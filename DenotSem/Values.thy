@@ -2,25 +2,26 @@ theory Values
 imports Main "~~/src/HOL/Library/FSet" 
 begin
 
-datatype val = VNat nat | VFun "(val \<times> val) fset"
+datatype val = VNat nat | VFun "(val \<times> val) list"
 
 fun val_join :: "val \<Rightarrow> val \<Rightarrow> val" (infix "\<squnion>" 56) where
   "VNat n1 \<squnion> VNat n2 = (if n1 = n2 then VNat n1 else undefined)" |
-  vfun_join: "VFun f1 \<squnion> VFun f2 = (VFun (f1 |\<union>| f2))" |
+  vfun_join: "VFun f1 \<squnion> VFun f2 = (VFun (f1 @ f2))" |
   "v1 \<squnion> v2 = undefined" 
 
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
-    fun_le :: "(val \<times> val) fset \<Rightarrow> (val \<times> val) fset \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
-    fun_in :: "val \<times> val \<Rightarrow> (val \<times> val) fset \<Rightarrow> bool" ("_ in _" [56,56] 55)
+    fun_le :: "(val \<times> val) list \<Rightarrow> (val \<times> val) list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
+    fun_in :: "val \<times> val \<Rightarrow> (val \<times> val) list \<Rightarrow> bool" ("_ in _" [56,56] 55)
     where
   vnat_le[intro!]: "(VNat n) \<sqsubseteq> (VNat n)" |
   vfun_le[intro!]: "t1 \<sqsubseteq> t2 \<Longrightarrow> (VFun t1) \<sqsubseteq> (VFun t2)" |
-  empty_le[intro!]: "{||} \<sqsubseteq> t2" |
-  ins_le[intro!]: "\<lbrakk> p in t2; t1 \<sqsubseteq> t2 \<rbrakk> \<Longrightarrow> finsert p t1 \<sqsubseteq> t2" |
-  fun_in_ax[intro!]: "p |\<in>| t \<Longrightarrow> p in t" |
+  empty_le[intro!]: "[] \<sqsubseteq> t2" |
+  ins_le[intro!]: "\<lbrakk> p in t2; t1 \<sqsubseteq> t2 \<rbrakk> \<Longrightarrow>  p#t1 \<sqsubseteq> t2" |
+  fun_in_ax[intro!]: "p \<in> set t \<Longrightarrow> p in t" |
   fun_in_sub: "\<lbrakk> (v1,v1') in t; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> (v2,v2') in t" | 
   fun_in_union: "\<lbrakk> (v1,v1') in t; (v2,v2') in t; v \<sqsubseteq> v1 \<squnion> v2; v1' \<squnion> v2' \<sqsubseteq> v' \<rbrakk>
                    \<Longrightarrow> (v,v') in t"
+
 inductive_cases 
   le_fun_fun_inv[elim!]: "VFun t1 \<sqsubseteq> VFun t2" and
   le_fun_nat_inv[elim!]: "VFun t2 \<sqsubseteq> VNat x1" and
@@ -28,8 +29,9 @@ inductive_cases
   le_nat_any_inv[elim!]: "VNat n \<sqsubseteq> v" and
   le_fun_any_inv[elim!]: "VFun t \<sqsubseteq> v" and
   le_any_fun_inv[elim!]: "v \<sqsubseteq> VFun t" and
-  le_ins_fun_inv[elim!]: "finsert (a, b) t1 \<sqsubseteq> t2"
-  
+  le_cons_fun_inv[elim!]: "(p#t1) \<sqsubseteq> t2"
+
+(*  
 section "Size of Values"  
   
 fun vadd :: "(val \<times> nat) \<times> (val \<times> nat) \<Rightarrow> nat \<Rightarrow> nat" where
@@ -95,7 +97,8 @@ lemma val_size_mem_r: assumes v12_t: "(v1,v2) |\<in>| t" shows "vsize v2 < fsize
 
 lemma psize_mem: assumes p_t: "p |\<in>| t" shows "psize p < fsize t"
   using p_t val_size_mem apply (case_tac p) apply simp done
-    
+   *)
+  
 section "Joins and Meets"
   
 abbreviation val_lub :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> bool" where
@@ -104,47 +107,49 @@ abbreviation val_lub :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> b
 abbreviation val_glb :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> bool" where
   "val_glb v v1 v2 \<equiv> v \<sqsubseteq> v1 \<and> v \<sqsubseteq> v2 \<and> (\<forall> v'. v' \<sqsubseteq> v1 \<and> v' \<sqsubseteq> v2 \<longrightarrow> v' \<sqsubseteq> v)"
 
-lemma fun_le_union1: "t1 \<sqsubseteq> t1 |\<union>| t2"
-  apply (induction t1 arbitrary: t2)
-   apply force
-  apply clarify
-  apply (rule ins_le) apply force
-  apply (subgoal_tac "t1 \<sqsubseteq> t1 |\<union>| finsert (a,b) t2") prefer 2 apply blast
-  apply force
-  done
+lemma fun_le_subset: "set t1 \<subseteq> set t2 \<Longrightarrow> t1 \<sqsubseteq> t2"
+ by (induction t1) auto  
   
-lemma fun_le_union2: "t1 \<sqsubseteq> t2 |\<union>| t1"
-  apply (induction t1 arbitrary: t2)
-   apply force
-  apply clarify
-  apply (rule ins_le) apply force
-  apply (subgoal_tac "t1 \<sqsubseteq> finsert (a,b) t2 |\<union>| t1") prefer 2 apply blast
-  apply force
-  done
+lemma fun_le_append1: "t1 \<sqsubseteq> t1 @ t2"
+proof -
+  have "set t1 \<subseteq> set (t1 @ t2)" by auto
+  then show ?thesis using fun_le_subset by blast
+qed
+  
+lemma fun_le_append2: "t1 \<sqsubseteq> t2 @ t1"
+proof -
+  have "set t1 \<subseteq> set (t2 @ t1)" by auto
+  then show ?thesis using fun_le_subset by blast
+qed
+
+lemma fun_append_le: fixes t1::"(val \<times> val) list" and t1'::"(val \<times> val) list"
+  assumes t1_t2: "t1 \<sqsubseteq> t2" and t1p_t2: "t1' \<sqsubseteq> t2" shows "t1 @ t1' \<sqsubseteq> t2"    
+  using t1_t2 t1p_t2 by (induction t1 arbitrary: t1' t2) auto
     
-lemma fun_union_le: fixes t1::"(val \<times> val) fset" and t1'::"(val \<times> val) fset"
-  assumes t1_t2: "t1 \<sqsubseteq> t2" and t1p_t2: "t1' \<sqsubseteq> t2" shows "t1 |\<union>| t1' \<sqsubseteq> t2"    
-  using t1_t2 t1p_t2 apply (induction t1 arbitrary: t1' t2)
-   apply force
-  apply simp apply clarify apply (rule ins_le) defer
-    
-    
-    
-lemma join_lub: fixes v1::val and v2::val 
-  assumes n: "n = vsize v1 + vsize v2" 
-  and ub1: "v1 \<sqsubseteq> v" and ub2: "v2 \<sqsubseteq> v"
+lemma join_lub_aux: fixes v1::val and v2::val 
+  assumes n: "n = size v1 + size v2" and ub1: "v1 \<sqsubseteq> v" and ub2: "v2 \<sqsubseteq> v"
   shows "val_lub (v1 \<squnion> v2) v1 v2"
   using n ub1 ub2 apply (induction n arbitrary: v1 v2 v rule: nat_less_induct)
   apply (case_tac v1)
    apply (case_tac v2) apply force apply force
   apply (case_tac v2) apply force
-  apply clarify apply (rule conjI) apply (simp only: vfun_join)
-   apply clarify apply (rule fun_le_union1)
+  apply clarify  
   apply (rule conjI) apply (simp only: vfun_join)
-   apply clarify apply (rule fun_le_union2)
+   apply clarify apply (rule fun_le_append1)
+  apply (rule conjI) apply (simp only: vfun_join)
+   apply clarify apply (rule fun_le_append2)
   apply clarify apply (simp only: vfun_join)
   apply clarify
-    
-    
+  apply (rule fun_append_le) apply blast apply blast
+  done
+
+proposition join_lub: fixes v1::val and v2::val 
+  assumes ub1: "v1 \<sqsubseteq> v" and ub2: "v2 \<sqsubseteq> v" shows "val_lub (v1 \<squnion> v2) v1 v2"
+  using join_lub_aux ub1 ub2 by blast
+
+(*
+lemma assumes p1_t: "p1 in t" and p2_t: "p2 in t"
+  shows "p1 \<squnion> p2 in t"
+*)    
     
 end
