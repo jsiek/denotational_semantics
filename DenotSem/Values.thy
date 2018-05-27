@@ -1,27 +1,51 @@
 theory Values
-imports Main "~~/src/HOL/Library/FSet" 
+imports Main
 begin
 
-datatype val = VNat nat | VFun "(val \<times> val) list"
+datatype val = VNat nat | VFun "entry list" and
+  entry = Entry val val (infix "\<mapsto>" 70)
 
+inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
+    inconsistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "!~" 52) where
+  vnat_consis[intro!]: "(VNat n) ~ (VNat n)" |
+  vfun_consis[intro!]: "\<lbrakk> \<forall> v1 v1' v2 v2'. v1 \<mapsto>v1' \<in> set t1 \<and> v2\<mapsto>v2' \<in> set t2 \<longrightarrow>
+                        (v1 ~ v2 \<and> v1' ~ v2') \<or> v1 !~ v2 \<rbrakk> \<Longrightarrow> (VFun t1) ~ (VFun t2)" |
+  vnat_inconsis[intro!]: "n \<noteq> n' \<Longrightarrow> (VNat n) !~ (VNat n')" |
+  vfun_inconsis[intro!]: "\<lbrakk> v1\<mapsto>v1' \<in> set t1; v2\<mapsto>v2' \<in> set t2; v1 ~ v2; v1' !~ v2' \<rbrakk> 
+                         \<Longrightarrow> (VFun t1) !~ (VFun t2)" |
+  vnat_vfun_inconsis[intro!]: "VNat n !~ VFun t" |
+  vfun_vnat_inconsis[intro!]: "VFun t !~ VNat n"
+
+definition is_fun :: "entry list \<Rightarrow> bool" where
+  "is_fun t \<equiv> (\<forall> v1 v2 v1' v2'. v1\<mapsto>v1' \<in> set t \<and> v2\<mapsto>v2' \<in> set t \<and> v1 ~ v2 \<longrightarrow> v1' ~ v2')"
+    
+inductive is_val :: "val \<Rightarrow> bool" where
+  vnat_is_val[intro!]: "is_val (VNat n)" |
+  vfun_is_val[intro!]: "\<lbrakk> is_fun t; \<forall> v v'. v\<mapsto>v' \<in> set t \<longrightarrow> is_val v \<and> is_val v' \<rbrakk>
+                        \<Longrightarrow> is_val (VFun t)"
+  
 fun val_join :: "val \<Rightarrow> val \<Rightarrow> val" (infix "\<squnion>" 56) where
   "VNat n1 \<squnion> VNat n2 = (if n1 = n2 then VNat n1 else undefined)" |
   vfun_join: "VFun f1 \<squnion> VFun f2 = (VFun (f1 @ f2))" |
   "v1 \<squnion> v2 = undefined" 
 
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
-    fun_le :: "(val \<times> val) list \<Rightarrow> (val \<times> val) list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
-    fun_in :: "val \<times> val \<Rightarrow> (val \<times> val) list \<Rightarrow> bool" ("_ in _" [56,56] 55)
+    entry_le :: "entry \<Rightarrow> entry \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
+    fun_le :: "entry list \<Rightarrow> entry list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
+    fun_in :: "entry \<Rightarrow> entry list \<Rightarrow> bool" ("_ in _" [56,56] 55)
     where
   vnat_le[intro!]: "(VNat n) \<sqsubseteq> (VNat n)" |
   vfun_le[intro!]: "t1 \<sqsubseteq> t2 \<Longrightarrow> (VFun t1) \<sqsubseteq> (VFun t2)" |
+  entry_le[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'\<rbrakk> \<Longrightarrow> (v1\<mapsto>v1') \<sqsubseteq> (v2\<mapsto>v2')" |
   empty_le[intro!]: "[] \<sqsubseteq> t2" |
   ins_le[intro!]: "\<lbrakk> p in t2; t1 \<sqsubseteq> t2 \<rbrakk> \<Longrightarrow>  p#t1 \<sqsubseteq> t2" |
-  fun_in_ax[intro!]: "p \<in> set t \<Longrightarrow> p in t" |
-  fun_in_sub: "\<lbrakk> (v1,v1') in t; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> (v2,v2') in t" | 
+  fun_in_ax[intro!]: "\<lbrakk> p \<in> set t \<rbrakk> \<Longrightarrow> p in t" |
+  fun_in_sub: "\<lbrakk> p1 in t; p1 \<sqsubseteq> p2 \<rbrakk> \<Longrightarrow> p2 in t" 
+(*
   fun_in_union: "\<lbrakk> (v1,v1') in t; (v2,v2') in t; v \<sqsubseteq> v1 \<squnion> v2; v1' \<squnion> v2' \<sqsubseteq> v' \<rbrakk>
                    \<Longrightarrow> (v,v') in t"
-
+*)
+  
 inductive_cases 
   le_fun_fun_inv[elim!]: "VFun t1 \<sqsubseteq> VFun t2" and
   le_fun_nat_inv[elim!]: "VFun t2 \<sqsubseteq> VNat x1" and
@@ -30,74 +54,6 @@ inductive_cases
   le_fun_any_inv[elim!]: "VFun t \<sqsubseteq> v" and
   le_any_fun_inv[elim!]: "v \<sqsubseteq> VFun t" and
   le_cons_fun_inv[elim!]: "(p#t1) \<sqsubseteq> t2"
-
-(*  
-section "Size of Values"  
-  
-fun vadd :: "(val \<times> nat) \<times> (val \<times> nat) \<Rightarrow> nat \<Rightarrow> nat" where
-  "vadd ((_,v),(_,u)) r = v + u + r"
-  
-primrec vsize :: "val \<Rightarrow> nat" where
-"vsize (VNat n) = 1" |
-"vsize (VFun t) = 1 + ffold vadd 0
-                            (fimage (map_prod (\<lambda> v. (v,vsize v)) (\<lambda> v. (v,vsize v))) t)"
-
-abbreviation vprod_size :: "val \<times> val \<Rightarrow> (val \<times> nat) \<times> (val \<times> nat)" where
-  "vprod_size \<equiv> map_prod (\<lambda> v. (v,vsize v)) (\<lambda> v. (v,vsize v))"
-
-abbreviation fsize :: "(val \<times> val) fset \<Rightarrow> nat" where
-  "fsize t \<equiv> 1 + ffold vadd 0 (fimage vprod_size t)"
-
-abbreviation psize :: "val \<times> val \<Rightarrow> nat" where
-  "psize \<equiv> \<lambda> (v1, v2). vsize v1 + vsize v2"
-  
-interpretation vadd_vprod: comp_fun_commute "vadd \<circ> vprod_size"
-  unfolding comp_fun_commute_def by auto  
-
-lemma vprod_size_inj: "inj_on vprod_size (fset A)"
-  unfolding inj_on_def by auto
-  
-lemma fsize_def2: "fsize t = 1 + ffold (vadd \<circ> vprod_size) 0 t"
-  using vprod_size_inj[of t] ffold_fimage[of vprod_size t vadd 0] by simp
-    
-lemma fsize_finsert_in[simp]:
-  assumes v12_t: "(v1,v2) |\<in>| t" shows "fsize (finsert (v1,v2) t) = fsize t"
-proof -
-  from v12_t have "finsert (v1,v2) t = t" by auto 
-  from this show ?thesis by simp
-qed
- 
-lemma fsize_finsert_notin[simp]: 
-  assumes v12_t: "(v1,v2) |\<notin>| t"
-  shows "fsize (finsert (v1,v2) t) = vsize v1 + vsize v2 + fsize t"
-proof -
-  let ?f = "vadd \<circ> vprod_size"
-  have "fsize (finsert (v1,v2) t) = 1 + ffold ?f 0 (finsert (v1,v2) t)"
-    using fsize_def2[of "finsert (v1,v2) t"] by simp
-  also from v12_t have "... = 1 + ?f (v1,v2) (ffold ?f 0 t)" by auto
-  finally have "fsize (finsert (v1,v2) t) = 1 + ?f (v1,v2) (ffold ?f 0 t)" .
-  from this show ?thesis using fsize_def2[of t] by simp
-qed
-
-lemma val_size_mem: assumes v12_t: "(v1,v2) |\<in>| t" shows "vsize v1 + vsize v2 < fsize t"
-  using v12_t apply (induction t arbitrary: v1 v2)
-   apply force
-  apply (subgoal_tac "x |\<notin>| t") prefer 2 apply force 
-  apply (case_tac x)
-  apply (subgoal_tac "fsize (finsert (a,b) t) = vsize a + vsize b + fsize t")
-   prefer 2 apply (rule fsize_finsert_notin) apply force
-  apply force 
-  done
-    
-lemma val_size_mem_l: assumes v12_t: "(v1,v2) |\<in>| t" shows "vsize v1 < fsize t"
-  using v12_t val_size_mem[of v1 v2 t] by arith 
-
-lemma val_size_mem_r: assumes v12_t: "(v1,v2) |\<in>| t" shows "vsize v2 < fsize t"
-  using v12_t val_size_mem[of v1 v2 t] by arith
-
-lemma psize_mem: assumes p_t: "p |\<in>| t" shows "psize p < fsize t"
-  using p_t val_size_mem apply (case_tac p) apply simp done
-   *)
   
 section "Joins and Meets"
   
@@ -122,7 +78,7 @@ proof -
   then show ?thesis using fun_le_subset by blast
 qed
 
-lemma fun_append_le: fixes t1::"(val \<times> val) list" and t1'::"(val \<times> val) list"
+lemma fun_append_le: fixes t1::"entry list" and t1'::"entry list"
   assumes t1_t2: "t1 \<sqsubseteq> t2" and t1p_t2: "t1' \<sqsubseteq> t2" shows "t1 @ t1' \<sqsubseteq> t2"    
   using t1_t2 t1p_t2 by (induction t1 arbitrary: t1' t2) auto
     
@@ -143,13 +99,11 @@ lemma join_lub_aux: fixes v1::val and v2::val
   apply (rule fun_append_le) apply blast apply blast
   done
 
-proposition join_lub: fixes v1::val and v2::val 
-  assumes ub1: "v1 \<sqsubseteq> v" and ub2: "v2 \<sqsubseteq> v" shows "val_lub (v1 \<squnion> v2) v1 v2"
-  using join_lub_aux ub1 ub2 by blast
+abbreviation bounded :: "val \<Rightarrow> val \<Rightarrow> bool" where
+  "bounded v1 v2 \<equiv> (\<exists> v. is_val v \<and> v1 \<sqsubseteq> v \<and> v2 \<sqsubseteq> v)" 
 
-(*
-lemma assumes p1_t: "p1 in t" and p2_t: "p2 in t"
-  shows "p1 \<squnion> p2 in t"
-*)    
+proposition join_lub: fixes v1::val and v2::val 
+  assumes v12: "bounded v1 v2" shows "val_lub (v1 \<squnion> v2) v1 v2"
+  using join_lub_aux v12 by blast   
     
 end
