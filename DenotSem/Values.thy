@@ -56,14 +56,18 @@ fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> val list" (infix 
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
     entry_le :: "entry \<Rightarrow> entry \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
     fun_le :: "func \<Rightarrow> func \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
-    fun_in :: "entry \<Rightarrow> func \<Rightarrow> bool" ("_ in _" [56,56] 55)
-    where
+    fun_in :: "entry \<Rightarrow> func \<Rightarrow> bool" ("_ in _" [56,56] 55) where
+      
   vnat_le[intro!]: "(VNat n) \<sqsubseteq> (VNat n)" |
   vfun_le[intro!]: "t1 \<sqsubseteq> t2 \<Longrightarrow> (VFun t1) \<sqsubseteq> (VFun t2)" |
+  
   entry_le[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'\<rbrakk> \<Longrightarrow> (v1\<mapsto>v1') \<sqsubseteq> (v2\<mapsto>v2')" |
+  
   empty_le[intro!]: "[] \<sqsubseteq> t2" |
   ins_le[intro!]: "\<lbrakk> p in t2; t1 \<sqsubseteq> t2 \<rbrakk> \<Longrightarrow>  p#t1 \<sqsubseteq> t2" |
-  fun_in_ax[intro!]: "\<lbrakk> p \<in> set t \<rbrakk> \<Longrightarrow> p in t" |
+  
+  fun_in_match[intro!]: "p in (p#t)" |
+  fun_in_rest[intro!]: "p in t \<Longrightarrow> p in q#t" |
   fun_in_sub: "\<lbrakk> p1 in t; p1 \<sqsubseteq> p2 \<rbrakk> \<Longrightarrow> p2 in t" 
 (*
   fun_in_union: "\<lbrakk> (v1,v1') in t; (v2,v2') in t; v \<sqsubseteq> v1 \<squnion> v2; v1' \<squnion> v2' \<sqsubseteq> v' \<rbrakk>
@@ -80,8 +84,10 @@ inductive_cases
   le_nat_any_inv[elim!]: "VNat n \<sqsubseteq> v" and
   le_fun_any_inv[elim!]: "VFun t \<sqsubseteq> v" and
   le_any_fun_inv[elim!]: "v \<sqsubseteq> VFun t" and
-  le_cons_fun_inv[elim!]: "((p::entry)#t1) \<sqsubseteq> t2"
-  
+  le_cons_fun_inv[elim!]: "((p::entry)#t1) \<sqsubseteq> t2" and
+  le_entry_inv[elim!]: "v2 \<mapsto> v2' \<sqsubseteq> v3 \<mapsto> v3'" and
+  le_entry_any_inv[elim!]: "v2 \<mapsto> v2' \<sqsubseteq> p3" and
+  le_any_entry_inv[elim!]: " p3 \<sqsubseteq> v1 \<mapsto> v1'" 
 section "Joins and Meets"
   
 abbreviation val_lub :: "val \<Rightarrow> val \<Rightarrow> val \<Rightarrow> bool" where

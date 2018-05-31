@@ -21,39 +21,17 @@ lemma val_size_mem_r: assumes v12_t: "v1\<mapsto>v2 \<in> set t" shows "vsize v2
     
 section "More stuff"    
 
-  (*
-thm val_le_entry_le_fun_le_fun_in.induct
+lemma entry_set_in: "p \<in> set f \<Longrightarrow> p in f"
+  apply (induction f) apply force  
+    apply simp apply (erule disjE) apply force apply force done
   
-lemma fun_in_induct:
-  assumes base: "(\<And>p t. p \<in> set t \<Longrightarrow> P p t)" and
-    IH: "(\<And>p1 t p2. p1 in t \<Longrightarrow> P p1 t \<Longrightarrow> p1 \<sqsubseteq> p2 \<Longrightarrow> P p2 t)" and
-    prem: "p in f" 
-  shows "P p f"    
-proof -
-  let ?P1 = "\<lambda>v v'. True" and ?P2 = "\<lambda>p p'. True" and ?P3 = "\<lambda>f f'. True" and
-    ?P4 = "\<lambda>p f. P p f"
-  show ?thesis
-    using val_le_entry_le_fun_le_fun_in.induct[of ?P1 ?P3 ?P2 ?P4] base IH prem by blast
-qed
-  
-lemma fun_in_inv: "p in f \<Longrightarrow> \<exists> p'. p' \<in> set f \<and> p' \<sqsubseteq> p"
-  apply (induction rule: fun_in_induct)
-  
-    
-    
-lemma fun_le_mem: "\<lbrakk> p \<in> set f; VFun f \<sqsubseteq> VFun f'\<rbrakk> \<Longrightarrow> \<exists> p'. p \<sqsubseteq> p'"
-  apply clarify
-  apply (induction f arbitrary: p f')
-   apply force
-   apply auto
-   
-    
-lemma fun_le_intro: "\<lbrakk> \<forall>p. p |\<in>| f \<longrightarrow> (\<exists>p'. p' |\<in>| f' \<and> p \<sqsubseteq> p') \<rbrakk> \<Longrightarrow> VFun f \<sqsubseteq> VFun f'"    
-  by auto 
-*)
-
 lemma fun_le_subset: fixes f::func shows "set f \<subseteq> set f' \<Longrightarrow> f \<sqsubseteq> f'"
-  by (induction f arbitrary: f') auto
+  apply (induction f arbitrary: f') 
+   apply force
+  apply simp apply clarify
+  apply (rule ins_le) using entry_set_in apply blast
+  apply blast
+  done
 
 lemma le_refl_aux:
     "(\<forall> v. n = vsize v \<longrightarrow> v \<sqsubseteq> v)
@@ -101,6 +79,119 @@ qed
 proposition val_le_refl[simp]: fixes v::val shows "v \<sqsubseteq> v" 
   using le_refl_aux by blast
   
+lemma fun_in_empty: assumes pe: "p in []" shows "False"
+proof -
+  let ?P1 = "\<lambda>v1 v2. True" and ?P2 = "\<lambda>p1 p2. True" and ?P3 = "\<lambda>f1 f2. True"
+    and ?P4 = "\<lambda>p f. f = [] \<longrightarrow> False"
+  have base: "\<And>p t. p \<in> set t \<Longrightarrow> t = [] \<longrightarrow> False" apply (case_tac t) by auto
+  show "False" using val_le_entry_le_fun_le_fun_in.induct[of ?P1 ?P2 ?P3 ?P4] pe base by blast
+qed
+ 
+thm val_le_entry_le_fun_le_fun_in.induct
+lemma le_trans_aux:
+    "(val_le v1 v2 \<longrightarrow> (\<forall> v3. (val_le v2 v3 \<longrightarrow> val_le v1 v3) 
+                            \<and> (val_le v3 v1 \<longrightarrow> val_le v3 v2)))
+  \<and> (entry_le p1 p2 \<longrightarrow> (\<forall> p3. (entry_le p2 p3 \<longrightarrow> entry_le p1 p3)
+                            \<and> (entry_le p3 p1 \<longrightarrow> entry_le p3 p2)))
+  \<and> (fun_le f1 f2 \<longrightarrow> (\<forall> f3. (fun_le f2 f3 \<longrightarrow> fun_le f1 f3)
+                           \<and> (fun_le f3 f1 \<longrightarrow> fun_le f3 f2)))
+  \<and> (p in f1 \<longrightarrow> (\<forall> f2. f1 \<sqsubseteq> f2 \<longrightarrow> p in f2))"
+proof (induction rule: val_le_entry_le_fun_le_fun_in.induct)
+  case (vnat_le n)
+  then show ?case by auto
+next
+  case (vfun_le t1 t2)
+  then show ?case by auto
+next
+  case (entry_le v2 v1 v1' v2')
+  then show ?case by auto 
+next
+  case (empty_le t2)
+  then show ?case apply clarify apply (rule conjI) apply force
+    apply clarify using fun_in_empty 
+next
+  case (ins_le p t2 t1)
+  then show ?case sorry
+next
+  case (fun_in_match p t)
+  then show ?case sorry
+next
+  case (fun_in_rest p t q)
+  then show ?case sorry
+next
+  case (fun_in_sub p1 t p2)
+  then show ?case sorry
+qed
+
+
+ (*
+  case (1 n)
+  show ?case apply (rule conjI) apply clarify defer apply (rule conjI) apply clarify defer
+      apply (rule conjI) apply clarify defer apply clarify defer
+  proof -
+    fix v1 v2::val and v3 assume n: "n = vsize v1 + vsize v2 + vsize v3" and
+      v12: "v1 \<sqsubseteq> v2" and v23: "v2 \<sqsubseteq> v3"
+    show "v1 \<sqsubseteq> v3" 
+    proof (cases v2)
+      case (VNat n2)
+      then show ?thesis using v12 v23 by auto
+    next
+      case (VFun f2) then have v2: "v2 = VFun f2" .
+      obtain f1 where v1: "v1 = VFun f1" and f12: "f1 \<sqsubseteq> f2" using v12 v2 by auto
+      obtain f3 where v3: "v3 = VFun f3" and f23: "f2 \<sqsubseteq> f3" using v23 v2 by auto
+      have "fsize f1 + fsize f2 + fsize f3 < n" using n v1 v2 v3 by auto
+      then have f13: "f1 \<sqsubseteq> f3" using f12 f23 1 by blast
+      show ?thesis using v1 v3 f13 by auto
+    qed   
+  next
+    fix p1 p2::entry and p3 assume n: "n = esize p1 + esize p2 + esize p3" and 
+      p12: "p1 \<sqsubseteq> p2" and p23: "p2 \<sqsubseteq> p3"
+    obtain v1 v1' where p1: "p1 = v1\<mapsto>v1'" by (cases p1) auto
+    obtain v2 v2' where p2: "p2 = v2\<mapsto>v2'" by (cases p2) auto
+    obtain v3 v3' where p3: "p3 = v3\<mapsto>v3'" by (cases p3) auto
+    have v31: "v3 \<sqsubseteq> v1"
+    proof -
+      have v32: "v3 \<sqsubseteq> v2" using p23 p2 p3 by auto
+      have v21: "v2 \<sqsubseteq> v1" using p12 p1 p2 by auto
+      have sv2: "vsize v1 + vsize v2 + vsize v3 < n" using n p1 p2 p3 by auto
+      show ?thesis using v32 v21 1 sv2 by auto
+    qed
+    have v13p: "v1' \<sqsubseteq> v3'"
+    proof -
+      have v12p: "v1' \<sqsubseteq> v2'" using p12 p1 p2 by auto
+      have v23p: "v2' \<sqsubseteq> v3'" using p23 p2 p3 by auto
+      have sv2p: "vsize v1' + vsize v2' + vsize v3' < n" using n p1 p2 p3 by auto
+      show ?thesis using v12p v23p 1 sv2p by auto
+    qed
+    show "p1 \<sqsubseteq> p3" using v31 v13p p1 p3 by auto
+  next
+    fix f1 f2::func and f3 assume n: "n = fsize f1 + fsize f2 + fsize f3" and
+      f12: "f1 \<sqsubseteq> f2" and f23: "f2 \<sqsubseteq> f3"
+    show "f1 \<sqsubseteq> f3"
+    proof (cases f1)
+      case Nil
+      then show ?thesis by auto
+    next
+      case (Cons p1 f1')
+      have p1_f2: "p1 in f2" using f12 Cons by auto
+      have f1p_f2: "f1' \<sqsubseteq> f2" using f12 Cons by auto
+      have sf: "fsize f1' + fsize f2 + fsize f3 < n" using n Cons by auto
+      show ?thesis using Cons apply simp
+      proof
+        show "p1 in f3" sorry
+      next
+        show "f1' \<sqsubseteq> f3" using sf 1 f1p_f2 f23 by blast
+      qed
+    qed
+  next
+    fix p::entry and f1::func and f2 assume n: "n = fsize f1 + fsize f2" and 
+      pf1: "p in f1" and f12: "f1 \<sqsubseteq> f2"
+    show "p \<in> set f2"
+      sorry
+  qed
+qed
+    *)
+  (*
 lemma val_le_trans_aux: fixes v2::val 
   assumes n_vs2: "n = vsize v2"
   shows "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3" using n_vs2
@@ -122,8 +213,9 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
       proof (cases v3)
         case (VNat n3) with v1 1 have "False" by auto thus ?thesis ..
       next
-        case (VFun t3)
-        show ?thesis using VFun v1 v2
+        case (VFun t3) then have v3: "v3 = VFun t3" .
+        show ?thesis sorry
+(*        using VFun v1 v2
         proof clarify
           fix v11 v11' assume v11_t1: "(v11,v11') |\<in>| t1"
           from v11_t1 1(2) v1 v2 obtain v22 v22' where v22_t2: "(v22,v22') |\<in>| t2" 
@@ -144,16 +236,16 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
           show "\<exists>v33 v33'. (v33, v33') |\<in>| t3 \<and> v33 \<sqsubseteq> v11 \<and> v11' \<sqsubseteq> v33'" by blast
         qed
       qed
+*)
+      qed
     qed
   qed
 qed
+*)
 
 proposition val_le_trans[trans]: fixes v2::val shows "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3"
-  using val_le_trans_aux by blast
+  sorry
     
-
-
-  
 lemma consis_and_not_consis:
   "(v ~ v' \<longrightarrow> \<not> (v !~ v')) \<and> (v !~ v' \<longrightarrow> \<not>(v ~ v'))"
   apply (induction rule: consistent_inconsistent.induct) apply force+ done
@@ -241,15 +333,6 @@ lemma env_le_ext[intro!]: fixes v::val and \<rho>::"val list"
 lemma val_env_ext[intro!]: "\<lbrakk> is_val v; val_env \<rho> \<rbrakk> \<Longrightarrow> val_env (v#\<rho>)"
   unfolding val_env_def apply auto apply (case_tac k) apply auto done
  
-lemma consis_refl[intro!]: "is_val v \<Longrightarrow> v ~ v"
-  apply (induction rule: is_val.induct)
-   apply blast
-  apply (simp only: is_fun_def)
-  apply (rule vfun_consis)
-  apply (rule allI)+ apply (rule impI)+ apply (erule conjE)+
-  apply (case_tac "v1 ~ v2") apply force apply blast 
-  done
-    
 lemma consis_env_refl[intro!]: "val_env \<rho> \<Longrightarrow> consis_env \<rho> \<rho>"
   apply (induction \<rho>) apply force
   apply (rule consis_env_cons)
