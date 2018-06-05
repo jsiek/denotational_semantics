@@ -141,7 +141,6 @@ lemma le_fun_subset: "\<lbrakk> set f1 \<subseteq> set f2 \<rbrakk> \<Longrighta
     apply (rule le_fun_member) apply assumption
   done
 
-(*  VFun f1 \<sqsubseteq> VFun (a # f2)  *)
 lemma le_factor_cons: "VFun f1 \<sqsubseteq> VFun (a # f2) \<Longrightarrow>
    \<exists> f3 f4. set f1 = set(f3@f4) \<and> VFun f3 \<sqsubseteq> VFun [a] \<and> VFun f4 \<sqsubseteq> VFun f2"
 proof (induction f1 arbitrary: a f2)
@@ -154,15 +153,31 @@ next
     apply (erule le_fun_cons_left_inv)
   proof -
     assume 1: "VFun [b] \<sqsubseteq> VFun (a # f2)" and 2: "VFun f1 \<sqsubseteq> VFun (a # f2)"
-  
-   from 1 show "\<exists>f3 f4.
-       insert b (set f1) = set f3 \<union> set f4 \<and>
+    obtain f3 f4 where f1_f34: "set f1 = set (f3@f4)" and f3_a: "VFun f3 \<sqsubseteq> VFun [a]" and
+      f4_f2: "VFun f4 \<sqsubseteq> VFun f2"
+      using 2 Cons(1)[of a f2] by blast
+    from 1 show "\<exists>f3 f4. insert b (set f1) = set f3 \<union> set f4 \<and>
        VFun f3 \<sqsubseteq> VFun [a] \<and> VFun f4 \<sqsubseteq> VFun f2" 
-      using 
-    sorry 
-(*    UNDER CONSTRUCTION
-   apply (erule le_fun_cons_left_inv)
-  *)
+    proof (rule le_single_cons_right_inv)
+      assume ab: "a = b"
+      let ?f3 = "a#f3" and ?f4 = "f4"
+      have 3: "VFun ?f3 \<sqsubseteq> VFun [a]" using f3_a
+        by (metis Values.le_refl le_cons_left)
+      have 4: "insert b (set f1) = set ?f3 \<union> set ?f4" using ab f1_f34 apply auto done       
+      show ?thesis using 3 4 f4_f2 by meson
+    next
+      assume 3: "VFun [b] \<sqsubseteq> VFun f2"
+      let ?f3 = "f3" and ?f4 = "b#f4"
+      have 4: "insert b (set f1) = set ?f3 \<union> set ?f4" using f1_f34 by simp
+      have 5: "VFun ?f4 \<sqsubseteq> VFun f2" using 3 f4_f2 by (metis le_cons_left)
+      show ?thesis using 4 f3_a 5 by meson
+    next
+      fix v2 v1 v1' v2' assume b: "b = (v1, v1')" and v2_v1: "v2 \<sqsubseteq> v1"
+        and v12p: "v1' \<sqsubseteq> v2'" and a: "a = (v2, v2')" and f2: "f2 = []"
+        
+        
+      show ?thesis sorry
+    qed
   qed
 qed
     
