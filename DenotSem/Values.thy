@@ -174,9 +174,11 @@ next
     next
       fix v2 v1 v1' v2' assume b: "b = (v1, v1')" and v2_v1: "v2 \<sqsubseteq> v1"
         and v12p: "v1' \<sqsubseteq> v2'" and a: "a = (v2, v2')" and f2: "f2 = []"
-        
-        
-      show ?thesis sorry
+      let ?f3 = "b#f1" and ?f4 = "[]"
+      have 3: "insert b (set f1) = set ?f3 \<union> set ?f4" by simp
+      have 4: "VFun ?f3 \<sqsubseteq> VFun [a]" using b v2_v1 v12p a 1 f2 using Cons.prems by auto
+      have 5: "VFun ?f4 \<sqsubseteq> VFun f2" using f2 by blast
+      show ?thesis using 3 4 5 by meson
     qed
   qed
 qed
