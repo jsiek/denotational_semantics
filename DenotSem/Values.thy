@@ -201,7 +201,7 @@ qed auto
 lemma le_fun_sub_subset: "\<lbrakk> f1 \<sqsubseteq> f2; a\<in>set f1 \<rbrakk> \<Longrightarrow> \<exists> b \<in> set f2. [a] \<sqsubseteq> [b]"
   using le_fun_sub_subset_aux by (simp add: le_fun_sub_subset_aux)
     
-lemma le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubseteq> v12"
+lemma le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubseteq> v12" (* incl_L *)
   apply (case_tac v1) apply (case_tac v2) apply (case_tac v12) apply simp
      apply (case_tac "x1=x1a") apply force apply force
     apply simp apply (case_tac "x1=x1a") apply force apply force
@@ -210,7 +210,7 @@ lemma le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubset
   apply (case_tac v12) apply force
   using le_fun_subset by auto
 
-lemma le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12"
+lemma le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12" (* incl_R *)
   apply (case_tac v1) apply (case_tac v2) apply (case_tac v12) apply simp
      apply (case_tac "x1=x1a") apply force apply force
     apply simp apply (case_tac "x1=x1a") apply force apply force
@@ -334,22 +334,44 @@ definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix
 lemma inconsis_not_consis[simp]: "(v1 !~ v2) = (\<not> (v1 ~ v2))"
   sorry
 
-(*    
-proposition mon: fixes v1::val and v2::val
-  assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'"
-  shows "v1 \<squnion> v2 \<sqsubseteq> v1' \<squnion> v2'"
+proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
+  assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
+    v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
+  shows "v12 \<sqsubseteq> v12'"
 proof -
-  have 3: "v1' \<sqsubseteq> v1' \<squnion> v2'" using le_join_left by blast
-  have 4: "v2' \<sqsubseteq> v1' \<squnion> v2'" using le_join_right by blast
-  have 5: "v1 \<sqsubseteq> v1' \<squnion> v2'" using 1 3 le_trans by blast
-  have 6: "v2 \<sqsubseteq> v1' \<squnion> v2'" using 2 4 le_trans by blast
-  show "v1 \<squnion> v2 \<sqsubseteq> v1' \<squnion> v2'" using 5 6 le_left_join by blast
+  have 3: "v1' \<sqsubseteq> v12'" using le_join_left v12p by blast
+  have 4: "v2' \<sqsubseteq> v12'" using le_join_right v12p by blast
+  have 5: "v1 \<sqsubseteq> v12'" using 1 3 le_trans by blast
+  have 6: "v2 \<sqsubseteq> v12'" using 2 4 le_trans by blast
+  show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join v12 by blast
 qed
-*)    
 
-(*
-    
+abbreviation equivalent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 60) where
+  "v \<approx> v' \<equiv> v \<sqsubseteq> v' \<and> v' \<sqsubseteq> v"
   
+proposition join_sym: fixes v1::val assumes v12: "v1\<squnion>v2 = Some v12" and v21: "v2\<squnion>v1 = Some v21"
+  shows "v12 \<approx> v21"
+proof
+  have 3: "v1 \<sqsubseteq> v21" using le_join_right v21 by blast
+  have 4: "v2 \<sqsubseteq> v21" using le_join_left v21 by blast
+  show "v12 \<sqsubseteq> v21" using le_left_join 3 4 v12 by blast
+next
+  have 1: "v1 \<sqsubseteq> v12" using le_join_left v12 by blast
+  have 2: "v2 \<sqsubseteq> v12" using le_join_right v12 by blast  
+  show "v21 \<sqsubseteq> v12" using 1 2 le_left_join v21 by blast
+qed
+
+proposition arrow_compatible: assumes aa: "a \<approx> a'" and bb: "b \<approx> b'" shows "a\<mapsto>b \<approx> a' \<mapsto> b'"
+  by (simp add: aa bb le_arrow le_fun)
+
+theorem beta_sound: fixes A1::val and A2::val and B1::val and B2::val 
+  assumes cd_ab: "C\<mapsto>D \<sqsubseteq> AB" and ab: "(A1\<mapsto>B1)\<squnion>(A2\<mapsto>B2) = Some AB"
+  shows "(A1 \<sqsubseteq> C \<or> A2 \<sqsubseteq> C \<or> (\<exists>A3. A3 \<sqsubseteq> C \<and> A1 \<squnion> A2 = Some A3))
+       \<and> (D \<sqsubseteq> B1 \<or> D \<sqsubseteq> B2 \<or> (\<exists>B3. D \<sqsubseteq> B3 \<and> B1 \<squnion> B2 = Some B3))"
+  using cd_ab ab sorry
+    
+(*
+
 lemma consis_val_join_val_aux:
   "(v1 ~ v2 \<longrightarrow> is_val v1 \<longrightarrow> is_val v2 \<longrightarrow> is_val (v1 \<squnion> v2))
       \<and> (v1 !~ v2 \<longrightarrow> True)"
