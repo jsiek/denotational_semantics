@@ -5,6 +5,10 @@ begin
 datatype val = VNat nat | VFun "(val \<times> val) list" 
 type_synonym entry = "val \<times> val" 
 type_synonym func = "entry list"  
+abbreviation make_entry :: "val \<Rightarrow> val \<Rightarrow> val" (infix "\<mapsto>" 70) where
+  "v \<mapsto> v' \<equiv> VFun [(v,v')]"
+abbreviation bottom_fun :: "val" ("\<bottom>" 100) where
+  "bottom_fun \<equiv> VFun []"
 
 function vsize :: "val \<Rightarrow> nat" and fsize :: "func \<Rightarrow> nat" where
 "vsize (VNat n) = 1" |
@@ -14,11 +18,14 @@ function vsize :: "val \<Rightarrow> nat" and fsize :: "func \<Rightarrow> nat" 
   by pat_completeness auto
 termination vsize by size_change
 
-abbreviation make_entry :: "val \<Rightarrow> val \<Rightarrow> val" (infix "\<mapsto>" 70) where
-  "v \<mapsto> v' \<equiv> VFun [(v,v')]"
-abbreviation bottom_fun :: "val" ("\<bottom>" 100) where
-  "bottom_fun \<equiv> VFun []"
-  
+lemma fsize_append[simp]: "fsize (f1@f2) = fsize f1 + fsize f2"
+  apply (induction f1 arbitrary: f2)
+   apply force
+  apply simp apply (case_tac a) apply simp 
+  done
+
+lemma size_fun_mem: "(v,v') \<in> set f \<Longrightarrow> vsize v + vsize v' < fsize f"
+  by (induction f) auto  
   
 fun val_join :: "val \<Rightarrow> val \<Rightarrow> val option" (infix "\<squnion>" 56) where
   "VNat n1 \<squnion> VNat n2 = (if n1 = n2 then Some (VNat n1) else None)" |
@@ -39,16 +46,7 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   le_cons_right2[intro!]: "f1 \<sqsubseteq> f2 \<Longrightarrow> f1 \<sqsubseteq> (p#f2)" |
   
   le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> [(v1,v1')] \<sqsubseteq> [(v2,v2')]" 
-(*
-  le_refl[intro!]: "(v::val) \<sqsubseteq> v" |
-  le_trans[intro!]: "\<lbrakk> (v1::val) \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3" |
-  le_join_left[intro!]: "v1 \<squnion> v2 = Some v3 \<Longrightarrow> v1 \<sqsubseteq> v3" | (* v1 \<sqsubseteq> v1 \<squnion> v2, incl_L *)
-  le_join_right[intro!]: "v1 \<squnion> v2 = Some v3 \<Longrightarrow> v2 \<sqsubseteq> v3" | (* v2 \<sqsubseteq> v1 \<squnion> v2, incl_R *)
-  le_left_join[intro!]: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" | (* glb *)
-*)
-(*
-  le_bot[intro!]: "\<bottom> \<sqsubseteq> v \<mapsto> v'" (* nu *) |
-*)(* the following rule makes things much more complicated -Jeremy
+(* the following rule makes things much more complicated -Jeremy
   le_distr: "v \<mapsto> (v1 \<squnion> v2) \<sqsubseteq> (v\<mapsto>v1) \<squnion> (v \<mapsto>v2)" (* arrow intersect *)
 *)
  
@@ -67,7 +65,7 @@ inductive_cases
   le_bot_right_inv: "v \<sqsubseteq> \<bottom>"
  
 lemma le_fun_bot_inv_aux: fixes v1::val and f1::func 
-   shows "(v1 \<sqsubseteq> v2 \<longrightarrow> True) \<and> (f1 \<sqsubseteq> f2 \<longrightarrow> f2 = [] \<longrightarrow> f1 = [])"
+  shows "(v1 \<sqsubseteq> v2 \<longrightarrow> True) \<and> (f1 \<sqsubseteq> f2 \<longrightarrow> f2 = [] \<longrightarrow> f1 = [])"
   by (induction rule: val_le_fun_le.induct) auto
 
 lemma le_fun_bot_inv[elim!]: "\<lbrakk> f \<sqsubseteq> []; f = [] \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
@@ -230,14 +228,6 @@ lemma le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<sq
   apply (case_tac v12) apply force
   apply (case_tac v3) apply force apply simp
   by (metis Un_iff le_fun le_fun_fun_inv le_fun_sub_subset_aux le_fun_subset_sub set_append)
-
-lemma fsize_append[simp]: "fsize (f1@f2) = fsize f1 + fsize f2"
-  apply (induction f1 arbitrary: f2)
-   apply force
-  apply simp apply (case_tac a) apply simp 
-  done
-
-lemma size_fun_mem: "(v,v') \<in> set f \<Longrightarrow> vsize v + vsize v' < fsize f" by (induction f) auto
     
 lemma le_fun_trans_aux:
    fixes f1::func and f2::func and f3::func
@@ -286,7 +276,12 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
     apply simp apply (rule le_fun) apply (erule le_fun_fun_inv)+
       using le_fun_trans_aux apply auto done
 qed
-  
+
+proposition le_trans[trans]: fixes v2::val shows "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3"
+  using le_val_trans_aux by blast
+
+lemma member_join_fun: "True" ..
+    
 inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
     inconsistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "!~" 52) where
   vnat_consis[intro!]: "(VNat n) ~ (VNat n)" |
@@ -335,9 +330,6 @@ fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option
  
 definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where 
   "(\<rho>::val list) \<sqsubseteq> \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k \<sqsubseteq> \<rho>'!k)" 
-
-section "Size of Values (for induction)"
-  
     
 lemma inconsis_not_consis[simp]: "(v1 !~ v2) = (\<not> (v1 ~ v2))"
   sorry
