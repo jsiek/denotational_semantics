@@ -329,68 +329,30 @@ lemma le_fun_trans_aux:
           \<longrightarrow> v1 \<sqsubseteq> v2 \<longrightarrow> v2 \<sqsubseteq> v3 \<longrightarrow> v1 \<sqsubseteq> v3)"
     and f1_f2: "f1 \<sqsubseteq> f2" and f2_f3: "f2 \<sqsubseteq> f3"
   shows "f1 \<sqsubseteq> f3"
-proof (cases f2)
-  case Nil
-  then show ?thesis using f1_f2 by blast
-next
-  case (Cons a2 f2')
-  show ?thesis sorry
-(*    
-  from Cons f2_f3 show ?thesis apply simp
-  proof (erule le_fun_cons_left_inv)
-    assume a_f3: "VFun [a] \<sqsubseteq> VFun f3" and f2p_f3: "VFun f2' \<sqsubseteq> VFun f3"
-    obtain f11 f12 where f1_f12: "set f1 = set(f11@f12)" and s_f12: "fsize f1 = fsize (f11@f12)" and
-      f11_a: "VFun f11 \<sqsubseteq> VFun [a]" and f12_f2: "VFun f12 \<sqsubseteq> VFun f2" using f1_f2 Cons le_factor_cons by blast
-    have 1: "VFun f1 \<sqsubseteq> VFun (f11@f12)" using le_fun_subset f1_f12 by auto
-    have 2: "VFun f11 \<sqsubseteq> VFun f3" using f11_a a_f3 sorry
-    have "fsize f12 + fsize f2 + fsize f3 < fsize f1 + fsize f2 + fsize f3" sorry
-    then have 3: "VFun f12 \<sqsubseteq> VFun f3" using f12_f2 f2_f3 IH 
-      apply (erule_tac x="vsize (VFun f12) + vsize (VFun f2) + vsize (VFun f3)" in allE)
-      apply (erule impE) apply force 
-      apply (erule_tac x="VFun f12" in allE) apply (erule_tac x="VFun f2" in allE)
-      apply (erule_tac x="VFun f3" in allE) apply auto done        
-    have "VFun (f11@f12) \<sqsubseteq> VFun f3" using 2 3 sorry
-    then show "VFun f1 \<sqsubseteq> VFun f3" sorry
+proof -
+  have 1: "\<forall>a\<in>set f1. \<exists> b \<in> set f2. [a] \<sqsubseteq> [b]" using f1_f2 le_fun_sub_subset by simp
+  have 2: "\<forall>a\<in>set f2. \<exists> b \<in> set f3. [a] \<sqsubseteq> [b]" using f2_f3 le_fun_sub_subset by simp
+  have 3: "\<forall>a\<in>set f1. \<exists> b \<in> set f3. [a] \<sqsubseteq> [b]"
+  proof clarify
+    fix v1 v1' assume v1_f1: "(v1,v1') \<in> set f1"
+    obtain v2 v2' where v2_f2: "(v2,v2') \<in> set f2" and v1_v2: "[(v1,v1')] \<sqsubseteq> [(v2,v2')]"
+      using 1 v1_f1 by auto
+    obtain v3 v3' where v3_f3: "(v3,v3') \<in> set f3" and v2_v3: "[(v2,v2')] \<sqsubseteq> [(v3,v3')]"
+      using 2 v2_f2 by auto
+    have s_v1_f1: "vsize (v1\<mapsto>v1') < fsize f1" using v1_f1 sorry
+    have s_v2_f2: "vsize (v2\<mapsto>v2') < fsize f2" using v2_f2 sorry
+    have s_v3_f3: "vsize (v3\<mapsto>v3') < fsize f3" using v3_f3 sorry
+    have v1p_v2p: "v1' \<sqsubseteq> v2'" using v1_v2 apply (rule le_single_both_inv) by auto
+    have v2p_v3p: "v2' \<sqsubseteq> v3'" using v2_v3 apply (rule le_single_both_inv) by auto
+    have v1p_v3p: "v1' \<sqsubseteq> v3'" using v1p_v2p v2p_v3p IH
+        apply (erule_tac x="vsize v1' + vsize v2' + vsize v3'" in allE)
+      apply (erule impE) using s_v1_f1 s_v2_f2 s_v3_f3 apply force apply blast done
+     
+        
+    show "\<exists>b\<in>set f3. [(v1, v1')] \<sqsubseteq> [b]" sorry
   qed
-*)
+  show ?thesis using 3 le_fun_subset_sub by blast
 qed
-  (*
-  apply blast
-  apply (erule le_fun_cons_left_inv)
-  apply (subgoal_tac "\<exists> f3 f4. set f1 = set(f3@f4) \<and> VFun f3 \<sqsubseteq> VFun [a] \<and> VFun f4 \<sqsubseteq> VFun f2")
-   prefer 2 apply (rule le_factor_cons) apply assumption apply (erule exE)+
-  apply (subgoal_tac "VFun f1 \<sqsubseteq> VFun (f3a@f4)") prefer 2 
-   apply (metis le_fun_subset le_less)
-  
-  (* need assoc/comm *)
-  sorry*)
-
-(*       
-lemma le_trans_aux: fixes v2::val shows "\<lbrakk> n = size v2; v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3"
-  apply (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
-  apply (case_tac v2)
-  apply (case_tac v1)
-  apply (case_tac v3)
-     apply force
-    apply force
-  apply force
-  apply (case_tac v1)
-  apply (case_tac v3)
-    apply force
-  apply force
-  apply (case_tac v3)
-   apply force
-  apply clarify
-    sorry
-    
-lemma le_append_fun_left[intro!]: fixes v1::val shows "VFun f1 \<sqsubseteq> VFun (f1@f2)"
-  using le_fun_subset by (subgoal_tac "set f1 \<subseteq> set (f1@f2)") auto
-
-lemma le_append_fun_right[intro!]: fixes v1::val shows "VFun f2 \<sqsubseteq> VFun (f1@f2)"
-  using le_fun_subset by (subgoal_tac "set f2 \<subseteq> set (f1@f2)") auto
-    
-*)
-  
 
 
     
