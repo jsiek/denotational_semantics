@@ -56,6 +56,9 @@ inductive_cases
   le_fun_nat_inv[elim!]: "VFun f \<sqsubseteq> VNat n" and
   le_fun_fun_inv[elim!]: "VFun f1 \<sqsubseteq> VFun f2" and
   le_any_nat_inv[elim!]: "v \<sqsubseteq> VNat x" and
+  le_nat_any_inv[elim!]: "VNat n \<sqsubseteq> v1" and
+  le_any_fun_inv[elim!]: "v \<sqsubseteq> VFun f" and
+  le_fun_any_inv[elim!]: "VFun f \<sqsubseteq> v" and
   le_cons_left_inv: " (a # f2) \<sqsubseteq>  f3" and
   le_single_left_inv: "[a] \<sqsubseteq> f" and
   le_single_cons_right_inv: "[a] \<sqsubseteq> (b#f)" and
@@ -517,5 +520,64 @@ next
     show ?thesis using j12 v_v12 by blast
   qed
 qed
+
+lemma consis_le_inconsis_le:
+  "(v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1 \<sqsubseteq> v1' \<and> v2 \<sqsubseteq> v2' \<longrightarrow> v1 ~ v2))
+  \<and> (v1' !~ v2' \<longrightarrow> (\<forall> v1 v2. v1' \<sqsubseteq> v1 \<and> v2' \<sqsubseteq> v2 \<longrightarrow> v1 !~ v2))"
+  apply (induction rule: consistent_inconsistent.induct)
+  apply blast
+  defer
+  apply blast
+  defer
+  apply blast
+  apply blast
+
+  apply (rule allI)+
+  apply (rule impI) apply (erule conjE)
+  apply (case_tac v1) apply force
+  apply (case_tac v2) apply force
+  apply simp apply (rule vfun_consis)
+  apply (rule allI)+ apply (rule impI) apply (erule conjE)
+
+  apply (erule le_fun_fun_inv)+
+   apply (subgoal_tac "\<exists> u u'. (u,u') \<in> set f1 \<and> u \<sqsubseteq> v1a \<and> v1' \<sqsubseteq> u'")
+   prefer 2 apply (rule le_fun_sub_pair) apply assumption apply assumption
+   apply (subgoal_tac "\<exists> u u'. (u,u') \<in> set f2 \<and> u \<sqsubseteq> v2a \<and> v2' \<sqsubseteq> u'")
+   prefer 2 apply (rule le_fun_sub_pair) apply assumption apply assumption
+
+   apply (erule exE)+
+   apply (erule conjE)+
+    
+   apply (erule_tac x=u in allE)    
+   apply (erule_tac x=u' in allE)    
+   apply (erule_tac x=ua in allE)    
+   apply (erule_tac x=u'a in allE)    
+
+  apply (erule impE) apply force
+  apply (erule disjE)
+    apply force
+  apply (rule disjI2)
+    apply force 
+    
+  apply (rule allI)+
+  apply (rule impI) apply (erule conjE)
+  apply (case_tac v1a) apply force 
+  apply (case_tac v2a) apply force
+  apply clarify
   
+  apply (subgoal_tac "\<exists> u u'. (u,u') \<in> set f2a \<and> u \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> u'")
+  prefer 2 apply (rule le_fun_sub_pair) apply assumption apply assumption
+  apply (subgoal_tac "\<exists> v v'. (v,v') \<in> set f2b \<and> v \<sqsubseteq> v2 \<and> v2' \<sqsubseteq> v'")
+  prefer 2 apply (rule le_fun_sub_pair) apply assumption apply assumption
+  apply (erule exE)+ apply (erule conjE)+
+  apply (rule vfun_inconsis) apply assumption apply assumption
+  apply auto   
+  done
+
+lemma consis_le: "\<lbrakk> v1 \<sqsubseteq> v1'; v2 \<sqsubseteq> v2'; v1' ~ v2' \<rbrakk> \<Longrightarrow> v1 ~ v2"
+  using consis_le_inconsis_le by blast
+
+lemma inconsis_le: "\<lbrakk> v1' \<sqsubseteq> v1; v2' \<sqsubseteq> v2; v1' !~ v2' \<rbrakk> \<Longrightarrow> v1 !~ v2"
+  using consis_le_inconsis_le by blast
+    
 end
