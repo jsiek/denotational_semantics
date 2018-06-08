@@ -55,6 +55,7 @@ inductive_cases
   le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> VFun f" and
   le_fun_nat_inv[elim!]: "VFun f \<sqsubseteq> VNat n" and
   le_fun_fun_inv[elim!]: "VFun f1 \<sqsubseteq> VFun f2" and
+  le_any_nat_inv[elim!]: "v \<sqsubseteq> VNat x" and
   le_cons_left_inv: " (a # f2) \<sqsubseteq>  f3" and
   le_single_left_inv: "[a] \<sqsubseteq> f" and
   le_single_cons_right_inv: "[a] \<sqsubseteq> (b#f)" and
@@ -201,6 +202,10 @@ qed auto
 lemma le_fun_sub_subset: "\<lbrakk> f1 \<sqsubseteq> f2; a\<in>set f1 \<rbrakk> \<Longrightarrow> \<exists> b \<in> set f2. [a] \<sqsubseteq> [b]"
   using le_fun_sub_subset_aux by (simp add: le_fun_sub_subset_aux)
     
+lemma le_fun_sub_pair: "\<lbrakk> f1 \<sqsubseteq> f2; (a,b) \<in> set f1 \<rbrakk> \<Longrightarrow> \<exists>a' b'. (a',b')\<in>set f2 \<and> a' \<sqsubseteq> a \<and> b \<sqsubseteq> b'"
+  using le_fun_sub_subset[of f1 f2 "(a,b)"] apply auto 
+  by (metis fst_conv le_cons_cons_inv le_fun_bot_inv list.simps(3) snd_conv)
+  
 lemma le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubseteq> v12" (* incl_L *)
   apply (case_tac v1) apply (case_tac v2) apply (case_tac v12) apply simp
      apply (case_tac "x1=x1a") apply force apply force
@@ -263,7 +268,7 @@ proof -
   qed
   show ?thesis using 3 le_fun_subset_sub by blast
 qed
-
+     
 lemma le_val_trans_aux:
   fixes v1::val and v2::val and v3::val
   assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
@@ -280,8 +285,16 @@ qed
 proposition le_trans[trans]: fixes v2::val shows "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3"
   using le_val_trans_aux by blast
 
-lemma member_join_fun: "True" ..
-   
+lemma le_fun_trans:
+   fixes f1::func and f2::func and f3::func
+   assumes f1_f2: "f1 \<sqsubseteq> f2" and f2_f3: "f2 \<sqsubseteq> f3" shows "f1 \<sqsubseteq> f3"
+proof -
+  have 1: "VFun f1 \<sqsubseteq> VFun f2" using f1_f2 by auto 
+  have 2: "VFun f2 \<sqsubseteq> VFun f3" using f2_f3 by auto
+  have "VFun f1 \<sqsubseteq> VFun f3" using 1 2 le_trans by blast
+  then show "f1 \<sqsubseteq> f3" by auto
+qed    
+
 proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
   assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
     v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
