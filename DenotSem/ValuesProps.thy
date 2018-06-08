@@ -1,3 +1,5 @@
+(* Mostly obsolete *)
+
 theory ValuesProps
   imports Values
 begin
