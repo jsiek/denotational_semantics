@@ -457,7 +457,7 @@ lemma consis_refl[intro!]: "is_val v \<Longrightarrow> v ~ v"
   apply (simp only: is_fun_def)
   done
 
-lemma consis_inconsis_refl: "(v ~ v' \<longrightarrow> v' ~ v) \<and> (v !~ v' \<longrightarrow> \<not>(v' ~ v))"
+lemma consis_inconsis_sym: "(v ~ v' \<longrightarrow> v' ~ v) \<and> (v !~ v' \<longrightarrow> \<not>(v' ~ v))"
   apply (induction rule: consistent_inconsistent.induct) 
   apply blast
   using consis_or_not apply blast
@@ -467,45 +467,42 @@ lemma consis_inconsis_refl: "(v ~ v' \<longrightarrow> v' ~ v) \<and> (v !~ v' \
   apply blast    
   done
     
-(*
+lemma consis_sym[sym]: "v ~ v' \<Longrightarrow> v' ~ v"
+  using consis_inconsis_sym by blast
 
-lemma consis_val_join_val_aux:
-  "(v1 ~ v2 \<longrightarrow> is_val v1 \<longrightarrow> is_val v2 \<longrightarrow> is_val (v1 \<squnion> v2))
-      \<and> (v1 !~ v2 \<longrightarrow> True)"
-  apply (induction rule: consistent_inconsistent.induct)
-  apply force
-  defer
-      apply force
-     apply force
-  apply force
-   apply force
-  apply (rule impI)+
-proof -
-  fix f1 f2 assume IH: "\<forall>v1 v1' v2 v2'. v1 \<mapsto> v1' \<sqsubseteq> VFun f1 \<and> v2 \<mapsto> v2' \<sqsubseteq> VFun f2 \<longrightarrow>
-          (v1 ~ v2 \<and> (is_val v1 \<longrightarrow> is_val v2 \<longrightarrow> is_val (v1 \<squnion> v2))) \<and>
-          v1' ~ v2' \<and> (is_val v1' \<longrightarrow> is_val v2' \<longrightarrow> is_val (v1' \<squnion> v2')) \<or>
-          v1 !~ v2 \<and> True" and
-    vf1: "is_val (VFun f1)" and vf2: "is_val (VFun f2)"
-  let ?v3 = "VFun (f1@f2)"
-  have "is_val ?v3"
-  proof (rule vfun_is_val) 
-    show "is_fun (f1@f2)" 
-      apply (simp only: is_fun_def) apply (rule vfun_consis)
-    proof clarify
-      fix v1 v1' v2 v2'
-      assume v11_f12: "v1 \<mapsto> v1' \<sqsubseteq> VFun (f1 @ f2)" and v22_f12: "v2 \<mapsto> v2' \<sqsubseteq> VFun (f1 @ f2)" 
-        and nc_v12: "\<not> v1 !~ v2"
-      have v1_v2: "v1 ~ v2" using nc_v12 by simp
-      
-          
-      have v1p_v2p: "v1' ~ v2'" sorry
-      show "v1 ~ v2 \<and> v1' ~ v2'" using v1_v2 v1p_v2p by blast
-    qed
+lemma consis_join_val:
+  assumes v1_v2: "v1 ~ v2" and v_v1: "is_val v1" and v_v2: "is_val v2"
+  shows "\<exists> v12. (v1 \<squnion> v2) = Some v12 \<and> is_val v12"
+proof (cases v1)
+  case (VNat n1) then have v1: "v1 = VNat n1" .
+  show ?thesis
+  proof (cases v2)
+    case (VNat n2)
+    show ?thesis using v1 VNat v1_v2 by auto
   next
-    show "\<forall>v v'. (v, v') \<in> set (f1 @ f2) \<longrightarrow> is_val v \<and> is_val v'" using vf1 vf2 by auto        
-  qed    
-  then show "is_val (VFun f1 \<squnion> VFun f2)" by simp
+    case (VFun f2)
+    have "False" using v1_v2 v1 VFun by auto 
+    then show ?thesis ..
+  qed
+next
+  case (VFun f1) then have v1: "v1 = VFun f1" .
+  show ?thesis
+  proof (cases v2)
+    case (VNat n2)
+    show ?thesis using v1 VNat v1_v2 by auto
+  next
+    case (VFun f2)
+    let ?v12 = "VFun (f1@f2)"
+    have j12: "v1 \<squnion> v2 = Some ?v12" using v1 VFun by simp
+    have v_v12: "is_val ?v12"
+      apply (rule vfun_is_val)
+       apply (simp only: is_fun_def)
+       apply (rule vfun_consis) 
+       apply (metis (mono_tags, lifting) Un_iff VFun consis_refl consis_sym set_append v1 v1_v2 v_v1 v_v2 vfun_consis_inv)
+      using v_v1 v_v2 using VFun v1 apply auto
+      done
+    show ?thesis using j12 v_v12 by blast
+  qed
 qed
-*)    
   
 end
