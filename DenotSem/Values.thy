@@ -281,7 +281,102 @@ proposition le_trans[trans]: fixes v2::val shows "\<lbrakk> v1 \<sqsubseteq> v2;
   using le_val_trans_aux by blast
 
 lemma member_join_fun: "True" ..
+   
+proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
+  assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
+    v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
+  shows "v12 \<sqsubseteq> v12'"
+proof -
+  have 3: "v1' \<sqsubseteq> v12'" using le_join_left v12p by blast
+  have 4: "v2' \<sqsubseteq> v12'" using le_join_right v12p by blast
+  have 5: "v1 \<sqsubseteq> v12'" using 1 3 le_trans by blast
+  have 6: "v2 \<sqsubseteq> v12'" using 2 4 le_trans by blast
+  show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join v12 by blast
+qed
+
+abbreviation equivalent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 60) where
+  "v \<approx> v' \<equiv> v \<sqsubseteq> v' \<and> v' \<sqsubseteq> v"
+  
+proposition join_sym: fixes v1::val assumes v12: "v1\<squnion>v2 = Some v12" and v21: "v2\<squnion>v1 = Some v21"
+  shows "v12 \<approx> v21"
+proof
+  have 3: "v1 \<sqsubseteq> v21" using le_join_right v21 by blast
+  have 4: "v2 \<sqsubseteq> v21" using le_join_left v21 by blast
+  show "v12 \<sqsubseteq> v21" using le_left_join 3 4 v12 by blast
+next
+  have 1: "v1 \<sqsubseteq> v12" using le_join_left v12 by blast
+  have 2: "v2 \<sqsubseteq> v12" using le_join_right v12 by blast  
+  show "v21 \<sqsubseteq> v12" using 1 2 le_left_join v21 by blast
+qed
+
+proposition arrow_compatible: assumes aa: "a \<approx> a'" and bb: "b \<approx> b'" shows "a\<mapsto>b \<approx> a' \<mapsto> b'"
+  by (simp add: aa bb le_arrow le_fun)
+
+theorem beta_sound_binary: fixes A1::val and A2::val and B1::val and B2::val 
+  assumes cd_ab: "C\<mapsto>D \<sqsubseteq> AB" and ab: "(A1\<mapsto>B1)\<squnion>(A2\<mapsto>B2) = Some AB"
+  shows "(A1 \<sqsubseteq> C \<and> D \<sqsubseteq> B1) \<or> (A2 \<sqsubseteq> C \<and> D \<sqsubseteq> B2 ) 
+      \<or> (\<exists>A3 B3. A3 \<sqsubseteq> C \<and> A1 \<squnion> A2 = Some A3 \<and> D \<sqsubseteq> B3 \<and> B1 \<squnion> B2 = Some B3)"
+  using cd_ab ab apply simp
+  apply (subgoal_tac "VFun [(C,D)] \<sqsubseteq> VFun [(A1,B1),(A2,B2)]") prefer 2 apply fastforce
+  apply (erule le_fun_fun_inv) apply (erule le_single_cons_right_inv)
+  apply (metis Pair_inject le_cons_left_single_inv le_fun_bot_inv not_Cons_self2)
+  apply (metis Pair_inject le_fun_bot_inv le_single_both_inv list.simps(3))  
+  apply simp
+  done
+
+fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
+  "select xs [] = []" |
+  "select xs (i#I) = (xs!i)#(select xs I)"
+
+fun join_list :: "val list \<Rightarrow> val option" where
+  "join_list [v] = Some v" |
+  "join_list (v#vs) = 
+     (case join_list vs of
+        None \<Rightarrow> None
+     | Some v' \<Rightarrow> v \<squnion> v')" 
+ 
+lemma select_append_map[simp]: "select (f1 @ f2) (map (\<lambda>i. i+length f1) I) = select f2 I"
+  apply (induction I) apply fastforce by (simp add: nth_append)
+
+lemma select_cons_map[simp]: "select (a#f2) (map Suc I) = select f2 I"
+  using select_append_map[of "[a]" f2] by fastforce 
+      
+theorem beta_sound: fixes C::val and D::val and f::func 
+  assumes cd_f: "C\<mapsto>D \<sqsubseteq> VFun f"
+  shows "\<exists> I A B. 0 < length I \<and> join_list (map fst (select f I)) = Some A \<and> A \<sqsubseteq> C
+                           \<and> join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B"
+  using cd_f apply (induction f)
+   apply fastforce
+  apply (erule le_fun_fun_inv)
+  apply (erule le_single_cons_right_inv) 
+    -- "Case 1" 
+    apply (case_tac a)
+    apply (rule_tac x="[0]" in exI)
+    apply simp 
+  apply (metis (no_types, lifting) fst_conv le_fun_bot_inv le_single_cons_right_inv not_Cons_self2 sndI)
+    apply (subgoal_tac "\<exists>I A B.
+           0 < length I \<and>
+           join_list (map fst (select f I)) = Some A \<and>
+           A \<sqsubseteq> C \<and>
+           join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B") prefer 2 apply force
+   apply (erule exE)+ apply (erule conjE)+
+    apply (rule_tac x="map Suc I" in exI)
+    apply (rule_tac x=A in exI)
+   apply (rule_tac x=B in exI)
+    apply (rule conjI) apply fastforce apply (rule conjI)
+    apply (subgoal_tac "select (a # f) (map Suc I) = select f I") prefer 2 apply fastforce
+    apply fastforce
+  -- "Case 2"
+   apply (rule conjI) apply assumption apply (rule conjI) prefer 2 apply assumption
+    apply fastforce
+  -- "Case 3" 
+  apply (rule_tac x="[0]" in exI) 
+  apply clarify apply (rule_tac x=v2 in exI) apply (rule_tac x=v2' in exI)
+  apply simp
+    done
     
+section "Consistency"
+
 inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
     inconsistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "!~" 52) where
   vnat_consis[intro!]: "(VNat n) ~ (VNat n)" |
@@ -334,42 +429,8 @@ definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix
 lemma inconsis_not_consis[simp]: "(v1 !~ v2) = (\<not> (v1 ~ v2))"
   sorry
 
-proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
-  assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
-    v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
-  shows "v12 \<sqsubseteq> v12'"
-proof -
-  have 3: "v1' \<sqsubseteq> v12'" using le_join_left v12p by blast
-  have 4: "v2' \<sqsubseteq> v12'" using le_join_right v12p by blast
-  have 5: "v1 \<sqsubseteq> v12'" using 1 3 le_trans by blast
-  have 6: "v2 \<sqsubseteq> v12'" using 2 4 le_trans by blast
-  show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join v12 by blast
-qed
-
-abbreviation equivalent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 60) where
-  "v \<approx> v' \<equiv> v \<sqsubseteq> v' \<and> v' \<sqsubseteq> v"
   
-proposition join_sym: fixes v1::val assumes v12: "v1\<squnion>v2 = Some v12" and v21: "v2\<squnion>v1 = Some v21"
-  shows "v12 \<approx> v21"
-proof
-  have 3: "v1 \<sqsubseteq> v21" using le_join_right v21 by blast
-  have 4: "v2 \<sqsubseteq> v21" using le_join_left v21 by blast
-  show "v12 \<sqsubseteq> v21" using le_left_join 3 4 v12 by blast
-next
-  have 1: "v1 \<sqsubseteq> v12" using le_join_left v12 by blast
-  have 2: "v2 \<sqsubseteq> v12" using le_join_right v12 by blast  
-  show "v21 \<sqsubseteq> v12" using 1 2 le_left_join v21 by blast
-qed
-
-proposition arrow_compatible: assumes aa: "a \<approx> a'" and bb: "b \<approx> b'" shows "a\<mapsto>b \<approx> a' \<mapsto> b'"
-  by (simp add: aa bb le_arrow le_fun)
-
-theorem beta_sound: fixes A1::val and A2::val and B1::val and B2::val 
-  assumes cd_ab: "C\<mapsto>D \<sqsubseteq> AB" and ab: "(A1\<mapsto>B1)\<squnion>(A2\<mapsto>B2) = Some AB"
-  shows "(A1 \<sqsubseteq> C \<or> A2 \<sqsubseteq> C \<or> (\<exists>A3. A3 \<sqsubseteq> C \<and> A1 \<squnion> A2 = Some A3))
-       \<and> (D \<sqsubseteq> B1 \<or> D \<sqsubseteq> B2 \<or> (\<exists>B3. D \<sqsubseteq> B3 \<and> B1 \<squnion> B2 = Some B3))"
-  using cd_ab ab sorry
-    
+  
 (*
 
 lemma consis_val_join_val_aux:
