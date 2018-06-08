@@ -14,7 +14,11 @@ theorem deterministic:
    \<Longrightarrow> v1 ~ v2 \<and> (\<exists> v12 \<rho>3. v1 \<squnion> v2 = Some v12 \<and> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3 \<and> v12 \<in> \<lbrakk>e\<rbrakk>\<rho>3)"
 proof (induction e arbitrary: v1 v2 \<rho>1 \<rho>2)
   case (EVar x)
-  then show ?case apply sledgehammer
+  have "v1 ~ v2" using EVar(1) EVar(2) EVar(5) lookup_consis apply auto
+      apply (case_tac "x < length \<rho>1") apply auto
+      apply (case_tac "x < length \<rho>2") apply auto
+    sorry
+  then show ?case sorry
 next
   case (ENat x)
   then show ?case sorry
