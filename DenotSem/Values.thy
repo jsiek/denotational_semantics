@@ -380,10 +380,10 @@ section "Consistency"
 inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
     inconsistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "!~" 52) where
   vnat_consis[intro!]: "(VNat n) ~ (VNat n)" |
-  vfun_consis[intro!]: "\<lbrakk> \<forall> v1 v1' v2 v2'. v1\<mapsto>v1' \<sqsubseteq> VFun f1 \<and> v2\<mapsto>v2' \<sqsubseteq> VFun f2 \<longrightarrow>
+  vfun_consis[intro!]: "\<lbrakk> \<forall> v1 v1' v2 v2'. (v1,v1') \<in> set f1 \<and> (v2,v2') \<in> set f2 \<longrightarrow>
                         (v1 ~ v2 \<and> v1' ~ v2') \<or> v1 !~ v2 \<rbrakk> \<Longrightarrow> (VFun f1) ~ (VFun f2)" |
   vnat_inconsis[intro!]: "n \<noteq> n' \<Longrightarrow> (VNat n) !~ (VNat n')" |
-  vfun_inconsis[intro!]: "\<lbrakk> v1 \<mapsto> v1' \<sqsubseteq> VFun f1; v2 \<mapsto> v2' \<sqsubseteq> VFun f2; v1 ~ v2; v1' !~ v2' \<rbrakk> 
+  vfun_inconsis[intro!]: "\<lbrakk> (v1, v1') \<in> set f1; (v2, v2') \<in> set f2; v1 ~ v2; v1' !~ v2' \<rbrakk> 
                          \<Longrightarrow> (VFun f1) !~ (VFun f2)" |
   vnat_vfun_inconsis[intro!]: "VNat n !~ VFun f" |
   vfun_vnat_inconsis[intro!]: "VFun f !~ VNat n"
@@ -426,11 +426,47 @@ fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option
 definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where 
   "(\<rho>::val list) \<sqsubseteq> \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k \<sqsubseteq> \<rho>'!k)" 
     
+lemma consis_and_not_consis: "(v ~ v' \<longrightarrow> \<not> (v !~ v')) \<and> (v !~ v' \<longrightarrow> \<not>(v ~ v'))"
+  by (induction rule: consistent_inconsistent.induct) blast+ 
+        
+lemma consis_or_not_aux: "\<forall> v v'. n = vsize v \<longrightarrow> v ~ v' \<or> v !~ v'"
+ apply (induction n rule: nat_less_induct)
+ apply (rule allI)+ apply (rule impI)
+ apply (case_tac v)    
+  apply (case_tac v')
+    apply force
+   apply force
+  apply (case_tac v')
+   apply force
+  apply simp
+  apply auto
+    apply (metis add_lessD1 less_SucI size_fun_mem)
+    apply (metis add_lessD1 less_SucI size_fun_mem)
+    apply (metis add_lessD1 less_SucI size_fun_mem)
+  by (metis add.commute add_lessD1 less_SucI size_fun_mem)    
+    
+lemma consis_or_not: "v ~ v' \<or> v !~ v'"
+  using consis_or_not_aux by blast
+  
 lemma inconsis_not_consis[simp]: "(v1 !~ v2) = (\<not> (v1 ~ v2))"
-  sorry
+  using consis_and_not_consis consis_or_not by blast
+  
+lemma consis_refl[intro!]: "is_val v \<Longrightarrow> v ~ v"
+  apply (induction rule: is_val.induct)
+  apply blast
+  apply (simp only: is_fun_def)
+  done
 
-  
-  
+lemma consis_inconsis_refl: "(v ~ v' \<longrightarrow> v' ~ v) \<and> (v !~ v' \<longrightarrow> \<not>(v' ~ v))"
+  apply (induction rule: consistent_inconsistent.induct) 
+  apply blast
+  using consis_or_not apply blast
+  apply blast    
+  using consis_and_not_consis apply blast
+  apply blast    
+  apply blast    
+  done
+    
 (*
 
 lemma consis_val_join_val_aux:
