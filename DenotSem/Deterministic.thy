@@ -54,11 +54,16 @@ next
     using EApp.IH(2) v21_e2 v22_e2 EApp.prems(3) EApp.prems(4) EApp.prems(5)
     by (metis  option.inject r12_r3)
   obtain v21' v1' where v21p_f1: "(v21',v1') \<in> set f1" and 
-    v21p_v21: "v21' \<sqsubseteq> v21" and v1_v1p: "v1 \<sqsubseteq> v1'" using v21v1_f1
+    v21p_v21: "v21' \<sqsubseteq> v21" and v1_v1p: "v1 \<sqsubseteq> v1'"
+    sorry
+    (*using v21v1_f1
     by (meson le_fun_sub_pair list.set_intros(1))
+      *)
   obtain v22' v2' where v22p_f2: "(v22',v2') \<in> set f2" and 
-    v22p_v22: "v22' \<sqsubseteq> v22" and v2_v2p: "v2 \<sqsubseteq> v2'" using v22v2_f2
-    by (meson le_fun_sub_pair list.set_intros(1))
+    v22p_v22: "v22' \<sqsubseteq> v22" and v2_v2p: "v2 \<sqsubseteq> v2'"
+    sorry
+    (*using v22v2_f2
+    by (meson le_fun_sub_pair list.set_intros(1))*)
   from f1_f2 v21p_f1 v22p_f2 have 1: "(v21' ~ v22' \<and> v1' ~ v2') \<or> \<not> v21' ~ v22'" 
     using consis_inconsis_sym by blast
   have c_v1v2: "v1 ~ v2"
@@ -75,7 +80,8 @@ next
         f1_e1 f2_e1 is_val_sem v21p_f1 v22p_f2 by blast
     have 2: "[(v12,v3)] \<sqsubseteq> [(v21',v1'),(v22',v2')]"
     proof -
-      have a: "[(v12,v3)] \<sqsubseteq> [(v12,v1),(v12,v2)]" sorry (* by le_distr *)
+      have a: "[(v12,v3)] \<sqsubseteq> [(v12,v1),(v12,v2)]"
+        using v1_v2_v3 by (rule le_distr)
       have b: "[(v12,v1),(v12,v2)] \<sqsubseteq> [(v21',v1'),(v22',v2')]"
         apply (rule le_cons_left) prefer 3 apply force
          apply (rule le_cons_right1) apply (rule le_arrow)

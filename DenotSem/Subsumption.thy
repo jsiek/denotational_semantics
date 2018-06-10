@@ -34,7 +34,8 @@ next
     fix v1 v2 assume v12: "(v1,v2) \<in> set f'" 
     obtain v3 v4 where v34: "(v3,v4) \<in> set f" 
       and v3_v1: "v3 \<sqsubseteq> v1" and v2_v4: "v2 \<sqsubseteq> v4" 
-      using v12 ELam(4) v vp using le_fun_sub_pair by blast
+      sorry (*
+      using v12 ELam(4) v vp using le_fun_sub_pair by blast*)
     have v4_E: "v4 \<in> \<lbrakk>e\<rbrakk>(v3#\<rho>)" using v34 body by blast
     have rr2: "(v3#\<rho>) \<sqsubseteq> (v1#\<rho>')" using ELam(3) v3_v1 unfolding env_le_def apply auto
         apply (case_tac k) apply force apply force done
