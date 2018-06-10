@@ -613,7 +613,15 @@ lemma consis_env_join: fixes \<rho>1::"val list" assumes r1_r2: "consis_env \<rh
     
 lemma consis_env_length: "consis_env \<rho> \<rho>' \<Longrightarrow> length \<rho> = length \<rho>'"
   apply (induction rule: consis_env.induct) apply auto done
-   
+     
+lemma join_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2; \<rho>1 \<squnion> \<rho>2 = Some \<rho>3  \<rbrakk> \<Longrightarrow> length \<rho>3 = length \<rho>1"
+  apply (induction arbitrary: \<rho>3 rule: consis_env.induct)
+   apply fastforce
+  apply simp
+  apply (case_tac "v \<squnion> v'") apply auto
+  apply (case_tac "\<rho> \<squnion> \<rho>'") apply auto
+  done
+    
 lemma join_env_nth: "\<lbrakk> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3; x < length \<rho>1; length \<rho>1 = length \<rho>2 \<rbrakk>
                       \<Longrightarrow> \<rho>1 ! x \<squnion> \<rho>2 ! x = Some (\<rho>3 ! x)"
   apply (induction arbitrary: x \<rho>3 rule: env_join.induct)
