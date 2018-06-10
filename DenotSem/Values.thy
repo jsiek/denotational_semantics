@@ -31,6 +31,16 @@ fun val_join :: "val \<Rightarrow> val \<Rightarrow> val option" (infix "\<squni
   "VNat n1 \<squnion> VNat n2 = (if n1 = n2 then Some (VNat n1) else None)" |
   vfun_join: "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))" |
   "v1 \<squnion> v2 = None"
+  
+fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option" (infix "\<squnion>" 56) where
+  "env_join [] [] = Some []" |
+  "env_join (v#\<rho>) (v'#\<rho>') = 
+      (case v \<squnion> v' of
+         None \<Rightarrow> None
+      | Some v'' \<Rightarrow> 
+           (case \<rho>\<squnion>\<rho>' of
+             None \<Rightarrow> None
+           | Some \<rho>'' \<Rightarrow> Some (v''#\<rho>'')))" 
 
   (* Adapted from BCD and EHR subtyping (Lambda Calculus with Types 2013) *) 
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) and
@@ -429,15 +439,6 @@ inductive_cases
 definition val_env :: "val list \<Rightarrow> bool" where
   "val_env \<rho> \<equiv> \<forall>k. k < length \<rho> \<longrightarrow> is_val (\<rho>!k)"
 
-fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option" (infix "\<squnion>" 56) where
-  "env_join [] [] = Some []" |
-  "env_join (v#\<rho>) (v'#\<rho>') = 
-      (case v \<squnion> v' of
-         None \<Rightarrow> None
-      | Some v'' \<Rightarrow> 
-           (case \<rho>\<squnion>\<rho>' of
-             None \<Rightarrow> None
-           | Some \<rho>'' \<Rightarrow> Some (v''#\<rho>'')))" 
  
 definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where 
   "(\<rho>::val list) \<sqsubseteq> \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k \<sqsubseteq> \<rho>'!k)" 
@@ -579,5 +580,49 @@ lemma consis_le: "\<lbrakk> v1 \<sqsubseteq> v1'; v2 \<sqsubseteq> v2'; v1' ~ v2
 
 lemma inconsis_le: "\<lbrakk> v1' \<sqsubseteq> v1; v2' \<sqsubseteq> v2; v1' !~ v2' \<rbrakk> \<Longrightarrow> v1 !~ v2"
   using consis_le_inconsis_le by blast
+  
+lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk>
+  \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
+  apply (induction arbitrary: x rule: consis_env.induct)
+   apply force
+  apply (case_tac x) apply force apply auto
+  done
+
+lemma cons_val_env_inv[elim!]:
+  "\<lbrakk> val_env (v#\<rho>); \<lbrakk> is_val v; val_env \<rho> \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+    unfolding val_env_def by fastforce
+
+lemma ext_val_env[intro!]: "\<lbrakk> is_val v; val_env \<rho> \<rbrakk> \<Longrightarrow> val_env (v#\<rho>)"
+  unfolding val_env_def apply auto apply (case_tac k) apply auto done
+      
+lemma consis_env_join: fixes \<rho>1::"val list" assumes r1_r2: "consis_env \<rho>1 \<rho>2" 
+  and v_r1: "val_env \<rho>1" and v_r2: "val_env \<rho>2"
+  shows "\<exists> \<rho>3. \<rho>1 \<squnion> \<rho>2 = Some \<rho>3 \<and> val_env \<rho>3"
+  using r1_r2 v_r1 v_r2 apply (induction rule: consis_env.induct)
+   apply (rule_tac x="[]" in exI) apply force
+   apply (erule cons_val_env_inv)
+  apply (erule cons_val_env_inv)
+   apply (subgoal_tac "\<exists>\<rho>3. \<rho> \<squnion> \<rho>' = Some \<rho>3 \<and> val_env \<rho>3") prefer 2 apply blast
+  apply (subgoal_tac "\<exists> v3. v \<squnion> v' = Some v3 \<and> is_val v3")
+    prefer 2 using consis_join_val apply blast
+  apply (erule exE)+ apply (erule conjE)+
+  apply (rule_tac x="v3#\<rho>3" in exI) 
+  apply (rule conjI) apply fastforce
+  apply blast
+  done
     
+lemma consis_env_length: "consis_env \<rho> \<rho>' \<Longrightarrow> length \<rho> = length \<rho>'"
+  apply (induction rule: consis_env.induct) apply auto done
+   
+lemma join_env_nth: "\<lbrakk> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3; x < length \<rho>1; length \<rho>1 = length \<rho>2 \<rbrakk>
+                      \<Longrightarrow> \<rho>1 ! x \<squnion> \<rho>2 ! x = Some (\<rho>3 ! x)"
+  apply (induction arbitrary: x \<rho>3 rule: env_join.induct)
+  apply fastforce
+  apply simp apply (case_tac "v \<squnion> v'") apply force apply simp
+    apply (case_tac "\<rho> \<squnion> \<rho>'") apply force apply simp
+    apply (case_tac x) apply force apply force
+  apply force  
+  apply force
+  done 
+
 end
