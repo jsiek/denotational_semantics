@@ -4,7 +4,7 @@ begin
 
 theorem deterministic:
   "\<lbrakk> v1 \<in> E e \<rho>1; v2 \<in> E e \<rho>2; val_env \<rho>1; val_env \<rho>2; consis_env \<rho>1 \<rho>2 \<rbrakk>
-   \<Longrightarrow> v1 ~ v2 \<and> (\<exists> v12 \<rho>3. v1 \<squnion> v2 = Some v12 \<and> is_val v12 \<and> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3 \<and> v12 \<in> \<lbrakk>e\<rbrakk>\<rho>3)"
+   \<Longrightarrow> v1 ~ v2 \<and> (\<exists> v12 \<rho>3. v1 \<squnion> v2 = Some v12 \<and> is_val v12 \<and> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3 \<and> val_env \<rho>3 \<and> v12 \<in> \<lbrakk>e\<rbrakk>\<rho>3)"
 proof (induction e arbitrary: v1 v2 \<rho>1 \<rho>2)
   case (EVar x)
   have xr1: "x < length \<rho>1" using EVar(1) by (case_tac "x < length \<rho>1") auto
@@ -25,10 +25,12 @@ proof (induction e arbitrary: v1 v2 \<rho>1 \<rho>2)
   have v12_r3: "v12 \<sqsubseteq> \<rho>3!x" using v1_r1x r123 r3x using mon v12 v2_r2x by blast
   have xr3: "x < length \<rho>3" using join_env_length xr1 r123 consis_env_length EVar(5) by simp
   have v12_e: "v12 \<in> \<lbrakk>EVar x\<rbrakk>\<rho>3" using v12_r3 xr3 v_v12 by simp
-  show ?case using v1_v2 v12 v_v12 r123 v12_e by blast
+  show ?case using v1_v2 v12 v_v12 r123 v12_e v_r3 by blast
 next
   case (ENat x)
-  then show ?case sorry
+  obtain \<rho>3 where r123: "\<rho>1 \<squnion> \<rho>2 = Some \<rho>3" and v_r3: "val_env \<rho>3" 
+    using ENat consis_env_join by blast
+  show ?case using ENat r123 v_r3 by auto 
 next
   case (ELam e)
   then show ?case sorry
@@ -36,7 +38,7 @@ next
   case (EApp e1 e2)
   then show ?case sorry
 next
-  case (EPrim x1a e1 e2)
+  case (EPrim f e1 e2)
   then show ?case sorry
 next
   case (EIf e1 e2 e3)
