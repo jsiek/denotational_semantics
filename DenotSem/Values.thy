@@ -414,8 +414,21 @@ next
       done
   next
     assume "[(C, D)] \<sqsubseteq> f"
-    then show ?thesis
-      sorry
+    then show ?thesis using Cons
+      apply (subgoal_tac "\<exists>I A B.
+           0 < length I \<and>
+           join_list (map fst (select f I)) = Some A \<and>
+           A \<sqsubseteq> C \<and>
+           join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B") prefer 2 apply force
+      apply (erule exE)+ apply (erule conjE)+
+      apply (rule_tac x="map Suc I" in exI)
+      apply (rule_tac x=A in exI)
+      apply (rule_tac x=B in exI)
+      apply (rule conjI) apply fastforce apply (rule conjI)
+       apply (subgoal_tac "select (a # f) (map Suc I) = select f I") prefer 2 apply fastforce
+       apply fastforce
+      apply force
+      done
   next
     fix v2::val and v1 and v1'::val and v2'
     assume "(C, D) = (v1, v1')" and "v2 \<sqsubseteq> v1" and "v1' \<sqsubseteq> v2'" and "a = (v2, v2')"
