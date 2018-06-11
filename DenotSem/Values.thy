@@ -220,7 +220,102 @@ lemma le_fun_sub_pair: "\<lbrakk> f1 \<sqsubseteq> f2; (a,b) \<in> set f1 \<rbra
   using le_fun_sub_subset[of f1 f2 "(a,b)"] apply auto 
   by (metis fst_conv le_cons_cons_inv le_fun_bot_inv list.simps(3) snd_conv)
 *)
-  
+
+lemma append_sub: fixes x::func shows " x @ x \<sqsubseteq> x"
+  apply (induction x)
+  apply force
+  by (metis Un_iff le_fun_refl le_fun_subset_sub set_append)
+    
+lemma join_self: fixes C::val shows "\<exists> C'. C \<squnion> C = Some C' \<and> C' \<sqsubseteq> C"
+  apply (induction C) apply force
+  apply auto apply (rule append_sub) 
+  done
+    
+theorem beta_sound_binary: fixes A1::val and A2::val and B1::val and B2::val 
+  assumes cd_ab: "C\<mapsto>D \<sqsubseteq> AB" and ab: "(A1\<mapsto>B1)\<squnion>(A2\<mapsto>B2) = Some AB"
+  shows "(A1 \<sqsubseteq> C \<and> D \<sqsubseteq> B1) \<or> (A2 \<sqsubseteq> C \<and> D \<sqsubseteq> B2 ) 
+      \<or> (\<exists>A3 B3. A3 \<sqsubseteq> C \<and> A1 \<squnion> A2 = Some A3 \<and> D \<sqsubseteq> B3 \<and> B1 \<squnion> B2 = Some B3)"
+  using cd_ab ab apply simp
+  apply (subgoal_tac "VFun [(C,D)] \<sqsubseteq> VFun [(A1,B1),(A2,B2)]") prefer 2 apply fastforce
+  apply (erule le_fun_fun_inv) apply (erule le_single_cons_right_inv)
+  apply (metis Pair_inject le_cons_left_single_inv le_fun_bot_inv not_Cons_self2)
+  apply (metis Pair_inject le_fun_bot_inv le_single_both_inv list.simps(3))  
+  apply simp
+  apply (rule disjI2) apply (rule disjI2)
+  apply clarify
+    apply (subgoal_tac "\<exists> C'. C \<squnion> C = Some C' \<and> C' \<sqsubseteq> C") apply (erule exE)
+   apply (rule_tac x="C'" in exI) apply (rule conjI) apply blast
+   apply (rule conjI) apply blast
+   apply (rule_tac x=D in exI) apply force
+    using join_self apply blast
+  done
+
+fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
+  "select xs [] = []" |
+  "select xs (i#I) = (xs!i)#(select xs I)"
+
+fun join_list :: "val list \<Rightarrow> val option" where
+  "join_list [v] = Some v" |
+  "join_list (v#vs) = 
+     (case join_list vs of
+        None \<Rightarrow> None
+     | Some v' \<Rightarrow> v \<squnion> v')" 
+ 
+lemma select_append_map[simp]: "select (f1 @ f2) (map (\<lambda>i. i+length f1) I) = select f2 I"
+  apply (induction I) apply fastforce by (simp add: nth_append)
+
+lemma select_cons_map[simp]: "select (a#f2) (map Suc I) = select f2 I"
+  using select_append_map[of "[a]" f2] by fastforce 
+      
+theorem beta_sound: fixes C::val and D::val and f::func 
+  assumes cd_f: "C\<mapsto>D \<sqsubseteq> VFun f"
+  shows "\<exists> I A B. 0 < length I \<and> join_list (map fst (select f I)) = Some A \<and> A \<sqsubseteq> C
+                           \<and> join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B"
+  using cd_f 
+proof (induction f)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons a f)
+  have "[(C, D)] \<sqsubseteq> a # f " using Cons(2) by (meson le_fun_fun_inv)
+  then show ?case
+  proof (rule le_single_cons_right_inv)
+    assume "[(C, D)] \<sqsubseteq> [a]"
+    then show ?thesis
+      apply (case_tac a)
+      apply (rule_tac x="[0]" in exI)
+      apply simp 
+      apply (metis (no_types, lifting) fst_conv le_fun_bot_inv le_single_cons_right_inv not_Cons_self2 sndI)
+      done
+  next
+    assume "[(C, D)] \<sqsubseteq> f"
+    then show ?thesis using Cons
+      apply (subgoal_tac "\<exists>I A B. 0 < length I \<and>
+           join_list (map fst (select f I)) = Some A \<and> A \<sqsubseteq> C \<and>
+           join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B") prefer 2 apply force
+      apply (erule exE)+ apply (erule conjE)+
+      apply (rule_tac x="map Suc I" in exI) apply (rule_tac x=A in exI)
+      apply (rule_tac x=B in exI) apply (rule conjI) apply fastforce apply (rule conjI)
+       apply (subgoal_tac "select (a # f) (map Suc I) = select f I") prefer 2 apply fastforce
+       apply fastforce apply force
+      done
+  next
+    fix v2::val and v1 and v1'::val and v2'
+    assume "(C, D) = (v1, v1')" and "v2 \<sqsubseteq> v1" and "v1' \<sqsubseteq> v2'" and "a = (v2, v2')"
+      and "f = []"
+    then show ?thesis using Cons apply (rule_tac x="[0]" in exI) 
+      apply clarify apply (rule_tac x=v2 in exI) apply (rule_tac x=v2' in exI)
+      apply simp done
+  next
+    fix v1::val and v2 v12 v assume cd: "(C, D) = (v, v12)" and v12: "v1 \<squnion> v2 = Some v12" and
+      a: "a = (v, v1)" and f: "f = [(v, v2)]"
+    then show ?thesis using Cons.prems
+      apply (rule_tac x="[0,1]" in exI) apply auto
+      apply (subgoal_tac "\<exists> v'. v \<squnion> v = Some v' \<and> v' \<sqsubseteq> v") prefer 2 using join_self apply blast
+      apply (erule exE) apply blast done
+  qed    
+qed
+
 lemma le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubseteq> v12" (* incl_L *)
   apply (case_tac v1) apply (case_tac v2) apply (case_tac v12) apply simp
      apply (case_tac "x1=x1a") apply force apply force
@@ -328,6 +423,16 @@ proof -
   show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join v12 by blast
 qed
 
+proposition arrow_join: fixes A::val and B::val and C::val and D::val
+  assumes ac: "A \<squnion> C = Some AC" and bd: "B \<squnion> D = Some BD"
+  shows "[(AC, BD)] \<sqsubseteq> [(A,B),(C,D)]"
+proof -
+  have 1: "[(AC,BD)] \<sqsubseteq> [(AC,B),(AC,D)]" using bd by (simp add: le_distr)
+  have 2: "[(AC,B),(AC,D)] \<sqsubseteq> [(A,B),(C,D)]" using ac 
+    by (metis Values.le_refl le_arrow le_cons_left le_cons_right1 le_cons_right2 le_join_left le_join_right)
+  show ?thesis using 1 2 le_fun_trans[of "[(AC,BD)]"] by auto
+qed
+
 abbreviation equivalent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 60) where
   "v \<approx> v' \<equiv> v \<sqsubseteq> v' \<and> v' \<sqsubseteq> v"
   
@@ -346,131 +451,7 @@ qed
 proposition arrow_compatible: assumes aa: "a \<approx> a'" and bb: "b \<approx> b'" shows "a\<mapsto>b \<approx> a' \<mapsto> b'"
   by (simp add: aa bb le_arrow le_fun)
 
-lemma append_sub: fixes x::func shows " x @ x \<sqsubseteq> x"
-  apply (induction x)
-  apply force
-  by (metis Un_iff le_fun_refl le_fun_subset_sub set_append)
     
-lemma join_self: fixes C::val shows "\<exists> C'. C \<squnion> C = Some C' \<and> C' \<sqsubseteq> C"
-  apply (induction C) apply force
-  apply auto apply (rule append_sub) 
-  done
-    
-theorem beta_sound_binary: fixes A1::val and A2::val and B1::val and B2::val 
-  assumes cd_ab: "C\<mapsto>D \<sqsubseteq> AB" and ab: "(A1\<mapsto>B1)\<squnion>(A2\<mapsto>B2) = Some AB"
-  shows "(A1 \<sqsubseteq> C \<and> D \<sqsubseteq> B1) \<or> (A2 \<sqsubseteq> C \<and> D \<sqsubseteq> B2 ) 
-      \<or> (\<exists>A3 B3. A3 \<sqsubseteq> C \<and> A1 \<squnion> A2 = Some A3 \<and> D \<sqsubseteq> B3 \<and> B1 \<squnion> B2 = Some B3)"
-  using cd_ab ab apply simp
-  apply (subgoal_tac "VFun [(C,D)] \<sqsubseteq> VFun [(A1,B1),(A2,B2)]") prefer 2 apply fastforce
-  apply (erule le_fun_fun_inv) apply (erule le_single_cons_right_inv)
-  apply (metis Pair_inject le_cons_left_single_inv le_fun_bot_inv not_Cons_self2)
-  apply (metis Pair_inject le_fun_bot_inv le_single_both_inv list.simps(3))  
-  apply simp
-  apply (rule disjI2) apply (rule disjI2)
-  apply clarify
-    apply (subgoal_tac "\<exists> C'. C \<squnion> C = Some C' \<and> C' \<sqsubseteq> C") apply (erule exE)
-   apply (rule_tac x="C'" in exI) apply (rule conjI) apply blast
-   apply (rule conjI) apply blast
-   apply (rule_tac x=D in exI) apply force
-    using join_self apply blast
-  done
-
-fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
-  "select xs [] = []" |
-  "select xs (i#I) = (xs!i)#(select xs I)"
-
-fun join_list :: "val list \<Rightarrow> val option" where
-  "join_list [v] = Some v" |
-  "join_list (v#vs) = 
-     (case join_list vs of
-        None \<Rightarrow> None
-     | Some v' \<Rightarrow> v \<squnion> v')" 
- 
-lemma select_append_map[simp]: "select (f1 @ f2) (map (\<lambda>i. i+length f1) I) = select f2 I"
-  apply (induction I) apply fastforce by (simp add: nth_append)
-
-lemma select_cons_map[simp]: "select (a#f2) (map Suc I) = select f2 I"
-  using select_append_map[of "[a]" f2] by fastforce 
-      
-theorem beta_sound: fixes C::val and D::val and f::func 
-  assumes cd_f: "C\<mapsto>D \<sqsubseteq> VFun f"
-  shows "\<exists> I A B. 0 < length I \<and> join_list (map fst (select f I)) = Some A \<and> A \<sqsubseteq> C
-                           \<and> join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B"
-  using cd_f 
-proof (induction f)
-  case Nil
-  then show ?case by auto
-next
-  case (Cons a f)
-  have "[(C, D)] \<sqsubseteq> a # f " using Cons(2) by (meson le_fun_fun_inv)
-  then show ?case
-  proof (rule le_single_cons_right_inv)
-    assume "[(C, D)] \<sqsubseteq> [a]"
-    then show ?thesis
-      apply (case_tac a)
-      apply (rule_tac x="[0]" in exI)
-      apply simp 
-      apply (metis (no_types, lifting) fst_conv le_fun_bot_inv le_single_cons_right_inv not_Cons_self2 sndI)
-      done
-  next
-    assume "[(C, D)] \<sqsubseteq> f"
-    then show ?thesis using Cons
-      apply (subgoal_tac "\<exists>I A B.
-           0 < length I \<and>
-           join_list (map fst (select f I)) = Some A \<and>
-           A \<sqsubseteq> C \<and>
-           join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B") prefer 2 apply force
-      apply (erule exE)+ apply (erule conjE)+
-      apply (rule_tac x="map Suc I" in exI)
-      apply (rule_tac x=A in exI)
-      apply (rule_tac x=B in exI)
-      apply (rule conjI) apply fastforce apply (rule conjI)
-       apply (subgoal_tac "select (a # f) (map Suc I) = select f I") prefer 2 apply fastforce
-       apply fastforce
-      apply force
-      done
-  next
-    fix v2::val and v1 and v1'::val and v2'
-    assume "(C, D) = (v1, v1')" and "v2 \<sqsubseteq> v1" and "v1' \<sqsubseteq> v2'" and "a = (v2, v2')"
-      and "f = []"
-    then show ?thesis sorry
-  next
-    fix v1::val and v2 v12 v assume "(C, D) = (v, v12)" and "v1 \<squnion> v2 = Some v12" and "a = (v, v1)"
-      and "f = [(v, v2)]"
-    show ?thesis sorry
-  qed    
-qed
-(*
-  apply (erule le_fun_fun_inv)
-  apply (erule le_single_cons_right_inv) 
-    -- "Case 1" 
-    apply (case_tac a)
-    apply (rule_tac x="[0]" in exI)
-    apply simp 
-  apply (metis (no_types, lifting) fst_conv le_fun_bot_inv le_single_cons_right_inv not_Cons_self2 sndI)
-    apply (subgoal_tac "\<exists>I A B.
-           0 < length I \<and>
-           join_list (map fst (select f I)) = Some A \<and>
-           A \<sqsubseteq> C \<and>
-           join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B") prefer 2 apply force
-   apply (erule exE)+ apply (erule conjE)+
-    apply (rule_tac x="map Suc I" in exI)
-    apply (rule_tac x=A in exI)
-   apply (rule_tac x=B in exI)
-    apply (rule conjI) apply fastforce apply (rule conjI)
-    apply (subgoal_tac "select (a # f) (map Suc I) = select f I") prefer 2 apply fastforce
-    apply fastforce
-  -- "Case 2"
-   apply (rule conjI) apply assumption apply (rule conjI) prefer 2 apply assumption
-    apply fastforce
-  -- "Case 3" 
-  apply (rule_tac x="[0]" in exI) 
-  apply clarify apply (rule_tac x=v2 in exI) apply (rule_tac x=v2' in exI)
-   apply simp
-  -- "Case 4"
-  sorry
-*)
-
 section "Consistency"
 
 inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
