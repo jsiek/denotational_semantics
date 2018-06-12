@@ -282,10 +282,10 @@ fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
   "select xs [] = []" |
   "select xs (i#I) = (xs!i)#(select xs I)"
 
-fun join_list :: "val list \<Rightarrow> val option" where
-  "join_list [v] = Some v" |
-  "join_list (v#vs) = 
-     (case join_list vs of
+fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
+  jl_one: "\<Squnion> [v] = Some v" |
+  jl_cons: "\<Squnion> (v#vs) = 
+     (case \<Squnion> vs of
         None \<Rightarrow> None
      | Some v' \<Rightarrow> v \<squnion> v')" 
  
@@ -299,8 +299,8 @@ lemma nth_sub: "i < length f \<Longrightarrow> VFun [f!i] \<sqsubseteq> VFun f"
   apply (cases "f!i") apply simp using le_fun_elt nth_mem by fastforce
 
 theorem join_select_sub:
-  assumes a: "join_list (map fst (select f I)) = Some A" and
-      b: "join_list (map snd (select f I)) = Some B"
+  assumes a: "\<Squnion> (map fst (select f I)) = Some A" and
+      b: "\<Squnion> (map snd (select f I)) = Some B"
       and li: "0 < length I" and in_f: "\<forall> i \<in> set I. i < length f"
     shows "VFun [(A,B)] \<sqsubseteq> VFun f"
   using a b li in_f
@@ -318,10 +318,10 @@ next
     fix i' I'' assume ip: "I' = i' # I''"
     have lip: "0 < length I'" using ip by simp
     have in_f: "\<forall>i\<in>set I'. i < length f" using Cons ip by auto
-    obtain A' where ap: "join_list (map fst (select f I')) = Some A'" 
-      using Cons ip by (case_tac "join_list (map fst (select f I'))") auto 
-    obtain B' where bp: "join_list (map snd (select f I')) = Some B'" 
-      using Cons ip by (case_tac "join_list (map snd (select f I'))") auto 
+    obtain A' where ap: "\<Squnion> (map fst (select f I')) = Some A'" 
+      using Cons ip by (case_tac "\<Squnion> (map fst (select f I'))") auto 
+    obtain B' where bp: "\<Squnion> (map snd (select f I')) = Some B'" 
+      using Cons ip by (case_tac "\<Squnion> (map snd (select f I'))") auto 
     obtain fi1 fi2 where fi: "f!i = (fi1,fi2)" by (cases "f!i") blast
     obtain C D where fi: "f!i = (C,D)" by (cases "f!i") auto
     have a: "C \<squnion> A' = Some A" using Cons.prems(1) ap ip fi by auto
@@ -354,8 +354,8 @@ lemma select_mem: "\<lbrakk> x \<in> set (select f I); \<forall>i\<in>set I. i <
 theorem beta_sound_aux:
   "\<lbrakk> v1 \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2 \<rbrakk> \<Longrightarrow>
     \<forall> C D. (C,D) \<in> set f1 \<longrightarrow> (\<exists> I A B.
-       0 < length I \<and> (\<forall>i\<in>set I. i < length f2) \<and> join_list (map fst (select f2 I)) = Some A
-      \<and> join_list (map snd (select f2 I)) = Some B \<and> C\<mapsto>D \<sqsubseteq> A\<mapsto>B)"  
+       0 < length I \<and> (\<forall>i\<in>set I. i < length f2) \<and> \<Squnion> (map fst (select f2 I)) = Some A
+      \<and> \<Squnion> (map snd (select f2 I)) = Some B \<and> C\<mapsto>D \<sqsubseteq> A\<mapsto>B)"  
 proof (induction arbitrary: f1 f2 rule: val_le.induct)
   case (le_refl v)
   then show ?case 
@@ -371,27 +371,27 @@ next
   proof -
     fix C D assume cd_f1: "(C,D) \<in> set f1"
     obtain I A B where li: "0 < length I" and li_f2: "\<forall>i\<in>set I. i < length f2" and
-      a: "join_list (map fst (select f2 I)) = Some A" and
-      b: "join_list (map snd (select f2 I)) = Some B" and
+      a: "\<Squnion> (map fst (select f2 I)) = Some A" and
+      b: "\<Squnion> (map snd (select f2 I)) = Some B" and
       cd_ab: "C \<mapsto> D \<sqsubseteq> A \<mapsto> B" using le_trans.IH(1)[of f1 f2] le_trans.prems v2 cd_f1 by blast
     
     have 1: "\<forall>C D. (C, D) \<in> set f2 \<longrightarrow>
           (\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
-              join_list (map fst (select f3 I)) = Some A \<and>
-              join_list (map snd (select f3 I)) = Some B \<and>
+              \<Squnion> (map fst (select f3 I)) = Some A \<and>
+              \<Squnion> (map snd (select f3 I)) = Some B \<and>
               C \<mapsto> D \<sqsubseteq> A \<mapsto> B)" using le_trans.IH(2)[of f2 f3] le_trans.prems v2 by blast
     
     have "\<forall> x \<in> set (select f2 I). x \<in> set f2" by (meson li_f2 select_mem)
     then have "\<forall> (X,Y) \<in> set (select f2 I). (X,Y) \<in> set f2" by auto
     then have "\<forall>C D. (C, D) \<in> set (select f2 I) \<longrightarrow>
           (\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
-              join_list (map fst (select f3 I)) = Some A \<and>
-              join_list (map snd (select f3 I)) = Some B \<and>
+              \<Squnion> (map fst (select f3 I)) = Some A \<and>
+              \<Squnion> (map snd (select f3 I)) = Some B \<and>
               C \<mapsto> D \<sqsubseteq> A \<mapsto> B)" using 1 apply blast done
         
     show "\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
-          join_list (map fst (select f3 I)) = Some A \<and>
-          join_list (map snd (select f3 I)) = Some B \<and>
+          \<Squnion> (map fst (select f3 I)) = Some A \<and>
+          \<Squnion> (map snd (select f3 I)) = Some B \<and>
           C \<mapsto> D \<sqsubseteq> A \<mapsto> B" sorry
   qed
 next
@@ -740,4 +740,148 @@ lemma join_env_nth: "\<lbrakk> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3; x < le
   apply force
   done 
 
+lemma join_list_sub: "\<lbrakk> A \<in> set L; \<Squnion>L = Some B \<rbrakk> \<Longrightarrow> A \<sqsubseteq> B"
+  apply (induction L arbitrary: A B)
+  apply force
+  apply simp apply (erule disjE)
+  apply (case_tac L) apply force
+    apply (case_tac "join_list L") apply auto
+    apply (simp add: le_join_left)
+  apply (case_tac L) apply force
+    apply (case_tac "join_list L") apply auto
+    apply (metis le_join_right val_le.le_trans)
+    apply (meson le_join_right val_le.le_trans)
+  done
+
+lemma join_list_glb: "\<lbrakk> 0 < length L; \<forall> A. A \<in> set L \<longrightarrow> A \<sqsubseteq> B; \<Squnion>L = Some As \<rbrakk> \<Longrightarrow> As \<sqsubseteq> B"
+proof (induction L arbitrary: As)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons A1 L') then have a1l_as: "\<Squnion> (A1 # L') = Some As" by blast
+  show ?case
+  proof (cases L')
+    case Nil
+    then show ?thesis using Cons by auto
+  next
+    case (Cons A2 L'')
+    obtain As' where asp: "\<Squnion> L' = Some As'" 
+      using Cons a1l_as by (case_tac "\<Squnion> (A2 # L'')") auto
+    have as2: "A1 \<squnion> As' = Some As" using asp a1l_as Cons by simp
+    have "\<forall>A. A \<in> set L' \<longrightarrow> A \<sqsubseteq> B" by (simp add: Cons.prems(2))
+    then have asp_b: "As' \<sqsubseteq> B" using Cons.IH Cons(1) asp by blast
+    have a1_b: "A1 \<sqsubseteq> B" by (simp add: Cons.prems(2))
+    show ?thesis using as2 a1_b asp_b using le_left_join by blast
+  qed
+qed
+  
+      
+  
+lemma mem_select: "\<lbrakk> i \<in> set I \<rbrakk> \<Longrightarrow> f!i \<in> set (select f I)"
+  by (induction I) auto
+(*
+fun params_above :: "func \<Rightarrow> val \<Rightarrow> nat list" where
+  "params_above [] v = []" |
+  "params_above ((v1,v1')#f) v = 
+    (let I = map Suc (params_above f v) in 
+     if v \<sqsubseteq> v1 then 0#I else I)"
+
+lemma params_above_correct: "\<forall> i. (i < length f \<and> v \<sqsubseteq> fst (f!i)) = (i \<in> set (params_above f v))"
+  apply (induction f)
+   apply force
+  apply clarify 
+  apply (case_tac i) apply simp 
+   apply (erule_tac x=0 in allE) apply simp
+   apply (case_tac "v \<sqsubseteq> a") apply force
+   apply force
+  apply simp
+  apply (case_tac "v \<sqsubseteq> a") apply auto
+  done    
+*)
+    
+(* This version follows Alessi et al. 2005 *)
+lemma beta_sound_aux2:
+    "\<lbrakk> (v1::val) \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2; (A1,B1) \<in> set f1;
+       \<Squnion> (map snd [(A2, B2)\<leftarrow>f2 . A1 \<sqsubseteq> A2]) = Some B2s \<rbrakk> \<Longrightarrow> B1 \<sqsubseteq> B2s" 
+proof (induction arbitrary: f1 f2 A1 B1 B2s rule: val_le.induct)
+  case (le_refl v)
+  let ?L = "map snd [(A,B)\<leftarrow>f1.  A1 \<sqsubseteq> A]"
+  have "B1 \<in> set ?L" using le_refl apply (subgoal_tac "A1 \<sqsubseteq> A1") prefer 2 apply blast
+      apply force done
+  then show "B1 \<sqsubseteq> B2s" using le_refl join_list_sub[of B1 ?L] by force 
+next
+  case (le_trans v1 v2 v3 f1 f3 A1 B1 B3s)
+  obtain f2 where v2: "v2 = VFun f2" using le_trans(1) le_trans(5) 
+    using le_fun_any_inv by blast
+  let ?L3 = "\<lambda> A2. map snd [(A3,B3)\<leftarrow>f3. A2 \<sqsubseteq> A3]"
+  have IH2: "\<And> A2 B2 B3. \<lbrakk> (A2, B2) \<in> set f2; \<Squnion>(?L3 A2) = Some B3 \<rbrakk> \<Longrightarrow>
+    B2 \<sqsubseteq> B3" using le_trans.IH(2)[of f2 f3] v2 le_trans(6) by blast
+
+  let ?L2 = "map snd [(A2,B2)\<leftarrow>f2. A1 \<sqsubseteq> A2]"
+  obtain B2s where b2: "\<Squnion> ?L2 = Some B2s" sorry
+  (* Need to require is_val to get self consistency *)
+  from le_trans.IH(1)[of f1 f2] le_trans(5) v2 le_trans(7) le_trans(8) b2
+  have d_b2: "B1 \<sqsubseteq> B2s" by blast
+ 
+  have b3s: "\<Squnion> (?L3 A1) = Some B3s" using le_trans by blast
+      
+  have b2_b3: "B2s \<sqsubseteq> B3s"
+  proof -
+    have 1: "\<forall> B2. B2 \<in> set ?L2 \<longrightarrow> B2 \<sqsubseteq> B3s"
+    proof clarify
+      fix B2 assume b2_l2: "B2 \<in> set ?L2"
+      obtain A2 where a2b2_f2: "(A2,B2) \<in> set f2" and a1_a2: "A1 \<sqsubseteq> A2" using b2_l2 by auto
+      obtain B3s' where b3sp: "\<Squnion> (?L3 A2) = Some B3s'" sorry
+      have b3sp_b3s: "B3s' \<sqsubseteq> B3s"
+      proof -
+        thm join_list_glb
+        have ll3: "0 < length (?L3 A2)" sorry
+        have all3s: "\<forall>B3. B3 \<in> set (?L3 A2) \<longrightarrow> B3 \<sqsubseteq> B3s"
+        proof clarify
+          fix B3 assume b3_l3: "B3 \<in> set (?L3 A2)"
+          obtain A3 where a3b3_f3: "(A3,B3) \<in> set f3" and a2_a3: "A2 \<sqsubseteq> A3" using b3_l3 by auto
+          have "A1 \<sqsubseteq> A3" using a1_a2 a2_a3 Values.le_trans by blast
+          then have "B3 \<in> set (?L3 A1)" using a3b3_f3 by force
+          then show "B3 \<sqsubseteq> B3s" using b3s join_list_sub by blast
+        qed
+        show ?thesis using join_list_glb[of "?L3 A2" B3s B3s'] b3sp all3s ll3 by blast
+      qed
+      have "B2 \<sqsubseteq> B3s'" using IH2[of A2 B2 B3s'] a2b2_f2 b3sp by blast
+      then show "B2 \<sqsubseteq> B3s" using b3sp_b3s Values.le_trans by blast
+    qed
+    have 2: "0 < length ?L2" sorry
+    show ?thesis using 1 2 b2 join_list_glb by blast
+  qed
+  show ?case using d_b2 b2_b3 Values.le_trans[of B1 B2s B3s] by blast
+next
+  case (le_bot f)
+  then show ?case by auto
+next
+  case (le_join_left v1 v2 v12 f1 f12)
+  obtain f2 where v2: "v2 = VFun f2" and f12: "f12 = f1@f2"
+    using le_join_left apply (cases v2) apply auto done
+  let ?L12 = "map snd [(A2,B2)\<leftarrow>f12. A1 \<sqsubseteq> A2]"
+  have "(A1,B1) \<in> set f12" using le_join_left f12 by auto
+  then have "B1 \<in> set ?L12" by force 
+  then show "B1 \<sqsubseteq> B2s" using join_list_sub le_join_left(5) by blast
+next
+  case (le_join_right v1 v2 v12 f2 f12)
+  obtain f1 where v2: "v2 = VFun f2" and f12: "f12 = f1@f2"
+    using le_join_right apply (cases v1) apply auto done
+  let ?L12 = "map snd [(A2,B2)\<leftarrow>f12. A1 \<sqsubseteq> A2]"
+  have "(A1,B1) \<in> set f12" using le_join_right f12 by auto
+  then have "B1 \<in> set ?L12" by force       
+  then show "B1 \<sqsubseteq> B2s" using join_list_sub le_join_right(5) by blast
+next
+  case (le_left_join v1 v3 v2 v12)
+  then show ?case sorry
+next
+  case (le_arrow v2 v1 v1' v2')
+  then show ?case sorry
+next
+  case (le_distr v1 v2 v12 v)
+  then show ?case sorry
+qed
+  
+    
 end
