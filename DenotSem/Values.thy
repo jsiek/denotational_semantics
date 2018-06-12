@@ -337,23 +337,63 @@ next
   qed
 qed
 
+lemma mem_nth: "x \<in> set ls \<Longrightarrow> \<exists> i. ls!i = x \<and> i < length ls"
+  apply (induction ls)
+  apply force
+  apply simp apply (erule disjE) apply simp
+  apply (rule_tac x=0 in exI) apply force
+  apply simp apply (erule exE) apply (rule_tac x="Suc i" in exI) apply force
+  done
+
+lemma select_mem: "\<lbrakk> x \<in> set (select f I); \<forall>i\<in>set I. i < length f \<rbrakk> \<Longrightarrow> x \<in> set f"
+  apply (induction I)
+   apply force
+  apply simp apply (erule disjE) apply force apply force
+  done
 
 theorem beta_sound_aux:
-  "\<lbrakk> v1 \<sqsubseteq> v2; v1 = C\<mapsto>D; v2 = VFun f \<rbrakk> \<Longrightarrow> \<exists> I A B.
-       0 < length I \<and> join_list (map fst (select f I)) = Some A
-      \<and> join_list (map snd (select f I)) = Some B \<and> C\<mapsto>D \<sqsubseteq> A\<mapsto>B"  
-proof (induction arbitrary: C D f rule: val_le.induct)
+  "\<lbrakk> v1 \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2 \<rbrakk> \<Longrightarrow>
+    \<forall> C D. (C,D) \<in> set f1 \<longrightarrow> (\<exists> I A B.
+       0 < length I \<and> (\<forall>i\<in>set I. i < length f2) \<and> join_list (map fst (select f2 I)) = Some A
+      \<and> join_list (map snd (select f2 I)) = Some B \<and> C\<mapsto>D \<sqsubseteq> A\<mapsto>B)"  
+proof (induction arbitrary: f1 f2 rule: val_le.induct)
   case (le_refl v)
-  then show ?case apply (rule_tac x="[0]" in exI) apply auto done
+  then show ?case 
+    apply simp apply clarify
+    apply (subgoal_tac "\<exists>i. f1!i = (C,D) \<and> i < length f1")
+      prefer 2 apply (rule mem_nth) apply assumption
+    apply (erule exE) apply (rule_tac x="[i]" in exI) apply (rule conjI) apply blast
+    apply simp apply auto done      
 next
-  case (le_trans v1 v2 v3)
-  obtain f2 where v2: "v2 = VFun f2" using le_trans using le_fun_any_inv by blast
-  obtain I A B where li: "0 < length I" and a: "join_list (map fst (select f2 I)) = Some A" and
-    b: "join_list (map snd (select f2 I)) = Some B" and
-    cd_ab: "C \<mapsto> D \<sqsubseteq> A \<mapsto> B" using le_trans v2 apply blast done
-  
-      
-  then show ?case sorry
+  case (le_trans v1 v2 v3 f1 f3)
+  obtain f2 where v2: "v2 = VFun f2" using le_trans by (meson le_fun_any_inv)
+  show ?case apply clarify
+  proof -
+    fix C D assume cd_f1: "(C,D) \<in> set f1"
+    obtain I A B where li: "0 < length I" and li_f2: "\<forall>i\<in>set I. i < length f2" and
+      a: "join_list (map fst (select f2 I)) = Some A" and
+      b: "join_list (map snd (select f2 I)) = Some B" and
+      cd_ab: "C \<mapsto> D \<sqsubseteq> A \<mapsto> B" using le_trans.IH(1)[of f1 f2] le_trans.prems v2 cd_f1 by blast
+    
+    have 1: "\<forall>C D. (C, D) \<in> set f2 \<longrightarrow>
+          (\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
+              join_list (map fst (select f3 I)) = Some A \<and>
+              join_list (map snd (select f3 I)) = Some B \<and>
+              C \<mapsto> D \<sqsubseteq> A \<mapsto> B)" using le_trans.IH(2)[of f2 f3] le_trans.prems v2 by blast
+    
+    have "\<forall> x \<in> set (select f2 I). x \<in> set f2" by (meson li_f2 select_mem)
+    then have "\<forall> (X,Y) \<in> set (select f2 I). (X,Y) \<in> set f2" by auto
+    then have "\<forall>C D. (C, D) \<in> set (select f2 I) \<longrightarrow>
+          (\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
+              join_list (map fst (select f3 I)) = Some A \<and>
+              join_list (map snd (select f3 I)) = Some B \<and>
+              C \<mapsto> D \<sqsubseteq> A \<mapsto> B)" using 1 apply blast done
+        
+    show "\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
+          join_list (map fst (select f3 I)) = Some A \<and>
+          join_list (map snd (select f3 I)) = Some B \<and>
+          C \<mapsto> D \<sqsubseteq> A \<mapsto> B" sorry
+  qed
 next
   case (le_bot f)
   then show ?case sorry
