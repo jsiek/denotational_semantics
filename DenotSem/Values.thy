@@ -865,8 +865,11 @@ next
   then have "B1 \<in> set ?L12" by force       
   then show "B1 \<sqsubseteq> B2s" using join_list_sub le_join_right(5) by blast
 next
-  case (le_left_join v1 v3 v2 v12 f12 f3)
-  then show "B1 \<sqsubseteq> B2s" sorry
+  case (le_left_join v1 v3 v2 v12 f12 f3 A12 B12 B3s)
+  let ?L3 = "map snd [(A3,B3)\<leftarrow>f3. A12 \<sqsubseteq> A3]"
+  have b3s: "\<Squnion> ?L3 = Some B3s" using le_left_join.prems(4) by auto
+  
+  show "B1 \<sqsubseteq> B2s" sorry
 next
   case (le_arrow v2 v1 v1' v2')
   then show ?case sorry
