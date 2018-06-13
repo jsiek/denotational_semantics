@@ -277,11 +277,11 @@ qed
     using join_self apply blast
   done
 *)
-    
+(*    
 fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
   "select xs [] = []" |
   "select xs (i#I) = (xs!i)#(select xs I)"
-
+*)
 fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
   jl_none: "\<Squnion> [] = None" |
   jl_one: "\<Squnion> [v] = Some v" |
@@ -289,7 +289,7 @@ fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
      (case \<Squnion> vs of
         None \<Rightarrow> None
      | Some v' \<Rightarrow> v \<squnion> v')" 
- 
+(*
 lemma select_append_map[simp]: "select (f1 @ f2) (map (\<lambda>i. i+length f1) I) = select f2 I"
   apply (induction I) apply fastforce by (simp add: nth_append)
 
@@ -414,7 +414,7 @@ next
   case (le_distr v1 v2 v12 v)
   then show ?case sorry
 qed
-
+*)
 (*    
 theorem beta_sound: fixes C::val and D::val and f::func 
   assumes cd_f: "C\<mapsto>D \<sqsubseteq> VFun f"
@@ -604,6 +604,29 @@ next
   qed
 qed
 
+corollary consis_upper_bound: fixes v1::val and v2::val 
+  assumes v1_v2: "v1 ~ v2" and v_v1: "is_val v1" and v_v2: "is_val v2"
+  shows "\<exists> v3. v1 \<sqsubseteq> v3 \<and> v2 \<sqsubseteq> v3 \<and> is_val v3"
+proof -
+  obtain v12 where v12: "v1 \<squnion> v2 = Some v12" and v_v12: "is_val v12" 
+    using v1_v2 v_v1 v_v2 consis_join_val by blast
+  have 1: "v1 \<sqsubseteq> v12" using v12 le_join_left by blast
+  have 2: "v2 \<sqsubseteq> v12" using v12 le_join_right by blast
+  show ?thesis using 1 2 v_v12 by blast
+qed
+
+lemma upper_bound_consis: fixes v1::val and v2::val and v3::val 
+  assumes v1_v3: "v1 \<sqsubseteq> v3" and v2_v3: "v2 \<sqsubseteq> v3" and v_v3: "is_val v3"
+  shows "v1 ~ v2"
+  using v_v3 v1_v3 v2_v3 apply (induction arbitrary: v1 v2 rule: is_val.induct)
+   apply (case_tac v1) apply (case_tac v2) apply force apply force
+   apply (case_tac v2) apply force apply force
+  apply (case_tac v1) apply (case_tac v2) apply force apply force
+  apply (case_tac v2) apply force
+  apply simp
+  apply (rule vfun_consis) apply (rule allI)+ apply (rule impI) apply (erule conjE)
+  oops      
+
 lemma consis_le_inconsis_le:
   "(v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1 \<sqsubseteq> v1' \<and> v2 \<sqsubseteq> v2' \<longrightarrow> v1 ~ v2))
   \<and> (v1' !~ v2' \<longrightarrow> (\<forall> v1 v2. v1' \<sqsubseteq> v1 \<and> v2' \<sqsubseteq> v2 \<longrightarrow> v1 !~ v2))"
@@ -615,7 +638,6 @@ next
   show ?case 
   proof clarify
     fix v1 v2 assume v1_f1: "v1 \<sqsubseteq> VFun f1" and v2_f2: "v2 \<sqsubseteq> VFun f2"
-    (* Need beta sound or something *)
     show "v1 ~ v2" sorry
   qed
 next
@@ -630,7 +652,8 @@ next
 next
   case (vfun_vnat_inconsis f n)
   then show ?case apply clarify apply (erule le_fun_any_inv) apply blast done
-qed
+oops
+
     (*
   apply (induction rule: consistent_inconsistent.induct)
   apply blast
@@ -682,13 +705,15 @@ qed
   apply auto   
   done
 *)
-    
+
+(*    
 lemma consis_le: "\<lbrakk> v1 \<sqsubseteq> v1'; v2 \<sqsubseteq> v2'; v1' ~ v2' \<rbrakk> \<Longrightarrow> v1 ~ v2"
   using consis_le_inconsis_le by blast
 
 lemma inconsis_le: "\<lbrakk> v1' \<sqsubseteq> v1; v2' \<sqsubseteq> v2; v1' !~ v2' \<rbrakk> \<Longrightarrow> v1 !~ v2"
   using consis_le_inconsis_le by blast
-  
+*)
+    
 lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk>
   \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
   apply (induction arbitrary: x rule: consis_env.induct)
@@ -790,10 +815,12 @@ proof -
   qed  
   show "B2s \<sqsubseteq> B3s" using 1 b2s join_list_glb by blast
 qed
-    
+
+(*
 lemma mem_select: "\<lbrakk> i \<in> set I \<rbrakk> \<Longrightarrow> f!i \<in> set (select f I)"
   by (induction I) auto
-    
+*)
+
 (* This version follows Alessi et al. 2005 *)
 lemma beta_sound_aux2:
     "\<lbrakk> (v1::val) \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2; (A1,B1) \<in> set f1;
@@ -899,6 +926,15 @@ next
   show "B1 \<sqsubseteq> B2s" using b1_v12 b2s_v12 le_refl by simp
 qed
 
+lemma beta_sound_gen:
+    "\<lbrakk> VFun f1 \<sqsubseteq> VFun f2;
+       (A1,B1) \<in> set f1;
+       \<Squnion> (map snd [(A2, B2)\<leftarrow>f2 . A2 \<sqsubseteq> A1]) = Some B2s \<rbrakk> \<Longrightarrow> B1 \<sqsubseteq> B2s"
+    using beta_sound_aux2 by blast
 
-    
+lemma beta_sound:
+    "\<lbrakk> A1 \<mapsto> B1 \<sqsubseteq> VFun f2;
+       \<Squnion> (map snd [(A2, B2)\<leftarrow>f2 . A2 \<sqsubseteq> A1]) = Some B2s \<rbrakk> \<Longrightarrow> B1 \<sqsubseteq> B2s"
+    using beta_sound_gen by auto   
+   
 end
