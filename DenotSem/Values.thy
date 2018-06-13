@@ -283,6 +283,7 @@ fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
   "select xs (i#I) = (xs!i)#(select xs I)"
 
 fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
+  jl_none: "\<Squnion> [] = None" |
   jl_one: "\<Squnion> [v] = Some v" |
   jl_cons: "\<Squnion> (v#vs) = 
      (case \<Squnion> vs of
@@ -753,7 +754,7 @@ lemma join_list_sub: "\<lbrakk> A \<in> set L; \<Squnion>L = Some B \<rbrakk> \<
     apply (meson le_join_right val_le.le_trans)
   done
 
-lemma join_list_glb: "\<lbrakk> 0 < length L; \<forall> A. A \<in> set L \<longrightarrow> A \<sqsubseteq> B; \<Squnion>L = Some As \<rbrakk> \<Longrightarrow> As \<sqsubseteq> B"
+lemma join_list_glb: "\<lbrakk> \<forall> A. A \<in> set L \<longrightarrow> A \<sqsubseteq> B; \<Squnion>L = Some As \<rbrakk> \<Longrightarrow> As \<sqsubseteq> B"
 proof (induction L arbitrary: As)
   case Nil
   then show ?case by auto
@@ -768,36 +769,30 @@ next
     obtain As' where asp: "\<Squnion> L' = Some As'" 
       using Cons a1l_as by (case_tac "\<Squnion> (A2 # L'')") auto
     have as2: "A1 \<squnion> As' = Some As" using asp a1l_as Cons by simp
-    have "\<forall>A. A \<in> set L' \<longrightarrow> A \<sqsubseteq> B" by (simp add: Cons.prems(2))
+    have "\<forall>A. A \<in> set L' \<longrightarrow> A \<sqsubseteq> B" by (simp add: Cons.prems(1))
     then have asp_b: "As' \<sqsubseteq> B" using Cons.IH Cons(1) asp by blast
-    have a1_b: "A1 \<sqsubseteq> B" by (simp add: Cons.prems(2))
+    have a1_b: "A1 \<sqsubseteq> B" by (simp add: Cons.prems(1))
     show ?thesis using as2 a1_b asp_b using le_left_join by blast
   qed
 qed
   
-      
-  
+lemma join_list_sub_glb: fixes B2s::val and B3s::val and L2::"val list"
+  assumes b2s: "\<Squnion> L2 = Some B2s" and b3s: "\<Squnion> L3 = Some B3s"
+    and P: "\<forall> B2. B2 \<in> set L2 \<longrightarrow> (\<exists> B3. B3 \<in> set L3 \<and> B2 \<sqsubseteq> B3)"
+  shows "B2s \<sqsubseteq> B3s"
+proof -
+  have 1: "\<forall> B2. B2 \<in> set L2 \<longrightarrow> B2 \<sqsubseteq> B3s"
+  proof clarify
+    fix B2 assume b2_l2: "B2 \<in> set L2"
+    obtain B3 where b3_l3: "B3 \<in> set L3" and b2_b3: "B2 \<sqsubseteq> B3" using P b2_l2 by blast
+    have "B3 \<sqsubseteq> B3s" using join_list_sub[of B3 L3 B3s] b3_l3 b3s by blast
+    then show "B2 \<sqsubseteq> B3s" using b2_b3 le_trans by blast
+  qed  
+  show "B2s \<sqsubseteq> B3s" using 1 b2s join_list_glb by blast
+qed
+    
 lemma mem_select: "\<lbrakk> i \<in> set I \<rbrakk> \<Longrightarrow> f!i \<in> set (select f I)"
   by (induction I) auto
-(*
-fun params_above :: "func \<Rightarrow> val \<Rightarrow> nat list" where
-  "params_above [] v = []" |
-  "params_above ((v1,v1')#f) v = 
-    (let I = map Suc (params_above f v) in 
-     if v \<sqsubseteq> v1 then 0#I else I)"
-
-lemma params_above_correct: "\<forall> i. (i < length f \<and> v \<sqsubseteq> fst (f!i)) = (i \<in> set (params_above f v))"
-  apply (induction f)
-   apply force
-  apply clarify 
-  apply (case_tac i) apply simp 
-   apply (erule_tac x=0 in allE) apply simp
-   apply (case_tac "v \<sqsubseteq> a") apply force
-   apply force
-  apply simp
-  apply (case_tac "v \<sqsubseteq> a") apply auto
-  done    
-*)
     
 (* This version follows Alessi et al. 2005 *)
 lemma beta_sound_aux2:
@@ -834,8 +829,6 @@ next
       obtain B3s' where b3sp: "\<Squnion> (?L3 A2) = Some B3s'" sorry
       have b3sp_b3s: "B3s' \<sqsubseteq> B3s"
       proof -
-        thm join_list_glb
-        have ll3: "0 < length (?L3 A2)" sorry
         have all3s: "\<forall>B3. B3 \<in> set (?L3 A2) \<longrightarrow> B3 \<sqsubseteq> B3s"
         proof clarify
           fix B3 assume b3_l3: "B3 \<in> set (?L3 A2)"
@@ -844,13 +837,12 @@ next
           then have "B3 \<in> set (?L3 A1)" using a3b3_f3 by force
           then show "B3 \<sqsubseteq> B3s" using b3s join_list_sub by blast
         qed
-        show ?thesis using join_list_glb[of "?L3 A2" B3s B3s'] b3sp all3s ll3 by blast
+        show ?thesis using join_list_glb[of "?L3 A2" B3s B3s'] b3sp all3s by blast
       qed
       have "B2 \<sqsubseteq> B3s'" using IH2[of A2 B2 B3s'] a2b2_f2 b3sp by blast
       then show "B2 \<sqsubseteq> B3s" using b3sp_b3s Values.le_trans by blast
     qed
-    have 2: "0 < length ?L2" sorry
-    show ?thesis using 1 2 b2 join_list_glb by blast
+    show ?thesis using 1 b2 join_list_glb by blast
   qed
   show ?case using d_b2 b2_b3 Values.le_trans[of B1 B2s B3s] by blast
 next
@@ -873,8 +865,8 @@ next
   then have "B1 \<in> set ?L12" by force       
   then show "B1 \<sqsubseteq> B2s" using join_list_sub le_join_right(5) by blast
 next
-  case (le_left_join v1 v3 v2 v12)
-  then show ?case sorry
+  case (le_left_join v1 v3 v2 v12 f12 f3)
+  then show "B1 \<sqsubseteq> B2s" sorry
 next
   case (le_arrow v2 v1 v1' v2')
   then show ?case sorry
@@ -882,6 +874,7 @@ next
   case (le_distr v1 v2 v12 v)
   then show ?case sorry
 qed
-  
+
+
     
 end
