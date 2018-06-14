@@ -552,5 +552,32 @@ lemma beta_sound:
        \<Squnion> (map snd [(A2, B2)\<leftarrow>f2 . A2 \<sqsubseteq> A1]) = Some B2s \<rbrakk> \<Longrightarrow> B1 \<sqsubseteq> B2s"
   (*  using beta_sound_gen *)
   oops   
-   
+
+lemma le_join: fixes v1::val and v2::val
+  assumes v1_v2: "v1 \<sqsubseteq> v2" shows "\<exists> v12. v1 \<squnion> v2 = Some v12 \<and> v2 \<approx> v12"
+  using v1_v2
+  apply (induction rule: val_le.induct)
+  -- "case le_refl"
+  apply (case_tac v) apply force apply force
+  -- "case le_trans" 
+  apply (erule exE)+
+  apply (subgoal_tac "v1 \<sqsubseteq> v3") prefer 2 using le_trans apply blast
+  apply (subgoal_tac "\<exists> v13. v1 \<squnion> v3 = Some v13") prefer 2 
+  using upper_bound_join apply blast
+        apply (erule exE) apply (rule_tac x=v13 in exI) apply simp
+  using le_join_right le_left_join apply blast
+  -- "case le_bot"
+  apply force
+  -- "case le_fun_append_left"
+  apply (metis (no_types, lifting) Values.vfun_join le_fun_append_left le_fun_append_right le_left_join val_le.le_refl)  
+  -- "case le_fun_append_right"
+  apply (metis (no_types, lifting) Values.vfun_join le_fun_append_right le_left_join val_le.le_refl)
+  -- "case le_fun_left_join"
+  apply (metis (no_types, lifting) Values.vfun_join le_fun_append_right le_fun_left_join val_le.le_trans)
+  -- "case le_arrow"      
+  apply (metis Values.vfun_join le_arrow le_fun_append_right le_fun_elt le_fun_left_join list.set_intros(1))
+  -- "case le_distr"
+  by (metis Values.vfun_join le_distr le_fun_append_right le_fun_left_join val_le.le_refl)    
+    
+
 end
