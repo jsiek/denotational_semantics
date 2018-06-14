@@ -101,7 +101,7 @@ lemma is_val_le_aux2:
    apply clarify
    apply (case_tac v') apply force apply simp
   apply clarify    
-    sorry
+    oops
   
 
 lemma is_val_le_aux: "(is_val v \<longrightarrow> (\<forall> v'. v' \<sqsubseteq> v \<longrightarrow> is_val v'))
