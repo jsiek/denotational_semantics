@@ -42,10 +42,46 @@ lemma consis_join_val:
   shows "\<exists> v12. (v1 \<squnion> v2) = Some v12 \<and> is_val v12"
   using v1_v2 v_v1 v_v2 by auto
 
+lemma vsize_join: "v1 \<squnion> v2 = Some v3 \<Longrightarrow> vsize v3 \<le> vsize v1 + vsize v2"
+  apply (case_tac v1)
+   apply (case_tac v2)
+  apply auto apply (case_tac "x1 = x1a") apply auto
+   apply (case_tac v2) apply auto
+  done
+    
 lemma is_val_or_not_aux: "\<forall> v. n = vsize v \<longrightarrow> is_val v \<or> not_val v"
   apply (induction n rule: nat_less_induct)
   apply (rule allI) apply (rule impI)
   apply (case_tac v)
+    apply fastforce
+  apply simp apply clarify
+  apply (rule vfun_is_val)
+   apply (rule allI)+ apply (rule impI)
+    apply (subgoal_tac "is_val va \<or> not_val va") prefer 2 
+    apply (metis add_lessD1 less_SucI size_fun_mem)
+    apply (subgoal_tac "is_val v' \<or> not_val v'") prefer 2 
+     apply (subgoal_tac "vsize v' < Suc (fsize x2)") prefer 2 
+     apply (meson dual_order.strict_trans not_add_less2 not_less_eq size_fun_mem)      
+     apply blast
+     using vfun_not_val1 vfun_not_val2 apply auto[1]
+     apply (rule allI)+ apply (rule impI)+ apply (erule conjE)+
+     apply (case_tac "v1 ~ v2") apply (rule disjI1)
+      apply simp
+      apply (rule classical)
+      apply (subgoal_tac "not_val (VFun x2)") apply blast
+      apply (erule exE) apply (erule conjE)+        
+       apply (rule vfun_not_val3)
+       prefer 3 apply assumption
+         apply assumption apply assumption apply assumption
+      apply clarify
+      apply (subgoal_tac "vsize v3' < Suc (fsize x2)")
+       apply (subgoal_tac "is_val v3' \<or> not_val v3'")
+     apply (erule disjE) apply blast apply blast
+       apply blast
+       apply (subgoal_tac "vsize v3' \<le> vsize v1' + vsize v2'") prefer 2
+     using vsize_join apply blast
+
+  (*
   apply auto
   apply (metis add_lessD1 less_SucI size_fun_mem vfun_not_val1)
   apply (metis add.commute add_lessD1 less_SucI size_fun_mem vfun_not_val2)    
@@ -55,6 +91,7 @@ lemma is_val_or_not_aux: "\<forall> v. n = vsize v \<longrightarrow> is_val v \<
     apply (meson add_lessD1 less_SucI)
   apply (subgoal_tac "is_val v1 \<or> not_val v1") prefer 2 apply force
   apply (subgoal_tac "is_val v2 \<or> not_val v2") prefer 2 apply force
+*)
   oops    
     
 lemma is_val_or_not: "is_val v \<or> not_val v" sorry

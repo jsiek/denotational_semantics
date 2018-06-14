@@ -27,10 +27,44 @@ lemma fsize_append[simp]: "fsize (f1@f2) = fsize f1 + fsize f2"
 lemma size_fun_mem: "(v,v') \<in> set f \<Longrightarrow> vsize v + vsize v' < fsize f"
   by (induction f) auto  
   
+lemma size_fun_mem2: "\<lbrakk> (v1,v1') \<in> set f; (v2,v2') \<in> set f; (v1,v1') \<noteq> (v2,v2') \<rbrakk>
+  \<Longrightarrow> vsize v1 + vsize v1' + vsize v2 + vsize v2' < fsize f"
+  apply (induction f arbitrary: v1 v1' v2 v2')
+   apply force
+   apply simp apply (erule disjE) 
+   apply (erule disjE)
+    apply clarify
+    apply (erule impE) apply simp apply blast
+   apply clarify apply (case_tac "a = v2") apply simp
+    using size_fun_mem apply force
+     apply simp using size_fun_mem apply force
+    apply clarify apply (erule disjE) apply clarify
+    defer
+    apply fastforce
+  proof -
+    fix a :: val and b :: val and fa :: "(val \<times> val) list" and v1a :: val and v1'a :: val and v2a :: val and v2'a :: val
+    assume "(v1a, v1'a) \<in> set fa"
+    then have "vsize v1a + vsize v1'a < fsize fa"
+      by (meson size_fun_mem)
+    then show "vsize v1a + vsize v1'a + vsize a + vsize b < fsize ((a, b) # fa)"
+      by auto
+qed 
+      
 fun val_join :: "val \<Rightarrow> val \<Rightarrow> val option" (infix "\<squnion>" 56) where
   "VNat n1 \<squnion> VNat n2 = (if n1 = n2 then Some (VNat n1) else None)" |
-  vfun_join: "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))" |
+  vfun_join: "VFun f1 \<squnion> VFun f2 = (if f1 = f2 then Some (VFun f1) else Some (VFun (f1 @ f2)))" |
   "v1 \<squnion> v2 = None"
+  
+lemma size_fun_mem_join: "\<lbrakk> (v1,v1') \<in> set f; (v2,v2') \<in> set f; v1' \<squnion> v2' = Some v3' \<rbrakk>
+   \<Longrightarrow> vsize v3' < Suc (fsize f)"
+  apply (case_tac "v1' = v2'")
+   apply simp apply (case_tac v1') apply (case_tac v2') apply simp
+     apply clarify using size_fun_mem apply force
+    apply clarify apply simp using size_fun_mem apply force
+  apply (case_tac v1') apply (case_tac v2') apply simp apply force
+  apply (case_tac v2') apply force
+  apply simp using size_fun_mem2 apply force
+  done
   
 fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option" (infix "\<squnion>" 56) where
   "env_join [] [] = Some []" |
@@ -48,24 +82,17 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   le_refl[intro!]: "v \<sqsubseteq> v" | 
   le_trans[trans]: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3" |
   le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
+(*
   le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubseteq> v12" (* incl_L *)| 
   le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12" (* incl_R *) | 
   le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" (* glb *) |
+*)
+  le_fun_append_left: "VFun f1 \<sqsubseteq> VFun (f1@f2)" |
+  le_fun_append_right: "VFun f2 \<sqsubseteq> VFun (f1@f2)" |
+  le_fun_left_join: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> VFun (f1@f2) \<sqsubseteq> VFun f3" |
   le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
   le_distr: "(v1::val) \<squnion> v2 = Some v12 \<Longrightarrow> v\<mapsto>v12 \<sqsubseteq> VFun [(v,v1), (v,v2)]"
 
-lemma le_fun_append_left: "VFun f1 \<sqsubseteq> VFun (f1@f2)"
-  apply (subgoal_tac "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))") prefer 2 apply simp
-  apply (rule le_join_left) apply assumption done
-
-lemma le_fun_append_right: "VFun f2 \<sqsubseteq> VFun (f1@f2)"
-  apply (subgoal_tac "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))") prefer 2 apply simp
-  apply (rule le_join_right) apply assumption done
-    
-lemma le_fun_left_join: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> VFun (f1@f2) \<sqsubseteq> VFun f3"
-  apply (subgoal_tac "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))") prefer 2 apply simp
-  apply (rule le_left_join) prefer 3 apply assumption+ done
-    
 inductive_cases 
   le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
   le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> VFun f" and
@@ -85,63 +112,86 @@ inductive_cases
   le_cons_cons_inv: "a#f1 \<sqsubseteq> (b#f2)" and
   le_bot_right_inv: "v \<sqsubseteq> \<bottom>"
 *)
+  
+proposition le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sqsubseteq> v12" (* incl_L *)
+  apply (case_tac v1) apply (case_tac v2) apply simp
+    apply (case_tac "x1 = x1a") apply force apply force
+   apply force
+  apply (case_tac v2) apply force
+  apply simp
+  apply (case_tac "x2 = x2a") apply force
+  apply simp
+  apply clarify
+  apply (rule le_fun_append_left)
+  done
+    
+proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12" (* incl_R *) 
+    apply (case_tac v1) apply (case_tac v2) apply simp
+    apply (case_tac "x1 = x1a") apply force apply force
+   apply force
+  apply (case_tac v2) apply force
+  apply simp
+  apply (case_tac "x2 = x2a") apply force
+  apply simp
+  apply clarify
+  apply (rule le_fun_append_right)
+  done
+  
+   
+(*
+lemma le_fun_append_left: "VFun f1 \<sqsubseteq> VFun (f1@f2)"
+  apply (subgoal_tac "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))") prefer 2 apply simp
+  apply (rule le_join_left) apply assumption done
 
+lemma le_fun_append_right: "VFun f2 \<sqsubseteq> VFun (f1@f2)"
+  apply (subgoal_tac "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))") prefer 2 apply simp
+  apply (rule le_join_right) apply assumption done
+
+lemma le_fun_left_join: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> VFun (f1@f2) \<sqsubseteq> VFun f3"
+  apply (subgoal_tac "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 @ f2))") prefer 2 apply simp
+  apply (rule le_left_join) prefer 3 apply assumption+ done
+*)    
+    
 lemma le_bot_inv_aux: fixes v1::val and f1::func
   assumes v12: "v1 \<sqsubseteq> v2" and v2b: "v2 = \<bottom>"
   shows "v1 = \<bottom>"
-  using v12 v2b apply (induction rule: val_le.induct)
-   apply auto
-   apply (case_tac v1) apply (case_tac v2) apply auto
-    apply (case_tac "x1=x1a") apply auto apply (case_tac v2) apply auto
-   apply (case_tac v1) apply (case_tac v2) apply auto
-    apply (case_tac "x1=x1a") apply auto apply (case_tac v2) apply auto
-  done    
+  using v12 v2b by (induction rule: val_le.induct) auto
+      
 
 lemma le_bot_inv[elim!]: "\<lbrakk> f \<sqsubseteq> \<bottom>; f = \<bottom> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
   using le_bot_inv_aux by auto      
     
 lemma le_any_nat_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v' = VNat n\<rbrakk> \<Longrightarrow> v = VNat n"
-  apply (induction rule: val_le.induct)
-         apply force
-        apply force
-  apply force
-      apply (case_tac v1) apply (case_tac v2) apply simp apply (case_tac "x1=x1a") apply force
-        apply force apply force apply (case_tac v2) apply force apply force 
-     apply (case_tac v1) apply (case_tac v2) apply simp  apply (case_tac "x1=x1a") apply force
-       apply force apply force apply simp apply (case_tac v2) apply force apply force
-    apply force
-   apply force
-  apply force
-  done
+  by (induction rule: val_le.induct) auto
     
 proposition le_any_nat_inv[elim!]: "\<lbrakk> v \<sqsubseteq> VNat n; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_any_nat_inv_aux[of v "VNat n" n] apply auto done
   
 lemma le_nat_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VNat n\<rbrakk> \<Longrightarrow> v' = VNat n"
-  apply (induction arbitrary: n rule: val_le.induct)
-         apply force
-        apply force
-  apply force
-      apply (case_tac v1) apply (case_tac v2) apply simp apply (case_tac "x1=x1a") apply force
-        apply force apply force apply (case_tac v2) apply force apply force 
-     apply (case_tac v1) apply (case_tac v2) apply simp apply (case_tac "x1=n") apply force
-       apply force apply force apply simp apply (case_tac v2) apply force
-    apply simp apply (case_tac v1) apply auto
-  done
+  by (induction arbitrary: n rule: val_le.induct) auto
     
 proposition le_nat_any_inv[elim!]: "\<lbrakk> VNat n \<sqsubseteq> v; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_nat_any_inv_aux[of "VNat n" v n] apply auto done    
 
 lemma le_fun_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VFun f \<rbrakk> \<Longrightarrow> \<exists> f'. v' = VFun f'"
-  apply (induction arbitrary: f rule: val_le.induct)
-         apply auto
-    apply (case_tac v2) apply auto apply (case_tac v1) apply auto
-  apply (case_tac v1) apply (case_tac v2) apply auto
-  done
+  by (induction arbitrary: f rule: val_le.induct) auto
   
 proposition le_fun_any_inv: "\<lbrakk> VFun f \<sqsubseteq> v; \<And>f'. v = VFun f' \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_fun_any_inv_aux by blast
 
+proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" (* glb *)
+  apply (case_tac v1) apply (case_tac v2) apply simp
+  apply (case_tac "x1 = x1a") apply force apply force
+  apply force
+  apply (case_tac v2) apply force
+  apply simp
+  apply (case_tac "x2 = x2a") apply force
+  apply simp
+  apply clarify
+  apply (case_tac v3) apply simp 
+  apply force
+  by (simp add: le_fun_left_join)
+ 
 proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
   assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
     v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
@@ -154,33 +204,38 @@ proof -
   show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join v12 by blast
 qed
 
+lemma le_fun_append_left_sub: assumes f1_f1p: "VFun f1 \<sqsubseteq> VFun f1'" shows "VFun f1 \<sqsubseteq> VFun (f1'@f2)"
+proof -
+  have "VFun f1' \<sqsubseteq> VFun (f1'@f2)" using le_fun_append_left by blast
+  then show ?thesis using f1_f1p le_trans by blast
+qed
+
+lemma le_fun_append_right_sub: assumes f1_f1p: "VFun f2 \<sqsubseteq> VFun f2'" shows "VFun f2 \<sqsubseteq> VFun (f1@f2')"
+proof -
+  have "VFun f2' \<sqsubseteq> VFun (f1@f2')" using le_fun_append_right by blast
+  then show ?thesis using f1_f1p le_trans by blast
+qed
+  
 lemma le_fun_elt: assumes v1f: "(v,v') \<in> set f" shows "v\<mapsto>v' \<sqsubseteq> VFun f"
-  using v1f apply (induction f)
+  using v1f apply (induction f) 
    apply force
   apply simp apply (erule disjE)
    apply simp
-   apply (subgoal_tac "VFun [a] \<squnion> VFun f = Some (VFun (a#f))")
-    prefer 2 apply force
-   apply (rule le_join_left) apply assumption
+   apply (case_tac "f=[a]")
+    apply simp using le_fun_left_join apply (metis append_Cons append_Nil le_fun_append_left)
+   apply clarify
+  using le_join_left apply (metis append.left_neutral append_Cons le_fun_append_left)
+  apply (subgoal_tac "v \<mapsto> v' \<sqsubseteq> VFun ([a] @ f)") prefer 2
+   apply (rule le_fun_append_right_sub) apply blast
   apply simp
-  apply (subgoal_tac "VFun [a] \<squnion> VFun f = Some (VFun (a#f))")
-   prefer 2 apply force
-  apply (subgoal_tac "VFun [a] \<squnion> VFun [(v,v')] = Some (VFun [a,(v,v')])")
-    prefer 2 apply force
-    apply (subgoal_tac "v \<mapsto> v' \<sqsubseteq> VFun [a,(v,v')]") prefer 2
-   apply (rule le_join_right) apply blast
-  apply (subgoal_tac "VFun [a,(v,v')] \<sqsubseteq> VFun (a#f)") prefer 2
-   apply (rule mon) prefer 3 apply assumption apply blast apply blast apply force
-  apply (rule le_trans) apply auto
-    done
+  done
  
 lemma le_fun_subset: fixes f1::func shows "\<lbrakk> set f1 \<subseteq> set f2 \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f2"
   apply (induction f1)
   apply force
   apply simp apply clarify
   apply (subgoal_tac "a\<mapsto>b \<sqsubseteq> VFun f2") prefer 2 apply (rule le_fun_elt) apply blast
-  apply (subgoal_tac "a\<mapsto>b \<squnion> VFun f1 = Some (VFun ((a, b) # f1))") prefer 2 apply force
-  using le_left_join by blast      
+  using le_fun_left_join by force
     
 lemma le_fun_subset_sub: "\<lbrakk> \<forall> a a'. (a,a')\<in>set f1\<longrightarrow> (\<exists> b b'. (b,b')\<in>set f2 \<and> a\<mapsto>a' \<sqsubseteq> b\<mapsto>b') \<rbrakk>
    \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f2"
@@ -229,59 +284,6 @@ lemma join_self: fixes C::val shows "\<exists> C'. C \<squnion> C = Some C' \<an
 
 inductive_cases le_fun_one_two_inv: "C \<mapsto> D \<sqsubseteq> VFun [(A1,B1),(A2,B2)]"
 
-(*
-theorem beta_sound_binary: fixes A1::val and A2::val and B1::val and B2::val 
-  assumes cd_ab: "CD \<sqsubseteq> AB" and cd: "CD = C\<mapsto>D" and ab: "(A1\<mapsto>B1)\<squnion>(A2\<mapsto>B2) = Some AB"
-  shows "(A1 \<sqsubseteq> C \<and> D \<sqsubseteq> B1) \<or> (A2 \<sqsubseteq> C \<and> D \<sqsubseteq> B2 ) 
-      \<or> (\<exists>A3 B3. A3 \<sqsubseteq> C \<and> A1 \<squnion> A2 = Some A3 \<and> D \<sqsubseteq> B3 \<and> B1 \<squnion> B2 = Some B3)"
- using cd_ab cd ab 
-proof (induction rule: val_le.induct)
-  case (le_refl v)
-  then show ?case by auto
-next
-  case (le_trans v1 v2 v3)
-  then show ?case sorry
-next
-  case (le_bot f)
-  then show ?case sorry
-next
-  case (le_join_left v1 v2 v12)
-  then show ?case sorry
-next
-  case (le_join_right v1 v2 v12)
-  then show ?case sorry
-next
-  case (le_left_join v1 v3 v2 v12)
-  then show ?case sorry
-next
-  case (le_arrow v2 v1 v1' v2')
-  then show ?case sorry
-next
-  case (le_distr v1 v2 v12 v)
-  then show ?case sorry
-qed
-  *)    
-(*  
-  apply simp
-  apply (subgoal_tac "VFun [(C,D)] \<sqsubseteq> VFun [(A1,B1),(A2,B2)]") prefer 2 apply fastforce
-  apply (erule le_fun_fun_inv) apply (erule le_single_cons_right_inv)
-  apply (metis Pair_inject le_cons_left_single_inv le_fun_bot_inv not_Cons_self2)
-  apply (metis Pair_inject le_fun_bot_inv le_single_both_inv list.simps(3))  
-  apply simp
-  apply (rule disjI2) apply (rule disjI2)
-  apply clarify
-    apply (subgoal_tac "\<exists> C'. C \<squnion> C = Some C' \<and> C' \<sqsubseteq> C") apply (erule exE)
-   apply (rule_tac x="C'" in exI) apply (rule conjI) apply blast
-   apply (rule conjI) apply blast
-   apply (rule_tac x=D in exI) apply force
-    using join_self apply blast
-  done
-*)
-(*    
-fun select :: "'a list \<Rightarrow> nat list \<Rightarrow> 'a list" where
-  "select xs [] = []" |
-  "select xs (i#I) = (xs!i)#(select xs I)"
-*)
 fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
   jl_none: "\<Squnion> [] = None" |
   jl_one: "\<Squnion> [v] = Some v" |
@@ -289,182 +291,6 @@ fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
      (case \<Squnion> vs of
         None \<Rightarrow> None
      | Some v' \<Rightarrow> v \<squnion> v')" 
-(*
-lemma select_append_map[simp]: "select (f1 @ f2) (map (\<lambda>i. i+length f1) I) = select f2 I"
-  apply (induction I) apply fastforce by (simp add: nth_append)
-
-lemma select_cons_map[simp]: "select (a#f2) (map Suc I) = select f2 I"
-  using select_append_map[of "[a]" f2] by fastforce 
-
-lemma nth_sub: "i < length f \<Longrightarrow> VFun [f!i] \<sqsubseteq> VFun f"
-  apply (cases "f!i") apply simp using le_fun_elt nth_mem by fastforce
-
-theorem join_select_sub:
-  assumes a: "\<Squnion> (map fst (select f I)) = Some A" and
-      b: "\<Squnion> (map snd (select f I)) = Some B"
-      and li: "0 < length I" and in_f: "\<forall> i \<in> set I. i < length f"
-    shows "VFun [(A,B)] \<sqsubseteq> VFun f"
-  using a b li in_f
-proof (induction I arbitrary: A B)
-  case Nil
-  then have "False" by auto then show ?case ..
-next
-  case (Cons i I')
-  show ?case
-  proof (cases I')
-    case Nil
-    then show ?thesis using Cons apply simp apply (case_tac "f!i") apply clarify
-      using nth_sub[of i f] apply auto done
-  next
-    fix i' I'' assume ip: "I' = i' # I''"
-    have lip: "0 < length I'" using ip by simp
-    have in_f: "\<forall>i\<in>set I'. i < length f" using Cons ip by auto
-    obtain A' where ap: "\<Squnion> (map fst (select f I')) = Some A'" 
-      using Cons ip by (case_tac "\<Squnion> (map fst (select f I'))") auto 
-    obtain B' where bp: "\<Squnion> (map snd (select f I')) = Some B'" 
-      using Cons ip by (case_tac "\<Squnion> (map snd (select f I'))") auto 
-    obtain fi1 fi2 where fi: "f!i = (fi1,fi2)" by (cases "f!i") blast
-    obtain C D where fi: "f!i = (C,D)" by (cases "f!i") auto
-    have a: "C \<squnion> A' = Some A" using Cons.prems(1) ap ip fi by auto
-    have b: "D \<squnion> B' = Some B" using Cons.prems(2) bp ip fi by auto
-    have "VFun [f!i] \<sqsubseteq> VFun f" using Cons nth_sub by auto
-    then have cd_f: "VFun [(C,D)] \<sqsubseteq> VFun f" using fi by simp
-    have ap_bp_f: "VFun [(A', B')] \<sqsubseteq> VFun f" using Cons.IH ap bp lip in_f by auto
-    have 1: "VFun [(C,D),(A',B')] \<sqsubseteq> VFun f" using cd_f ap_bp_f le_fun_append_left 
-      by (metis append_Cons append_Nil val_join.simps(2) val_le.intros(6))
-    have 2: "VFun [(A,B)] \<sqsubseteq> VFun [(C,D),(A',B')]" using arrow_join a b by simp   
-    show "VFun [(A, B)] \<sqsubseteq> VFun f" 
-      using 2 1 le_trans[of "VFun [(A,B)]" "VFun [(C,D),(A',B')]"] by simp 
-  qed
-qed
-
-lemma mem_nth: "x \<in> set ls \<Longrightarrow> \<exists> i. ls!i = x \<and> i < length ls"
-  apply (induction ls)
-  apply force
-  apply simp apply (erule disjE) apply simp
-  apply (rule_tac x=0 in exI) apply force
-  apply simp apply (erule exE) apply (rule_tac x="Suc i" in exI) apply force
-  done
-
-lemma select_mem: "\<lbrakk> x \<in> set (select f I); \<forall>i\<in>set I. i < length f \<rbrakk> \<Longrightarrow> x \<in> set f"
-  apply (induction I)
-   apply force
-  apply simp apply (erule disjE) apply force apply force
-  done
-
-theorem beta_sound_aux:
-  "\<lbrakk> v1 \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2 \<rbrakk> \<Longrightarrow>
-    \<forall> C D. (C,D) \<in> set f1 \<longrightarrow> (\<exists> I A B.
-       0 < length I \<and> (\<forall>i\<in>set I. i < length f2) \<and> \<Squnion> (map fst (select f2 I)) = Some A
-      \<and> \<Squnion> (map snd (select f2 I)) = Some B \<and> C\<mapsto>D \<sqsubseteq> A\<mapsto>B)"  
-proof (induction arbitrary: f1 f2 rule: val_le.induct)
-  case (le_refl v)
-  then show ?case 
-    apply simp apply clarify
-    apply (subgoal_tac "\<exists>i. f1!i = (C,D) \<and> i < length f1")
-      prefer 2 apply (rule mem_nth) apply assumption
-    apply (erule exE) apply (rule_tac x="[i]" in exI) apply (rule conjI) apply blast
-    apply simp apply auto done      
-next
-  case (le_trans v1 v2 v3 f1 f3)
-  obtain f2 where v2: "v2 = VFun f2" using le_trans by (meson le_fun_any_inv)
-  show ?case apply clarify
-  proof -
-    fix C D assume cd_f1: "(C,D) \<in> set f1"
-    obtain I A B where li: "0 < length I" and li_f2: "\<forall>i\<in>set I. i < length f2" and
-      a: "\<Squnion> (map fst (select f2 I)) = Some A" and
-      b: "\<Squnion> (map snd (select f2 I)) = Some B" and
-      cd_ab: "C \<mapsto> D \<sqsubseteq> A \<mapsto> B" using le_trans.IH(1)[of f1 f2] le_trans.prems v2 cd_f1 by blast
-    
-    have 1: "\<forall>C D. (C, D) \<in> set f2 \<longrightarrow>
-          (\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
-              \<Squnion> (map fst (select f3 I)) = Some A \<and>
-              \<Squnion> (map snd (select f3 I)) = Some B \<and>
-              C \<mapsto> D \<sqsubseteq> A \<mapsto> B)" using le_trans.IH(2)[of f2 f3] le_trans.prems v2 by blast
-    
-    have "\<forall> x \<in> set (select f2 I). x \<in> set f2" by (meson li_f2 select_mem)
-    then have "\<forall> (X,Y) \<in> set (select f2 I). (X,Y) \<in> set f2" by auto
-    then have "\<forall>C D. (C, D) \<in> set (select f2 I) \<longrightarrow>
-          (\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
-              \<Squnion> (map fst (select f3 I)) = Some A \<and>
-              \<Squnion> (map snd (select f3 I)) = Some B \<and>
-              C \<mapsto> D \<sqsubseteq> A \<mapsto> B)" using 1 apply blast done
-        
-    show "\<exists>I A B. 0 < length I \<and> (\<forall>i\<in>set I. i < length f3) \<and>
-          \<Squnion> (map fst (select f3 I)) = Some A \<and>
-          \<Squnion> (map snd (select f3 I)) = Some B \<and>
-          C \<mapsto> D \<sqsubseteq> A \<mapsto> B" sorry
-  qed
-next
-  case (le_bot f)
-  then show ?case sorry
-next
-  case (le_join_left v1 v2 v12)
-  then show ?case sorry
-next
-  case (le_join_right v1 v2 v12)
-  then show ?case sorry
-next
-  case (le_left_join v1 v3 v2 v12)
-  then show ?case sorry
-next
-  case (le_arrow v2 v1 v1' v2')
-  then show ?case sorry
-next
-  case (le_distr v1 v2 v12 v)
-  then show ?case sorry
-qed
-*)
-(*    
-theorem beta_sound: fixes C::val and D::val and f::func 
-  assumes cd_f: "C\<mapsto>D \<sqsubseteq> VFun f"
-  shows "\<exists> I A B. 0 < length I \<and> join_list (map fst (select f I)) = Some A \<and> A \<sqsubseteq> C
-                           \<and> join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B"
-  using cd_f 
-proof (induction f)
-  case Nil
-  then show ?case by auto
-next
-  case (Cons a f)
-  have "[(C, D)] \<sqsubseteq> a # f " using Cons(2) by (meson le_fun_fun_inv)
-  then show ?case
-  proof (rule le_single_cons_right_inv)
-    assume "[(C, D)] \<sqsubseteq> [a]"
-    then show ?thesis
-      apply (case_tac a)
-      apply (rule_tac x="[0]" in exI)
-      apply simp 
-      apply (metis (no_types, lifting) fst_conv le_fun_bot_inv le_single_cons_right_inv not_Cons_self2 sndI)
-      done
-  next
-    assume "[(C, D)] \<sqsubseteq> f"
-    then show ?thesis using Cons
-      apply (subgoal_tac "\<exists>I A B. 0 < length I \<and>
-           join_list (map fst (select f I)) = Some A \<and> A \<sqsubseteq> C \<and>
-           join_list (map snd (select f I)) = Some B \<and> D \<sqsubseteq> B") prefer 2 apply force
-      apply (erule exE)+ apply (erule conjE)+
-      apply (rule_tac x="map Suc I" in exI) apply (rule_tac x=A in exI)
-      apply (rule_tac x=B in exI) apply (rule conjI) apply fastforce apply (rule conjI)
-       apply (subgoal_tac "select (a # f) (map Suc I) = select f I") prefer 2 apply fastforce
-       apply fastforce apply force
-      done
-  next
-    fix v2::val and v1 and v1'::val and v2'
-    assume "(C, D) = (v1, v1')" and "v2 \<sqsubseteq> v1" and "v1' \<sqsubseteq> v2'" and "a = (v2, v2')"
-      and "f = []"
-    then show ?thesis using Cons apply (rule_tac x="[0]" in exI) 
-      apply clarify apply (rule_tac x=v2 in exI) apply (rule_tac x=v2' in exI)
-      apply simp done
-  next
-    fix v1::val and v2 v12 v assume cd: "(C, D) = (v, v12)" and v12: "v1 \<squnion> v2 = Some v12" and
-      a: "a = (v, v1)" and f: "f = [(v, v2)]"
-    then show ?thesis using Cons.prems
-      apply (rule_tac x="[0,1]" in exI) apply auto
-      apply (subgoal_tac "\<exists> v'. v \<squnion> v = Some v' \<and> v' \<sqsubseteq> v") prefer 2 using join_self apply blast
-      apply (erule exE) apply blast done
-  qed    
-qed
-*)
 
 abbreviation equivalent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 60) where
   "v \<approx> v' \<equiv> v \<sqsubseteq> v' \<and> v' \<sqsubseteq> v"
