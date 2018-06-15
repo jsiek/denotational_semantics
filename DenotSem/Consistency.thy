@@ -12,18 +12,54 @@ inductive is_val :: "val \<Rightarrow> bool" where
   vfun_is_val[intro!]: "\<lbrakk> \<forall> v v'. (v,v') \<in> set f \<longrightarrow> is_val v \<and> is_val v';
                           is_fun f \<rbrakk>
                         \<Longrightarrow> is_val (VFun f)"
+inductive_cases
+  v_fun_inv[elim!]: "is_val (VFun f)"
 
 abbreviation has_vals :: "func \<Rightarrow> bool" where
   "has_vals f \<equiv> \<forall> v v'. (v,v') \<in> set f \<longrightarrow> is_val v \<and> is_val v'"
 
-inductive_cases
-  v_fun_inv[elim!]: "is_val (VFun f)"
+abbreviation consis_list :: "val list \<Rightarrow> bool" where
+  "consis_list L \<equiv> \<forall> v1 v2. v1 \<in> set L \<longrightarrow> v2 \<in> set L \<longrightarrow> v1 ~ v2"
 
-(*lemma consis_join_val:
-  assumes v1_v2: "v1 ~ v2" and v_v1: "is_val v1" and v_v2: "is_val v2"
-  shows "\<exists> v12. (v1 \<squnion> v2) = Some v12 \<and> is_val v12"
-  using v1_v2 v_v1 v_v2 by auto
-*)
+lemma consis_upper_bound: fixes v1::val and v2::val and v3::val
+  assumes v12: "v1 ~ v2" and v13: "v1 ~ v3" and v23: "v2 \<squnion> v3 = Some v23"
+  shows "v1 ~ v23"
+  using v12 v13 v23
+  apply (case_tac v1) apply (case_tac v2) apply (case_tac v3) apply simp apply clarify
+     apply (case_tac "x1a = x1b") apply force apply force apply force apply force
+  apply (case_tac v2) apply force apply (case_tac v3) apply force apply simp
+  apply (erule exE)+ apply (case_tac "x2a = x2b") apply simp
+   apply (case_tac "x2 = x2b") apply force apply force
+  apply simp apply (case_tac "x2= x2b") apply force apply force
+  done
+
+lemma consis_join_list: assumes cl: "consis_list L" and vl: "\<forall> v'. v' \<in> set L \<longrightarrow> v ~ v'" 
+   and ls: "\<Squnion>L = Some Ls"
+  shows "v ~ Ls"  
+  using cl vl ls apply (induction L arbitrary: Ls)
+   apply force
+  apply simp apply (case_tac "L") apply force
+  apply simp apply (case_tac "\<Squnion> (aa # list)") apply force apply simp
+  apply (rule consis_upper_bound) prefer 3 apply assumption
+  apply auto
+  done   
+ 
+lemma upper_bound_consis_list:
+  assumes cl: "consis_list L" and ll: "0 < length L" shows "\<exists> Ls. \<Squnion>L = Some Ls"
+  using cl ll apply (induction L)
+   apply force
+  apply simp
+  apply (case_tac L)
+  apply force
+  apply simp
+  apply (erule exE)
+  apply simp
+  apply (rule consis_join_list) prefer 3 apply assumption
+   apply auto
+  done
+  
+lemma le_consis: "v1 \<sqsubseteq> v2 \<Longrightarrow> v1 ~ v2"
+  using le_join by blast
 
 lemma vsize_join: "v1 \<squnion> v2 = Some v3 \<Longrightarrow> vsize v3 \<le> vsize v1 + vsize v2"
   apply (case_tac v1)
@@ -32,55 +68,6 @@ lemma vsize_join: "v1 \<squnion> v2 = Some v3 \<Longrightarrow> vsize v3 \<le> v
   apply (case_tac v2) apply auto
   apply (case_tac "x2 = x2a") apply auto
   done
-    
-(*
-lemma is_val_or_not_aux: "\<forall> v. n = vsize v \<longrightarrow> is_val v \<or> not_val v"
-  apply (induction n rule: nat_less_induct)
-  apply (rule allI) apply (rule impI)
-  apply (case_tac v)
-   apply fastforce
-  apply simp apply clarify
-  apply (rule vfun_is_val)
-   apply (rule allI)+ apply (rule impI)
-   apply (subgoal_tac "is_val va \<or> not_val va") prefer 2 
-    apply (metis add_lessD1 less_SucI size_fun_mem)
-   apply (subgoal_tac "is_val v' \<or> not_val v'") prefer 2 
-    apply (subgoal_tac "vsize v' < Suc (fsize x2)") prefer 2 
-     apply (meson dual_order.strict_trans not_add_less2 not_less_eq size_fun_mem)      
-    apply blast
-  using vfun_not_val1 vfun_not_val2 apply auto[1]
-  apply (rule allI)+ apply (rule impI)+ apply (erule conjE)+
-  apply (case_tac "v1 ~ v2") apply (rule disjI1)
-   apply simp
-   apply (rule classical)
-   apply (subgoal_tac "not_val (VFun x2)") apply blast
-   apply (erule exE) apply (erule conjE)+        
-   apply (rule vfun_not_val3)
-       prefer 3 apply assumption
-      apply assumption apply assumption apply assumption
-   apply clarify
-   apply (subgoal_tac "vsize v3' < Suc (fsize x2)")
-    apply (subgoal_tac "is_val v3' \<or> not_val v3'")
-     apply (erule disjE) apply blast apply blast
-    apply blast
-   apply (simp add: size_fun_mem_join)
-  apply (rule disjI2)
-  apply (rule allI)
-  apply clarify
-  apply (subgoal_tac "vsize v3 < Suc (fsize x2)")
-   apply (subgoal_tac "is_val v3 \<or> not_val v3")
-    apply (erule disjE) apply blast apply blast
-   apply blast
-  apply (rule size_fun_mem_join_fst) prefer 3 apply assumption
-   apply auto
-  done
-
-lemma is_val_or_not: "is_val v \<or> not_val v" 
-  using is_val_or_not_aux by blast
-
-lemma not_val_is_val[simp]: "not_val v = (\<not> is_val v)"
-  using is_val_and_not_val is_val_or_not by blast    
-*)
         
 lemma consis_refl[intro!]: "is_val v \<Longrightarrow> v ~ v"
   by (cases v) auto
