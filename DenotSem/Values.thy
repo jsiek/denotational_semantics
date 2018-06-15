@@ -348,6 +348,8 @@ lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
                                         (vsize v2b + vsize v2'a)))))))")
      prefer 2 apply force
     apply blast
+  apply clarify 
+    
     
     
   sorry
