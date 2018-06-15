@@ -23,7 +23,8 @@ proof (induction arbitrary: f1 f2 A1 B1 rule: val_le.induct)
   have b1_ls: "B1 \<sqsubseteq> Ls" using b1_L using join_list_sub ls by blast  
   show ?case using ls b1_ls by blast
 next
-  case (le_trans v1 v2 v3)
+  case (le_trans v1 v2 v3 f1 f3 A1 B1)
+    (* need is_val v2! *)
   then show ?case sorry
 next
   case (le_bot f)
