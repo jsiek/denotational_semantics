@@ -23,7 +23,16 @@ lemma fsize_append[simp]: "fsize (f1@f2) = fsize f1 + fsize f2"
    apply force
   apply simp apply (case_tac a) apply simp 
   done
+    
+lemma fsize_append_right: "f3 \<noteq> [] \<Longrightarrow> fsize f2 < fsize (f2 @ f3)"
+  apply (induction f2)
+  apply simp apply (case_tac f3) apply force apply force
+  apply force
+  done
 
+lemma fsize_append_left: "f2 \<noteq> [] \<Longrightarrow> fsize f3 < fsize (f2 @ f3)"
+  apply (induction f2) apply simp apply (case_tac f2) apply force apply force done
+    
 lemma size_fun_mem: "(v,v') \<in> set f \<Longrightarrow> vsize v + vsize v' < fsize f"
   by (induction f) auto  
   
@@ -63,7 +72,9 @@ lemma size_fun_mem_join_fst: "\<lbrakk> (v1,v1') \<in> set f; (v2,v2') \<in> set
     apply clarify apply simp using size_fun_mem apply force
   apply (case_tac v1) apply (case_tac v2) apply simp apply force
   apply (case_tac v2) apply force
-  apply simp using size_fun_mem2 apply force
+  apply (subgoal_tac "vsize v1 + vsize v1' + vsize v2 + vsize v2' < fsize f")
+    prefer 2 using size_fun_mem2 apply force
+  apply simp apply clarify apply simp
   done
     
 lemma size_fun_mem_join: "\<lbrakk> (v1,v1') \<in> set f; (v2,v2') \<in> set f; v1' \<squnion> v2' = Some v3' \<rbrakk>
@@ -74,7 +85,9 @@ lemma size_fun_mem_join: "\<lbrakk> (v1,v1') \<in> set f; (v2,v2') \<in> set f; 
     apply clarify apply simp using size_fun_mem apply force
   apply (case_tac v1') apply (case_tac v2') apply simp apply force
   apply (case_tac v2') apply force
-  apply simp using size_fun_mem2 apply force
+  apply (subgoal_tac "vsize v1 + vsize v1' + vsize v2 + vsize v2' < fsize f")
+    prefer 2 using size_fun_mem2 apply force
+  apply simp apply clarify apply simp
   done
   
 fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option" (infix "\<squnion>" 56) where
@@ -94,9 +107,10 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
 (*  le_trans[trans]: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3" |*)
   le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
-  le_fun_append_left: "VFun [a] \<sqsubseteq> VFun f2 \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (f2@f3)" |
-  le_fun_append_right: "VFun [a] \<sqsubseteq> VFun f3 \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (f2@f3)" |
-  le_fun_left_cons: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f2; VFun f1 \<sqsubseteq> VFun f3; f1 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun (a#f1) \<sqsubseteq> VFun f2" |
+  le_fun_append_left: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f2; f3 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (f2@f3)" |
+  le_fun_append_right: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f3; f2 \<noteq> []\<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (f2@f3)" |
+  le_fun_left_cons: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f2; VFun f1 \<sqsubseteq> VFun f3; f1 \<noteq> [] \<rbrakk>
+                     \<Longrightarrow> VFun (a#f1) \<sqsubseteq> VFun f2" |
   le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
   le_distr: "(v1::val) \<squnion> v2 = Some v12 \<Longrightarrow> v\<mapsto>v12 \<sqsubseteq> VFun [(v,v1), (v,v2)]"
 
@@ -128,24 +142,26 @@ proposition le_refl_aux: "n = vsize v \<Longrightarrow> v \<sqsubseteq> v"
    apply force
   apply clarify    
   apply (case_tac list) apply simp apply (rule le_arrow)
-  using less_SucI less_add_Suc1 apply blast
-  using less_SucI less_add_Suc2 apply blast  
+    apply (subgoal_tac "vsize a < Suc (Suc (vsize a + vsize b))") 
+     apply blast apply force
+    apply (subgoal_tac "vsize b < Suc (Suc (vsize a + vsize b))") 
+     apply blast apply force   
   apply (rule le_fun_left_cons)
     apply (subgoal_tac "a \<mapsto> b \<sqsubseteq> VFun ([(a,b)]@list)") prefer 2
   apply (rule le_fun_append_left) 
   apply (metis add.commute fsize.simps(2) le_arrow linorder_neqE_nat list.set_intros(1) not_add_less2 size_fun_mem trans_less_add2 vsize.simps(2))
    apply force
+    apply force
    apply (subgoal_tac "vsize (VFun list) < vsize (VFun ((a,b)#list))")
-    prefer 2 apply force    
-   apply blast
-    apply blast
+     prefer 2 apply force    
+   apply (subgoal_tac "VFun list \<sqsubseteq> VFun list") prefer 2 apply blast 
+   apply simp
+   apply simp
   done
     
 proposition le_refl[intro!]: "v \<sqsubseteq> v"
   using le_refl_aux by blast
 
-
-    
 lemma le_bot_inv_aux: fixes v1::val and f1::func
   assumes v12: "v1 \<sqsubseteq> v2" and v2b: "v2 = \<bottom>"
   shows "v1 = \<bottom>"
@@ -172,19 +188,22 @@ lemma le_fun_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VFun f \<rbrakk> \<
 proposition le_fun_any_inv: "\<lbrakk> VFun f \<sqsubseteq> v; \<And>f'. v = VFun f' \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_fun_any_inv_aux by blast
 
-    
 lemma le_fun_elt: assumes v1f: "(v,v') \<in> set f" shows "v\<mapsto>v' \<sqsubseteq> VFun f"
   using v1f apply (induction f) 
    apply force
   apply simp apply (erule disjE)
    apply simp
+   apply (case_tac f)
+    apply simp apply blast
    apply (subgoal_tac "VFun [a] \<sqsubseteq> VFun ([a]@f)")
    prefer 2 apply (rule le_fun_append_left) apply blast
    apply simp
+   apply simp 
    apply (subgoal_tac "v \<mapsto> v' \<sqsubseteq> VFun ([a]@f)")
    prefer 2 apply (rule le_fun_append_right)
-    apply blast
-  apply simp
+    apply simp
+   apply simp
+    apply simp
   done
 
 lemma le_fun_subset: fixes f1::func shows "\<lbrakk> set f1 \<subseteq> set f2 \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f2"
@@ -254,9 +273,28 @@ proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v
   apply force
   by (simp add: le_fun_left_append)
  
-lemma "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3"
-  oops    
-  
+lemma le_left_append_1: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3"
+  apply (induction f1 arbitrary: f2 f3)
+  apply blast
+  apply (case_tac f1)
+    apply (erule le_fun_fun_inv)
+    apply force
+    apply (simp add: val_le.le_fun_append_left)
+    apply (simp add: val_le.le_fun_append_right)
+    apply force
+    apply force
+    apply simp apply (rule le_distr) apply blast
+  apply (rule le_fun_left_cons)
+    apply (erule le_fun_fun_inv)
+    apply force 
+    apply (simp add: val_le.le_fun_append_left)
+    apply (simp add: val_le.le_fun_append_right)
+    apply force+
+  done    
+
+lemma le_left_append_2: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun f2 \<sqsubseteq> VFun f3"
+  sorry
+    
 lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
     v1_v2: "v1 \<sqsubseteq> v2" and v2_v3: "v2 \<sqsubseteq> v3"
   shows "v1 \<sqsubseteq> v3"
@@ -268,10 +306,52 @@ lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
   apply clarify
   apply (erule le_fun_fun_inv) 
   apply blast
-      apply clarify
+  apply clarify
+    apply (subgoal_tac "VFun f2 \<sqsubseteq> VFun x2c") prefer 2 apply (rule le_left_append_1) apply force    
+    apply (subgoal_tac "vsize (a\<mapsto>b) + vsize (VFun f2) + vsize (VFun x2c) < vsize (a \<mapsto> b) + vsize (VFun (f2 @ f3)) + vsize (VFun x2c)")
+    prefer 2 using fsize_append_right apply simp 
+    apply blast
+  apply clarify
+    apply (subgoal_tac "VFun f3 \<sqsubseteq> VFun x2c") prefer 2 apply (rule le_left_append_2) apply force
+    apply (subgoal_tac "vsize (a\<mapsto>b) + vsize (VFun f3) + vsize (VFun x2c) < vsize (a \<mapsto> b) + vsize (VFun (f2 @ f3)) + vsize (VFun x2c)")
+    prefer 2 using fsize_append_left apply simp 
+    apply blast
+  apply clarify 
+    apply (rule le_fun_left_cons)
+    apply (subgoal_tac "vsize (a\<mapsto>b) + vsize (VFun x2b) + vsize (VFun x2c) < vsize (VFun ((a, b) # f1)) + vsize (VFun x2b) + vsize (VFun x2c)")
+    prefer 2 apply simp apply (case_tac f1) apply force apply force
+    apply blast apply blast apply blast
+  apply clarify 
+    apply (erule le_fun_fun_inv)
+    apply force
+    apply simp apply clarify 
+      apply (subgoal_tac "v1a \<mapsto> v1' \<sqsubseteq> VFun f2") prefer 2
+      apply (subgoal_tac "vsize (v1a\<mapsto>v1') + vsize (a\<mapsto>b) + vsize (VFun f2) < Suc (Suc (Suc (Suc (vsize v1a + vsize v1' + fsize [(a, b)] +
+                              (fsize f2 + fsize f3)))))")
+      prefer 2 apply simp apply (case_tac f3) apply force apply force
+        apply blast
+      apply (simp add: val_le.le_fun_append_left)
+    apply simp apply clarify
+      apply (subgoal_tac "v1a \<mapsto> v1' \<sqsubseteq> VFun f3") prefer 2
+      apply (subgoal_tac "vsize (v1a\<mapsto>v1') + vsize (a\<mapsto>b) + vsize (VFun f3) < Suc (Suc (Suc (Suc (vsize v1a + vsize v1' + fsize [(a, b)] +
+                              (fsize f2 + fsize f3)))))")
+      prefer 2 apply simp apply (case_tac f2) apply force apply force
+        apply blast
+      apply (simp add: val_le.le_fun_append_right)
+    apply force
+    apply simp apply clarify apply (rule le_arrow) 
+    apply (subgoal_tac "vsize v2b + vsize v1b + vsize v1a < Suc (Suc (Suc (Suc (Suc (Suc (vsize v1a + vsize v1' + (vsize v1b + vsize v1'a) +
+                                        (vsize v2b + vsize v2'a)))))))")
+      prefer 2 apply force
+    apply blast
+    apply (subgoal_tac "vsize v1' + vsize v1'a + vsize v2'a < Suc (Suc (Suc (Suc (Suc (Suc (vsize v1a + vsize v1' + (vsize v1b + vsize v1'a) +
+                                        (vsize v2b + vsize v2'a)))))))")
+     prefer 2 apply force
+    apply blast
     
     
   sorry
+
     
 lemma le_trans: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq>  v3" 
   using le_trans_aux by blast
