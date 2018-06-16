@@ -300,8 +300,8 @@ lemma append_len_geq: "f @ f' = list @ list' \<Longrightarrow> \<not> length f <
     apply auto
   done
     
-lemma le_left_append_1_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VFun (f1@f2) \<sqsubseteq> VFun f3 \<rbrakk>
-  \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3"
+lemma le_left_append_elim_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VFun (f1@f2) \<sqsubseteq> VFun f3 \<rbrakk>
+  \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3"
   apply (induction n arbitrary: f1 f2 f3 rule: nat_less_induct)
   apply (case_tac f1)
    apply force
@@ -320,31 +320,38 @@ lemma le_left_append_1_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VFun 
      apply (erule exE) apply clarify 
      apply (subgoal_tac "fsize ((a,b)#f) + fsize f' + fsize f3 < Suc (vsize a + vsize b + fsize f + fsize f2 + fsize f3)")    
       prefer 2 apply force
-     apply (metis Cons_eq_appendI) 
+     apply (rule conjI)
+     apply (metis Cons_eq_appendI)
+     apply (subgoal_tac "f2 = f' @ (aa, ba) # lista") prefer 2 apply force
+     apply clarify apply (metis append_Cons append_self_conv le_fun_left_append less_not_refl2) 
     apply (subgoal_tac "\<exists> l'. f = list @ l'") 
      apply clarify 
   apply (case_tac l')
       apply simp apply clarify
      apply (subgoal_tac "((ab, bb) # listb) @ f2 = (aa, ba) # lista") prefer 2 apply force
      apply simp apply clarify 
+    apply (subgoal_tac "fsize ((aa, ba) # listb) + fsize f2 + fsize f3 < Suc (Suc (vsize a + vsize b + (fsize list + (vsize aa + vsize ba + fsize listb)) + fsize f2 +
+                    fsize f3))") prefer 2 apply force
+     apply (erule_tac x="fsize ((aa, ba) # listb) + fsize f2 + fsize f3" in allE) 
+     apply (erule impE) apply force apply (erule_tac x="(aa, ba) # listb" in allE)
+    apply (erule_tac x="f2" in allE) apply (erule_tac x="f3" in allE)
      apply (subgoal_tac "VFun ((aa, ba) # listb) \<sqsubseteq> VFun f3")
      apply (subgoal_tac "VFun (((a, b) # list) @ ((aa, ba) # listb)) \<sqsubseteq> VFun f3") apply force
-      apply (rule le_fun_left_append) apply blast apply blast
-  apply blast
-      apply blast
-    apply (subgoal_tac "fsize ((aa,ba)#listb) + fsize f2 + fsize f3 < Suc (Suc (vsize a + vsize b + (fsize list + (vsize aa + vsize ba + fsize listb)) +
-                    fsize f2 +
-                    fsize f3))") prefer 2 apply force
-     apply (erule_tac x="fsize ((aa,ba)#listb) + fsize f2 + fsize f3" in allE)
-     apply force
+       apply (rule le_fun_left_append) apply blast apply blast apply blast
+       apply blast
+      apply force
     apply (rule append_len_geq)
      apply force
     apply force
+    apply force
    apply (simp add: le_arrow) 
-  by (simp add: le_distr)
-
-lemma le_left_append_1: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3"
-  using le_left_append_1_aux by blast
+   apply (simp add: le_distr)
+  apply force
+    done
+    
+lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
+   \<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using le_left_append_elim_aux by blast
     
 (*
 lemma le_append_commute: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun (f2@f1) \<sqsubseteq> VFun f3"
@@ -370,23 +377,6 @@ lemma le_left_cons: "VFun ((a,b)#f1) \<sqsubseteq> VFun f2 \<Longrightarrow> VFu
     sorry
 *)
     
-lemma le_left_append_2: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun f2 \<sqsubseteq> VFun f3"
-(*  apply (induction f1 arbitrary: f2 f3)
-   apply force
-  apply simp
-  apply (case_tac f1)
-    apply simp
-    apply (erule le_fun_fun_inv)
-    apply force
-    apply force
-    apply force
-    apply simp apply clarify
-    
-  apply (rule le_fun_left_cons)
-*)
-  sorry
-
-    
 lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
     v1_v2: "v1 \<sqsubseteq> v2" and v2_v3: "v2 \<sqsubseteq> v3"
   shows "v1 \<sqsubseteq> v3"
@@ -398,8 +388,24 @@ lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
   apply clarify
   apply (erule le_fun_fun_inv) 
   apply blast
-  apply clarify
-    apply (subgoal_tac "VFun f2 \<sqsubseteq> VFun x2c") prefer 2 apply (rule le_left_append_1) apply force    
+  apply simp apply clarify
+    apply (subgoal_tac "vsize (VFun x2a) + vsize (VFun f2) + vsize (VFun x2c) < Suc (Suc (Suc (fsize x2a + (fsize f2 + fsize f3) + fsize x2c)))")
+    prefer 2 apply simp apply (case_tac f3) apply force apply force
+      apply blast apply clarify
+     apply (subgoal_tac "vsize (VFun x2a) + vsize (VFun f3) + vsize (VFun x2c) < vsize (VFun x2a) + vsize (VFun (f2 @ f3)) + vsize (VFun x2c)")
+      prefer 2 apply simp apply (case_tac f2) apply force apply force
+     apply blast
+    apply simp apply clarify
+    apply (rule le_fun_left_append)
+    apply(subgoal_tac "vsize (VFun f1) + vsize (VFun x2b) + vsize (VFun x2c)< Suc (Suc (Suc (fsize f1 + fsize f2 + fsize x2b + fsize x2c)))")
+        prefer 2 apply simp apply (case_tac f2) apply force apply force
+       apply blast
+    apply(subgoal_tac "vsize (VFun f2) + vsize (VFun x2b) + vsize (VFun x2c)< Suc (Suc (Suc (fsize f1 + fsize f2 + fsize x2b + fsize x2c)))")
+        prefer 2 apply simp apply (case_tac f1) apply force apply force
+      apply blast
+     apply blast apply blast
+    
+    
     apply (subgoal_tac "vsize (a\<mapsto>b) + vsize (VFun f2) + vsize (VFun x2c) < vsize (a \<mapsto> b) + vsize (VFun (f2 @ f3)) + vsize (VFun x2c)")
     prefer 2 using fsize_append_right apply simp 
     apply blast
@@ -431,7 +437,7 @@ lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
         apply blast
       apply (simp add: val_le.le_fun_append_right)
     apply force
-    apply simp apply clarify apply (rule le_arrow) 
+  apply simp apply clarify apply (rule le_arrow) 
     apply (subgoal_tac "vsize v2b + vsize v1b + vsize v1a < Suc (Suc (Suc (Suc (Suc (Suc (vsize v1a + vsize v1' + (vsize v1b + vsize v1'a) +
                                         (vsize v2b + vsize v2'a)))))))")
       prefer 2 apply force
