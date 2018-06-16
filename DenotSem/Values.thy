@@ -100,19 +100,19 @@ fun env_join :: "val list \<Rightarrow> val list \<Rightarrow> (val list) option
              None \<Rightarrow> None
            | Some \<rho>'' \<Rightarrow> Some (v''#\<rho>'')))" 
 
-  (* Adapted from BCD and EHR subtyping (Lambda Calculus with Types 2013) *) 
+  (* Adapted from BCD and EHR subtyping (Lambda Calculus with Types 2013),
+     removed refl and trans, changed other rules to compensate and
+     enable the proof of refl and trans. *) 
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) 
     where
-(*  le_refl[intro!]: "v \<sqsubseteq> v" | *)
   le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
-(*  le_trans[trans]: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3" |*)
   le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
   le_fun_append_left: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f2; f3 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (f2@f3)" |
   le_fun_append_right: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f3; f2 \<noteq> []\<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (f2@f3)" |
   le_fun_left_cons: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f2; VFun f1 \<sqsubseteq> VFun f3; f1 \<noteq> [] \<rbrakk>
                      \<Longrightarrow> VFun (a#f1) \<sqsubseteq> VFun f2" |
   le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
-  le_distr: "(v1::val) \<squnion> v2 = Some v12 \<Longrightarrow> v\<mapsto>v12 \<sqsubseteq> VFun [(v,v1), (v,v2)]"
+  le_distr: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2s; v2' \<squnion> v2'' = Some v2s \<rbrakk> \<Longrightarrow> v1\<mapsto>v1' \<sqsubseteq> VFun [(v2,v2'), (v2,v2'')]"
 
 inductive_cases 
   le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
@@ -283,7 +283,8 @@ lemma le_left_append_1: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VF
     apply (simp add: val_le.le_fun_append_right)
     apply force
     apply force
-    apply simp apply (rule le_distr) apply blast
+   apply simp apply (rule le_distr) apply blast
+    apply blast apply blast
   apply (rule le_fun_left_cons)
     apply (erule le_fun_fun_inv)
     apply force 
@@ -293,6 +294,9 @@ lemma le_left_append_1: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VF
   done    
 
 lemma le_left_append_2: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun f2 \<sqsubseteq> VFun f3"
+  apply (induction f1 arbitrary: f2 f3)
+  apply force
+  
   sorry
     
 lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
@@ -348,13 +352,33 @@ lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
                                         (vsize v2b + vsize v2'a)))))))")
      prefer 2 apply force
     apply blast
-  apply clarify 
-    
-    
-    
-  sorry
+   apply clarify
+   apply (subgoal_tac "v2b \<sqsubseteq> v1a")
+    apply (subgoal_tac "v1' \<sqsubseteq> v2s")
+    apply (rule le_distr)
+    apply blast        
+      prefer 2 apply blast
+     apply blast
+   apply (subgoal_tac "vsize v1' + vsize v1'a + vsize v2s < vsize (v1a \<mapsto> v1') + vsize (v1b \<mapsto> v1'a) + vsize (VFun [(v2b, v2'a), (v2b, v2'')])")      
+     prefer 2 apply simp apply (case_tac v2s) apply force apply simp
+     apply (case_tac v2'a) apply (case_tac v2'') apply simp apply (case_tac "x1=x1a") apply force
+       apply force apply simp apply simp apply (case_tac v2'') apply simp apply simp
+    apply (case_tac "x2a=x2b") apply simp apply simp apply force
+    apply blast
+   apply (subgoal_tac "vsize v2b + vsize v1b + vsize v1a < vsize (v1a \<mapsto> v1') + vsize (v1b \<mapsto> v1'a) + vsize (VFun [(v2b, v2'a), (v2b, v2'')])") 
+    prefer 2 apply force apply blast
+  apply clarify
+  apply (subgoal_tac "VFun ([(v2a, v2')]@[(v2a, v2'')]) \<sqsubseteq> VFun x2c")
+     prefer 2 apply force
+  apply (subgoal_tac "VFun [(v2a, v2')] \<sqsubseteq> VFun x2c")
+   prefer 2 using le_left_append_1 apply blast
+  apply (subgoal_tac "VFun [(v2a, v2'')] \<sqsubseteq> VFun x2c")
+   prefer 2  using le_left_append_2 apply blast
+  apply (subgoal_tac "v1a \<mapsto> v1' \<sqsubseteq> v2a \<mapsto> v2s")
+  apply (metis (no_types, lifting) Cons_eq_append_conv Values.le_refl append_Cons le_fun_left_cons le_left_append_2 list.simps(3))
+  apply blast
+  done
 
-    
 lemma le_trans: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq>  v3" 
   using le_trans_aux by blast
     
