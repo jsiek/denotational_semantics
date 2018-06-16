@@ -360,9 +360,22 @@ lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
    \<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_left_append_elim_aux by blast
     
-lemma le_append_join: "\<lbrakk> VFun f1 \<sqsubseteq> VFun (f2@f3); VFun f2 \<sqsubseteq> VFun f4; VFun f3 \<sqsubseteq> VFun f4\<rbrakk>
+(* need transitivity! IH? *)
+lemma le_append_join: "\<lbrakk> VFun f1 \<sqsubseteq> VFun (f2@f3); VFun f2 \<sqsubseteq> VFun f4; VFun f3 \<sqsubseteq> VFun f4;
+    \<forall>n. n < 1 + fsize f1 + fsize f2 + fsize f3 + fsize f4 \<longrightarrow>
+       (\<forall> f f' f''. n = fsize f + fsize f' + fsize f'' \<longrightarrow> 
+           VFun f \<sqsubseteq> VFun f' \<longrightarrow> VFun f' \<sqsubseteq> VFun f'' \<longrightarrow> VFun f \<sqsubseteq> VFun f'') \<rbrakk>
     \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f4"
-    sorry
+  apply (induction f2 arbitrary: f1 f3 f4)
+  -- "case f2=[]"
+  apply simp apply (erule_tac x="fsize f1 + fsize f3 + fsize f4" in allE)
+    apply (erule impE) apply simp apply blast
+  -- "case f2=a#f2" 
+  apply simp apply clarify
+  apply (subgoal_tac "VFun ([(a,b)]@f2) \<sqsubseteq> VFun f4") prefer 2 apply force
+  apply clarify
+  
+  sorry
     
 (*
 lemma le_append_commute: "VFun (f1@f2) \<sqsubseteq> VFun f3 \<Longrightarrow> VFun (f2@f1) \<sqsubseteq> VFun f3"
