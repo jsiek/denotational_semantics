@@ -374,10 +374,11 @@ lemma le_left_append_elim_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VF
     apply (erule impE) apply simp
  
   done
-    
-lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
+*)    
+lemma le_left_append_elim: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
    \<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  using le_left_append_elim_aux by blast
+  sorry
+(*  using le_left_append_elim_aux by blast
 *)    
 (*    
 lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
@@ -530,7 +531,10 @@ lemma le_arrow_inv[elim!]: "\<lbrakk> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto
   done
 
 inductive_cases le_fun_arrow_inv: "VFun f1 \<sqsubseteq> v2 \<mapsto> v2'"
-    
+
+lemma non_empty_pos_fsize[intro!]: "f \<noteq> [] \<Longrightarrow> 0 < fsize f"
+    by (case_tac f) auto
+  
 lemma le_trans_aux2: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
     v1_v2: "v1 \<sqsubseteq> v2" and v2_v3: "v2 \<sqsubseteq> v3"
   shows "v1 \<sqsubseteq> v3"
@@ -548,7 +552,7 @@ lemma le_trans_aux2: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
   apply clarify apply (rename_tac f3a f3b)
     apply (subgoal_tac "VFun f1 \<sqsubseteq> VFun f3a") prefer 2 
     apply (subgoal_tac "vsize (VFun f1) + vsize (VFun f2) + vsize (VFun f3a) < vsize (VFun f1) + vsize (VFun f2) + vsize (VFun (f3a @ f3b))")
-    prefer 2 apply simp apply (case_tac f3b) apply force apply force
+    prefer 2 apply force
     apply blast apply (rule le_fun_append_left) apply blast apply blast
   -- "case 6"     
   prefer 4
@@ -576,9 +580,8 @@ lemma le_trans_aux2: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
     apply (erule_tac x="vsize (VFun f1a) + vsize (v1a\<mapsto>v1') + vsize (v2a \<mapsto> v2')" in allE)
       apply (erule impE) apply simp apply (case_tac f2a) apply force apply force apply blast
     apply (erule_tac x="vsize (VFun f2a) + vsize (v1a\<mapsto>v1') + vsize (v2a \<mapsto> v2')" in allE)
-      apply (erule impE) apply simp apply (case_tac f2a) apply force
-       apply (case_tac f1a) apply force apply force apply blast
-      apply blast apply blast
+      apply (erule impE) apply force
+      apply blast apply blast apply blast
    apply clarify apply (rule le_arrow)
     apply (erule_tac x="vsize v2a + vsize v1a + vsize v1b" in allE)
     apply (erule impE) apply force apply blast
@@ -588,26 +591,34 @@ lemma le_trans_aux2: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
   apply clarify 
   apply (rename_tac f2a f2b)
   apply (erule le_fun_fun_inv)
-  apply clarify apply (case_tac "length f2c < length f2a")
-    apply (subgoal_tac "\<exists> f2a'. f2a = f2c @ f2a' \<and> f2a' \<noteq> []")
-    prefer 2 apply (metis add_lessD1 append_Nil2 append_len_geq less_imp_add_positive nat_neq_iff) 
-       apply (erule exE) apply (erule conjE) apply simp
-       apply (subgoal_tac "VFun f1 \<sqsubseteq> VFun (f2c@f2a')") prefer 2 apply (rule le_fun_append_left)
-         apply blast apply blast
-    apply (erule_tac x="vsize (VFun f1) + vsize (VFun (f2c@f2a')) + vsize (VFun f3)" in allE)
-       apply (erule impE) apply simp apply (case_tac f2b) apply force apply simp 
-        apply (case_tac a) apply simp apply blast
-      apply (subgoal_tac "\<exists> f2c'. f2c = f2a @ f2c'") prefer 2 apply (rule append_len_geq) 
-        apply (subgoal_tac "f2c @ f3a = f2a @ f2b") apply blast apply simp apply blast 
-      apply (erule exE) apply clarify
-      apply (case_tac f2c') apply clarify apply simp
-       apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2a) + vsize (VFun f3)" in allE)
-       apply (erule impE) apply simp apply (case_tac f3a) apply force apply force
-       apply blast 
-      apply (subgoal_tac "VFun (f2a@f2c') \<sqsubseteq> VFun f3") prefer 2 apply (rule le_fun_left_append)
-          apply blast apply (subgoal_tac "f2b = f2c' @ f3a") prefer 2 apply force
-         apply simp 
-         
+    -- "case 4.1"
+    apply blast 
+    -- "case 4.2"
+    apply (case_tac "length f2c < length f2a")
+      -- "case 4.2.a"
+      apply (subgoal_tac "\<exists> f2a'. f2a = f2c@f2a'") prefer 2 
+      apply (metis add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
+      apply (erule exE) apply simp apply (erule le_left_append_elim)
+      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2c) + vsize (VFun f3)" in allE)
+      apply (erule impE) apply simp apply blast
+      apply blast
+      -- "case 4.2.b" 
+      apply (subgoal_tac "\<exists>f2a'. f2c = f2a@f2a'") prefer 2 apply (rule append_len_geq)
+      apply (subgoal_tac "f2c@f3a = f2a@f2b") prefer 2 apply force
+      apply blast apply blast apply (erule exE) apply simp apply clarify
+      apply (erule le_left_append_elim) 
+      apply (case_tac f2a') apply simp 
+      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2a) + vsize (VFun f3)" in allE)
+      apply (erule impE) apply force apply blast
+      apply (subgoal_tac "VFun (f2a@f2a') \<sqsubseteq> VFun f3") prefer 2 apply (rule le_fun_left_append)
+          apply blast apply blast apply blast apply blast
+      apply (erule_tac x="vsize (VFun f1) + vsize (VFun (f2a@f2a')) + vsize (VFun f3)" in allE)
+      apply (erule impE) apply force
+      apply blast
+    -- "case 4.3"
+    
+    
+    
   oops
     
 end
