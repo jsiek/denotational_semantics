@@ -322,29 +322,57 @@ lemma append_len_geq: "f @ f' = list @ list' \<Longrightarrow> \<not> length f <
     apply auto
   done
 
-(*    
 lemma le_left_append_elim_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VFun (f1@f2) \<sqsubseteq> VFun f3 \<rbrakk>
   \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3"
   apply (induction n arbitrary: f1 f2 f3 rule: nat_less_induct)
   apply (case_tac f1)
    apply force
-  apply clarify apply (rename_tac v v' f)
+  apply clarify apply (rename_tac v v' f1')
   apply (erule le_fun_fun_inv)
+    -- "case 1"
     apply force  
-    apply clarify apply (metis add_less_cancel_left fsize_append_right le_fun_append_left) 
-    apply clarify apply (metis add_less_cancel_left fsize_append_left le_fun_append_right) 
-    apply simp
+    -- "case 2"
+    apply (metis add_less_cancel_left fsize_append_right le_fun_append_left) 
+    -- "case 3"
+    apply (metis add_less_cancel_left fsize_append_left le_fun_append_right) 
+    -- "case 4"
+    apply (subgoal_tac "\<exists>f1a'. f1a = (v,v')#f1a'") prefer 2 apply (metis append_eq_Cons_conv)
+    apply (erule exE) apply simp
+    apply (case_tac "length f1' < length f1a'")    
+      -- "case 4b"
+      apply (subgoal_tac "\<exists> f1b. f1a' = f1' @ f1b") prefer 2 
+      apply (metis append_len_geq less_SucI not_less_eq) apply (erule exE) apply clarify
+      apply (subgoal_tac "f2 = f1b@f2a") prefer 2 apply force apply simp
+      apply (case_tac f2a) apply force
+      apply (subgoal_tac "VFun ((v,v')#f1') \<sqsubseteq> VFun f3 \<and> VFun f1b \<sqsubseteq> VFun f3") prefer 2
+      apply (erule_tac x="fsize ((v,v')#f1') + fsize f1b + fsize f3" in allE)
+      apply (erule impE) apply force apply (erule_tac x="(v,v')#f1'" in allE)
+      apply (erule_tac x="f1b" in allE) apply (erule_tac x="f3" in allE) 
+      apply (erule impE) apply force apply (erule impE) apply force
+      apply blast
+      apply (rule conjI) apply force apply (erule conjE)
+      apply (rule le_fun_left_append) apply blast apply blast apply blast apply blast
+      -- "case 4b"
+
+(*
+    apply (subgoal_tac "VFun ([(v,v')]@f1a') \<sqsubseteq> VFun f3") prefer 2 apply force
+    apply (subgoal_tac "v\<mapsto>v' \<sqsubseteq> VFun f3 \<and> VFun f1a' \<sqsubseteq> VFun f3") prefer 2 
+     apply (erule_tac x="vsize (v\<mapsto>v') + vsize (VFun f1a') + vsize (VFun f3)" in allE)
+     apply (erule impE) apply simp
+*)
+(*    apply simp
     apply (case_tac f1a) apply force apply simp   
     apply (case_tac f2a) apply force apply simp    
     apply clarify
-    apply (case_tac "length f < length list")
-    apply (subgoal_tac "\<exists> f'. list = f @ f'") prefer 2 
+    apply (case_tac "length f1' < length list")
+    apply (subgoal_tac "\<exists> f'. list = f1' @ f'") prefer 2 
       apply (metis (no_types, lifting) Suc_eq_plus1 add_lessD1 append_eq_append_conv2 length_append less_add_one not_less_eq)
      apply (erule exE) apply clarify 
-     apply (subgoal_tac "fsize ((a,b)#f) + fsize f' + fsize f3 < Suc (vsize a + vsize b + fsize f + fsize f2 + fsize f3)")    
+     apply (subgoal_tac "fsize ((a,b)#f1') + fsize f' + fsize f3 < Suc (vsize a + vsize b + fsize f1' + fsize f2 + fsize f3)")    
       prefer 2 apply force
      apply (rule conjI)
-     apply (metis Cons_eq_appendI)
+*)
+(*     apply (metis Cons_eq_appendI)
      apply (subgoal_tac "f2 = f' @ (aa, ba) # lista") prefer 2 apply force
      apply clarify apply (metis append_Cons append_self_conv le_fun_left_append less_not_refl2) 
     apply (subgoal_tac "\<exists> l'. f = list @ l'") 
