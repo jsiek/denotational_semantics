@@ -616,9 +616,18 @@ lemma le_trans_aux2: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
       apply (erule impE) apply force
       apply blast
     -- "case 4.3"
+    apply (case_tac "length f2c < length f2a")
+      -- "case 4.3.a"
+      apply (subgoal_tac "\<exists> f2a'. f2a = f2c@f2a'") prefer 2 
+      apply (metis add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
+      apply (erule exE) apply simp apply (erule le_left_append_elim)
+      apply (subgoal_tac "f3a = f2a' @ f2b") prefer 2 apply blast
+      apply simp 
     
-    
-    
+(*
+      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2a') + vsize (VFun f3)" in allE)      
+      apply (erule impE) apply force
+*)
   oops
     
 end
