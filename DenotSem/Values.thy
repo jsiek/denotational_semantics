@@ -132,15 +132,16 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
                      \<Longrightarrow> VFun (f1@f2) \<sqsubseteq> VFun f3" |
   le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
   le_distr_L: "\<lbrakk> va \<squnion> vb = Some vab; vc \<mapsto> va \<sqsubseteq> vd; vc \<mapsto> vb \<sqsubseteq> vd;
-                 vab \<noteq> va; vab \<noteq> vb \<rbrakk> \<Longrightarrow> vc \<mapsto> vab \<sqsubseteq> vd" |
+                 vab \<noteq> va; vab \<noteq> vb \<rbrakk> \<Longrightarrow> vc \<mapsto> vab \<sqsubseteq> vd" 
+(*
+  le_distr_R1: "\<lbrakk> va \<squnion> vb = Some vab \<rbrakk> \<Longrightarrow> vc \<mapsto> vab \<sqsubseteq> vc \<mapsto> va"
+
+  le_distr_R1: "va \<squnion> vb = Some vab \<Longrightarrow> vc \<mapsto> va \<sqsubseteq> vc \<mapsto> vab" |
+  le_distr_R2: "va \<squnion> vb = Some vab \<Longrightarrow> vc \<mapsto> vb \<sqsubseteq> vc \<mapsto> vab"
+*)
+(*
   le_distr_R: "\<lbrakk> v1 \<sqsubseteq> v2 \<mapsto> v3a; v1 \<sqsubseteq> v2 \<mapsto> v3b; v3a \<squnion> v3b = Some v3ab;
                  v3ab \<noteq> v3a; v3ab \<noteq> v3b \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v2 \<mapsto> v3ab" 
-(*
-  I can prove trans for the following, but it's not equivalent to the trad rule
-  le_distr1: "\<lbrakk> v1 \<sqsubseteq> v2a \<mapsto> v2b; v1 \<sqsubseteq> v2a \<mapsto> v2c \<rbrakk> \<Longrightarrow> 
-      v1 \<sqsubseteq> VFun [(v2a,v2b), (v2a,v2c)]"
-  le_distr2: "\<lbrakk> v1 \<sqsubseteq> v2a \<mapsto> v2; v2b \<squnion> v2c = Some v2 \<rbrakk> \<Longrightarrow> 
-      v1 \<sqsubseteq> VFun [(v2a,v2b), (v2a,v2c)]"
 *)
 inductive_cases 
   le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
@@ -148,20 +149,6 @@ inductive_cases
   le_fun_nat_inv[elim!]: "VFun f \<sqsubseteq> VNat n" and
   le_fun_fun_inv: "VFun f1 \<sqsubseteq> VFun f2" and
   le_arrow_arrow_inv: "v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'"
-(* and
-  
-  le_nat_any_inv[elim!]: "VNat n \<sqsubseteq> v1" and
-  le_any_fun_inv[elim!]: "v \<sqsubseteq> VFun f" and
-  le_fun_any_inv[elim!]: "VFun f \<sqsubseteq> v" and
-  le_cons_left_inv: " (a # f2) \<sqsubseteq>  f3" and
-  le_single_left_inv: "[a] \<sqsubseteq> f" and
-  le_single_cons_right_inv: "[a] \<sqsubseteq> (b#f)" and
-  le_cons_left_single_inv: "a#f \<sqsubseteq> [b]" and
-  le_single_both_inv: "[a] \<sqsubseteq> [b]" and
-  le_cons_right_inv: "f1 \<sqsubseteq> (a#f2)" and
-  le_cons_cons_inv: "a#f1 \<sqsubseteq> (b#f2)" and
-  le_bot_right_inv: "v \<sqsubseteq> \<bottom>"
-*)
   
 lemma le_fun_cons_left: "\<lbrakk> VFun [a] \<sqsubseteq> VFun [b]; f3 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (b#f3)" 
   using le_fun_append_left by (metis append.left_neutral append_Cons)
@@ -325,6 +312,14 @@ proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v
   apply blast
   done
 
+proposition le_distr_trad1: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some v12" 
+  shows "v \<mapsto> v12 \<sqsubseteq> VFun [(v,v1),(v,v2)]"
+  by (smt insert_iff le_distr_L le_fun_elt list.set(2) v12)
+
+proposition le_distr_trad2: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some v12" 
+  shows "VFun [(v,v1),(v,v2)] \<sqsubseteq> v \<mapsto> v12"
+  using Values.le_refl le_arrow le_fun_left_cons le_join_left le_join_right v12 by force
+
 lemma append_len_geq: "f @ f' = list @ list' \<Longrightarrow> \<not> length f < length list \<Longrightarrow> \<exists>l'. f = list @ l'"
   apply (induction f arbitrary: f' list list')
   apply force
@@ -389,34 +384,12 @@ lemma le_left_append_elim_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VF
     -- "case 5"
     apply force
     -- "case 6"
-(*  for le_distr1 apply clarify
-  apply (subgoal_tac "VFun ((v,v')#f1') \<sqsubseteq> VFun [(v2a,v2b)] \<and> VFun f2 \<sqsubseteq> VFun [(v2a,v2b)]") prefer 2
-  apply (erule_tac x="fsize ((v,v')#f1') + fsize f2 + fsize [(v2a,v2b)]" in allE)
-   apply (erule impE) apply force apply blast apply (erule conjE)
-  apply (subgoal_tac "VFun ((v,v')#f1') \<sqsubseteq> VFun [(v2a,v2c)] \<and> VFun f2 \<sqsubseteq> VFun [(v2a,v2c)]") prefer 2
-  apply (erule_tac x="fsize ((v,v')#f1') + fsize f2 + fsize [(v2a,v2c)]" in allE)
-   apply (erule impE) apply force apply blast apply (erule conjE)  
-  apply (rule conjI) prefer 2
-  apply (rule le_distr) apply blast apply blast
-  apply (rule le_distr) apply blast apply blast
-*)
-(* for le_distr2
-  apply clarify
-  apply (subgoal_tac "VFun ((v,v')#f1') \<sqsubseteq> VFun [(v2a,v2)] \<and> VFun f2 \<sqsubseteq> VFun [(v2a,v2)]") prefer 2
-   apply (erule_tac x="fsize ((v,v')#f1') + fsize f2 + fsize [(v2a,v2)]" in allE)
-   apply (erule impE) apply (subgoal_tac "vsize v2 \<le> vsize v2b + vsize v2c") prefer 2
-   apply (rule vsize_join) apply blast apply simp
-   apply (subgoal_tac "0 < vsize v2a") prefer 2 apply (rule vsize_pos) apply arith
-   apply blast apply (erule conjE)
-   apply (rule conjI) apply (rule le_distr) apply assumption apply assumption
-    apply (rule le_distr) apply assumption apply assumption
-*)
   -- "case le_distr_L"
   apply (case_tac f2)
      apply simp apply (rule conjI) apply (rule le_distr_L) apply assumption
        apply blast apply blast apply blast
      apply force apply force apply force
-  -- "case le_distr_R"
+(*  -- "case le_distr_R"
   apply clarify    
   apply (subgoal_tac "v3a = v3ab \<or> v3b = v3ab \<or> (vsize v3a < vsize v3ab \<and> vsize v3b < vsize v3ab)")
     prefer 2 apply (rule join_eq_vsize) apply assumption
@@ -438,6 +411,7 @@ lemma le_left_append_elim_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VF
   apply blast apply blast
 
   apply blast apply blast
+*)
   done
 
 lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
@@ -480,6 +454,7 @@ next
   next
     show "v1b \<sqsubseteq> v2b" using le_distr_L by (metis Pair_inject le_left_join list.inject val.inject(2)) 
     qed
+(*
 next
   case (le_distr_R v1 v2' v3a v3b v3ab)
   have c: "v3a \<squnion> v3b = Some v2b" using le_distr_R by simp
@@ -491,6 +466,7 @@ next
      apply (metis le_fun_append_left le_nat_any_inv_aux self_append_conv vsize.elims)
     using le_distr_R by blast
   then show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" using x by blast
+*)
 qed
 
 lemma le_arrow_inv[elim!]: "\<lbrakk> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'; \<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
@@ -638,6 +614,7 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
         show "VFun f1 \<sqsubseteq> VFun f3" using vca_f3 vcb_f3 vab f1 apply simp
           apply (rule le_distr_L) apply assumption apply assumption apply assumption
           using vab_va vab_vb by auto
+(*
       next
         fix v2c and v2a::val and v2b v2ab
         assume f2_: "f2 = [(v2c, v2ab)]" and f1_v2ca: "VFun f1 \<sqsubseteq> v2c \<mapsto> v2a" and 
@@ -645,6 +622,7 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
           v2ab_v2a: "v2ab \<noteq> v2a" and v2ab_v2b: "v2ab \<noteq> v2b"
         have "False" using f2 f2_ f2a_ne f2b_ne by (cases f2a) auto
         then show "VFun f1 \<sqsubseteq> VFun f3" ..
+*)
       qed
     next (* Case 5 le_arrow *)
       fix v3a v2a v2b v3b assume f2: "f2=[(v2a,v2b)]" and f3: "f3=[(v3a,v3b)]" and
@@ -692,6 +670,7 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
           apply (subgoal_tac "vab \<sqsubseteq> v2b") prefer 2 apply (meson le_left_join)
           using 1(1) 1(2) apply (erule_tac x="vsize vab + vsize v2b + vsize v3b" in allE)
            apply (erule impE) apply force apply blast done          
+(*
       next
         fix v2c v2d assume f1_v2ac: "VFun f1 \<sqsubseteq> v2a \<mapsto> v2c" and "VFun f1 \<sqsubseteq> v2a \<mapsto> v2d" and
           v2b: "v2c \<squnion> v2d = Some v2b" and v2bc: "v2b \<noteq> v2c" and v2bd: "v2b \<noteq> v2d" 
@@ -703,208 +682,74 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
           using 1(1) 1(2) v1 v2 v3 f2 size_v2b
           apply (erule_tac x="vsize (VFun f1) + vsize (v2a\<mapsto> v2c) + vsize (VFun f3)" in allE)
           apply (erule impE) apply force apply blast done
+*)
       qed
+        
     next (* Case 6 le_distr_L *)
       fix v2a::val and v2b v2ab vc and va::val and vb::val 
-      assume "f2 = [(vc, v2ab)]" and "v2a \<squnion> v2b = Some v2ab" and
-       "vc \<mapsto> v2a \<sqsubseteq> VFun f3" and "vc \<mapsto> v2b \<sqsubseteq> VFun f3" and "v2ab \<noteq> va" and "v2ab \<noteq> v2b"
-      show "v1 \<sqsubseteq> v3" sorry
+      assume f2: "f2 = [(vc, v2ab)]" and v2ab: "v2a \<squnion> v2b = Some v2ab" and
+        vca_f3: "vc \<mapsto> v2a \<sqsubseteq> VFun f3" and vcb_f3: "vc \<mapsto> v2b \<sqsubseteq> VFun f3" and
+        v2ab_va: "v2ab \<noteq> va" and v2ab_v2b: "v2ab \<noteq> v2b"
 
+      show "v1 \<sqsubseteq> v3" using v1 v2 v3 f2 1(4) apply simp apply (erule le_fun_arrow_inv)
+      proof -
+        assume f1: "f1 = []"
+        then show "VFun f1 \<sqsubseteq> VFun f3" by blast
+      next
+        fix f2a f3a
+        assume vc_f23: "[(vc, v2ab)] = f2a @ f3a" and 
+          f1_f2a: "VFun f1 \<sqsubseteq> VFun f2a" and f3a_ne: "f3a \<noteq> []"
+        have "f2a = []" using vc_f23 f3a_ne by (cases f2a) auto
+        then have "f1 = []" using f1_f2a by blast  
+        then show "VFun f1 \<sqsubseteq> VFun f3" by blast
+      next
+        fix f2' f2a' assume vc_f23: "[(vc, v2ab)] = f2a' @ f2'" and
+          f1_f2p: "VFun f1 \<sqsubseteq> VFun f2'" and f2a_ne: "f2a' \<noteq> []"
+        have "f2' = []" using vc_f23 f2a_ne by (cases f2a') auto
+        then have "f1 = []" using f1_f2p by blast
+        then show "VFun f1 \<sqsubseteq> VFun f3" by blast
+      next
+        fix f1a f2a assume f1: "f1 = f1a @ f2a" and f1a_vcab: "VFun f1a \<sqsubseteq> vc \<mapsto> v2ab" and
+          f2a_vcab: "VFun f2a \<sqsubseteq> vc \<mapsto> v2ab" and f1a_ne: "f1a \<noteq> []" and f2a_ne: "f2a \<noteq> []"
+        have vcab_f3: "vc \<mapsto> v2ab \<sqsubseteq> VFun f3" using v2ab vca_f3 vcb_f3 v2ab_va v2ab_v2b v2 v3 f2 1(3) by blast
+        have f1a_f3: "VFun f1a \<sqsubseteq> VFun f3" using f1a_vcab vcab_f3 1(1) 1(2)
+          apply (erule_tac x="vsize (VFun f1a) + vsize (vc \<mapsto> v2ab) + vsize (VFun f3)" in allE)
+          apply (erule impE) apply (simp add: f1 f2 f2a_ne non_empty_pos_fsize v1 v2 v3) by blast
+        have f2a_f3: "VFun f2a \<sqsubseteq> VFun f3" using f2a_vcab vcab_f3 1(1) 1(2)
+          apply (erule_tac x="vsize (VFun f2a) + vsize (vc \<mapsto> v2ab) + vsize (VFun f3)" in allE)
+          apply (erule impE) using f1 f1a_ne f2 v1 v2 v3 apply auto[1] by blast
+        show "VFun f1 \<sqsubseteq> VFun f3" using f1 f1a_f3 f2a_f3 f1a_ne f2a_ne
+          apply simp apply (rule le_fun_left_append) apply auto done            
+      next
+        fix va vb assume f1: "f1 = [(va, vb)]" and vc_va: "vc \<sqsubseteq> va" and vb_v2ab: "vb \<sqsubseteq> v2ab"          
+        show "VFun f1 \<sqsubseteq> VFun f3" sorry
+      next
+        show "VFun f1 \<sqsubseteq> VFun f3" sorry
+(*
+      next
+        show "VFun f1 \<sqsubseteq> VFun f3" sorry            
+*)
+      qed
+(*        
     next (* Case 7 le_distr_R *)
-      fix v2 v3aa v3b v3ab
-      show ?thesis sorry
+      fix v3c and v3a::val and v3b v3ab
+      assume f3: "f3 = [(v3c, v3ab)]" and 
+        f2_3a: "VFun f2 \<sqsubseteq> v3c \<mapsto> v3a" and f2_3b: "VFun f2 \<sqsubseteq> v3c \<mapsto> v3b" and
+        v3ab: "v3a \<squnion> v3b = Some v3ab" and v3ab_v3a: "v3ab \<noteq> v3a" and v3ab_v3b: "v3ab \<noteq> v3b"
+      have size_v3ab: "vsize v3a < vsize v3ab \<and> vsize v3b < vsize v3ab"
+        using join_eq_vsize[of v3a v3b v3ab] v3ab v3ab_v3a v3ab_v3b by auto
+      have f1_3ca: "VFun f1 \<sqsubseteq> v3c \<mapsto> v3a" using 1(1) 1(2) 1(4) v1 v2 v3 f2_3a f3
+        apply (erule_tac x="vsize v1 + vsize v2 + vsize (v3c \<mapsto> v3a)" in allE)
+        apply (erule impE) using size_v3ab apply force apply blast done
+      have f1_3cb: "VFun f1 \<sqsubseteq> v3c \<mapsto> v3b"
+        using 1(1) 1(2) 1(4) v1 v2 v3 f2_3b f3
+        apply (erule_tac x="vsize v1 + vsize v2 + vsize (v3c \<mapsto> v3b)" in allE)
+        apply (erule impE) using size_v3ab apply force apply blast done
+      show ?thesis using v1 v3 f3 f1_3ca f1_3cb v3ab v3ab_v3a v3ab_v3b
+          le_distr_R[of "VFun f1" v3c v3a v3b v3ab] by simp
+*)
     qed
   qed
-qed
-  
-lemma le_trans_aux2: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
-    v1_v2: "v1 \<sqsubseteq> v2" and v2_v3: "v2 \<sqsubseteq> v3"
-  shows "v1 \<sqsubseteq> v3"
-  using n v2_v3 v1_v2
-  apply (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
-  apply (case_tac v1) apply (case_tac v2) apply force apply force apply (case_tac v2) apply force
-  apply (case_tac v3) apply force 
-  apply (rename_tac n v1 v2 v3 f1 f2 f3)
-  apply (case_tac v2) apply (case_tac v1) apply (case_tac v3) apply force apply force
-    apply force apply (case_tac v1) apply force apply (case_tac v2) apply force
-    apply (case_tac v3) apply force
-  apply clarify
-  apply (rename_tac n v1 v2 v3 f1 f2 f3)
-  apply (erule le_fun_fun_inv) 
-  -- "case 1" 
-  apply blast
-  -- "case 2"
-  apply clarify apply (rename_tac f3a f3b)
-    apply (subgoal_tac "VFun f1 \<sqsubseteq> VFun f3a") prefer 2 
-    apply (subgoal_tac "vsize (VFun f1) + vsize (VFun f2) + vsize (VFun f3a) < vsize (VFun f1) + vsize (VFun f2) + vsize (VFun (f3a @ f3b))")
-    prefer 2 apply force
-    apply blast apply (rule le_fun_append_left) apply blast apply blast
-(* -- "case 6" 
- for distr1
-  apply clarify
-  apply (subgoal_tac "VFun f1 \<sqsubseteq> v2a \<mapsto> v2b")
-  apply (subgoal_tac "VFun f1 \<sqsubseteq> v2a \<mapsto> v2c")
-  apply (rule le_distr) apply blast apply blast 
-  apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2) + vsize (v2a \<mapsto> v2c)" in allE)
-  apply (erule impE) apply force apply blast
-  apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2) + vsize (v2a \<mapsto> v2b)" in allE)
-  apply (erule impE) apply force apply blast
-*)
-(* for distr2
- apply clarify 
-  apply (subgoal_tac "VFun f1 \<sqsubseteq> v2a \<mapsto> v2b") prefer 2
-    apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2) + vsize (v2a \<mapsto> v2b)" in allE)
-    apply (erule impE) apply simp apply (subgoal_tac "vsize v2b \<le> vsize v2ba + vsize v2c") prefer 2
-    apply (rule vsize_join) apply assumption 
-    apply (subgoal_tac "0 < vsize v2a") prefer 2 apply (rule vsize_pos) apply arith apply blast
-    apply (rule le_distr) apply assumption apply assumption 
-*)
-(*  apply clarify
-  apply (erule le_arrow_fun_inv)
-    -- "case 6.1"     
-    apply clarify
-*)    
-(*  apply (erule le_fun_arrow_inv)
-    -- "case 6.1"     
-    apply force
-    -- "case 6.2"
-    apply (case_tac f2a) prefer 2 apply force apply simp
-    apply (subgoal_tac "\<bottom> \<sqsubseteq> VFun (f3)") prefer 2 apply blast
-    apply (erule_tac x="vsize (VFun f1) + vsize (VFun []) + vsize (VFun f3)" in allE)
-    apply (erule impE) apply force apply blast
-    -- "case 6.3"
-    apply (case_tac f2a) apply force apply simp apply (erule conjE)+ apply clarify
-    apply simp
-    apply (subgoal_tac "vc \<mapsto> vab \<sqsubseteq> VFun f3") prefer 2 apply (rule le_distr) apply assumption
-      apply assumption apply assumption 
-    apply (rule le_fun_left_append) 
-    apply (erule_tac x="vsize (VFun f1a) + vsize (vc \<mapsto> vab) + vsize (VFun f3)" in allE)
-    apply (erule impE) apply force apply blast
-    apply (erule_tac x="vsize (VFun f2a) + vsize (vc \<mapsto> vab) + vsize (VFun f3)" in allE)
-      apply (erule impE) apply force apply blast
-    apply blast
-    -- "case 6.4" 
-    apply force
-    -- "case 6.5"    
-    apply clarify 
-*)    
-  -- "case 3"
-  apply clarify apply (rule le_fun_append_right) 
-  apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2) + vsize (VFun f3a)" in allE)
-  apply (erule impE) apply simp apply (case_tac f2a) apply force apply force apply force
-  apply force
-  -- "case 5"
-  prefer 2
-  apply clarify 
-    apply (erule le_fun_arrow_inv)
-    apply force
-    apply (case_tac f2a) apply force apply force
-    apply (case_tac f3a) apply force apply (case_tac f2a) apply force apply force
-    apply clarify apply (rule le_fun_left_append) 
-    apply (erule_tac x="vsize (VFun f1a) + vsize (v1b\<mapsto>v1') + vsize (v2b \<mapsto> v2')" in allE)
-      apply (erule impE) apply simp apply (case_tac f2a) apply force apply force apply blast
-    apply (erule_tac x="vsize (VFun f2a) + vsize (v1b\<mapsto>v1') + vsize (v2b \<mapsto> v2')" in allE)
-      apply (erule impE) apply force
-      apply blast apply blast apply blast
-   apply clarify apply (rule le_arrow)
-    apply (erule_tac x="vsize v2b + vsize v1b + vsize v1c" in allE)
-    apply (erule impE) apply force apply blast
-    apply (erule_tac x="vsize v1'a + vsize v1' + vsize v2'" in allE)
-    apply (erule impE) apply force apply blast  
-  -- "case 4"
-  apply clarify 
-  apply (rename_tac f2a f2b)
-  apply (erule le_fun_fun_inv)
-    -- "case 4.1"
-    apply blast 
-    -- "case 4.2"
-    apply (case_tac "length f2c < length f2a")
-      -- "case 4.2.a"
-      apply (subgoal_tac "\<exists> f2a'. f2a = f2c@f2a'") prefer 2 
-      apply (metis add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
-      apply (erule exE) apply simp apply (erule le_left_append_elim)
-      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2c) + vsize (VFun f3)" in allE)
-      apply (erule impE) apply simp apply blast
-      apply blast
-      -- "case 4.2.b" 
-      apply (subgoal_tac "\<exists>f2a'. f2c = f2a@f2a'") prefer 2 apply (rule append_len_geq)
-      apply (subgoal_tac "f2c@f3a = f2a@f2b") prefer 2 apply force
-      apply blast apply blast apply (erule exE) apply simp apply clarify
-      apply (erule le_left_append_elim) 
-      apply (case_tac f2a') apply simp 
-      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f2a) + vsize (VFun f3)" in allE)
-      apply (erule impE) apply force apply blast
-      apply (subgoal_tac "VFun (f2a@f2a') \<sqsubseteq> VFun f3") prefer 2 apply (rule le_fun_left_append)
-          apply blast apply blast apply blast apply blast
-      apply (erule_tac x="vsize (VFun f1) + vsize (VFun (f2a@f2a')) + vsize (VFun f3)" in allE)
-      apply (erule impE) apply force
-      apply blast
-    -- "case 4.3"
-    apply (case_tac "length f2c < length f2a")
-      -- "case 4.3.a"
-      apply (subgoal_tac "\<exists> f2c'. f2a = f2c@f2c'") prefer 2 
-      apply (metis add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
-      apply (erule exE) apply simp apply (erule le_left_append_elim)
-      apply (subgoal_tac "f3a = f2c' @ f2b") prefer 2 apply force apply simp
-      apply (subgoal_tac "VFun (f2c'@f2b) \<sqsubseteq> VFun f3") prefer 2 apply (rule le_fun_left_append)
-      apply blast apply assumption apply blast apply blast 
-      apply (erule_tac x="vsize (VFun f1) + vsize (VFun (f2c'@f2b)) + vsize (VFun f3)" in allE)      
-      apply (erule impE) apply force apply blast
-      -- "case 4.3.b"
-      apply (subgoal_tac "\<exists>f2a'. f2c = f2a@f2a'") prefer 2 apply (rule append_len_geq)
-      apply (subgoal_tac "f2c@f3a = f2a@f2b") prefer 2 apply force
-      apply blast apply blast apply (erule exE) apply simp apply clarify apply simp
-      apply (erule le_left_append_elim)
-      apply (case_tac f2a') apply simp
-      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f3a) + vsize (VFun f3)" in allE)      
-      apply (erule impE) apply force apply blast
-      apply clarify apply (case_tac f2a) apply force
-      apply (erule_tac x="vsize (VFun f1) + vsize (VFun f3a) + vsize (VFun f3)" in allE)      
-      apply force
-    -- "case 4.4" 
-    apply clarify apply (subgoal_tac "VFun (f2a@f2b) \<sqsubseteq> VFun f3") prefer 2
-    apply (rule le_fun_left_append) apply assumption apply assumption apply blast apply blast
-    apply (subgoal_tac "VFun f1a \<sqsubseteq> VFun f3") prefer 2 
-    apply (erule_tac x="vsize (VFun f1a) + vsize (VFun (f2a@f2b)) + vsize (VFun f3)" in allE)      
-      apply (erule impE) apply force apply blast
-    apply (subgoal_tac "VFun f2c \<sqsubseteq> VFun f3") prefer 2 
-    apply (erule_tac x="vsize (VFun f2c) + vsize (VFun (f2a@f2b)) + vsize (VFun f3)" in allE)      
-      apply (erule impE) apply force apply blast
-    apply (rule le_fun_left_append) apply assumption apply assumption apply blast apply blast
-    -- "case 4.5"
-    apply (case_tac f2a) apply blast apply (case_tac f2b) apply blast apply force
-    -- "case 4.6"
-    apply (case_tac f2a) apply blast apply (case_tac f2b) apply blast apply clarify
-    apply simp apply (erule conjE)+ apply (case_tac list) apply simp apply clarify
-    prefer 2 apply force
-  (* for le_distr1 rule:
-    apply (erule_tac x="vsize (VFun f1) + vsize (v2a \<mapsto> v2b) + vsize (VFun f3)" in allE)   
-    apply (erule impE) apply force apply blast
-*)
-proof -
-  fix f1 f3 v2 v2j and v2b::val and v2c a b list aa ba lista
-  assume IH: "\<forall>m<Suc (Suc (Suc (fsize f1 + (vsize v2 + vsize v2b + (vsize v2 + vsize v2c)) + fsize f3))).
-          \<forall>x xa xb.
-             m = vsize x + vsize xa + vsize xb \<longrightarrow> xa \<sqsubseteq> xb \<longrightarrow> x \<sqsubseteq> xa \<longrightarrow> x \<sqsubseteq> xb" and
-       v2b_f3: "v2 \<mapsto> v2b \<sqsubseteq> VFun f3" and v2c_f3: "v2 \<mapsto> v2c \<sqsubseteq> VFun f3" and
-       f1_v2_v2j: "VFun f1 \<sqsubseteq> v2 \<mapsto> v2j" and v2j: "v2b \<squnion> v2c = Some v2j"
-  
-  
-       
-  show "VFun f1 \<sqsubseteq> VFun f3" 
-(*
-    apply (subgoal_tac "VFun ([(v2a,v2ba)]@[(v2a,v2c)]) \<sqsubseteq> VFun f3") prefer 2
-    apply (rule le_fun_left_append) apply assumption apply assumption
-    apply blast apply blast
-    apply (subgoal_tac "v2a \<mapsto> v2ba \<sqsubseteq> v2a \<mapsto> v2b") prefer 2
-      apply (rule le_arrow) apply blast apply (rule le_join_left) apply assumption
-    apply (subgoal_tac "v2a \<mapsto> v2c \<sqsubseteq> v2a \<mapsto> v2b") prefer 2
-      apply (rule le_arrow) apply blast apply (rule le_join_right) apply assumption
-    apply (subgoal_tac "v2a \<mapsto> v2c \<sqsubseteq> VFun ([(v2a, v2ba),(v2a, v2c)])") prefer 2
-    apply (rule le_distr) apply assumption apply assumption
-    
-  apply (erule_tac x="vsize (VFun f1) + vsize (v2a \<mapsto> v2c) + vsize X" in allE)
-  done*) sorry
 qed
     
 lemma le_trans: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq>  v3" 
@@ -915,16 +760,55 @@ proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::va
     v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
   shows "v12 \<sqsubseteq> v12'"
 proof -
-  have 3: "v1' \<sqsubseteq> v12'" using le_join_left v12p by blast
-  have 4: "v2' \<sqsubseteq> v12'" using le_join_right v12p by blast
+  have 3: "v1' \<sqsubseteq> v12'" using le_join_left v12p by auto
+  have 4: "v2' \<sqsubseteq> v12'" using le_join_right v12p by auto
   have 5: "v1 \<sqsubseteq> v12'" using 1 3 le_trans by blast
   have 6: "v2 \<sqsubseteq> v12'" using 2 4 le_trans by blast
-  show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join v12 by blast
+  show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join[of v1 v12' v2 v12] v12 by simp
 qed
 
-proposition le_distr_trad: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some v12" 
-  shows "v \<mapsto> v12 \<sqsubseteq> VFun [(v,v1),(v,v2)]"
+datatype coercion = 
+  CNat nat
+  | CBot func
+  | CAppL coercion func
+  | CAppR coercion func
+  | CLApp coercion coercion
+  | CArrowL coercion
+  | CArrowR coercion coercion
+  | CDist coercion coercion
+    
+inductive wt_coercion :: "coercion \<Rightarrow> val \<Rightarrow> val \<Rightarrow> bool" ("\<turnstile> _ : _ \<Rightarrow> _ " [54,54,54] 55) where
+  cnat[intro!]: "\<turnstile> CNat n : VNat n \<Rightarrow> VNat n" |
+  cbot[intro!]: "\<turnstile> CBot f : \<bottom> \<Rightarrow> VFun f" |
+  cappl[intro!]: "\<lbrakk> \<turnstile> c : VFun f1 \<Rightarrow> VFun f2; f3 \<noteq> [] \<rbrakk> \<Longrightarrow> \<turnstile> CAppL c f3 : VFun f1 \<Rightarrow> VFun (f2@f3)"|
+  cappr[intro!]: "\<lbrakk> \<turnstile> c : VFun f1 \<Rightarrow> VFun f3; f2 \<noteq> [] \<rbrakk> \<Longrightarrow> \<turnstile> CAppR c f2 : VFun f1 \<Rightarrow> VFun (f2@f3)"|
+  clapp[intro!]: "\<lbrakk> \<turnstile> c1 : VFun f1 \<Rightarrow> VFun f3; \<turnstile> c2 : VFun f2 \<Rightarrow> VFun f3; f1 \<noteq> []; f2 \<noteq> [] \<rbrakk>
+               \<Longrightarrow> \<turnstile> CLApp c1 c2 : VFun (f1@f2) \<Rightarrow> VFun f3" |
+  carrowl[intro!]: "\<turnstile> c : vb \<Rightarrow> va \<Longrightarrow> \<turnstile> CArrowL c : (va\<mapsto>vc) \<Rightarrow> (vb\<mapsto>vc)" |
+  carrowr[intro!]: "\<lbrakk> \<turnstile> c1 : vb \<Rightarrow> vd; \<turnstile> c2 : va\<mapsto>vd \<Rightarrow> vc\<rbrakk> \<Longrightarrow> \<turnstile> CArrowR c1 c2 : (va\<mapsto>vb) \<Rightarrow> vc" |
+  cdist[intro!]: "\<lbrakk> va\<squnion>vb = Some vab; \<turnstile> c1 : vc\<mapsto>va \<Rightarrow> vd; \<turnstile> c2 : vc\<mapsto>vb \<Rightarrow> vd; vab\<noteq>va; vab\<noteq>vb\<rbrakk>
+     \<Longrightarrow> \<turnstile> CDist c1 c2 : (vc \<mapsto> vab) \<Rightarrow> vd"
+  
+lemma wt_coerce_le: "\<turnstile> c : v1 \<Rightarrow> v2 \<Longrightarrow> v1 \<sqsubseteq> v2"  
+  apply (induction rule: wt_coercion.induct)
+  apply (rule le_nat)
+  apply (rule le_bot)
+  apply (rule le_fun_append_left) apply blast apply blast
+  apply (rule le_fun_append_right) apply blast apply blast
+  apply (rule le_fun_left_append) apply blast apply blast apply blast apply blast
+  apply (rule le_arrow) apply blast apply (rule le_refl)
+  using Values.le_trans (* OK?? *) apply blast
+  apply (rule le_distr_L) apply assumption+
+  done
+
+lemma le_wt_coerce: "v1 \<sqsubseteq> v2 \<Longrightarrow> \<exists>c. \<turnstile> c : v1 \<Rightarrow> v2"
+  apply (induction rule: val_le.induct)
+  apply (rule_tac x="CNat n" in exI) apply (rule cnat)
+  apply (rule_tac x="CBot f" in exI) apply (rule cbot)
+  apply (erule exE)+ apply (rule_tac x="CAppL c f3" in exI) apply (rule cappl) apply assumption+      
+  apply (erule exE)+ apply (rule_tac x="CAppR c f2" in exI) apply (rule cappr) apply assumption+      
+  apply (erule exE)+ apply (rule_tac x="CLApp c ca" in exI) apply (rule clapp) apply assumption+
+  apply (erule exE)+   
   oops
-
-
+    
 end
