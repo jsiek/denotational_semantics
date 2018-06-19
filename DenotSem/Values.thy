@@ -789,6 +789,18 @@ inductive wt_coercion :: "coercion \<Rightarrow> val \<Rightarrow> val \<Rightar
   cdist[intro!]: "\<lbrakk> va\<squnion>vb = Some vab; \<turnstile> c1 : vc\<mapsto>va \<Rightarrow> vd; \<turnstile> c2 : vc\<mapsto>vb \<Rightarrow> vd; vab\<noteq>va; vab\<noteq>vb\<rbrakk>
      \<Longrightarrow> \<turnstile> CDist c1 c2 : (vc \<mapsto> vab) \<Rightarrow> vd"
   
+lemma le_wt_coerce: "v1 \<sqsubseteq> v2 \<Longrightarrow> \<exists>c. \<turnstile> c : v1 \<Rightarrow> v2"
+  apply (induction rule: val_le.induct)
+  apply (rule_tac x="CNat n" in exI) apply (rule cnat)
+  apply (rule_tac x="CBot f" in exI) apply (rule cbot)
+  apply (erule exE)+ apply (rule_tac x="CAppL c f3" in exI) apply (rule cappl) apply assumption+      
+  apply (erule exE)+ apply (rule_tac x="CAppR c f2" in exI) apply (rule cappr) apply assumption+      
+  apply (erule exE)+ apply (rule_tac x="CLApp c ca" in exI) apply (rule clapp) apply assumption+
+    apply (erule exE)+ apply (rule_tac x="CArrowR ca (CArrowL c)" in exI) apply (rule carrowr)
+    apply assumption apply (rule carrowl) apply assumption
+  apply (erule exE)+ apply (rule_tac x="CDist c ca" in exI) apply auto
+  done
+    
 lemma wt_coerce_le: "\<turnstile> c : v1 \<Rightarrow> v2 \<Longrightarrow> v1 \<sqsubseteq> v2"  
   apply (induction rule: wt_coercion.induct)
   apply (rule le_nat)
@@ -801,14 +813,4 @@ lemma wt_coerce_le: "\<turnstile> c : v1 \<Rightarrow> v2 \<Longrightarrow> v1 \
   apply (rule le_distr_L) apply assumption+
   done
 
-lemma le_wt_coerce: "v1 \<sqsubseteq> v2 \<Longrightarrow> \<exists>c. \<turnstile> c : v1 \<Rightarrow> v2"
-  apply (induction rule: val_le.induct)
-  apply (rule_tac x="CNat n" in exI) apply (rule cnat)
-  apply (rule_tac x="CBot f" in exI) apply (rule cbot)
-  apply (erule exE)+ apply (rule_tac x="CAppL c f3" in exI) apply (rule cappl) apply assumption+      
-  apply (erule exE)+ apply (rule_tac x="CAppR c f2" in exI) apply (rule cappr) apply assumption+      
-  apply (erule exE)+ apply (rule_tac x="CLApp c ca" in exI) apply (rule clapp) apply assumption+
-  apply (erule exE)+   
-  oops
-    
 end
