@@ -444,6 +444,14 @@ lemma le_left_append_elim: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
    \<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_left_append_elim_aux by blast
 
+lemma join_elim[elim!]: "\<lbrakk> v1 \<squnion> v2 = Some v3; \<And>n. \<lbrakk> v1 = VNat n; v2 = VNat n; v3 = VNat n \<rbrakk> \<Longrightarrow> P;
+         \<And> f1 f2. \<lbrakk> v1 = VFun f1; v2 = VFun f2; f1 \<noteq> f2; v3 = VFun (f1@f2) \<rbrakk> \<Longrightarrow> P;
+         \<And> f. \<lbrakk> v1 = VFun f; v2 = VFun f; v3 = VFun f \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  apply (case_tac v1) apply (case_tac v2) apply simp apply (case_tac "x1=x1a") apply force 
+    apply force apply force apply (case_tac v2) apply force apply simp
+    apply (case_tac "x2=x2a") apply force apply force
+  done
+
 lemma le_arrow_inv_aux: "\<lbrakk> v1 \<sqsubseteq> v2; v1 = v1a \<mapsto> v1b; v2 = v2a \<mapsto> v2b \<rbrakk> \<Longrightarrow> v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b"
 proof (induction v1 v2 arbitrary: v1a v1b v2a v2b rule: val_le.induct)
   case (le_nat n)
@@ -466,12 +474,26 @@ next
   then show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" using le_arrow by simp
 next
   case (le_distr_L va vb vab vc vd)
-  then show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" sorry
+  show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" 
+  proof
+    show "v2a \<sqsubseteq> v1a" using le_distr_L by (metis Pair_inject le_left_join list.inject val.inject(2))
+  next
+    show "v1b \<sqsubseteq> v2b" using le_distr_L by (metis Pair_inject le_left_join list.inject val.inject(2)) 
+    qed
 next
-  case (le_distr_R v1 v2 v3a v3b v3ab)
-  then show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" sorry
+  case (le_distr_R v1 v2' v3a v3b v3ab)
+  have c: "v3a \<squnion> v3b = Some v2b" using le_distr_R by simp
+  have x: "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v3a" using le_distr_R.IH(1)[of v1a v1b v2a v3a] le_distr_R by simp
+  have y: "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v3b" using le_distr_R.IH(2)[of v1a v1b v2a v3b] le_distr_R by simp
+  have "v1b \<sqsubseteq> v2b" 
+    using c apply (rule join_elim)
+    using le_distr_R apply force
+    using le_distr_R x y apply simp apply (case_tac v3ab) apply force apply simp
+     apply (metis le_fun_append_left le_nat_any_inv_aux self_append_conv vsize.elims)
+    using le_distr_R by blast
+  then show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" using x by blast
 qed
-  
+
 lemma le_arrow_inv[elim!]: "\<lbrakk> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'; \<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_arrow_inv_aux by blast
 
@@ -832,5 +854,5 @@ proposition le_distr_trad: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some v
   shows "v \<mapsto> v12 \<sqsubseteq> VFun [(v,v1),(v,v2)]"
   oops
 
-    
+
 end
