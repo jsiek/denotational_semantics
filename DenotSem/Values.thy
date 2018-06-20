@@ -931,6 +931,43 @@ lemma c_fun_elt: assumes v1f: "find_entry v v' f = Some c"
    apply simp apply (case_tac "find_entry v v' f") apply force
    apply simp apply clarify apply (rule c_fun_cons_right) apply auto
    done
+
+fun subset_fun :: "func \<Rightarrow> func \<Rightarrow> coercion option" where
+  "subset_fun [] f2 = Some (CBot f2)" |
+  "subset_fun ((v,v')#f1) f2 = 
+     (case find_entry v v' f2 of 
+        None \<Rightarrow> None
+     | Some c1 \<Rightarrow>
+        (if f1 = [] then Some c1
+         else
+         (case subset_fun f1 f2 of
+           None \<Rightarrow> None
+         | Some c2 \<Rightarrow> 
+           Some (CLApp c1 c2))))"
+
+lemma c_fun_subset: "subset_fun f1 f2 = Some c \<Longrightarrow> \<turnstile> c : VFun f1 \<Rightarrow> VFun f2"
+  apply (induction f1 f2 arbitrary: c rule: subset_fun.induct)
+   apply force
+  apply simp apply (case_tac "find_entry v v' f2")
+  apply force
+  apply simp
+  apply (case_tac "f1 = []")
+    apply simp apply (rule c_fun_elt) apply assumption
+  apply (case_tac "subset_fun f1 f2")
+   apply force
+  apply simp apply clarify apply (subgoal_tac "\<turnstile> aa : VFun f1 \<Rightarrow> VFun f2") prefer 2 apply blast
+  apply (rule c_fun_left_cons)
+  apply (rule c_fun_elt) apply assumption+
+  done
+    
+lemma set_fun_sub: "set f1 \<subseteq> set f2 \<Longrightarrow> \<exists>c. subset_fun f1 f2 = Some c"
+  apply (induction f1)
+  apply force
+  apply (case_tac f1)
+    apply simp apply (case_tac a) apply simp 
+  using set_find_entry apply fastforce
+  apply simp apply clarify
+    
     
 (*    
 lemma c_trans_aux:     
