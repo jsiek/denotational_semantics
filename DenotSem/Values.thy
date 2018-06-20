@@ -150,10 +150,10 @@ inductive_cases
   le_fun_fun_inv: "VFun f1 \<sqsubseteq> VFun f2" and
   le_arrow_arrow_inv: "v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'"
   
-lemma le_fun_cons_left: "\<lbrakk> VFun [a] \<sqsubseteq> VFun [b]; f3 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (b#f3)" 
+lemma le_fun_cons_left: "\<lbrakk> VFun f1 \<sqsubseteq> VFun [b]; f2 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun (b#f2)" 
   using le_fun_append_left by (metis append.left_neutral append_Cons)
 
-lemma le_fun_cons_right: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> VFun [a] \<sqsubseteq> VFun (b#f3)" 
+lemma le_fun_cons_right: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f2 \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun (b#f2)" 
   using le_fun_append_right by (metis append.simps(1) append_Cons)
     
 lemma le_fun_left_cons: "\<lbrakk> VFun [a] \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3; f2 \<noteq> [] \<rbrakk>
@@ -788,7 +788,21 @@ inductive wt_coercion :: "coercion \<Rightarrow> val \<Rightarrow> val \<Rightar
   carrowr[intro!]: "\<lbrakk> \<turnstile> c1 : vb \<Rightarrow> vd; \<turnstile> c2 : va\<mapsto>vd \<Rightarrow> vc\<rbrakk> \<Longrightarrow> \<turnstile> CArrowR c1 c2 : (va\<mapsto>vb) \<Rightarrow> vc" |
   cdist[intro!]: "\<lbrakk> va\<squnion>vb = Some vab; \<turnstile> c1 : vc\<mapsto>va \<Rightarrow> vd; \<turnstile> c2 : vc\<mapsto>vb \<Rightarrow> vd; vab\<noteq>va; vab\<noteq>vb\<rbrakk>
      \<Longrightarrow> \<turnstile> CDist c1 c2 : (vc \<mapsto> vab) \<Rightarrow> vd"
+
+inductive_cases 
+  cnat_inv[elim!]: "\<turnstile> CNat n2 : v2 \<Rightarrow> v3"
   
+lemma c_arrow_aux: "\<lbrakk> \<turnstile> c1 : v2 \<Rightarrow> v1; \<turnstile> c2 : v1' \<Rightarrow> v2'\<rbrakk> \<Longrightarrow>
+       \<exists>c. \<turnstile> c : v1 \<mapsto> v1' \<Rightarrow> v2 \<mapsto> v2'"
+  by (subgoal_tac "\<turnstile> CArrowR c2 (CArrowL c1) : v1\<mapsto>v1' \<Rightarrow> v2\<mapsto>v2'") auto
+  
+abbreviation mk_arrow :: "coercion \<Rightarrow> coercion \<Rightarrow> coercion" (infix "\<hookrightarrow>" 60) where
+  "c1 \<hookrightarrow> c2 \<equiv> CArrowR c2 (CArrowL c1)"  
+
+lemma c_arrow: "\<lbrakk> \<turnstile> c1 : v2 \<Rightarrow> v1; \<turnstile> c2 : v1' \<Rightarrow> v2'\<rbrakk> \<Longrightarrow>
+       \<turnstile> c1 \<hookrightarrow> c2 : v1 \<mapsto> v1' \<Rightarrow> v2 \<mapsto> v2'"
+  using c_arrow_aux by blast
+
 lemma le_wt_coerce: "v1 \<sqsubseteq> v2 \<Longrightarrow> \<exists>c. \<turnstile> c : v1 \<Rightarrow> v2"
   apply (induction rule: val_le.induct)
   apply (rule_tac x="CNat n" in exI) apply (rule cnat)
@@ -812,5 +826,134 @@ lemma wt_coerce_le: "\<turnstile> c : v1 \<Rightarrow> v2 \<Longrightarrow> v1 \
   using Values.le_trans (* OK?? *) apply blast
   apply (rule le_distr_L) apply assumption+
   done
+
+lemma c_fun_cons_left: "\<lbrakk> \<turnstile> c : VFun f1 \<Rightarrow> VFun [b]; f2 \<noteq> [] \<rbrakk> \<Longrightarrow>
+    \<turnstile> CAppL c f2 : VFun f1 \<Rightarrow> VFun (b#f2)"
+  using cappl[of c f1 "[b]" f2] by simp 
+   
+lemma c_fun_cons_right: "\<lbrakk> \<turnstile> c : VFun f1 \<Rightarrow> VFun f2 \<rbrakk> \<Longrightarrow>
+    \<turnstile> CAppR c [b] : VFun f1 \<Rightarrow> VFun (b#f2)" 
+  using cappr[of c f1 f2 "[b]"] by simp
+
+lemma c_fun_left_cons: "\<lbrakk> \<turnstile> c1 : VFun [a] \<Rightarrow> VFun f3; \<turnstile> c2 : VFun f2 \<Rightarrow> VFun f3; f2 \<noteq> [] \<rbrakk>
+   \<Longrightarrow> \<turnstile> CLApp c1 c2  : VFun (a#f2) \<Rightarrow> VFun f3"
+  using clapp[of c1 "[a]" f3 c2 f2] by simp 
+
+(*fun mk_id :: "val \<Rightarrow> val \<Rightarrow> coercion option" where
+  "mk_id (VNat n1) (VNat n2) = (if n1 = n2 then Some (CNat n1) else None)" |
+  "mk_id (VFun f1) (VFun f2) = 
+     (case f1 of
+       [] \<Rightarrow> Some (CBot f2)
+     | [(v1,v1')] \<Rightarrow> 
+        (case f2 of
+          [] \<Rightarrow> None
+        | [(v2,v2')] \<Rightarrow> (if v2 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v1 then 
+                         case None)
+     | (v1,v1')#f \<Rightarrow> None)"
+*)
+
+proposition c_refl_aux: "n = vsize v \<Longrightarrow> \<exists>c. \<turnstile> c : v \<Rightarrow> v"
+proof (induction n arbitrary: v rule: nat_less_induct)
+  case (1 n)
+  show ?case
+  proof (cases v)
+    case (VNat n1)
+    then show ?thesis by auto
+  next
+    case (VFun f)
+    show ?thesis
+    proof (cases f)
+      case Nil
+      then show ?thesis using VFun 1 by auto
+    next
+      case (Cons a f') then have f: "f = a#f'" .
+      obtain v1 v1' where a: "a = (v1,v1')" by (cases a) auto
+      show ?thesis
+      proof (cases f')
+        case Nil
+        
+        show ?thesis            
+            sorry
+      next
+        case (Cons b f'') then have fp_ne: "f' \<noteq> []" by auto
+        obtain c1 where c1: "\<turnstile> c1 : v1 \<Rightarrow> v1" using 1 VFun f a
+          apply (erule_tac x="vsize v1" in allE) apply auto done 
+        obtain c2 where c2: "\<turnstile> c2 : v1' \<Rightarrow> v1'" using 1 VFun f a
+          apply (erule_tac x="vsize v1'" in allE) by auto
+        obtain c12 where c12: "\<turnstile> c12 : v1 \<mapsto> v1' \<Rightarrow> v1 \<mapsto> v1'"
+          using c1 c2 c_arrow[of c1 v1 v1 c2 v1' v1'] by auto
+        have 2: "\<turnstile> CAppL c12 f' : v1 \<mapsto> v1' \<Rightarrow> VFun ((v1,v1')#f')"
+          using c12 fp_ne c_fun_cons_left[of c12 "(v1,v1')" "(v1,v1')" f'] by auto
+        
+        obtain c where cfp: "\<turnstile> c : VFun f' \<Rightarrow> VFun f'" using 1 VFun f a
+          apply (erule_tac x="vsize (VFun f')" in allE)
+          apply (erule impE) apply force apply blast done
+        have 3: "\<turnstile> CAppR c [(v1,v1')] : VFun f' \<Rightarrow> VFun ((v1,v1')#f')"
+          using cfp c_fun_cons_right[of c] sorry
+          
+        show ?thesis sorry
+      qed
+    qed
+  qed 
+qed
+(*  apply (rename_tac v v' f')
+  apply (case_tac f')
+   apply simp
+   apply (subgoal_tac "\<exists>c. \<turnstile> c : v \<Rightarrow> v")
+    apply (subgoal_tac "\<exists>c. \<turnstile> c : v' \<Rightarrow> v'")
+     apply (erule exE)+ apply (erule c_arrow) prefer 2 apply blast apply blast 
+    apply (erule_tac x="vsize v'" in allE) apply force
+    apply (erule_tac x="vsize v" in allE) apply force
+  -- "case f' =(v2,v2')#f''"
+  apply clarify apply (rename_tac v2 v2' f'')
+    
+    using c_fun_left_cons
+*)    
+    
+lemma c_refl[intro!]: "\<exists> c. \<turnstile> c : v \<Rightarrow> v"
+    sorry
+    
+    
+    
+    
+    
+    
+lemma c_trans_aux:     
+    assumes n: "n = size c1 + size c2" and
+    v1_v2: "\<turnstile> c1 : v1 \<Rightarrow> v2" and v2_v3: "\<turnstile> c2 : v2 \<Rightarrow> v3"
+  shows "\<exists> c12. \<turnstile> c12 : v1 \<Rightarrow> v3"
+  using n v2_v3 v1_v2
+proof (induction n arbitrary: c1 c2 v1 v2 v3 rule: nat_less_induct)
+  case (1 n)
+  show ?case
+  proof (cases c2)
+    case (CNat n2)
+    then show ?thesis apply (rule_tac x="CNat n2" in exI) using 1
+        apply clarify apply simp
+  next
+    case (CBot x2)
+    then show ?thesis sorry
+  next
+    case (CAppL x31 x32)
+    then show ?thesis sorry
+  next
+    case (CAppR x41 x42)
+    then show ?thesis sorry
+  next
+    case (CLApp x51 x52)
+    then show ?thesis sorry
+  next
+    case (CArrowL x6)
+    then show ?thesis sorry
+  next
+    case (CArrowR x71 x72)
+    then show ?thesis sorry
+  next
+    case (CDist x81 x82)
+    then show ?thesis sorry
+  qed
+qed
+
+
 
 end
