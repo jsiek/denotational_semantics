@@ -901,26 +901,23 @@ proposition c_fun_any_inv: "\<lbrakk> \<turnstile> c : VFun f \<Rightarrow> v; \
 fun find_entry :: "val \<Rightarrow> val \<Rightarrow> func \<Rightarrow> coercion option" where
   "find_entry v v' [] = None" |
   "find_entry v v' ((v1,v1')#f) = 
-     (if v = v1 \<and> v' = v1' then Some (CAppL (mk_id (v\<mapsto>v')) f)
+     (if v = v1 \<and> v' = v1' then
+        (case f of
+          [] \<Rightarrow> Some (mk_id (v1 \<mapsto> v1'))
+        | (v2,v2')#f' \<Rightarrow> Some (CAppL (mk_id (v\<mapsto>v')) f))
       else
         case (find_entry v v' f) of
           None \<Rightarrow> None
         | Some c \<Rightarrow> Some (CAppR c [(v1,v1')]))"
     
-lemma c_fun_elt: assumes v1f: "(v,v') \<in> set f" shows "\<exists>c. \<turnstile> c : v\<mapsto>v' \<Rightarrow> VFun f"
+lemma set_find_entry: assumes v1f: "(v,v') \<in> set f" shows "\<exists>c. find_entry v v' f = Some c"
   using v1f apply (induction f) 
    apply force
    apply simp apply (erule disjE)
-   apply simp
-   apply (case_tac f)
-    apply force 
-   apply (subgoal_tac "\<exists> c. \<turnstile> c : VFun [a] \<Rightarrow> VFun ([a]@f)")
-   prefer 2 using cappl apply blast
-   apply force
-   apply simp 
-   apply (subgoal_tac "\<exists> c. \<turnstile> c : v \<mapsto> v' \<Rightarrow> VFun ([a]@f)")
-   prefer 2 using cappr apply blast
-   apply force
+   apply simp apply (case_tac f) apply force apply force
+  apply simp apply clarify apply simp apply (case_tac "v=a \<and> v' = b")
+    apply clarify apply (case_tac f) apply force apply force
+    apply (case_tac f) apply force apply force
   done
  
 lemma c_fun_elt: assumes v1f: "find_entry v v' f = Some c"
@@ -928,14 +925,12 @@ lemma c_fun_elt: assumes v1f: "find_entry v v' f = Some c"
   using v1f apply (induction v v' f arbitrary: c rule: find_entry.induct) 
    apply force
    apply simp apply (case_tac "v = v1 \<and> v' = v1'")
-   apply simp  apply clarify apply (rule c_fun_cons_left)
-    
-(*   apply force
-   apply simp 
-   apply (subgoal_tac "\<exists> c. \<turnstile> c : v \<mapsto> v' \<Rightarrow> VFun ([a]@f)")
-   prefer 2 using cappr apply blast
-   apply force
-*)  done
+   apply (case_tac f) apply force
+   apply simp apply clarify
+   apply (rule c_fun_cons_left) apply blast apply blast
+   apply simp apply (case_tac "find_entry v v' f") apply force
+   apply simp apply clarify apply (rule c_fun_cons_right) apply auto
+   done
     
 (*    
 lemma c_trans_aux:     
