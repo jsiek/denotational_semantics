@@ -853,7 +853,7 @@ proof -
   assume bd: "vb \<sqsubseteq> vd" and vad_vc: "va \<mapsto> vd \<sqsubseteq> vc"
   have "va \<mapsto> vb \<sqsubseteq> va \<mapsto> vd" using bd le_arrow by blast  
   then show "va \<mapsto> vb \<sqsubseteq> vc" sorry
-qed 
+oops 
 
 lemma c_fun_cons_left: "\<lbrakk> \<turnstile> c : VFun f1 \<Rightarrow> VFun [b]; f2 \<noteq> [] \<rbrakk> \<Longrightarrow>
     \<turnstile> CAppL c f2 : VFun f1 \<Rightarrow> VFun (b#f2)"
