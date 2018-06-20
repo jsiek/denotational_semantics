@@ -750,15 +750,18 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
 *)
     qed
   qed
-qed
-    
+oops
+
 lemma le_trans: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq>  v3" 
-  using le_trans_aux by blast
+(*  using le_trans_aux by blast *)
+  oops
 
 proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
   assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
     v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
   shows "v12 \<sqsubseteq> v12'"
+oops
+(*
 proof -
   have 3: "v1' \<sqsubseteq> v12'" using le_join_left v12p by auto
   have 4: "v2' \<sqsubseteq> v12'" using le_join_right v12p by auto
@@ -766,6 +769,7 @@ proof -
   have 6: "v2 \<sqsubseteq> v12'" using 2 4 le_trans by blast
   show "v12 \<sqsubseteq> v12'" using 5 6 le_left_join[of v1 v12' v2 v12] v12 by simp
 qed
+*)
 
 datatype coercion = 
   CNat nat
@@ -814,6 +818,25 @@ lemma le_wt_coerce: "v1 \<sqsubseteq> v2 \<Longrightarrow> \<exists>c. \<turnsti
     apply assumption apply (rule carrowl) apply assumption
   apply (erule exE)+ apply (rule_tac x="CDist c ca" in exI) apply auto
   done
+
+lemma le_arrow_split: assumes bd: "vb \<sqsubseteq> vd" and vad_vc: "va \<mapsto> vd \<sqsubseteq> vc"
+  shows "va \<mapsto> vb \<sqsubseteq> vc"
+proof -
+  have 1: "va \<mapsto> vb \<sqsubseteq> va \<mapsto> vd" using bd by blast
+  
+oops
+(*  apply (induction vad vc arbitrary: vb vd va rule: val_le.induct)
+  apply force
+  apply force
+  apply (simp add: le_fun_append_left)
+  apply (simp add: le_fun_append_right)
+  apply (simp add: append_eq_Cons_conv)
+  defer
+  apply sledgehammer
+    
+  apply simp apply clarify   
+*)
+    
     
 lemma wt_coerce_le: "\<turnstile> c : v1 \<Rightarrow> v2 \<Longrightarrow> v1 \<sqsubseteq> v2"  
   apply (induction rule: wt_coercion.induct)
@@ -823,9 +846,14 @@ lemma wt_coerce_le: "\<turnstile> c : v1 \<Rightarrow> v2 \<Longrightarrow> v1 \
   apply (rule le_fun_append_right) apply blast apply blast
   apply (rule le_fun_left_append) apply blast apply blast apply blast apply blast
   apply (rule le_arrow) apply blast apply (rule le_refl)
-  using Values.le_trans (* OK?? *) apply blast
+  defer
   apply (rule le_distr_L) apply assumption+
-  done
+proof -
+  fix c1 vb vd c2 va vc
+  assume bd: "vb \<sqsubseteq> vd" and vad_vc: "va \<mapsto> vd \<sqsubseteq> vc"
+  have "va \<mapsto> vb \<sqsubseteq> va \<mapsto> vd" using bd le_arrow by blast  
+  then show "va \<mapsto> vb \<sqsubseteq> vc" sorry
+qed 
 
 lemma c_fun_cons_left: "\<lbrakk> \<turnstile> c : VFun f1 \<Rightarrow> VFun [b]; f2 \<noteq> [] \<rbrakk> \<Longrightarrow>
     \<turnstile> CAppL c f2 : VFun f1 \<Rightarrow> VFun (b#f2)"
@@ -1006,8 +1034,79 @@ lemma c_join_left: "\<lbrakk> join_left v1 v2 = Some c; v1 \<squnion> v2 = Some 
   apply blast
   done
 
+(* todo: join_right *)  
+    
+lemma c_left_join: "\<lbrakk> \<turnstile> c1 : v1 \<Rightarrow> v3; \<turnstile> c2 : v2 \<Rightarrow> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow>
+     \<exists>c. \<turnstile> c : v12 \<Rightarrow> v3"
+  apply (case_tac v1)
+   apply (case_tac v2)
+    apply simp
+    apply (case_tac "x1=x1a") apply simp apply clarify 
+      apply (rule_tac x="CNat x1a" in exI) apply blast
+    apply force
+   apply force
+  apply (case_tac v2) apply force
+  apply clarify apply (case_tac v12) apply simp apply (case_tac "x2=x2a") 
+    apply force apply force
+  apply clarify
+  apply (case_tac "x2=x2a") apply simp
+   apply force
+  apply (case_tac "x2=[]")  apply force
+  apply (case_tac "x2a=[]") apply force
+  apply (rule_tac x="CLApp c1 c2" in exI) apply simp apply clarify
+  apply (subgoal_tac "\<exists> f3. v3 = VFun f3") prefer 2
+    apply (erule c_fun_any_inv) apply force apply (erule exE) apply clarify
+  apply (rule clapp)
+  apply auto
+  done
 
-
+lemma c_left_append_elim_aux: "\<lbrakk> \<turnstile> c : v12 \<Rightarrow> v3; v12=VFun (f1@f2); v3 = VFun f3 \<rbrakk>
+  \<Longrightarrow> \<exists> c1 c2. \<turnstile> c1 : VFun f1 \<Rightarrow> VFun f3 \<and> \<turnstile> c2 : VFun f2 \<Rightarrow> VFun f3"
+  apply (induction c v12 v3 arbitrary: f1 f2 f3 rule: wt_coercion.induct)
+  -- "case 1"
+  apply force
+  -- "case 2"
+  apply force
+  -- "case 3"
+  apply force
+  -- "case 4"
+  apply force
+  -- "case 5"
+  apply (case_tac "length f1 < length f1a")
+    -- "subcase f1 < f1a"
+    apply (subgoal_tac "\<exists> f1b. f1a = f1@f1b") prefer 2 
+      apply (metis append_len_geq less_SucI not_less_eq val.inject(2))
+    apply (erule exE) apply clarify
+      apply (subgoal_tac "f2 = f1b @ f2a") prefer 2 apply force
+      apply (case_tac f2a) 
+      -- "subsubcase f2a=[]"
+      apply simp
+      apply (rule_tac x="CLApp c1 c2" in exI)
+      apply (rule clapp) apply blast apply blast apply blast
+      apply blast
+      -- "subsubcase f2a"
+      apply simp
+      apply (subgoal_tac "\<exists> c1 c2. \<turnstile> c1 : VFun f1b \<Rightarrow> VFun f3a \<and> \<turnstile> c2 : VFun (a#list) \<Rightarrow> VFun f3a")
+        prefer 2 apply force apply (erule exE)+ apply (erule conjE)+
+      apply (rule_tac x="CLApp c1 c1a" in exI)
+      apply (rule clapp) apply assumption apply assumption apply blast apply blast 
+    -- "subcase f1 >= f1a"
+    apply (subgoal_tac "\<exists> f1b. f1 = f1a@f1b") prefer 2 apply (rule append_len_geq)
+    apply blast apply blast apply (erule exE) 
+    apply (subgoal_tac "f2a = f1b @ f2") prefer 2 apply force
+    apply simp
+    apply (subgoal_tac "\<exists> c1 c2. \<turnstile> c1 : VFun f1a \<Rightarrow> VFun f3a \<and> \<turnstile> c2 : VFun f1b \<Rightarrow> VFun f3a")
+      prefer 2 apply force apply (erule exE)+ apply (erule conjE)+
+    apply (case_tac f1b) apply force
+    apply (rule_tac x="CLApp c2a c2" in exI) apply (rule clapp) apply blast apply blast apply blast
+    apply blast    
+  -- "case 6"
+  apply (case_tac f1) apply force apply force
+  -- "case 7"
+  apply (case_tac f1) 
+    apply simp apply clarify
+    oops
+    
 (*    
 lemma c_trans_aux:     
     assumes n: "n = size c1 + size c2" and
