@@ -872,9 +872,70 @@ lemma c_refl[intro!]: "\<turnstile> mk_id v : v \<Rightarrow> v"
   apply (rule c_cons_good) apply force apply force apply force apply force
   done
 
-    
-    
+lemma c_bot_inv_aux: fixes v1::val and f1::func
+  assumes v12: "\<turnstile> c : v1 \<Rightarrow> v2" and v2b: "v2 = \<bottom>"
+  shows "v1 = \<bottom>"
+  using v12 v2b by (induction rule: wt_coercion.induct) auto
 
+lemma c_bot_inv[elim!]: "\<lbrakk> \<turnstile> c : v \<Rightarrow> \<bottom>; v = \<bottom> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
+  using c_bot_inv_aux by auto      
+
+lemma c_any_nat_inv_aux: "\<lbrakk> \<turnstile> c : v \<Rightarrow> v'; v' = VNat n\<rbrakk> \<Longrightarrow> v = VNat n"
+  by (induction rule: wt_coercion.induct) auto
+    
+proposition c_any_nat_inv[elim!]: "\<lbrakk> \<turnstile> c : v \<Rightarrow> VNat n; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using c_any_nat_inv_aux by auto
+
+lemma c_nat_any_inv_aux: "\<lbrakk> \<turnstile> c : v \<Rightarrow> v'; v = VNat n\<rbrakk> \<Longrightarrow> v' = VNat n"
+  by (induction arbitrary: n rule: wt_coercion.induct) auto
+    
+proposition c_nat_any_inv[elim!]: "\<lbrakk> \<turnstile> c : VNat n \<Rightarrow> v; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using c_nat_any_inv_aux by auto    
+
+lemma c_fun_any_inv_aux: "\<lbrakk> \<turnstile> c : v \<Rightarrow> v'; v = VFun f \<rbrakk> \<Longrightarrow> \<exists> f'. v' = VFun f'"
+  by (induction arbitrary: f rule: wt_coercion.induct) auto
+  
+proposition c_fun_any_inv: "\<lbrakk> \<turnstile> c : VFun f \<Rightarrow> v; \<And>f'. v = VFun f' \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using c_fun_any_inv_aux by blast
+
+fun find_entry :: "val \<Rightarrow> val \<Rightarrow> func \<Rightarrow> coercion option" where
+  "find_entry v v' [] = None" |
+  "find_entry v v' ((v1,v1')#f) = 
+     (if v = v1 \<and> v' = v1' then Some (CAppL (mk_id (v\<mapsto>v')) f)
+      else
+        case (find_entry v v' f) of
+          None \<Rightarrow> None
+        | Some c \<Rightarrow> Some (CAppR c [(v1,v1')]))"
+    
+lemma c_fun_elt: assumes v1f: "(v,v') \<in> set f" shows "\<exists>c. \<turnstile> c : v\<mapsto>v' \<Rightarrow> VFun f"
+  using v1f apply (induction f) 
+   apply force
+   apply simp apply (erule disjE)
+   apply simp
+   apply (case_tac f)
+    apply force 
+   apply (subgoal_tac "\<exists> c. \<turnstile> c : VFun [a] \<Rightarrow> VFun ([a]@f)")
+   prefer 2 using cappl apply blast
+   apply force
+   apply simp 
+   apply (subgoal_tac "\<exists> c. \<turnstile> c : v \<mapsto> v' \<Rightarrow> VFun ([a]@f)")
+   prefer 2 using cappr apply blast
+   apply force
+  done
+ 
+lemma c_fun_elt: assumes v1f: "find_entry v v' f = Some c"
+  shows "\<turnstile> c : v\<mapsto>v' \<Rightarrow> VFun f"
+  using v1f apply (induction v v' f arbitrary: c rule: find_entry.induct) 
+   apply force
+   apply simp apply (case_tac "v = v1 \<and> v' = v1'")
+   apply simp  apply clarify apply (rule c_fun_cons_left)
+    
+(*   apply force
+   apply simp 
+   apply (subgoal_tac "\<exists> c. \<turnstile> c : v \<mapsto> v' \<Rightarrow> VFun ([a]@f)")
+   prefer 2 using cappr apply blast
+   apply force
+*)  done
     
 (*    
 lemma c_trans_aux:     
