@@ -967,8 +967,47 @@ lemma set_fun_sub: "set f1 \<subseteq> set f2 \<Longrightarrow> \<exists>c. subs
     apply simp apply (case_tac a) apply simp 
   using set_find_entry apply fastforce
   apply simp apply clarify
+  apply (subgoal_tac "\<exists>c. find_entry a b f2 = Some c") prefer 2 apply (rule set_find_entry)
+    apply assumption apply (erule exE)
+  apply simp
+  done
     
+abbreviation join_left :: "val \<Rightarrow> val \<Rightarrow> coercion option" where
+  "join_left v1 v2 \<equiv> 
+    (case v1 of
+      VNat n1 \<Rightarrow>
+       (case v2 of
+          VNat n2 \<Rightarrow> if n1 = n2 then Some (CNat n1) else None
+       | VFun f2 \<Rightarrow> None)
+    | VFun f1 \<Rightarrow>
+       (case v2 of
+          VNat n2 \<Rightarrow> None
+        | VFun f2 \<Rightarrow> (if f1 = f2 then Some (mk_id (VFun f1))
+                      else (if f2 = [] then Some (mk_id (VFun f1))
+                      else Some (CAppL (mk_id (VFun f1)) f2))
+       )))"
     
+lemma c_join_left: "\<lbrakk> join_left v1 v2 = Some c; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> \<turnstile> c : v1 \<Rightarrow> v12"
+  apply (case_tac v1) apply (case_tac v2) apply simp
+    apply (case_tac "x1=x1a") apply force apply force apply force
+  apply (case_tac v2) apply force
+    apply clarify 
+  apply simp 
+  apply (rename_tac f1 f2)
+  apply (case_tac "f1 = f2")
+    -- "case f1 = f2"
+    apply (subgoal_tac "c = mk_id (VFun f1)") prefer 2 apply force apply clarify
+    apply (subgoal_tac "v12 = VFun f2") prefer 2 apply force apply blast
+    -- "case f1 \<noteq> f2"
+    apply (case_tac "f2=[]") apply clarify
+    apply (subgoal_tac "c = mk_id (VFun f1)") prefer 2 apply force apply force
+    apply (subgoal_tac "c = CAppL (mk_id (VFun f1)) f2") prefer 2 apply force
+  apply clarify apply (subgoal_tac "v12 = VFun (f1 @ f2)") prefer 2 apply force
+  apply blast
+  done
+
+
+
 (*    
 lemma c_trans_aux:     
     assumes n: "n = size c1 + size c2" and
