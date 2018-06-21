@@ -155,6 +155,9 @@ lemma non_empty_pos_fsize[intro!]: "f \<noteq> [] \<Longrightarrow> 0 < fsize f"
 lemma nat_less_IH[elim!]: "\<lbrakk> \<forall>m<k. \<forall>x. m = S x \<longrightarrow> P x; S a < k \<rbrakk> \<Longrightarrow> P a"
  by blast
 
+lemma nat_less_IH3[elim!]: "\<lbrakk> \<forall>m<k. \<forall>x y z. m = S x y z \<longrightarrow> P x y z; S a b c < k \<rbrakk> \<Longrightarrow> P a b c"
+  by blast
+   
 section "Reflexivity"  
   
 proposition le_refl_aux: "n = vsize v \<Longrightarrow> v \<sqsubseteq> v"
@@ -390,11 +393,83 @@ proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::va
   
 section "Transitivity"
     
+lemma append_len_geq: "f @ f' = list @ list' \<Longrightarrow> \<not> length f < length list \<Longrightarrow> \<exists>l'. f = list @ l'"
+  apply (induction f arbitrary: f' list list')
+  apply force
+  apply simp
+  apply (case_tac list)
+    apply auto
+  done
+
+lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
+   \<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  sorry
+    
+lemma trans_app:
+  assumes f1_f2c: "VFun f1 \<sqsubseteq> VFun f2c" and 
+    f2: "f2 = f2a@f2b" and f2_cd: "f2 = f2c @ f2d" and f2a_ne: "f2a \<noteq> []" and
+    f2a_f3: "VFun f2a \<sqsubseteq> VFun f3" and f2b_f3: "VFun f2b \<sqsubseteq> VFun f3" and
+    IH1: "VFun f1 \<sqsubseteq> VFun f2c \<and> VFun f2c \<sqsubseteq> VFun f3 \<longrightarrow> VFun f1 \<sqsubseteq> VFun f3"
+  shows "VFun f1 \<sqsubseteq> VFun f3"
+proof (cases "length f2a < length f2c")
+  case True
+  obtain f2c' where f2c: "f2c = f2a @ f2c'" using f2 f2_cd 
+    by (metis True add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
+  have f2cp_ne: "f2c' \<noteq> []" using f2c f2 f2_cd True by auto
+  obtain f2b' where f2b: "f2b = f2c' @ f2b'" using f2c f2 f2_cd by auto
+  have f2cp_f3: "VFun f2c' \<sqsubseteq> VFun f3" using f2b f2b_f3 apply simp 
+    apply (erule le_left_append_elim) by blast
+  have f2c_f3: "VFun f2c \<sqsubseteq> VFun f3" using f2a_f3 f2cp_f3 f2c f2a_ne f2cp_ne 
+    apply simp apply (rule le_app_L) by auto
+  show ?thesis using f1_f2c f2c_f3 IH1 by blast
+next
+  case False
+  obtain f2a' where f2a: "f2a = f2c @ f2a'" using f2 f2_cd False using append_len_geq by blast
+  have f2c_f3: "VFun f2c \<sqsubseteq> VFun f3" using f2a_f3 f2a by auto
+  show ?thesis using f1_f2c f2c_f3 IH1 by blast
+qed
+  
+lemma le_app_app:
+  assumes f2: "f2 = f2a@f2b" and f2_cd: "f2 = f2c @ f2d" and
+    f2a_ne: "f2a \<noteq> []" and f2b_ne: "f2b \<noteq> []" and
+    f2a_f3: "VFun f2a \<sqsubseteq> VFun f3" and f2b_f3: "VFun f2b \<sqsubseteq> VFun f3"
+  shows "VFun f2c \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3"
+proof (cases "length f2a < length f2c")
+  case True
+  obtain f2c' where f2c: "f2c = f2a @ f2c'" using f2 f2_cd 
+    by (metis True add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
+  have f2cp_ne: "f2c' \<noteq> []" using f2c f2 f2_cd True by auto
+  have f2b: "f2b = f2c' @ f2d" using f2c f2 f2_cd by auto
+  have f2cp_f3: "VFun f2c' \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3" using f2b f2b_f3 apply simp 
+    apply (erule le_left_append_elim) by blast
+  have f2c_f3: "VFun f2c \<sqsubseteq> VFun f3" using f2a_f3 f2cp_f3 f2c f2a_ne f2cp_ne 
+    apply simp apply (rule le_app_L) by auto
+  show ?thesis using f2cp_f3 f2c_f3 by blast
+next
+  case False
+  obtain f2a' where f2a: "f2a = f2c @ f2a'" using f2 f2_cd False using append_len_geq by blast
+  have f2c_f3: "VFun f2c \<sqsubseteq> VFun f3" using f2a_f3 f2a by auto
+  have f2d: "f2d = f2a' @ f2b" using f2a f2 f2_cd by simp
+  have f2a_f3: "VFun f2a' \<sqsubseteq> VFun f3" using f2a_f3 f2a by auto
+  show ?thesis
+  proof (cases "f2a' = []")
+    case True
+    then have "VFun f2d \<sqsubseteq> VFun f3" using f2d f2b_f3 by simp
+    then show ?thesis using f2c_f3 by blast
+  next
+    case False
+    have "VFun f2d \<sqsubseteq> VFun f3" using f2d f2a_f3 f2b_f3 False f2b_ne by auto
+    then show ?thesis using f2c_f3 by blast
+  qed
+qed
+    
 lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
     v1_v2: "v1 \<sqsubseteq> v2" and v2_v3: "v2 \<sqsubseteq> v3"
   shows "v1 \<sqsubseteq> v3"
   using n v2_v3 v1_v2
 proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
+  let ?S = "\<lambda>x y z. vsize x + vsize y + vsize z"
+  let ?P = "\<lambda>x y z. y \<sqsubseteq> z \<longrightarrow> x \<sqsubseteq> y \<longrightarrow> x \<sqsubseteq> z"
   case (1 n)
   show ?case
   proof (cases v1)
@@ -402,8 +477,72 @@ proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
     then have v3: "v3 = VNat n1" using 1 by (case_tac v2) auto
     then show "v1 \<sqsubseteq> v3" using v1 v3 by blast
   next
-    case (VFun x2)
-    then show "v1 \<sqsubseteq> v3" sorry
+    case (VFun f1)
+    then have v1: "v1 = VFun f1" .
+    obtain f2 f3 where v2: "v2 = VFun f2" and v3: "v3 = VFun f3"
+      using 1 v1 apply (case_tac v2) apply auto apply (case_tac v3) by auto
+
+    show ?thesis
+    proof (cases "f1 = []")
+      case True
+      then show ?thesis using v1 v3 by blast
+    next
+      case False then have f1_ne: "f1 \<noteq> []" .
+          
+      have "VFun f2 \<sqsubseteq> VFun f3" using 1(3) v2 v3 by simp
+      then show ?thesis
+      proof (rule le_fun_fun_inv)
+        assume "f2 = []" then show ?thesis using "1.prems"(3) v2 v3 by blast
+      next
+        fix f3a f3b assume f3: "f3 = f3a@f3b" and f2_f3a: "VFun f2 \<sqsubseteq> VFun f3a" and
+          f3b_ne: "f3b \<noteq> []"
+        then have f1_f3a: "VFun f1 \<sqsubseteq> VFun f3a" using 1(1) 1(2) 1(4) v1 v2 v3
+          using nat_less_IH3[of n ?S ?P "VFun f1" "VFun f2" "VFun f3a"] by auto
+        then show "v1 \<sqsubseteq> v3" using v1 v3 f3 f3b_ne f1_ne apply simp by (rule le_app_R1) auto
+      next
+        fix f3a f3b assume f3: "f3 = f3a@f3b" and f2_f3a: "VFun f2 \<sqsubseteq> VFun f3b" and
+           f3b_ne: "f3a \<noteq> []"
+        then have f1_f3a: "VFun f1 \<sqsubseteq> VFun f3b" using 1(1) 1(2) 1(4) v1 v2 v3
+          using nat_less_IH3[of n ?S ?P "VFun f1" "VFun f2" "VFun f3b"] by auto
+        then show "v1 \<sqsubseteq> v3" using v1 v3 f3 f3b_ne f1_ne apply simp apply (rule le_app_R2) by auto
+      next
+        fix f2a f2b assume f2: "f2 = f2a@f2b" and f2a_f3: "VFun f2a \<sqsubseteq> VFun f3"
+          and f2b_f3: "VFun f2b \<sqsubseteq> VFun f3" and f2a_ne: "f2a \<noteq> []" and f2b_ne: "f2b \<noteq> []" 
+        have f2_f3: "VFun f2 \<sqsubseteq> VFun f3" using f2a_f3 f2b_f3 f2 apply simp
+         apply (rule le_app_L) using f2a_ne f2b_ne apply auto done
+          
+        show "v1 \<sqsubseteq> v3" using 1(4) v1 v2 v3 apply simp
+        proof (erule le_fun_fun_inv)
+          assume "f1 = []" then show "VFun f1 \<sqsubseteq> VFun f3" by auto
+        next
+          fix f2c f2d assume f2_cd: "f2 = f2c @ f2d" and f1_f2c: "VFun f1 \<sqsubseteq> VFun f2c"
+            and f1_ne: "f1 \<noteq> []" and f2b_ne: "f2d \<noteq> []"
+          
+          have "VFun f2c \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3"
+            using le_app_app[of f2 f2a f2b f2c f2d f3] 
+            
+          have IH1: "VFun f1 \<sqsubseteq> VFun f2c \<and> VFun f2c \<sqsubseteq> VFun f3 \<longrightarrow> VFun f1 \<sqsubseteq> VFun f3"
+            using 1(1) 1(2) v1 v2 v3 f2_cd f2b_ne
+              nat_less_IH3[of n ?S ?P "VFun f1" "VFun f2c" "VFun f3"]  by auto        
+          show "VFun f1 \<sqsubseteq> VFun f3" using f1_f2c f2 f2_cd f2a_ne f2a_f3 f2b_f3 IH1 trans_app by blast
+        next
+          fix f2c f2d
+          assume f2_cd:"f2 = f2c @ f2d" and f1_f2d: "VFun f1 \<sqsubseteq> VFun f2d" and f2c_ne:"f2c \<noteq> []"          
+
+          show "VFun f1 \<sqsubseteq> VFun f3" sorry
+        next
+          show "VFun f1 \<sqsubseteq> VFun f3" sorry
+        next
+          show "VFun f1 \<sqsubseteq> VFun f3" sorry
+        next
+          show "VFun f1 \<sqsubseteq> VFun f3" sorry
+        qed
+      next
+        show ?thesis sorry
+      next
+        show ?thesis sorry
+      qed
+    qed
   qed
 qed
 
