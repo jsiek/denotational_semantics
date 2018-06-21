@@ -172,9 +172,7 @@ proof (induction n arbitrary: v rule: nat_less_induct)
     next
       case (Cons a f')
       obtain v v' where a: "a = (v,v')" by (cases a) auto
-      have v_v: "v \<sqsubseteq> v" using 1 Cons a VFun by auto
-      have vp_vp: "v' \<sqsubseteq> v'" using 1 Cons a VFun by auto
-      have 2: "v\<mapsto>v' \<sqsubseteq> v\<mapsto>v'" using v_v vp_vp by (rule le_arrow)
+      have 2: "v\<mapsto>v' \<sqsubseteq> v\<mapsto>v'" apply (rule le_arrow) using 1 Cons a VFun by auto
       have 3: "VFun f' \<sqsubseteq> VFun f'" using 1 Cons VFun a by auto
       have "VFun ((v,v')#f') \<sqsubseteq> VFun ((v,v')#f')"
       proof (cases "f' = []")
@@ -185,7 +183,7 @@ proof (induction n arbitrary: v rule: nat_less_induct)
         have 4: "v\<mapsto>v' \<sqsubseteq> VFun ((v,v')#f')" using 2 apply (rule le_cons_R1) using False by auto
         have 5: "VFun f' \<sqsubseteq> VFun ((v,v')#f')" using 3 apply (rule le_cons_R2) using False by simp
         show ?thesis using 4 5 apply (rule le_cons_L) using False by simp
-      qed      
+      qed
       then show ?thesis using Cons VFun a by simp
     qed
   qed
