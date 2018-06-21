@@ -192,6 +192,68 @@ qed
 proposition le_refl[intro!]: "v \<sqsubseteq> v"
   using le_refl_aux by blast
 
+section "Inversion Lemmas"
+  
+lemma le_bot_inv_aux: fixes v1::val and f1::func
+  assumes v12: "v1 \<sqsubseteq> v2" and v2b: "v2 = \<bottom>" shows "v1 = \<bottom>"
+  using v12 v2b by (induction rule: val_le.induct) auto
+      
+lemma le_bot_inv[elim!]: "\<lbrakk> f \<sqsubseteq> \<bottom>; f = \<bottom> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
+  using le_bot_inv_aux by auto      
+    
+lemma le_any_nat_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v' = VNat n\<rbrakk> \<Longrightarrow> v = VNat n"
+  by (induction rule: val_le.induct) auto
+    
+proposition le_any_nat_inv[elim!]: "\<lbrakk> v \<sqsubseteq> VNat n; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using le_any_nat_inv_aux[of v "VNat n" n] by auto
+  
+lemma le_nat_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VNat n\<rbrakk> \<Longrightarrow> v' = VNat n"
+  by (induction arbitrary: n rule: val_le.induct) auto
+    
+proposition le_nat_any_inv[elim!]: "\<lbrakk> VNat n \<sqsubseteq> v; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using le_nat_any_inv_aux[of "VNat n" v n] by auto    
+
+lemma le_fun_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VFun f \<rbrakk> \<Longrightarrow> \<exists> f'. v' = VFun f'"
+  by (induction arbitrary: f rule: val_le.induct) auto
+  
+proposition le_fun_any_inv: "\<lbrakk> VFun f \<sqsubseteq> v; \<And>f'. v = VFun f' \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using le_fun_any_inv_aux by blast
+    
+section "Generalized Introduction Rules"
+
+lemma le_fun_elt: assumes v12: "v1\<mapsto>v1' \<sqsubseteq> v2\<mapsto>v2'" and v2f: "(v2,v2') \<in> set f2"
+  shows "v1\<mapsto>v1' \<sqsubseteq> VFun f2" using v12 v2f
+proof (induction f2)
+  case Nil
+  then have "False" by simp
+  then show ?case ..
+next
+  case (Cons a f2)
+  obtain v v' where a: "a = (v,v')" by (cases a) auto
+  have "(v2,v2') = (v,v') \<or> (v2,v2') \<in> set f2" using Cons a by auto 
+  then show ?case
+  proof
+    assume v2v: "(v2,v2') = (v,v')"
+    show ?thesis sorry
+  next
+    assume v2f2: "(v2,v2') \<in> set f2"
+    show ?thesis sorry
+  qed
+qed  
+
+  
+lemma le_fun_subset: fixes f1::func and f2::func 
+  assumes ae: "\<forall> v1 v1'. (v1,v1') \<in> set f1 \<Longrightarrow> \<exists> v2 v2'. (v2,v2') \<in> set f2"
+  shows "VFun f1 \<sqsubseteq> VFun f2"
+proof (induction f1)
+  case Nil
+  show "\<bottom> \<sqsubseteq> VFun f2" by blast
+next
+  case (Cons a f1')
+  obtain v v' where a: "a = (v,v')" by (cases a) auto
+  
+  show ?case sorry
+qed  
     
     
 end
