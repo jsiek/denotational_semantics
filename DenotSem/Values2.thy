@@ -539,6 +539,12 @@ fun eq :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) wher
   "VNat n1 \<approx> VNat n2 = (n1 = n2)" |
   "VFun f1 \<approx> VFun f2 = (set f1 = set f2)" |
   "v1 \<approx> v2 = False"
+
+lemma eq_trans[trans]: "\<lbrakk> A \<approx> B; B \<approx> C \<rbrakk> \<Longrightarrow> A \<approx> C"
+  apply (case_tac A) apply (case_tac B) apply force apply force
+  apply (case_tac B) apply force apply simp
+    apply (case_tac C) apply force apply force
+  done
     
 lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some ABC \<rbrakk> \<Longrightarrow>
   \<exists> BC ABC'. B \<squnion> C = Some BC  \<and> A \<squnion> BC = Some ABC' \<and> ABC \<approx> ABC'"
@@ -550,37 +556,18 @@ lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some AB
   apply simp apply (case_tac B) apply force apply simp apply (case_tac "x2=x2a") apply simp
    apply clarify apply simp apply (case_tac C) apply force apply simp
    apply (case_tac "x2a = x2") apply force apply simp apply clarify apply simp
-   apply (case_tac "x2=[]") apply force apply simp
-   apply (subgoal_tac "set (x2a@x2) = set (x2a@x2a@x2)") prefer 2 apply force
-    apply (rule conjI)
-    apply (rule le_fun_subset) apply force 
-    apply (rule le_fun_subset) apply force 
-  apply simp apply clarify apply (case_tac C) apply force apply clarify
-  apply (case_tac ABC) apply (case_tac "x2@x2a = x2b") apply force apply force
-  apply clarify
-  apply (rename_tac fa fb fc fabc)
-  apply (case_tac "fb = fc")
-   apply (rule_tac x="VFun fb" in exI) apply (rule conjI) apply force
-   apply (rule_tac x="VFun (fa@fb)" in exI) apply simp
-   apply (subgoal_tac "set fabc = set (fa@fc)") prefer 2 apply simp
-    apply (case_tac "fa=[]") apply force apply force
-   apply (rule conjI) apply (rule le_fun_subset_eq) apply simp
-    apply (rule le_fun_subset_eq) apply simp
-  apply (rule_tac x="VFun (fb@fc)" in exI) apply (rule conjI) apply force
-  apply (case_tac "fa@fb = fc") apply simp 
-   apply (rule conjI)
-  apply (rule impI) apply (subgoal_tac "set fabc = set fb \<union> set fabc") prefer 2 apply force
-    apply (rule conjI) apply (rule le_fun_subset_eq) apply simp apply simp
-    apply (rule le_fun_subset_eq) apply simp 
-   apply (rule impI) apply (subgoal_tac "set fabc = set fa \<union> set fb \<union> set fabc")
-    prefer 2 apply force apply (rule conjI) apply (rule le_fun_subset_eq) apply force
-    apply (rule le_fun_subset_eq) apply force
-  apply simp apply (rule conjI) apply (rule impI) 
-    apply (subgoal_tac "set fabc = set fb \<union> set fc") prefer 2 apply force
-   apply (rule conjI) apply (rule le_fun_subset_eq) apply simp
-   apply (rule le_fun_subset_eq) apply simp
-    apply blast
-done
+  apply (case_tac "x2=[]") 
+   apply simp apply clarify apply (case_tac C) apply force apply simp
+    apply (case_tac "x2a=x2b") apply force apply force
+  apply (case_tac "x2=x2a") apply force apply simp
+  apply clarify apply (case_tac C) apply force apply simp
+  apply (case_tac "x2@x2a = x2b") apply simp apply clarify
+   apply (case_tac "x2@x2a = []") apply force apply simp
+   apply (rule impI) apply (rule conjI) apply (rule impI) 
+    apply (metis set_append sup.right_idem sup_left_idem)
+  apply blast
+  apply simp apply (case_tac "x2b = []") apply force apply force
+  done
     
 lemma join_list_append:
   "\<lbrakk> \<Squnion> f1 = Some A; \<Squnion> f2 = Some B; A \<squnion> B = Some C \<rbrakk> \<Longrightarrow>
@@ -599,7 +586,8 @@ next
       then show ?thesis using Cons.prems(2) by auto
     next
       case (Cons v2 f2')
-      then show ?thesis using Cons.prems(1) Cons.prems(2) Cons.prems(3) True by auto
+      then show ?thesis using Cons.prems True Cons
+        apply simp apply (case_tac C) apply auto done
     qed
   next
     case False
@@ -611,7 +599,8 @@ next
       using v1_Ap_A abc join_assoc[of v1 A' A B C] by blast
     from Cons(1)[of A' f2 B C'] obtain C'' where f1p_f2_cpp: "\<Squnion> (f1' @ f2) = Some C''"
       and cpp_cp: "C'' \<approx> C'" using Cons(3) ap apbc by blast 
-        
+    
+    have "\<Squnion>(v1#(f1'@f2)) = Some X" using f1p_f2_cpp sorry
     show "\<exists>C'. \<Squnion> ((v1 # f1') @ f2) = Some C' \<and> C' \<approx> C" sorry
   qed
 qed
