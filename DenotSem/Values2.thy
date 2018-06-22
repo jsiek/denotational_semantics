@@ -16,6 +16,13 @@ fun val_join :: "val \<Rightarrow> val \<Rightarrow> val option" (infix "\<squni
   vfun_join: "VFun f1 \<squnion> VFun f2 = (if f1 = f2 then Some (VFun f1) else Some (VFun (f1 @ f2)))" |
   "v1 \<squnion> v2 = None"
 
+fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
+  "\<Squnion> [] = None" |
+  "\<Squnion> [v] = Some v" |
+  "\<Squnion> (v#ls) = (case \<Squnion>ls of
+                None \<Rightarrow> None
+              | Some v' \<Rightarrow> v \<squnion> v')"
+
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where
   le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
   le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
@@ -24,8 +31,11 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   le_app_L[intro!]: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3; f1 \<noteq> []; f2 \<noteq> [] \<rbrakk>
                      \<Longrightarrow> VFun (f1@f2) \<sqsubseteq> VFun f3" |
   le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
-  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v2 \<sqsubseteq> v1;  v1' \<sqsubseteq> vab;
+(*  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v2 \<sqsubseteq> v1;  v1' \<sqsubseteq> vab;
                 vab \<noteq> va; vab \<noteq> vb \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> VFun [(v2,va),(v2,vb)]" 
+*)
+  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v1\<mapsto>va \<sqsubseteq> VFun f2; v1\<mapsto>vb \<sqsubseteq> VFun f2 \<rbrakk>
+                     \<Longrightarrow> v1\<mapsto>vab \<sqsubseteq> VFun f2"
 
 inductive_cases 
   le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
@@ -246,6 +256,9 @@ next
   have "v2 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v2'" using le_arrow by blast
   then show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" using le_arrow by simp
 next
+  case (le_distr va vb vab v1 f2 v1a v1b v2a v2b)
+  show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" sorry
+(*
   case (le_distr va vb vab vc vd)
   show "v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b" 
   proof
@@ -253,6 +266,7 @@ next
   next
     show "v1b \<sqsubseteq> v2b" using le_distr.prems(2) by blast
   qed
+*)
 qed
     
 lemma le_arrow_inv[elim!]: "\<lbrakk> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'; \<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
@@ -283,7 +297,7 @@ next
       then show ?thesis using a Cons apply simp apply (rule le_cons_R1) by auto
     next
       assume "(v2,v2') \<in> set f2"
-      then have "v1 \<mapsto> v1' \<sqsubseteq> VFun f2" using Cons.IH v12 by blast
+      then have "v1 \<mapsto> v1' \<sqsubseteq> VFun f2" using Cons.IH v12 by auto
       then show ?thesis by (rule le_cons_R2) simp
     qed
   qed   
@@ -390,7 +404,23 @@ proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::va
   apply (meson Values2.vfun_join le_left_join)
   apply simp apply clarify 
   by (metis (no_types, lifting) append_Nil2 le_app_L le_app_R1 le_app_R2 self_append_conv2)    
-  
+
+lemma upper_bound_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> \<exists> v12. v1 \<squnion> v2 = Some v12"
+  apply (case_tac v1) apply (case_tac v2) apply auto apply (case_tac v2) by auto
+
+lemma upper_bound_join_list: "\<lbrakk> (\<forall> v. v \<in> set L \<longrightarrow> v \<sqsubseteq> u); L \<noteq> [] \<rbrakk> \<Longrightarrow>
+    \<exists>vj. \<Squnion>L = Some vj \<and> vj \<sqsubseteq> u"
+  apply (induction L)
+  apply force
+  apply (case_tac L)
+   apply force
+   apply simp apply clarify apply simp 
+  apply (erule_tac x=a in allE) apply clarify apply simp
+    apply (subgoal_tac "\<exists>vja. a \<squnion> vj = Some vja") prefer 2 apply (rule upper_bound_join)
+    apply assumption apply assumption apply (erule exE)
+  apply (rule_tac x=vja in exI) apply simp
+  using le_left_join by blast
+    
 section "Transitivity"
     
 lemma append_len_geq: "f @ f' = list @ list' \<Longrightarrow> \<not> length f < length list \<Longrightarrow> \<exists>l'. f = list @ l'"
@@ -401,6 +431,59 @@ lemma append_len_geq: "f @ f' = list @ list' \<Longrightarrow> \<not> length f <
     apply auto
   done
 
+lemma le_left_append_elim_aux: "\<lbrakk> n = fsize f1 + fsize f2 + fsize f3; VFun (f1@f2) \<sqsubseteq> VFun f3 \<rbrakk>
+  \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3"
+proof (induction n arbitrary: f1 f2 f3 rule: nat_less_induct)
+  case (1 n)
+  show ?case
+  proof (cases f1)
+    case Nil
+    then show ?thesis using 1(3) by auto
+  next
+    case (Cons a f1') 
+    then obtain v v' where a: "a = (v,v')" by (cases a) auto
+    then have f1: "f1 = (v,v')#f1'" using Cons by simp
+    show ?thesis using 1(3)
+    proof (rule le_fun_fun_inv)
+      assume "f1 @ f2 = []"
+      then show "VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3" by auto
+    next
+      fix f31 f32 assume f3: "f3 = f31 @ f32" and f12_f2: "VFun (f1 @ f2) \<sqsubseteq> VFun f31"
+        and f12_ne: "f1 @ f2 \<noteq> []" and f32_ne: "f32 \<noteq> []"
+      have "fsize f1 + fsize f2 + fsize f31 < n" using 1(2) f3 f32_ne by auto
+      then have "VFun f1 \<sqsubseteq> VFun f31 \<and> VFun f2 \<sqsubseteq> VFun f31" using 1(1) f12_f2 by blast
+      then show "VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3"
+        by (metis f3 f32_ne le_app_R1 val_le.le_bot) 
+    next
+      fix f31 f32 assume f3: "f3 = f31@f32" and f12_f32: "VFun (f1 @ f2) \<sqsubseteq> VFun f32"
+        and f12_ne: "f1@f2 \<noteq> []" and f31_ne: "f31 \<noteq> []"
+      have "fsize f1 + fsize f2 + fsize f32 < n" using 1(2) f3 f31_ne by auto
+      then have "VFun f1 \<sqsubseteq> VFun f32 \<and> VFun f2 \<sqsubseteq> VFun f32" using 1(1) f12_f32 by blast
+      then show "VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3"
+        by (metis f3 f31_ne le_app_R2 val_le.le_bot)
+    next
+      fix fa fb assume f12_ab: "f1 @ f2 = fa @ fb" and a3: "VFun fa \<sqsubseteq> VFun f3" 
+        and b3: "VFun fb \<sqsubseteq> VFun f3" and a_ne: "fa \<noteq> []" and b_ne: "fb \<noteq> []" 
+      obtain fa' where fa: "fa = (v,v')#fa'" using f1 f12_ab a_ne
+         apply (case_tac fa) apply auto done
+      show "VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3" 
+      proof (cases "length f1' < length fa'")
+        case True
+          
+        then show ?thesis sorry
+      next
+        case False
+        then show ?thesis sorry
+      qed
+    next
+      show "VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3" sorry
+    next
+      show "VFun f1 \<sqsubseteq> VFun f3 \<and> VFun f2 \<sqsubseteq> VFun f3" sorry
+    qed      
+  qed
+qed
+    
+    
 lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
    \<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   sorry
@@ -408,7 +491,8 @@ lemma le_left_append_elim[elim!]: "\<lbrakk> VFun (f1@f2) \<sqsubseteq> VFun f3;
 lemma le_app_app:
   assumes f2: "f2 = f2a@f2b" and f2_cd: "f2 = f2c @ f2d" and
     f2a_ne: "f2a \<noteq> []" and f2b_ne: "f2b \<noteq> []" and
-    f2a_f3: "VFun f2a \<sqsubseteq> VFun f3" and f2b_f3: "VFun f2b \<sqsubseteq> VFun f3"
+    f2a_f3: "VFun f2a \<sqsubseteq> VFun f3" and f2b_f3: "VFun f2b \<sqsubseteq> VFun f3" and
+    IH: "VFun (f2c' @ f2d) \<sqsubseteq> VFun f3 \<longrightarrow> VFun f2c' \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3"
   shows "VFun f2c \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3"
 proof (cases "length f2a < length f2c")
   case True
@@ -416,8 +500,7 @@ proof (cases "length f2a < length f2c")
     by (metis True add_lessD1 append_len_geq less_imp_add_positive less_not_refl2)
   have f2cp_ne: "f2c' \<noteq> []" using f2c f2 f2_cd True by auto
   have f2b: "f2b = f2c' @ f2d" using f2c f2 f2_cd by auto
-  have f2cp_f3: "VFun f2c' \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3" using f2b f2b_f3 apply simp 
-    apply (erule le_left_append_elim) by blast
+  have f2cp_f3: "VFun f2c' \<sqsubseteq> VFun f3 \<and> VFun f2d \<sqsubseteq> VFun f3" using f2b f2b_f3 IH by auto 
   have f2c_f3: "VFun f2c \<sqsubseteq> VFun f3" using f2a_f3 f2cp_f3 f2c f2a_ne f2cp_ne 
     apply simp apply (rule le_app_L) by auto
   show ?thesis using f2cp_f3 f2c_f3 by blast
@@ -438,136 +521,6 @@ next
     then show ?thesis using f2c_f3 by blast
   qed
 qed
-    
-lemma le_trans_aux: assumes n: "n = vsize v1 + vsize v2 + vsize v3" and
-    v1_v2: "v1 \<sqsubseteq> v2" and v2_v3: "v2 \<sqsubseteq> v3"
-  shows "v1 \<sqsubseteq> v3"
-  using n v2_v3 v1_v2
-proof (induction n arbitrary: v1 v2 v3 rule: nat_less_induct)
-  let ?S = "\<lambda>x y z. vsize x + vsize y + vsize z"
-  let ?P = "\<lambda>x y z. y \<sqsubseteq> z \<longrightarrow> x \<sqsubseteq> y \<longrightarrow> x \<sqsubseteq> z"
-  case (1 n)
-  show ?case
-  proof (cases v1)
-    case (VNat n1) then have v1: "v1 = VNat n1" .
-    then have v3: "v3 = VNat n1" using 1 by (case_tac v2) auto
-    then show "v1 \<sqsubseteq> v3" using v1 v3 by blast
-  next
-    case (VFun f1)
-    then have v1: "v1 = VFun f1" .
-    obtain f2 f3 where v2: "v2 = VFun f2" and v3: "v3 = VFun f3"
-      using 1 v1 apply (case_tac v2) apply auto apply (case_tac v3) by auto
 
-    show ?thesis
-    proof (cases "f1 = []")
-      case True
-      then show ?thesis using v1 v3 by blast
-    next
-      case False then have f1_ne: "f1 \<noteq> []" .
-          
-      have "VFun f2 \<sqsubseteq> VFun f3" using 1(3) v2 v3 by simp
-      then show ?thesis
-      proof (rule le_fun_fun_inv)
-        (* case le_bot *)
-        assume "f2 = []" then show ?thesis using "1.prems"(3) v2 v3 by blast
-            
-      next (* case le_app_R1 *)
-        fix f3a f3b assume f3: "f3 = f3a@f3b" and f2_f3a: "VFun f2 \<sqsubseteq> VFun f3a" and
-          f3b_ne: "f3b \<noteq> []"
-        then have f1_f3a: "VFun f1 \<sqsubseteq> VFun f3a" using 1(1) 1(2) 1(4) v1 v2 v3
-          using nat_less_IH3[of n ?S ?P "VFun f1" "VFun f2" "VFun f3a"] by auto
-        then show "v1 \<sqsubseteq> v3" using v1 v3 f3 f3b_ne f1_ne apply simp by (rule le_app_R1) auto
-
-      next (* case le_app_R2 *)
-        fix f3a f3b assume f3: "f3 = f3a@f3b" and f2_f3a: "VFun f2 \<sqsubseteq> VFun f3b" and
-           f3b_ne: "f3a \<noteq> []"
-        then have f1_f3a: "VFun f1 \<sqsubseteq> VFun f3b" using 1(1) 1(2) 1(4) v1 v2 v3
-          using nat_less_IH3[of n ?S ?P "VFun f1" "VFun f2" "VFun f3b"] by auto
-        then show "v1 \<sqsubseteq> v3" using v1 v3 f3 f3b_ne f1_ne apply simp apply (rule le_app_R2) by auto
-            
-      next (* case le_app_L *)
-        fix f2a f2b assume f2: "f2 = f2a@f2b" and f2a_f3: "VFun f2a \<sqsubseteq> VFun f3"
-          and f2b_f3: "VFun f2b \<sqsubseteq> VFun f3" and f2a_ne: "f2a \<noteq> []" and f2b_ne: "f2b \<noteq> []" 
-        have f2_f3: "VFun f2 \<sqsubseteq> VFun f3" using f2a_f3 f2b_f3 f2 apply simp
-         apply (rule le_app_L) using f2a_ne f2b_ne apply auto done
-          
-        show "v1 \<sqsubseteq> v3" using 1(4) v1 v2 v3 apply simp
-        proof (erule le_fun_fun_inv)
-          (* subcase le_bot *)
-          assume "f1 = []" then show "VFun f1 \<sqsubseteq> VFun f3" by auto
-
-        next (* subcase le_app_R1 *) 
-          fix f2c f2d assume f2_cd: "f2 = f2c @ f2d" and f1_f2c: "VFun f1 \<sqsubseteq> VFun f2c"
-            and f1_ne: "f1 \<noteq> []" and f2d_ne: "f2d \<noteq> []"
-          have f2c_f3: "VFun f2c \<sqsubseteq> VFun f3"
-            using le_app_app[of f2 f2a f2b f2c f2d f3] f2 f2_cd f2a_ne f2b_ne f2a_f3 f2b_f3 by auto 
-          have s: "vsize (VFun f1) + vsize (VFun f2c) + vsize (VFun f3) < n"
-            using 1(2) v1 v2 v3 f2_cd f2d_ne by auto
-          show "VFun f1 \<sqsubseteq> VFun f3" using 1(1) s f1_f2c f2c_f3 by blast      
-              
-        next (* subcase le_app_R2 *)
-          fix f2c f2d
-          assume f2_cd:"f2 = f2c @ f2d" and f1_f2d: "VFun f1 \<sqsubseteq> VFun f2d" and f2c_ne:"f2c \<noteq> []"          
-          have f2d_f3: "VFun f2d \<sqsubseteq> VFun f3"
-            using le_app_app[of f2 f2a f2b f2c f2d f3] f2 f2_cd f2a_ne f2b_ne f2a_f3 f2b_f3 by auto
-          show "VFun f1 \<sqsubseteq> VFun f3"
-          proof (cases "f2d = []") 
-            case True then have "f1 = []" using f1_f2d by blast then show ?thesis by blast
-          next
-            case False
-            then have s: "vsize (VFun f1) + vsize (VFun f2d) + vsize (VFun f3) < n"
-              using 1(2) v1 v2 v3 f2 f2_cd f2c_ne apply auto by (metis fsize_append fsize_append_left)
-            show "VFun f1 \<sqsubseteq> VFun f3" using 1(1) s f1_f2d f2d_f3 by blast
-          qed
-            
-        next (* subcase le_app_L *)
-          fix f1a f1b assume f1: "f1 = f1a @ f1b" and f1a_f2: "VFun f1a \<sqsubseteq> VFun f2" and
-            f1b_f2: "VFun f1b \<sqsubseteq> VFun f2" and f1a_ne: "f1a \<noteq> []" and f1b_ne: "f1b \<noteq> []"
-          have "vsize (VFun f1a) + vsize (VFun f2) + vsize (VFun f3) < n"
-            using 1(2) v1 v2 v3 f1 f1b_ne by auto
-          then have f1a_f3: "VFun f1a \<sqsubseteq> VFun f3" using f1a_f2 f2_f3 1(1) by blast
-          have "vsize (VFun f1b) + vsize (VFun f2) + vsize (VFun f3) < n"
-            using 1(2) v1 v2 v3 f1 f1a_ne by auto
-          then have f1b_f3: "VFun f1b \<sqsubseteq> VFun f3" using f1b_f2 f2_f3 1(1) by blast        
-          show "VFun f1 \<sqsubseteq> VFun f3" using f1a_f3 f1b_f3 f1 apply simp apply (rule le_app_L)
-            using f1a_ne f1b_ne by auto
-
-        next (* subcase le_arrow *)
-          fix vc va vb vd assume f2_: "f2 = [(vc, vd)]"
-          have "False" using f2 f2_ f2a_ne f2b_ne by (case_tac f2a) auto
-          then show "VFun f1 \<sqsubseteq> VFun f3" ..
-              
-        next (* subcase le_distr *)
-          fix va vb vab v22 v11 v11'
-          assume f1: "f1 = [(v11, v11')]" and f2_: "f2 = [(v22, va), (v22, vb)]" 
-            and vab: "va \<squnion> vb = Some vab" and v22_v1: "v22 \<sqsubseteq> v11" and v1'_vab: "v11' \<sqsubseteq> vab"
-            and "vab \<noteq> va" and "vab \<noteq> vb"
-
-          have f2ab: "f2a = [(v22, va)] \<and> f2b = [(v22, vb)]" using f2 f2_ f2a_ne f2b_ne f2a_f3
-            apply simp apply (case_tac f2a) apply force apply (case_tac f2b) apply force 
-              apply (case_tac f2b) apply force apply (case_tac list) apply auto done            
-          have v2va_f3: "v22\<mapsto>va \<sqsubseteq> VFun f3" using f2a_f3 f2ab by simp
-          have v2vb_f3: "v22\<mapsto>vb \<sqsubseteq> VFun f3" using f2b_f3 f2ab by simp
-          
-          have 2: "v11\<mapsto>v11' \<sqsubseteq> v22 \<mapsto> vab" using v22_v1 v1'_vab by (rule le_arrow)
-          have 3: "v22 \<mapsto> vab \<sqsubseteq> VFun f3" using f2a_f3 f2b_f3 f2ab sorry
-              
-              (* 
-              Need le_dist_L!
-              *)
-            
-          have "vsize (v11\<mapsto>v11') + vsize (v22 \<mapsto> vab) + vsize (VFun f3) < n"
-            using 1(2) v1 v2 v3 f1 f2 f2_ f2ab vab vsize_join[of va vb vab] 
-            apply auto apply (case_tac "vsize v22") using vsize_pos[of v22] apply force by arith 
-          then show "VFun f1 \<sqsubseteq> VFun f3" using 2 3 1(1) f1 by blast
-        qed
-      next
-        show ?thesis sorry
-      next
-        show ?thesis sorry
-      qed
-    qed
-  qed
-qed
 
 end
