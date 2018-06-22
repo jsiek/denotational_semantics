@@ -535,8 +535,10 @@ section "Beta Sound, aka Arrow Subtping"
 lemma join_list_cons_none: "\<lbrakk> \<Squnion>ls = None; ls \<noteq> [] \<rbrakk> \<Longrightarrow> \<Squnion>(a#ls) = None" 
   apply (case_tac ls) apply auto done
   
-abbreviation equiv :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
-  "v \<approx> v' \<equiv> v \<sqsubseteq> v' \<and> v' \<sqsubseteq> v"
+fun eq :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
+  "VNat n1 \<approx> VNat n2 = (n1 = n2)" |
+  "VFun f1 \<approx> VFun f2 = (set f1 = set f2)" |
+  "v1 \<approx> v2 = False"
     
 lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some ABC \<rbrakk> \<Longrightarrow>
   \<exists> BC ABC'. B \<squnion> C = Some BC  \<and> A \<squnion> BC = Some ABC' \<and> ABC \<approx> ABC'"
@@ -605,10 +607,11 @@ next
       apply (case_tac "\<Squnion>f1'") using join_list_cons_none[of f1' v1] apply force
       by (smt join_list.elims list.distinct(1) list.inject option.simps(5))    
     from Cons have abc: "A \<squnion> B = Some C" by simp
-        
     obtain C' D where apbc: "A' \<squnion> B = Some C'" and v1_cp_d: "v1 \<squnion> C' = Some D" and c_d: "C \<approx> D"
       using v1_Ap_A abc join_assoc[of v1 A' A B C] by blast
-    from Cons(1)[of A' f2 B]
+    from Cons(1)[of A' f2 B C'] obtain C'' where f1p_f2_cpp: "\<Squnion> (f1' @ f2) = Some C''"
+      and cpp_cp: "C'' \<approx> C'" using Cons(3) ap apbc by blast 
+        
     show "\<exists>C'. \<Squnion> ((v1 # f1') @ f2) = Some C' \<and> C' \<approx> C" sorry
   qed
 qed
