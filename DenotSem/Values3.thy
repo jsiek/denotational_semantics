@@ -1,4 +1,4 @@
-theory Values2
+theory Values3
 imports Main
 begin
 
@@ -22,51 +22,6 @@ fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
                else (case \<Squnion>ls of
                        None \<Rightarrow> None
                      | Some v' \<Rightarrow> v \<squnion> v'))"
-
-inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where
-  le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
-  le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
-  le_app_R1[intro!]: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f2; f1 \<noteq> []; f3 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun (f2@f3)" |
-  le_app_R2[intro!]: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f3; f1 \<noteq> []; f2 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun (f2@f3)" |
-  le_app_L[intro!]: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3; f1 \<noteq> []; f2 \<noteq> [] \<rbrakk>
-                     \<Longrightarrow> VFun (f1@f2) \<sqsubseteq> VFun f3" |
-  le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
-(*  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v2 \<sqsubseteq> v1;  v1' \<sqsubseteq> vab;
-                vab \<noteq> va; vab \<noteq> vb \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> VFun [(v2,va),(v2,vb)]" 
-*)
-  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v1\<mapsto>va \<sqsubseteq> VFun f2; v1\<mapsto>vb \<sqsubseteq> VFun f2 \<rbrakk>
-                     \<Longrightarrow> v1\<mapsto>vab \<sqsubseteq> VFun f2"
-
-inductive_cases 
-  le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
-  le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> VFun f" and
-  le_fun_nat_inv[elim!]: "VFun f \<sqsubseteq> VNat n" and
-  le_any_bot_inv: "v \<sqsubseteq> \<bottom>" and 
-  le_fun_fun_inv: "VFun f1 \<sqsubseteq> VFun f2" and
-  le_arrow_arrow_inv: "v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" and
-  le_fun_arrow_inv: "VFun f1 \<sqsubseteq> v2 \<mapsto> v2'" and
-  le_arrow_fun_inv: "v1 \<mapsto> v1' \<sqsubseteq> VFun f2"
-  
-lemma le_cons_R1: assumes f1_b: "VFun f1 \<sqsubseteq> VFun [b]" and f1_ne: "f1\<noteq>[]" and f2_ne: "f2 \<noteq> []"
-  shows "VFun f1 \<sqsubseteq> VFun (b#f2)" 
-proof -
-  have "VFun f1 \<sqsubseteq> VFun ([b]@f2)" using f1_b f1_ne f2_ne by (rule le_app_R1) 
-  then show ?thesis by simp
-qed
-
-lemma le_cons_R2: assumes f1_f2: "VFun f1 \<sqsubseteq> VFun f2" and f1_ne: "f1 \<noteq> []"
-  shows "VFun f1 \<sqsubseteq> VFun (b#f2)" 
-proof -
-  have "VFun f1 \<sqsubseteq> VFun ([b]@f2)" using f1_f2 f1_ne by (rule le_app_R2) auto
-  then show ?thesis by simp
-qed
-    
-lemma le_cons_L: assumes a_f3: "VFun [a] \<sqsubseteq> VFun f3" and f2_f3: "VFun f2 \<sqsubseteq> VFun f3"
-  and f2_ne: "f2 \<noteq> []" shows "VFun (a#f2) \<sqsubseteq> VFun f3"
-proof -
-  have "VFun ([a]@f2) \<sqsubseteq> VFun f3" using a_f3 f2_f3 f2_ne le_app_L by blast
-  then show ?thesis by simp
-qed
 
 section "Value Size and Induction"
   
@@ -167,7 +122,56 @@ lemma nat_less_IH[elim!]: "\<lbrakk> \<forall>m<k. \<forall>x. m = S x \<longrig
 
 lemma nat_less_IH3[elim!]: "\<lbrakk> \<forall>m<k. \<forall>x y z. m = S x y z \<longrightarrow> P x y z; S a b c < k \<rbrakk> \<Longrightarrow> P a b c"
   by blast
-   
+
+fun shallow_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<lesssim>" 52) where
+  "(VNat n1) \<lesssim> (VNat n2) = (n1 = n2)" |
+  "(VFun f1) \<lesssim> (VFun f2) = (set f1 \<subseteq> set f2 \<and> fsize f1 = fsize f2)"
+
+abbreviation eq :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
+  "v1 \<approx> v2 \<equiv> (v1 \<lesssim> v2 \<and> v2 \<lesssim> v1)"
+
+inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where
+  le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
+  le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
+  le_app_R[intro!]: "\<lbrakk> VFun f1 \<sqsubseteq> VFun f2; VFun f2 \<lesssim> VFun f3; f1 \<noteq> [] \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f3" |
+  le_app_L[intro!]: "\<lbrakk> VFun f12 \<approx> VFun (f1@f2); VFun f1 \<sqsubseteq> VFun f3; VFun f2 \<sqsubseteq> VFun f3; f1 \<noteq> []; f2 \<noteq> [] \<rbrakk>
+                     \<Longrightarrow> VFun f12 \<sqsubseteq> VFun f3" |
+  le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" |
+  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v1\<mapsto>va \<sqsubseteq> VFun f2; v1\<mapsto>vb \<sqsubseteq> VFun f2 \<rbrakk>
+                     \<Longrightarrow> v1\<mapsto>vab \<sqsubseteq> VFun f2"
+
+inductive_cases 
+  le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
+  le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> VFun f" and
+  le_fun_nat_inv[elim!]: "VFun f \<sqsubseteq> VNat n" and
+  le_any_bot_inv: "v \<sqsubseteq> \<bottom>" and 
+  le_fun_fun_inv: "VFun f1 \<sqsubseteq> VFun f2" and
+  le_arrow_arrow_inv: "v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'" and
+  le_fun_arrow_inv: "VFun f1 \<sqsubseteq> v2 \<mapsto> v2'" and
+  le_arrow_fun_inv: "v1 \<mapsto> v1' \<sqsubseteq> VFun f2"
+  
+lemma le_cons_R1: assumes f1_b: "VFun f1 \<sqsubseteq> VFun [b]" and f1_ne: "f1\<noteq>[]" and f2_ne: "f2 \<noteq> []"
+  shows "VFun f1 \<sqsubseteq> VFun (b#f2)" 
+proof -
+  have "VFun f1 \<sqsubseteq> VFun ([b]@f2)" using f1_b f1_ne f2_ne by (rule le_app_R1) 
+  then show ?thesis by simp
+qed
+
+lemma le_cons_R2: assumes f1_f2: "VFun f1 \<sqsubseteq> VFun f2" and f1_ne: "f1 \<noteq> []"
+  shows "VFun f1 \<sqsubseteq> VFun (b#f2)" 
+proof -
+  have "VFun f1 \<sqsubseteq> VFun ([b]@f2)" using f1_f2 f1_ne by (rule le_app_R2) auto
+  then show ?thesis by simp
+qed
+    
+lemma le_cons_L: assumes a_f3: "VFun [a] \<sqsubseteq> VFun f3" and f2_f3: "VFun f2 \<sqsubseteq> VFun f3"
+  and f2_ne: "f2 \<noteq> []" shows "VFun (a#f2) \<sqsubseteq> VFun f3"
+proof -
+  have "VFun ([a]@f2) \<sqsubseteq> VFun f3" using a_f3 f2_f3 f2_ne le_app_L by blast
+  then show ?thesis by simp
+qed
+
+
 
 section "Reflexivity"  
   
@@ -548,10 +552,6 @@ section "Beta Sound, aka Arrow Subtping"
 lemma join_list_cons_none: "\<lbrakk> \<Squnion>ls = None; ls \<noteq> [] \<rbrakk> \<Longrightarrow> \<Squnion>(a#ls) = None" 
   apply (case_tac ls) apply auto done
   
-fun eq :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
-  "VNat n1 \<approx> VNat n2 = (n1 = n2)" |
-  "VFun f1 \<approx> VFun f2 = (set f1 = set f2)" |
-  "v1 \<approx> v2 = False"
 
 lemma eq_sym[sym]: "A \<approx> B \<Longrightarrow> B \<approx> A"
   apply (case_tac A) apply (case_tac B) apply force apply force
