@@ -722,8 +722,18 @@ lemma decomp_union_list: "set x = set f1 \<union> set f2 \<Longrightarrow>
  \<exists> x1 x2. x = x1@x2 \<and> set x1 = set f1 \<and> set x2 = set f2" 
   oops
     
-lemma subset_sub: "\<lbrakk> A' \<sqsubseteq> B; A' = VFun f'; set f \<subseteq> set f' \<rbrakk> \<Longrightarrow> VFun f \<sqsubseteq> B"
-  apply (induction A' B arbitrary: f f' rule: val_le.induct)
+lemma subset_sub: "\<lbrakk> VFun f \<sqsubseteq> B; set f' \<subseteq> set f \<rbrakk> \<Longrightarrow> VFun f' \<sqsubseteq> B"
+  apply (induction f)
+   apply force
+  apply simp
+    apply (case_tac B) apply force apply clarify
+    apply (subgoal_tac "VFun ([(a,b)]@f) \<sqsubseteq> VFun x2") prefer 2 apply force
+    apply (subgoal_tac "VFun [(a,b)] \<sqsubseteq> VFun x2 \<and> VFun f \<sqsubseteq> VFun x2") prefer 2
+    apply (rule le_left_append_elim) apply blast apply blast
+  apply simp apply clarify
+  
+    
+(*  apply (induction A' B arbitrary: f f' rule: val_le.induct)
   apply force 
   apply force
   apply simp apply (subgoal_tac "VFun f \<sqsubseteq> VFun f2") prefer 2 apply blast  
@@ -735,7 +745,7 @@ lemma subset_sub: "\<lbrakk> A' \<sqsubseteq> B; A' = VFun f'; set f \<subseteq>
   apply simp apply (subgoal_tac "VFun f1 \<sqsubseteq> VFun f3") prefer 2 apply blast
     apply (subgoal_tac "VFun f2 \<sqsubseteq> VFun f3") prefer 2 apply blast
     apply clarify
-    oops
+*)    oops
     
 lemma eq_sub: "\<lbrakk> A' \<sqsubseteq> B; A \<approx> A'  \<rbrakk> \<Longrightarrow> A \<sqsubseteq> B"
 (*  apply (induction A' B arbitrary: A rule: val_le.induct)
