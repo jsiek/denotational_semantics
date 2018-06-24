@@ -345,9 +345,17 @@ proposition le_distr_trad2: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some 
     using v12 using le_join_right apply blast
   done
 
-lemma subset_fun_in: "(v\<mapsto>v' \<in> f1 \<longrightarrow> fset f1 \<subseteq> fset f2 \<longrightarrow> v\<mapsto>v' \<in> f2)"
-  
-  sorry
+lemma subset_fun_in_aux: "(v1\<sqsubseteq>v2 \<longrightarrow> True) \<and> (v\<mapsto>v' \<in> f1 \<longrightarrow> (\<forall>f2. fset f1 \<subseteq> fset f2 \<longrightarrow> v\<mapsto>v' \<in> f2))"
+  apply (induction rule: val_le_fun_in.induct)
+      apply blast
+     apply blast
+    apply blast
+  using le_arrow apply blast
+  using le_distr apply blast
+  done
+    
+lemma subset_fun_in: "\<lbrakk> v\<mapsto>v' \<in> f1; fset f1 \<subseteq> fset f2 \<rbrakk> \<Longrightarrow> v\<mapsto>v' \<in> f2"
+  using subset_fun_in_aux by blast
   
 proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
   assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
@@ -364,9 +372,15 @@ proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::va
    apply (erule le_arrow_fun_inv) apply simp
    apply (subgoal_tac "(v2a,v2'a) \<in> fset (f|\<union>|f2)") prefer 2 apply force
     apply (rule le_arrow) apply assumption apply blast apply blast
-
-  oops    
-    
+   apply (rule subset_fun_in) apply blast apply force 
+  apply (erule le_fun_any_inv)
+   apply simp apply clarify apply (rule le_fun) apply clarify
+   apply (subgoal_tac "v\<mapsto>v' \<in> f2") prefer 2 apply blast
+   apply (rule subset_fun_in) apply assumption apply force
+  apply simp apply clarify apply (rule le_fun) apply clarify
+  apply simp apply (erule disjE) 
+  apply (meson funion_upper1 less_eq_fset.rep_eq subset_fun_in)  
+  by (meson funion_upper2 less_eq_fset.rep_eq subset_fun_in)    
     
 lemma upper_bound_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> \<exists> v12. v1 \<squnion> v2 = Some v12"
   apply (case_tac v1) apply (case_tac v2) apply auto apply (case_tac v2) by auto
