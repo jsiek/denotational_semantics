@@ -30,7 +30,7 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   le_bot: "\<bottom> \<sqsubseteq> VFun f" |
   le_fun: "\<lbrakk> \<forall> v v'. (v,v') \<in> fset f1 \<longrightarrow> v\<mapsto>v' \<in> f2 \<rbrakk>
                      \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f2" |
-  le_arrow: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'; (v2, v2') \<in> fset f2  \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<in> f2" |
+  le_arrow: "\<lbrakk> (v2, v2') \<in> fset f2; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<in> f2" |
   le_distr: "\<lbrakk> va \<squnion> vb = Some vab; v1\<mapsto>va \<in> f2; v1\<mapsto>vb \<in> f2 \<rbrakk>
                      \<Longrightarrow> v1\<mapsto>vab \<in> f2"
 
@@ -38,9 +38,12 @@ inductive_cases
   le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
   le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> VFun f" and
   le_fun_nat_inv[elim!]: "VFun f \<sqsubseteq> VNat n" and
+  le_any_nat_inv[elim!]: "v \<sqsubseteq> VNat n" and 
+  le_nat_any_inv[elim!]: "VNat n \<sqsubseteq> v" and
   le_any_bot_inv: "v \<sqsubseteq> \<bottom>" and 
   le_fun_fun_inv: "VFun f1 \<sqsubseteq> VFun f2" and
-  le_arrow_arrow_inv: "v1 \<mapsto> v1' \<in> f" 
+  le_fun_any_inv: "VFun f \<sqsubseteq> v" and
+  le_arrow_fun_inv: "v1 \<mapsto> v1' \<in> f" 
 (*  le_fun_arrow_inv: "VFun f1 \<sqsubseteq> v2 \<mapsto> v2'" and
   le_arrow_fun_inv: "v1 \<mapsto> v1' \<sqsubseteq> VFun f2"
   *)
@@ -218,10 +221,8 @@ proposition le_refl[intro!]: "v \<sqsubseteq> v"
    apply force
   apply (rule le_fun)
    apply clarify
-  apply (rule le_arrow) prefer 3 apply assumption apply auto   
+  apply (rule le_arrow) apply assumption apply auto   
   done
-
-
 
 section "Introduction Rules for Join"
     
@@ -231,7 +232,7 @@ proposition le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sq
    apply force
   apply (case_tac v2) apply force
   apply simp apply clarify apply (rule le_fun) apply clarify
-    apply (rule le_arrow) prefer 3 apply force apply auto
+    apply (rule le_arrow) apply auto
   done
     
 proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12" (* incl_R *) 
@@ -240,8 +241,7 @@ proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<s
    apply force
   apply (case_tac v2) apply force
   apply simp apply clarify apply (rule le_fun) apply clarify 
-  apply (rule le_arrow) prefer 3 apply force
-   apply auto
+  apply (rule le_arrow) apply auto
     done
 
  proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" (* glb *)
@@ -255,35 +255,31 @@ proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<s
      apply (subgoal_tac "(v,v') \<in> fset f1 \<or> (v,v') \<in> fset f2") prefer 2 apply force
      apply (erule disjE) 
     using le_fun_fun_inv apply auto done
-     
-(*
 
 section "Inversion Lemmas"
-  
-lemma le_bot_inv_aux: fixes v1::val and f1::func
-  assumes v12: "v1 \<sqsubseteq> v2" and v2b: "v2 = \<bottom>" shows "v1 = \<bottom>"
-  using v12 v2b by (induction rule: val_le.induct) auto
-      
-lemma le_bot_inv[elim!]: "\<lbrakk> f \<sqsubseteq> \<bottom>; f = \<bottom> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
-  using le_bot_inv_aux by auto      
-    
-lemma le_any_nat_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v' = VNat n\<rbrakk> \<Longrightarrow> v = VNat n"
-  by (induction rule: val_le.induct) auto
-    
-proposition le_any_nat_inv[elim!]: "\<lbrakk> v \<sqsubseteq> VNat n; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  using le_any_nat_inv_aux[of v "VNat n" n] by auto
-  
-lemma le_nat_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VNat n\<rbrakk> \<Longrightarrow> v' = VNat n"
-  by (induction arbitrary: n rule: val_le.induct) auto
-    
-proposition le_nat_any_inv[elim!]: "\<lbrakk> VNat n \<sqsubseteq> v; \<lbrakk> v = VNat n \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  using le_nat_any_inv_aux[of "VNat n" v n] by auto    
+     
+lemma le_bot_inv_aux: "(v1 \<sqsubseteq> v2 \<longrightarrow> v2 = \<bottom> \<longrightarrow> v1 = \<bottom>) \<and> (v\<mapsto>v' \<in> f \<longrightarrow> f \<noteq> {||})"
+  apply (induction rule: val_le_fun_in.induct)   
+  apply force
+  apply force
+  apply simp apply (rule impI) apply (rule classical)
+    apply (subgoal_tac "\<exists> v v'. (v,v') |\<in>| f1") prefer 2 apply auto[1]
+    apply (erule exE)+ apply (erule_tac x=v in allE)apply (erule_tac x=v' in allE)
+    apply (erule impE) apply (simp add: fmember.rep_eq) apply blast
+  apply force 
+  apply force
+  done
 
+lemma le_bot_inv[elim!]: "\<lbrakk> v \<sqsubseteq> \<bottom>; v = \<bottom> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
+  using le_bot_inv_aux by auto      
+
+proposition le_fun_any_inv2: "\<lbrakk> VFun f \<sqsubseteq> v; \<And>f'. v = VFun f' \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+   apply (erule le_fun_any_inv) apply auto done
+
+(*
 lemma le_fun_any_inv_aux: "\<lbrakk> v \<sqsubseteq> v'; v = VFun f \<rbrakk> \<Longrightarrow> \<exists> f'. v' = VFun f'"
   by (induction arbitrary: f rule: val_le.induct) auto
   
-proposition le_fun_any_inv: "\<lbrakk> VFun f \<sqsubseteq> v; \<And>f'. v = VFun f' \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  using le_fun_any_inv_aux by blast
 
 lemma le_arrow_inv_aux: "\<lbrakk> v1 \<sqsubseteq> v2; v1 = v1a \<mapsto> v1b; v2 = v2a \<mapsto> v2b \<rbrakk> \<Longrightarrow> v2a \<sqsubseteq> v1a \<and> v1b \<sqsubseteq> v2b"
 proof (induction v1 v2 arbitrary: v1a v1b v2a v2b rule: val_le.induct)
@@ -317,101 +313,64 @@ qed
     
 lemma le_arrow_inv[elim!]: "\<lbrakk> v1 \<mapsto> v1' \<sqsubseteq> v2 \<mapsto> v2'; \<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_arrow_inv_aux by blast 
-    
+*)
+
 section "More Introduction Rules"
 
-lemma le_fun_elt: assumes v12: "v1\<mapsto>v1' \<sqsubseteq> v2\<mapsto>v2'" and v2f: "(v2,v2') \<in> set f2"
-  shows "v1\<mapsto>v1' \<sqsubseteq> VFun f2" using v12 v2f
-proof (induction f2)
-  case Nil
-  then have "False" by simp
-  then show ?case ..
-next
-  case (Cons a f2)
-  obtain v v' where a: "a = (v,v')" by (cases a) auto
-  show ?case
-  proof (cases f2)
-    case Nil
-    then show ?thesis using Cons a by auto
-  next
-    case (Cons b f2')
-    have "(v2,v2') = (v,v') \<or> (v2,v2') \<in> set f2" using a using Cons.prems(2) by auto
-    then show ?thesis
-    proof
-      assume "(v2,v2') = (v,v')"
-      then have "v1 \<mapsto> v1' \<sqsubseteq> v \<mapsto> v'" using v12 by auto
-      then show ?thesis using a Cons apply simp apply (rule le_cons_R1) by auto
-    next
-      assume "(v2,v2') \<in> set f2"
-      then have "v1 \<mapsto> v1' \<sqsubseteq> VFun f2" using Cons.IH v12 by auto
-      then show ?thesis by (rule le_cons_R2) simp
-    qed
-  qed   
-qed
-  
-lemma le_fun_subset: fixes f1::func and f2::func 
-  assumes ae: "\<forall> v1 v1'. (v1,v1') \<in> set f1 \<longrightarrow> (\<exists> v2 v2'. (v2,v2') \<in> set f2 \<and> v1\<mapsto>v1'\<sqsubseteq>v2\<mapsto>v2')"
-  shows "VFun f1 \<sqsubseteq> VFun f2" using ae
-proof (induction f1)
-  case Nil
-  show "\<bottom> \<sqsubseteq> VFun f2" by blast
-next
-  case (Cons a f1')
-  obtain v1 v1' where a: "a = (v1,v1')" by (cases a) auto
-  have v11_f1: "(v1,v1') \<in> set (a#f1')" using a by simp
-  obtain v2 v2' where v22_f2: "(v2,v2') \<in> set f2" and v11_v22: "v1\<mapsto>v1'\<sqsubseteq>v2\<mapsto>v2'"
-    using v11_f1 Cons(2) by blast
-  have 1: "v1\<mapsto>v1' \<sqsubseteq> VFun f2" using v11_v22 v22_f2 by (rule le_fun_elt)
-  have 2: "VFun f1' \<sqsubseteq> VFun f2" by (simp add: Cons.IH Cons.prems)
-  show ?case
-  proof (cases f1')
-    case Nil
-    then show ?thesis using a 1 by auto
-  next
-    case (Cons a list)
-    then show ?thesis using 1 2 a apply simp apply (rule le_cons_L) by auto
-  qed
-qed  
-
 lemma le_fun_subset_eq: fixes f1::func and f2::func 
-  assumes f1_f2: "set f1 \<subseteq> set f2" shows "VFun f1 \<sqsubseteq> VFun f2"
-proof -
-  have ae: "\<forall> v1 v1'. (v1,v1') \<in> set f1 \<longrightarrow> (\<exists> v2 v2'. (v2,v2') \<in> set f2 \<and> v1\<mapsto>v1'\<sqsubseteq>v2\<mapsto>v2')"
-    using f1_f2 le_refl apply auto done
-  then show ?thesis using le_fun_subset by blast
+  assumes f1_f2: "fset f1 \<subseteq> fset f2" shows "VFun f1 \<sqsubseteq> VFun f2"
+proof
+  show "\<forall>v v'. (v, v') \<in> fset f1 \<longrightarrow> v\<mapsto>v' \<in> f2 "
+  proof clarify
+    fix v v' assume "(v,v') \<in> fset f1"
+    then have "(v,v') \<in> fset f2" using f1_f2 by blast
+    then show "v\<mapsto>v' \<in> f2" 
+      apply (rule le_arrow) apply auto done
+  qed
 qed
   
 proposition le_distr_trad1: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some v12" 
-  shows "v \<mapsto> v12 \<sqsubseteq> VFun [(v,v1),(v,v2)]"
-  using v12 by (metis Values2.le_refl le_cons_R1 le_cons_R2 le_distr not_Cons_self)
+  shows "v \<mapsto> v12 \<in> {|(v,v1),(v,v2)|}"
+  using v12 apply (rule le_distr) apply (rule le_arrow) defer apply (rule le_refl)
+  apply (rule le_refl) apply (rule le_arrow) defer apply (rule le_refl) apply (rule le_refl)
+  apply auto
+  done
     
 proposition le_distr_trad2: fixes v1::val assumes v12: "v1 \<squnion> v2 = Some v12" 
-  shows "VFun [(v,v1),(v,v2)] \<sqsubseteq> v \<mapsto> v12"
-  using v12 by (metis Values2.le_refl le_arrow le_cons_L le_join_left le_join_right)
+  shows "VFun {|(v,v1),(v,v2)|} \<sqsubseteq> VFun {|(v, v12)|}"
+  apply (rule le_fun) apply clarify
+  apply simp apply (erule disjE) apply clarify apply (rule le_arrow) apply force
+    apply blast using v12 using le_join_left apply blast
+  apply clarify apply (rule le_arrow) apply force apply blast
+    using v12 using le_join_right apply blast
+  done
 
+lemma subset_fun_in: "(v\<mapsto>v' \<in> f1 \<longrightarrow> fset f1 \<subseteq> fset f2 \<longrightarrow> v\<mapsto>v' \<in> f2)"
+  
+  sorry
+  
 proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::val 
   assumes 1: "v1 \<sqsubseteq> v1'" and 2: "v2 \<sqsubseteq> v2'" and
     v12: "v1 \<squnion> v2 = Some v12" and v12p: "v1' \<squnion> v2' = Some v12'"
   shows "v12 \<sqsubseteq> v12'"
   using 1 2 v12 v12p
   apply (case_tac v1) apply (case_tac v2) apply force apply force apply (case_tac v2)
-   apply force apply simp
-  apply (case_tac "x2=x2a") apply simp apply clarify 
-   apply (case_tac v1') apply force apply (case_tac v2') apply force    
-   apply simp apply (case_tac "x2b=x2c") apply force apply simp
-   apply (case_tac v12') apply force apply simp
-   apply clarify apply (metis le_app_R1 le_app_R2 val_le.le_bot)
-  apply simp apply (case_tac v1') apply force apply (case_tac v2') apply force
-  apply (case_tac v12') apply simp apply (case_tac "x2b=x2c") apply force
    apply force apply simp apply clarify
-  apply (case_tac "x2b=x2c") apply simp
-  apply (meson Values2.vfun_join le_left_join)
-  apply simp apply clarify 
-  by (metis (no_types, lifting) append_Nil2 le_app_L le_app_R1 le_app_R2 self_append_conv2)    
+   apply (erule le_fun_any_inv) 
+   apply (erule le_fun_any_inv)
+  apply clarify apply simp apply clarify apply (rule le_bot)
+   apply simp apply clarify apply (rule le_fun) apply clarify
+   apply (subgoal_tac "v\<mapsto>v' \<in> f2") prefer 2 apply blast
+   apply (erule le_arrow_fun_inv) apply simp
+   apply (subgoal_tac "(v2a,v2'a) \<in> fset (f|\<union>|f2)") prefer 2 apply force
+    apply (rule le_arrow) apply assumption apply blast apply blast
 
+  oops    
+    
+    
 lemma upper_bound_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> \<exists> v12. v1 \<squnion> v2 = Some v12"
   apply (case_tac v1) apply (case_tac v2) apply auto apply (case_tac v2) by auto
-
+(*
 lemma upper_bound_join_list: "\<lbrakk> (\<forall> v. v \<in> set L \<longrightarrow> v \<sqsubseteq> u); L \<noteq> [] \<rbrakk> \<Longrightarrow>
     \<exists>vj. \<Squnion>L = Some vj \<and> vj \<sqsubseteq> u"
   apply (induction L)
