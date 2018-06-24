@@ -27,11 +27,11 @@ fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52)
   and fun_in :: "val \<Rightarrow> val \<Rightarrow> func \<Rightarrow> bool"  ("_\<mapsto>_ \<in> _" [54,54,54] 55) where
   le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
-  le_bot[intro!]: "\<bottom> \<sqsubseteq> VFun f" |
-  le_fun_L[intro!]: "\<lbrakk> \<forall> v v'. (v,v') \<in> fset f1 \<longrightarrow> v\<mapsto>v' \<in> f2 \<rbrakk>
+  le_bot: "\<bottom> \<sqsubseteq> VFun f" |
+  le_fun: "\<lbrakk> \<forall> v v'. (v,v') \<in> fset f1 \<longrightarrow> v\<mapsto>v' \<in> f2 \<rbrakk>
                      \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f2" |
-  le_arrow[intro!]: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'; (v2, v2') \<in> fset f2  \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<in> f2" |
-  le_distr[intro!]: "\<lbrakk> va \<squnion> vb = Some vab; v1\<mapsto>va \<in> f2; v1\<mapsto>vb \<in> f2 \<rbrakk>
+  le_arrow: "\<lbrakk> v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'; (v2, v2') \<in> fset f2  \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<in> f2" |
+  le_distr: "\<lbrakk> va \<squnion> vb = Some vab; v1\<mapsto>va \<in> f2; v1\<mapsto>vb \<in> f2 \<rbrakk>
                      \<Longrightarrow> v1\<mapsto>vab \<in> f2"
 
 inductive_cases 
@@ -213,37 +213,15 @@ lemma nat_less_IH3[elim!]: "\<lbrakk> \<forall>m<k. \<forall>x y z. m = S x y z 
 
 section "Reflexivity"  
 
-proposition le_refl_aux: "v \<sqsubseteq> v"
+proposition le_refl[intro!]: "v \<sqsubseteq> v"
   apply (induction v)
-  apply force
+   apply force
   apply (rule le_fun)
    apply clarify
-   apply (subgoal_tac "v \<mapsto> v' \<sqsubseteq> v \<mapsto> v'") prefer 2 apply (simp add: le_arrow)
-   
-    
-proposition le_refl_aux: "n = vsize v \<Longrightarrow> v \<sqsubseteq> v"
-proof (induction n arbitrary: v rule: nat_less_induct)
-  case (1 k)
-  show ?case
-  proof (cases v)
-    case (VNat n)
-    have "VNat n \<sqsubseteq> VNat n" by blast
-    then show ?thesis using VNat by simp
-  next
-    case (VFun f)
-    then show ?thesis apply simp
-      apply (case_tac f) apply force apply simp
-      apply (rule le_fun)
-       apply clarify
-       apply simp apply (erule disjE) apply clarify 
-               
-   sorry     
-    qed
-  qed
-qed
-(*
-proposition le_refl[intro!]: "v \<sqsubseteq> v"
-  using le_refl_aux by blast
+  apply (rule le_arrow) prefer 3 apply assumption apply auto   
+  done
+
+
 
 section "Introduction Rules for Join"
     
@@ -252,51 +230,34 @@ proposition le_join_left: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v1 \<sq
     apply (case_tac "x1 = x1a") apply force apply force
    apply force
   apply (case_tac v2) apply force
-  apply simp
-  apply (case_tac "x2 = x2a") apply force 
-  apply simp
-  apply clarify
-    apply (case_tac x2a) apply simp apply blast
-  apply (case_tac x2) apply simp apply blast
-  apply (rule le_app_R1) apply blast apply blast apply blast
+  apply simp apply clarify apply (rule le_fun) apply clarify
+    apply (rule le_arrow) prefer 3 apply force apply auto
   done
-
+    
 proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12" (* incl_R *) 
     apply (case_tac v1) apply (case_tac v2) apply simp
     apply (case_tac "x1 = x1a") apply force apply force
    apply force
   apply (case_tac v2) apply force
-  apply simp
-  apply (case_tac "x2 = x2a") apply force
-  apply simp
-  apply clarify
-  apply (case_tac x2)
-   apply force
-    apply (case_tac x2a) apply force
-   apply (rule le_app_R2) apply auto
-  done
+  apply simp apply clarify apply (rule le_fun) apply clarify 
+  apply (rule le_arrow) prefer 3 apply force
+   apply auto
+    done
 
-proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" (* glb *)
+ proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" (* glb *)
   apply (case_tac v1) apply (case_tac v2) apply simp
   apply (case_tac "x1 = x1a") apply force apply force
   apply force
   apply (case_tac v2) apply force
-  apply simp
-  apply (case_tac "x2 = x2a") apply force
-  apply simp
-  apply clarify
-  apply (case_tac v3) apply simp 
-   apply force
-  apply clarify
-  apply (case_tac x2) apply force
-  apply (case_tac x2a) apply force
-  apply (rule le_app_L)
-     apply force
-    apply force
-  apply blast
-  apply blast
-  done
-    
+   apply (case_tac v3) apply force
+   apply (rename_tac f1 f2 f3)
+   apply simp apply clarify apply (rule le_fun) apply clarify
+     apply (subgoal_tac "(v,v') \<in> fset f1 \<or> (v,v') \<in> fset f2") prefer 2 apply force
+     apply (erule disjE) 
+    using le_fun_fun_inv apply auto done
+     
+(*
+
 section "Inversion Lemmas"
   
 lemma le_bot_inv_aux: fixes v1::val and f1::func
