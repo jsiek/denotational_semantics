@@ -16,22 +16,22 @@ fun val_join :: "val \<Rightarrow> val \<Rightarrow> val option" (infix "\<squni
   "VNat n1 \<squnion> VNat n2 = (if n1 = n2 then Some (VNat n1) else None)" |
   vfun_join: "VFun f1 \<squnion> VFun f2 = Some (VFun (f1 |\<union>| f2))" |
   "v1 \<squnion> v2 = None"
-
+(*
 fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
   "\<Squnion> [] = None" |
   "\<Squnion> (v#ls) = (if ls = [] then Some v
                else (case \<Squnion>ls of
                        None \<Rightarrow> None
                      | Some v' \<Rightarrow> v \<squnion> v'))"
-
+*)
 abbreviation join_maybe :: "val \<Rightarrow> val option \<Rightarrow> val option" where  
   "join_maybe v1 mv2 \<equiv> 
     (case mv2 of
         None \<Rightarrow> None
      | Some v2 \<Rightarrow> v1 \<squnion> v2)"
 
-definition join_fset :: "val fset \<Rightarrow> val option" ("\<Squnion>") where
-  "\<Squnion> L \<equiv> (if fcard L = 0 then None
+abbreviation join_fset :: "val fset \<Rightarrow> val option" ("\<Squnion>") where
+  "\<Squnion> L \<equiv> (if L = bot then None
            else let v = (SOME x. x |\<in>| L) in ffold join_maybe (Some v) (fminus L {|v|}))"  
   
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52)
@@ -395,6 +395,7 @@ proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::va
 lemma upper_bound_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> \<exists> v12. v1 \<squnion> v2 = Some v12"
   apply (case_tac v1) apply (case_tac v2) apply auto apply (case_tac v2) by auto
 
+(*
 lemma upper_bound_join_list: "\<lbrakk> (\<forall> v. v \<in> set L \<longrightarrow> v \<sqsubseteq> u); L \<noteq> [] \<rbrakk> \<Longrightarrow>
     \<exists>vj. \<Squnion>L = Some vj \<and> vj \<sqsubseteq> u"
   apply (induction L)
@@ -409,7 +410,12 @@ lemma upper_bound_join_list: "\<lbrakk> (\<forall> v. v \<in> set L \<longrighta
     apply (rule le_left_join) prefer 3 apply assumption apply blast apply blast
     apply simp apply (case_tac "\<Squnion>list") apply force apply simp
     using le_left_join by blast
+*)
 
+lemma join_commutes: "A \<squnion> B = Some C \<Longrightarrow> B \<squnion> A = Some C"
+  apply (case_tac A) apply (case_tac B) apply simp apply (case_tac "x1=x1a") apply force
+    apply force apply force apply (case_tac B) apply force apply force done
+    
 interpretation join_commute: comp_fun_commute "join_maybe"
   unfolding comp_fun_commute_def 
   apply auto apply (rule ext) apply simp apply (case_tac xa)
@@ -465,7 +471,7 @@ proof -
   have ub2: "\<forall> v. v \<in> fset ?L \<longrightarrow> v \<sqsubseteq> u" using ub by auto
   obtain vj where "ffold join_maybe (Some ?v) ?L = Some vj" and "vj \<sqsubseteq> u"
     using ub2 v_u upper_bound_join_fold by blast
-  then show ?thesis using L_ne by (simp add: join_fset_def) 
+  then show ?thesis using L_ne by simp 
 qed
   
 lemma lower_bounds_join: "\<lbrakk> va \<squnion> vb = Some vab; va \<sqsubseteq> B1; vb \<sqsubseteq> B2 \<rbrakk> \<Longrightarrow> \<exists> B12. B1 \<squnion> B2 = Some B12"
@@ -591,8 +597,10 @@ qed
     
 section "Beta Sound, aka Arrow Subtping"
 
+(*
 lemma join_list_cons_none: "\<lbrakk> \<Squnion>ls = None; ls \<noteq> [] \<rbrakk> \<Longrightarrow> \<Squnion>(a#ls) = None" 
   apply (case_tac ls) apply auto done
+*)
   
 lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some ABC \<rbrakk> \<Longrightarrow>
   \<exists> BC. B \<squnion> C = Some BC  \<and> A \<squnion> BC = Some ABC"
@@ -606,7 +614,15 @@ lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some AB
    apply force
     apply clarify apply (case_tac C) apply force apply force
   done
-        
+
+lemma join_assoc2: "\<lbrakk> B \<squnion> C = Some BC; A \<squnion> BC = Some ABC \<rbrakk> \<Longrightarrow>
+  \<exists> AB. A \<squnion> B = Some AB \<and> AB \<squnion> C = Some ABC"
+  apply (case_tac B) apply (case_tac C) apply auto apply (case_tac "x1=x1a") apply auto
+   apply (case_tac A) apply auto apply (case_tac "x1=x1a") apply auto
+  apply (case_tac C) apply auto apply (case_tac A) apply auto
+  done
+
+(*
 lemma join_list_append:
   "\<lbrakk> \<Squnion> f1 = Some A; \<Squnion> f2 = Some B; A \<squnion> B = Some C \<rbrakk> \<Longrightarrow> \<Squnion> (f1@f2) = Some C" 
 proof (induction f1 arbitrary: A B f2 C)
@@ -639,7 +655,8 @@ next
     then show "\<Squnion> ((v1 # f1') @ f2) = Some C" by simp
   qed
 qed
-
+*)
+(*
 abbreviation UB :: "val \<Rightarrow> val fset \<Rightarrow> bool" where
   "UB u L \<equiv> \<forall>v'. v' |\<in>| L \<longrightarrow> v' \<sqsubseteq> u"
 abbreviation LUB :: "val \<Rightarrow> val fset \<Rightarrow> bool" where
@@ -671,16 +688,350 @@ next
   have lub: "\<forall>v. UB v ?L \<longrightarrow> vj \<sqsubseteq> v" sorry
   show "LUB vj (finsert v (finsert x L))" using ub lub by simp
 qed
+*)
+  (*
+lemma mem_fold_join: assumes A_L: "A |\<in>| L" and fl_B: "ffold join_maybe (Some v) L = Some B"
+  shows "A \<squnion> B = Some B"
+  using A_L fl_B 
+proof (induction L arbitrary: A B v)
+  case empty
+  then have "False" by auto
+  then show ?case ..
+next
+  case (insert C L)
+  
+    
+  have "A = C \<or> A |\<in>| L" using insert(3) by blast
+  then show ?case
+  proof
+    assume a: "A = C"
+    then show ?thesis 
+  next
+    assume a_l: "A |\<in>| L"
+    show ?thesis sorry
+  qed
+qed
+*)
+    
+ 
 
+lemma fold_join_nat:
+  "ffold join_maybe (Some (VNat n)) L = Some v \<Longrightarrow> v = VNat n"
+  apply (induction L arbitrary: n v)
+   apply force
+  apply simp
+  apply (case_tac "ffold join_maybe (Some (VNat n)) L")
+  apply force
+  apply simp apply (case_tac x) apply simp
+    apply (case_tac a) apply simp apply (case_tac "x1=x1a") apply force apply force
+   apply force apply force
+  done
+
+lemma fold_join_nat_init:
+  "ffold join_maybe (Some (VNat n)) L = Some v \<Longrightarrow>
+  v = VNat n \<and> (\<forall>v. v |\<in>| L \<longrightarrow> v = VNat n)"
+  apply (induction L arbitrary: n v)
+   apply force
+  apply simp
+  apply (case_tac "ffold join_maybe (Some (VNat n)) L")
+  apply force
+  apply simp apply (case_tac x) apply simp
+    apply (case_tac a) apply simp apply (case_tac "x1=x1a") apply force apply force
+   apply force apply force
+  done
+
+lemma fold_join_all_nat:
+  "\<forall>v. v |\<in>| L \<longrightarrow> v = VNat n \<Longrightarrow> ffold join_maybe (Some (VNat n)) L = Some (VNat n)"
+  apply (induction L arbitrary: n)
+  apply force
+  apply force
+  done
+
+lemma fold_join_nat_result:
+  "ffold join_maybe (Some v) L = Some (VNat n) \<Longrightarrow>
+   v = VNat n \<and> (\<forall>v. v |\<in>| L \<longrightarrow> v = VNat n)"
+  apply (induction L)
+   apply force
+  apply simp
+  apply (case_tac "ffold join_maybe (Some v) L")
+   apply force
+  apply simp
+  apply (case_tac x) apply simp apply (case_tac a) apply simp
+    apply (case_tac "x1=x1a") apply force apply force
+   apply force
+  apply (case_tac a) apply force apply force
+  done
+    
+lemma fold_join_fun:
+  "ffold join_maybe (Some (VFun f)) L = Some v \<Longrightarrow> \<exists>f'. v = VFun f' \<and> f |\<subseteq>| f'"
+  apply (induction L arbitrary: f v)
+  apply force
+  apply simp apply (case_tac "ffold join_maybe (Some (VFun f)) L")
+  apply force
+  apply simp apply (case_tac a) apply force
+  apply simp apply (case_tac x) apply force apply force
+  done
+
+lemma fold_join_fun_init:
+  "ffold join_maybe (Some (VFun f)) L = Some v \<Longrightarrow>
+   \<exists>f'. v = VFun f' \<and> fset f' = fset f \<union> \<Union>{ fset f|f. VFun f |\<in>| L}"
+  apply (induction L arbitrary: f v)
+  apply force
+  apply (case_tac "ffold join_maybe (Some (VFun f)) L")
+  apply force
+  apply (case_tac a) apply force
+  apply (case_tac x) apply force
+  apply simp
+  apply (case_tac v) apply force
+  apply clarify
+  apply (rule_tac x="x2a|\<union>|x2" in exI) apply simp
+  apply (subgoal_tac "\<exists>f'. VFun x2 = VFun f' \<and> fset f' = fset f \<union> \<Union>{fset f |f. VFun f |\<in>| L}")
+  prefer 2 apply blast
+  apply blast
+  done
+
+lemma fold_join_all_fun:
+  "\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f. v = VFun f) \<Longrightarrow>
+   \<exists> f'. ffold join_maybe (Some (VFun f)) L = Some (VFun f') \<and>
+      fset f' = fset f \<union> \<Union>{fset f|f. VFun f |\<in>| L }"
+  apply (induction L)
+   apply force
+  apply simp apply clarify
+  apply (case_tac x) apply force
+  apply simp apply clarify
+  apply blast
+  done
+
+lemma fold_join_fun_result:
+  "ffold join_maybe (Some v) L = Some (VFun f) \<Longrightarrow>
+  \<exists> f'. v = VFun f' \<and> (\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f'. v = VFun f'))
+     \<and> fset f = fset f' \<union> \<Union>{fset f|f. VFun f |\<in>| L}"
+  apply (induction L arbitrary: f)
+  apply force
+  apply simp apply (case_tac "ffold join_maybe (Some v) L")
+   apply force
+  apply simp apply (case_tac x) apply (case_tac a) apply simp
+    apply (case_tac "x1=x1a") apply force apply force
+   apply force apply simp apply (case_tac a) apply force
+  apply simp apply clarify 
+    apply (subgoal_tac "\<exists>f'. v = VFun f' \<and>
+                  (\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f'. v = VFun f')) \<and>
+                  fset x2a = fset f' \<union> \<Union>{fset f |f. VFun f |\<in>| L}") prefer 2 apply blast
+  apply clarify apply auto
+  done
+    
+lemma fold_join_union:
+  assumes fl1_A: "ffold join_maybe (Some v1) L1 = Some A" and
+    fl2_B: "ffold join_maybe (Some v2) L2 = Some B" and
+    abc: "A \<squnion> B = Some C" and v1_L1: "v1 |\<notin>| L1|\<union>|L2" and v2_L2: "v2 |\<notin>| L1|\<union>|L2" and
+    l1_l2: "L1 |\<inter>| L2 = bot"
+  shows "ffold join_maybe (Some v2) ((finsert v1 L1) |\<union>| L2) = Some C" 
+  using fl1_A fl2_B abc v1_L1 v2_L2 l1_l2
+proof (induction L1 arbitrary: v1 v2 L2 A B C)
+  case empty
+  have v1: "v1 = A" using empty(1) by auto
+  have A_L2: "A |\<notin>| L2" using empty(4) v1 by blast
+  have "ffold join_maybe (Some v2) (finsert A L2)
+          = join_maybe A (ffold join_maybe (Some v2) L2)" using A_L2 by simp
+  also have "... = A \<squnion> B" using empty(2) by simp
+  also have "... = Some C" using v1 empty(3) by simp
+  finally show ?case using v1 by simp
+next
+  case (insert D L1')
+  obtain E where fl1_E: "ffold join_maybe (Some v1) L1' = Some E"
+    and de_a: "D \<squnion> E = Some A" using insert by (case_tac "ffold join_maybe (Some v1) L1'") auto
+  obtain EB where eb: "E \<squnion> B = Some EB" and
+    deb: "D \<squnion> EB = Some C" using de_a insert(5) join_assoc[of D E A B C] by blast
+  have v1_l12: "v1 |\<notin>| L1' |\<union>| L2" using insert(6) by blast
+  have v2_l12: "v2 |\<notin>| L1' |\<union>| L2" using insert(7) by blast
+  have l1p_l2: "L1' |\<inter>| L2 = {||}" using insert.prems(6) by auto
+  from insert(2)[of v1 E v2 L2 B EB] fl1_E insert(4) v1_l12 v2_l12 eb l1p_l2
+  have fv1l12: "ffold join_maybe (Some v2) ((finsert v1 L1') |\<union>| L2) = Some EB" by blast
+  have d_l1l2: "D |\<notin>| (finsert v1 L1') |\<union>| L2" using insert(1) insert(8) insert.prems(4) by blast
+  have "ffold join_maybe (Some v2) (finsert v1 (finsert D L1') |\<union>| L2)
+      = ffold join_maybe (Some v2) (finsert D ((finsert v1 L1') |\<union>| L2))"
+    by (simp add: finsert_commute)
+  also have "... = join_maybe D (ffold join_maybe (Some v2) ((finsert v1 L1') |\<union>| L2))"
+    using d_l1l2 by simp
+  also have "... = D \<squnion> EB" using fv1l12 by simp
+  also have "... = Some C" using deb by simp
+  finally show ?case by blast
+qed    
+
+lemma union_fold_join: 
+  assumes L12_C: "ffold join_maybe (Some v) (L1|\<union>|L2) = Some C" and L12: "L1|\<inter>|L2 = bot"
+  shows "\<exists> A B. ffold join_maybe (Some v) L1 = Some A 
+              \<and> ffold join_maybe (Some v) L2 = Some B
+              \<and> A \<squnion> B = Some C"
+  using L12_C L12
+  apply (induction L1 arbitrary: v L2 C)
+    -- "base case" 
+   apply simp apply (case_tac v) apply (case_tac C) apply simp
+    apply (subgoal_tac "VNat x1a = VNat x1") prefer 2 using fold_join_nat apply blast
+     apply blast
+     apply (subgoal_tac "C = VNat x1") prefer 2 using fold_join_nat apply blast apply force
+   apply simp
+   apply (subgoal_tac "\<exists>f'. C = VFun f' \<and> x2 |\<subseteq>| f'") prefer 2 using fold_join_fun apply blast
+   apply clarify apply force
+    -- "induction step"
+  apply (subgoal_tac "x |\<notin>| (L1|\<union>|L2)") prefer 2 apply blast
+  apply simp apply (subgoal_tac "L1|\<inter>|L2 = bot") prefer 2 apply blast
+  apply (case_tac "ffold join_maybe (Some v) (L1 |\<union>| L2)")
+   apply force
+    apply (subgoal_tac "\<exists>A. ffold join_maybe (Some v) L1 = Some A \<and>
+               (\<exists>B. ffold join_maybe (Some v) L2 = Some B \<and> A \<squnion> B = Some a)") 
+    prefer 2 apply blast
+    apply clarify  
+  apply simp
+  using join_assoc2 apply blast
+  done   
+
+lemma union_nat_result: "\<Squnion>L = Some (VNat n) \<Longrightarrow> (\<forall>v. v |\<in>| L \<longrightarrow> v = VNat n)"
+  apply (case_tac "L = bot") apply force apply simp
+  using fold_join_nat_result 
+  by (metis fempty_iff finsertE fminusI)
+
+lemma union_all_nat: assumes alln: "\<forall>v. v |\<in>| L \<longrightarrow> v = VNat n" and L_ne: "L \<noteq> bot"
+  shows "\<Squnion>L = Some (VNat n)"
+proof -
+  let ?P = "\<lambda>x. x |\<in>| L"
+  let ?v = "SOME x. x |\<in>| L" let ?L = "L |-| {|?v|}"
+  obtain x where xL: "x |\<in>| L" using L_ne by blast
+  have "?v |\<in>| L" using xL by (rule someI)
+  then have v: "?v = VNat n" using alln by blast
+  have alln2: "\<forall>v. v |\<in>| (L|-| {|VNat n|}) \<longrightarrow> v = VNat n" using alln by blast    
+  have "\<Squnion>L = ffold join_maybe (Some ?v) ?L" using L_ne by metis
+  also have "... = ffold join_maybe (Some (VNat n)) (L |-| {|VNat n|})" using v by simp
+  also have "... = Some (VNat n)" using fold_join_all_nat[of "L-{|VNat n|}" n] alln2 by simp
+  finally show ?thesis by blast
+qed
+  
+abbreviation union_fun :: "val fset \<Rightarrow> func \<Rightarrow> bool" where
+  "union_fun L f \<equiv> (\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f'. v = VFun f')) \<and> fset f = \<Union>{fset f'|f'. VFun f' |\<in>| L}"
+  
+lemma union_fun_result: assumes Lf: "\<Squnion>L = Some (VFun f)"
+  shows "(\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f'. v = VFun f')) \<and> fset f = \<Union>{fset f'|f'. VFun f' |\<in>| L}"
+proof (cases "L = bot")
+  case True
+  then show ?thesis using Lf by auto
+next
+  case False
+  let ?v = "SOME x. x |\<in>| L" let ?L = "L |-| {|?v|}"
+  have "\<Squnion>L = ffold join_maybe (Some ?v) (L |-| {|?v|})" using False by metis
+  from fold_join_fun_result[of ?v ?L f] Lf this
+  obtain f' where vfp: "?v = VFun f'" and
+    allf: "(\<forall>v. v |\<in>| L |-| {|?v|} \<longrightarrow> (\<exists>f'. v = VFun f'))" and
+    f: "fset f = fset f' \<union> \<Union>{fset f |f. VFun f |\<in>| L |-| {|?v|}}" by auto
+  have 1: "(\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f'. v = VFun f'))" using vfp allf apply auto done
+  have f2: "fset f = fset f' \<union> \<Union>{fset f |f. VFun f |\<in>| L |-| {|VFun f'|}}" using vfp f by simp
+  have "?v |\<in>| L" using False apply (subgoal_tac "\<exists>x. x |\<in>| L") prefer 2 apply blast apply clarify
+    apply (rule someI) apply blast done
+  then have fpL: "VFun f' |\<in>| L" using vfp by simp
+  then have 2: "fset f = \<Union>{fset f'|f'. VFun f' |\<in>| L}" using f2 by auto
+  show ?thesis using 1 2 by blast
+qed
+        
+lemma union_all_fun: assumes allf: "\<forall>v. v |\<in>| L \<longrightarrow> (\<exists>f. v = VFun f)" and L_ne: "L \<noteq> bot"
+  shows "\<exists>f. \<Squnion>L = Some (VFun f) \<and> fset f = \<Union>{fset f'|f'. VFun f' |\<in>| L}"
+proof -
+  let ?P = "\<lambda>x. x |\<in>| L"
+  let ?v = "SOME x. x |\<in>| L" let ?L = "L |-| {|?v|}"
+  obtain x where xL: "x |\<in>| L" using L_ne by blast
+  have vL: "?v |\<in>| L" using xL by (rule someI)
+  obtain f where v: "?v = VFun f" and fL: "VFun f |\<in>| L" using allf vL by auto
+  have allf2: "\<forall>v. v |\<in>| (L|-| {|VFun f|}) \<longrightarrow> (\<exists>f. v = VFun f)" using allf by blast  
+  from fold_join_all_fun[of "L-{|VFun f|}" f] allf2
+  obtain f' where 1: "ffold join_maybe (Some (VFun f)) (L |-| {|VFun f|}) = Some (VFun f')" and
+         2: "fset f' = fset f \<union> \<Union>{fset fa |fa. VFun fa |\<in>| L |-| {|VFun f|}}" by blast
+  have "\<Squnion>L = ffold join_maybe (Some ?v) ?L" using L_ne by metis
+  also have "... = ffold join_maybe (Some (VFun f)) (L |-| {|VFun f|})" using v by simp
+  also have "... = Some (VFun f')" using 1 by simp 
+  finally have 3: "\<Squnion>L = Some (VFun f')" by blast
+  show ?thesis apply (rule_tac x=f' in exI) apply (rule conjI) using 3 apply force
+      using 2 fL apply blast done
+qed
   
 lemma join_fset_union: fixes L1::"val fset" and L2::"val fset"
-  shows "\<lbrakk> \<Squnion> L1 = Some A; \<Squnion> L2 = Some B; A \<squnion> B = Some C \<rbrakk> \<Longrightarrow> \<Squnion> (L1|\<union>|L2) = Some C"
-proof -
-  
-  show ?thesis sorry
+ assumes L1_A: "\<Squnion> L1 = Some A" and L2_B: "\<Squnion> L2 = Some B" and ABC: "A \<squnion> B = Some C"
+ shows "\<Squnion> (L1|\<union>|L2) = Some C"
+proof (cases A)
+  case (VNat n)
+  have b: "B = VNat n" using ABC VNat apply (case_tac B) apply auto apply (case_tac "n=x1")
+      apply auto done
+  have c: "C = VNat n" using ABC VNat b apply auto done      
+  have L1_n: "\<forall>v. v |\<in>| L1 \<longrightarrow> v = VNat n" using L1_A VNat union_nat_result by blast
+  have L2_n: "\<forall>v. v |\<in>| L2 \<longrightarrow> v = VNat n" using L2_B b union_nat_result by blast
+  have L12_n: "\<forall>v. v |\<in>| L1|\<union>|L2 \<longrightarrow> v = VNat n" using L1_n L2_n by blast
+  have L12_ne: "L1|\<union>|L2 \<noteq> bot" using L1_A apply (case_tac "L1=bot") apply auto done
+  show ?thesis using L12_n c union_all_nat L12_ne by blast
+next
+  case (VFun fa)
+  obtain fb where b: "B = VFun fb" using ABC VFun apply (case_tac B) apply auto done
+  have c: "C = VFun (fa|\<union>|fb)" using ABC VFun b apply auto done
+  have L1_fa: "union_fun L1 fa" using union_fun_result L1_A VFun apply auto done 
+  have L2_fb: "union_fun L2 fb" using union_fun_result L2_B b apply auto done 
+  have L12_f: "union_fun (L1|\<union>|L2) (fa|\<union>|fb)" using L1_fa L2_fb by auto
+  have L12_ne: "L1|\<union>|L2 \<noteq> bot" using L1_A apply (case_tac "L1=bot") apply auto done
+  show ?thesis using L12_f c union_all_fun[of "L1|\<union>|L2"] L12_ne 
+    by (metis (no_types, lifting) fset_inject)
 qed
+
+(*
+abbreviation fmap :: "('a \<Rightarrow> 'b) \<Rightarrow> 'a fset \<Rightarrow> 'b fset" where
+  "fmap f L \<equiv> ffold (\<lambda>a A. finsert (f a) A) bot L"
+*)
+
+lemma le_trans_aux: "(v2 \<sqsubseteq> v3 \<longrightarrow> (\<forall> v1. v1 \<sqsubseteq> v2 \<longrightarrow> v1 \<sqsubseteq> v3)) \<and>
+   (v\<mapsto>v' \<in> fa \<longrightarrow> (\<forall> fb. VFun fa \<sqsubseteq> VFun fb \<longrightarrow> v\<mapsto>v' \<in> fb))"
+  apply (induction rule: val_le_fun_in.induct)
+  -- "case 1"
+  apply force
+  -- "case 2" 
+  apply clarify apply (rule le_fun) apply force
+  -- "case 3"
+  apply clarify apply (case_tac v1) apply force
+    apply clarify apply (rename_tac f2 f3 X f1) apply (rule le_fun) apply clarify
+        
     
-lemma factor_aux:
+  -- "case 4"     
+  apply clarify
+   apply (erule le_fun_fun_inv)
+    apply force
+    apply (subgoal_tac "(v1,v1') \<in> fset f2") apply blast
+    
+    
+(*    
+lemma factor_aux: "(v1 \<sqsubseteq> v2 \<longrightarrow> True)
+  \<and> (A \<mapsto> B \<in> f1 \<longrightarrow> (\<forall>f2. VFun f1 \<sqsubseteq> VFun f2 \<longrightarrow>
+  (\<exists> f2'. fset f2' \<subseteq> fset f2 \<and> \<Squnion>(fst|`|f2') = Some C \<and> \<Squnion>(snd|`|f2') = Some D
+     \<and> C \<sqsubseteq> A \<and> B \<sqsubseteq> D)))"
+proof (induction rule: val_le_fun_in.induct)
+  case (le_nat n)
+  then show ?case by blast
+next
+  case (le_bot f)
+  then show ?case by blast
+next
+  case (le_fun f1 f2)
+  then show ?case by blast
+next
+  case (le_arrow v2 v2' f1 v1 v1')
+  show ?case apply clarify
+    apply (erule le_fun_fun_inv) using le_arrow apply force
+    apply (subgoal_tac "v2 \<mapsto> v2' \<in> f2") prefer 2 using le_arrow(1) apply blast
+    apply (erule le_arrow_fun_inv)
+    apply (rename_tac v3 v3')
+    apply (rule_tac x="{|(v2, v2')|}" in exI)
+     apply (rule conjI) apply 
+      
+next
+  case (le_distr va vb vab v1 f2)
+  then show ?case sorry
+qed
+  
+
+    
+lemma factor_aux2:
     "\<lbrakk> (v1::val) \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2; (A,B) \<in> fset f1 \<rbrakk> \<Longrightarrow>
      \<exists> f2' As Bs. fset f2' \<subseteq> fset f2 \<and> \<Squnion> (map fst f2') = Some As \<and> \<Squnion> (map snd f2') = Some Bs
        \<and> As \<sqsubseteq> A \<and> B \<sqsubseteq> Bs" 
