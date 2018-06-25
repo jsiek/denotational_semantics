@@ -640,7 +640,45 @@ next
   qed
 qed
 
+abbreviation UB :: "val \<Rightarrow> val fset \<Rightarrow> bool" where
+  "UB u L \<equiv> \<forall>v'. v' |\<in>| L \<longrightarrow> v' \<sqsubseteq> u"
+abbreviation LUB :: "val \<Rightarrow> val fset \<Rightarrow> bool" where
+  "LUB u L \<equiv> UB u L \<and> (\<forall> v. UB v L \<longrightarrow> u \<sqsubseteq> v)"
+  
+lemma "\<lbrakk> ffold join_maybe (Some v) L = Some vj \<rbrakk> \<Longrightarrow> LUB vj (finsert v L)"
+proof (induction L arbitrary: v vj)
+  case empty
+  then show ?case by auto
+next
+  case (insert x L)
+  obtain y where fL: "ffold join_maybe (Some v) L = Some y"
+    using insert(1) insert(3) apply (case_tac "ffold join_maybe (Some v) L")
+      apply force apply force done
+  have lub_y: "LUB y (finsert v L)" using fL insert(2)[of v y] by simp
+      
+  have "ffold join_maybe (Some v) (finsert x L) 
+        = join_maybe x (ffold join_maybe (Some v) L)" by (simp add: insert(1))
+  also have "... = join_maybe x (Some y)" using fL by simp
+  also have "... = x \<squnion> y" by simp
+  finally have vj: "x \<squnion> y = Some vj" using insert(3) by simp
+      
+  have v_vj: "v \<sqsubseteq> vj" sorry
+      
+  let ?L = "finsert v (finsert x L)"
+  have ub: "UB vj ?L" apply simp apply clarify apply (rule conjI) apply clarify
+      
+      
+  have lub: "\<forall>v. UB v ?L \<longrightarrow> vj \<sqsubseteq> v" sorry
+  show "LUB vj (finsert v (finsert x L))" using ub lub by simp
+qed
 
+  
+lemma join_fset_union: fixes L1::"val fset" and L2::"val fset"
+  shows "\<lbrakk> \<Squnion> L1 = Some A; \<Squnion> L2 = Some B; A \<squnion> B = Some C \<rbrakk> \<Longrightarrow> \<Squnion> (L1|\<union>|L2) = Some C"
+proof -
+  
+  show ?thesis sorry
+qed
     
 lemma factor_aux:
     "\<lbrakk> (v1::val) \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2; (A,B) \<in> fset f1 \<rbrakk> \<Longrightarrow>
