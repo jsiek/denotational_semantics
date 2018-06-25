@@ -24,6 +24,16 @@ fun join_list :: "val list \<Rightarrow> val option" ("\<Squnion>") where
                        None \<Rightarrow> None
                      | Some v' \<Rightarrow> v \<squnion> v'))"
 
+abbreviation join_maybe :: "val \<Rightarrow> val option \<Rightarrow> val option" where  
+  "join_maybe v1 mv2 \<equiv> 
+    (case mv2 of
+        None \<Rightarrow> None
+     | Some v2 \<Rightarrow> v1 \<squnion> v2)"
+
+definition join_fset :: "val fset \<Rightarrow> val option" ("\<Squnion>") where
+  "\<Squnion> L \<equiv> (if fcard L = 0 then None
+           else let v = (SOME x. x |\<in>| L) in ffold join_maybe (Some v) (fminus L {|v|}))"  
+  
 inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 52)
   and fun_in :: "val \<Rightarrow> val \<Rightarrow> func \<Rightarrow> bool"  ("_\<mapsto>_ \<in> _" [54,54,54] 55) where
   le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
@@ -384,7 +394,7 @@ proposition mon: fixes v1::val and v2::val and v1'::val and v2'::val and v12::va
     
 lemma upper_bound_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> \<exists> v12. v1 \<squnion> v2 = Some v12"
   apply (case_tac v1) apply (case_tac v2) apply auto apply (case_tac v2) by auto
-(*
+
 lemma upper_bound_join_list: "\<lbrakk> (\<forall> v. v \<in> set L \<longrightarrow> v \<sqsubseteq> u); L \<noteq> [] \<rbrakk> \<Longrightarrow>
     \<exists>vj. \<Squnion>L = Some vj \<and> vj \<sqsubseteq> u"
   apply (induction L)
@@ -400,16 +410,81 @@ lemma upper_bound_join_list: "\<lbrakk> (\<forall> v. v \<in> set L \<longrighta
     apply simp apply (case_tac "\<Squnion>list") apply force apply simp
     using le_left_join by blast
 
+interpretation join_commute: comp_fun_commute "join_maybe"
+  unfolding comp_fun_commute_def 
+  apply auto apply (rule ext) apply simp apply (case_tac xa)
+   apply force
+  apply simp apply (case_tac "x \<squnion> a") apply simp
+   apply (case_tac "y \<squnion> a") apply force apply simp
+   apply (case_tac a) apply (case_tac x) apply simp
+    apply (case_tac "x1a=x1") apply force apply simp
+     apply clarify apply (case_tac y) apply simp
+    apply (case_tac "x1b=x1") apply force apply force
+     apply force apply simp apply clarify apply (case_tac y)
+     apply simp apply (case_tac "x1a=x1") apply auto 
+   apply (case_tac x) apply auto apply (case_tac y) apply auto
+  apply (case_tac x) apply auto apply (case_tac a) apply auto
+   apply (case_tac "x1=x1a") apply auto apply (case_tac y)
+    apply auto apply (case_tac a) apply auto apply (case_tac y)
+   apply auto
+  done
+
+context comp_fun_commute
+begin
+  
+  lemma ffold_singleton[simp]: "ffold f z {|x|} = f x z"
+  proof -
+    have x: "x |\<notin>| bot" by simp
+    have "ffold f z {|x|} = ffold f z (finsert x bot)" by simp
+    also have "... = f x (ffold f z bot)" using x ffold_finsert[of x bot z] by simp
+    also have "... = f x z" by simp
+    finally show ?thesis by simp
+  qed
+
+end
+  
+lemma upper_bound_join_fold: "\<lbrakk> (\<forall> v. v \<in> fset L \<longrightarrow> v \<sqsubseteq> u); v \<sqsubseteq> u \<rbrakk> \<Longrightarrow>
+    \<exists>vj. ffold join_maybe (Some v) L = Some vj \<and> vj \<sqsubseteq> u"
+  apply (induction L)
+   apply force
+  apply simp apply (case_tac "L = bot") apply simp
+   apply (subgoal_tac "\<exists> y. x \<squnion> v = Some y") prefer 2 apply (simp add: upper_bound_join)
+   apply clarify apply (rule_tac x=y in exI) apply simp using le_left_join apply blast
+   apply clarify 
+  by (metis le_left_join option.simps(5) upper_bound_join)
+
+    
+lemma upper_bound_join_fset: fixes L::"val fset" 
+  assumes ub: "\<forall> v. v \<in> fset L \<longrightarrow> v \<sqsubseteq> u" and L_ne: "L \<noteq> {||}"
+  shows "\<exists>vj. \<Squnion>L = Some vj \<and> vj \<sqsubseteq> u"
+proof -
+  let ?v = "SOME x. x |\<in>| L"
+  have vL: "?v |\<in>| L" using L_ne fempty_ffilter ffmember_filter someI_ex by force
+  have v_u: "?v \<sqsubseteq> u" using ub notin_fset vL by fastforce
+  let ?L = "L |-| {|?v|}" 
+  have ub2: "\<forall> v. v \<in> fset ?L \<longrightarrow> v \<sqsubseteq> u" using ub by auto
+  obtain vj where "ffold join_maybe (Some ?v) ?L = Some vj" and "vj \<sqsubseteq> u"
+    using ub2 v_u upper_bound_join_fold by blast
+  then show ?thesis using L_ne by (simp add: join_fset_def) 
+qed
+  
 lemma lower_bounds_join: "\<lbrakk> va \<squnion> vb = Some vab; va \<sqsubseteq> B1; vb \<sqsubseteq> B2 \<rbrakk> \<Longrightarrow> \<exists> B12. B1 \<squnion> B2 = Some B12"
   apply (case_tac va) apply (case_tac vb) apply force
    apply force apply (case_tac vb) apply force apply simp apply (case_tac "x2=x2a") apply simp
    apply (case_tac vab) apply force apply simp apply clarify apply (case_tac B1)
     apply force apply (case_tac B2) apply force apply clarify
-    apply (case_tac "x2c=x2d") apply force
-      apply (rule_tac x="VFun (x2c@x2d)" in exI) apply force
-  apply simp apply clarify apply (case_tac B1) apply force apply (case_tac B2) apply force
-  apply clarify apply (case_tac "x2b=x2c") apply force apply force
+  apply force
+  apply clarify 
+  apply (erule le_fun_any_inv)
+   apply simp apply clarify
+   apply (erule le_fun_any_inv)
+    apply force
+   apply force
+  apply (erule le_fun_any_inv)
+    apply auto
   done
+
+(*
     
 section "More Lemmas"
     
@@ -512,30 +587,15 @@ next
     then show ?thesis using f2c_f3 by blast
   qed
 qed
-
+*)
+    
 section "Beta Sound, aka Arrow Subtping"
 
 lemma join_list_cons_none: "\<lbrakk> \<Squnion>ls = None; ls \<noteq> [] \<rbrakk> \<Longrightarrow> \<Squnion>(a#ls) = None" 
   apply (case_tac ls) apply auto done
   
-fun eq :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
-  "VNat n1 \<approx> VNat n2 = (n1 = n2)" |
-  "VFun f1 \<approx> VFun f2 = (set f1 = set f2)" |
-  "v1 \<approx> v2 = False"
-
-lemma eq_sym[sym]: "A \<approx> B \<Longrightarrow> B \<approx> A"
-  apply (case_tac A) apply (case_tac B) apply force apply force
-    apply (case_tac B) apply force apply force
-  done
-    
-lemma eq_trans[trans]: "\<lbrakk> A \<approx> B; B \<approx> C \<rbrakk> \<Longrightarrow> A \<approx> C"
-  apply (case_tac A) apply (case_tac B) apply force apply force
-  apply (case_tac B) apply force apply simp
-    apply (case_tac C) apply force apply force
-  done
-    
 lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some ABC \<rbrakk> \<Longrightarrow>
-  \<exists> BC ABC'. B \<squnion> C = Some BC  \<and> A \<squnion> BC = Some ABC' \<and> ABC \<approx> ABC'"
+  \<exists> BC. B \<squnion> C = Some BC  \<and> A \<squnion> BC = Some ABC"
   apply (case_tac A)
    apply (case_tac B)
     apply simp apply (case_tac "x1=x1a") apply simp apply clarify
@@ -543,31 +603,12 @@ lemma join_assoc: "\<lbrakk> A \<squnion> B = Some AB; AB \<squnion> C = Some AB
      apply simp apply (case_tac "x1=x1a") apply force apply force apply force
   apply simp apply (case_tac B) apply force apply simp apply (case_tac "x2=x2a") apply simp
    apply clarify apply simp apply (case_tac C) apply force apply simp
-   apply (case_tac "x2a = x2") apply force apply simp apply clarify apply simp
-  apply (case_tac "x2=[]") 
-   apply simp apply clarify apply (case_tac C) apply force apply simp
-    apply (case_tac "x2a=x2b") apply force apply force
-  apply (case_tac "x2=x2a") apply force apply simp
-  apply clarify apply (case_tac C) apply force apply simp
-  apply (case_tac "x2@x2a = x2b") apply simp apply clarify
-   apply (case_tac "x2@x2a = []") apply force apply simp
-   apply (rule impI) apply (rule conjI) apply (rule impI) 
-    apply (metis set_append sup.right_idem sup_left_idem)
-  apply blast
-  apply simp apply (case_tac "x2b = []") apply force apply force
+   apply force
+    apply clarify apply (case_tac C) apply force apply force
   done
-    
-lemma join_eq: "\<lbrakk> A \<squnion> B = Some C; B \<approx> B' \<rbrakk> \<Longrightarrow> \<exists> C'. A \<squnion> B' = Some C' \<and> C \<approx> C'"
-  apply (case_tac A) apply (case_tac B) apply simp apply (case_tac "x1 = x1a")
-     apply simp apply clarify apply (case_tac B') apply force apply force
-    apply force apply force apply (case_tac B) apply force apply simp
-  apply (case_tac "x2=x2a") apply simp apply clarify apply (case_tac B')
-    apply force apply force apply simp apply clarify apply (case_tac B') apply force apply force
-  done
-    
+        
 lemma join_list_append:
-  "\<lbrakk> \<Squnion> f1 = Some A; \<Squnion> f2 = Some B; A \<squnion> B = Some C \<rbrakk> \<Longrightarrow>
-    \<exists> C'. \<Squnion> (f1@f2) = Some C' \<and> C' \<approx> C" 
+  "\<lbrakk> \<Squnion> f1 = Some A; \<Squnion> f2 = Some B; A \<squnion> B = Some C \<rbrakk> \<Longrightarrow> \<Squnion> (f1@f2) = Some C" 
 proof (induction f1 arbitrary: A B f2 C)
   case Nil
   then show ?case by force
@@ -582,32 +623,28 @@ next
       then show ?thesis using Cons.prems(2) by auto
     next
       case (Cons v2 f2')
-      then show ?thesis using Cons.prems True Cons
-        apply simp apply (case_tac C) apply auto done
+      then show ?thesis using Cons.prems True Cons by simp
     qed
   next
     case False
     obtain A1 where ap: "\<Squnion>f1' = Some A1" and v1_Ap_A: "v1 \<squnion> A1 = Some A" using False Cons(2) 
       apply (case_tac "\<Squnion>f1'") using join_list_cons_none[of f1' v1] by auto
     have abc: "A \<squnion> B = Some C" using Cons by simp
-    obtain C' D where apbc: "A1 \<squnion> B = Some C'" and v1_cp_d: "v1 \<squnion> C' = Some D" and c_d: "C \<approx> D"
+    obtain A1B where apbc: "A1 \<squnion> B = Some A1B" and v1_cp_d: "v1 \<squnion> A1B = Some C" 
       using v1_Ap_A abc join_assoc[of v1 A1 A B C] by blast
-    obtain C'' where f1p_f2_cpp: "\<Squnion> (f1' @ f2) = Some C''"
-      and cpp_cp: "C'' \<approx> C'" using Cons(1)[of A1 f2 B C'] Cons(3) ap apbc by blast 
+    have f1p_f2_a1b: "\<Squnion> (f1' @ f2) = Some A1B" using Cons(1)[of A1 f2 B] Cons(3) ap apbc by blast 
     have f1p_f2_ne: "f1'@f2 \<noteq> []" using False by auto
-    obtain D' where v1_cpp_dp: "v1 \<squnion> C'' = Some D'" and d_dp: "D' \<approx> D" 
-      using v1_cp_d cpp_cp join_eq eq_sym by blast
-    have dp_c: "D' \<approx> C" using d_dp c_d eq_trans eq_sym by blast    
-    have "\<Squnion>(v1#(f1'@f2)) = v1 \<squnion> C''" using f1p_f2_cpp f1p_f2_ne False by simp
-    then have "\<Squnion>((v1#f1')@f2) = Some D'" using v1_cpp_dp by simp 
-    then show "\<exists>C'. \<Squnion> ((v1 # f1') @ f2) = Some C' \<and> C' \<approx> C" using dp_c by blast
+    have v1_cp_dp: "v1 \<squnion> A1B = Some C"  using v1_cp_d by blast
+    have "\<Squnion>(v1#(f1'@f2)) = Some C" using f1p_f2_a1b f1p_f2_ne False v1_cp_d by simp
+    then show "\<Squnion> ((v1 # f1') @ f2) = Some C" by simp
   qed
 qed
-  
+
+
     
 lemma factor_aux:
-    "\<lbrakk> (v1::val) \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2; (A,B) \<in> set f1 \<rbrakk> \<Longrightarrow>
-     \<exists> f2' As Bs. set f2' \<subseteq> set f2 \<and> \<Squnion> (map fst f2') = Some As \<and> \<Squnion> (map snd f2') = Some Bs
+    "\<lbrakk> (v1::val) \<sqsubseteq> v2; v1 = VFun f1; v2 = VFun f2; (A,B) \<in> fset f1 \<rbrakk> \<Longrightarrow>
+     \<exists> f2' As Bs. fset f2' \<subseteq> fset f2 \<and> \<Squnion> (map fst f2') = Some As \<and> \<Squnion> (map snd f2') = Some Bs
        \<and> As \<sqsubseteq> A \<and> B \<sqsubseteq> Bs" 
 proof (induction arbitrary: f1 f2 A B rule: val_le.induct)
   case (le_nat n)
