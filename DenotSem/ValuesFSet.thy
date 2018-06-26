@@ -454,7 +454,7 @@ lemma join_val_fset_mem: "\<lbrakk> v1 |\<in>| L; v2 \<squnion> L = Some v3 \<rb
    apply force
    by (metis join_commute.ffold_fun_left_comm join_commute.ffold_singleton option.simps(5))
 
-lemma join_commutes2: "A \<squnion> B =  B \<squnion> A"
+lemma join_commutes2: "A \<squnion> B = B \<squnion> A"
   apply (case_tac A) apply (case_tac B) apply force apply force
   apply (case_tac B) apply force apply force done
 
