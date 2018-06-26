@@ -980,7 +980,7 @@ abbreviation fmap :: "('a \<Rightarrow> 'b) \<Rightarrow> 'a fset \<Rightarrow> 
   "fmap f L \<equiv> ffold (\<lambda>a A. finsert (f a) A) bot L"
 *)
 
-lemma join_finsert: fixes L::"val fset" assumes L_y: "\<Squnion>L = Some y" and xL: "x |\<notin>| L"
+lemma join_finsert[simp]: fixes L::"val fset" assumes L_y: "\<Squnion>L = Some y" and xL: "x |\<notin>| L"
   shows "\<Squnion> (finsert x L) = x \<squnion> y"
 proof -
   have L_ne: "L \<noteq> bot" using L_y apply (case_tac "L=bot") by (auto simp: join_fset_def)
