@@ -33,14 +33,9 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   and fun_in :: "val \<Rightarrow> val \<Rightarrow> func \<Rightarrow> bool"  ("_\<mapsto>_ \<sqsubseteq> _" [54,54,54] 55) where
   le_nat[intro!]: "VNat n \<sqsubseteq> VNat n" |
   le_fun: "\<lbrakk> \<forall> v v'. (v,v') \<in> fset f1 \<longrightarrow> v\<mapsto>v' \<sqsubseteq> f2 \<rbrakk> \<Longrightarrow> VFun f1 \<sqsubseteq> VFun f2" |
-  le_arrow: "\<lbrakk> (v2,v2') \<in> fset f; fset f' \<subseteq> fset f; 
-               v2 \<squnion> (fst|`|f') = Some v3; v3 \<sqsubseteq> v1; 
-               v1' \<sqsubseteq> v3'; v2'\<squnion>(snd|`|f') = Some v3' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> f"
-  (*
-  le_arrow: "\<lbrakk> (v2, v2') \<in> fset f; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> f" |
-  le_distr: "\<lbrakk> va \<squnion> vb = Some vab; v\<mapsto>va \<sqsubseteq> f; v\<mapsto>vb \<sqsubseteq> f \<rbrakk> \<Longrightarrow> v\<mapsto>vab \<sqsubseteq> f"
-*)
-  
+  le_arrow: "\<lbrakk> fset f' \<subseteq> fset f; f' \<noteq> {||}; \<forall>v2 v2'. (v2,v2') \<in> fset f' \<longrightarrow> v2 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v2' \<rbrakk>
+               \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> f"
+
 abbreviation match :: "val \<Rightarrow> val \<Rightarrow> val \<times> val \<Rightarrow> func \<Rightarrow> func" where
   "match v1 v1' v22 f' \<equiv> (if fst v22 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> snd v22 then finsert v22 f' else f')"
   
@@ -266,14 +261,11 @@ proposition le_refl[intro!]: "v \<sqsubseteq> v"
    apply force
   apply (rule le_fun)
    apply clarify
-  apply (rule le_arrow) 
-       apply assumption
-      apply (subgoal_tac "fset bot \<subseteq> fset x") prefer 2 apply force
+  apply (rule le_arrow)  
+    apply (subgoal_tac "fset {|(v,v')|} \<subseteq> fset x") prefer 2 apply force
       apply assumption
-     apply (simp add: join_val_fset_def)
     apply force
    apply force
-    apply (simp add: join_val_fset_def)
   done
     
 section "Inversion Lemmas"
@@ -285,8 +277,8 @@ lemma le_bot_inv_aux: "(v1 \<sqsubseteq> v2 \<longrightarrow> v2 = \<bottom> \<l
     apply (subgoal_tac "\<exists> v v'. (v,v') |\<in>| f1") prefer 2 apply auto[1]
     apply (erule exE)+ apply (erule_tac x=v in allE)apply (erule_tac x=v' in allE)
     apply (erule impE) apply (simp add: fmember.rep_eq) apply blast
-  apply force 
-  done
+  apply (rule classical) apply simp 
+  by (metis bot_fset.rep_eq fset_inject)
 
 lemma le_bot_inv[elim!]: "\<lbrakk> v \<sqsubseteq> \<bottom>; v = \<bottom> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P" 
   using le_bot_inv_aux by auto      
@@ -301,13 +293,10 @@ proposition le_join_left: fixes v2::val shows "v1 \<squnion> v2 = Some v12 \<Lon
   apply simp apply clarify apply (rule le_fun) apply clarify
   apply (rule le_arrow) 
        apply (subgoal_tac "(v,v') \<in> fset (x2 |\<union>| x2a)") prefer 2 apply force
-       apply assumption
-      apply (subgoal_tac "fset bot \<subseteq> fset (x2 |\<union>| x2a)") prefer 2 apply force
+      apply (subgoal_tac "fset {|(v, v')|} \<subseteq> fset (x2 |\<union>| x2a)") prefer 2 apply force
       apply blast
-     apply (simp add: join_val_fset_def) 
     apply blast
-   apply blast
-    apply (simp add: join_val_fset_def)
+   apply force
   done
     
 proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<sqsubseteq> v12" (* incl_R *) 
@@ -318,13 +307,10 @@ proposition le_join_right: "v1 \<squnion> v2 = Some v12 \<Longrightarrow> v2 \<s
   apply simp apply clarify apply (rule le_fun) apply clarify 
   apply (rule le_arrow) 
      apply (subgoal_tac "(v,v') \<in> fset (x2 |\<union>| x2a)") prefer 2 apply force
-       apply assumption
-      apply (subgoal_tac "fset bot \<subseteq> fset (x2 |\<union>| x2a)") prefer 2 apply force
+      apply (subgoal_tac "fset {|(v, v')|} \<subseteq> fset (x2 |\<union>| x2a)") prefer 2 apply force
       apply blast
-     apply (simp add: join_val_fset_def) 
-    apply blast
    apply blast
-    apply (simp add: join_val_fset_def)
+    apply force
     done
 
  proposition le_left_join: "\<lbrakk> v1 \<sqsubseteq> v3; v2 \<sqsubseteq> v3; v1 \<squnion> v2 = Some v12 \<rbrakk> \<Longrightarrow> v12 \<sqsubseteq> v3" (* glb *)
@@ -505,12 +491,8 @@ section "More Introduction Rules"
 
 lemma le_arrow_left: "\<lbrakk> (v2, v2') \<in> fset f; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2' \<rbrakk> \<Longrightarrow> v1 \<mapsto> v1' \<sqsubseteq> f"
   apply (rule le_arrow)
-       apply assumption
-      apply (subgoal_tac "fset bot \<subseteq> fset f") prefer 2 apply force apply assumption
-     apply force
-    apply blast
-    apply blast
-  apply force
+    apply (subgoal_tac "fset {|(v2, v2')|} \<subseteq> fset f") prefer 2 apply force apply assumption
+   apply auto
   done
         
 lemma le_fun_subset_eq: fixes f1::func and f2::func 
@@ -527,11 +509,12 @@ qed
 proposition le_distr_trad1: fixes v2:: val assumes v12: "v1 \<squnion> v2 = Some v12" 
   shows "v \<mapsto> v12 \<sqsubseteq> {|(v,v1),(v,v2)|}"
   apply (rule le_arrow)
-  apply (subgoal_tac "(v,v1) \<in> fset {|(v, v1), (v, v2)|}") prefer 2 apply force apply assumption
-      apply (subgoal_tac "fset {|(v,v2)|} \<subseteq> fset {|(v, v1), (v, v2)|}") prefer 2 apply force apply assumption
-  apply force  
-    apply blast
-  using v12 apply blast    
+    apply (subgoal_tac "fset {|(v, v1),(v,v2)|} \<subseteq> fset {|(v, v1), (v, v2)|}") prefer 2 apply force
+    apply assumption
+   apply force 
+  apply clarify apply simp apply (erule disjE) apply clarify
+  apply (rule conjI) apply blast
+  using v12 apply sledgehammer
   using v12 join_commutes apply simp 
   done
     
@@ -1047,13 +1030,30 @@ lemma beta_helper: "\<lbrakk> \<forall> v v'. (v,v') \<in> fset f1 \<longrightar
   sorry
 *)
   
-lemma matches_beta_sound: "\<lbrakk> f' = matches v1 v1' f; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'\<rbrakk> \<Longrightarrow> 
+locale match_curry =
+  fixes v1::val and v1'::val
+  
+context match_curry
+begin
+  interpretation cmatch_commute: comp_fun_commute "match v v'"
+    unfolding comp_fun_commute_def apply clarify apply (rule ext) apply auto done
+      
+  lemma matches_beta_sound: "\<lbrakk> f' = matches v1 v1' f; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'\<rbrakk> \<Longrightarrow> 
     \<exists>v3 v3'. fset f' \<subseteq> fset f \<and> v2 \<squnion> (fst|`|f') = Some v3 \<and> v2' \<squnion> (snd|`|f') = Some v3'
          \<and> v3 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v3'"
-  apply (induction f arbitrary: f' v1 v2 v1' v2')
-  unfolding matches_def apply force
-  apply simp apply clarify
-    
+    apply (induction f arbitrary: f' v1 v2 v1' v2')
+    unfolding matches_def apply force
+    apply simp
+    apply (case_tac x) apply clarify apply (rule conjI) apply clarify apply (rule conjI)
+    apply (subgoal_tac "fset (ffold (match v1 v1') {||} f) \<subseteq> fset f \<and>
+           (\<exists>v3. v2 \<squnion> fst |`| ffold (match v1 v1') {||} f = Some v3 \<and>
+                 (\<exists>v3'. v2' \<squnion> snd |`| ffold (match v1 v1') {||} f = Some v3' \<and>
+                        v3 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v3'))") prefer 2 apply blast
+    apply clarify apply blast defer apply blast
+    apply auto  
+    sorry
+end
+  
 lemma le_trans_aux:
   "(\<forall>v1 v2 v3. n = vsize v1 + vsize v2 + vsize v3 \<longrightarrow> 
        v1 \<sqsubseteq> v2 \<longrightarrow> v2 \<sqsubseteq> v3 \<longrightarrow> v1 \<sqsubseteq> v3)
