@@ -1075,7 +1075,7 @@ proof (induction n rule: nat_less_induct)
     qed
   next
     fix A B f1 f2 assume n: "n = vsize A + vsize B + fsize f1 + fsize f2"
-       and "A\<mapsto>B \<sqsubseteq> f1" and "VFun f1 \<sqsubseteq> VFun f2"
+       and ab_f1: "A\<mapsto>B \<sqsubseteq> f1" and f1_f2: "VFun f1 \<sqsubseteq> VFun f2"
     show "A\<mapsto>B \<sqsubseteq> f2" sorry
   qed
 qed
