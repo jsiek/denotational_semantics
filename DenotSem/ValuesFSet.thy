@@ -41,6 +41,12 @@ inductive val_le :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubse
   le_distr: "\<lbrakk> va \<squnion> vb = Some vab; v\<mapsto>va \<sqsubseteq> f; v\<mapsto>vb \<sqsubseteq> f \<rbrakk> \<Longrightarrow> v\<mapsto>vab \<sqsubseteq> f"
 *)
   
+abbreviation match :: "val \<Rightarrow> val \<Rightarrow> val \<times> val \<Rightarrow> func \<Rightarrow> func" where
+  "match v1 v1' v22 f' \<equiv> (if fst v22 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> snd v22 then finsert v22 f' else f')"
+  
+definition matches :: "val \<Rightarrow> val \<Rightarrow> func \<Rightarrow> func" where
+  "matches v1 v1' f \<equiv> ffold (match v1 v1') bot f"
+  
 inductive_cases 
   le_nat_nat_inv[elim!]: "VNat n1 \<sqsubseteq> VNat n2" and
   le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> VFun f" and
@@ -1041,6 +1047,13 @@ lemma beta_helper: "\<lbrakk> \<forall> v v'. (v,v') \<in> fset f1 \<longrightar
   sorry
 *)
   
+lemma matches_beta_sound: "\<lbrakk> f' = matches v1 v1' f; v2 \<sqsubseteq> v1; v1' \<sqsubseteq> v2'\<rbrakk> \<Longrightarrow> 
+    \<exists>v3 v3'. fset f' \<subseteq> fset f \<and> v2 \<squnion> (fst|`|f') = Some v3 \<and> v2' \<squnion> (snd|`|f') = Some v3'
+         \<and> v3 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v3'"
+  apply (induction f arbitrary: f' v1 v2 v1' v2')
+  unfolding matches_def apply force
+  apply simp apply clarify
+    
 lemma le_trans_aux:
   "(\<forall>v1 v2 v3. n = vsize v1 + vsize v2 + vsize v3 \<longrightarrow> 
        v1 \<sqsubseteq> v2 \<longrightarrow> v2 \<sqsubseteq> v3 \<longrightarrow> v1 \<sqsubseteq> v3)
