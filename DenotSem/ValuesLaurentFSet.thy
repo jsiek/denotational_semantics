@@ -185,8 +185,12 @@ next
   then have "{|v1, v2|} |\<union>| (finsert ?v xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|vr|}" using 1 by simp
   then show ?case by blast
 next
-  case (union_R xs c1 v1 c2 v2)
-  then show ?case sorry
+  case (union_R xs c1 va c2 vb)
+  let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})" 
+  have a: "?xs \<turnstile> c1 : {|va|}" sorry
+  have b: "?xs \<turnstile> c2 : {|vb|}" sorry
+  have "?xs \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
+  then show ?case using union_R by blast
 next
   case (union_L v1 v2 xs c v)
   then show ?case sorry
