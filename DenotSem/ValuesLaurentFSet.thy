@@ -187,13 +187,37 @@ next
 next
   case (union_R xs c1 va c2 vb)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})" 
-  have a: "?xs \<turnstile> c1 : {|va|}" sorry
-  have b: "?xs \<turnstile> c2 : {|vb|}" sorry
+  obtain c1 where a: "?xs \<turnstile> c1 : {|va|}" using union_R.IH(1)[of va v1 v2] union_R.prems by blast
+  obtain c2 where b: "?xs \<turnstile> c2 : {|vb|}" using union_R.IH(2)[of vb v1 v2] union_R.prems by blast
   have "?xs \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
   then show ?case using union_R by blast
 next
-  case (union_L v1 v2 xs c v)
-  then show ?case sorry
+  case (union_L va vb xs c v)
+  let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
+  
+  have "\<exists>c'. {|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|vr|}"
+  proof (cases "va \<squnion> vb = v1 \<squnion> v2")
+    case True
+    then show ?thesis sorry
+  next
+    case False
+    have 3: "va\<squnion>vb |\<notin>| ?xs" using union_L(1) False union_L.prems(3) union_L.prems(4) by blast
+    have 1: "finsert (va \<squnion> vb) ?xs
+          = {|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|})" using False by auto
+    have 4: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" using union_L.prems False by auto
+    have 5: "v1 |\<notin>| {|va, vb|} |\<union>| xs" sorry
+    have 6: "v2 |\<notin>| {|va, vb|} |\<union>| xs" sorry
+    from union_L.IH[of v v1 v2] 4 5 6 obtain c' where 
+      7: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|v|}" by blast
+    have 8: "finsert va (finsert vb xs) |-| {|v1 \<squnion> v2|} = finsert va (finsert vb (xs |-| {|v1 \<squnion> v2|}))" sorry
+    have "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) = {|va,vb|}|\<union>| ?xs" 
+      using 3 False union_L(1) False union_L.prems 8 by (simp add: finsert_commute)
+    with 7 union_L(4) have "{|va,vb|}|\<union>| ?xs \<turnstile> c' : {|vr|}" by simp
+    then have 2: "finsert (va \<squnion> vb) ?xs \<turnstile> CUnionL c' : {|vr|}"
+       using 3 ValuesLaurentFSet.union_L by blast
+    show ?thesis using 1 2 by (rule_tac x="CUnionL c'" in exI) simp
+  qed
+  then show ?case by blast
 next
   case (le_nat n)
   then have "False" by auto
