@@ -29,7 +29,7 @@ inductive deduce_le :: "val list \<Rightarrow> coercion \<Rightarrow> val \<Righ
   union_R[intro!]: "\<lbrakk> \<Gamma> \<turnstile> c1 : v1; \<Gamma> \<turnstile> c2 : v2 \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CUnionR c1 c2 : v1 \<squnion> v2" |
   union_L[intro]: "\<lbrakk> \<Gamma>=\<Gamma>1@(v1\<squnion>v2)#\<Gamma>2; \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CUnionL c : v" | 
   le_nat[intro!]: "[VNat n] \<turnstile> CNat n : VNat n" |
-  le_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; [v1] \<turnstile> c1 : doms \<Gamma>'; cods \<Gamma>' \<turnstile> c2 : v1'\<rbrakk>
+  le_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; [v1] \<turnstile> c1 : doms \<Gamma>; cods \<Gamma> \<turnstile> c2 : v1'\<rbrakk>
     \<Longrightarrow> \<Gamma> \<turnstile> CArrow c1 c2 : v1 \<mapsto> v1'"
   
 inductive_cases
@@ -43,10 +43,13 @@ inductive_cases
 
 fun count :: "'a list \<Rightarrow> 'a \<Rightarrow> nat" where
   "count [] a = 0" |
-  "count (b#ls) a = (if a = b then Suc (count ls a) else count ls a)"
+  count_cons: "count (b#ls) a = (if a = b then 1 else 0) + count ls a"
 
 definition perm :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool" where
   "perm \<Gamma> \<Gamma>' \<equiv> (\<forall> x. count \<Gamma> x = count \<Gamma>' x)"
+  
+lemma count_append[simp]: "count (xs@ys) v = count xs v + count ys v"
+  apply (induction xs) apply auto done
   
 lemma count_remove1_same[simp]: "count (remove1 v ls) v = (count ls v) - 1"
   apply (induction ls) apply auto done
@@ -106,7 +109,44 @@ lemma perm_set_eq[intro]: "perm xs ys \<Longrightarrow> set xs = set ys"
   apply blast
   done
     
-    
+lemma perm_remove_common1:
+  "perm (\<Gamma>1 @ v# \<Gamma>2) (\<Gamma>1' @ v# \<Gamma>2') \<Longrightarrow> perm (\<Gamma>1 @ \<Gamma>2) (\<Gamma>1' @ \<Gamma>2')"
+  unfolding perm_def by auto
+
+lemma perm_add_common:
+  "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2') \<Longrightarrow> perm (\<Gamma>1@\<Gamma>@\<Gamma>2) (\<Gamma>1'@\<Gamma>@\<Gamma>2')"
+  unfolding perm_def by auto
+
+lemma perm_ex_cons:
+  "perm (v # \<Gamma>2) \<Gamma>' \<Longrightarrow> \<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'" 
+  apply (induction \<Gamma>' arbitrary: v \<Gamma>2)
+   apply (simp add: perm_def) apply (erule_tac x=v in allE) apply force
+  apply (case_tac "a = v") apply (rule_tac x="[]" in exI)
+    apply (rule_tac x=\<Gamma>' in exI) apply force
+  apply (subgoal_tac "perm (v#(remove1 a \<Gamma>2)) \<Gamma>'")
+   apply (subgoal_tac "\<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'") prefer 2 apply blast 
+   apply (erule exE)+ apply clarify
+   apply (rule_tac x="a#\<Gamma>1'" in exI)
+    apply (rule_tac x="\<Gamma>2'" in exI)
+    apply (rule conjI) apply force apply force
+  unfolding perm_def apply (rule allI) apply (erule_tac x=x in allE)
+  apply simp apply (case_tac "x=v") apply force 
+  apply simp apply (case_tac "x=a") apply auto
+  done
+
+lemma perm_ex_append: "perm (\<Gamma>1@ v # \<Gamma>2) \<Gamma>' \<Longrightarrow> \<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'"
+  apply (induction \<Gamma>1 arbitrary: \<Gamma>2 \<Gamma>')
+    using perm_ex_cons apply force
+    apply simp
+    apply (subgoal_tac "perm (\<Gamma>1 @ v # \<Gamma>2) (remove1 a \<Gamma>')") prefer 2
+     apply (simp add: perm_def) apply clarify apply (erule_tac x=x in allE)
+     apply (case_tac "x=v") apply simp apply (case_tac "v=a") apply force apply force
+      apply simp apply (case_tac "x=a") apply force apply force
+      apply (subgoal_tac "\<exists>\<Gamma>1'. (\<exists>\<Gamma>2'. (remove1 a \<Gamma>') = \<Gamma>1' @ v # \<Gamma>2') \<and> v \<notin> set \<Gamma>1'")
+      prefer 2 apply blast apply (erule exE) apply (erule conjE) apply (erule exE)
+     oops     
+      
+(*  
 lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
   apply (induction arbitrary: \<Gamma>' rule: deduce_le.induct)
   -- "case wk_nat" 
@@ -148,7 +188,17 @@ lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbra
     -- "case union_R"
     apply force
     -- "case union_L"
-    
+    apply clarify 
+    apply (subgoal_tac "\<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>'=\<Gamma>1'@(v1\<squnion>v2)#\<Gamma>2'") apply (erule exE)+
+     apply (subgoal_tac "perm (\<Gamma>1 @ v1 # v2 # \<Gamma>2) (\<Gamma>1'@v1#v2#\<Gamma>2')") 
+    apply (subgoal_tac "\<exists>c'. \<Gamma>1'@v1#v2#\<Gamma>2' \<turnstile> c' : v") prefer 2 apply blast
+    apply (erule exE) apply (rule_tac x="CUnionL c'" in exI) apply (rule union_L)
+       apply assumption apply assumption apply simp 
+     apply (subgoal_tac "perm (\<Gamma>1 @  \<Gamma>2) (\<Gamma>1' @ \<Gamma>2')") prefer 2 apply (rule perm_remove_common1)
+      apply blast
+    apply (subgoal_tac "perm (\<Gamma>1 @ [v1, v2] @ \<Gamma>2) (\<Gamma>1' @ [v1, v2] @ \<Gamma>2')") prefer 2
+    apply (rule perm_add_common) apply blast apply simp
+        
     -- "case le_nat"
     defer
     -- "case le_arrow"
@@ -163,7 +213,7 @@ lemma wk_gen: "\<forall> c v v' \<Gamma> \<Delta>. n = size c \<longrightarrow> 
     
 lemma weaken: "\<lbrakk> \<Gamma> \<turnstile> c : v; fset \<Gamma> \<subseteq> fset \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
  oops
-  
+ *) 
   
     
     
