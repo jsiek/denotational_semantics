@@ -213,24 +213,55 @@ next
     using cons_R(5) by (simp add: factor_union)
   then obtain ys1' ys2' where ysp: "ys'=ys1'|\<union>|ys2'" and ys11: "ys1' |\<subseteq>| ys1" and ys22: "ys2' |\<subseteq>| ys2"
     by blast      
-  
-  then show ?case sorry
+  from cons_R.IH(1) ys11 obtain c3 where c3: "xs \<turnstile> c3 : ys1'" by blast
+  from cons_R.IH(2) ys22 obtain c4 where c4: "xs \<turnstile> c4 : ys2'" by blast
+  have "xs \<turnstile> CCons c3 c4 : ys'" using c3 c4 ysp by auto
+  then show ?case by blast
 next
   case (union_R xs c1 v1 c2 v2)
-  then show ?case sorry
+  have "ys' = bot \<or> ys' = {|v1 \<squnion> v2|}" using union_R by auto
+  then show ?case
+  proof
+    assume "ys' = bot"
+    then show ?thesis by auto
+  next
+    assume ysp: "ys' = {|v1 \<squnion> v2|}" 
+    show ?thesis using ysp union_R by blast
+  qed
 next
   case (union_L v1 v2 xs c v)
-  then show ?case sorry
+  have "ys' = bot \<or> ys' = {|v|}" using union_L by auto
+  then show ?case
+  proof
+    assume "ys' = bot"
+    then show ?thesis by auto
+  next
+    assume ysp: "ys' = {|v|}" 
+    show ?thesis using ysp union_L by blast
+  qed
 next
   case (le_nat n xs)
-  then show ?case sorry
+  have "ys' = bot \<or> ys' = {|VNat n|}" using le_nat(2) by auto
+  then show ?case
+  proof
+    assume "ys' = bot"
+    then show ?thesis by auto
+  next
+    assume ysp: "ys' = {|VNat n|}" 
+    show ?thesis using ysp le_nat by blast
+  qed
 next
   case (le_arrow xs' xs v1 c1 c2 v1')
-  then show ?case sorry
-qed
-
-   
-    
+  have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow(7) by auto
+  then show ?case
+  proof
+    assume "ys' = bot"
+    then show ?thesis by auto
+  next
+    assume ysp: "ys' = {|v1 \<mapsto> v1'|}" 
+    show ?thesis using ysp le_arrow by blast
+  qed
+qed    
     
 lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1, size c2) \<longrightarrow>
    xs \<turnstile> c1 : ys \<longrightarrow> xs |\<union>| ys \<turnstile> c2 : zs \<longrightarrow> (\<exists>c3. xs \<turnstile> c3 : zs)" (is "?P m")
@@ -268,7 +299,7 @@ next
     next
       show ?thesis sorry
     next
-      fix n xsa assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CNat n" and zs: "zs = {|VNat n|}"
+      fix n xsa assume xsa: "xs |\<union>| ys = xsa" and "c2 = CNat n" and zs: "zs = {|VNat n|}"
         and n_xsa: "VNat n |\<in>| xsa"
       have "VNat n |\<in>| xs \<or> VNat n |\<in>| ys" using n_xsa xsa by auto
       then show ?thesis
@@ -277,12 +308,24 @@ next
         then show ?thesis using zs by blast
       next
         assume n_ys: "VNat n |\<in>| ys"
-        obtain c1' where "xs \<turnstile> c1' : {|VNat n|}" using n_ys c1  
-            
-        show ?thesis sorry
+        then have "{|VNat n|} |\<subseteq>| ys" by blast
+        with c1 obtain c1' where c1p: "xs \<turnstile> c1' : {|VNat n|}" using weaken_right by blast
+        with zs show ?thesis by blast
       qed
     next
-      show ?thesis sorry
+      fix xs' xsa v1 c2a c2b v1'
+      assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CArrow c2a c2b" and zs: "zs = {|v1 \<mapsto> v1'|}" 
+         and xsp_xsa: "xs' |\<subseteq>| xsa" and af_xsp: "all_funs xs'" and 
+         c1: "{|v1|} \<turnstile> c2a : ValuesLaurentFSet.dom |`| xs'"
+         and c2a: "cod |`| xs' \<turnstile> c2b : {|v1'|}" 
+      from xsa xsp_xsa factor_union[of xs' xs ys] obtain xs1' xs2' where
+        xsp: "xs' = xs1'|\<union>| xs2'" and xs1p_xs: "xs1'|\<subseteq>| xs" and xs2p_ys: "xs2'|\<subseteq>|ys" by blast
+      have 2: "all_funs xs1'" sorry
+      obtain c3a where 3: "{|v1|} \<turnstile> c3a : ValuesLaurentFSet.dom |`| xs1'"
+        using c1 xs1p_xs sorry
+      have 4: "cod |`| xs1' \<turnstile> c3b : {|v1'|}" sorry
+      have "xs \<turnstile> CArrow c3a c3b : {|v1 \<mapsto> v1'|}" using xs1p_xs 2 3 4 by blast
+      then show ?thesis using zs by blast
     qed  
   qed
 qed
