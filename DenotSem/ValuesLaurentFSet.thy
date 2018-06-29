@@ -322,7 +322,7 @@ next
         xsp: "xs' = xs1'|\<union>| xs2'" and xs1p_xs: "xs1'|\<subseteq>| xs" and xs2p_ys: "xs2'|\<subseteq>|ys" by blast
       have 2: "all_funs xs1'" sorry
       obtain c3a where 3: "{|v1|} \<turnstile> c3a : ValuesLaurentFSet.dom |`| xs1'"
-        using c1 xs1p_xs sorry
+        using c1 xs1p_xs xsp sorry
       have 4: "cod |`| xs1' \<turnstile> c3b : {|v1'|}" sorry
       have "xs \<turnstile> CArrow c3a c3b : {|v1 \<mapsto> v1'|}" using xs1p_xs 2 3 4 by blast
       then show ?thesis using zs by blast
