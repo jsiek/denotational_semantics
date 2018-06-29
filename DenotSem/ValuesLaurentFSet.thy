@@ -107,59 +107,42 @@ next
   have "xs' \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
   then show ?case using union_R by blast
 next
-  case (union_L va vb xs c v)
-  let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
-  have vab_xs_c: "{|va, vb|} |\<union>| xs \<turnstile> c : {|v|}" using union_L by blast
-
+  case (union_L va vb xs c v) 
   have "(v1 \<squnion> v2 = va \<squnion> vb) \<or> (v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb)" using union_L by blast
   then show ?case
   proof
-    assume v12_vab: "v1 \<squnion> v2 = va \<squnion> vb" 
-    have a: "?xs \<turnstile> c : {|vr|}" using vab_xs_c v12_vab union_L.hyps(1) union_L.prems(1) by auto
-    have b: "?xs = {|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|})" using v12_vab by simp 
-    show ?thesis using a b by auto
-  next
-    assume v12_xs: "v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb"
-    let ?abxs = "finsert (va \<squnion> vb) xs"
-    have "{|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|})
-         = {|v1, v2|} |\<union>| (?abxs |-| {|v1 \<squnion> v2|})" 
-      using v12_xs by simp
-      
-        
-    have "\<exists>c'. {|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|vr|}"
-    proof (cases "{|va\<squnion>vb|} |\<inter>| {|v1,v2|} = bot \<and> {|v1\<squnion>v2|} |\<inter>| {|va,vb|} = bot")
+    assume 2: "v1 \<squnion> v2 = va \<squnion> vb"
+    have 3: "{|va, vb|} |\<union>| xs \<turnstile> c : {|v|}" using union_L by blast      
+    show ?thesis
+    proof (cases "v1 \<squnion> v2 |\<in>| xs")
       case True
-      have 10: "{|v1\<squnion>v2|} |\<inter>| {|va,vb|} = bot" using True by blast
-      have 3: "va\<squnion>vb |\<notin>| ?xs" using union_L(1) union_L.prems True by auto 
-      have 1: "finsert (va \<squnion> vb) ?xs
-               = {|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|})" using v12_xs by auto
-      have 4: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" using union_L.prems v12_xs by auto
-      obtain c' where 7: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|v|}" 
-        using union_L.IH[of v v1 v2] 4 by blast
-      have 8: "finsert va (finsert vb xs) |-| {|v1 \<squnion> v2|} = finsert va (finsert vb (xs |-| {|v1 \<squnion> v2|}))" 
-        using 10 by auto 
-      have "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) = {|va,vb|}|\<union>| ?xs" 
-        using union_L(1) union_L.prems 8 by (simp add: finsert_commute)
-      with 7 union_L(4) have "{|va,vb|}|\<union>| ?xs \<turnstile> c' : {|vr|}" by simp
-      then have 2: "finsert (va \<squnion> vb) ?xs \<turnstile> CUnionL c' : {|vr|}"
-        using 3 ValuesLaurentFSet.union_L by blast
-      show ?thesis using 1 2 by (rule_tac x="CUnionL c'" in exI) simp
+      then have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" by auto
+      have 4: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) |\<subseteq>| xs'"
+        using union_L(5) 2 by auto
+      obtain c' where cp: "xs' \<turnstile> c' : {|v|}" using union_L.IH[of v v1 v2 xs'] 3 4 by blast
+      then show ?thesis using union_L(3) by blast
     next
       case False
-      have "{|v1, v2|} |\<union>| (finsert (va \<squnion> vb) xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|vr|}" 
-        sorry   
-      then show ?thesis by blast
-    qed  
-    then show ?case by blast
+      then have "{|va, vb|} |\<union>| xs |\<subseteq>| xs'" using union_L(5) 2 by auto
+      then show ?thesis using 3 weaken union_L(3) by blast
+    qed        
+  next
+    assume 2: "v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb"     
+    have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" using 2 by auto  
+    have 1: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) |\<subseteq>| {|va, vb|} |\<union>| xs'"
+      using union_L(5) by auto
+    obtain c' where cp: "{|va, vb|} |\<union>| xs' \<turnstile> c' : {|v|}" 
+      using union_L.IH[of v v1 v2 "{|va, vb|} |\<union>| xs'"] 1 3 by blast
+    then have "finsert (va\<squnion>vb) xs' \<turnstile> CUnionL c' : {|v|}" by blast
+    moreover have "finsert (va\<squnion>vb) xs' = xs'" using union_L(5) 2 by auto
+    ultimately show ?thesis using union_L(3) by (rule_tac x="CUnionL c'" in exI) auto 
   qed
 next
   case (le_nat n)
-  then have "False" by auto
-  then show ?case ..
+  then show ?case by auto
 next
   case (le_arrow xs v1 c1 c2 v1')
-  then have "False" using all_funs_are_funs[of xs "v1\<squnion>v2"] by blast
-  then show ?case ..
+  then show ?case sorry
 qed
          
     
