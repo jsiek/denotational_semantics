@@ -194,6 +194,43 @@ lemma fsize_union[simp]: "fsize (x1 |\<union>| x2) \<le> fsize x1 + fsize x2"
    apply force
   by (smt add.commute add.left_commute dual_order.trans fsize_finsert_in fsize_finsert_notin funion_finsert_left le_add2 nat_add_left_cancel_le)
   
+inductive_cases deduce_finsert_inv: "xs \<turnstile> c : finsert x ys"
+  
+lemma factor_union: "a |\<subseteq>| b|\<union>|c \<Longrightarrow> \<exists>a1 a2. a = a1|\<union>|a2 \<and> a1 |\<subseteq>| b \<and> a2 |\<subseteq>| c"
+  apply (induction a)
+   apply blast
+  apply simp apply (erule exE)+ apply (erule conjE)+ apply (erule disjE)
+  using finsert_absorb2 apply blast
+  by (metis finsert_fsubset funion_finsert_right)
+    
+lemma weaken_right: "\<lbrakk> xs \<turnstile> c : ys; ys' |\<subseteq>| ys  \<rbrakk> \<Longrightarrow> \<exists>c'. xs \<turnstile> c' : ys'"
+proof (induction xs c ys arbitrary: ys' rule: deduce_le.induct)
+  case (empty_R xs)
+  then show ?case by auto
+next
+  case (cons_R xs c1 ys1 c2 ys2)
+  have "\<exists>ys1' ys2'. ys'=ys1'|\<union>|ys2' \<and> ys1' |\<subseteq>| ys1 \<and> ys2' |\<subseteq>| ys2"
+    using cons_R(5) by (simp add: factor_union)
+  then obtain ys1' ys2' where ysp: "ys'=ys1'|\<union>|ys2'" and ys11: "ys1' |\<subseteq>| ys1" and ys22: "ys2' |\<subseteq>| ys2"
+    by blast      
+  
+  then show ?case sorry
+next
+  case (union_R xs c1 v1 c2 v2)
+  then show ?case sorry
+next
+  case (union_L v1 v2 xs c v)
+  then show ?case sorry
+next
+  case (le_nat n xs)
+  then show ?case sorry
+next
+  case (le_arrow xs' xs v1 c1 c2 v1')
+  then show ?case sorry
+qed
+
+   
+    
     
 lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1, size c2) \<longrightarrow>
    xs \<turnstile> c1 : ys \<longrightarrow> xs |\<union>| ys \<turnstile> c2 : zs \<longrightarrow> (\<exists>c3. xs \<turnstile> c3 : zs)" (is "?P m")
@@ -231,7 +268,19 @@ next
     next
       show ?thesis sorry
     next
-      show ?thesis sorry
+      fix n xsa assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CNat n" and zs: "zs = {|VNat n|}"
+        and n_xsa: "VNat n |\<in>| xsa"
+      have "VNat n |\<in>| xs \<or> VNat n |\<in>| ys" using n_xsa xsa by auto
+      then show ?thesis
+      proof
+        assume "VNat n |\<in>| xs"
+        then show ?thesis using zs by blast
+      next
+        assume n_ys: "VNat n |\<in>| ys"
+        obtain c1' where "xs \<turnstile> c1' : {|VNat n|}" using n_ys c1  
+            
+        show ?thesis sorry
+      qed
     next
       show ?thesis sorry
     qed  
