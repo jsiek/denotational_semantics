@@ -7,7 +7,8 @@ datatype val = VNat nat | VArrow val val (infix "\<mapsto>" 60) | VUnion val val
 abbreviation is_fun :: "val \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<mapsto>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
 abbreviation all_funs :: "val fset \<Rightarrow> bool" where
-  "all_funs xs \<equiv> ffold (\<lambda>v b. is_fun v \<and> b) True xs"
+(*  "all_funs xs \<equiv> ffold (\<lambda>v b. is_fun v \<and> b) True xs" *)
+   "all_funs xs \<equiv> \<forall>v. v |\<in>| xs \<longrightarrow> is_fun v"
 
 interpretation is_fun_commute: comp_fun_commute "(\<lambda>v b. is_fun v \<and> b)"
   unfolding comp_fun_commute_def by auto  
@@ -88,8 +89,10 @@ next
 qed
 
 lemma all_funs_are_funs: "\<lbrakk> all_funs xs; v |\<in>| xs \<rbrakk> \<Longrightarrow> \<exists>v1 v2. v = v1\<mapsto>v2"
-  apply (induction xs) apply auto apply (case_tac v) apply auto done
-  
+(*  apply (induction xs) apply auto apply (case_tac v) apply auto done
+*)
+  apply (case_tac v) apply auto done
+    
 lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys;  (v1\<squnion>v2) |\<in>| xs;
                    {|v1,v2|} |\<union>| (xs |-| {|v1\<squnion>v2|}) |\<subseteq>| xs'\<rbrakk> \<Longrightarrow>
                   \<exists>c'. xs' \<turnstile> c' : ys"
@@ -263,9 +266,48 @@ next
   qed
 qed    
     
-lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1, size c2) \<longrightarrow>
+lemma fsize_empty[simp]: "fsize {||} = 0"
+  unfolding fsize_def by auto
+    
+lemma dom_finsert[simp]: "all_funs (finsert x ys) \<Longrightarrow>
+               dom |`| (finsert x ys) = finsert (dom x) (dom |`| ys)"
+  by simp
+    
+lemma mem_cod: "\<lbrakk> all_funs ys; \<forall>x1. x1\<mapsto>x2 |\<notin>| ys \<rbrakk> \<Longrightarrow> x2 |\<notin>| (cod|`|ys)"
+  apply (induction ys arbitrary: x2) 
+   apply force
+   apply (subgoal_tac "is_fun x") prefer 2 apply force
+  apply (case_tac x) apply force prefer 2 apply force
+  apply simp
+  done
+    
+lemma fsize_funs[simp]: "all_funs ys \<Longrightarrow> fsize (dom|`|ys) + fsize(cod|`|ys) \<le> fsize ys"
+  apply (induction ys)
+   apply force
+  apply (subgoal_tac "is_fun x") prefer 2 apply force apply (case_tac x) apply force
+    prefer 2 apply force apply simp
+   apply (case_tac "dom x |\<in>| (dom|`|ys)") apply simp
+   apply (case_tac "cod x |\<in>| (cod|`|ys)") apply force apply force
+  apply simp apply (case_tac "cod x |\<in>| (cod|`|ys)") apply force apply force
+  done
+    
+lemma fsize_subset[simp,intro]: "xs |\<subseteq>| ys \<Longrightarrow> fsize xs \<le> fsize ys"
+  apply (induction ys arbitrary: xs)
+   apply force
+  apply simp 
+  apply (case_tac "x |\<in>| xs")
+    apply (subgoal_tac "\<exists>xs'. xs = finsert x xs' \<and> x |\<notin>| xs'") prefer 2 
+    apply (simp add: mk_disjoint_finsert)
+   apply (erule exE) apply (erule conjE)
+   apply simp apply blast
+  apply (subgoal_tac "xs |\<subseteq>| ys") prefer 2 apply blast
+  apply (subgoal_tac "fsize xs \<le> fsize ys") prefer 2 apply blast
+  apply arith
+  done
+    
+lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1 + size c2) \<longrightarrow>
    xs \<turnstile> c1 : ys \<longrightarrow> xs |\<union>| ys \<turnstile> c2 : zs \<longrightarrow> (\<exists>c3. xs \<turnstile> c3 : zs)" (is "?P m")
-proof (induction m rule: wf_induct[of "less_than <*lex*> (less_than <*lex*> less_than)"])
+proof (induction m rule: wf_induct[of "less_than <*lex*> less_than"])
   case 1
   then show ?case by auto
 next
@@ -273,8 +315,8 @@ next
   then show ?case
   proof clarify
     fix xs ys zs c1 c2
-    assume IH: "\<forall>m'. (m', fsize ys, size c1, size c2) \<in> less_than <*lex*> less_than <*lex*> less_than \<longrightarrow> ?P m'" and
-       m: "m = (fsize ys, size c1, size c2)" and
+    assume IH: "\<forall>m'. (m', fsize ys, size c1 + size c2) \<in> less_than <*lex*> less_than \<longrightarrow> ?P m'" and
+       m: "m = (fsize ys, size c1 + size c2)" and
        c1: "xs \<turnstile> c1 : ys" and c2: "xs |\<union>| ys \<turnstile> c2 : zs"
     from c2 show "\<exists>c3. xs \<turnstile> c3 : zs"
     proof
@@ -284,13 +326,15 @@ next
     next
       fix xsa c2a zs1 c2b zs2
       assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CCons c2a c2b" and
-        zs: "zs = zs1 |\<union>| zs2" and c2a: "xsa \<turnstile> c2a : zs1" and c2b: "xsa \<turnstile> c2b : zs2"
+        zs: "zs = zs1 |\<union>| zs2" and c2a_: "xsa \<turnstile> c2a : zs1" and c2b_: "xsa \<turnstile> c2b : zs2"
+      have c2a: "xs |\<union>| ys \<turnstile> c2a : zs1" using c2a_ xsa by blast
+      have c2b: "xs |\<union>| ys \<turnstile> c2b : zs2" using c2b_ xsa by blast
       from c1 c2a xsa IH c2 have "\<exists>c. xs \<turnstile> c : zs1" 
-        apply (erule_tac x="(fsize ys, size c1, size c2a)" in allE) apply (erule impE) apply force
+        apply (erule_tac x="(fsize ys, size c1 + size c2a)" in allE) apply (erule impE) apply force
         apply blast done
       then obtain c3 where c3: "xs \<turnstile> c3 : zs1" by blast
       from c1 c2b xsa IH c2 have "\<exists>c. xs \<turnstile> c : zs2" 
-        apply (erule_tac x="(fsize ys, size c1, size c2b)" in allE) apply (erule impE) apply force
+        apply (erule_tac x="(fsize ys, size c1 + size c2b)" in allE) apply (erule impE) apply force
         apply blast done
       then obtain c4 where c4: "xs \<turnstile> c4 : zs2" by blast
       show ?thesis using c3 c4 zs by blast
@@ -313,21 +357,35 @@ next
         with zs show ?thesis by blast
       qed
     next
-      fix xs' xsa v1 c2a c2b v1'
-      assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CArrow c2a c2b" and zs: "zs = {|v1 \<mapsto> v1'|}" 
-         and xsp_xsa: "xs' |\<subseteq>| xsa" and af_xsp: "all_funs xs'" and 
-         c1: "{|v1|} \<turnstile> c2a : ValuesLaurentFSet.dom |`| xs'"
-         and c2a: "cod |`| xs' \<turnstile> c2b : {|v1'|}" 
-      from xsa xsp_xsa factor_union[of xs' xs ys] obtain xs1' xs2' where
-        xsp: "xs' = xs1'|\<union>| xs2'" and xs1p_xs: "xs1'|\<subseteq>| xs" and xs2p_ys: "xs2'|\<subseteq>|ys" by blast
-      have 2: "all_funs xs1'" sorry
-      obtain c3a where 3: "{|v1|} \<turnstile> c3a : ValuesLaurentFSet.dom |`| xs1'"
-        apply (subgoal_tac "dom |`| xs1' |\<subseteq>| dom|`| xs'") prefer 2 using xsp apply force
+      fix fs xsa z1 c2a c2b z2
+      assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CArrow c2a c2b" and zs: "zs = {|z1 \<mapsto> z2|}" 
+         and xsp_xsa: "fs |\<subseteq>| xsa" and af_xsp: "all_funs fs" and 
+         c1: "{|z1|} \<turnstile> c2a : ValuesLaurentFSet.dom |`| fs"
+         and c2a: "cod |`| fs \<turnstile> c2b : {|z2|}" 
+      from xsa xsp_xsa factor_union[of fs xs ys] obtain xs' ys' where
+        xsp: "fs = xs'|\<union>| ys'" and xs1p_xs: "xs'|\<subseteq>| xs" and xs2p_ys: "ys'|\<subseteq>|ys" by blast
+      have 2: "all_funs xs'" using af_xsp xsp by auto
+      obtain c3a where 3: "{|z1|} \<turnstile> c3a : ValuesLaurentFSet.dom |`| xs'"
+        apply (subgoal_tac "dom |`| xs' |\<subseteq>| dom|`| fs") prefer 2 using xsp apply force
         using c1 weaken_right apply blast done
-      obtain c3b where 4: "cod |`| xs1' \<turnstile> c3b : {|v1'|}"
-        using IH 3
+      have c2a_: "(cod|`|xs') |\<union>| (cod|`|ys') \<turnstile> c2b : {|z2|}" sorry
+      obtain c4 where c4: "cod |`| xs' \<turnstile> c4 : cod |`| ys'" sorry 
+      have scysp_ys: "fsize (cod |`| ys') \<le> fsize ys"
+        using xsp xsa xsp_xsa af_xsp apply simp
+          apply (subgoal_tac "fsize (dom |`| ys') + fsize (cod |`| ys') \<le> fsize ys'")
+         prefer 2 using fsize_funs[of ys'] apply blast
+          apply (subgoal_tac "ys' |\<subseteq>| ys") prefer 2 using xs2p_ys apply blast
+        apply (subgoal_tac "fsize ys' \<le> fsize ys") prefer 2 apply blast
+        apply arith done
+      have c4_c1: "size c4 \<le> size c1" sorry
+      have c2b_c4_c1_c2: "size c2b + size c4 < size c1 + size c2" using c2 c4_c1 by auto
+      obtain c3b where 4: "cod |`| xs' \<turnstile> c3b : {|z2|}"
+        using c2a_ c4 IH
+        apply (erule_tac x="(fsize (cod |`| ys'), size c2b + size c4)" in allE)
+        apply (erule impE) using c2b_c4_c1_c2 scysp_ys apply force
+        
         sorry
-      have "xs \<turnstile> CArrow c3a c3b : {|v1 \<mapsto> v1'|}" using xs1p_xs 2 3 4 by blast
+      have "xs \<turnstile> CArrow c3a c3b : {|z1 \<mapsto> z2|}" using xs1p_xs 2 3 4 by blast
       then show ?thesis using zs by blast
     qed  
   qed
