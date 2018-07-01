@@ -305,9 +305,9 @@ lemma fsize_subset[simp,intro]: "xs |\<subseteq>| ys \<Longrightarrow> fsize xs 
   apply arith
   done
     
-lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1 + size c2) \<longrightarrow>
+lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1, size c2) \<longrightarrow>
    xs \<turnstile> c1 : ys \<longrightarrow> xs |\<union>| ys \<turnstile> c2 : zs \<longrightarrow> (\<exists>c3. xs \<turnstile> c3 : zs)" (is "?P m")
-proof (induction m rule: wf_induct[of "less_than <*lex*> less_than"])
+proof (induction m rule: wf_induct[of "less_than <*lex*> (less_than <*lex*> less_than)"])
   case 1
   then show ?case by auto
 next
@@ -315,8 +315,8 @@ next
   then show ?case
   proof clarify
     fix xs ys zs c1 c2
-    assume IH: "\<forall>m'. (m', fsize ys, size c1 + size c2) \<in> less_than <*lex*> less_than \<longrightarrow> ?P m'" and
-       m: "m = (fsize ys, size c1 + size c2)" and
+    assume IH: "\<forall>m'. (m', fsize ys, size c1, size c2) \<in> less_than <*lex*> (less_than <*lex*> less_than) \<longrightarrow> ?P m'" and
+       m: "m = (fsize ys, size c1, size c2)" and
        c1: "xs \<turnstile> c1 : ys" and c2: "xs |\<union>| ys \<turnstile> c2 : zs"
     from c2 show "\<exists>c3. xs \<turnstile> c3 : zs"
     proof
@@ -330,11 +330,11 @@ next
       have c2a: "xs |\<union>| ys \<turnstile> c2a : zs1" using c2a_ xsa by blast
       have c2b: "xs |\<union>| ys \<turnstile> c2b : zs2" using c2b_ xsa by blast
       from c1 c2a xsa IH c2 have "\<exists>c. xs \<turnstile> c : zs1" 
-        apply (erule_tac x="(fsize ys, size c1 + size c2a)" in allE) apply (erule impE) apply force
+        apply (erule_tac x="(fsize ys, size c1, size c2a)" in allE) apply (erule impE) apply force
         apply blast done
       then obtain c3 where c3: "xs \<turnstile> c3 : zs1" by blast
       from c1 c2b xsa IH c2 have "\<exists>c. xs \<turnstile> c : zs2" 
-        apply (erule_tac x="(fsize ys, size c1 + size c2b)" in allE) apply (erule impE) apply force
+        apply (erule_tac x="(fsize ys, size c1, size c2b)" in allE) apply (erule impE) apply force
         apply blast done
       then obtain c4 where c4: "xs \<turnstile> c4 : zs2" by blast
       show ?thesis using c3 c4 zs by blast
@@ -360,32 +360,30 @@ next
       fix fs xsa z1 c2a c2b z2
       assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CArrow c2a c2b" and zs: "zs = {|z1 \<mapsto> z2|}" 
          and xsp_xsa: "fs |\<subseteq>| xsa" and af_xsp: "all_funs fs" and 
-         c1: "{|z1|} \<turnstile> c2a : ValuesLaurentFSet.dom |`| fs"
-         and c2a: "cod |`| fs \<turnstile> c2b : {|z2|}" 
-      from xsa xsp_xsa factor_union[of fs xs ys] obtain xs' ys' where
-        xsp: "fs = xs'|\<union>| ys'" and xs1p_xs: "xs'|\<subseteq>| xs" and xs2p_ys: "ys'|\<subseteq>|ys" by blast
-      have 2: "all_funs xs'" using af_xsp xsp by auto
-      obtain c3a where 3: "{|z1|} \<turnstile> c3a : ValuesLaurentFSet.dom |`| xs'"
-        apply (subgoal_tac "dom |`| xs' |\<subseteq>| dom|`| fs") prefer 2 using xsp apply force
-        using c1 weaken_right apply blast done
-      have c2a_: "(cod|`|xs') |\<union>| (cod|`|ys') \<turnstile> c2b : {|z2|}" sorry
-      obtain c4 where c4: "cod |`| xs' \<turnstile> c4 : cod |`| ys'" sorry 
+         c2a: "{|z1|} \<turnstile> c2a : dom |`| fs" and c2b: "cod |`| fs \<turnstile> c2b : {|z2|}" 
+      obtain xs' ys' where fs: "fs = xs'|\<union>| ys'" and xsp_xs: "xs'|\<subseteq>| xs" and ysp_ys: "ys'|\<subseteq>|ys" 
+        using xsa xsp_xsa factor_union[of fs xs ys] by blast
+      have 2: "all_funs xs'" using af_xsp fs by auto
+      have af_ysp: "all_funs ys'" using af_xsp fs by auto
+      obtain c3a where 3: "{|z1|} \<turnstile> c3a : dom |`| xs'"
+        apply (subgoal_tac "dom |`| xs' |\<subseteq>| dom|`| fs") prefer 2 using fs apply force
+        using c2a weaken_right apply blast done
+      have c2b_: "(cod|`|xs') |\<union>| (cod|`|ys') \<turnstile> c2b : {|z2|}" 
+        using fs by (metis c2b fimage_funion)
+      obtain c1' where c1p: "xs' \<turnstile> c1' : ys'" using c1 xsp_xs ysp_ys
+          using weaken weaken_right sorry (* program with xs', wrong direction -Jeremy *)
+      obtain c11 where c11: "cod |`| xs' \<turnstile> c11 : cod |`| ys'"  
+        and c11_c1: "size c11 \<le> size c1" using c1 xsp_xs ysp_ys 2 af_ysp sorry
       have scysp_ys: "fsize (cod |`| ys') \<le> fsize ys"
-        using xsp xsa xsp_xsa af_xsp apply simp
+        using fs xsa xsp_xsa af_xsp ysp_ys apply simp
           apply (subgoal_tac "fsize (dom |`| ys') + fsize (cod |`| ys') \<le> fsize ys'")
          prefer 2 using fsize_funs[of ys'] apply blast
-          apply (subgoal_tac "ys' |\<subseteq>| ys") prefer 2 using xs2p_ys apply blast
-        apply (subgoal_tac "fsize ys' \<le> fsize ys") prefer 2 apply blast
-        apply arith done
-      have c4_c1: "size c4 \<le> size c1" sorry
-      have c2b_c4_c1_c2: "size c2b + size c4 < size c1 + size c2" using c2 c4_c1 by auto
-      obtain c3b where 4: "cod |`| xs' \<turnstile> c3b : {|z2|}"
-        using c2a_ c4 IH
-        apply (erule_tac x="(fsize (cod |`| ys'), size c2b + size c4)" in allE)
-        apply (erule impE) using c2b_c4_c1_c2 scysp_ys apply force
-        
-        sorry
-      have "xs \<turnstile> CArrow c3a c3b : {|z1 \<mapsto> z2|}" using xs1p_xs 2 3 4 by blast
+        apply (subgoal_tac "fsize ys' \<le> fsize ys") prefer 2 apply blast apply arith done
+      have c2b_c11: "size c2b < size c2" using c2 by auto
+      obtain c3b where 4: "cod |`| xs' \<turnstile> c3b : {|z2|}" using c2b_ c11 IH
+        apply (erule_tac x="(fsize (cod |`| ys'), size c11, size c2b)" in allE)
+        apply (erule impE) using c2b_c11 c11_c1 scysp_ys apply force by blast
+      have "xs \<turnstile> CArrow c3a c3b : {|z1 \<mapsto> z2|}" using xsp_xs 2 3 4 by blast
       then show ?thesis using zs by blast
     qed  
   qed
