@@ -31,9 +31,8 @@ inductive deduce_le :: "val fset \<Rightarrow> coercion \<Rightarrow> val fset \
   union_R[intro!]: "\<lbrakk> xs \<turnstile> c1 : {|v1|}; xs \<turnstile> c2 : {|v2|} \<rbrakk> \<Longrightarrow> xs \<turnstile> CUnionR c1 c2 : {|v1\<squnion>v2|}" |
   union_L[intro]:"\<lbrakk> {|v1,v2|}|\<union>|xs \<turnstile> c: {|v|} \<rbrakk>
                   \<Longrightarrow> finsert (v1\<squnion>v2) xs \<turnstile> CUnionL c: {|v|}" | 
-  le_nat[intro!]: "VNat n |\<in>| xs \<Longrightarrow> xs \<turnstile> CNat n : {|VNat n|}" |
-  le_arrow[intro!]: "\<lbrakk> xs' = ffilter is_fun xs; (*xs' |\<subseteq>| xs; all_funs xs';*)
-          {|v1|} \<turnstile> c1 : dom|`|xs'; cod|`|xs' \<turnstile> c2 : {|v1'|}\<rbrakk>
+  le_nat[intro!]: "{|VNat n|} \<turnstile> CNat n : {|VNat n|}" |
+  le_arrow[intro!]: "\<lbrakk>all_funs xs; {|v1|} \<turnstile> c1: dom|`|xs; cod|`|xs \<turnstile> c2: {|v1'|}\<rbrakk>
     \<Longrightarrow> xs \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v1'|}"
 
 inductive_cases
@@ -45,6 +44,8 @@ inductive_cases
    carrow_inv[elim!]: "xs \<turnstile> CArrow c1 c2 : ys" and
    cnil_inv[elim!]: "xs \<turnstile> CNil : ys" and
    ccons_inv[elim!]: "xs \<turnstile> CCons c1 c2 : ys"
+
+inductive_cases deduce_finsert_inv: "xs \<turnstile> c : finsert x ys"
 
 lemma factor_union: "a |\<subseteq>| b|\<union>|c \<Longrightarrow> \<exists>a1 a2. a = a1|\<union>|a2 \<and> a1 |\<subseteq>| b \<and> a2 |\<subseteq>| c"
   apply (induction a)
@@ -96,8 +97,8 @@ next
     show ?thesis using ysp union_L by blast
   qed
 next
-  case (le_nat n xs)
-  have "ys' = bot \<or> ys' = {|VNat n|}" using le_nat(2) by auto
+  case (le_nat n ys')
+  have "ys' = bot \<or> ys' = {|VNat n|}" using le_nat by auto
   then show ?case
   proof
     assume "ys' = bot"
@@ -107,7 +108,7 @@ next
     show ?thesis using ysp le_nat by blast
   qed
 next
-  case (le_arrow xs' xs v1 c1 c2 v1')
+  case (le_arrow xs v1 c1 c2 v1')
   have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow(6) by blast
   then show ?case
   proof
@@ -149,15 +150,17 @@ lemma weaken: "\<lbrakk> xs \<turnstile> c : {|v'|}; xs |\<subseteq>| xs' \<rbra
 
 lemma ax: "v |\<in>| xs \<Longrightarrow> \<exists>c. xs \<turnstile> c : {|v|}"
 proof (induction v arbitrary: xs)
-  case (VNat x)
-  then show ?case by force
+  case (VNat n)
+  have "{|VNat n|} \<turnstile> CNat n : {|VNat n|}" by blast
+  then obtain c where "xs \<turnstile> c : {|VNat n|}" using weaken[of "{|VNat n|}"] VNat by blast
+  then show ?case by blast
 next
   case (VArrow v1 v2)
   let ?xs = "{|v1 \<mapsto> v2|}"
-  have xs_filter: "?xs = ffilter is_fun ?xs" by auto
-  obtain c1 where 2: "{|v1|} \<turnstile> c1 : dom|`|?xs" using VArrow.IH(1) by auto
-  obtain c2 where 3: "cod|`|?xs \<turnstile> c2 : {|v2|}" using VArrow.IH(2) by auto
-  have "?xs \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v2|}" using 2 3 xs_filter by blast
+  have af_xs: "all_funs ?xs" by auto
+  obtain c1 where c1: "{|v1|} \<turnstile> c1 : dom|`|?xs" using VArrow.IH(1) by auto
+  obtain c2 where c2: "cod|`|?xs \<turnstile> c2 : {|v2|}" using VArrow.IH(2) by auto
+  have "?xs \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v2|}" using af_xs c1 c2 by blast
   then show ?case using VArrow(3) weaken[of "{|v1 \<mapsto> v2|}" "CArrow c1 c2"] by blast
 next
   case (VUnion v1 v2)
@@ -166,7 +169,7 @@ next
   proof -
     obtain c1' where c1p: "{|v1,v2|}|\<union>|xs' \<turnstile> c1' : {|v1|}" using VUnion.IH by blast
     then have "finsert (v1\<squnion>v2) xs' \<turnstile> CUnionL c1' : {|v1|}" by blast
-    then show ?thesis using xs apply (rule_tac x="CUnionL c1'" in exI) apply simp done
+    then show ?thesis using xs by (rule_tac x="CUnionL c1'" in exI) simp
   qed
   have 2: "\<exists> c2. xs \<turnstile> c2 : {|v2|}"
   proof -
@@ -181,34 +184,37 @@ qed
 lemma all_funs_are_funs: "\<lbrakk> all_funs xs; v |\<in>| xs \<rbrakk> \<Longrightarrow> \<exists>v1 v2. v = v1\<mapsto>v2"
   apply (case_tac v) apply auto done
     
-lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys;  (v1\<squnion>v2) |\<in>| xs;
-                   {|v1,v2|} |\<union>| (xs |-| {|v1\<squnion>v2|}) |\<subseteq>| xs'\<rbrakk> \<Longrightarrow>
-                  \<exists>c'. xs' \<turnstile> c' : ys"
-proof (induction xs c ys arbitrary: v1 v2 xs' rule: deduce_le.induct)
+lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys;  v1\<squnion>v2 |\<in>| xs \<rbrakk> \<Longrightarrow>
+                  \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : ys"
+proof (induction xs c ys arbitrary: v1 v2 rule: deduce_le.induct)
   case (wk_nat xs c ys n)
-  then show ?case by blast
+  then show ?case sorry
 next
   case (wk_fun xs c ys v1 v2)
-  then show ?case by blast
+  then show ?case sorry
 next
   case (empty_R xs)
   then show ?case by auto
 next
   case (cons_R xs c1 ys1 c2 ys2)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
-  obtain c1' where c1p: "xs' \<turnstile> c1' : ys1" using cons_R.IH(1) cons_R.prems by blast
-  obtain c2' where c2p: "xs' \<turnstile> c2' : ys2" using cons_R.IH(2) cons_R.prems by blast
-  have "xs' \<turnstile> CCons c1' c2' : ys1 |\<union>| ys2" using c1p c2p by blast
+  obtain c1' where c1p: "?xs \<turnstile> c1' : ys1" using cons_R.IH(1) cons_R.prems by blast
+  obtain c2' where c2p: "?xs \<turnstile> c2' : ys2" using cons_R.IH(2) cons_R.prems by blast
+  have "?xs \<turnstile> CCons c1' c2' : ys1 |\<union>| ys2" using c1p c2p by blast
   then show ?case by meson
 next
   case (union_R xs c1 va c2 vb)
-  obtain c1 where a: "xs' \<turnstile> c1 : {|va|}" using union_R.IH(1) union_R.prems by blast
-  obtain c2 where b: "xs' \<turnstile> c2 : {|vb|}" using union_R.IH(2) union_R.prems by blast
-  have "xs' \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
+  let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
+  obtain c1 where a: "?xs \<turnstile> c1 : {|va|}" using union_R.IH(1) union_R.prems by blast
+  obtain c2 where b: "?xs \<turnstile> c2 : {|vb|}" using union_R.IH(2) union_R.prems by blast
+  have "?xs \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
   then show ?case using union_R by blast
 next
   case (union_L va vb xs c v) 
-  have "(v1 \<squnion> v2 = va \<squnion> vb) \<or> (v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb)" using union_L by blast
+  show ?case sorry
+(*
+  have "(v1 \<squnion> v2 = va \<squnion> vb) \<or> (v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb)" 
+    using union_L by blast
   then show ?case
   proof
     assume 2: "v1 \<squnion> v2 = va \<squnion> vb"
@@ -237,20 +243,19 @@ next
     moreover have "finsert (va\<squnion>vb) xs' = xs'" using union_L 2 by blast
     ultimately show ?thesis using union_L(3) by (rule_tac x="CUnionL c'" in exI) auto 
   qed
+*)
 next
   case (le_nat n)
-  then show ?case by auto
+  then have "False" by auto
+  then show ?case ..
 next
-  case (le_arrow ys' ys va c1 c2 vb)
-  let ?fxs = "ffilter is_fun xs'"
-    
-(*
-  have "ys' |\<subseteq>| xs'" using le_arrow(1) le_arrow(2) le_arrow(7) all_funs_are_funs by blast
-  moreover have "ys' \<turnstile> CArrow c1 c2 : {|va\<mapsto>vb|}" using le_arrow by blast
-  ultimately show "\<exists>c'. xs' \<turnstile> c' : {|va\<mapsto>vb|}" using weaken[of ys' "CArrow c1 c2"] by blast*)
-  show ?case sorry
+  case (le_arrow xs y1 c1 c2 y2 v1 v2)
+  then have "False" by auto
+  then show ?case ..
 qed
 
+section "Size of Finite Sets of Values"  
+  
 fun vadd :: "(val \<times> nat) \<Rightarrow> nat \<Rightarrow> nat" where
   "vadd (_,v) r = v + r"
   
@@ -294,10 +299,7 @@ lemma fsize_union[simp]: "fsize (x1 |\<union>| x2) \<le> fsize x1 + fsize x2"
   apply (induction x1)
    apply force
   by (smt add.commute add.left_commute dual_order.trans fsize_finsert_in fsize_finsert_notin funion_finsert_left le_add2 nat_add_left_cancel_le)
-  
-inductive_cases deduce_finsert_inv: "xs \<turnstile> c : finsert x ys"
-  
-  
+    
 lemma fsize_empty[simp]: "fsize {||} = 0"
   unfolding fsize_def by auto
     
@@ -336,6 +338,8 @@ lemma fsize_subset[simp,intro]: "xs |\<subseteq>| ys \<Longrightarrow> fsize xs 
   apply (subgoal_tac "fsize xs \<le> fsize ys") prefer 2 apply blast
   apply arith
   done
+    
+section "Cut Elimination"
     
 lemma cut: "\<forall>xs ys zs c1 c2. m = (fsize ys, size c1, size c2) \<longrightarrow>
    xs \<turnstile> c1 : ys \<longrightarrow> xs |\<union>| ys \<turnstile> c2 : zs \<longrightarrow> (\<exists>c3. xs \<turnstile> c3 : zs)" (is "?P m")
