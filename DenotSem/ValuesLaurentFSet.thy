@@ -185,11 +185,11 @@ lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys;  (v1\<squnion>v2) |\<in>| xs;
                    {|v1,v2|} |\<union>| (xs |-| {|v1\<squnion>v2|}) |\<subseteq>| xs'\<rbrakk> \<Longrightarrow>
                   \<exists>c'. xs' \<turnstile> c' : ys"
 proof (induction xs c ys arbitrary: v1 v2 xs' rule: deduce_le.induct)
- case (wk_nat xs c ys n)
-  then show ?case sorry
+  case (wk_nat xs c ys n)
+  then show ?case by blast
 next
   case (wk_fun xs c ys v1 v2)
-  then show ?case sorry
+  then show ?case by blast
 next
   case (empty_R xs)
   then show ?case by auto
@@ -242,6 +242,8 @@ next
   then show ?case by auto
 next
   case (le_arrow ys' ys va c1 c2 vb)
+  let ?fxs = "ffilter is_fun xs'"
+    
 (*
   have "ys' |\<subseteq>| xs'" using le_arrow(1) le_arrow(2) le_arrow(7) all_funs_are_funs by blast
   moreover have "ys' \<turnstile> CArrow c1 c2 : {|va\<mapsto>vb|}" using le_arrow by blast
