@@ -18,11 +18,12 @@ fun dom :: "val \<Rightarrow> val" where
 fun cod :: "val \<Rightarrow> val" where
   "cod (v\<mapsto>v') = v'"
 
-datatype coercion = CWkNat coercion | CWkFun coercion 
+datatype coercion = CWk coercion 
   | CNat nat | CArrow coercion coercion
   | CUnionR coercion coercion | CUnionL coercion | CNil | CCons coercion coercion
 
 inductive deduce_le :: "val fset \<Rightarrow> coercion \<Rightarrow> val fset \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
+  weaken[intro!]: "\<lbrakk> xs1 \<turnstile> c : ys; xs1 |\<subseteq>| xs2 \<rbrakk> \<Longrightarrow> xs2 \<turnstile> CWk c : ys" | 
   empty_R[intro!]: "xs \<turnstile> CNil : {||}" |
   cons_R[intro!]: "\<lbrakk> xs \<turnstile> c1 : ys1; xs \<turnstile> c2 : ys2 \<rbrakk> 
     \<Longrightarrow> xs \<turnstile> CCons c1 c2 : ys1 |\<union>| ys2" |
@@ -53,6 +54,9 @@ lemma factor_union: "a |\<subseteq>| b|\<union>|c \<Longrightarrow> \<exists>a1 
     
 lemma weaken_right: "\<lbrakk> xs \<turnstile> c : ys; ys' |\<subseteq>| ys  \<rbrakk> \<Longrightarrow> \<exists>c'. xs \<turnstile> c' : ys'"
 proof (induction xs c ys arbitrary: ys' rule: deduce_le.induct)
+  case (weaken xs1 c ys xs2)
+  then show ?case sorry
+next
   case (empty_R xs)
   then show ?case by auto
 next
@@ -67,7 +71,7 @@ next
   then show ?case by blast
 next
   case (union_R xs c1 v1 c2 v2)
-  have "ys' = bot \<or> ys' = {|v1 \<squnion> v2|}" using union_R by auto
+  have "ys' = bot \<or> ys' = {|v1 \<squnion> v2|}" using union_R(5) by blast
   then show ?case
   proof
     assume "ys' = bot"
@@ -78,7 +82,7 @@ next
   qed
 next
   case (union_L v1 v2 xs c v)
-  have "ys' = bot \<or> ys' = {|v|}" using union_L by auto
+  have "ys' = bot \<or> ys' = {|v|}" using union_L(3) by blast
   then show ?case
   proof
     assume "ys' = bot"
@@ -100,7 +104,7 @@ next
   qed
 next
   case (le_arrow xs' xs v1 c1 c2 v1')
-  have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow by auto
+  have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow(6) by blast
   then show ?case
   proof
     assume "ys' = bot"
@@ -110,7 +114,8 @@ next
     show ?thesis using ysp le_arrow by blast
   qed
 qed    
-     
+
+ (*
 lemma weaken: "\<lbrakk> xs \<turnstile> c : ys; xs |\<subseteq>| xs' \<rbrakk> \<Longrightarrow> \<exists> c'. xs' \<turnstile> c' : ys"
 proof (induction xs c ys arbitrary: xs' rule: deduce_le.induct)
   case (union_L v1 v2 xs c vr)
@@ -166,7 +171,8 @@ next
   qed
   show ?case using 1 2 by blast
 qed
-
+*)
+  
 lemma all_funs_are_funs: "\<lbrakk> all_funs xs; v |\<in>| xs \<rbrakk> \<Longrightarrow> \<exists>v1 v2. v = v1\<mapsto>v2"
   apply (case_tac v) apply auto done
     
