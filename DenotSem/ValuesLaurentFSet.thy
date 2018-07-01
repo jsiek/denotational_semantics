@@ -30,7 +30,7 @@ inductive deduce_le :: "val fset \<Rightarrow> coercion \<Rightarrow> val fset \
   union_L[intro]:"\<lbrakk> {|v1,v2|}|\<union>|xs \<turnstile> c: {|v|} \<rbrakk>
                   \<Longrightarrow> finsert (v1\<squnion>v2) xs \<turnstile> CUnionL c: {|v|}" | 
   le_nat[intro!]: "VNat n |\<in>| xs \<Longrightarrow> xs \<turnstile> CNat n : {|VNat n|}" |
-  le_arrow[intro!]: "\<lbrakk> xs' |\<subseteq>| xs; all_funs xs';
+  le_arrow[intro!]: "\<lbrakk> xs' = ffilter is_fun xs; (*xs' |\<subseteq>| xs; all_funs xs';*)
           {|v1|} \<turnstile> c1 : dom|`|xs'; cod|`|xs' \<turnstile> c2 : {|v1'|}\<rbrakk>
     \<Longrightarrow> xs \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v1'|}"
 
@@ -100,7 +100,7 @@ next
   qed
 next
   case (le_arrow xs' xs v1 c1 c2 v1')
-  have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow(7) by auto
+  have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow by auto
   then show ?case
   proof
     assume "ys' = bot"
@@ -122,11 +122,19 @@ proof (induction xs c ys arbitrary: xs' rule: deduce_le.induct)
   then show ?case using 1 apply (rule_tac x="CUnionL c'" in exI) apply simp done
 next
   case (le_arrow xs' xs v1 c1 c2 v1' xs2)
-  have "xs' |\<subseteq>| xs2" using le_arrow(1) le_arrow(7) using fsubset_trans by blast
+  obtain xs2' where xs2p: "xs2' = ffilter is_fun xs2" by auto
+  have xsp_xs2p: "xs' |\<subseteq>| xs2'" using le_arrow(1) le_arrow(6) xs2p by auto
+  then have "cod|`|xs' |\<subseteq>| cod|`|xs2'" by auto
+  then obtain c2' where c2p: "cod|`|xs2' \<turnstile> c2' : {|v1'|}" 
+    using le_arrow.IH(2)[of "cod|`|xs2'"] by blast
+  
+(*  have "xs' |\<subseteq>| xs2" using le_arrow(1) le_arrow(7) using fsubset_trans by blast
   then have "xs2 \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v1'|}" 
     apply (rule deduce_le.le_arrow)
       using le_arrow apply auto done
   then show ?case by blast
+*)
+  show ?case sorry
 qed blast+
   
 lemma ax: "v |\<in>| xs \<Longrightarrow> \<exists>c. xs \<turnstile> c : {|v|}"
