@@ -18,49 +18,39 @@ fun dom :: "val \<Rightarrow> val" where
 fun cod :: "val \<Rightarrow> val" where
   "cod (v\<mapsto>v') = v'"
 
-datatype coercion = CWkNat coercion | CWkFun coercion 
-  | CNat nat | CArrow coercion coercion
-  | CUnionR coercion coercion | CUnionL coercion | CNil | CCons coercion coercion
-
-inductive deduce_le :: "val fset \<Rightarrow> coercion \<Rightarrow> val fset \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
-  wk_nat[intro!]: "\<lbrakk> xs \<turnstile> c : {|v|} \<rbrakk> \<Longrightarrow> finsert (VNat n) xs \<turnstile> CWkNat c : {|v|}" |
-  wk_fun[intro!]: "\<lbrakk> xs \<turnstile> c : {|v|} \<rbrakk> \<Longrightarrow> finsert (v1 \<mapsto> v2) xs \<turnstile> CWkFun c : {|v|}" |
-  empty_R[intro!]: "xs \<turnstile> CNil : {||}" |
-  cons_R[intro!]: "\<lbrakk> xs \<turnstile> c1 : ys1; xs \<turnstile> c2 : ys2 \<rbrakk> 
-    \<Longrightarrow> xs \<turnstile> CCons c1 c2 : ys1 |\<union>| ys2" |
-  union_R[intro!]: "\<lbrakk> xs \<turnstile> c1 : {|v1|}; xs \<turnstile> c2 : {|v2|} \<rbrakk> \<Longrightarrow> xs \<turnstile> CUnionR c1 c2 : {|v1\<squnion>v2|}" |
-  union_L[intro]:"\<lbrakk> {|v1,v2|}|\<union>|xs \<turnstile> c: {|v|} \<rbrakk>
-                  \<Longrightarrow> finsert (v1\<squnion>v2) xs \<turnstile> CUnionL c: {|v|}" | 
-  le_nat[intro!]: "{|VNat n|} \<turnstile> CNat n : {|VNat n|}" |
-  le_arrow[intro!]: "\<lbrakk>all_funs xs; {|v1|} \<turnstile> c1: dom|`|xs; cod|`|xs \<turnstile> c2: {|v1'|}\<rbrakk>
-    \<Longrightarrow> xs \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v1'|}"
-
-inductive_cases
-   cwknat_inv[elim!]: "xs \<turnstile> CWkNat c : ys" and
-   cwkfun_inv[elim!]: "xs \<turnstile> CWkFun c : ys" and
-   cunionr_inv[elim!]: "xs \<turnstile> CUnionR c1 c2 : ys" and
-   cunionl_inv[elim!]: "xs \<turnstile> CUnionL c : ys" and
-   cnat_inv[elim!]: "xs \<turnstile> CNat n : ys" and
-   carrow_inv[elim!]: "xs \<turnstile> CArrow c1 c2 : ys" and
-   cnil_inv[elim!]: "xs \<turnstile> CNil : ys" and
-   ccons_inv[elim!]: "xs \<turnstile> CCons c1 c2 : ys"
+inductive deduce_le :: "val fset \<Rightarrow> nat \<Rightarrow> val fset \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
+  wk_nat[intro!]: "\<lbrakk> xs \<turnstile> k : {|v|} \<rbrakk> \<Longrightarrow> finsert (VNat n) xs \<turnstile> Suc k : {|v|}" |
+  wk_fun[intro!]: "\<lbrakk> xs \<turnstile> k : {|v|} \<rbrakk> \<Longrightarrow> finsert (v1 \<mapsto> v2) xs \<turnstile> Suc k : {|v|}" |
+  empty_R[intro!]: "xs \<turnstile> k : {||}" |
+  cons_R[intro!]: "\<lbrakk> xs \<turnstile> k : ys1; xs \<turnstile> k : ys2 \<rbrakk> 
+    \<Longrightarrow> xs \<turnstile> Suc k : ys1 |\<union>| ys2" |
+  union_R[intro!]: "\<lbrakk> xs \<turnstile> k : {|v1|}; xs \<turnstile> k : {|v2|} \<rbrakk> \<Longrightarrow> xs \<turnstile> Suc k : {|v1\<squnion>v2|}" |
+  union_L[intro]:"\<lbrakk> {|v1,v2|}|\<union>|xs \<turnstile> k : {|v|} \<rbrakk>
+                  \<Longrightarrow> finsert (v1\<squnion>v2) xs \<turnstile> Suc k : {|v|}" | 
+  le_nat[intro!]: "{|VNat n|} \<turnstile> k : {|VNat n|}" |
+  le_arrow[intro!]: "\<lbrakk>all_funs xs; {|v1|} \<turnstile> k : dom|`|xs; cod|`|xs \<turnstile> k : {|v2|}\<rbrakk>
+    \<Longrightarrow> xs \<turnstile> Suc k : {|v1 \<mapsto> v2|}"
 
 inductive_cases deduce_finsert_inv: "xs \<turnstile> c : finsert x ys"
   
-lemma weaken1: "\<lbrakk> xs \<turnstile> c : {|v'|} \<rbrakk> \<Longrightarrow> \<exists> c'. finsert v xs \<turnstile> c' : {|v'|}"
-proof (induction v arbitrary: xs c v')
-  case (VNat x)
-  then show ?case by (rule_tac x="CWkNat c" in exI) force
+section "Weakening Lemmas"
+  
+lemma weaken1: "\<lbrakk> xs \<turnstile> k : {|v'|} \<rbrakk> \<Longrightarrow> \<exists> k'. finsert v xs \<turnstile> k' : {|v'|}"
+proof (induction v arbitrary: xs k v')
+  case (VNat n)
+  then have "finsert (VNat n) xs \<turnstile> Suc k : {|v'|}" by blast
+  then show ?case by blast
 next
   case (VArrow v1 v2)
-  then show ?case by (rule_tac x="CWkFun c" in exI) force
+  then have "finsert (VArrow v1 v2) xs \<turnstile> Suc k : {|v'|}" by blast
+  then show ?case by blast
 next
   case (VUnion v1 v2)
   obtain c2 where 1: "finsert v2 xs \<turnstile> c2 : {|v'|}" using VUnion by blast
   obtain c1 where 2: "finsert v1 (finsert v2 xs) \<turnstile> c1 : {|v'|}" using VUnion 1 by blast
-  show ?case using 2 union_L[of v1 v2 xs c1 v'] by force
+  show ?case using 2 union_L by force
 qed
-    
+
 lemma weaken_aux: "\<lbrakk> xs \<turnstile> c : {|v'|} \<rbrakk> \<Longrightarrow> \<exists> c'. xs' |\<union>| xs \<turnstile> c' : {|v'|}"
 proof (induction xs' arbitrary: xs c v')
   case empty
@@ -74,6 +64,7 @@ qed
 
 lemma weaken: "\<lbrakk> xs \<turnstile> c : {|v'|}; xs |\<subseteq>| xs' \<rbrakk> \<Longrightarrow> \<exists> c'. xs' \<turnstile> c' : {|v'|}"
   using weaken_aux by (metis sup.orderE)
+
 lemma factor_union: "a |\<subseteq>| b|\<union>|c \<Longrightarrow> \<exists>a1 a2. a = a1|\<union>|a2 \<and> a1 |\<subseteq>| b \<and> a2 |\<subseteq>| c"
   apply (induction a)
    apply blast
@@ -81,7 +72,18 @@ lemma factor_union: "a |\<subseteq>| b|\<union>|c \<Longrightarrow> \<exists>a1 
   using finsert_absorb2 apply blast
   by (metis finsert_fsubset funion_finsert_right)
     
-lemma weaken_right: "\<lbrakk> xs \<turnstile> c : ys; ys' |\<subseteq>| ys  \<rbrakk> \<Longrightarrow> \<exists>c'. xs \<turnstile> c' : ys'"
+lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Longrightarrow> xs \<turnstile> c' : ys"
+  apply (induction xs c ys arbitrary: c' rule: deduce_le.induct) 
+  apply (metis Suc_le_D Suc_le_lessD less_Suc_eq_le wk_nat)
+  apply (metis Suc_le_D Suc_le_lessD less_Suc_eq_le wk_fun)
+  apply blast    
+  using Suc_le_D apply force
+  apply (metis Suc_le_D Suc_le_lessD less_Suc_eq_le union_R)
+  apply (metis Suc_le_D Suc_le_lessD less_Suc_eq_le union_L)
+  apply blast  
+  by (metis Suc_le_D Suc_le_lessD le_arrow less_Suc_eq_le)
+
+lemma weaken_right: "\<lbrakk> xs \<turnstile> c : ys; ys' |\<subseteq>| ys  \<rbrakk> \<Longrightarrow> \<exists>c'. xs \<turnstile> c' : ys' \<and> c' \<le> c"
 proof (induction xs c ys arbitrary: ys' rule: deduce_le.induct)
   case (wk_nat xs c v n)
   then have "ys' = bot \<or> ys' = {|v|}" by blast
@@ -108,17 +110,20 @@ next
   case (empty_R xs)
   then show ?case by auto
 next
-  case (cons_R xs c1 ys1 c2 ys2)
+  case (cons_R xs k ys1 ys2)
   have "\<exists>ys1' ys2'. ys'=ys1'|\<union>|ys2' \<and> ys1' |\<subseteq>| ys1 \<and> ys2' |\<subseteq>| ys2"
     using cons_R(5) by (simp add: factor_union)
   then obtain ys1' ys2' where ysp: "ys'=ys1'|\<union>|ys2'" and ys11: "ys1' |\<subseteq>| ys1" and ys22: "ys2' |\<subseteq>| ys2"
     by blast      
-  from cons_R.IH(1) ys11 obtain c3 where c3: "xs \<turnstile> c3 : ys1'" by blast
-  from cons_R.IH(2) ys22 obtain c4 where c4: "xs \<turnstile> c4 : ys2'" by blast
-  have "xs \<turnstile> CCons c3 c4 : ys'" using c3 c4 ysp by auto
-  then show ?case by blast
+  from cons_R.IH(1) ys11 obtain c3 where c3: "xs \<turnstile> c3 : ys1'" and c3_k: "c3 \<le> k" by blast
+  from cons_R.IH(2) ys22 obtain c4 where c4: "xs \<turnstile> c4 : ys2'" and c4_k: "c4 \<le> k" by blast
+  let ?c34 = "max c3 c4"
+  have c3_2: "xs \<turnstile> ?c34 : ys1'" using c3 weaken_size by auto
+  have c4_2: "xs \<turnstile> ?c34 : ys2'" using c4 weaken_size by auto
+  have "xs \<turnstile> Suc ?c34 : ys'" using c3_2 c4_2 ysp by auto
+  then show ?case using c3_k c4_k by auto
 next
-  case (union_R xs c1 v1 c2 v2)
+  case (union_R xs k v1 v2)
   have "ys' = bot \<or> ys' = {|v1 \<squnion> v2|}" using union_R(5) by blast
   then show ?case
   proof
@@ -129,7 +134,7 @@ next
     show ?thesis using ysp union_R by blast
   qed
 next
-  case (union_L v1 v2 xs c v)
+  case (union_L v1 v2 xs k v)
   have "ys' = bot \<or> ys' = {|v|}" using union_L(3) by blast
   then show ?case
   proof
@@ -151,7 +156,7 @@ next
     show ?thesis using ysp le_nat by blast
   qed
 next
-  case (le_arrow xs v1 c1 c2 v1')
+  case (le_arrow xs v1 k v1')
   have "ys' = bot \<or> ys' = {|v1 \<mapsto> v1'|}" using le_arrow(6) by blast
   then show ?case
   proof
@@ -163,6 +168,8 @@ next
   qed
 qed    
 
+section "Axiom Lemma"
+(*
 lemma ax: "v |\<in>| xs \<Longrightarrow> \<exists>c. xs \<turnstile> c : {|v|}"
 proof (induction v arbitrary: xs)
   case (VNat n)
@@ -194,6 +201,8 @@ next
   qed
   show ?case using 1 2 by blast
 qed
+  
+section "Union Left Inversion Lemma"
   
 lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys; ys = {|v|}; v1\<squnion>v2 |\<in>| xs \<rbrakk> \<Longrightarrow>
                   \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : {|v|}"
@@ -404,15 +413,39 @@ next
        c1: "xs \<turnstile> c1 : ys" and c2: "xs |\<union>| ys \<turnstile> c2 : zs"
     from c2 show "\<exists>c3. xs \<turnstile> c3 : zs"
     proof
-      fix xsa c v n assume xs_ys: "xs |\<union>| ys = finsert (VNat n) xsa" and
-        c2: "c2 = CWkNat c" and zs: "zs = {|v|}" and "xsa \<turnstile> c : {|v|}"
-(*      have "VNat n |\<in>| xs \<or> VNat n |\<in>| ys" using xs_ys by blast
-      then show "\<exists>c3. xs \<turnstile> c3 : zs"
-      proof
-        assume "VNat n |\<in>| xs"
-        then show ?thesis using ax[of "VNat n" xs] zs
-*)
-      show ?thesis sorry
+      fix xys c2' v n assume xs_ys: "xs |\<union>| ys = finsert (VNat n) xys" and
+        c2_c2p: "c2 = CWkNat c2'" and zs: "zs = {|v|}" and c2p: "xys \<turnstile> c2' : {|v|}"
+
+      show ?thesis
+      proof (cases "VNat n |\<in>| xys")
+        case True
+        then have "xys = xs |\<union>| ys" using xs_ys by auto
+        then have "xs|\<union>|ys \<turnstile> c2' : {|v|}" using c2p by simp
+        then have "\<exists>c3. xs \<turnstile> c3 : {|v|}" using IH c1
+          apply (erule_tac x="(fsize ys, size c1, size c2')" in allE)
+            apply (erule impE) using c2_c2p apply force
+            apply blast done
+        then show ?thesis using zs by simp
+      next
+        case False then have n_xys: "VNat n |\<notin>| xys" by blast
+        then have xys: "xys = (xs - {|VNat n|}) |\<union>| (ys - {|VNat n|})" using xs_ys by auto
+        show ?thesis
+        proof (cases "VNat n |\<in>| ys")
+          assume n_ys: "VNat n |\<in>| ys"          
+          then have "fsize (ys - {|VNat n|}) < fsize ys" sorry
+            
+          show ?thesis sorry
+        next
+          assume n_ys: "VNat n |\<notin>| ys"
+          then have xys2: "xys = (xs - {|VNat n|}) |\<union>| ys" using xys by simp
+          have n_xs: "VNat n |\<in>| xs" using xs_ys n_ys by auto
+          then obtain xs' where xs_xsp: "xs = finsert (VNat n) xs'" and n_xsp: "VNat n |\<notin>| xs'"
+            by (meson mk_disjoint_finsert)
+          have c2p2: "xs' |\<union>| ys \<turnstile> c2' : {|v|}" using c2p xys2 xs_xsp n_xsp by auto
+                        
+          show ?thesis sorry
+        qed
+      qed
     next
       assume "c2 = CNil" and zs: "zs = {||}"
       have "xs \<turnstile> CNil : zs" using zs by auto
@@ -517,6 +550,6 @@ next
   qed
 qed
 
-
+*)
   
 end
