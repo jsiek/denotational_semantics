@@ -2,45 +2,39 @@ theory LaurentValues
   imports Main
 begin
 
-datatype val = VNat nat | VArrow val val (infix "\<mapsto>" 60) | VUnion val val (infix "\<squnion>" 61) | VBot
+datatype val = VNat nat | VArrow val val (infix "\<mapsto>" 60) | VUnion val val (infix "\<squnion>" 61) 
   
-abbreviation fdom :: "val \<Rightarrow> val \<Rightarrow> val" where
-  "fdom v \<Gamma> \<equiv> (case v of v1\<mapsto>v1' \<Rightarrow> v1 \<squnion> \<Gamma> | _ \<Rightarrow> \<Gamma>)"
-abbreviation fcod :: "val \<Rightarrow> val list \<Rightarrow> val list" where
-  "fcod v \<Gamma> \<equiv> (case v of v1\<mapsto>v1' \<Rightarrow> v1'#\<Gamma> | _ \<Rightarrow> \<Gamma>)"
+fun dom :: "val \<Rightarrow> val" where
+  "dom (v\<mapsto>v') = v"
+fun cod :: "val \<Rightarrow> val" where
+  "cod (v\<mapsto>v') = v'"
 abbreviation is_fun :: "val \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<mapsto>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
 abbreviation all_funs :: "val list \<Rightarrow> bool" where
-  "all_funs \<Gamma> \<equiv> fold (\<lambda>v b. is_fun v \<and> b) \<Gamma> True"
+  "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> set \<Gamma> \<longrightarrow> is_fun v"
 
-definition doms :: "val list \<Rightarrow> val" where
-  "doms \<Gamma> \<equiv> fold fdom \<Gamma> VBot"
-definition cods :: "val list \<Rightarrow> val list" where
-  "cods \<Gamma> \<equiv> fold fcod \<Gamma> []"
+inductive deduce_le :: "val list \<Rightarrow> nat \<Rightarrow> val \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
+  wk_nat[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(VNat n)#\<Gamma>2 \<turnstile> Suc c: v" | 
+  wk_fun[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<mapsto>v2)#\<Gamma>2 \<turnstile> Suc c: v" |
+  union_R[intro!]: "\<lbrakk> \<Gamma> \<turnstile> c : v1; \<Gamma> \<turnstile> c : v2 \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<squnion> v2" |
+  union_L[intro]: "\<lbrakk> \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<squnion>v2)#\<Gamma>2 \<turnstile> Suc c : v" | 
+  le_nat[intro!]: "[VNat n] \<turnstile> c : VNat n" |
+  le_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; 
+                      \<forall> v v'. v\<mapsto>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
+                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk>
+    \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<mapsto> v2"
 
-datatype coercion = CWkNat coercion | CWkFun coercion | CWkBot coercion 
-  | CNat nat | CArrow coercion coercion
-  | CUnionR coercion coercion | CUnionL coercion
-
-inductive deduce_le :: "val list \<Rightarrow> coercion \<Rightarrow> val \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
-  wk_nat[intro!]: "\<lbrakk> \<Gamma>=\<Gamma>1@(VNat n)#\<Gamma>2; \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CWkNat c: v" | 
-  wk_fun[intro!]: "\<lbrakk> \<Gamma>=\<Gamma>1@(v1\<mapsto>v1')#\<Gamma>2; \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CWkFun c: v" |
-  wk_bot[intro!]: "\<lbrakk> \<Gamma>=\<Gamma>1@(VBot)#\<Gamma>2; \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CWkBot c: v" | 
-  union_R[intro!]: "\<lbrakk> \<Gamma> \<turnstile> c1 : v1; \<Gamma> \<turnstile> c2 : v2 \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CUnionR c1 c2 : v1 \<squnion> v2" |
-  union_L[intro]: "\<lbrakk> \<Gamma>=\<Gamma>1@(v1\<squnion>v2)#\<Gamma>2; \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> CUnionL c : v" | 
-  le_nat[intro!]: "[VNat n] \<turnstile> CNat n : VNat n" |
-  le_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; [v1] \<turnstile> c1 : doms \<Gamma>; cods \<Gamma> \<turnstile> c2 : v1'\<rbrakk>
-    \<Longrightarrow> \<Gamma> \<turnstile> CArrow c1 c2 : v1 \<mapsto> v1'"
+lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Longrightarrow> xs \<turnstile> c' : ys"
+  apply (induction xs c ys arbitrary: c' rule: deduce_le.induct) 
+  apply (metis Suc_le_D Suc_le_mono wk_nat)  
+  apply (metis Suc_le_D Suc_le_mono wk_fun)  
+  using Suc_le_D apply force
+  apply (metis Suc_le_D Suc_le_mono union_L)
+  apply blast
+  by (metis (no_types, lifting) Suc_le_D le_arrow less_eq_nat.simps(2) nat.case(2))
+    
+section "Permutations"
   
-inductive_cases
-   cwknat_inv[elim!]: "\<Gamma> \<turnstile> CWkNat c : v" and
-   cwkfun_inv[elim!]: "\<Gamma> \<turnstile> CWkFun c : v" and
-   cwkbot_inv[elim!]: "\<Gamma> \<turnstile> CWkBot c : v" and
-   cunionr_inv[elim!]: "\<Gamma> \<turnstile> CUnionR c1 c2 : v" and
-   cunionl_inv[elim!]: "\<Gamma> \<turnstile> CUnionL c : v" and
-   cnat_inv[elim!]: "\<Gamma> \<turnstile> CNat n : v" and
-   carrow_inv[elim!]: "\<Gamma> \<turnstile> CArrow c1 c2 : v"
-
 fun count :: "'a list \<Rightarrow> 'a \<Rightarrow> nat" where
   "count [] a = 0" |
   count_cons: "count (b#ls) a = (if a = b then 1 else 0) + count ls a"
@@ -145,7 +139,11 @@ lemma perm_ex_append: "perm (\<Gamma>1@ v # \<Gamma>2) \<Gamma>' \<Longrightarro
       apply (subgoal_tac "\<exists>\<Gamma>1'. (\<exists>\<Gamma>2'. (remove1 a \<Gamma>') = \<Gamma>1' @ v # \<Gamma>2') \<and> v \<notin> set \<Gamma>1'")
       prefer 2 apply blast apply (erule exE) apply (erule conjE) apply (erule exE)
      oops     
-      
+
+section "Admissible Rules"
+
+
+  
 (*  
 lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
   apply (induction arbitrary: \<Gamma>' rule: deduce_le.induct)

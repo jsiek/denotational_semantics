@@ -1,4 +1,4 @@
-theory ValuesLaurentFSet
+theory ValuesLaurentListSet
   imports Main "~~/src/HOL/Library/FSet" 
 begin
 

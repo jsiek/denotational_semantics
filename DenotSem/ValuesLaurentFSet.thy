@@ -169,11 +169,11 @@ next
 qed    
 
 section "Axiom Lemma"
-(*
+
 lemma ax: "v |\<in>| xs \<Longrightarrow> \<exists>c. xs \<turnstile> c : {|v|}"
 proof (induction v arbitrary: xs)
   case (VNat n)
-  have "{|VNat n|} \<turnstile> CNat n : {|VNat n|}" by blast
+  have "{|VNat n|} \<turnstile> 0 : {|VNat n|}" by blast
   then obtain c where "xs \<turnstile> c : {|VNat n|}" using weaken[of "{|VNat n|}"] VNat by blast
   then show ?case by blast
 next
@@ -182,66 +182,201 @@ next
   have af_xs: "all_funs ?xs" by auto
   obtain c1 where c1: "{|v1|} \<turnstile> c1 : dom|`|?xs" using VArrow.IH(1) by auto
   obtain c2 where c2: "cod|`|?xs \<turnstile> c2 : {|v2|}" using VArrow.IH(2) by auto
-  have "?xs \<turnstile> CArrow c1 c2 : {|v1 \<mapsto> v2|}" using af_xs c1 c2 by blast
-  then show ?case using VArrow(3) weaken[of "{|v1 \<mapsto> v2|}" "CArrow c1 c2"] by blast
+  let ?k = "max c1 c2"
+  have c1_2: "{|v1|} \<turnstile> ?k : dom|`|?xs" using weaken_size c1 by auto
+  have c2_2: "cod|`|?xs \<turnstile> ?k : {|v2|}" using weaken_size c2 by auto
+  have "?xs \<turnstile> Suc ?k : {|v1 \<mapsto> v2|}" using af_xs c1_2 c2_2 by (rule le_arrow)
+  then show ?case using VArrow(3) weaken[of "{|v1 \<mapsto> v2|}"] by blast
 next
   case (VUnion v1 v2)
   obtain xs' where xs: "xs = finsert (v1\<squnion>v2) xs'" using VUnion.prems by blast
-  have 1: "\<exists> c1. xs \<turnstile> c1 : {|v1|}"
-  proof -
-    obtain c1' where c1p: "{|v1,v2|}|\<union>|xs' \<turnstile> c1' : {|v1|}" using VUnion.IH by blast
-    then have "finsert (v1\<squnion>v2) xs' \<turnstile> CUnionL c1' : {|v1|}" by blast
-    then show ?thesis using xs by (rule_tac x="CUnionL c1'" in exI) simp
+  obtain c1' where "{|v1,v2|}|\<union>|xs' \<turnstile> c1' : {|v1|}" using VUnion.IH by blast
+  then have "finsert (v1\<squnion>v2) xs' \<turnstile> Suc c1' : {|v1|}" by blast
+  then have c1: "xs \<turnstile> Suc c1' : {|v1|}" using xs by simp      
+  obtain c2' where "{|v1,v2|}|\<union>|xs' \<turnstile> c2' : {|v2|}" using VUnion.IH by blast
+  then have "finsert (v1\<squnion>v2) xs' \<turnstile> Suc c2' : {|v2|}" by blast
+  then have c2: "xs \<turnstile> Suc c2' : {|v2|}" using xs by simp      
+  show ?case apply (rule_tac x="Suc (Suc (max c1' c2'))" in exI)    
+    using c1 c2 weaken_size max_Suc_Suc union_R by auto
+qed
+
+section "Union Left Inversion Lemma"
+
+lemma "va \<squnion> vb = va \<Longrightarrow> False"
+  by (metis add.assoc add_eq_0_iff_both_eq_0 add_eq_self_zero n_not_Suc_n val.size_gen(3))
+  
+lemma "va \<squnion> vb = vb \<Longrightarrow> False"
+  by (metis add.right_neutral nat_add_left_cancel_less not_add_less2 val.size_gen(3) zero_less_Suc)
+    
+lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys; ys = {|v|}; xs = finsert (v1\<squnion>v2) xs'; v1\<squnion>v2 |\<notin>| xs' \<rbrakk> \<Longrightarrow>
+                  \<exists>c'. {|v1,v2|} |\<union>| xs' \<turnstile> c' : {|v|} \<and> c' < c"
+proof (induction xs c ys arbitrary: v1 v2 v xs' rule: deduce_le.induct)
+  case (wk_nat xs k vr n)
+  show ?case
+  proof (cases "VNat n |\<in>| xs")
+    case True
+    then have xs: "xs = finsert (v1 \<squnion> v2) xs'" using wk_nat.prems finsert_absorb by fastforce
+    then obtain c' where "{|v1, v2|} |\<union>| xs' \<turnstile> c' : {|v|}" and "c' < k" 
+      using wk_nat.IH[of v v1 v2 xs'] wk_nat.prems by blast
+    then show ?thesis by auto
+  next
+    case False
+    then have xs: "xs = finsert (v1\<squnion>v2) (xs'|-| {|VNat n|})" using wk_nat.prems(2) by auto
+    have v12_xs: "v1 \<squnion> v2 |\<notin>| xs' |-| {|VNat n|}" using wk_nat.prems by auto      
+    obtain c' where cp: "{|v1, v2|} |\<union>| (xs'|-| {|VNat n|}) \<turnstile> c' : {|v|}" and cp_k: "c' < k" 
+      using wk_nat.IH[of v v1 v2 "xs'|-| {|VNat n|}"] xs v12_xs wk_nat.prems(1) by blast
+    have "finsert (VNat n) ({|v1, v2|} |\<union>| (xs'|-| {|VNat n|})) \<turnstile> Suc c' : {|v|}" using cp
+         deduce_le.wk_nat[of "({|v1, v2|} |\<union>| (xs'|-| {|VNat n|}))" c' v n] by simp
+    then have "{|v1, v2|} |\<union>| xs' \<turnstile> Suc c' : {|v|}" 
+      by (metis False finsertI1 finsertI2 finsert_fminus finsert_fminus_single finsert_ident funion_finsert_right wk_nat.prems(2) xs)
+    then show ?thesis using cp_k by auto
   qed
-  have 2: "\<exists> c2. xs \<turnstile> c2 : {|v2|}"
-  proof -
-    obtain c2' where c2p: "{|v1,v2|}|\<union>|xs' \<turnstile> c2' : {|v2|}" using VUnion.IH by blast
-    then have "finsert (v1\<squnion>v2) xs' \<turnstile> CUnionL c2' : {|v2|}" by blast
-    then show ?thesis using xs by (rule_tac x="CUnionL c2'" in exI) simp
+next
+  case (wk_fun xs k vr va vb)
+  show ?case
+  proof (cases "va \<mapsto> vb |\<in>| xs")
+    case True
+    then have xs: "xs = finsert (v1 \<squnion> v2) xs'" using wk_fun.prems finsert_absorb by fastforce
+    then obtain c' where "{|v1, v2|} |\<union>| xs' \<turnstile> c' : {|v|}" and "c' < k" 
+      using wk_fun.IH[of v v1 v2 xs'] wk_fun.prems by blast
+    then show ?thesis by auto
+  next
+    case False
+    then have xs: "xs = finsert (v1\<squnion>v2) (xs'|-| {|va \<mapsto> vb|})" using wk_fun.prems(2) by auto
+    have v12_xs: "v1 \<squnion> v2 |\<notin>| xs' |-| {|va \<mapsto> vb|}" using wk_fun.prems by auto      
+    obtain c' where cp: "{|v1, v2|} |\<union>| (xs'|-| {|va \<mapsto> vb|}) \<turnstile> c' : {|v|}" and cp_k: "c' < k" 
+      using wk_fun.IH[of v v1 v2 "xs'|-| {|va \<mapsto> vb|}"] xs v12_xs wk_fun.prems(1) by blast
+    have "finsert (va \<mapsto> vb) ({|v1, v2|} |\<union>| (xs'|-| {|va \<mapsto> vb|})) \<turnstile> Suc c' : {|v|}" using cp
+         deduce_le.wk_fun[of "({|v1, v2|} |\<union>| (xs'|-| {|va \<mapsto> vb|}))" c' v] by simp
+    then have "{|v1, v2|} |\<union>| xs' \<turnstile> Suc c' : {|v|}" 
+      by (metis False finsertI1 finsertI2 finsert_fminus finsert_fminus_single finsert_ident funion_finsert_right wk_fun.prems(2) xs)
+    then show ?thesis using cp_k by auto
   qed
-  show ?case using 1 2 by blast
+next
+  case (empty_R xs k)
+  then show ?case by auto
+next
+  case (cons_R xs k ys1 ys2)
+  have "ys1 = {|v|} \<or> ys2 = {|v|}" using cons_R.prems by blast
+  then show ?case
+  proof
+    assume "ys1 = {|v|}"
+    then obtain c1' where "{|v1, v2|} |\<union>| xs' \<turnstile> c1' : {|v|}" and "c1' < k"
+      using cons_R.IH(1)[of v v1 v2 xs'] cons_R.prems by blast
+    then show ?case by (rule_tac x="c1'" in exI) simp 
+  next
+    assume ys2_v: "ys2 = {|v|}"
+    then obtain c2' where "{|v1, v2|} |\<union>| xs' \<turnstile> c2' : {|v|}" and "c2' < k" using cons_R.IH(2) cons_R.prems by blast
+    then show ?case by (rule_tac x="c2'" in exI) simp
+  qed
+next
+  case (union_R xs k va vb)
+  let ?xs = "{|v1, v2|} |\<union>| xs'"
+  obtain c1 where a: "?xs \<turnstile> c1 : {|va|}" and c1_c: "c1 < k" using union_R.IH(1) union_R.prems by blast
+  obtain c2 where b: "?xs \<turnstile> c2 : {|vb|}" and c2_c: "c2 < k" using union_R.IH(2) union_R.prems by blast
+  have "?xs \<turnstile> Suc (max c1 c2) : {|va \<squnion> vb|}" using a b c1_c c2_c 
+    using deduce_le.union_R weaken_size by auto
+  then show ?case using c1_c c2_c union_R.prems by (rule_tac x="Suc (max c1 c2)" in exI) auto
+next
+  case (union_L va vb xs k vr)
+  show ?case
+  proof (cases "v1 \<squnion> v2 = va \<squnion> vb")
+    case True then have v12_vab: "v1 \<squnion> v2 = va \<squnion> vb" by simp
+    show ?thesis
+    proof (cases "v1 \<squnion> v2 |\<in>| xs")
+      case True
+      have xs: "xs = finsert (v1 \<squnion> v2) xs'" using v12_vab True union_L.prems finsert_absorb by force
+      have 1: "{|va, vb|} |\<union>| xs = finsert (v1 \<squnion> v2) ({|va, vb|} |\<union>| xs')" by (simp add: xs)
+      have 2: "v1 \<squnion> v2 |\<notin>| {|va, vb|} |\<union>| xs'" using union_L.prems v12_vab apply auto
+        apply (metis add.assoc add_eq_0_iff_both_eq_0 add_eq_self_zero n_not_Suc_n val.size_gen(3))
+        apply (metis add.right_neutral nat_add_left_cancel_less not_add_less2 val.size_gen(3) zero_less_Suc)
+        done
+      from union_L.IH[of v v1 v2 "{|va,vb|} |\<union>| xs'"] 1 2 union_L.prems(1)
+      obtain c' where "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs') \<turnstile> c' : {|v|}" and "c' < k" by blast      
+      then show ?thesis by (metis less_SucI sup_left_idem v12_vab val.inject(3))
+    next
+      case False
+      then have xs_xsp: "xs = xs'" using v12_vab union_L.prems finsert_ident by fastforce
+      show ?thesis using union_L(1) v12_vab xs_xsp union_L.prems(1) by auto  
+    qed
+  next
+    case False then have v12_vab: "v1 \<squnion> v2 \<noteq> va \<squnion> vb" by simp
+    have vab_xsp: "va \<squnion> vb |\<in>| xs'" using v12_vab union_L.prems(2) by auto
+    have v12_xs: "v1 \<squnion> v2 |\<in>| xs" using union_L.prems(2) v12_vab by fastforce
+    show ?thesis
+    proof (cases "va \<squnion> vb |\<in>| xs")
+      case True
+      let ?xs = "{|va, vb|} |\<union>| xs'"
+      have 1: "{|va, vb|} |\<union>| xs = finsert (v1 \<squnion> v2) ?xs"
+        using union_L.prems(2) v12_vab True finsert_absorb by force
+      have 2: "v1 \<squnion> v2 |\<notin>| {|va, vb|} |\<union>| xs'" sorry
+      from union_L.IH[of v v1 v2 ?xs] union_L.prems(1) 1 2
+      obtain c' where "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs') \<turnstile> c' : {|v|}" and "c' < k" 
+        by blast
+        
+      then show ?thesis sorry
+    next
+      case False
+      then have 1: "{|va, vb|} |\<union>| xs = finsert (v1 \<squnion> v2) ({|va, vb|} |\<union>| (xs' |-| {|va\<squnion>vb|}))"
+        using union_L.prems(2) v12_vab by blast 
+      
+      then show ?thesis sorry
+    qed
+      
+      
+        
+    then show ?thesis sorry
+  qed
+    
+next
+  case (le_nat n k)
+  then show ?case sorry
+next
+  case (le_arrow xs v1 k v2)
+  then show ?case sorry
 qed
   
-section "Union Left Inversion Lemma"
   
-lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys; ys = {|v|}; v1\<squnion>v2 |\<in>| xs \<rbrakk> \<Longrightarrow>
-                  \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : {|v|}"
-proof (induction xs c ys arbitrary: v1 v2 v rule: deduce_le.induct)
+(*  
+lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys; ys = {|v|}; xs = finsert (v1\<squnion>v2) xs' \<rbrakk> \<Longrightarrow>
+                  \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : {|v|} \<and> c' < c"
+proof (induction xs c ys arbitrary: v1 v2 v xs' rule: deduce_le.induct)
   case (wk_nat xs c ys n)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
-  obtain c where a: "?xs \<turnstile> c : {|v|}" using wk_nat by blast
-  then obtain c' where "finsert (VNat n) ?xs \<turnstile> c' : {|v|}" using weaken1 by blast
-  then show ?case apply (rule_tac x=c' in exI)  by (simp add: finsert_fminus_if)
+  obtain c' where a: "?xs \<turnstile> c' : {|v|}" and cp_c: "c' < c" using wk_nat.IH wk_nat.prems by blast
+  then have "finsert (VNat n) ?xs \<turnstile> Suc c' : {|v|}" using deduce_le.wk_nat by blast
+  then show ?case using cp_c apply (rule_tac x="Suc c'" in exI) by (simp add: finsert_fminus_if)
 next
   case (wk_fun xs c ys va vb)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
-  obtain c where a: "?xs \<turnstile> c : {|v|}" using wk_fun by blast
-  then obtain c' where "finsert (VArrow va vb) ?xs \<turnstile> c' : {|v|}" using weaken1 by blast
-  then show ?case apply (rule_tac x=c' in exI)  by (simp add: finsert_fminus_if)
+  obtain c' where a: "?xs \<turnstile> c' : {|v|}" and cp_c: "c' < c" using wk_fun by blast
+  then have "finsert (VArrow va vb) ?xs \<turnstile> Suc c' : {|v|}" using deduce_le.wk_fun by blast
+  then show ?case using cp_c apply (rule_tac x="Suc c'" in exI) by (simp add: finsert_fminus_if)
 next
   case (empty_R xs)
   then show ?case by auto
 next
-  case (cons_R xs c1 ys1 c2 ys2)
+  case (cons_R xs c ys1 ys2)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
   have "ys1 = {|v|} \<or> ys2 = {|v|}" using cons_R.prems by blast
   then show ?case
   proof
     assume "ys1 = {|v|}"
-    then obtain c1' where "?xs \<turnstile> c1' : {|v|}" using cons_R.IH(1) cons_R.prems by blast
-    then show ?case by meson
+    then obtain c1' where "?xs \<turnstile> c1' : {|v|}" and "c1' < c" using cons_R.IH(1) cons_R.prems by blast
+    then show ?case by (rule_tac x="c1'" in exI) simp 
   next
     assume ys2_v: "ys2 = {|v|}"
-    then obtain c2' where "?xs \<turnstile> c2' : {|v|}" using cons_R.IH(2) cons_R.prems by blast
-    then show ?case by meson
+    then obtain c2' where "?xs \<turnstile> c2' : {|v|}" and "c2' < c" using cons_R.IH(2) cons_R.prems by blast
+    then show ?case by (rule_tac x="c2'" in exI) simp
   qed
 next
-  case (union_R xs c1 va c2 vb)
+  case (union_R xs c va vb v1 v2)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
-  obtain c1 where a: "?xs \<turnstile> c1 : {|va|}" using union_R.IH(1) union_R.prems by blast
-  obtain c2 where b: "?xs \<turnstile> c2 : {|vb|}" using union_R.IH(2) union_R.prems by blast
-  have "?xs \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
-  then show ?case using union_R by blast
+  obtain c1 where a: "?xs \<turnstile> c1 : {|va|}" and c1_c: "c1 < c" using union_R.IH(1) union_R.prems by blast
+  obtain c2 where b: "?xs \<turnstile> c2 : {|vb|}" and c2_c: "c2 < c" using union_R.IH(2) union_R.prems by blast
+  have "?xs \<turnstile> Suc (max c1 c2) : {|va \<squnion> vb|}" using a b c1_c c2_c 
+    using deduce_le.union_R weaken_size by auto
+  then show ?case using c1_c c2_c union_R.prems by (rule_tac x="Suc (max c1 c2)" in exI) auto
 next
   case (union_L va vb xs c vr)
   let ?F = "\<lambda> xs. {|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
@@ -255,11 +390,11 @@ next
     proof (cases "v1 \<squnion> v2 |\<in>| xs")
       case True
       then have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" by auto
-      obtain c' where cp: "?F ({|va, vb|} |\<union>| xs) \<turnstile> c' : {|v|}"
+      obtain c' where cp: "?F ({|va, vb|} |\<union>| xs) \<turnstile> c' : {|v|}" and cp_c: "c' < c"
         using union_L.IH[of v] 3 union_L.prems by blast
       have "?F ({|va, vb|} |\<union>| xs) = ?F (finsert (va \<squnion> vb) xs)"
         using 2 finsert_absorb by blast
-      then show ?thesis using cp by (rule_tac x=c' in exI) simp        
+      then show ?thesis using cp cp_c by (rule_tac x=c' in exI) simp        
     next
       case False
       then have "?F (finsert (va \<squnion> vb) xs) = {|va, vb|} |\<union>| xs" using 2 by simp
@@ -269,15 +404,19 @@ next
     assume 2: "v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb"     
     have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" using 2 by auto      
     obtain c' where cp: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|v|}" 
-      using union_L.IH 3 union_L.prems by blast
+      and cp_c: "c' < c" using union_L.IH 3 union_L.prems by blast
+        
+(*    
     have "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|})
            |\<subseteq>| {|va,vb|} |\<union>| ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|}))" by auto
     then obtain c'' where "{|va,vb|} |\<union>| ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})) \<turnstile> c'' : {|v|}" 
       using weaken cp by presburger
-    then have "finsert (va\<squnion>vb) ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})) \<turnstile> CUnionL c'' : {|v|}" by blast
-    then have "{|v1, v2|} |\<union>| (finsert (va\<squnion>vb) (xs |-| {|v1 \<squnion> v2|})) \<turnstile> CUnionL c'' : {|v|}" by auto
-    then show ?thesis using 2 apply (rule_tac x="CUnionL c''" in exI) 
+    then have "finsert (va\<squnion>vb) ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})) \<turnstile> Suc c'' : {|v|}" by blast
+    then have "{|v1, v2|} |\<union>| (finsert (va\<squnion>vb) (xs |-| {|v1 \<squnion> v2|})) \<turnstile> Suc c'' : {|v|}" by auto
+    then show ?thesis using 2 apply (rule_tac x="Suc c''" in exI) 
       by (metis finsert_fminus_if fsingleton_iff)
+*)
+  show ?thesis sorry
   qed
 next
   case (le_nat n)
@@ -289,6 +428,7 @@ next
   then show ?case ..
 qed
 
+(*
 section "Size of Finite Sets of Values"  
   
 fun vadd :: "(val \<times> nat) \<Rightarrow> nat \<Rightarrow> nat" where
