@@ -184,24 +184,37 @@ qed
 lemma all_funs_are_funs: "\<lbrakk> all_funs xs; v |\<in>| xs \<rbrakk> \<Longrightarrow> \<exists>v1 v2. v = v1\<mapsto>v2"
   apply (case_tac v) apply auto done
     
-lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys;  v1\<squnion>v2 |\<in>| xs \<rbrakk> \<Longrightarrow>
-                  \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : ys"
-proof (induction xs c ys arbitrary: v1 v2 rule: deduce_le.induct)
+lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys; ys = {|v|}; v1\<squnion>v2 |\<in>| xs \<rbrakk> \<Longrightarrow>
+                  \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : {|v|}"
+proof (induction xs c ys arbitrary: v1 v2 v rule: deduce_le.induct)
   case (wk_nat xs c ys n)
-  then show ?case sorry
+  let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
+  obtain c where a: "?xs \<turnstile> c : {|v|}" using wk_nat by blast
+  then obtain c' where "finsert (VNat n) ?xs \<turnstile> c' : {|v|}" using weaken1 by blast
+  then show ?case apply (rule_tac x=c' in exI)  by (simp add: finsert_fminus_if)
 next
-  case (wk_fun xs c ys v1 v2)
-  then show ?case sorry
+  case (wk_fun xs c ys va vb)
+  let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
+  obtain c where a: "?xs \<turnstile> c : {|v|}" using wk_fun by blast
+  then obtain c' where "finsert (VArrow va vb) ?xs \<turnstile> c' : {|v|}" using weaken1 by blast
+  then show ?case apply (rule_tac x=c' in exI)  by (simp add: finsert_fminus_if)
 next
   case (empty_R xs)
   then show ?case by auto
 next
   case (cons_R xs c1 ys1 c2 ys2)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
-  obtain c1' where c1p: "?xs \<turnstile> c1' : ys1" using cons_R.IH(1) cons_R.prems by blast
-  obtain c2' where c2p: "?xs \<turnstile> c2' : ys2" using cons_R.IH(2) cons_R.prems by blast
-  have "?xs \<turnstile> CCons c1' c2' : ys1 |\<union>| ys2" using c1p c2p by blast
-  then show ?case by meson
+  have "ys1 = {|v|} \<or> ys2 = {|v|}" using cons_R.prems by blast
+  then show ?case
+  proof
+    assume "ys1 = {|v|}"
+    then obtain c1' where "?xs \<turnstile> c1' : {|v|}" using cons_R.IH(1) cons_R.prems by blast
+    then show ?case by meson
+  next
+    assume ys2_v: "ys2 = {|v|}"
+    then obtain c2' where "?xs \<turnstile> c2' : {|v|}" using cons_R.IH(2) cons_R.prems by blast
+    then show ?case by meson
+  qed
 next
   case (union_R xs c1 va c2 vb)
   let ?xs = "{|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
@@ -210,9 +223,8 @@ next
   have "?xs \<turnstile> CUnionR c1 c2 : {|va \<squnion> vb|}" using a b by blast
   then show ?case using union_R by blast
 next
-  case (union_L va vb xs c v) 
-  show ?case sorry
-(*
+  case (union_L va vb xs c vr)
+  let ?F = "\<lambda> xs. {|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})"
   have "(v1 \<squnion> v2 = va \<squnion> vb) \<or> (v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb)" 
     using union_L by blast
   then show ?case
@@ -223,10 +235,11 @@ next
     proof (cases "v1 \<squnion> v2 |\<in>| xs")
       case True
       then have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" by auto
-      have 4: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) |\<subseteq>| xs'"
-        using union_L 2 by blast
-      obtain c' where cp: "xs' \<turnstile> c' : {|v|}" using union_L.IH 3 4 by blast
-      then show ?thesis using union_L(3) by blast
+      obtain c' where cp: "?F ({|va, vb|} |\<union>| xs) \<turnstile> c' : {|v|}"
+        using union_L.IH[of v] 3 union_L.prems by blast
+      have "?F ({|va, vb|} |\<union>| xs) = ?F (finsert (va \<squnion> vb) xs)" sorry
+      then show ?thesis apply (rule_tac x=c' in exI) using union_L.prems True 2 3 cp
+        by simp        
     next
       case False
       then have "{|va, vb|} |\<union>| xs |\<subseteq>| xs'" using union_L 2 by auto
@@ -243,7 +256,6 @@ next
     moreover have "finsert (va\<squnion>vb) xs' = xs'" using union_L 2 by blast
     ultimately show ?thesis using union_L(3) by (rule_tac x="CUnionL c'" in exI) auto 
   qed
-*)
 next
   case (le_nat n)
   then have "False" by auto
