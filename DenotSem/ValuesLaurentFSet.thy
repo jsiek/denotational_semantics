@@ -179,11 +179,7 @@ next
   qed
   show ?case using 1 2 by blast
 qed
-
   
-lemma all_funs_are_funs: "\<lbrakk> all_funs xs; v |\<in>| xs \<rbrakk> \<Longrightarrow> \<exists>v1 v2. v = v1\<mapsto>v2"
-  apply (case_tac v) apply auto done
-    
 lemma union_Le: "\<lbrakk> xs \<turnstile> c : ys; ys = {|v|}; v1\<squnion>v2 |\<in>| xs \<rbrakk> \<Longrightarrow>
                   \<exists>c'. {|v1,v2|} |\<union>| (xs - {|v1\<squnion>v2|}) \<turnstile> c' : {|v|}"
 proof (induction xs c ys arbitrary: v1 v2 v rule: deduce_le.induct)
@@ -237,24 +233,27 @@ next
       then have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" by auto
       obtain c' where cp: "?F ({|va, vb|} |\<union>| xs) \<turnstile> c' : {|v|}"
         using union_L.IH[of v] 3 union_L.prems by blast
-      have "?F ({|va, vb|} |\<union>| xs) = ?F (finsert (va \<squnion> vb) xs)" sorry
-      then show ?thesis apply (rule_tac x=c' in exI) using union_L.prems True 2 3 cp
-        by simp        
+      have "?F ({|va, vb|} |\<union>| xs) = ?F (finsert (va \<squnion> vb) xs)"
+        using 2 finsert_absorb by blast
+      then show ?thesis using cp by (rule_tac x=c' in exI) simp        
     next
       case False
-      then have "{|va, vb|} |\<union>| xs |\<subseteq>| xs'" using union_L 2 by auto
-      then show ?thesis using 3 weaken union_L(3) by blast
-    qed        
+      then have "?F (finsert (va \<squnion> vb) xs) = {|va, vb|} |\<union>| xs" using 2 by simp
+      then show ?thesis using 3 by (rule_tac x=c in exI) simp
+    qed  
   next
     assume 2: "v1 \<squnion> v2 |\<in>| xs \<and> v1 \<squnion> v2 \<noteq> va \<squnion> vb"     
-    have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" using 2 by auto  
-    have 1: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) |\<subseteq>| {|va, vb|} |\<union>| xs'"
-      using union_L by blast
-    obtain c' where cp: "{|va, vb|} |\<union>| xs' \<turnstile> c' : {|v|}" 
-      using union_L.IH 1 3 by blast
-    then have "finsert (va\<squnion>vb) xs' \<turnstile> CUnionL c' : {|v|}" by blast
-    moreover have "finsert (va\<squnion>vb) xs' = xs'" using union_L 2 by blast
-    ultimately show ?thesis using union_L(3) by (rule_tac x="CUnionL c'" in exI) auto 
+    have 3: "v1 \<squnion> v2 |\<in>| {|va, vb|} |\<union>| xs" using 2 by auto      
+    obtain c' where cp: "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|}) \<turnstile> c' : {|v|}" 
+      using union_L.IH 3 union_L.prems by blast
+    have "{|v1, v2|} |\<union>| ({|va, vb|} |\<union>| xs |-| {|v1 \<squnion> v2|})
+           |\<subseteq>| {|va,vb|} |\<union>| ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|}))" by auto
+    then obtain c'' where "{|va,vb|} |\<union>| ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})) \<turnstile> c'' : {|v|}" 
+      using weaken cp by presburger
+    then have "finsert (va\<squnion>vb) ({|v1, v2|} |\<union>| (xs |-| {|v1 \<squnion> v2|})) \<turnstile> CUnionL c'' : {|v|}" by blast
+    then have "{|v1, v2|} |\<union>| (finsert (va\<squnion>vb) (xs |-| {|v1 \<squnion> v2|})) \<turnstile> CUnionL c'' : {|v|}" by auto
+    then show ?thesis using 2 apply (rule_tac x="CUnionL c''" in exI) 
+      by (metis finsert_fminus_if fsingleton_iff)
   qed
 next
   case (le_nat n)
@@ -368,6 +367,11 @@ next
        c1: "xs \<turnstile> c1 : ys" and c2: "xs |\<union>| ys \<turnstile> c2 : zs"
     from c2 show "\<exists>c3. xs \<turnstile> c3 : zs"
     proof
+      fix xsa c ysa n assume "xs |\<union>| ys = finsert (VNat n) xsa" and
+        c2: "c2 = CWkNat c" and "zs = ysa" and "xsa \<turnstile> c : ysa"
+
+      show "\<exists>c3. xs \<turnstile> c3 : zs" sorry
+    next
       assume "c2 = CNil" and zs: "zs = {||}"
       have "xs \<turnstile> CNil : zs" using zs by auto
       then show ?thesis by blast
@@ -391,6 +395,7 @@ next
     next
       show ?thesis sorry
     next
+      (*
       fix n xsa assume xsa: "xs |\<union>| ys = xsa" and "c2 = CNat n" and zs: "zs = {|VNat n|}"
         and n_xsa: "VNat n |\<in>| xsa"
       have "VNat n |\<in>| xs \<or> VNat n |\<in>| ys" using n_xsa xsa by auto
@@ -404,6 +409,8 @@ next
         with c1 obtain c1' where c1p: "xs \<turnstile> c1' : {|VNat n|}" using weaken_right by blast
         with zs show ?thesis by blast
       qed
+*)
+      show ?thesis sorry
     next
       fix fs xsa z1 c2a c2b z2
       assume xsa: "xs |\<union>| ys = xsa" and c2: "c2 = CArrow c2a c2b" and zs: "zs = {|z1 \<mapsto> z2|}" 
@@ -430,13 +437,15 @@ next
       next
         show ?thesis sorry
       next
+        show ?thesis sorry
+            (*
         fix fs1 xs0 y1 c1a c1b y2 assume xs_xsz: "xs = xs0" and c1_arrow: "c1 = CArrow c1a c1b" and
           ys_arrow: "ys = {|y1 \<mapsto> y2|}" and fs1_xsz: "fs1 |\<subseteq>| xs0" and af_fs1: "all_funs fs1" and
           "{|y1|} \<turnstile> c1a : dom |`|fs1" and c1b: "cod |`| fs1 \<turnstile> c1b : {|y2|}"
         have "cod|`|fs1 |\<subseteq>| cod|`|xs'" using xs_xsz fs1_xsz xsp_xs sorry
           
         show "\<exists>c11. cod |`| xs' \<turnstile> c11 : cod |`| ys' \<and> size c11 \<le> size c1" 
-         sorry
+         sorry*)
       qed
       then obtain c11 where c11: "cod |`| xs' \<turnstile> c11 : cod |`| ys'"  
         and c11_c1: "size c11 \<le> size c1" by blast
@@ -449,9 +458,19 @@ next
       obtain c3b where c3b: "cod |`| xs' \<turnstile> c3b : {|z2|}" using c2b_ c11 IH
         apply (erule_tac x="(fsize (cod |`| ys'), size c11, size c2b)" in allE)
         apply (erule impE) using c2b_c11 c11_c1 scysp_ys apply force by blast
-      have "xs \<turnstile> CArrow c3a c3b : {|z1 \<mapsto> z2|}" using xsp_xs af_xsp c3a c3b by blast
+(*      have "xs \<turnstile> CArrow c3a c3b : {|z1 \<mapsto> z2|}" using xsp_xs af_xsp c3a c3b by blast
       then show ?thesis using zs by blast
-    qed  
+*)
+      show ?thesis sorry
+    next
+      show ?thesis sorry
+    qed
+  next
+    show ?thesis sorry
+  next
+    show ?thesis sorry
+  next
+    show ?thesis sorry        
   qed
 qed
 
