@@ -35,26 +35,33 @@ lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Lon
     
 section "Permutations"
   
+(*
 fun count :: "'a list \<Rightarrow> 'a \<Rightarrow> nat" where
   "count [] a = 0" |
   count_cons: "count (b#ls) a = (if a = b then 1 else 0) + count ls a"
+*)
 
-definition perm :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool" where
-  "perm \<Gamma> \<Gamma>' \<equiv> (\<forall> x. count \<Gamma> x = count \<Gamma>' x)"
+lemma count_cons[simp]: "count_list (b#ls) a = (if a = b then 1 else 0) + count_list ls a"
+  by simp
+   
+declare count_list.simps(2)[simp del]
   
-lemma count_append[simp]: "count (xs@ys) v = count xs v + count ys v"
+definition perm :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool" where
+  "perm \<Gamma> \<Gamma>' \<equiv> (\<forall> x. count_list \<Gamma> x = count_list \<Gamma>' x)"
+  
+lemma count_append[simp]: "count_list (xs@ys) v = count_list xs v + count_list ys v"
   apply (induction xs) apply auto done
   
-lemma count_remove1_same[simp]: "count (remove1 v ls) v = (count ls v) - 1"
+lemma count_remove1_same[simp]: "count_list (remove1 v ls) v = (count_list ls v) - 1"
   apply (induction ls) apply auto done
 
-lemma count_remove1_diff[simp]: "v \<noteq> v' \<Longrightarrow> count (remove1 v ls) v' = count ls v'"
+lemma count_remove1_diff[simp]: "v \<noteq> v' \<Longrightarrow> count_list (remove1 v ls) v' = count_list ls v'"
   apply (induction ls) apply auto done
 
-lemma count_remove_mid_same[simp]: "count (xs@v#ys) v = 1 + count (xs@ys) v"
+lemma count_remove_mid_same[simp]: "count_list (xs@v#ys) v = 1 + count_list (xs@ys) v"
   apply (induction xs) by auto
 
-lemma count_remove_mid_diff[simp]: "v \<noteq> v' \<Longrightarrow> count (xs@v#ys) v' = count (xs@ys) v'"
+lemma count_remove_mid_diff[simp]: "v \<noteq> v' \<Longrightarrow> count_list (xs@v#ys) v' = count_list (xs@ys) v'"
   apply (induction xs) by auto
     
 lemma perm_remove1[intro]: "perm (\<Gamma>1@v#\<Gamma>2) \<Gamma> \<Longrightarrow> perm (\<Gamma>1@\<Gamma>2) (remove1 v \<Gamma>)"
@@ -80,33 +87,33 @@ lemma remove1_ex_append: "v \<in> set xs \<Longrightarrow>
   apply force
     done    
 
-lemma nz_count_mem[iff]: "(count ls v \<noteq> 0) = (v \<in> set ls)"
+lemma nz_count_mem[iff]: "(count_list ls v \<noteq> 0) = (v \<in> set ls)"
   apply (induction ls) apply auto done
    
-lemma zero_count_not_mem: "(count ls v = 0) \<Longrightarrow> (v \<notin> set ls)"
+lemma zero_count_not_mem: "(count_list ls v = 0) \<Longrightarrow> (v \<notin> set ls)"
   apply (induction ls) apply force apply simp
     apply (case_tac "v = a") apply force apply force done
 
-lemma non_mem_zero_count: "v \<notin> set ls \<Longrightarrow> count ls v = 0"
+lemma non_mem_zero_count: "v \<notin> set ls \<Longrightarrow> count_list ls v = 0"
   apply (induction ls) apply force apply force done
 
-lemma zero_count_iff_non_mem[iff]: "(count ls v = 0) = (v \<notin> set ls)"
+lemma zero_count_iff_non_mem[iff]: "(count_list ls v = 0) = (v \<notin> set ls)"
   by (meson non_mem_zero_count zero_count_not_mem)  
   
 lemma perm_set_eq[intro]: "perm xs ys \<Longrightarrow> set xs = set ys"
   unfolding perm_def
   apply (rule equalityI) apply (rule subsetI)
-  apply (subgoal_tac "count xs x \<noteq> 0") prefer 2 apply blast apply simp
+  apply (subgoal_tac "count_list xs x \<noteq> 0") prefer 2 apply blast apply simp
   apply (rule subsetI) 
-  apply (subgoal_tac "count ys x \<noteq> 0") prefer 2 apply blast
-    apply (subgoal_tac "count xs x \<noteq> 0") prefer 2 apply simp
+  apply (subgoal_tac "count_list ys x \<noteq> 0") prefer 2 apply blast
+    apply (subgoal_tac "count_list xs x \<noteq> 0") prefer 2 apply simp
   apply blast
   done
     
 lemma perm_remove_common1:
   "perm (\<Gamma>1 @ v# \<Gamma>2) (\<Gamma>1' @ v# \<Gamma>2') \<Longrightarrow> perm (\<Gamma>1 @ \<Gamma>2) (\<Gamma>1' @ \<Gamma>2')"
   unfolding perm_def by auto
-
+    
 lemma perm_add_common:
   "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2') \<Longrightarrow> perm (\<Gamma>1@\<Gamma>@\<Gamma>2) (\<Gamma>1'@\<Gamma>@\<Gamma>2')"
   unfolding perm_def by auto
@@ -129,17 +136,39 @@ lemma perm_ex_cons:
   done
 
 lemma perm_ex_append: "perm (\<Gamma>1@ v # \<Gamma>2) \<Gamma>' \<Longrightarrow> \<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'"
-  apply (induction \<Gamma>1 arbitrary: \<Gamma>2 \<Gamma>')
-    using perm_ex_cons apply force
-    apply simp
-    apply (subgoal_tac "perm (\<Gamma>1 @ v # \<Gamma>2) (remove1 a \<Gamma>')") prefer 2
-     apply (simp add: perm_def) apply clarify apply (erule_tac x=x in allE)
-     apply (case_tac "x=v") apply simp apply (case_tac "v=a") apply force apply force
-      apply simp apply (case_tac "x=a") apply force apply force
-      apply (subgoal_tac "\<exists>\<Gamma>1'. (\<exists>\<Gamma>2'. (remove1 a \<Gamma>') = \<Gamma>1' @ v # \<Gamma>2') \<and> v \<notin> set \<Gamma>1'")
-      prefer 2 apply blast apply (erule exE) apply (erule conjE) apply (erule exE)
-     oops     
+  unfolding perm_def
+  apply (erule_tac x=v in allE)
+  apply simp
+  apply (subgoal_tac "v \<in> set \<Gamma>'") prefer 2 
+   apply (metis nat.distinct(1) non_mem_zero_count)
+  by (meson split_list_first)
 
+lemma perm_empty[simp]: "perm [] xs \<Longrightarrow> xs = []"
+  unfolding perm_def by simp
+    
+lemma perm_singleton[simp]: "perm [v] \<Gamma>' \<Longrightarrow> \<Gamma>' = [v]"   
+  unfolding perm_def
+  apply (case_tac \<Gamma>')
+  apply (metis Nil_is_append_conv list.set_intros(1) remove1_ex_append zero_count_iff_non_mem)
+  apply (case_tac "a = v") apply force
+  by (metis count_list.simps  list.set_intros(1) zero_count_not_mem)    
+
+lemma perm_map[intro!]: "perm xs ys \<Longrightarrow> perm (map f xs) (map f ys)"
+  apply (induction xs arbitrary: f ys)
+   apply simp apply (subgoal_tac "ys = []") prefer 2 apply (rule perm_empty) apply blast
+   apply (simp add: perm_def)
+   apply (subgoal_tac "\<exists>ys1 ys2. ys = ys1@a#ys2 \<and> a \<notin> set ys1") prefer 2 
+   apply (meson perm_ex_cons) apply (erule exE)+ apply simp
+  apply clarify
+  apply (subgoal_tac "perm ([]@xs) (ys1@ys2)") prefer 2 
+   apply (rule perm_remove_common1) apply force
+  apply (subgoal_tac "perm (map f ([]@xs)) (map f (ys1@ys2))") prefer 2 apply force
+  apply simp
+  apply (subgoal_tac "perm ([] @ [f a] @ map f xs) (map f ys1 @ [f a]@ map f ys2)") prefer 2
+    apply (rule perm_add_common) apply force
+  apply force
+  done
+    
 section "Admissible Rules"
 
 lemma wk_gen: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists>c'. \<Gamma>@v#\<Delta> \<turnstile> c' : v')"
@@ -181,70 +210,60 @@ next
   then show ?case using union_L[of "[]" v1 v2 "[]"] by auto
 qed
   
-(*  
 lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
-  apply (induction arbitrary: \<Gamma>' rule: deduce_le.induct)
-  -- "case wk_nat" 
-      apply (subgoal_tac "perm (\<Gamma>1@\<Gamma>2) (remove1 (VNat n) \<Gamma>')") prefer 2 
-       apply (rule perm_remove1) apply force
-    apply (subgoal_tac " \<exists>c'. remove1 (VNat n) \<Gamma>' \<turnstile> c' : v") prefer 2 apply blast
-        apply clarify
-    apply (subgoal_tac "VNat n \<in> set \<Gamma>'") prefer 2
-         apply (subgoal_tac "set (\<Gamma>1 @ VNat n # \<Gamma>2) = set \<Gamma>'") prefer 2 
-          apply (rule perm_set_eq) apply assumption apply force
-        apply (subgoal_tac "\<exists> ys zs. \<Gamma>'=ys@(VNat n)#zs \<and> remove1 (VNat n) \<Gamma>' = ys@zs \<and> (VNat n) \<notin> set ys")
-         prefer 2 apply (rule remove1_ex_append) apply blast
-        apply clarify apply (rule_tac x="CWkNat c'" in exI) apply (rule wk_nat) apply blast
-        apply force
-    -- "case wk_fun"
-      apply (subgoal_tac "perm (\<Gamma>1@\<Gamma>2) (remove1 (v1 \<mapsto> v1') \<Gamma>')") prefer 2 
-       apply (rule perm_remove1) apply force
-    apply (subgoal_tac " \<exists>c'. remove1 (v1 \<mapsto> v1') \<Gamma>' \<turnstile> c' : v") prefer 2 apply blast
-        apply clarify
-    apply (subgoal_tac "v1 \<mapsto> v1' \<in> set \<Gamma>'") prefer 2
-         apply (subgoal_tac "set (\<Gamma>1 @ (v1 \<mapsto> v1') # \<Gamma>2) = set \<Gamma>'") prefer 2 
-          apply (rule perm_set_eq) apply assumption apply force
-        apply (subgoal_tac "\<exists> ys zs. \<Gamma>'=ys@(v1 \<mapsto> v1')#zs \<and> remove1 (v1 \<mapsto> v1') \<Gamma>' = ys@zs \<and> (v1 \<mapsto> v1') \<notin> set ys")
-         prefer 2 apply (rule remove1_ex_append) apply blast
-        apply clarify apply (rule_tac x="CWkFun c'" in exI) apply (rule wk_fun) apply blast
-        apply force
-    -- "case wk_bot"
-    apply (subgoal_tac "perm (\<Gamma>1@\<Gamma>2) (remove1 (VBot) \<Gamma>')") prefer 2 
-       apply (rule perm_remove1) apply force
-    apply (subgoal_tac " \<exists>c'. remove1 (VBot) \<Gamma>' \<turnstile> c' : v") prefer 2 apply blast
-        apply clarify
-    apply (subgoal_tac "VBot \<in> set \<Gamma>'") prefer 2
-         apply (subgoal_tac "set (\<Gamma>1 @ (VBot) # \<Gamma>2) = set \<Gamma>'") prefer 2 
-          apply (rule perm_set_eq) apply assumption apply force
-        apply (subgoal_tac "\<exists> ys zs. \<Gamma>'=ys@(VBot)#zs \<and> remove1 (VBot) \<Gamma>' = ys@zs \<and> (VBot) \<notin> set ys")
-         prefer 2 apply (rule remove1_ex_append) apply blast
-        apply clarify apply (rule_tac x="CWkBot c'" in exI) apply (rule wk_bot) apply blast
-        apply force
-    -- "case union_R"
-    apply force
-    -- "case union_L"
-    apply clarify 
-    apply (subgoal_tac "\<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>'=\<Gamma>1'@(v1\<squnion>v2)#\<Gamma>2'") apply (erule exE)+
-     apply (subgoal_tac "perm (\<Gamma>1 @ v1 # v2 # \<Gamma>2) (\<Gamma>1'@v1#v2#\<Gamma>2')") 
-    apply (subgoal_tac "\<exists>c'. \<Gamma>1'@v1#v2#\<Gamma>2' \<turnstile> c' : v") prefer 2 apply blast
-    apply (erule exE) apply (rule_tac x="CUnionL c'" in exI) apply (rule union_L)
-       apply assumption apply assumption apply simp 
-     apply (subgoal_tac "perm (\<Gamma>1 @  \<Gamma>2) (\<Gamma>1' @ \<Gamma>2')") prefer 2 apply (rule perm_remove_common1)
-      apply blast
-    apply (subgoal_tac "perm (\<Gamma>1 @ [v1, v2] @ \<Gamma>2) (\<Gamma>1' @ [v1, v2] @ \<Gamma>2')") prefer 2
-    apply (rule perm_add_common) apply blast apply simp
-        
-    -- "case le_nat"
-    defer
-    -- "case le_arrow"
-    
-    oops
-    
-    
-lemma weaken: "\<lbrakk> \<Gamma> \<turnstile> c : v; fset \<Gamma> \<subseteq> fset \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
- oops
- *) 
+proof (induction \<Gamma> c v arbitrary: \<Gamma>' rule: deduce_le.induct)
+  case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
+  from wk_nat(3) obtain \<Gamma>1' \<Gamma>2' where gp: "\<Gamma>' = \<Gamma>1'@(VNat n)#\<Gamma>2'"
+    using perm_ex_append[of \<Gamma>1] by blast
+  have "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2')" using gp perm_remove_common1 wk_nat.prems by fastforce
+  then obtain c' where cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c' : v" using wk_nat.IH by blast
+  then show ?case using gp  by blast
+next
+  case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
+  from wk_fun(3) obtain \<Gamma>1' \<Gamma>2' where gp: "\<Gamma>' = \<Gamma>1'@(v1 \<mapsto> v2)#\<Gamma>2'"
+    using perm_ex_append[of \<Gamma>1] by blast
+  have "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2')" using gp perm_remove_common1 wk_fun.prems by fastforce
+  then obtain c' where cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c' : v" using wk_fun.IH by blast
+  then show ?case using gp by blast
+next
+  case (union_R \<Gamma> c v1 v2)
+  obtain c1 where c1: "\<Gamma>' \<turnstile> c1 : v1" using union_R.IH(1) union_R.prems by blast
+  obtain c2 where c2: "\<Gamma>' \<turnstile> c2 : v2" using union_R.IH(2) union_R.prems by blast
+  then show ?case using c1 c2 apply (rule_tac x="Suc (max c1 c2)" in exI) 
+    by (simp add: deduce_le.union_R weaken_size)
+next
+  case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
+  from union_L.prems obtain \<Gamma>1' \<Gamma>2' where gp: "\<Gamma>' = \<Gamma>1'@(v1 \<squnion> v2)#\<Gamma>2'"
+    using perm_ex_append[of \<Gamma>1] by blast
+  have "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2')" using gp perm_remove_common1 using union_L.prems by fastforce
+  then have "perm (\<Gamma>1 @ [v1, v2] @ \<Gamma>2) (\<Gamma>1' @ [v1, v2] @ \<Gamma>2')" using perm_add_common by blast
+  then have "perm (\<Gamma>1 @ v1 # v2 # \<Gamma>2) (\<Gamma>1' @ v1 # v2 # \<Gamma>2')" by simp    
+  with union_L.IH[of "\<Gamma>1' @ v1 # v2 # \<Gamma>2'"] obtain c' where
+    cp: "\<Gamma>1' @ v1 # v2 # \<Gamma>2' \<turnstile> c' : v" by blast
+  then show ?case using gp by blast
+next
+  case (le_nat n c)
+  then have gp: "\<Gamma>' = [VNat n]" by simp
+  then show ?case by auto
+next
+  case (le_arrow \<Gamma> v1 c v2)
+  have af_gp: "all_funs \<Gamma>'" using le_arrow(1) le_arrow(5) using perm_set_eq by blast
+  have "perm (map cod \<Gamma>) (map cod \<Gamma>')" using le_arrow.prems by blast
+  then obtain c2 where c2: "map cod \<Gamma>' \<turnstile> c2 : v2" using le_arrow.IH(2) by blast
+  have c1: "\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c : v"
+  proof clarify
+    fix v v' assume vv_gp: "v\<mapsto>v' \<in> set \<Gamma>'"
+    then have "v\<mapsto>v' \<in> set \<Gamma>" using le_arrow.prems perm_set_eq by blast
+    then show "[v1] \<turnstile> c : v" using le_arrow.IH(1) by blast
+  qed
+  let ?c = "max c2 c"
+  have c2_2: "map cod \<Gamma>' \<turnstile> ?c : v2" using c2 weaken_size by auto
+  have c1_2: "\<forall>v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> ?c : v" using c1 weaken_size by auto    
+  show ?case using af_gp c1_2 c2_2 by blast
+qed
   
+
+    
     
     
 end
