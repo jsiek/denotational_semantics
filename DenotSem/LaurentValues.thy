@@ -142,7 +142,44 @@ lemma perm_ex_append: "perm (\<Gamma>1@ v # \<Gamma>2) \<Gamma>' \<Longrightarro
 
 section "Admissible Rules"
 
-
+lemma wk_gen: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists>c'. \<Gamma>@v#\<Delta> \<turnstile> c' : v')"
+proof (induction v arbitrary: \<Gamma> \<Delta> c v')
+  case (VNat n)
+  then show ?case using wk_nat by blast
+next
+  case (VArrow v1 v2)
+  then show ?case using wk_fun by blast
+next
+  case (VUnion v1 v2)
+  obtain c2 where "\<Gamma>@v2#\<Delta> \<turnstile> c2 : v'" using VUnion.IH(2) VUnion.prems by blast
+  then obtain c1 where "\<Gamma>@v1#v2#\<Delta> \<turnstile> c1 : v'" using VUnion.IH(1) by blast 
+  then show ?case using union_L by blast
+qed
+ 
+lemma ax: "\<exists>c. [v] \<turnstile> c : v"
+proof (induction v)
+  case (VNat n)
+  then show ?case by blast
+next
+  case (VArrow v1 v2)
+  obtain c1 where c1: "[v1] \<turnstile> c1 : v1" using VArrow.IH(1) by blast
+  obtain c2 where c2: "[v2] \<turnstile> c2 : v2" using VArrow.IH(2) by blast
+  have c1_2: "[v1] \<turnstile> max c1 c2 : v1" using weaken_size c1 by auto
+  have c2_2: "[v2] \<turnstile> max c1 c2 : v2" using weaken_size c2 by auto
+  show ?case using le_arrow[of "[(v1\<mapsto>v2)]" v1 "max c1 c2" v2] c1_2 c2_2
+     apply (rule_tac x="Suc (max c1 c2)" in exI) apply simp done
+next
+  case (VUnion v1 v2)
+  obtain c1 where c1: "[v1] \<turnstile> c1 : v1" using VUnion.IH(1) by blast
+  obtain c2 where c2: "[v2] \<turnstile> c2 : v2" using VUnion.IH(2) by blast
+  obtain c1' where c1p: "[v1,v2] \<turnstile> c1' : v1"
+    using c1 wk_gen[of "[v1]" "[]" c1 v1 v2] by auto
+  obtain c2' where c2p: "[v1,v2] \<turnstile> c2' : v2"
+    using c2 wk_gen[of "[]" "[v2]" c2 v2 v1] by auto
+  have "[v1,v2] \<turnstile> Suc (max c1' c2') : v1 \<squnion> v2"
+    using weaken_size union_R c1p c2p by auto
+  then show ?case using union_L[of "[]" v1 v2 "[]"] by auto
+qed
   
 (*  
 lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
@@ -203,11 +240,6 @@ lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbra
     
     oops
     
-lemma wk_gen: "\<forall> c v v' \<Gamma> \<Delta>. n = size c \<longrightarrow> \<Gamma>@\<Delta> \<turnstile> c : v \<longrightarrow> (\<exists>c'. \<Gamma>@v'#\<Delta> \<turnstile> c' : v)"
-  apply (induction n rule: nat_less_induct)
-  apply clarify
-  apply (case_tac c)
-  oops
     
 lemma weaken: "\<lbrakk> \<Gamma> \<turnstile> c : v; fset \<Gamma> \<subseteq> fset \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
  oops
