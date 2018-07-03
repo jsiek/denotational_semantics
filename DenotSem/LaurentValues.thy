@@ -280,37 +280,103 @@ lemma append_eq: "v \<noteq> v' \<Longrightarrow> xs@v#ys = xs'@v'#ys' \<Longrig
 lemma union_Le: "\<lbrakk> \<Gamma>' \<turnstile> k : C; \<Gamma>' = \<Gamma>@(A\<squnion>B)#\<Delta> \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
 proof (induction \<Gamma>' k C arbitrary: \<Gamma> A B \<Delta> rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
-  have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@(VNat n)#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
-        \<or> (\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@(VNat n)#\<Gamma>2)"
+  let ?vp = "VNat n"
+  have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
+        \<or> (\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2)"
     using wk_nat.prems by (simp add: append_eq)
   then show ?case
   proof
-    assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@(VNat n)#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
-    then obtain \<Delta>' where g: "\<Gamma>=\<Gamma>1@(VNat n)#\<Delta>'" and g2: "\<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>" by blast
+    assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
+    then obtain \<Delta>' where g: "\<Gamma>=\<Gamma>1@?vp#\<Delta>'" and g2: "\<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>" by blast
     have "\<Gamma>1 @ \<Gamma>2 = \<Gamma>1 @ \<Delta>' @ (A \<squnion> B) # \<Delta>" using g g2 by simp
     with wk_nat.IH[of "\<Gamma>1 @ \<Delta>'" A B \<Delta>] obtain k' where 
       kp: "(\<Gamma>1 @ \<Delta>') @ A # B # \<Delta> \<turnstile> k' : v" and kp_c: "k' < c" by auto
     then have "\<Gamma>@A#B#\<Delta> \<turnstile> Suc k' : v" using g by auto
     then show ?thesis using kp_c by auto
   next
-    assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@(VNat n)#\<Gamma>2"
-    show ?thesis sorry
+    assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2"
+    then obtain \<Delta>' where g1: "\<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>'" and d: "\<Delta>=\<Delta>'@?vp#\<Gamma>2" by blast
+    have "\<Gamma>1@\<Gamma>2 = \<Gamma> @ (A \<squnion> B) # (\<Delta>' @ \<Gamma>2)" using g1 d by simp
+    with wk_nat.IH[of \<Gamma> A B "\<Delta>'@\<Gamma>2"] obtain k' where
+      kp: "\<Gamma>@A#B#(\<Delta>'@\<Gamma>2) \<turnstile> k' : v" and kp_c: "k' < c" by auto
+    then have "(\<Gamma>@A#B#\<Delta>')@\<Gamma>2 \<turnstile> k' : v" by simp
+    then have "(\<Gamma>@A#B#\<Delta>')@?vp#\<Gamma>2 \<turnstile> Suc k' : v" by blast
+    then have "\<Gamma> @ A # B # \<Delta> \<turnstile> Suc k' : v" using d by simp  
+    then show ?thesis using kp_c by auto 
   qed
 next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
-  then show ?case sorry
+  let ?vp = "v1\<mapsto>v2"
+  have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
+        \<or> (\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2)"
+    using wk_fun.prems by (simp add: append_eq)
+  then show ?case
+  proof
+    assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
+    then obtain \<Delta>' where g: "\<Gamma>=\<Gamma>1@?vp#\<Delta>'" and g2: "\<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>" by blast
+    have "\<Gamma>1 @ \<Gamma>2 = \<Gamma>1 @ \<Delta>' @ (A \<squnion> B) # \<Delta>" using g g2 by simp
+    with wk_fun.IH[of "\<Gamma>1 @ \<Delta>'" A B \<Delta>] obtain k' where 
+      kp: "(\<Gamma>1 @ \<Delta>') @ A # B # \<Delta> \<turnstile> k' : v" and kp_c: "k' < c" by auto
+    then have "\<Gamma>@A#B#\<Delta> \<turnstile> Suc k' : v" using g by auto
+    then show ?thesis using kp_c by auto
+  next
+    assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2"
+    then obtain \<Delta>' where g1: "\<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>'" and d: "\<Delta>=\<Delta>'@?vp#\<Gamma>2" by blast
+    have "\<Gamma>1@\<Gamma>2 = \<Gamma> @ (A \<squnion> B) # (\<Delta>' @ \<Gamma>2)" using g1 d by simp
+    with wk_fun.IH[of \<Gamma> A B "\<Delta>'@\<Gamma>2"] obtain k' where
+      kp: "\<Gamma>@A#B#(\<Delta>'@\<Gamma>2) \<turnstile> k' : v" and kp_c: "k' < c" by auto
+    then have "(\<Gamma>@A#B#\<Delta>')@\<Gamma>2 \<turnstile> k' : v" by simp
+    then have "(\<Gamma>@A#B#\<Delta>')@?vp#\<Gamma>2 \<turnstile> Suc k' : v" by blast
+    then have "\<Gamma> @ A # B # \<Delta> \<turnstile> Suc k' : v" using d by simp  
+    then show ?thesis using kp_c by auto 
+  qed
 next
-  case (union_R \<Gamma> c v1 v2)
-  then show ?case sorry
+  case (union_R \<Gamma> c v1 v2 \<Gamma>')
+  obtain k1 where k1: "\<Gamma>' @ A # B # \<Delta> \<turnstile> k1 : v1" and k1_c: "k1 < c" 
+    using union_R.IH(1) union_R.prems by blast
+  obtain k2 where k2: "\<Gamma>' @ A # B # \<Delta> \<turnstile> k2 : v2" and k2_c: "k2 < c" 
+    using union_R.IH(2) union_R.prems by blast
+  show ?case using k1 k1_c k2 k2_c weaken_size by (rule_tac x="Suc (max k1 k2)" in exI) auto
 next
   case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
-  then show ?case sorry
+  let ?vp = "v1\<squnion>v2"
+  show ?case
+  proof (cases "v1\<squnion>v2 = A\<squnion>B")
+    case True
+    then show ?thesis sorry
+  next
+    case False
+    then have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
+        \<or> (\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2)"
+      using union_L.prems(1) append_eq[of "v1\<squnion>v2" "A\<squnion>B" \<Gamma>1 \<Gamma>2 \<Gamma> \<Delta>] by blast
+    then show ?thesis
+    proof
+      assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
+      then obtain \<Delta>' where g: "\<Gamma>=\<Gamma>1@?vp#\<Delta>'" and g2: "\<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>" by blast
+      have "\<Gamma>1 @ v1 # v2 # \<Gamma>2 =  (\<Gamma>1 @ v1 # v2 # \<Delta>') @ (A \<squnion> B) # \<Delta>" using g g2 by simp
+      with union_L.IH[of "\<Gamma>1 @ v1 # v2 # \<Delta>'" A B \<Delta>] obtain k' where 
+        kp: "(\<Gamma>1 @ v1 # v2 # \<Delta>') @ A # B # \<Delta> \<turnstile> k' : v" and kp_c: "k' < c" by auto
+      then have "\<Gamma>@A#B#\<Delta> \<turnstile> Suc k' : v" using g by auto
+      then show ?thesis using kp_c by auto
+    next
+      assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2"
+      then obtain \<Delta>' where g1: "\<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>'" and d: "\<Delta>=\<Delta>'@?vp#\<Gamma>2" by blast
+      have "\<Gamma>1 @ v1 # v2 # \<Gamma>2 = \<Gamma> @ (A \<squnion> B) # \<Delta>' @ v1 # v2 # \<Gamma>2" using g1 d by simp 
+      with union_L.IH[of \<Gamma> A B "\<Delta>' @ v1 # v2 # \<Gamma>2"] obtain k' where
+        kp: "(\<Gamma> @ A # B # \<Delta>') @ v1 # v2 # \<Gamma>2 \<turnstile> k' : v" and kp_c: "k' < c" by auto
+      then have "(\<Gamma> @ A # B # \<Delta>') @ ?vp # \<Gamma>2 \<turnstile> Suc k' : v" by blast 
+      then show ?thesis using kp_c d by auto
+    qed
+  qed
 next
   case (le_nat n c)
-  then show ?case sorry
+  then have "False"
+    by (metis append_eq_Cons_conv append_is_Nil_conv list.inject list.simps(3) val.simps(7))
+  then show ?case ..
 next
-  case (le_arrow \<Gamma> v1 c v2)
-  then show ?case sorry
+  case (le_arrow \<Gamma>' v1 c v2)
+  have "False" using le_arrow(1) le_arrow(5) apply simp apply (erule_tac x="A\<squnion>B" in allE) by blast      
+  then show ?case ..
 qed
     
     
