@@ -262,7 +262,51 @@ next
   show ?case using af_gp c1_2 c2_2 by blast
 qed
   
-
+lemma append_eq_aux: "v \<noteq> v' \<Longrightarrow> v#ys = xs'@v'#ys' \<Longrightarrow> (\<exists>ls. xs'=v#ls \<and> ys=ls@v'#ys') 
+                                           \<or> (\<exists>ls. ys'=ls@v#ys)"
+  apply (induction xs' arbitrary: v v' ys ys')
+  apply force
+  apply auto
+  done
+  
+lemma append_eq: "v \<noteq> v' \<Longrightarrow> xs@v#ys = xs'@v'#ys' \<Longrightarrow> (\<exists>ls. xs'=xs@v#ls \<and> ys=ls@v'#ys') 
+                                           \<or> (\<exists>ls. xs=xs'@v'#ls \<and> ys'=ls@v#ys)"
+  apply (induction xs arbitrary: v ys xs' v' ys')
+  apply simp using append_eq_aux apply fastforce
+  apply simp
+  apply (case_tac xs') apply force apply simp
+  done
+    
+lemma union_Le: "\<lbrakk> \<Gamma>' \<turnstile> k : C; \<Gamma>' = \<Gamma>@(A\<squnion>B)#\<Delta> \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
+proof (induction \<Gamma>' k C arbitrary: \<Gamma> A B \<Delta> rule: deduce_le.induct)
+  case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
+  have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@(VNat n)#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
+        \<or> (\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@(VNat n)#\<Gamma>2)"
+    using wk_nat.prems by (simp add: append_eq)
+  then show ?case
+  proof
+    assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@(VNat n)#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
+    show ?thesis sorry
+  next
+    assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@(VNat n)#\<Gamma>2"
+    show ?thesis sorry
+  qed
+next
+  case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
+  then show ?case sorry
+next
+  case (union_R \<Gamma> c v1 v2)
+  then show ?case sorry
+next
+  case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
+  then show ?case sorry
+next
+  case (le_nat n c)
+  then show ?case sorry
+next
+  case (le_arrow \<Gamma> v1 c v2)
+  then show ?case sorry
+qed
     
     
     
