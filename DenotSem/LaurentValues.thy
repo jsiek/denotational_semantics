@@ -277,6 +277,22 @@ lemma append_eq: "v \<noteq> v' \<Longrightarrow> xs@v#ys = xs'@v'#ys' \<Longrig
   apply (case_tac xs') apply force apply simp
   done
     
+lemma append_eq2_aux: "v#ys = xs'@v#ys' \<Longrightarrow>
+   (\<exists>ls. xs'=v#ls \<and> ys=ls@v#ys') \<or> (\<exists>ls. ys'=ls@v#ys) \<or> ys = ys'"  
+  apply (induction xs' arbitrary: v ys ys')
+   apply force
+  apply force
+  done
+  
+lemma append_eq2: "xs@v#ys = xs'@v#ys' \<Longrightarrow>
+     (\<exists>ls. xs'=xs@v#ls \<and> ys=ls@v#ys') 
+       \<or> (\<exists>ls. xs=xs'@v#ls \<and> ys'=ls@v#ys)
+       \<or> (xs = xs' \<and> ys = ys')"
+  apply (induction xs arbitrary: v ys xs' ys')    
+   apply simp using append_eq2_aux apply force
+     apply (case_tac xs') apply force apply simp
+  done
+    
 lemma union_Le: "\<lbrakk> \<Gamma>' \<turnstile> k : C; \<Gamma>' = \<Gamma>@(A\<squnion>B)#\<Delta> \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
 proof (induction \<Gamma>' k C arbitrary: \<Gamma> A B \<Delta> rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
@@ -343,7 +359,19 @@ next
   show ?case
   proof (cases "v1\<squnion>v2 = A\<squnion>B")
     case True
-    then show ?thesis sorry
+    then have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
+        \<or> (\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2)
+        \<or> (\<Gamma>1=\<Gamma> \<and> \<Gamma>2=\<Delta>)" using append_eq2[of \<Gamma>1 "?vp" \<Gamma>2 \<Gamma> \<Delta>] union_L.prems by blast
+    moreover {
+      assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
+      have ?thesis sorry }
+    moreover {
+      assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2"
+      have ?thesis sorry }
+    moreover {
+      assume "\<Gamma>1=\<Gamma> \<and> \<Gamma>2=\<Delta>"
+      have ?thesis sorry
+    } ultimately show ?thesis by blast      
   next
     case False
     then have "(\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>) 
@@ -379,6 +407,6 @@ next
   then show ?case ..
 qed
     
-    
+
     
 end
