@@ -286,7 +286,12 @@ proof (induction \<Gamma>' k C arbitrary: \<Gamma> A B \<Delta> rule: deduce_le.
   then show ?case
   proof
     assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@(VNat n)#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
-    show ?thesis sorry
+    then obtain \<Delta>' where g: "\<Gamma>=\<Gamma>1@(VNat n)#\<Delta>'" and g2: "\<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>" by blast
+    have "\<Gamma>1 @ \<Gamma>2 = \<Gamma>1 @ \<Delta>' @ (A \<squnion> B) # \<Delta>" using g g2 by simp
+    with wk_nat.IH[of "\<Gamma>1 @ \<Delta>'" A B \<Delta>] obtain k' where 
+      kp: "(\<Gamma>1 @ \<Delta>') @ A # B # \<Delta> \<turnstile> k' : v" and kp_c: "k' < c" by auto
+    then have "\<Gamma>@A#B#\<Delta> \<turnstile> Suc k' : v" using g by auto
+    then show ?thesis using kp_c by auto
   next
     assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@(VNat n)#\<Gamma>2"
     show ?thesis sorry
