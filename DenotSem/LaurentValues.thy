@@ -364,13 +364,25 @@ next
         \<or> (\<Gamma>1=\<Gamma> \<and> \<Gamma>2=\<Delta>)" using append_eq2[of \<Gamma>1 "?vp" \<Gamma>2 \<Gamma> \<Delta>] union_L.prems by blast
     moreover {
       assume "\<exists> \<Delta>'. \<Gamma>=\<Gamma>1@?vp#\<Delta>' \<and> \<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>"
-      have ?thesis sorry }
+      then obtain \<Delta>' where g: "\<Gamma>=\<Gamma>1@?vp#\<Delta>'" and g2: "\<Gamma>2=\<Delta>'@(A\<squnion>B)#\<Delta>" by blast
+      have "\<Gamma>1 @ v1 # v2 # \<Gamma>2 = (\<Gamma>1 @ v1 # v2 # \<Delta>') @ (A \<squnion> B) # \<Delta>"
+        using g g2 union_L.prems by simp
+      with union_L.IH[of "\<Gamma>1 @ v1 # v2 # \<Delta>'" A B \<Delta>]
+      obtain k' where kp: "(\<Gamma>1 @ v1 # v2 # \<Delta>') @ A # B # \<Delta> \<turnstile> k' : v" and kp_c: "k' < c" by blast
+      then have ?thesis 
+        using \<open>\<exists>\<Delta>''. \<Gamma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Delta>'' \<and> \<Gamma>2 = \<Delta>'' @ (A \<squnion> B) # \<Delta>\<close> g2 by auto
+    }
     moreover {
       assume "\<exists> \<Delta>'. \<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>' \<and> \<Delta>=\<Delta>'@?vp#\<Gamma>2"
-      have ?thesis sorry }
+      then obtain \<Delta>' where g1: "\<Gamma>1=\<Gamma>@(A\<squnion>B)#\<Delta>'" and d: "\<Delta>=\<Delta>'@?vp#\<Gamma>2" by blast
+      have "\<Gamma>1 @ v1 # v2 # \<Gamma>2 = \<Gamma> @ (A \<squnion> B) # (\<Delta>' @ v1 # v2 # \<Gamma>2)" using g1 d union_L.prems by simp
+      with union_L.IH[of \<Gamma> A B "\<Delta>' @ v1 # v2 # \<Gamma>2"]
+      obtain k' where kp: "(\<Gamma> @ A # B # \<Delta>') @ v1 # v2 # \<Gamma>2 \<turnstile> k' : v" and kp_c: "k' < c" by auto
+      then have "(\<Gamma> @ A # B # \<Delta>') @ ?vp # \<Gamma>2 \<turnstile> Suc k' : v" by blast
+      then have ?thesis using d kp_c by auto  }
     moreover {
       assume "\<Gamma>1=\<Gamma> \<and> \<Gamma>2=\<Delta>"
-      have ?thesis sorry
+      then have ?thesis using True union_L.hyps by blast
     } ultimately show ?thesis by blast      
   next
     case False
