@@ -457,7 +457,7 @@ next
     fix \<Gamma> A \<Delta> \<Sigma> C c1 c2
     assume m: "m = (size A, c1, c2)" and c1: "\<Gamma> \<turnstile> c1 : A" and c2: "\<Delta> @ A # \<Sigma> \<turnstile> c2 : C"
     from c2 show "\<exists>c3. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c3 : C"
-    proof (* case wk_nat *)
+    proof (* case c2 is wk_nat *)
       fix \<Gamma>1 \<Gamma>2 c v n
       let ?v = "VNat n"
       assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2 " and c2_c: "c2 = Suc c" and c_v: "C = v" and
@@ -487,7 +487,7 @@ next
         then have c_2: "\<Delta>@\<Sigma> \<turnstile> c : C" using c c_v by simp
         then have ?thesis using weaken by blast }
       ultimately show ?thesis by blast
-    next (* case wk_fun *)
+    next (* case c2 is wk_fun *)
       fix \<Gamma>1 \<Gamma>2 c v v1 v2
       let ?v = "v1 \<mapsto> v2"
       assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2 " and c2_c: "c2 = Suc c" and c_v: "C = v" and
@@ -517,13 +517,17 @@ next
         then have c_2: "\<Delta>@\<Sigma> \<turnstile> c : C" using c c_v by simp
         then have ?thesis using weaken by blast }
       ultimately show ?thesis by blast
-    next (* case union_R *)
+    next (* case c2 is union_R *)
+      fix \<Gamma>' c v1 v2
+      assume gp: "\<Delta> @ A # \<Sigma> = \<Gamma>'" and c2_c: "c2 = Suc c" and c_v12: "C = v1 \<squnion> v2" and
+        c_v1: "\<Gamma>' \<turnstile> c : v1" and c_v2: "\<Gamma>' \<turnstile> c : v2"
+      
       show ?thesis sorry
-    next (* case union_L *)
+    next (* case c2 is union_L *)
       show ?thesis sorry
-    next (* case le_nat *)
+    next (* case c2 is le_nat *)
       show ?thesis sorry
-    next (* case le_arrow *)
+    next (* case c2 is le_arrow *)
       show ?thesis sorry
     qed      
   qed
