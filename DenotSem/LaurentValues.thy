@@ -530,7 +530,28 @@ next
       show ?thesis apply (rule_tac x="Suc (max c3 c4)" in exI)
         using c3 c4 c_v12 weaken_size deduce_le.union_R by auto
     next (* case c2 is union_L *)
-      show ?thesis sorry
+      fix \<Gamma>1 v1 v2 \<Gamma>2 c v assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and
+        c2_c: "c2 = Suc c" and c_v: "C = v" and c: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> c : v"
+      let ?v = "v1\<squnion>v2"
+      from 1 append_eq3[of \<Delta> A \<Sigma> \<Gamma>1 "?v" \<Gamma>2]
+      have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2) \<or>
+            (\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>) \<or>
+             \<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2 " by blast
+      moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2"
+        then obtain \<Delta>' where g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ ?v # \<Gamma>2" by blast
+            
+        have ?thesis sorry }
+      moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>"
+        then obtain \<Delta>' where d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # \<Sigma>" by blast
+        with c c_v have "(\<Gamma>1@v1#v2#\<Delta>')@A#\<Sigma> \<turnstile> c : C" by simp
+        then obtain c' where cp: "(\<Gamma>1@v1#v2#\<Delta>')@\<Gamma>@\<Sigma> \<turnstile> c' : C" using 2 c1
+          apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) 
+           apply (simp add: c2_c m) apply blast done
+        then have "\<Gamma>1@v1#v2#(\<Delta>'@\<Gamma>@\<Sigma>) \<turnstile> c' : C" by simp
+        then have ?thesis using d g2 apply (rule_tac x="Suc c'" in exI) by auto }
+      moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
+        have ?thesis sorry }
+      ultimately show ?thesis by blast
     next (* case c2 is le_nat *)
       show ?thesis sorry
     next (* case c2 is le_arrow *)
