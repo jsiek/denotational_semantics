@@ -521,8 +521,14 @@ next
       fix \<Gamma>' c v1 v2
       assume gp: "\<Delta> @ A # \<Sigma> = \<Gamma>'" and c2_c: "c2 = Suc c" and c_v12: "C = v1 \<squnion> v2" and
         c_v1: "\<Gamma>' \<turnstile> c : v1" and c_v2: "\<Gamma>' \<turnstile> c : v2"
-      
-      show ?thesis sorry
+      obtain c3 where c3: "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : v1" using c_v1 2 c2_c m 
+        apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) apply force
+        using c1 gp by blast
+      obtain c4 where c4: "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c4 : v2" using c_v2 2 c2_c m 
+        apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) apply force
+        using c1 gp by blast
+      show ?thesis apply (rule_tac x="Suc (max c3 c4)" in exI)
+        using c3 c4 c_v12 weaken_size deduce_le.union_R by auto
     next (* case c2 is union_L *)
       show ?thesis sorry
     next (* case c2 is le_nat *)
