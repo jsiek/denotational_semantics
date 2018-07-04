@@ -539,8 +539,13 @@ next
              \<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2 " by blast
       moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2"
         then obtain \<Delta>' where g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ ?v # \<Gamma>2" by blast
-            
-        have ?thesis sorry }
+        have "\<Delta>@A#(\<Delta>'@v1#v2#\<Gamma>2) \<turnstile> c : C" using c g1 s c_v by simp
+        then obtain c' where "\<Delta>@\<Gamma>@(\<Delta>'@v1#v2#\<Gamma>2) \<turnstile> c' : C" using 2 m c2_c c1
+          apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) apply force
+          apply blast done
+        then have "(\<Delta>@\<Gamma>@\<Delta>')@v1#v2#\<Gamma>2 \<turnstile> c' : C" by simp
+        then have "(\<Delta>@\<Gamma>@\<Delta>')@(v1\<squnion>v2)#\<Gamma>2 \<turnstile> Suc c' : C" by blast
+        then have ?thesis using s by auto }
       moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>"
         then obtain \<Delta>' where d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # \<Sigma>" by blast
         with c c_v have "(\<Gamma>1@v1#v2#\<Delta>')@A#\<Sigma> \<turnstile> c : C" by simp
