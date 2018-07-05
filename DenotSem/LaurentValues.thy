@@ -432,11 +432,16 @@ lemma union_Le: "\<lbrakk> \<Gamma>@(A\<squnion>B)#\<Delta> \<turnstile> k : C  
 
 lemma append_eq3_aux: "v # ys = xs' @ v' # ys' \<Longrightarrow>
        (\<exists>ls. xs' = v # ls \<and> ys = ls @ v' # ys') \<or>
-       v = v' \<and> ys = ys'"
+       xs' = [] \<and> v = v' \<and> ys = ys'"
   apply (induction xs' arbitrary: v ys v' ys')
   apply force
   apply auto
   done
+
+lemma cons_append_eq3_elim: "\<lbrakk> v # ys = xs' @ v' # ys';
+       \<And>ls. \<lbrakk>xs' = v # ls; ys = ls @ v' # ys' \<rbrakk> \<Longrightarrow> P; 
+       \<lbrakk> xs' = []; v = v'; ys = ys' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using append_eq3_aux[of v ys xs' v' ys'] by blast
 
 lemma append_eq3: "xs@v#ys = xs'@v'#ys' \<Longrightarrow>
      (\<exists>ls. xs'=xs@v#ls \<and> ys=ls@v'#ys') 
@@ -447,6 +452,12 @@ lemma append_eq3: "xs@v#ys = xs'@v'#ys' \<Longrightarrow>
   apply (metis Cons_eq_append_conv)
      apply (case_tac xs') apply force apply simp
   done
+
+lemma append_eq3_elim: "\<lbrakk> xs@v#ys = xs'@v'#ys'; 
+     \<And>ls. \<lbrakk> xs'=xs@v#ls; ys=ls@v'#ys' \<rbrakk> \<Longrightarrow> P; 
+     \<And>ls. \<lbrakk>xs=xs'@v'#ls; ys'=ls@v#ys \<rbrakk> \<Longrightarrow> P;
+           \<lbrakk>xs = xs'; v = v'; ys = ys' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using append_eq3 by (metis (full_types))
     
 lemma cut: "\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. m = (size A, c1, c2) \<longrightarrow>
    \<Gamma> \<turnstile> c1 : A \<longrightarrow> \<Delta>@A#\<Sigma> \<turnstile> c2 : C \<longrightarrow> (\<exists>c3. \<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : C)" (is "?P m")
@@ -609,7 +620,34 @@ next
         c: "\<Delta> @ A # A # \<Sigma> \<turnstile> c : C"
     from c show "\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C "
     proof (* case wk_nat *)
-      show ?thesis sorry
+      fix \<Gamma>1 \<Gamma>2 ca v n
+      let ?v = "VNat n"
+      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2" and c_ca: "c = Suc ca" and c_v: "C = v"
+        and ca: "\<Gamma>1 @ \<Gamma>2 \<turnstile> ca : v"
+      from eq show ?thesis
+      proof (rule append_eq3_elim)
+        fix \<Delta>' assume g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and eq2: "A # \<Sigma> = \<Delta>' @ ?v # \<Gamma>2"
+        from eq2 show ?thesis
+        proof (rule cons_append_eq3_elim)
+          fix \<Delta>'' assume dp: "\<Delta>' = A # \<Delta>''" and s: "\<Sigma> = \<Delta>'' @ ?v # \<Gamma>2"
+          have "\<Delta>@A#A#\<Delta>''@\<Gamma>2 \<turnstile> ca : C" using ca c_v dp s g1 by simp
+          then obtain cb where "\<Delta>@A#\<Delta>''@\<Gamma>2 \<turnstile> cb : C" using 2 m c_ca 
+              apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+          then have "(\<Delta>@A#\<Delta>'')@\<Gamma>2 \<turnstile> cb : C" by simp
+          then have "(\<Delta>@A#\<Delta>'')@ (?v) # \<Gamma>2 \<turnstile> Suc cb : C" by blast
+          then show ?thesis using dp eq2 by auto
+        next
+          assume dp: "\<Delta>' = []" and a: "A = ?v" and s: "\<Sigma> = \<Gamma>2" 
+            
+          show ?thesis sorry
+        qed
+      next
+        fix \<Delta>' assume d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # A # \<Sigma>"
+        show ?thesis sorry
+      next
+        assume d: "\<Delta> = \<Gamma>1" and a: "A = ?v" and eq2: "A # \<Sigma> = \<Gamma>2"
+        show ?thesis sorry
+      qed        
     next (* case wk_fun *)
       show ?thesis sorry
     next (* case union_R *)
