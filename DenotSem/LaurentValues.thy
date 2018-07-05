@@ -301,7 +301,7 @@ lemma append_eq2: "xs@v#ys = xs'@v#ys' \<Longrightarrow>
      apply (case_tac xs') apply force apply simp
   done
     
-lemma union_Le: "\<lbrakk> \<Gamma>' \<turnstile> k : C; \<Gamma>' = \<Gamma>@(A\<squnion>B)#\<Delta> \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
+lemma union_Le_aux: "\<lbrakk> \<Gamma>' \<turnstile> k : C; \<Gamma>' = \<Gamma>@(A\<squnion>B)#\<Delta> \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
 proof (induction \<Gamma>' k C arbitrary: \<Gamma> A B \<Delta> rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
   let ?vp = "VNat n"
@@ -426,7 +426,10 @@ next
   have "False" using le_arrow(1) le_arrow(5) apply simp apply (erule_tac x="A\<squnion>B" in allE) by blast      
   then show ?case ..
 qed
-    
+ 
+lemma union_Le: "\<lbrakk> \<Gamma>@(A\<squnion>B)#\<Delta> \<turnstile> k : C  \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
+  using union_Le_aux by blast
+
 lemma append_eq3_aux: "v # ys = xs' @ v' # ys' \<Longrightarrow>
        (\<exists>ls. xs' = v # ls \<and> ys = ls @ v' # ys') \<or>
        v = v' \<and> ys = ys'"
@@ -555,7 +558,35 @@ next
         then have "\<Gamma>1@v1#v2#(\<Delta>'@\<Gamma>@\<Sigma>) \<turnstile> c' : C" by simp
         then have ?thesis using d g2 apply (rule_tac x="Suc c'" in exI) by auto }
       moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
-        have ?thesis sorry }
+        from c1 have ?thesis
+        proof (* case c1 wk_nat *)
+          show ?thesis sorry
+        next (* case c1 wk_fun *)
+          show ?thesis sorry
+        next (* case c1 union_R *)
+          fix \<Gamma>' c1' v1' v2' assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c: "c1 = Suc c1'" and
+            a: "A = v1' \<squnion> v2'" and c1p_v1: "\<Gamma>' \<turnstile> c1': v1'" and c1p_v2: "\<Gamma>' \<turnstile> c1' : v2'"
+          obtain c3 where c3: "\<Delta>@\<Gamma>@v2#\<Sigma> \<turnstile> c3 : C" using c1p_v1 c das 2 c_v g_gp a
+            apply (erule_tac x="(size v1', c1', c)" in allE) apply (erule impE) 
+            using c1_c c2_c m apply force apply blast done
+          then have "(\<Delta>@\<Gamma>)@v2#\<Sigma> \<turnstile> c3 : C" by simp
+          then obtain c4 where c4: "(\<Delta>@\<Gamma>)@\<Gamma>@\<Sigma> \<turnstile> c4 : C" using c1p_v2 das 2 c_v g_gp a
+            apply (erule_tac x="(size v2', c1', c3)" in allE) apply (erule impE) 
+            using c1_c c2_c m apply force apply blast done
+          then obtain c5 where "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c5 : C"  sorry
+          then show ?thesis by blast
+        next (* case c1 union_L *)
+          show ?thesis sorry
+        next (* case c1 le_nat *)
+          fix n c assume "A = VNat n"
+          with das have "False" by simp
+          then show ?thesis ..
+        next (* case c1 le_arrow *)
+          fix \<Gamma>' v1 c v2 assume "A = v1 \<mapsto> v2"
+          with das have "False" by simp
+          then show ?thesis ..
+        qed          
+      }
       ultimately show ?thesis by blast
     next (* case c2 is le_nat *)
       show ?thesis sorry
@@ -565,7 +596,69 @@ next
   qed
 qed
     
+lemma co: "\<forall> \<Delta> A \<Sigma> c C. m = (size A, c) \<longrightarrow>
+            \<Delta> @ A # A # \<Sigma> \<turnstile> c : C \<longrightarrow> (\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C)"
+proof (induction m rule: wf_induct[of "less_than <*lex*> less_than"])
+  case 1
+  then show ?case by auto
+next
+  case (2 m)
+  then show ?case
+  proof clarify
+    fix \<Delta> and A::val and \<Sigma> c C assume m: "m = (size A, c)" and
+        c: "\<Delta> @ A # A # \<Sigma> \<turnstile> c : C"
+    from c show "\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C "
+    proof (* case wk_nat *)
+      show ?thesis sorry
+    next (* case wk_fun *)
+      show ?thesis sorry
+    next (* case union_R *)
+      show ?thesis sorry
+    next (* case union_L *)
+      fix \<Gamma>1 v1 v2 \<Gamma>2 ca v
+      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and c_ca: "c = Suc ca" and
+        c_v: "C = v" and ca: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> ca : v" 
+      from eq append_eq3[of \<Delta> A "A#\<Sigma>" \<Gamma>1 "v1\<squnion>v2" \<Gamma>2]
+      have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> A#\<Sigma> = ls @ (v1\<squnion>v2) # \<Gamma>2) \<or>
+            (\<exists>ls. \<Delta> = \<Gamma>1 @ (v1\<squnion>v2) # ls \<and> \<Gamma>2 = ls @ A # A # \<Sigma>) \<or>
+             \<Delta> = \<Gamma>1 \<and> A = (v1\<squnion>v2) \<and> A#\<Sigma> = \<Gamma>2 " by blast
+      moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> A#\<Sigma> = ls @ (v1\<squnion>v2) # \<Gamma>2"
+        have ?thesis sorry
+      } moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ (v1\<squnion>v2) # ls \<and> \<Gamma>2 = ls @ A # A # \<Sigma>"
+        have ?thesis sorry
+      } moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = (v1\<squnion>v2) \<and> A#\<Sigma> = \<Gamma>2"
+        from ca das have "(\<Gamma>1 @ [v1, v2]) @ (v1\<squnion>v2) # \<Sigma> \<turnstile> ca : v" by auto
+        then obtain cb where "(\<Gamma>1 @ [v1, v2]) @ v1 # v2 # \<Sigma> \<turnstile> cb : v" 
+          using union_Le[of "(\<Gamma>1@ [v1, v2])" v1 v2 \<Sigma> ca v] by blast
+        then have cb: "\<Gamma>1 @ [v1, v2, v1, v2] @ \<Sigma> \<turnstile> cb : v" by simp
+        have "perm (\<Gamma>1 @ [v1, v2, v1, v2] @ \<Sigma>)
+                   (\<Gamma>1 @ [v1, v1, v2, v2] @ \<Sigma>)" unfolding perm_def by auto
+        then obtain cc where "\<Gamma>1 @ [v1, v1, v2, v2] @ \<Sigma> \<turnstile> cc : v" 
+          using ex cb by blast
+        then have "\<Gamma>1 @ v1 # v1 # [v2, v2] @ \<Sigma> \<turnstile> cc : v" by simp
+        then obtain cd where "\<Gamma>1 @ v1 # [v2, v2] @ \<Sigma> \<turnstile> cd : v" 
+          using 2 m das apply (erule_tac x="(size v1, cc)" in allE)
+          apply (erule impE) apply force apply blast done
+        then have "(\<Gamma>1 @ [v1]) @ v2 # v2 # \<Sigma> \<turnstile> cd : v" by simp
+        then obtain ce where "(\<Gamma>1 @ [v1]) @ v2 # \<Sigma> \<turnstile> ce : v"
+          using 2 m das apply (erule_tac x="(size v2, cd)" in allE)
+          apply (erule impE) apply force apply blast done
+        then have "\<Gamma>1 @ v1 # v2 # \<Sigma> \<turnstile> ce : v" by simp
+        then have "\<Gamma>1 @ (v1 \<squnion> v2) # \<Sigma> \<turnstile> Suc ce : v" by blast
+        then have ?thesis using das c_v by auto
+      } ultimately show ?thesis by blast
+    next (* case le_nat *)
+      fix n ca assume "\<Delta> @ A # A # \<Sigma> = [VNat n]"
+      then have "False" by simp
+      then show ?thesis ..
+    next (* case le_arrow *)
+      
+      show ?thesis sorry
+    qed      
+  qed
+qed
 
-    
+lemma co_gen: "\<Delta> @ \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c : B \<Longrightarrow> \<exists>c'. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c' : B"
+    sorry
     
 end
