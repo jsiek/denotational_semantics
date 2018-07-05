@@ -14,6 +14,7 @@ fun M :: "ty \<Rightarrow> val set" where
   "M (T1\<rightarrow>T2) = {VFun f'|f'. \<forall>v v'. (v,v') \<in> set f' \<longrightarrow> v \<in> M T1 \<longrightarrow> v' \<in> M T2}" |
   "M (T1\<sqinter>T2) =  M T1 \<inter> M T2" |
   "M \<bottom> = {}"
+  
 
 definition subtype :: "ty \<Rightarrow> ty \<Rightarrow> bool" (infix "<:" 60) where
   "T1 <: T2 \<equiv> M T1 \<subseteq> M T2"
@@ -81,7 +82,7 @@ lemma arrow_subtyping: "\<lbrakk> A\<rightarrow>B <: arrows2ty C  \<rbrakk> \<Lo
   apply (induction C)
   apply force
   apply (case_tac a) apply (rename_tac a C Ai Bi) apply simp apply clarify
-  
+  sorry
     
     
 section "Value Ordering via Subtyping"
