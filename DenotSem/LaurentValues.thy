@@ -945,13 +945,25 @@ next
         then show ?thesis ..
             
       next (* c2 is le_arrow *)
-        fix \<Gamma>'' v1 c2' v2 assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and "c2 = Suc c2'" and 
-          c_v12: "C = v1 \<mapsto> v2" and af_gpp: "all_funs \<Gamma>''" and 
-          v1_c2p: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'' \<longrightarrow> [v1] \<turnstile> c2' : v" and
-          c2p_v2: "map cod \<Gamma>'' \<turnstile> c2' : v2" 
-        
+        fix \<Gamma>'' v1' c2' v2' assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and 
+          c_v12: "C = v1' \<mapsto> v2'" and af_gpp: "all_funs \<Gamma>''" and 
+          v1_c2p: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'' \<longrightarrow> [v1'] \<turnstile> c2' : v" and
+          c2p_v2: "map cod \<Gamma>'' \<turnstile> c2' : v2'" 
           
-          
+        let ?G = "\<Delta> @ \<Sigma>" 
+        have af_g: "all_funs ?G" using af_gpp af_gp g_gp gpp by auto
+        let ?cp = "max c1' c2'"
+        have 3: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> [v1'] \<turnstile> ?cp : v"
+          apply clarify apply simp apply (erule disjE) 
+          using v1_c2p gpp weaken_size[of "[v1']" c2'] apply force
+          using v1_c2p gpp weaken_size[of "[v1']" c2'] apply force
+          done
+        have c2p_v2p: "(map cod \<Delta>) @ v2 # (map cod \<Sigma>) \<turnstile> c2' : v2'" using c2p_v2 gpp a by auto
+        have c1_v2: "\<Gamma>' \<turnstile> c1 : v2" sorry
+        obtain c3 where "(map cod \<Delta>) @ \<Gamma>' @ (map cod \<Sigma>) \<turnstile> c3 : v2'"
+          using c2p_v2p gpp c1_v2 2 m c2_c2p g_gp a 
+          apply (erule_tac x="(size v2, c1, c2')" in allE) apply (erule impE) apply force apply blast done
+                        
         show ?thesis sorry
       qed        
     qed
