@@ -34,12 +34,6 @@ lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Lon
   by (metis (no_types, lifting) Suc_le_D le_arrow less_eq_nat.simps(2) nat.case(2))
     
 section "Permutations"
-  
-(*
-fun count :: "'a list \<Rightarrow> 'a \<Rightarrow> nat" where
-  "count [] a = 0" |
-  count_cons: "count (b#ls) a = (if a = b then 1 else 0) + count ls a"
-*)
 
 lemma count_cons[simp]: "count_list (b#ls) a = (if a = b then 1 else 0) + count_list ls a"
   by simp
@@ -168,7 +162,22 @@ lemma perm_map[intro!]: "perm xs ys \<Longrightarrow> perm (map f xs) (map f ys)
     apply (rule perm_add_common) apply force
   apply force
   done
+  
+lemma perm_refl[intro!]: "perm L L"
+  unfolding perm_def by auto
+
+lemma perm_symm: "perm L1 L2 \<Longrightarrow> perm L2 L1"
+  unfolding perm_def by auto
     
+lemma perm_trans: "\<lbrakk> perm L1 L2; perm L2 L3 \<rbrakk> \<Longrightarrow> perm L1 L3"
+  unfolding perm_def apply auto done
+    
+lemma perm_append[intro!]: "perm (L1@L2) (L2@L1)"
+  unfolding perm_def apply auto done
+    
+lemma perm_cons_remove[intro!]: "v \<in> set L \<Longrightarrow> perm L (v#(remove1 v L))"    
+  unfolding perm_def apply auto by (metis Suc_pred neq0_conv nz_count_mem)
+
 section "Admissible Rules"
 
 lemma wk_gen: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists>c'. \<Gamma>@v#\<Delta> \<turnstile> c' : v')"
@@ -218,27 +227,26 @@ next
   then show ?case using union_L[of "[]" v1 v2 "[]"] by auto
 qed
   
-lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : v"
+lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<Gamma>' \<turnstile> c : v"
 proof (induction \<Gamma> c v arbitrary: \<Gamma>' rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
   from wk_nat(3) obtain \<Gamma>1' \<Gamma>2' where gp: "\<Gamma>' = \<Gamma>1'@(VNat n)#\<Gamma>2'"
     using perm_ex_append[of \<Gamma>1] by blast
   have "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2')" using gp perm_remove_common1 wk_nat.prems by fastforce
-  then obtain c' where cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c' : v" using wk_nat.IH by blast
-  then show ?case using gp  by blast
+  then have cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c : v" using wk_nat.IH by blast
+  then show ?case using gp by blast
 next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
   from wk_fun(3) obtain \<Gamma>1' \<Gamma>2' where gp: "\<Gamma>' = \<Gamma>1'@(v1 \<mapsto> v2)#\<Gamma>2'"
     using perm_ex_append[of \<Gamma>1] by blast
   have "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2')" using gp perm_remove_common1 wk_fun.prems by fastforce
-  then obtain c' where cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c' : v" using wk_fun.IH by blast
+  then have cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c : v" using wk_fun.IH by blast
   then show ?case using gp by blast
 next
   case (union_R \<Gamma> c v1 v2)
-  obtain c1 where c1: "\<Gamma>' \<turnstile> c1 : v1" using union_R.IH(1) union_R.prems by blast
-  obtain c2 where c2: "\<Gamma>' \<turnstile> c2 : v2" using union_R.IH(2) union_R.prems by blast
-  then show ?case using c1 c2 apply (rule_tac x="Suc (max c1 c2)" in exI) 
-    by (simp add: deduce_le.union_R weaken_size)
+  have c1: "\<Gamma>' \<turnstile> c : v1" using union_R.IH(1) union_R.prems by blast
+  have c2: "\<Gamma>' \<turnstile> c : v2" using union_R.IH(2) union_R.prems by blast
+  then show ?case using c1 c2 by (simp add: deduce_le.union_R weaken_size)
 next
   case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
   from union_L.prems obtain \<Gamma>1' \<Gamma>2' where gp: "\<Gamma>' = \<Gamma>1'@(v1 \<squnion> v2)#\<Gamma>2'"
@@ -246,8 +254,8 @@ next
   have "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2')" using gp perm_remove_common1 using union_L.prems by fastforce
   then have "perm (\<Gamma>1 @ [v1, v2] @ \<Gamma>2) (\<Gamma>1' @ [v1, v2] @ \<Gamma>2')" using perm_add_common by blast
   then have "perm (\<Gamma>1 @ v1 # v2 # \<Gamma>2) (\<Gamma>1' @ v1 # v2 # \<Gamma>2')" by simp    
-  with union_L.IH[of "\<Gamma>1' @ v1 # v2 # \<Gamma>2'"] obtain c' where
-    cp: "\<Gamma>1' @ v1 # v2 # \<Gamma>2' \<turnstile> c' : v" by blast
+  with union_L.IH[of "\<Gamma>1' @ v1 # v2 # \<Gamma>2'"] have
+    cp: "\<Gamma>1' @ v1 # v2 # \<Gamma>2' \<turnstile> c : v" by blast
   then show ?case using gp by blast
 next
   case (le_nat n c)
@@ -257,16 +265,15 @@ next
   case (le_arrow \<Gamma> v1 c v2)
   have af_gp: "all_funs \<Gamma>'" using le_arrow(1) le_arrow(5) using perm_set_eq by blast
   have "perm (map cod \<Gamma>) (map cod \<Gamma>')" using le_arrow.prems by blast
-  then obtain c2 where c2: "map cod \<Gamma>' \<turnstile> c2 : v2" using le_arrow.IH(2) by blast
+  then have c2: "map cod \<Gamma>' \<turnstile> c : v2" using le_arrow.IH(2) by blast
   have c1: "\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c : v"
   proof clarify
     fix v v' assume vv_gp: "v\<mapsto>v' \<in> set \<Gamma>'"
     then have "v\<mapsto>v' \<in> set \<Gamma>" using le_arrow.prems perm_set_eq by blast
     then show "[v1] \<turnstile> c : v" using le_arrow.IH(1) by blast
   qed
-  let ?c = "max c2 c"
-  have c2_2: "map cod \<Gamma>' \<turnstile> ?c : v2" using c2 weaken_size by auto
-  have c1_2: "\<forall>v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> ?c : v" using c1 weaken_size by auto    
+  have c2_2: "map cod \<Gamma>' \<turnstile> c : v2" using c2 weaken_size by auto
+  have c1_2: "\<forall>v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c : v" using c1 weaken_size by auto    
   show ?case using af_gp c1_2 c2_2 by blast
 qed
   
@@ -284,6 +291,11 @@ lemma append_eq: "v \<noteq> v' \<Longrightarrow> xs@v#ys = xs'@v'#ys' \<Longrig
   apply simp
   apply (case_tac xs') apply force apply simp
   done
+
+lemma append_eq_elim: "\<lbrakk> xs@v#ys = xs'@v'#ys'; v \<noteq> v';
+             \<And>ls. \<lbrakk> xs'=xs@v#ls; ys=ls@v'#ys' \<rbrakk> \<Longrightarrow> P; 
+             \<And>ls. \<lbrakk> xs=xs'@v'#ls; ys'=ls@v#ys \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using append_eq apply metis done
     
 lemma append_eq2_aux: "v#ys = xs'@v#ys' \<Longrightarrow>
    (\<exists>ls. xs'=v#ls \<and> ys=ls@v#ys') \<or> (\<exists>ls. ys'=ls@v#ys) \<or> ys = ys'"  
@@ -459,7 +471,494 @@ lemma append_eq3_elim: "\<lbrakk> xs@v#ys = xs'@v'#ys';
            \<lbrakk>xs = xs'; v = v'; ys = ys' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using append_eq3 by (metis (full_types))
     
+
+lemma co: "\<forall> \<Delta> A \<Sigma> c C. m = (size A, c) \<longrightarrow>
+            \<Delta> @ A # A # \<Sigma> \<turnstile> c : C \<longrightarrow> (\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C)"
+proof (induction m rule: wf_induct[of "less_than <*lex*> less_than"])
+  case 1
+  then show ?case by auto
+next
+  case (2 m)
+  then show ?case
+  proof clarify
+    fix \<Delta> and A::val and \<Sigma> c C assume m: "m = (size A, c)" and
+        c: "\<Delta> @ A # A # \<Sigma> \<turnstile> c : C"
+    from c show "\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C "
+    proof (* case wk_nat *)
+      fix \<Gamma>1 \<Gamma>2 ca v n
+      let ?v = "VNat n"
+      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2" and c_ca: "c = Suc ca" and c_v: "C = v"
+        and ca: "\<Gamma>1 @ \<Gamma>2 \<turnstile> ca : v"
+      have p1: "perm (\<Delta> @ A # A # \<Sigma>) (\<Gamma>1 @ ?v # \<Gamma>2)" using eq by auto        
+      from eq show ?thesis
+      proof (rule append_eq3_elim)
+        fix \<Delta>' assume g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and eq2: "A # \<Sigma> = \<Delta>' @ ?v # \<Gamma>2"
+        from eq2 show ?thesis
+        proof (rule cons_append_eq3_elim)
+          fix \<Delta>'' assume dp: "\<Delta>' = A # \<Delta>''" and s: "\<Sigma> = \<Delta>'' @ ?v # \<Gamma>2"
+          have "\<Delta>@A#A#\<Delta>''@\<Gamma>2 \<turnstile> ca : C" using ca c_v dp s g1 by simp
+          then obtain cb where "\<Delta>@A#\<Delta>''@\<Gamma>2 \<turnstile> cb : C" using 2 m c_ca 
+              apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+          then have "(\<Delta>@A#\<Delta>'')@\<Gamma>2 \<turnstile> cb : C" by simp
+          then have "(\<Delta>@A#\<Delta>'')@ ?v # \<Gamma>2 \<turnstile> Suc cb : C" by blast
+          then show ?thesis using dp eq2 by auto
+        next
+          assume dp: "\<Delta>' = []" and a: "A = ?v" and s: "\<Sigma> = \<Gamma>2" 
+          from ca dp s g1 c_v have "\<Delta> @ A # \<Sigma> \<turnstile> ca : C" by simp
+          then show ?thesis by blast
+        qed
+      next
+        fix \<Delta>' assume d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # A # \<Sigma>"
+        have "(\<Gamma>1 @ \<Delta>') @ A # A # \<Sigma> \<turnstile> ca : C" using ca c_v d g2 by simp
+        then obtain cb where "(\<Gamma>1 @ \<Delta>') @ A # \<Sigma> \<turnstile> cb : C" using 2 m c_ca
+          apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+        then have "\<Gamma>1 @ (\<Delta>' @ A # \<Sigma>) \<turnstile> cb : C" by simp
+        then have "\<Gamma>1 @ ?v # (\<Delta>' @ A # \<Sigma>) \<turnstile> Suc cb : C" by blast
+        then show ?thesis using d by auto
+      next
+        assume d: "\<Delta> = \<Gamma>1" and a: "A = ?v" and eq2: "A # \<Sigma> = \<Gamma>2"
+        then show ?thesis using ca c_v by blast
+      qed
+        
+    next (* case wk_fun *)
+      fix \<Gamma>1 \<Gamma>2 ca v v1 v2
+      let ?v = "v1\<mapsto>v2"
+      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2" and c_ca: "c = Suc ca" and c_v: "C = v"
+        and ca: "\<Gamma>1 @ \<Gamma>2 \<turnstile> ca : v"
+      from eq show ?thesis
+      proof (rule append_eq3_elim)
+        fix \<Delta>' assume g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and eq2: "A # \<Sigma> = \<Delta>' @ ?v # \<Gamma>2"
+        from eq2 show ?thesis
+        proof (rule cons_append_eq3_elim)
+          fix \<Delta>'' assume dp: "\<Delta>' = A # \<Delta>''" and s: "\<Sigma> = \<Delta>'' @ ?v # \<Gamma>2"
+          have "\<Delta>@A#A#\<Delta>''@\<Gamma>2 \<turnstile> ca : C" using ca c_v dp s g1 by simp
+          then obtain cb where "\<Delta>@A#\<Delta>''@\<Gamma>2 \<turnstile> cb : C" using 2 m c_ca 
+              apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+          then have "(\<Delta>@A#\<Delta>'')@\<Gamma>2 \<turnstile> cb : C" by simp
+          then have "(\<Delta>@A#\<Delta>'')@ ?v # \<Gamma>2 \<turnstile> Suc cb : C" by blast
+          then show ?thesis using dp eq2 by auto
+        next
+          assume dp: "\<Delta>' = []" and a: "A = ?v" and s: "\<Sigma> = \<Gamma>2" 
+          from ca dp s g1 c_v have "\<Delta> @ A # \<Sigma> \<turnstile> ca : C" by simp
+          then show ?thesis by blast
+        qed
+      next
+        fix \<Delta>' assume d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # A # \<Sigma>"
+        have "(\<Gamma>1 @ \<Delta>') @ A # A # \<Sigma> \<turnstile> ca : C" using ca c_v d g2 by simp
+        then obtain cb where "(\<Gamma>1 @ \<Delta>') @ A # \<Sigma> \<turnstile> cb : C" using 2 m c_ca
+          apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+        then have "\<Gamma>1 @ (\<Delta>' @ A # \<Sigma>) \<turnstile> cb : C" by simp
+        then have "\<Gamma>1 @ ?v # (\<Delta>' @ A # \<Sigma>) \<turnstile> Suc cb : C" by blast
+        then show ?thesis using d by auto
+      next
+        assume d: "\<Delta> = \<Gamma>1" and a: "A = ?v" and eq2: "A # \<Sigma> = \<Gamma>2"
+        then show ?thesis using ca c_v by blast
+      qed
+        
+    next (* case union_R *)
+      fix \<Gamma> ca v1 v2 assume g: "\<Delta> @ A # A # \<Sigma> = \<Gamma>" and c_ca: "c = Suc ca" and
+        c_v12: "C = v1 \<squnion> v2" and ca_v1: "\<Gamma> \<turnstile> ca : v1" and ca_v2: "\<Gamma> \<turnstile> ca : v2" 
+      obtain cb where cb_v1: "\<Delta>@A#\<Sigma> \<turnstile> cb : v1"  using 2 m c_ca ca_v1 g
+        apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+      obtain cd where cd_v2: "\<Delta>@A#\<Sigma> \<turnstile> cd : v2"  using 2 m c_ca ca_v2 g
+        apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+      have "\<Delta>@A#\<Sigma> \<turnstile> Suc (max cb cd) : v1 \<squnion> v2" using cb_v1 cd_v2 using weaken_size by auto
+      then show ?thesis using c_v12 by blast
+    
+    next (* case union_L *)
+      fix \<Gamma>1 v1 v2 \<Gamma>2 ca v
+      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and c_ca: "c = Suc ca" and
+        c_v: "C = v" and ca: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> ca : v" 
+      from eq show ?thesis
+      proof (rule append_eq3_elim)
+        fix \<Delta>' assume  g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and as: "A # \<Sigma> = \<Delta>' @ (v1 \<squnion> v2) # \<Gamma>2"
+        show ?thesis
+        proof (cases \<Delta>')
+          case Nil
+          from Nil as have a: "A = v1\<squnion>v2" by simp
+          have ca2: "\<Delta> @ (v1\<squnion>v2) # v1 # v2 # \<Sigma> \<turnstile> ca : C" using g1 c_v ca as Nil by simp
+          then obtain cb where cb: "\<Delta> @ v1 # v2 # v1 # v2 # \<Sigma> \<turnstile> cb : C" and cb_ca: "cb < ca" 
+            using union_Le[of \<Delta> v1 v2 "v1 # v2 # \<Sigma>" ca C] by blast
+          have "perm (\<Delta> @ v1 # v2 # v1 # v2 # \<Sigma>) (\<Delta> @ v1 # v1 # v2 # v2 # \<Sigma>)" 
+            unfolding perm_def apply auto done
+          then have "\<Delta> @ v1 # v1 # v2 # v2 # \<Sigma> \<turnstile> cb : C" using ex cb by auto
+          then obtain cc where "\<Delta> @ v1 # v2 # v2 # \<Sigma> \<turnstile> cc : C" using 2 m a
+            apply (erule_tac x="(size v1, cb)" in allE) apply (erule impE) apply force by blast
+          then have "(\<Delta> @ [v1]) @ v2 # v2 # \<Sigma> \<turnstile> cc : C" by simp
+          then obtain cd where "(\<Delta> @ [v1]) @ v2 # \<Sigma> \<turnstile> cd : C" using 2 m a
+            apply (erule_tac x="(size v2, cc)" in allE) apply (erule impE) apply force apply blast done
+          then show ?thesis using a by auto
+        next
+          case (Cons a \<Delta>'')
+          then have ca2: "\<Delta> @ A # A # \<Delta>'' @ v1 # v2 # \<Gamma>2 \<turnstile> ca : C" using g1 c_v ca as by simp
+          then obtain cb where "\<Delta> @ A # \<Delta>'' @ v1 # v2 # \<Gamma>2 \<turnstile> cb : C" using 2 m c_ca
+            apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force apply blast done
+          then have "(\<Delta> @ A # \<Delta>'') @ v1 # v2 # \<Gamma>2 \<turnstile> cb : C" by simp
+          then have "(\<Delta> @ A # \<Delta>'') @ (v1 \<squnion> v2) # \<Gamma>2 \<turnstile> Suc cb : C" by blast
+          then show ?thesis using Cons as by auto
+        qed          
+      next
+        fix \<Delta>' assume d: "\<Delta> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # A # \<Sigma>" 
+        have "(\<Gamma>1 @ v1 # v2 # \<Delta>') @ A # A # \<Sigma> \<turnstile> ca : C" using ca c_v d g2 by simp 
+        then obtain cb where "(\<Gamma>1 @ v1 # v2 # \<Delta>') @ A # \<Sigma> \<turnstile> cb : C" using 2 m c_ca
+          apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
+        then have "\<Gamma>1 @ v1 # v2 # \<Delta>' @ A # \<Sigma> \<turnstile> cb : C" by simp
+        then have "\<Gamma>1 @ (v1 \<squnion> v2) # \<Delta>' @ A # \<Sigma> \<turnstile> Suc cb : C" by blast          
+        then show ?thesis using d by auto
+      next
+        assume d: "\<Delta> = \<Gamma>1" and a: "A = (v1\<squnion>v2)" and as: "A#\<Sigma> = \<Gamma>2"
+        from ca d a as have "(\<Gamma>1 @ [v1, v2]) @ (v1\<squnion>v2) # \<Sigma> \<turnstile> ca : v" by auto
+        then obtain cb where "(\<Gamma>1 @ [v1, v2]) @ v1 # v2 # \<Sigma> \<turnstile> cb : v" 
+          using union_Le[of "(\<Gamma>1@ [v1, v2])" v1 v2 \<Sigma> ca v] by blast
+        then have cb: "\<Gamma>1 @ [v1, v2, v1, v2] @ \<Sigma> \<turnstile> cb : v" by simp
+        have "perm (\<Gamma>1 @ [v1, v2, v1, v2] @ \<Sigma>)
+                   (\<Gamma>1 @ [v1, v1, v2, v2] @ \<Sigma>)" unfolding perm_def by auto
+        then obtain cc where "\<Gamma>1 @ [v1, v1, v2, v2] @ \<Sigma> \<turnstile> cc : v" 
+          using ex cb by blast
+        then have "\<Gamma>1 @ v1 # v1 # [v2, v2] @ \<Sigma> \<turnstile> cc : v" by simp
+        then obtain cd where "\<Gamma>1 @ v1 # [v2, v2] @ \<Sigma> \<turnstile> cd : v" 
+          using 2 m d a as apply (erule_tac x="(size v1, cc)" in allE)
+          apply (erule impE) apply force apply blast done
+        then have "(\<Gamma>1 @ [v1]) @ v2 # v2 # \<Sigma> \<turnstile> cd : v" by simp
+        then obtain ce where "(\<Gamma>1 @ [v1]) @ v2 # \<Sigma> \<turnstile> ce : v"
+          using 2 m d a as apply (erule_tac x="(size v2, cd)" in allE)
+          apply (erule impE) apply force apply blast done
+        then have "\<Gamma>1 @ v1 # v2 # \<Sigma> \<turnstile> ce : v" by simp
+        then have "\<Gamma>1 @ (v1 \<squnion> v2) # \<Sigma> \<turnstile> Suc ce : v" by blast
+        then show ?thesis using d a as c_v by auto
+      qed
+        
+    next (* case le_nat *)
+      fix n ca assume "\<Delta> @ A # A # \<Sigma> = [VNat n]"
+      then have "False" by simp
+      then show ?thesis ..
+
+    next (* case le_arrow *)
+      fix \<Gamma> v1 ca v2 assume g: "\<Delta> @ A # A # \<Sigma> = \<Gamma>" and c_ca: "c = Suc ca" and
+        c_v12: "C = v1 \<mapsto> v2" and afg: "all_funs \<Gamma>" and
+        ca_v1: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> ca : v" and
+        ca_v2: "map cod \<Gamma> \<turnstile> ca : v2"
+      let ?G = "\<Delta> @ A # \<Sigma>"
+      obtain A1 A2 where a: "A = A1\<mapsto>A2" using g afg apply (case_tac A) by auto
+      have "map cod \<Gamma> = (map cod \<Delta>) @ A2 # A2 # (map cod \<Sigma>)" using g ca_v2 a by auto
+      then have "(map cod \<Delta>) @ A2 # A2 # (map cod \<Sigma>) \<turnstile> ca : v2" using ca_v2 by simp
+      then obtain cb where "(map cod \<Delta>) @ A2 # (map cod \<Sigma>) \<turnstile> cb : v2" using 2 m a
+          apply (erule_tac x="(size A2, ca)" in allE) apply (erule impE) apply force by blast
+      then have cb_v2: "map cod ?G \<turnstile> cb : v2" using a by simp
+      have ca_v1: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> [v1] \<turnstile> ca : v" 
+        using ca_v1 g apply clarify 
+        apply (subgoal_tac "v \<mapsto> v' \<in> set (\<Delta> @ A # A # \<Sigma>)") prefer 2 apply force by blast 
+      have "all_funs ?G" using afg g by auto
+      then have "?G \<turnstile> Suc (max ca cb) : v1 \<mapsto> v2" using cb_v2 ca_v1 
+          le_arrow[of "?G" v1 "max ca cb" v2] weaken_size 
+        by (metis (no_types, lifting) max.cobounded2 max_def)
+      then show ?thesis using c_v12 by blast
+    qed      
+  qed
+qed
+
+lemma co_gen: "\<Delta> @ \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c : B \<Longrightarrow> \<exists>c'. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c' : B"
+proof (induction \<Gamma> arbitrary: \<Delta> c)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons a \<Gamma>)
+  have "perm (\<Delta> @ (a # \<Gamma>) @ (a # \<Gamma>) @ \<Sigma>)
+             (\<Delta> @ a # a # \<Gamma> @ \<Gamma> @ \<Sigma>)" unfolding perm_def by auto
+  then obtain c' where "\<Delta> @ a # a # \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c' : B" using Cons.prems ex by blast
+  then obtain c'' where "\<Delta> @ a # \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c'' : B" using co by blast
+  then have "(\<Delta> @ [a]) @ \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c'' : B" by simp
+  then obtain c3 where "(\<Delta> @ [a]) @ \<Gamma> @ \<Sigma> \<turnstile> c3 : B" 
+    using Cons.IH[of "\<Delta>@[a]"] by blast 
+  then show ?case by auto
+qed
+
+abbreviation cut_IH :: "nat \<times> nat \<times> nat \<Rightarrow> bool" where
+  "cut_IH m \<equiv> \<forall>y. (y, m) \<in> less_than <*lex*> less_than <*lex*> less_than \<longrightarrow>
+      (\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. y = (size A, c1, c2) \<longrightarrow> \<Gamma> \<turnstile> c1 : A \<longrightarrow>
+          \<Delta> @ A # \<Sigma> \<turnstile> c2 : C \<longrightarrow> (\<exists>c3. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c3 : C))"   
+  
+lemma cut_any_wk: fixes \<Gamma>1 \<Gamma>2 c v'
+  assumes c1: "\<Gamma> \<turnstile> c1 : A" and IH: "cut_IH m" and m: "m = (size A, c1, c2)" and
+          1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ v' # \<Gamma>2 " and c2_c: "c2 = Suc c" and
+          c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : C" 
+  shows "\<exists>c3. \<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : C"
+proof -
+  let ?v = "v'"
+  from 1 append_eq3[of \<Delta> A \<Sigma> \<Gamma>1 "?v" \<Gamma>2]
+  have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2) \<or>
+            (\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>) \<or>
+             \<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2 " by blast
+  moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2"
+    then obtain \<Delta>' where g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ ?v # \<Gamma>2" by blast
+    with c have "\<Delta>@A#(\<Delta>'@\<Gamma>2) \<turnstile> c : C" by auto
+    then obtain c' where cp: "\<Delta>@\<Gamma>@\<Delta>'@\<Gamma>2 \<turnstile> c' : C" using c1 c IH 
+      apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) 
+       apply (simp add: c2_c less_eq m) apply blast done
+    then
+    have ?thesis using wk_gen[of "\<Delta>@\<Gamma>@\<Delta>'" \<Gamma>2 c' C] s by auto }
+  moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>"
+    then obtain \<Delta>' where d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # \<Sigma>" by blast
+    with c have "(\<Gamma>1 @ \<Delta>') @ A # \<Sigma> \<turnstile> c : C" by simp
+    then obtain c' where cp: "(\<Gamma>1@\<Delta>')@\<Gamma>@\<Sigma> \<turnstile> c' : C" using c1 IH 
+      apply (erule_tac x="(size A, c1, c)" in allE)  apply (erule impE) 
+       apply (simp add: c2_c less_eq m) apply blast done 
+    then have ?thesis using wk_gen[of \<Gamma>1 "\<Delta>'@\<Gamma>@\<Sigma>" c' C] d g2 by auto
+  }
+  moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
+    then have c_2: "\<Delta>@\<Sigma> \<turnstile> c : C" using c by simp
+    then have ?thesis using weaken by blast }
+  ultimately show ?thesis by blast
+qed
+  
+lemma cut_any_union_R:
+  fixes \<Gamma>' \<Gamma>'' c2' v1' v2' m assumes 2: "cut_IH m" and m: "m = (size A, c1, c2)" and
+    c1p_v12: "\<Gamma>' \<turnstile> c1 : A" and
+    gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and
+    c_v12p: "C = v1' \<squnion> v2'" and
+    c2p_v1p: "\<Gamma>'' \<turnstile> c2' : v1'" and c2p_v2p: "\<Gamma>'' \<turnstile> c2' : v2'" 
+  shows "\<exists>c3. \<Delta>@\<Gamma>'@\<Sigma> \<turnstile> c3 : C"
+proof -
+  have "\<Delta> @ A # \<Sigma> \<turnstile> c2' : v1'" using gpp c2p_v1p by simp
+  then obtain c3 where c3: "\<Delta> @ \<Gamma>' @ \<Sigma> \<turnstile> c3 : v1'" using c1p_v12 2 m c2_c2p
+    apply (erule_tac x="(size A, c1, c2')" in allE) apply (erule impE) apply force apply blast done
+  have "\<Delta> @ A # \<Sigma> \<turnstile> c2' : v2'" using gpp c2p_v2p by simp
+  then obtain c4 where c4: "\<Delta> @ \<Gamma>' @ \<Sigma> \<turnstile> c4 : v2'" using c1p_v12 2 m c2_c2p
+    apply (erule_tac x="(size A, c1, c2')" in allE) apply (erule impE) apply force apply blast done
+  have "\<Delta> @ \<Gamma>' @ \<Sigma> \<turnstile> Suc (max c3 c4) : v1' \<squnion> v2'" using c3 c4 weaken_size by auto
+  then show ?thesis using c_v12p by auto
+qed 
+
+lemma cut_any_union_L_part_1:
+  fixes \<Gamma>' \<Gamma>1 v1' v2' \<Gamma>2 c2' v \<Delta>'
+  assumes 2: "cut_IH m" and m: "m = (size A, c1, c2)" and
+    c1p_v12: "\<Gamma>' \<turnstile> c1 : A" and
+  eq:"\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1' \<squnion> v2') # \<Gamma>2" and 
+  c2_c2p: "c2 = Suc c2'" and c2p_v: "\<Gamma>1 @ v1' # v2' # \<Gamma>2 \<turnstile> c2' : C" and
+  g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ (v1' \<squnion> v2') # \<Gamma>2"
+shows "\<exists>c3. \<Delta>@\<Gamma>'@\<Sigma> \<turnstile> c3 : C"
+proof -
+  have "\<Delta> @ A # (\<Delta>' @ v1' # v2' # \<Gamma>2) \<turnstile> c2' : C" using c2p_v g1 by simp
+  then obtain c3 where "\<Delta> @ \<Gamma>' @ (\<Delta>' @ v1' # v2' # \<Gamma>2) \<turnstile> c3 : C" using c1p_v12 2 m c2_c2p
+    apply (erule_tac x="(size A, c1, c2')" in allE) apply (erule impE) apply force apply blast done
+  then have "(\<Delta> @ \<Gamma>' @ \<Delta>') @ v1' # v2' # \<Gamma>2 \<turnstile> c3 : C" by simp
+  then have "(\<Delta> @ \<Gamma>' @ \<Delta>') @ (v1' \<squnion> v2') # \<Gamma>2 \<turnstile> Suc c3 : C" by blast
+  then show ?thesis using s by auto
+qed
+          
+lemma cut_any_union_L_part_2:
+  fixes \<Gamma>' \<Gamma>1 v1' v2' \<Gamma>2 c2' v \<Sigma>'
+  assumes 2: "cut_IH m" and m: "m = (size A, c1, c2)" and
+    c1p_v12: "\<Gamma>' \<turnstile> c1 : A" and eq:"\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1' \<squnion> v2') # \<Gamma>2" and 
+  c2_c2p: "c2 = Suc c2'" and c_v: "C = v" and c2p_v: "\<Gamma>1 @ v1' # v2' # \<Gamma>2 \<turnstile> c2' : v" and
+  d: "\<Delta> = \<Gamma>1 @ (v1' \<squnion> v2') # \<Sigma>'" and g2: "\<Gamma>2 = \<Sigma>' @ A # \<Sigma>"
+shows "\<exists>c3. \<Delta>@\<Gamma>'@\<Sigma> \<turnstile> c3 : C"
+proof -
+  have "(\<Gamma>1 @ v1' # v2' # \<Sigma>') @ A # \<Sigma> \<turnstile> c2' : C" using d g2 c_v c2p_v by simp 
+  then obtain c3 where "(\<Gamma>1 @ v1' # v2' # \<Sigma>') @ \<Gamma>' @ \<Sigma> \<turnstile> c3 : C" using c1p_v12 2 m c2_c2p
+    apply (erule_tac x="(size A, c1, c2')" in allE) apply (erule impE) apply force apply blast done
+  then have "\<Gamma>1 @ v1' # v2' # (\<Sigma>' @ \<Gamma>' @ \<Sigma>) \<turnstile> c3 : C" by simp
+  then have "\<Gamma>1 @ (v1' \<squnion> v2') # (\<Sigma>' @ \<Gamma>' @ \<Sigma>) \<turnstile> Suc c3 : C" by blast
+  then show ?thesis using d g2 by auto
+qed
+          
 lemma cut: "\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. m = (size A, c1, c2) \<longrightarrow>
+   \<Gamma> \<turnstile> c1 : A \<longrightarrow> \<Delta>@A#\<Sigma> \<turnstile> c2 : C \<longrightarrow> (\<exists>c3. \<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : C)" (is "?P m")
+proof (induction m rule: wf_induct[of "less_than <*lex*> (less_than <*lex*> less_than)"])
+  case 1
+  then show ?case by auto
+next
+  case (2 m)
+  show ?case 
+  proof clarify
+    fix \<Gamma> A \<Delta> \<Sigma> C c1 c2
+    assume m: "m = (size A, c1, c2)" and c1: "\<Gamma> \<turnstile> c1 : A" and
+      c2: "\<Delta> @ A # \<Sigma> \<turnstile> c2 : C"
+    from c1 show "\<exists>c3. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c3 : C"
+    proof (* case c1 is wk_nat *)
+      fix \<Gamma>1 \<Gamma>2 c v n
+      assume g: "\<Gamma> = \<Gamma>1 @ VNat n # \<Gamma>2" and c1_c: "c1 = Suc c" and
+        a_v: "A = v" and c_v: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
+      then have "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : A" by simp
+      then obtain c' where "\<Delta>@(\<Gamma>1@\<Gamma>2)@\<Sigma> \<turnstile> c' : C" using 2 c1_c m c_v c2
+        apply (erule_tac x="(size A, c, c2)" in allE) apply (erule impE) apply force
+          apply blast done
+      then have "(\<Delta>@\<Gamma>1)@(\<Gamma>2@\<Sigma>) \<turnstile> c' : C" by simp
+      then show ?thesis using g wk_nat[of "\<Delta>@\<Gamma>1" "\<Gamma>2@\<Sigma>"] by auto
+          
+    next (* case c1 is wk_fun *)
+      fix \<Gamma>1 \<Gamma>2 c1' v v1 v2 assume g: "\<Gamma> = \<Gamma>1 @ (v1 \<mapsto> v2) # \<Gamma>2" and
+        c1_c1p: "c1 = Suc c1'" and A_v: "A = v" and c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c1' : v"
+      then have "\<Gamma>1 @ \<Gamma>2 \<turnstile> c1' : A" by simp
+      then obtain c' where "\<Delta>@(\<Gamma>1@\<Gamma>2)@\<Sigma> \<turnstile> c' : C" using 2 c1_c1p m c2
+        apply (erule_tac x="(size A, c1', c2)" in allE) apply (erule impE) apply force apply blast done
+      then have "(\<Delta>@\<Gamma>1)@(\<Gamma>2@\<Sigma>) \<turnstile> c' : C" by simp
+      then show ?thesis using g wk_fun[of "\<Delta>@\<Gamma>1" "\<Gamma>2@\<Sigma>" c' C v1 v2] by auto
+          
+    next (* case c1 is union_R *)
+      fix \<Gamma>' c1' v1 v2 assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
+        a: "A = v1 \<squnion> v2" and c1p_v1: "\<Gamma>' \<turnstile> c1' : v1" and c1p_v2: "\<Gamma>' \<turnstile> c1' : v2" 
+      have c1p_v12: "\<Gamma>' \<turnstile> c1 : A" using c1p_v1 c1p_v2 a c1_c1p by blast
+      
+      show ?thesis using c2
+      proof (* case c2 is wk_nat *)
+        fix \<Gamma>1 \<Gamma>2 c v n assume eq: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ VNat n # \<Gamma>2" and 
+          c2_c: "c2 = Suc c" and c_v: "C = v" and c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
+        then show ?thesis using  c1p_v12 2 m g_gp 
+            cut_any_wk[of \<Gamma>' c1 A m c2 \<Delta> \<Sigma> \<Gamma>1] by blast
+            
+      next (* case c2 is wk_fun *)
+        fix \<Gamma>1 \<Gamma>2 c v v1 v2 assume eq: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<mapsto> v2) # \<Gamma>2" and c2_c: "c2 = Suc c"
+          and c_v: "C = v" and c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
+        then show ?thesis using  c1p_v12 2 m g_gp 
+            cut_any_wk[of \<Gamma>' c1 A m c2 \<Delta> \<Sigma> \<Gamma>1] by blast
+
+      next (* case c2 is union_R *)
+        fix \<Gamma>'' c2' v1' v2' assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and
+          c_v12p: "C = v1' \<squnion> v2'" and c2p_v1p: "\<Gamma>'' \<turnstile> c2' : v1'" and c2p_v2p: "\<Gamma>'' \<turnstile> c2' : v2'" 
+        then show ?thesis using 2 m g_gp c1p_v12 cut_any_union_R by blast            
+
+      next (* case c2 is union_L *)
+        fix \<Gamma>1 v1' v2' \<Gamma>2 c2' v assume eq:"\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1' \<squnion> v2') # \<Gamma>2" and 
+          c2_c2p: "c2 = Suc c2'" and c_v: "C = v" and c2p_v: "\<Gamma>1 @ v1' # v2' # \<Gamma>2 \<turnstile> c2' : v"
+        show ?thesis using eq
+        proof (rule append_eq3_elim)
+          fix \<Delta>' assume g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ (v1' \<squnion> v2') # \<Gamma>2"
+          then show ?thesis using 2 m c1p_v12 eq c2_c2p c_v c2p_v g_gp
+              cut_any_union_L_part_1[of m A c1 c2 \<Gamma>' \<Delta> \<Sigma> \<Gamma>1 v1' v2'] by blast
+        next
+          fix \<Sigma>' assume d: "\<Delta> = \<Gamma>1 @ (v1' \<squnion> v2') # \<Sigma>'" and g2: "\<Gamma>2 = \<Sigma>' @ A # \<Sigma>"
+          then show ?thesis using 2 m c1p_v12 eq c2_c2p c_v c2p_v g_gp
+              cut_any_union_L_part_2[of m A c1 c2 \<Gamma>' \<Delta> \<Sigma> \<Gamma>1 v1' v2'] by blast
+        next
+          assume d: "\<Delta> = \<Gamma>1" and a2: "A = v1' \<squnion> v2'" and s: "\<Sigma> = \<Gamma>2"
+          have "\<Delta> @ v1' # v2' # \<Sigma> \<turnstile> c2' : C" using c2p_v d s c_v by simp
+          then obtain c3 where c3: "\<Delta> @ \<Gamma>' @ v2' # \<Sigma> \<turnstile> c3 : C" using c1p_v1 2 m c1_c1p c2_c2p a a2
+            apply (erule_tac x="(size v1', c1', c2')" in allE) apply (erule impE) 
+             apply force apply blast done
+          then have "(\<Delta> @ \<Gamma>') @ v2' # \<Sigma> \<turnstile> c3 : C" by simp
+          then obtain c4 where c4: "(\<Delta> @ \<Gamma>') @ \<Gamma>' @ \<Sigma> \<turnstile> c4 : C" using c1p_v2 2 m c1_c1p c2_c2p a a2
+            apply (erule_tac x="(size v2', c1', c3)" in allE) apply (erule impE) 
+             apply force apply blast done
+          then obtain c5 where "\<Delta> @ \<Gamma>' @ \<Sigma> \<turnstile> c5 : C" using co_gen[of \<Delta> \<Gamma>' \<Sigma>] by auto 
+          then show ?thesis using g_gp by blast
+        qed
+          
+      next (* case c2 is le_nat *)
+        fix n c2' assume g: "\<Delta> @ A # \<Sigma> = [VNat n]" and c2_c2p: "c2 = c2'" and
+          c_n: "C = VNat n" 
+        have d: "\<Delta>=[]" using g apply (cases \<Delta>) by auto
+        have "A = VNat n" using g d by simp
+        then have "False" using a by simp then show ?thesis ..
+            
+      next (* case c2 is le_arrow *)
+        fix \<Gamma>'' v1 c2' v2 assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and af_gp: "all_funs \<Gamma>''" 
+        have "False" using af_gp a gpp by auto
+        then show ?thesis ..
+      qed
+
+    next (* case c1 is union_L *)
+      show ?thesis sorry
+          
+    next (* case c1 is le_nat *)
+      fix n c1' assume g: "\<Gamma> = [VNat n]" and c1_c1p: "c1 = c1'" and a: "A = VNat n"
+      then have c1p: "\<Gamma> \<turnstile> c1' : A" by blast
+      show ?thesis using c2
+      proof (* case c2 is wk_nat *)
+        fix \<Gamma>1 \<Gamma>2 c2' v n assume eq: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ VNat n # \<Gamma>2" and
+          c2_c2p: "c2 = Suc c2'" and c_v: "C = v" and c2p_v: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c2' : v"         
+        then show ?thesis using g c1_c1p a cut_any_wk by auto
+      next (* case c2 is wk_fun *)
+        fix \<Gamma>1 \<Gamma>2 c v v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<mapsto> v2) # \<Gamma>2" and 
+          "c2 = Suc c" and "C = v" and "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
+        then show ?thesis using g c1_c1p a cut_any_wk by auto
+      next (* case c2 is union_R *)
+        fix \<Gamma>' c v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "c2 = Suc c" and "C = v1 \<squnion> v2" and
+          "\<Gamma>' \<turnstile> c : v1" and "\<Gamma>' \<turnstile> c : v2"
+        then show ?thesis using 2 m g c1p a cut_any_union_R by blast
+      next (* case c2 is union_L *)
+        fix \<Gamma>1 v1 v2 \<Gamma>2 c2' v assume eq: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and
+          c2_c2p: "c2 = Suc c2'" and c_v: "C = v" and c2p_v: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> c2' : v"
+        show ?thesis using eq
+        proof (rule append_eq_elim)
+          show "A \<noteq> v1 \<squnion> v2" using a by simp
+        next
+          fix ls assume "\<Gamma>1 = \<Delta> @ A # ls" and "\<Sigma> = ls @ (v1 \<squnion> v2) # \<Gamma>2"
+          then show ?thesis using 2 m c1p eq c2_c2p c_v c2p_v c1_c1p
+              cut_any_union_L_part_1[of m A c1 c2 \<Gamma> \<Delta> \<Sigma>] by blast 
+        next
+          fix ls assume "\<Delta> = \<Gamma>1 @ (v1 \<squnion> v2) # ls" and "\<Gamma>2 = ls @ A # \<Sigma>"
+          then show ?thesis using 2 m c1p eq c2_c2p c_v c2p_v c1_c1p
+              cut_any_union_L_part_2[of m A c1 c2 \<Gamma> \<Delta> \<Sigma>] by blast 
+        qed
+      next (* case c2 is le_nat *)
+        fix n' c2' assume "\<Delta> @ A # \<Sigma> = [VNat n']" and "c2 = c2'" and "C = VNat n'" 
+        then show ?thesis using a g by auto 
+            
+      next (* case c2 is le_arrow *)
+        fix \<Gamma>' v1 c v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "all_funs \<Gamma>'"
+        then have "False" using a by auto
+        then show ?thesis ..
+      qed        
+          
+    next (* case c1 is le_arrow *)
+      fix \<Gamma>' v1 c1' v2 assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
+        a: "A = v1 \<mapsto> v2" and af_gp: "all_funs \<Gamma>'" and 
+        v1_c: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c1' : v" and
+        c_v2: "map cod \<Gamma>' \<turnstile> c1' : v2"
+      then have c1: "\<Gamma>' \<turnstile> c1 : A" by blast
+      show ?thesis using c2
+      proof (* c2 is wk_nat *)
+        fix \<Gamma>1 \<Gamma>2 c2' v n assume "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ VNat n # \<Gamma>2" and "c2 = Suc c2'" and
+          "C = v" and "\<Gamma>1 @ \<Gamma>2 \<turnstile> c2' : v" 
+        then show ?thesis using 2 m c1 g_gp cut_any_wk[of \<Gamma>' c1 A m c2 \<Delta> \<Sigma> \<Gamma>1] by blast
+          
+      next (* c2 is wk_fun *)
+        fix \<Gamma>1 \<Gamma>2 c v v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<mapsto> v2) # \<Gamma>2" and "c2 = Suc c"
+          and "C = v" and "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
+        then show ?thesis using 2 m c1 g_gp cut_any_wk[of \<Gamma>' c1 A m c2 \<Delta> \<Sigma> \<Gamma>1] by blast
+
+      next (* c2 is union_R *)
+        fix \<Gamma>' c v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "c2 = Suc c" and "C = v1 \<squnion> v2" and
+          "\<Gamma>' \<turnstile> c : v1" and "\<Gamma>' \<turnstile> c : v2" 
+        then show ?thesis using 2 m g_gp c1 cut_any_union_R[of m] by blast
+
+      next (* c2 is union_L *)
+        fix \<Gamma>1 v1 v2 \<Gamma>2 c2' v assume eq: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and 
+          c2_c2p: "c2 = Suc c2'" and c_v: "C = v" and c2p: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> c2' : v"
+        show ?thesis using eq
+        proof (rule append_eq_elim)
+          show "A \<noteq> v1 \<squnion> v2" using a by simp
+        next
+          fix ls assume "\<Gamma>1 = \<Delta> @ A # ls" and "\<Sigma> = ls @ (v1 \<squnion> v2) # \<Gamma>2"
+          then show ?thesis using 2 m c1 eq c2_c2p c_v c2p c1_c1p g_gp
+              cut_any_union_L_part_1[of m A c1 c2 \<Gamma> \<Delta> \<Sigma>] by blast
+        next
+          fix ls assume "\<Delta> = \<Gamma>1 @ (v1 \<squnion> v2) # ls" and "\<Gamma>2 = ls @ A # \<Sigma>"
+          then show ?thesis using 2 m c1 eq c2_c2p c_v c2p c1_c1p g_gp
+              cut_any_union_L_part_2[of m A c1 c2 \<Gamma> \<Delta> \<Sigma>] by blast
+        qed
+          
+      next (* c2 is le_nat *)
+        fix n c assume "\<Delta> @ A # \<Sigma> = [VNat n]"
+        then have "False" using a apply (cases \<Delta>) apply auto done
+        then show ?thesis ..
+            
+      next (* c2 is le_arrow *)
+        fix \<Gamma>'' v1 c2' v2 assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and "c2 = Suc c2'" and 
+          c_v12: "C = v1 \<mapsto> v2" and af_gpp: "all_funs \<Gamma>''" and 
+          v1_c2p: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'' \<longrightarrow> [v1] \<turnstile> c2' : v" and
+          c2p_v2: "map cod \<Gamma>'' \<turnstile> c2' : v2" 
+        
+          
+          
+        show ?thesis sorry
+      qed        
+    qed
+  qed
+qed
+      
+lemma cut2: "\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. m = (size A, c1, c2) \<longrightarrow>
    \<Gamma> \<turnstile> c1 : A \<longrightarrow> \<Delta>@A#\<Sigma> \<turnstile> c2 : C \<longrightarrow> (\<exists>c3. \<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : C)" (is "?P m")
 proof (induction m rule: wf_induct[of "less_than <*lex*> (less_than <*lex*> less_than)"])
   case 1
@@ -543,6 +1042,7 @@ next
         using c1 gp by blast
       show ?thesis apply (rule_tac x="Suc (max c3 c4)" in exI)
         using c3 c4 c_v12 weaken_size deduce_le.union_R by auto
+          
     next (* case c2 is union_L *)
       fix \<Gamma>1 v1 v2 \<Gamma>2 c v assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and
         c2_c: "c2 = Suc c" and c_v: "C = v" and c: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> c : v"
@@ -571,8 +1071,14 @@ next
       moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
         from c1 have ?thesis
         proof (* case c1 wk_nat *)
+          
+          
+          
           show ?thesis sorry
         next (* case c1 wk_fun *)
+          
+          
+          
           show ?thesis sorry
         next (* case c1 union_R *)
           fix \<Gamma>' c1' v1' v2' assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c: "c1 = Suc c1'" and
@@ -584,9 +1090,13 @@ next
           then obtain c4 where c4: "(\<Delta>@\<Gamma>)@\<Gamma>@\<Sigma> \<turnstile> c4 : C" using c1p_v2 das 2 c_v g_gp a
             apply (erule_tac x="(size v2', c1', c3)" in allE) apply (erule impE) 
             using c1_c c2_c m apply force apply blast done
-          then obtain c5 where "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c5 : C"  sorry
+          then obtain c5 where "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c5 : C" apply simp using co_gen by blast
           then show ?thesis by blast
         next (* case c1 union_L *)
+          
+          
+          
+          
           show ?thesis sorry
         next (* case c1 le_nat *)
           fix n c assume "A = VNat n"
@@ -599,117 +1109,30 @@ next
         qed          
       }
       ultimately show ?thesis by blast
+          
     next (* case c2 is le_nat *)
-      show ?thesis sorry
+      fix n c assume "\<Delta> @ A # \<Sigma> = [VNat n]" and "c2 = c" and "C = VNat n"
+      then show ?thesis using c1 apply (case_tac \<Delta>) by auto  
+          
     next (* case c2 is le_arrow *)
-      show ?thesis sorry
-    qed      
-  qed
-qed
-    
-lemma co: "\<forall> \<Delta> A \<Sigma> c C. m = (size A, c) \<longrightarrow>
-            \<Delta> @ A # A # \<Sigma> \<turnstile> c : C \<longrightarrow> (\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C)"
-proof (induction m rule: wf_induct[of "less_than <*lex*> less_than"])
-  case 1
-  then show ?case by auto
-next
-  case (2 m)
-  then show ?case
-  proof clarify
-    fix \<Delta> and A::val and \<Sigma> c C assume m: "m = (size A, c)" and
-        c: "\<Delta> @ A # A # \<Sigma> \<turnstile> c : C"
-    from c show "\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C "
-    proof (* case wk_nat *)
-      fix \<Gamma>1 \<Gamma>2 ca v n
-      let ?v = "VNat n"
-      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2" and c_ca: "c = Suc ca" and c_v: "C = v"
-        and ca: "\<Gamma>1 @ \<Gamma>2 \<turnstile> ca : v"
-      from eq show ?thesis
-      proof (rule append_eq3_elim)
-        fix \<Delta>' assume g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and eq2: "A # \<Sigma> = \<Delta>' @ ?v # \<Gamma>2"
-        from eq2 show ?thesis
-        proof (rule cons_append_eq3_elim)
-          fix \<Delta>'' assume dp: "\<Delta>' = A # \<Delta>''" and s: "\<Sigma> = \<Delta>'' @ ?v # \<Gamma>2"
-          have "\<Delta>@A#A#\<Delta>''@\<Gamma>2 \<turnstile> ca : C" using ca c_v dp s g1 by simp
-          then obtain cb where "\<Delta>@A#\<Delta>''@\<Gamma>2 \<turnstile> cb : C" using 2 m c_ca 
-              apply (erule_tac x="(size A, ca)" in allE) apply (erule impE) apply force by blast
-          then have "(\<Delta>@A#\<Delta>'')@\<Gamma>2 \<turnstile> cb : C" by simp
-          then have "(\<Delta>@A#\<Delta>'')@ (?v) # \<Gamma>2 \<turnstile> Suc cb : C" by blast
-          then show ?thesis using dp eq2 by auto
-        next
-          assume dp: "\<Delta>' = []" and a: "A = ?v" and s: "\<Sigma> = \<Gamma>2" 
-            
-          show ?thesis sorry
-        qed
-      next
-        fix \<Delta>' assume d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # A # \<Sigma>"
-        show ?thesis sorry
-      next
-        assume d: "\<Delta> = \<Gamma>1" and a: "A = ?v" and eq2: "A # \<Sigma> = \<Gamma>2"
-        show ?thesis sorry
-      qed        
-    next (* case wk_fun *)
-      show ?thesis sorry
-    next (* case union_R *)
-      show ?thesis sorry
-    next (* case union_L *)
-      fix \<Gamma>1 v1 v2 \<Gamma>2 ca v
-      assume eq: "\<Delta> @ A # A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and c_ca: "c = Suc ca" and
-        c_v: "C = v" and ca: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> ca : v" 
-      from eq append_eq3[of \<Delta> A "A#\<Sigma>" \<Gamma>1 "v1\<squnion>v2" \<Gamma>2]
-      have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> A#\<Sigma> = ls @ (v1\<squnion>v2) # \<Gamma>2) \<or>
-            (\<exists>ls. \<Delta> = \<Gamma>1 @ (v1\<squnion>v2) # ls \<and> \<Gamma>2 = ls @ A # A # \<Sigma>) \<or>
-             \<Delta> = \<Gamma>1 \<and> A = (v1\<squnion>v2) \<and> A#\<Sigma> = \<Gamma>2 " by blast
-      moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> A#\<Sigma> = ls @ (v1\<squnion>v2) # \<Gamma>2"
-        have ?thesis sorry
-      } moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ (v1\<squnion>v2) # ls \<and> \<Gamma>2 = ls @ A # A # \<Sigma>"
-        have ?thesis sorry
-      } moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = (v1\<squnion>v2) \<and> A#\<Sigma> = \<Gamma>2"
-        from ca das have "(\<Gamma>1 @ [v1, v2]) @ (v1\<squnion>v2) # \<Sigma> \<turnstile> ca : v" by auto
-        then obtain cb where "(\<Gamma>1 @ [v1, v2]) @ v1 # v2 # \<Sigma> \<turnstile> cb : v" 
-          using union_Le[of "(\<Gamma>1@ [v1, v2])" v1 v2 \<Sigma> ca v] by blast
-        then have cb: "\<Gamma>1 @ [v1, v2, v1, v2] @ \<Sigma> \<turnstile> cb : v" by simp
-        have "perm (\<Gamma>1 @ [v1, v2, v1, v2] @ \<Sigma>)
-                   (\<Gamma>1 @ [v1, v1, v2, v2] @ \<Sigma>)" unfolding perm_def by auto
-        then obtain cc where "\<Gamma>1 @ [v1, v1, v2, v2] @ \<Sigma> \<turnstile> cc : v" 
-          using ex cb by blast
-        then have "\<Gamma>1 @ v1 # v1 # [v2, v2] @ \<Sigma> \<turnstile> cc : v" by simp
-        then obtain cd where "\<Gamma>1 @ v1 # [v2, v2] @ \<Sigma> \<turnstile> cd : v" 
-          using 2 m das apply (erule_tac x="(size v1, cc)" in allE)
-          apply (erule impE) apply force apply blast done
-        then have "(\<Gamma>1 @ [v1]) @ v2 # v2 # \<Sigma> \<turnstile> cd : v" by simp
-        then obtain ce where "(\<Gamma>1 @ [v1]) @ v2 # \<Sigma> \<turnstile> ce : v"
-          using 2 m das apply (erule_tac x="(size v2, cd)" in allE)
-          apply (erule impE) apply force apply blast done
-        then have "\<Gamma>1 @ v1 # v2 # \<Sigma> \<turnstile> ce : v" by simp
-        then have "\<Gamma>1 @ (v1 \<squnion> v2) # \<Sigma> \<turnstile> Suc ce : v" by blast
-        then have ?thesis using das c_v by auto
-      } ultimately show ?thesis by blast
-    next (* case le_nat *)
-      fix n ca assume "\<Delta> @ A # A # \<Sigma> = [VNat n]"
-      then have "False" by simp
-      then show ?thesis ..
-    next (* case le_arrow *)
+      fix \<Gamma>' v1 c2a v2 assume gp: "\<Delta> @ A # \<Sigma> = \<Gamma>'" and c2_c: "c2 = Suc c2a" and 
+        c_v12: "C = v1 \<mapsto> v2" and afg: "all_funs \<Gamma>'" and
+        c2a_v1: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'\<longrightarrow>[v1] \<turnstile> c2a : v" and
+        c2a_v2: "map cod \<Gamma>' \<turnstile> c2a : v2" 
       
-      show ?thesis sorry
+      obtain A1 A2 where a: "A = A1\<mapsto>A2" using gp afg apply (case_tac A) by auto
+      then have "map cod \<Gamma>' = (map cod \<Delta>) @ A2 # (map cod \<Sigma>)" using gp by auto
+      then have c2a: "(map cod \<Delta>) @ A2 # (map cod \<Sigma>) \<turnstile> c2a : v2" using c2a_v2 by simp
+      
+      from c1 a have c1_2: "\<Gamma> \<turnstile> c1 : A1\<mapsto>A2" by simp
+      
+          
+          
+          
+          
+      show ?thesis sorry  
     qed      
   qed
-qed
-
-lemma co_gen: "\<Delta> @ \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c : B \<Longrightarrow> \<exists>c'. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c' : B"
-proof (induction \<Gamma> arbitrary: \<Delta> c)
-  case Nil
-  then show ?case by auto
-next
-  case (Cons a \<Gamma>)
-  have "perm (\<Delta> @ (a # \<Gamma>) @ (a # \<Gamma>) @ \<Sigma>)
-             (\<Delta> @ a # a # \<Gamma> @ \<Gamma> @ \<Sigma>)" unfolding perm_def by auto
-  then obtain c' where "\<Delta> @ a # a # \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c' : B" using Cons.prems ex by blast
-  then obtain c'' where "\<Delta> @ a # \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c'' : B" using co by blast
-  then have "(\<Delta> @ [a]) @ \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c'' : B" by simp
-  then obtain c3 where "(\<Delta> @ [a]) @ \<Gamma> @ \<Sigma> \<turnstile> c3 : B" 
-    using Cons.IH[of "\<Delta>@[a]"] by blast 
-  then show ?case by auto
 qed
 
     

@@ -1,0 +1,30 @@
+
+Could P(N) (or B(A)) be used for semantic subtyping?
+And avoid the need for the E and give inversion principles?
+
+
+V = n | Pf(V) x V
+
+A,B,C,D ::= n | A → B | A ∩ B
+
+[n] = {n}
+[A → B] = { (vs,v) | vs ⊆ [A] implies v ∈ [B] }
+[A ∩ B] = [A] ∩ [B]
+
+A <: B def= [A] ⊆ [B]
+
+
+Suppose A → B <: C → D
+  { (vs,v) | vs ⊆ [A] implies v ∈ [B] }
+  ⊆
+  { (vs,v) | vs ⊆ [C] implies v ∈ [D] }
+
+nts C <: A
+<=  [C] ⊆ [A]
+  Suppose x ∈ [C].
+  nts x ∈ [A].
+
+
+
+1-800-433-7300
+
