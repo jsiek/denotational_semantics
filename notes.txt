@@ -1,4 +1,36 @@
 
+Γ |- A    Δ, A, Σ |- C 
+----------------------
+Δ, Γ, Σ |- C
+
+
+case le_arrow le_arrow
+A → B
+C → D
+
+Have:
+A ⊦ c1 : dom(Γ)      C ⊦ c3 : dom(Δ), A, dom(Σ)
+cod(Γ) ⊦ c2 : B      cod(Δ), B, cod(Σ) ⊦ c4 : D
+---------------      --------------------------
+Γ ⊦ A → B            Δ, A → B, Σ ⊦ C → D
+
+
+Proof:
+
+C ⊦ c3' : A   A ⊦ c1 : dom(Γ)
+----------------------------(IH)
+C ⊦ c4 : dom(Γ)
+C ⊦ c3' : dom(Δ),dom(Σ)        cod(Γ) ⊦ c2 : B   cod(Δ),B,cod(Σ) ⊦ c4 : D
+-------------------------      -----------------------------------------(IH)
+C ⊦ dom(Δ), dom(Γ), dom(Σ)     cod(Δ), cod(Γ), cod(Σ) ⊦ D
+---------------------------------------------------------(→)
+Δ, Γ, Σ ⊦ C → D
+
+
+
+
+
+================================================================================
 Could P(N) (or B(A)) be used for semantic subtyping?
 And avoid the need for the E and give inversion principles?
 
@@ -23,8 +55,4 @@ nts C <: A
 <=  [C] ⊆ [A]
   Suppose x ∈ [C].
   nts x ∈ [A].
-
-
-
-1-800-433-7300
 
