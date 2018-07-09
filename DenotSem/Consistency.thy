@@ -1,5 +1,5 @@
-theory ConsistencyOld
-  imports Values
+theory Consistency
+  imports LaurentValues
 begin
 
 section "Consistency"
@@ -7,8 +7,7 @@ section "Consistency"
 inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
     inconsistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "!~" 52) where
   vnat_consis[intro!]: "(VNat n) ~ (VNat n)" |
-  vfun_consis[intro!]: "\<lbrakk> \<forall> v1 v1' v2 v2'. (v1,v1') \<in> set f1 \<and> (v2,v2') \<in> set f2 \<longrightarrow>
-                        (v1 ~ v2 \<and> v1' ~ v2') \<or> v1 !~ v2 \<rbrakk> \<Longrightarrow> (VFun f1) ~ (VFun f2)" |
+  vfun_consis[intro!]: "\<lbrakk> (v1 ~ v2 \<and> v1' ~ v2') \<or> v1 !~ v2 \<rbrakk> \<Longrightarrow> (v1 ) ~ (VFun f2)" |
   vnat_inconsis[intro!]: "n \<noteq> n' \<Longrightarrow> (VNat n) !~ (VNat n')" |
   vfun_inconsis[intro!]: "\<lbrakk> (v1, v1') \<in> set f1; (v2, v2') \<in> set f2; v1 ~ v2; v1' !~ v2' \<rbrakk> 
                          \<Longrightarrow> (VFun f1) !~ (VFun f2)" |
