@@ -7,34 +7,45 @@ section "Consistency"
 inductive consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) and
     inconsistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "!~" 52) where
   vnat_consis[intro!]: "(VNat n) ~ (VNat n)" |
-  vfun_consis[intro!]: "\<lbrakk> (v1 ~ v2 \<and> v1' ~ v2') \<or> v1 !~ v2 \<rbrakk> \<Longrightarrow> (v1 ) ~ (VFun f2)" |
+  vfun_consis[intro!]: "\<lbrakk> (v1 ~ v2 \<and> v1' ~ v2') \<or> v1 !~ v2 \<rbrakk> \<Longrightarrow> (v1\<mapsto>v1') ~ (v2\<mapsto>v2')" |
+  vjoin_consisL[intro!]: "\<lbrakk> v\<mapsto>v' ~ v1; v\<mapsto>v' ~ v2\<rbrakk> \<Longrightarrow> v\<mapsto>v' ~ (v1 \<squnion> v2)" |
+  vjoin_consisR[intro!]: "\<lbrakk> v1 ~ v; v2 ~ v \<rbrakk> \<Longrightarrow> v1 \<squnion> v2 ~ v" |
   vnat_inconsis[intro!]: "n \<noteq> n' \<Longrightarrow> (VNat n) !~ (VNat n')" |
-  vfun_inconsis[intro!]: "\<lbrakk> (v1, v1') \<in> set f1; (v2, v2') \<in> set f2; v1 ~ v2; v1' !~ v2' \<rbrakk> 
-                         \<Longrightarrow> (VFun f1) !~ (VFun f2)" |
-  vnat_vfun_inconsis[intro!]: "VNat n !~ VFun f" |
-  vfun_vnat_inconsis[intro!]: "VFun f !~ VNat n"
+  vfun_inconsis[intro!]: "\<lbrakk> v1 ~ v2; v1' !~ v2' \<rbrakk> \<Longrightarrow> (v1\<mapsto>v1') !~ (v2\<mapsto>v2')" |
+  vnat_vfun_inconsis[intro!]: "VNat n !~ v \<mapsto> v'" |
+  vfun_vnat_inconsis[intro!]: "v \<mapsto> v' !~ VNat n" |
+  vjoin_inconsisL[intro!]: "\<lbrakk> v\<mapsto>v' !~ v1 \<or> v\<mapsto>v' !~ v2 \<rbrakk> \<Longrightarrow> v\<mapsto>v' !~ v1 \<squnion> v2" |
+  vjoin_inconsisR[intro!]: "\<lbrakk> v1 !~ v \<or> v2 !~ v \<rbrakk> \<Longrightarrow> v1 \<squnion> v2 !~ v"
 
 inductive_cases 
   vnat_consis_inv[elim!]: "VNat n ~ VNat n'" and
-  vfun_consis_inv[elim!]: "VFun f ~ VFun f'" and
+  vfun_consis_inv[elim!]: "v1\<mapsto>v1' ~ v2 \<mapsto> v2'" and
   vnat_inconsis_inv[elim!]: "VNat n !~ VNat n'" and
-  vfun_inconsis_inv[elim!]: "VFun f !~ VFun f'" and
-  vnat_vfun_consis_inv[elim!]: "VNat n ~ VFun f" and
-  vfun_vnat_consis_inv[elim!]: "VFun f ~ VNat n"
+  vfun_inconsis_inv[elim!]: "v1\<mapsto>v1' !~ v2 \<mapsto> v2'" and
+  vnat_vfun_consis_inv[elim!]: "VNat n ~ v2 \<mapsto> v2'" and
+  vfun_vnat_consis_inv[elim!]: "v1\<mapsto>v1' ~ VNat n" and
+  vfun_any_consis_inv: "v \<mapsto> v' ~ v1" and 
+  vfun_any_inconsis_inv: "v \<mapsto> v' !~ v1" and
+  vfun_vjoin_consis_inv[elim!]: "v \<mapsto> v' ~ v1 \<squnion> v2" and 
+  vfun_vjoin_inconsis_inv[elim!]: " v \<mapsto> v' !~ v1 \<squnion> v2" and
+  vjoin_consis_inv[elim!]: "v1 \<squnion> v2 ~ v" and
+  vjoin_inconsis_inv[elim!]: "v1 \<squnion> v2 !~ v" 
   
 inductive consis_env :: "val list \<Rightarrow> val list \<Rightarrow> bool" where
   consis_env_nil[intro!]: "consis_env [] []" |
   consis_env_cons[intro!]: "\<lbrakk> v ~ v'; consis_env \<rho> \<rho>' \<rbrakk> \<Longrightarrow> consis_env (v#\<rho>) (v'#\<rho>')" 
 
-definition is_fun :: "func \<Rightarrow> bool" where
-  "is_fun f \<equiv> VFun f ~ VFun f"
+definition is_fun :: "val \<Rightarrow> bool" where
+  "is_fun f \<equiv> f ~ f"
     
 inductive is_val :: "val \<Rightarrow> bool" where
   vnat_is_val[intro!]: "is_val (VNat n)" |
-  vfun_is_val[intro!]: "\<lbrakk> is_fun f; \<forall> v v'. (v,v') \<in> set f \<longrightarrow> is_val v \<and> is_val v' \<rbrakk>
-                        \<Longrightarrow> is_val (VFun f)"
+  vfun_is_val[intro!]: "\<lbrakk> is_val v; is_val v' \<rbrakk> \<Longrightarrow> is_val (v \<mapsto> v')" |
+  vunion_is_val[intro!]: "\<lbrakk> is_val v1; is_val v2; v1 ~ v2 \<rbrakk> \<Longrightarrow> is_val (v1 \<squnion> v2)"
+
 inductive_cases
-  vfun_is_val_inv[elim!]: "is_val (VFun f)"
+  vfun_is_val_inv[elim!]: "is_val (v \<mapsto> v')" and
+  vjoin_is_val_inv[elim!]: "is_val (v1 \<squnion> v2)"
 
 definition val_env :: "val list \<Rightarrow> bool" where
   "val_env \<rho> \<equiv> \<forall>k. k < length \<rho> \<longrightarrow> is_val (\<rho>!k)"
@@ -43,8 +54,9 @@ definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix
   "(\<rho>::val list) \<sqsubseteq> \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k \<sqsubseteq> \<rho>'!k)" 
     
 lemma consis_and_not_consis: "(v ~ v' \<longrightarrow> \<not> (v !~ v')) \<and> (v !~ v' \<longrightarrow> \<not>(v ~ v'))"
-  by (induction rule: consistent_inconsistent.induct) blast+ 
-        
+  by (induction rule: consistent_inconsistent.induct) force+
+  
+(*        
 lemma consis_or_not_aux: "\<forall> v v'. n = vsize v \<longrightarrow> v ~ v' \<or> v !~ v'"
  apply (induction n rule: nat_less_induct)
  apply (rule allI)+ apply (rule impI)
@@ -271,5 +283,6 @@ lemma join_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2; \<rho>1 \<squnion>
   apply (case_tac "v \<squnion> v'") apply auto
   apply (case_tac "\<rho> \<squnion> \<rho>'") apply auto
   done
-
+*)
+     
 end
