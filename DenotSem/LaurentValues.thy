@@ -867,7 +867,13 @@ next
       qed
 
     next (* case c1 is union_L *)
-      show ?thesis sorry
+      fix \<Gamma>1 v1 v2 \<Gamma>2 c1' v assume g: "\<Gamma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and 
+       c1_c: "c1 = Suc c1'" and A_v: "A = v" and c1p_v: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> c1' : v" 
+      obtain c3 where "\<Delta>@(\<Gamma>1@v1#v2#\<Gamma>2)@\<Sigma> \<turnstile> c3 : C" using c1p_v c2 2 m c1_c g A_v
+        apply (erule_tac x="(size A, c1', c2)" in allE) apply (erule impE) apply force by blast
+      then have "(\<Delta>@\<Gamma>1)@v1#v2#(\<Gamma>2@\<Sigma>) \<turnstile> c3 : C" by simp
+      then have "(\<Delta>@\<Gamma>1)@(v1\<squnion>v2)#(\<Gamma>2@\<Sigma>) \<turnstile> Suc c3 : C" by (rule union_L)
+      then show ?thesis using g by auto
           
     next (* case c1 is le_nat *)
       fix n c1' assume g: "\<Gamma> = [VNat n]" and c1_c1p: "c1 = c1'" and a: "A = VNat n"
@@ -1012,183 +1018,76 @@ next
     qed
   qed
 qed
-      
-lemma cut2: "\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. m = (size A, c1, c2) \<longrightarrow>
-   \<Gamma> \<turnstile> c1 : A \<longrightarrow> \<Delta>@A#\<Sigma> \<turnstile> c2 : C \<longrightarrow> (\<exists>c3. \<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : C)" (is "?P m")
-proof (induction m rule: wf_induct[of "less_than <*lex*> (less_than <*lex*> less_than)"])
-  case 1
-  then show ?case by auto
-next
-  case (2 m)
-  show ?case 
-  proof clarify
-    fix \<Gamma> A \<Delta> \<Sigma> C c1 c2
-    assume m: "m = (size A, c1, c2)" and c1: "\<Gamma> \<turnstile> c1 : A" and c2: "\<Delta> @ A # \<Sigma> \<turnstile> c2 : C"
-    from c2 show "\<exists>c3. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c3 : C"
-    proof (* case c2 is wk_nat *)
-      fix \<Gamma>1 \<Gamma>2 c v n
-      let ?v = "VNat n"
-      assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2 " and c2_c: "c2 = Suc c" and c_v: "C = v" and
-        c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
-      from 1 append_eq3[of \<Delta> A \<Sigma> \<Gamma>1 "?v" \<Gamma>2]
-      have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2) \<or>
-            (\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>) \<or>
-             \<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2 " by blast
-      moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2"
-        then obtain \<Delta>' where g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ ?v # \<Gamma>2" by blast
-        with c c_v have "\<Delta>@A#(\<Delta>'@\<Gamma>2) \<turnstile> c : C" by auto
-        then obtain c' where cp: "\<Delta>@\<Gamma>@\<Delta>'@\<Gamma>2 \<turnstile> c' : C" using c1 c 2 c_v
-          apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) 
-           apply (simp add: c2_c less_eq m) apply blast done
-        then
-        have ?thesis using wk_nat[of "\<Delta>@\<Gamma>@\<Delta>'" \<Gamma>2 c' C] s by auto }
-      moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>"
-        then obtain \<Delta>' where d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # \<Sigma>" by blast
-        with c c_v have "(\<Gamma>1 @ \<Delta>') @ A # \<Sigma> \<turnstile> c : C" by simp
-        then obtain c' where cp: "(\<Gamma>1@\<Delta>')@\<Gamma>@\<Sigma> \<turnstile> c' : C" using c1 2 c_v
-          apply (erule_tac x="(size A, c1, c)" in allE)  apply (erule impE) 
-           apply (simp add: c2_c less_eq m) apply blast done 
-        then have ?thesis using wk_nat[of \<Gamma>1 "\<Delta>'@\<Gamma>@\<Sigma>" c' C n] d g2
-          apply (rule_tac x="Suc c'" in exI) by simp
-        }
-      moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
-        then have c_2: "\<Delta>@\<Sigma> \<turnstile> c : C" using c c_v by simp
-        then have ?thesis using weaken by blast }
-      ultimately show ?thesis by blast
-    next (* case c2 is wk_fun *)
-      fix \<Gamma>1 \<Gamma>2 c v v1 v2
-      let ?v = "v1 \<mapsto> v2"
-      assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ ?v # \<Gamma>2 " and c2_c: "c2 = Suc c" and c_v: "C = v" and
-        c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
-      from 1 append_eq3[of \<Delta> A \<Sigma> \<Gamma>1 "?v" \<Gamma>2]
-      have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2) \<or>
-            (\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>) \<or>
-             \<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2 " by blast
-      moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2"
-        then obtain \<Delta>' where g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ ?v # \<Gamma>2" by blast
-        with c c_v have "\<Delta>@A#(\<Delta>'@\<Gamma>2) \<turnstile> c : C" by auto
-        then obtain c' where cp: "\<Delta>@\<Gamma>@\<Delta>'@\<Gamma>2 \<turnstile> c' : C" using c1 c 2 c_v
-          apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) 
-           apply (simp add: c2_c less_eq m) apply blast done
-        then
-        have ?thesis using wk_fun[of "\<Delta>@\<Gamma>@\<Delta>'" \<Gamma>2 c' C] s by auto }
-      moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>"
-        then obtain \<Delta>' where d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # \<Sigma>" by blast
-        with c c_v have "(\<Gamma>1 @ \<Delta>') @ A # \<Sigma> \<turnstile> c : C" by simp
-        then obtain c' where cp: "(\<Gamma>1@\<Delta>')@\<Gamma>@\<Sigma> \<turnstile> c' : C" using c1 2 c_v
-          apply (erule_tac x="(size A, c1, c)" in allE)  apply (erule impE) 
-           apply (simp add: c2_c less_eq m) apply blast done 
-        then have ?thesis using wk_fun[of \<Gamma>1 "\<Delta>'@\<Gamma>@\<Sigma>" c' C] d g2
-          apply (rule_tac x="Suc c'" in exI) by simp
-        }
-      moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
-        then have c_2: "\<Delta>@\<Sigma> \<turnstile> c : C" using c c_v by simp
-        then have ?thesis using weaken by blast }
-      ultimately show ?thesis by blast
-    next (* case c2 is union_R *)
-      fix \<Gamma>' c v1 v2
-      assume gp: "\<Delta> @ A # \<Sigma> = \<Gamma>'" and c2_c: "c2 = Suc c" and c_v12: "C = v1 \<squnion> v2" and
-        c_v1: "\<Gamma>' \<turnstile> c : v1" and c_v2: "\<Gamma>' \<turnstile> c : v2"
-      obtain c3 where c3: "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : v1" using c_v1 2 c2_c m 
-        apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) apply force
-        using c1 gp by blast
-      obtain c4 where c4: "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c4 : v2" using c_v2 2 c2_c m 
-        apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) apply force
-        using c1 gp by blast
-      show ?thesis apply (rule_tac x="Suc (max c3 c4)" in exI)
-        using c3 c4 c_v12 weaken_size deduce_le.union_R by auto
-          
-    next (* case c2 is union_L *)
-      fix \<Gamma>1 v1 v2 \<Gamma>2 c v assume 1: "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2" and
-        c2_c: "c2 = Suc c" and c_v: "C = v" and c: "\<Gamma>1 @ v1 # v2 # \<Gamma>2 \<turnstile> c : v"
-      let ?v = "v1\<squnion>v2"
-      from 1 append_eq3[of \<Delta> A \<Sigma> \<Gamma>1 "?v" \<Gamma>2]
-      have "(\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2) \<or>
-            (\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>) \<or>
-             \<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2 " by blast
-      moreover { assume "\<exists>ls. \<Gamma>1 = \<Delta> @ A # ls \<and> \<Sigma> = ls @ ?v # \<Gamma>2"
-        then obtain \<Delta>' where g1: "\<Gamma>1 = \<Delta> @ A # \<Delta>'" and s: "\<Sigma> = \<Delta>' @ ?v # \<Gamma>2" by blast
-        have "\<Delta>@A#(\<Delta>'@v1#v2#\<Gamma>2) \<turnstile> c : C" using c g1 s c_v by simp
-        then obtain c' where "\<Delta>@\<Gamma>@(\<Delta>'@v1#v2#\<Gamma>2) \<turnstile> c' : C" using 2 m c2_c c1
-          apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) apply force
-          apply blast done
-        then have "(\<Delta>@\<Gamma>@\<Delta>')@v1#v2#\<Gamma>2 \<turnstile> c' : C" by simp
-        then have "(\<Delta>@\<Gamma>@\<Delta>')@(v1\<squnion>v2)#\<Gamma>2 \<turnstile> Suc c' : C" by blast
-        then have ?thesis using s by auto }
-      moreover { assume "\<exists>ls. \<Delta> = \<Gamma>1 @ ?v # ls \<and> \<Gamma>2 = ls @ A # \<Sigma>"
-        then obtain \<Delta>' where d: "\<Delta> = \<Gamma>1 @ ?v # \<Delta>'" and g2: "\<Gamma>2 = \<Delta>' @ A # \<Sigma>" by blast
-        with c c_v have "(\<Gamma>1@v1#v2#\<Delta>')@A#\<Sigma> \<turnstile> c : C" by simp
-        then obtain c' where cp: "(\<Gamma>1@v1#v2#\<Delta>')@\<Gamma>@\<Sigma> \<turnstile> c' : C" using 2 c1
-          apply (erule_tac x="(size A, c1, c)" in allE) apply (erule impE) 
-           apply (simp add: c2_c m) apply blast done
-        then have "\<Gamma>1@v1#v2#(\<Delta>'@\<Gamma>@\<Sigma>) \<turnstile> c' : C" by simp
-        then have ?thesis using d g2 apply (rule_tac x="Suc c'" in exI) by auto }
-      moreover { assume das: "\<Delta> = \<Gamma>1 \<and> A = ?v \<and> \<Sigma> = \<Gamma>2"
-        from c1 have ?thesis
-        proof (* case c1 wk_nat *)
-          
-          
-          
-          show ?thesis sorry
-        next (* case c1 wk_fun *)
-          
-          
-          
-          show ?thesis sorry
-        next (* case c1 union_R *)
-          fix \<Gamma>' c1' v1' v2' assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c: "c1 = Suc c1'" and
-            a: "A = v1' \<squnion> v2'" and c1p_v1: "\<Gamma>' \<turnstile> c1': v1'" and c1p_v2: "\<Gamma>' \<turnstile> c1' : v2'"
-          obtain c3 where c3: "\<Delta>@\<Gamma>@v2#\<Sigma> \<turnstile> c3 : C" using c1p_v1 c das 2 c_v g_gp a
-            apply (erule_tac x="(size v1', c1', c)" in allE) apply (erule impE) 
-            using c1_c c2_c m apply force apply blast done
-          then have "(\<Delta>@\<Gamma>)@v2#\<Sigma> \<turnstile> c3 : C" by simp
-          then obtain c4 where c4: "(\<Delta>@\<Gamma>)@\<Gamma>@\<Sigma> \<turnstile> c4 : C" using c1p_v2 das 2 c_v g_gp a
-            apply (erule_tac x="(size v2', c1', c3)" in allE) apply (erule impE) 
-            using c1_c c2_c m apply force apply blast done
-          then obtain c5 where "\<Delta>@\<Gamma>@\<Sigma> \<turnstile> c5 : C" apply simp using co_gen by blast
-          then show ?thesis by blast
-        next (* case c1 union_L *)
-          
-          
-          
-          
-          show ?thesis sorry
-        next (* case c1 le_nat *)
-          fix n c assume "A = VNat n"
-          with das have "False" by simp
-          then show ?thesis ..
-        next (* case c1 le_arrow *)
-          fix \<Gamma>' v1 c v2 assume "A = v1 \<mapsto> v2"
-          with das have "False" by simp
-          then show ?thesis ..
-        qed          
-      }
-      ultimately show ?thesis by blast
-          
-    next (* case c2 is le_nat *)
-      fix n c assume "\<Delta> @ A # \<Sigma> = [VNat n]" and "c2 = c" and "C = VNat n"
-      then show ?thesis using c1 apply (case_tac \<Delta>) by auto  
-          
-    next (* case c2 is le_arrow *)
-      fix \<Gamma>' v1 c2a v2 assume gp: "\<Delta> @ A # \<Sigma> = \<Gamma>'" and c2_c: "c2 = Suc c2a" and 
-        c_v12: "C = v1 \<mapsto> v2" and afg: "all_funs \<Gamma>'" and
-        c2a_v1: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'\<longrightarrow>[v1] \<turnstile> c2a : v" and
-        c2a_v2: "map cod \<Gamma>' \<turnstile> c2a : v2" 
-      
-      obtain A1 A2 where a: "A = A1\<mapsto>A2" using gp afg apply (case_tac A) by auto
-      then have "map cod \<Gamma>' = (map cod \<Delta>) @ A2 # (map cod \<Sigma>)" using gp by auto
-      then have c2a: "(map cod \<Delta>) @ A2 # (map cod \<Sigma>) \<turnstile> c2a : v2" using c2a_v2 by simp
-      
-      from c1 a have c1_2: "\<Gamma> \<turnstile> c1 : A1\<mapsto>A2" by simp
-      
-          
-          
-          
-          
-      show ?thesis sorry  
-    qed      
-  qed
+
+definition le_val :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 55) where
+  "v1 \<sqsubseteq> v2 \<equiv> \<exists>c. [v2] \<turnstile> c : v1"
+
+proposition le_refl[simp]: "v \<sqsubseteq> v"
+  unfolding le_val_def using ax by blast
+
+proposition le_trans[trans]: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3 \<rbrakk> \<Longrightarrow> v1 \<sqsubseteq> v3"
+  unfolding le_val_def using cut 
+  by (metis (full_types) append.left_neutral append_Cons)
+
+(*
+section "Regular Values"  
+  
+datatype val2 = V2Nat nat | V2Fun func and
+  func = End val2 val2 | Insert val2 val2 func
+  
+fun v2v :: "val2  \<Rightarrow> val" and f2v :: "func \<Rightarrow> val" where
+  "v2v (V2Nat n) = VNat n" |
+  "v2v (V2Fun f) = f2v f" |
+  "f2v (End v v') = (v2v v) \<mapsto> (v2v v')" |
+  "f2v (Insert v v' f) = VUnion ((v2v v) \<mapsto> (v2v v')) (f2v f)" 
+
+definition le_val :: "val2 \<Rightarrow> val2 \<Rightarrow> bool" (infix "\<sqsubseteq>" 55) where
+  "v1 \<sqsubseteq> v2 \<equiv> \<exists>c. [v2v v2] \<turnstile> c : v2v v1"
+
+    
+  
+proposition le_union_right1: fixes f::func 
+  assumes 1: "V2Fun f \<sqsubseteq> V2Fun f1" shows "V2Fun f \<sqsubseteq> V2Fun (f1 @ f2)"    
+proof -
+  let ?v1 = "v2v (V2Fun f1)" and ?v2 = "v2v (V2Fun f2)" and ?v = "v2v (V2Fun f)"
+  obtain c where "[?v1] \<turnstile> c : v2v (V2Fun f)" using 1 unfolding le_val_def by blast
+  then obtain c' where "[?v1]@ ?v2 #[] \<turnstile> c' : v2v (V2Fun f)"
+    using wk_gen[of "[?v1]" "[]" c "?v"] by auto 
+  then have "[]@?v1# ?v2 #[] \<turnstile> c' : ?v" by simp
+  then have "[]@(?v1 \<squnion> ?v2) #[] \<turnstile> Suc c' : ?v" using union_L by blast
+  then show ?thesis unfolding le_val_def by auto
 qed
 
+proposition le_union_right2: fixes f::func 
+  assumes 1: "V2Fun f \<sqsubseteq> V2Fun f2" shows "V2Fun f \<sqsubseteq> V2Fun (f1 \<squnion> f2)"    
+proof -
+  let ?v1 = "v2v (V2Fun f1)" and ?v2 = "v2v (V2Fun f2)" and ?v = "v2v (V2Fun f)"
+  obtain c where "[?v2] \<turnstile> c : v2v (V2Fun f)" using 1 unfolding le_val_def by blast
+  then obtain c' where "[]@ ?v1 #[?v2] \<turnstile> c' : v2v (V2Fun f)"
+    using wk_gen[of "[]" "[?v2]" c "?v"] by auto 
+  then have "[]@?v1# ?v2 #[] \<turnstile> c' : ?v" by simp
+  then have "[]@(?v1 \<squnion> ?v2) #[] \<turnstile> Suc c' : ?v" using union_L by blast
+  then show ?thesis unfolding le_val_def by auto
+qed
+
+proposition le_union_left:
+  assumes 1: "V2Fun f1 \<sqsubseteq> V2Fun f3" and 2: "V2Fun f2 \<sqsubseteq> V2Fun f3"
+  shows "V2Fun (f1 \<squnion> f2) \<sqsubseteq> V2Fun f3"
+proof -
+  let ?v1 = "v2v (V2Fun f1)" and ?v2 = "v2v (V2Fun f2)" and ?v3 = "v2v (V2Fun f3)"
+  obtain c1 where 3: "[?v3] \<turnstile> c1 : ?v1" using 1 unfolding le_val_def by auto
+  obtain c2 where 4: "[?v3] \<turnstile> c2 : ?v2" using 2 unfolding le_val_def by auto
+  have "[?v3] \<turnstile> Suc (max c1 c2) : ?v1 \<squnion> ?v2" using 3 4 weaken_size union_R by auto
+  then show ?thesis unfolding le_val_def by auto    
+qed
+
+proposition le_num: "V2Nat n \<sqsubseteq> V2Nat n" unfolding le_val_def by auto
+
+proposition le_fun: 
+  assumes 1: "v3 \<sqsubseteq> v1" and 2: "v2 \<sqsubseteq> v4"
+  shows "V2Fun (v1 \<mapsto> v2) \<sqsubseteq> V2Fun (v3 \<mapsto> v4)"
+  sorry
+    
+*)
     
 end

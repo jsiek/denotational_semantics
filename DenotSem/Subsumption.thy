@@ -1,5 +1,5 @@
 theory Subsumption
- imports Values Denot
+ imports LaurentValues Denot
 begin
 
 lemma is_val_sem: assumes v_e: "v \<in> \<lbrakk>e\<rbrakk>\<rho>" and v_r: "val_env \<rho>" shows "is_val v" 
