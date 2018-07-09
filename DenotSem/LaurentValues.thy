@@ -761,7 +761,16 @@ proof -
   then have "\<Gamma>1 @ (v1' \<squnion> v2') # (\<Sigma>' @ \<Gamma>' @ \<Sigma>) \<turnstile> Suc c3 : C" by blast
   then show ?thesis using d g2 by auto
 qed
-          
+  
+lemma ex_larger: "\<exists>c. (\<forall>v v'. v \<mapsto> v' \<in> set G \<longrightarrow> f (v,v') \<le> (c::nat))"  
+  apply (induction G)
+   apply force
+  apply clarify
+  apply (case_tac a) apply simp apply blast defer apply simp apply blast apply simp
+  apply (rule_tac x="max c (f (x21,x22))" in exI) apply clarify
+  apply (rule conjI) apply (rule impI) apply force apply force
+  done
+
 lemma cut: "\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. m = (size A, c1, c2) \<longrightarrow>
    \<Gamma> \<turnstile> c1 : A \<longrightarrow> \<Delta>@A#\<Sigma> \<turnstile> c2 : C \<longrightarrow> (\<exists>c3. \<Delta>@\<Gamma>@\<Sigma> \<turnstile> c3 : C)" (is "?P m")
 proof (induction m rule: wf_induct[of "less_than <*lex*> (less_than <*lex*> less_than)"])
@@ -902,10 +911,10 @@ next
       qed        
           
     next (* case c1 is le_arrow *)
-      fix \<Gamma>' v1 c1' v2 assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
-        a: "A = v1 \<mapsto> v2" and af_gp: "all_funs \<Gamma>'" and 
-        v1_c: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c1' : v" and
-        c_v2: "map cod \<Gamma>' \<turnstile> c1' : v2"
+      fix \<Gamma>' A' c1' B assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
+        a: "A = A' \<mapsto> B" and af_gp: "all_funs \<Gamma>'" and 
+        v1_c: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [A'] \<turnstile> c1' : v" and
+        c_B: "map cod \<Gamma>' \<turnstile> c1' : B"
       then have c1: "\<Gamma>' \<turnstile> c1 : A" by blast
       show ?thesis using c2
       proof (* c2 is wk_nat *)
@@ -945,26 +954,60 @@ next
         then show ?thesis ..
             
       next (* c2 is le_arrow *)
-        fix \<Gamma>'' v1' c2' v2' assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and 
-          c_v12: "C = v1' \<mapsto> v2'" and af_gpp: "all_funs \<Gamma>''" and 
-          v1_c2p: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'' \<longrightarrow> [v1'] \<turnstile> c2' : v" and
-          c2p_v2: "map cod \<Gamma>'' \<turnstile> c2' : v2'" 
-          
-        let ?G = "\<Delta> @ \<Sigma>" 
-        have af_g: "all_funs ?G" using af_gpp af_gp g_gp gpp by auto
-        let ?cp = "max c1' c2'"
-        have 3: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> [v1'] \<turnstile> ?cp : v"
-          apply clarify apply simp apply (erule disjE) 
-          using v1_c2p gpp weaken_size[of "[v1']" c2'] apply force
-          using v1_c2p gpp weaken_size[of "[v1']" c2'] apply force
-          done
-        have c2p_v2p: "(map cod \<Delta>) @ v2 # (map cod \<Sigma>) \<turnstile> c2' : v2'" using c2p_v2 gpp a by auto
-        have c1_v2: "\<Gamma>' \<turnstile> c1 : v2" sorry
-        obtain c3 where "(map cod \<Delta>) @ \<Gamma>' @ (map cod \<Sigma>) \<turnstile> c3 : v2'"
+        fix \<Gamma>'' C' c2' D assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and 
+          c_v12: "C = C' \<mapsto> D" and af_gpp: "all_funs \<Gamma>''" and 
+          v1_c2p: "\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>'' \<longrightarrow> [C'] \<turnstile> c2' : v" and
+          c2p_v2: "map cod \<Gamma>'' \<turnstile> c2' : D" 
+        let ?G = "\<Delta> @ \<Gamma> @ \<Sigma>" 
+
+        have c1_v2: "map cod \<Gamma> \<turnstile> c1' : B" using c_B g_gp by simp
+        have c2p_v2p: "(map cod \<Delta>) @ B # (map cod \<Sigma>) \<turnstile> c2' : D" using c2p_v2 gpp a by auto
+        obtain c3 where dgs_d_c3: "map cod ?G \<turnstile> c3 : D"
           using c2p_v2p gpp c1_v2 2 m c2_c2p g_gp a 
-          apply (erule_tac x="(size v2, c1, c2')" in allE) apply (erule impE) apply force apply blast done
-                        
-        show ?thesis sorry
+          apply (erule_tac x="(size B, c1', c2')" in allE) apply (erule impE) apply force
+            apply simp by blast
+
+        have af_dgs: "all_funs ?G" using af_gpp af_gp g_gp gpp by auto
+        let ?cp = "max c1' (max c2' c3)"
+        have c_dgs_aux: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> (\<exists>c. [C'] \<turnstile> c : v)"
+          apply clarify apply simp apply (erule disjE) defer apply (erule disjE) defer defer
+        proof -
+          fix v v' assume "v \<mapsto> v' \<in> set \<Delta>" 
+          then have "[C'] \<turnstile> c2' : v" using v1_c2p gpp a by (erule_tac x=v in allE) auto
+          then show "\<exists>c. [C'] \<turnstile> c : v" by blast
+        next
+          fix v v' assume vvp_g: "v \<mapsto> v' \<in> set \<Gamma>" 
+          have c_a: "[C'] \<turnstile> ?cp : A'" using v1_c2p gpp a weaken_size[of "[C']" c2' A' ?cp] by force
+          have a_v: "[A'] \<turnstile> ?cp : v"
+            using vvp_g v1_c g_gp weaken_size[of "[A']" c1' v ?cp] max.cobounded1 by blast
+          obtain c where "[C'] \<turnstile> c : v" using c_a a_v 2 m a
+            apply (erule_tac x="(size A', ?cp, ?cp)" in allE) apply (erule impE) apply force 
+              apply (erule_tac x="[C']" in allE)
+              apply (erule_tac x="A'" in allE)
+              apply (erule_tac x="[]" in allE)
+            apply auto done
+          then show "\<exists>c. [C'] \<turnstile> c : v" by blast
+        next
+          fix v v' assume "v \<mapsto> v' \<in> set \<Sigma>" 
+          then have "[C'] \<turnstile> c2' : v" using v1_c2p gpp a by (erule_tac x=v in allE) auto
+          then show "\<exists>c. [C'] \<turnstile> c : v" by blast
+        qed
+        (* The main work is done, but we still have to get the counters to line up. *)
+        let ?Q = "\<lambda>vv c. fst vv \<mapsto> snd vv \<in> set ?G \<longrightarrow> [C'] \<turnstile> c : fst vv"
+        have "\<forall>vv.\<exists>c. ?Q vv c" using c_dgs_aux by auto
+        then have "\<exists>f. \<forall>vv. ?Q vv (f vv)" by (rule choice)
+        then obtain f where c_dgs_f: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> [C'] \<turnstile> f (v,v') : v" by auto
+        obtain c' where cp:"\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> f (v,v') \<le> c'" using ex_larger by blast
+        have c_dgs_aux2: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> [C'] \<turnstile> c' : v"
+          using cp c_dgs_f weaken_size by blast
+        let ?c = "max c' c3" 
+        have c_dgs: "\<forall>v v'. v \<mapsto> v' \<in> set ?G \<longrightarrow> [C'] \<turnstile> ?c : v"   
+          using c_dgs_aux2 apply clarify apply (erule_tac x=v in allE)
+          apply (erule_tac x=v' in allE) apply (erule impE) apply blast
+            using weaken_size apply auto done
+        have dgs_d: "map cod ?G \<turnstile> ?c : D" using dgs_d_c3 weaken_size apply auto done
+        show ?thesis using c_dgs dgs_d af_dgs c_v12 le_arrow[of ?G C' ?c D]
+          by (meson max.cobounded2 weaken_size)          
       qed        
     qed
   qed
