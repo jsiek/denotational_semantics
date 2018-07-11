@@ -19,10 +19,8 @@ inductive deduce_le :: "val list \<Rightarrow> nat \<Rightarrow> val \<Rightarro
   union_R[intro!]: "\<lbrakk> \<Gamma> \<turnstile> c : v1; \<Gamma> \<turnstile> c : v2 \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<squnion> v2" |
   union_L[intro]: "\<lbrakk> \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<squnion>v2)#\<Gamma>2 \<turnstile> Suc c : v" | 
   le_nat[intro!]: "[VNat n] \<turnstile> c : VNat n" |
-  le_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; 
-                      \<forall> v v'. v\<mapsto>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
-                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk>
-    \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<mapsto> v2"
+  le_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; \<forall> v v'. v\<mapsto>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
+                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<mapsto> v2"
 
 lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Longrightarrow> xs \<turnstile> c' : ys"
   apply (induction xs c ys arbitrary: c' rule: deduce_le.induct) 
@@ -1019,9 +1017,101 @@ next
   qed
 qed
 
+section "Inversion Lemmas"
+
+lemma d_empty_inv_aux: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma>=[] \<rbrakk> \<Longrightarrow> False"
+  by (induction \<Gamma> c v rule: deduce_le.induct) auto
+
+lemma d_empty_elim[elim!]: "\<lbrakk> [] \<turnstile> c : v \<rbrakk> \<Longrightarrow> P"
+  using d_empty_inv_aux by blast
+
+fun atoms :: "val \<Rightarrow> val set" where
+  "atoms (VNat n) = {VNat n}" |
+  "atoms (v\<mapsto>v') = {v\<mapsto>v'}" |
+  atoms_union: "atoms (v\<squnion>v') = atoms v \<union> atoms v'"  
+
+lemma d_nat_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = VNat n \<rbrakk> \<Longrightarrow> VNat n \<in> (\<Union>v\<in>set \<Gamma>. atoms v)"
+  by (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct) auto 
+
+lemma d_arrow_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = v1\<mapsto>v2 \<rbrakk> \<Longrightarrow>
+   \<exists> \<Gamma>' c'. set \<Gamma>' \<subseteq> (\<Union>v\<in>set \<Gamma>. atoms v) \<and> all_funs \<Gamma>' 
+       \<and> (\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)
+       \<and> map cod \<Gamma>' \<turnstile> c' : v2"
+proof (induction \<Gamma> c v arbitrary: v1 v2 rule: deduce_le.induct)
+  case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> (\<Union>a\<in>set (\<Gamma>1 @ \<Gamma>2). atoms a)" and "all_funs \<Gamma>'" and
+       "(\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
+  then show ?case by auto
+next
+  case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> (\<Union>a\<in>set (\<Gamma>1 @ \<Gamma>2). atoms a)" and "all_funs \<Gamma>'" and
+       "(\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
+  then show ?case by auto
+next
+  case (union_R \<Gamma> c v1 v2)
+  then have "False" by auto
+  then show ?case ..
+next
+  case (union_L \<Gamma>1 u1 u2 \<Gamma>2 c v)
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> (\<Union>a\<in>set (\<Gamma>1 @ u1 # u2 # \<Gamma>2). atoms a)" and "all_funs \<Gamma>'" and
+       "(\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
+  then show ?case by auto
+next
+  case (le_nat n c)
+  then have "False" by auto
+  then show ?case ..
+next
+  case (le_arrow \<Gamma> v1' c v2')
+  then show ?case apply (rule_tac x=\<Gamma> in exI) apply (rule_tac x=c in exI)
+    apply (rule conjI) apply (rule subsetI) apply simp 
+     apply (subgoal_tac "is_fun x") prefer 2 apply blast apply (rule_tac x=x in bexI) 
+      apply (case_tac x) apply force apply force apply force apply blast
+      apply (rule conjI) apply blast apply (rule conjI) apply blast apply blast done
+qed
+  
+definition ctx_atoms :: "val list \<Rightarrow> val set" where
+  "ctx_atoms \<Gamma> \<equiv> \<Union>a\<in>set \<Gamma>. atoms a" 
+  
+lemma d_nat_atoms_L_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; (\<forall>v. v \<in> ctx_atoms \<Gamma> \<longrightarrow> v = VNat n);
+                         v' \<in> atoms v \<rbrakk> \<Longrightarrow> v' = VNat n"
+proof (induction \<Gamma> c v arbitrary: n v' rule: deduce_le.induct)
+  case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
+  then show ?case unfolding ctx_atoms_def 
+    by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
+next
+  case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
+  then show ?case unfolding ctx_atoms_def 
+    by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
+next
+  case (union_R \<Gamma> c v1 v2)
+  then show ?case unfolding ctx_atoms_def by (metis Un_iff atoms.simps(3))
+next
+  case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
+  have "ctx_atoms (\<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2) = ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2)"
+    unfolding ctx_atoms_def by auto
+  then have " \<forall>v. v \<in> ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2) \<longrightarrow> v = VNat n" using union_L(3) by blast
+  then show ?case using union_L.IH union_L.prems(2) by blast
+next
+  case (le_nat n' c)
+  then show ?case unfolding ctx_atoms_def by auto 
+next
+  case (le_arrow \<Gamma> v1 c v2)
+  have "\<Gamma> \<noteq> []" using le_arrow(2) by auto
+  then have "False" using le_arrow(1) le_arrow(5) apply (case_tac \<Gamma>) apply force
+    apply simp apply (case_tac a) apply force apply simp
+      unfolding ctx_atoms_def apply auto done 
+  then show ?case ..
+qed 
+  
+    
+section "Partial Order on Values"  
+  
 definition le_val :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 55) where
   "v1 \<sqsubseteq> v2 \<equiv> \<exists>c. [v2] \<turnstile> c : v1"
 
+definition val_equiv :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
+  "v1 \<approx> v2 \<equiv> v1 \<sqsubseteq> v2 \<and> v2 \<sqsubseteq> v1"
+  
 proposition le_refl[simp]: "v \<sqsubseteq> v"
   unfolding le_val_def using ax by blast
 
@@ -1029,6 +1119,87 @@ proposition le_trans[trans]: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3
   unfolding le_val_def using cut 
   by (metis (full_types) append.left_neutral append_Cons)
 
+lemma atoms_nat_deduce: "(\<forall>v. v \<in> atoms A \<longrightarrow> v = VNat n) \<Longrightarrow> \<exists>c. [VNat n] \<turnstile> c : A"     
+  apply (induction A)
+    apply force
+   apply force
+  apply (subgoal_tac "\<forall>v. v \<in> atoms A1 \<longrightarrow> v = VNat n") prefer 2 apply force
+  apply (subgoal_tac "\<forall>v. v \<in> atoms A2 \<longrightarrow> v = VNat n") prefer 2 apply force
+  apply simp apply clarify
+  apply (rule_tac x="Suc (max c ca)" in exI) apply (rule union_R)
+    apply (rule weaken_size) apply blast
+  using max.cobounded1 apply blast
+    apply (rule weaken_size) apply blast
+  using max.cobounded2 apply blast
+    done
+
+lemma le_union_right1[intro]: assumes b_a1: "B \<sqsubseteq> A1" shows "B \<sqsubseteq> A1 \<squnion> A2"
+proof -
+  obtain c where "[A1] \<turnstile> c : B" using b_a1 unfolding le_val_def by auto
+  then obtain c' where "[A1,A2] \<turnstile> c' : B" using wk_gen[of "[A1]" "[]" c B A2] by auto 
+  then have "[A1\<squnion>A2] \<turnstile> Suc c' : B" using union_L[of "[]" A1 A2 "[]" c' B] by auto
+  then show ?thesis unfolding le_val_def by blast
+qed
+  
+lemma le_union_right2[intro]: assumes b_a2: "B \<sqsubseteq> A2" shows "B \<sqsubseteq> A1 \<squnion> A2"
+proof -
+  obtain c where "[A2] \<turnstile> c : B" using b_a2 unfolding le_val_def by auto
+  then obtain c' where "[A1,A2] \<turnstile> c' : B" using wk_gen[of "[]" "[A2]" c B A1] by auto 
+  then have "[A1\<squnion>A2] \<turnstile> Suc c' : B" using union_L[of "[]" A1 A2 "[]" c' B] by auto
+  then show ?thesis unfolding le_val_def by blast
+qed
+
+lemma le_union_left[intro]: "\<lbrakk> A1 \<sqsubseteq> B; A2 \<sqsubseteq> B \<rbrakk> \<Longrightarrow> A1 \<squnion> A2 \<sqsubseteq> B"
+  unfolding le_val_def apply clarify apply (rule_tac x="Suc (max c ca)" in exI)
+    apply (rule union_R) using weaken_size apply auto done
+     
+lemma join_equiv_left:
+  assumes a1: "A1 \<approx> B" and a2: "A2 \<approx> B" shows "A1 \<squnion> A2 \<approx> B"
+proof -
+  have "A1 \<squnion> A2 \<sqsubseteq> B"
+  proof -
+    have "A1 \<sqsubseteq> B" using a1 unfolding val_equiv_def by blast
+    moreover have "A2 \<sqsubseteq> B" using a2 unfolding val_equiv_def by blast
+    ultimately show ?thesis by blast
+  qed    
+  moreover have "B \<sqsubseteq> A1 \<squnion> A2" 
+  proof -
+    have "B \<sqsubseteq> A1" using a1 unfolding val_equiv_def by blast
+    then show ?thesis by blast
+  qed
+  ultimately show ?thesis unfolding val_equiv_def by blast
+qed
+      
+lemma atoms_nat_eq_nat: "(\<forall>v. v \<in> atoms A \<longrightarrow> v = VNat n) \<Longrightarrow> A \<approx> VNat n"
+  apply (induction A)
+  apply (simp add: val_equiv_def le_val_def)
+   apply (simp add: val_equiv_def le_val_def) apply force
+  apply simp
+    
+  apply (simp add: val_equiv_def le_val_def) 
+  
+  
+    
+  
+  unfolding val_equiv_def le_val_def apply (rule conjI)
+  using atoms_nat_deduce apply blast
+    
+  oops
+  
+  
+lemma d_nat_any_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [VNat n] \<rbrakk> \<Longrightarrow> v \<approx> VNat n"
+  apply (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct)
+       apply (case_tac \<Gamma>1) apply force apply force
+      apply (case_tac \<Gamma>1) apply force apply force
+     apply (subgoal_tac "v1 \<approx> VNat n") prefer 2 apply blast    
+     apply (subgoal_tac "v2 \<approx> VNat n") prefer 2 apply blast
+     apply (simp add: val_equiv_def le_val_def)
+     apply (rule conjI) apply (subgoal_tac "[VNat n] \<turnstile> Suc c : v1 \<squnion> v2") prefer 2 apply blast
+      apply blast 
+     apply (subgoal_tac "\<exists>c. [v1] \<turnstile> c : VNat n") prefer 2 apply blast apply clarify
+    apply (subgoal_tac "\<exists>c. [v2] \<turnstile> c : VNat n") prefer 2 apply blast apply clarify
+    oops
+    
 (*
 section "Regular Values"  
   
