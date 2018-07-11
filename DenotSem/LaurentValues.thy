@@ -1053,9 +1053,23 @@ fun atoms :: "val \<Rightarrow> val set" where
   "atoms (v\<mapsto>v') = {v\<mapsto>v'}" |
   atoms_union: "atoms (v\<squnion>v') = atoms v \<union> atoms v'"  
 
-lemma d_nat_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = VNat n \<rbrakk> \<Longrightarrow> VNat n \<in> (\<Union>v\<in>set \<Gamma>. atoms v)"
-  by (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct) auto 
+abbreviation ctx_atoms :: "val list \<Rightarrow> val set" where
+  "ctx_atoms \<Gamma> \<equiv> \<Union>a\<in>set \<Gamma>. atoms a"   
 
+lemma d_nat_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = VNat n \<rbrakk> \<Longrightarrow> VNat n \<in> ctx_atoms \<Gamma>"
+  by (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct) auto 
+    
+lemma d_nat_atoms_any_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; ctx_atoms \<Gamma> \<subseteq> {VNat n} \<rbrakk> \<Longrightarrow> atoms v \<subseteq> {VNat n}"
+  apply (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct)
+  using UN_insert apply auto[1]
+  using UN_insert apply auto[1]
+  apply force  
+  prefer 2 apply force  
+  prefer 2 apply simp apply (case_tac \<Gamma>) apply simp apply blast apply simp
+    apply (case_tac a) apply force apply force apply force
+  apply simp
+  done
+    
 lemma d_arrow_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = v1\<mapsto>v2 \<rbrakk> \<Longrightarrow>
    \<exists> \<Gamma>' c'. set \<Gamma>' \<subseteq> (\<Union>v\<in>set \<Gamma>. atoms v) \<and> all_funs \<Gamma>' 
        \<and> (\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)
@@ -1091,9 +1105,6 @@ next
       apply (case_tac x) apply force apply force apply force apply blast
       apply (rule conjI) apply blast apply (rule conjI) apply blast apply blast done
 qed
-  
-definition ctx_atoms :: "val list \<Rightarrow> val set" where
-  "ctx_atoms \<Gamma> \<equiv> \<Union>a\<in>set \<Gamma>. atoms a" 
   
 lemma d_nat_atoms_L_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; (\<forall>v. v \<in> ctx_atoms \<Gamma> \<longrightarrow> v = VNat n);
                          v' \<in> atoms v \<rbrakk> \<Longrightarrow> v' = VNat n"
@@ -1139,7 +1150,7 @@ proposition le_trans[trans]: "\<lbrakk> v1 \<sqsubseteq> v2; v2 \<sqsubseteq> v3
   unfolding le_val_def using cut 
   by (metis (full_types) append.left_neutral append_Cons)
 
-lemma atoms_nat_deduce: "(\<forall>v. v \<in> atoms A \<longrightarrow> v = VNat n) \<Longrightarrow> \<exists>c. [VNat n] \<turnstile> c : A"     
+lemma atoms_nat_deduce: "atoms A \<subseteq> {VNat n} \<Longrightarrow> \<exists>c. [VNat n] \<turnstile> c : A"     
   apply (induction A)
     apply force
    apply force
@@ -1152,6 +1163,9 @@ lemma atoms_nat_deduce: "(\<forall>v. v \<in> atoms A \<longrightarrow> v = VNat
     apply (rule weaken_size) apply blast
   using max.cobounded2 apply blast
     done
+
+lemma atoms_le_any_nat[intro]: "atoms A \<subseteq> {VNat n} \<Longrightarrow> A \<sqsubseteq> VNat n"
+  unfolding le_val_def using atoms_nat_deduce by blast
       
 proposition le_arrow[intro!]: assumes ca: "C \<sqsubseteq> A" and bd: "B \<sqsubseteq> D" shows "A\<mapsto>B \<sqsubseteq> C\<mapsto>D"      
 proof -
@@ -1204,58 +1218,45 @@ proof -
   have 2: "B \<sqsubseteq> C \<squnion> D" using bd by blast
   show ?thesis using 1 2 by blast
 qed
-    
+ 
+lemma le_any_nat_inv_atoms: "\<lbrakk> A \<sqsubseteq> VNat n \<rbrakk> \<Longrightarrow> atoms A \<subseteq> { VNat n }"
+  unfolding le_val_def using d_nat_atoms_any_inv by fastforce
+
 section "Type Equivalence"
     
 definition val_equiv :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
   "v1 \<approx> v2 \<equiv> v1 \<sqsubseteq> v2 \<and> v2 \<sqsubseteq> v1"
+
+proposition equiv_refl[simp]: "A \<approx> A"
+  unfolding val_equiv_def by blast
   
-lemma equiv_sym[sym]: "A \<approx> B \<Longrightarrow> B \<approx> A"
+proposition equiv_sym[sym]: "A \<approx> B \<Longrightarrow> B \<approx> A"
   unfolding val_equiv_def by blast 
 
-lemma equiv_trans[trans]: "\<lbrakk> A \<approx> B; B \<approx> C \<rbrakk> \<Longrightarrow> A \<approx> C"
+proposition equiv_trans[trans]: "\<lbrakk> A \<approx> B; B \<approx> C \<rbrakk> \<Longrightarrow> A \<approx> C"
   unfolding val_equiv_def using le_trans by blast
 
-lemma equiv_fun_cong[cong]: "\<lbrakk> A \<approx> C; B \<approx> D \<rbrakk> \<Longrightarrow> (A\<mapsto>B) \<approx> (C\<mapsto>D)"
-  sorry
+proposition equiv_fun_cong[intro]: "\<lbrakk> A \<approx> C; B \<approx> D \<rbrakk> \<Longrightarrow> (A \<mapsto> B) \<approx> (C \<mapsto> D)"
+  unfolding val_equiv_def using le_arrow apply auto done
 
-lemma join_equiv_left:
-  assumes a1: "A1 \<approx> B" and a2: "A2 \<approx> B" shows "A1 \<squnion> A2 \<approx> B"
-proof -
-  have "A1 \<squnion> A2 \<sqsubseteq> B"
-  proof -
-    have "A1 \<sqsubseteq> B" using a1 unfolding val_equiv_def by blast
-    moreover have "A2 \<sqsubseteq> B" using a2 unfolding val_equiv_def by blast
-    ultimately show ?thesis by blast
-  qed    
-  moreover have "B \<sqsubseteq> A1 \<squnion> A2" 
-  proof -
-    have "B \<sqsubseteq> A1" using a1 unfolding val_equiv_def by blast
-    then show ?thesis by blast
-  qed
-  ultimately show ?thesis unfolding val_equiv_def by blast
-qed
+proposition join_equiv_left[intro]: "\<lbrakk> A1 \<approx> B; A2 \<approx> B \<rbrakk> \<Longrightarrow> A1 \<squnion> A2 \<approx> B"
+  unfolding val_equiv_def by blast   
 
-lemma atoms_nat_eq_nat: "(\<forall>v. v \<in> atoms A \<longrightarrow> v = VNat n) \<Longrightarrow> A \<approx> VNat n"
+proposition join_equiv_right[intro]: "\<lbrakk> A \<approx> B1; A \<approx> B2 \<rbrakk> \<Longrightarrow> A \<approx> B1 \<squnion> B2"
+  unfolding val_equiv_def by blast     
+  
+proposition equiv_join_cong[intro]: "\<lbrakk> A \<approx> C; B \<approx> D \<rbrakk> \<Longrightarrow> A \<squnion> B \<approx> C \<squnion> D"
+  unfolding val_equiv_def by blast
+    
+lemma atoms_nat_eq_nat: "atoms A \<subseteq> {VNat n} \<Longrightarrow> A \<approx> VNat n"
   apply (induction A)
   apply (simp add: val_equiv_def le_val_def)
    apply (simp add: val_equiv_def le_val_def) apply force
-  apply simp
-    using join_equiv_left apply blast
   done   
-  
-lemma d_nat_any_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [VNat n] \<rbrakk> \<Longrightarrow> v \<approx> VNat n"
-  apply (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct)
-       apply (case_tac \<Gamma>1) apply force apply force
-      apply (case_tac \<Gamma>1) apply force apply force
-     apply (subgoal_tac "v1 \<approx> VNat n") prefer 2 apply blast    
-     apply (subgoal_tac "v2 \<approx> VNat n") prefer 2 apply blast
-     apply (simp add: val_equiv_def le_val_def)
-     apply (rule conjI) apply (subgoal_tac "[VNat n] \<turnstile> Suc c : v1 \<squnion> v2") prefer 2 apply blast
-      apply blast 
-     apply (subgoal_tac "\<exists>c. [v1] \<turnstile> c : VNat n") prefer 2 apply blast apply clarify
-    apply (subgoal_tac "\<exists>c. [v2] \<turnstile> c : VNat n") prefer 2 apply blast apply clarify
-    oops
+
+lemma le_any_nat_inv[elim!]: "\<lbrakk> A \<sqsubseteq> VNat n; A \<approx> VNat n \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using le_any_nat_inv_atoms atoms_nat_eq_nat by auto
+    
     
 
     
