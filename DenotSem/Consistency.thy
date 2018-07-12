@@ -91,7 +91,7 @@ lemma d_consis_nat_L: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [VNat n
    apply force+
   done
 
-lemma le_any_nat_consis: "v \<sqsubseteq> VNat n \<Longrightarrow> v ~ VNat n"
+lemma le_any_nat_consis[intro]: "v \<sqsubseteq> VNat n \<Longrightarrow> v ~ VNat n"
   unfolding le_val_def using d_consis_nat_L by auto
 
 lemma consis_nat_atoms: "\<lbrakk> v ~ VNat n \<rbrakk> \<Longrightarrow> atoms v \<subseteq> { VNat n }"
@@ -115,6 +115,9 @@ lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \
    apply force
   apply force
   done
+
+lemma atoms_incosis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
+  by (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct) auto
     
 lemma val_consis_atoms: "is_val v \<Longrightarrow> consis (atoms v)"
   apply (induction v) apply auto
@@ -158,26 +161,24 @@ proof -
     using d_nat_inv by presburger
   have "VNat n \<in> atoms v" using vp_v vp_n by simp
   with v_v show "v ~ VNat n" using nat_atom_consis_nat by blast
-qed
-  
-    
-    
+qed    
 
 lemma consis_le_inconsis_le:
   "(v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1 \<sqsubseteq> v1' \<and> v2 \<sqsubseteq> v2' \<longrightarrow> v1 ~ v2))
   \<and> (\<not> v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1' \<sqsubseteq> v1 \<and> v2' \<sqsubseteq> v2 \<longrightarrow> \<not> v1 ~ v2))"
 proof (induction v1' v2' rule: consistent.induct)
   case (1 n m)
-  then show ?case apply auto
-    apply (subgoal_tac "v1 ~ VNat n") prefer 2 apply blast
-    apply (subgoal_tac "v2 ~ VNat n") prefer 2 apply blast
-    using consis_nat_trans consis_sym_aux apply blast
-    apply (subgoal_tac "v1 ~ VNat n") prefer 2 apply blast
-    apply (subgoal_tac "v2 ~ VNat n") prefer 2 apply blast
-    done
+  then show ?case apply (rule conjI) apply clarify 
+     apply (subgoal_tac "v1 ~ VNat n") prefer 2 using le_any_nat_consis apply auto[1]
+     apply (subgoal_tac "v2 ~ VNat n") prefer 2 using le_any_nat_consis apply auto[1]
+    using consis_nat_trans consis_sym apply blast
+    apply (rule impI) apply simp
+    using consis_atoms consistent.simps(1) le_nat_any_inv by blast
 next
   case (2 v1 v1' m)
-  then show ?case sorry
+  then show ?case apply (rule conjI) apply simp apply clarify
+    using atoms_incosis[of "v1\<mapsto>v1'" "VNat m"] le_nat_any_inv[of m]
+    sorry
 next
   case (3 n v2 v2')
   then show ?case sorry

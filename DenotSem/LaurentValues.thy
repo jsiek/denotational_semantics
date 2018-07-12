@@ -1231,6 +1231,16 @@ lemma le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> A \<mapsto> B \<Longrightarro
 lemma le_fun_nat_inv[elim!]: "A\<mapsto>B \<sqsubseteq> VNat n \<Longrightarrow> P"
   unfolding le_val_def using d_nat_atoms_L_inv[of "[VNat n]"] by force
 
+lemma le_fun_any_inv_atoms: assumes ab_c: "A\<mapsto>B \<sqsubseteq> C" shows "\<exists>D E. D\<mapsto>E \<in> atoms C"
+proof -
+  obtain c where c_ab: "[C] \<turnstile> c : A\<mapsto>B" using ab_c unfolding le_val_def by auto
+  then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
+    gp_b: "map cod \<Gamma>' \<turnstile> c' : B" using d_arrow_inv[of "[C]" c "A\<mapsto>B" A B] apply blast done
+  obtain D \<Gamma>'' where gp: "\<Gamma>' = D#\<Gamma>''" apply (case_tac \<Gamma>') using gp_b apply force apply force done
+  then have "D \<in> atoms C" using gp_c by auto
+  show ?thesis sorry
+qed
+    
 section "Type Equivalence"
     
 definition val_equiv :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<approx>" 55) where
