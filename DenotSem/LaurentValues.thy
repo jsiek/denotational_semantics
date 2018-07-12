@@ -1071,17 +1071,17 @@ lemma d_nat_atoms_any_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; ctx_atoms \<G
   done
     
 lemma d_arrow_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = v1\<mapsto>v2 \<rbrakk> \<Longrightarrow>
-   \<exists> \<Gamma>' c'. set \<Gamma>' \<subseteq> (\<Union>v\<in>set \<Gamma>. atoms v) \<and> all_funs \<Gamma>' 
+   \<exists> \<Gamma>' c'. set \<Gamma>' \<subseteq> ctx_atoms \<Gamma> \<and> all_funs \<Gamma>' 
        \<and> (\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)
        \<and> map cod \<Gamma>' \<turnstile> c' : v2"
 proof (induction \<Gamma> c v arbitrary: v1 v2 rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
-  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> (\<Union>a\<in>set (\<Gamma>1 @ \<Gamma>2). atoms a)" and "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ \<Gamma>2)" and "all_funs \<Gamma>'" and
        "(\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
-  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> (\<Union>a\<in>set (\<Gamma>1 @ \<Gamma>2). atoms a)" and "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ \<Gamma>2)" and "all_funs \<Gamma>'" and
        "(\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
@@ -1090,7 +1090,7 @@ next
   then show ?case ..
 next
   case (union_L \<Gamma>1 u1 u2 \<Gamma>2 c v)
-  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> (\<Union>a\<in>set (\<Gamma>1 @ u1 # u2 # \<Gamma>2). atoms a)" and "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ u1 # u2 # \<Gamma>2)" and "all_funs \<Gamma>'" and
        "(\<forall>v v'. v \<mapsto> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
@@ -1110,30 +1110,26 @@ lemma d_nat_atoms_L_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; (\<forall>v. v 
                          v' \<in> atoms v \<rbrakk> \<Longrightarrow> v' = VNat n"
 proof (induction \<Gamma> c v arbitrary: n v' rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
-  then show ?case unfolding ctx_atoms_def 
-    by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
+  then show ?case by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
 next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
-  then show ?case unfolding ctx_atoms_def 
-    by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
+  then show ?case by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
 next
   case (union_R \<Gamma> c v1 v2)
-  then show ?case unfolding ctx_atoms_def by (metis Un_iff atoms.simps(3))
+  then show ?case  by (metis Un_iff atoms.simps(3))
 next
   case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
-  have "ctx_atoms (\<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2) = ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2)"
-    unfolding ctx_atoms_def by auto
+  have "ctx_atoms (\<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2) = ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2)" by auto
   then have " \<forall>v. v \<in> ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2) \<longrightarrow> v = VNat n" using union_L(3) by blast
   then show ?case using union_L.IH union_L.prems(2) by blast
 next
   case (d_nat n' c)
-  then show ?case unfolding ctx_atoms_def by auto 
+  then show ?case by auto 
 next
   case (d_arrow \<Gamma> v1 c v2)
   have "\<Gamma> \<noteq> []" using d_arrow(2) by auto
   then have "False" using d_arrow(1) d_arrow(5) apply (case_tac \<Gamma>) apply force
-    apply simp apply (case_tac a) apply force apply simp
-      unfolding ctx_atoms_def apply auto done 
+    apply simp apply (case_tac a) apply force apply simp apply auto done 
   then show ?case ..
 qed 
   
@@ -1158,11 +1154,11 @@ lemma atoms_nat_deduce: "atoms A \<subseteq> {VNat n} \<Longrightarrow> \<exists
   apply (subgoal_tac "\<forall>v. v \<in> atoms A2 \<longrightarrow> v = VNat n") prefer 2 apply force
   apply simp apply clarify
   apply (rule_tac x="Suc (max c ca)" in exI) apply (rule union_R)
-    apply (rule weaken_size) apply blast
+   apply (rule weaken_size) apply blast
   using max.cobounded1 apply blast
-    apply (rule weaken_size) apply blast
+  apply (rule weaken_size) apply blast
   using max.cobounded2 apply blast
-    done
+  done
 
 lemma atoms_le_any_nat[intro]: "atoms A \<subseteq> {VNat n} \<Longrightarrow> A \<sqsubseteq> VNat n"
   unfolding le_val_def using atoms_nat_deduce by blast
@@ -1218,9 +1214,22 @@ proof -
   have 2: "B \<sqsubseteq> C \<squnion> D" using bd by blast
   show ?thesis using 1 2 by blast
 qed
- 
+
+proposition le_dist_union_fun: "(A\<squnion>B)\<mapsto>(C\<squnion>D) \<sqsubseteq> (A\<mapsto>C) \<squnion> (B\<mapsto>D)"
+  by (meson LaurentValues.le_refl LaurentValues.le_trans
+      le_arrow le_dist le_mon le_union_right1 le_union_right2)  
+  
 lemma le_any_nat_inv_atoms: "\<lbrakk> A \<sqsubseteq> VNat n \<rbrakk> \<Longrightarrow> atoms A \<subseteq> { VNat n }"
   unfolding le_val_def using d_nat_atoms_any_inv by fastforce
+
+lemma le_nat_any_inv[elim]: "\<lbrakk> VNat n \<sqsubseteq> A \<rbrakk> \<Longrightarrow> VNat n \<in> atoms A"
+  unfolding le_val_def using d_nat_inv[of "[A]"] by auto
+
+lemma le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> A \<mapsto> B \<Longrightarrow> P"
+  unfolding le_val_def using d_nat_inv[of "[(A\<mapsto>B)]"] by auto
+    
+lemma le_fun_nat_inv[elim!]: "A\<mapsto>B \<sqsubseteq> VNat n \<Longrightarrow> P"
+  unfolding le_val_def using d_nat_atoms_L_inv[of "[VNat n]"] by force
 
 section "Type Equivalence"
     
@@ -1254,10 +1263,8 @@ lemma atoms_nat_eq_nat: "atoms A \<subseteq> {VNat n} \<Longrightarrow> A \<appr
    apply (simp add: val_equiv_def le_val_def) apply force
   done   
 
-lemma le_any_nat_inv[elim!]: "\<lbrakk> A \<sqsubseteq> VNat n; A \<approx> VNat n \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+lemma le_any_nat_inv[elim]: "\<lbrakk> A \<sqsubseteq> VNat n; A \<approx> VNat n \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using le_any_nat_inv_atoms atoms_nat_eq_nat by auto
-    
-    
 
     
 end

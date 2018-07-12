@@ -94,11 +94,13 @@ lemma d_consis_nat_L: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [VNat n
 lemma le_any_nat_consis: "v \<sqsubseteq> VNat n \<Longrightarrow> v ~ VNat n"
   unfolding le_val_def using d_consis_nat_L by auto
 
-lemma consis_nat_atoms: "\<lbrakk> v ~ VNat n; v' \<in> atoms v \<rbrakk> \<Longrightarrow> v' = VNat n"
-  by (induction v arbitrary: n v') auto
+lemma consis_nat_atoms: "\<lbrakk> v ~ VNat n \<rbrakk> \<Longrightarrow> atoms v \<subseteq> { VNat n }"
+  by (induction v arbitrary: n) auto
   
-lemma le_any_nat_atom_consis: "\<lbrakk> v \<sqsubseteq> VNat n; v' \<in> atoms v \<rbrakk> \<Longrightarrow> v' = VNat n"
-  unfolding le_val_def using d_consis_nat_L consis_nat_atoms by blast
+(*
+lemma le_any_nat_atom_consis: "\<lbrakk> v \<sqsubseteq> VNat n \<rbrakk> \<Longrightarrow> atoms v \<subseteq> {VNat n}"
+  using le_any_nat_inv_atoms by blast
+*)
 
 definition consis :: "val set \<Rightarrow> bool" where
   "consis \<Gamma> \<equiv> (\<forall>v v'. v \<in> \<Gamma> \<longrightarrow> v' \<in> \<Gamma> \<longrightarrow> v ~ v')"
@@ -151,8 +153,9 @@ lemma le_nat_any_consis[intro!]: assumes n_v: "VNat n \<sqsubseteq> v" and v_v: 
   shows "v ~ VNat n"
 proof -
   obtain c where "[v] \<turnstile> c : VNat n" using n_v unfolding le_val_def by blast
-  with d_consis_nat_R_atoms[of "[v]" c "VNat n"] obtain v' where
-    vp_v: "v' \<in> (\<Union>v\<in>set [v]. atoms v)" and vp_n: "v' = VNat n" by blast
+  then obtain v' where
+    vp_v: "v' \<in> (\<Union>v\<in>set [v]. atoms v)" and vp_n: "v' = VNat n"
+    using d_nat_inv by presburger
   have "VNat n \<in> atoms v" using vp_v vp_n by simp
   with v_v show "v ~ VNat n" using nat_atom_consis_nat by blast
 qed
