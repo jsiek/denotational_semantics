@@ -116,8 +116,11 @@ lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \
   apply force
   done
 
-lemma atoms_incosis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
+lemma atoms_inconsis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
   by (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct) auto
+
+lemma atoms_consis: "(\<forall> v1' v2'. v1' \<in> atoms v1 \<longrightarrow> v2' \<in> atoms v2 \<longrightarrow> v1' ~ v2') \<Longrightarrow> v1 ~ v2"
+  by (induction v1 v2 rule: consistent.induct) auto
     
 lemma val_consis_atoms: "is_val v \<Longrightarrow> consis (atoms v)"
   apply (induction v) apply auto
@@ -166,6 +169,7 @@ qed
 lemma consis_le_inconsis_le:
   "(v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1 \<sqsubseteq> v1' \<and> v2 \<sqsubseteq> v2' \<longrightarrow> v1 ~ v2))
   \<and> (\<not> v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1' \<sqsubseteq> v1 \<and> v2' \<sqsubseteq> v2 \<longrightarrow> \<not> v1 ~ v2))"
+  (is "?P v1' v2' \<and> ?Q v1' v2'")
 proof (induction v1' v2' rule: consistent.induct)
   case (1 n m)
   then show ?case apply (rule conjI) apply clarify 
@@ -173,21 +177,116 @@ proof (induction v1' v2' rule: consistent.induct)
      apply (subgoal_tac "v2 ~ VNat n") prefer 2 using le_any_nat_consis apply auto[1]
     using consis_nat_trans consis_sym apply blast
     apply (rule impI) apply simp
-    using consis_atoms consistent.simps(1) le_nat_any_inv by blast
+    using consis_atoms consistent.simps(1) le_nat_any_inv_atoms by blast
 next
   case (2 v1 v1' m)
-  then show ?case apply (rule conjI) apply simp apply clarify
-    using atoms_incosis[of "v1\<mapsto>v1'" "VNat m"] le_nat_any_inv[of m]
-    sorry
+  show ?case
+  proof
+    show "?P (v1\<mapsto>v1') (VNat m)" by auto
+  next
+    show "?Q (v1\<mapsto>v1') (VNat m)"
+    proof clarify
+      fix v3 v4 assume "\<not> v1 \<mapsto> v1' ~ VNat m" and v11_v3: "v1 \<mapsto> v1' \<sqsubseteq> v3" and m_v4: "VNat m \<sqsubseteq> v4"
+        and v3_v4: "v3 ~ v4"
+      have m_v4: "VNat m \<in> atoms v4" using m_v4 le_nat_any_inv_atoms by blast
+      obtain v2 v2' where v22_v3: "v2\<mapsto>v2' \<in> atoms v3" using v11_v3 le_fun_any_inv_atoms_ex by blast
+      have "\<not> (VNat m ~ v2\<mapsto>v2')" by simp
+      then have "\<not> (v4 ~ v3)" using v22_v3 m_v4 atoms_inconsis by blast
+      then show False using v3_v4 using consis_sym by blast
+    qed      
+  qed  
 next
   case (3 n v2 v2')
-  then show ?case sorry
+  show ?case
+  proof
+    show "?P (VNat n) (v2\<mapsto>v2')" by auto
+  next
+    show "?Q (VNat n) (v2\<mapsto>v2')"
+    proof clarify
+      fix v3 v4 assume "\<not> VNat n ~ (v2\<mapsto>v2')" and v11_v3: "v2 \<mapsto> v2' \<sqsubseteq> v4" and 
+        m_v4: "VNat n \<sqsubseteq> v3" and v3_v4: "v3 ~ v4"
+      have m_v4: "VNat n \<in> atoms v3" using m_v4 le_nat_any_inv_atoms by blast
+      obtain v1 v1' where v22_v3: "v1\<mapsto>v1' \<in> atoms v4" using v11_v3 le_fun_any_inv_atoms_ex by blast
+      have "\<not> (VNat n ~ v1\<mapsto>v1')" by simp
+      then have "\<not> (v3 ~ v4)" using v22_v3 m_v4 atoms_inconsis by blast
+      then show False using v3_v4 using consis_sym by blast
+    qed      
+  qed  
 next
   case (4 v1 v1' v2 v2')
-  then show ?case sorry
+  show ?case
+  proof
+    show "?P (v1\<mapsto>v1') (v2\<mapsto>v2')"
+    proof clarify
+      fix v3 v4 assume v11_v22: "v1 \<mapsto> v1' ~ v2 \<mapsto> v2'" and v3_v11: "v3 \<sqsubseteq> v1\<mapsto>v1'" and 
+        v4_v22: "v4 \<sqsubseteq> v2\<mapsto>v2'" 
+      have v3_fun: "\<forall>v'. v' \<in> atoms v3 \<longrightarrow> (\<exists> A B. v' = A\<mapsto>B \<and> v1 \<sqsubseteq> A \<and> B \<sqsubseteq> v1')"
+        using v3_v11 using le_any_fun_inv_atoms by blast
+      have v4_fun: "\<forall>v'. v' \<in> atoms v4 \<longrightarrow> (\<exists> A B. v' = A\<mapsto>B \<and> v2 \<sqsubseteq> A \<and> B \<sqsubseteq> v2')"
+        using v4_v22 using le_any_fun_inv_atoms by blast          
+      have "(v1 ~ v2 \<and> v1' ~ v2') \<or> \<not>(v1 ~ v2)" using v11_v22 by simp
+      then show "v3 ~ v4"
+      proof
+        assume v1_v2: "v1 ~ v2 \<and> v1' ~ v2'"
+        have "\<forall>a3 a4. a3 \<in> atoms v3 \<longrightarrow> a4 \<in> atoms v4 \<longrightarrow> a3 ~ a4"
+        proof clarify
+          fix a3 a4 assume a3_v3: "a3 \<in> atoms v3" and a4_v4: "a4 \<in> atoms v4"
+          obtain A3 B3 where a3: "a3=A3\<mapsto>B3" and v1_A3: "v1 \<sqsubseteq> A3" and B3_v1: "B3 \<sqsubseteq> v1'" 
+            using v3_fun a3_v3 by blast
+          obtain A4 B4 where a4: "a4=A4\<mapsto>B4" and v2_A4: "v2 \<sqsubseteq> A4" and B4_v2: "B4 \<sqsubseteq> v2'" 
+            using v4_fun a4_v4 by blast
+          show "a3 ~ a4"
+          proof (cases "A3 ~ A4")
+            case True
+            have "B3 ~ B4" using 4 v1_v2 B3_v1 B4_v2 by blast
+            then show ?thesis using True a3 a4 by simp
+          next
+            case False
+            then show ?thesis using a3 a4 by simp
+          qed
+        qed
+        then show ?thesis using atoms_consis by blast
+      next
+        assume v1_v2: "\<not>(v1 ~ v2)"
+        have "\<forall>a3 a4. a3 \<in> atoms v3 \<longrightarrow> a4 \<in> atoms v4 \<longrightarrow> a3 ~ a4"
+        proof clarify
+          fix a3 a4 assume a3_v3: "a3 \<in> atoms v3" and a4_v4: "a4 \<in> atoms v4"
+          obtain A3 B3 where a3: "a3=A3\<mapsto>B3" and v1_A3: "v1 \<sqsubseteq> A3" and B3_v1: "B3 \<sqsubseteq> v1'" 
+            using v3_fun a3_v3 by blast
+          obtain A4 B4 where a4: "a4=A4\<mapsto>B4" and v2_A4: "v2 \<sqsubseteq> A4" and B4_v2: "B4 \<sqsubseteq> v2'" 
+            using v4_fun a4_v4 by blast
+          have "\<not> A3 ~ A4" using v1_v2 4 v1_A3 v2_A4 by blast
+          then show "a3 ~ a4" using a3 a4 by simp              
+        qed
+        then show ?thesis using atoms_consis by blast
+      qed
+    qed      
+  next
+    show "?Q (v1\<mapsto>v1') (v2\<mapsto>v2')"
+    proof clarify
+      fix v3 v4 assume "\<not> v1 \<mapsto> v1' ~ v2 \<mapsto> v2'" and v11_v3: "v1 \<mapsto> v1' \<sqsubseteq> v3" and
+        v22_v4: "v2 \<mapsto> v2' \<sqsubseteq> v4" and v3_v4: "v3 ~ v4"
+      then have v1_v2: "v1 ~ v2 \<and> \<not> v1' ~ v2'" by simp
+      obtain v31 v32 where v33_v3: "v31 \<mapsto> v32 \<in> atoms v3" 
+        using le_fun_any_inv_atoms_ex v11_v3 by blast
+       have "v31 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v32" using v33_v3 v11_v3 le_fun_any_inv_atoms
+          
+          
+      have "\<not> v3 ~ v4" sorry 
+      then show "False" using v3_v4 ..
+    qed      
+  qed    
 next
   case (5 n v2 v2')
-  then show ?case sorry
+  show ?case
+  proof
+    show "?P (VNat n) (v2 \<squnion> v2')"   
+      by (metis consis_nat_atoms LaurentValues.le_trans atoms_le_any_nat consis_nat_trans 
+          consis_sym le_any_nat_consis)
+  next
+    show "?Q (VNat n) (v2 \<squnion> v2')" 
+      sorry
+  qed
 next
   case (6 v1 v1' v2 v2')
   then show ?case sorry

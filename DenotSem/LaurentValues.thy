@@ -245,9 +245,7 @@ next
     then show ?thesis by blast
   qed
 qed
- 
-  
-  
+   
 lemma ex: "\<lbrakk> \<Gamma> \<turnstile> c : v; perm \<Gamma> \<Gamma>' \<rbrakk> \<Longrightarrow> \<Gamma>' \<turnstile> c : v"
 proof (induction \<Gamma> c v arbitrary: \<Gamma>' rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
@@ -1040,6 +1038,50 @@ next
   qed
 qed
 
+fun atoms :: "val \<Rightarrow> val set" where
+  "atoms (VNat n) = {VNat n}" |
+  "atoms (v\<mapsto>v') = {v\<mapsto>v'}" |
+  atoms_union: "atoms (v\<squnion>v') = atoms v \<union> atoms v'"  
+
+abbreviation ctx_atoms :: "val list \<Rightarrow> val set" where
+  "ctx_atoms \<Gamma> \<equiv> \<Union>a\<in>set \<Gamma>. atoms a"   
+
+lemma ax_atoms: "v \<in> atoms A \<Longrightarrow> \<exists>c. [A] \<turnstile> c : v"
+proof (induction A)
+  case (VNat x)
+  then show ?case by auto
+next
+  case (VArrow A1 A2)
+  then show ?case by auto
+next
+  case (VUnion A1 A2)
+  then have "v \<in> atoms A1 \<or> v \<in> atoms A2" by auto
+  then show ?case
+  proof
+    assume "v \<in> atoms A1"
+    then obtain c where "[A1] \<turnstile> c : v" using VUnion by auto
+    then obtain c' where "[A1,A2] \<turnstile> c' : v" using weaken[of "[A1]" "[]" c v "[A2]"] by auto
+    then show ?thesis using union_L[of "[]" A1 A2 "[]" c' v] by auto
+  next
+    assume "v \<in> atoms A2"
+    then obtain c where "[A2] \<turnstile> c : v" using VUnion by auto
+    then obtain c' where "[A1,A2] \<turnstile> c' : v" using weaken[of "[]" "[A2]" c v "[A1]"] by auto
+    then show ?thesis using union_L[of "[]" A1 A2 "[]" c' v] by auto
+  qed    
+qed
+
+lemma ax_ctx_atoms: "v \<in> ctx_atoms \<Gamma> \<Longrightarrow> \<exists>c. \<Gamma> \<turnstile> c : v"
+  apply (induction \<Gamma>)
+   apply force
+  apply simp apply (erule disjE) apply (subgoal_tac "\<exists>c. [a] \<turnstile> c : v") prefer 2
+  using ax_atoms apply blast
+   apply (erule exE) apply (subgoal_tac "\<exists>c. [a]@\<Gamma>@[] \<turnstile> c : v") prefer 2 apply (rule weaken)
+    apply force apply force
+  apply (subgoal_tac "\<exists>c. \<Gamma> \<turnstile> c : v") prefer 2 apply blast apply clarify
+  apply (subgoal_tac "\<exists>c. []@ a # \<Gamma> \<turnstile> c : v") prefer 2 apply (rule wk_gen) apply force
+  apply force
+  done      
+
 section "Inversion Lemmas"
 
 lemma d_empty_inv_aux: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma>=[] \<rbrakk> \<Longrightarrow> False"
@@ -1048,13 +1090,6 @@ lemma d_empty_inv_aux: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma>=[] \<rbr
 lemma d_empty_elim[elim!]: "\<lbrakk> [] \<turnstile> c : v \<rbrakk> \<Longrightarrow> P"
   using d_empty_inv_aux by blast
 
-fun atoms :: "val \<Rightarrow> val set" where
-  "atoms (VNat n) = {VNat n}" |
-  "atoms (v\<mapsto>v') = {v\<mapsto>v'}" |
-  atoms_union: "atoms (v\<squnion>v') = atoms v \<union> atoms v'"  
-
-abbreviation ctx_atoms :: "val list \<Rightarrow> val set" where
-  "ctx_atoms \<Gamma> \<equiv> \<Union>a\<in>set \<Gamma>. atoms a"   
 
 lemma d_nat_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = VNat n \<rbrakk> \<Longrightarrow> VNat n \<in> ctx_atoms \<Gamma>"
   by (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct) auto 
@@ -1132,6 +1167,57 @@ next
     apply simp apply (case_tac a) apply force apply simp apply auto done 
   then show ?case ..
 qed 
+  
+lemma d_fun_atoms_L_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; (\<forall>v. v \<in> ctx_atoms \<Gamma> \<longrightarrow> is_fun v);
+                         v' \<in> atoms v \<rbrakk> \<Longrightarrow> is_fun v'"
+proof (induction \<Gamma> c v arbitrary: v' rule: deduce_le.induct)
+  case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
+  then show ?case using UN_E Un_iff insert_is_Un list.set(2) set_append by fastforce
+next
+  case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
+  then show ?case by (metis UN_iff Un_iff insert_is_Un list.set(2) set_append)
+next
+  case (union_R \<Gamma> c v1 v2)
+  then show ?case by (metis Un_iff atoms.simps(3))
+next
+  case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
+  then show ?case
+  proof -
+    have "ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2) = ctx_atoms (\<Gamma>1 @ (v1 \<squnion> v2) # \<Gamma>2)" by (simp add: Un_assoc)
+    then show ?thesis by (metis (no_types) union_L.IH union_L.prems(1) union_L.prems(2))
+  qed
+next
+  case (d_nat n c)
+  then show ?case by simp
+next
+  case (d_arrow \<Gamma> v1 c v2)
+  show ?case using d_arrow(6) by simp
+qed
+
+lemma d_fun_any_inv_atoms: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [(C\<mapsto>D)]; v' \<in> atoms v \<rbrakk> \<Longrightarrow> 
+   \<exists> A B c'. v' = A\<mapsto>B \<and> ([A] \<turnstile> c' : C) \<and> ([D] \<turnstile> c' : B)"
+  apply (induction \<Gamma> c v arbitrary: C D rule: deduce_le.induct)
+  apply (metis append_is_Nil_conv butlast.simps(2) butlast_append list.distinct(1) list.inject self_append_conv2 val.distinct(1))
+  apply (metis append_is_Nil_conv append_self_conv2 butlast.simps(2) butlast_append d_empty_inv_aux list.simps(3))
+  apply auto[1]
+  apply (simp add: append_eq_Cons_conv)
+  apply blast
+  by auto
+  
+proposition weaken_subset: "\<lbrakk> \<Gamma> \<turnstile> c : A; set \<Gamma> = set \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : A"
+  apply (induction \<Gamma> c A arbitrary: \<Gamma>' rule: deduce_le.induct)
+       apply (case_tac "VNat n \<in> set (\<Gamma>1@\<Gamma>2)")
+        apply (subgoal_tac "set (\<Gamma>1 @ \<Gamma>2) = set \<Gamma>'") prefer 2 apply simp
+         apply (rule equalityI) apply (rule subsetI) apply blast apply (rule subsetI) 
+  apply (metis UnI1 UnI2 insertE)
+        apply blast
+       apply (subgoal_tac "set (\<Gamma>1 @ \<Gamma>2) = set (removeAll (VNat n) \<Gamma>')") prefer 2
+        apply force 
+    apply (subgoal_tac "\<exists>c'. removeAll (VNat n) \<Gamma>' \<turnstile> c' : v") prefer 2 apply blast apply (erule exE)
+       
+    
+    
+  oops
   
     
 section "Partial Order on Values"  
@@ -1222,7 +1308,7 @@ proposition le_dist_union_fun: "(A\<squnion>B)\<mapsto>(C\<squnion>D) \<sqsubset
 lemma le_any_nat_inv_atoms: "\<lbrakk> A \<sqsubseteq> VNat n \<rbrakk> \<Longrightarrow> atoms A \<subseteq> { VNat n }"
   unfolding le_val_def using d_nat_atoms_any_inv by fastforce
 
-lemma le_nat_any_inv[elim]: "\<lbrakk> VNat n \<sqsubseteq> A \<rbrakk> \<Longrightarrow> VNat n \<in> atoms A"
+lemma le_nat_any_inv_atoms[elim]: "\<lbrakk> VNat n \<sqsubseteq> A \<rbrakk> \<Longrightarrow> VNat n \<in> atoms A"
   unfolding le_val_def using d_nat_inv[of "[A]"] by auto
 
 lemma le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> A \<mapsto> B \<Longrightarrow> P"
@@ -1231,15 +1317,33 @@ lemma le_nat_fun_inv[elim!]: "VNat n \<sqsubseteq> A \<mapsto> B \<Longrightarro
 lemma le_fun_nat_inv[elim!]: "A\<mapsto>B \<sqsubseteq> VNat n \<Longrightarrow> P"
   unfolding le_val_def using d_nat_atoms_L_inv[of "[VNat n]"] by force
 
-lemma le_fun_any_inv_atoms: assumes ab_c: "A\<mapsto>B \<sqsubseteq> C" shows "\<exists>D E. D\<mapsto>E \<in> atoms C"
+lemma le_fun_any_inv_atoms_ex: assumes ab_c: "A\<mapsto>B \<sqsubseteq> C" shows "\<exists>D E. D\<mapsto>E \<in> atoms C"
 proof -
   obtain c where c_ab: "[C] \<turnstile> c : A\<mapsto>B" using ab_c unfolding le_val_def by auto
   then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
     gp_b: "map cod \<Gamma>' \<turnstile> c' : B" using d_arrow_inv[of "[C]" c "A\<mapsto>B" A B] apply blast done
   obtain D \<Gamma>'' where gp: "\<Gamma>' = D#\<Gamma>''" apply (case_tac \<Gamma>') using gp_b apply force apply force done
-  then have "D \<in> atoms C" using gp_c by auto
+  then have d_c: "D \<in> atoms C" using gp_c by auto
+  obtain D1 D2 where d: "D = D1 \<mapsto> D2" using gp af_gp by (case_tac D) auto
+  show ?thesis using d_c d by blast
+qed
+
+lemma le_fun_any_inv_atoms: assumes ab_c: "A\<mapsto>B \<sqsubseteq> C"
+  shows "\<exists> \<Gamma>'. set \<Gamma>' \<subseteq> atoms C \<and> (\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> v \<sqsubseteq> A)
+               \<and> map cod \<Gamma>' \<turnstile> c' : B"
+proof -
+  obtain c where "[C] \<turnstile> c : A \<mapsto> B" using ab_c unfolding le_val_def by blast
+  then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
+    a_dgp: "\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [A] \<turnstile> c' : v" and cgp_b: "map cod \<Gamma>' \<turnstile> c' : B"
+    using d_arrow_inv[of "[C]" c "A\<mapsto>B" A B] by blast
+        
+      
   show ?thesis sorry
 qed
+  
+lemma le_any_fun_inv_atoms: assumes a_bc: "A \<sqsubseteq> B\<mapsto>C"
+  shows "\<forall>a. a \<in> atoms A \<longrightarrow> (\<exists> a1 a2. a = a1\<mapsto>a2 \<and> B \<sqsubseteq> a1 \<and> a2 \<sqsubseteq> C)"
+  using a_bc unfolding le_val_def apply clarify using d_fun_any_inv_atoms[of "[(B\<mapsto>C)]"] by blast  
     
 section "Type Equivalence"
     
