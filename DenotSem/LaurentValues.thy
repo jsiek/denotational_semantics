@@ -1270,7 +1270,7 @@ termination apply (relation "measure count_dups")
   apply auto 
   done 
 
-lemma weaken_rmdups: "\<lbrakk> \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. rmdups \<Gamma> \<turnstile> c' : A"
+lemma strengthen_rmdups: "\<lbrakk> \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. rmdups \<Gamma> \<turnstile> c' : A"
   apply (induction \<Gamma> arbitrary: c A rule: rmdups.induct)
   apply (case_tac "find_dup xs") apply force
   apply (subgoal_tac "count_list xs a > 1") prefer 2 apply blast
@@ -1279,7 +1279,24 @@ lemma weaken_rmdups: "\<lbrakk> \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrigh
   apply clarify
   apply auto
   done
+
+lemma remove1_rmdups: "count_list xs a > 1 \<Longrightarrow> rmdups (remove1 a xs) = rmdups xs"    
+proof (induction xs)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons a xs)
+  then show ?case sorry
+qed
     
+  
+lemma weaken_rmdups: "\<lbrakk>  rmdups \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma> \<turnstile> c' : A"
+  apply (induction \<Gamma> arbitrary: c A rule: rmdups.induct)
+  apply (case_tac "find_dup xs") apply force
+  apply (subgoal_tac "count_list xs a > 1") prefer 2 apply blast
+  
+    
+sorry   
     
 proposition weaken_subset: "\<lbrakk> \<Gamma> \<turnstile> c : A; set \<Gamma> = set \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : A"
   apply (induction \<Gamma> c A arbitrary: \<Gamma>' rule: deduce_le.induct)
