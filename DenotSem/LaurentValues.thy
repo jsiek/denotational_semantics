@@ -12,7 +12,7 @@ abbreviation is_fun :: "val \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<mapsto>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
 abbreviation all_funs :: "val list \<Rightarrow> bool" where
   "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> set \<Gamma> \<longrightarrow> is_fun v"
-
+  
 inductive deduce_le :: "val list \<Rightarrow> nat \<Rightarrow> val \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
   wk_nat[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(VNat n)#\<Gamma>2 \<turnstile> Suc c: v" | 
   wk_fun[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<mapsto>v2)#\<Gamma>2 \<turnstile> Suc c: v" |
@@ -20,8 +20,8 @@ inductive deduce_le :: "val list \<Rightarrow> nat \<Rightarrow> val \<Rightarro
   union_L[intro]: "\<lbrakk> \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<squnion>v2)#\<Gamma>2 \<turnstile> Suc c : v" | 
   d_nat[intro!]: "[VNat n] \<turnstile> c : VNat n" |
   d_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; \<forall> v v'. v\<mapsto>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
-                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<mapsto> v2"
-
+                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<mapsto> v2"  
+  
 lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Longrightarrow> xs \<turnstile> c' : ys"
   apply (induction xs c ys arbitrary: c' rule: deduce_le.induct) 
   apply (metis Suc_le_D Suc_le_mono wk_nat)  
@@ -1381,6 +1381,7 @@ proof -
 qed
   
 (* to do: generalize to subset and to ctx-atoms *)
+
   
 section "Partial Order on Values"  
   
