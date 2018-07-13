@@ -491,7 +491,7 @@ lemma append_eq3_elim: "\<lbrakk> xs@v#ys = xs'@v'#ys';
   using append_eq3 by (metis (full_types))
     
 
-lemma co: "\<forall> \<Delta> A \<Sigma> c C. m = (size A, c) \<longrightarrow>
+lemma co_aux: "\<forall> \<Delta> A \<Sigma> c C. m = (size A, c) \<longrightarrow>
             \<Delta> @ A # A # \<Sigma> \<turnstile> c : C \<longrightarrow> (\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C)"
 proof (induction m rule: wf_induct[of "less_than <*lex*> less_than"])
   case 1
@@ -675,6 +675,9 @@ next
     qed      
   qed
 qed
+
+lemma co: "\<Delta> @ A # A # \<Sigma> \<turnstile> c : C \<Longrightarrow> \<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C"
+  using co_aux by auto
 
 lemma co_gen: "\<Delta> @ \<Gamma> @ \<Gamma> @ \<Sigma> \<turnstile> c : B \<Longrightarrow> \<exists>c'. \<Delta> @ \<Gamma> @ \<Sigma> \<turnstile> c' : B"
 proof (induction \<Gamma> arbitrary: \<Delta> c)
@@ -1082,6 +1085,10 @@ lemma ax_ctx_atoms: "v \<in> ctx_atoms \<Gamma> \<Longrightarrow> \<exists>c. \<
   apply force
   done      
 
+-- "opposite of co"     
+lemma rm: "\<lbrakk> \<Delta> @ A # \<Sigma> \<turnstile> c : C \<rbrakk> \<Longrightarrow> \<exists>c'. \<Delta> @ A # A # \<Sigma> \<turnstile> c' : C"
+  using wk_gen[of \<Delta> "A#\<Sigma>" c C A] by blast
+
 section "Inversion Lemmas"
 
 lemma d_empty_inv_aux: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma>=[] \<rbrakk> \<Longrightarrow> False"
@@ -1204,6 +1211,76 @@ lemma d_fun_any_inv_atoms: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [(
   apply blast
   by auto
   
+
+lemma rmdup: assumes a_dup: "count_list \<Gamma> a > 1" and g_b: "\<Gamma> \<turnstile> c : B"
+  shows "\<exists> c'. remove1 a \<Gamma> \<turnstile> c' : B"
+proof -
+  have "a \<in> set \<Gamma>" using a_dup using count_notin by force
+  then have 1: "perm \<Gamma> (a#remove1 a \<Gamma>)" by blast
+  have "count_list (remove1 a \<Gamma>) a > 0" using a_dup by auto
+  then have "a \<in> set (remove1 a \<Gamma>)" using gr_implies_not0 by blast
+  then have 2: "perm (remove1 a \<Gamma>) (a#(remove1 a (remove1 a \<Gamma>)))" by blast
+  then have "perm (a#(remove1 a \<Gamma>)) (a#a#(remove1 a (remove1 a \<Gamma>)))" unfolding perm_def by auto
+  then have "perm \<Gamma> (a#a#(remove1 a (remove1 a \<Gamma>)))" using perm_trans 1 apply blast done
+  then obtain c' where "(a#a#(remove1 a (remove1 a \<Gamma>))) \<turnstile> c' : B" using g_b ex by blast
+  then obtain c'' where 3: "(a#(remove1 a (remove1 a \<Gamma>))) \<turnstile> c'' : B" 
+    using co[of "[]" a "remove1 a (remove1 a \<Gamma>)" c' B] by auto
+  have "perm (a#(remove1 a (remove1 a \<Gamma>))) (remove1 a \<Gamma>)" using 2 perm_symm by blast
+  then obtain c3 where "remove1 a \<Gamma> \<turnstile> c3 : B" using 3 ex by blast
+  then show "\<exists>c'. remove1 a \<Gamma> \<turnstile> c' : B" by blast
+qed
+
+fun find_dup :: "'a list \<Rightarrow> 'a option" where
+  "find_dup [] = None" |
+  "find_dup (x#xs) = (if x \<in> set xs then Some x else find_dup xs)"
+  
+lemma find_dup_mem[intro]: "find_dup xs = Some x \<Longrightarrow> x \<in> set xs"
+  apply (induction xs arbitrary: x)
+   apply force
+  apply simp apply (case_tac "a \<in> set xs") apply auto done
+
+lemma find_dup_count[intro]: "find_dup xs = Some x \<Longrightarrow> count_list xs x > 1"
+  apply (induction xs arbitrary: x)
+   apply force
+  apply simp
+  apply (case_tac "a \<in> set xs")
+   apply simp using gr_zeroI apply blast
+  apply simp 
+  apply (subgoal_tac "x \<in> set xs") prefer 2 using find_dup_mem apply force
+  apply blast
+  done    
+
+fun count_dups :: "'a list \<Rightarrow> nat" where
+  "count_dups [] = 0" |
+  "count_dups (x#xs) = (if x \<in> set xs then 1 else 0) + count_dups xs"
+
+lemma rm_count_dups[simp]: "count_list xs x > 1 \<Longrightarrow> count_dups (remove1 x xs) < count_dups xs"
+  apply (induction xs arbitrary: x)
+   apply force
+    apply auto by (simp add: zero_less_iff_neq_zero)
+    
+function rmdups :: "'a list \<Rightarrow> 'a list" where
+  "rmdups xs = (case (find_dup xs) of
+                 None \<Rightarrow> xs
+               | Some x \<Rightarrow> rmdups (remove1 x xs))"
+  by auto
+termination apply (relation "measure count_dups")
+   apply force
+  apply auto apply (subgoal_tac "count_list xs x2 > 1") prefer 2 apply blast
+  apply auto 
+  done 
+
+lemma weaken_rmdups: "\<lbrakk> \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. rmdups \<Gamma> \<turnstile> c' : A"
+  apply (induction \<Gamma> arbitrary: c A rule: rmdups.induct)
+  apply (case_tac "find_dup xs") apply force
+  apply (subgoal_tac "count_list xs a > 1") prefer 2 apply blast
+  apply (subgoal_tac "\<exists>c. remove1 a xs \<turnstile> c : A") prefer 2 using rmdup apply blast
+  apply (subgoal_tac "\<exists>c'. rmdups (remove1 a xs) \<turnstile> c' : A") prefer 2 apply blast
+  apply clarify
+  apply auto
+  done
+    
+    
 proposition weaken_subset: "\<lbrakk> \<Gamma> \<turnstile> c : A; set \<Gamma> = set \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : A"
   apply (induction \<Gamma> c A arbitrary: \<Gamma>' rule: deduce_le.induct)
        apply (case_tac "VNat n \<in> set (\<Gamma>1@\<Gamma>2)")
