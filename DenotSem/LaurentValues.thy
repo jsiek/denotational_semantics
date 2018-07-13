@@ -1362,8 +1362,9 @@ lemma distinct_rmdups[intro]: "distinct (rmdups xs)"
     
 lemma distinct_set_eq_perm[intro]: "\<lbrakk> set xs = set ys; distinct xs; distinct ys \<rbrakk> \<Longrightarrow> perm xs ys"
   unfolding perm_def 
-  by (smt One_nat_def Suc_pred Un_iff count_remove1_same distinct.simps(2) distinct_append neq0_conv nz_count_mem remove1_ex_append set_append)
-    
+  by (smt One_nat_def Suc_pred Un_iff count_remove1_same distinct.simps(2) distinct_append
+      neq0_conv nz_count_mem remove1_ex_append set_append)
+
 proposition weaken_set_eq: assumes g_a: "\<Gamma> \<turnstile> c : A" and g_gp: "set \<Gamma> = set \<Gamma>'"
   shows "\<exists>c'. \<Gamma>' \<turnstile> c' : A"
 proof -
