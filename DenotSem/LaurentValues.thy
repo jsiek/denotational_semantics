@@ -1250,6 +1250,15 @@ lemma find_dup_count[intro]: "find_dup xs = Some x \<Longrightarrow> count_list 
   apply blast
   done    
 
+lemma find_dup_none_count: "find_dup xs = None \<Longrightarrow> count_list xs x < 2"
+  apply (induction xs arbitrary: x)
+   apply force
+  apply simp 
+  apply (case_tac "x = a") apply simp  
+   apply (case_tac "a \<in> set xs") apply force apply force
+  apply (case_tac "a \<in> set xs") apply force apply force
+  done    
+    
 fun count_dups :: "'a list \<Rightarrow> nat" where
   "count_dups [] = 0" |
   "count_dups (x#xs) = (if x \<in> set xs then 1 else 0) + count_dups xs"
@@ -1280,40 +1289,98 @@ lemma strengthen_rmdups: "\<lbrakk> \<Gamma> \<turnstile> c : A \<rbrakk> \<Long
   apply auto
   done
 
-lemma remove1_rmdups: "count_list xs a > 1 \<Longrightarrow> rmdups (remove1 a xs) = rmdups xs"    
-proof (induction xs)
-  case Nil
-  then show ?case by auto
-next
-  case (Cons a xs)
-  then show ?case sorry
+lemma find_dup_diff[simp]: "\<lbrakk> a \<noteq> b; find_dup xs = Some a \<rbrakk> \<Longrightarrow> find_dup (remove1 b xs) = Some a"
+  by (induction xs arbitrary: a b) auto
+        
+lemma remove1_rmdups[simp]: "\<lbrakk> 1 < count_list xs y \<rbrakk> \<Longrightarrow> rmdups (remove1 y xs) = rmdups xs"    
+proof (induction xs arbitrary: y rule: rmdups.induct)
+  case (1 xs)
+  obtain n where cy: "count_list xs y = n + 2" using 1(2)
+    by (metis Suc_nat_number_of_add add.commute less_imp_Suc_add numerals(1) semiring_norm(2))
+  show "rmdups (remove1 y xs) = rmdups xs"
+  proof (cases "find_dup xs")
+    case None
+    then have "count_list xs y < 2" by (simp add: find_dup_none_count)
+    then have "False" using cy by simp
+    then show ?thesis ..
+  next
+    case (Some a)
+    then have rm_xs: "rmdups xs = rmdups (remove1 a xs)" by simp      
+    show ?thesis
+    proof (cases "a = y")
+      case True
+      then have "rmdups xs = rmdups (remove1 y xs)" using rm_xs by simp
+      then show ?thesis by simp
+    next
+      case False
+      then have "1 < count_list (remove1 a xs) y" using 1(2) by simp
+      then have IH: "rmdups (remove1 y (remove1 a xs)) = rmdups (remove1 a xs)" 
+        using 1(1)[of a y] Some False by simp
+      have "find_dup (remove1 y xs) = Some a" using Some False by simp
+      then have "rmdups (remove1 y xs) = rmdups (remove1 a (remove1 y xs))" by simp
+      also have "... = rmdups (remove1 y (remove1 a xs))" using False by (simp add: remove1_commute)
+      also have "... = rmdups (remove1 a xs)" using IH by simp
+      also have "... = rmdups xs" using rm_xs by simp
+      finally show ?thesis by simp
+    qed
+  qed
 qed
     
   
-lemma weaken_rmdups: "\<lbrakk>  rmdups \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma> \<turnstile> c' : A"
+lemma weaken_rmdups: "\<lbrakk> rmdups \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma> \<turnstile> c' : A"
   apply (induction \<Gamma> arbitrary: c A rule: rmdups.induct)
   apply (case_tac "find_dup xs") apply force
   apply (subgoal_tac "count_list xs a > 1") prefer 2 apply blast
+  apply (simp only: remove1_rmdups) 
+  apply (subgoal_tac "rmdups xs = rmdups (remove1 a xs)") prefer 2 apply force
+  apply (subgoal_tac "\<exists>c'. remove1 a xs \<turnstile> c' : A") prefer 2 apply force apply clarify
+  apply (subgoal_tac "a \<in> set xs") prefer 2 apply blast
+  apply (subgoal_tac "\<exists> ys zs. xs=ys@a#zs \<and> remove1 a xs = ys@zs \<and> a \<notin> set ys")
+   prefer 2 apply (rule remove1_ex_append) apply blast
+  apply clarify apply (rule wk_gen) apply force 
+  done   
+ 
+lemma rmdups_set_eq[simp]: "set (rmdups \<Gamma>) = set \<Gamma>"
+  apply (induction rule: rmdups.induct)
+  apply (case_tac "find_dup xs")
+  apply force
+  apply (subgoal_tac "a \<in> set xs") prefer 2 apply force
+  by (smt add.left_neutral count_dups.simps(2) find_dup_count insert_absorb list.simps(15) not_add_less2 perm_cons_remove perm_def perm_set_eq remove1.simps(2) remove1_rmdups rm_count_dups)    
+
+lemma find_dup_distinct: "find_dup xs = None \<Longrightarrow> distinct xs"
+  apply (induction xs)
+   apply simp
+  apply auto apply (case_tac "a \<in> set xs") apply auto
+  done    
+    
+lemma distinct_rmdups[intro]: "distinct (rmdups xs)"
+  apply (induction xs rule: rmdups.induct)
+  apply (case_tac "find_dup xs")
+  using find_dup_distinct apply force
+  apply auto
+  done
+    
+lemma distinct_set_eq_perm[intro]: "\<lbrakk> set xs = set ys; distinct xs; distinct ys \<rbrakk> \<Longrightarrow> perm xs ys"
+  unfolding perm_def 
+  by (smt One_nat_def Suc_pred Un_iff count_remove1_same distinct.simps(2) distinct_append neq0_conv nz_count_mem remove1_ex_append set_append)
+    
+proposition weaken_set_eq: assumes g_a: "\<Gamma> \<turnstile> c : A" and g_gp: "set \<Gamma> = set \<Gamma>'"
+  shows "\<exists>c'. \<Gamma>' \<turnstile> c' : A"
+proof -
+  have "set (rmdups \<Gamma>) = set \<Gamma>" using rmdups_set_eq by fast
+  also have "... = set (rmdups \<Gamma>')" using rmdups_set_eq g_gp by fast
+  finally have rg_rgp: "set (rmdups \<Gamma>) = set (rmdups \<Gamma>')" by blast
+  have d_g: "distinct (rmdups \<Gamma>)" by blast
+  have d_gp: "distinct (rmdups \<Gamma>')" by blast
+  have p: "perm (rmdups \<Gamma>) (rmdups \<Gamma>')" using d_g d_gp rg_rgp distinct_set_eq_perm by blast
+  obtain c1 where "rmdups \<Gamma> \<turnstile> c1 : A" using strengthen_rmdups g_a by blast
+  then obtain c2 where "rmdups \<Gamma>' \<turnstile> c2 : A" using ex p by blast
+  then obtain c3 where "\<Gamma>' \<turnstile> c3 : A" using weaken_rmdups by blast      
+  then show ?thesis by blast
+qed
   
-    
-sorry   
-    
-proposition weaken_subset: "\<lbrakk> \<Gamma> \<turnstile> c : A; set \<Gamma> = set \<Gamma>' \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma>' \<turnstile> c' : A"
-  apply (induction \<Gamma> c A arbitrary: \<Gamma>' rule: deduce_le.induct)
-       apply (case_tac "VNat n \<in> set (\<Gamma>1@\<Gamma>2)")
-        apply (subgoal_tac "set (\<Gamma>1 @ \<Gamma>2) = set \<Gamma>'") prefer 2 apply simp
-         apply (rule equalityI) apply (rule subsetI) apply blast apply (rule subsetI) 
-  apply (metis UnI1 UnI2 insertE)
-        apply blast
-       apply (subgoal_tac "set (\<Gamma>1 @ \<Gamma>2) = set (removeAll (VNat n) \<Gamma>')") prefer 2
-        apply force 
-    apply (subgoal_tac "\<exists>c'. removeAll (VNat n) \<Gamma>' \<turnstile> c' : v") prefer 2 apply blast apply (erule exE)
-       
-    
-    
-  oops
+(* to do: generalize to subset and to ctx-atoms *)
   
-    
 section "Partial Order on Values"  
   
 definition le_val :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "\<sqsubseteq>" 55) where
@@ -1422,17 +1489,38 @@ proof -
   show ?thesis using d_c d by blast
 qed
 
+lemma le_fold_join_L: "x#xs \<turnstile> c : A \<Longrightarrow> \<exists>c'. [fold (\<lambda>x r. x \<squnion> r) xs x] \<turnstile> c' : A"
+  apply (induction xs arbitrary: x c A)
+  apply force
+  apply simp
+  apply (subgoal_tac "a # x # xs \<turnstile> c : A") prefer 2
+   apply (subgoal_tac "perm (x # a # xs) (a # x # xs)") prefer 2 apply (simp add: perm_def) 
+    using ex apply blast
+  apply (subgoal_tac "[] @ (a\<squnion>x) # xs \<turnstile> Suc c : A") prefer 2 using union_L[of "[]"] apply force
+  apply simp
+  done   
+
+definition join_list :: "val list \<Rightarrow> val" ("\<Squnion>" 1000) where
+  "\<Squnion> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold (\<lambda>x r. x \<squnion> r) xs' x)"
+    
 lemma le_fun_any_inv_atoms: assumes ab_c: "A\<mapsto>B \<sqsubseteq> C"
-  shows "\<exists> \<Gamma>'. set \<Gamma>' \<subseteq> atoms C \<and> (\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> v \<sqsubseteq> A)
-               \<and> map cod \<Gamma>' \<turnstile> c' : B"
+  shows "\<exists> \<Gamma>'. \<Gamma>' \<noteq> [] \<and> all_funs \<Gamma>' \<and> set \<Gamma>' \<subseteq> atoms C \<and> (\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> v \<sqsubseteq> A)
+               \<and> B \<sqsubseteq> \<Squnion>(map cod \<Gamma>')"
 proof -
   obtain c where "[C] \<turnstile> c : A \<mapsto> B" using ab_c unfolding le_val_def by blast
   then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
     a_dgp: "\<forall> v v'. v\<mapsto>v' \<in> set \<Gamma>' \<longrightarrow> [A] \<turnstile> c' : v" and cgp_b: "map cod \<Gamma>' \<turnstile> c' : B"
     using d_arrow_inv[of "[C]" c "A\<mapsto>B" A B] by blast
-        
-      
-  show ?thesis sorry
+  obtain D \<Gamma>'' where gp: "\<Gamma>' = D#\<Gamma>''" using cgp_b apply (cases \<Gamma>') apply auto done
+  then have "cod D # map cod \<Gamma>'' \<turnstile> c' : B" using cgp_b gp by simp
+  then obtain c'' where "[fold (\<lambda>x r. x \<squnion> r) (map cod \<Gamma>'') (cod D)] \<turnstile> c'' : B"
+    using le_fold_join_L by blast
+  then have "[\<Squnion>(map cod \<Gamma>')] \<turnstile> c'' : B" using gp join_list_def by simp
+  then have "B \<sqsubseteq> \<Squnion>(map cod \<Gamma>')" unfolding le_val_def by blast   
+  then show ?thesis using gp_c af_gp a_dgp gp
+    apply (rule_tac x=\<Gamma>' in exI) apply (rule conjI) apply force apply (rule conjI) apply force
+    apply (rule conjI) apply force apply (rule conjI) apply (simp add: le_val_def) apply blast
+    apply blast done
 qed
   
 lemma le_any_fun_inv_atoms: assumes a_bc: "A \<sqsubseteq> B\<mapsto>C"
