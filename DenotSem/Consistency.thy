@@ -13,21 +13,24 @@ fun consistent :: "val \<Rightarrow> val \<Rightarrow> bool" (infix "~" 52) wher
   "(v1\<mapsto>v1') ~ (v2 \<squnion> v2') = ((v1\<mapsto>v1') ~ v2 \<and> (v1\<mapsto>v1') ~ v2')" |
   "(v1\<squnion>v1') ~ v2 = (v1 ~ v2 \<and> v1' ~ v2)" 
   
-fun consis_env :: "val list \<Rightarrow> val list \<Rightarrow> bool" where
+(*fun consis_env :: "val list \<Rightarrow> val list \<Rightarrow> bool" where
   "consis_env [] [] = True" |
   "consis_env [] (v'#\<rho>') = False" | 
   "consis_env (v#\<rho>) [] = False" |
   "consis_env (v#\<rho>) (v'#\<rho>') = (v ~ v' \<and> consis_env \<rho> \<rho>')"
-
+*)
+abbreviation consis_env :: "val list \<Rightarrow> val list \<Rightarrow> bool" where
+  "consis_env \<rho> \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho> \<longrightarrow> \<rho>!k ~ \<rho>'!k)"
+  
 fun is_val :: "val \<Rightarrow> bool" where
   "is_val (VNat n) = True" |
   "is_val (v \<mapsto> v') = (is_val v \<and> is_val v')" |
   "is_val (v1 \<squnion> v2) = (is_val v1 \<and> is_val v2 \<and> v1 ~ v2)"
 
-definition val_env :: "val list \<Rightarrow> bool" where
+abbreviation val_env :: "val list \<Rightarrow> bool" where
   "val_env \<rho> \<equiv> \<forall>k. k < length \<rho> \<longrightarrow> is_val (\<rho>!k)"
 
-definition env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where 
+abbreviation env_le :: "val list \<Rightarrow> val list \<Rightarrow> bool" (infix "\<sqsubseteq>" 52) where 
   "(\<rho>::val list) \<sqsubseteq> \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k \<sqsubseteq> \<rho>'!k)" 
  
 lemma consis_join_R[intro!]: "\<lbrakk> v1 ~ v2; v1 ~ v3 \<rbrakk> \<Longrightarrow> v1 ~ v2 \<squnion> v3"
@@ -269,8 +272,8 @@ next
       then have v1_v2: "v1 ~ v2 \<and> \<not> v1' ~ v2'" by simp
       obtain v31 v32 where v33_v3: "v31 \<mapsto> v32 \<in> atoms v3" 
         using le_fun_any_inv_atoms_ex v11_v3 by blast
-       have "v31 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v32" using v33_v3 v11_v3 le_fun_any_inv_atoms
-          
+      have "v31 \<sqsubseteq> v1 \<and> v1' \<sqsubseteq> v32" using v33_v3 v11_v3 le_fun_any_inv_atoms
+        sorry    
           
       have "\<not> v3 ~ v4" sorry 
       then show "False" using v3_v4 ..
@@ -347,55 +350,33 @@ qed
   apply auto   
   done
 *)
-
-(*    
+  
 lemma consis_le: "\<lbrakk> v1 \<sqsubseteq> v1'; v2 \<sqsubseteq> v2'; v1' ~ v2' \<rbrakk> \<Longrightarrow> v1 ~ v2"
   using consis_le_inconsis_le by blast
 
-lemma inconsis_le: "\<lbrakk> v1' \<sqsubseteq> v1; v2' \<sqsubseteq> v2; v1' !~ v2' \<rbrakk> \<Longrightarrow> v1 !~ v2"
+lemma inconsis_le: "\<lbrakk> v1' \<sqsubseteq> v1; v2' \<sqsubseteq> v2; \<not> v1' ~ v2' \<rbrakk> \<Longrightarrow> \<not> v1 ~ v2"
   using consis_le_inconsis_le by blast
-*)
     
-lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk>
-  \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
-  apply (induction arbitrary: x rule: consis_env.induct)
-   apply force
-  apply (case_tac x) apply force apply auto
-  done
+lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk> \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
+  by auto
 
-lemma cons_val_env_inv[elim!]:
-  "\<lbrakk> val_env (v#\<rho>); \<lbrakk> is_val v; val_env \<rho> \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-    unfolding val_env_def by fastforce
+lemma cons_val_env_inv[elim!]: "\<lbrakk> val_env (v#\<rho>); \<lbrakk> is_val v; val_env \<rho> \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  by fastforce
 
 lemma ext_val_env[intro!]: "\<lbrakk> is_val v; val_env \<rho> \<rbrakk> \<Longrightarrow> val_env (v#\<rho>)"
-  unfolding val_env_def apply auto apply (case_tac k) apply auto done
-      
+   apply auto apply (case_tac k) apply auto done
+
+abbreviation join_env :: "val list \<Rightarrow> val list \<Rightarrow> val list" (infix "\<squnion>" 55) where
+  "\<rho> \<squnion> \<rho>' \<equiv> map (\<lambda>(v,v'). v \<squnion> v') (zip \<rho> \<rho>')"
+    
 lemma consis_env_join: fixes \<rho>1::"val list" assumes r1_r2: "consis_env \<rho>1 \<rho>2" 
   and v_r1: "val_env \<rho>1" and v_r2: "val_env \<rho>2"
-  shows "\<exists> \<rho>3. \<rho>1 \<squnion> \<rho>2 = Some \<rho>3 \<and> val_env \<rho>3"
-  using r1_r2 v_r1 v_r2 apply (induction rule: consis_env.induct)
-   apply (rule_tac x="[]" in exI) apply force
-   apply (erule cons_val_env_inv)
-  apply (erule cons_val_env_inv)
-   apply (subgoal_tac "\<exists>\<rho>3. \<rho> \<squnion> \<rho>' = Some \<rho>3 \<and> val_env \<rho>3") prefer 2 apply blast
-  apply (subgoal_tac "\<exists> v3. v \<squnion> v' = Some v3 \<and> is_val v3")
-    prefer 2 using consis_join_val apply blast
-  apply (erule exE)+ apply (erule conjE)+
-  apply (rule_tac x="v3#\<rho>3" in exI) 
-  apply (rule conjI) apply fastforce
-  apply blast
-  done
+  shows "val_env (\<rho>1 \<squnion> \<rho>2)" using r1_r2 v_r1 v_r2 by auto
     
 lemma consis_env_length: "consis_env \<rho> \<rho>' \<Longrightarrow> length \<rho> = length \<rho>'"
-  apply (induction rule: consis_env.induct) apply auto done
+  by auto
 
-lemma join_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2; \<rho>1 \<squnion> \<rho>2 = Some \<rho>3  \<rbrakk> \<Longrightarrow> length \<rho>3 = length \<rho>1"
-  apply (induction arbitrary: \<rho>3 rule: consis_env.induct)
-   apply fastforce
-  apply simp
-  apply (case_tac "v \<squnion> v'") apply auto
-  apply (case_tac "\<rho> \<squnion> \<rho>'") apply auto
-  done
-*)
-     
+lemma join_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2 \<rbrakk> \<Longrightarrow> length (\<rho>1 \<squnion> \<rho>2) = length \<rho>1"
+  by auto
+         
 end
