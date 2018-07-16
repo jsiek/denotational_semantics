@@ -1381,8 +1381,10 @@ proof -
 qed
   
 (* to do: generalize to subset and to ctx-atoms *)
-section "Partial Order on Values"  
-  
+
+
+section "Subtyping"  
+
 definition sub_ty :: "ty \<Rightarrow> ty \<Rightarrow> bool" (infix "<:" 55) where
   "v1 <: v2 \<equiv> \<exists>c. [v1] \<turnstile> c : v2"
 
@@ -1476,6 +1478,15 @@ lemma sub_nat_fun_inv[elim!]: "A \<rightarrow> B <: TNat n \<Longrightarrow> P"
     
 lemma sub_fun_nat_inv[elim!]: "TNat n <: A\<rightarrow>B  \<Longrightarrow> P"
   unfolding sub_ty_def using d_nat_atoms_L_inv[of "[TNat n]"] by force
+
+lemma sub_fun_fun_inv[elim!]: assumes ab_cd: "A\<rightarrow>B <: C\<rightarrow>D" and rest: "\<lbrakk> C <: A; B <: D \<rbrakk> \<Longrightarrow> P"
+  shows "P"
+proof -
+  obtain c where "[A\<rightarrow>B] \<turnstile> c : C\<rightarrow>D" using ab_cd unfolding sub_ty_def by auto
+  then obtain c' where c_a: "[C] \<turnstile> c' : A" and b_d: "[B] \<turnstile> c' : D"
+    using d_fun_any_inv_atoms[of "[A\<rightarrow>B]" c "C\<rightarrow>D" A B "C\<rightarrow>D"] by auto
+  then show ?thesis using rest sub_ty_def by auto
+qed
 
 lemma sub_fun_any_inv_atoms_ex: assumes ab_c: "C <: A\<rightarrow>B" shows "\<exists>D E. D\<rightarrow>E \<in> atoms C"
 proof -
