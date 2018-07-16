@@ -15,9 +15,33 @@ lemma merge_inter: "A ~ B \<Longrightarrow> merge A B \<approx> A \<sqinter> B"
     apply simp
   done
   
-lemma consistent_app: "\<lbrakk> f1 ~ f2; v1 ~ v2; v1' \<in> f1 \<bullet> v1; v2' \<in> f2 \<bullet> v2 \<rbrakk> \<Longrightarrow> v1' ~ v2'"
-  apply simp
-  sorry
+lemma consistent_app: assumes f1_f2: "f1 ~ f2" and v1_v2: "v1 ~ v2" and 
+  f1_v1: "v1' \<in> f1 \<bullet> v1"  and f2_v2: "v2' \<in> f2 \<bullet> v2" 
+shows "v1' ~ v2'"
+proof -
+  have f1_v11: "f1 <: v1 \<rightarrow> v1'" using f1_v1 by simp
+  have f2_v22: "f2 <: v2 \<rightarrow> v2'" using f2_v2 by simp
+
+  obtain \<Gamma>1 where g1_ne: "\<Gamma>1 \<noteq> []" and "all_funs \<Gamma>1" and g1_f1: "set \<Gamma>1 \<subseteq> atoms f1" and
+    v1_g1: "\<forall>v v'. v\<rightarrow>v' \<in> set \<Gamma>1 \<longrightarrow> v1 <: v" and g1_v1p: "\<Sqinter>(map cod \<Gamma>1) <: v1'"
+    using f1_v11 sub_fun_any_inv_atoms[of f1 v1 v1'] by blast
+    
+  obtain \<Gamma>2 where g2_ne: "\<Gamma>2 \<noteq> []" and "all_funs \<Gamma>2" and g2_f2: "set \<Gamma>2 \<subseteq> atoms f2" and
+    v2_g2: "\<forall>v v'. v\<rightarrow>v' \<in> set \<Gamma>2 \<longrightarrow> v2 <: v" and g2_v2p: "\<Sqinter>(map cod \<Gamma>2) <: v2'"
+    using f2_v22 sub_fun_any_inv_atoms[of f2 v2 v2'] by blast
+
+  { fix a b c d
+    assume ab_g1: "a\<rightarrow>b \<in> set \<Gamma>1" and cd_g2: "c\<rightarrow>d \<in> set \<Gamma>2"
+    have v1_a: "v1 <: a" using v1_g1 ab_g1 by blast 
+    have v2_c: "v2 <: c" using v2_g2 cd_g2 by blast
+    have a_c: "a ~ c" using v1_a v2_c v1_v2 consis_le by blast        
+    have ab_cd: "a\<rightarrow>b ~ c\<rightarrow>d"
+      using ab_g1 cd_g2 g1_f1 g2_f2 f1_f2 consis_atoms by blast
+    have "b ~ d" using ab_cd a_c by simp
+  }
+  then have "\<Sqinter>(map cod \<Gamma>1) ~ \<Sqinter>(map cod \<Gamma>2)" sorry
+  then show ?thesis using g1_v1p g2_v2p consis_le by blast
+qed
   
 lemma merge_app: assumes f1_v1: "v1' \<in> f1 \<bullet> v1" and f2_v2: "v2' \<in> f2 \<bullet> v2" and 
   f1_f2: "f1 ~ f2" and v1_v2: "v1 ~ v2" and v1p_v2p: "v1' ~ v2'"

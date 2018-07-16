@@ -1211,7 +1211,6 @@ lemma d_fun_any_inv_atoms: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [(
   apply blast
   by auto
   
-
 lemma rmdup: assumes a_dup: "count_list \<Gamma> a > 1" and g_b: "\<Gamma> \<turnstile> c : B"
   shows "\<exists> c'. remove1 a \<Gamma> \<turnstile> c' : B"
 proof -
@@ -1510,13 +1509,13 @@ lemma sub_fold_join_L: "x#xs \<turnstile> c : A \<Longrightarrow> \<exists>c'. [
   apply simp
   done   
 
-definition join_list :: "ty list \<Rightarrow> ty" ("\<Squnion>" 1000) where
-  "\<Squnion> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold (\<lambda>x r. x \<sqinter> r) xs' x)"
+definition meet_list :: "ty list \<Rightarrow> ty" ("\<Sqinter>" 1000) where
+  "\<Sqinter> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold (\<lambda>x r. x \<sqinter> r) xs' x)"
     
 lemma sub_fun_any_inv_atoms: assumes ab_c: "C <: A\<rightarrow>B"
   shows "\<exists> \<Gamma>'. \<Gamma>' \<noteq> [] \<and> all_funs \<Gamma>' \<and> set \<Gamma>' \<subseteq> atoms C 
                \<and> (\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> A <: v)
-               \<and> \<Squnion>(map cod \<Gamma>') <: B"
+               \<and> \<Sqinter>(map cod \<Gamma>') <: B"
 proof -
   obtain c where "[C] \<turnstile> c : A \<rightarrow> B" using ab_c unfolding sub_ty_def by blast
   then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
@@ -1526,8 +1525,8 @@ proof -
   then have "cod D # map cod \<Gamma>'' \<turnstile> c' : B" using cgp_b gp by simp
   then obtain c'' where "[fold (\<lambda>x r. x \<sqinter> r) (map cod \<Gamma>'') (cod D)] \<turnstile> c'' : B"
     using sub_fold_join_L by blast
-  then have "[\<Squnion>(map cod \<Gamma>')] \<turnstile> c'' : B" using gp join_list_def by simp
-  then have "\<Squnion>(map cod \<Gamma>') <: B" unfolding sub_ty_def by blast   
+  then have "[\<Sqinter>(map cod \<Gamma>')] \<turnstile> c'' : B" using gp meet_list_def by simp
+  then have "\<Sqinter>(map cod \<Gamma>') <: B" unfolding sub_ty_def by blast   
   then show ?thesis using gp_c af_gp a_dgp gp
     apply (rule_tac x=\<Gamma>' in exI) apply (rule conjI) apply force apply (rule conjI) apply force
     apply (rule conjI) apply force apply (rule conjI) apply (simp add: sub_ty_def) apply blast

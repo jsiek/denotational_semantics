@@ -34,7 +34,8 @@ inductive_cases
   wf_ty_arrow_inv[elim!]: "wf_ty (v \<rightarrow> v')" and 
   wf_ty_inter_inv[elim!]: "wf_ty (f \<sqinter> f')" and
   wf_arrow_inv[elim!]: "wf_fun (v \<rightarrow> v')" and 
-  wf_inter_inv[elim!]: "wf_fun (f \<sqinter> f')"
+  wf_inter_inv[elim!]: "wf_fun (f \<sqinter> f')" and
+  wf_fun_inv: "wf_fun f"
   
 abbreviation wf_env :: "ty list \<Rightarrow> bool" where
   "wf_env \<rho> \<equiv> \<forall>k. k < length \<rho> \<longrightarrow> wf_ty (\<rho>!k)"
@@ -109,7 +110,144 @@ lemma upper_bound_consis: fixes v1::val and v2::val and v3::val
   oops      
 *)
     
+lemma atoms_inter_inv[elim!]: "\<lbrakk> v \<in> atoms (v1 \<sqinter> v2); v \<in> atoms v1 \<Longrightarrow> P; v \<in> atoms v2 \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"  
+  by auto 
+    
+lemma consis_arrow_inter_inv[elim!]: "\<lbrakk> v1 \<rightarrow> v1' ~ v2 \<sqinter> v2'; \<lbrakk> v1\<rightarrow>v1' ~ v2; v1\<rightarrow>v1' ~ v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  by auto  
+  
+lemma consis_inter_arrow_inv[elim!]: "\<lbrakk> v1 \<sqinter> v1' ~ v2 \<rightarrow> v2'; \<lbrakk> v1~ v2 \<rightarrow> v2'; v1' ~ v2\<rightarrow>v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  by auto  
 
+lemma consis_inter_inter_inv[elim!]: "\<lbrakk> v1 \<sqinter> v1' ~ v2 \<sqinter> v2'; 
+    \<lbrakk> v1 ~ v2; v1~v2'; v1' ~ v2; v1' ~ v2' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  by auto  
+    
+lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> v1' ~ v2'"
+  apply (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct)  
+        apply force
+       apply force
+        apply force
+     apply (metis atoms.simps(2) singletonD)
+      apply force
+    apply blast
+    apply force
+    apply blast
+    apply blast
+  done
+
+lemma wf_merge[intro!]: "\<lbrakk> wf_ty a; wf_ty b; a ~ b \<rbrakk> \<Longrightarrow> wf_ty (merge a b)"
+  by (induction a b rule: consistent.induct) auto
+      
+lemma consis_merge: "\<lbrakk> a ~ b; a ~ y; x ~ b; x ~ y \<rbrakk> \<Longrightarrow> merge a x ~ merge b y"
+  apply (case_tac a) apply (case_tac b) apply auto apply (case_tac y) apply auto
+    apply (case_tac x) apply auto apply (case_tac b) apply auto apply (case_tac b)
+    apply auto
+  done
+
+lemma consis_inter_right: "\<lbrakk> wf_fun A; wf_fun B; A ~ C; B ~ C \<rbrakk> \<Longrightarrow> A \<sqinter> B ~ C"
+  apply (induction C arbitrary: A B)
+    apply (erule wf_fun_inv) apply force apply force
+    apply (erule wf_fun_inv) apply force apply force
+  apply (erule wf_fun_inv) apply simp 
+   apply (erule wf_fun_inv) apply simp apply force
+  apply simp apply (erule wf_fun_inv) apply force apply force
+  done    
+
+lemma consis_merge_left: "\<lbrakk> a ~ v; x ~ v; wf_ty a; wf_ty x \<rbrakk> \<Longrightarrow> merge a x ~ v"
+  apply (case_tac a) apply (case_tac v) apply auto apply (case_tac x) apply auto
+   apply (case_tac v) apply auto apply (case_tac x) apply auto 
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast
+   apply (case_tac x) apply force apply force apply simp 
+   apply clarify apply (rule consis_inter_right) apply blast apply blast apply blast apply blast
+  apply (case_tac v) apply force apply force apply simp
+  apply (case_tac x) apply force apply simp apply clarify apply (rule conjI)
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast 
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast 
+  apply (rule conjI)
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast 
+  apply (rule conjI)
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast 
+  apply clarify
+  apply (rule conjI)
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast 
+    apply (rule consis_inter_right) apply blast apply blast apply blast apply blast 
+  done   
+
+lemma consis_merge_right: "\<lbrakk> v ~ a; v ~ x; wf_ty a; wf_ty x \<rbrakk> \<Longrightarrow> v ~ merge a x"
+  sorry
+
+lemma consis_fold_merge: "\<forall> L2 x y. (\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<union> set L2 \<longrightarrow> v1 ~ v2) \<longrightarrow>
+        (\<forall> v. v \<in> set L1 \<union> set L2 \<longrightarrow> x ~ v) \<longrightarrow> (\<forall>v. v \<in> set L1 \<union> set L2 \<longrightarrow> v ~ y) \<longrightarrow>
+        x ~ y \<longrightarrow> wf_ty x \<longrightarrow> wf_ty y \<longrightarrow> length L1 = length L2 \<longrightarrow>
+       (\<forall>v. v \<in> set L1 \<longrightarrow> wf_ty v) \<and> (\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v) \<longrightarrow>
+   fold (\<lambda>x r. merge x r) L1 x ~ fold (\<lambda>x r. merge x r) L2 y" (is "\<forall> L2 x y. ?P L1 L2 x y")
+proof (induction L1)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons a L1') then have IH: "\<forall> L2 x y. ?P L1' L2 x y" .
+  show ?case
+  proof clarify
+    fix L2 x y assume 1: "\<forall>v1 v2. {v1,v2} \<subseteq> set (a # L1') \<union> set L2 \<longrightarrow> v1 ~ v2" and
+      2: "\<forall>v. v \<in> set (a # L1') \<union> set L2 \<longrightarrow> x ~ v" and
+      3: "\<forall>v. v \<in> set (a # L1') \<union> set L2 \<longrightarrow> v ~ y" and
+      x_y: "x ~ y" and wf_x: "wf_ty x" and wf_y: "wf_ty y" and 
+      l1_l2: "length (a # L1') = length L2" and
+      wf_L1p: "\<forall>v. v \<in> set (a # L1') \<longrightarrow> wf_ty v" and
+      wf_L2: "\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v" 
+    show "fold merge (a # L1') x ~ fold merge L2 y" 
+    proof (cases L2)
+      case Nil
+      then have "False" using l1_l2 by simp
+      then show ?thesis ..
+    next
+      case (Cons b L2')
+      from IH have IH_spec: "?P L1' L2' (merge a x) (merge b y)" by simp        
+      have ax_by: "merge a x ~ merge b y" using 1 2 3 local.Cons x_y consis_merge by auto
+      have 4: "\<forall>v1 v2. {v1,v2} \<subseteq> set L1' \<union> set L2' \<longrightarrow> v1 ~ v2" using 1 Cons by auto
+      have 5: "\<forall>v. v \<in> set L1' \<union> set L2' \<longrightarrow> merge a x ~ v" 
+        apply clarify
+        apply (subgoal_tac "a ~ v") prefer 2 using 1 Cons apply force
+        apply (subgoal_tac "x ~ v") prefer 2 using 2 Cons apply force
+        apply (rule consis_merge_left) apply blast apply blast
+        using wf_L1p apply simp
+        using wf_x apply simp done 
+      have 6: "\<forall>v. v \<in> set L1' \<union> set L2'\<longrightarrow> v ~ merge b y" 
+          apply clarify 
+          apply (subgoal_tac "v ~ b") prefer 2 using 1 Cons apply force
+          apply (subgoal_tac "v ~ y") prefer 2 using 3 Cons apply force
+        apply (rule consis_merge_right) apply blast apply blast
+        using wf_L2 Cons apply simp
+        using wf_y apply simp done 
+      have 7: "length L1' = length L2'" using Cons l1_l2 by auto      
+      have 8: "wf_ty (merge a x)"
+      proof -
+        have wf_a: "wf_ty a" using wf_L1p by auto
+        have a_x: "a ~ x" using 2 consis_sym[of x a] by simp  
+        show ?thesis using wf_x wf_a a_x wf_merge[of a x] by simp
+      qed
+      have 9: "wf_ty (merge b y)"
+      proof -
+        have wf_b: "wf_ty b" using wf_L2 Cons by auto
+        have b_y: "b ~ y" using 3 consis_sym[of y b] Cons by simp  
+        show ?thesis using wf_y wf_b b_y wf_merge[of b y] by simp
+      qed
+      have 10: "\<forall>v. v \<in> set L1' \<longrightarrow> wf_ty v" using wf_L1p by simp
+      have 11: "\<forall>v. v \<in> set L2' \<longrightarrow> wf_ty v" using wf_L2 Cons by simp
+      have "fold merge L1' (merge a x) ~ fold merge L2' (merge b y)"
+        using IH_spec 4 5 6 7 8 9 10 11 ax_by by blast          
+      then show ?thesis using Cons by simp
+    qed
+  qed
+qed
+    
+lemma consis_glb: "\<lbrakk> (\<forall> v1 v2. v1 \<in> set L1 \<longrightarrow> v2 \<in> set L2 \<longrightarrow> v1 ~ v2); 
+        L1 \<noteq> []; L2 \<noteq> [] \<rbrakk> \<Longrightarrow> \<Sqinter>L1 ~ \<Sqinter>L2"
+  
+    
+  sorry  
+  
 (*
 lemma d_consis_nat_L: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [TNat n] \<rbrakk> \<Longrightarrow> v ~ TNat n"
   apply (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct)
@@ -134,16 +272,7 @@ lemma le_any_nat_atom_consis: "\<lbrakk> v \<sqsubseteq> TNat n \<rbrakk> \<Long
 definition consis :: "ty set \<Rightarrow> bool" where
   "consis \<Gamma> \<equiv> (\<forall>v v'. v \<in> \<Gamma> \<longrightarrow> v' \<in> \<Gamma> \<longrightarrow> v ~ v')"
   
-lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> v1' ~ v2'"
-  apply (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct)  
-        apply force
-       apply force
-      apply force
-     apply (metis atoms.simps(2) singletonD)
-    apply force
-   apply force
-  apply force
-  done
+
 
 lemma atoms_inconsis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
   by (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct) auto
@@ -377,13 +506,13 @@ qed
   apply auto   
   done
 *)
-  
+*)  
 lemma consis_le: "\<lbrakk> v1' <: v1; v2' <: v2; v1' ~ v2' \<rbrakk> \<Longrightarrow> v1 ~ v2"
-  using consis_le_inconsis_le by blast
-
-lemma inconsis_le: "\<lbrakk> v1 <: v1'; v2 <: v2'; \<not> v1' ~ v2' \<rbrakk> \<Longrightarrow> \<not> v1 ~ v2"
-  using consis_le_inconsis_le by blast
+  sorry
     
+lemma inconsis_le: "\<lbrakk> v1 <: v1'; v2 <: v2'; \<not> v1' ~ v2' \<rbrakk> \<Longrightarrow> \<not> v1 ~ v2"
+  sorry
+(*    
 lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk> \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
   by auto
 
