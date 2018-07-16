@@ -1,5 +1,5 @@
 theory Deterministic
-  imports LaurentValues Denot Subsumption
+  imports Values Denot Subsumption
 begin
 
 theorem deterministic:
