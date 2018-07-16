@@ -534,15 +534,6 @@ lemma join_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2 \<rbrakk> \<Longrig
   by auto
 *)
     
-lemma wf_merge: "v1 ~ v2 \<Longrightarrow> wf_ty v1 \<Longrightarrow> wf_ty v2 \<Longrightarrow>
-         wf_ty (merge v1 v2)"
-  apply (case_tac v1) apply simp apply (case_tac v2) apply simp apply simp
-    apply simp apply simp apply (case_tac v2) apply simp apply simp 
-    apply force
-   apply force
-  apply (case_tac v2) apply force apply force apply force 
-  done
-    
 lemma consis_env_wf_inter: fixes \<rho>1::"ty list" assumes r1_r2: "consis_env \<rho>1 \<rho>2" 
   and v_r1: "wf_env \<rho>1" and v_r2: "wf_env \<rho>2"
 shows "wf_env (\<rho>1 \<sqinter> \<rho>2)" using r1_r2 v_r1 v_r2 

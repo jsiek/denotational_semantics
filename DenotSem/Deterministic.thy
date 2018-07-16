@@ -6,15 +6,48 @@ lemma merge_inter: "A ~ B \<Longrightarrow> merge A B \<approx> A \<sqinter> B"
   apply (case_tac A)
     apply (case_tac B)
       apply force
-     apply simp
-  apply simp
-  apply (case_tac B)
-     apply simp
-    apply simp
-   apply simp
-    apply simp
+    apply force
+  apply force
+  apply force
+  apply force
+  done
+    
+lemma merge_inter_equiv: "\<lbrakk> A ~ B; B \<approx> B' \<rbrakk> \<Longrightarrow> merge A B \<approx> A \<sqinter> B'"
+  apply (case_tac A)
+    apply (case_tac B)
+      apply force
+     apply force
+    apply force
+   apply force
+    apply force
   done
   
+lemma fold_merge_equiv_fold_meet: fixes xs::"ty list"
+  assumes c_xs: "\<forall>v1 v2. {v1,v2} \<subseteq> set xs \<longrightarrow> v1 ~ v2" and x_xp: "x \<approx> x'" and
+    x_xs: "\<forall>v. v \<in> set xs \<longrightarrow> x ~ v" and wf_xs: "\<forall>v. v \<in> set xs \<longrightarrow> wf_ty v" and wf_x: "wf_ty x" 
+  shows "fold merge xs x \<approx> fold op \<sqinter> xs x'"
+  using c_xs x_xp x_xs wf_xs wf_x
+proof (induction xs arbitrary: x x')
+  case Nil
+  then show ?case by auto
+next
+  case (Cons a xs)
+  have 1: "\<forall>v1 v2. {v1, v2} \<subseteq> set xs \<longrightarrow> v1 ~ v2" using Cons by auto
+  have 2: "\<forall>v. v \<in> set xs \<longrightarrow> (merge a x) ~ v" using Cons apply clarify 
+      apply (rule consis_merge_left) apply auto done
+  have 3: "\<forall>v. v \<in> set xs \<longrightarrow> wf_ty v" using Cons by auto
+  have 4: "wf_ty (merge a x)" using Cons wf_merge consis_sym by auto
+  have 5: "merge a x \<approx> a \<sqinter> x'"
+  proof -
+    have "a ~ x" using Cons(4) consis_sym by auto
+    then show ?thesis using Cons(3) merge_inter_equiv[of a x x'] by simp
+  qed
+  have "fold merge xs (merge a x) \<approx> fold op \<sqinter> xs (a \<sqinter> x')"
+    using Cons.IH[of "merge a x" "a \<sqinter> x'"] 1 2 3 4 5 by blast  
+  then show ?case by simp
+qed
+    
+    
 lemma consistent_app: assumes f1_f2: "f1 ~ f2" and v1_v2: "v1 ~ v2" and 
   f1_v1: "v1' \<in> f1 \<bullet> v1"  and f2_v2: "v2' \<in> f2 \<bullet> v2" 
 shows "v1' ~ v2'"
