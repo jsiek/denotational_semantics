@@ -4,7 +4,7 @@ begin
 
 theorem deterministic:
   "\<lbrakk> v1 \<in> E e \<rho>1; v2 \<in> E e \<rho>2; val_env \<rho>1; val_env \<rho>2; consis_env \<rho>1 \<rho>2 \<rbrakk>
-   \<Longrightarrow> v1 ~ v2 \<and> (\<exists> v12 \<rho>3. v1 \<squnion> v2 = Some v12 \<and> is_val v12 \<and> \<rho>1 \<squnion> \<rho>2 = Some \<rho>3 \<and> val_env \<rho>3 \<and> v12 \<in> \<lbrakk>e\<rbrakk>\<rho>3)"
+   \<Longrightarrow> v1 ~ v2 \<and> (\<exists> v12 \<rho>3. v1 \<squnion> v2 = v12 \<and> is_val v12 \<and> \<rho>1 \<squnion> \<rho>2 = \<rho>3 \<and> val_env \<rho>3 \<and> v12 \<in> \<lbrakk>e\<rbrakk>\<rho>3)"
 proof (induction e arbitrary: v1 v2 \<rho>1 \<rho>2)
   case (EVar x)
   have xr1: "x < length \<rho>1" using EVar(1) by (case_tac "x < length \<rho>1") auto

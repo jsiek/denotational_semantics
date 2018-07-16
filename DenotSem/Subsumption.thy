@@ -1,13 +1,32 @@
 theory Subsumption
- imports LaurentValues Denot
+ imports LaurentValues Denot Consistency
 begin
-
-lemma is_val_sem: assumes v_e: "v \<in> \<lbrakk>e\<rbrakk>\<rho>" and v_r: "val_env \<rho>" shows "is_val v" 
-  using v_e v_r
-proof (induction e arbitrary: v \<rho>)
+  
+lemma sub_fun_is_val: "v \<mapsto> v' \<sqsubseteq> f \<Longrightarrow> is_val f \<Longrightarrow> is_val v'"   
+  sorry
+  
+lemma is_val_sem:
+  "\<lbrakk> v \<in> \<lbrakk>e\<rbrakk>\<rho>; val_env \<rho> \<rbrakk> \<Longrightarrow> is_val v" 
+proof (induction e arbitrary: \<rho> v)
   case (EVar x)
-  then show ?case by (case_tac "x < length \<rho>") auto
-qed auto
+  then show ?case by (case_tac "x < length \<rho>") auto 
+next
+  case (ENat x)
+  then show ?case by auto
+next
+  case (ELam e)
+  then show ?case by auto
+next
+  case (EApp e1 e2)
+  then show ?case using sub_fun_is_val by auto
+next
+  case (EPrim x1a e1 e2)
+  then show ?case by auto
+next
+  case (EIf e1 e2 e3)
+  then show ?case by auto
+qed
+
 
 proposition change_env_le: fixes v::val and \<rho>::"val list"
   assumes de: "v \<in> E e \<rho>" and vp_v: "v' \<sqsubseteq> v" 
@@ -19,12 +38,13 @@ proof (induction e arbitrary: v v' \<rho> \<rho>' rule: exp.induct)
   obtain v2 where lx: "\<rho>!x = v2" and v_v2: "v \<sqsubseteq> v2" and kr: "x< length \<rho>"
       using EVar by (case_tac "x < length \<rho>") auto 
   obtain v3 where lx2: "\<rho>'!x = v3" and v2_v3: "v2 \<sqsubseteq> v3"
-    using lx EVar kr unfolding env_le_def by auto 
+    using lx EVar kr by auto 
   have v_v3: "v \<sqsubseteq> v3" using v_v2 v2_v3  using le_trans by blast
   have vp_v3: "v' \<sqsubseteq> v3" using EVar v_v3 le_trans by blast 
-  show ?case using EVar lx2 vp_v3 kr unfolding env_le_def by auto
+  show ?case using EVar lx2 vp_v3 kr by auto
 next
   case (ELam e)
+    (*
  obtain f where v: "v = VFun f" and vv: "is_val v" and
     body: "\<forall> v1 v2. (v1,v2) \<in> set f \<longrightarrow> v2 \<in> \<lbrakk>e\<rbrakk>(v1#\<rho>)" using ELam(2) by fastforce     
   obtain f' where vp: "v' = VFun f'" using v ELam(4)  by (case_tac v') auto 
@@ -47,9 +67,11 @@ next
     show "v2 \<in> E e (v1#\<rho>')" 
       using ELam(1)[of v4 "v3#\<rho>" "v1#\<rho>'" v2] v4_E rr2 v2_v4 v_v2 v_v3r v_v1rp by blast
   qed
+  *)
+  show ?case sorry
 next
   case (EApp e1 e2)
-  obtain f v2 where 
+(*  obtain f v2 where 
     f_e1: "VFun f \<in> E e1 \<rho>" and v2_e2: "v2 \<in> E e2 \<rho>" and
     v23p_f: "[(v2,v)] \<sqsubseteq> f"  using EApp(3) by auto
   have v_vf: "is_val (VFun f)" using f_e1 is_val_sem EApp(7) by blast
@@ -60,9 +82,13 @@ next
   have "[(v2,v')] \<sqsubseteq> [(v2,v)]" using EApp(5) by (simp add: le_refl le_arrow)
   then have v2v_f: "[(v2,v')] \<sqsubseteq> f" using v23p_f le_fun_trans[of "[(v2,v')]" "[(v2,v)]" f] by simp
   show ?case using v2v_f f_e1b EApp(6) v2_e2b by auto
+*)
+  show ?case sorry
 next
   case (EPrim f e1 e2)
-  then show ?case by (smt E.simps(5) is_val_sem le_nat le_nat_fun_inv mem_Collect_eq val_le.cases)
+  then show ?case apply simp apply clarify apply (rule_tac x=n1 in exI)
+    apply (rule conjI) apply force apply (rule_tac x=n2 in exI) apply (rule conjI) apply force
+      apply simp sorry
 next
   case (EIf e1 e2 e3)
   then show ?case apply simp apply clarify apply (rule_tac x=n in exI) apply (rule conjI) by auto
