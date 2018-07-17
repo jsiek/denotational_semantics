@@ -25,10 +25,10 @@ text{*
   *} 
   
 inductive wf_ty :: "ty \<Rightarrow> bool" and wf_fun :: "ty \<Rightarrow> bool" where
-  nat_wf_ty[intro!]: "wf_ty (TNat n)" |
-  fun_wf_ty[intro!]: "\<lbrakk> wf_fun f \<rbrakk> \<Longrightarrow> wf_ty f" |
-  arrow_func[intro!]: "\<lbrakk> wf_ty v; wf_ty v' \<rbrakk> \<Longrightarrow> wf_fun (v \<rightarrow> v')" |
-  inter_func[intro!]: "\<lbrakk> f1 ~ f2; wf_fun f1; wf_fun f2 \<rbrakk> \<Longrightarrow> wf_fun (f1 \<sqinter> f2)"
+  nat_wf_ty[intro]: "wf_ty (TNat n)" |
+  fun_wf_ty[intro]: "\<lbrakk> wf_fun f \<rbrakk> \<Longrightarrow> wf_ty f" |
+  arrow_func[intro]: "\<lbrakk> wf_ty v; wf_ty v' \<rbrakk> \<Longrightarrow> wf_fun (v \<rightarrow> v')" |
+  inter_func[intro]: "\<lbrakk> f1 ~ f2; wf_fun f1; wf_fun f2 \<rbrakk> \<Longrightarrow> wf_fun (f1 \<sqinter> f2)"
 
 inductive_cases 
   wf_ty_arrow_inv[elim!]: "wf_ty (v \<rightarrow> v')" and 
@@ -47,6 +47,9 @@ fun merge :: "ty \<Rightarrow> ty \<Rightarrow> ty" where
   "merge (TNat n1) (TNat n2) = (if n1 = n2 then TNat n1 else undefined)" |
   "merge f1 f2 = f1 \<sqinter> f2"
   
+definition merge_list :: "ty list \<Rightarrow> ty" ("\<Prod>" 1000) where
+  "\<Prod> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold merge xs' x)"
+
 abbreviation env_inter :: "ty list \<Rightarrow> ty list \<Rightarrow> ty list" (infix "\<sqinter>" 60) where
   "env_inter \<rho>1 \<rho>2 \<equiv> map (\<lambda>(A,B). merge A B) (zip \<rho>1 \<rho>2)" 
 
@@ -137,8 +140,8 @@ lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \
   done
 
 lemma wf_merge[intro!]: "\<lbrakk> wf_ty a; wf_ty b; a ~ b \<rbrakk> \<Longrightarrow> wf_ty (merge a b)"
-  by (induction a b rule: consistent.induct) auto
-      
+  by (induction a b rule: consistent.induct) force+
+    
 lemma consis_merge: "\<lbrakk> a ~ b; a ~ y; x ~ b; x ~ y \<rbrakk> \<Longrightarrow> merge a x ~ merge b y"
   apply (case_tac a) apply (case_tac b) apply auto apply (case_tac y) apply auto
     apply (case_tac x) apply auto apply (case_tac b) apply auto apply (case_tac b)
@@ -177,14 +180,72 @@ lemma consis_merge_left: "\<lbrakk> a ~ v; x ~ v; wf_ty a; wf_ty x \<rbrakk> \<L
 lemma consis_merge_right: "\<lbrakk> v ~ a; v ~ x; wf_ty a; wf_ty x \<rbrakk> \<Longrightarrow> v ~ merge a x"
   sorry
 
-lemma consis_fold_merge: "\<forall> L2 x y. (\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<union> set L2 \<longrightarrow> v1 ~ v2) \<longrightarrow>
-        (\<forall> v. v \<in> set L1 \<union> set L2 \<longrightarrow> x ~ v) \<longrightarrow> (\<forall>v. v \<in> set L1 \<union> set L2 \<longrightarrow> v ~ y) \<longrightarrow>
-        x ~ y \<longrightarrow> wf_ty x \<longrightarrow> wf_ty y \<longrightarrow> length L1 = length L2 \<longrightarrow>
-       (\<forall>v. v \<in> set L1 \<longrightarrow> wf_ty v) \<and> (\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v) \<longrightarrow>
-   fold (\<lambda>x r. merge x r) L1 x ~ fold (\<lambda>x r. merge x r) L2 y" (is "\<forall> L2 x y. ?P L1 L2 x y")
+lemma consis_fold_merge_left: "\<forall> x y. (\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<longrightarrow> v1 ~ v2) \<longrightarrow>
+        (\<forall> v. v \<in> set L1 \<longrightarrow> x ~ v) \<longrightarrow> (\<forall>v. v \<in> set L1 \<longrightarrow> v ~ y) \<longrightarrow>
+        x ~ y \<longrightarrow> wf_ty x \<longrightarrow> wf_ty y \<longrightarrow>
+       (\<forall>v. v \<in> set L1 \<longrightarrow> wf_ty v)  \<longrightarrow>
+   fold merge L1 x ~ y" (is "\<forall> x y. ?P L1 x y")
 proof (induction L1)
   case Nil
   then show ?case by auto
+next
+  case (Cons a L1') then have IH: "\<forall> x y. ?P L1' x y" .
+  show ?case 
+  proof clarify
+    fix x y assume 1: "\<forall>v1 v2. {v1,v2} \<subseteq> set (a # L1') \<longrightarrow> v1 ~ v2" and
+      2: "\<forall>v. v \<in> set (a # L1') \<longrightarrow> x ~ v" and
+      3: "\<forall>v. v \<in> set (a # L1') \<longrightarrow> v ~ y" and
+      x_y: "x ~ y" and wf_x: "wf_ty x" and wf_y: "wf_ty y" and 
+      wf_L1p: "\<forall>v. v \<in> set (a # L1') \<longrightarrow> wf_ty v" 
+    have IH_spec: "?P L1' (merge a x) y" using IH by blast        
+    have wf_a: "wf_ty a" using wf_L1p by auto
+    have "fold merge L1' (merge a x) ~ y"
+    proof (rule IH_spec[rule_format])
+      fix v1 v2 show "{v1, v2} \<subseteq> set L1' \<Longrightarrow> v1 ~ v2" using 1 by auto
+    next fix v assume v_l1: "v \<in> set L1'"
+      have a_v: "a ~ v" using 1 v_l1 by auto
+      have x_v: "x ~ v" using 2 v_l1 by auto
+      show "merge a x ~ v" using consis_merge_left wf_x wf_a a_v x_v by simp
+    next fix v assume "v \<in> set L1'" then show "v ~ y" using 3 by auto
+    next 
+      have a_y: "a ~ y" using 3 by auto
+      show "merge a x ~ y" using a_y x_y wf_a wf_x consis_merge_left by simp
+    next
+      show "wf_ty (merge a x)" using wf_a wf_x by (simp add: "2" consis_sym wf_merge)
+    next show "wf_ty y" using wf_y .
+    next fix v assume "v \<in> set L1'" then show "wf_ty v" using wf_L1p by auto      
+    qed  
+    then show "fold merge (a # L1') x ~ y" by simp
+  qed
+qed
+
+lemma consis_fold_merge_right: "\<forall> x y. (\<forall> v1 v2. {v1,v2} \<subseteq> set L2 \<longrightarrow> v1 ~ v2) \<longrightarrow>
+        (\<forall> v. v \<in> set L2 \<longrightarrow> x ~ v) \<longrightarrow> (\<forall>v. v \<in> set L2 \<longrightarrow> v ~ y) \<longrightarrow>
+        x ~ y \<longrightarrow> wf_ty x \<longrightarrow> wf_ty y \<longrightarrow>
+       (\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v)  \<longrightarrow>
+   x ~ fold merge L2 y" (is "\<forall> x y. ?P L2 x y")
+  sorry  
+  
+lemma consis_fold_merge: "\<forall> L2 x y. (\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<union> set L2 \<longrightarrow> v1 ~ v2) \<longrightarrow>
+        (\<forall> v. v \<in> set L1 \<union> set L2 \<longrightarrow> x ~ v) \<longrightarrow> (\<forall>v. v \<in> set L1 \<union> set L2 \<longrightarrow> v ~ y) \<longrightarrow>
+        x ~ y \<longrightarrow> wf_ty x \<longrightarrow> wf_ty y \<longrightarrow> 
+       (\<forall>v. v \<in> set L1 \<longrightarrow> wf_ty v) \<and> (\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v) \<longrightarrow>
+   fold merge L1 x ~ fold merge L2 y" (is "\<forall> L2 x y. ?P L1 L2 x y")
+proof (induction L1)
+  case Nil
+  show ?case
+  proof clarify
+    fix L2 x y assume 1: "\<forall>v1 v2. {v1,v2} \<subseteq> set [] \<union> set L2 \<longrightarrow> v1 ~ v2" and
+      2: "\<forall>v. v \<in> set [] \<union> set L2 \<longrightarrow> x ~ v" and
+      3: "\<forall>v. v \<in> set [] \<union> set L2 \<longrightarrow> v ~ y" and
+      x_y: "x ~ y" and wf_x: "wf_ty x" and wf_y: "wf_ty y" and 
+      wf_L1p: "\<forall>v. v \<in> set [] \<longrightarrow> wf_ty v" and
+      wf_L2: "\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v"     
+    have "x ~ fold merge L2 y" 
+      apply (rule consis_fold_merge_right[rule_format])
+      using 1 2 3 x_y wf_x wf_y wf_L2 by auto        
+    then show "fold merge [] x ~ fold merge L2 y" by simp
+  qed    
 next
   case (Cons a L1') then have IH: "\<forall> L2 x y. ?P L1' L2 x y" .
   show ?case
@@ -193,14 +254,14 @@ next
       2: "\<forall>v. v \<in> set (a # L1') \<union> set L2 \<longrightarrow> x ~ v" and
       3: "\<forall>v. v \<in> set (a # L1') \<union> set L2 \<longrightarrow> v ~ y" and
       x_y: "x ~ y" and wf_x: "wf_ty x" and wf_y: "wf_ty y" and 
-      l1_l2: "length (a # L1') = length L2" and
       wf_L1p: "\<forall>v. v \<in> set (a # L1') \<longrightarrow> wf_ty v" and
       wf_L2: "\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v" 
     show "fold merge (a # L1') x ~ fold merge L2 y" 
     proof (cases L2)
       case Nil
-      then have "False" using l1_l2 by simp
-      then show ?thesis ..
+      show ?thesis 
+        apply (rule consis_fold_merge_left[rule_format])
+          using 1 2 Nil 3 x_y Nil wf_x Nil wf_y wf_L1p by auto
     next
       case (Cons b L2')
       from IH have IH_spec: "?P L1' L2' (merge a x) (merge b y)" by simp        
@@ -220,7 +281,6 @@ next
         apply (rule consis_merge_right) apply blast apply blast
         using wf_L2 Cons apply simp
         using wf_y apply simp done 
-      have 7: "length L1' = length L2'" using Cons l1_l2 by auto      
       have 8: "wf_ty (merge a x)"
       proof -
         have wf_a: "wf_ty a" using wf_L1p by auto
@@ -236,17 +296,33 @@ next
       have 10: "\<forall>v. v \<in> set L1' \<longrightarrow> wf_ty v" using wf_L1p by simp
       have 11: "\<forall>v. v \<in> set L2' \<longrightarrow> wf_ty v" using wf_L2 Cons by simp
       have "fold merge L1' (merge a x) ~ fold merge L2' (merge b y)"
-        using IH_spec 4 5 6 7 8 9 10 11 ax_by by blast          
+        using IH_spec 4 5 6 8 9 10 11 ax_by by blast          
       then show ?thesis using Cons by simp
     qed
   qed
 qed
-    
-lemma consis_glb: "\<lbrakk> (\<forall> v1 v2. v1 \<in> set L1 \<longrightarrow> v2 \<in> set L2 \<longrightarrow> v1 ~ v2); 
-        L1 \<noteq> []; L2 \<noteq> [] \<rbrakk> \<Longrightarrow> \<Sqinter>L1 ~ \<Sqinter>L2"
-  
-    
-  sorry  
+
+lemma consis_merge_list: 
+  assumes c_l12: "\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<union> set L2 \<longrightarrow> v1 ~ v2" and
+    wf_l1: "\<forall>v. v \<in> set L1 \<longrightarrow> wf_ty v" and
+    wf_l2: "\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v" and
+    l1_ne: "L1 \<noteq> []" and l2_ne: "L2 \<noteq> []" 
+  shows "\<Prod> L1 ~ \<Prod> L2"
+proof -
+  obtain x L1' where l1: "L1 = x#L1'" using l1_ne by (cases L1) auto
+  obtain y L2' where l2: "L2 = y#L2'" using l2_ne by (cases L2) auto
+  have 1: "\<forall> v1 v2. {v1,v2} \<subseteq> set L1' \<union> set L2' \<longrightarrow> v1 ~ v2" using c_l12 l1 l2 by auto
+  have 2: "\<forall> v. v \<in> set L1' \<union> set L2' \<longrightarrow> x ~ v" using c_l12 l1 l2 by auto
+  have 3: "\<forall>v. v \<in> set L1' \<union> set L2' \<longrightarrow> v ~ y" using c_l12 l1 l2 by auto
+  have 4: "x ~ y" using c_l12 l1 l2 by auto
+  have 5: "wf_ty x" using l1 wf_l1 by auto
+  have 6: "wf_ty y" using l2 wf_l2 by auto
+  have 8: "\<forall>v. v \<in> set L1' \<longrightarrow> wf_ty v" using wf_l1 l1 by auto
+  have 9: "\<forall>v. v \<in> set L2' \<longrightarrow> wf_ty v" using wf_l2 l2 by auto
+  have "fold merge L1' x ~ fold merge L2' y"
+    using consis_fold_merge 1 2 3 4 5 6 8 9 by blast
+  then show ?thesis using l1 l2 merge_list_def by simp
+qed 
   
 (*
 lemma d_consis_nat_L: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [TNat n] \<rbrakk> \<Longrightarrow> v ~ TNat n"
@@ -544,5 +620,20 @@ shows "wf_env (\<rho>1 \<sqinter> \<rho>2)" using r1_r2 v_r1 v_r2
   apply (subgoal_tac "wf_ty (\<rho>2!k)") prefer 2 apply simp
   apply (rule wf_merge) apply blast+
   done
+ 
+lemma wf_atoms[intro]: "\<lbrakk> wf_ty B; A \<in> atoms B \<rbrakk> \<Longrightarrow> wf_ty A"
+  by (induction B) auto   
+    
+    
+lemma wf_consis_atoms: "\<lbrakk> wf_ty B; A \<in> atoms B; C \<in> atoms B \<rbrakk> \<Longrightarrow> A ~ C"
+  apply (induction B)
+    apply force
+   apply force
+    apply clarify 
+  apply simp apply (erule disjE) apply (erule disjE) apply blast
+  using consis_atoms apply blast
+    apply (erule disjE) using consis_atoms consis_sym apply blast
+  apply blast
+  done    
     
 end

@@ -1510,7 +1510,7 @@ lemma sub_fold_join_L: "x#xs \<turnstile> c : A \<Longrightarrow> \<exists>c'. [
   done   
 
 definition meet_list :: "ty list \<Rightarrow> ty" ("\<Sqinter>" 1000) where
-  "\<Sqinter> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold (\<lambda>x r. x \<sqinter> r) xs' x)"
+  "\<Sqinter> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold op \<sqinter> xs' x)"
     
 lemma sub_fun_any_inv_atoms: assumes ab_c: "C <: A\<rightarrow>B"
   shows "\<exists> \<Gamma>'. \<Gamma>' \<noteq> [] \<and> all_funs \<Gamma>' \<and> set \<Gamma>' \<subseteq> atoms C 
