@@ -2,6 +2,9 @@ theory Deterministic
   imports Consistency Denot
 begin
 
+lemma wf_eval: "\<lbrakk> v \<in> \<lbrakk>e\<rbrakk>\<rho>; wf_env \<rho> \<rbrakk> \<Longrightarrow> wf_ty v"
+  apply (induction e) apply (case_tac "x < length \<rho>") apply force+ done
+
 lemma merge_inter: "A ~ B \<Longrightarrow> merge A B \<approx> A \<sqinter> B"
   apply (case_tac A)
     apply (case_tac B)
@@ -187,6 +190,7 @@ lemma merge_app: assumes f1_v1: "v1' \<in> f1 \<bullet> v1" and f2_v2: "v2' \<in
   f1_f2: "f1 ~ f2" and v1_v2: "v1 ~ v2" and v1p_v2p: "v1' ~ v2'"
   shows "merge v1' v2' \<in> merge f1 f2 \<bullet> merge v1 v2"
 proof -
+  have wf_v12: "wf_ty (merge v1' v2')" using f1_v1 f2_v2 v1p_v2p by auto 
   have f1_v1p: "f1 <: v1 \<rightarrow> v1'" using f1_v1 by simp
   have f2_v2p: "f2 <: v2 \<rightarrow> v2'" using f2_v2 by simp  
   have "merge f1 f2 <: f1 \<sqinter> f2" using merge_inter f1_f2 ty_equiv_def by auto
@@ -194,14 +198,14 @@ proof -
   also have "(v1 \<rightarrow> v1') \<sqinter> (v2 \<rightarrow> v2') <: (v1 \<sqinter> v2) \<rightarrow> (v1' \<sqinter> v2')" by (rule sub_dist_union_fun)
   also have "... <: (merge v1 v2) \<rightarrow> (merge v1' v2')" apply (rule sub_arrow)
       using merge_inter v1_v2 v1p_v2p ty_equiv_def apply auto done
-  finally  have "merge f1 f2 <: (merge v1 v2) \<rightarrow> (merge v1' v2')" using sub_trans by auto
-  then show ?thesis by simp
+  finally have "merge f1 f2 <: (merge v1 v2) \<rightarrow> (merge v1' v2')" using sub_trans by auto
+  then show ?thesis using wf_v12 by simp
 qed
     
 theorem deterministic:
   "\<lbrakk> v1 \<in> E e \<rho>1; v2 \<in> E e \<rho>2; wf_env \<rho>1; wf_env \<rho>2; consis_env \<rho>1 \<rho>2 \<rbrakk>
    \<Longrightarrow> v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>e\<rbrakk>(\<rho>1 \<sqinter> \<rho>2)"
-proof (induction e arbitrary: v1 v2 \<rho>1 \<rho>2)
+proof (induction e arbitrary: v1 v2 \<rho>1 \<rho>2)    
   case (EVar x)
   have xr1: "x < length \<rho>1" using EVar(1) by (case_tac "x < length \<rho>1") auto
   have xr2: "x < length \<rho>2" using EVar(2) by (case_tac "x < length \<rho>2") auto
@@ -223,7 +227,58 @@ next
   show ?case using m v1 v2 by simp
 next
   case (ELam e)
-  then show ?case sorry
+  have wf_v1: "wf_fun v1" and v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" using ELam(2) by auto
+  have wf_v2: "wf_fun v2" and v2_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)" using ELam(3) by auto
+  
+  have v12: "merge v1 v2 = v1 \<sqinter> v2"
+    using wf_v1 wf_v2 by (metis merge.simps(4) merge.simps(5) wf_fun_inv)
+
+  have v1_v2: "v1 ~ v2" apply (rule atoms_consis) using wf_v1 wf_v2 apply auto
+  proof -
+    fix a1 a2
+    assume a1_v1: "a1 \<in> atoms v1" and a2_v2: "a2 \<in> atoms v2"
+    obtain a11 a12 where a1: "a1=a11\<rightarrow>a12" using a1_v1 wf_v1 atoms_wf_fun by blast
+    obtain a21 a22 where a2: "a2=a21\<rightarrow>a22" using a2_v2 wf_v2 atoms_wf_fun by blast
+    show "a1 ~ a2"
+    proof (cases "a11 ~ a21")
+      case True
+      have a12_e: "a12 \<in> \<lbrakk>e\<rbrakk>(a11#\<rho>1)" using v1_e a1_v1 a1 by simp
+      have a22_e: "a22 \<in> \<lbrakk>e\<rbrakk>(a21#\<rho>2)" using v2_e a2_v2 a2 by simp
+      have wf_r1: "wf_env (a11 # \<rho>1)"
+        using ELam(4) wf_v1 a1_v1 apply simp apply clarify apply (case_tac k)
+          apply simp 
+         apply (metis a1 fun_wf_ty wf_arrow_inv wf_atoms wf_ty_arrow_inv)
+          apply simp done
+      have wf_r2: "wf_env (a21 # \<rho>2)" 
+        using ELam(5) wf_v2 a2_v2 apply simp apply clarify apply (case_tac k)
+          apply simp 
+         apply (metis a2 fun_wf_ty wf_arrow_inv wf_atoms wf_ty_arrow_inv)
+          apply simp done
+      have c_r12: "consis_env (a11 # \<rho>1) (a21 # \<rho>2)" 
+        using ELam(6) True apply simp apply clarify apply (case_tac k)
+          apply simp apply simp done
+      have "a12 ~ a22"
+        using ELam.IH[of a12 "a11#\<rho>1" a22 "a21#\<rho>2"] a12_e a22_e wf_r1 wf_r2 c_r12 by blast
+      then show ?thesis using True a1 a2 by simp
+    next
+      case False
+      then show ?thesis using a1 a2 by simp
+    qed
+  qed
+  have v12_l: "merge v1 v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1 \<sqinter> \<rho>2" apply simp
+  proof
+    show "wf_fun (merge v1 v2)"
+      using wf_v1 wf_v2 v1_v2 by (simp add: inter_func v12)
+  next
+    show " \<forall>v v'. v \<rightarrow> v' \<in> atoms (merge v1 v2) \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
+    proof clarify
+      fix v v' assume vv_v12: "v \<rightarrow> v' \<in> atoms (merge v1 v2)"
+        
+        
+      show "v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)" sorry
+    qed
+  qed
+  show ?case using v1_v2 v12_l by simp
 next
   case (EApp e1 e2 v1' v2')
   obtain f1 v1 where f1_e1: "f1 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v1_e2: "v1 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" and v1p_f1_v1: "v1' \<in> f1 \<bullet> v1"
@@ -234,18 +289,56 @@ next
   have m_f1f2: "merge f1 f2 \<in> \<lbrakk>e1\<rbrakk>(\<rho>1\<sqinter>\<rho>2)" using EApp.IH(1) f1_e1 f2_e1 EApp(5) EApp(6) EApp(7) by blast
   have v1_v2: "v1 ~ v2" using EApp.IH(2) v1_e2 v2_e2 EApp(5) EApp(6) EApp(7) by blast
   have m_v12: "merge v1 v2 \<in> \<lbrakk>e2\<rbrakk>(\<rho>1\<sqinter>\<rho>2)" using EApp.IH(2) v1_e2 v2_e2 EApp(5) EApp(6) EApp(7) by blast
-  have v1p_v2p: "v1' ~ v2'" using f1_f2 v1_v2 v1p_f1_v1 v2p_f2_v2 consistent_app by blast
+  have wf_f1: "wf_ty f1" using f1_e1 wf_eval EApp(5) by blast
+  have wf_f2: "wf_ty f2" using f2_e1 wf_eval EApp(6) by blast
+  have wf_v1: "wf_ty v1" using v1_e2 wf_eval EApp(5) by blast
+  have wf_v2: "wf_ty v2" using v2_e2 wf_eval EApp(6) by blast
+  have v1p_v2p: "v1' ~ v2'"
+    using f1_f2 v1_v2 v1p_f1_v1 v2p_f2_v2 wf_f1 wf_f2 wf_v1 wf_v2 consistent_app by blast
   have m_v12p_f12_v12: "merge v1' v2' \<in> (merge f1 f2) \<bullet> (merge v1 v2)"
     using v1p_f1_v1 v2p_f2_v2 f1_f2 v1_v2 v1p_v2p merge_app by blast
   show ?case using v1p_v2p m_v12p_f12_v12 m_f1f2 m_v12 by auto
 next
   case (EPrim f e1 e2)
-  then show ?case apply simp apply clarify apply simp apply (rule conjI) 
-      sorry
-      
+  obtain n1 n2 where n1_e1: "TNat n1 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and n2_e2: "TNat n2 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" and 
+    v1: "v1 = TNat (f n1 n2)" using EPrim(3) by auto
+  obtain n3 n4 where n3_e1: "TNat n3 \<in> \<lbrakk>e1\<rbrakk>\<rho>2" and n4_e2: "TNat n4 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" and
+    v2: "v2 = TNat (f n3 n4)" using EPrim(4) by auto
+  have n1_n3: "n1 = n3" 
+    using EPrim.IH(1)[of "TNat n1" \<rho>1 "TNat n3" \<rho>2] n1_e1 n3_e1 EPrim.prems by auto
+  have n13_e1: "merge (TNat n1) (TNat n3) \<in> \<lbrakk>e1\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+    using EPrim.IH(1)[of "TNat n1" \<rho>1 "TNat n3" \<rho>2] n1_e1 n3_e1 EPrim.prems by auto
+  have n2_n4: "n2 = n4" 
+    using EPrim.IH(2)[of "TNat n2" \<rho>1 "TNat n4" \<rho>2] n2_e2 n4_e2 EPrim.prems by auto
+  have n24_e2: "merge (TNat n2) (TNat n4) \<in> \<lbrakk>e2\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+    using EPrim.IH(2)[of "TNat n2" \<rho>1 "TNat n4" \<rho>2] n2_e2 n4_e2 EPrim.prems by auto      
+  then show ?case using n1_n3 n2_n4 v1 v2 n13_e1 n24_e2 by auto      
 next
   case (EIf e1 e2 e3)
-  then show ?case sorry
+  obtain n1 where n1_e1: "TNat n1 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v1_e3: "n1 = 0 \<longrightarrow> v1 \<in> \<lbrakk>e3\<rbrakk>\<rho>1" and
+    v1_e2: "n1 \<noteq> 0 \<longrightarrow> v1 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" using EIf(4) by auto
+  obtain n2 where n2_e1: "TNat n2 \<in> \<lbrakk>e1\<rbrakk>\<rho>2" and v2_e3: "n2 = 0 \<longrightarrow> v2 \<in> \<lbrakk>e3\<rbrakk>\<rho>2" and
+    v2_e2: "n2 \<noteq> 0 \<longrightarrow> v2 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" using EIf(5) by auto
+  have n1_n2: "n1 = n2"
+    using EIf.IH(1)[of "TNat n1" \<rho>1 "TNat n2" \<rho>2] n1_e1 n2_e1 EIf.prems by auto
+  have n12_e1: "merge (TNat n1) (TNat n2) \<in> \<lbrakk>e1\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+    using EIf.IH(1)[of "TNat n1" \<rho>1 "TNat n2" \<rho>2] n1_e1 n2_e1 EIf.prems by auto
+  show ?case
+  proof (cases "n1 = 0")
+    case True
+    have v1_v2: "v1 ~ v2"
+      using EIf.IH(3)[of v1 \<rho>1 v2 \<rho>2] v1_e3 v2_e3 EIf.prems True n1_n2 by auto
+    have "merge v1 v2 \<in> \<lbrakk>e3\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+      using EIf.IH(3)[of v1 \<rho>1 v2 \<rho>2] v1_e3 v2_e3 EIf.prems True n1_n2 by auto
+    then show ?thesis using v1_v2 n1_n2 True n12_e1 by auto
+  next
+    case False
+    have v1_v2: "v1 ~ v2"
+      using EIf.IH(2)[of v1 \<rho>1 v2 \<rho>2] v1_e2 v2_e2 EIf.prems False n1_n2 by auto
+    have "merge v1 v2 \<in> \<lbrakk>e2\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+      using EIf.IH(2)[of v1 \<rho>1 v2 \<rho>2] v1_e2 v2_e2 EIf.prems False n1_n2 by auto
+    then show ?thesis using v1_v2 n1_n2 False n12_e1 by auto
+  qed    
 qed
   
 end

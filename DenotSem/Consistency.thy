@@ -35,6 +35,7 @@ inductive_cases
   wf_ty_inter_inv[elim!]: "wf_ty (f \<sqinter> f')" and
   wf_arrow_inv[elim!]: "wf_fun (v \<rightarrow> v')" and 
   wf_inter_inv[elim!]: "wf_fun (f \<sqinter> f')" and
+  wf_fun_nat_inv[elim!]: "wf_fun (TNat n)" and
   wf_fun_inv: "wf_fun f"
   
 abbreviation wf_env :: "ty list \<Rightarrow> bool" where
@@ -352,10 +353,16 @@ definition consis :: "ty set \<Rightarrow> bool" where
 
 lemma atoms_inconsis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
   by (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct) auto
+*)
 
-lemma atoms_consis: "(\<forall> v1' v2'. v1' \<in> atoms v1 \<longrightarrow> v2' \<in> atoms v2 \<longrightarrow> v1' ~ v2') \<Longrightarrow> v1 ~ v2"
-  by (induction v1 v2 rule: consistent.induct) auto
-    
+lemma atoms_consis: "\<lbrakk> (\<forall> v1' v2'. v1' \<in> atoms v1 \<longrightarrow> v2' \<in> atoms v2 \<longrightarrow> v1' ~ v2');
+      wf_fun v1; wf_fun v2 \<rbrakk> \<Longrightarrow> v1 ~ v2"
+  by (induction v1 v2 rule: consistent.induct) auto    
+
+lemma atoms_wf_fun: "\<lbrakk> wf_fun f; a \<in> atoms f \<rbrakk> \<Longrightarrow> \<exists> a1 a2. a = a1\<rightarrow>a2"
+  by (induction f) auto  
+  
+(*   
 lemma val_consis_atoms: "wf_ty v \<Longrightarrow> consis (atoms v)"
   apply (induction v) apply auto
     apply (simp add: consis_def)
