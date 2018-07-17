@@ -201,7 +201,74 @@ proof -
   finally have "merge f1 f2 <: (merge v1 v2) \<rightarrow> (merge v1' v2')" using sub_trans by auto
   then show ?thesis using wf_v12 by simp
 qed
+
+lemma strengthen_env: "\<lbrakk> v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1; \<rho>2 <: \<rho>1; wf_env \<rho>1; wf_env \<rho>2 \<rbrakk> \<Longrightarrow>
+    \<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"
+proof (induction e arbitrary: v1 \<rho>1 \<rho>2)
+  case (EVar x)
+  then show ?case by (cases "x < length \<rho>1") auto
+next
+  case (ENat x)
+  then show ?case by auto
+next
+  case (ELam e)
     
+    
+    
+    
+    
+    
+    
+  then show ?case sorry
+next
+  case (EApp e1 e2)
+  obtain f v where f_e1: "f \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v_e2: "v \<in> \<lbrakk>e2\<rbrakk>\<rho>1" and f_v: "v1 \<in> f \<bullet> v"
+    using EApp.prems(1) by auto
+  obtain f' where fp_e1: "f' \<in> \<lbrakk>e1\<rbrakk>\<rho>2" and fp_f: "f' <: f" and wf_fp: "wf_ty f'"
+    using EApp.IH(1)[of f \<rho>1 \<rho>2] f_e1 EApp.prems by blast
+  obtain v2 where v2_e2: "v2 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" and v2_v: "v2 <: v" and wf_v2: "wf_ty v2"
+    using EApp.IH(2)[of v \<rho>1 \<rho>2] v_e2 EApp.prems by blast
+  note fp_f
+  also have "f <: v \<rightarrow> v1" using f_v by simp
+  also have "v \<rightarrow> v1 <: v2 \<rightarrow> v1" using v2_v by (simp add: sub_arrow)
+  finally have fp_v2v1: "f' <: v2 \<rightarrow> v1" by blast
+  have wf_v1: "wf_ty v1" using EApp.prems(1) wf_eval EApp.prems(3) by blast  
+  show ?case using fp_e1 v2_e2 fp_v2v1 wf_v1 by auto
+next
+  case (EPrim f e1 e2)
+  obtain n1 n2 where n1_e1_r1: "TNat n1 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and n2_e2_r1: "TNat n2 \<in> \<lbrakk>e2\<rbrakk>\<rho>1"
+    and v1: "v1 = TNat (f n1 n2)" using EPrim(3) by auto
+  obtain v2 where v2_n1: "v2 <: TNat n1" and wf_v2: "wf_ty v2" and v2_e1_r2: "v2 \<in> \<lbrakk>e1\<rbrakk>\<rho>2"
+    using EPrim.IH(1)[of "TNat n1" \<rho>1 \<rho>2] EPrim.prems n1_e1_r1 by blast
+  obtain v3 where v3_n2: "v3 <: TNat n2" and wf_v3: "wf_ty v3" and v3_e2_r2: "v3 \<in> \<lbrakk>e2\<rbrakk>\<rho>2"
+    using EPrim.IH(2)[of "TNat n2" \<rho>1 \<rho>2] EPrim.prems n2_e2_r1 by blast
+  have v2: "v2 = TNat n1" using v2_n1 wf_v2 
+    by (metis consis_le consis_refl consistent.simps(7) merge.simps(1) merge_inter sub_refl ty_equiv_def)
+  have v3: "v3 = TNat n2" using v3_n2 wf_v3
+    by (metis consis_le consis_refl consistent.simps(7) merge.simps(1) merge_inter sub_refl ty_equiv_def)           
+  show ?case using v2 v3 v2 v2_e1_r2 v3_e2_r2 v1 v2 by auto
+next
+  case (EIf e1 e2 e3)
+  obtain n where n_e1: "TNat n \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v1_e3: "n=0\<longrightarrow> v1 \<in> \<lbrakk>e3\<rbrakk>\<rho>1" and 
+    v1_e2: "n\<noteq>0 \<longrightarrow> v1 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" using EIf.prems(1) by auto
+  obtain v2 where v2_n: "v2 <: TNat n" and wf_v2: "wf_ty v2" and v2_e1_r2: "v2 \<in> \<lbrakk>e1\<rbrakk>\<rho>2"
+    using EIf.IH(1)[of "TNat n" \<rho>1 \<rho>2] EIf.prems n_e1 by blast
+  have v2: "v2 = TNat n" using v2_n wf_v2
+    by (metis consis_le consis_refl consistent.simps(7) merge.simps(1) merge_inter sub_refl ty_equiv_def) 
+  show ?case
+  proof (cases "n = 0")
+    case True
+    from EIf.IH(3)[of v1 \<rho>1 \<rho>2] EIf.prems v1_e3 True
+    obtain v3 where v3_e3: "v3 \<in> \<lbrakk>e3\<rbrakk>\<rho>2" and v3_v1: "v3 <: v1" and wf_v3: "wf_ty v3" by blast        
+    then show ?thesis using True v2_e1_r2 v2 by auto
+  next
+    case False
+    from EIf.IH(2)[of v1 \<rho>1 \<rho>2] EIf.prems v1_e2 False
+    obtain v3 where v3_e2: "v3 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" and v3_v1: "v3 <: v1" and wf_v3: "wf_ty v3" by blast        
+    then show ?thesis using False v2_e1_r2 v2 by auto
+  qed
+qed
+  
 theorem deterministic:
   "\<lbrakk> v1 \<in> E e \<rho>1; v2 \<in> E e \<rho>2; wf_env \<rho>1; wf_env \<rho>2; consis_env \<rho>1 \<rho>2 \<rbrakk>
    \<Longrightarrow> v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>e\<rbrakk>(\<rho>1 \<sqinter> \<rho>2)"
@@ -273,9 +340,19 @@ next
     show " \<forall>v v'. v \<rightarrow> v' \<in> atoms (merge v1 v2) \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
     proof clarify
       fix v v' assume vv_v12: "v \<rightarrow> v' \<in> atoms (merge v1 v2)"
-        
-        
-      show "v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)" sorry
+      have "v\<rightarrow>v' \<in> atoms v1 \<or> v\<rightarrow>v' \<in> atoms v2" using v12 vv_v12 by simp        
+      then show "v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
+      proof
+        assume vv_v1: "v\<rightarrow>v' \<in> atoms v1"
+        have vp_e_r1: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" using vv_v1 v1_e by blast
+            
+        show ?thesis sorry
+      next
+        assume vv_v2: "v\<rightarrow>v' \<in> atoms v2"
+        have vp_e_r2: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)" using vv_v2 v2_e by blast
+          
+        show ?thesis sorry
+      qed
     qed
   qed
   show ?case using v1_v2 v12_l by simp

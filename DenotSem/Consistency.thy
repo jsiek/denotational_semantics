@@ -41,7 +41,7 @@ inductive_cases
 abbreviation wf_env :: "ty list \<Rightarrow> bool" where
   "wf_env \<rho> \<equiv> \<forall>k. k < length \<rho> \<longrightarrow> wf_ty (\<rho>!k)"
 
-abbreviation env_le :: "ty list \<Rightarrow> ty list \<Rightarrow> bool" (infix "<:" 52) where 
+abbreviation env_sub :: "ty list \<Rightarrow> ty list \<Rightarrow> bool" (infix "<:" 52) where 
   "(\<rho>::ty list) <: \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k <: \<rho>'!k)"
 
 fun merge :: "ty \<Rightarrow> ty \<Rightarrow> ty" where
