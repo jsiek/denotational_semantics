@@ -441,30 +441,41 @@ lemma strengthen_env_fun:
     r2_r1: "\<rho>2 <: \<rho>1" and
     wf_v1: "wf_fun v1" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and
     v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" and
-    v2_v1: "v2 <: v1" and wf_v2: "wf_fun v2"  
+    v1_v2: "v1 <: v2" and wf_v2: "wf_fun v2"  
   shows "\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)"
-    using str det r2_r1 wf_v1 wf_r1 wf_r2 v1_e
-proof (induction v1 arbitrary: \<rho>1 \<rho>2)
+    using str det r2_r1 wf_v1 wf_r1 wf_r2 v1_e v1_v2 wf_v2
+proof (induction v1 arbitrary: \<rho>1 \<rho>2 v2)
   case (TNat n)
   then have "False" by auto
   then show ?case ..
 next
   case (TArrow v11 v12)
   have v12_e: "v12 \<in> \<lbrakk>e\<rbrakk>(v11#\<rho>1)" using TArrow.prems(7) by auto
-  have vr2_vr1: "v11#\<rho>2 <: v11#\<rho>1" using TArrow(5) apply auto apply (case_tac k) by auto
   have wf_v11: "wf_ty v11" using TArrow using wf_atoms by blast
-  have wf_vr1: "wf_env (v11#\<rho>1)" using TArrow(7) wf_v11 apply auto apply (case_tac k) by auto
-  have wf_vr2: "wf_env (v11#\<rho>2)" using TArrow(8) wf_v11 apply auto apply (case_tac k) by auto
-(*
-  obtain v22 where v22_e: "v22 \<in> \<lbrakk>e\<rbrakk>(v11#\<rho>2)" and v22_v12: "v22 <: v12" and wf_v22: "wf_ty v22"
-    using TArrow.prems(1) v12_e vr2_vr1 wf_vr1 wf_vr2 apply (erule_tac x=v12 in allE)
-      apply (erule_tac x="v11#\<rho>1" in allE) apply (erule_tac x="v11#\<rho>2" in allE)
-    apply (erule impE) apply force apply blast done
-  have v12_v12: "v11 \<rightarrow> v22 <: v11 \<rightarrow> v12" using v22_v12 sub_arrow by auto
-  have wf_v12: "wf_ty (v11 \<rightarrow> v22)" using wf_v11 wf_v22 by auto
-  then show ?case using v22_e v12_v12 wf_v12 by auto
-*)
-  show ?case sorry
+  show ?case
+  proof clarify
+    fix v v' assume vv_v2: "v\<rightarrow>v' \<in> atoms v2"
+    have wf_v: "wf_ty v" using TArrow.prems(9) vv_v2 wf_atoms by blast
+    have wf_vp: "wf_ty v'" using TArrow.prems(9) vv_v2 wf_atoms by blast
+    have v_v11: "v <: v11" and v12_vp: "v12 <: v'" 
+      using vv_v2 TArrow.prems(8) sub_any_fun_inv_atoms[of v11 v12 v2] by auto
+    have wf_v11r1: "wf_env (v11 # \<rho>1)" using wf_v11 TArrow(7) by (simp add: nth_Cons') 
+    have wf_vr2: "wf_env (v # \<rho>2)" using wf_v TArrow(8) by (simp add: nth_Cons')
+    from TArrow.prems(1) v12_e
+    show "v' \<in> \<lbrakk>e\<rbrakk>v#\<rho>2" 
+      apply simp apply (erule_tac x=v12 in allE)
+      apply (erule_tac x=v' in allE) apply (erule_tac x="v11#\<rho>1" in allE)
+      apply (erule_tac x="v#\<rho>2" in allE) apply (erule impE) prefer 2 apply assumption
+      apply (rule conjI) apply assumption
+        apply (rule conjI) 
+       apply (simp add: TArrow.prems(3))
+      apply (rule conjI) apply clarify apply (case_tac k) apply simp using v_v11 apply blast
+      using TArrow.prems(3) apply auto[1]
+      apply (rule conjI) using v12_vp apply blast 
+      apply (rule conjI) using wf_vp apply blast
+      apply (rule conjI) using wf_v11r1 apply blast
+        using wf_vr2 by blast
+  qed    
 next
   case (TInter f11 f12)
 (*
@@ -513,10 +524,18 @@ lemma merge_sub: "v1 ~ v2 \<Longrightarrow> merge v1 v2 <: v1"
   apply (case_tac v2) apply auto
   done
 
+lemma merge_sub2: "v1 ~ v2 \<Longrightarrow> merge v1 v2 <: v2"
+  apply (case_tac v1) apply auto
+  apply (case_tac v2) apply auto
+  done
+
 lemma merge_mon: "\<lbrakk> A ~ B; C ~ D; A <: C; B <: D \<rbrakk> \<Longrightarrow> merge A B <: merge C D"
   using sub_mon merge_inter[of A B] merge_inter[of C D]
   by (meson sub_trans ty_equiv_def)
   
+lemma wf_fun_sub: "\<lbrakk> wf_fun v1; v1 <: v2; wf_ty v2 \<rbrakk> \<Longrightarrow> wf_fun v2"
+  by (metis consis_le consis_refl_aux consistent.simps(7) sub_nat_fun_inv sub_refl wf_fun_inv wf_ty.cases)  
+    
 lemma strengthen_determ: "(\<forall> v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 e \<rho>1 \<rho>2)
    \<and> (\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
 proof (induction e)
@@ -539,25 +558,34 @@ proof (induction e)
   qed    
 next
   case (ENat x)
-  then show ?case by auto
+  show ?case 
+  proof
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 (ENat x) \<rho>1 \<rho>2" 
+      apply auto
+      apply (case_tac v2) apply auto 
+      by (meson consis_refl consistent.simps(7) inconsis_le nat_wf_ty sub_refl)
+  next
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (ENat x) \<rho>1 \<rho>2" by auto
+  qed
 next
   case (ELam e)
   show ?case
   proof
-    show "\<forall>v1 \<rho>1 \<rho>2. strengthen v1 (ELam e) \<rho>1 \<rho>2"
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 (ELam e) \<rho>1 \<rho>2"
       apply (rule allI)+ apply (rule impI) apply (erule conjE)+
     proof -
-      fix v1 and \<rho>1::"ty list" and \<rho>2::"ty list"
+      fix v1::ty and v2::ty and \<rho>1::"ty list" and \<rho>2::"ty list"
       assume v1_le: "v1 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1" and l_r2_r1: "length \<rho>2 = length \<rho>1" and
-        r2_r1_: "\<forall>k<length \<rho>2. \<rho>2 ! k <: \<rho>1 ! k" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2"
+        r2_r1_: "\<forall>k<length \<rho>2. \<rho>2 ! k <: \<rho>1 ! k" and v1_v2: "v1 <: v2" and wf_v2: "wf_ty v2" and
+        wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2"
       have wf_v1: "wf_fun v1" and v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"
         using v1_le by auto  
-      have r2_r1: "\<rho>2 <: \<rho>1" using l_r2_r1 r2_r1_ by auto          
-      from strengthen_env_fun[of e \<rho>2 \<rho>1 v1] r2_r1 ELam wf_v1 v1_e wf_r1 wf_r2
-      obtain v2 where "v2 <: v1" and "wf_fun v2" and 
-        "(\<forall>v v'. v \<rightarrow> v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2)" by fastforce
-      then show "\<exists>v2. v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2" by auto
-    qed      
+      have r2_r1: "\<rho>2 <: \<rho>1" using l_r2_r1 r2_r1_ by auto
+      have wff_v2: "wf_fun v2" using wf_fun_sub wf_v2 v1_v2 wf_v1 by blast
+      from strengthen_env_fun[of e \<rho>2 \<rho>1 v1 v2] r2_r1 ELam wf_v1 wff_v2 v1_v2 v1_e wf_r1 wf_r2
+      have "(\<forall>v v'. v \<rightarrow> v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2)" by fastforce
+      then show "v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>2" using wff_v2 by simp
+    qed
   next
     show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (ELam e) \<rho>1 \<rho>2" 
       apply (rule allI)+ apply (rule impI) apply (erule conjE)+
@@ -609,20 +637,34 @@ next
         show " \<forall>v v'. v \<rightarrow> v' \<in> atoms (merge v1 v2) \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
         proof clarify
           fix v v' assume vv_v12: "v \<rightarrow> v' \<in> atoms (merge v1 v2)"
+          have wf_v: "wf_ty v" 
+            by (meson fun_wf_ty v1_v2 vv_v12 wf_arrow_inv wf_atoms wf_merge wf_ty_arrow_inv wf_v1 wf_v2)
+          have wf_vp: "wf_ty v'" 
+            by (meson fun_wf_ty v1_v2 vv_v12 wf_arrow_inv wf_atoms wf_merge wf_ty_arrow_inv wf_v1 wf_v2)
           have "v\<rightarrow>v' \<in> atoms v1 \<or> v\<rightarrow>v' \<in> atoms v2" using v12 vv_v12 by simp        
           then show "v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
           proof
             assume vv_v1: "v\<rightarrow>v' \<in> atoms v1"
             have vp_e_r1: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" using vv_v1 v1_e by blast
-            have "v # (\<rho>1 \<sqinter> \<rho>2) <: v#\<rho>1" using l_r1r2 c_r1r2
-              apply auto apply (case_tac k) apply auto using merge_sub apply auto done                
-            
-            then show ?thesis using vp_e_r1 sorry
+            have vr12_vr1: "v # (\<rho>1 \<sqinter> \<rho>2) <: v#\<rho>1" using l_r1r2 c_r1r2
+              apply auto apply (case_tac k) apply auto using merge_sub apply auto done
+            have wf_vr1: "wf_env (v#\<rho>1)" using wf_r1 wf_v apply auto apply (case_tac k) by auto
+            have wf_vr2: "wf_env (v#(\<rho>1\<sqinter>\<rho>2))" using wf_r1 wf_r2 wf_v 
+              apply auto apply (case_tac k) apply auto using c_r1r2 by blast
+            have vp_vp: "v' <: v'" by auto
+            from ELam have "strengthen v' v' e (v#\<rho>1) (v#(\<rho>1\<sqinter>\<rho>2))" by blast
+            then show ?thesis using vp_e_r1 vr12_vr1 wf_vp wf_vr1 wf_vr2 vp_vp by blast
           next
             assume vv_v2: "v\<rightarrow>v' \<in> atoms v2"
             have vp_e_r2: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)" using vv_v2 v2_e by blast
-                
-            show ?thesis sorry
+            have vr12_vr1: "v # (\<rho>1 \<sqinter> \<rho>2) <: v#\<rho>2" using l_r1r2 c_r1r2
+              apply auto apply (case_tac k) apply auto using merge_sub2 apply auto done
+            have wf_vr1: "wf_env (v#\<rho>2)" using wf_r2 wf_v apply auto apply (case_tac k) by auto
+            have wf_vr2: "wf_env (v#(\<rho>1\<sqinter>\<rho>2))" using wf_r1 wf_r2 wf_v 
+              apply auto apply (case_tac k) apply auto using c_r1r2 by blast
+            have vp_vp: "v' <: v'" by auto
+            from ELam have "strengthen v' v' e (v#\<rho>2) (v#(\<rho>1\<sqinter>\<rho>2))" by blast
+            then show ?thesis using vp_e_r2 vr12_vr1 wf_vp wf_vr1 wf_vr2 vp_vp by blast
           qed
         qed
       qed

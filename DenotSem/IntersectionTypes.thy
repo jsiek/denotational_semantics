@@ -1472,6 +1472,9 @@ lemma sub_any_nat_inv_atoms: "\<lbrakk> TNat n <: A \<rbrakk> \<Longrightarrow> 
 lemma sub_nat_any_inv_atoms[elim]: "\<lbrakk> A <: TNat n \<rbrakk> \<Longrightarrow> TNat n \<in> atoms A"
   unfolding sub_ty_def using d_nat_inv[of "[A]"] by auto
 
+lemma sub_nat_nat_inv[elim!]: "\<lbrakk> TNat n1 <: TNat n2; n1 = n2 \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using sub_nat_any_inv_atoms by fastforce
+
 lemma sub_nat_fun_inv[elim!]: "A \<rightarrow> B <: TNat n \<Longrightarrow> P"
   unfolding sub_ty_def using d_nat_inv[of "[(A\<rightarrow>B)]"] by auto
     
