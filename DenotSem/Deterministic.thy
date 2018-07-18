@@ -501,6 +501,11 @@ next
   show ?case using v2_f12 wf_v2 v2_e by blast
 qed  
 
+lemma merge_sub: "v1 ~ v2 \<Longrightarrow> merge v1 v2 <: v1"
+  apply (case_tac v1) apply auto
+  apply (case_tac v2) apply auto
+  done
+  
 lemma strengthen_determ: "(\<forall> v1 \<rho>1 \<rho>2. strengthen v1 e \<rho>1 \<rho>2)\<and>(\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
 proof (induction e)
   case (EVar x)
@@ -517,17 +522,85 @@ next
     proof -
       fix v1 and \<rho>1::"ty list" and \<rho>2::"ty list"
       assume v1_le: "v1 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1" and l_r2_r1: "length \<rho>2 = length \<rho>1" and
-        r2_r1: "\<forall>k<length \<rho>2. \<rho>2 ! k <: \<rho>1 ! k" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2"
+        r2_r1_: "\<forall>k<length \<rho>2. \<rho>2 ! k <: \<rho>1 ! k" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2"
       have wf_v1: "wf_fun v1" and v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"
-        using v1_le by auto    
-      
-      
-          
-      show "\<exists>v2. v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"     
-        sorry
+        using v1_le by auto  
+      have r2_r1: "\<rho>2 <: \<rho>1" using l_r2_r1 r2_r1_ by auto          
+      from strengthen_env_fun[of e \<rho>2 \<rho>1 v1] r2_r1 ELam wf_v1 v1_e wf_r1 wf_r2
+      obtain v2 where "v2 <: v1" and "wf_fun v2" and 
+        "(\<forall>v v'. v \<rightarrow> v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2)" by fastforce
+      then show "\<exists>v2. v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2" by auto
     qed      
   next
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (ELam e) \<rho>1 \<rho>2" sorry
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (ELam e) \<rho>1 \<rho>2" 
+      apply (rule allI)+ apply (rule impI) apply (erule conjE)+
+    proof -
+      fix v1 v2 \<rho>1 \<rho>2 assume v1_e: "v1 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1" and v2_e: "v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>2" and
+        wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and l_r1r2: "length \<rho>1 = length \<rho>2" and
+        c_r1r2: "\<forall>k<length \<rho>1. \<rho>1 ! k ~ \<rho>2 ! k"
+      have wf_v1: "wf_fun v1" and v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" using v1_e by auto
+      have wf_v2: "wf_fun v2" and v2_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)" using v2_e by auto          
+      have v12: "merge v1 v2 = v1 \<sqinter> v2"
+        using wf_v1 wf_v2 by (metis merge.simps(4) merge.simps(5) wf_fun_inv)          
+      have v1_v2: "v1 ~ v2" apply (rule atoms_consis) using wf_v1 wf_v2 apply auto
+      proof -
+        fix a1 a2
+        assume a1_v1: "a1 \<in> atoms v1" and a2_v2: "a2 \<in> atoms v2"
+        obtain a11 a12 where a1: "a1=a11\<rightarrow>a12" using a1_v1 wf_v1 atoms_wf_fun by blast
+        obtain a21 a22 where a2: "a2=a21\<rightarrow>a22" using a2_v2 wf_v2 atoms_wf_fun by blast
+        show "a1 ~ a2"
+        proof (cases "a11 ~ a21")
+          case True
+          have a12_e: "a12 \<in> \<lbrakk>e\<rbrakk>(a11#\<rho>1)" using v1_e a1_v1 a1 by simp
+          have a22_e: "a22 \<in> \<lbrakk>e\<rbrakk>(a21#\<rho>2)" using v2_e a2_v2 a2 by simp
+          have wf_r1: "wf_env (a11 # \<rho>1)"
+            using wf_r1 wf_v1 a1_v1 apply simp apply clarify apply (case_tac k)
+             apply simp 
+             apply (metis a1 fun_wf_ty wf_arrow_inv wf_atoms wf_ty_arrow_inv)
+             apply simp done
+          have wf_r2: "wf_env (a21 # \<rho>2)" 
+            using wf_r2 wf_v2 a2_v2 apply simp apply clarify apply (case_tac k)
+              apply simp 
+              apply (metis a2 fun_wf_ty wf_arrow_inv wf_atoms wf_ty_arrow_inv)
+              apply simp done
+          have c_r12: "consis_env (a11 # \<rho>1) (a21 # \<rho>2)" 
+            using l_r1r2 c_r1r2 True apply simp apply clarify apply (case_tac k)
+               apply simp apply simp done
+          have "a12 ~ a22" using ELam.IH a12_e a22_e wf_r1 wf_r2 c_r12 by blast
+          then show ?thesis using True a1 a2 by simp
+        next
+          case False
+          then show ?thesis using a1 a2 by simp
+        qed
+      qed
+
+      have v12_l: "merge v1 v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1 \<sqinter> \<rho>2" apply simp
+      proof
+        show "wf_fun (merge v1 v2)"
+          using wf_v1 wf_v2 v1_v2 by (simp add: inter_func v12)
+      next
+        show " \<forall>v v'. v \<rightarrow> v' \<in> atoms (merge v1 v2) \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
+        proof clarify
+          fix v v' assume vv_v12: "v \<rightarrow> v' \<in> atoms (merge v1 v2)"
+          have "v\<rightarrow>v' \<in> atoms v1 \<or> v\<rightarrow>v' \<in> atoms v2" using v12 vv_v12 by simp        
+          then show "v' \<in> \<lbrakk>e\<rbrakk>v # (\<rho>1 \<sqinter> \<rho>2)"
+          proof
+            assume vv_v1: "v\<rightarrow>v' \<in> atoms v1"
+            have vp_e_r1: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" using vv_v1 v1_e by blast
+            have "v # (\<rho>1 \<sqinter> \<rho>2) <: v#\<rho>1" using l_r1r2 c_r1r2
+              apply auto apply (case_tac k) apply auto using merge_sub apply auto done                
+            
+            then show ?thesis using vp_e_r1 sorry
+          next
+            assume vv_v2: "v\<rightarrow>v' \<in> atoms v2"
+            have vp_e_r2: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)" using vv_v2 v2_e by blast
+                
+            show ?thesis sorry
+          qed
+        qed
+      qed
+      show "v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1 \<sqinter> \<rho>2" using v1_v2 v12_l by simp
+    qed
   qed    
 next
   case (EApp e1 e2)
