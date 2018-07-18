@@ -1570,6 +1570,11 @@ proof -
       fold_meet_ub[of \<Gamma>' C a1] by (simp add: meet_list_def)
 qed    
     
+lemma sub_any_fun_elim2: "\<lbrakk> C <: A\<rightarrow>B;
+  \<And>\<Gamma>'. \<lbrakk> \<Gamma>' \<noteq> []; all_funs \<Gamma>'; set \<Gamma>' \<subseteq> atoms C; 
+      A <: \<Sqinter>(map dom \<Gamma>'); \<Sqinter>(map cod \<Gamma>') <: B \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using sub_any_fun_elim[of C A B P] meet_list_ub by blast
+
 lemma sub_any_fun_inv_atoms: assumes a_bc: "B\<rightarrow>C <: A"
   shows "\<forall>a. a \<in> atoms A \<longrightarrow> (\<exists> a1 a2. a = a1\<rightarrow>a2 \<and> a1 <: B \<and> C <: a2)"
   using a_bc unfolding sub_ty_def using d_fun_any_inv_atoms[of "[(B\<rightarrow>C)]"] by blast  
