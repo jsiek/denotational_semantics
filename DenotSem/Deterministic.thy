@@ -426,22 +426,23 @@ next
   qed    
 qed
 
-abbreviation strengthen :: "ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
-  "strengthen v1 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<longrightarrow>
-    (\<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2))"
+abbreviation strengthen :: "ty \<Rightarrow> ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
+  "strengthen v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> v1 <: v2 \<and> wf_ty v2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<longrightarrow>
+    v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2)"
 
 abbreviation determ :: "ty \<Rightarrow> ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
   "determ v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> E e \<rho>1 \<and> v2 \<in> E e \<rho>2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<and> consis_env \<rho>1 \<rho>2 
    \<longrightarrow> v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>e\<rbrakk>(\<rho>1 \<sqinter> \<rho>2))"
 
 lemma strengthen_env_fun:
-  fixes \<rho>1::"ty list" and \<rho>2::"ty list"
-  assumes str: "\<forall> v1 \<rho>1 \<rho>2. strengthen v1 e \<rho>1 \<rho>2" and 
+  fixes \<rho>1::"ty list" and \<rho>2::"ty list" and v1::ty and v2::ty 
+  assumes str: "\<forall> v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 e \<rho>1 \<rho>2" and 
     det: "\<forall> v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2" and
     r2_r1: "\<rho>2 <: \<rho>1" and
     wf_v1: "wf_fun v1" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and
-    v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"    
-  shows "\<exists> v2. v2 <: v1 \<and> wf_fun v2 \<and> (\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2))"
+    v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" and
+    v2_v1: "v2 <: v1" and wf_v2: "wf_fun v2"  
+  shows "\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)"
     using str det r2_r1 wf_v1 wf_r1 wf_r2 v1_e
 proof (induction v1 arbitrary: \<rho>1 \<rho>2)
   case (TNat n)
@@ -454,6 +455,7 @@ next
   have wf_v11: "wf_ty v11" using TArrow using wf_atoms by blast
   have wf_vr1: "wf_env (v11#\<rho>1)" using TArrow(7) wf_v11 apply auto apply (case_tac k) by auto
   have wf_vr2: "wf_env (v11#\<rho>2)" using TArrow(8) wf_v11 apply auto apply (case_tac k) by auto
+(*
   obtain v22 where v22_e: "v22 \<in> \<lbrakk>e\<rbrakk>(v11#\<rho>2)" and v22_v12: "v22 <: v12" and wf_v22: "wf_ty v22"
     using TArrow.prems(1) v12_e vr2_vr1 wf_vr1 wf_vr2 apply (erule_tac x=v12 in allE)
       apply (erule_tac x="v11#\<rho>1" in allE) apply (erule_tac x="v11#\<rho>2" in allE)
@@ -461,8 +463,11 @@ next
   have v12_v12: "v11 \<rightarrow> v22 <: v11 \<rightarrow> v12" using v22_v12 sub_arrow by auto
   have wf_v12: "wf_ty (v11 \<rightarrow> v22)" using wf_v11 wf_v22 by auto
   then show ?case using v22_e v12_v12 wf_v12 by auto
+*)
+  show ?case sorry
 next
   case (TInter f11 f12)
+(*
   from TInter.IH(1)[of \<rho>2 \<rho>1] obtain f21 where f21_f11: "f21 <: f11" and wf_f21: "wf_fun f21"
     and f21_e: "\<forall>v v'. v \<rightarrow> v' \<in> atoms f21 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2" using TInter.prems by auto
   from TInter.IH(2)[of \<rho>2 \<rho>1] obtain f22 where f22_f12: "f22 <: f12" and wf_f22: "wf_fun f22"
@@ -499,17 +504,39 @@ next
   have v2_e: "(\<forall>v v'. v \<rightarrow> v' \<in> atoms (f21 \<sqinter> f22) \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2)"
     using f21_e f22_e by auto
   show ?case using v2_f12 wf_v2 v2_e by blast
+*)
+  show ?case sorry
 qed  
 
 lemma merge_sub: "v1 ~ v2 \<Longrightarrow> merge v1 v2 <: v1"
   apply (case_tac v1) apply auto
   apply (case_tac v2) apply auto
   done
+
+lemma merge_mon: "\<lbrakk> A ~ B; C ~ D; A <: C; B <: D \<rbrakk> \<Longrightarrow> merge A B <: merge C D"
+  using sub_mon merge_inter[of A B] merge_inter[of C D]
+  by (meson sub_trans ty_equiv_def)
   
-lemma strengthen_determ: "(\<forall> v1 \<rho>1 \<rho>2. strengthen v1 e \<rho>1 \<rho>2)\<and>(\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
+lemma strengthen_determ: "(\<forall> v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 e \<rho>1 \<rho>2)
+   \<and> (\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
 proof (induction e)
   case (EVar x)
-  then show ?case by auto
+  show ?case
+  proof
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 (EVar x) \<rho>1 \<rho>2"
+     apply clarify apply simp apply (case_tac "x < length \<rho>1") apply simp
+    apply (meson sub_trans)
+      apply force done
+  next
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EVar x) \<rho>1 \<rho>2"
+      apply clarify
+    apply simp apply (case_tac "x < length \<rho>1") apply simp 
+     apply (rule conjI) apply (rule consis_le) apply force apply force apply force
+      apply (rule conjI) 
+      apply (rule merge_mon) apply force apply (rule consis_le) apply force apply force
+      apply force apply force apply force apply (rule wf_merge) apply force apply force
+       apply (rule consis_le) apply force apply force apply force apply force done
+  qed    
 next
   case (ENat x)
   then show ?case by auto
