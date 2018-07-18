@@ -1515,6 +1515,7 @@ lemma sub_fold_join_L: "x#xs \<turnstile> c : A \<Longrightarrow> \<exists>c'. [
 definition meet_list :: "ty list \<Rightarrow> ty" ("\<Sqinter>" 1000) where
   "\<Sqinter> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold op \<sqinter> xs' x)"
     
+(* to do: rename this lemma to sub_any_fun_inv *)
 lemma sub_fun_any_inv_atoms: assumes ab_c: "C <: A\<rightarrow>B"
   shows "\<exists> \<Gamma>'. \<Gamma>' \<noteq> [] \<and> all_funs \<Gamma>' \<and> set \<Gamma>' \<subseteq> atoms C 
                \<and> (\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> A <: v)
@@ -1536,6 +1537,39 @@ proof -
     apply blast done
 qed
   
+lemma sub_any_fun_elim: "\<lbrakk> C <: A\<rightarrow>B;
+  \<And>\<Gamma>'. \<lbrakk> \<Gamma>' \<noteq> []; all_funs \<Gamma>'; set \<Gamma>' \<subseteq> atoms C; 
+               (\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> A <: v);
+                \<Sqinter>(map cod \<Gamma>') <: B \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using sub_fun_any_inv_atoms[of C A B] by blast
+
+lemma fold_meet_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma> \<longrightarrow> C <: A; all_funs \<Gamma>; C <: A1 \<rbrakk>
+    \<Longrightarrow> C <: fold op \<sqinter> (map dom \<Gamma>) A1"
+  apply (induction \<Gamma> arbitrary: A1)
+  apply force
+  apply simp  
+  apply (case_tac a) apply force defer apply force
+    apply (rename_tac a1 a2) apply simp
+  apply (subgoal_tac "C <: a1") prefer 2 apply force
+  apply auto
+  done
+    
+lemma meet_list_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma> \<longrightarrow> C <: A; all_funs \<Gamma>; \<Gamma> \<noteq> [] \<rbrakk>
+    \<Longrightarrow> C <: \<Sqinter>(map dom \<Gamma>)"
+  apply (case_tac \<Gamma>) apply force
+proof -
+  fix a \<Gamma>'
+  assume ca: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma> \<longrightarrow> C <: A" and af_g: "all_funs \<Gamma>"
+       and g_ne: "\<Gamma> \<noteq> []" and g: "\<Gamma> = a # \<Gamma>'"
+  obtain a1 a2 where a: "a=a1\<rightarrow>a2" using af_g g apply (case_tac a)
+      apply force apply force apply force done
+  have c_a1: "C <: a1" using ca g a by auto 
+  have ca2: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma>' \<longrightarrow> C <: A" using ca g by auto
+  have af_g2: "all_funs \<Gamma>'" using af_g g by auto
+  show "C <: \<Sqinter>(map dom \<Gamma>)" using g_ne c_a1 ca2 af_g2 g a
+      fold_meet_ub[of \<Gamma>' C a1] by (simp add: meet_list_def)
+qed    
+    
 lemma sub_any_fun_inv_atoms: assumes a_bc: "B\<rightarrow>C <: A"
   shows "\<forall>a. a \<in> atoms A \<longrightarrow> (\<exists> a1 a2. a = a1\<rightarrow>a2 \<and> a1 <: B \<and> C <: a2)"
   using a_bc unfolding sub_ty_def using d_fun_any_inv_atoms[of "[(B\<rightarrow>C)]"] by blast  

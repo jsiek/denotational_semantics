@@ -202,6 +202,7 @@ proof -
   then show ?thesis using wf_v12 by simp
 qed
 
+(*
 lemma strengthen_env: "\<lbrakk> v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1; \<rho>2 <: \<rho>1; wf_env \<rho>1; wf_env \<rho>2 \<rbrakk> \<Longrightarrow>
     \<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"
 proof (induction e arbitrary: v1 \<rho>1 \<rho>2)
@@ -276,7 +277,9 @@ next
     then show ?thesis using False v2_e1_r2 v2 by auto
   qed
 qed
-  
+*)
+
+(*  
 theorem deterministic:
   "\<lbrakk> v1 \<in> E e \<rho>1; v2 \<in> E e \<rho>2; wf_env \<rho>1; wf_env \<rho>2; consis_env \<rho>1 \<rho>2 \<rbrakk>
    \<Longrightarrow> v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>e\<rbrakk>(\<rho>1 \<sqinter> \<rho>2)"
@@ -425,7 +428,8 @@ next
     then show ?thesis using v1_v2 n1_n2 False n12_e1 by auto
   qed    
 qed
-
+*)
+  
 abbreviation strengthen :: "ty \<Rightarrow> ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
   "strengthen v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> v1 <: v2 \<and> wf_ty v2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<longrightarrow>
     v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2)"
@@ -536,37 +540,37 @@ lemma merge_mon: "\<lbrakk> A ~ B; C ~ D; A <: C; B <: D \<rbrakk> \<Longrightar
 lemma wf_fun_sub: "\<lbrakk> wf_fun v1; v1 <: v2; wf_ty v2 \<rbrakk> \<Longrightarrow> wf_fun v2"
   by (metis consis_le consis_refl_aux consistent.simps(7) sub_nat_fun_inv sub_refl wf_fun_inv wf_ty.cases)  
     
-lemma strengthen_determ: "(\<forall> v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 e \<rho>1 \<rho>2)
-   \<and> (\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
-proof (induction e)
-  case (EVar x)
-  show ?case
-  proof
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 (EVar x) \<rho>1 \<rho>2"
-     apply clarify apply simp apply (case_tac "x < length \<rho>1") apply simp
+lemma strengthen_var: "strengthen v1 v2 (EVar x) \<rho>1 \<rho>2"    
+  apply clarify apply simp apply (case_tac "x < length \<rho>1") apply simp
     apply (meson sub_trans)
-      apply force done
-  next
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EVar x) \<rho>1 \<rho>2"
+  apply force 
+  done
+  
+lemma determ_var: "determ v1 v2 (EVar x) \<rho>1 \<rho>2"
       apply clarify
     apply simp apply (case_tac "x < length \<rho>1") apply simp 
      apply (rule conjI) apply (rule consis_le) apply force apply force apply force
       apply (rule conjI) 
       apply (rule merge_mon) apply force apply (rule consis_le) apply force apply force
       apply force apply force apply force apply (rule wf_merge) apply force apply force
-       apply (rule consis_le) apply force apply force apply force apply force done
-  qed    
+   apply (rule consis_le) apply force apply force apply force apply force 
+  done
+
+lemma strengthen_nat: "strengthen v1 v2 (ENat x) \<rho>1 \<rho>2"
+   apply auto
+      apply (case_tac v2) apply auto 
+  by (meson consis_refl consistent.simps(7) inconsis_le nat_wf_ty sub_refl)
+    
+lemma determ_nat:  "determ v1 v2 (ENat x) \<rho>1 \<rho>2" by auto
+
+lemma strengthen_determ: "(\<forall> v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 e \<rho>1 \<rho>2)
+   \<and> (\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
+proof (induction e)
+  case (EVar x)
+  show ?case apply (rule conjI) using strengthen_var apply blast using determ_var by blast
 next
   case (ENat x)
-  show ?case 
-  proof
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. strengthen v1 v2 (ENat x) \<rho>1 \<rho>2" 
-      apply auto
-      apply (case_tac v2) apply auto 
-      by (meson consis_refl consistent.simps(7) inconsis_le nat_wf_ty sub_refl)
-  next
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (ENat x) \<rho>1 \<rho>2" by auto
-  qed
+  show ?case  apply (rule conjI) using strengthen_nat apply blast using determ_nat by blast 
 next
   case (ELam e)
   show ?case
@@ -679,7 +683,8 @@ next
   then show ?case sorry
 next
   case (EIf e1 e2 e3)
-  show ?case
+  show ?case sorry
+(*
   proof
     show "\<forall>v1 \<rho>1 \<rho>2. strengthen v1 (EIf e1 e2 e3) \<rho>1 \<rho>2" 
       apply (rule allI)+ apply (rule impI) apply (erule conjE)+
@@ -745,8 +750,29 @@ next
       qed      
     qed
   qed
+*)
 qed
-  
-  
 
+lemma sub_atoms_inv: "\<lbrakk> v1 <: v2; a \<in> atoms v2 \<rbrakk> \<Longrightarrow> v1 <: a"
+  using ax_atoms sub_trans sub_ty_def by blast  
+  
+lemma subsumption: "\<lbrakk> v1 \<in> \<lbrakk>e\<rbrakk>\<rho>; v1 <: v2; wf_ty v2 \<rbrakk> \<Longrightarrow> v2 \<in> \<lbrakk>e\<rbrakk>\<rho>"
+  apply (induction e arbitrary: v1 v2 \<rho>)
+       apply simp apply (case_tac "x < length \<rho>") apply simp 
+        apply (rule sub_trans) apply blast apply blast
+       apply force
+    
+    apply simp apply (case_tac v2) apply force apply force 
+      apply (meson consis_le consis_refl consistent.simps(7) nat_wf_ty sub_refl)
+    
+     apply simp
+    apply (rule conjI) using wf_fun_sub apply blast
+     apply clarify
+     apply (subgoal_tac "v1 <: v \<rightarrow> v'") prefer 2 using sub_atoms_inv apply blast
+     apply (erule sub_any_fun_elim)
+    oops
+    
+
+    
+    
 end
