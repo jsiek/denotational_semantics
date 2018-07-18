@@ -202,26 +202,6 @@ proof -
   then show ?thesis using wf_v12 by simp
 qed
 
-lemma strengthen_env_fun:
-  assumes IH: "\<forall> v1 \<rho>1 \<rho>2. v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2
-     \<longrightarrow> (\<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2)" and 
-    wf_v1: "wf_fun v1" and
-    v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"    
-  shows "\<exists> v2. v2 <: v1 \<and> wf_fun v2 \<and> (\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2))"
-    using IH wf_v1 v1_e
-proof (induction v1 arbitrary: \<rho>1 \<rho>2)
-  case (TNat n)
-  then have "False" by auto
-  then show ?case ..
-next
-  case (TArrow v11 v12)
-  
-  then show ?case sorry
-next
-  case (TInter v11 v12)
-  then show ?case sorry
-qed
-    
 lemma strengthen_env: "\<lbrakk> v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1; \<rho>2 <: \<rho>1; wf_env \<rho>1; wf_env \<rho>2 \<rbrakk> \<Longrightarrow>
     \<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"
 proof (induction e arbitrary: v1 \<rho>1 \<rho>2)
@@ -445,5 +425,179 @@ next
     then show ?thesis using v1_v2 n1_n2 False n12_e1 by auto
   qed    
 qed
+
+abbreviation strengthen :: "ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
+  "strengthen v1 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<longrightarrow>
+    (\<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2))"
+
+abbreviation determ :: "ty \<Rightarrow> ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
+  "determ v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> E e \<rho>1 \<and> v2 \<in> E e \<rho>2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<and> consis_env \<rho>1 \<rho>2 
+   \<longrightarrow> v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>e\<rbrakk>(\<rho>1 \<sqinter> \<rho>2))"
+
+lemma strengthen_determ: "(\<forall> v1 \<rho>1 \<rho>2. strengthen v1 e \<rho>1 \<rho>2)\<and>(\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
+proof (induction e)
+  case (EVar x)
+  then show ?case by auto
+next
+  case (ENat x)
+  then show ?case by auto
+next
+  case (ELam e)
+  show ?case
+  proof
+    show "\<forall>v1 \<rho>1 \<rho>2. strengthen v1 (ELam e) \<rho>1 \<rho>2"
+      apply (rule allI)+ apply (rule impI) apply (erule conjE)+
+    proof -
+      fix v1 and \<rho>1::"ty list" and \<rho>2::"ty list"
+      assume v1_le: "v1 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>1" and l_r2_r1: "length \<rho>2 = length \<rho>1" and
+        r2_r1: "\<forall>k<length \<rho>2. \<rho>2 ! k <: \<rho>1 ! k" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2"
+      have wf_v1: "wf_fun v1" and v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"
+        using v1_le by auto    
+      
+      
+          
+      show "\<exists>v2. v2 \<in> \<lbrakk>ELam e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"     
+        sorry
+    qed      
+  next
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (ELam e) \<rho>1 \<rho>2" sorry
+  qed    
+next
+  case (EApp e1 e2)
+  then show ?case sorry
+next
+  case (EPrim f e1 e2)
+  then show ?case sorry
+next
+  case (EIf e1 e2 e3)
+  show ?case
+  proof
+    show "\<forall>v1 \<rho>1 \<rho>2. strengthen v1 (EIf e1 e2 e3) \<rho>1 \<rho>2" 
+      apply (rule allI)+ apply (rule impI) apply (erule conjE)+
+    proof -
+      fix v1 and \<rho>1::"ty list" and \<rho>2::"ty list"
+      assume v1_if: "v1 \<in> \<lbrakk>EIf e1 e2 e3\<rbrakk>\<rho>1" and l_r2_r1: "length \<rho>2 = length \<rho>1" and
+         r2_r1: "\<forall>k<length \<rho>2. \<rho>2 ! k <: \<rho>1 ! k" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2"      
+      obtain n where n_e1: "TNat n \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v1_e3: "n=0\<longrightarrow> v1 \<in> \<lbrakk>e3\<rbrakk>\<rho>1" and 
+        v1_e2: "n\<noteq>0 \<longrightarrow> v1 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" using v1_if by auto
+      have IH1: "strengthen (TNat n) e1 \<rho>1 \<rho>2" using EIf.IH(1) by blast
+      obtain v2 where v2_n: "v2 <: TNat n" and wf_v2: "wf_ty v2" and v2_e1_r2: "v2 \<in> \<lbrakk>e1\<rbrakk>\<rho>2"
+        using IH1 n_e1 l_r2_r1 r2_r1 wf_r1 wf_r2 by blast
+      have v2: "v2 = TNat n" using v2_n wf_v2
+        by (metis consis_le consis_refl consistent.simps(7) merge.simps(1) merge_inter sub_refl ty_equiv_def) 
+      show "\<exists>v2. v2 \<in> \<lbrakk>EIf e1 e2 e3\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"
+      proof (cases "n = 0")
+        case True
+        have IH3: "strengthen v1 e3 \<rho>1 \<rho>2" using EIf.IH(3) by blast
+        from IH3 l_r2_r1 r2_r1 wf_r1 wf_r2 v1_e3 True
+        obtain v3 where v3_e3: "v3 \<in> \<lbrakk>e3\<rbrakk>\<rho>2" and v3_v1: "v3 <: v1" and wf_v3: "wf_ty v3" by blast        
+        then show ?thesis using True v2_e1_r2 v2 by auto
+      next
+        case False
+        have IH2: "strengthen v1 e2 \<rho>1 \<rho>2" using EIf.IH(2) by blast
+        from IH2 l_r2_r1 r2_r1 wf_r1 wf_r2 v1_e2 False
+        obtain v3 where v3_e2: "v3 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" and v3_v1: "v3 <: v1" and wf_v3: "wf_ty v3" by blast        
+        then show ?thesis using False v2_e1_r2 v2 by auto
+      qed      
+    qed
+  next    
+    show "\<forall> v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EIf e1 e2 e3) \<rho>1 \<rho>2"
+      apply (rule allI)+ apply (rule impI) apply (erule conjE)+
+    proof -
+      fix v1 v2 \<rho>1 \<rho>2
+      assume v1_if: "v1 \<in> \<lbrakk>EIf e1 e2 e3\<rbrakk>\<rho>1" and v2_if: "v2 \<in> \<lbrakk>EIf e1 e2 e3\<rbrakk>\<rho>2"
+         and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and l_r1_r2: "length \<rho>1 = length \<rho>2" and 
+         c_r1_r2: "\<forall>k<length \<rho>1. \<rho>1 ! k ~ \<rho>2 ! k" 
+      obtain n1 where n1_e1: "TNat n1 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v1_e3: "n1 = 0 \<longrightarrow> v1 \<in> \<lbrakk>e3\<rbrakk>\<rho>1" and
+        v1_e2: "n1 \<noteq> 0 \<longrightarrow> v1 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" using v1_if by auto
+      obtain n2 where n2_e1: "TNat n2 \<in> \<lbrakk>e1\<rbrakk>\<rho>2" and v2_e3: "n2 = 0 \<longrightarrow> v2 \<in> \<lbrakk>e3\<rbrakk>\<rho>2" and
+        v2_e2: "n2 \<noteq> 0 \<longrightarrow> v2 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" using v2_if by auto
+      have IH1: "determ (TNat n1) (TNat n2) e1 \<rho>1 \<rho>2" using EIf.IH(1) by blast
+      have n1_n2: "n1 = n2" using IH1 n1_e1 n2_e1 wf_r1 wf_r2 l_r1_r2 c_r1_r2 by simp
+      have n12_e1: "merge (TNat n1) (TNat n2) \<in> \<lbrakk>e1\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+        using IH1 n1_e1 n2_e1 wf_r1 wf_r2 l_r1_r2 c_r1_r2 by auto
+      show "v1 ~ v2 \<and> merge v1 v2 \<in> \<lbrakk>EIf e1 e2 e3\<rbrakk>\<rho>1 \<sqinter> \<rho>2"
+      proof (cases "n1 = 0")
+        case True
+        have IH3: "determ v1 v2 e3 \<rho>1 \<rho>2" using EIf.IH(3) by blast
+        have v1_v2: "v1 ~ v2"
+          using IH3 v1_e3 v2_e3 True n1_n2 wf_r1 wf_r2 l_r1_r2 c_r1_r2 by auto
+        have "merge v1 v2 \<in> \<lbrakk>e3\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+          using IH3 v1_e3 v2_e3 EIf.prems True n1_n2 wf_r1 wf_r2 l_r1_r2 c_r1_r2 by auto
+        then show ?thesis using v1_v2 n1_n2 True n12_e1 by auto
+      next
+        case False
+        have IH2: "determ v1 v2 e2 \<rho>1 \<rho>2" using EIf.IH(2) by blast
+        have v1_v2: "v1 ~ v2"
+          using IH2 v1_e2 v2_e2 EIf.prems False n1_n2 wf_r1 wf_r2 l_r1_r2 c_r1_r2 by auto
+        have "merge v1 v2 \<in> \<lbrakk>e2\<rbrakk>\<rho>1 \<sqinter> \<rho>2" 
+          using IH2 v1_e2 v2_e2 EIf.prems False n1_n2 wf_r1 wf_r2 l_r1_r2 c_r1_r2 by auto
+        then show ?thesis using v1_v2 n1_n2 False n12_e1 by auto
+      qed      
+    qed
+  qed
+qed
   
+lemma strengthen_env_fun:
+  fixes \<rho>1::"ty list" and \<rho>2::"ty list"
+  assumes str: "\<forall> v1 \<rho>1 \<rho>2. strengthen v1 e \<rho>1 \<rho>2" and 
+    det: "\<forall> v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2" and
+    r2_r1: "\<rho>2 <: \<rho>1" and
+    wf_v1: "wf_fun v1" and wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and
+    v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"    
+  shows "\<exists> v2. v2 <: v1 \<and> wf_fun v2 \<and> (\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2))"
+    using str det r2_r1 wf_v1 wf_r1 wf_r2 v1_e
+proof (induction v1 arbitrary: \<rho>1 \<rho>2)
+  case (TNat n)
+  then have "False" by auto
+  then show ?case ..
+next
+  case (TArrow v11 v12)
+  have v12_e: "v12 \<in> \<lbrakk>e\<rbrakk>(v11#\<rho>1)" using TArrow.prems(7) by auto
+  have vr2_vr1: "v11#\<rho>2 <: v11#\<rho>1" using TArrow(5) apply auto apply (case_tac k) by auto
+  have wf_v11: "wf_ty v11" using TArrow using wf_atoms by blast
+  have wf_vr1: "wf_env (v11#\<rho>1)" using TArrow(7) wf_v11 apply auto apply (case_tac k) by auto
+  have wf_vr2: "wf_env (v11#\<rho>2)" using TArrow(8) wf_v11 apply auto apply (case_tac k) by auto
+  obtain v22 where v22_e: "v22 \<in> \<lbrakk>e\<rbrakk>(v11#\<rho>2)" and v22_v12: "v22 <: v12" and wf_v22: "wf_ty v22"
+    using TArrow.prems(1) v12_e vr2_vr1 wf_vr1 wf_vr2 apply (erule_tac x=v12 in allE)
+      apply (erule_tac x="v11#\<rho>1" in allE) apply (erule_tac x="v11#\<rho>2" in allE)
+    apply (erule impE) apply force apply blast done
+  have v12_v12: "v11 \<rightarrow> v22 <: v11 \<rightarrow> v12" using v22_v12 sub_arrow by auto
+  have wf_v12: "wf_ty (v11 \<rightarrow> v22)" using wf_v11 wf_v22 by auto
+  then show ?case using v22_e v12_v12 wf_v12 by auto
+next
+  case (TInter f11 f12)
+  from TInter.IH(1)[of \<rho>2 \<rho>1] obtain f21 where f21_f11: "f21 <: f11" and wf_f21: "wf_fun f21"
+    and f21_e: "\<forall>v v'. v \<rightarrow> v' \<in> atoms f21 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2" using TInter.prems by auto
+  from TInter.IH(2)[of \<rho>2 \<rho>1] obtain f22 where f22_f12: "f22 <: f12" and wf_f22: "wf_fun f22"
+    and f22_e: "\<forall>v v'. v \<rightarrow> v' \<in> atoms f22 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2" using TInter.prems by auto
+  have v2_f12: "f21 \<sqinter> f22 <: f11 \<sqinter> f12" using f21_f11 f22_f12 sub_mon by blast
+  have c_v1: "f11 ~ f12" using TInter.prems(4) by blast
+  have f21_f22: "\<forall>f1 f2. f1 \<in> atoms f21 \<longrightarrow> f2 \<in> atoms f22 \<longrightarrow> f1 ~ f2"
+  proof clarify
+    fix f1 f2 assume f1_f21: "f1 \<in> atoms f21" and f2_f22: "f2 \<in> atoms f22"
+    obtain f1a f1b where f1: "f1 = f1a \<rightarrow> f1b" using f1_f21 wf_f21 using atoms_wf_fun by blast
+    obtain f2a f2b where f2: "f2 = f2a \<rightarrow> f2b" using f2_f22 wf_f22 using atoms_wf_fun by blast
+    show "f1 ~ f2"
+    proof (cases "f1a ~ f2a")
+      case True
+      from TInter.prems(2) have det_e: "determ f1b f2b e (f1a#\<rho>2) (f2a#\<rho>2)" by blast
+      have "f1a \<in> \<lbrakk>e\<rbrakk>(f1b#\<rho>2)" using f21_e f1_f21 f1 sorry
+          
+      have "f1b ~ f2b" sorry
+      then show ?thesis using True f1 f2 by simp
+    next
+      case False
+      then show ?thesis using f1 f2 by simp
+    qed      
+  qed
+  have c_v2: "f21 ~ f22" using f21_f22 wf_f21 wf_f22
+    by (rule atoms_consis) 
+  have wf_v2: "wf_fun (f21 \<sqinter> f22)" using wf_f21 wf_f22 c_v2 by blast
+  have v2_e: "(\<forall>v v'. v \<rightarrow> v' \<in> atoms (f21 \<sqinter> f22) \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>v # \<rho>2)"
+    using f21_e f22_e by auto
+  show ?case using v2_f12 wf_v2 v2_e by blast
+qed  
+  
+
 end
