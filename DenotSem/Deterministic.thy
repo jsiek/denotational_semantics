@@ -202,6 +202,26 @@ proof -
   then show ?thesis using wf_v12 by simp
 qed
 
+lemma strengthen_env_fun:
+  assumes IH: "\<forall> v1 \<rho>1 \<rho>2. v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2
+     \<longrightarrow> (\<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2)" and 
+    wf_v1: "wf_fun v1" and
+    v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"    
+  shows "\<exists> v2. v2 <: v1 \<and> wf_fun v2 \<and> (\<forall>v v'. v\<rightarrow>v' \<in> atoms v2 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2))"
+    using IH wf_v1 v1_e
+proof (induction v1 arbitrary: \<rho>1 \<rho>2)
+  case (TNat n)
+  then have "False" by auto
+  then show ?case ..
+next
+  case (TArrow v11 v12)
+  
+  then show ?case sorry
+next
+  case (TInter v11 v12)
+  then show ?case sorry
+qed
+    
 lemma strengthen_env: "\<lbrakk> v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1; \<rho>2 <: \<rho>1; wf_env \<rho>1; wf_env \<rho>2 \<rbrakk> \<Longrightarrow>
     \<exists>v2. v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2 \<and> v2 <: v1 \<and> wf_ty v2"
 proof (induction e arbitrary: v1 \<rho>1 \<rho>2)
@@ -212,14 +232,22 @@ next
   then show ?case by auto
 next
   case (ELam e)
+  have wf_v1: "wf_fun v1" and v1_e: "\<forall>v v'. v\<rightarrow>v' \<in> atoms v1 \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)"
+    using ELam.prems(1) by auto    
+  
+  { fix v v' assume vv_v1: "v\<rightarrow>v' \<in> atoms v1"
+    have vp_e: "v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>1)" using vv_v1 v1_e by blast
+    have vr2_vr1: "v#\<rho>2 <: v#\<rho>1" using ELam.prems(2) apply auto apply (case_tac k) by auto
+    have wf_v: "wf_ty v" using vv_v1 wf_v1 using wf_atoms by blast
+    have wf_vr1: "wf_env (v#\<rho>1)" using wf_v ELam.prems(3) apply auto apply (case_tac k) by auto
+    have wf_vr2: "wf_env (v#\<rho>2)" using wf_v ELam.prems(4) apply auto apply (case_tac k) by auto
+    obtain v2 where v2_e: "v2 \<in> \<lbrakk>e\<rbrakk>(v#\<rho>2)" and v2_vp: "v2 <: v'" and wf_v2: "wf_ty v2"
+      using ELam.IH[of v' "v#\<rho>1" "v#\<rho>2"] vp_e vr2_vr1 wf_vr1 wf_vr2 by blast
+    have "True" ..
+  }  
+  
     
-    
-    
-    
-    
-    
-    
-  then show ?case sorry
+  show ?case sorry
 next
   case (EApp e1 e2)
   obtain f v where f_e1: "f \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v_e2: "v \<in> \<lbrakk>e2\<rbrakk>\<rho>1" and f_v: "v1 \<in> f \<bullet> v"
