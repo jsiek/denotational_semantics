@@ -1501,7 +1501,7 @@ proof -
   show ?thesis using d_c d by blast
 qed
 
-lemma sub_fold_join_L: "x#xs \<turnstile> c : A \<Longrightarrow> \<exists>c'. [fold (\<lambda>x r. x \<sqinter> r) xs x] \<turnstile> c' : A"
+lemma sub_fold_join_L: "x#xs \<turnstile> c : A \<Longrightarrow> \<exists>c'. [fold op \<sqinter> xs x] \<turnstile> c' : A"
   apply (induction xs arbitrary: x c A)
   apply force
   apply simp

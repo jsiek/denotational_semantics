@@ -431,8 +431,9 @@ qed
 *)
   
 abbreviation strengthen :: "ty \<Rightarrow> ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
-  "strengthen v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> v1 <: v2 \<and> wf_ty v2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<longrightarrow>
-    v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2)"
+  "strengthen v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<and> \<rho>2 <: \<rho>1 \<and> v1 <: v2
+                               \<and> wf_ty v2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2
+                               \<longrightarrow> v2 \<in> \<lbrakk>e\<rbrakk>\<rho>2)"
 
 abbreviation determ :: "ty \<Rightarrow> ty \<Rightarrow> exp \<Rightarrow> ty list \<Rightarrow> ty list \<Rightarrow> bool" where
   "determ v1 v2 e \<rho>1 \<rho>2 \<equiv> (v1 \<in> E e \<rho>1 \<and> v2 \<in> E e \<rho>2 \<and> wf_env \<rho>1 \<and> wf_env \<rho>2 \<and> consis_env \<rho>1 \<rho>2 
@@ -771,8 +772,46 @@ lemma subsumption: "\<lbrakk> v1 \<in> \<lbrakk>e\<rbrakk>\<rho>; v1 <: v2; wf_t
      apply (subgoal_tac "v1 <: v \<rightarrow> v'") prefer 2 using sub_atoms_inv apply blast
      apply (erule sub_any_fun_elim)
     oops
-    
+
+lemma arrow_lam: "\<lbrakk> wf_ty v; wf_ty v' \<rbrakk> \<Longrightarrow> (v\<rightarrow>v' \<in> \<lbrakk>\<lambda>e\<rbrakk>\<rho>) = (v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>))"
+  by auto
+
 
     
+      
+lemma fold_merge_arrows: 
+  fixes e::exp and \<Gamma>::"ty list" and A1::ty 
+  shows "\<lbrakk> \<forall> v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2; all_funs \<Gamma>; wf_env \<rho>;
+         (*wf_fun C; set \<Gamma> \<subseteq> atoms C; A\<rightarrow>B \<in> atoms C;*)
+         set \<Gamma> \<subseteq> \<lbrakk>\<lambda>e\<rbrakk>\<rho>; A\<rightarrow>B \<in> \<lbrakk>\<lambda>e\<rbrakk>\<rho> \<rbrakk> \<Longrightarrow> 
+         fold merge (map cod \<Gamma>) B \<in> \<lbrakk>e\<rbrakk>(fold merge (map dom \<Gamma>) A)#\<rho>"
+proof (induction \<Gamma> arbitrary: A B)
+  case Nil
+  then show ?case by auto
+next
+  case (Cons a \<Gamma>)
+  obtain A' B' where a: "a = A' \<rightarrow> B'" using Cons.prems(2) by (cases a) auto
+  have d_e: "determ B' B e (A'#\<rho>) (A#\<rho>)" using Cons.prems(1) by blast
+  have bp_e: "B' \<in> \<lbrakk>e\<rbrakk>A'#\<rho>" using Cons.prems a by simp
+  have b_e: "B \<in> \<lbrakk>e\<rbrakk>A#\<rho>" using Cons.prems by simp      
+  have a_ap: "A ~ A'" sorry
+  have wf_a: "wf_ty A" sorry
+  have wf_ap: "wf_ty A'" sorry
+  have wf_apr: "wf_env (A'#\<rho>)" using wf_ap Cons.prems(3) apply auto
+      apply (case_tac k) apply auto done
+  have wf_ar: "wf_env (A#\<rho>)" using wf_a Cons.prems(3) apply auto
+      apply (case_tac k) apply auto done      
+  have c_apr_ar: "consis_env (A'#\<rho>) (A#\<rho>)" using Cons(4) a_ap apply auto
+      apply (case_tac k) apply auto using consis_sym apply blast done
+  from d_e bp_e b_e wf_apr wf_ar c_apr_ar 
+  have "B' ~ B \<and> merge B' B \<in> \<lbrakk>e\<rbrakk>((A'#\<rho>) \<sqinter> (A#\<rho>))" by auto
+  then have aa_bb_le: "(merge A' A) \<rightarrow> (merge B' B) \<in> \<lbrakk>\<lambda>e\<rbrakk>\<rho>" sorry
+  have af_g: "all_funs \<Gamma>" using Cons.prems(2) by auto
+  from Cons.IH[of "merge A' A" "merge B' B"] Cons.prems(1) af_g Cons.prems(3)
+  have "fold merge (map cod \<Gamma>) (merge B' B)
+      \<in> \<lbrakk>e\<rbrakk>fold merge (map IntersectionTypes.dom \<Gamma>) (merge A' A) # \<rho>"
+     by (smt Cons.prems(4) aa_bb_le insert_subset list.simps(15))     
+  then show ?case using a by simp
+qed
     
 end

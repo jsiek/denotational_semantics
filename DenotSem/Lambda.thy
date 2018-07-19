@@ -4,7 +4,7 @@ theory Lambda
 begin
 (*>*)
 
-datatype exp = EVar nat | ENat nat | ELam exp | EApp exp exp
+datatype exp = EVar nat | ENat nat | ELam exp ("\<lambda>" 1000) | EApp exp exp
   | EPrim "nat \<Rightarrow> nat \<Rightarrow> nat" exp exp | EIf exp exp exp
 
 (*<*)
