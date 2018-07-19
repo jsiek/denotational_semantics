@@ -9,9 +9,9 @@ fun consistent :: "ty \<Rightarrow> ty \<Rightarrow> bool" (infix "~" 52) where
   "(v1\<rightarrow>v1') ~ (TNat m) = False" |
   "(TNat n) ~ (v2\<rightarrow>v2') = False" | 
   "(v1\<rightarrow>v1') ~ (v2\<rightarrow>v2') = ((v1 ~ v2 \<and> v1' ~ v2') \<or> \<not> (v1 ~ v2))" |
-  "(TNat n) ~ (v2 \<sqinter> v2') = False" |
+  "(TNat n) ~ (v2 \<sqinter> v2') = (TNat n ~ v2 \<and> TNat n ~ v2')" |
   "(v1\<rightarrow>v1') ~ (v2 \<sqinter> v2') = ((v1\<rightarrow>v1') ~ v2 \<and> (v1\<rightarrow>v1') ~ v2')" |
-  "(v1\<sqinter>v1') ~ (TNat n) = False" |
+  "(v1\<sqinter>v1') ~ (TNat n) = (v1 ~ TNat n \<and> v1' ~ TNat n)" |
   "(v1\<sqinter>v1') ~ (v2\<rightarrow>v2') = (v1 ~ (v2\<rightarrow>v2') \<and> v1' ~ (v2\<rightarrow>v2'))" |
   "(v1\<sqinter>v1') ~ (v2\<sqinter>v2') = (v1 ~ v2 \<and> v1 ~ v2' \<and> v1' ~ v2 \<and> v1' ~ v2')"
   
@@ -24,19 +24,14 @@ text{*
   intersections are only used for functions, not numbers.
   *} 
   
-inductive wf_ty :: "ty \<Rightarrow> bool" and wf_fun :: "ty \<Rightarrow> bool" where
+inductive wf_ty :: "ty \<Rightarrow> bool" where
   nat_wf_ty[intro]: "wf_ty (TNat n)" |
-  fun_wf_ty[intro]: "\<lbrakk> wf_fun f \<rbrakk> \<Longrightarrow> wf_ty f" |
-  arrow_func[intro]: "\<lbrakk> wf_ty v; wf_ty v' \<rbrakk> \<Longrightarrow> wf_fun (v \<rightarrow> v')" |
-  inter_func[intro]: "\<lbrakk> f1 ~ f2; wf_fun f1; wf_fun f2 \<rbrakk> \<Longrightarrow> wf_fun (f1 \<sqinter> f2)"
+  arrow_func[intro]: "\<lbrakk> wf_ty v; wf_ty v' \<rbrakk> \<Longrightarrow> wf_ty (v \<rightarrow> v')" |
+  inter_func[intro]: "\<lbrakk> f1 ~ f2; wf_ty f1; wf_ty f2 \<rbrakk> \<Longrightarrow> wf_ty (f1 \<sqinter> f2)"
 
 inductive_cases 
   wf_ty_arrow_inv[elim!]: "wf_ty (v \<rightarrow> v')" and 
-  wf_ty_inter_inv[elim!]: "wf_ty (f \<sqinter> f')" and
-  wf_arrow_inv[elim!]: "wf_fun (v \<rightarrow> v')" and 
-  wf_inter_inv[elim!]: "wf_fun (f \<sqinter> f')" and
-  wf_fun_nat_inv[elim!]: "wf_fun (TNat n)" and
-  wf_fun_inv: "wf_fun f"
+  wf_ty_inter_inv[elim!]: "wf_ty (f \<sqinter> f')"
   
 abbreviation wf_env :: "ty list \<Rightarrow> bool" where
   "wf_env \<rho> \<equiv> \<forall>k. k < length \<rho> \<longrightarrow> wf_ty (\<rho>!k)"
@@ -44,17 +39,10 @@ abbreviation wf_env :: "ty list \<Rightarrow> bool" where
 abbreviation env_sub :: "ty list \<Rightarrow> ty list \<Rightarrow> bool" (infix "<:" 52) where 
   "(\<rho>::ty list) <: \<rho>' \<equiv> length \<rho> = length \<rho>' \<and> (\<forall> k. k < length \<rho>  \<longrightarrow> \<rho>!k <: \<rho>'!k)"
 
-fun merge :: "ty \<Rightarrow> ty \<Rightarrow> ty" where
-  "merge (TNat n1) (TNat n2) = (if n1 = n2 then TNat n1 else undefined)" |
-  "merge f1 f2 = f1 \<sqinter> f2"
-  
-definition merge_list :: "ty list \<Rightarrow> ty" ("\<Prod>" 1000) where
-  "\<Prod> xs \<equiv> (case xs of [] \<Rightarrow> undefined | x#xs' \<Rightarrow> fold merge xs' x)"
-
 abbreviation env_inter :: "ty list \<Rightarrow> ty list \<Rightarrow> ty list" (infix "\<sqinter>" 60) where
-  "env_inter \<rho>1 \<rho>2 \<equiv> map (\<lambda>(A,B). merge A B) (zip \<rho>1 \<rho>2)" 
+  "env_inter \<rho>1 \<rho>2 \<equiv> map (\<lambda>(A,B). A \<sqinter> B) (zip \<rho>1 \<rho>2)" 
 
-lemma consis_env_inter: "\<lbrakk> consis_env \<rho>1 \<rho>2; k < length \<rho>1 \<rbrakk> \<Longrightarrow> (\<rho>1 \<sqinter> \<rho>2)!k = merge (\<rho>1!k) (\<rho>2!k)"
+lemma consis_env_inter: "\<lbrakk> consis_env \<rho>1 \<rho>2; k < length \<rho>1 \<rbrakk> \<Longrightarrow> (\<rho>1 \<sqinter> \<rho>2)!k = \<rho>1!k \<sqinter> \<rho>2!k"
   by auto
  
 lemma inter_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2 \<rbrakk> \<Longrightarrow> length (\<rho>1 \<sqinter> \<rho>2) = length \<rho>1"
@@ -79,15 +67,9 @@ lemma consis_sym_aux: "(v ~ v' \<longrightarrow> v' ~ v) \<and> (\<not> v ~ v' \
 lemma consis_sym[sym]: "v ~ v' \<Longrightarrow> v' ~ v"
   using consis_sym_aux by blast
     
-lemma consis_refl_aux: "(wf_ty v \<longrightarrow> v ~ v) \<and> (wf_fun f \<longrightarrow> f ~ f)"
-  apply (induction rule: wf_ty_wf_fun.induct) 
-    apply force
-   apply force
-   apply force
-  apply simp apply (rule consis_sym) apply blast  
-  done
+lemma consis_refl[intro!]: "wf_ty v \<Longrightarrow> v ~ v"
+  apply (induction rule: wf_ty.induct) using consis_sym by auto
 
-lemma consis_refl[intro!]: "wf_ty v \<Longrightarrow> v ~ v" using consis_refl_aux by blast
     
 (*    
 corollary consis_upper_bound: fixes v1::val and v2::val 
@@ -132,32 +114,35 @@ lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \
         apply force
        apply force
         apply force
-     apply (metis atoms.simps(2) singletonD)
-      apply force
+       apply (metis atoms.simps(2) singletonD)
+    apply (subgoal_tac "TNat n ~ v2 \<and> TNat n ~ v2'") prefer 2  using consistent.simps(5) apply blast
     apply blast
-    apply force
-    apply blast
-    apply blast
-  done
+     apply (subgoal_tac "v1 \<rightarrow> v1' ~ v2 \<and> v1 \<rightarrow> v1' ~ v2'") prefer 2 apply blast
+     apply blast
+    apply (subgoal_tac "v1 ~ TNat n \<and> v1' ~ TNat n") prefer 2 
+         using consistent.simps(7) apply blast
+           apply blast
+          apply blast
+         apply blast
+         done
 
-lemma wf_merge[intro!]: "\<lbrakk> wf_ty a; wf_ty b; a ~ b \<rbrakk> \<Longrightarrow> wf_ty (merge a b)"
-  by (induction a b rule: consistent.induct) force+
-    
+(*
 lemma consis_merge: "\<lbrakk> a ~ b; a ~ y; x ~ b; x ~ y \<rbrakk> \<Longrightarrow> merge a x ~ merge b y"
   apply (case_tac a) apply (case_tac b) apply auto apply (case_tac y) apply auto
     apply (case_tac x) apply auto apply (case_tac b) apply auto apply (case_tac b)
     apply auto
   done
-
-lemma consis_inter_right: "\<lbrakk> wf_fun A; wf_fun B; A ~ C; B ~ C \<rbrakk> \<Longrightarrow> A \<sqinter> B ~ C"
+*)
+    
+lemma consis_inter_right: "\<lbrakk> wf_ty A; wf_ty B; A ~ C; B ~ C \<rbrakk> \<Longrightarrow> A \<sqinter> B ~ C"
   apply (induction C arbitrary: A B)
-    apply (erule wf_fun_inv) apply force apply force
-    apply (erule wf_fun_inv) apply force apply force
-  apply (erule wf_fun_inv) apply simp 
-   apply (erule wf_fun_inv) apply simp apply force
-  apply simp apply (erule wf_fun_inv) apply force apply force
+    apply force
+   apply force
+  apply (case_tac A) apply simp apply (case_tac B) apply force apply force apply force
+   apply (case_tac B) apply force apply force apply force
+   apply (case_tac B) apply force+
   done    
-
+(*
 lemma consis_merge_left: "\<lbrakk> a ~ v; x ~ v; wf_ty a; wf_ty x \<rbrakk> \<Longrightarrow> merge a x ~ v"
   apply (case_tac a) apply (case_tac v) apply auto apply (case_tac x) apply auto
    apply (case_tac v) apply auto apply (case_tac x) apply auto 
@@ -226,7 +211,8 @@ lemma consis_fold_merge_right: "\<forall> x y. (\<forall> v1 v2. {v1,v2} \<subse
        (\<forall>v. v \<in> set L2 \<longrightarrow> wf_ty v)  \<longrightarrow>
    x ~ fold merge L2 y" (is "\<forall> x y. ?P L2 x y")
   sorry  
-  
+*)
+(*
 lemma consis_fold_merge: "\<forall> L2 x y. (\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<union> set L2 \<longrightarrow> v1 ~ v2) \<longrightarrow>
         (\<forall> v. v \<in> set L1 \<union> set L2 \<longrightarrow> x ~ v) \<longrightarrow> (\<forall>v. v \<in> set L1 \<union> set L2 \<longrightarrow> v ~ y) \<longrightarrow>
         x ~ y \<longrightarrow> wf_ty x \<longrightarrow> wf_ty y \<longrightarrow> 
@@ -302,7 +288,9 @@ next
     qed
   qed
 qed
-
+*)
+    
+(*
 lemma consis_merge_list: 
   assumes c_l12: "\<forall> v1 v2. {v1,v2} \<subseteq> set L1 \<union> set L2 \<longrightarrow> v1 ~ v2" and
     wf_l1: "\<forall>v. v \<in> set L1 \<longrightarrow> wf_ty v" and
@@ -324,7 +312,8 @@ proof -
     using consis_fold_merge 1 2 3 4 5 6 8 9 by blast
   then show ?thesis using l1 l2 merge_list_def by simp
 qed 
-  
+*)
+    
 (*
 lemma d_consis_nat_L: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [TNat n] \<rbrakk> \<Longrightarrow> v ~ TNat n"
   apply (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct)
@@ -356,11 +345,8 @@ lemma atoms_inconsis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in
 *)
 
 lemma atoms_consis: "\<lbrakk> (\<forall> v1' v2'. v1' \<in> atoms v1 \<longrightarrow> v2' \<in> atoms v2 \<longrightarrow> v1' ~ v2');
-      wf_fun v1; wf_fun v2 \<rbrakk> \<Longrightarrow> v1 ~ v2"
+      wf_ty v1; wf_ty v2 \<rbrakk> \<Longrightarrow> v1 ~ v2"
   by (induction v1 v2 rule: consistent.induct) auto    
-
-lemma atoms_wf_fun: "\<lbrakk> wf_fun f; a \<in> atoms f \<rbrakk> \<Longrightarrow> \<exists> a1 a2. a = a1\<rightarrow>a2"
-  by (induction f) auto  
   
 (*   
 lemma val_consis_atoms: "wf_ty v \<Longrightarrow> consis (atoms v)"
@@ -625,12 +611,11 @@ shows "wf_env (\<rho>1 \<sqinter> \<rho>2)" using r1_r2 v_r1 v_r2
   apply (subgoal_tac "\<rho>1!k ~ \<rho>2!k") prefer 2 apply force
   apply (subgoal_tac "wf_ty (\<rho>1!k)") prefer 2 apply simp
   apply (subgoal_tac "wf_ty (\<rho>2!k)") prefer 2 apply simp
-  apply (rule wf_merge) apply blast+
+  apply blast+
   done
  
 lemma wf_atoms[intro]: "\<lbrakk> wf_ty B; A \<in> atoms B \<rbrakk> \<Longrightarrow> wf_ty A"
   by (induction B) auto   
-    
     
 lemma wf_consis_atoms: "\<lbrakk> wf_ty B; A \<in> atoms B; C \<in> atoms B \<rbrakk> \<Longrightarrow> A ~ C"
   apply (induction B)
