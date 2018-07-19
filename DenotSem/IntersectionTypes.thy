@@ -10,8 +10,8 @@ fun cod :: "ty \<Rightarrow> ty" where
   "cod (v\<rightarrow>v') = v'"
 abbreviation is_fun :: "ty \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<rightarrow>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
-abbreviation all_funs :: "ty list \<Rightarrow> bool" where
-  "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> set \<Gamma> \<longrightarrow> is_fun v"
+abbreviation all_funs :: "ty set \<Rightarrow> bool" where
+  "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> \<Gamma> \<longrightarrow> is_fun v"
   
 inductive deduce_le :: "ty list \<Rightarrow> nat \<Rightarrow> ty \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
   wk_nat[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(TNat n)#\<Gamma>2 \<turnstile> Suc c: v" | 
@@ -19,7 +19,7 @@ inductive deduce_le :: "ty list \<Rightarrow> nat \<Rightarrow> ty \<Rightarrow>
   union_R[intro!]: "\<lbrakk> \<Gamma> \<turnstile> c : v1; \<Gamma> \<turnstile> c : v2 \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<sqinter> v2" |
   union_L[intro]: "\<lbrakk> \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<sqinter>v2)#\<Gamma>2 \<turnstile> Suc c : v" | 
   d_nat[intro!]: "[TNat n] \<turnstile> c : TNat n" |
-  d_arrow[intro!]: "\<lbrakk> all_funs \<Gamma>; \<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
+  d_arrow[intro!]: "\<lbrakk> all_funs (set \<Gamma>); \<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
                       map cod \<Gamma> \<turnstile> c : v2\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<rightarrow> v2"  
   
 lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Longrightarrow> xs \<turnstile> c' : ys"
@@ -282,7 +282,7 @@ next
   then show ?case by auto
 next
   case (d_arrow \<Gamma> v1 c v2)
-  have af_gp: "all_funs \<Gamma>'" using d_arrow(1) d_arrow(5) using perm_set_eq by blast
+  have af_gp: "all_funs (set \<Gamma>')" using d_arrow(1) d_arrow(5) using perm_set_eq by blast
   have "perm (map cod \<Gamma>) (map cod \<Gamma>')" using d_arrow.prems by blast
   then have c2: "map cod \<Gamma>' \<turnstile> c : v2" using d_arrow.IH(2) by blast
   have c1: "\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c : v"
@@ -654,7 +654,7 @@ next
 
     next (* case d_arrow *)
       fix \<Gamma> v1 ca v2 assume g: "\<Delta> @ A # A # \<Sigma> = \<Gamma>" and c_ca: "c = Suc ca" and
-        c_v12: "C = v1 \<rightarrow> v2" and afg: "all_funs \<Gamma>" and
+        c_v12: "C = v1 \<rightarrow> v2" and afg: "all_funs (set \<Gamma>)" and
         ca_v1: "\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> ca : v" and
         ca_v2: "map cod \<Gamma> \<turnstile> ca : v2"
       let ?G = "\<Delta> @ A # \<Sigma>"
@@ -667,7 +667,7 @@ next
       have ca_v1: "\<forall>v v'. v \<rightarrow> v' \<in> set ?G \<longrightarrow> [v1] \<turnstile> ca : v" 
         using ca_v1 g apply clarify 
         apply (subgoal_tac "v \<rightarrow> v' \<in> set (\<Delta> @ A # A # \<Sigma>)") prefer 2 apply force by blast 
-      have "all_funs ?G" using afg g by auto
+      have "all_funs (set ?G)" using afg g by auto
       then have "?G \<turnstile> Suc (max ca cb) : v1 \<rightarrow> v2" using cb_v2 ca_v1 
           d_arrow[of "?G" v1 "max ca cb" v2] weaken_size 
         by (metis (no_types, lifting) max.cobounded2 max_def)
@@ -883,7 +883,7 @@ next
         then have "False" using a by simp then show ?thesis ..
             
       next (* case c2 is d_arrow *)
-        fix \<Gamma>'' v1 c2' v2 assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and af_gp: "all_funs \<Gamma>''" 
+        fix \<Gamma>'' v1 c2' v2 assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and af_gp: "all_funs (set \<Gamma>'')" 
         have "False" using af_gp a gpp by auto
         then show ?thesis ..
       qed
@@ -933,14 +933,14 @@ next
         then show ?thesis using a g by auto 
             
       next (* case c2 is d_arrow *)
-        fix \<Gamma>' v1 c v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "all_funs \<Gamma>'"
+        fix \<Gamma>' v1 c v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "all_funs (set \<Gamma>')"
         then have "False" using a by auto
         then show ?thesis ..
       qed        
           
     next (* case c1 is d_arrow *)
       fix \<Gamma>' A' c1' B assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
-        a: "A = A' \<rightarrow> B" and af_gp: "all_funs \<Gamma>'" and 
+        a: "A = A' \<rightarrow> B" and af_gp: "all_funs (set \<Gamma>')" and 
         v1_c: "\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma>' \<longrightarrow> [A'] \<turnstile> c1' : v" and
         c_B: "map cod \<Gamma>' \<turnstile> c1' : B"
       then have c1: "\<Gamma>' \<turnstile> c1 : A" by blast
@@ -983,7 +983,7 @@ next
             
       next (* c2 is d_arrow *)
         fix \<Gamma>'' C' c2' D assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and 
-          c_v12: "C = C' \<rightarrow> D" and af_gpp: "all_funs \<Gamma>''" and 
+          c_v12: "C = C' \<rightarrow> D" and af_gpp: "all_funs (set \<Gamma>'')" and 
           v1_c2p: "\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma>'' \<longrightarrow> [C'] \<turnstile> c2' : v" and
           c2p_v2: "map cod \<Gamma>'' \<turnstile> c2' : D" 
         let ?G = "\<Delta> @ \<Gamma> @ \<Sigma>" 
@@ -995,7 +995,7 @@ next
           apply (erule_tac x="(size B, c1', c2')" in allE) apply (erule impE) apply force
             apply simp by blast
 
-        have af_dgs: "all_funs ?G" using af_gpp af_gp g_gp gpp by auto
+        have af_dgs: "all_funs (set ?G)" using af_gpp af_gp g_gp gpp by auto
         let ?cp = "max c1' (max c2' c3)"
         have c_dgs_aux: "\<forall>v v'. v \<rightarrow> v' \<in> set ?G \<longrightarrow> (\<exists>c. [C'] \<turnstile> c : v)"
           apply clarify apply simp apply (erule disjE) defer apply (erule disjE) defer defer
@@ -1113,17 +1113,17 @@ lemma d_nat_atoms_any_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; ctx_atoms \<G
   done
     
 lemma d_arrow_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = v1\<rightarrow>v2 \<rbrakk> \<Longrightarrow>
-   \<exists> \<Gamma>' c'. set \<Gamma>' \<subseteq> ctx_atoms \<Gamma> \<and> all_funs \<Gamma>' 
+   \<exists> \<Gamma>' c'. set \<Gamma>' \<subseteq> ctx_atoms \<Gamma> \<and> all_funs (set \<Gamma>') 
        \<and> (\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)
        \<and> map cod \<Gamma>' \<turnstile> c' : v2"
 proof (induction \<Gamma> c v arbitrary: v1 v2 rule: deduce_le.induct)
   case (wk_nat \<Gamma>1 \<Gamma>2 c v n)
-  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ \<Gamma>2)" and "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ \<Gamma>2)" and "all_funs (set \<Gamma>')" and
        "(\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
-  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ \<Gamma>2)" and "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ \<Gamma>2)" and "all_funs (set \<Gamma>')" and
        "(\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
@@ -1132,7 +1132,7 @@ next
   then show ?case ..
 next
   case (union_L \<Gamma>1 u1 u2 \<Gamma>2 c v)
-  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ u1 # u2 # \<Gamma>2)" and "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where "set \<Gamma>' \<subseteq> ctx_atoms (\<Gamma>1 @ u1 # u2 # \<Gamma>2)" and "all_funs (set \<Gamma>')" and
        "(\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
@@ -1493,7 +1493,7 @@ qed
 lemma sub_fun_any_inv_atoms_ex: assumes ab_c: "C <: A\<rightarrow>B" shows "\<exists>D E. D\<rightarrow>E \<in> atoms C"
 proof -
   obtain c where c_ab: "[C] \<turnstile> c : A\<rightarrow>B" using ab_c unfolding sub_ty_def by auto
-  then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs (set \<Gamma>')" and
     gp_b: "map cod \<Gamma>' \<turnstile> c' : B" using d_arrow_inv[of "[C]" c "A\<rightarrow>B" A B] apply blast done
   obtain D \<Gamma>'' where gp: "\<Gamma>' = D#\<Gamma>''" apply (case_tac \<Gamma>') using gp_b apply force apply force done
   then have d_c: "D \<in> atoms C" using gp_c by auto
@@ -1517,12 +1517,12 @@ definition meet_list :: "ty list \<Rightarrow> ty" ("\<Sqinter>" 1000) where
     
 (* to do: rename this lemma to sub_any_fun_inv *)
 lemma sub_fun_any_inv_atoms: assumes ab_c: "C <: A\<rightarrow>B"
-  shows "\<exists> \<Gamma>'. \<Gamma>' \<noteq> [] \<and> all_funs \<Gamma>' \<and> set \<Gamma>' \<subseteq> atoms C 
+  shows "\<exists> \<Gamma>'. \<Gamma>' \<noteq> [] \<and> all_funs (set \<Gamma>') \<and> set \<Gamma>' \<subseteq> atoms C 
                \<and> (\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> A <: v)
                \<and> \<Sqinter>(map cod \<Gamma>') <: B"
 proof -
   obtain c where "[C] \<turnstile> c : A \<rightarrow> B" using ab_c unfolding sub_ty_def by blast
-  then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs \<Gamma>'" and
+  then obtain \<Gamma>' c' where gp_c: "set \<Gamma>' \<subseteq> ctx_atoms [C]" and af_gp: "all_funs (set \<Gamma>')" and
     a_dgp: "\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> [A] \<turnstile> c' : v" and cgp_b: "map cod \<Gamma>' \<turnstile> c' : B"
     using d_arrow_inv[of "[C]" c "A\<rightarrow>B" A B] by blast
   obtain D \<Gamma>'' where gp: "\<Gamma>' = D#\<Gamma>''" using cgp_b apply (cases \<Gamma>') apply auto done
@@ -1538,12 +1538,12 @@ proof -
 qed
   
 lemma sub_any_fun_elim: "\<lbrakk> C <: A\<rightarrow>B;
-  \<And>\<Gamma>'. \<lbrakk> \<Gamma>' \<noteq> []; all_funs \<Gamma>'; set \<Gamma>' \<subseteq> atoms C; 
+  \<And>\<Gamma>'. \<lbrakk> \<Gamma>' \<noteq> []; all_funs (set \<Gamma>'); set \<Gamma>' \<subseteq> atoms C; 
                (\<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> A <: v);
                 \<Sqinter>(map cod \<Gamma>') <: B \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using sub_fun_any_inv_atoms[of C A B] by blast
 
-lemma fold_meet_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma> \<longrightarrow> C <: A; all_funs \<Gamma>; C <: A1 \<rbrakk>
+lemma fold_meet_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma> \<longrightarrow> C <: A; all_funs (set \<Gamma>); C <: A1 \<rbrakk>
     \<Longrightarrow> C <: fold op \<sqinter> (map dom \<Gamma>) A1"
   apply (induction \<Gamma> arbitrary: A1)
   apply force
@@ -1554,24 +1554,24 @@ lemma fold_meet_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma>
   apply auto
   done
     
-lemma meet_list_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma> \<longrightarrow> C <: A; all_funs \<Gamma>; \<Gamma> \<noteq> [] \<rbrakk>
+lemma meet_list_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma> \<longrightarrow> C <: A; all_funs (set \<Gamma>); \<Gamma> \<noteq> [] \<rbrakk>
     \<Longrightarrow> C <: \<Sqinter>(map dom \<Gamma>)"
   apply (case_tac \<Gamma>) apply force
 proof -
   fix a \<Gamma>'
-  assume ca: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma> \<longrightarrow> C <: A" and af_g: "all_funs \<Gamma>"
+  assume ca: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma> \<longrightarrow> C <: A" and af_g: "all_funs (set \<Gamma>)"
        and g_ne: "\<Gamma> \<noteq> []" and g: "\<Gamma> = a # \<Gamma>'"
   obtain a1 a2 where a: "a=a1\<rightarrow>a2" using af_g g apply (case_tac a)
       apply force apply force apply force done
   have c_a1: "C <: a1" using ca g a by auto 
   have ca2: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma>' \<longrightarrow> C <: A" using ca g by auto
-  have af_g2: "all_funs \<Gamma>'" using af_g g by auto
+  have af_g2: "all_funs (set \<Gamma>')" using af_g g by auto
   show "C <: \<Sqinter>(map dom \<Gamma>)" using g_ne c_a1 ca2 af_g2 g a
       fold_meet_ub[of \<Gamma>' C a1] by (simp add: meet_list_def)
 qed    
     
 lemma sub_any_fun_elim2: "\<lbrakk> C <: A\<rightarrow>B;
-  \<And>\<Gamma>'. \<lbrakk> \<Gamma>' \<noteq> []; all_funs \<Gamma>'; set \<Gamma>' \<subseteq> atoms C; 
+  \<And>\<Gamma>'. \<lbrakk> \<Gamma>' \<noteq> []; all_funs (set \<Gamma>'); set \<Gamma>' \<subseteq> atoms C; 
       A <: \<Sqinter>(map dom \<Gamma>'); \<Sqinter>(map cod \<Gamma>') <: B \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using sub_any_fun_elim[of C A B P] meet_list_ub by blast
 
