@@ -1049,6 +1049,9 @@ fun atoms :: "ty \<Rightarrow> ty set" where
 abbreviation ctx_atoms :: "ty list \<Rightarrow> ty set" where
   "ctx_atoms \<Gamma> \<equiv> \<Union>a\<in>set \<Gamma>. atoms a"   
 
+lemma atoms_not_inter[elim!]: "A \<sqinter> B \<in> atoms C \<Longrightarrow> P" 
+  apply (induction C) apply auto done
+  
 lemma ax_atoms: "v \<in> atoms A \<Longrightarrow> \<exists>c. [A] \<turnstile> c : v"
 proof (induction A)
   case (TNat x)
