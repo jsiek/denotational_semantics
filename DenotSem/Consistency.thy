@@ -48,12 +48,11 @@ lemma consis_env_inter: "\<lbrakk> consis_env \<rho>1 \<rho>2; k < length \<rho>
 lemma inter_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2 \<rbrakk> \<Longrightarrow> length (\<rho>1 \<sqinter> \<rho>2) = length \<rho>1"
   by auto
     
-(*
-lemma consis_join_R[intro!]: "\<lbrakk> v1 ~ v2; v1 ~ v3 \<rbrakk> \<Longrightarrow> v1 ~ v2 \<sqinter> v3"
-  by (induction v1) auto
 
-lemma consis_join_L[intro!]: "\<lbrakk> v1 ~ v3; v2 ~ v3 \<rbrakk> \<Longrightarrow> v1 \<sqinter> v2 ~ v3"
-  by auto  
+
+
+    
+(*
   
 lemma consis_join_L_inv[elim!]: "\<lbrakk> v1\<sqinter>v2 ~ v; \<lbrakk> v1 ~ v; v2 ~ v \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   by auto
@@ -126,6 +125,15 @@ lemma consis_atoms: "\<lbrakk> v1 ~ v2; v1' \<in> atoms v1; v2' \<in> atoms v2 \
          apply blast
          done
 
+lemma inconsis_atoms: "\<lbrakk> \<not> v1 ~ v2 \<rbrakk> \<Longrightarrow> \<exists> v1' v2'. v1' \<in> atoms v1 \<and> v2' \<in> atoms v2 \<and> \<not>v1'~v2'"
+  by (induction v1 v2 rule: consistent.induct) auto
+    
+lemma atoms_consis: "\<forall> v1' v2'. v1' \<in> atoms v1 \<longrightarrow> v2' \<in> atoms v2 \<longrightarrow> v1' ~ v2' \<Longrightarrow> v1 ~ v2"
+  by (induction v1 v2 rule: consistent.induct) auto    
+
+lemma atoms_inconsis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
+  by (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct) auto
+
 (*
 lemma consis_merge: "\<lbrakk> a ~ b; a ~ y; x ~ b; x ~ y \<rbrakk> \<Longrightarrow> merge a x ~ merge b y"
   apply (case_tac a) apply (case_tac b) apply auto apply (case_tac y) apply auto
@@ -133,15 +141,13 @@ lemma consis_merge: "\<lbrakk> a ~ b; a ~ y; x ~ b; x ~ y \<rbrakk> \<Longrighta
     apply auto
   done
 *)
+  
+lemma consis_inter_L[intro!]: "\<lbrakk> v1 ~ v3; v2 ~ v3 \<rbrakk> \<Longrightarrow> v1 \<sqinter> v2 ~ v3"
+  using atoms_consis consis_atoms by blast
     
-lemma consis_inter_right: "\<lbrakk> wf_ty A; wf_ty B; A ~ C; B ~ C \<rbrakk> \<Longrightarrow> A \<sqinter> B ~ C"
-  apply (induction C arbitrary: A B)
-    apply force
-   apply force
-  apply (case_tac A) apply simp apply (case_tac B) apply force apply force apply force
-   apply (case_tac B) apply force apply force apply force
-   apply (case_tac B) apply force+
-  done    
+lemma consis_inter_R[intro!]: "\<lbrakk> v1 ~ v2; v1 ~ v3 \<rbrakk> \<Longrightarrow> v1 ~ v2 \<sqinter> v3"
+  using atoms_consis consis_atoms by blast
+    
 (*
 lemma consis_merge_left: "\<lbrakk> a ~ v; x ~ v; wf_ty a; wf_ty x \<rbrakk> \<Longrightarrow> merge a x ~ v"
   apply (case_tac a) apply (case_tac v) apply auto apply (case_tac x) apply auto
@@ -323,12 +329,21 @@ lemma d_consis_nat_L: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [TNat n
     apply (case_tac \<Gamma>1) apply force apply force
    apply force+
   done
+*)
 
-lemma le_any_nat_consis[intro]: "TNat n <: v \<Longrightarrow> v ~ TNat n"
-  unfolding sub_ty_def using d_consis_nat_L by auto
-
+lemma nat_atoms_consis: "atoms v \<subseteq> {TNat n} \<Longrightarrow> v ~ TNat n"
+  by (induction v) auto
+    
+lemma le_any_nat_consis[intro]: assumes n_v: "TNat n <: v" shows "v ~ TNat n"
+proof -
+  have "atoms v \<subseteq> {TNat n}" using n_v sub_any_nat_inv_atoms by blast
+  then show "v ~ TNat n" using nat_atoms_consis by blast
+qed
+  
 lemma consis_nat_atoms: "\<lbrakk> v ~ TNat n \<rbrakk> \<Longrightarrow> atoms v \<subseteq> { TNat n }"
   by (induction v arbitrary: n) auto
+
+(*
   
 (*
 lemma le_any_nat_atom_consis: "\<lbrakk> v \<sqsubseteq> TNat n \<rbrakk> \<Longrightarrow> atoms v \<subseteq> {TNat n}"
@@ -338,15 +353,8 @@ lemma le_any_nat_atom_consis: "\<lbrakk> v \<sqsubseteq> TNat n \<rbrakk> \<Long
 definition consis :: "ty set \<Rightarrow> bool" where
   "consis \<Gamma> \<equiv> (\<forall>v v'. v \<in> \<Gamma> \<longrightarrow> v' \<in> \<Gamma> \<longrightarrow> v ~ v')"
   
-
-
-lemma atoms_inconsis: "\<lbrakk> \<not>(v1' ~ v2'); v1' \<in> atoms v1; v2' \<in> atoms v2 \<rbrakk> \<Longrightarrow> \<not>(v1 ~ v2)"
-  by (induction v1 v2 arbitrary: v1' v2' rule: consistent.induct) auto
 *)
-
-lemma atoms_consis: "\<lbrakk> (\<forall> v1' v2'. v1' \<in> atoms v1 \<longrightarrow> v2' \<in> atoms v2 \<longrightarrow> v1' ~ v2');
-      wf_ty v1; wf_ty v2 \<rbrakk> \<Longrightarrow> v1 ~ v2"
-  by (induction v1 v2 rule: consistent.induct) auto    
+    
   
 (*   
 lemma val_consis_atoms: "wf_ty v \<Longrightarrow> consis (atoms v)"
@@ -358,13 +366,22 @@ lemma val_consis_atoms: "wf_ty v \<Longrightarrow> consis (atoms v)"
     apply blast using consis_atoms apply blast 
   apply clarify using consis_sym consis_atoms apply blast
   done
-  
+*)  
+    
 lemma consis_nat_trans: "\<lbrakk> v1 ~ TNat n; TNat n ~ v2 \<rbrakk> \<Longrightarrow> v1 ~ v2"
-  by (induction v1) auto   
+  by (induction v1 arbitrary: v2) auto
 
 lemma consis_nat_trans2: "\<lbrakk> v1 ~ v2; v2 ~ TNat n \<rbrakk> \<Longrightarrow> v1 ~ TNat n"
-  by (induction v2 arbitrary: v1 n) auto
-
+  apply (induction v2 arbitrary: v1 n) 
+    apply force
+   apply force
+  apply (case_tac v1)
+  apply force
+   apply force
+  apply force
+  done    
+    
+(*
 definition vals :: "ty set \<Rightarrow> bool" where
   "vals \<Gamma> \<equiv> (\<forall>v. v \<in> \<Gamma> \<longrightarrow> wf_ty v)"
   
@@ -392,19 +409,52 @@ proof -
   have "TNat n \<in> atoms v" using vp_v vp_n by simp
   with v_v show "v ~ TNat n" using nat_atom_consis_nat by blast
 qed    
+*)
+ 
+lemma consis_inter_right_elim[elim!]: "\<lbrakk> A ~ A1 \<sqinter> A2; \<lbrakk> A ~ A1; A ~ A2 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using atoms_consis consis_atoms by blast
 
+lemma consis_inter_left_elim[elim!]: "\<lbrakk> A1 \<sqinter> A2 ~ A; \<lbrakk> A1 ~ A; A2 ~ A \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+  using atoms_consis consis_atoms by (smt IntersectionTypes.atoms_union Un_iff)
+
+lemma fold_meet_atoms[simp]: "atoms (fold op \<sqinter> L A) = atoms A \<union> ctx_atoms L"
+  by (induction L arbitrary: A) auto
+    
+lemma meet_list_atoms[simp]: "L \<noteq> [] \<Longrightarrow> atoms (\<Sqinter>L) = ctx_atoms L"
+  unfolding meet_list_def by (cases L) auto
+
+lemma meet_list_consis_inv: "\<lbrakk> \<Sqinter>L1 ~ \<Sqinter>L2; A \<in> set L1; B \<in> set L2; L1 \<noteq> []; L2 \<noteq> [] \<rbrakk> \<Longrightarrow> A ~ B"
+  using meet_list_atoms atoms_consis consis_atoms by (smt UN_I)
+
+lemma meet_list_inconsis_inv: "\<lbrakk> \<not> \<Sqinter>L1 ~ \<Sqinter>L2; L1 \<noteq> []; L2 \<noteq> [] \<rbrakk> \<Longrightarrow> 
+   \<exists> A B. A \<in> set L1 \<and> B \<in> set L2 \<and> \<not> A ~ B"
+  using meet_list_atoms atoms_inconsis inconsis_atoms by (smt UN_E)
+    
 lemma consis_le_inconsis_le:
   "(v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1' <: v1 \<and> v2' <: v2 \<longrightarrow> v1 ~ v2))
   \<and> (\<not> v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1 <: v1' \<and> v2 <: v2' \<longrightarrow> \<not> v1 ~ v2))"
   (is "?P v1' v2' \<and> ?Q v1' v2'")
 proof (induction v1' v2' rule: consistent.induct)
   case (1 n m)
-  then show ?case apply (rule conjI) apply clarify 
-     apply (subgoal_tac "v1 ~ TNat n") prefer 2 using le_any_nat_consis apply auto[1]
-     apply (subgoal_tac "v2 ~ TNat n") prefer 2 using le_any_nat_consis apply auto[1]
-    using consis_nat_trans consis_sym apply blast
-    apply (rule impI) apply simp
-    using consis_atoms consistent.simps(1) sub_nat_any_inv_atoms by blast
+  show ?case
+  proof
+    show "?P (TNat n) (TNat m)" 
+    proof clarify
+      fix v1 v2 assume n_m: "TNat n ~ TNat m" and n_v1: "TNat n <: v1" and m_v2: "TNat m <: v2"
+      have 1: "v1 ~ TNat n" using n_v1 by (simp add: le_any_nat_consis)
+      have 2: "v2 ~ TNat m" using m_v2 by (simp add: le_any_nat_consis)
+      show "v1 ~ v2" using 1 2 n_m using consis_nat_trans consis_sym by meson
+    qed
+  next
+    show "?Q (TNat n) (TNat m)" apply (rule impI)+ apply (rule allI)+
+      apply (rule impI) apply (erule conjE)
+    proof -
+      fix v1 v2 assume n_m: "\<not> (TNat n ~ TNat m)" and v1_n: "v1 <: TNat n" and v2_m: "v2 <: TNat m"
+      have 1: "TNat n \<in> atoms v1" using v1_n sub_nat_any_inv_atoms by blast
+      have 2: "TNat m \<in> atoms v2" using v2_m sub_nat_any_inv_atoms by blast
+      show "\<not> (v1 ~ v2)" using n_m 1 2 atoms_inconsis by blast
+    qed
+  qed    
 next
   case (2 v1 v1' m)
   show ?case
@@ -417,7 +467,8 @@ next
         m_v4: "v4 <: TNat m"
         and v3_v4: "v3 ~ v4"
       have m_v4: "TNat m \<in> atoms v4" using m_v4 sub_nat_any_inv_atoms by blast
-      obtain v2 v2' where v22_v3: "v2\<rightarrow>v2' \<in> atoms v3" using v11_v3 sub_fun_any_inv_atoms_ex by blast
+      obtain v2 v2' where v22_v3: "v2\<rightarrow>v2' \<in> atoms v3" 
+        using v11_v3 sub_fun_any_inv_atoms_ex by blast
       have "\<not> (TNat m ~ v2\<rightarrow>v2')" by simp
       then have "\<not> (v4 ~ v3)" using v22_v3 m_v4 atoms_inconsis by blast
       then show False using v3_v4 using consis_sym by blast
@@ -434,7 +485,8 @@ next
       fix v3 v4 assume "\<not> TNat n ~ (v2\<rightarrow>v2')" and v11_v3: "v4 <: v2 \<rightarrow> v2'" and 
         m_v4: "v3 <: TNat n" and v3_v4: "v3 ~ v4"
       have m_v4: "TNat n \<in> atoms v3" using m_v4 sub_nat_any_inv_atoms by blast
-      obtain v1 v1' where v22_v3: "v1\<rightarrow>v1' \<in> atoms v4" using v11_v3 sub_fun_any_inv_atoms_ex by blast
+      obtain v1 v1' where v22_v3: "v1\<rightarrow>v1' \<in> atoms v4" 
+        using v11_v3 sub_fun_any_inv_atoms_ex by blast
       have "\<not> (TNat n ~ v1\<rightarrow>v1')" by simp
       then have "\<not> (v3 ~ v4)" using v22_v3 m_v4 atoms_inconsis by blast
       then show False using v3_v4 using consis_sym by blast
@@ -491,17 +543,36 @@ next
     qed      
   next
     show "?Q (v1\<rightarrow>v1') (v2\<rightarrow>v2')"
-    proof clarify
-      fix v3 v4 assume "\<not> v1 \<rightarrow> v1' ~ v2 \<rightarrow> v2'" and v11_v3: "v3 <: v1 \<rightarrow> v1'" and
-        v22_v4: "v4 <: v2 \<rightarrow> v2'" and v3_v4: "v3 ~ v4"
-      then have v1_v2: "v1 ~ v2 \<and> \<not> v1' ~ v2'" by simp
-      obtain v31 v32 where v33_v3: "v31 \<rightarrow> v32 \<in> atoms v3" 
-        using sub_fun_any_inv_atoms_ex v11_v3 by blast
-      have "v1 <: v31 \<and> v32 <: v1'" using v33_v3 v11_v3 sub_fun_any_inv_atoms
-        sorry    
-          
-      have "\<not> v3 ~ v4" sorry 
-      then show "False" using v3_v4 ..
+      apply (rule impI) apply (rule allI)+ apply (rule impI) apply (erule conjE)
+    proof -
+      fix v3 v4 assume v11_v22: "\<not> v1 \<rightarrow> v1' ~ v2 \<rightarrow> v2'" and v11_v3: "v3 <: v1 \<rightarrow> v1'" and
+        v22_v4: "v4 <: v2 \<rightarrow> v2'" 
+      have v1_v2: "v1 ~ v2" and 
+        not_v1p_v2p: "\<not> v1' ~ v2'" using v11_v22 by auto
+
+      obtain \<Gamma>3 where g3_ne: "\<Gamma>3 \<noteq> []" and af_g3: "all_funs (set \<Gamma>3)" and g3_v3: "set \<Gamma>3 \<subseteq> atoms v3" and
+        v1_g3: "v1 <: \<Sqinter>(map dom \<Gamma>3)" and g3_v1p: "\<Sqinter>(map cod \<Gamma>3) <: v1'" 
+        using v11_v3 sub_any_fun_elim2 by blast
+      obtain \<Gamma>4 where g4_ne: "\<Gamma>4 \<noteq> []" and af_g4: "all_funs (set \<Gamma>4)" and g4_v4: "set \<Gamma>4 \<subseteq> atoms v4" and
+        v2_g4: "v2 <: \<Sqinter>(map dom \<Gamma>4)" and g4_v2p: "\<Sqinter>(map cod \<Gamma>4) <: v2'" 
+        using v22_v4 sub_any_fun_elim2 by blast
+      
+      have c_dg3_dg4: "\<Sqinter>(map dom \<Gamma>3) ~ \<Sqinter>(map dom \<Gamma>4)" using v1_v2 v1_g3 v2_g4 4 by blast
+      have nc_cg3_cg4: "\<not> \<Sqinter>(map cod \<Gamma>3) ~ \<Sqinter>(map cod \<Gamma>4)" using not_v1p_v2p g3_v1p g4_v2p 4 by blast 
+      obtain C D where c_g3: "C \<in> set (map cod \<Gamma>3)" and d_g4: "D \<in> set (map cod \<Gamma>4)" and 
+        c_d: "\<not> C ~ D" using nc_cg3_cg4 by(meson g3_ne g4_ne map_is_Nil_conv meet_list_inconsis_inv)
+      obtain A where ac_g3: "A \<rightarrow> C \<in> set \<Gamma>3" using c_g3 af_g3 g3_v3 apply auto apply (case_tac x)
+          apply auto done
+      obtain B where bd_g4: "B \<rightarrow> D \<in> set \<Gamma>4" using d_g4 af_g4 apply auto apply (case_tac x)
+          apply auto done         
+      have a_b: "A ~ B" using c_dg3_dg4
+        apply (rule meet_list_consis_inv)
+        using ac_g3 apply force
+        using bd_g4 apply force
+          using g3_ne apply force using g4_ne apply force done
+      have "\<not> A \<rightarrow> C ~ B \<rightarrow> D" using a_b c_d by simp
+      then show "\<not> v3 ~ v4" 
+        using g3_v3 g4_v4 ac_g3 bd_g4 atoms_inconsis[of "A\<rightarrow>C" "B\<rightarrow>D" v3 v4] by blast 
     qed      
   qed    
 next
@@ -513,14 +584,65 @@ next
           consis_sym le_any_nat_consis)
   next
     show "?Q (TNat n) (v2 \<sqinter> v2')" 
-      sorry
+      by (metis (no_types, lifting) atoms.simps(1) atoms_consis atoms_sub_any_nat consis_atoms 
+          consis_nat_atoms consis_sym le_any_nat_consis singletonD sub_nat_any_inv_atoms sub_trans)
   qed
 next
   case (6 v1 v1' v2 v2')
-  then show ?case sorry
+  show ?case
+  proof
+    show "?P (v1 \<rightarrow> v1') (v2 \<sqinter> v2')"
+    proof clarify
+      fix v3 v4
+      assume v11_v2: "v1 \<rightarrow> v1' ~ v2" and v11_v2p: "v1 \<rightarrow> v1' ~ v2'" and
+        v11_v3: "v1 \<rightarrow> v1' <: v3" and v22_v4: "v2 \<sqinter> v2' <: v4"
+      have v3a: "\<forall>a. a \<in> atoms v3 \<longrightarrow> (\<exists>a1 a2. a=a1\<rightarrow>a2 \<and> a1 <: v1 \<and> v1' <: a2)"
+        using sub_any_fun_inv_atoms v11_v3 by blast
+      
+        
+      show  "v3 ~ v4"
+        apply (rule atoms_consis) apply clarify
+      proof -
+        fix v3' v4' assume v3p_v3: "v3' \<in> atoms v3" and v4p_v4: "v4' \<in> atoms v4"
+        obtain v31 v32 where v3p: "v3' = v31 \<rightarrow> v32" and 
+          v31_v1: "v31 <: v1" and v1p_v32: "v1' <: v32" using v3a v3p_v3 by blast
+        have "v2 \<sqinter> v2' <: v4'" using v22_v4 v4p_v4 sub_atom_sub by blast
+
+        
+        show "v3' ~ v4'" sorry
+      qed
+        
+        
+    qed      
+  next
+    show "?Q (v1 \<rightarrow> v1') (v2 \<sqinter> v2')" sorry
+  qed    
 next
   case (7 v1 v1' v2)
-  then show ?case sorry
+  show ?case
+  proof
+    show "?P (v1 \<sqinter> v1') (TNat v2)" 
+      by (meson "7.IH"(1) atoms_nat_eq_nat consis_nat_atoms consistent.simps(7) sub_trans ty_equiv_def)
+  next
+    show "?Q (v1 \<sqinter> v1') (TNat v2)" 
+      by (metis (no_types, lifting) atoms.simps(1) atoms_consis atoms_sub_any_nat consis_atoms consis_nat_atoms le_any_nat_consis singletonD sub_nat_any_inv_atoms sub_trans)
+  qed
+next
+  case (8 v1 v1' v2 v2')
+  show ?case
+  proof
+    show "?P (v1 \<sqinter> v1') (v2 \<rightarrow> v2')" sorry
+  next
+    show "?Q (v1 \<sqinter> v1') (v2 \<rightarrow> v2')" sorry
+  qed
+next
+  case (9 v1 v1' v2 v2')
+  show ?case
+  proof
+    show "?P (v1 \<sqinter> v1') (v2 \<sqinter> v2')" sorry
+  next
+    show "?Q (v1 \<sqinter> v1') (v2 \<sqinter> v2')" sorry
+  qed    
 qed
 
 
@@ -575,7 +697,7 @@ qed
   apply auto   
   done
 *)
-*)  
+
 lemma consis_le: "\<lbrakk> v1' <: v1; v2' <: v2; v1' ~ v2' \<rbrakk> \<Longrightarrow> v1 ~ v2"
   sorry
     

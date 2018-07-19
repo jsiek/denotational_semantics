@@ -1614,4 +1614,16 @@ lemma atoms_nat_eq_nat: "atoms A \<subseteq> {TNat n} \<Longrightarrow> A \<appr
 lemma sub_any_nat_inv[elim]: "\<lbrakk> TNat n <: A; A \<approx> TNat n \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using sub_any_nat_inv_atoms atoms_nat_eq_nat by auto
 
+lemma sub_atom_sub: "\<lbrakk> A <: B; C \<in> atoms B \<rbrakk> \<Longrightarrow> A <: C"
+  apply (induction B arbitrary: A C)
+  apply force
+  apply (subgoal_tac "C = B1\<rightarrow>B2") prefer 2 using atoms.simps(2) apply blast    
+   apply blast
+  apply (subgoal_tac "C \<in> atoms B1 \<or> C \<in> atoms B2") prefer 2
+  using atoms.simps(3) apply blast   
+  apply (subgoal_tac "A <: B1") prefer 2 apply (meson sub_inter_right1 sub_refl sub_trans)
+  apply (subgoal_tac "A <: B2") prefer 2 apply (meson sub_inter_right2 sub_refl sub_trans)
+  apply blast
+  done
+    
 end
