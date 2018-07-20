@@ -438,7 +438,8 @@ lemma meet_list_consis_inv: "\<lbrakk> \<Sqinter>L1 ~ \<Sqinter>L2; A \<in> set 
 lemma meet_list_inconsis_inv: "\<lbrakk> \<not> \<Sqinter>L1 ~ \<Sqinter>L2; L1 \<noteq> []; L2 \<noteq> [] \<rbrakk> \<Longrightarrow> 
    \<exists> A B. A \<in> set L1 \<and> B \<in> set L2 \<and> \<not> A ~ B"
   using meet_list_atoms atoms_inconsis inconsis_atoms by (smt UN_E)
-    
+
+(*
 lemma consis_le_inconsis_le:
   "(v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1' <: v1 \<and> v2' <: v2 \<longrightarrow> v1 ~ v2))
   \<and> (\<not> v1' ~ v2' \<longrightarrow> (\<forall> v1 v2. v1 <: v1' \<and> v2 <: v2' \<longrightarrow> \<not> v1 ~ v2))"
@@ -691,6 +692,7 @@ next
     show "?Q (v1 \<sqinter> v1') (v2 \<sqinter> v2')" sorry
   qed    
 oops
+*)
 
 lemma size_atoms[simp]: "B \<in> atoms A \<Longrightarrow> size B \<le> size A"
   apply (induction A) apply auto done
@@ -717,7 +719,6 @@ lemma fold_depth_bounded: "\<lbrakk> (\<forall>A. A \<in> set L \<longrightarrow
    apply force
   apply force
   done
-
 
 lemma list_depth_bounded: "\<lbrakk> L \<noteq> []; \<forall>A. A \<in> set L \<longrightarrow> depth A \<le> n \<rbrakk> \<Longrightarrow> list_depth L \<le> n"
   apply (case_tac L) apply force
@@ -749,12 +750,29 @@ lemma fold_depth_dom: "\<lbrakk> all_funs (set \<Gamma>); d1 < d2 \<rbrakk> \<Lo
    prefer 2 apply force
   apply force
   done        
+
+lemma fold_depth_cod: "\<lbrakk> all_funs (set \<Gamma>); d1 < d2 \<rbrakk> \<Longrightarrow>
+   fold (\<lambda>a b. max (depth a) b) (map cod \<Gamma>) d1
+   < fold (\<lambda>a b. max (depth a) b) \<Gamma> d2"
+  apply (induction \<Gamma> arbitrary: d1 d2)
+   apply force
+  apply (case_tac a) apply force defer apply force
+  apply simp
+  apply (subgoal_tac "max (depth x21) d1 < max (Suc (max (depth x21) (depth x22))) d2")
+   prefer 2 apply force
+  apply force
+  done        
     
 lemma list_depth_dom: "\<lbrakk> all_funs (set \<Gamma>); \<Gamma> \<noteq> [] \<rbrakk> \<Longrightarrow> list_depth (map dom \<Gamma>) < list_depth \<Gamma>"
   apply (case_tac \<Gamma>) apply force
   apply simp apply (case_tac a) apply force defer apply force apply simp
     using fold_depth_dom apply auto done
     
+lemma list_depth_cod: "\<lbrakk> all_funs (set \<Gamma>); \<Gamma> \<noteq> [] \<rbrakk> \<Longrightarrow> list_depth (map cod \<Gamma>) < list_depth \<Gamma>"
+  apply (case_tac \<Gamma>) apply force
+  apply simp apply (case_tac a) apply force defer apply force apply simp
+    using fold_depth_cod apply auto done
+
 lemma depth_meet_list_dom:
   assumes g_a: "set \<Gamma> \<subseteq> atoms A" and af_g: "all_funs (set \<Gamma>)" and g_ne: "\<Gamma> \<noteq> []"
   shows "depth (\<Sqinter> (map dom \<Gamma>)) < depth A"
@@ -766,113 +784,245 @@ proof -
     using g_a atoms_depth apply blast done
   finally show ?thesis by blast
 qed
+  
+lemma depth_meet_list_cod:
+  assumes g_a: "set \<Gamma> \<subseteq> atoms A" and af_g: "all_funs (set \<Gamma>)" and g_ne: "\<Gamma> \<noteq> []"
+  shows "depth (\<Sqinter> (map cod \<Gamma>)) < depth A"
+proof -
+  have "list_depth (map cod \<Gamma>) < list_depth \<Gamma>" using af_g g_ne by (rule list_depth_cod)
+  then have "depth (\<Sqinter>(map cod \<Gamma>)) < list_depth \<Gamma>" using meet_list_depth g_ne by auto
+  also have "list_depth \<Gamma> \<le> depth A"
+    apply (rule list_depth_bounded) using g_ne apply blast
+    using g_a atoms_depth apply blast done
+  finally show ?thesis by blast
+qed
 
 lemma consis_sub_aux: 
   "(\<forall> A B C D. n = depth A + depth B + depth C + depth D 
-      \<longrightarrow> A ~ B \<longrightarrow> A <: C \<longrightarrow> B <: D \<longrightarrow> C ~ D)
-  \<and> (\<forall> A B C D. n = depth A + depth B + depth C + depth D
-      \<longrightarrow> \<not> A ~ B \<longrightarrow> C <: A \<longrightarrow> D <: B \<longrightarrow> \<not> C ~ D)"
-    (is "?P n \<and> ?Q n")
+      \<longrightarrow> A ~ B \<longrightarrow> A <: C \<longrightarrow> B <: D \<longrightarrow> C ~ D)" (is "?P n ")
 proof (induction n rule: nat_less_induct)
   case (1 n)
-  show ?case
-  proof
-    show "?P n"
-    proof clarify
-      fix A::ty and B::ty and C::ty and D::ty
-      assume n: "n = depth A + depth B + depth C + depth D" and
-        a_b: "A ~ B" and a_c: "A <: C" and b_d: "B <: D"
-        
-      show "C ~ D" apply (rule atoms_consis) apply clarify
-      proof -
-        fix C' D' assume cp_c: "C' \<in> atoms C" and dp_d: "D' \<in> atoms D"
-        have a_cp: "A <: C'" using a_c cp_c using sub_atom_sub by blast
-        have b_dp: "B <: D'" using b_d dp_d using sub_atom_sub by blast        
-        show "C' ~ D'"
-        proof (cases C')
-          case (TNat n1)
-          then have "TNat n1 \<in> atoms A" using a_cp
-            by (simp add: sub_nat_any_inv_atoms)
-          then have "atoms B \<subseteq> {TNat n1}" using a_b
-            by (metis atoms.simps(1) atoms_consis consis_atoms consis_nat_atoms 
-                consis_sym singletonD)
-          then have "atoms D \<subseteq> {TNat n1}" using b_dp  
-            by (meson atoms_sub_any_nat b_d sub_any_nat_inv_atoms sub_trans)
-          then have "D' = TNat n1" using dp_d by auto
-          then show ?thesis using TNat by simp
-        next
-          case (TArrow C1 C2)
-          then obtain A1 A2 where "A1\<rightarrow>A2 \<in> atoms A" using a_cp sub_fun_any_inv_atoms_ex by blast
-          then have "all_funs (atoms B)" 
-            apply clarify apply (subgoal_tac "A1\<rightarrow>A2 ~ v") prefer 2
-            using a_b consis_atoms[of A B "A1\<rightarrow>A2"] apply blast
-            apply (case_tac v) apply auto done
-          then have "is_fun D'" using b_d d_fun_atoms_L_inv dp_d 
-            using sub_ty_def by fastforce
-          then obtain D1 D2 where dp: "D' = D1 \<rightarrow> D2" apply (cases D') by auto
-              
-          have "A <: C1 \<rightarrow> C2" using a_cp TArrow by simp
-          then show ?thesis
+  show ?case    
+  proof clarify
+    fix A::ty and B::ty and C::ty and D::ty
+    assume n: "n = depth A + depth B + depth C + depth D" and
+      a_b: "A ~ B" and a_c: "A <: C" and b_d: "B <: D"
+      
+    show "C ~ D" apply (rule atoms_consis) apply clarify
+    proof -
+      fix C' D' assume cp_c: "C' \<in> atoms C" and dp_d: "D' \<in> atoms D"
+      have a_cp: "A <: C'" using a_c cp_c using sub_atom_sub by blast
+      have b_dp: "B <: D'" using b_d dp_d using sub_atom_sub by blast        
+      show "C' ~ D'"
+      proof (cases C')
+        case (TNat n1)
+        then have "TNat n1 \<in> atoms A" using a_cp
+          by (simp add: sub_nat_any_inv_atoms)
+        then have "atoms B \<subseteq> {TNat n1}" using a_b
+          by (metis atoms.simps(1) atoms_consis consis_atoms consis_nat_atoms 
+              consis_sym singletonD)
+        then have "atoms D \<subseteq> {TNat n1}" using b_dp  
+          by (meson atoms_sub_any_nat b_d sub_any_nat_inv_atoms sub_trans)
+        then have "D' = TNat n1" using dp_d by auto
+        then show ?thesis using TNat by simp
+      next
+        case (TArrow C1 C2)
+        then obtain A1 A2 where "A1\<rightarrow>A2 \<in> atoms A" using a_cp sub_fun_any_inv_atoms_ex by blast
+        then have "all_funs (atoms B)" 
+          apply clarify apply (subgoal_tac "A1\<rightarrow>A2 ~ v") prefer 2
+          using a_b consis_atoms[of A B "A1\<rightarrow>A2"] apply blast
+          apply (case_tac v) apply auto done
+        then have "is_fun D'" using b_d d_fun_atoms_L_inv dp_d 
+          using sub_ty_def by fastforce
+        then obtain D1 D2 where dp: "D' = D1 \<rightarrow> D2" apply (cases D') by auto
+            
+        have "A <: C1 \<rightarrow> C2" using a_cp TArrow by simp
+        then show ?thesis
+        proof (rule sub_any_fun_elim2)
+          fix \<Gamma>a assume ga_ne: "\<Gamma>a \<noteq> []" and af_ga: "all_funs (set \<Gamma>a)" and
+            ga_a: "set \<Gamma>a \<subseteq> atoms A" and c1_dga: "C1 <: \<Sqinter> (map dom \<Gamma>a)" and
+            cga_c2: "\<Sqinter> (map cod \<Gamma>a) <: C2" 
+          have "B <: D1 \<rightarrow> D2" using b_dp dp by simp
+          then show "C' ~ D'"
           proof (rule sub_any_fun_elim2)
-            fix \<Gamma>a assume ga_ne: "\<Gamma>a \<noteq> []" and "all_funs (set \<Gamma>a)" and
-              ga_a: "set \<Gamma>a \<subseteq> atoms A" and c1_dga: "C1 <: \<Sqinter> (map dom \<Gamma>a)" and
-              cga_c2: "\<Sqinter> (map cod \<Gamma>a) <: C2" 
-            have "B <: D1 \<rightarrow> D2" using b_dp dp by simp
-            then show "C' ~ D'"
-            proof (rule sub_any_fun_elim2)
-              fix \<Gamma>b assume gb_ne: "\<Gamma>b \<noteq> []" and af_gb: "all_funs (set \<Gamma>b)" and 
-                gb_b: "set \<Gamma>b \<subseteq> atoms B" and
-                d1_dgb: "D1 <: \<Sqinter> (map dom \<Gamma>b)" and
-                cgb_d2: "\<Sqinter> (map cod \<Gamma>b) <: D2"
-              show "C' ~ D'"
-              proof (cases "C1 ~ D1")
-                case True
-                have s_c1: "depth C1 < depth C" using cp_c TArrow atoms_depth[of C' C] by auto
-                have s_d1: "depth D1 < depth D" using dp_d dp atoms_depth[of D' D] by auto
-                have s_c2: "depth C2 < depth C" using cp_c TArrow atoms_depth[of C' C] by auto
-                have s_d2: "depth D2 < depth D" using dp_d dp atoms_depth[of D' D] by auto
-                have s_ga: "depth (\<Sqinter>(map dom \<Gamma>a)) < depth A" using ga_a sorry
-                have s_gb: "depth (\<Sqinter>(map dom \<Gamma>b)) < depth B" using gb_b sorry
-                have s_cga: "depth (\<Sqinter>(map cod \<Gamma>a)) < depth A" using ga_a sorry
-                have s_cgb: "depth (\<Sqinter>(map cod \<Gamma>b)) < depth B" using gb_b sorry
-                have "\<Sqinter>(map dom \<Gamma>a) ~ \<Sqinter>(map dom \<Gamma>b)"
-                  using c1_dga d1_dgb True 1 s_c1 s_d1 s_ga s_gb n
-                  apply (erule_tac x="depth (\<Sqinter>(map dom \<Gamma>a)) + depth (\<Sqinter>(map dom \<Gamma>b)) + depth C1 + depth D1" in allE)
-                  apply (erule impE) apply force
-                  apply blast done
-                then have "\<Sqinter>(map cod \<Gamma>a) ~ \<Sqinter>(map cod \<Gamma>b)" using a_b ga_a gb_b sorry
-                then have "C2 ~ D2" using cga_c2 cgb_d2 1 s_c2 s_d2 s_cga s_cgb n
-                  apply (erule_tac x="depth (\<Sqinter>(map cod \<Gamma>a)) + depth (\<Sqinter>(map cod \<Gamma>b)) + depth C2 + depth D2" in allE)
-                  apply (erule impE) apply force
-                  apply blast done
-                then show ?thesis using True TArrow dp by simp
-              next
-                case False
-                then show ?thesis using TArrow dp by simp
-              qed
+            fix \<Gamma>b assume gb_ne: "\<Gamma>b \<noteq> []" and af_gb: "all_funs (set \<Gamma>b)" and 
+              gb_b: "set \<Gamma>b \<subseteq> atoms B" and
+              d1_dgb: "D1 <: \<Sqinter> (map dom \<Gamma>b)" and
+              cgb_d2: "\<Sqinter> (map cod \<Gamma>b) <: D2"
+            show "C' ~ D'"
+            proof (cases "C1 ~ D1")
+              case True
+              have s_c1: "depth C1 < depth C" using cp_c TArrow atoms_depth[of C' C] by auto
+              have s_d1: "depth D1 < depth D" using dp_d dp atoms_depth[of D' D] by auto
+              have s_c2: "depth C2 < depth C" using cp_c TArrow atoms_depth[of C' C] by auto
+              have s_d2: "depth D2 < depth D" using dp_d dp atoms_depth[of D' D] by auto
+              have s_ga: "depth (\<Sqinter>(map dom \<Gamma>a)) < depth A" 
+                using ga_a depth_meet_list_dom ga_ne af_ga by blast
+              have s_gb: "depth (\<Sqinter>(map dom \<Gamma>b)) < depth B" 
+                using gb_b depth_meet_list_dom gb_ne af_gb by blast
+              have s_cga: "depth (\<Sqinter>(map cod \<Gamma>a)) < depth A"
+                using ga_a depth_meet_list_cod ga_ne af_ga by blast
+              have s_cgb: "depth (\<Sqinter>(map cod \<Gamma>b)) < depth B" 
+                using gb_b depth_meet_list_cod gb_ne af_gb by blast
+              have c_ga_gb: "\<Sqinter>(map dom \<Gamma>a) ~ \<Sqinter>(map dom \<Gamma>b)"
+                using c1_dga d1_dgb True 1 s_c1 s_d1 s_ga s_gb n
+                apply (erule_tac x="depth (\<Sqinter>(map dom \<Gamma>a)) + depth (\<Sqinter>(map dom \<Gamma>b)) + depth C1 + depth D1" in allE)
+                apply (erule impE) apply force apply force
+                done                
+              have "\<Sqinter>(map cod \<Gamma>a) ~ \<Sqinter>(map cod \<Gamma>b)" apply (rule atoms_consis) apply clarify
+              proof -
+                fix A' B' assume ap_ga: "A' \<in> atoms (\<Sqinter>(map cod \<Gamma>a))" and
+                  bp_gb: "B' \<in> atoms (\<Sqinter>(map cod \<Gamma>b))"
+                have "A' \<in> ctx_atoms (map cod \<Gamma>a)" using ap_ga meet_list_atoms ga_ne by auto
+                then obtain A1 A2 where a12_ga: "A1\<rightarrow>A2 \<in> set \<Gamma>a" and ap_a2: "A' \<in> atoms A2"
+                  using af_ga apply auto apply (case_tac x) apply auto done
+                have "B' \<in> ctx_atoms (map cod \<Gamma>b)" using bp_gb meet_list_atoms gb_ne by auto
+                then obtain B1 B2 where b12_gb: "B1\<rightarrow>B2 \<in> set \<Gamma>b" and bp_b2: "B' \<in> atoms B2"
+                  using af_gb apply auto apply (case_tac x) apply auto done
+                have a12_a: "A1\<rightarrow>A2 \<in> atoms A" using a12_ga ga_a by blast
+                have b12_b: "B1\<rightarrow>B2 \<in> atoms B" using b12_gb gb_b by blast
+                have a12_b12: "A1\<rightarrow>A2 ~ B1\<rightarrow>B2" using a12_a b12_b a_b consis_atoms by blast
+                have "A1 ~ B1"
+                proof -
+                  have a1_dga: "A1 \<in> set (map dom \<Gamma>a)" using a12_ga by force
+                  have b1_dgb: "B1 \<in> set (map dom \<Gamma>b)" using b12_gb by force
+                  show ?thesis
+                    using c_ga_gb a1_dga b1_dgb ga_ne gb_ne meet_list_consis_inv by auto
+                qed
+                then have "A2 ~ B2" using a12_b12 by simp                    
+                then show "A' ~ B'" using ap_a2 bp_b2 consis_atoms by blast
+              qed                
+              then have "C2 ~ D2" using cga_c2 cgb_d2 1 s_c2 s_d2 s_cga s_cgb n
+                apply (erule_tac x="depth (\<Sqinter>(map cod \<Gamma>a)) + depth (\<Sqinter>(map cod \<Gamma>b)) + depth C2 + depth D2" in allE)
+                apply (erule impE) apply force
+                apply blast done
+              then show ?thesis using True TArrow dp by simp
+            next
+              case False
+              then show ?thesis using TArrow dp by simp
             qed
           qed
-        next
-          case (TInter C1 C2)
-          then have "False" using cp_c 
-            by blast
-          then show ?thesis ..
         qed
+      next
+        case (TInter C1 C2)
+        then have "False" using cp_c 
+          by blast
+        then show ?thesis ..
       qed
     qed
-  next
-    show "?Q n" sorry
-  qed    
+  qed
 qed
-    
-  
-  
 
 lemma consis_le: "\<lbrakk> v1' <: v1; v2' <: v2; v1' ~ v2' \<rbrakk> \<Longrightarrow> v1 ~ v2"
-  sorry
+  using consis_sub_aux by auto
     
+lemma inconsis_sub_aux:
+  "\<forall> A B C D. n = depth A + depth B + depth C + depth D
+      \<longrightarrow> \<not> A ~ B \<longrightarrow> C <: A \<longrightarrow> D <: B \<longrightarrow> \<not> C ~ D"
+ (is "?Q n")
+proof (induction n rule: nat_less_induct)
+  case (1 n)
+  show ?case apply (rule allI)+ apply (rule impI)+    
+  proof -
+    fix A::ty and B::ty and C::ty and D::ty
+    assume n: "n = depth A + depth B + depth C + depth D" and
+      a_b: "\<not> A ~ B" and c_a: "C <: A" and d_b: "D <: B"
+    obtain A' B' where ap_a: "A' \<in> atoms A" and bp_b: "B' \<in> atoms B" and ap_bp: "\<not> A' ~ B'"
+      using a_b inconsis_atoms by blast
+    show "\<not> C ~ D"
+    proof (cases A')
+      case (TNat n)
+      have n_c: "TNat n \<in> atoms C" using c_a ap_a TNat sub_atom_sub sub_nat_any_inv_atoms by blast
+      have "(\<exists>m. B' = TNat m \<and> m \<noteq> n) \<or> (\<exists>B1 B2. B' = B1\<rightarrow>B2)" using TNat ap_bp bp_b
+          apply (cases B') apply auto done
+      then show ?thesis
+      proof
+        assume "\<exists>m. B' = TNat m \<and> m \<noteq> n"
+        then obtain m where bp: "B' = TNat m" and m_n: "m \<noteq> n" by blast
+        have m_d: "TNat m \<in> atoms D" using bp d_b bp_b 
+           sub_atom_sub sub_nat_any_inv_atoms by blast
+        have tn_tm: "\<not> TNat n ~ TNat m" using m_n by simp
+        then show "\<not> C ~ D" apply (rule atoms_inconsis) using n_c m_d apply auto done
+      next
+        assume "\<exists>B1 B2. B' = B1\<rightarrow>B2"
+        then obtain B1 B2 where bp: "B' = B1 \<rightarrow> B2" by blast
+        have "D <: B1 \<rightarrow> B2" using d_b bp_b bp using sub_atom_sub by blast
+        then obtain D1 D2 where d12_d: "D1\<rightarrow>D2 \<in> atoms D"
+          using sub_fun_any_inv_atoms_ex by blast
+        have "\<not> TNat n ~ D1\<rightarrow>D2" by simp            
+        then show "\<not> C ~ D" using n_c d12_d atoms_inconsis by blast          
+      qed
+    next
+      case (TArrow A1 A2)
+      have c_a12: "C <: A1 \<rightarrow> A2" using c_a TArrow sub_atom_sub ap_a by blast
+      have "(\<exists>n. B' = TNat n) \<or> (\<exists> B1 B2. B' = B1\<rightarrow>B2 \<and> A1~B1 \<and> \<not> A2 ~ B2)"
+        using ap_bp TArrow bp_b apply (cases B') by auto      
+      then show ?thesis
+      proof 
+        assume "\<exists>n. B' = TNat n" then obtain n where bp: "B' = TNat n" by blast
+        have n_d: "TNat n \<in> atoms D" using d_b bp_b bp sub_atom_sub sub_nat_any_inv_atoms by blast
+        obtain C1 C2 where c12_c: "C1\<rightarrow>C2 \<in> atoms C" using c_a12 sub_fun_any_inv_atoms_ex by blast
+        have "\<not> C1\<rightarrow>C2 ~ TNat n" by simp
+        then show ?thesis using c12_c n_d atoms_inconsis by blast
+      next
+        assume "\<exists> B1 B2. B' = B1\<rightarrow>B2 \<and> A1~B1 \<and> \<not> A2 ~ B2"
+        then obtain B1 B2 where bp: "B' = B1\<rightarrow>B2" and a1_b1: "A1 ~ B1" and a2_b2: "\<not> A2 ~ B2"
+          by blast
+            
+        have v11_v3: "C <: A1 \<rightarrow> A2" using c_a12 by blast
+        have v22_v4: "D <: B1 \<rightarrow> B2" using bp bp_b d_b sub_atom_sub by blast
+        have v1_v2: "A1 ~ B1" using a1_b1 by blast 
+        have not_v1p_v2p: "\<not> A2 ~ B2" using a2_b2 by blast
+
+        obtain \<Gamma>3 where g3_ne: "\<Gamma>3 \<noteq> []" and af_g3: "all_funs (set \<Gamma>3)" and g3_v3: "set \<Gamma>3 \<subseteq> atoms C" and
+          v1_g3: "A1 <: \<Sqinter>(map dom \<Gamma>3)" and g3_v1p: "\<Sqinter>(map cod \<Gamma>3) <: A2" 
+          using v11_v3 sub_any_fun_elim2 by blast
+        obtain \<Gamma>4 where g4_ne: "\<Gamma>4 \<noteq> []" and af_g4: "all_funs (set \<Gamma>4)" and g4_v4: "set \<Gamma>4 \<subseteq> atoms D" and
+          v2_g4: "B1 <: \<Sqinter>(map dom \<Gamma>4)" and g4_v2p: "\<Sqinter>(map cod \<Gamma>4) <: B2" 
+          using v22_v4 sub_any_fun_elim2 by blast
+      
+        have c_dg3_dg4: "\<Sqinter>(map dom \<Gamma>3) ~ \<Sqinter>(map dom \<Gamma>4)" using v1_v2 v1_g3 v2_g4 consis_le by blast
+            
+        have nc_cg3_cg4: "\<not> \<Sqinter>(map cod \<Gamma>3) ~ \<Sqinter>(map cod \<Gamma>4)"
+        proof -
+           have s_a2: "depth A2 < depth A" using ap_a TArrow atoms_depth[of A' A] by auto
+           have s_b2: "depth B2 < depth B" using bp_b bp atoms_depth[of B' B] by auto
+           have s_g3: "depth (\<Sqinter>(map cod \<Gamma>3)) < depth C"
+                using g3_v3 depth_meet_list_cod g3_ne af_g3 by blast
+           have s_g4: "depth (\<Sqinter>(map cod \<Gamma>4)) < depth D" 
+                using g4_v4 depth_meet_list_cod g4_ne af_g4 by blast
+          show ?thesis using not_v1p_v2p g3_v1p g4_v2p n 1
+            apply (erule_tac x="depth A2 + depth B2 + depth (\<Sqinter>(map cod \<Gamma>3)) + depth (\<Sqinter>(map cod \<Gamma>4))" in allE)
+            apply (erule impE) using s_a2 s_b2 s_g3 s_g4 apply force apply blast done
+        qed
+        obtain C3 D3 where c_g3: "C3 \<in> set (map cod \<Gamma>3)" and d_g4: "D3 \<in> set (map cod \<Gamma>4)" and 
+        c_d: "\<not> C3 ~ D3" using nc_cg3_cg4 by(meson g3_ne g4_ne map_is_Nil_conv meet_list_inconsis_inv)
+        obtain A where ac_g3: "A \<rightarrow> C3 \<in> set \<Gamma>3" using c_g3 af_g3 g3_v3 apply auto apply (case_tac x)
+          apply auto done
+        obtain B where bd_g4: "B \<rightarrow> D3 \<in> set \<Gamma>4" using d_g4 af_g4 apply auto apply (case_tac x)
+          apply auto done         
+        have a_b: "A ~ B" using c_dg3_dg4
+          apply (rule meet_list_consis_inv)
+          using ac_g3 apply force
+          using bd_g4 apply force
+          using g3_ne apply force using g4_ne apply force done
+        have "\<not> A \<rightarrow> C3 ~ B \<rightarrow> D3" using a_b c_d by simp
+        then show "\<not> C ~ D" 
+          apply (rule atoms_inconsis)
+          using g3_v3 g4_v4 ac_g3 bd_g4 apply auto done
+      qed
+    next
+      case (TInter A1 A2)
+      then have "False" using ap_a by auto
+      then show ?thesis ..
+    qed
+  qed
+qed
+  
 lemma inconsis_le: "\<lbrakk> v1 <: v1'; v2 <: v2'; \<not> v1' ~ v2' \<rbrakk> \<Longrightarrow> \<not> v1 ~ v2"
-  sorry
+  using inconsis_sub_aux by blast
+
+
 (*    
 lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk> \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
   by auto
