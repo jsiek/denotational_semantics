@@ -425,7 +425,16 @@ next
       have r12_r1: "\<rho>1\<sqinter>\<rho>2 <: \<rho>1" using c_r1_r2 by auto
       have r12_r2: "\<rho>1\<sqinter>\<rho>2 <: \<rho>2" using c_r1_r2 by auto
           
-      have "v1 ~ v2" sorry
+      have "v1 ~ v2" apply (rule atoms_consis) apply clarify
+      proof -
+        fix A1 A2 assume a1_v1: "A1 \<in> atoms v1" and a2_v2: "A2 \<in> atoms v2"
+        obtain A11 A12 where "A1=A11\<rightarrow>A12" and "A12 \<in> \<lbrakk>e\<rbrakk>A11#\<rho>1" using f_v1_e_r1 
+          by (metis a1_v1 atoms_not_inter denot_fun_inv_atoms ty.simps(10) wf_atoms wf_ty.simps wf_v1)
+        obtain A21 A22 where "A2=A21\<rightarrow>A22" and "A22 \<in> \<lbrakk>e\<rbrakk>A21#\<rho>2" using f_v2_e_r2 
+          by (metis a2_v2 atoms_not_inter denot_fun_inv_atoms ty.simps(10) wf_atoms wf_ty.simps wf_v2)
+          
+        show "A1 ~ A2" sorry
+      qed        
       then have wf_v12: "wf_ty (v1 \<sqinter> v2)" using wf_v1 wf_v2 by auto
       have f_v1_e: "F v1 e (\<rho>1 \<sqinter> \<rho>2)" using f_v1_e_r1 r12_r1 weaken_env_fun by blast
       have f_v2_e: "F v2 e (\<rho>1 \<sqinter> \<rho>2)" using f_v2_e_r2 r12_r2 weaken_env_fun by blast
