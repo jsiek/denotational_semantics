@@ -131,7 +131,7 @@ proof -
   then show ?thesis using wf_v12 by simp
 qed
 
-lemma weaken_env_fun: "\<lbrakk> F v e \<rho>1; \<rho>2 <: \<rho>1; (\<forall> v \<rho>1 \<rho>2. v \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<longrightarrow> \<rho>2 <: \<rho>1 \<longrightarrow> v \<in> \<lbrakk>e\<rbrakk>\<rho>2) \<rbrakk>
+lemma weaken_env_fun_aux: "\<lbrakk> F v e \<rho>1; \<rho>2 <: \<rho>1; (\<forall> v \<rho>1 \<rho>2. v \<in> \<lbrakk>e\<rbrakk>\<rho>1 \<longrightarrow> \<rho>2 <: \<rho>1 \<longrightarrow> v \<in> \<lbrakk>e\<rbrakk>\<rho>2) \<rbrakk>
                     \<Longrightarrow> F v e \<rho>2"
 proof (induction v arbitrary: e \<rho>1 \<rho>2)
   case (TNat n)
@@ -156,7 +156,7 @@ next
   then show ?case by auto
 next
   case (ELam e)
-  then show ?case using weaken_env_fun[of v e \<rho>1 \<rho>2] by auto
+  then show ?case using weaken_env_fun_aux[of v e \<rho>1 \<rho>2] by auto
 next
   case (EApp e1 e2)
   then show ?case apply simp apply blast done      
@@ -167,6 +167,9 @@ next
   case (EIf e1 e2 e3)
   then show ?case apply simp apply blast done
 qed
+
+lemma weaken_env_fun: "\<lbrakk> F v e \<rho>1; \<rho>2 <: \<rho>1 \<rbrakk> \<Longrightarrow> F v e \<rho>2"
+  using weaken_env_fun_aux weaken_env by blast
 
 lemma denot_fun_atoms: "\<lbrakk> all_funs (atoms v); \<forall>v1 v2. v1\<rightarrow>v2 \<in> atoms v \<longrightarrow> v2 \<in> \<lbrakk>e\<rbrakk>v1#\<rho> \<rbrakk>
    \<Longrightarrow> F v e \<rho>"
@@ -410,7 +413,25 @@ next
        apply (rule subsumption_fun) apply blast apply blast apply blast 
          apply blast apply blast using ELam.IH apply auto done
   next
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (\<lambda> e) \<rho>1 \<rho>2 " sorry
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (\<lambda> e) \<rho>1 \<rho>2 " apply (rule allI)+ apply (rule impI)+
+    proof -
+      fix v1 v2 \<rho>1 \<rho>2 assume v1_le: "v1 \<in> \<lbrakk>\<lambda> e\<rbrakk>\<rho>1" and v2_le: "v2 \<in> \<lbrakk>\<lambda> e\<rbrakk>\<rho>2" and
+        wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and c_r1_r2: "consis_env \<rho>1 \<rho>2" 
+      have wf_v1: "wf_ty v1" using v1_le by simp
+      have wf_v2: "wf_ty v2" using v2_le by simp
+      have f_v1_e_r1: "F v1 e \<rho>1" using v1_le by simp      
+      have f_v2_e_r2: "F v2 e \<rho>2" using v2_le by simp      
+          
+      have r12_r1: "\<rho>1\<sqinter>\<rho>2 <: \<rho>1" using c_r1_r2 by auto
+      have r12_r2: "\<rho>1\<sqinter>\<rho>2 <: \<rho>2" using c_r1_r2 by auto
+          
+      have "v1 ~ v2" sorry
+      then have wf_v12: "wf_ty (v1 \<sqinter> v2)" using wf_v1 wf_v2 by auto
+      have f_v1_e: "F v1 e (\<rho>1 \<sqinter> \<rho>2)" using f_v1_e_r1 r12_r1 weaken_env_fun by blast
+      have f_v2_e: "F v2 e (\<rho>1 \<sqinter> \<rho>2)" using f_v2_e_r2 r12_r2 weaken_env_fun by blast
+        
+      show "v1 \<sqinter> v2 \<in> \<lbrakk>\<lambda> e\<rbrakk>\<rho>1 \<sqinter> \<rho>2 \<and> wf_ty (v1 \<sqinter> v2)" using wf_v12 f_v1_e f_v2_e by simp
+    qed
   qed
 next
   case (EApp e1 e2)
