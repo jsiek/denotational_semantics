@@ -1,6 +1,10 @@
+(*<*)
 theory Denot
-  imports Values Lambda Consistency
+  imports Lambda Consistency
 begin
+(*>*)
+  
+section "Denotational Semantics of Lambda Calculus"
 
 abbreviation fun_app :: "ty \<Rightarrow> ty \<Rightarrow> ty set" (infix "\<bullet>" 80) where
   "f \<bullet> v \<equiv> {v'. f <: v \<rightarrow> v' \<and> wf_ty v' }"
@@ -22,4 +26,6 @@ fun E :: "exp \<Rightarrow> ty list \<Rightarrow> ty set" ("\<lbrakk>_\<rbrakk>_
   Ffun: "F (v \<rightarrow> v') e \<rho> = (v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>))" |
   Finter: "F (v1 \<sqinter> v2) e \<rho> = (F v1 e \<rho> \<and> F v2 e \<rho>)"
 
+(*<*)
 end
+(*>*)

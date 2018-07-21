@@ -12,7 +12,7 @@
 %\usepackage{eurosym}
   %for \<euro>
 
-%\usepackage[only,bigsqcap]{stmaryrd}
+\usepackage[only,bigsqcap]{stmaryrd}
   %for \<Sqinter>
 
 %\usepackage{eufrak}
@@ -35,14 +35,28 @@
 
 \begin{document}
 
-\title{DenotSem}
-\author{By jsiek}
+\title{Modeling the Functional Character \\ of the Lambda Calculus}
+\author{Jeremy G. Siek}
 \maketitle
+
+\begin{abstract}
+  Denotational semantics for the lambda calculus that are given by graph models
+  or filter models (i.e. intersection type systems) use finite relations
+  to model functions. In this document I use a notion of consistency 
+  to restrict these relations to be functions (or finite approximations of them) 
+  and I prove that the model is deterministic in the sense that any two outputs
+  from the same program are equal, and furthermore, that the result of merging
+  the two outputs is also an output of the program. Phrasing this in terms
+  of an intersection type system, I show that the subsumption rule and the
+  intersection introduction rule are both admissible.
+\end{abstract}
 
 \tableofcontents
 
 % sane default for proof documents
 \parindent 0pt\parskip 0.5ex
+
+\pagebreak
 
 % generated text of all theories
 \input{session}

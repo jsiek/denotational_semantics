@@ -1,7 +1,11 @@
+(*<*)
 theory Deterministic
   imports Consistency Denot
 begin
+(*>*)
 
+section "Model is Deterministic, Intersection Intro is Admissible"
+  
 lemma wf_eval: "\<lbrakk> v \<in> \<lbrakk>e\<rbrakk>\<rho>; wf_env \<rho> \<rbrakk> \<Longrightarrow> wf_ty v"
   apply (induction e) apply (case_tac "x < length \<rho>") apply force+ done
     
@@ -573,4 +577,6 @@ next
   qed    
 qed  
   
+(*<*)
 end
+(*>*)

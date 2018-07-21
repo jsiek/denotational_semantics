@@ -4,6 +4,10 @@ session "DenotSem" = "HOL" +
     (* Foo *)
     (* Bar *)
   theories
-    (* Baz *)
+    IntersectionTypes
+    Lambda
+    Denot
+    Consistency
+    Deterministic
   document_files
     "root.tex"

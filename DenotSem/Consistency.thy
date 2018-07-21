@@ -1,8 +1,10 @@
+(*<*)
 theory Consistency
   imports IntersectionTypes
 begin
+(*>*)
 
-section "Consistency"
+section "Consistency and Well-Formed Types"
 
 fun consistent :: "ty \<Rightarrow> ty \<Rightarrow> bool" (infix "~" 52) where
   "(TNat n) ~ (TNat m) = (n = m)" |
@@ -596,4 +598,7 @@ lemma wf_consis_atoms: "\<lbrakk> wf_ty B; A \<in> atoms B; C \<in> atoms B \<rb
   apply blast
   done    
     
+(*<*)
 end
+(*>*)
+

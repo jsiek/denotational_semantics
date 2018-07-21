@@ -1,7 +1,11 @@
+(*<*)
 theory IntersectionTypes
   imports Main
 begin
+(*>*)
 
+section "Intersection Types"
+  
 datatype ty = TNat nat | TArrow ty ty (infix "\<rightarrow>" 62) | TInter ty ty (infix "\<sqinter>" 61) 
   
 fun dom :: "ty \<Rightarrow> ty" where
@@ -12,6 +16,13 @@ abbreviation is_fun :: "ty \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<rightarrow>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
 abbreviation all_funs :: "ty set \<Rightarrow> bool" where
   "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> \<Gamma> \<longrightarrow> is_fun v"
+
+section "Subtyping, Sequent Style"
+  
+text{* 
+  This sequent-style presentation of subtyping is due to Olivier Laurent,
+  Intersection Subtyping with Constructors, ITRS 2018.
+*}
   
 inductive deduce_le :: "ty list \<Rightarrow> nat \<Rightarrow> ty \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
   wk_nat[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(TNat n)#\<Gamma>2 \<turnstile> Suc c: v" | 
@@ -176,7 +187,7 @@ lemma perm_append[intro!]: "perm (L1@L2) (L2@L1)"
 lemma perm_cons_remove[intro!]: "v \<in> set L \<Longrightarrow> perm L (v#(remove1 v L))"    
   unfolding perm_def apply auto by (metis Suc_pred neq0_conv nz_count_mem)
 
-section "Admissible Rules"
+section "Admissible Subtyping Rules"
 
 lemma wk_gen: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists>c'. \<Gamma>@v#\<Delta> \<turnstile> c' : v')"
 proof (induction v arbitrary: \<Gamma> \<Delta> c v')
@@ -695,6 +706,8 @@ next
   then show ?case by auto
 qed
 
+section "Cut Elimination (Transitivity of Subtyping)"
+  
 abbreviation cut_IH :: "nat \<times> nat \<times> nat \<Rightarrow> bool" where
   "cut_IH m \<equiv> \<forall>y. (y, m) \<in> less_than <*lex*> less_than <*lex*> less_than \<longrightarrow>
       (\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. y = (size A, c1, c2) \<longrightarrow> \<Gamma> \<turnstile> c1 : A \<longrightarrow>
@@ -1328,7 +1341,6 @@ proof (induction xs arbitrary: y rule: rmdups.induct)
   qed
 qed
     
-  
 lemma weaken_rmdups: "\<lbrakk> rmdups \<Gamma> \<turnstile> c : A \<rbrakk> \<Longrightarrow> \<exists>c'. \<Gamma> \<turnstile> c' : A"
   apply (induction \<Gamma> arbitrary: c A rule: rmdups.induct)
   apply (case_tac "find_dup xs") apply force
@@ -1384,8 +1396,7 @@ qed
   
 (* to do: generalize to subset and to ctx-atoms *)
 
-
-section "Subtyping"  
+section "Subtyping (Regular Style)"  
 
 definition sub_ty :: "ty \<Rightarrow> ty \<Rightarrow> bool" (infix "<:" 55) where
   "v1 <: v2 \<equiv> \<exists>c. [v1] \<turnstile> c : v2"
@@ -1629,4 +1640,6 @@ lemma sub_atom_sub: "\<lbrakk> A <: B; C \<in> atoms B \<rbrakk> \<Longrightarro
   apply blast
   done
     
+(*<*)
 end
+(*>*)
