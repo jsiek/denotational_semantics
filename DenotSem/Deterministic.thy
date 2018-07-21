@@ -454,7 +454,21 @@ next
   qed
 next
   case (EApp e1 e2)
-  then show ?case sorry
+  show ?case
+  proof
+    show "\<forall>v1 v2 \<rho>. subsump v1 v2 (EApp e1 e2) \<rho>"
+      apply clarify apply simp apply clarify
+    proof -
+      fix v1::ty and v2 \<rho> f v assume v1_v2: "v1 <: v2" and wf_v2: "wf_ty v2" and wf_r: "wf_env \<rho>" and
+        f_e1: "f \<in> \<lbrakk>e1\<rbrakk>\<rho>" and v_e2: "v \<in> \<lbrakk>e2\<rbrakk>\<rho>" and f_vv1: "f <: v \<rightarrow> v1" and wf_v1: "wf_ty v1"
+      
+        
+        
+      show "\<exists>f. f \<in> \<lbrakk>e1\<rbrakk>\<rho> \<and> (\<exists>v. v \<in> \<lbrakk>e2\<rbrakk>\<rho> \<and> f <: v \<rightarrow> v2)" sorry
+    qed
+  next
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EApp e1 e2) \<rho>1 \<rho>2 " sorry
+  qed    
 next
   case (EPrim x1a e1 e2)
   then show ?case sorry
