@@ -1,6 +1,6 @@
 (*<*)
 theory Deterministic
-  imports Consistency Denot
+  imports Lambda Denot Consistency
 begin
 (*>*)
 
@@ -391,7 +391,7 @@ qed
   
 lemma subsumption_deterministic:
   "(\<forall> v1 v2 \<rho>. subsump v1 v2 e \<rho>) \<and> (\<forall> v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<rho>2)"
-proof (induction)
+proof (induction e)
   case (EVar x)
   show ?case
   proof
