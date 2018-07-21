@@ -9,21 +9,23 @@ strengthen:
   then Y ∈ [e]ρ2.
 
 
-B ∈ [e]A#ρ
-D ∈ [e]C#ρ
 
-(A → B) ∩ (C → D)
+(A → B) ∩ (C → D) ∈ [λ e]ρ
+  A → B ∈ [λ e]ρ
+    B ∈ [e]A#ρ
+  C → D ∈ [λ e]ρ
+    D ∈ [e]C#ρ
 
+  A → B ~ C → D
 
-(A ∩ C) → (B ∩ D)
+  Case A ~ C:
 
-(B ∩ D) ∈ [e](A ∩ C)#ρ  ??
+    (B ∩ D) ∈ [e](A ∩ C)#ρ  by determ 
+    (A ∩ C) → (B ∩ D) ∈ [λ e]ρ
 
-(B ∩ D) <: B
-(B ∩ D) <: D
+  Case A /~ C:
+    then they couldn't be supertypes of the same type
 
-(A ∩ C) <: A
-(A ∩ C) <: C
 
 
 ================================================================================
