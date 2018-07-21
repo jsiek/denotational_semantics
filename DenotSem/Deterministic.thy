@@ -421,24 +421,34 @@ next
       have wf_v2: "wf_ty v2" using v2_le by simp
       have f_v1_e_r1: "F v1 e \<rho>1" using v1_le by simp      
       have f_v2_e_r2: "F v2 e \<rho>2" using v2_le by simp      
-          
       have r12_r1: "\<rho>1\<sqinter>\<rho>2 <: \<rho>1" using c_r1_r2 by auto
       have r12_r2: "\<rho>1\<sqinter>\<rho>2 <: \<rho>2" using c_r1_r2 by auto
-          
       have "v1 ~ v2" apply (rule atoms_consis) apply clarify
       proof -
         fix A1 A2 assume a1_v1: "A1 \<in> atoms v1" and a2_v2: "A2 \<in> atoms v2"
-        obtain A11 A12 where "A1=A11\<rightarrow>A12" and "A12 \<in> \<lbrakk>e\<rbrakk>A11#\<rho>1" using f_v1_e_r1 
+        obtain A11 A12 where a1: "A1=A11\<rightarrow>A12" and a12_e: "A12 \<in> \<lbrakk>e\<rbrakk>A11#\<rho>1" using f_v1_e_r1 
           by (metis a1_v1 atoms_not_inter denot_fun_inv_atoms ty.simps(10) wf_atoms wf_ty.simps wf_v1)
-        obtain A21 A22 where "A2=A21\<rightarrow>A22" and "A22 \<in> \<lbrakk>e\<rbrakk>A21#\<rho>2" using f_v2_e_r2 
+        obtain A21 A22 where a2: "A2=A21\<rightarrow>A22" and a22_e: "A22 \<in> \<lbrakk>e\<rbrakk>A21#\<rho>2" using f_v2_e_r2 
           by (metis a2_v2 atoms_not_inter denot_fun_inv_atoms ty.simps(10) wf_atoms wf_ty.simps wf_v2)
-          
-        show "A1 ~ A2" sorry
+        show "A1 ~ A2"
+        proof (cases "A11 ~ A21")
+          case True
+          have c_ar1_ar2: "consis_env (A11#\<rho>1) (A21#\<rho>2)" using True c_r1_r2 apply auto
+              apply (case_tac k) apply auto done
+          have wf_ar1: "wf_env (A11#\<rho>1)" using wf_r1 a1 a1_v1 wf_v1 apply auto
+              apply (case_tac k) apply auto using wf_ty_arrow_inv by blast
+          have wf_ar2: "wf_env (A21#\<rho>2)" using wf_r2 a2 a2_v2 wf_v2 apply auto
+            apply (case_tac k) apply auto using wf_ty_arrow_inv by blast
+          have "determ A12 A22 e (A11#\<rho>1) (A21#\<rho>2)" using ELam by blast
+          then show ?thesis using c_ar1_ar2 a12_e a22_e wf_ar1 wf_ar2 True a1 a2 by auto
+        next
+          case False
+          then show ?thesis using a1 a2 by simp
+        qed
       qed        
       then have wf_v12: "wf_ty (v1 \<sqinter> v2)" using wf_v1 wf_v2 by auto
       have f_v1_e: "F v1 e (\<rho>1 \<sqinter> \<rho>2)" using f_v1_e_r1 r12_r1 weaken_env_fun by blast
       have f_v2_e: "F v2 e (\<rho>1 \<sqinter> \<rho>2)" using f_v2_e_r2 r12_r2 weaken_env_fun by blast
-        
       show "v1 \<sqinter> v2 \<in> \<lbrakk>\<lambda> e\<rbrakk>\<rho>1 \<sqinter> \<rho>2 \<and> wf_ty (v1 \<sqinter> v2)" using wf_v12 f_v1_e f_v2_e by simp
     qed
   qed
