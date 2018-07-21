@@ -461,17 +461,78 @@ next
     proof -
       fix v1::ty and v2 \<rho> f v assume v1_v2: "v1 <: v2" and wf_v2: "wf_ty v2" and wf_r: "wf_env \<rho>" and
         f_e1: "f \<in> \<lbrakk>e1\<rbrakk>\<rho>" and v_e2: "v \<in> \<lbrakk>e2\<rbrakk>\<rho>" and f_vv1: "f <: v \<rightarrow> v1" and wf_v1: "wf_ty v1"
-      
-        
-        
-      show "\<exists>f. f \<in> \<lbrakk>e1\<rbrakk>\<rho> \<and> (\<exists>v. v \<in> \<lbrakk>e2\<rbrakk>\<rho> \<and> f <: v \<rightarrow> v2)" sorry
+      have "v \<rightarrow> v1 <: v \<rightarrow> v2" using v1_v2 by blast
+      then have "f <: v \<rightarrow> v2" using f_vv1 sub_trans by blast
+      then show "\<exists>f. f \<in> \<lbrakk>e1\<rbrakk>\<rho> \<and> (\<exists>v. v \<in> \<lbrakk>e2\<rbrakk>\<rho> \<and> f <: v \<rightarrow> v2)" 
+        using f_e1 v_e2 by blast
     qed
   next
-    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EApp e1 e2) \<rho>1 \<rho>2 " sorry
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EApp e1 e2) \<rho>1 \<rho>2 "
+      apply (rule allI)+ apply (rule impI)+
+    proof -
+      fix v1 v2 \<rho>1 \<rho>2 assume v1_e1e2: "v1 \<in> \<lbrakk>EApp e1 e2\<rbrakk>\<rho>1" and v2_e1e2: "v2 \<in> \<lbrakk>EApp e1 e2\<rbrakk>\<rho>2" and
+        wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and c_r1_r2: "consis_env \<rho>1 \<rho>2"
+      obtain f1 v21 where f1_e1: "f1 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v21_e2: "v21\<in> \<lbrakk>e2\<rbrakk>\<rho>1" and f1_v21: "v1 \<in> f1 \<bullet> v21" 
+        using v1_e1e2 by auto
+      obtain f2 v22 where f2_e1: "f2 \<in> \<lbrakk>e1\<rbrakk>\<rho>2" and v22_e2: "v22\<in> \<lbrakk>e2\<rbrakk>\<rho>2" and f2_v22: "v2 \<in> f2 \<bullet> v22" 
+        using v2_e1e2 by auto
+      have "determ f1 f2 e1 \<rho>1 \<rho>2" using EApp(1) by blast
+      then have f12_e1: "f1 \<sqinter> f2 \<in> \<lbrakk>e1\<rbrakk>\<rho>1\<sqinter>\<rho>2" and wf_f12: "wf_ty (f1 \<sqinter> f2)"         
+        using f1_e1 f2_e1 wf_r1 wf_r2 c_r1_r2 by auto
+      have "determ v21 v22 e2 \<rho>1 \<rho>2" using EApp(2) by blast
+      then have v22_e2: "v21 \<sqinter> v22 \<in> \<lbrakk>e2\<rbrakk>\<rho>1\<sqinter>\<rho>2" and wf_v21_v22: "wf_ty (v21 \<sqinter> v22)"
+        using v21_e2 v22_e2 wf_r1 wf_r2 c_r1_r2 by auto
+      have f12_v21_v22: "v1 \<sqinter> v2 \<in> (f1 \<sqinter> f2) \<bullet> (v21 \<sqinter> v22)"
+        using inter_app[of v1 f1 v21 v2 f2 v22] f1_v21 f2_v22 wf_f12 wf_v21_v22 
+        by (metis CollectD consis_le consistent.simps(4) wf_ty_inter_inv)
+      have v1_v2: "v1 ~ v2"
+        using consistent_app[of f1 f2 v21 v22 v1 v2] wf_f12 wf_v21_v22 f1_v21 f2_v22 by blast
+      have wf_v1: "wf_ty v1" using f1_v21 by blast
+      have wf_v2: "wf_ty v2" using f2_v22 by blast
+      show "v1 \<sqinter> v2 \<in> \<lbrakk>EApp e1 e2\<rbrakk>\<rho>1 \<sqinter> \<rho>2 \<and> wf_ty (v1 \<sqinter> v2)"
+        using f12_e1 v22_e2 v1_v2 wf_v1 wf_v2 v1_v2 f12_v21_v22 by auto
+    qed      
   qed    
 next
-  case (EPrim x1a e1 e2)
-  then show ?case sorry
+  case (EPrim f e1 e2)
+  show ?case 
+  proof
+    show "\<forall>v1 v2 \<rho>. subsump v1 v2 (EPrim f e1 e2) \<rho>" apply simp by (meson sub_trans)
+  next
+    show "\<forall>v1 v2 \<rho>1 \<rho>2. determ v1 v2 (EPrim f e1 e2) \<rho>1 \<rho>2" 
+      apply (rule allI)+ apply (rule impI)+
+    proof -
+      fix v1 v2 \<rho>1 \<rho>2
+      assume v1_p: "v1 \<in> \<lbrakk>EPrim f e1 e2\<rbrakk>\<rho>1" and v2_p: "v2 \<in> \<lbrakk>EPrim f e1 e2\<rbrakk>\<rho>2" and 
+        wf_r1: "wf_env \<rho>1" and wf_r2: "wf_env \<rho>2" and c_r1_r2: "consis_env \<rho>1 \<rho>2"
+      obtain v11 v21 n1 n2 where v11_e1_r1: "v11 \<in> \<lbrakk>e1\<rbrakk>\<rho>1" and v21_e2_r1: "v21 \<in> \<lbrakk>e2\<rbrakk>\<rho>1" and
+        v11_n1: "v11 <: TNat n1" and v21_n2: "v21 <: TNat n2" and
+        fn12_v1: "TNat (f n1 n2) <: v1" and wf_v1: "wf_ty v1" using v1_p by auto
+      obtain v12 v22 n3 n4 where v12_e1_r2: "v12 \<in> \<lbrakk>e1\<rbrakk>\<rho>2" and v22_e2_r2: "v22 \<in> \<lbrakk>e2\<rbrakk>\<rho>2" and
+        v12_n3: "v12 <: TNat n3" and v22_n4: "v22 <: TNat n4" and
+        fn34_v2: "TNat (f n3 n4) <: v2" and wf_v2: "wf_ty v2" using v2_p by auto
+
+      have IH1: "determ v11 v12 e1 \<rho>1 \<rho>2" using EPrim(1) by simp
+      have "wf_ty (v11 \<sqinter> v12)" using IH1 v11_e1_r1 v12_e1_r2 c_r1_r2 wf_r1 wf_r2 by blast
+      then have "TNat n1 ~ TNat n3" using v11_n1 v12_n3 consis_le by blast
+      then have n1_n3: "n1 = n3" by simp
+          
+      have IH2: "determ v21 v22 e2 \<rho>1 \<rho>2" using EPrim(2) by simp
+      have "wf_ty (v21 \<sqinter> v22)" using IH2 v21_e2_r1 v22_e2_r2 c_r1_r2 wf_r1 wf_r2 by blast
+      then have "TNat n2 ~ TNat n4" using v21_n2 v22_n4 consis_le by blast
+      then have n2_n4: "n2 = n4" by simp
+      
+      have v1_v2: "v1 ~ v2" using n1_n3 n2_n4 fn12_v1 fn34_v2 consis_le by blast
+      have r12_r1: "\<rho>1\<sqinter>\<rho>2 <: \<rho>1" using c_r1_r2 apply auto done
+          
+      have v11_r12: "v11 \<in> \<lbrakk>e1\<rbrakk>\<rho>1\<sqinter>\<rho>2" using r12_r1 v11_e1_r1 weaken_env by blast
+      have v21_r12: "v21 \<in> \<lbrakk>e2\<rbrakk>\<rho>1\<sqinter>\<rho>2" using r12_r1 v21_e2_r1 weaken_env by blast
+          
+      show "v1 \<sqinter> v2 \<in> \<lbrakk>EPrim f e1 e2\<rbrakk>\<rho>1 \<sqinter> \<rho>2 \<and> wf_ty (v1 \<sqinter> v2)"
+        using v11_r12 v21_r12 v1_v2 wf_v1 wf_v2
+          apply simp using fn12_v1 fn34_v2 n1_n3 n2_n4 v11_n1 v21_n2 by blast
+    qed
+  qed
 next
   case (EIf e1 e2 e3)
   then show ?case sorry
