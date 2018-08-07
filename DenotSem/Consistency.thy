@@ -48,19 +48,7 @@ lemma consis_env_inter: "\<lbrakk> consis_env \<rho>1 \<rho>2; k < length \<rho>
   by auto
  
 lemma inter_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2 \<rbrakk> \<Longrightarrow> length (\<rho>1 \<sqinter> \<rho>2) = length \<rho>1"
-  by auto
-    
-
-
-
-    
-(*
-  
-lemma consis_join_L_inv[elim!]: "\<lbrakk> v1\<sqinter>v2 ~ v; \<lbrakk> v1 ~ v; v2 ~ v \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  by auto
-lemma consis_join_R_inv[elim!]: "\<lbrakk> v ~ v1\<sqinter>v2; \<lbrakk> v ~ v1; v ~ v2 \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  by (induction v arbitrary: v1 v2) auto
-*)     
+  by auto   
 
 lemma consis_sym_aux: "(v ~ v' \<longrightarrow> v' ~ v) \<and> (\<not> v ~ v' \<longrightarrow> \<not> v' ~ v)"
   by (induction v v' rule: consistent.induct) auto
@@ -70,32 +58,6 @@ lemma consis_sym[sym]: "v ~ v' \<Longrightarrow> v' ~ v"
     
 lemma consis_refl[intro!]: "wf_ty v \<Longrightarrow> v ~ v"
   apply (induction rule: wf_ty.induct) using consis_sym by auto
-
-    
-(*    
-corollary consis_upper_bound: fixes v1::val and v2::val 
-  assumes v1_v2: "v1 ~ v2" and v_v1: "wf_ty v1" and v_v2: "wf_ty v2"
-  shows "\<exists> v3. v1 \<sqsubseteq> v3 \<and> v2 \<sqsubseteq> v3 \<and> wf_ty v3"
-proof -
-  obtain v12 where v12: "v1 \<sqinter> v2 = Some v12" and v_v12: "wf_ty v12" 
-    using v1_v2 v_v1 v_v2 consis_join_val by blast
-  have 1: "v1 \<sqsubseteq> v12" using v12 le_join_left by blast
-  have 2: "v2 \<sqsubseteq> v12" using v12 le_join_right by blast
-  show ?thesis using 1 2 v_v12 by blast
-qed
-
-lemma upper_bound_consis: fixes v1::val and v2::val and v3::val 
-  assumes v1_v3: "v1 \<sqsubseteq> v3" and v2_v3: "v2 \<sqsubseteq> v3" and v_v3: "wf_ty v3"
-  shows "v1 ~ v2"
-  using v_v3 v1_v3 v2_v3 apply (induction arbitrary: v1 v2 rule: wf_ty.induct)
-   apply (case_tac v1) apply (case_tac v2) apply force apply force
-   apply (case_tac v2) apply force apply force
-  apply (case_tac v1) apply (case_tac v2) apply force apply force
-  apply (case_tac v2) apply force
-  apply simp
-  apply (rule vfun_consis) apply (rule allI)+ apply (rule impI) apply (erule conjE)
-  oops      
-*)
     
 lemma atoms_inter_inv[elim!]: "\<lbrakk> v \<in> atoms (v1 \<sqinter> v2); v \<in> atoms v1 \<Longrightarrow> P; v \<in> atoms v2 \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"  
   by auto 
@@ -152,23 +114,7 @@ proof -
 qed
   
 lemma consis_nat_atoms: "\<lbrakk> v ~ TNat n \<rbrakk> \<Longrightarrow> atoms v \<subseteq> { TNat n }"
-  by (induction v arbitrary: n) auto
-
-(*
-
-definition consis :: "ty set \<Rightarrow> bool" where
-  "consis \<Gamma> \<equiv> (\<forall>v v'. v \<in> \<Gamma> \<longrightarrow> v' \<in> \<Gamma> \<longrightarrow> v ~ v')"
-  
-lemma val_consis_atoms: "wf_ty v \<Longrightarrow> consis (atoms v)"
-  apply (induction v) apply auto
-    apply (simp add: consis_def)
-   apply (simp add: consis_def) apply blast
-  apply (simp add: consis_def) apply clarify
-  apply (rule conjI) apply clarify apply (erule_tac x=v in allE) apply (erule impE)
-    apply blast using consis_atoms apply blast 
-  apply clarify using consis_sym consis_atoms apply blast
-  done
-*)  
+  by (induction v arbitrary: n) auto 
     
 lemma consis_nat_trans: "\<lbrakk> v1 ~ TNat n; TNat n ~ v2 \<rbrakk> \<Longrightarrow> v1 ~ v2"
   by (induction v1 arbitrary: v2) auto
@@ -549,29 +495,6 @@ qed
   
 lemma inconsis_le: "\<lbrakk> v1 <: v1'; v2 <: v2'; \<not> v1' ~ v2' \<rbrakk> \<Longrightarrow> \<not> v1 ~ v2"
   using inconsis_sub_aux by blast
-
-
-(*    
-lemma lookup_consis[intro]: "\<lbrakk> consis_env \<rho> \<rho>'; x < length \<rho> \<rbrakk> \<Longrightarrow> (\<rho>!x) ~ (\<rho>'!x)"
-  by auto
-
-lemma cons_wf_env_inv[elim!]: "\<lbrakk> wf_env (v#\<rho>); \<lbrakk> wf_ty v; wf_env \<rho> \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-  by fastforce
-
-lemma ext_wf_env[intro!]: "\<lbrakk> wf_ty v; wf_env \<rho> \<rbrakk> \<Longrightarrow> wf_env (v#\<rho>)"
-   apply auto apply (case_tac k) apply auto done
-
-abbreviation join_env :: "ty list \<Rightarrow> ty list \<Rightarrow> ty list" (infix "\<sqinter>" 55) where
-  "\<rho> \<sqinter> \<rho>' \<equiv> map (\<lambda>(v,v'). v \<sqinter> v') (zip \<rho> \<rho>')"
-    
-
-    
-lemma consis_env_length: "consis_env \<rho> \<rho>' \<Longrightarrow> length \<rho> = length \<rho>'"
-  by auto
-
-lemma join_env_length: "\<lbrakk> consis_env \<rho>1 \<rho>2 \<rbrakk> \<Longrightarrow> length (\<rho>1 \<sqinter> \<rho>2) = length \<rho>1"
-  by auto
-*)
     
 lemma consis_env_wf_inter: fixes \<rho>1::"ty list" assumes r1_r2: "consis_env \<rho>1 \<rho>2" 
   and v_r1: "wf_env \<rho>1" and v_r2: "wf_env \<rho>2"

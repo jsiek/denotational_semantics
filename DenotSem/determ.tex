@@ -1,0 +1,183 @@
+\documentclass{article}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{hyperref}
+
+\newcommand{\lam}[1]{\lambda #1.\,}
+\newcommand{\app}[0]{\;}
+\newcommand{\IF}[0]{\textbf{if}\;}
+\newcommand{\THEN}[0]{\;\textbf{then}\;}
+\newcommand{\ELSE}[0]{\;\textbf{else}\;}
+\newcommand{\ESEM}[1]{\mathcal{E}[\![ #1 ]\!]}
+\newcommand{\FSEM}[1]{\mathcal{F}[\![ #1 ]\!]}
+\newcommand{\SET}[1]{\mathcal{P}(#1)}
+
+
+\title{Intersection Types, Cut Elimination, and the Functional
+  Character of the Lambda Calculus}
+
+\author{Jeremy G. Siek}
+
+\begin{document}
+\maketitle
+
+Last December I proved that my graph model of the lambda calculus,
+once suitable restricted, is deterministic. That is, I defined a
+notion of \emph{consistency} between values, written $v_1 \sim v_2$,
+and showed that any two outputs of the same program are consistent. \\
+
+\noindent \textbf{Theorem} (Determinism of $\mathcal{E}$)
+  If $v \in \ESEM{e}\rho$, $v' \in \ESEM{e}\rho'$, and $\rho \sim
+  \rho'$, then $v \sim v'$. \\
+
+\noindent Recall that values are integers or finite relations;
+consistency for integers is equality and consistency for relations
+means mapping consistent inputs to consistent outputs.
+
+Having proved the Determinism Theorem, I thought it would be
+straightforward to prove the following related theorem about the join
+of two values. \\
+
+\noindent \textbf{Theorem} (Join in $\mathcal{E}$)
+  If $v \in \ESEM{e}\rho$, $v' \in \ESEM{e}\rho'$, and $\rho \sim
+  \rho'$, \\
+  then $v \sqcup v' \in \ESEM{e}(\rho\sqcup\rho')$. \\
+
+Recall that we have defined a partial order $\sqsubseteq$ on values,
+and that, in most partial orders, there is a close connection between
+notions of consistency and least upper bounds (joins). One typically
+has that $v \sim v'$ iff $v \sqcup v'$ exists. So my thinking was that
+it should be easy to adapt my proof of the determinism theorem to
+prove this theorem about joins, and I set out hoping to finish in a
+couple weeks. Hah! Here we are 8 months later and the proof is
+complete, but my journey to find the proof was rather circuitous and
+ended up depending on a recent result about intersection types and cut
+elimination from Olivier Laurent. In this blog post I'll try to
+recount the journey and describe the proof, hopefully remembering all
+the challenges and motivations that led to the proof.
+
+Many of the challenges revolved around the definitions of
+$\sqsubseteq$, consistency, and $\sqcup$. Given that I already had
+definitions for $\sqsubseteq$ and consistency, the obvious thing to
+try was to define $\sqcup$ such that it would be the least upper bound
+of $\sqsubseteq$. So I arrived at this partial function:
+\begin{align*}
+  n \sqcup n &= n \\
+  f_1 \sqcup f_2 &= f_1 \cup f_2
+\end{align*}
+Now suppose we prove the Join Theorem by induction on $e$ and consider
+the case for application: $e = (e_1 \app e_2)$.
+We have
+\begin{itemize}
+\item $f \in \ESEM{e_1}\rho$, $v_2 \in \ESEM{e_2}\rho$,  
+  $v_3 \mapsto v_4 \in f$, $v_3 \sqsubseteq v_2$, and $v \sqsubseteq v_4$
+  for some $f, v_2, v_3, v_4$.
+\item $f' \in \ESEM{e_2}\rho'$, $v'_2 \in \ESEM{e_2}\rho'$,   
+  $v'_3 \mapsto v'_4 \in f$, $v'_3 \sqsubseteq v'_2$, and $v' \sqsubseteq v'_4$
+  for some $f', v'_2, v'_3, v'_4$.
+\end{itemize}
+By the induction hypothesis we have $f \sqcup f' \in \ESEM{e_1}$
+and $v_2 \sqcup v'_2 \in \ESEM{e_2}$.
+We need to show that 
+\[
+   v''_3 \mapsto v''_4 \in f \sqcup f' 
+   \qquad
+   v''_3 \sqsubseteq v_2 \sqcup v'_2
+   \qquad
+   v \sqcup v' \sqsubseteq v''_4
+\]
+But we have a problem, given our definition of $\sqcup$ in terms of
+set union, there won't necissarily be a single entry in $f \sqcup f'$
+that combines the information from both $v_3 \mapsto v_4$ and $v'_3
+\mapsto v'_4$. After all, $f \sqcup f'$ contains all the entries of
+$f$ and all the entries of $f'$, but no entries that mix together the
+information from entries in $f$ and $f'$.
+
+At this point I started thinking that my definitions of $\sqsubseteq$,
+consistency, and $\sqcup$ were too simple, and that I needed to
+incorporate ideas from the literature on filter models and
+intersection types. As I've written about previously, my graph model
+corresponds to a particular intersection type system, and perhaps a
+different intersection type system would do the job. Recall that the
+correspondence goes as follows: values correspond to types,
+$\sqsubseteq$ corresponds to subtyping $<:$ (in reverse), and $\sqcup$
+corresponds to intersection $\sqcap$. The various intersection type
+systems primarily differ in their definitions of subtyping.  Given the
+above proof attempt, I figured that I would need usual
+co/contra-variant rule for function types and also the following rule
+for distributing intersections over function types.
+\[
+  (A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)
+\]
+This distributivity rule enables the ``mixing'' of information from
+two different entries.
+
+So I defined types as follows:
+\[
+  A,B,C,D ::= n \mid A \to B \mid A \sqcap B
+\]
+and defined subtyping to follow that of the BCD intersection type
+system.
+\begin{gather*}
+A <: A \qquad \frac{A <: B \quad B <: C}{A <: C} \\[2ex]
+A \sqcap B <: A \qquad
+A \sqcap B <: B \qquad
+\frac{C <: A \quad C <: B}{C <: A \sqcap B} \\[2ex]
+\frac{C <: A \quad B <: D}{A \to B <: C \to D}
+\qquad
+(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)
+\end{gather*}
+I then adapted the definition of consistency to work over types.
+Because of the use of negation in this definition, it is easier to
+define consistency as a recursive function in Isabelle instead of as
+an inductively defined relation.
+\begin{align*}
+ n \sim n' &= (n = n') \\
+ n \sim (C \to D) &= \mathit{false} \\
+ n \sim (C \sqcap D) &= n \sim C \text{ and } n \sim D \\
+ (A \to B) \sim n' &= \mathit{false} \\
+ (A \to B) \sim (C \to D) &= 
+    (A \sim C \text{ and } B \sim D) \text{ or } A \not\sim C \\
+ (A \to B) \sim (C \sqcap D) &=
+    (A \to B) \sim C \text{ and } (A \to B) \sim D \\
+ (A \sqcap B) \sim n' &= A \sim n' \text{ and } B \sim n' \\
+ (A \sqcap B) \sim (C \sqcap D) &= 
+    A \sim C \text{ and } A \sim D \text{ and } 
+    B \sim C \text{ and } B \sim D
+\end{align*}
+
+Turning back to the Join Theorem, let us restate it in terms of an
+intersection type system. Instead of using the letter $\rho$ for
+environments, we shall switch to $\Gamma$ because they now contain
+types instead of values. \\
+
+\noindent \textbf{Theorem} (Intersection Introduction is Admissible)
+  If $\Gamma \vdash e : A$, $\Gamma' \vdash e : B$, and $\Gamma \sim
+  \Gamma'$, 
+  then $\Gamma\sqcap\Gamma' \vdash e : A \sqcap B$. \\
+
+By restating the theorem in terms of intersection types, we have
+essentially arrived at the rule for intersection introduction.  In
+other words, if we can prove this theorem we will have shown that the
+intersection introduction rule is admissible in our system.
+
+While the change to intersection types enabled this top-level proof to
+go through, I got stuck on one of the lemmas that it requires, which
+is an adaptation of Proposition 3 of the prior blog post. \\
+
+\noindent \textbf{Lemma} (Consistency and Subtyping)
+\begin{enumerate}
+\item  If $A \sim B$, $A <: C$, and $B <: D$,
+  then $C \sim D$.
+\item If $A \not\sim B$, $C <: A$, $D <: B$, then $C \not\sim D$.
+\end{enumerate}
+In particular, I got stuck in the cases where the subtyping $A <: C$
+or $B <: D$ was derived using the transitivity subtyping rule.
+
+
+
+\end{document}
+
+%%  LocalWords:  denotationally ctx subexpression eq denot lrcl env
