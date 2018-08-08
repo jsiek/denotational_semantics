@@ -7,12 +7,14 @@
 
 \newcommand{\lam}[1]{\lambda #1.\,}
 \newcommand{\app}[0]{\;}
-\newcommand{\IF}[0]{\textbf{if}\;}
-\newcommand{\THEN}[0]{\;\textbf{then}\;}
-\newcommand{\ELSE}[0]{\;\textbf{else}\;}
+\newcommand{\IF}[0]{\mathrm{if}\;}
+\newcommand{\THEN}[0]{\;\mathrm{then}\;}
+\newcommand{\ELSE}[0]{\;\mathrm{else}\;}
 \newcommand{\ESEM}[1]{\mathcal{E}[\![ #1 ]\!]}
 \newcommand{\FSEM}[1]{\mathcal{F}[\![ #1 ]\!]}
 \newcommand{\SET}[1]{\mathcal{P}(#1)}
+\newcommand{\WF}[1]{\mathsf{wf}(#1)}
+\newcommand{\UP}[1]{\mathord{\uparrow} #1}
 
 
 \title{Intersection Types, Sub-formula Property, and the Functional
@@ -111,6 +113,8 @@ of $f$ and all the entries of $f'$, but the set union operation does
 not mix together information from entries in $f$ and $f'$ to form new
 entries.
 
+\section{Intersection Types to the Rescue}
+
 At this point I started thinking that my definitions of $\sqsubseteq$,
 consistency, and $\sqcup$ were too simple, and that I needed to
 incorporate ideas from the literature on filter models and
@@ -191,6 +195,8 @@ post. \\
 \end{enumerate}
 In particular, I got stuck in the cases where the subtyping $A <: C$
 or $B <: D$ was derived using the transitivity rule.
+
+\section{Subtyping and the Sub-formula Property}
 
 For a long time I've disliked definition of subtyping in which
 transitivity is given as a rule instead of proved as a theorem.  There
@@ -360,7 +366,45 @@ depth of the derivation of $\Gamma_2 \vdash B$, and $k_2$ is the depth
 of the derivation of $\Gamma_1,B,\Gamma_3 \vdash C$.
 
 
-  
+\section{The Home Stretch}
+
+Armed with a good definition of intersection types, I turned back to
+the proof of the Join Theorem, but first I needed to adjust my
+denotational semantics to use intersection types. For this we'll need
+the definition of well formed types that we alluded to earlier.
+
+\begin{gather*}
+  \frac{}{\WF{n}}
+  \qquad
+  \frac{\WF{A} \quad \WF{B}}{\WF{A \to B}}
+  \qquad
+  \frac{A \sim B \quad \WF{A} \quad \WF{B}}{\WF{A \sqcap B}}
+\end{gather*}
+
+We also introduce the following notation for all the well-formed types
+that are super-types of a given type.
+\[
+   \UP{A} \stackrel{def}{=} \{ B\mid A <: B \text{ and } \WF{B} \}
+\]
+
+We shall represent variables with de Bruijn indices, so an environment
+$\rho$ is a sequence of types.  The denotational semantics of the CBV
+lambda calculus is defined as follows.
+\begin{align*}
+  \ESEM{n}\rho &= \UP{n} \\
+  \ESEM{x}\rho &=  \IF x < |\rho| \THEN \UP{\rho_k} \ELSE \emptyset \\
+  \ESEM{\lam{x}e }\rho &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\rho) \} \\
+  \ESEM{e_1\app e_2}\rho &= \{ C \mid
+    A \in \ESEM{e_1}\rho,
+    B \in \ESEM{e_2}\rho,
+    A <: B \to C, \text{ and } \WF{C} \} \\
+  \ESEM{f(e_1,e_2)}\rho &=
+    \{ \}
+\end{align*}
+
+
+
+
 
 
 \end{document}
