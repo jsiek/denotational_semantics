@@ -10,11 +10,13 @@
 \newcommand{\IF}[0]{\mathrm{if}\;}
 \newcommand{\THEN}[0]{\;\mathrm{then}\;}
 \newcommand{\ELSE}[0]{\;\mathrm{else}\;}
-\newcommand{\ESEM}[1]{\mathcal{E}[\![ #1 ]\!]}
-\newcommand{\FSEM}[1]{\mathcal{F}[\![ #1 ]\!]}
+\newcommand{\SEM}[1]{[\![ #1 ]\!]}
+\newcommand{\ESEM}[1]{\mathcal{E}\SEM{#1}}
+\newcommand{\FSEM}[1]{\mathcal{F}\SEM{#1}}
 \newcommand{\SET}[1]{\mathcal{P}(#1)}
 \newcommand{\WF}[1]{\mathsf{wf}(#1)}
 \newcommand{\UP}[1]{\mathord{\uparrow} #1}
+\newcommand{\ATOMS}[1]{\mathit{atoms}(#1)}
 
 
 \title{Intersection Types, Sub-formula Property, and the Functional
@@ -349,8 +351,9 @@ $\Gamma_1,A, B,\Gamma_2 \vdash C$. \\
 (Proved by induction on the derivation of $\Gamma_1,A\sqcap B,\Gamma_2
 \vdash C$.)\\
 
-\noindent \textbf{Lemma} (Collapse Duplicates) \\ If
-$\Gamma_1,A,A,\Gamma_2 \vdash C$, then $\Gamma_1,A,\Gamma_2 \vdash
+\noindent \textbf{Lemma} (Collapse Duplicates) \\
+%
+If $\Gamma_1,A,A,\Gamma_2 \vdash C$, then $\Gamma_1,A,\Gamma_2 \vdash
 C$. \\
 %
 (This is proved by well-founded induction on the lexicographical
@@ -381,28 +384,217 @@ the definition of well formed types that we alluded to earlier.
   \frac{A \sim B \quad \WF{A} \quad \WF{B}}{\WF{A \sqcap B}}
 \end{gather*}
 
+Here are some examples and non-examples of well-formed types.
+\begin{gather*}
+  \WF{4} \qquad \WF{3 \sqcap 3} \qquad \neg \WF{3 \sqcap 4} \\
+  \WF{(0\to 1) \sqcap (2 \to 3)} \qquad \neg \WF{(0 \to 1) \sqcap (0 \to 2)}
+\end{gather*}
+It is sometimes helpful to think of well-formed types in terms of the
+equivalence classes determined by subtype equivalence:
+\[
+A \approx B \quad = \quad
+  A <: B \text{ and } B <: A
+\]
+For example, we have $3 \approx (3 \sqcap 3)$, so they are
+in the same equivalence class and $3$ would be the representative.
+
+
 We also introduce the following notation for all the well-formed types
 that are super-types of a given type.
 \[
-   \UP{A} \stackrel{def}{=} \{ B\mid A <: B \text{ and } \WF{B} \}
+   \UP{A} \quad = \quad \{ B\mid A <: B \text{ and } \WF{B} \}
 \]
 
 We shall represent variables with de Bruijn indices, so an environment
 $\rho$ is a sequence of types.  The denotational semantics of the CBV
-lambda calculus is defined as follows.
+$\lambda$-calculus is defined as follows.
 \begin{align*}
   \ESEM{n}\rho &= \UP{n} \\
   \ESEM{x}\rho &=  \IF x < |\rho| \THEN \UP{\rho_k} \ELSE \emptyset \\
-  \ESEM{\lam{x}e }\rho &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\rho) \} \\
-  \ESEM{e_1\app e_2}\rho &= \{ C \mid
-    A \in \ESEM{e_1}\rho,
-    B \in \ESEM{e_2}\rho,
-    A <: B \to C, \text{ and } \WF{C} \} \\
+  \ESEM{\lambda e }\rho &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\rho) \} \\
+  \ESEM{e_1\app e_2}\rho &= \left\{ C\, \middle| \exists A,B.\;
+      \begin{array}{l}
+      A \in \ESEM{e_1}\rho,
+      B \in \ESEM{e_2}\rho,\\
+      A <: B \to C, \text{ and } \WF{C}
+      \end{array}
+        \right\} \\
   \ESEM{f(e_1,e_2)}\rho &=
-    \{ \}
+      \left\{ C\, \middle| \begin{array}{l}
+       \exists A,B,n_1,n_2.\; A \in \ESEM{e_1}\rho, B \in \ESEM{e_2}\rho,\\
+      \qquad A <: n_1, B <: n_2, \SEM{f}(n_1,n_2) <: C, \WF{C} 
+      \end{array} \right\} \\
+  \ESEM{\IF e_1 \THEN e_2 \ELSE e_3}\rho &=
+    \left\{ B\, \middle| \exists A.\;
+    \begin{array}{l}A \in \ESEM{e_1}\rho, A <: n,\\
+           n = 0 \Rightarrow B \in \ESEM{e_3}\rho,\\
+           n \neq 0 \Rightarrow B \in \ESEM{e_2}\rho
+    \end{array}
+    \right\}
+    \\[2ex]
+    \intertext{where}
+   \FSEM{n}e\rho &= \mathit{false} \\
+   \FSEM{A \sqcap B}e \rho &= \FSEM{A}e\rho \text{ and } \FSEM{B}e\rho\\
+   \FSEM{A \to B}e \rho &= B \in \ESEM{e} (A, \rho)
 \end{align*}
 
 
+\noindent \textbf{Proposition} (Consistency is Symmetric and Reflexive) \\
+%
+\begin{enumerate}
+\item If $A \sim B$, then $B \sim A$.
+\item If $\WF{A}$, then $A \sim A$.
+\end{enumerate}
+
+It will often be convenient to decompose a type into its set of
+\emph{atoms}, defined as follows.
+\begin{align*}
+  \ATOMS{n} &= \{ n \} \\
+  \ATOMS{A\to B} &= \{ A \to B \} \\
+  \ATOMS{A \sqcap B} &= \ATOMS{A} \cup \ATOMS{B}
+\end{align*}
+
+The consistency of two types is determined by the consistency of its
+atoms. \\
+
+\noindent \textbf{Lemma} (Atomic Consistency) 
+\begin{enumerate}
+\item If $A \sim B$, $C \in \ATOMS{A}$, and $D \in \ATOMS{B}$,
+  then $C \sim D$.
+\item If (for any $C \in \ATOMS{A}$ and $D \in \ATOMS{B}$, 
+  $C \sim D$), then $A \sim B$.
+\item If $A \not\sim B$, then $C \not\sim D$ for some
+  $C \in \ATOMS{A}$ and $D \in \ATOMS{B}$.
+\item If $C \not\sim D$, $C \in \ATOMS{A}$, and $D \in \ATOMS{B}$,
+  then $A \not\sim B$. 
+\end{enumerate}
+
+There are also several properties of subtyping and the atoms of a type.\\
+
+\noindent \textbf{Lemma} (Atomic Subtyping)
+\begin{enumerate}
+\item If $A <: B$ and $C \in \ATOMS{B}$, then $A <: C$.
+\item If $A <: n$, then $n \in \ATOMS{A}$.
+\item $n <: A$ if and only if $\ATOMS{A} \subseteq \{ n \}$.
+\item If $C <: A \to B$, then $D\to E \in \ATOMS{C}$ for some $D,E$.
+\item If $\Gamma \vdash A$ and every atom in $\Gamma$ is a function type,
+  then every atom of $A$ is a function type.
+\end{enumerate}
+
+And we have the following important inversion lemma for function
+types. We use the following abbreviations:
+\begin{align*}
+  \mathrm{dom}(\Gamma) &= \{ A \mid \exists B.\; A \to B \in \Gamma \}\\
+  \mathrm{cod}(\Gamma) &= \{ B \mid \exists A.\; A \to B \in \Gamma \}
+\end{align*}
+
+\noindent \textbf{Lemma} (Subtyping Inversion for Funcion Types)\\
+%
+If $C <: A \to B$, then there is a sequence of function types $\Gamma$
+such that
+\begin{enumerate}
+\item each element of $\Gamma$ is an atom of $C$,
+\item For every $D\to E \in \Gamma$, we have $A <: D$, and
+\item $\bigsqcap \mathrm{cod}(\Gamma) <: B$.
+\end{enumerate}
+Note that item 2 above implies that $A <: \bigsqcap \mathrm{dom}(\Gamma)$.
+
+With the above lemmas, we are ready to prove the Consistency and
+Subtyping Lemma that previously stumped me.\\
+
+\noindent \textbf{Lemma} (Consistency and Subtyping)
+\begin{enumerate}
+\item  If $A \sim B$, $A <: C$, and $B <: D$,
+  then $C \sim D$.
+\item If $A \not\sim B$, $C <: A$, $D <: B$, then $C \not\sim D$.
+\end{enumerate}
+
+(1) The proof is by strong induction on the sum of the depths of $A$,
+$B$, $C$, and $D$. To show that $C \sim D$ it suffices to show that
+all of their atoms are consistent. Suppose $C' \in \ATOMS{C}$
+and $D'\in\ATOMS{D}$. So we need to show that $C' \sim D'$.
+%Note that $A <: C'$ and $B <: D'$
+We proceed by cases on $C'$.
+\begin{itemize}
+\item Case $C'=n_1$:\\
+  We have $A <: C'$ and therefore $n_1 \in \ATOMS{A}$.
+  Then because $A \sim B$, we have $\ATOMS{B} \subseteq \{n_1\}$.
+  We have $B <: D'$, so we also have $\ATOMS{D} \subseteq \{n_1\}$.
+  Therefore $C' \sim D'$.
+  
+\item Case $C'=C_1\to C_2$:\\
+  We have $A <: C_1 \to C_2$, so by inversion we have
+  some sequence of function types $\Gamma_1$ such that
+  every element of $\Gamma_1$ is an atom of $A$,
+  $C_1 <: \bigsqcap \mathrm{dom}(\Gamma_1)$,
+  and $\bigsqcap \mathrm{cod}(\Gamma_1) <: C_2$.
+
+  We also know that $D'$ is a function type, say $D'=D_1 \to D_2$.
+  (This is because we have $A <: C'$, so we know that $A_1\to A_2 \in
+  \ATOMS{A}$ for some $A_1,A_2$. Then because $A \sim B$, we know that
+  all the atoms in $B$ are function types.  Then because $B <: D$ and
+  $D' \in \ATOMS{D}$, we have that $D'$ is a function type.)
+  %
+  So by inversion on $B <: D_1 \to D_2$, we have
+  some sequence of function types $\Gamma_2$ such that
+  every element of $\Gamma_2$ is an atom of $B$,
+  $D_1 <: \bigsqcap \mathrm{dom}(\Gamma_2)$,
+  and $\bigsqcap \mathrm{cod}(\Gamma_2) <: D_2$.
+
+  It's the case that either $C_1 \sim D_1$ or $C_1 \not\sim D_1$.
+  \begin{itemize}
+  \item Sub-case $C_1 \sim D_1$.\\
+    It suffices to show that $C_2 \sim D_2$.
+    By the induction hypothesis, we have
+    $\bigsqcap \mathrm{dom}(\Gamma_1) \sim \bigsqcap \mathrm{dom}(\Gamma_2)$.
+
+    As an intermediate step, we shall prove that
+    $\bigsqcap \mathrm{cod}(\Gamma_1) \sim \bigsqcap \mathrm{cod}(\Gamma_2)$,
+    which we shall do by showing that all their atoms are consistent.
+    Suppose $A' \in \ATOMS{\bigsqcap \mathrm{cod}(\Gamma_1)}$
+    and $B' \in \ATOMS{\bigsqcap \mathrm{cod}(\Gamma_2)}$.
+    There is some $A_1\to A_2 \in \Gamma_1$ where $A' \in \ATOMS{A_2}$.
+    Similarly, there is $B_1 \to B_2 \in \Gamma_2$ where $B' \in \ATOMS{B_2}$.
+    Also, we have $A_1 \to A_2 \in \ATOMS{A}$ and $B_1 \to B_2 \in \ATOMS{B}$.
+    Then because $A \sim B$, we have $A_1 \to A_2 \sim B_1 \to B_2$.
+    Furthermore, we have $A_1 \sim B_1$ because
+    $\bigsqcap \mathrm{dom}(\Gamma_1) \sim \bigsqcap \mathrm{dom}(\Gamma_2)$,
+    so it must be the case that $A_2 \sim B_2$.
+    Then because $A' \in \ATOMS{A_2}$ and $B' \in \ATOMS{B_2}$, we
+    have $A' \sim B'$. Thus concludes this intermediate step.
+
+    By another use of the induction hypothesis, we have
+    $C_2 \sim D_2$, and this case is finished.
+    
+  \item Sub-case $C_1 \not\sim D_1$.\\
+    Then we immediately have $C_1 \to C_2 \sim D_1 \to D_2$.
+  \end{itemize}
+  
+\item Case $C'=C_1\sqcap C_2$:\\
+  We already know that $C'$ is an atom, so we have a contradiction
+  and this case is vacously true.
+\end{itemize}
+
+Now we can move on to lemmas about the denotational semantics that
+will be needed to prove the Join Theorem. \\
+
+\noindent \textbf{Lemma} (Weakening)
+\begin{enumerate}
+\item If $\FSEM{A}e \rho_1$, $\rho_1 <: \rho_2$ and
+  $(\forall B \rho_1 \rho_2,\; B \in \ESEM{e}\rho_1, \rho_2 <: \rho_1
+  \Rightarrow B \in \ESEM{e}\rho_2)$, then
+  $\FSEM{A}e \rho_2$.
+\item If $A \in \ESEM{e}\rho_1$ and $\rho_2 <: \rho_1$,
+  then $A \in \ESEM{e}\rho_2$.
+\end{enumerate}
+(Part 1 is proved by induction on $A$. Part 2 is proved by induction
+on $e$ and uses part 1.)
+
+\noindent \textbf{Lemma} (Consistent Application) \\
+%
+If $A_1 \sim A_2$, $B_1 \sim B_2$, $A_1 <: B_1 \to C_1$,
+$A_2 <: B_2 \to C_2$, and all these types are well formed,
+then $C_1 \sim C_2$.
 
 
 
