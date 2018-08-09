@@ -406,36 +406,36 @@ that are super-types of a given type.
 \]
 
 We shall represent variables with de Bruijn indices, so an environment
-$\rho$ is a sequence of types.  The denotational semantics of the CBV
+$\Gamma$ is a sequence of types.  The denotational semantics of the CBV
 $\lambda$-calculus is defined as follows.
 \begin{align*}
-  \ESEM{n}\rho &= \UP{n} \\
-  \ESEM{x}\rho &=  \IF x < |\rho| \THEN \UP{\rho_k} \ELSE \emptyset \\
-  \ESEM{\lambda e }\rho &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\rho) \} \\
-  \ESEM{e_1\app e_2}\rho &= \left\{ C\, \middle| \exists A,B.\;
+  \ESEM{n}\Gamma &= \UP{n} \\
+  \ESEM{x}\Gamma &=  \IF x < |\Gamma| \THEN \UP{\Gamma[k]} \ELSE \emptyset \\
+  \ESEM{\lambda e }\Gamma &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\Gamma) \} \\
+  \ESEM{e_1\app e_2}\Gamma &= \left\{ C\, \middle| \exists A,B.\;
       \begin{array}{l}
-      A \in \ESEM{e_1}\rho,
-      B \in \ESEM{e_2}\rho,\\
+      A \in \ESEM{e_1}\Gamma,
+      B \in \ESEM{e_2}\Gamma,\\
       A <: B \to C, \text{ and } \WF{C}
       \end{array}
         \right\} \\
-  \ESEM{f(e_1,e_2)}\rho &=
+  \ESEM{f(e_1,e_2)}\Gamma &=
       \left\{ C\, \middle| \begin{array}{l}
-       \exists A,B,n_1,n_2.\; A \in \ESEM{e_1}\rho, B \in \ESEM{e_2}\rho,\\
+       \exists A,B,n_1,n_2.\; A \in \ESEM{e_1}\Gamma, B \in \ESEM{e_2}\Gamma,\\
       \qquad A <: n_1, B <: n_2, \SEM{f}(n_1,n_2) <: C, \WF{C} 
       \end{array} \right\} \\
-  \ESEM{\IF e_1 \THEN e_2 \ELSE e_3}\rho &=
+  \ESEM{\IF e_1 \THEN e_2 \ELSE e_3}\Gamma &=
     \left\{ B\, \middle| \exists A.\;
-    \begin{array}{l}A \in \ESEM{e_1}\rho, A <: n,\\
-           n = 0 \Rightarrow B \in \ESEM{e_3}\rho,\\
-           n \neq 0 \Rightarrow B \in \ESEM{e_2}\rho
+    \begin{array}{l}A \in \ESEM{e_1}\Gamma, A <: n,\\
+           n = 0 \Rightarrow B \in \ESEM{e_3}\Gamma,\\
+           n \neq 0 \Rightarrow B \in \ESEM{e_2}\Gamma
     \end{array}
     \right\}
     \\[2ex]
     \intertext{where}
-   \FSEM{n}e\rho &= \mathit{false} \\
-   \FSEM{A \sqcap B}e \rho &= \FSEM{A}e\rho \text{ and } \FSEM{B}e\rho\\
-   \FSEM{A \to B}e \rho &= B \in \ESEM{e} (A, \rho)
+   \FSEM{n}e\Gamma &= \mathit{false} \\
+   \FSEM{A \sqcap B}e \Gamma &= \FSEM{A}e\Gamma \text{ and } \FSEM{B}e\Gamma\\
+   \FSEM{A \to B}e \Gamma &= B \in \ESEM{e} (A, \Gamma)
 \end{align*}
 
 
@@ -575,29 +575,56 @@ We proceed by cases on $C'$.
   and this case is vacously true.
 \end{itemize}
 
-Now we can move on to lemmas about the denotational semantics that
-will be needed to prove the Join Theorem. \\
+The next two lemmas follow from the Consistency and Subtyping Lemma
+and help prepare to prove the case for application in the Join
+Theorem.
+
+\noindent \textbf{Lemma} (Application Consistency) \\
+%
+If $A_1 \sim A_2$, $B_1 \sim B_2$, $A_1 <: B_1 \to C_1$,
+$A_2 <: B_2 \to C_2$, and all these types are well formed,
+then $C_1 \sim C_2$.\\
+(This lemma is proved directly, without induction.)\\
+
+\noindent \textbf{Lemma} (Application Intersection) \\
+%
+If $A_1 <: B_1 \to C_1$, $A_2 <: B_2 \to C_2$, $A_1 \sim A_2$,
+$B_1 \sim B_2$, and $C_1 \sim C_2$, then
+$(A_1\sqcap A_2) <: (B_1 \sqcap B_2) \to (C_1 \sqcap C_2)$.\\
+(This lemma is proved directly, without induction.) \\
+
+We move on to the Weakening Lemma, which will be needed to prove the
+Join Theorem. \\
 
 \noindent \textbf{Lemma} (Weakening)
 \begin{enumerate}
-\item If $\FSEM{A}e \rho_1$, $\rho_1 <: \rho_2$ and
-  $(\forall B \rho_1 \rho_2,\; B \in \ESEM{e}\rho_1, \rho_2 <: \rho_1
-  \Rightarrow B \in \ESEM{e}\rho_2)$, then
-  $\FSEM{A}e \rho_2$.
-\item If $A \in \ESEM{e}\rho_1$ and $\rho_2 <: \rho_1$,
-  then $A \in \ESEM{e}\rho_2$.
+\item If $\FSEM{A}e \Gamma_1$, $\Gamma_1 <: \Gamma_2$ and
+  $(\forall B \Gamma_1 \Gamma_2,\; B \in \ESEM{e}\Gamma_1, \Gamma_2 <: \Gamma_1
+  \Rightarrow B \in \ESEM{e}\Gamma_2)$, then
+  $\FSEM{A}e \Gamma_2$.
+\item If $A \in \ESEM{e}\Gamma_1$ and $\Gamma_2 <: \Gamma_1$,
+  then $A \in \ESEM{e}\Gamma_2$.
 \end{enumerate}
 (Part 1 is proved by induction on $A$. Part 2 is proved by induction
 on $e$ and uses part 1.) \\
 
-\noindent \textbf{Lemma} (Consistent Application) \\
+Now for the main event, the proof of the Join Theorem!
+Though we'll rebrand it as the Meet Theorem.\\
+
+\noindent \textbf{Theorem} (Meet)\\
+If $A_1 \in \ESEM{e}\Gamma_1$, $A_2 \in \ESEM{e}\Gamma_2$,
+both $\Gamma_1$ and $\Gamma_2$ are well formed,
+and $\Gamma_1 \sim \Gamma_2$, \\
+then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$. \\
 %
-If $A_1 \sim A_2$, $B_1 \sim B_2$, $A_1 <: B_1 \to C_1$,
-$A_2 <: B_2 \to C_2$, and all these types are well formed,
-then $C_1 \sim C_2$.
+\textbf{Proof}
+We proceed by induction on $e$.
+\begin{itemize}
+\item Case $e=x$:
+  We have $\Gamma_1[k] <: A_1$ and $\Gamma_2[k] <: A_2$.
 
-
-
+  nts. $\Gamma_1[k] \sqcap \Gamma_2[k] <: A_1 \sqcap A_2$
+\end{itemize}
 
 \end{document}
 

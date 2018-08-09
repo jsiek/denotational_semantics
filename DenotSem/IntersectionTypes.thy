@@ -1470,7 +1470,7 @@ proof -
   then show ?thesis unfolding sub_ty_def by blast
 qed
   
-proposition sub_mon[intro]: assumes ac: "C <: A" and bd: "D <: B" shows "C \<sqinter> D <: A \<sqinter> B"
+proposition sub_mon: assumes ac: "C <: A" and bd: "D <: B" shows "C \<sqinter> D <: A \<sqinter> B"
 proof -
   have 1: "C \<sqinter> D <: A" using ac by blast
   have 2: "C \<sqinter> D <: B" using bd by blast

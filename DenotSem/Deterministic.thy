@@ -233,9 +233,22 @@ lemma deterministic: "\<forall> v1 v2 \<rho>1 \<rho>2. determ v1 v2 e \<rho>1 \<
 proof (induction e)
   case (EVar x)
   show ?case
-    apply clarify
-    apply (case_tac "x < length \<rho>1") defer apply force
-    using consis_le inter_func by auto
+    apply clarify apply (case_tac "x < length \<rho>1") defer apply force
+    apply simp apply clarify apply (rule conjI)
+  proof -
+    fix v1::ty and v2::ty and \<rho>1 \<rho>2
+    assume "\<rho>1 ! x <: v1" and "\<rho>2 ! x <: v2"    
+    then show "\<rho>1 ! x \<sqinter> \<rho>2 ! x <: v1 \<sqinter> v2" 
+      by (rule sub_mon)
+  next
+    fix v1::ty and v2::ty and \<rho>1 \<rho>2
+    assume wv1: "wf_ty v1" and wv2: "wf_ty v2" and c_r1_r2: "\<forall>k<length \<rho>2. \<rho>1 ! k ~ \<rho>2 ! k" and
+      r1x_v1: "\<rho>1 ! x <: v1" and r2x_v2: "\<rho>2 ! x <: v2" and
+      l_r1r2: "length \<rho>1 = length \<rho>2" and x_r2: "x < length \<rho>2"
+    have "\<rho>1!x ~ \<rho>2!x" using c_r1_r2 l_r1r2 x_r2 by blast
+    then have "v1 ~ v2" using consis_le r1x_v1 r2x_v2 by blast
+    then show "wf_ty (v1 \<sqinter> v2)" using wv1 wv2 inter_func by blast
+ qed
 next
   case (ENat n)
   then show ?case 
