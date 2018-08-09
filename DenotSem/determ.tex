@@ -53,8 +53,8 @@ $\rho$ is well formed, $\rho'$ is well formed,
 and $\rho \sim \rho'$, \\
 then $v \sqcup v' \in \ESEM{e}(\rho\sqcup\rho')$. \\
 
-I am particularly interested in this theorem because $\beta$-equality
-can be obtained as a corollary.
+\noindent I am particularly interested in this theorem because
+$\beta$-equality can be obtained as a corollary.
 \[
 \ESEM{(\lam{x}e)\app e'}\rho = \ESEM{[x{:=}e']e}\rho
 \]
@@ -170,11 +170,11 @@ inductively defined relation.)
 \end{align*}
 
 Turning back to the Join Theorem, I restated it in terms of the
-intersection type system. Instead of using the letter $\rho$ for
-environments, we shall switch to $\Gamma$ because they now contain
-types instead of values. \\
+intersection type system and rebranded it the Meet Theorem. Instead of
+using the letter $\rho$ for environments, we shall switch to $\Gamma$
+because they now contain types instead of values. \\
 
-\noindent \textbf{Theorem} (Intersection Introduction)\\
+\noindent \textbf{Theorem} (Meet)\\
   If $\Gamma \vdash e : A$, $\Gamma' \vdash e : B$, and $\Gamma \sim
   \Gamma'$, 
   then $\Gamma\sqcap\Gamma' \vdash e : A \sqcap B$. \\
@@ -598,7 +598,7 @@ $\lambda$-calculus is defined as follows.
 \begin{align*}
   \ESEM{n}\Gamma &= \UP{n} \\
   \ESEM{x}\Gamma &=  \IF x < |\Gamma| \THEN \UP{\Gamma[k]} \ELSE \emptyset \\
-  \ESEM{\lambda e }\Gamma &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\Gamma) \} \\
+  \ESEM{\lambda e }\Gamma &= \{ A \mid \WF{A} \text{ and } \FSEM{A}e\Gamma \} \\
   \ESEM{e_1\app e_2}\Gamma &= \left\{ C\, \middle| \exists A,B.\;
       \begin{array}{l}
       A \in \ESEM{e_1}\Gamma,
@@ -642,15 +642,14 @@ on $e$ and uses part 1.) \\
 
 \section{The Home Stretch}
 
-Now for the main event, the proof of the Join Theorem!  Though we'll
-rebrand it as the Meet Theorem, given our switch from values to
-intersection types.\\
+Now for the main event, the proof of the Meet Theorem! \\
 
 \noindent \textbf{Theorem} (Meet)\\
 If $A_1 \in \ESEM{e}\Gamma_1$, $A_2 \in \ESEM{e}\Gamma_2$,
 both $\Gamma_1$ and $\Gamma_2$ are well formed,
 and $\Gamma_1 \sim \Gamma_2$, \\
-then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$. \\[1ex]
+then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$ and
+  $\WF{A_1 \sqcap A_2}$. \\[1ex]
 %
 \textbf{Proof}
 We proceed by induction on $e$.
@@ -669,8 +668,132 @@ We proceed by induction on $e$.
   So we have $\WF{A_1 \sqcap A_2}$ and this case is finished.
 
 \item Case $e=\lambda e$: \\
+  We need to show that $\WF{A_1 \sqcap A_2}$ and
+  $\FSEM{A_1 \sqcap A_2}e(\Gamma_1\sqcap\Gamma_2)$.
+  For the later, it suffices to show that $A_1 \sim A_2$,
+  which we shall do by showing that their atoms are consistent.
+  Suppose $A'_1 \in \ATOMS{A_1}$ and $A'_2 \in \ATOMS{A_2}$.
+  Because $\FSEM{A_1}e\Gamma_1$ 
+  we have $A'_1 =A'_{11} \to A'_{12}$ and
+  $A'_{12} \in \ESEM{e}(A'_{11},\Gamma_1)$. Similarly,
+  from $\FSEM{A_2}e\Gamma_2$ we have
+  $A'_2 =A'_{21} \to A'_{22}$ and $A'_{22} \in \ESEM{e}(A'_{21},\Gamma_2)$.
+  We proceed by cases on whether $A'_{11} \sim A'_{21}$.
+  \begin{itemize}
+  \item Sub-case $A'_{11} \sim A'_{21}$:\\
+    By the induction hypothesis, we have
+    $\WF{A'_{12} \sqcap A'_{22}}$ from which we
+    have $A'_{12} \sim A'_{22}$ and therefore
+    $A'_{11}\to A'_{12} \sim A'_{21} \to A'_{22}$.
+    
+    %% \[
+    %%   A'_{12} \sqcap A'_{22} \in
+    %%   \ESEM{e}(A'_{11}\sqcap A'_{21},\Gamma_1 \sqcap \Gamma_2)
+    %%   \quad\text{and} \quad
+    %%   \WF{A'_{12} \sqcap A'_{22}}
+    %% \]
+    
+    
+  \item Sub-case $A'_{11} \not\sim A'_{21}$:\\
+      It immediately follows that $A'_{11}\to A'_{12} \sim A'_{21} \to A'_{22}$.
+  \end{itemize}
+
+  It remains to show $\FSEM{A_1 \sqcap A_2}e(\Gamma_1\sqcap\Gamma_2)$.
+  This follows from two uses of the Weakening Lemma to obtain
+  $\FSEM{A_1}e(\Gamma_1\sqcap\Gamma_2)$ and
+  $\FSEM{A_2}e(\Gamma_1\sqcap\Gamma_2)$.
+  
+\item Case $e = (e_1 \app e_2)$: \\
+  We have
+  \[
+  B_1 \in \ESEM{e_1}\Gamma_1 \quad
+  C_1 \in \ESEM{e_2}\Gamma_1 \quad
+  B_1 <: C_1 \to A_1 \quad
+  \WF{A_1}
+  \]
+  and
+  \[
+  B_2 \in \ESEM{e_1}\Gamma_2 \quad
+  C_2 \in \ESEM{e_2}\Gamma_2 \quad
+  B_2 <: C_2 \to A_2 \quad
+  \WF{A_2}
+  \]
+  By the induction hypothesis, we have
+  \[
+  B_1 \sqcap B_2 \in \ESEM{e_1}(\Gamma_1 \sqcap \Gamma_2)
+  \quad
+  \WF{B_1 \sqcap B_2}
+  \]
+  and
+  \[
+  C_1 \sqcap C_2 \in \ESEM{e_2}(\Gamma_1 \sqcap \Gamma_2)
+  \quad
+  \WF{C_1 \sqcap C_2}
+  \]
+  We obtain $A_1 \sim A_2$ by the Application Consistency Lemma,
+  and then by the Application Intersection Lemma we have
+  \[
+    B_1 \sqcap B_2 <: (C_1 \sqcap C_2) \to (A_1 \sqcap A_2)
+  \]
+  So we have $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1 \sqcap \Gamma_2)$.
+    
+  Also, from $A_1 \sim A_2$, $\WF{A_1}$, and $\WF{A_2}$, we conclude
+  that $\WF{A_1 \sqcap A_2}$.
+\item Case $e= f(e_1,e_2)$: \\
+  (This case is not very interesting. See the Isabelle proof
+   for the details.)
+
+ \item Case $e= \IF e_1 \THEN e_2 \ELSE e_3$: \\
+  (This case is not very interesting. See the Isabelle proof
+   for the details.)
   
 \end{itemize}
+
+I thought that the following Subsumption Theorem would be needed to
+prove the Meet Theorem, but it turned out not to be necessary, which
+is especially nice because the proof of the Subsumption Theorem turned
+out to depend on the Meet Theorem!\\
+
+\noindent \textbf{Theorem} (Subsumption)\\
+If $A \in \ESEM{e}\Gamma$, $A <: B$, and both $B$ and $\Gamma$ are
+well-formed, then $B \in \ESEM{e}\Gamma$. \\
+
+\noindent The proof is by induction on $e$ and all but the case
+$e=\lambda e'$ are straightforward. For that case, we use the
+following lemmas.\\
+
+\noindent \textbf{Lemma} (Distributivity for $\mathcal{F}$)\\
+If $\FSEM{(A \to B)\sqcap (C \to D)} e \Gamma$,
+$A \sim C$, and everything is well formed, then
+$\FSEM{(A\sqcap C) \to (B\sqcap D)} e \Gamma$.\\
+(The proof is direct, using the Meet Theorem
+and the Weakening Lemma.)\\
+
+\noindent \textbf{Lemma} ($\mathcal{F}$ and Intersections)\\
+Suppose $\Gamma_1$ is a non-empty sequence of well-formed and
+consistent function types.
+If $\FSEM{\bigsqcap \Gamma_1} e \Gamma_2$, then
+$\FSEM{\bigsqcap\mathrm{dom}(\Gamma_1) \to \bigsqcap \mathrm{cod}(\Gamma_1)}
+e \Gamma_2$. \\
+(The proof is by induction on $\Gamma_1$ and uses the previous lemma.)
+
+\section{Conclusion}
+
+This result can be viewed a couple ways. As discussed at the beginning
+of this post, establishing the Meet Theorem means that the this
+call-by-value denotational semantics respects $\beta$-equality for any
+terminating argument expression. This is useful in proving the
+correctness of a function inlining optimizer. Also, it would be
+straightforward to define a call-by-name (or need) version of the
+semantics that respects $\beta$-equality unconditionally.
+
+Secondly, from the viewpoint of intersection type systems, this result
+shows that, once we require types to be well formed (i.e. self
+consistent), we no longer need the intersection introduction rule
+because it is a consequence of having the subtyping rule for
+distributing intersections through function types.
+
+
 
 \end{document}
 

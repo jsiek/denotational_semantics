@@ -321,11 +321,11 @@ next
     have "determ v21 v22 e2 \<rho>1 \<rho>2" using EApp(2) by blast
     then have v22_e2: "v21 \<sqinter> v22 \<in> \<lbrakk>e2\<rbrakk>\<rho>1\<sqinter>\<rho>2" and wf_v21_v22: "wf_ty (v21 \<sqinter> v22)"
       using v21_e2 v22_e2 wf_r1 wf_r2 c_r1_r2 by auto
-    have f12_v21_v22: "v1 \<sqinter> v2 \<in> (f1 \<sqinter> f2) \<bullet> (v21 \<sqinter> v22)"
-      using inter_app[of v1 f1 v21 v2 f2 v22] f1_v21 f2_v22 wf_f12 wf_v21_v22 
-      by (metis CollectD consis_le consistent.simps(4) wf_ty_inter_inv)
     have v1_v2: "v1 ~ v2"
-      using consistent_app[of f1 f2 v21 v22 v1 v2] wf_f12 wf_v21_v22 f1_v21 f2_v22 by blast
+      using consistent_app[of f1 f2 v21 v22 v1 v2] wf_f12 wf_v21_v22 f1_v21 f2_v22 by blast        
+    have f12_v21_v22: "v1 \<sqinter> v2 \<in> (f1 \<sqinter> f2) \<bullet> (v21 \<sqinter> v22)"
+      using inter_app[of v1 f1 v21 v2 f2 v22] f1_v21 f2_v22 wf_f12 wf_v21_v22 v1_v2 wf_ty_inter_inv
+      by metis
     have wf_v1: "wf_ty v1" using f1_v21 by blast
     have wf_v2: "wf_ty v2" using f2_v22 by blast
     show "v1 \<sqinter> v2 \<in> \<lbrakk>EApp e1 e2\<rbrakk>\<rho>1 \<sqinter> \<rho>2 \<and> wf_ty (v1 \<sqinter> v2)"
