@@ -248,7 +248,7 @@ timing!  Furthermore, Olivier would be presenting the paper, titled
 \emph{Intersection Subtyping with Constructors}, at the Workshop on
 Intersection Types and Related System in Oxford on July 8, part of the
 Federated Logic Conference (FLOC). I was planning to attend FLOC
-anyways, for the DOMAINS workshop to celabrate Dana Scott's 85th
+anyways, for the DOMAINS workshop to celebrate Dana Scott's 85th
 birthday.
 
 Olivier's systems makes two important changes compared to prior work:
@@ -536,7 +536,7 @@ We proceed by cases on $C'$.
   
 \item Case $C'=C_1\sqcap C_2$:\\
   We already know that $C'$ is an atom, so we have a contradiction
-  and this case is vacously true.
+  and this case is vacuously true.
 \end{itemize}
 
 The next two lemmas follow from the Consistency and Subtyping Lemma
@@ -596,8 +596,8 @@ that are super-types of a given type.
 \]
 
 We shall represent variables with de Bruijn indices, so an environment
-$\Gamma$ is a sequence of types.  The denotational semantics of the CBV
-$\lambda$-calculus is defined as follows.
+$\Gamma$ is a sequence of types.  The denotational semantics of the
+call-by-value $\lambda$-calculus is defined as follows.
 \begin{align*}
   \ESEM{n}\Gamma &= \UP{n} \\
   \ESEM{x}\Gamma &=  \IF x < |\Gamma| \THEN \UP{\Gamma[k]} \ELSE \emptyset \\
@@ -801,4 +801,7 @@ distributing intersections through function types.
 
 %%  LocalWords:  denotationally ctx subexpression eq denot lrcl env
 %%  LocalWords:  iff Hah pdf subtyping contra distributivity BCD et
-%%  LocalWords:  Barendregt al Fundamenta Informaticae sequent
+%%  LocalWords:  Barendregt al Fundamenta Informaticae sequent Coq th
+%%  LocalWords:  FLOC Scott's Olivier's disjunction reflexivity dom
+%%  LocalWords:  subtype Denotational denotational de Bruijn indices
+%%  LocalWords:  Subsumption inlining
