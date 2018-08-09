@@ -310,7 +310,7 @@ by Olivier in his draft.\\
 
 The transitivity rule is the instance of cut elimination where
 $\Gamma_2 = A$ and both $\Gamma_1$ and $\Gamma_3$ are empty.
-  
+
 Unfortunately, I couldn't resist making changes to Olivier's subtyping
 system as I entered it into Isabelle, which cost me considerable time.
 Some of Olivier's lemmas show that the collection of types on the
@@ -368,78 +368,36 @@ on the triple $(n,k_1,k_2)$ where $n$ is the size of B, $k_1$ is the
 depth of the derivation of $\Gamma_2 \vdash B$, and $k_2$ is the depth
 of the derivation of $\Gamma_1,B,\Gamma_3 \vdash C$.
 
-
-\section{The Home Stretch}
-
-Armed with a good definition of intersection types, I turned back to
-the proof of the Join Theorem, but first I needed to adjust my
-denotational semantics to use intersection types. For this we'll need
-the definition of well formed types that we alluded to earlier.
-
-\begin{gather*}
-  \frac{}{\WF{n}}
-  \qquad
-  \frac{\WF{A} \quad \WF{B}}{\WF{A \to B}}
-  \qquad
-  \frac{A \sim B \quad \WF{A} \quad \WF{B}}{\WF{A \sqcap B}}
-\end{gather*}
-
-Here are some examples and non-examples of well-formed types.
-\begin{gather*}
-  \WF{4} \qquad \WF{3 \sqcap 3} \qquad \neg \WF{3 \sqcap 4} \\
-  \WF{(0\to 1) \sqcap (2 \to 3)} \qquad \neg \WF{(0 \to 1) \sqcap (0 \to 2)}
-\end{gather*}
-It is sometimes helpful to think of well-formed types in terms of the
-equivalence classes determined by subtype equivalence:
+We define subtyping as follows.
 \[
-A \approx B \quad = \quad
-  A <: B \text{ and } B <: A
-\]
-For example, we have $3 \approx (3 \sqcap 3)$, so they are
-in the same equivalence class and $3$ would be the representative.
-
-
-We also introduce the following notation for all the well-formed types
-that are super-types of a given type.
-\[
-   \UP{A} \quad = \quad \{ B\mid A <: B \text{ and } \WF{B} \}
+  A <: B \quad = \quad A \vdash B
 \]
 
-We shall represent variables with de Bruijn indices, so an environment
-$\Gamma$ is a sequence of types.  The denotational semantics of the CBV
-$\lambda$-calculus is defined as follows.
-\begin{align*}
-  \ESEM{n}\Gamma &= \UP{n} \\
-  \ESEM{x}\Gamma &=  \IF x < |\Gamma| \THEN \UP{\Gamma[k]} \ELSE \emptyset \\
-  \ESEM{\lambda e }\Gamma &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\Gamma) \} \\
-  \ESEM{e_1\app e_2}\Gamma &= \left\{ C\, \middle| \exists A,B.\;
-      \begin{array}{l}
-      A \in \ESEM{e_1}\Gamma,
-      B \in \ESEM{e_2}\Gamma,\\
-      A <: B \to C, \text{ and } \WF{C}
-      \end{array}
-        \right\} \\
-  \ESEM{f(e_1,e_2)}\Gamma &=
-      \left\{ C\, \middle| \begin{array}{l}
-       \exists A,B,n_1,n_2.\; A \in \ESEM{e_1}\Gamma, B \in \ESEM{e_2}\Gamma,\\
-      \qquad A <: n_1, B <: n_2, \SEM{f}(n_1,n_2) <: C, \WF{C} 
-      \end{array} \right\} \\
-  \ESEM{\IF e_1 \THEN e_2 \ELSE e_3}\Gamma &=
-    \left\{ B\, \middle| \exists A.\;
-    \begin{array}{l}A \in \ESEM{e_1}\Gamma, A <: n,\\
-           n = 0 \Rightarrow B \in \ESEM{e_3}\Gamma,\\
-           n \neq 0 \Rightarrow B \in \ESEM{e_2}\Gamma
-    \end{array}
-    \right\}
-    \\[2ex]
-    \intertext{where}
-   \FSEM{n}e\Gamma &= \mathit{false} \\
-   \FSEM{A \sqcap B}e \Gamma &= \FSEM{A}e\Gamma \text{ and } \FSEM{B}e\Gamma\\
-   \FSEM{A \to B}e \Gamma &= B \in \ESEM{e} (A, \Gamma)
-\end{align*}
+The BCD subtyping rules and other derived rules follow from the above
+lemmas.\\
 
+\noindent \textbf{Proposition} (Properties of Subtyping) 
+\begin{enumerate}
+\item $A <: A$.
+\item If $A <: B$ and $B <: C$, then $A <: C$. 
+\item If $C <: A$ and $B <: D$, then $A \to B <: C \to D$.
+\item If $A_1 <: B$, then $A_1 \sqcap A_2 <: B$.
+\item If $A_2 <: B$, then $A_1 \sqcap A_2 <: B$.
+\item If $B <: A_1$ and $B <: A_2$, then $B <: A_1 \sqcap A_2$.
+\item If $A <: C$ and $B <: D$, then $A \sqcap B <: C \sqcap D$.
+\item $(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)$.
+\item $(A \to C) \sqcap (B \to D) <: (A\sqcap B) \to (C \sqcap D)$
+\end{enumerate}
+  
 
-\noindent \textbf{Proposition} (Consistency is Symmetric and Reflexive) \\
+\section{Consistency and Subtyping, Resolved}
+
+Recall that my switch to intersection types was motivated by my
+failure to prove the Consistency and Subtyping Lemma.  We now return
+to the proof of that Lemma. We start with a handful of lemmas that are
+needed for that proof. \\
+
+\noindent \textbf{Lemma} (Consistency is Symmetric and Reflexive) 
 %
 \begin{enumerate}
 \item If $A \sim B$, then $B \sim A$.
@@ -488,7 +446,7 @@ types. We use the following abbreviations:
   \mathrm{cod}(\Gamma) &= \{ B \mid \exists A.\; A \to B \in \Gamma \}
 \end{align*}
 
-\noindent \textbf{Lemma} (Subtyping Inversion for Funcion Types)\\
+\noindent \textbf{Lemma} (Subtyping Inversion for Function Types)\\
 %
 If $C <: A \to B$, then there is a sequence of function types $\Gamma$
 such that
@@ -499,9 +457,6 @@ such that
 \end{enumerate}
 Note that item 2 above implies that $A <: \bigsqcap \mathrm{dom}(\Gamma)$.
 
-With the above lemmas, we are ready to prove the Consistency and
-Subtyping Lemma that previously stumped me.\\
-
 \noindent \textbf{Lemma} (Consistency and Subtyping)
 \begin{enumerate}
 \item  If $A \sim B$, $A <: C$, and $B <: D$,
@@ -510,7 +465,13 @@ Subtyping Lemma that previously stumped me.\\
 \end{enumerate}
 
 (1) The proof is by strong induction on the sum of the depths of $A$,
-$B$, $C$, and $D$. To show that $C \sim D$ it suffices to show that
+$B$, $C$, and $D$. We define the depth of a type as follows.
+\begin{align*}
+  \mathit{depth}(n) &= 0 \\
+  \mathit{depth}(A \to B) &= 1 + \mathrm{max}(\mathit{depth}(A),\mathit{depth}(B)) \\
+  \mathit{depth}(A \sqcap B) &= \mathrm{max}(\mathit{depth}(A),\mathit{depth}(B)) 
+\end{align*}
+To show that $C \sim D$ it suffices to show that
 all of their atoms are consistent. Suppose $C' \in \ATOMS{C}$
 and $D'\in\ATOMS{D}$. So we need to show that $C' \sim D'$.
 %Note that $A <: C'$ and $B <: D'$
@@ -577,7 +538,7 @@ We proceed by cases on $C'$.
 
 The next two lemmas follow from the Consistency and Subtyping Lemma
 and help prepare to prove the case for application in the Join
-Theorem.
+Theorem. \\
 
 \noindent \textbf{Lemma} (Application Consistency) \\
 %
@@ -593,8 +554,79 @@ $B_1 \sim B_2$, and $C_1 \sim C_2$, then
 $(A_1\sqcap A_2) <: (B_1 \sqcap B_2) \to (C_1 \sqcap C_2)$.\\
 (This lemma is proved directly, without induction.) \\
 
-We move on to the Weakening Lemma, which will be needed to prove the
-Join Theorem. \\
+
+\section{Updating the Denotational Semantics}
+
+Armed with the Consistency and Subtyping Lemma, I turned back to the
+proof of the Join Theorem, but first I needed to update my
+denotational semantics to use intersection types instead of
+values. For this we'll need the definition of well formed types that
+we alluded to earlier.
+
+\begin{gather*}
+  \frac{}{\WF{n}}
+  \qquad
+  \frac{\WF{A} \quad \WF{B}}{\WF{A \to B}}
+  \qquad
+  \frac{A \sim B \quad \WF{A} \quad \WF{B}}{\WF{A \sqcap B}}
+\end{gather*}
+
+Here are some examples and non-examples of well-formed types.
+\begin{gather*}
+  \WF{4} \qquad \WF{3 \sqcap 3} \qquad \neg \WF{3 \sqcap 4} \\
+  \WF{(0\to 1) \sqcap (2 \to 3)} \qquad \neg \WF{(0 \to 1) \sqcap (0 \to 2)}
+\end{gather*}
+It is sometimes helpful to think of well-formed types in terms of the
+equivalence classes determined by subtype equivalence:
+\[
+A \approx B \quad = \quad
+  A <: B \text{ and } B <: A
+\]
+For example, we have $3 \approx (3 \sqcap 3)$, so they are
+in the same equivalence class and $3$ would be the representative.
+
+
+We also introduce the following notation for all the well-formed types
+that are super-types of a given type.
+\[
+   \UP{A} \quad = \quad \{ B\mid A <: B \text{ and } \WF{B} \}
+\]
+
+We shall represent variables with de Bruijn indices, so an environment
+$\Gamma$ is a sequence of types.  The denotational semantics of the CBV
+$\lambda$-calculus is defined as follows.
+\begin{align*}
+  \ESEM{n}\Gamma &= \UP{n} \\
+  \ESEM{x}\Gamma &=  \IF x < |\Gamma| \THEN \UP{\Gamma[k]} \ELSE \emptyset \\
+  \ESEM{\lambda e }\Gamma &= \{ A \mid \WF{A} \text{ and } \FSEM{A}(e,\Gamma) \} \\
+  \ESEM{e_1\app e_2}\Gamma &= \left\{ C\, \middle| \exists A,B.\;
+      \begin{array}{l}
+      A \in \ESEM{e_1}\Gamma,
+      B \in \ESEM{e_2}\Gamma,\\
+      A <: B \to C, \text{ and } \WF{C}
+      \end{array}
+        \right\} \\
+  \ESEM{f(e_1,e_2)}\Gamma &=
+      \left\{ C\, \middle| \begin{array}{l}
+       \exists A,B,n_1,n_2.\; A \in \ESEM{e_1}\Gamma, B \in \ESEM{e_2}\Gamma,\\
+      \qquad A <: n_1, B <: n_2, \SEM{f}(n_1,n_2) <: C, \WF{C} 
+      \end{array} \right\} \\
+  \ESEM{\IF e_1 \THEN e_2 \ELSE e_3}\Gamma &=
+    \left\{ B\, \middle| \exists A.\;
+    \begin{array}{l}A \in \ESEM{e_1}\Gamma, A <: n,\\
+           n = 0 \Rightarrow B \in \ESEM{e_3}\Gamma,\\
+           n \neq 0 \Rightarrow B \in \ESEM{e_2}\Gamma
+    \end{array}
+    \right\}
+    \\[2ex]
+    \intertext{where}
+   \FSEM{n}e\Gamma &= \mathit{false} \\
+   \FSEM{A \sqcap B}e \Gamma &= \FSEM{A}e\Gamma \text{ and } \FSEM{B}e\Gamma\\
+   \FSEM{A \to B}e \Gamma &= B \in \ESEM{e} (A, \Gamma)
+\end{align*}
+
+It is easy to show that swapping in a ``super'' environment does not
+change the semantics.
 
 \noindent \textbf{Lemma} (Weakening)
 \begin{enumerate}
@@ -608,22 +640,36 @@ Join Theorem. \\
 (Part 1 is proved by induction on $A$. Part 2 is proved by induction
 on $e$ and uses part 1.) \\
 
-Now for the main event, the proof of the Join Theorem!
-Though we'll rebrand it as the Meet Theorem.\\
+\section{The Home Stretch}
+
+Now for the main event, the proof of the Join Theorem!  Though we'll
+rebrand it as the Meet Theorem, given our switch from values to
+intersection types.\\
 
 \noindent \textbf{Theorem} (Meet)\\
 If $A_1 \in \ESEM{e}\Gamma_1$, $A_2 \in \ESEM{e}\Gamma_2$,
 both $\Gamma_1$ and $\Gamma_2$ are well formed,
 and $\Gamma_1 \sim \Gamma_2$, \\
-then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$. \\
+then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$. \\[1ex]
 %
 \textbf{Proof}
 We proceed by induction on $e$.
 \begin{itemize}
-\item Case $e=x$:
-  We have $\Gamma_1[k] <: A_1$ and $\Gamma_2[k] <: A_2$.
+\item Case $e=k$ ($k$ is a de Bruijn index for a variable):\\
+  We have $\Gamma_1[k] <: A_1$ and $\Gamma_2[k] <: A_2$,
+  so $\Gamma_1[k] \sqcap \Gamma_2[k] <: A_1 \sqcap A_2$.
+  Also, because $\Gamma_1 \sim \Gamma_2$ we have
+  $\Gamma_1[k] \sim \Gamma_2[k]$ and therefore
+  $A_1 \sim A_2$, by the Consistency and Subtyping Lemma.
+  So we have $\WF{A_1 \sqcap A_2}$ and this case is finished.
+  
+\item Case $e=n$: \\
+  We have $n <: A_1$ and $n <: A_2$, so $n <: A_1 \sqcap A_2$.
+  Also, we have $A_1 \sim A_2$ by the Consistency and Subtyping Lemma.
+  So we have $\WF{A_1 \sqcap A_2}$ and this case is finished.
 
-  nts. $\Gamma_1[k] \sqcap \Gamma_2[k] <: A_1 \sqcap A_2$
+\item Case $e=\lambda e$: \\
+  
 \end{itemize}
 
 \end{document}
