@@ -110,7 +110,7 @@ We need to show that
    v \sqcup v' \sqsubseteq v''_4
 \]
 But here we have a problem. Given our definition of $\sqcup$ in terms
-of set union, there won't necissarily be a single entry in $f \sqcup
+of set union, there won't necessarily be a single entry in $f \sqcup
 f'$ that combines the information from both $v_3 \mapsto v_4$ and
 $v'_3 \mapsto v'_4$. After all, $f \sqcup f'$ contains all the entries
 of $f$ and all the entries of $f'$, but the set union operation does
@@ -129,7 +129,7 @@ correspondence goes as follows: values correspond to types,
 $\sqsubseteq$ corresponds to subtyping $<:$ (in reverse), and $\sqcup$
 corresponds to intersection $\sqcap$. The various intersection type
 systems primarily differ in their definitions of subtyping.  Given the
-above proof attempt, I figured that I would need usual
+above proof attempt, I figured that I would need the usual
 co/contra-variant rule for function types and also the following rule
 for distributing intersections over function types.
 \[
@@ -142,7 +142,8 @@ So I defined types as follows:
 \[
   A,B,C,D ::= n \mid A \to B \mid A \sqcap B
 \]
-and defined subtyping according to the BCD intersection type system.
+and defined subtyping according to the BCD intersection type system
+(\emph{Lambda Calculus with Types}, Barendregt et al. 2013).
 \begin{gather*}
 A <: A \qquad \frac{A <: B \quad B <: C}{A <: C} \\[2ex]
 A \sqcap B <: A \qquad
@@ -172,7 +173,7 @@ inductively defined relation.)
 \end{align*}
 
 Turning back to the Join Theorem, I restated it in terms of the
-intersection type system and rebranded it the Meet Theorem. Instead of
+intersection type system and re-branded it the Meet Theorem. Instead of
 using the letter $\rho$ for environments, we shall switch to $\Gamma$
 because they now contain types instead of values. \\
 
@@ -207,9 +208,9 @@ transitivity is given as a rule instead of proved as a theorem.  There
 are several reasons for this: a subtyping algorithm can't directly
 implement a transitivity rule (or any rule that is not syntax
 directed), reasoning by induction or cases (inversion) is more
-difficult, and it is redundant. Furthermore, the presense of the
-transitivity rule means that subtyping does not satisfy the subformula
-property. This term subformula property comes from logic, and means
+difficult, and it is redundant. Furthermore, the presence of the
+transitivity rule means that subtyping does not satisfy the sub-formula
+property. This term sub-formula property comes from logic, and means
 that a derivation (proof) of a formula only mentions propositions that
 are a part of the formulate to be proved. The transitivity rule breaks
 this property because the type $B$ comes out of nowhere, it is not
@@ -221,7 +222,7 @@ straightforward. But what I soon realized that the addition of the
 distributivity rule makes it significantly more difficult.  After
 trying and failing to prove transitivity for some time, I resorted to
 reading the literature. Unfortunately, it turns out that none of the
-published intersection type systems satisfied the subformula property
+published intersection type systems satisfied the sub-formula property
 and vast majority of them included the transitivity rule.  However,
 there was one paper that offered some hope.  In a 2012 article in
 Fundamenta Informaticae titled \emph{Intersection Types with Subtyping
@@ -240,7 +241,7 @@ Olivier. He replied,
 \begin{quote}
 ``Indeed! I now have two different sequent-calculus systems which are
   equivalent to BCD subtyping and satisfy the sub-formula property.  I
-  am currently writting a paper on this but it is not ready yet.''
+  am currently writing a paper on this but it is not ready yet.''
 \end{quote}
 and he attached the paper draft and the Coq mechanization. What great
 timing!  Furthermore, Olivier would be presenting the paper, titled
@@ -799,3 +800,5 @@ distributing intersections through function types.
 \end{document}
 
 %%  LocalWords:  denotationally ctx subexpression eq denot lrcl env
+%%  LocalWords:  iff Hah pdf subtyping contra distributivity BCD et
+%%  LocalWords:  Barendregt al Fundamenta Informaticae sequent
