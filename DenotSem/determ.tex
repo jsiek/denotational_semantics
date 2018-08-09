@@ -17,6 +17,7 @@
 \newcommand{\WF}[1]{\mathsf{wf}(#1)}
 \newcommand{\UP}[1]{\mathord{\uparrow} #1}
 \newcommand{\ATOMS}[1]{\mathit{atoms}(#1)}
+\newcommand{\sqinter}[0]{\bigsqcap}
 
 
 \title{Intersection Types, Sub-formula Property, and the Functional
@@ -76,6 +77,7 @@ published just this summer, concerning intersection types, the
 sub-formula property, and cut elimination by Olivier Laurent. In this
 blog post I'll try to recount the journey and describe the proof,
 hopefully remembering the challenges and motivations.
+Here is a tar ball of the mechanization in Isabelle and in pdf form.
 
 Many of the challenges revolved around the definitions of
 $\sqsubseteq$, consistency, and $\sqcup$. Given that I already had
@@ -282,12 +284,12 @@ intersection. The fifth rule is reflexivity for integers, and the last
 is the combined rule for function types.
 
 The combined rule for function types says that the intersection of a
-sequence of function types $\bigsqcap_{i=1\ldots n} (C_i\to D_i)$ is a
+sequence of function types $\sqinter_{i=1\ldots n} (C_i\to D_i)$ is a
 subtype of $A \to B$ if
 \[
-  A <: \bigsqcap_{i\in\{1\ldots n\}} C_i
+  A <: \sqinter_{i\in\{1\ldots n\}} C_i
   \qquad \text{and}\qquad
-  \bigsqcap_{i\in\{1\ldots n\}} D_i <: B
+  \sqinter_{i\in\{1\ldots n\}} D_i <: B
 \]
 Interestingly, the inversion principle for this rule is the
 $\beta$-sound property described in Chapter 14 of \emph{Lambda
@@ -453,9 +455,9 @@ such that
 \begin{enumerate}
 \item each element of $\Gamma$ is an atom of $C$,
 \item For every $D\to E \in \Gamma$, we have $A <: D$, and
-\item $\bigsqcap \mathrm{cod}(\Gamma) <: B$.
+\item $\sqinter \mathrm{cod}(\Gamma) <: B$.
 \end{enumerate}
-Note that item 2 above implies that $A <: \bigsqcap \mathrm{dom}(\Gamma)$.
+Note that item 2 above implies that $A <: \sqinter \mathrm{dom}(\Gamma)$.
 
 \noindent \textbf{Lemma} (Consistency and Subtyping)
 \begin{enumerate}
@@ -487,8 +489,8 @@ We proceed by cases on $C'$.
   We have $A <: C_1 \to C_2$, so by inversion we have
   some sequence of function types $\Gamma_1$ such that
   every element of $\Gamma_1$ is an atom of $A$,
-  $C_1 <: \bigsqcap \mathrm{dom}(\Gamma_1)$,
-  and $\bigsqcap \mathrm{cod}(\Gamma_1) <: C_2$.
+  $C_1 <: \sqinter \mathrm{dom}(\Gamma_1)$,
+  and $\sqinter \mathrm{cod}(\Gamma_1) <: C_2$.
 
   We also know that $D'$ is a function type, say $D'=D_1 \to D_2$.
   (This is because we have $A <: C'$, so we know that $A_1\to A_2 \in
@@ -499,27 +501,27 @@ We proceed by cases on $C'$.
   So by inversion on $B <: D_1 \to D_2$, we have
   some sequence of function types $\Gamma_2$ such that
   every element of $\Gamma_2$ is an atom of $B$,
-  $D_1 <: \bigsqcap \mathrm{dom}(\Gamma_2)$,
-  and $\bigsqcap \mathrm{cod}(\Gamma_2) <: D_2$.
+  $D_1 <: \sqinter \mathrm{dom}(\Gamma_2)$,
+  and $\sqinter \mathrm{cod}(\Gamma_2) <: D_2$.
 
   It's the case that either $C_1 \sim D_1$ or $C_1 \not\sim D_1$.
   \begin{itemize}
   \item Sub-case $C_1 \sim D_1$.\\
     It suffices to show that $C_2 \sim D_2$.
     By the induction hypothesis, we have
-    $\bigsqcap \mathrm{dom}(\Gamma_1) \sim \bigsqcap \mathrm{dom}(\Gamma_2)$.
+    $\sqinter \mathrm{dom}(\Gamma_1) \sim \sqinter \mathrm{dom}(\Gamma_2)$.
 
     As an intermediate step, we shall prove that
-    $\bigsqcap \mathrm{cod}(\Gamma_1) \sim \bigsqcap \mathrm{cod}(\Gamma_2)$,
+    $\sqinter \mathrm{cod}(\Gamma_1) \sim \sqinter \mathrm{cod}(\Gamma_2)$,
     which we shall do by showing that all their atoms are consistent.
-    Suppose $A' \in \ATOMS{\bigsqcap \mathrm{cod}(\Gamma_1)}$
-    and $B' \in \ATOMS{\bigsqcap \mathrm{cod}(\Gamma_2)}$.
+    Suppose $A' \in \ATOMS{\sqinter \mathrm{cod}(\Gamma_1)}$
+    and $B' \in \ATOMS{\sqinter \mathrm{cod}(\Gamma_2)}$.
     There is some $A_1\to A_2 \in \Gamma_1$ where $A' \in \ATOMS{A_2}$.
     Similarly, there is $B_1 \to B_2 \in \Gamma_2$ where $B' \in \ATOMS{B_2}$.
     Also, we have $A_1 \to A_2 \in \ATOMS{A}$ and $B_1 \to B_2 \in \ATOMS{B}$.
     Then because $A \sim B$, we have $A_1 \to A_2 \sim B_1 \to B_2$.
     Furthermore, we have $A_1 \sim B_1$ because
-    $\bigsqcap \mathrm{dom}(\Gamma_1) \sim \bigsqcap \mathrm{dom}(\Gamma_2)$,
+    $\sqinter \mathrm{dom}(\Gamma_1) \sim \sqinter \mathrm{dom}(\Gamma_2)$,
     so it must be the case that $A_2 \sim B_2$.
     Then because $A' \in \ATOMS{A_2}$ and $B' \in \ATOMS{B_2}$, we
     have $A' \sim B'$. Thus concludes this intermediate step.
@@ -619,7 +621,6 @@ $\lambda$-calculus is defined as follows.
     \end{array}
     \right\}
     \\[2ex]
-    \intertext{where}
    \FSEM{n}e\Gamma &= \mathit{false} \\
    \FSEM{A \sqcap B}e \Gamma &= \FSEM{A}e\Gamma \text{ and } \FSEM{B}e\Gamma\\
    \FSEM{A \to B}e \Gamma &= B \in \ESEM{e} (A, \Gamma)
@@ -772,8 +773,8 @@ and the Weakening Lemma.)\\
 \noindent \textbf{Lemma} ($\mathcal{F}$ and Intersections)\\
 Suppose $\Gamma_1$ is a non-empty sequence of well-formed and
 consistent function types.
-If $\FSEM{\bigsqcap \Gamma_1} e \Gamma_2$, then
-$\FSEM{\bigsqcap\mathrm{dom}(\Gamma_1) \to \bigsqcap \mathrm{cod}(\Gamma_1)}
+If $\FSEM{\sqinter \Gamma_1} e \Gamma_2$, then
+$\FSEM{\sqinter\mathrm{dom}(\Gamma_1) \to \sqinter \mathrm{cod}(\Gamma_1)}
 e \Gamma_2$. \\
 (The proof is by induction on $\Gamma_1$ and uses the previous lemma.)
 
