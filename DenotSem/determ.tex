@@ -602,9 +602,9 @@ call-by-value $\lambda$-calculus is defined as follows.
   \ESEM{n}\Gamma &= \UP{n} \\
   \ESEM{x}\Gamma &=  \IF x < |\Gamma| \THEN \UP{\Gamma[k]} \ELSE \emptyset \\
   \ESEM{\lambda e }\Gamma &= \{ A \mid \WF{A} \text{ and } \FSEM{A}e\Gamma \} \\
-  \ESEM{e_1\app e_2}\Gamma &= \left\{ C\, \middle| \exists A,B.\;
+  \ESEM{e_1\app e_2}\Gamma &= \left\{ C\, \middle| 
       \begin{array}{l}
-      A \in \ESEM{e_1}\Gamma,
+      \exists A,B.\; A \in \ESEM{e_1}\Gamma,
       B \in \ESEM{e_2}\Gamma,\\
       A <: B \to C, \text{ and } \WF{C}
       \end{array}
@@ -612,11 +612,11 @@ call-by-value $\lambda$-calculus is defined as follows.
   \ESEM{f(e_1,e_2)}\Gamma &=
       \left\{ C\, \middle| \begin{array}{l}
        \exists A,B,n_1,n_2.\; A \in \ESEM{e_1}\Gamma, B \in \ESEM{e_2}\Gamma,\\
-      \qquad A <: n_1, B <: n_2, \SEM{f}(n_1,n_2) <: C, \WF{C} 
+      A <: n_1, B <: n_2, \SEM{f}(n_1,n_2) <: C, \WF{C} 
       \end{array} \right\} \\
   \ESEM{\IF e_1 \THEN e_2 \ELSE e_3}\Gamma &=
-    \left\{ B\, \middle| \exists A.\;
-    \begin{array}{l}A \in \ESEM{e_1}\Gamma, A <: n,\\
+    \left\{ B\, \middle| 
+    \begin{array}{l}\exists A, n.\; A \in \ESEM{e_1}\Gamma, A <: n,\\
            n = 0 \Rightarrow B \in \ESEM{e_3}\Gamma,\\
            n \neq 0 \Rightarrow B \in \ESEM{e_2}\Gamma
     \end{array}
@@ -633,8 +633,9 @@ change the semantics.
 \noindent \textbf{Lemma} (Weakening)
 \begin{enumerate}
 \item If $\FSEM{A}e \Gamma_1$, $\Gamma_1 <: \Gamma_2$ and
-  $(\forall B \Gamma_1 \Gamma_2,\; B \in \ESEM{e}\Gamma_1, \Gamma_2 <: \Gamma_1
-  \Rightarrow B \in \ESEM{e}\Gamma_2)$, then
+  $(\forall B, \Gamma_1, \Gamma_2.\;
+     B \in \ESEM{e}\Gamma_1, \Gamma_2 <: \Gamma_1
+    \Rightarrow B \in \ESEM{e}\Gamma_2)$, then
   $\FSEM{A}e \Gamma_2$.
 \item If $A \in \ESEM{e}\Gamma_1$ and $\Gamma_2 <: \Gamma_1$,
   then $A \in \ESEM{e}\Gamma_2$.
