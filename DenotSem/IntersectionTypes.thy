@@ -16,6 +16,16 @@ abbreviation is_fun :: "ty \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<rightarrow>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
 abbreviation all_funs :: "ty set \<Rightarrow> bool" where
   "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> \<Gamma> \<longrightarrow> is_fun v"
+  
+fun fun_pred :: "ty \<Rightarrow> bool" where
+  "fun_pred (TNat n) = False" |
+  "fun_pred (A \<rightarrow> B) = True" |
+  "fun_pred (A \<sqinter> B) = (fun_pred A \<and> fun_pred B)"
+  
+fun entries :: "ty \<Rightarrow> (ty \<times> ty) set" where
+  "entries (TNat n) = {}" |
+  "entries (A \<rightarrow> B) = {(A,B)}" |
+  "entries (A \<sqinter> B) = entries A \<union> entries B" 
 
 section "Subtyping, Sequent Style"
   

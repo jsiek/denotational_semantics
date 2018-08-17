@@ -31,16 +31,6 @@ lemma inj_nat_sub: "wf_env \<rho> \<Longrightarrow>
   (inj_nat_ty n \<subseteq> Denot.E e \<rho>) = (\<exists> T. T \<in> Denot.E e \<rho> \<and> T <: TNat n)"
   apply auto using subsumption by (meson nat_wf_ty)
   
-fun fun_pred :: "ty \<Rightarrow> bool" where
-  "fun_pred (TNat n) = False" |
-  "fun_pred (A \<rightarrow> B) = True" |
-  "fun_pred (A \<sqinter> B) = (fun_pred A \<and> fun_pred B)"
-  
-fun entries :: "ty \<Rightarrow> (ty \<times> ty) set" where
-  "entries (TNat n) = {}" |
-  "entries (A \<rightarrow> B) = {(A,B)}" |
-  "entries (A \<sqinter> B) = entries A \<union> entries B" 
-
 lemma f_lam: "fun_pred f \<Longrightarrow> F f e \<rho> = (\<forall> v v'. (v,v') \<in> entries f \<longrightarrow> v' \<in> Denot.E e (v#\<rho>))"
   by (induction f) auto
 
