@@ -7,7 +7,7 @@ text{*
 *}  
   
 inductive reduce :: "exp \<Rightarrow> exp \<Rightarrow> bool" (infix "\<longrightarrow>" 55) where
-  beta[intro!]: "EApp (ELam e) e' \<longrightarrow> \<up> (-1) 0 ([0 \<mapsto> e'] e)" |
+  beta[intro!]: "EApp (ELam e) e' \<longrightarrow> ([0 \<mapsto> e'] e)" |
   lam_cong[intro!]: "e \<longrightarrow> e' \<Longrightarrow> ELam e \<longrightarrow> ELam e'" |
   app_left[intro!]: "\<lbrakk> e1 \<longrightarrow> e1' \<rbrakk> \<Longrightarrow> EApp e1 e2 \<longrightarrow> EApp e1' e2" |
   app_right[intro!]: "\<lbrakk> e2 \<longrightarrow> e2' \<rbrakk> \<Longrightarrow> EApp e1 e2 \<longrightarrow> EApp e1 e2'" |
