@@ -52,7 +52,10 @@ interpretation simple_model: lambda_graph_model DenotFSet.E val_le VNat simple_a
     apply simp apply (rule Collect_cong) apply (rule iffI) 
      apply blast using val_le.simps apply auto[1]
   using val_le.simps apply auto[1] 
-  by (smt Collect_cong DenotFSet.Elam fun_entries.simps(2) is_fun_val.elims(2) is_fun_val.simps(2))
+  apply simp apply (rule Collect_cong) apply (rule iffI) 
+  using fun_entries.simps(2) is_fun_val.simps(2) apply blast
+  using fun_entries.simps(2) is_fun_val.elims(2) by force
+
     
   
 end
