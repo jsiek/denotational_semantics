@@ -5,7 +5,7 @@ begin
 locale model_base =
   fixes D :: "exp \<Rightarrow> 'a list \<Rightarrow> 'a set" and le :: "'a \<Rightarrow> 'a \<Rightarrow> bool" (infix "\<lesssim>" 55) and
     inj_nat :: "nat \<Rightarrow> 'a" and app :: "'a \<Rightarrow> 'a \<Rightarrow> 'a set" and wf:: "'a \<Rightarrow> bool" and
-    is_fun :: "'a \<Rightarrow> bool" and entries :: "'a \<Rightarrow> ('a \<times> 'a) set"
+    is_fun :: "'a \<Rightarrow> bool" and entries :: "'a \<Rightarrow> ('a \<times> 'a) fset"
 begin
   
 definition wf_env :: "'a list \<Rightarrow> bool" where
@@ -17,14 +17,15 @@ locale lambda_graph_model = model_base +
   assumes d_var: "D (EVar x) \<rho> = (if x < length \<rho> then {\<rho>!x} else {})" and
     d_nat: "D (ENat n) \<rho> = {inj_nat n}" and
     d_lam: "D (ELam e) \<rho> = { f. wf f \<and> is_fun f 
-              \<and> (\<forall> v v'. (v,v') \<in> entries f \<longrightarrow> (\<exists>v''. v'' \<in> D e (v#\<rho>) \<and> v' \<lesssim> v''))}" and
+              \<and> (\<forall> v v'. (v,v') |\<in>| entries f \<longrightarrow> (\<exists>v''. v'' \<in> D e (v#\<rho>) \<and> v' \<lesssim> v''))}" and
     d_app: "D (EApp e1 e2) \<rho> = {v'. \<exists> f v. f \<in> D e1 \<rho> \<and> v \<in> D e2 \<rho> \<and> v' \<in> app f v }" and
     d_prim: "D (EPrim f e1 e2) \<rho> = {v. wf v \<and> (\<exists> v1 v2 n1 n2. v1 \<in> D e1 \<rho> \<and> v2 \<in> D e2 \<rho> 
             \<and> inj_nat n1 \<lesssim> v1 \<and> inj_nat n2 \<lesssim> v2 \<and> v \<lesssim> inj_nat (f n1 n2))}" and
     d_if: "D (EIf e1 e2 e3) \<rho> = {v. \<exists> v1 n1. v1 \<in> D e1 \<rho> \<and> inj_nat n1 \<lesssim> v1 \<and>
           (n1 = 0 \<longrightarrow> v \<in> D e3 \<rho>) \<and> (n1 \<noteq> 0 \<longrightarrow> v \<in> D e2 \<rho>) }"
     
-interpretation intersection_model: lambda_graph_model DenotAlt.D "(\<lambda>a b. (b::ty) <: a)" TNat fun_app wf_ty fun_pred entries
+interpretation intersection_model:
+  lambda_graph_model DenotAlt.D "(\<lambda>a b. (b::ty) <: a)" TNat fun_app wf_ty fun_pred entries
   apply unfold_locales apply force+ done
     
   
@@ -32,15 +33,15 @@ abbreviation up_val :: "val \<Rightarrow> val set" where
   "up_val v \<equiv> {v'. v' \<sqsubseteq> v}" 
   
 abbreviation simple_apply :: "val \<Rightarrow> val \<Rightarrow> val set" where
-  "simple_apply v1 v2 \<equiv> { v3. \<exists> f v2' v3'. v1 = VFun f \<and> (v2', v3') \<in> fset f \<and> v2' \<sqsubseteq> v2 \<and> v3 \<sqsubseteq> v3' }"
-  
+  "simple_apply v1 v2 \<equiv> { v3. \<exists>f v2' v3'. v1=VFun f \<and> (v2',v3') |\<in>| f \<and> v2' \<sqsubseteq> v2 \<and> v3 \<sqsubseteq> v3' }"
+
 fun is_fun_val :: "val \<Rightarrow> bool" where
   "is_fun_val (VNat n) = False" |
   "is_fun_val (VFun f) = True"
   
-fun fun_entries :: "val \<Rightarrow> (val \<times> val) set" where
-  "fun_entries (VNat n) = {}" |
-  "fun_entries (VFun f) = fset f"
+fun fun_entries :: "val \<Rightarrow> (val \<times> val) fset" where
+  "fun_entries (VNat n) = {||}" |
+  "fun_entries (VFun f) = f"
   
 interpretation simple_model: lambda_graph_model DenotFSet.E val_le VNat simple_apply 
   "\<lambda>v. True" is_fun_val fun_entries
@@ -48,13 +49,13 @@ interpretation simple_model: lambda_graph_model DenotFSet.E val_le VNat simple_a
        apply force
       apply force
      defer
-     apply force
+     apply simp apply (smt Collect_cong notin_fset)   
     apply simp apply (rule Collect_cong) apply (rule iffI) 
      apply blast using val_le.simps apply auto[1]
   using val_le.simps apply auto[1] 
   apply simp apply (rule Collect_cong) apply (rule iffI) 
-  using fun_entries.simps(2) is_fun_val.simps(2) apply blast
-  using fun_entries.simps(2) is_fun_val.elims(2) by force
+  apply (metis fun_entries.simps(2) is_fun_val.simps(2) notin_fset)
+  by (metis fun_entries.simps(2) is_fun_val.elims(2) notin_fset)
 
 lemma nth_append_less: "n < length xs \<Longrightarrow> (xs @ ys)!n = xs!n"  
   using nth_append[of xs ys n] by simp
@@ -67,7 +68,7 @@ begin
 
 definition lam :: "('a \<Rightarrow> 'a set) \<Rightarrow> 'a set" where
   "lam G = { f. wf f \<and> is_fun f 
-              \<and> (\<forall> v v'. (v,v') \<in> entries f \<longrightarrow> (\<exists>v''. v'' \<in> G v \<and> v' \<lesssim> v''))}"
+              \<and> (\<forall> v v'. (v,v') |\<in>| entries f \<longrightarrow> (\<exists>v''. v'' \<in> G v \<and> v' \<lesssim> v''))}"
 
 lemma lambda_def[simp]: "D (ELam e) \<rho> = lam (\<lambda>v. D e (v # \<rho>))"
   unfolding lam_def using d_lam by blast
@@ -119,6 +120,17 @@ next
   finally show ?case by blast       
 qed (auto simp: d_nat d_app d_prim d_if)
 
+thm Set.set_eqI
+
+lemma sem_subst_lam:
+  fixes f::'a
+  assumes IH: "(\<Union>v\<in>D e' \<rho>\<^sub>2. D e (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)) = D ([length \<rho>\<^sub>1\<mapsto>\<up> (length \<rho>\<^sub>1) 0 e']e) (\<rho>\<^sub>1 @ \<rho>\<^sub>2)" 
+  shows "(f \<in> (\<Union>v\<in>D e' \<rho>\<^sub>2. D (\<lambda> e) (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)))
+        = (f \<in> D ([length \<rho>\<^sub>1\<mapsto>\<up> (length \<rho>\<^sub>1) 0 e']\<lambda> e) (\<rho>\<^sub>1 @ \<rho>\<^sub>2))" using IH
+    apply (induction f)
+    
+sorry
+  
 lemma sem_subst:
   assumes ne_ep: "D e' \<rho>\<^sub>2 \<noteq> {}"
   shows "(\<Union>v\<in> D e' \<rho>\<^sub>2. D e (\<rho>\<^sub>1@v#\<rho>\<^sub>2)) = D (([length \<rho>\<^sub>1 \<mapsto> (\<up> (length \<rho>\<^sub>1) 0 e')] e)) (\<rho>\<^sub>1@\<rho>\<^sub>2)" using ne_ep
@@ -164,11 +176,23 @@ next
   then show ?case using d_nat by auto
 next
   case (ELam e)
+  show ?case
+  proof (rule set_eqI)
+    fix f
+    show "(f \<in> (\<Union>v\<in>D e' \<rho>\<^sub>2. D (\<lambda> e) (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)))
+        = (f \<in> D ([length \<rho>\<^sub>1\<mapsto>\<up> (length \<rho>\<^sub>1) 0 e']\<lambda> e) (\<rho>\<^sub>1 @ \<rho>\<^sub>2))"
+      sorry
+  qed    
+(*    
   let ?n = "length \<rho>\<^sub>1" and ?m = "length \<rho>\<^sub>2"  
 
   have "(\<Union>v\<in>D e' \<rho>\<^sub>2. D (\<lambda> e) (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)) 
                  = (\<Union>v\<in>D e' \<rho>\<^sub>2. lam (\<lambda>d. D e (d # \<rho>\<^sub>1 @ v # \<rho>\<^sub>2)))" by simp
-  also have "... = lam (\<lambda>d. D ([Suc ?n\<mapsto>\<up> (Suc ?n) 0 e']e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2))"
+  also have "... = lam (\<lambda>d. D ([Suc ?n\<mapsto>\<up> (Suc ?n) 0 e']e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2))" 
+  proof (rule set_eqI)
+    fix f
+    
+    
   proof -
     { fix G H
       have "(\<Union>v\<in>D e' \<rho>\<^sub>2. lam (\<lambda>d. G d v)) = lam (\<lambda>d. H d)" sorry 
@@ -188,6 +212,7 @@ next
   qed
   also have "... = D ([?n\<mapsto>\<up> ?n 0 e']\<lambda> e) (\<rho>\<^sub>1 @ \<rho>\<^sub>2)" by simp     
   finally show ?case by simp
+*)
 next
   case (EApp e1 e2)
   then show ?case using d_app sorry

@@ -5,7 +5,7 @@ begin
 fun D :: "exp \<Rightarrow> ty list \<Rightarrow> ty set" where
   Enat: "D (ENat n) \<rho> = {TNat n}" |
   Evar: "D (EVar k) \<rho> = (if k < length \<rho> then {\<rho>!k} else {})" |
-  Elam: "D (ELam e) \<rho> = { f. wf_ty f \<and> fun_pred f \<and> (\<forall> v v'. (v,v') \<in> entries f \<longrightarrow>
+  Elam: "D (ELam e) \<rho> = { f. wf_ty f \<and> fun_pred f \<and> (\<forall> v v'. (v,v') |\<in>| entries f \<longrightarrow>
    (\<exists>v''. v'' \<in> D e (v#\<rho>) \<and> v'' <: v')) }" |
   Eapp: "D (EApp e1 e2) \<rho> = { v'. \<exists> f v. f \<in> D e1 \<rho> \<and> v \<in> D e2 \<rho> \<and> v' \<in> f \<bullet> v }" | 
   Eprim: "D (EPrim f e1 e2) \<rho> = { v. \<exists> v1 v2 n1 n2. v1 \<in> D e1 \<rho> 
@@ -13,13 +13,13 @@ fun D :: "exp \<Rightarrow> ty list \<Rightarrow> ty set" where
   Eif: "D (EIf e1 e2 e3) \<rho> = { v. \<exists> v1 n. v1 \<in> D e1 \<rho> \<and> v1 <: TNat n
          \<and> (n = 0 \<longrightarrow> v \<in> D e3 \<rho>) \<and> (n \<noteq> 0 \<longrightarrow> v \<in> D e2 \<rho>) }"
 
-lemma f_lam: "fun_pred f \<Longrightarrow> F f e \<rho> = (\<forall> v v'. (v,v') \<in> entries f \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk> (v#\<rho>))"
+lemma f_lam: "fun_pred f \<Longrightarrow> F f e \<rho> = (\<forall> v v'. (v,v') |\<in>| entries f \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk> (v#\<rho>))"
   by (induction f) auto
 
 lemma f_fun_pred: "F f e \<rho> \<Longrightarrow> fun_pred f"
   by (induction f) auto
 
-lemma wf_entries: "\<lbrakk> wf_ty A; (v,v') \<in> entries A \<rbrakk> \<Longrightarrow> wf_ty v \<and> wf_ty v'"
+lemma wf_entries: "\<lbrakk> wf_ty A; (v,v') |\<in>| entries A \<rbrakk> \<Longrightarrow> wf_ty v \<and> wf_ty v'"
   apply (induction A arbitrary: v v') apply force apply force apply force done
 
 lemma extend_wf_env: "\<lbrakk> wf_env \<rho>; wf_ty v \<rbrakk> \<Longrightarrow> wf_env (v#\<rho>)"
@@ -53,12 +53,12 @@ theorem d_e: "wf_env \<rho> \<Longrightarrow> \<lbrakk>e\<rbrakk>\<rho> = {B. \<
       apply clarify
       apply blast
      apply clarify 
-     apply (subgoal_tac "F A e \<rho> = (\<forall> v v'. (v,v') \<in> entries A \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk> (v#\<rho>))") prefer 2
+     apply (subgoal_tac "F A e \<rho> = (\<forall> v v'. (v,v') |\<in>| entries A \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk> (v#\<rho>))") prefer 2
       apply (rule f_lam) apply blast
      apply (subgoal_tac "F A e \<rho>")       
       apply (rule subsumption_fun) apply assumption apply assumption apply assumption
         apply assumption apply assumption apply clarify apply (meson subsumption)
-     apply (subgoal_tac "\<forall> v v'. (v,v') \<in> entries A \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk> (v#\<rho>)") apply blast
+     apply (subgoal_tac "\<forall> v v'. (v,v') |\<in>| entries A \<longrightarrow> v' \<in> \<lbrakk>e\<rbrakk> (v#\<rho>)") apply blast
      apply (metis (no_types, lifting) extend_wf_env mem_Collect_eq wf_entries)
     -- "app"
     apply simp apply (rule Collect_cong) apply (rule iffI) 
@@ -87,5 +87,4 @@ theorem d_e: "wf_env \<rho> \<Longrightarrow> \<lbrakk>e\<rbrakk>\<rho> = {B. \<
    apply (meson Suc_neq_Zero sub_trans zero_less_Suc)
   by blast
 
-         
 end
