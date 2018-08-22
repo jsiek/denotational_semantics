@@ -65,6 +65,13 @@ lemma nth_append_greater: "length xs \<le> n \<Longrightarrow> (xs @ ys)!n = ys!
 context lambda_graph_model
 begin
 
+definition lam :: "('a \<Rightarrow> 'a set) \<Rightarrow> 'a set" where
+  "lam G = { f. wf f \<and> is_fun f 
+              \<and> (\<forall> v v'. (v,v') \<in> entries f \<longrightarrow> (\<exists>v''. v'' \<in> G v \<and> v' \<lesssim> v''))}"
+
+lemma lambda_def[simp]: "D (ELam e) \<rho> = lam (\<lambda>v. D e (v # \<rho>))"
+  unfolding lam_def using d_lam by blast
+  
 lemma sem_shift: "D e (\<rho>\<^sub>1@\<rho>\<^sub>3) = D (shift (length \<rho>\<^sub>2) (length \<rho>\<^sub>1) e) (\<rho>\<^sub>1 @ \<rho>\<^sub>2 @ \<rho>\<^sub>3)" 
 proof (induction e arbitrary: \<rho>\<^sub>1 \<rho>\<^sub>2 \<rho>\<^sub>3)
   case (EVar x)
@@ -100,14 +107,16 @@ proof (induction e arbitrary: \<rho>\<^sub>1 \<rho>\<^sub>2 \<rho>\<^sub>3)
   qed
 next
   case (ELam e)
-  let ?n = "length \<rho>\<^sub>1" and ?m = "length \<rho>\<^sub>2"
-  have 1: "\<And> d. D e (d#\<rho>\<^sub>1@\<rho>\<^sub>3) = D (shift ?m (Suc ?n) e) (d#\<rho>\<^sub>1@\<rho>\<^sub>2@\<rho>\<^sub>3)"
+  let ?n = "length \<rho>\<^sub>1" and ?m = "length \<rho>\<^sub>2"  
+  have "D (\<lambda> e) (\<rho>\<^sub>1 @ \<rho>\<^sub>3) = lam (\<lambda>d. D e (d # \<rho>\<^sub>1 @ \<rho>\<^sub>3))" by simp
+  also have "... = lam (\<lambda>d. D (\<up> ?m (Suc ?n) e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2 @ \<rho>\<^sub>3))"
   proof -
-    fix d
-    show "D e (d#\<rho>\<^sub>1@\<rho>\<^sub>3) = D (shift ?m (Suc ?n) e) (d#\<rho>\<^sub>1@\<rho>\<^sub>2@\<rho>\<^sub>3)" using ELam[of "d#\<rho>\<^sub>1" \<rho>\<^sub>3 \<rho>\<^sub>2]
-      by simp
+    { fix d have "D e (d#\<rho>\<^sub>1@\<rho>\<^sub>3) = D (\<up> ?m (Suc ?n) e) (d#\<rho>\<^sub>1@\<rho>\<^sub>2@\<rho>\<^sub>3)"
+        using ELam[of "d#\<rho>\<^sub>1" \<rho>\<^sub>3 \<rho>\<^sub>2] by simp }
+    thus ?thesis by simp    
   qed
-  from 1 show ?case using d_lam by simp       
+  also have "... = D (\<up> ?m ?n (\<lambda> e)) (\<rho>\<^sub>1 @ \<rho>\<^sub>2 @ \<rho>\<^sub>3)" by simp
+  finally show ?case by blast       
 qed (auto simp: d_nat d_app d_prim d_if)
 
 lemma sem_subst:
@@ -130,7 +139,7 @@ proof (induction e arbitrary: \<rho>\<^sub>1 \<rho>\<^sub>2)
     show ?thesis
     proof (cases "x = length \<rho>\<^sub>1")
       case True
-      have "(\<Union>v\<in>D e' \<rho>\<^sub>2. D (EVar x) (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)) = (\<Union>x\<in>D e' \<rho>\<^sub>2. {x})"
+      have "(\<Union>v\<in>D e' \<rho>\<^sub>2. D (EVar x) (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)) = (\<Union>v\<in>D e' \<rho>\<^sub>2. {v})"
         using EVar True d_var by simp
       also have "... = D e' \<rho>\<^sub>2" by simp
       also have "... = D (shift (length \<rho>\<^sub>1) 0 e') (\<rho>\<^sub>1 @ \<rho>\<^sub>2)" using sem_shift[of e' "[]"] by simp
@@ -155,7 +164,30 @@ next
   then show ?case using d_nat by auto
 next
   case (ELam e)
-  then show ?case sorry
+  let ?n = "length \<rho>\<^sub>1" and ?m = "length \<rho>\<^sub>2"  
+
+  have "(\<Union>v\<in>D e' \<rho>\<^sub>2. D (\<lambda> e) (\<rho>\<^sub>1 @ v # \<rho>\<^sub>2)) 
+                 = (\<Union>v\<in>D e' \<rho>\<^sub>2. lam (\<lambda>d. D e (d # \<rho>\<^sub>1 @ v # \<rho>\<^sub>2)))" by simp
+  also have "... = lam (\<lambda>d. D ([Suc ?n\<mapsto>\<up> (Suc ?n) 0 e']e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2))"
+  proof -
+    { fix G H
+      have "(\<Union>v\<in>D e' \<rho>\<^sub>2. lam (\<lambda>d. G d v)) = lam (\<lambda>d. H d)" sorry 
+    }
+    { fix d::'a
+      have "(\<Union>v\<in>D e' \<rho>\<^sub>2. D e (d # \<rho>\<^sub>1 @ v # \<rho>\<^sub>2)) = D ([Suc ?n\<mapsto>\<up> (Suc ?n) 0 e']e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2)"        
+        using ELam.IH[of \<rho>\<^sub>2 "d#\<rho>\<^sub>1"] ELam.prems by simp }
+    then have 1: "(\<Union>v\<in>D e' \<rho>\<^sub>2. lam (\<lambda>d. D e (d # \<rho>\<^sub>1 @ v # \<rho>\<^sub>2)))
+      \<subseteq> lam (\<lambda>d. D ([Suc (length \<rho>\<^sub>1)\<mapsto>\<up> (Suc (length \<rho>\<^sub>1)) 0 e']e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2))"
+      unfolding lam_def by fastforce
+    have 2: "lam (\<lambda>d. D ([Suc (length \<rho>\<^sub>1)\<mapsto>\<up> (Suc (length \<rho>\<^sub>1)) 0 e']e) (d # \<rho>\<^sub>1 @ \<rho>\<^sub>2))
+      \<subseteq> (\<Union>v\<in>D e' \<rho>\<^sub>2. lam (\<lambda>d. D e (d # \<rho>\<^sub>1 @ v # \<rho>\<^sub>2)))"
+      unfolding lam_def apply auto
+        
+      sorry
+    show ?thesis using 1 2 by blast
+  qed
+  also have "... = D ([?n\<mapsto>\<up> ?n 0 e']\<lambda> e) (\<rho>\<^sub>1 @ \<rho>\<^sub>2)" by simp     
+  finally show ?case by simp
 next
   case (EApp e1 e2)
   then show ?case using d_app sorry
