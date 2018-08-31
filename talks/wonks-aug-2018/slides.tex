@@ -260,169 +260,54 @@ moredelim=[is][\color{blue}]{~}{~},
 
 \frame{
 
-\begin{tabular}{ll} 
-\begin{minipage}{0.45\textwidth}
+%% \begin{tabular}{ll} 
+%% \begin{minipage}{0.45\textwidth}
 \centering
-\large Back to the Future  \\ 
-with Denotational Semantics \\[2ex]
+\large Intersection Types, Sub-formula Property, and  \\ 
+   the Functional Character of the Lambda Calculus \\[2ex]
 \normalsize Jeremy G. Siek \\
 Indiana University\\[2ex]
-Off the Beaten Track \\
-January 2018
-\end{minipage}
-&
-\begin{minipage}{0.45\textwidth}
-\includegraphics[height=3in]{btf}
-\end{minipage}
-\end{tabular}
+PL Wonks \\
+August 2018
+%% \end{minipage}
+%% &
+%% \begin{minipage}{0.45\textwidth}
+%% \includegraphics[height=3in]{btf}
+%% \end{minipage}
+%% \end{tabular}
 
 }
 %===============================================================================
-
 \frame{
-  \frametitle{Operational vs. Denotational Semantics}
 
-  \vspace{10pt}
-  Folk knowledge tells us:
-  \begin{center}
-  \begin{tabular}{l|c|c}
-                                 & Operational & Denotational \\ \hline\hline
-    Specify External Behavior   &  & \checkmark \\\hline
-    Compositional                &  & \checkmark \\\hline
-    Simple                       & \checkmark & \\\hline
-    Easily Extensible                   & \checkmark &  \\\hline
-  \end{tabular}
-  \end{center}
-
-  \vspace{20pt}
-  
-  \begin{quote}
-    When I think of the number of headaches I have caused people
-    in Computer Science who have tried to figure out ... domains, I have
-    to cringe.  --- Dana Scott, 1982.
-  \end{quote}
-
-  \vspace{20pt}
-
-  \begin{center}
-  But can denotational semantics be simple?
-  \end{center}
-  
-}
-%===============================================================================
-
-\frame{
-  \frametitle{A Bit of History Relevant to this Talk}
-
-  \begin{center}\scriptsize
-  \xymatrix@=6pt{
-    \text{\bf Operational Semantics} & \text{\bf Denotational Semantics} & \text{\bf Type Systems}\\
-    *+[F]{\txt{$\lambda$-conversion \\ Church '32}}\ar[d] \ar@/_40pt/[ddd] &
-    &
-    *+[F]{\txt{Functionality in CL \\ Curry '34}} \ar[dd]\\
-%    && *+[F]{\txt{Simple Theory of Types \\ Church ('40)}}\\
-    *+[F]{\txt{SECD machine\\
-          Landin '64}}  
-    %% *+[F]{\txt{Contextual Equivalence\\
-    %%     Morris '68}} \\
- &   *+[F]{\txt{$D_{\infty}$ \\
-           Scott '69}} 
- & \\
-%    
- & *+[F]{\color{red}\txt{Graph Models \\
-           Plotkin '72, Scott '76, Engeler '81}} \ar@/_60pt/[dddd] 
- & *+[F]{\color{red}\txt{Intersection Types\\
-        Coppo, Dezani, Salle '78}} \ar@/^10pt/[dl] \ar@/^30pt/[ddddl] \\
-    *+[F]{\txt{SOS \\
-        Plotkin '81}} \ar[dd]
-    &  *+[F]{\color{red}\txt{Filter Models\\
-        Barendregt et al. '83}} 
-    & \\
-%    
-    & *+[F]{\txt{Semantics of Scheme \\
-        Rees \& Clinger '86}} \\
-    *+[F]{\txt{Syntactic Type Soundness\\
-          Wright \& Felleisen '94}} \ar[d] \\
-    %% *+[F]{\txt{Featherweight Java\\
-    %%     Igarashi et al. '99}} \ar[d] \\
-    *+[F]{\txt{Verified C Compiler\\
-          Leroy 2009}}
-    & *+[F]{\color{red}\txt{Revisiting Elementary Semantics\\
-        Siek 2017}}
-  }
-  \end{center}
-  
 }
 
 %===============================================================================
 
 \frame{
 \frametitle{Outline}
-
 \begin{itemize}
-\item A \textbf{simple} semantics of CBV $\lambda$-calculus in two
-  forms:\\ relational and denotational
-\item Plotkin, Scott, and Engeler's models of the $\lambda$-calculus
-\item Application to proving correctness of an inliner
+\item ...
 \end{itemize}
 }
 
 
-
-%===============================================================================
-
-%% \frame{
-%% \frametitle{A Simple Semantics of IMP (Dec. 8, 2016)}
-
-%% \[
-%% \begin{array}{rcl}
-%%  c & ::= & \mathtt{skip} \mid x := e \mid c ; c 
-%%    \mid \mathtt{if}\;e\;\mathtt{then}\;c\;\mathtt{else}\;c 
-%%    \mid \mathtt{while}\;e\;\mathtt{do}\;c
-%% \end{array}
-%% \]
-%% \begin{align*}
-%%   \mathcal{C} & : \mathsf{Com} \to \mathcal{P}(\mathsf{State} \times \mathsf{State}) \\
-%%   \CC{\mathtt{skip}} &= \{ (\sigma,\sigma) \mid \sigma \in \mathsf{State} \} \\
-%%   \CC{x := e} &= \{ (\sigma, \sigma(x:= \EE{e}{\sigma})) \mid \sigma \in \mathsf{State} \} \\
-%%   & \dots \\
-%%  \CC{\mathtt{while}\, e \,\mathtt{do}\, c} &= \
-%%     \{ (\sigma,\sigma') \mid  \EE{e}{},\CC{c} \vdash \sigma \leadsto \sigma' \}
-%% \end{align*}
-
-%% \begin{gather*}
-%%   \inference{de(\sigma) = 0}
-%%             {de,dc \vdash \sigma \leadsto \sigma}
-%% \quad
-%%   \inference{de(\sigma_1) \neq 0 \\ (\sigma_1,\sigma_2) \in dc &
-%%     de,dc \vdash \sigma_2 \leadsto \sigma_3}
-%%   {de,dc \vdash \sigma_1 \leadsto \sigma_3}
-%% \end{gather*}
-
-%% \footnote{Bob Atkey suggested this variation.}
-
-%% }
-
 %===============================================================================
 
 \frame{
-\frametitle{Semantics of Functions}
+\frametitle{Tabulating Functions}
 
-\begin{itemize}
-\item Much of the complexity is because functions are infinite.
-\item But for one execution of a program, you don't need
-  functions with infinite domain, finite domains will do!
-\end{itemize}
-
+Syntax of an applied lambda calculus:
 \[
   \begin{array}{rcl}
   && n \in \mathbb{Z} \qquad x \in \mathbb{X} \;\;\text{(program variables)}\\
-  \oplus & ::= & + \mid - \mid \times \\
-  e \in \mathbb{E} & ::= & n \mid e \oplus e \mid x \mid \lam{x} e \mid e \; e
-    \mid \IF e \THEN e \ELSE e  \FI
+  e \in \mathbb{E} & ::= & x \mid \lam{x} e \mid e \; e \mid \\
+    & & n \mid e \oplus e \mid \IF e \THEN e \ELSE e  \FI\\
+  \oplus & ::= & + \mid - \mid \times 
   \end{array}
 \]
 
+Values:
 \begin{center}
   \fbox{\fbox{
       $
@@ -431,46 +316,41 @@ January 2018
       \mathbb{V} = \mathbb{Z} + \mathcal{P}_{f}(\mathbb{V} \times \mathbb{V}) \quad \dagger
       \end{array}
       $
-}}\footnote{$\dagger$ This definition comes from Semantic Subtyping, Frisch et al. 2008.}
+}}
 \end{center}
 
-Let $t$ (for table) range over $\mathcal{P}_{f}(\mathbb{V} \times \mathbb{V}) $.
+Let $t$, for table, range over $\mathcal{P}_{f}(\mathbb{V} \times \mathbb{V}) $.
 
 }
 
 %===============================================================================
 \frame{
-\frametitle{Simple Semantics in Relational Form (take 1)}
+\frametitle{A Compositional Big-Step Semantics}
 \small
 %\vspace{5pt}
 \fbox{$\rho \vdash e \Rightarrow v$}
 \begin{gather*}
+  \inference
+      {}
+      {\rho \vdash x \Rightarrow \rho(x)}
+  \quad
+  \inference
+      {\forall (v,v')\in t,\\ \rho(x{:=}v) \vdash e \Rightarrow v'}
+      {\rho \vdash \lam{x}e \Rightarrow t}
+  \quad
+  \inference
+      {\rho \vdash e_1 \Rightarrow t &
+       \rho \vdash e_2 \Rightarrow v \\
+      (v,v') \in t}
+      {\rho \vdash (e_1\app e_2) \Rightarrow v'}
+  \\[2ex]
   \inference{}{\rho \vdash n \Rightarrow n}
   \quad
   \inference
       {\rho \vdash e_1 \Rightarrow n_1 &
        \rho \vdash e_2 \Rightarrow n_2}
       {\rho \vdash e_1 \oplus e_2 \Rightarrow n_1 \oplus n_2}
-  \quad
-  \inference
-      {}
-      {\rho \vdash x \Rightarrow \rho(x)}
   \\[2ex]
-  {\color{red}
-  \inference
-      {\forall (v,v'){\in} t,\; \rho(x{:=}v) \vdash e \Rightarrow v'}
-      {\rho \vdash \lam{x}e \Rightarrow t}
-  }
-  \quad
-  {\color{red}
-  \inference
-      {\rho \vdash e_1 \Rightarrow t &
-       \rho \vdash e_2 \Rightarrow v \\
-      (v,v') \in t}
-      {\rho \vdash (e_1\app e_2) \Rightarrow v'}
-  }
-  \\[2ex]
-  \quad
   \inference{\rho \vdash e_1 \Rightarrow 0 & 
     \rho \vdash e_2 \Rightarrow v}
             {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \FI \Rightarrow v}
