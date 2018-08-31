@@ -1,0 +1,989 @@
+\documentclass[12pt]{beamer}
+%\usecolortheme{seagull}
+%\usecolortheme{wolverine} yuk
+%\usecolortheme{beetle}
+\usecolortheme{dove} % black on white
+\usepackage[T1]{fontenc}
+\usepackage{garamond}
+\usefonttheme{serif}
+\usepackage{multicol}
+\usepackage{pifont}
+\usepackage{etex}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{semantic}
+\usepackage[all]{xy}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{fancybox}
+\usepackage{stmaryrd}
+\usepackage{rotating}
+\usepackage{wasysym}
+\usepackage{ulem}
+
+\definecolor{darkgreen}{rgb}{0.0, 0.6, 0.3}
+
+\usepackage{enumitem}
+\setitemize{label=\usebeamerfont*{itemize item}%
+  \usebeamercolor[fg]{itemize item}
+  \usebeamertemplate{itemize item}}
+  \setlist{itemsep=1ex}
+
+
+
+\newcommand{\Gbox}[1]{\colorbox{lightgray}{#1}}
+\newcommand{\Rbox}[1]{\colorbox{pink}{#1}}
+
+\newcommand{\featstart}{\hfill}
+\newcommand{\featend}{\hfill\hfill}
+\newcommand{\feat}[1]{{\featstart#1\featend}}
+
+\newcommand{\Topcircle}{\begin{turn}{270}\Leftcircle\end{turn}}
+\newcommand{\BOTTOMCIRCLE}{\begin{turn}{270}\RIGHTCIRCLE\end{turn}}
+\newcommand{\halfcircle}{\parbox{0in}{\Topcircle}\parbox{1.65ex}{\BOTTOMCIRCLE}{}}
+
+\newcommand{\featY}{\feat{\CIRCLE}} % Has feature fully
+\newcommand{\featP}{\feat{\halfcircle}} % Has feature partially
+\newcommand{\featN}{\feat{\Circle}} % Does not have feature
+
+
+\newcommand{\labeltag}[1]{\label{#1}\tag{\textsc{#1}}}
+\newcommand{\type}{\vdash}
+\newcommand{\typeS}{\vdash_{STLC}}
+\newcommand{\typeG}{\vdash}
+\newcommand{\typeCC}{\vdash_{C}}
+
+\newcommand{\evall}{\Downarrow }
+\newcommand{\evallS}{\Downarrow_{STLC} }
+\newcommand{\evallG}{\Downarrow}
+\newcommand{\evallCC}{\Downarrow_{C}}
+\newcommand{\evallD}{\Downarrow_{DTLC}}
+
+\newcommand{\reduce}{\longrightarrow}
+\newcommand{\becomes}{\longrightarrow}
+
+%\newcommand{\EE}{{\cal E}}
+%\newcommand{\FF}{{\cal F}}
+\newcommand{\Hole}{\Box}
+
+\newcommand{\divergeG}{\Uparrow}
+\newcommand{\subtype}{<:}
+\newcommand{\consis}{\sim}
+
+\newcommand{\embed}[1]{\lceil #1 \rceil}
+\newcommand{\bl}[1]{{\color{blue} #1}}
+\newcommand{\rd}[1]{{\color{red} #1}}
+\newcommand{\pr}[1]{{\color{purple} #1}}
+\newcommand{\kw}[1]{\mathtt{#1}}
+
+\newcommand{\labels}[1]{\mathit{labels}(#1)}
+\newcommand{\static}[2]{\mathit{static}(#1,#2)}
+\newcommand{\safe}[1]{\mathrel{\mathit{safe}} #1}
+\newcommand{\lo}[1]{\overline{#1}}
+\newcommand{\rng}[1]{\mathit{rng}(#1)}
+
+\newcommand{\semi}{\mathbin{;}}
+\newcommand{\id}{\key{id}}
+\newcommand{\Id}[1]{\id_{#1}}
+\newcommand{\fail}[3]{\bot^{#1}_{#2 \Rightarrow #3}}
+\newcommand{\Fail}[1]{\bot^{#1}}
+\newcommand{\FAIL}[3]{\bot^{#2}}
+\newcommand{\qu}[2]{{{#2}\query^{#1}}}
+\newcommand{\pl}[1]{{#1\pling}}
+\newcommand{\query}{\mathtt{?}}
+\newcommand{\pling}{\mathtt{!}}
+
+\newcommand{\bcfun}[1]{\langle\!\langle #1 \rangle\!\rangle}
+\newcommand{\MergeT}{\sqcap}
+\newcommand{\RefC}[1]{\key{Ref}(#1)}
+\newcommand{\error}{\key{error}}
+
+
+\newcommand{\Obj}{\key{Obj}}
+\newcommand{\String}{\key{String}}
+\newcommand{\Double}{\key{Double}}
+
+%\newcommand{\If}[3]{\key{if}\,#1\key{if}\,#2\key{if}#3}
+
+
+\newcommand{\ba}{\begin{array}}
+\newcommand{\ea}{\end{array}}
+\newenvironment{stack}{\ba{@{}l@{}}}{\ea}
+\newenvironment{branch}{\left\{\ba{@{}l@{\qquad}l@{}}}{\ea\right\}}
+\newenvironment{syntax}{\[\ba{l@{\;\;}lcl}}{\ea\]}
+\newcommand{\dotspace}{.\,}
+\newcommand{\key}[1]{\ensuremath{\mathtt{#1}}}
+\newcommand{\Base}{B}
+\newcommand{\dyn}{\star}
+\newcommand{\Dyn}{\ensuremath{\star}}
+\newcommand{\Int}{\key{Int}}
+\newcommand{\Float}{\key{float}}
+\newcommand{\Bool}{\key{Bool}}
+\newcommand{\Str}{\key{String}}
+\newcommand{\Ref}{\key{Ref}\,}
+\newcommand{\tapp}{\;\,}
+\newcommand{\tu}{{\to}}
+\newcommand{\To}{\Rightarrow}
+\newcommand{\Let}{\key{let}\;}
+\newcommand{\Letrec}{\key{let}\,\key{rec}\;}
+\newcommand{\In}{\key{in}\;}
+\newcommand{\If}{\mathsf{if}\;}
+\newcommand{\Then}{\;\mathsf{then}\;}
+\newcommand{\Else}{\mathsf{else}\;}
+\newcommand{\True}{\key{true}}
+\newcommand{\False}{\key{false}}
+\newcommand{\as}{\mathrel{\key{as}}}
+\newcommand{\op}{\mathit{op}}
+\newcommand{\dom}[1]{\mathit{dom}(#1)}
+\newcommand{\cod}[1]{\mathit{cod}(#1)}
+\newcommand{\blame}[1]{\key{blame}\,#1}
+\newcommand{\pblame}[2]{\key{blame}\,#1@#2}
+\newcommand{\ledyn}{\sqsubseteq}
+\newcommand{\IS}{\mathrel{\mathtt{is}}}
+\newcommand{\cast}[1]{\overset{#1}{\Rightarrow}}
+%\newcommand{\mkcast}[1]{\langle\!\langle#1\rangle\!\rangle}
+\newcommand{\mkcast}[1]{(#1)}
+\newcommand{\alloc}{\key{ref}\,}
+\newcommand{\deref}{\texttt{!}}
+\newcommand{\update}{\mathrel{\texttt{:=}}}
+\newcommand{\all}[1]{\forall #1.\,}
+\newcommand{\ftv}[1]{\mathrm{ftv}(#1)}
+\newcommand{\CAST}[1]{\langle #1 \rangle}
+\newcommand{\new}[1]{\nu #1.\;}
+\newcommand{\case}[3]{\key{case}\,#1\,\key{of}\,\key{inl}\,x\Rightarrow\,#2\,| \,\key{inr}\,x\Rightarrow \,#3}
+\newcommand{\join}[2]{#1 \sqcup #2 }
+\newcommand{\meet}[2]{#1 \sqcap #2 }
+
+\newcommand{\EE}[2]{\mathcal{E}\llbracket #1 \rrbracket #2}
+\newcommand{\FF}[3]{\mathcal{F}(#1, #2, #3)}
+\newcommand{\CC}[1]{\mathcal{C}\llbracket #1 \rrbracket}
+
+\newcommand{\EXP}[1]{\,#1\,}
+\newcommand{\CE}[0]{\mathcal{E}}
+\newcommand{\SEM}[1]{\llbracket #1 \rrbracket}
+\newcommand{\TSEM}[1]{\mathcal{T}\llbracket #1 \rrbracket}
+\newcommand{\lam}[1]{\lambda #1.\,}
+\newcommand{\LAM}[1]{\lambda\!\!\!\lambda #1.\,}
+\newcommand{\of}[0]{{:}}
+\newcommand{\by}[0]{{:=}}
+\newcommand{\INT}[0]{\mathtt{int}}
+\newcommand{\REF}[1]{\mathtt{ref}\,#1}
+\newcommand{\fix}[1]{\mathtt{fix}\,#1.\,}
+\newcommand{\FST}[1]{\pi_1\, #1}
+\newcommand{\SND}[1]{\pi_2\, #1}
+\newcommand{\fst}[1]{\mathsf{fst}(#1)}
+\newcommand{\snd}[1]{\mathsf{snd}(#1)}
+\newcommand{\emptyenv}[0]{\mathsf{empty}}
+\newcommand{\ext}[3]{\mathsf{extend}(#1,#2,#3)}
+\newcommand{\tyext}[1]{\mathsf{tyExtend}(#1)}
+\newcommand{\lookup}[2]{\mathsf{lookup}(#1,#2)}
+\newcommand{\shift}[3]{\,\uparrow^{#1}_{#2}(#3)}
+\newcommand{\app}[0]{\;}
+\newcommand{\LET}[0]{\mathbf{let}\,}
+\newcommand{\IN}[0]{\,\mathbf{in}\,}
+\newcommand{\abs}[1]{\mathsf{thunk}(#1)}
+\newcommand{\val}[1]{\overline{#1}}
+\newcommand{\CASE}[0]{\textsf{case}\,}
+\newcommand{\OF}[0]{\,\textsf{of}\,}
+%% \newcommand{\IF}[0]{\textbf{if}\,}
+%% \newcommand{\THEN}[0]{\,\textbf{then}\,}
+%% \newcommand{\ELSE}[0]{\,\textbf{else}\,}
+\newcommand{\IF}[0]{\mathsf{ifz}(}
+\newcommand{\THEN}[0]{,}
+\newcommand{\ELSE}[0]{,}
+\newcommand{\FI}[0]{)}
+\newcommand{\return}[0]{\mathsf{return}\;}
+\newcommand{\bind}[0]{\mathsf{bind}\;}
+\newcommand{\down}[0]{\mathsf{down}\;}
+\newcommand{\wrong}[0]{\mathsf{wrong}}
+\newcommand{\plus}[0]{\mathrel{\mathsf{plus}}}
+\newcommand{\zero}[0]{\mathsf{zero}}
+\newcommand{\SET}[1]{\mathcal{P}(#1)}
+\newcommand{\FSET}[1]{\mathcal{P}_f(#1)}
+\newcommand{\store}[0]{\mathsf{store}}
+\newcommand{\CHOOSE}[0]{\mathsf{choose}\,}
+
+\newcommand*\oldmacro{}%
+\let\oldmacro\insertshorttitle%
+\renewcommand*\insertshorttitle{%
+  \oldmacro\hfill%
+  \insertframenumber\,/\,\inserttotalframenumber}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+%\newtheorem{definition}{Definition}
+\newtheorem{conjecture}[theorem]{\translate{Conjecture}}
+\newtheorem{proposition}[theorem]{\translate{Proposition}}
+
+\lstdefinestyle{basic}{
+%showstringspaces=false,
+language=Python,
+columns=fullflexible,
+%basicstyle=\sffamily\small,%
+basicstyle=\ttfamily,%
+%columns=fixed,
+%basewidth=0.49em,
+%lineskip=0pt,
+%escapechar=@,xleftmargin=1pc,%
+keywordstyle=\ttfamily,
+mathescape=true,%
+moredelim=**[is][\color{blue}]{@}{@},
+moredelim=[is][\color{red}]{|}{|},
+moredelim=[is][\color{blue}]{~}{~},
+%commentstyle=\rmfamily,%
+%morekeywords={return,fix,var,proc,fun,func},%
+%deletekeywords={int,bool}
+}
+\lstset{style=basic}
+
+\garamond
+
+\title[Back to Denotational]{Back to the Future with \\ Denotational Semantics}
+\author{Jeremy G. Siek \\[1ex]
+ Indiana University, Bloomington
+}
+\date{}
+%% \institute{\normalsize 
+%%  Indiana University, Bloomington
+%% }
+
+% 3 hours
+
+%\newcommand\footnotemark{}
+%\renewcommand\footnoterule{}
+\setbeamercolor{footnote mark}{fg=white}
+
+\begin{document}
+
+\frame{
+
+\begin{tabular}{ll} 
+\begin{minipage}{0.45\textwidth}
+\centering
+\large Back to the Future  \\ 
+with Denotational Semantics \\[2ex]
+\normalsize Jeremy G. Siek \\
+Indiana University\\[2ex]
+Off the Beaten Track \\
+January 2018
+\end{minipage}
+&
+\begin{minipage}{0.45\textwidth}
+\includegraphics[height=3in]{btf}
+\end{minipage}
+\end{tabular}
+
+}
+%===============================================================================
+
+\frame{
+  \frametitle{Operational vs. Denotational Semantics}
+
+  \vspace{10pt}
+  Folk knowledge tells us:
+  \begin{center}
+  \begin{tabular}{l|c|c}
+                                 & Operational & Denotational \\ \hline\hline
+    Specify External Behavior   &  & \checkmark \\\hline
+    Compositional                &  & \checkmark \\\hline
+    Simple                       & \checkmark & \\\hline
+    Easily Extensible                   & \checkmark &  \\\hline
+  \end{tabular}
+  \end{center}
+
+  \vspace{20pt}
+  
+  \begin{quote}
+    When I think of the number of headaches I have caused people
+    in Computer Science who have tried to figure out ... domains, I have
+    to cringe.  --- Dana Scott, 1982.
+  \end{quote}
+
+  \vspace{20pt}
+
+  \begin{center}
+  But can denotational semantics be simple?
+  \end{center}
+  
+}
+%===============================================================================
+
+\frame{
+  \frametitle{A Bit of History Relevant to this Talk}
+
+  \begin{center}\scriptsize
+  \xymatrix@=6pt{
+    \text{\bf Operational Semantics} & \text{\bf Denotational Semantics} & \text{\bf Type Systems}\\
+    *+[F]{\txt{$\lambda$-conversion \\ Church '32}}\ar[d] \ar@/_40pt/[ddd] &
+    &
+    *+[F]{\txt{Functionality in CL \\ Curry '34}} \ar[dd]\\
+%    && *+[F]{\txt{Simple Theory of Types \\ Church ('40)}}\\
+    *+[F]{\txt{SECD machine\\
+          Landin '64}}  
+    %% *+[F]{\txt{Contextual Equivalence\\
+    %%     Morris '68}} \\
+ &   *+[F]{\txt{$D_{\infty}$ \\
+           Scott '69}} 
+ & \\
+%    
+ & *+[F]{\color{red}\txt{Graph Models \\
+           Plotkin '72, Scott '76, Engeler '81}} \ar@/_60pt/[dddd] 
+ & *+[F]{\color{red}\txt{Intersection Types\\
+        Coppo, Dezani, Salle '78}} \ar@/^10pt/[dl] \ar@/^30pt/[ddddl] \\
+    *+[F]{\txt{SOS \\
+        Plotkin '81}} \ar[dd]
+    &  *+[F]{\color{red}\txt{Filter Models\\
+        Barendregt et al. '83}} 
+    & \\
+%    
+    & *+[F]{\txt{Semantics of Scheme \\
+        Rees \& Clinger '86}} \\
+    *+[F]{\txt{Syntactic Type Soundness\\
+          Wright \& Felleisen '94}} \ar[d] \\
+    %% *+[F]{\txt{Featherweight Java\\
+    %%     Igarashi et al. '99}} \ar[d] \\
+    *+[F]{\txt{Verified C Compiler\\
+          Leroy 2009}}
+    & *+[F]{\color{red}\txt{Revisiting Elementary Semantics\\
+        Siek 2017}}
+  }
+  \end{center}
+  
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Outline}
+
+\begin{itemize}
+\item A \textbf{simple} semantics of CBV $\lambda$-calculus in two
+  forms:\\ relational and denotational
+\item Plotkin, Scott, and Engeler's models of the $\lambda$-calculus
+\item Application to proving correctness of an inliner
+\end{itemize}
+}
+
+
+
+%===============================================================================
+
+%% \frame{
+%% \frametitle{A Simple Semantics of IMP (Dec. 8, 2016)}
+
+%% \[
+%% \begin{array}{rcl}
+%%  c & ::= & \mathtt{skip} \mid x := e \mid c ; c 
+%%    \mid \mathtt{if}\;e\;\mathtt{then}\;c\;\mathtt{else}\;c 
+%%    \mid \mathtt{while}\;e\;\mathtt{do}\;c
+%% \end{array}
+%% \]
+%% \begin{align*}
+%%   \mathcal{C} & : \mathsf{Com} \to \mathcal{P}(\mathsf{State} \times \mathsf{State}) \\
+%%   \CC{\mathtt{skip}} &= \{ (\sigma,\sigma) \mid \sigma \in \mathsf{State} \} \\
+%%   \CC{x := e} &= \{ (\sigma, \sigma(x:= \EE{e}{\sigma})) \mid \sigma \in \mathsf{State} \} \\
+%%   & \dots \\
+%%  \CC{\mathtt{while}\, e \,\mathtt{do}\, c} &= \
+%%     \{ (\sigma,\sigma') \mid  \EE{e}{},\CC{c} \vdash \sigma \leadsto \sigma' \}
+%% \end{align*}
+
+%% \begin{gather*}
+%%   \inference{de(\sigma) = 0}
+%%             {de,dc \vdash \sigma \leadsto \sigma}
+%% \quad
+%%   \inference{de(\sigma_1) \neq 0 \\ (\sigma_1,\sigma_2) \in dc &
+%%     de,dc \vdash \sigma_2 \leadsto \sigma_3}
+%%   {de,dc \vdash \sigma_1 \leadsto \sigma_3}
+%% \end{gather*}
+
+%% \footnote{Bob Atkey suggested this variation.}
+
+%% }
+
+%===============================================================================
+
+\frame{
+\frametitle{Semantics of Functions}
+
+\begin{itemize}
+\item Much of the complexity is because functions are infinite.
+\item But for one execution of a program, you don't need
+  functions with infinite domain, finite domains will do!
+\end{itemize}
+
+\[
+  \begin{array}{rcl}
+  && n \in \mathbb{Z} \qquad x \in \mathbb{X} \;\;\text{(program variables)}\\
+  \oplus & ::= & + \mid - \mid \times \\
+  e \in \mathbb{E} & ::= & n \mid e \oplus e \mid x \mid \lam{x} e \mid e \; e
+    \mid \IF e \THEN e \ELSE e  \FI
+  \end{array}
+\]
+
+\begin{center}
+  \fbox{\fbox{
+      $
+      \begin{array}{ll}
+      v ::= n \mid \{ (v_1,v'_1),\ldots,(v_n,v'_n) \}\\[1ex]
+      \mathbb{V} = \mathbb{Z} + \mathcal{P}_{f}(\mathbb{V} \times \mathbb{V}) \quad \dagger
+      \end{array}
+      $
+}}\footnote{$\dagger$ This definition comes from Semantic Subtyping, Frisch et al. 2008.}
+\end{center}
+
+Let $t$ (for table) range over $\mathcal{P}_{f}(\mathbb{V} \times \mathbb{V}) $.
+
+}
+
+%===============================================================================
+\frame{
+\frametitle{Simple Semantics in Relational Form (take 1)}
+\small
+%\vspace{5pt}
+\fbox{$\rho \vdash e \Rightarrow v$}
+\begin{gather*}
+  \inference{}{\rho \vdash n \Rightarrow n}
+  \quad
+  \inference
+      {\rho \vdash e_1 \Rightarrow n_1 &
+       \rho \vdash e_2 \Rightarrow n_2}
+      {\rho \vdash e_1 \oplus e_2 \Rightarrow n_1 \oplus n_2}
+  \quad
+  \inference
+      {}
+      {\rho \vdash x \Rightarrow \rho(x)}
+  \\[2ex]
+  {\color{red}
+  \inference
+      {\forall (v,v'){\in} t,\; \rho(x{:=}v) \vdash e \Rightarrow v'}
+      {\rho \vdash \lam{x}e \Rightarrow t}
+  }
+  \quad
+  {\color{red}
+  \inference
+      {\rho \vdash e_1 \Rightarrow t &
+       \rho \vdash e_2 \Rightarrow v \\
+      (v,v') \in t}
+      {\rho \vdash (e_1\app e_2) \Rightarrow v'}
+  }
+  \\[2ex]
+  \quad
+  \inference{\rho \vdash e_1 \Rightarrow 0 & 
+    \rho \vdash e_2 \Rightarrow v}
+            {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \FI \Rightarrow v}
+  \inference{\rho \vdash e_1 \Rightarrow n & n \neq 0 &
+    \rho \vdash e_3 \Rightarrow v}
+            {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \FI \Rightarrow v}
+\end{gather*}
+%% \hrule
+%% \hrule
+%% \vspace{5pt}
+%% Comparison to big-step semantics:
+%% \begin{gather*}
+%%   \inference{}
+%%             {\varrho \vdash \lam{x} e \Rightarrow \langle \lam{x}e,\varrho \rangle}
+%%   \qquad
+%%   \inference{\varrho \vdash e_1 \Rightarrow \langle \lam{x}e,\varrho' \rangle&
+%%              \varrho \vdash e_1 \Rightarrow v_2 \\
+%%              \varrho'(x\by v_2) \vdash e \Rightarrow v}
+%%             {\varrho \vdash (e_1 \app e_2) \Rightarrow v}
+%% \end{gather*}
+}
+%===============================================================================
+\frame{
+\frametitle{The Problem with Self-Application}
+
+Consider
+\[
+  (\lam{f} f \app f) \app (\lam{g} 1)
+\]
+Clearly, the result should be $1$.
+
+To obtain $\vdash (\lam{f} f \app f) \app (\lam{g} 1) \Rightarrow 1$ we
+need some $t_1$ and $t_2$ s.t.
+\[
+\vdash (\lam{f} f \app f) \Rightarrow t_1 \qquad
+\vdash (\lam{g} 1) \Rightarrow t_2 \qquad
+(t_2,1) \in t_1
+\]
+So we need $\{ f\by t_2 \} \vdash f \app f \Rightarrow 1$
+and then
+\[
+  (t_2,1) \in t_2
+\]
+but that's impossible!
+
+}
+%===============================================================================
+
+\frame{
+\frametitle{Fixing Self-Application}
+
+We can fix this problem by allowing a kind of subsumption.
+
+\vspace{10pt}
+\fbox{$v \sqsubseteq v$}
+\[
+    \inference{}{n \sqsubseteq n}
+    \qquad
+    \inference{t_1 \subseteq t_2}
+               {t_1 \sqsubseteq t_2}
+    %% \inference{\forall (v_1,v'_1) \in t_1, \exists (v_2,v'_2) \in t_2,\\ 
+    %%            v_2 \sqsubseteq v_1 \text{ and } v'_1 \sqsubseteq v'_2}
+    %%            {t_1 \sqsubseteq t_2}
+\]
+\vspace{10pt}
+
+We allow arguments to be larger than necessary:$^\dagger$
+\footnote{$^\dagger$ Thank you Allan Jeffrey for tweeting this solution!}
+\[
+\inference{\rho \vdash e_1 \Rightarrow t &
+           \rho \vdash e_2 \Rightarrow v_2 \\
+           (v,v') \in t & \rd{v \sqsubseteq v_2}}
+          {\rho \vdash (e_1\app e_2) \Rightarrow v'}
+\]
+
+}
+
+%===============================================================================
+\frame{
+\frametitle{Subsumption and Environment Weakening}
+
+To prove equivalent wrt. reduction semantics, we need: 
+
+\vspace{10pt}
+
+\begin{proposition}
+If $\rho \vdash e \Rightarrow v$, $v' \sqsubseteq v$, 
+and $\mathrm{fv}(e) \vdash \rho \sqsubseteq \rho'$,\\
+then $\rho' \vdash e \Rightarrow v'$.
+\label{prop:change-env-le}
+\end{proposition}
+
+\vspace{10pt}
+
+Example: 
+\[
+  t_0 = \{(1,2) \} \quad\sqsubseteq\quad t_1 = \{(0,1),(1,2)\}
+\]
+\[
+ \emptyset \vdash \lam{x} x \Rightarrow \{(t_1,t_1)\}
+ \qquad
+ \emptyset \vdash \lam{x} x \Rightarrow \{(t_1,t_0)\}
+\]
+
+}
+%===============================================================================
+\frame{
+\frametitle{Simple Semantics in Relational Form (take 2)}
+\small
+
+
+\fbox{$\rho \vdash e \Rightarrow v$}
+\begin{gather*}
+  \inference{}{\rho \vdash n \Rightarrow n}
+  \quad
+  \inference
+      {\rho \vdash e_1 \Rightarrow n_1 &
+       \rho \vdash e_2 \Rightarrow n_2}
+      {\rho \vdash e_1 \oplus e_2 \Rightarrow n_1 \oplus n_2}
+  \quad
+  \inference
+      {\rd{v \sqsubseteq \rho(x)}}
+      {\rho \vdash x \Rightarrow v}
+  \\[3ex]
+  \inference
+      {\forall (v,v'){\in} t.\; \rho(x{:=}v) \vdash e \Rightarrow v'}
+      {\rho \vdash \lam{x}e \Rightarrow t}
+  \quad
+  \inference
+      {\rho \vdash e_1 \Rightarrow t &
+       \rho \vdash e_2 \Rightarrow v_2 \\
+      (v,v') \in t & \rd{v \sqsubseteq v_2} & \rd{v_3 \sqsubseteq v'}}
+      {\rho \vdash (e_1\app e_2) \Rightarrow v_3}
+  \\[3ex]
+  \inference{\rho \vdash e_1 \Rightarrow n & n \neq 0 &
+    \rho \vdash e_2 \Rightarrow v}
+            {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \Rightarrow v}
+  \quad
+  \inference{\rho \vdash e_1 \Rightarrow 0 & 
+    \rho \vdash e_3 \Rightarrow v}
+            {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \Rightarrow v}
+\end{gather*}
+}
+%===============================================================================
+\frame{
+\frametitle{Example of a recursive function}
+
+\begin{align*}
+  M & \equiv \lam{x} f \app (\lam{v} (x\app x) \app v) \\
+  Z & \equiv \lam{f} M \app M  \\
+  F & \equiv \lam{n} \IF n \THEN 1 \ELSE n  \times r(n-1) \FI \\
+  H & \equiv \lam{r} F \\
+  \mathit{fact} & \equiv Z\app H
+\end{align*}
+Tables:
+\begin{align*}
+  F_t(n) &= \{ (n,n!) \} \\
+%  H_t(n) &= \{ (\emptyset, F_t(0)), (F_t(0), F_t(1)), \ldots, (F_t(n-1), F_t(n))\} \\
+  H_t(n) &= \{ (\emptyset, F_t(0)) \} \cup \{ (F_t(n), F_t(n+1)) \mid n \in \mathbb{N} \} \\
+  \rd{M_t(0)} &= \rd{\emptyset} \\
+  \rd{M_t(n+1)} &= \rd{M_t(n) \cup \{ (M_t(n), F_t(n)) \}} \\
+  Z_t(n) &= \{ (H_t(n), F_t(n)) \}
+\end{align*}
+We have $\emptyset \vdash Z\app H \Rightarrow F_t(n)$ for any $n$,
+so $\emptyset \vdash \mathit{fact}\,n \Rightarrow n!$.
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Simple Semantics in Denotational Form}
+
+Of course, relations are isomorphic to set-valued functions:
+\[
+  \SET{(\mathbb{X} \to \mathbb{V}) \times \mathbb{E} \times \mathbb{V}}
+  \quad\cong\quad
+  \mathbb{E} \to (\mathbb{X} \to \mathbb{V}) \to \SET{\mathbb{V}}
+\]
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Simple Semantics in Denotational Form}
+
+%% \[
+%% v \in \mathbb{V} \qquad \rho \in \mathbb{X} \rightharpoonup \mathbb{V}
+%% \]
+
+\fbox{$\SEM{-}: \mathbb{E} \to (\mathbb{X} \to \mathbb{V}) \to \SET{\mathbb{V}}$}
+\begin{align*}
+\SEM{ n }\rho &= \{ n \} \\
+\SEM{ e_1 \oplus e_2 }\rho &= \{  n_1 \oplus n_2 \mid 
+   n_1 \in \SEM{ e_1 }\rho \text{ and } n_2 \in \SEM{ e_2 }\rho \} \\
+\SEM{ x }\rho &= \{ v \mid v \sqsubseteq \rho(x) \} \\
+\SEM{ \lam{x} e }\rho &= 
+  \{ t \mid \forall (v,v')\in t,\, v' \in \SEM{ e }\rho(x{:=}v) \} \\
+\SEM{ e_1\;e_2 }\rho &= \left\{ v_3 \, \middle| 
+   \begin{array}{l}
+   \exists t\, v_2\, v\, v'.\, t \in \SEM{ e_1 }\rho,\, v_2 \in \SEM{ e_2 }\rho, \\
+   (v, v') \in t, \, v \sqsubseteq v_2,\, v_3 \sqsubseteq v'
+   \end{array}
+\right\} \\
+\SEM{\IF e_1 \THEN e_2 \ELSE e_3 \FI}\rho &=
+\left\{ v\, \middle|\,
+  \begin{array}{l}
+   \exists n.\, n \in \SEM{e_1}\rho, \\
+   \quad (n= 0 \implies v \in \SEM{e_2}\rho) \text{ and}\\
+   \quad (n\neq 0 \implies v \in \SEM{e_3}\rho)
+  \end{array}
+  \right\}
+\end{align*}
+
+}
+
+%===============================================================================
+\frame{
+\frametitle{Properties}
+
+\begin{itemize}
+\item $\beta_v$-reduction preserves meaning:
+\[
+\SEM{(\lam{x}e) \app v} = \SEM{e[v/x]}
+\]
+\item Sound \& complete wrt. op. sem.\\
+  If $\SEM{e}\emptyset = \SEM{n}\emptyset$, then $e \Downarrow n$.\\
+  If $e \Downarrow n$, then $\SEM{e} \emptyset = \SEM{n}\emptyset$.
+\item The simple semantics is a congruence:\\
+  For any context $C$, 
+  if $\SEM{e} = \SEM{e'}$, then $\SEM{C[e]} = \SEM{C[e']}$.
+\item Sound wrt. contextual equivalence: \\
+  If $\SEM{e} = \SEM{e'}$,
+  then $C[e] \Downarrow$ iff $C[e'] \Downarrow$
+  for any closing $C$.
+\item The simple semantics is not fully abstract. \\
+  Parallel OR provides a counter example.
+\end{itemize}
+
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Outline}
+
+\begin{itemize}
+\item A simple semantics of $\lambda$-calculus in two
+  forms:\\ relational and denotational.
+\item \textbf{Plotkin, Scott, and Engeler's models}
+\item Correctness of an inliner
+\end{itemize}
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Plotkin, Scott, and Engeler's Models}
+
+\begin{description}
+\item[Plotkin 1972:] $\mathcal{P}(\mathbb{V})$ where
+\[
+  \mathbb{V} = \mathbb{Z} + \FSET{\mathbb{V}} \times \FSET{\mathbb{V}}
+\]
+\item[Scott 1976:] $\mathcal{P}(\mathbb{N})$
+%% $\mathcal{P}(\mathbb{N})$ where
+%%   $\mathbb{N}$ encodes Engeler's version of $\mathbb{V}$
+\item[Engeler 1981:] $\mathcal{P}(\mathbb{V})$ where
+\[
+  \mathbb{V} = \mathbb{Z} + \FSET{\mathbb{V}} \times \mathbb{V}
+\]
+
+\item[Siek 2017:] $\mathcal{P}(\mathbb{V})$ where
+\[
+ \mathbb{V} = \mathbb{Z} + \mathcal{P}_{f}(\mathbb{V} \times \mathbb{V}) 
+\]
+\end{description}
+}
+%===============================================================================
+
+%% \frame{
+%% \frametitle{Plotkin's Model}
+
+
+%% \fbox{$\SEM{e}\rho \in \SET{\mathbb{V}}$}
+%% \begin{align*}
+%% \SEM{ n }\rho &= \{ n \} \\
+%% \SEM{ e_1 \oplus e_2 }\rho &= \{  n_1 \oplus n_2 \mid 
+%%    n_1 \in \SEM{ e_1 }\rho \land n_2 \in \SEM{ e_2 }\rho \} \\
+%% \SEM{ x }\rho &= \rho(x) \\
+%% \SEM{ \lam{x} e }\rho &= 
+%%   \{ (V,V') \mid  V' \subseteq \SEM{ e }\rho(x{:=}V) \} \\
+%% \SEM{ e_1\;e_2 }\rho &= \bigcup \left\{ V' \, \middle| 
+%%    \begin{array}{l}
+%%    \exists V.\, (V,V') {\in} \SEM{ e_1 }\rho \land V {\subseteq} \SEM{ e_2 }\rho 
+%%    \end{array}
+%% \right\} \\
+%% \SEM{\IF e_1 \THEN e_2 \ELSE e_3}\rho &=
+%% \left\{ v\, \middle|\,
+%%   \begin{array}{l}
+%%    \exists n.\, n \in \SEM{e_1}\rho \\
+%%    \land\, (n\neq 0 \implies v \in \SEM{e_2}\rho)\\
+%%    \land\, (n=0 \implies v \in \SEM{e_3}\rho)
+%%   \end{array}
+%%   \right\}
+%% \end{align*}
+
+%% }
+
+%===============================================================================
+
+\frame{
+\frametitle{Scott and Engeler's Model}
+
+\[
+  \mathbb{V} = \mathbb{Z} + \FSET{\mathbb{V}} \times \mathbb{V}
+\]
+
+\fbox{$\SEM{-} : \mathbb{E} \to (\mathbb{X} \to \rd{\FSET{\mathbb{V}}}) \to  \SET{\mathbb{V}}$}
+\begin{align*}
+\SEM{ n }\rho &= \{ n \} \\
+\SEM{ e_1 \oplus e_2 }\rho &= \{  n_1 \oplus n_2 \mid 
+   n_1 \in \SEM{ e_1 }\rho \text{ and } n_2 \in \SEM{ e_2 }\rho \} \\
+\SEM{ x }\rho &= \rho(x) \\
+\SEM{ \lam{x} e }\rho &= 
+  \{ \rd{(V,v')} \mid  v' \in \SEM{ e }\rho(x{:=}\rd{V}) \} \\
+\SEM{ e_1\;e_2 }\rho &= \left\{ v' \, \middle| 
+   \begin{array}{l}
+   \exists V.\, \rd{(V,v')} \in \SEM{ e_1 }\rho \text{ and } \rd{V \subseteq\;} \SEM{ e_2 }\rho
+   \end{array}
+\right\} \\
+\SEM{\IF e_1 \THEN e_2 \ELSE e_3 \FI}\rho &=
+\left\{ v\, \middle|\,
+  \begin{array}{l}
+   \exists n,\, n \in \SEM{e_1}\rho, \\
+   (n= 0 \implies v \in \SEM{e_2}\rho), \text{ and}\\
+   (n\neq 0 \implies v \in \SEM{e_3}\rho)
+  \end{array}
+  \right\}
+\end{align*}
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Outline}
+
+\begin{itemize}
+\item A simple semantics of $\lambda$-calculus in two
+  forms:\\ relational and denotational.
+\item Plotkin, Scott, and Engeler's models
+\item \textbf{Correctness of an inliner}
+\end{itemize}
+}
+
+%===============================================================================
+\frame{
+\frametitle{A Function Inliner}
+
+\fbox{$\mathcal{O}(e,k) = e'$}
+\begin{align*}
+  \mathcal{O}(x, k) &= x \\
+  \mathcal{O}(n, k) &= n \\
+  \mathcal{O}(e_1 \oplus e_2, k) &=
+  \begin{cases}
+    n_1 \SEM{\oplus} n_2 & \text{if }
+    \mathcal{O}(e_1,k) {=} n_1, 
+    \mathcal{O}(e_2,k) {=} n_2 \\
+    \mathcal{O}(e_1, k) \oplus \mathcal{O}(e_2,k)
+    & \text{otherwise}
+  \end{cases} \\
+  \mathcal{O}(\lambda x.\, e, k) &=
+    \lambda x.\, \mathcal{O}(e, k) \\
+  \mathcal{O}(e_1\app e_2, k) &=
+  \begin{cases}
+    \mathcal{O}(e[v_2/x], k{-}1)
+    & \text{if } k \geq 1, \mathcal{O}(e_1, k) = \lambda x.\, e \\
+     & \text{and } \mathcal{O}(e_2,k) = v_2 \\
+    \mathcal{O}(e_1, k) \app \mathcal{O}(e_2, k) & \text{otherwise}
+  \end{cases} 
+\end{align*}
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Correctness of the Inliner}
+
+\begin{lemma}[Optimizer Preserves Denotations]
+  \label{lem:O2-correct-aux}
+  $\SEM{\mathcal{O}(e,k)} = \SEM{e}$
+\end{lemma}
+\begin{proof} By induction on $\mathcal{O}$.
+\begin{itemize}
+\item Case $x$: $\SEM{\mathcal{O}(x,k)} = \SEM{x}$  by def. $\mathcal{O}$.
+\item Case $n$: $\SEM{\mathcal{O}(n,k)} = \SEM{n}$  by def. $\mathcal{O}$.
+\item Case $e_1 \oplus e_2$: \\
+  Suppose $\mathcal{O}(e_1,k) = n_1, \mathcal{O}(e_2,k) = n_2$.\\
+  So $\mathcal{O}(e_1 \oplus e_2) = n_1 \SEM{\oplus} n_2$.\\
+%  NTS $\SEM{n_1 \SEM{\oplus} n_2} = \SEM{e_1 \oplus e_2}$.\\
+%  By IH, $\SEM{e_1} = \SEM{n_1}$, $\SEM{e_2} = \SEM{n_2}$.\\
+  $\SEM{n_1 \SEM{\oplus} n_2} =
+   \SEM{n_1 \oplus n_2} =
+   \SEM{e_1 \oplus e_2}$ by IH and congruence.
+   Suppose not.
+   So $\mathcal{O}(e_1 \oplus e_2) = \mathcal{O}(e_1,k) \oplus \mathcal{O}(e_2,k)$.\\
+   $\SEM{\mathcal{O}(e_1,k) \oplus \mathcal{O}(e_2,k)} = 
+      \SEM{e_1 \oplus e_2}$ by IH and congruence.
+
+\item Cont'd on next slide.
+      
+\end{itemize}
+\end{proof}
+
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Correctness of the Inliner, cont'd}
+
+\begin{itemize}
+\item Case $\lam{x}e$:\\
+  So $\mathcal{O}(\lam{x}e,k) = \lam{x} \mathcal{O}(e,k)$ \\
+  By the IH $\SEM{\mathcal{O}(e,k)} = \SEM{e}$. \\
+  Therefore $\SEM{\lam{x} \mathcal{O}(e,k)} = \SEM{\lam{x}e}$
+  by congruence.
+
+\item Case $e_1 \app e_2$: \\
+  Suppose $\mathcal{O}(e_1,k) = \lam{x} e, \mathcal{O}(e_2,k)=v_2$. \\
+  So $\mathcal{O}(e_1 \app e_2,k) = \mathcal{O}(e[v_2/x],k-1)$.
+  \begin{align*}
+  \SEM{\mathcal{O}(e[v_2/x],k-1)}
+  &= \SEM{e[v_2/x]} & \text{(by IH)}\\
+  &= \SEM{(\lam{x}e) \app v_2} & \text{($\beta$ preserves meaning)}\\
+  &= \SEM{e_1 \app e_2} & \text{(by IH and congruence)}
+  \end{align*}
+  Suppose not.
+  So $\mathcal{O}(e_1 \app e_2,k) = \mathcal{O}(e_1,k) \app \mathcal{O}(e_2,k)$.
+  We conclude that
+  $\SEM{\mathcal{O}(e_1,k) \app \mathcal{O}(e_2,k)}
+  = \SEM{e_1 \app e_2}$
+  by IH and congruence.
+  
+\end{itemize}
+
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Recap \& Further Reading}
+
+  \begin{itemize}
+  \item $\lambda$ can be modeled with finite graphs! 
+  \item Ingredients: subsumption + $\mathcal{P}$.
+  \item This insight goes back to Plotkin, Scott, and Engeler.
+  \item Several views of the semantics: relational, denotational,
+    non-deterministic interpreter$^\dagger$, intersection
+    types$^\dagger$
+  \item Correctness of an inliner.
+  \item Semantics for System F and semantic type soundness$^\dagger$
+  \item The simple semantics is deterministic (see my blog)
+  \end{itemize}
+
+  $^\dagger$ not discussed but in the draft on arXiv:\\
+  Revisiting Elementary Denotational Semantics
+     \url{https://arxiv.org/abs/1707.03762}.\\
+  Isabelle proofs available in the Archive of Formal Proof.
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Burning Questions}
+
+\begin{itemize}
+\item Why didn't graph models become popular?
+\item Are there any killer reasons to not use graph models?
+\item Can graph models scale to handle real languages?
+\item Do graph models make proofs easier?
+  \begin{itemize}
+  \item compiler correctness
+  \item program equivalence
+  \end{itemize}
+\item Can we distinguish errors from non-termination 
+   like we can in reduction semantics? 
+\end{itemize}
+
+}
+
+
+\end{document}
+
+% LocalWords:  titlepage containsverbatim frametitle  Siek Taha lstlisting
+% LocalWords:  Rightarrow IU CBV Denotational SECD Landin Plotkin et
+% LocalWords:  texttt Rightarrow texttt texttt Rightarrow Findler deriv Wadler
+% LocalWords:  Longrightarrow Longrightarrow circ Wrigstad ldots inc bytecode
+% LocalWords:  includegraphics invokedynamic switchpoints unboxed xymatrix rrr
+% LocalWords:  vspace newsavebox DistExample lrbox linewidth mathtt mathtt emph
+% LocalWords:  vdash usebox mathbf mathit longmapsto mathsf subtyping emptyset
+% LocalWords:  Henglein's footnotesize Drossopoulou Igarashi Gronski Dimoulas
+% LocalWords:  varphi eval Jython microbenchmarks Fibonnaci vitousek bharadwaj
+% LocalWords:  Shashank  Barendregt al Coppo Dezani Salle Damas Rees
+%%  LocalWords:  Felleisen Compositional denotational rcl de Atkey AO
+%%  LocalWords:  lcl lccl Heh subsumption wrt Abramsky's btw BCDC BCD
+%%  LocalWords:  CDCHL Abramsky BDS iff Inhabitation CDHL HL Bool FV
+%%  LocalWords:  darkgreen Egidi Honsell Ronchi Rocca preorder Alessi
+%%  LocalWords:  Barbanera Ciancaglini nts dom Sem approximants ctx
+%%  LocalWords:  Hyland CDS polymorphism
