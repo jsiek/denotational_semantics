@@ -163,6 +163,7 @@
 \newcommand{\EXP}[1]{\,#1\,}
 \newcommand{\CE}[0]{\mathcal{E}}
 \newcommand{\SEM}[1]{\llbracket #1 \rrbracket}
+\newcommand{\ESEM}[1]{\llbracket #1 \rrbracket}
 \newcommand{\TSEM}[1]{\mathcal{T}\llbracket #1 \rrbracket}
 \newcommand{\lam}[1]{\lambda #1.\,}
 \newcommand{\LAM}[1]{\lambda\!\!\!\lambda #1.\,}
@@ -360,7 +361,7 @@ Let $t$, for table, range over $\mathcal{P}_{f}(\mathbb{D} \times \mathbb{D}) $.
             {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \FI \Rightarrow d}
 \end{gather*}
 \hrule
-%% \hrule
+\hrule
 \vspace{5pt}
 Comparison to a standard big-step semantics:
 \begin{gather*}
@@ -430,12 +431,11 @@ One direction of the proof relies on \\[2ex]
 
 \textbf{Lemma}  (Reverse Substitution)\\
   If $d \in \SEM{e[v/x]}$ then
-  $d \in \SEM{e}\rho(x{:=}d')$ and $d' \in \SEM{v}\emptyset$
-  for some $d'$.\\[2ex]
+  $\exists d' \in \SEM{v}\emptyset,\; d \in \SEM{e}\rho(x{:=}d')$.\\[2ex]
 
 which in turn relies on \\[2ex]
 
-\textbf{Lemma} (Combine Values)\\
+\textbf{Lemma} (Combine Denotations of Values)\\
 If $d_1 \in \SEM{v}\rho$ and $d_2 \in \SEM{v}\rho$,
 then $d_1 \sqcup d_2 \in \SEM{v}\rho$.
 
@@ -447,21 +447,84 @@ then $d_1 \sqcup d_2 \in \SEM{v}\rho$.
 \frame{
 \frametitle{Goal: arbitrary $\beta$-reduction}
 
-If $\SEM{e'} \neq \emptyset$, then
+\textbf{Theorem} (Equality of $\beta$-reduction for CBV)\\
 \[
 \SEM{(\lam{x}e) \app e'} = \SEM{e[e'/x]}
+\qquad \text{if } \SEM{e'} \neq \emptyset
 \]
+\vspace{5pt}
 
-This would require\\[2ex]
+This requires\\[2ex]
 
-\textbf{Lemma} (Combine Expressions)\\
+\textbf{Lemma} (Combine Denotations of Expressions)\\
 If $d_1 \in \SEM{e}\rho$ and $d_2 \in \SEM{e}\rho$,
 then $d_1 \sqcup d_2 \in \SEM{e}\rho$.
 
-
 }
 
+%===============================================================================
+\frame{
+   \frametitle{Tables are Relations, not Functions}
 
+A problem with the lambda's-as-tables approach:
+\begin{align*}
+  \lam{f} (f \app 3) + (f \app 3)
+  &=_{\mathrm{ctx}}
+  \lam{f} (\lam{x} x + x) \app (f \app 3)
+\\
+  \ESEM{\lam{f} (f \app 3) + (f \app 3)}
+  &\neq
+  \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 3)}
+\end{align*}
+
+Why not equal?
+\begin{align*}
+  R &= \{ (0,1), (0,2) \}\\
+  \{ (R,9) \} &\in \ESEM{\lam{f} (f \app 3) + (f \app 3)} \\
+  \{ (R,9) \} &\not\in \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 3)} 
+\end{align*}
+   
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Restrict the tables to be functions}
+
+  \begin{itemize}
+    \item Recall the definition: a \emph{function} $f$ is a relation
+      on two sets $A$ and $B$ such that if $(a,b) \in f$ and $(a,b')
+      \in f$, then $b = b'$.
+    \item Can we add this restriction to our notion of value?
+    \item Not quite, because it would allow the following bad table.
+      \[
+      \{ (\{(0,1)\}, 2), (\{(0,1),(5,6) \}, 3) \}
+      \]   
+  \end{itemize}
+
+  We need a generalization of equality that makes sense for finite
+  approximations of functions.
+  
+\begin{gather*}
+  \frac{}{n \sim n}
+  \qquad
+  \frac{\begin{array}{l}\forall v_1 v'_1 v_2 v'_2, (v_1,v'_1) \in t_1 \land (v_2,v'_2) \in t_2 \\
+        \implies (v_1 \sim v_2 \land v'_1 \sim v'_2) \lor v_1 \not\sim v_2
+        \end{array}}
+    {t_1 \sim t_2}
+\end{gather*}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Determinism}
+
+  With this restriction, I was able to prove the following in December
+  of 2017. \\[2ex]
+
+  \textbf{Theorem} (Determinism)\\ If $v_1 \in \SEM{e}\rho$ and $v_2
+  \in \SEM{e}\rho$ , then $v_1 \sim v_2$. \\[2ex]
+  
+}
 
 
 
