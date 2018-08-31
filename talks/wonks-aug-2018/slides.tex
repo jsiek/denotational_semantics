@@ -314,7 +314,7 @@ Denotations:
   \fbox{\fbox{
       $
       \begin{array}{ll}
-      d ::= n \mid \{ (d_1, d'_1),\ldots,(d_n,d'_n) \}\\[1ex]
+      d ::= n \mid \{ d_1\mapsto d'_1,\ldots, d_n\mapsto d'_n \}\\[1ex]
       \mathbb{D} = \mathbb{Z} + \mathcal{P}_{f}(\mathbb{D} \times \mathbb{D})
       \end{array}
       $
@@ -336,13 +336,13 @@ Let $t$, for table, range over $\mathcal{P}_{f}(\mathbb{D} \times \mathbb{D}) $.
       {\rho \vdash x \Rightarrow d}
   \;
   \inference
-      {\forall (d,d')\in t,\\ \rho(x{:=}d) \vdash e \Rightarrow d'}
+      {\forall d\mapsto d'\in t,\\ \rho(x{:=}d) \vdash e \Rightarrow d'}
       {\rho \vdash \lam{x}e \Rightarrow t}
   \;
   \inference
       {\rho \vdash e_1 \Rightarrow t &
        \rho \vdash e_2 \Rightarrow d_2 \\
-      (d,d') \in t & d \sqsubseteq d_2 & d_3 \sqsubseteq d'}
+      d \mapsto d' \in t & d \sqsubseteq d_2 & d_3 \sqsubseteq d'}
       {\rho \vdash (e_1\app e_2) \Rightarrow d_3}
   \\[2ex]
   \inference{}{\rho \vdash n \Rightarrow n}
@@ -399,11 +399,11 @@ Of course, relations are isomorphic to set-valued functions:
    n_1 \in \SEM{ e_1 }\rho \text{ and } n_2 \in \SEM{ e_2 }\rho \} \\
 \SEM{ x }\rho &= \{ d \mid d \sqsubseteq \rho(x) \} \\
 \SEM{ \lam{x} e }\rho &= 
-  \{ t \mid \forall (d,d')\in t,\, d' \in \SEM{ e }\rho(x{:=}d) \} \\
+  \{ t \mid \forall d\mapsto d'\in t,\, d' \in \SEM{ e }\rho(x{:=}d) \} \\
 \SEM{ e_1\;e_2 }\rho &= \left\{ d_3 \, \middle| 
    \begin{array}{l}
    \exists t\, d_2\, d\, d'.\, t \in \SEM{ e_1 }\rho,\, d_2 \in \SEM{ e_2 }\rho, \\
-   (d, d') \in t, \, d \sqsubseteq d_2,\, d_3 \sqsubseteq d'
+   d\mapsto d' \in t, \, d \sqsubseteq d_2,\, d_3 \sqsubseteq d'
    \end{array}
 \right\} \\
 \SEM{\IF e_1 \THEN e_2 \ELSE e_3 \FI}\rho &=
@@ -479,11 +479,13 @@ A problem with the lambda's-as-tables approach:
 
 Why not equal?
 \begin{align*}
-  R &= \{ (0,1), (0,2) \}\\
-  \{ (R,9) \} &\in \ESEM{\lam{f} (f \app 3) + (f \app 3)} \\
-  \{ (R,9) \} &\not\in \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 3)} 
+  R &= \{ 0\mapsto 1, 0\mapsto 2 \}\\
+  \{ R\mapsto 9 \} &\in \ESEM{\lam{f} (f \app 3) + (f \app 3)} \\
+  \{ R\mapsto 9 \} &\not\in \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 3)} 
 \end{align*}
    
+This is bad, we need this equality to justify a standard compiler
+optimization: common subexpression elimination!
 
 }
 %===============================================================================
@@ -491,24 +493,24 @@ Why not equal?
   \frametitle{Restrict the tables to be functions}
 
   \begin{itemize}
-    \item Recall the definition: a \emph{function} $f$ is a relation
-      on two sets $A$ and $B$ such that if $(a,b) \in f$ and $(a,b')
-      \in f$, then $b = b'$.
-    \item Can we add this restriction to our notion of value?
-    \item Not quite, because it would allow the following bad table.
+    \item Recall the definition: a \textbf{function} $f$ is a relation
+      such that\\
+      if $(a,b) \in f$ and $(a,b') \in f$, then $b = b'$.
+    \item Can we add this restriction to the denotations?
+    \item Not quite, it would allow bogus tables such as
       \[
-      \{ (\{(0,1)\}, 2), (\{(0,1),(5,6) \}, 3) \}
+      \{ \{0\mapsto 1\} \mapsto 2, \{0\mapsto 1, 5\mapsto 6 \} \mapsto 3 \}
       \]   
   \end{itemize}
 
-  We need a generalization of equality that makes sense for finite
+  We need a generalization of equality that makes sense for
   approximations of functions.
   
 \begin{gather*}
   \frac{}{n \sim n}
   \qquad
-  \frac{\begin{array}{l}\forall v_1 v'_1 v_2 v'_2, (v_1,v'_1) \in t_1 \land (v_2,v'_2) \in t_2 \\
-        \implies (v_1 \sim v_2 \land v'_1 \sim v'_2) \lor v_1 \not\sim v_2
+  \frac{\begin{array}{l}\forall d_1 d'_1 d_2 d'_2, d_1\mapsto d'_1 \in t_1 \land d_2 \mapsto d'_2 \in t_2 \\
+        \implies (d_1 \sim d_2 \land d'_1 \sim d'_2) \lor d_1 \not\sim d_2
         \end{array}}
     {t_1 \sim t_2}
 \end{gather*}
@@ -521,11 +523,77 @@ Why not equal?
   With this restriction, I was able to prove the following in December
   of 2017. \\[2ex]
 
-  \textbf{Theorem} (Determinism)\\ If $v_1 \in \SEM{e}\rho$ and $v_2
-  \in \SEM{e}\rho$ , then $v_1 \sim v_2$. \\[2ex]
-  
+  \textbf{Theorem} (Determinism)\\ If $d_1 \in \SEM{e}\rho$ and $d_2
+  \in \SEM{e}\rho$ , then $d_1 \sim d_2$. \\[2ex]
+
+  In general for partial orders, one often has
+  \[
+    a \sim b \text{ iff } \exists c,\; c = a \sqcup b
+  \]
+  So I thought that the lemma Combine Denotations of Expressions would
+  easily follow. \\[2ex]
+
+  It didn't.
+}
+%===============================================================================
+\frame{
+  \frametitle{Challenge \#1}
+
+
+  I had been using the follow definition of $\sqsubseteq$
+  \[
+    \inference{}{n \sqsubseteq n}
+    \qquad
+    \inference{t_1 \subseteq t_2}
+               {t_1 \sqsubseteq t_2}
+  \]
+  which leads to this definition of $\sqcup$:
+  \begin{align*}
+    n \sqcup n &= n \\
+    t_1 \sqcup t_2 &= t_1 \cup t_2
+  \end{align*}
+    
 }
 
+%===============================================================================
+
+\frame{
+  \frametitle{Challenge \#1}
+  
+Let's try to prove Combine Denoations of Expression by induction on
+$e$. Consider the case for application: $e = (e_1 \app e_2)$. From $v
+\in \ESEM{e_1 \app e_2}\rho$ and $v' \in \ESEM{e_1 \app e_2}\rho'$ we
+have something like
+\begin{gather*}
+t \in \ESEM{e_1}\rho \qquad v_2 \in \ESEM{e_2}\rho \qquad
+  v_2 \mapsto v \in t \\
+t' \in \ESEM{e_2}\rho' \qquad v'_2 \in \ESEM{e_2}\rho' \qquad
+  v'_2 \mapsto v' \in t
+\end{gather*}
+By the induction hypothesis we have
+\[
+t \sqcup t' \in \ESEM{e_1} \qquad
+v_2 \sqcup v'_2 \in \ESEM{e_2}
+\]
+We need to show that 
+\[
+   (v_2 \sqcup v'_2) \mapsto (v \sqcup v') \in t \sqcup t' 
+\]
+But we cannot. Set union does not mix together information from
+entries in $t$ and $t'$ to form new entries.
+
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Solution \#1: Intersection Types}
+
+  Our domain $\mathbb{D}$ and ordering $\sqsubseteq$ can be viewed as
+  a certain kind of intersection type.
+  
+
+}
 
 
 \end{document}
