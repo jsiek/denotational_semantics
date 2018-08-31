@@ -206,6 +206,11 @@
 \newcommand{\store}[0]{\mathsf{store}}
 \newcommand{\CHOOSE}[0]{\mathsf{choose}\,}
 
+\newcommand{\WF}[1]{\mathsf{wf}(#1)}
+\newcommand{\UP}[1]{\mathord{\uparrow} #1}
+\newcommand{\ATOMS}[1]{\mathit{atoms}(#1)}
+\newcommand{\sqinter}[0]{\bigsqcap}
+
 \newcommand*\oldmacro{}%
 \let\oldmacro\insertshorttitle%
 \renewcommand*\insertshorttitle{%
@@ -563,7 +568,8 @@ optimization: common subexpression elimination!
 Let's try to prove Combine Denoations of Expression by induction on
 $e$. Consider the case for application: $e = (e_1 \app e_2)$. From $v
 \in \ESEM{e_1 \app e_2}\rho$ and $v' \in \ESEM{e_1 \app e_2}\rho'$ we
-have something like
+need to show $v \sqcup v' \in \ESEM{e_1 \app e_2}$.
+We have something like
 \begin{gather*}
 t \in \ESEM{e_1}\rho \qquad v_2 \in \ESEM{e_2}\rho \qquad
   v_2 \mapsto v \in t \\
@@ -587,14 +593,237 @@ entries in $t$ and $t'$ to form new entries.
 %===============================================================================
 
 \frame{
-  \frametitle{Solution \#1: Intersection Types}
+  \frametitle{Solution \#1: Intersection Types to the rescue!}
 
-  Our domain $\mathbb{D}$ and ordering $\sqsubseteq$ can be viewed as
-  a certain kind of intersection type.
-  
+  \begin{itemize}
+  \item Our denotations $\mathbb{D}$ and ordering $\sqsubseteq$ can be
+    viewed as a simple form of intersection type and subtyping.
+  \item Barendregt-Coppo-Dezani (BCD) subtyping solves challenge \#1
+    with the following rules:
+    \begin{gather*}
+      \inference{}{(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)}\\[2ex]
+      \inference{C <: A \quad B <: D}{A \to B <: C \to D}
+    \end{gather*}
+  \end{itemize}
 
 }
 
+%===============================================================================
+\frame{
+  \frametitle{Challenge \#2: Consistency and Subtyping}
+
+The following was easy to prove with $\mathbb{D}$ and ordering
+$\sqsubseteq$. But with intersection types, not so much.\\[2ex]
+  
+\textbf{Lemma} (Consistency and Subtyping)
+\begin{itemize}
+\item  If $A \sim B$, $A <: C$, and $B <: D$,
+  then $C \sim D$.
+\item If $A \not\sim B$, $C <: A$, $D <: B$, then $C \not\sim D$.
+\end{itemize}
+\vspace{5pt}
+
+I got stuck on the cases for subtyping via the transitivity rule.
+
+}
+%===============================================================================
+\frame{
+  \frametitle{BCD Subtyping}
+
+\begin{gather*}
+\inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \\[2ex]
+\inference{}{A \sqcap B <: A} \quad
+\inference{}{A \sqcap B <: B} \quad
+\inference{C <: A \quad C <: B}{C <: A \sqcap B} \\[2ex]
+\inference{C <: A \quad B <: D}{A \to B <: C \to D}
+\quad
+\inference{}{(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)}
+\end{gather*}
+
+\begin{center}
+  Fails the sub-formula property because of the transitivity rule.
+\end{center}
+
+}
+
+%===============================================================================
+\frame{
+  \frametitle{Solution \#2: Olivier Laurent to the rescue!}
+
+In \textit{Intersection Types with Subtyping by Means of Cut
+  Elimination} (Fund. Inf. 2012), Olivier Laurent defines subtyping
+without transitivity and instead proves it, but it does not satisfy
+the sub-formula property because of an additional rule. Olivier admits
+\begin{quote}
+``it would be much nicer and much more natural to go through a
+  sub-formula property''
+\end{quote}
+
+So I emailed Olivier in June and go the reply
+\begin{quote}
+``Indeed! I now have two different sequent-calculus systems which are
+  equivalent to BCD subtyping and satisfy the sub-formula property.  I
+  am currently writing a paper on this but it is not ready yet.''
+\end{quote}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Olivier's Subtyping}
+
+  
+  $A_1,\ldots,A_n \vdash B$
+   means 
+  $A_1 \sqcap \cdots \sqcap A_n <: B$.
+
+  Let $\Sigma$ be a sequence of types.
+
+\begin{gather*}
+  \inference{\Sigma_1, \Sigma_2 \vdash A}
+       {\Sigma_1 , n, \Sigma_2 \vdash A} \qquad
+  \inference{\Sigma_1, \Sigma_2 \vdash A}
+       {\Sigma_1 , B \to C, \Sigma_2 \vdash A}
+   \\[2ex]
+   \inference{\Sigma \vdash A \quad \Sigma \vdash B}{\Sigma \vdash A \sqcap B}
+   \qquad
+   \inference{\Sigma_1,B,C,\Sigma_2 \vdash A}{\Sigma_1,B\sqcap C,\Sigma_2 \vdash A}
+   \\[2ex]
+   \inference{}{n \vdash n}
+   \qquad
+   \inference{A \vdash C_1, \ldots, C_n \quad
+         D_1, \ldots, D_n \vdash B}
+        {C_1\to D_1,\ldots, C_n\to D_n \vdash A \to B}
+\end{gather*}
+  
+Simple, elegant, beautiful!
+
+}
+
+%===============================================================================
+\frame{
+  \frametitle{The Road to Transitivity}
+
+\noindent \textbf{Lemma} (Weakening)\\
+  If $\Sigma_1,\Sigma_2 \vdash A$,
+  then $\Sigma_1,B,\Sigma_2 \vdash A$. \\[1ex]
+
+\noindent \textbf{Lemma} (Axiom)\\
+$A \vdash A$ \\[1ex]
+
+\noindent \textbf{Lemma} (Permutation)\\
+  If $\Sigma_1 \vdash A$ and $\Sigma_2$ is a permutation of $\Sigma_1$,
+  then $\Sigma_2 \vdash A$. \\[1ex]
+  
+\noindent \textbf{Lemma} ($\sqcap L_e$) \\
+If $\Sigma_1,A\sqcap B,\Sigma_2 \vdash C$, then
+$\Sigma_1,A, B,\Sigma_2 \vdash C$. \\[1ex]
+
+\noindent \textbf{Lemma} (Collapse Duplicates) \\
+%
+If $\Sigma_1,A,A,\Sigma_2 \vdash C$, then $\Sigma_1,A,\Sigma_2 \vdash
+C$. \\[1ex]
+
+\noindent \textbf{Theorem} (Cut Elimination)\\
+  If $\Sigma_2 \vdash B$ and $\Sigma_1,B,\Sigma_3 \vdash C$,
+  then $\Sigma_1,\Sigma_2,\Sigma_3 \vdash C$. 
+  
+}  
+%===============================================================================
+\frame{
+  \frametitle{The Usual Properties of Subtyping }
+
+  \[
+    A <: B  \text{ iff } A \vdash B
+  \]
+  
+\textbf{Proposition} (Properties of Subtyping) 
+\begin{itemize}
+\item $A <: A$.
+\item If $A <: B$ and $B <: C$, then $A <: C$. 
+\item If $C <: A$ and $B <: D$, then $A \to B <: C \to D$.
+\item If $A_1 <: B$, then $A_1 \sqcap A_2 <: B$.
+\item If $A_2 <: B$, then $A_1 \sqcap A_2 <: B$.
+\item If $B <: A_1$ and $B <: A_2$, then $B <: A_1 \sqcap A_2$.
+\item If $A <: C$ and $B <: D$, then $A \sqcap B <: C \sqcap D$.
+\item $(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)$.
+\item $(A \to C) \sqcap (B \to D) <: (A\sqcap B) \to (C \sqcap D)$
+\end{itemize}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Back to Consistency and Subtyping}
+
+Definition of \emph{atoms}.
+\begin{gather*}
+  \ATOMS{n} = \{ n \} \qquad
+  \ATOMS{A\to B} = \{ A \to B \} \\
+  \ATOMS{A \sqcap B} = \ATOMS{A} \cup \ATOMS{B}
+\end{gather*}
+
+\textbf{Lemma} (Atomic Consistency) \\
+$A \sim B$ iff (for all $C \in \ATOMS{A}$ and $D \in \ATOMS{B}$, $C
+\sim D$).\\[1ex]
+
+\noindent \textbf{Lemma} (Atomic Subtyping)\\
+...\\[1ex]
+
+\noindent \textbf{Lemma} (Subtyping Inversion for Function Types)\\
+%
+If $C <: A \to B$, then ... \\[1ex]
+
+\noindent \textbf{Lemma} (Consistency and Subtyping)\\
+  If $A \sim B$, $A <: C$, and $B <: D$,
+  then $C \sim D$.
+  
+}
+%===============================================================================
+\frame{
+\frametitle{Back to Combining Denotations of Expressions}
+
+Definition of well-formed type.
+\begin{gather*}
+  \frac{}{\WF{n}}
+  \qquad
+  \frac{\WF{A} \quad \WF{B}}{\WF{A \to B}}
+  \qquad
+  \frac{A \sim B \quad \WF{A} \quad \WF{B}}{\WF{A \sqcap B}}
+\end{gather*}
+
+\noindent \textbf{Lemma} (Weakening)\\
+If $A \in \ESEM{e}\Gamma_1$ and $\Gamma_2 <: \Gamma_1$,
+then $A \in \ESEM{e}\Gamma_2$. \\[2ex]
+
+\noindent \textbf{Lemma} (Combining Denotations of Expressions)\\
+If $A_1 \in \ESEM{e}\Gamma_1$, $A_2 \in \ESEM{e}\Gamma_2$,
+$\WF{\Gamma_1}$, $\WF{\Gamma_2}$,
+and $\Gamma_1 \sim \Gamma_2$, \\
+then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$ and
+  $\WF{A_1 \sqcap A_2}$.\\[2ex]
+
+The following can then also be proved.\\[2ex]
+
+\noindent \textbf{Proposition} (Subsumption)\\
+If $A \in \ESEM{e}\Gamma$, $A <: B$, $\WF{B}$, $\WF{\Gamma}$,
+then $B \in \ESEM{e}\Gamma$. 
+
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Conclusions}
+
+  \begin{itemize}
+  \item Restricting the tables to be ``functional'' gives us
+    determinism, common subexpression elimination, and
+    $\beta$-equality!
+    
+  \item Subtyping for intersections types: Olivier's elegant
+    formulation satisfies the sub-formula property!
+    
+  \end{itemize}
+}
 
 \end{document}
 
