@@ -273,8 +273,8 @@ moredelim=[is][\color{blue}]{~}{~},
    the Functional Character of the Lambda Calculus \\[2ex]
 \normalsize Jeremy G. Siek \\
 Indiana University\\[2ex]
-PL Wonks \\
-August 2018
+Center for Programming Systems \\
+August 31, 2018
 %% \end{minipage}
 %% &
 %% \begin{minipage}{0.45\textwidth}
@@ -304,7 +304,7 @@ Denotations:
   \fbox{\fbox{
       $
       \begin{array}{ll}
-      d ::= n \mid \{ d_1\mapsto d'_1,\ldots, d_n\mapsto d'_n \}\\[1ex]
+      d ::= n \mid \{ d_1{\mapsto} d'_1,\ldots, d_n{\mapsto} d'_n \}\\[1ex]
       \mathbb{D} = \mathbb{Z} + \mathcal{P}_{f}(\mathbb{D} \times \mathbb{D})
       \end{array}
       $
@@ -319,14 +319,15 @@ Let $t$, for table, range over $\mathcal{P}_{f}(\mathbb{D} \times \mathbb{D}) $.
 \frame{
 \frametitle{A Compositional Big-Step Semantics}
 \small
-\fbox{$\rho \vdash e \Rightarrow d$}
+\vspace{5pt}
+\hfill\fbox{$\rho \vdash e \Rightarrow d$}
 \begin{gather*}
   \inference
       { d \sqsubseteq \rho(x)}
       {\rho \vdash x \Rightarrow d}
   \;
   \inference
-      {\forall d\mapsto d'\in t,\\ \rho(x{:=}d) \vdash e \Rightarrow d'}
+      {\forall\, d{\mapsto}d'\in t,\\ \rho(x{:=}d) \vdash e \Rightarrow d'}
       {\rho \vdash \lam{x}e \Rightarrow t}
   \;
   \inference
@@ -437,6 +438,8 @@ then $d_1 \sqcup d_2 \in \SEM{v}\rho$.
 \frame{
 \frametitle{Goal: arbitrary $\beta$-reduction}
 
+To justify optimizing via function inlining, we'd like:\\[2ex]
+
 \textbf{Theorem} (Equality of $\beta$-reduction for CBV)\\
 \[
 \SEM{(\lam{x}e) \app e'} = \SEM{e[e'/x]}
@@ -458,20 +461,20 @@ then $d_1 \sqcup d_2 \in \SEM{e}\rho$.
 
 A problem with the lambda's-as-tables approach:
 \begin{align*}
-  \lam{f} (f \app 3) + (f \app 3)
-  &=_{\mathrm{ctx}}
-  \lam{f} (\lam{x} x + x) \app (f \app 3)
+  \lam{f} (f \app 5) + (f \app 5)
+  & \stackrel{\mathrm{ctx}}{=}
+  \lam{f} (\lam{x} x + x) \app (f \app 5)
 \\
-  \ESEM{\lam{f} (f \app 3) + (f \app 3)}
+  \ESEM{\lam{f} (f \app 5) + (f \app 5)}
   &\neq
-  \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 3)}
+  \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 5)}
 \end{align*}
 
 Why not equal?
 \begin{align*}
-  R &= \{ 0\mapsto 1, 0\mapsto 2 \}\\
-  \{ R\mapsto 9 \} &\in \ESEM{\lam{f} (f \app 3) + (f \app 3)} \\
-  \{ R\mapsto 9 \} &\not\in \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 3)} 
+  R &= \{ 5\mapsto 1, 5\mapsto 2 \}\\
+  \{ R\mapsto 3 \} &\in \ESEM{\lam{f} (f \app 5) + (f \app 5)} \\
+  \{ R\mapsto 3 \} &\not\in \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 5)} 
 \end{align*}
    
 This is bad, we need this equality to justify a standard compiler
@@ -489,7 +492,7 @@ optimization: common subexpression elimination!
     \item Can we add this restriction to the denotations?
     \item Not quite, it would allow bogus tables such as
       \[
-      \{ \{0\mapsto 1\} \mapsto 2, \{0\mapsto 1, 5\mapsto 6 \} \mapsto 3 \}
+      \{ \{0{\mapsto} 1\} \mapsto 2, \{0{\mapsto} 1, 5{\mapsto} 6 \} \mapsto 3 \}
       \]   
   \end{itemize}
 
@@ -499,7 +502,7 @@ optimization: common subexpression elimination!
 \begin{gather*}
   \frac{}{n \sim n}
   \qquad
-  \frac{\begin{array}{l}\forall d_1 d'_1 d_2 d'_2, d_1\mapsto d'_1 \in t_1 \land d_2 \mapsto d'_2 \in t_2 \\
+  \frac{\begin{array}{l}\forall d_1 d'_1 d_2 d'_2, d_1{\mapsto} d'_1 \in t_1 \land d_2 {\mapsto} d'_2 \in t_2 \\
         \implies (d_1 \sim d_2 \land d'_1 \sim d'_2) \lor d_1 \not\sim d_2
         \end{array}}
     {t_1 \sim t_2}
@@ -582,7 +585,7 @@ entries in $t$ and $t'$ to form new entries.
 
   \begin{itemize}
   \item Our denotations $\mathbb{D}$ and ordering $\sqsubseteq$ can be
-    viewed as a simple form of intersection type and subtyping.
+    viewed as a simple form of intersection types and subtyping.
   \item Barendregt-Coppo-Dezani (BCD) subtyping solves challenge \#1
     with the following rules:
     \begin{gather*}
@@ -598,7 +601,8 @@ entries in $t$ and $t'$ to form new entries.
   \frametitle{Challenge \#2: Consistency and Subtyping}
 
 The following was easy to prove with $\mathbb{D}$ and ordering
-$\sqsubseteq$. But with intersection types, not so much.\\[2ex]
+$\sqsubseteq$. \\
+But with intersection types, not so much.\\[2ex]
   
 \textbf{Lemma} (Consistency and Subtyping)
 \begin{itemize}
@@ -615,6 +619,7 @@ I got stuck on the cases for subtyping via the transitivity rule.
 \frame{
   \frametitle{BCD Subtyping}
 
+  \hfill\fbox{$A <: B$}
 \begin{gather*}
 \inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \\[2ex]
 \inference{}{A \sqcap B <: A} \quad
@@ -624,6 +629,8 @@ I got stuck on the cases for subtyping via the transitivity rule.
 \quad
 \inference{}{(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)}
 \end{gather*}
+
+\vspace{10pt}
 
 \begin{center}
   Fails the sub-formula property because of the transitivity rule.
@@ -654,8 +661,7 @@ So I emailed Olivier in June and go the reply
 }
 %===============================================================================
 \frame{
-  \frametitle{Olivier's Subtyping}
-
+  \frametitle{Olivier's Definition of Subtyping}
   
   $A_1,\ldots,A_n \vdash B$
    means 
@@ -663,6 +669,8 @@ So I emailed Olivier in June and go the reply
 
   Let $\Sigma$ be a sequence of types.
 
+  \vspace{10pt}
+  \hfill\fbox{$\Sigma \vdash A$}
 \begin{gather*}
   \inference{\Sigma_1, \Sigma_2 \vdash A}
        {\Sigma_1 , n, \Sigma_2 \vdash A} \qquad
@@ -675,18 +683,21 @@ So I emailed Olivier in June and go the reply
    \\[2ex]
    \inference{}{n \vdash n}
    \qquad
-   \inference{A \vdash C_1, \ldots, C_n \quad
+   \inference{A \vdash C_1 \cdots A \vdash C_n
+         &
          D_1, \ldots, D_n \vdash B}
         {C_1\to D_1,\ldots, C_n\to D_n \vdash A \to B}
 \end{gather*}
-  
+
+\begin{center}
 Simple, elegant, beautiful!
+\end{center}
 
 }
 
 %===============================================================================
 \frame{
-  \frametitle{The Road to Transitivity}
+  \frametitle{Olivier's Road to Transitivity}
 
 \noindent \textbf{Lemma} (Weakening)\\
   If $\Sigma_1,\Sigma_2 \vdash A$,
@@ -739,7 +750,7 @@ C$. \\[1ex]
 \frame{
   \frametitle{Back to Consistency and Subtyping}
 
-Definition of \emph{atoms}.
+Definition of \textit{atoms}.
 \begin{gather*}
   \ATOMS{n} = \{ n \} \qquad
   \ATOMS{A\to B} = \{ A \to B \} \\
@@ -800,9 +811,9 @@ then $B \in \ESEM{e}\Gamma$.
   \frametitle{Conclusions}
 
   \begin{itemize}
-  \item Restricting the tables to be ``functional'' gives us
+  \item Restricting the tables to be functions gives us
     determinism, common subexpression elimination, and
-    $\beta$-equality!
+    $\beta$-equality (function inlining)!
     
   \item Subtyping for intersections types: Olivier's elegant
     formulation satisfies the sub-formula property!
