@@ -1,6 +1,6 @@
 (*<*)
 theory IntersectionTypes
-  imports Main
+  imports Main "~~/src/HOL/Library/FSet" 
 begin
 (*>*)
 
@@ -22,10 +22,10 @@ fun fun_pred :: "ty \<Rightarrow> bool" where
   "fun_pred (A \<rightarrow> B) = True" |
   "fun_pred (A \<sqinter> B) = (fun_pred A \<and> fun_pred B)"
   
-fun entries :: "ty \<Rightarrow> (ty \<times> ty) set" where
-  "entries (TNat n) = {}" |
-  "entries (A \<rightarrow> B) = {(A,B)}" |
-  "entries (A \<sqinter> B) = entries A \<union> entries B" 
+fun entries :: "ty \<Rightarrow> (ty \<times> ty) fset" where
+  "entries (TNat n) = {||}" |
+  "entries (A \<rightarrow> B) = {|(A,B)|}" |
+  "entries (A \<sqinter> B) = entries A |\<union>| entries B" 
 
 section "Subtyping, Sequent Style"
   
