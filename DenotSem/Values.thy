@@ -31,7 +31,9 @@ inductive_cases val_le_0[elim!]: "0 \<turnstile> (v1::val) \<sqsubseteq> v2" and
   fun_le_0[elim!]: "0 \<turnstile> (f1::func) \<sqsubseteq> f2" and
   val_le_inv: "k \<turnstile> (v1::val) \<sqsubseteq> v2" and
   vfun_le_inv[elim!]: "k \<turnstile> VFun f1 \<sqsubseteq> VFun f2" and
-  fun_le_inv: "k \<turnstile> (f1::func) \<sqsubseteq> f2"
+  fun_le_inv: "k \<turnstile> (f1::func) \<sqsubseteq> f2" and
+  nat_fun_le_inv[elim!]: "k \<turnstile> VNat n \<sqsubseteq> VFun f" and
+  fun_nat_le_inv[elim!]: "k \<turnstile> VFun f \<sqsubseteq> VNat n"
     
 lemma weaken_size:  
   "(\<forall> v1 v2. k \<turnstile> (v1::val) \<sqsubseteq> v2 \<longrightarrow> (\<forall>k'. k \<le> k' \<longrightarrow> k' \<turnstile> v1 \<sqsubseteq> v2)) \<and>
@@ -48,7 +50,23 @@ lemma weaken_size:
   apply (rule arrow_le) apply blast+
   done
 
+lemma weaken: "c \<turnstile> f1 \<sqsubseteq> f2@f3 \<Longrightarrow> (\<exists>c'. c' \<turnstile> f1 \<sqsubseteq> f2@f@f3)"
+  apply (induction f arbitrary: c f1 f2 f3)
+   apply force
+  apply (subgoal_tac "\<exists>c'. c' \<turnstile> f1 \<sqsubseteq> f2 @ (f @ f3)") prefer 2 apply force
+  apply clarify
+  apply (subgoal_tac "Suc c' \<turnstile> f1 \<sqsubseteq> f2 @ (a, b) # (f @ f3)")
+    prefer 2 apply (rule wk_fun) apply blast
+  apply auto
+  done
     
+thm val.induct
+    
+(* todo:
+lemma ax 
+
+*)  
+  
 (*
 function vsize :: "val \<Rightarrow> nat" and fsize :: "func \<Rightarrow> nat" where
   "vsize (VNat n) = 1" |
