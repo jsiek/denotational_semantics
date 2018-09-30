@@ -120,9 +120,9 @@ function vsize :: "val \<Rightarrow> nat" and fsize :: "func \<Rightarrow> nat" 
 *)
  
 fun inter :: "ty list \<Rightarrow> ty" where
-  "inter [] = undefined" |
+  "inter [] = \<top>" |
   "inter (A#AS) = A \<sqinter> inter AS"  
-  
+
 function val2ty :: "val \<Rightarrow> ty" and fun2tys :: "func \<Rightarrow> ty list" where
   "val2ty (VNat n) = TNat n" |
   "val2ty (VFun f) = inter (fun2tys f)" |
@@ -131,11 +131,13 @@ function val2ty :: "val \<Rightarrow> ty" and fun2tys :: "func \<Rightarrow> ty 
   by pat_completeness auto
   termination by size_change
 
-lemma val_le_sound: fixes v::val and f::func 
+lemma val_le_sound: fixes v::val and v'::val and f::func and f'::func 
   shows 
   "(k1 \<turnstile> v \<sqsubseteq> v' \<longrightarrow> (\<exists>c. [val2ty v] \<turnstile> c : val2ty v'))
-       \<and>  (k2 \<turnstile> f \<sqsubseteq> f' \<longrightarrow> (\<forall>v v'. (v,v') \<in> f' \<longrightarrow> 
+    \<and> (k2 \<turnstile> f \<sqsubseteq> f' \<longrightarrow> (\<forall>v v'. (v,v') \<in> set f' \<longrightarrow> 
             (\<exists>c. fun2tys f \<turnstile> c : (val2ty v) \<rightarrow> (val2ty v'))))"
-  
+  apply (induction rule: val_le_fun_le.induct)
+       apply force
+  sorry    
   
 end

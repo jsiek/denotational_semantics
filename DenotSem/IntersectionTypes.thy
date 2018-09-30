@@ -1,13 +1,14 @@
 (*<*)
 theory IntersectionTypes
-  imports Main "~~/src/HOL/Library/FSet" 
+  imports Main "~~/src/HOL/Library/FSet" Permutation
 begin
 (*>*)
 
 section "Intersection Types"
   
 datatype ty = TNat nat | TArrow ty ty (infix "\<rightarrow>" 62) | TInter ty ty (infix "\<sqinter>" 61) 
-  
+  | TTop ("\<top>")
+    
 fun dom :: "ty \<Rightarrow> ty" where
   "dom (v\<rightarrow>v') = v"
 fun cod :: "ty \<Rightarrow> ty" where
@@ -16,14 +17,16 @@ abbreviation is_fun :: "ty \<Rightarrow> bool" where
   "is_fun v \<equiv> (case v of v1\<rightarrow>v2 \<Rightarrow> True | _ \<Rightarrow> False)"
 abbreviation all_funs :: "ty set \<Rightarrow> bool" where
   "all_funs \<Gamma> \<equiv> \<forall> v. v \<in> \<Gamma> \<longrightarrow> is_fun v"
-  
+
 fun fun_pred :: "ty \<Rightarrow> bool" where
   "fun_pred (TNat n) = False" |
+  "fun_pred \<top> = True" |
   "fun_pred (A \<rightarrow> B) = True" |
   "fun_pred (A \<sqinter> B) = (fun_pred A \<and> fun_pred B)"
   
 fun entries :: "ty \<Rightarrow> (ty \<times> ty) fset" where
   "entries (TNat n) = {||}" |
+  "entries \<top> = {||}" |
   "entries (A \<rightarrow> B) = {|(A,B)|}" |
   "entries (A \<sqinter> B) = entries A |\<union>| entries B" 
 
@@ -37,166 +40,28 @@ text{*
 inductive deduce_le :: "ty list \<Rightarrow> nat \<Rightarrow> ty \<Rightarrow> bool" ("_ \<turnstile> _ : _" [55,55,55] 56) where
   wk_nat[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(TNat n)#\<Gamma>2 \<turnstile> Suc c: v" | 
   wk_fun[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<rightarrow>v2)#\<Gamma>2 \<turnstile> Suc c: v" |
+  wk_top[intro!]: "\<lbrakk> \<Gamma>1@\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@\<top>#\<Gamma>2 \<turnstile> Suc c: v" |
   union_R[intro!]: "\<lbrakk> \<Gamma> \<turnstile> c : v1; \<Gamma> \<turnstile> c : v2 \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<sqinter> v2" |
   union_L[intro]: "\<lbrakk> \<Gamma>1@v1#v2#\<Gamma>2 \<turnstile> c : v \<rbrakk> \<Longrightarrow> \<Gamma>1@(v1\<sqinter>v2)#\<Gamma>2 \<turnstile> Suc c : v" | 
   d_nat[intro!]: "[TNat n] \<turnstile> c : TNat n" |
   d_arrow[intro!]: "\<lbrakk> all_funs (set \<Gamma>); \<forall> v v'. v\<rightarrow>v' \<in> set \<Gamma> \<longrightarrow> [v1] \<turnstile> c : v;
-                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<rightarrow> v2"  
-  
+                      map cod \<Gamma> \<turnstile> c : v2\<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> Suc c : v1 \<rightarrow> v2" |
+  d_top[intro!]: "\<lbrakk> all_funs (set \<Gamma>); \<Gamma> \<noteq> [] \<rbrakk> \<Longrightarrow> \<Gamma> \<turnstile> c : \<top>" |
+  d_toptop[intro!]: "[\<top>] \<turnstile> c : \<top>"
+
 lemma weaken_size: "\<lbrakk> xs \<turnstile> c : ys; c \<le> c' \<rbrakk> \<Longrightarrow> xs \<turnstile> c' : ys"
   apply (induction xs c ys arbitrary: c' rule: deduce_le.induct) 
   apply (metis Suc_le_D Suc_le_mono wk_nat)  
   apply (metis Suc_le_D Suc_le_mono wk_fun)  
+  apply (metis Suc_le_D Suc_le_mono wk_top)  
   using Suc_le_D apply force
   apply (metis Suc_le_D Suc_le_mono union_L)
   apply blast
-  by (metis (no_types, lifting) Suc_le_D d_arrow less_eq_nat.simps(2) nat.case(2))
-    
-section "Permutations"
-
-lemma count_cons[simp]: "count_list (b#ls) a = (if a = b then 1 else 0) + count_list ls a"
-  by simp
-   
-declare count_list.simps(2)[simp del]
-  
-definition perm :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool" where
-  "perm \<Gamma> \<Gamma>' \<equiv> (\<forall> x. count_list \<Gamma> x = count_list \<Gamma>' x)"
-  
-lemma count_append[simp]: "count_list (xs@ys) v = count_list xs v + count_list ys v"
-  apply (induction xs) apply auto done
-  
-lemma count_remove1_same[simp]: "count_list (remove1 v ls) v = (count_list ls v) - 1"
-  apply (induction ls) apply auto done
-
-lemma count_remove1_diff[simp]: "v \<noteq> v' \<Longrightarrow> count_list (remove1 v ls) v' = count_list ls v'"
-  apply (induction ls) apply auto done
-
-lemma count_remove_mid_same[simp]: "count_list (xs@v#ys) v = 1 + count_list (xs@ys) v"
-  apply (induction xs) by auto
-
-lemma count_remove_mid_diff[simp]: "v \<noteq> v' \<Longrightarrow> count_list (xs@v#ys) v' = count_list (xs@ys) v'"
-  apply (induction xs) by auto
-    
-lemma perm_remove1[intro]: "perm (\<Gamma>1@v#\<Gamma>2) \<Gamma> \<Longrightarrow> perm (\<Gamma>1@\<Gamma>2) (remove1 v \<Gamma>)"
-  unfolding perm_def 
-  by (metis add_diff_cancel_left' count_remove1_diff count_remove1_same 
-      count_remove_mid_diff count_remove_mid_same)  
-  
-lemma remove1_append_notin[simp]: "v \<notin> set ys \<Longrightarrow> remove1 v (ys @ v # zs) = ys @ zs"
-    apply (induction ys) apply auto done
-  
-lemma remove1_ex_append: "v \<in> set xs \<Longrightarrow>
-   \<exists> ys zs. xs=ys@v#zs \<and> remove1 v xs = ys@zs \<and> v \<notin> set ys"
-  apply (induction xs)
-   apply force
-  apply (case_tac "v = a")
-    apply simp apply (rule_tac x="[]" in exI) apply force
-  apply simp
-  apply clarify
-  apply (rule_tac x="a#ys" in exI)
-  apply (rule_tac x="zs" in exI) apply (rule conjI) apply simp
-  apply (rule conjI)
-    prefer 2 apply force
-  apply force
-    done    
-
-lemma nz_count_mem[iff]: "(count_list ls v \<noteq> 0) = (v \<in> set ls)"
-  apply (induction ls) apply auto done
-   
-lemma zero_count_not_mem: "(count_list ls v = 0) \<Longrightarrow> (v \<notin> set ls)"
-  apply (induction ls) apply force apply simp
-    apply (case_tac "v = a") apply force apply force done
-
-lemma non_mem_zero_count: "v \<notin> set ls \<Longrightarrow> count_list ls v = 0"
-  apply (induction ls) apply force apply force done
-
-lemma zero_count_iff_non_mem[iff]: "(count_list ls v = 0) = (v \<notin> set ls)"
-  by (meson non_mem_zero_count zero_count_not_mem)  
-  
-lemma perm_set_eq[intro]: "perm xs ys \<Longrightarrow> set xs = set ys"
-  unfolding perm_def
-  apply (rule equalityI) apply (rule subsetI)
-  apply (subgoal_tac "count_list xs x \<noteq> 0") prefer 2 apply blast apply simp
-  apply (rule subsetI) 
-  apply (subgoal_tac "count_list ys x \<noteq> 0") prefer 2 apply blast
-    apply (subgoal_tac "count_list xs x \<noteq> 0") prefer 2 apply simp
+  apply (metis (no_types, lifting) Suc_le_D d_arrow less_eq_nat.simps(2) nat.case(2))
+  apply blast
   apply blast
   done
     
-lemma perm_remove_common1:
-  "perm (\<Gamma>1 @ v# \<Gamma>2) (\<Gamma>1' @ v# \<Gamma>2') \<Longrightarrow> perm (\<Gamma>1 @ \<Gamma>2) (\<Gamma>1' @ \<Gamma>2')"
-  unfolding perm_def by auto
-    
-lemma perm_add_common:
-  "perm (\<Gamma>1@\<Gamma>2) (\<Gamma>1'@\<Gamma>2') \<Longrightarrow> perm (\<Gamma>1@\<Gamma>@\<Gamma>2) (\<Gamma>1'@\<Gamma>@\<Gamma>2')"
-  unfolding perm_def by auto
-
-lemma perm_ex_cons:
-  "perm (v # \<Gamma>2) \<Gamma>' \<Longrightarrow> \<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'" 
-  apply (induction \<Gamma>' arbitrary: v \<Gamma>2)
-   apply (simp add: perm_def) apply (erule_tac x=v in allE) apply force
-  apply (case_tac "a = v") apply (rule_tac x="[]" in exI)
-    apply (rule_tac x=\<Gamma>' in exI) apply force
-  apply (subgoal_tac "perm (v#(remove1 a \<Gamma>2)) \<Gamma>'")
-   apply (subgoal_tac "\<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'") prefer 2 apply blast 
-   apply (erule exE)+ apply clarify
-   apply (rule_tac x="a#\<Gamma>1'" in exI)
-    apply (rule_tac x="\<Gamma>2'" in exI)
-    apply (rule conjI) apply force apply force
-  unfolding perm_def apply (rule allI) apply (erule_tac x=x in allE)
-  apply simp apply (case_tac "x=v") apply force 
-  apply simp apply (case_tac "x=a") apply auto
-  done
-
-lemma perm_ex_append: "perm (\<Gamma>1@ v # \<Gamma>2) \<Gamma>' \<Longrightarrow> \<exists>\<Gamma>1' \<Gamma>2'. \<Gamma>' = \<Gamma>1' @ v # \<Gamma>2' \<and> v \<notin> set \<Gamma>1'"
-  unfolding perm_def
-  apply (erule_tac x=v in allE)
-  apply simp
-  apply (subgoal_tac "v \<in> set \<Gamma>'") prefer 2 
-   apply (metis nat.distinct(1) non_mem_zero_count)
-  by (meson split_list_first)
-
-lemma perm_empty[simp]: "perm [] xs \<Longrightarrow> xs = []"
-  unfolding perm_def by simp
-    
-lemma perm_singleton[simp]: "perm [v] \<Gamma>' \<Longrightarrow> \<Gamma>' = [v]"   
-  unfolding perm_def
-  apply (case_tac \<Gamma>')
-  apply (metis Nil_is_append_conv list.set_intros(1) remove1_ex_append zero_count_iff_non_mem)
-  apply (case_tac "a = v") apply force
-  by (metis count_list.simps  list.set_intros(1) zero_count_not_mem)    
-
-lemma perm_map[intro!]: "perm xs ys \<Longrightarrow> perm (map f xs) (map f ys)"
-  apply (induction xs arbitrary: f ys)
-   apply simp apply (subgoal_tac "ys = []") prefer 2 apply (rule perm_empty) apply blast
-   apply (simp add: perm_def)
-   apply (subgoal_tac "\<exists>ys1 ys2. ys = ys1@a#ys2 \<and> a \<notin> set ys1") prefer 2 
-   apply (meson perm_ex_cons) apply (erule exE)+ apply simp
-  apply clarify
-  apply (subgoal_tac "perm ([]@xs) (ys1@ys2)") prefer 2 
-   apply (rule perm_remove_common1) apply force
-  apply (subgoal_tac "perm (map f ([]@xs)) (map f (ys1@ys2))") prefer 2 apply force
-  apply simp
-  apply (subgoal_tac "perm ([] @ [f a] @ map f xs) (map f ys1 @ [f a]@ map f ys2)") prefer 2
-    apply (rule perm_add_common) apply force
-  apply force
-  done
-  
-lemma perm_refl[intro!]: "perm L L"
-  unfolding perm_def by auto
-
-lemma perm_symm: "perm L1 L2 \<Longrightarrow> perm L2 L1"
-  unfolding perm_def by auto
-    
-lemma perm_trans: "\<lbrakk> perm L1 L2; perm L2 L3 \<rbrakk> \<Longrightarrow> perm L1 L3"
-  unfolding perm_def apply auto done
-    
-lemma perm_append[intro!]: "perm (L1@L2) (L2@L1)"
-  unfolding perm_def apply auto done
-    
-lemma perm_cons_remove[intro!]: "v \<in> set L \<Longrightarrow> perm L (v#(remove1 v L))"    
-  unfolding perm_def apply auto by (metis Suc_pred neq0_conv nz_count_mem)
-
 section "Admissible Subtyping Rules"
 
 lemma wk_gen: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists>c'. \<Gamma>@v#\<Delta> \<turnstile> c' : v')"
@@ -211,6 +76,9 @@ next
   obtain c2 where "\<Gamma>@v2#\<Delta> \<turnstile> c2 : v'" using TInter.IH(2) TInter.prems by blast
   then obtain c1 where "\<Gamma>@v1#v2#\<Delta> \<turnstile> c1 : v'" using TInter.IH(1) by blast 
   then show ?case using union_L by blast
+next
+  case TTop
+  then show ?case by blast
 qed
   
 lemma weaken: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists>c'. \<Gamma>@\<Sigma>@\<Delta> \<turnstile> c' : v')"
@@ -223,6 +91,9 @@ lemma weaken: "\<Gamma>@\<Delta> \<turnstile> c : v' \<Longrightarrow> (\<exists
 
 lemma ax[intro]: "\<exists>c. [v] \<turnstile> c : v"
 proof (induction v)
+  case TTop
+  then show ?case by blast
+next
   case (TNat n)
   then show ?case by blast
 next
@@ -283,6 +154,10 @@ next
   then have cp: "\<Gamma>1'@\<Gamma>2' \<turnstile> c : v" using wk_fun.IH by blast
   then show ?case using gp by blast
 next
+  case (wk_top \<Gamma>1 \<Gamma>2 c v)
+  then show ?case
+    by (metis deduce_le.wk_top perm_ex_append perm_remove1 remove1_append_notin)
+next
   case (union_R \<Gamma> c v1 v2)
   have c1: "\<Gamma>' \<turnstile> c : v1" using union_R.IH(1) union_R.prems by blast
   have c2: "\<Gamma>' \<turnstile> c : v2" using union_R.IH(2) union_R.prems by blast
@@ -315,6 +190,12 @@ next
   have c2_2: "map cod \<Gamma>' \<turnstile> c : v2" using c2 weaken_size by auto
   have c1_2: "\<forall>v v'. v\<rightarrow>v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c : v" using c1 weaken_size by auto    
   show ?case using af_gp c1_2 c2_2 by blast
+next
+  case (d_top \<Gamma> c)
+  then show ?case using perm_set_eq by fastforce
+next
+  case (d_toptop c)
+  then show ?case by (metis deduce_le.d_toptop perm_singleton)
 qed
   
 lemma append_eq_aux: "v \<noteq> v' \<Longrightarrow> v#ys = xs'@v'#ys' \<Longrightarrow> (\<exists>ls. xs'=v#ls \<and> ys=ls@v'#ys') 
@@ -407,6 +288,9 @@ next
     then show ?thesis using kp_c by auto 
   qed
 next
+  case (wk_top \<Gamma>1 \<Gamma>2 c v)
+  then show ?case sorry
+next
   case (union_R \<Gamma> c v1 v2 \<Gamma>')
   obtain k1 where k1: "\<Gamma>' @ A # B # \<Delta> \<turnstile> k1 : v1" and k1_c: "k1 < c" 
     using union_R.IH(1) union_R.prems by blast
@@ -477,6 +361,14 @@ next
   case (d_arrow \<Gamma>' v1 c v2)
   have "False" using d_arrow(1) d_arrow(5) apply simp apply (erule_tac x="A\<sqinter>B" in allE) by blast      
   then show ?case ..
+next
+  case (d_top \<Gamma> c)
+  have "False" using local.d_top(1) local.d_top(2) using local.d_top(3) by auto
+  then show ?case ..
+next
+  case (d_toptop c)
+  then show ?case
+    by (meson Cons_eq_append_conv Nil_is_append_conv list.inject list.simps(3) ty.distinct(12))
 qed
  
 lemma union_Le: "\<lbrakk> \<Gamma>@(A\<sqinter>B)#\<Delta> \<turnstile> k : C  \<rbrakk> \<Longrightarrow> \<exists>k'. \<Gamma>@A#B#\<Delta> \<turnstile> k' : C \<and> k' < k"
@@ -510,7 +402,6 @@ lemma append_eq3_elim: "\<lbrakk> xs@v#ys = xs'@v'#ys';
      \<And>ls. \<lbrakk>xs=xs'@v'#ls; ys'=ls@v#ys \<rbrakk> \<Longrightarrow> P;
            \<lbrakk>xs = xs'; v = v'; ys = ys' \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using append_eq3 by (metis (full_types))
-    
 
 lemma co_aux: "\<forall> \<Delta> A \<Sigma> c C. m = (size A, c) \<longrightarrow>
             \<Delta> @ A # A # \<Sigma> \<turnstile> c : C \<longrightarrow> (\<exists>c'. \<Delta> @ A # \<Sigma> \<turnstile> c' : C)"
@@ -594,7 +485,9 @@ next
         assume d: "\<Delta> = \<Gamma>1" and a: "A = ?v" and eq2: "A # \<Sigma> = \<Gamma>2"
         then show ?thesis using ca c_v by blast
       qed
-        
+    next (* case wk_top *)
+      fix \<Gamma>1 \<Gamma>2 ca v
+      show ?thesis sorry
     next (* case union_R *)
       fix \<Gamma> ca v1 v2 assume g: "\<Delta> @ A # A # \<Sigma> = \<Gamma>" and c_ca: "c = Suc ca" and
         c_v12: "C = v1 \<sqinter> v2" and ca_v1: "\<Gamma> \<turnstile> ca : v1" and ca_v2: "\<Gamma> \<turnstile> ca : v2" 
@@ -693,6 +586,12 @@ next
           d_arrow[of "?G" v1 "max ca cb" v2] weaken_size 
         by (metis (no_types, lifting) max.cobounded2 max_def)
       then show ?thesis using c_v12 by blast
+    next (* case d_top *)
+      fix \<Gamma> ca
+      show ?thesis sorry
+    next (* case d_toptop *)
+      fix ca
+      show ?thesis sorry
     qed      
   qed
 qed
@@ -811,9 +710,9 @@ lemma ex_larger: "\<exists>c. (\<forall>v v'. v \<rightarrow> v' \<in> set G \<l
   apply (induction G)
    apply force
   apply clarify
-  apply (case_tac a) apply simp apply blast defer apply simp apply blast apply simp
-  apply (rule_tac x="max c (f (x21,x22))" in exI) apply clarify
-  apply (rule conjI) apply (rule impI) apply force apply force
+  apply (case_tac a) apply simp apply blast defer apply simp apply blast
+   apply simp apply blast
+  apply (rule_tac x="max c (f (x21,x22))" in exI) apply fastforce
   done
 
 lemma cut: "\<forall>\<Gamma> A \<Delta> \<Sigma> C c1 c2. m = (size A, c1, c2) \<longrightarrow>
@@ -848,7 +747,9 @@ next
         apply (erule_tac x="(size A, c1', c2)" in allE) apply (erule impE) apply force apply blast done
       then have "(\<Delta>@\<Gamma>1)@(\<Gamma>2@\<Sigma>) \<turnstile> c' : C" by simp
       then show ?thesis using g wk_fun[of "\<Delta>@\<Gamma>1" "\<Gamma>2@\<Sigma>" c' C v1 v2] by auto
-          
+    next (* case c1 is wk_top *)
+      fix \<Gamma>1 \<Gamma>2 c v
+      show ?thesis sorry
     next (* case c1 is union_R *)
       fix \<Gamma>' c1' v1 v2 assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
         a: "A = v1 \<sqinter> v2" and c1p_v1: "\<Gamma>' \<turnstile> c1' : v1" and c1p_v2: "\<Gamma>' \<turnstile> c1' : v2" 
@@ -866,7 +767,10 @@ next
           and c_v: "C = v" and c: "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
         then show ?thesis using  c1p_v12 2 m g_gp 
             cut_any_wk[of \<Gamma>' c1 A m c2 \<Delta> \<Sigma> \<Gamma>1] by blast
-
+      next (* case c2 is wk_top *)
+        fix \<Gamma>1 \<Gamma>2 c v
+        show ?thesis sorry
+            
       next (* case c2 is union_R *)
         fix \<Gamma>'' c2' v1' v2' assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and c2_c2p: "c2 = Suc c2'" and
           c_v12p: "C = v1' \<sqinter> v2'" and c2p_v1p: "\<Gamma>'' \<turnstile> c2' : v1'" and c2p_v2p: "\<Gamma>'' \<turnstile> c2' : v2'" 
@@ -909,6 +813,13 @@ next
         fix \<Gamma>'' v1 c2' v2 assume gpp: "\<Delta> @ A # \<Sigma> = \<Gamma>''" and af_gp: "all_funs (set \<Gamma>'')" 
         have "False" using af_gp a gpp by auto
         then show ?thesis ..
+      next (* case c2 is d_top *)
+        fix \<Gamma>' c
+        show ?thesis sorry
+      next (* case c2 is d_toptop *)
+        fix c
+        show ?thesis sorry
+            
       qed
 
     next (* case c1 is union_L *)
@@ -932,6 +843,10 @@ next
         fix \<Gamma>1 \<Gamma>2 c v v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<rightarrow> v2) # \<Gamma>2" and 
           "c2 = Suc c" and "C = v" and "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
         then show ?thesis using g c1_c1p a cut_any_wk by auto
+      next (* case c2 is wk_top *)
+        fix \<Gamma>1 \<Gamma>2 c v
+        show ?thesis sorry
+            
       next (* case c2 is union_R *)
         fix \<Gamma>' c v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "c2 = Suc c" and "C = v1 \<sqinter> v2" and
           "\<Gamma>' \<turnstile> c : v1" and "\<Gamma>' \<turnstile> c : v2"
@@ -959,7 +874,14 @@ next
         fix \<Gamma>' v1 c v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "all_funs (set \<Gamma>')"
         then have "False" using a by auto
         then show ?thesis ..
-      qed        
+      next (* case c2 is d_top *)
+        fix \<Gamma>' c
+        show ?thesis sorry
+      next (* case c2 is d_toptop *)
+        fix c
+        show ?thesis sorry
+            
+      qed
           
     next (* case c1 is d_arrow *)
       fix \<Gamma>' A' c1' B assume g_gp: "\<Gamma> = \<Gamma>'" and c1_c1p: "c1 = Suc c1'" and 
@@ -977,7 +899,9 @@ next
         fix \<Gamma>1 \<Gamma>2 c v v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>1 @ (v1 \<rightarrow> v2) # \<Gamma>2" and "c2 = Suc c"
           and "C = v" and "\<Gamma>1 @ \<Gamma>2 \<turnstile> c : v"
         then show ?thesis using 2 m c1 g_gp cut_any_wk[of \<Gamma>' c1 A m c2 \<Delta> \<Sigma> \<Gamma>1] by blast
-
+      next (* c2 is wk_top *)
+        fix \<Gamma>1 \<Gamma>2 c v
+        show ?thesis sorry
       next (* c2 is union_R *)
         fix \<Gamma>' c v1 v2 assume "\<Delta> @ A # \<Sigma> = \<Gamma>'" and "c2 = Suc c" and "C = v1 \<sqinter> v2" and
           "\<Gamma>' \<turnstile> c : v1" and "\<Gamma>' \<turnstile> c : v2" 
@@ -1059,7 +983,21 @@ next
         have dgs_d: "map cod ?G \<turnstile> ?c : D" using dgs_d_c3 weaken_size apply auto done
         show ?thesis using c_dgs dgs_d af_dgs c_v12 d_arrow[of ?G C' ?c D]
           by (meson max.cobounded2 weaken_size)          
-      qed        
+      next (* case c2 is d_top *)
+        fix \<Gamma>' c
+        show ?thesis sorry
+      next
+        fix c
+        show ?thesis sorry
+            
+      qed 
+    next (* case c1 is d_top *)
+      fix \<Gamma>' c
+      show ?thesis sorry
+    next (* case c1 is d_toptop *)
+      fix c
+      show ?thesis sorry
+          
     qed
   qed
 qed
@@ -1067,6 +1005,7 @@ qed
 fun atoms :: "ty \<Rightarrow> ty set" where
   "atoms (TNat n) = {TNat n}" |
   "atoms (v\<rightarrow>v') = {v\<rightarrow>v'}" |
+  "atoms \<top> = {\<top>}" | 
   atoms_union: "atoms (v\<sqinter>v') = atoms v \<union> atoms v'"  
 
 abbreviation ctx_atoms :: "ty list \<Rightarrow> ty set" where
@@ -1096,7 +1035,10 @@ next
     then obtain c where "[A2] \<turnstile> c : v" using TInter by auto
     then obtain c' where "[A1,A2] \<turnstile> c' : v" using weaken[of "[]" "[A2]" c v "[A1]"] by auto
     then show ?thesis using union_L[of "[]" A1 A2 "[]" c' v] by auto
-  qed    
+  qed   
+next 
+  case TTop
+  then show ?case by auto
 qed
 
 lemma ax_ctx_atoms: "v \<in> ctx_atoms \<Gamma> \<Longrightarrow> \<exists>c. \<Gamma> \<turnstile> c : v"
@@ -1131,11 +1073,13 @@ lemma d_nat_atoms_any_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; ctx_atoms \<G
   apply (induction \<Gamma> c v arbitrary: n rule: deduce_le.induct)
   using UN_insert apply auto[1]
   using UN_insert apply auto[1]
+  using UN_insert apply auto[1]
   apply force  
-  prefer 2 apply force  
-  prefer 2 apply simp apply (case_tac \<Gamma>) apply simp apply blast apply simp
-    apply (case_tac a) apply force apply force apply force
-  apply simp
+  apply simp apply force    
+  apply simp apply (case_tac \<Gamma>) apply simp apply blast apply simp
+    apply (case_tac a) apply force apply force apply force apply force
+   apply simp apply (case_tac \<Gamma>) apply force apply simp apply (case_tac a)
+    apply force+
   done
     
 lemma d_arrow_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; v = v1\<rightarrow>v2 \<rbrakk> \<Longrightarrow>
@@ -1153,6 +1097,9 @@ next
        "(\<forall>v v'. v \<rightarrow> v' \<in> set \<Gamma>' \<longrightarrow> [v1] \<turnstile> c' : v)" and "map cod \<Gamma>' \<turnstile> c' : v2" by blast
   then show ?case by auto
 next
+  case (wk_top \<Gamma>1 \<Gamma>2 c v)
+  then show ?case sorry
+next
   case (union_R \<Gamma> c v1 v2)
   then have "False" by auto
   then show ?case ..
@@ -1167,11 +1114,20 @@ next
   then show ?case ..
 next
   case (d_arrow \<Gamma> v1' c v2')
-  then show ?case apply (rule_tac x=\<Gamma> in exI) apply (rule_tac x=c in exI)
+  then show ?case
+    sorry
+(*  apply (rule_tac x=\<Gamma> in exI) apply (rule_tac x=c in exI)
     apply (rule conjI) apply (rule subsetI) apply simp 
      apply (subgoal_tac "is_fun x") prefer 2 apply blast apply (rule_tac x=x in bexI) 
       apply (case_tac x) apply force apply force apply force apply blast
       apply (rule conjI) apply blast apply (rule conjI) apply blast apply blast done
+*)
+next
+  case (d_top \<Gamma> c)
+  then show ?case sorry
+next
+  case (d_toptop c)
+  then show ?case sorry
 qed
   
 lemma d_nat_atoms_L_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; (\<forall>v. v \<in> ctx_atoms \<Gamma> \<longrightarrow> v = TNat n);
@@ -1183,8 +1139,11 @@ next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
   then show ?case by (metis UN_E UN_I Un_insert_right insert_iff list.set(2) set_append)
 next
+  case (wk_top \<Gamma>1 \<Gamma>2 c v)
+  then show ?case sorry
+next
   case (union_R \<Gamma> c v1 v2)
-  then show ?case  by (metis Un_iff atoms.simps(3))
+  then show ?case  by (metis Un_iff atoms.simps(4))
 next
   case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
   have "ctx_atoms (\<Gamma>1 @ (v1 \<sqinter> v2) # \<Gamma>2) = ctx_atoms (\<Gamma>1 @ v1 # v2 # \<Gamma>2)" by auto
@@ -1199,8 +1158,15 @@ next
   then have "False" using d_arrow(1) d_arrow(5) apply (case_tac \<Gamma>) apply force
     apply simp apply (case_tac a) apply force apply simp apply auto done 
   then show ?case ..
+next
+  case (d_top \<Gamma> c)
+  then show ?case sorry
+next
+  case (d_toptop c)
+  then show ?case sorry
 qed 
   
+(* statement needs fixing to allow top *)
 lemma d_fun_atoms_L_inv: "\<lbrakk> \<Gamma> \<turnstile> c : v; (\<forall>v. v \<in> ctx_atoms \<Gamma> \<longrightarrow> is_fun v);
                          v' \<in> atoms v \<rbrakk> \<Longrightarrow> is_fun v'"
 proof (induction \<Gamma> c v arbitrary: v' rule: deduce_le.induct)
@@ -1208,10 +1174,15 @@ proof (induction \<Gamma> c v arbitrary: v' rule: deduce_le.induct)
   then show ?case using UN_E Un_iff insert_is_Un list.set(2) set_append by fastforce
 next
   case (wk_fun \<Gamma>1 \<Gamma>2 c v v1 v2)
-  then show ?case by (metis UN_iff Un_iff insert_is_Un list.set(2) set_append)
+  then show ?case
+    sorry
+(*    by (metis UN_iff Un_iff insert_is_Un list.set(2) set_append) *)
+next
+  case (wk_top \<Gamma>1 \<Gamma>2 c v)
+  then show ?case sorry
 next
   case (union_R \<Gamma> c v1 v2)
-  then show ?case by (metis Un_iff atoms.simps(3))
+  then show ?case by (metis Un_iff atoms.simps(4))
 next
   case (union_L \<Gamma>1 v1 v2 \<Gamma>2 c v)
   then show ?case
@@ -1225,6 +1196,12 @@ next
 next
   case (d_arrow \<Gamma> v1 c v2)
   show ?case using d_arrow(6) by simp
+next
+  case (d_top \<Gamma> c)
+  then show ?case sorry
+next
+  case (d_toptop c)
+  then show ?case sorry
 qed
 
 lemma d_fun_any_inv_atoms: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [(C\<rightarrow>D)]; v' \<in> atoms v \<rbrakk> \<Longrightarrow> 
@@ -1232,11 +1209,14 @@ lemma d_fun_any_inv_atoms: "\<lbrakk> \<Gamma> \<turnstile> c : v; \<Gamma> = [(
   apply (induction \<Gamma> c v arbitrary: C D rule: deduce_le.induct)
   apply (metis append_is_Nil_conv butlast.simps(2) butlast_append list.distinct(1) list.inject self_append_conv2 ty.distinct(1))
   apply (metis append_is_Nil_conv append_self_conv2 butlast.simps(2) butlast_append d_empty_inv_aux list.simps(3))
+  apply (metis append_is_Nil_conv butlast.simps(2) butlast_append list.distinct(1) list.inject self_append_conv2 ty.distinct(9))
   apply auto[1]
   apply (simp add: append_eq_Cons_conv)
   apply blast
-  by auto
-  
+  apply force
+  apply (metis (no_types, lifting) SUP_empty UN_insert atoms.simps(2) atoms.simps(3) d_fun_atoms_L_inv d_top list.set(1) list.set(2) singletonD sup_bot.comm_neutral ty.case(4))
+  by simp
+    
 lemma rmdup: assumes a_dup: "count_list \<Gamma> a > 1" and g_b: "\<Gamma> \<turnstile> c : B"
   shows "\<exists> c'. remove1 a \<Gamma> \<turnstile> c' : B"
 proof -
@@ -1245,7 +1225,8 @@ proof -
   have "count_list (remove1 a \<Gamma>) a > 0" using a_dup by auto
   then have "a \<in> set (remove1 a \<Gamma>)" using gr_implies_not0 by blast
   then have 2: "perm (remove1 a \<Gamma>) (a#(remove1 a (remove1 a \<Gamma>)))" by blast
-  then have "perm (a#(remove1 a \<Gamma>)) (a#a#(remove1 a (remove1 a \<Gamma>)))" unfolding perm_def by auto
+  then have "perm (a#(remove1 a \<Gamma>)) (a#a#(remove1 a (remove1 a \<Gamma>)))" 
+    unfolding perm_def by (metis count_cons)
   then have "perm \<Gamma> (a#a#(remove1 a (remove1 a \<Gamma>)))" using perm_trans 1 apply blast done
   then obtain c' where "(a#a#(remove1 a (remove1 a \<Gamma>))) \<turnstile> c' : B" using g_b ex by blast
   then obtain c'' where 3: "(a#(remove1 a (remove1 a \<Gamma>))) \<turnstile> c'' : B" 
@@ -1430,6 +1411,7 @@ lemma atoms_nat_deduce: "atoms A \<subseteq> {TNat n} \<Longrightarrow> \<exists
   using max.cobounded1 apply blast
   apply (rule weaken_size) apply blast
   using max.cobounded2 apply blast
+  apply simp
   done
 
 lemma atoms_sub_any_nat[intro]: "atoms A \<subseteq> {TNat n} \<Longrightarrow> TNat n <: A"
@@ -1572,7 +1554,7 @@ lemma fold_meet_ub: "\<lbrakk> \<forall> A B. A\<rightarrow>B \<in> set \<Gamma>
   apply (induction \<Gamma> arbitrary: A1)
   apply force
   apply simp  
-  apply (case_tac a) apply force defer apply force
+  apply (case_tac a) apply force defer apply force apply force
     apply (rename_tac a1 a2) apply simp
   apply (subgoal_tac "C <: a1") prefer 2 apply force
   apply auto
@@ -1585,8 +1567,7 @@ proof -
   fix a \<Gamma>'
   assume ca: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma> \<longrightarrow> C <: A" and af_g: "all_funs (set \<Gamma>)"
        and g_ne: "\<Gamma> \<noteq> []" and g: "\<Gamma> = a # \<Gamma>'"
-  obtain a1 a2 where a: "a=a1\<rightarrow>a2" using af_g g apply (case_tac a)
-      apply force apply force apply force done
+  obtain a1 a2 where a: "a=a1\<rightarrow>a2" using af_g g by (case_tac a) auto
   have c_a1: "C <: a1" using ca g a by auto 
   have ca2: "\<forall>A B. A \<rightarrow> B \<in> set \<Gamma>' \<longrightarrow> C <: A" using ca g by auto
   have af_g2: "all_funs (set \<Gamma>')" using af_g g by auto
@@ -1632,8 +1613,8 @@ proposition equiv_join_cong[intro]: "\<lbrakk> A \<approx> C; B \<approx> D \<rb
 lemma atoms_nat_eq_nat: "atoms A \<subseteq> {TNat n} \<Longrightarrow> A \<approx> TNat n"
   apply (induction A)
   apply (simp add: ty_equiv_def sub_ty_def)
-   apply (simp add: ty_equiv_def sub_ty_def) apply force
-  done   
+   apply (simp add: ty_equiv_def sub_ty_def) apply force apply force
+  done
 
 lemma sub_any_nat_inv[elim]: "\<lbrakk> TNat n <: A; A \<approx> TNat n \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
   using sub_any_nat_inv_atoms atoms_nat_eq_nat by auto
@@ -1644,12 +1625,13 @@ lemma sub_atom_sub: "\<lbrakk> A <: B; C \<in> atoms B \<rbrakk> \<Longrightarro
   apply (subgoal_tac "C = B1\<rightarrow>B2") prefer 2 using atoms.simps(2) apply blast    
    apply blast
   apply (subgoal_tac "C \<in> atoms B1 \<or> C \<in> atoms B2") prefer 2
-  using atoms.simps(3) apply blast   
+  using atoms.simps(4) apply blast   
   apply (subgoal_tac "A <: B1") prefer 2 apply (meson sub_inter_right1 sub_refl sub_trans)
   apply (subgoal_tac "A <: B2") prefer 2 apply (meson sub_inter_right2 sub_refl sub_trans)
-  apply blast
+   apply blast
+    apply force
   done
-    
+
 (*<*)
 end
 (*>*)
