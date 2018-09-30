@@ -1,5 +1,5 @@
 theory Values
-  imports Main
+  imports Main IntersectionTypes
 begin
 
 section "Values"
@@ -62,10 +62,52 @@ lemma weaken: "c \<turnstile> f1 \<sqsubseteq> f2@f3 \<Longrightarrow> (\<exists
     
 thm val.induct
     
+lemma fun_cons_le:
+  fixes v1::val and v1'::val and f1::func 
+  assumes v21: "k \<turnstile> v2 \<sqsubseteq> v1" and v12: "k \<turnstile> v1' \<sqsubseteq> v2'" and f12: "k \<turnstile> f1 \<sqsubseteq> f2"
+  shows "k \<turnstile> (v1,v1')#f1 \<sqsubseteq> (v2,v2')#f2"
+  sorry
+    
 (* todo:
 lemma ax 
-
-*)  
+ 
+*)
+lemma ax_fun: fixes f::func
+  assumes IH: "\<forall>v v'. (v,v') \<in> set f \<longrightarrow> (\<exists>k. k \<turnstile> v \<sqsubseteq> v) \<and> (\<exists>k. k \<turnstile> v' \<sqsubseteq> v')"
+  shows "\<exists>k. k \<turnstile> f \<sqsubseteq> f" using IH
+proof (induction f)
+  case Nil
+  then show ?case by blast
+next
+  case (Cons a f)
+  obtain k where ff: "k \<turnstile> f \<sqsubseteq> f" using Cons by auto
+  obtain v v' where a: "a = (v,v')" by (cases a) auto
+  obtain k1 where 1: "k1 \<turnstile> v \<sqsubseteq> v" using Cons(2) a by auto
+  obtain k2 where 2: "k2 \<turnstile> v' \<sqsubseteq> v'" using Cons(2) a by auto
+  let ?k = "max k (max k1 k2)"
+  have "k \<le> ?k" by auto
+  then have 3: "?k \<turnstile> f \<sqsubseteq> f" using ff weaken_size by blast    
+  have "k1 \<le> ?k" by auto
+  then have 4: "?k \<turnstile> v \<sqsubseteq> v" using 1 weaken_size by blast
+  
+      
+  show ?case sorry
+qed
+  
+  
+lemma ax: fixes v::val shows "\<exists>k. k \<turnstile> v \<sqsubseteq> v"
+proof (induction v)
+  case (VNat x)
+  then show ?case by blast
+next
+  case (VFun f)
+  have IH: "\<forall>v v'. (v,v') \<in> set f \<longrightarrow> (\<exists>k. k \<turnstile> v \<sqsubseteq> v) \<and> (\<exists>k. k \<turnstile> v' \<sqsubseteq> v')"
+    using VFun by auto
+  
+  have "k \<turnstile> f \<sqsubseteq> f" sorry  
+  then show "\<exists>k. k \<turnstile> VFun f \<sqsubseteq> VFun f" by blast
+qed
+   
   
 (*
 function vsize :: "val \<Rightarrow> nat" and fsize :: "func \<Rightarrow> nat" where
@@ -76,15 +118,24 @@ function vsize :: "val \<Rightarrow> nat" and fsize :: "func \<Rightarrow> nat" 
   by pat_completeness auto
   termination by size_change
 *)
-(*  
-function val2ty :: "val \<Rightarrow> ty" and fun2ty :: "func \<Rightarrow> ty" where
+ 
+fun inter :: "ty list \<Rightarrow> ty" where
+  "inter [] = undefined" |
+  "inter (A#AS) = A \<sqinter> inter AS"  
+  
+function val2ty :: "val \<Rightarrow> ty" and fun2tys :: "func \<Rightarrow> ty list" where
   "val2ty (VNat n) = TNat n" |
-  "val2ty (VFun f) = fun2ty f" |
-  "fun2ty [] = undefined" |
-  "fun2ty ((v,v')#f) = ((val2ty v) \<rightarrow> (val2ty v')) \<sqinter> fun2ty f"
+  "val2ty (VFun f) = inter (fun2tys f)" |
+  "fun2tys [] = []" |
+  "fun2tys ((v,v')#f) = ((val2ty v) \<rightarrow> (val2ty v')) # fun2tys f"
   by pat_completeness auto
   termination by size_change
- *)
+
+lemma val_le_sound: fixes v::val and f::func 
+  shows 
+  "(k1 \<turnstile> v \<sqsubseteq> v' \<longrightarrow> (\<exists>c. [val2ty v] \<turnstile> c : val2ty v'))
+       \<and>  (k2 \<turnstile> f \<sqsubseteq> f' \<longrightarrow> (\<forall>v v'. (v,v') \<in> f' \<longrightarrow> 
+            (\<exists>c. fun2tys f \<turnstile> c : (val2ty v) \<rightarrow> (val2ty v'))))"
   
   
 end
