@@ -10,8 +10,9 @@ type_synonym func = "(val \<times> val) list"
   
 fun join_val :: "val \<Rightarrow> val \<Rightarrow> val option" (infix "\<squnion>" 80) where
   "(VNat n1) \<squnion> (VNat n2) = (if n1 = n2 then Some (VNat n1) else None)" |
-  "(VFun f1) \<squnion> (VFun f2) = Some (VFun (f1@f2))"
-  
+  "(VFun f1) \<squnion> (VFun f2) = Some (VFun (f1@f2))" |
+  "join_val _ _ = None"
+   
 fun join_val_list :: "val list \<Rightarrow> val option" ("\<Squnion>" 1000) where
   "join_val_list [] = None" |
   "join_val_list (v#vs) = (case \<Squnion>vs of None \<Rightarrow> None | Some v' \<Rightarrow> v \<squnion> v')" 
@@ -139,5 +140,28 @@ lemma val_le_sound: fixes v::val and v'::val and f::func and f'::func
   apply (induction rule: val_le_fun_le.induct)
        apply force
   sorry    
+
+fun ty2val :: "ty \<Rightarrow> val option" and tys2fun :: "ty list \<Rightarrow> func option" where
+  "ty2val (TNat n) = Some (VNat n)" |
+  "ty2val (A \<rightarrow> B) = (case ty2val A of None \<Rightarrow> None
+                     | Some v \<Rightarrow> (case ty2val B of None \<Rightarrow> None
+                     | Some v' \<Rightarrow> Some (VFun [(v, v')])))" |
+  "ty2val (A \<sqinter> B) = (case ty2val A of None \<Rightarrow> None
+                     | Some v \<Rightarrow> (case ty2val B of None \<Rightarrow> None
+                     | Some v' \<Rightarrow> v \<squnion> v'))" |
+  "ty2val \<top> = Some (VFun [])" |
+  "tys2fun [] = Some []" |
+  "tys2fun (A#Bs) = 
+     (case A of 
+       A1 \<rightarrow> A2 \<Rightarrow> (ty2val A1, ty2val A2)#tys2fun Bs
+     | _ \<Rightarrow> tys2fun Bs)"
+
+thm val2ty_fun2tys.induct
+  
+lemma val2ty_iso: "ty2val (val2ty v) = Some v' \<longrightarrow> v' = v"
+  "tys2fun (fun2tys f) = Some f' \<Longrightarrow> f = f'"
+  apply (induction v arbitrary: v' rule: val2ty_fun2tys.induct)
+   apply force
+
   
 end
