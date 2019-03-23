@@ -24,7 +24,8 @@ fun E :: "exp \<Rightarrow> ty list \<Rightarrow> ty set" ("\<lbrakk>_\<rbrakk>_
          \<and> (n = 0 \<longrightarrow> v \<in> \<lbrakk>e3\<rbrakk>\<rho>) \<and> (n \<noteq> 0 \<longrightarrow> v \<in> \<lbrakk>e2\<rbrakk>\<rho>) }" |
   Fnat: "F (TNat n) e \<rho> = False" |
   Ffun: "F (v \<rightarrow> v') e \<rho> = (v' \<in> \<lbrakk>e\<rbrakk>(v#\<rho>))" |
-  Finter: "F (v1 \<sqinter> v2) e \<rho> = (F v1 e \<rho> \<and> F v2 e \<rho>)"
+  Finter: "F (v1 \<sqinter> v2) e \<rho> = (F v1 e \<rho> \<and> F v2 e \<rho>)" |
+  Ftop: "F \<top> e \<rho> = True"
 
 (*<*)
 end
