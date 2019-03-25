@@ -182,6 +182,14 @@ sub (⊔-intro d d₁) (ConjL⊑ lt lt₁) =
 sub (⊔-intro d d₁) (ConjR1⊑ lt) = sub d lt
 sub (⊔-intro d d₁) (ConjR2⊑ lt) = sub d₁ lt
 
+
+denot-any-bot : ∀ {Γ} {γ : Env Γ} {M v₁}
+  → γ ⊢ M ↓ v₁
+    ----------
+  → γ ⊢ M ↓ ⊥
+denot-any-bot d = sub d Bot⊑
+
+
 _iff_ : Set → Set → Set
 P iff Q = (P → Q) × (Q → P)
 
@@ -515,6 +523,13 @@ val-subst-zero {Γ}{N} v = valsub G
   G {Z} = v
   G {S k} = V-var
 
+{-
+
+ Can we replace the premise TermValue N
+ with Terminates N?
+
+ -}
+
 substitution-reflect : ∀ {Γ} {γ : Env Γ} {M N v}
   → γ ⊢ M [ N ] ↓ v   →  TermValue N
     -----------------------------------------------
@@ -539,13 +554,15 @@ reflect d (ξ₁-rule r) with d
 ... | ⊔-intro d₁ d₂ = ⊔-intro (reflect d₁ (ξ₁-rule r)) (reflect d₂ (ξ₁-rule r))
 reflect d (ξ₂-rule d' r) with d
 ... | ↦-elim d₁ d₂ lt2 = ↦-elim d₁ (reflect d₂ r) lt2
-... | ⊔-intro d₁ d₂ = ⊔-intro (reflect d₁ (ξ₂-rule d' r)) (reflect d₂ (ξ₂-rule d' r))
+... | ⊔-intro d₁ d₂ = ⊔-intro (reflect d₁ (ξ₂-rule d' r))
+                              (reflect d₂ (ξ₂-rule d' r))
 reflect d (β-rule v) with substitution-reflect d v
 ... | ⟨ v₂ , ⟨ d₁ , d₂ ⟩ ⟩ = ↦-elim (↦-intro d₂) d₁ Refl⊑
-reflect{Γ}{γ}{v = v} (lit-intro{P = p}{k = k} d) (δ-rule{b = b}{p = p}{f = f}{k = k'}) =
-  ↦-elim{v₁ = lit k'}{v₂ = v} (lit-intro (fun-val d)) (lit-intro base-eval-lit) Refl⊑
+reflect{v = v} (lit-intro d) (δ-rule{k = k'}) =
+    ↦-elim{v₁ = lit k'}{v₂ = v} (lit-intro (fun-val d))
+                                (lit-intro base-eval-lit) Refl⊑
 reflect (⊔-intro d₁ d₂) δ-rule =
-  ⊔-intro (reflect d₁ δ-rule) (reflect d₂ δ-rule)
+    ⊔-intro (reflect d₁ δ-rule) (reflect d₂ δ-rule)
 
 reduce-equal : ∀ {Γ} {M : Γ ⊢ ★} {N : Γ ⊢ ★}
   → M —→ N
