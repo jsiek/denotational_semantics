@@ -3,7 +3,8 @@ module Denot where
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
 open import Data.Nat using (ℕ; suc ; zero)
-open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
 open import Agda.Primitive using (lzero)
 open import Lambda
 open import Relation.Nullary.Negation using (contradiction)
@@ -96,17 +97,17 @@ data _∈_〚_〛 : Value → (P : Prim) → rep P → Set where
    base-val : ∀{B}{b : base-rep B}
               --------------------------
             → (base-eval b) ∈ (` B)〚 b 〛
-   fun-val :  ∀{B}{P}{f : base-rep B → rep P}{k : base-rep B}{v' : Value}
-            → v' ∈ P 〚 (f k) 〛
-              ----------------------------------
-            → ((lit {B} k) ↦ v') ∈ (B ⇒ P)〚 f 〛
-   ⊔-val :  ∀{P : Prim}{f : rep P}{v₁ v₂ : Value}
-            → v₁ ∈ P 〚 f 〛  →   v₂ ∈ P 〚 f 〛
+   fun-val :  ∀{B}{P}{f : base-rep B → rep P}{k : base-rep B}{v : Value}
+            → v ∈ P 〚 f k 〛
+              -------------------------------
+            → (lit {B} k ↦ v) ∈ (B ⇒ P)〚 f 〛
+   ⊔-val :  ∀{P : Prim}{p : rep P}{v₁ v₂ : Value}
+            → v₁ ∈ P 〚 p 〛  →   v₂ ∈ P 〚 p 〛
               --------------------------------
-            → (v₁ ⊔ v₂) ∈ P 〚 f 〛
-   ⊥-val :  ∀{P : Prim}{f : rep P}
-              -------------
-            → _∈_〚_〛 ⊥ P f
+            → (v₁ ⊔ v₂) ∈ P 〚 p 〛
+   ⊥-val :  ∀{P : Prim}{p : rep P}
+              ------------
+            → ⊥ ∈ P 〚 p 〛
 
 
 infix 3 _⊢_↓_
@@ -117,10 +118,10 @@ data _⊢_↓_ : ∀{Γ} → Env Γ → (Γ ⊢ ★) → Value → Set where
         -------------
       → γ ⊢ (` x) ↓ v
 
-  lit-intro : ∀{Γ}{γ : Env Γ}{P : Prim} {k : rep P} {v : Value}
-        → v ∈ P 〚 k 〛
+  lit-intro : ∀{Γ}{γ : Env Γ}{P : Prim} {p : rep P} {v : Value}
+        → v ∈ P 〚 p 〛
           ----------------------
-        → γ ⊢ ($_ {Γ} {P} k) ↓ v
+        → γ ⊢ ($_ {Γ} {P} p) ↓ v
 
   ↦-elim : ∀ {Γ} {γ : Env Γ} {M₁ M₂ v v₁ v₂}
         → γ ⊢ M₁ ↓ (v₁ ↦ v₂)  →  γ ⊢ M₂ ↓ v₁  → v ⊑ v₂
@@ -148,19 +149,24 @@ sub-prim : ∀ {P : Prim}{p : rep P}{v₁ v₂ : Value}
   → v₂ ∈ P 〚 p 〛
 sub-prim (base-val {Nat}) Bot⊑ = ⊥-val
 sub-prim (base-val {Nat}) Lit⊑ = base-val
-sub-prim (base-val {Nat}) (ConjL⊑ lt lt₁) = ⊔-val (sub-prim base-val lt) (sub-prim base-val lt₁)
+sub-prim (base-val {Nat}) (ConjL⊑ lt lt₁) =
+    ⊔-val (sub-prim base-val lt) (sub-prim base-val lt₁)
 sub-prim (base-val {𝔹}) Bot⊑ = ⊥-val
 sub-prim (base-val {𝔹}) Lit⊑ = base-val
-sub-prim (base-val {𝔹}) (ConjL⊑ lt lt₁) = ⊔-val (sub-prim base-val lt) (sub-prim base-val lt₁)
+sub-prim (base-val {𝔹}) (ConjL⊑ lt lt₁) =
+    ⊔-val (sub-prim base-val lt) (sub-prim base-val lt₁)
 sub-prim (fun-val d) Bot⊑ = ⊥-val
 sub-prim (fun-val d) Fun⊑ = fun-val d
-sub-prim (fun-val d) (ConjL⊑ lt lt₁) = ⊔-val (sub-prim (fun-val d) lt) (sub-prim (fun-val d) lt₁)
+sub-prim (fun-val d) (ConjL⊑ lt lt₁) =
+    ⊔-val (sub-prim (fun-val d) lt) (sub-prim (fun-val d) lt₁)
 sub-prim (⊔-val d d₁) Bot⊑ = ⊥-val
-sub-prim (⊔-val d d₁) (ConjL⊑ lt lt₁) = ⊔-val (sub-prim (⊔-val d d₁) lt) (sub-prim (⊔-val d d₁) lt₁)
+sub-prim (⊔-val d d₁) (ConjL⊑ lt lt₁) =
+    ⊔-val (sub-prim (⊔-val d d₁) lt) (sub-prim (⊔-val d d₁) lt₁)
 sub-prim (⊔-val d d₁) (ConjR1⊑ lt) = sub-prim d lt
 sub-prim (⊔-val d d₁) (ConjR2⊑ lt) = sub-prim d₁ lt
 sub-prim ⊥-val Bot⊑ = ⊥-val
-sub-prim ⊥-val (ConjL⊑ lt lt₁) = ⊔-val (sub-prim ⊥-val lt) (sub-prim ⊥-val lt₁)
+sub-prim ⊥-val (ConjL⊑ lt lt₁) =
+    ⊔-val (sub-prim ⊥-val lt) (sub-prim ⊥-val lt₁)
 
 
 sub : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
@@ -204,8 +210,11 @@ ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
 ext-nth ρ lt {Z} = Refl⊑
 ext-nth ρ lt {S n'} = lt
 
+Rename : Context → Context → Set
+Rename Γ Δ = ∀{A} → Γ ∋ A → Δ ∋ A
+
 rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Γ ⊢ ★}
-  → (ρ : ∀{A} → Γ ∋ A → Δ ∋ A)
+  → (ρ : Rename Γ Δ)
   → (∀ {n : Γ ∋ ★} → nth n γ ⊑ nth (ρ n) δ)
   → γ ⊢ M ↓ v
     ----------------------------------------
@@ -241,12 +250,12 @@ subst-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Γ ⊢ ★}
 subst-pres σ s (var {x = x} lt) = sub (s {x}) lt
 subst-pres σ s (lit-intro d) = (lit-intro d)
 subst-pres σ s (↦-elim d₁ d₂ lt2) =
-  ↦-elim (subst-pres σ s d₁) (subst-pres σ s d₂) lt2
+   ↦-elim (subst-pres σ s d₁) (subst-pres σ s d₂) lt2
 subst-pres σ s (↦-intro d) =
-  ↦-intro (subst-pres (λ {A} → exts σ) (λ {x} → subst-ext σ s {x}) d)
+   ↦-intro (subst-pres (λ {A} → exts σ) (λ {x} → subst-ext σ s {x}) d)
 subst-pres σ s ⊥-intro = ⊥-intro
 subst-pres σ s (⊔-intro d₁ d₂) =
-  ⊔-intro (subst-pres σ s d₁) (subst-pres σ s d₂)
+   ⊔-intro (subst-pres σ s d₁) (subst-pres σ s d₂)
 
 substitution : ∀ {Γ} {γ : Env Γ} {M N v₁ v₂}
    → γ , v₁ ⊢ M ↓ v₂  →  γ ⊢ N ↓ v₁
@@ -269,9 +278,9 @@ preserve (↦-elim d₁ d₂ lt2) (ξ₁-rule r) = ↦-elim (preserve d₁ r) d�
 preserve (↦-elim d₁ d₂ lt2) (ξ₂-rule v r) = ↦-elim d₁ (preserve d₂ r) lt2
 preserve (↦-elim (↦-intro d₁) d₂ lt2) (β-rule v) = sub (substitution d₁ d₂) lt2
 preserve (↦-elim (lit-intro (fun-val {Nat} d)) (lit-intro base-val) lt) δ-rule =
-  lit-intro (sub-prim d lt)
+   lit-intro (sub-prim d lt)
 preserve (↦-elim (lit-intro (fun-val {𝔹} d)) (lit-intro base-val) lt) δ-rule =
-  lit-intro (sub-prim d lt)
+   lit-intro (sub-prim d lt)
 preserve (↦-intro d) ()
 preserve ⊥-intro ()
 preserve (⊔-intro d d₁) r = ⊔-intro (preserve d r) (preserve d₁ r)
@@ -284,7 +293,7 @@ var-inv (var lt) = lt
 var-inv (⊔-intro d₁ d₂) = ConjL⊑ (var-inv d₁) (var-inv d₂)
 
 rename-reflect : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} { M : Γ ⊢ ★}
-  → {ρ : ∀{A} → Γ ∋ A → Δ ∋ A}
+  → {ρ : Rename Γ Δ}
   → (∀ {n : Γ ∋ ★} → nth (ρ n) δ ≡ nth n γ)
   → δ ⊢ rename ρ M ↓ v
     ------------------------------------
@@ -400,13 +409,13 @@ term-value-⊥ V-ƛ = ⊥-intro
 term-value-⊥ V-const = lit-intro ⊥-val
 term-value-⊥ V-var = var Bot⊑
 
-data ValSubst : ∀{Γ Δ} → Subst Γ Δ → Set where
-  valsub : ∀{Γ Δ}{σ : Subst Γ Δ}
-        → (∀{k} → TermValue{Δ}{★} (σ k))
-        → ValSubst σ
+data Terminating : ∀{Γ Δ} → Subst Γ Δ → Env Δ → Set where
+  valsub : ∀{Γ Δ}{σ : Subst Γ Δ}{δ : Env Δ}
+        → (∀{k} → δ ⊢ (σ k) ↓ ⊥)
+        → Terminating σ δ
 
 subst-reflect-var : ∀ {Γ Δ} {γ : Env Δ} {x : Γ ∋ ★} {v} {σ : Subst Γ Δ}
-  → γ ⊢ σ x ↓ v   →   ValSubst σ
+  → γ ⊢ σ x ↓ v   →   Terminating σ γ
     ----------------------------------------
   → Σ[ δ ∈ Env Γ ] γ ⊨ σ ↓ δ  ×  δ ⊢ ` x ↓ v
 subst-reflect-var {Γ}{Δ}{γ}{x}{v}{σ} sx (valsub allv)
@@ -416,10 +425,11 @@ subst-reflect-var {Γ}{Δ}{γ}{x}{v}{σ} sx (valsub allv)
   const-env-ok : γ ⊨ σ ↓ const-env x v
   const-env-ok {k} with var-eq? k x
   ... | yes k≡x rewrite k≡x | nth-const-env {Γ}{x}{v} = sx
-  ... | no k≢x rewrite diff-nth-const-env {Γ}{k}{x}{v} k≢x = term-value-⊥ allv
+  ... | no k≢x rewrite diff-nth-const-env {Γ}{k}{x}{v} k≢x = allv
 
-subst-empty : ∀{Γ Δ}{γ : Env Δ}{σ : Subst Γ Δ} → ValSubst σ → γ ⊨ σ ↓ empty-env
-subst-empty (valsub allv) {k = k} rewrite nth-empty-env {x = k} = term-value-⊥ allv
+subst-empty : ∀{Γ Δ}{γ : Env Δ}{σ : Subst Γ Δ}
+            → Terminating σ γ → γ ⊨ σ ↓ empty-env
+subst-empty (valsub allv) {k = k} rewrite nth-empty-env {x = k} = allv
 
 subst-⊔ : ∀{Γ Δ}{γ : Env Δ}{γ₁ γ₂ : Env Γ}{σ : Subst Γ Δ}
            → γ ⊨ σ ↓ γ₁  →  γ ⊨ σ ↓ γ₂
@@ -434,31 +444,31 @@ lambda-inj : ∀ {Γ} {M : Γ , ★ ⊢ ★ } {N : Γ , ★ ⊢ ★ }
   → (M ≡ N)
 lambda-inj refl = refl
 
-rename-value : ∀{Γ Δ}{ρ : ∀{A} → Γ ∋ A → Δ ∋ A}{M : Γ ⊢ ★}
-   → TermValue M
-   → TermValue (rename ρ M)
-rename-value V-ƛ = V-ƛ
-rename-value V-const = V-const
-rename-value V-var = V-var
+rename-pres-bot : ∀{Γ Δ}{ρ : Rename Γ Δ}
+    {M : Γ ⊢ ★}{γ : Env Γ}{δ : Env Δ}
+   → (∀{n : Γ ∋ ★} → nth n γ ⊑ nth (ρ n) δ)
+   → γ ⊢ M ↓ ⊥
+   → δ ⊢ (rename ρ M) ↓ ⊥
+rename-pres-bot {ρ = ρ} r d = rename-pres ρ r d
 
-ext-val-subst : ∀{Γ Δ}{σ : Subst Γ Δ}{B}
-              → ValSubst σ
-              → ValSubst (exts σ {B = B})
-ext-val-subst {Γ}{Δ}{σ}{B} (valsub d) = (valsub λ {k} → G {k})
+ext-val-subst : ∀{Γ Δ}{σ : Subst Γ Δ}{δ : Env Δ}{v}
+              → Terminating σ δ
+              → Terminating (exts σ {B = ★}) (δ , v)
+ext-val-subst {Γ}{Δ}{σ}{δ}{v} (valsub d) = (valsub λ {k} → G {k})
   where
-  G : {k : Γ , B ∋ ★} → TermValue (exts σ k)
-  G {Z} = V-var
-  G {S k} = rename-value d
+  G : {k : Γ , ★ ∋ ★} → (δ , v) ⊢ exts σ k ↓ ⊥
+  G {Z} = var Bot⊑
+  G {S k} = rename-pres-bot {γ = δ}{δ = δ , v} (λ {n} → Refl⊑) d
 
 subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Γ ⊢ ★} {v} {L : Δ ⊢ ★} {σ : Subst Γ Δ}
-  → δ ⊢ L ↓ v  →  (subst σ M) ≡ L  → ValSubst σ
+  → δ ⊢ L ↓ v  →  (subst σ M) ≡ L  → Terminating σ δ
     -------------------------------------------
   → Σ[ γ ∈ Env Γ ] δ ⊨ σ ↓ γ  ×  γ ⊢ M ↓ v
 
-subst-reflect {Γ}{Δ}{δ}{M}{v}{σ = σ} (lit-intro{P = P}{k = k} d) eqL vs with M
-... | ` x  with lit-intro{Δ}{δ}{P}{k} d
+subst-reflect {Γ}{Δ}{M = M}{σ = σ} (lit-intro d) eqL vs with M
+... | ` x  with lit-intro{Δ} d
 ... | d' rewrite sym eqL = subst-reflect-var {σ = σ} d' vs
-subst-reflect {M = M} {σ = σ} (lit-intro {P = .p'} {.k'} d) refl vs | $_ {p = p'} k' =
+subst-reflect {M = M} {σ = σ} (lit-intro d) refl vs | $ k' =
   ⟨ empty-env , ⟨ subst-empty vs , (lit-intro d) ⟩ ⟩
 subst-reflect {M = M} {σ = σ} (lit-intro d) () vs | ƛ M'
 subst-reflect {M = M} {σ = σ} (lit-intro d) () vs | M₁ · M₂
@@ -514,24 +524,19 @@ nth-id-le : ∀{Γ}{δ'}{v'}{γ}{N}
 nth-id-le γ-sz-δ'v' {Z} = Refl⊑
 nth-id-le γ-sz-δ'v' {S n'} = var-inv (γ-sz-δ'v' {S n'})
 
-val-subst-zero : ∀{Γ}{N : Γ ⊢ ★}
-  → TermValue N
-  → ValSubst (subst-zero N)
-val-subst-zero {Γ}{N} v = valsub G
+
+val-subst-zero : ∀{Γ}{γ : Env Γ}{N : Γ ⊢ ★}
+  → γ ⊢ N ↓ ⊥
+  → Terminating (subst-zero N) γ
+val-subst-zero {Γ}{γ}{N} v = valsub G
   where
-  G : {k : Γ , ★ ∋ ★} → TermValue (subst-zero N k)
+  G : ∀{k : Γ , ★ ∋ ★} → γ ⊢ subst-zero N k ↓ ⊥
   G {Z} = v
-  G {S k} = V-var
+  G {S k} = var Bot⊑
 
-{-
-
- Can we replace the premise TermValue N
- with Terminates N?
-
- -}
 
 substitution-reflect : ∀ {Γ} {γ : Env Γ} {M N v}
-  → γ ⊢ M [ N ] ↓ v   →  TermValue N
+  → γ ⊢ M [ N ] ↓ v   →  γ ⊢ N ↓ ⊥
     -----------------------------------------------
   → Σ[ v₂ ∈ Value ] γ ⊢ N ↓ v₂  ×  (γ , v₂) ⊢ M ↓ v
 substitution-reflect {Γ}{γ}{M}{N} d vn
@@ -556,7 +561,7 @@ reflect d (ξ₂-rule d' r) with d
 ... | ↦-elim d₁ d₂ lt2 = ↦-elim d₁ (reflect d₂ r) lt2
 ... | ⊔-intro d₁ d₂ = ⊔-intro (reflect d₁ (ξ₂-rule d' r))
                               (reflect d₂ (ξ₂-rule d' r))
-reflect d (β-rule v) with substitution-reflect d v
+reflect d (β-rule v) with substitution-reflect d (term-value-⊥ v)
 ... | ⟨ v₂ , ⟨ d₁ , d₂ ⟩ ⟩ = ↦-elim (↦-intro d₂) d₁ Refl⊑
 reflect{v = v} (lit-intro d) (δ-rule{k = k'}) =
     ↦-elim{v₁ = lit k'}{v₂ = v} (lit-intro (fun-val d))
