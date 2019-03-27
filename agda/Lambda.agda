@@ -57,6 +57,31 @@ rep : Prim → Set
 rep (` b) = base-rep b
 rep (b ⇒ p) = base-rep b → rep p
 
+base-eq? : (B : Base) → (B' : Base) → Dec (B ≡ B')
+base-eq? Nat Nat = yes refl
+base-eq? Nat 𝔹 = no (λ ())
+base-eq? 𝔹 Nat = no (λ ())
+base-eq? 𝔹 𝔹 = yes refl
+
+prim-eq? : (P : Prim) → (P' : Prim) → Dec (P ≡ P')
+prim-eq? (` B) (` B')
+    with base-eq? B B'
+... | yes eq rewrite eq = yes refl
+... | no neq = no G
+    where G : ¬ ` B ≡ ` B'
+          G refl = neq refl
+prim-eq? (` B) (B' ⇒ P') = no λ ()
+prim-eq? (B ⇒ P) (` B') = no (λ ())
+prim-eq? (B ⇒ P) (B' ⇒ P')
+    with base-eq? B B' | prim-eq? P P'
+... | yes b-eq | yes p-eq = yes (Eq.cong₂ _⇒_ b-eq p-eq)
+... | yes b-eq | no p-neq = no G
+    where G : ¬ (B ⇒ P) ≡ (B' ⇒ P')
+          G refl = p-neq refl
+prim-eq? (B ⇒ P) (B' ⇒ P') | no b-neq  | _ = no G
+    where G : ¬ (B ⇒ P) ≡ (B' ⇒ P')
+          G refl = b-neq refl
+
 data _⊢_ : Context → Type → Set where
 
   $_ :  ∀ {Γ}{p : Prim} → rep p → Γ ⊢ ★
@@ -168,3 +193,61 @@ data _—→_ : ∀ {Γ A} → (Γ ⊢ A) → (Γ ⊢ A) → Set where
   δ-rule : ∀ {Γ}{B}{P} {f : base-rep B → rep P} {k : base-rep B}
       ---------------------------------------------------------
     → ($_ {Γ} {B ⇒ P} f) · ($_ {Γ}{` B} k) —→ ($_ {Γ}{P} (f k))
+
+
+infix  2 _—↠_
+infix  1 begin_
+infixr 2 _—→⟨_⟩_
+infix  3 _∎
+
+data _—↠_ : ∀ {Γ A} → (Γ ⊢ A) → (Γ ⊢ A) → Set where
+
+  _∎ : ∀ {Γ A} (M : Γ ⊢ A)
+      --------
+    → M —↠ M
+
+  _—→⟨_⟩_ : ∀ {Γ A} (L : Γ ⊢ A) {M N : Γ ⊢ A}
+    → L —→ M
+    → M —↠ N
+      ---------
+    → L —↠ N
+
+begin_ : ∀ {Γ} {A} {M N : Γ ⊢ A}
+  → M —↠ N
+    ------
+  → M —↠ N
+begin M—↠N = M—↠N
+
+
+data Progress (M : ∅ ⊢ ★) : Set where
+  step : ∀{N : ∅ ⊢ ★}
+     → M —→ N
+     → Progress M
+
+  done : TermValue M → Progress M
+
+  stuck : Progress M
+
+progress : (M : ∅ ⊢ ★) → Progress M
+progress ($ k) = done V-const
+progress (` ())
+progress (ƛ d) = done V-ƛ
+progress (L · M)
+    with progress L
+... | step L→L' = step (ξ₁-rule L→L')
+... | done (V-var{x = ()})
+... | stuck = stuck
+progress (L · M) | done V-ƛ
+        with progress M
+...     | step M→M' = step (ξ₂-rule V-ƛ M→M')
+...     | done Mv = step (β-rule Mv)
+...     | stuck = stuck
+progress (($ k) · M) | done (V-const {p = ` B}) = stuck
+progress (($ f) · M) | done (V-const {p = B ⇒ P})
+        with progress M
+...     | step M→M' = step (ξ₂-rule V-const M→M')
+...     | stuck = stuck
+...     | done V-ƛ = stuck
+...     | done (V-const{p = P'}{k = k'}) = {!!}
+...     | done (V-var{x = ()})
+
