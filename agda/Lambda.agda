@@ -248,6 +248,52 @@ progress (($ f) · M) | done (V-const {p = B ⇒ P})
 ...     | step M→M' = step (ξ₂-rule V-const M→M')
 ...     | stuck = stuck
 ...     | done V-ƛ = stuck
-...     | done (V-const{p = P'}{k = k'}) = {!!}
 ...     | done (V-var{x = ()})
+...     | done (V-const{p = P'})
+           with prim-eq? P' (` B) 
+...        | yes refl = step δ-rule
+...        | no neq = stuck
+
+data Finished {Γ A} (N : Γ ⊢ A) : Set where
+   done :
+       TermValue N
+       -----------
+     → Finished N
+   out-of-gas :
+       ----------
+       Finished N
+   stuck :
+       ----------
+       Finished N
+
+data Steps : ∀ {A} → ∅ ⊢ A → Set where
+  steps : ∀ {A} {L N : ∅ ⊢ A}
+    → L —↠ N
+    → Finished N
+      ----------
+    → Steps L
+
+eval : ℕ → (L : ∅ ⊢ ★) → Steps L
+eval zero    L                     =  steps (L ∎) out-of-gas
+eval (suc m) L with progress L
+... | done VL                      =  steps (L ∎) (done VL)
+... | stuck                        = steps (L ∎) stuck
+... | step {M} L—→M with eval m M
+...    | steps M—↠N fin            =  steps (L —→⟨ L—→M ⟩ M—↠N) fin
+
+run : ℕ → (∅ ⊢ ★) → (∅ ⊢ ★)
+run zero    L                     =  L
+run (suc m) L with progress L
+... | done VL                      = L
+... | stuck                        = L
+... | step {M} L—→M                = run m M
+
+_ : run 2 ((ƛ (` Z)) · ($ 1)) ≡ $ 1
+_ = refl
+
+inc : ∅ ⊢ ★
+inc = ($_ {p = Nat ⇒ (` Nat)} λ x → x + 1)
+
+_ : run 2 (inc · ($ 2)) ≡ $ 3
+_ = refl
 

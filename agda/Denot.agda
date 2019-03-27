@@ -701,4 +701,8 @@ congruence {C = CAppL C' L} eq =
 congruence {C = CAppR L C'} eq =
   app-cong equal-refl (congruence {C = C'} eq) 
 
+_ : ∅ ⊢ inc · ($ 2) ↓ (lit 3)
+_ = ↦-elim (lit-intro (fun-val base-val)) (lit-intro base-val) Lit⊑
 
+_ : ∅ ⊢ (ƛ (` Z)) · ($ 1) ↓ (lit 1)
+_ = ↦-elim (↦-intro (var Lit⊑)) (lit-intro base-val) Lit⊑
