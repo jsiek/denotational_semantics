@@ -7,6 +7,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Agda.Primitive using (lzero)
 open import Lambda
+open import Relation.Nullary using (¬_)
 open import Relation.Nullary.Negation using (contradiction)
 open import Data.Empty using (⊥-elim)
 open import Relation.Nullary using (Dec; yes; no)
@@ -199,8 +200,26 @@ denot-any-bot d = sub d Bot⊑
 _iff_ : Set → Set → Set
 P iff Q = (P → Q) × (Q → P)
 
+infix 4 _≅_
 _≅_ : ∀ {Γ} → (Γ ⊢ ★) → (Γ ⊢ ★) → Set
 _≅_ {Γ} M N = (∀ {γ : Env Γ} → ∀ {v} → (γ ⊢ M ↓ v) iff (γ ⊢ N ↓ v))
+
+equal-refl : ∀ {Γ : Context} → {M : Γ ⊢ ★}
+  → M ≅ M
+equal-refl = ⟨ (λ x → x) , (λ x → x) ⟩
+
+equal-sym : ∀ {Γ : Context} → {M : Γ ⊢ ★} → {N : Γ ⊢ ★}
+  → M ≅ N
+    -----
+  → N ≅ M
+equal-sym eq = ⟨ proj₂ eq , proj₁ eq ⟩
+
+equal-trans : ∀ {Γ : Context} → {M₁ : Γ ⊢ ★} → {M₂ : Γ ⊢ ★} → {M₃ : Γ ⊢ ★}
+  → M₁ ≅ M₂ → M₂ ≅ M₃
+    -----------------
+  → M₁ ≅ M₃
+equal-trans eq1 eq3 =
+  ⟨ (λ z → proj₁ eq3 (proj₁ eq1 z)) , (λ z → proj₂ eq1 (proj₂ eq3 z)) ⟩
 
 ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
   → (ρ : ∀ {A} → Γ ∋ A → Δ ∋ A)
@@ -209,9 +228,6 @@ ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
   → (∀ {n : Γ , ★ ∋ ★} → nth n (γ , v) ⊑ nth ((ext ρ) n) (δ , v))
 ext-nth ρ lt {Z} = Refl⊑
 ext-nth ρ lt {S n'} = lt
-
-Rename : Context → Context → Set
-Rename Γ Δ = ∀{A} → Γ ∋ A → Δ ∋ A
 
 rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Γ ⊢ ★}
   → (ρ : Rename Γ Δ)
@@ -228,6 +244,12 @@ rename-pres ρ nth-eq (↦-intro d) =
 rename-pres ρ nth-eq ⊥-intro = ⊥-intro
 rename-pres ρ nth-eq (⊔-intro d d₁) =
   ⊔-intro (rename-pres ρ nth-eq d) (rename-pres ρ nth-eq d₁)
+
+rename-inc-pres : ∀ {Γ v' v} {γ : Env Γ} {M : Γ ⊢ ★}
+    → γ ⊢ M ↓ v
+    → γ , v' ⊢ rename (λ {A} → λ k → S k) M ↓ v
+rename-inc-pres d = rename-pres (λ {A} → λ k → S k) (λ {n} → Refl⊑) d
+
 
 Subst : Context → Context → Set
 Subst Γ Δ = ∀{A} → Γ ∋ A → Δ ⊢ A
@@ -325,6 +347,10 @@ rename-inc-reflect : ∀ {Γ v' v} {γ : Env Γ} { M : Γ ⊢ ★}
     ------------------------------------
   → γ ⊢ M ↓ v
 rename-inc-reflect d = rename-reflect (λ {n} → refl) d
+
+rename-inc-iff : ∀ {Γ v' v} {γ : Env Γ} { M : Γ ⊢ ★}
+  → (γ ⊢ M ↓ v) iff ((γ , v') ⊢ rename (λ {A} → S_) M ↓ v)
+rename-inc-iff = ⟨ rename-inc-pres , rename-inc-reflect ⟩
 
 is-identity : ∀ {Γ} (id : ∀{A} → Γ ∋ A → Γ ∋ A) → Set
 is-identity {Γ} id = (∀ {x : Γ ∋ ★} → id {★} x ≡ x)
@@ -569,8 +595,110 @@ reflect{v = v} (lit-intro d) (δ-rule{k = k'}) =
 reflect (⊔-intro d₁ d₂) δ-rule =
     ⊔-intro (reflect d₁ δ-rule) (reflect d₂ δ-rule)
 
+
 reduce-equal : ∀ {Γ} {M : Γ ⊢ ★} {N : Γ ⊢ ★}
   → M —→ N
     ------
   → M ≅ N
 reduce-equal {Γ}{M}{N} r = ⟨ (λ m → preserve m r) , (λ n → reflect n r) ⟩
+
+
+beta-equal : ∀ {Γ : Context} → {M : Γ ⊢ ★} → {N : Γ , ★ ⊢ ★} → TermValue M
+  → ((ƛ N) · M) ≅ (N [ M ])
+beta-equal mv = reduce-equal (β-rule mv)
+
+
+data VarMustEval : ∀{Γ : Context} → Γ ⊢ ★ → Set where
+  vme-var : ∀{Γ : Context} → VarMustEval (`_ {Γ , ★} Z)
+  vme-appL : ∀{Γ}{M N : Γ ⊢ ★} → VarMustEval M → VarMustEval (M · N)
+  vme-appR : ∀{Γ}{M N : Γ ⊢ ★} → VarMustEval N → VarMustEval (M · N)
+
+var-must-eval : ∀{Γ}{γ : Env Γ}{N L : Γ ⊢ ★}{M : Γ , ★ ⊢ ★}{v}
+               → VarMustEval M
+               → γ ⊢ L ↓ v → M [ N ] ≡ L → Σ[ v' ∈ Value ] γ ⊢ N ↓ v'
+var-must-eval {v = v} vme-var d eqL rewrite eqL = ⟨ v , d ⟩
+var-must-eval {L = $ x} (vme-appL vo) d ()
+var-must-eval {L = ` x} (vme-appL vo) d ()
+var-must-eval {L = ƛ L} (vme-appL vo) d ()
+var-must-eval (vme-appL vo) (↦-elim d₁ d₂ x) refl =
+   var-must-eval vo d₁ refl
+var-must-eval {L = L₁ · L₂}{M = M₁ · M₂} (vme-appL vo) (⊔-intro d₁ d₂) eqL =
+   var-must-eval (vme-appL {N = M₂} vo) d₁ eqL
+var-must-eval {L = $ x} (vme-appR vo) d ()
+var-must-eval {L = ` x} (vme-appR vo) d ()
+var-must-eval {L = ƛ L} (vme-appR vo) d ()
+var-must-eval (vme-appR vo) (↦-elim d₁ d₂ x) refl = 
+   var-must-eval vo d₂ refl
+var-must-eval {L = L · L₁}{M = M₁ · M₂} (vme-appR vo) (⊔-intro d₁ d₂) eqL =
+   var-must-eval (vme-appR{M = M₁} vo) d₁ eqL
+
+
+β-var-must-eval : ∀{Γ}{N : Γ ⊢ ★}{M : Γ , ★ ⊢ ★}
+         → VarMustEval M
+           --------------------
+         → (ƛ M ) · N ≅ M [ N ]
+β-var-must-eval {Γ}{N}{M} vo {γ}{v} = ⟨ H , G ⟩
+  where
+  G : γ ⊢ M [ N ] ↓ v → γ ⊢ (ƛ M) · N ↓ v
+  G d
+      with var-must-eval vo d refl
+  ... | ⟨ v' , N↓v' ⟩
+      with substitution-reflect{M = M} d (sub N↓v' Bot⊑)
+  ... | ⟨ v₂ , ⟨ N↓v₂ , M↓v ⟩ ⟩ =
+    ↦-elim (↦-intro M↓v) N↓v₂ Refl⊑
+  
+  H : ∀{v} → γ ⊢ (ƛ M) · N ↓ v → γ ⊢ M [ N ] ↓ v
+  H (↦-elim (↦-intro d₁) d₂ lt) = sub (substitution d₁ d₂) lt
+  H (⊔-intro d₁ d₂) = ⊔-intro (H d₁) (H d₂)
+
+
+infix 4 _≲_
+_≲_ : ∀ {Γ} → (Γ ⊢ ★) → (Γ ⊢ ★) → Set
+_≲_ {Γ} M N = (∀ {γ : Env Γ} → ∀ {v} → (γ ⊢ M ↓ v) → (γ ⊢ N ↓ v))
+
+lam-less : ∀{Γ}{M N : Γ , ★ ⊢ ★} → M ≲ N → (ƛ M) ≲ (ƛ N)
+lam-less M≲N (↦-intro M↓v) = ↦-intro (M≲N M↓v)
+lam-less M≲N ⊥-intro = ⊥-intro
+lam-less M≲N (⊔-intro ƛM↓v₁ ƛM↓v₂) =
+   ⊔-intro (lam-less M≲N ƛM↓v₁) (lam-less M≲N ƛM↓v₂)
+
+app-less : ∀{Γ}{M₁ M₂ N₁ N₂ : Γ ⊢ ★}
+         → M₁ ≲ N₁ → M₂ ≲ N₂ → (M₁ · M₂) ≲ (N₁ · N₂)
+app-less M₁≲N₁ M₂≲N₂ {γ} {v} (↦-elim M₁↓v M₂↓v' lt) =
+   ↦-elim (M₁≲N₁ M₁↓v) (M₂≲N₂ M₂↓v') lt
+app-less M₁≲N₁ M₂≲N₂ {γ} {v₁ ⊔ v₂} (⊔-intro M₁·M₂↓v₁ M₁·M₂↓v₂) =
+   ⊔-intro (app-less M₁≲N₁ M₂≲N₂ M₁·M₂↓v₁) (app-less M₁≲N₁ M₂≲N₂ M₁·M₂↓v₂)
+
+
+lam-cong : ∀{Γ}{M N : Γ , ★ ⊢ ★} → M ≅ N → (ƛ M) ≅ (ƛ N)
+lam-cong {Γ}{M}{N} M≅N {γ}{v} = ⟨ lam-less (proj₁ M≅N) , lam-less (proj₂ M≅N) ⟩
+
+app-cong : ∀{Γ}{M₁ M₂ N₁ N₂ : Γ ⊢ ★}
+         → M₁ ≅ N₁ → M₂ ≅ N₂ → (M₁ · M₂) ≅ (N₁ · N₂)
+app-cong M₁≅N₁ M₂≅N₂ {γ} {v} =
+   ⟨ app-less (proj₁ M₁≅N₁) (proj₁ M₂≅N₂) ,
+     app-less (proj₂ M₁≅N₁) (proj₂ M₂≅N₂) ⟩
+
+
+data Ctx : Context → Context → Set where
+  CHole : ∀{Γ} → Ctx Γ Γ
+  CLam :  ∀{Γ Δ} → Ctx (Γ , ★) (Δ , ★) → Ctx (Γ , ★) Δ
+  CAppL : ∀{Γ Δ} → Ctx Γ Δ → Δ ⊢ ★ → Ctx Γ Δ
+  CAppR : ∀{Γ Δ} → Δ ⊢ ★ → Ctx Γ Δ → Ctx Γ Δ
+
+plug : ∀{Γ}{Δ} → Ctx Γ Δ → Γ ⊢ ★ → Δ ⊢ ★
+plug CHole M = M
+plug (CLam C) M = ƛ plug C M
+plug (CAppL C N) M = (plug C M) · N
+plug (CAppR L C) M = L · (plug C M)
+
+congruence : ∀{Γ Δ}{C : Ctx Γ Δ} {M N : Γ ⊢ ★}
+           → M ≅ N → (plug C M) ≅ (plug C N)
+congruence {C = CHole} eq = eq
+congruence {C = CLam C'} eq = lam-cong (congruence {C = C'} eq)
+congruence {C = CAppL C' L} eq =
+  app-cong (congruence {C = C'} eq) equal-refl
+congruence {C = CAppR L C'} eq =
+  app-cong equal-refl (congruence {C = C'} eq) 
+
+

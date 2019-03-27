@@ -86,14 +86,17 @@ count {∅}     _        =  ⊥-elim impossible
 #_ : ∀ {Γ} → ℕ → Γ ⊢ ★
 # n  =  ` count n
 
-ext : ∀ {Γ Δ} → (∀ {A} → Γ ∋ A → Δ ∋ A)
+Rename : Context → Context → Set
+Rename Γ Δ = ∀{A} → Γ ∋ A → Δ ∋ A
+
+ext : ∀ {Γ Δ} → Rename Γ Δ
     -----------------------------------
   → (∀ {A B} → Γ , B ∋ A → Δ , B ∋ A)
 ext ρ Z      =  Z
 ext ρ (S x)  =  S (ρ x)
 
 rename : ∀ {Γ Δ}
-  → (∀ {A} → Γ ∋ A → Δ ∋ A)
+  → Rename Γ Δ
     ------------------------
   → (∀ {A} → Γ ⊢ A → Δ ⊢ A)
 rename ρ (` x)          =  ` (ρ x)
