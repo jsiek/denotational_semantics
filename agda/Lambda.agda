@@ -125,7 +125,7 @@ rename : ∀ {Γ Δ}
     ------------------------
   → (∀ {A} → Γ ⊢ A → Δ ⊢ A)
 rename ρ (` x)          =  ` (ρ x)
-rename ρ ($_ {p = p} k)          =  $_ {p = p} k
+rename ρ ($_ {p = p} k) =  $_ {p = p} k
 rename ρ (ƛ N)          =  ƛ (rename (ext ρ) N)
 rename ρ (L · M)        =  (rename ρ L) · (rename ρ M)
 
