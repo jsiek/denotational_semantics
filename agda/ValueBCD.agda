@@ -32,7 +32,7 @@ data _⊑_ : Value → Value → Set where
        → (v₁ ↦ v₂) ⊑ (v₁' ↦ v₂')
   Dist⊑ : ∀{v₁ v₂ v₃}
          --------------------------------------
-       → (v₁ ↦ v₂) ⊔ (v₁ ↦ v₃) ⊑ v₁ ↦ (v₂ ⊔ v₃)
+       → v₁ ↦ (v₂ ⊔ v₃) ⊑ (v₁ ↦ v₂) ⊔ (v₁ ↦ v₃)
   ConjL⊑ : ∀ {v v₁ v₂}
       → v₁ ⊑ v  →  v₂ ⊑ v
         -----------------
@@ -98,7 +98,6 @@ P iff Q = (P → Q) × (Q → P)
 ⊔⊑L (ConjL⊑ d d₁) = d
 ⊔⊑L (ConjR1⊑ d) = ConjR1⊑ (⊔⊑L d)
 ⊔⊑L (ConjR2⊑ d) = ConjR2⊑ (⊔⊑L d)
-⊔⊑L {v₁ ↦ v₂} {v₁ ↦ v₃} {v₁ ↦ (v₂ ⊔ v₃)} Dist⊑ = Fun⊑ Refl⊑ (ConjR1⊑ Refl⊑)
 ⊔⊑L (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑L d₁) d₂
 
 ⊔⊑R : ∀{v₁ v₂ v : Value}
@@ -107,5 +106,19 @@ P iff Q = (P → Q) × (Q → P)
 ⊔⊑R (ConjL⊑ d d₁) = d₁
 ⊔⊑R (ConjR1⊑ d) = ConjR1⊑ (⊔⊑R d)
 ⊔⊑R (ConjR2⊑ d) = ConjR2⊑ (⊔⊑R d)
-⊔⊑R {v₁ ↦ v₂} {v₁ ↦ v₃} {v₁ ↦ (v₂ ⊔ v₃)} Dist⊑ = Fun⊑ Refl⊑ (ConjR2⊑ Refl⊑)
 ⊔⊑R (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑R d₁) d₂
+
+Conj⊑Conj : ∀ {v₁ v₂ v₁' v₂'}
+      → v₁ ⊑ v₁'  →  v₂ ⊑ v₂'
+        -----------------------
+      → (v₁ ⊔ v₂) ⊑ (v₁' ⊔ v₂')
+Conj⊑Conj d₁ d₂ = ConjL⊑ (ConjR1⊑ d₁) (ConjR2⊑ d₂)
+
+
+ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
+  → (ρ : ∀ {A} → Γ ∋ A → Δ ∋ A)
+  → (∀ {n : Γ ∋ ★} → nth n γ ⊑ nth (ρ n) δ)
+    -----------------------------------------------------------------
+  → (∀ {n : Γ , ★ ∋ ★} → nth n (γ , v) ⊑ nth ((ext ρ) n) (δ , v))
+ext-nth ρ lt {Z} = Refl⊑
+ext-nth ρ lt {S n'} = lt

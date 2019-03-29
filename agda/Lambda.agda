@@ -297,3 +297,4 @@ inc = ($_ {p = Nat ⇒ (` Nat)} λ x → x + 1)
 _ : run 2 (inc · ($ 2)) ≡ $ 3
 _ = refl
 
+

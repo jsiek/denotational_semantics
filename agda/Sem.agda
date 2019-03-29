@@ -1,7 +1,7 @@
 module Sem where
 
 open import Lambda
-open import Value
+open import ValueBCD
 
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
@@ -44,6 +44,10 @@ data ℘ : ∀{P : Prim} → rep P → Value → Set where
    ℘-⊥ :  ∀{P : Prim}{p : rep P}
               ---------
             → ℘ {P} p ⊥
+   ℘-⊑ :  ∀{P : Prim}{p : rep P}{v₁ v₂ : Value}
+            → ℘ {P} p v₁  →  v₂ ⊑ v₁
+              ----------------------
+            → ℘ {P} p v₂
 
 
 data ℰ : ∀{Γ} → Γ ⊢ ★ → Env Γ → Value → Set where
@@ -60,8 +64,117 @@ data ℰ : ∀{Γ} → Γ ⊢ ★ → Env Γ → Value → Set where
           ----------------------------------
         → ℰ (M₁ · M₂) γ v
 
+  ℰ-lam : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
+        → ℰ M (γ , v₁) v₂
+          -------------------
+        → ℰ (ƛ M) γ (v₁ ↦ v₂)
+
+  ℰ-⊥ : ∀ {Γ} {γ : Env Γ} {M}
+          -----------
+        → ℰ (ƛ M) γ ⊥
+
+  ℰ-⊔ : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
+        → ℰ M γ v₁  →  ℰ M γ v₂
+          ---------------------
+        → ℰ M γ (v₁ ⊔ v₂)
+
+  ℰ-⊑ : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
+        → ℰ M γ v₁  →  v₂ ⊑ v₁
+          ---------------------
+        → ℰ M γ v₂
+
+rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Γ ⊢ ★}
+  → (ρ : Rename Γ Δ)
+  → (∀ {n : Γ ∋ ★} → nth n γ ⊑ nth (ρ n) δ)
+  → ℰ M γ v
+    ----------------------------------------
+  → ℰ (rename ρ M) δ v
+rename-pres ρ nth-eq (ℰ-var{x = x} lt) =  ℰ-var (Trans⊑ lt (nth-eq {x}))
+rename-pres ρ nth-eq (ℰ-lit d) = ℰ-lit d
+rename-pres ρ nth-eq (ℰ-app d d₁ lt2) =
+  ℰ-app (rename-pres ρ nth-eq d) (rename-pres ρ nth-eq d₁) lt2
+rename-pres ρ nth-eq (ℰ-lam d) =
+  ℰ-lam (rename-pres (ext ρ) (λ {n} → ext-nth ρ nth-eq {n}) d)
+rename-pres ρ nth-eq ℰ-⊥ = ℰ-⊥
+rename-pres ρ nth-eq (ℰ-⊔ d d₁) =
+  ℰ-⊔ (rename-pres ρ nth-eq d) (rename-pres ρ nth-eq d₁)
+rename-pres ρ nth-eq (ℰ-⊑ d lt) =
+  ℰ-⊑ (rename-pres ρ nth-eq d) lt
+
+is-identity : ∀ {Γ} (id : ∀{A} → Γ ∋ A → Γ ∋ A) → Set
+is-identity {Γ} id = (∀ {x : Γ ∋ ★} → id {★} x ≡ x)
+
+rename-id : ∀ {Γ} {M : Γ ⊢ ★} {id : ∀{A} → Γ ∋ A → Γ ∋ A}
+  → is-identity id
+    ---------------
+  → rename id M ≡ M
+rename-id {M = ` x} eq = cong `_ (eq {x})
+rename-id {M = $_ k} eq = cong $_ refl
+rename-id {M = ƛ M₁}{id = id} eq = cong ƛ_ (rename-id {M = M₁} ext-id)
+  where
+  ext-id : is-identity (ext id)
+  ext-id {Z} = refl
+  ext-id {S x} = cong S_ eq
+rename-id {M = M · M₁} eq = cong₂ _·_ (rename-id eq) (rename-id eq)
+
+var-id : ∀ {Γ A} → (Γ ∋ A) → (Γ ∋ A)
+var-id {A} x = x
+
+var-id-id : ∀ {Γ} → is-identity {Γ} var-id
+var-id-id = refl
+
+Env⊑ : ∀ {Γ} {γ : Env Γ} {δ : Env Γ} {M v}
+  → ℰ M γ v  →  γ `⊑ δ
+    --------------------
+  → ℰ M δ v
+Env⊑{Γ}{γ}{δ}{M}{v} d lt
+      with rename-pres var-id lt d
+... | d' rewrite rename-id {Γ}{M}{var-id} (var-id-id {Γ}) = d'
+
+
+up-env : ∀ {Γ} {γ : Env Γ} {M v u₁ u₂}
+  → ℰ M (γ , u₁) v  →  u₁ ⊑ u₂
+    ----------------------------
+  → ℰ M (γ , u₂) v
+up-env{Γ}{γ}{M}{v}{u₁}{u₂} d lt = Env⊑ d (λ {k} → nth-le lt {k})
+  where
+  nth-le : u₁ ⊑ u₂ → (γ , u₁) `⊑ (γ , u₂)
+  nth-le lt {Z} = lt
+  nth-le lt {S n} = Refl⊑
 
 {-
+
+  Inversion (aka Generation) Lemmas
+
+-}
+
+app-inv : ∀{Γ}{γ : Env Γ}{M N : Γ ⊢ ★}{v : Value}
+        → ℰ (M · N) γ v
+        → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] Σ[ v₃ ∈ Value ]  ℰ M γ (v₁ ↦ v₂) × ℰ N γ v₃ × v₁ ⊑ v₃ × v ⊑ v₂
+app-inv (ℰ-app{v₁ = v₁}{v₂ = v₂} d₁ d₂ lt) =
+   ⟨ v₁ , ⟨ v₂ , ⟨ v₁ , ⟨ d₁ , ⟨ d₂ , ⟨ Refl⊑ , lt ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+app-inv {Γ}{γ}{M}{N}{v} (ℰ-⊔ d₁ d₂)
+    with app-inv d₁ | app-inv d₂
+... | ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ M↓v12 , ⟨ N↓v3 , ⟨ v13 , vv2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+    | ⟨ v₁' , ⟨ v₂' , ⟨ v₃' , ⟨ M↓v12' , ⟨ N↓v3' , ⟨ v13' , vv2' ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+      let M↓⊔ = ℰ-⊔ M↓v12 M↓v12' in
+      let N↓⊔ = ℰ-⊔ N↓v3 N↓v3' in
+      ⟨ v₁ ⊔ v₁' , ⟨ v₂ ⊔ v₂' , ⟨ v₃ ⊔ v₃' , ⟨ ℰ-⊑ M↓⊔ G , ⟨ N↓⊔ , ⟨ H , I ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+      where
+      G : (v₁ ⊔ v₁') ↦ (v₂ ⊔ v₂') ⊑ (v₁ ↦ v₂) ⊔ (v₁' ↦ v₂')
+      G = Trans⊑ (Dist⊑{v₁ = v₁ ⊔ v₁'}{v₂ = v₂}{v₃ = v₂'})
+                 (Conj⊑Conj (Fun⊑ (ConjR1⊑ Refl⊑) Refl⊑) (Fun⊑ (ConjR2⊑ Refl⊑) Refl⊑))
+      H = Conj⊑Conj v13 v13'
+      I = Conj⊑Conj vv2 vv2'
+app-inv {Γ}{γ}{M}{N}{v} (ℰ-⊑ d lt)
+    with app-inv d
+... | ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ M↓v12 , ⟨ N↓v3 , ⟨ v13 , vv2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ M↓v12 , ⟨ N↓v3 , ⟨ v13 , Trans⊑ lt vv2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+
+infixl 7 _●_
+
+_●_ : ∀{Γ} → Sem Γ → Sem Γ → Sem Γ
+(F ● E) γ v = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] Σ[ v₃ ∈ Value ] F γ (v₁ ↦ v₂) × E γ v₃ × v₁ ⊑ v₃ × v ⊑ v₂
 
 
 Λ : ∀{Γ} → Sem (Γ , ★) → Sem Γ
@@ -70,84 +183,92 @@ data ℰ : ∀{Γ} → Γ ⊢ ★ → Env Γ → Value → Set where
 Λ S' γ (v₁ ↦ v₂) = S' (γ , v₁) v₂
 Λ S' γ (v₁ ⊔ v₂) = (Λ S' γ v₁) × (Λ S' γ v₂)
 
-sub-Λ : ∀{Γ}{E : Sem (Γ , ★)}{γ v v'} → (Λ E) γ v → v' ⊑ v → (Λ E) γ v'
-sub-Λ γ Bot⊑ = tt
-sub-Λ γ Lit⊑ = γ
-sub-Λ γ Fun⊑ = γ
-sub-Λ γ (ConjL⊑ lt lt₁) = ⟨ sub-Λ γ lt , sub-Λ γ lt₁ ⟩
-sub-Λ γ (ConjR1⊑ lt) = sub-Λ (proj₁ γ) lt
-sub-Λ γ (ConjR2⊑ lt) = sub-Λ (proj₂ γ) lt
-
-ℒλ≃Λℒ : ∀{Γ}{M : Γ , ★ ⊢ ★} → ℒ (ƛ M) ≃ Λ (ℒ M)
-ℒλ≃Λℒ {Γ}{M} = ⟨ G , H ⟩
-  where G : ∀{γ v} → ℒ (ƛ M) γ v → Λ (ℒ M) γ v
-        G (↦-intro d) = d
-        G ⊥-intro = tt
-        G (⊔-intro d₁ d₂) = ⟨ (G d₁) , (G d₂) ⟩
-
-        H : ∀{γ v} → Λ (ℒ M) γ v → ℒ (ƛ M) γ v
-        H {γ} {⊥} d = ⊥-intro
-        H {γ} {lit x} ()
-        H {γ} {v ↦ v'} d = ↦-intro d
-        H {γ} {v₁ ⊔ v₂} ⟨ d₁ , d₂ ⟩ = ⊔-intro (H d₁) (H d₂)
-
-app : ∀{Γ} → Sem Γ → Sem Γ → Sem Γ
-app F E γ v =
-   Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] Σ[ v₃ ∈ Value ] Σ[ v₄ ∈ Value ]
-      F γ v₁ × E γ v₂ × v₃ ↦ v₄ ⊑ v₁ × v₃ ⊑ v₂ × v ⊑ v₄
-
-infixl 7 _●_
-
-_●_ : ∀{Γ} → Sem Γ → Sem Γ → Sem Γ
-(F ● E) γ ⊥ = app F E γ ⊥
-(F ● E) γ (lit x) = app F E γ (lit x)
-(F ● E) γ (v ↦ v') = app F E γ (v ↦ v')
-(F ● E) γ (v₁ ⊔ v₂) = (F ● E) γ v₁ × (F ● E) γ v₂
+sub-Λ : ∀{Γ}{M : Γ , ★ ⊢ ★}{γ v v'} → (Λ (ℰ M)) γ v → v' ⊑ v → (Λ (ℰ M)) γ v'
+sub-Λ d Bot⊑ = tt
+sub-Λ d Lit⊑ = d
+sub-Λ d (Fun⊑ lt lt') = ℰ-⊑ (up-env d lt) lt'
+sub-Λ d (ConjL⊑ lt lt₁) = ⟨ sub-Λ d lt , sub-Λ d lt₁ ⟩
+sub-Λ d (ConjR1⊑ lt) = sub-Λ (proj₁ d) lt
+sub-Λ d (ConjR2⊑ lt) = sub-Λ (proj₂ d) lt
+sub-Λ {v = v₁ ↦ v₂ ⊔ v₁ ↦ v₃} {v₁ ↦ (v₂ ⊔ v₃)} ⟨ M2 , M3 ⟩ Dist⊑ =
+   ℰ-⊔ M2 M3
+sub-Λ d (Trans⊑ x₁ x₂) = sub-Λ (sub-Λ d x₂) x₁
 
 
-sub-app-● : ∀{Γ}{F E : Sem Γ}{γ v v'} → app F E γ v → v' ⊑ v → (F ● E) γ v'
-sub-app-● ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ Fv₁ , ⟨ Ev₂ , ⟨ v34⊑v1 , ⟨ v32 , vv4 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ Bot⊑ =
-  ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ Fv₁ , ⟨ Ev₂ , ⟨ v34⊑v1 , ⟨ v32 , Bot⊑ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-sub-app-● ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ Fv₁ , ⟨ Ev₂ , ⟨ v34⊑v1 , ⟨ v32 , vv4 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ Lit⊑ =
-  ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ Fv₁ , ⟨ Ev₂ , ⟨ v34⊑v1 , ⟨ v32 , vv4 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-sub-app-● ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ Fv₁ , ⟨ Ev₂ , ⟨ v34⊑v1 , ⟨ v32 , vv4 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ Fun⊑ =
-  ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ Fv₁ , ⟨ Ev₂ , ⟨ v34⊑v1 , ⟨ v32 , vv4 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-sub-app-● d (ConjL⊑ lt₁ lt₂) = {!!}
-sub-app-● d (ConjR1⊑ lt) = {!!}
-sub-app-● d (ConjR2⊑ lt) = {!!}
+lam-inv : ∀{Γ}{γ : Env Γ}{M : Γ , ★ ⊢ ★}{v : Value}
+        → ℰ (ƛ M) γ v → Λ (ℰ M) γ v
+lam-inv (ℰ-lam d) = d
+lam-inv ℰ-⊥ = tt
+lam-inv (ℰ-⊔ d₁ d₂) = ⟨ lam-inv d₁ , lam-inv d₂ ⟩
+lam-inv {Γ}{γ}{M}{v = v₂} (ℰ-⊑{v₁ = v₁}{v₂ = v₂} d lt) = sub-Λ (lam-inv d) lt
 
-sub-● : ∀{Γ}{F E : Sem Γ}{γ v v'} → (F ● E) γ v → v' ⊑ v → (F ● E) γ v'
-sub-● {Γ} {F} {E} {γ} {⊥} {v'} d lt = sub-app-● d lt
-sub-● {Γ} {F} {E} {γ} {lit x} {v'} d lt = sub-app-● d lt
-sub-● {Γ} {F} {E} {γ} {v ↦ v₁} {v'} d lt = sub-app-● d lt
-sub-● {Γ} {F} {E} {γ} {v₁ ⊔ v₂} {.⊥} ⟨ d₁ , d₂ ⟩ Bot⊑ = {!!}
-sub-● {Γ} {F} {E} {γ} {v₁ ⊔ v₂} {.(_ ⊔ _)} ⟨ d₁ , d₂ ⟩ (ConjL⊑ lt lt₁) = {!!}
-sub-● {Γ} {F} {E} {γ} {v₁ ⊔ v₂} {v'} ⟨ d₁ , d₂ ⟩ (ConjR1⊑ lt) = {!!}
-sub-● {Γ} {F} {E} {γ} {v₁ ⊔ v₂} {v'} ⟨ d₁ , d₂ ⟩ (ConjR2⊑ lt) = {!!}
+inv-lam : ∀{Γ}{γ : Env Γ}{M : Γ , ★ ⊢ ★}{v : Value}
+        → Λ (ℰ M) γ v
+        → ℰ (ƛ M) γ v
+inv-lam {v = ⊥} d = ℰ-⊥
+inv-lam {v = lit x} ()
+inv-lam {v = v₁ ↦ v₂} d = ℰ-lam d
+inv-lam {v = v₁ ⊔ v₂} ⟨ d1 , d2 ⟩ =
+    let ih1 = inv-lam{v = v₁} d1 in
+    let ih2 = inv-lam{v = v₂} d2 in
+    ℰ-⊔ (inv-lam d1) (inv-lam d2)
 
-
-
-⊔⊑L : ∀{v₁ v₂ v : Value}
-    → v₁ ⊔ v₂ ⊑ v
-    → v₁ ⊑ v
-⊔⊑L (ConjL⊑ d d₁) = d
-⊔⊑L (ConjR1⊑ d) = ConjR1⊑ (⊔⊑L d)
-⊔⊑L (ConjR2⊑ d) = ConjR2⊑ (⊔⊑L d)
-
-⊔⊑R : ∀{v₁ v₂ v : Value}
-    → v₁ ⊔ v₂ ⊑ v
-    → v₂ ⊑ v
-⊔⊑R (ConjL⊑ d d₁) = d₁
-⊔⊑R (ConjR1⊑ d) = ConjR1⊑ (⊔⊑R d)
-⊔⊑R (ConjR2⊑ d) = ConjR2⊑ (⊔⊑R d)
+lam-inv2 : ∀{Γ}{γ : Env Γ}{M : Γ , ★ ⊢ ★}{v : Value}
+        → Λ (ℰ M) γ v
+        → (v ⊑ ⊥)
+          ⊎ (Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] ℰ M (γ , v₁) v₂ × v₁ ↦ v₂ ⊑ v)
+lam-inv2 {v = ⊥} d = inj₁ Bot⊑
+lam-inv2 {v = lit x} ()
+lam-inv2 {v = v₁ ↦ v₂} d = inj₂ ⟨ v₁ , ⟨ v₂ , ⟨ d , Refl⊑ ⟩ ⟩ ⟩
+lam-inv2 {v = v₁ ⊔ v₂} ⟨ d1 , d2 ⟩
+    with lam-inv2{v = v₁} d1 | lam-inv2{v = v₂} d2
+... | inj₁ d1' | inj₁ d2' = inj₁ (ConjL⊑ d1' d2')
+... | inj₁ lt1 | inj₂ ⟨ v₁' , ⟨ v₂' , ⟨ d' , lt2 ⟩ ⟩ ⟩ =
+      inj₂ ⟨ v₁' , ⟨ v₂' , ⟨ d' , ConjR2⊑ lt2 ⟩ ⟩ ⟩
+... | inj₂  ⟨ v₁' , ⟨ v₂' , ⟨ d' , lt2 ⟩ ⟩ ⟩ | _ =
+      inj₂ ⟨ v₁' , ⟨ v₂' , ⟨ d' , ConjR1⊑ lt2 ⟩ ⟩ ⟩
 
 
-ℒ·≃●ℒ : ∀{Γ}{M N : Γ ⊢ ★} → ℒ (M · N) ≃ (ℒ M) ● (ℒ N)
-ℒ·≃●ℒ {Γ}{M}{N} = ⟨ G , H ⟩
-  where G : ∀{γ v} → ℒ (M · N) γ v → (ℒ M ● ℒ N) γ v
-        G {γ} {v} d = {!!}
+var-inv : ∀ {Γ v x} {γ : Env Γ}
+  → ℰ (` x) γ v
+    -------------------
+  → v ⊑ nth x γ
+var-inv (ℰ-var lt) = lt
+var-inv (ℰ-⊔ d₁ d₂) = ConjL⊑ (var-inv d₁) (var-inv d₂)
+var-inv (ℰ-⊑ d lt) = Trans⊑ lt (var-inv d)
 
-        H : ∀{γ v} → (ℒ M ● ℒ N) γ v → ℒ (M · N) γ v
-        H {γ} {v} d =
-           {!!}
+prim-inv : ∀ {Γ v} {γ : Env Γ}{P : Prim}{p : rep P}
+  → ℰ ($_ {Γ}{P} p) γ v
+    -----------------------------------
+  → ℘ {P} p v
+prim-inv (ℰ-lit{v = v} d) = d
+prim-inv (ℰ-⊔ d d₁) = ℘-⊔ (prim-inv d) (prim-inv d₁)
+prim-inv (ℰ-⊑ d x) = ℘-⊑ (prim-inv d) x
+
+
+{-
+
+  Equational and compositional presentation of the semantics
+
 -}
+
+var-equiv : ∀{Γ}{γ : Env Γ}{x : Γ ∋ ★}
+          → ℰ (` x) ≃ (λ γ v → v ⊑ nth x γ)
+var-equiv = ⟨ var-inv , (λ lt → ℰ-var lt) ⟩
+
+lit-equiv : ∀{Γ}{γ : Env Γ}{P : Prim}{p : rep P}
+          → ℰ ($_ {Γ} {P} p) ≃ λ γ v → ℘ {P} p v
+lit-equiv = ⟨ prim-inv , ℰ-lit ⟩
+
+app-equiv : ∀{Γ}{γ : Env Γ}{M N : Γ ⊢ ★}
+          → ℰ (M · N) ≃ (ℰ M) ● (ℰ N)
+app-equiv{Γ}{γ}{M}{N} = ⟨ app-inv , G ⟩
+   where G : ∀{γ v} → (ℰ M ● ℰ N) γ v → ℰ (M · N) γ v
+         G {γ}{v} ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ d1 , ⟨ d2 , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+           ℰ-app d1 (ℰ-⊑ d2 lt1) lt2
+
+lam-equiv : ∀{Γ}{γ : Env Γ}{M : Γ , ★ ⊢ ★}
+          → ℰ (ƛ M) ≃ Λ (ℰ M)
+lam-equiv {Γ}{γ}{M}{v} = ⟨ lam-inv , inv-lam ⟩
+
+

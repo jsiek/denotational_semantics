@@ -643,18 +643,3 @@ _ : ∅ ⊢ (ƛ (` Z)) · ($ 1) ↓ (lit 1)
 _ = ↦-elim (↦-intro (var Lit⊑)) (lit-intro base-val) Lit⊑
 
 
-{-
-
-  Inversion (aka Generation) Lemmas
-
--}
-
-app-inv : ∀{Γ}{γ : Env Γ}{M N : Γ ⊢ ★}{v : Value}
-        → γ ⊢ M · N ↓ v
-        → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] Σ[ v₃ ∈ Value ]  γ ⊢ M ↓ v₁ ↦ v₂ × γ ⊢ N ↓ v₃ × v₁ ⊑ v₃ × v ⊑ v₂
-app-inv (↦-elim d₁ d₂ lt) = {!!}
-app-inv {Γ}{γ}{M}{N}{v} (⊔-intro d₁ d₂)
-    with app-inv d₁
-... | ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ M↓v12 , ⟨ N↓v3 , ⟨ v13 , vv2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
-
-      ⟨ {!!} , ⟨ {!!} , ⟨ {!!} , ⟨ M↓v12 , ⟨ N↓v3 , ⟨ v13 , {!!} ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
