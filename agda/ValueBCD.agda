@@ -24,7 +24,7 @@ data Value : Set where
 infix 4 _⊑_
 
 data _⊑_ : Value → Value → Set where
-  Bot⊑ : ∀ {v} → ⊥ ⊑ v
+  Bot⊑Fun : ∀ {v v'} → ⊥ ⊑ v ↦ v'
   Lit⊑ : ∀{B k} → lit {B} k ⊑ lit {B} k
   Fun⊑ : ∀ {v₁ v₂ v₁' v₂'}
        → v₁' ⊑ v₁  →  v₂ ⊑ v₂'
@@ -51,11 +51,52 @@ data _⊑_ : Value → Value → Set where
        -----------------
      → v₁ ⊑ v₃
 
+
 Refl⊑ : ∀ {v} → v ⊑ v
 Refl⊑ {⊥} = Bot⊑
 Refl⊑ {lit x} = Lit⊑
 Refl⊑ {v ↦ v₁} = Fun⊑ Refl⊑ Refl⊑
 Refl⊑ {v ⊔ v₁} = ConjL⊑ (ConjR1⊑ Refl⊑) (ConjR2⊑ Refl⊑)
+
+
+Conj⊑Conj : ∀ {v₁ v₂ v₁' v₂'}
+      → v₁ ⊑ v₁'  →  v₂ ⊑ v₂'
+        -----------------------
+      → (v₁ ⊔ v₂) ⊑ (v₁' ⊔ v₂')
+Conj⊑Conj d₁ d₂ = ConjL⊑ (ConjR1⊑ d₁) (ConjR2⊑ d₂)
+
+
+Dist⊔↦⊔ : ∀{v₁ v₁' v₂ v₂' : Value}
+        → (v₁ ⊔ v₁') ↦ (v₂ ⊔ v₂') ⊑ (v₁ ↦ v₂) ⊔ (v₁' ↦ v₂')
+Dist⊔↦⊔{v₁}{v₁'}{v₂}{v₂'} =
+    Trans⊑ (Dist⊑{v₁ = v₁ ⊔ v₁'}{v₂ = v₂}{v₃ = v₂'})
+           (Conj⊑Conj (Fun⊑ (ConjR1⊑ Refl⊑) Refl⊑)
+                      (Fun⊑ (ConjR2⊑ Refl⊑) Refl⊑))
+
+
+Dist⊔↦⊑↦⊔ : ∀{v₁ v₂ v₄ : Value}
+         → (v₁ ↦ v₂) ⊔ (v₁ ↦ v₄) ⊑ v₁ ↦ (v₂ ⊔ v₄)
+Dist⊔↦⊑↦⊔ = ConjL⊑ (Fun⊑ Refl⊑ (ConjR1⊑ Refl⊑))
+                   (Fun⊑ Refl⊑ (ConjR2⊑ Refl⊑))
+
+
+⊔⊑L : ∀{v₁ v₂ v : Value}
+    → v₁ ⊔ v₂ ⊑ v
+    → v₁ ⊑ v
+⊔⊑L (ConjL⊑ d d₁) = d
+⊔⊑L (ConjR1⊑ d) = ConjR1⊑ (⊔⊑L d)
+⊔⊑L (ConjR2⊑ d) = ConjR2⊑ (⊔⊑L d)
+⊔⊑L (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑L d₁) d₂
+
+
+⊔⊑R : ∀{v₁ v₂ v : Value}
+    → v₁ ⊔ v₂ ⊑ v
+    → v₂ ⊑ v
+⊔⊑R (ConjL⊑ d d₁) = d₁
+⊔⊑R (ConjR1⊑ d) = ConjR1⊑ (⊔⊑R d)
+⊔⊑R (ConjR2⊑ d) = ConjR2⊑ (⊔⊑R d)
+⊔⊑R (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑R d₁) d₂
+
 
 data Env : (Γ : Context) → Set where
   ∅ : Env ∅
@@ -92,33 +133,3 @@ EnvConjR2⊑ (γ , v) (δ , v') {S k} = EnvConjR2⊑ γ δ {k}
 _iff_ : Set → Set → Set
 P iff Q = (P → Q) × (Q → P)
 
-⊔⊑L : ∀{v₁ v₂ v : Value}
-    → v₁ ⊔ v₂ ⊑ v
-    → v₁ ⊑ v
-⊔⊑L (ConjL⊑ d d₁) = d
-⊔⊑L (ConjR1⊑ d) = ConjR1⊑ (⊔⊑L d)
-⊔⊑L (ConjR2⊑ d) = ConjR2⊑ (⊔⊑L d)
-⊔⊑L (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑L d₁) d₂
-
-⊔⊑R : ∀{v₁ v₂ v : Value}
-    → v₁ ⊔ v₂ ⊑ v
-    → v₂ ⊑ v
-⊔⊑R (ConjL⊑ d d₁) = d₁
-⊔⊑R (ConjR1⊑ d) = ConjR1⊑ (⊔⊑R d)
-⊔⊑R (ConjR2⊑ d) = ConjR2⊑ (⊔⊑R d)
-⊔⊑R (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑R d₁) d₂
-
-Conj⊑Conj : ∀ {v₁ v₂ v₁' v₂'}
-      → v₁ ⊑ v₁'  →  v₂ ⊑ v₂'
-        -----------------------
-      → (v₁ ⊔ v₂) ⊑ (v₁' ⊔ v₂')
-Conj⊑Conj d₁ d₂ = ConjL⊑ (ConjR1⊑ d₁) (ConjR2⊑ d₂)
-
-
-ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
-  → (ρ : ∀ {A} → Γ ∋ A → Δ ∋ A)
-  → (∀ {n : Γ ∋ ★} → nth n γ ⊑ nth (ρ n) δ)
-    -----------------------------------------------------------------
-  → (∀ {n : Γ , ★ ∋ ★} → nth n (γ , v) ⊑ nth ((ext ρ) n) (δ , v))
-ext-nth ρ lt {Z} = Refl⊑
-ext-nth ρ lt {S n'} = lt
