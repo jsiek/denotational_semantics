@@ -1777,18 +1777,49 @@ data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Γ ⊢ ★) → Clos → Set where
 𝕍→WHNF {M = M · M₁} {v} ()
 
 data Fun : Value → Set where
-  fun : ∀{v v'} → Fun (v ↦ v')
+  fun : ∀{v₁ v v'} → v₁ ≡ (v ↦ v') → Fun v₁
 
-𝔼 v (clos M γ) = Fun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
+data SomeFun : Value → Set where
+  sfv-fun : ∀{v₃ v₄ : Value}
+         → SomeFun (v₃ ↦ v₄) 
+  sfv-⊔L : ∀{v₃ v₄ : Value}
+       → SomeFun v₃
+       → SomeFun (v₃ ⊔ v₄)
+  sfv-⊔R : ∀{v₃ v₄ : Value}
+       → SomeFun v₄
+       → SomeFun (v₃ ⊔ v₄)
+
+SomeFun-⊑ : ∀{v v' : Value}
+      → SomeFun v → v ⊑ v'
+      → SomeFun v'
+SomeFun-⊑ () Bot⊑
+SomeFun-⊑ (sfv-fun) (Fun⊑ lt lt₁) = sfv-fun
+SomeFun-⊑ (sfv-fun) Dist⊑ = sfv-⊔L sfv-fun
+SomeFun-⊑ (sfv-⊔L d) (ConjL⊑ lt lt₁) = SomeFun-⊑ d lt
+SomeFun-⊑ (sfv-⊔R d) (ConjL⊑ lt lt₁) = SomeFun-⊑ d lt₁
+SomeFun-⊑ d (ConjR1⊑ lt) = sfv-⊔L (SomeFun-⊑ d lt)
+SomeFun-⊑ d (ConjR2⊑ lt) = sfv-⊔R (SomeFun-⊑ d lt)
+SomeFun-⊑ d (Trans⊑ lt lt₁) = SomeFun-⊑ (SomeFun-⊑ d lt) lt₁
+
+
+↦⊑→SomeFun : ∀{v₁ v₂ v : Value} → v₁ ↦ v₂ ⊑ v → SomeFun v
+↦⊑→SomeFun (Fun⊑ lt lt₁) = sfv-fun
+↦⊑→SomeFun Dist⊑ = sfv-⊔L sfv-fun
+↦⊑→SomeFun (ConjR1⊑ lt) = sfv-⊔L (↦⊑→SomeFun lt)
+↦⊑→SomeFun (ConjR2⊑ lt) = sfv-⊔R (↦⊑→SomeFun lt)
+↦⊑→SomeFun (Trans⊑ lt lt₁) = SomeFun-⊑ (↦⊑→SomeFun lt) lt₁
+
+𝔼 v (clos M γ) = SomeFun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
 
 𝕍→𝔼 : ∀{c : Clos}{v : Value}
     → 𝕍 v c → 𝔼 v c
 𝕍→𝔼 {clos (` x₁) x} {v} ()
 𝕍→𝔼 {clos (M · M₁) x} {v} ()
-𝕍→𝔼 {clos (ƛ M) γ} {⊥} tt ()
+𝕍→𝔼 {clos (ƛ M) x} {⊥} x₁ ()
 𝕍→𝔼 {clos (ƛ M) γ} {v ↦ v'} vnc f =
    ⟨ clos (ƛ M) γ , ⟨ (𝕍⇓-id{M = (ƛ M)}{v = v ↦ v'} vnc) , vnc ⟩ ⟩
-𝕍→𝔼 {clos (ƛ M) γ} {v₁ ⊔ v₂} ⟨ vv1 , vv2 ⟩ = λ ()
+𝕍→𝔼 {clos (ƛ M) γ} {v₁ ⊔ v₂} ⟨ vv1 , vv2 ⟩ f =
+   ⟨ (clos (ƛ M) γ) , ⟨ ⇓-lam , ⟨ vv1 , vv2 ⟩ ⟩ ⟩
 
 atoms : Value → List Value
 atoms (v ↦ v') = (v ↦ v') ∷ nil
@@ -1796,10 +1827,14 @@ atoms (v₁ ⊔ v₂) = atoms v₁ ++ atoms v₂
 atoms ⊥ = nil
 
 dom : (v : Value) → Fun v → Value
-dom (v ↦ v') fun = v
+dom ⊥ (fun ())
+dom (v ↦ v') (fun eq) = v
+dom (v ⊔ v') (fun ())
 
 cod : (v : Value) → Fun v → Value
-cod (v ↦ v') fun = v'
+cod ⊥ (fun ())
+cod (v ↦ v') (fun eq) = v'
+cod (v ⊔ v') (fun ())
 
 infix 5 _∈_
 
@@ -1845,6 +1880,22 @@ val≡? (v ⊔ v₁) (v' ⊔ v'')
 ... | inj₁ a = inj₁ (inj₂ a)
 ... | inj₂ b = inj₂ b
 
+∈++⁺ : ∀{ls1 ls2 v} → v ∈⁺ (ls1 ⁺++⁺ ls2) → v ∈⁺ ls1 ⊎ v ∈⁺ ls2
+∈++⁺ {x ∷ ls1} (inj₁ refl) = inj₁ (inj₁ refl)
+∈++⁺ {x ∷ ls1} (inj₂ y)
+    with ∈++ {ls1} y
+... | inj₁ a = inj₁ (inj₂ a)
+... | inj₂ b = inj₂ b
+
+∈++-tail⁺ : ∀{ls1 ls2 : List⁺ Value}{v}
+          → v ∈ List⁺.tail (ls1 ⁺++⁺ ls2)
+          → v ∈ List⁺.tail ls1 ⊎ v ∈⁺ ls2
+∈++-tail⁺ {head ∷ tail} {head₁ ∷ tail₁} {v} m
+    with ∈++{ls1 = tail}{ls2 = head₁ ∷ tail₁} m
+... | inj₁ x = inj₁ x
+... | inj₂ (inj₁ y) = inj₂ (inj₁ y)
+... | inj₂ (inj₂ y) = inj₂ (inj₂ y)
+
 ∈++-L : ∀{ls1 ls2 x} →  x ∈ ls1  →  x ∈ (ls1 ++ ls2)
 ∈++-L {nil} ()
 ∈++-L {x ∷ ls1} (inj₁ refl) = inj₁ refl
@@ -1853,6 +1904,14 @@ val≡? (v ⊔ v₁) (v' ⊔ v'')
 ∈++-R : ∀{ls1 ls2 x} →  x ∈ ls2  →  x ∈ (ls1 ++ ls2)
 ∈++-R {nil} m = m
 ∈++-R {x ∷ ls1} m = inj₂ (∈++-R m)
+
+∈++-L⁺ : ∀{ls1 ls2 x} →  x ∈⁺ ls1  →  x ∈⁺ (ls1 ⁺++⁺ ls2)
+∈++-L⁺ {x ∷ ls1} (inj₁ refl) = inj₁ refl
+∈++-L⁺ {x ∷ ls1} (inj₂ y) = inj₂ (∈++-L y)
+
+∈++-R⁺ : ∀{ls1 ls2 x} →  x ∈⁺ ls2  →  x ∈⁺ (ls1 ⁺++⁺ ls2)
+∈++-R⁺ {x ∷ ls1} m = inj₂ (∈++-R m)
+
 
 Funs : List Value → Set
 Funs vs = (∀{v} → v ∈ vs → Fun v)
@@ -1956,7 +2015,7 @@ concat-nil = refl
 ++-nil {x ∷ ls} rewrite ++-nil {ls} = refl
 
 atoms-fun-id : ∀{A : Value} → Fun A → atoms A ≡ (A ∷ nil)
-atoms-fun-id {.(_ ↦ _)} fun = refl
+atoms-fun-id {.(_ ↦ _)} (fun refl) = refl
 
 atoms⨆-list-funs : ∀{L : List Value}{A : Value}
     → Fun A → Funs L
@@ -2000,9 +2059,9 @@ funs-atoms-sub{A} f (ConjR1⊑{v₁ = C}{v₂ = D} ab) m =
 funs-atoms-sub f (ConjR2⊑{v₁ = C}{v₂ = D} ab) m =
    funs-atoms-sub (λ {v₁} x → f {v₁} (∈++-R x)) ab m
 funs-atoms-sub f (Trans⊑ ab ab₁) m = funs-atoms-sub (funs-atoms-sub f ab₁) ab m
-funs-atoms-sub f (Fun⊑ ab ab₁) (inj₁ refl) = fun
+funs-atoms-sub f (Fun⊑ ab ab₁) (inj₁ refl) = fun refl
 funs-atoms-sub f (Fun⊑ ab ab₁) (inj₂ ())
-funs-atoms-sub f Dist⊑ (inj₁ refl) = fun
+funs-atoms-sub f Dist⊑ (inj₁ refl) = fun refl
 funs-atoms-sub f Dist⊑ (inj₂ ())
 
 
@@ -2028,239 +2087,344 @@ sub-fun-atoms{Γ}{A}{B} fg lt = funs-atoms-sub y lt
 ⊔⊑-inv (ConjR2⊑ abc) = ConjR2⊑ (⊔⊑-inv abc)
 ⊔⊑-inv (Trans⊑ abc abc₁) = Trans⊑ (⊔⊑-inv abc) abc₁
 
+⊔⊑-invR : ∀{A B C : Value}
+       → A ⊔ B ⊑ C
+       → B ⊑ C
+⊔⊑-invR (ConjL⊑ lt lt₁) = lt₁
+⊔⊑-invR (ConjR1⊑ lt) = ConjR1⊑ (⊔⊑-invR lt)
+⊔⊑-invR (ConjR2⊑ lt) = ConjR2⊑ (⊔⊑-invR lt)
+⊔⊑-invR (Trans⊑ lt lt₁) = Trans⊑ (⊔⊑-invR lt) lt₁
+
 infix 3 _≈_
 _≈_ : (A : Value) → (B : Value) → Set
 A ≈ B = A ⊑ B × B ⊑ A
 
-{-
-infixr 3 _≊_
+Refl≈ : ∀ {v} → v ≈ v
+Refl≈ = ⟨ Refl⊑ , Refl⊑ ⟩
 
-data _≊_ : Value → Value → Set where
-  Refl≊ : ∀{A : Value} → A ≊ A
-  Sym≊ : ∀{A B : Value} → A ≊ B → B ≊ A
-  Trans≊ : ∀{A B C : Value} → A ≊ B → B ≊ C → A ≊ C
-  Dist≊ : ∀{A B C D : Value}
-        → (A ↦ B) ⊔ (C ↦ D) ≊ ((A ⊔ C) ↦ (B ⊔ D)) ⊔ ((A ↦ B) ⊔ (C ↦ D))
-  Assoc≊ : ∀{A B C : Value} → (A ⊔ B) ⊔ C ≊ A ⊔ (B ⊔ C)
-  BotL≊ : ∀{A B} → B ≊ ⊥ → A ⊔ B ≊ A
-  BotR≊ : ∀{A B} → B ≊ ⊥ → B ⊔ A ≊ A
-  Fun≊ : ∀{A B C D} → A ≊ C → B ≊ D → A ↦ B ≊ C ↦ D
+Trans≈ : ∀ {A B C} → A ≈ B → B ≈ C → A ≈ C
+Trans≈ ⟨ ab , ba ⟩ ⟨ bc , cb ⟩ = ⟨ (Trans⊑ ab bc) , (Trans⊑ cb ba) ⟩
 
+Assoc⊑ : ∀ {A B C} → (A ⊔ B) ⊔ C ⊑ A ⊔ (B ⊔ C)
+Assoc⊑ = ConjL⊑ (⊔⊑⊔ Refl⊑ (ConjR1⊑ Refl⊑)) (ConjR2⊑ (ConjR2⊑ Refl⊑))
 
-≊→≈ : ∀{A B} → A ≊ B → A ≈ B
-≊→≈ Refl≊ = ⟨ Refl⊑ , Refl⊑ ⟩
-≊→≈ (Sym≊ ab) with ≊→≈ ab
-... | ⟨ x , y ⟩ = ⟨ y , x ⟩
-≊→≈ (Trans≊ ab ab₁) with ≊→≈ ab | ≊→≈ ab₁
-... | ⟨ x , y ⟩ | ⟨ z , w ⟩ = ⟨ Trans⊑ x z , Trans⊑ w y ⟩
-≊→≈ Dist≊ = ⟨ (ConjR2⊑ Refl⊑) , ConjL⊑ Dist⊔↦⊔ Refl⊑ ⟩
-≊→≈ Assoc≊ = ⟨ TO , FRO ⟩
-   where TO = (ConjL⊑ (ConjL⊑ (ConjR1⊑ Refl⊑) (ConjR2⊑ (ConjR1⊑ Refl⊑)))
-                  (ConjR2⊑ (ConjR2⊑ Refl⊑)))
-         FRO = (ConjL⊑ (ConjR1⊑ (ConjR1⊑ Refl⊑))
-                   (ConjL⊑ (ConjR1⊑ (ConjR2⊑ Refl⊑)) (ConjR2⊑ Refl⊑)))
-≊→≈ (BotL≊ bb) = ⟨ (ConjL⊑ Refl⊑ (Trans⊑ (proj₁ (≊→≈ bb)) Bot⊑)) ,
-                   (ConjR1⊑ Refl⊑) ⟩
-≊→≈ (BotR≊ bb) = ⟨ (ConjL⊑ (Trans⊑ (proj₁ (≊→≈ bb)) Bot⊑) Refl⊑) ,
-                   (ConjR2⊑ Refl⊑) ⟩
-≊→≈ (Fun≊ ac bd) = ⟨ (Fun⊑ (proj₂ (≊→≈ ac)) (proj₁ (≊→≈ bd))) ,
-                     (Fun⊑ (proj₁ (≊→≈ ac)) (proj₂ (≊→≈ bd))) ⟩
+Assoc⊑L : ∀ {A B C} → A ⊔ (B ⊔ C) ⊑ (A ⊔ B) ⊔ C
+Assoc⊑L = ConjL⊑ (ConjR1⊑ (ConjR1⊑ Refl⊑))
+   (ConjL⊑ (ConjR1⊑ (ConjR2⊑ Refl⊑)) (ConjR2⊑ Refl⊑))
+
+Assoc≈ : ∀ {A B C} → (A ⊔ B) ⊔ C ≈ A ⊔ (B ⊔ C)
+Assoc≈ = ⟨ Assoc⊑ , Assoc⊑L ⟩
+
+Assoc≈L : ∀ {A B C} → A ⊔ (B ⊔ C) ≈ (A ⊔ B) ⊔ C
+Assoc≈L = ⟨ Assoc⊑L , Assoc⊑ ⟩
+
+⊔≈⊔ : ∀ {v₁ v₂ v₃ v₄}
+      → v₁ ≈ v₃  →  v₂ ≈ v₄
+        -----------------------
+      → (v₁ ⊔ v₂) ≈ (v₃ ⊔ v₄)
+⊔≈⊔ d₁ d₂ = ⟨ ConjL⊑ (ConjR1⊑ (proj₁ d₁)) (ConjR2⊑ (proj₁ d₂)) ,
+              ConjL⊑ (ConjR1⊑ (proj₂ d₁)) (ConjR2⊑ (proj₂ d₂)) ⟩
 
 
-⊑≊ : ∀{A B C} → A ⊑ B → B ≊ C → A ⊑ C
-⊑≊ A⊑B B≊C = 
-   let B⊑C = proj₁ (≊→≈ B≊C) in
-   Trans⊑ A⊑B B⊑C  
+dom-fun : ∀{A fg fg'} → dom A fg ≡ dom A fg'
+dom-fun {.(_ ↦ _)}{fun refl} {fun refl}  = refl
 
-≊⊑ : ∀{A B C} → A ≊ B → B ⊑ C → A ⊑ C
-≊⊑ A≊B B⊑C =
-   let A⊑B = proj₁ (≊→≈ A≊B) in
-   Trans⊑ A⊑B B⊑C  
+cod-fun : ∀{A fg fg'} → cod A fg ≡ cod A fg'
+cod-fun {.(_ ↦ _)}{fun refl} {fun refl}  = refl
 
-⊑⊥→≊⊥ : ∀{A B} → A ⊑ B → B ≊ ⊥ → A ≊ ⊥
-⊑⊥→≊⊥ Bot⊑ B≊⊥ = Refl≊
-⊑⊥→≊⊥ (ConjL⊑ A⊑B A⊑B₁) B≊⊥ = Trans≊ (BotR≊ (⊑⊥→≊⊥ A⊑B B≊⊥)) (⊑⊥→≊⊥ A⊑B₁ B≊⊥)
-⊑⊥→≊⊥ (ConjR1⊑ A⊑B) B≊⊥ = {!!}
-⊑⊥→≊⊥ (ConjR2⊑ A⊑B) B≊⊥ = {!!}
-⊑⊥→≊⊥ (Trans⊑ A⊑B A⊑B₁) B≊⊥ = {!!}
-⊑⊥→≊⊥ (Fun⊑ A⊑B A⊑B₁) B≊⊥ = {!!}
-⊑⊥→≊⊥ Dist⊑ B≊⊥ = {!!}
+doms-fun : ∀{Γ}{fg fg' : Funs Γ} → (doms Γ fg) ≡ (doms Γ fg')
+doms-fun {nil} {fg} {fg'} = refl
+doms-fun {A ∷ Γ} {fg} {fg'} = cong₂ _∷_ (dom-fun{A}) doms-fun
 
-
-⊑⊑→≊ : ∀{A B} → A ⊑ B → B ⊑ A → A ≊ B
-⊑⊑→≊ {.⊥} {.⊥} Bot⊑ Bot⊑ = Refl≊
-⊑⊑→≊ {.⊥} {B₁ ⊔ B₂} Bot⊑ (ConjL⊑ ba ba₁) =
-   let B₁≊⊥ = ⊑⊑→≊ ba Bot⊑ in
-   let B₂≊⊥ = ⊑⊑→≊ ba₁ Bot⊑ in
-   Sym≊ (Trans≊ (BotL≊ B₂≊⊥) B₁≊⊥)
-⊑⊑→≊ {.⊥} {B} Bot⊑ (Trans⊑{v₂ = C} ba ba₁) =
-   let ih = ⊑⊑→≊ ba₁ Bot⊑ in
-   let B⊑⊥ = Trans⊑ {!!} {!!} in
-   {!!}
-⊑⊑→≊ {.(_ ⊔ _)} {B} (ConjL⊑ ab ab₁) ba = {!!}
-⊑⊑→≊ {A} {.(_ ⊔ _)} (ConjR1⊑ ab) ba = {!!}
-⊑⊑→≊ {A} {.(_ ⊔ _)} (ConjR2⊑ ab) ba = {!!}
-⊑⊑→≊ {A} {B} (Trans⊑ ab ab₁) ba = {!!}
-⊑⊑→≊ {.(_ ↦ _)} {.(_ ↦ _)} (Fun⊑ ab ab₁) ba = {!!}
-⊑⊑→≊ {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} Dist⊑ ba = {!!}
-
-≈→≊ : ∀{A B} → A ≈ B → A ≊ B
-≈→≊ ⟨ Bot⊑ , Bot⊑ ⟩ = Refl≊
-≈→≊ ⟨ Bot⊑ , ConjL⊑{v₁ = B₁}{v₂ = B₂} ba ba₁ ⟩ =
-  let ih1 = ≈→≊ ⟨ ba , Bot⊑ ⟩ in
-  let ih2 = ≈→≊ ⟨ ba₁ , Bot⊑ ⟩ in
-  Sym≊ (Trans≊ (BotL≊ ih2) ih1)
-≈→≊{B = B} ⟨ Bot⊑ , Trans⊑{v₂ = C} ba ba₁ ⟩ =
-   let C≊⊥ = ≈→≊ ⟨ ba₁ , Bot⊑{C} ⟩ in
-   let C⊑B : C ⊑ B
-       C⊑B = {!!} in
-   {-
-    B ⊑ C  C = ⊥
-    B ⊑ ⊥
-    B ≈ ⊥
-
-    NTS:  C ⊑ B
-    -}
-   let B≊C : B ≊ C
-       B≊C = {!!} {- ≈→≊ ⟨ ba , C⊑B ⟩ -} in
-   let x = Trans≊ B≊C C≊⊥ in
-   Sym≊ {!x!}
-≈→≊ ⟨ ConjL⊑ ab ab₁ , ba ⟩ = {!!}
-≈→≊ ⟨ ConjR1⊑ ab , ba ⟩ = {!!}
-≈→≊ ⟨ ConjR2⊑ ab , ba ⟩ = {!!}
-≈→≊ ⟨ Trans⊑ ab ab₁ , ba ⟩ = {!!}
-≈→≊ ⟨ Fun⊑ ab ab₁ , ba ⟩ = {!!}
-≈→≊ ⟨ Dist⊑ , ba ⟩ = {!!}
-
-
-infix 1 _↝_∈_
-
-_↝_∈_ : (A : Value) → (B : Value) → (C : Value) → Set
-A ↝ B ∈ C = Σ[ C' ∈ Value ] (A ↦ B) ∈ atoms C' × C' ≈ C
--}
-
-
+cods-fun : ∀{Γ}{fg fg' : Funs Γ} → (cods Γ fg) ≡ (cods Γ fg')
+cods-fun {nil} {fg} {fg'} = refl
+cods-fun {A ∷ Γ} {fg} {fg'} = cong₂ _∷_ (cod-fun{A}) cods-fun
 
 {-
-sub-inv : ∀{A A' : Value}
-        → A' ⊑ A
-        → ∀{B' C'} → B' ↝ C' ∈ A' → ¬ C' ⊑ ⊥
-        → Σ[ B ∈ Value ] Σ[ C ∈ Value ]
-          (B ↝ C ∈ A)  ×  B ⊑ B'  ×  C' ⊑ C  ×  ¬ C ⊑ ⊥
-sub-inv Bot⊑ {B'} {C'} ⟨ A'₁ , ⟨ a , b ⟩ ⟩ ncb 
-    with atomic-fun-sub{B = (B' ↦ C') ⊔ A'₁}{D = B'}{E = C'}  (inj₁ refl)
-... | ()
-sub-inv{A}{A₁' ⊔ A₂'} (ConjL⊑ A₁'⊑A A₂'⊑A₁) {B'} {C'} m ncb =
-  let x : B' ↝ C' ∈ A₁'
-      x = ⟨ {!!} , ⟨ {!!} , {!!} ⟩ ⟩
-      in
-  {!!}
-sub-inv (ConjR1⊑ A'⊑A) {B'} {C'} m ncb = {!!}
-sub-inv (ConjR2⊑ A'⊑A) {B'} {C'} m ncb = {!!}
-sub-inv{A}{A'} (Trans⊑{v₂ = D} A'⊑D D⊑A) {B'} {C'} m ncb
-    with sub-inv A'⊑D m ncb 
-... | ⟨ B , ⟨ C , ⟨ eqD , ⟨ B⊑B' , ⟨ C'⊑C , nc'b ⟩ ⟩ ⟩ ⟩ ⟩
-    with sub-inv D⊑A eqD nc'b
-... | ⟨ E , ⟨ F ,  ⟨ eqA , ⟨ E⊑B' , ⟨ C'⊑F , nc''b ⟩ ⟩ ⟩ ⟩ ⟩ =
-   
-   ⟨ E , ⟨ F , ⟨ eqA , ⟨ (Trans⊑ E⊑B' B⊑B') , ⟨ (Trans⊑ C'⊑C C'⊑F) , nc''b ⟩ ⟩ ⟩ ⟩ ⟩
-
-sub-inv (Fun⊑ A'⊑A A'⊑A₁) {B'} {C'} m ncb = {!!}
-sub-inv Dist⊑ {B'} {C'} m ncb = {!!}
-
+doms-fun⁺ : ∀{Γ}{fg fg' : Funs (toList Γ)} → (doms⁺ Γ fg) ≡ (doms⁺ Γ fg')
+doms-fun⁺ {Γ}{fg}{fg'} = {!!}
 -}
 
-factor : (A : Value) → (B' : Value) → (C' : Value)→ Set
-factor A B' C' = Σ[ Γ ∈ List⁺ Value ] Σ[ f ∈ Funs (toList Γ) ] 
-                 (∀{B} → B ∈⁺ Γ → B ∈ atoms A) ×
-                  (⨆ (doms⁺ Γ f) ⊑ B') × (C' ⊑ ⨆ (cods⁺ Γ f))
+doms++ : ∀{Γ₁ Γ₂ : List Value}
+       → (f1 : Funs Γ₁) → (f2 : Funs Γ₂) → (f12 : Funs (Γ₁ ++ Γ₂))
+       → (doms (Γ₁ ++ Γ₂) f12) ≡ (doms Γ₁ f1) ++ (doms Γ₂ f2)
+doms++ {nil} {Γ₂} f1 f2 f12 = doms-fun
+doms++ {A ∷ Γ₁} {Γ₂} f1 f2 f12 =
+  cong₂ _∷_ (dom-fun{A}) (doms++ (λ {v} z → f1 (inj₂ z)) f2
+                                 (λ {v} z → f12 (inj₂ z)))
+
+
+cods++ : ∀{Γ₁ Γ₂ : List Value}
+       → (f1 : Funs Γ₁) → (f2 : Funs Γ₂) → (f12 : Funs (Γ₁ ++ Γ₂))
+       → (cods (Γ₁ ++ Γ₂) f12) ≡ (cods Γ₁ f1) ++ (cods Γ₂ f2)
+cods++ {nil} {Γ₂} f1 f2 f12 = cods-fun
+cods++ {A ∷ Γ₁} {Γ₂} f1 f2 f12 =
+  cong₂ _∷_ (cod-fun{A}) (cods++ (λ {v} z → f1 (inj₂ z)) f2
+                                 (λ {v} z → f12 (inj₂ z)))
+
+
+doms++⁺ : ∀{Γ₁ Γ₂ : List⁺ Value}
+       → (f1 : Funs (toList Γ₁)) → (f2 : Funs (toList Γ₂))
+       → (f12 : Funs (toList (Γ₁ ⁺++⁺ Γ₂)))
+       → (doms⁺ (Γ₁ ⁺++⁺ Γ₂) f12) ≡ (doms⁺ Γ₁ f1) ⁺++⁺ (doms⁺ Γ₂ f2)
+doms++⁺ {A ∷ Γ₁}{B ∷ Γ₂} f1 f2 f12 =
+  cong₂ _∷_ (dom-fun{A}) (doms++{Γ₁}{B ∷ Γ₂} (λ {v} z → f1 (inj₂ z))
+                           f2 (λ {v} z → f12 (inj₂ z)))
+
+
+cods++⁺ : ∀{Γ₁ Γ₂ : List⁺ Value}
+       → (f1 : Funs (toList Γ₁)) → (f2 : Funs (toList Γ₂))
+       → (f12 : Funs (toList (Γ₁ ⁺++⁺ Γ₂)))
+       → (cods⁺ (Γ₁ ⁺++⁺ Γ₂) f12) ≡ (cods⁺ Γ₁ f1) ⁺++⁺ (cods⁺ Γ₂ f2)
+cods++⁺ {A ∷ Γ₁}{B ∷ Γ₂} f1 f2 f12 =
+  cong₂ _∷_ (cod-fun{A}) (cods++{Γ₁}{B ∷ Γ₂} (λ {v} z → f1 (inj₂ z))
+                           f2 (λ {v} z → f12 (inj₂ z)))
+
+
+⨆++ : ∀{Γ₁ : List Value}{Γ₂ : List Value}{A B : Value}
+        → ⨆-list A (Γ₁ ++ (B ∷ Γ₂)) ≈ (⨆-list A Γ₁) ⊔ (⨆-list B Γ₂)
+⨆++ {nil} = Refl≈
+⨆++ {A' ∷ Γ₁} = Trans≈ (⊔≈⊔ Refl≈ (⨆++ {Γ₁})) Assoc≈L 
+
+
+⨆++⁺ : ∀{Γ₁ Γ₂ : List⁺ Value}
+        → ⨆ (Γ₁ ⁺++⁺ Γ₂) ≈ ⨆ Γ₁ ⊔ ⨆ Γ₂
+⨆++⁺ {A ∷ Γ₁} {B ∷ Γ₂} = ⨆++{Γ₁}{Γ₂}
+
+
+⨆doms++⁺ : ∀{Γ₁ Γ₂ : List⁺ Value}
+          {fg : Funs (toList (Γ₁ ⁺++⁺ Γ₂))}
+          {fg1 : Funs (toList Γ₁)} {fg2 : Funs (toList Γ₂)}
+        → ⨆ (doms⁺ (Γ₁ ⁺++⁺ Γ₂) fg) ≈ ⨆ (doms⁺ Γ₁ fg1) ⊔ ⨆ (doms⁺ Γ₂ fg2)
+⨆doms++⁺ {Γ₁} {Γ₂} {fg} {fg1} {fg2}
+    rewrite cong ⨆ (doms++⁺ fg1 fg2 fg) =
+      ⨆++⁺ {doms⁺ Γ₁ fg1}{doms⁺ Γ₂ fg2}
+
+
+⨆cods++⁺ : ∀{Γ₁ Γ₂ : List⁺ Value}
+          {fg : Funs (toList (Γ₁ ⁺++⁺ Γ₂))}
+          {fg1 : Funs (toList Γ₁)} {fg2 : Funs (toList Γ₂)}
+        → ⨆ (cods⁺ (Γ₁ ⁺++⁺ Γ₂) fg) ≈ ⨆ (cods⁺ Γ₁ fg1) ⊔ ⨆ (cods⁺ Γ₂ fg2)
+⨆cods++⁺ {Γ₁} {Γ₂} {fg} {fg1} {fg2}
+    rewrite cong ⨆ (cods++⁺ fg1 fg2 fg) =
+      ⨆++⁺ {cods⁺ Γ₁ fg1}{cods⁺ Γ₂ fg2}
+
+
+factor⁺ : (A : Value) → (Γ : List⁺ Value) → (B' : Value) → (C' : Value)→ Set
+factor⁺ A Γ B' C' = Σ[ f ∈ Funs (toList Γ) ] 
+                    (∀{B} → B ∈⁺ Γ → B ∈ atoms A) ×
+                    (⨆ (doms⁺ Γ f) ⊑ B') × (C' ⊑ ⨆ (cods⁺ Γ f))
+
+factor : (A : Value) → (A₁ : Value) (A₂ : Value) → (Γ : List Value)
+       → (B' : Value) → (C' : Value)→ Set
+factor A A₁ A₂ Γ B' C' = Σ[ f ∈ Funs Γ ] 
+   (∀{A₃} → A₃ ∈ Γ → A₃ ∈ atoms A) ×
+   (⨆-list A₁ (doms Γ f) ⊑ B') ×
+   (C' ⊑ ⨆-list A₂ (cods Γ f))
+
+funs-append : ∀{ls1 ls2} → Funs ls1 → Funs ls2 → Funs (ls1 ++ ls2)
+funs-append {nil} {ls2} f1 f2 = f2
+funs-append {x ∷ ls1} {ls2} f1 f2 {.x} (inj₁ refl) = f1 (inj₁ refl)
+funs-append {x ∷ ls1} {ls2} f1 f2 {v} (inj₂ y) = funs-append (λ {v₁} z → f1 (inj₂ z)) f2 y
+
+funs-append⁺ : ∀{ls1 ls2 : List⁺ Value} → Funs (toList ls1) → Funs (toList ls2) → Funs (toList (ls1 ⁺++⁺ ls2))
+funs-append⁺ {x ∷ ls1} {ls2} f1 f2 {.x} (inj₁ refl) = f1 (inj₁ refl)
+funs-append⁺ {x ∷ ls1} {ls2} f1 f2 {v} (inj₂ y) = funs-append (λ {v₁} z → f1 (inj₂ z)) f2 y
+
+sub-inv-trans : ∀{D₁}{D₂}{Γ'}{fg' : Funs Γ'}{A}{D}
+              → D₁ ↦ D₂ ∈ atoms D → (∀{B} → B ∈ Γ' → B ∈ atoms D)
+              → (∀{B' C'} → B' ↦ C' ∈ atoms D
+                  → Σ[ Γ ∈ List⁺ Value ] factor⁺ A Γ B' C')
+              → Σ[ Γ ∈ List⁺ Value ] Σ[ fg ∈ Funs (toList Γ) ]
+                (∀{A₁} → A₁ ∈⁺ Γ → A₁ ∈ atoms A)
+              × (⨆ (doms⁺ Γ fg) ⊑ ⨆-list D₁ (doms Γ' fg'))
+              × (⨆-list D₂ (cods Γ' fg') ⊑ ⨆ (cods⁺ Γ fg))
+sub-inv-trans {D₁}{D₂}{nil} {fg'} {A} {D} D₁↦D₂∈D Γ'⊆D IH = IH D₁↦D₂∈D
+sub-inv-trans {D₁}{D₂}{D'' ∷ Γ''} {fg'} {A} {D} D₁↦D₂∈D Γ'⊆D IH
+    with IH D₁↦D₂∈D
+... | ⟨ Γ₁ , ⟨ fg1 , ⟨ Γ₁⊆A , ⟨ ⨆domΓ₁⊑D₁ , D₂⊑⨆codΓ₁ ⟩ ⟩ ⟩ ⟩
+    with fg' (inj₁ refl)
+... | (fun{v = D₃}{v' = D₄} refl)
+    with sub-inv-trans {D₃}{D₄}{Γ''} {λ {v} z → fg' (inj₂ z)} {A} {D}
+             (Γ'⊆D (inj₁ refl)) (λ {B} z → Γ'⊆D (inj₂ z)) IH
+... | ⟨ Γ₂ , ⟨ fg2 , ⟨ Γ₂⊆A , ⟨ ⨆domΓ₂⊑D₃ , D₄⊑⨆codΓ₂ ⟩ ⟩ ⟩ ⟩ =
+    let fg12 = funs-append⁺ fg1 fg2 in
+    ⟨ (Γ₁ ⁺++⁺ Γ₂) , ⟨ fg12 , ⟨ Γ₁++Γ₂⊆A ,
+    ⟨ Trans⊑ (proj₁ (⨆doms++⁺{Γ₁}{Γ₂}{fg12}{fg1}{fg2}))
+             (⊔⊑⊔ ⨆domΓ₁⊑D₁ ⨆domΓ₂⊑D₃) ,
+      Trans⊑ (⊔⊑⊔ D₂⊑⨆codΓ₁ D₄⊑⨆codΓ₂)
+             ((proj₂ (⨆cods++⁺{Γ₁}{Γ₂}{fg12}{fg1}{fg2}))) ⟩ ⟩ ⟩ ⟩
+
+    where Γ₁++Γ₂⊆A : (∀{A₁} → A₁ ∈⁺ (Γ₁ ⁺++⁺ Γ₂) → A₁ ∈ atoms A)
+          Γ₁++Γ₂⊆A (inj₁ refl) = Γ₁⊆A (inj₁ refl)
+          Γ₁++Γ₂⊆A (inj₂ y)
+              with ∈++-tail⁺{ls1 = Γ₁} y
+          ... | inj₁ x = Γ₁⊆A (inj₂ x)
+          ... | inj₂ (inj₁ refl) = Γ₂⊆A (inj₁ refl)
+          ... | inj₂ (inj₂ z) = Γ₂⊆A (inj₂ z)
+
 
 sub-inv : ∀{A A' : Value}
         → A' ⊑ A
-        → ∀{B' C'} → B' ↦ C' ∈ atoms A' → ¬ C' ⊑ ⊥ → factor A B' C'
+        → ∀{B' C'} → B' ↦ C' ∈ atoms A'
+        → Σ[ Γ ∈ List⁺ Value ] factor⁺ A Γ B' C'
 sub-inv Bot⊑ ()
-sub-inv{A}{A'₁ ⊔ A'₂} (ConjL⊑ A'₁⊑A A'₂⊑A) {B'}{C'} m ncb
+sub-inv{A}{A'₁ ⊔ A'₂} (ConjL⊑ A'₁⊑A A'₂⊑A) {B'}{C'} m 
     with ∈++{ls1 = atoms A'₁} m
-... | inj₁ B'↦C'∈A'₁ = sub-inv A'₁⊑A B'↦C'∈A'₁ ncb
-... | inj₂ B'↦C'∈A'₂ = sub-inv A'₂⊑A B'↦C'∈A'₂ ncb
-sub-inv{A₁ ⊔ A₂}{A'} (ConjR1⊑{v₁ = A₁}{v₂ = A₂} A'⊑A₁) {B'}{C'} m ncb
-    with sub-inv A'⊑A₁ m ncb 
+... | inj₁ B'↦C'∈A'₁ = sub-inv A'₁⊑A B'↦C'∈A'₁ 
+... | inj₂ B'↦C'∈A'₂ = sub-inv A'₂⊑A B'↦C'∈A'₂ 
+sub-inv{A₁ ⊔ A₂}{A'} (ConjR1⊑{v₁ = A₁}{v₂ = A₂} A'⊑A₁) {B'}{C'} m 
+    with sub-inv A'⊑A₁ m  
 ... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A₁ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
       ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
     where Γ⊆A : (∀{B} → B ∈⁺ Γ → B ∈ atoms (A₁ ⊔ A₂))
           Γ⊆A {B} B∈Γ = ∈++-L (Γ⊆A₁ {B} B∈Γ)
-sub-inv{A₁ ⊔ A₂}{A'} (ConjR2⊑{v₁ = A₁}{v₂ = A₂} A'⊑A₂) {B'}{C'} m ncb
-    with sub-inv A'⊑A₂ m ncb 
+sub-inv{A₁ ⊔ A₂}{A'} (ConjR2⊑{v₁ = A₁}{v₂ = A₂} A'⊑A₂) {B'}{C'} m 
+    with sub-inv A'⊑A₂ m  
 ... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A₂ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
       ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
     where Γ⊆A : (∀{B} → B ∈⁺ Γ → B ∈ atoms (A₁ ⊔ A₂))
           Γ⊆A {B} B∈Γ = ∈++-R (Γ⊆A₂ {B} B∈Γ)
-sub-inv{A}{A'} (Trans⊑{v₂ = D} A'⊑D D⊑A) {B'}{C'} m ncb
-    with sub-inv A'⊑D m ncb 
-... | ⟨ Γ₁ , ⟨ fg1 , ⟨ Γ₁⊆D , ⟨ domΓ₁⊑B' , C'⊑codΓ₁ ⟩ ⟩ ⟩ ⟩ =  factorA
-    
-  where factorA : factor A B' C'
-        factorA = {!!}
+sub-inv{A}{A'} (Trans⊑{v₂ = D} A'⊑D D⊑A) {B'}{C'} B'↦C'∈A' 
+    with sub-inv A'⊑D B'↦C'∈A'  
+... | ⟨ D' ∷ Γ' , ⟨ fg' , ⟨ Γ'⊆D , ⟨ domΓ'⊑B' , C'⊑codΓ' ⟩ ⟩ ⟩ ⟩
+    with fg' (inj₁ refl)
+... | (fun{v = D₁}{v' = D₂} refl) 
+    with sub-inv-trans {D₁}{D₂}{Γ'}{λ z → fg' (inj₂ z)}{A}{D}
+                       (Γ'⊆D (inj₁ refl)) (λ {B} z → Γ'⊆D (inj₂ z))
+                       (sub-inv D⊑A)
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ domΓ⊑domΓ' , codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ Trans⊑ domΓ⊑domΓ' domΓ'⊑B' ,
+                             Trans⊑ C'⊑codΓ' codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩
+sub-inv {A₁ ↦ A₂} {A'₁ ↦ A'₂} (Fun⊑ A₁⊑A'₁ A'₂⊑A₂) (inj₁ refl) =
+  ⟨ A₁ ↦ A₂ ∷ nil , ⟨ F , ⟨ G , ⟨ A₁⊑A'₁ , A'₂⊑A₂ ⟩ ⟩ ⟩ ⟩
+  where F : Funs (toList (A₁ ↦ A₂ ∷ nil))
+        F (inj₁ refl) = fun refl
+        F (inj₂ ())
 
-sub-inv (Fun⊑ A'⊑A A'⊑A₁) = {!!}
-sub-inv Dist⊑ = {!!}
+        G : {B : Value} → B ∈⁺ (A₁ ↦ A₂ ∷ nil) → B ≡ A₁ ↦ A₂ ⊎ Bot
+        G (inj₁ refl) = inj₁ refl
+        G (inj₂ ())
+        
+sub-inv {A₁ ↦ A₂} {A'₁ ↦ A'₂} (Fun⊑ A₁⊑A'₁ A'₂⊑A₂) (inj₂ ())
+sub-inv {A₁ ↦ A₂ ⊔ A₁ ↦ A₃} {A₁ ↦ (A₂ ⊔ A₃)} Dist⊑ (inj₁ refl) =
+  ⟨ (A₁ ↦ A₂ ∷ A₁ ↦ A₃ ∷ nil) , ⟨ f , ⟨ g , ⟨ (ConjL⊑ Refl⊑ Refl⊑) ,
+     ⊔⊑⊔ Refl⊑ Refl⊑ ⟩ ⟩ ⟩ ⟩
+
+  where f : Funs (toList (A₁ ↦ A₂ ∷ A₁ ↦ A₃ ∷ nil))
+        f (inj₁ refl) = fun refl
+        f (inj₂ (inj₁ refl)) = fun refl
+        f (inj₂ (inj₂ ())) 
+
+        g : {B : Value} → B ∈⁺ (A₁ ↦ A₂ ∷ A₁ ↦ A₃ ∷ nil)
+          → B ≡ A₁ ↦ A₂ ⊎ B ≡ A₁ ↦ A₃ ⊎ Bot
+        g (inj₁ refl) = inj₁ refl
+        g (inj₂ (inj₁ refl)) = inj₂ (inj₁ refl)
+        g (inj₂ (inj₂ ()))
+
+sub-inv {A₁ ↦ A₂ ⊔ A₁ ↦ A₃} {A₁ ↦ (A₂ ⊔ A₃)} Dist⊑ (inj₂ ())
+
+lub-sub : ∀{Γ}{A B C}
+        → A ∈ (C ∷ Γ) →  ⨆-list C Γ ⊑ B
+        → A ⊑ B
+lub-sub {nil} {A} {B} (inj₁ refl) lt = lt
+lub-sub {nil} {A} {B} (inj₂ ()) lt
+lub-sub {C' ∷ Γ} {A} {B} (inj₁ refl) lt = ⊔⊑-inv lt
+lub-sub {C' ∷ Γ} {A} {B} (inj₂ y) lt =
+   lub-sub {Γ}{A}{B} y (⊔⊑-invR lt)
+
+fun∈→dom∈ : ∀{Γ}{f : Funs Γ}{D E} → (D ↦ E) ∈ Γ → D ∈ doms Γ f
+fun∈→dom∈ {nil} ()
+fun∈→dom∈ {.(_ ↦ _) ∷ Γ}{f} (inj₁ refl)
+      with f (inj₁ refl)
+... | fun x = inj₁ refl
+fun∈→dom∈ {A ∷ Γ}{f} (inj₂ y) = inj₂ (fun∈→dom∈ {Γ}{λ {v} z → f (inj₂ z)} y)
+
+fun∈→dom∈⁺ : ∀{Γ}{f : Funs (toList Γ)}{D E} → (D ↦ E) ∈⁺ Γ → D ∈⁺ doms⁺ Γ f
+fun∈→dom∈⁺ {A ∷ Γ}{f} m = fun∈→dom∈ {A ∷ Γ} {f} m
 
 
-{-
 sub-inv-fun : ∀{A B C : Value}
         → (A ↦ B) ⊑ C
         → Σ[ Γ ∈ List⁺ Value ] Σ[ f ∈ Funs (toList Γ) ] 
              (∀{D} → D ∈⁺ Γ → D ∈ atoms C)
            × (∀{D E} → (D ↦ E) ∈⁺ Γ → D ⊑ A)
            × (B ⊑ ⨆ (cods⁺ Γ f))
-sub-inv-fun{A}{B} (ConjR1⊑{v₁ = C}{v₂ = C'} abc)
-    with sub-inv-fun{A}{B} abc
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆C , ⟨ D⊑A , B⊑codsΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ G , ⟨ D⊑A , B⊑codsΓ ⟩ ⟩ ⟩ ⟩
-    where G : {D : Value} → D ∈⁺ Γ → D ∈ (atoms C ++ atoms C')
-          G dg = ∈++-L (Γ⊆C dg)
-sub-inv-fun{A}{B} (ConjR2⊑{v₁ = C}{v₂ = C'} abc)
-    with sub-inv-fun{A}{B} abc
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆C , ⟨ D⊑A , B⊑codsΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ G , ⟨ D⊑A , B⊑codsΓ ⟩ ⟩ ⟩ ⟩
-    where G : {D : Value} → D ∈⁺ Γ → D ∈ (atoms C ++ atoms C')
-          G dg = ∈++-R (Γ⊆C dg)
-sub-inv-fun{A}{B}{C} (Trans⊑{v₁ = A ↦ B}{v₂ = C'}{v₃ = C} A↦B⊑C' C'⊑C)
-    with sub-inv-fun A↦B⊑C'
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆C' , ⟨ domΓ⊑A , B⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ Γ⊆C , ⟨ domΓ⊑A , B⊑codΓ ⟩ ⟩ ⟩ ⟩
-    where Γ⊆C : ∀{D} → D ∈⁺ Γ → D ∈ atoms C
-          Γ⊆C {E} E∈Γ = let E∈C' = Γ⊆C' E∈Γ in {!!}
+sub-inv-fun{A}{B}{C} abc
+    with sub-inv abc {A}{B} (inj₁ refl)
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ db , cc ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ G , cc ⟩ ⟩ ⟩ ⟩
 
-sub-inv-fun (Fun⊑ abc abc₁) = {!!}
-sub-inv-fun Dist⊑ = {!!}
--}
+   where G : ∀{D E} → (D ↦ E) ∈⁺ Γ → D ⊑ A
+         G{D}{E} m = lub-sub (fun∈→dom∈⁺{f = f} m) db
+         
+
+Γ⊆A↦B : ∀{Γ}{A B} → (∀{D} → D ∈⁺ Γ → D ∈ atoms (A ↦ B))
+      → List⁺.head Γ ≡ A ↦ B
+Γ⊆A↦B {head ∷ tail} f
+    with f (inj₁ refl)
+... | inj₁ refl = refl
+... | inj₂ ()
 
 
+Γ⊆A↦B→codΓ≡B : ∀{Γ}{A B}{f : Funs Γ}
+      → (∀{D} → D ∈ Γ → D ∈ atoms (A ↦ B))
+      → (∀{D} → D ∈ (cods Γ f) → D ≡ B)
+Γ⊆A↦B→codΓ≡B {nil} {A} {B} {f} g ()
+Γ⊆A↦B→codΓ≡B {x ∷ Γ} {A} {B} {f} g (inj₁ refl)
+    with f (inj₁ refl)
+... | fun{v = v}{v' = v'} refl
+    with g {v ↦ v'} (inj₁ refl)
+... | inj₁ refl = refl
+... | inj₂ ()
+Γ⊆A↦B→codΓ≡B {C ∷ Γ} {A} {B} {f} g (inj₂ y) =
+   Γ⊆A↦B→codΓ≡B {Γ} {A} {B} {λ {v} z → f (inj₂ z)}
+              (λ {D} z → g (inj₂ z)) y
 
-{-
 
+⨆-list-refl : ∀{Γ}{A} → (∀{D} → D ∈ Γ → D ≡ A)
+            → ⨆-list A Γ ⊑ A
+⨆-list-refl {nil} f = Refl⊑
+⨆-list-refl {B ∷ Γ}{A} f rewrite f (inj₁ refl) =
+   let ih = ⨆-list-refl {Γ}{A} G in 
+   ConjL⊑ Refl⊑ ih
 
-
-
+    where G : {D : Value} → D ∈ Γ → D ≡ A
+          G m = f (inj₂ m)
 
 ↦⊑↦-inv : ∀{v₁ v₂ v₃ v₄}
         → v₁ ↦ v₂ ⊑ v₃ ↦ v₄
         → v₃ ⊑ v₁ × v₂ ⊑ v₄
-↦⊑↦-inv (Trans⊑ lt lt₁)
-    with ⊑↦→AllFuns lt₁
-... | af-fun c d
-    with ↦⊑↦-inv lt
-... | ⟨ a , b ⟩ = 
-    ⟨ Trans⊑ c a , Trans⊑ b d ⟩
-↦⊑↦-inv (Trans⊑ lt lt₁) | af-⊔ a b = {!!}
+↦⊑↦-inv{v₁}{v₂}{v₃}{v₄} lt
+    with sub-inv-fun lt  
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆v34 , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with ⊔⊑-invR (⨆-list-refl {cods ((List⁺.head Γ) ∷ (List⁺.tail Γ)) f}
+               (Γ⊆A↦B→codΓ≡B {f = f} Γ⊆v34))
+... | y               
+    with f (inj₁ refl)
+... | fun{v}{v₃'}{v₄'} eq = 
+    ⟨ G , Trans⊑ lt2 y ⟩
 
-↦⊑↦-inv (Trans⊑ lt lt₁) | af-⊥ = {!!}
-↦⊑↦-inv (Fun⊑ lt lt₁) = ⟨ lt , lt₁ ⟩
--}
+    where G : v₃ ⊑ v₁
+          G rewrite Γ⊆A↦B {Γ} Γ⊆v34 = lt1 (inj₁ refl)
 
+
+sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
 sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
-sub-𝔼 evc lt = {!!}
+
+sub-𝔼 {clos M x} {v' = ⊥} x₁ Bot⊑ ()
+sub-𝔼 {clos M x} {v' = v₁ ⊔ v₂} evc (ConjL⊑ x₂ x₃) (sfv-⊔L x₄) = {!!}
+sub-𝔼 {clos M x} {v' = v₁ ⊔ v₂} evc (ConjL⊑ x₂ x₃) (sfv-⊔R x₄) = {!!}
+sub-𝔼 {clos M x} {v₁ ⊔ v₂} {v'} evc (ConjR1⊑ lt) fv' =
+  let lt : v' ⊑ v₁ ⊔ v₂
+      lt = ConjR1⊑ lt in
+  let sv12 = SomeFun-⊑ fv' lt in
+  let x = evc sv12 in
+  ⟨ proj₁ x , ⟨ proj₁ (proj₂ x) , sub-𝕍 (proj₂ (proj₂ x)) lt ⟩ ⟩
+sub-𝔼 {clos M x} {.(_ ⊔ _)} {v'} evc (ConjR2⊑ lt) fv' = {!!}
+sub-𝔼 {clos M x} {v} {v'} evc (Trans⊑ lt lt₁) fv' = {!!}
+sub-𝔼 {clos M x} {.(_ ↦ _)} {.(_ ↦ _)} evc (Fun⊑ lt lt₁) fv' = {!!}
+sub-𝔼 {clos M x} {.(_ ↦ _ ⊔ _ ↦ _)} {.(_ ↦ (_ ⊔ _))} evc Dist⊑ fv' = {!!}
 
 {-
 sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
@@ -2270,7 +2434,7 @@ sub-𝔼 {clos M x} {v ⊔ v₁} evc lt = {!!}
 sub-𝔼 {clos M x} ⟨ c , ⟨ M⇓ , vc ⟩ ⟩ lt = ⟨ c , ⟨ M⇓ , sub-𝕍 vc lt ⟩ ⟩
 -}
 
-sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
+
 sub-𝕍 {clos (` x₁) x} {v} vc Bot⊑ = vc
 sub-𝕍 {clos (ƛ M) x} {v} vc Bot⊑ = tt
 sub-𝕍 {clos (M · M₁) x} {v} vc Bot⊑ = vc
