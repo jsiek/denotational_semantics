@@ -1743,42 +1743,6 @@ data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Γ ⊢ ★) → Clos → Set where
 ... | refl = ⇓-determ mc₁ mc''
 
 
-𝔼 : Value → Clos → Set
-
-{-
-
-  We define 𝕍 first by cases on the closure's term,
-  then on the value. 
-
- -}
-𝕍 : Value → Clos → Set
-𝕍 v (clos (` x₁) x) = Bot
-𝕍 v (clos (M · M₁) x) = Bot
-𝕍 ⊥ (clos (ƛ M) x) = ⊤
-𝕍 (v ↦ v') (clos (ƛ M) γ) =
-     (∀{c : Clos} → 𝔼 v c → Σ[ c' ∈ Clos ]
-           (γ , c) ⊢ M ⇓ c'  ×  𝕍 v' c')
-𝕍 (v₁ ⊔ v₂) (clos (ƛ M) γ) = 𝕍 v₁ (clos (ƛ M) γ) × 𝕍 v₂ (clos (ƛ M) γ)
-
-𝕍⇓-id : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v}
-      → 𝕍 v (clos M γ)
-      → γ ⊢ M ⇓ clos M γ
-𝕍⇓-id {M = ` x} {⊥} ()
-𝕍⇓-id {M = ` x} {v ↦ v₁} ()
-𝕍⇓-id {M = ` x} {v ⊔ v₁} ()
-𝕍⇓-id {M = ƛ M} {v = v} vv = ⇓-lam
-𝕍⇓-id {M = M · M₁} {⊥} ()
-𝕍⇓-id {M = M · M₁} {v ↦ v₁} ()
-𝕍⇓-id {M = M · M₁} {v ⊔ v₁} ()
-
-𝕍→WHNF : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v} → 𝕍 v (clos M γ) → WHNF M
-𝕍→WHNF {M = ` x} {v} ()
-𝕍→WHNF {M = ƛ M} {v} vc = ƛ_
-𝕍→WHNF {M = M · M₁} {v} ()
-
-data Fun : Value → Set where
-  fun : ∀{v₁ v v'} → v₁ ≡ (v ↦ v') → Fun v₁
-
 data SomeFun : Value → Set where
   sfv-fun : ∀{v₃ v₄ : Value}
          → SomeFun (v₃ ↦ v₄) 
@@ -1788,6 +1752,7 @@ data SomeFun : Value → Set where
   sfv-⊔R : ∀{v₃ v₄ : Value}
        → SomeFun v₄
        → SomeFun (v₃ ⊔ v₄)
+
 
 SomeFun-⊑ : ∀{v v' : Value}
       → SomeFun v → v ⊑ v'
@@ -1809,13 +1774,50 @@ SomeFun-⊑ d (Trans⊑ lt lt₁) = SomeFun-⊑ (SomeFun-⊑ d lt) lt₁
 ↦⊑→SomeFun (ConjR2⊑ lt) = sfv-⊔R (↦⊑→SomeFun lt)
 ↦⊑→SomeFun (Trans⊑ lt lt₁) = SomeFun-⊑ (↦⊑→SomeFun lt) lt₁
 
-𝔼 v (clos M γ) = SomeFun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
+data Fun : Value → Set where
+  fun : ∀{v₁ v v'} → v₁ ≡ (v ↦ v') → Fun v₁
+
+𝔼 : Value → Clos → Set
+
+{-
+
+  We define 𝕍 first by cases on the closure's term,
+  then on the value. 
+
+ -}
+𝕍 : Value → Clos → Set
+𝕍 v (clos (` x₁) x) = Bot
+𝕍 v (clos (M · M₁) x) = Bot
+𝕍 ⊥ (clos (ƛ M) x) = ⊤
+𝕍 (v ↦ v') (clos (ƛ M) γ) =
+     (∀{c : Clos} → 𝔼 v c → Fun v' → Σ[ c' ∈ Clos ]
+           (γ , c) ⊢ M ⇓ c'  ×  𝕍 v' c')
+𝕍 (v₁ ⊔ v₂) (clos (ƛ M) γ) = 𝕍 v₁ (clos (ƛ M) γ) × 𝕍 v₂ (clos (ƛ M) γ)
+
+𝔼 v (clos M γ) = Fun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
+
+𝕍⇓-id : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v}
+      → 𝕍 v (clos M γ)
+      → γ ⊢ M ⇓ clos M γ
+𝕍⇓-id {M = ` x} {⊥} ()
+𝕍⇓-id {M = ` x} {v ↦ v₁} ()
+𝕍⇓-id {M = ` x} {v ⊔ v₁} ()
+𝕍⇓-id {M = ƛ M} {v = v} vv = ⇓-lam
+𝕍⇓-id {M = M · M₁} {⊥} ()
+𝕍⇓-id {M = M · M₁} {v ↦ v₁} ()
+𝕍⇓-id {M = M · M₁} {v ⊔ v₁} ()
+
+𝕍→WHNF : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v} → 𝕍 v (clos M γ) → WHNF M
+𝕍→WHNF {M = ` x} {v} ()
+𝕍→WHNF {M = ƛ M} {v} vc = ƛ_
+𝕍→WHNF {M = M · M₁} {v} ()
+
 
 𝕍→𝔼 : ∀{c : Clos}{v : Value}
     → 𝕍 v c → 𝔼 v c
 𝕍→𝔼 {clos (` x₁) x} {v} ()
 𝕍→𝔼 {clos (M · M₁) x} {v} ()
-𝕍→𝔼 {clos (ƛ M) x} {⊥} x₁ ()
+𝕍→𝔼 {clos (ƛ M) x} {⊥} x₁ (fun ())
 𝕍→𝔼 {clos (ƛ M) γ} {v ↦ v'} vnc f =
    ⟨ clos (ƛ M) γ , ⟨ (𝕍⇓-id{M = (ƛ M)}{v = v ↦ v'} vnc) , vnc ⟩ ⟩
 𝕍→𝔼 {clos (ƛ M) γ} {v₁ ⊔ v₂} ⟨ vv1 , vv2 ⟩ f =
@@ -2410,30 +2412,12 @@ sub-inv-fun{A}{B}{C} abc
 
 
 sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
+
 sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
-
-sub-𝔼 {clos M x} {v' = ⊥} x₁ Bot⊑ ()
-sub-𝔼 {clos M x} {v' = v₁ ⊔ v₂} evc (ConjL⊑ x₂ x₃) (sfv-⊔L x₄) = {!!}
-sub-𝔼 {clos M x} {v' = v₁ ⊔ v₂} evc (ConjL⊑ x₂ x₃) (sfv-⊔R x₄) = {!!}
-sub-𝔼 {clos M x} {v₁ ⊔ v₂} {v'} evc (ConjR1⊑ lt) fv' =
-  let lt : v' ⊑ v₁ ⊔ v₂
-      lt = ConjR1⊑ lt in
-  let sv12 = SomeFun-⊑ fv' lt in
-  let x = evc sv12 in
-  ⟨ proj₁ x , ⟨ proj₁ (proj₂ x) , sub-𝕍 (proj₂ (proj₂ x)) lt ⟩ ⟩
-sub-𝔼 {clos M x} {.(_ ⊔ _)} {v'} evc (ConjR2⊑ lt) fv' = {!!}
-sub-𝔼 {clos M x} {v} {v'} evc (Trans⊑ lt lt₁) fv' = {!!}
-sub-𝔼 {clos M x} {.(_ ↦ _)} {.(_ ↦ _)} evc (Fun⊑ lt lt₁) fv' = {!!}
-sub-𝔼 {clos M x} {.(_ ↦ _ ⊔ _ ↦ _)} {.(_ ↦ (_ ⊔ _))} evc Dist⊑ fv' = {!!}
-
-{-
-sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
-sub-𝔼 {clos M x} {⊥} evc lt fun = ⊥-elim (¬↦⊑⊥ lt)
-sub-𝔼 {clos M x} {v ↦ v₁} evc lt fun = {!!}
-sub-𝔼 {clos M x} {v ⊔ v₁} evc lt = {!!}
-sub-𝔼 {clos M x} ⟨ c , ⟨ M⇓ , vc ⟩ ⟩ lt = ⟨ c , ⟨ M⇓ , sub-𝕍 vc lt ⟩ ⟩
--}
-
+sub-𝔼 {clos M x} {v} {v'} evc lt fv
+    with evc {!!}
+... | ⟨ c , ⟨ Mc , vvc ⟩ ⟩ =
+      ⟨ c , ⟨ Mc , sub-𝕍 vvc lt ⟩ ⟩
 
 sub-𝕍 {clos (` x₁) x} {v} vc Bot⊑ = vc
 sub-𝕍 {clos (ƛ M) x} {v} vc Bot⊑ = tt
@@ -2448,67 +2432,30 @@ sub-𝕍 {clos (` x₁) x} {.(_ ⊔ _)} () (ConjR2⊑ lt)
 sub-𝕍 {clos (ƛ M) x} {.(_ ⊔ _)} ⟨ vv1 , vv2 ⟩ (ConjR2⊑ lt) = sub-𝕍 vv2 lt
 sub-𝕍 {clos (M · M₁) x} {.(_ ⊔ _)} () (ConjR2⊑ lt)
 sub-𝕍 {c} {v} vc (Trans⊑{v₂ = v₂} lt lt₁) =
-   sub-𝕍 {c} {v₂} (sub-𝕍 {c}{v} vc lt₁) lt
+    sub-𝕍 {c} {v₂} (sub-𝕍 {c}{v} vc lt₁) lt
 sub-𝕍 {clos (` x₁) x} {.(_ ↦ _)} () (Fun⊑ lt lt₁)
-sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _)} vc (Fun⊑ lt lt₁) ev1
-    with vc (sub-𝔼 ev1 lt)
+sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _)} vc (Fun⊑ lt lt₁) ev1 sf
+    with vc (sub-𝔼 ev1 lt) {!!}
 ... | ⟨ c , ⟨ Mc , v4 ⟩ ⟩ = ⟨ c , ⟨ Mc , sub-𝕍 v4 lt₁ ⟩ ⟩
-
 sub-𝕍 {clos (M · M₁) x} {.(_ ↦ _)} () (Fun⊑ lt lt₁)
 sub-𝕍 {clos (` x₁) x} {.(_ ↦ _ ⊔ _ ↦ _)} () Dist⊑
-sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _ ⊔ _ ↦ _)} ⟨ vc12 , vc13 ⟩ Dist⊑ vc1
-    with vc12 vc1 | vc13 vc1
+sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _ ⊔ _ ↦ _)} ⟨ vc12 , vc13 ⟩ Dist⊑ vc1 (fun ())
+
+
+{-
+    with vc12 vc1 {!!} | vc13 vc1 {!!}
 ... | ⟨ clos N δ , ⟨ Mc1 , v4 ⟩ ⟩
     | ⟨ c2 , ⟨ Mc2 , v5 ⟩ ⟩ rewrite ⇓-determ Mc2 Mc1 with 𝕍→WHNF v4
 ... | ƛ_ =
       ⟨ clos N δ , ⟨ Mc1 , ⟨ v4 , v5 ⟩ ⟩ ⟩
-
-
+-}
 sub-𝕍 {clos (M · M₁) x} {.(_ ↦ _ ⊔ _ ↦ _)} () Dist⊑ 
 
-{-
-sub-𝕍 {clos (` x) γ} {v} () lt
-sub-𝕍 {clos (M · M₁) γ} {v} () lt
-sub-𝕍 {clos (ƛ M) γ} {⊥} tt Bot⊑ = tt
-sub-𝕍 {clos (ƛ M) γ} {⊥} tt (ConjL⊑ lt lt₁) = ⟨ sub-𝕍 tt lt , sub-𝕍 tt lt₁ ⟩
-sub-𝕍 {clos (ƛ M) γ} {⊥} tt (Trans⊑{v₂ = v₂} lt lt₁) =
-  let ih = sub-𝕍 {clos (ƛ M) γ} {⊥} tt lt₁ in
-  sub-𝕍 {clos (ƛ M) γ} {v₂} ih lt
-sub-𝕍 {clos (ƛ M) γ} {v ↦ v₁} vnc lt = {!!}
-sub-𝕍 {clos (ƛ M) γ} {v₁ ⊔ v₂} ⟨ vv1 , vv2 ⟩ lt = {!!}
--}
 
-{-
-
-
-sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
-sub-𝕍 {clos (` x) γ} {⊥} vc Bot⊑ = vc
-sub-𝕍 {clos (` x) γ} {v ↦ v₁} vc Bot⊑ = vc
-sub-𝕍 {clos (` x) γ} {v ⊔ v₁} vc Bot⊑ = sub-𝕍 (proj₂ vc) Bot⊑
-sub-𝕍 {clos (ƛ M) γ} vc Bot⊑ = tt
-sub-𝕍 {clos (M · M₁) γ}{v} vc Bot⊑ = {!!}
-sub-𝕍 {clos M γ} vc (ConjL⊑ lt lt₁) = ⟨ sub-𝕍 vc lt , sub-𝕍 vc lt₁ ⟩
-sub-𝕍 {clos M γ} ⟨ vc1 , vc2 ⟩ (ConjR1⊑ lt) = sub-𝕍 vc1 lt
-sub-𝕍 {clos M γ} ⟨ vc1 , vc2 ⟩ (ConjR2⊑ lt) = sub-𝕍 vc2 lt
-sub-𝕍 {clos M γ} vc (Trans⊑ lt lt₁) = sub-𝕍 (sub-𝕍 vc lt₁) lt
-sub-𝕍 {clos (` x) γ} () (Fun⊑ lt lt₁)
-sub-𝕍 {clos (M · M₁) γ} () (Fun⊑ lt lt₁)
-sub-𝕍 {clos {Γ} (ƛ M) γ} vc (Fun⊑ lt lt₁) ec1
-    with vc (sub-𝔼 ec1 lt)
-... | ⟨ c , ⟨ Mc , v4 ⟩ ⟩ = ⟨ c , ⟨ Mc , sub-𝕍 v4 lt₁ ⟩ ⟩
-sub-𝕍 {clos (` x) γ} ⟨ fst , snd ⟩ Dist⊑ = snd
-sub-𝕍 {clos (M · M₁) γ} ⟨ fst , snd ⟩ Dist⊑ = snd
-sub-𝕍 {clos (ƛ M) γ} ⟨ vc12 , vc13 ⟩ Dist⊑ vc1
-    with vc12 vc1 | vc13 vc1
-... | ⟨ clos N δ , ⟨ Mc1 , v4 ⟩ ⟩
-    | ⟨ c2 , ⟨ Mc2 , v5 ⟩ ⟩ rewrite ⇓-determ Mc2 Mc1 =
-      ⟨ clos N δ , ⟨ Mc1 , ⟨ v4 , v5 ⟩ ⟩ ⟩
-
-sub-𝔼 {clos M x} ⟨ c , ⟨ M⇓ , vc ⟩ ⟩ lt = ⟨ c , ⟨ M⇓ , sub-𝕍 vc lt ⟩ ⟩
-  
 𝔾 : ∀{Γ} → Env Γ → ClosEnv Γ → Set
 𝔾 ∅ ∅ = ⊤
 𝔾 (γ , v) (γ' , c) = 𝔾 γ γ' × 𝔼 v c
+
 
 𝔾-nth : ∀{Γ}{γ : Env Γ}{γ' : ClosEnv Γ}{x : Γ ∋ ★}
          → 𝔾 γ γ' → 𝔼 (nth x γ) (kth x γ')
@@ -2524,13 +2471,37 @@ kth-x{γ' = γ'}{x = x} with kth x γ'
 ... | clos{Γ = Δ} M δ = ⟨ Δ , ⟨ δ , ⟨ M , refl ⟩ ⟩ ⟩
 
 
+
 soundness↓⇓ : ∀{Γ}{γ : Env Γ}{γ' : ClosEnv Γ}{M : Γ ⊢ ★ }{v}
             → 𝔾 γ γ' → γ ⊢ M ↓ v → 𝔼 v (clos M γ')
-soundness↓⇓{Γ}{γ}{γ'} e (var{x = x})
-    with kth-x{Γ}{γ'}{x} | 𝔾-nth{x = x} e
-... | ⟨ Δ , ⟨ δ , ⟨ M , eq ⟩ ⟩ ⟩ | e' rewrite eq
-    with e'
-... | ⟨ c , ⟨ L⇓c , Vnc ⟩ ⟩ = ⟨ c , ⟨ ⇓-var eq L⇓c , Vnc  ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {`_ x} {v} g var sf 
+    with kth-x{Γ}{γ'}{x} | 𝔾-nth{x = x} g
+... | ⟨ Δ , ⟨ δ , ⟨ M , eq ⟩ ⟩ ⟩ | g' rewrite eq
+    with g' sf
+... | ⟨ c , ⟨ L⇓c , Vnc ⟩ ⟩ =
+      ⟨ c , ⟨ (⇓-var eq L⇓c) , Vnc ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {L · M} {v} g (↦-elim{v₁ = v₁} d₁ d₂) sf
+    with soundness↓⇓ g d₁ {!!}
+... | ⟨ clos (` x) δ , ⟨ L⇓c , () ⟩ ⟩
+... | ⟨ clos (L' · M') δ , ⟨ L⇓c , () ⟩ ⟩ 
+... | ⟨ clos (ƛ L') δ , ⟨ L⇓c , Vc ⟩ ⟩
+    with Vc {clos M γ'} (soundness↓⇓ g d₂) sf
+... | ⟨ c' , ⟨ L'⇓c' , Vc' ⟩ ⟩ =
+    ⟨ c' , ⟨ ⇓-app L⇓c L'⇓c' , Vc' ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {ƛ M} {v ↦ v'} g (↦-intro d) sf =
+  ⟨ (clos (ƛ M) γ') , ⟨ ⇓-lam , G ⟩ ⟩
+  where G : {c : Clos} → 𝔼 v c → Fun v'
+          → Σ-syntax Clos (λ c' → ((γ' , c) ⊢ M ⇓ c') × 𝕍 v' c')
+        G {c} evc sfv' =
+          let ih = soundness↓⇓{Γ , ★}{γ , v}{γ' , c}{M}{v'}
+                        ⟨ g , evc ⟩ d {!!} in
+          {!!}
+
+soundness↓⇓ {Γ} {γ} {γ'} {M} {⊥} g ⊥-intro = {!!}
+soundness↓⇓ {Γ} {γ} {γ'} {M} {v₁ ⊔ v₂} g (⊔-intro d d₁) = {!!}
+soundness↓⇓ {Γ} {γ} {γ'} {M} {v} g (sub d x) = {!!}
+
+{-
 soundness↓⇓ e (↦-elim d₁ d₂)
     with soundness↓⇓ e d₁
 ... | ⟨ clos (` x) δ , ⟨ m1⇓c , () ⟩ ⟩
@@ -2545,36 +2516,9 @@ soundness↓⇓ e (sub d x) = {!!}
 -}
 
 
+
 {-
 
-
-
-sub-𝕍' : ∀{M : ∅ ⊢ ★}{v v'}
-      → 𝕍 v M → v' ⊑ v → WHNF M
-      → 𝕍 v' M
-sub-𝕍' v Bot⊑ ƛ_ = 𝕍⊥
-sub-𝕍' v (ConjL⊑ lt lt₁) ƛ_ = 𝕍⊔ (sub-𝕍' v lt ƛ_) (sub-𝕍' v lt₁ ƛ_)
-sub-𝕍' (𝕍⊔ v v₁) (ConjR1⊑ lt) ƛ_ = sub-𝕍' v lt ƛ_
-sub-𝕍' (𝕍⊔ v v₁) (ConjR2⊑ lt) ƛ_ = sub-𝕍' v₁ lt ƛ_
-sub-𝕍' v (Trans⊑ lt lt₁) ƛ_ = sub-𝕍' (sub-𝕍' v lt₁ ƛ_) lt ƛ_
-sub-𝕍' (𝕍↦{L = L}{v = v}{v' = v'} x) (Fun⊑{v₁ = v₁}{v₂ = v₂} lt lt₁) ƛ_ =
-   𝕍↦ G
-   where G : ∀ {γ : Env ∅} {M : ∅ ⊢ ★} →
-               γ ⊢ M ↓ v₁ → Σ[ N ∈ (∅ ⊢ ★) ] ((L [ M ]) ⇓ N) × 𝕍 v₂ N
-         G d  with x (sub d lt)
-         ... | ⟨ N , ⟨ ev , d' ⟩ ⟩ = ⟨ N , ⟨ ev , sub-𝕍' d' lt₁ (𝕍→WHNF d') ⟩ ⟩
-sub-𝕍' (𝕍⊔{L = L} (𝕍↦{v = v}{v' = v'} x) (𝕍↦{v = v}{v' = v''} x₁)) Dist⊑ ƛ_ =
-   𝕍↦ G
-   where G : {γ : Env ∅} {M : ∅ ⊢ ★} → γ ⊢ M ↓ v →
-           Σ-syntax (∅ ⊢ ★) (λ N → ((L [ M ]) ⇓ N) × 𝕍 (v' ⊔ v'') N)
-         G d with x d | x₁ d
-         ... | ⟨ N₁ , ⟨ ev₁ , d₁ ⟩ ⟩ | ⟨ N₂ , ⟨ ev₂ , d₂ ⟩ ⟩
-             rewrite ⇓-determ ev₂ ev₁
-             with 𝕍→WHNF d₁
-         ... | ƛ_ = ⟨ N₁ , ⟨ ev₁ , 𝕍⊔ d₁ d₂ ⟩ ⟩
-
-sub-𝕍 : ∀{M : ∅ ⊢ ★}{v v'} → 𝕍 v M → v' ⊑ v → 𝕍 v' M
-sub-𝕍 v lt = sub-𝕍' v lt (𝕍→WHNF v)
 
 empty-context : (γ : Env ∅) → γ ≡ ∅
 empty-context ∅ = refl
