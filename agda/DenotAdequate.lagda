@@ -1742,6 +1742,30 @@ data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Γ ⊢ ★) → Clos → Set where
     with ⇓-determ mc mc'
 ... | refl = ⇓-determ mc₁ mc''
 
+AboveFun2 : (v : Value) → ∀{v'} → v ⊑ v' → Set
+AboveFun2 .⊥ {v'} Bot⊑ = Bot
+AboveFun2 (v₁ ⊔ v₂) {v'} (ConjL⊑ v⊑v' v⊑v'') =
+  AboveFun2 v₁ v⊑v' × AboveFun2 v₂ v⊑v''
+AboveFun2 v {v₁ ⊔ v₂} (ConjR1⊑ v⊑v') = AboveFun2 v v⊑v'
+AboveFun2 v {v₁ ⊔ v₂} (ConjR2⊑ v⊑v') = AboveFun2 v v⊑v'
+AboveFun2 v {v'} (Trans⊑{v₂ = v₂} v⊑v' v⊑v'') =
+  AboveFun2 v v⊑v' × AboveFun2 v₂ v⊑v''
+AboveFun2 .(_ ↦ _) {.(_ ↦ _)} (Fun⊑ v⊑v' v⊑v'') = ⊤
+AboveFun2 .(_ ↦ (_ ⊔ _)) {.(_ ↦ _ ⊔ _ ↦ _)} Dist⊑ = ⊤
+
+AboveFun2-⊑ : ∀{v v' : Value}
+      → (lt : v ⊑ v') → AboveFun2 v lt
+      → Σ [ lt' ∈ ] AboveFun2 v' lt'
+      
+
+AboveFun : Value → Set
+AboveFun v = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ↦ v₂ ⊑ v
+
+AboveFun-⊑ : ∀{v v' : Value}
+      → AboveFun v → v ⊑ v'
+      → AboveFun v'
+AboveFun-⊑ ⟨ v₁ , ⟨ v₂ , lt' ⟩ ⟩ lt = ⟨ v₁ , ⟨ v₂ , Trans⊑ lt' lt ⟩ ⟩
+
 
 data SomeFun : Value → Set where
   sfv-fun : ∀{v₃ v₄ : Value}
@@ -1777,51 +1801,6 @@ SomeFun-⊑ d (Trans⊑ lt lt₁) = SomeFun-⊑ (SomeFun-⊑ d lt) lt₁
 data Fun : Value → Set where
   fun : ∀{v₁ v v'} → v₁ ≡ (v ↦ v') → Fun v₁
 
-𝔼 : Value → Clos → Set
-
-{-
-
-  We define 𝕍 first by cases on the closure's term,
-  then on the value. 
-
- -}
-𝕍 : Value → Clos → Set
-𝕍 v (clos (` x₁) x) = Bot
-𝕍 v (clos (M · M₁) x) = Bot
-𝕍 ⊥ (clos (ƛ M) x) = ⊤
-𝕍 (v ↦ v') (clos (ƛ M) γ) =
-     (∀{c : Clos} → 𝔼 v c → Fun v' → Σ[ c' ∈ Clos ]
-           (γ , c) ⊢ M ⇓ c'  ×  𝕍 v' c')
-𝕍 (v₁ ⊔ v₂) (clos (ƛ M) γ) = 𝕍 v₁ (clos (ƛ M) γ) × 𝕍 v₂ (clos (ƛ M) γ)
-
-𝔼 v (clos M γ) = Fun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
-
-𝕍⇓-id : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v}
-      → 𝕍 v (clos M γ)
-      → γ ⊢ M ⇓ clos M γ
-𝕍⇓-id {M = ` x} {⊥} ()
-𝕍⇓-id {M = ` x} {v ↦ v₁} ()
-𝕍⇓-id {M = ` x} {v ⊔ v₁} ()
-𝕍⇓-id {M = ƛ M} {v = v} vv = ⇓-lam
-𝕍⇓-id {M = M · M₁} {⊥} ()
-𝕍⇓-id {M = M · M₁} {v ↦ v₁} ()
-𝕍⇓-id {M = M · M₁} {v ⊔ v₁} ()
-
-𝕍→WHNF : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v} → 𝕍 v (clos M γ) → WHNF M
-𝕍→WHNF {M = ` x} {v} ()
-𝕍→WHNF {M = ƛ M} {v} vc = ƛ_
-𝕍→WHNF {M = M · M₁} {v} ()
-
-
-𝕍→𝔼 : ∀{c : Clos}{v : Value}
-    → 𝕍 v c → 𝔼 v c
-𝕍→𝔼 {clos (` x₁) x} {v} ()
-𝕍→𝔼 {clos (M · M₁) x} {v} ()
-𝕍→𝔼 {clos (ƛ M) x} {⊥} x₁ (fun ())
-𝕍→𝔼 {clos (ƛ M) γ} {v ↦ v'} vnc f =
-   ⟨ clos (ƛ M) γ , ⟨ (𝕍⇓-id{M = (ƛ M)}{v = v ↦ v'} vnc) , vnc ⟩ ⟩
-𝕍→𝔼 {clos (ƛ M) γ} {v₁ ⊔ v₂} ⟨ vv1 , vv2 ⟩ f =
-   ⟨ (clos (ƛ M) γ) , ⟨ ⇓-lam , ⟨ vv1 , vv2 ⟩ ⟩ ⟩
 
 atoms : Value → List Value
 atoms (v ↦ v') = (v ↦ v') ∷ nil
@@ -2410,12 +2389,66 @@ sub-inv-fun{A}{B}{C} abc
     where G : v₃ ⊑ v₁
           G rewrite Γ⊆A↦B {Γ} Γ⊆v34 = lt1 (inj₁ refl)
 
+AboveFun⊥ : ¬ AboveFun ⊥
+AboveFun⊥ ⟨ v₁ , ⟨ v₂ , lt ⟩ ⟩
+    with sub-inv-fun lt
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆⊥ , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩ = Γ⊆⊥ (inj₁ refl)
+
+
+𝔼 : Value → Clos → Set
+
+{-
+
+  We define 𝕍 first by cases on the closure's term,
+  then on the value. 
+
+ -}
+𝕍 : Value → Clos → Set
+𝕍 v (clos (` x₁) γ) = Bot
+𝕍 v (clos (M · M₁) γ) = Bot
+𝕍 ⊥ (clos (ƛ M) γ) = ⊤
+𝕍 (v ↦ v') (clos (ƛ M) γ) =
+     (∀{c : Clos} → 𝔼 v c → AboveFun v' → Σ[ c' ∈ Clos ]
+           (γ , c) ⊢ M ⇓ c'  ×  𝕍 v' c')
+𝕍 (v₁ ⊔ v₂) (clos (ƛ M) γ) = 𝕍 v₁ (clos (ƛ M) γ) × 𝕍 v₂ (clos (ƛ M) γ)
+
+𝔼 v (clos M γ) = AboveFun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
+
+𝕍⇓-id : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v}
+      → 𝕍 v (clos M γ)
+      → γ ⊢ M ⇓ clos M γ
+𝕍⇓-id {M = ` x} {⊥} ()
+𝕍⇓-id {M = ` x} {v ↦ v₁} ()
+𝕍⇓-id {M = ` x} {v ⊔ v₁} ()
+𝕍⇓-id {M = ƛ M} {v = v} vv = ⇓-lam
+𝕍⇓-id {M = M · M₁} {⊥} ()
+𝕍⇓-id {M = M · M₁} {v ↦ v₁} ()
+𝕍⇓-id {M = M · M₁} {v ⊔ v₁} ()
+
+𝕍→WHNF : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v} → 𝕍 v (clos M γ) → WHNF M
+𝕍→WHNF {M = ` x} {v} ()
+𝕍→WHNF {M = ƛ M} {v} vc = ƛ_
+𝕍→WHNF {M = M · M₁} {v} ()
+
+
+𝕍→𝔼 : ∀{c : Clos}{v : Value}
+    → 𝕍 v c → 𝔼 v c
+𝕍→𝔼 {clos (` x₁) x} {v} ()
+𝕍→𝔼 {clos (M · M₁) x} {v} ()
+𝕍→𝔼 {clos (ƛ M) x} {⊥} vc af = ⊥-elim (AboveFun⊥ af)
+{-
+𝕍→𝔼 {clos (ƛ M) x} {⊥} x₁ (fun)
+-}
+𝕍→𝔼 {clos (ƛ M) γ} {v ↦ v'} vnc f =
+   ⟨ clos (ƛ M) γ , ⟨ (𝕍⇓-id{M = (ƛ M)}{v = v ↦ v'} vnc) , vnc ⟩ ⟩
+𝕍→𝔼 {clos (ƛ M) γ} {v₁ ⊔ v₂} ⟨ vv1 , vv2 ⟩ f =
+   ⟨ (clos (ƛ M) γ) , ⟨ ⇓-lam , ⟨ vv1 , vv2 ⟩ ⟩ ⟩
 
 sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
 
 sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
 sub-𝔼 {clos M x} {v} {v'} evc lt fv
-    with evc {!!}
+    with evc (AboveFun-⊑ fv lt)
 ... | ⟨ c , ⟨ Mc , vvc ⟩ ⟩ =
       ⟨ c , ⟨ Mc , sub-𝕍 vvc lt ⟩ ⟩
 
@@ -2435,11 +2468,14 @@ sub-𝕍 {c} {v} vc (Trans⊑{v₂ = v₂} lt lt₁) =
     sub-𝕍 {c} {v₂} (sub-𝕍 {c}{v} vc lt₁) lt
 sub-𝕍 {clos (` x₁) x} {.(_ ↦ _)} () (Fun⊑ lt lt₁)
 sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _)} vc (Fun⊑ lt lt₁) ev1 sf
-    with vc (sub-𝔼 ev1 lt) {!!}
+    with vc (sub-𝔼 ev1 lt) (AboveFun-⊑ sf lt₁)
 ... | ⟨ c , ⟨ Mc , v4 ⟩ ⟩ = ⟨ c , ⟨ Mc , sub-𝕍 v4 lt₁ ⟩ ⟩
 sub-𝕍 {clos (M · M₁) x} {.(_ ↦ _)} () (Fun⊑ lt lt₁)
 sub-𝕍 {clos (` x₁) x} {.(_ ↦ _ ⊔ _ ↦ _)} () Dist⊑
-sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _ ⊔ _ ↦ _)} ⟨ vc12 , vc13 ⟩ Dist⊑ vc1 (fun ())
+sub-𝕍 {clos (ƛ M) x} {v₁ ↦ v₂ ⊔ v₁ ↦ v₃} ⟨ vc12 , vc13 ⟩
+    Dist⊑ ev1c ⟨ v , ⟨ v' , lt ⟩ ⟩ =
+
+    {!!}
 
 
 {-
@@ -2481,7 +2517,7 @@ soundness↓⇓ {Γ} {γ} {γ'} {`_ x} {v} g var sf
 ... | ⟨ c , ⟨ L⇓c , Vnc ⟩ ⟩ =
       ⟨ c , ⟨ (⇓-var eq L⇓c) , Vnc ⟩ ⟩
 soundness↓⇓ {Γ} {γ} {γ'} {L · M} {v} g (↦-elim{v₁ = v₁} d₁ d₂) sf
-    with soundness↓⇓ g d₁ {!!}
+    with soundness↓⇓ g d₁ ⟨ v₁ , ⟨ v , Refl⊑ ⟩ ⟩
 ... | ⟨ clos (` x) δ , ⟨ L⇓c , () ⟩ ⟩
 ... | ⟨ clos (L' · M') δ , ⟨ L⇓c , () ⟩ ⟩ 
 ... | ⟨ clos (ƛ L') δ , ⟨ L⇓c , Vc ⟩ ⟩
@@ -2489,17 +2525,15 @@ soundness↓⇓ {Γ} {γ} {γ'} {L · M} {v} g (↦-elim{v₁ = v₁} d₁ d₂)
 ... | ⟨ c' , ⟨ L'⇓c' , Vc' ⟩ ⟩ =
     ⟨ c' , ⟨ ⇓-app L⇓c L'⇓c' , Vc' ⟩ ⟩
 soundness↓⇓ {Γ} {γ} {γ'} {ƛ M} {v ↦ v'} g (↦-intro d) sf =
-  ⟨ (clos (ƛ M) γ') , ⟨ ⇓-lam , G ⟩ ⟩
-  where G : {c : Clos} → 𝔼 v c → Fun v'
+  ⟨ (clos (ƛ M) γ') , ⟨ ⇓-lam , {!!} ⟩ ⟩
+  where G : {c : Clos} → 𝔼 v c → AboveFun v'
           → Σ-syntax Clos (λ c' → ((γ' , c) ⊢ M ⇓ c') × 𝕍 v' c')
         G {c} evc sfv' =
-          let ih = soundness↓⇓{Γ , ★}{γ , v}{γ' , c}{M}{v'}
-                        ⟨ g , evc ⟩ d {!!} in
-          {!!}
-
-soundness↓⇓ {Γ} {γ} {γ'} {M} {⊥} g ⊥-intro = {!!}
-soundness↓⇓ {Γ} {γ} {γ'} {M} {v₁ ⊔ v₂} g (⊔-intro d d₁) = {!!}
-soundness↓⇓ {Γ} {γ} {γ'} {M} {v} g (sub d x) = {!!}
+           soundness↓⇓{Γ , ★}{γ , v}{γ' , c}{M}{v'} ⟨ g , evc ⟩ d {!!}
+soundness↓⇓ {Γ} {γ} {γ'} {M} {⊥} g ⊥-intro sf = ⊥-elim (AboveFun⊥ sf)
+soundness↓⇓ {Γ} {γ} {γ'} {M} {v₁ ⊔ v₂} g (⊔-intro d₁ d₂) sf =
+  ⟨ {!!} , ⟨ {!!} , {!!} ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {M} {v} g (sub d lt) sf = {!!}
 
 {-
 soundness↓⇓ e (↦-elim d₁ d₂)
