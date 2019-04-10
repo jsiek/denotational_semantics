@@ -27,7 +27,6 @@ open import Denot_CBN_BCD
 ## Adequacy of the denotational semantics
 
 \begin{code}
-\begin{code}
 data WHNF : ∀ {Γ A} → Γ ⊢ A → Set where
 
   ƛ_ : ∀ {Γ} {N : Γ , ★ ⊢ ★}
@@ -108,12 +107,12 @@ data Fun : Value → Set where
 dom : (v : Value) → Value
 dom ⊥  = ⊥
 dom (v ↦ v') = v
-dom (v ⊔ v') = dom' v ⊔ dom' v'
+dom (v ⊔ v') = dom v ⊔ dom v'
 
 cod : (v : Value) → Value
 cod ⊥  = ⊥
 cod (v ↦ v') = v'
-cod (v ⊔ v') = cod' v ⊔ cod' v'
+cod (v ⊔ v') = cod v ⊔ cod v'
 
 infix 5 _∈_
 
@@ -122,9 +121,410 @@ v ∈ ⊥ = v ≡ ⊥
 v ∈ v' ↦ v'' = v ≡ v' ↦ v''
 v ∈ (v₁ ⊔ v₂) = v ∈ v₁ ⊎ v ∈ v₂
 
+infix 5 _⊆_
+
+_⊆_ : Value → Value → Set
+A ⊆ B = (∀{C} → C ∈ A → C ∈ B)
+
 Funs : Value → Set
 Funs v = (∀{v'} → v' ∈ v → Fun v')
 
+¬Fun⊥ : ¬ (Fun ⊥)
+¬Fun⊥ (fun ())
+
+↦⊆→∈ : ∀{A B C : Value} → A ↦ B ⊆ C → A ↦ B ∈ C
+↦⊆→∈{A}{B}{C} abc = abc {A ↦ B} refl 
 
 
+⊔⊆-inv : ∀{A B C : Value}
+       → (A ⊔ B) ⊆ C
+       → A ⊆ C × B ⊆ C
+⊔⊆-inv abc = ⟨ (λ {x} x₁ → abc (inj₁ x₁)) , (λ {x} x₁ → abc (inj₂ x₁)) ⟩
+
+
+factor : (A : Value) → (Γ : Value) → (B' : Value) → (C' : Value) → Set
+factor A Γ B' C' = Funs Γ × Γ ⊆ A × dom Γ ⊑ B' × C' ⊑ cod Γ
+
+sub-inv-trans : ∀{Γ' A D : Value}
+              → Funs Γ'
+              → Γ' ⊆ D
+              → (∀{B' C'} → B' ↦ C' ∈ D
+                  → Σ[ Γ ∈ Value ] factor A Γ B' C')
+              → Σ[ Γ ∈ Value ] factor A Γ (dom Γ') (cod Γ')
+sub-inv-trans {⊥} {A} {D} fg Γ'⊆D IH =
+   ⊥-elim (contradiction (fg{v' = ⊥} refl) ¬Fun⊥)
+sub-inv-trans {D₃ ↦ D₄} {A} {D} fg Γ'⊆D IH = IH (↦⊆→∈ Γ'⊆D)
+sub-inv-trans {Γ₁ ⊔ Γ₂} {A} {D} fg Γ'⊆D IH
+    with ⊔⊆-inv Γ'⊆D
+... | ⟨ Γ₁⊆D , Γ₂⊆D ⟩
+    with sub-inv-trans {Γ₁} {A} {D} (λ {v'} z → fg (inj₁ z)) Γ₁⊆D IH
+       | sub-inv-trans {Γ₂} {A} {D} (λ {v'} z → fg (inj₂ z)) Γ₂⊆D IH
+... | ⟨ Γ₁' , ⟨ fg1' , ⟨ Γ₁'⊆A , ⟨ domΓ₁'⊑domΓ₁ , codΓ₁⊑codΓ₁' ⟩ ⟩ ⟩ ⟩
+    | ⟨ Γ₂' , ⟨ fg2' , ⟨ Γ₂'⊆A , ⟨ domΓ₂'⊑domΓ₂ , codΓ₁⊑codΓ₂' ⟩ ⟩ ⟩ ⟩ =
+      ⟨ (Γ₁' ⊔ Γ₂') , ⟨ fg12 , ⟨ Γ₁₂⊆A , ⟨ ⊔⊑⊔ domΓ₁'⊑domΓ₁ domΓ₂'⊑domΓ₂ ,
+                                           ⊔⊑⊔ codΓ₁⊑codΓ₁' codΓ₁⊑codΓ₂' ⟩ ⟩ ⟩ ⟩
+    where fg12 : {v' : Value} → v' ∈ Γ₁' ⊎ v' ∈ Γ₂' → Fun v'
+          fg12 {v'} (inj₁ x) = fg1' x
+          fg12 {v'} (inj₂ y) = fg2' y
+
+          Γ₁₂⊆A : {C : Value} → C ∈ Γ₁' ⊎ C ∈ Γ₂' → C ∈ A
+          Γ₁₂⊆A {C} (inj₁ x) = Γ₁'⊆A x
+          Γ₁₂⊆A {C} (inj₂ y) = Γ₂'⊆A y
+
+sub-inv : ∀{A A' : Value}
+        → A' ⊑ A
+        → ∀{B' C'} → B' ↦ C' ∈ A' → Σ[ Γ ∈ Value ] factor A Γ B' C'
+sub-inv {A} {⊥} Bot⊑ {B'} {C'} ()
+sub-inv {A} {A'₁ ⊔ A'₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₁ x) = sub-inv lt x
+sub-inv {A} {A'₁ ⊔ A'₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₂ y) = sub-inv lt₁ y
+sub-inv {A₁ ⊔ A₂} {A'} (ConjR1⊑ lt) {B'} {C'} m
+    with sub-inv lt m  
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A₁ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₁ (Γ⊆A₁ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
+sub-inv {A₁ ⊔ A₂} {A'} (ConjR2⊑ lt) {B'} {C'} m
+    with sub-inv lt m  
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A₂ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₂ (Γ⊆A₂ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
+sub-inv {A} {A'} (Trans⊑ lt1 lt2) {B'} {C'} m
+    with sub-inv lt1 m
+... | ⟨ Γ' , ⟨ fg' , ⟨ Γ'⊆D , ⟨ domΓ'⊑B' , C'⊑codΓ' ⟩ ⟩ ⟩ ⟩ 
+    with sub-inv-trans {Γ'} fg' Γ'⊆D (sub-inv lt2) 
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ domΓ⊑domΓ' , codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ Trans⊑ domΓ⊑domΓ' domΓ'⊑B' ,
+                             Trans⊑ C'⊑codΓ' codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩
+sub-inv {A₁ ↦ A₂} {A'₁ ↦ A'₂} (Fun⊑ lt1 lt2) refl =
+  ⟨ A₁ ↦ A₂ , ⟨ (λ {v'} → fun) , ⟨ (λ {C} z → z) , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+sub-inv {A₁ ↦ A₂ ⊔ A₁ ↦ A₃} {A₁ ↦ (A₂ ⊔ A₃)} Dist⊑ {.A₁} {.(A₂ ⊔ A₃)} refl =
+  ⟨ A₁ ↦ A₂ ⊔ A₁ ↦ A₃ , ⟨ f , ⟨ g , ⟨ (ConjL⊑ Refl⊑ Refl⊑) ,
+     ⊔⊑⊔ Refl⊑ Refl⊑ ⟩ ⟩ ⟩ ⟩
+  where f : Funs (A₁ ↦ A₂ ⊔ A₁ ↦ A₃)
+        f (inj₁ x) = fun x
+        f (inj₂ y) = fun y
+
+        g : (A₁ ↦ A₂ ⊔ A₁ ↦ A₃) ⊆ (A₁ ↦ A₂ ⊔ A₁ ↦ A₃)
+        g (inj₁ x) = inj₁ x
+        g (inj₂ y) = inj₂ y
+\end{code}
+
+\begin{code}
+⊔⊑-invL : ∀{A B C : Value}
+       → A ⊔ B ⊑ C
+       → A ⊑ C
+⊔⊑-invL (ConjL⊑ abc abc₁) = abc
+⊔⊑-invL (ConjR1⊑ abc) = ConjR1⊑ (⊔⊑-invL abc)
+⊔⊑-invL (ConjR2⊑ abc) = ConjR2⊑ (⊔⊑-invL abc)
+⊔⊑-invL (Trans⊑ abc abc₁) = Trans⊑ (⊔⊑-invL abc) abc₁
+
+⊔⊑-invR : ∀{A B C : Value}
+       → A ⊔ B ⊑ C
+       → B ⊑ C
+⊔⊑-invR (ConjL⊑ lt lt₁) = lt₁
+⊔⊑-invR (ConjR1⊑ lt) = ConjR1⊑ (⊔⊑-invR lt)
+⊔⊑-invR (ConjR2⊑ lt) = ConjR2⊑ (⊔⊑-invR lt)
+⊔⊑-invR (Trans⊑ lt lt₁) = Trans⊑ (⊔⊑-invR lt) lt₁
+
+lub-sub : ∀{Γ A B : Value}
+        → A ∈ Γ → Γ ⊑ B
+        → A ⊑ B
+lub-sub {⊥} refl lt = lt
+lub-sub {Γ ↦ Γ₁} refl lt = lt
+lub-sub {Γ ⊔ Γ₁} (inj₁ x) lt = lub-sub x (⊔⊑-invL lt)
+lub-sub {Γ ⊔ Γ₁} (inj₂ y) lt = lub-sub y (⊔⊑-invR lt)
+
+lub-sub2 : ∀{A Γ B : Value}
+        → A ⊆ Γ → Γ ⊑ B
+        → A ⊑ B
+lub-sub2 {⊥} s lt = Bot⊑
+lub-sub2 {A ↦ A₁} s lt = lub-sub (s {A ↦ A₁} refl) lt
+lub-sub2 {A ⊔ A₁} s lt = ConjL⊑ (lub-sub2 (λ {C} z → s (inj₁ z)) lt)
+                           (lub-sub2 (λ {C} z → s (inj₂ z)) lt)
+
+
+fun∈→⊆ : ∀{Γ D E : Value} → Funs Γ → (D ↦ E) ∈ Γ → D ⊆ dom Γ
+fun∈→⊆ {⊥} fg ()
+fun∈→⊆ {A ↦ B} fg refl = λ z → z
+fun∈→⊆ {Γ ⊔ Γ₁} fg (inj₁ x) =
+  let ih = fun∈→⊆ {Γ} (λ {v'} z → fg (inj₁ z)) x in
+  λ x₁ → inj₁ (ih x₁)
+fun∈→⊆ {Γ ⊔ Γ₁} fg (inj₂ y) =
+  let ih = fun∈→⊆ {Γ₁} (λ {v'} z → fg (inj₂ z)) y in
+  λ x₁ → inj₂ (ih x₁)
+
+sub-inv-fun : ∀{A B C : Value}
+        → (A ↦ B) ⊑ C
+        → Σ[ Γ ∈ Value ]
+           Funs Γ
+           × Γ ⊆ C
+           × (∀{D E} → (D ↦ E) ∈ Γ → D ⊑ A)
+           × B ⊑ cod Γ
+sub-inv-fun{A}{B}{C} abc
+    with sub-inv abc {A}{B} refl
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ db , cc ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ G , cc ⟩ ⟩ ⟩ ⟩
+   where G : ∀{D E} → (D ↦ E) ∈ Γ → D ⊑ A
+         G{D}{E} m = lub-sub2 (fun∈→⊆ f m) db
+
+Γ⊆A↦B→codΓ⊆B : ∀{Γ A B : Value}
+      → Γ ⊆ A ↦ B
+      → cod Γ ⊆  B
+Γ⊆A↦B→codΓ⊆B {⊥} s refl with s {⊥} refl
+... | ()
+Γ⊆A↦B→codΓ⊆B {C ↦ C'} s m with s {C ↦ C'} refl
+... | refl = m
+Γ⊆A↦B→codΓ⊆B {Γ ⊔ Γ₁} s (inj₁ x) = Γ⊆A↦B→codΓ⊆B (λ {C} z → s (inj₁ z)) x
+Γ⊆A↦B→codΓ⊆B {Γ ⊔ Γ₁} s (inj₂ y) = Γ⊆A↦B→codΓ⊆B (λ {C} z → s (inj₂ z)) y
+
+∈→⊑ : ∀{A B : Value} → A ∈ B → A ⊑ B
+∈→⊑ {.⊥} {⊥} refl = Bot⊑
+∈→⊑ {.(B ↦ B₁)} {B ↦ B₁} refl = Refl⊑
+∈→⊑ {A} {B ⊔ B₁} (inj₁ x) = ConjR1⊑ (∈→⊑ x)
+∈→⊑ {A} {B ⊔ B₁} (inj₂ y) = ConjR2⊑ (∈→⊑ y)
+
+
+⊆→⊑ : ∀{A B : Value} → A ⊆ B → A ⊑ B
+⊆→⊑ {⊥} {B} s with s {⊥} refl
+... | x = Bot⊑
+⊆→⊑ {A ↦ A'} {B} s with s {A ↦ A'} refl
+... | x = ∈→⊑ x
+⊆→⊑ {A ⊔ A'} {B} s =
+   ConjL⊑ (⊆→⊑ (λ {C} z → s (inj₁ z))) (⊆→⊑ (λ {C} z → s (inj₂ z)))
+
+Funs∈ : ∀{A} → Funs A → Σ[ B ∈ Value ] Σ[ B' ∈ Value ] B ↦ B' ∈ A
+Funs∈ {⊥} f with f {⊥} refl
+... | fun ()
+Funs∈ {A ↦ A'} f = ⟨ A , ⟨ A' , refl ⟩ ⟩
+Funs∈ {A ⊔ A'} f
+    with Funs∈ {A} λ {v'} z → f (inj₁ z)
+... | ⟨ B , ⟨ B' , m ⟩ ⟩ = ⟨ B , ⟨ B' , (inj₁ m) ⟩ ⟩
+
+↦⊑↦-inv : ∀{v₁ v₂ v₃ v₄}
+        → v₁ ↦ v₂ ⊑ v₃ ↦ v₄
+        → v₃ ⊑ v₁ × v₂ ⊑ v₄
+↦⊑↦-inv{v₁}{v₂}{v₃}{v₄} lt
+    with sub-inv-fun lt  
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆v34 , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with Funs∈ f
+... | ⟨ A , ⟨ A' , A↦A'∈Γ ⟩ ⟩
+    with Γ⊆v34 A↦A'∈Γ
+... | refl =    
+  let codΓ⊆v₄ = Γ⊆A↦B→codΓ⊆B Γ⊆v34 in
+  ⟨ lt1 A↦A'∈Γ , Trans⊑ lt2 (⊆→⊑ codΓ⊆v₄) ⟩
+
+𝔼 : Value → Clos → Set
+
+𝕍 : Value → Clos → Set
+𝕍 v (clos (` x₁) γ) = Bot
+𝕍 v (clos (M · M₁) γ) = Bot
+𝕍 ⊥ (clos (ƛ M) γ) = ⊤
+𝕍 (v ↦ v') (clos (ƛ M) γ) =
+     (∀{c : Clos} → 𝔼 v c → AboveFun v' → Σ[ c' ∈ Clos ]
+           (γ , c) ⊢ M ⇓ c'  ×  𝕍 v' c')
+𝕍 (v₁ ⊔ v₂) (clos (ƛ M) γ) = 𝕍 v₁ (clos (ƛ M) γ) × 𝕍 v₂ (clos (ƛ M) γ)
+
+𝔼 v (clos M γ) = AboveFun v → Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
+
+𝕍→WHNF : ∀{Γ}{γ : ClosEnv Γ}{M : Γ ⊢ ★}{v} → 𝕍 v (clos M γ) → WHNF M
+𝕍→WHNF {M = ` x} {v} ()
+𝕍→WHNF {M = ƛ M} {v} vc = ƛ_
+𝕍→WHNF {M = M · M₁} {v} ()
+
+𝕍→lam : ∀{c v} → 𝕍 v c → Σ[ Γ ∈ Context ] Σ[ γ ∈ ClosEnv Γ ] Σ[ M ∈ Γ , ★ ⊢ ★ ]
+                 c ≡ clos (ƛ M) γ
+𝕍→lam {clos (` x₁) x} ()
+𝕍→lam {clos {Γ} (ƛ M) x} vc = ⟨ Γ , ⟨ x , ⟨ M , refl ⟩ ⟩ ⟩
+𝕍→lam {clos (M · M₁) x} ()
+
+𝕍⊔-intro : ∀{c v₁ v₂} → 𝕍 v₁ c → 𝕍 v₂ c → 𝕍 (v₁ ⊔ v₂) c
+𝕍⊔-intro {clos (` x₁) x} () v2c
+𝕍⊔-intro {clos (ƛ M) x} v1c v2c = ⟨ v1c , v2c ⟩
+𝕍⊔-intro {clos (M · M₁) x} () v2c
+
+not-AboveFun-𝕍 : ∀{v : Value}{Γ}{γ' : ClosEnv Γ}{M : Γ , ★ ⊢ ★ }
+               → ¬ AboveFun v → 𝕍 v (clos (ƛ M) γ')
+not-AboveFun-𝕍 {⊥} af = tt
+not-AboveFun-𝕍 {v ↦ v'} af = ⊥-elim (contradiction ⟨ v , ⟨ v' , Refl⊑ ⟩ ⟩ af)
+not-AboveFun-𝕍 {v₁ ⊔ v₂} af
+    with not-AboveFun-⊔-inv af
+... | ⟨ af1 , af2 ⟩ =
+    ⟨ not-AboveFun-𝕍 af1 , not-AboveFun-𝕍 af2 ⟩
+
+AboveFun⊥ : ¬ AboveFun ⊥
+AboveFun⊥ ⟨ v₁ , ⟨ v₂ , lt ⟩ ⟩
+    with sub-inv-fun lt
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆⊥ , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with Funs∈ f
+... | ⟨ A , ⟨ B , m ⟩ ⟩
+    with Γ⊆⊥ m
+... | ()
+
+
+AboveFun-⊔ : ∀{v₁ v₂}
+           → AboveFun (v₁ ⊔ v₂)
+           → AboveFun v₁ ⊎ AboveFun v₂
+AboveFun-⊔{v₁}{v₂} ⟨ v , ⟨ v' , v↦v'⊑v₁⊔v₂ ⟩ ⟩ 
+    with sub-inv-fun v↦v'⊑v₁⊔v₂
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆v₁⊔v₂ , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with Funs∈ f
+... | ⟨ A , ⟨ B , m ⟩ ⟩
+    with Γ⊆v₁⊔v₂ m
+... | inj₁ x = inj₁ ⟨ A , ⟨ B , (∈→⊑ x) ⟩ ⟩
+... | inj₂ x = inj₂ ⟨ A , ⟨ B , (∈→⊑ x) ⟩ ⟩
+
+
+not-AboveFun-⊔ : ∀{v₁ v₂ : Value}
+               → ¬ AboveFun v₁ → ¬ AboveFun v₂
+               → ¬ AboveFun (v₁ ⊔ v₂)
+not-AboveFun-⊔ af1 af2 af12
+    with AboveFun-⊔ af12
+... | inj₁ x = contradiction x af1
+... | inj₂ x = contradiction x af2
+
+AboveFun? : (v : Value) → Dec (AboveFun v)
+AboveFun? ⊥ = no AboveFun⊥
+AboveFun? (v ↦ v') = yes ⟨ v , ⟨ v' , Refl⊑ ⟩ ⟩
+AboveFun? (v₁ ⊔ v₂)
+    with AboveFun? v₁ | AboveFun? v₂
+... | yes ⟨ v , ⟨ v' , lt ⟩ ⟩ | _ = yes ⟨ v , ⟨ v' , (ConjR1⊑ lt) ⟩ ⟩
+... | no _ | yes ⟨ v , ⟨ v' , lt ⟩ ⟩ = yes ⟨ v , ⟨ v' , (ConjR2⊑ lt) ⟩ ⟩
+... | no x | no y = no (not-AboveFun-⊔ x y)
+
+sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
+
+sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
+sub-𝔼 {clos M x} {v} {v'} evc lt fv
+    with evc (AboveFun-⊑ fv lt)
+... | ⟨ c , ⟨ Mc , vvc ⟩ ⟩ =
+      ⟨ c , ⟨ Mc , sub-𝕍 vvc lt ⟩ ⟩
+
+sub-𝕍 {clos (` x₁) x} {v} vc Bot⊑ = vc
+sub-𝕍 {clos (ƛ M) x} {v} vc Bot⊑ = tt
+sub-𝕍 {clos (M · M₁) x} {v} vc Bot⊑ = vc
+sub-𝕍 {clos (` x₁) x} {v} () (ConjL⊑ lt lt₁)
+sub-𝕍 {clos (ƛ M) x} {v} vc (ConjL⊑ lt₁ lt₂) = ⟨ (sub-𝕍 vc lt₁) , sub-𝕍 vc lt₂ ⟩
+sub-𝕍 {clos (M · M₁) x} {v} () (ConjL⊑ lt lt₁)
+sub-𝕍 {clos (` x₁) x} {.(_ ⊔ _)} () (ConjR1⊑ lt)
+sub-𝕍 {clos (ƛ M) x} {.(_ ⊔ _)} ⟨ vv1 , vv2 ⟩ (ConjR1⊑ lt) = sub-𝕍 vv1 lt
+sub-𝕍 {clos (M · M₁) x} {.(_ ⊔ _)} () (ConjR1⊑ lt)
+sub-𝕍 {clos (` x₁) x} {.(_ ⊔ _)} () (ConjR2⊑ lt)
+sub-𝕍 {clos (ƛ M) x} {.(_ ⊔ _)} ⟨ vv1 , vv2 ⟩ (ConjR2⊑ lt) = sub-𝕍 vv2 lt
+sub-𝕍 {clos (M · M₁) x} {.(_ ⊔ _)} () (ConjR2⊑ lt)
+sub-𝕍 {c} {v} vc (Trans⊑{v₂ = v₂} lt lt₁) =
+    sub-𝕍 {c} {v₂} (sub-𝕍 {c}{v} vc lt₁) lt
+sub-𝕍 {clos (` x₁) x} {.(_ ↦ _)} () (Fun⊑ lt lt₁)
+sub-𝕍 {clos (ƛ M) x} {.(_ ↦ _)} vc (Fun⊑ lt lt₁) ev1 sf
+    with vc (sub-𝔼 ev1 lt) (AboveFun-⊑ sf lt₁)
+... | ⟨ c , ⟨ Mc , v4 ⟩ ⟩ = ⟨ c , ⟨ Mc , sub-𝕍 v4 lt₁ ⟩ ⟩
+sub-𝕍 {clos (M · M₁) x} {.(_ ↦ _)} () (Fun⊑ lt lt₁)
+sub-𝕍 {clos (` x₁) x} {.(_ ↦ _ ⊔ _ ↦ _)} () Dist⊑
+sub-𝕍 {clos (ƛ M) γ} {v₁ ↦ v₂ ⊔ v₁ ↦ v₃} ⟨ vc12 , vc13 ⟩
+    Dist⊑ ev1c ⟨ v , ⟨ v' , lt ⟩ ⟩
+    with AboveFun? v₂ | AboveFun? v₃
+... | yes af2 | no naf3
+    with vc12 ev1c af2
+... | ⟨ c2 , ⟨ M⇓c2 , 𝕍2c ⟩ ⟩ 
+    with 𝕍→lam 𝕍2c
+... | ⟨ Γ' , ⟨ δ , ⟨ N , eq ⟩ ⟩ ⟩ rewrite eq =
+      let 𝕍3c = not-AboveFun-𝕍{v₃}{Γ'}{δ}{N} naf3 in
+      ⟨ clos (ƛ N) δ , ⟨ M⇓c2 , 𝕍⊔-intro 𝕍2c 𝕍3c ⟩ ⟩
+sub-𝕍 {c} {v₁ ↦ v₂ ⊔ v₁ ↦ v₃} ⟨ vc12 , vc13 ⟩  Dist⊑ ev1c ⟨ v , ⟨ v' , lt ⟩ ⟩
+    | no naf2 | yes af3
+    with vc13 ev1c af3
+... | ⟨ c3 , ⟨ M⇓c3 , 𝕍3c ⟩ ⟩ 
+    with 𝕍→lam 𝕍3c
+... | ⟨ Γ' , ⟨ δ , ⟨ N , eq ⟩ ⟩ ⟩ rewrite eq =
+      let 𝕍2c = not-AboveFun-𝕍{v₂}{Γ'}{δ}{N} naf2 in
+      ⟨ clos (ƛ N) δ , ⟨ M⇓c3 , 𝕍⊔-intro 𝕍2c 𝕍3c ⟩ ⟩
+sub-𝕍 {c} {v₁ ↦ v₂ ⊔ v₁ ↦ v₃} ⟨ vc12 , vc13 ⟩  Dist⊑ ev1c ⟨ v , ⟨ v' , lt ⟩ ⟩
+    | no naf2 | no naf3
+    with AboveFun-⊔ ⟨ v , ⟨ v' , lt ⟩ ⟩
+... | inj₁ af2 = ⊥-elim (contradiction af2 naf2)
+... | inj₂ af3 = ⊥-elim (contradiction af3 naf3)
+sub-𝕍 {c} {v₁ ↦ v₂ ⊔ v₁ ↦ v₃} ⟨ vc12 , vc13 ⟩  Dist⊑ ev1c ⟨ v , ⟨ v' , lt ⟩ ⟩
+    | yes af2 | yes af3
+    with vc12 ev1c af2 | vc13 ev1c af3
+... | ⟨ clos N δ , ⟨ Mc1 , v4 ⟩ ⟩
+    | ⟨ c2 , ⟨ Mc2 , v5 ⟩ ⟩ rewrite ⇓-determ Mc2 Mc1 with 𝕍→WHNF v4
+... | ƛ_ =
+      ⟨ clos N δ , ⟨ Mc1 , ⟨ v4 , v5 ⟩ ⟩ ⟩
+
+sub-𝕍 {clos (M · M₁) x} {.(_ ↦ _ ⊔ _ ↦ _)} () Dist⊑ 
+
+
+𝔾 : ∀{Γ} → Env Γ → ClosEnv Γ → Set
+𝔾 ∅ ∅ = ⊤
+𝔾 (γ , v) (γ' , c) = 𝔾 γ γ' × 𝔼 v c
+
+
+𝔾-nth : ∀{Γ}{γ : Env Γ}{γ' : ClosEnv Γ}{x : Γ ∋ ★}
+         → 𝔾 γ γ' → 𝔼 (nth x γ) (kth x γ')
+𝔾-nth {∅} {∅} {∅} {()} tt
+𝔾-nth {Γ , ★} {γ , x} {γ' , x₁} {Z} ⟨ fst , snd ⟩ = snd
+𝔾-nth {Γ , ★} {γ , x} {γ' , x₁} {S k} ⟨ fst , snd ⟩ = 𝔾-nth fst
+
+
+kth-x : ∀{Γ}{γ' : ClosEnv Γ}{x : Γ ∋ ★}
+     → Σ[ Δ ∈ Context ] Σ[ δ ∈ ClosEnv Δ ] Σ[ M ∈ Δ ⊢ ★ ]
+                 kth x γ' ≡ clos M δ
+kth-x{γ' = γ'}{x = x} with kth x γ'
+... | clos{Γ = Δ} M δ = ⟨ Δ , ⟨ δ , ⟨ M , refl ⟩ ⟩ ⟩
+
+
+soundness↓⇓ : ∀{Γ}{γ : Env Γ}{γ' : ClosEnv Γ}{M : Γ ⊢ ★ }{v}
+            → 𝔾 γ γ' → γ ⊢ M ↓ v → 𝔼 v (clos M γ')
+soundness↓⇓ {Γ} {γ} {γ'} {`_ x} {v} g var sf 
+    with kth-x{Γ}{γ'}{x} | 𝔾-nth{x = x} g
+... | ⟨ Δ , ⟨ δ , ⟨ M , eq ⟩ ⟩ ⟩ | g' rewrite eq
+    with g' sf
+... | ⟨ c , ⟨ L⇓c , Vnc ⟩ ⟩ =
+      ⟨ c , ⟨ (⇓-var eq L⇓c) , Vnc ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {L · M} {v} g (↦-elim{v₁ = v₁} d₁ d₂) sf
+    with soundness↓⇓ g d₁ ⟨ v₁ , ⟨ v , Refl⊑ ⟩ ⟩
+... | ⟨ clos (` x) δ , ⟨ L⇓c , () ⟩ ⟩
+... | ⟨ clos (L' · M') δ , ⟨ L⇓c , () ⟩ ⟩ 
+... | ⟨ clos (ƛ L') δ , ⟨ L⇓c , Vc ⟩ ⟩
+    with Vc {clos M γ'} (soundness↓⇓ g d₂) sf
+... | ⟨ c' , ⟨ L'⇓c' , Vc' ⟩ ⟩ =
+    ⟨ c' , ⟨ ⇓-app L⇓c L'⇓c' , Vc' ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {ƛ M} {v ↦ v'} g (↦-intro d) sf =
+  ⟨ (clos (ƛ M) γ') , ⟨ ⇓-lam , G ⟩ ⟩
+  where G : {c : Clos} → 𝔼 v c → AboveFun v'
+          → Σ-syntax Clos (λ c' → ((γ' , c) ⊢ M ⇓ c') × 𝕍 v' c')
+        G {c} evc sfv' =
+           soundness↓⇓{Γ , ★}{γ , v}{γ' , c}{M}{v'} ⟨ g , evc ⟩ d sfv'
+soundness↓⇓ {Γ} {γ} {γ'} {M} {⊥} g ⊥-intro sf = ⊥-elim (AboveFun⊥ sf)
+soundness↓⇓ {Γ} {γ} {γ'} {M} {v₁ ⊔ v₂} g (⊔-intro d₁ d₂) af12
+    with AboveFun? v₁ | AboveFun? v₂
+soundness↓⇓ g (⊔-intro{v₁ = v₁}{v₂ = v₂} d₁ d₂) af12 | yes af1 | no naf2
+    with soundness↓⇓ g d₁ af1 
+... | ⟨ c1 , ⟨ M⇓c1 , 𝕍1c ⟩ ⟩
+    with 𝕍→lam 𝕍1c
+... | ⟨ Γ , ⟨ γ , ⟨ M , eq ⟩ ⟩ ⟩ rewrite eq =     
+    let 𝕍2c = not-AboveFun-𝕍{v₂}{Γ}{γ}{M} naf2 in
+    ⟨ clos (ƛ M) γ , ⟨ M⇓c1 , 𝕍⊔-intro 𝕍1c 𝕍2c ⟩ ⟩
+soundness↓⇓ g (⊔-intro{v₁ = v₁}{v₂ = v₂} d₁ d₂) af12 | no naf1  | yes af2
+    with soundness↓⇓ g d₂ af2
+... | ⟨ c2 , ⟨ M⇓c2 , 𝕍2c ⟩ ⟩
+    with 𝕍→lam 𝕍2c
+... | ⟨ Γ , ⟨ γ , ⟨ M , eq ⟩ ⟩ ⟩ rewrite eq =     
+    let 𝕍1c = not-AboveFun-𝕍{v₁}{Γ}{γ}{M} naf1 in
+    ⟨ clos (ƛ M) γ , ⟨ M⇓c2 , 𝕍⊔-intro 𝕍1c 𝕍2c ⟩ ⟩
+soundness↓⇓ g (⊔-intro d₁ d₂) af12 | no naf1  | no naf2
+    with AboveFun-⊔ af12
+... | inj₁ af1 = ⊥-elim (contradiction af1 naf1)
+... | inj₂ af2 = ⊥-elim (contradiction af2 naf2)
+soundness↓⇓ g (⊔-intro d₁ d₂) af12 | yes af1 | yes af2
+    with soundness↓⇓ g d₁ af1 | soundness↓⇓ g d₂ af2 
+... | ⟨ c1 , ⟨ M⇓c1 , 𝕍1c ⟩ ⟩ | ⟨ c2 , ⟨ M⇓c2 , 𝕍2c ⟩ ⟩
+    rewrite ⇓-determ M⇓c2 M⇓c1 =
+      ⟨ c1 , ⟨ M⇓c1 , 𝕍⊔-intro 𝕍1c 𝕍2c ⟩ ⟩
+soundness↓⇓ {Γ} {γ} {γ'} {M} {v} g (sub d lt) sf 
+    with soundness↓⇓ {Γ} {γ} {γ'} {M} g d (AboveFun-⊑ sf lt)
+... | ⟨ c , ⟨ M⇓c , 𝕍c ⟩ ⟩ =
+      ⟨ c , ⟨ M⇓c , sub-𝕍 𝕍c lt ⟩ ⟩
+
+adequacy : ∀{M : ∅ ⊢ ★}{N : ∅ , ★ ⊢ ★}  →  ℰ M ≃ ℰ (ƛ N)
+         →  Σ[ c ∈ Clos ] ∅ ⊢ M ⇓ c
+adequacy{M}{N} eq 
+    with soundness↓⇓ tt ((proj₂ eq) (↦-intro ⊥-intro)) ⟨ ⊥ , ⟨ ⊥ , Refl⊑ ⟩ ⟩
+... | ⟨ c , ⟨ M⇓c , Vc ⟩ ⟩ = ⟨ c , M⇓c ⟩
 \end{code}
