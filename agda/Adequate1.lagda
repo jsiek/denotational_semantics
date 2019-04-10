@@ -1,9 +1,28 @@
 \begin{code}
 module Adequate1 where
-
-open import Denot_CBN_BCD
 \end{code}
 
+## Imports
+
+\begin{code}
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; _≢_; refl; sym; trans; cong; cong₂; inspect)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum
+open import Agda.Primitive using (lzero)
+open import Relation.Nullary using (¬_)
+open import Relation.Nullary.Negation using (contradiction)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Data.Unit using (⊤; tt)
+open import Data.Maybe
+open import Data.List using (List; _∷_; _++_; concat; map) renaming ([] to nil)
+open import Data.List.NonEmpty using (List⁺; _∷_; _⁺++⁺_; toList) 
+open import Data.Nat using (ℕ; suc; zero; _≤_)
+open import Relation.Nullary using (Dec; yes; no)
+
+open import Untyped
+open import Denot_CBN_BCD
+\end{code}
 
 ## Adequacy of the denotational semantics
 
@@ -185,9 +204,6 @@ val≡? (v ⊔ v₁) (v' ⊔ v'')
 
 Funs : List Value → Set
 Funs vs = (∀{v} → v ∈ vs → Fun v)
-
-AllFuns : Value → Set
-AllFuns v = (∀{v'} → v' ∈' v → Fun v')
 
 doms : (vs : List Value) → Funs vs → List Value
 doms nil af = nil

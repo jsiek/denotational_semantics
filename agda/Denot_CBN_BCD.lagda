@@ -7,7 +7,7 @@ next      : /Acknowledgements/
 ---
 
 \begin{code}
-module DenotAdequate where
+module Denot_CBN_BCD where
 \end{code}
 
 The lambda calculus is a language about _functions_, that is, mappings
