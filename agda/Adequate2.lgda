@@ -1,0 +1,23 @@
+\begin{code}
+module Adequate2 where
+
+dom : (v : Value) → Value
+dom ⊥  = ⊥
+dom (v ↦ v') = v
+dom (v ⊔ v') = dom' v ⊔ dom' v'
+
+cod : (v : Value) → Value
+cod ⊥  = ⊥
+cod (v ↦ v') = v'
+cod (v ⊔ v') = cod' v ⊔ cod' v'
+
+infix 5 _∈_
+
+_∈_ : Value → Value → Set
+v ∈ ⊥ = v ≡ ⊥
+v ∈ v' ↦ v'' = v ≡ v' ↦ v''
+v ∈ (v₁ ⊔ v₂) = v ∈ v₁ ⊎ v ∈ v₂
+
+
+
+\end{code}
