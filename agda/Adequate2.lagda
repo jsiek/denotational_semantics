@@ -56,17 +56,17 @@ then both v₁ and v₂ are less than v₃.
 
 [JGS: Move this to the section where ⊑ is defined.]
 
-The inversion property for functions is subtle.  What can we deduce
-from knowing that a function v₁ ↦ v₁' is less than some value v₂?
-What can we deduce about v₂?  This is not easy to answer because of
-the Dist⊑ rule , which relates a function on the left to a pair of
-functions on the right.  So v₂ may include several functions that, as
-a group, relate to v₁ ↦ v₁'. Furthermore, because of the rules ConjR1⊑
-and ConjR2⊑, there may be other things inside v₂, such as ⊥, that have
-nothing to do with v₁ ↦ v₁'. So in general, v₂ must include a
-collection of functions where the join of their domains is less than
-v₁ and the join of their codomains is greater than v₁'.
-
+What can we deduce from knowing that a function v₁ ↦ v₁' is less than
+some value v₂?  What can we deduce about v₂? The answer to this
+question is called the inversion property of less-than for functions.
+This question is not easy to answer because of the Dist⊑ rule, which
+relates a function on the left to a pair of functions on the right.
+So v₂ may include several functions that, as a group, relate to v₁ ↦
+v₁'. Furthermore, because of the rules ConjR1⊑ and ConjR2⊑, there may
+be other values inside v₂, such as ⊥, that have nothing to do with v₁
+↦ v₁'. But in general, we can deduce that v₂ includes a collection of
+functions where the join of their domains is less than v₁ and the join
+of their codomains is greater than v₁'.
 
 To precisely state and prove this inversion property, we need to
 define what it means for a value to _include_ a collection of values.
@@ -76,14 +76,12 @@ codomains.
 
 ### Value membership and inclusion
 
-We first define what it means for a value to include another value.
-Recall that we think of values as sets of entries with the join
+Recall that we think of a value as a set of entries with the join
 operator v₁ ⊔ v₂ acting like set union. The function value v ↦ v' and
-bottom value ⊥ constitute the two kinds of entries.  (In other
-contexts one can instead think of ⊥ as the empty set, but here we must
-think of it as a kind of element.)  So we write v ∈ v' to mean that v
-is an element that is syntactically contained underneath any number of
-joins in v'.
+bottom value ⊥ constitute the two kinds of elements of the set.  (In
+other contexts one can instead think of ⊥ as the empty set, but here
+we must think of it as an element.)  We write v ∈ v' to say that v is
+an element of v', as defined below.
 
 \begin{code}
 infix 5 _∈_
@@ -94,9 +92,8 @@ v ∈ v₁ ↦ v₂ = v ≡ v₁ ↦ v₂
 v ∈ (v₁ ⊔ v₂) = v ∈ v₁ ⊎ v ∈ v₂
 \end{code}
 
-Because values can represent sets, we can represent collections of
-values simply as values. We write v₁ ⊆ v₂ if all the elements of v₁
-are also in v₂.
+So we can represent a collection of values simply as a value.  We
+write v₁ ⊆ v₂ to say that all the elements of v₁ are also in v₂.
 
 \begin{code}
 infix 5 _⊆_
@@ -105,8 +102,8 @@ _⊆_ : Value → Value → Set
 v₁ ⊆ v₂ = ∀{v₃} → v₃ ∈ v₁ → v₃ ∈ v₂
 \end{code}
 
-These notions of membership and inclusion for values are closely
-related to the less-than relation. They are narrower relations, they
+The notions of membership and inclusion for values are closely related
+to the less-than relation. They are narrower relations in that they
 imply the less-than relation but not the other way around.
 
 \begin{code}
@@ -131,9 +128,9 @@ imply the less-than relation but not the other way around.
    ConjL⊑ (⊆→⊑ (λ {C} z → s (inj₁ z))) (⊆→⊑ (λ {C} z → s (inj₂ z)))
 \end{code}
 
-We shall need some inversion principles for value inclusion.  If the
-union of v₁ and v₂ is included in v₃, then of course both v₁ and v₂
-are each included in v₃.
+We shall also need some inversion principles for value inclusion.  If
+the union of v₁ and v₂ is included in v₃, then of course both v₁ and
+v₂ are each included in v₃.
 
 \begin{code}
 ⊔⊆-inv : ∀{v₁ v₂ v₃ : Value}
@@ -159,8 +156,8 @@ then v₁ ↦ v₂ must be a member of v₃.
 ### Function values
 
 To identify collections of functions, we define the following two
-predicates. We write Fun v₁ if v₁ is a function value, that is if v₁ ≡
-v ↦ v' for some values v and v'. We write Funs v if all the elements
+predicates. We write Fun v₁ if v₁ is a function value, that is, if v₁
+≡ v ↦ v' for some values v and v'. We write Funs v if all the elements
 of v are functions.
 
 \begin{code}
@@ -237,8 +234,8 @@ that v₁ is included in the domain of v.
   λ x₁ → inj₂ (ih x₁)
 \end{code}
 
-Regarding cod, again we have a collection of functions represented by
-v, but all of them are just copies of v₁ ↦ v₂.  Then the cod v is
+Regarding cod, suppose we have a collection of functions represented
+by v, but all of them are just copies of v₁ ↦ v₂.  Then the cod v is
 included in v₂.
 
 \begin{code}
@@ -255,47 +252,78 @@ included in v₂.
 \end{code}
 
 With the dom and cod functions in hand, we can make precise the
-conclusion of the inversion principle for functions, which we
-package into the following predicate named factor. We say that
-v₁ ↦ v₂ _factors_ v₂ into v₂' (and a remainder that is ignored).
+conclusion of the inversion principle for functions, which we package
+into the following predicate named factor. We say that v₁ ↦ v₁'
+_factors_ v₂ into v₂'.
 
 \begin{code}
 factor : (v₂ : Value) → (v₂' : Value) → (v₁ : Value) → (v₁' : Value) → Set
 factor v₂ v₂' v₁ v₁' = Funs v₂' × v₂' ⊆ v₂ × dom v₂' ⊑ v₁ × v₁' ⊑ cod v₂'
 \end{code}
 
+We prove the inversion principle for functions by induction on the
+derivation of the less-than relation. To make the induction hypothesis
+stronger, we broaden the premise to v₁ ⊑ v₂ (instead of v₁ ↦ v₁' ⊑
+v₂), and strengthen the conclusion to say that for _every_ function
+value w₁ ↦ w₁' ∈ v₁, w₁ ↦ w₁' factors v₂ into v₂'.
 
 ### Inversion of less-than for functions, the case for Trans⊑
 
+The crux of the proof is the case for Trans⊑.
 
+    v₁ ⊑ u   u ⊑ v₂
+    --------------- (Trans⊑)
+        v₁ ⊑ v₂
+
+By the induction hypothesis for v₁ ⊑ u, we know
+that w₁ ↦ w₁' factors u into u', for some value u',
+so we have Funs u' and u' ⊆ u.
+By the induction hypothesis for u ⊑ v₂, we know
+that for any u₁ ↦ u₂ ∈ u, u₁ ↦ u₂ factors v₂ into v₂'.
+With these facts in hand, we proceed by induction on u'
+to prove that (dom u') ↦ (cod u') factors v₂ into v₂'.
+We discuss each case of the proof in the text below.
 
 \begin{code}
-sub-inv-trans : ∀{B' A B : Value}
-    → Funs B'
-    → B' ⊆ B
-    → (∀{B₁ B₂} → B₁ ↦ B₂ ∈ B → Σ[ A' ∈ Value ] factor A A' B₁ B₂)
-      ----------------------------------------------------------
-    → Σ[ A' ∈ Value ] factor A A' (dom B') (cod B')
-sub-inv-trans {⊥} {A} {B} fg B'⊆B IH =
-   ⊥-elim (contradiction (fg{v' = ⊥} refl) ¬Fun⊥)
-sub-inv-trans {B₁' ↦ B₂'} {A} {B} fg B'⊆B IH = IH (↦⊆→∈ B'⊆B)
-sub-inv-trans {B₁' ⊔ B₂'} {A} {B} fg B'⊆B IH
-    with ⊔⊆-inv B'⊆B
-... | ⟨ B₁'⊆B , B₂'⊆B ⟩
-    with sub-inv-trans {B₁'} {A} {B} (λ {v'} z → fg (inj₁ z)) B₁'⊆B IH
-       | sub-inv-trans {B₂'} {A} {B} (λ {v'} z → fg (inj₂ z)) B₂'⊆B IH
-... | ⟨ A₁' , ⟨ fg1' , ⟨ A₁'⊆A , ⟨ domA₁'⊑domΓ₁ , codΓ₁⊑codA₁' ⟩ ⟩ ⟩ ⟩
-    | ⟨ A₂' , ⟨ fg2' , ⟨ A₂'⊆A , ⟨ domA₂'⊑domΓ₂ , codΓ₁⊑codA₂' ⟩ ⟩ ⟩ ⟩ =
-      ⟨ (A₁' ⊔ A₂') , ⟨ fg12 , ⟨ A₁₂'⊆A , ⟨ ⊔⊑⊔ domA₁'⊑domΓ₁ domA₂'⊑domΓ₂ ,
-                                           ⊔⊑⊔ codΓ₁⊑codA₁' codΓ₁⊑codA₂' ⟩ ⟩ ⟩ ⟩
-    where fg12 : {v' : Value} → v' ∈ A₁' ⊎ v' ∈ A₂' → Fun v'
-          fg12 {v'} (inj₁ x) = fg1' x
-          fg12 {v'} (inj₂ y) = fg2' y
+sub-inv-trans : ∀{u' v₂ u : Value}
+    → Funs u'  →  u' ⊆ u
+    → (∀{u₁ u₂} → u₁ ↦ u₂ ∈ u → Σ[ v₂' ∈ Value ] factor v₂ v₂' u₁ u₂)
+      ---------------------------------------------------------------
+    → Σ[ v₂' ∈ Value ] factor v₂ v₂' (dom u') (cod u')
+sub-inv-trans {⊥} {v₂} {u} fu' u'⊆u IH =
+   ⊥-elim (contradiction (fu'{v' = ⊥} refl) ¬Fun⊥)
+sub-inv-trans {u₁' ↦ u₂'} {v₂} {u} fg u'⊆u IH = IH (↦⊆→∈ u'⊆u)
+sub-inv-trans {u₁' ⊔ u₂'} {v₂} {u} fg u'⊆u IH
+    with ⊔⊆-inv u'⊆u
+... | ⟨ u₁'⊆u , u₂'⊆u ⟩
+    with sub-inv-trans {u₁'} {v₂} {u} (λ {v'} z → fg (inj₁ z)) u₁'⊆u IH
+       | sub-inv-trans {u₂'} {v₂} {u} (λ {v'} z → fg (inj₂ z)) u₂'⊆u IH
+... | ⟨ v₂₁' , ⟨ fu21' , ⟨ v₂₁'⊆v₂ , ⟨ dv₂₁'⊑du₁' , cu₁'⊑cv₂₁' ⟩ ⟩ ⟩ ⟩
+    | ⟨ v₂₂' , ⟨ fu22' , ⟨ v₂₂'⊆v₂ , ⟨ dv₂₂'⊑du₂' , cu₁'⊑cv₂₂' ⟩ ⟩ ⟩ ⟩ =
+      ⟨ (v₂₁' ⊔ v₂₂') , ⟨ fv₂' , ⟨ v₂'⊆v₂ ,
+      ⟨ ⊔⊑⊔ dv₂₁'⊑du₁' dv₂₂'⊑du₂' ,
+        ⊔⊑⊔ cu₁'⊑cv₂₁' cu₁'⊑cv₂₂' ⟩ ⟩ ⟩ ⟩
+    where fv₂' : {v' : Value} → v' ∈ v₂₁' ⊎ v' ∈ v₂₂' → Fun v'
+          fv₂' {v'} (inj₁ x) = fu21' x
+          fv₂' {v'} (inj₂ y) = fu22' y
 
-          A₁₂'⊆A : {C : Value} → C ∈ A₁' ⊎ C ∈ A₂' → C ∈ A
-          A₁₂'⊆A {C} (inj₁ x) = A₁'⊆A x
-          A₁₂'⊆A {C} (inj₂ y) = A₂'⊆A y
+          v₂'⊆v₂ : {C : Value} → C ∈ v₂₁' ⊎ C ∈ v₂₂' → C ∈ v₂
+          v₂'⊆v₂ {C} (inj₁ x) = v₂₁'⊆v₂ x
+          v₂'⊆v₂ {C} (inj₂ y) = v₂₂'⊆v₂ y
 \end{code}
+
+* Suppose u' ≡ ⊥. Then we have a contradiction because
+  it is not the case that Fun ⊥.
+
+* Suppose u' ≡ u₁' ↦ u₂'. Then u₁' ↦ u₂' ∈ u and we can apply the
+  premise (the induction hypothesis from u ⊑ v₂) to obtain that
+  u₁' ↦ u₂' factors of v₂ into v₂'. Thus this case is complete because
+  dom u' ≡ u₁' and cod u' ≡ u₂'.
+  
+* Suppose u' ≡ u₁' ⊔ u₂'. So u₁' ⊆ u and u₂' ⊆ u, and of course
+  Funs u₁' and Funs u₂'. So we can apply the induction hypothesis
+  for both u₁' and u₂'.
+
 
 
 ### Inversion of less-than for functions
@@ -303,32 +331,35 @@ sub-inv-trans {B₁' ⊔ B₂'} {A} {B} fg B'⊆B IH
 \begin{code}
 sub-inv : ∀{v₂ v₁ : Value}
         → v₁ ⊑ v₂
-        → ∀{B' C'} → B' ↦ C' ∈ v₁
+        → ∀{w₁ w₁'} → w₁ ↦ w₁' ∈ v₁
           -------------------------------
-        → Σ[ Γ ∈ Value ] factor v₂ Γ B' C'
-sub-inv {v₂} {⊥} Bot⊑ {B'} {C'} ()
-sub-inv {v₂} {v₁₁ ⊔ v₁₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₁ x) = sub-inv lt x
-sub-inv {v₂} {v₁₁ ⊔ v₁₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₂ y) = sub-inv lt₁ y
-sub-inv {v₂₁ ⊔ v₂₂} {v₁} (ConjR1⊑ lt) {B'} {C'} m
+        → Σ[ v₂' ∈ Value ] factor v₂ v₂' w₁ w₁'
+sub-inv {v₂} {⊥} Bot⊑ {w₁} {w₁'} ()
+sub-inv {v₂} {v₁₁ ⊔ v₁₂} (ConjL⊑ lt1 lt2) {w₁} {w₁'} (inj₁ x) = sub-inv lt1 x
+sub-inv {v₂} {v₁₁ ⊔ v₁₂} (ConjL⊑ lt1 lt2) {w₁} {w₁'} (inj₂ y) = sub-inv lt2 y
+sub-inv {v₂₁ ⊔ v₂₂} {v₁} (ConjR1⊑ lt) {w₁} {w₁'} m
     with sub-inv lt m  
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂₁ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₁ (Γ⊆v₂₁ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
-sub-inv {v₂₁ ⊔ v₂₂} {v₁} (ConjR2⊑ lt) {B'} {C'} m
+... | ⟨ v₂₁' , ⟨ fv₂₁' , ⟨ v₂₁'⊆v₂₁ , ⟨ domv₂₁'⊑w₁ , w₁'⊑codv₂₁' ⟩ ⟩ ⟩ ⟩ =
+      ⟨ v₂₁' , ⟨ fv₂₁' , ⟨ (λ {w} z → inj₁ (v₂₁'⊆v₂₁ z)) ,
+                                   ⟨ domv₂₁'⊑w₁ , w₁'⊑codv₂₁' ⟩ ⟩ ⟩ ⟩
+sub-inv {v₂₁ ⊔ v₂₂} {v₁} (ConjR2⊑ lt) {w₁} {w₁'} m
     with sub-inv lt m  
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂₂ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₂ (Γ⊆v₂₂ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
-sub-inv {v₂} {v₁} (Trans⊑ lt1 lt2) {B'} {C'} m
-    with sub-inv lt1 m
-... | ⟨ Γ' , ⟨ fg' , ⟨ Γ'⊆D , ⟨ domΓ'⊑B' , C'⊑codΓ' ⟩ ⟩ ⟩ ⟩ 
-    with sub-inv-trans {Γ'} fg' Γ'⊆D (sub-inv lt2) 
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂ , ⟨ domΓ⊑domΓ' , codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂ , ⟨ Trans⊑ domΓ⊑domΓ' domΓ'⊑B' ,
-                             Trans⊑ C'⊑codΓ' codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩
+... | ⟨ v₂₂' , ⟨ fv₂₂' , ⟨ v₂₂'⊆v₂₂ , ⟨ domv₂₂'⊑w₁ , w₁'⊑codv₂₂' ⟩ ⟩ ⟩ ⟩ =
+      ⟨ v₂₂' , ⟨ fv₂₂' , ⟨ (λ {C} z → inj₂ (v₂₂'⊆v₂₂ z)) ,
+                                   ⟨ domv₂₂'⊑w₁ , w₁'⊑codv₂₂' ⟩ ⟩ ⟩ ⟩
+sub-inv {v₂} {v₁} (Trans⊑{v₂ = u} v₁⊑u u⊑v₂) {w₁} {w₁'} w₁↦w₁'∈v₁
+    with sub-inv v₁⊑u w₁↦w₁'∈v₁
+... | ⟨ u' , ⟨ fu' , ⟨ u'⊆u , ⟨ domu'⊑w₁ , w₁'⊑codu' ⟩ ⟩ ⟩ ⟩ 
+    with sub-inv-trans {u'} fu' u'⊆u (sub-inv u⊑v₂) 
+... | ⟨ v₂' , ⟨ fv₂' , ⟨ v₂'⊆v₂ , ⟨ domv₂'⊑domu' , codu'⊑codv₂' ⟩ ⟩ ⟩ ⟩ =
+      ⟨ v₂' , ⟨ fv₂' , ⟨ v₂'⊆v₂ , ⟨ Trans⊑ domv₂'⊑domu' domu'⊑w₁ ,
+                                  Trans⊑ w₁'⊑codu' codu'⊑codv₂' ⟩ ⟩ ⟩ ⟩
 sub-inv {v₂₁ ↦ v₂₂} {v₁₁ ↦ v₁₂} (Fun⊑ lt1 lt2) refl =
-  ⟨ v₂₁ ↦ v₂₂ , ⟨ (λ {v'} → fun) , ⟨ (λ {C} z → z) , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
-sub-inv {v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃} {v₂₁ ↦ (v₂₂ ⊔ v₂₃)} Dist⊑ {.v₂₁} {.(v₂₂ ⊔ v₂₃)} refl =
-  ⟨ v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃ , ⟨ f , ⟨ g , ⟨ (ConjL⊑ Refl⊑ Refl⊑) ,
-     ⊔⊑⊔ Refl⊑ Refl⊑ ⟩ ⟩ ⟩ ⟩
+    ⟨ v₂₁ ↦ v₂₂ , ⟨ (λ {v'} → fun) , ⟨ (λ {C} z → z) , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+sub-inv {v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃} {v₂₁ ↦ (v₂₂ ⊔ v₂₃)} Dist⊑
+    {.v₂₁} {.(v₂₂ ⊔ v₂₃)} refl =
+    ⟨ v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃ , ⟨ f , ⟨ g , ⟨ ConjL⊑ Refl⊑ Refl⊑ ,
+                                            ⊔⊑⊔ Refl⊑ Refl⊑ ⟩ ⟩ ⟩ ⟩
   where f : Funs (v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃)
         f (inj₁ x) = fun x
         f (inj₂ y) = fun y
