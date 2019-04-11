@@ -57,18 +57,21 @@ then both v₁ and v₂ are less than v₃.
 [JGS: Move this to the section where ⊑ is defined.]
 
 The inversion property for functions is subtle.  What can we deduce
-from knowning that a function v₁ ↦ v₁' is less than some value v₂?
-That is, what can we deduce about v₂?  This is not easy to answer
-because of the Dist⊑ rule , which relates a function on the left to a
-pair of functions on the right.  So v₂ may include several functions
-that, as a group, relate to v₁ ↦ v₁'. Furthermore, because of the
-rules ConjR1⊑ and ConjR2⊑, there may be other things inside v₂, such
-as ⊥, that have nothing to do with v₁ ↦ v₁'. So in general, v₂ must
-include a collection of functions whose domains are less than v₁ and
-whose codomains are greater than v₁'. To precisely state and prove
-this inversion property, we will need to define what it means for a
-value to _include_ a collection of values.
+from knowing that a function v₁ ↦ v₁' is less than some value v₂?
+What can we deduce about v₂?  This is not easy to answer because of
+the Dist⊑ rule , which relates a function on the left to a pair of
+functions on the right.  So v₂ may include several functions that, as
+a group, relate to v₁ ↦ v₁'. Furthermore, because of the rules ConjR1⊑
+and ConjR2⊑, there may be other things inside v₂, such as ⊥, that have
+nothing to do with v₁ ↦ v₁'. So in general, v₂ must include a
+collection of functions where the join of their domains is less than
+v₁ and the join of their codomains is greater than v₁'.
 
+
+To precisely state and prove this inversion property, we need to
+define what it means for a value to _include_ a collection of values.
+We also need to define how to compute the join of their domains and
+codomains.
 
 
 ### Value membership and inclusion
@@ -107,24 +110,24 @@ related to the less-than relation. They are narrower relations, they
 imply the less-than relation but not the other way around.
 
 \begin{code}
-∈→⊑ : ∀{v₁ B : Value}
-    → v₁ ∈ B
+∈→⊑ : ∀{v₁ v₂ : Value}
+    → v₁ ∈ v₂
       -----
-    → v₁ ⊑ B
+    → v₁ ⊑ v₂
 ∈→⊑ {.⊥} {⊥} refl = Bot⊑
-∈→⊑ {.(B ↦ B₁)} {B ↦ B₁} refl = Refl⊑
-∈→⊑ {v₁} {B ⊔ B₁} (inj₁ x) = ConjR1⊑ (∈→⊑ x)
-∈→⊑ {v₁} {B ⊔ B₁} (inj₂ y) = ConjR2⊑ (∈→⊑ y)
+∈→⊑ {.(v₂ ↦ v₂₁)} {v₂ ↦ v₂₁} refl = Refl⊑
+∈→⊑ {v₁} {v₂ ⊔ v₂₁} (inj₁ x) = ConjR1⊑ (∈→⊑ x)
+∈→⊑ {v₁} {v₂ ⊔ v₂₁} (inj₂ y) = ConjR2⊑ (∈→⊑ y)
 
-⊆→⊑ : ∀{v₁ B : Value}
-    → v₁ ⊆ B
+⊆→⊑ : ∀{v₁ v₂ : Value}
+    → v₁ ⊆ v₂
       -----
-    → v₁ ⊑ B
-⊆→⊑ {⊥} {B} s with s {⊥} refl
+    → v₁ ⊑ v₂
+⊆→⊑ {⊥} {v₂} s with s {⊥} refl
 ... | x = Bot⊑
-⊆→⊑ {v₁ ↦ v₁'} {B} s with s {v₁ ↦ v₁'} refl
+⊆→⊑ {v₁ ↦ v₁'} {v₂} s with s {v₁ ↦ v₁'} refl
 ... | x = ∈→⊑ x
-⊆→⊑ {v₁ ⊔ v₁'} {B} s =
+⊆→⊑ {v₁ ⊔ v₁'} {v₂} s =
    ConjL⊑ (⊆→⊑ (λ {C} z → s (inj₁ z))) (⊆→⊑ (λ {C} z → s (inj₂ z)))
 \end{code}
 
@@ -177,144 +180,170 @@ Of course, the value ⊥ is not a function.
 
 In our values-as-sets representation, our sets always include at least
 one element. Thus, if all the elements are functions, there is at
-least one element that is a function.
+least one that is a function.
 
 \begin{code}
 Funs∈ : ∀{v₁}
       → Funs v₁
-      → Σ[ B ∈ Value ] Σ[ B' ∈ Value ] B ↦ B' ∈ v₁
+      → Σ[ v ∈ Value ] Σ[ v' ∈ Value ] v ↦ v' ∈ v₁
 Funs∈ {⊥} f with f {⊥} refl
 ... | fun ()
-Funs∈ {v₁ ↦ v₁'} f = ⟨ v₁ , ⟨ v₁' , refl ⟩ ⟩
-Funs∈ {v₁ ⊔ v₁'} f
+Funs∈ {v ↦ v'} f = ⟨ v , ⟨ v' , refl ⟩ ⟩
+Funs∈ {v₁ ⊔ v₂} f
     with Funs∈ {v₁} λ {v'} z → f (inj₁ z)
-... | ⟨ B , ⟨ B' , m ⟩ ⟩ = ⟨ B , ⟨ B' , (inj₁ m) ⟩ ⟩
+... | ⟨ v , ⟨ v' , m ⟩ ⟩ = ⟨ v , ⟨ v' , (inj₁ m) ⟩ ⟩
 \end{code}
 
-[JGS: UNDER CONSTRUCTION]
+
+### Domains and codomains
+
+Returning to our goal, the inversion principle for less-than a
+function, we want to show that v₁ ↦ v₁' ⊑ v₂ implies that v₂ includes
+a set of function values such that the join of their domains is less
+than v₁ and the join of their codomains is greater than v₁'.
+
+To this end we define the following dom and cod functions.  Given some
+value v (that represents a set of entries), dom v returns the join of
+their domains and cod v returns the join of their codomains.
 
 \begin{code}
 dom : (v : Value) → Value
 dom ⊥  = ⊥
 dom (v ↦ v') = v
 dom (v ⊔ v') = dom v ⊔ dom v'
-\end{code}
 
-\begin{code}
 cod : (v : Value) → Value
 cod ⊥  = ⊥
 cod (v ↦ v') = v'
 cod (v ⊔ v') = cod v ⊔ cod v'
 \end{code}
 
+We need just one property each for dom and cod.  Given a collection of
+functions represented by value v, and an entry v₁ ↦ v₂ in v, we know
+that v₁ is included in the domain of v.
 
 \begin{code}
-fun∈→⊆dom : ∀{Γ D E : Value}
-          → Funs Γ  →  (D ↦ E) ∈ Γ
+↦∈→⊆dom : ∀{v v₁ v₂ : Value}
+          → Funs v  →  (v₁ ↦ v₂) ∈ v
             ----------------------
-          → D ⊆ dom Γ
-fun∈→⊆dom {⊥} fg ()
-fun∈→⊆dom {v₁ ↦ B} fg refl = λ z → z
-fun∈→⊆dom {Γ ⊔ Γ₁} fg (inj₁ x) =
-  let ih = fun∈→⊆dom {Γ} (λ {v'} z → fg (inj₁ z)) x in
+          → v₁ ⊆ dom v
+↦∈→⊆dom {⊥} fg ()
+↦∈→⊆dom {v ↦ v'} fg refl = λ z → z
+↦∈→⊆dom {v ⊔ v'} fg (inj₁ x) =
+  let ih = ↦∈→⊆dom {v} (λ {v'} z → fg (inj₁ z)) x in
   λ x₁ → inj₁ (ih x₁)
-fun∈→⊆dom {Γ ⊔ Γ₁} fg (inj₂ y) =
-  let ih = fun∈→⊆dom {Γ₁} (λ {v'} z → fg (inj₂ z)) y in
+↦∈→⊆dom {v ⊔ v'} fg (inj₂ y) =
+  let ih = ↦∈→⊆dom {v'} (λ {v'} z → fg (inj₂ z)) y in
   λ x₁ → inj₂ (ih x₁)
 \end{code}
 
+Regarding cod, again we have a collection of functions represented by
+v, but all of them are just copies of v₁ ↦ v₂.  Then the cod v is
+included in v₂.
 
 \begin{code}
-Γ⊆A↦B→codΓ⊆B : ∀{Γ A B : Value}
-      → Γ ⊆ A ↦ B
+⊆↦→cod⊆ : ∀{v v₁ v₂ : Value}
+      → v ⊆ v₁ ↦ v₂
         ---------
-      → cod Γ ⊆ B
-Γ⊆A↦B→codΓ⊆B {⊥} s refl with s {⊥} refl
+      → cod v ⊆ v₂
+⊆↦→cod⊆ {⊥} s refl with s {⊥} refl
 ... | ()
-Γ⊆A↦B→codΓ⊆B {C ↦ C'} s m with s {C ↦ C'} refl
+⊆↦→cod⊆ {C ↦ C'} s m with s {C ↦ C'} refl
 ... | refl = m
-Γ⊆A↦B→codΓ⊆B {Γ ⊔ Γ₁} s (inj₁ x) = Γ⊆A↦B→codΓ⊆B (λ {C} z → s (inj₁ z)) x
-Γ⊆A↦B→codΓ⊆B {Γ ⊔ Γ₁} s (inj₂ y) = Γ⊆A↦B→codΓ⊆B (λ {C} z → s (inj₂ z)) y
+⊆↦→cod⊆ {v ⊔ v₁} s (inj₁ x) = ⊆↦→cod⊆ (λ {C} z → s (inj₁ z)) x
+⊆↦→cod⊆ {v ⊔ v₁} s (inj₂ y) = ⊆↦→cod⊆ (λ {C} z → s (inj₂ z)) y
+\end{code}
+
+With the dom and cod functions in hand, we can make precise the
+conclusion of the inversion principle for functions, which we
+package into the following predicate named factor. We say that
+v₁ ↦ v₂ _factors_ v₂ into v₂' (and a remainder that is ignored).
+
+\begin{code}
+factor : (v₂ : Value) → (v₂' : Value) → (v₁ : Value) → (v₁' : Value) → Set
+factor v₂ v₂' v₁ v₁' = Funs v₂' × v₂' ⊆ v₂ × dom v₂' ⊑ v₁ × v₁' ⊑ cod v₂'
 \end{code}
 
 
 ### Inversion of less-than for functions, the case for Trans⊑
 
-\begin{code}
-factor : (A : Value) → (Γ : Value) → (B' : Value) → (C' : Value) → Set
-factor A Γ B' C' = Funs Γ × Γ ⊆ A × dom Γ ⊑ B' × C' ⊑ cod Γ
-\end{code}
 
 
 \begin{code}
-sub-inv-trans : ∀{Γ' A D : Value}
-    → Funs Γ'
-    → Γ' ⊆ D
-    → (∀{B' C'} → B' ↦ C' ∈ D → Σ[ Γ ∈ Value ] factor A Γ B' C')
+sub-inv-trans : ∀{B' A B : Value}
+    → Funs B'
+    → B' ⊆ B
+    → (∀{B₁ B₂} → B₁ ↦ B₂ ∈ B → Σ[ A' ∈ Value ] factor A A' B₁ B₂)
       ----------------------------------------------------------
-    → Σ[ Γ ∈ Value ] factor A Γ (dom Γ') (cod Γ')
-sub-inv-trans {⊥} {A} {D} fg Γ'⊆D IH =
+    → Σ[ A' ∈ Value ] factor A A' (dom B') (cod B')
+sub-inv-trans {⊥} {A} {B} fg B'⊆B IH =
    ⊥-elim (contradiction (fg{v' = ⊥} refl) ¬Fun⊥)
-sub-inv-trans {D₃ ↦ D₄} {A} {D} fg Γ'⊆D IH = IH (↦⊆→∈ Γ'⊆D)
-sub-inv-trans {Γ₁ ⊔ Γ₂} {A} {D} fg Γ'⊆D IH
-    with ⊔⊆-inv Γ'⊆D
-... | ⟨ Γ₁⊆D , Γ₂⊆D ⟩
-    with sub-inv-trans {Γ₁} {A} {D} (λ {v'} z → fg (inj₁ z)) Γ₁⊆D IH
-       | sub-inv-trans {Γ₂} {A} {D} (λ {v'} z → fg (inj₂ z)) Γ₂⊆D IH
-... | ⟨ Γ₁' , ⟨ fg1' , ⟨ Γ₁'⊆A , ⟨ domΓ₁'⊑domΓ₁ , codΓ₁⊑codΓ₁' ⟩ ⟩ ⟩ ⟩
-    | ⟨ Γ₂' , ⟨ fg2' , ⟨ Γ₂'⊆A , ⟨ domΓ₂'⊑domΓ₂ , codΓ₁⊑codΓ₂' ⟩ ⟩ ⟩ ⟩ =
-      ⟨ (Γ₁' ⊔ Γ₂') , ⟨ fg12 , ⟨ Γ₁₂⊆A , ⟨ ⊔⊑⊔ domΓ₁'⊑domΓ₁ domΓ₂'⊑domΓ₂ ,
-                                           ⊔⊑⊔ codΓ₁⊑codΓ₁' codΓ₁⊑codΓ₂' ⟩ ⟩ ⟩ ⟩
-    where fg12 : {v' : Value} → v' ∈ Γ₁' ⊎ v' ∈ Γ₂' → Fun v'
+sub-inv-trans {B₁' ↦ B₂'} {A} {B} fg B'⊆B IH = IH (↦⊆→∈ B'⊆B)
+sub-inv-trans {B₁' ⊔ B₂'} {A} {B} fg B'⊆B IH
+    with ⊔⊆-inv B'⊆B
+... | ⟨ B₁'⊆B , B₂'⊆B ⟩
+    with sub-inv-trans {B₁'} {A} {B} (λ {v'} z → fg (inj₁ z)) B₁'⊆B IH
+       | sub-inv-trans {B₂'} {A} {B} (λ {v'} z → fg (inj₂ z)) B₂'⊆B IH
+... | ⟨ A₁' , ⟨ fg1' , ⟨ A₁'⊆A , ⟨ domA₁'⊑domΓ₁ , codΓ₁⊑codA₁' ⟩ ⟩ ⟩ ⟩
+    | ⟨ A₂' , ⟨ fg2' , ⟨ A₂'⊆A , ⟨ domA₂'⊑domΓ₂ , codΓ₁⊑codA₂' ⟩ ⟩ ⟩ ⟩ =
+      ⟨ (A₁' ⊔ A₂') , ⟨ fg12 , ⟨ A₁₂'⊆A , ⟨ ⊔⊑⊔ domA₁'⊑domΓ₁ domA₂'⊑domΓ₂ ,
+                                           ⊔⊑⊔ codΓ₁⊑codA₁' codΓ₁⊑codA₂' ⟩ ⟩ ⟩ ⟩
+    where fg12 : {v' : Value} → v' ∈ A₁' ⊎ v' ∈ A₂' → Fun v'
           fg12 {v'} (inj₁ x) = fg1' x
           fg12 {v'} (inj₂ y) = fg2' y
 
-          Γ₁₂⊆A : {C : Value} → C ∈ Γ₁' ⊎ C ∈ Γ₂' → C ∈ A
-          Γ₁₂⊆A {C} (inj₁ x) = Γ₁'⊆A x
-          Γ₁₂⊆A {C} (inj₂ y) = Γ₂'⊆A y
+          A₁₂'⊆A : {C : Value} → C ∈ A₁' ⊎ C ∈ A₂' → C ∈ A
+          A₁₂'⊆A {C} (inj₁ x) = A₁'⊆A x
+          A₁₂'⊆A {C} (inj₂ y) = A₂'⊆A y
 \end{code}
 
 
 ### Inversion of less-than for functions
 
 \begin{code}
-sub-inv : ∀{A A' : Value}
-        → A' ⊑ A
-        → ∀{B' C'} → B' ↦ C' ∈ A'
+sub-inv : ∀{v₂ v₁ : Value}
+        → v₁ ⊑ v₂
+        → ∀{B' C'} → B' ↦ C' ∈ v₁
           -------------------------------
-        → Σ[ Γ ∈ Value ] factor A Γ B' C'
-sub-inv {A} {⊥} Bot⊑ {B'} {C'} ()
-sub-inv {A} {A'₁ ⊔ A'₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₁ x) = sub-inv lt x
-sub-inv {A} {A'₁ ⊔ A'₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₂ y) = sub-inv lt₁ y
-sub-inv {A₁ ⊔ A₂} {A'} (ConjR1⊑ lt) {B'} {C'} m
+        → Σ[ Γ ∈ Value ] factor v₂ Γ B' C'
+sub-inv {v₂} {⊥} Bot⊑ {B'} {C'} ()
+sub-inv {v₂} {v₁₁ ⊔ v₁₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₁ x) = sub-inv lt x
+sub-inv {v₂} {v₁₁ ⊔ v₁₂} (ConjL⊑ lt lt₁) {B'} {C'} (inj₂ y) = sub-inv lt₁ y
+sub-inv {v₂₁ ⊔ v₂₂} {v₁} (ConjR1⊑ lt) {B'} {C'} m
     with sub-inv lt m  
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A₁ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₁ (Γ⊆A₁ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
-sub-inv {A₁ ⊔ A₂} {A'} (ConjR2⊑ lt) {B'} {C'} m
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂₁ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₁ (Γ⊆v₂₁ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
+sub-inv {v₂₁ ⊔ v₂₂} {v₁} (ConjR2⊑ lt) {B'} {C'} m
     with sub-inv lt m  
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A₂ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₂ (Γ⊆A₂ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
-sub-inv {A} {A'} (Trans⊑ lt1 lt2) {B'} {C'} m
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂₂ , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ (λ {C} z → inj₂ (Γ⊆v₂₂ z)) , ⟨ domΓ⊑B' , C'⊑codΓ ⟩ ⟩ ⟩ ⟩
+sub-inv {v₂} {v₁} (Trans⊑ lt1 lt2) {B'} {C'} m
     with sub-inv lt1 m
 ... | ⟨ Γ' , ⟨ fg' , ⟨ Γ'⊆D , ⟨ domΓ'⊑B' , C'⊑codΓ' ⟩ ⟩ ⟩ ⟩ 
     with sub-inv-trans {Γ'} fg' Γ'⊆D (sub-inv lt2) 
-... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ domΓ⊑domΓ' , codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ Γ , ⟨ fg , ⟨ Γ⊆A , ⟨ Trans⊑ domΓ⊑domΓ' domΓ'⊑B' ,
+... | ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂ , ⟨ domΓ⊑domΓ' , codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ Γ , ⟨ fg , ⟨ Γ⊆v₂ , ⟨ Trans⊑ domΓ⊑domΓ' domΓ'⊑B' ,
                              Trans⊑ C'⊑codΓ' codΓ'⊑codΓ ⟩ ⟩ ⟩ ⟩
-sub-inv {A₁ ↦ A₂} {A'₁ ↦ A'₂} (Fun⊑ lt1 lt2) refl =
-  ⟨ A₁ ↦ A₂ , ⟨ (λ {v'} → fun) , ⟨ (λ {C} z → z) , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
-sub-inv {A₁ ↦ A₂ ⊔ A₁ ↦ A₃} {A₁ ↦ (A₂ ⊔ A₃)} Dist⊑ {.A₁} {.(A₂ ⊔ A₃)} refl =
-  ⟨ A₁ ↦ A₂ ⊔ A₁ ↦ A₃ , ⟨ f , ⟨ g , ⟨ (ConjL⊑ Refl⊑ Refl⊑) ,
+sub-inv {v₂₁ ↦ v₂₂} {v₁₁ ↦ v₁₂} (Fun⊑ lt1 lt2) refl =
+  ⟨ v₂₁ ↦ v₂₂ , ⟨ (λ {v'} → fun) , ⟨ (λ {C} z → z) , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+sub-inv {v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃} {v₂₁ ↦ (v₂₂ ⊔ v₂₃)} Dist⊑ {.v₂₁} {.(v₂₂ ⊔ v₂₃)} refl =
+  ⟨ v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃ , ⟨ f , ⟨ g , ⟨ (ConjL⊑ Refl⊑ Refl⊑) ,
      ⊔⊑⊔ Refl⊑ Refl⊑ ⟩ ⟩ ⟩ ⟩
-  where f : Funs (A₁ ↦ A₂ ⊔ A₁ ↦ A₃)
+  where f : Funs (v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃)
         f (inj₁ x) = fun x
         f (inj₂ y) = fun y
-        g : (A₁ ↦ A₂ ⊔ A₁ ↦ A₃) ⊆ (A₁ ↦ A₂ ⊔ A₁ ↦ A₃)
+        g : (v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃) ⊆ (v₂₁ ↦ v₂₂ ⊔ v₂₁ ↦ v₂₃)
         g (inj₁ x) = inj₁ x
         g (inj₂ y) = inj₂ y
 \end{code}
 
 \begin{code}
+sub-inv-fun' : ∀{A B C : Value}
+    → (A ↦ B) ⊑ C
+      -----------------------------
+    → Σ[ Γ ∈ Value ] factor C Γ A B
+sub-inv-fun'{A}{B}{C} abc = sub-inv abc {A}{B} refl
+
 sub-inv-fun : ∀{A B C : Value}
     → (A ↦ B) ⊑ C
       --------------------------------------------------------------------------
@@ -324,7 +353,7 @@ sub-inv-fun{A}{B}{C} abc
 ... | ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ db , cc ⟩ ⟩ ⟩ ⟩ =
       ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ G , cc ⟩ ⟩ ⟩ ⟩
    where G : ∀{D E} → (D ↦ E) ∈ Γ → D ⊑ A
-         G{D}{E} m = Trans⊑ (⊆→⊑ (fun∈→⊆dom f m)) db
+         G{D}{E} m = Trans⊑ (⊆→⊑ (↦∈→⊆dom f m)) db
 \end{code}
 
 \begin{code}
@@ -339,7 +368,7 @@ sub-inv-fun{A}{B}{C} abc
 ... | ⟨ A , ⟨ A' , A↦A'∈Γ ⟩ ⟩
     with Γ⊆v34 A↦A'∈Γ
 ... | refl =    
-  let codΓ⊆v₄ = Γ⊆A↦B→codΓ⊆B Γ⊆v34 in
+  let codΓ⊆v₄ = ⊆↦→cod⊆ Γ⊆v34 in
   ⟨ lt1 A↦A'∈Γ , Trans⊑ lt2 (⊆→⊑ codΓ⊆v₄) ⟩
 \end{code}
 

@@ -172,9 +172,9 @@ property.
 
 \begin{code}
 Dist⊔↦⊔ : ∀{v₁ v₁' v₂ v₂' : Value}
-        → (v₁ ⊔ v₁') ↦ (v₂ ⊔ v₂') ⊑ (v₁ ↦ v₂) ⊔ (v₁' ↦ v₂')
+        → (v₁ ⊔ v₂) ↦ (v₁' ⊔ v₂') ⊑ (v₁ ↦ v₁') ⊔ (v₂ ↦ v₂')
 Dist⊔↦⊔{v₁}{v₁'}{v₂}{v₂'} =
-    Trans⊑ (Dist⊑{v₁ = v₁ ⊔ v₁'}{v₂ = v₂}{v₃ = v₂'})
+    Trans⊑ (Dist⊑{v₁ = v₁ ⊔ v₂}{v₂ = v₁'}{v₃ = v₂'})
            (⊔⊑⊔ (Fun⊑ (ConjR1⊑ Refl⊑) Refl⊑)
                       (Fun⊑ (ConjR2⊑ Refl⊑) Refl⊑))
 \end{code}
