@@ -26,20 +26,25 @@ open import Denot_CBN_BCD
 
 ## Inversion of less-than for joins
 
-\begin{code}
-⊔⊑-invL : ∀{A B C : Value}
-       → A ⊔ B ⊑ C
-       → A ⊑ C
-⊔⊑-invL (ConjL⊑ abc abc₁) = abc
-⊔⊑-invL (ConjR1⊑ abc) = ConjR1⊑ (⊔⊑-invL abc)
-⊔⊑-invL (ConjR2⊑ abc) = ConjR2⊑ (⊔⊑-invL abc)
-⊔⊑-invL (Trans⊑ abc abc₁) = Trans⊑ (⊔⊑-invL abc) abc₁
-\end{code}
+[JGS: Move this to the section where ⊑ is defined.]
+
+If the join v₁ ⊔ v₂ is less than another value v₃,
+then both v₁ and v₂ are less than v₃.
 
 \begin{code}
-⊔⊑-invR : ∀{A B C : Value}
-       → A ⊔ B ⊑ C
-       → B ⊑ C
+⊔⊑-invL : ∀{v₁ v₂ v₃ : Value}
+        → v₁ ⊔ v₂ ⊑ v₃
+          ---------
+        → v₁ ⊑ v₃
+⊔⊑-invL (ConjL⊑ lt1 lt2) = lt1
+⊔⊑-invL (ConjR1⊑ lt) = ConjR1⊑ (⊔⊑-invL lt)
+⊔⊑-invL (ConjR2⊑ lt) = ConjR2⊑ (⊔⊑-invL lt)
+⊔⊑-invL (Trans⊑ lt1 lt2) = Trans⊑ (⊔⊑-invL lt1) lt2
+
+⊔⊑-invR : ∀{v₁ v₂ v₃ : Value}
+       → v₁ ⊔ v₂ ⊑ v₃
+         ---------
+       → v₂ ⊑ v₃
 ⊔⊑-invR (ConjL⊑ lt lt₁) = lt₁
 ⊔⊑-invR (ConjR1⊑ lt) = ConjR1⊑ (⊔⊑-invR lt)
 ⊔⊑-invR (ConjR2⊑ lt) = ConjR2⊑ (⊔⊑-invR lt)
@@ -49,104 +54,111 @@ open import Denot_CBN_BCD
 
 ## Inversion of the less-than relation for functions
 
-\begin{code}
-AboveFun : Value → Set
-AboveFun v = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ↦ v₂ ⊑ v
+[JGS: Move this to the section where ⊑ is defined.]
 
-AboveFun-⊑ : ∀{v v' : Value}
-      → AboveFun v → v ⊑ v'
-      → AboveFun v'
-AboveFun-⊑ ⟨ v₁ , ⟨ v₂ , lt' ⟩ ⟩ lt = ⟨ v₁ , ⟨ v₂ , Trans⊑ lt' lt ⟩ ⟩
+The inversion property for functions is subtle.  What can we deduce
+from knowning that a function v₁ ↦ v₁' is less than some value v₂?
+That is, what can we deduce about v₂?  This is not easy to answer
+because of the Dist⊑ rule , which relates a function on the left to a
+pair of functions on the right.  So v₂ may include several functions
+that, as a group, relate to v₁ ↦ v₁'. Furthermore, because of the
+rules ConjR1⊑ and ConjR2⊑, there may be other things inside v₂, such
+as ⊥, that have nothing to do with v₁ ↦ v₁'. So in general, v₂ must
+include a collection of functions whose domains are less than v₁ and
+whose codomains are greater than v₁'. To precisely state and prove
+this inversion property, we will need to define what it means for a
+value to _include_ a collection of values.
 
-not-AboveFun-⊔-inv : ∀{v₁ v₂ : Value} → ¬ AboveFun (v₁ ⊔ v₂)
-              → ¬ AboveFun v₁ × ¬ AboveFun v₂
-not-AboveFun-⊔-inv af = ⟨ f af , g af ⟩
-  where
-    f : ∀{v₁ v₂ : Value} → ¬ AboveFun (v₁ ⊔ v₂) → ¬ AboveFun v₁
-    f{v₁}{v₂} af12 ⟨ v , ⟨ v' , lt ⟩ ⟩ =
-        contradiction ⟨ v , ⟨ v' , ConjR1⊑ lt ⟩ ⟩ af12
-    g : ∀{v₁ v₂ : Value} → ¬ AboveFun (v₁ ⊔ v₂) → ¬ AboveFun v₂
-    g{v₁}{v₂} af12 ⟨ v , ⟨ v' , lt ⟩ ⟩ =
-        contradiction ⟨ v , ⟨ v' , ConjR2⊑ lt ⟩ ⟩ af12
-\end{code}
 
 
 ### Value membership and inclusion
+
+We first define what it means for a value to include another value.
+Recall that we think of values as sets of entries with the join
+operator v₁ ⊔ v₂ acting like set union. The function value v ↦ v' and
+bottom value ⊥ constitute the two kinds of entries.  (In other
+contexts one can instead think of ⊥ as the empty set, but here we must
+think of it as a kind of element.)  So we write v ∈ v' to mean that v
+is an element that is syntactically contained underneath any number of
+joins in v'.
 
 \begin{code}
 infix 5 _∈_
 
 _∈_ : Value → Value → Set
 v ∈ ⊥ = v ≡ ⊥
-v ∈ v' ↦ v'' = v ≡ v' ↦ v''
+v ∈ v₁ ↦ v₂ = v ≡ v₁ ↦ v₂
 v ∈ (v₁ ⊔ v₂) = v ∈ v₁ ⊎ v ∈ v₂
 \end{code}
+
+Because values can represent sets, we can represent collections of
+values simply as values. We write v₁ ⊆ v₂ if all the elements of v₁
+are also in v₂.
 
 \begin{code}
 infix 5 _⊆_
 
 _⊆_ : Value → Value → Set
-A ⊆ B = (∀{C} → C ∈ A → C ∈ B)
+v₁ ⊆ v₂ = ∀{v₃} → v₃ ∈ v₁ → v₃ ∈ v₂
 \end{code}
 
+These notions of membership and inclusion for values are closely
+related to the less-than relation. They are narrower relations, they
+imply the less-than relation but not the other way around.
+
 \begin{code}
-∈→⊑ : ∀{A B : Value} → A ∈ B → A ⊑ B
+∈→⊑ : ∀{v₁ B : Value}
+    → v₁ ∈ B
+      -----
+    → v₁ ⊑ B
 ∈→⊑ {.⊥} {⊥} refl = Bot⊑
 ∈→⊑ {.(B ↦ B₁)} {B ↦ B₁} refl = Refl⊑
-∈→⊑ {A} {B ⊔ B₁} (inj₁ x) = ConjR1⊑ (∈→⊑ x)
-∈→⊑ {A} {B ⊔ B₁} (inj₂ y) = ConjR2⊑ (∈→⊑ y)
-\end{code}
+∈→⊑ {v₁} {B ⊔ B₁} (inj₁ x) = ConjR1⊑ (∈→⊑ x)
+∈→⊑ {v₁} {B ⊔ B₁} (inj₂ y) = ConjR2⊑ (∈→⊑ y)
 
-\begin{code}
-⊆→⊑ : ∀{A B : Value} → A ⊆ B → A ⊑ B
+⊆→⊑ : ∀{v₁ B : Value}
+    → v₁ ⊆ B
+      -----
+    → v₁ ⊑ B
 ⊆→⊑ {⊥} {B} s with s {⊥} refl
 ... | x = Bot⊑
-⊆→⊑ {A ↦ A'} {B} s with s {A ↦ A'} refl
+⊆→⊑ {v₁ ↦ v₁'} {B} s with s {v₁ ↦ v₁'} refl
 ... | x = ∈→⊑ x
-⊆→⊑ {A ⊔ A'} {B} s =
+⊆→⊑ {v₁ ⊔ v₁'} {B} s =
    ConjL⊑ (⊆→⊑ (λ {C} z → s (inj₁ z))) (⊆→⊑ (λ {C} z → s (inj₂ z)))
 \end{code}
 
+We shall need some inversion principles for value inclusion.  If the
+union of v₁ and v₂ is included in v₃, then of course both v₁ and v₂
+are each included in v₃.
 
 \begin{code}
-∈⊑→⊑ : ∀{Γ A B : Value}
-        → A ∈ Γ → Γ ⊑ B
-        → A ⊑ B
-∈⊑→⊑ {⊥} refl lt = lt
-∈⊑→⊑ {Γ ↦ Γ₁} refl lt = lt
-∈⊑→⊑ {Γ ⊔ Γ₁} (inj₁ x) lt = ∈⊑→⊑ x (⊔⊑-invL lt)
-∈⊑→⊑ {Γ ⊔ Γ₁} (inj₂ y) lt = ∈⊑→⊑ y (⊔⊑-invR lt)
-\end{code}
-
-\begin{code}
-⊆⊑→⊑ : ∀{A Γ B : Value}
-        → A ⊆ Γ → Γ ⊑ B
-        → A ⊑ B
-⊆⊑→⊑ {⊥} s lt = Bot⊑
-⊆⊑→⊑ {A ↦ A₁} s lt = ∈⊑→⊑ (s {A ↦ A₁} refl) lt
-⊆⊑→⊑ {A ⊔ A₁} s lt = ConjL⊑ (⊆⊑→⊑ (λ {C} z → s (inj₁ z)) lt)
-                            (⊆⊑→⊑ (λ {C} z → s (inj₂ z)) lt)
-\end{code}
-
-
-\begin{code}
-↦⊆→∈ : ∀{A B C : Value}
-     → A ↦ B ⊆ C
-       ---------
-     → A ↦ B ∈ C
-↦⊆→∈{A}{B}{C} abc = abc {A ↦ B} refl 
-\end{code}
-
-\begin{code}
-⊔⊆-inv : ∀{A B C : Value}
-       → (A ⊔ B) ⊆ C
+⊔⊆-inv : ∀{v₁ v₂ v₃ : Value}
+       → (v₁ ⊔ v₂) ⊆ v₃
          ---------------
-       → A ⊆ C  ×  B ⊆ C
+       → v₁ ⊆ v₃  ×  v₂ ⊆ v₃
 ⊔⊆-inv abc = ⟨ (λ {x} x₁ → abc (inj₁ x₁)) , (λ {x} x₁ → abc (inj₂ x₁)) ⟩
+\end{code}
+
+In our value representation, the function value v₁ ↦ v₂ is both an
+element and also a singleton set. So if v₁ ↦ v₂ is a subset of v₃,
+then v₁ ↦ v₂ must be a member of v₃.
+
+\begin{code}
+↦⊆→∈ : ∀{v₁ v₂ v₃ : Value}
+     → v₁ ↦ v₂ ⊆ v₃
+       ---------
+     → v₁ ↦ v₂ ∈ v₃
+↦⊆→∈{v₁}{v₂}{v₃} incl = incl {v₁ ↦ v₂} refl 
 \end{code}
 
 
 ### Function values
+
+To identify collections of functions, we define the following two
+predicates. We write Fun v₁ if v₁ is a function value, that is if v₁ ≡
+v ↦ v' for some values v and v'. We write Funs v if all the elements
+of v are functions.
 
 \begin{code}
 data Fun : Value → Set where
@@ -156,29 +168,39 @@ Funs : Value → Set
 Funs v = ∀{v'} → v' ∈ v → Fun v'
 \end{code}
 
-\begin{code}
-Funs∈ : ∀{A} → Funs A → Σ[ B ∈ Value ] Σ[ B' ∈ Value ] B ↦ B' ∈ A
-Funs∈ {⊥} f with f {⊥} refl
-... | fun ()
-Funs∈ {A ↦ A'} f = ⟨ A , ⟨ A' , refl ⟩ ⟩
-Funs∈ {A ⊔ A'} f
-    with Funs∈ {A} λ {v'} z → f (inj₁ z)
-... | ⟨ B , ⟨ B' , m ⟩ ⟩ = ⟨ B , ⟨ B' , (inj₁ m) ⟩ ⟩
-\end{code}
-
+Of course, the value ⊥ is not a function.
 
 \begin{code}
 ¬Fun⊥ : ¬ (Fun ⊥)
 ¬Fun⊥ (fun ())
 \end{code}
 
+In our values-as-sets representation, our sets always include at least
+one element. Thus, if all the elements are functions, there is at
+least one element that is a function.
+
+\begin{code}
+Funs∈ : ∀{v₁}
+      → Funs v₁
+      → Σ[ B ∈ Value ] Σ[ B' ∈ Value ] B ↦ B' ∈ v₁
+Funs∈ {⊥} f with f {⊥} refl
+... | fun ()
+Funs∈ {v₁ ↦ v₁'} f = ⟨ v₁ , ⟨ v₁' , refl ⟩ ⟩
+Funs∈ {v₁ ⊔ v₁'} f
+    with Funs∈ {v₁} λ {v'} z → f (inj₁ z)
+... | ⟨ B , ⟨ B' , m ⟩ ⟩ = ⟨ B , ⟨ B' , (inj₁ m) ⟩ ⟩
+\end{code}
+
+[JGS: UNDER CONSTRUCTION]
 
 \begin{code}
 dom : (v : Value) → Value
 dom ⊥  = ⊥
 dom (v ↦ v') = v
 dom (v ⊔ v') = dom v ⊔ dom v'
+\end{code}
 
+\begin{code}
 cod : (v : Value) → Value
 cod ⊥  = ⊥
 cod (v ↦ v') = v'
@@ -192,7 +214,7 @@ fun∈→⊆dom : ∀{Γ D E : Value}
             ----------------------
           → D ⊆ dom Γ
 fun∈→⊆dom {⊥} fg ()
-fun∈→⊆dom {A ↦ B} fg refl = λ z → z
+fun∈→⊆dom {v₁ ↦ B} fg refl = λ z → z
 fun∈→⊆dom {Γ ⊔ Γ₁} fg (inj₁ x) =
   let ih = fun∈→⊆dom {Γ} (λ {v'} z → fg (inj₁ z)) x in
   λ x₁ → inj₁ (ih x₁)
@@ -302,7 +324,7 @@ sub-inv-fun{A}{B}{C} abc
 ... | ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ db , cc ⟩ ⟩ ⟩ ⟩ =
       ⟨ Γ , ⟨ f , ⟨ Γ⊆C , ⟨ G , cc ⟩ ⟩ ⟩ ⟩
    where G : ∀{D E} → (D ↦ E) ∈ Γ → D ⊑ A
-         G{D}{E} m = ⊆⊑→⊑ (fun∈→⊆dom f m) db
+         G{D}{E} m = Trans⊑ (⊆→⊑ (fun∈→⊆dom f m)) db
 \end{code}
 
 \begin{code}
@@ -321,6 +343,35 @@ sub-inv-fun{A}{B}{C} abc
   ⟨ lt1 A↦A'∈Γ , Trans⊑ lt2 (⊆→⊑ codΓ⊆v₄) ⟩
 \end{code}
 
+
+## Properties of being above a function (more corollaries)
+
+
+\begin{code}
+AboveFun : Value → Set
+AboveFun v = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ↦ v₂ ⊑ v
+\end{code}
+
+\begin{code}
+AboveFun-⊑ : ∀{v v' : Value}
+      → AboveFun v → v ⊑ v'
+        -------------------
+      → AboveFun v'
+AboveFun-⊑ ⟨ v₁ , ⟨ v₂ , lt' ⟩ ⟩ lt = ⟨ v₁ , ⟨ v₂ , Trans⊑ lt' lt ⟩ ⟩
+\end{code}
+
+\begin{code}
+not-AboveFun-⊔-inv : ∀{v₁ v₂ : Value} → ¬ AboveFun (v₁ ⊔ v₂)
+              → ¬ AboveFun v₁ × ¬ AboveFun v₂
+not-AboveFun-⊔-inv af = ⟨ f af , g af ⟩
+  where
+    f : ∀{v₁ v₂ : Value} → ¬ AboveFun (v₁ ⊔ v₂) → ¬ AboveFun v₁
+    f{v₁}{v₂} af12 ⟨ v , ⟨ v' , lt ⟩ ⟩ =
+        contradiction ⟨ v , ⟨ v' , ConjR1⊑ lt ⟩ ⟩ af12
+    g : ∀{v₁ v₂ : Value} → ¬ AboveFun (v₁ ⊔ v₂) → ¬ AboveFun v₂
+    g{v₁}{v₂} af12 ⟨ v , ⟨ v' , lt ⟩ ⟩ =
+        contradiction ⟨ v , ⟨ v' , ConjR2⊑ lt ⟩ ⟩ af12
+\end{code}
 
 \begin{code}
 AboveFun⊥ : ¬ AboveFun ⊥
