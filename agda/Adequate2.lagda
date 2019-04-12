@@ -300,6 +300,9 @@ sub-inv-trans {u₁' ⊔ u₂'} {v₂} {u} fg u'⊆u IH
        | sub-inv-trans {u₂'} {v₂} {u} (λ {v'} z → fg (inj₂ z)) u₂'⊆u IH
 ... | ⟨ v₂₁' , ⟨ fu21' , ⟨ v₂₁'⊆v₂ , ⟨ dv₂₁'⊑du₁' , cu₁'⊑cv₂₁' ⟩ ⟩ ⟩ ⟩
     | ⟨ v₂₂' , ⟨ fu22' , ⟨ v₂₂'⊆v₂ , ⟨ dv₂₂'⊑du₂' , cu₁'⊑cv₂₂' ⟩ ⟩ ⟩ ⟩ =
+      let x = ⊔⊑⊔ dv₂₁'⊑du₁' dv₂₂'⊑du₂' in
+      let y = ⊔⊑⊔ cu₁'⊑cv₂₁' cu₁'⊑cv₂₂' in
+      let z = {!!} in
       ⟨ (v₂₁' ⊔ v₂₂') , ⟨ fv₂' , ⟨ v₂'⊆v₂ ,
       ⟨ ⊔⊑⊔ dv₂₁'⊑du₁' dv₂₂'⊑du₂' ,
         ⊔⊑⊔ cu₁'⊑cv₂₁' cu₁'⊑cv₂₂' ⟩ ⟩ ⟩ ⟩
@@ -317,14 +320,23 @@ sub-inv-trans {u₁' ⊔ u₂'} {v₂} {u} fg u'⊆u IH
 
 * Suppose u' ≡ u₁' ↦ u₂'. Then u₁' ↦ u₂' ∈ u and we can apply the
   premise (the induction hypothesis from u ⊑ v₂) to obtain that
-  u₁' ↦ u₂' factors of v₂ into v₂'. Thus this case is complete because
+  u₁' ↦ u₂' factors of v₂ into v₂'. This case is complete because
   dom u' ≡ u₁' and cod u' ≡ u₂'.
   
-* Suppose u' ≡ u₁' ⊔ u₂'. So u₁' ⊆ u and u₂' ⊆ u, and of course
-  Funs u₁' and Funs u₂'. So we can apply the induction hypothesis
-  for both u₁' and u₂'.
-
-
+* Suppose u' ≡ u₁' ⊔ u₂'. Then we have u₁' ⊆ u and u₂' ⊆ u. We also  
+  have Funs u₁' and Funs u₂', so we can apply the induction hypothesis
+  for both u₁' and u₂'. So there exists values v₂₁' and v₂₂' such that
+  (dom u₁') ↦ (cod u₁') factors u into v₂₁' and
+  (dom u₂') ↦ (cod u₂') factors u into v₂₂'.
+  We will show that (dom u) ↦ (cod u) factors u into (v₂₁' ⊔ v₂₂').
+  So we need to show that
+  
+    dom (v₂₁' ⊔ v₂₂') ⊑ dom (u₁' ⊔ u₂')
+    cod (u₁' ⊔ u₂') ⊑ cod (v₂₁' ⊔ v₂₂')
+  
+  But those both follow directly from the factoring of
+  u into v₂₁' and v₂₂', using the monotonicity of ⊔ with respect to ⊑.
+  
 
 ### Inversion of less-than for functions
 
