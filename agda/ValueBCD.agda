@@ -24,6 +24,7 @@ data Value : Set where
 infix 4 _⊑_
 
 data _⊑_ : Value → Value → Set where
+  Bot⊑Bot : ⊥ ⊑ ⊥
   Bot⊑Fun : ∀ {v v'} → ⊥ ⊑ v ↦ v'
   Lit⊑ : ∀{B k} → lit {B} k ⊑ lit {B} k
   Fun⊑ : ∀ {v₁ v₂ v₁' v₂'}
@@ -53,7 +54,7 @@ data _⊑_ : Value → Value → Set where
 
 
 Refl⊑ : ∀ {v} → v ⊑ v
-Refl⊑ {⊥} = Bot⊑
+Refl⊑ {⊥} = Bot⊑Bot
 Refl⊑ {lit x} = Lit⊑
 Refl⊑ {v ↦ v₁} = Fun⊑ Refl⊑ Refl⊑
 Refl⊑ {v ⊔ v₁} = ConjL⊑ (ConjR1⊑ Refl⊑) (ConjR2⊑ Refl⊑)
