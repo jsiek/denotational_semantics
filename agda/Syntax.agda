@@ -1,7 +1,9 @@
 module Syntax (Op : Set) where
 
 open import Data.Nat
+  using (ℕ; zero; suc)
 open import Data.List
+  using (List; []; _∷_)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
@@ -408,3 +410,123 @@ sub-sub {M = o ⦅ Ms ⦆} = cong₂ _⦅_⦆ refl (sub-subs{Ms = Ms})
 
 sub-subs {Ms = []} = refl
 sub-subs {Ms = M ∷ Ms} = cong₂ _∷_ (sub-sub{M = M}) sub-subs
+
+
+rename-subst : ∀{Γ Δ Δ′}{M : Term Γ}{ρ : Rename Γ Δ}{σ : Subst Δ Δ′}
+             → ⟪ σ ⟫ (rename ρ M) ≡ ⟪ σ ∘ ρ ⟫ M
+rename-subst {Γ}{Δ}{Δ′}{M}{ρ}{σ} =
+   begin
+     ⟪ σ ⟫ (rename ρ M)
+   ≡⟨ cong ⟪ σ ⟫ (rename-subst-ren{M = M}) ⟩
+     ⟪ σ ⟫ (⟪ ren ρ ⟫ M)
+   ≡⟨ sub-sub{M = M} ⟩
+     ⟪ ren ρ ⨟ σ ⟫ M
+   ≡⟨⟩
+     ⟪ σ ∘ ρ ⟫ M
+   ∎
+
+
+sub-assoc : ∀{Γ Δ Σ Ψ} {σ : Subst Γ Δ} {τ : Subst Δ Σ}
+             {θ : Subst Σ Ψ}
+          → (σ ⨟ τ) ⨟ θ ≡ σ ⨟ τ ⨟ θ
+sub-assoc {Γ}{Δ}{Σ}{Ψ}{σ}{τ}{θ} = extensionality λ x → lemma{x = x}
+  where
+  lemma : ∀ {x : Var Γ} → ((σ ⨟ τ) ⨟ θ) x ≡ (σ ⨟ τ ⨟ θ) x
+  lemma {x} =
+      begin
+        ((σ ⨟ τ) ⨟ θ) x
+      ≡⟨⟩
+        ⟪ θ ⟫ (⟪ τ ⟫ (σ x))
+      ≡⟨ sub-sub{M = σ x} ⟩
+        ⟪ τ ⨟ θ ⟫ (σ x)
+      ≡⟨⟩
+        (σ ⨟ τ ⨟ θ) x
+      ∎
+
+
+subst-zero-exts-cons : ∀{Γ Δ}{σ : Subst Γ Δ}{M : Term Δ}
+                     → exts σ ⨟ subst-zero M ≡ M • σ
+subst-zero-exts-cons {Γ}{Δ}{σ}{M} =
+    begin
+      exts σ ⨟ subst-zero M
+    ≡⟨ cong₂ _⨟_ exts-cons-shift subst-Z-cons-ids ⟩
+      (` Z • (σ ⨟ ↑)) ⨟ (M • ids)
+    ≡⟨ sub-dist ⟩
+      (⟪ M • ids ⟫ (` Z)) • ((σ ⨟ ↑) ⨟ (M • ids))
+    ≡⟨ cong₂ _•_ (sub-head{σ = ids}) refl ⟩
+      M • ((σ ⨟ ↑) ⨟ (M • ids))
+    ≡⟨ cong₂ _•_ refl (sub-assoc{σ = σ}) ⟩
+      M • (σ ⨟ (↑ ⨟ (M • ids)))
+    ≡⟨ cong₂ _•_ refl (cong₂ _⨟_ {x = σ} refl (sub-tail{M = M}{σ = ids})) ⟩
+      M • (σ ⨟ ids)
+    ≡⟨ cong₂ _•_ refl (sub-idR{σ = σ}) ⟩
+      M • σ
+    ∎
+
+
+subst-commute : ∀{Γ Δ : ℕ}{N : Term (suc Γ)}{M : Term Γ}{σ : Subst Γ Δ }
+    → (⟪ exts σ ⟫ N) [ ⟪ σ ⟫ M ] ≡ ⟪ σ ⟫ (N [ M ])
+subst-commute {Γ}{Δ}{N}{M}{σ} =
+     begin
+       ⟪ exts σ ⟫ N [ ⟪ σ ⟫ M ]
+     ≡⟨⟩
+       ⟪ subst-zero (⟪ σ ⟫ M) ⟫ (⟪ exts σ ⟫ N)
+     ≡⟨ cong-app (cong ⟪_⟫ subst-Z-cons-ids) (⟪ exts σ ⟫ N) ⟩
+       ⟪ ⟪ σ ⟫ M • ids ⟫ (⟪ exts σ ⟫ N)
+     ≡⟨ sub-sub {M = N} ⟩
+       ⟪ (exts σ) ⨟ ((⟪ σ ⟫ M) • ids) ⟫ N
+     ≡⟨ cong-app (cong ⟪_⟫ (cong₂ _⨟_ exts-cons-shift refl)) N ⟩
+       ⟪ (` Z • (σ ⨟ ↑)) ⨟ (⟪ σ ⟫ M • ids) ⟫ N
+     ≡⟨ cong-app (cong ⟪_⟫ (sub-dist {M = ` Z})) N ⟩
+       ⟪ ⟪ ⟪ σ ⟫ M • ids ⟫ (` Z) • ((σ ⨟ ↑) ⨟ (⟪ σ ⟫ M • ids)) ⟫ N
+     ≡⟨⟩
+       ⟪ ⟪ σ ⟫ M • ((σ ⨟ ↑) ⨟ (⟪ σ ⟫ M • ids)) ⟫ N
+     ≡⟨ cong-app (cong ⟪_⟫ (cong₂ _•_ refl (sub-assoc{σ = σ}))) N ⟩
+       ⟪ ⟪ σ ⟫ M • (σ ⨟ ↑ ⨟ ⟪ σ ⟫ M • ids) ⟫ N
+     ≡⟨ refl ⟩
+       ⟪ ⟪ σ ⟫ M • (σ ⨟ ids) ⟫ N
+     ≡⟨ cong-app (cong ⟪_⟫ (cong₂ _•_ refl (sub-idR{σ = σ}))) N ⟩
+       ⟪ ⟪ σ ⟫ M • σ ⟫ N
+     ≡⟨ cong-app (cong ⟪_⟫ (cong₂ _•_ refl (sub-idL{σ = σ}))) N ⟩
+       ⟪ ⟪ σ ⟫ M • (ids ⨟ σ) ⟫ N
+     ≡⟨ cong-app (cong ⟪_⟫ (sym sub-dist)) N ⟩
+       ⟪ M • ids ⨟ σ ⟫ N
+     ≡⟨ sym (sub-sub{M = N}) ⟩
+       ⟪ σ ⟫ (⟪ M • ids ⟫ N)
+     ≡⟨ cong ⟪ σ ⟫ (sym (cong-app (cong ⟪_⟫ subst-Z-cons-ids) N)) ⟩
+       ⟪ σ ⟫ (N [ M ])
+     ∎
+
+
+rename-subst-commute : ∀{Γ Δ}{N : Term (suc Γ)}{M : Term Γ}{ρ : Rename Γ Δ }
+    → (rename (ext ρ) N) [ rename ρ M ] ≡ rename ρ (N [ M ])
+rename-subst-commute {Γ}{Δ}{N}{M}{ρ} =
+     begin
+       (rename (ext ρ) N) [ rename ρ M ]
+     ≡⟨ cong-app (cong ⟪_⟫ (cong subst-zero rename-subst-ren)) (rename (ext ρ) N) ⟩
+       (rename (ext ρ) N) [ ⟪ ren ρ ⟫ M ]
+     ≡⟨ cong ⟪ subst-zero (⟪ ren ρ ⟫ M) ⟫ (rename-subst-ren{M = N}) ⟩
+       (⟪ ren (ext ρ) ⟫ N) [ ⟪ ren ρ ⟫ M ]
+     ≡⟨  cong ⟪ subst-zero (⟪ ren ρ ⟫ M) ⟫ ( cong-app (cong ⟪_⟫ ren-ext) N) ⟩
+       (⟪ exts (ren ρ) ⟫ N) [ ⟪ ren ρ ⟫ M ]
+     ≡⟨ subst-commute{N = N} ⟩
+       ⟪ ren ρ ⟫ (N [ M ])
+     ≡⟨ sym rename-subst-ren ⟩
+       rename ρ (N [ M ])
+     ∎
+
+
+_〔_〕 : ∀ {Γ}
+        → Term (suc (suc Γ))
+        → Term Γ
+          ------------
+        → Term (suc Γ)
+_〔_〕 {Γ} N M = ⟪ exts (subst-zero M) ⟫ N
+
+
+substitution : ∀{Γ}{M : Term (suc (suc Γ))}{N : Term (suc Γ)}{L : Term Γ}
+    → (M [ N ]) [ L ] ≡ (M 〔 L 〕) [ (N [ L ]) ]
+substitution{M = M}{N = N}{L = L} =
+   sym (subst-commute{N = M}{M = N}{σ = subst-zero L})
+
+
