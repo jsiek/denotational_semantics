@@ -15,7 +15,6 @@ postulate
       -----------------------
     → f ≡ g
 
-
 data Var : ℕ → Set where
 
   Z : ∀ {Γ}
