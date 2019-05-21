@@ -6,23 +6,7 @@ open import Data.List using (List; []; _∷_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
-
-data Base : Set where
-  Nat : Base
-  𝔹 : Base
-
-data Prim : Set where
-  `_ : Base → Prim
-  _⇒_ : Base → Prim → Prim
-
-base-rep : Base → Set 
-base-rep Nat = ℕ
-base-rep 𝔹 = Bool
-
-rep : Prim → Set
-rep (` b) = base-rep b
-rep (b ⇒ p) = base-rep b → rep p
-
+open import Primitives
 
 data Op : Set where
   lam : Op
@@ -47,6 +31,11 @@ L · M = app ⦅ L ∷ M ∷ [] ⦆
 
 $ : ∀{Γ}{p : Prim} → rep p → Term Γ
 $ {Γ}{p} k = prim {p} k ⦅ [] ⦆
+
+data TermV : ∀{Γ} → Term Γ → Set where
+  t-var : ∀{Γ} → (x : Var Γ) → TermV (` x)
+  t-lam : ∀{Γ}{N : Term (suc Γ)} → TermV N → TermV (ƛ N)
+  t-app : ∀{Γ}{L M : Term Γ} → TermV L → TermV M → TermV (L · M)
 
 sub-lam : ∀{Γ Δ} {σ : Subst Γ Δ} {N : Term (suc Γ)}
         → ⟪ σ ⟫ (ƛ N) ≡ ƛ (⟪ exts σ ⟫ N)
