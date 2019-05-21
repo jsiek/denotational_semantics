@@ -1,9 +1,7 @@
 module Syntax (Op : Set) where
 
-open import Data.Nat
-  using (ℕ; zero; suc)
-open import Data.List
-  using (List; []; _∷_)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.List using (List; []; _∷_)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)

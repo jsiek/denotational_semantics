@@ -1,10 +1,8 @@
 module LambdaV where
 
-open import Data.Nat
-  using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc)
 open import Data.Bool  
-open import Data.List
-  using (List; []; _∷_)
+open import Data.List using (List; []; _∷_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
@@ -52,27 +50,11 @@ $ {Γ}{p} k = prim {p} k ⦅ [] ⦆
 
 sub-lam : ∀{Γ Δ} {σ : Subst Γ Δ} {N : Term (suc Γ)}
         → ⟪ σ ⟫ (ƛ N) ≡ ƛ (⟪ exts σ ⟫ N)
-sub-lam {σ = σ}{N = N} =
-  begin
-      ⟪ σ ⟫ (ƛ N)
-    ≡⟨ sub-op{Ms = (α N) ∷ []} ⟩
-      (lam ⦅ (⟪ σ ⟫ (α N)) ∷ [] ⦆)
-    ≡⟨⟩
-      ƛ (⟪ exts σ ⟫ N)
-  ∎
+sub-lam = refl
 
 sub-app : ∀{Γ Δ} {σ : Subst Γ Δ} {L M : Term Γ}
         → ⟪ σ ⟫ (L · M)  ≡ (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
-sub-app {σ = σ}{L}{M} =
-  begin
-      ⟪ σ ⟫ (L · M)
-    ≡⟨⟩
-      ⟪ σ ⟫ (app ⦅ L ∷ M ∷ [] ⦆)
-    ≡⟨ sub-op{Ms = L ∷ M ∷ []} ⟩
-      (app ⦅ (⟪ σ ⟫ L) ∷ (⟪ σ ⟫ M) ∷ [] ⦆)
-    ≡⟨⟩
-      (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
-  ∎
+sub-app = refl
 
 data TermValue : ∀ {Γ} → Term Γ → Set where
 
