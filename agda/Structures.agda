@@ -7,7 +7,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty renaming (⊥ to Bot)
 import LambdaV
-open LambdaV.ASTMod using (Var)
+open LambdaV.ASTMod using (Var; Z; S_; extensionality)
 
 open import Data.Nat using (ℕ; zero; suc)
 
@@ -29,23 +29,51 @@ record Domain (D : Set) : Set₁ where
     Cong↦ : ∀{u v u' v'} → u ↦ v ≡ u' ↦ v' → u ≡ u' × v ≡ v'
     Refl⊑ : ∀ {v} → v ⊑ v
     ConjL⊑ : ∀ {u v w} → v ⊑ u → w ⊑ u → (v ⊔ w) ⊑ u
-    Trans⊑ : ∀ {u v w} → u ⊑ v → v ⊑ w → u ⊑ w
 
-Env : ℕ → Set → Set
-Env Γ D = ∀ (x : Var Γ) → D
 
-Denotation : ℕ → Set → Set₁
-Denotation Γ D = (Env Γ D → D → Set)
+module LambdaModelMod
+  (D : Set)
+  (_⊑_ : D → D → Set)
+  (_⊔_ : D → D → D)
+  where
 
-record LambdaModel (D : Set) : Set₂ where
-  field
-    ℱ : ∀{Γ} → Denotation (suc Γ) D → Denotation Γ D
-    _●_ : ∀{Γ} → Denotation Γ D → Denotation Γ D → Denotation Γ D
-    _⊑_ : D → D → Set
-{-
-    _≃_ : ∀ {Γ} → (Denotation Γ D) → (Denotation Γ D) → Set
+  Env : ℕ → Set
+  Env Γ = ∀ (x : Var Γ) → D
 
-    ≃-refl : ∀ {Γ} → {D : Denotation Γ D} → D ≃ D
-    ≃-sym : ∀ {Γ} → {M N : Denotation Γ D} → M ≃ N → N ≃ M
-    ≃-trans : ∀ {Γ} → {M₁ M₂ M₃ : Denotation Γ D} → M₁ ≃ M₂ → M₂ ≃ M₃ → M₁ ≃ M₃
--}
+  `∅ : Env zero
+  `∅ ()
+
+  infixl 5 _`,_
+
+  _`,_ : ∀ {Γ} → Env Γ → D → Env (suc Γ)
+  (γ `, v) Z = v
+  (γ `, v) (S x) = γ x
+
+  init : ∀ {Γ} → Env (suc Γ) → Env Γ
+  init γ x = γ (S x)
+
+  last : ∀ {Γ} → Env (suc Γ) → D
+  last γ = γ Z
+
+  init-last : ∀ {Γ} → (γ : Env (suc Γ)) → γ ≡ (init γ `, last γ)
+  init-last {Γ} γ = extensionality lemma
+    where
+    lemma : ∀ (x : Var (suc Γ)) → γ x ≡ (init γ `, last γ) x
+    lemma Z      =  refl
+    lemma (S x)  =  refl
+
+  _`⊑_ : ∀ {Γ} → Env Γ → Env Γ → Set
+  _`⊑_ {Γ} γ δ = ∀ (x : Var Γ) → γ x ⊑ δ x
+
+  Denotation : ℕ → Set₁
+  Denotation Γ =
+    Σ[ E ∈ (Env Γ → D → Set) ]
+       (∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v) ×
+       (∀{γ}{v w} → E γ v → w ⊑ v → E γ w) ×
+       (∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v))
+
+  record LambdaModel : Set₁ where
+    field
+      ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
+      _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
+      Trans⊑ : ∀ {u v w} → u ⊑ v → v ⊑ w → u ⊑ w
