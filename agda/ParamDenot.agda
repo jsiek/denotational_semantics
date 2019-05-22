@@ -1,8 +1,12 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Primitives
-open import LambdaV using (Term; $; _·_; ƛ; TermV; t-var; t-lam; t-app)
-open LambdaV.AST using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Rename; Subst;
+open import LambdaV using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; lam; app)
+open LambdaV.ASTMod using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Rename; Subst;
      ext; exts; rename)
 open import Structures
+
+open import Data.List using (List; []; _∷_)
 open import Function using (_∘_)
 open import Data.Nat using (ℕ; zero; suc)
 import Relation.Binary.PropositionalEquality as Eq
@@ -11,76 +15,25 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 
-
 module ParamDenot
-    (Value : Set)
-    (domain : Domain Value)
+    (D : Set)
+    (model : LambdaModel D)
     where
 
+open LambdaModel model
 
-open Domain domain
+ℰ : ∀{Γ} → Term Γ → (Env Γ D → D → Set)
+ℰ ⟨ _ , t-var x ⟩ = λ ρ v → v ⊑ ρ x 
+ℰ ⟨ lam ⦅ (α N) ∷ [] ⦆ , t-lam Nt ⟩ = ℱ (ℰ ⟨ N , Nt ⟩)
+ℰ ⟨ app ⦅ L ∷ M ∷ [] ⦆ , t-app Lt Mt ⟩ = (ℰ ⟨ L , Lt ⟩) ● (ℰ ⟨ M , Mt ⟩)
 
-import Environment
-module E = Environment Value domain
-open E
+ℰ-⊑ : ∀{Γ}{M : Term Γ}{γ : Env Γ D}{v w : D}
+    → ℰ M γ v  → w ⊑ v
+      ----------------
+    → ℰ M γ w
+ℰ-⊑ ℰMγv v⊑w = {!!}
 
-Sem : ℕ → Set₁
-Sem Γ = (Env Γ → Value → Set)
-
-data ℘ : ∀{P : Prim} → rep P → Value → Set where
-   ℘-base : ∀{B}{b : base-rep B}
-              ---------------
-            → ℘ {` B} b (lit b)
-   ℘-fun :  ∀{B}{P}{f : base-rep B → rep P}{k : base-rep B}{v : Value}
-            → ℘ {P} (f k) v
-              -----------------------------
-            → ℘ {B ⇒ P} f ((lit {B} k) ↦ v)
-   ℘-⊔ :  ∀{P : Prim}{p : rep P}{v₁ v₂ : Value}
-            → ℘ {P} p v₁  →  ℘ {P} p v₂
-              -------------------------
-            → ℘ {P} p (v₁ ⊔ v₂)
-   ℘-⊥ :  ∀{P : Prim}{p : rep P}
-              ---------
-            → ℘ {P} p ⊥
-   ℘-⊑ :  ∀{P : Prim}{p : rep P}{v₁ v₂ : Value}
-            → ℘ {P} p v₁  →  v₂ ⊑ v₁
-              ----------------------
-            → ℘ {P} p v₂
-
-
-data ℰ : ∀{Γ} → Term Γ → Sem Γ where
-  ℰ-var : ∀ {Γ} {γ : Env Γ} {x}
-        ---------------
-      → ℰ (` x) γ (γ x)
-  ℰ-lit : ∀{Γ}{γ : Env Γ}{P : Prim} {p : rep P} {v : Value}
-        → ℘ {P} p v
-          --------------------
-        → ℰ ($ {Γ} {P} p) γ v
-  ℰ-app : ∀ {Γ} {γ : Env Γ} {M₁ M₂ v₁ v₂}
-        → ℰ M₁ γ (v₁ ↦ v₂)  →  ℰ M₂ γ v₁
-          ------------------------------
-        → ℰ (M₁ · M₂) γ v₂
-
-  ℰ-lam : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
-        → ℰ M (γ `, v₁) v₂
-          -------------------
-        → ℰ (ƛ M) γ (v₁ ↦ v₂)
-
-  ℰ-⊥ : ∀ {Γ} {γ : Env Γ} {M}
-          -----------
-        → ℰ (ƛ M) γ ⊥
-
-  ℰ-⊔ : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
-        → ℰ M γ v₁  →  ℰ M γ v₂
-          ---------------------
-        → ℰ M γ (v₁ ⊔ v₂)
-
-  ℰ-⊑ : ∀ {Γ} {γ : Env Γ} {M v₁ v₂}
-        → ℰ M γ v₁  →  v₂ ⊑ v₁
-          ---------------------
-        → ℰ M γ v₂
-
-
+{-
 var-inv : ∀ {Γ v x} {γ : Env Γ}
   → ℰ (` x) γ v
     -------------------
@@ -89,17 +42,6 @@ var-inv (ℰ-var) = Refl⊑
 var-inv (ℰ-⊔ d₁ d₂) = ConjL⊑ (var-inv d₁) (var-inv d₂)
 var-inv (ℰ-⊑ d lt) = Trans⊑ lt (var-inv d)
 
-Denotation : ℕ → Set₁
-Denotation Γ = (Env Γ → Value → Set)
-
-{-
-ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
-ℱ D γ (v ↦ w) = D (γ `, v) w
-ℱ D γ ⊥ = ⊤
-ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
--}
-
-{-
 lambda-inversion
   : ∀{Γ} {γ : Env Γ} {M : Term Γ} {N : Term (suc Γ)} {v v₁ v₂ : Value}
   → ℰ M γ v → M ≡ (ƛ N) → v ≡ (v₁ ↦ v₂)
@@ -128,7 +70,7 @@ lambda-inversion {v₁ = v₁} {v₂} (ℰ-⊑ ℰMv₁ v⊑v₁) eq1 eq2 =
 
 
 
-
+{-
 rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
   → (ρ : Rename Γ Δ)
   → γ `⊑ (δ ∘ ρ)
@@ -160,3 +102,4 @@ subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
 subst-ext σ d Z = ℰ-var
 subst-ext σ d (S x′) = rename-pres S_ (λ _ → Refl⊑) (d x′)
 
+-}

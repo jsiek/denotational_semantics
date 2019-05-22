@@ -24,13 +24,13 @@ data Var : ℕ → Set where
       ---------
     → Var (suc Γ)
 
-data Term : ℕ → Set where
+data AST : ℕ → Set where
 
-  `_ : ∀{Γ} → (x : Var Γ) → Term Γ
+  `_ : ∀{Γ} → (x : Var Γ) → AST Γ
 
-  α_ : ∀{Γ} → Term (suc Γ) → Term Γ
+  α_ : ∀{Γ} → AST (suc Γ) → AST Γ
   
-  _⦅_⦆ : ∀{Γ} → Op → List (Term Γ) → Term Γ
+  _⦅_⦆ : ∀{Γ} → Op → List (AST Γ) → AST Γ
 
   
 ext : ∀ {Γ Δ} → (Var Γ → Var Δ)
@@ -43,11 +43,11 @@ ext ρ (S x)  =  S (ρ x)
 rename : ∀ {Γ Δ}
   → (Var Γ → Var Δ)
     -----------------------
-  → (Term Γ → Term Δ)
+  → (AST Γ → AST Δ)
 renames : ∀ {Γ Δ}
   → (Var Γ → Var Δ)
     -------------------------------------
-  → (List (Term Γ) → List (Term Δ))
+  → (List (AST Γ) → List (AST Δ))
 
 rename ρ (` x)          =  ` (ρ x)
 rename ρ (α N)          =  α (rename (ext ρ) N)
@@ -56,21 +56,23 @@ renames ρ []            = []
 renames ρ (M ∷ Ms)      = rename ρ M ∷ renames ρ Ms
 
 
-exts : ∀ {Γ Δ} → (Var Γ → Term Δ)
+exts : ∀ {Γ Δ} → (Var Γ → AST Δ)
     -----------------------------
-  → Var (suc Γ) → Term (suc Δ)
+  → Var (suc Γ) → AST (suc Δ)
 exts σ Z      =  ` Z
 exts σ (S x)  =  rename S_ (σ x)
 
+Subst : ℕ → ℕ → Set
+Subst Γ Δ = Var Γ → AST Δ
 
 ⟪_⟫ : ∀ {Γ Δ}
-  → (Var Γ → Term Δ)
-    -----------------
-  → (Term Γ → Term Δ)
+  → Subst Γ Δ
+    -------------
+  → AST Γ → AST Δ
 substs : ∀ {Γ Δ}
-  → (Var Γ → Term Δ)
-    -------------------------------
-  → (List (Term Γ) → List (Term Δ))
+  → Subst Γ Δ
+    ---------------------------
+  → List (AST Γ) → List (AST Δ)
 
 ⟪ σ ⟫ (` k)          =  σ k
 ⟪ σ ⟫ (α N)          =  α (⟪ exts σ ⟫ N)
@@ -78,22 +80,20 @@ substs : ∀ {Γ Δ}
 substs σ []            = []
 substs σ (M ∷ Ms)      = ⟪ σ ⟫ M ∷ substs σ Ms
 
-subst-zero : ∀ {Γ} → (Term Γ) → Var (suc Γ) → (Term Γ)
+subst-zero : ∀ {Γ} → (AST Γ) → Var (suc Γ) → (AST Γ)
 subst-zero M Z      =  M
 subst-zero M (S x)  =  ` x
 
 _[_] : ∀ {Γ}
-        → Term (suc Γ)
-        → Term Γ
+        → AST (suc Γ)
+        → AST Γ
           ---------
-        → Term Γ
+        → AST Γ
 _[_] N M =  ⟪ subst-zero M ⟫ N
 
 Rename : ℕ → ℕ → Set
 Rename Γ Δ = Var Γ → Var Δ
 
-Subst : ℕ → ℕ → Set
-Subst Γ Δ = Var Γ → Term Δ
 
 ids : ∀{Γ} → Subst Γ Γ
 ids x = ` x
@@ -102,7 +102,7 @@ ids x = ` x
 ↑ x = ` (S x)
 
 infixr 6 _•_
-_•_ : ∀{Γ Δ} → (Term Δ) → Subst Γ Δ → Subst (suc Γ) Δ
+_•_ : ∀{Γ Δ} → (AST Δ) → Subst Γ Δ → Subst (suc Γ) Δ
 (M • σ) Z = M
 (M • σ) (S x) = σ x
 
@@ -116,12 +116,12 @@ ren : ∀{Γ Δ} → Rename Γ Δ → Subst Γ Δ
 ren ρ = ids ∘ ρ
 
 
-sub-head : ∀ {Γ Δ} {M : Term Δ}{σ : Subst Γ Δ}
+sub-head : ∀ {Γ Δ} {M : AST Δ}{σ : Subst Γ Δ}
          → ⟪ M • σ ⟫ (` Z) ≡ M
 sub-head = refl
 
 
-sub-tail : ∀{Γ Δ} {M : Term Δ} {σ : Subst Γ Δ}
+sub-tail : ∀{Γ Δ} {M : AST Δ} {σ : Subst Γ Δ}
          → (↑ ⨟ M • σ) ≡ σ
 sub-tail = extensionality λ x → refl
 
@@ -147,7 +147,7 @@ sub-idL : ∀{Γ Δ} {σ : Subst Γ Δ}
        → ids ⨟ σ ≡ σ
 sub-idL = extensionality λ x → refl
 
-sub-dist :  ∀{Γ Δ Σ} {σ : Subst Γ Δ} {τ : Subst Δ Σ} {M : Term Δ}
+sub-dist :  ∀{Γ Δ Σ} {σ : Subst Γ Δ} {τ : Subst Δ Σ} {M : AST Δ}
          → ((M • σ) ⨟ τ) ≡ ((⟪ τ ⟫ M) • (σ ⨟ τ))
 sub-dist {Γ}{Δ}{Σ}{σ}{τ}{M} = extensionality λ x → lemma {x = x}
   where
@@ -156,7 +156,7 @@ sub-dist {Γ}{Δ}{Σ}{σ}{τ}{M} = extensionality λ x → lemma {x = x}
   lemma {x = S x} = refl
 
 
-sub-op : ∀{Γ Δ} {σ : Subst Γ Δ} {o : Op}{Ms : List (Term Γ)}
+sub-op : ∀{Γ Δ} {σ : Subst Γ Δ} {o : Op}{Ms : List (AST Γ)}
         → ⟪ σ ⟫ (o ⦅ Ms ⦆)  ≡ o ⦅ substs σ Ms ⦆
 sub-op = refl        
 
@@ -170,9 +170,9 @@ ren-ext {Γ}{Δ}{ρ} = extensionality λ x → lemma {x = x}
   lemma {x = S x} = refl
 
 
-rename-subst-ren : ∀ {Γ Δ} {ρ : Rename Γ Δ}{M : Term Γ}
+rename-subst-ren : ∀ {Γ Δ} {ρ : Rename Γ Δ}{M : AST Γ}
                  → rename ρ M ≡ ⟪ ren ρ ⟫ M
-renames-subst-ren : ∀ {Γ Δ} {ρ : Rename Γ Δ}{Ms : List (Term Γ)}
+renames-subst-ren : ∀ {Γ Δ} {ρ : Rename Γ Δ}{Ms : List (AST Γ)}
                  → renames ρ Ms ≡ substs (ren ρ) Ms
 rename-subst-ren {M = ` x} = refl
 rename-subst-ren {ρ = ρ}{M = α N} =
@@ -201,7 +201,7 @@ ren-shift {Γ} = extensionality λ x → lemma {x = x}
   lemma {x = S x} = refl
 
 
-rename-shift : ∀{Γ} {M : Term Γ}
+rename-shift : ∀{Γ} {M : AST Γ}
              → rename (S_) M ≡ ⟪ ↑ ⟫ M
 rename-shift{Γ}{M} =
   begin
@@ -235,17 +235,17 @@ ext-cons-Z-shift {Γ}{Δ}{ρ} =
   ∎
 
 
-subst-Z-cons-ids : ∀{Γ}{M : Term Γ}
+subst-Z-cons-ids : ∀{Γ}{M : AST Γ}
                  → subst-zero M ≡ (M • ids)
 subst-Z-cons-ids = extensionality λ x → lemma {x = x}
   where
-  lemma : ∀{Γ}{M : Term Γ}{x : Var (suc Γ)}
+  lemma : ∀{Γ}{M : AST Γ}{x : Var (suc Γ)}
                       → subst-zero M x ≡ (M • ids) x
   lemma {x = Z} = refl
   lemma {x = S x} = refl
 
 
-sub-abs : ∀{Γ Δ} {σ : Subst Γ Δ} {N : Term (suc Γ)}
+sub-abs : ∀{Γ Δ} {σ : Subst Γ Δ} {N : AST (suc Γ)}
         → ⟪ σ ⟫ (α N) ≡ α ⟪ (` Z) • (σ ⨟ ↑) ⟫ N
 sub-abs {σ = σ}{N = N} =
    begin
@@ -265,9 +265,9 @@ exts-ids {Γ} = extensionality lemma
         lemma (S x) = refl
 
 
-sub-id : ∀{Γ} {M : Term Γ}
+sub-id : ∀{Γ} {M : AST Γ}
          → ⟪ ids ⟫ M ≡ M
-subs-id : ∀{Γ} {Ms : List (Term Γ)}
+subs-id : ∀{Γ} {Ms : List (AST Γ)}
          → substs ids Ms ≡ Ms
 sub-id {M = ` x} = refl
 sub-id {M = α N} = 
@@ -306,9 +306,9 @@ compose-ext = extensionality λ x → lemma {x = x}
   lemma {x = S x} = refl
 
 
-compose-rename : ∀{Γ Δ Σ}{M : Term Γ}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
+compose-rename : ∀{Γ Δ Σ}{M : AST Γ}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
   → rename ρ (rename ρ′ M) ≡ rename (ρ ∘ ρ′) M
-compose-renames : ∀{Γ Δ Σ}{Ms : List (Term Γ)}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
+compose-renames : ∀{Γ Δ Σ}{Ms : List (AST Γ)}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
   → renames ρ (renames ρ′ Ms) ≡ renames (ρ ∘ ρ′) Ms
 compose-rename {M = ` x} = refl
 compose-rename {Γ}{Δ}{Σ}{α N}{ρ}{ρ′} = cong α_ G
@@ -327,11 +327,11 @@ compose-renames {Ms = []} = refl
 compose-renames {Ms = M ∷ Ms} = cong₂ _∷_ compose-rename compose-renames
 
 
-commute-subst-rename : ∀{Γ Δ}{M : Term Γ}{σ : Subst Γ Δ}
+commute-subst-rename : ∀{Γ Δ}{M : AST Γ}{σ : Subst Γ Δ}
                         {ρ : ∀{Γ} → Rename Γ (suc Γ)}
      → (∀{x : Var Γ} → exts σ (ρ x) ≡ rename ρ (σ x))
      → ⟪ exts σ ⟫ (rename ρ M) ≡ rename ρ (⟪ σ ⟫ M)
-commute-subst-renames : ∀{Γ Δ}{Ms : List (Term Γ)}{σ : Subst Γ Δ}
+commute-subst-renames : ∀{Γ Δ}{Ms : List (AST Γ)}{σ : Subst Γ Δ}
                         {ρ : ∀{Γ} → Rename Γ (suc Γ)}
      → (∀{x : Var Γ} → exts σ (ρ x) ≡ rename ρ (σ x))
      → substs (exts σ) (renames ρ Ms) ≡ renames ρ (substs σ Ms)
@@ -388,9 +388,9 @@ exts-seq = extensionality λ x → lemma {x = x}
      ∎
 
 
-sub-sub : ∀{Γ Δ Σ}{M : Term Γ} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
+sub-sub : ∀{Γ Δ Σ}{M : AST Γ} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
             → ⟪ σ₂ ⟫ (⟪ σ₁ ⟫ M) ≡ ⟪ σ₁ ⨟ σ₂ ⟫ M
-sub-subs : ∀{Γ Δ Σ}{Ms : List (Term Γ)} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
+sub-subs : ∀{Γ Δ Σ}{Ms : List (AST Γ)} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
             → substs σ₂ (substs σ₁ Ms) ≡ substs (σ₁ ⨟ σ₂) Ms
 sub-sub {M = ` x} = refl
 sub-sub {Γ}{Δ}{Σ}{α N}{σ₁}{σ₂} =
@@ -409,7 +409,7 @@ sub-subs {Ms = []} = refl
 sub-subs {Ms = M ∷ Ms} = cong₂ _∷_ (sub-sub{M = M}) sub-subs
 
 
-rename-subst : ∀{Γ Δ Δ′}{M : Term Γ}{ρ : Rename Γ Δ}{σ : Subst Δ Δ′}
+rename-subst : ∀{Γ Δ Δ′}{M : AST Γ}{ρ : Rename Γ Δ}{σ : Subst Δ Δ′}
              → ⟪ σ ⟫ (rename ρ M) ≡ ⟪ σ ∘ ρ ⟫ M
 rename-subst {Γ}{Δ}{Δ′}{M}{ρ}{σ} =
    begin
@@ -441,7 +441,7 @@ sub-assoc {Γ}{Δ}{Σ}{Ψ}{σ}{τ}{θ} = extensionality λ x → lemma{x = x}
       ∎
 
 
-subst-zero-exts-cons : ∀{Γ Δ}{σ : Subst Γ Δ}{M : Term Δ}
+subst-zero-exts-cons : ∀{Γ Δ}{σ : Subst Γ Δ}{M : AST Δ}
                      → exts σ ⨟ subst-zero M ≡ M • σ
 subst-zero-exts-cons {Γ}{Δ}{σ}{M} =
     begin
@@ -461,7 +461,7 @@ subst-zero-exts-cons {Γ}{Δ}{σ}{M} =
     ∎
 
 
-subst-commute : ∀{Γ Δ : ℕ}{N : Term (suc Γ)}{M : Term Γ}{σ : Subst Γ Δ }
+subst-commute : ∀{Γ Δ : ℕ}{N : AST (suc Γ)}{M : AST Γ}{σ : Subst Γ Δ }
     → (⟪ exts σ ⟫ N) [ ⟪ σ ⟫ M ] ≡ ⟪ σ ⟫ (N [ M ])
 subst-commute {Γ}{Δ}{N}{M}{σ} =
      begin
@@ -495,7 +495,7 @@ subst-commute {Γ}{Δ}{N}{M}{σ} =
      ∎
 
 
-rename-subst-commute : ∀{Γ Δ}{N : Term (suc Γ)}{M : Term Γ}{ρ : Rename Γ Δ }
+rename-subst-commute : ∀{Γ Δ}{N : AST (suc Γ)}{M : AST Γ}{ρ : Rename Γ Δ }
     → (rename (ext ρ) N) [ rename ρ M ] ≡ rename ρ (N [ M ])
 rename-subst-commute {Γ}{Δ}{N}{M}{ρ} =
      begin
@@ -514,14 +514,14 @@ rename-subst-commute {Γ}{Δ}{N}{M}{ρ} =
 
 
 _〔_〕 : ∀ {Γ}
-        → Term (suc (suc Γ))
-        → Term Γ
+        → AST (suc (suc Γ))
+        → AST Γ
           ------------
-        → Term (suc Γ)
+        → AST (suc Γ)
 _〔_〕 {Γ} N M = ⟪ exts (subst-zero M) ⟫ N
 
 
-substitution : ∀{Γ}{M : Term (suc (suc Γ))}{N : Term (suc Γ)}{L : Term Γ}
+substitution : ∀{Γ}{M : AST (suc (suc Γ))}{N : AST (suc Γ)}{L : AST Γ}
     → (M [ N ]) [ L ] ≡ (M 〔 L 〕) [ (N [ L ]) ]
 substitution{M = M}{N = N}{L = L} =
    sym (subst-commute{N = M}{M = N}{σ = subst-zero L})
