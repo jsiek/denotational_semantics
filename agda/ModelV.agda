@@ -68,7 +68,8 @@ open LM
 
 ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
 ℱ {Γ} ⟨ D , ⟨ up-env , ⟨ down-closed , ⊔-closed ⟩ ⟩ ⟩ =
-   ⟨ F , ⟨ (λ {γ}{δ}{v} x x₁ → up-F {γ}{δ}{v} x x₁ ) ,
+   ⟨ F ,
+   ⟨ (λ {γ}{δ}{v} x x₁ → up-F {γ}{δ}{v} x x₁ ) ,
    ⟨ sub-F ,
      (λ {γ}{u}{v} x x₁ → F-⊔{γ}{u}{v} x x₁) ⟩ ⟩ ⟩
    where
