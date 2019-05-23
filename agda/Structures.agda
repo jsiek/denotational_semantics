@@ -7,9 +7,10 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty renaming (⊥ to Bot)
 import LambdaV
-open LambdaV.ASTMod using (Var; Z; S_; extensionality)
+open LambdaV.ASTMod using (Rename; Var; Z; S_; ext; extensionality)
 
 open import Data.Nat using (ℕ; zero; suc)
+open import Function using (_∘_)
 
 _iff_ : Set → Set → Set
 P iff Q = (P → Q) × (Q → P)
@@ -65,15 +66,17 @@ module LambdaModelMod
   _`⊑_ : ∀ {Γ} → Env Γ → Env Γ → Set
   _`⊑_ {Γ} γ δ = ∀ (x : Var Γ) → γ x ⊑ δ x
 
-  Denotation : ℕ → Set₁
-  Denotation Γ =
-    Σ[ E ∈ (Env Γ → D → Set) ]
-       (∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v) ×
-       (∀{γ}{v w} → E γ v → w ⊑ v → E γ w) ×
-       (∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v))
-
+  record Denotation (Γ : ℕ) : Set₁ where
+    field
+      E : Env Γ → D → Set
+      up-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
+      ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
+      ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
+      
   record LambdaModel : Set₁ where
     field
       ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
       _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
+      Refl⊑ : ∀ {v} → v ⊑ v
       Trans⊑ : ∀ {u v w} → u ⊑ v → v ⊑ w → u ⊑ w
+      ConjL⊑ : ∀ {u v w} → v ⊑ u → w ⊑ u → (v ⊔ w) ⊑ u

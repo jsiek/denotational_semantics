@@ -1,7 +1,7 @@
 
 open import Structures
 open import LambdaV
-  using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; TSubst; ⌊_⌋; ⟪_⟫; lam; app)
+  using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; Subst; ⌊_⌋; ⟪_⟫; lam; app)
 open LambdaV.ASTMod using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Subst; exts)
 
 open import Data.List using (List; []; _∷_)
@@ -12,9 +12,10 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
 module ParamSoundness
   (D : Set)
   (_⊑_ : D → D → Set)
+  (_⊔_ : D → D → D)
   where
 
-  module LM = LambdaModelMod D _⊑_
+  module LM = LambdaModelMod D _⊑_ _⊔_
   open LM
   open LambdaModel
 

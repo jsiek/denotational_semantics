@@ -1,9 +1,8 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 open import Primitives
-open import LambdaV using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; lam; app)
-open LambdaV.ASTMod using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Rename; Subst;
-     ext; exts; rename)
+open import LambdaV
+   using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; lam; app; rename)
+open LambdaV.ASTMod
+   using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Rename; Subst; ext; exts)
 open import Structures
 
 open import Data.List using (List; []; _∷_)
@@ -18,9 +17,10 @@ open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 module ParamDenot
     (D : Set)
     (_⊑_ : D → D → Set)
+    (_⊔_ : D → D → D)
     where
 
-module LM = LambdaModelMod D _⊑_
+module LM = LambdaModelMod D _⊑_ _⊔_
 open LM
 
 module Denot (model : LambdaModel) where
@@ -28,10 +28,23 @@ module Denot (model : LambdaModel) where
   open LambdaModel model
 
   ℰ : ∀{Γ} → Term Γ → Denotation Γ
-  ℰ ⟨ _ , t-var x ⟩ =
-      ⟨ (λ ρ v → v ⊑ ρ x) ,
-      ⟨ (λ x₁ x₂ → Trans⊑ x₁ (x₂ x)) ,
-        (λ x₁ x₂ → Trans⊑ x₂ x₁) ⟩ ⟩
+  ℰ {Γ} ⟨ _ , t-var x ⟩ =
+     record { E = E ; up-env = up-env ;
+              ⊑-closed = λ {γ v w} x₁ x₂ → var-⊑ {γ}{v}{w} x₁ x₂ ;
+              ⊔-closed = λ {γ u v} x y → var-⊔ {γ}{u}{v} x y }
+     where
+       E : Env Γ → D → Set
+       E ρ v = v ⊑ ρ x
+
+       up-env : ∀ {γ δ : Env Γ} {v : D} → v ⊑ γ x → γ `⊑ δ → v ⊑ δ x
+       up-env v⊑γx γ⊑δ = Trans⊑ v⊑γx (γ⊑δ x)
+
+       var-⊑ : ∀ {γ : Env Γ} {v w : D} → v ⊑ γ x → w ⊑ v → w ⊑ γ x
+       var-⊑ v⊑γx w⊑v = Trans⊑ w⊑v v⊑γx
+
+       var-⊔ : ∀ {γ : Env Γ} {u v : D} → u ⊑ γ x → v ⊑ γ x → (u ⊔ v) ⊑ γ x
+       var-⊔ u⊑γx v⊑γx = ConjL⊑ u⊑γx v⊑γx
+
   ℰ {Γ} ⟨ lam ⦅ (α N) ∷ [] ⦆ , t-lam Nt ⟩ = ℱ (ℰ ⟨ N , Nt ⟩)
   ℰ ⟨ app ⦅ L ∷ M ∷ [] ⦆ , t-app Lt Mt ⟩ = (ℰ ⟨ L , Lt ⟩) ● (ℰ ⟨ M , Mt ⟩)
 
@@ -74,11 +87,37 @@ module Denot (model : LambdaModel) where
     {!!}
   -}
 
+  lambda-inversion
+    : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v v₁ v₂ : Value}
+    → Denotation.E (ℱ D) γ v → v ≡ (v₁ ↦ v₂)
+      --------------------------------------------------
+    → ℰ N (γ `, v₁) v₂
 
 
+  ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
+    → (ρ : Rename Γ Δ)
+    → γ `⊑ (δ ∘ ρ)
+      ------------------------------
+    → (γ `, v) `⊑ ((δ `, v) ∘ ext ρ)
+  ext-nth ρ lt Z = Refl⊑
+  ext-nth ρ lt (S n′) = lt n′
 
-
-
+  rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
+    → (ρ : Rename Γ Δ)
+    → γ `⊑ (δ ∘ ρ)
+    → Denotation.E (ℰ M) γ v
+      ---------------------------------
+    → Denotation.E (ℰ (rename ρ M)) δ v
+  rename-pres {Γ} {Δ} {v} {γ} {δ} {⟨ _ , t-var x ⟩} ρ γ⊑δ∘ρ ℰMγv =
+    LambdaModel.Trans⊑ model ℰMγv (γ⊑δ∘ρ x)
+  rename-pres {Γ} {Δ} {v} {γ} {δ} {⟨ (lam ⦅ (α N) ∷ [] ⦆) , t-lam Nt ⟩} ρ γ⊑δ∘ρ ℱℰNγv =
+     let ih = rename-pres {v = v}{γ `, v}{δ `, v}{⟨ N , Nt ⟩ } (ext ρ) (ext-nth ρ γ⊑δ∘ρ) {!!} in
+     {!!}
+{-
+    let ih = rename-pres {v = v}{δ = δ `, v}{M = {!!}} (ext ρ) (ext-nth ρ γ⊑δ∘ρ) ℰNγv in
+    ih
+-}
+  rename-pres {Γ} {Δ} {v} {γ} {δ} {⟨ (app ⦅ L ∷ M ∷ [] ⦆) , t-app Lt Mt ⟩} ρ γ⊑δ∘ρ ℰMγv = {!!}
 
 
 

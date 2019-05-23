@@ -16,9 +16,9 @@ data Op : Set where
 
 import Syntax
 module ASTMod = Syntax Op
-open ASTMod using (`_; α_; _⦅_⦆; Var; Rename; Subst; _[_]; Z; S_; _•_; _⨟_; ↑;
-                sub-abs; sub-op; exts; exts-cons-shift; rename; extensionality)
-            renaming (⟪_⟫ to subst)
+open ASTMod using (`_; α_; _⦅_⦆; Var; Rename; _[_]; Z; S_; _•_; _⨟_; ↑;
+                sub-abs; sub-op; exts; exts-cons-shift; extensionality)
+            renaming (⟪_⟫ to subst; rename to srename; Subst to SSubst)
 
 AST : ℕ → Set
 AST Γ = ASTMod.AST Γ
@@ -42,44 +42,50 @@ data IsTerm : ∀{Γ} → AST Γ → Set where
 Term : ℕ → Set
 Term Γ = Σ[ M ∈ AST Γ ] IsTerm M
 
-TSubst : ℕ → ℕ → Set
-TSubst Γ Δ = Var Γ → Σ[ M ∈ AST Δ ] IsTerm M
+Subst : ℕ → ℕ → Set
+Subst Γ Δ = Var Γ → Σ[ M ∈ AST Δ ] IsTerm M
 
 rename-pres-term : ∀{Γ Δ}{M : AST Γ}{ρ : Rename Γ Δ} → IsTerm M
-                 → IsTerm (rename ρ M)
+                 → IsTerm (srename ρ M)
 rename-pres-term {ρ = ρ} (t-var x) = t-var (ρ x)
 rename-pres-term (t-lam Mt) = t-lam (rename-pres-term Mt)
 rename-pres-term (t-app Mt Mt₁) =
   t-app (rename-pres-term Mt) (rename-pres-term Mt₁)
 
-texts : ∀ {Γ Δ} → (TSubst Γ Δ)
+texts : ∀ {Γ Δ} → (Subst Γ Δ)
         ----------------------
-      → TSubst (suc Γ) (suc Δ)
+      → Subst (suc Γ) (suc Δ)
 texts σ Z      =  ⟨ ` Z , t-var Z ⟩
-texts σ (S x)  =  ⟨ rename S_ (proj₁ (σ x)) , rename-pres-term (proj₂ (σ x)) ⟩
+texts σ (S x)  =  ⟨ srename S_ (proj₁ (σ x)) , rename-pres-term (proj₂ (σ x)) ⟩
+
+rename : ∀ {Γ Δ}
+  → Rename Γ Δ
+    -------------
+  → Term Γ → Term Δ
+rename ρ ⟨ M , Mt ⟩ = ⟨ (srename ρ M) , (rename-pres-term Mt) ⟩
 
 ⟪_⟫ : ∀ {Γ Δ}
-  → TSubst Γ Δ
+  → Subst Γ Δ
     -------------
   → Term Γ → Term Δ
 tsubsts : ∀ {Γ Δ}
-  → TSubst Γ Δ
+  → Subst Γ Δ
     ---------------------------
   → List (Term Γ) → List (Term Δ)
 
-⌊_⌋ : ∀{Γ Δ} → TSubst Γ Δ → Subst Γ Δ
+⌊_⌋ : ∀{Γ Δ} → Subst Γ Δ → SSubst Γ Δ
 ⌊ σ ⌋ x = proj₁ (σ x)
 
-sub-lam : ∀{Γ Δ} {σ : Subst Γ Δ} {N : AST (suc Γ)}
+sub-lam : ∀{Γ Δ} {σ : SSubst Γ Δ} {N : AST (suc Γ)}
         → subst σ (ƛ N) ≡ ƛ (subst (exts σ) N)
 sub-lam = refl
 
-sub-app : ∀{Γ Δ} {σ : Subst Γ Δ} {L M : AST Γ}
+sub-app : ∀{Γ Δ} {σ : SSubst Γ Δ} {L M : AST Γ}
         → subst σ (L · M)  ≡ (subst σ L) · (subst σ M)
 sub-app = refl
 
 
-texts-exts : ∀{Γ Δ}{σ : TSubst Γ Δ}
+texts-exts : ∀{Γ Δ}{σ : Subst Γ Δ}
            → ⌊ texts σ ⌋ ≡ exts ⌊ σ ⌋
 texts-exts {σ = σ} = extensionality λ x → G {x}
   where
@@ -87,7 +93,7 @@ texts-exts {σ = σ} = extensionality λ x → G {x}
   G {Syntax.Z} = refl
   G {Syntax.S x} = refl
 
-subst-term : ∀{Γ Δ}{M : AST Γ}{σ : TSubst Γ Δ}
+subst-term : ∀{Γ Δ}{M : AST Γ}{σ : Subst Γ Δ}
            → IsTerm M
            → IsTerm (subst ⌊ σ ⌋ M)
 subst-term {σ = σ} (t-var x) = proj₂ (σ x)

@@ -63,18 +63,28 @@ Refl⊑ {⊥} = Bot⊑
 Refl⊑ {v ↦ v′} = Fun⊑ Refl⊑ Refl⊑
 Refl⊑ {v₁ ⊔ v₂} = ConjL⊑ (ConjR1⊑ Refl⊑) (ConjR2⊑ Refl⊑)
 
+⊔⊑⊔ : ∀ {v w v′ w′}
+      → v ⊑ v′  →  w ⊑ w′
+        -----------------------
+      → (v ⊔ w) ⊑ (v′ ⊔ w′)
+⊔⊑⊔ d₁ d₂ = ConjL⊑ (ConjR1⊑ d₁) (ConjR2⊑ d₂)
+
+Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
+        → (v ⊔ v′) ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v′ ↦ w′)
+Dist⊔↦⊔ = Trans⊑ Dist⊑ (⊔⊑⊔ (Fun⊑ (ConjR1⊑ Refl⊑) Refl⊑)
+                            (Fun⊑ (ConjR2⊑ Refl⊑) Refl⊑))
+
 module LM = LambdaModelMod Value _⊑_ _⊔_
 open LM
 
 ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
-ℱ {Γ} ⟨ D , ⟨ up-env , ⟨ down-closed , ⊔-closed ⟩ ⟩ ⟩ =
-   ⟨ F ,
-   ⟨ (λ {γ}{δ}{v} x x₁ → up-F {γ}{δ}{v} x x₁ ) ,
-   ⟨ sub-F ,
-     (λ {γ}{u}{v} x x₁ → F-⊔{γ}{u}{v} x x₁) ⟩ ⟩ ⟩
+ℱ {Γ} D = record { E = F ;
+                    up-env = λ {γ}{δ}{v} x x₁ → up-F {γ}{δ}{v} x x₁ ;
+                    ⊑-closed = sub-F ;
+                    ⊔-closed = λ {γ}{u}{v} x x₁ → F-⊔{γ}{u}{v} x x₁ }
    where
    F : Env Γ → Value → Set
-   F γ (v ↦ w) = D (γ `, v) w
+   F γ (v ↦ w) = Denotation.E D (γ `, v) w
    F γ ⊥ = ⊤
    F γ (u ⊔ v) = (F γ u) × (F γ v)
 
@@ -82,7 +92,7 @@ open LM
         F γ v → ((x : Var Γ) → γ x ⊑ δ x) → F δ v
    up-F {v = ⊥} Fγv γ⊑δ = tt
    up-F {γ}{δ} {v = v ↦ w} Fγv γ⊑δ =
-      up-env Fγv b
+      Denotation.up-env D Fγv b
       where b : (γ `, v) `⊑ (δ `, v)
             b Z = Refl⊑
             b (S x) = γ⊑δ x
@@ -97,61 +107,63 @@ open LM
    sub-F Fγv (ConjR2⊑ wv) = sub-F (proj₂ Fγv) wv
    sub-F Fγv (Trans⊑ wv wv₁) = sub-F (sub-F Fγv wv₁) wv
    sub-F {γ}{v ↦ w}{v' ↦ w'} Fγv (Fun⊑ wv wv₁) =
-      let a = up-env Fγv b in
-      down-closed a wv₁
+      let a = Denotation.up-env D Fγv b in
+      Denotation.⊑-closed D a wv₁
       where b : (γ `, v) `⊑ (γ `, v')
             b Z = wv
             b (S x) = Refl⊑ 
-   sub-F ⟨ fst , snd ⟩ Dist⊑ = ⊔-closed fst snd
+   sub-F ⟨ Eγvw , Eγvw′ ⟩ Dist⊑ = Denotation.⊔-closed D Eγvw Eγvw′
 
    F-⊔ : ∀{γ : Env Γ} {u v : Value} → F γ u → F γ v → F γ u × F γ v
    F-⊔ d1 d2 = ⟨ d1 , d2 ⟩
 
-{-
 infixl 7 _●_
 
-_●_ : ∀{Γ} → Denotation Γ Value → Denotation Γ Value → Denotation Γ Value
-(D₁ ● D₂) γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ]( D₁ γ (v ↦ w) × D₂ γ v )
+_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
+_●_ {Γ} D₁ D₂ = record { E = app ;
+                         up-env = up-env ;
+                         ⊑-closed = ●-⊑ ;
+                         ⊔-closed = ●-⊔ }
+  where
+  app : Env Γ → Value → Set
+  app γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] Denotation.E D₁ γ (v ↦ w)
+                                 × Denotation.E D₂ γ v 
 
-sub-ℱ : ∀{Γ}{D}{γ v u}
-      → ℱ {Γ} D γ v
-      → u ⊑ v
-        ------------
-      → ℱ D γ u
-sub-ℱ d Bot⊑ = tt
-sub-ℱ d (Fun⊑ lt lt′) = {!!}
-sub-ℱ d (ConjL⊑ lt lt₁) = ⟨ sub-ℱ d lt , sub-ℱ d lt₁ ⟩
-sub-ℱ d (ConjR1⊑ lt) = sub-ℱ (proj₁ d) lt
-sub-ℱ d (ConjR2⊑ lt) = sub-ℱ (proj₂ d) lt
-sub-ℱ {v = v₁ ↦ v₂ ⊔ v₁ ↦ v₃} {v₁ ↦ (v₂ ⊔ v₃)} ⟨ N2 , N3 ⟩ Dist⊑ =
-   {!!}
-sub-ℱ d (Trans⊑ x₁ x₂) = sub-ℱ (sub-ℱ d x₂) x₁
+  up-env : ∀{γ δ : Env Γ} {w : Value} → app γ w → γ `⊑ δ → app δ w
+  up-env (inj₁ w⊑⊥) γ⊑δ = inj₁ w⊑⊥
+  up-env (inj₂ ⟨ v , ⟨ Eγv↦w , Eγv ⟩ ⟩) γ⊑δ =
+    inj₂ ⟨ v ,
+         ⟨ Denotation.up-env D₁ Eγv↦w γ⊑δ ,
+           Denotation.up-env D₂ Eγv γ⊑δ ⟩ ⟩
 
-_≃_ : ∀ {Γ} → (Denotation Γ Value) → (Denotation Γ Value) → Set
-(_≃_ {Γ} D₁ D₂) = (γ : Env Γ Value) → (v : Value) → D₁ γ v iff D₂ γ v
+  ●-⊑ : ∀ {γ : Var Γ → Value} {v w : Value} → app γ v → w ⊑ v → app γ w
+  ●-⊑ (inj₁ v⊑⊥) w⊑v = inj₁ (Trans⊑ w⊑v v⊑⊥)
+  ●-⊑ {v = v}{w} (inj₂ ⟨ v' , ⟨ Eγv'↦v , Eγv' ⟩ ⟩) w⊑v =
+    inj₂ ⟨ v' , ⟨ Denotation.⊑-closed D₁ Eγv'↦v lt , Eγv' ⟩ ⟩
+    where lt : v' ↦ w ⊑ v' ↦ v
+          lt = Fun⊑ Refl⊑ w⊑v
 
-≃-refl : ∀ {Γ} → {M : Denotation Γ Value}
-  → M ≃ M
-≃-refl γ v = ⟨ (λ x → x) , (λ x → x) ⟩
+  ●-⊔ : ∀ {γ : Var Γ → Value} {u v : Value} → app γ u → app γ v → app γ (u ⊔ v)
+  ●-⊔ (inj₁ u⊑⊥) (inj₁ v⊑⊥) = inj₁ (ConjL⊑ u⊑⊥ v⊑⊥)
+  ●-⊔ {u = u}{v} (inj₁ u⊑⊥) (inj₂ ⟨ v' , ⟨ Eγv'↦v , Eγv' ⟩ ⟩) =
+     inj₂ ⟨ v' , ⟨ Denotation.⊑-closed D₁ Eγv'↦v lt , Eγv' ⟩ ⟩
+     where lt : v' ↦ (u ⊔ v) ⊑ v' ↦ v
+           lt = Fun⊑ Refl⊑ (ConjL⊑ (Trans⊑ u⊑⊥ Bot⊑) Refl⊑)
+  ●-⊔ {u = u}{v} (inj₂ ⟨ v' , ⟨ Eγv'↦v , Eγv' ⟩ ⟩) (inj₁ u⊑⊥) =
+     inj₂ ⟨ v' , ⟨ Denotation.⊑-closed D₁ Eγv'↦v lt , Eγv' ⟩ ⟩
+     where lt : v' ↦ (u ⊔ v) ⊑ v' ↦ u
+           lt = Fun⊑ Refl⊑ (ConjL⊑ Refl⊑ (Trans⊑ u⊑⊥ Bot⊑))
+  ●-⊔ {u = u}{v} (inj₂ ⟨ u₁ , ⟨ Eγu₁↦v , Eγu₁ ⟩ ⟩)
+                 (inj₂ ⟨ v₁ , ⟨ Eγv₁↦v , Eγv₁ ⟩ ⟩) =
+     let a = Denotation.⊔-closed D₁ Eγu₁↦v Eγv₁↦v in
+     let b = Denotation.⊔-closed D₂ Eγu₁ Eγv₁ in
+     inj₂ ⟨ (u₁ ⊔ v₁) , ⟨ Denotation.⊑-closed D₁ a Dist⊔↦⊔ , b ⟩ ⟩
 
-≃-sym : ∀ {Γ} → {M N : Denotation Γ Value}
-  → M ≃ N
-    -----
-  → N ≃ M
-≃-sym eq γ v = ⟨ (proj₂ (eq γ v)) , (proj₁ (eq γ v)) ⟩
 
-≃-trans : ∀ {Γ} → {M₁ M₂ M₃ : Denotation Γ Value}
-  → M₁ ≃ M₂
-  → M₂ ≃ M₃
-    -------
-  → M₁ ≃ M₃
-≃-trans eq1 eq2 γ v = ⟨ (λ z → proj₁ (eq2 γ v) (proj₁ (eq1 γ v) z)) ,
-                        (λ z → proj₂ (eq1 γ v) (proj₂ (eq2 γ v) z)) ⟩
-
-model : LambdaModel Value
+model : LambdaModel 
 model = record { ℱ = ℱ ;
                  _●_ = _●_ ;
-                 _⊑_ = _⊑_ ;
-                 Trans⊑ = Trans⊑
+                 Refl⊑ = Refl⊑ ;
+                 Trans⊑ = Trans⊑ ;
+                 ConjL⊑ = ConjL⊑
                  }
--}
