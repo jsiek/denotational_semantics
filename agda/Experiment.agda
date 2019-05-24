@@ -90,7 +90,8 @@ module Model
     → ℰ M γ ≃ ℰ (rename ρ M) δ
   rename-equiv {M = ⟨ .(` x) , t-var x ⟩} γ≡δ∘ρ = {!!}
   rename-equiv {M = ⟨ .(lam ⦅ (α _) ∷ [] ⦆) , t-lam Mt ⟩} γ≡δ∘ρ = {!!}
-  rename-equiv {Γ}{Δ}{γ}{δ}{⟨ (app ⦅ L ∷ M ∷ [] ⦆) , t-app Lt Mt ⟩}{ρ} γ≡δ∘ρ = G
+  rename-equiv {Γ}{Δ}{γ}{δ}{⟨ (app ⦅ L ∷ M ∷ [] ⦆) , t-app Lt Mt ⟩}{ρ} γ≡δ∘ρ =
+    G
     where
     L' = ⟨ L , Lt ⟩
     M' = ⟨ M , Mt ⟩
