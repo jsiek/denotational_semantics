@@ -159,9 +159,32 @@ _●_ {Γ} D₁ D₂ = record { E = app ;
      let b = Denotation.⊔-closed D₂ Eγu₁ Eγv₁ in
      inj₂ ⟨ (u₁ ⊔ v₁) , ⟨ Denotation.⊑-closed D₁ a Dist⊔↦⊔ , b ⟩ ⟩
 
+var : {Γ : ℕ} → Var Γ → Denotation Γ
+var {Γ} x = record { E = E ; up-env = up-env ;
+                 ⊑-closed = λ {γ v w} x₁ x₂ → var-⊑ {γ}{v}{w} x₁ x₂ ;
+                 ⊔-closed = λ {γ u v} x y → var-⊔ {γ}{u}{v} x y }
+        where      
+        E : Env Γ → Value → Set
+        E ρ v = v ⊑ ρ x
+
+        up-env : ∀ {γ δ : Env Γ} {v : Value} → v ⊑ γ x → γ `⊑ δ → v ⊑ δ x
+        up-env v⊑γx γ⊑δ = Trans⊑ v⊑γx (γ⊑δ x)
+
+        var-⊑ : ∀ {γ : Env Γ} {v w : Value} → v ⊑ γ x → w ⊑ v → w ⊑ γ x
+        var-⊑ v⊑γx w⊑v = Trans⊑ w⊑v v⊑γx
+
+        var-⊔ : ∀ {γ : Env Γ} {u v : Value} → u ⊑ γ x → v ⊑ γ x → (u ⊔ v) ⊑ γ x
+        var-⊔ u⊑γx v⊑γx = ConjL⊑ u⊑γx v⊑γx
+
+{-
+retract : ∀{Γ}{f : Denotation (suc Γ)}{D : Denotation Γ}{γ}{v}
+        → Denotation.E (_●_ (ℱ f)) γ v iff Denotation.E f γ v
+retract {Γ}{D} = ?
+-}
 
 model : LambdaModel 
-model = record { ℱ = ℱ ;
+model = record { var = var ;
+                 ℱ = ℱ ;
                  _●_ = _●_ ;
                  Refl⊑ = Refl⊑ ;
                  Trans⊑ = Trans⊑ ;

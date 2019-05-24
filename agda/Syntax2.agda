@@ -7,13 +7,20 @@
 -}
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Nat.Properties
+open import Data.Bool
 open import Data.List using (List; []; _∷_)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open import Level using (Level)
 
-module Syntax2 (Op : Set) (sig : Op → List ℕ) where
+import Relation.Binary.HeterogeneousEquality as HEq
+open HEq using (_≅_; ≅-to-type-≡) renaming (refl to hrefl; cong to hcong; subst to hsubst)
+open HEq.≅-Reasoning using (_≅⟨_⟩_) renaming (begin_ to hbegin_; _≡⟨⟩_ to _≅⟨⟩_; _∎ to _□)
+
+module Syntax2 (Op : Set) (sig : Op → List Bool) where
 
 postulate
   extensionality : ∀ {A B : Set} {f g : A → B}
@@ -35,7 +42,7 @@ data Var : ℕ → Set where
 Rename : ℕ → ℕ → Set
 Rename Γ Δ = Var Γ → Var Δ
 
-data Args (Γ : ℕ) : (sig : List ℕ) → Set
+data Args (Γ : ℕ) : (sig : List Bool) → Set
 
 data AST : ℕ → Set where
 
@@ -45,7 +52,8 @@ data AST : ℕ → Set where
 
 data Args Γ where
   nil : Args Γ []
-  cons : ∀{a as} → AST (a + Γ) → Args Γ as → Args Γ (a ∷ as)
+  bind : ∀{bs} → AST (suc Γ) → Args Γ bs → Args Γ (true ∷ bs)
+  cons : ∀{bs} → AST Γ → Args Γ bs → Args Γ (false ∷ bs)
 
 Subst : ℕ → ℕ → Set
 Subst Γ Δ = Var Γ → AST Δ
@@ -55,12 +63,6 @@ ext : ∀ {Γ Δ} → Rename Γ Δ
   → Rename (suc Γ) (suc Δ)
 ext ρ Z      =  Z
 ext ρ (S x)  =  S (ρ x)
-
-extn : ∀ {Γ Δ} → (a : ℕ) → Rename Γ Δ
-     ---------------------------------
-   → Rename (a + Γ) (a + Δ)
-extn zero ρ = ρ 
-extn (suc n) ρ = ext (extn n ρ)
 
 rename : ∀ {Γ Δ}
      → Rename Γ  Δ
@@ -74,7 +76,8 @@ renames : ∀ {Γ Δ S}
 rename ρ (` x)          =  ` (ρ x)
 rename ρ (o ⦅ Ms ⦆)     =  o ⦅ renames ρ Ms ⦆
 renames ρ nil           = nil
-renames ρ (cons {a} M Ms) = cons (rename (extn a ρ) M) (renames ρ Ms)
+renames ρ (cons M Ms) = cons (rename ρ M) (renames ρ Ms)
+renames ρ (bind M Ms) = bind (rename (ext ρ) M) (renames ρ Ms)
 
 exts : ∀ {Γ Δ}
    → Subst Γ Δ
@@ -82,13 +85,6 @@ exts : ∀ {Γ Δ}
    → Subst (suc Γ) (suc Δ)
 exts σ Z      =  ` Z
 exts σ (S x)  =  rename S_ (σ x)
-
-extsn : ∀ {Γ Δ}
-    → (a : ℕ) → Subst Γ Δ
-      ---------------------
-    → Subst (a + Γ) (a + Δ)
-extsn zero σ = σ
-extsn (suc n) σ = exts (extsn n σ)
 
 ⟪_⟫ : ∀ {Γ Δ}
   → Subst Γ Δ
@@ -99,10 +95,11 @@ substs : ∀ {Γ Δ S}
     -------------------
   → Args Γ S → Args Δ S
 
-⟪ σ ⟫ (` x)              =  σ x
-⟪ σ ⟫ (o ⦅ Ms ⦆)         =  o ⦅ substs σ Ms ⦆
-substs σ nil             = nil
-substs σ (cons {a} M Ms) = cons (⟪ extsn a σ ⟫ M) (substs σ Ms)
+⟪ σ ⟫ (` x)          =  σ x
+⟪ σ ⟫ (o ⦅ Ms ⦆)     =  o ⦅ substs σ Ms ⦆
+substs σ nil         = nil
+substs σ (bind M Ms) = bind (⟪ exts σ ⟫ M) (substs σ Ms)
+substs σ (cons M Ms) = cons (⟪ σ ⟫ M) (substs σ Ms)
 
 subst-zero : ∀ {Γ} → (AST Γ) → Var (suc Γ) → (AST Γ)
 subst-zero M Z      = M
@@ -189,22 +186,6 @@ ren-ext {Γ}{Δ}{ρ} = extensionality λ x → lemma {x = x}
   lemma {x = Z} = refl
   lemma {x = S x} = refl
 
-ren-extn : ∀ {Γ Δ} {ρ : Rename Γ Δ} {a}
-        → ren (extn a ρ) ≡ extsn a (ren ρ)
-ren-extn {Γ} {Δ} {ρ} {zero} = refl
-ren-extn {Γ} {Δ} {ρ} {suc a} =
-  let ih = ren-extn {ρ = ρ}{a} in
-  begin
-     ren (extn (suc a) ρ)
-    ≡⟨⟩
-     ren (ext (extn a ρ))
-    ≡⟨ ren-ext{ρ = extn a ρ} ⟩
-     exts (ren (extn a ρ))
-    ≡⟨ cong exts (ren-extn{ρ = ρ}) ⟩
-     exts (extsn a (ren ρ))
-    ≡⟨⟩
-     extsn (suc a) (ren ρ)
-  ∎
 
 rename-subst-ren : ∀ {Γ Δ} {ρ : Rename Γ Δ}{M : AST Γ}
                  → rename ρ M ≡ ⟪ ren ρ ⟫ M
@@ -212,22 +193,24 @@ renames-subst-ren : ∀ {Γ Δ} {ρ : Rename Γ Δ}{S}{Ms : Args Γ S}
                  → renames ρ Ms ≡ substs (ren ρ) Ms
 rename-subst-ren {M = ` x} = refl
 rename-subst-ren{Γ}{Δ}{ρ}{o ⦅ Ms ⦆} =
-  cong (_⦅_⦆ {Δ} o) (renames-subst-ren {ρ = ρ}{Ms = Ms})
+  cong (_⦅_⦆ o) (renames-subst-ren {Ms = Ms})
 renames-subst-ren {Ms = nil} = refl
-renames-subst-ren {ρ = ρ}{Ms = cons {a} M Ms} =
-  let ih1 = rename-subst-ren {ρ = extn a ρ}{M = M} in
+renames-subst-ren {ρ = ρ}{Ms = bind M Ms} =
+  let ih1 = rename-subst-ren {ρ = ext ρ}{M = M} in
   let ih2 = renames-subst-ren {ρ = ρ}{Ms = Ms} in
   begin
-      renames ρ (cons M Ms)
+      renames ρ (bind M Ms)
     ≡⟨⟩
-      cons (rename (extn a ρ) M) (renames ρ Ms)
-    ≡⟨ cong₂ cons ih1 ih2 ⟩
-      cons (⟪ ren (extn a ρ) ⟫ M) (substs (ren ρ) Ms)
-    ≡⟨ cong₂ cons (cong-app (cong ⟪_⟫ (ren-extn{ρ = ρ})) M) refl ⟩
-      cons (⟪ extsn a (ren ρ) ⟫ M) (substs (ren ρ) Ms)
+      bind (rename (ext ρ) M) (renames ρ Ms)
+    ≡⟨ cong₂ bind ih1 ih2 ⟩
+      bind (⟪ ren (ext ρ) ⟫ M) (substs (ren ρ) Ms)
+    ≡⟨ cong₂ bind (cong-app (cong ⟪_⟫ (ren-ext{ρ = ρ})) M) refl ⟩
+      bind (⟪ exts (ren ρ) ⟫ M) (substs (ren ρ) Ms)
     ≡⟨⟩
-      substs (ren ρ) (cons M Ms)
+      substs (ren ρ) (bind M Ms)
   ∎
+renames-subst-ren {ρ = ρ}{Ms = cons M Ms} =
+  cong₂ cons (rename-subst-ren{M = M}) (renames-subst-ren{Ms = Ms})
 
 ren-shift : ∀{Γ}
           → ren S_ ≡ ↑ 
@@ -297,27 +280,24 @@ exts-ids {Γ} = extensionality lemma
         lemma Z = refl
         lemma (S x) = refl
 
+
 sub-id : ∀{Γ} {M : AST Γ}
          → ⟪ ids ⟫ M ≡ M
 subs-id : ∀{Γ}{S} {Ms : Args Γ S}
          → substs ids Ms ≡ Ms
 sub-id {M = ` x} = refl
-sub-id {M = o ⦅ Ms ⦆} = {!!}
+sub-id {M = o ⦅ Ms ⦆} = cong (_⦅_⦆ o) (subs-id {Ms = Ms})
 subs-id {Ms = nil} = refl
-subs-id {Ms = cons {a} M Ms} = {!!}
-
-{-
-sub-id {M = α N} = 
+subs-id {Ms = bind M Ms} =
    begin
-     ⟪ ids ⟫ (α N)
-   ≡⟨⟩
-     α ⟪ exts ids ⟫ N
-   ≡⟨ cong α_ (cong-app (cong ⟪_⟫ exts-ids) N)  ⟩
-     α ⟪ ids ⟫ N
-   ≡⟨ cong α_ sub-id ⟩
-     α N
+     bind (⟪ exts ids ⟫ M) (substs ids Ms)
+   ≡⟨ cong₂ bind (cong-app (cong ⟪_⟫ exts-ids) M) (subs-id {Ms = Ms})  ⟩
+     bind (⟪ ids ⟫ M) Ms
+   ≡⟨ cong₂ bind (sub-id {M = M}) refl ⟩
+     bind M Ms
    ∎
--}
+subs-id {Ms = cons M Ms} = cong₂ cons sub-id subs-id
+
 
 sub-idR : ∀{Γ Δ} {σ : Subst Γ Δ}
        → (σ ⨟ ids) ≡ σ
@@ -339,40 +319,46 @@ compose-ext = extensionality λ x → lemma {x = x}
   lemma {x = Z} = refl
   lemma {x = S x} = refl
 
-{-
 compose-rename : ∀{Γ Δ Σ}{M : AST Γ}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
   → rename ρ (rename ρ′ M) ≡ rename (ρ ∘ ρ′) M
-compose-renames : ∀{Γ Δ Σ}{Ms : List (AST Γ)}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
+compose-renames : ∀{Γ Δ Σ}{S}{Ms : Args Γ S}{ρ : Rename Δ Σ}{ρ′ : Rename Γ Δ} 
   → renames ρ (renames ρ′ Ms) ≡ renames (ρ ∘ ρ′) Ms
 compose-rename {M = ` x} = refl
-compose-rename {Γ}{Δ}{Σ}{α N}{ρ}{ρ′} = cong α_ G
-  where
-  G : rename (ext ρ) (rename (ext ρ′) N) ≡ rename (ext (ρ ∘ ρ′)) N
-  G =
-      begin
-        rename (ext ρ) (rename (ext ρ′) N)
-      ≡⟨ compose-rename{ρ = ext ρ}{ρ′ = ext ρ′} ⟩
-        rename ((ext ρ) ∘ (ext ρ′)) N
-      ≡⟨ cong₂ rename compose-ext refl ⟩
-        rename (ext (ρ ∘ ρ′)) N
-      ∎        
-compose-rename {M = o ⦅ Ms ⦆} = cong₂ _⦅_⦆ refl compose-renames
-compose-renames {Ms = []} = refl
-compose-renames {Ms = M ∷ Ms} = cong₂ _∷_ compose-rename compose-renames
+compose-rename {M = o ⦅ Ms ⦆} = cong (_⦅_⦆ o) (compose-renames {Ms = Ms})
+compose-renames {Ms = nil} = refl
+compose-renames {Ms = bind M Ms}{ρ}{ρ′} =
+  let ih1 = compose-rename {M = M}{ext ρ}{ext ρ′} in
+  let ih2 = compose-renames {Ms = Ms}{ρ}{ρ′} in
+  begin
+      bind (rename (ext ρ) (rename (ext ρ′) M))
+        (renames ρ (renames ρ′ Ms))
+    ≡⟨ cong₂ bind ih1 ih2 ⟩ 
+      bind (rename ((ext ρ) ∘ (ext ρ′)) M) (renames (ρ ∘ ρ′) Ms)
+    ≡⟨ cong₂ bind (cong₂ rename (compose-ext{ρ = ρ}) refl) refl ⟩ 
+      bind (rename (ext (ρ ∘ ρ′)) M) (renames (ρ ∘ ρ′) Ms)
+    ∎
+compose-renames {Ms = cons M Ms}{ρ}{ρ′} = cong₂ cons compose-rename compose-renames
 
 
 commute-subst-rename : ∀{Γ Δ}{M : AST Γ}{σ : Subst Γ Δ}
                         {ρ : ∀{Γ} → Rename Γ (suc Γ)}
      → (∀{x : Var Γ} → exts σ (ρ x) ≡ rename ρ (σ x))
      → ⟪ exts σ ⟫ (rename ρ M) ≡ rename ρ (⟪ σ ⟫ M)
-commute-subst-renames : ∀{Γ Δ}{Ms : List (AST Γ)}{σ : Subst Γ Δ}
+commute-subst-renames : ∀{Γ Δ}{S}{Ms : Args Γ S}{σ : Subst Γ Δ}
                         {ρ : ∀{Γ} → Rename Γ (suc Γ)}
      → (∀{x : Var Γ} → exts σ (ρ x) ≡ rename ρ (σ x))
      → substs (exts σ) (renames ρ Ms) ≡ renames ρ (substs σ Ms)
 commute-subst-rename {M = ` x} r = r
-commute-subst-rename{Γ}{Δ}{α N}{σ}{ρ} r =
-   cong α_ (commute-subst-rename{suc Γ}{suc Δ}{N}
-               {exts σ}{ρ = ρ′} (λ {x} → H {x}))
+commute-subst-rename {M = o ⦅ Ms ⦆} r =
+  cong (_⦅_⦆ o) (commute-subst-renames {Ms = Ms} r)
+commute-subst-renames {Ms = nil} r = refl
+commute-subst-renames {Γ}{Δ}{_}{bind M Ms}{σ}{ρ} r =
+  begin
+    bind (⟪ exts (exts σ) ⟫ (rename (ext ρ) M)) (substs (exts σ) (renames ρ Ms))
+  ≡⟨ cong₂ bind (commute-subst-rename{suc Γ}{suc Δ}{M}{exts σ}{ρ′} (λ {x} → H {x}))
+                (commute-subst-renames{Ms = Ms} r) ⟩
+    bind (rename (ext ρ) (⟪ exts σ ⟫ M)) (renames ρ (substs σ Ms))
+  ∎
    where
    ρ′ : ∀ {Γ} → Rename Γ (suc Γ)
    ρ′ {zero} = λ ()
@@ -396,11 +382,8 @@ commute-subst-rename{Γ}{Δ}{α N}{σ}{ρ} r =
      ≡⟨⟩
        rename (ext ρ) (exts σ (S y))
      ∎
-commute-subst-rename {M = o ⦅ Ms ⦆}{ρ = ρ} r =
-   cong₂ _⦅_⦆ refl (commute-subst-renames{Ms = Ms}{ρ = ρ} r)
-commute-subst-renames {Ms = []} r = refl
-commute-subst-renames {Ms = M ∷ Ms} r =
-  cong₂ _∷_ (commute-subst-rename{M = M} r) (commute-subst-renames r)
+commute-subst-renames {Γ}{Δ}{_}{cons M Ms}{σ}{ρ} r =
+  cong₂ cons (commute-subst-rename{M = M} r) (commute-subst-renames{Ms = Ms} r)
 
 
 exts-seq : ∀{Γ Δ Δ′} {σ₁ : Subst Γ Δ} {σ₂ : Subst Δ Δ′}
@@ -420,6 +403,8 @@ exts-seq = extensionality λ x → lemma {x = x}
      ≡⟨⟩
        rename S_ ((σ₁ ⨟ σ₂) x)
      ∎
+
+{-
 
 
 sub-sub : ∀{Γ Δ Σ}{M : AST Γ} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 

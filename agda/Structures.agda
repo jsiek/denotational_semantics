@@ -75,6 +75,7 @@ module LambdaModelMod
       
   record LambdaModel : Set₁ where
     field
+      var : ∀{Γ} → Var Γ → Denotation Γ
       ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
       _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
       Refl⊑ : ∀ {v} → v ⊑ v

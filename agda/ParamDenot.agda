@@ -28,24 +28,8 @@ module Denot (model : LambdaModel) where
   open LambdaModel model
 
   ℰ : ∀{Γ} → Term Γ → Denotation Γ
-  ℰ {Γ} ⟨ _ , t-var x ⟩ =
-     record { E = E ; up-env = up-env ;
-              ⊑-closed = λ {γ v w} x₁ x₂ → var-⊑ {γ}{v}{w} x₁ x₂ ;
-              ⊔-closed = λ {γ u v} x y → var-⊔ {γ}{u}{v} x y }
-     where
-       E : Env Γ → D → Set
-       E ρ v = v ⊑ ρ x
-
-       up-env : ∀ {γ δ : Env Γ} {v : D} → v ⊑ γ x → γ `⊑ δ → v ⊑ δ x
-       up-env v⊑γx γ⊑δ = Trans⊑ v⊑γx (γ⊑δ x)
-
-       var-⊑ : ∀ {γ : Env Γ} {v w : D} → v ⊑ γ x → w ⊑ v → w ⊑ γ x
-       var-⊑ v⊑γx w⊑v = Trans⊑ w⊑v v⊑γx
-
-       var-⊔ : ∀ {γ : Env Γ} {u v : D} → u ⊑ γ x → v ⊑ γ x → (u ⊔ v) ⊑ γ x
-       var-⊔ u⊑γx v⊑γx = ConjL⊑ u⊑γx v⊑γx
-
-  ℰ {Γ} ⟨ lam ⦅ (α N) ∷ [] ⦆ , t-lam Nt ⟩ = ℱ (ℰ ⟨ N , Nt ⟩)
+  ℰ ⟨ _ , t-var x ⟩ = var x
+  ℰ ⟨ lam ⦅ (α N) ∷ [] ⦆ , t-lam Nt ⟩ = ℱ (ℰ ⟨ N , Nt ⟩)
   ℰ ⟨ app ⦅ L ∷ M ∷ [] ⦆ , t-app Lt Mt ⟩ = (ℰ ⟨ L , Lt ⟩) ● (ℰ ⟨ M , Mt ⟩)
 
   {-
@@ -87,12 +71,13 @@ module Denot (model : LambdaModel) where
     {!!}
   -}
 
+{-
   lambda-inversion
     : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v v₁ v₂ : Value}
     → Denotation.E (ℱ D) γ v → v ≡ (v₁ ↦ v₂)
       --------------------------------------------------
     → ℰ N (γ `, v₁) v₂
-
+-}
 
   ext-nth : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
     → (ρ : Rename Γ Δ)
@@ -109,7 +94,7 @@ module Denot (model : LambdaModel) where
       ---------------------------------
     → Denotation.E (ℰ (rename ρ M)) δ v
   rename-pres {Γ} {Δ} {v} {γ} {δ} {⟨ _ , t-var x ⟩} ρ γ⊑δ∘ρ ℰMγv =
-    LambdaModel.Trans⊑ model ℰMγv (γ⊑δ∘ρ x)
+    {!!}
   rename-pres {Γ} {Δ} {v} {γ} {δ} {⟨ (lam ⦅ (α N) ∷ [] ⦆) , t-lam Nt ⟩} ρ γ⊑δ∘ρ ℱℰNγv =
      let ih = rename-pres {v = v}{γ `, v}{δ `, v}{⟨ N , Nt ⟩ } (ext ρ) (ext-nth ρ γ⊑δ∘ρ) {!!} in
      {!!}
