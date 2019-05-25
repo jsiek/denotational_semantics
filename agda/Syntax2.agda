@@ -404,29 +404,28 @@ exts-seq = extensionality λ x → lemma {x = x}
        rename S_ ((σ₁ ⨟ σ₂) x)
      ∎
 
-{-
-
-
 sub-sub : ∀{Γ Δ Σ}{M : AST Γ} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
             → ⟪ σ₂ ⟫ (⟪ σ₁ ⟫ M) ≡ ⟪ σ₁ ⨟ σ₂ ⟫ M
-sub-subs : ∀{Γ Δ Σ}{Ms : List (AST Γ)} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
+sub-subs : ∀{Γ Δ Σ}{S}{Ms : Args Γ S} {σ₁ : Subst Γ Δ}{σ₂ : Subst Δ Σ} 
             → substs σ₂ (substs σ₁ Ms) ≡ substs (σ₁ ⨟ σ₂) Ms
 sub-sub {M = ` x} = refl
-sub-sub {Γ}{Δ}{Σ}{α N}{σ₁}{σ₂} =
-   begin
-     ⟪ σ₂ ⟫ (⟪ σ₁ ⟫ (α N))
-   ≡⟨⟩
-     α ⟪ exts σ₂ ⟫ (⟪ exts σ₁ ⟫ N)
-   ≡⟨ cong α_ (sub-sub{M = N}{σ₁ = exts σ₁}{σ₂ = exts σ₂}) ⟩
-     α ⟪ exts σ₁ ⨟ exts σ₂ ⟫ N
-   ≡⟨ cong α_ (cong-app (cong ⟪_⟫ exts-seq) N) ⟩
-     α ⟪ exts ( σ₁ ⨟ σ₂) ⟫ N
-   ∎
-sub-sub {M = o ⦅ Ms ⦆} = cong₂ _⦅_⦆ refl (sub-subs{Ms = Ms})
-
-sub-subs {Ms = []} = refl
-sub-subs {Ms = M ∷ Ms} = cong₂ _∷_ (sub-sub{M = M}) sub-subs
-
+sub-sub {M = op ⦅ Ms ⦆} = cong (op ⦅_⦆) (sub-subs{Ms = Ms})
+sub-subs {Ms = nil} = refl
+sub-subs {Ms = bind M Ms}{σ₁}{σ₂} =
+  let ih1 = sub-sub {M = M}{exts σ₁}{exts σ₂} in
+  let ih2 = sub-subs {Ms = Ms}{σ₁}{σ₂} in
+  begin
+    substs σ₂ (substs σ₁ (bind M Ms))
+  ≡⟨⟩
+    bind (⟪ exts σ₂ ⟫ (⟪ exts σ₁ ⟫ M)) (substs σ₂ (substs σ₁ Ms))
+  ≡⟨ cong₂ bind ih1 ih2 ⟩
+    bind (⟪ exts σ₁ ⨟ exts σ₂ ⟫ M) (substs (σ₁ ⨟ σ₂) Ms)
+  ≡⟨ cong₂ bind (cong-app (cong ⟪_⟫ exts-seq) M) refl ⟩
+    bind (⟪ exts (σ₁ ⨟ σ₂) ⟫ M) (substs (σ₁ ⨟ σ₂) Ms)
+  ≡⟨⟩
+    substs (σ₁ ⨟ σ₂) (bind M Ms)
+  ∎
+sub-subs {Ms = cons M Ms} = cong₂ cons (sub-sub{M = M}) (sub-subs{Ms = Ms})
 
 rename-subst : ∀{Γ Δ Δ′}{M : AST Γ}{ρ : Rename Γ Δ}{σ : Subst Δ Δ′}
              → ⟪ σ ⟫ (rename ρ M) ≡ ⟪ σ ∘ ρ ⟫ M
@@ -440,7 +439,6 @@ rename-subst {Γ}{Δ}{Δ′}{M}{ρ}{σ} =
    ≡⟨⟩
      ⟪ σ ∘ ρ ⟫ M
    ∎
-
 
 sub-assoc : ∀{Γ Δ Σ Ψ} {σ : Subst Γ Δ} {τ : Subst Δ Σ}
              {θ : Subst Σ Ψ}
@@ -458,7 +456,6 @@ sub-assoc {Γ}{Δ}{Σ}{Ψ}{σ}{τ}{θ} = extensionality λ x → lemma{x = x}
       ≡⟨⟩
         (σ ⨟ τ ⨟ θ) x
       ∎
-
 
 subst-zero-exts-cons : ∀{Γ Δ}{σ : Subst Γ Δ}{M : AST Δ}
                      → exts σ ⨟ subst-zero M ≡ M • σ
@@ -478,7 +475,6 @@ subst-zero-exts-cons {Γ}{Δ}{σ}{M} =
     ≡⟨ cong₂ _•_ refl (sub-idR{σ = σ}) ⟩
       M • σ
     ∎
-
 
 subst-commute : ∀{Γ Δ : ℕ}{N : AST (suc Γ)}{M : AST Γ}{σ : Subst Γ Δ }
     → (⟪ exts σ ⟫ N) [ ⟪ σ ⟫ M ] ≡ ⟪ σ ⟫ (N [ M ])
@@ -513,7 +509,6 @@ subst-commute {Γ}{Δ}{N}{M}{σ} =
        ⟪ σ ⟫ (N [ M ])
      ∎
 
-
 rename-subst-commute : ∀{Γ Δ}{N : AST (suc Γ)}{M : AST Γ}{ρ : Rename Γ Δ }
     → (rename (ext ρ) N) [ rename ρ M ] ≡ rename ρ (N [ M ])
 rename-subst-commute {Γ}{Δ}{N}{M}{ρ} =
@@ -539,11 +534,8 @@ _〔_〕 : ∀ {Γ}
         → AST (suc Γ)
 _〔_〕 {Γ} N M = ⟪ exts (subst-zero M) ⟫ N
 
-
 substitution : ∀{Γ}{M : AST (suc (suc Γ))}{N : AST (suc Γ)}{L : AST Γ}
     → (M [ N ]) [ L ] ≡ (M 〔 L 〕) [ (N [ L ]) ]
 substitution{M = M}{N = N}{L = L} =
    sym (subst-commute{N = M}{M = N}{σ = subst-zero L})
 
-
--}
