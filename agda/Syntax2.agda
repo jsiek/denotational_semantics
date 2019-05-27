@@ -17,8 +17,10 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Level using (Level)
 
 import Relation.Binary.HeterogeneousEquality as HEq
-open HEq using (_≅_; ≅-to-type-≡) renaming (refl to hrefl; cong to hcong; subst to hsubst)
-open HEq.≅-Reasoning using (_≅⟨_⟩_) renaming (begin_ to hbegin_; _≡⟨⟩_ to _≅⟨⟩_; _∎ to _□)
+open HEq using (_≅_; ≅-to-type-≡)
+   renaming (refl to hrefl; cong to hcong; subst to hsubst)
+open HEq.≅-Reasoning using (_≅⟨_⟩_)
+   renaming (begin_ to hbegin_; _≡⟨⟩_ to _≅⟨⟩_; _∎ to _□)
 
 module Syntax2 (Op : Set) (sig : Op → List Bool) where
 

@@ -2,7 +2,8 @@
 open import LambdaV
    using ($; _·_; ƛ; Term; prim; lam; app)
 open LambdaV.ASTMod
-   using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst; ext; exts; cons; bind; nil; rename)
+   using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst;
+          ext; exts; cons; bind; nil; rename; ⟪_⟫)
 open import Primitives
    using (Base; Prim; rep; base; base-rep; _⇒_; base-eq?)
 
@@ -75,7 +76,8 @@ module Domain
     → M₂ ≃ M₃
       -------
     → M₁ ≃ M₃
-  ≃-trans m12 m23 = ⟨ (λ z → proj₁ m23 (proj₁ m12 z)) , (λ z → proj₂ m12 (proj₂ m23 z)) ⟩
+  ≃-trans m12 m23 = ⟨ (λ z → proj₁ m23 (proj₁ m12 z)) ,
+                      (λ z → proj₂ m12 (proj₂ m23 z)) ⟩
 
   infixr 2 _≃⟨⟩_ _≃⟨_⟩_
   infix  3 _☐
@@ -103,9 +105,11 @@ module Domain
     (℘ : ∀{P : Prim} → rep P → Value → Set)
     (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
     (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}{D₁′ D₂′ : Denotation Δ}
+    (cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
+               {D₁′ D₂′ : Denotation Δ}
             → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ)
-    (cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}{D′ : Denotation (suc Δ)}
+    (cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+               {D′ : Denotation (suc Δ)}
             → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v)) → ℱ D γ ≃ ℱ D′ δ)
     where
 
@@ -121,7 +125,8 @@ module Domain
     _`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
     _`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x
 
-    rename-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ} { ρ : Rename Γ Δ }
+    rename-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
+                     {ρ : Rename Γ Δ}
       → γ `≡ (δ ∘ ρ)
       → ℰ M γ ≃ ℰ (rename ρ M) δ
     rename-equiv {M = (prim {p} k ⦅ nil ⦆)} γ≡δ∘ρ = ⟨ (λ z → z) , (λ z → z) ⟩
@@ -138,6 +143,14 @@ module Domain
     rename-equiv {Γ}{Δ}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆}{ρ} γ≡δ∘ρ =
       cong-● (rename-equiv {M = L} γ≡δ∘ρ) (rename-equiv {M = M} γ≡δ∘ρ)
 
+    _⊨_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
+    _⊨_↓_ {Δ}{Γ} δ σ γ = ∀{k : Var Γ} →  ℰ (σ k) δ (γ k)
+
+    subst-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
+      → (σ : Subst Γ Δ)  →  δ ⊨ σ ↓ γ
+        -----------------------------
+      → ℰ M γ ≃ ℰ (⟪ σ ⟫ M) δ 
+    subst-equiv {M = M} σ δ⊨σ↓γ = {!!}
 
 module Instance where
 
@@ -216,7 +229,8 @@ module Instance where
   ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
   ℱ D γ (lit k) = Bot
 
-  cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}{D′ : Denotation (suc Δ)}
+  cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+            {D′ : Denotation (suc Δ)}
          → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v)) → ℱ D γ ≃ ℱ D′ δ
   cong-ℱ D≃D′ {lit k} = ⟨ (λ x → x) , (λ x → x) ⟩
   cong-ℱ D≃D′ {⊥} = ⟨ (λ x → ⊤.tt) , (λ x → ⊤.tt) ⟩
@@ -232,7 +246,8 @@ module Instance where
   _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
   _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
 
-  cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}{D₁′ D₂′ : Denotation Δ}
+  cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
+            {D₁′ D₂′ : Denotation Δ}
          → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ
   cong-● {γ = γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 {w}
       with eq1 {w} | eq2 {w}
@@ -240,11 +255,13 @@ module Instance where
       where
       G : (D₁ ● D₂) γ w → (D₁′ ● D₂′) δ w
       G (inj₁ w⊑⊥) = inj₁ w⊑⊥
-      G (inj₂ ⟨ v , ⟨ D₁γv↦w , D₂γv ⟩ ⟩) = inj₂ ⟨ v , ⟨ (proj₁ eq1 D₁γv↦w) , (proj₁ eq2 D₂γv) ⟩ ⟩
+      G (inj₂ ⟨ v , ⟨ D₁γv↦w , D₂γv ⟩ ⟩) =
+        inj₂ ⟨ v , ⟨ (proj₁ eq1 D₁γv↦w) , (proj₁ eq2 D₂γv) ⟩ ⟩
 
       H : (D₁′ ● D₂′) δ w → (D₁ ● D₂) γ w
       H (inj₁ w⊑⊥) = inj₁ w⊑⊥
-      H (inj₂ ⟨ v , ⟨ D₁′δv↦w , D₂′δv ⟩ ⟩) = inj₂ ⟨ v , ⟨ (proj₂ eq1 D₁′δv↦w) , (proj₂ eq2 D₂′δv) ⟩ ⟩
+      H (inj₂ ⟨ v , ⟨ D₁′δv↦w , D₂′δv ⟩ ⟩) =
+        inj₂ ⟨ v , ⟨ (proj₂ eq1 D₁′δv↦w) , (proj₂ eq2 D₂′δv) ⟩ ⟩
 
   ℘ : ∀{P : Prim} → rep P → Value → Set
   ℘ {base B} k (lit {B'} k')
@@ -262,5 +279,6 @@ module Instance where
   module Den = Denot (λ {P} p v → ℘ {P} p v)
                      ℱ
                      _●_
-                     (λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 → cong-● {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2)
+                     (λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 →
+                       cong-● {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2)
                      cong-ℱ
