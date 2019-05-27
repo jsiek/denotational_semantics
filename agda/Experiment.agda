@@ -313,8 +313,13 @@ module Instance where
         inj₂ ⟨ v , ⟨ (proj₂ eq1 D₁′δv↦w) , (proj₂ eq2 D₂′δv) ⟩ ⟩
 
   ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
+         → WFDenot Γ D₁
          → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
-  ●-⊑ = {!!}
+  ●-⊑ d (inj₁ x) w⊑v = inj₁ (Trans⊑ w⊑v x)
+  ●-⊑ {v = v}{w} d (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) w⊑v =
+    inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed d fst₁ lt  , snd ⟩ ⟩
+    where lt : v' ↦ w ⊑ v' ↦ v
+          lt = Fun⊑ Refl⊑ w⊑v
 
   ℘ : ∀{P : Prim} → rep P → Value → Set
   ℘ {base B} k (lit {B'} k')
