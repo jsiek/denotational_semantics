@@ -28,9 +28,10 @@ module Experiment where
 
 module Domain
   (Value : Set)
+  (lit : {B : Base} → base-rep B → Value)
+  (_⊔_ : Value → Value → Value)
   (_⊑_ : Value → Value → Set)
   (Trans⊑ : ∀ {u v w} → u ⊑ v → v ⊑ w → u ⊑ w)
-  (lit : {B : Base} → base-rep B → Value)
   where
 
   Env : ℕ → Set
@@ -106,6 +107,11 @@ module Domain
       → d ≃ d
   (d ☐) {v} =  ≃-refl {d}
 
+  record WFDenot (Γ : ℕ) (E : Denotation Γ) : Set₁ where
+    field
+      up-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
+      ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
+      ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
 
   module Denot
     (℘ : ∀{P : Prim} → rep P → Value → Set)
@@ -118,9 +124,9 @@ module Domain
                {D′ : Denotation (suc Δ)}
             → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v)) → ℱ D γ ≃ ℱ D′ δ)
     (●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
-         → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w)
+         → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w)
     (ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-         → ℱ D γ v → w ⊑ v → ℱ D γ w)
+         → WFDenot (suc Γ) D → ℱ D γ v → w ⊑ v → ℱ D γ w)
     where
 
     ℰ : ∀{Γ} → Term Γ → Denotation Γ
@@ -128,6 +134,14 @@ module Domain
     ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
     ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
     ℰ ((prim {p} k) ⦅ nil ⦆) γ = ℘ {p} k
+
+    ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
+        → ℰ M γ v → w ⊑ v → ℰ M γ w
+    ℰ-⊑ {M = ` x} ℰMγv w⊑v = Trans⊑ w⊑v ℰMγv
+    ℰ-⊑ {M = lam ⦅ bind N nil ⦆} ℰMγv w⊑v = {!!}
+    ℰ-⊑ {γ = γ} {app ⦅ cons L (cons M nil) ⦆} {v} {w} ℰMγv w⊑v =
+       ●-⊑ {!!} ℰMγv w⊑v
+    ℰ-⊑ {M = prim p ⦅ Ms ⦆} ℰMγv w⊑v = {!!}
 
     rename-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
                      {ρ : Rename Γ Δ}
@@ -231,7 +245,7 @@ module Instance where
   Dist⊔↦⊔ = Trans⊑ Dist⊑ (⊔⊑⊔ (Fun⊑ (ConjR1⊑ Refl⊑) Refl⊑)
                               (Fun⊑ (ConjR2⊑ Refl⊑) Refl⊑))
 
-  module Dom = Domain Value _⊑_ Trans⊑ lit
+  module Dom = Domain Value lit _⊔_ _⊑_ Trans⊑ 
   open Dom
 
   ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
@@ -251,12 +265,6 @@ module Instance where
   ... | ⟨ a , b ⟩ | ⟨ c , d ⟩ =
       ⟨ (λ x → ⟨ a (proj₁ x) , c (proj₂ x) ⟩) ,
         (λ x → ⟨ b (proj₁ x) , d (proj₂ x) ⟩) ⟩
-
-  record WFDenot (Γ : ℕ) (E : Denotation Γ) : Set₁ where
-    field
-      up-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
-      ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
-      ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
 
   ℱ-up-env : ∀{Γ}{D : Denotation (suc Γ)}{γ δ : Env Γ} {v : Value}
         → WFDenot (suc Γ) D
@@ -313,8 +321,8 @@ module Instance where
         inj₂ ⟨ v , ⟨ (proj₂ eq1 D₁′δv↦w) , (proj₂ eq2 D₂′δv) ⟩ ⟩
 
   ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
-         → WFDenot Γ D₁
-         → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
+         → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
+         → (D₁ ● D₂) γ w
   ●-⊑ d (inj₁ x) w⊑v = inj₁ (Trans⊑ w⊑v x)
   ●-⊑ {v = v}{w} d (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) w⊑v =
     inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed d fst₁ lt  , snd ⟩ ⟩
@@ -340,6 +348,7 @@ module Instance where
                      (λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 →
                        cong-● {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2)
                      cong-ℱ
-                     {!!}
-                     {!!}
+                     (λ {Γ}{D₁}{D₂}{γ}{v}{w} x x₁ x₂ →
+                         ●-⊑ {Γ}{D₁}{D₂}{γ}{v}{w} x x₁ x₂)
+                     ℱ-⊑
   open Den
