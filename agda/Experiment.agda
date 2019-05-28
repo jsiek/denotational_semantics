@@ -169,6 +169,11 @@ module Domain
          → WFDenot (suc Γ) D → ℱ D γ v → w ⊑ v → ℱ D γ w)
     (ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v))
+    (●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
+      → (∀{v w} → D₁ γ v → w ⊑ v → D₁ γ w)
+      → (∀{u v} → D₁ γ u → D₁ γ v → D₁ γ (u ⊔ v))
+      → (∀{u v} → D₂ γ u → D₂ γ v → D₂ γ (u ⊔ v))
+      → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v))
     where
 
     cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
@@ -250,13 +255,18 @@ module Domain
   
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
-    ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ConjL⊑ ℰMγu ℰMγv
-    ℰ-⊔ {M = lam ⦅ bind N nil ⦆} ℰMγu ℰMγv = ℱ-⊔ ℰMγu ℰMγv
-    ℰ-⊔ {M = app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv = {!!}
-    ℰ-⊔ {M = prim p ⦅ nil ⦆} ℰMγu ℰMγv = {!!}
-        
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
+        
+    ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ConjL⊑ ℰMγu ℰMγv
+    ℰ-⊔ {M = lam ⦅ bind N nil ⦆} ℰMγu ℰMγv = ℱ-⊔ ℰMγu ℰMγv
+    ℰ-⊔ {γ = γ}{app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv =
+       let a = ℰ-⊔ {γ = γ} {M = L} in
+       let b = ℰ-⊔ {γ = γ} {M = M} in
+       let c = ℰ-⊑ {γ = γ} {M = L} in
+       ●-⊔ c a b ℰMγu ℰMγv
+    ℰ-⊔ {M = prim p ⦅ nil ⦆} ℰMγu ℰMγv = {!!}
+        
     ℰ-⊑ {M = ` x} ℰMγv w⊑v = Trans⊑ w⊑v ℰMγv
     ℰ-⊑ {M = lam ⦅ bind N nil ⦆} ℰMγv w⊑v =
       let ih = ℰ-⊑ {M = N} {!!} {!!} in
@@ -477,4 +487,6 @@ module Instance where
                          ●-⊑ {Γ}{D₁}{D₂}{γ}{v}{w} x x₁ x₂)
                      ℱ-⊑
                      (λ {Γ}{D}{γ}{u}{v} du dv → ℱ-⊔ {Γ}{D}{γ}{u}{v} du dv)
+                     (λ {Γ}{D₁}{D₂}{γ}{u}{v} a b c d e →
+                       ●-⊔{Γ}{D₁}{D₂}{γ}{u}{v} a b c d e)
   open Den
