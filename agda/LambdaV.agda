@@ -12,12 +12,16 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
 data Op : Set where
   lam : Op
   app : Op
+{-
   prim : ∀{p : Prim} → rep p → Op
+-}
 
 sig : Op → List Bool
 sig lam = true ∷ []
 sig app = false ∷ false ∷ []
+{-
 sig (prim {p} k) = []
+-}
 
 import Syntax2
 module ASTMod = Syntax2 Op sig
@@ -36,8 +40,10 @@ infixl 7  _·_
 _·_ : ∀{Γ} → AST Γ → AST Γ → AST Γ
 L · M = app ⦅ cons L (cons M nil) ⦆
 
+{-
 $ : ∀{Γ}{p : Prim} → rep p → AST Γ
 $ {Γ}{p} k = prim {p} k ⦅ nil ⦆
+-}
 
 Term : ℕ → Set
 Term Γ = AST Γ
@@ -52,9 +58,11 @@ data TermValue : ∀ {Γ} → Term Γ → Set where
       -----------
     → TermValue (ƛ N)
 
+{-
   V-const : ∀ {Γ} {p : Prim} {k : rep p}
       ------------------------
     → TermValue {Γ} ($ {Γ}{p} k)
+-}
 
 infix 2 _—→_
 
@@ -76,10 +84,11 @@ data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
       ---------------------------------
     → (ƛ N) · M —→ N [ M ]
 
+{-
   δ-rule : ∀ {Γ}{B}{P} {f : base-rep B → rep P} {k : base-rep B}
       ----------------------------------------------------------
     → ($ {Γ} {B ⇒ P} f) · ($ {Γ}{base B} k) —→ ($ {Γ}{P} (f k))
-
+-}
 
 infix  2 _—↠_
 infixr 2 _—→⟨_⟩_
