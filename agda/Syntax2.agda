@@ -300,6 +300,18 @@ subs-id {Ms = bind M Ms} =
    ∎
 subs-id {Ms = cons M Ms} = cong₂ cons sub-id subs-id
 
+rename-id : ∀ {Γ} {M : AST Γ} 
+  → rename (λ x → x) M ≡ M
+rename-id {M = M} =
+   begin
+     rename (λ x → x) M
+   ≡⟨ rename-subst-ren  ⟩
+     ⟪ ren (λ x → x) ⟫ M
+   ≡⟨⟩
+     ⟪ ids ⟫ M
+   ≡⟨ sub-id  ⟩
+     M
+   ∎
 
 sub-idR : ∀{Γ Δ} {σ : Subst Γ Δ}
        → (σ ⨟ ids) ≡ σ
