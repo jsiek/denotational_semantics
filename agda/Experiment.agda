@@ -290,6 +290,13 @@ module InValueOrder (D : ValueOrder) where
     open Den
     open ModelCong Cong
 
+    ⊑-ext-R : ∀{Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ}{v}
+          → γ `⊑ (δ ∘ ρ)
+            ------------------------------
+          → (γ `, v) `⊑ ((δ `, v) ∘ ext ρ)
+    ⊑-ext-R {v = v} γ⊑δ∘ρ Z = ⊑-refl
+    ⊑-ext-R {v = v} γ⊑δ∘ρ (S x) = γ⊑δ∘ρ x
+
     rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
            → (ρ : Rename Γ Δ)
            → γ `⊑ (δ ∘ ρ)
@@ -298,16 +305,10 @@ module InValueOrder (D : ValueOrder) where
            → ℰ (rename ρ M) δ v
     rename-pres {v = v}{γ}{δ}{` x} ρ γ⊑δ∘ρ ℰMγv =
         v  ⊑⟨ ℰMγv ⟩ γ x  ⊑⟨ γ⊑δ∘ρ x ⟩ δ (ρ x) ◼
-    rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} ρ γ⊑δ∘ρ =
-       ℱ-≲ {Γ}{Δ}{γ}{δ}{ℰ N}{ℰ (rename (ext ρ) N)} IH {v}
+    rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} ρ γ⊑δ∘ρ = ℱ-≲ IH {v}
        where
-       H : ∀{v} → (γ `, v) `⊑ ((λ {x} → δ `, v) ∘ ext ρ)
-       H {v} Z = ⊑-refl
-       H {v} (S x) = γ⊑δ∘ρ x
-
-       IH : ∀ {v₁} → ℰ N (γ `, v₁) ≲ ℰ (rename (ext ρ) N) (δ `, v₁)
-       IH {v} = rename-pres {γ = γ `, v}{δ = δ `, v}{M = N} (ext ρ) H
-
+       IH : ∀ {v} → ℰ N (γ `, v) ≲ ℰ (rename (ext ρ) N) (δ `, v) 
+       IH {v} = rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ)
     rename-pres {M = app ⦅ cons L (cons M nil) ⦆} ρ γ⊑δ∘ρ =
       ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
 
@@ -332,6 +333,13 @@ module InValueOrder (D : ValueOrder) where
       env-le lt Z = lt
       env-le lt (S n) = ⊑-refl
 
+    ⊑-ext-L : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ} {v}
+          → (δ ∘ ρ) `⊑ γ
+            ---------------------------------
+          → ((δ `, v) ∘ ext ρ) `⊑ (γ `, v)
+    ⊑-ext-L δ∘ρ⊑γ Z = ⊑-refl
+    ⊑-ext-L δ∘ρ⊑γ (S x) = δ∘ρ⊑γ x
+            
     rename-reflect : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} { M : Term Γ}
                        {ρ : Rename Γ Δ}
       → (δ ∘ ρ) `⊑ γ
@@ -340,15 +348,9 @@ module InValueOrder (D : ValueOrder) where
     rename-reflect {Γ}{Δ}{γ}{δ}{` x} {ρ} δ∘ρ⊑γ {v} ℰρMδv  =
       v  ⊑⟨ ℰρMδv ⟩ δ (ρ x)  ⊑⟨ δ∘ρ⊑γ x ⟩  γ x ◼
     rename-reflect {Γ}{Δ}{γ}{δ}{lam ⦅ bind N nil ⦆} {ρ} δ∘ρ⊑γ {v} = ℱ-≲ IH {v}
-      where ⊑-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
-                  → (ρ : Rename Γ Δ)  →  (δ ∘ ρ) `⊑ γ
-                    ---------------------------------
-                  → ((δ `, v) ∘ ext ρ) `⊑ (γ `, v)
-            ⊑-ext ρ lt Z = ⊑-refl
-            ⊑-ext ρ lt (S x) = lt x
-            
-            IH : ∀ {v} → ℰ (rename (ext ρ) N) (δ `, v) ≲ ℰ N (γ `, v)
-            IH {v} = rename-reflect{M = N}{ρ = ext ρ} (⊑-ext ρ δ∘ρ⊑γ)
+      where
+      IH : ∀ {v} → ℰ (rename (ext ρ) N) (δ `, v) ≲ ℰ N (γ `, v)
+      IH {v} = rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)
     rename-reflect {M = app ⦅ cons L (cons M nil) ⦆} {ρ} δ∘ρ⊑γ =
       ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
 
