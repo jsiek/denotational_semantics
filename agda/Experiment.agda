@@ -631,17 +631,17 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
     ...  | no _    =  refl
 
     subst-reflect-var : ∀ {Γ Δ} {γ : Env Δ} {x : Var Γ} {v} {σ : Subst Γ Δ}
-      → ℰ (σ x) γ v
+      → ℰ (σ x) γ v  →  γ `⊢ σ ↓ `⊥
         -----------------------------------------
       → Σ[ δ ∈ Env Γ ] γ `⊢ σ ↓ δ  ×  ℰ (` x) δ v
-    subst-reflect-var {Γ}{Δ}{γ}{x}{v}{σ} xv
+    subst-reflect-var {Γ}{Δ}{γ}{x}{v}{σ} xv γ⊢σ↓⊥
       rewrite sym (nth-const-env {Γ}{x}{v}) =
         ⟨ const-env x v , ⟨ const-env-ok , ⊑-refl ⟩ ⟩
       where
       const-env-ok : γ `⊢ σ ↓ const-env x v
       const-env-ok y with x var≟ y
       ... | yes x≡y rewrite sym x≡y | nth-const-env {Γ}{x}{v} = xv
-      ... | no x≢y rewrite diff-nth-const-env {Γ}{x}{y}{v} x≢y = ℰ-⊥ {M = σ y}
+      ... | no x≢y rewrite diff-nth-const-env {Γ}{x}{y}{v} x≢y = γ⊢σ↓⊥ y
 
     subst-⊥ : ∀{Γ Δ}{γ : Env Δ}{σ : Subst Γ Δ}
         -----------------
@@ -661,15 +661,22 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
       → ℰ M (init δ `, last δ) v
     split {δ = δ} δMv rewrite init-last δ = δMv
 
+    δu⊢extσ⊥ : ∀{Γ}{Δ}{δ : Env Δ}{σ : Subst Γ Δ}{u}
+             → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
+    δu⊢extσ⊥ δ⊢σ↓⊥ Z = ⊑-⊥
+    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (S x) =
+       rename-pres {M = σ x} S_ (λ x₁ → ⊑-refl) (δ⊢σ↓⊥ x)
+
     subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Term Γ} {L : Term Δ}
                       {σ : Subst Γ Δ} {v}
       → ℰ L δ v
       → L ≡ ⟪ σ ⟫ M
+      → δ `⊢ σ ↓ `⊥
         --------------------------------------------
       → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
-    subst-reflect {δ = δ}{` x}{L}{σ} ℰLδv L≡σM rewrite L≡σM =
-        subst-reflect-var{σ = σ} ℰLδv
-    subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM
+    subst-reflect {δ = δ}{` x}{L}{σ} ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
+        subst-reflect-var{σ = σ} ℰLδv δ⊢σ↓⊥
+    subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
         rewrite L≡σM
         = G {v} ℰLδv
         where
@@ -679,7 +686,7 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
         G {⊥} tt = ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , tt  ⟩ ⟩
         G {u ↦ w} ℰLδv
             with subst-reflect {δ = δ `, u} {M = N} {L = ⟪ exts σ ⟫ N}
-                     {σ = exts σ} {w} ℰLδv refl
+                     {σ = exts σ} {w} ℰLδv refl (δu⊢extσ⊥ δ⊢σ↓⊥)
         ... | ⟨ γ , ⟨ subst-γ , m ⟩ ⟩ =
               ⟨ init γ ,
               ⟨ (λ x → rename-inc-reflect {M = σ x} (subst-γ (S x))) ,
@@ -693,14 +700,15 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
            ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{u}m1(EnvConjR1⊑ δ₁ δ₂) ,
              ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}m2(EnvConjR2⊑ δ₁ δ₂) ⟩
              ⟩ ⟩
-    subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv L≡σM
+    subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv
+                  L≡σM δ⊢σ↓⊥
         rewrite L≡σM | ●-≡ {Δ}{ℰ (⟪ σ ⟫ L)}{ℰ (⟪ σ ⟫ M)}{δ}{v}
         with ℰσL●ℰσMδv
     ... | inj₁ v⊑⊥ =
           ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , ℰ-⊑{M = L · M} (ℰ-⊥{M = L · M}) v⊑⊥  ⟩ ⟩
     ... | inj₂ ⟨ u , ⟨ ℰσLδu↦v , ℰσMδu ⟩ ⟩
-        with subst-reflect{M = L} ℰσLδu↦v refl
-           | subst-reflect{M = M} ℰσMδu refl
+        with subst-reflect{M = L} ℰσLδu↦v refl δ⊢σ↓⊥
+           | subst-reflect{M = M} ℰσMδu refl δ⊢σ↓⊥
     ... | ⟨ δ₁  , ⟨ subst-δ₁ , ℰLδ₁u↦v ⟩ ⟩
         | ⟨ δ₂  , ⟨ subst-δ₂ , ℰMδ₂u ⟩ ⟩ =
           ⟨ (δ₁ `⊔ δ₂) ,
@@ -727,12 +735,18 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
       lemma Z  =  ⊑-refl
       lemma (S x) = δσγ (S x)
 
+    subst-zero-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+                 → ℰ M γ ⊥
+                 → γ `⊢ subst-zero M ↓ `⊥
+    subst-zero-⊥ ℰMγ⊥ Z = ℰMγ⊥
+    subst-zero-⊥ ℰMγ⊥ (S x) = ⊑-⊥
+
     substitution-reflect : ∀ {Δ} {δ : Env Δ} {N : Term (suc Δ)} {M : Term Δ} {v}
-      → ℰ (N [ M ]) δ v
+      → ℰ (N [ M ]) δ v  → ℰ M δ ⊥
         ------------------------------------------------
       → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
-    substitution-reflect{N = N}{M = M} d
-         with subst-reflect {M = N} d refl
+    substitution-reflect{N = N}{M = M} ℰNMδv ℰMδ⊥
+         with subst-reflect {M = N} ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
     ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
          with subst-zero-reflect δσγ
     ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
@@ -742,7 +756,7 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
         → ℰ (N [ M ]) γ v
         → ℰ ((ƛ N) · M) γ v
     reflect-beta {Γ}{γ}{M}{N}{v} d 
-        with substitution-reflect{N = N}{M = M} d
+        with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M})
     ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ rewrite ●-≡ {Γ}{ℱ (ℰ N)}{ℰ M}{γ}{v} =
           inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
 
@@ -760,6 +774,7 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
         ●-≲ (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
     reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
         reflect-beta {M = M}{N}
+
 
 module CallByName where
 
