@@ -344,13 +344,11 @@ module InValueOrder (D : ValueOrder) where
         -------------------------
       → ℰ (rename ρ M) δ ≲ ℰ M γ
     rename-reflect {Γ}{Δ}{γ}{δ}{` x} {ρ} δ∘ρ⊑γ {v} ℰρMδv  =
-      v  ⊑⟨ ℰρMδv ⟩ δ (ρ x)  ⊑⟨ δ∘ρ⊑γ x ⟩  γ x ◼
-    rename-reflect {Γ}{Δ}{γ}{δ}{lam ⦅ bind N nil ⦆} {ρ} δ∘ρ⊑γ {v} = ℱ-≲ IH {v}
-      where
-      IH : ∀ {v} → ℰ (rename (ext ρ) N) (δ `, v) ≲ ℰ N (γ `, v)
-      IH {v} = rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)
+       v  ⊑⟨ ℰρMδv ⟩ δ (ρ x)  ⊑⟨ δ∘ρ⊑γ x ⟩  γ x ◼
+    rename-reflect {Γ}{Δ}{γ}{δ}{lam ⦅ bind N nil ⦆} {ρ} δ∘ρ⊑γ {v} =
+       ℱ-≲ (rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)) {v}
     rename-reflect {M = app ⦅ cons L (cons M nil) ⦆} {ρ} δ∘ρ⊑γ =
-      ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
+       ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
 
     rename-inc-reflect : ∀ {Γ v′ v} {γ : Env Γ} { M : Term Γ}
       → ℰ (rename S_ M) (γ `, v′) v
