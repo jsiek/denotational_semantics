@@ -163,691 +163,664 @@ _□ : ∀ (d : Value → Set)
 ... | a | b =
     ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
 
+cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+          {D′ : Denotation (suc Δ)}
+       → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v))
+       → ℱ D γ ≃ ℱ D′ δ
+cong-ℱ {D = D}{D′} D≃D′ {v} =
+  ⟨ (ℱ-≲ (proj₁ D≃D′)) {v = v} , (ℱ-≲ (proj₂ D≃D′)) {v = v} ⟩
 
-record ValueOrder : Set₁ where
-  infix 4 _⊑_
+infix 4 _⊑_
+
+data _⊑_ : Value → Value → Set where
+
+  ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
+
+  ⊑-conj-L : ∀ {u v w}
+      → v ⊑ u
+      → w ⊑ u
+        -----------
+      → (v ⊔ w) ⊑ u
+
+  ⊑-conj-R1 : ∀ {u v w}
+     → u ⊑ v
+       -----------
+     → u ⊑ (v ⊔ w)
+
+  ⊑-conj-R2 : ∀ {u v w}
+     → u ⊑ w
+       -----------
+     → u ⊑ (v ⊔ w)
+
+  ⊑-trans : ∀ {u v w}
+     → u ⊑ v
+     → v ⊑ w
+       -----
+     → u ⊑ w
+
+  ⊑-fun : ∀ {v w v′ w′}
+       → v′ ⊑ v
+       → w ⊑ w′
+         -------------------
+       → (v ↦ w) ⊑ (v′ ↦ w′)
+
+  ⊑-dist : ∀{v w w′}
+         ---------------------------------
+       → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
+
+⊑-refl : ∀ {v} → v ⊑ v
+⊑-refl {⊥} = ⊑-⊥
+⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
+⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
+
+⊔⊑⊔ : ∀ {v w v′ w′}
+      → v ⊑ v′  →  w ⊑ w′
+        -----------------------
+      → (v ⊔ w) ⊑ (v′ ⊔ w′)
+⊔⊑⊔ d₁ d₂ = ⊑-conj-L (⊑-conj-R1 d₁) (⊑-conj-R2 d₂)
+
+Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
+        → ((v ⊔ v′) ↦ (w ⊔ w′)) ⊑ ((v ↦ w) ⊔ (v′ ↦ w′))
+Dist⊔↦⊔ = ⊑-trans ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
+                            (⊑-fun (⊑-conj-R2 ⊑-refl) ⊑-refl))
+
+infixr 2 _⊑⟨⟩_ _⊑⟨_⟩_
+infix  3 _◼
+
+_⊑⟨⟩_ : ∀ (x : Value) {y : Value}
+    → x ⊑ y
+      -----
+    → x ⊑ y
+x ⊑⟨⟩ x⊑y  = x⊑y
+
+_⊑⟨_⟩_ : ∀ (x : Value) {y z : Value}
+    → x ⊑ y
+    → y ⊑ z
+      -----
+    → x ⊑ z
+(x ⊑⟨ x⊑y ⟩ y⊑z) =  ⊑-trans x⊑y y⊑z
+
+_◼ : ∀ (v : Value)
+      -----
+    → v ⊑ v
+(v ◼) =  ⊑-refl
+
+
+_`⊑_ : ∀ {Γ} → Env Γ → Env Γ → Set
+_`⊑_ {Γ} γ δ = (x : Var Γ) → γ x ⊑ δ x
+
+_`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
+_`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x
+
+`Refl⊑ : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
+`Refl⊑ {Γ} {γ} x = ⊑-refl {γ x}
+
+EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → γ `⊑ (γ `⊔ δ)
+EnvConjR1⊑ γ δ x = ⊑-conj-R1 ⊑-refl
+
+EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → δ `⊑ (γ `⊔ δ)
+EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
+
+
+record WFDenot (Γ : ℕ) (E : Denotation Γ) : Set₁ where
   field
-    _⊑_ : Value → Value → Set
-    ⊑-refl : ∀ {v} → v ⊑ v
-    ⊑-trans : ∀ {u v w} → u ⊑ v → v ⊑ w → u ⊑ w
-    ⊑-conj-L : ∀ {u v w} → v ⊑ u → w ⊑ u → v ⊔ w ⊑ u
-    ⊑-conj-R1 : ∀ {u v w} → u ⊑ v → u ⊑ v ⊔ w
-    ⊑-conj-R2 : ∀ {u v w} → u ⊑ w → u ⊑ v ⊔ w
-    ⊑-fun : ∀ {v w v′ w′} → v′ ⊑ v → w ⊑ w′ → v ↦ w ⊑ v′ ↦ w′
-    ⊑-dist : ∀{v w w′} → v ↦ (w ⊔ w′) ⊑ v ↦ w ⊔ v ↦ w′
+    ⊑-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
+    ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
+    ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
 
-record ValueOrderWithBot (dom : ValueOrder) : Set₁ where
-  open ValueOrder dom
+ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+       → WFDenot (suc Γ) D
+       → ℱ D γ v → w ⊑ v → ℱ D γ w
+ℱ-⊑ d ℱDγv ⊑-⊥ = tt
+ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
+ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
+ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
+ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
+ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
+  WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
+  where b : (γ `, v) `⊑ (γ `, v')
+        b Z = v⊑v'
+        b (S x) = ⊑-refl 
+ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
+
+record ModelCong
+       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+       : Set₁ where
   field
-    ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
-
-module ValueOrderAux (D : ValueOrder) where
-
-  open ValueOrder D
-
-  ⊔⊑⊔ : ∀ {v w v′ w′}
-        → v ⊑ v′  →  w ⊑ w′
-          -----------------------
-        → (v ⊔ w) ⊑ (v′ ⊔ w′)
-  ⊔⊑⊔ d₁ d₂ = ⊑-conj-L (⊑-conj-R1 d₁) (⊑-conj-R2 d₂)
-
-  Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
-          → ((v ⊔ v′) ↦ (w ⊔ w′)) ⊑ ((v ↦ w) ⊔ (v′ ↦ w′))
-  Dist⊔↦⊔ = ⊑-trans ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
-                              (⊑-fun (⊑-conj-R2 ⊑-refl) ⊑-refl))
-
-  infixr 2 _⊑⟨⟩_ _⊑⟨_⟩_
-  infix  3 _◼
-
-  _⊑⟨⟩_ : ∀ (x : Value) {y : Value}
-      → x ⊑ y
-        -----
-      → x ⊑ y
-  x ⊑⟨⟩ x⊑y  = x⊑y
-
-  _⊑⟨_⟩_ : ∀ (x : Value) {y z : Value}
-      → x ⊑ y
-      → y ⊑ z
-        -----
-      → x ⊑ z
-  (x ⊑⟨ x⊑y ⟩ y⊑z) =  ⊑-trans x⊑y y⊑z
-
-  _◼ : ∀ (v : Value)
-        -----
-      → v ⊑ v
-  (v ◼) =  ⊑-refl
+    ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
+            {D₁′ D₂′ : Denotation Δ}
+         → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
+         → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
 
 
-  _`⊑_ : ∀ {Γ} → Env Γ → Env Γ → Set
-  _`⊑_ {Γ} γ δ = (x : Var Γ) → γ x ⊑ δ x
+record ModelBasics
+       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+       : Set₁ where
+  field
+    Cong : ModelCong _●_
+    ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
+         → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
+    ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
+         → WFDenot Γ D₁ → WFDenot Γ D₂
+         → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
 
-  _`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
-  _`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x
+module Denot
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  where
 
-  `Refl⊑ : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
-  `Refl⊑ {Γ} {γ} x = ⊑-refl {γ x}
-  
-  EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → γ `⊑ (γ `⊔ δ)
-  EnvConjR1⊑ γ δ x = ⊑-conj-R1 ⊑-refl
+  ℰ : ∀{Γ} → Term Γ → Denotation Γ
+  ℰ {Γ} (` x) γ v = v ⊑ γ x
+  ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
+  ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
 
-  EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → δ `⊑ (γ `⊔ δ)
-  EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
-  
+  infix 3 _`⊢_↓_
+  _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
+  _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
 
-  record WFDenot (Γ : ℕ) (E : Denotation Γ) : Set₁ where
-    field
-      ⊑-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
-      ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
-      ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
+module RenamePreserveReflect
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  (Cong : ModelCong _●_)
+  where
 
-  record ModelCong
-         (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-         : Set₁ where
-    field
-      ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
-              {D₁′ D₂′ : Denotation Δ}
-           → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
-           → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
+  module Den = Denot _●_
+  open Den
+  open ModelCong Cong
 
+  ⊑-ext-R : ∀{Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ}{v}
+        → γ `⊑ (δ ∘ ρ)
+          ------------------------------
+        → (γ `, v) `⊑ ((δ `, v) ∘ ext ρ)
+  ⊑-ext-R {v = v} γ⊑δ∘ρ Z = ⊑-refl
+  ⊑-ext-R {v = v} γ⊑δ∘ρ (S x) = γ⊑δ∘ρ x
 
-module InValueOrder (D : ValueOrder) where
+  rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
+         → (ρ : Rename Γ Δ)
+         → γ `⊑ (δ ∘ ρ)
+         → ℰ M γ v
+           ------------------
+         → ℰ (rename ρ M) δ v
+  rename-pres {v = v}{γ}{δ}{` x} ρ γ⊑δ∘ρ ℰMγv =
+      v  ⊑⟨ ℰMγv ⟩ γ x  ⊑⟨ γ⊑δ∘ρ x ⟩ δ (ρ x) ◼
+  rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} ρ γ⊑δ∘ρ =
+      ℱ-≲ (rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ)) {v}
+  rename-pres {M = app ⦅ cons L (cons M nil) ⦆} ρ γ⊑δ∘ρ =
+      ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
 
-  open ValueOrder D
-  open ValueOrderAux D
+  ⊑-env : ∀ {Γ} {γ : Env Γ} {δ : Env Γ} {M v}
+    → ℰ M γ v
+    → γ `⊑ δ
+      ----------
+    → ℰ M δ v
+  ⊑-env{Γ}{γ}{δ}{M}{v} d lt
+        with rename-pres{Γ}{Γ}{v}{γ}{δ}{M} (λ x → x) lt d
+  ... | d′ rewrite rename-id {Γ}{M} =
+        d′
 
-  record ModelBasics
-         (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-         : Set₁ where
-    field
-      Cong : ModelCong _●_
-      ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
-           → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
-      ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-           → WFDenot (suc Γ) D → ℱ D γ v → w ⊑ v → ℱ D γ w
-      ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-           → WFDenot Γ D₁ → WFDenot Γ D₂
-           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-           
-  module Denot
-    (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  EnvExt⊑ : ∀ {Γ} {γ : Env Γ} {M v u₁ u₂}
+    → ℰ M (γ `, u₁) v
+    → u₁ ⊑ u₂
+      -----------------
+    → ℰ M (γ `, u₂) v
+  EnvExt⊑ {M = M} d lt = ⊑-env{M = M} d (env-le lt)
     where
-    
-    ℰ : ∀{Γ} → Term Γ → Denotation Γ
-    ℰ {Γ} (` x) γ v = v ⊑ γ x
-    ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
-    ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
+    env-le : ∀ {γ u₁ u₂} → u₁ ⊑ u₂ → (γ `, u₁) `⊑ (γ `, u₂)
+    env-le lt Z = lt
+    env-le lt (S n) = ⊑-refl
 
-    infix 3 _`⊢_↓_
-    _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
-    _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
+  ⊑-ext-L : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ} {v}
+        → (δ ∘ ρ) `⊑ γ
+          ---------------------------------
+        → ((δ `, v) ∘ ext ρ) `⊑ (γ `, v)
+  ⊑-ext-L δ∘ρ⊑γ Z = ⊑-refl
+  ⊑-ext-L δ∘ρ⊑γ (S x) = δ∘ρ⊑γ x
 
-  module RenamePreserveReflect
-    (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (Cong : ModelCong _●_)
-    where
-    
-    module Den = Denot _●_
-    open Den
-    open ModelCong Cong
+  rename-reflect : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} { M : Term Γ}
+                     {ρ : Rename Γ Δ}
+    → (δ ∘ ρ) `⊑ γ
+      -------------------------
+    → ℰ (rename ρ M) δ ≲ ℰ M γ
+  rename-reflect {Γ}{Δ}{γ}{δ}{` x} {ρ} δ∘ρ⊑γ {v} ℰρMδv  =
+     v  ⊑⟨ ℰρMδv ⟩ δ (ρ x)  ⊑⟨ δ∘ρ⊑γ x ⟩  γ x ◼
+  rename-reflect {Γ}{Δ}{γ}{δ}{lam ⦅ bind N nil ⦆} {ρ} δ∘ρ⊑γ {v} =
+     ℱ-≲ (rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)) {v}
+  rename-reflect {M = app ⦅ cons L (cons M nil) ⦆} {ρ} δ∘ρ⊑γ =
+     ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
 
-    ⊑-ext-R : ∀{Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ}{v}
-          → γ `⊑ (δ ∘ ρ)
-            ------------------------------
-          → (γ `, v) `⊑ ((δ `, v) ∘ ext ρ)
-    ⊑-ext-R {v = v} γ⊑δ∘ρ Z = ⊑-refl
-    ⊑-ext-R {v = v} γ⊑δ∘ρ (S x) = γ⊑δ∘ρ x
+  rename-inc-reflect : ∀ {Γ v′ v} {γ : Env Γ} { M : Term Γ}
+    → ℰ (rename S_ M) (γ `, v′) v
+      ----------------------------
+    → ℰ M γ v
+  rename-inc-reflect {M = M} d = rename-reflect {M = M} `Refl⊑ d
 
-    rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
-           → (ρ : Rename Γ Δ)
-           → γ `⊑ (δ ∘ ρ)
-           → ℰ M γ v
-             ------------------
-           → ℰ (rename ρ M) δ v
-    rename-pres {v = v}{γ}{δ}{` x} ρ γ⊑δ∘ρ ℰMγv =
-        v  ⊑⟨ ℰMγv ⟩ γ x  ⊑⟨ γ⊑δ∘ρ x ⟩ δ (ρ x) ◼
-    rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} ρ γ⊑δ∘ρ =
-        ℱ-≲ (rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ)) {v}
-    rename-pres {M = app ⦅ cons L (cons M nil) ⦆} ρ γ⊑δ∘ρ =
-        ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
+  rename-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ} {ρ : Rename Γ Δ}
+    → γ `≡ (δ ∘ ρ)
+      ------------------------
+    → ℰ M γ ≃ ℰ (rename ρ M) δ
+  rename-equiv {γ = γ}{δ}{M}{ρ} γ≡δ∘ρ =
+      ⟨ rename-pres {M = M} ρ γ⊑δ∘ρ , rename-reflect {M = M} {ρ} δ∘ρ⊑γ ⟩
+      where γ⊑δ∘ρ : γ `⊑ (δ ∘ ρ)
+            γ⊑δ∘ρ x rewrite γ≡δ∘ρ x = ⊑-refl
 
-    ⊑-env : ∀ {Γ} {γ : Env Γ} {δ : Env Γ} {M v}
-      → ℰ M γ v
-      → γ `⊑ δ
-        ----------
-      → ℰ M δ v
-    ⊑-env{Γ}{γ}{δ}{M}{v} d lt
-          with rename-pres{Γ}{Γ}{v}{γ}{δ}{M} (λ x → x) lt d
-    ... | d′ rewrite rename-id {Γ}{M} =
-          d′
+            δ∘ρ⊑γ : (δ ∘ ρ) `⊑ γ
+            δ∘ρ⊑γ x rewrite γ≡δ∘ρ x = ⊑-refl
 
-    EnvExt⊑ : ∀ {Γ} {γ : Env Γ} {M v u₁ u₂}
-      → ℰ M (γ `, u₁) v
-      → u₁ ⊑ u₂
-        -----------------
-      → ℰ M (γ `, u₂) v
-    EnvExt⊑ {M = M} d lt = ⊑-env{M = M} d (env-le lt)
-      where
-      env-le : ∀ {γ u₁ u₂} → u₁ ⊑ u₂ → (γ `, u₁) `⊑ (γ `, u₂)
-      env-le lt Z = lt
-      env-le lt (S n) = ⊑-refl
-
-    ⊑-ext-L : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ} {v}
-          → (δ ∘ ρ) `⊑ γ
-            ---------------------------------
-          → ((δ `, v) ∘ ext ρ) `⊑ (γ `, v)
-    ⊑-ext-L δ∘ρ⊑γ Z = ⊑-refl
-    ⊑-ext-L δ∘ρ⊑γ (S x) = δ∘ρ⊑γ x
-            
-    rename-reflect : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} { M : Term Γ}
-                       {ρ : Rename Γ Δ}
-      → (δ ∘ ρ) `⊑ γ
-        -------------------------
-      → ℰ (rename ρ M) δ ≲ ℰ M γ
-    rename-reflect {Γ}{Δ}{γ}{δ}{` x} {ρ} δ∘ρ⊑γ {v} ℰρMδv  =
-       v  ⊑⟨ ℰρMδv ⟩ δ (ρ x)  ⊑⟨ δ∘ρ⊑γ x ⟩  γ x ◼
-    rename-reflect {Γ}{Δ}{γ}{δ}{lam ⦅ bind N nil ⦆} {ρ} δ∘ρ⊑γ {v} =
-       ℱ-≲ (rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)) {v}
-    rename-reflect {M = app ⦅ cons L (cons M nil) ⦆} {ρ} δ∘ρ⊑γ =
-       ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
-
-    rename-inc-reflect : ∀ {Γ v′ v} {γ : Env Γ} { M : Term Γ}
-      → ℰ (rename S_ M) (γ `, v′) v
-        ----------------------------
-      → ℰ M γ v
-    rename-inc-reflect {M = M} d = rename-reflect {M = M} `Refl⊑ d
-
-    rename-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ} {ρ : Rename Γ Δ}
-      → γ `≡ (δ ∘ ρ)
-        ------------------------
-      → ℰ M γ ≃ ℰ (rename ρ M) δ
-    rename-equiv {γ = γ}{δ}{M}{ρ} γ≡δ∘ρ =
-        ⟨ rename-pres {M = M} ρ γ⊑δ∘ρ , rename-reflect {M = M} {ρ} δ∘ρ⊑γ ⟩
-        where γ⊑δ∘ρ : γ `⊑ (δ ∘ ρ)
-              γ⊑δ∘ρ x rewrite γ≡δ∘ρ x = ⊑-refl
-              
-              δ∘ρ⊑γ : (δ ∘ ρ) `⊑ γ
-              δ∘ρ⊑γ x rewrite γ≡δ∘ρ x = ⊑-refl
-
-  module Filter
-      (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-      (MB : ModelBasics _●_)
-      where
-
-    open ModelBasics MB
-    
-    module Den = Denot _●_
-    open Den
-    
-    module RP = RenamePreserveReflect _●_ Cong
-    open RP using (⊑-env; rename-pres)  
-  
-    ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
-        → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
-    ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
-        → ℰ M γ v → w ⊑ v → ℰ M γ w
-        
-    ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv
-    ℰ-⊔ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
-       ℱ-⊔ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
-    ℰ-⊔ {Γ}{γ = γ}{app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv =
-       let a = ℰ-⊔ {γ = γ} {M = L} in
-       let b = ℰ-⊔ {γ = γ} {M = M} in
-       let c = ℰ-⊑ {γ = γ} {M = L} in
-       ●-⊔ G H ℰMγu ℰMγv
-      where G : WFDenot Γ (ℰ L)
-            G = record { ⊑-env = ⊑-env{M = L} ;
-                         ⊑-closed = ℰ-⊑ {M = L} ;
-                         ⊔-closed = ℰ-⊔ {M = L}  }
-            H : WFDenot Γ (ℰ M)
-            H = record { ⊑-env = ⊑-env{M = M} ;
-                         ⊑-closed = ℰ-⊑ {M = M} ;
-                         ⊔-closed = ℰ-⊔ {M = M}  }
-       
-        
-    ℰ-⊑ {M = ` x} ℰMγv w⊑v = ⊑-trans w⊑v ℰMγv
-    ℰ-⊑ {Γ}{γ}{lam ⦅ bind N nil ⦆}{v}{w} ℰMγv w⊑v =
-      ℱ-⊑ G ℰMγv w⊑v
-      where G : WFDenot (suc Γ) (ℰ N)
-            G = record { ⊑-env = ⊑-env{M = N} ;
-                         ⊑-closed = ℰ-⊑ {M = N} ;
-                         ⊔-closed = ℰ-⊔ {M = N} }
-
-    ℰ-⊑ {Γ}{γ} {app ⦅ cons L (cons M nil) ⦆} {v} {w} ℰMγv w⊑v =
-       ●-⊑ G ℰMγv w⊑v
-       where G : WFDenot Γ (ℰ L)
-             G = record { ⊑-env = ⊑-env{M = L} ;
-                          ⊑-closed = ℰ-⊑ {M = L} ;
-                          ⊔-closed = ℰ-⊔ {M = L} }
-
-    WF : ∀{Γ}{M : Term Γ} → WFDenot Γ (ℰ M)
-    WF {Γ} {M} = record { ⊑-env = ⊑-env {M = M} ;
-                          ⊑-closed = ℰ-⊑ {M = M} ;
-                          ⊔-closed = ℰ-⊔ {M = M} }
-
-  module SubstPres
+module Filter
     (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
     (MB : ModelBasics _●_)
     where
-    
-    open Denot _●_
-    open ModelBasics MB
-    open ModelCong Cong
-    module RP = RenamePreserveReflect _●_ Cong
-    open RP using (⊑-env; rename-pres)  
-    open Filter _●_ MB using (ℰ-⊑; ℰ-⊔)
-    
-    subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
-      → (σ : Subst Γ Δ)
-      → δ `⊢ σ ↓ γ
-       --------------------------
-      → δ `, v `⊢ exts σ ↓ γ `, v
-    subst-ext σ d Z = ⊑-refl
-    subst-ext σ d (S x′) = rename-pres {M = σ x′} S_ (λ _ → ⊑-refl) (d x′)
 
-    subst-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
-      → (σ : Subst Γ Δ)
-      → δ `⊢ σ ↓ γ
-      → ℰ M γ v
-        ------------------
-      → ℰ (⟪ σ ⟫ M) δ v
-    subst-pres {M = ` x} σ δ⊢σ↓γ ℰMγv = ℰ-⊑ {M = σ x} (δ⊢σ↓γ x) ℰMγv
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} σ δ⊢σ↓γ ℰMγv =
-       (ℱ-≲ {Γ}{Δ}{γ}{δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}
-             λ {v} → subst-pres {γ = γ `, v}{δ = δ `, v}{M = N} (exts σ)
-                          (subst-ext σ δ⊢σ↓γ)) {v}
-        ℰMγv
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆} σ δ⊢σ↓γ ℰMγv =
-       (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
-            {D₂′ = ℰ (⟪ σ ⟫ M)}
-            (λ ℰLγv → subst-pres {Γ}{Δ}{γ = γ}{δ}{L} σ δ⊢σ↓γ ℰLγv)
-            (λ ℰMδv → subst-pres {Γ}{Δ}{γ = γ}{δ}{M} σ δ⊢σ↓γ ℰMδv))
-        ℰMγv
+  open ModelBasics MB
 
-    substitution : ∀ {Γ} {γ : Env Γ} {N M v w}
-       → ℰ N (γ `, v) w
-       → ℰ M γ v
-         ---------------
-       → ℰ (N [ M ]) γ w   
-    substitution{Γ}{γ}{N}{M}{v}{w} dn dm =
-      subst-pres{M = N} (subst-zero M) sub-z-ok dn
-      where
-      sub-z-ok : γ `⊢ subst-zero M ↓ (γ `, v)
-      sub-z-ok Z = dm
-      sub-z-ok (S x) = ⊑-refl
+  module Den = Denot _●_
+  open Den
+
+  module RP = RenamePreserveReflect _●_ Cong
+  open RP using (⊑-env; rename-pres)  
+
+  ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
+      → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
+  ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
+      → ℰ M γ v → w ⊑ v → ℰ M γ w
+
+  ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv
+  ℰ-⊔ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
+     ℱ-⊔ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
+  ℰ-⊔ {Γ}{γ = γ}{app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv =
+     let a = ℰ-⊔ {γ = γ} {M = L} in
+     let b = ℰ-⊔ {γ = γ} {M = M} in
+     let c = ℰ-⊑ {γ = γ} {M = L} in
+     ●-⊔ G H ℰMγu ℰMγv
+    where G : WFDenot Γ (ℰ L)
+          G = record { ⊑-env = ⊑-env{M = L} ;
+                       ⊑-closed = ℰ-⊑ {M = L} ;
+                       ⊔-closed = ℰ-⊔ {M = L}  }
+          H : WFDenot Γ (ℰ M)
+          H = record { ⊑-env = ⊑-env{M = M} ;
+                       ⊑-closed = ℰ-⊑ {M = M} ;
+                       ⊔-closed = ℰ-⊔ {M = M}  }
 
 
-module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
+  ℰ-⊑ {M = ` x} ℰMγv w⊑v = ⊑-trans w⊑v ℰMγv
+  ℰ-⊑ {Γ}{γ}{lam ⦅ bind N nil ⦆}{v}{w} ℰMγv w⊑v =
+    ℱ-⊑ G ℰMγv w⊑v
+    where G : WFDenot (suc Γ) (ℰ N)
+          G = record { ⊑-env = ⊑-env{M = N} ;
+                       ⊑-closed = ℰ-⊑ {M = N} ;
+                       ⊔-closed = ℰ-⊔ {M = N} }
 
-  open ValueOrder D
-  open ValueOrderWithBot D'
-  open ValueOrderAux D
+  ℰ-⊑ {Γ}{γ} {app ⦅ cons L (cons M nil) ⦆} {v} {w} ℰMγv w⊑v =
+     ●-⊑ G ℰMγv w⊑v
+     where G : WFDenot Γ (ℰ L)
+           G = record { ⊑-env = ⊑-env{M = L} ;
+                        ⊑-closed = ℰ-⊑ {M = L} ;
+                        ⊔-closed = ℰ-⊔ {M = L} }
 
-  `⊥ : ∀ {Γ} → Env Γ
-  `⊥ x = ⊥
+  WF : ∀{Γ}{M : Term Γ} → WFDenot Γ (ℰ M)
+  WF {Γ} {M} = record { ⊑-env = ⊑-env {M = M} ;
+                        ⊑-closed = ℰ-⊑ {M = M} ;
+                        ⊔-closed = ℰ-⊔ {M = M} }
 
-  record ModelBot
-         (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-         : Set₁ where
-    field
-      MB : InValueOrder.ModelBasics D _●_
-      ●-⊥ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ}
-           → (D₁ ● D₂) γ ⊥
+module SubstPres
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  (MB : ModelBasics _●_)
+  where
 
-  record ModelExtra
-         (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-         : Set₁ where
-    field
-      MBot : ModelBot _●_
-      ●-≡ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {w : Value}
-          → (D₁ ● D₂) γ w ≡ (w ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v))
-      ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u : Value}
-            → ℱ D γ u
-            → u ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] Σ[ w ∈ Value ]
-                        (D (γ `, v) w) × ((v ↦ w) ⊑ u))
+  open Denot _●_
+  open ModelBasics MB
+  open ModelCong Cong
+  module RP = RenamePreserveReflect _●_ Cong
+  open RP using (⊑-env; rename-pres)  
+  open Filter _●_ MB using (ℰ-⊑; ℰ-⊔)
 
+  subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
+    → (σ : Subst Γ Δ)
+    → δ `⊢ σ ↓ γ
+     --------------------------
+    → δ `, v `⊢ exts σ ↓ γ `, v
+  subst-ext σ d Z = ⊑-refl
+  subst-ext σ d (S x′) = rename-pres {M = σ x′} S_ (λ _ → ⊑-refl) (d x′)
 
-  module Preservation
-    (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (ME : ModelExtra _●_)
+  subst-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
+    → (σ : Subst Γ Δ)
+    → δ `⊢ σ ↓ γ
+    → ℰ M γ v
+      ------------------
+    → ℰ (⟪ σ ⟫ M) δ v
+  subst-pres {M = ` x} σ δ⊢σ↓γ ℰMγv = ℰ-⊑ {M = σ x} (δ⊢σ↓γ x) ℰMγv
+  subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} σ δ⊢σ↓γ ℰMγv =
+     (ℱ-≲ {Γ}{Δ}{γ}{δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}
+           λ {v} → subst-pres {γ = γ `, v}{δ = δ `, v}{M = N} (exts σ)
+                        (subst-ext σ δ⊢σ↓γ)) {v}
+      ℰMγv
+  subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆} σ δ⊢σ↓γ ℰMγv =
+     (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
+          {D₂′ = ℰ (⟪ σ ⟫ M)}
+          (λ ℰLγv → subst-pres {Γ}{Δ}{γ = γ}{δ}{L} σ δ⊢σ↓γ ℰLγv)
+          (λ ℰMδv → subst-pres {Γ}{Δ}{γ = γ}{δ}{M} σ δ⊢σ↓γ ℰMδv))
+      ℰMγv
+
+  substitution : ∀ {Γ} {γ : Env Γ} {N M v w}
+     → ℰ N (γ `, v) w
+     → ℰ M γ v
+       ---------------
+     → ℰ (N [ M ]) γ w   
+  substitution{Γ}{γ}{N}{M}{v}{w} dn dm =
+    subst-pres{M = N} (subst-zero M) sub-z-ok dn
     where
-
-    module Den = InValueOrder.Denot D _●_
-    open Den
-    open ModelExtra ME
-    open ModelBot MBot
-    open InValueOrder.ModelBasics MB
-    open ModelCong Cong
-    module RP = InValueOrder.RenamePreserveReflect D _●_ Cong
-    open RP using (⊑-env; rename-pres)  
-    module F = InValueOrder.Filter D _●_ MB
-    open F using (ℰ-⊑; ℰ-⊔)
-    open InValueOrder.SubstPres D _●_ MB
-    
-    ℱ●-inv : ∀{Γ} {D₁ : Denotation (suc Γ)}{D₂ : Denotation Γ}{γ : Env Γ}
-              {w : Value}
-            → (ℱ D₁ ● D₂) γ w
-            → w ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] D₁ (γ `, v) w × D₂ γ v)
-    ℱ●-inv {Γ}{D₁}{D₂}{γ}{w} ℱD₁●D₂γw
-        rewrite ●-≡{Γ}{ℱ D₁}{D₂}{γ}{w}
-        with ℱD₁●D₂γw
-    ... | inj₁ w⊑⊥ = inj₁ w⊑⊥ 
-    ... | inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩ =
-          inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩
-        
-    ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
-        → ℰ M γ ⊥
-    ℰ-⊥ {M = ` x} = ⊑-⊥
-    ℰ-⊥ {Γ}{γ}{M = lam ⦅ bind N nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
-    ℰ-⊥ {M = app ⦅ cons L (cons M nil) ⦆} = ●-⊥
+    sub-z-ok : γ `⊢ subst-zero M ↓ (γ `, v)
+    sub-z-ok Z = dm
+    sub-z-ok (S x) = ⊑-refl
 
 
-    open LambdaV.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule)
+`⊥ : ∀ {Γ} → Env Γ
+`⊥ x = ⊥
 
-    preserve : ∀ {Γ} {γ : Env Γ} {M N v}
-      → M —→ N
-      → ℰ M γ v
-        ----------
-      → ℰ N γ v
-    preserve {γ = γ} (ξ₁-rule{L = L}{L´}{M} L—→L′) =
-      ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L´}{D₂′ = ℰ M}
-                  (λ x → preserve L—→L′ x)
-                  (λ x → x)
-    preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
-      ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
-                  (λ x → x)
-                  (λ x → preserve M—→M′ x)
-    preserve (β-rule{N = N}{M = M}) ℱℰN●ℰMγw 
-        with ℱ●-inv ℱℰN●ℰMγw
-    ... | inj₁ w⊑⊥ =
-        ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) w⊑⊥
-    ... | inj₂ ⟨ v , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
-        substitution{N = N}{M = M} ℰNγvw ℰMγv
+record ModelBot
+       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+       : Set₁ where
+  field
+    MB : ModelBasics _●_
+    ●-⊥ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ}
+         → (D₁ ● D₂) γ ⊥
 
-  module Reflect
-    (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (ME : ModelExtra _●_)
-    where
-    
-    module Den = InValueOrder.Denot D _●_
-    open Den
-    open ModelExtra ME
-    open ModelBot MBot
-    open InValueOrder.ModelBasics MB
-    open ModelCong Cong
+record ModelExtra
+       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+       : Set₁ where
+  field
+    MBot : ModelBot _●_
+    ●-≡ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {w : Value}
+        → (D₁ ● D₂) γ w ≡ (w ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v))
+    ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u : Value}
+          → ℱ D γ u
+          → u ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] Σ[ w ∈ Value ]
+                      (D (γ `, v) w) × ((v ↦ w) ⊑ u))
 
-    cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-              {D′ : Denotation (suc Δ)}
-           → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v))
-           → ℱ D γ ≃ ℱ D′ δ
-    cong-ℱ {D = D}{D′} D≃D′ {v} =
-      ⟨ (ℱ-≲ (proj₁ D≃D′)) {v = v} , (ℱ-≲ (proj₂ D≃D′)) {v = v} ⟩
+
+module Preservation
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  (ME : ModelExtra _●_)
+  where
+
+  module Den = Denot _●_
+  open Den
+  open ModelExtra ME
+  open ModelBot MBot
+  open ModelBasics MB
+  open ModelCong Cong
+  module RP = RenamePreserveReflect _●_ Cong
+  open RP using (⊑-env; rename-pres)  
+  module F = Filter _●_ MB
+  open F using (ℰ-⊑; ℰ-⊔)
+  open SubstPres _●_ MB
+
+  ℱ●-inv : ∀{Γ} {D₁ : Denotation (suc Γ)}{D₂ : Denotation Γ}{γ : Env Γ}
+            {w : Value}
+          → (ℱ D₁ ● D₂) γ w
+          → w ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] D₁ (γ `, v) w × D₂ γ v)
+  ℱ●-inv {Γ}{D₁}{D₂}{γ}{w} ℱD₁●D₂γw
+      rewrite ●-≡{Γ}{ℱ D₁}{D₂}{γ}{w}
+      with ℱD₁●D₂γw
+  ... | inj₁ w⊑⊥ = inj₁ w⊑⊥ 
+  ... | inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩ =
+        inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩
+
+  ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+      → ℰ M γ ⊥
+  ℰ-⊥ {M = ` x} = ⊑-⊥
+  ℰ-⊥ {Γ}{γ}{M = lam ⦅ bind N nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
+  ℰ-⊥ {M = app ⦅ cons L (cons M nil) ⦆} = ●-⊥
+
+
+  open LambdaV.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule)
+
+  preserve : ∀ {Γ} {γ : Env Γ} {M N v}
+    → M —→ N
+    → ℰ M γ v
+      ----------
+    → ℰ N γ v
+  preserve {γ = γ} (ξ₁-rule{L = L}{L´}{M} L—→L′) =
+    ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L´}{D₂′ = ℰ M}
+                (λ x → preserve L—→L′ x)
+                (λ x → x)
+  preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
+    ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
+                (λ x → x)
+                (λ x → preserve M—→M′ x)
+  preserve (β-rule{N = N}{M = M}) ℱℰN●ℰMγw 
+      with ℱ●-inv ℱℰN●ℰMγw
+  ... | inj₁ w⊑⊥ =
+      ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) w⊑⊥
+  ... | inj₂ ⟨ v , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
+      substitution{N = N}{M = M} ℰNγvw ℰMγv
+
+module SubstReflect
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  (ME : ModelExtra _●_)
+  where
+
+  open Denot _●_
+  open ModelExtra ME
+  open ModelBot MBot
+  open ModelBasics MB
+  open ModelCong Cong
+  open Filter _●_ MB using (ℰ-⊑; ℰ-⊔; WF)
+  open RenamePreserveReflect _●_ Cong
+     using (⊑-env; EnvExt⊑; rename-pres; rename-inc-reflect)  
+  open Preservation _●_ ME using (ℰ-⊥)
   
-    cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
-              {D₁′ D₂′ : Denotation Δ}
-           → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ
-    cong-● {γ = γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 {w} =
-      ⟨ (●-≲{D₁ = D₁}{D₂}{D₁′}{D₂′} (proj₁ eq1) (proj₁ eq2)) {v = w} ,
-        (●-≲{D₁ = D₁′}{D₂′}{D₁}{D₂} (proj₂ eq1) (proj₂ eq2)) {v = w} ⟩
+  _var≟_ : ∀ {Γ} → (x y : Var Γ) → Dec (x ≡ y)
+  Z var≟ Z  =  yes refl
+  Z var≟ (S _)  =  no λ()
+  (S _) var≟ Z  =  no λ()
+  (S x) var≟ (S y) with  x var≟ y
+  ...                 |  yes refl =  yes refl
+  ...                 |  no neq   =  no λ{refl → neq refl}
 
+  var≟-refl : ∀ {Γ} (x : Var Γ) → (x var≟ x) ≡ yes refl
+  var≟-refl Z = refl
+  var≟-refl (S x) rewrite var≟-refl x = refl
 
-    module RP = InValueOrder.RenamePreserveReflect D _●_ Cong
-    open RP using (⊑-env; EnvExt⊑; rename-pres; rename-inc-reflect)  
+  const-env : ∀{Γ} → (x : Var Γ) → Value → Env Γ
+  const-env x v y with x var≟ y
+  ...             | yes _       = v
+  ...             | no _        = ⊥
 
-    module F = InValueOrder.Filter D _●_ MB
-    open F using (ℰ-⊑; ℰ-⊔; WF)
+  nth-const-env : ∀{Γ} {x : Var Γ} {v} → (const-env x v) x ≡ v
+  nth-const-env {x = x} rewrite var≟-refl x = refl
 
-    module P = Preservation _●_ ME
-    open P using (ℰ-⊥)
+  diff-nth-const-env : ∀{Γ} {x y : Var Γ} {v}
+    → x ≢ y
+      -------------------
+    → const-env x v y ≡ ⊥
+  diff-nth-const-env {Γ} {x} {y} neq with x var≟ y
+  ...  | yes eq  =  ⊥-elim (neq eq)
+  ...  | no _    =  refl
 
+  subst-reflect-var : ∀ {Γ Δ} {γ : Env Δ} {x : Var Γ} {v} {σ : Subst Γ Δ}
+    → ℰ (σ x) γ v  →  γ `⊢ σ ↓ `⊥
+      -----------------------------------------
+    → Σ[ δ ∈ Env Γ ] γ `⊢ σ ↓ δ  ×  ℰ (` x) δ v
+  subst-reflect-var {Γ}{Δ}{γ}{x}{v}{σ} xv γ⊢σ↓⊥
+    rewrite sym (nth-const-env {Γ}{x}{v}) =
+      ⟨ const-env x v , ⟨ const-env-ok , ⊑-refl ⟩ ⟩
+    where
+    const-env-ok : γ `⊢ σ ↓ const-env x v
+    const-env-ok y with x var≟ y
+    ... | yes x≡y rewrite sym x≡y | nth-const-env {Γ}{x}{v} = xv
+    ... | no x≢y rewrite diff-nth-const-env {Γ}{x}{y}{v} x≢y = γ⊢σ↓⊥ y
 
-    _var≟_ : ∀ {Γ} → (x y : Var Γ) → Dec (x ≡ y)
-    Z var≟ Z  =  yes refl
-    Z var≟ (S _)  =  no λ()
-    (S _) var≟ Z  =  no λ()
-    (S x) var≟ (S y) with  x var≟ y
-    ...                 |  yes refl =  yes refl
-    ...                 |  no neq   =  no λ{refl → neq refl}
+{-
+  subst-⊥ : ∀{Γ Δ}{γ : Env Δ}{σ : Subst Γ Δ}
+      -----------------
+    → γ `⊢ σ ↓ `⊥
+  subst-⊥ {σ = σ} x = ℰ-⊥ {M = σ x}
+-}
 
-    var≟-refl : ∀ {Γ} (x : Var Γ) → (x var≟ x) ≡ yes refl
-    var≟-refl Z = refl
-    var≟-refl (S x) rewrite var≟-refl x = refl
+  subst-⊔ : ∀{Γ Δ}{γ : Env Δ}{γ₁ γ₂ : Env Γ}{σ : Subst Γ Δ}
+             → γ `⊢ σ ↓ γ₁
+             → γ `⊢ σ ↓ γ₂
+               -------------------------
+             → γ `⊢ σ ↓ (γ₁ `⊔ γ₂)
+  subst-⊔ {σ = σ} γ₁-ok γ₂-ok x = ℰ-⊔ {M = σ x} (γ₁-ok x) (γ₂-ok x)
 
-    const-env : ∀{Γ} → (x : Var Γ) → Value → Env Γ
-    const-env x v y with x var≟ y
-    ...             | yes _       = v
-    ...             | no _        = ⊥
+  split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}
+    → ℰ M δ v
+      ------------------------
+    → ℰ M (init δ `, last δ) v
+  split {δ = δ} δMv rewrite init-last δ = δMv
 
-    nth-const-env : ∀{Γ} {x : Var Γ} {v} → (const-env x v) x ≡ v
-    nth-const-env {x = x} rewrite var≟-refl x = refl
+  δu⊢extσ⊥ : ∀{Γ}{Δ}{δ : Env Δ}{σ : Subst Γ Δ}{u}
+           → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
+  δu⊢extσ⊥ δ⊢σ↓⊥ Z = ⊑-⊥
+  δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (S x) =
+     rename-pres {M = σ x} S_ (λ x₁ → ⊑-refl) (δ⊢σ↓⊥ x)
 
-    diff-nth-const-env : ∀{Γ} {x y : Var Γ} {v}
-      → x ≢ y
-        -------------------
-      → const-env x v y ≡ ⊥
-    diff-nth-const-env {Γ} {x} {y} neq with x var≟ y
-    ...  | yes eq  =  ⊥-elim (neq eq)
-    ...  | no _    =  refl
-
-    subst-reflect-var : ∀ {Γ Δ} {γ : Env Δ} {x : Var Γ} {v} {σ : Subst Γ Δ}
-      → ℰ (σ x) γ v  →  γ `⊢ σ ↓ `⊥
-        -----------------------------------------
-      → Σ[ δ ∈ Env Γ ] γ `⊢ σ ↓ δ  ×  ℰ (` x) δ v
-    subst-reflect-var {Γ}{Δ}{γ}{x}{v}{σ} xv γ⊢σ↓⊥
-      rewrite sym (nth-const-env {Γ}{x}{v}) =
-        ⟨ const-env x v , ⟨ const-env-ok , ⊑-refl ⟩ ⟩
+  subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Term Γ} {L : Term Δ}
+                    {σ : Subst Γ Δ} {v}
+    → ℰ L δ v
+    → L ≡ ⟪ σ ⟫ M
+    → δ `⊢ σ ↓ `⊥
+      --------------------------------------------
+    → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
+  subst-reflect {δ = δ}{` x}{L}{σ} ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
+      subst-reflect-var{σ = σ} ℰLδv δ⊢σ↓⊥
+  subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
+      rewrite L≡σM
+      = G {v} ℰLδv
       where
-      const-env-ok : γ `⊢ σ ↓ const-env x v
-      const-env-ok y with x var≟ y
-      ... | yes x≡y rewrite sym x≡y | nth-const-env {Γ}{x}{v} = xv
-      ... | no x≢y rewrite diff-nth-const-env {Γ}{x}{y}{v} x≢y = γ⊢σ↓⊥ y
-
-    subst-⊥ : ∀{Γ Δ}{γ : Env Δ}{σ : Subst Γ Δ}
-        -----------------
-      → γ `⊢ σ ↓ `⊥
-    subst-⊥ {σ = σ} x = ℰ-⊥ {M = σ x}
-
-    subst-⊔ : ∀{Γ Δ}{γ : Env Δ}{γ₁ γ₂ : Env Γ}{σ : Subst Γ Δ}
-               → γ `⊢ σ ↓ γ₁
-               → γ `⊢ σ ↓ γ₂
-                 -------------------------
-               → γ `⊢ σ ↓ (γ₁ `⊔ γ₂)
-    subst-⊔ {σ = σ} γ₁-ok γ₂-ok x = ℰ-⊔ {M = σ x} (γ₁-ok x) (γ₂-ok x)
-
-    split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}
-      → ℰ M δ v
-        ------------------------
-      → ℰ M (init δ `, last δ) v
-    split {δ = δ} δMv rewrite init-last δ = δMv
-
-    δu⊢extσ⊥ : ∀{Γ}{Δ}{δ : Env Δ}{σ : Subst Γ Δ}{u}
-             → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
-    δu⊢extσ⊥ δ⊢σ↓⊥ Z = ⊑-⊥
-    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (S x) =
-       rename-pres {M = σ x} S_ (λ x₁ → ⊑-refl) (δ⊢σ↓⊥ x)
-
-    subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Term Γ} {L : Term Δ}
-                      {σ : Subst Γ Δ} {v}
-      → ℰ L δ v
-      → L ≡ ⟪ σ ⟫ M
-      → δ `⊢ σ ↓ `⊥
-        --------------------------------------------
-      → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
-    subst-reflect {δ = δ}{` x}{L}{σ} ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
-        subst-reflect-var{σ = σ} ℰLδv δ⊢σ↓⊥
-    subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
-        rewrite L≡σM
-        = G {v} ℰLδv
+      G : ∀{v}
+        → ℱ (ℰ (⟪ exts σ ⟫ N)) δ v
+        → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℱ (ℰ N) γ v
+      G {⊥} tt = ⟨ `⊥ , ⟨ δ⊢σ↓⊥ , tt  ⟩ ⟩
+      G {u ↦ w} ℰLδv
+          with subst-reflect {δ = δ `, u} {M = N} {L = ⟪ exts σ ⟫ N}
+                   {σ = exts σ} {w} ℰLδv refl (δu⊢extσ⊥ δ⊢σ↓⊥)
+      ... | ⟨ γ , ⟨ subst-γ , m ⟩ ⟩ =
+            ⟨ init γ ,
+            ⟨ (λ x → rename-inc-reflect {M = σ x} (subst-γ (S x))) ,
+              (let m' = split{M = N} m in
+               EnvExt⊑{M = N} m' (subst-γ Z)) ⟩ ⟩
+      G {u ⊔ w} ⟨ aa , bb ⟩ 
+          with G {u} aa | G {w} bb
+      ... | ⟨ δ₁ , ⟨ subst-δ₁ , m1 ⟩ ⟩ | ⟨ δ₂ , ⟨ subst-δ₂ , m2 ⟩ ⟩ =
+         ⟨ δ₁ `⊔ δ₂ ,
+         ⟨ subst-⊔ {σ = σ} subst-δ₁ subst-δ₂ ,
+         ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{u}m1(EnvConjR1⊑ δ₁ δ₂) ,
+           ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}m2(EnvConjR2⊑ δ₁ δ₂) ⟩
+           ⟩ ⟩
+  subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv
+                L≡σM δ⊢σ↓⊥
+      {- ●-≡ IS A PROBLEM FOR CBV!! NEED TO ABSTRACT! -}
+      rewrite L≡σM | ●-≡ {Δ}{ℰ (⟪ σ ⟫ L)}{ℰ (⟪ σ ⟫ M)}{δ}{v}
+      with ℰσL●ℰσMδv
+  ... | inj₁ v⊑⊥ = 
+        ⟨ `⊥ , ⟨ δ⊢σ↓⊥ , ℰ-⊑{M = L · M} (ℰ-⊥{M = L · M}) v⊑⊥  ⟩ ⟩
+  ... | inj₂ ⟨ u , ⟨ ℰσLδu↦v , ℰσMδu ⟩ ⟩
+      with subst-reflect{M = L} ℰσLδu↦v refl δ⊢σ↓⊥
+         | subst-reflect{M = M} ℰσMδu refl δ⊢σ↓⊥
+  ... | ⟨ δ₁  , ⟨ subst-δ₁ , ℰLδ₁u↦v ⟩ ⟩
+      | ⟨ δ₂  , ⟨ subst-δ₂ , ℰMδ₂u ⟩ ⟩ =
+        ⟨ (δ₁ `⊔ δ₂) ,
+        ⟨ (subst-⊔ {γ₁ = δ₁}{γ₂ = δ₂}{σ = σ} subst-δ₁ subst-δ₂) ,
+          G ⟩ ⟩
         where
-        G : ∀{v}
-          → ℱ (ℰ (⟪ exts σ ⟫ N)) δ v
-          → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℱ (ℰ N) γ v
-        G {⊥} tt = ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , tt  ⟩ ⟩
-        G {u ↦ w} ℰLδv
-            with subst-reflect {δ = δ `, u} {M = N} {L = ⟪ exts σ ⟫ N}
-                     {σ = exts σ} {w} ℰLδv refl (δu⊢extσ⊥ δ⊢σ↓⊥)
-        ... | ⟨ γ , ⟨ subst-γ , m ⟩ ⟩ =
-              ⟨ init γ ,
-              ⟨ (λ x → rename-inc-reflect {M = σ x} (subst-γ (S x))) ,
-                (let m' = split{M = N} m in
-                 EnvExt⊑{M = N} m' (subst-γ Z)) ⟩ ⟩
-        G {u ⊔ w} ⟨ aa , bb ⟩ 
-            with G {u} aa | G {w} bb
-        ... | ⟨ δ₁ , ⟨ subst-δ₁ , m1 ⟩ ⟩ | ⟨ δ₂ , ⟨ subst-δ₂ , m2 ⟩ ⟩ =
-           ⟨ δ₁ `⊔ δ₂ ,
-           ⟨ subst-⊔ {σ = σ} subst-δ₁ subst-δ₂ ,
-           ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{u}m1(EnvConjR1⊑ δ₁ δ₂) ,
-             ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}m2(EnvConjR2⊑ δ₁ δ₂) ⟩
-             ⟩ ⟩
-    subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv
-                  L≡σM δ⊢σ↓⊥
-        rewrite L≡σM | ●-≡ {Δ}{ℰ (⟪ σ ⟫ L)}{ℰ (⟪ σ ⟫ M)}{δ}{v}
-        with ℰσL●ℰσMδv
-    ... | inj₁ v⊑⊥ =
-          ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , ℰ-⊑{M = L · M} (ℰ-⊥{M = L · M}) v⊑⊥  ⟩ ⟩
-    ... | inj₂ ⟨ u , ⟨ ℰσLδu↦v , ℰσMδu ⟩ ⟩
-        with subst-reflect{M = L} ℰσLδu↦v refl δ⊢σ↓⊥
-           | subst-reflect{M = M} ℰσMδu refl δ⊢σ↓⊥
-    ... | ⟨ δ₁  , ⟨ subst-δ₁ , ℰLδ₁u↦v ⟩ ⟩
-        | ⟨ δ₂  , ⟨ subst-δ₂ , ℰMδ₂u ⟩ ⟩ =
-          ⟨ (δ₁ `⊔ δ₂) ,
-          ⟨ (subst-⊔ {γ₁ = δ₁}{γ₂ = δ₂}{σ = σ} subst-δ₁ subst-δ₂) ,
-            G ⟩ ⟩
-          where
-          ℰLδ₁⊔δ₂u↦v : ℰ L (λ z → (δ₁ `⊔ δ₂) z) (u ↦ v)
-          ℰLδ₁⊔δ₂u↦v = ⊑-env{M = L} ℰLδ₁u↦v (EnvConjR1⊑ δ₁ δ₂)
-          
-          ℰMδ₁⊔δ₂u  : ℰ M (λ z → (δ₁ `⊔ δ₂) z) u
-          ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
-          
-          G : (ℰ L ● ℰ M) (δ₁ `⊔ δ₂) v
-          G rewrite ●-≡ {Γ}{ℰ L}{ℰ M}{δ₁ `⊔ δ₂}{v} =
-            inj₂ ⟨ u , ⟨ ℰLδ₁⊔δ₂u↦v , ℰMδ₁⊔δ₂u ⟩ ⟩
+        ℰLδ₁⊔δ₂u↦v : ℰ L (λ z → (δ₁ `⊔ δ₂) z) (u ↦ v)
+        ℰLδ₁⊔δ₂u↦v = ⊑-env{M = L} ℰLδ₁u↦v (EnvConjR1⊑ δ₁ δ₂)
 
-    subst-zero-reflect : ∀ {Δ} {δ : Env Δ} {γ : Env (suc Δ)} {M : Term Δ}
-      → δ `⊢ subst-zero M ↓ γ
-        ----------------------------------------
-      → Σ[ w ∈ Value ] γ `⊑ (δ `, w) × ℰ M δ w
-    subst-zero-reflect {δ = δ} {γ = γ} δσγ = ⟨ last γ , ⟨ lemma , δσγ Z ⟩ ⟩   
-      where
-      lemma : γ `⊑ (δ `, last γ)
-      lemma Z  =  ⊑-refl
-      lemma (S x) = δσγ (S x)
+        ℰMδ₁⊔δ₂u  : ℰ M (λ z → (δ₁ `⊔ δ₂) z) u
+        ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
 
-    subst-zero-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
-                 → ℰ M γ ⊥
-                 → γ `⊢ subst-zero M ↓ `⊥
-    subst-zero-⊥ ℰMγ⊥ Z = ℰMγ⊥
-    subst-zero-⊥ ℰMγ⊥ (S x) = ⊑-⊥
+        G : (ℰ L ● ℰ M) (δ₁ `⊔ δ₂) v
+        G rewrite ●-≡ {Γ}{ℰ L}{ℰ M}{δ₁ `⊔ δ₂}{v} =
+          inj₂ ⟨ u , ⟨ ℰLδ₁⊔δ₂u↦v , ℰMδ₁⊔δ₂u ⟩ ⟩
 
-    substitution-reflect : ∀ {Δ} {δ : Env Δ} {N : Term (suc Δ)} {M : Term Δ} {v}
-      → ℰ (N [ M ]) δ v  → ℰ M δ ⊥
-        ------------------------------------------------
-      → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
-    substitution-reflect{N = N}{M = M} ℰNMδv ℰMδ⊥
-         with subst-reflect {M = N} ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
-    ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
-         with subst-zero-reflect δσγ
-    ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
-           ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
+  subst-zero-reflect : ∀ {Δ} {δ : Env Δ} {γ : Env (suc Δ)} {M : Term Δ}
+    → δ `⊢ subst-zero M ↓ γ
+      ----------------------------------------
+    → Σ[ w ∈ Value ] γ `⊑ (δ `, w) × ℰ M δ w
+  subst-zero-reflect {δ = δ} {γ = γ} δσγ = ⟨ last γ , ⟨ lemma , δσγ Z ⟩ ⟩   
+    where
+    lemma : γ `⊑ (δ `, last γ)
+    lemma Z  =  ⊑-refl
+    lemma (S x) = δσγ (S x)
 
-    reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
-        → ℰ (N [ M ]) γ v
-        → ℰ ((ƛ N) · M) γ v
-    reflect-beta {Γ}{γ}{M}{N}{v} d 
-        with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M})
-    ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ rewrite ●-≡ {Γ}{ℱ (ℰ N)}{ℰ M}{γ}{v} =
-          inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
+  subst-zero-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+               → ℰ M γ ⊥
+               → γ `⊢ subst-zero M ↓ `⊥
+  subst-zero-⊥ ℰMγ⊥ Z = ℰMγ⊥
+  subst-zero-⊥ ℰMγ⊥ (S x) = ⊑-⊥
 
-    open LambdaV.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule)
+  substitution-reflect : ∀ {Δ} {δ : Env Δ} {N : Term (suc Δ)} {M : Term Δ} {v}
+    → ℰ (N [ M ]) δ v  → ℰ M δ ⊥
+      ------------------------------------------------
+    → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
+  substitution-reflect{N = N}{M = M} ℰNMδv ℰMδ⊥
+       with subst-reflect {M = N} ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
+  ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
+       with subst-zero-reflect δσγ
+  ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
+         ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
 
-    reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
-      →  M —→ M′  →   M′ ≡ N  →  ℰ N γ v
-        --------------------------------
-      → ℰ M γ v    
-    reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
-        rewrite sym L′·M≡N =
-        ●-≲ (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
-    reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
-        rewrite sym L·M′≡N =
-        ●-≲ (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
-    reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
-        reflect-beta {M = M}{N}
+
+module Reflect
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  (ME : ModelExtra _●_)
+  where
+
+  open Denot _●_
+  open ModelExtra ME
+  open ModelBot MBot
+  open ModelBasics MB
+  open ModelCong Cong
+
+  cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
+            {D₁′ D₂′ : Denotation Δ}
+         → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ
+  cong-● {γ = γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 {w} =
+    ⟨ (●-≲{D₁ = D₁}{D₂}{D₁′}{D₂′} (proj₁ eq1) (proj₁ eq2)) {v = w} ,
+      (●-≲{D₁ = D₁′}{D₂′}{D₁}{D₂} (proj₂ eq1) (proj₂ eq2)) {v = w} ⟩
+
+
+  module RP = RenamePreserveReflect _●_ Cong
+  open RP using (⊑-env; EnvExt⊑; rename-pres; rename-inc-reflect)  
+
+  module F = Filter _●_ MB
+  open F using (ℰ-⊑; ℰ-⊔; WF)
+
+  open Preservation _●_ ME using (ℰ-⊥)
+
+  open SubstReflect _●_ ME
+
+  reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+      → ℰ (N [ M ]) γ v
+      → ℰ ((ƛ N) · M) γ v
+  reflect-beta {Γ}{γ}{M}{N}{v} d 
+      with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M})
+  ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ rewrite ●-≡ {Γ}{ℱ (ℰ N)}{ℰ M}{γ}{v} =
+        inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
+
+  open LambdaV.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule)
+
+  reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
+    →  M —→ M′  →   M′ ≡ N  →  ℰ N γ v
+      --------------------------------
+    → ℰ M γ v    
+  reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
+      rewrite sym L′·M≡N =
+      ●-≲ (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
+  reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
+      rewrite sym L·M′≡N =
+      ●-≲ (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
+  reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
+      reflect-beta {M = M}{N}
 
 
 module CallByName where
-
-  infix 4 _⊑_
-
-  data _⊑_ : Value → Value → Set where
-
-    ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
-
-    ⊑-conj-L : ∀ {u v w}
-        → v ⊑ u
-        → w ⊑ u
-          -----------
-        → (v ⊔ w) ⊑ u
-
-    ⊑-conj-R1 : ∀ {u v w}
-       → u ⊑ v
-         -----------
-       → u ⊑ (v ⊔ w)
-
-    ⊑-conj-R2 : ∀ {u v w}
-       → u ⊑ w
-         -----------
-       → u ⊑ (v ⊔ w)
-
-    ⊑-trans : ∀ {u v w}
-       → u ⊑ v
-       → v ⊑ w
-         -----
-       → u ⊑ w
-
-    ⊑-fun : ∀ {v w v′ w′}
-         → v′ ⊑ v
-         → w ⊑ w′
-           -------------------
-         → (v ↦ w) ⊑ (v′ ↦ w′)
-
-    ⊑-dist : ∀{v w w′}
-           ---------------------------------
-         → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
-
-  ⊑-refl : ∀ {v} → v ⊑ v
-  ⊑-refl {⊥} = ⊑-⊥
-  ⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
-  ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
-
-  domain : ValueOrder
-  domain = record
-             { _⊑_ = _⊑_
-             ; ⊑-refl = ⊑-refl
-             ; ⊑-trans = ⊑-trans
-             ; ⊑-conj-L = ⊑-conj-L
-             ; ⊑-conj-R1 = ⊑-conj-R1
-             ; ⊑-conj-R2 = ⊑-conj-R2
-             ; ⊑-fun = ⊑-fun
-             ; ⊑-dist = ⊑-dist
-             }
-
-  domain_bot : ValueOrderWithBot domain
-  domain_bot = record { ⊑-⊥ = ⊑-⊥ }
-
-  open ValueOrderAux domain
-  open InValueOrderWithBot domain
 
   infixl 7 _●_
   _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
   _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
 
-  cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-            {D′ : Denotation (suc Δ)}
-         → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v))
-         → ℱ D γ ≃ ℱ D′ δ
-  cong-ℱ {D = D}{D′} D≃D′ {v} =
-    ⟨ (ℱ-≲ (proj₁ D≃D′)) {v = v} , (ℱ-≲ (proj₂ D≃D′)) {v = v} ⟩
-  
   ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
             {D₁′ D₂′ : Denotation Δ}
          → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
@@ -863,7 +836,7 @@ module CallByName where
   Cong = record { ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
                          ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y }
 
-  module RP = InValueOrder.RenamePreserveReflect domain _●_ Cong
+  module RP = RenamePreserveReflect _●_ Cong
   open RP using (⊑-env)  
 
   ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
@@ -885,20 +858,6 @@ module CallByName where
          ⟨ WFDenot.⊑-closed wf1 a Dist⊔↦⊔ ,
            WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩
 
-  ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-         → WFDenot (suc Γ) D
-         → ℱ D γ v → w ⊑ v → ℱ D γ w
-  ℱ-⊑ d ℱDγv ⊑-⊥ = tt
-  ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
-  ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
-  ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
-  ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
-  ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
-    WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
-    where b : (γ `, v) `⊑ (γ `, v')
-          b Z = v⊑v'
-          b (S x) = ⊑-refl 
-  ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
 
   ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
       → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
@@ -927,87 +886,26 @@ module CallByName where
         inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , ⊑-conj-R1 v'↦w'⊑v ⟩ ⟩ ⟩
 
 
-  MB : InValueOrder.ModelBasics domain _●_
+  MB : ModelBasics _●_
   MB = (record { Cong = Cong ;
                  ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
-                 ℱ-⊑ = ℱ-⊑ ;
                  ●-⊔ = ●-⊔
                  })
 
-  MBot : ModelBot domain_bot _●_
+  MBot : ModelBot _●_
   MBot = (record { MB = MB ;
                  ●-⊥ = λ {Γ}{D₁}{D₂} → ●-⊥ {D₁ = D₁}{D₂} })
 
-  ME : ModelExtra domain_bot _●_
+  ME : ModelExtra _●_
   ME = (record { MBot = MBot ;
                  ●-≡ = refl ;
                  ℱ-inv = ℱ-inv
                  })
 
-  open Reflect domain_bot _●_ ME
+  open Reflect _●_ ME
 
 
 module CallByValue where
-
-  infix 4 _⊑_
-
-  data _⊑_ : Value → Value → Set where
-
-    ⊑-⊥-⊥ : ⊥ ⊑ ⊥
-    
-    ⊑-⊥-fun : ∀ {v w} → ⊥ ⊑ v ↦ w 
-
-    ⊑-conj-L : ∀ {u v w}
-        → v ⊑ u
-        → w ⊑ u
-          -----------
-        → (v ⊔ w) ⊑ u
-
-    ⊑-conj-R1 : ∀ {u v w}
-       → u ⊑ v
-         -----------
-       → u ⊑ (v ⊔ w)
-
-    ⊑-conj-R2 : ∀ {u v w}
-       → u ⊑ w
-         -----------
-       → u ⊑ (v ⊔ w)
-
-    ⊑-trans : ∀ {u v w}
-       → u ⊑ v
-       → v ⊑ w
-         -----
-       → u ⊑ w
-
-    ⊑-fun : ∀ {v w v′ w′}
-         → v′ ⊑ v
-         → w ⊑ w′
-           -------------------
-         → (v ↦ w) ⊑ (v′ ↦ w′)
-
-    ⊑-dist : ∀{v w w′}
-           ---------------------------------
-         → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
-  
-
-  ⊑-refl : ∀ {v} → v ⊑ v
-  ⊑-refl {⊥} = ⊑-⊥-⊥
-  ⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
-  ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
-
-  domain : ValueOrder
-  domain = record
-             { _⊑_ = _⊑_
-             ; ⊑-refl = ⊑-refl
-             ; ⊑-trans = ⊑-trans
-             ; ⊑-conj-L = ⊑-conj-L
-             ; ⊑-conj-R1 = ⊑-conj-R1
-             ; ⊑-conj-R2 = ⊑-conj-R2
-             ; ⊑-fun = ⊑-fun
-             ; ⊑-dist = ⊑-dist
-             }
-             
-  open ValueOrderAux domain
 
   infixl 7 _●_
   _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
@@ -1026,7 +924,7 @@ module CallByValue where
   Cong = record { ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
                          ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y }
 
-  module RP = InValueOrder.RenamePreserveReflect domain _●_ Cong
+  module RP = RenamePreserveReflect _●_ Cong
   open RP using (⊑-env)  
 
   ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
@@ -1039,22 +937,6 @@ module CallByValue where
     ⟨ WFDenot.⊑-closed wf1 a Dist⊔↦⊔ ,
       WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩
 
-  ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-         → WFDenot (suc Γ) D
-         → ℱ D γ v → w ⊑ v → ℱ D γ w
-  ℱ-⊑ d ℱDγv ⊑-⊥-⊥ = tt
-  ℱ-⊑ d ℱDγv ⊑-⊥-fun = tt
-  ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
-  ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
-  ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
-  ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
-  ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
-    WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
-    where b : (γ `, v) `⊑ (γ `, v')
-          b Z = v⊑v'
-          b (S x) = ⊑-refl 
-  ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
-
   ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
       → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
       → (D₁ ● D₂) γ w
@@ -1063,10 +945,9 @@ module CallByValue where
     where lt : v' ↦ w ⊑ v' ↦ v
           lt = ⊑-fun ⊑-refl w⊑v
 
-  MB : InValueOrder.ModelBasics domain _●_
+  MB : ModelBasics _●_
   MB = (record { Cong = Cong ;
                  ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
-                 ℱ-⊑ = ℱ-⊑ ;
                  ●-⊔ = ●-⊔
                  })
   
