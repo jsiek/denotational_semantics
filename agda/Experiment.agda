@@ -69,6 +69,14 @@ _`⊔_ : ∀ {Γ} → Env Γ → Env Γ → Env Γ
 ℱ D γ ⊥ = ⊤
 ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
 
+ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+    → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
+ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
+
+ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
+    → ℱ D γ ⊥
+ℱ-⊥ = tt
+
 _≲_ : (Value → Set) → (Value → Set) → Set
 d ≲ d' = ∀{v : Value} → d v → d' v
 
@@ -256,8 +264,6 @@ module InValueOrder (D : ValueOrder) where
            → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
            → WFDenot (suc Γ) D → ℱ D γ v → w ⊑ v → ℱ D γ w
-      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-            → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
            → WFDenot Γ D₁ → WFDenot Γ D₂
            → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
@@ -425,14 +431,12 @@ module InValueOrder (D : ValueOrder) where
     (MB : ModelBasics _●_)
     where
     
-    module Den = Denot _●_
-    open Den
+    open Denot _●_
     open ModelBasics MB
     open ModelCong Cong
     module RP = RenamePreserveReflect _●_ Cong
     open RP using (⊑-env; rename-pres)  
-    module F = Filter _●_ MB
-    open F using (ℰ-⊑; ℰ-⊔)
+    open Filter _●_ MB using (ℰ-⊑; ℰ-⊔)
     
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
       → (σ : Subst Γ Δ)
@@ -490,17 +494,12 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
       MB : InValueOrder.ModelBasics D _●_
       ●-⊥ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ}
            → (D₁ ● D₂) γ ⊥
-      ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
-           → ℱ D γ ⊥
-
 
   record ModelExtra
          (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
          : Set₁ where
     field
       MBot : ModelBot _●_
-      ℱ-≡ : ∀{Γ}{D : Denotation (suc Γ)} {γ : Env Γ} {v w : Value}
-          → ℱ D γ (v ↦ w) ≡ D (γ `, v) w
       ●-≡ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {w : Value}
           → (D₁ ● D₂) γ w ≡ (w ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v))
       ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u : Value}
@@ -534,9 +533,8 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
         rewrite ●-≡{Γ}{ℱ D₁}{D₂}{γ}{w}
         with ℱD₁●D₂γw
     ... | inj₁ w⊑⊥ = inj₁ w⊑⊥ 
-    ... | inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩
-        rewrite ℱ-≡{Γ}{D₁}{γ}{v}{w} =
-        inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩
+    ... | inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩ =
+          inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩
         
     ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
         → ℰ M γ ⊥
@@ -564,7 +562,7 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
     ... | inj₂ ⟨ v , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
         substitution{N = N}{M = M} ℰNγvw ℰMγv
 
-  module DenotProps
+  module Reflect
     (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
     (ME : ModelExtra _●_)
     where
@@ -592,7 +590,7 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
 
 
     module RP = InValueOrder.RenamePreserveReflect D _●_ Cong
-    open RP using (⊑-env; rename-pres)  
+    open RP using (⊑-env; EnvExt⊑; rename-pres; rename-inc-reflect)  
 
     module F = InValueOrder.Filter D _●_ MB
     open F using (ℰ-⊑; ℰ-⊔; WF)
@@ -654,12 +652,6 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
                → γ `⊢ σ ↓ (γ₁ `⊔ γ₂)
     subst-⊔ {σ = σ} γ₁-ok γ₂-ok x = ℰ-⊔ {M = σ x} (γ₁-ok x) (γ₂-ok x)
 
-    lambda-inj : ∀ {Γ} {M N : Term (suc Γ) }
-      → _≡_ {A = Term Γ} (ƛ M) (ƛ N)
-        ---------------------------
-      → M ≡ N
-    lambda-inj refl = refl
-
     split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}
       → ℰ M δ v
         ------------------------
@@ -674,38 +666,30 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
       → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
     subst-reflect {δ = δ}{` x}{L}{σ} ℰLδv L≡σM rewrite L≡σM =
         subst-reflect-var{σ = σ} ℰLδv
-    subst-reflect {Γ} {δ = δ} {lam ⦅ bind N nil ⦆} {_} {σ} {v} ℰLδv L≡σM
+    subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM
         rewrite L≡σM
-        with v
-    ... | ⊥ = ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , tt  ⟩ ⟩
-    ... | u ↦ w = {!!}
-    ... | u ⊔ w = {!!}
-
-{-        
-        with ℱ-inv ℰLδv
-    ... | inj₁ v⊑⊥ =
-          ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , ℰ-⊑{M = ƛ N} (ℰ-⊥{M = ƛ N}) v⊑⊥  ⟩ ⟩
-    ... | inj₂ ⟨ u , ⟨ w , ⟨ ℰσNδuw , u↦w⊑v ⟩ ⟩ ⟩ 
-        with subst-reflect {δ = δ `, u} {M = N} {L = ⟪ exts σ ⟫ N}
-                     {σ = exts σ} {w} ℰσNδuw refl
-    ... | ⟨ γ , ⟨ δu⊢extsσ↓γ , ℰNγw ⟩ ⟩ = 
-          ⟨ init γ ,
-          ⟨ (λ x → rename-inc-reflect {M = σ x}(δu⊢extsσ↓γ (S x))) ,
-            {!!} ⟩ ⟩
+        = G {v} ℰLδv
         where
-        u' = last γ
-        
-        u'⊑u : u' ⊑ u
-        u'⊑u = δu⊢extsσ↓γ Z
-        
-        aa : ℰ N (init γ `, u') w
-        aa = split{M = N} ℰNγw
-
-        bb : ℱ (ℰ N) (init γ) (u' ↦ w)
-        bb rewrite ℱ-≡{Γ}{ℰ N}{init γ}{u'}{w} = aa
--}
-
-        
+        G : ∀{v}
+          → ℱ (ℰ (⟪ exts σ ⟫ N)) δ v
+          → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℱ (ℰ N) γ v
+        G {⊥} tt = ⟨ `⊥ , ⟨ subst-⊥ {σ = σ} , tt  ⟩ ⟩
+        G {u ↦ w} ℰLδv
+            with subst-reflect {δ = δ `, u} {M = N} {L = ⟪ exts σ ⟫ N}
+                     {σ = exts σ} {w} ℰLδv refl
+        ... | ⟨ γ , ⟨ subst-γ , m ⟩ ⟩ =
+              ⟨ init γ ,
+              ⟨ (λ x → rename-inc-reflect {M = σ x} (subst-γ (S x))) ,
+                (let m' = split{M = N} m in
+                 EnvExt⊑{M = N} m' (subst-γ Z)) ⟩ ⟩
+        G {u ⊔ w} ⟨ aa , bb ⟩ 
+            with G {u} aa | G {w} bb
+        ... | ⟨ δ₁ , ⟨ subst-δ₁ , m1 ⟩ ⟩ | ⟨ δ₂ , ⟨ subst-δ₂ , m2 ⟩ ⟩ =
+           ⟨ δ₁ `⊔ δ₂ ,
+           ⟨ subst-⊔ {σ = σ} subst-δ₁ subst-δ₂ ,
+           ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{u}m1(EnvConjR1⊑ δ₁ δ₂) ,
+             ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}m2(EnvConjR2⊑ δ₁ δ₂) ⟩
+             ⟩ ⟩
     subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv L≡σM
         rewrite L≡σM | ●-≡ {Δ}{ℰ (⟪ σ ⟫ L)}{ℰ (⟪ σ ⟫ M)}{δ}{v}
         with ℰσL●ℰσMδv
@@ -729,6 +713,38 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
           G : (ℰ L ● ℰ M) (δ₁ `⊔ δ₂) v
           G rewrite ●-≡ {Γ}{ℰ L}{ℰ M}{δ₁ `⊔ δ₂}{v} =
             inj₂ ⟨ u , ⟨ ℰLδ₁⊔δ₂u↦v , ℰMδ₁⊔δ₂u ⟩ ⟩
+
+    subst-zero-reflect : ∀ {Δ} {δ : Env Δ} {γ : Env (suc Δ)} {M : Term Δ}
+      → δ `⊢ subst-zero M ↓ γ
+        ----------------------------------------
+      → Σ[ w ∈ Value ] γ `⊑ (δ `, w) × ℰ M δ w
+    subst-zero-reflect {δ = δ} {γ = γ} δσγ = ⟨ last γ , ⟨ lemma , δσγ Z ⟩ ⟩   
+      where
+      lemma : γ `⊑ (δ `, last γ)
+      lemma Z  =  ⊑-refl
+      lemma (S x) = δσγ (S x)
+
+    substitution-reflect : ∀ {Δ} {δ : Env Δ} {N : Term (suc Δ)} {M : Term Δ} {v}
+      → ℰ (N [ M ]) δ v
+        ------------------------------------------------
+      → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
+    substitution-reflect{N = N}{M = M} d
+         with subst-reflect {M = N} d refl
+    ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
+         with subst-zero-reflect δσγ
+    ...  | ⟨ w , ⟨ ineq , δMw ⟩ ⟩ =
+           ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv ineq ⟩ ⟩
+
+    reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+        → ℰ (N [ M ]) γ v
+        → ℰ ((ƛ N) · M) γ v
+    reflect-beta {Γ}{γ}{M}{N}{v} d 
+        with substitution-reflect{N = N}{M = M} d
+    ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ rewrite ●-≡ {Γ}{ℱ (ℰ N)}{ℰ M}{γ}{v} =
+          inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
+
+    {- todo: reflect -}
+    
 
 module CallByName where
 
@@ -822,10 +838,6 @@ module CallByName where
   module RP = InValueOrder.RenamePreserveReflect domain _●_ Cong
   open RP using (⊑-env)  
 
-  ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-      → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
-  ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
-
   ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
       → WFDenot Γ D₁ → WFDenot Γ D₂
       → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
@@ -873,10 +885,6 @@ module CallByName where
       → (D₁ ● D₂) γ ⊥
   ●-⊥ = inj₁ ⊑-⊥
 
-  ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
-      → ℱ D γ ⊥
-  ℱ-⊥ = tt
-
   ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u : Value}
         → ℱ D γ u
         → u ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] Σ[ w ∈ Value ] D (γ `, v) w × v ↦ w ⊑ u)
@@ -895,23 +903,20 @@ module CallByName where
   MB = (record { Cong = Cong ;
                  ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
                  ℱ-⊑ = ℱ-⊑ ;
-                 ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} a b → ℱ-⊔ {D = D}{γ}{u}{v} a b;
                  ●-⊔ = ●-⊔
                  })
 
   MBot : ModelBot domain_bot _●_
   MBot = (record { MB = MB ;
-                 ●-⊥ = λ {Γ}{D₁}{D₂} → ●-⊥ {D₁ = D₁}{D₂};
-                 ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {D = D}{γ} })
+                 ●-⊥ = λ {Γ}{D₁}{D₂} → ●-⊥ {D₁ = D₁}{D₂} })
 
   ME : ModelExtra domain_bot _●_
   ME = (record { MBot = MBot ;
-                 ℱ-≡ = refl ;
                  ●-≡ = refl ;
                  ℱ-inv = ℱ-inv
                  })
 
-  open DenotProps domain_bot _●_ ME
+  open Reflect domain_bot _●_ ME
 
 
 module CallByValue where
@@ -996,10 +1001,6 @@ module CallByValue where
   module RP = InValueOrder.RenamePreserveReflect domain _●_ Cong
   open RP using (⊑-env)  
 
-  ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-      → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
-  ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
-
   ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
       → WFDenot Γ D₁ → WFDenot Γ D₂
       → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
@@ -1034,15 +1035,10 @@ module CallByValue where
     where lt : v' ↦ w ⊑ v' ↦ v
           lt = ⊑-fun ⊑-refl w⊑v
 
-  ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
-      → ℱ D γ ⊥
-  ℱ-⊥ = tt
-
   MB : InValueOrder.ModelBasics domain _●_
   MB = (record { Cong = Cong ;
                  ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
                  ℱ-⊑ = ℱ-⊑ ;
-                 ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} a b → ℱ-⊔ {D = D}{γ}{u}{v} a b;
                  ●-⊔ = ●-⊔
                  })
   
