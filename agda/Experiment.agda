@@ -1,6 +1,6 @@
 
 open import LambdaV
-   using (_·_; ƛ; Term; lam; app; _—→_; ξ₁-rule; ξ₂-rule; β-rule)
+   using (_·_; ƛ; Term; lam; app)
 open LambdaV.ASTMod
    using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst;
           ext; exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
@@ -80,8 +80,8 @@ _`⊔_ : ∀ {Γ} → Env Γ → Env Γ → Env Γ
 _≲_ : (Value → Set) → (Value → Set) → Set
 d ≲ d' = ∀{v : Value} → d v → d' v
 
-≲-refl : ∀ {M : Value → Set}
-       → M ≲ M
+≲-refl : ∀ {d : Value → Set}
+       → d ≲ d
 ≲-refl = λ z → z
 
 ≲-trans : ∀ {d₁ d₂ d₃ : Value → Set}
@@ -542,6 +542,9 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
     ℰ-⊥ {Γ}{γ}{M = lam ⦅ bind N nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
     ℰ-⊥ {M = app ⦅ cons L (cons M nil) ⦆} = ●-⊥
 
+
+    open LambdaV.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule)
+
     preserve : ∀ {Γ} {γ : Env Γ} {M N v}
       → M —→ N
       → ℰ M γ v
@@ -551,11 +554,11 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
       ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L´}{D₂′ = ℰ M}
                   (λ x → preserve L—→L′ x)
                   (λ x → x)
-    preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} Lv M—→M′) =
+    preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
       ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
                   (λ x → x)
                   (λ x → preserve M—→M′ x)
-    preserve (β-rule{N = N}{M = M} Mv) ℱℰN●ℰMγw 
+    preserve (β-rule{N = N}{M = M}) ℱℰN●ℰMγw 
         with ℱ●-inv ℱℰN●ℰMγw
     ... | inj₁ w⊑⊥ =
         ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) w⊑⊥
@@ -732,8 +735,8 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
          with subst-reflect {M = N} d refl
     ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
          with subst-zero-reflect δσγ
-    ...  | ⟨ w , ⟨ ineq , δMw ⟩ ⟩ =
-           ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv ineq ⟩ ⟩
+    ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
+           ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
 
     reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
         → ℰ (N [ M ]) γ v
@@ -743,8 +746,20 @@ module InValueOrderWithBot (D : ValueOrder) (D' : ValueOrderWithBot D) where
     ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ rewrite ●-≡ {Γ}{ℱ (ℰ N)}{ℰ M}{γ}{v} =
           inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
 
-    {- todo: reflect -}
-    
+    open LambdaV.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule)
+
+    reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
+      →  M —→ M′  →   M′ ≡ N  →  ℰ N γ v
+        --------------------------------
+      → ℰ M γ v    
+    reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
+        rewrite sym L′·M≡N =
+        ●-≲ (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
+    reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
+        rewrite sym L·M′≡N =
+        ●-≲ (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
+    reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
+        reflect-beta {M = M}{N}
 
 module CallByName where
 

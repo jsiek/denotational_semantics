@@ -48,61 +48,107 @@ $ {Γ}{p} k = prim {p} k ⦅ nil ⦆
 Term : ℕ → Set
 Term Γ = AST Γ
 
-data TermValue : ∀ {Γ} → Term Γ → Set where
 
-  V-var : ∀ {Γ}{x : Var Γ}
-      --------------------
-    → TermValue {Γ} (` x)
+module CBV-Reduction where
 
-  V-ƛ : ∀ {Γ} {N : Term (suc Γ)}
-      -----------
-    → TermValue (ƛ N)
+  data TermValue : ∀ {Γ} → Term Γ → Set where
 
-{-
-  V-const : ∀ {Γ} {p : Prim} {k : rep p}
-      ------------------------
-    → TermValue {Γ} ($ {Γ}{p} k)
--}
+    V-var : ∀ {Γ}{x : Var Γ}
+        --------------------
+      → TermValue {Γ} (` x)
 
-infix 2 _—→_
+    V-ƛ : ∀ {Γ} {N : Term (suc Γ)}
+        -----------
+      → TermValue (ƛ N)
 
-data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
+  {-
+    V-const : ∀ {Γ} {p : Prim} {k : rep p}
+        ------------------------
+      → TermValue {Γ} ($ {Γ}{p} k)
+  -}
 
-  ξ₁-rule : ∀ {Γ} {L L′ M : Term Γ}
-    → L —→ L′
-      ----------------
-    → L · M —→ L′ · M
+  infix 2 _—→_
 
-  ξ₂-rule : ∀ {Γ} {L M M′ : Term Γ}
-    → TermValue L
-    → M —→ M′
-      ----------------
-    → L · M —→ L · M′
+  data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
 
-  β-rule : ∀ {Γ} {N : Term (suc Γ)} {M : Term Γ}
-    → TermValue M
-      ---------------------------------
-    → (ƛ N) · M —→ N [ M ]
+    ξ₁-rule : ∀ {Γ} {L L′ M : Term Γ}
+      → L —→ L′
+        ----------------
+      → L · M —→ L′ · M
 
-{-
-  δ-rule : ∀ {Γ}{B}{P} {f : base-rep B → rep P} {k : base-rep B}
-      ----------------------------------------------------------
-    → ($ {Γ} {B ⇒ P} f) · ($ {Γ}{base B} k) —→ ($ {Γ}{P} (f k))
--}
+    ξ₂-rule : ∀ {Γ} {L M M′ : Term Γ}
+      → TermValue L
+      → M —→ M′
+        ----------------
+      → L · M —→ L · M′
 
-infix  2 _—↠_
-infixr 2 _—→⟨_⟩_
-infix  3 _□
+    β-rule : ∀ {Γ} {N : Term (suc Γ)} {M : Term Γ}
+      → TermValue M
+        ---------------------------------
+      → (ƛ N) · M —→ N [ M ]
 
-data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
+  {-
+    δ-rule : ∀ {Γ}{B}{P} {f : base-rep B → rep P} {k : base-rep B}
+        ----------------------------------------------------------
+      → ($ {Γ} {B ⇒ P} f) · ($ {Γ}{base B} k) —→ ($ {Γ}{P} (f k))
+  -}
 
-  _□ : ∀ {Γ} (M : Term Γ)
-      --------
-    → M —↠ M
+  infix  2 _—↠_
+  infixr 2 _—→⟨_⟩_
+  infix  3 _□
 
-  _—→⟨_⟩_ : ∀ {Γ} (L : Term Γ) {M N : Term Γ}
-    → L —→ M
-    → M —↠ N
-      ---------
-    → L —↠ N
+  data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
+
+    _□ : ∀ {Γ} (M : Term Γ)
+        --------
+      → M —↠ M
+
+    _—→⟨_⟩_ : ∀ {Γ} (L : Term Γ) {M N : Term Γ}
+      → L —→ M
+      → M —↠ N
+        ---------
+      → L —↠ N
+
+
+module Reduction where
+
+  infix 2 _—→_
+
+  data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
+
+    ξ₁-rule : ∀ {Γ} {L L′ M : Term Γ}
+      → L —→ L′
+        ----------------
+      → L · M —→ L′ · M
+
+    ξ₂-rule : ∀ {Γ} {L M M′ : Term Γ}
+      → M —→ M′
+        ----------------
+      → L · M —→ L · M′
+
+    β-rule : ∀ {Γ} {N : Term (suc Γ)} {M : Term Γ}
+        ---------------------------------
+      → (ƛ N) · M —→ N [ M ]
+
+  {-
+    δ-rule : ∀ {Γ}{B}{P} {f : base-rep B → rep P} {k : base-rep B}
+        ----------------------------------------------------------
+      → ($ {Γ} {B ⇒ P} f) · ($ {Γ}{base B} k) —→ ($ {Γ}{P} (f k))
+  -}
+
+  infix  2 _—↠_
+  infixr 2 _—→⟨_⟩_
+  infix  3 _□
+
+  data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
+
+    _□ : ∀ {Γ} (M : Term Γ)
+        --------
+      → M —↠ M
+
+    _—→⟨_⟩_ : ∀ {Γ} (L : Term Γ) {M N : Term Γ}
+      → L —→ M
+      → M —↠ N
+        ---------
+      → L —↠ N
 
