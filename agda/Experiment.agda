@@ -305,12 +305,10 @@ module InValueOrder (D : ValueOrder) where
            → ℰ (rename ρ M) δ v
     rename-pres {v = v}{γ}{δ}{` x} ρ γ⊑δ∘ρ ℰMγv =
         v  ⊑⟨ ℰMγv ⟩ γ x  ⊑⟨ γ⊑δ∘ρ x ⟩ δ (ρ x) ◼
-    rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} ρ γ⊑δ∘ρ = ℱ-≲ IH {v}
-       where
-       IH : ∀ {v} → ℰ N (γ `, v) ≲ ℰ (rename (ext ρ) N) (δ `, v) 
-       IH {v} = rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ)
+    rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} ρ γ⊑δ∘ρ =
+        ℱ-≲ (rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ)) {v}
     rename-pres {M = app ⦅ cons L (cons M nil) ⦆} ρ γ⊑δ∘ρ =
-      ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
+        ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
 
     ⊑-env : ∀ {Γ} {γ : Env Γ} {δ : Env Γ} {M v}
       → ℰ M γ v
