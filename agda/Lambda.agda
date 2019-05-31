@@ -6,6 +6,9 @@
 
 module Lambda where
 
+
+open import Variables
+
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Bool  
 open import Data.List using (List; []; _∷_)
@@ -25,9 +28,9 @@ sig app = false ∷ false ∷ []
 
 import Syntax2
 module ASTMod = Syntax2 Op sig
-open ASTMod using (`_; _⦅_⦆; Var; Rename; Subst; rename; ⟪_⟫;
-         _[_]; Z; S_; _•_; _⨟_; ↑;
-         exts; exts-cons-shift; extensionality; bind; cons; nil)
+open ASTMod using (`_; _⦅_⦆; Subst; rename; ⟪_⟫;
+         _[_]; _•_; _⨟_; ↑;
+         exts; exts-cons-shift; bind; cons; nil)
 
 
 AST : ℕ → Set

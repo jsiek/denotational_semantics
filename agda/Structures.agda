@@ -1,9 +1,7 @@
 module Structures where
 
-import Lambda
-open Lambda.ASTMod
-   using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst;
-          ext; exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
+open import Variables
+open import Lambda
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl)
@@ -253,4 +251,46 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ⊑-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
       ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
       ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
+
+
+  record LambdaModelBasics (LM : DomainAux.LambdaModel D) : Set₁ where
+    open LambdaModel LM
+    field
+      ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+            {D′ : Denotation (suc Δ)}
+          → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
+          → ℱ D γ ≲ ℱ D′ δ
+      ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
+              {D₁′ D₂′ : Denotation Δ}
+          → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
+          → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
+      ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+          → WFDenot (suc Γ) D
+          → ℱ D γ v → w ⊑ v → ℱ D γ w
+      ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
+          → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
+      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+          → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
+      ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
+          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
+
+
+module LambdaDenot
+  (D : Domain) (V : ValueOrdering D) (LM : DomainAux.LambdaModel D)
+  where
+  open DomainAux D
+  open ValueOrdering V
+  open LambdaModel LM
+
+  open ASTMod using (`_; _⦅_⦆; cons; bind; nil; Subst)
+
+  ℰ : ∀{Γ} → Term Γ → Denotation Γ
+  ℰ {Γ} (` x) γ v = v ⊑ γ x
+  ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
+  ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
+
+  infix 3 _`⊢_↓_
+  _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
+  _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
 

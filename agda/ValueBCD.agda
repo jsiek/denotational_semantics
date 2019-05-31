@@ -1,8 +1,9 @@
+open import Variables
 open import Structures
 import Lambda
 open Lambda.ASTMod
-   using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst;
-          ext; exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
+   using (`_; _⦅_⦆; Subst;
+          exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
