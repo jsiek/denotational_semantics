@@ -1,6 +1,6 @@
 {- 
 
-   ISWM: the call-by-value lambda calculus with constants.
+   ISWIM: the call-by-value lambda calculus with constants.
 
 -}
 
