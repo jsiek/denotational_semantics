@@ -64,7 +64,7 @@ module Reduction where
         ---------------------------------
       → (ƛ N) · M —→ N [ M ]
 
-    ζ : ∀ {Γ} {N N′ : Term (suc Γ)}
+    ζ-rule : ∀ {Γ} {N N′ : Term (suc Γ)}
       → N —→ N′
         -----------
       → ƛ N —→ ƛ N′

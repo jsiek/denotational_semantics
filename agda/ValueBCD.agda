@@ -1,4 +1,8 @@
-module ValueBCD where
+open import Structures
+import Lambda
+open Lambda.ASTMod
+   using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst;
+          ext; exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
@@ -6,131 +10,129 @@ open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Agda.Primitive using (lzero)
-open import Lambda
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary.Negation using (contradiction)
 open import Data.Empty using (⊥-elim)
 open import Relation.Nullary using (Dec; yes; no)
+open import Data.Unit using (⊤; tt)
+
+
+module ValueBCD where
 
 infixr 7 _↦_
 infixl 5 _⊔_
 
 data Value : Set where
   ⊥ : Value
-  lit : {B : Base} → base-rep B → Value
   _↦_ : Value → Value → Value
   _⊔_ : Value → Value → Value
+
+domain : Domain
+domain = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
+
+open DomainAux domain
+
+ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
+ℱ D γ (v ↦ w) = D (γ `, v) w
+ℱ D γ ⊥ = ⊤
+ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
+
+ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+    → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
+ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
+
+ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
+    → ℱ D γ ⊥
+ℱ-⊥ = tt
+
+ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+          {D′ : Denotation (suc Δ)}
+       → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
+       → ℱ D γ ≲ ℱ D′ δ
+ℱ-≲ D≲D′ {⊥} = λ _ → tt
+ℱ-≲ D≲D′ {v ↦ w} = D≲D′
+ℱ-≲ {D = D}{D′} D≲D′ {u ⊔ v} ℱDγ
+    with ℱ-≲{D = D}{D′} D≲D′ {u} | ℱ-≲{D = D}{D′} D≲D′ {v}
+... | a | b =
+    ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
+
+cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+          {D′ : Denotation (suc Δ)}
+       → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v))
+       → ℱ D γ ≃ ℱ D′ δ
+cong-ℱ {D = D}{D′} D≃D′ {v} =
+  ⟨ (ℱ-≲ (proj₁ D≃D′)) {v = v} , (ℱ-≲ (proj₂ D≃D′)) {v = v} ⟩
 
 infix 4 _⊑_
 
 data _⊑_ : Value → Value → Set where
-  Bot⊑Bot : ⊥ ⊑ ⊥
-  Bot⊑Fun : ∀ {v v'} → ⊥ ⊑ v ↦ v'
-  Lit⊑ : ∀{B k} → lit {B} k ⊑ lit {B} k
-  Fun⊑ : ∀ {v₁ v₂ v₁' v₂'}
-       → v₁' ⊑ v₁  →  v₂ ⊑ v₂'
-         -----------------------
-       → (v₁ ↦ v₂) ⊑ (v₁' ↦ v₂')
-  Dist⊑ : ∀{v₁ v₂ v₃}
-         --------------------------------------
-       → v₁ ↦ (v₂ ⊔ v₃) ⊑ (v₁ ↦ v₂) ⊔ (v₁ ↦ v₃)
-  ConjL⊑ : ∀ {v v₁ v₂}
-      → v₁ ⊑ v  →  v₂ ⊑ v
-        -----------------
-      → (v₁ ⊔ v₂) ⊑ v
-  ConjR1⊑ : ∀ {v v₁ v₂}
-     → v ⊑ v₁
-       -------------
-     → v ⊑ (v₁ ⊔ v₂)
-  ConjR2⊑ : ∀ {v v₁ v₂}
-     → v ⊑ v₂
-       -------------
-     → v ⊑ (v₁ ⊔ v₂)
 
-  Trans⊑ : ∀ {v₁ v₂ v₃}
-     → v₁ ⊑ v₂ → v₂ ⊑ v₃
-       -----------------
-     → v₁ ⊑ v₃
+  ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
 
+  ⊑-conj-L : ∀ {u v w}
+      → v ⊑ u
+      → w ⊑ u
+        -----------
+      → (v ⊔ w) ⊑ u
 
-Refl⊑ : ∀ {v} → v ⊑ v
-Refl⊑ {⊥} = Bot⊑Bot
-Refl⊑ {lit x} = Lit⊑
-Refl⊑ {v ↦ v₁} = Fun⊑ Refl⊑ Refl⊑
-Refl⊑ {v ⊔ v₁} = ConjL⊑ (ConjR1⊑ Refl⊑) (ConjR2⊑ Refl⊑)
+  ⊑-conj-R1 : ∀ {u v w}
+     → u ⊑ v
+       -----------
+     → u ⊑ (v ⊔ w)
 
+  ⊑-conj-R2 : ∀ {u v w}
+     → u ⊑ w
+       -----------
+     → u ⊑ (v ⊔ w)
 
-Conj⊑Conj : ∀ {v₁ v₂ v₁' v₂'}
-      → v₁ ⊑ v₁'  →  v₂ ⊑ v₂'
-        -----------------------
-      → (v₁ ⊔ v₂) ⊑ (v₁' ⊔ v₂')
-Conj⊑Conj d₁ d₂ = ConjL⊑ (ConjR1⊑ d₁) (ConjR2⊑ d₂)
+  ⊑-trans : ∀ {u v w}
+     → u ⊑ v
+     → v ⊑ w
+       -----
+     → u ⊑ w
 
+  ⊑-fun : ∀ {v w v′ w′}
+       → v′ ⊑ v
+       → w ⊑ w′
+         -------------------
+       → (v ↦ w) ⊑ (v′ ↦ w′)
 
-Dist⊔↦⊔ : ∀{v₁ v₁' v₂ v₂' : Value}
-        → (v₁ ⊔ v₁') ↦ (v₂ ⊔ v₂') ⊑ (v₁ ↦ v₂) ⊔ (v₁' ↦ v₂')
-Dist⊔↦⊔{v₁}{v₁'}{v₂}{v₂'} =
-    Trans⊑ (Dist⊑{v₁ = v₁ ⊔ v₁'}{v₂ = v₂}{v₃ = v₂'})
-           (Conj⊑Conj (Fun⊑ (ConjR1⊑ Refl⊑) Refl⊑)
-                      (Fun⊑ (ConjR2⊑ Refl⊑) Refl⊑))
+  ⊑-dist : ∀{v w w′}
+         ---------------------------------
+       → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
 
+⊑-refl : ∀ {v} → v ⊑ v
+⊑-refl {⊥} = ⊑-⊥
+⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
+⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
-Dist⊔↦⊑↦⊔ : ∀{v₁ v₂ v₄ : Value}
-         → (v₁ ↦ v₂) ⊔ (v₁ ↦ v₄) ⊑ v₁ ↦ (v₂ ⊔ v₄)
-Dist⊔↦⊑↦⊔ = ConjL⊑ (Fun⊑ Refl⊑ (ConjR1⊑ Refl⊑))
-                   (Fun⊑ Refl⊑ (ConjR2⊑ Refl⊑))
+ordering : ValueOrdering domain
+ordering = record
+             { _⊑_ = _⊑_
+             ; ⊑-⊥ = ⊑-⊥
+             ; ⊑-conj-L = ⊑-conj-L
+             ; ⊑-conj-R1 = ⊑-conj-R1
+             ; ⊑-conj-R2 = ⊑-conj-R2
+             ; ⊑-trans = ⊑-trans
+             ; ⊑-fun = ⊑-fun
+             ; ⊑-dist = ⊑-dist
+             ; ⊑-refl = ⊑-refl
+             }
 
+open OrderingAux domain ordering
 
-⊔⊑L : ∀{v₁ v₂ v : Value}
-    → v₁ ⊔ v₂ ⊑ v
-    → v₁ ⊑ v
-⊔⊑L (ConjL⊑ d d₁) = d
-⊔⊑L (ConjR1⊑ d) = ConjR1⊑ (⊔⊑L d)
-⊔⊑L (ConjR2⊑ d) = ConjR2⊑ (⊔⊑L d)
-⊔⊑L (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑L d₁) d₂
-
-
-⊔⊑R : ∀{v₁ v₂ v : Value}
-    → v₁ ⊔ v₂ ⊑ v
-    → v₂ ⊑ v
-⊔⊑R (ConjL⊑ d d₁) = d₁
-⊔⊑R (ConjR1⊑ d) = ConjR1⊑ (⊔⊑R d)
-⊔⊑R (ConjR2⊑ d) = ConjR2⊑ (⊔⊑R d)
-⊔⊑R (Trans⊑ {v₁ ⊔ v₂} d₁ d₂) = Trans⊑ (⊔⊑R d₁) d₂
-
-
-data Env : (Γ : Context) → Set where
-  ∅ : Env ∅
-  _,_ : ∀ { Γ } → Env Γ → Value → Env (Γ , ★)
-
-nth : ∀{Γ} → (Γ ∋ ★) → Env Γ → Value
-nth () ∅
-nth Z (ρ , v) = v
-nth (S x) (ρ , v) = nth x ρ
-
-_`⊑_ : ∀{Γ} → (γ : Env Γ) → (δ : Env Γ) → Set
-_`⊑_ {Γ} γ δ = ∀{k : Γ ∋ ★} → nth k γ ⊑ nth k δ
-
-_`⊔_ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → Env Γ
-∅ `⊔ ∅ = ∅
-(γ , v) `⊔ (δ , v') = (γ `⊔ δ) , (v ⊔ v')
-
-nth-join-env : ∀ {Γ} → {γ₁ : Env Γ} → {γ₂ : Env Γ}
-  → ∀ {k} → nth k (γ₁ `⊔ γ₂) ≡ (nth k γ₁) ⊔ (nth k γ₂)
-nth-join-env {∅} {∅} {∅} {()}
-nth-join-env {Γ , ★} {γ₁ , v₁} {γ₂ , v₂} {Z} = refl
-nth-join-env {Γ , ★} {γ₁ , v₁} {γ₂ , v₂} {S k} = nth-join-env {Γ}{γ₁}{γ₂}{k}
-
-EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → γ `⊑ (γ `⊔ δ)
-EnvConjR1⊑ ∅ ∅ {()}
-EnvConjR1⊑ (γ , v) (δ , v') {Z} = ConjR1⊑ Refl⊑
-EnvConjR1⊑ (γ , v) (δ , v') {S k} = EnvConjR1⊑ γ δ {k}
-
-EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → δ `⊑ (γ `⊔ δ)
-EnvConjR2⊑ ∅ ∅ {()}
-EnvConjR2⊑ (γ , v) (δ , v') {Z} = ConjR2⊑ Refl⊑
-EnvConjR2⊑ (γ , v) (δ , v') {S k} = EnvConjR2⊑ γ δ {k}
-
-_iff_ : Set → Set → Set
-P iff Q = (P → Q) × (Q → P)
+ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+       → WFDenot (suc Γ) D
+       → ℱ D γ v → w ⊑ v → ℱ D γ w
+ℱ-⊑ d ℱDγv ⊑-⊥ = tt
+ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
+ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
+ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
+ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
+ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
+  WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
+  where b : (γ `, v) `⊑ (γ `, v')
+        b Z = v⊑v'
+        b (S x) = ⊑-refl 
+ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
 

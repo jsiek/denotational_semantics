@@ -7,6 +7,10 @@
 module LambdaCallByValue where
 
 open import Lambda
+open import Experiment
+open Lambda.ASTMod
+   using (Var; Z; S_; `_; _⦅_⦆; extensionality; Rename; Subst;
+          ext; exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Bool  
@@ -48,11 +52,11 @@ data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
 
 infix  2 _—↠_
 infixr 2 _—→⟨_⟩_
-infix  3 _□
+infix  3 _▩
 
 data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
 
-  _□ : ∀ {Γ} (M : Term Γ)
+  _▩ : ∀ {Γ} (M : Term Γ)
       --------
     → M —↠ M
 
