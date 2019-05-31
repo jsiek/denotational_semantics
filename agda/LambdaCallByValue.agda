@@ -4,7 +4,7 @@
 
 -}
 
-module LambdaV where
+module LambdaCallByValue where
 
 open import Lambda
 
