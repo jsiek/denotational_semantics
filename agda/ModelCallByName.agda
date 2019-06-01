@@ -2,12 +2,15 @@ open import Structures
 open import ValueBCD
 open DomainAux domain
 open OrderingAux domain ordering
+open import Lambda
+open ASTMod using (`_; _⦅_⦆; cons; bind; nil)
+open import Structures
 
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
-module ModelCallbyName where
+module ModelCallByName where
 
 infixl 7 _●_
 _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
@@ -68,3 +71,12 @@ model_basics = (record { ℱ-≲ = ℱ-≲ ;
                ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
                ●-⊔ = ●-⊔
                })
+
+open LambdaDenot domain ordering model
+
+ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+    → ℰ M γ ⊥
+ℰ-⊥ {M = ` x} = ⊑-⊥
+ℰ-⊥ {Γ}{γ}{M = lam ⦅ bind N nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {M = app ⦅ cons L (cons M nil) ⦆} = inj₁ ⊑-⊥
+

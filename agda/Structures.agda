@@ -2,6 +2,7 @@ module Structures where
 
 open import Variables
 open import Lambda
+open Lambda.ASTMod using (⟪_⟫)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 open import Relation.Nullary using (Dec; yes; no)
@@ -300,6 +301,7 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
 module LambdaDenot
   (D : Domain) (V : ValueOrdering D) (LM : DomainAux.LambdaModel D)
   where
+  open Domain D
   open DomainAux D
   open ValueOrdering V
   open LambdaModel LM
@@ -321,6 +323,7 @@ module LambdaDenot
   _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
   _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
 
-
-  
-
+  SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
+         → Subst Γ Δ → Value → Set
+  SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
+                         → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
