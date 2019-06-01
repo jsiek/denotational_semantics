@@ -23,6 +23,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
    renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Nat using (ℕ; zero; suc; _+_)
 
 
 module PreserveReflectCallByValue where
@@ -81,3 +82,20 @@ preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
       substitution{N = N}{M = M} {v'} ℰNγvw ℰMγv
 
 
+reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
+  → M —→ N
+    ---------
+  → ℰ M ≃ ℰ N
+reduce-equal {Γ}{M}{N} r γ v =
+    ⟨ (λ m → preserve r m) , (λ n → reflect r refl n) ⟩
+
+
+soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
+  → M —↠ ƛ N
+    -----------------
+  → ℰ M ≃ ℰ (ƛ N)
+soundness (_ ▩) γ v = ⟨ (λ x → x) , (λ x → x) ⟩
+soundness {Γ} (L —→⟨ r ⟩ M—↠N) γ v =
+   let ih = soundness M—↠N in
+   let e = reduce-equal r in
+   ≃-trans {Γ} e ih γ v

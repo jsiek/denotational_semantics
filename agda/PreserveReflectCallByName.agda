@@ -93,7 +93,7 @@ soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
   → M —↠ ƛ N
     -----------------
   → ℰ M ≃ ℰ (ƛ N)
-soundness (.(ƛ _) □) γ v = ⟨ (λ x → x) , (λ x → x) ⟩
+soundness (_ □) γ v = ⟨ (λ x → x) , (λ x → x) ⟩
 soundness {Γ} (L —→⟨ r ⟩ M—↠N) γ v =
    let ih = soundness M—↠N in
    let e = reduce-equal r in
