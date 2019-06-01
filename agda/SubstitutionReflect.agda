@@ -116,7 +116,10 @@ module SubstReflect
     ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
            ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
 
-module CallByName where
+
+import ValueBCD
+  
+module LambdaValueBCD (LM : DomainAux.LambdaModel ValueBCD.domain) where
   open import ValueBCD
   open import ModelCallByName
   open DomainAux domain
@@ -149,6 +152,17 @@ module CallByName where
        ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}m2(EnvConjR2⊑ δ₁ δ₂) ⟩
        ⟩ ⟩
 
+
+module CallByName where
+  open import ValueBCD
+  open import ModelCallByName
+  open DomainAux domain
+  open OrderingAux domain ordering
+  open LambdaDenot domain ordering model
+  open RenamePreserveReflect domain ordering model model_basics
+    using (⊑-env)
+  open Filter domain ordering model model_basics using (subst-⊔; ℰ-⊑)
+
   subst-reflect-app : ∀ {Γ Δ} {δ : Env Δ} {L : Term Γ} {M : Term Γ} 
                       {σ : Subst Γ Δ} {v}
           → (∀ {v : Value} → SubRef Γ Δ δ L (⟪ σ ⟫ L) σ v)
@@ -175,6 +189,8 @@ module CallByName where
         ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
 
   open SubstReflect domain ordering model model_basics
+  open LambdaValueBCD model
+  
   open LambdaApp
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
              subst-reflect-lambda{Γ}{Δ}{δ}{N}{σ}{v} IH a b c)
