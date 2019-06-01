@@ -29,17 +29,17 @@ module SubstitutionPreserve
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : OrderingAux.LambdaModelBasics D V LM)
+  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
   where
 
   open Domain D
   open DomainAux D
   open ValueOrdering V
   open OrderingAux D V
-  open LambdaDenot D V LM
+  open LambdaDenot D V _●_ ℱ
   open LambdaModelBasics MB
-  open RenamePreserveReflect D V LM MB using (⊑-env; rename-pres)  
-  open Filter D V LM MB
+  open RenamePreserveReflect D V _●_ ℱ MB using (⊑-env; rename-pres)  
+  open Filter D V _●_ ℱ MB
 
   subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
     → (σ : Subst Γ Δ)

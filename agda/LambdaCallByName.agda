@@ -10,10 +10,10 @@ open DomainAux domain
 open OrderingAux domain ordering
 
 open import ModelCallByName
-open import Filter domain ordering model model_basics
-open import SubstitutionPreserve domain ordering model model_basics
-open LambdaDenot domain ordering model
-open import RenamePreserveReflect domain ordering model model_basics
+open import Filter domain ordering _●_ ℱ model_basics
+open import SubstitutionPreserve domain ordering _●_ ℱ model_basics
+open LambdaDenot domain ordering _●_ ℱ
+open import RenamePreserveReflect domain ordering _●_ ℱ model_basics
   using (⊑-env)  
 
 open import Data.Nat using (ℕ; zero; suc)
@@ -36,18 +36,6 @@ open SubstitutionReflect.CallByName
 module LambdaCallByName where
 
 {-
-
-
-  substitution-reflect : ∀ {Δ} {δ : Env Δ} {N : Term (suc Δ)} {M : Term Δ} {v}
-    → ℰ (N [ M ]) δ v  → ℰ M δ ⊥
-      ------------------------------------------------
-    → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
-  substitution-reflect{N = N}{M = M} ℰNMδv ℰMδ⊥
-       with subst-reflect {M = N} ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
-  ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
-       with subst-zero-reflect δσγ
-  ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
-         ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
 
 
 module Reflect
@@ -76,35 +64,39 @@ module Reflect
   open F using (ℰ-⊑; ℰ-⊔; WF)
 
   open Preservation _●_ ME using (ℰ-⊥)
-
   open SubstReflect _●_ ME
 
-  reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
-      → ℰ (N [ M ]) γ v
-      → ℰ ((ƛ N) · M) γ v
-  reflect-beta {Γ}{γ}{M}{N}{v} d 
-      with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M})
-  ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ rewrite ●-≡ {Γ}{ℱ (ℰ N)}{ℰ M}{γ}{v} =
-        inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
-
-  reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
-    →  M —→ M′  →   M′ ≡ N  →  ℰ N γ v
-      --------------------------------
-    → ℰ M γ v    
-  reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
-      rewrite sym L′·M≡N =
-      ●-≲ (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
-  reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
-      rewrite sym L·M′≡N =
-      ●-≲ (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
-  reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
-      reflect-beta {M = M}{N}
-  reflect {v = v} (ζ-rule {Γ}{N}{N′} N—→N′) M′≡N rewrite sym M′≡N =
-      ℱ-≲ (reflect N—→N′ refl) {v}
 -}
 
+reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+    → ℰ (N [ M ]) γ v
+    → ℰ ((ƛ N) · M) γ v
+reflect-beta {Γ}{γ}{M}{N}{v} d 
+    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M})
+... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
+      inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
+
+reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
+  →  M —→ M′  →   M′ ≡ N  →  ℰ N γ v
+    --------------------------------
+  → ℰ M γ v    
+reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
+    rewrite sym L′·M≡N =
+    ●-≲ {D₁ = ℰ L′}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M}
+        (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
+reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
+    rewrite sym L·M′≡N =
+    ●-≲ {D₁ = ℰ L}{D₂ = ℰ M′}{D₁′ = ℰ L}{D₂′ = ℰ M}
+        (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
+reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
+    reflect-beta {M = M}{N}
+reflect {v = v} (ζ-rule {Γ}{N}{N′} N—→N′) M′≡N rewrite sym M′≡N =
+    ℱ-≲ (reflect N—→N′ refl) {v}
 
 
+{-
+
+OBSOLETE??
 
 ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u : Value}
       → ℱ D γ u
@@ -119,8 +111,6 @@ module Reflect
 ... | inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , v'↦w'⊑v ⟩ ⟩ ⟩ | _ =
       inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , ⊑-conj-R1 v'↦w'⊑v ⟩ ⟩ ⟩
 
-
-
 ℱ●-inv : ∀{Γ} {D₁ : Denotation (suc Γ)}{D₂ : Denotation Γ}{γ : Env Γ}
           {w : Value}
         → (ℱ D₁ ● D₂) γ w
@@ -130,6 +120,7 @@ module Reflect
 ... | inj₁ w⊑⊥ = inj₁ w⊑⊥ 
 ... | inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩ =
       inj₂ ⟨ v , ⟨ ℱD₁γv↦w , D₂γv ⟩ ⟩
+-}
 
 preserve : ∀ {Γ} {γ : Env Γ} {M N v}
   → M —→ N
