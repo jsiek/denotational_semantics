@@ -345,3 +345,10 @@ module DenotAux
   ƛ-⊥ : ∀{Γ}{N : Term (suc Γ)}{γ : Env Γ}
       → ℰ (ƛ N) γ ⊥
   ƛ-⊥ = ℱ-⊥
+
+  cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
+            {D₁′ D₂′ : Denotation Δ}
+         → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ
+  cong-● {γ = γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 {w} =
+    ⟨ (●-≲{D₁ = D₁}{D₂}{D₁′}{D₂′} (proj₁ eq1) (proj₁ eq2)) {v = w} ,
+      (●-≲{D₁ = D₁′}{D₂′}{D₁}{D₂} (proj₂ eq1) (proj₂ eq2)) {v = w} ⟩

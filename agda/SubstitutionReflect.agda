@@ -260,4 +260,4 @@ module CallByValue where
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
              subst-reflect-lambda{Γ}{Δ}{δ}{N}{σ}{v} IH a b c)
           (λ {Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c →
-             subst-reflect-app{Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c)
+             subst-reflect-app{Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c) public
