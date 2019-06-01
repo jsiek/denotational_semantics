@@ -33,7 +33,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 import SubstitutionReflect
 open SubstitutionReflect.CallByName
 
-module LambdaCallByName where
+module PreserveReflectCallByName where
 
 {-
 
