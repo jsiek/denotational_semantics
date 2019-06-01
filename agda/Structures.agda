@@ -205,11 +205,12 @@ module DomainAux(D : Domain) where
   (d □) {v} =  ≃-refl {d}
 
 
+{-
   record LambdaModel : Set₁ where
     field
       _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
       ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
-
+-}
 
 {-
 
@@ -275,8 +276,10 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
 
 
-  record LambdaModelBasics (LM : DomainAux.LambdaModel D) : Set₁ where
-    open LambdaModel LM
+  record LambdaModelBasics
+      (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+      (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
+      : Set₁ where
     field
       ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
             {D′ : Denotation (suc Δ)}
@@ -296,15 +299,17 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
           → WFDenot Γ D₁ → WFDenot Γ D₂
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-
+      ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 
 module LambdaDenot
-  (D : Domain) (V : ValueOrdering D) (LM : DomainAux.LambdaModel D)
+  (D : Domain) (V : ValueOrdering D)
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
   where
   open Domain D
   open DomainAux D
   open ValueOrdering V
-  open LambdaModel LM
 
   open ASTMod using (`_; _⦅_⦆; cons; bind; nil; Subst)
 
@@ -323,7 +328,20 @@ module LambdaDenot
   _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
   _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
 
-  SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
-         → Subst Γ Δ → Value → Set
-  SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
-                         → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
+
+module DenotAux
+  (D : Domain) (V : ValueOrdering D) 
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  where
+  open Domain D
+  open DomainAux D
+  open OrderingAux D V
+  open LambdaDenot D V _●_ ℱ
+  open LambdaModelBasics MB
+
+  ƛ-⊥ : ∀{Γ}{N : Term (suc Γ)}{γ : Env Γ}
+      → ℰ (ƛ N) γ ⊥
+  ƛ-⊥ = ℱ-⊥

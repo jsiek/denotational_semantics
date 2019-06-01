@@ -23,18 +23,20 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module Filter
   (D : Domain)
   (V : ValueOrdering D)
-  (LM : DomainAux.LambdaModel D)
-  (MV : OrderingAux.LambdaModelBasics D V LM)
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (MV : OrderingAux.LambdaModelBasics D V _●_ ℱ)
   where
   
   open Domain D
   open DomainAux D
   open ValueOrdering V
   open OrderingAux D V
-  open LambdaDenot D V LM
+  open LambdaDenot D V _●_ ℱ
   open LambdaModelBasics MV
 
-  open RenamePreserveReflect D V LM MV  using (⊑-env; rename-pres)  
+  open RenamePreserveReflect D V _●_ ℱ MV  using (⊑-env; rename-pres)  
 
   ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
       → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)

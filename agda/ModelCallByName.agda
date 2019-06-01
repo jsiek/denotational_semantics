@@ -6,6 +6,8 @@ open import Lambda
 open ASTMod using (`_; _⦅_⦆; cons; bind; nil)
 open import Structures
 
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Data.Nat using (suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -15,9 +17,6 @@ module ModelCallByName where
 infixl 7 _●_
 _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
 _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
-
-model : LambdaModel
-model = record { _●_ = _●_ ; ℱ = ℱ }
 
 ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
           {D₁′ D₂′ : Denotation Δ}
@@ -62,17 +61,18 @@ model = record { _●_ = _●_ ; ℱ = ℱ }
     → (D₁ ● D₂) γ ⊥
 ●-⊥ = inj₁ ⊑-⊥
 
-model_basics : LambdaModelBasics model
-model_basics = (record { ℱ-≲ = ℱ-≲ ;
+model_basics : LambdaModelBasics _●_ ℱ
+model_basics = record { ℱ-≲ = ℱ-≲ ;
                ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
                        ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y;
                ℱ-⊑ = ℱ-⊑;
                ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
                ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
-               ●-⊔ = ●-⊔
-               })
+               ●-⊔ = ●-⊔ ;
+               ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ}
+               }
 
-open LambdaDenot domain ordering model
+open LambdaDenot domain ordering _●_ ℱ
 
 ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
     → ℰ M γ ⊥

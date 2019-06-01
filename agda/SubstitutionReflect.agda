@@ -11,7 +11,7 @@ import Filter
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; []; _∷_)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
+open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app; subst)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -27,18 +27,24 @@ module SubstitutionReflect where
 module SubstReflect
   (D : Domain)
   (V : ValueOrdering D)
-  (LM : DomainAux.LambdaModel D)
-  (MB : OrderingAux.LambdaModelBasics D V LM)
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
   where
   
   open Domain D
   open OrderingAux D V
   open DomainAux D
   open ValueOrdering V
-  open LambdaModel LM
-  open LambdaDenot D V LM
-  open Filter D V LM MB
-  open RenamePreserveReflect D V LM MB using (⊑-env)
+  open LambdaDenot D V _●_ ℱ
+  open Filter D V _●_ ℱ MB
+  open RenamePreserveReflect D V _●_ ℱ MB using (⊑-env)
+
+  SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
+         → Subst Γ Δ → Value → Set
+  SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
+                         → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
 
   module LambdaApp
     (subst-reflect-lambda : ∀{Γ Δ} {δ : Env Δ} {N : Term (suc Γ)}
@@ -117,25 +123,34 @@ module SubstReflect
            ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
 
 
-import ValueBCD
+open import ValueBCD
+open DomainAux domain
   
-module LambdaValueBCD (LM : DomainAux.LambdaModel ValueBCD.domain) where
-  open import ValueBCD
-  open import ModelCallByName
-  open DomainAux domain
+module LambdaValueBCD
+  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
+  (MB : OrderingAux.LambdaModelBasics domain ordering _●_ ℱ)
+  where
   open OrderingAux domain ordering
-  open LambdaDenot domain ordering model
-  open RenamePreserveReflect domain ordering model model_basics
+  open RenamePreserveReflect domain ordering _●_ ℱ MB
     using (rename-inc-reflect; EnvExt⊑; ⊑-env)
-  open Filter domain ordering model model_basics using (subst-⊔; δu⊢extσ⊥; ℰ-⊑)
+  open Filter domain ordering _●_ ℱ MB using (subst-⊔; δu⊢extσ⊥; ℰ-⊑)
+  open DenotAux domain ordering _●_ ℱ MB
+  open LambdaDenot domain ordering _●_ ℱ
+  open LambdaModelBasics MB
+
+  SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
+         → Subst Γ Δ → Value → Set
+  SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
+                         → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
 
   subst-reflect-lambda : ∀{Γ Δ} {δ : Env Δ} {N : Term (suc Γ)}
                       {σ : Subst Γ Δ} {v}
           → (∀{u w}
              → SubRef (suc Γ) (suc Δ) (δ `, u) N (⟪ exts σ ⟫ N)  (exts σ) w)
           → SubRef Γ Δ δ (ƛ N) (⟪ σ ⟫ (ƛ N)) σ v
-  subst-reflect-lambda {v = ⊥} IH tt L≡ δ⊢σ↓⊥ = ⟨ `⊥ , ⟨ δ⊢σ↓⊥ , tt  ⟩ ⟩
-  subst-reflect-lambda {N = N}{σ} {u ↦ w} IH ℰLδv L≡ δ⊢σ↓⊥
+  subst-reflect-lambda {Γ}{N = N}{v = ⊥} IH _ L≡ δ⊢σ↓⊥ =
+      ⟨ `⊥ , ⟨ δ⊢σ↓⊥ , ƛ-⊥ {Γ}{N}{`⊥} ⟩ ⟩
+  subst-reflect-lambda {Γ}{Δ}{δ}{N = N}{σ} {u ↦ w} IH ℰLδv L≡ δ⊢σ↓⊥
       with IH {u}{w} ℰLδv refl (δu⊢extσ⊥ δ⊢σ↓⊥)
   ... | ⟨ γ , ⟨ subst-γ , m ⟩ ⟩ =
         ⟨ init γ ,
@@ -154,15 +169,19 @@ module LambdaValueBCD (LM : DomainAux.LambdaModel ValueBCD.domain) where
 
 
 module CallByName where
-  open import ValueBCD
-  open import ModelCallByName
-  open DomainAux domain
-  open OrderingAux domain ordering
-  open LambdaDenot domain ordering model
-  open RenamePreserveReflect domain ordering model model_basics
-    using (⊑-env)
-  open Filter domain ordering model model_basics using (subst-⊔; ℰ-⊑)
 
+  open import ModelCallByName
+  open OrderingAux domain ordering
+  open LambdaDenot domain ordering _●_ ℱ
+  open RenamePreserveReflect domain ordering _●_ ℱ model_basics
+    using (⊑-env)
+  open Filter domain ordering _●_ ℱ model_basics using (subst-⊔; ℰ-⊑)
+
+  SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
+         → Subst Γ Δ → Value → Set
+  SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
+                         → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
+                         
   subst-reflect-app : ∀ {Γ Δ} {δ : Env Δ} {L : Term Γ} {M : Term Γ} 
                       {σ : Subst Γ Δ} {v}
           → (∀ {v : Value} → SubRef Γ Δ δ L (⟪ σ ⟫ L) σ v)
@@ -188,8 +207,54 @@ module CallByName where
         ℰMδ₁⊔δ₂u  : ℰ M (λ z → (δ₁ `⊔ δ₂) z) u
         ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
 
-  open SubstReflect domain ordering model model_basics
-  open LambdaValueBCD model
+  open SubstReflect domain ordering _●_ ℱ model_basics
+  open LambdaValueBCD _●_ model_basics
+  
+  open LambdaApp
+          (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
+             subst-reflect-lambda{Γ}{Δ}{δ}{N}{σ}{v} IH a b c)
+          (λ {Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c →
+             subst-reflect-app{Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c)
+
+module CallByValue where
+
+  open import ModelCallByValue
+  open OrderingAux domain ordering
+  open LambdaDenot domain ordering _●_ ℱ
+  open RenamePreserveReflect domain ordering _●_ ℱ model_basics
+    using (⊑-env)
+  open Filter domain ordering _●_ ℱ model_basics using (subst-⊔; ℰ-⊑)
+
+  SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
+         → Subst Γ Δ → Value → Set
+  SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
+                         → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
+
+  subst-reflect-app : ∀ {Γ Δ} {δ : Env Δ} {L : Term Γ} {M : Term Γ} 
+                      {σ : Subst Γ Δ} {v}
+          → (∀ {v : Value} → SubRef Γ Δ δ L (⟪ σ ⟫ L) σ v)
+          → (∀ {v : Value} → SubRef Γ Δ δ M (⟪ σ ⟫ M) σ v)
+          → SubRef Γ Δ δ (L · M) (⟪ σ ⟫ (L · M)) σ v
+  subst-reflect-app {Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 ℰσL●ℰσMδv L≡σM δ⊢σ↓⊥
+      rewrite L≡σM 
+      with ℰσL●ℰσMδv
+  ... | ⟨ u , ⟨ ℰσLδu↦v , ℰσMδu ⟩ ⟩
+      with IH1 ℰσLδu↦v refl δ⊢σ↓⊥
+         | IH2 ℰσMδu refl δ⊢σ↓⊥
+  ... | ⟨ δ₁  , ⟨ subst-δ₁ , ℰLδ₁u↦v ⟩ ⟩
+      | ⟨ δ₂  , ⟨ subst-δ₂ , ℰMδ₂u ⟩ ⟩ =
+        ⟨ (δ₁ `⊔ δ₂) ,
+        ⟨ (subst-⊔ {γ₁ = δ₁}{γ₂ = δ₂}{σ = σ} subst-δ₁ subst-δ₂) ,
+          ⟨ u , ⟨ ℰLδ₁⊔δ₂u↦v , ℰMδ₁⊔δ₂u ⟩ ⟩ ⟩ ⟩
+        where
+        ℰLδ₁⊔δ₂u↦v : ℰ L (λ z → (δ₁ `⊔ δ₂) z) (u ↦ v)
+        ℰLδ₁⊔δ₂u↦v = ⊑-env{M = L} ℰLδ₁u↦v (EnvConjR1⊑ δ₁ δ₂)
+
+        ℰMδ₁⊔δ₂u  : ℰ M (λ z → (δ₁ `⊔ δ₂) z) u
+        ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
+
+  open SubstReflect domain ordering _●_ ℱ model_basics
+  open LambdaValueBCD _●_ model_basics
   
   open LambdaApp
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →

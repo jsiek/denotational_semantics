@@ -26,7 +26,9 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module SubstitutionPreserve
   (D : Domain)
   (V : ValueOrdering D)
-  (LM : DomainAux.LambdaModel D)
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
   (MB : OrderingAux.LambdaModelBasics D V LM)
   where
 

@@ -22,15 +22,17 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module RenamePreserveReflect
   (D : Domain)
   (V : ValueOrdering D)
-  (LM : DomainAux.LambdaModel D)
-  (MV : OrderingAux.LambdaModelBasics D V LM)
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (MV : OrderingAux.LambdaModelBasics D V _●_ ℱ)
   where
   
   open Domain D
   open DomainAux D
   open ValueOrdering V
   open OrderingAux D V
-  open LambdaDenot D V LM
+  open LambdaDenot D V _●_ ℱ
   open LambdaModelBasics MV
 
   ⊑-ext-R : ∀{Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ}{v}
