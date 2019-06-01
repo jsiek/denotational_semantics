@@ -101,6 +101,7 @@ module RenamePreserveReflect
     → ℰ M γ v
   rename-inc-reflect {M = M} d = rename-reflect {M = M} `Refl⊑ d
 
+{-
   rename-equiv : ∀ {Γ Δ} {γ : Env Γ} {δ : Env Δ} {M : Term Γ} {ρ : Rename Γ Δ}
     → γ `≡ (δ ∘ ρ)
       ------------------------
@@ -112,4 +113,4 @@ module RenamePreserveReflect
 
             δ∘ρ⊑γ : (δ ∘ ρ) `⊑ γ
             δ∘ρ⊑γ x rewrite γ≡δ∘ρ x = ⊑-refl
-
+-}

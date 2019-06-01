@@ -168,44 +168,55 @@ module DomainAux(D : Domain) where
   P iff Q = (P → Q) × (Q → P)
 
 
-  _≃_ : (Value → Set) → (Value → Set) → Set
-  d ≃ d' = ∀{v : Value} → d v iff d' v
+  infix 3 _≃_
 
-  ≃-refl : ∀ {d : Value → Set}
-    → d ≃ d
-  ≃-refl = ⟨ (λ x → x) , (λ x → x) ⟩
+  _≃_ : ∀ {Γ} → (Denotation Γ) → (Denotation Γ) → Set
+  (_≃_ {Γ} D₁ D₂) = (γ : Env Γ) → (v : Value) → D₁ γ v iff D₂ γ v
 
-  ≃-trans : ∀ {d₁ d₂ d₃ : Value → Set}
-    → d₁ ≃ d₂
-    → d₂ ≃ d₃
-      ------- 
-   → d₁ ≃ d₃
-  ≃-trans m12 m23 = ⟨ (λ z → proj₁ m23 (proj₁ m12 z)) ,
-                      (λ z → proj₂ m12 (proj₂ m23 z)) ⟩
+  ≃-refl : ∀ {Γ } → {M : Denotation Γ}
+    → M ≃ M
+  ≃-refl γ v = ⟨ (λ x → x) , (λ x → x) ⟩
+
+  ≃-sym : ∀ {Γ } → {M N : Denotation Γ}
+    → M ≃ N
+      -----
+    → N ≃ M
+  ≃-sym eq γ v = ⟨ (proj₂ (eq γ v)) , (proj₁ (eq γ v)) ⟩
+
+  ≃-trans : ∀ {Γ } → {M₁ M₂ M₃ : Denotation Γ}
+    → M₁ ≃ M₂
+    → M₂ ≃ M₃
+      -------
+    → M₁ ≃ M₃
+  ≃-trans eq1 eq2 γ v = ⟨ (λ z → proj₁ (eq2 γ v) (proj₁ (eq1 γ v) z)) ,
+                          (λ z → proj₂ (eq1 γ v) (proj₂ (eq2 γ v) z)) ⟩
 
   infixr 2 _≃⟨⟩_ _≃⟨_⟩_
   infix  3 _□
 
-  _≃⟨⟩_ : ∀ (x : Value → Set) {y : Value → Set}
+  _≃⟨⟩_ : ∀ {Γ} (x : Denotation Γ) {y : Denotation Γ}
       → x ≃ y
         -----
       → x ≃ y
   x ≃⟨⟩ x≃y  = x≃y
 
-  _≃⟨_⟩_ : ∀ (x : Value → Set) {y z : Value → Set}
+  _≃⟨_⟩_ : ∀ {Γ} (x : Denotation Γ) {y z : Denotation Γ}
       → x ≃ y
       → y ≃ z
         -----
       → x ≃ z
-  (x ≃⟨ x≃y ⟩ y≃z) {v} =  ≃-trans (x≃y{v}) y≃z {v}
+  (x ≃⟨ x≃y ⟩ y≃z) =  ≃-trans x≃y y≃z
 
-  _□ : ∀ (d : Value → Set)
+  _□ : ∀ {Γ} (d : Denotation Γ)
         -----
       → d ≃ d
-  (d □) {v} =  ≃-refl {d}
+  (d □) =  ≃-refl
 
 
 {-
+
+  The following caused problems with equality. -Jeremy
+
   record LambdaModel : Set₁ where
     field
       _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
@@ -346,9 +357,11 @@ module DenotAux
       → ℰ (ƛ N) γ ⊥
   ƛ-⊥ = ℱ-⊥
 
+{-
   cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
             {D₁′ D₂′ : Denotation Δ}
          → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ
   cong-● {γ = γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 {w} =
     ⟨ (●-≲{D₁ = D₁}{D₂}{D₁′}{D₂′} (proj₁ eq1) (proj₁ eq2)) {v = w} ,
       (●-≲{D₁ = D₁′}{D₂′}{D₁}{D₂} (proj₂ eq1) (proj₂ eq2)) {v = w} ⟩
+-}

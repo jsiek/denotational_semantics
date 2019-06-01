@@ -90,7 +90,7 @@ _[_] : ∀ {Γ}
 _[_] N M =  ⟪ subst-zero M ⟫ N
 
 ids : ∀{Γ} → Subst Γ Γ
-ids x = ` x
+ids {Γ} x = ` x
 
 ↑ : ∀{Γ} → Subst Γ (suc Γ)
 ↑ x = ` (S x)

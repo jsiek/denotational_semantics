@@ -4,7 +4,8 @@ open import Lambda
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
-open Lambda.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule; ζ-rule)
+open Lambda.Reduction
+  using (_—→_; ξ₁-rule; ξ₂-rule; β-rule; ζ-rule; _—↠_; _—→⟨_⟩_; _□)
 open import ValueBCD
 open DomainAux domain
 open OrderingAux domain ordering
@@ -23,6 +24,8 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
    renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Nat using (ℕ; zero; suc; _+_)
+
 
 
 module PreserveReflectCallByName where
@@ -77,3 +80,21 @@ preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
       substitution{N = N}{M = M} {v'} ℰNγvw ℰMγv
 preserve {v = v} (ζ-rule {Γ}{N}{N′} N—→N′) = ℱ-≲ (preserve N—→N′) {v}
 
+
+reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
+  → M —→ N
+    ---------
+  → ℰ M ≃ ℰ N
+reduce-equal {Γ}{M}{N} r γ v =
+    ⟨ (λ m → preserve r m) , (λ n → reflect r refl n) ⟩
+
+
+soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
+  → M —↠ ƛ N
+    -----------------
+  → ℰ M ≃ ℰ (ƛ N)
+soundness (.(ƛ _) □) γ v = ⟨ (λ x → x) , (λ x → x) ⟩
+soundness {Γ} (L —→⟨ r ⟩ M—↠N) γ v =
+   let ih = soundness M—↠N in
+   let e = reduce-equal r in
+   ≃-trans {Γ} e ih γ v

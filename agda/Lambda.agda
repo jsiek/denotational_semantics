@@ -88,3 +88,39 @@ module Reduction where
         ---------
       → L —↠ N
 
+  —↠-trans : ∀{Γ}{L M N : Term Γ}
+           → L —↠ M
+           → M —↠ N
+           → L —↠ N
+  —↠-trans (M □) mn = mn
+  —↠-trans (L —→⟨ r ⟩ lm) mn = L —→⟨ r ⟩ (—↠-trans lm mn)
+
+  —→-app-cong : ∀{Γ}{L L' M : Term Γ}
+              → L —→ L'
+              → L · M —→ L' · M
+  —→-app-cong (ξ₁-rule ll') = ξ₁-rule (—→-app-cong ll')
+  —→-app-cong (ξ₂-rule ll') = ξ₁-rule (ξ₂-rule ll')
+  —→-app-cong β-rule = ξ₁-rule β-rule
+  —→-app-cong (ζ-rule ll') = ξ₁-rule (ζ-rule ll')
+
+  abs-cong : ∀ {Γ} {N N' : Term (suc Γ)}
+           → N —↠ N'
+             ----------
+           → ƛ N —↠ ƛ N'
+  abs-cong (M □) = ƛ M □
+  abs-cong (L —→⟨ r ⟩ rs) = ƛ L —→⟨ ζ-rule r ⟩ abs-cong rs
+
+  appL-cong : ∀ {Γ} {L L' M : Term Γ}
+           → L —↠ L'
+             ---------------
+           → L · M —↠ L' · M
+  appL-cong {Γ}{L}{L'}{M} (L □) = L · M □
+  appL-cong {Γ}{L}{L'}{M} (L —→⟨ r ⟩ rs) = L · M —→⟨ ξ₁-rule r ⟩ appL-cong rs
+
+  appR-cong : ∀ {Γ} {L M M' : Term Γ}
+           → M —↠ M'
+             ---------------
+           → L · M —↠ L · M'
+  appR-cong {Γ}{L}{M}{M'} (M □) = L · M □
+  appR-cong {Γ}{L}{M}{M'} (M —→⟨ r ⟩ rs) = L · M —→⟨ ξ₂-rule r ⟩ appR-cong rs
+

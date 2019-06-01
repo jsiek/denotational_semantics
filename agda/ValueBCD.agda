@@ -58,12 +58,14 @@ open DomainAux domain
 ... | a | b =
     ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
 
+{-
 cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
           {D′ : Denotation (suc Δ)}
        → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v))
        → ℱ D γ ≃ ℱ D′ δ
 cong-ℱ {D = D}{D′} D≃D′ {v} =
   ⟨ (ℱ-≲ (proj₁ D≃D′)) {v = v} , (ℱ-≲ (proj₂ D≃D′)) {v = v} ⟩
+-}
 
 infix 4 _⊑_
 
@@ -350,3 +352,62 @@ sub-inv-fun{v}{w}{u₁} abc
 ... | refl =    
   let codΓ⊆w′ = ⊆↦→cod⊆ Γ⊆v34 in
   ⟨ lt1 u↦u′∈Γ , ⊑-trans lt2 (⊆→⊑ codΓ⊆w′) ⟩
+
+
+AboveFun : Value → Set
+AboveFun u = Σ[ v ∈ Value ] Σ[ w ∈ Value ] v ↦ w ⊑ u
+
+AboveFun-⊑ : ∀{u u' : Value}
+      → AboveFun u → u ⊑ u'
+        -------------------
+      → AboveFun u'
+AboveFun-⊑ ⟨ v , ⟨ w , lt' ⟩ ⟩ lt = ⟨ v , ⟨ w , ⊑-trans lt' lt ⟩ ⟩
+
+AboveFun⊥ : ¬ AboveFun ⊥
+AboveFun⊥ ⟨ v , ⟨ w , lt ⟩ ⟩
+    with sub-inv-fun lt
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆⊥ , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with Funs∈ f
+... | ⟨ A , ⟨ B , m ⟩ ⟩
+    with Γ⊆⊥ m
+... | ()
+
+AboveFun-⊔ : ∀{u u'}
+           → AboveFun (u ⊔ u')
+           → AboveFun u ⊎ AboveFun u'
+AboveFun-⊔{u}{u'} ⟨ v , ⟨ w , v↦w⊑u⊔u' ⟩ ⟩ 
+    with sub-inv-fun v↦w⊑u⊔u'
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆u⊔u' , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with Funs∈ f
+... | ⟨ A , ⟨ B , m ⟩ ⟩
+    with Γ⊆u⊔u' m
+... | inj₁ x = inj₁ ⟨ A , ⟨ B , (∈→⊑ x) ⟩ ⟩
+... | inj₂ x = inj₂ ⟨ A , ⟨ B , (∈→⊑ x) ⟩ ⟩
+
+not-AboveFun-⊔ : ∀{u u' : Value}
+               → ¬ AboveFun u → ¬ AboveFun u'
+               → ¬ AboveFun (u ⊔ u')
+not-AboveFun-⊔ naf1 naf2 af12
+    with AboveFun-⊔ af12
+... | inj₁ af1 = contradiction af1 naf1
+... | inj₂ af2 = contradiction af2 naf2
+
+not-AboveFun-⊔-inv : ∀{u u' : Value} → ¬ AboveFun (u ⊔ u')
+              → ¬ AboveFun u × ¬ AboveFun u'
+not-AboveFun-⊔-inv af = ⟨ f af , g af ⟩
+  where
+    f : ∀{u u' : Value} → ¬ AboveFun (u ⊔ u') → ¬ AboveFun u
+    f{u}{u'} af12 ⟨ v , ⟨ w , lt ⟩ ⟩ =
+        contradiction ⟨ v , ⟨ w , ⊑-conj-R1 lt ⟩ ⟩ af12
+    g : ∀{u u' : Value} → ¬ AboveFun (u ⊔ u') → ¬ AboveFun u'
+    g{u}{u'} af12 ⟨ v , ⟨ w , lt ⟩ ⟩ =
+        contradiction ⟨ v , ⟨ w , ⊑-conj-R2 lt ⟩ ⟩ af12
+
+AboveFun? : (v : Value) → Dec (AboveFun v)
+AboveFun? ⊥ = no AboveFun⊥
+AboveFun? (v ↦ w) = yes ⟨ v , ⟨ w , ⊑-refl ⟩ ⟩
+AboveFun? (u ⊔ u')
+    with AboveFun? u | AboveFun? u'
+... | yes ⟨ v , ⟨ w , lt ⟩ ⟩ | _ = yes ⟨ v , ⟨ w , (⊑-conj-R1 lt) ⟩ ⟩
+... | no _ | yes ⟨ v , ⟨ w , lt ⟩ ⟩ = yes ⟨ v , ⟨ w , (⊑-conj-R2 lt) ⟩ ⟩
+... | no x | no y = no (not-AboveFun-⊔ x y)
