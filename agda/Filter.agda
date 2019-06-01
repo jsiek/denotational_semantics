@@ -79,3 +79,16 @@ module Filter
                         ⊑-closed = ℰ-⊑ {M = M} ;
                         ⊔-closed = ℰ-⊔ {M = M} }
 
+  subst-⊔ : ∀{Γ Δ}{γ : Env Δ}{γ₁ γ₂ : Env Γ}{σ : Subst Γ Δ}
+             → γ `⊢ σ ↓ γ₁
+             → γ `⊢ σ ↓ γ₂
+               -------------------------
+             → γ `⊢ σ ↓ (γ₁ `⊔ γ₂)
+  subst-⊔ {σ = σ} γ₁-ok γ₂-ok x = ℰ-⊔ {M = σ x} (γ₁-ok x) (γ₂-ok x)
+
+  δu⊢extσ⊥ : ∀{Γ}{Δ}{δ : Env Δ}{σ : Subst Γ Δ}{u}
+           → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
+  δu⊢extσ⊥ δ⊢σ↓⊥ Z = ⊑-⊥
+  δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (S x) =
+     rename-pres {M = σ x} S_ (λ x₁ → ⊑-refl) (δ⊢σ↓⊥ x)
+

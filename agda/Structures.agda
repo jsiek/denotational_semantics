@@ -3,8 +3,8 @@ module Structures where
 open import Variables
 open import Lambda
 
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
+open import Relation.Nullary using (Dec; yes; no)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty renaming (⊥ to Bot)
@@ -82,6 +82,9 @@ module DomainAux(D : Domain) where
   `∅ : Env zero
   `∅ ()
 
+  `⊥ : ∀ {Γ} → Env Γ
+  `⊥ x = ⊥
+
   infixl 5 _`,_
 
   _`,_ : ∀ {Γ} → Env Γ → Value → Env (suc Γ)
@@ -106,6 +109,24 @@ module DomainAux(D : Domain) where
 
   _`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
   _`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x
+
+  const-env : ∀{Γ} → (x : Var Γ) → Value → Env Γ
+  const-env x v y with x var≟ y
+  ...             | yes _       = v
+  ...             | no _        = ⊥
+
+  nth-const-env : ∀{Γ} {x : Var Γ} {v} → (const-env x v) x ≡ v
+  nth-const-env {x = x} rewrite var≟-refl x = refl
+
+  diff-nth-const-env : ∀{Γ} {x y : Var Γ} {v}
+    → x ≢ y
+      -------------------
+    → const-env x v y ≡ ⊥
+  diff-nth-const-env {Γ} {x} {y} neq with x var≟ y
+  ...  | yes eq  =  ⊥-elim (neq eq)
+  ...  | no _    =  refl
+
+
 
   _≲_ : (Value → Set) → (Value → Set) → Set
   d ≲ d' = ∀{v : Value} → d v → d' v
@@ -290,7 +311,16 @@ module LambdaDenot
   ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
   ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
 
+  split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}
+    → ℰ M δ v
+      ------------------------
+    → ℰ M (init δ `, last δ) v
+  split {δ = δ} δMv rewrite init-last δ = δMv
+
   infix 3 _`⊢_↓_
   _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
   _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
+
+
+  
 

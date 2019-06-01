@@ -27,23 +27,6 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module LambdaCallByName where
 
 {-
-module Preservation
-  (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-  (ME : ModelExtra _●_)
-  where
-
-  module Den = LambdaDenot _●_
-  open Den
-  open ModelExtra ME
-  open ModelBot MBot
-  open ModelBasics MB
-  open ModelCong Cong
-  module RP = RenamePreserveReflect _●_ Cong
-  open RP using (⊑-env; rename-pres)  
-  module F = Filter _●_ MB
-  open F using (ℰ-⊑; ℰ-⊔)
-  open SubstPres _●_ MB
-
 
 module SubstReflect
   (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)

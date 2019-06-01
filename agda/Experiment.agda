@@ -31,9 +31,6 @@ module SubstPres
 
 
 
-`⊥ : ∀ {Γ} → Env Γ
-`⊥ x = ⊥
-
 record ModelBot
        (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
        : Set₁ where
