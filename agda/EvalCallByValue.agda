@@ -57,9 +57,7 @@ data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Term Γ) → Clos → Set where
 ⇓-determ ⇓-lam ⇓-lam = refl
 ⇓-determ (⇓-app mc₁ mc₂ mc₃) (⇓-app mc₁′ mc₂′ mc₃′) 
     with ⇓-determ mc₁ mc₁′ | ⇓-determ mc₂ mc₂′ 
-... | refl | refl = {!!}
-
-
+... | refl | refl = ⇓-determ mc₃ mc₃′
 
 _≈_ : Clos → (Term zero) → Set
 _≈ₑ_ : ∀{Γ} → ClosEnv Γ → Subst Γ zero → Set
