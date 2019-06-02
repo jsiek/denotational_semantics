@@ -2,7 +2,8 @@ module Structures where
 
 open import Variables
 open import Lambda
-open Lambda.ASTMod using (⟪_⟫)
+open Lambda.ASTMod
+  using (⟪_⟫; Ctx; CHole; COp; plug; cbind; tbind; ccons; tcons)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 open import Relation.Nullary using (Dec; yes; no)
@@ -377,3 +378,14 @@ module DenotAux
                  (λ {w} D₂γw → proj₂ (d2 γ w) D₂γw) {v} in
      ⟨ to , from ⟩
 
+
+  compositionality : ∀{Γ Δ}{C : Ctx Γ Δ} {M N : Term Γ}
+                → ℰ M ≃ ℰ N
+                  ---------------------------
+                → ℰ (plug C M) ≃ ℰ (plug C N)
+  compositionality {C = CHole} M≃N = M≃N
+  compositionality {C = COp lam (cbind C Ms eq)} M≃N = {!!}
+  compositionality {C = COp lam (tbind N Cs eq)} M≃N = {!!}
+  compositionality {C = COp lam (ccons C Ms ())} M≃N
+  compositionality {C = COp lam (tcons N Cs ())} M≃N
+  compositionality {C = COp app Cs} M≃N = {!!}
