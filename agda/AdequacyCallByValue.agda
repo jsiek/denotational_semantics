@@ -5,13 +5,14 @@ open import LambdaCallByValue
 open import ValueBCD
 open import EvalCallByValue
 open Lambda.ASTMod
-   using (`_; _⦅_⦆; Subst;
+   using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 open import Structures
 open import ModelCallByValue
 open DomainAux domain
 open OrderingAux domain ordering
 open LambdaDenot domain ordering _●_ ℱ
+open DenotAux domain ordering _●_ ℱ model_basics
 open import PreserveReflectCallByValue using (soundness; ℰ-⊥)
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -124,3 +125,20 @@ cbv↔reduce {M} = ⟨ (λ x → reduce→cbv (proj₂ x)) ,
                    (λ x → cbv→reduce (proj₂ (proj₂ (proj₂ x)))) ⟩
 
 
+denot-equal-terminates : ∀{Γ} {M N : Term Γ} {C : Ctx Γ zero}
+  → ℰ M ≃ ℰ N  →  terminates (plug C M)
+    -----------------------------------
+  → terminates (plug C N)
+denot-equal-terminates {Γ}{M}{N}{C} ℰM≃ℰN ⟨ N′ , CM—↠ƛN′ ⟩ =
+  let ℰCM≃ℰƛN′ = soundness CM—↠ƛN′ in
+  let ℰCM≃ℰCN = compositionality{Γ = Γ}{Δ = zero}{C = C} ℰM≃ℰN in
+  let ℰCN≃ℰƛN′ = ≃-trans (≃-sym ℰCM≃ℰCN) ℰCM≃ℰƛN′ in
+    cbv→reduce (proj₂ (proj₂ (proj₂ (adequacy{N = N′} ℰCN≃ℰƛN′))))
+
+denot-equal-contex-equal : ∀{Γ} {M N : Term Γ}
+  → ℰ M ≃ ℰ N
+    ---------
+  → M ≅ N
+denot-equal-contex-equal{Γ}{M}{N} eq {C} =
+   ⟨ (λ tm → denot-equal-terminates{M = M} eq tm) ,
+     (λ tn → denot-equal-terminates{M = N} (≃-sym eq) tn) ⟩

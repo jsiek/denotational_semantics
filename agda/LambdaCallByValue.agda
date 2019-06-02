@@ -9,11 +9,12 @@ module LambdaCallByValue where
 open import Variables
 open import Lambda
 open Lambda.ASTMod
-   using (`_; _⦅_⦆; Subst;
+   using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 open import ValueBCD
 
 open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
 data TermValue : ∀ {Γ} → Term Γ → Set where
 
@@ -100,3 +101,9 @@ appR-cong {Γ}{L}{M}{M'} v (M ▩) = L · M ▩
 appR-cong {Γ}{L}{M}{M'} v (M —→⟨ r ⟩ rs) =
     L · M —→⟨ ξ₂-rule v r ⟩ appR-cong v rs
 
+terminates : ∀{Γ} → (M : Term Γ ) → Set
+terminates {Γ} M = Σ[ N ∈ Term (suc Γ) ] (M —↠ ƛ N)
+
+_≅_ : ∀{Γ} → (M N : Term Γ) → Set
+(_≅_ {Γ} M N) = ∀ {C : Ctx Γ zero}
+              → (terminates (plug C M)) iff (terminates (plug C N))

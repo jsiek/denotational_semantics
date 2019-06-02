@@ -1,6 +1,7 @@
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (¬_; Dec; yes; no)
+open import Data.Product using (_×_)
 
 module Variables where
 
@@ -35,6 +36,12 @@ Z var≟ (S _)  =  no λ()
 var≟-refl : ∀ {Γ} (x : Var Γ) → (x var≟ x) ≡ yes refl
 var≟-refl Z = refl
 var≟-refl (S x) rewrite var≟-refl x = refl
+
+
+{- Some other miscellaneous stuff -}
+
+_iff_ : Set → Set → Set
+P iff Q = (P → Q) × (Q → P)
 
 postulate
   extensionality : ∀ {A B : Set} {f g : A → B}

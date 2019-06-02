@@ -30,7 +30,7 @@ import Syntax2
 module ASTMod = Syntax2 Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; rename; ⟪_⟫;
          _[_]; _•_; _⨟_; ↑;
-         exts; exts-cons-shift; bind; cons; nil)
+         exts; exts-cons-shift; bind; cons; nil; Ctx; plug)
 
 
 AST : ℕ → Set
@@ -132,3 +132,9 @@ module Reduction where
   appR-cong {Γ}{L}{M}{M'} (M □) = L · M □
   appR-cong {Γ}{L}{M}{M'} (M —→⟨ r ⟩ rs) = L · M —→⟨ ξ₂-rule r ⟩ appR-cong rs
 
+  terminates : ∀{Γ} → (M : Term Γ ) → Set
+  terminates {Γ} M = Σ[ N ∈ Term (suc Γ) ] (M —↠ ƛ N)
+
+  _≅_ : ∀{Γ} → (M N : Term Γ) → Set
+  (_≅_ {Γ} M N) = ∀ {C : Ctx Γ zero}
+                → (terminates (plug C M)) iff (terminates (plug C N))

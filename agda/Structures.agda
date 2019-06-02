@@ -169,9 +169,6 @@ module DomainAux(D : Domain) where
       → d ≲ d
   (d ☐) {v} =  ≲-refl {d}
 
-  _iff_ : Set → Set → Set
-  P iff Q = (P → Q) × (Q → P)
-
 
   infix 3 _≃_
 
