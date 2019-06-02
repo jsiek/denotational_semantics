@@ -3,7 +3,7 @@ open import Lambda
 open Lambda.Reduction
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; nil; ⟪_⟫; subst-zero)
+          exts; cons; bind; nil; ⟪_⟫; _⨟_; subst-zero)
 open import Syntax2 Op sig
    using (ids; _•_; subst-zero-exts-cons; sub-id; sub-sub)
 
@@ -115,9 +115,15 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
        | β-rule{zero}{⟪ exts τ ⟫ N}{⟪ σ ⟫ M}
 ... | ⟨ N' , ⟨ —↠N' , c≈N' ⟩ ⟩ | ƛτN·σM—→
     rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero (⟪ σ ⟫ M)} =
-    let rs = (ƛ (⟪ exts τ ⟫ N)) · (⟪ σ ⟫ M) —→⟨ ƛτN·σM—→ ⟩ —↠N' in
-    let g = —↠-trans (appL-cong σL—↠ƛτN) rs in
-    ⟨ N' , ⟨ g , c≈N' ⟩ ⟩
+    ⟨ N' , ⟨ r , c≈N' ⟩ ⟩
+    where
+    r = (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆)
+        —↠⟨ appL-cong σL—↠ƛτN ⟩
+        ((app ⦅ cons (lam ⦅ bind (⟪ exts τ ⟫ N) nil ⦆) (cons (⟪ σ ⟫ M) nil) ⦆))
+        —→⟨ ƛτN·σM—→ ⟩
+        ⟪ exts τ ⨟ subst-zero (⟪ σ ⟫ M) ⟫ N
+        —↠⟨ —↠N' ⟩
+        N' □
 
 cbn→reduce :  ∀{M : Term zero}{Δ}{δ : ClosEnv Δ}{N′ : Term (suc Δ)}
      → ∅' ⊢ M ⇓ clos (ƛ N′) δ

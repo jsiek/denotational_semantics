@@ -115,7 +115,6 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
                    {σ₂ = subst-zero (lam ⦅ bind (⟪ exts θ ⟫ M₁) nil ⦆)} =
     ⟨ N′ , ⟨ r , ⟨ ψ , ⟨ δ₂≈ₑψ , N′≡ ⟩ ⟩ ⟩ ⟩
     where
-    r : (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆) —↠ N′
     r = (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆)
         —↠⟨ appL-cong σL—↠ƛτN ⟩
         ((app ⦅ cons (lam ⦅ bind (⟪ exts τ ⟫ N) nil ⦆) (cons (⟪ σ ⟫ M) nil) ⦆))

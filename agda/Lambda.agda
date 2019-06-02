@@ -95,6 +95,14 @@ module Reduction where
   —↠-trans (M □) mn = mn
   —↠-trans (L —→⟨ r ⟩ lm) mn = L —→⟨ r ⟩ (—↠-trans lm mn)
 
+  infixr 2 _—↠⟨_⟩_
+
+  _—↠⟨_⟩_ : ∀{Γ}(L : Term Γ) {M N : Term Γ}
+           → L —↠ M
+           → M —↠ N
+           → L —↠ N
+  L —↠⟨ L—↠M ⟩ M—↠N = —↠-trans L—↠M M—↠N
+
   —→-app-cong : ∀{Γ}{L L' M : Term Γ}
               → L —→ L'
               → L · M —→ L' · M
