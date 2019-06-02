@@ -22,6 +22,7 @@ open HEq using (_≅_; ≅-to-type-≡)
    renaming (refl to hrefl; cong to hcong; subst to hsubst)
 open HEq.≅-Reasoning using (_≅⟨_⟩_)
    renaming (begin_ to hbegin_; _≡⟨⟩_ to _≅⟨⟩_; _∎ to _□)
+open import Relation.Nullary using (¬_)
 
 module Syntax2 (Op : Set) (sig : Op → List Bool) where
 
@@ -53,6 +54,13 @@ data CArgs where
         → CArgs (suc Γ) Δ bs'
   ccons : ∀{Γ Δ}{bs bs'} → Ctx Γ Δ → Args Δ bs → bs' ≡ (false ∷ bs)
         → CArgs Γ Δ bs'  
+
+
+cargs-not-empty : ∀ {Γ Δ} → ¬ CArgs Γ Δ []
+cargs-not-empty {Γ} {Δ} (tbind x Cs ())
+cargs-not-empty {Γ} {Δ} (tcons x Cs ())
+cargs-not-empty {.(suc _)} {Δ} (cbind x x₁ ())
+cargs-not-empty {Γ} {Δ} (ccons x x₁ ())
 
 plug : ∀ {Γ Δ} → Ctx Γ Δ → AST Γ → AST Δ
 plug-args : ∀ {Γ Δ bs} → CArgs Γ Δ bs → AST Γ → Args Δ bs

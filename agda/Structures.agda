@@ -3,7 +3,8 @@ module Structures where
 open import Variables
 open import Lambda
 open Lambda.ASTMod
-  using (⟪_⟫; Ctx; CHole; COp; plug; cbind; tbind; ccons; tcons)
+  using (bind; cons; nil; ⟪_⟫;
+         Ctx; CHole; COp; plug; cbind; tbind; ccons; tcons; cargs-not-empty)
 
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 open import Relation.Nullary using (Dec; yes; no)
@@ -11,7 +12,10 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc)
+open import Data.Bool
+open import Data.List
 open import Function using (_∘_)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 
 record Domain : Set₁ where
   infixr 7 _↦_
@@ -384,8 +388,26 @@ module DenotAux
                   ---------------------------
                 → ℰ (plug C M) ≃ ℰ (plug C N)
   compositionality {C = CHole} M≃N = M≃N
-  compositionality {C = COp lam (cbind C Ms eq)} M≃N = {!!}
-  compositionality {C = COp lam (tbind N Cs eq)} M≃N = {!!}
+  
+  compositionality {C = COp lam (cbind {Γ}{Δ}{bs}{bs'} C′ nil refl)}{M}{N} M≃N =
+     ℱ-cong (compositionality {C = C′} M≃N)
+
+  compositionality {C = COp lam (tbind N Cs refl)} M≃N =
+     ⊥-elim (cargs-not-empty Cs)
   compositionality {C = COp lam (ccons C Ms ())} M≃N
   compositionality {C = COp lam (tcons N Cs ())} M≃N
-  compositionality {C = COp app Cs} M≃N = {!!}
+  
+  compositionality {C = COp app (cbind C′ Ms ())} M≃N
+  compositionality {C = COp app (tbind L Cs ())} M≃N
+  
+  compositionality {C = COp app (ccons C′ (cons M nil) refl)} M≃N =
+     ●-cong (compositionality {C = C′} M≃N)
+            (λ γ v → ⟨ (λ x → x) , (λ x → x) ⟩)
+  compositionality {C = COp app (tcons L (ccons C′ nil refl) refl)} M≃N =
+     ●-cong (λ γ v → ⟨ (λ x → x) , (λ x → x) ⟩)
+            (compositionality {C = C′} M≃N)
+  compositionality {C = COp app (tcons L (cbind C′ Ms ()) refl)} M≃N
+  compositionality {C = COp app (tcons L (tbind M Cs ()) refl)} M≃N
+  compositionality {C = COp app (tcons L (tcons M Cs refl) refl)} M≃N =
+     ⊥-elim (cargs-not-empty Cs)
+  
