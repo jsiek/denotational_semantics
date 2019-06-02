@@ -38,6 +38,38 @@ data Args Γ where
   bind : ∀{bs} → AST (suc Γ) → Args Γ bs → Args Γ (true ∷ bs)
   cons : ∀{bs} → AST Γ → Args Γ bs → Args Γ (false ∷ bs)
 
+data CArgs : (Γ : ℕ) → (Δ : ℕ) → (sig : List Bool) → Set
+
+data Ctx : ℕ → ℕ → Set where
+  CHole : ∀ {Γ} → Ctx Γ Γ
+  COp : ∀ {Γ Δ} → (op : Op) → CArgs Γ Δ (sig op) → Ctx Γ Δ
+
+data CArgs where
+  tbind : ∀{Γ Δ}{bs bs'} → AST (suc Δ) → CArgs Γ Δ bs → bs' ≡ (true ∷ bs)
+        → CArgs Γ Δ bs'
+  tcons : ∀{Γ Δ}{bs bs'} → AST Δ → CArgs Γ Δ bs → bs' ≡ (false ∷ bs)
+        → CArgs Γ Δ bs'
+  cbind : ∀{Γ Δ}{bs bs'} → Ctx (suc Γ) (suc Δ) → Args Δ bs → bs' ≡ (true ∷ bs)
+        → CArgs (suc Γ) Δ bs'
+  ccons : ∀{Γ Δ}{bs bs'} → Ctx Γ Δ → Args Δ bs → bs' ≡ (false ∷ bs)
+        → CArgs Γ Δ bs'  
+
+plug : ∀ {Γ Δ} → Ctx Γ Δ → AST Γ → AST Δ
+plug-args : ∀ {Γ Δ bs} → CArgs Γ Δ bs → AST Γ → Args Δ bs
+
+plug CHole M = M
+plug (COp op args) M = op ⦅ plug-args args M ⦆
+
+plug-args {Γ} {δ} {bs} (tbind N Cs eq) M rewrite eq =
+   bind N (plug-args Cs M)
+plug-args {Γ} {δ} {bs} (tcons L Cs eq) M rewrite eq =
+   cons L (plug-args Cs M)
+plug-args {Γ} {δ} {bs} (cbind C Ns eq) M rewrite eq =
+   bind (plug C M) Ns
+plug-args {Γ} {δ} {bs} (ccons C Ls eq) M rewrite eq =
+   cons (plug C M) Ls
+
+
 Subst : ℕ → ℕ → Set
 Subst Γ Δ = Var Γ → AST Δ
 

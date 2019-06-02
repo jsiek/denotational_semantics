@@ -58,15 +58,7 @@ open DomainAux domain
 ... | a | b =
     ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
 
-{-
-cong-ℱ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-          {D′ : Denotation (suc Δ)}
-       → (∀{v : Value} → D (γ `, v) ≃ D′ (δ `, v))
-       → ℱ D γ ≃ ℱ D′ δ
-cong-ℱ {D = D}{D′} D≃D′ {v} =
-  ⟨ (ℱ-≲ (proj₁ D≃D′)) {v = v} , (ℱ-≲ (proj₂ D≃D′)) {v = v} ⟩
--}
-
+  
 infix 4 _⊑_
 
 data _⊑_ : Value → Value → Set where

@@ -357,11 +357,23 @@ module DenotAux
       → ℰ (ƛ N) γ ⊥
   ƛ-⊥ = ℱ-⊥
 
-{-
-  cong-● : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
-            {D₁′ D₂′ : Denotation Δ}
-         → D₁ γ ≃ D₁′ δ → D₂ γ ≃ D₂′ δ → (D₁ ● D₂) γ ≃ (D₁′ ● D₂′) δ
-  cong-● {γ = γ}{δ}{D₁}{D₂}{D₁′}{D₂′} eq1 eq2 {w} =
-    ⟨ (●-≲{D₁ = D₁}{D₂}{D₁′}{D₂′} (proj₁ eq1) (proj₁ eq2)) {v = w} ,
-      (●-≲{D₁ = D₁′}{D₂′}{D₁}{D₂} (proj₂ eq1) (proj₂ eq2)) {v = w} ⟩
--}
+  ℱ-cong : ∀{Γ}{D D′ : Denotation (suc Γ)}
+         → D ≃ D′
+           -----------
+         → ℱ D ≃ ℱ D′
+  ℱ-cong {Γ}{D}{D′} D≃D′ γ v =
+    ⟨ (ℱ-≲ λ {w} {v'} x → proj₁ (D≃D′ (γ `, w) v') x) {v} ,
+      (ℱ-≲ λ {w} {v'} x → proj₂ (D≃D′ (γ `, w) v') x) {v} ⟩
+
+  ●-cong : ∀{Γ}{D₁ D₁′ D₂ D₂′ : Denotation Γ}
+     → D₁ ≃ D₁′ → D₂ ≃ D₂′
+     → (D₁ ● D₂) ≃ (D₁′ ● D₂′)
+  ●-cong {Γ}{D₁}{D₁′}{D₂}{D₂′} d1 d2 γ v =
+     let to = ●-≲ {Γ}{Γ}{γ}{γ}{D₁}{D₂}{D₁′}{D₂′}
+                 (λ {w} D₁γw → proj₁ (d1 γ w) D₁γw)
+                 (λ {w} D₂γw → proj₁ (d2 γ w) D₂γw) {v} in
+     let from = ●-≲ {Γ}{Γ}{γ}{γ}{D₁′}{D₂′}{D₁}{D₂}
+                 (λ {w} D₁γw → proj₂ (d1 γ w) D₁γw)
+                 (λ {w} D₂γw → proj₂ (d2 γ w) D₂γw) {v} in
+     ⟨ to , from ⟩
+
