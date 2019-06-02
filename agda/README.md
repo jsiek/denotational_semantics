@@ -2,16 +2,16 @@
 
 File Overview
 
-* Variables
+* `Variables`
 
   Defines de Bruijn indices, Rename, ext, and var≟.
 
-* Syntax2
+* `Syntax2`
 
   Abstract binding trees a la Robert Harper,
   substitution, and contexts. 
 
-* Structures
+* `Structures`
 
   * Generic structures Domain, ValueOrdering, LambdaModelBasics.
   * Defines auxilliary modules expressed in terms of the
@@ -20,7 +20,7 @@ File Overview
   * Denotational semantics of lambda calculus defined
     generically in terms of ●, ℱ, Domain, and ValueOrdering.
   
-* ValueBCD
+* `ValueBCD`
 
   * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
     types), the ⊑ ordering, and ℱ. Instances of Domain
@@ -28,55 +28,62 @@ File Overview
   * Proves function inversion and stuff
     about AboveFun needed for adequacy of CBN.
 
-* Lambda
+* `Lambda`
 
   Syntax, reduction, and contextual equivalence for the lambda
   calculus.
 
-* LambdaCallByValue
+* `LambdaCallByValue`
 
   Call-by-value reduction and contextual equivalence.
 
-* EvalCallByName
+* `EvalCallByName`
 
   Call-by-name evaluation as a big-step relation.
   Proves that CBN evaluation implies reduction to WHNF.
 
-* EvalCallByValue
+* `EvalCallByValue`
 
   Call-by-value evaluation as a big-step relation.
   Proves that CBV evaluation implies CBV reduction to WHNF.
 
-* ModelCallByName
+* `ModelCallByName`
 
   * ● for CBN and a bunch of lemmas about it.
   * An instance of LambdaModelBasics
 
-* ModelCallByValue
+* `ModelCallByValue`
 
   * ● for CBV and a bunch of lemmas about it.
   * An instance of LambdaModelBasics
 
-* RenamePreserveReflect (requires LambdaModelBasics)
+* `RenamePreserveReflect` (requires LambdaModelBasics)
+
   Proves that renaming preserves and reflects denotations.
 
-* SubstitutionPreserve (requires LambdaModelBasics)
+* `SubstitutionPreserve` (requires LambdaModelBasics)
+
   Proves that substitution preserves denotations.
 
-* SubstitutionReflect
+* `SubstitutionReflect`
+
   Proves that substitution reflects denotations for both of the
   CBN and CBV models.
 
-* PreserveReflectCallByName
+* `PreserveReflectCallByName`
+
   Proves soundness of lambda reduction wrt. CBN denotational model.
 
-* PreserveReflectCallByValue
+* `PreserveReflectCallByValue`
+
   Proves soundness of call-by-value reduction wrt. CBV denotational model.
 
-* AdequacyCallByName
+* `AdequacyCallByName`
+
   Proves adequacy of CBN model with respect to lambda reduction to WHNF.
   Also proves that denotational equality implies contextual equivalence.
 
-* AdequacyCallByValue
+* `AdequacyCallByValue`
+
   Proves adequacy of CBV model with respect to CBV reduction to WHNF.
   Also proves that denotational equality implies contextual equivalence.
