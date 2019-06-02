@@ -18,11 +18,11 @@ File Overview
     generic structures: DomainAux, OrderingAux, DenotAux.
     DenotAux includes a proof of compositionality.
   * Denotational semantics of lambda calculus defined
-    generically in terms of _●_, ℱ, Domain, and ValueOrdering.
+    generically in terms of ●, ℱ, Domain, and ValueOrdering.
   
 * ValueBCD
 
-  * Denotational values (⊥, _↦_, _⊔_) (aka. BCD intersection
+  * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
     types), the ⊑ ordering, and ℱ. Instances of Domain
     and ValueOrdering.
   * Proves function inversion and stuff
@@ -49,12 +49,12 @@ File Overview
 
 * ModelCallByName
 
-  * _●_ for CBN and a bunch of lemmas about it.
+  * ● for CBN and a bunch of lemmas about it.
   * An instance of LambdaModelBasics
 
 * ModelCallByValue
 
-  * _●_ for CBV and a bunch of lemmas about it.
+  * ● for CBV and a bunch of lemmas about it.
   * An instance of LambdaModelBasics
 
 * RenamePreserveReflect (requires LambdaModelBasics)
