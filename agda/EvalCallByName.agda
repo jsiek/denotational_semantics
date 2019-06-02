@@ -16,7 +16,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
 open import Function using (_∘_)
 
 
-module CallByNameEval where
+module EvalCallByName where
 
 Context = ℕ
 
@@ -42,10 +42,11 @@ data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Term Γ) → Clos → Set where
           -----------
         → γ ⊢ ` x ⇓ V
 
-  ⇓-lam : ∀{Γ}{γ : ClosEnv Γ}{M : Term (suc Γ)}
-        → γ ⊢ ƛ M ⇓ clos (ƛ M) γ
+  ⇓-lam : ∀{Γ}{γ : ClosEnv Γ}{N : Term (suc Γ)}
+        → γ ⊢ ƛ N ⇓ clos (ƛ N) γ
 
-  ⇓-app : ∀{Γ}{γ : ClosEnv Γ}{L M : Term Γ}{Δ}{δ : ClosEnv Δ}{N : Term (suc Δ)}{V}
+  ⇓-app : ∀{Γ}{γ : ClosEnv Γ}{L M : Term Γ}{Δ}{δ : ClosEnv Δ}
+           {N : Term (suc Δ)}{V}
        → γ ⊢ L ⇓ clos (ƛ N) δ   →   (δ ,' clos M γ) ⊢ N ⇓ V
          ---------------------------------------------------
        → γ ⊢ L · M ⇓ V

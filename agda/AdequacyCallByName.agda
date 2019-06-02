@@ -4,7 +4,7 @@ open Reduction
   using (_—↠_)
 
 open import ValueBCD
-open import CallByNameEval
+open import EvalCallByName
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
