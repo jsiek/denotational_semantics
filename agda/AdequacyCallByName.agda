@@ -108,7 +108,7 @@ sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw
     | ⟨ c₃ , ⟨ L⇓c₃ , 𝕍w' ⟩ ⟩ rewrite ⇓-determ L⇓c₃ L⇓c₂ with 𝕍→WHNF 𝕍w
 ... | ƛ_ =
       ⟨ clos L δ , ⟨ L⇓c₂ , ⟨ 𝕍w , 𝕍w' ⟩ ⟩ ⟩
-sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩  Dist⊑ ev1c sf
+sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
     | yes af2 | no naf3
     with vcw ev1c af2
 ... | ⟨ clos {Γ'} L γ₁ , ⟨ L⇓c2 , 𝕍w ⟩ ⟩
@@ -116,7 +116,7 @@ sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩  Dist⊑ ev1c sf
 ... | ƛ_ {N = N'} =
       let 𝕍w' = not-AboveFun-𝕍{w'}{Γ'}{γ₁}{N'} naf3 in
       ⟨ clos (lam ⦅ bind N' nil ⦆) γ₁ , ⟨ L⇓c2 , 𝕍⊔-intro 𝕍w 𝕍w' ⟩ ⟩
-sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ Dist⊑ ev1c sf
+sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
     | no naf2 | yes af3
     with vcw' ev1c af3
 ... | ⟨ clos {Γ'} L γ₁ , ⟨ L⇓c3 , 𝕍w'c ⟩ ⟩ 
@@ -163,7 +163,7 @@ kth-x{γ' = γ'}{x = x} with γ' x
   G {v ↦ w} ℱℰNγv fv = ⟨ (clos (lam ⦅ bind N nil ⦆) γ') , ⟨ ⇓-lam , E ⟩ ⟩
     where E : {c : Clos} → 𝔼 v c → AboveFun w
             → Σ[ c' ∈ Clos ] (γ' ,' c) ⊢ N ⇓ c'  ×  𝕍 w c'
-          E {c} 𝔼vc fw = ℰ→𝔼 (λ {x} → 𝔾-ext{Γ}{γ}{γ'} 𝔾γγ' 𝔼vc {x}) ℱℰNγv fw
+          E {c} 𝔼vc fw = ℰ→𝔼 (λ {x} → 𝔾-ext 𝔾γγ' 𝔼vc {x}) ℱℰNγv fw
   G {v₁ ⊔ v₂} ⟨ d₁ , d₂ ⟩ fv
       with AboveFun? v₁ | AboveFun? v₂
   ... | yes fv1 | yes fv2

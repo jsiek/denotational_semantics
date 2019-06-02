@@ -36,7 +36,7 @@ _,'_ : ∀ {Γ} → ClosEnv Γ → Clos → ClosEnv (suc Γ)
 
 data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Term Γ) → Clos → Set where
 
-  ⇓-var : ∀{Γ}{γ : ClosEnv Γ}{x : Var Γ}{Δ}{δ : ClosEnv Δ}{M : Term Δ}
+  ⇓-var : ∀{Γ}{γ : ClosEnv Γ}{x : Var Γ}
           -------------
         → γ ⊢ ` x ⇓ γ x
 
@@ -124,11 +124,11 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
         —↠⟨ —↠N′ ⟩
         N′ ▩
 
-cbn→reduce :  ∀{M : Term zero}{Δ}{δ : ClosEnv Δ}{N′ : Term (suc Δ)}
+cbv→reduce :  ∀{M : Term zero}{Δ}{δ : ClosEnv Δ}{N′ : Term (suc Δ)}
      → ∅' ⊢ M ⇓ clos N′ δ
        -----------------------------
      → Σ[ N ∈ Term (suc zero) ] (M —↠ ƛ N)
-cbn→reduce {M}{Δ}{δ}{N′} M⇓c
+cbv→reduce {M}{Δ}{δ}{N′} M⇓c
     with ⇓→—↠×𝔹{σ = ids} M⇓c ≈ₑ-id
 ... | ⟨ N , ⟨ rs , ⟨ σ , ⟨ h , eq2 ⟩ ⟩ ⟩ ⟩
     rewrite sub-id{M = M} | eq2 =
