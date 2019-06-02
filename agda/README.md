@@ -61,6 +61,10 @@ File Overview
 
   Proves that renaming preserves and reflects denotations.
 
+* `Filter` (requires LambdaModelBasics)
+
+  Proves admisibility of subsumption and ⊔ introduction.
+
 * `SubstitutionPreserve` (requires LambdaModelBasics)
 
   Proves that substitution preserves denotations.
