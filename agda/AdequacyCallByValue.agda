@@ -13,7 +13,7 @@ open OrderingAux domain ordering
 open import ModelCallByValue domain ordering ℱ model_curry
 open LambdaDenot domain ordering _●_ ℱ
 open DenotAux domain ordering _●_ ℱ model_basics
-open import PreserveReflectCallByValue using (soundness; ℰ-⊥)
+open import SoundnessCallByValue using (soundness; ℰ-⊥)
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)

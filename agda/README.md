@@ -22,7 +22,7 @@ File Overview
 
 * `MultiStep`
 
-  Defines multi-step reduction generically over any reduction
+  Defines multi-step reduction generically given a reduction
   relation.
 
 * `ValueBCD`
@@ -35,7 +35,7 @@ File Overview
 
 * `ValueBCDConst`
 
-  * Adds constants, including primitive operators
+  * Adds constants, including primitive operators.
 
 * `Lambda`
 
@@ -96,11 +96,11 @@ File Overview
   Proves that substitution reflects denotations for the models
   of CBN, CBV, and ISWIM.
 
-* `PreserveReflectCallByName`
+* `SoundnessCallByName`
 
   Proves soundness of lambda reduction wrt. CBN denotational model.
 
-* `PreserveReflectCallByValue`
+* `SoundnessCallByValue`
 
   Proves soundness of call-by-value reduction wrt. CBV denotational model.
 

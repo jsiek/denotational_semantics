@@ -14,7 +14,7 @@ open DomainAux domain
 open OrderingAux domain ordering
 open LambdaDenot domain ordering _●_ ℱ
 open DenotAux domain ordering _●_ ℱ model_basics
-open import PreserveReflectCallByName using (soundness)
+open import SoundnessCallByName using (soundness)
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
