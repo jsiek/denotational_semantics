@@ -145,6 +145,53 @@ model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
                        ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} }
 
 
+℘ : ∀{P : Prim} → rep P → Value → Set
+℘ {P} k (const {B′} k′)
+    with P
+... | B ⇒ P′ = Bot
+... | base B 
+    with base-eq? B B′
+... | yes eq rewrite eq = k ≡ k′
+... | no neq = Bot
+℘ {P} k ⊥ = ⊤
+℘ {P} f (v ↦ w)
+    with P
+... | base B = Bot
+... | B ⇒ P′ = ∀{k : base-rep B} → v ⊑ const {B} k → ℘ {P′} (f k) w
+℘ {P} f (u ⊔ v) = ℘ {P} f u × ℘ {P} f v
+
+
+℘-⊑ : ∀{P}{k : rep P}{v w : Value}
+   → ℘ {P} k v
+   → w ⊑ v
+     ------------
+   → ℘ {P} k w
+℘-⊑ {P} {k} {v} {.⊥} ℘kv ⊑-⊥ =
+   tt
+℘-⊑ {P} {k} {.(const _)} {.(const _)} ℘kv ⊑-const =
+   ℘kv
+℘-⊑ {P} {k} {v} {.(_ ⊔ _)} ℘kv (⊑-conj-L w⊑v w⊑v₁) =
+   ⟨ ℘-⊑ ℘kv w⊑v , ℘-⊑ ℘kv w⊑v₁ ⟩
+℘-⊑ {P} {k} {.(_ ⊔ _)} {w} ℘kv (⊑-conj-R1 w⊑v) =
+   ℘-⊑ (proj₁ ℘kv) w⊑v
+℘-⊑ {P} {k} {.(_ ⊔ _)} {w} ℘kv (⊑-conj-R2 w⊑v) =
+   ℘-⊑ (proj₂ ℘kv) w⊑v
+℘-⊑ {P} {k} {v} {w} ℘kv (⊑-trans w⊑v w⊑v₁) =
+   ℘-⊑ (℘-⊑ ℘kv w⊑v₁) w⊑v
+℘-⊑ {P} {f} {v ↦ w} {v′ ↦ w′} ℘fv (⊑-fun v⊑v′ w′⊑w)
+    with P
+... | base B = ℘fv
+... | B ⇒ P′ = G
+    where G : ∀{k} → v′ ⊑ const k → ℘ {P′} (f k) w′
+          G {k} v′⊑k = ℘-⊑ {P′} (℘fv {k} (⊑-trans v⊑v′ v′⊑k)) w′⊑w
+℘-⊑ {P} {f} {(v ↦ w ⊔ v ↦ w′)} {(v ↦ (w ⊔ w′))} ℘fv ⊑-dist
+    with P
+... | base B = proj₁ ℘fv
+... | B ⇒ P′ = G
+    where G : ∀{k} → v ⊑ const k → ℘ {P′} (f k) w × ℘ {P′} (f k) w′
+          G {k} v⊑k = ⟨ (proj₁ ℘fv v⊑k) , (proj₂ ℘fv v⊑k) ⟩
+
+
 {------------------------------
 
   Skipping function inversion for now because I'm more interested in

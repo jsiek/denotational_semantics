@@ -1,9 +1,4 @@
 open import Structures
-{-
-open import ValueBCD
-open DomainAux domain
-open OrderingAux domain ordering
--}
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat using (suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)

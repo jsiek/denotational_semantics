@@ -29,13 +29,11 @@ sig app = false ∷ false ∷ []
 
 import Syntax2
 module ASTMod = Syntax2 Op sig
-open ASTMod using (`_; _⦅_⦆; Subst; rename; ⟪_⟫;
-         _[_]; _•_; _⨟_; ↑;
-         exts; exts-cons-shift; bind; cons; nil; Ctx; plug)
+open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
+                   rename; ⟪_⟫; _[_]; subst-zero; bind; cons; nil; exts;
+                   rename-id) public
+open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 
-
-AST : ℕ → Set
-AST Γ = ASTMod.AST Γ
 
 infixl 7  _·_
 

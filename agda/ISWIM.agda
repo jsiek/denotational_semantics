@@ -7,7 +7,6 @@
 module ISWIM where
 
 open import Variables public
-open import Structures
 open import Primitives
 
 open import Data.Nat using (ℕ; zero; suc)
@@ -35,8 +34,9 @@ sig (lit {p} k) = []
 import Syntax2
 module ASTMod = Syntax2 Op sig
 open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
-                   ⟪_⟫; _[_]; bind; cons; nil) public
-open ASTMod using (rename; _•_; _⨟_; ↑; exts; exts-cons-shift)
+                   rename; ⟪_⟫; _[_]; subst-zero; bind; cons; nil; exts;
+                   rename-id) public
+open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 
 infixl 7  _·_
 

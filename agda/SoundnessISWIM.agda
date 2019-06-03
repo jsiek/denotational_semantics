@@ -1,21 +1,14 @@
 open import Variables
 open import Structures
 open import ISWIM
-{-
-open ISWIM.ASTMod
-   using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
--}
 open import ModelISWIM
-
-open LambdaDenot domain ordering _●_ ℱ
 
 open import Filter domain ordering _●_ ℱ model_basics
 open import SubstitutionPreserve domain ordering _●_ ℱ model_basics
 open import RenamePreserveReflect domain ordering _●_ ℱ model_basics
    using (⊑-env)  
 import SubstitutionReflect
-open SubstitutionReflect.ISWIM
+open SubstitutionReflect.ISWIM using (substitution-reflect)
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -32,6 +25,7 @@ module SoundnessISWIM where
 ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
     → TermValue M
     → ℰ M γ ⊥
+ℰ-⊥ {M = lit {p} k ⦅ nil ⦆} V-lit = ?
 ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
 ℰ-⊥ {Γ}{γ}{(lam ⦅ bind N nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
 
