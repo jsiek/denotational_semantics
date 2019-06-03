@@ -330,9 +330,8 @@ module SubstReflectLambdaBCDConst where
 
 module ISWIM where
 
-  open import ValueBCDConst
-  open DomainAux domain
-  open import ModelCallByValue domain ordering ℱ model_curry
+  open import ModelISWIM
+
   open SubstReflectAppCBV domain ordering ℱ model_curry
   open Inner model_basics
 

@@ -1,22 +1,21 @@
 open import Variables
 open import Structures
-open import Lambda
-open Lambda.ASTMod
+open import ISWIM
+{-
+open ISWIM.ASTMod
    using (`_; _⦅_⦆; Subst;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
-open Lambda.Reduction
-  using (_—→_; ξ₁-rule; ξ₂-rule; β-rule; ζ-rule; _—↠_; _—→⟨_⟩_; _□)
-open import ValueBCD
-open DomainAux domain
-open OrderingAux domain ordering
-open import ModelCallByName
+-}
+open import ModelISWIM
+
 open LambdaDenot domain ordering _●_ ℱ
+
 open import Filter domain ordering _●_ ℱ model_basics
 open import SubstitutionPreserve domain ordering _●_ ℱ model_basics
 open import RenamePreserveReflect domain ordering _●_ ℱ model_basics
    using (⊑-env)  
 import SubstitutionReflect
-open SubstitutionReflect.CallByName
+open SubstitutionReflect.ISWIM
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -27,15 +26,24 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; zero; suc; _+_)
 
 
-module SoundnessCallByName where
+module SoundnessISWIM where
+
+
+ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+    → TermValue M
+    → ℰ M γ ⊥
+ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
+ℰ-⊥ {Γ}{γ}{(lam ⦅ bind N nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
+
 
 reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+    → TermValue M
     → ℰ (N [ M ]) γ v
     → ℰ ((ƛ N) · M) γ v
-reflect-beta {Γ}{γ}{M}{N}{v} d 
-    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M})
+reflect-beta {Γ}{γ}{M}{N}{v} Mv d 
+    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv)
 ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
-      inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
+      ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
 
 
 reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
@@ -46,14 +54,12 @@ reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
     rewrite sym L′·M≡N =
     ●-≲ {D₁ = ℰ L′}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M}
         (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
-reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
+reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
     rewrite sym L·M′≡N =
     ●-≲ {D₁ = ℰ L}{D₂ = ℰ M′}{D₁′ = ℰ L}{D₂′ = ℰ M}
         (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
-reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
-    reflect-beta {M = M}{N}
-reflect {v = v} (ζ-rule {Γ}{N}{N′} N—→N′) M′≡N rewrite sym M′≡N =
-    ℱ-≲ (reflect N—→N′ refl) {v}
+reflect (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
+    reflect-beta {M = M}{N} Mv
 
 
 preserve : ∀ {Γ} {γ : Env Γ} {M N v}
@@ -65,18 +71,15 @@ preserve {γ = γ} (ξ₁-rule{L = L}{L´}{M} L—→L′) =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L´}{D₂′ = ℰ M}
               (λ x → preserve L—→L′ x)
               (λ x → x)
-preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
+preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} v M—→M′) =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
               (λ x → x)
               (λ x → preserve M—→M′ x)
 preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
-               {v} (β-rule{N = N}{M = M}) ℰƛN·Mγw
+               {v} (β-rule{N = N}{M = M} Mv) ℰƛN·Mγw
     with ℰƛN·Mγw
-... | inj₁ w⊑⊥ =
-      ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) w⊑⊥
-... | inj₂ ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
+... | ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
       substitution{N = N}{M = M} {v'} ℰNγvw ℰMγv
-preserve {v = v} (ζ-rule {Γ}{N}{N′} N—→N′) = ℱ-≲ (preserve N—→N′) {v}
 
 
 reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}

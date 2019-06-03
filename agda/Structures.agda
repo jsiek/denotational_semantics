@@ -329,7 +329,8 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 
 module LambdaDenot
-  (D : Domain) (V : ValueOrdering D)
+  (D : Domain)
+  (V : ValueOrdering D)
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
@@ -345,6 +346,11 @@ module LambdaDenot
   ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
   ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
 
+  {- 
+     The following are here and not in DenotAux 
+     because they do not depend on LambdaModelBasics.
+   -}
+   
   split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}
     → ℰ M δ v
       ------------------------
@@ -368,7 +374,8 @@ module DenotAux
   open OrderingAux D V
   open LambdaDenot D V _●_ ℱ
   open LambdaModelBasics MB
-
+  open ASTMod using (Subst)
+  
   ƛ-⊥ : ∀{Γ}{N : Term (suc Γ)}{γ : Env Γ}
       → ℰ (ƛ N) γ ⊥
   ƛ-⊥ = ℱ-⊥

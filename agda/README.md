@@ -104,6 +104,10 @@ File Overview
 
   Proves soundness of call-by-value reduction wrt. CBV denotational model.
 
+* `SoundnessISWIM`
+
+  Proves soundness of ISWIM reduction wrt. its denotational model.
+
 * `AdequacyCallByName`
 
   Proves adequacy of CBN model with respect to lambda reduction to WHNF.

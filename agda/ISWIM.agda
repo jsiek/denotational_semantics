@@ -6,7 +6,7 @@
 
 module ISWIM where
 
-open import Variables
+open import Variables public
 open import Structures
 open import Primitives
 
@@ -35,8 +35,8 @@ sig (lit {p} k) = []
 import Syntax2
 module ASTMod = Syntax2 Op sig
 open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
-    rename; ⟪_⟫; _[_]; _•_; _⨟_; ↑;
-    exts; exts-cons-shift; bind; cons; nil)
+                   ⟪_⟫; _[_]; bind; cons; nil) public
+open ASTMod using (rename; _•_; _⨟_; ↑; exts; exts-cons-shift)
 
 infixl 7  _·_
 
