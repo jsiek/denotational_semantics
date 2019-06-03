@@ -1,8 +1,9 @@
 open import Structures
+{-
 open import ValueBCD
 open DomainAux domain
 open OrderingAux domain ordering
-
+-}
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat using (suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
@@ -10,7 +11,18 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 
-module ModelCallByValue where
+module ModelCallByValue
+  (D : Domain)
+  (V : ValueOrdering D)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (MC : OrderingAux.ModelCurry D V ℱ)
+  where
+
+open Domain D
+open ValueOrdering V
+open DomainAux D
+open OrderingAux D V
+open ModelCurry MC
 
 infixl 7 _●_
 _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ

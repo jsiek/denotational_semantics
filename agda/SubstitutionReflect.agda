@@ -218,7 +218,7 @@ module CallByName where
 
 module CallByValue where
 
-  open import ModelCallByValue
+  open import ModelCallByValue domain ordering ℱ model_curry
   open OrderingAux domain ordering
   open LambdaDenot domain ordering _●_ ℱ
   open RenamePreserveReflect domain ordering _●_ ℱ model_basics

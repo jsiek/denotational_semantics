@@ -288,6 +288,20 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
       ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
 
+  record ModelCurry
+      (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
+      : Set₁ where
+    field
+      ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+            {D′ : Denotation (suc Δ)}
+          → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
+          → ℱ D γ ≲ ℱ D′ δ
+      ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+          → WFDenot (suc Γ) D
+          → ℱ D γ v → w ⊑ v → ℱ D γ w
+      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+          → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
+      ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 
   record LambdaModelBasics
       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)

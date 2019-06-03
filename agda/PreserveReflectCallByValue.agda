@@ -8,7 +8,7 @@ open Lambda.ASTMod
 open import ValueBCD
 open DomainAux domain
 open OrderingAux domain ordering
-open import ModelCallByValue
+open import ModelCallByValue domain ordering ℱ model_curry
 open LambdaDenot domain ordering _●_ ℱ
 open import Filter domain ordering _●_ ℱ model_basics
 open import SubstitutionPreserve domain ordering _●_ ℱ model_basics

@@ -8,9 +8,9 @@ open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 open import Structures
-open import ModelCallByValue
 open DomainAux domain
 open OrderingAux domain ordering
+open import ModelCallByValue domain ordering ℱ model_curry
 open LambdaDenot domain ordering _●_ ℱ
 open DenotAux domain ordering _●_ ℱ model_basics
 open import PreserveReflectCallByValue using (soundness; ℰ-⊥)

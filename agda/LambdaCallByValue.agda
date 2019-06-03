@@ -46,37 +46,7 @@ data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
       ---------------------------------
     → (ƛ N) · M —→ N [ M ]
 
-infix  2 _—↠_
-infixr 2 _—→⟨_⟩_
-infix  3 _▩
-
-data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
-
-  _▩ : ∀ {Γ} (M : Term Γ)
-      --------
-    → M —↠ M
-
-  _—→⟨_⟩_ : ∀ {Γ} (L : Term Γ) {M N : Term Γ}
-    → L —→ M
-    → M —↠ N
-      ---------
-    → L —↠ N
-
-
-—↠-trans : ∀{Γ}{L M N : Term Γ}
-         → L —↠ M
-         → M —↠ N
-         → L —↠ N
-—↠-trans (M ▩) mn = mn
-—↠-trans (L —→⟨ r ⟩ lm) mn = L —→⟨ r ⟩ (—↠-trans lm mn)
-
-infixr 2 _—↠⟨_⟩_
-
-_—↠⟨_⟩_ : ∀{Γ}(L : Term Γ) {M N : Term Γ}
-         → L —↠ M
-         → M —↠ N
-         → L —↠ N
-L —↠⟨ L—↠M ⟩ M—↠N = —↠-trans L—↠M M—↠N
+open import MultiStep Op sig _—→_ public
 
 —→-app-cong : ∀{Γ}{L L' M : Term Γ}
             → L —→ L'
@@ -89,7 +59,7 @@ appL-cong : ∀ {Γ} {L L' M : Term Γ}
          → L —↠ L'
            ---------------
          → L · M —↠ L' · M
-appL-cong {Γ}{L}{L'}{M} (L ▩) = L · M ▩
+appL-cong {Γ}{L}{L'}{M} (L □) = L · M □
 appL-cong {Γ}{L}{L'}{M} (L —→⟨ r ⟩ rs) = L · M —→⟨ ξ₁-rule r ⟩ appL-cong rs
 
 appR-cong : ∀ {Γ} {L M M' : Term Γ}
@@ -97,7 +67,7 @@ appR-cong : ∀ {Γ} {L M M' : Term Γ}
          → M —↠ M'
            ---------------
          → L · M —↠ L · M'
-appR-cong {Γ}{L}{M}{M'} v (M ▩) = L · M ▩
+appR-cong {Γ}{L}{M}{M'} v (M □) = L · M □
 appR-cong {Γ}{L}{M}{M'} v (M —→⟨ r ⟩ rs) =
     L · M —→⟨ ξ₂-rule v r ⟩ appR-cong v rs
 

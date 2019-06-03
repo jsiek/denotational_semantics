@@ -16,7 +16,8 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Primitives
-open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+   renaming (_,_ to ⟨_,_⟩)
 
 data Op : Set where
   lam : Op
@@ -72,36 +73,7 @@ module Reduction where
         -----------
       → ƛ N —→ ƛ N′
 
-  infix  2 _—↠_
-  infixr 2 _—→⟨_⟩_
-  infix  3 _□
-
-  data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
-
-    _□ : ∀ {Γ} (M : Term Γ)
-        --------
-      → M —↠ M
-
-    _—→⟨_⟩_ : ∀ {Γ} (L : Term Γ) {M N : Term Γ}
-      → L —→ M
-      → M —↠ N
-        ---------
-      → L —↠ N
-
-  —↠-trans : ∀{Γ}{L M N : Term Γ}
-           → L —↠ M
-           → M —↠ N
-           → L —↠ N
-  —↠-trans (M □) mn = mn
-  —↠-trans (L —→⟨ r ⟩ lm) mn = L —→⟨ r ⟩ (—↠-trans lm mn)
-
-  infixr 2 _—↠⟨_⟩_
-
-  _—↠⟨_⟩_ : ∀{Γ}(L : Term Γ) {M N : Term Γ}
-           → L —↠ M
-           → M —↠ N
-           → L —↠ N
-  L —↠⟨ L—↠M ⟩ M—↠N = —↠-trans L—↠M M—↠N
+  open import MultiStep Op sig _—→_ public
 
   —→-app-cong : ∀{Γ}{L L' M : Term Γ}
               → L —→ L'
