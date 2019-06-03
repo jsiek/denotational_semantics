@@ -1,9 +1,11 @@
 open import Variables
+open import Primitives
 open import Structures
 
 import RenamePreserveReflect
 import Filter
 
+open import Data.Bool
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; []; _∷_)
 import Relation.Binary.PropositionalEquality as Eq
@@ -33,7 +35,7 @@ module ForLambdaModel
   open OrderingAux D V
   open DomainAux D
   open ValueOrdering V
-  
+
   module ForLambda where
 
     open import Lambda
@@ -45,7 +47,18 @@ module ForLambdaModel
     SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
                            → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
 
-    module LambdaApp
+    subst-reflect-var : ∀ {Γ Δ} {δ : Env Δ} {x : Var Γ} {σ : Subst Γ Δ} {v}
+            → SubRef Γ Δ δ (` x) (⟪ σ ⟫ (` x)) σ v
+    subst-reflect-var {Γ}{Δ}{δ}{x}{σ}{v} ℰLδv L≡σM δ⊢σ↓⊥ 
+        rewrite L≡σM | sym (nth-const-env {Γ}{x}{v}) =
+          ⟨ const-env x v , ⟨ const-env-ok , ⊑-refl ⟩ ⟩
+        where
+        const-env-ok : δ `⊢ σ ↓ const-env x v
+        const-env-ok y with x var≟ y
+        ... | yes x≡y rewrite sym x≡y | nth-const-env {Γ}{x}{v} = ℰLδv
+        ... | no x≢y rewrite diff-nth-const-env {Γ}{x}{y}{v} x≢y = δ⊢σ↓⊥ y
+    
+    module SubstReflect
       (subst-reflect-lambda : ∀{Γ Δ} {δ : Env Δ} {N : Term (suc Γ)}
                         {σ : Subst Γ Δ} {v}
             → (∀{u w}
@@ -61,7 +74,68 @@ module ForLambdaModel
       subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Term Γ} {L : Term Δ}
                         {σ : Subst Γ Δ} {v}
                     → SubRef Γ Δ δ M L σ v
-      subst-reflect {Γ}{Δ}{δ}{` x}{L}{σ}{v} ℰLδv L≡σM δ⊢σ↓⊥
+      subst-reflect {Γ}{Δ}{δ}{` x}{L}{σ}{v} ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
+        subst-reflect-var {x = x}{σ} ℰLδv refl δ⊢σ↓⊥
+      subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
+          rewrite L≡σM =
+          subst-reflect-lambda {N = N}{v = v} IH ℰLδv refl δ⊢σ↓⊥
+          where
+          IH = λ {u}{w} → subst-reflect {δ = δ `, u} {M = N}
+                              {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
+      subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv
+                    L≡σM δ⊢σ↓⊥ rewrite L≡σM =
+          subst-reflect-app {L = L}{M} IH1 IH2 ℰσL●ℰσMδv refl δ⊢σ↓⊥
+          where
+          IH1 = λ {v} → subst-reflect {δ = δ} {M = L} {L = ⟪ σ ⟫ L} {σ = σ} {v}
+          IH2 = λ {v} → subst-reflect {δ = δ} {M = M} {L = ⟪ σ ⟫ M} {σ = σ} {v}
+
+
+      subst-zero-reflect : ∀ {Δ} {δ : Env Δ} {γ : Env (suc Δ)} {M : Term Δ}
+        → δ `⊢ subst-zero M ↓ γ
+          ----------------------------------------
+        → Σ[ w ∈ Value ] γ `⊑ (δ `, w) × ℰ M δ w
+      subst-zero-reflect {δ = δ} {γ = γ} δσγ = ⟨ last γ , ⟨ lemma , δσγ Z ⟩ ⟩   
+        where
+        lemma : γ `⊑ (δ `, last γ)
+        lemma Z  =  ⊑-refl
+        lemma (S x) = δσγ (S x)
+
+
+      subst-zero-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+                   → ℰ M γ ⊥
+                   → γ `⊢ subst-zero M ↓ `⊥
+      subst-zero-⊥ ℰMγ⊥ Z = ℰMγ⊥
+      subst-zero-⊥ ℰMγ⊥ (S x) = ⊑-⊥
+
+
+      substitution-reflect : ∀ {Δ}{δ : Env Δ}{N : Term (suc Δ)} {M : Term Δ} {v}
+        → ℰ (N [ M ]) δ v  → ℰ M δ ⊥
+          ------------------------------------------------
+        → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
+      substitution-reflect{N = N}{M = M} ℰNMδv ℰMδ⊥
+           with subst-reflect {M = N} ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
+      ...  | ⟨ γ , ⟨ δσγ , γNv ⟩ ⟩
+           with subst-zero-reflect δσγ
+      ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
+             ⟨ w , ⟨ δMw , ⊑-env {M = N} γNv γ⊑δw ⟩ ⟩
+
+  module ForISWIM 
+    (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
+    where
+
+    open import ISWIM
+    open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
+      using (⊑-env)
+
+    SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
+           → Subst Γ Δ → Value → Set
+    SubRef Γ Δ δ M L σ v = ℰ L δ v → L ≡ ⟪ σ ⟫ M → δ `⊢ σ ↓ `⊥
+                           → Σ[ γ ∈ Env Γ ] δ `⊢ σ ↓ γ  ×  ℰ M γ v
+
+    subst-reflect-var : ∀ {Γ Δ} {δ : Env Δ} {x : Var Γ} {σ : Subst Γ Δ} {v}
+            → SubRef Γ Δ δ (` x) (⟪ σ ⟫ (` x)) σ v
+    subst-reflect-var {Γ}{Δ}{δ}{x}{σ}{v} ℰLδv L≡σM δ⊢σ↓⊥ 
         rewrite L≡σM | sym (nth-const-env {Γ}{x}{v}) =
           ⟨ const-env x v , ⟨ const-env-ok , ⊑-refl ⟩ ⟩
         where
@@ -69,27 +143,38 @@ module ForLambdaModel
         const-env-ok y with x var≟ y
         ... | yes x≡y rewrite sym x≡y | nth-const-env {Γ}{x}{v} = ℰLδv
         ... | no x≢y rewrite diff-nth-const-env {Γ}{x}{y}{v} x≢y = δ⊢σ↓⊥ y
+    
+    module SubstReflect
+      (subst-reflect-lambda : ∀{Γ Δ} {δ : Env Δ} {N : Term (suc Γ)}
+                        {σ : Subst Γ Δ} {v}
+            → (∀{u w}
+               → SubRef (suc Γ) (suc Δ) (δ `, u) N (⟪ exts σ ⟫ N)  (exts σ) w)
+            → SubRef Γ Δ δ (ƛ N) (⟪ σ ⟫ (ƛ N)) σ v)
+      (subst-reflect-app : ∀ {Γ Δ} {δ : Env Δ} {L : Term Γ} {M : Term Γ} 
+                        {σ : Subst Γ Δ} {v}
+            → (∀ {v : Value} → SubRef Γ Δ δ L (⟪ σ ⟫ L) σ v)
+            → (∀ {v : Value} → SubRef Γ Δ δ M (⟪ σ ⟫ M) σ v)
+            → SubRef Γ Δ δ (L · M) (⟪ σ ⟫ (L · M)) σ v)
+      where
+
+      subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Term Γ} {L : Term Δ}
+                        {σ : Subst Γ Δ} {v}
+                    → SubRef Γ Δ δ M L σ v
+      subst-reflect {M = lit {P} k ⦅ nil ⦆} ℰLδv L≡σM δ⊢σ↓⊥ = {!!}
+      subst-reflect {Γ}{Δ}{δ}{` x}{L}{σ}{v} ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
+        subst-reflect-var {x = x}{σ} ℰLδv refl δ⊢σ↓⊥
       subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
           rewrite L≡σM =
-          subst-reflect-lambda {N = N}{v = v} IH ℰLδv refl δ⊢σ↓⊥ 
+          subst-reflect-lambda {N = N}{v = v} IH ℰLδv refl δ⊢σ↓⊥
           where
-          IH : ∀ {u w : Value}
-             → SubRef (suc Γ) (suc Δ) (δ `, u) N (⟪ exts σ ⟫ N)  (exts σ) w
-          IH {u}{w} ℰLδv L≡σM δu⊢eσ↓⊥ =
-            subst-reflect {δ = δ `, u} {M = N} {L = ⟪ exts σ ⟫ N}
-                 {σ = exts σ} {w} ℰLδv L≡σM δu⊢eσ↓⊥
+          IH = λ {u}{w} → subst-reflect {δ = δ `, u} {M = N}
+                              {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
       subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} ℰσL●ℰσMδv
                     L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           subst-reflect-app {L = L}{M} IH1 IH2 ℰσL●ℰσMδv refl δ⊢σ↓⊥
           where
-          IH1 : ∀ {v : Value} → SubRef Γ Δ δ L (⟪ σ ⟫ L) σ v
-          IH1 {v} ℰLδv L≡σM δ⊢σ↓⊥ =
-            subst-reflect {δ = δ} {M = L} {L = ⟪ σ ⟫ L}
-                 {σ = σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
-          IH2 : ∀ {v : Value} → SubRef Γ Δ δ M (⟪ σ ⟫ M) σ v
-          IH2 {v} ℰLδv L≡σM δ⊢σ↓⊥ =
-            subst-reflect {δ = δ} {M = M} {L = ⟪ σ ⟫ M}
-                 {σ = σ} {v} ℰLδv L≡σM δ⊢σ↓⊥
+          IH1 = λ {v} → subst-reflect {δ = δ} {M = L} {L = ⟪ σ ⟫ L} {σ = σ} {v}
+          IH2 = λ {v} → subst-reflect {δ = δ} {M = M} {L = ⟪ σ ⟫ M} {σ = σ} {v}
 
 
       subst-zero-reflect : ∀ {Δ} {δ : Env Δ} {γ : Env (suc Δ)} {M : Term Δ}
@@ -265,7 +350,7 @@ module CallByName where
   open ForLambdaModel domain ordering _●_ ℱ model_basics
   open SubstReflectLambdaBCD.Inner _●_ model_basics
   
-  open ForLambda.LambdaApp
+  open ForLambda.SubstReflect
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
              subst-reflect-lambda{Γ}{Δ}{δ}{N}{σ}{v} IH a b c)
           (λ {Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c →
@@ -282,7 +367,7 @@ module CallByValue where
   open ForLambdaModel domain ordering _●_ ℱ model_basics
   open SubstReflectLambdaBCD.Inner _●_ model_basics
   
-  open ForLambda.LambdaApp
+  open ForLambda.SubstReflect
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
              subst-reflect-lambda{Γ}{Δ}{δ}{N}{σ}{v} IH a b c)
           (λ {Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c →
@@ -347,7 +432,7 @@ module ISWIM where
   open SubstReflect domain ordering _●_ ℱ model_basics
   open SubstReflectLambdaBCDConst.Inner _●_ model_basics
   
-  open LambdaApp
+  open SubstReflect
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
              subst-reflect-lambda{Γ}{Δ}{δ}{N}{σ}{v} IH a b c)
           (λ {Γ}{Δ}{δ}{L}{M}{σ}{v} IH1 IH2 a b c →
