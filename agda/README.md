@@ -13,13 +13,18 @@ File Overview
 
 * `Structures`
 
-  * Generic structures Domain, ValueOrdering, LambdaModelBasics.
+  * Generic structures Domain, ValueOrdering, ModelCurry, LambdaModelBasics.
   * Defines auxilliary modules expressed in terms of the
     generic structures: DomainAux, OrderingAux, DenotAux.
     DenotAux includes a proof of compositionality.
   * Denotational semantics of lambda calculus defined
     generically in terms of ●, ℱ, Domain, and ValueOrdering.
-  
+
+* `MultiStep`
+
+  Defines multi-step reduction generically over any reduction
+  relation.
+
 * `ValueBCD`
 
   * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
@@ -27,6 +32,10 @@ File Overview
     and ValueOrdering.
   * Proves function inversion and stuff
     about AboveFun needed for adequacy of CBN.
+
+* `ValueBCDConst`
+
+  * Adds constants, including primitive operators
 
 * `Lambda`
 
@@ -36,6 +45,10 @@ File Overview
 * `LambdaCallByValue`
 
   Call-by-value reduction and contextual equivalence.
+
+* `ISWIM`
+
+  Call-by-value lambda calculus with constants and a δ redution rule.
 
 * `EvalCallByName`
 
@@ -47,6 +60,10 @@ File Overview
   Call-by-value evaluation as a big-step relation.
   Proves that CBV evaluation implies CBV reduction to WHNF.
 
+* `EvalISWIM`
+
+  Same as above, but with constants added.
+
 * `ModelCallByName`
 
   * ● for CBN and a bunch of lemmas about it.
@@ -56,6 +73,11 @@ File Overview
 
   * ● for CBV and a bunch of lemmas about it.
   * An instance of LambdaModelBasics
+
+* `ModelISWIM`
+
+  Same as above for ISWIM. Just instantiates the ModelCallByValue
+  module with a different domain.
 
 * `RenamePreserveReflect` (requires LambdaModelBasics)
 
@@ -71,8 +93,8 @@ File Overview
 
 * `SubstitutionReflect`
 
-  Proves that substitution reflects denotations for both of the
-  CBN and CBV models.
+  Proves that substitution reflects denotations for the models
+  of CBN, CBV, and ISWIM.
 
 * `PreserveReflectCallByName`
 
