@@ -81,7 +81,10 @@ reflect {v = v}(δ-rule {Γ}{B}{P}{f}{k}) M′≡N ℘fkv rewrite sym M′≡N =
 
    G : ∀ {k₁} → const k ⊑ const k₁ → ℘ {P} (f k₁) v
    G ⊑-const = ℘fkv
-   G (⊑-trans k⊑k₁ k⊑k₂) = {!!}
+   G {k₁} (⊑-trans{v = v} k⊑k₁ k⊑k₂)
+        with base-eq? B B | BelowConst-⊑ (⊑k→BelowConstk k⊑k₂) k⊑k₁
+   ... | yes eq | b rewrite eq | b = ℘fkv
+   ... | no neq | ()
 
 
 preserve : ∀ {Γ} {γ : Env Γ} {M N v}
@@ -102,6 +105,7 @@ preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
     with ℰƛN·Mγw
 ... | ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
       substitution{N = N}{M = M} {v'} ℰNγvw ℰMγv
+preserve (δ-rule) ℰMγv = ?
 
 
 reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
