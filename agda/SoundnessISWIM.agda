@@ -105,8 +105,14 @@ preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
     with ℰƛN·Mγw
 ... | ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
       substitution{N = N}{M = M} {v'} ℰNγvw ℰMγv
-preserve (δ-rule) ℰMγv = ?
-
+preserve {Γ} {γ} {v = v} (δ-rule {Γ} {B} {P} {f} {k})
+   ⟨ u , ⟨ ∀k,u⊑k→℘fkv , ℘ku ⟩ ⟩ = G
+    where
+    G : ℘ {P} (f k) v
+    G =
+     let bku = (℘k→BelowConstk {B}{k}{u} ℘ku) in
+     ∀k,u⊑k→℘fkv {k} (BelowConstk→⊑k bku)
+    
 
 reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
   → M —→ N
