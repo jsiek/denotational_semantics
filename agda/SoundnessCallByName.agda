@@ -11,9 +11,12 @@ open DomainAux domain
 open OrderingAux domain ordering
 open import ModelCallByName
 open LambdaDenot domain ordering _●_ ℱ
-open import Filter domain ordering _●_ ℱ model_basics
-open import SubstitutionPreserve domain ordering _●_ ℱ model_basics
-open import RenamePreserveReflect domain ordering _●_ ℱ model_basics
+import Filter
+open Filter.ForLambda domain ordering _●_ ℱ model_basics
+import SubstitutionPreserve
+open SubstitutionPreserve.ForLambda domain ordering _●_ ℱ model_basics
+import RenamePreserveReflect
+open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ model_basics
    using (⊑-env)  
 import SubstitutionReflect
 open SubstitutionReflect.CallByName

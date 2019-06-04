@@ -67,12 +67,6 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
     | ⟨ c₃ , ⟨ L⇓c₃ , 𝕍w' ⟩ ⟩ rewrite ⇓-determ L⇓c₃ L⇓c₂ =
       ⟨ clos L δ , ⟨ L⇓c₂ , ⟨ 𝕍w , 𝕍w' ⟩ ⟩ ⟩
 
-kth-x : ∀{Γ}{γ' : ClosEnv Γ}{x : Var Γ}
-     → Σ[ Δ ∈ Context ] Σ[ δ ∈ ClosEnv Δ ] Σ[ N ∈ Term (suc Δ) ]
-                 γ' x ≡ clos N δ
-kth-x{γ' = γ'}{x = x} with γ' x
-... | clos{Γ = Δ} N δ = ⟨ Δ , ⟨ δ , ⟨ N , refl ⟩ ⟩ ⟩
-
 
 𝔼 : ∀{Γ} → Value → Term Γ → ClosEnv Γ → Set
 𝔼 v M γ = Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
