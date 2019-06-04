@@ -117,3 +117,9 @@ File Overview
 
   Proves adequacy of CBV model with respect to CBV reduction to WHNF.
   Also proves that denotational equality implies contextual equivalence.
+
+* `AdequacyISWIM`
+
+  Proves adequacy of ISWIM's model with respect to ISWIM reduction to
+  a value (literal or lambda abstraction).  Also proves that
+  denotational equality implies contextual equivalence.
