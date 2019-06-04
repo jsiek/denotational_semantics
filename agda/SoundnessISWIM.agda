@@ -1,14 +1,27 @@
 open import Variables
+open import Primitives
 open import Structures
 open import ISWIM
 open import ModelISWIM
-
-open import Filter domain ordering _●_ ℱ model_basics
-open import SubstitutionPreserve domain ordering _●_ ℱ model_basics
-open import RenamePreserveReflect domain ordering _●_ ℱ model_basics
-   using (⊑-env)  
+open import ValueBCDConst
+open DomainAux domain
+open ISWIMDenot domain ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+import Filter
+open Filter.ForISWIM domain ordering _●_ ℱ model_basics
+   (λ {P} k v → ℘ {P} k v)
+   (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
+   ℘-⊑
+import SubstitutionPreserve
+open SubstitutionPreserve.ISWIM domain ordering _●_ ℱ model_basics
+   (λ {P} k v → ℘ {P} k v)
+   (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
+   ℘-⊑
+import RenamePreserveReflect
+open RenamePreserveReflect.ForISWIM domain ordering _●_ ℱ model_basics
+   (λ {P} k v → ℘ {P} k v) using (⊑-env)  
 import SubstitutionReflect
 open SubstitutionReflect.ISWIM using (substitution-reflect)
+
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -17,6 +30,9 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
    renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Unit using (⊤; tt)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Relation.Nullary using (Dec; yes; no)
 
 
 module SoundnessISWIM where
@@ -25,7 +41,7 @@ module SoundnessISWIM where
 ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
     → TermValue M
     → ℰ M γ ⊥
-ℰ-⊥ {M = lit {p} k ⦅ nil ⦆} V-lit = ?
+ℰ-⊥ {M = lit {p} k ⦅ nil ⦆} V-lit = tt
 ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
 ℰ-⊥ {Γ}{γ}{(lam ⦅ bind N nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
 
@@ -54,6 +70,18 @@ reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
         (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
 reflect (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
     reflect-beta {M = M}{N} Mv
+reflect {v = v}(δ-rule {Γ}{B}{P}{f}{k}) M′≡N ℘fkv rewrite sym M′≡N =
+   ⟨ const {B} k , ⟨ G , ℘kk ⟩ ⟩
+   where
+   ℘kk : ℘ k (const {B} k)
+   ℘kk
+       with base-eq? B B
+   ... | no neq = ⊥-elim (neq refl)      
+   ... | yes eq rewrite eq = refl
+
+   G : ∀ {k₁} → const k ⊑ const k₁ → ℘ {P} (f k₁) v
+   G ⊑-const = ℘fkv
+   G (⊑-trans k⊑k₁ k⊑k₂) = {!!}
 
 
 preserve : ∀ {Γ} {γ : Env Γ} {M N v}

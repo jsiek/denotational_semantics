@@ -192,6 +192,11 @@ model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
           G {k} v⊑k = ⟨ (proj₁ ℘fv v⊑k) , (proj₂ ℘fv v⊑k) ⟩
 
 
+℘-⊔ : ∀{P : Prim} {k : rep P} {u v : Value}
+    → ℘ {P} k u → ℘ {P} k v → ℘ {P} k (u ⊔ v)
+℘-⊔ ℘u ℘v = ⟨ ℘u , ℘v ⟩
+
+
 {------------------------------
 
   Skipping function inversion for now because I'm more interested in

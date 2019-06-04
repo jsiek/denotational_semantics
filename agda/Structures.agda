@@ -460,3 +460,23 @@ module DenotAux
   compositionality {C = COp app (tcons L (tcons M Cs refl) refl)} M≃N =
      ⊥-elim (cargs-not-empty Cs)
   
+
+module ISWIMDenotAux
+  (D : Domain) (V : ValueOrdering D) 
+  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
+       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
+  where
+  
+  open Domain D
+  open DomainAux D
+  open OrderingAux D V
+  open ISWIMDenot D V _●_ ℱ  (λ {P} k v → ℘ {P} k v)
+  open import ISWIM
+  open LambdaModelBasics MB
+  
+  ƛ-⊥ : ∀{Γ}{N : Term (suc Γ)}{γ : Env Γ}
+      → ℰ (ƛ N) γ ⊥
+  ƛ-⊥ = ℱ-⊥
