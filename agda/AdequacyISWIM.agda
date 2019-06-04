@@ -118,33 +118,35 @@ adequacy : ∀{M : Term zero}{N : Term zero}
            ----------------------------------------------------------
          → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
 adequacy{M}{N} Nv eq 
-    with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥) (ℰ-⊥ {γ = λ ()}{M = N} Nv))
+    with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥) (ℰ-⊥ {M = N} Nv))
 ... | ⟨ c , ⟨ M⇓c , Vc ⟩ ⟩ = ⟨ c , M⇓c ⟩
 
 
-reduce→⇓ : ∀ {M : Term zero} {N : Term (suc zero)}
-           → M —↠ lam ⦅ bind N nil ⦆
+reduce→⇓ : ∀ {M : Term zero} {N : Term zero}
+           → TermValue N
+           → M —↠ N
            → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
-reduce→⇓ {M}{N} M—↠ƛN = adequacy {M}{N} (soundness M—↠ƛN)
+reduce→⇓ {M}{N} Nv M—↠N = adequacy {M}{N} Nv (soundness Nv M—↠N)
 
 
 ⇓↔reduce : ∀ {M : Term zero}
-           → (Σ[ N ∈ Term (suc zero) ] (M —↠ lam ⦅ bind N nil ⦆))
+           → (Σ[ N ∈ Term zero ] TermValue N × (M —↠ N))
              iff
              (Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c)
-⇓↔reduce {M} = ⟨ (λ x → reduce→⇓ (proj₂ x)) ,
-                   (λ x → ⇓→—↠ (proj₂ (proj₂ (proj₂ x)))) ⟩
+⇓↔reduce {M} = ⟨ (λ x → reduce→⇓ (proj₁ (proj₂ x)) (proj₂ (proj₂ x))) ,
+                 (λ x → ⇓→—↠ (proj₂ x)) ⟩
 
 
 denot-equal-terminates : ∀{Γ} {M N : Term Γ} {C : Ctx Γ zero}
   → ℰ M ≃ ℰ N  →  terminates (plug C M)
     -----------------------------------
   → terminates (plug C N)
-denot-equal-terminates {Γ}{M}{N}{C} ℰM≃ℰN ⟨ N′ , CM—↠ƛN′ ⟩ =
-  let ℰCM≃ℰƛN′ = soundness CM—↠ƛN′ in
+denot-equal-terminates {Γ}{M}{N}{C} ℰM≃ℰN ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
+  let ℰCM≃ℰƛN′ = soundness Nv CM—↠N′ in
   let ℰCM≃ℰCN = compositionality{Γ = Γ}{Δ = zero}{C = C} ℰM≃ℰN in
   let ℰCN≃ℰƛN′ = ≃-trans (≃-sym ℰCM≃ℰCN) ℰCM≃ℰƛN′ in
-    ⇓→—↠ (proj₂ (proj₂ (proj₂ (adequacy{N = N′} ℰCN≃ℰƛN′))))
+    ⇓→—↠ (proj₂ (adequacy{N = N′} Nv ℰCN≃ℰƛN′))
+
 
 denot-equal-contex-equal : ∀{Γ} {M N : Term Γ}
   → ℰ M ≃ ℰ N
@@ -153,3 +155,5 @@ denot-equal-contex-equal : ∀{Γ} {M N : Term Γ}
 denot-equal-contex-equal{Γ}{M}{N} eq {C} =
    ⟨ (λ tm → denot-equal-terminates{M = M} eq tm) ,
      (λ tn → denot-equal-terminates{M = N} (≃-sym eq) tn) ⟩
+
+

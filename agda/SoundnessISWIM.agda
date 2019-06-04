@@ -122,12 +122,13 @@ reduce-equal {Γ}{M}{N} r γ v =
     ⟨ (λ m → preserve r m) , (λ n → reflect r refl n) ⟩
 
 
-soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
-  → M —↠ ƛ N
+soundness : ∀{Γ} {M : Term Γ} {N : Term Γ}
+  → TermValue N
+  → M —↠ N
     -----------------
-  → ℰ M ≃ ℰ (ƛ N)
-soundness (_ □) γ v = ⟨ (λ x → x) , (λ x → x) ⟩
-soundness {Γ} (L —→⟨ r ⟩ M—↠N) γ v =
-   let ih = soundness M—↠N in
+  → ℰ M ≃ ℰ N
+soundness Nv (_ □) γ v = ⟨ (λ x → x) , (λ x → x) ⟩
+soundness {Γ} Nv (L —→⟨ r ⟩ M—↠N) γ v =
+   let ih = soundness Nv M—↠N in
    let e = reduce-equal r in
    ≃-trans {Γ} e ih γ v
