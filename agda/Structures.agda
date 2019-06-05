@@ -279,11 +279,11 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
   EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → δ `⊑ (γ `⊔ δ)
   EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
 
-  record WFDenot (Γ : ℕ) (E : Denotation Γ) : Set₁ where
+  record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
     field
-      ⊑-env : ∀{γ δ}{v} → E γ v → γ `⊑ δ → E δ v
-      ⊑-closed : ∀{γ}{v w} → E γ v → w ⊑ v → E γ w
-      ⊔-closed : ∀{γ u v} → E γ u → E γ v → E γ (u ⊔ v)
+      ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
+      ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
+      ⊔-closed : ∀{γ u v} → D γ u → D γ v → D γ (u ⊔ v)
 
   record ModelCurry
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
