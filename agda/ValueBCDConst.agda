@@ -854,6 +854,29 @@ k⊑A→k∈A : ∀{B}{k : base-rep B}{A : Value}
 k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
 
 
+⊔⊑R : ∀{B₁ B₂ A}
+    → B₁ ⊔ B₂ ⊑ A
+    → B₁ ⊑ A
+⊔⊑R (⊑-conj-L B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = B₁⊔B₂⊑A
+⊔⊑R (⊑-conj-R1 B₁⊔B₂⊑A) = ⊑-conj-R1 (⊔⊑R B₁⊔B₂⊑A)
+⊔⊑R (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑R B₁⊔B₂⊑A)
+⊔⊑R (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑R B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
+
+⊔⊑L : ∀{B₁ B₂ A}
+    → B₁ ⊔ B₂ ⊑ A
+    → B₂ ⊑ A
+⊔⊑L (⊑-conj-L B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = B₁⊔B₂⊑A₁
+⊔⊑L (⊑-conj-R1 B₁⊔B₂⊑A) = ⊑-conj-R1 (⊔⊑L B₁⊔B₂⊑A)
+⊔⊑L (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑L B₁⊔B₂⊑A)
+⊔⊑L (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑L B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
+
+∈⊑⊑ : ∀{B A C} → B ⊑ A → C ∈ B → C ⊑ A
+∈⊑⊑ {⊥} B⊑A C∈B rewrite C∈B = B⊑A
+∈⊑⊑ {const k} B⊑A C∈B rewrite C∈B = B⊑A
+∈⊑⊑ {B₁ ↦ B₂} B⊑A C∈B rewrite C∈B = B⊑A
+∈⊑⊑ {B₁ ⊔ B₂}{A}{C} B⊑A (inj₁ C∈B₁) = ∈⊑⊑ {B₁}{A}{C} (⊔⊑R B⊑A) C∈B₁
+∈⊑⊑ {B₁ ⊔ B₂}{A}{C} B⊑A (inj₂ C∈B₂) = ∈⊑⊑ {B₂}{A}{C} (⊔⊑L B⊑A) C∈B₂
+
 consistent-⊑ : ∀{A B C D}
     → A ~ B  →  C ⊑ A  → D ⊑ B
     → C ~ D
@@ -866,6 +889,13 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
            k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  in
        let k∈A : const k ∈ A
            k∈A = k⊑A→k∈A k⊑A in
-       ?
+       let xx = λ {v′} → consistent→atoms {A}{B}{const k}{v′} A~B k∈A in
+       let D′⊑B : D′ ⊑ B
+           D′⊑B = ⊑-trans (∈→⊑ D′∈D) D⊑B in
+       let D′∈B : D′ ∈ B
+           D′∈B = {!!} in
+           {- 
+            -}
+       xx {D′} D′∈B
     G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
     G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
