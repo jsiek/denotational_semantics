@@ -120,7 +120,7 @@ appR-cong {Γ}{L}{M}{M'} v (M —→⟨ r ⟩ rs) =
     L · M —→⟨ ξ₂-rule v r ⟩ appR-cong v rs
 
 terminates : ∀{Γ} → (M : Term Γ ) → Set
-terminates {Γ} M = Σ[ N ∈ Term (suc Γ) ] (M —↠ ƛ N)
+terminates {Γ} M = Σ[ N ∈ Term Γ ] TermValue N × (M —↠ N)
 
 _≅_ : ∀{Γ} → (M N : Term Γ) → Set
 (_≅_ {Γ} M N) = ∀ {C : Ctx Γ zero}

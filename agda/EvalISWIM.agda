@@ -135,12 +135,12 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
         —↠⟨ —↠N′ ⟩
         N′ □
 
-⇓→—↠ :  ∀{M : Term zero}{Δ}{δ : ValEnv Δ}{N′ : Term (suc Δ)}
-     → ∅' ⊢ M ⇓ val-clos N′ δ
-       -----------------------------
-     → Σ[ N ∈ Term (suc zero) ] (M —↠ ƛ N)
-⇓→—↠ {M}{Δ}{δ}{N′} M⇓c
+⇓→—↠ :  ∀{M : Term zero}{c : Val}
+     → ∅' ⊢ M ⇓ c
+       -----------------------------------------
+     → Σ[ N ∈ Term zero ] TermValue N × (M —↠ N)
+⇓→—↠ {M}{c} M⇓c
     with ⇓→—↠×≈{σ = ids} M⇓c ≈ₑ-id
-... | ⟨ N , ⟨ rs , ⟨ σ , ⟨ h , eq2 ⟩ ⟩ ⟩ ⟩
-    rewrite sub-id{M = M} | eq2 =
-    ⟨ ⟪ exts σ ⟫ N′ , rs ⟩
+... | ⟨ N , ⟨ rs , c≈N ⟩ ⟩
+    rewrite sub-id{M = M} =
+    ⟨ N , ⟨ (≈→TermValue c≈N) , rs ⟩ ⟩
