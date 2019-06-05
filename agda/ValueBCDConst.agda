@@ -817,25 +817,41 @@ below-fun-funs {u} {v₁ ⊔ v₂} fv u⊑v = {!!}
 
 -}
 
+AboveConst : Value → Set
+AboveConst u = Σ[ B ∈ Base ] Σ[ k ∈ base-rep B ] const {B} k ⊑ u
 
+AboveConst-⊑ : ∀{u v}
+   → AboveConst u → u ⊑ v
+   → AboveConst v
+AboveConst-⊑ ⟨ B , ⟨ k , snd ⟩ ⟩ uv = ⟨ B , ⟨ k , ⊑-trans snd uv ⟩ ⟩
 
+const-sub-inv : ∀{u₁ u₂ : Value}
+        → u₁ ⊑ u₂
+        → ∀{B}{k : base-rep B} → const {B} k ∈ u₁
+          -------------------------------------
+        → const {B} k ∈ u₂
+const-sub-inv {.⊥} {u₂} ⊑-⊥ ()
+const-sub-inv {.(const _)} {.(const _)} ⊑-const f = f
+const-sub-inv {.(_ ⊔ _)} {u₂} (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₁ x) =
+    const-sub-inv u₁⊑u₂ x
+const-sub-inv {.(_ ⊔ _)} {u₂} (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₂ y) =
+    const-sub-inv u₁⊑u₃ y
+const-sub-inv {u₁} {.(_ ⊔ _)} (⊑-conj-R1 u₁⊑u₂) f = inj₁ (const-sub-inv u₁⊑u₂ f)
+const-sub-inv {u₁} {.(_ ⊔ _)} (⊑-conj-R2 u₁⊑u₂) f = inj₂ (const-sub-inv u₁⊑u₂ f)
+const-sub-inv {u₁} {u₂} (⊑-trans u₁⊑u₂ u₁⊑u₃) f =
+    const-sub-inv u₁⊑u₃ (const-sub-inv u₁⊑u₂ f)
+const-sub-inv {.(_ ↦ _)} {.(_ ↦ _)} (⊑-fun u₁⊑u₂ u₁⊑u₃) ()
+const-sub-inv {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} ⊑-dist ()
+
+{-
+AboveConst⊥ : ¬ AboveConst ⊥
+AboveConst⊥ ⟨ v , ⟨ w , lt ⟩ ⟩ = {!!}
+-}
 
 k⊑A→k∈A : ∀{B}{k : base-rep B}{A : Value}
         → const k ⊑ A
         → const k ∈ A
-k⊑A→k∈A {B} {k} {⊥} k⊑A =
-    ⊥-elim (v⊑⊥→Below⊥ k⊑A)
-k⊑A→k∈A {B} {k} {const {B′} k′} k⊑A
-    with base-eq? B′ B | ⊑k→BelowConstk k⊑A
-... | yes eq1 | eq2 rewrite eq1 | eq2 = refl
-... | no neq | ()
-k⊑A→k∈A {B} {k} {A₁ ↦ A₂} k⊑A 
-    with ⊑↦→BelowFun k⊑A
-... | ()  
-k⊑A→k∈A {B} {k} {A₁ ⊔ A₂} k⊑A = {!!}
-
-
-
+k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
 
 
 consistent-⊑ : ∀{A B C D}
@@ -849,7 +865,10 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
        let k⊑A : const k ⊑ A
            k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  in
        let k∈A : const k ∈ A
-           k∈A = {!!} in
-       {!!}
+           k∈A = k⊑A→k∈A k⊑A in
+       atoms→consistent {const k}{D′} {!!}
+       where
+       H : {u′ v′ : Value} → u′ ≡ const k → v′ ∈ D′ → u′ ~ v′
+       H {u′}{v′} eq v′∈D′ rewrite eq = {!!}
     G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
     G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
