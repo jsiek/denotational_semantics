@@ -866,9 +866,6 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
            k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  in
        let k∈A : const k ∈ A
            k∈A = k⊑A→k∈A k⊑A in
-       atoms→consistent {const k}{D′} {!!}
-       where
-       H : {u′ v′ : Value} → u′ ≡ const k → v′ ∈ D′ → u′ ~ v′
-       H {u′}{v′} eq v′∈D′ rewrite eq = {!!}
+       ?
     G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
     G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
