@@ -53,6 +53,11 @@ data _⊢_⇓_ : ∀{Γ} → ValEnv Γ → (Term Γ) → Val → Set where
        → (δ ,' V) ⊢ N ⇓ V′
          ---------------------------------------------------
        → γ ⊢ L · M ⇓ V′
+  ⇓-prim : ∀{Γ}{γ : ValEnv Γ}{L M : Term Γ}{P : Prim}{B : Base}
+                {f : rep (B ⇒ P)}{k : base-rep B}
+       → γ ⊢ L ⇓ val-const {B ⇒ P} f  →  γ ⊢ M ⇓ val-const {base B} k
+         ------------------------------------------------------------
+       → γ ⊢ L · M ⇓ val-const {P} (f k)
 
 ⇓-determ : ∀{Γ}{γ : ValEnv Γ}{M : Term Γ}{V V' : Val}
          → γ ⊢ M ⇓ V → γ ⊢ M ⇓ V'
@@ -63,6 +68,15 @@ data _⊢_⇓_ : ∀{Γ} → ValEnv Γ → (Term Γ) → Val → Set where
 ⇓-determ (⇓-app mc₁ mc₂ mc₃) (⇓-app mc₁′ mc₂′ mc₃′) 
     with ⇓-determ mc₁ mc₁′ | ⇓-determ mc₂ mc₂′ 
 ... | refl | refl = ⇓-determ mc₃ mc₃′
+⇓-determ (⇓-prim mc₁ mc₂) (⇓-prim mc₁′ mc₂′)
+    with ⇓-determ mc₁ mc₁′ | ⇓-determ mc₂ mc₂′ 
+... | refl | refl = refl
+⇓-determ (⇓-app mc₁ mc₂ mc₃) (⇓-prim mc₁′ mc₂′)
+    with ⇓-determ mc₁ mc₁′
+... | ()    
+⇓-determ (⇓-prim mc₁ mc₂) (⇓-app mc₁′ mc₂′ mc₃′)
+    with ⇓-determ mc₁ mc₁′
+... | ()    
 
 _≈_ : Val → (Term zero) → Set
 _≈ₑ_ : ∀{Γ} → ValEnv Γ → Subst Γ zero → Set
@@ -110,6 +124,23 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
 ⇓→—↠×≈ {γ = γ}{σ} (⇓-var {x = x}) γ≈ₑσ = ⟨ σ x , ⟨ σ x □ , γ≈ₑσ ⟩ ⟩
 ⇓→—↠×≈ {σ = σ} {c = val-clos N γ} ⇓-lam γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ ⟩ ⟩
+⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons L (cons M nil) ⦆} {c}
+    (⇓-prim {P = P}{B}{f}{k} L⇓f M⇓k) γ≈ₑσ 
+    with ⇓→—↠×≈{σ = σ} L⇓f γ≈ₑσ
+... | ⟨ L′ , ⟨ σL—↠f , L′≡ ⟩ ⟩
+    rewrite L′≡ 
+    with ⇓→—↠×≈{σ = σ} M⇓k γ≈ₑσ
+... | ⟨ M′ , ⟨ σM—↠M′ , M′≡ ⟩ ⟩
+    rewrite M′≡ =
+    ⟨ lit {P} (f k) ⦅ nil ⦆ , ⟨ r , refl ⟩ ⟩
+    where
+    r = (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆)
+        —↠⟨ appL-cong σL—↠f  ⟩
+        (app ⦅ cons (lit f ⦅ nil ⦆) (cons (⟪ σ ⟫ M) nil) ⦆)
+        —↠⟨ appR-cong V-lit σM—↠M′ ⟩
+        (app ⦅ cons (lit f ⦅ nil ⦆) (cons (lit k ⦅ nil ⦆) nil) ⦆)
+        —→⟨ δ-rule ⟩
+        (lit (f k) ⦅ nil ⦆)  □
 ⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons L (cons M nil) ⦆} {c}
     (⇓-app {Γ}{δ = δ}{N}{V}{V′} L⇓ƛNδ M⇓V N⇓V′) γ≈ₑσ
     with ⇓→—↠×≈{σ = σ} L⇓ƛNδ γ≈ₑσ

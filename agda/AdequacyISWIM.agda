@@ -100,17 +100,21 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
    where
    G : ∀{v} → ℱ (ℰ N) γ v → 𝕍 v (val-clos N γ')
    G {⊥} ℱℰNγv = tt
+   G {const {B} k} ()
    G {v ↦ w} ℱℰNγv {c} vc =
       ℰ→𝔼 {M = N} {w} (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
    G {v₁ ⊔ v₂} ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ = ⟨ G {v₁} ℱℰNγv₁ , G {v₂} ℱℰNγv₂ ⟩
 ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ' ⟨ v₁ , ⟨ d₁ , d₂ ⟩ ⟩
     with ℰ→𝔼 {M = L} 𝔾γγ' d₁ | ℰ→𝔼 {M = M} 𝔾γγ' d₂
-... | ⟨ val-clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩
-    | ⟨ val-clos M' δ₂ , ⟨ M⇓M' , 𝕍v₁ ⟩ ⟩ 
-    with 𝕍v₁↦v {val-clos M' δ₂} 𝕍v₁
-... | ⟨ c , ⟨ L'⇓c , 𝕍v ⟩ ⟩ =
-    ⟨ c , ⟨ (⇓-app L⇓L' M⇓M' L'⇓c) , 𝕍v ⟩ ⟩
-  
+... | ⟨ val-clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩ 
+    with 𝕍v₁↦v {c} 𝕍v₁
+... | ⟨ c' , ⟨ L'⇓c' , 𝕍v ⟩ ⟩ =
+    ⟨ c' , ⟨ (⇓-app L⇓L' M⇓c L'⇓c') , 𝕍v ⟩ ⟩
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ' ⟨ v₁ , ⟨ d₁ , d₂ ⟩ ⟩
+    | ⟨ val-const {P} f , ⟨ L⇓f , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩
+    with P
+... | base B = ⊥-elim 𝕍v₁↦v
+... | B ⇒ P′ = {!!}     
 
 adequacy : ∀{M : Term zero}{N : Term zero}
          → TermValue N
