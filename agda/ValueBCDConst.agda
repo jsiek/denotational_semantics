@@ -243,6 +243,8 @@ v⊑⊥→Below⊥ ⊑-⊥ = tt
 v⊑⊥→Below⊥ (⊑-conj-L v⊑⊥ v⊑⊥₁) = ⟨ v⊑⊥→Below⊥ v⊑⊥ , v⊑⊥→Below⊥ v⊑⊥₁ ⟩
 v⊑⊥→Below⊥ (⊑-trans v⊑⊥ v⊑⊥₁) = Below⊥-⊑ (v⊑⊥→Below⊥ v⊑⊥₁) v⊑⊥
 
+
+
 BelowConst : ∀{B : Base} → (k : base-rep B) → Value → Set
 BelowConst k ⊥ = ⊤
 BelowConst {B} k (const {B′} k′)
@@ -326,90 +328,6 @@ BelowConstk→⊑k {v = v₁ ⊔ v₂} ⟨ fst , snd ⟩ =
     (℘k→BelowConstk {B}{k}{v₁} (proj₂ ℘kv)) ⟩
 
 
-infix 4 _~_
-
-_~_ : Value → Value → Set
-⊥ ~ v = ⊤
-const {B} k ~ ⊥ = ⊤
-const {B} k ~ const {B′} k′
-    with base-eq? B B′
-... | yes eq rewrite eq = k ≡ k′ 
-... | no neq = Bot
-const {B} k ~ v ↦ w = Bot
-const {B} k ~ u ⊔ v = const {B} k ~ u × const {B} k ~ v
-v ↦ w ~ ⊥ = ⊤
-v ↦ w ~ const k = Bot
-v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
-v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
-v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
-
-
-~⊔R : ∀{v u₁ u₂} → v ~ u₁ → v ~ u₂ 
-    → v ~ u₁ ⊔ u₂
-~⊔R {⊥} v~u₁ v~u₂ = tt
-~⊔R {const k} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
-~⊔R {v ↦ w} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
-~⊔R {v₁ ⊔ v₂} v~u₁ v~u₂ =
-    ⟨ (~⊔R {v = v₁} (proj₁ v~u₁) (proj₁ v~u₂)) ,
-      (~⊔R {v = v₂} (proj₂ v~u₁) (proj₂ v~u₂)) ⟩
-
-
-data wf : Value → Set where
-  wf-bot : wf ⊥
-  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
-  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
-  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
-
-
-~-sym : ∀{u v} → u ~ v → v ~ u
-~-sym {⊥} {⊥} u~v = tt
-~-sym {⊥} {const k} u~v = tt
-~-sym {⊥} {v ↦ w} u~v = tt
-~-sym {⊥} {v₁ ⊔ v₂} u~v = ⟨ ~-sym {v = v₁} tt , ~-sym {v = v₂} tt ⟩
-~-sym {const k} {⊥} u~v = tt
-~-sym {const {B} k} {const {B′} k′} u~v
-    with base-eq? B B′
-... | no neq = ⊥-elim u~v
-... | yes eq
-    rewrite eq
-    with base-eq? B′ B′
-... | no neq = neq refl
-... | yes refl = sym u~v
-~-sym {const k} {v ↦ w} ()
-~-sym {const k} {u ⊔ v} ⟨ k~u , k~v ⟩ =
-  ⟨ (~-sym{v = u} k~u) , (~-sym{v = v} k~v) ⟩
-~-sym {v ↦ w} {⊥} u~v = tt
-~-sym {v ↦ w} {const k} ()
-~-sym {v ↦ w} {v′ ↦ w′} (inj₁ ⟨ fst , snd ⟩) =
-   inj₁ ⟨ (~-sym{v = v′} fst) , (~-sym{v = w′} snd) ⟩
-~-sym {v ↦ w} {v′ ↦ w′} (inj₂ ¬v~v′) =
-   inj₂ λ x → ⊥-elim (contradiction (~-sym{u = v′} x) ¬v~v′)
-~-sym {v ↦ w} {u₁ ⊔ u₂} ⟨ fst , snd ⟩ =
-   ⟨ ~-sym{v = u₁} fst , ~-sym{v = u₂} snd ⟩
-~-sym {u₁ ⊔ u₂} {⊥} ⟨ fst , snd ⟩ = tt
-~-sym {u₁ ⊔ u₂} {const k} ⟨ fst , snd ⟩ =
-   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
-~-sym {u₁ ⊔ u₂} {v ↦ v₁} ⟨ fst , snd ⟩ =
-   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
-~-sym {u₁ ⊔ u₂} {v₁ ⊔ v₂} ⟨ fst , snd ⟩ 
-    with ~-sym {u₁} {v₁ ⊔ v₂} fst
-       | ~-sym {u₂} {v₁ ⊔ v₂} snd
-... | ⟨ v₁~u₁ , v₂~u₁ ⟩ | ⟨ v₁~u₂ , v₂~u₂ ⟩ =
-      ⟨ ~⊔R{v = v₁} v₁~u₁ v₁~u₂ , ~⊔R{v = v₂} v₂~u₁ v₂~u₂ ⟩
-
-~-refl : ∀{v} → wf v → v ~ v
-~-refl {.⊥} wf-bot = tt
-~-refl {const {B} k} wf-const
-    with base-eq? B B
-... | yes eq rewrite eq = refl
-... | no neq = neq refl
-~-refl {.(_ ↦ _)} (wf-fun wfv wfv₁) = inj₁ ⟨ ~-refl wfv , ~-refl wfv₁ ⟩
-~-refl {v₁ ⊔ v₂} (wf-⊔ v₁~v₂ wfv₁ wfv₂) =
-    ⟨ ~⊔R{v₁} (~-refl{v₁} wfv₁) v₁~v₂ ,
-      ~⊔R{v₂} (~-sym{v₁} v₁~v₂) (~-refl wfv₂) ⟩
-
-
-
 {------------------------------
   Function Inversion
  -------------------------------}
@@ -477,6 +395,9 @@ not-u₁⊔u₂∈v {v ⊔ v₁} (inj₂ y) = not-u₁⊔u₂∈v y
 data Fun : Value → Set where
   fun : ∀{u v w} → u ≡ (v ↦ w) → Fun u
 
+not-Fun-k : ∀{B : Base}{k : base-rep B} → ¬ Fun (const {B} k)
+not-Fun-k {B} {k} (fun ())
+
 Funs : Value → Set
 Funs v = ∀{u} → u ∈ v → Fun u
 
@@ -488,6 +409,7 @@ Funs∈ : ∀{u}
       → Σ[ v ∈ Value ] Σ[ w ∈ Value ] v ↦ w ∈ u
 Funs∈ {⊥} f with f {⊥} refl
 ... | fun ()
+Funs∈ {const {B} k} f = ⊥-elim (not-Fun-k (f refl))
 Funs∈ {v ↦ w} f = ⟨ v , ⟨ w , refl ⟩ ⟩
 Funs∈ {u ⊔ u′} f
     with Funs∈ λ z → f (inj₁ z)
@@ -496,11 +418,13 @@ Funs∈ {u ⊔ u′} f
 
 dom : (u : Value) → Value
 dom ⊥  = ⊥
+dom (const {B} k) = ⊥
 dom (v ↦ w) = v
 dom (u ⊔ u′) = dom u ⊔ dom u′
 
 cod : (u : Value) → Value
 cod ⊥  = ⊥
+cod (const {B} k) = ⊥
 cod (v ↦ w) = w
 cod (u ⊔ u′) = cod u ⊔ cod u′
 
@@ -510,6 +434,7 @@ cod (u ⊔ u′) = cod u ⊔ cod u′
             ----------------------
           → v ⊆ dom u
 ↦∈→⊆dom {⊥} fg () u∈v
+↦∈→⊆dom {const {B} k} fu ()
 ↦∈→⊆dom {v ↦ w} fg refl u∈v = u∈v
 ↦∈→⊆dom {u ⊔ u′} fg (inj₁ v↦w∈u) u∈v =
    let ih = ↦∈→⊆dom (λ z → fg (inj₁ z)) v↦w∈u in
@@ -524,6 +449,9 @@ cod (u ⊔ u′) = cod u ⊔ cod u′
           ---------
         → cod u ⊆ w
 ⊆↦→cod⊆ {⊥} s refl with s {⊥} refl
+... | ()
+⊆↦→cod⊆ {const {B} k} u⊆v↦w
+    with u⊆v↦w refl
 ... | ()
 ⊆↦→cod⊆ {C ↦ C′} s m with s {C ↦ C′} refl
 ... | refl = m
@@ -541,6 +469,7 @@ sub-inv-trans : ∀{u′ u₂ u : Value}
     → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′) (cod u′)
 sub-inv-trans {⊥} {u₂} {u} fu′ u′⊆u IH =
    ⊥-elim (contradiction (fu′ refl) ¬Fun⊥)
+sub-inv-trans {const {B} k} fu′ u′⊆u IH = ⊥-elim (not-Fun-k (fu′ refl))
 sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fg u′⊆u IH = IH (↦⊆→∈ u′⊆u)
 sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fg u′⊆u IH
     with ⊔⊆-inv u′⊆u
@@ -566,6 +495,7 @@ sub-inv : ∀{u₁ u₂ : Value}
           -------------------------------------
         → Σ[ u₃ ∈ Value ] factor u₂ u₃ v w
 sub-inv {⊥} {u₂} ⊑-⊥ {v} {w} ()
+sub-inv {const {B} k} ⊑-const {v} {w} ()
 sub-inv {u₁₁ ⊔ u₁₂} {u₂} (⊑-conj-L lt1 lt2) {v} {w} (inj₁ x) = sub-inv lt1 x
 sub-inv {u₁₁ ⊔ u₁₂} {u₂} (⊑-conj-L lt1 lt2) {v} {w} (inj₂ y) = sub-inv lt2 y
 sub-inv {u₁} {u₂₁ ⊔ u₂₂} (⊑-conj-R1 lt) {v} {w} m
@@ -677,9 +607,249 @@ not-AboveFun-⊔-inv af = ⟨ f af , g af ⟩
 
 AboveFun? : (v : Value) → Dec (AboveFun v)
 AboveFun? ⊥ = no AboveFun⊥
+AboveFun? (const {B} k) = no G
+  where
+  G : ¬ AboveFun (const k)
+  G ⟨ v , ⟨ w , v↦w⊑k ⟩ ⟩ = ⊥-elim (⊑k→BelowConstk v↦w⊑k)
 AboveFun? (v ↦ w) = yes ⟨ v , ⟨ w , ⊑-refl ⟩ ⟩
 AboveFun? (u ⊔ u')
     with AboveFun? u | AboveFun? u'
 ... | yes ⟨ v , ⟨ w , lt ⟩ ⟩ | _ = yes ⟨ v , ⟨ w , (⊑-conj-R1 lt) ⟩ ⟩
 ... | no _ | yes ⟨ v , ⟨ w , lt ⟩ ⟩ = yes ⟨ v , ⟨ w , (⊑-conj-R2 lt) ⟩ ⟩
 ... | no x | no y = no (not-AboveFun-⊔ x y)
+
+
+{------------------------------
+  Consistency
+ -------------------------------}
+
+infix 4 _~_
+
+_~_ : Value → Value → Set
+⊥ ~ v = ⊤
+const {B} k ~ ⊥ = ⊤
+const {B} k ~ const {B′} k′
+    with base-eq? B B′
+... | yes eq rewrite eq = k ≡ k′ 
+... | no neq = Bot
+const {B} k ~ v ↦ w = Bot
+const {B} k ~ u ⊔ v = const {B} k ~ u × const {B} k ~ v
+v ↦ w ~ ⊥ = ⊤
+v ↦ w ~ const k = Bot
+v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
+v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
+v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
+
+
+~⊔R : ∀{v u₁ u₂} → v ~ u₁ → v ~ u₂ 
+    → v ~ u₁ ⊔ u₂
+~⊔R {⊥} v~u₁ v~u₂ = tt
+~⊔R {const k} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+~⊔R {v ↦ w} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+~⊔R {v₁ ⊔ v₂} v~u₁ v~u₂ =
+    ⟨ (~⊔R {v = v₁} (proj₁ v~u₁) (proj₁ v~u₂)) ,
+      (~⊔R {v = v₂} (proj₂ v~u₁) (proj₂ v~u₂)) ⟩
+
+
+data wf : Value → Set where
+  wf-bot : wf ⊥
+  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
+  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
+  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+
+
+~-sym : ∀{u v} → u ~ v → v ~ u
+~-sym {⊥} {⊥} u~v = tt
+~-sym {⊥} {const k} u~v = tt
+~-sym {⊥} {v ↦ w} u~v = tt
+~-sym {⊥} {v₁ ⊔ v₂} u~v = ⟨ ~-sym {v = v₁} tt , ~-sym {v = v₂} tt ⟩
+~-sym {const k} {⊥} u~v = tt
+~-sym {const {B} k} {const {B′} k′} u~v
+    with base-eq? B B′
+... | no neq = ⊥-elim u~v
+... | yes eq
+    rewrite eq
+    with base-eq? B′ B′
+... | no neq = neq refl
+... | yes refl = sym u~v
+~-sym {const k} {v ↦ w} ()
+~-sym {const k} {u ⊔ v} ⟨ k~u , k~v ⟩ =
+  ⟨ (~-sym{v = u} k~u) , (~-sym{v = v} k~v) ⟩
+~-sym {v ↦ w} {⊥} u~v = tt
+~-sym {v ↦ w} {const k} ()
+~-sym {v ↦ w} {v′ ↦ w′} (inj₁ ⟨ fst , snd ⟩) =
+   inj₁ ⟨ (~-sym{v = v′} fst) , (~-sym{v = w′} snd) ⟩
+~-sym {v ↦ w} {v′ ↦ w′} (inj₂ ¬v~v′) =
+   inj₂ λ x → ⊥-elim (contradiction (~-sym{u = v′} x) ¬v~v′)
+~-sym {v ↦ w} {u₁ ⊔ u₂} ⟨ fst , snd ⟩ =
+   ⟨ ~-sym{v = u₁} fst , ~-sym{v = u₂} snd ⟩
+~-sym {u₁ ⊔ u₂} {⊥} ⟨ fst , snd ⟩ = tt
+~-sym {u₁ ⊔ u₂} {const k} ⟨ fst , snd ⟩ =
+   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
+~-sym {u₁ ⊔ u₂} {v ↦ v₁} ⟨ fst , snd ⟩ =
+   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
+~-sym {u₁ ⊔ u₂} {v₁ ⊔ v₂} ⟨ fst , snd ⟩ 
+    with ~-sym {u₁} {v₁ ⊔ v₂} fst
+       | ~-sym {u₂} {v₁ ⊔ v₂} snd
+... | ⟨ v₁~u₁ , v₂~u₁ ⟩ | ⟨ v₁~u₂ , v₂~u₂ ⟩ =
+      ⟨ ~⊔R{v = v₁} v₁~u₁ v₁~u₂ , ~⊔R{v = v₂} v₂~u₁ v₂~u₂ ⟩
+
+~-refl : ∀{v} → wf v → v ~ v
+~-refl {.⊥} wf-bot = tt
+~-refl {const {B} k} wf-const
+    with base-eq? B B
+... | yes eq rewrite eq = refl
+... | no neq = neq refl
+~-refl {.(_ ↦ _)} (wf-fun wfv wfv₁) = inj₁ ⟨ ~-refl wfv , ~-refl wfv₁ ⟩
+~-refl {v₁ ⊔ v₂} (wf-⊔ v₁~v₂ wfv₁ wfv₂) =
+    ⟨ ~⊔R{v₁} (~-refl{v₁} wfv₁) v₁~v₂ ,
+      ~⊔R{v₂} (~-sym{v₁} v₁~v₂) (~-refl wfv₂) ⟩
+
+
+consistent→atoms : ∀ {u v u′ v′} → u ~ v → u′ ∈ u → v′ ∈ v → u′ ~ v′
+consistent→atoms {⊥} {v} {u′} {v′} u~v u′∈u v′∈v rewrite u′∈u = tt
+consistent→atoms {const {B} k} {⊥} {u′} {v′} u~v u′∈u v′∈v
+    rewrite u′∈u | v′∈v = tt
+consistent→atoms {const {B} k} {const {B′} k′} {u′} {v′} u~v u′∈u v′∈v
+    rewrite u′∈u | v′∈v
+    with base-eq? B B′
+... | yes refl = u~v
+... | no neq = u~v
+consistent→atoms {const {B} k} {v ↦ w} {u′} {v′} () u′∈u v′∈v
+consistent→atoms {const {B} k} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u
+    (inj₁ v′∈v₁) rewrite u′∈u = consistent→atoms{const {B} k} fst refl v′∈v₁
+consistent→atoms {const {B} k} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u
+    (inj₂ v′∈v₂) rewrite u′∈u =  consistent→atoms{const {B} k} snd refl v′∈v₂
+consistent→atoms {u ↦ w} {⊥} {u′} {v′} u~v u′∈u v′∈v rewrite u′∈u | v′∈v = tt
+consistent→atoms {u ↦ w} {const x} {u′} {v′} () u′∈u v′∈v
+consistent→atoms {u ↦ w} {v₁ ↦ v₂} {u′} {v′} (inj₁ ⟨ fst , snd ⟩) u′∈u v′∈v
+    rewrite u′∈u | v′∈v = inj₁ ⟨ fst , snd ⟩
+consistent→atoms {u ↦ w} {v₁ ↦ v₂} {u′} {v′} (inj₂ y) u′∈u v′∈v
+    rewrite u′∈u | v′∈v = inj₂ y
+consistent→atoms {u ↦ w} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u (inj₁ x)
+    rewrite u′∈u = consistent→atoms {u ↦ w}{v₁} fst refl x
+consistent→atoms {u ↦ w} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u (inj₂ y)
+    rewrite u′∈u = consistent→atoms {u ↦ w}{v₂} snd refl y
+consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₁ u′∈u₁) v′∈v =
+    consistent→atoms u₁~v u′∈u₁ v′∈v
+consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₂ u′∈u₂) v′∈v =
+    consistent→atoms u₂~v u′∈u₂ v′∈v
+
+atoms→consistent : ∀{u v}
+                 → (∀{u′ v′} → u′ ∈ u → v′ ∈ v → u′ ~ v′)
+                 → u ~ v
+atoms→consistent {⊥} {v} atoms = tt
+atoms→consistent {const k} {⊥} atoms = tt
+atoms→consistent {const k} {const k′} atoms =
+    atoms {const k} {const k′} refl refl
+atoms→consistent {const k} {v ↦ w} atoms =
+    ⊥-elim (atoms {const k} {v ↦ w} refl refl)
+atoms→consistent {const k} {v₁ ⊔ v₂} atoms =
+    ⟨ atoms→consistent{const k}{v₁} (λ {u′} {v′} z z₁ → atoms z (inj₁ z₁)) ,
+      atoms→consistent{const k}{v₂} (λ {u′} {v′} z z₁ → atoms z (inj₂ z₁)) ⟩
+atoms→consistent {u ↦ w} {⊥} atoms = tt
+atoms→consistent {u ↦ w} {const k} atoms =
+    ⊥-elim (atoms {u ↦ w}{const k} refl refl)
+atoms→consistent {u ↦ w} {v₁ ↦ v₂} atoms =
+    atoms {u ↦ w} {v₁ ↦ v₂ } refl refl
+atoms→consistent {u ↦ w} {v₁ ⊔ v₂} atoms =
+    ⟨ atoms→consistent{u ↦ w}{v₁}(λ {u′}{v′} z z₁ → atoms z (inj₁ z₁)) ,
+      atoms→consistent{u ↦ w}{v₂} (λ {u′} {v′} z z₁ → atoms z (inj₂ z₁)) ⟩
+atoms→consistent {u₁ ⊔ u₂} {v} atoms =
+    ⟨ atoms→consistent (λ {u′} {v′} z → atoms (inj₁ z)) ,
+      atoms→consistent (λ {u′} {v′} z → atoms (inj₂ z)) ⟩
+
+
+BelowFun : Value → Set
+BelowFun ⊥ = ⊤
+BelowFun (const {B} k) = Bot
+BelowFun (v ↦ w) = ⊤
+BelowFun (u ⊔ v) = BelowFun u × BelowFun v
+
+Below⊥→BelowFun : ∀{v : Value}
+   → Below⊥ v
+   → BelowFun v
+Below⊥→BelowFun {⊥} b⊥v = tt
+Below⊥→BelowFun {const {B′} k′} ()
+Below⊥→BelowFun {v ↦ w} ()
+Below⊥→BelowFun {v₁ ⊔ v₂} ⟨ fst , snd ⟩ =
+  ⟨ Below⊥→BelowFun fst , Below⊥→BelowFun snd ⟩
+
+
+BelowFun-⊑ : ∀{u v} → BelowFun v → u ⊑ v → BelowFun u
+BelowFun-⊑ {.⊥} {v} bv ⊑-⊥ = tt
+BelowFun-⊑ {.(const _)} {.(const _)} () ⊑-const
+BelowFun-⊑ {.(_ ⊔ _)} {v} bv (⊑-conj-L u⊑v u⊑v₁) =
+    ⟨ BelowFun-⊑ bv u⊑v , BelowFun-⊑ bv u⊑v₁ ⟩
+BelowFun-⊑ {u} {.(_ ⊔ _)} bv (⊑-conj-R1 u⊑v) =
+    BelowFun-⊑ (proj₁ bv) u⊑v
+BelowFun-⊑ {u} {.(_ ⊔ _)} bv (⊑-conj-R2 u⊑v) =
+    BelowFun-⊑ (proj₂ bv) u⊑v
+BelowFun-⊑ {u} {v} bv (⊑-trans u⊑v u⊑v₁) =
+    BelowFun-⊑ (BelowFun-⊑ bv u⊑v₁) u⊑v
+BelowFun-⊑ {.(_ ↦ _)} {.(_ ↦ _)} bv (⊑-fun u⊑v u⊑v₁) = tt
+BelowFun-⊑ {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} bv ⊑-dist = tt
+
+⊑↦→BelowFun : ∀{u v w} → u ⊑ v ↦ w → BelowFun u
+⊑↦→BelowFun {.⊥} {v} {w} ⊑-⊥ = tt
+⊑↦→BelowFun {.(_ ⊔ _)} {v} {w} (⊑-conj-L u⊑v↦w u⊑v↦w₁) =
+    ⟨ ⊑↦→BelowFun u⊑v↦w , ⊑↦→BelowFun u⊑v↦w₁ ⟩
+⊑↦→BelowFun {u} {v} {w} (⊑-trans u⊑v↦w u⊑v↦w₁) =
+  let ih = ⊑↦→BelowFun u⊑v↦w₁ in
+  BelowFun-⊑ ih u⊑v↦w
+⊑↦→BelowFun {.(_ ↦ _)} {v} {w} (⊑-fun u⊑v↦w u⊑v↦w₁) = tt
+
+
+{-
+below-fun-funs : ∀{u v}
+    → Funs v
+    → u ⊑ v
+    → Funs u ⊎ u ⊑ ⊥
+below-fun-funs {u} {⊥} fv u⊑v = inj₂ u⊑v
+below-fun-funs {u} {const k} fv u⊑v
+    with fv {const k} refl
+... | fun ()   
+below-fun-funs {⊥} {v ↦ w} fv u⊑v = inj₂ ⊑-⊥
+below-fun-funs {const k} {v ↦ w} fv u⊑v = {!!}
+below-fun-funs {u ↦ u₁} {v ↦ w} fv u⊑v = inj₁ λ {u₂} → fun
+below-fun-funs {u₁ ⊔ u₂} {v ↦ w} fv u⊑v = {!!}
+below-fun-funs {u} {v₁ ⊔ v₂} fv u⊑v = {!!}
+
+-}
+
+
+
+
+k⊑A→k∈A : ∀{B}{k : base-rep B}{A : Value}
+        → const k ⊑ A
+        → const k ∈ A
+k⊑A→k∈A {B} {k} {⊥} k⊑A =
+    ⊥-elim (v⊑⊥→Below⊥ k⊑A)
+k⊑A→k∈A {B} {k} {const {B′} k′} k⊑A
+    with base-eq? B′ B | ⊑k→BelowConstk k⊑A
+... | yes eq1 | eq2 rewrite eq1 | eq2 = refl
+... | no neq | ()
+k⊑A→k∈A {B} {k} {A₁ ↦ A₂} k⊑A 
+    with ⊑↦→BelowFun k⊑A
+... | ()  
+k⊑A→k∈A {B} {k} {A₁ ⊔ A₂} k⊑A = {!!}
+
+
+
+
+
+consistent-⊑ : ∀{A B C D}
+    → A ~ B  →  C ⊑ A  → D ⊑ B
+    → C ~ D
+consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
+    where
+    G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
+    G {⊥} {D′} C′∈C D′∈D = tt
+    G {const k} {D′} C′∈C D′∈D =
+       let k⊑A : const k ⊑ A
+           k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  in
+       let k∈A : const k ∈ A
+           k∈A = {!!} in
+       {!!}
+    G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
+    G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
