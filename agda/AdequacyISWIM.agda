@@ -49,7 +49,6 @@ module AdequacyISWIM where
 𝔾-ext {Γ} {γ} {γ'} g e {Z} = e
 𝔾-ext {Γ} {γ} {γ'} g e {S x} = g
 
-
 sub-𝕍 : ∀{c : Val}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
 
 sub-𝕍 {c} vc ⊑-⊥ = tt
@@ -63,11 +62,25 @@ sub-𝕍 vc (⊑-conj-L lt1 lt2) = ⟨ (sub-𝕍 vc lt1) , sub-𝕍 vc lt2 ⟩
 sub-𝕍 ⟨ vv1 , vv2 ⟩ (⊑-conj-R1 lt) = sub-𝕍 vv1 lt
 sub-𝕍 ⟨ vv1 , vv2 ⟩ (⊑-conj-R2 lt) = sub-𝕍 vv2 lt
 sub-𝕍 vc (⊑-trans {v = v₂} lt1 lt2) = sub-𝕍 (sub-𝕍 vc lt2) lt1
-sub-𝕍 {val-const {P} p} vc (⊑-fun lt1 lt2) = {!!}
+sub-𝕍 {val-const {P} f} vc (⊑-fun{v}{w}{v′}{w′} lt1 lt2)
+    with P
+... | base B = ⊥-elim vc
+... | B ⇒ P′ 
+    with vc
+... | ⟨ k , ⟨ k⊑v′ , ℘fkw′ ⟩ ⟩ =
+      ⟨ k , ⟨ (⊑-trans k⊑v′ lt1) , ℘-⊑ ℘fkw′ lt2 ⟩ ⟩
 sub-𝕍 {val-clos N γ} vc (⊑-fun lt1 lt2) ev1
     with vc (sub-𝕍 ev1 lt1)
 ... | ⟨ c , ⟨ Nc , v4 ⟩ ⟩ = ⟨ c , ⟨ Nc , sub-𝕍 v4 lt2 ⟩ ⟩
-sub-𝕍 {val-const {P} p} {v ↦ w ⊔ v ↦ w'} ⟨ vc1 , vc2 ⟩ ⊑-dist = {!!}
+sub-𝕍 {val-const {P} p} {v ↦ w ⊔ v ↦ w′} ⟨ vc1 , vc2 ⟩ ⊑-dist
+    with P
+... | base B = ⊥-elim vc1
+... | B ⇒ P′
+    with vc1 | vc2
+... | ⟨ k , ⟨ k⊑v , ℘pkw ⟩ ⟩ | ⟨ k′ , ⟨ k′⊑v , ℘pk′w′ ⟩ ⟩
+    rewrite k⊑v→k′⊑v→k′≡k k⊑v k′⊑v =
+      ⟨ k , ⟨ k⊑v , ⟨ ℘pkw , ℘pk′w′ ⟩ ⟩ ⟩
+
 sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
     with vcw ev1c | vcw' ev1c
 ... | ⟨ c , ⟨ L⇓c₂ , 𝕍w ⟩ ⟩
@@ -114,7 +127,26 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
     | ⟨ val-const {P} f , ⟨ L⇓f , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩
     with P
 ... | base B = ⊥-elim 𝕍v₁↦v
-... | B ⇒ P′ = {!!}     
+... | B ⇒ P′
+  {-
+    𝕍v₁   : 𝕍 v₁ c
+    𝕍v₁↦v : {k : base-rep B} → v₁ ⊑ const k → ℘ (f k) v
+  -}
+    with 𝕍v₁↦v
+... | ⟨ k , ⟨ k⊑v₁ , ℘fkv ⟩ ⟩
+    {-
+    𝕍 v₁ c
+    ℘ (f k) v
+    const k ⊑ v₁
+    -}
+    with c
+... | val-clos N γ₁ = ⊥-elim (sub-𝕍 𝕍v₁ k⊑v₁)
+... | val-const {B₁ ⇒ P₁} f′ = ⊥-elim (sub-𝕍 𝕍v₁ k⊑v₁)
+... | val-const {base B′} k′
+    with base-eq? B′ B | sub-𝕍 𝕍v₁ k⊑v₁
+... | no neq | ()
+... | yes eq | 𝕍kc rewrite eq | 𝕍kc =
+    ⟨ val-const {P′} (f k) , ⟨ ⇓-prim L⇓f M⇓c , ℘pv→𝕍vp {P′}{f k}{v} ℘fkv ⟩ ⟩ 
 
 adequacy : ∀{M : Term zero}{N : Term zero}
          → TermValue N

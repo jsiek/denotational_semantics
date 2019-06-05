@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Variables
 open import Primitives
 open import Structures
@@ -71,7 +73,7 @@ reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
 reflect (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
     reflect-beta {M = M}{N} Mv
 reflect {v = v}(δ-rule {Γ}{B}{P}{f}{k}) M′≡N ℘fkv rewrite sym M′≡N =
-   ⟨ const {B} k , ⟨ G , ℘kk ⟩ ⟩
+   ⟨ const {B} k , ⟨ {!!} , ℘kk ⟩ ⟩
    where
    ℘kk : ℘ k (const {B} k)
    ℘kk
@@ -111,7 +113,8 @@ preserve {Γ} {γ} {v = v} (δ-rule {Γ} {B} {P} {f} {k})
     G : ℘ {P} (f k) v
     G =
      let bku = (℘k→BelowConstk {B}{k}{u} ℘ku) in
-     ∀k,u⊑k→℘fkv {k} (BelowConstk→⊑k bku)
+     {- ∀k,u⊑k→℘fkv {k} (BelowConstk→⊑k bku) -}
+     {!!}
     
 
 reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
