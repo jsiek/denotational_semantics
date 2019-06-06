@@ -401,6 +401,13 @@ not-Fun-k {B} {k} (fun ())
 Funs : Value → Set
 Funs v = ∀{u} → u ∈ v → Fun u
 
+data Fun⊥ : Value → Set where
+  fun : ∀{u v w} → u ≡ (v ↦ w) → Fun⊥ u
+  bot : ∀{u} → u ≡ ⊥ → Fun⊥ u
+
+Funs⊥ : Value → Set
+Funs⊥ v = ∀{u} → u ∈ v → Fun⊥ u
+
 ¬Fun⊥ : ¬ (Fun ⊥)
 ¬Fun⊥ (fun ())
 
@@ -639,6 +646,45 @@ v ↦ w ~ const k = Bot
 v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
 v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
 v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
+
+consistent? : (u : Value) → (v : Value) → Dec (u ~ v)
+consistent? ⊥ v = yes tt
+consistent? (const k) ⊥ = yes tt
+consistent? (const {B} k) (const {B′} k′)
+    with base-eq? B B′
+... | yes eq rewrite eq = base-rep-eq? k k′
+... | no  neq = no (λ z → z)
+consistent? (const k) (v₁ ↦ v₂) = no (λ z → z)
+consistent? (const k) (v₁ ⊔ v₂)
+    with consistent? (const k) v₁ | consistent? (const k) v₂
+... | yes c1 | yes c2 = yes ⟨ c1 , c2 ⟩
+... | yes c1 | no c2 = no (λ z → c2 (proj₂ z))
+... | no c1  | yes c2 = no (λ z → c1 (proj₁ z))
+... | no c1  | no c2 = no (λ z → c2 (proj₂ z))
+consistent? (u₁ ↦ u₂) ⊥ = yes tt
+consistent? (u₁ ↦ u₂) (const x) = no (λ z → z)
+consistent? (u₁ ↦ u₂) (v₁ ↦ v₂)
+    with consistent? u₁ v₁ | consistent? u₂ v₂
+... | yes c1 | yes c2 = yes (inj₁ ⟨ c1 , c2 ⟩)
+... | no c1  | yes c2 = yes (inj₂ c1)
+... | no c1  | no c2 = yes (inj₂ c1)
+... | yes c1 | no c2 = no (G c1 c2)
+    where
+    G : u₁ ~ v₁ → ¬ (u₂ ~ v₂) → ¬ ((u₁ ~ v₁ × u₂ ~ v₂) ⊎ (u₁ ~ v₁ → Bot))
+    G c1 c2 (inj₁ x) = c2 (proj₂ x)
+    G c1 c2 (inj₂ y) = y c1
+consistent? (u₁ ↦ u₂) (v₁ ⊔ v₂)
+    with consistent? (u₁ ↦ u₂) v₁ | consistent? (u₁ ↦ u₂) v₂
+... | yes c1 | yes c2 = yes ⟨ c1 , c2 ⟩
+... | no c1  | yes c2 = no (λ z → c1 (proj₁ z))
+... | no c1  | no c2 = no (λ z → c2 (proj₂ z))
+... | yes c1 | no c2 = no (λ z → c2 (proj₂ z))
+consistent? (u₁ ⊔ u₂) v
+    with consistent? u₁ v | consistent? u₂ v
+... | yes c1 | yes c2 = yes ⟨ c1 , c2 ⟩
+... | no c1  | yes c2 = no (λ z → c1 (proj₁ z))
+... | no c1  | no c2 = no (λ z → c2 (proj₂ z))
+... | yes c1 | no c2 = no (λ z → c2 (proj₂ z))
 
 
 ~⊔R : ∀{v u₁ u₂} → v ~ u₁ → v ~ u₂ 
@@ -934,6 +980,27 @@ atomic-sub-4 {A}{B}{C} A↦B⊑C
 ... | fun {u′}{u₁}{u₂} eq rewrite eq =
       ⟨ u₁ , ⟨ u₂ , (uC u′∈u) ⟩ ⟩
 
+{- Atomic Subtyping 5 (d_fun_atoms_L_inv) -}
+
+∈-Below⊥ : ∀{v u} → u ∈ v → Below⊥ v → u ≡ ⊥
+∈-Below⊥ {⊥} {u} u∈v bv = u∈v
+∈-Below⊥ {const x} {u} u∈v ()
+∈-Below⊥ {v ↦ v₁} {u} u∈v ()
+∈-Below⊥ {v ⊔ v₁} {u} (inj₁ x) bv = ∈-Below⊥ x (proj₁ bv)
+∈-Below⊥ {v ⊔ v₁} {u} (inj₂ y) bv = ∈-Below⊥ y (proj₂ bv)
+
+atomic-sub-5 : ∀{u v} → v ⊑ u → Funs⊥ u → Funs⊥ v
+atomic-sub-5 {u} {⊥} v⊑u Funs⊥u {u′} u′≡⊥ = bot u′≡⊥
+atomic-sub-5 {u} {const k} v⊑u Funs⊥u {u′} u′≡k
+    rewrite u′≡k 
+    with Funs⊥u (k⊑A→k∈A v⊑u)
+... | fun ()
+... | bot ()
+atomic-sub-5 {u} {v₁ ↦ v₂} v⊑u Funs⊥u u≡ = fun u≡
+atomic-sub-5 {u} {v₁ ⊔ v₂} v⊑u Funs⊥u {u′} (inj₁ x) =
+    atomic-sub-5 {u} {v₁} (⊔⊑R v⊑u) Funs⊥u x
+atomic-sub-5 {u} {v₁ ⊔ v₂} v⊑u Funs⊥u {u′} (inj₂ y) =
+    atomic-sub-5 {u} {v₂} (⊔⊑L v⊑u) Funs⊥u y
 
 k~v→k⊔⊥⊆v : ∀{v : Value}{B : Base}{k : base-rep B}
         → const k ~ v
@@ -976,11 +1043,39 @@ k⊔⊥⊆v→k~v {v₁ ⊔ v₂} {B} {k} v⊆k⊔⊥ =
 ∈-refl {u ↦ u₁} {v} u∈v = refl
 ∈-refl {u ⊔ u₁} {v} u∈v = ⊥-elim (not-u₁⊔u₂∈v u∈v)
 
+v↦w~u→Funs⊥u : ∀{v w u} → v ↦ w ~ u → Funs⊥ u
+v↦w~u→Funs⊥u {v} {w} {⊥} v↦w~u u≡⊥ = bot u≡⊥
+v↦w~u→Funs⊥u {v} {w} {const k} ()
+v↦w~u→Funs⊥u {v} {w} {u₁ ↦ u₂} v↦w~u u≡ = fun u≡
+v↦w~u→Funs⊥u {v} {w} {u₁ ⊔ u₂} ⟨ fst , snd ⟩ {u} = G
+  where
+  ih1 : Funs⊥ u₁
+  ih1 = v↦w~u→Funs⊥u {v}{w}{u₁} fst 
+  ih2 : Funs⊥ u₂
+  ih2 = v↦w~u→Funs⊥u {v}{w}{u₂} snd 
+  G : u ∈ u₁ ⊎ u ∈ u₂ → Fun⊥ u
+  G (inj₁ u∈u₁) = ih1 u∈u₁
+  G (inj₂ u∈u₂) = ih2 u∈u₂
+
+Funs⊥u→u∈v→Fun⊥u : ∀{u v} → Funs⊥ u → u ∈ v → Fun⊥ u
+Funs⊥u→u∈v→Fun⊥u {⊥} {v} fu u∈v = fu refl
+Funs⊥u→u∈v→Fun⊥u {const k} {v} fu u∈v = fu refl
+Funs⊥u→u∈v→Fun⊥u {u₁ ↦ u₂} {v} fu u∈v = fu refl
+Funs⊥u→u∈v→Fun⊥u {u ⊔ u₁} {v} fu u∈v = ⊥-elim (not-u₁⊔u₂∈v u∈v)
+
+funs-B : ∀{A B} → A ~ B → ∀{A₁ A₂} → A₁ ↦ A₂ ∈ A → Funs⊥ B
+funs-B {A}{B} A~B {A₁}{A₂} A₁↦A₂∈A {B′} B′∈B =
+   (let A₁↦A₂~B′ = consistent→atoms{A}{B}{v′ = B′}
+                               A~B A₁↦A₂∈A B′∈B in
+   let funs-B′ = v↦w~u→Funs⊥u{A₁}{A₂}{B′} A₁↦A₂~B′ in
+   Funs⊥u→u∈v→Fun⊥u funs-B′ B′∈B) 
+
 consistent-⊑ : ∀{A B C D}
     → A ~ B  →  C ⊑ A  → D ⊑ B
     → C ~ D
 consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
     where
+    
     G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
     G {⊥} {D′} C′∈C D′∈D = tt
     G {const {b} k} {D′} C′∈C D′∈D =
@@ -998,17 +1093,22 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
        D′⊆k⊔⊥ = A⊑k→A⊆k⊔⊥ (⊑-trans D′⊑B (A⊆k⊔⊥→A⊑k B⊆k⊔⊥) )
     G {C₁ ↦ C₂} {D′} C₁↦C₂∈C D′∈D
         with sub-inv-fun (⊑-trans (∈→⊑ C₁↦C₂∈C) C⊑A)
-    ... | ⟨ u₂ , ⟨ fu₂ , u₂⊆A ⟩ ⟩
+    ... | ⟨ u₂ , ⟨ fu₂ , ⟨ u₂⊆A , _ ⟩ ⟩ ⟩
         with atomic-sub-4 (∈⊑⊑ C₁↦C₂∈C C⊑A)
-    ... | ⟨ A₁ , ⟨ A₂ , A₁↦A₂∈A ⟩ ⟩ =
+    ... | ⟨ A₁ , ⟨ A₂ , A₁↦A₂∈A ⟩ ⟩
+        with (atomic-sub-5 D⊑B (funs-B A~B A₁↦A₂∈A)) D′∈D
+    ... | bot eq rewrite eq = tt
+    ... | fun {D}{D₁}{D₂} eq
+        rewrite eq 
+        with sub-inv-fun (∈⊑⊑ D′∈D D⊑B)
+    ... | ⟨ v₂ , ⟨ fv₂ , ⟨ v₂⊆B , xx ⟩ ⟩ ⟩ =
+         {!!}
 
-        let Bfun = λ {B′} → consistent→atoms{A}{B}{v′ = B′} A~B A₁↦A₂∈A in
-        
-        {!!}
         where
         C₁↦C₂⊑A : C₁ ↦ C₂ ⊑ A
         C₁↦C₂⊑A = ∈⊑⊑ C₁↦C₂∈C C⊑A
-        
+
+
 
 
         

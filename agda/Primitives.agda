@@ -4,8 +4,8 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 
 module Primitives where
 
-open import Data.Bool  using (Bool)
-open import Data.Nat using (ℕ)
+open import Data.Bool  using (Bool) renaming (_≟_ to _=?_)
+open import Data.Nat using (ℕ; _≟_) 
 
 data Base : Set where
   Nat : Base
@@ -29,3 +29,6 @@ base-eq? Nat 𝔹 = no (λ ())
 base-eq? 𝔹 Nat = no (λ ())
 base-eq? 𝔹 𝔹 = yes refl
 
+base-rep-eq? : ∀{B} → (k : base-rep B) (k′ : base-rep B) → Dec (k ≡ k′)
+base-rep-eq? {Nat} k k′ = k ≟ k′
+base-rep-eq? {𝔹} k k′ = k =? k′
