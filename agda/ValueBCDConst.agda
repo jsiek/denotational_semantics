@@ -865,18 +865,75 @@ k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
 
 {- Atomic Subtyping 3 -}
 
+BelowConstk→⊆k⊔⊥ : ∀{A}{B}{k : base-rep B}
+          → BelowConst k A
+          → A ⊆ (const k ⊔ ⊥)
+BelowConstk→⊆k⊔⊥ {⊥} {B} {k} bkA u≡⊥ = inj₂ u≡⊥
+BelowConstk→⊆k⊔⊥ {const {b} k′} {B} {k} bkA u≡k′
+    with base-eq? B b
+... | yes eq rewrite eq | bkA = inj₁ u≡k′
+... | no neq = ⊥-elim bkA
+BelowConstk→⊆k⊔⊥ {A₁ ↦ A₂} {B} {k} () u≡A₁→A₂
+BelowConstk→⊆k⊔⊥ {A₁ ⊔ A₂} {B} {k} ⟨ fst , snd ⟩ (inj₁ x) =
+    BelowConstk→⊆k⊔⊥ fst x
+BelowConstk→⊆k⊔⊥ {A₁ ⊔ A₂} {B} {k} ⟨ fst , snd ⟩ (inj₂ y) =
+    BelowConstk→⊆k⊔⊥ snd y
+
 A⊑k→A⊆k⊔⊥ : ∀{A}{B}{k : base-rep B}
           → A ⊑ const k
           → A ⊆ (const k ⊔ ⊥)
-A⊑k→A⊆k⊔⊥ {.⊥} ⊑-⊥ {u} u≡⊥ = inj₂ u≡⊥
-A⊑k→A⊆k⊔⊥ {const {b′} k′} ⊑-const {u} u≡̨k′ = inj₁ u≡̨k′
-A⊑k→A⊆k⊔⊥ {A₁ ⊔ A₂} {b} {k} (⊑-conj-L A1⊑k A2⊑k) {u} (inj₁ x) = A⊑k→A⊆k⊔⊥ A1⊑k x
-A⊑k→A⊆k⊔⊥ {A₁ ⊔ A₂} {b} {k} (⊑-conj-L A1⊑k A2⊑k) {u} (inj₂ y) = A⊑k→A⊆k⊔⊥ A2⊑k y
-A⊑k→A⊆k⊔⊥ {A}{b}{k} (⊑-trans{v = v} A⊑k A⊑k₁) {u} u∈A =
-  let ih = A⊑k→A⊆k⊔⊥ A⊑k₁ in
-  let u⊑v = ∈⊑⊑ u∈A A⊑k in
-  {- const-sub-inv? -}
-  {!!}
+A⊑k→A⊆k⊔⊥ A⊑k = BelowConstk→⊆k⊔⊥ (⊑k→BelowConstk A⊑k)
+
+⊆k⊔⊥→BelowConstk : ∀{A}{B}{k : base-rep B}
+          → A ⊆ (const k ⊔ ⊥)
+          → BelowConst k A
+⊆k⊔⊥→BelowConstk {⊥} {B} {k} A⊆k⊔⊥ = tt
+⊆k⊔⊥→BelowConstk {const {b} k′} {B} {k} A⊆k⊔⊥
+    with base-eq? B b
+... | no neq
+    with A⊆k⊔⊥ {const k′} refl
+... | inj₁ refl = neq refl
+... | inj₂ ()
+⊆k⊔⊥→BelowConstk {const {b} k′} {B} {k} A⊆k⊔⊥ | yes eq rewrite eq
+    with A⊆k⊔⊥ {const k′} refl
+... | inj₁ refl = refl
+... | inj₂ ()
+⊆k⊔⊥→BelowConstk {A₁ ↦ A₂} {B} {k} A⊆k⊔⊥
+    with A⊆k⊔⊥ {A₁ ↦ A₂} refl
+... | inj₁ ()
+... | inj₂ ()
+⊆k⊔⊥→BelowConstk {A₁ ⊔ A₂} {B} {k} A⊆k⊔⊥ =
+    ⟨ ⊆k⊔⊥→BelowConstk (λ {u} z → A⊆k⊔⊥ (inj₁ z)) ,
+      ⊆k⊔⊥→BelowConstk (λ {u} z → A⊆k⊔⊥ (inj₂ z)) ⟩
+
+A⊆k⊔⊥→A⊑k : ∀{A}{B}{k : base-rep B}
+          → A ⊆ (const k ⊔ ⊥)
+          → A ⊑ const k
+A⊆k⊔⊥→A⊑k A⊆k⊔⊥ = BelowConstk→⊑k (⊆k⊔⊥→BelowConstk A⊆k⊔⊥)
+
+{- Atomic Subtyping 4 -}
+
+atom-exists : ∀{v} → Σ[ u ∈ Value ] u ∈ v
+atom-exists {⊥} = ⟨ ⊥ , refl ⟩
+atom-exists {const k} = ⟨ const k , refl ⟩
+atom-exists {v ↦ w} = ⟨ v ↦ w , refl ⟩
+atom-exists {v₁ ⊔ v₂}
+    with atom-exists {v₁}
+... | ⟨ u , u∈v₁ ⟩ =   
+      ⟨ u , (inj₁ u∈v₁) ⟩
+
+atomic-sub-4 : ∀{A B C}
+    → A ↦ B ⊑ C
+    → Σ[ D ∈ Value ] Σ[ E ∈ Value ] D ↦ E ∈ C
+atomic-sub-4 {A}{B}{C} A↦B⊑C
+    with sub-inv-fun A↦B⊑C
+... | ⟨ u , ⟨ fu , ⟨ uC , _ ⟩ ⟩ ⟩
+    with atom-exists {u}
+... | ⟨ u′ , u′∈u ⟩
+    with fu u′∈u
+... | fun {u′}{u₁}{u₂} eq rewrite eq =
+      ⟨ u₁ , ⟨ u₂ , (uC u′∈u) ⟩ ⟩
+
 
 k~v→k⊔⊥⊆v : ∀{v : Value}{B : Base}{k : base-rep B}
         → const k ~ v
@@ -927,30 +984,32 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
     G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
     G {⊥} {D′} C′∈C D′∈D = tt
     G {const {b} k} {D′} C′∈C D′∈D =
-       let B⊆k⊔⊥′ = λ {B′} B′∈B →
-                  (let k~B′ = (consistent→atoms {A}{B}{const k}{B′} A~B k∈A B′∈B)
-                   in k~v→k⊔⊥⊆v{B′}{b}{k})  in
-{-
-       let D′∈B : D′ ∈ B
-           D′∈B = {!!} in
--}
-           {- : const k ~ D′
-              = B~v′ {D′} D′∈B
-            -}
-       {!!}
+       k⊔⊥⊆v→k~v D′⊆k⊔⊥
        where
-           k⊑A : const k ⊑ A
-           k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  
-           k∈A : const k ∈ A
-           k∈A = k⊑A→k∈A k⊑A 
-           B⊆k⊔⊥ : B ⊆ (const k ⊔ ⊥)
-           B⊆k⊔⊥ {B′} B′∈B = 
-             let k~B′ = consistent→atoms A~B k∈A B′∈B in
-             k~v→k⊔⊥⊆v{B′} k~B′ {B′} (∈-refl B′∈B)
-           D′⊑B : D′ ⊑ B
-           D′⊑B = ⊑-trans (∈→⊑ D′∈D) D⊑B 
+       k∈A : const k ∈ A
+       k∈A = k⊑A→k∈A (⊑-trans (∈→⊑ C′∈C) C⊑A)
+       B⊆k⊔⊥ : B ⊆ (const k ⊔ ⊥)
+       B⊆k⊔⊥ {B′} B′∈B = 
+         let k~B′ = consistent→atoms A~B k∈A B′∈B in
+         k~v→k⊔⊥⊆v{B′} k~B′ {B′} (∈-refl B′∈B)
+       D′⊑B : D′ ⊑ B
+       D′⊑B = ⊑-trans (∈→⊑ D′∈D) D⊑B
+       D′⊆k⊔⊥ : D′ ⊆ (const k ⊔ ⊥)
+       D′⊆k⊔⊥ = A⊑k→A⊆k⊔⊥ (⊑-trans D′⊑B (A⊆k⊔⊥→A⊑k B⊆k⊔⊥) )
+    G {C₁ ↦ C₂} {D′} C₁↦C₂∈C D′∈D
+        with sub-inv-fun (⊑-trans (∈→⊑ C₁↦C₂∈C) C⊑A)
+    ... | ⟨ u₂ , ⟨ fu₂ , u₂⊆A ⟩ ⟩
+        with atomic-sub-4 (∈⊑⊑ C₁↦C₂∈C C⊑A)
+    ... | ⟨ A₁ , ⟨ A₂ , A₁↦A₂∈A ⟩ ⟩ =
+
+        let Bfun = λ {B′} → consistent→atoms{A}{B}{v′ = B′} A~B A₁↦A₂∈A in
+        
+        {!!}
+        where
+        C₁↦C₂⊑A : C₁ ↦ C₂ ⊑ A
+        C₁↦C₂⊑A = ∈⊑⊑ C₁↦C₂∈C C⊑A
+        
 
 
-       
-    G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
-    G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
+        
+    G {C₁ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
