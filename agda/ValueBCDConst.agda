@@ -800,23 +800,6 @@ BelowFun-⊑ {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} bv ⊑-dist = tt
 ⊑↦→BelowFun {.(_ ↦ _)} {v} {w} (⊑-fun u⊑v↦w u⊑v↦w₁) = tt
 
 
-{-
-below-fun-funs : ∀{u v}
-    → Funs v
-    → u ⊑ v
-    → Funs u ⊎ u ⊑ ⊥
-below-fun-funs {u} {⊥} fv u⊑v = inj₂ u⊑v
-below-fun-funs {u} {const k} fv u⊑v
-    with fv {const k} refl
-... | fun ()   
-below-fun-funs {⊥} {v ↦ w} fv u⊑v = inj₂ ⊑-⊥
-below-fun-funs {const k} {v ↦ w} fv u⊑v = {!!}
-below-fun-funs {u ↦ u₁} {v ↦ w} fv u⊑v = inj₁ λ {u₂} → fun
-below-fun-funs {u₁ ⊔ u₂} {v ↦ w} fv u⊑v = {!!}
-below-fun-funs {u} {v₁ ⊔ v₂} fv u⊑v = {!!}
-
--}
-
 AboveConst : Value → Set
 AboveConst u = Σ[ B ∈ Base ] Σ[ k ∈ base-rep B ] const {B} k ⊑ u
 
@@ -848,12 +831,6 @@ AboveConst⊥ : ¬ AboveConst ⊥
 AboveConst⊥ ⟨ v , ⟨ w , lt ⟩ ⟩ = {!!}
 -}
 
-k⊑A→k∈A : ∀{B}{k : base-rep B}{A : Value}
-        → const k ⊑ A
-        → const k ∈ A
-k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
-
-
 ⊔⊑R : ∀{B₁ B₂ A}
     → B₁ ⊔ B₂ ⊑ A
     → B₁ ⊑ A
@@ -870,12 +847,50 @@ k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
 ⊔⊑L (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑L B₁⊔B₂⊑A)
 ⊔⊑L (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑L B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
 
-∈⊑⊑ : ∀{B A C} → B ⊑ A → C ∈ B → C ⊑ A
-∈⊑⊑ {⊥} B⊑A C∈B rewrite C∈B = B⊑A
-∈⊑⊑ {const k} B⊑A C∈B rewrite C∈B = B⊑A
-∈⊑⊑ {B₁ ↦ B₂} B⊑A C∈B rewrite C∈B = B⊑A
-∈⊑⊑ {B₁ ⊔ B₂}{A}{C} B⊑A (inj₁ C∈B₁) = ∈⊑⊑ {B₁}{A}{C} (⊔⊑R B⊑A) C∈B₁
-∈⊑⊑ {B₁ ⊔ B₂}{A}{C} B⊑A (inj₂ C∈B₂) = ∈⊑⊑ {B₂}{A}{C} (⊔⊑L B⊑A) C∈B₂
+{- Atomic Subtyping 1 -}
+
+∈⊑⊑ : ∀{B A C} → C ∈ B → B ⊑ A → C ⊑ A
+∈⊑⊑ {⊥} C∈B B⊑A  rewrite C∈B = B⊑A
+∈⊑⊑ {const k} C∈B B⊑A rewrite C∈B = B⊑A
+∈⊑⊑ {B₁ ↦ B₂} C∈B B⊑A rewrite C∈B = B⊑A
+∈⊑⊑ {B₁ ⊔ B₂}{A}{C} (inj₁ C∈B₁) B⊑A = ∈⊑⊑ {B₁}{A}{C} C∈B₁ (⊔⊑R B⊑A)
+∈⊑⊑ {B₁ ⊔ B₂}{A}{C} (inj₂ C∈B₂) B⊑A = ∈⊑⊑ {B₂}{A}{C} C∈B₂ (⊔⊑L B⊑A)
+
+{- Atomic Subtyping 2 -}
+
+k⊑A→k∈A : ∀{B}{k : base-rep B}{A : Value}
+        → const k ⊑ A
+        → const k ∈ A
+k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
+
+
+k~v→k∈v⊎v⊑⊥ : ∀{v : Value}{B : Base}{k : base-rep B}
+        → const {B} k ~ v
+        → const {B} k ∈ v ⊎ v ⊑ ⊥
+k~v→k∈v⊎v⊑⊥ {⊥} k~v = inj₂ ⊑-⊥
+k~v→k∈v⊎v⊑⊥ {const {B′} k′}{B}{k} k~v
+    with base-eq? B B′
+... | yes eq rewrite eq | k~v = inj₁ refl
+... | no neq = ⊥-elim k~v
+k~v→k∈v⊎v⊑⊥ {v ↦ w} ()
+k~v→k∈v⊎v⊑⊥ {v₁ ⊔ v₂} ⟨ fst , snd ⟩
+    with k~v→k∈v⊎v⊑⊥ {v₁} fst | k~v→k∈v⊎v⊑⊥ {v₂} snd
+... | inj₁ xx | inj₁ yy = inj₁ (inj₁ xx)
+... | inj₁ xx | inj₂ yy = inj₁ (inj₁ xx)
+... | inj₂ xx | inj₁ yy = inj₁ (inj₂ yy)
+... | inj₂ xx | inj₂ yy = inj₂ (⊑-conj-L xx yy)
+
+k~v→Below-k : ∀{v : Value}{B : Base}{k : base-rep B}
+        → const {B} k ~ v
+        → BelowConst k v
+k~v→Below-k {⊥} k~v = tt
+k~v→Below-k {const {B′} k′} {B}{k} k~v
+    with base-eq? B B′
+... | yes eq rewrite eq | k~v = refl
+... | no neq = ⊥-elim k~v
+k~v→Below-k {v ↦ w} ()
+k~v→Below-k {v₁ ⊔ v₂} ⟨ fst , snd ⟩ =
+    ⟨ k~v→Below-k {v₁} fst , k~v→Below-k {v₂} snd ⟩
 
 consistent-⊑ : ∀{A B C D}
     → A ~ B  →  C ⊑ A  → D ⊑ B
@@ -884,18 +899,21 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
     where
     G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
     G {⊥} {D′} C′∈C D′∈D = tt
-    G {const k} {D′} C′∈C D′∈D =
+    G {const {B′} k} {D′} C′∈C D′∈D =
        let k⊑A : const k ⊑ A
            k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  in
        let k∈A : const k ∈ A
            k∈A = k⊑A→k∈A k⊑A in
-       let xx = λ {v′} → consistent→atoms {A}{B}{const k}{v′} A~B k∈A in
+       let B~k = λ {v′} v′∈B →
+                  k~v→k∈v⊎v⊑⊥{v′} (consistent→atoms {A}{B}{const k}{v′} A~B k∈A v′∈B) in
        let D′⊑B : D′ ⊑ B
            D′⊑B = ⊑-trans (∈→⊑ D′∈D) D⊑B in
+
        let D′∈B : D′ ∈ B
            D′∈B = {!!} in
-           {- 
+           {- : const k ~ D′
+              = B~v′ {D′} D′∈B
             -}
-       xx {D′} D′∈B
+       {!!} 
     G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
     G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
