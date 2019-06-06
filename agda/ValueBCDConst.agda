@@ -863,34 +863,61 @@ k⊑A→k∈A : ∀{B}{k : base-rep B}{A : Value}
         → const k ∈ A
 k⊑A→k∈A {B} {k} {A} k⊑A = const-sub-inv k⊑A refl
 
+{- Atomic Subtyping 3 -}
 
-k~v→k∈v⊎v⊑⊥ : ∀{v : Value}{B : Base}{k : base-rep B}
-        → const {B} k ~ v
-        → const {B} k ∈ v ⊎ v ⊑ ⊥
-k~v→k∈v⊎v⊑⊥ {⊥} k~v = inj₂ ⊑-⊥
-k~v→k∈v⊎v⊑⊥ {const {B′} k′}{B}{k} k~v
-    with base-eq? B B′
-... | yes eq rewrite eq | k~v = inj₁ refl
-... | no neq = ⊥-elim k~v
-k~v→k∈v⊎v⊑⊥ {v ↦ w} ()
-k~v→k∈v⊎v⊑⊥ {v₁ ⊔ v₂} ⟨ fst , snd ⟩
-    with k~v→k∈v⊎v⊑⊥ {v₁} fst | k~v→k∈v⊎v⊑⊥ {v₂} snd
-... | inj₁ xx | inj₁ yy = inj₁ (inj₁ xx)
-... | inj₁ xx | inj₂ yy = inj₁ (inj₁ xx)
-... | inj₂ xx | inj₁ yy = inj₁ (inj₂ yy)
-... | inj₂ xx | inj₂ yy = inj₂ (⊑-conj-L xx yy)
+A⊑k→A⊆k⊔⊥ : ∀{A}{B}{k : base-rep B}
+          → A ⊑ const k
+          → A ⊆ (const k ⊔ ⊥)
+A⊑k→A⊆k⊔⊥ {.⊥} ⊑-⊥ {u} u≡⊥ = inj₂ u≡⊥
+A⊑k→A⊆k⊔⊥ {const {b′} k′} ⊑-const {u} u≡̨k′ = inj₁ u≡̨k′
+A⊑k→A⊆k⊔⊥ {A₁ ⊔ A₂} {b} {k} (⊑-conj-L A1⊑k A2⊑k) {u} (inj₁ x) = A⊑k→A⊆k⊔⊥ A1⊑k x
+A⊑k→A⊆k⊔⊥ {A₁ ⊔ A₂} {b} {k} (⊑-conj-L A1⊑k A2⊑k) {u} (inj₂ y) = A⊑k→A⊆k⊔⊥ A2⊑k y
+A⊑k→A⊆k⊔⊥ {A}{b}{k} (⊑-trans{v = v} A⊑k A⊑k₁) {u} u∈A =
+  let ih = A⊑k→A⊆k⊔⊥ A⊑k₁ in
+  let u⊑v = ∈⊑⊑ u∈A A⊑k in
+  {- const-sub-inv? -}
+  {!!}
 
-k~v→Below-k : ∀{v : Value}{B : Base}{k : base-rep B}
-        → const {B} k ~ v
-        → BelowConst k v
-k~v→Below-k {⊥} k~v = tt
-k~v→Below-k {const {B′} k′} {B}{k} k~v
+k~v→k⊔⊥⊆v : ∀{v : Value}{B : Base}{k : base-rep B}
+        → const k ~ v
+        → v ⊆ (const k ⊔ ⊥)
+k~v→k⊔⊥⊆v {⊥} {B} {k} k~v {u} u≡⊥ = inj₂ u≡⊥
+k~v→k⊔⊥⊆v {const {B′} k′} {B} {k} k~v {u} u≡k′
     with base-eq? B B′
-... | yes eq rewrite eq | k~v = refl
+... | yes eq rewrite eq | k~v = inj₁ u≡k′
 ... | no neq = ⊥-elim k~v
-k~v→Below-k {v ↦ w} ()
-k~v→Below-k {v₁ ⊔ v₂} ⟨ fst , snd ⟩ =
-    ⟨ k~v→Below-k {v₁} fst , k~v→Below-k {v₂} snd ⟩
+k~v→k⊔⊥⊆v {v ↦ w} {B} {k} () {u} u≡v↦w
+k~v→k⊔⊥⊆v {v ⊔ v₁} {B} {k} k~v {u} (inj₁ x) = k~v→k⊔⊥⊆v (proj₁ k~v) x
+k~v→k⊔⊥⊆v {v ⊔ v₁} {B} {k} k~v {u} (inj₂ y) = k~v→k⊔⊥⊆v (proj₂ k~v) y
+
+k⊔⊥⊆v→k~v : ∀{v : Value}{B : Base}{k : base-rep B}
+        → v ⊆ (const k ⊔ ⊥)
+        → const k ~ v
+k⊔⊥⊆v→k~v {⊥} {B} {k} v⊆k⊔⊥ = tt
+k⊔⊥⊆v→k~v {const {B′} k′} {B} {k} v⊆k⊔⊥
+    with base-eq? B B′
+... | no neq
+    with v⊆k⊔⊥ {const k′} refl
+... | inj₂ ()
+... | inj₁ refl = ⊥-elim (neq refl)
+k⊔⊥⊆v→k~v {const {B′} k′} {B} {k} v⊆k⊔⊥ | yes eq
+    rewrite eq
+    with v⊆k⊔⊥ {const k′} refl
+... | inj₁ refl = refl
+... | inj₂ ()
+k⊔⊥⊆v→k~v {v ↦ w} {B} {k} v⊆k⊔⊥
+    with v⊆k⊔⊥ {v ↦ w} refl
+... | inj₁ ()
+... | inj₂ ()
+k⊔⊥⊆v→k~v {v₁ ⊔ v₂} {B} {k} v⊆k⊔⊥ =
+    ⟨ k⊔⊥⊆v→k~v (λ {u} z → v⊆k⊔⊥ (inj₁ z)) ,
+      k⊔⊥⊆v→k~v (λ {u} z → v⊆k⊔⊥ (inj₂ z)) ⟩
+
+∈-refl : ∀ {u v} → u ∈ v → u ∈ u
+∈-refl {⊥} {v} u∈v = refl
+∈-refl {const x} {v} u∈v = refl
+∈-refl {u ↦ u₁} {v} u∈v = refl
+∈-refl {u ⊔ u₁} {v} u∈v = ⊥-elim (not-u₁⊔u₂∈v u∈v)
 
 consistent-⊑ : ∀{A B C D}
     → A ~ B  →  C ⊑ A  → D ⊑ B
@@ -899,21 +926,31 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
     where
     G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
     G {⊥} {D′} C′∈C D′∈D = tt
-    G {const {B′} k} {D′} C′∈C D′∈D =
-       let k⊑A : const k ⊑ A
-           k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  in
-       let k∈A : const k ∈ A
-           k∈A = k⊑A→k∈A k⊑A in
-       let B~k = λ {v′} v′∈B →
-                  k~v→k∈v⊎v⊑⊥{v′} (consistent→atoms {A}{B}{const k}{v′} A~B k∈A v′∈B) in
-       let D′⊑B : D′ ⊑ B
-           D′⊑B = ⊑-trans (∈→⊑ D′∈D) D⊑B in
-
+    G {const {b} k} {D′} C′∈C D′∈D =
+       let B⊆k⊔⊥′ = λ {B′} B′∈B →
+                  (let k~B′ = (consistent→atoms {A}{B}{const k}{B′} A~B k∈A B′∈B)
+                   in k~v→k⊔⊥⊆v{B′}{b}{k})  in
+{-
        let D′∈B : D′ ∈ B
            D′∈B = {!!} in
+-}
            {- : const k ~ D′
               = B~v′ {D′} D′∈B
             -}
-       {!!} 
+       {!!}
+       where
+           k⊑A : const k ⊑ A
+           k⊑A = ⊑-trans (∈→⊑ C′∈C) C⊑A  
+           k∈A : const k ∈ A
+           k∈A = k⊑A→k∈A k⊑A 
+           B⊆k⊔⊥ : B ⊆ (const k ⊔ ⊥)
+           B⊆k⊔⊥ {B′} B′∈B = 
+             let k~B′ = consistent→atoms A~B k∈A B′∈B in
+             k~v→k⊔⊥⊆v{B′} k~B′ {B′} (∈-refl B′∈B)
+           D′⊑B : D′ ⊑ B
+           D′⊑B = ⊑-trans (∈→⊑ D′∈D) D⊑B 
+
+
+       
     G {C′ ↦ C₂} {D′} C′∈C D′∈D = {!!}
     G {C′ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
