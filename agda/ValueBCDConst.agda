@@ -1070,6 +1070,25 @@ funs-B {A}{B} A~B {A₁}{A₂} A₁↦A₂∈A {B′} B′∈B =
    let funs-B′ = v↦w~u→Funs⊥u{A₁}{A₂}{B′} A₁↦A₂~B′ in
    Funs⊥u→u∈v→Fun⊥u funs-B′ B′∈B) 
 
+
+∈cod : ∀{Γ A}
+     → A ∈ cod Γ
+     → (Σ[ A₁ ∈ Value ] Σ[ A₂ ∈ Value ] A₁ ↦ A₂ ∈ Γ × A ∈ A₂) ⊎ (A ≡ ⊥)
+∈cod {⊥} {A} A∈codΓ rewrite A∈codΓ = inj₂ refl
+∈cod {const k} {A} A∈codΓ rewrite A∈codΓ = inj₂ refl
+∈cod {Γ₁ ↦ Γ₂} {A} A∈codΓ = inj₁ ⟨ Γ₁ , ⟨ Γ₂ , ⟨ refl , A∈codΓ ⟩ ⟩ ⟩
+∈cod {Γ₁ ⊔ Γ₂} {A} (inj₁ x) 
+   with ∈cod {Γ₁} {A} x
+... | inj₁ ⟨ A₁ , ⟨ A₂ , ⟨ A₁↦A₂∈Γ₁ , A∈A₂ ⟩ ⟩ ⟩ =
+      inj₁ ⟨ A₁ , ⟨ A₂ , ⟨ inj₁ A₁↦A₂∈Γ₁ , A∈A₂ ⟩ ⟩ ⟩
+... | inj₂ A≡⊥ = inj₂ A≡⊥
+∈cod {Γ₁ ⊔ Γ₂} {A} (inj₂ y)
+   with ∈cod {Γ₂} {A} y
+... | inj₁ ⟨ A₁ , ⟨ A₂ , ⟨ A₁↦A₂∈Γ₂ , A∈A₂ ⟩ ⟩ ⟩ =
+      inj₁ ⟨ A₁ , ⟨ A₂ , ⟨ inj₂ A₁↦A₂∈Γ₂ , A∈A₂ ⟩ ⟩ ⟩
+... | inj₂ A≡⊥ = inj₂ A≡⊥
+
+
 consistent-⊑ : ∀{A B C D}
     → A ~ B  →  C ⊑ A  → D ⊑ B
     → C ~ D
@@ -1092,24 +1111,30 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
        D′⊆k⊔⊥ : D′ ⊆ (const k ⊔ ⊥)
        D′⊆k⊔⊥ = A⊑k→A⊆k⊔⊥ (⊑-trans D′⊑B (A⊆k⊔⊥→A⊑k B⊆k⊔⊥) )
     G {C₁ ↦ C₂} {D′} C₁↦C₂∈C D′∈D
-        with sub-inv-fun (⊑-trans (∈→⊑ C₁↦C₂∈C) C⊑A)
-    ... | ⟨ u₂ , ⟨ fu₂ , ⟨ u₂⊆A , _ ⟩ ⟩ ⟩
+        with sub-inv (⊑-trans (∈→⊑ C₁↦C₂∈C) C⊑A) refl
+    ... | ⟨ Γ₁ , ⟨ funs-Γ₁ , ⟨ Γ₁⊆A , ⟨ domΓ₁⊑C₁ , C₂⊑codΓ₁ ⟩ ⟩ ⟩ ⟩
         with atomic-sub-4 (∈⊑⊑ C₁↦C₂∈C C⊑A)
     ... | ⟨ A₁ , ⟨ A₂ , A₁↦A₂∈A ⟩ ⟩
         with (atomic-sub-5 D⊑B (funs-B A~B A₁↦A₂∈A)) D′∈D
     ... | bot eq rewrite eq = tt
     ... | fun {D}{D₁}{D₂} eq
         rewrite eq 
-        with sub-inv-fun (∈⊑⊑ D′∈D D⊑B)
-    ... | ⟨ v₂ , ⟨ fv₂ , ⟨ v₂⊆B , xx ⟩ ⟩ ⟩ =
-         {!!}
-
+        with sub-inv (∈⊑⊑ D′∈D D⊑B) refl
+    ... | ⟨ Γ₂ , ⟨ funs-Γ₂ , ⟨ Γ₂⊆B , ⟨ domΓ₂⊑D₁ , D₂⊑codΓ₂ ⟩ ⟩ ⟩ ⟩
+        with consistent? C₁ D₁
+    ... | no C₁~̸D₁ = inj₂ λ C₁~D₁ → contradiction C₁~D₁ C₁~̸D₁
+    ... | yes C₁~D₁ =  inj₁ ⟨ C₁~D₁ , {!!} ⟩
         where
-        C₁↦C₂⊑A : C₁ ↦ C₂ ⊑ A
-        C₁↦C₂⊑A = ∈⊑⊑ C₁↦C₂∈C C⊑A
+        domΓ₁~domΓ₂ : dom Γ₁ ~ dom Γ₂
+        domΓ₁~domΓ₂ = consistent-⊑ C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
 
+        H : ∀{A′ B′} → A′ ∈ cod Γ₁ → B′ ∈ cod Γ₂ → A′ ~ B′
+        H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂ = {!!}
 
+        codΓ₁~codΓ₂ : cod Γ₁ ~ cod Γ₂
+        codΓ₁~codΓ₂ = atoms→consistent H
 
-
+        C₂~D₂ : C₂ ~ D₂
+        C₂~D₂ = consistent-⊑ codΓ₁~codΓ₂ C₂⊑codΓ₁ D₂⊑codΓ₂
         
     G {C₁ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
