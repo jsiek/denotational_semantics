@@ -1,186 +1,57 @@
-open import Variables
-open import Structures
-import Lambda
-open Lambda.ASTMod
-   using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
-
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
-open import Data.Nat using (ℕ; suc ; zero)
+open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_) renaming (_⊔_ to max)
+open import Data.Nat.Properties
+  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
+         +-mono-≤-<; +-mono-<-≤; +-comm; n≤1+n;
+         ≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Agda.Primitive using (lzero)
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary.Negation using (contradiction)
-open import Data.Empty using (⊥-elim)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤; tt)
 
-
-module ValueBCD where
-
-infixr 7 _↦_
-infixl 5 _⊔_
-
-data Value : Set where
-  ⊥ : Value
-  _↦_ : Value → Value → Value
-  _⊔_ : Value → Value → Value
-
-domain : Domain
-domain = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
-
+open import Variables
+open import Primitives
+open import ValueBCDConst
+open import Structures
 open DomainAux domain
-
-ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
-ℱ D γ (v ↦ w) = D (γ `, v) w
-ℱ D γ ⊥ = ⊤
-ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
-
-ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-    → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
-ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
-
-ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
-    → ℱ D γ ⊥
-ℱ-⊥ = tt
-
-ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-          {D′ : Denotation (suc Δ)}
-       → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
-       → ℱ D γ ≲ ℱ D′ δ
-ℱ-≲ D≲D′ {⊥} = λ _ → tt
-ℱ-≲ D≲D′ {v ↦ w} = D≲D′
-ℱ-≲ {D = D}{D′} D≲D′ {u ⊔ v} ℱDγ
-    with ℱ-≲{D = D}{D′} D≲D′ {u} | ℱ-≲{D = D}{D′} D≲D′ {v}
-... | a | b =
-    ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
-
-  
-infix 4 _⊑_
-
-data _⊑_ : Value → Value → Set where
-
-  ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
-
-  ⊑-conj-L : ∀ {u v w}
-      → v ⊑ u
-      → w ⊑ u
-        -----------
-      → (v ⊔ w) ⊑ u
-
-  ⊑-conj-R1 : ∀ {u v w}
-     → u ⊑ v
-       -----------
-     → u ⊑ (v ⊔ w)
-
-  ⊑-conj-R2 : ∀ {u v w}
-     → u ⊑ w
-       -----------
-     → u ⊑ (v ⊔ w)
-
-  ⊑-trans : ∀ {u v w}
-     → u ⊑ v
-     → v ⊑ w
-       -----
-     → u ⊑ w
-
-  ⊑-fun : ∀ {v w v′ w′}
-       → v′ ⊑ v
-       → w ⊑ w′
-         -------------------
-       → (v ↦ w) ⊑ (v′ ↦ w′)
-
-  ⊑-dist : ∀{v w w′}
-         ---------------------------------
-       → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
-
-⊑-refl : ∀ {v} → v ⊑ v
-⊑-refl {⊥} = ⊑-⊥
-⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
-⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
-
-ordering : ValueOrdering domain
-ordering = record
-             { _~_ = λ u v → ⊤
-             ; _⊑_ = _⊑_
-             ; ⊑-⊥ = ⊑-⊥
-             ; ⊑-conj-L = ⊑-conj-L
-             ; ⊑-conj-R1 = ⊑-conj-R1
-             ; ⊑-conj-R2 = ⊑-conj-R2
-             ; ⊑-trans = ⊑-trans
-             ; ⊑-fun = ⊑-fun
-             ; ⊑-dist = ⊑-dist
-             ; ⊑-refl = ⊑-refl
-             ; ~-⊑ = λ a b c → tt
-             }
-
 open OrderingAux domain ordering
 
-ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D
-       → ℱ D γ v → w ⊑ v → ℱ D γ w
-ℱ-⊑ d ℱDγv ⊑-⊥ = tt
-ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
-ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
-ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
-ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
-ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
-  WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
-  where b : (γ `, v) `⊑ (γ `, v')
-        b Z = v⊑v'
-        b (S x) = ⊑-refl 
-ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
 
-model_curry : ModelCurry ℱ
-model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
-                       ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
-                       ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} }
-                       
-{-
+module ValueBCDConstProps where
 
-This is not used. -Jeremy
-
-ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u : Value}
-      → ℱ D γ u
-      → u ⊑ ⊥ ⊎ (Σ[ v ∈ Value ] Σ[ w ∈ Value ] D (γ `, v) w × v ↦ w ⊑ u)
-ℱ-inv {u = ⊥} tt = inj₁ ⊑-refl
-ℱ-inv {u = v ↦ w} ℱDγu = inj₂ ⟨ v , ⟨ w , ⟨ ℱDγu , ⊑-refl ⟩ ⟩ ⟩
-ℱ-inv {u = u ⊔ v} ⟨ fst , snd ⟩
-    with ℱ-inv{u = u} fst | ℱ-inv{u = v} snd
-... | inj₁ u⊑⊥ | inj₁ v⊑⊥ = inj₁ (⊑-conj-L u⊑⊥ v⊑⊥)
-... | inj₁ u⊑⊥ | inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , v'↦w'⊑v ⟩ ⟩ ⟩ =
-      inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , ⊑-conj-R2 v'↦w'⊑v ⟩ ⟩ ⟩
-... | inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , v'↦w'⊑v ⟩ ⟩ ⟩ | _ =
-      inj₂ ⟨ v' , ⟨ w' , ⟨ Dγv'w' , ⊑-conj-R1 v'↦w'⊑v ⟩ ⟩ ⟩
--}
 
 {------------------------------
   Function Inversion
  -------------------------------}
 
-infix 5 _∈_
+not-u₁⊔u₂∈v : ∀{v u₁ u₂} → ¬ (u₁ ⊔ u₂) ∈ v
+not-u₁⊔u₂∈v {⊥} ()
+not-u₁⊔u₂∈v {const x} ()
+not-u₁⊔u₂∈v {v ↦ v₁} ()
+not-u₁⊔u₂∈v {v ⊔ v₁} (inj₁ x) = not-u₁⊔u₂∈v x
+not-u₁⊔u₂∈v {v ⊔ v₁} (inj₂ y) = not-u₁⊔u₂∈v y
 
-_∈_ : Value → Value → Set
-u ∈ ⊥ = u ≡ ⊥
-u ∈ v ↦ w = u ≡ v ↦ w
-u ∈ (v ⊔ w) = u ∈ v ⊎ u ∈ w
-
-infix 5 _⊆_
-
-_⊆_ : Value → Value → Set
-v ⊆ w = ∀{u} → u ∈ v → u ∈ w
 
 ∈→⊑ : ∀{u v : Value}
     → u ∈ v
       -----
     → u ⊑ v
-∈→⊑ {.⊥} {⊥} refl = ⊑-⊥
+∈→⊑ {⊥} {⊥} u∈v = ⊑-⊥
+∈→⊑ {⊥} {v} u∈v = ⊑-⊥
+∈→⊑ {u} {⊥} u∈v rewrite u∈v = ⊑-⊥
+∈→⊑ {const {B} k} {const {B′} k′} u∈v rewrite u∈v = ⊑-refl
+∈→⊑ {const {B} k} {v ↦ w} ()
+∈→⊑ {v ↦ w} {const k} ()
 ∈→⊑ {v ↦ w} {v ↦ w} refl = ⊑-refl
 ∈→⊑ {u} {v ⊔ w} (inj₁ x) = ⊑-conj-R1 (∈→⊑ x)
 ∈→⊑ {u} {v ⊔ w} (inj₂ y) = ⊑-conj-R2 (∈→⊑ y)
+∈→⊑ {u₁ ⊔ u₂} {v} u∈v = ⊥-elim (contradiction u∈v not-u₁⊔u₂∈v)
 
 ⊆→⊑ : ∀{u v : Value}
     → u ⊆ v
@@ -188,6 +59,8 @@ v ⊆ w = ∀{u} → u ∈ v → u ∈ w
     → u ⊑ v
 ⊆→⊑ {⊥} s with s {⊥} refl
 ... | x = ⊑-⊥
+⊆→⊑ {const {B} k} s with s {const {B} k} refl
+... | x = ∈→⊑ x
 ⊆→⊑ {u ↦ u′} s with s {u ↦ u′} refl
 ... | x = ∈→⊑ x
 ⊆→⊑ {u ⊔ u′} s = ⊑-conj-L (⊆→⊑ (λ z → s (inj₁ z))) (⊆→⊑ (λ z → s (inj₂ z)))
@@ -204,11 +77,14 @@ v ⊆ w = ∀{u} → u ∈ v → u ∈ w
      → v ↦ w ∈ u
 ↦⊆→∈ incl = incl refl 
 
-data Fun : Value → Set where
-  fun : ∀{u v w} → u ≡ (v ↦ w) → Fun u
+not-Fun-k : ∀{B : Base}{k : base-rep B} → ¬ Fun (const {B} k)
+not-Fun-k {B} {k} (fun ())
 
 Funs : Value → Set
 Funs v = ∀{u} → u ∈ v → Fun u
+
+Funs⊥ : Value → Set
+Funs⊥ v = ∀{u} → u ∈ v → Fun⊥ u
 
 ¬Fun⊥ : ¬ (Fun ⊥)
 ¬Fun⊥ (fun ())
@@ -218,35 +94,27 @@ Funs∈ : ∀{u}
       → Σ[ v ∈ Value ] Σ[ w ∈ Value ] v ↦ w ∈ u
 Funs∈ {⊥} f with f {⊥} refl
 ... | fun ()
+Funs∈ {const {B} k} f = ⊥-elim (not-Fun-k (f refl))
 Funs∈ {v ↦ w} f = ⟨ v , ⟨ w , refl ⟩ ⟩
 Funs∈ {u ⊔ u′} f
     with Funs∈ λ z → f (inj₁ z)
 ... | ⟨ v , ⟨ w , m ⟩ ⟩ = ⟨ v , ⟨ w , (inj₁ m) ⟩ ⟩
 
 
-dom : (u : Value) → Value
-dom ⊥  = ⊥
-dom (v ↦ w) = v
-dom (u ⊔ u′) = dom u ⊔ dom u′
-
-cod : (u : Value) → Value
-cod ⊥  = ⊥
-cod (v ↦ w) = w
-cod (u ⊔ u′) = cod u ⊔ cod u′
-
-
 ↦∈→⊆dom : ∀{u v w : Value}
-          → Funs u  →  (v ↦ w) ∈ u
+          →  (v ↦ w) ∈ u
             ----------------------
           → v ⊆ dom u
-↦∈→⊆dom {⊥} fg () u∈v
-↦∈→⊆dom {v ↦ w} fg refl u∈v = u∈v
-↦∈→⊆dom {u ⊔ u′} fg (inj₁ v↦w∈u) u∈v =
-   let ih = ↦∈→⊆dom (λ z → fg (inj₁ z)) v↦w∈u in
+↦∈→⊆dom {⊥} () u∈v
+↦∈→⊆dom {const {B} k} ()
+↦∈→⊆dom {v ↦ w} refl u∈v = u∈v
+↦∈→⊆dom {u ⊔ u′} (inj₁ v↦w∈u) u∈v =
+   let ih = ↦∈→⊆dom v↦w∈u in
    inj₁ (ih u∈v)
-↦∈→⊆dom {u ⊔ u′} fg (inj₂ v↦w∈u′) u∈v =
-   let ih = ↦∈→⊆dom (λ z → fg (inj₂ z)) v↦w∈u′ in
+↦∈→⊆dom {u ⊔ u′} (inj₂ v↦w∈u′) u∈v =
+   let ih = ↦∈→⊆dom v↦w∈u′ in
    inj₂ (ih u∈v)
+
 
 
 ⊆↦→cod⊆ : ∀{u v w : Value}
@@ -254,6 +122,9 @@ cod (u ⊔ u′) = cod u ⊔ cod u′
           ---------
         → cod u ⊆ w
 ⊆↦→cod⊆ {⊥} s refl with s {⊥} refl
+... | ()
+⊆↦→cod⊆ {const {B} k} u⊆v↦w
+    with u⊆v↦w refl
 ... | ()
 ⊆↦→cod⊆ {C ↦ C′} s m with s {C ↦ C′} refl
 ... | refl = m
@@ -271,6 +142,7 @@ sub-inv-trans : ∀{u′ u₂ u : Value}
     → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′) (cod u′)
 sub-inv-trans {⊥} {u₂} {u} fu′ u′⊆u IH =
    ⊥-elim (contradiction (fu′ refl) ¬Fun⊥)
+sub-inv-trans {const {B} k} fu′ u′⊆u IH = ⊥-elim (not-Fun-k (fu′ refl))
 sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fg u′⊆u IH = IH (↦⊆→∈ u′⊆u)
 sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fg u′⊆u IH
     with ⊔⊆-inv u′⊆u
@@ -296,6 +168,7 @@ sub-inv : ∀{u₁ u₂ : Value}
           -------------------------------------
         → Σ[ u₃ ∈ Value ] factor u₂ u₃ v w
 sub-inv {⊥} {u₂} ⊑-⊥ {v} {w} ()
+sub-inv {const {B} k} ⊑-const {v} {w} ()
 sub-inv {u₁₁ ⊔ u₁₂} {u₂} (⊑-conj-L lt1 lt2) {v} {w} (inj₁ x) = sub-inv lt1 x
 sub-inv {u₁₁ ⊔ u₁₂} {u₂} (⊑-conj-L lt1 lt2) {v} {w} (inj₂ y) = sub-inv lt2 y
 sub-inv {u₁} {u₂₁ ⊔ u₂₂} (⊑-conj-R1 lt) {v} {w} m
@@ -338,7 +211,7 @@ sub-inv-fun{v}{w}{u₁} abc
 ... | ⟨ u₂ , ⟨ f , ⟨ u₂⊆u₁ , ⟨ db , cc ⟩ ⟩ ⟩ ⟩ =
       ⟨ u₂ , ⟨ f , ⟨ u₂⊆u₁ , ⟨ G , cc ⟩ ⟩ ⟩ ⟩
    where G : ∀{D E} → (D ↦ E) ∈ u₂ → D ⊑ v
-         G{D}{E} m = ⊑-trans (⊆→⊑ (↦∈→⊆dom f m)) db
+         G{D}{E} m = ⊑-trans (⊆→⊑ (↦∈→⊆dom m)) db
 
 
 ↦⊑↦-inv : ∀{v w v′ w′}
@@ -407,9 +280,16 @@ not-AboveFun-⊔-inv af = ⟨ f af , g af ⟩
 
 AboveFun? : (v : Value) → Dec (AboveFun v)
 AboveFun? ⊥ = no AboveFun⊥
+AboveFun? (const {B} k) = no G
+  where
+  G : ¬ AboveFun (const k)
+  G ⟨ v , ⟨ w , v↦w⊑k ⟩ ⟩ = ⊥-elim (⊑k→BelowConstk v↦w⊑k)
 AboveFun? (v ↦ w) = yes ⟨ v , ⟨ w , ⊑-refl ⟩ ⟩
 AboveFun? (u ⊔ u')
     with AboveFun? u | AboveFun? u'
 ... | yes ⟨ v , ⟨ w , lt ⟩ ⟩ | _ = yes ⟨ v , ⟨ w , (⊑-conj-R1 lt) ⟩ ⟩
 ... | no _ | yes ⟨ v , ⟨ w , lt ⟩ ⟩ = yes ⟨ v , ⟨ w , (⊑-conj-R2 lt) ⟩ ⟩
 ... | no x | no y = no (not-AboveFun-⊔ x y)
+
+
+

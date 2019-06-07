@@ -42,9 +42,15 @@ module Filter
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
+    ℰ-~ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
+        → ℰ M γ u → ℰ M γ v → u ~ v
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
 
+    ℰ-~ {Γ}{γ}{M = ` x}{u}{v} ℰMγu ℰMγv = {!!}
+    ℰ-~ {M = lam ⦅ bind N nil ⦆} ℰMγu ℰMγv = {!!}
+    ℰ-~ {M = app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv = {!!}
+    
     ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv
     ℰ-⊔ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
        ℱ-⊔ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
@@ -56,11 +62,13 @@ module Filter
       where G : WFDenot Γ (ℰ L)
             G = record { ⊑-env = ⊑-env {M = L} ;
                          ⊑-closed = ℰ-⊑ {M = L} ;
-                         ⊔-closed = ℰ-⊔ {M = L}  }
+                         ⊔-closed = ℰ-⊔ {M = L} ;
+                         ~-closed = ℰ-~ {M = L} }
             H : WFDenot Γ (ℰ M)
             H = record { ⊑-env = ⊑-env {M = M} ;
                          ⊑-closed = ℰ-⊑ {M = M} ;
-                         ⊔-closed = ℰ-⊔ {M = M}  }
+                         ⊔-closed = ℰ-⊔ {M = M} ;
+                         ~-closed = ℰ-~ {M = M} }
 
 
     ℰ-⊑ {M = ` x} ℰMγv w⊑v = ⊑-trans w⊑v ℰMγv
@@ -69,19 +77,22 @@ module Filter
       where G : WFDenot (suc Γ) (ℰ N)
             G = record { ⊑-env = ⊑-env {M = N} ;
                          ⊑-closed = ℰ-⊑ {M = N} ;
-                         ⊔-closed = ℰ-⊔ {M = N} }
+                         ⊔-closed = ℰ-⊔ {M = N} ;
+                         ~-closed = ℰ-~ {M = N} }
 
     ℰ-⊑ {Γ}{γ} {app ⦅ cons L (cons M nil) ⦆} {v} {w} ℰMγv w⊑v =
        ●-⊑ G ℰMγv w⊑v
        where G : WFDenot Γ (ℰ L)
              G = record { ⊑-env = ⊑-env {M = L} ;
                           ⊑-closed = ℰ-⊑ {M = L} ;
-                          ⊔-closed = ℰ-⊔ {M = L} }
+                          ⊔-closed = ℰ-⊔ {M = L} ;
+                          ~-closed = ℰ-~ {M = L} }
 
     WF : ∀{Γ}{M : Term Γ} → WFDenot Γ (ℰ M)
     WF {Γ} {M} = record { ⊑-env = ⊑-env {M = M} ;
                           ⊑-closed = ℰ-⊑ {M = M} ;
-                          ⊔-closed = ℰ-⊔ {M = M} }
+                          ⊔-closed = ℰ-⊔ {M = M} ;
+                          ~-closed = ℰ-~ {M = M} }
 
     subst-⊔ : ∀{Γ Δ}{γ : Env Δ}{γ₁ γ₂ : Env Γ}{σ : Subst Γ Δ}
                → γ `⊢ σ ↓ γ₁
@@ -106,9 +117,13 @@ module Filter
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
+    ℰ-~ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
+        → ℰ M γ u → ℰ M γ v → u ~ v
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
 
+    ℰ-~ {M = M} ℰMγu ℰMγv = {!!}
+    
     ℰ-⊔ {M = lit {P} k ⦅ nil ⦆} ℰMγu ℰMγv = ℘-⊔ ℰMγu ℰMγv
     ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv
     ℰ-⊔ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
@@ -121,11 +136,13 @@ module Filter
       where G : WFDenot Γ (ℰ L)
             G = record { ⊑-env = ⊑-env {M = L} ;
                          ⊑-closed = ℰ-⊑ {M = L} ;
-                         ⊔-closed = ℰ-⊔ {M = L}  }
+                         ⊔-closed = ℰ-⊔ {M = L} ;
+                         ~-closed = ℰ-~ {M = L} }
             H : WFDenot Γ (ℰ M)
             H = record { ⊑-env = ⊑-env {M = M} ;
                          ⊑-closed = ℰ-⊑ {M = M} ;
-                         ⊔-closed = ℰ-⊔ {M = M}  }
+                         ⊔-closed = ℰ-⊔ {M = M} ;
+                         ~-closed = ℰ-~ {M = M} }
 
 
     ℰ-⊑ {M = lit {P} k ⦅ nil ⦆} ℰMγv w⊑v = ℘-⊑ ℰMγv w⊑v
@@ -135,19 +152,22 @@ module Filter
       where G : WFDenot (suc Γ) (ℰ N)
             G = record { ⊑-env = ⊑-env {M = N} ;
                          ⊑-closed = ℰ-⊑ {M = N} ;
-                         ⊔-closed = ℰ-⊔ {M = N} }
+                         ⊔-closed = ℰ-⊔ {M = N} ;
+                         ~-closed = ℰ-~ {M = N} }
 
     ℰ-⊑ {Γ}{γ} {app ⦅ cons L (cons M nil) ⦆} {v} {w} ℰMγv w⊑v =
        ●-⊑ G ℰMγv w⊑v
        where G : WFDenot Γ (ℰ L)
              G = record { ⊑-env = ⊑-env {M = L} ;
                           ⊑-closed = ℰ-⊑ {M = L} ;
-                          ⊔-closed = ℰ-⊔ {M = L} }
+                          ⊔-closed = ℰ-⊔ {M = L} ;
+                          ~-closed = ℰ-~ {M = L} }
 
     WF : ∀{Γ}{M : Term Γ} → WFDenot Γ (ℰ M)
     WF {Γ} {M} = record { ⊑-env = ⊑-env {M = M} ;
                           ⊑-closed = ℰ-⊑ {M = M} ;
-                          ⊔-closed = ℰ-⊔ {M = M} }
+                          ⊔-closed = ℰ-⊔ {M = M} ;
+                          ~-closed = ℰ-~ {M = M} }
 
     subst-⊔ : ∀{Γ Δ}{γ : Env Δ}{γ₁ γ₂ : Env Γ}{σ : Subst Γ Δ}
                → γ `⊢ σ ↓ γ₁

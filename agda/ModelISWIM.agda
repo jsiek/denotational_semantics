@@ -17,10 +17,9 @@ open import ValueBCDConst
 open DomainAux domain 
 open OrderingAux domain ordering 
 
-{- 
-  open import ModelCallByValue domain ordering ℱ model_curry public
--}
+open import ModelCallByValue domain ordering ℱ model_curry public
 
+{-
 infixl 7 _●_
 _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
 _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ γ v 
@@ -71,3 +70,4 @@ model_basics = record { ℱ-≲ = ℱ-≲ ;
                ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ}
                }
   
+-}

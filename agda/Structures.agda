@@ -65,6 +65,15 @@ record ValueOrdering (D : Domain) : Set₁ where
     ⊑-refl : ∀ {v} → v ⊑ v
 
 
+record Consistent (D : Domain) (V : ValueOrdering D) : Set₁ where
+  open Domain D
+  open ValueOrdering V
+  infix 4 _~_
+  field
+    _~_ : Value → Value → Set
+    ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
+    
+
 {-
 
   The DomainAux module contains stuff that is defined/proved
@@ -284,6 +293,9 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
       ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
       ⊔-closed : ∀{γ u v} → D γ u → D γ v → D γ (u ⊔ v)
+{-
+      ~-closed : ∀{γ u v} → D γ u → D γ v → u ~ v
+-}
 
   record ModelCurry
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
