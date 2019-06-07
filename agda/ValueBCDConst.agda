@@ -435,20 +435,20 @@ cod (const {B} k) = ⊥
 cod (v ↦ w) = w
 cod (u ⊔ u′) = cod u ⊔ cod u′
 
-
 ↦∈→⊆dom : ∀{u v w : Value}
-          → Funs u  →  (v ↦ w) ∈ u
+          →  (v ↦ w) ∈ u
             ----------------------
           → v ⊆ dom u
-↦∈→⊆dom {⊥} fg () u∈v
-↦∈→⊆dom {const {B} k} fu ()
-↦∈→⊆dom {v ↦ w} fg refl u∈v = u∈v
-↦∈→⊆dom {u ⊔ u′} fg (inj₁ v↦w∈u) u∈v =
-   let ih = ↦∈→⊆dom (λ z → fg (inj₁ z)) v↦w∈u in
+↦∈→⊆dom {⊥} () u∈v
+↦∈→⊆dom {const {B} k} ()
+↦∈→⊆dom {v ↦ w} refl u∈v = u∈v
+↦∈→⊆dom {u ⊔ u′} (inj₁ v↦w∈u) u∈v =
+   let ih = ↦∈→⊆dom v↦w∈u in
    inj₁ (ih u∈v)
-↦∈→⊆dom {u ⊔ u′} fg (inj₂ v↦w∈u′) u∈v =
-   let ih = ↦∈→⊆dom (λ z → fg (inj₂ z)) v↦w∈u′ in
+↦∈→⊆dom {u ⊔ u′} (inj₂ v↦w∈u′) u∈v =
+   let ih = ↦∈→⊆dom v↦w∈u′ in
    inj₂ (ih u∈v)
+
 
 
 ⊆↦→cod⊆ : ∀{u v w : Value}
@@ -545,7 +545,7 @@ sub-inv-fun{v}{w}{u₁} abc
 ... | ⟨ u₂ , ⟨ f , ⟨ u₂⊆u₁ , ⟨ db , cc ⟩ ⟩ ⟩ ⟩ =
       ⟨ u₂ , ⟨ f , ⟨ u₂⊆u₁ , ⟨ G , cc ⟩ ⟩ ⟩ ⟩
    where G : ∀{D E} → (D ↦ E) ∈ u₂ → D ⊑ v
-         G{D}{E} m = ⊑-trans (⊆→⊑ (↦∈→⊆dom f m)) db
+         G{D}{E} m = ⊑-trans (⊆→⊑ (↦∈→⊆dom m)) db
 
 
 ↦⊑↦-inv : ∀{v w v′ w′}
@@ -646,6 +646,12 @@ v ↦ w ~ const k = Bot
 v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
 v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
 v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
+
+v~⊥ : ∀{v : Value} → v ~ ⊥
+v~⊥ {⊥} = tt
+v~⊥ {const x} = tt
+v~⊥ {v ↦ w} = tt
+v~⊥ {v₁ ⊔ v₂} = ⟨ v~⊥ {v₁} , v~⊥ {v₂} ⟩
 
 consistent? : (u : Value) → (v : Value) → Dec (u ~ v)
 consistent? ⊥ v = yes tt
@@ -1129,7 +1135,29 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
         domΓ₁~domΓ₂ = consistent-⊑ C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
 
         H : ∀{A′ B′} → A′ ∈ cod Γ₁ → B′ ∈ cod Γ₂ → A′ ~ B′
-        H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂ = {!!}
+        H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂
+            with ∈cod {Γ₁} A′∈codΓ₁ | ∈cod {Γ₂} B′∈codΓ₂
+        ... | inj₁ ⟨ A₁ , ⟨ A₂ , ⟨ A₁↦A₂∈Γ₁ , A′∈A₂ ⟩ ⟩ ⟩ | inj₂ B′≡⊥
+            rewrite B′≡⊥ =
+              v~⊥ {A′}
+        H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂ | inj₂ A′≡⊥ | _ rewrite A′≡⊥ =
+              tt
+        H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂
+            | inj₁ ⟨ A₁ , ⟨ A₂ , ⟨ A₁↦A₂∈Γ₁ , A′∈A₂ ⟩ ⟩ ⟩ 
+            | inj₁ ⟨ B₁ , ⟨ B₂ , ⟨ B₁↦B₂∈Γ₂ , B′∈B₂ ⟩ ⟩ ⟩
+            with consistent→atoms{A}{B}{A₁ ↦ A₂}{B₁ ↦ B₂}
+                                   A~B (Γ₁⊆A A₁↦A₂∈Γ₁) (Γ₂⊆B B₁↦B₂∈Γ₂)
+        ... | inj₁ ⟨ A₁~B₁ , A₂~B₂ ⟩ =
+              consistent→atoms{A₂}{B₂}{A′}{B′} A₂~B₂ A′∈A₂ B′∈B₂
+        ... | inj₂ A₁~̸B₁ =
+              let A₁⊆domΓ₁ = ↦∈→⊆dom A₁↦A₂∈Γ₁ in
+              let B₁⊆domΓ₂ = ↦∈→⊆dom B₁↦B₂∈Γ₂ in
+              let A₁~B₁ = atoms→consistent{A₁}{B₁}
+                          (λ {A₁′} {B₁′} A₁′∈A₁ B₁′∈B₁ →
+                           let A₁′∈domΓ₁ = A₁⊆domΓ₁ A₁′∈A₁ in
+                           let B₁′∈domΓ₂ = B₁⊆domΓ₂ B₁′∈B₁ in
+                           consistent→atoms domΓ₁~domΓ₂ A₁′∈domΓ₁ B₁′∈domΓ₂) in
+              ⊥-elim (contradiction A₁~B₁ A₁~̸B₁)
 
         codΓ₁~codΓ₂ : cod Γ₁ ~ cod Γ₂
         codΓ₁~codΓ₂ = atoms→consistent H
