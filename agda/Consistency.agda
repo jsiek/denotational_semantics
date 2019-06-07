@@ -19,8 +19,9 @@ open import Variables
 open import Primitives
 open import Structures
 open import ValueBCDConst
-open import ValueBCDConstProps
+open import FunInverseBCDConst
 open OrderingAux domain ordering
+open import BelowBCDConst
 
 module Consistency where
 

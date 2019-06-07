@@ -23,21 +23,24 @@ module Filter
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (C : Consistent D V)
+  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
   where
   
   open Domain D
   open DomainAux D
   open ValueOrdering V
   open OrderingAux D V
-  open LambdaModelBasics MB
+  open ModelMod.LambdaModelBasics MB
+  open Consistent C
+  open WFDenotMod D V C
 
   module ForLambda where
   
     open import Lambda
     open LambdaDenot D V _●_ ℱ
 
-    open RenamePreserveReflect.ForLambda D V _●_ ℱ MB
+    open RenamePreserveReflect.ForLambda D V _●_ ℱ C MB
        using (⊑-env; rename-pres)  
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
@@ -47,10 +50,25 @@ module Filter
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
 
-    ℰ-~ {Γ}{γ}{M = ` x}{u}{v} ℰMγu ℰMγv = {!!}
-    ℰ-~ {M = lam ⦅ bind N nil ⦆} ℰMγu ℰMγv = {!!}
-    ℰ-~ {M = app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv = {!!}
-    
+    ℰ-~ {Γ}{γ}{M = ` x}{u}{v} ℰMγu ℰMγv = ~-⊑ ~-refl ℰMγu ℰMγv
+    ℰ-~ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
+       ℱ-~ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
+    ℰ-~ {Γ}{γ}{app ⦅ cons L (cons M nil) ⦆}{u}{v} ℰMγu ℰMγv =
+       let a = ℰ-⊔ {γ = γ} {M = L} in
+       let b = ℰ-⊔ {γ = γ} {M = M} in
+       let c = ℰ-⊑ {γ = γ} {M = L} in
+       ●-~ G H ℰMγu ℰMγv
+      where G : WFDenot Γ (ℰ L)
+            G = record { ⊑-env = ⊑-env {M = L} ;
+                         ⊑-closed = ℰ-⊑ {M = L} ;
+                         ⊔-closed = ℰ-⊔ {M = L} ;
+                         ~-closed = ℰ-~ {M = L} }
+            H : WFDenot Γ (ℰ M)
+            H = record { ⊑-env = ⊑-env {M = M} ;
+                         ⊑-closed = ℰ-⊑ {M = M} ;
+                         ⊔-closed = ℰ-⊔ {M = M} ;
+                         ~-closed = ℰ-~ {M = M} }
+
     ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv
     ℰ-⊔ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
        ℱ-⊔ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
@@ -107,12 +125,14 @@ module Filter
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
     (℘-⊑ : ∀{P : Prim} {D : rep P} {v w : Value}
           → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
+    (℘-~ : ∀{P : Prim } {D : rep P} {u v : Value}
+          → ℘ {P} D u → ℘ {P} D v → u ~ v)
     where
   
     open import ISWIM
     open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
 
-    open RenamePreserveReflect.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v)
        using (⊑-env; rename-pres)  
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
@@ -122,7 +142,25 @@ module Filter
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
 
-    ℰ-~ {M = M} ℰMγu ℰMγv = {!!}
+    ℰ-~ {M = ` x} ℰMγu ℰMγv = ~-⊑ ~-refl ℰMγu ℰMγv
+    ℰ-~ {M = lit {P} k ⦅ nil ⦆} ℰMγu ℰMγv = ℘-~ ℰMγu ℰMγv
+    ℰ-~ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
+       ℱ-~ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
+    ℰ-~ {Γ}{γ}{app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv =
+       let a = ℰ-⊔ {γ = γ} {M = L} in
+       let b = ℰ-⊔ {γ = γ} {M = M} in
+       let c = ℰ-⊑ {γ = γ} {M = L} in
+       ●-~ G H ℰMγu ℰMγv
+      where G : WFDenot Γ (ℰ L)
+            G = record { ⊑-env = ⊑-env {M = L} ;
+                         ⊑-closed = ℰ-⊑ {M = L} ;
+                         ⊔-closed = ℰ-⊔ {M = L} ;
+                         ~-closed = ℰ-~ {M = L} }
+            H : WFDenot Γ (ℰ M)
+            H = record { ⊑-env = ⊑-env {M = M} ;
+                         ⊑-closed = ℰ-⊑ {M = M} ;
+                         ⊔-closed = ℰ-⊔ {M = M} ;
+                         ~-closed = ℰ-~ {M = M} }
     
     ℰ-⊔ {M = lit {P} k ⦅ nil ⦆} ℰMγu ℰMγv = ℘-⊔ ℰMγu ℰMγv
     ℰ-⊔ {M = ` x} ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv

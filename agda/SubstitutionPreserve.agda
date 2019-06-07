@@ -25,14 +25,16 @@ module SubstitutionPreserve
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (C : Consistent D V)
+  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
   where
 
   open Domain D
   open DomainAux D
   open ValueOrdering V
+  open Consistent C
   open OrderingAux D V
-  open LambdaModelBasics MB
+  open ModelMod.LambdaModelBasics MB
 
   module ForLambda where
 
@@ -42,9 +44,9 @@ module SubstitutionPreserve
        using (`_; _⦅_⦆; Subst;
               exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
     open LambdaDenot D V _●_ ℱ
-    open RenamePreserveReflect.ForLambda D V _●_ ℱ MB
+    open RenamePreserveReflect.ForLambda D V _●_ ℱ C MB
       using (⊑-env; rename-pres)
-    open Filter.ForLambda D V _●_ ℱ MB
+    open Filter.ForLambda D V _●_ ℱ C MB
 
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
       → (σ : Subst Γ Δ)
@@ -92,13 +94,15 @@ module SubstitutionPreserve
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
     (℘-⊑ : ∀{P : Prim} {D : rep P} {v w : Value}
           → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
+    (℘-~ : ∀{P : Prim } {D : rep P} {u v : Value}
+          → ℘ {P} D u → ℘ {P} D v → u ~ v)
     where
 
     open import ISWIM
     open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open RenamePreserveReflect.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v)
       using (⊑-env; rename-pres)
-    open Filter.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑
+    open Filter.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑ ℘-~
 
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
       → (σ : Subst Γ Δ)

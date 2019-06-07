@@ -21,9 +21,9 @@ open import ValueBCDConst
 open import Structures
 open DomainAux domain
 open OrderingAux domain ordering
+open import BelowBCDConst
 
-
-module ValueBCDConstProps where
+module FunInverseBCDConst where
 
 
 {------------------------------

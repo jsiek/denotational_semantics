@@ -104,8 +104,7 @@ data _⊑_ : Value → Value → Set where
 
 ordering : ValueOrdering domain
 ordering = record
-             { _~_ = λ u v → ⊤
-             ; _⊑_ = _⊑_
+             { _⊑_ = _⊑_
              ; ⊑-⊥ = ⊑-⊥
              ; ⊑-conj-L = ⊑-conj-L
              ; ⊑-conj-R1 = ⊑-conj-R1
@@ -114,10 +113,17 @@ ordering = record
              ; ⊑-fun = ⊑-fun
              ; ⊑-dist = ⊑-dist
              ; ⊑-refl = ⊑-refl
-             ; ~-⊑ = λ a b c → tt
              }
 
 open OrderingAux domain ordering
+
+consistent : Consistent domain ordering
+consistent = record { _~_ = λ u v → ⊤ ;
+                      ~-refl = λ {v} → tt ;
+                      ~-⊑ = λ {u} {v} {u′} {v′} _ _ _ → tt }
+
+open WFDenotMod domain ordering consistent
+open ModelMod domain ordering consistent
 
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
        → WFDenot (suc Γ) D

@@ -10,13 +10,16 @@ module ModelCallByValue
   (D : Domain)
   (V : ValueOrdering D)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MC : OrderingAux.ModelCurry D V ℱ)
+  (C : Consistent D V)
+  (MC : ModelMod.ModelCurry D V C ℱ)
   where
 
 open Domain D
 open ValueOrdering V
 open DomainAux D
 open OrderingAux D V
+open WFDenotMod D V C
+open ModelMod D V C
 open ModelCurry MC
 
 infixl 7 _●_
@@ -59,6 +62,8 @@ model_basics = record { ℱ-≲ = ℱ-≲ ;
                ℱ-⊑ = ℱ-⊑;
                ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
                ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
+               ℱ-~ = λ {Γ}{D}{γ}{u}{v} → ℱ-~{D = D}{γ}{u}{v} ;
                ●-⊔ = ●-⊔ ;
+               ●-~ = {!!} ;
                ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ}
                }

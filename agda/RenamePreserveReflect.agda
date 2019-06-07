@@ -24,14 +24,15 @@ module RenamePreserveReflect
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MV : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (C : Consistent D V)
+  (MV : ModelMod.LambdaModelBasics D V C _●_ ℱ)
   where
   
   open Domain D
   open DomainAux D
   open ValueOrdering V
   open OrderingAux D V
-  open LambdaModelBasics MV
+  open ModelMod.LambdaModelBasics MV
 
   ⊑-ext-R : ∀{Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ}{v}
         → γ `⊑ (δ ∘ ρ)

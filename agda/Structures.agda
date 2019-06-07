@@ -71,6 +71,7 @@ record Consistent (D : Domain) (V : ValueOrdering D) : Set₁ where
   infix 4 _~_
   field
     _~_ : Value → Value → Set
+    ~-refl : ∀{v} → v ~ v
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
     
 
@@ -288,15 +289,31 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
   EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → δ `⊑ (γ `⊔ δ)
   EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
 
+module WFDenotMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
+
+  open Domain D
+  open ValueOrdering V
+  open Consistent C
+  open DomainAux D
+  open OrderingAux D V
+
   record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
     field
       ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
       ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
       ⊔-closed : ∀{γ u v} → D γ u → D γ v → D γ (u ⊔ v)
-{-
       ~-closed : ∀{γ u v} → D γ u → D γ v → u ~ v
--}
 
+
+module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
+
+  open Domain D
+  open ValueOrdering V
+  open Consistent C
+  open DomainAux D
+  open OrderingAux D V
+  open WFDenotMod D V C
+  
   record ModelCurry
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
       : Set₁ where
@@ -311,6 +328,8 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
+      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+          → ℱ D γ u → ℱ D γ v → u ~ v
 
   record LambdaModelBasics
       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
@@ -332,9 +351,14 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
           → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
       ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
+      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+          → ℱ D γ u → ℱ D γ v → u ~ v
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
           → WFDenot Γ D₁ → WFDenot Γ D₂
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
+      ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
+          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → u ~ v
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 
 module LambdaDenot
@@ -409,13 +433,16 @@ module ℱ-●-cong
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (C : Consistent D V)
+  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
   where
   open Domain D
   open DomainAux D
   open OrderingAux D V
-  open LambdaModelBasics MB
-  
+
+  open ModelMod.LambdaModelBasics MB
+
+
   ℱ-cong : ∀{Γ}{D D′ : Denotation (suc Γ)}
          → D ≃ D′
            -----------
@@ -441,13 +468,14 @@ module DenotAux
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (C : Consistent D V)
+  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
   where
   open Domain D
   open DomainAux D
   open OrderingAux D V
-  open LambdaModelBasics MB
-  open ℱ-●-cong D V _●_ ℱ MB
+  open ModelMod.LambdaModelBasics MB
+  open ℱ-●-cong D V _●_ ℱ C MB
 
   open LambdaDenot D V _●_ ℱ
   open import Lambda
@@ -491,7 +519,8 @@ module ISWIMDenotAux
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (C : Consistent D V)
+  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
   (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
   where
   
@@ -499,8 +528,8 @@ module ISWIMDenotAux
   open DomainAux D
   open OrderingAux D V
   open ISWIMDenot D V _●_ ℱ  (λ {P} k v → ℘ {P} k v)
-  open LambdaModelBasics MB
-  open ℱ-●-cong D V _●_ ℱ MB
+  open ModelMod.LambdaModelBasics MB
+  open ℱ-●-cong D V _●_ ℱ C MB
   
   open import ISWIM
   open ASTMod
