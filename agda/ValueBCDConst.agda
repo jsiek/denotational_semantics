@@ -10,7 +10,9 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
 open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_) renaming (_⊔_ to max)
 open import Data.Nat.Properties
-  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step)
+  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
+         +-mono-≤-<; +-mono-<-≤; +-comm;
+         ≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -1142,6 +1144,23 @@ max-lub {suc x} {suc y} {suc z} (_≤_.s≤s x≤z) (_≤_.s≤s y≤z) =
     let u₂≤v = ⊆→depth≤ u₂⊆v in
     max-lub u₁≤v u₂≤v
 
+dom-depth-≤ : ∀{u : Value} → depth (dom u) ≤ depth u
+dom-depth-≤ {⊥} = _≤_.z≤n
+dom-depth-≤ {const k} = _≤_.z≤n
+dom-depth-≤ {v ↦ w} = ≤-step (m≤m⊔n (depth v) (depth w))
+dom-depth-≤ {u ⊔ v} =
+  let ih1 = dom-depth-≤ {u} in
+  let ih2 = dom-depth-≤ {v} in
+  ⊔-mono-≤ ih1 ih2
+
+cod-depth-≤ : ∀{u : Value} → depth (cod u) ≤ depth u
+cod-depth-≤ {⊥} = _≤_.z≤n
+cod-depth-≤ {const k} = _≤_.z≤n
+cod-depth-≤ {v ↦ w} = ≤-step (n≤m⊔n (depth v) (depth w))
+cod-depth-≤ {u ⊔ v} =
+  let ih1 = cod-depth-≤ {u} in
+  let ih2 = cod-depth-≤ {v} in
+  ⊔-mono-≤ ih1 ih2
 
 consistent-⊑ : ∀{A B C D} {n : ℕ} {m : measure n A C }
     → A ~ B  →  C ⊑ A  → D ⊑ B
@@ -1182,7 +1201,14 @@ consistent-⊑ {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B = atoms→consistent {C}
     ... | yes C₁~D₁ =  inj₁ ⟨ C₁~D₁ , C₂~D₂ ⟩
         where
         m1 : measure n C₁ (dom Γ₁)
-        m1 = {!!}
+        m1 rewrite +-comm (depth C₁) (depth (dom Γ₁)) =
+          let C₁<C = ≤-trans (_≤_.s≤s (m≤m⊔n (depth C₁) (depth C₂)))
+                             (∈→depth≤ C₁↦C₂∈C) in
+          let domΓ₁≤A = ≤-trans (dom-depth-≤ {Γ₁}) (⊆→depth≤ Γ₁⊆A) in
+          let A+C≤n = ≤-pred m in
+          let domΓ₁+C₁<A+C = +-mono-≤-< domΓ₁≤A C₁<C in
+          let domΓ₁+C₁<n = ≤-trans domΓ₁+C₁<A+C  A+C≤n in
+          domΓ₁+C₁<n
 
         domΓ₁~domΓ₂ : dom Γ₁ ~ dom Γ₂
         domΓ₁~domΓ₂ = consistent-⊑{n = n}{m1} C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
@@ -1216,7 +1242,14 @@ consistent-⊑ {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B = atoms→consistent {C}
         codΓ₁~codΓ₂ = atoms→consistent H
 
         m2 : measure n (cod Γ₁) C₂
-        m2 = {!!}
+        m2 =
+          let C₂<C = ≤-trans (_≤_.s≤s (n≤m⊔n (depth C₁) (depth C₂)))
+                             (∈→depth≤ C₁↦C₂∈C) in
+          let codΓ₁≤A = ≤-trans (cod-depth-≤ {Γ₁}) (⊆→depth≤ Γ₁⊆A) in
+          let A+C≤n = ≤-pred m in
+          let codΓ₁+C₂<A+C = +-mono-≤-< codΓ₁≤A C₂<C in
+          let codΓ₁+C₂<n = ≤-trans codΓ₁+C₂<A+C A+C≤n in
+          codΓ₁+C₂<n
 
         C₂~D₂ : C₂ ~ D₂
         C₂~D₂ = consistent-⊑{n = n}{m2} codΓ₁~codΓ₂ C₂⊑codΓ₁ D₂⊑codΓ₂
