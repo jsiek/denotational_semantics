@@ -23,21 +23,21 @@ module Filter
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MV : OrderingAux.LambdaModelBasics D V _●_ ℱ)
+  (MB : OrderingAux.LambdaModelBasics D V _●_ ℱ)
   where
   
   open Domain D
   open DomainAux D
   open ValueOrdering V
   open OrderingAux D V
-  open LambdaModelBasics MV
+  open LambdaModelBasics MB
 
   module ForLambda where
   
     open import Lambda
     open LambdaDenot D V _●_ ℱ
 
-    open RenamePreserveReflect.ForLambda D V _●_ ℱ MV
+    open RenamePreserveReflect.ForLambda D V _●_ ℱ MB
        using (⊑-env; rename-pres)  
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
@@ -101,7 +101,7 @@ module Filter
     open import ISWIM
     open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
 
-    open RenamePreserveReflect.ForISWIM D V _●_ ℱ MV (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
        using (⊑-env; rename-pres)  
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}

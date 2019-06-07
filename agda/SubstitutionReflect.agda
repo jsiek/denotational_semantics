@@ -219,25 +219,45 @@ module ForLambdaModel
 
 
 module SubstReflectAppCBV
+{-
   (D : Domain)
   (V : ValueOrdering D)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
   (MC : OrderingAux.ModelCurry D V ℱ)
+-}
   where
 
+{-
   open import ModelCallByValue D V ℱ MC
   open Domain D
   open ValueOrdering V
   open DomainAux D
   open OrderingAux D V
-  
-  module ForLambda (MB : LambdaModelBasics _●_ ℱ) where
+-}
 
+{-
+  module ForLambda (MB : LambdaModelBasics _●_ ℱ) where
+-}
+  module ForLambda where
+
+    open import ValueBCD
+    open DomainAux domain
+    open OrderingAux domain ordering
+    open import ModelCallByValue domain ordering ℱ model_curry
+
+    open import Lambda
+    open LambdaDenot domain ordering _●_ ℱ
+    open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ model_basics
+      using (⊑-env)
+    open Filter.ForLambda domain ordering _●_ ℱ model_basics using (subst-⊔; ℰ-⊑)
+
+{-
     open import Lambda
     open LambdaDenot D V _●_ ℱ
     open RenamePreserveReflect.ForLambda D V _●_ ℱ MB
       using (⊑-env)
     open Filter.ForLambda D V _●_ ℱ MB using (subst-⊔; ℰ-⊑)
+-}
 
     SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
            → Subst Γ Δ → Value → Set
@@ -268,19 +288,35 @@ module SubstReflectAppCBV
           ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
 
   module ForISWIM
+{-
     (MB : LambdaModelBasics _●_ ℱ)
     (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
     (℘-⊔ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
     (℘-⊑ : ∀{P : Prim} {D : rep P} {v w : Value}
           → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
+-}
     where
 
     open import ISWIM
+    open import ValueBCDConst 
+    open import ModelISWIM
+{-
     open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
     open RenamePreserveReflect.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
         using (⊑-env)
     open Filter.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑
+        using (subst-⊔; ℰ-⊑)
+-}
+    open DomainAux domain
+    open OrderingAux domain ordering
+    open ISWIMDenot domain ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM domain ordering _●_ ℱ model_basics (λ {P} k v → ℘ {P} k v)
+        using (⊑-env)
+    open Filter.ForISWIM domain ordering _●_ ℱ model_basics
+        (λ {P} k v → ℘ {P} k v)
+        (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
+        ℘-⊑
         using (subst-⊔; ℰ-⊑)
 
     SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
@@ -474,8 +510,10 @@ module CallByValue where
   open import ValueBCD
   open DomainAux domain
   open import ModelCallByValue domain ordering ℱ model_curry
+{-
   open SubstReflectAppCBV.ForLambda domain ordering ℱ model_curry model_basics
-
+-}
+  open SubstReflectAppCBV.ForLambda
   open ForLambdaModel domain ordering _●_ ℱ model_basics
   open SubstReflectLambdaBCD.Inner _●_ model_basics
   
@@ -491,10 +529,13 @@ module ISWIM where
   open import ValueBCDConst
   open import ModelISWIM
 
+  open SubstReflectAppCBV.ForISWIM
+  {-
   open SubstReflectAppCBV.ForISWIM domain ordering ℱ model_curry model_basics
      (λ {P} k v → ℘ {P} k v)
      (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
      ℘-⊑
+-}
 
   open ForLambdaModel domain ordering _●_ ℱ model_basics
   open SubstReflectLambdaBCDConst.Inner _●_ model_basics 
