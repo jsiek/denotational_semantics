@@ -11,7 +11,7 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_) renaming (_⊔_ to max)
 open import Data.Nat.Properties
   using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
-         +-mono-≤-<; +-mono-<-≤; +-comm;
+         +-mono-≤-<; +-mono-<-≤; +-comm; n≤1+n;
          ≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -1162,12 +1162,13 @@ cod-depth-≤ {u ⊔ v} =
   let ih2 = cod-depth-≤ {v} in
   ⊔-mono-≤ ih1 ih2
 
-consistent-⊑ : ∀{A B C D} {n : ℕ} {m : measure n A C }
+consistent-⊑-aux : ∀{A B C D} {n : ℕ} {m : measure n A C }
     → A ~ B  →  C ⊑ A  → D ⊑ B
     → C ~ D
-consistent-⊑ {A}{B}{C}{D} {zero} {m} A~B C⊑A D⊑B =
+consistent-⊑-aux {A}{B}{C}{D} {zero} {m} A~B C⊑A D⊑B =
     ⊥-elim (not-measure-zero {A}{C} m)
-consistent-⊑ {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
+consistent-⊑-aux {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B =
+    atoms→consistent {C}{D} G
     where
     
     G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
@@ -1211,7 +1212,7 @@ consistent-⊑ {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B = atoms→consistent {C}
           domΓ₁+C₁<n
 
         domΓ₁~domΓ₂ : dom Γ₁ ~ dom Γ₂
-        domΓ₁~domΓ₂ = consistent-⊑{n = n}{m1} C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
+        domΓ₁~domΓ₂ = consistent-⊑-aux{n = n}{m1} C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
 
         H : ∀{A′ B′} → A′ ∈ cod Γ₁ → B′ ∈ cod Γ₂ → A′ ~ B′
         H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂
@@ -1252,6 +1253,34 @@ consistent-⊑ {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B = atoms→consistent {C}
           codΓ₁+C₂<n
 
         C₂~D₂ : C₂ ~ D₂
-        C₂~D₂ = consistent-⊑{n = n}{m2} codΓ₁~codΓ₂ C₂⊑codΓ₁ D₂⊑codΓ₂
+        C₂~D₂ = consistent-⊑-aux{n = n}{m2} codΓ₁~codΓ₂ C₂⊑codΓ₁ D₂⊑codΓ₂
         
     G {C₁ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
+
+consistent-⊑ : ∀{A B C D}
+    → A ~ B  →  C ⊑ A  → D ⊑ B
+    → C ~ D
+consistent-⊑ {A}{B}{C}{D} =
+    consistent-⊑-aux {A}{B}{C}{D} {suc (depth A + depth C)} {_≤_.s≤s ≤-refl}
+
+app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
+  → u₁ ~ u₂
+  → v₁ ~ v₂
+  → v₁ ↦ w₁ ⊑ u₁
+  → v₂ ↦ w₂ ⊑ u₂
+  → w₁ ~ w₂
+app-consistency u₁~u₂ v₁~v₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
+    with consistent-⊑ u₁~u₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
+... | inj₁ ⟨ _ , w₁~w₂ ⟩ = w₁~w₂
+... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
+
+app-join : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
+  → v₁ ↦ w₁ ⊑ u₁
+  → v₂ ↦ w₂ ⊑ u₂
+  → (v₁ ⊔ v₂) ↦ (w₁ ⊔ w₂) ⊑ (u₁ ⊔ u₂)
+app-join {u₁} {u₂} {v₁} {w₁} {v₂} {w₂} v₁↦w₁⊑u₁ v₂↦w₂⊑u₂ =
+  let xx : (v₁ ⊔ v₂) ↦ (w₁ ⊔ w₂) ⊑ (v₁ ↦ w₁) ⊔ (v₂ ↦ w₂)
+      xx = Dist⊔↦⊔ in
+  let yy : (v₁ ↦ w₁) ⊔ (v₂ ↦ w₂) ⊑ u₁ ⊔ u₂
+      yy = ⊑-conj-L (⊑-conj-R1 v₁↦w₁⊑u₁) (⊑-conj-R2 v₂↦w₂⊑u₂) in
+  ⊑-trans xx yy
