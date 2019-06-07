@@ -8,7 +8,9 @@ open Lambda.ASTMod
 
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
-open import Data.Nat using (ℕ; suc ; zero)
+open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_) renaming (_⊔_ to max)
+open import Data.Nat.Properties
+  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -1095,10 +1097,58 @@ funs-B {A}{B} A~B {A₁}{A₂} A₁↦A₂∈A {B′} B′∈B =
 ... | inj₂ A≡⊥ = inj₂ A≡⊥
 
 
-consistent-⊑ : ∀{A B C D}
+depth : (v : Value) → ℕ
+depth ⊥ = zero
+depth (const k) = zero
+depth (v ↦ w) = suc (max (depth v) (depth w))
+depth (v₁ ⊔ v₂) = max (depth v₁) (depth v₂)
+
+measure : (n : ℕ) → (A : Value) → (C : Value) → Set
+measure n A C = depth A + depth C < n
+
+not-measure-zero : ∀{A C} → ¬ measure zero A C
+not-measure-zero {A}{C} mz
+    with n≤0⇒n≡0 mz
+... | ()
+
+
+{- I can't find this in the old Agda std lib !! -}
+max-lub : ∀{x y z : ℕ} → x ≤ z → y ≤ z → max x y ≤ z
+max-lub {.0} {y} {z} _≤_.z≤n y≤z = y≤z
+max-lub {suc x} {.0} {suc z} (_≤_.s≤s x≤z) _≤_.z≤n = _≤_.s≤s x≤z
+max-lub {suc x} {suc y} {suc z} (_≤_.s≤s x≤z) (_≤_.s≤s y≤z) =
+  let max-xy≤z = max-lub {x}{y}{z} x≤z y≤z in
+  _≤_.s≤s max-xy≤z
+
+
+∈→depth≤ : ∀{v u : Value} → u ∈ v → depth u ≤ depth v
+∈→depth≤ {⊥} {u} u∈v rewrite u∈v = _≤_.z≤n
+∈→depth≤ {const x} {u} u∈v rewrite u∈v = _≤_.z≤n
+∈→depth≤ {v ↦ w} {u} u∈v rewrite u∈v = ≤-refl
+∈→depth≤ {v₁ ⊔ v₂} {u} (inj₁ x) =
+    ≤-trans (∈→depth≤ {v₁} {u} x) (m≤m⊔n (depth v₁) (depth v₂))
+∈→depth≤ {v₁ ⊔ v₂} {u} (inj₂ y) =
+    ≤-trans (∈→depth≤ {v₂} {u} y) (n≤m⊔n (depth v₁) (depth v₂))
+
+
+⊆→depth≤ : ∀{u v : Value} → u ⊆ v → depth u ≤ depth v
+⊆→depth≤ {⊥} {v} u⊆v = _≤_.z≤n
+⊆→depth≤ {const x} {v} u⊆v = _≤_.z≤n
+⊆→depth≤ {u₁ ↦ u₂} {v} u⊆v = ∈→depth≤ (u⊆v refl)
+⊆→depth≤ {u₁ ⊔ u₂} {v} u⊆v
+    with ⊔⊆-inv u⊆v
+... | ⟨ u₁⊆v , u₂⊆v ⟩ =
+    let u₁≤v = ⊆→depth≤ u₁⊆v in
+    let u₂≤v = ⊆→depth≤ u₂⊆v in
+    max-lub u₁≤v u₂≤v
+
+
+consistent-⊑ : ∀{A B C D} {n : ℕ} {m : measure n A C }
     → A ~ B  →  C ⊑ A  → D ⊑ B
     → C ~ D
-consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
+consistent-⊑ {A}{B}{C}{D} {zero} {m} A~B C⊑A D⊑B =
+    ⊥-elim (not-measure-zero {A}{C} m)
+consistent-⊑ {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
     where
     
     G : ∀ {C′ D′} → C′ ∈ C → D′ ∈ D → C′ ~ D′
@@ -1129,10 +1179,13 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
     ... | ⟨ Γ₂ , ⟨ funs-Γ₂ , ⟨ Γ₂⊆B , ⟨ domΓ₂⊑D₁ , D₂⊑codΓ₂ ⟩ ⟩ ⟩ ⟩
         with consistent? C₁ D₁
     ... | no C₁~̸D₁ = inj₂ λ C₁~D₁ → contradiction C₁~D₁ C₁~̸D₁
-    ... | yes C₁~D₁ =  inj₁ ⟨ C₁~D₁ , {!!} ⟩
+    ... | yes C₁~D₁ =  inj₁ ⟨ C₁~D₁ , C₂~D₂ ⟩
         where
+        m1 : measure n C₁ (dom Γ₁)
+        m1 = {!!}
+
         domΓ₁~domΓ₂ : dom Γ₁ ~ dom Γ₂
-        domΓ₁~domΓ₂ = consistent-⊑ C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
+        domΓ₁~domΓ₂ = consistent-⊑{n = n}{m1} C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
 
         H : ∀{A′ B′} → A′ ∈ cod Γ₁ → B′ ∈ cod Γ₂ → A′ ~ B′
         H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂
@@ -1162,7 +1215,10 @@ consistent-⊑ {A}{B}{C}{D} A~B C⊑A D⊑B = atoms→consistent {C}{D} G
         codΓ₁~codΓ₂ : cod Γ₁ ~ cod Γ₂
         codΓ₁~codΓ₂ = atoms→consistent H
 
+        m2 : measure n (cod Γ₁) C₂
+        m2 = {!!}
+
         C₂~D₂ : C₂ ~ D₂
-        C₂~D₂ = consistent-⊑ codΓ₁~codΓ₂ C₂⊑codΓ₁ D₂⊑codΓ₂
+        C₂~D₂ = consistent-⊑{n = n}{m2} codΓ₁~codΓ₂ C₂⊑codΓ₁ D₂⊑codΓ₂
         
     G {C₁ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
