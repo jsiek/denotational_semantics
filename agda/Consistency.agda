@@ -604,7 +604,9 @@ consistent = record {
     _~_ = _~_ ;
     ~-refl = ~-refl ;
     ~-⊑ = consistent-⊑ ;
-    ~-↦ = λ {v} {w} {v′} {w′} z → z
+    ~-↦ = λ {v} {w} {v′} {w′} z → z ;
+    wf-fun = wf-fun ;
+    wf-⊔ = wf-⊔
     }
 
 open ConsistentAux domain ordering consistent

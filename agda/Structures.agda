@@ -78,7 +78,8 @@ record Consistent (D : Domain) (V : ValueOrdering D) : Set₁ where
     ~-refl : ∀{v} → wf v → v ~ v
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
     ~-↦ : ∀{v w v′ w′} → (v ↦ w ~ v′ ↦ w′) → ((v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′))
-    
+    wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
+    wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)    
 
 
 {-
@@ -251,6 +252,9 @@ module ConsistentAux (D : Domain) (V : ValueOrdering D) (C : Consistent D V)
   _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
   _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
 
+  ~′-refl : ∀{Γ}{γ : Env Γ} → WFEnv γ → γ ~′ γ
+  ~′-refl {Γ}{γ} wfγ {x} = ~-refl (wfγ {x})
+
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
         → v₁ ~ v₂
@@ -335,7 +339,8 @@ module WFDenotMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
       ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
       ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
       ⊔-closed : ∀{γ u v} → D γ u → D γ v → D γ (u ⊔ v)
-      ~-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ → D γ u → D δ v → u ~ v
+      ~-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
+               → D γ u → D δ v → u ~ v
 
 
 module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
@@ -359,12 +364,12 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
           → WFDenot (suc Γ) D
           → ℱ D γ v → w ⊑ v → ℱ D γ w
-      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
-      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-          → WFDenot (suc Γ) D
-          → ℱ D γ u → ℱ D γ v → u ~ v
+      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
+          → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
+          → ℱ D γ u → ℱ D δ v → u ~ v
 
   record LambdaModelBasics
       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
@@ -386,15 +391,16 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
           → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
       ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
-      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-          → WFDenot (suc Γ) D
-          → ℱ D γ u → ℱ D γ v → u ~ v
+      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
+          → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
+          → ℱ D γ u → ℱ D δ v → u ~ v
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-      ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-          → WFEnv γ → WFDenot Γ D₁ → WFDenot Γ D₂
-          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → u ~ v
+      ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
+          → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
+          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → (D₁ ● D₂) γ u → (D₁ ● D₂) δ v → u ~ v
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 
 module LambdaDenot

@@ -7,6 +7,7 @@ open ASTMod using (`_; _⦅_⦆; cons; bind; nil)
 open import Structures
 open WFDenotMod domain ordering consistent
 open ModelMod domain ordering consistent
+open ConsistentAux domain ordering consistent
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat using (suc)
@@ -33,18 +34,18 @@ _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) ×
 
 
 ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-    → WFDenot Γ D₁ → WFDenot Γ D₂
+    → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ
     → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-●-⊔ {u = u} {v} wf1 wf2 (inj₁ u⊑⊥) (inj₁ v⊑⊥) = inj₁ (⊑-conj-L u⊑⊥ v⊑⊥)
-●-⊔ {u = u} {v} wf1 wf2 (inj₁ u⊑⊥) (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) =
+●-⊔ {u = u} {v} wf1 wf2 wfγ (inj₁ u⊑⊥) (inj₁ v⊑⊥) = inj₁ (⊑-conj-L u⊑⊥ v⊑⊥)
+●-⊔ {u = u} {v} wf1 wf2 wfγ (inj₁ u⊑⊥) (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) =
   inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed wf1 fst₁ lt , snd ⟩ ⟩
   where lt : v' ↦ (u ⊔ v) ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl (⊑-conj-L (⊑-trans u⊑⊥ ⊑-⊥) ⊑-refl)
-●-⊔ {u = u} {v} wf1 wf2 (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩) (inj₁ v⊑⊥) =
+●-⊔ {u = u} {v} wf1 wf2 wfγ (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩) (inj₁ v⊑⊥) =
   inj₂ ⟨ u' , ⟨ (WFDenot.⊑-closed wf1 fst₁ lt) , snd ⟩ ⟩
   where lt : u' ↦ (u ⊔ v) ⊑ u' ↦ u
         lt = ⊑-fun ⊑-refl (⊑-conj-L ⊑-refl (⊑-trans v⊑⊥ ⊑-⊥))
-●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
+●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
                     (inj₂ ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩) =
   let a = WFDenot.⊔-closed wf1 fst₁ fst₃ in                      
   inj₂ ⟨ (u' ⊔ v') ,

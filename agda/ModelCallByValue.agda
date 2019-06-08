@@ -28,48 +28,53 @@ open ModelCurry MC
 
 infixl 7 _●_
 _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
-_●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
+_●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ γ v 
 
 ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
           {D₁′ D₂′ : Denotation Δ}
        → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
        → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
 ●-≲ {γ = γ} {δ} {D₁} {D₂} {D₁′} {D₂′} D₁γ≲D₁′δ D₂γ≲D₂′δ {w}
-    ⟨ v , ⟨ fst₁ , snd ⟩ ⟩
+    ⟨ v , ⟨ wfv , ⟨ fst₁ , snd ⟩ ⟩ ⟩
     with D₁γ≲D₁′δ {w} | D₂γ≲D₂′δ {w}
-... | a | b = ⟨ v , ⟨ (D₁γ≲D₁′δ fst₁) , (D₂γ≲D₂′δ snd) ⟩ ⟩
+... | a | b = ⟨ v , ⟨ wfv , ⟨ (D₁γ≲D₁′δ fst₁) , (D₂γ≲D₂′δ snd) ⟩ ⟩ ⟩
 
 
 ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-    → WFDenot Γ D₁ → WFDenot Γ D₂
+    → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ
     → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩
-                    ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩ =
-  let a = WFDenot.⊔-closed wf1 fst₁ fst₃ in                      
+●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ
+    ⟨ u' , ⟨ wfu' , ⟨ fst₁ , snd ⟩ ⟩ ⟩
+    ⟨ v' , ⟨ wfv' , ⟨ fst₃ , snd₁ ⟩ ⟩ ⟩ = 
+  let a = WFDenot.⊔-closed wf1 fst₁ fst₃ in
+  let u'~v' = WFDenot.~-closed wf2 wfγ wfγ (λ {x} → ~′-refl (wfγ{x}) {x})
+                 wfu' wfv' snd snd₁ in
   ⟨ (u' ⊔ v') ,
+  ⟨ wf-⊔ u'~v' wfu' wfv' ,
   ⟨ WFDenot.⊑-closed wf1 a Dist⊔↦⊔ ,
-    WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩
+    WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩ ⟩
 
 
-●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-    → WFEnv γ → WFDenot Γ D₁ → WFDenot Γ D₂
-    → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → u ~ v
-●-~ {Γ}{D₁}{D₂}{γ}{u}{v} wfγ wf1 wf2 ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩
-                                     ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩
-    with WFDenot.~-closed wf1 wfγ fst₁ fst₃
+●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
+    → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v → WFDenot Γ D₁ → WFDenot Γ D₂
+    → (D₁ ● D₂) γ u → (D₁ ● D₂) δ v → u ~ v
+●-~ {Γ}{D₁}{D₂}{γ}{δ}{u}{v} wfγ wfδ γ~δ wfu wfv wf1 wf2
+    ⟨ u' , ⟨ wfu' , ⟨ fst₁ , snd ⟩ ⟩ ⟩ ⟨ v' , ⟨ wfv' , ⟨ fst₃ , snd₁ ⟩ ⟩ ⟩
+    with WFDenot.~-closed wf1 wfγ wfδ γ~δ (wf-fun wfu' wfu) (wf-fun wfv' wfv)
+        fst₁ fst₃
 ... | u'↦u~v'↦v
     with ~-↦ {u'}{u}{v'}{v} u'↦u~v'↦v
 ... | inj₁ ⟨ _ , u~v ⟩ = u~v
 ... | inj₂ u'~̸v' = 
-    let u'~v' = WFDenot.~-closed wf2 wfγ snd snd₁ in
+    let u'~v' = WFDenot.~-closed wf2 wfγ wfδ γ~δ wfu' wfv' snd snd₁ in
     ⊥-elim (contradiction u'~v' u'~̸v')
 
 
 ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
     → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
     → (D₁ ● D₂) γ w
-●-⊑ {v = v}{w} d ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩ w⊑v =
-  ⟨ v' , ⟨ WFDenot.⊑-closed d fst₁ lt  , snd ⟩ ⟩
+●-⊑ {v = v}{w} d ⟨ v' , ⟨ wfv' , ⟨ fst₁ , snd ⟩ ⟩ ⟩ w⊑v =
+  ⟨ v' , ⟨ wfv' , ⟨ WFDenot.⊑-closed d fst₁ lt  , snd ⟩ ⟩ ⟩
   where lt : v' ↦ w ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl w⊑v
 

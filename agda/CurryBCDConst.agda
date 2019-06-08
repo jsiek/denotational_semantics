@@ -1,7 +1,9 @@
 open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
+open import Relation.Nullary using (Dec; yes; no)
 
 open import Variables
 open import Primitives
@@ -53,28 +55,41 @@ module CurryBCDConst where
         b (S x) = ⊑-refl 
 ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
 
-ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-    → WFDenot (suc Γ) D
-    → ℱ D γ u → ℱ D γ v → u ~ v
-ℱ-~ {D = D} {γ} {⊥} {v} wfd d1 d2 = tt
-ℱ-~ {D = D} {γ} {const k} {v} wfd () d2
-ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {⊥} wfd d1 d2 = tt
-ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {const x} wfd d1 ()
-ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd d1 d2 =
-  let wfγu₁ : WFEnv (γ `, u₁)
-      wfγu₁ = {!!} in
-  let wfγv₁ : WFEnv (γ `, v₁)
-      wfγv₁ = {!!} in
-  let γu₁~γv₁ : (γ `, u₁) ~′ (γ `, v₁)
-      γu₁~γv₁ = {!!} in
-  let u₂~v₂ = WFDenot.~-closed wfd wfγu₁ wfγv₁ γu₁~γv₁ d1 d2 in
-  {!!}
-ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd d1 ⟨ fst , snd ⟩ =
-    ⟨ ℱ-~ {D = D}{γ}{u₁ ↦ u₂}{v₁} wfd d1 fst ,
-      ℱ-~ {D = D}{γ}{u₁ ↦ u₂}{v₂} wfd d1 snd ⟩
-ℱ-~ {D = D} {γ} {u₁ ⊔ u₂} {v} wfd ⟨ fst , snd ⟩ d2 =
-    ⟨ ℱ-~ {D = D}{γ}{u₁}{v} wfd fst d2 ,
-      ℱ-~ {D = D}{γ}{u₂}{v} wfd snd d2 ⟩
+ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
+    → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
+    → ℱ D γ u → ℱ D δ v → u ~ v
+ℱ-~ {D = D} {γ} {δ} {⊥} {v} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
+ℱ-~ {D = D} {γ} {δ} {const k} {v} wfd wfγ wfδ γ~δ wfu wfv () d2
+ℱ-~ {D = D} {γ} {δ} {u₁ ↦ u₂} {⊥} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
+ℱ-~ {D = D} {γ} {δ} {u₁ ↦ u₂} {const x} wfd wfγ wfδ γ~δ wfu wfv d1 ()
+ℱ-~ {Γ} {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd wfγ wfδ γ~δ (wf-fun wfu₁ wfu₂)
+  (wf-fun wfv₁ wfv₂) d1 d2
+    with consistent? u₁ v₁
+... | no u₁~̸v₁ = inj₂ u₁~̸v₁
+... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
+      where
+      wfγu₁ : WFEnv (γ `, u₁)
+      wfγu₁ {Z} = wfu₁
+      wfγu₁ {S x} = wfγ
+      wfδv₁ : WFEnv (δ `, v₁)
+      wfδv₁ {Z} = wfv₁
+      wfδv₁ {S x} = wfδ
+      γu₁~δv₁ : (γ `, u₁) ~′ (δ `, v₁)
+      γu₁~δv₁ {Z} = u₁~v₁
+      γu₁~δv₁ {S x} = γ~δ {x}
+      u₂~v₂ = WFDenot.~-closed wfd (λ {x} → wfγu₁ {x}) (λ {x} → wfδv₁ {x})
+                 (λ {x} → γu₁~δv₁ {x}) wfu₂ wfv₂ d1 d2 
+  
+ℱ-~ {Γ}{D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd wfγ wfδ γ~δ 
+    (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst , snd ⟩ =
+    ⟨ ℱ-~ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₁} wfd wfγ wfδ γ~δ
+           (wf-fun wfu₁ wfu₂) wfv₁ d1 fst ,
+      ℱ-~ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₂} wfd wfγ wfδ γ~δ
+           (wf-fun wfu₁ wfu₂) wfv₂ d1 snd ⟩
+ℱ-~ {D = D} {γ} {δ} {u₁ ⊔ u₂} {v} wfd wfγ wfδ γ~δ
+    (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fst , snd ⟩ d2 =
+    ⟨ ℱ-~ {D = D}{γ}{δ}{u₁}{v} wfd wfγ wfδ γ~δ wfu₁ wfv fst d2 ,
+      ℱ-~ {D = D}{γ}{δ}{u₂}{v} wfd wfγ wfδ γ~δ wfu₂ wfv snd d2 ⟩
 
 model_curry : ModelCurry ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
