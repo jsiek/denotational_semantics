@@ -599,19 +599,15 @@ consistent-⊑ {A}{B}{C}{D} =
 
 
 consistent : Consistent domain ordering
-consistent = record { _~_ = _~_ ; ~-⊑ = consistent-⊑ }
+consistent = record {
+    wf = wf ;
+    _~_ = _~_ ;
+    ~-refl = ~-refl ;
+    ~-⊑ = consistent-⊑ ;
+    ~-↦ = λ {v} {w} {v′} {w′} z → z
+    }
 
-
-app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
-  → u₁ ~ u₂
-  → v₁ ~ v₂
-  → v₁ ↦ w₁ ⊑ u₁
-  → v₂ ↦ w₂ ⊑ u₂
-  → w₁ ~ w₂
-app-consistency u₁~u₂ v₁~v₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
-    with consistent-⊑ u₁~u₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
-... | inj₁ ⟨ _ , w₁~w₂ ⟩ = w₁~w₂
-... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
+open ConsistentAux domain ordering consistent
 
 app-join : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
   → v₁ ↦ w₁ ⊑ u₁

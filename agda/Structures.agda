@@ -7,12 +7,15 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Bool
 open import Data.List
 open import Function using (_∘_)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Relation.Nullary.Negation using (contradiction)
+open import Relation.Nullary using (¬_)
 
 record Domain : Set₁ where
   infixr 7 _↦_
@@ -70,10 +73,13 @@ record Consistent (D : Domain) (V : ValueOrdering D) : Set₁ where
   open ValueOrdering V
   infix 4 _~_
   field
+    wf : Value → Set
     _~_ : Value → Value → Set
-    ~-refl : ∀{v} → v ~ v
+    ~-refl : ∀{v} → wf v → v ~ v
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
+    ~-↦ : ∀{v w v′ w′} → (v ↦ w ~ v′ ↦ w′) → ((v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′))
     
+
 
 {-
 
@@ -232,6 +238,32 @@ module DomainAux(D : Domain) where
       ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
 -}
 
+module ConsistentAux (D : Domain) (V : ValueOrdering D) (C : Consistent D V)
+  where
+  open Domain D
+  open ValueOrdering V
+  open Consistent C
+  open DomainAux D
+
+  WFEnv : ∀{Γ} → Env Γ → Set
+  WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
+
+  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
+  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
+
+  app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
+        → u₁ ~ u₂
+        → v₁ ~ v₂
+        → v₁ ↦ w₁ ⊑ u₁
+        → v₂ ↦ w₂ ⊑ u₂
+        → w₁ ~ w₂
+  app-consistency {u₁}{u₂}{v₁}{w₁}{v₂}{w₂} u₁~u₂ v₁~v₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
+      with ~-⊑ u₁~u₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
+  ... | v₁↦w₁~v₂↦w₂ 
+      with ~-↦ {v₁}{w₁}{v₂}{w₂} v₁↦w₁~v₂↦w₂ 
+  ... | inj₁ ⟨ _ , w₁~w₂ ⟩ = w₁~w₂
+  ... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
+
 {-
 
   The OrderingAux module contains stuff that is defined/proved
@@ -295,6 +327,7 @@ module WFDenotMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
   open ValueOrdering V
   open Consistent C
   open DomainAux D
+  open ConsistentAux D V C
   open OrderingAux D V
 
   record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
@@ -302,7 +335,7 @@ module WFDenotMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
       ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
       ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
       ⊔-closed : ∀{γ u v} → D γ u → D γ v → D γ (u ⊔ v)
-      ~-closed : ∀{γ u v} → D γ u → D γ v → u ~ v
+      ~-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ → D γ u → D δ v → u ~ v
 
 
 module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
@@ -312,6 +345,7 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
   open Consistent C
   open DomainAux D
   open OrderingAux D V
+  open ConsistentAux D V C
   open WFDenotMod D V C
   
   record ModelCurry
@@ -329,6 +363,7 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
       ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+          → WFDenot (suc Γ) D
           → ℱ D γ u → ℱ D γ v → u ~ v
 
   record LambdaModelBasics
@@ -352,12 +387,13 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
       ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
       ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+          → WFDenot (suc Γ) D
           → ℱ D γ u → ℱ D γ v → u ~ v
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
           → WFDenot Γ D₁ → WFDenot Γ D₂
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
       ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → WFEnv γ → WFDenot Γ D₁ → WFDenot Γ D₂
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → u ~ v
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 

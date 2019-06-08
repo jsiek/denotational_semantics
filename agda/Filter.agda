@@ -33,6 +33,7 @@ module Filter
   open OrderingAux D V
   open ModelMod.LambdaModelBasics MB
   open Consistent C
+  open ConsistentAux D V C
   open WFDenotMod D V C
 
   module ForLambda where
@@ -46,14 +47,14 @@ module Filter
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
     ℰ-~ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
-        → ℰ M γ u → ℰ M γ v → u ~ v
+        → WFEnv γ → ℰ M γ u → ℰ M γ v → u ~ v
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
 
-    ℰ-~ {Γ}{γ}{M = ` x}{u}{v} ℰMγu ℰMγv = ~-⊑ ~-refl ℰMγu ℰMγv
-    ℰ-~ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
+    ℰ-~ {Γ}{γ}{M = ` x}{u}{v} wfγ ℰMγu ℰMγv = ~-⊑ (~-refl (wfγ {x})) ℰMγu ℰMγv
+    ℰ-~ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} wfγ ℰMγu ℰMγv =
        ℱ-~ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
-    ℰ-~ {Γ}{γ}{app ⦅ cons L (cons M nil) ⦆}{u}{v} ℰMγu ℰMγv =
+    ℰ-~ {Γ}{γ}{app ⦅ cons L (cons M nil) ⦆}{u}{v} wfγ ℰMγu ℰMγv =
        let a = ℰ-⊔ {γ = γ} {M = L} in
        let b = ℰ-⊔ {γ = γ} {M = M} in
        let c = ℰ-⊑ {γ = γ} {M = L} in
@@ -138,15 +139,15 @@ module Filter
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
     ℰ-~ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
-        → ℰ M γ u → ℰ M γ v → u ~ v
+        → WFEnv γ → ℰ M γ u → ℰ M γ v → u ~ v
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → ℰ M γ v → w ⊑ v → ℰ M γ w
 
-    ℰ-~ {M = ` x} ℰMγu ℰMγv = ~-⊑ ~-refl ℰMγu ℰMγv
-    ℰ-~ {M = lit {P} k ⦅ nil ⦆} ℰMγu ℰMγv = ℘-~ ℰMγu ℰMγv
-    ℰ-~ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} ℰMγu ℰMγv =
+    ℰ-~ {M = ` x} wfγ ℰMγu ℰMγv = ~-⊑ (~-refl (wfγ {x})) ℰMγu ℰMγv
+    ℰ-~ {M = lit {P} k ⦅ nil ⦆} wfγ ℰMγu ℰMγv = ℘-~ ℰMγu ℰMγv
+    ℰ-~ {Γ}{γ}{lam ⦅ bind N nil ⦆}{u}{v} wfγ ℰMγu ℰMγv =
        ℱ-~ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
-    ℰ-~ {Γ}{γ}{app ⦅ cons L (cons M nil) ⦆} ℰMγu ℰMγv =
+    ℰ-~ {Γ}{γ}{app ⦅ cons L (cons M nil) ⦆} wfγ ℰMγu ℰMγv =
        let a = ℰ-⊔ {γ = γ} {M = L} in
        let b = ℰ-⊔ {γ = γ} {M = M} in
        let c = ℰ-⊑ {γ = γ} {M = L} in

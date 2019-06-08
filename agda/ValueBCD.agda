@@ -118,9 +118,11 @@ ordering = record
 open OrderingAux domain ordering
 
 consistent : Consistent domain ordering
-consistent = record { _~_ = λ u v → ⊤ ;
-                      ~-refl = λ {v} → tt ;
-                      ~-⊑ = λ {u} {v} {u′} {v′} _ _ _ → tt }
+consistent = record { wf = λ v → ⊤ ;
+                      _~_ = λ u v → ⊤ ;
+                      ~-refl = λ {v} wfv → tt ;
+                      ~-⊑ = λ {u} {v} {u′} {v′} _ _ _ → tt ;
+                      ~-↦ = λ {v} {w} {v′} {w′} _ → inj₁ ⟨ tt , tt ⟩ }
 
 open WFDenotMod domain ordering consistent
 open ModelMod domain ordering consistent

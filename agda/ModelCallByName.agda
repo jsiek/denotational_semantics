@@ -5,6 +5,8 @@ open OrderingAux domain ordering
 open import Lambda
 open ASTMod using (`_; _⦅_⦆; cons; bind; nil)
 open import Structures
+open WFDenotMod domain ordering consistent
+open ModelMod domain ordering consistent
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat using (suc)

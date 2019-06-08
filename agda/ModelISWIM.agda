@@ -15,9 +15,11 @@ module ModelISWIM where
 
 open import ValueBCDConst 
 open DomainAux domain 
-open OrderingAux domain ordering 
+open OrderingAux domain ordering
+open import Consistency
+open import CurryBCDConst
 
-open import ModelCallByValue domain ordering ℱ model_curry public
+open import ModelCallByValue domain ordering ℱ consistent model_curry public
 
 {-
 infixl 7 _●_

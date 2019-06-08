@@ -1,3 +1,12 @@
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+   renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Nat using (ℕ; zero; suc; _+_)
+
+
 open import Variables
 open import Structures
 open import Lambda
@@ -12,7 +21,7 @@ open OrderingAux domain ordering
 open import ModelCallByName
 open LambdaDenot domain ordering _●_ ℱ
 import Filter
-open Filter.ForLambda domain ordering _●_ ℱ model_basics
+open Filter.ForLambda domain ordering _●_ ℱ consistent model_basics
 import SubstitutionPreserve
 open SubstitutionPreserve.ForLambda domain ordering _●_ ℱ model_basics
 import RenamePreserveReflect
@@ -21,13 +30,6 @@ open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ model_basics
 import SubstitutionReflect
 open SubstitutionReflect.CallByName
 
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
-open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
-   renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Nat using (ℕ; zero; suc; _+_)
 
 
 module SoundnessCallByName where

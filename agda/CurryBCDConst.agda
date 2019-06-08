@@ -9,7 +9,10 @@ open import ValueBCDConst
 open import Structures
 open DomainAux domain
 open OrderingAux domain ordering
-
+open import Consistency
+open ConsistentAux domain ordering consistent
+open WFDenotMod domain ordering consistent
+open ModelMod domain ordering consistent
 
 module CurryBCDConst where
 
@@ -50,7 +53,32 @@ module CurryBCDConst where
         b (S x) = ⊑-refl 
 ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
 
+ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+    → WFDenot (suc Γ) D
+    → ℱ D γ u → ℱ D γ v → u ~ v
+ℱ-~ {D = D} {γ} {⊥} {v} wfd d1 d2 = tt
+ℱ-~ {D = D} {γ} {const k} {v} wfd () d2
+ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {⊥} wfd d1 d2 = tt
+ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {const x} wfd d1 ()
+ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd d1 d2 =
+  let wfγu₁ : WFEnv (γ `, u₁)
+      wfγu₁ = {!!} in
+  let wfγv₁ : WFEnv (γ `, v₁)
+      wfγv₁ = {!!} in
+  let γu₁~γv₁ : (γ `, u₁) ~′ (γ `, v₁)
+      γu₁~γv₁ = {!!} in
+  let u₂~v₂ = WFDenot.~-closed wfd wfγu₁ wfγv₁ γu₁~γv₁ d1 d2 in
+  {!!}
+ℱ-~ {D = D} {γ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd d1 ⟨ fst , snd ⟩ =
+    ⟨ ℱ-~ {D = D}{γ}{u₁ ↦ u₂}{v₁} wfd d1 fst ,
+      ℱ-~ {D = D}{γ}{u₁ ↦ u₂}{v₂} wfd d1 snd ⟩
+ℱ-~ {D = D} {γ} {u₁ ⊔ u₂} {v} wfd ⟨ fst , snd ⟩ d2 =
+    ⟨ ℱ-~ {D = D}{γ}{u₁}{v} wfd fst d2 ,
+      ℱ-~ {D = D}{γ}{u₂}{v} wfd snd d2 ⟩
+
 model_curry : ModelCurry ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
-                       ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
-                       ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} }
+                       ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔ {D = D}{γ}{u}{v} ;
+                       ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} ;
+                       ℱ-~ = λ {Γ}{D}{γ}{u}{v} → ℱ-~ {D = D}{γ}{u}{v}
+                     }

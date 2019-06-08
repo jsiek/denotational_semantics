@@ -4,6 +4,8 @@ open import Data.Nat using (suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Relation.Nullary.Negation using (contradiction)
 
 
 module ModelCallByValue
@@ -16,8 +18,10 @@ module ModelCallByValue
 
 open Domain D
 open ValueOrdering V
+open Consistent C
 open DomainAux D
 open OrderingAux D V
+open ConsistentAux D V C
 open WFDenotMod D V C
 open ModelMod D V C
 open ModelCurry MC
@@ -36,7 +40,6 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v
 ... | a | b = ⟨ v , ⟨ (D₁γ≲D₁′δ fst₁) , (D₂γ≲D₂′δ snd) ⟩ ⟩
 
 
-
 ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
     → WFDenot Γ D₁ → WFDenot Γ D₂
     → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
@@ -46,6 +49,21 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v
   ⟨ (u' ⊔ v') ,
   ⟨ WFDenot.⊑-closed wf1 a Dist⊔↦⊔ ,
     WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩
+
+
+●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
+    → WFEnv γ → WFDenot Γ D₁ → WFDenot Γ D₂
+    → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → u ~ v
+●-~ {Γ}{D₁}{D₂}{γ}{u}{v} wfγ wf1 wf2 ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩
+                                     ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩
+    with WFDenot.~-closed wf1 wfγ fst₁ fst₃
+... | u'↦u~v'↦v
+    with ~-↦ {u'}{u}{v'}{v} u'↦u~v'↦v
+... | inj₁ ⟨ _ , u~v ⟩ = u~v
+... | inj₂ u'~̸v' = 
+    let u'~v' = WFDenot.~-closed wf2 wfγ snd snd₁ in
+    ⊥-elim (contradiction u'~v' u'~̸v')
+
 
 ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
     → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
@@ -64,6 +82,6 @@ model_basics = record { ℱ-≲ = ℱ-≲ ;
                ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
                ℱ-~ = λ {Γ}{D}{γ}{u}{v} → ℱ-~{D = D}{γ}{u}{v} ;
                ●-⊔ = ●-⊔ ;
-               ●-~ = {!!} ;
+               ●-~ = ●-~ ;
                ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ}
                }
