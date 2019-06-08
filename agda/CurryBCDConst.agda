@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -40,20 +42,31 @@ module CurryBCDConst where
 
 
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D
+       → WFDenot (suc Γ) D → WFEnv γ → wf v
        → ℱ D γ v → w ⊑ v → ℱ D γ w
-ℱ-⊑ d ℱDγv ⊑-⊥ = tt
-ℱ-⊑ d () ⊑-const
-ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
-ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
-ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
-ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
-ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
+ℱ-⊑ d wfγ wfv ℱDγv ⊑-⊥ = tt
+ℱ-⊑ d wfγ wfv () ⊑-const
+ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-L w⊑v w⊑v₁) =
+    ⟨ (ℱ-⊑ d wfγ wfv ℱDγv w⊑v) , (ℱ-⊑ d wfγ wfv ℱDγv w⊑v₁) ⟩
+ℱ-⊑ d wfγ (wf-⊔ v~w₁ wfv wfw₁) ℱDγv (⊑-conj-R1 w⊑v) =
+    ℱ-⊑ d wfγ wfv (proj₁ ℱDγv) w⊑v
+ℱ-⊑ d wfγ (wf-⊔ v~w₁ wfv wfw₁) ℱDγv (⊑-conj-R2 w⊑v) =
+    ℱ-⊑ d wfγ wfw₁ (proj₂ ℱDγv) w⊑v
+ℱ-⊑ {v = v}{w} d wfγ wfv ℱDγv (⊑-trans{v = v₁} w⊑v w⊑v₁) =
+    {- Need subformula property!! Or add wf requirement to ⊑-trans? -}
+    ℱ-⊑ d wfγ {!!} (ℱ-⊑ d wfγ wfv ℱDγv w⊑v₁) w⊑v
+ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv ℱDγv (⊑-fun v⊑v' w'⊑w) =
   WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
   where b : (γ `, v) `⊑ (γ `, v')
         b Z = v⊑v'
         b (S x) = ⊑-refl 
-ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
+ℱ-⊑ {γ = γ} d wfγ (wf-⊔ a (wf-fun wfv wfw) c) ℱDγv (⊑-dist{v = v}) =
+  WFDenot.⊔-closed d (λ {x} → G {x}) (proj₁ ℱDγv) (proj₂ ℱDγv)
+  where
+  G : WFEnv (γ `, v)
+  G {Z} = wfv
+  G {S x} = wfγ
+
 
 ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
     → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v

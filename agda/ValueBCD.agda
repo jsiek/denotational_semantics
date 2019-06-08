@@ -117,8 +117,11 @@ ordering = record
 
 open OrderingAux domain ordering
 
+wf : Value → Set
+wf = λ v → ⊤
+
 consistent : Consistent domain ordering
-consistent = record { wf = λ v → ⊤ ;
+consistent = record { wf = wf ;
                       _~_ = λ u v → ⊤ ;
                       ~-refl = λ {v} wfv → tt ;
                       ~-⊑ = λ {u} {v} {u′} {v′} _ _ _ → tt ;
@@ -126,21 +129,33 @@ consistent = record { wf = λ v → ⊤ ;
 
 open WFDenotMod domain ordering consistent
 open ModelMod domain ordering consistent
+open ConsistentAux domain ordering consistent
 
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D
+       → WFDenot (suc Γ) D → WFEnv γ → wf v
        → ℱ D γ v → w ⊑ v → ℱ D γ w
-ℱ-⊑ d ℱDγv ⊑-⊥ = tt
-ℱ-⊑ d ℱDγv (⊑-conj-L w⊑v w⊑v₁) = ⟨ (ℱ-⊑ d ℱDγv w⊑v) , (ℱ-⊑ d ℱDγv w⊑v₁) ⟩
-ℱ-⊑ d ℱDγv (⊑-conj-R1 w⊑v) = ℱ-⊑ d (proj₁ ℱDγv) w⊑v
-ℱ-⊑ d ℱDγv (⊑-conj-R2 w⊑v) = ℱ-⊑ d (proj₂ ℱDγv) w⊑v
-ℱ-⊑ d ℱDγv (⊑-trans w⊑v w⊑v₁) = ℱ-⊑ d (ℱ-⊑ d ℱDγv w⊑v₁) w⊑v
-ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d ℱDγv (⊑-fun v⊑v' w'⊑w) =
+ℱ-⊑ d wfγ wfv ℱDγv ⊑-⊥ = tt
+ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-L w⊑v w⊑v₁) =
+    ⟨ (ℱ-⊑ d (λ {x} → wfγ{x}) wfv ℱDγv w⊑v) ,
+      (ℱ-⊑ d (λ {x} → wfγ{x}) wfv ℱDγv w⊑v₁) ⟩
+ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-R1 w⊑v) =
+    ℱ-⊑ d (λ {x} → wfγ{x}) wfv (proj₁ ℱDγv) w⊑v
+ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-R2 w⊑v) =
+    ℱ-⊑ d (λ {x} → wfγ{x}) wfv (proj₂ ℱDγv) w⊑v
+ℱ-⊑ d wfγ wfv ℱDγv (⊑-trans w⊑v w⊑v₁) =
+    ℱ-⊑ d (λ {x} → wfγ{x}) wfv (ℱ-⊑ d (λ {x} → wfγ{x}) wfv ℱDγv w⊑v₁) w⊑v
+ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv ℱDγv (⊑-fun v⊑v' w'⊑w) =
   WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
   where b : (γ `, v) `⊑ (γ `, v')
         b Z = v⊑v'
         b (S x) = ⊑-refl 
-ℱ-⊑ d ℱDγv ⊑-dist = WFDenot.⊔-closed d (proj₁ ℱDγv) (proj₂ ℱDγv)
+ℱ-⊑ {γ = γ} d wfγ wfv ℱDγv (⊑-dist{v = v}) =
+    WFDenot.⊔-closed d (λ {x} → G {x}) (proj₁ ℱDγv) (proj₂ ℱDγv)
+    where
+    G : WFEnv (γ `, v)
+    G {Z} = tt
+    G {S x} = tt
+
 
 model_curry : ModelCurry ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;

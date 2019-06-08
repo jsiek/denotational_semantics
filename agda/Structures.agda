@@ -338,7 +338,8 @@ module WFDenotMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
     field
       ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
       ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
-      ⊔-closed : ∀{γ u v} → D γ u → D γ v → D γ (u ⊔ v)
+      ⊔-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ
+               → D γ u → D δ v → D γ (u ⊔ v)
       ~-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
                → D γ u → D δ v → u ~ v
 
@@ -362,7 +363,7 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
           → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
           → ℱ D γ ≲ ℱ D′ δ
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-          → WFDenot (suc Γ) D
+          → WFDenot (suc Γ) D → WFEnv γ → wf v
           → ℱ D γ v → w ⊑ v → ℱ D γ w
       ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u v : Value}
           → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
@@ -385,7 +386,7 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
           → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
           → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-          → WFDenot (suc Γ) D
+          → WFDenot (suc Γ) D → WFEnv γ → wf v
           → ℱ D γ v → w ⊑ v → ℱ D γ w
       ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
           → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
@@ -394,8 +395,8 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
       ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
           → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
           → ℱ D γ u → ℱ D δ v → u ~ v
-      ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-          → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ
+      ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {δ : Env Γ} {u v : Value}
+          → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → WFEnv δ → γ ~′ δ
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
       ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
           → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v

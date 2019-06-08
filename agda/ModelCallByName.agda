@@ -33,24 +33,25 @@ _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) ×
 ... | a | b = inj₂ ⟨ v , ⟨ (D₁γ≲D₁′δ fst₁) , (D₂γ≲D₂′δ snd) ⟩ ⟩
 
 
-●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-    → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ
+●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
+    → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → WFEnv δ → γ ~′ δ
     → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-●-⊔ {u = u} {v} wf1 wf2 wfγ (inj₁ u⊑⊥) (inj₁ v⊑⊥) = inj₁ (⊑-conj-L u⊑⊥ v⊑⊥)
-●-⊔ {u = u} {v} wf1 wf2 wfγ (inj₁ u⊑⊥) (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) =
+●-⊔ {u = u} {v} wf1 wf2 wfγ wfδ γ~δ (inj₁ u⊑⊥) (inj₁ v⊑⊥) =
+    inj₁ (⊑-conj-L u⊑⊥ v⊑⊥)
+●-⊔ {u = u} {v} wf1 wf2 wfγ wfδ γ~δ (inj₁ u⊑⊥) (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) =
   inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed wf1 fst₁ lt , snd ⟩ ⟩
   where lt : v' ↦ (u ⊔ v) ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl (⊑-conj-L (⊑-trans u⊑⊥ ⊑-⊥) ⊑-refl)
-●-⊔ {u = u} {v} wf1 wf2 wfγ (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩) (inj₁ v⊑⊥) =
+●-⊔ {u = u} {v} wf1 wf2 wfγ wfδ γ~δ (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩) (inj₁ v⊑⊥) =
   inj₂ ⟨ u' , ⟨ (WFDenot.⊑-closed wf1 fst₁ lt) , snd ⟩ ⟩
   where lt : u' ↦ (u ⊔ v) ⊑ u' ↦ u
         lt = ⊑-fun ⊑-refl (⊑-conj-L ⊑-refl (⊑-trans v⊑⊥ ⊑-⊥))
-●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
+●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ wfδ γ~δ (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
                     (inj₂ ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩) =
-  let a = WFDenot.⊔-closed wf1 fst₁ fst₃ in                      
+  let a = WFDenot.⊔-closed wf1 (λ {x} → wfγ {x}) fst₁ fst₃ in                      
   inj₂ ⟨ (u' ⊔ v') ,
        ⟨ WFDenot.⊑-closed wf1 a Dist⊔↦⊔ ,
-         WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩
+         WFDenot.⊔-closed wf2 (λ {x} → wfδ {x}) snd snd₁ ⟩ ⟩
 
 ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
     → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
@@ -72,7 +73,7 @@ model_basics = record { ℱ-≲ = ℱ-≲ ;
                ℱ-⊑ = ℱ-⊑;
                ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
                ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
-               ●-⊔ = ●-⊔ ;
+               ●-⊔ = λ {a}{b}{c}{d}{e}{f} → ●-⊔ {a}{b}{c}{d}{e}{f} ;
                ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ}
                }
 
