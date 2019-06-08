@@ -30,6 +30,7 @@ record ValueOrdering (D : Domain) : Set₁ where
   open Domain D
   infix 4 _⊑_
   field
+    wf : Value → Set
     _⊑_ : Value → Value → Set
     ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
 
@@ -50,6 +51,7 @@ record ValueOrdering (D : Domain) : Set₁ where
        → u ⊑ (v ⊔ w)
 
     ⊑-trans : ∀ {u v w}
+       → wf v
        → u ⊑ v
        → v ⊑ w
          -----
@@ -73,7 +75,6 @@ record Consistent (D : Domain) (V : ValueOrdering D) : Set₁ where
   open ValueOrdering V
   infix 4 _~_
   field
-    wf : Value → Set
     _~_ : Value → Value → Set
     ~-refl : ∀{v} → wf v → v ~ v
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
@@ -289,7 +290,7 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
 
   Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
           → ((v ⊔ v′) ↦ (w ⊔ w′)) ⊑ ((v ↦ w) ⊔ (v′ ↦ w′))
-  Dist⊔↦⊔ = ⊑-trans ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
+  Dist⊔↦⊔ = ⊑-trans ? ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
                               (⊑-fun (⊑-conj-R2 ⊑-refl) ⊑-refl))
 
   infixr 2 _⊑⟨⟩_ _⊑⟨_⟩_
@@ -306,7 +307,7 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       → y ⊑ z
         -----
       → x ⊑ z
-  (x ⊑⟨ x⊑y ⟩ y⊑z) =  ⊑-trans x⊑y y⊑z
+  (x ⊑⟨ x⊑y ⟩ y⊑z) =  ⊑-trans ? x⊑y y⊑z
 
   _◼ : ∀ (v : Value)
         -----

@@ -41,12 +41,6 @@ v~⊥ {v₁ ⊔ v₂} = ⟨ v~⊥ {v₁} , v~⊥ {v₂} ⟩
       (~⊔R {v = v₂} (proj₂ v~u₁) (proj₂ v~u₂)) ⟩
 
 
-data wf : Value → Set where
-  wf-bot : wf ⊥
-  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
-  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
-  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
-
 
 ~-sym : ∀{u v} → u ~ v → v ~ u
 ~-sym {⊥} {⊥} u~v = tt

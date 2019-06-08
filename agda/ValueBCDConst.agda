@@ -34,6 +34,31 @@ open DomainAux domain
 ℱ D γ (const k) = Bot
 ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
 
+infix 4 _~_
+
+_~_ : Value → Value → Set
+⊥ ~ v = ⊤
+const {B} k ~ ⊥ = ⊤
+const {B} k ~ const {B′} k′
+    with base-eq? B B′
+... | yes eq rewrite eq = k ≡ k′ 
+... | no neq = Bot
+const {B} k ~ v ↦ w = Bot
+const {B} k ~ u ⊔ v = const {B} k ~ u × const {B} k ~ v
+v ↦ w ~ ⊥ = ⊤
+v ↦ w ~ const k = Bot
+v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
+v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
+v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
+
+
+data wf : Value → Set where
+  wf-bot : wf ⊥
+  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
+  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
+  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+
+
 infix 4 _⊑_
 
 data _⊑_ : Value → Value → Set where
@@ -59,6 +84,7 @@ data _⊑_ : Value → Value → Set where
      → u ⊑ (v ⊔ w)
 
   ⊑-trans : ∀ {u v w}
+     → wf v
      → u ⊑ v
      → v ⊑ w
        -----
@@ -75,22 +101,6 @@ data _⊑_ : Value → Value → Set where
        → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
 
 
-infix 4 _~_
-
-_~_ : Value → Value → Set
-⊥ ~ v = ⊤
-const {B} k ~ ⊥ = ⊤
-const {B} k ~ const {B′} k′
-    with base-eq? B B′
-... | yes eq rewrite eq = k ≡ k′ 
-... | no neq = Bot
-const {B} k ~ v ↦ w = Bot
-const {B} k ~ u ⊔ v = const {B} k ~ u × const {B} k ~ v
-v ↦ w ~ ⊥ = ⊤
-v ↦ w ~ const k = Bot
-v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
-v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
-v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
 
 
 consistent? : (u : Value) → (v : Value) → Dec (u ~ v)
