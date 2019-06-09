@@ -1,7 +1,7 @@
 open import Primitives
 open import Structures
 
-open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -10,21 +10,26 @@ open import Relation.Nullary using (¬_)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤; tt)
-
+open import Relation.Nullary.Negation using (contradiction)
 
 module ValueBCDConst where
 
 infixr 7 _↦_
 infixl 5 _⊔_
 
-data Value : Set where
+data Value : Set 
+infix 4 _~_
+_~_ : Value → Value → Set
+
+
+data Value where
   ⊥ : Value
   const : {B : Base} → base-rep B → Value
   _↦_ : Value → Value → Value
-  _⊔_ : Value → Value → Value
+  _⊔_ : (u : Value) → (v : Value) → {c : u ~ v} → Value
 
 domain : Domain
-domain = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
+domain = record { Value = Value ; _~_ = _~_ ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
 
 open DomainAux domain
 
@@ -34,9 +39,8 @@ open DomainAux domain
 ℱ D γ (const k) = Bot
 ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
 
-infix 4 _~_
 
-_~_ : Value → Value → Set
+
 ⊥ ~ v = ⊤
 const {B} k ~ ⊥ = ⊤
 const {B} k ~ const {B′} k′
@@ -52,12 +56,65 @@ v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
 v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
 
 
-data wf : Value → Set where
-  wf-bot : wf ⊥
-  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
-  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
-  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+~⊔R : ∀{v u₁ u₂} → v ~ u₁ → v ~ u₂ → {c : u₁ ~ u₂}
+    → v ~ ((u₁ ⊔ u₂){c})
+~⊔R {⊥} v~u₁ v~u₂ = tt
+~⊔R {const k} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+~⊔R {v ↦ w} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+~⊔R {v₁ ⊔ v₂} v~u₁ v~u₂ =
+    ⟨ (~⊔R {v = v₁} (proj₁ v~u₁) (proj₁ v~u₂)) ,
+      (~⊔R {v = v₂} (proj₂ v~u₁) (proj₂ v~u₂)) ⟩
 
+~-sym : ∀{u v} → u ~ v → v ~ u
+~-sym {⊥} {⊥} u~v = tt
+~-sym {⊥} {const k} u~v = tt
+~-sym {⊥} {v ↦ w} u~v = tt
+~-sym {⊥} {v₁ ⊔ v₂} u~v = ⟨ ~-sym {v = v₁} tt , ~-sym {v = v₂} tt ⟩
+~-sym {const k} {⊥} u~v = tt
+~-sym {const {B} k} {const {B′} k′} u~v
+    with base-eq? B B′
+... | no neq = ⊥-elim u~v
+... | yes eq
+    rewrite eq
+    with base-eq? B′ B′
+... | no neq = neq refl
+... | yes refl = sym u~v
+~-sym {const k} {v ↦ w} ()
+~-sym {const k} {u ⊔ v} ⟨ k~u , k~v ⟩ =
+  ⟨ (~-sym{v = u} k~u) , (~-sym{v = v} k~v) ⟩
+~-sym {v ↦ w} {⊥} u~v = tt
+~-sym {v ↦ w} {const k} ()
+~-sym {v ↦ w} {v′ ↦ w′} (inj₁ ⟨ fst , snd ⟩) =
+   inj₁ ⟨ (~-sym{v = v′} fst) , (~-sym{v = w′} snd) ⟩
+~-sym {v ↦ w} {v′ ↦ w′} (inj₂ ¬v~v′) =
+   inj₂ λ x → ⊥-elim (contradiction (~-sym{u = v′} x) ¬v~v′)
+~-sym {v ↦ w} {u₁ ⊔ u₂} ⟨ fst , snd ⟩ =
+   ⟨ ~-sym{v = u₁} fst , ~-sym{v = u₂} snd ⟩
+~-sym {u₁ ⊔ u₂} {⊥} ⟨ fst , snd ⟩ = tt
+~-sym {u₁ ⊔ u₂} {const k} ⟨ fst , snd ⟩ =
+   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
+~-sym {u₁ ⊔ u₂} {v ↦ v₁} ⟨ fst , snd ⟩ =
+   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
+~-sym {u₁ ⊔ u₂} {v₁ ⊔ v₂} ⟨ fst , snd ⟩ 
+    with ~-sym {u₁} {v₁ ⊔ v₂} fst
+       | ~-sym {u₂} {v₁ ⊔ v₂} snd
+... | ⟨ v₁~u₁ , v₂~u₁ ⟩ | ⟨ v₁~u₂ , v₂~u₂ ⟩ =
+      ⟨ ~⊔R{v = v₁} v₁~u₁ v₁~u₂ , ~⊔R{v = v₂} v₂~u₁ v₂~u₂ ⟩
+
+
+~-refl : ∀{v} → v ~ v
+~-refl {⊥} = tt
+~-refl {const {B} k} 
+    with base-eq? B B
+... | yes eq rewrite eq = refl
+... | no neq = neq refl
+~-refl {v ↦ w} = inj₁ ⟨ ~-refl {v} , ~-refl {w} ⟩
+~-refl {(v₁ ⊔ v₂){c}} =
+    ⟨ ~⊔R {v₁} (~-refl {v₁}) c ,
+      ~⊔R {v₂} (~-sym {v₁} c) (~-refl {v₂}) ⟩
+
+~-↦-cong : ∀{u v u′ v′} → u ~ u′ → v ~ v′ → (u ↦ v) ~ (u′ ↦ v′)
+~-↦-cong = λ z z₁ → inj₁ ⟨ z , z₁ ⟩
 
 infix 4 _⊑_
 
@@ -68,23 +125,23 @@ data _⊑_ : Value → Value → Set where
   ⊑-const : ∀ {B}{k} → const {B} k ⊑ const {B} k
 
   ⊑-conj-L : ∀ {u v w}
-      → v ⊑ u
-      → w ⊑ u
-        -----------
-      → (v ⊔ w) ⊑ u
+        → v ⊑ u
+        → w ⊑ u
+        → {c : v ~ w}
+          -----------
+        → ((v ⊔ w){c}) ⊑ u
 
   ⊑-conj-R1 : ∀ {u v w}
-     → u ⊑ v
-       -----------
-     → u ⊑ (v ⊔ w)
+       → u ⊑ v → {c : v ~ w}
+         ------------------
+       → u ⊑ ((v ⊔ w){c})
 
   ⊑-conj-R2 : ∀ {u v w}
-     → u ⊑ w
-       -----------
-     → u ⊑ (v ⊔ w)
+       → u ⊑ w → {c : v ~ w}
+         -----------
+       → u ⊑ ((v ⊔ w){c})
 
   ⊑-trans : ∀ {u v w}
-     → wf v
      → u ⊑ v
      → v ⊑ w
        -----
@@ -97,8 +154,10 @@ data _⊑_ : Value → Value → Set where
        → (v ↦ w) ⊑ (v′ ↦ w′)
 
   ⊑-dist : ∀{v w w′}
-         ---------------------------------
-       → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
+       → {c : w ~ w′}
+         --------------------------------------------
+       → v ↦ ((w ⊔ w′){c}) ⊑ (((v ↦ w) ⊔ (v ↦ w′))
+         {~-↦-cong {v}{w}{v}{w′} (~-refl {v}) c})
 
 
 
@@ -212,6 +271,17 @@ BelowConst k (u ⊔ v) = BelowConst k u × BelowConst k v
 ⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
+
+
+
+
+~-⊔-cong : ∀{u v u′ v′}
+             → (u ~ u′) → (u ~ v′)
+             → (v ~ u′) → (v ~ v′)
+             → {c1 : (u ~ v)} {c2 : (u′ ~ v′)}
+             → ((u ⊔ v){c1}) ~ ((u′ ⊔ v′){c2})
+~-⊔-cong {u}{v}{u′}{v′} u~u′ u~v′ v~u′ v~v′ {u~v} {u′~v′} = {!!}
+
 ordering : ValueOrdering domain
 ordering = record
              { _⊑_ = _⊑_
@@ -221,7 +291,11 @@ ordering = record
              ; ⊑-conj-R2 = ⊑-conj-R2
              ; ⊑-trans = ⊑-trans
              ; ⊑-fun = ⊑-fun
-             ; ⊑-dist = ⊑-dist
              ; ⊑-refl = ⊑-refl
+             ; ~-↦-cong = λ {u} {v} {u′} {v′} z z₁ → inj₁ ⟨ z , z₁ ⟩
+             ; ~-refl = ~-refl
+             ; ~-↦ = λ {v} {w} {v′} {w′} z → z
+             ; ~-⊔-cong = ~-⊔-cong             
+             ; ⊑-dist = ⊑-dist
              }
 

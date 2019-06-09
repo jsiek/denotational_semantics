@@ -20,38 +20,40 @@ open import Relation.Nullary using (¬_)
 record Domain : Set₁ where
   infixr 7 _↦_
   infixl 5 _⊔_
+  infix 4 _~_
   field
     Value : Set
+    _~_ : Value → Value → Set
     ⊥ : Value
     _↦_ : Value → Value → Value
-    _⊔_ : Value → Value → Value
+    _⊔_ : (u : Value) → (v : Value) → {c : u ~ v} → Value
 
 record ValueOrdering (D : Domain) : Set₁ where
   open Domain D
   infix 4 _⊑_
   field
-    wf : Value → Set
     _⊑_ : Value → Value → Set
+
     ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
 
     ⊑-conj-L : ∀ {u v w}
         → v ⊑ u
         → w ⊑ u
+        → {c : v ~ w}
           -----------
-        → (v ⊔ w) ⊑ u
+        → ((v ⊔ w){c}) ⊑ u
 
     ⊑-conj-R1 : ∀ {u v w}
-       → u ⊑ v
-         -----------
-       → u ⊑ (v ⊔ w)
+       → u ⊑ v → {c : v ~ w}
+         ------------------
+       → u ⊑ ((v ⊔ w){c})
 
     ⊑-conj-R2 : ∀ {u v w}
-       → u ⊑ w
+       → u ⊑ w → {c : v ~ w}
          -----------
-       → u ⊑ (v ⊔ w)
+       → u ⊑ ((v ⊔ w){c})
 
     ⊑-trans : ∀ {u v w}
-       → wf v
        → u ⊑ v
        → v ⊑ w
          -----
@@ -62,26 +64,35 @@ record ValueOrdering (D : Domain) : Set₁ where
          → w ⊑ w′
            -------------------
          → (v ↦ w) ⊑ (v′ ↦ w′)
-
-    ⊑-dist : ∀{v w w′}
-           ---------------------------------
-         → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
-
+         
     ⊑-refl : ∀ {v} → v ⊑ v
+
+    ~-↦-cong : ∀{u v u′ v′} → u ~ u′ → v ~ v′ → (u ↦ v) ~ (u′ ↦ v′)
+    
+    ~-refl : ∀{v} → v ~ v
+    
+    ~-↦ : ∀{v w v′ w′} → (v ↦ w ~ v′ ↦ w′) → ((v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′))
+    
+    ~-⊔-cong : ∀{u v u′ v′}
+             → (u ~ u′) → (u ~ v′)
+             → (v ~ u′) → (v ~ v′)
+             → {c1 : (u ~ v)} {c2 : (u′ ~ v′)}
+             → ((u ⊔ v){c1}) ~ ((u′ ⊔ v′){c2})
+             
+    ⊑-dist : ∀{v w w′}
+         → {c : w ~ w′}
+           --------------------------------------------
+         → v ↦ ((w ⊔ w′){c}) ⊑ (((v ↦ w) ⊔ (v ↦ w′)) {~-↦-cong ~-refl c})
+
+    
 
 
 record Consistent (D : Domain) (V : ValueOrdering D) : Set₁ where
   open Domain D
   open ValueOrdering V
-  infix 4 _~_
   field
-    _~_ : Value → Value → Set
-    ~-refl : ∀{v} → wf v → v ~ v
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
-    ~-↦ : ∀{v w v′ w′} → (v ↦ w ~ v′ ↦ w′) → ((v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′))
-    wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
-    wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)    
-
+    
 
 {-
 
@@ -125,8 +136,11 @@ module DomainAux(D : Domain) where
     lemma Z      =  refl
     lemma (S x)  =  refl
 
-  _`⊔_ : ∀ {Γ} → Env Γ → Env Γ → Env Γ
-  (γ `⊔ δ) x = γ x ⊔ δ x
+  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
+  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
+  
+  _`⊔_ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → {c : γ ~′ δ} → Env Γ
+  (γ `⊔ δ) {c} x = (γ x ⊔ δ x){c {x}}
 
   _`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
   _`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x
@@ -240,35 +254,6 @@ module DomainAux(D : Domain) where
       ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
 -}
 
-module ConsistentAux (D : Domain) (V : ValueOrdering D) (C : Consistent D V)
-  where
-  open Domain D
-  open ValueOrdering V
-  open Consistent C
-  open DomainAux D
-
-  WFEnv : ∀{Γ} → Env Γ → Set
-  WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
-
-  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
-  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
-
-  ~′-refl : ∀{Γ}{γ : Env Γ} → WFEnv γ → γ ~′ γ
-  ~′-refl {Γ}{γ} wfγ {x} = ~-refl (wfγ {x})
-
-  app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
-        → u₁ ~ u₂
-        → v₁ ~ v₂
-        → v₁ ↦ w₁ ⊑ u₁
-        → v₂ ↦ w₂ ⊑ u₂
-        → w₁ ~ w₂
-  app-consistency {u₁}{u₂}{v₁}{w₁}{v₂}{w₂} u₁~u₂ v₁~v₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
-      with ~-⊑ u₁~u₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
-  ... | v₁↦w₁~v₂↦w₂ 
-      with ~-↦ {v₁}{w₁}{v₂}{w₂} v₁↦w₁~v₂↦w₂ 
-  ... | inj₁ ⟨ _ , w₁~w₂ ⟩ = w₁~w₂
-  ... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
-
 {-
 
   The OrderingAux module contains stuff that is defined/proved
@@ -284,15 +269,19 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
   
   ⊔⊑⊔ : ∀ {v w v′ w′}
         → v ⊑ v′  →  w ⊑ w′
-          -----------------------
-        → (v ⊔ w) ⊑ (v′ ⊔ w′)
-  ⊔⊑⊔ d₁ d₂ = ⊑-conj-L (⊑-conj-R1 d₁) (⊑-conj-R2 d₂)
+        → {c1 : v ~ w}{c2 : v′ ~ w′}
+          --------------------------
+        → ((v ⊔ w){c1}) ⊑ ((v′ ⊔ w′){c2})
+  ⊔⊑⊔ d₁ d₂ {vw}{vw′} = ⊑-conj-L (⊑-conj-R1 d₁) (⊑-conj-R2 d₂)
 
   Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
-          → ((v ⊔ v′) ↦ (w ⊔ w′)) ⊑ ((v ↦ w) ⊔ (v′ ↦ w′))
-  Dist⊔↦⊔ = ⊑-trans ? ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
-                              (⊑-fun (⊑-conj-R2 ⊑-refl) ⊑-refl))
-
+          → {c1 : v ~ v′} → {c2 : w ~ w′}
+          → (((v ⊔ v′){c1}) ↦ ((w ⊔ w′) {c2})) ⊑ ((v ↦ w) ⊔ (v′ ↦ w′))
+                                                    {~-↦-cong c1 c2}
+  Dist⊔↦⊔ {v~v′} {w~w′} =
+     ⊑-trans ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
+                         (⊑-fun (⊑-conj-R2 ⊑-refl) ⊑-refl))
+                
   infixr 2 _⊑⟨⟩_ _⊑⟨_⟩_
   infix  3 _◼
 
@@ -307,7 +296,7 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
       → y ⊑ z
         -----
       → x ⊑ z
-  (x ⊑⟨ x⊑y ⟩ y⊑z) =  ⊑-trans ? x⊑y y⊑z
+  (x ⊑⟨ x⊑y ⟩ y⊑z) =  ⊑-trans x⊑y y⊑z
 
   _◼ : ∀ (v : Value)
         -----
@@ -320,40 +309,65 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
   `Refl⊑ : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
   `Refl⊑ {Γ} {γ} x = ⊑-refl {γ x}
 
-  EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → γ `⊑ (γ `⊔ δ)
+  EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ)
+             → {c : γ ~′ δ}
+             → γ `⊑ ((γ `⊔ δ){c})
   EnvConjR1⊑ γ δ x = ⊑-conj-R1 ⊑-refl
 
-  EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → δ `⊑ (γ `⊔ δ)
+  EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ)
+             → {c : γ ~′ δ}
+             → δ `⊑ ((γ `⊔ δ){c})
   EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
 
-module WFDenotMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
+  ~′-refl : ∀{Γ}{γ : Env Γ} → γ ~′ γ
+  ~′-refl {Γ}{γ}{x} = ~-refl
 
+
+module ConsistentAux (D : Domain) (V : ValueOrdering D) (C : Consistent D V)
+  where
   open Domain D
   open ValueOrdering V
   open Consistent C
   open DomainAux D
-  open ConsistentAux D V C
+
+  app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
+        → u₁ ~ u₂
+        → v₁ ~ v₂
+        → v₁ ↦ w₁ ⊑ u₁
+        → v₂ ↦ w₂ ⊑ u₂
+        → w₁ ~ w₂
+  app-consistency {u₁}{u₂}{v₁}{w₁}{v₂}{w₂} u₁~u₂ v₁~v₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
+      with ~-⊑ u₁~u₂ v₁↦w₁⊑u₁ v₂↦w₂⊑u₂
+  ... | v₁↦w₁~v₂↦w₂ 
+      with ~-↦ {v₁}{w₁}{v₂}{w₂} v₁↦w₁~v₂↦w₂ 
+  ... | inj₁ ⟨ _ , w₁~w₂ ⟩ = w₁~w₂
+  ... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
+
+
+module WFDenotMod (D : Domain) (V : ValueOrdering D) where
+
+  open Domain D
+  open ValueOrdering V
+  open DomainAux D
   open OrderingAux D V
 
   record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
     field
       ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
       ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
-      ⊔-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ
-               → D γ u → D δ v → D γ (u ⊔ v)
-      ~-closed : ∀{γ δ u v} → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
+      ⊔-closed : ∀{γ δ u v} → γ ~′ δ → {c : u ~ v}
+               → D γ u → D δ v → D γ ((u ⊔ v){c})
+      ~-closed : ∀{γ δ u v} → γ ~′ δ
                → D γ u → D δ v → u ~ v
 
 
-module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
+module ModelMod (D : Domain) (V : ValueOrdering D) where
 
   open Domain D
   open ValueOrdering V
-  open Consistent C
   open DomainAux D
   open OrderingAux D V
-  open ConsistentAux D V C
-  open WFDenotMod D V C
+  open WFDenotMod D V 
   
   record ModelCurry
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
@@ -364,46 +378,37 @@ module ModelMod (D : Domain) (V : ValueOrdering D) (C : Consistent D V) where
           → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
           → ℱ D γ ≲ ℱ D′ δ
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-          → WFDenot (suc Γ) D → WFEnv γ → wf v
-          → ℱ D γ v → w ⊑ v → ℱ D γ w
-      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{u v : Value}
-          → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
+          → WFDenot (suc Γ) D → w ⊑ v
+          → ℱ D γ v
+          → ℱ D γ w
+      ℱ-⊔ : ∀{Γ}{γ : Env Γ}{δ : Env Γ}{D : Denotation (suc Γ)}{u v : Value}
+          → γ ~′ δ → {c : u ~ v}
+          → ℱ D γ u → ℱ D δ v
+          → ℱ D γ ((u ⊔ v){c})
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
       ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
-          → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
-          → ℱ D γ u → ℱ D δ v → u ~ v
+          → WFDenot (suc Γ) D → γ ~′ δ
+          → ℱ D γ u → ℱ D δ v
+          → u ~ v
 
   record LambdaModelBasics
       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
       : Set₁ where
     field
-      ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-            {D′ : Denotation (suc Δ)}
-          → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
-          → ℱ D γ ≲ ℱ D′ δ
+      model_curry : ModelCurry ℱ
       ●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
               {D₁′ D₂′ : Denotation Δ}
           → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
           → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
-      ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-          → WFDenot (suc Γ) D → WFEnv γ → wf v
-          → ℱ D γ v → w ⊑ v → ℱ D γ w
       ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
           → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
-      ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
-          → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
-      ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
-          → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
-          → ℱ D γ u → ℱ D δ v → u ~ v
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {δ : Env Γ} {u v : Value}
-          → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → WFEnv δ → γ ~′ δ
-          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
+          → WFDenot Γ D₁ → WFDenot Γ D₂ → γ ~′ δ → {c : u ~ v}
+          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ ((u ⊔ v){c})
       ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
-          → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
-          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → WFDenot Γ D₁ → WFDenot Γ D₂ → γ ~′ δ
           → (D₁ ● D₂) γ u → (D₁ ● D₂) δ v → u ~ v
-      ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
 
 module LambdaDenot
   (D : Domain)
@@ -477,14 +482,14 @@ module ℱ-●-cong
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (C : Consistent D V)
-  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
+  (MB : ModelMod.LambdaModelBasics D V _●_ ℱ)
   where
   open Domain D
   open DomainAux D
   open OrderingAux D V
 
   open ModelMod.LambdaModelBasics MB
+  open ModelMod.ModelCurry model_curry
 
 
   ℱ-cong : ∀{Γ}{D D′ : Denotation (suc Γ)}
@@ -512,14 +517,14 @@ module DenotAux
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (C : Consistent D V)
-  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
+  (MB : ModelMod.LambdaModelBasics D V _●_ ℱ)
   where
   open Domain D
   open DomainAux D
   open OrderingAux D V
   open ModelMod.LambdaModelBasics MB
-  open ℱ-●-cong D V _●_ ℱ C MB
+  open ModelMod.ModelCurry model_curry
+  open ℱ-●-cong D V _●_ ℱ MB
 
   open LambdaDenot D V _●_ ℱ
   open import Lambda
@@ -563,8 +568,7 @@ module ISWIMDenotAux
   (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
        → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
   (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (C : Consistent D V)
-  (MB : ModelMod.LambdaModelBasics D V C _●_ ℱ)
+  (MB : ModelMod.LambdaModelBasics D V _●_ ℱ)
   (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
   where
   
@@ -573,7 +577,8 @@ module ISWIMDenotAux
   open OrderingAux D V
   open ISWIMDenot D V _●_ ℱ  (λ {P} k v → ℘ {P} k v)
   open ModelMod.LambdaModelBasics MB
-  open ℱ-●-cong D V _●_ ℱ C MB
+  open ModelMod.ModelCurry model_curry
+  open ℱ-●-cong D V _●_ ℱ MB
   
   open import ISWIM
   open ASTMod

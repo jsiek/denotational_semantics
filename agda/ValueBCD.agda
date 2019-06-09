@@ -102,34 +102,36 @@ data _⊑_ : Value → Value → Set where
 ⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
+wf : Value → Set
+wf = λ v → ⊤
+
 ordering : ValueOrdering domain
 ordering = record
-             { _⊑_ = _⊑_
+             { wf = wf 
+             ; _⊑_ = _⊑_
+             ; _~_ = λ u v → ⊤ 
              ; ⊑-⊥ = ⊑-⊥
              ; ⊑-conj-L = ⊑-conj-L
              ; ⊑-conj-R1 = ⊑-conj-R1
              ; ⊑-conj-R2 = ⊑-conj-R2
-             ; ⊑-trans = ⊑-trans
+             ; ⊑-trans = λ wfv → ⊑-trans
              ; ⊑-fun = ⊑-fun
              ; ⊑-dist = ⊑-dist
              ; ⊑-refl = ⊑-refl
+             ; wf-fun = λ {v} {w} _ _ → tt
+             ; wf-⊔ = λ {u} {v} _ _ _ → tt
+             ; ~-refl = λ {v} wfv → tt
+             ; ~-↦ = λ {v} {w} {v′} {w′} _ → inj₁ ⟨ tt , tt ⟩ 
+             ; ~-↦-cong = λ {u} {v} {u′} {v′} _ _ → tt
+             ; ~-⊔-cong = λ {u} {v} {u′} {v′} _ _ → tt
              }
 
 open OrderingAux domain ordering
 
-wf : Value → Set
-wf = λ v → ⊤
 
-consistent : Consistent domain ordering
-consistent = record { wf = wf ;
-                      _~_ = λ u v → ⊤ ;
-                      ~-refl = λ {v} wfv → tt ;
-                      ~-⊑ = λ {u} {v} {u′} {v′} _ _ _ → tt ;
-                      ~-↦ = λ {v} {w} {v′} {w′} _ → inj₁ ⟨ tt , tt ⟩ }
-
-open WFDenotMod domain ordering consistent
-open ModelMod domain ordering consistent
-open ConsistentAux domain ordering consistent
+open WFDenotMod domain ordering 
+open ModelMod domain ordering 
+open ConsistentAux domain ordering
 
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
        → WFDenot (suc Γ) D → WFEnv γ → wf v
@@ -150,11 +152,15 @@ open ConsistentAux domain ordering consistent
         b Z = v⊑v'
         b (S x) = ⊑-refl 
 ℱ-⊑ {γ = γ} d wfγ wfv ℱDγv (⊑-dist{v = v}) =
-    WFDenot.⊔-closed d (λ {x} → G {x}) (proj₁ ℱDγv) (proj₂ ℱDγv)
+    WFDenot.⊔-closed d {γ = γ `, v}{γ `, v} (λ {x} → G {x}) (λ {x} → G {x})
+        (λ {x} → H {x}) (proj₁ ℱDγv) (proj₂ ℱDγv)
     where
     G : WFEnv (γ `, v)
     G {Z} = tt
     G {S x} = tt
+    H : (γ `, v) ~′ (γ `, v)
+    H {Z} = tt
+    H {S x} = tt
 
 
 model_curry : ModelCurry ℱ
