@@ -274,10 +274,10 @@ dom′ (u₁ ⊔ u₂)
 ... | no nc = nothing
 
 
-dom~ : Value → Set
-dom~ v = Σ[ u ∈ Value ] dom′ v ≡ just u
+dom∃ : Value → Set
+dom∃ v = Σ[ u ∈ Value ] dom′ v ≡ just u
 
-dom : (v : Value) → {d : dom~ v } → Value
+dom : (v : Value) → {d : dom∃ v } → Value
 dom v {⟨ u , snd ⟩} = u
 
 {-
@@ -301,10 +301,10 @@ cod′ (u₁ ⊔ u₂)
 ... | no nc = nothing
 
 
-cod~ : Value → Set
-cod~ v = Σ[ u ∈ Value ] cod′ v ≡ just u
+cod∃ : Value → Set
+cod∃ v = Σ[ u ∈ Value ] cod′ v ≡ just u
 
-cod : (v : Value) → {c : cod~ v} → Value
+cod : (v : Value) → {c : cod∃ v} → Value
 cod v {⟨ u , snd ⟩} = u
 
 {-

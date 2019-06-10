@@ -1,5 +1,4 @@
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; _≢_; refl; sym; cong; cong₂)
+open import Agda.Primitive using (lzero)
 open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_) renaming (_⊔_ to max)
 open import Data.Nat.Properties
   using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
@@ -8,12 +7,13 @@ open import Data.Nat.Properties
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Agda.Primitive using (lzero)
-open import Relation.Nullary using (¬_)
-open import Relation.Nullary.Negation using (contradiction)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
-open import Relation.Nullary using (Dec; yes; no)
+open import Data.Maybe
 open import Data.Unit using (⊤; tt)
+open import Relation.Nullary using (Dec; yes; no; ¬_)
+open import Relation.Nullary.Negation using (contradiction)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; _≢_; refl; sym; cong; cong₂)
 
 open import Variables
 open import Primitives
@@ -30,7 +30,7 @@ module FunInverseBCDConst where
   Function Inversion
  -------------------------------}
 
-not-u₁⊔u₂∈v : ∀{v u₁ u₂} → ¬ (u₁ ⊔ u₂) ∈ v
+not-u₁⊔u₂∈v : ∀{v u₁ u₂}{c} → ¬ ((u₁ ⊔ u₂){c}) ∈ v
 not-u₁⊔u₂∈v {⊥} ()
 not-u₁⊔u₂∈v {const x} ()
 not-u₁⊔u₂∈v {v ↦ v₁} ()
@@ -65,8 +65,8 @@ not-u₁⊔u₂∈v {v ⊔ v₁} (inj₂ y) = not-u₁⊔u₂∈v y
 ... | x = ∈→⊑ x
 ⊆→⊑ {u ⊔ u′} s = ⊑-conj-L (⊆→⊑ (λ z → s (inj₁ z))) (⊆→⊑ (λ z → s (inj₂ z)))
 
-⊔⊆-inv : ∀{u v w : Value}
-       → (u ⊔ v) ⊆ w
+⊔⊆-inv : ∀{u v w : Value}{c}
+       → ((u ⊔ v){c}) ⊆ w
          ---------------
        → u ⊆ w  ×  v ⊆ w
 ⊔⊆-inv uvw = ⟨ (λ x → uvw (inj₁ x)) , (λ x → uvw (inj₂ x)) ⟩
@@ -101,36 +101,67 @@ Funs∈ {u ⊔ u′} f
 ... | ⟨ v , ⟨ w , m ⟩ ⟩ = ⟨ v , ⟨ w , (inj₁ m) ⟩ ⟩
 
 
-↦∈→⊆dom : ∀{u v w : Value}
+dom↦ : ∀{v w}{d} → dom (v ↦ w) {d} ≡ v
+dom↦ {v} {w} {⟨ u , refl ⟩} = refl
+
+
+dom∃⊔ : ∀{u v}{c} → dom∃ ((u ⊔ v){c}) → dom∃ u × dom∃ v
+dom∃⊔ {u} {v} {c} ⟨ w , snd ⟩
+    with dom′ u | dom′ v
+... | just u₁ | just v₁ = ⟨ ⟨ u₁ , refl ⟩ , ⟨ v₁ , refl ⟩ ⟩
+... | just u₁ | nothing
+    with snd
+... | ()
+dom∃⊔ {u} {v} {c} ⟨ w , snd ⟩ | nothing | _
+    with snd
+... | ()
+
+
+↦∈→⊆dom : ∀{u v w : Value} {d : dom∃ u}
           →  (v ↦ w) ∈ u
-            ----------------------
-          → v ⊆ dom u
+            ----------------------------
+          → v ⊆ dom u {d}
 ↦∈→⊆dom {⊥} () u∈v
 ↦∈→⊆dom {const {B} k} ()
-↦∈→⊆dom {v ↦ w} refl u∈v = u∈v
-↦∈→⊆dom {u ⊔ u′} (inj₁ v↦w∈u) u∈v =
+↦∈→⊆dom {u₁ ↦ u₂}{v}{w}{d} refl u∈v rewrite dom↦{u₁}{u₂}{d} = u∈v
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {v} {w} {⟨ u , j ⟩} (inj₁ v↦w∈u₁) {u′} u′∈v
+    with dom∃⊔ {u₁}{u₂}{c} ⟨ u , j ⟩
+... | ⟨ ⟨ v₁ , jv₁ ⟩ , ⟨ v₂ , jv₂ ⟩ ⟩
+    rewrite jv₁ | jv₂
+    with consistent? v₁ v₂
+... | yes v₁~v₂ =
+     let ih = ↦∈→⊆dom{u₁}{v}{w}{⟨ v₁ , jv₁ ⟩} v↦w∈u₁ u′∈v in
+     {!!}
+... | no v₁~̸v₂ = {!!}
+
+{-
    let ih = ↦∈→⊆dom v↦w∈u in
    inj₁ (ih u∈v)
-↦∈→⊆dom {u ⊔ u′} (inj₂ v↦w∈u′) u∈v =
+-}
+↦∈→⊆dom {u ⊔ u′} (inj₂ v↦w∈u′) u∈v = {!!}
+{-
    let ih = ↦∈→⊆dom v↦w∈u′ in
    inj₂ (ih u∈v)
+-}
 
 
-
-⊆↦→cod⊆ : ∀{u v w : Value}
+⊆↦→cod⊆ : ∀{u v w : Value}{c}
         → u ⊆ v ↦ w
           ---------
-        → cod u ⊆ w
-⊆↦→cod⊆ {⊥} s refl with s {⊥} refl
-... | ()
+        → (cod u){c} ⊆ w
+⊆↦→cod⊆ {⊥} s u∈cod⊥ = {!!}
+
 ⊆↦→cod⊆ {const {B} k} u⊆v↦w
     with u⊆v↦w refl
 ... | ()
 ⊆↦→cod⊆ {C ↦ C′} s m with s {C ↦ C′} refl
-... | refl = m
-⊆↦→cod⊆ {u ⊔ u′} s (inj₁ x) = ⊆↦→cod⊆ (λ {C} z → s (inj₁ z)) x
+... | refl = {!!}
+⊆↦→cod⊆ {u ⊔ u′} s xx = {!!}
+{-
 ⊆↦→cod⊆ {u ⊔ u′} s (inj₂ y) = ⊆↦→cod⊆ (λ {C} z → s (inj₂ z)) y
+-}
 
+{-
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = Funs u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u′
@@ -293,3 +324,4 @@ AboveFun? (u ⊔ u')
 
 
 
+-}
