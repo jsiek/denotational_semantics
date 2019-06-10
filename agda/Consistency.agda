@@ -25,75 +25,14 @@ open import BelowBCDConst
 
 module Consistency where
 
-v~⊥ : ∀{v : Value} → v ~ ⊥
-v~⊥ {⊥} = tt
-v~⊥ {const x} = tt
-v~⊥ {v ↦ w} = tt
-v~⊥ {v₁ ⊔ v₂} = ⟨ v~⊥ {v₁} , v~⊥ {v₂} ⟩
-
-~⊔R : ∀{v u₁ u₂} → v ~ u₁ → v ~ u₂ 
-    → v ~ u₁ ⊔ u₂
-~⊔R {⊥} v~u₁ v~u₂ = tt
-~⊔R {const k} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
-~⊔R {v ↦ w} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
-~⊔R {v₁ ⊔ v₂} v~u₁ v~u₂ =
-    ⟨ (~⊔R {v = v₁} (proj₁ v~u₁) (proj₁ v~u₂)) ,
-      (~⊔R {v = v₂} (proj₂ v~u₁) (proj₂ v~u₂)) ⟩
-
-
+{-
 data wf : Value → Set where
   wf-bot : wf ⊥
   wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
   wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
   wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+-}
 
-
-~-sym : ∀{u v} → u ~ v → v ~ u
-~-sym {⊥} {⊥} u~v = tt
-~-sym {⊥} {const k} u~v = tt
-~-sym {⊥} {v ↦ w} u~v = tt
-~-sym {⊥} {v₁ ⊔ v₂} u~v = ⟨ ~-sym {v = v₁} tt , ~-sym {v = v₂} tt ⟩
-~-sym {const k} {⊥} u~v = tt
-~-sym {const {B} k} {const {B′} k′} u~v
-    with base-eq? B B′
-... | no neq = ⊥-elim u~v
-... | yes eq
-    rewrite eq
-    with base-eq? B′ B′
-... | no neq = neq refl
-... | yes refl = sym u~v
-~-sym {const k} {v ↦ w} ()
-~-sym {const k} {u ⊔ v} ⟨ k~u , k~v ⟩ =
-  ⟨ (~-sym{v = u} k~u) , (~-sym{v = v} k~v) ⟩
-~-sym {v ↦ w} {⊥} u~v = tt
-~-sym {v ↦ w} {const k} ()
-~-sym {v ↦ w} {v′ ↦ w′} (inj₁ ⟨ fst , snd ⟩) =
-   inj₁ ⟨ (~-sym{v = v′} fst) , (~-sym{v = w′} snd) ⟩
-~-sym {v ↦ w} {v′ ↦ w′} (inj₂ ¬v~v′) =
-   inj₂ λ x → ⊥-elim (contradiction (~-sym{u = v′} x) ¬v~v′)
-~-sym {v ↦ w} {u₁ ⊔ u₂} ⟨ fst , snd ⟩ =
-   ⟨ ~-sym{v = u₁} fst , ~-sym{v = u₂} snd ⟩
-~-sym {u₁ ⊔ u₂} {⊥} ⟨ fst , snd ⟩ = tt
-~-sym {u₁ ⊔ u₂} {const k} ⟨ fst , snd ⟩ =
-   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
-~-sym {u₁ ⊔ u₂} {v ↦ v₁} ⟨ fst , snd ⟩ =
-   ⟨ ~-sym{u = u₁} fst , ~-sym{u = u₂} snd ⟩
-~-sym {u₁ ⊔ u₂} {v₁ ⊔ v₂} ⟨ fst , snd ⟩ 
-    with ~-sym {u₁} {v₁ ⊔ v₂} fst
-       | ~-sym {u₂} {v₁ ⊔ v₂} snd
-... | ⟨ v₁~u₁ , v₂~u₁ ⟩ | ⟨ v₁~u₂ , v₂~u₂ ⟩ =
-      ⟨ ~⊔R{v = v₁} v₁~u₁ v₁~u₂ , ~⊔R{v = v₂} v₂~u₁ v₂~u₂ ⟩
-
-~-refl : ∀{v} → wf v → v ~ v
-~-refl {.⊥} wf-bot = tt
-~-refl {const {B} k} wf-const
-    with base-eq? B B
-... | yes eq rewrite eq = refl
-... | no neq = neq refl
-~-refl {.(_ ↦ _)} (wf-fun wfv wfv₁) = inj₁ ⟨ ~-refl wfv , ~-refl wfv₁ ⟩
-~-refl {v₁ ⊔ v₂} (wf-⊔ v₁~v₂ wfv₁ wfv₂) =
-    ⟨ ~⊔R{v₁} (~-refl{v₁} wfv₁) v₁~v₂ ,
-      ~⊔R{v₂} (~-sym{v₁} v₁~v₂) (~-refl wfv₂) ⟩
 
 
 consistent→atoms : ∀ {u v u′ v′} → u ~ v → u′ ∈ u → v′ ∈ v → u′ ~ v′
@@ -220,22 +159,6 @@ const-sub-inv {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} ⊑-dist ()
 AboveConst⊥ : ¬ AboveConst ⊥
 AboveConst⊥ ⟨ v , ⟨ w , lt ⟩ ⟩ = {!!}
 -}
-
-⊔⊑R : ∀{B₁ B₂ A}
-    → B₁ ⊔ B₂ ⊑ A
-    → B₁ ⊑ A
-⊔⊑R (⊑-conj-L B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = B₁⊔B₂⊑A
-⊔⊑R (⊑-conj-R1 B₁⊔B₂⊑A) = ⊑-conj-R1 (⊔⊑R B₁⊔B₂⊑A)
-⊔⊑R (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑R B₁⊔B₂⊑A)
-⊔⊑R (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑R B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
-
-⊔⊑L : ∀{B₁ B₂ A}
-    → B₁ ⊔ B₂ ⊑ A
-    → B₂ ⊑ A
-⊔⊑L (⊑-conj-L B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = B₁⊔B₂⊑A₁
-⊔⊑L (⊑-conj-R1 B₁⊔B₂⊑A) = ⊑-conj-R1 (⊔⊑L B₁⊔B₂⊑A)
-⊔⊑L (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑L B₁⊔B₂⊑A)
-⊔⊑L (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑L B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
 
 {- Atomic Subtyping 1 -}
 

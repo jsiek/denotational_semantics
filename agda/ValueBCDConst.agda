@@ -1,16 +1,17 @@
 open import Primitives
 open import Structures
 
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Relation.Nullary using (¬_)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
-open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤; tt)
+open import Data.Maybe
+open import Relation.Nullary using (¬_)
+open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 
 module ValueBCDConst where
 
@@ -160,6 +161,21 @@ data _⊑_ : Value → Value → Set where
          {~-↦-cong {v}{w}{v}{w′} (~-refl {v}) c})
 
 
+⊔⊑R : ∀{B₁ B₂ A} {c}
+    → ((B₁ ⊔ B₂){c}) ⊑ A
+    → B₁ ⊑ A
+⊔⊑R (⊑-conj-L B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = B₁⊔B₂⊑A
+⊔⊑R (⊑-conj-R1 B₁⊔B₂⊑A) = ⊑-conj-R1 (⊔⊑R B₁⊔B₂⊑A)
+⊔⊑R (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑R B₁⊔B₂⊑A)
+⊔⊑R (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑R B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
+
+⊔⊑L : ∀{B₁ B₂ A} {c}
+    → ((B₁ ⊔ B₂){c}) ⊑ A
+    → B₂ ⊑ A
+⊔⊑L (⊑-conj-L B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = B₁⊔B₂⊑A₁
+⊔⊑L (⊑-conj-R1 B₁⊔B₂⊑A) = ⊑-conj-R1 (⊔⊑L B₁⊔B₂⊑A)
+⊔⊑L (⊑-conj-R2 B₁⊔B₂⊑A) = ⊑-conj-R2 (⊔⊑L B₁⊔B₂⊑A)
+⊔⊑L (⊑-trans B₁⊔B₂⊑A B₁⊔B₂⊑A₁) = ⊑-trans (⊔⊑L B₁⊔B₂⊑A) B₁⊔B₂⊑A₁
 
 
 consistent? : (u : Value) → (v : Value) → Dec (u ~ v)
@@ -238,17 +254,108 @@ data Fun⊥ : Value → Set where
   fun : ∀{u v w} → u ≡ (v ↦ w) → Fun⊥ u
   bot : ∀{u} → u ≡ ⊥ → Fun⊥ u
 
-dom : (u : Value) → Value
-dom ⊥  = ⊥
-dom (const {B} k) = ⊥
-dom (v ↦ w) = v
-dom (u ⊔ u′) = dom u ⊔ dom u′
+v~⊥ : ∀{v : Value} → v ~ ⊥
+v~⊥ {⊥} = tt
+v~⊥ {const x} = tt
+v~⊥ {v ↦ w} = tt
+v~⊥ {v₁ ⊔ v₂} = ⟨ v~⊥ {v₁} , v~⊥ {v₂} ⟩
 
-cod : (u : Value) → Value
+dom′ : (u : Value) → Maybe Value
+dom′ ⊥ = nothing
+dom′ (const k) = nothing
+dom′ (u₁ ↦ u₂) = just u₁
+dom′ (u₁ ⊔ u₂)
+    with dom′ u₁ | dom′ u₂
+... | nothing | _ = nothing
+... | just v₁ | nothing = nothing
+... | just v₁ | just v₂
+    with consistent? v₁ v₂
+... | yes c = just ((v₁ ⊔ v₂) {c})
+... | no nc = nothing
+
+
+dom~ : Value → Set
+dom~ v = Σ[ u ∈ Value ] dom′ v ≡ just u
+
+dom : (v : Value) → {d : dom~ v } → Value
+dom v {⟨ u , snd ⟩} = u
+
+{-
+dom ⊥ {c} = ⊥
+dom (const {B} k) {c} = ⊥
+dom (v ↦ w) {c} = v
+dom ((u ⊔ u′){c}) {dc} = (dom u ⊔ dom u′){{!!}}
+-}
+
+cod′ : (u : Value) → Maybe Value
+cod′ ⊥ = nothing
+cod′ (const k) = nothing
+cod′ (u₁ ↦ u₂) = just u₂
+cod′ (u₁ ⊔ u₂)
+    with cod′ u₁ | cod′ u₂
+... | nothing | _ = nothing
+... | just v₁ | nothing = nothing
+... | just v₁ | just v₂
+    with consistent? v₁ v₂
+... | yes c = just ((v₁ ⊔ v₂) {c})
+... | no nc = nothing
+
+
+cod~ : Value → Set
+cod~ v = Σ[ u ∈ Value ] cod′ v ≡ just u
+
+cod : (v : Value) → {c : cod~ v} → Value
+cod v {⟨ u , snd ⟩} = u
+
+{-
 cod ⊥  = ⊥
 cod (const {B} k) = ⊥
 cod (v ↦ w) = w
-cod (u ⊔ u′) = cod u ⊔ cod u′
+cod ((u ⊔ u′){c}) = (cod u ⊔ cod u′){~-cod~ {u}{u′} c}
+-}
+
+
+
+⊑-refl : ∀ {v} → v ⊑ v
+⊑-refl {⊥} = ⊑-⊥
+⊑-refl {const k} = ⊑-const
+⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
+⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
+
+
+u~v⊔w : ∀{u v w}{c} → u ~ v → u ~ w → u ~ (v ⊔ w) {c}
+u~v⊔w {⊥} {v} {w} u~v u~w = tt
+u~v⊔w {const k} {v} {w} u~v u~w = ⟨ u~v , u~w ⟩
+u~v⊔w {u₁ ↦ u₂} {v} {w} u~v u~w = ⟨ u~v , u~w ⟩
+u~v⊔w {u₁ ⊔ u₂} {v} {w} u~v u~w =
+  ⟨ (u~v⊔w {u₁} (proj₁ u~v) (proj₁ u~w)) ,
+    (u~v⊔w {u₂} (proj₂ u~v) (proj₂ u~w)) ⟩
+
+~-⊔-cong : ∀{u v u′ v′}
+             → (u ~ u′) → (u ~ v′)
+             → (v ~ u′) → (v ~ v′)
+             → {c1 : (u ~ v)} {c2 : (u′ ~ v′)}
+             → ((u ⊔ v){c1}) ~ ((u′ ⊔ v′){c2})
+~-⊔-cong {u}{v}{u′}{v′} u~u′ u~v′ v~u′ v~v′ {u~v} {u′~v′} =
+  ⟨ u~v⊔w {u}{u′}{v′} u~u′ u~v′ , u~v⊔w {v}{u′}{v′} v~u′ v~v′ ⟩
+
+ordering : ValueOrdering domain
+ordering = record
+             { _⊑_ = _⊑_
+             ; ⊑-⊥ = ⊑-⊥
+             ; ⊑-conj-L = ⊑-conj-L
+             ; ⊑-conj-R1 = ⊑-conj-R1
+             ; ⊑-conj-R2 = ⊑-conj-R2
+             ; ⊑-trans = ⊑-trans
+             ; ⊑-fun = ⊑-fun
+             ; ⊑-refl = ⊑-refl
+             ; ~-↦-cong = λ {u} {v} {u′} {v′} z z₁ → inj₁ ⟨ z , z₁ ⟩
+             ; ~-refl = λ {v} → ~-refl {v}
+             ; ~-↦ = λ {v} {w} {v′} {w′} z → z
+             ; ~-⊔-cong = λ {u}{v}{u′}{v′} → ~-⊔-cong {u}{v}{u′}{v′}
+             ; ⊑-dist = ⊑-dist
+             }
+
 
 Below⊥ : Value → Set
 Below⊥ ⊥ = ⊤
@@ -264,38 +371,4 @@ BelowConst {B} k (const {B′} k′)
 ... | no neg = Bot
 BelowConst k (v ↦ w) = Bot
 BelowConst k (u ⊔ v) = BelowConst k u × BelowConst k v
-
-⊑-refl : ∀ {v} → v ⊑ v
-⊑-refl {⊥} = ⊑-⊥
-⊑-refl {const k} = ⊑-const
-⊑-refl {v ↦ v′} = ⊑-fun ⊑-refl ⊑-refl
-⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
-
-
-
-
-
-~-⊔-cong : ∀{u v u′ v′}
-             → (u ~ u′) → (u ~ v′)
-             → (v ~ u′) → (v ~ v′)
-             → {c1 : (u ~ v)} {c2 : (u′ ~ v′)}
-             → ((u ⊔ v){c1}) ~ ((u′ ⊔ v′){c2})
-~-⊔-cong {u}{v}{u′}{v′} u~u′ u~v′ v~u′ v~v′ {u~v} {u′~v′} = {!!}
-
-ordering : ValueOrdering domain
-ordering = record
-             { _⊑_ = _⊑_
-             ; ⊑-⊥ = ⊑-⊥
-             ; ⊑-conj-L = ⊑-conj-L
-             ; ⊑-conj-R1 = ⊑-conj-R1
-             ; ⊑-conj-R2 = ⊑-conj-R2
-             ; ⊑-trans = ⊑-trans
-             ; ⊑-fun = ⊑-fun
-             ; ⊑-refl = ⊑-refl
-             ; ~-↦-cong = λ {u} {v} {u′} {v′} z z₁ → inj₁ ⟨ z , z₁ ⟩
-             ; ~-refl = ~-refl
-             ; ~-↦ = λ {v} {w} {v′} {w′} z → z
-             ; ~-⊔-cong = ~-⊔-cong             
-             ; ⊑-dist = ⊑-dist
-             }
 
