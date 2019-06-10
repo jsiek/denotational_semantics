@@ -101,81 +101,51 @@ Funs∈ {u ⊔ u′} f
 ... | ⟨ v , ⟨ w , m ⟩ ⟩ = ⟨ v , ⟨ w , (inj₁ m) ⟩ ⟩
 
 
-dom↦ : ∀{v w}{d} → dom (v ↦ w) {d} ≡ v
-dom↦ {v} {w} {⟨ u , refl ⟩} = refl
+↦∈→⊆dom : ∀{u u′ v w : Value}
+      → (v ↦ w) ∈ u
+      → dom u ≡ just u′
+        ----------------------------
+      → v ⊆ u′
+↦∈→⊆dom {⊥} () eq 
+↦∈→⊆dom {const {B} k} () eq
+↦∈→⊆dom {u₁ ↦ u₂}{u′}{v}{w} refl refl u∈v = u∈v
+↦∈→⊆dom {(u₁ ⊔ u₂) {c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
+    with dom u₁ | dom u₂
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
+    | just v₁ | just v₂ 
+    with consistent? v₁ v₂ 
+... | yes v₁~v₂ =
+      let ih = ↦∈→⊆dom {u₁}{v₁} v↦w∈u₁ in
+      {!!}
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
+    | just v₁ | just v₂ | no v₁~̸v₂ 
+    with eq
+... | ()
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
+    | nothing | _
+    with eq
+... | ()
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
+    | just v₁ | nothing
+    with eq
+... | ()
+↦∈→⊆dom {(u₁ ⊔ u₂) {c}} {u′} {v} {w} (inj₂ v↦w∈u₂) eq {v'} v'∈v = {!!}
 
-
-dom-∃-⊔ : ∀{u v}{c} → dom∃ ((u ⊔ v){c})
-        → Σ[ d1 ∈ dom∃ u ] Σ[ d2 ∈ dom∃ v ] dom u {d1} ~ dom v {d2}
-dom-∃-⊔ {u} {v} {c} ⟨ w , snd ⟩
-    with dom′ u | dom′ v
-... | just u₁ | just v₁
-    with consistent? u₁ v₁
-... | yes u₁~v₁ = ⟨ ⟨ u₁ , refl ⟩ , ⟨ ⟨ v₁ , refl ⟩ , u₁~v₁ ⟩ ⟩
-... | no u₁~̸v₁
-    with snd
-... | ()
-dom-∃-⊔ {u} {v} {c} ⟨ w , snd ⟩ | just u₁ | nothing
-    with snd
-... | ()
-dom-∃-⊔ {u} {v} {c} ⟨ w , snd ⟩ | nothing | _
-    with snd
-... | ()
-
-dom-⊔ : ∀{u v}{u~v : u ~ v}{d : dom∃ ((u ⊔ v){u~v})}
-      → dom ((u ⊔ v) {u~v}) {d}
-         ≡ (dom u {proj₁ (dom-∃-⊔ {u}{v}{u~v} d)}
-           ⊔ dom v {proj₁ (proj₂ (dom-∃-⊔ {u}{v}{u~v} d))})
-            {proj₂ (proj₂ (dom-∃-⊔ {u}{v}{u~v} d))}
-dom-⊔ {u} {v} {u~v} {⟨ fst , snd ⟩}
-    with dom′ u | dom′ v
-... | just u₁ | just v₁
-    with consistent? u₁ v₁
-... | yes u₁~v₁
-    with snd
-... | refl = refl
-dom-⊔ {u} {v} {u~v} {⟨ fst , snd ⟩} | just u₁ | just v₁ | no u₁~̸v₁
-    with snd
-... | ()
-dom-⊔ {u} {v} {u~v} {⟨ fst , snd ⟩} | just u₁ | nothing
-    with snd
-... | ()
-dom-⊔ {u} {v} {u~v} {⟨ fst , snd ⟩} | nothing | _
-    with snd
-... | ()
-
-↦∈→⊆dom : ∀{u v w : Value} {d : dom∃ u}
-          →  (v ↦ w) ∈ u
-            ----------------------------
-          → v ⊆ dom u {d}
-↦∈→⊆dom {⊥} () u∈v
-↦∈→⊆dom {const {B} k} ()
-↦∈→⊆dom {u₁ ↦ u₂}{v}{w}{d} refl u∈v rewrite dom↦{u₁}{u₂}{d} = u∈v
-↦∈→⊆dom {(u₁ ⊔ u₂){c}} {v} {w} {⟨ u , j ⟩} (inj₁ v↦w∈u₁) {u′} u′∈v
-    with dom-∃-⊔ {u₁}{u₂}{c} ⟨ u , j ⟩
-... | ⟨ ⟨ v₁ , jv₁ ⟩ , ⟨ ⟨ v₂ , jv₂ ⟩ , v₁~v₂ ⟩ ⟩ =
-
-     let ih = ↦∈→⊆dom{u₁}{v}{w}{⟨ v₁ , jv₁ ⟩} v↦w∈u₁ u′∈v in
-     {!!}
-↦∈→⊆dom {(u₁ ⊔ u₂){c}} {v} {w} {⟨ u , j ⟩} (inj₂ y) {u′} u′∈v = {!!}
 
 
 
 {-
-   let ih = ↦∈→⊆dom v↦w∈u in
-   inj₁ (ih u∈v)
-
 ↦∈→⊆dom {u ⊔ u′} (inj₂ v↦w∈u′) u∈v = {!!}
-
    let ih = ↦∈→⊆dom v↦w∈u′ in
    inj₂ (ih u∈v)
 -}
 
 
-⊆↦→cod⊆ : ∀{u v w : Value}{c}
+⊆↦→cod⊆ : ∀{u u′ v w : Value}
         → u ⊆ v ↦ w
-          ---------
-        → (cod u){c} ⊆ w
+        → cod u ≡ just u′ 
+          --------------
+        → u′ ⊆ w
 ⊆↦→cod⊆ {⊥} s u∈cod⊥ = {!!}
 
 ⊆↦→cod⊆ {const {B} k} u⊆v↦w

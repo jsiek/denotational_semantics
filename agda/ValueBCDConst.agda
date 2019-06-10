@@ -260,25 +260,19 @@ v~⊥ {const x} = tt
 v~⊥ {v ↦ w} = tt
 v~⊥ {v₁ ⊔ v₂} = ⟨ v~⊥ {v₁} , v~⊥ {v₂} ⟩
 
-dom′ : (u : Value) → Maybe Value
-dom′ ⊥ = nothing
-dom′ (const k) = nothing
-dom′ (u₁ ↦ u₂) = just u₁
-dom′ (u₁ ⊔ u₂)
-    with dom′ u₁ | dom′ u₂
+dom : (u : Value) → Maybe Value
+dom ⊥ = nothing
+dom (const k) = nothing
+dom (u₁ ↦ u₂) = just u₁
+dom (u₁ ⊔ u₂)
+    with dom u₁ | dom u₂
 ... | nothing | _ = nothing
 ... | just v₁ | nothing = nothing
 ... | just v₁ | just v₂
     with consistent? v₁ v₂
-... | yes c = just ((v₁ ⊔ v₂) {c})
-... | no nc = nothing
+... | yes v₁~v₂ = just ((v₁ ⊔ v₂) {v₁~v₂})
+... | no v₁~̸v₂ = nothing
 
-
-dom∃ : Value → Set
-dom∃ v = Σ[ u ∈ Value ] dom′ v ≡ just u
-
-dom : (v : Value) → {d : dom∃ v } → Value
-dom v {⟨ u , snd ⟩} = u
 
 {-
 dom ⊥ {c} = ⊥
@@ -287,12 +281,12 @@ dom (v ↦ w) {c} = v
 dom ((u ⊔ u′){c}) {dc} = (dom u ⊔ dom u′){{!!}}
 -}
 
-cod′ : (u : Value) → Maybe Value
-cod′ ⊥ = nothing
-cod′ (const k) = nothing
-cod′ (u₁ ↦ u₂) = just u₂
-cod′ (u₁ ⊔ u₂)
-    with cod′ u₁ | cod′ u₂
+cod : (u : Value) → Maybe Value
+cod ⊥ = nothing
+cod (const k) = nothing
+cod (u₁ ↦ u₂) = just u₂
+cod (u₁ ⊔ u₂)
+    with cod u₁ | cod u₂
 ... | nothing | _ = nothing
 ... | just v₁ | nothing = nothing
 ... | just v₁ | just v₂
@@ -300,12 +294,6 @@ cod′ (u₁ ⊔ u₂)
 ... | yes c = just ((v₁ ⊔ v₂) {c})
 ... | no nc = nothing
 
-
-cod∃ : Value → Set
-cod∃ v = Σ[ u ∈ Value ] cod′ v ≡ just u
-
-cod : (v : Value) → {c : cod∃ v} → Value
-cod v {⟨ u , snd ⟩} = u
 
 {-
 cod ⊥  = ⊥
