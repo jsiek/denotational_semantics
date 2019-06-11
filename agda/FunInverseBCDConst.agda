@@ -13,7 +13,7 @@ open import Data.Unit using (⊤; tt)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; _≢_; refl; sym; cong; cong₂)
+  using (_≡_; _≢_; refl; sym; cong; cong₂; inspect; [_])
 
 open import Variables
 open import Primitives
@@ -110,35 +110,46 @@ Funs∈ {u ⊔ u′} f
 ↦∈→⊆dom {const {B} k} () eq
 ↦∈→⊆dom {u₁ ↦ u₂}{u′}{v}{w} refl refl u∈v = u∈v
 ↦∈→⊆dom {(u₁ ⊔ u₂) {c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
-    with dom u₁ | dom u₂
-↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
-    | just v₁ | just v₂ 
+    with dom u₁ | inspect dom u₁ | dom u₂ | inspect dom u₂
+... | just v₁ | [ domu₁≡v₁ ] | just v₂ | [ domu₂≡v₂ ]
     with consistent? v₁ v₂ 
-... | yes v₁~v₂ =
-      let ih = ↦∈→⊆dom {u₁}{v₁} v↦w∈u₁ in
-      {!!}
+... | yes v₁~v₂
+    with eq
+... | refl =
+      inj₁ (↦∈→⊆dom {u₁}{v₁} v↦w∈u₁ domu₁≡v₁ v'∈v)
 ↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
-    | just v₁ | just v₂ | no v₁~̸v₂ 
+    | just v₁ | [ domu₁≡v₁ ] | just v₂ | [ domu₂≡v₂ ] | no v₁~̸v₂ 
     with eq
 ... | ()
 ↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
-    | nothing | _
+    | nothing | [ _ ] | _ | [ _ ]
     with eq
 ... | ()
 ↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₁ v↦w∈u₁) eq {v'} v'∈v
-    | just v₁ | nothing
+    | just v₁ | [ domu₁≡v₁ ] | nothing | [ _ ]
     with eq
 ... | ()
-↦∈→⊆dom {(u₁ ⊔ u₂) {c}} {u′} {v} {w} (inj₂ v↦w∈u₂) eq {v'} v'∈v = {!!}
 
-
-
-
-{-
-↦∈→⊆dom {u ⊔ u′} (inj₂ v↦w∈u′) u∈v = {!!}
-   let ih = ↦∈→⊆dom v↦w∈u′ in
-   inj₂ (ih u∈v)
--}
+↦∈→⊆dom {(u₁ ⊔ u₂) {c}} {u′} {v} {w} (inj₂ v↦w∈u₂) eq {v'} v'∈v
+    with dom u₁ | inspect dom u₁ | dom u₂ | inspect dom u₂
+... | just v₁ | [ domu₁≡v₁ ] | just v₂ | [ domu₂≡v₂ ]
+    with consistent? v₁ v₂ 
+... | yes v₁~v₂
+    with eq
+... | refl =
+      inj₂ (↦∈→⊆dom {u₂}{v₂} v↦w∈u₂ domu₂≡v₂ v'∈v)
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₂ v↦w∈u₂) eq {v'} v'∈v
+    | just v₁ | [ domu₁≡v₁ ] | just v₂ | [ domu₂≡v₂ ] | no v₁~̸v₂ 
+    with eq
+... | ()
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₂ v↦w∈u₂) eq {v'} v'∈v
+    | nothing | [ _ ] | _ | [ _ ]
+    with eq
+... | ()
+↦∈→⊆dom {(u₁ ⊔ u₂){c}} {u′} {v} {w} (inj₂ v↦w∈u₂) eq {v'} v'∈v
+    | just v₁ | [ domu₁≡v₁ ] | nothing | [ _ ]
+    with eq
+... | ()
 
 
 ⊆↦→cod⊆ : ∀{u u′ v w : Value}
@@ -146,50 +157,79 @@ Funs∈ {u ⊔ u′} f
         → cod u ≡ just u′ 
           --------------
         → u′ ⊆ w
-⊆↦→cod⊆ {⊥} s u∈cod⊥ = {!!}
-
-⊆↦→cod⊆ {const {B} k} u⊆v↦w
-    with u⊆v↦w refl
+⊆↦→cod⊆ {⊥} s ()
+⊆↦→cod⊆ {const {B} k} u⊆v↦w ()
+⊆↦→cod⊆ {C ↦ C′} s refl
+    with s {C ↦ C′} refl
+... | refl = λ z → z
+⊆↦→cod⊆ {u₁ ⊔ u₂}{u′}{v}{w} u⊆v↦w codu≡u′ {v′} v′∈u′
+    with cod u₁ | inspect cod u₁ | cod u₂ | inspect cod u₂
+... | just v₁ | [ codu₁≡v₁ ] | just v₂ | [ codu₂≡v₂ ]
+    with consistent? v₁ v₂
+... | yes v₁~v₂
+    with codu≡u′
+... | refl
+    with v′∈u′
+... | inj₁ v′∈v₁ =     
+      ⊆↦→cod⊆ (λ x → u⊆v↦w (inj₁ x)) codu₁≡v₁ v′∈v₁
+... | inj₂ v′∈v₂ =
+      ⊆↦→cod⊆ (λ x → u⊆v↦w (inj₂ x)) codu₂≡v₂ v′∈v₂
+⊆↦→cod⊆ {u₁ ⊔ u₂}{u′}{v}{w} u⊆v↦w codu≡u′ {v′} v′∈u′
+    | just v₁ | [ codu₁≡v₁ ] | just v₂ | [ codu₂≡v₂ ]
+    | no v₁~̸v₂
+    with codu≡u′
 ... | ()
-⊆↦→cod⊆ {C ↦ C′} s m with s {C ↦ C′} refl
-... | refl = {!!}
-⊆↦→cod⊆ {u ⊔ u′} s xx = {!!}
-{-
-⊆↦→cod⊆ {u ⊔ u′} s (inj₂ y) = ⊆↦→cod⊆ (λ {C} z → s (inj₂ z)) y
--}
-
-{-
+⊆↦→cod⊆ {u₁ ⊔ u₂}{u′}{v}{w} u⊆v↦w codu≡u′ {v′} v′∈u′
+    | just v₁ | [ codu₁≡v₁ ] | nothing | [ _ ]
+    with codu≡u′
+... | ()
+⊆↦→cod⊆ {u₁ ⊔ u₂}{u′}{v}{w} u⊆v↦w codu≡u′ {v′} v′∈u′
+    | nothing | [ _ ] | _ | [ _ ]
+    with codu≡u′
+... | ()
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
-factor u u′ v w = Funs u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u′
+factor u u′ v w = Σ[ du ∈ Value ] Σ[ cu ∈ Value ]
+                  Funs u′ × u′ ⊆ u
+                  × dom u′ ≡ just du × du ⊑ v
+                  × cod u′ ≡ just cu × w ⊑ cu
 
-sub-inv-trans : ∀{u′ u₂ u : Value}
+sub-inv-trans : ∀{u′ u₂ u du cu : Value}
     → Funs u′  →  u′ ⊆ u
     → (∀{v′ w′} → v′ ↦ w′ ∈ u → Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′)
+    → dom u′ ≡ just du  → cod u′ ≡ just cu
       ---------------------------------------------------------------
-    → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′) (cod u′)
+    → Σ[ u₃ ∈ Value ] factor u₂ u₃ du cu
 sub-inv-trans {⊥} {u₂} {u} fu′ u′⊆u IH =
    ⊥-elim (contradiction (fu′ refl) ¬Fun⊥)
 sub-inv-trans {const {B} k} fu′ u′⊆u IH = ⊥-elim (not-Fun-k (fu′ refl))
-sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fg u′⊆u IH = IH (↦⊆→∈ u′⊆u)
-sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fg u′⊆u IH
+sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fg u′⊆u IH refl refl = IH (↦⊆→∈ u′⊆u)
+sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fg u′⊆u IH du≡ cu≡
     with ⊔⊆-inv u′⊆u
 ... | ⟨ u₁′⊆u , u₂′⊆u ⟩
-    with sub-inv-trans {u₁′} {u₂} {u} (λ {v′} z → fg (inj₁ z)) u₁′⊆u IH
-       | sub-inv-trans {u₂′} {u₂} {u} (λ {v′} z → fg (inj₂ z)) u₂′⊆u IH
-... | ⟨ u₃₁ , ⟨ fu21' , ⟨ u₃₁⊆u₂ , ⟨ du₃₁⊑du₁′ , cu₁′⊑cu₃₁ ⟩ ⟩ ⟩ ⟩
+    with sub-inv-trans {u₁′} {u₂} {u} (λ {v′} z → fg (inj₁ z)) u₁′⊆u IH {!!} {!!}
+       | sub-inv-trans {u₂′} {u₂} {u} (λ {v′} z → fg (inj₂ z)) u₂′⊆u IH {!!} {!!}
+... | ⟨ u₃₁ , ⟨ du21 , ⟨ cu21 , ⟨ fu21' , ⟨ u₃₁⊆u₂ , ⟨ du21≡ , ⟨ du₃₁⊑du₁′ ,
+        ⟨ cu21≡ , cu₁′⊑cu₃₁ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
     | ⟨ u₃₂ , ⟨ fu22' , ⟨ u₃₂⊆u₂ , ⟨ du₃₂⊑du₂′ , cu₁′⊑cu₃₂ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ (u₃₁ ⊔ u₃₂) , ⟨ fu₂′ , ⟨ u₂′⊆u₂ ,
-      ⟨ ⊔⊑⊔ du₃₁⊑du₁′ du₃₂⊑du₂′ ,
-        ⊔⊑⊔ cu₁′⊑cu₃₁ cu₁′⊑cu₃₂ ⟩ ⟩ ⟩ ⟩
+      ⟨ (u₃₁ ⊔ u₃₂) ,
+      ⟨ {!!} ,
+      ⟨ {!!} ,
+      ⟨ fu₂′ ,
+      ⟨ u₂′⊆u₂ ,
+      ⟨ {!!} ,
+      ⟨ {!!} {- ⊔⊑⊔ du₃₁⊑du₁′ du₃₂⊑du₂′ -} ,
+      ⟨ {!!} ,
+        {!!} {- ⊔⊑⊔ cu₁′⊑cu₃₁ cu₁′⊑cu₃₂ -} ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
     where fu₂′ : {v′ : Value} → v′ ∈ u₃₁ ⊎ v′ ∈ u₃₂ → Fun v′
-          fu₂′ {v′} (inj₁ x) = fu21' x
-          fu₂′ {v′} (inj₂ y) = fu22' y
+          fu₂′ {v′} (inj₁ x) = {!!} {- fu21' x -}
+          fu₂′ {v′} (inj₂ y) = {!!} {- fu22' y -}
           u₂′⊆u₂ : {C : Value} → C ∈ u₃₁ ⊎ C ∈ u₃₂ → C ∈ u₂
-          u₂′⊆u₂ {C} (inj₁ x) = u₃₁⊆u₂ x
-          u₂′⊆u₂ {C} (inj₂ y) = u₃₂⊆u₂ y
+          u₂′⊆u₂ {C} (inj₁ x) = {!!} {- u₃₁⊆u₂ x -}
+          u₂′⊆u₂ {C} (inj₂ y) = {!!} {- u₃₂⊆u₂ y -}
 
 
+{-
 sub-inv : ∀{u₁ u₂ : Value}
         → u₁ ⊑ u₂
         → ∀{v w} → v ↦ w ∈ u₁
@@ -318,6 +358,7 @@ AboveFun? (u ⊔ u')
 ... | yes ⟨ v , ⟨ w , lt ⟩ ⟩ | _ = yes ⟨ v , ⟨ w , (⊑-conj-R1 lt) ⟩ ⟩
 ... | no _ | yes ⟨ v , ⟨ w , lt ⟩ ⟩ = yes ⟨ v , ⟨ w , (⊑-conj-R2 lt) ⟩ ⟩
 ... | no x | no y = no (not-AboveFun-⊔ x y)
+
 
 
 
