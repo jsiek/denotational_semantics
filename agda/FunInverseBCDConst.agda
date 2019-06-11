@@ -188,6 +188,51 @@ Funs∈ {u ⊔ u′} f
     with codu≡u′
 ... | ()
 
+
+dom-u⊔v→dom-u×dom-v : ∀{u v w}{c}
+         → dom ((u ⊔ v){c}) ≡ just w
+         → Σ[ u′ ∈ Value ] Σ[ v′ ∈ Value ] Σ[ c′ ∈ u′ ~ v′ ]
+            dom u ≡ just u′ × dom v ≡ just v′ × w ≡ (u′ ⊔ v′) {c′}
+dom-u⊔v→dom-u×dom-v {u}{v}{w}{c} dom-u⊔v
+    with dom u | dom v
+... | just u′  | just v′
+    with consistent? u′ v′
+... | yes u′~v′
+    with dom-u⊔v
+... | refl = ⟨ u′ , ⟨ v′ , ⟨ u′~v′  , ⟨ refl , ⟨ refl , refl ⟩ ⟩ ⟩ ⟩ ⟩
+dom-u⊔v→dom-u×dom-v {u}{v}{w}{c} () | just u′  | just v′ | no u′~̸v′
+dom-u⊔v→dom-u×dom-v {u}{v}{w}{c} () | nothing  | _
+dom-u⊔v→dom-u×dom-v {u}{v}{w}{c} () | just u′  | nothing
+
+
+cod-u⊔v→cod-u×cod-v : ∀{u v w}{c}
+         → cod ((u ⊔ v){c}) ≡ just w
+         → Σ[ u′ ∈ Value ] Σ[ v′ ∈ Value ] Σ[ c′ ∈ u′ ~ v′ ]
+           cod u ≡ just u′ × cod v ≡ just v′ × w ≡ (u′ ⊔ v′) {c′}
+cod-u⊔v→cod-u×cod-v {u}{v}{w}{c} cod-u⊔v
+    with cod u | cod v
+... | just u′  | just v′
+    with consistent? u′ v′
+... | yes u′~v′
+    with cod-u⊔v
+... | refl = ⟨ u′ , ⟨ v′ , ⟨ u′~v′ , ⟨ refl , ⟨ refl , refl ⟩ ⟩ ⟩ ⟩ ⟩
+cod-u⊔v→cod-u×cod-v {u}{v}{w}{c} () | just u′  | just v′ | no u′~̸v′
+cod-u⊔v→cod-u×cod-v {u}{v}{w}{c} () | nothing  | _
+cod-u⊔v→cod-u×cod-v {u}{v}{w}{c} () | just u′  | nothing
+
+
+u⊆w→v⊆w→u~v : ∀{u v w} → u ⊆ w → v ⊆ w → u ~ v
+u⊆w→v⊆w→u~v {u}{v}{w} u⊆w v⊆w = atoms→consistent{u}{v} G
+   where
+   G : {u′ v′ : Value} → u′ ∈ u → v′ ∈ v → u′ ~ v′
+   G {u′}{v′} u′∈u v′∈v =
+     let u′∈w = u⊆w u′∈u in
+     let v′∈w = v⊆w v′∈v in
+     let w~w = ~-refl {w} in
+     consistent→atoms{w}{w} w~w u′∈w v′∈w
+
+
+
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = Σ[ du ∈ Value ] Σ[ cu ∈ Value ]
                   Funs u′ × u′ ⊆ u
@@ -204,17 +249,22 @@ sub-inv-trans {⊥} {u₂} {u} fu′ u′⊆u IH =
    ⊥-elim (contradiction (fu′ refl) ¬Fun⊥)
 sub-inv-trans {const {B} k} fu′ u′⊆u IH = ⊥-elim (not-Fun-k (fu′ refl))
 sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fg u′⊆u IH refl refl = IH (↦⊆→∈ u′⊆u)
-sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fg u′⊆u IH du≡ cu≡
-    with ⊔⊆-inv u′⊆u
+sub-inv-trans {(u₁′ ⊔ u₂′){u₁′~u₂′}} {u₂} {u}{du}{cu} fg u′⊆u IH du≡ cu≡
+    with ⊔⊆-inv{c = u₁′~u₂′} u′⊆u | dom-u⊔v→dom-u×dom-v {u₁′}{u₂′}{du}{u₁′~u₂′} du≡
+                            | cod-u⊔v→cod-u×cod-v {u₁′}{u₂′}{cu}{u₁′~u₂′} cu≡
 ... | ⟨ u₁′⊆u , u₂′⊆u ⟩
-    with sub-inv-trans {u₁′} {u₂} {u} (λ {v′} z → fg (inj₁ z)) u₁′⊆u IH {!!} {!!}
-       | sub-inv-trans {u₂′} {u₂} {u} (λ {v′} z → fg (inj₂ z)) u₂′⊆u IH {!!} {!!}
-... | ⟨ u₃₁ , ⟨ du21 , ⟨ cu21 , ⟨ fu21' , ⟨ u₃₁⊆u₂ , ⟨ du21≡ , ⟨ du₃₁⊑du₁′ ,
+    | ⟨ du₁ , ⟨ du₂ , ⟨ du₁~du₂ , ⟨ du₁≡ , ⟨ du₂≡ , du≡′ ⟩ ⟩ ⟩ ⟩ ⟩
+    | ⟨ cu₁ , ⟨ cu₂ , ⟨ cu₁~cu₂ , ⟨ cu₁≡ , ⟨ cu₂≡ , cu≡′ ⟩ ⟩ ⟩ ⟩ ⟩
+    rewrite du≡′ | cu≡′ 
+    with sub-inv-trans {u₁′} {u₂} {u} (λ {v′} z → fg (inj₁ z)) u₁′⊆u IH du₁≡ cu₁≡
+       | sub-inv-trans {u₂′} {u₂} {u} (λ {v′} z → fg (inj₂ z)) u₂′⊆u IH du₂≡ cu₂≡
+... | ⟨ u₃₁ , ⟨ du31 , ⟨ cu31 , ⟨ fu21' , ⟨ u₃₁⊆u₂ , ⟨ du31≡ , ⟨ du₃₁⊑du₁′ ,
         ⟨ cu21≡ , cu₁′⊑cu₃₁ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-    | ⟨ u₃₂ , ⟨ fu22' , ⟨ u₃₂⊆u₂ , ⟨ du₃₂⊑du₂′ , cu₁′⊑cu₃₂ ⟩ ⟩ ⟩ ⟩ =
-      ⟨ (u₃₁ ⊔ u₃₂) ,
-      ⟨ {!!} ,
-      ⟨ {!!} ,
+    | ⟨ u₃₂ , ⟨ du32 , ⟨ cu32 , ⟨ fu22' , ⟨ u₃₂⊆u₂ , ⟨ du32≡ , ⟨ du₃₂⊑du₂′ ,
+        ⟨ cu22≡ , cu₁′⊑cu₃₂ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ (u₃₁ ⊔ u₃₂) {u⊆w→v⊆w→u~v u₃₁⊆u₂ u₃₂⊆u₂} ,
+      ⟨ (du31 ⊔ du32) {{!!}} ,  {- need consistent-⊑ ! -}
+      ⟨ (cu31 ⊔ cu32) {{!!}} ,
       ⟨ fu₂′ ,
       ⟨ u₂′⊆u₂ ,
       ⟨ {!!} ,

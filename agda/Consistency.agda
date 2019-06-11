@@ -35,58 +35,6 @@ data wf : Value → Set where
 
 
 
-consistent→atoms : ∀ {u v u′ v′} → u ~ v → u′ ∈ u → v′ ∈ v → u′ ~ v′
-consistent→atoms {⊥} {v} {u′} {v′} u~v u′∈u v′∈v rewrite u′∈u = tt
-consistent→atoms {const {B} k} {⊥} {u′} {v′} u~v u′∈u v′∈v
-    rewrite u′∈u | v′∈v = tt
-consistent→atoms {const {B} k} {const {B′} k′} {u′} {v′} u~v u′∈u v′∈v
-    rewrite u′∈u | v′∈v
-    with base-eq? B B′
-... | yes refl = u~v
-... | no neq = u~v
-consistent→atoms {const {B} k} {v ↦ w} {u′} {v′} () u′∈u v′∈v
-consistent→atoms {const {B} k} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u
-    (inj₁ v′∈v₁) rewrite u′∈u = consistent→atoms{const {B} k} fst refl v′∈v₁
-consistent→atoms {const {B} k} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u
-    (inj₂ v′∈v₂) rewrite u′∈u =  consistent→atoms{const {B} k} snd refl v′∈v₂
-consistent→atoms {u ↦ w} {⊥} {u′} {v′} u~v u′∈u v′∈v rewrite u′∈u | v′∈v = tt
-consistent→atoms {u ↦ w} {const x} {u′} {v′} () u′∈u v′∈v
-consistent→atoms {u ↦ w} {v₁ ↦ v₂} {u′} {v′} (inj₁ ⟨ fst , snd ⟩) u′∈u v′∈v
-    rewrite u′∈u | v′∈v = inj₁ ⟨ fst , snd ⟩
-consistent→atoms {u ↦ w} {v₁ ↦ v₂} {u′} {v′} (inj₂ y) u′∈u v′∈v
-    rewrite u′∈u | v′∈v = inj₂ y
-consistent→atoms {u ↦ w} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u (inj₁ x)
-    rewrite u′∈u = consistent→atoms {u ↦ w}{v₁} fst refl x
-consistent→atoms {u ↦ w} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst , snd ⟩ u′∈u (inj₂ y)
-    rewrite u′∈u = consistent→atoms {u ↦ w}{v₂} snd refl y
-consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₁ u′∈u₁) v′∈v =
-    consistent→atoms u₁~v u′∈u₁ v′∈v
-consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₂ u′∈u₂) v′∈v =
-    consistent→atoms u₂~v u′∈u₂ v′∈v
-
-atoms→consistent : ∀{u v}
-                 → (∀{u′ v′} → u′ ∈ u → v′ ∈ v → u′ ~ v′)
-                 → u ~ v
-atoms→consistent {⊥} {v} atoms = tt
-atoms→consistent {const k} {⊥} atoms = tt
-atoms→consistent {const k} {const k′} atoms =
-    atoms {const k} {const k′} refl refl
-atoms→consistent {const k} {v ↦ w} atoms =
-    ⊥-elim (atoms {const k} {v ↦ w} refl refl)
-atoms→consistent {const k} {v₁ ⊔ v₂} atoms =
-    ⟨ atoms→consistent{const k}{v₁} (λ {u′} {v′} z z₁ → atoms z (inj₁ z₁)) ,
-      atoms→consistent{const k}{v₂} (λ {u′} {v′} z z₁ → atoms z (inj₂ z₁)) ⟩
-atoms→consistent {u ↦ w} {⊥} atoms = tt
-atoms→consistent {u ↦ w} {const k} atoms =
-    ⊥-elim (atoms {u ↦ w}{const k} refl refl)
-atoms→consistent {u ↦ w} {v₁ ↦ v₂} atoms =
-    atoms {u ↦ w} {v₁ ↦ v₂ } refl refl
-atoms→consistent {u ↦ w} {v₁ ⊔ v₂} atoms =
-    ⟨ atoms→consistent{u ↦ w}{v₁}(λ {u′}{v′} z z₁ → atoms z (inj₁ z₁)) ,
-      atoms→consistent{u ↦ w}{v₂} (λ {u′} {v′} z z₁ → atoms z (inj₂ z₁)) ⟩
-atoms→consistent {u₁ ⊔ u₂} {v} atoms =
-    ⟨ atoms→consistent (λ {u′} {v′} z → atoms (inj₁ z)) ,
-      atoms→consistent (λ {u′} {v′} z → atoms (inj₂ z)) ⟩
 
 
 BelowFun : Value → Set
