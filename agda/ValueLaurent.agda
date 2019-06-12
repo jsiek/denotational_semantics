@@ -58,7 +58,7 @@ v ⊆ w = ∀{u} → u ∈ v → u ∈ w
 
 
 AllFun : (u : Value) → Set
-AllFun ⊥ = ⊤
+AllFun ⊥ = Bot
 AllFun (const x) = Bot
 AllFun (v ↦ w) = ⊤
 AllFun (u ⊔ v) = AllFun u × AllFun v 
@@ -289,6 +289,7 @@ SomeFun-⊑ {v} {w₁ ⊔ w₂} fv (⊑-conj-R1 v⊑w) = inj₁ (SomeFun-⊑ fv 
 SomeFun-⊑ {v} {.(_ ⊔ _)} fv (⊑-conj-R2 v⊑w) = inj₂ (SomeFun-⊑ fv v⊑w)
 SomeFun-⊑ {v₁ ↦ v₂} {w} fv (⊑-fun{w}{u′} u′⊆w afu′ du′⊑v₁ v₂⊑cu′) = {!!}
 
+{-
 AllFun-⊑ : ∀{v w} → AllFun w → v ⊑ w → AllFun v
 AllFun-⊑ {.⊥} {w} afw ⊑-⊥ = tt
 AllFun-⊑ {.(const _)} {.(const _)} () ⊑-const
@@ -297,6 +298,7 @@ AllFun-⊑ {.(_ ⊔ _)} {w} afw (⊑-conj-L v⊑w v⊑w₁) =
 AllFun-⊑ {v} {.(_ ⊔ _)} afw (⊑-conj-R1 v⊑w) = AllFun-⊑ (proj₁ afw) v⊑w
 AllFun-⊑ {v} {.(_ ⊔ _)} afw (⊑-conj-R2 v⊑w) = AllFun-⊑ (proj₂ afw) v⊑w
 AllFun-⊑ {.(_ ↦ _)} {w} afw (⊑-fun x y v⊑w v⊑w₁) = tt
+-}
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u′
@@ -455,11 +457,10 @@ sub-inv-trans : ∀{u′ u₂ u : Value}
     → (∀{v′ w′} → v′ ↦ w′ ∈ u′ → Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′)
       ---------------------------------------------------------------
     → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′) (cod u′)
-sub-inv-trans {⊥} {u₂} {u} fu′ u′⊆u IH =
-  ⟨ ⊥ , ⟨ tt , ⟨ {!!} , ⟨ {!!} , {!!} ⟩ ⟩ ⟩ ⟩
-sub-inv-trans {const k} {u₂} {u} fu′ u′⊆u IH = {!!}
-sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fu′ u′⊆u IH = {!!}
-sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fu′ u′⊆u IH = {!!}
+sub-inv-trans {⊥} {u₂} {u} () u′⊆u IH
+sub-inv-trans {const k} {u₂} {u} () u′⊆u IH
+sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fu′ u′⊆u IH = IH refl
+sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} ⟨ afu₁′ , afu₂′ ⟩ u′⊆u IH = {!!}
 
 
 
