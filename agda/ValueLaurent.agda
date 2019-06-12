@@ -113,10 +113,11 @@ data _⊑_ : Value → Value → Set where
          -----------
        → u ⊑ v ⊔ w
 
-  ⊑-fun : ∀ {u v w}
-       → SomeFun u
-       → dom u ⊑ v
-       → w ⊑ cod u
+  ⊑-fun : ∀ {u u′ v w}
+       → u′ ⊆ u
+       → AllFun u′
+       → dom u′ ⊑ v
+       → w ⊑ cod u′
          -------------------
        → v ↦ w ⊑ u
 
@@ -124,7 +125,7 @@ data _⊑_ : Value → Value → Set where
 ⊑-refl : ∀{v} → v ⊑ v
 ⊑-refl {⊥} = ⊑-⊥
 ⊑-refl {const k} = ⊑-const
-⊑-refl {v ↦ w} = ⊑-fun tt (⊑-refl{v}) ⊑-refl
+⊑-refl {v ↦ w} = ⊑-fun{v ↦ w}{v ↦ w} (λ {u} z → z) tt (⊑-refl{v}) ⊑-refl
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
 ⊔⊑R : ∀{B C A}
@@ -286,7 +287,7 @@ SomeFun-⊑ {.(_ ⊔ _)} {w} (inj₁ x) (⊑-conj-L v⊑w v⊑w₁) = SomeFun-�
 SomeFun-⊑ {.(_ ⊔ _)} {w} (inj₂ y) (⊑-conj-L v⊑w v⊑w₁) = SomeFun-⊑ y v⊑w₁
 SomeFun-⊑ {v} {w₁ ⊔ w₂} fv (⊑-conj-R1 v⊑w) = inj₁ (SomeFun-⊑ fv v⊑w)
 SomeFun-⊑ {v} {.(_ ⊔ _)} fv (⊑-conj-R2 v⊑w) = inj₂ (SomeFun-⊑ fv v⊑w)
-SomeFun-⊑ {.(_ ↦ _)} {w} fv (⊑-fun y v⊑w v⊑w₁) = y
+SomeFun-⊑ {v₁ ↦ v₂} {w} fv (⊑-fun{w}{u′} u′⊆w afu′ du′⊑v₁ v₂⊑cu′) = {!!}
 
 AllFun-⊑ : ∀{v w} → AllFun w → v ⊑ w → AllFun v
 AllFun-⊑ {.⊥} {w} afw ⊑-⊥ = tt
@@ -295,7 +296,7 @@ AllFun-⊑ {.(_ ⊔ _)} {w} afw (⊑-conj-L v⊑w v⊑w₁) =
     ⟨ AllFun-⊑ afw v⊑w , AllFun-⊑ afw v⊑w₁ ⟩
 AllFun-⊑ {v} {.(_ ⊔ _)} afw (⊑-conj-R1 v⊑w) = AllFun-⊑ (proj₁ afw) v⊑w
 AllFun-⊑ {v} {.(_ ⊔ _)} afw (⊑-conj-R2 v⊑w) = AllFun-⊑ (proj₂ afw) v⊑w
-AllFun-⊑ {.(_ ↦ _)} {w} afw (⊑-fun x v⊑w v⊑w₁) = tt
+AllFun-⊑ {.(_ ↦ _)} {w} afw (⊑-fun x y v⊑w v⊑w₁) = tt
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u′
@@ -316,8 +317,8 @@ factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u�
     with ⊑-fun-inv {u₁} {u22} {v} {w} u₁⊑u₂ v↦w∈u₁
 ... | ⟨ u₃ , ⟨ afu₃ , ⟨ u3⊆u₁ , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩ =
       ⟨ u₃ , ⟨ afu₃ , ⟨ (λ {x} x₁ → inj₂ (u3⊆u₁ x₁)) , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩  
-⊑-fun-inv {u11 ↦ u21} {u₂} {v} {w} (⊑-fun x u₁⊑u₂ u₁⊑u₃) refl =
-      ⟨ u₂ , ⟨ {!!} , ⟨ (λ {x₂} x₃ → x₃) , ⟨ u₁⊑u₂ , u₁⊑u₃ ⟩ ⟩ ⟩ ⟩
+⊑-fun-inv {u11 ↦ u21} {u₂} {v} {w} (⊑-fun{u′ = u′} u′⊆u₂ afu′ du′⊑u11 u21⊑cu′) refl =
+      ⟨ u′ , ⟨ afu′ , ⟨ u′⊆u₂ , ⟨ du′⊑u11 , u21⊑cu′ ⟩ ⟩ ⟩ ⟩
 
 
 ⊑-dom : ∀{u v}
@@ -342,8 +343,8 @@ factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u�
     with ⊑-dom {u} {v₂} u⊑v sfu
 ... | ⟨ v₂′ , ⟨ v₂′⊆v₂ , ⟨ dv₂′⊑du , ⟨ af , sf ⟩ ⟩ ⟩ ⟩ =
       ⟨ v₂′ , ⟨ (λ {u₁} z → inj₂ (v₂′⊆v₂ z)) , ⟨ dv₂′⊑du , ⟨ af , sf ⟩ ⟩ ⟩ ⟩
-⊑-dom {u₁ ↦ u₂} {v} (⊑-fun x u⊑v u⊑v₁) sfu =
-      ⟨ v , ⟨ (λ {x₁} x₂ → x₂) , ⟨ u⊑v , ⟨ {!!} , x ⟩ ⟩ ⟩ ⟩
+⊑-dom {u₁ ↦ u₂} {v} (⊑-fun x y u⊑v u⊑v₁) sfu =
+      ⟨ v , ⟨ (λ {x₁} x₂ → x₂) , ⟨ {!!} , ⟨ {!!} , {!!} ⟩ ⟩ ⟩ ⟩
 
 ⊑-cod : ∀{u v}
       → u ⊑ v
@@ -355,7 +356,7 @@ factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u�
     ⊑-conj-L (⊑-cod {u₁}{v} u₁⊑v afu₁) (⊑-cod {u₂}{v} u₂⊑v afu₂)
 ⊑-cod {u} {v₁ ⊔ v₂} (⊑-conj-R1 u⊑v₁) afu = ⊑-conj-R1 (⊑-cod u⊑v₁ afu)
 ⊑-cod {u} {v₁ ⊔ v₂} (⊑-conj-R2 u⊑v₂) afu = ⊑-conj-R2 (⊑-cod u⊑v₂ afu)
-⊑-cod {u₁ ↦ u₂} {v} (⊑-fun sfv dv⊑v w⊑cv) afu = w⊑cv
+⊑-cod {u₁ ↦ u₂} {v} (⊑-fun x sfv dv⊑v w⊑cv) afu = {!!}
 
 
 ⊥∈→⊥∈cod : ∀{v} → ⊥ ∈ v → ⊥ ∈ cod v
@@ -454,14 +455,13 @@ sub-inv-trans : ∀{u′ u₂ u : Value}
     → (∀{v′ w′} → v′ ↦ w′ ∈ u′ → Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′)
       ---------------------------------------------------------------
     → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′) (cod u′)
-sub-inv-trans = {!!}
+sub-inv-trans {⊥} {u₂} {u} fu′ u′⊆u IH =
+  ⟨ ⊥ , ⟨ tt , ⟨ {!!} , ⟨ {!!} , {!!} ⟩ ⟩ ⟩ ⟩
+sub-inv-trans {const k} {u₂} {u} fu′ u′⊆u IH = {!!}
+sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fu′ u′⊆u IH = {!!}
+sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} fu′ u′⊆u IH = {!!}
 
 
-{-
-AllFun w′
-w′ ⊆ w
-dom w′ ↦ cod w′ ⊑
--}
 
 ⊑-trans : ∀{u v w} → u ⊑ v → v ⊑ w → u ⊑ w
 ⊑-trans {.⊥} {v} {w} ⊑-⊥ v⊑w = ⊑-⊥
@@ -474,19 +474,14 @@ dom w′ ↦ cod w′ ⊑
 ⊑-trans {u} {v₁ ⊔ v₂} {w} (⊑-conj-R2 u⊑v₂) v₁⊔v₂⊑w =
     let v₂⊑w = ⊔⊑L v₁⊔v₂⊑w in
     ⊑-trans u⊑v₂ v₂⊑w
-⊑-trans {u₁ ↦ u₂} {v} {w} (⊑-fun sfv dv⊑u₁ u₂⊑cv) v⊑w
-    with ⊑-fun-inv {u₁ ↦ u₂} {v} (⊑-fun sfv dv⊑u₁ u₂⊑cv) refl
+⊑-trans {u₁ ↦ u₂} {v} {w} (⊑-fun xx sfv dv⊑u₁ u₂⊑cv) v⊑w
+    with ⊑-fun-inv {u₁ ↦ u₂} {v} (⊑-fun xx sfv dv⊑u₁ u₂⊑cv) refl
 ... | ⟨ v′ , ⟨ afv′ , ⟨ v′⊆v , ⟨ dv′⊑u₁ , u₂⊑cv′ ⟩ ⟩ ⟩ ⟩ 
     with sub-inv-trans afv′ v′⊆v (λ {v₁}{v₂} v₁↦v₂∈v′ → ⊑-fun-inv {v′} {w} (u⊆v⊑w→u⊑w v′⊆v v⊑w) v₁↦v₂∈v′)
 ... | ⟨ w′ , ⟨ afw′ , ⟨ w′⊆w , ⟨ dw′⊑dv′ , cv′⊑cw′ ⟩ ⟩ ⟩ ⟩ =
       let u₂⊑cw′ = ⊑-trans u₂⊑cv′ cv′⊑cw′ in
       let dw′⊑u₁ = ⊑-trans dw′⊑dv′ dv′⊑u₁ in
-      let u₁↦u₂⊑dw'↦cw′ = ⊑-fun {dom w′ ↦ cod w′}{u₁}{u₂} tt dw′⊑u₁ u₂⊑cw′ in
-
-      {!!}
+      {- need to use a termination measure -}
+      ⊑-fun{u′ = w′} w′⊆w afw′ {!!} u₂⊑cw′
    
-   where
-   H : ∀{v₁ v₂} → v₁ ↦ v₂ ∈ v′ → Σ[ w′ ∈ Value ] factor w w′ v₁ v₂
-   H {v₁}{v₂} v₁↦v₂∈v′ =
-       ⊑-fun-inv {v′} {w} (u⊆v⊑w→u⊑w v′⊆v v⊑w) v₁↦v₂∈v′
 
