@@ -42,16 +42,11 @@ not-u₁⊔u₂∈v {v ⊔ v₁} (inj₂ y) = not-u₁⊔u₂∈v y
     → u ∈ v
       -----
     → u ⊑ v
-∈→⊑ {⊥} {⊥} u∈v = ⊑-⊥
-∈→⊑ {⊥} {v} u∈v = ⊑-⊥
-∈→⊑ {u} {⊥} u∈v rewrite u∈v = ⊑-⊥
-∈→⊑ {const {B} k} {const {B′} k′} u∈v rewrite u∈v = ⊑-refl
-∈→⊑ {const {B} k} {v ↦ w} ()
-∈→⊑ {v ↦ w} {const k} ()
-∈→⊑ {v ↦ w} {v ↦ w} refl = ⊑-refl
-∈→⊑ {u} {v ⊔ w} (inj₁ x) = ⊑-conj-R1 (∈→⊑ x)
-∈→⊑ {u} {v ⊔ w} (inj₂ y) = ⊑-conj-R2 (∈→⊑ y)
-∈→⊑ {u₁ ⊔ u₂} {v} u∈v = ⊥-elim (contradiction u∈v not-u₁⊔u₂∈v)
+∈→⊑ {u} {⊥} refl = ⊑-⊥
+∈→⊑ {u} {const k} refl = ⊑-const
+∈→⊑ {u} {v ↦ w} refl = ⊑-refl
+∈→⊑ {u} {v₁ ⊔ v₂} (inj₁ x) = ⊑-conj-R1 (∈→⊑ x)
+∈→⊑ {u} {v₁ ⊔ v₂} (inj₂ y) = ⊑-conj-R2 (∈→⊑ y)
 
 ⊆→⊑ : ∀{u v : Value}
     → u ⊆ v
