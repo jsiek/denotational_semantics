@@ -564,7 +564,7 @@ data _⟪_ : ℕ × ℕ → ℕ × ℕ → Set where
   IH : ∀ x y 
      → (∀ x' y' → ⟨ x' , y' ⟩ ⟪ ⟨ x , y ⟩ → ⊑-trans-P x' y')
      → ⊑-trans-P x y
-  IH = ?
+  IH = {!!}
 
 
 ⊑-trans : ∀{u v w}{n : ℕ}{m : measure n u v w} → u ⊑ v → v ⊑ w → u ⊑ w
