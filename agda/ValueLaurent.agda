@@ -17,7 +17,8 @@ open import Data.List using (List ; _∷_ ; []; _++_)
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; refl; sym; cong; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning renaming (begin_ to start_; _∎ to _□)
 
 module ValueLaurent where
@@ -410,3 +411,110 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
 ⊑-trans : ∀{u v w} → u ⊑ v → v ⊑ w → u ⊑ w
 ⊑-trans {u} {v} {w} u⊑v v⊑w =
     ⊑-trans-rec (depth u + depth w) (size u + size v) refl refl u⊑v v⊑w
+
+
+{-
+  The traditional function subtyping rule is admissible.
+ -}
+
+⊑-fun′ : ∀{v w v′ w′}
+       → v′ ⊑ v
+       → w ⊑ w′
+         -------------------
+       → (v ↦ w) ⊑ (v′ ↦ w′)
+⊑-fun′ {v}{w}{v′}{w′} v′⊑v w⊑w′ =
+    ⊑-fun {v′ ↦ w′}{v′ ↦ w′}{v}{w} (λ {u} z → z) tt v′⊑v w⊑w′
+
+{-
+  The traditional distributivity rule is admissible.
+ -}
+
+⊑-dist : ∀{v w w′}
+         ---------------------------------
+       → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
+⊑-dist {v}{w}{w′} =
+  ⊑-fun {(v ↦ w) ⊔ (v ↦ w′)} {(v ↦ w) ⊔ (v ↦ w′)} {v} {w ⊔ w′}
+        (λ {u} z → z) ⟨ tt , tt ⟩
+        (⊑-conj-L ⊑-refl ⊑-refl)
+        ((⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)))
+
+{-
+
+  The usual inversion rule for function subtyping.
+
+ -}
+
+AllFun∈ : ∀{u}
+      → AllFun u
+      → Σ[ v ∈ Value ] Σ[ w ∈ Value ] v ↦ w ∈ u
+AllFun∈ {⊥} ()
+AllFun∈ {const k} ()
+AllFun∈ {v ↦ w} afu = ⟨ v , ⟨ w , refl ⟩ ⟩
+AllFun∈ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩
+    with AllFun∈ {u₁} fst₁
+... | ⟨ v , ⟨ w , vw∈u ⟩ ⟩ =
+      ⟨ v , ⟨ w , inj₁ vw∈u ⟩ ⟩
+
+⊆↦→cod⊆ : ∀{u v w : Value}
+        → u ⊆ v ↦ w
+          --------------
+        → cod u ⊆ w
+⊆↦→cod⊆ {⊥} s u≡⊥
+    with s refl
+... | ()
+⊆↦→cod⊆ {const {B} k} s u≡⊥
+    with s refl
+... | ()
+⊆↦→cod⊆ {C ↦ C′} s u∈C′
+    with s {C ↦ C′} refl
+... | refl = u∈C′
+⊆↦→cod⊆ {u₁ ⊔ u₂}{v}{w} u⊆v↦w {v′} v′∈u′
+    with v′∈u′
+... | inj₁ v′∈v₁ =     
+      ⊆↦→cod⊆ (λ x → u⊆v↦w (inj₁ x)) v′∈v₁
+... | inj₂ v′∈v₂ =
+      ⊆↦→cod⊆ (λ x → u⊆v↦w (inj₂ x)) v′∈v₂
+
+
+∈→⊑ : ∀{u v : Value}
+    → u ∈ v
+      -----
+    → u ⊑ v
+∈→⊑ {u} {⊥} refl = ⊑-⊥
+∈→⊑ {u} {const k} refl = ⊑-const
+∈→⊑ {u} {v ↦ w} refl = ⊑-refl
+∈→⊑ {u} {v₁ ⊔ v₂} (inj₁ x) = ⊑-conj-R1 (∈→⊑ x)
+∈→⊑ {u} {v₁ ⊔ v₂} (inj₂ y) = ⊑-conj-R2 (∈→⊑ y)
+
+⊆→⊑ : ∀{u v : Value}
+    → u ⊆ v
+      -----
+    → u ⊑ v
+⊆→⊑ {⊥} s with s {⊥} refl
+... | x = ⊑-⊥
+⊆→⊑ {const {B} k} s with s {const {B} k} refl
+... | x = ∈→⊑ x
+⊆→⊑ {u ↦ u′} s with s {u ↦ u′} refl
+... | x = ∈→⊑ x
+⊆→⊑ {u ⊔ u′} s = ⊑-conj-L (⊆→⊑ (λ z → s (inj₁ z))) (⊆→⊑ (λ z → s (inj₂ z)))
+
+
+⊑-fun-inv′ : ∀{v w v′ w′}
+        → v ↦ w ⊑ v′ ↦ w′
+          -----------------
+        → v′ ⊑ v × w ⊑ w′
+⊑-fun-inv′ {v}{w}{v′}{w′} lt
+    with ⊑-fun-inv lt refl
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆v34 , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+    with AllFun∈ f
+... | ⟨ u , ⟨ u′ , u↦u′∈Γ ⟩ ⟩
+    with Γ⊆v34 u↦u′∈Γ
+... | refl =    
+  let codΓ⊆w′ = ⊆↦→cod⊆ Γ⊆v34 in
+  ⟨ {!!} {- lt1 u↦u′∈Γ -} , ⊑-trans lt2 (⊆→⊑ codΓ⊆w′) ⟩
+
+{-
+
+  need ↦∈→⊆dom
+
+-}
