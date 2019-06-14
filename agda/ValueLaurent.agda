@@ -19,7 +19,8 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; cong; inspect; [_])
-open Relation.Binary.PropositionalEquality.≡-Reasoning renaming (begin_ to start_; _∎ to _□)
+open Relation.Binary.PropositionalEquality.≡-Reasoning
+    renaming (begin_ to start_; _∎ to _□)
 
 module ValueLaurent where
 
@@ -54,17 +55,17 @@ AllFun (const x) = Bot
 AllFun (v ↦ w) = ⊤
 AllFun (u ⊔ v) = AllFun u × AllFun v 
 
-dom : (u : Value) → Value
-dom ⊥ = ⊥
-dom (const k) = ⊥
+dom : (u : Value) → ∀{a : AllFun u } → Value
+dom ⊥ {()}
+dom (const k) {()}
 dom (v ↦ w) = v
-dom (u ⊔ v) = dom u ⊔ dom v
+dom (u ⊔ v) { ⟨ fu , fv ⟩ } = dom u {fu} ⊔ dom v {fv}
 
-cod : (u : Value) → Value
-cod ⊥  = ⊥
-cod (const k) = ⊥
+cod : (u : Value) → ∀{a : AllFun u} → Value
+cod ⊥ {()}
+cod (const k) {()}
 cod (v ↦ w) = w
-cod (u ⊔ v) = cod u ⊔ cod v
+cod (u ⊔ v) { ⟨ fu , fv ⟩ } = cod u {fu} ⊔ cod v {fv}
 
 infix 4 _⊑_
 
@@ -92,9 +93,9 @@ data _⊑_ : Value → Value → Set where
 
   ⊑-fun : ∀ {u u′ v w}
        → u′ ⊆ u
-       → AllFun u′
-       → dom u′ ⊑ v
-       → w ⊑ cod u′
+       → (fu′ : AllFun u′)
+       → dom u′ {fu′} ⊑ v
+       → w ⊑ cod u′ {fu′}
          -------------------
        → v ↦ w ⊑ u
 
@@ -106,7 +107,8 @@ data _⊑_ : Value → Value → Set where
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
-factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u′
+factor u u′ v w = Σ[ fu′ ∈ AllFun u′ ] u′ ⊆ u
+                  × dom u′ {fu′} ⊑ v × w ⊑ cod u′ {fu′}
 
 
 ⊑-fun-inv : ∀{u₁ u₂ v w}
@@ -133,10 +135,10 @@ factor u u′ v w = AllFun u′ × u′ ⊆ u × dom u′ ⊑ v × w ⊑ cod u�
 
 
 sub-inv-trans : ∀{u′ u₂ u : Value}
-    → AllFun u′  →  u′ ⊆ u
+    → (fu′ : AllFun u′)  →  u′ ⊆ u
     → (∀{v′ w′} → v′ ↦ w′ ∈ u′ → Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′)
       ---------------------------------------------------------------
-    → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′) (cod u′)
+    → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′ {fu′}) (cod u′ {fu′})
 sub-inv-trans {⊥} {u₂} {u} () u′⊆u IH
 sub-inv-trans {const k} {u₂} {u} () u′⊆u IH
 sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fu′ u′⊆u IH = IH refl
@@ -244,22 +246,22 @@ max-lub {suc x} {suc y} {suc z} (_≤_.s≤s x≤z) (_≤_.s≤s y≤z) =
     let u₂≤v = ⊆→depth≤ u₂⊆v in
     max-lub u₁≤v u₂≤v
 
-dom-depth-≤ : ∀{u : Value} → depth (dom u) ≤ depth u
-dom-depth-≤ {⊥} = _≤_.z≤n
-dom-depth-≤ {const k} = _≤_.z≤n
+dom-depth-≤ : ∀{u : Value}{fu : AllFun u} → depth (dom u {fu}) ≤ depth u
+dom-depth-≤ {⊥}{()}
+dom-depth-≤ {const k}{()}
 dom-depth-≤ {v ↦ w} = ≤-step (m≤m⊔n (depth v) (depth w))
 dom-depth-≤ {u ⊔ v} =
   let ih1 = dom-depth-≤ {u} in
   let ih2 = dom-depth-≤ {v} in
   ⊔-mono-≤ ih1 ih2
 
-cod-depth-≤ : ∀{u : Value} → depth (cod u) ≤ depth u
-cod-depth-≤ {⊥} = _≤_.z≤n
-cod-depth-≤ {const k} = _≤_.z≤n
+cod-depth-≤ : ∀{u : Value}{fu : AllFun u} → depth (cod u {fu}) ≤ depth u
+cod-depth-≤ {⊥}{()}
+cod-depth-≤ {const k}{()}
 cod-depth-≤ {v ↦ w} = ≤-step (n≤m⊔n (depth v) (depth w))
-cod-depth-≤ {u ⊔ v} =
-  let ih1 = cod-depth-≤ {u} in
-  let ih2 = cod-depth-≤ {v} in
+cod-depth-≤ {u ⊔ v} {⟨ fu , fv ⟩} =
+  let ih1 = cod-depth-≤ {u}{fu} in
+  let ih2 = cod-depth-≤ {v}{fv} in
   ⊔-mono-≤ ih1 ih2
 
 ≤′-trans : ∀{x y z} → x ≤′ y → y ≤′ z → x ≤′ z
@@ -455,16 +457,12 @@ AllFun∈ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩
 ... | ⟨ v , ⟨ w , vw∈u ⟩ ⟩ =
       ⟨ v , ⟨ w , inj₁ vw∈u ⟩ ⟩
 
-⊆↦→cod⊆ : ∀{u v w : Value}
+⊆↦→cod⊆ : ∀{u v w : Value} {fu : AllFun u}
         → u ⊆ v ↦ w
           --------------
-        → cod u ⊆ w
-⊆↦→cod⊆ {⊥} s u≡⊥
-    with s refl
-... | ()
-⊆↦→cod⊆ {const {B} k} s u≡⊥
-    with s refl
-... | ()
+        → cod u {fu} ⊆ w
+⊆↦→cod⊆ {⊥} {fu = ()}
+⊆↦→cod⊆ {const {B} k} {fu = ()}
 ⊆↦→cod⊆ {C ↦ C′} s u∈C′
     with s {C ↦ C′} refl
 ... | refl = u∈C′
@@ -498,6 +496,17 @@ AllFun∈ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩
 ... | x = ∈→⊑ x
 ⊆→⊑ {u ⊔ u′} s = ⊑-conj-L (⊆→⊑ (λ z → s (inj₁ z))) (⊆→⊑ (λ z → s (inj₂ z)))
 
+↦∈→⊆dom : ∀{u v w : Value} {fu : AllFun u}
+      → (v ↦ w) ∈ u
+        ----------------------------
+      → v ⊆ dom u {fu}
+↦∈→⊆dom {⊥} {fu = ()} eq 
+↦∈→⊆dom {const {B} k} {fu = ()} eq
+↦∈→⊆dom {u₁ ↦ u₂}{v}{w} refl {v′} v′∈u₁ = v′∈u₁
+↦∈→⊆dom {u₁ ⊔ u₂} {v} {w} {⟨ f1 , f2 ⟩} (inj₁ v↦w∈u₁) {v'} v'∈v =
+    inj₁ (↦∈→⊆dom {u₁}{v}{fu = f1} v↦w∈u₁ v'∈v)
+↦∈→⊆dom {u₁ ⊔ u₂} {v} {w} {⟨ f1 , f2 ⟩} (inj₂ v↦w∈u₂) {v'} v'∈v =
+    inj₂ (↦∈→⊆dom {u₂}{v}{fu = f2} v↦w∈u₂ v'∈v)
 
 ⊑-fun-inv′ : ∀{v w v′ w′}
         → v ↦ w ⊑ v′ ↦ w′
@@ -511,10 +520,6 @@ AllFun∈ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩
     with Γ⊆v34 u↦u′∈Γ
 ... | refl =    
   let codΓ⊆w′ = ⊆↦→cod⊆ Γ⊆v34 in
-  ⟨ {!!} {- lt1 u↦u′∈Γ -} , ⊑-trans lt2 (⊆→⊑ codΓ⊆w′) ⟩
+  let u⊆domΓ = ↦∈→⊆dom{Γ}{fu = f} u↦u′∈Γ in
+  ⟨ ⊑-trans (⊆→⊑ u⊆domΓ) lt1 , ⊑-trans lt2 (⊆→⊑ codΓ⊆w′) ⟩
 
-{-
-
-  need ↦∈→⊆dom
-
--}
