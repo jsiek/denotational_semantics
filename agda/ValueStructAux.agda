@@ -1,16 +1,24 @@
-open import Structures
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
+open import Relation.Nullary using (Dec; yes; no; ¬_)
+open import Relation.Nullary.Negation using (contradiction)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
+open import Variables
+open import Structures
 
 {-
 
-  The DomainAux module contains stuff that is defined/proved
-  generically in terms of the Domain structure.
+  The ValueStructAux module contains stuff that is defined/proved
+  generically in terms of the ValueStruct structure.
   
 -}
 
-module DomainAux(D : Domain) where
+module ValueStructAux(D : ValueStruct) where
 
-  open Domain D
+  open ValueStruct D
 
   Env : ℕ → Set
   Env Γ = Var Γ → Value
@@ -43,11 +51,8 @@ module DomainAux(D : Domain) where
     lemma Z      =  refl
     lemma (S x)  =  refl
 
-  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
-  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
-  
-  _`⊔_ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → {c : γ ~′ δ} → Env Γ
-  (γ `⊔ δ) {c} x = (γ x ⊔ δ x){c {x}}
+  _`⊔_ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → Env Γ
+  (γ `⊔ δ) x = γ x ⊔ δ x
 
   _`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
   _`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x

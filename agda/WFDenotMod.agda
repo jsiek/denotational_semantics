@@ -1,3 +1,7 @@
+open import Structures
+import DomainAux
+import OrderingAux
+
 module WFDenotMod (D : Domain) (V : ValueOrdering D) where
 
   open Domain D

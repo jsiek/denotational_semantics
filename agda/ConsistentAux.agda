@@ -5,6 +5,9 @@ module ConsistentAux (D : Domain) (V : ValueOrdering D) (C : Consistent D V)
   open Consistent C
   open DomainAux D
 
+  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
+  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
+
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
         → v₁ ~ v₂
