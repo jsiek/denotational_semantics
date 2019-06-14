@@ -375,8 +375,8 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
   helper d s IH {u₁ ↦ u₂}{v}{w}d≡ s≡ (⊑-fun{u′ = v′}v′⊆v afv′ dv′⊑u₁ u₂⊑cv′) v⊑w
       rewrite d≡ | s≡
       with sub-inv-trans afv′ v′⊆v
-                (λ {v₁}{v₂} v₁↦v₂∈v′ → ⊑-fun-inv {v′} {w} (u⊆v⊑w→u⊑w v′⊆v v⊑w)
-                                         v₁↦v₂∈v′)
+                (λ {v₁}{v₂} v₁↦v₂∈v′ →
+                   ⊑-fun-inv {v′} {w} (u⊆v⊑w→u⊑w v′⊆v v⊑w) v₁↦v₂∈v′)
   ... | ⟨ w′ , ⟨ afw′ , ⟨ w′⊆w , ⟨ dw′⊑dv′ , cv′⊑cw′ ⟩ ⟩ ⟩ ⟩ =
         let dw′⊑u₁ = IH M1 {dom w′}{dom v′}{u₁} refl refl dw′⊑dv′ dv′⊑u₁ in
         let u₂⊑cw′ = IH M2 {u₂}{cod v′}{cod w′} refl refl u₂⊑cv′ cv′⊑cw′ in
