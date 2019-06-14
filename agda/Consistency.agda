@@ -19,8 +19,10 @@ open import Variables
 open import Primitives
 open import Structures
 open import ValueConst
-open OrderingAux domain ordering
+open import OrderingAux value_struct ordering
+{-
 open import BelowBCDConst
+-}
 
 module Consistency where
 
@@ -32,9 +34,24 @@ data wf : Value → Set where
   wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
 -}
 
+wf : Value → Set
+wf v = v ~ v
 
 
+Below⊥ : Value → Set
+Below⊥ ⊥ = ⊤
+Below⊥ (const x) = Bot
+Below⊥ (v ↦ v₁) = Bot
+Below⊥ (u ⊔ v) = Below⊥ u × Below⊥ v
 
+BelowConst : ∀{B : Base} → (k : base-rep B) → Value → Set
+BelowConst k ⊥ = ⊤
+BelowConst {B} k (const {B′} k′)
+    with base-eq? B B′
+... | yes eq rewrite eq = k ≡ k′ 
+... | no neg = Bot
+BelowConst k (v ↦ w) = Bot
+BelowConst k (u ⊔ v) = BelowConst k u × BelowConst k v
 
 BelowFun : Value → Set
 BelowFun ⊥ = ⊤
@@ -48,9 +65,33 @@ Below⊥→BelowFun : ∀{v : Value}
 Below⊥→BelowFun {⊥} b⊥v = tt
 Below⊥→BelowFun {const {B′} k′} ()
 Below⊥→BelowFun {v ↦ w} ()
-Below⊥→BelowFun {v₁ ⊔ v₂} ⟨ fst , snd ⟩ =
-  ⟨ Below⊥→BelowFun fst , Below⊥→BelowFun snd ⟩
+Below⊥→BelowFun {v₁ ⊔ v₂} ⟨ fst' , snd' ⟩ =
+  ⟨ Below⊥→BelowFun fst' , Below⊥→BelowFun snd' ⟩
 
+AllFun-∈-↦ : ∀{u u′}
+      → AllFun u → u′ ∈ u
+      → Σ[ v ∈ Value ] Σ[ w ∈ Value ] u′ ≡ v ↦ w
+AllFun-∈-↦ {⊥} () u′∈u 
+AllFun-∈-↦ {const k} () u′∈u 
+AllFun-∈-↦ {v ↦ w} afu u′∈u  = ⟨ v , ⟨ w , u′∈u ⟩ ⟩
+AllFun-∈-↦ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ (inj₁ u′∈u₁) = AllFun-∈-↦ fst₁ u′∈u₁
+AllFun-∈-↦ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ (inj₂ u′∈u₂) = AllFun-∈-↦ snd₁ u′∈u₂
+
+⊑k→BelowConstk : ∀{B : Base}{k : base-rep B}{v : Value}
+   → v ⊑ const {B} k
+   → BelowConst k v
+⊑k→BelowConstk ⊑-⊥ = tt
+⊑k→BelowConstk {B} (⊑-const{B′})
+    with base-eq? B B′
+... | yes eq rewrite eq = refl
+... | no neq = neq refl
+⊑k→BelowConstk (⊑-conj-L v⊑k v⊑k₁) =
+   ⟨ ⊑k→BelowConstk v⊑k , ⊑k→BelowConstk v⊑k₁ ⟩
+⊑k→BelowConstk {v = v ↦ w} (⊑-fun {const {B} k} u′⊆k fu′ x₁ x₂)
+    with AllFun∈ fu′
+... | ⟨ v′ , ⟨ w′ , vw′∈u′ ⟩ ⟩
+    with u′⊆k vw′∈u′
+... | ()    
 
 BelowFun-⊑ : ∀{u v} → BelowFun v → u ⊑ v → BelowFun u
 BelowFun-⊑ {.⊥} {v} bv ⊑-⊥ = tt
@@ -61,20 +102,13 @@ BelowFun-⊑ {u} {.(_ ⊔ _)} bv (⊑-conj-R1 u⊑v) =
     BelowFun-⊑ (proj₁ bv) u⊑v
 BelowFun-⊑ {u} {.(_ ⊔ _)} bv (⊑-conj-R2 u⊑v) =
     BelowFun-⊑ (proj₂ bv) u⊑v
-BelowFun-⊑ {u} {v} bv (⊑-trans u⊑v u⊑v₁) =
-    BelowFun-⊑ (BelowFun-⊑ bv u⊑v₁) u⊑v
-BelowFun-⊑ {.(_ ↦ _)} {.(_ ↦ _)} bv (⊑-fun u⊑v u⊑v₁) = tt
-BelowFun-⊑ {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} bv ⊑-dist = tt
+BelowFun-⊑ {u} {v} bv (⊑-fun a b c d) = tt
 
 ⊑↦→BelowFun : ∀{u v w} → u ⊑ v ↦ w → BelowFun u
 ⊑↦→BelowFun {.⊥} {v} {w} ⊑-⊥ = tt
 ⊑↦→BelowFun {.(_ ⊔ _)} {v} {w} (⊑-conj-L u⊑v↦w u⊑v↦w₁) =
     ⟨ ⊑↦→BelowFun u⊑v↦w , ⊑↦→BelowFun u⊑v↦w₁ ⟩
-⊑↦→BelowFun {u} {v} {w} (⊑-trans u⊑v↦w u⊑v↦w₁) =
-  let ih = ⊑↦→BelowFun u⊑v↦w₁ in
-  BelowFun-⊑ ih u⊑v↦w
-⊑↦→BelowFun {.(_ ↦ _)} {v} {w} (⊑-fun u⊑v↦w u⊑v↦w₁) = tt
-
+⊑↦→BelowFun {.(_ ↦ _)} {v} {w} (⊑-fun a b c d) = tt
 
 AboveConst : Value → Set
 AboveConst u = Σ[ B ∈ Base ] Σ[ k ∈ base-rep B ] const {B} k ⊑ u
@@ -82,7 +116,7 @@ AboveConst u = Σ[ B ∈ Base ] Σ[ k ∈ base-rep B ] const {B} k ⊑ u
 AboveConst-⊑ : ∀{u v}
    → AboveConst u → u ⊑ v
    → AboveConst v
-AboveConst-⊑ ⟨ B , ⟨ k , snd ⟩ ⟩ uv = ⟨ B , ⟨ k , ⊑-trans snd uv ⟩ ⟩
+AboveConst-⊑ ⟨ B , ⟨ k , snd' ⟩ ⟩ uv = ⟨ B , ⟨ k , ⊑-trans snd' uv ⟩ ⟩
 
 const-sub-inv : ∀{u₁ u₂ : Value}
         → u₁ ⊑ u₂
@@ -97,10 +131,7 @@ const-sub-inv {.(_ ⊔ _)} {u₂} (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₂ y
     const-sub-inv u₁⊑u₃ y
 const-sub-inv {u₁} {.(_ ⊔ _)} (⊑-conj-R1 u₁⊑u₂) f = inj₁ (const-sub-inv u₁⊑u₂ f)
 const-sub-inv {u₁} {.(_ ⊔ _)} (⊑-conj-R2 u₁⊑u₂) f = inj₂ (const-sub-inv u₁⊑u₂ f)
-const-sub-inv {u₁} {u₂} (⊑-trans u₁⊑u₂ u₁⊑u₃) f =
-    const-sub-inv u₁⊑u₃ (const-sub-inv u₁⊑u₂ f)
-const-sub-inv {.(_ ↦ _)} {.(_ ↦ _)} (⊑-fun u₁⊑u₂ u₁⊑u₃) ()
-const-sub-inv {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} ⊑-dist ()
+const-sub-inv {.(_ ↦ _)} (⊑-fun a b c d) ()
 
 {-
 AboveConst⊥ : ¬ AboveConst ⊥
@@ -134,10 +165,10 @@ BelowConstk→⊆k⊔⊥ {const {b} k′} {B} {k} bkA u≡k′
 ... | yes eq rewrite eq | bkA = inj₁ u≡k′
 ... | no neq = ⊥-elim bkA
 BelowConstk→⊆k⊔⊥ {A₁ ↦ A₂} {B} {k} () u≡A₁→A₂
-BelowConstk→⊆k⊔⊥ {A₁ ⊔ A₂} {B} {k} ⟨ fst , snd ⟩ (inj₁ x) =
-    BelowConstk→⊆k⊔⊥ fst x
-BelowConstk→⊆k⊔⊥ {A₁ ⊔ A₂} {B} {k} ⟨ fst , snd ⟩ (inj₂ y) =
-    BelowConstk→⊆k⊔⊥ snd y
+BelowConstk→⊆k⊔⊥ {A₁ ⊔ A₂} {B} {k} ⟨ fst' , snd' ⟩ (inj₁ x) =
+    BelowConstk→⊆k⊔⊥ fst' x
+BelowConstk→⊆k⊔⊥ {A₁ ⊔ A₂} {B} {k} ⟨ fst' , snd' ⟩ (inj₂ y) =
+    BelowConstk→⊆k⊔⊥ snd' y
 
 A⊑k→A⊆k⊔⊥ : ∀{A}{B}{k : base-rep B}
           → A ⊑ const k
@@ -166,6 +197,18 @@ A⊑k→A⊆k⊔⊥ A⊑k = BelowConstk→⊆k⊔⊥ (⊑k→BelowConstk A⊑k)
     ⟨ ⊆k⊔⊥→BelowConstk (λ {u} z → A⊆k⊔⊥ (inj₁ z)) ,
       ⊆k⊔⊥→BelowConstk (λ {u} z → A⊆k⊔⊥ (inj₂ z)) ⟩
 
+BelowConstk→⊑k : ∀{B : Base}{k : base-rep B}{v : Value}
+   → BelowConst k v
+   → v ⊑ const {B} k
+BelowConstk→⊑k {v = ⊥} bkv = ⊑-⊥
+BelowConstk→⊑k {B}{k}{v = const {B′} k′} bkv
+     with base-eq? B B′
+... | yes eq rewrite eq | bkv = ⊑-const
+... | no neq = ⊥-elim bkv
+BelowConstk→⊑k {v = v ↦ v₁} ()
+BelowConstk→⊑k {v = v₁ ⊔ v₂} ⟨ fst' , snd' ⟩ =
+  ⊑-conj-L (BelowConstk→⊑k fst') (BelowConstk→⊑k snd')
+
 A⊆k⊔⊥→A⊑k : ∀{A}{B}{k : base-rep B}
           → A ⊆ (const k ⊔ ⊥)
           → A ⊑ const k
@@ -186,13 +229,46 @@ atomic-sub-4 : ∀{A B C}
     → A ↦ B ⊑ C
     → Σ[ D ∈ Value ] Σ[ E ∈ Value ] D ↦ E ∈ C
 atomic-sub-4 {A}{B}{C} A↦B⊑C
-    with sub-inv-fun A↦B⊑C
+    with ⊑-fun-inv A↦B⊑C refl
 ... | ⟨ u , ⟨ fu , ⟨ uC , _ ⟩ ⟩ ⟩
     with atom-exists {u}
-... | ⟨ u′ , u′∈u ⟩
-    with fu u′∈u
-... | fun {u′}{u₁}{u₂} eq rewrite eq =
+... | ⟨ u′ , u′∈u ⟩ 
+    with AllFun-∈-↦ fu u′∈u
+... | ⟨ u₁ , ⟨ u₂ ,  eq ⟩ ⟩ rewrite eq =
       ⟨ u₁ , ⟨ u₂ , (uC u′∈u) ⟩ ⟩
+
+
+data Fun : Value → Set where
+  fun : ∀{u v w} → u ≡ (v ↦ w) → Fun u
+
+not-Fun-k : ∀{B : Base}{k : base-rep B} → ¬ Fun (const {B} k)
+not-Fun-k {B} {k} (fun ())
+
+Funs : Value → Set
+Funs v = ∀{u} → u ∈ v → Fun u
+
+data Fun⊥ : Value → Set where
+  fun : ∀{u v w} → u ≡ (v ↦ w) → Fun⊥ u
+  bot : ∀{u} → u ≡ ⊥ → Fun⊥ u
+
+Funs⊥ : Value → Set
+Funs⊥ v = ∀{u} → u ∈ v → Fun⊥ u
+
+¬Fun⊥ : ¬ (Fun ⊥)
+¬Fun⊥ (fun ())
+
+Funs∈ : ∀{u}
+      → Funs u
+      → Σ[ v ∈ Value ] Σ[ w ∈ Value ] v ↦ w ∈ u
+Funs∈ {⊥} f with f {⊥} refl
+... | fun ()
+Funs∈ {const {B} k} f = ⊥-elim (not-Fun-k (f refl))
+Funs∈ {v ↦ w} f = ⟨ v , ⟨ w , refl ⟩ ⟩
+Funs∈ {u ⊔ u′} f
+    with Funs∈ λ z → f (inj₁ z)
+... | ⟨ v , ⟨ w , m ⟩ ⟩ = ⟨ v , ⟨ w , (inj₁ m) ⟩ ⟩
+
+
 
 {- Atomic Subtyping 5 (d_fun_atoms_L_inv) -}
 
@@ -202,6 +278,7 @@ atomic-sub-4 {A}{B}{C} A↦B⊑C
 ∈-Below⊥ {v ↦ v₁} {u} u∈v ()
 ∈-Below⊥ {v ⊔ v₁} {u} (inj₁ x) bv = ∈-Below⊥ x (proj₁ bv)
 ∈-Below⊥ {v ⊔ v₁} {u} (inj₂ y) bv = ∈-Below⊥ y (proj₂ bv)
+
 
 atomic-sub-5 : ∀{u v} → v ⊑ u → Funs⊥ u → Funs⊥ v
 atomic-sub-5 {u} {⊥} v⊑u Funs⊥u {u′} u′≡⊥ = bot u′≡⊥
@@ -251,6 +328,13 @@ k⊔⊥⊆v→k~v {v₁ ⊔ v₂} {B} {k} v⊆k⊔⊥ =
     ⟨ k⊔⊥⊆v→k~v (λ {u} z → v⊆k⊔⊥ (inj₁ z)) ,
       k⊔⊥⊆v→k~v (λ {u} z → v⊆k⊔⊥ (inj₂ z)) ⟩
 
+not-u₁⊔u₂∈v : ∀{v u₁ u₂} → ¬ (u₁ ⊔ u₂) ∈ v
+not-u₁⊔u₂∈v {⊥} ()
+not-u₁⊔u₂∈v {const x} ()
+not-u₁⊔u₂∈v {v ↦ v₁} ()
+not-u₁⊔u₂∈v {v ⊔ v₁} (inj₁ x) = not-u₁⊔u₂∈v x
+not-u₁⊔u₂∈v {v ⊔ v₁} (inj₂ y) = not-u₁⊔u₂∈v y
+
 ∈-refl : ∀ {u v} → u ∈ v → u ∈ u
 ∈-refl {⊥} {v} u∈v = refl
 ∈-refl {const x} {v} u∈v = refl
@@ -261,12 +345,12 @@ v↦w~u→Funs⊥u : ∀{v w u} → v ↦ w ~ u → Funs⊥ u
 v↦w~u→Funs⊥u {v} {w} {⊥} v↦w~u u≡⊥ = bot u≡⊥
 v↦w~u→Funs⊥u {v} {w} {const k} ()
 v↦w~u→Funs⊥u {v} {w} {u₁ ↦ u₂} v↦w~u u≡ = fun u≡
-v↦w~u→Funs⊥u {v} {w} {u₁ ⊔ u₂} ⟨ fst , snd ⟩ {u} = G
+v↦w~u→Funs⊥u {v} {w} {u₁ ⊔ u₂} ⟨ fst' , snd' ⟩ {u} = G
   where
   ih1 : Funs⊥ u₁
-  ih1 = v↦w~u→Funs⊥u {v}{w}{u₁} fst 
+  ih1 = v↦w~u→Funs⊥u {v}{w}{u₁} fst' 
   ih2 : Funs⊥ u₂
-  ih2 = v↦w~u→Funs⊥u {v}{w}{u₂} snd 
+  ih2 = v↦w~u→Funs⊥u {v}{w}{u₂} snd'
   G : u ∈ u₁ ⊎ u ∈ u₂ → Fun⊥ u
   G (inj₁ u∈u₁) = ih1 u∈u₁
   G (inj₂ u∈u₂) = ih2 u∈u₂
@@ -285,11 +369,11 @@ funs-B {A}{B} A~B {A₁}{A₂} A₁↦A₂∈A {B′} B′∈B =
    Funs⊥u→u∈v→Fun⊥u funs-B′ B′∈B) 
 
 
-∈cod : ∀{Γ A}
-     → A ∈ cod Γ
+∈cod : ∀{Γ A}{fg : AllFun Γ}
+     → A ∈ cod Γ {fg}
      → (Σ[ A₁ ∈ Value ] Σ[ A₂ ∈ Value ] A₁ ↦ A₂ ∈ Γ × A ∈ A₂) ⊎ (A ≡ ⊥)
-∈cod {⊥} {A} A∈codΓ rewrite A∈codΓ = inj₂ refl
-∈cod {const k} {A} A∈codΓ rewrite A∈codΓ = inj₂ refl
+∈cod {⊥} {A}{()} A∈codΓ
+∈cod {const k} {A}{()} A∈codΓ
 ∈cod {Γ₁ ↦ Γ₂} {A} A∈codΓ = inj₁ ⟨ Γ₁ , ⟨ Γ₂ , ⟨ refl , A∈codΓ ⟩ ⟩ ⟩
 ∈cod {Γ₁ ⊔ Γ₂} {A} (inj₁ x) 
    with ∈cod {Γ₁} {A} x
@@ -303,11 +387,13 @@ funs-B {A}{B} A~B {A₁}{A₂} A₁↦A₂∈A {B′} B′∈B =
 ... | inj₂ A≡⊥ = inj₂ A≡⊥
 
 
+{-
 depth : (v : Value) → ℕ
 depth ⊥ = zero
 depth (const k) = zero
 depth (v ↦ w) = suc (max (depth v) (depth w))
 depth (v₁ ⊔ v₂) = max (depth v₁) (depth v₂)
+-}
 
 measure : (n : ℕ) → (A : Value) → (C : Value) → Set
 measure n A C = depth A + depth C < n
@@ -319,14 +405,16 @@ not-measure-zero {A}{C} mz
 
 
 {- I can't find this in the old Agda std lib !! -}
+{-
 max-lub : ∀{x y z : ℕ} → x ≤ z → y ≤ z → max x y ≤ z
 max-lub {.0} {y} {z} _≤_.z≤n y≤z = y≤z
 max-lub {suc x} {.0} {suc z} (_≤_.s≤s x≤z) _≤_.z≤n = _≤_.s≤s x≤z
 max-lub {suc x} {suc y} {suc z} (_≤_.s≤s x≤z) (_≤_.s≤s y≤z) =
   let max-xy≤z = max-lub {x}{y}{z} x≤z y≤z in
   _≤_.s≤s max-xy≤z
+-}
 
-
+{-
 ∈→depth≤ : ∀{v u : Value} → u ∈ v → depth u ≤ depth v
 ∈→depth≤ {⊥} {u} u∈v rewrite u∈v = _≤_.z≤n
 ∈→depth≤ {const x} {u} u∈v rewrite u∈v = _≤_.z≤n
@@ -365,6 +453,13 @@ cod-depth-≤ {u ⊔ v} =
   let ih1 = cod-depth-≤ {u} in
   let ih2 = cod-depth-≤ {v} in
   ⊔-mono-≤ ih1 ih2
+-}
+
+v~⊥ : ∀{v : Value} → v ~ ⊥
+v~⊥ {⊥} = tt
+v~⊥ {const x} = tt
+v~⊥ {v ↦ w} = tt
+v~⊥ {v₁ ⊔ v₂} = ⟨ v~⊥ {v₁} , v~⊥ {v₂} ⟩
 
 consistent-⊑-aux : ∀{A B C D} {n : ℕ} {m : measure n A C }
     → A ~ B  →  C ⊑ A  → D ⊑ B
@@ -391,7 +486,7 @@ consistent-⊑-aux {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B =
        D′⊆k⊔⊥ : D′ ⊆ (const k ⊔ ⊥)
        D′⊆k⊔⊥ = A⊑k→A⊆k⊔⊥ (⊑-trans D′⊑B (A⊆k⊔⊥→A⊑k B⊆k⊔⊥) )
     G {C₁ ↦ C₂} {D′} C₁↦C₂∈C D′∈D
-        with sub-inv (⊑-trans (∈→⊑ C₁↦C₂∈C) C⊑A) refl
+        with ⊑-fun-inv (⊑-trans (∈→⊑ C₁↦C₂∈C) C⊑A) refl
     ... | ⟨ Γ₁ , ⟨ funs-Γ₁ , ⟨ Γ₁⊆A , ⟨ domΓ₁⊑C₁ , C₂⊑codΓ₁ ⟩ ⟩ ⟩ ⟩
         with atomic-sub-4 (∈⊑⊑ C₁↦C₂∈C C⊑A)
     ... | ⟨ A₁ , ⟨ A₂ , A₁↦A₂∈A ⟩ ⟩
@@ -399,7 +494,7 @@ consistent-⊑-aux {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B =
     ... | bot eq rewrite eq = tt
     ... | fun {D}{D₁}{D₂} eq
         rewrite eq 
-        with sub-inv (∈⊑⊑ D′∈D D⊑B) refl
+        with ⊑-fun-inv (∈⊑⊑ D′∈D D⊑B) refl
     ... | ⟨ Γ₂ , ⟨ funs-Γ₂ , ⟨ Γ₂⊆B , ⟨ domΓ₂⊑D₁ , D₂⊑codΓ₂ ⟩ ⟩ ⟩ ⟩
         with consistent? C₁ D₁
     ... | no C₁~̸D₁ = inj₂ λ C₁~D₁ → contradiction C₁~D₁ C₁~̸D₁
@@ -468,12 +563,16 @@ consistent-⊑ {A}{B}{C}{D} =
     consistent-⊑-aux {A}{B}{C}{D} {suc (depth A + depth C)} {_≤_.s≤s ≤-refl}
 
 
-consistent : Consistent domain ordering
+consistent : Consistent value_struct ordering
 consistent = record {
-    ~-⊑ = consistent-⊑
+      _~_ = _~_
+    ; ~-⊑ = consistent-⊑
+    ; ~-↦-cong = ~-↦-cong
+    ; ~-↦ = ?
+    ; ~-⊔-cong = ~-⊔-cong
     }
 
-open ConsistentAux domain ordering consistent
+open import ConsistentAux value_struct ordering consistent
 
 app-join : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
   → v₁ ↦ w₁ ⊑ u₁
@@ -532,3 +631,5 @@ _⊑′_ : Value′ → Value′ → Set
 ... | no v~̸w = {!!}               {- Nope, this won't work! -}
 
  -------------------------------}
+
+

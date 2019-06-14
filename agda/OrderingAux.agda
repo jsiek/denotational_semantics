@@ -1,31 +1,29 @@
+open import Variables
 open import Structures
-open import DomainAux
+import ValueStructAux
 
 {-
 
   The OrderingAux module contains stuff that is defined/proved
-  generically in terms of the Domain and ValueOrdering structures.
+  generically in terms of the ValueStruct and ValueOrdering structures.
   
 -}
 
-module OrderingAux (D : Domain) (V : ValueOrdering D) where
+module OrderingAux (D : ValueStruct) (V : ValueOrdering D) where
 
-  open Domain D
-  open DomainAux D
+  open ValueStruct D
+  open ValueStructAux D
   open ValueOrdering V
   
   ⊔⊑⊔ : ∀ {v w v′ w′}
         → v ⊑ v′  →  w ⊑ w′
-        → {c1 : v ~ w}{c2 : v′ ~ w′}
           --------------------------
-        → ((v ⊔ w){c1}) ⊑ ((v′ ⊔ w′){c2})
-  ⊔⊑⊔ d₁ d₂ {vw}{vw′} = ⊑-conj-L (⊑-conj-R1 d₁) (⊑-conj-R2 d₂)
+        → v ⊔ w ⊑ v′ ⊔ w′
+  ⊔⊑⊔ d₁ d₂ = ⊑-conj-L (⊑-conj-R1 d₁) (⊑-conj-R2 d₂)
 
   Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
-          → {c1 : v ~ v′} → {c2 : w ~ w′}
-          → (((v ⊔ v′){c1}) ↦ ((w ⊔ w′) {c2})) ⊑ ((v ↦ w) ⊔ (v′ ↦ w′))
-                                                    {~-↦-cong c1 c2}
-  Dist⊔↦⊔ {v~v′} {w~w′} =
+          → (v ⊔ v′) ↦ (w ⊔ w′) ⊑ v ↦ w ⊔ v′ ↦ w′
+  Dist⊔↦⊔ =
      ⊑-trans ⊑-dist (⊔⊑⊔ (⊑-fun (⊑-conj-R1 ⊑-refl) ⊑-refl)
                          (⊑-fun (⊑-conj-R2 ⊑-refl) ⊑-refl))
                 
@@ -57,15 +55,11 @@ module OrderingAux (D : Domain) (V : ValueOrdering D) where
   `Refl⊑ {Γ} {γ} x = ⊑-refl {γ x}
 
   EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ)
-             → {c : γ ~′ δ}
-             → γ `⊑ ((γ `⊔ δ){c})
+             → γ `⊑ (γ `⊔ δ)
   EnvConjR1⊑ γ δ x = ⊑-conj-R1 ⊑-refl
 
   EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ)
-             → {c : γ ~′ δ}
-             → δ `⊑ ((γ `⊔ δ){c})
+             → δ `⊑ (γ `⊔ δ)
   EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
 
-  ~′-refl : ∀{Γ}{γ : Env Γ} → γ ~′ γ
-  ~′-refl {Γ}{γ}{x} = ~-refl
 

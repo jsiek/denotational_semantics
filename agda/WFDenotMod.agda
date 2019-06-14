@@ -1,12 +1,15 @@
+open import Data.Nat using (ℕ; zero; suc)
+
 open import Structures
-import DomainAux
+import ValueStructAux
 import OrderingAux
+import ConsistentAux
 
-module WFDenotMod (D : Domain) (V : ValueOrdering D) where
+module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) where
 
-  open Domain D
+  open ValueStruct D
   open ValueOrdering V
-  open DomainAux D
+  open ValueStructAux D using (_⊑′_)
   open OrderingAux D V
 
   record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where

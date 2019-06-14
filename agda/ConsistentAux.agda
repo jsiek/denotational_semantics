@@ -1,13 +1,30 @@
-module ConsistentAux (D : Domain) (V : ValueOrdering D) (C : Consistent D V)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Relation.Nullary.Negation using (contradiction)
+
+
+open import Variables
+open import Structures
+import ValueStructAux
+
+
+module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
   where
-  open Domain D
+  open ValueStruct D
   open ValueOrdering V
   open Consistent C
-  open DomainAux D
+  open ValueStructAux D
 
   _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
   _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
 
+{-
+  ~′-refl : ∀{Γ}{γ : Env Γ} → γ ~′ γ
+  ~′-refl {Γ}{γ}{x} = ~-refl
+-}
+  
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
         → v₁ ~ v₂

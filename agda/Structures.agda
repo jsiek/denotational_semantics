@@ -78,8 +78,6 @@ record Consistent (D : ValueStruct) (V : ValueOrdering D) : Set₁ where
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
     ~-↦-cong : ∀{u v u′ v′} → u ~ u′ → v ~ v′ → (u ↦ v) ~ (u′ ↦ v′)
     
-    ~-refl : ∀{v} → v ~ v
-    
     ~-↦ : ∀{v w v′ w′} → (v ↦ w ~ v′ ↦ w′) → ((v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′))
     
     ~-⊔-cong : ∀{u v u′ v′}

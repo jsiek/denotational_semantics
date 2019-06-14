@@ -1,4 +1,5 @@
 open import Primitives
+open import Structures
 
 open import Data.Nat using (ℕ; suc ; zero; _+_; _≤′_; _<′_; _<_; _≤_;
     z≤n; s≤s; ≤′-refl; ≤′-step) renaming (_⊔_ to max)
@@ -32,6 +33,9 @@ data Value : Set where
   const : {b : Base} → base-rep b → Value
   _↦_ : Value → Value → Value
   _⊔_ : (u : Value) → (v : Value) → Value
+
+value_struct : ValueStruct
+value_struct = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
 
 infix 5 _∈_
 
@@ -521,3 +525,197 @@ AllFun∈ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩
   let u⊆domΓ = ↦∈→⊆dom{Γ}{fu = f} u↦u′∈Γ in
   ⟨ ⊑-trans (⊆→⊑ u⊆domΓ) lt1 , ⊑-trans lt2 (⊆→⊑ codΓ⊆w′) ⟩
 
+
+ordering : ValueOrdering value_struct
+ordering = record
+             { _⊑_ = _⊑_
+             ; ⊑-⊥ = ⊑-⊥
+             ; ⊑-conj-L = ⊑-conj-L
+             ; ⊑-conj-R1 = ⊑-conj-R1
+             ; ⊑-conj-R2 = ⊑-conj-R2
+             ; ⊑-trans = ⊑-trans
+             ; ⊑-fun = ⊑-fun′
+             ; ⊑-refl = ⊑-refl
+             ; ⊑-dist = ⊑-dist
+             }
+
+{-
+
+ Consistency
+
+-}
+
+infix 4 _~_
+
+_~_ : Value → Value → Set
+⊥ ~ v = ⊤
+const {B} k ~ ⊥ = ⊤
+const {B} k ~ const {B′} k′
+    with base-eq? B B′
+... | yes eq rewrite eq = k ≡ k′ 
+... | no neq = Bot
+const {B} k ~ v ↦ w = Bot
+const {B} k ~ u ⊔ v = const {B} k ~ u × const {B} k ~ v
+v ↦ w ~ ⊥ = ⊤
+v ↦ w ~ const k = Bot
+v ↦ w ~ v′ ↦ w′ = (v ~ v′ × w ~ w′) ⊎ ¬ (v ~ v′)
+v ↦ w ~ (u₁ ⊔ u₂) = v ↦ w ~ u₁ × v ↦ w ~ u₂
+v₁ ⊔ v₂ ~ u = v₁ ~ u × v₂ ~ u
+
+~⊔R : ∀{v u₁ u₂} → v ~ u₁ → v ~ u₂
+    → v ~ (u₁ ⊔ u₂)
+~⊔R {⊥} v~u₁ v~u₂ = tt
+~⊔R {const k} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+~⊔R {v ↦ w} v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+~⊔R {v₁ ⊔ v₂} v~u₁ v~u₂ =
+    ⟨ (~⊔R {v = v₁} (proj₁ v~u₁) (proj₁ v~u₂)) ,
+      (~⊔R {v = v₂} (proj₂ v~u₁) (proj₂ v~u₂)) ⟩
+
+~-sym : ∀{u v} → u ~ v → v ~ u
+~-sym {⊥} {⊥} u~v = tt
+~-sym {⊥} {const k} u~v = tt
+~-sym {⊥} {v ↦ w} u~v = tt
+~-sym {⊥} {v₁ ⊔ v₂} u~v = ⟨ ~-sym {v = v₁} tt , ~-sym {v = v₂} tt ⟩
+~-sym {const k} {⊥} u~v = tt
+~-sym {const {B} k} {const {B′} k′} u~v
+    with base-eq? B B′
+... | no neq = ⊥-elim u~v
+... | yes eq
+    rewrite eq
+    with base-eq? B′ B′
+... | no neq = neq refl
+... | yes refl = sym u~v
+~-sym {const k} {v ↦ w} ()
+~-sym {const k} {u ⊔ v} ⟨ k~u , k~v ⟩ =
+  ⟨ (~-sym{v = u} k~u) , (~-sym{v = v} k~v) ⟩
+~-sym {v ↦ w} {⊥} u~v = tt
+~-sym {v ↦ w} {const k} ()
+~-sym {v ↦ w} {v′ ↦ w′} (inj₁ ⟨ v~v′ , w~w′ ⟩) =
+   inj₁ ⟨ ~-sym{v} v~v′ , ~-sym{w} w~w′ ⟩
+~-sym {v ↦ w} {v′ ↦ w′} (inj₂ ¬v~v′) =
+  inj₂ λ v′~v → ⊥-elim (contradiction (~-sym{v′} v′~v) ¬v~v′)
+~-sym {v ↦ w} {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ =
+    ⟨ ~-sym{v ↦ w}{u₁} fst₁ , ~-sym{v ↦ w}{u₂} snd₁ ⟩
+~-sym {u₁ ⊔ u₂} {⊥} _ = tt
+~-sym {u₁ ⊔ u₂} {const k} ⟨ fst1 , snd1 ⟩ =
+   ⟨ ~-sym{u = u₁} fst1 , ~-sym{u = u₂} snd1 ⟩
+~-sym {u₁ ⊔ u₂} {v ↦ v₁} ⟨ fst1 , snd1 ⟩ =
+   ⟨ ~-sym{u = u₁} fst1 , ~-sym{u = u₂} snd1 ⟩
+~-sym {u₁ ⊔ u₂} {v₁ ⊔ v₂} ⟨ fst1 , snd1 ⟩ 
+    with ~-sym {u₁} {v₁ ⊔ v₂} fst1
+       | ~-sym {u₂} {v₁ ⊔ v₂} snd1
+... | ⟨ v₁~u₁ , v₂~u₁ ⟩ | ⟨ v₁~u₂ , v₂~u₂ ⟩ =
+      ⟨ ~⊔R{v = v₁} v₁~u₁ v₁~u₂ , ~⊔R{v = v₂} v₂~u₁ v₂~u₂ ⟩
+
+
+
+~-↦-cong : ∀{u v u′ v′} → u ~ u′ → v ~ v′ → (u ↦ v) ~ (u′ ↦ v′)
+~-↦-cong = λ z z₁ → inj₁ ⟨ z , z₁ ⟩
+
+consistent? : (u : Value) → (v : Value) → Dec (u ~ v)
+consistent? ⊥ v = yes tt
+consistent? (const k) ⊥ = yes tt
+consistent? (const {B} k) (const {B′} k′)
+    with base-eq? B B′
+... | yes eq rewrite eq = base-rep-eq? k k′
+... | no  neq = no (λ z → z)
+consistent? (const k) (v₁ ↦ v₂) = no (λ z → z)
+consistent? (const k) (v₁ ⊔ v₂)
+    with consistent? (const k) v₁ | consistent? (const k) v₂
+... | yes c1 | yes c2 = yes ⟨ c1 , c2 ⟩
+... | yes c1 | no c2 = no (λ z → c2 (proj₂ z))
+... | no c1  | yes c2 = no (λ z → c1 (proj₁ z))
+... | no c1  | no c2 = no (λ z → c2 (proj₂ z))
+consistent? (u₁ ↦ u₂) ⊥ = yes tt
+consistent? (u₁ ↦ u₂) (const x) = no (λ z → z)
+consistent? (u₁ ↦ u₂) (v₁ ↦ v₂)
+    with consistent? u₁ v₁ | consistent? u₂ v₂
+... | yes c1 | yes c2 = yes (inj₁ ⟨ c1 , c2 ⟩)
+... | no c1  | yes c2 = yes (inj₂ c1)
+... | no c1  | no c2 = yes (inj₂ c1)
+... | yes c1 | no c2 = no (G c1 c2)
+    where
+    G : u₁ ~ v₁ → ¬ (u₂ ~ v₂) → ¬ ((u₁ ~ v₁ × u₂ ~ v₂) ⊎ (u₁ ~ v₁ → Bot))
+    G c1 c2 (inj₁ x) = c2 (proj₂ x)
+    G c1 c2 (inj₂ y) = y c1
+consistent? (u₁ ↦ u₂) (v₁ ⊔ v₂)
+    with consistent? (u₁ ↦ u₂) v₁ | consistent? (u₁ ↦ u₂) v₂
+... | yes c1 | yes c2 = yes ⟨ c1 , c2 ⟩
+... | no c1  | yes c2 = no (λ z → c1 (proj₁ z))
+... | no c1  | no c2 = no (λ z → c2 (proj₂ z))
+... | yes c1 | no c2 = no (λ z → c2 (proj₂ z))
+consistent? (u₁ ⊔ u₂) v
+    with consistent? u₁ v | consistent? u₂ v
+... | yes c1 | yes c2 = yes ⟨ c1 , c2 ⟩
+... | no c1  | yes c2 = no (λ z → c1 (proj₁ z))
+... | no c1  | no c2 = no (λ z → c2 (proj₂ z))
+... | yes c1 | no c2 = no (λ z → c2 (proj₂ z))
+
+u~v⊔w : ∀{u v w} → u ~ v → u ~ w → u ~ (v ⊔ w)
+u~v⊔w {⊥} {v} {w} u~v u~w = tt
+u~v⊔w {const k} {v} {w} u~v u~w = ⟨ u~v , u~w ⟩
+u~v⊔w {u₁ ↦ u₂} {v} {w} u~v u~w = ⟨ u~v , u~w ⟩
+u~v⊔w {u₁ ⊔ u₂} {v} {w} u~v u~w =
+  ⟨ (u~v⊔w {u₁} (proj₁ u~v) (proj₁ u~w)) ,
+    (u~v⊔w {u₂} (proj₂ u~v) (proj₂ u~w)) ⟩
+
+~-⊔-cong : ∀{u v u′ v′}
+             → (u ~ u′) → (u ~ v′)
+             → (v ~ u′) → (v ~ v′)
+             → (u ⊔ v) ~ (u′ ⊔ v′)
+~-⊔-cong {u}{v}{u′}{v′} u~u′ u~v′ v~u′ v~v′ =
+  ⟨ u~v⊔w {u}{u′}{v′} u~u′ u~v′ , u~v⊔w {v}{u′}{v′} v~u′ v~v′ ⟩
+
+atoms→consistent : ∀{u v}
+                 → (∀{u′ v′} → u′ ∈ u → v′ ∈ v → u′ ~ v′)
+                 → u ~ v
+atoms→consistent {⊥} {v} atoms = tt
+atoms→consistent {const k} {⊥} atoms = tt
+atoms→consistent {const k} {const k′} atoms =
+    atoms {const k} {const k′} refl refl
+atoms→consistent {const k} {v ↦ w} atoms =
+    ⊥-elim (atoms {const k} {v ↦ w} refl refl)
+atoms→consistent {const k} {v₁ ⊔ v₂} atoms =
+    ⟨ atoms→consistent{const k}{v₁} (λ {u′} {v′} z z₁ → atoms z (inj₁ z₁)) ,
+      atoms→consistent{const k}{v₂} (λ {u′} {v′} z z₁ → atoms z (inj₂ z₁)) ⟩
+atoms→consistent {u ↦ w} {⊥} atoms = tt
+atoms→consistent {u ↦ w} {const k} atoms =
+    ⊥-elim (atoms {u ↦ w}{const k} refl refl)
+atoms→consistent {u ↦ w} {v₁ ↦ v₂} atoms =
+    atoms {u ↦ w} {v₁ ↦ v₂ } refl refl
+atoms→consistent {u ↦ w} {v₁ ⊔ v₂} atoms =
+    ⟨ atoms→consistent{u ↦ w}{v₁}(λ {u′}{v′} z z₁ → atoms z (inj₁ z₁)) ,
+      atoms→consistent{u ↦ w}{v₂} (λ {u′} {v′} z z₁ → atoms z (inj₂ z₁)) ⟩
+atoms→consistent {u₁ ⊔ u₂} {v} atoms =
+    ⟨ atoms→consistent (λ {u′} {v′} z → atoms (inj₁ z)) ,
+      atoms→consistent (λ {u′} {v′} z → atoms (inj₂ z)) ⟩
+      
+
+consistent→atoms : ∀ {u v u′ v′} → u ~ v → u′ ∈ u → v′ ∈ v → u′ ~ v′
+consistent→atoms {⊥} {v} {u′} {v′} u~v u′∈u v′∈v rewrite u′∈u = tt
+consistent→atoms {const {B} k} {⊥} {u′} {v′} u~v u′∈u v′∈v
+    rewrite u′∈u | v′∈v = tt
+consistent→atoms {const {B} k} {const {B′} k′} {u′} {v′} u~v u′∈u v′∈v
+    rewrite u′∈u | v′∈v
+    with base-eq? B B′
+... | yes refl = u~v
+... | no neq = u~v
+consistent→atoms {const {B} k} {v ↦ w} {u′} {v′} () u′∈u v′∈v
+consistent→atoms {const {B} k} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst' , snd' ⟩ u′∈u
+    (inj₁ v′∈v₁) rewrite u′∈u = consistent→atoms{const {B} k} fst' refl v′∈v₁
+consistent→atoms {const {B} k} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst' , snd' ⟩ u′∈u
+    (inj₂ v′∈v₂) rewrite u′∈u =  consistent→atoms{const {B} k} snd' refl v′∈v₂
+consistent→atoms {u ↦ w} {⊥} {u′} {v′} u~v u′∈u v′∈v rewrite u′∈u | v′∈v = tt
+consistent→atoms {u ↦ w} {const x} {u′} {v′} () u′∈u v′∈v
+consistent→atoms {u ↦ w} {v₁ ↦ v₂} {u′} {v′} (inj₁ ⟨ fst' , snd' ⟩) u′∈u v′∈v
+    rewrite u′∈u | v′∈v = inj₁ ⟨ fst' , snd' ⟩
+consistent→atoms {u ↦ w} {v₁ ↦ v₂} {u′} {v′} (inj₂ y) u′∈u v′∈v
+    rewrite u′∈u | v′∈v = inj₂ y
+consistent→atoms {u ↦ w} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst' , snd' ⟩ u′∈u (inj₁ x)
+    rewrite u′∈u = consistent→atoms {u ↦ w}{v₁} fst' refl x
+consistent→atoms {u ↦ w} {v₁ ⊔ v₂} {u′} {v′} ⟨ fst' , snd' ⟩ u′∈u (inj₂ y)
+    rewrite u′∈u = consistent→atoms {u ↦ w}{v₂} snd' refl y
+consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₁ u′∈u₁) v′∈v =
+    consistent→atoms u₁~v u′∈u₁ v′∈v
+consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₂ u′∈u₂) v′∈v =
+    consistent→atoms u₂~v u′∈u₂ v′∈v
