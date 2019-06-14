@@ -22,7 +22,7 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module ValueLaurent where
+module ValueConst where
 
 infixr 7 _↦_
 infixl 6 _⊔_
