@@ -27,9 +27,7 @@ module ValueConst where
 infixr 7 _↦_
 infixl 6 _⊔_
 
-data Value : Set 
-
-data Value where
+data Value : Set where
   ⊥ : Value
   const : {b : Base} → base-rep b → Value
   _↦_ : Value → Value → Value

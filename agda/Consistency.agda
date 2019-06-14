@@ -18,8 +18,7 @@ open import Data.Unit using (⊤; tt)
 open import Variables
 open import Primitives
 open import Structures
-open import ValueBCDConst
-open import FunInverseBCDConst
+open import ValueConst
 open OrderingAux domain ordering
 open import BelowBCDConst
 
