@@ -1,6 +1,9 @@
 open import Structures
 import ValueStructAux
+import OrderingAux
 import ModelMod
+import ConsistentAux
+import WFDenotMod
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat using (suc)
@@ -14,7 +17,8 @@ open import Relation.Nullary.Negation using (contradiction)
 module ModelCallByValue
   (D : ValueStruct)
   (V : ValueOrdering D)
-  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ) → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
+            → ValueStructAux.Denotation D Γ)
   (C : Consistent D V)
   (MC : ModelMod.ModelCurry D V C ℱ)
   where
@@ -50,7 +54,7 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
     ⟨ u' , ⟨ wfu' , ⟨ fst₁ , snd ⟩ ⟩ ⟩
     ⟨ v' , ⟨ wfv' , ⟨ fst₃ , snd₁ ⟩ ⟩ ⟩ = 
   let a = WFDenot.⊔-closed wf1 fst₁ fst₃ in
-  let u'~v' = WFDenot.~-closed wf2 wfγ wfγ (λ {x} → ~′-refl (wfγ{x}) {x})
+  let u'~v' = WFDenot.~-closed wf2 wfγ wfγ (λ {x} → wfγ{x})
                  wfu' wfv' snd snd₁ in
   ⟨ (u' ⊔ v') ,
   ⟨ wf-⊔ u'~v' wfu' wfv' ,

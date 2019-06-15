@@ -36,9 +36,6 @@ data wf : Value → Set where
   wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
 -}
 
-wf : Value → Set
-wf v = v ~ v
-
 
 Below⊥ : Value → Set
 Below⊥ ⊥ = ⊤
@@ -580,6 +577,7 @@ consistent-⊑ {A}{B}{C}{D} =
 consistent : Consistent value_struct ordering
 consistent = record {
       _~_ = _~_
+    ; ~-sym = λ {u}{v} → ~-sym {u}{v}
     ; ~-⊑ = consistent-⊑
     ; ~-↦-cong = λ {u}{v}{u′}{v′} → ~-↦-cong {u}{v}{u′}{v′}
     ; ~-↦ = λ {v} {w} {v′} {w′} z → z

@@ -1,16 +1,24 @@
+open import Data.Nat using (ℕ; zero; suc)
+
+
 open import Structures
 import ValueStructAux
 import OrderingAux
 import WFDenotMod
+import ConsistentAux
 
 
-module ModelMod (D : ValueStruct) (V : ValueOrdering D) where
+module ModelMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
+  where
 
   open ValueStruct D
   open ValueOrdering V
+  open Consistent C
   open ValueStructAux D
   open OrderingAux D V
-  open WFDenotMod D V 
+  open ConsistentAux D V C
+  open WFDenotMod D V C
+
   
   record ModelCurry
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
@@ -27,7 +35,7 @@ module ModelMod (D : ValueStruct) (V : ValueOrdering D) where
       ℱ-⊔ : ∀{Γ}{γ : Env Γ}{δ : Env Γ}{D : Denotation (suc Γ)}{u v : Value}
           → γ ~′ δ → {c : u ~ v}
           → ℱ D γ u → ℱ D δ v
-          → ℱ D γ ((u ⊔ v){c})
+          → ℱ D γ (u ⊔ v)
       ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} → ℱ D γ ⊥
       ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
           → WFDenot (suc Γ) D → γ ~′ δ
@@ -48,7 +56,7 @@ module ModelMod (D : ValueStruct) (V : ValueOrdering D) where
           → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
       ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {δ : Env Γ} {u v : Value}
           → WFDenot Γ D₁ → WFDenot Γ D₂ → γ ~′ δ → {c : u ~ v}
-          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ ((u ⊔ v){c})
+          → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
       ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
           → WFDenot Γ D₁ → WFDenot Γ D₂ → γ ~′ δ
           → (D₁ ● D₂) γ u → (D₁ ● D₂) δ v → u ~ v

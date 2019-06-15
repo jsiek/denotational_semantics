@@ -1,3 +1,4 @@
+open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -16,6 +17,12 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   open ValueOrdering V
   open Consistent C
   open ValueStructAux D
+
+  wf : Value → Set
+  wf v = v ~ v
+
+  WFEnv : ∀ {Γ : ℕ} → Env Γ → Set
+  WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
 
   _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
   _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
@@ -39,3 +46,5 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   ... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
 
 
+  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+  wf-⊔ {u}{v} u~v wfu wfv = ~-⊔-cong wfu u~v (~-sym u~v) wfv
