@@ -29,7 +29,8 @@ module ModelMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
           → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
           → ℱ D γ ≲ ℱ D′ δ
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-          → WFDenot (suc Γ) D → w ⊑ v
+          → WFDenot (suc Γ) D → WFEnv γ → wf v
+          → w ⊑ v
           → ℱ D γ v
           → ℱ D γ w
       ℱ-⊔ : ∀{Γ}{γ : Env Γ}{δ : Env Γ}{D : Denotation (suc Γ)}{u v : Value}

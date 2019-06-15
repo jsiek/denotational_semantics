@@ -53,13 +53,13 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
 ●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ
     ⟨ u' , ⟨ wfu' , ⟨ fst₁ , snd ⟩ ⟩ ⟩
     ⟨ v' , ⟨ wfv' , ⟨ fst₃ , snd₁ ⟩ ⟩ ⟩ = 
-  let a = WFDenot.⊔-closed wf1 fst₁ fst₃ in
+  let a = WFDenot.⊔-closed wf1 {!!} {!!} {!!} {!!} {!!} {!!} {!!} {- fst₁ fst₃ -} in
   let u'~v' = WFDenot.~-closed wf2 wfγ wfγ (λ {x} → wfγ{x})
                  wfu' wfv' snd snd₁ in
   ⟨ (u' ⊔ v') ,
   ⟨ wf-⊔ u'~v' wfu' wfv' ,
-  ⟨ WFDenot.⊑-closed wf1 a Dist⊔↦⊔ ,
-    WFDenot.⊔-closed wf2 snd snd₁ ⟩ ⟩ ⟩
+  ⟨ WFDenot.⊑-closed wf1 {!!} {!!} {!!} a Dist⊔↦⊔ ,
+    WFDenot.⊔-closed wf2 {!!} {!!} {!!} {!!} {!!} snd snd₁ ⟩ ⟩ ⟩
 
 
 ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
@@ -81,19 +81,16 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
     → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v
     → (D₁ ● D₂) γ w
 ●-⊑ {v = v}{w} d ⟨ v' , ⟨ wfv' , ⟨ fst₁ , snd ⟩ ⟩ ⟩ w⊑v =
-  ⟨ v' , ⟨ wfv' , ⟨ WFDenot.⊑-closed d fst₁ lt  , snd ⟩ ⟩ ⟩
+  ⟨ v' , ⟨ wfv' , ⟨ WFDenot.⊑-closed d {!!} {!!} {!!} fst₁ lt  , snd ⟩ ⟩ ⟩
   where lt : v' ↦ w ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl w⊑v
 
 model_basics : LambdaModelBasics _●_ ℱ
-model_basics = record { ℱ-≲ = ℱ-≲ ;
+model_basics = record {
+               model_curry = MC ;
                ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
-                       ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y;
-               ℱ-⊑ = ℱ-⊑;
-               ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
-               ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
-               ℱ-~ = λ {Γ}{D}{γ}{u}{v} → ℱ-~{D = D}{γ}{u}{v} ;
-               ●-⊔ = ●-⊔ ;
-               ●-~ = ●-~ ;
-               ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ}
+                       ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y ;
+               ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c ;
+               ●-⊔ = {!!} ;
+               ●-~ = {!!} 
                }

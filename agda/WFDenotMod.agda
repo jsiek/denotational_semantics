@@ -13,7 +13,7 @@ module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
   open Consistent C
   open ValueStructAux D
   open OrderingAux D V using (_`⊑_)
-  open ConsistentAux D V C using (_~′_)
+  open ConsistentAux D V C using (wf; _~′_; WFEnv)
 
   record Ideal (𝒟 : Value → Set) : Set₁ where
     field
@@ -24,11 +24,17 @@ module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
 
   record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
     field
-      ⊑-env : ∀{γ δ}{v} → D γ v → γ `⊑ δ → D δ v
-      ⊑-closed : ∀{γ}{v w} → D γ v → w ⊑ v → D γ w
-      ⊔-closed : ∀{γ δ u v} → γ ~′ δ
+      ⊑-env : ∀{γ δ}{v}
+               → WFEnv γ → WFEnv δ → wf v
+                → γ `⊑ δ → D γ v → D δ v
+      ⊑-closed : ∀{γ}{v w}
+               → WFEnv γ → wf v → wf w
+               → w ⊑ v → D γ v → D γ w
+      ⊔-closed : ∀{γ δ u v}
+               → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
                → D γ u → D δ v → D γ (u ⊔ v)
-      ~-closed : ∀{γ δ u v} → γ ~′ δ
+      ~-closed : ∀{γ δ u v}
+               → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
                → D γ u → D δ v → u ~ v
 
 

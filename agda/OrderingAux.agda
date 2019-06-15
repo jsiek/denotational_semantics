@@ -51,6 +51,16 @@ module OrderingAux (D : ValueStruct) (V : ValueOrdering D) where
   _`⊑_ : ∀ {Γ} → Env Γ → Env Γ → Set
   _`⊑_ {Γ} γ δ = (x : Var Γ) → γ x ⊑ δ x
 
+  `⊑-refl : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
+  `⊑-refl {Γ}{γ} x = ⊑-refl
+  
+  `⊑-extend : ∀ {Γ} {γ δ : Env Γ}{v w}
+            → γ `⊑ δ → v ⊑ w
+            → (γ `, v) `⊑ (δ `, w)
+  `⊑-extend {Γ} {γ} {δ} {v} {w} γ⊑δ v⊑w Z = v⊑w
+  `⊑-extend {Γ} {γ} {δ} {v} {w} γ⊑δ v⊑w (S x) = γ⊑δ x
+  
+
   `Refl⊑ : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
   `Refl⊑ {Γ} {γ} x = ⊑-refl {γ x}
 
