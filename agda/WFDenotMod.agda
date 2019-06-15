@@ -5,12 +5,15 @@ import ValueStructAux
 import OrderingAux
 import ConsistentAux
 
-module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) where
+module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
+  where
 
   open ValueStruct D
   open ValueOrdering V
-  open ValueStructAux D using (_⊑′_)
-  open OrderingAux D V
+  open Consistent C
+  open ValueStructAux D
+  open OrderingAux D V using (_`⊑_)
+  open ConsistentAux D V C using (_~′_)
 
   record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
     field
