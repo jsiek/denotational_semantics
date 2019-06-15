@@ -1,8 +1,14 @@
-module ModelMod (D : Domain) (V : ValueOrdering D) where
+open import Structures
+import ValueStructAux
+import OrderingAux
+import WFDenotMod
 
-  open Domain D
+
+module ModelMod (D : ValueStruct) (V : ValueOrdering D) where
+
+  open ValueStruct D
   open ValueOrdering V
-  open DomainAux D
+  open ValueStructAux D
   open OrderingAux D V
   open WFDenotMod D V 
   

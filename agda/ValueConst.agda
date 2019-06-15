@@ -273,10 +273,15 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
   fst : ∀{x x' y y'} → x <′ x' → ⟨ x , y ⟩ << ⟨ x' , y' ⟩
   snd : ∀{x x' y y'} → x ≤′ x' → y <′ y' → ⟨ x , y ⟩ << ⟨ x' , y' ⟩
 
-<<-nat-wf : (P : ℕ → ℕ → Set) →
+{- 
+
+  The following is based on code from Pierre-Evariste Dagand.
+  https://pages.lip6.fr/Pierre-Evariste.Dagand/stuffs/notes/html/Bove.html
+ -}
+<<-wellfounded : (P : ℕ → ℕ → Set) →
          (∀ x y → (∀ {x' y'} → ⟨ x' , y' ⟩ << ⟨ x , y ⟩ → P x' y') → P x y) →
          ∀ x y → P x y
-<<-nat-wf P ih x y = ih x y (help x y)
+<<-wellfounded P ih x y = ih x y (help x y)
   where help : (x y : ℕ) → ∀{ x' y'} → ⟨ x' , y' ⟩ << ⟨ x , y ⟩ → P x' y'
         help .(suc x') y {x'}{y'} (fst ≤′-refl) =
             ih x' y' (help x' y') 
@@ -301,7 +306,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
                          → u ⊑ v → v ⊑ w → u ⊑ w
 
 ⊑-trans-rec : ∀ d s → ⊑-trans-P d s
-⊑-trans-rec = <<-nat-wf ⊑-trans-P helper
+⊑-trans-rec = <<-wellfounded ⊑-trans-P helper
   where
   helper : ∀ x y 
          → (∀ {x' y'} → ⟨ x' , y' ⟩ << ⟨ x , y ⟩ → ⊑-trans-P x' y')

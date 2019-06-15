@@ -1,10 +1,12 @@
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
-open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_) renaming (_⊔_ to max)
+open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_; s≤s)
+  renaming (_⊔_ to max)
 open import Data.Nat.Properties
   using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
-         +-mono-≤-<; +-mono-<-≤; +-comm; n≤1+n;
-         ≤-pred)
+         +-mono-≤-<; +-mono-<-≤; +-mono-≤; +-comm; n≤1+n;
+         ≤-pred; ≤-reflexive)
+open Data.Nat.Properties.≤-Reasoning using (begin_; _≤⟨_⟩_; _∎)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -500,18 +502,30 @@ consistent-⊑-aux {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B =
     ... | no C₁~̸D₁ = inj₂ λ C₁~D₁ → contradiction C₁~D₁ C₁~̸D₁
     ... | yes C₁~D₁ =  inj₁ ⟨ C₁~D₁ , C₂~D₂ ⟩
         where
-        m1 : measure n C₁ (dom Γ₁)
-        m1 rewrite +-comm (depth C₁) (depth (dom Γ₁)) =
-          let C₁<C = ≤-trans (_≤_.s≤s (m≤m⊔n (depth C₁) (depth C₂)))
-                             (∈→depth≤ C₁↦C₂∈C) in
-          let domΓ₁≤A = ≤-trans (dom-depth-≤ {Γ₁}) (⊆→depth≤ Γ₁⊆A) in
-          let A+C≤n = ≤-pred m in
-          let domΓ₁+C₁<A+C = +-mono-≤-< domΓ₁≤A C₁<C in
-          let domΓ₁+C₁<n = ≤-trans domΓ₁+C₁<A+C  A+C≤n in
-          domΓ₁+C₁<n
+        M1 : measure n C₁ (dom Γ₁)
+        M1 rewrite +-comm (depth C₁) (depth (dom Γ₁ {funs-Γ₁})) =
+          let C₁<C =
+                   begin
+                     suc (depth C₁)
+                   ≤⟨ s≤s (m≤m⊔n (depth C₁) (depth C₂)) ⟩
+                     suc (max (depth C₁) (depth C₂))
+                   ≤⟨ ∈→depth≤ C₁↦C₂∈C ⟩
+                     depth C
+                   ∎ in
+          begin
+             suc (depth C₁ + depth (dom Γ₁))
+          ≤⟨ s≤s (≤-reflexive (+-comm (depth C₁) (depth (dom Γ₁)))) ⟩
+             suc (depth (dom Γ₁) + depth C₁)
+          ≤⟨ +-mono-≤-< (dom-depth-≤ {Γ₁} {funs-Γ₁}) C₁<C ⟩
+             depth Γ₁ + depth C
+          ≤⟨ +-mono-≤ (⊆→depth≤ Γ₁⊆A) ≤-refl  ⟩
+             depth A + depth C
+          ≤⟨ ≤-pred m ⟩
+             n
+          ∎
 
         domΓ₁~domΓ₂ : dom Γ₁ ~ dom Γ₂
-        domΓ₁~domΓ₂ = consistent-⊑-aux{n = n}{m1} C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
+        domΓ₁~domΓ₂ = consistent-⊑-aux{n = n}{M1} C₁~D₁ domΓ₁⊑C₁ domΓ₂⊑D₁
 
         H : ∀{A′ B′} → A′ ∈ cod Γ₁ → B′ ∈ cod Γ₂ → A′ ~ B′
         H {A′} {B′} A′∈codΓ₁ B′∈codΓ₂
@@ -567,9 +581,9 @@ consistent : Consistent value_struct ordering
 consistent = record {
       _~_ = _~_
     ; ~-⊑ = consistent-⊑
-    ; ~-↦-cong = ~-↦-cong
-    ; ~-↦ = ?
-    ; ~-⊔-cong = ~-⊔-cong
+    ; ~-↦-cong = λ {u}{v}{u′}{v′} → ~-↦-cong {u}{v}{u′}{v′}
+    ; ~-↦ = λ {v} {w} {v′} {w′} z → z
+    ; ~-⊔-cong = λ {u}{v}{u′}{v′} → ~-⊔-cong {u}{v}{u′}{v′}
     }
 
 open import ConsistentAux value_struct ordering consistent

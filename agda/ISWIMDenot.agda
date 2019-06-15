@@ -1,13 +1,18 @@
+open import Primitives
+open import Structures
+import ValueStructAux
+open import Data.Nat using (ℕ; suc ; zero)
+
 module ISWIMDenot
-  (D : Domain)
+  (D : ValueStruct)
   (V : ValueOrdering D)
-  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
-       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
+  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
+       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ) → ValueStructAux.Denotation D Γ)
+  (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
   where
-  open Domain D
-  open DomainAux D
+  open ValueStruct D
+  open ValueStructAux D
   open ValueOrdering V
 
   open import ISWIM

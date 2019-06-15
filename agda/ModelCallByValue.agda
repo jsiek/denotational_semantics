@@ -1,4 +1,7 @@
 open import Structures
+import ValueStructAux
+import ModelMod
+
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Nat using (suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
@@ -9,17 +12,17 @@ open import Relation.Nullary.Negation using (contradiction)
 
 
 module ModelCallByValue
-  (D : Domain)
+  (D : ValueStruct)
   (V : ValueOrdering D)
-  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ) → ValueStructAux.Denotation D Γ)
   (C : Consistent D V)
   (MC : ModelMod.ModelCurry D V C ℱ)
   where
 
-open Domain D
+open ValueStruct D
 open ValueOrdering V
 open Consistent C
-open DomainAux D
+open ValueStructAux D
 open OrderingAux D V
 open ConsistentAux D V C
 open WFDenotMod D V C
