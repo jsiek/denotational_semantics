@@ -19,7 +19,7 @@ open import ConsistentAux value_struct ordering consistent
 open import WFDenotMod value_struct ordering consistent
 open import ModelMod value_struct ordering consistent
 
-module CurryBCDConst where
+module CurryConstProps where
 
 ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
     → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)

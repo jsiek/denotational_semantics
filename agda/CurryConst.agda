@@ -6,7 +6,7 @@ open import Data.Unit using (⊤; tt)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 
-module Curry where
+module CurryConst where
 
 open import Primitives
 open import ValueConst
