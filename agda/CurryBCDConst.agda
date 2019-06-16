@@ -4,6 +4,8 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; refl; sym; cong; inspect; [_])
 
 open import Variables
 open import Primitives
@@ -57,6 +59,45 @@ u~v⊔w→u~w {u ↦ u₁} {v} {w} u~v⊔w = proj₂ u~v⊔w
 u~v⊔w→u~w {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
     ⟨ u~v⊔w→u~w {u₁} fst₁ , u~v⊔w→u~w {u₂} snd₁ ⟩
 
+
+wf-⊆ : ∀{v v′} → v′ ⊆ v → wf v → wf v′
+wf-⊆ {⊥} {⊥} v′⊆v wfv = tt
+wf-⊆ {⊥} {const {b} k} v′⊆v wfv
+    with v′⊆v refl
+... | ()     
+wf-⊆ {⊥} {v′ ↦ v′₁} v′⊆v wfv
+    with v′⊆v refl
+... | ()     
+wf-⊆ {⊥} {v′₁ ⊔ v′₂} v′⊆v wfv
+    with ⊔⊆-inv {v′₁}{v′₂}{⊥} v′⊆v
+... | ⟨ v′₁⊆⊥ , v′₂⊆⊥ ⟩ =
+    let ih1 = wf-⊆ {⊥} {v′₁} v′₁⊆⊥ tt in
+    let ih2 = wf-⊆ {⊥} {v′₂} v′₂⊆⊥ tt in
+     ⟨ {!!} , {!!} ⟩
+wf-⊆ {const x} {v′} v′⊆v wfv = {!!}
+wf-⊆ {v ↦ v₁} {v′} v′⊆v wfv = {!!}
+wf-⊆ {v ⊔ v₁} {v′} v′⊆v wfv = {!!}
+
+ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+       → WFDenot (suc Γ) D → WFEnv γ → wf v
+        → w ⊑ v → ℱ D γ v → ℱ D γ w
+ℱ-⊑ {Γ} {D} {γ} {⊥} {⊥} wfd wfγ wfv w⊑v ℱv = tt
+ℱ-⊑ {Γ} {D} {γ} {⊥} {const x} wfd wfγ wfv w⊑v ℱv
+    with v⊑⊥→Below⊥ w⊑v
+... | ()
+ℱ-⊑ {Γ} {D} {γ} {⊥} {w ↦ w₁} wfd wfγ wfv w⊑v ℱv
+    with v⊑⊥→Below⊥ w⊑v
+... | ()
+ℱ-⊑ {Γ} {D} {γ} {⊥} {w₁ ⊔ w₂} wfd wfγ wfv w₁⊔w₂⊑v ℱv =
+  let w₁⊑v = ⊔⊑R w₁⊔w₂⊑v in
+  let w₂⊑v = ⊔⊑L w₁⊔w₂⊑v in
+    ⟨ ℱ-⊑ wfd wfγ wfv w₁⊑v ℱv  , ℱ-⊑ wfd wfγ wfv w₂⊑v ℱv ⟩
+ℱ-⊑ {Γ} {D} {γ} {const k} {w} wfd wfγ wfv w⊑v ()
+ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {w} wfd wfγ wfv w⊑v ℱv = {!!}
+ℱ-⊑ {Γ} {D} {γ} {v₁ ⊔ v₂} {w} wfd wfγ wfv w⊑v₁⊔v₂ ⟨ ℱv₁ , ℱv₂ ⟩ = {!!}
+
+
+{-
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
        → WFDenot (suc Γ) D → WFEnv γ → wf v
         → w ⊑ v → ℱ D γ v → ℱ D γ w
@@ -69,9 +110,13 @@ u~v⊔w→u~w {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
 ℱ-⊑ {Γ}{D}{γ}{v₁ ⊔ v₂}{w} d wfγ ⟨ _ , v₂~v₁⊔v₂ ⟩ (⊑-conj-R2 w⊑v) ℱDγv =
     ℱ-⊑ d wfγ (u~v⊔w→u~w {v₂} v₂~v₁⊔v₂) w⊑v (proj₂ ℱDγv) 
 ℱ-⊑ {Γ}{D}{γ}{v}{w₁ ↦ w₂}wfd wfγ wfv (⊑-fun{u′ = v′} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′)d =
+  {!!}
+-}
+{-
   let dv′↦cv′⊑v : (dom v′ {fv′}) ↦ (cod v′ {fv′}) ⊑ v
       dv′↦cv′⊑v = {!!} in
-  let ih = ℱ-⊑ wfd wfγ wfv dv′↦cv′⊑v d in
+  let ih : D (γ `, dom v′) (cod v′)
+      ih = {!!} {- ℱ-⊑ wfd wfγ wfv dv′↦cv′⊑v d -} in
   let Dγw₁cv′ : D (γ `, w₁) (cod v′)
       Dγw₁cv′ = WFDenot.⊑-env wfd {γ `, (dom v′ {fv′})} {γ `, w₁} {cod v′ {fv′}}
          ((λ {x} → WFEnv-extend{Γ}{γ}{v = dom v′ {fv′}} wfγ {!!} {x}))
@@ -79,7 +124,8 @@ u~v⊔w→u~w {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
          {!!}
          (`⊑-extend `⊑-refl dv′⊑w₁)
          ih in 
-  WFDenot.⊑-closed wfd {!!} {!!} {!!} w₂⊑cv′ Dγw₁cv′ 
+  WFDenot.⊑-closed wfd {!!} {!!} {!!} w₂⊑cv′ Dγw₁cv′
+-}
 {-
 ℱ-⊑ {v = v}{w} d wfγ wfv ℱDγv (⊑-trans{v = v₁} w⊑v w⊑v₁) =
     {- Need subformula property!! Or add wf requirement to ⊑-trans? -}

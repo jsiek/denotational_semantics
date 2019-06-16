@@ -37,11 +37,29 @@ data wf : Value → Set where
 -}
 
 
+AllFun-∈-↦ : ∀{u u′}
+      → AllFun u → u′ ∈ u
+      → Σ[ v ∈ Value ] Σ[ w ∈ Value ] u′ ≡ v ↦ w
+AllFun-∈-↦ {⊥} () u′∈u 
+AllFun-∈-↦ {const k} () u′∈u 
+AllFun-∈-↦ {v ↦ w} afu u′∈u  = ⟨ v , ⟨ w , u′∈u ⟩ ⟩
+AllFun-∈-↦ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ (inj₁ u′∈u₁) = AllFun-∈-↦ fst₁ u′∈u₁
+AllFun-∈-↦ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ (inj₂ u′∈u₂) = AllFun-∈-↦ snd₁ u′∈u₂
+
 Below⊥ : Value → Set
 Below⊥ ⊥ = ⊤
 Below⊥ (const x) = Bot
 Below⊥ (v ↦ v₁) = Bot
 Below⊥ (u ⊔ v) = Below⊥ u × Below⊥ v
+
+v⊑⊥→Below⊥ : ∀{v : Value} → v ⊑ ⊥ → Below⊥ v
+v⊑⊥→Below⊥ ⊑-⊥ = tt
+v⊑⊥→Below⊥ (⊑-conj-L v⊑⊥ v⊑⊥₁) = ⟨ v⊑⊥→Below⊥ v⊑⊥ , v⊑⊥→Below⊥ v⊑⊥₁ ⟩
+v⊑⊥→Below⊥ {v ↦ w} (⊑-fun {⊥} u′⊆⊥ fu′ x₁ x₂)
+    with AllFun∈ fu′
+... | ⟨ v′ , ⟨ w′ , vw′∈u′ ⟩ ⟩
+    with u′⊆⊥ vw′∈u′
+... | ()
 
 BelowConst : ∀{B : Base} → (k : base-rep B) → Value → Set
 BelowConst k ⊥ = ⊤
@@ -66,15 +84,6 @@ Below⊥→BelowFun {const {B′} k′} ()
 Below⊥→BelowFun {v ↦ w} ()
 Below⊥→BelowFun {v₁ ⊔ v₂} ⟨ fst' , snd' ⟩ =
   ⟨ Below⊥→BelowFun fst' , Below⊥→BelowFun snd' ⟩
-
-AllFun-∈-↦ : ∀{u u′}
-      → AllFun u → u′ ∈ u
-      → Σ[ v ∈ Value ] Σ[ w ∈ Value ] u′ ≡ v ↦ w
-AllFun-∈-↦ {⊥} () u′∈u 
-AllFun-∈-↦ {const k} () u′∈u 
-AllFun-∈-↦ {v ↦ w} afu u′∈u  = ⟨ v , ⟨ w , u′∈u ⟩ ⟩
-AllFun-∈-↦ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ (inj₁ u′∈u₁) = AllFun-∈-↦ fst₁ u′∈u₁
-AllFun-∈-↦ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ (inj₂ u′∈u₂) = AllFun-∈-↦ snd₁ u′∈u₂
 
 ⊑k→BelowConstk : ∀{B : Base}{k : base-rep B}{v : Value}
    → v ⊑ const {B} k
