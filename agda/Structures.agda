@@ -75,6 +75,8 @@ record Consistent (D : ValueStruct) (V : ValueOrdering D) : Set₁ where
   infix 4 _~_
   field
     _~_ : Value → Value → Set
+    wf : Value → Set
+    ~-refl : ∀{v}{w : wf v} → v ~ v
     ~-sym : ∀{u v} → u ~ v → v ~ u
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
     ~-↦-cong : ∀{u v u′ v′} → u ~ u′ → v ~ v′ → (u ↦ v) ~ (u′ ↦ v′)

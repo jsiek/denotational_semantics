@@ -19,14 +19,8 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   open Consistent C
   open ValueStructAux D
 
-  wf : Value → Set
-  wf v = v ~ v
-
   WFEnv : ∀ {Γ : ℕ} → Env Γ → Set
   WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
-
-  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
-  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
 
   WFEnv-extend : ∀{Γ}{γ : Env Γ}{v}
               → WFEnv {Γ} γ
@@ -35,16 +29,15 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   WFEnv-extend {Γ} {γ} {v} wfγ wfv {Z} = wfv
   WFEnv-extend {Γ} {γ} {v} wfγ wfv {S x} = wfγ
 
-  WFEnvγ→γ`⊑γ : ∀{Γ}{γ : Env Γ}
+  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
+  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
+
+  ~′-refl : ∀{Γ}{γ : Env Γ}
               → WFEnv {Γ} γ
               → γ ~′ γ
-  WFEnvγ→γ`⊑γ {Γ}{γ} wfγ {x} = wfγ
+  ~′-refl {Γ}{γ} wfγ {x} = ~-refl {γ x} {wfγ} 
 
-{-
-  ~′-refl : ∀{Γ}{γ : Env Γ} → γ ~′ γ
-  ~′-refl {Γ}{γ}{x} = ~-refl
--}
-  
+
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
         → v₁ ~ v₂
@@ -59,8 +52,10 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   ... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
 
 
+{-
   wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
   wf-⊔ {u}{v} u~v wfu wfv = ~-⊔-cong wfu u~v (~-sym u~v) wfv
 
   wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
   wf-fun {v}{w} wfv wfw = ~-↦-cong wfv wfw
+-}

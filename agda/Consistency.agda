@@ -28,14 +28,6 @@ open import BelowBCDConst
 
 module Consistency where
 
-{-
-data wf : Value → Set where
-  wf-bot : wf ⊥
-  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
-  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
-  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
--}
-
 
 AllFun-∈-↦ : ∀{u u′}
       → AllFun u → u′ ∈ u
@@ -586,6 +578,8 @@ consistent-⊑ {A}{B}{C}{D} =
 consistent : Consistent value_struct ordering
 consistent = record {
       _~_ = _~_
+    ; wf = wf
+    ; ~-refl = λ {v}{wfv} → ~-refl {v}{wfv}
     ; ~-sym = λ {u}{v} → ~-sym {u}{v}
     ; ~-⊑ = consistent-⊑
     ; ~-↦-cong = λ {u}{v}{u′}{v′} → ~-↦-cong {u}{v}{u′}{v′}

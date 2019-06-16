@@ -10,7 +10,7 @@ open import Relation.Binary.PropositionalEquality
 open import Variables
 open import Primitives
 open import ValueConst
-open import Curry
+open import CurryConst
 open import Structures
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -41,66 +41,59 @@ module CurryConstProps where
 ... | a | b =
     ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
 
-u~v⊔w→u~v : ∀{u v w}
-          → u ~ v ⊔ w
-          → u ~ v
-u~v⊔w→u~v {⊥} {v} {w} u~v⊔w = tt
-u~v⊔w→u~v {const k} {v} {w} u~v⊔w = proj₁ u~v⊔w
-u~v⊔w→u~v {u₁ ↦ u₂} {v} {w} u~v⊔w = proj₁ u~v⊔w
-u~v⊔w→u~v {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
-    ⟨ u~v⊔w→u~v {u₁} fst₁ , u~v⊔w→u~v {u₂} snd₁ ⟩
-
-u~v⊔w→u~w : ∀{u v w}
-          → u ~ v ⊔ w
-          → u ~ w
-u~v⊔w→u~w {⊥} {v} {w} u~v⊔w = tt
-u~v⊔w→u~w {const x} {v} {w} u~v⊔w = proj₂ u~v⊔w
-u~v⊔w→u~w {u ↦ u₁} {v} {w} u~v⊔w = proj₂ u~v⊔w
-u~v⊔w→u~w {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
-    ⟨ u~v⊔w→u~w {u₁} fst₁ , u~v⊔w→u~w {u₂} snd₁ ⟩
-
-
-wf-⊆ : ∀{v v′} → v′ ⊆ v → wf v → wf v′
-wf-⊆ {⊥} {⊥} v′⊆v wfv = tt
-wf-⊆ {⊥} {const {b} k} v′⊆v wfv
-    with v′⊆v refl
-... | ()     
-wf-⊆ {⊥} {v′ ↦ v′₁} v′⊆v wfv
-    with v′⊆v refl
-... | ()     
-wf-⊆ {⊥} {v′₁ ⊔ v′₂} v′⊆v wfv
-    with ⊔⊆-inv {v′₁}{v′₂}{⊥} v′⊆v
-... | ⟨ v′₁⊆⊥ , v′₂⊆⊥ ⟩ =
-    let ih1 = wf-⊆ {⊥} {v′₁} v′₁⊆⊥ tt in
-    let ih2 = wf-⊆ {⊥} {v′₂} v′₂⊆⊥ tt in
-     ⟨ {!!} , {!!} ⟩
-wf-⊆ {const x} {v′} v′⊆v wfv = {!!}
-wf-⊆ {v ↦ v₁} {v′} v′⊆v wfv = {!!}
-wf-⊆ {v ⊔ v₁} {v′} v′⊆v wfv = {!!}
-
-ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v
-        → w ⊑ v → ℱ D γ v → ℱ D γ w
-ℱ-⊑ {Γ} {D} {γ} {⊥} {⊥} wfd wfγ wfv w⊑v ℱv = tt
-ℱ-⊑ {Γ} {D} {γ} {⊥} {const x} wfd wfγ wfv w⊑v ℱv
-    with v⊑⊥→Below⊥ w⊑v
-... | ()
-ℱ-⊑ {Γ} {D} {γ} {⊥} {w ↦ w₁} wfd wfγ wfv w⊑v ℱv
-    with v⊑⊥→Below⊥ w⊑v
-... | ()
-ℱ-⊑ {Γ} {D} {γ} {⊥} {w₁ ⊔ w₂} wfd wfγ wfv w₁⊔w₂⊑v ℱv =
-  let w₁⊑v = ⊔⊑R w₁⊔w₂⊑v in
-  let w₂⊑v = ⊔⊑L w₁⊔w₂⊑v in
-    ⟨ ℱ-⊑ wfd wfγ wfv w₁⊑v ℱv  , ℱ-⊑ wfd wfγ wfv w₂⊑v ℱv ⟩
-ℱ-⊑ {Γ} {D} {γ} {const k} {w} wfd wfγ wfv w⊑v ()
-ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {w} wfd wfγ wfv w⊑v ℱv = {!!}
-ℱ-⊑ {Γ} {D} {γ} {v₁ ⊔ v₂} {w} wfd wfγ wfv w⊑v₁⊔v₂ ⟨ ℱv₁ , ℱv₂ ⟩ = {!!}
 
 
 {-
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v
+       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w 
         → w ⊑ v → ℱ D γ v → ℱ D γ w
+ℱ-⊑ {Γ} {D} {γ} {⊥} {⊥} wfd wfγ wfv wfw w⊑v ℱv = tt
+ℱ-⊑ {Γ} {D} {γ} {⊥} {const x} wfd wfγ wfv wfw w⊑v ℱv
+    with v⊑⊥→Below⊥ w⊑v
+... | ()
+ℱ-⊑ {Γ} {D} {γ} {⊥} {w ↦ w₁} wfd wfγ wfv wfw w⊑v ℱv
+    with v⊑⊥→Below⊥ w⊑v
+... | ()
+ℱ-⊑ {Γ} {D} {γ} {⊥} {w₁ ⊔ w₂} wfd wfγ wfv (wf-⊔ w₁~w₂ wfw₁ wfw₂) w₁⊔w₂⊑v ℱv =
+  let w₁⊑v = ⊔⊑R w₁⊔w₂⊑v in
+  let w₂⊑v = ⊔⊑L w₁⊔w₂⊑v in
+    ⟨ ℱ-⊑ wfd wfγ wfv wfw₁ w₁⊑v ℱv  , ℱ-⊑ wfd wfγ wfv wfw₂ w₂⊑v ℱv ⟩
+ℱ-⊑ {Γ} {D} {γ} {const k} {w} wfd wfγ wfv wfw w⊑v ()
+ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {⊥} wfd wfγ wfv wfw w⊑v ℱv = tt
+ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {const x} wfd wfγ wfv wfw w⊑v ℱv
+    with ⊑↦→BelowFun w⊑v
+... | ()
+ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {w₁ ↦ w₂} wfd wfγ
+    (wf-fun wfv₁ wfv₂) (wf-fun wfw₁ wfw₂) w⊑v ℱv
+    with ⊑-fun-inv′ w⊑v
+... | ⟨ v₁⊑w₁ , w₂⊑v₂ ⟩ =
+    let Dw₁v₂ : D (γ `, w₁) v₂
+        Dw₁v₂ = WFDenot.⊑-env wfd {γ `, v₁} {γ `, w₁}{v₂}
+                (λ {x} → WFEnv-extend wfγ wfv₁ {x})
+                (λ {x} → WFEnv-extend wfγ wfw₁ {x})
+                wfv₂ (`⊑-extend `⊑-refl v₁⊑w₁)
+                ℱv in
+    WFDenot.⊑-closed wfd (λ {x} → WFEnv-extend wfγ wfw₁ {x})
+                     wfv₂ wfw₂ w₂⊑v₂ Dw₁v₂
+ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {w₁ ⊔ w₂} wfd wfγ wfv wfw w⊑v ℱv = {!!}
+ℱ-⊑ {Γ} {D} {γ} {v₁ ⊔ v₂} {w} wfd wfγ wfv wfw w⊑v₁⊔v₂ ⟨ ℱv₁ , ℱv₂ ⟩ = {!!}
+   {- this case looks hard -}
+-}
+
+ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w
+        → w ⊑ v → ℱ D γ v → ℱ D γ w
+ℱ-⊑ d wfγ wfv wfw ⊑-⊥ ℱDγv = tt
+ℱ-⊑ d wfγ wfv wfw ⊑-const ()
+ℱ-⊑ d wfγ wfv (wf-⊔ c xx yy) (⊑-conj-L w⊑v w⊑v₁) ℱDγv =
+    ⟨ (ℱ-⊑ d wfγ wfv xx w⊑v ℱDγv) , (ℱ-⊑ d wfγ wfv yy w⊑v₁ ℱDγv) ⟩
+ℱ-⊑ d wfγ (wf-⊔ x wfv wfv₁) wfw (⊑-conj-R1 w⊑v) ⟨ fst₁ , snd₁ ⟩ =
+    ℱ-⊑ d wfγ wfv wfw w⊑v fst₁
+ℱ-⊑ d wfγ (wf-⊔ x wfv wfv₁) wfw (⊑-conj-R2 w⊑v) ⟨ fst₁ , snd₁ ⟩ =
+    ℱ-⊑ d wfγ wfv₁ wfw w⊑v snd₁
+ℱ-⊑ {Γ} {D} {γ} d wfγ wfv (wf-fun wfw₁ wfw₂) (⊑-fun {v} {v′} {w₁} {w₂} v′∈v fv′ dv′⊑w₁ w₂⊑cv′) ℱDγv = {!!}
+
+{-
 ℱ-⊑ d wfγ wfv ⊑-⊥ ℱDγv  = tt
 ℱ-⊑ d wfγ wfv ⊑-const () 
 ℱ-⊑ d wfγ wfv (⊑-conj-L w⊑v w⊑v₁) ℱDγv  =

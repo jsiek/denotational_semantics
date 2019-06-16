@@ -724,3 +724,78 @@ consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (in
     consistent→atoms u₁~v u′∈u₁ v′∈v
 consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₂ u′∈u₂) v′∈v =
     consistent→atoms u₂~v u′∈u₂ v′∈v
+
+data wf : Value → Set where
+  wf-bot : wf ⊥
+  wf-const : ∀{B}{k : base-rep B} → wf (const {B} k)
+  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
+  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+
+~-refl : ∀{v}{w : wf v} → v ~ v
+~-refl {⊥} = tt
+~-refl {const {B} k} 
+    with base-eq? B B
+... | yes eq rewrite eq = refl
+... | no neq = neq refl
+~-refl {v ↦ w}{wf-fun wfv wfw} =
+    inj₁ ⟨ ~-refl {v}{wfv} , ~-refl {w}{wfw} ⟩
+~-refl {v₁ ⊔ v₂}{wf-⊔ v₁~v₂ wfv₁ wfv₂} =
+    ⟨ ~⊔R {v₁} (~-refl {v₁}{wfv₁}) v₁~v₂ ,
+      ~⊔R {v₂} (~-sym {v₁} v₁~v₂) (~-refl {v₂}{wfv₂}) ⟩
+
+u~v⊔w→u~v : ∀{u v w}
+          → u ~ v ⊔ w
+          → u ~ v
+u~v⊔w→u~v {⊥} {v} {w} u~v⊔w = tt
+u~v⊔w→u~v {const k} {v} {w} u~v⊔w = proj₁ u~v⊔w
+u~v⊔w→u~v {u₁ ↦ u₂} {v} {w} u~v⊔w = proj₁ u~v⊔w
+u~v⊔w→u~v {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
+    ⟨ u~v⊔w→u~v {u₁} fst₁ , u~v⊔w→u~v {u₂} snd₁ ⟩
+
+u~v⊔w→u~w : ∀{u v w}
+          → u ~ v ⊔ w
+          → u ~ w
+u~v⊔w→u~w {⊥} {v} {w} u~v⊔w = tt
+u~v⊔w→u~w {const x} {v} {w} u~v⊔w = proj₂ u~v⊔w
+u~v⊔w→u~w {u ↦ u₁} {v} {w} u~v⊔w = proj₂ u~v⊔w
+u~v⊔w→u~w {u₁ ⊔ u₂} {v} {w} ⟨ fst₁ , snd₁ ⟩ =
+    ⟨ u~v⊔w→u~w {u₁} fst₁ , u~v⊔w→u~w {u₂} snd₁ ⟩
+
+
+wf-∈ : ∀{v v′} → v′ ∈ v → wf v → wf v′
+wf-∈ {.⊥} {v′} refl wf-bot = wf-bot
+wf-∈ {.(const _)} {v′} refl wf-const = wf-const
+wf-∈ {.(_ ↦ _)} {v′} refl (wf-fun wfv wfv₁) = wf-fun wfv wfv₁
+wf-∈ {.(_ ⊔ _)} {v′} (inj₁ x₁) (wf-⊔ x wfv wfv₁) = wf-∈ x₁ wfv
+wf-∈ {.(_ ⊔ _)} {v′} (inj₂ y) (wf-⊔ x wfv wfv₁) = wf-∈ y wfv₁
+
+wf-∈-~ : ∀{u v w} → wf w → u ∈ w → v ∈ w → u ~ v
+wf-∈-~ {u} {v} {⊥} wfw refl refl = tt
+wf-∈-~ {u} {v} {const {b} x} wfw refl refl
+   with base-eq? b b
+... | yes eq rewrite eq = refl
+... | no neq = neq refl
+wf-∈-~ {.(w ↦ w₁)} {.(w ↦ w₁)} {w ↦ w₁} (wf-fun wfw wfw₁) refl refl =
+    inj₁ ⟨ ~-refl{w}{wfw}  , ~-refl {w₁}{wfw₁} ⟩
+wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ x wfw wfw₁) (inj₁ x₁) (inj₁ x₂) = wf-∈-~ wfw x₁ x₂
+wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ w~w₁ wfw wfw₁) (inj₁ x₁) (inj₂ y) =
+  consistent→atoms w~w₁ x₁ y
+wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ w~w₁ wfw wfw₁) (inj₂ y) (inj₁ x₁) =
+  consistent→atoms {w₁}{w}{u}{v} (~-sym{w}{w₁} w~w₁) y x₁ 
+wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ x wfw wfw₁) (inj₂ y) (inj₂ y₁) = wf-∈-~ wfw₁ y y₁
+
+wf-⊆-~ : ∀{u v w} → wf w → u ⊆ w → v ⊆ w → u ~ v
+wf-⊆-~ {u}{v}{w} wfw u⊆w v⊆w =
+  atoms→consistent{u}{v} λ {u′ v′} u′∈u v′∈v →
+     wf-∈-~{u′}{v′}{w} wfw (u⊆w u′∈u) (v⊆w v′∈v)
+
+wf-⊆ : ∀{v v′} → v′ ⊆ v → wf v → wf v′
+wf-⊆ {v} {⊥} v′⊆v wfv = wf-bot
+wf-⊆ {v} {const x} v′⊆v wfv = wf-const
+wf-⊆ {v} {v′ ↦ v′₁} v′⊆v wfv
+    with v′⊆v refl
+... | v′↦v′₁∈v = wf-∈ v′↦v′₁∈v wfv
+wf-⊆ {v} {v′ ⊔ v′₁} v′⊔v′₁⊆v wfv
+    with ⊔⊆-inv v′⊔v′₁⊆v
+... | ⟨ v′⊆v , v′₁⊆v ⟩ =
+    wf-⊔ (wf-⊆-~ wfv v′⊆v v′₁⊆v) (wf-⊆ v′⊆v wfv) (wf-⊆ v′₁⊆v wfv)

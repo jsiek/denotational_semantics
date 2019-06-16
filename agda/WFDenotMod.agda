@@ -13,7 +13,7 @@ module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
   open Consistent C
   open ValueStructAux D
   open OrderingAux D V using (_`⊑_)
-  open ConsistentAux D V C using (wf; _~′_; WFEnv)
+  open ConsistentAux D V C using (_~′_; WFEnv)
 
   record Ideal (𝒟 : Value → Set) : Set₁ where
     field
