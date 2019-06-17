@@ -19,9 +19,9 @@ open import OrderingAux value_struct ordering
 open import Consistency
 open import ConsistentAux value_struct ordering consistent
 open import WFDenotMod value_struct ordering consistent
-open import ModelMod value_struct ordering consistent
+open import CurryApplyStruct value_struct ordering consistent
 
-module CurryConstProps where
+module ModelCurryConst where
 
 ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
     → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
@@ -31,8 +31,8 @@ module CurryConstProps where
     → ℱ D γ ⊥
 ℱ-⊥ = tt
 
-ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-          {D′ : Denotation (suc Δ)}
+ℱ-≲ : ∀{Γ Δ}{D : Denotation (suc Γ)}
+          {D′ : Denotation (suc Δ)}{γ : Env Γ}{δ : Env Δ}
        → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
        → ℱ D γ ≲ ℱ D′ δ
 ℱ-≲ D≲D′ {⊥} = λ _ → tt
@@ -42,46 +42,6 @@ module CurryConstProps where
     with ℱ-≲{D = D}{D′} D≲D′ {u} | ℱ-≲{D = D}{D′} D≲D′ {v}
 ... | a | b =
     ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
-
-
-
-{-
-ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w 
-        → w ⊑ v → ℱ D γ v → ℱ D γ w
-ℱ-⊑ {Γ} {D} {γ} {⊥} {⊥} wfd wfγ wfv wfw w⊑v ℱv = tt
-ℱ-⊑ {Γ} {D} {γ} {⊥} {const x} wfd wfγ wfv wfw w⊑v ℱv
-    with v⊑⊥→Below⊥ w⊑v
-... | ()
-ℱ-⊑ {Γ} {D} {γ} {⊥} {w ↦ w₁} wfd wfγ wfv wfw w⊑v ℱv
-    with v⊑⊥→Below⊥ w⊑v
-... | ()
-ℱ-⊑ {Γ} {D} {γ} {⊥} {w₁ ⊔ w₂} wfd wfγ wfv (wf-⊔ w₁~w₂ wfw₁ wfw₂) w₁⊔w₂⊑v ℱv =
-  let w₁⊑v = ⊔⊑R w₁⊔w₂⊑v in
-  let w₂⊑v = ⊔⊑L w₁⊔w₂⊑v in
-    ⟨ ℱ-⊑ wfd wfγ wfv wfw₁ w₁⊑v ℱv  , ℱ-⊑ wfd wfγ wfv wfw₂ w₂⊑v ℱv ⟩
-ℱ-⊑ {Γ} {D} {γ} {const k} {w} wfd wfγ wfv wfw w⊑v ()
-ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {⊥} wfd wfγ wfv wfw w⊑v ℱv = tt
-ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {const x} wfd wfγ wfv wfw w⊑v ℱv
-    with ⊑↦→BelowFun w⊑v
-... | ()
-ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {w₁ ↦ w₂} wfd wfγ
-    (wf-fun wfv₁ wfv₂) (wf-fun wfw₁ wfw₂) w⊑v ℱv
-    with ⊑-fun-inv′ w⊑v
-... | ⟨ v₁⊑w₁ , w₂⊑v₂ ⟩ =
-    let Dw₁v₂ : D (γ `, w₁) v₂
-        Dw₁v₂ = WFDenot.⊑-env wfd {γ `, v₁} {γ `, w₁}{v₂}
-                (λ {x} → WFEnv-extend wfγ wfv₁ {x})
-                (λ {x} → WFEnv-extend wfγ wfw₁ {x})
-                wfv₂ (`⊑-extend `⊑-refl v₁⊑w₁)
-                ℱv in
-    WFDenot.⊑-closed wfd (λ {x} → WFEnv-extend wfγ wfw₁ {x})
-                     wfv₂ wfw₂ w₂⊑v₂ Dw₁v₂
-ℱ-⊑ {Γ} {D} {γ} {v₁ ↦ v₂} {w₁ ⊔ w₂} wfd wfγ wfv wfw w⊑v ℱv = {!!}
-ℱ-⊑ {Γ} {D} {γ} {v₁ ⊔ v₂} {w} wfd wfγ wfv wfw w⊑v₁⊔v₂ ⟨ ℱv₁ , ℱv₂ ⟩ = {!!}
-   {- this case looks hard -}
--}
-
 
 domu↦codu⊑u : ∀{u} → (fu : AllFun u) → dom u {fu} ↦ cod u {fu} ⊑ u
 domu↦codu⊑u {⊥} ()

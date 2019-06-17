@@ -8,7 +8,7 @@ import WFDenotMod
 import ConsistentAux
 
 
-module ModelMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
+module CurryApplyStruct (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
   where
 
   open ValueStruct D
