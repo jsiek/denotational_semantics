@@ -42,7 +42,8 @@ module ModelMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
           → ℱ D γ u → ℱ D δ v
           → u ~ v
 
-  record LambdaModelBasics
+  {- was LambdaModelBasics -}
+  record CurryApplyStruct
       (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)
       : Set₁ where
