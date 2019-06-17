@@ -38,6 +38,12 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   ~′-refl {Γ}{γ} wfγ {x} = ~-refl {γ x} {wfγ} 
 
 
+  ~′-extend : ∀{Γ}{γ δ : Env Γ}{u v}
+            → γ ~′ δ → u ~ v
+            → (γ `, u) ~′ (δ `, v)
+  ~′-extend γ~′δ u~v {Z} = u~v
+  ~′-extend γ~′δ u~v {S x} = γ~′δ
+
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
         → v₁ ~ v₂

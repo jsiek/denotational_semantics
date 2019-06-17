@@ -269,40 +269,33 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
 ℱ-~ {D = D} {γ} {δ} {const k} {v} wfd wfγ wfδ γ~δ wfu wfv () d2
 ℱ-~ {D = D} {γ} {δ} {u₁ ↦ u₂} {⊥} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
 ℱ-~ {D = D} {γ} {δ} {u₁ ↦ u₂} {const x} wfd wfγ wfδ γ~δ wfu wfv d1 ()
-ℱ-~ {Γ} {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd wfγ wfδ γ~δ wfu wfv d1 d2
+ℱ-~ {Γ} {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd wfγ wfδ γ~δ (wf-fun wfu₁ wfu₂) (wf-fun wfv₁ wfv₂) d1 d2
     with consistent? u₁ v₁
 ... | no u₁~̸v₁ = inj₂ u₁~̸v₁
 ... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
       where
-      wfγu₁ : WFEnv (γ `, u₁)
-      wfγu₁ {Z} = {!!}
-      wfγu₁ {S x} = wfγ
-      wfδv₁ : WFEnv (δ `, v₁)
-      wfδv₁ {Z} = {!!}
-      wfδv₁ {S x} = wfδ
-      γu₁~δv₁ : (γ `, u₁) ~′ (δ `, v₁)
-      γu₁~δv₁ {Z} = u₁~v₁
-      γu₁~δv₁ {S x} = γ~δ {x}
+      wfγu₁ = λ {x} → WFEnv-extend wfγ wfu₁ {x}
+      wfδv₁ = λ {x} → WFEnv-extend wfδ wfv₁ {x}
+      γu₁~δv₁ = λ {x} → ~′-extend γ~δ u₁~v₁ {x}
       u₂~v₂ = WFDenot.~-closed wfd (λ {x} → wfγu₁ {x}) (λ {x} → wfδv₁ {x})
-                 (λ {x} → γu₁~δv₁ {x}) {!!} {!!} d1 d2 
-  
+                 (λ {x} → γu₁~δv₁ {x}) wfu₂ wfv₂ d1 d2 
 ℱ-~ {Γ}{D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd wfγ wfδ γ~δ 
-    wfu wfv d1 ⟨ fst' , snd' ⟩ =
+    (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst' , snd' ⟩ =
     ⟨ ℱ-~ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₁} wfd wfγ wfδ γ~δ
-           (wf-fun {!!} {!!}) {!!} d1 fst' ,
+           (wf-fun wfu₁ wfu₂) wfv₁ d1 fst' ,
       ℱ-~ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₂} wfd wfγ wfδ γ~δ
-           (wf-fun {!!} {!!}) {!!} d1 snd' ⟩
+           (wf-fun wfu₁ wfu₂) wfv₂ d1 snd' ⟩
 ℱ-~ {D = D} {γ} {δ} {u₁ ⊔ u₂} {v} wfd wfγ wfδ γ~δ
-    wfu wfv ⟨ fst' , snd' ⟩ d2 =
-    ⟨ ℱ-~ {D = D}{γ}{δ}{u₁}{v} wfd wfγ wfδ γ~δ {!!} wfv fst' d2 ,
-      ℱ-~ {D = D}{γ}{δ}{u₂}{v} wfd wfγ wfδ γ~δ {!!} wfv snd' d2 ⟩
+    (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fst' , snd' ⟩ d2 =
+    ⟨ ℱ-~ {D = D}{γ}{δ}{u₁}{v} wfd wfγ wfδ γ~δ wfu₁ wfv fst' d2 ,
+      ℱ-~ {D = D}{γ}{δ}{u₂}{v} wfd wfγ wfδ γ~δ wfu₂ wfv snd' d2 ⟩
 
-{-
-model_curry : ModelCurry ℱ
+
+model_curry : CurryStruct ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ;
                        ℱ-⊑ = ℱ-⊑ ;
                        ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔ {Γ}{D}{γ}{u}{v} ;
                        ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} ;
                        ℱ-~ = λ {Γ}{D}{γ}{u}{v} → ℱ-~ {Γ}{D}{γ}{u}{v}
                      }
--}
+
