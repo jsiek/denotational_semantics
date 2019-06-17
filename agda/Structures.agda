@@ -76,6 +76,8 @@ record Consistent (D : ValueStruct) (V : ValueOrdering D) : Set₁ where
   field
     _~_ : Value → Value → Set
     wf : Value → Set
+    wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
+    wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
     ~-refl : ∀{v}{w : wf v} → v ~ v
     ~-sym : ∀{u v} → u ~ v → v ~ u
     ~-⊑ : ∀{u v u′ v′}  → u ~ v → u′ ⊑ u → v′ ⊑ v → u′ ~ v′
@@ -88,16 +90,5 @@ record Consistent (D : ValueStruct) (V : ValueOrdering D) : Set₁ where
              → (v ~ u′) → (v ~ v′)
              → u ⊔ v ~ u′ ⊔ v′
              
-
-
-{-
-
-  The following caused problems with equality. -Jeremy
-
-  record LambdaModel : Set₁ where
-    field
-      _●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
-      ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
--}
 
 

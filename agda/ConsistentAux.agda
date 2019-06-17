@@ -11,8 +11,10 @@ open import Structures
 import ValueStructAux
 
 
-module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
+module ConsistentAux
+  (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
   where
+  
   open ValueStruct D
   open ValueOrdering V
   open import OrderingAux D V
@@ -58,10 +60,8 @@ module ConsistentAux (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V
   ... | inj₂ v₁~̸v₂ = ⊥-elim (contradiction v₁~v₂ v₁~̸v₂)
 
 
-{-
-  wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
-  wf-⊔ {u}{v} u~v wfu wfv = ~-⊔-cong wfu u~v (~-sym u~v) wfv
-
-  wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
-  wf-fun {v}{w} wfv wfw = ~-↦-cong wfv wfw
--}
+  ~-↦-~ : ∀{v w v′ w′} → (v ↦ w ~ v′ ↦ w′) → v ~ v′ → w ~ w′
+  ~-↦-~ vw~vw′ v~v'
+      with ~-↦ vw~vw′
+  ... | inj₁ ⟨ _ , w~w′ ⟩ = w~w′
+  ... | inj₂ ¬v~v′ = ⊥-elim (contradiction v~v' ¬v~v′)

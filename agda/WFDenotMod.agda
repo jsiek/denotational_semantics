@@ -30,9 +30,9 @@ module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
       ⊑-closed : ∀{γ}{v w}
                → WFEnv γ → wf v → wf w
                → w ⊑ v → D γ v → D γ w
-      ⊔-closed : ∀{γ δ u v}
-               → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
-               → D γ u → D δ v → D γ (u ⊔ v)
+      ⊔-closed : ∀{γ u v}
+               → WFEnv γ → wf u → wf v
+               → D γ u → D γ v → D γ (u ⊔ v)
       ~-closed : ∀{γ δ u v}
                → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
                → D γ u → D δ v → u ~ v

@@ -8,7 +8,8 @@ import WFDenotMod
 import ConsistentAux
 
 
-module CurryApplyStruct (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
+module CurryApplyStruct
+  (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
   where
 
   open ValueStruct D
@@ -54,11 +55,13 @@ module CurryApplyStruct (D : ValueStruct) (V : ValueOrdering D) (C : Consistent 
           → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
           → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
       ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
-          → WFDenot Γ D₁ → (D₁ ● D₂) γ v → w ⊑ v → (D₁ ● D₂) γ w
-      ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {δ : Env Γ} {u v : Value}
-          → WFDenot Γ D₁ → WFDenot Γ D₂ → γ ~′ δ → {c : u ~ v}
+          → WFDenot Γ D₁ → WFEnv γ → wf v → wf w
+          → w ⊑ v → (D₁ ● D₂) γ v → (D₁ ● D₂) γ w
+      ●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{u v : Value}
+          → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → wf u → wf v
           → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
       ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
-          → WFDenot Γ D₁ → WFDenot Γ D₂ → γ ~′ δ
+          → WFDenot Γ D₁ → WFDenot Γ D₂
+          → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
           → (D₁ ● D₂) γ u → (D₁ ● D₂) δ v → u ~ v
 

@@ -189,9 +189,8 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
                         wf-cv₂
                         (`⊑-extend `⊑-refl (⊑-conj-R2 ⊑-refl))
                         D-γdv₂-cv₂ in
-  WFDenot.⊔-closed wfd (λ {x} → wf-γdv₁⊔dv₂ {x}) (λ {x} → wf-γdv₁⊔dv₂{x})
-    (λ {x} → ~′-refl{suc Γ} (λ {y} → wf-γdv₁⊔dv₂ {y}) {x})
-    wf-cv₁ wf-cv₂ Dγdv₁⊔dv₂-cv₁ Dγdv₁⊔dv₂-cv₂ 
+  WFDenot.⊔-closed wfd (λ {x} → wf-γdv₁⊔dv₂ {x}) wf-cv₁ wf-cv₂
+      Dγdv₁⊔dv₂-cv₁ Dγdv₁⊔dv₂-cv₂ 
         
 
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
