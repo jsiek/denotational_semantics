@@ -568,6 +568,7 @@ consistent-⊑-aux {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B =
         
     G {C₁ ⊔ C₂} {D′} C′∈C D′∈D = ⊥-elim (not-u₁⊔u₂∈v C′∈C)
 
+
 consistent-⊑ : ∀{A B C D}
     → A ~ B  →  C ⊑ A  → D ⊑ B
     → C ~ D

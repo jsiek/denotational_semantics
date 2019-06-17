@@ -108,6 +108,21 @@ data _⊑_ : Value → Value → Set where
 ⊑-refl {v ↦ w} = ⊑-fun{v ↦ w}{v ↦ w} (λ {u} z → z) tt (⊑-refl{v}) ⊑-refl
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
+⊔⊑R : ∀{B C A}
+    → B ⊔ C ⊑ A
+    → B ⊑ A
+⊔⊑R (⊑-conj-L B⊔C⊑A B⊔C⊑A₁) = B⊔C⊑A
+⊔⊑R (⊑-conj-R1 B⊔C⊑A) = ⊑-conj-R1 (⊔⊑R B⊔C⊑A)
+⊔⊑R (⊑-conj-R2 B⊔C⊑A) = ⊑-conj-R2 (⊔⊑R B⊔C⊑A)
+
+⊔⊑L : ∀{B C A}
+    → B ⊔ C ⊑ A
+    → C ⊑ A
+⊔⊑L (⊑-conj-L B⊔C⊑A B⊔C⊑A₁) = B⊔C⊑A₁
+⊔⊑L (⊑-conj-R1 B⊔C⊑A) = ⊑-conj-R1 (⊔⊑L B⊔C⊑A)
+⊔⊑L (⊑-conj-R2 B⊔C⊑A) = ⊑-conj-R2 (⊔⊑L B⊔C⊑A)
+
+
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = Σ[ fu′ ∈ AllFun u′ ] u′ ⊆ u
                   × dom u′ {fu′} ⊑ v × w ⊑ cod u′ {fu′}
@@ -163,21 +178,6 @@ sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} ⟨ afu₁′ , afu₂′ ⟩ u�
 
     I : cod u₁′ ⊔ cod u₂′ ⊑ cod u₃ ⊔ cod u₄
     I = ⊑-conj-L (⊑-conj-R1 ⊑cu₃) (⊑-conj-R2 ⊑cu₄)
-
-
-⊔⊑R : ∀{B C A}
-    → B ⊔ C ⊑ A
-    → B ⊑ A
-⊔⊑R (⊑-conj-L B⊔C⊑A B⊔C⊑A₁) = B⊔C⊑A
-⊔⊑R (⊑-conj-R1 B⊔C⊑A) = ⊑-conj-R1 (⊔⊑R B⊔C⊑A)
-⊔⊑R (⊑-conj-R2 B⊔C⊑A) = ⊑-conj-R2 (⊔⊑R B⊔C⊑A)
-
-⊔⊑L : ∀{B C A}
-    → B ⊔ C ⊑ A
-    → C ⊑ A
-⊔⊑L (⊑-conj-L B⊔C⊑A B⊔C⊑A₁) = B⊔C⊑A₁
-⊔⊑L (⊑-conj-R1 B⊔C⊑A) = ⊑-conj-R1 (⊔⊑L B⊔C⊑A)
-⊔⊑L (⊑-conj-R2 B⊔C⊑A) = ⊑-conj-R2 (⊔⊑L B⊔C⊑A)
 
 
 u∈v⊑w→u⊑w : ∀{B A C} → C ∈ B → B ⊑ A → C ⊑ A
@@ -420,7 +420,6 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
 ⊑-trans : ∀{u v w} → u ⊑ v → v ⊑ w → u ⊑ w
 ⊑-trans {u} {v} {w} u⊑v v⊑w =
     ⊑-trans-rec (depth u + depth w) (size u + size v) refl refl u⊑v v⊑w
-
 
 {-
   The traditional function subtyping rule is admissible.
@@ -770,19 +769,8 @@ wf-∈ {.(_ ⊔ _)} {v′} (inj₁ x₁) (wf-⊔ x wfv wfv₁) = wf-∈ x₁ wfv
 wf-∈ {.(_ ⊔ _)} {v′} (inj₂ y) (wf-⊔ x wfv wfv₁) = wf-∈ y wfv₁
 
 wf-∈-~ : ∀{u v w} → wf w → u ∈ w → v ∈ w → u ~ v
-wf-∈-~ {u} {v} {⊥} wfw refl refl = tt
-wf-∈-~ {u} {v} {const {b} x} wfw refl refl
-   with base-eq? b b
-... | yes eq rewrite eq = refl
-... | no neq = neq refl
-wf-∈-~ {.(w ↦ w₁)} {.(w ↦ w₁)} {w ↦ w₁} (wf-fun wfw wfw₁) refl refl =
-    inj₁ ⟨ ~-refl{w}{wfw}  , ~-refl {w₁}{wfw₁} ⟩
-wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ x wfw wfw₁) (inj₁ x₁) (inj₁ x₂) = wf-∈-~ wfw x₁ x₂
-wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ w~w₁ wfw wfw₁) (inj₁ x₁) (inj₂ y) =
-  consistent→atoms w~w₁ x₁ y
-wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ w~w₁ wfw wfw₁) (inj₂ y) (inj₁ x₁) =
-  consistent→atoms {w₁}{w}{u}{v} (~-sym{w}{w₁} w~w₁) y x₁ 
-wf-∈-~ {u} {v} {w ⊔ w₁} (wf-⊔ x wfw wfw₁) (inj₂ y) (inj₂ y₁) = wf-∈-~ wfw₁ y y₁
+wf-∈-~ {u}{v}{w} wfw u∈w v∈w =
+  consistent→atoms{w}{w}{u}{v} (~-refl{w}{wfw}) u∈w v∈w
 
 wf-⊆-~ : ∀{u v w} → wf w → u ⊆ w → v ⊆ w → u ~ v
 wf-⊆-~ {u}{v}{w} wfw u⊆w v⊆w =
@@ -799,3 +787,4 @@ wf-⊆ {v} {v′ ⊔ v′₁} v′⊔v′₁⊆v wfv
     with ⊔⊆-inv v′⊔v′₁⊆v
 ... | ⟨ v′⊆v , v′₁⊆v ⟩ =
     wf-⊔ (wf-⊆-~ wfv v′⊆v v′₁⊆v) (wf-⊆ v′⊆v wfv) (wf-⊆ v′₁⊆v wfv)
+
