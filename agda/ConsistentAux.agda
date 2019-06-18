@@ -21,6 +21,89 @@ module ConsistentAux
   open Consistent C
   open ValueStructAux D
 
+
+  _≲_ : (Value → Set) → (Value → Set) → Set
+  d ≲ d' = ∀{v : Value} → wf v → d v → d' v
+
+  ≲-refl : ∀ {d : Value → Set}
+         → d ≲ d
+  ≲-refl wfv dv = dv
+
+  ≲-trans : ∀ {d₁ d₂ d₃ : Value → Set}
+    → d₁ ≲ d₂
+    → d₂ ≲ d₃
+      ------- 
+    → d₁ ≲ d₃
+  ≲-trans m12 m23 wfv d₁v = m23 wfv (m12 wfv d₁v)
+
+  infixr 2 _≲⟨⟩_ _≲⟨_⟩_
+  infix  3 _☐
+
+  _≲⟨⟩_ : ∀ (x : Value → Set) {y : Value → Set}
+      → x ≲ y
+        -----
+      → x ≲ y
+  x ≲⟨⟩ x≲y  = x≲y
+
+  _≲⟨_⟩_ : ∀ (x : Value → Set) {y z : Value → Set}
+      → x ≲ y
+      → y ≲ z
+        -----
+      → x ≲ z
+  (x ≲⟨ x≲y ⟩ y≲z) {v} wfv xv = y≲z wfv (x≲y wfv xv)
+
+  _☐ : ∀ (d : Value → Set)
+        -----
+      → d ≲ d
+  (d ☐) {v} =  ≲-refl {d}
+
+
+  infix 3 _≃_
+
+  _≃_ : ∀ {Γ} → (Denotation Γ) → (Denotation Γ) → Set
+  (_≃_ {Γ} D₁ D₂) = (γ : Env Γ) → (v : Value) → wf v → D₁ γ v iff D₂ γ v
+
+  ≃-refl : ∀ {Γ } → {M : Denotation Γ}
+    → M ≃ M
+  ≃-refl γ v wfv = ⟨ (λ x → x) , (λ x → x) ⟩
+
+  ≃-sym : ∀ {Γ } → {M N : Denotation Γ}
+    → M ≃ N
+      -----
+    → N ≃ M
+  ≃-sym eq γ v wfv = ⟨ (proj₂ (eq γ v wfv)) , (proj₁ (eq γ v wfv)) ⟩
+
+  ≃-trans : ∀ {Γ } → {M₁ M₂ M₃ : Denotation Γ}
+    → M₁ ≃ M₂
+    → M₂ ≃ M₃
+      -------
+    → M₁ ≃ M₃
+  ≃-trans eq1 eq2 γ v wfv =
+      ⟨ (λ z → proj₁ (eq2 γ v wfv) (proj₁ (eq1 γ v wfv) z)) ,
+        (λ z → proj₂ (eq1 γ v wfv) (proj₂ (eq2 γ v wfv) z)) ⟩
+
+  infixr 2 _≃⟨⟩_ _≃⟨_⟩_
+  infix  3 _□
+
+  _≃⟨⟩_ : ∀ {Γ} (x : Denotation Γ) {y : Denotation Γ}
+      → x ≃ y
+        -----
+      → x ≃ y
+  x ≃⟨⟩ x≃y  = x≃y
+
+  _≃⟨_⟩_ : ∀ {Γ} (x : Denotation Γ) {y z : Denotation Γ}
+      → x ≃ y
+      → y ≃ z
+        -----
+      → x ≃ z
+  (x ≃⟨ x≃y ⟩ y≃z) =  ≃-trans x≃y y≃z
+
+  _□ : ∀ {Γ} (d : Denotation Γ)
+        -----
+      → d ≃ d
+  (d □) =  ≃-refl
+
+
   WFEnv : ∀ {Γ : ℕ} → Env Γ → Set
   WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
 

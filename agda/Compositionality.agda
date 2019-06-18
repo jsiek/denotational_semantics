@@ -1,20 +1,35 @@
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+
+import CurryApplyStruct
+import OrderingAux
+open import Primitives
+open import Structures
+import ValueStructAux
+import WFDenotMod
+
 module Compositionality where
 
 module DenotAux
-  (D : Domain) (V : ValueOrdering D) 
-  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
-       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : ModelMod.LambdaModelBasics D V _●_ ℱ)
+  (D : ValueStruct) (V : ValueOrdering D) 
+  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
+       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
+      → ValueStructAux.Denotation D Γ)
+  (C : Consistent D V)
+  (MB : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   where
-  open Domain D
-  open DomainAux D
+  open ValueStruct D
+  open ValueStructAux D
   open OrderingAux D V
-  open ModelMod.LambdaModelBasics MB
-  open ModelMod.ModelCurry model_curry
-  open ℱ-●-cong D V _●_ ℱ MB
+  open CurryApplyStruct.CurryApplyStruct MB
+  open CurryApplyStruct.CurryStruct model_curry
+  open import CurryApplyAux D V C _●_ ℱ MB
 
-  open LambdaDenot D V _●_ ℱ
+  open import LambdaDenot D V _●_ ℱ
   open import Lambda
   open ASTMod
   
@@ -52,21 +67,23 @@ module DenotAux
   
 
 module ISWIMDenotAux
-  (D : Domain) (V : ValueOrdering D) 
-  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
-       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : ModelMod.LambdaModelBasics D V _●_ ℱ)
-  (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
+  (D : ValueStruct) (V : ValueOrdering D) 
+  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
+       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
+       → ValueStructAux.Denotation D Γ)
+  (C : Consistent D V)
+  (MB : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
+  (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
   where
   
-  open Domain D
-  open DomainAux D
+  open ValueStruct D
+  open ValueStructAux D
   open OrderingAux D V
-  open ISWIMDenot D V _●_ ℱ  (λ {P} k v → ℘ {P} k v)
-  open ModelMod.LambdaModelBasics MB
-  open ModelMod.ModelCurry model_curry
-  open ℱ-●-cong D V _●_ ℱ MB
+  open import ISWIMDenot D V _●_ ℱ  (λ {P} k v → ℘ {P} k v)
+  open CurryApplyStruct.CurryApplyStruct MB
+  open CurryApplyStruct.CurryStruct model_curry
+  open import CurryApplyAux D V C _●_ ℱ MB
   
   open import ISWIM
   open ASTMod

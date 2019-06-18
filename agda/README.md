@@ -15,40 +15,49 @@ File Overview
 
    Structures ValueStruct, ValueOrdering, ModelCurry, and Consistent.
 
-* ValueStructAux
+* `ValueStructAux`  (parameterized on ValueStruct)
 
-  Generic stuff in terms of ValueStruct.
+   * Environments (type `Env`) and operations on them.
+   * Type `Denotation`
 
-* OrderingAux
+* `OrderingAux` (parameterized on ValueStruct and ValueOrdering)
 
-  Generic stuff in terms of ValueOrdering.
+   * Derived rules regarding `⊑`.
+   * Equational reasoning for `⊑`.
+   * Extending `⊑` to environments.
 
-* ConsistentAux
+* `ConsistentAux` (parameterized on Consistent, etc.)
 
-  Generic stuff in terms of Consistent.
+   * denotational equality `≃` and inequality `≲`
+	 with notation for equational reasoning.
+   * Well-formed environments (`WFEnv`).
+   * Consistency for environments.
+   * Derived rules regarding `~`.
 
-* `CurryApplyStruct`
+* `CurryApplyStruct` (parameterized on Consistent, etc.)
 
-  Structures CurryStruct and CurryApplyStruct.
+   Structures `CurryStruct` and `CurryApplyStruct`.
 
-* `LambdaDenot`
+* `LambdaDenot` (parameterized on ValueStruct and ValueOrdering)
 
   Denotational semantics of lambda calculus defined
   generically in terms of ●, ℱ, Domain, and ValueOrdering.
 
-* `ISWIMDenot`
+* `ISWIMDenot` (parameterized on ValueStruct and ValueOrdering)
 
   Denotational semantics of ISWIM defined
   generically in terms of ●, ℱ, Domain, and ValueOrdering.
   
-* `Compositionality`
+* `Compositionality` (parameterized on CurryApplyStruct)
+
+   Proof of compositionality for the lambda calculus and ISWIM.
 
 * `MultiStep`
 
   Defines multi-step reduction generically given a reduction
   relation.
 
-* `ValueBCD` (obsolete)
+* `ValueBCD`
 
   * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
     types), the ⊑ ordering, and ℱ. Instances of Domain
@@ -75,7 +84,8 @@ File Overview
 
 * `ISWIM`
 
-  Call-by-value lambda calculus with constants and a δ redution rule.
+  Call-by-value lambda calculus with constants and a δ reduction rule
+  for primitive operations.
 
 * `EvalCallByName`
 
@@ -106,7 +116,7 @@ File Overview
   Same as above for ISWIM. Just instantiates the ModelCallByValue
   module with a different domain.
 
-* `RenamePreserveReflect` (requires CurryApplyStruct)
+* `RenamePreserveReflect` (parameterized on CurryApplyStruct)
 
   Proves that renaming preserves and reflects denotations.
 
@@ -114,7 +124,7 @@ File Overview
 
   Proves admisibility of subsumption and ⊔ introduction.
 
-* `SubstitutionPreserve` (requires CurryApplyStruct)
+* `SubstitutionPreserve` (parameterized on CurryApplyStruct)
 
   Proves that substitution preserves denotations.
 

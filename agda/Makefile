@@ -1,16 +1,17 @@
 %.agdai: %.agda
 	agda  $<
 
+#	BelowBCDConst.agda \
+#	FunInverseBCDConst.agda \
+#	CurryBCDConst.agda \
+
 AGDA = Variables.agda \
 	Syntax2.agda \
 	Primitives.agda \
 	Structures.agda \
 	MultiStep.agda \
 	ValueBCD.agda \
-	ValueBCDConst.agda \
-	BelowBCDConst.agda \
-	FunInverseBCDConst.agda \
-	CurryBCDConst.agda \
+	ValueConst.agda \
 	Consistency.agda \
 	Lambda.agda \
 	LambdaCallByValue.agda \

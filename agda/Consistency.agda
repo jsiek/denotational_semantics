@@ -580,6 +580,7 @@ consistent : Consistent value_struct ordering
 consistent = record {
       _~_ = _~_
     ; wf = wf
+    ; wf-bot = wf-bot
     ; wf-⊔ = wf-⊔
     ; wf-fun = wf-fun
     ; ~-refl = λ {v}{wfv} → ~-refl {v}{wfv}

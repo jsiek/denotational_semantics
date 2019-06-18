@@ -1,6 +1,5 @@
 open import Data.Nat using (ℕ; zero; suc)
 
-
 open import Structures
 import ValueStructAux
 import OrderingAux
@@ -27,7 +26,7 @@ module CurryApplyStruct
     field
       ℱ-≲ : ∀{Γ Δ}{D : Denotation (suc Γ)} {D′ : Denotation (suc Δ)}
              {γ : Env Γ}{δ : Env Δ}
-          → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
+          → (∀{v : Value} → wf v → D (γ `, v) ≲ D′ (δ `, v))
           → ℱ D γ ≲ ℱ D′ δ
       ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
           → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w

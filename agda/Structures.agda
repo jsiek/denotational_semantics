@@ -76,6 +76,7 @@ record Consistent (D : ValueStruct) (V : ValueOrdering D) : Set₁ where
   field
     _~_ : Value → Value → Set
     wf : Value → Set
+    wf-bot : wf ⊥
     wf-⊔ : ∀{u v} → u ~ v → wf u → wf v → wf (u ⊔ v)
     wf-fun : ∀{v w} → wf v → wf w → wf (v ↦ w)
     ~-refl : ∀{v}{w : wf v} → v ~ v

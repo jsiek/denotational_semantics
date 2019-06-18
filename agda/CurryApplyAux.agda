@@ -1,16 +1,29 @@
-module CurryApplyCong
-  (D : Domain) (V : ValueOrdering D) 
-  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
-       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
-  (MB : ModelMod.LambdaModelBasics D V _●_ ℱ)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
+
+open import Structures
+import ValueStructAux
+import OrderingAux
+import WFDenotMod
+import CurryApplyStruct
+
+
+module CurryApplyAux
+  (D : ValueStruct)
+  (V : ValueOrdering D) 
+  (C : Consistent D V)
+  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
+       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ) → ValueStructAux.Denotation D Γ)
+  (MB : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   where
-  open Domain D
-  open DomainAux D
+  open ValueStruct D
+  open ValueStructAux D
   open OrderingAux D V
 
-  open ModelMod.LambdaModelBasics MB
-  open ModelMod.ModelCurry model_curry
+  open CurryApplyStruct.CurryApplyStruct MB
+  open CurryApplyStruct.CurryStruct model_curry
 
 
   ℱ-cong : ∀{Γ}{D D′ : Denotation (suc Γ)}
