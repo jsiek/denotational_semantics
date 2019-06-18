@@ -17,7 +17,9 @@ open import ValueConst
 open import ValueStructAux value_struct 
 open import OrderingAux value_struct ordering
 open import Consistency
+open import CurryConst
 open import ModelCurryConst
 
-open import ModelCallByValue value_struct ordering consistent ℱ model_curry public
+open import ModelCallByValue value_struct ordering consistent ℱ model_curry
+     public
 

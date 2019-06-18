@@ -18,14 +18,13 @@ open import Data.Unit using (⊤; tt)
 
 open import Variables
 open import Primitives
-open import ValueBCDConst
+open import ValueConst
+open import Consistency
 open import Structures
+open import CurryConst
 
 
-module PrimBCDConst where
-
-{- need consistency for this to be true! -Jeremy -}
-postulate k⊑v→k′⊑v→k′≡k : ∀{B : Base}{k : base-rep B}{k′ : base-rep B} {v : Value} → const k ⊑ v → const k′ ⊑ v → k′ ≡ k
+module PrimConst where
 
 ℘-⊑ : ∀{P}{k : rep P}{v w : Value}
    → ℘ {P} k v
@@ -42,6 +41,12 @@ postulate k⊑v→k′⊑v→k′≡k : ∀{B : Base}{k : base-rep B}{k′ : bas
    ℘-⊑ (proj₁ ℘kv) w⊑v
 ℘-⊑ {P} {k} {.(_ ⊔ _)} {w} ℘kv (⊑-conj-R2 w⊑v) =
    ℘-⊑ (proj₂ ℘kv) w⊑v
+℘-⊑ {P}{k}{v}{w = w₁ ↦ w₂} ℘kv (⊑-fun{u′ = v′} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′)
+    with P
+... | base b = {!!}
+... | b ⇒ P′ = {!!}
+
+{-
 ℘-⊑ {P} {k} {v} {w} ℘kv (⊑-trans w⊑v w⊑v₁) =
    ℘-⊑ (℘-⊑ ℘kv w⊑v₁) w⊑v
 ℘-⊑ {P} {f} {v ↦ w} {v′ ↦ w′} ℘fv (⊑-fun v⊑v′ w′⊑w)
@@ -57,24 +62,29 @@ postulate k⊑v→k′⊑v→k′≡k : ∀{B : Base}{k : base-rep B}{k′ : bas
 ... | ⟨ k , ⟨ k⊑v , ℘fkw ⟩ ⟩ = G
     where G : Σ[ k ∈ base-rep B ] (const k ⊑ v′ × ℘ (f k) w′)
           G = ⟨ k , ⟨ (⊑-trans k⊑v v⊑v′) , (℘-⊑ ℘fkw w′⊑w) ⟩ ⟩
+-}
 
 
+{-
 ℘-⊑ {P} {f} {(v ↦ w ⊔ v ↦ w′)} {(v ↦ (w ⊔ w′))} ℘fv ⊑-dist
     with P
 ... | base B = proj₁ ℘fv
+-}
 {-
 ... | B ⇒ P′ = G
     where G : ∀{k} → v ⊑ const k → ℘ {P′} (f k) w × ℘ {P′} (f k) w′
           G {k} v⊑k = ⟨ (proj₁ ℘fv v⊑k) , (proj₂ ℘fv v⊑k) ⟩
 -}
+{-
 ... | B ⇒ P′
     with ℘fv
 ... | ⟨ ⟨ k , ⟨ k⊑v , ℘fkw ⟩ ⟩ , ⟨ k′ , ⟨ k′⊑v , ℘fk′w ⟩ ⟩ ⟩ = G
     where G : Σ[ k ∈ base-rep B ] (const k ⊑ v × ℘ (f k) w × ℘ (f k) w′)
           G
-              with k⊑v→k′⊑v→k′≡k k⊑v k′⊑v
+              with consistent-⊑ ⊑-refl k⊑v k′⊑v
           ... | eq rewrite eq =
              ⟨ k , ⟨ k⊑v , ⟨ ℘fkw , ℘fk′w ⟩ ⟩ ⟩
+-}
 
 ℘-⊔ : ∀{P : Prim} {k : rep P} {u v : Value}
     → ℘ {P} k u → ℘ {P} k v → ℘ {P} k (u ⊔ v)
