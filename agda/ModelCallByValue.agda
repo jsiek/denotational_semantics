@@ -41,10 +41,11 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
           {D₁′ D₂′ : Denotation Δ}
        → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
        → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
-●-≲ {γ = γ} {δ} {D₁} {D₂} {D₁′} {D₂′} D₁γ≲D₁′δ D₂γ≲D₂′δ {w}
+●-≲ {γ = γ} {δ} {D₁} {D₂} {D₁′} {D₂′} D₁γ≲D₁′δ D₂γ≲D₂′δ {w} wfw
     ⟨ v , ⟨ wfv , ⟨ fst₁ , snd ⟩ ⟩ ⟩
     with D₁γ≲D₁′δ {w} | D₂γ≲D₂′δ {w}
-... | a | b = ⟨ v , ⟨ wfv , ⟨ (D₁γ≲D₁′δ fst₁) , (D₂γ≲D₂′δ snd) ⟩ ⟩ ⟩
+... | a | b =
+    ⟨ v , ⟨ wfv , ⟨ (D₁γ≲D₁′δ (wf-fun wfv wfw) fst₁) , (D₂γ≲D₂′δ wfv snd) ⟩ ⟩ ⟩
 
 ●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
     → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 

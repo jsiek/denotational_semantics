@@ -4,6 +4,7 @@ import Lambda
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
+import CurryApplyStruct
 
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
@@ -29,10 +30,10 @@ data Value : Set where
   _↦_ : Value → Value → Value
   _⊔_ : Value → Value → Value
 
-domain : Domain
-domain = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
+value_struct : ValueStruct
+value_struct = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_ }
 
-open DomainAux domain
+open import ValueStructAux value_struct
 
 ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
 ℱ D γ (v ↦ w) = D (γ `, v) w
@@ -46,18 +47,6 @@ open DomainAux domain
 ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
     → ℱ D γ ⊥
 ℱ-⊥ = tt
-
-ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-          {D′ : Denotation (suc Δ)}
-       → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
-       → ℱ D γ ≲ ℱ D′ δ
-ℱ-≲ D≲D′ {⊥} = λ _ → tt
-ℱ-≲ D≲D′ {v ↦ w} = D≲D′
-ℱ-≲ {D = D}{D′} D≲D′ {u ⊔ v} ℱDγ
-    with ℱ-≲{D = D}{D′} D≲D′ {u} | ℱ-≲{D = D}{D′} D≲D′ {v}
-... | a | b =
-    ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
-
   
 infix 4 _⊑_
 
@@ -105,65 +94,76 @@ data _⊑_ : Value → Value → Set where
 wf : Value → Set
 wf = λ v → ⊤
 
-ordering : ValueOrdering domain
+ordering : ValueOrdering value_struct
 ordering = record
-             { wf = wf 
-             ; _⊑_ = _⊑_
-             ; _~_ = λ u v → ⊤ 
+             { _⊑_ = _⊑_
              ; ⊑-⊥ = ⊑-⊥
              ; ⊑-conj-L = ⊑-conj-L
              ; ⊑-conj-R1 = ⊑-conj-R1
              ; ⊑-conj-R2 = ⊑-conj-R2
-             ; ⊑-trans = λ wfv → ⊑-trans
+             ; ⊑-trans = ⊑-trans
              ; ⊑-fun = ⊑-fun
-             ; ⊑-dist = ⊑-dist
              ; ⊑-refl = ⊑-refl
-             ; wf-fun = λ {v} {w} _ _ → tt
-             ; wf-⊔ = λ {u} {v} _ _ _ → tt
-             ; ~-refl = λ {v} wfv → tt
-             ; ~-↦ = λ {v} {w} {v′} {w′} _ → inj₁ ⟨ tt , tt ⟩ 
-             ; ~-↦-cong = λ {u} {v} {u′} {v′} _ _ → tt
-             ; ~-⊔-cong = λ {u} {v} {u′} {v′} _ _ → tt
+             ; ⊑-dist = ⊑-dist
              }
 
-open OrderingAux domain ordering
+open import OrderingAux value_struct ordering
+
+consistent : Consistent value_struct ordering
+consistent = record {
+      _~_ = λ u v → ⊤
+    ; wf = λ v → ⊤
+    ; wf-bot = tt
+    ; wf-⊔ = λ {u} {v} _ _ _ → tt
+    ; wf-fun = λ {v} {w} _ _ → tt
+    ; ~-refl = λ {v} {w} → tt
+    ; ~-sym = λ {u} {v} _ → tt
+    ; ~-⊑ = λ {u} {v} {u′} {v′} _ _ _ → tt
+    ; ~-↦-cong = λ {u} {v} {u′} {v′} _ _ → tt
+    ; ~-↦ = λ {v} {w} {v′} {w′} _ → inj₁ ⟨ tt , tt ⟩
+    ; ~-⊔-cong = λ {u} {v} {u′} {v′} _ _ _ _ → tt
+    }
 
 
-open WFDenotMod domain ordering 
-open ModelMod domain ordering 
-open ConsistentAux domain ordering
+open import ConsistentAux value_struct ordering consistent
+
+ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
+          {D′ : Denotation (suc Δ)}
+       → (∀{v : Value} → wf v → D (γ `, v) ≲ D′ (δ `, v))
+       → ℱ D γ ≲ ℱ D′ δ
+ℱ-≲ D≲D′ {⊥} _ _ = tt
+ℱ-≲ D≲D′ {v ↦ w} = D≲D′ tt
+ℱ-≲ {D = D}{D′} D≲D′ {u ⊔ v} _ ℱDγ
+    with ℱ-≲{D = D}{D′} D≲D′ {u} | ℱ-≲{D = D}{D′} D≲D′ {v}
+... | a | b =
+    ⟨ (a tt (proj₁ ℱDγ)) , (b tt (proj₂ ℱDγ)) ⟩
+
+open import WFDenotMod value_struct ordering consistent
 
 ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v
-       → ℱ D γ v → w ⊑ v → ℱ D γ w
-ℱ-⊑ d wfγ wfv ℱDγv ⊑-⊥ = tt
-ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-L w⊑v w⊑v₁) =
-    ⟨ (ℱ-⊑ d (λ {x} → wfγ{x}) wfv ℱDγv w⊑v) ,
-      (ℱ-⊑ d (λ {x} → wfγ{x}) wfv ℱDγv w⊑v₁) ⟩
-ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-R1 w⊑v) =
-    ℱ-⊑ d (λ {x} → wfγ{x}) wfv (proj₁ ℱDγv) w⊑v
-ℱ-⊑ d wfγ wfv ℱDγv (⊑-conj-R2 w⊑v) =
-    ℱ-⊑ d (λ {x} → wfγ{x}) wfv (proj₂ ℱDγv) w⊑v
-ℱ-⊑ d wfγ wfv ℱDγv (⊑-trans w⊑v w⊑v₁) =
-    ℱ-⊑ d (λ {x} → wfγ{x}) wfv (ℱ-⊑ d (λ {x} → wfγ{x}) wfv ℱDγv w⊑v₁) w⊑v
-ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv ℱDγv (⊑-fun v⊑v' w'⊑w) =
-  WFDenot.⊑-closed d (WFDenot.⊑-env d ℱDγv b) w'⊑w
-  where b : (γ `, v) `⊑ (γ `, v')
-        b Z = v⊑v'
-        b (S x) = ⊑-refl 
-ℱ-⊑ {γ = γ} d wfγ wfv ℱDγv (⊑-dist{v = v}) =
-    WFDenot.⊔-closed d {γ = γ `, v}{γ `, v} (λ {x} → G {x}) (λ {x} → G {x})
-        (λ {x} → H {x}) (proj₁ ℱDγv) (proj₂ ℱDγv)
-    where
-    G : WFEnv (γ `, v)
-    G {Z} = tt
-    G {S x} = tt
-    H : (γ `, v) ~′ (γ `, v)
-    H {Z} = tt
-    H {S x} = tt
+       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w
+        → w ⊑ v → ℱ D γ v → ℱ D γ w
+ℱ-⊑ d wfγ wfv wfw ⊑-⊥ ℱDγv = tt
+ℱ-⊑ d wfγ wfv wfw (⊑-conj-L w⊑v w⊑v₁) ℱDγv =
+    ⟨ (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v ℱDγv) ,
+      (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v₁ ℱDγv) ⟩
+ℱ-⊑ d wfγ wfv wfw (⊑-conj-R1 w⊑v) ℱDγv =
+    ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v (proj₁ ℱDγv)
+ℱ-⊑ d wfγ wfv wfw (⊑-conj-R2 w⊑v) ℱDγv =
+    ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v (proj₂ ℱDγv)
+ℱ-⊑ d wfγ wfv wfw (⊑-trans w⊑v w⊑v₁) ℱDγv =
+    ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v
+      (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v₁ ℱDγv)
+ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv wfw (⊑-fun v⊑v' w'⊑w) ℱDγv =
+  WFDenot.⊑-closed d (λ {x} → tt) tt tt w'⊑w
+      (WFDenot.⊑-env d (λ {x} → tt) (λ {x} → tt) tt
+         (`⊑-extend `⊑-refl v⊑v') ℱDγv)
+ℱ-⊑ {γ = γ} d wfγ wfv wfw (⊑-dist{v = v}) ℱDγv =
+    WFDenot.⊔-closed d {γ = γ `, v} (λ {x} → tt) tt tt 
+        (proj₁ ℱDγv) (proj₂ ℱDγv)
 
 
-model_curry : ModelCurry ℱ
+model_curry : CurryApplyStruct.CurryStruct value_struct ordering consistent ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
                        ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
                        ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} }
@@ -442,3 +442,4 @@ AboveFun? (u ⊔ u')
 ... | yes ⟨ v , ⟨ w , lt ⟩ ⟩ | _ = yes ⟨ v , ⟨ w , (⊑-conj-R1 lt) ⟩ ⟩
 ... | no _ | yes ⟨ v , ⟨ w , lt ⟩ ⟩ = yes ⟨ v , ⟨ w , (⊑-conj-R2 lt) ⟩ ⟩
 ... | no x | no y = no (not-AboveFun-⊔ x y)
+
