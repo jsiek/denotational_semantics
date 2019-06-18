@@ -54,12 +54,14 @@ module SubstitutionPreserve
     open Filter.ForLambda D V _●_ ℱ C MB
 
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
+      → WFEnv γ
       → (σ : Subst Γ Δ)
       → δ `⊢ σ ↓ γ
        --------------------------
       → δ `, v `⊢ exts σ ↓ γ `, v
-    subst-ext σ d Z = ⊑-refl
-    subst-ext σ d (S x′) = rename-pres {M = σ x′} S_ (λ _ → ⊑-refl) (d x′)
+    subst-ext wfγ σ d Z = ⊑-refl
+    subst-ext wfγ σ d (S x′) =
+        rename-pres {M = σ x′} S_ (λ _ → ⊑-refl) wfγ (d x′)
 
     subst-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
       → WFEnv γ → WFEnv δ → wf v
@@ -71,28 +73,33 @@ module SubstitutionPreserve
     subst-pres {M = ` x} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
         ℰ-⊑ {M = σ x} wfδ wfγ wfv ℰMγv (δ⊢σ↓γ x)
     subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
-       (ℱ-≲ {Γ}{Δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}{γ}{δ}
-             λ {v′} wfv′ → subst-pres {γ = γ `, v′}{δ = δ `, v′}{M = N} (WFEnv-extend wfγ wfv) (WFEnv-extend wfδ wfv) {!wfv′!}
-                       (exts σ) (subst-ext σ δ⊢σ↓γ)) {v}
-        ℰMγv
+        ℱ-≲ (λ {v′} wfv′ {w} wfw ℰNw →
+              subst-pres {γ = γ `, v′}{δ = δ `, v′}{M = N}
+                    (λ {x} → WFEnv-extend{Γ} wfγ wfv′ {x})
+                    (λ {x} → WFEnv-extend wfδ wfv′ {x})
+                    wfw (exts σ) (subst-ext wfγ σ δ⊢σ↓γ) ℰNw)
+             wfv ℰMγv
     subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆}
        wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
-       {!!}
-{-       
        (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
             {D₂′ = ℰ (⟪ σ ⟫ M)}
-            (λ ℰLγv → subst-pres {Γ}{Δ}{γ = γ}{δ}{L} σ δ⊢σ↓γ ℰLγv)
-            (λ ℰMδv → subst-pres {Γ}{Δ}{γ = γ}{δ}{M} σ δ⊢σ↓γ ℰMδv))
+            (λ wfv ℰLγv →
+               subst-pres {Γ}{Δ}{γ = γ}{δ}{L} wfγ wfδ wfv σ δ⊢σ↓γ ℰLγv)
+            (λ wfv ℰMδv →
+               subst-pres {Γ}{Δ}{γ = γ}{δ}{M} wfγ wfδ wfv σ δ⊢σ↓γ ℰMδv))
+        wfv
         ℰMγv
--}
+
 
     substitution : ∀ {Γ} {γ : Env Γ} {N M v w}
+       → WFEnv γ → wf w → wf v
        → ℰ N (γ `, v) w
        → ℰ M γ v
          ---------------
        → ℰ (N [ M ]) γ w   
-    substitution{Γ}{γ}{N}{M}{v}{w} dn dm =
-      subst-pres{M = N} {!!} {!!} {!!} (subst-zero M) sub-z-ok dn
+    substitution{Γ}{γ}{N}{M}{v}{w} wfγ wfw wfv dn dm =
+      subst-pres {M = N} (λ {x} → WFEnv-extend wfγ wfv {x}) wfγ wfw
+                 (subst-zero M) sub-z-ok dn
       where
       sub-z-ok : γ `⊢ subst-zero M ↓ (γ `, v)
       sub-z-ok Z = dm
@@ -116,49 +123,55 @@ module SubstitutionPreserve
     open Filter.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑ ℘-~
 
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
+      → WFEnv γ
       → (σ : Subst Γ Δ)
       → δ `⊢ σ ↓ γ
        --------------------------
       → δ `, v `⊢ exts σ ↓ γ `, v
-    subst-ext σ d Z = ⊑-refl
-    subst-ext σ d (S x′) = rename-pres {M = σ x′} S_ (λ _ → ⊑-refl) (d x′)
+    subst-ext wfγ σ d Z = ⊑-refl
+    subst-ext wfγ σ d (S x′) =
+        rename-pres {M = σ x′} S_ (λ _ → ⊑-refl) wfγ (d x′)
 
     subst-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
+      → WFEnv γ → WFEnv δ → wf v
       → (σ : Subst Γ Δ)
       → δ `⊢ σ ↓ γ
       → ℰ M γ v
         ------------------
       → ℰ (⟪ σ ⟫ M) δ v
-    subst-pres {M = lit {P} k ⦅ nil ⦆} σ δ⊢σ↓γ ℰMγv = ℰMγv
-    subst-pres {M = ` x} σ δ⊢σ↓γ ℰMγv =
-        {!!}
-        {- ℰ-⊑ {M = σ x} (δ⊢σ↓γ x) ℰMγv -}
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} σ δ⊢σ↓γ ℰMγv =
-       {!!}
-       {-
-       (ℱ-≲ {Γ}{Δ}{γ}{δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}
-             λ {v} → subst-pres {γ = γ `, v}{δ = δ `, v}{M = N} (exts σ)
-                          (subst-ext σ δ⊢σ↓γ)) {v}
-        ℰMγv
-        -}
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆} σ δ⊢σ↓γ ℰMγv =
-       {!!}
-       {-
+    subst-pres {M = lit {P} k ⦅ nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv = ℰMγv
+    subst-pres {M = ` x} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
+        ℰ-⊑ {M = σ x} wfδ wfγ wfv ℰMγv (δ⊢σ↓γ x)
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
+       (ℱ-≲ {Γ}{Δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}
+             λ {v′} wfv′ {w} wfw →
+                subst-pres {γ = γ `, v′}{δ = δ `, v′}{M = N}
+                       (λ {x} → WFEnv-extend wfγ wfv′ {x})
+                       (λ {x} → WFEnv-extend wfδ wfv′ {x}) 
+                       wfw (exts σ) (subst-ext wfγ σ δ⊢σ↓γ))
+        wfv ℰMγv
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆}
+       wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
        (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
             {D₂′ = ℰ (⟪ σ ⟫ M)}
-            (λ ℰLγv → subst-pres {Γ}{Δ}{γ = γ}{δ}{L} σ δ⊢σ↓γ ℰLγv)
-            (λ ℰMδv → subst-pres {Γ}{Δ}{γ = γ}{δ}{M} σ δ⊢σ↓γ ℰMδv))
-        ℰMγv
-        -}
+            (λ wfv ℰLγv →
+               subst-pres {Γ}{Δ}{γ = γ}{δ}{L} wfγ wfδ wfv σ δ⊢σ↓γ ℰLγv)
+            (λ wfv ℰMδv →
+               subst-pres {Γ}{Δ}{γ = γ}{δ}{M} wfγ wfδ wfv σ δ⊢σ↓γ ℰMδv))
+        wfv ℰMγv
+
 
     substitution : ∀ {Γ} {γ : Env Γ} {N M v w}
+       → WFEnv γ → wf w → wf v
        → ℰ N (γ `, v) w
        → ℰ M γ v
          ---------------
        → ℰ (N [ M ]) γ w   
-    substitution{Γ}{γ}{N}{M}{v}{w} dn dm =
-      subst-pres{M = N} (subst-zero M) sub-z-ok dn
+    substitution{Γ}{γ}{N}{M}{v}{w} wfγ wfw wfv dn dm =
+      subst-pres{M = N} (λ {x} → WFEnv-extend wfγ wfv {x})
+          wfγ wfw (subst-zero M) sub-z-ok dn
       where
       sub-z-ok : γ `⊢ subst-zero M ↓ (γ `, v)
       sub-z-ok Z = dm
       sub-z-ok (S x) = ⊑-refl
+

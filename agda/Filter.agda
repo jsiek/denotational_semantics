@@ -48,10 +48,10 @@ module Filter
     open RenamePreserveReflect.ForLambda D V _●_ ℱ C MB
        using (⊑-env; rename-pres)  
 
-    ⊑-env′ : ∀{Γ}{M}{γ δ}{v} → WFEnv γ → WFEnv δ → wf v → γ `⊑ δ → (ℰ M) γ v
-           → (ℰ M) δ v
+    ⊑-env′ : ∀{Γ}{M}{γ δ : Env Γ}{v} → WFEnv γ → WFEnv δ → wf v → γ `⊑ δ
+           → (ℰ M) γ v → (ℰ M) δ v
     ⊑-env′ {Γ}{M}{γ}{δ}{v} wfγ wfδ wfv γ⊑δ ℰMγv =
-        ⊑-env {Γ}{γ}{δ}{M}{v} ℰMγv γ⊑δ
+        ⊑-env {Γ}{γ}{δ}{M}{v} wfv γ⊑δ ℰMγv 
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → WFEnv γ → wf u → wf v
@@ -157,8 +157,10 @@ module Filter
     open RenamePreserveReflect.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v)
        using (⊑-env; rename-pres)
        
-    ⊑-env′ : ∀{Γ}{M}{γ δ}{v} → WFEnv γ → WFEnv δ → wf v → γ `⊑ δ → (ℰ M) γ v → (ℰ M) δ v
-    ⊑-env′ {Γ}{M}{γ}{δ}{v} wfγ wfδ wfv γ⊑δ ℰMγv = ⊑-env {Γ}{γ}{δ}{M}{v} ℰMγv γ⊑δ
+    ⊑-env′ : ∀{Γ}{M}{γ δ : Env Γ}{v} → WFEnv γ → WFEnv δ → wf v → γ `⊑ δ
+           → (ℰ M) γ v → (ℰ M) δ v
+    ⊑-env′ {Γ}{M}{γ}{δ}{v} wfγ wfδ wfv γ⊑δ ℰMγv =
+       ⊑-env {Γ}{γ}{δ}{M}{v} wfv γ⊑δ ℰMγv 
 
     ℰ-⊔ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {u v : Value}
         → WFEnv γ → wf u → wf v

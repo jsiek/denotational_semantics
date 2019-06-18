@@ -37,6 +37,10 @@ File Overview
 * `CurryApplyStruct` (parameterized on Consistent, etc.)
 
    Structures `CurryStruct` and `CurryApplyStruct`.
+   
+* `CurryApplyAux` (parameterized by CurryApplyStruct)
+
+   Proves congruence rules wrt. ≃ for ℱ and ●. 
 
 * `LambdaDenot` (parameterized on ValueStruct and ValueOrdering)
 
