@@ -13,19 +13,42 @@ File Overview
 
 * `Structures`
 
-  * Generic structures Domain, ValueOrdering, ModelCurry, LambdaModelBasics.
-  * Defines auxilliary modules expressed in terms of the
-    generic structures: DomainAux, OrderingAux, DenotAux.
-    DenotAux includes a proof of compositionality.
-  * Denotational semantics of lambda calculus defined
-    generically in terms of ●, ℱ, Domain, and ValueOrdering.
+   Structures ValueStruct, ValueOrdering, ModelCurry, and Consistent.
+
+* ValueStructAux
+
+  Generic stuff in terms of ValueStruct.
+
+* OrderingAux
+
+  Generic stuff in terms of ValueOrdering.
+
+* ConsistentAux
+
+  Generic stuff in terms of Consistent.
+
+* `CurryApplyStruct`
+
+  Structures CurryStruct and CurryApplyStruct.
+
+* `LambdaDenot`
+
+  Denotational semantics of lambda calculus defined
+  generically in terms of ●, ℱ, Domain, and ValueOrdering.
+
+* `ISWIMDenot`
+
+  Denotational semantics of ISWIM defined
+  generically in terms of ●, ℱ, Domain, and ValueOrdering.
+  
+* `Compositionality`
 
 * `MultiStep`
 
   Defines multi-step reduction generically given a reduction
   relation.
 
-* `ValueBCD`
+* `ValueBCD` (obsolete)
 
   * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
     types), the ⊑ ordering, and ℱ. Instances of Domain
@@ -33,9 +56,13 @@ File Overview
   * Proves function inversion and stuff
     about AboveFun needed for adequacy of CBN.
 
-* `ValueBCDConst`
+* `ValueConst`
 
   * Adds constants, including primitive operators.
+
+* `Consistency`
+
+  Proof of the consistent subtyping property.
 
 * `Lambda`
 
@@ -72,22 +99,22 @@ File Overview
 * `ModelCallByValue`
 
   * ● for CBV and a bunch of lemmas about it.
-  * An instance of LambdaModelBasics
+  * An instance of CurryApplyStruct
 
 * `ModelISWIM`
 
   Same as above for ISWIM. Just instantiates the ModelCallByValue
   module with a different domain.
 
-* `RenamePreserveReflect` (requires LambdaModelBasics)
+* `RenamePreserveReflect` (requires CurryApplyStruct)
 
   Proves that renaming preserves and reflects denotations.
 
-* `Filter` (requires LambdaModelBasics)
+* `Filter` (requires CurryApplyStruct)
 
   Proves admisibility of subsumption and ⊔ introduction.
 
-* `SubstitutionPreserve` (requires LambdaModelBasics)
+* `SubstitutionPreserve` (requires CurryApplyStruct)
 
   Proves that substitution preserves denotations.
 
