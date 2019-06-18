@@ -22,11 +22,11 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module Filter
   (D : ValueStruct)
   (V : ValueOrdering D)
+  (C : Consistent D V)
   (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
        → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
   (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
      → ValueStructAux.Denotation D Γ)
-  (C : Consistent D V)
   (MB : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   where
   
@@ -45,7 +45,7 @@ module Filter
     open import Lambda
     open import LambdaDenot D V _●_ ℱ
 
-    open RenamePreserveReflect.ForLambda D V _●_ ℱ C MB
+    open RenamePreserveReflect.ForLambda D V C _●_ ℱ MB
        using (⊑-env; rename-pres)  
 
     ⊑-env′ : ∀{Γ}{M}{γ δ : Env Γ}{v} → WFEnv γ → WFEnv δ → wf v → γ `⊑ δ
@@ -154,7 +154,7 @@ module Filter
     open import ISWIM
     open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
 
-    open RenamePreserveReflect.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM D V C _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
        using (⊑-env; rename-pres)
        
     ⊑-env′ : ∀{Γ}{M}{γ δ : Env Γ}{v} → WFEnv γ → WFEnv δ → wf v → γ `⊑ δ

@@ -17,9 +17,9 @@ open import Relation.Nullary.Negation using (contradiction)
 module ModelCallByValue
   (D : ValueStruct)
   (V : ValueOrdering D)
+  (C : Consistent D V)
   (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
             → ValueStructAux.Denotation D Γ)
-  (C : Consistent D V)
   (MC : CurryApplyStruct.CurryStruct D V C ℱ)
   where
 

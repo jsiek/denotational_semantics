@@ -33,15 +33,15 @@ module ModelCurryConst where
 
 ℱ-≲ : ∀{Γ Δ}{D : Denotation (suc Γ)}
           {D′ : Denotation (suc Δ)}{γ : Env Γ}{δ : Env Δ}
-       → (∀{v : Value} → D (γ `, v) ≲ D′ (δ `, v))
+       → (∀{v : Value} → wf v → D (γ `, v) ≲ D′ (δ `, v))
        → ℱ D γ ≲ ℱ D′ δ
-ℱ-≲ D≲D′ {⊥} = λ _ → tt
-ℱ-≲ D≲D′ {const k} = λ x → x
-ℱ-≲ D≲D′ {v ↦ w} = D≲D′
-ℱ-≲ {D = D}{D′} D≲D′ {u ⊔ v} ℱDγ
+ℱ-≲ D≲D′ {⊥} wfv _ = tt
+ℱ-≲ D≲D′ {const k} wfv = λ z → z
+ℱ-≲ D≲D′ {v ↦ w} (wf-fun wfv wfw) Dγv-w = D≲D′ wfv wfw Dγv-w
+ℱ-≲ {D = D}{D′} D≲D′ {u ⊔ v} (wf-⊔ u~v wfu wfv) ℱDγ
     with ℱ-≲{D = D}{D′} D≲D′ {u} | ℱ-≲{D = D}{D′} D≲D′ {v}
 ... | a | b =
-    ⟨ (a (proj₁ ℱDγ)) , (b (proj₂ ℱDγ)) ⟩
+   ⟨ (a wfu (proj₁ ℱDγ)) , (b wfv (proj₂ ℱDγ)) ⟩
 
 domu↦codu⊑u : ∀{u} → (fu : AllFun u) → dom u {fu} ↦ cod u {fu} ⊑ u
 domu↦codu⊑u {⊥} ()

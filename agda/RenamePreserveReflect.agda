@@ -22,11 +22,11 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module RenamePreserveReflect
   (D : ValueStruct)
   (V : ValueOrdering D)
+  (C : Consistent D V)
   (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
        → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
   (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
      → ValueStructAux.Denotation D Γ)
-  (C : Consistent D V)
   (MV : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   where
   

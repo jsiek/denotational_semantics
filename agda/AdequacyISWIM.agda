@@ -1,7 +1,7 @@
 open import Variables
 open import Primitives
 open import Structures
-open import ValueBCDConst
+open import ValueConst
 open import EvalISWIM
 open import ISWIM
 open DomainAux domain

@@ -5,21 +5,21 @@ open import Primitives
 open import Structures
 open import ISWIM
 open import ModelISWIM
-open import ValueBCDConst
-open DomainAux domain
-open ISWIMDenot domain ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+open import ValueConst
+open ValueStructAux value_struct
+open ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
 import Filter
-open Filter.ForISWIM domain ordering _●_ ℱ model_basics
+open Filter.ForISWIM value_struct ordering _●_ ℱ model_basics
    (λ {P} k v → ℘ {P} k v)
    (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
    ℘-⊑
 import SubstitutionPreserve
-open SubstitutionPreserve.ISWIM domain ordering _●_ ℱ model_basics
+open SubstitutionPreserve.ISWIM value_struct ordering _●_ ℱ model_basics
    (λ {P} k v → ℘ {P} k v)
    (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
    ℘-⊑
 import RenamePreserveReflect
-open RenamePreserveReflect.ForISWIM domain ordering _●_ ℱ model_basics
+open RenamePreserveReflect.ForISWIM value_struct ordering _●_ ℱ model_basics
    (λ {P} k v → ℘ {P} k v) using (⊑-env)  
 import SubstitutionReflect
 open SubstitutionReflect.ISWIM using (substitution-reflect)

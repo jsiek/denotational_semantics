@@ -6,6 +6,7 @@ import Filter
 import ValueStructAux
 import OrderingAux
 import CurryApplyStruct
+import RenamePreserveReflect
 
 open import Data.Bool
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
@@ -244,15 +245,18 @@ module SubstReflectAppCBV
   module ForLambda where
 
     open import ValueBCD
-    open ValueStructAux domain
-    open OrderingAux domain ordering
-    open import ModelCallByValue domain ordering ℱ model_curry
+    open ValueStructAux value_struct
+    open OrderingAux value_struct ordering
+    open import ModelCallByValue value_struct ordering ℱ model_curry
 
     open import Lambda
-    open LambdaDenot domain ordering _●_ ℱ
-    open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ model_basics
+    open import LambdaDenot value_struct ordering _●_ ℱ
+    open RenamePreserveReflect.ForLambda value_struct ordering consistent
+            _●_ ℱ model_curry_apply
       using (⊑-env)
-    open Filter.ForLambda domain ordering _●_ ℱ model_basics using (subst-⊔; ℰ-⊑)
+    open Filter.ForLambda value_struct ordering consistent _●_ ℱ
+       model_curry_apply
+       using (subst-⊔; ℰ-⊑)
 
 {-
     open import Lambda
@@ -290,33 +294,17 @@ module SubstReflectAppCBV
           ℰMδ₁⊔δ₂u  : ℰ M (λ z → (δ₁ `⊔ δ₂) z) u
           ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
 
-  module ForISWIM
-{-
-    (MB : LambdaModelBasics _●_ ℱ)
-    (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
-    (℘-⊔ : ∀{P : Prim } {D : rep P} {u v : Value}
-          → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
-    (℘-⊑ : ∀{P : Prim} {D : rep P} {v w : Value}
-          → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
--}
-    where
+  module ForISWIM where
 
     open import ISWIM
-    open import ValueBCDConst 
+    open import ValueConst 
     open import ModelISWIM
-{-
-    open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open RenamePreserveReflect.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
+    open ValueStructAux value_struct
+    open OrderingAux value_struct ordering
+    open ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM value_struct ordering _●_ ℱ model_curry_apply (λ {P} k v → ℘ {P} k v)
         using (⊑-env)
-    open Filter.ForISWIM D V _●_ ℱ MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑
-        using (subst-⊔; ℰ-⊑)
--}
-    open ValueStructAux domain
-    open OrderingAux domain ordering
-    open ISWIMDenot domain ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open RenamePreserveReflect.ForISWIM domain ordering _●_ ℱ model_basics (λ {P} k v → ℘ {P} k v)
-        using (⊑-env)
-    open Filter.ForISWIM domain ordering _●_ ℱ model_basics
+    open Filter.ForISWIM value_struct ordering _●_ ℱ model_curry_apply
         (λ {P} k v → ℘ {P} k v)
         (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
         ℘-⊑
@@ -353,20 +341,20 @@ module SubstReflectAppCBV
 
 module SubstReflectLambdaBCD where
   open import ValueBCD
-  open ValueStructAux domain
+  open ValueStructAux value_struct
 
   module Inner
     (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (MB : OrderingAux.LambdaModelBasics domain ordering _●_ ℱ)
+    (MB : OrderingAux.LambdaModelBasics value_struct ordering _●_ ℱ)
     where
     
-    open OrderingAux domain ordering
-    open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ MB
+    open OrderingAux value_struct ordering
+    open RenamePreserveReflect.ForLambda value_struct ordering _●_ ℱ MB
        using (rename-inc-reflect; EnvExt⊑; ⊑-env; δu⊢extσ⊥)
-    open Filter.ForLambda domain ordering _●_ ℱ MB
+    open Filter.ForLambda value_struct ordering _●_ ℱ MB
        using (subst-⊔; ℰ-⊑)
-    open DenotAux domain ordering _●_ ℱ MB
-    open LambdaDenot domain ordering _●_ ℱ
+    open DenotAux value_struct ordering _●_ ℱ MB
+    open LambdaDenot value_struct ordering _●_ ℱ
     open LambdaModelBasics MB
     open import Lambda
 
@@ -402,13 +390,13 @@ module SubstReflectLambdaBCD where
 
 module SubstReflectLambdaBCDConst where
 
-  open import ValueBCDConst
-  open ValueStructAux domain
-  open OrderingAux domain ordering
+  open import ValueConst
+  open ValueStructAux value_struct
+  open OrderingAux value_struct ordering
 
   module Inner
     (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (MB : OrderingAux.LambdaModelBasics domain ordering _●_ ℱ)
+    (MB : OrderingAux.LambdaModelBasics value_struct ordering _●_ ℱ)
     (℘ : ∀{P : Prim} → rep P → Value → Set)
     (℘-⊔ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
@@ -417,12 +405,12 @@ module SubstReflectLambdaBCDConst where
     where
 
     open import ISWIM    
-    open ISWIMDenot domain ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open ISWIMDenotAux domain ordering _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
+    open ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open ISWIMDenotAux value_struct ordering _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
     open RenamePreserveReflect.ForISWIM
-      domain ordering _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
+      value_struct ordering _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
       using (rename-inc-reflect; EnvExt⊑; ⊑-env; δu⊢extσ⊥)
-    open Filter.ForISWIM domain ordering _●_ ℱ MB
+    open Filter.ForISWIM value_struct ordering _●_ ℱ MB
       (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑
       using (subst-⊔; ℰ-⊑)
 
@@ -459,13 +447,13 @@ module SubstReflectLambdaBCDConst where
 module CallByName where
 
   open import ValueBCD
-  open ValueStructAux domain
+  open ValueStructAux value_struct
   open import ModelCallByName
-  open OrderingAux domain ordering
-  open LambdaDenot domain ordering _●_ ℱ
-  open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ model_basics
+  open OrderingAux value_struct ordering
+  open LambdaDenot value_struct ordering _●_ ℱ
+  open RenamePreserveReflect.ForLambda value_struct ordering _●_ ℱ model_curry_apply
     using (⊑-env)
-  open Filter.ForLambda domain ordering _●_ ℱ model_basics using (subst-⊔; ℰ-⊑)
+  open Filter.ForLambda value_struct ordering _●_ ℱ model_curry_apply using (subst-⊔; ℰ-⊑)
   open import Lambda
 
   SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
@@ -498,8 +486,8 @@ module CallByName where
         ℰMδ₁⊔δ₂u  : ℰ M (λ z → (δ₁ `⊔ δ₂) z) u
         ℰMδ₁⊔δ₂u = ⊑-env{M = M} ℰMδ₂u (EnvConjR2⊑ δ₁ δ₂)
 
-  open ForLambdaModel domain ordering _●_ ℱ model_basics
-  open SubstReflectLambdaBCD.Inner _●_ model_basics
+  open ForLambdaModel value_struct ordering _●_ ℱ model_curry_apply
+  open SubstReflectLambdaBCD.Inner _●_ model_curry_apply
   
   open ForLambda.SubstReflect
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
@@ -511,14 +499,14 @@ module CallByName where
 module CallByValue where
 
   open import ValueBCD
-  open ValueStructAux domain
-  open import ModelCallByValue domain ordering ℱ model_curry
+  open ValueStructAux value_struct
+  open import ModelCallByValue value_struct ordering ℱ model_curry
 {-
-  open SubstReflectAppCBV.ForLambda domain ordering ℱ model_curry model_basics
+  open SubstReflectAppCBV.ForLambda value_struct ordering ℱ model_curry model_curry_apply
 -}
   open SubstReflectAppCBV.ForLambda
-  open ForLambdaModel domain ordering _●_ ℱ model_basics
-  open SubstReflectLambdaBCD.Inner _●_ model_basics
+  open ForLambdaModel value_struct ordering _●_ ℱ model_curry_apply
+  open SubstReflectLambdaBCD.Inner _●_ model_curry_apply
   
   open ForLambda.SubstReflect
           (λ {Γ}{Δ}{δ}{N}{σ}{v} IH a b c →
@@ -529,19 +517,12 @@ module CallByValue where
 
 module ISWIM where
 
-  open import ValueBCDConst
+  open import ValueConst
   open import ModelISWIM
 
   open SubstReflectAppCBV.ForISWIM
-  {-
-  open SubstReflectAppCBV.ForISWIM domain ordering ℱ model_curry model_basics
-     (λ {P} k v → ℘ {P} k v)
-     (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
-     ℘-⊑
--}
-
-  open ForLambdaModel domain ordering _●_ ℱ model_basics
-  open SubstReflectLambdaBCDConst.Inner _●_ model_basics 
+  open ForLambdaModel value_struct ordering _●_ ℱ model_curry_apply
+  open SubstReflectLambdaBCDConst.Inner _●_ model_curry_apply 
        (λ {P} k v → ℘ {P} k v)
        (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
        ℘-⊑

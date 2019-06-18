@@ -1,3 +1,5 @@
+OBSOLETE
+
 open import Primitives
 open import Structures
 

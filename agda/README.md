@@ -64,10 +64,10 @@ File Overview
 * `ValueBCD`
 
   * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
-    types), the ⊑ ordering, and ℱ. Instances of Domain
-    and ValueOrdering.
-  * Proves function inversion and stuff
-    about AboveFun needed for adequacy of CBN.
+    types), the ⊑ ordering, and ℱ. Instances of ValueStruct,
+    ValueOrdering, and Consistent.
+  * Proves function inversion and stuff about AboveFun needed for
+    adequacy of call-by-name.
 
 * `ValueConst`
 
@@ -75,7 +75,8 @@ File Overview
 
 * `Consistency`
 
-  Proof of the consistent subtyping property.
+  * Proof of the consistent subtyping property.
+  * Instance of the Consistent structure.
 
 * `Lambda`
 
