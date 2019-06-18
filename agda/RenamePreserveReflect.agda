@@ -2,37 +2,40 @@ open import Structures
 open import Variables
 open import Primitives
 import Syntax2
+import ValueStructAux
+import CurryApplyStruct
 
 open import Data.Bool using (Bool)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Data.List using (List; []; _∷_)
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
-open import Function using (_∘_)
 open import Data.Unit using (⊤; tt)
-open import Data.Empty renaming (⊥ to Bot)
+open import Function using (_∘_)
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 module RenamePreserveReflect
-  (D : Domain)
+  (D : ValueStruct)
   (V : ValueOrdering D)
-  (_●_ : ∀{Γ} → DomainAux.Denotation D Γ
-       → DomainAux.Denotation D Γ → DomainAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → DomainAux.Denotation D (suc Γ) → DomainAux.Denotation D Γ)
+  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
+       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
+     → ValueStructAux.Denotation D Γ)
   (C : Consistent D V)
-  (MV : ModelMod.LambdaModelBasics D V C _●_ ℱ)
+  (MV : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   where
   
-  open Domain D
-  open DomainAux D
+  open ValueStruct D
+  open ValueStructAux D
   open ValueOrdering V
-  open OrderingAux D V
-  open ModelMod.LambdaModelBasics MV
+  open import OrderingAux D V
+  open CurryApplyStruct.CurryApplyStruct MV
+  open CurryApplyStruct.CurryStruct model_curry
 
   ⊑-ext-R : ∀{Γ Δ} {γ : Env Γ} {δ : Env Δ} {ρ : Rename Γ Δ}{v}
         → γ `⊑ (δ ∘ ρ)
@@ -51,7 +54,7 @@ module RenamePreserveReflect
   module ForLambda where
   
     open import Lambda
-    open LambdaDenot D V _●_ ℱ
+    open import LambdaDenot D V _●_ ℱ
 
     rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
            → (ρ : Rename Γ Δ)
@@ -113,11 +116,11 @@ module RenamePreserveReflect
 
 
   module ForISWIM
-    (℘ : ∀{P : Prim} → rep P → Domain.Value D → Set)
+    (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
     where
   
     open import ISWIM
-    open ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
 
     rename-pres : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ} {M : Term Γ}
            → (ρ : Rename Γ Δ)

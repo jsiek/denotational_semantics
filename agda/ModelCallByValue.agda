@@ -88,8 +88,6 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
     WFDenot.⊔-closed wf2 wfγ wfu' wfv' D₂γu' D₂γv' ⟩ ⟩ ⟩
 
 
-
-
 ●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
     → WFDenot Γ D₁
     → WFEnv γ → wf v → wf w
@@ -105,12 +103,14 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
   where lt : v' ↦ w ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl w⊑v
 
-model_basics : CurryApplyStruct _●_ ℱ
-model_basics = record {
-               model_curry = MC ;
-               ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
-                       ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y ;
-               ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c ;
-               ●-⊔ = ●-⊔ ;
-               ●-~ = ●-~ 
-               }
+
+model_curry_apply : CurryApplyStruct _●_ ℱ
+model_curry_apply =
+    record {
+           model_curry = MC ;
+           ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
+                   ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y ;
+           ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c ;
+           ●-⊔ = ●-⊔ ;
+           ●-~ = ●-~ 
+           }

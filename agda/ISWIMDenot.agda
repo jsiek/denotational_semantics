@@ -1,6 +1,7 @@
 open import Primitives
 open import Structures
 import ValueStructAux
+
 open import Data.Nat using (ℕ; suc ; zero)
 
 module ISWIMDenot
@@ -8,7 +9,8 @@ module ISWIMDenot
   (V : ValueOrdering D)
   (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
        → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ) → ValueStructAux.Denotation D Γ)
+  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
+     → ValueStructAux.Denotation D Γ)
   (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
   where
   open ValueStruct D
