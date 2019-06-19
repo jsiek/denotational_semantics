@@ -32,3 +32,4 @@ open import ValueStructAux value_struct
 ... | base B = Bot
 ... | B ⇒ P′ = Σ[ k ∈ base-rep B ] (const {B} k ⊑ v × ℘ {P′} (f k) w)
 ℘ {P} f (u ⊔ v) = ℘ {P} f u × ℘ {P} f v
+

@@ -16,16 +16,16 @@ open Lambda.ASTMod
 open Lambda.Reduction
   using (_—→_; ξ₁-rule; ξ₂-rule; β-rule; ζ-rule; _—↠_; _—→⟨_⟩_; _□)
 open import ValueBCD
-open DomainAux domain
-open OrderingAux domain ordering
+open import ValueStructAux value_struct
+open import OrderingAux value_struct ordering
 open import ModelCallByName
-open LambdaDenot domain ordering _●_ ℱ
+open import LambdaDenot value_struct ordering _●_ ℱ
 import Filter
-open Filter.ForLambda domain ordering _●_ ℱ consistent model_basics
+open Filter.ForLambda value_struct ordering _●_ ℱ consistent model_curry_apply
 import SubstitutionPreserve
-open SubstitutionPreserve.ForLambda domain ordering _●_ ℱ model_basics
+open SubstitutionPreserve.ForLambda value_struct ordering _●_ ℱ model_curry_apply
 import RenamePreserveReflect
-open RenamePreserveReflect.ForLambda domain ordering _●_ ℱ model_basics
+open RenamePreserveReflect.ForLambda value_struct ordering _●_ ℱ model_curry_apply
    using (⊑-env)  
 import SubstitutionReflect
 open SubstitutionReflect.CallByName

@@ -132,3 +132,49 @@ module PrimConst where
 ℘-⊔ ℘u ℘v = ⟨ ℘u , ℘v ⟩
 
 
+℘-~ : ∀{P : Prim } {D : rep P} {u v : Value}
+    → ℘ {P} D u → ℘ {P} D v
+    → u ~ v
+℘-~ {P} {D} {⊥} {v} pu pv = tt
+℘-~ {P} {D} {const k} {⊥} pu pv = tt
+℘-~ {P} {D} {const {b} k} {const {b′} k′} pu pv
+    with P
+... | b₁ ⇒ p' = ⊥-elim pu
+℘-~ {P} {D} {const {b} k} {const {b′} k′} pu pv
+    | base b₁
+    with base-eq? b₁ b | pu | base-eq? b₁ b′ | pv
+... | yes refl | refl | no neq2 | ()
+... | no neq1 | () | _ | _
+... | yes refl | refl | yes refl | refl
+    with base-eq? b₁ b₁
+... | yes refl = refl
+... | no neq = neq refl
+℘-~ {P} {D} {const {b} k} {v ↦ v₁} pu pv
+    with P
+... | base b′ = ⊥-elim pv
+... | b′ ⇒ p' = ⊥-elim pu
+℘-~ {P} {D} {const k} {v₁ ⊔ v₂} pu ⟨ pv₁ , pv₂ ⟩
+    with P
+... | base b′ = ⟨ ℘-~{u = const k}{v₁} pu pv₁ , ℘-~{u = const k}{v₂} pu pv₂ ⟩
+... | b′ ⇒ p' = ⊥-elim pu
+℘-~ {P} {f} {u₁ ↦ u₂} {v} pu pv
+    with P
+... | base b′ = ⊥-elim pu
+... | b′ ⇒ p′
+    with pu
+... | ⟨ k , ⟨ k<u₁ , pfku₂ ⟩ ⟩ = G {v} pv
+    where
+    G : ∀{v} → ℘ {b′ ⇒ p′} f v → u₁ ↦ u₂ ~ v
+    G {⊥} pfv = tt
+    G {const k′} ()
+    G {v₁ ↦ v₂} ⟨ k′ , ⟨ k′<v₁ , pfk′v₂ ⟩ ⟩
+        with consistent? u₁ v₁
+    ... | no u₁~̸v₁ = inj₂ u₁~̸v₁
+    ... | yes u₁~v₁
+        with base-eq? b′ b′ | consistent-⊑ u₁~v₁ k<u₁ k′<v₁
+    ... | yes refl | refl = inj₁ ⟨ u₁~v₁ , ℘-~{u = u₂}{v = v₂} pfku₂ pfk′v₂ ⟩
+    ... | no neq | k~k′ = inj₂ (λ x → k~k′)
+    G {v₁ ⊔ v₂} ⟨ fst₁ , snd₁ ⟩ = ⟨ G {v₁} fst₁ , G {v₂} snd₁ ⟩
+
+℘-~ {P} {D} {u₁ ⊔ u₂} {v} ⟨ pu₁ , pu₂ ⟩ pv =
+    ⟨ (℘-~{u = u₁}{v} pu₁ pv) , (℘-~{u = u₂}{v} pu₂ pv) ⟩

@@ -146,7 +146,7 @@ module Filter
     (℘-⊔ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
     (℘-⊑ : ∀{P : Prim} {D : rep P} {v w : Value}
-          → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
+          → wf w → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
     (℘-~ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → u ~ v)
     where
@@ -219,7 +219,7 @@ module Filter
                          ~-closed = ℰ-~ {M = M} }
 
 
-    ℰ-⊑ {M = lit {P} k ⦅ nil ⦆} wfγ wfv wfw w⊑v ℰMγv = ℘-⊑ ℰMγv w⊑v
+    ℰ-⊑ {M = lit {P} k ⦅ nil ⦆} wfγ wfv wfw w⊑v ℰMγv = ℘-⊑ wfw ℰMγv w⊑v
     ℰ-⊑ {M = ` x} wfγ wfv wfw w⊑v ℰMγv = ⊑-trans w⊑v ℰMγv
     ℰ-⊑ {Γ}{γ}{lam ⦅ bind N nil ⦆}{v}{w} wfγ wfv wfw w⊑v ℰMγv =
       ℱ-⊑ G wfγ wfv wfw w⊑v ℰMγv 
