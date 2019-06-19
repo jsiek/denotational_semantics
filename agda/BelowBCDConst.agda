@@ -90,15 +90,3 @@ BelowConstk→⊑k {v = v ↦ v₁} ()
 BelowConstk→⊑k {v = v₁ ⊔ v₂} ⟨ fst , snd ⟩ =
   ⊑-conj-L (BelowConstk→⊑k fst) (BelowConstk→⊑k snd)
 
-℘k→BelowConstk : ∀{B : Base}{k : base-rep B}{v : Value}
-    → ℘ {base B} k v
-    → BelowConst k v
-℘k→BelowConstk {B} {k} {⊥} ℘kv = tt
-℘k→BelowConstk {B} {k} {const {B′} k′} ℘kv
-    with base-eq? B B′
-... | yes eq rewrite eq = ℘kv
-... | no neq = ℘kv
-℘k→BelowConstk {B} {k} {v ↦ v₁} ℘kv = ℘kv
-℘k→BelowConstk {B} {k} {v ⊔ v₁} ℘kv =
-  ⟨ (℘k→BelowConstk {B}{k}{v} (proj₁ ℘kv)) ,
-    (℘k→BelowConstk {B}{k}{v₁} (proj₂ ℘kv)) ⟩
