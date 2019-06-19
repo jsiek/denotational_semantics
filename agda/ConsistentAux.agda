@@ -3,6 +3,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
 
 
@@ -148,3 +149,9 @@ module ConsistentAux
       with ~-↦ vw~vw′
   ... | inj₁ ⟨ _ , w~w′ ⟩ = w~w′
   ... | inj₂ ¬v~v′ = ⊥-elim (contradiction v~v' ¬v~v′)
+
+  wf-const-env : ∀ {Γ}{x v} → wf v → ∀ {y} → wf (const-env {Γ} x v y)
+  wf-const-env {Γ}{x}{v} wfv {y}
+      with x var≟ y
+  ... | yes eq = wfv
+  ... | no neq = wf-bot
