@@ -111,7 +111,7 @@ module SubstitutionPreserve
     (℘-⊔ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
     (℘-⊑ : ∀{P : Prim} {D : rep P} {v w : Value}
-          → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
+          → wf w → ℘ {P} D v → w ⊑ v → ℘ {P} D w)
     (℘-~ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → u ~ v)
     where
