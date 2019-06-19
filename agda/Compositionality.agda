@@ -14,7 +14,8 @@ import WFDenotMod
 module Compositionality where
 
 module DenotAux
-  (D : ValueStruct) (V : ValueOrdering D) 
+  (D : ValueStruct)
+  (V : ValueOrdering D) 
   (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
        → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
   (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)

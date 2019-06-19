@@ -361,7 +361,8 @@ module SubstReflectLambdaBCD where
     open import LambdaDenot value_struct ordering _●_ ℱ
     open CurryApplyStruct.CurryApplyStruct MB
     open import Lambda
-    open import Compositionality value_struct ordering _●_ ℱ C
+    open import Compositionality
+    open DenotAux value_struct ordering _●_ ℱ consistent MB
 
     SubRef : (Γ : ℕ) → (Δ : ℕ) → Env Δ → Term Γ → Term Δ
            → Subst Γ Δ → Value → Set
@@ -393,15 +394,16 @@ module SubstReflectLambdaBCD where
           ⟩ ⟩
 
 
-module SubstReflectLambdaBCDConst where
+module SubstReflectLambdaConst where
 
   open import ValueConst
+  open import CurryConst
   open ValueStructAux value_struct
   open OrderingAux value_struct ordering
 
   module Inner
     (_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ)
-    (MB : OrderingAux.LambdaModelBasics value_struct ordering _●_ ℱ)
+    (MB : CurryApplyStruct.CurryApplyStruct value_struct ordering _●_ ℱ)
     (℘ : ∀{P : Prim} → rep P → Value → Set)
     (℘-⊔ : ∀{P : Prim } {D : rep P} {u v : Value}
           → ℘ {P} D u → ℘ {P} D v → ℘ {P} D (u ⊔ v))
@@ -410,7 +412,8 @@ module SubstReflectLambdaBCDConst where
     where
 
     open import ISWIM    
-    open ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open import ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+    open import Compositionality
     open ISWIMDenotAux value_struct ordering _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
     open RenamePreserveReflect.ForISWIM
       value_struct ordering _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
@@ -527,7 +530,7 @@ module ISWIM where
 
   open SubstReflectAppCBV.ForISWIM
   open ForLambdaModel value_struct ordering _●_ ℱ model_curry_apply
-  open SubstReflectLambdaBCDConst.Inner _●_ model_curry_apply 
+  open SubstReflectLambdaConst.Inner _●_ model_curry_apply 
        (λ {P} k v → ℘ {P} k v)
        (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
        ℘-⊑
