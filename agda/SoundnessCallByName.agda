@@ -73,7 +73,7 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
               (λ x y → y)
               (preserve M—→M′)
 preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}
-               (β-rule{N = N}{M = M}) xx ℰƛN·Mγw 
+               (β-rule{N = N}{M = M}) _ ℰƛN·Mγw 
     with ℰƛN·Mγw
 ... | inj₁ w⊑⊥ =
       ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (λ {x} → tt) tt tt w⊑⊥ (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) 
@@ -87,7 +87,7 @@ reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
     ---------
   → ℰ M ≃ ℰ N
 reduce-equal {Γ}{M}{N} r γ v wfv =
-    ⟨ preserve r tt , ( reflect r refl tt) ⟩
+    ⟨ preserve r tt , reflect r refl tt ⟩
 
 soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
   → M —↠ ƛ N
