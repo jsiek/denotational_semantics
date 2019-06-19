@@ -18,7 +18,6 @@ module CurryApplyStruct
   open OrderingAux D V
   open ConsistentAux D V C
   open WFDenotMod D V C
-
   
   record CurryStruct
       (ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ)

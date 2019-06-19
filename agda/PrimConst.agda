@@ -70,25 +70,28 @@ module PrimConst where
 ... | ⟨ w₁⊆v , w₂⊆v ⟩ = ⟨ ℘-⊆ ℘kv w₁⊆v  , ℘-⊆ ℘kv w₂⊆v ⟩
 
 ℘-⊑ : ∀{P}{k : rep P}{v w : Value}
+   → wf w
    → ℘ {P} k v
    → w ⊑ v
      ------------
    → ℘ {P} k w
-℘-⊑ {P} {k} {v} {.⊥} ℘kv ⊑-⊥ =
+℘-⊑ {P} {k} {v} {.⊥} wfw ℘kv ⊑-⊥ =
    tt
-℘-⊑ {P} {k} {.(const _)} {.(const _)} ℘kv ⊑-const =
+℘-⊑ {P} {k} {.(const _)} {.(const _)} wfw ℘kv ⊑-const =
    ℘kv
-℘-⊑ {P} {k} {v} {.(_ ⊔ _)} ℘kv (⊑-conj-L w⊑v w⊑v₁) =
-   ⟨ ℘-⊑ ℘kv w⊑v , ℘-⊑ ℘kv w⊑v₁ ⟩
-℘-⊑ {P} {k} {.(_ ⊔ _)} {w} ℘kv (⊑-conj-R1 w⊑v) =
-   ℘-⊑ (proj₁ ℘kv) w⊑v
-℘-⊑ {P} {k} {.(_ ⊔ _)} {w} ℘kv (⊑-conj-R2 w⊑v) =
-   ℘-⊑ (proj₂ ℘kv) w⊑v
-℘-⊑ {P}{f}{v}{w = w₁ ↦ w₂} ℘kv (⊑-fun{u′ = v′} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′)
+℘-⊑ {P} {k} {v} {w₁ ⊔ w₂} (wf-⊔ w₁~w₂ wfw₁ wfw₂) ℘kv (⊑-conj-L w⊑v w⊑v₁) =
+   ⟨ ℘-⊑ wfw₁ ℘kv w⊑v , ℘-⊑ wfw₂ ℘kv w⊑v₁ ⟩
+℘-⊑ {P} {k} {.(_ ⊔ _)} {w} wfw ℘kv (⊑-conj-R1 w⊑v) =
+   ℘-⊑ wfw (proj₁ ℘kv) w⊑v
+℘-⊑ {P} {k} {.(_ ⊔ _)} {w} wfw ℘kv (⊑-conj-R2 w⊑v) =
+   ℘-⊑ wfw (proj₂ ℘kv) w⊑v
+℘-⊑ {P}{f}{v}{w = w₁ ↦ w₂} (wf-fun wfw₁ wfw₂) ℘kv
+    (⊑-fun{u′ = v′} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′)
     with P
 ... | b ⇒ P′ =
-      let ℘kv′ = ℘-⊆ ℘kv v′⊆v in
-      {!!} {- ℘-dom-cod {fv = fv′} ℘kv′ dv′⊑w₁ w₂⊑cv′ -}
+      let pdc = ℘-dom-cod {fv = fv′} (℘-⊆ ℘kv v′⊆v) dv′⊑w₁ wfw₁ in
+      let IH = ℘-⊑ wfw₂ (proj₂ (proj₂ pdc)) w₂⊑cv′ in
+      ⟨ proj₁ pdc , ⟨ proj₁ (proj₂ pdc) , IH ⟩ ⟩
 
     where
     ℘-dom-cod : ∀{b : Base}{p : Prim}{f : rep (b ⇒ p)}{v w₁ : Value}
@@ -104,22 +107,13 @@ module PrimConst where
        dv⊑w₁ wfw
         with ℘-dom-cod{b}{p}{f}{v₁}{w₁} fst₁ (⊔⊑R dv⊑w₁) wfw
         | ℘-dom-cod{b}{p}{f}{v₂}{w₁} snd₁ (⊔⊑L dv⊑w₁) wfw
-    ... | ⟨ k1 , ⟨ k1<w1 , pfk1 ⟩ ⟩ | ⟨ k2 , ⟨ k2<w1 , pfk2 ⟩ ⟩ =
-        let k1~k2 = consistent-⊑{w₁}{w₁} (~-refl{w₁}{wfw}) k1<w1 k2<w1 in
-        ⟨ k1 , ⟨ k1<w1 , ⟨ pfk1 , lemma k1~k2 pfk2 ⟩ ⟩ ⟩
+    ... | ⟨ k1 , ⟨ k1<w1 , pfk1 ⟩ ⟩ | ⟨ k2 , ⟨ k2<w1 , pfk2 ⟩ ⟩
+        with base-eq? b b | consistent-⊑{w₁}{w₁} (~-refl{w₁}{wfw}) k1<w1 k2<w1
+    ... | yes refl | refl = ⟨ k1 , ⟨ k2<w1 , ⟨ pfk1 , pfk2 ⟩ ⟩ ⟩
+    ... | no neq | k1~k2 = ⊥-elim (neq refl)
 
-        where
-        lemma : (const{b} k1) ~ (const{b} k2)
-              → ℘ {p} (f k2) (cod v₂ {snd₂})
-              → ℘ {p} (f k1) (cod v₂ {snd₂})
-        lemma k1~k2 ℘fk2cv2
-           with base-eq? b b
-        ... | yes eq  = {!!}
-        ... | no neq = {!!}
-           
-
-
-℘-⊑ {P}{f}{v}{w = w₁ ↦ w₂} ℘kv (⊑-fun{u′ = v′} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′) | base b
+℘-⊑ {P}{f}{v}{w = w₁ ↦ w₂} wfw ℘kv (⊑-fun{u′ = v′} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′)
+    | base b
     with AllFun∈ fv′
 ... | ⟨ v₁ , ⟨ v₂ , v₁↦v₂∈v′ ⟩ ⟩ =
       let bk = ℘k→BelowConstk{b}{f}{v} ℘kv in
@@ -132,47 +126,6 @@ module PrimConst where
     lemma {v₁ ↦ v₂} refl ()
     lemma {v₁ ⊔ v₂} (inj₁ x) ⟨ fst₁ , snd₁ ⟩ = lemma x fst₁
     lemma {v₁ ⊔ v₂} (inj₂ y) ⟨ fst₁ , snd₁ ⟩ = lemma y snd₁
-
-
-{-
-℘-⊑ {P} {k} {v} {w} ℘kv (⊑-trans w⊑v w⊑v₁) =
-   ℘-⊑ (℘-⊑ ℘kv w⊑v₁) w⊑v
-℘-⊑ {P} {f} {v ↦ w} {v′ ↦ w′} ℘fv (⊑-fun v⊑v′ w′⊑w)
-    with P
-... | base B = ℘fv
-{-
-... | B ⇒ P′ = G
-    where G : ∀{k} → v′ ⊑ const k → ℘ {P′} (f k) w′
-          G {k} v′⊑k = ℘-⊑ {P′} (℘fv {k} (⊑-trans v⊑v′ v′⊑k)) w′⊑w
--}
-... | B ⇒ P′
-    with ℘fv
-... | ⟨ k , ⟨ k⊑v , ℘fkw ⟩ ⟩ = G
-    where G : Σ[ k ∈ base-rep B ] (const k ⊑ v′ × ℘ (f k) w′)
-          G = ⟨ k , ⟨ (⊑-trans k⊑v v⊑v′) , (℘-⊑ ℘fkw w′⊑w) ⟩ ⟩
--}
-
-
-{-
-℘-⊑ {P} {f} {(v ↦ w ⊔ v ↦ w′)} {(v ↦ (w ⊔ w′))} ℘fv ⊑-dist
-    with P
-... | base B = proj₁ ℘fv
--}
-{-
-... | B ⇒ P′ = G
-    where G : ∀{k} → v ⊑ const k → ℘ {P′} (f k) w × ℘ {P′} (f k) w′
-          G {k} v⊑k = ⟨ (proj₁ ℘fv v⊑k) , (proj₂ ℘fv v⊑k) ⟩
--}
-{-
-... | B ⇒ P′
-    with ℘fv
-... | ⟨ ⟨ k , ⟨ k⊑v , ℘fkw ⟩ ⟩ , ⟨ k′ , ⟨ k′⊑v , ℘fk′w ⟩ ⟩ ⟩ = G
-    where G : Σ[ k ∈ base-rep B ] (const k ⊑ v × ℘ (f k) w × ℘ (f k) w′)
-          G
-              with consistent-⊑ ⊑-refl k⊑v k′⊑v
-          ... | eq rewrite eq =
-             ⟨ k , ⟨ k⊑v , ⟨ ℘fkw , ℘fk′w ⟩ ⟩ ⟩
--}
 
 ℘-⊔ : ∀{P : Prim} {k : rep P} {u v : Value}
     → ℘ {P} k u → ℘ {P} k v → ℘ {P} k (u ⊔ v)

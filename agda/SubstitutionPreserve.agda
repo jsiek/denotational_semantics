@@ -49,9 +49,9 @@ module SubstitutionPreserve
        using (`_; _⦅_⦆; Subst;
               exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
     open import LambdaDenot D V _●_ ℱ
-    open RenamePreserveReflect.ForLambda D V _●_ ℱ C MB
+    open RenamePreserveReflect.ForLambda D V C _●_ ℱ MB
       using (⊑-env; rename-pres)
-    open Filter.ForLambda D V _●_ ℱ C MB
+    open Filter.ForLambda D V C _●_ ℱ MB
 
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
       → WFEnv γ
@@ -118,9 +118,9 @@ module SubstitutionPreserve
 
     open import ISWIM
     open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open RenamePreserveReflect.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v)
+    open RenamePreserveReflect.ForISWIM D V C _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
       using (⊑-env; rename-pres)
-    open Filter.ForISWIM D V _●_ ℱ C MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑ ℘-~
+    open Filter.ForISWIM D V C _●_ ℱ MB (λ {P} k v → ℘ {P} k v) ℘-⊔ ℘-⊑ ℘-~
 
     subst-ext : ∀ {Γ Δ v} {γ : Env Γ} {δ : Env Δ}
       → WFEnv γ
