@@ -1,25 +1,28 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 open import Variables
 open import Primitives
 open import Structures
 open import ISWIM
 open import ModelISWIM
 open import ValueConst
-open ValueStructAux value_struct
-open ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+open import CurryConst
+open import ModelCurryConst
+open import ValueStructAux value_struct
+open import Consistency
+open import ConsistentAux value_struct ordering consistent
+open import ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+open import PrimConst
 import Filter
-open Filter.ForISWIM value_struct ordering _●_ ℱ model_basics
+open Filter.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply
    (λ {P} k v → ℘ {P} k v)
    (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
    ℘-⊑
 import SubstitutionPreserve
-open SubstitutionPreserve.ISWIM value_struct ordering _●_ ℱ model_basics
+open SubstitutionPreserve.ISWIM value_struct ordering _●_ ℱ consistent model_curry_apply
    (λ {P} k v → ℘ {P} k v)
    (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
    ℘-⊑
 import RenamePreserveReflect
-open RenamePreserveReflect.ForISWIM value_struct ordering _●_ ℱ model_basics
+open RenamePreserveReflect.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply
    (λ {P} k v → ℘ {P} k v) using (⊑-env)  
 import SubstitutionReflect
 open SubstitutionReflect.ISWIM using (substitution-reflect)
@@ -53,15 +56,15 @@ reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
     → ℰ (N [ M ]) γ v
     → ℰ ((ƛ N) · M) γ v
 reflect-beta {Γ}{γ}{M}{N}{v} Mv d 
-    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv)
+    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) ? ?
 ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
-      ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
+      ⟨ v₂′ , ⟨ ? , ⟨ d₂′ , d₁′ ⟩ ⟩ ⟩ 
 
 
-reflect : ∀ {Γ} {γ : Env Γ} {M M′ N v}
-  →  M —→ M′  →   M′ ≡ N  →  ℰ N γ v
-    --------------------------------
-  → ℰ M γ v    
+reflect : ∀ {Γ} {γ : Env Γ} {M M′ N}
+  →  M —→ M′  →   M′ ≡ N
+    --------------------
+    →  ℰ N γ ≲ ℰ M γ
 reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
     rewrite sym L′·M≡N =
     ●-≲ {D₁ = ℰ L′}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M}
@@ -71,7 +74,7 @@ reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
     ●-≲ {D₁ = ℰ L}{D₂ = ℰ M′}{D₁′ = ℰ L}{D₂′ = ℰ M}
         (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
 reflect (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
-    reflect-beta {M = M}{N} Mv
+    λ wfv → reflect-beta {M = M}{N} Mv
 reflect {v = v}(δ-rule {Γ}{B}{P}{f}{k}) M′≡N ℘fkv rewrite sym M′≡N =
    ⟨ const {B} k , ⟨ {!!} , ℘kk ⟩ ⟩
    where
@@ -83,10 +86,12 @@ reflect {v = v}(δ-rule {Γ}{B}{P}{f}{k}) M′≡N ℘fkv rewrite sym M′≡N =
 
    G : ∀ {k₁} → const k ⊑ const k₁ → ℘ {P} (f k₁) v
    G ⊑-const = ℘fkv
+{-
    G {k₁} (⊑-trans{v = v} k⊑k₁ k⊑k₂)
         with base-eq? B B | BelowConst-⊑ (⊑k→BelowConstk k⊑k₂) k⊑k₁
    ... | yes eq | b rewrite eq | b = ℘fkv
    ... | no neq | ()
+-}
 
 
 preserve : ∀ {Γ} {γ : Env Γ} {M N v}
