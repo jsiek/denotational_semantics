@@ -122,6 +122,10 @@ data _⊑_ : Value → Value → Set where
 ⊔⊑L (⊑-conj-R1 B⊔C⊑A) = ⊑-conj-R1 (⊔⊑L B⊔C⊑A)
 ⊔⊑L (⊑-conj-R2 B⊔C⊑A) = ⊑-conj-R2 (⊔⊑L B⊔C⊑A)
 
+⊔⊑-inv : ∀{B C A}
+    → B ⊔ C ⊑ A
+    → B ⊑ A × C ⊑ A
+⊔⊑-inv B⊔C⊑A  = ⟨ ⊔⊑R B⊔C⊑A , ⊔⊑L B⊔C⊑A ⟩
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = Σ[ fu′ ∈ AllFun u′ ] u′ ⊆ u

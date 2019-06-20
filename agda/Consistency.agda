@@ -576,6 +576,16 @@ consistent-⊑ {A}{B}{C}{D} =
     consistent-⊑-aux {A}{B}{C}{D} {suc (depth A + depth C)} {_≤_.s≤s ≤-refl}
 
 
+k⊑v→k′⊑v→k′≡k : ∀{b : Base}{k k′ : base-rep b}{v : Value}
+              → wf v 
+              → const {b} k ⊑ v → const {b} k′ ⊑ v
+              → k ≡ k′
+k⊑v→k′⊑v→k′≡k {b}{k}{k′}{v} wfv k⊑v k′⊑v
+    with base-eq? b b | consistent-⊑{v}{v} (~-refl{v}{wfv}) k⊑v k′⊑v
+... | no neq | k~k′ = ⊥-elim (neq refl)    
+... | yes refl | k~k′ =  k~k′
+
+
 consistent : Consistent value_struct ordering
 consistent = record {
       _~_ = _~_
