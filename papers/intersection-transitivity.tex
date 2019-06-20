@@ -73,11 +73,11 @@ Figure~\ref{fig:types-subtyping}
   \begin{tabular}{ll}
     (refl$_α$) & $α <: α$ \\[2ex]
     (incl$_L$) & $\inference{A <: C}{A ∩ B <: C}$ \\[2ex]
-    (incl$_R$) & $\inference{B <: C} A ∩ B <: C$ \\[2ex]
+    (incl$_R$) & $\inference{B <: C}{A ∩ B <: C}$ \\[2ex]
     (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[2ex]
     ($\TOP_{\mathrm{top}}$) & $A <: \TOP$ \\[2ex]
     ($\TOP→$) & $\TOP <: A → \TOP$ \\[2ex]
-    ($→$) &$\inference{D ⊆ C & A' <: \dom{D} & \cod{D} <: B' }{C <: A' → B'}$
+    ($→'$) &$\inference{D ⊆ C & A' <: \dom{D} & \cod{D} <: B' }{C <: A' → B'}$
   \end{tabular}
   \caption{New Subtyping Relation}
   \label{fig:new-subtyping}
