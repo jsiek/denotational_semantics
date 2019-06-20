@@ -8,11 +8,13 @@ open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 open import Structures
-open DomainAux domain
-open OrderingAux domain ordering
-open import ModelCallByValue domain ordering ℱ model_curry
-open LambdaDenot domain ordering _●_ ℱ
-open DenotAux domain ordering _●_ ℱ model_basics
+open import ValueStructAux value_struct
+open import OrderingAux value_struct ordering
+open import ConsistentAux value_struct ordering consistent
+open import ModelCallByValue value_struct ordering consistent ℱ model_curry
+open import LambdaDenot value_struct ordering _●_ ℱ
+open import Compositionality
+open DenotAux value_struct ordering _●_ ℱ consistent model_curry_apply
 open import SoundnessCallByValue using (soundness; ℰ-⊥)
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -83,7 +85,8 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
    G {v ↦ w} ℱℰNγv {c} vc =
       ℰ→𝔼 {M = N} {w} (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
    G {v₁ ⊔ v₂} ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ = ⟨ G {v₁} ℱℰNγv₁ , G {v₂} ℱℰNγv₂ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ' ⟨ v₁ , ⟨ d₁ , d₂ ⟩ ⟩
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ'
+    ⟨ v₁ , ⟨ wfv , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
     with ℰ→𝔼 {M = L} 𝔾γγ' d₁ | ℰ→𝔼 {M = M} 𝔾γγ' d₂
 ... | ⟨ clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩
     | ⟨ clos M' δ₂ , ⟨ M⇓M' , 𝕍v₁ ⟩ ⟩ 
@@ -98,7 +101,8 @@ adequacy : ∀{M : Term zero}{N : Term (suc zero)}
          → Σ[ Γ ∈ Context ] Σ[ N′ ∈ Term (suc Γ) ] Σ[ γ ∈ ClosEnv Γ ]
             ∅' ⊢ M ⇓ clos N′ γ
 adequacy{M}{N} eq 
-    with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥) (ℰ-⊥ {γ = λ ()}{M = lam ⦅ bind N nil ⦆} V-ƛ))
+    with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {x} → tt) tt)
+                  (ℰ-⊥ {γ = λ ()}{M = lam ⦅ bind N nil ⦆} V-ƛ))
 ... | ⟨ clos {Γ} N′ γ , ⟨ M⇓c , Vc ⟩ ⟩ =
     ⟨ Γ , ⟨ N′ , ⟨ γ , M⇓c ⟩ ⟩ ⟩
 
