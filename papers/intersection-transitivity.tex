@@ -47,13 +47,14 @@ Figure~\ref{fig:types-subtyping}
   \]
   \fbox{$A ≤ B$} \\[1ex]
   \begin{tabular}{ll}
-    (refl)  & $A ≤ A$ \\[1ex]
-    (incl$_L$) & $A ∩ B ≤ A$ \\[1ex]
-    (incl$_R$) & $A ∩ B ≤ B$ \\[1ex]
-    (glb) & $\inference{A ≤ B & B ≤ C}{A ≤ C}$ \\[1ex]
-    ($\TOP_{\mathrm{top}}$) & $A ≤ \TOP$ \\[1ex]
-    ($\TOP→$) & $\TOP ≤ A → \TOP$ \\[1ex]
-    ($→∩$) & $(A → B) ∩ (A → C) A → (B ∩ C)$ \\[1ex]
+    (refl)  & $A ≤ A$ \\[2ex]
+    (incl$_L$) & $A ∩ B ≤ A$ \\[2ex]
+    (incl$_R$) & $A ∩ B ≤ B$ \\[2ex]
+    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[2ex]
+    (trans) & $\inference{A ≤ B & B ≤ C}{A ≤ C}$ \\[2ex]
+    ($\TOP_{\mathrm{top}}$) & $A ≤ \TOP$ \\[2ex]
+    ($\TOP→$) & $\TOP ≤ A → \TOP$ \\[2ex]
+    ($→∩$) & $(A → B) ∩ (A → C) A → (B ∩ C)$ \\[2ex]
     ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
   \end{tabular}
   \caption{Intersection Types and BCD Subtyping}
@@ -70,12 +71,12 @@ Figure~\ref{fig:types-subtyping}
 
 \begin{figure}
   \begin{tabular}{ll}
-    (refl$_α$) & $α <: α$ \\[1ex]
-    (incl$_L$) & $A ∩ B <: A$ \\[1ex]
-    (incl$_R$) & $A ∩ B <: B$ \\[1ex]
-    (glb) & $\inference{A <: B & B <: C}{A <: C}$ \\[1ex]
-    ($\TOP_{\mathrm{top}}$) & $A <: \TOP$ \\[1ex]
-    ($\TOP→$) & $\TOP <: A → \TOP$ \\[1ex]
+    (refl$_α$) & $α <: α$ \\[2ex]
+    (incl$_L$) & $\inference{A <: C}{A ∩ B <: C}$ \\[2ex]
+    (incl$_R$) & $\inference{B <: C} A ∩ B <: C$ \\[2ex]
+    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[2ex]
+    ($\TOP_{\mathrm{top}}$) & $A <: \TOP$ \\[2ex]
+    ($\TOP→$) & $\TOP <: A → \TOP$ \\[2ex]
     ($→$) &$\inference{D ⊆ C & A' <: \dom{D} & \cod{D} <: B' }{C <: A' → B'}$
   \end{tabular}
   \caption{New Subtyping Relation}
