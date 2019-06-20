@@ -128,8 +128,11 @@ soundness : ∀{Γ} {M : Term Γ} {N : Term Γ}
   → M —↠ N
     -----------------
   → ℰ M ≃ ℰ N
-soundness Nv (_ □) γ v wfγ wfv = ⟨ (λ x → x) , (λ x → x) ⟩
-soundness {Γ} Nv (L —→⟨ r ⟩ M—↠N) γ v =
-   let ih = soundness Nv M—↠N in
-   let e = reduce-equal r in
-   ≃-trans {Γ} e ih γ v
+soundness Mv (M □) = ℰ M ≃⟨⟩ ℰ M ■
+soundness {Γ}{M}{N} Nv (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
+     ℰ M
+   ≃⟨ reduce-equal M—→M′ ⟩ 
+     ℰ M′
+   ≃⟨ soundness Nv M′—↠N ⟩ 
+     ℰ N
+   ■

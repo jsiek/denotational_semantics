@@ -89,16 +89,19 @@ reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
   → M —→ N
     ---------
   → ℰ M ≃ ℰ N
-reduce-equal {Γ}{M}{N} r γ v wfv =
-    ⟨ preserve r tt , reflect r refl tt ⟩
+reduce-equal {Γ}{M}{N} r γ v wfγ wfv = ⟨ preserve r tt , reflect r refl tt ⟩
 
 
 soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
   → M —↠ ƛ N
     -----------------
   → ℰ M ≃ ℰ (ƛ N)
-soundness (_ □) γ v wfv = ⟨ (λ x → x) , (λ x → x) ⟩
-soundness {Γ} (L —→⟨ r ⟩ M—↠N) γ v =
-   let ih = soundness M—↠N in
-   let e = reduce-equal r in
-   ≃-trans {Γ} e ih γ v
+soundness (M □) = ℰ M ≃⟨⟩ ℰ M ■
+soundness {Γ}{M}{N} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
+     ℰ M
+   ≃⟨ reduce-equal M—→M′ ⟩ 
+     ℰ M′
+   ≃⟨ soundness M′—↠N ⟩ 
+     ℰ (ƛ N)
+   ■
+

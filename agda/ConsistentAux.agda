@@ -94,7 +94,7 @@ module ConsistentAux
         (λ z → proj₂ (eq1 γ v wfγ wfv) (proj₂ (eq2 γ v wfγ wfv) z)) ⟩
 
   infixr 2 _≃⟨⟩_ _≃⟨_⟩_
-  infix  3 _□
+  infix  3 _■
 
   _≃⟨⟩_ : ∀ {Γ} (x : Denotation Γ) {y : Denotation Γ}
       → x ≃ y
@@ -109,10 +109,10 @@ module ConsistentAux
       → x ≃ z
   (x ≃⟨ x≃y ⟩ y≃z) =  ≃-trans x≃y y≃z
 
-  _□ : ∀ {Γ} (d : Denotation Γ)
+  _■ : ∀ {Γ} (d : Denotation Γ)
         -----
       → d ≃ d
-  (d □) =  ≃-refl
+  (d ■) =  ≃-refl
 
 
   _~′_ : ∀{Γ} → Env Γ → Env Γ → Set

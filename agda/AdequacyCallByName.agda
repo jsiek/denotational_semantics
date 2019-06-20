@@ -10,10 +10,12 @@ open Lambda.ASTMod
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
 open import Structures
 open import ModelCallByName
-open DomainAux domain
-open OrderingAux domain ordering
-open LambdaDenot domain ordering _●_ ℱ
-open DenotAux domain ordering _●_ ℱ model_basics
+open import ValueStructAux value_struct
+open import OrderingAux value_struct ordering
+open import ConsistentAux value_struct ordering consistent
+open import LambdaDenot value_struct ordering _●_ ℱ
+open import Compositionality
+open DenotAux value_struct ordering _●_ ℱ consistent model_curry_apply
 open import SoundnessCallByName using (soundness)
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -208,7 +210,7 @@ adequacy : ∀{M : Term zero}{N : Term (suc zero)}
          → Σ[ Γ ∈ Context ] Σ[ N′ ∈ Term (suc Γ) ] Σ[ γ ∈ ClosEnv Γ ]
             ∅' ⊢ M ⇓ clos (lam ⦅ bind N′ nil ⦆) γ
 adequacy{M}{N} eq
-    with ℰ→𝔼 𝔾-∅ ((proj₂ (eq `∅ (⊥ ↦ ⊥))) (ℰ-⊥{M = N}))
+    with ℰ→𝔼 𝔾-∅ ((proj₂ (eq `∅ (⊥ ↦ ⊥) (λ {x} → tt) tt)) (ℰ-⊥{M = N}))
                  ⟨ ⊥ , ⟨ ⊥ , ⊑-refl ⟩ ⟩
 ... | ⟨ clos {Γ} M′ γ , ⟨ M⇓c , Vc ⟩ ⟩
     with 𝕍→WHNF Vc
