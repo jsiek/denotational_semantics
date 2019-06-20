@@ -1,0 +1,91 @@
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathabx}
+\usepackage{stmaryrd}
+\usepackage{semantic}
+%\usepackage{fullpage}
+\usepackage{fontspec,unicode-math}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{constraint}[theorem]{Constraint}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
+
+\title{Transitivity of Subtyping for Intersection Types, Directly}
+\author{Jeremy G. Siek}
+
+\begin{document}
+\maketitle
+
+\newcommand{\TOP}{\ensuremath{\mathtt{U}}}
+\newcommand{\dom}[1]{\mathrm{dom}(#1)}
+\newcommand{\cod}[1]{\mathrm{cod}(#1)}
+
+\citet{Barendregt:1983aa}
+\citet{Barendregt:2013aa}
+
+\citet{Laurent:2012aa}
+\citet{Laurent:2018aa}
+
+$λ^{\mathrm{BCD}}_∩$
+
+Figure~\ref{fig:types-subtyping}
+
+\begin{figure}[tbp]
+  \[
+  \begin{array}{lclr}
+    \alpha,\beta & ::= & \TOP \mid c_0 \mid c_1 \mid c_2 \mid \cdots & \text{atoms}\\
+    A,B,C,D & ::= & \alpha \mid A → B \mid A ∩ B & \text{types}
+  \end{array}
+  \]
+  \fbox{$A ≤ B$} \\[1ex]
+  \begin{tabular}{ll}
+    (refl)  & $A ≤ A$ \\[1ex]
+    (incl$_L$) & $A ∩ B ≤ A$ \\[1ex]
+    (incl$_R$) & $A ∩ B ≤ B$ \\[1ex]
+    (glb) & $\inference{A ≤ B & B ≤ C}{A ≤ C}$ \\[1ex]
+    ($\TOP_{\mathrm{top}}$) & $A ≤ \TOP$ \\[1ex]
+    ($\TOP→$) & $\TOP ≤ A → \TOP$ \\[1ex]
+    ($→∩$) & $(A → B) ∩ (A → C) A → (B ∩ C)$ \\[1ex]
+    ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
+  \end{tabular}
+  \caption{Intersection Types and BCD Subtyping}
+  \label{fig:types-subtyping}
+\end{figure}
+
+\begin{align*}
+  \dom{A → B} &= A \\
+  \dom{A ∩ B} &= \dom{A} ∩ \dom {B} \\
+  \\
+  \cod{A → B} &= B \\
+  \cod{A ∩ B} &= \cod{A} ∩ \cod {B}
+\end{align*}
+
+\begin{figure}
+  \begin{tabular}{ll}
+    (refl$_α$) & $α <: α$ \\[1ex]
+    (incl$_L$) & $A ∩ B <: A$ \\[1ex]
+    (incl$_R$) & $A ∩ B <: B$ \\[1ex]
+    (glb) & $\inference{A <: B & B <: C}{A <: C}$ \\[1ex]
+    ($\TOP_{\mathrm{top}}$) & $A <: \TOP$ \\[1ex]
+    ($\TOP→$) & $\TOP <: A → \TOP$ \\[1ex]
+    ($→$) &$\inference{D ⊆ C & A' <: \dom{D} & \cod{D} <: B' }{C <: A' → B'}$
+  \end{tabular}
+  \caption{New Subtyping Relation}
+  \label{fig:new-subtyping}
+\end{figure}
+
+\clearpage
+\pagebreak
+
+\bibliographystyle{abbrvnat}
+\bibliography{all}
+
+\end{document}
