@@ -59,29 +59,39 @@ module ConsistentAux
   (d ☐) {v} =  ≲-refl {d}
 
 
+  WFEnv : ∀ {Γ : ℕ} → Env Γ → Set
+  WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
+
+  WFEnv-extend : ∀{Γ}{γ : Env Γ}{v}
+              → WFEnv {Γ} γ
+              → wf v
+              → WFEnv {suc Γ} (γ `, v)
+  WFEnv-extend {Γ} {γ} {v} wfγ wfv {Z} = wfv
+  WFEnv-extend {Γ} {γ} {v} wfγ wfv {S x} = wfγ
+
   infix 3 _≃_
 
   _≃_ : ∀ {Γ} → (Denotation Γ) → (Denotation Γ) → Set
-  (_≃_ {Γ} D₁ D₂) = (γ : Env Γ) → (v : Value) → wf v → D₁ γ v iff D₂ γ v
+  (_≃_ {Γ} D₁ D₂) = (γ : Env Γ) → (v : Value) → WFEnv γ → wf v → D₁ γ v iff D₂ γ v
 
   ≃-refl : ∀ {Γ } → {M : Denotation Γ}
     → M ≃ M
-  ≃-refl γ v wfv = ⟨ (λ x → x) , (λ x → x) ⟩
+  ≃-refl γ v wfγ wfv = ⟨ (λ x → x) , (λ x → x) ⟩
 
   ≃-sym : ∀ {Γ } → {M N : Denotation Γ}
     → M ≃ N
       -----
     → N ≃ M
-  ≃-sym eq γ v wfv = ⟨ (proj₂ (eq γ v wfv)) , (proj₁ (eq γ v wfv)) ⟩
+  ≃-sym eq γ v wfγ wfv = ⟨ (proj₂ (eq γ v wfγ wfv)) , (proj₁ (eq γ v wfγ wfv)) ⟩
 
   ≃-trans : ∀ {Γ } → {M₁ M₂ M₃ : Denotation Γ}
     → M₁ ≃ M₂
     → M₂ ≃ M₃
       -------
     → M₁ ≃ M₃
-  ≃-trans eq1 eq2 γ v wfv =
-      ⟨ (λ z → proj₁ (eq2 γ v wfv) (proj₁ (eq1 γ v wfv) z)) ,
-        (λ z → proj₂ (eq1 γ v wfv) (proj₂ (eq2 γ v wfv) z)) ⟩
+  ≃-trans eq1 eq2 γ v wfγ wfv =
+      ⟨ (λ z → proj₁ (eq2 γ v wfγ wfv) (proj₁ (eq1 γ v wfγ wfv) z)) ,
+        (λ z → proj₂ (eq1 γ v wfγ wfv) (proj₂ (eq2 γ v wfγ wfv) z)) ⟩
 
   infixr 2 _≃⟨⟩_ _≃⟨_⟩_
   infix  3 _□
@@ -104,16 +114,6 @@ module ConsistentAux
       → d ≃ d
   (d □) =  ≃-refl
 
-
-  WFEnv : ∀ {Γ : ℕ} → Env Γ → Set
-  WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
-
-  WFEnv-extend : ∀{Γ}{γ : Env Γ}{v}
-              → WFEnv {Γ} γ
-              → wf v
-              → WFEnv {suc Γ} (γ `, v)
-  WFEnv-extend {Γ} {γ} {v} wfγ wfv {Z} = wfv
-  WFEnv-extend {Γ} {γ} {v} wfγ wfv {S x} = wfγ
 
   _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
   _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x

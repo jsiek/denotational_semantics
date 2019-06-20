@@ -33,20 +33,20 @@ module CurryApplyAux
          → D ≃ D′
            -----------
          → ℱ D ≃ ℱ D′
-  ℱ-cong {Γ}{D}{D′} D≃D′ γ v wfv =
-    ⟨ ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₁ (D≃D′ (γ `, w) v' wfv') Dv') wfv ,
-      ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₂ (D≃D′ (γ `, w) v' wfv') Dv') wfv ⟩
+  ℱ-cong {Γ}{D}{D′} D≃D′ γ v wfγ wfv =
+    ⟨ ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₁ (D≃D′ (γ `, w) v' (λ {x} → WFEnv-extend wfγ wfw {x}) wfv') Dv') wfv ,
+      ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₂ (D≃D′ (γ `, w) v' (λ {x} → WFEnv-extend wfγ wfw {x}) wfv') Dv') wfv ⟩
 
 
   ●-cong : ∀{Γ}{D₁ D₁′ D₂ D₂′ : Denotation Γ}
      → D₁ ≃ D₁′ → D₂ ≃ D₂′
      → (D₁ ● D₂) ≃ (D₁′ ● D₂′)
-  ●-cong {Γ}{D₁}{D₁′}{D₂}{D₂′} d1 d2 γ v wfv =
+  ●-cong {Γ}{D₁}{D₁′}{D₂}{D₂′} d1 d2 γ v wfγ wfv =
      let to = ●-≲ {Γ}{Γ}{γ}{γ}{D₁}{D₂}{D₁′}{D₂′}
-                 (λ {w} wfw D₁γw → proj₁ (d1 γ w wfw) D₁γw)
-                 (λ {w} wfw D₂γw → proj₁ (d2 γ w wfw) D₂γw) wfv in
+                 (λ {w} wfw D₁γw → proj₁ (d1 γ w wfγ wfw) D₁γw)
+                 (λ {w} wfw D₂γw → proj₁ (d2 γ w wfγ wfw) D₂γw) wfv in
      let from = ●-≲ {Γ}{Γ}{γ}{γ}{D₁′}{D₂′}{D₁}{D₂}
-                 (λ {w} wfw D₁γw → proj₂ (d1 γ w wfw) D₁γw)
-                 (λ {w} wfw D₂γw → proj₂ (d2 γ w wfw) D₂γw) wfv in
+                 (λ {w} wfw D₁γw → proj₂ (d1 γ w wfγ wfw) D₁γw)
+                 (λ {w} wfw D₂γw → proj₂ (d2 γ w wfγ wfw) D₂γw) wfv in
      ⟨ to , from ⟩
 

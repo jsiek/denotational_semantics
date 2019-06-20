@@ -53,31 +53,34 @@ module SoundnessISWIM where
 
 
 reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+    → WFEnv γ → wf v
     → TermValue M
     → ℰ (N [ M ]) γ v
     → ℰ ((ƛ N) · M) γ v
-reflect-beta {Γ}{γ}{M}{N}{v} Mv d 
-    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) {!!} {!!}
-... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
-      ⟨ v₂′ , ⟨ {!!} , ⟨ d₂′ , d₁′ ⟩ ⟩ ⟩ 
+reflect-beta {Γ}{γ}{M}{N}{v} wfγ wfv Mv d 
+    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) wfγ wfv
+... | ⟨ v₂′ , ⟨ wfv₂ , ⟨ d₁′ , d₂′ ⟩ ⟩ ⟩ =
+      ⟨ v₂′ , ⟨ wfv₂ , ⟨ d₂′ , d₁′ ⟩ ⟩ ⟩ 
 
 
 reflect : ∀ {Γ} {γ : Env Γ} {M M′ N}
+  →  WFEnv γ
   →  M —→ M′  →   M′ ≡ N
     --------------------
     →  ℰ N γ ≲ ℰ M γ
-reflect {γ = γ} (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
+reflect {γ = γ} wfγ (ξ₁-rule {L = L}{L′}{M} L—→L′) L′·M≡N
     rewrite sym L′·M≡N =
     ●-≲ {D₁ = ℰ L′}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M}
-        (reflect L—→L′ refl) (≲-refl {d = ℰ M γ})
-reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
+        (reflect wfγ L—→L′ refl) (≲-refl {d = ℰ M γ})
+reflect {γ = γ} wfγ (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
     rewrite sym L·M′≡N =
     ●-≲ {D₁ = ℰ L}{D₂ = ℰ M′}{D₁′ = ℰ L}{D₂′ = ℰ M}
-        (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
-reflect (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
-    λ wfv → reflect-beta {M = M}{N} Mv
-reflect (δ-rule {Γ}{B}{P}{f}{k}) M′≡N {v} wfv ℘fkv rewrite sym M′≡N =
-   ⟨ const {B} k , ⟨ {!!} , {!!} {- ℘kk -} ⟩ ⟩
+        (≲-refl {d = ℰ L γ}) (reflect wfγ M—→M′ refl)
+reflect wfγ (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
+    λ wfv → reflect-beta {M = M}{N} wfγ wfv Mv
+reflect wfγ (δ-rule {Γ}{B}{P}{f}{k}) M′≡N {v} wfv ℘fkv
+   rewrite sym M′≡N = 
+    ⟨ const {B} k , ⟨ wf-const , ⟨ ⟨ k , ⟨ ⊑-const , ℘fkv ⟩ ⟩ , ℘kk ⟩ ⟩ ⟩
    where
    ℘kk : ℘ k (const {B} k)
    ℘kk
@@ -87,12 +90,6 @@ reflect (δ-rule {Γ}{B}{P}{f}{k}) M′≡N {v} wfv ℘fkv rewrite sym M′≡N 
 
    G : ∀ {k₁} → const k ⊑ const k₁ → ℘ {P} (f k₁) v
    G ⊑-const = ℘fkv
-{-
-   G {k₁} (⊑-trans{v = v} k⊑k₁ k⊑k₂)
-        with base-eq? B B | BelowConst-⊑ (⊑k→BelowConstk k⊑k₂) k⊑k₁
-   ... | yes eq | b rewrite eq | b = ℘fkv
-   ... | no neq | ()
--}
 
 
 preserve : ∀ {Γ} {γ : Env Γ} {M N}
@@ -113,23 +110,17 @@ preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
 ... | ⟨ v' , ⟨ wfv' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ ⟩ =
       substitution {N = N}{ M} {v'} wfγ wfv wfv' ℰNγvw ℰMγv 
 preserve {Γ} {γ} (δ-rule {Γ} {B} {P} {f} {k}) wfγ {v} wfv
-   ⟨ u , ⟨ wfu , ⟨ ⟨ k′ , ⟨ u⊑k′ , ℘fk′v ⟩ ⟩ , ℘ku ⟩ ⟩ ⟩ = G
-    where
-    G : ℘ {P} (f k) v
-    G =
-{-
-     let bku = (℘k→BelowConstk {B}{k}{u} ℘ku) in
-     let u⊑k = BelowConstk→⊑k {B}{k}{u} bku in
--}
-     {!!} {- ∀k,u⊑k→℘fkv {k} (BelowConstk→⊑k bku) -}
+   ⟨ u , ⟨ wfu , ⟨ ⟨ k′ , ⟨ k′⊑u , ℘fk′v ⟩ ⟩ , ℘ku ⟩ ⟩ ⟩
+    with ⊑-trans k′⊑u (BelowConstk→⊑k {B}{k}{u} (℘k→BelowConstk {B}{k}{u} ℘ku))
+... | ⊑-const = ℘fk′v   
     
 
 reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
   → M —→ N
     ---------
   → ℰ M ≃ ℰ N
-reduce-equal {Γ}{M}{N} r γ v wfv =
-    ⟨ preserve r {!!} wfv , reflect r refl wfv ⟩
+reduce-equal {Γ}{M}{N} r γ v wfγ wfv =
+    ⟨ preserve r wfγ wfv , reflect wfγ r refl wfv ⟩
 
 
 soundness : ∀{Γ} {M : Term Γ} {N : Term Γ}
@@ -137,7 +128,7 @@ soundness : ∀{Γ} {M : Term Γ} {N : Term Γ}
   → M —↠ N
     -----------------
   → ℰ M ≃ ℰ N
-soundness Nv (_ □) γ v wfv = ⟨ (λ x → x) , (λ x → x) ⟩
+soundness Nv (_ □) γ v wfγ wfv = ⟨ (λ x → x) , (λ x → x) ⟩
 soundness {Γ} Nv (L —→⟨ r ⟩ M—↠N) γ v =
    let ih = soundness Nv M—↠N in
    let e = reduce-equal r in

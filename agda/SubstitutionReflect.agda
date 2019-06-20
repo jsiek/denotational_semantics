@@ -207,10 +207,11 @@ module ForLambdaModel
 
 
       subst-zero-reflect : ∀ {Δ} {δ : Env Δ} {γ : Env (suc Δ)} {M : Term Δ}
+        → WFEnv γ
         → δ `⊢ subst-zero M ↓ γ
           ----------------------------------------
-        → Σ[ w ∈ Value ] γ `⊑ (δ `, w) × ℰ M δ w
-      subst-zero-reflect {δ = δ} {γ = γ} δσγ = ⟨ last γ , ⟨ lemma , δσγ Z ⟩ ⟩   
+        → Σ[ w ∈ Value ] wf w × γ `⊑ (δ `, w) × ℰ M δ w
+      subst-zero-reflect {δ = δ} {γ = γ} wfγ δσγ = ⟨ last γ , ⟨ wfγ , ⟨ lemma , δσγ Z ⟩ ⟩ ⟩ 
           where
           lemma : γ `⊑ (δ `, last γ)
           lemma Z  =  ⊑-refl
@@ -227,13 +228,13 @@ module ForLambdaModel
       substitution-reflect : ∀ {Δ}{δ : Env Δ}{N : Term (suc Δ)} {M : Term Δ} {v}
         → ℰ (N [ M ]) δ v  → ℰ M δ ⊥ → WFEnv δ → wf v
           ------------------------------------------------
-        → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
+        → Σ[ w ∈ Value ] wf w × ℰ M δ w  ×  ℰ N (δ `, w) v
       substitution-reflect{N = N}{M}{v} ℰNMδv ℰMδ⊥ wfδ wfv
            with subst-reflect {M = N} wfδ wfv ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
       ...  | ⟨ γ , ⟨ wfγ , ⟨ δσγ , γNv ⟩ ⟩ ⟩ 
-           with subst-zero-reflect δσγ
-      ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
-             ⟨ w , ⟨ δMw , ⊑-env {M = N} wfv γ⊑δw γNv  ⟩ ⟩
+           with subst-zero-reflect wfγ δσγ
+      ...  | ⟨ w , ⟨ wfw , ⟨ γ⊑δw , δMw ⟩ ⟩ ⟩ =
+             ⟨ w , ⟨ wfw , ⟨ δMw , ⊑-env {M = N} wfv γ⊑δw γNv ⟩ ⟩ ⟩ 
 
 
 module SubstReflectAppCBV where
