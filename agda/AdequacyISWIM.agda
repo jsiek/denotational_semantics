@@ -56,23 +56,29 @@ module AdequacyISWIM where
 𝔾-ext {Γ} {γ} {γ'} g e {Z} = e
 𝔾-ext {Γ} {γ} {γ'} g e {S x} = g
 
-sub-𝕍 : ∀{c : Val}{v v'} → wf v' → 𝕍 v c → v' ⊑ v → 𝕍 v' c
+sub-𝕍 : ∀{c : Val}{v v'} → wf v → wf v' → 𝕍 v c → v' ⊑ v → 𝕍 v' c
 
-sub-𝕍 {c} wfv' vc ⊑-⊥ = tt
-sub-𝕍 {val-const {base B} k} wfv' vc (⊑-const {B′} {k′})
+sub-𝕍 {c} wfv wfv' vc ⊑-⊥ = tt
+sub-𝕍 {val-const {base B} k} wfv wfv' vc (⊑-const {B′} {k′})
     with base-eq? B B′
 ... | yes eq rewrite eq = vc
 ... | no neq = vc
-sub-𝕍 {val-const {B ⇒ P} p} wfv' () (⊑-const {B′} {k}) 
-sub-𝕍 {val-clos N x} wfv' () ⊑-const
-sub-𝕍 (wf-⊔ v~w wfv wfw) vc (⊑-conj-L lt1 lt2) =
-    ⟨ (sub-𝕍 wfv vc lt1) , sub-𝕍 wfw vc lt2 ⟩
-sub-𝕍 wfv' ⟨ vv1 , vv2 ⟩ (⊑-conj-R1 lt) = sub-𝕍 wfv' vv1 lt
-sub-𝕍 wfv' ⟨ vv1 , vv2 ⟩ (⊑-conj-R2 lt) = sub-𝕍 wfv' vv2 lt
-sub-𝕍 {c}{u}{v' = v ↦ w} (wf-fun wfv wfw) 𝕍uc (⊑-fun{u′ = u′} u′⊆u fu′ du′⊑v w⊑cu′) =
+sub-𝕍 {val-const {B ⇒ P} p} wfv wfv' () (⊑-const {B′} {k}) 
+sub-𝕍 {val-clos N x} wfv wfv' () ⊑-const
+sub-𝕍 wfu (wf-⊔ v~w wfv wfw) vc (⊑-conj-L lt1 lt2) =
+    ⟨ sub-𝕍 wfu wfv vc lt1 , sub-𝕍 wfu wfw vc lt2 ⟩
+sub-𝕍 (wf-⊔ v₁~v₂ wfv₁ wfv₂) wfv' ⟨ vv1 , vv2 ⟩ (⊑-conj-R1 lt) =
+    sub-𝕍 wfv₁ wfv' vv1 lt
+sub-𝕍 (wf-⊔ v₁~v₂ wfv₁ wfv₂) wfv' ⟨ vv1 , vv2 ⟩ (⊑-conj-R2 lt) =
+    sub-𝕍 wfv₂ wfv' vv2 lt
+sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
+   (⊑-fun{u′ = u′} u′⊆u fu′ du′⊑v w⊑cu′) =
    let 𝕍u′c = 𝕍-⊆ 𝕍uc u′⊆u in
    let 𝕍du′↦cu′c = 𝕍-dom-cod wfv fu′ du′⊑v 𝕍u′c in
-   lemma {dom u′}{cod u′}{v}{w}{c} wfw du′⊑v w⊑cu′ 𝕍du′↦cu′c  
+   lemma {dom u′}{cod u′}{v}{w}{c} wfv wfw
+         (wf-dom (wf-⊆ u′⊆u wfu) wfv fu′ du′⊑v)
+         (wf-cod (wf-⊆ u′⊆u wfu) wfv fu′ du′⊑v)
+         du′⊑v w⊑cu′ 𝕍du′↦cu′c  
 
    where
    𝕍-∈ : ∀{c}{u v} → 𝕍 u c → v ∈ u → 𝕍 v c
@@ -128,20 +134,22 @@ sub-𝕍 {c}{u}{v' = v ↦ w} (wf-fun wfv wfw) 𝕍uc (⊑-fun{u′ = u′} u′
        dist{c} wfv du₁⊑v du₂⊑v ih1 ih2
 
    lemma : ∀{du cu v w}{c}
-         → wf w
+         → wf v → wf w → wf du → wf cu
          → du ⊑ v → w ⊑ cu → 𝕍 (du ↦ cu) c
          → 𝕍 (v ↦ w) c
-   lemma {du} {cu} {v} {w} {val-const {p} f} wfw du′⊑v w⊑cu′ 𝕍du′↦cu′c
+   lemma {du} {cu} {v} {w} {val-const {p} f} wfv wfw wfdu wfcu
+       du′⊑v w⊑cu′ 𝕍du′↦cu′c
        with p
    ... | base b = ⊥-elim 𝕍du′↦cu′c
    ... | b ⇒ p′
        with 𝕍du′↦cu′c
    ... | ⟨ k , ⟨ k⊑du , ℘-fk-cu ⟩ ⟩ =
          ⟨ k , ⟨ ⊑-trans k⊑du du′⊑v , ℘-⊑ wfw ℘-fk-cu w⊑cu′ ⟩ ⟩
-   lemma {du}{cu}{v}{w}{val-clos N γ} wfw du′⊑v w⊑cu′ 𝕍du′↦cu′c {c} 𝕍vc 
-        with  𝕍du′↦cu′c (sub-𝕍 {!!} 𝕍vc du′⊑v)
+   lemma {du}{cu}{v}{w}{val-clos N γ} wfv wfw wfdu wfcu
+        du′⊑v w⊑cu′ 𝕍du′↦cu′c {c} 𝕍vc 
+        with  𝕍du′↦cu′c (sub-𝕍 wfv wfdu 𝕍vc du′⊑v)
    ... | ⟨ v' , ⟨ N⇓v' , 𝕍-cu-v' ⟩ ⟩ =
-         ⟨ v' , ⟨ N⇓v' , sub-𝕍 wfw 𝕍-cu-v' w⊑cu′ ⟩ ⟩
+         ⟨ v' , ⟨ N⇓v' , sub-𝕍 wfcu wfw 𝕍-cu-v' w⊑cu′ ⟩ ⟩
 
 
 
@@ -180,58 +188,53 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
         → 𝕍 v (val-const {P} p)
 ℘pv→𝕍vp {v = ⊥} ℘pv = tt
 ℘pv→𝕍vp {v = const x} ℘pv = ℘pv
-℘pv→𝕍vp {base x} {v = v ↦ v₁} ()
-℘pv→𝕍vp {x ⇒ P} {v = v ↦ v₁} ℘pv = ℘pv
-{-
-℘pv→𝕍vp {P}{p}{v = v ⊔ v₁} ⟨ fst , snd ⟩ =
-  ⟨ ℘pv→𝕍vp {P}{p}{v} fst , ℘pv→𝕍vp {P}{p}{v₁} snd ⟩
--}
+℘pv→𝕍vp {base b} {v = v ↦ v₁} ()
+℘pv→𝕍vp {b ⇒ p} {v = v ↦ v₁} ℘pv = ℘pv
+℘pv→𝕍vp {P} {p} {v₁ ⊔ v₂} ⟨ ℘pv₁ , ℘pv₂ ⟩ =
+  ⟨ ℘pv→𝕍vp {P}{p}{v₁} ℘pv₁ , ℘pv→𝕍vp {P}{p}{v₂} ℘pv₂ ⟩
 
 𝔼 : ∀{Γ} → Value → Term Γ → ValEnv Γ → Set
 𝔼 v M γ = Σ[ c ∈ Val ] γ ⊢ M ⇓ c × 𝕍 v c
 
-ℰ→𝔼 : ∀{Γ}{γ : Env Γ}{γ' : ValEnv Γ}{M : Term Γ }{v}
-            → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
-ℰ→𝔼 {Γ} {γ} {γ'} { lit {P} p ⦅ nil ⦆ } {v} 𝔾γγ' ℰMγv =
+ℰ→𝔼 : ∀{Γ}{γ : Env Γ}{γ' : ValEnv Γ}{M : Term Γ }{v : Value}
+    → WFEnv γ → wf v
+    → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
+ℰ→𝔼 {Γ} {γ} {γ'} { lit {P} p ⦅ nil ⦆ } {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ (val-const {P} p) , ⟨ ⇓-lit , ℘pv→𝕍vp {P}{p}{v} ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {` x} {v} 𝔾γγ' ℰMγv =
-   ⟨ γ' x , ⟨ ⇓-var , sub-𝕍 {!!} (𝔾γγ' {x}) ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ bind N nil ⦆} {v} 𝔾γγ' ℰMγv =
-   ⟨ val-clos N γ' , ⟨ ⇓-lam , G {v} ℰMγv ⟩ ⟩
+ℰ→𝔼 {Γ} {γ} {γ'} {` x} {v} wfγ wfv 𝔾γγ' ℰMγv =
+   ⟨ γ' x , ⟨ ⇓-var , sub-𝕍 wfγ wfv (𝔾γγ' {x}) ℰMγv ⟩ ⟩
+ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ bind N nil ⦆} {v} wfγ wfv 𝔾γγ' ℰMγv =
+   ⟨ val-clos N γ' , ⟨ ⇓-lam , G {v} wfv ℰMγv ⟩ ⟩
    where
-   G : ∀{v} → ℱ (ℰ N) γ v → 𝕍 v (val-clos N γ')
-   G {⊥} ℱℰNγv = tt
-   G {const {B} k} ()
-   G {v ↦ w} ℱℰNγv {c} vc =
-      ℰ→𝔼 {M = N} {w} (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
-   G {v₁ ⊔ v₂} ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ = ⟨ G {v₁} ℱℰNγv₁ , G {v₂} ℱℰNγv₂ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ' ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩
-    with ℰ→𝔼 {M = L} 𝔾γγ' d₁ | ℰ→𝔼 {M = M} 𝔾γγ' d₂
+   G : ∀{v} → wf v → ℱ (ℰ N) γ v → 𝕍 v (val-clos N γ')
+   G {⊥} wfv ℱℰNγv = tt
+   G {const {B} k} wfv ()
+   G {v ↦ w} (wf-fun wfv wfw) ℱℰNγv {c} vc =
+      ℰ→𝔼 {M = N} {w} (λ {x} → WFEnv-extend wfγ wfv {x}) wfw
+          (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
+   G {v₁ ⊔ v₂} (wf-⊔ _ wfv₁ wfv₂) ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ =
+      ⟨ G {v₁} wfv₁ ℱℰNγv₁ , G {v₂} wfv₂ ℱℰNγv₂ ⟩
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} wfγ wfv 𝔾γγ'
+    ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩
+    with ℰ→𝔼 {M = L} wfγ (wf-fun wfv₁ wfv) 𝔾γγ' d₁
+       | ℰ→𝔼 {M = M} wfγ wfv₁ 𝔾γγ' d₂
 ... | ⟨ val-clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩ 
     with 𝕍v₁↦v {c} 𝕍v₁
 ... | ⟨ c' , ⟨ L'⇓c' , 𝕍v ⟩ ⟩ =
     ⟨ c' , ⟨ (⇓-app L⇓L' M⇓c L'⇓c') , 𝕍v ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ' ⟨ v₁ , ⟨ d₁ , d₂ ⟩ ⟩
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} wfγ wfv 𝔾γγ'
+    ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
     | ⟨ val-const {P} f , ⟨ L⇓f , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩
     with P
 ... | base B = ⊥-elim 𝕍v₁↦v
 ... | B ⇒ P′
-  {-
-    𝕍v₁   : 𝕍 v₁ c
-    𝕍v₁↦v : {k : base-rep B} → v₁ ⊑ const k → ℘ (f k) v
-  -}
     with 𝕍v₁↦v
 ... | ⟨ k , ⟨ k⊑v₁ , ℘fkv ⟩ ⟩
-    {-
-    𝕍 v₁ c
-    ℘ (f k) v
-    const k ⊑ v₁
-    -}
     with c
-... | val-clos N γ₁ = ⊥-elim (sub-𝕍 {!!} 𝕍v₁ k⊑v₁)
-... | val-const {B₁ ⇒ P₁} f′ = ⊥-elim (sub-𝕍 {!!} 𝕍v₁ k⊑v₁)
+... | val-clos N γ₁ = ⊥-elim (sub-𝕍 wfv₁ wf-const 𝕍v₁ k⊑v₁)
+... | val-const {B₁ ⇒ P₁} f′ = ⊥-elim (sub-𝕍 wfv₁ wf-const 𝕍v₁ k⊑v₁)
 ... | val-const {base B′} k′
-    with base-eq? B′ B | sub-𝕍 {!!} 𝕍v₁ k⊑v₁
+    with base-eq? B′ B | sub-𝕍 wfv₁ wf-const 𝕍v₁ k⊑v₁
 ... | no neq | ()
 ... | yes eq | 𝕍kc rewrite eq | 𝕍kc =
     ⟨ val-const {P′} (f k) , ⟨ ⇓-prim L⇓f M⇓c , ℘pv→𝕍vp {P′}{f k}{v} ℘fkv ⟩ ⟩ 
@@ -242,7 +245,7 @@ adequacy : ∀{M : Term zero}{N : Term zero}
            ----------------------------------------------------------
          → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
 adequacy{M}{N} Nv eq 
-    with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {}) wf-bot) (ℰ-⊥ {M = N} Nv))
+    with ℰ→𝔼 (λ {}) wf-bot 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {}) wf-bot) (ℰ-⊥ {M = N} Nv))
 ... | ⟨ c , ⟨ M⇓c , Vc ⟩ ⟩ = ⟨ c , M⇓c ⟩
 
 
