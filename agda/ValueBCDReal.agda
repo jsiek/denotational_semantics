@@ -98,6 +98,22 @@ AllFun (const x) = Bot
 AllFun (v ↦ w) = ⊤
 AllFun (u ⊔ v) = AllFun u × AllFun v 
 
+AllBot : (u : Value) → Set
+AllBot ⊥ = ⊤
+AllBot (const x) = Bot
+AllBot (v ↦ w) = AllBot w
+AllBot (u ⊔ v) = AllBot u × AllBot v 
+
+AllBot? : (u : Value) → Dec (AllBot u)
+AllBot? ⊥ = yes tt
+AllBot? (const k) = no (λ z → z)
+AllBot? (u₁ ↦ u₂) = AllBot? u₂
+AllBot? (u₁ ⊔ u₂)
+    with AllBot? u₁ | AllBot? u₂
+... | yes x | yes y = yes ⟨ x , y ⟩    
+... | yes x | no y = no λ z → y (proj₂ z)    
+... | no x | _ = no λ z → x (proj₁ z)     
+
 dom : (u : Value) → ∀{a : AllFun u } → Value
 dom ⊥ {()}
 dom (const k) {()}
@@ -189,24 +205,42 @@ data _⊑_ : Value → Value → Set where
          -----------
        → u ⊑ v ⊔ w
 
+  ⊑-↦⊥ : ∀{u v w}
+       → AllBot w
+         ---------
+       → v ↦ w ⊑ u
+       
   ⊑-fun : ∀ {u u′ v w}
+       → ¬ (AllBot w)
        → u′ ⊆ u
        → (fu′ : AllFun u′)
+       → (∀{v′ w′} → AllBot w′ → ¬ (v′ ↦ w′ ∈ u′))
        → dom u′ {fu′} ⊑ v
        → w ⊑ cod u′ {fu′}
          -------------------
        → v ↦ w ⊑ u
 
-  ⊑-↦⊥ : ∀{u v}
-       → NoFun u
-         -------------------
-       → v ↦ ⊥ ⊑ u
-  
+       
+{-
+ v' ⊑ v
+
+ v ↦ (⊥ ⊔ ⊥) ⊑  v' ↦ ⊥
+
+-}  
 
 ⊑-refl : ∀{v} → v ⊑ v
 ⊑-refl {⊥} = ⊑-⊥
 ⊑-refl {const k} = ⊑-const
-⊑-refl {v ↦ w} = ⊑-fun{v ↦ w}{v ↦ w} (λ {u} z → z) tt (⊑-refl{v}) ⊑-refl
+⊑-refl {v ↦ w}
+    with AllBot? w
+... | yes bw = ⊑-↦⊥ bw
+... | no w≠⊥ = ⊑-fun{v ↦ w}{v ↦ w} w≠⊥ (λ {u} z → z) tt G (⊑-refl{v}) ⊑-refl
+    where G : {v′ w′ : Value} → AllBot w′ → ¬ v′ ↦ w′ ≡ v ↦ w
+          G {v′} {⊥} bw refl = w≠⊥ tt
+          G {v′} {const x} bw refl = bw
+          G {v′} {w′ ↦ w′₁} bw refl = w≠⊥ bw
+          G {v′} {w′ ⊔ w′₁} bw refl = w≠⊥ bw
+
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
 
 ⊔⊑R : ∀{B C A}
@@ -275,57 +309,52 @@ NonFun-⊑ {v}{w} v⊑w nfv = {!!}
 
 factor : (u : Value) → (u′ : Value) → (v : Value) → (w : Value) → Set
 factor u u′ v w = (Σ[ fu′ ∈ AllFun u′ ] u′ ⊆ u
+                    × (∀{v′ w′} → AllBot w′ → ¬ (v′ ↦ w′ ∈ u′))
                     × dom u′ {fu′} ⊑ v × w ⊑ cod u′ {fu′})
 
 ⊑-fun-inv : ∀{u₁ u₂ v w}
+      → ¬ AllBot w
       → u₁ ⊑ u₂
       → v ↦ w ∈ u₁
-      → (Σ[ u₃ ∈ Value ] factor u₂ u₃ v w) ⊎ NonFun u₂
-⊑-fun-inv {u₁₁ ↦ ⊥} {u₂} (⊑-↦⊥ nfu₂) refl = inj₂ (NoFun→NonFun nfu₂)
-⊑-fun-inv {.⊥} {u₂} {v} {w} ⊑-⊥ () 
-⊑-fun-inv {.(const _)} {.(const _)} {v} {w} ⊑-const () 
-⊑-fun-inv {u11 ⊔ u12} {u₂} {v} {w} (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₁ x) =
-    ⊑-fun-inv u₁⊑u₂ x 
-⊑-fun-inv {u11 ⊔ u12} {u₂} {v} {w} (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₂ y) =
-    ⊑-fun-inv u₁⊑u₃ y 
-⊑-fun-inv {u₁} {u21 ⊔ u22} {v} {w} (⊑-conj-R1 u₁⊑u₂) v↦w∈u₁ 
-    with ⊑-fun-inv {u₁} {u21} {v} {w} u₁⊑u₂ v↦w∈u₁
-... | inj₂ nfu21 = inj₂ (inj₁ nfu21)
-... | inj₁ ⟨ u₃ , ⟨ afu₃ , ⟨ u3⊆u₁ , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩ =
-    inj₁ ⟨ u₃ , ⟨ afu₃ , ⟨ (λ {x} x₁ → inj₁ (u3⊆u₁ x₁)) , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩  
-⊑-fun-inv {u₁} {u21 ⊔ u22} {v} {w} (⊑-conj-R2 u₁⊑u₂) v↦w∈u₁ 
-    with ⊑-fun-inv {u₁} {u22} {v} {w} u₁⊑u₂ v↦w∈u₁
-... | inj₂ nfu22 = inj₂ (inj₂ nfu22)
-... | inj₁ ⟨ u₃ , ⟨ afu₃ , ⟨ u3⊆u₁ , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩ =
-    inj₁ ⟨ u₃ , ⟨ afu₃ , ⟨ (λ {x} x₁ → inj₂ (u3⊆u₁ x₁)) , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩  
-⊑-fun-inv {u11 ↦ u21} {u₂} {v} {w} (⊑-fun{u′ = u′} u′⊆u₂ afu′ du′⊑u11 u21⊑cu′) 
+      → Σ[ u₃ ∈ Value ] factor u₂ u₃ v w
+⊑-fun-inv {u₁₁ ↦ u₂₂} {u₂} w≢⊥ (⊑-↦⊥ xx) refl = ⊥-elim (w≢⊥ xx)
+⊑-fun-inv {.⊥} {u₂} {v} {w} w≢⊥ ⊑-⊥ () 
+⊑-fun-inv {.(const _)} {.(const _)} {v} {w} w≢⊥ ⊑-const () 
+⊑-fun-inv {u11 ⊔ u12} {u₂} {v} {w} w≢⊥ (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₁ x) =
+    ⊑-fun-inv w≢⊥ u₁⊑u₂ x 
+⊑-fun-inv {u11 ⊔ u12} {u₂} {v} {w} w≢⊥ (⊑-conj-L u₁⊑u₂ u₁⊑u₃) (inj₂ y) =
+    ⊑-fun-inv w≢⊥ u₁⊑u₃ y 
+⊑-fun-inv {u₁} {u21 ⊔ u22} {v} {w} w≢⊥ (⊑-conj-R1 u₁⊑u₂) v↦w∈u₁ 
+    with ⊑-fun-inv {u₁} {u21} {v} {w} w≢⊥ u₁⊑u₂ v↦w∈u₁
+... | ⟨ u₃ , ⟨ afu₃ , ⟨ u3⊆u₁ , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ u₃ , ⟨ afu₃ , ⟨ (λ {x} x₁ → inj₁ (u3⊆u₁ x₁)) , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩  
+⊑-fun-inv {u₁} {u21 ⊔ u22} {v} {w} w≢⊥ (⊑-conj-R2 u₁⊑u₂) v↦w∈u₁ 
+    with ⊑-fun-inv {u₁} {u22} {v} {w} w≢⊥ u₁⊑u₂ v↦w∈u₁
+... | ⟨ u₃ , ⟨ afu₃ , ⟨ u3⊆u₁ , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ u₃ , ⟨ afu₃ , ⟨ (λ {x} x₁ → inj₂ (u3⊆u₁ x₁)) , ⟨ du₃⊑v , w⊑codu₃ ⟩ ⟩ ⟩ ⟩  
+⊑-fun-inv {u11 ↦ u21} {u₂} {v} {w} w≢⊥
+    (⊑-fun{u′ = u′} ≢⊥ u′⊆u₂ afu′ ∉⊥ du′⊑u11 u21⊑cu′) 
     refl =
-      inj₁ ⟨ u′ , ⟨ afu′ , ⟨ u′⊆u₂ , ⟨ du′⊑u11 , u21⊑cu′ ⟩ ⟩ ⟩ ⟩
-
+      ⟨ u′ , ⟨ afu′ , ⟨ u′⊆u₂ , ⟨ ∉⊥ , ⟨ du′⊑u11 , u21⊑cu′ ⟩ ⟩ ⟩ ⟩ ⟩
 
 sub-inv-trans : ∀{u′ u₂ u : Value}
-   → (fu′ : AllFun u′)  →  u′ ⊆ u
-   → (∀{v′ w′} → v′ ↦ w′ ∈ u′
-         → (Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′) ⊎ NonFun u₂)
-     -------------------------------------------------------------------------
-   → (Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′ {fu′}) (cod u′ {fu′})) ⊎ NonFun u₂
-sub-inv-trans {⊥} {u₂} {u} () u′⊆u IH
-sub-inv-trans {const k} {u₂} {u} () u′⊆u IH
-sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} fu′ u′⊆u IH = IH refl
-{-    
-    with u₂′ ≟ ⊥
-... | yes refl = {!!}
-... | no neq = {!!} {-IH refl-}
--}
-sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} ⟨ afu₁′ , afu₂′ ⟩ u′⊆u IH
-    with sub-inv-trans {u₁′} {u₂} {u} afu₁′
-               (λ {u₁} z → u′⊆u (inj₁ z)) (λ {v′} {w′} z → IH (inj₁ z))
-    | sub-inv-trans {u₂′} {u₂} {u} afu₂′
-               (λ {u₁} z → u′⊆u (inj₂ z)) (λ {v′} {w′} z → IH (inj₂ z))
-... | inj₁ ⟨ u₃ , ⟨ afu₃ , ⟨ u₃⊆ , ⟨ du₃⊑ , ⊑cu₃ ⟩ ⟩ ⟩ ⟩
-    | inj₁ ⟨ u₄ , ⟨ afu₄ , ⟨ u₄⊆ , ⟨ du₄⊑ , ⊑cu₄ ⟩ ⟩ ⟩ ⟩ =
-
-      inj₁ ⟨ (u₃ ⊔ u₄) , ⟨ ⟨ afu₃ , afu₄ ⟩ , ⟨ G , ⟨ H , I ⟩ ⟩ ⟩ ⟩
+  → (∀{v w} → AllBot w → ¬ (v ↦ w ∈ u′))
+  → (fu′ : AllFun u′)  →  u′ ⊆ u
+  → (∀{v′ w′} → ¬ AllBot w′ → v′ ↦ w′ ∈ u′ → Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′)
+    -------------------------------------------------------------------------
+  → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′ {fu′}) (cod u′ {fu′})
+sub-inv-trans {⊥} {u₂} {u} ⊥∉  () u′⊆u IH
+sub-inv-trans {const k} {u₂} {u} ⊥∉  () u′⊆u IH
+sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} ⊥∉ fu′ u′⊆u IH =
+    IH (λ z → ⊥∉ z refl) refl
+sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} ⊥∉ ⟨ afu₁′ , afu₂′ ⟩ u′⊆u IH
+    with sub-inv-trans {u₁′} {u₂} {u} (λ {v} {w} z z₁ → ⊥∉ z (inj₁ z₁)) afu₁′
+               (λ {u₁} z → u′⊆u (inj₁ z)) (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₁ z))
+    | sub-inv-trans {u₂′} {u₂} {u} (λ {v} {w} z z₁ → ⊥∉ z (inj₂ z₁)) afu₂′
+               (λ {u₁} z → u′⊆u (inj₂ z)) (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₂ z))
+... | ⟨ u₃ , ⟨ afu₃ , ⟨ u₃⊆ , ⟨ ∉⊥1 , ⟨ du₃⊑ , ⊑cu₃ ⟩ ⟩ ⟩ ⟩ ⟩
+    | ⟨ u₄ , ⟨ afu₄ , ⟨ u₄⊆ , ⟨ ∉⊥2 , ⟨ du₄⊑ , ⊑cu₄ ⟩ ⟩ ⟩ ⟩ ⟩ =
+      ⟨ (u₃ ⊔ u₄) , ⟨ ⟨ afu₃ , afu₄ ⟩ , ⟨ G , ⟨ J , ⟨ H , I ⟩ ⟩ ⟩ ⟩ ⟩
     where
     G : ∀ {u₁} → u₁ ∈ u₃ ⊎ u₁ ∈ u₄ → u₁ ∈ u₂
     G {u₁} (inj₁ x) = u₃⊆ x
@@ -336,6 +365,10 @@ sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} ⟨ afu₁′ , afu₂′ ⟩ u�
 
     I : cod u₁′ ⊔ cod u₂′ ⊑ cod u₃ ⊔ cod u₄
     I = ⊑-conj-L (⊑-conj-R1 ⊑cu₃) (⊑-conj-R2 ⊑cu₄)
+
+    J : {v′ w′ : Value} → AllBot w′ → v′ ↦ w′ ∈ u₃ ⊎ v′ ↦ w′ ∈ u₄ → Bot
+    J {v′} {w′} bw′ (inj₁ x) = ∉⊥1 bw′ x
+    J {v′} {w′} bw′ (inj₂ y) = ∉⊥2 bw′ y
 
 
 u∈v⊑w→u⊑w : ∀{B A C} → C ∈ B → B ⊑ A → C ⊑ A
@@ -531,20 +564,18 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       M : ⟨ depth u + depth w , size u + size v₂ ⟩ <<
           ⟨ depth u + depth w , size u + suc (size v₁ + size v₂) ⟩
       M = snd (≤⇒≤′ ≤-refl) (≤⇒≤′ Ma)
-  helper d s IH {u₁ ↦ ⊥} {v} {w} d≡ s≡ (⊑-↦⊥ nfv) v⊑w =
-
-     {!!}
+  helper d s IH {u₁ ↦ u₂} {v} {w} d≡ s≡ (⊑-↦⊥ bu₂) v⊑w = (⊑-↦⊥ bu₂)
   
   helper d s IH {u₁ ↦ u₂} {v} {w} d≡ s≡
-      (⊑-fun{u′ = v′} v′⊆v afv′ dv′⊑u₁ u₂⊑cv′) v⊑w
+      (⊑-fun{u′ = v′} ≢⊥ v′⊆v afv′ ∉⊥ dv′⊑u₁ u₂⊑cv′) v⊑w
       rewrite d≡ | s≡
-      with sub-inv-trans afv′ v′⊆v
-                (λ {v₁}{v₂} v₁↦v₂∈v′ →
-                   ⊑-fun-inv {v′} {w} (u⊆v⊑w→u⊑w v′⊆v v⊑w) v₁↦v₂∈v′) 
-  ... | inj₁ ⟨ w′ , ⟨ afw′ , ⟨ w′⊆w , ⟨ dw′⊑dv′ , cv′⊑cw′ ⟩ ⟩ ⟩ ⟩ =
+      with sub-inv-trans ∉⊥ afv′ v′⊆v
+                (λ {v₁}{v₂} ≢⊥ v₁↦v₂∈v′ →
+                   ⊑-fun-inv {v′} {w} ≢⊥ (u⊆v⊑w→u⊑w v′⊆v v⊑w) v₁↦v₂∈v′) 
+  ... | ⟨ w′ , ⟨ afw′ , ⟨ w′⊆w , ⟨ ∉⊥1 , ⟨ dw′⊑dv′ , cv′⊑cw′ ⟩ ⟩ ⟩ ⟩ ⟩ =
         let dw′⊑u₁ = IH M1 {dom w′}{dom v′}{u₁} refl refl dw′⊑dv′ dv′⊑u₁ in
         let u₂⊑cw′ = IH M2 {u₂}{cod v′}{cod w′} refl refl u₂⊑cv′ cv′⊑cw′ in
-        ⊑-fun{u′ = w′} w′⊆w afw′ dw′⊑u₁ u₂⊑cw′
+        ⊑-fun{u′ = w′} ≢⊥ w′⊆w afw′ ∉⊥1 dw′⊑u₁ u₂⊑cw′
       where
       dw′≤w : depth (dom w′) ≤ depth w
       dw′≤w = ≤-trans (dom-depth-≤{w′}) (⊆→depth≤ w′⊆w)
@@ -582,26 +613,128 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
   The traditional function subtyping rule is admissible.
  -}
 
+AllBot-∈ : ∀{w u}
+         → AllBot u
+         → w ∈ u
+         → AllBot w
+AllBot-∈ {w} {⊥} bu refl = tt
+AllBot-∈ {w} {const x} bu refl = bu
+AllBot-∈ {w} {u ↦ u₁} bu refl = bu
+AllBot-∈ {w} {u ⊔ u₁} ⟨ fst₁ , snd₁ ⟩ (inj₁ x) = AllBot-∈ fst₁ x
+AllBot-∈ {w} {u ⊔ u₁} ⟨ fst₁ , snd₁ ⟩ (inj₂ y) = AllBot-∈ snd₁ y
+
+AllBot-⊆ : ∀{w u}
+         → AllBot u
+         → w ⊆ u
+         → AllBot w
+AllBot-⊆ {⊥} {u} bu w⊆u = AllBot-∈ bu (w⊆u refl)
+AllBot-⊆ {const x} {u} bu w⊆u = AllBot-∈ bu (w⊆u refl)
+AllBot-⊆ {w ↦ w₁} {u} bu w⊆u = AllBot-∈ bu (w⊆u refl)
+AllBot-⊆ {w₁ ⊔ w₂} {u} bu w⊆u
+    with ⊔⊆-inv w⊆u
+... | ⟨ w₁⊆u , w₂⊆u ⟩ = ⟨ AllBot-⊆ bu w₁⊆u , AllBot-⊆ bu w₂⊆u ⟩
+
+
+AllBot-cod : ∀{u}
+           → AllBot u
+           → (fu : AllFun u)
+           → AllBot (cod u {fu})
+AllBot-cod {⊥} bu ()
+AllBot-cod {const x} bu ()
+AllBot-cod {u ↦ u₁} bu fu = bu
+AllBot-cod {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩ ⟨ fst₂ , snd₂ ⟩ =
+    ⟨ AllBot-cod fst₁ fst₂ , AllBot-cod snd₁ snd₂ ⟩
+
+
+AllBot-⊑ : ∀{w u}
+         → AllBot u
+         → w ⊑ u
+         → AllBot w
+AllBot-⊑ bu ⊑-⊥ = tt
+AllBot-⊑ bu ⊑-const = bu
+AllBot-⊑ bu (⊑-conj-L w⊑u w⊑u₁) = ⟨ AllBot-⊑ bu w⊑u , AllBot-⊑ bu w⊑u₁ ⟩
+AllBot-⊑ bu (⊑-conj-R1 w⊑u) = AllBot-⊑ (proj₁ bu) w⊑u
+AllBot-⊑ bu (⊑-conj-R2 w⊑u) = AllBot-⊑ (proj₂ bu) w⊑u
+AllBot-⊑ bu (⊑-↦⊥ x) = x
+AllBot-⊑ bu (⊑-fun{u′ = u′} bw u′⊆u fu′ ∉⊥ w⊑u w⊑u₁) =
+  let bu′ = AllBot-⊆ bu u′⊆u in
+  let bcu′ = AllBot-cod{u′} bu′ fu′ in
+  AllBot-⊑ bcu′ w⊑u₁
+
+
 ⊑-fun′ : ∀{v w v′ w′}
        → v′ ⊑ v
        → w ⊑ w′
          -------------------
        → (v ↦ w) ⊑ (v′ ↦ w′)
-⊑-fun′ {v}{w}{v′}{w′} v′⊑v w⊑w′ =
-    ⊑-fun {v′ ↦ w′}{v′ ↦ w′}{v}{w} (λ {u} z → z) tt v′⊑v w⊑w′
+⊑-fun′ {v}{w}{v′}{w′} v′⊑v w⊑w′
+    with AllBot? w
+... | yes ab = ⊑-↦⊥ ab
+... | no nab
+    with AllBot? w′
+... | yes ab′ =  ⊥-elim (nab (AllBot-⊑ ab′ w⊑w′))
+... | no nab′ =    
+      ⊑-fun {v′ ↦ w′}{v′ ↦ w′}{v}{w} nab (λ {u} z → z) tt G v′⊑v w⊑w′
+    where
+    G : ∀ {v′₁ : Value} {w′₁ : Value} →
+              AllBot w′₁ → ¬ v′₁ ↦ w′₁ ≡ v′ ↦ w′
+    G ab refl = nab′ ab
 
+    
 {-
   The traditional distributivity rule is admissible.
  -}
 
+
+AllBot-⊑-any : ∀{u v} → AllBot u → u ⊑ v
+AllBot-⊑-any {⊥} {v} bu = ⊑-⊥
+AllBot-⊑-any {const x} {v} ()
+AllBot-⊑-any {u ↦ u₁} {v} bu = ⊑-↦⊥ bu
+AllBot-⊑-any {u ⊔ u₁} {v} bu =
+    ⊑-conj-L (AllBot-⊑-any (proj₁ bu)) (AllBot-⊑-any (proj₂ bu))
+
+
 ⊑-dist : ∀{v w w′}
          ---------------------------------
        → v ↦ (w ⊔ w′) ⊑ (v ↦ w) ⊔ (v ↦ w′)
-⊑-dist {v}{w}{w′} =
+⊑-dist {v}{w}{w′}
+    with AllBot? w | AllBot? w′
+... | yes bw | yes bw′ = ⊑-↦⊥ ⟨ bw , bw′ ⟩
+... | yes bw | no bw′ =
+      ⊑-fun {(v ↦ w) ⊔ (v ↦ w′)} {(v ↦ w′)} {v} {w ⊔ w′}
+        (λ z → bw′ (proj₂ z))
+        (λ {u} → inj₂)
+        tt
+        G
+        ⊑-refl
+        (⊑-conj-L (AllBot-⊑-any bw) ⊑-refl)
+    where G : {v′ : Value} {w′₁ : Value} →
+              AllBot w′₁ → ¬ v′ ↦ w′₁ ≡ v ↦ w′
+          G bw1 refl = bw′ bw1
+
+⊑-dist {v}{w}{w′} | no bw | yes bw′ =
+    ⊑-fun {(v ↦ w) ⊔ (v ↦ w′)} {(v ↦ w)} {v} {w ⊔ w′}
+          (λ z → bw (proj₁ z))
+          (λ {u} → inj₁)
+          tt
+          G
+          ⊑-refl
+          (⊑-conj-L ⊑-refl (AllBot-⊑-any bw′))
+    where G : {v′ : Value} {w′₁ : Value} →
+              AllBot w′₁ → ¬ v′ ↦ w′₁ ≡ v ↦ w
+          G bw1 refl = bw bw1
+
+⊑-dist {v}{w}{w′} | no bw | no bw′ = 
   ⊑-fun {(v ↦ w) ⊔ (v ↦ w′)} {(v ↦ w) ⊔ (v ↦ w′)} {v} {w ⊔ w′}
+        (λ z → bw′ (proj₂ z))
         (λ {u} z → z) ⟨ tt , tt ⟩
+        G
         (⊑-conj-L ⊑-refl ⊑-refl)
         ((⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)))
+  where G : {v′ : Value} {w′₁ : Value} →
+          AllBot w′₁ → ¬ (v′ ↦ w′₁ ≡ v ↦ w ⊎ v′ ↦ w′₁ ≡ v ↦ w′)
+        G bw1 (inj₁ refl) = bw bw1
+        G bw1 (inj₂ refl) = bw′ bw1
 
 {-
 
@@ -672,14 +805,12 @@ AllFun∈ {u₁ ⊔ u₂} ⟨ fst₁ , snd₁ ⟩
     inj₂ (↦∈→⊆dom {u₂}{v}{fu = f2} v↦w∈u₂ v'∈v)
 
 ⊑-fun-inv′ : ∀{v w v′ w′}
-        → v ↦ w ⊑ v′ ↦ w′
+        → v ↦ w ⊑ v′ ↦ w′  →  ¬ AllBot w
           ---------------
         → v′ ⊑ v × w ⊑ w′
-⊑-fun-inv′ {v}{w}{v′}{w′} lt
-    with ⊑-fun-inv lt refl
-... | inj₂ ()
-⊑-fun-inv′ {v}{w}{v′}{w′} lt
-    | inj₁ ⟨ Γ , ⟨ f , ⟨ Γ⊆v34 , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩
+⊑-fun-inv′ {v}{w}{v′}{w′} lt bw 
+    with ⊑-fun-inv bw lt refl
+... | ⟨ Γ , ⟨ f , ⟨ Γ⊆v34 , ⟨ ∉⊥ , ⟨ lt1 , lt2 ⟩ ⟩ ⟩ ⟩ ⟩
     with AllFun∈ f
 ... | ⟨ u , ⟨ u′ , u↦u′∈Γ ⟩ ⟩
     with Γ⊆v34 u↦u′∈Γ
@@ -701,3 +832,34 @@ ordering = record
              ; ⊑-refl = ⊑-refl
              ; ⊑-dist = ⊑-dist
              }
+
+<:→⊑ : ∀{u v} → u <: v → u ⊑ v
+<:→⊑ {u} {.u} <:-refl = ⊑-refl
+<:→⊑ {u} {.(u ⊔ _)} <:-incl-L = ⊑-conj-R1 ⊑-refl
+<:→⊑ {u} {.(_ ⊔ u)} <:-incl-R = ⊑-conj-R2 ⊑-refl
+<:→⊑ {.(_ ⊔ _)} {v} (<:-glb u<:v u<:v₁) = ⊑-conj-L (<:→⊑ u<:v) (<:→⊑ u<:v₁)
+<:→⊑ {u} {v} (<:-trans u<:v u<:v₁) = ⊑-trans (<:→⊑ u<:v) (<:→⊑ u<:v₁)
+<:→⊑ {.⊥} {v} <:-U-top = ⊑-⊥
+<:→⊑ {.(_ ↦ ⊥)} {.⊥} <:-U→ = ⊑-↦⊥ tt
+<:→⊑ {.(_ ↦ (_ ⊔ _))} {.(_ ↦ _ ⊔ _ ↦ _)} <:-→⊔ = ⊑-dist
+<:→⊑ {.(_ ↦ _)} {.(_ ↦ _)} (<:-→ u<:v u<:v₁) = ⊑-fun′ (<:→⊑ u<:v) (<:→⊑ u<:v₁)
+
+AllBot<:⊥ : ∀{u} → AllBot u → u <: ⊥
+AllBot<:⊥ {⊥} bu = <:-refl
+AllBot<:⊥ {const x} ()
+AllBot<:⊥ {u ↦ u₁} bu = <:-trans (<:-→ <:-refl (AllBot<:⊥ bu)) <:-U→
+AllBot<:⊥ {u ⊔ u₁} bu = <:-glb (AllBot<:⊥ (proj₁ bu)) (AllBot<:⊥ (proj₂ bu))
+
+⊑→<: : ∀{u v} → u ⊑ v → u <: v
+⊑→<: {.⊥} {v} ⊑-⊥ = <:-U-top
+⊑→<: {.(const _)} {.(const _)} ⊑-const = <:-refl
+⊑→<: {.(_ ⊔ _)} {v} (⊑-conj-L u⊑v u⊑v₁) = <:-glb (⊑→<: u⊑v) (⊑→<: u⊑v₁)
+⊑→<: {u} {.(_ ⊔ _)} (⊑-conj-R1 u⊑v) = <:-trans (⊑→<: u⊑v) <:-incl-L
+⊑→<: {u} {.(_ ⊔ _)} (⊑-conj-R2 u⊑v) = <:-trans (⊑→<: u⊑v) <:-incl-R
+⊑→<: {u₁ ↦ u₂} {v} (⊑-↦⊥ bu₂) = <:-trans G H
+      where
+      G : u₁ ↦ u₂ <: u₁ ↦ ⊥
+      G = <:-→ <:-refl (AllBot<:⊥ bu₂)
+      H : u₁ ↦ ⊥ <: v
+      H = <:-trans <:-U→ <:-U-top
+⊑→<: {u₁ ↦ u₂} {v} (⊑-fun x x₁ fu′ x₂ u⊑v u⊑v₁) = {!!}
