@@ -850,6 +850,39 @@ AllBot<:⊥ {const x} ()
 AllBot<:⊥ {u ↦ u₁} bu = <:-trans (<:-→ <:-refl (AllBot<:⊥ bu)) <:-U→
 AllBot<:⊥ {u ⊔ u₁} bu = <:-glb (AllBot<:⊥ (proj₁ bu)) (AllBot<:⊥ (proj₂ bu))
 
+⊔<:-inv : ∀{B C A}
+    → B ⊔ C <: A
+    → B <: A × C <: A
+⊔<:-inv <:-refl = ⟨ <:-incl-L , <:-incl-R ⟩
+⊔<:-inv <:-incl-L =
+    ⟨ (<:-trans <:-incl-L <:-incl-L) , (<:-trans <:-incl-R <:-incl-L) ⟩
+⊔<:-inv <:-incl-R =
+    ⟨ (<:-trans <:-incl-L <:-incl-R) , (<:-trans <:-incl-R <:-incl-R) ⟩
+⊔<:-inv (<:-glb B⊔C<:A B⊔C<:A₁) = ⟨ B⊔C<:A , B⊔C<:A₁ ⟩
+⊔<:-inv (<:-trans B⊔C<:A B⊔C<:A₁) =
+    ⟨ (<:-trans (proj₁ (⊔<:-inv B⊔C<:A)) B⊔C<:A₁) ,
+      (<:-trans (proj₂ (⊔<:-inv B⊔C<:A)) B⊔C<:A₁) ⟩
+
+∈<:<: : ∀{u v w} → u ∈ v → v <: w → u <: w
+∈<:<: {u} {⊥} {w} refl v<:w = v<:w
+∈<:<: {u} {const x} {w} refl v<:w = v<:w
+∈<:<: {u} {v ↦ v₁} {w} refl v<:w = v<:w
+∈<:<: {u} {v₁ ⊔ v₂} {w} (inj₁ x) v<:w 
+    with ⊔<:-inv v<:w
+... | ⟨ v₁<:w , v₂<:w ⟩ = ∈<:<: x v₁<:w
+∈<:<: {u} {v₁ ⊔ v₂} {w} (inj₂ y) v<:w
+    with ⊔<:-inv v<:w
+... | ⟨ v₁<:w , v₂<:w ⟩ = ∈<:<: y v₂<:w
+
+⊆<:<: : ∀{u v w} → u ⊆ v → v <: w → u <: w
+⊆<:<: {⊥} {v} {w} u⊆v v<:w = ∈<:<: (u⊆v refl) v<:w
+⊆<:<: {const x} {v} {w} u⊆v v<:w = ∈<:<: (u⊆v refl) v<:w
+⊆<:<: {u ↦ u₁} {v} {w} u⊆v v<:w = ∈<:<: (u⊆v refl) v<:w
+⊆<:<: {u₁ ⊔ u₂} {v} {w} u⊆v v<:w
+    with ⊔⊆-inv u⊆v
+... | ⟨ u₁⊆v , u₂⊆v ⟩ =
+      <:-glb (⊆<:<: u₁⊆v v<:w ) (⊆<:<: u₂⊆v v<:w)
+
 ⊑→<: : ∀{u v} → u ⊑ v → u <: v
 ⊑→<: {.⊥} {v} ⊑-⊥ = <:-U-top
 ⊑→<: {.(const _)} {.(const _)} ⊑-const = <:-refl
@@ -862,4 +895,11 @@ AllBot<:⊥ {u ⊔ u₁} bu = <:-glb (AllBot<:⊥ (proj₁ bu)) (AllBot<:⊥ (pr
       G = <:-→ <:-refl (AllBot<:⊥ bu₂)
       H : u₁ ↦ ⊥ <: v
       H = <:-trans <:-U→ <:-U-top
-⊑→<: {u₁ ↦ u₂} {v} (⊑-fun x x₁ fu′ x₂ u⊑v u⊑v₁) = {!!}
+⊑→<: {u₁ ↦ u₂} {v} (⊑-fun{u′ = v′} nbu₂ v′⊆v fv′ ∉⊥ dv′⊑u₁ u₂⊑cv′) =
+   let dv′<:u₁ = ⊑→<: dv′⊑u₁ in
+   let u₂<:cv′ = ⊑→<: u₂⊑cv′ in
+   let v′<:v = ⊆<:<: v′⊆v <:-refl in {- oops, could have used diff. lemma -}
+   <:-trans u₁↦u₂<:v′ v′<:v
+   where
+   u₁↦u₂<:v′ : u₁ ↦ u₂ <: v′
+   u₁↦u₂<:v′ = {!!}
