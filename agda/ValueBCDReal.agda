@@ -863,6 +863,22 @@ AllBot<:⊥ {u ⊔ u₁} bu = <:-glb (AllBot<:⊥ (proj₁ bu)) (AllBot<:⊥ (pr
     ⟨ (<:-trans (proj₁ (⊔<:-inv B⊔C<:A)) B⊔C<:A₁) ,
       (<:-trans (proj₂ (⊔<:-inv B⊔C<:A)) B⊔C<:A₁) ⟩
 
+∈→<: : ∀{u v} → u ∈ v → u <: v
+∈→<: {u} {⊥} refl = <:-refl
+∈→<: {u} {const x} refl = <:-refl
+∈→<: {u} {v ↦ v₁} refl = <:-refl
+∈→<: {u} {v₁ ⊔ v₂} (inj₁ x) = <:-trans (∈→<: x) <:-incl-L
+∈→<: {u} {v₁ ⊔ v₂} (inj₂ y) = <:-trans (∈→<: y) <:-incl-R
+
+⊆→<: : ∀{u v} → u ⊆ v → u <: v
+⊆→<: {⊥} {v} u⊆v = ∈→<: (u⊆v refl)
+⊆→<: {const x} {v} u⊆v = ∈→<: (u⊆v refl)
+⊆→<: {u ↦ u₁} {v} u⊆v = ∈→<: (u⊆v refl)
+⊆→<: {u₁ ⊔ u₂} {v} u⊆v
+    with ⊔⊆-inv u⊆v
+... | ⟨ u₁⊆v , u₂⊆v ⟩ = <:-glb (⊆→<: u₁⊆v) (⊆→<: u₂⊆v)
+
+{-
 ∈<:<: : ∀{u v w} → u ∈ v → v <: w → u <: w
 ∈<:<: {u} {⊥} {w} refl v<:w = v<:w
 ∈<:<: {u} {const x} {w} refl v<:w = v<:w
@@ -882,6 +898,19 @@ AllBot<:⊥ {u ⊔ u₁} bu = <:-glb (AllBot<:⊥ (proj₁ bu)) (AllBot<:⊥ (pr
     with ⊔⊆-inv u⊆v
 ... | ⟨ u₁⊆v , u₂⊆v ⟩ =
       <:-glb (⊆<:<: u₁⊆v v<:w ) (⊆<:<: u₂⊆v v<:w)
+-}
+
+
+⊔<:⊔ : ∀ {v w v′ w′}
+    → v <: v′  →  w <: w′
+      -------------------
+    → v ⊔ w <: v′ ⊔ w′
+⊔<:⊔ d₁ d₂ = <:-glb (<:-trans d₁ <:-incl-L) (<:-trans d₂ <:-incl-R)
+
+Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
+        → (v ⊔ v′) ↦ (w ⊔ w′) <: v ↦ w ⊔ v′ ↦ w′
+Dist⊔↦⊔ = <:-trans <:-→⊔ (⊔<:⊔ (<:-→ <:-incl-L <:-refl)
+                               (<:-→ <:-incl-R <:-refl))
 
 ⊑→<: : ∀{u v} → u ⊑ v → u <: v
 ⊑→<: {.⊥} {v} ⊑-⊥ = <:-U-top
@@ -898,8 +927,18 @@ AllBot<:⊥ {u ⊔ u₁} bu = <:-glb (AllBot<:⊥ (proj₁ bu)) (AllBot<:⊥ (pr
 ⊑→<: {u₁ ↦ u₂} {v} (⊑-fun{u′ = v′} nbu₂ v′⊆v fv′ ∉⊥ dv′⊑u₁ u₂⊑cv′) =
    let dv′<:u₁ = ⊑→<: dv′⊑u₁ in
    let u₂<:cv′ = ⊑→<: u₂⊑cv′ in
-   let v′<:v = ⊆<:<: v′⊆v <:-refl in {- oops, could have used diff. lemma -}
-   <:-trans u₁↦u₂<:v′ v′<:v
+   let v′<:v = ⊆→<: v′⊆v in
+   <:-trans (<:-trans (<:-→ dv′<:u₁ u₂<:cv′) (dv↦cv<:v dv′<:u₁)) v′<:v
    where
-   u₁↦u₂<:v′ : u₁ ↦ u₂ <: v′
-   u₁↦u₂<:v′ = {!!}
+   dv↦cv<:v : ∀{v u}{fv : AllFun v}
+             → dom v {fv} <: u → dom v {fv} ↦ cod v {fv} <: v
+   dv↦cv<:v {⊥} {u} {()} dv<:u
+   dv↦cv<:v {const x} {u} {()} dv<:u
+   dv↦cv<:v {v₁ ↦ v₂} {u} {fv} dv<:u = <:-refl
+   dv↦cv<:v {v₁ ⊔ v₂} {u} {⟨ fv1 , fv2 ⟩} dv<:u
+       with ⊔<:-inv dv<:u
+   ... | ⟨ dv₁ , dv₂ ⟩ =
+         let ih1 = dv↦cv<:v {v₁}{u}{fv1} dv₁ in
+         let ih2 = dv↦cv<:v {v₂}{u}{fv2} dv₂ in
+         <:-trans Dist⊔↦⊔ (<:-glb (<:-trans ih1 <:-incl-L)
+                                  (<:-trans ih2 <:-incl-R))
