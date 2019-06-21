@@ -130,19 +130,26 @@ Figure~\ref{fig:aux}
   \label{fig:new-subtyping}
 \end{figure}
 
-\begin{definition}[factor]
-
+\begin{definition}[factors]
+  We say $A → B$ \emph{factors} $C$
+  if there exists some type $C'$ such that
+  $C' ⊆ C$, $\neg\,\mathsf{topCod}(C')$, $A <: \dom{C'}$, and $\cod{C'} <: B$.
 \end{definition}
 
 \begin{lemma}
+  If $\neg\,\mathsf{top}(w)$
+  and $u_1$
+\end{lemma}
+
+
+\begin{lemma}
   If
-\begin{itemize}
-\item $\neg\, \mathsf{topCod}(D)$,
-\item $D ⊆ C$, and
-\item for any $A,B$, if $\neg\,\mathsf{top}(B)$ and $A → B ∈ D$,
-     then $A → B$ factors $u_2$ into some type $u_3$,
-\end{itemize}
-then $\dom{D} → \cod{D}$ factors $u_2$ into some type $u_4$.
+  \begin{itemize}
+  \item $\neg\, \mathsf{topCod}(D)$,
+  \item for any $A,B$, if $\neg\,\mathsf{top}(B)$ and $A → B ∈ D$,
+    then $A → B$ factors $C$,
+  \end{itemize}
+  then $\dom{D} → \cod{D}$ factors $C$.
 \end{lemma}
 
 \begin{align*}
