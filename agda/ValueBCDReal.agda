@@ -337,21 +337,21 @@ factor u u′ v w = (Σ[ fu′ ∈ AllFun u′ ] u′ ⊆ u
     refl =
       ⟨ u′ , ⟨ afu′ , ⟨ u′⊆u₂ , ⟨ ∉⊥ , ⟨ du′⊑u11 , u21⊑cu′ ⟩ ⟩ ⟩ ⟩ ⟩
 
-sub-inv-trans : ∀{u′ u₂ u : Value}
+sub-inv-trans : ∀{u′ u₂ : Value}
   → (∀{v w} → AllBot w → ¬ (v ↦ w ∈ u′))
-  → (fu′ : AllFun u′)  →  u′ ⊆ u
+  → (fu′ : AllFun u′)
   → (∀{v′ w′} → ¬ AllBot w′ → v′ ↦ w′ ∈ u′ → Σ[ u₃ ∈ Value ] factor u₂ u₃ v′ w′)
     -------------------------------------------------------------------------
   → Σ[ u₃ ∈ Value ] factor u₂ u₃ (dom u′ {fu′}) (cod u′ {fu′})
-sub-inv-trans {⊥} {u₂} {u} ⊥∉  () u′⊆u IH
-sub-inv-trans {const k} {u₂} {u} ⊥∉  () u′⊆u IH
-sub-inv-trans {u₁′ ↦ u₂′} {u₂} {u} ⊥∉ fu′ u′⊆u IH =
+sub-inv-trans {⊥} {u₂} ⊥∉  () IH
+sub-inv-trans {const k} {u₂} ⊥∉  () IH
+sub-inv-trans {u₁′ ↦ u₂′} {u₂} ⊥∉ fu′ IH =
     IH (λ z → ⊥∉ z refl) refl
-sub-inv-trans {u₁′ ⊔ u₂′} {u₂} {u} ⊥∉ ⟨ afu₁′ , afu₂′ ⟩ u′⊆u IH
-    with sub-inv-trans {u₁′} {u₂} {u} (λ {v} {w} z z₁ → ⊥∉ z (inj₁ z₁)) afu₁′
-               (λ {u₁} z → u′⊆u (inj₁ z)) (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₁ z))
-    | sub-inv-trans {u₂′} {u₂} {u} (λ {v} {w} z z₁ → ⊥∉ z (inj₂ z₁)) afu₂′
-               (λ {u₁} z → u′⊆u (inj₂ z)) (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₂ z))
+sub-inv-trans {u₁′ ⊔ u₂′} {u₂} ⊥∉ ⟨ afu₁′ , afu₂′ ⟩ IH
+    with sub-inv-trans {u₁′} {u₂} (λ {v} {w} z z₁ → ⊥∉ z (inj₁ z₁)) afu₁′
+               (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₁ z))
+    | sub-inv-trans {u₂′} {u₂} (λ {v} {w} z z₁ → ⊥∉ z (inj₂ z₁)) afu₂′
+               (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₂ z))
 ... | ⟨ u₃ , ⟨ afu₃ , ⟨ u₃⊆ , ⟨ ∉⊥1 , ⟨ du₃⊑ , ⊑cu₃ ⟩ ⟩ ⟩ ⟩ ⟩
     | ⟨ u₄ , ⟨ afu₄ , ⟨ u₄⊆ , ⟨ ∉⊥2 , ⟨ du₄⊑ , ⊑cu₄ ⟩ ⟩ ⟩ ⟩ ⟩ =
       ⟨ (u₃ ⊔ u₄) , ⟨ ⟨ afu₃ , afu₄ ⟩ , ⟨ G , ⟨ J , ⟨ H , I ⟩ ⟩ ⟩ ⟩ ⟩
@@ -569,7 +569,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
   helper d s IH {u₁ ↦ u₂} {v} {w} d≡ s≡
       (⊑-fun{u′ = v′} ≢⊥ v′⊆v afv′ ∉⊥ dv′⊑u₁ u₂⊑cv′) v⊑w
       rewrite d≡ | s≡
-      with sub-inv-trans ∉⊥ afv′ v′⊆v
+      with sub-inv-trans ∉⊥ afv′ 
                 (λ {v₁}{v₂} ≢⊥ v₁↦v₂∈v′ →
                    ⊑-fun-inv {v′} {w} ≢⊥ (u⊆v⊑w→u⊑w v′⊆v v⊑w) v₁↦v₂∈v′) 
   ... | ⟨ w′ , ⟨ afw′ , ⟨ w′⊆w , ⟨ ∉⊥1 , ⟨ dw′⊑dv′ , cv′⊑cw′ ⟩ ⟩ ⟩ ⟩ ⟩ =

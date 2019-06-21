@@ -18,7 +18,7 @@
 \newtheorem{example}[theorem]{Example}
 
 
-\title{Transitivity of Subtyping for Intersection Types, Directly}
+\title{Transitivity of Subtyping for Intersection Types}
 \author{Jeremy G. Siek}
 
 \begin{document}
@@ -36,7 +36,7 @@
 
 $λ^{\mathrm{BCD}}_∩$
 
-Figure~\ref{fig:types-subtyping}
+Figure~\ref{fig:types}
 
 \begin{figure}[tbp]
   \[
@@ -45,43 +45,126 @@ Figure~\ref{fig:types-subtyping}
     A,B,C,D & ::= & \alpha \mid A → B \mid A ∩ B & \text{types}
   \end{array}
   \]
-  \fbox{$A ≤ B$} \\[1ex]
-  \begin{tabular}{ll}
-    (refl)  & $A ≤ A$ \\[2ex]
-    (incl$_L$) & $A ∩ B ≤ A$ \\[2ex]
-    (incl$_R$) & $A ∩ B ≤ B$ \\[2ex]
-    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[2ex]
-    (trans) & $\inference{A ≤ B & B ≤ C}{A ≤ C}$ \\[2ex]
-    ($\TOP_{\mathrm{top}}$) & $A ≤ \TOP$ \\[2ex]
-    ($\TOP→$) & $\TOP ≤ A → \TOP$ \\[2ex]
-    ($→∩$) & $(A → B) ∩ (A → C) A → (B ∩ C)$ \\[2ex]
-    ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
-  \end{tabular}
-  \caption{Intersection Types and BCD Subtyping}
-  \label{fig:types-subtyping}
+  \caption{Intersection Types}
+  \label{fig:types}
 \end{figure}
 
-\begin{align*}
+
+
+Figure~\ref{fig:BCD-subtyping}
+
+\begin{figure}[tbp]
+  \fbox{$A ≤ B$} \\[1ex]
+  \begin{tabular}{p{1in}l}
+    (refl)  & $A ≤ A$ \\[3ex]
+    (incl$_L$) & $A ∩ B ≤ A$ \\[3ex]
+    (incl$_R$) & $A ∩ B ≤ B$ \\[3ex]
+    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[3ex]
+    (trans) & $\inference{A ≤ B & B ≤ C}{A ≤ C}$ \\[3ex]
+    ($\TOP_{\mathrm{top}}$) & $A ≤ \TOP$ \\[3ex]
+    ($\TOP{→}$) & $\TOP ≤ A → \TOP$ \\[3ex]
+    (${→}{∩}$) & $(A → B) ∩ (A → C) ≤ A → (B ∩ C)$ \\[3ex]
+    ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
+  \end{tabular}
+  \caption{BCD Subtyping}
+  \label{fig:BCD-subtyping}
+\end{figure}
+
+Figure~\ref{fig:aux}
+
+\begin{figure}[tbp]
+
+  \fbox{$\dom{A}, \cod{A}$}
+  \begin{align*}
   \dom{A → B} &= A \\
   \dom{A ∩ B} &= \dom{A} ∩ \dom {B} \\
   \\
   \cod{A → B} &= B \\
   \cod{A ∩ B} &= \cod{A} ∩ \cod {B}
-\end{align*}
+  \end{align*}
 
-\begin{figure}
+  \fbox{$\mathsf{top}(A)$}
+  \begin{gather*}
+    \mathsf{top}(\TOP)
+    \quad
+    \inference{\mathsf{top}(B)}{\mathsf{top}(A → B)}
+    \quad
+    \inference{\mathsf{top}(A) & \mathsf{top}(B)}{\mathsf{top}(A ∩ B)}
+  \end{gather*}
+
+  \fbox{$A ∈ B$}
+  \begin{gather*}
+    \inference{}{\alpha ∈ \alpha}  \quad
+    \inference{}{A → B ∈ A → B} \\[3ex]
+    \inference{A ∈ B}{A ∈ B ∩ C} \quad
+    \inference{A ∈ C}{A ∈ B ∩ C}
+  \end{gather*}
+
+  \fbox{$A ⊆ B$}
+  \[
+     A ⊆ B = ∀ C.\, C ∈ A \text{ implies } C ∈ B
+  \]
+
+  \fbox{$\mathsf{topCod}(D)$}
+  \[
+  \mathsf{topCod}(D) =
+     \exists A B.\, A → B ∈ D \text{ and } \mathsf{top}(B)  
+  \]
+
+  \caption{Auxilliary definitions}
+  \label{fig:aux}
+\end{figure}
+
+
+\begin{figure}[tbp]
   \begin{tabular}{ll}
-    (refl$_α$) & $α <: α$ \\[2ex]
-    (incl$_L$) & $\inference{A <: C}{A ∩ B <: C}$ \\[2ex]
-    (incl$_R$) & $\inference{B <: C}{A ∩ B <: C}$ \\[2ex]
-    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[2ex]
-    ($\TOP_{\mathrm{top}}$) & $A <: \TOP$ \\[2ex]
-    ($\TOP→$) & $\TOP <: A → \TOP$ \\[2ex]
-    ($→'$) &$\inference{D ⊆ C & A' <: \dom{D} & \cod{D} <: B' }{C <: A' → B'}$
+    (refl$_α$) & $\inference{}{α <: α}$ \\[3ex]
+    (lb$_L$) & $\inference{A <: C}{A ∩ B <: C}$ \\[3ex]
+    (lb$_R$) & $\inference{B <: C}{A ∩ B <: C}$ \\[3ex]
+    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[3ex]
+    ($\TOP_{\mathrm{top}}$) & $\inference{}{A <: \TOP}$ \\[3ex]
+    ($\TOP{→}'$) & $\inference{}{C <: A → B}\;\mathsf{top}(B)$ \\[3ex]
+    ($→'$) &$\inference{A <: \dom{D} & \cod{D} <: B }{C <: A → B}\begin{array}{l} \neg\, \mathsf{top}(B) \\ \neg \, \mathsf{topCod}(D) \\ D ⊆ C \end{array}$
   \end{tabular}
   \caption{New Subtyping Relation}
   \label{fig:new-subtyping}
 \end{figure}
+
+\begin{definition}[factor]
+
+\end{definition}
+
+\begin{lemma}
+  If
+\begin{itemize}
+\item $\neg\, \mathsf{topCod}(D)$,
+\item $D ⊆ C$, and
+\item for any $A,B$, if $\neg\,\mathsf{top}(B)$ and $A → B ∈ D$,
+     then $A → B$ factors $u_2$ into some type $u_3$,
+\end{itemize}
+then $\dom{D} → \cod{D}$ factors $u_2$ into some type $u_4$.
+\end{lemma}
+
+\begin{align*}
+  \mathsf{size}(\alpha) &= 0 \\
+  \mathsf{size}(A → B) &= 1 + \mathsf{size}(A) + \mathsf{size}(B) \\
+  \mathsf{size}(A ∩ B) &= 1 + \mathsf{size}(A) + \mathsf{size}(B)
+\end{align*}
+
+\begin{align*}
+  \mathsf{depth}(\alpha) &= 0 \\
+  \mathsf{depth}(A → B) &= 1 + \max(\mathsf{depth}(A), \mathsf{depth}(B)) \\
+  \mathsf{depth}(A ∩ B) &= \max(\mathsf{depth}(A), \mathsf{depth}(B))
+\end{align*}
+
+\begin{lemma}[Transitivity of $<:$]
+    If $A <: B$ and $B <: C$, then $A <: C$.
+\end{lemma}
+
+
+\begin{theorem}[Equivalence of the subtyping relations]\ \\
+  $A <: B$ if and only if $A ≤ B$.
+\end{theorem}
 
 \clearpage
 \pagebreak
