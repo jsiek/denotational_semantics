@@ -28,13 +28,45 @@
 \newcommand{\dom}[1]{\mathrm{dom}(#1)}
 \newcommand{\cod}[1]{\mathrm{cod}(#1)}
 
-\citet{Barendregt:1983aa}
+
+\begin{abstract}
+  The subtyping relation for intersection type systems traditionally
+  employs a transitivity rule (Barendregt et al. 1983), which means
+  that the subtyping judgment does not enjoy the subformula property.
+  Laurent develops a sequent-style subtyping judgment, without
+  transitivity, and proves transitivity via a sequence of six lemmas
+  that culminate in cut-elimination (2018). This article presents a
+  subtyping judgment, in regular style, that satisfies the subformula
+  property, and presents a direct proof of transitivity. Borrowing
+  from Laurent's system, the rule for function types is essentially
+  the $\beta$-soundness property.  The main lemma required for the
+  transitivity proof happens to be one that is used to prove the
+  inversion principle for subtyping of function types (Barendregt et
+  al. 2013). However, the choice of induction principle for the proof
+  of transitivity requires some care: we use strong induction on the
+  lexicographical ordering of the sum of the depths of the first and
+  last type followed by the sume of the sizes of the first and second
+  type.
+\end{abstract}
+
+\section{Introduction}
+
+Intersection types were invented by Coppo, Dezani-Ciancaglini, and
+Salle, as a tool for studying normalization in the lambda
+calculus~\citet{Coppo:1979aa}. By varying the subtyping rules and atom
+types, researchers have used intersection type systems to model many
+different
+calculi~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
+Perhaps the best-known of them is the BCD intersection type system of
+\citet{Barendregt:1983aa}.
+
+
 \citet{Barendregt:2013aa}
 
 \citet{Laurent:2012aa}
 \citet{Laurent:2018aa}
 
-$λ^{\mathrm{BCD}}_∩$
+%$λ^{\mathrm{BCD}}_∩$
 
 Figure~\ref{fig:types}
 
@@ -68,7 +100,7 @@ Figure~\ref{fig:BCD-subtyping}
     (${→}{∩}$) & $(A → B) ∩ (A → C) ≤ A → (B ∩ C)$ \\[3ex]
     ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
   \end{tabular}
-  \caption{BCD Subtyping}
+  \caption{The Subtyping Judgement of Barendregt, Coppo, and Dezani (BCD).}
   \label{fig:BCD-subtyping}
 \end{figure}
 
@@ -113,7 +145,7 @@ Figure~\ref{fig:aux}
      \exists A B.\, A → B ∈ D \text{ and } \mathsf{top}(B)  
   \]
 
-  \caption{Auxilliary definitions}
+  \caption{Auxiliary definitions}
   \label{fig:aux}
 \end{figure}
 
@@ -187,3 +219,6 @@ Figure~\ref{fig:aux}
 \bibliography{all}
 
 \end{document}
+
+% LocalWords:  dom subtyping Barendregt et al subformula sequent aa
+% LocalWords:  BCD lclr refl glb topInCod
