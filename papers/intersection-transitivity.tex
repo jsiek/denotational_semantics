@@ -45,7 +45,7 @@
   al. 2013). The choice of induction principle for the proof of
   transitivity requires some care: we use strong induction on the
   lexicographical ordering of the sum of the depths of the first and
-  last type followed by the sume of the sizes of the first and second
+  last type followed by the sum of the sizes of the first and second
   type.
 \end{abstract}
 
@@ -88,9 +88,11 @@ if it has type $A$ and $A$ is a subtype of $B$, written $A ≤ B$.
 Figure~\ref{fig:BCD-subtyping} reviews the BCD rules for subtyping.
 Note that in the (trans) rule, the type $B$ that appears in the
 premises does not appear in the conclusion. Thus, the BCD subtyping
-judgment does not enjoy the subformula property. The subformula
-property is a useful one. For example, the author ...
-
+judgment does not enjoy the subformula property.  For other systems,
+it is straightforward to remove the (trans) rule, modify the other
+rules, and then then prove transitivity~\citep{Muehlboeck:2018aa}.
+Unfortunately, the ${→}{∩}$ rule significantly complicates the
+situation for the BCD system.
 
 \begin{figure}[tbp]
   \fbox{$A ≤ B$} \\[1ex]
@@ -107,23 +109,50 @@ property is a useful one. For example, the author ...
     (${→}{∩}$) & $(A → B) ∩ (A → C) ≤ A → (B ∩ C)$ \\[3ex]
     ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
   \end{tabular}
-  \caption{The Subtyping Judgement of Barendregt, Coppo, and Dezani (BCD).}
+  \caption{The Subtyping Judgment of Barendregt, Coppo, and Dezani (BCD).}
   \label{fig:BCD-subtyping}
 \end{figure}
 
+The subformula property is a useful one. For example, the author is
+using intersection types to create a denotational semantics for the
+ISWIM language, which includes constants and primitive
+operations~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
+It seems that doing so requires placing extra conditions on types and
+that is much easier when subtyping satisfies the subformula property.
 
-\citet{Laurent:2012aa}
-\citet{Laurent:2018aa}
+%\citet{Laurent:2012aa}
+
+\citet{Laurent:2018aa} introduces the ISC sequent-style system,
+written $\Gamma \vdash B$, where $\Gamma$ is a sequence of types
+$A_1,\ldots,A_n$. The intuition is that $A_1,\ldots,A_n \vdash B$
+corresponds to $A_1 ∩ \cdots ∩ A_n ≤ B$. The ISC system satisfies the
+subformula property and is equivalent to the BCD system. To prove
+this, Laurent establishes six lemmas that culminate in
+cut-elimination, from which transitivity follows dirctly.
+
+This article presents a more direct route to the subformula property
+and transitivity. We present a subtyping relation $A <: B$ and
+directly prove transitivity, without using an auxilliary sequent-style
+system. Nevertheless, the intuitions are based on those of
+Laurent. The key to $A <: B$ is a rule for function types based on the
+$\beta$-soundness property~\citep{Barendregt:2013aa}, just as in ISC.
+
+
+ROAD MAP
+
 
 %$λ^{\mathrm{BCD}}_∩$
 
+\section{Intersection Subtyping, with Subformula}
+
+Our new subtyping judgment relies on several auxilliary notions, which
+we define in Figure~\ref{fig:aux}. These include the $\dom{}$ and
+$\cod{}$ functions. For function types they simply return the domain
+and codomain, respectively. For intersections, $\dom{A ∩ B}$ is the
+intersection of the domain of $A$ and $B$. Similarly for $\cod{}$.
+Both $\dom{}$ and $\cod{}$ are undefined on atoms.
 
 
-
-
-
-
-Figure~\ref{fig:aux}
 
 \begin{figure}[tbp]
 
@@ -182,9 +211,13 @@ Figure~\ref{fig:aux}
     ($\TOP{→}'$) & $\inference{}{C <: A → B}\;\mathsf{top}(B)$ \\[3ex]
     ($→'$) &$\inference{A <: \dom{D} & \cod{D} <: B }{C <: A → B}\begin{array}{l} \neg\, \mathsf{top}(B) \\ \neg \, \mathsf{topInCod}(D) \\ D ⊆ C \end{array}$
   \end{tabular}
-  \caption{New Subtyping Relation}
+  \caption{The New Subtyping Judgment}
   \label{fig:new-subtyping}
 \end{figure}
+
+
+\section{Transitivity}
+
 
 \begin{definition}[factors]
   We say $A → B$ \emph{factors} $C$
@@ -222,9 +255,9 @@ Figure~\ref{fig:aux}
   \mathsf{depth}(A ∩ B) &= \max(\mathsf{depth}(A), \mathsf{depth}(B))
 \end{align*}
 
-\begin{lemma}[Transitivity of $<:$]\label{lem:sub-trans}
+\begin{theorem}[Transitivity of $<:$]\label{lem:sub-trans}
     If $A <: B$ and $B <: C$, then $A <: C$.
-\end{lemma}
+\end{theorem}
 
 
 \begin{theorem}[Equivalence of the subtyping relations]\ \\
@@ -240,4 +273,7 @@ Figure~\ref{fig:aux}
 \end{document}
 
 % LocalWords:  dom subtyping Barendregt et al subformula sequent aa
-% LocalWords:  BCD lclr refl glb topInCod
+% LocalWords:  BCD lclr refl glb topInCod Coppo Dezani Ciancaglini fk
+% LocalWords:  Salle Engeler Honsell Abramsky Plotkin Rocca Alessi
+% LocalWords:  subsumption subtype denotational ISWIM Landin
+% LocalWords:  Felleisen
