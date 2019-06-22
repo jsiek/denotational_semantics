@@ -37,13 +37,13 @@
   transitivity, and proves transitivity via a sequence of six lemmas
   that culminate in cut-elimination (2018). This article presents a
   subtyping judgment, in regular style, that satisfies the subformula
-  property, and presents a direct proof of transitivity. Borrowing
-  from Laurent's system, the rule for function types is essentially
-  the $\beta$-soundness property.  The main lemma required for the
-  transitivity proof happens to be one that is used to prove the
-  inversion principle for subtyping of function types (Barendregt et
-  al. 2013). However, the choice of induction principle for the proof
-  of transitivity requires some care: we use strong induction on the
+  property, and gives a direct proof of transitivity. Borrowing from
+  Laurent's system, the rule for function types is essentially the
+  $\beta$-soundness property.  The main lemma required for the
+  transitivity proof is one that has been used to prove the inversion
+  principle for subtyping of function types (Barendregt et
+  al. 2013). The choice of induction principle for the proof of
+  transitivity requires some care: we use strong induction on the
   lexicographical ordering of the sum of the depths of the first and
   last type followed by the sume of the sizes of the first and second
   type.
@@ -58,17 +58,14 @@ types, researchers have used intersection type systems to model many
 different
 calculi~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
 Perhaps the best-known of them is the BCD intersection type system of
-\citet{Barendregt:1983aa}.
+\citet{Barendregt:1983aa}. For this article we focus on the BCD
+system, following the presentation of \citet{Barendregt:2013aa}.  We
+conjecture that our results apply to other intersection type systems.
 
-
-\citet{Barendregt:2013aa}
-
-\citet{Laurent:2012aa}
-\citet{Laurent:2018aa}
-
-%$λ^{\mathrm{BCD}}_∩$
-
-Figure~\ref{fig:types}
+The BCD intersection type systems extends the simply-typed lambda
+calculus with the addition of intersection types, written $A ∩ B$, a
+top type $\TOP$, and an infinite collection of type
+constants. Figure~\ref{fig:types} defines the grammar of types.
 
 \begin{figure}[tbp]
   \[
@@ -81,9 +78,19 @@ Figure~\ref{fig:types}
   \label{fig:types}
 \end{figure}
 
+The BCD intersection type system includes a subsumption rule which
+states that a term $M$ in environment $\Gamma$ can be given type $B$
+if it has type $A$ and $A$ is a subtype of $B$, written $A ≤ B$.
+\[
+\inference{\Gamma \vdash M : A & A ≤ B}
+          {\Gamma \vdash M : B}
+\]
+Figure~\ref{fig:BCD-subtyping} reviews the BCD rules for subtyping.
+Note that in the (trans) rule, the type $B$ that appears in the
+premises does not appear in the conclusion. Thus, the BCD subtyping
+judgment does not enjoy the subformula property. The subformula
+property is a useful one. For example, the author ...
 
-
-Figure~\ref{fig:BCD-subtyping}
 
 \begin{figure}[tbp]
   \fbox{$A ≤ B$} \\[1ex]
@@ -103,6 +110,18 @@ Figure~\ref{fig:BCD-subtyping}
   \caption{The Subtyping Judgement of Barendregt, Coppo, and Dezani (BCD).}
   \label{fig:BCD-subtyping}
 \end{figure}
+
+
+\citet{Laurent:2012aa}
+\citet{Laurent:2018aa}
+
+%$λ^{\mathrm{BCD}}_∩$
+
+
+
+
+
+
 
 Figure~\ref{fig:aux}
 
