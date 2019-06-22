@@ -55,6 +55,8 @@ Figure~\ref{fig:BCD-subtyping}
 
 \begin{figure}[tbp]
   \fbox{$A ≤ B$} \\[1ex]
+  
+  \centering
   \begin{tabular}{p{1in}l}
     (refl)  & $A ≤ A$ \\[3ex]
     (incl$_L$) & $A ∩ B ≤ A$ \\[3ex]
@@ -105,9 +107,9 @@ Figure~\ref{fig:aux}
      A ⊆ B = ∀ C.\, C ∈ A \text{ implies } C ∈ B
   \]
 
-  \fbox{$\mathsf{topCod}(D)$}
+  \fbox{$\mathsf{topInCod}(D)$}
   \[
-  \mathsf{topCod}(D) =
+  \mathsf{topInCod}(D) =
      \exists A B.\, A → B ∈ D \text{ and } \mathsf{top}(B)  
   \]
 
@@ -117,14 +119,17 @@ Figure~\ref{fig:aux}
 
 
 \begin{figure}[tbp]
-  \begin{tabular}{ll}
+  \fbox{$A <: B$} \\[1ex]
+  
+  \centering
+  \begin{tabular}{p{1in}l}
     (refl$_α$) & $\inference{}{α <: α}$ \\[3ex]
     (lb$_L$) & $\inference{A <: C}{A ∩ B <: C}$ \\[3ex]
     (lb$_R$) & $\inference{B <: C}{A ∩ B <: C}$ \\[3ex]
     (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[3ex]
     ($\TOP_{\mathrm{top}}$) & $\inference{}{A <: \TOP}$ \\[3ex]
     ($\TOP{→}'$) & $\inference{}{C <: A → B}\;\mathsf{top}(B)$ \\[3ex]
-    ($→'$) &$\inference{A <: \dom{D} & \cod{D} <: B }{C <: A → B}\begin{array}{l} \neg\, \mathsf{top}(B) \\ \neg \, \mathsf{topCod}(D) \\ D ⊆ C \end{array}$
+    ($→'$) &$\inference{A <: \dom{D} & \cod{D} <: B }{C <: A → B}\begin{array}{l} \neg\, \mathsf{top}(B) \\ \neg \, \mathsf{topInCod}(D) \\ D ⊆ C \end{array}$
   \end{tabular}
   \caption{New Subtyping Relation}
   \label{fig:new-subtyping}
@@ -133,19 +138,21 @@ Figure~\ref{fig:aux}
 \begin{definition}[factors]
   We say $A → B$ \emph{factors} $C$
   if there exists some type $C'$ such that
-  $C' ⊆ C$, $\neg\,\mathsf{topCod}(C')$, $A <: \dom{C'}$, and $\cod{C'} <: B$.
+  $C' ⊆ C$, $\neg\,\mathsf{topInCod}(C')$, $A <: \dom{C'}$, and $\cod{C'} <: B$.
 \end{definition}
 
-\begin{lemma}
-  If $\neg\,\mathsf{top}(w)$
-  and $u_1$
+\begin{lemma}\label{lem:sub-fun-inv}
+  If $\neg\,\mathsf{top}(B)$,
+  $D <: C$, and
+  $A → B ∈ C$, then
+  $A → B$ factors $D$.
 \end{lemma}
 
 
-\begin{lemma}
+\begin{lemma}\label{lem:sub-inv-trans}
   If
   \begin{itemize}
-  \item $\neg\, \mathsf{topCod}(D)$,
+  \item $\neg\, \mathsf{topInCod}(D)$,
   \item for any $A,B$, if $\neg\,\mathsf{top}(B)$ and $A → B ∈ D$,
     then $A → B$ factors $C$,
   \end{itemize}
@@ -164,7 +171,7 @@ Figure~\ref{fig:aux}
   \mathsf{depth}(A ∩ B) &= \max(\mathsf{depth}(A), \mathsf{depth}(B))
 \end{align*}
 
-\begin{lemma}[Transitivity of $<:$]
+\begin{lemma}[Transitivity of $<:$]\label{lem:sub-trans}
     If $A <: B$ and $B <: C$, then $A <: C$.
 \end{lemma}
 
