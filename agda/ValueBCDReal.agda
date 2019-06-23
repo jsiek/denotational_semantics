@@ -356,8 +356,8 @@ sub-inv-trans {u₁′ ⊔ u₂′} {u₂} ⊥∉ ⟨ afu₁′ , afu₂′ ⟩ 
                (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₁ z))
     | sub-inv-trans {u₂′} {u₂} (λ {v} {w} z z₁ → ⊥∉ z (inj₂ z₁)) afu₂′
                (λ {v′} {w′} ≢⊥ z → IH ≢⊥ (inj₂ z))
-... | ⟨ u₃ , ⟨ afu₃ , ⟨ u₃⊆ , ⟨ ∉⊥1 , ⟨ du₃⊑ , ⊑cu₃ ⟩ ⟩ ⟩ ⟩ ⟩
-    | ⟨ u₄ , ⟨ afu₄ , ⟨ u₄⊆ , ⟨ ∉⊥2 , ⟨ du₄⊑ , ⊑cu₄ ⟩ ⟩ ⟩ ⟩ ⟩ =
+... | ⟨ u₃ , ⟨ afu₃ , ⟨ u₃⊆ , ⟨ ∉⊥1 , ⟨ du₃⊑du₁′ , cu₁′⊑cu₃ ⟩ ⟩ ⟩ ⟩ ⟩
+    | ⟨ u₄ , ⟨ afu₄ , ⟨ u₄⊆ , ⟨ ∉⊥2 , ⟨ du₄⊑du₂′ , cu₂′⊑cu₄ ⟩ ⟩ ⟩ ⟩ ⟩ =
       ⟨ (u₃ ⊔ u₄) , ⟨ ⟨ afu₃ , afu₄ ⟩ , ⟨ G , ⟨ J , ⟨ H , I ⟩ ⟩ ⟩ ⟩ ⟩
     where
     G : ∀ {u₁} → u₁ ∈ u₃ ⊎ u₁ ∈ u₄ → u₁ ∈ u₂
@@ -365,10 +365,10 @@ sub-inv-trans {u₁′ ⊔ u₂′} {u₂} ⊥∉ ⟨ afu₁′ , afu₂′ ⟩ 
     G {u₁} (inj₂ y) = u₄⊆ y
 
     H : dom u₃ ⊔ dom u₄ ⊑ dom u₁′ ⊔ dom u₂′
-    H = ⊑-conj-L (⊑-conj-R1 du₃⊑) (⊑-conj-R2 du₄⊑)
+    H = ⊑-conj-L (⊑-conj-R1 du₃⊑du₁′) (⊑-conj-R2 du₄⊑du₂′)
 
     I : cod u₁′ ⊔ cod u₂′ ⊑ cod u₃ ⊔ cod u₄
-    I = ⊑-conj-L (⊑-conj-R1 ⊑cu₃) (⊑-conj-R2 ⊑cu₄)
+    I = ⊑-conj-L (⊑-conj-R1 cu₁′⊑cu₃) (⊑-conj-R2 cu₂′⊑cu₄)
 
     J : {v′ w′ : Value} → AllBot w′ → v′ ↦ w′ ∈ u₃ ⊎ v′ ↦ w′ ∈ u₄ → Bot
     J {v′} {w′} bw′ (inj₁ x) = ∉⊥1 bw′ x

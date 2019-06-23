@@ -331,11 +331,29 @@ factors $B$, then $\dom{A} → \cod{A}$ also factors $B$.
   \item Case $A$ is an atom. The statement is vacuously true.
   \item Case $A = A_1 → A_2$ is a function type. Then we conclude by applying
     the premise with $C$ and $D$ instantiated to $A_1$ and $A_2$ respectively.
-  \item Case $A = A_1 ∩ A_2$.
-
-    UNDER CONSTRUCTION
+  \item Case $A = A_1 ∩ A_2$.  By the induction hypothesis for $A_1$
+    and for $A_2$, we have that $\dom{A_1} → \cod{A_1}$ factors $B$
+    and so does $\dom{A_2} → \cod{A_2}$.  So there exists
+    $B_1$ and $B_2$ such that $B_1 ⊆ B$, $\neg\,\topInCod{B_1}$,
+    $\dom{A_1} <: \dom{B_1}$, $\cod{B_1} <: \cod{A_2}$ and similarly
+    for $B_2$. We need to show that $\dom{A} → \cod{A}$ factors
+    $B$. We choose the witness $B_1 ∩ B_2$.  Clearly we have $B_1 ∩
+    B_2 ⊆ B$ and $\neg \topInCod{B_1 ∩ B_2}$.  Also, we have
+    \[
+    \dom{B_1} ∩ \dom{B_2} <: \dom{A_1} ∩ \dom{A_2}
+    \]
+    and
+    \[
+    \cod{A_1} ∩ \cod{A_2} <: \cod{B_1} ∩ \cod{B_2}
+    \]
+    Thus, we have that $\dom{B_1 ∩ B_2} <: \dom{A}$
+    and $\cod{A} <: \cod{B_1 ∩ B_2}$, and this case is complete.
   \end{itemize}
 \end{proof}
+
+We now turn to the proof of transitivity, that
+if $A <: B$ and $B <: C$, then $A <: C$.
+
 
 
 
