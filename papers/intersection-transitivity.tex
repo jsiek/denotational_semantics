@@ -103,11 +103,11 @@ situation for the BCD system.
     \text{(trans)} \; \inference{A ≤ B & B ≤ C}{A ≤ C} \\[3ex]
     \text{(incl$_L$)} \; \inference{}{A ∩ B ≤ A} \quad
     \text{(incl$_R$)} \; \inference{}{A ∩ B ≤ B} \quad
-    \text{(glb)} \; \inference{C ≤ A & C ≤ B}{C ≤ A ∩ B} \\[3ex]
-    (→) \; \inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'} \quad
+    \text{(glb)} \; \inference{A ≤ C & A ≤ D}{A ≤ C ∩ D} \\[3ex]
+    (→) \; \inference{C ≤ A & B ≤ D}{A → B ≤ C → D} \quad
     ({→}{∩}) \; \inference{}{(A → B) ∩ (A → C) ≤ A → (B ∩ C)} \\[3ex]
     (\TOP_{\mathrm{top}}) \; \inference{}{A ≤ \TOP} \quad
-    (\TOP{→}) \; \inference{}{\TOP ≤ A → \TOP}
+    (\TOP{→}) \; \inference{}{\TOP ≤ C → \TOP}
   \end{gather*}
   \caption{Subtyping of Barendregt, Coppo, and
     Dezani-Ciancaglini (BCD).}
@@ -157,7 +157,10 @@ $A$ is a function type, respectively. If $A$ is an intersection $A_1 ∩
 A_2$, then $\dom{A}$ is the intersection of the domain of $A_1$ and
 $A_2$.  If $A$ is an atom, $\dom{A}$ is undefined. Likewise for
 $\cod{A}$. For example, if $A = (A_1 → B_1) ∩ \cdots ∩ (A_n → B_n)$,
-then $\dom{A} = A_1 ∩ \cdots ∩ A_n$ and $\cod{A} = B_1 ∩ \cdots ∩ B_n$.
+then $\dom{A} = A_1 ∩ \cdots ∩ A_n$ and $\cod{A} = B_1 ∩ \cdots ∩
+B_n$.  When $\dom{A}$ or $\cod{A}$ appears in lemma or theorem
+statement, we implicitly assume that $A$ is a type such that $\dom{A}$
+and $\cod{A}$ are defined.
 %
 The $\topP{A}$ predicate identifies types that are equivalent to
 $\TOP$. The $\topInCod{A}$ predicate identifies types that have $\TOP$
@@ -222,13 +225,13 @@ We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
     \text{(refl$_α$)} \; \inference{}{α <: α} \\[3ex]
     \text{(lb$_L$)} \; \inference{A <: C}{A ∩ B <: C} \quad
     \text{(lb$_R$)} \; \inference{B <: C}{A ∩ B <: C} \quad
-    \text{(glb)} \; \inference{C ≤ A & C ≤ B}{C ≤ A ∩ B} \\[3ex]
+    \text{(glb)} \; \inference{A ≤ C & A ≤ D}{A ≤ C ∩ D} \\[3ex]
     (→') \; \inference{C <: \dom{B} & \cod{B} <: D }{A <: C → D}
     \begin{array}{l} \neg\, \mathsf{top}(D) \\
       \neg \, \mathsf{topInCod}(B) \\
       B ⊆ A \end{array}\\[3ex]
     (\TOP_{\mathrm{top}}) \; \inference{}{A <: \TOP} \quad
-    (\TOP{→}') \; \inference{}{C <: A → B}\;\mathsf{top}(B)
+    (\TOP{→}') \; \inference{}{A <: C → D}\;\mathsf{top}(D)
   \end{gather*}
   \caption{The New Subtyping Judgment}
   \label{fig:new-subtyping}
@@ -236,11 +239,11 @@ We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
 
 
 The new intersection subtyping judgment, $A <: B$, is defined in
-Figure~\ref{fig:new-subtyping}. Of course, it omits the (trans) rule.
-We also omit the (refl) rule, replacing it with reflexivity for atoms
+Figure~\ref{fig:new-subtyping}. First, it does not include the (trans)
+rule.  It also replaces the (refl) rule with reflexivity for atoms
 (refl$_\alpha$). The most important rule is the one for function types
-$(→')$, which subsumes the rules $(→)$ and $({→}{∩})$ in BCD
-subtyping. It essentially turns the $\beta$-soundness property into a
+$(→')$, which subsumes $(→)$ and $({→}{∩})$ in BCD subtyping.  The
+$(→')$ rule essentially turns the $\beta$-soundness property into a
 subtyping rule. It says that a type $A$ is a subtype of a function
 type $C → D$ if $A$ contains a type $B$ whose domain and codomain are
 larger and smaller than $C$ and $D$, respectively. The use of $B$
@@ -252,54 +255,89 @@ types under $\eta$-reduction.  In a system that does not involve
 $\eta$-reduction, the (\TOP{→}') rule can be ommitted, as well as
 those side conditions. The rules (lb$_L$) and (lb$_R$) adapt
 (incl$_L$) and (incl$_R$) to a system without transitivity, and have
-appeared many times in the literature~\citep{Bakel:1995aa}.
+appeared many times in the literature~\citep{Bakel:1995aa}.  The
+$(\TOP{→}')$ rule generalizes the (\TOP{→}) rule, replacing the $\TOP$
+on the left with any type $A$, because for transitivity, any type is
+below $\TOP$. The $(\TOP{→}')$ rule also replaces the $\TOP$ in the
+codomain on the right with any type $D$ that is equivalent to $\TOP$.
 
 
 \begin{proposition}\ 
   \begin{enumerate}
   \item (reflexivity) $A <: A$ \label{prop:refl}
   \item If $A <: B ∩ C$, then $A <: B$ and $A <: C$. \label{prop:⊔⊑-inv}
+  \item If $A <: B$ and $C ∈ B$, then $A <: C$.\label{prop:u∈v⊑w→u⊑w}
+  \item If $A <: B$ and $C ⊆ B$, then $A <: C$.\label{prop:u⊆v⊑w→u⊑w}
   \end{enumerate}
 \end{proposition}
-\begin{proof}
-  The proof of reflexivity is by induction on $A$. In the case
-  $A = A_1 → A_2$, we proceed by cases on whether $\topP{A_2}$.
-  If it is, deduce $A_1 → A_2 <: A_1 → A_2$ by rule $(\TOP{→}')$.
-  Otherwise, we use rule $(→')$
+\begin{proof}\ 
+  \begin{enumerate}
+    \item The proof of reflexivity is by induction on $A$. In the case
+      $A = A_1 → A_2$, we proceed by cases on whether $\topP{A_2}$.
+      If it is, deduce $A_1 → A_2 <: A_1 → A_2$ by rule $(\TOP{→}')$.
+      Otherwise, we use rule $(→')$
+    \item The proof is by induction on the derivation of $A <: B ∩ C$.
+    \item The proof is by induction on $B$. In the case where $B = B_1 ∩ B_2$,
+      we have that either $C ∈ B_1$ or $C ∈ B_2$, but in
+      either case we use part \ref{prop:⊔⊑-inv} of this proposition to
+      fulfill the premise of the induction hypothesis.
+    \item The proof  is by induction on $C$, using part \ref{prop:u∈v⊑w→u⊑w}
+      of this proposition in the cases for atoms and function types. 
+  \end{enumerate}
 \end{proof}
 
-\begin{proposition}\label{prop:u⊆v⊑w→u⊑w}
- If $A <: B$ and $C ⊆ B$, then $A <: C$.
-\end{proposition}
 
-\clearpage
-\pagebreak
-\section{Transitivity}
-
+Next we turn to the subtyping inversion principle for function types.
+The idea is to generalize the rule $(→')$ with respect to the type on
+the right, allowing any type that contains a function type.  The
+premises of $(→')$ are somewhat complex, so we package most of them
+into the following definition.
 
 \begin{definition}[factors]
-  We say $A → B$ \emph{factors} $C$
-  if there exists some type $C'$ such that
-  $C' ⊆ C$, $\neg\,\mathsf{topInCod}(C')$, $A <: \dom{C'}$, and $\cod{C'} <: B$.
+  We say $C → D$ \emph{factors} $A$
+  if there exists some type $B$ such that
+  $B ⊆ A$, $\neg\,\mathsf{topInCod}(B)$, $C <: \dom{B}$, and $\cod{B} <: D$.
 \end{definition}
 
-\begin{lemma}\label{lem:⊑-fun-inv}
-  If $\neg\,\mathsf{top}(B)$,
-  $D <: C$, and
-  $A → B ∈ C$, then
-  $A → B$ factors $D$.
-\end{lemma}
+\begin{proposition}[Inversion Principle for Function Types]\label{lem:⊑-fun-inv}
+  If $A <: C'$, $C → D ∈ C'$, and $\neg\,\mathsf{top}(D)$, then
+  $C → D$ factors $A$.
+\end{proposition}
+\begin{proof}
+  The proof is a straightforward induction on $A <: C'$.
+\end{proof}
 
+\section{Transitivity}
+
+The proof of transitivity relies on the following lemma, which is
+traditionally needed to prove the inversion principle for function
+types. However, it was not needed for our system because the rule
+$(→')$ is already quite close to the inversion principle.
+The lemma states that if every function type $C → D$ in A
+factors $B$, then $\dom{A} → \cod{A}$ also factors $B$.
 
 \begin{lemma}\label{lem:sub-inv-trans}
   If
   \begin{itemize}
-  \item $\neg\, \mathsf{topInCod}(D)$,
-  \item for any $A,B$, if $\neg\,\mathsf{top}(B)$ and $A → B ∈ D$,
-    then $A → B$ factors $C$,
+  \item for any $C$ and $D$, if $C → D ∈ A$ and $\neg\,\mathsf{top}(D)$,
+    then $C → D$ factors $B$, and
+  \item $\neg\, \mathsf{topInCod}(A)$,
   \end{itemize}
-  then $\dom{D} → \cod{D}$ factors $C$.
+  then $\dom{A} → \cod{A}$ factors $B$.
 \end{lemma}
+\begin{proof}
+  The proof is by induction on $A$.
+  \begin{itemize}
+  \item Case $A$ is an atom. The statement is vacuously true.
+  \item Case $A = A_1 → A_2$ is a function type. Then we conclude by applying
+    the premise with $C$ and $D$ instantiated to $A_1$ and $A_2$ respectively.
+  \item Case $A = A_1 ∩ A_2$.
+
+    UNDER CONSTRUCTION
+  \end{itemize}
+\end{proof}
+
+
 
 \begin{align*}
   \mathsf{size}(\alpha) &= 0 \\

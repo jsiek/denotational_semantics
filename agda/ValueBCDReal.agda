@@ -384,12 +384,8 @@ u∈v⊑w→u⊑w {B₁ ⊔ B₂}{A}{C} (inj₂ C∈B₂) B⊑A = u∈v⊑w→u�
 
 u⊆v⊑w→u⊑w : ∀{u v w} → u ⊆ v → v ⊑ w → u ⊑ w
 u⊆v⊑w→u⊑w {⊥} {v} {w} u⊆v v⊑w = ⊑-⊥
-u⊆v⊑w→u⊑w {const k} {v} {w} u⊆v v⊑w
-    with u⊆v refl
-... | k∈v = u∈v⊑w→u⊑w k∈v v⊑w
-u⊆v⊑w→u⊑w {u₁ ↦ u₂} {v} {w} u⊆v v⊑w
-    with u⊆v refl
-... | u₁↦u₂∈v = u∈v⊑w→u⊑w u₁↦u₂∈v v⊑w
+u⊆v⊑w→u⊑w {const k} {v} {w} u⊆v v⊑w = u∈v⊑w→u⊑w (u⊆v refl) v⊑w
+u⊆v⊑w→u⊑w {u₁ ↦ u₂} {v} {w} u⊆v v⊑w = u∈v⊑w→u⊑w (u⊆v refl) v⊑w
 u⊆v⊑w→u⊑w {u₁ ⊔ u₂} {v} {w} u⊆v v⊑w =
     ⊑-conj-L (u⊆v⊑w→u⊑w u₁⊆v v⊑w) (u⊆v⊑w→u⊑w u₂⊆v v⊑w)
     where
