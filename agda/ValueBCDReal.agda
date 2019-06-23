@@ -126,6 +126,7 @@ cod (const k) {()}
 cod (v ↦ w) = w
 cod (u ⊔ v) { ⟨ fu , fv ⟩ } = cod u {fu} ⊔ cod v {fv}
 
+{-
 NonFun : (u : Value) → Set
 NonFun ⊥ = ⊤
 NonFun (const x) = ⊤
@@ -143,6 +144,7 @@ NoFun→NonFun {⊥} nfu = tt
 NoFun→NonFun {const x} nfu = tt
 NoFun→NonFun {u ↦ u₁} nfu = nfu
 NoFun→NonFun {u ⊔ u₁} nfu = inj₁ (NoFun→NonFun (proj₁ nfu))
+-}
 
 infix 4 _<:_
 
@@ -268,6 +270,7 @@ data _⊑_ : Value → Value → Set where
        → u ⊆ w  ×  v ⊆ w
 ⊔⊆-inv uvw = ⟨ (λ x → uvw (inj₁ x)) , (λ x → uvw (inj₂ x)) ⟩
 
+{-
 ⊆⊥⊑ : ∀{v w} → v ⊆ ⊥ → v ⊑ w
 ⊆⊥⊑ {⊥} {w} v⊆⊥ = ⊑-⊥
 ⊆⊥⊑ {const x} {w} v⊆⊥
@@ -279,6 +282,7 @@ data _⊑_ : Value → Value → Set where
 ⊆⊥⊑ {v₁ ⊔ v₂} {w} v⊆⊥
     with ⊔⊆-inv{w = ⊥} v⊆⊥
 ... | ⟨ xx , yy ⟩ = ⊑-conj-L (⊆⊥⊑{v₁}{w} xx) (⊆⊥⊑{v₂}{w} yy)
+-}
 
 {-
 NonFun-⊑ : ∀{v w} → v ⊑ w → NonFun v → NonFun w

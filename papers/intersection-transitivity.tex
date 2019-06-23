@@ -27,6 +27,8 @@
 \newcommand{\TOP}{\ensuremath{\mathtt{U}}}
 \newcommand{\dom}[1]{\mathrm{dom}(#1)}
 \newcommand{\cod}[1]{\mathrm{cod}(#1)}
+\newcommand{\topP}[1]{\mathrm{top}(#1)}
+\newcommand{\topInCod}[1]{\mathrm{topInCod}(#1)}
 
 
 \begin{abstract}
@@ -56,7 +58,7 @@ Salle, as a tool for studying normalization in the lambda
 calculus~\citep{Coppo:1979aa}. By varying the subtyping rules and atom
 types, researchers have used intersection type systems to model many
 different
-calculi~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
+calculi~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
 Perhaps the best-known of them is the BCD intersection type system of
 \citet{Barendregt:1983aa}. For this article we focus on the BCD
 system, following the presentation of \citet{Barendregt:2013aa}.  We
@@ -95,21 +97,20 @@ Unfortunately, the ${→}{∩}$ rule significantly complicates the
 situation for the BCD system.
 
 \begin{figure}[tbp]
-  \fbox{$A ≤ B$} \\[1ex]
-  
-  \centering
-  \begin{tabular}{p{1in}l}
-    (refl)  & $A ≤ A$ \\[3ex]
-    (incl$_L$) & $A ∩ B ≤ A$ \\[3ex]
-    (incl$_R$) & $A ∩ B ≤ B$ \\[3ex]
-    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[3ex]
-    (trans) & $\inference{A ≤ B & B ≤ C}{A ≤ C}$ \\[3ex]
-    ($\TOP_{\mathrm{top}}$) & $A ≤ \TOP$ \\[3ex]
-    ($\TOP{→}$) & $\TOP ≤ A → \TOP$ \\[3ex]
-    (${→}{∩}$) & $(A → B) ∩ (A → C) ≤ A → (B ∩ C)$ \\[3ex]
-    ($→$) & $\inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'}$
-  \end{tabular}
-  \caption{The Subtyping Judgment of Barendregt, Coppo, and Dezani (BCD).}
+  \fbox{$A ≤ B$}
+  \begin{gather*}
+    \text{(refl)} \; \inference{}{A ≤ A} \quad
+    \text{(trans)} \; \inference{A ≤ B & B ≤ C}{A ≤ C} \\[3ex]
+    \text{(incl$_L$)} \; \inference{}{A ∩ B ≤ A} \quad
+    \text{(incl$_R$)} \; \inference{}{A ∩ B ≤ B} \quad
+    \text{(glb)} \; \inference{C ≤ A & C ≤ B}{C ≤ A ∩ B} \\[3ex]
+    (→) \; \inference{A' ≤ A & B ≤ B'}{A → B ≤ A' → B'} \quad
+    ({→}{∩}) \; \inference{}{(A → B) ∩ (A → C) ≤ A → (B ∩ C)} \\[3ex]
+    (\TOP_{\mathrm{top}}) \; \inference{}{A ≤ \TOP} \quad
+    (\TOP{→}) \; \inference{}{\TOP ≤ A → \TOP}
+  \end{gather*}
+  \caption{Subtyping of Barendregt, Coppo, and
+    Dezani-Ciancaglini (BCD).}
   \label{fig:BCD-subtyping}
 \end{figure}
 
@@ -119,8 +120,6 @@ ISWIM language, which includes constants and primitive
 operations~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
 It seems that doing so requires placing extra conditions on types and
 that is much easier when subtyping satisfies the subformula property.
-
-%\citet{Laurent:2012aa}
 
 \citet{Laurent:2018aa} introduces the ISC sequent-style system,
 written $\Gamma \vdash B$, where $\Gamma$ is a sequence of types
@@ -136,6 +135,8 @@ directly prove transitivity, without using an auxilliary sequent-style
 system. Nevertheless, the intuitions are based on those of
 Laurent. The key to $A <: B$ is a rule for function types based on the
 $\beta$-soundness property~\citep{Barendregt:2013aa}, just as in ISC.
+The definitions and results in this article have been machine checked
+in Agda.
 
 
 ROAD MAP
@@ -145,13 +146,30 @@ ROAD MAP
 
 \section{Intersection Subtyping, with Subformula}
 
-Our new subtyping judgment relies on several auxilliary notions, which
-we define in Figure~\ref{fig:aux}. These include the $\dom{}$ and
-$\cod{}$ functions. For function types they simply return the domain
-and codomain, respectively. For intersections, $\dom{A ∩ B}$ is the
-intersection of the domain of $A$ and $B$. Similarly for $\cod{}$.
-Both $\dom{}$ and $\cod{}$ are undefined on atoms.
+Our new subtyping judgment relies on several auxilliary notions that
+help us avoid the use of ellipses, which we define in
+Figure~\ref{fig:aux}. These include the $\dom{A}$ and $\cod{A}$
+functions, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
+relations $A ∈ B$ and $A ⊆ B$.
+%
+The $\dom{A}$ and $\cod{A}$ functions return the domain or codomain if
+$A$ is a function type, respectively. If $A$ is an intersection $A_1 ∩
+A_2$, then $\dom{A}$ is the intersection of the domain of $A_1$ and
+$A_2$.  If $A$ is an atom, $\dom{A}$ is undefined. Likewise for
+$\cod{A}$. For example, if $A = (A_1 → B_1) ∩ \cdots ∩ (A_n → B_n)$,
+then $\dom{A} = A_1 ∩ \cdots ∩ A_n$ and $\cod{A} = B_1 ∩ \cdots ∩ B_n$.
+%
+The $\topP{A}$ predicate identifies types that are equivalent to
+$\TOP$. The $\topInCod{A}$ predicate identifies types that have $\TOP$
+in their codomain.
+%
+The relation $A ∈ B$ indicates whether $A$ is syntactically a part of $B$.
+The relation $A ⊆ B$ holds when every part of $A$ is a part of $B$.
+We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
 
+\begin{proposition}
+\item If $A ∩ B ⊆ C$, then $A ⊆ C$ and $B ⊆ C$. \label{prop:⊔⊆-inv}
+\end{proposition}
 
 
 \begin{figure}[tbp]
@@ -165,19 +183,19 @@ Both $\dom{}$ and $\cod{}$ are undefined on atoms.
   \cod{A ∩ B} &= \cod{A} ∩ \cod {B}
   \end{align*}
 
-  \fbox{$\mathsf{top}(A)$}
+  \fbox{$\topP{A}$}
   \begin{gather*}
-    \mathsf{top}(\TOP)
+    \inference{}{\topP{\TOP}}
     \quad
-    \inference{\mathsf{top}(B)}{\mathsf{top}(A → B)}
+    \inference{\topP{B}}{\topP{A → B}}
     \quad
-    \inference{\mathsf{top}(A) & \mathsf{top}(B)}{\mathsf{top}(A ∩ B)}
+    \inference{\topP{A} & \topP{B}}{\topP{A ∩ B}}
   \end{gather*}
 
   \fbox{$A ∈ B$}
   \begin{gather*}
     \inference{}{\alpha ∈ \alpha}  \quad
-    \inference{}{A → B ∈ A → B} \\[3ex]
+    \inference{}{A → B ∈ A → B} \quad
     \inference{A ∈ B}{A ∈ B ∩ C} \quad
     \inference{A ∈ C}{A ∈ B ∩ C}
   \end{gather*}
@@ -193,29 +211,69 @@ Both $\dom{}$ and $\cod{}$ are undefined on atoms.
      \exists A B.\, A → B ∈ D \text{ and } \mathsf{top}(B)  
   \]
 
-  \caption{Auxiliary definitions}
+  \caption{Auxiliary Definitions}
   \label{fig:aux}
 \end{figure}
 
 
 \begin{figure}[tbp]
-  \fbox{$A <: B$} \\[1ex]
-  
-  \centering
-  \begin{tabular}{p{1in}l}
-    (refl$_α$) & $\inference{}{α <: α}$ \\[3ex]
-    (lb$_L$) & $\inference{A <: C}{A ∩ B <: C}$ \\[3ex]
-    (lb$_R$) & $\inference{B <: C}{A ∩ B <: C}$ \\[3ex]
-    (glb) & $\inference{C ≤ A & C ≤ B}{C ≤ A ∩ B}$ \\[3ex]
-    ($\TOP_{\mathrm{top}}$) & $\inference{}{A <: \TOP}$ \\[3ex]
-    ($\TOP{→}'$) & $\inference{}{C <: A → B}\;\mathsf{top}(B)$ \\[3ex]
-    ($→'$) &$\inference{A <: \dom{D} & \cod{D} <: B }{C <: A → B}\begin{array}{l} \neg\, \mathsf{top}(B) \\ \neg \, \mathsf{topInCod}(D) \\ D ⊆ C \end{array}$
-  \end{tabular}
+  \fbox{$A <: B$}
+  \begin{gather*}
+    \text{(refl$_α$)} \; \inference{}{α <: α} \\[3ex]
+    \text{(lb$_L$)} \; \inference{A <: C}{A ∩ B <: C} \quad
+    \text{(lb$_R$)} \; \inference{B <: C}{A ∩ B <: C} \quad
+    \text{(glb)} \; \inference{C ≤ A & C ≤ B}{C ≤ A ∩ B} \\[3ex]
+    (→') \; \inference{C <: \dom{B} & \cod{B} <: D }{A <: C → D}
+    \begin{array}{l} \neg\, \mathsf{top}(D) \\
+      \neg \, \mathsf{topInCod}(B) \\
+      B ⊆ A \end{array}\\[3ex]
+    (\TOP_{\mathrm{top}}) \; \inference{}{A <: \TOP} \quad
+    (\TOP{→}') \; \inference{}{C <: A → B}\;\mathsf{top}(B)
+  \end{gather*}
   \caption{The New Subtyping Judgment}
   \label{fig:new-subtyping}
 \end{figure}
 
 
+The new intersection subtyping judgment, $A <: B$, is defined in
+Figure~\ref{fig:new-subtyping}. Of course, it omits the (trans) rule.
+We also omit the (refl) rule, replacing it with reflexivity for atoms
+(refl$_\alpha$). The most important rule is the one for function types
+$(→')$, which subsumes the rules $(→)$ and $({→}{∩})$ in BCD
+subtyping. It essentially turns the $\beta$-soundness property into a
+subtyping rule. It says that a type $A$ is a subtype of a function
+type $C → D$ if $A$ contains a type $B$ whose domain and codomain are
+larger and smaller than $C$ and $D$, respectively. The use of $B$
+instead of $A$ in the premise, with the condition $B ⊆ A$, allows this
+rule to absorb uses of (incl$_L$) and (incl$_R$) on the left.  The
+side conditions $\neg\;\topP{B}$ and $\neg\;\topInCod{D}$ are needed
+because of the (\TOP{→}') rule, which in turn is needed to preserve
+types under $\eta$-reduction.  In a system that does not involve
+$\eta$-reduction, the (\TOP{→}') rule can be ommitted, as well as
+those side conditions. The rules (lb$_L$) and (lb$_R$) adapt
+(incl$_L$) and (incl$_R$) to a system without transitivity, and have
+appeared many times in the literature~\citep{Bakel:1995aa}.
+
+
+\begin{proposition}\ 
+  \begin{enumerate}
+  \item (reflexivity) $A <: A$ \label{prop:refl}
+  \item If $A <: B ∩ C$, then $A <: B$ and $A <: C$. \label{prop:⊔⊑-inv}
+  \end{enumerate}
+\end{proposition}
+\begin{proof}
+  The proof of reflexivity is by induction on $A$. In the case
+  $A = A_1 → A_2$, we proceed by cases on whether $\topP{A_2}$.
+  If it is, deduce $A_1 → A_2 <: A_1 → A_2$ by rule $(\TOP{→}')$.
+  Otherwise, we use rule $(→')$
+\end{proof}
+
+\begin{proposition}\label{prop:u⊆v⊑w→u⊑w}
+ If $A <: B$ and $C ⊆ B$, then $A <: C$.
+\end{proposition}
+
+\clearpage
+\pagebreak
 \section{Transitivity}
 
 
@@ -225,7 +283,7 @@ Both $\dom{}$ and $\cod{}$ are undefined on atoms.
   $C' ⊆ C$, $\neg\,\mathsf{topInCod}(C')$, $A <: \dom{C'}$, and $\cod{C'} <: B$.
 \end{definition}
 
-\begin{lemma}\label{lem:sub-fun-inv}
+\begin{lemma}\label{lem:⊑-fun-inv}
   If $\neg\,\mathsf{top}(B)$,
   $D <: C$, and
   $A → B ∈ C$, then
@@ -258,6 +316,8 @@ Both $\dom{}$ and $\cod{}$ are undefined on atoms.
 \begin{theorem}[Transitivity of $<:$]\label{lem:sub-trans}
     If $A <: B$ and $B <: C$, then $A <: C$.
 \end{theorem}
+
+\section{Equivalence of BCD Subtyping and the new Subtyping}
 
 
 \begin{theorem}[Equivalence of the subtyping relations]\ \\
