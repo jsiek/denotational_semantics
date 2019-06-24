@@ -730,7 +730,7 @@ AllBot-⊑-any {u ⊔ u₁} {v} bu =
         (λ {u} z → z) ⟨ tt , tt ⟩
         G
         (⊑-conj-L ⊑-refl ⊑-refl)
-        ((⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)))
+        ⊑-refl
   where G : {v′ : Value} {w′₁ : Value} →
           AllBot w′₁ → ¬ (v′ ↦ w′₁ ≡ v ↦ w ⊎ v′ ↦ w′₁ ≡ v ↦ w′)
         G bw1 (inj₁ refl) = bw bw1
@@ -912,6 +912,31 @@ Dist⊔↦⊔ : ∀{v v′ w w′ : Value}
 Dist⊔↦⊔ = <:-trans <:-→⊔ (⊔<:⊔ (<:-→ <:-incl-L <:-refl)
                                (<:-→ <:-incl-R <:-refl))
 
+dv↦cv<:v : ∀{v}{fv : AllFun v}
+          → dom v {fv} ↦ cod v {fv} <: v
+dv↦cv<:v {⊥} {()}
+dv↦cv<:v {const x} {()} 
+dv↦cv<:v {v₁ ↦ v₂} {fv} = <:-refl
+dv↦cv<:v {v₁ ⊔ v₂} {⟨ fv1 , fv2 ⟩} =
+      let ih1 = dv↦cv<:v {v₁}{fv1}  in
+      let ih2 = dv↦cv<:v {v₂}{fv2} in
+      <:-trans Dist⊔↦⊔ (<:-glb (<:-trans ih1 <:-incl-L)
+                               (<:-trans ih2 <:-incl-R))
+{-
+dv↦cv<:v : ∀{v u}{fv : AllFun v}
+          → dom v {fv} <: u → dom v {fv} ↦ cod v {fv} <: v
+dv↦cv<:v {⊥} {u} {()} dv<:u
+dv↦cv<:v {const x} {u} {()} dv<:u
+dv↦cv<:v {v₁ ↦ v₂} {u} {fv} dv<:u = <:-refl
+dv↦cv<:v {v₁ ⊔ v₂} {u} {⟨ fv1 , fv2 ⟩} dv<:u
+    with ⊔<:-inv dv<:u
+... | ⟨ dv₁ , dv₂ ⟩ =
+      let ih1 = dv↦cv<:v {v₁}{u}{fv1} dv₁ in
+      let ih2 = dv↦cv<:v {v₂}{u}{fv2} dv₂ in
+      <:-trans Dist⊔↦⊔ (<:-glb (<:-trans ih1 <:-incl-L)
+                               (<:-trans ih2 <:-incl-R))
+-}
+
 ⊑→<: : ∀{u v} → u ⊑ v → u <: v
 ⊑→<: {.⊥} {v} ⊑-⊥ = <:-U-top
 ⊑→<: {.(const _)} {.(const _)} ⊑-const = <:-refl
@@ -928,17 +953,5 @@ Dist⊔↦⊔ = <:-trans <:-→⊔ (⊔<:⊔ (<:-→ <:-incl-L <:-refl)
    let dv′<:u₁ = ⊑→<: dv′⊑u₁ in
    let u₂<:cv′ = ⊑→<: u₂⊑cv′ in
    let v′<:v = ⊆→<: v′⊆v in
-   <:-trans (<:-trans (<:-→ dv′<:u₁ u₂<:cv′) (dv↦cv<:v dv′<:u₁)) v′<:v
-   where
-   dv↦cv<:v : ∀{v u}{fv : AllFun v}
-             → dom v {fv} <: u → dom v {fv} ↦ cod v {fv} <: v
-   dv↦cv<:v {⊥} {u} {()} dv<:u
-   dv↦cv<:v {const x} {u} {()} dv<:u
-   dv↦cv<:v {v₁ ↦ v₂} {u} {fv} dv<:u = <:-refl
-   dv↦cv<:v {v₁ ⊔ v₂} {u} {⟨ fv1 , fv2 ⟩} dv<:u
-       with ⊔<:-inv dv<:u
-   ... | ⟨ dv₁ , dv₂ ⟩ =
-         let ih1 = dv↦cv<:v {v₁}{u}{fv1} dv₁ in
-         let ih2 = dv↦cv<:v {v₂}{u}{fv2} dv₂ in
-         <:-trans Dist⊔↦⊔ (<:-glb (<:-trans ih1 <:-incl-L)
-                                  (<:-trans ih2 <:-incl-R))
+   <:-trans (<:-trans (<:-→ dv′<:u₁ u₂<:cv′) dv↦cv<:v) v′<:v
+

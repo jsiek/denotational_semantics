@@ -8,6 +8,7 @@
 \usepackage{semantic}
 %\usepackage{fullpage}
 \usepackage{fontspec,unicode-math}
+\usepackage{hyperref}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
@@ -25,10 +26,12 @@
 \maketitle
 
 \newcommand{\TOP}{\ensuremath{\mathtt{U}}}
-\newcommand{\dom}[1]{\mathrm{dom}(#1)}
-\newcommand{\cod}[1]{\mathrm{cod}(#1)}
-\newcommand{\topP}[1]{\mathrm{top}(#1)}
-\newcommand{\topInCod}[1]{\mathrm{topInCod}(#1)}
+\newcommand{\dom}[1]{\mathsf{dom}(#1)}
+\newcommand{\cod}[1]{\mathsf{cod}(#1)}
+\newcommand{\topP}[1]{\mathsf{top}(#1)}
+\newcommand{\topInCod}[1]{\mathsf{topInCod}(#1)}
+\newcommand{\depth}[1]{\mathsf{depth}(#1)}
+\newcommand{\size}[1]{\mathsf{size}(#1)}
 
 
 \begin{abstract}
@@ -39,16 +42,17 @@
   transitivity, and proves transitivity via a sequence of six lemmas
   that culminate in cut-elimination (2018). This article presents a
   subtyping judgment, in regular style, that satisfies the subformula
-  property, and gives a direct proof of transitivity. Borrowing from
-  Laurent's system, the rule for function types is essentially the
-  $\beta$-soundness property.  The main lemma required for the
+  property, and presents a direct proof of transitivity. Borrowing
+  from Laurent's system, the rule for function types is essentially
+  the $\beta$-soundness property.  The main lemma required for the
   transitivity proof is one that has been used to prove the inversion
-  principle for subtyping of function types (Barendregt et
-  al. 2013). The choice of induction principle for the proof of
-  transitivity requires some care: we use strong induction on the
-  lexicographical ordering of the sum of the depths of the first and
-  last type followed by the sum of the sizes of the first and second
-  type.
+  principle for subtyping of function types. The choice of induction
+  principle for the proof of transitivity is subtle: we use
+  well-founded induction on the lexicographical ordering of the sum of
+  the depths of the first and last type followed by the sum of the
+  sizes of the middle and last type. The article concludes with a
+  proof that the new subtyping judgment is equivalent to that of
+  Barendregt, Coppo, and Dezani-Ciancaglini.
 \end{abstract}
 
 \section{Introduction}
@@ -56,13 +60,14 @@
 Intersection types were invented by Coppo, Dezani-Ciancaglini, and
 Salle, as a tool for studying normalization in the lambda
 calculus~\citep{Coppo:1979aa}. By varying the subtyping rules and atom
-types, researchers have used intersection type systems to model many
+types, researchers use intersection type systems to model many
 different
 calculi~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
 Perhaps the best-known of them is the BCD intersection type system of
 \citet{Barendregt:1983aa}. For this article we focus on the BCD
 system, following the presentation of \citet{Barendregt:2013aa}.  We
-conjecture that our results apply to other intersection type systems.
+conjecture that our results apply to other intersection type systems
+as well.
 
 The BCD intersection type systems extends the simply-typed lambda
 calculus with the addition of intersection types, written $A ∩ B$, a
@@ -72,8 +77,8 @@ constants. Figure~\ref{fig:types} defines the grammar of types.
 \begin{figure}[tbp]
   \[
   \begin{array}{lclr}
-    \alpha,\beta & ::= & \TOP \mid c_0 \mid c_1 \mid c_2 \mid \cdots & \text{atoms}\\
-    A,B,C,D & ::= & \alpha \mid A → B \mid A ∩ B & \text{types}
+    α,\beta & ::= & \TOP \mid c_0 \mid c_1 \mid c_2 \mid \cdots & \text{atoms}\\
+    A,B,C,D & ::= & α \mid A → B \mid A ∩ B & \text{types}
   \end{array}
   \]
   \caption{Intersection Types}
@@ -93,8 +98,8 @@ premises does not appear in the conclusion. Thus, the BCD subtyping
 judgment does not enjoy the subformula property.  For other systems,
 it is straightforward to remove the (trans) rule, modify the other
 rules, and then then prove transitivity~\citep{Muehlboeck:2018aa}.
-Unfortunately, the ${→}{∩}$ rule significantly complicates the
-situation for the BCD system.
+Unfortunately, the $({→}{∩})$ rule of the BCD system significantly
+complicates the situation.
 
 \begin{figure}[tbp]
   \fbox{$A ≤ B$}
@@ -119,7 +124,8 @@ using intersection types to create a denotational semantics for the
 ISWIM language, which includes constants and primitive
 operations~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
 It seems that doing so requires placing extra conditions on types and
-that is much easier when subtyping satisfies the subformula property.
+it is much easier to do so when subtyping satisfies the subformula
+property.
 
 \citet{Laurent:2018aa} introduces the ISC sequent-style system,
 written $\Gamma \vdash B$, where $\Gamma$ is a sequence of types
@@ -127,26 +133,29 @@ $A_1,\ldots,A_n$. The intuition is that $A_1,\ldots,A_n \vdash B$
 corresponds to $A_1 ∩ \cdots ∩ A_n ≤ B$. The ISC system satisfies the
 subformula property and is equivalent to the BCD system. To prove
 this, Laurent establishes six lemmas that culminate in
-cut-elimination, from which transitivity follows dirctly.
+cut-elimination, from which transitivity follows.
 
 This article presents a more direct route to the subformula property
 and transitivity. We present a subtyping relation $A <: B$ and
-directly prove transitivity, without using an auxilliary sequent-style
+directly prove transitivity without using an auxiliary sequent-style
 system. Nevertheless, the intuitions are based on those of
 Laurent. The key to $A <: B$ is a rule for function types based on the
 $\beta$-soundness property~\citep{Barendregt:2013aa}, just as in ISC.
 The definitions and results in this article have been machine checked
 in Agda.
 
-
-ROAD MAP
-
-
+We describe the new subtyping relation in
+Section~\ref{sec:new-subtyping}, prove transitivity in
+Section~\ref{sec:trans}, and prove its equivalence to BCD subtyping in
+Section~\ref{sec:equiv}. We make some concluding remarks in
+Section~\ref{sec:conclude}.
+    
 %$λ^{\mathrm{BCD}}_∩$
 
-\section{Intersection Subtyping, with Subformula}
+\section{A New Subtyping Judgment}
+\label{sec:new-subtyping}
 
-Our new subtyping judgment relies on several auxilliary notions that
+Our new subtyping judgment relies on several auxiliary notions that
 help us avoid the use of ellipses, which we define in
 Figure~\ref{fig:aux}. These include the $\dom{A}$ and $\cod{A}$
 functions, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
@@ -170,8 +179,8 @@ The relation $A ∈ B$ indicates whether $A$ is syntactically a part of $B$.
 The relation $A ⊆ B$ holds when every part of $A$ is a part of $B$.
 We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
 
-\begin{proposition}
-\item If $A ∩ B ⊆ C$, then $A ⊆ C$ and $B ⊆ C$. \label{prop:⊔⊆-inv}
+\begin{proposition}\label{prop:⊔⊆-inv}
+ \item If $A ∩ B ⊆ C$, then $A ⊆ C$ and $B ⊆ C$. 
 \end{proposition}
 
 
@@ -197,7 +206,7 @@ We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
 
   \fbox{$A ∈ B$}
   \begin{gather*}
-    \inference{}{\alpha ∈ \alpha}  \quad
+    \inference{}{α ∈ α}  \quad
     \inference{}{A → B ∈ A → B} \quad
     \inference{A ∈ B}{A ∈ B ∩ C} \quad
     \inference{A ∈ C}{A ∈ B ∩ C}
@@ -225,7 +234,7 @@ We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
     \text{(refl$_α$)} \; \inference{}{α <: α} \\[3ex]
     \text{(lb$_L$)} \; \inference{A <: C}{A ∩ B <: C} \quad
     \text{(lb$_R$)} \; \inference{B <: C}{A ∩ B <: C} \quad
-    \text{(glb)} \; \inference{A ≤ C & A ≤ D}{A ≤ C ∩ D} \\[3ex]
+    \text{(glb)} \; \inference{A <: C & A <: D}{A <: C ∩ D} \\[3ex]
     (→') \; \inference{C <: \dom{B} & \cod{B} <: D }{A <: C → D}
     \begin{array}{l} \neg\, \mathsf{top}(D) \\
       \neg \, \mathsf{topInCod}(B) \\
@@ -241,30 +250,32 @@ We say that $B$ \emph{contains} $A$ if $A ⊆ B$.
 The new intersection subtyping judgment, $A <: B$, is defined in
 Figure~\ref{fig:new-subtyping}. First, it does not include the (trans)
 rule.  It also replaces the (refl) rule with reflexivity for atoms
-(refl$_\alpha$). The most important rule is the one for function types
+(refl$_α$). The most important rule is the one for function types
 $(→')$, which subsumes $(→)$ and $({→}{∩})$ in BCD subtyping.  The
 $(→')$ rule essentially turns the $\beta$-soundness property into a
-subtyping rule. It says that a type $A$ is a subtype of a function
-type $C → D$ if $A$ contains a type $B$ whose domain and codomain are
-larger and smaller than $C$ and $D$, respectively. The use of $B$
-instead of $A$ in the premise, with the condition $B ⊆ A$, allows this
-rule to absorb uses of (incl$_L$) and (incl$_R$) on the left.  The
-side conditions $\neg\;\topP{B}$ and $\neg\;\topInCod{D}$ are needed
-because of the (\TOP{→}') rule, which in turn is needed to preserve
-types under $\eta$-reduction.  In a system that does not involve
-$\eta$-reduction, the (\TOP{→}') rule can be ommitted, as well as
-those side conditions. The rules (lb$_L$) and (lb$_R$) adapt
-(incl$_L$) and (incl$_R$) to a system without transitivity, and have
-appeared many times in the literature~\citep{Bakel:1995aa}.  The
-$(\TOP{→}')$ rule generalizes the (\TOP{→}) rule, replacing the $\TOP$
-on the left with any type $A$, because for transitivity, any type is
-below $\TOP$. The $(\TOP{→}')$ rule also replaces the $\TOP$ in the
-codomain on the right with any type $D$ that is equivalent to $\TOP$.
+subtyping rule. The $(→')$ rule says that a type $A$ is a subtype of a
+function type $C → D$ if a subset of $A$, call it $B$, has domain and
+codomain that are larger and smaller than $C$ and $D$,
+respectively. The use of a subset of $A$ enables this rule to absorb
+uses of (incl$_L$) and (incl$_R$) on the left.  The side conditions
+$\neg\;\topP{B}$ and $\neg\;\topInCod{D}$ are needed because of the
+(\TOP{→}') rule, which in turn is needed to preserve types under
+$\eta$-reduction.  In a system that does not involve $\eta$-reduction,
+the (\TOP{→}') rule can be omitted, as well as those side
+conditions. The rules (lb$_L$) and (lb$_R$) adapt (incl$_L$) and
+(incl$_R$) to a system without transitivity, and have appeared many
+times in the literature~\citep{Bakel:1995aa}.  The $(\TOP{→}')$ rule
+generalizes the (\TOP{→}) rule, replacing the $\TOP$ on the left with
+any type $A$, because for transitivity, any type is below $\TOP$. The
+$(\TOP{→}')$ rule also replaces the $\TOP$ in the codomain on the
+right with any type $D$ that is equivalent to $\TOP$.
 
+Before moving on, we make note of some basic facts regarding the $<:$
+relation and the $\topP{A}$ predicate.
 
-\begin{proposition}\ 
+\begin{proposition}[Basic Properties of $<:$]\ \label{prop:subtyping}
   \begin{enumerate}
-  \item (reflexivity) $A <: A$ \label{prop:refl}
+  \item (reflexivity) $A <: A$ \label{prop:⊑-refl}
   \item If $A <: B ∩ C$, then $A <: B$ and $A <: C$. \label{prop:⊔⊑-inv}
   \item If $A <: B$ and $C ∈ B$, then $A <: C$.\label{prop:u∈v⊑w→u⊑w}
   \item If $A <: B$ and $C ⊆ B$, then $A <: C$.\label{prop:u⊆v⊑w→u⊑w}
@@ -272,20 +283,53 @@ codomain on the right with any type $D$ that is equivalent to $\TOP$.
 \end{proposition}
 \begin{proof}\ 
   \begin{enumerate}
-    \item The proof of reflexivity is by induction on $A$. In the case
-      $A = A_1 → A_2$, we proceed by cases on whether $\topP{A_2}$.
-      If it is, deduce $A_1 → A_2 <: A_1 → A_2$ by rule $(\TOP{→}')$.
-      Otherwise, we use rule $(→')$
-    \item The proof is by induction on the derivation of $A <: B ∩ C$.
-    \item The proof is by induction on $B$. In the case where $B = B_1 ∩ B_2$,
-      we have that either $C ∈ B_1$ or $C ∈ B_2$, but in
-      either case we use part \ref{prop:⊔⊑-inv} of this proposition to
-      fulfill the premise of the induction hypothesis.
-    \item The proof  is by induction on $C$, using part \ref{prop:u∈v⊑w→u⊑w}
-      of this proposition in the cases for atoms and function types. 
+  \item The proof of reflexivity is by induction on $A$. In the case
+    $A = A_1 → A_2$, we proceed by cases on whether $\topP{A_2}$.
+    If it is, deduce $A_1 → A_2 <: A_1 → A_2$ by rule $(\TOP{→}')$.
+    Otherwise, apply rule $(→')$
+  \item The proof is by induction on the derivation of $A <: B ∩ C$.
+  \item The proof is by induction on $B$. In the case where $B = B_1
+    ∩ B_2$, either $C ∈ B_1$ or $C ∈ B_2$, but in either case part
+    \ref{prop:⊔⊑-inv} of this proposition fulfills the premise of
+    the induction hypothesis, from which the conclusion follows.
+  \item The proof  is by induction on $C$, using part \ref{prop:u∈v⊑w→u⊑w}
+    of this proposition in the cases for atoms and function types.
   \end{enumerate}
 \end{proof}
 
+\begin{proposition}[Properties of $\topP{A}$]\ \label{prop:top}
+  \begin{enumerate}
+  \item If $\topP{A}$ then $\topP{\cod{A}}$.\label{prop:AllBot-cod}
+  \item If $\topP{A}$ and $B ∈ A$, then $\topP{B}$.\label{prop:AllBot-∈}
+  \item If $\topP{A}$ and $B ⊆ A$, then $\topP{B}$.\label{prop:AllBot-⊆}
+  \item If $\topP{A}$ and $A <: B$, then $\topP{B}$.\label{prop:AllBot-⊑}
+  \item If $\topP{A}$, then $B <: A$.\label{prop:AllBot-⊑-any}
+  \end{enumerate}
+\end{proposition}
+\begin{proof}\
+  \begin{enumerate}
+  \item The proof is a straightforward induction on $A$.
+  \item The proof is also a straightforward induction on $A$.
+  \item The proof is by induction on $B$. The cases for atoms and
+    function types are proved by part \ref{prop:AllBot-∈} of
+    this proposition. In the case for
+    $B = B_1 ∩ B_2$, from $B_1 ∩ B_2 <: A$, we have
+    $B_1 <: A$ and $B_2 <: A$ (Proposition~\ref{prop:⊔⊆-inv}).
+    Then by the induction hypotheses for $B_1$ and $B_2$ we have
+    $\topP{B_1}$ and $\topP{B_2}$, from which we conclude
+    that $\topP{B_1 ∩ B_2}$.
+  \item The proof is by induction on the derivation of $A <: B$.
+    All of the cases are straightforward except for rule $(→')$.
+    In that case we have $B = B_1 → B_2$ and some $A'$ such that
+    $A' ⊆ A$, $B_1 <: \dom{A'}$, $\cod{A'} <: B_2$, $\neg\,\topP{B_2}$,
+    and $\neg\,\topInCod{A'}$. From the premise $\topP{A}$
+    and part \ref{prop:AllBot-⊆} of this proposition, we
+    have $\topP{A'}$. Then by part \ref{prop:AllBot-cod}
+    we have $\topP{\cod{A'}}$. By the induction hypothesis
+    for $\cod{A'} <: B$ we conclude that $\topP{B}$.
+  \item The proof is a straightforward induction on $A$.
+  \end{enumerate}
+\end{proof}
 
 Next we turn to the subtyping inversion principle for function types.
 The idea is to generalize the rule $(→')$ with respect to the type on
@@ -296,10 +340,12 @@ into the following definition.
 \begin{definition}[factors]
   We say $C → D$ \emph{factors} $A$
   if there exists some type $B$ such that
-  $B ⊆ A$, $\neg\,\mathsf{topInCod}(B)$, $C <: \dom{B}$, and $\cod{B} <: D$.
+  $B ⊆ A$, $C <: \dom{B}$, $\cod{B} <: D$, and
+  $\neg\,\mathsf{topInCod}(B)$.
 \end{definition}
 
-\begin{proposition}[Inversion Principle for Function Types]\label{lem:⊑-fun-inv}
+\begin{proposition}[Inversion Principle for Function Types]
+  \label{prop:⊑-fun-inv}
   If $A <: C'$, $C → D ∈ C'$, and $\neg\,\mathsf{top}(D)$, then
   $C → D$ factors $A$.
 \end{proposition}
@@ -308,6 +354,7 @@ into the following definition.
 \end{proof}
 
 \section{Transitivity}
+\label{sec:trans}
 
 The proof of transitivity relies on the following lemma, which is
 traditionally needed to prove the inversion principle for function
@@ -319,7 +366,7 @@ factors $B$, then $\dom{A} → \cod{A}$ also factors $B$.
 \begin{lemma}\label{lem:sub-inv-trans}
   If
   \begin{itemize}
-  \item for any $C$ and $D$, if $C → D ∈ A$ and $\neg\,\mathsf{top}(D)$,
+  \item for any $C$ $D$, if $C → D ∈ A$ and $\neg\,\mathsf{top}(D)$,
     then $C → D$ factors $B$, and
   \item $\neg\, \mathsf{topInCod}(A)$,
   \end{itemize}
@@ -351,36 +398,245 @@ factors $B$, then $\dom{A} → \cod{A}$ also factors $B$.
   \end{itemize}
 \end{proof}
 
-We now turn to the proof of transitivity, that
-if $A <: B$ and $B <: C$, then $A <: C$.
-
-
-
-
+We now turn to the proof of transitivity, that if $A <: B$ and $B <:
+C$, then $A <: C$. The proof is by well-founded induction on the
+lexicographical ordering of the sum of the depths of $A$ and $C$
+followed by the sum of the sizes of $B$ and $C$. To be precise, we
+define this ordering as follows.
+\[
+\langle A, B, C \rangle \ll \langle A', B', C' \rangle
+=
+\begin{array}{l}
+\depth{A} + \depth{C} < \depth{A'} + \depth{C'}
+\text{ or } \\
+(\depth{A} + \depth{C}
+\leq
+\depth{A'} + \depth{C'} \\
+\text{ and }
+\size{B} + \size{C}
+<
+\size{B'} + \size{C'})
+\end{array}
+\]
+where $\size{A}$ is 
 \begin{align*}
-  \mathsf{size}(\alpha) &= 0 \\
-  \mathsf{size}(A → B) &= 1 + \mathsf{size}(A) + \mathsf{size}(B) \\
-  \mathsf{size}(A ∩ B) &= 1 + \mathsf{size}(A) + \mathsf{size}(B)
+  \size{α} &= 0 \\
+  \size{A → B} &= 1 + \size{A} + \size{B} \\
+  \size{A ∩ B} &= 1 + \size{A} + \size{B}
+\end{align*}
+and $\depth{A}$ is 
+\begin{align*}
+  \depth{α} &= 0 \\
+  \depth{A → B} &= 1 + \max(\depth{A}, \depth{B}) \\
+  \depth{A ∩ B} &= \max(\depth{A}, \depth{B})
 \end{align*}
 
-\begin{align*}
-  \mathsf{depth}(\alpha) &= 0 \\
-  \mathsf{depth}(A → B) &= 1 + \max(\mathsf{depth}(A), \mathsf{depth}(B)) \\
-  \mathsf{depth}(A ∩ B) &= \max(\mathsf{depth}(A), \mathsf{depth}(B))
-\end{align*}
-
-\begin{theorem}[Transitivity of $<:$]\label{lem:sub-trans}
+\begin{theorem}[Transitivity of $<:$]\label{thm:⊑-trans}
     If $A <: B$ and $B <: C$, then $A <: C$.
 \end{theorem}
+\begin{proof}
+  The proof is by well-founded induction on the relation $\ll$.
+  We proceed by cases on the last rule applied in the
+  derivation of $B <: C$.
+  \begin{description}
+  \item[Case (refl$_α$)] We have $B = C = α$.  From the premise $A <:
+    B$ we immediately conclude that $A <: α$.
+  \item[Case (lb$_L$)] So $B = B_1 ∩ B_2$, $B_1 <: C$, and $A <: B_1 ∩
+    B_2$.  We have $A <: B_1$ (Proposition~\ref{prop:subtyping} part
+    \ref{prop:⊔⊑-inv}), so we conclude that $A <: C$ by the induction
+    hypothesis, noting that $\langle A, B_1, C \rangle \ll \langle A,
+    B, C \rangle$ because $\size{B_1} < \size{B}$.
+  \item[Case (lb$_R$)] So $B = B_1 ∩ B_2$, $B_2 <: C$, and $A <: B_1 ∩
+    B_2$.  We have $A <: B_2$ (Proposition~\ref{prop:subtyping} part
+    \ref{prop:⊔⊑-inv}), so we conclude that $A <: C$ by the induction
+    hypothesis, noting that $\langle A, B_2, C \rangle \ll \langle A,
+    B, C \rangle$ because $\depth{B_2} \leq \depth{B}$ and $\size{B_2}
+    < \size{B}$.
+  \item[Case (glb)] We have $C = C_1 ∩ C_2$, $B <: C_1$, and $B <:
+    C_2$.  By the induction hypothesis, we have $A <: C_1$ and $A <:
+    C_2$, noting that $\langle A, B, C_1 \rangle \ll \langle A, B, C
+    \rangle$ $\langle A, B, C_2 \rangle \ll \langle A, B, C\rangle$
+    because $\depth{C_1} \leq \depth{C}$, $\depth{C_2} \leq
+    \depth{C}$, $\size{C_1} < C$, and $\size{C_2} < C$.
+    We conclude $A <: C_1 ∩ C_2$ by rule (glb).
+  \item[Case $(→')$] So $C = C_1 → C_2$, $\neg \topP{C_2}$, and there
+    exists $B'$ such that $C_1 <: \dom{B'}$, $\cod{B'} <: C_2$, $B' ⊆
+    B$, and $\neg \topInCod{B'}$. From $A <: B$ and $B' ⊆ B$, we have
+    $A <: B'$ (Proposition~\ref{prop:subtyping} part
+    \ref{prop:u⊆v⊑w→u⊑w}). Thus, for any $B_1 → B_2 ∈ B'$, $B_1 → B_2$
+    factors $A$ (Proposition~\ref{prop:⊑-fun-inv}). We have
+    satisfied the premises of Lemma~\ref{lem:sub-inv-trans},
+    so $\dom{B'} → \cod{B'}$ factors $A$. That means there exists
+    $A'$ such that $A' ⊆ A$, $\neg\,\topInCod{A'}$, $\dom{B'} <: \dom{A'}$,
+    and $\cod{A'} <: \cod{B'}$. Then by the induction hypothesis,
+    we have
+    \[
+    C_1 <: \dom{A'} \quad\text{and}\quad \cod{A'} <: C_2
+    \]
+    noting that
+    $\langle C_1, \dom{B'}, \dom{A'} \rangle \ll \langle A, B, C \rangle$
+    because $\depth{C_1} + \depth{\dom{A'}} < \depth{A} + \depth{C}$
+    and
+    $\langle \cod{A'}, \cod{B'}, C_2 \rangle \ll \langle A, B, C \rangle$
+    because $\depth{\cod{A'}} + \depth{C_2} < \depth{A} + \depth{C}$.
+    We conclude that $A <: C_1 → C_2$ by rule $(→')$ witnessed by $A'$.
+  \item[Case $(\TOP_{\mathrm{top}})$] We have $C = \TOP$ and
+    conclude $A <: \TOP$ by rule $(\TOP_{\mathrm{top}})$.
+  \item[Case $(\TOP{→}')$] We have $C = C_1 → C_2$ and $\topP{C_2}$.
+    We conclude $A <: C_1 → C_2$ by rule $(\TOP{→}')$.
+  \end{description}
+\end{proof}
 
-\section{Equivalence of BCD Subtyping and the new Subtyping}
 
+\section{Equivalence with BCD Subtyping}
+\label{sec:equiv}
+
+Having proved (trans), we next prove $(→)$ and $({→}{∩})$
+and then show that $A <: B$ is equivalent to $A ≤ B$.
+
+\begin{lemma}[$→$]\label{lem:⊑-fun′}
+  If $C <: A$ and $B <: D$, then
+  $A → B <: C → D$.
+\end{lemma}
+\begin{proof}
+  Consider whether $\topP{D}$ or not.
+  \begin{description}
+  \item[Case $\topP{D}$] We conclude $A → B <: C → D$
+    by rule $(\TOP{→}')$.
+  \item[Case $\neg \,\topP{D}$]
+    Consider whether $\topP{B}$ or not.
+    \begin{description}
+    \item[Case $\topP{B}$] So $\topP{D}$ (Prop. \ref{prop:top}
+      part \ref{prop:AllBot-⊑}), but that is a contradiction.
+    \item[Case $\neg\,\topP{B}$]
+      We conclude that $A → B <: C → D$ by rule $(→')$.
+    \end{description}
+  \end{description}
+\end{proof}
+
+\begin{lemma}[${→}{∩}$]\label{lem:⊑-dist}
+  $(A → B) ∩ (A → C) <: A → (B ∩ C)$
+\end{lemma}
+\begin{proof}
+   We consider the cases for whether $\topP{B}$ or $\topP{C}$.
+   \begin{description}
+   \item[Case $\topP{B}$ and $\topP{C}$]
+     Then $\topP{B ∩ C}$ and we conclude that
+     $(A → B) ∩ (A → C) <: A → (B ∩ C)$
+     by rule $(\TOP{→}')$.
+   \item[Case $\topP{B}$ and $\neg\,\topP{C}$]
+     We conclude that 
+     $(A → B) ∩ (A → C) <: A → (B ∩ C)$
+     by rule $(→')$, choosing the witness $A → C$
+     and noting that $C <: B$ 
+     by way of Proposition~\ref{prop:top}
+     part \ref{prop:AllBot-⊑-any}
+     and $C <: C$ by Proposition~\ref{prop:subtyping}
+     part \ref{prop:⊑-refl}.
+   \item[Case $\neg\,\topP{B}$ and $\topP{C}$]
+     We conclude that 
+     $(A → B) ∩ (A → C) <: A → (B ∩ C)$
+     by rule $(→')$, this time with witness $A → B$
+     and noting that
+     $B <: B$ by Proposition~\ref{prop:subtyping}
+     part \ref{prop:⊑-refl}
+     and $B <: C$ 
+     by way of Proposition~\ref{prop:top}
+     part \ref{prop:AllBot-⊑-any}.
+   \item[Case $\neg,\topP{B}$ and $\neg\,\topP{C}$]
+     Again we apply rule $(→')$, but with witness
+     $(A → B) ∩ (A → C)$.
+   \end{description}
+\end{proof}
+
+\noindent We require one more lemma.
+
+\begin{lemma}
+  \label{lem:dv↦cv<:v}
+  $A ≤ \dom{A} → \cod{A}$.
+\end{lemma}
+\begin{proof}
+  The proof is by induction on $A$.
+\end{proof}
+
+\noindent Now for the proof of equivalence
 
 \begin{theorem}[Equivalence of the subtyping relations]\ \\
   $A <: B$ if and only if $A ≤ B$.
 \end{theorem}
+\begin{proof}
+  We prove each direction of the if-and-only-if separately.
+  \begin{description}
+  \item[$A <: B$ implies $A ≤ B$]
+    We proceed by induction on the derivation of $A <: B$.
+    \begin{description}
+    \item[Case (refl$_α$)] We conclude $α ≤ α$ by (refl).      
+    \item[Case (lb$_L$)] By the induction hypothesis we have $A ≤ C$.
+      By (incl$_L$) we have $A ∩ B ≤ A$. We conclude
+      that $A ∩ B ≤ C$ by (trans).
+    \item[Case (lb$_R$)] By the induction hypothesis we have $B ≤ C$.
+      By (incl$_R$) we have $A ∩ B ≤ B$. We conclude
+      that $A ∩ B ≤ C$ by (trans).
+    \item[Case (glb)] By the induction hypothesis we have
+      $A ≤ C$ and $A ≤ D$, so we conclude that
+      $A ≤ C ∩ D$ by (glb).
+    \item[Case $(→')$] By the induction hypothesis we have
+      $C ≤ \dom{B}$ and also $\cod{B} ≤ D$.
+      From $B ⊆ A$ we have $A ≤ B$.      
+      Then by Lemma~\ref{lem:dv↦cv<:v} we have
+      $B ≤ \dom{B} → \cod{B}$.
+      Also, we have $\dom{B} → \cod{B} ≤ C → D$ by rule $(→)$.
+      We conclude that $A ≤ C → D$ by chaining the three prior
+      facts using (trans).
+    \item[Case $(\TOP_{\mathrm{top}})$]
+      We conclude that $A ≤ \TOP$ by $(\TOP_{\mathrm{top}})$.
+    \item[Case $(\TOP{→}')$] We have $A ≤ \TOP$ and $\TOP <: C →
+      \TOP$.  Also, $C → \TOP ≤ C → D$ because $\TOP <: D$ follows
+      from $\topP{D}$.  Thus, applying (trans) we conclude $A ≤ C →
+      D$.
+    \end{description}
+    
+  \item[$A ≤ B$ implies $A <: B$]
+    We proceed by induction on the derivation of $A ≤ B$.
+    \begin{description}
+    \item[Case (refl)] We conclude $A <: A$ by Prop.~\ref{prop:subtyping}
+      part \ref{prop:⊑-refl}.
+    \item[Case (trans)]
+      By the induction hypothesis, we have $A <: B$ and $B <: C$.
+      We conclude that $A <: C$ by Theorem~\ref{thm:⊑-trans}.
+    \item[Case (incl$_L$)] We have $A <: A$
+      (Prop.~\ref{prop:subtyping} part \ref{prop:⊑-refl}),
+      and therefore $A ∩ B <: A$ by rule (lb$_L$).
+    \item[Case (incl$_R$)] We have $B <: B$
+      (Prop.~\ref{prop:subtyping} part \ref{prop:⊑-refl}),
+      and therefore $A ∩ B <: B$ by rule (lb$_R$).
+    \item[Case (glb)] By the induction hypothesis, we have
+      $A <: C$ and $A <: D$, so we conclude that $A <: C ∩ D$ by (glb).
+    \item[Case $(→)$] By the induction hypothesis, we have $C <: A$
+      and $B <: D$. We conclude that $A → B <: C → D$
+      by Lemma~\ref{lem:⊑-fun′}.
+    \item[Case $({→}{∩})$] We conclude that
+      $(A → B) ∩ (A → C) <: A → (B ∩ C)$
+      by Lemma~\ref{lem:⊑-dist}.
+    \item[Case $(\TOP_{\mathrm{top}})$]
+      We conclude that $A <: \TOP$ by rule $(\TOP_{\mathrm{top}})$.
+    \item[Case $(\TOP{→})$]
+      We have $\topP{\TOP}$, so $\TOP <: C → \TOP$ by rule $(\TOP{→}')$.
+    \end{description}
+    
+  \end{description}
+\end{proof}
 
-\clearpage
+\section{Conclusion}
+\label{sec:conclude}
+
+In this article we present a new subtyping relation $A <: B$ for
+intersection types that enjoys the subformula property.  None of the
+rules of the new subtyping relation are particularly novel, but the
+fact that we can prove transitivity directly from them is!  We prove
+that the new relation is equivalent to the subtyping relation $A ≤ B$
+of Barendregt, Coppo, and Dezani-Ciancaglini.
+
 \pagebreak
 
 \bibliographystyle{abbrvnat}
@@ -391,5 +647,6 @@ if $A <: B$ and $B <: C$, then $A <: C$.
 % LocalWords:  dom subtyping Barendregt et al subformula sequent aa
 % LocalWords:  BCD lclr refl glb topInCod Coppo Dezani Ciancaglini fk
 % LocalWords:  Salle Engeler Honsell Abramsky Plotkin Rocca Alessi
-% LocalWords:  subsumption subtype denotational ISWIM Landin
-% LocalWords:  Felleisen
+% LocalWords:  subsumption subtype denotational ISWIM Landin Ishihara
+% LocalWords:  Felleisen Muehlboeck ISC Agda codomain reflexivity
+% LocalWords:  Bakel
