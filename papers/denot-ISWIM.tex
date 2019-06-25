@@ -1,0 +1,93 @@
+\documentclass{article}
+%\usepackage{cmbright}
+\usepackage{natbib}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{mathabx}
+\usepackage{stmaryrd}
+\usepackage{semantic}
+%\usepackage{fullpage}
+%\usepackage{fontspec,unicode-math}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{constraint}[theorem]{Constraint}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\true}[0]{\mathsf{true}}
+\newcommand{\curry}[1]{\mathsf{curry}(#1)}
+\newcommand{\apply}[2]{\mathsf{apply}(#1, #2)}
+
+\title{An Elementary Denotational \\ Semantics for ISWIM}
+\author{Jeremy G. Siek}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  This article takes a baby step toward developing denotational
+  semantics that are suitable for widespread use by programming
+  language practitioners and researchers who work outside of
+  semantics, e.g, in compiler correctness, static analysis, language
+  standards, etc. The current practice in such areas is to use
+  operational semantics, and it is quite successful. However, such
+  semantics are not compositional, which complicates reasoning about
+  them.  Denotational semantics are compositional, but their
+  mathematical sophistication has made them too time consuming for
+  practitioners to understand and customize to their uses. One purpose
+  of this article is to see how little mathematics is necessary to
+  develop compositional semantics.
+
+  As a case study, this article develops a denotational semantics for
+  the ISWIM programming language, that is, for a call-by-value lambda
+  calculus extended with arbitrary primitive operations and literals.
+  It models lambda expressions with lookup tables, a simple idea that
+  goes back to the graph and filter models for the lambda
+  calculus. Unfortunately, those models cannot be used as-is for
+  ISWIM: lookup tables are too loose in that they can represent
+  arbitrary relations, not just functions. So the article presents a
+  way to restrict lookup tables to just functions. The article proves
+  the soundness and adequacy of the resulting denotational semantics,
+  proves that denotational equality implies contextual equivalence,
+  and demostrates uses of the semantics in compiler correctness proofs
+  (inlining and closure conversion).
+\end{abstract}
+
+
+\section{Introduction}
+
+\citet{Barendregt:2013aa}
+
+\section{Semantics of ISWIM}
+
+Values
+\[
+\begin{array}{lcll}
+  \mathbb{A} & ::= & \mathbb{Z} \mid \mathbb{B} \mid \cdots & \text{atomic types}\\
+  \mathbb{P} & ::= & \mathbb{A} \mid \mathbb{A} \to \mathbb{P} & \text{primitive types}\\
+  c & \in & \mathbb{P} & \text{constants} \\
+  u,v,w & ::= & c \mid \bot \mid v \mapsto w \mid u \sqcup v & \text{values}
+\end{array}
+\]
+
+\begin{align*}
+  \curry{D}\, \gamma\, (v \mapsto w) &= D \,(\gamma,v)\, w\\
+  \curry{D}\, \gamma\, (u \sqcup v) &= D \,\gamma\, u \text{ and } D\, \gamma\, v \\
+  \curry{D}\, \gamma\, \bot &= \true \\
+\end{align*}
+
+
+\begin{align*}
+  \apply{D}{E}\,\gamma\,w &=
+    \exists v.\, D\,\gamma\,(v \mapsto w) \text{ and } E \, \gamma \, v
+\end{align*}
+
+\section{Conclusion}
+
+
+\end{document}
