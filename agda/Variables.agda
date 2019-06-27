@@ -1,7 +1,10 @@
-open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Maybe 
+open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s; ≤-pred)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (¬_; Dec; yes; no)
-open import Data.Product using (_×_)
+
 
 module Variables where
 
@@ -36,6 +39,21 @@ Z var≟ (S _)  =  no λ()
 var≟-refl : ∀ {Γ} (x : Var Γ) → (x var≟ x) ≡ yes refl
 var≟-refl Z = refl
 var≟-refl (S x) rewrite var≟-refl x = refl
+
+var→ℕ : ∀{Γ} → Var Γ → Σ[ n ∈ ℕ ] n ≤ Γ
+var→ℕ Z = ⟨ 0 , z≤n ⟩
+var→ℕ (S x)
+    with var→ℕ x
+... | ⟨ n , lt ⟩ =
+      ⟨ suc n , s≤s lt ⟩
+
+ℕ→var : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Var Γ
+ℕ→var {zero} zero ()
+ℕ→var {suc Γ} zero lt =
+    Z
+ℕ→var {zero} (suc n) ()
+ℕ→var {suc Γ} (suc n) lt =
+    S (ℕ→var {Γ} n (≤-pred lt))
 
 
 {- Some other miscellaneous stuff -}
