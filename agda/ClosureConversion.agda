@@ -89,6 +89,10 @@ compressor {Γ} (suc n) lt M
     ... | no neq = weaken (ρ x)
 
 
+bind-ast : AST Γ → (n : ℕ) → Arg Γ n
+
+
+
 convert-clos : ∀{Γ} → Term Γ → IR Γ
 convert-clos (` x) = var x
 convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
