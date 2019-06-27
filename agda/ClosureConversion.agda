@@ -89,7 +89,6 @@ compressor {Γ} (suc n) lt M
     ... | no neq = weaken (ρ x)
 
 
-bind-ast : AST Γ → (n : ℕ) → Arg Γ n
 
 
 
