@@ -30,13 +30,10 @@ data Args Γ where
   cons : ∀{n bs} → Arg Γ n → Args Γ bs → Args Γ (n ∷ bs)
 
 bind-ast : ∀{Γ} → (n : ℕ) → AST (n + Γ) → Arg Γ n
-bind-ast {Γ} zero M = ast M
-bind-ast {Γ} (suc n) M =
-  let ih = bind-ast n {!!} in
-  {!!}
-  where G : (suc (n + Γ)) ≡ (n + suc Γ)
-        G = {!refl!}
-
+bind-ast {Γ} zero M =
+    ast M
+bind-ast {Γ} (suc n) M rewrite sym (+-suc n Γ) =
+    bind (bind-ast n M)
 
 
 Subst : ℕ → ℕ → Set

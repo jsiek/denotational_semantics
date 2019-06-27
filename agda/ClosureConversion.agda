@@ -7,14 +7,18 @@ open import ISWIM
 open import Data.Bool using (Bool; true; false; _∨_)
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List; []; _∷_; _++_; length)
-open import Data.Nat using (ℕ; zero; suc; _≤_; _≟_)
-open import Data.Nat.Properties using (≤-refl; ≤-trans; n≤1+n)
+open import Data.Nat using (ℕ; zero; suc; pred; _≤_; _≟_; _+_; ∣_-_∣)
+open import Data.Nat.Properties
+   using (≤-refl; ≤-trans; n≤1+n; +-comm; ≤-step; +-suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; _≢_; refl; sym; cong; inspect; [_])
+  using (_≡_; _≢_; refl; sym; cong; cong₂; inspect; [_])
+open Relation.Binary.PropositionalEquality.≡-Reasoning
+  using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+
 open import Relation.Nullary using (Dec; yes; no)
 
 {-
@@ -43,7 +47,7 @@ import Syntax3
 module IRMod = Syntax3 IROp IR-sig
 open IRMod renaming (AST to IR; `_ to var; _⦅_⦆ to node; cons to ir-cons;
    nil to ir-nil; ast to ir-ast; bind to ir-bind; rename to ir-rename) public
-open IRMod using (_•_; _⨟_; ↑; exts-cons-shift)
+open IRMod using (_•_; _⨟_; ↑; exts-cons-shift; bind-ast)
 
 FV : ∀{Γ} → Term Γ → Var Γ → Bool
 FV {Γ} (` x) y
@@ -70,17 +74,26 @@ weaken : ∀{Δ} → Var Δ → Var (suc Δ)
 weaken Z = Z
 weaken (S x) = S (weaken x)
 
-
+{-
+n-0≡n : ∀{n : ℕ} → ∣ n - 0 ∣ ≡ n
+n-0≡n {zero} = refl
+n-0≡n {suc n} = refl
+-}
 
 compressor : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Term Γ
-           → Σ[ Δ ∈ ℕ ] Rename Γ Δ
-compressor {Γ} zero lt M = ⟨ suc zero , (λ x → Z) ⟩
+           → Σ[ Δ ∈ ℕ ] Rename Γ Δ × Δ ≤ suc n
+compressor {Γ} zero lt M =
+  ⟨ suc zero , ⟨ (λ _ → Z) , ≤-refl ⟩ ⟩
 compressor {Γ} (suc n) lt M
     with FV M (ℕ→var (suc n) lt)
-... | false = compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
-... | true
+... | false
     with compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
-... | ⟨ Δ , ρ ⟩ = ⟨ suc Δ , ρ′ ⟩
+... | ⟨ Δ , ⟨ ρ , lt2 ⟩ ⟩ =    
+      ⟨ Δ , ⟨ ρ , ≤-step lt2 ⟩ ⟩
+compressor {Γ} (suc n) lt M | true
+    with compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
+... | ⟨ Δ , ⟨ ρ , lt2 ⟩ ⟩ =
+      ⟨ suc Δ , ⟨ ρ′ , ≤-trans (_≤_.s≤s lt2) ≤-refl ⟩ ⟩
     where
     ρ′ : Rename Γ (suc Δ)
     ρ′ x
@@ -89,20 +102,41 @@ compressor {Γ} (suc n) lt M
     ... | no neq = weaken (ρ x)
 
 
-
-
+n≤m→m≡k+n : ∀{n m} → n ≤ m → Σ[ k ∈ ℕ ] m ≡ k + n
+n≤m→m≡k+n {.0} {m} _≤_.z≤n =
+  ⟨ m , G ⟩
+  where
+  G : m ≡ m + 0
+  G =
+    begin
+      m
+    ≡⟨⟩
+      0 + m
+    ≡⟨ +-comm 0 m ⟩
+      m + 0
+    ∎
+n≤m→m≡k+n {suc n} {suc m} (_≤_.s≤s n≤m)
+    with n≤m→m≡k+n {n}{m} n≤m
+... | ⟨ k , eq ⟩ rewrite eq =   
+      ⟨ k , sym (+-suc k n) ⟩
 
 convert-clos : ∀{Γ} → Term Γ → IR Γ
 convert-clos (` x) = var x
 convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
     with compressor {suc Γ} Γ ≤-refl N
-... | ⟨ Δ , ρ ⟩ =
+... | ⟨ Δ , ⟨ ρ , lt ⟩ ⟩
+    with n≤m→m≡k+n lt
+... | ⟨ k , eq ⟩ rewrite eq =     
 
   let N′ = ir-rename ρ (convert-clos N) in
+  let N′′ = bind-ast {0} Δ (G N′) in
 
   let f = node {Γ} (fun Δ) (ir-cons {!!} ir-nil) in
   {!node (close ?) f!}
 
+  where
+  G : IR Δ → IR (Δ + 0)
+  G N = {!!}
 
 
 convert-clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = {!!}
