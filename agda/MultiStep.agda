@@ -4,15 +4,15 @@ open import Data.List using (List; []; _∷_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
    renaming (_,_ to ⟨_,_⟩)
 
-import Syntax2
+import Syntax3
 
 module MultiStep
   (Op : Set)
-  (sig : Op → List Bool) 
-  (_—→_ : ∀ {Γ} → (Syntax2.AST Op sig Γ) → (Syntax2.AST Op sig Γ) → Set)
+  (sig : Op → List ℕ) 
+  (_—→_ : ∀ {Γ} → (Syntax3.AST Op sig Γ) → (Syntax3.AST Op sig Γ) → Set)
   where
 
-  open Syntax2 Op sig
+  open Syntax3 Op sig
 
   private Term : ℕ → Set
   Term Γ = AST Γ

@@ -21,8 +21,8 @@ module LambdaDenot
 
   ℰ : ∀{Γ} → Term Γ → Denotation Γ
   ℰ {Γ} (` x) γ v = v ⊑ γ x
-  ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
-  ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
+  ℰ {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆) = ℱ (ℰ N)
+  ℰ {Γ} (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = (ℰ L) ● (ℰ M)
 
   {- 
      The following are here and not in DenotAux 

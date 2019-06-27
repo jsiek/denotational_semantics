@@ -3,8 +3,8 @@ open import Lambda
 open Lambda.Reduction
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; nil; ⟪_⟫; _⨟_; subst-zero)
-open import Syntax2 Op sig
+          exts; cons; bind; ast; nil; ⟪_⟫; _⨟_; subst-zero)
+open import Syntax3 Op sig
    using (ids; _•_; subst-zero-exts-cons; sub-id; sub-sub)
 
 
@@ -105,9 +105,9 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
     with ⇓→—↠×≈{σ = τ} δ⊢L⇓c δ≈ₑτ
 ... | ⟨ N , ⟨ τL—↠N , c≈N ⟩ ⟩ rewrite σx≡τL =
       ⟨ N , ⟨ τL—↠N , c≈N ⟩ ⟩
-⇓→—↠×≈ {σ = σ} {c = clos (lam ⦅ bind N nil ⦆) γ} ⇓-lam γ≈ₑσ =
+⇓→—↠×≈ {σ = σ} {c = clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} ⇓-lam γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ ⟩ ⟩
-⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons L (cons M nil) ⦆} {c} (⇓-app {N = N} L⇓ƛNδ N⇓c) γ≈ₑσ
+⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c} (⇓-app {N = N} L⇓ƛNδ N⇓c) γ≈ₑσ
     with ⇓→—↠×≈{σ = σ} L⇓ƛNδ γ≈ₑσ
 ... | ⟨ _ , ⟨ σL—↠ƛτN , ⟨ τ , ⟨ δ≈ₑτ , ≡ƛτN ⟩ ⟩ ⟩ ⟩ rewrite ≡ƛτN
     with ⇓→—↠×≈ {σ = ext-subst τ (⟪ σ ⟫ M)} N⇓c
@@ -117,9 +117,9 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
     rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero (⟪ σ ⟫ M)} =
     ⟨ N' , ⟨ r , c≈N' ⟩ ⟩
     where
-    r = (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆)
+    r = (app ⦅ cons (ast (⟪ σ ⟫ L)) (cons (ast (⟪ σ ⟫ M)) nil) ⦆)
         —↠⟨ appL-cong σL—↠ƛτN ⟩
-        ((app ⦅ cons (lam ⦅ bind (⟪ exts τ ⟫ N) nil ⦆) (cons (⟪ σ ⟫ M) nil) ⦆))
+        (ƛ (⟪ exts τ ⟫ N)) · ⟪ σ ⟫ M
         —→⟨ ƛτN·σM—→ ⟩
         ⟪ exts τ ⨟ subst-zero (⟪ σ ⟫ M) ⟫ N
         —↠⟨ —↠N' ⟩

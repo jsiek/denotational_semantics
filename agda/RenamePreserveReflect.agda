@@ -1,7 +1,7 @@
 open import Structures
 open import Variables
 open import Primitives
-import Syntax2
+import Syntax3
 import ValueStructAux
 import CurryApplyStruct
 

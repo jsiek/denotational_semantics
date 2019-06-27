@@ -30,7 +30,7 @@
 \maketitle
 
 \begin{abstract}
-  This article takes a baby step toward developing denotational
+  This article takes a small step toward developing denotational
   semantics that are suitable for widespread use by programming
   language practitioners and researchers who work outside of
   semantics, e.g, in compiler correctness, static analysis, language
@@ -40,21 +40,22 @@
   them.  Denotational semantics are compositional, but their
   mathematical sophistication has made them too time consuming for
   practitioners to understand and customize to their uses. One purpose
-  of this article is to see how little mathematics is necessary to
-  develop compositional semantics.
+  of this article is to see how little sophistication and abstraction
+  is necessary to define a compositional semantics.
 
   As a case study, this article develops a denotational semantics for
   the ISWIM programming language, that is, for a call-by-value lambda
   calculus extended with arbitrary primitive operations and literals.
-  It models lambda expressions with lookup tables, a simple idea that
-  goes back to the graph and filter models for the lambda
-  calculus. Unfortunately, those models cannot be used as-is for
-  ISWIM: lookup tables are too loose in that they can represent
-  arbitrary relations, not just functions. So the article presents a
-  way to restrict lookup tables to just functions. The article proves
-  the soundness and adequacy of the resulting denotational semantics,
-  proves that denotational equality implies contextual equivalence,
-  and demostrates uses of the semantics in compiler correctness proofs
+  We choose a denotational model based on the graph and filter models
+  for the lambda calculus because of their extreme simplicity; they
+  use lookup tables to represent functions. Unfortunately, these
+  models are not adequate as-is for ISWIM because lookup tables
+  represent arbitrary relations, not just functions. This article
+  presents a simple way to restrict lookup tables so that they only
+  approximate functions. The article proves the soundness and adequacy
+  of the resulting denotational semantics for ISWIM, proves that
+  denotational equality implies contextual equivalence, and
+  demostrates uses of the semantics in compiler correctness proofs
   (inlining and closure conversion).
 \end{abstract}
 
@@ -89,5 +90,7 @@ Values
 
 \section{Conclusion}
 
+\bibliographystyle{abbrvnat}
+\bibliography{all}
 
 \end{document}

@@ -23,14 +23,14 @@ data Op : Set where
   lam : Op
   app : Op
 
-sig : Op → List Bool
-sig lam = true ∷ []
-sig app = false ∷ false ∷ []
+sig : Op → List ℕ
+sig lam = 1 ∷ []
+sig app = 0 ∷ 0 ∷ []
 
-import Syntax2
-module ASTMod = Syntax2 Op sig
+import Syntax3
+module ASTMod = Syntax3 Op sig
 open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
-                   rename; ⟪_⟫; _[_]; subst-zero; bind; cons; nil; exts;
+                   rename; ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
                    rename-id) public
 open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 
@@ -38,10 +38,10 @@ open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 infixl 7  _·_
 
 ƛ : ∀{Γ} → AST (suc Γ) → AST Γ
-ƛ N = lam ⦅ bind N nil ⦆
+ƛ N = lam ⦅ cons (bind (ast N)) nil ⦆
 
 _·_ : ∀{Γ} → AST Γ → AST Γ → AST Γ
-L · M = app ⦅ cons L (cons M nil) ⦆
+L · M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 
 Term : ℕ → Set
 Term Γ = AST Γ

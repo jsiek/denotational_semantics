@@ -68,7 +68,8 @@ Perhaps the best-known of them is the BCD intersection type system of
 \citet{Barendregt:1983aa}. For this article we focus on the BCD
 system, following the presentation of \citet{Barendregt:2013aa}.  We
 conjecture that our results apply to other intersection type systems
-as well.
+that include the $({\to}{\cap})$ rule for distributing intersection
+and function types.
 
 The BCD intersection type systems extends the simply-typed lambda
 calculus with the addition of intersection types, written $A \cap B$, a
@@ -94,13 +95,12 @@ if it has type $A$ and $A$ is a subtype of $B$, written $A \leq B$.
           {\Gamma \vdash M : B}
 \]
 Figure~\ref{fig:BCD-subtyping} reviews the BCD rules for subtyping.
-Note that in the (trans) rule, the type $B$ that appears in the
-premises does not appear in the conclusion. Thus, the BCD subtyping
-judgment does not enjoy the subformula property.  For other systems,
-it is straightforward to remove the (trans) rule, modify the other
-rules, and then then prove transitivity~\citep{Muehlboeck:2018aa}.
-Unfortunately, the $({\to}{\cap})$ rule of the BCD system significantly
-complicates the situation.
+Note that in the (trans) rule, the type $B$ appears in the premises
+but not in the conclusion. Thus, the BCD subtyping judgment does not
+enjoy the subformula property.  For many other subtyping systems, it
+is straightforward to remove the (trans) rule, modify the other rules,
+and then then prove transitivity.  Unfortunately, the $({\to}{\cap})$
+rule of the BCD system significantly complicates the situation.
 
 \begin{figure}[tbp]
   \fbox{$A \leq B$}
@@ -120,13 +120,17 @@ complicates the situation.
   \label{fig:BCD-subtyping}
 \end{figure}
 
-The subformula property is a useful one. For example, the author is
-using intersection types to create a denotational semantics for the
-ISWIM language, which includes constants and primitive
+The subformula property is a useful one. For example, the author uses
+intersection types to create denotational semantics (a filter model)
+for the ISWIM language, which includes constants and primitive
 operations~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
-It seems that doing so requires placing extra conditions on types and
-it is much easier to do so when subtyping satisfies the subformula
-property.
+This requires placing extra conditions on types and it is much easier
+to do so when subtyping satisfies the subformula property.
+
+There has been a recent flurry of interest in subtyping for
+intersection types that has led to several systems that satisfy the
+subformula property. We discuss each of them in the next few
+paragraphs.
 
 \citet{Laurent:2018aa} introduces the ISC sequent-style system,
 written $\Gamma \vdash B$, where $\Gamma$ is a sequence of types
@@ -136,7 +140,7 @@ subformula property and is equivalent to the BCD system. To prove
 this, Laurent establishes six lemmas that culminate in
 cut-elimination, from which transitivity follows.
 
-\citet{Bi:2018aa} also present a subtyping system that satisfies the
+\citet{Bi:2018aa} present a subtyping algorithm that satisfies the
 subformula property and prove that is equivalent to BCD
 subtyping. Their system is based on the decision procedure
 of~\citet{Pierce:1989aa} and takes the form $\mathcal{L} \vdash A
@@ -149,44 +153,57 @@ $\mathcal{L} \vdash A \prec: B$ is equivalent to $A \leq \mathcal{L}
   (\mathcal{L},A) \to B &= \mathcal{L} \to (A \to B)
 \end{align*}
 The proof of transitivity for this system is an adaptation of Pierce's
-but it corrects some errors and introduces more lemmas concerning the
-auxilliary notion of reflexive supertypes.
+but it corrects some errors and introduces more lemmas concerning an
+auxilliary notion called reflexive supertypes.
 
-This article presents a more direct route to the subformula property
-and transitivity. We present a subtyping relation $A <: B$ and
-directly prove transitivity without using an auxiliary sequent-style
-system. Nevertheless, the intuitions are based on those of
-Laurent. The key to $A <: B$ is a rule for function types based on the
-$\beta$-soundness property~\citep{Barendregt:2013aa}, just as in ISC.
-The definitions and results in this article have been machine checked
-in Agda.
+\citet{Muehlboeck:2018aa} develop a framework for obtaining subtyping
+algorithms for systems that include intersection and union types and
+that are extensible to other types. To decide $A \leq B$ their
+algorithm converts $A$ to disjunctive normal form and then applies a
+client-supplied function to each collection of literals. To obtain a
+system equivalent to BCD, including the ${\to}{\cap}$ rule, the client
+side function saturates the collection of literals by applying
+${\to}{\cap}$ (left to right) as much as possible.
+[todo: say something about the proof of transitivity]
+
+This article presents a direct route to the subformula property and
+proof of transitivity for BCD subtyping. We present straightforward
+rules for a new subtyping relation $A <: B$ and directly prove
+transitivity. The key to $A <: B$ is a rule for function types similar
+to the one in Laurent's ISC, which effectively turns the
+$\beta$-soundness property~\citep{Barendregt:2013aa} into a subtyping
+rule. While the rules that define $A <: B$ are not particularly novel,
+the fact that transivity can be proved directly from them is
+suprising.
 
 We describe the new subtyping relation in
 Section~\ref{sec:new-subtyping}, prove transitivity in
 Section~\ref{sec:trans}, and prove its equivalence to BCD subtyping in
 Section~\ref{sec:equiv}. We make some concluding remarks in
 Section~\ref{sec:conclude}.
+
+The definitions and results in this article have been machine checked
+in Agda.
     
 %$λ^{\mathrm{BCD}}_\cap$
 
 \section{A New Subtyping Judgment}
 \label{sec:new-subtyping}
 
-Our new subtyping judgment relies on several auxiliary notions that
-help us avoid the use of ellipses, which we define in
-Figure~\ref{fig:aux}. These include the $\dom{A}$ and $\cod{A}$
-functions, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
+Our new subtyping judgment relies on a few definitions that are given
+in Figure~\ref{fig:aux}. These include the partial functions $\dom{A}$
+and $\cod{A}$, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
 relations $A \in B$ and $A \subseteq B$.
 %
-The $\dom{A}$ and $\cod{A}$ functions return the domain or codomain if
-$A$ is a function type, respectively. If $A$ is an intersection $A_1 \cap
-A_2$, then $\dom{A}$ is the intersection of the domain of $A_1$ and
-$A_2$.  If $A$ is an atom, $\dom{A}$ is undefined. Likewise for
-$\cod{A}$. For example, if $A = (A_1 \to B_1) \cap \cdots \cap (A_n \to B_n)$,
-then $\dom{A} = A_1 \cap \cdots \cap A_n$ and $\cod{A} = B_1 \cap \cdots \cap
-B_n$.  When $\dom{A}$ or $\cod{A}$ appears in lemma or theorem
-statement, we implicitly assume that $A$ is a type such that $\dom{A}$
-and $\cod{A}$ are defined.
+The $\dom{A}$ and $\cod{A}$ partial functions return the domain or
+codomain if $A$ is a function type, respectively. If $A$ is an
+intersection $A_1 \cap A_2$, then $\dom{A}$ is the intersection of the
+domain of $A_1$ and $A_2$.  If $A$ is an atom, $\dom{A}$ is
+undefined. Likewise for $\cod{A}$. For example, if $A = (A_1 \to B_1)
+\cap \cdots \cap (A_n \to B_n)$, then $\dom{A} = A_1 \cap \cdots \cap
+A_n$ and $\cod{A} = B_1 \cap \cdots \cap B_n$.  When $\dom{A}$ or
+$\cod{A}$ appears in lemma or theorem statement, we implicitly assume
+that $A$ is a type such that $\dom{A}$ and $\cod{A}$ are defined.
 %
 The $\topP{A}$ predicate identifies types that are equivalent to
 $\TOP$. The $\topInCod{A}$ predicate identifies types that have $\TOP$

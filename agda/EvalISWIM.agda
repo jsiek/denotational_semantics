@@ -3,8 +3,8 @@ open import Variables
 open import ISWIM
 open ISWIM.ASTMod
    using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; nil; ⟪_⟫; _⨟_; subst-zero)
-open import Syntax2 Op sig
+          exts; cons; bind; ast; nil; ⟪_⟫; _⨟_; subst-zero)
+open import Syntax3 Op sig
    using (ids; _•_; subst-zero-exts-cons; sub-id; sub-sub)
 
 open import Data.Nat using (ℕ; zero; suc)
@@ -124,7 +124,7 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
 ⇓→—↠×≈ {γ = γ}{σ} (⇓-var {x = x}) γ≈ₑσ = ⟨ σ x , ⟨ σ x □ , γ≈ₑσ ⟩ ⟩
 ⇓→—↠×≈ {σ = σ} {c = val-clos N γ} ⇓-lam γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ ⟩ ⟩
-⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons L (cons M nil) ⦆} {c}
+⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
     (⇓-prim {P = P}{B}{f}{k} L⇓f M⇓k) γ≈ₑσ 
     with ⇓→—↠×≈{σ = σ} L⇓f γ≈ₑσ
 ... | ⟨ L′ , ⟨ σL—↠f , L′≡ ⟩ ⟩
@@ -134,14 +134,14 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
     rewrite M′≡ =
     ⟨ lit {P} (f k) ⦅ nil ⦆ , ⟨ r , refl ⟩ ⟩
     where
-    r = (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆)
+    r = (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
         —↠⟨ appL-cong σL—↠f  ⟩
-        (app ⦅ cons (lit f ⦅ nil ⦆) (cons (⟪ σ ⟫ M) nil) ⦆)
+        (lit f ⦅ nil ⦆) · (⟪ σ ⟫ M)
         —↠⟨ appR-cong V-lit σM—↠M′ ⟩
-        (app ⦅ cons (lit f ⦅ nil ⦆) (cons (lit k ⦅ nil ⦆) nil) ⦆)
+        (lit f ⦅ nil ⦆) · (lit k ⦅ nil ⦆)
         —→⟨ δ-rule ⟩
         (lit (f k) ⦅ nil ⦆)  □
-⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons L (cons M nil) ⦆} {c}
+⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
     (⇓-app {Γ}{δ = δ}{N}{V}{V′} L⇓ƛNδ M⇓V N⇓V′) γ≈ₑσ
     with ⇓→—↠×≈{σ = σ} L⇓ƛNδ γ≈ₑσ
 ... | ⟨ L′ , ⟨ σL—↠ƛτN , ⟨ τ , ⟨ δ≈ₑτ , L′≡ ⟩ ⟩ ⟩ ⟩
@@ -155,12 +155,11 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
     rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero M′} =
     ⟨ N′ , ⟨ r , c≈N′ ⟩ ⟩
     where
-    r = (app ⦅ cons (⟪ σ ⟫ L) (cons (⟪ σ ⟫ M) nil) ⦆)
+    r = (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
         —↠⟨ appL-cong σL—↠ƛτN ⟩
-        ((app ⦅ cons (lam ⦅ bind (⟪ exts τ ⟫ N) nil ⦆) (cons (⟪ σ ⟫ M) nil) ⦆))
+        (ƛ (⟪ exts τ ⟫ N)) · (⟪ σ ⟫ M)
         —↠⟨ appR-cong V-ƛ σM—↠M′ ⟩
-        (((app ⦅ cons (lam ⦅ bind (⟪ exts τ ⟫ N) nil ⦆)
-                (cons M′ nil) ⦆)))
+        (ƛ (⟪ exts τ ⟫ N)) · M′
         —→⟨ ƛτN·σM—→ ⟩
         ⟪ exts τ ⨟ subst-zero M′ ⟫ N
         —↠⟨ —↠N′ ⟩
