@@ -29,14 +29,17 @@ data Args Γ where
   nil : Args Γ []
   cons : ∀{n bs} → Arg Γ n → Args Γ bs → Args Γ (n ∷ bs)
 
-bind-ast : ∀{Γ} → (n : ℕ) → AST (n + Γ) → Arg Γ n
-bind-ast {Γ} zero M = ast M
-bind-ast {Γ} (suc n) M =
-  let ih = bind-ast n {!!} in
-  {!!}
-  where G : (suc (n + Γ)) ≡ (n + suc Γ)
-        G = {!refl!}
 
+bind-arg : ∀{Γ m} → (n : ℕ) → Arg (n + Γ) m → Arg Γ (n + m)
+bind-arg {Γ} zero A = A
+bind-arg {Γ}{m} (suc n) A
+    with bind-arg {Γ}{suc m} n (bind A)
+... | ih rewrite +-suc n m = ih
+
+bind-ast : ∀{Γ} → (n : ℕ) → AST (n + Γ) → Arg Γ n
+bind-ast {Γ} n M
+    with bind-arg n (ast M)
+... | A rewrite +-identityʳ n = A
 
 
 Subst : ℕ → ℕ → Set
