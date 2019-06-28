@@ -29,7 +29,6 @@ data Args Γ where
   nil : Args Γ []
   cons : ∀{n bs} → Arg Γ n → Args Γ bs → Args Γ (n ∷ bs)
 
-
 bind-arg : ∀{Γ m} → (n : ℕ) → Arg (n + Γ) m → Arg Γ (n + m)
 bind-arg {Γ} zero A = A
 bind-arg {Γ}{m} (suc n) A
