@@ -1,5 +1,5 @@
 open import Data.Maybe 
-open import Data.Nat using (ℕ; zero; suc; _≤_; z≤n; s≤s; ≤-pred)
+open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; z≤n; s≤s; ≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
@@ -40,14 +40,14 @@ var≟-refl : ∀ {Γ} (x : Var Γ) → (x var≟ x) ≡ yes refl
 var≟-refl Z = refl
 var≟-refl (S x) rewrite var≟-refl x = refl
 
-var→ℕ : ∀{Γ} → Var Γ → Σ[ n ∈ ℕ ] n ≤ Γ
-var→ℕ Z = ⟨ 0 , z≤n ⟩
+var→ℕ : ∀{Γ} → Var Γ → Σ[ n ∈ ℕ ] n < Γ
+var→ℕ {Γ} Z = ⟨ 0 , s≤s z≤n ⟩
 var→ℕ (S x)
     with var→ℕ x
 ... | ⟨ n , lt ⟩ =
       ⟨ suc n , s≤s lt ⟩
 
-ℕ→var : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Var Γ
+ℕ→var : ∀{Γ} → (n : ℕ) → (lt : n < Γ) → Var Γ
 ℕ→var {zero} zero ()
 ℕ→var {suc Γ} zero lt =
     Z

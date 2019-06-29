@@ -7,7 +7,7 @@ open import ISWIM
 open import Data.Bool using (Bool; true; false; _∨_)
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List; []; _∷_; _++_; length; replicate)
-open import Data.Nat using (ℕ; zero; suc; _≤_; _≟_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; s≤s)
 open import Data.Nat.Properties
   using (≤-refl; ≤-trans; n≤1+n; +-identityʳ; ≤-step)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
@@ -70,6 +70,14 @@ weaken-var : ∀{Δ} → Var Δ → Var (suc Δ)
 weaken-var Z = Z
 weaken-var (S x) = S (weaken-var x)
 
+pos-var : ∀{Γ} → Var Γ → Set
+pos-var {.(suc _)} Z = False
+pos-var {.(suc _)} (S x) = True
+
+prev-var : ∀{Γ} → (x : Var (suc Γ)) → {nz : pos-var x} → Var Γ
+prev-var {Γ} Z {()}
+prev-var {Γ} (S x) {nz} = x
+
 strengthen-var : ∀{Δ} → (x : Var (suc Δ)) → Var Δ ⊎ (x ≡ ℕ→var Δ ≤-refl )
 strengthen-var {zero} Z = inj₂ refl
 strengthen-var {zero} (S ())
@@ -78,31 +86,6 @@ strengthen-var {suc Δ} (S x)
     with strengthen-var {Δ} x
 ... | inj₁ x′ = inj₁ (S x′)
 ... | inj₂ eq rewrite eq = inj₂ refl
-
-compressor′ : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Term Γ
-           → Σ[ Δ ∈ ℕ ] Rename Γ (suc Δ) × Rename (suc Δ) Γ
-compressor′ {Γ} zero lt M = ⟨ zero , ⟨ (λ x → Z) , ρ-inv lt ⟩ ⟩
-    where ρ-inv : 1 ≤ Γ → Rename 1 Γ
-          ρ-inv (s≤s lt) x = Z
-compressor′ {Γ} (suc n) lt M
-    with FV M (ℕ→var (suc n) lt)
-... | false = compressor′ {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
-... | true
-    with compressor′ {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
-... | ⟨ Δ , ⟨ ρ , ρ-inv ⟩ ⟩ =
-      ⟨ suc Δ , ⟨ ρ′ , ρ′-inv ⟩ ⟩
-    where
-    ρ′ : Rename Γ (suc (suc Δ))
-    ρ′ x
-        with x var≟ ℕ→var (suc n) lt
-    ... | yes eq = ℕ→var (suc Δ) ≤-refl
-    ... | no neq = weaken-var (ρ x)
-    ρ′-inv : Rename (suc (suc Δ)) Γ
-    ρ′-inv y
-        with strengthen-var y
-    ... | inj₁ y′ = ρ-inv y′
-    ... | inj₂ eq rewrite eq = ℕ→var (suc n) lt
-    
 
 {-
 compressor : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Term Γ
@@ -127,16 +110,71 @@ compressor {Γ} (suc n) lt M | true
     ... | no neq = weaken-var (ρ x)
 -}
 
+
+{-
+
+  The compressor function produces a renaming for all the
+  free variables in Γ, compressing them into suc Δ.
+  (We write suc Δ instead of Δ because it is always greater than
+  zero.)
+
+-}
+  
+pos-var-suc : ∀{Γ n}{lt} → pos-var (ℕ→var {Γ} (suc n) lt)
+pos-var-suc {zero} {n} {()}
+pos-var-suc {suc Γ} {n} {lt} = tt
+
+compressor : ∀{Γ} → (n : ℕ) → (lt : n < Γ) → Term Γ
+           → Σ[ Δ ∈ ℕ ] Σ[ ρ ∈ Rename Γ (suc Δ) ]
+             Σ[ ρ-inv ∈ Rename (suc Δ) Γ ] (∀{x} → pos-var (ρ-inv (S x)))
+compressor {Γ} zero lt M = ⟨ zero , ⟨ (λ x → Z) , ⟨ ρ-inv lt , (λ {}) ⟩ ⟩ ⟩
+    where ρ-inv : 1 ≤ Γ → Rename 1 Γ
+          ρ-inv (s≤s lt) x = Z
+compressor {Γ} (suc n) lt M
+    with FV M (ℕ→var (suc n) lt)
+... | false = compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
+... | true
+    with compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
+... | ⟨ Δ , ⟨ ρ , ⟨ ρ-inv , nz ⟩ ⟩ ⟩ =
+      ⟨ suc Δ , ⟨ ρ′ , ⟨ ρ′-inv , G ⟩ ⟩ ⟩
+    where
+    ρ′ : Rename Γ (suc (suc Δ))
+    ρ′ x
+        with x var≟ ℕ→var (suc n) lt
+    ... | yes eq = ℕ→var (suc Δ) ≤-refl
+    ... | no neq = weaken-var (ρ x)
+    
+    ρ′-inv : Rename (suc (suc Δ)) Γ
+    ρ′-inv y
+        with strengthen-var y
+    ... | inj₁ y′ = ρ-inv y′
+    ... | inj₂ eq rewrite eq = ℕ→var (suc n) lt
+
+    G : ∀{x : Var (suc Δ)} → pos-var (ρ′-inv (S x))
+    G {x}
+        with strengthen-var x
+    ... | inj₁ x′ = nz
+    ... | inj₂ eq rewrite eq = pos-var-suc
+        
+
 convert-clos : ∀{Γ} → Term Γ → IR Γ
 convert-clos (` x) = var x
 convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
-    with compressor′ {suc Γ} Γ ≤-refl N
-... | ⟨ Δ , ⟨ ρ , ρ-inv ⟩ ⟩
+    with compressor {suc Γ} Γ ≤-refl N
+... | ⟨ Δ , ⟨ ρ , ⟨ ρ-inv , pos ⟩ ⟩ ⟩
     with ir-rename ρ (convert-clos N)
 ... | N′ =
+    {-
+    Δ is the number of free variables, not counting the 0 variable.
+    If there are no free variables in N then Δ = 0.
+    Those variables have index 1, 2, ..., Δ
+
+    ρ maps from suc Γ to suc Δ
+    ρ-inv maps from suc Δ to suc Γ
+    -}
     let f = ir-rename ρ′ (node {0} (fun (suc Δ)) (ir-cons (N′′ N′) ir-nil)) in
-    node {Γ} (close (suc Δ)) (ir-cons (ir-ast f)
-                                      (free-vars {Δ} ρ-inv (suc Δ) {≤-refl}))
+    node {Γ} (close Δ) (ir-cons (ir-ast f)
+                                (free-vars {Δ} {≤-refl}))
     where
     N′′ : IR (suc Δ) → Arg 0 (suc Δ)
     N′′ N′ rewrite sym (+-identityʳ Δ)        {- ugh! -}
@@ -146,16 +184,16 @@ convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
     ρ′ : Rename 0 Γ
     ρ′ ()
 
-    free-vars : ∀{Δ} → Rename (suc Δ) (suc Γ) → (n : ℕ) → {lt : n ≤ suc Δ}
+    free-vars : ∀{n : ℕ}{lt : n ≤ Δ}
               → Args Γ (replicate n 0)
-    free-vars {Δ} ρ-inv zero {lt} = ir-nil
-    free-vars {Δ} ρ-inv (suc n) {s≤s lt} =
-       let x : Var (suc Δ)
-           x = ℕ→var n (s≤s lt) in
-       let x′ = ρ-inv x in
-       ir-cons (ir-ast (var {!!})) (free-vars {Δ} ρ-inv n {≤-step lt})
-
-
-convert-clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = {!!}
+    free-vars {zero} {lt} = ir-nil
+    free-vars {suc n} {s≤s {n = Δ′} lt} =     {- Δ = suc Δ′ -}
+       let y : Var (suc Γ)
+           y = ρ-inv (ℕ→var {suc Δ} (suc n) (s≤s (s≤s lt))) in
+       ir-cons (ir-ast (var (prev-var y {pos}))) (free-vars {n} {≤-step lt})
+convert-clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) =
+   let L′ = convert-clos L in
+   let M′ = convert-clos M in
+   node ir-app (ir-cons (ir-ast L′) (ir-cons (ir-ast M′) ir-nil))
 convert-clos (lit {p} k ⦅ nil ⦆) =
    node (ir-lit {p} k) ir-nil 
