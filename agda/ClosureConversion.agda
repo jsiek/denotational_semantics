@@ -150,12 +150,10 @@ convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
               → Args Γ (replicate n 0)
     free-vars {Δ} ρ-inv zero {lt} = ir-nil
     free-vars {Δ} ρ-inv (suc n) {s≤s lt} =
-{-
        let x : Var (suc Δ)
-           x = ℕ→var Δ ≤-refl in
+           x = ℕ→var n (s≤s lt) in
        let x′ = ρ-inv x in
--}  
-       ir-cons (ir-ast {!!}) (free-vars {Δ} ρ-inv n {≤-step lt})
+       ir-cons (ir-ast (var {!!})) (free-vars {Δ} ρ-inv n {≤-step lt})
 
 
 convert-clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = {!!}
