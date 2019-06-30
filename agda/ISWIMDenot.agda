@@ -22,8 +22,8 @@ module ISWIMDenot
   ℰ : ∀{Γ} → Term Γ → Denotation Γ
   ℰ (lit {P} k ⦅ nil ⦆) γ v = ℘ {P} k v
   ℰ {Γ} (` x) γ v = v ⊑ γ x
-  ℰ {Γ} (lam ⦅ bind N nil ⦆) = ℱ (ℰ N)
-  ℰ {Γ} (app ⦅ cons L (cons M nil) ⦆) = (ℰ L) ● (ℰ M)
+  ℰ {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆) = ℱ (ℰ N)
+  ℰ {Γ} (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = (ℰ L) ● (ℰ M)
 
   {- The following is a duplication from Structures.LambdaDenot -}
   split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}

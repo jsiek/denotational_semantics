@@ -87,29 +87,10 @@ strengthen-var {suc Δ} (S x)
 ... | inj₁ x′ = inj₁ (S x′)
 ... | inj₂ eq rewrite eq = inj₂ refl
 
-{-
-compressor : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Term Γ
-           → Σ[ Δ ∈ ℕ ] Rename Γ Δ × Δ ≤ suc n
-compressor {Γ} zero lt M =
-  ⟨ suc zero , ⟨ (λ _ → Z) , ≤-refl ⟩ ⟩
-compressor {Γ} (suc n) lt M
-    with FV M (ℕ→var (suc n) lt)
-... | false
-    with compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
-... | ⟨ Δ , ⟨ ρ , lt2 ⟩ ⟩ =    
-      ⟨ Δ , ⟨ ρ , ≤-step lt2 ⟩ ⟩
-compressor {Γ} (suc n) lt M | true
-    with compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
-... | ⟨ Δ , ⟨ ρ , lt2 ⟩ ⟩ =
-      ⟨ suc Δ , ⟨ ρ′ , ≤-trans (_≤_.s≤s lt2) ≤-refl ⟩ ⟩
-    where
-    ρ′ : Rename Γ (suc Δ)
-    ρ′ x
-        with x var≟ (ℕ→var (suc n) lt)
-    ... | yes eq = ℕ→var Δ ≤-refl
-    ... | no neq = weaken-var (ρ x)
--}
 
+pos-var-suc : ∀{Γ n}{lt} → pos-var (ℕ→var {Γ} (suc n) lt)
+pos-var-suc {zero} {n} {()}
+pos-var-suc {suc Γ} {n} {lt} = tt
 
 {-
 
@@ -120,10 +101,6 @@ compressor {Γ} (suc n) lt M | true
 
 -}
   
-pos-var-suc : ∀{Γ n}{lt} → pos-var (ℕ→var {Γ} (suc n) lt)
-pos-var-suc {zero} {n} {()}
-pos-var-suc {suc Γ} {n} {lt} = tt
-
 compressor : ∀{Γ} → (n : ℕ) → (lt : n < Γ) → Term Γ
            → Σ[ Δ ∈ ℕ ] Σ[ ρ ∈ Rename Γ (suc Δ) ]
              Σ[ ρ-inv ∈ Rename (suc Δ) Γ ] (∀{x} → pos-var (ρ-inv (S x)))
@@ -155,7 +132,13 @@ compressor {Γ} (suc n) lt M
         with strengthen-var x
     ... | inj₁ x′ = nz
     ... | inj₂ eq rewrite eq = pos-var-suc
-        
+
+{-
+
+ Closure conversion 
+
+ -}
+
 
 convert-clos : ∀{Γ} → Term Γ → IR Γ
 convert-clos (` x) = var x
@@ -197,3 +180,42 @@ convert-clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) =
    node ir-app (ir-cons (ir-ast L′) (ir-cons (ir-ast M′) ir-nil))
 convert-clos (lit {p} k ⦅ nil ⦆) =
    node (ir-lit {p} k) ir-nil 
+
+{-
+
+ Semantics of the target language
+
+ -}
+
+
+open import ValueConst
+open import ValueStructAux value_struct
+open import OrderingAux value_struct ordering
+open import Consistency
+open import ConsistentAux value_struct ordering consistent
+open import CurryConst
+open import ModelCurryConst
+open import ModelCallByValue value_struct ordering consistent ℱ model_curry
+
+
+ℳ : ∀{Γ} → IR Γ → Denotation Γ
+ℳ (node (ir-lit {P} k) ir-nil) γ v = ℘ {P} k v
+ℳ {Γ} (var x) γ v =
+    v ⊑ γ x
+ℳ {Γ} (node (fun n) (ir-cons bN ir-nil)) =
+    curry-n n bN
+    where
+    curry-n : ∀{Γ} → (n : ℕ) → Arg Γ n → Denotation Γ
+    curry-n {Γ} 0 (ir-ast N) = ℳ N
+    curry-n {Γ} (suc n) (ir-bind bN) =
+      ℱ (curry-n {suc Γ} n bN)
+ℳ {Γ} (node (close n) (ir-cons (ir-ast L) As)) =
+    apply-n n (ℳ {Γ} L) As
+    where
+    apply-n : (n : ℕ) → Denotation Γ → Args Γ (replicate n 0) → Denotation Γ
+    apply-n zero D ir-nil = D
+    apply-n (suc n) D (ir-cons (ir-ast M) As) =
+        let D′ = D ● ℳ {Γ} M in
+        apply-n n D′ As
+ℳ {Γ} (node ir-app (ir-cons (ir-ast L) (ir-cons (ir-ast M) ir-nil))) =
+    (ℳ L) ● (ℳ M)
