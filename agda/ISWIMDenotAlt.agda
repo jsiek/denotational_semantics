@@ -1,0 +1,157 @@
+open import Variables
+open import Primitives
+open import Structures
+open import ValueConst
+open import EvalISWIM
+open import ISWIM
+open import ValueConst
+open import ValueStructAux value_struct
+open import OrderingAux value_struct ordering
+open import Consistency
+open import ConsistentAux value_struct ordering consistent
+open import CurryConst
+open import PrimConst
+open import ModelCurryConst
+open import ModelCallByValue value_struct ordering consistent ℱ model_curry
+open import ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
+import Filter
+open Filter.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply
+   (λ {P} k v → ℘ {P} k v)
+   (λ {P} {k} {u} {v} → ℘-⊔ {P} {k} {u} {v})
+   ℘-⊑
+   (λ {P} {k} {u} {v} → ℘-~ {P} {k} {u} {v})
+
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum
+open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Data.Unit
+open import Relation.Nullary using (¬_)
+open import Relation.Nullary.Negation using (contradiction)
+open import Relation.Nullary using (Dec; yes; no)
+
+module ISWIMDenotAlt where
+  
+infixl 7 _●′_
+_●′_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
+_●′_ {Γ} D₁ D₂ γ w = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ]
+    Σ[ v₃ ∈ Value ] Σ[ v₄ ∈ Value ]
+    wf v₁ × wf v₂ × wf v₃ × wf v₄ × D₁ γ v₁ × D₂ γ v₂
+    × v₃ ↦ v₄ ⊑ v₁ × v₃ ⊑ v₂ × w ⊑ v₄
+
+ℰ′ : ∀{Γ} → Term Γ → Denotation Γ
+ℰ′ (lit {P} k ⦅ nil ⦆) γ v = ℘ {P} k v
+ℰ′ {Γ} (` x) γ v = v ≡ γ x
+ℰ′ {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆) = ℱ (ℰ′ N)
+ℰ′ {Γ} (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = (ℰ′ L) ●′ (ℰ′ M)
+
+AllFun⊥ : (u : Value) → Set
+AllFun⊥ ⊥ = ⊤
+AllFun⊥ (const k) = Bot
+AllFun⊥ (v ↦ w) = ⊤
+AllFun⊥ (u ⊔ v) = AllFun⊥ u × AllFun⊥ v 
+
+ℱ-inv : ∀{Γ}{D : Denotation (suc Γ)}{ρ : Env Γ}{u : Value}
+      → ℱ D ρ u
+      → (∀{v w} → v ↦ w ∈ u → D (ρ `, v) w) × AllFun⊥ u
+ℱ-inv {Γ} {D} {ρ} {⊥} ℱDu = ⟨ (λ {v} {w} ()) , tt ⟩
+ℱ-inv {Γ} {D} {ρ} {const k} ()
+ℱ-inv {Γ} {D} {ρ} {u₁ ↦ u₂} ℱDu = ⟨ (λ {refl → ℱDu}) , tt ⟩
+ℱ-inv {Γ} {D} {ρ} {u₁ ⊔ u₂} ⟨ ℱDu1 , ℱDu2 ⟩
+    with ℱ-inv {Γ} {D} {ρ} {u₁} ℱDu1
+      | ℱ-inv {Γ} {D} {ρ} {u₂} ℱDu2
+... | ⟨ all1 , fu1 ⟩ | ⟨ all2 , fu2 ⟩ =
+      ⟨ G , ⟨ fu1 , fu2 ⟩ ⟩
+   where
+   G : ∀{v w : Value} → v ↦ w ∈ u₁ ⊎ v ↦ w ∈ u₂ → D (ρ `, v) w
+   G (inj₁ x) = all1 x
+   G (inj₂ y) = all2 y
+
+ℱ-intro : ∀{Γ}{D : Denotation (suc Γ)}{ρ : Env Γ}{u : Value}
+      → (∀{v w} → v ↦ w ∈ u → D (ρ `, v) w)
+      → AllFun⊥ u
+      → ℱ D ρ u
+ℱ-intro {Γ} {D} {ρ} {⊥} Dvw fu = tt
+ℱ-intro {Γ} {D} {ρ} {const k} Dvw ()
+ℱ-intro {Γ} {D} {ρ} {u₁ ↦ u₂} Dvw fu = Dvw refl
+ℱ-intro {Γ} {D} {ρ} {u₁ ⊔ u₂} Dvw ⟨ fu1 , fu2 ⟩ =
+   ⟨ ℱ-intro (λ {v} {w} z → Dvw (inj₁ z)) fu1 ,
+     ℱ-intro (λ {v} {w} z → Dvw (inj₂ z)) fu2 ⟩
+
+
+ℰ′→ℰ : ∀{Γ}{M : Term Γ}{ρ : Env Γ}{v : Value}
+     → WFEnv ρ → wf v
+     → ℰ′ M ρ v → ℰ M ρ v
+ℰ′→ℰ {Γ} {` x} {ρ} {v} wfρ wfv refl = ⊑-refl
+ℰ′→ℰ {Γ} {lit {P} k ⦅ nil ⦆} {ρ} {v} wfρ wfv v∈ℰ′Mρ = v∈ℰ′Mρ
+ℰ′→ℰ {Γ} {lam ⦅ cons (bind (ast N)) nil ⦆} {ρ} {v} wfρ wfv v∈ℰ′Mρ
+    with ℱ-inv {Γ}{ℰ′ N}{ρ}{v} v∈ℰ′Mρ
+... | ⟨ all , fv ⟩ =
+    ℱ-intro IH fv
+    where
+    IH : ∀{u w} → u ↦ w ∈ v → ℰ N (ρ `, u) w
+    IH {u}{w} u↦w∈v
+        with wf-∈ u↦w∈v wfv
+    ... | wf-fun wfu wfw =
+        let wfρ' = WFEnv-extend{Γ}{ρ} wfρ wfu in
+        ℰ′→ℰ {suc Γ}{N} (λ {x} → wfρ' {x}) wfw (all {u}{w} u↦w∈v)
+ℰ′→ℰ {Γ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {ρ} {v} wfρ wfv
+  ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ v₄ , ⟨ wfv1 , ⟨ wfv2 , ⟨ wfv3 , ⟨ wfv4 ,
+  ⟨ Lv1 , ⟨ Mv2 , ⟨ v3↦v4⊑v1 , ⟨ v3⊑v2 , v⊑v4 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+  let Lv1 = ℰ′→ℰ {Γ}{L} wfρ wfv1 Lv1 in  
+  let Mv2 = ℰ′→ℰ {Γ}{M} wfρ wfv2 Mv2 in
+  let v3↦v⊑v1 = ⊑-trans (⊑-fun′ ⊑-refl v⊑v4) v3↦v4⊑v1 in
+  let Lv3↦v = ℰ-⊑{Γ}{ρ}{L} wfρ wfv1 (wf-fun wfv3 wfv) v3↦v⊑v1 Lv1 in
+  let Mv3 = ℰ-⊑{Γ}{ρ}{M} wfρ wfv2 wfv3 v3⊑v2 Mv2 in
+  ⟨ v₃ , ⟨ wfv3 , ⟨ Lv3↦v , Mv3 ⟩ ⟩ ⟩
+
+
+ℰ→ℰ′ : ∀{Γ}{M : Term Γ}{ρ ρ' : Env Γ}{v : Value}
+     → WFEnv ρ → WFEnv ρ' → ρ `⊑ ρ' → wf v 
+     → ℰ M ρ v
+     → Σ[ v′ ∈ Value ] wf v′ × ℰ′ M ρ' v′ × v ⊑ v′
+ℰ→ℰ′ {Γ}{` x}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
+    ⟨ ρ' x , ⟨ wfρ' , ⟨ refl , ⊑-trans ℰMρv (ρ⊑ρ' x) ⟩ ⟩ ⟩
+ℰ→ℰ′ {Γ}{lit {P} k ⦅ nil ⦆}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
+    ⟨ v , ⟨ wfv , ⟨ ℰMρv , ⊑-refl ⟩ ⟩ ⟩
+ℰ→ℰ′ {Γ}{lam ⦅ cons (bind (ast N)) nil ⦆}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
+   G wfv ℰMρv
+   where
+   G : ∀{v} → wf v → ℱ (ℰ N) ρ v
+     → Σ[ v′ ∈ Value ] wf v′ × ℱ (ℰ′ N) ρ' v′ × v ⊑ v′
+   G {⊥} wfv ℱNv = ⟨ ⊥ , ⟨ wf-bot , ⟨ tt , ⊑-⊥ ⟩ ⟩ ⟩
+   G {const k} wfv ()
+   G {v₁ ↦ v₂} (wf-fun wfv1 wfv2) ℱNv
+       with ℰ→ℰ′ {suc Γ}{N}{ρ `, v₁}{ρ' `, v₁}{v₂}
+                  (λ {x} → WFEnv-extend wfρ wfv1 {x})
+                  (λ {x} → WFEnv-extend wfρ' wfv1 {x})
+                  (`⊑-extend ρ⊑ρ' ⊑-refl) wfv2 ℱNv
+   ... | ⟨ v′ , ⟨ wfv′ , ⟨ Mv′ , v⊑v′ ⟩ ⟩ ⟩ =
+         ⟨ v₁ ↦ v′ , ⟨ wf-fun wfv1 wfv′ , ⟨ Mv′ , ⊑-fun′ ⊑-refl v⊑v′ ⟩ ⟩ ⟩
+   G {v₁ ⊔ v₂} (wf-⊔ v₁~v₂ wfv1 wfv2) ⟨ ℱNv1 , ℱNv2 ⟩
+       with G {v₁} wfv1 ℱNv1
+          | G {v₂} wfv2 ℱNv2
+   ... | ⟨ v1′ , ⟨ wfv1′ , ⟨ Mv1′ , v⊑v1′ ⟩ ⟩ ⟩
+       | ⟨ v2′ , ⟨ wfv2′ , ⟨ Mv2′ , v⊑v2′ ⟩ ⟩ ⟩ =
+         let v1′~v2′ : v1′ ~ v2′
+             v1′~v2′ = ℱ-~{Γ}{ℰ′ N} ({!!}) {!!} {!!} ~′-refl {!!} {!!} Mv1′ Mv2′ in
+         ⟨ (v1′ ⊔ v2′) ,
+         ⟨ (wf-⊔ v1′~v2′ wfv1′ wfv2′) , ⟨ ⟨ Mv1′ , Mv2′ ⟩ ,
+           (⊑-conj-L (⊑-conj-R1 v⊑v1′) (⊑-conj-R2 v⊑v2′)) ⟩ ⟩ ⟩
+   
+   
+ℰ→ℰ′ {Γ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv
+   ⟨ u , ⟨ wfu , ⟨ Luw , Mu ⟩ ⟩ ⟩
+    with ℰ→ℰ′ {Γ}{L} wfρ wfρ' ρ⊑ρ' (wf-fun wfu wfv) Luw
+       | ℰ→ℰ′ {Γ}{M} wfρ wfρ' ρ⊑ρ' wfu Mu
+... | ⟨ v1 , ⟨ wfv1 , ⟨ Lv1 , uv⊑v1 ⟩ ⟩ ⟩
+    | ⟨ u1 , ⟨ wfu1 , ⟨ Mu1 , u⊑u1 ⟩ ⟩ ⟩ =
+      ⟨ v ,
+      ⟨ wfv ,
+      ⟨ ⟨ v1 , ⟨ u1 , ⟨ u , ⟨ v  , ⟨ wfv1 , ⟨ wfu1 , ⟨ wfu , ⟨ wfv ,
+        ⟨ Lv1 , ⟨ Mu1 , ⟨ uv⊑v1 , ⟨ u⊑u1 , ⊑-refl ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ,
+        ⊑-refl ⟩ ⟩ ⟩
