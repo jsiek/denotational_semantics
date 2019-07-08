@@ -57,7 +57,8 @@ module Filter
         → WFEnv γ → wf u → wf v
         → ℰ M γ u → ℰ M γ v → ℰ M γ (u ⊔ v)
     ℰ-~ : ∀{Γ} {γ : Env Γ} {δ : Env Γ} {M : Term Γ} {u v : Value}
-        → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v → ℰ M γ u → ℰ M δ v → u ~ v
+        → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
+        → ℰ M γ u → ℰ M δ v → u ~ v
     ℰ-⊑ : ∀{Γ} {γ : Env Γ} {M : Term Γ} {v w : Value}
         → WFEnv γ → wf v → wf w 
         → w ⊑ v → ℰ M γ v → ℰ M γ w
