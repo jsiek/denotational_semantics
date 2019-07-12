@@ -6,7 +6,7 @@ File Overview
 
   Defines de Bruijn indices, Rename, ext, and var≟.
 
-* `Syntax2`
+* `Syntax3`
 
   Abstract binding trees a la Robert Harper,
   substitution, and contexts. 
@@ -51,7 +51,15 @@ File Overview
 
   Denotational semantics of ISWIM defined
   generically in terms of ●, ℱ, Domain, and ValueOrdering.
-  
+
+* `ISWIMDenotAlt`
+
+  An alternative semantic definition of ISWIM that does not use `⊑`
+  in the variable case, but only in the meaning of application.
+  So it does not satisfy `ℰ-⊑`. Nevertheless, this version is equivalent
+  to the above version in the same way that an algorithmic
+  type system is equivalent to a declarative one.  
+
 * `Compositionality` (parameterized on CurryApplyStruct)
 
    Proof of compositionality for the lambda calculus and ISWIM.

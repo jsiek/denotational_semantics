@@ -47,7 +47,7 @@ module SubstitutionPreserve
     open Lambda.Reduction using (_—→_; ξ₁-rule; ξ₂-rule; β-rule; ζ-rule)
     open Lambda.ASTMod
        using (`_; _⦅_⦆; Subst;
-              exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
+              exts; cons; ast; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
     open import LambdaDenot D V _●_ ℱ
     open RenamePreserveReflect.ForLambda D V C _●_ ℱ MB
       using (⊑-env; rename-pres)
@@ -72,14 +72,14 @@ module SubstitutionPreserve
       → ℰ (⟪ σ ⟫ M) δ v
     subst-pres {M = ` x} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
         ℰ-⊑ {M = σ x} wfδ wfγ wfv ℰMγv (δ⊢σ↓γ x)
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
         ℱ-≲ (λ {v′} wfv′ {w} wfw ℰNw →
               subst-pres {γ = γ `, v′}{δ = δ `, v′}{M = N}
                     (λ {x} → WFEnv-extend{Γ} wfγ wfv′ {x})
                     (λ {x} → WFEnv-extend wfδ wfv′ {x})
                     wfw (exts σ) (subst-ext wfγ σ δ⊢σ↓γ) ℰNw)
              wfv ℰMγv
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆}
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}
        wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
        (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
             {D₂′ = ℰ (⟪ σ ⟫ M)}
@@ -142,7 +142,7 @@ module SubstitutionPreserve
     subst-pres {M = lit {P} k ⦅ nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv = ℰMγv
     subst-pres {M = ` x} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
         ℰ-⊑ {M = σ x} wfδ wfγ wfv ℰMγv (δ⊢σ↓γ x)
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ bind N nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
        (ℱ-≲ {Γ}{Δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}
              λ {v′} wfv′ {w} wfw →
                 subst-pres {γ = γ `, v′}{δ = δ `, v′}{M = N}
@@ -150,7 +150,7 @@ module SubstitutionPreserve
                        (λ {x} → WFEnv-extend wfδ wfv′ {x}) 
                        wfw (exts σ) (subst-ext wfγ σ δ⊢σ↓γ))
         wfv ℰMγv
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons L (cons M nil) ⦆}
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}
        wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
        (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
             {D₂′ = ℰ (⟪ σ ⟫ M)}

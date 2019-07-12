@@ -6,7 +6,7 @@ open import Data.Nat using (ℕ; suc ; zero; _+_; _≤′_; _<′_; _<_; _≤_;
 open import Data.Nat.Properties
   using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
          +-mono-≤; +-mono-≤-<; +-mono-<-≤; +-comm; +-assoc; n≤1+n; 
-         ≤-pred; m≤m+n; n≤m+n; ≤-reflexive; ≤′⇒≤; ≤⇒≤′; +-suc)
+         ≤-pred; m≤m+n; m≤n+m; ≤-reflexive; ≤′⇒≤; ≤⇒≤′; +-suc)
 open Data.Nat.Properties.≤-Reasoning using (begin_; _≤⟨_⟩_; _∎)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -330,7 +330,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
             ∎
       M1b = begin
                suc (size u₁ + size v)
-            ≤⟨ s≤s (+-mono-≤ ≤-refl (n≤m+n (size u₂) (size v))) ⟩
+            ≤⟨ s≤s (+-mono-≤ ≤-refl (m≤n+m (size v) (size u₂))) ⟩
                suc (size u₁ + (size u₂ + size v))
             ≤⟨ s≤s (≤-reflexive (sym (+-assoc (size u₁) (size u₂) (size v)))) ⟩
                suc (size u₁ + size u₂ + size v)
@@ -346,7 +346,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
             ∎
       M2b = begin
                suc (size u₂ + size v)
-            ≤⟨ s≤s (+-mono-≤ (n≤m+n (size u₁) (size u₂)) ≤-refl) ⟩
+            ≤⟨ s≤s (+-mono-≤ (m≤n+m (size u₂) (size u₁)) ≤-refl) ⟩
                suc ((size u₁ + size u₂) + size v)
             ∎ 
       M2 : ⟨ depth u₂ + depth w , size u₂ + size v ⟩ <<
@@ -377,7 +377,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
               suc (size u + size v₂)
            ≤⟨ ≤-reflexive (sym (+-suc (size u) (size v₂))) ⟩
               size u + suc (size v₂)
-           ≤⟨ +-mono-≤ ≤-refl (s≤s (n≤m+n (size v₁) (size v₂))) ⟩
+           ≤⟨ +-mono-≤ ≤-refl (s≤s (m≤n+m (size v₂) (size v₁))) ⟩
               size u + suc (size v₁ + size v₂)
            ∎ 
       M : ⟨ depth u + depth w , size u + size v₂ ⟩ <<

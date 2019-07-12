@@ -44,24 +44,17 @@ module DenotAux
                   ---------------------------
                 → ℰ (plug C M) ≃ ℰ (plug C N)
   compositionality {C = CHole} M≃N = M≃N
-  compositionality {C = COp lam (cbind {Γ}{Δ}{bs}{bs'} C′ nil refl)}{M}{N} M≃N =
+  compositionality {C = COp lam (tcons (bind (ast N)) Cs refl)} M≃N =
+     ⊥-elim (cargs-not-empty Cs)
+  compositionality {C = COp lam (ccons (CBind (CAst C′)) nil refl)} M≃N =
      ℱ-cong (compositionality {C = C′} M≃N)
-  compositionality {C = COp lam (tbind N Cs refl)} M≃N =
+  compositionality {C = COp app (tcons (ast L) (tcons x Cs refl) refl)} M≃N =
      ⊥-elim (cargs-not-empty Cs)
-  compositionality {C = COp lam (ccons C Ms ())} M≃N
-  compositionality {C = COp lam (tcons N Cs ())} M≃N
-  compositionality {C = COp app (cbind C′ Ms ())} M≃N
-  compositionality {C = COp app (tbind L Cs ())} M≃N
-  compositionality {C = COp app (ccons C′ (cons M nil) refl)} M≃N =
-     ●-cong (compositionality {C = C′} M≃N) ≃-refl
-  compositionality {C = COp app (tcons L (ccons C′ nil refl) refl)} M≃N =
+  compositionality {C = COp app (tcons (ast L) (ccons (CAst C′) nil refl) refl)} M≃N =
      ●-cong ≃-refl (compositionality {C = C′} M≃N)
-  compositionality {C = COp app (tcons L (cbind C′ Ms ()) refl)} M≃N
-  compositionality {C = COp app (tcons L (tbind M Cs ()) refl)} M≃N
-  compositionality {C = COp app (tcons L (tcons M Cs refl) refl)} M≃N =
-     ⊥-elim (cargs-not-empty Cs)
+  compositionality {C = COp app (ccons (CAst C′) (cons (ast M) nil) refl)} M≃N =
+     ●-cong (compositionality {C = C′} M≃N) ≃-refl
   
-
 module ISWIMDenotAux
   (D : ValueStruct) (V : ValueOrdering D) 
   (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
@@ -94,23 +87,13 @@ module ISWIMDenotAux
                   ---------------------------
                 → ℰ (plug C M) ≃ ℰ (plug C N)
   compositionality {C = CHole} M≃N = M≃N
-  compositionality {C = COp (lit {P} k) (tbind N Cs ())} M≃N
-  compositionality {C = COp (lit {P} k) (cbind C Ns ())} M≃N
-  compositionality {C = COp (lit {P} k) (tcons C Ms ())} M≃N
-  compositionality {C = COp (lit {P} k) (ccons M Cs ())} M≃N
-  compositionality {C = COp lam (cbind {Γ}{Δ}{bs}{bs'} C′ nil refl)}{M}{N} M≃N =
+  compositionality {C = COp lam (tcons (bind (ast N)) Cs refl)} M≃N =
+     ⊥-elim (cargs-not-empty Cs)
+  compositionality {C = COp lam (ccons (CBind (CAst C′)) nil refl)} M≃N =
      ℱ-cong (compositionality {C = C′} M≃N)
-  compositionality {C = COp lam (tbind N Cs refl)} M≃N =
+  compositionality {C = COp app (tcons (ast L) (tcons x Cs refl) refl)} M≃N =
      ⊥-elim (cargs-not-empty Cs)
-  compositionality {C = COp lam (ccons C Ms ())} M≃N
-  compositionality {C = COp lam (tcons N Cs ())} M≃N
-  compositionality {C = COp app (cbind C′ Ms ())} M≃N
-  compositionality {C = COp app (tbind L Cs ())} M≃N
-  compositionality {C = COp app (ccons C′ (cons M nil) refl)} M≃N =
-     ●-cong (compositionality {C = C′} M≃N) ≃-refl 
-  compositionality {C = COp app (tcons L (ccons C′ nil refl) refl)} M≃N =
+  compositionality {C = COp app (tcons (ast L) (ccons (CAst C′) nil refl) refl)} M≃N =
      ●-cong ≃-refl (compositionality {C = C′} M≃N)
-  compositionality {C = COp app (tcons L (cbind C′ Ms ()) refl)} M≃N
-  compositionality {C = COp app (tcons L (tbind M Cs ()) refl)} M≃N
-  compositionality {C = COp app (tcons L (tcons M Cs refl) refl)} M≃N =
-     ⊥-elim (cargs-not-empty Cs)
+  compositionality {C = COp app (ccons (CAst C′) (cons (ast M) nil) refl)} M≃N =
+     ●-cong (compositionality {C = C′} M≃N) ≃-refl

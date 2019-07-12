@@ -88,6 +88,6 @@ open import LambdaDenot value_struct ordering _●_ ℱ
 ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
     → ℰ M γ ⊥
 ℰ-⊥ {M = ` x} = ⊑-⊥
-ℰ-⊥ {Γ}{γ}{M = lam ⦅ bind N nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
-ℰ-⊥ {M = app ⦅ cons L (cons M nil) ⦆} = inj₁ ⊑-⊥
+ℰ-⊥ {Γ}{γ}{M = lam ⦅ cons (bind (ast N)) nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆} = inj₁ ⊑-⊥
 

@@ -6,13 +6,26 @@
 #	CurryBCDConst.agda \
 
 AGDA = Variables.agda \
-	Syntax2.agda \
 	Primitives.agda \
 	Structures.agda \
-	MultiStep.agda \
-	ValueBCD.agda \
 	ValueConst.agda \
+	Syntax3.agda \
+	MultiStep.agda \
+	ValueStructAux.agda \
+	OrderingAux.agda \
 	Consistency.agda \
+	ConsistentAux.agda \
+	CurryConst.agda \
+	PrimConst.agda \
+	ModelLCurryConst.agda \
+	WFDenotMod.agda \
+	CurryApplyStruct.agda \
+	CurryApplyAux.agda \
+	ISWIMDenot.agda \
+	ISWIMDenotAlt.agda \
+	Compositionality.agda \
+	ValueBCD.agda \
+	LambdaDenot.agda \
 	Lambda.agda \
 	LambdaCallByValue.agda \
 	ISWIM.agda \

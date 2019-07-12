@@ -8,6 +8,7 @@ open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open import Relation.Nullary using (¬_)
 
 
 module Syntax3 (Op : Set) (sig : Op → List ℕ) where
@@ -561,6 +562,12 @@ data CArgs where
         → CArgs Γ Δ bs'
   ccons : ∀{Γ Δ}{n}{bs bs'} → CArg Γ Δ n → Args Δ bs → bs' ≡ (n ∷ bs)
         → CArgs Γ Δ bs'  
+
+cargs-not-empty : ∀ {Γ Δ} → ¬ CArgs Γ Δ []
+cargs-not-empty {Γ} {Δ} (tcons (ast x) Cs ())
+cargs-not-empty {Γ} {Δ} (tcons (bind x) Cs ())
+cargs-not-empty {Γ} {Δ} (ccons (CAst x) x₁ ())
+cargs-not-empty {.(suc _)} {Δ} (ccons (CBind x) x₁ ())
 
 plug : ∀ {Γ Δ} → Ctx Γ Δ → AST Γ → AST Δ
 plug-arg : ∀ {Γ Δ n} → CArg Γ Δ n → AST Γ → Arg Δ n
