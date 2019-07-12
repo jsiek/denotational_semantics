@@ -99,13 +99,13 @@ module ForLambdaModel
                     → SubRef Γ Δ δ M L σ v
       subst-reflect {Γ}{Δ}{δ}{` x}{L}{σ}{v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
         subst-reflect-var {x = x}{σ} wfδ wfv ℰLδv refl δ⊢σ↓⊥
-      subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥
+      subst-reflect {Γ}{Δ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} {L} {σ} {v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥
           rewrite L≡σM =
           subst-reflect-lambda {N = N}{v = v} IH wfδ wfv ℰLδv refl δ⊢σ↓⊥
           where
           IH = λ {u}{w} → subst-reflect {δ = δ `, u} {M = N}
                               {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
-      subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
+      subst-reflect {Γ}{Δ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
                     L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           subst-reflect-app {L = L}{M} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
           where
@@ -192,13 +192,13 @@ module ForLambdaModel
           ⟨ `⊥ , ⟨ wf-bot , ⟨ δ⊢σ↓⊥ , ℰLδv ⟩ ⟩ ⟩ 
       subst-reflect {Γ}{Δ}{δ}{` x}{L}{σ}{v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           subst-reflect-var {x = x}{σ} wfδ wfv ℰLδv refl δ⊢σ↓⊥
-      subst-reflect {Γ}{Δ}{δ}{lam ⦅ bind N nil ⦆} {L} {σ} {v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥
+      subst-reflect {Γ}{Δ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} {L} {σ} {v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥
           rewrite L≡σM =
           subst-reflect-lambda {N = N}{v = v} IH wfδ wfv ℰLδv refl δ⊢σ↓⊥
           where
           IH = λ {u}{w} → subst-reflect {δ = δ `, u} {M = N}
                               {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
-      subst-reflect {Γ}{Δ}{δ}{app ⦅ cons L (cons M nil) ⦆}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
+      subst-reflect {Γ}{Δ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
                     L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           subst-reflect-app {L = L}{M} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
           where
@@ -398,9 +398,9 @@ module SubstReflectLambdaBCD where
         ⟨ (λ {x} → tt) ,
         ⟨ subst-⊔ {σ = σ} (λ {x} → tt) (λ {x} → tt) (λ {x} → tt)
                   subst-δ₁ subst-δ₂ ,
-        ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{u}
+        ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}
                tt (EnvConjR1⊑ δ₁ δ₂) m1 ,
-          ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}
+          ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ cons (bind (ast N)) nil ⦆}{w}
                tt (EnvConjR2⊑ δ₁ δ₂) m2 ⟩
           ⟩ ⟩ ⟩
 
@@ -469,8 +469,8 @@ module SubstReflectLambdaConst where
         ⟨ δ₁ `⊔ δ₂ ,
         ⟨ wf-⊔ δ₁~δ₂ wfδ₁ wfδ₂ ,
         ⟨ subst-⊔ {σ = σ} wfδ wfδ₁ wfδ₂ subst-δ₁ subst-δ₂ ,
-        ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{u}wfu(EnvConjR1⊑ δ₁ δ₂) m1 ,
-          ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ bind N nil ⦆}{w}wfw(EnvConjR2⊑ δ₁ δ₂) m2 ⟩
+        ⟨ ⊑-env{Γ}{δ₁}{δ₁ `⊔ δ₂}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}wfu(EnvConjR1⊑ δ₁ δ₂) m1 ,
+          ⊑-env{Γ}{δ₂}{δ₁ `⊔ δ₂}{lam ⦅ cons (bind (ast N)) nil ⦆}{w}wfw(EnvConjR2⊑ δ₁ δ₂) m2 ⟩
           ⟩ ⟩ ⟩ 
         where
         δ₁~δ₂ : δ₁ ~′ δ₂

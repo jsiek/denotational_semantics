@@ -17,7 +17,7 @@ AGDA = Variables.agda \
 	ConsistentAux.agda \
 	CurryConst.agda \
 	PrimConst.agda \
-	ModelLCurryConst.agda \
+	ModelCurryConst.agda \
 	WFDenotMod.agda \
 	CurryApplyStruct.agda \
 	CurryApplyAux.agda \
