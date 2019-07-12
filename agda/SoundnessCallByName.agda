@@ -72,7 +72,7 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
               (λ x y → y)
               (preserve M—→M′)
-preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}
+preserve {Γ}{γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}
                (β-rule{N = N}{M = M}) _ ℰƛN·Mγw 
     with ℰƛN·Mγw
 ... | inj₁ w⊑⊥ =

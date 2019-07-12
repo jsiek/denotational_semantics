@@ -203,7 +203,7 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
    ⟨ (val-const {P} p) , ⟨ ⇓-lit , ℘pv→𝕍vp {P}{p}{v} ℰMγv ⟩ ⟩
 ℰ→𝔼 {Γ} {γ} {γ'} {` x} {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ γ' x , ⟨ ⇓-var , sub-𝕍 wfγ wfv (𝔾γγ' {x}) ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ bind N nil ⦆} {v} wfγ wfv 𝔾γγ' ℰMγv =
+ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ cons (bind (ast N)) nil ⦆} {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ val-clos N γ' , ⟨ ⇓-lam , G {v} wfv ℰMγv ⟩ ⟩
    where
    G : ∀{v} → wf v → ℱ (ℰ N) γ v → 𝕍 v (val-clos N γ')
@@ -214,7 +214,7 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
           (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
    G {v₁ ⊔ v₂} (wf-⊔ _ wfv₁ wfv₂) ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ =
       ⟨ G {v₁} wfv₁ ℱℰNγv₁ , G {v₂} wfv₂ ℱℰNγv₂ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} wfγ wfv 𝔾γγ'
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} wfγ wfv 𝔾γγ'
     ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩
     with ℰ→𝔼 {M = L} wfγ (wf-fun wfv₁ wfv) 𝔾γγ' d₁
        | ℰ→𝔼 {M = M} wfγ wfv₁ 𝔾γγ' d₂

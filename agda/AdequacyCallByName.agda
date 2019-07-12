@@ -40,11 +40,11 @@ module AdequacyCallByName where
 
 𝕍 v (clos (` x₁) γ) = Bot
 𝕍 v (clos (app ⦅ cons M (cons M₁ nil) ⦆) γ) = Bot
-𝕍 ⊥ (clos (lam ⦅ bind M nil ⦆) γ) = ⊤
-𝕍 (v ↦ w) (clos (lam ⦅ bind N nil ⦆) γ) =
+𝕍 ⊥ (clos (lam ⦅ cons (bind (ast M)) nil ⦆) γ) = ⊤
+𝕍 (v ↦ w) (clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ) =
     (∀{c : Clos} → 𝔼 v c → AboveFun w → Σ[ c' ∈ Clos ]
         (γ ,' c) ⊢ N ⇓ c'  ×  𝕍 w c')
-𝕍 (u ⊔ v) (clos (lam ⦅ bind N nil ⦆) γ) =
+𝕍 (u ⊔ v) (clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ) =
    𝕍 u (clos (ƛ N) γ) × 𝕍 v (clos (ƛ N) γ)
 
 𝔼 v (clos M γ') = AboveFun v → Σ[ c ∈ Clos ] γ' ⊢ M ⇓ c × 𝕍 v c
@@ -67,21 +67,21 @@ data WHNF : ∀ {Γ} → Term Γ → Set where
 𝕍→WHNF : ∀{Γ}{γ : ClosEnv Γ}{M : Term Γ}{v}
        → 𝕍 v (clos M γ) → WHNF M
 𝕍→WHNF {M = ` x} {v} ()
-𝕍→WHNF {M = lam ⦅ bind N nil ⦆} {v} vc = ƛ_
-𝕍→WHNF {M = app ⦅ cons L (cons M nil) ⦆} {v} ()
+𝕍→WHNF {M = lam ⦅ cons (bind (ast N)) nil ⦆} {v} vc = ƛ_
+𝕍→WHNF {M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} ()
 
 𝕍⊔-intro : ∀{c u v}
          → 𝕍 u c → 𝕍 v c
            ---------------
          → 𝕍 (u ⊔ v) c
 𝕍⊔-intro {clos (` x) γ} () vc
-𝕍⊔-intro {clos (lam ⦅ bind N nil ⦆) γ} uc vc = ⟨ uc , vc ⟩
-𝕍⊔-intro {clos (app ⦅ cons L (cons M nil) ⦆) γ} () vc
+𝕍⊔-intro {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} uc vc = ⟨ uc , vc ⟩
+𝕍⊔-intro {clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) γ} () vc
 
 not-AboveFun-𝕍 : ∀{v : Value}{Γ}{γ' : ClosEnv Γ}{N : Term (suc Γ) }
     → ¬ AboveFun v
       -------------------
-    → 𝕍 v (clos (lam ⦅ bind N nil ⦆) γ')
+    → 𝕍 v (clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ')
 not-AboveFun-𝕍 {⊥} af = tt
 not-AboveFun-𝕍 {v ↦ v'} af = ⊥-elim (contradiction ⟨ v , ⟨ v' , ⊑-refl ⟩ ⟩ af)
 not-AboveFun-𝕍 {v₁ ⊔ v₂} af
@@ -95,15 +95,15 @@ sub-𝔼 : ∀{c : Clos}{v v'} → 𝔼 v c → v' ⊑ v → 𝔼 v' c
 
 sub-𝕍 {clos (` x) γ} {v} () lt
 sub-𝕍 {clos (app ⦅ cons L (cons M nil) ⦆) γ} () lt
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} vc ⊑-⊥ = tt
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} vc (⊑-conj-L lt1 lt2) = ⟨ (sub-𝕍 vc lt1) , sub-𝕍 vc lt2 ⟩
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} ⟨ vv1 , vv2 ⟩ (⊑-conj-R1 lt) = sub-𝕍 vv1 lt
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} ⟨ vv1 , vv2 ⟩ (⊑-conj-R2 lt) = sub-𝕍 vv2 lt
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} vc (⊑-trans {v = v₂} lt1 lt2) = sub-𝕍 (sub-𝕍 vc lt2) lt1
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} vc (⊑-fun lt1 lt2) ev1 sf
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} vc ⊑-⊥ = tt
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} vc (⊑-conj-L lt1 lt2) = ⟨ (sub-𝕍 vc lt1) , sub-𝕍 vc lt2 ⟩
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} ⟨ vv1 , vv2 ⟩ (⊑-conj-R1 lt) = sub-𝕍 vv1 lt
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} ⟨ vv1 , vv2 ⟩ (⊑-conj-R2 lt) = sub-𝕍 vv2 lt
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} vc (⊑-trans {v = v₂} lt1 lt2) = sub-𝕍 (sub-𝕍 vc lt2) lt1
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} vc (⊑-fun lt1 lt2) ev1 sf
     with vc (sub-𝔼 ev1 lt1) (AboveFun-⊑ sf lt2)
 ... | ⟨ c , ⟨ Nc , v4 ⟩ ⟩ = ⟨ c , ⟨ Nc , sub-𝕍 v4 lt2 ⟩ ⟩
-sub-𝕍 {clos (lam ⦅ bind N nil ⦆) γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
+sub-𝕍 {clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
     with AboveFun? w | AboveFun? w'
 ... | yes af2 | yes af3
     with vcw ev1c af2 | vcw' ev1c af3
@@ -118,7 +118,7 @@ sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
     with 𝕍→WHNF 𝕍w
 ... | ƛ_ {N = N'} =
       let 𝕍w' = not-AboveFun-𝕍{w'}{Γ'}{γ₁}{N'} naf3 in
-      ⟨ clos (lam ⦅ bind N' nil ⦆) γ₁ , ⟨ L⇓c2 , 𝕍⊔-intro 𝕍w 𝕍w' ⟩ ⟩
+      ⟨ clos (lam ⦅ cons (bind (ast N')) nil ⦆) γ₁ , ⟨ L⇓c2 , 𝕍⊔-intro 𝕍w 𝕍w' ⟩ ⟩
 sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
     | no naf2 | yes af3
     with vcw' ev1c af3
@@ -126,7 +126,7 @@ sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c sf
     with 𝕍→WHNF 𝕍w'c
 ... | ƛ_ {N = N'} =
       let 𝕍wc = not-AboveFun-𝕍{w}{Γ'}{γ₁}{N'} naf2 in
-      ⟨ clos (lam ⦅ bind N' nil ⦆) γ₁ , ⟨ L⇓c3 , 𝕍⊔-intro 𝕍wc 𝕍w'c ⟩ ⟩
+      ⟨ clos (lam ⦅ cons (bind (ast N')) nil ⦆) γ₁ , ⟨ L⇓c3 , 𝕍⊔-intro 𝕍wc 𝕍w'c ⟩ ⟩
 sub-𝕍 {c} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ Dist⊑ ev1c ⟨ v' , ⟨ w'' , lt ⟩ ⟩
     | no naf2 | no naf3
     with AboveFun-⊔ ⟨ v' , ⟨ w'' , lt ⟩ ⟩
@@ -156,14 +156,14 @@ kth-x{γ' = γ'}{x = x} with γ' x
     with 𝔾γγ'x (AboveFun-⊑ fγx v⊑γx)
 ... | ⟨ c , ⟨ M'⇓c , 𝕍γx ⟩ ⟩ =
       ⟨ c , ⟨ (⇓-var eq M'⇓c) , sub-𝕍 𝕍γx v⊑γx ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ bind N nil ⦆} {v} 𝔾γγ' ℰMγv fγx = G ℰMγv fγx
+ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ cons (bind (ast N)) nil ⦆} {v} 𝔾γγ' ℰMγv fγx = G ℰMγv fγx
   where
   G : ∀{v}
     → ℱ (ℰ N) γ v
     → AboveFun v
-    → Σ[ c ∈ Clos ] (γ' ⊢ lam ⦅ bind N nil ⦆ ⇓ c) × 𝕍 v c
+    → Σ[ c ∈ Clos ] (γ' ⊢ lam ⦅ cons (bind (ast N)) nil ⦆ ⇓ c) × 𝕍 v c
   G {⊥} tt fv = ⊥-elim (AboveFun⊥ fv)
-  G {v ↦ w} ℱℰNγv fv = ⟨ (clos (lam ⦅ bind N nil ⦆) γ') , ⟨ ⇓-lam , E ⟩ ⟩
+  G {v ↦ w} ℱℰNγv fv = ⟨ (clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ') , ⟨ ⇓-lam , E ⟩ ⟩
     where E : {c : Clos} → 𝔼 v c → AboveFun w
             → Σ[ c' ∈ Clos ] (γ' ,' c) ⊢ N ⇓ c'  ×  𝕍 w c'
           E {c} 𝔼vc fw = ℰ→𝔼 (λ {x} → 𝔾-ext 𝔾γγ' 𝔼vc {x}) ℱℰNγv fw
@@ -180,21 +180,21 @@ kth-x{γ' = γ'}{x = x} with γ' x
       with 𝕍→WHNF 𝕍v₁
   ... | ƛ_ {N = N} =
       let 𝕍v₂ = not-AboveFun-𝕍{v₂}{Γ'}{γ₁}{N} nfv2 in
-      ⟨ clos (lam ⦅ bind N nil ⦆) γ₁ , ⟨ M⇓c₁ , 𝕍⊔-intro 𝕍v₁ 𝕍v₂ ⟩ ⟩
+      ⟨ clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ₁ , ⟨ M⇓c₁ , 𝕍⊔-intro 𝕍v₁ 𝕍v₂ ⟩ ⟩
   G {v₁ ⊔ v₂} ⟨ d₁ , d₂ ⟩ fv | no nfv1  | yes fv2
       with G d₂ fv2
   ... | ⟨ clos {Γ'} M' γ₁ , ⟨ M'⇓c₂ , 𝕍2c ⟩ ⟩
       with 𝕍→WHNF 𝕍2c
   ... | ƛ_ {N = N} =
       let 𝕍1c = not-AboveFun-𝕍{v₁}{Γ'}{γ₁}{N} nfv1 in
-      ⟨ clos (lam ⦅ bind N nil ⦆) γ₁ , ⟨ M'⇓c₂ , 𝕍⊔-intro 𝕍1c 𝕍2c ⟩ ⟩
+      ⟨ clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ₁ , ⟨ M'⇓c₂ , 𝕍⊔-intro 𝕍1c 𝕍2c ⟩ ⟩
   G {v₁ ⊔ v₂} ℱℰNγv fv12 | no nfv1  | no nfv2
       with AboveFun-⊔ fv12
   ... | inj₁ fv1 = ⊥-elim (contradiction fv1 nfv1)
   ... | inj₂ fv2 = ⊥-elim (contradiction fv2 nfv2)
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ' (inj₁ v⊑⊥) fγx =
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} 𝔾γγ' (inj₁ v⊑⊥) fγx =
    ⊥-elim (contradiction (AboveFun-⊑ fγx v⊑⊥) AboveFun⊥ )
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ'
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} 𝔾γγ'
    (inj₂ ⟨ v₁ , ⟨ d₁ , d₂ ⟩ ⟩ ) fv
     with ℰ→𝔼 𝔾γγ' d₁ ⟨ v₁ , ⟨ v , ⊑-refl ⟩ ⟩
 ... | ⟨ clos L' δ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩ 
@@ -205,10 +205,10 @@ kth-x{γ' = γ'}{x = x} with γ' x
     ⟨ c' , ⟨ ⇓-app L⇓L' N⇓c' , 𝕍v ⟩ ⟩
 
 adequacy : ∀{M : Term zero}{N : Term (suc zero)}
-         → ℰ M ≃ ℰ (lam ⦅ bind N nil ⦆)
+         → ℰ M ≃ ℰ (lam ⦅ cons (bind (ast N)) nil ⦆)
            ----------------------------------------------------------
          → Σ[ Γ ∈ Context ] Σ[ N′ ∈ Term (suc Γ) ] Σ[ γ ∈ ClosEnv Γ ]
-            ∅' ⊢ M ⇓ clos (lam ⦅ bind N′ nil ⦆) γ
+            ∅' ⊢ M ⇓ clos (lam ⦅ cons (bind (ast N′)) nil ⦆) γ
 adequacy{M}{N} eq
     with ℰ→𝔼 𝔾-∅ ((proj₂ (eq `∅ (⊥ ↦ ⊥) (λ {x} → tt) tt)) (ℰ-⊥{M = N}))
                  ⟨ ⊥ , ⟨ ⊥ , ⊑-refl ⟩ ⟩
@@ -218,17 +218,17 @@ adequacy{M}{N} eq
     ⟨ Γ , ⟨ N′ , ⟨ γ , M⇓c ⟩  ⟩ ⟩
 
 reduce→cbn : ∀ {M : Term zero} {N : Term (suc zero)}
-           → M —↠ lam ⦅ bind N nil ⦆
+           → M —↠ lam ⦅ cons (bind (ast N)) nil ⦆
            → Σ[ Δ ∈ ℕ ] Σ[ N′ ∈ Term (suc Δ) ] Σ[ δ ∈ ClosEnv Δ ] 
-             ∅' ⊢ M ⇓ clos (lam ⦅ bind N′ nil ⦆) δ
+             ∅' ⊢ M ⇓ clos (lam ⦅ cons (bind (ast N′)) nil ⦆) δ
 reduce→cbn {M}{N} M—↠ƛN = adequacy {M}{N} (soundness M—↠ƛN)
 
 
 cbn↔reduce : ∀ {M : Term zero}
-           → (Σ[ N ∈ Term (suc zero) ] (M —↠ lam ⦅ bind N nil ⦆))
+           → (Σ[ N ∈ Term (suc zero) ] (M —↠ lam ⦅ cons (bind (ast N)) nil ⦆))
              iff
              (Σ[ Δ ∈ ℕ ] Σ[ N′ ∈ Term (suc Δ) ] Σ[ δ ∈ ClosEnv Δ ]
-               ∅' ⊢ M ⇓ clos (lam ⦅ bind N′ nil ⦆) δ)
+               ∅' ⊢ M ⇓ clos (lam ⦅ cons (bind (ast N′)) nil ⦆) δ)
 cbn↔reduce {M} = ⟨ (λ x → reduce→cbn (proj₂ x)) ,
                    (λ x → cbn→reduce (proj₂ (proj₂ (proj₂ x)))) ⟩
 

@@ -49,7 +49,7 @@ module SoundnessISWIM where
     → ℰ M γ ⊥
 ℰ-⊥ {M = lit {p} k ⦅ nil ⦆} V-lit = tt
 ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
-ℰ-⊥ {Γ}{γ}{(lam ⦅ bind N nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {Γ}{γ}{(lam ⦅ cons (bind (ast N)) nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
 
 
 reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
@@ -104,7 +104,7 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} v M—→M′) wfγ =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
               (λ wf x → x)
               (preserve M—→M′ wfγ)
-preserve {Γ}{γ}{app ⦅ cons (lam ⦅ bind N nil ⦆) (cons M nil) ⦆}{_}
+preserve {Γ}{γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}{_}
                 (β-rule{N = N}{M = M} Mv) wfγ wfv ℰƛN·Mγw
     with ℰƛN·Mγw
 ... | ⟨ v' , ⟨ wfv' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ ⟩ =

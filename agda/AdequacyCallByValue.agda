@@ -77,7 +77,7 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
             → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
 ℰ→𝔼 {Γ} {γ} {γ'} {` x} {v} 𝔾γγ' ℰMγv =
    ⟨ γ' x , ⟨ ⇓-var , sub-𝕍 (𝔾γγ' {x}) ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ bind N nil ⦆} {v} 𝔾γγ' ℰMγv =
+ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ cons (bind (ast N)) nil ⦆} {v} 𝔾γγ' ℰMγv =
    ⟨ clos N γ' , ⟨ ⇓-lam , G ℰMγv ⟩ ⟩
    where
    G : ∀{v} → ℱ (ℰ N) γ v → 𝕍 v (clos N γ')
@@ -85,7 +85,7 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
    G {v ↦ w} ℱℰNγv {c} vc =
       ℰ→𝔼 {M = N} {w} (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
    G {v₁ ⊔ v₂} ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ = ⟨ G {v₁} ℱℰNγv₁ , G {v₂} ℱℰNγv₂ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons L (cons M nil) ⦆} {v} 𝔾γγ'
+ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} 𝔾γγ'
     ⟨ v₁ , ⟨ wfv , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
     with ℰ→𝔼 {M = L} 𝔾γγ' d₁ | ℰ→𝔼 {M = M} 𝔾γγ' d₂
 ... | ⟨ clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩
@@ -96,26 +96,26 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
   
 
 adequacy : ∀{M : Term zero}{N : Term (suc zero)}
-         → ℰ M ≃ ℰ (lam ⦅ bind N nil ⦆)
+         → ℰ M ≃ ℰ (lam ⦅ cons (bind (ast N)) nil ⦆)
            ----------------------------------------------------------
          → Σ[ Γ ∈ Context ] Σ[ N′ ∈ Term (suc Γ) ] Σ[ γ ∈ ClosEnv Γ ]
             ∅' ⊢ M ⇓ clos N′ γ
 adequacy{M}{N} eq 
     with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {x} → tt) tt)
-                  (ℰ-⊥ {γ = λ ()}{M = lam ⦅ bind N nil ⦆} V-ƛ))
+                  (ℰ-⊥ {γ = λ ()}{M = lam ⦅ cons (bind (ast N)) nil ⦆} V-ƛ))
 ... | ⟨ clos {Γ} N′ γ , ⟨ M⇓c , Vc ⟩ ⟩ =
     ⟨ Γ , ⟨ N′ , ⟨ γ , M⇓c ⟩ ⟩ ⟩
 
 
 reduce→cbv : ∀ {M : Term zero} {N : Term (suc zero)}
-           → M —↠ lam ⦅ bind N nil ⦆
+           → M —↠ lam ⦅ cons (bind (ast N)) nil ⦆
            → Σ[ Δ ∈ ℕ ] Σ[ N′ ∈ Term (suc Δ) ] Σ[ δ ∈ ClosEnv Δ ] 
              ∅' ⊢ M ⇓ clos N′ δ
 reduce→cbv {M}{N} M—↠ƛN = adequacy {M}{N} (soundness M—↠ƛN)
 
 
 cbv↔reduce : ∀ {M : Term zero}
-           → (Σ[ N ∈ Term (suc zero) ] (M —↠ lam ⦅ bind N nil ⦆))
+           → (Σ[ N ∈ Term (suc zero) ] (M —↠ lam ⦅ cons (bind (ast N)) nil ⦆))
              iff
              (Σ[ Δ ∈ ℕ ] Σ[ N′ ∈ Term (suc Δ) ] Σ[ δ ∈ ClosEnv Δ ]
                ∅' ⊢ M ⇓ clos N′ δ)
