@@ -24,12 +24,12 @@ open import Data.Unit using (⊤; tt)
 data Op : Set where
   lam : Op
   app : Op
-  lit : ∀{p : Prim} → rep p → Op
+  lit : (p : Prim) → rep p → Op
 
 sig : Op → List ℕ
 sig lam = 1 ∷ []
 sig app = 0 ∷ 0 ∷ []
-sig (lit {p} k) = []
+sig (lit p k) = []
 
 import Syntax3
 module ASTMod = Syntax3 Op sig
@@ -38,20 +38,16 @@ open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
                    rename-id) public
 open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 
-infixl 7  _·_
 
 Term : ℕ → Set
 Term Γ = AST Γ
 
-ƛ : ∀{Γ} → Term (suc Γ) → Term Γ
-ƛ N = lam ⦅ cons (bind (ast N)) nil ⦆
+pattern ƛ N = lam ⦅ cons (bind (ast N)) nil ⦆
 
-_·_ : ∀{Γ} → Term Γ → Term Γ → Term Γ
-L · M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
+infixl 7  _·_
+pattern _·_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 
-$_ : ∀{Γ}{p : Prim} → rep p → Term Γ
-$_ {Γ}{p} k = lit {p} k ⦅ nil ⦆
-
+pattern $ p k = lit p k ⦅ nil ⦆
 
 
 data TermValue : ∀ {Γ} → Term Γ → Set where
@@ -66,7 +62,7 @@ data TermValue : ∀ {Γ} → Term Γ → Set where
 
   V-lit : ∀ {Γ} {p : Prim} {k : rep p}
       ---------------------------
-    → TermValue {Γ} ($_ {Γ}{p} k)
+    → TermValue {Γ} ($ p k)
 
 infix 2 _—→_
 
@@ -90,7 +86,7 @@ data _—→_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
 
   δ-rule : ∀ {Γ}{B}{P} {f : base-rep B → rep P} {k : base-rep B}
       ------------------------------------------------------------
-    → ($_ {Γ} {B ⇒ P} f) · ($_ {Γ}{base B} k) —→ ($_ {Γ}{P} (f k))
+    → _—→_ {Γ} (($ (B ⇒ P) f) · ($ (base B) k)) ($ P (f k))
 
 
 open import MultiStep Op sig _—→_ public

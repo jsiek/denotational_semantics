@@ -1,5 +1,8 @@
 module Value where
 
+open import Primitives
+open import Variables
+
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
 open import Data.Nat using (ℕ; suc ; zero)
@@ -58,9 +61,11 @@ Trans⊑ (ConjR2⊑ a) (ConjL⊑ b b₁) = Trans⊑ a b₁
 Trans⊑ (ConjR2⊑ a) (ConjR1⊑ b) = ConjR1⊑ (Trans⊑ (ConjR2⊑ a) b)
 Trans⊑ (ConjR2⊑ a) (ConjR2⊑ b) = ConjR2⊑ (Trans⊑ (ConjR2⊑ a) b)
 
+Context = ℕ
+
 data Env : (Γ : Context) → Set where
-  ∅ : Env ∅
-  _,_ : ∀ { Γ } → Env Γ → Value → Env (Γ , ★)
+  ∅ : Env 0
+  _,_ : ∀ { Γ } → Env Γ → Value → Env (suc Γ)
 
 nth : ∀{Γ} → (Γ ∋ ★) → Env Γ → Value
 nth () ∅

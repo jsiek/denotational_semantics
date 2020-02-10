@@ -38,7 +38,7 @@ data _⊢_⇓_ : ∀{Γ} → ValEnv Γ → (Term Γ) → Val → Set where
 
   ⇓-lit : ∀{Γ}{γ : ValEnv Γ}{p : Prim}{k : rep p}
           ---------------------------------
-        → γ ⊢ $_ {Γ}{p} k ⇓ val-const {p} k
+        → γ ⊢ $ p k ⇓ val-const {p} k
         
   ⇓-var : ∀{Γ}{γ : ValEnv Γ}{x : Var Γ}
           -------------
@@ -81,7 +81,7 @@ data _⊢_⇓_ : ∀{Γ} → ValEnv Γ → (Term Γ) → Val → Set where
 _≈_ : Val → (Term zero) → Set
 _≈ₑ_ : ∀{Γ} → ValEnv Γ → Subst Γ zero → Set
 
-(val-const {p} k) ≈ N = N ≡ lit {p} k ⦅ nil ⦆
+(val-const {p} k) ≈ N = N ≡ $ p k
 (val-clos {Γ} M γ) ≈ N = Σ[ σ ∈ Subst Γ zero ] γ ≈ₑ σ × (N ≡ ⟪ σ ⟫ (ƛ M))
 
 γ ≈ₑ σ = ∀{x} → (γ x) ≈ (σ x)
@@ -120,7 +120,7 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
          ---------------------------------------
        → Σ[ N ∈ Term zero ] (⟪ σ ⟫ M —↠ N) × c ≈ N
 ⇓→—↠×≈ (⇓-lit {p = p}{k}) γ≈ₑσ =
-    ⟨ lit {p} k ⦅ nil ⦆ , ⟨ lit {p} k ⦅ nil ⦆ □ , refl ⟩ ⟩
+    ⟨ $ p k , ⟨ $ p k □ , refl ⟩ ⟩
 ⇓→—↠×≈ {γ = γ}{σ} (⇓-var {x = x}) γ≈ₑσ = ⟨ σ x , ⟨ σ x □ , γ≈ₑσ ⟩ ⟩
 ⇓→—↠×≈ {σ = σ} {c = val-clos N γ} ⇓-lam γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ ⟩ ⟩
@@ -132,15 +132,15 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
     with ⇓→—↠×≈{σ = σ} M⇓k γ≈ₑσ
 ... | ⟨ M′ , ⟨ σM—↠M′ , M′≡ ⟩ ⟩
     rewrite M′≡ =
-    ⟨ lit {P} (f k) ⦅ nil ⦆ , ⟨ r , refl ⟩ ⟩
+    ⟨ $ P (f k) , ⟨ r , refl ⟩ ⟩
     where
     r = (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
         —↠⟨ appL-cong σL—↠f  ⟩
-        (lit f ⦅ nil ⦆) · (⟪ σ ⟫ M)
+        ($ (B ⇒ P) f) · (⟪ σ ⟫ M)
         —↠⟨ appR-cong V-lit σM—↠M′ ⟩
-        (lit f ⦅ nil ⦆) · (lit k ⦅ nil ⦆)
+        ($ (B ⇒ P) f) · ($ (base B) k)
         —→⟨ δ-rule ⟩
-        (lit (f k) ⦅ nil ⦆)  □
+        ($ P (f k))  □
 ⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
     (⇓-app {Γ}{δ = δ}{N}{V}{V′} L⇓ƛNδ M⇓V N⇓V′) γ≈ₑσ
     with ⇓→—↠×≈{σ = σ} L⇓ƛNδ γ≈ₑσ

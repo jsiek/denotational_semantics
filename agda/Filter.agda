@@ -175,7 +175,7 @@ module Filter
         → w ⊑ v → ℰ M γ v → ℰ M γ w
 
     ℰ-~ {M = ` x} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv = ~-⊑ (γ~δ {x}) ℰMγu ℰMδv
-    ℰ-~ {M = lit {P} k ⦅ nil ⦆} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv = ℘-~ ℰMγu ℰMδv
+    ℰ-~ {M = $ P k} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv = ℘-~ ℰMγu ℰMδv
     ℰ-~ {Γ}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv =
        ℱ-~ {Γ}{ℰ N}{γ}{δ}{u}{v} G wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv
        where G : WFDenot (suc Γ) (ℰ N)
@@ -199,7 +199,7 @@ module Filter
                          ⊔-closed = ℰ-⊔ {M = M} ;
                          ~-closed = ℰ-~ {M = M} }
     
-    ℰ-⊔ {M = lit {P} k ⦅ nil ⦆} wfγ wfu wfv ℰMγu ℰMγv = ℘-⊔ ℰMγu ℰMγv
+    ℰ-⊔ {M = $ P k} wfγ wfu wfv ℰMγu ℰMγv = ℘-⊔ ℰMγu ℰMγv
     ℰ-⊔ {M = ` x} wfγ wfu wfv ℰMγu ℰMγv = ⊑-conj-L ℰMγu ℰMγv
     ℰ-⊔ {Γ}{γ}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}{v} wfγ wfu wfv ℰMγu ℰMγv =
        ℱ-⊔ {Γ}{ℰ N}{γ}{u}{v} ℰMγu ℰMγv
@@ -220,9 +220,9 @@ module Filter
                          ~-closed = ℰ-~ {M = M} }
 
 
-    ℰ-⊑ {M = lit {P} k ⦅ nil ⦆} wfγ wfv wfw w⊑v ℰMγv = ℘-⊑ wfw ℰMγv w⊑v
+    ℰ-⊑ {M = $ P k} wfγ wfv wfw w⊑v ℰMγv = ℘-⊑ wfw ℰMγv w⊑v
     ℰ-⊑ {M = ` x} wfγ wfv wfw w⊑v ℰMγv = ⊑-trans w⊑v ℰMγv
-    ℰ-⊑ {Γ}{γ}{lam ⦅ cons (bind (ast N)) nil ⦆}{v}{w} wfγ wfv wfw w⊑v ℰMγv =
+    ℰ-⊑ {Γ}{γ}{ƛ N}{v}{w} wfγ wfv wfw w⊑v ℰMγv =
       ℱ-⊑ G wfγ wfv wfw w⊑v ℰMγv 
       where G : WFDenot (suc Γ) (ℰ N)
             G = record { ⊑-env = ⊑-env′ {M = N} ;
@@ -230,7 +230,7 @@ module Filter
                          ⊔-closed = ℰ-⊔ {M = N} ;
                          ~-closed = ℰ-~ {M = N} }
 
-    ℰ-⊑ {Γ}{γ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} {w} wfγ wfv wfw
+    ℰ-⊑ {Γ}{γ} {L · M} {v} {w} wfγ wfv wfw
         w⊑v ℰMγv =
        ●-⊑ G wfγ wfv wfw w⊑v ℰMγv 
        where G : WFDenot Γ (ℰ L)

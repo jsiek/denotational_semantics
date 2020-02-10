@@ -139,10 +139,10 @@ module SubstitutionPreserve
       → ℰ M γ v
         ------------------
       → ℰ (⟪ σ ⟫ M) δ v
-    subst-pres {M = lit {P} k ⦅ nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv = ℰMγv
+    subst-pres {M = $ P k} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv = ℰMγv
     subst-pres {M = ` x} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
         ℰ-⊑ {M = σ x} wfδ wfγ wfv ℰMγv (δ⊢σ↓γ x)
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{ƛ N} wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
        (ℱ-≲ {Γ}{Δ}{ℰ N}{ℰ (⟪ exts σ ⟫ N)}
              λ {v′} wfv′ {w} wfw →
                 subst-pres {γ = γ `, v′}{δ = δ `, v′}{M = N}
@@ -150,7 +150,7 @@ module SubstitutionPreserve
                        (λ {x} → WFEnv-extend wfδ wfv′ {x}) 
                        wfw (exts σ) (subst-ext wfγ σ δ⊢σ↓γ))
         wfv ℰMγv
-    subst-pres {Γ}{Δ}{v}{γ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}
+    subst-pres {Γ}{Δ}{v}{γ}{δ}{L · M}
        wfγ wfδ wfv σ δ⊢σ↓γ ℰMγv =
        (●-≲{Γ}{Δ}{γ}{δ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ (⟪ σ ⟫ L)}
             {D₂′ = ℰ (⟪ σ ⟫ M)}

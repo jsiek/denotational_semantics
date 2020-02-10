@@ -31,13 +31,13 @@ data IROp : Set where
   fun : ℕ → IROp   {- number of parameters -}
   close : ℕ → IROp
   ir-app : IROp
-  ir-lit : ∀{p : Prim} → rep p → IROp
+  ir-lit : (p : Prim) → rep p → IROp
 
 IR-sig : IROp → List ℕ
 IR-sig (fun n) = n ∷ []
 IR-sig (close n) = replicate (suc n) 0
 IR-sig ir-app = 0 ∷ 0 ∷ []
-IR-sig (ir-lit {p} k) = []
+IR-sig (ir-lit p k) = []
 
 import Syntax3
 module IRMod = Syntax3 IROp IR-sig
@@ -50,9 +50,9 @@ FV {Γ} (` x) y
     with x var≟ y
 ... | yes _ = true
 ... | no _ = false
-FV {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆) y = FV N (S y)
-FV {Γ} (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) y = FV L y ∨ FV M y
-FV {Γ} (lit {p} k ⦅ nil ⦆) y = false
+FV {Γ} (ƛ N) y = FV N (S y)
+FV {Γ} (L · M) y = FV L y ∨ FV M y
+FV {Γ} ($ p k) y = false
 
 FV′ : ∀{Γ} → Term Γ → Var Γ → List (Var Γ)
 FV′ {Γ} M x
@@ -142,7 +142,7 @@ compressor {Γ} (suc n) lt M
 
 convert-clos : ∀{Γ} → Term Γ → IR Γ
 convert-clos (` x) = var x
-convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
+convert-clos {Γ} (ƛ N)
     with compressor {suc Γ} Γ ≤-refl N
 ... | ⟨ Δ , ⟨ ρ , ⟨ ρ-inv , pos ⟩ ⟩ ⟩
     with ir-rename ρ (convert-clos N)
@@ -174,12 +174,12 @@ convert-clos {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆)
        let y : Var (suc Γ)
            y = ρ-inv (ℕ→var {suc Δ} (suc n) (s≤s (s≤s lt))) in
        ir-cons (ir-ast (var (prev-var y {pos}))) (free-vars {n} {≤-step lt})
-convert-clos (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) =
+convert-clos (L · M) =
    let L′ = convert-clos L in
    let M′ = convert-clos M in
    node ir-app (ir-cons (ir-ast L′) (ir-cons (ir-ast M′) ir-nil))
-convert-clos (lit {p} k ⦅ nil ⦆) =
-   node (ir-lit {p} k) ir-nil 
+convert-clos ($ p k) =
+   node (ir-lit p k) ir-nil 
 
 {-
 
@@ -199,7 +199,7 @@ open import ModelCallByValue value_struct ordering consistent ℱ model_curry
 
 
 ℳ : ∀{Γ} → IR Γ → Denotation Γ
-ℳ (node (ir-lit {P} k) ir-nil) γ v = ℘ {P} k v
+ℳ (node (ir-lit P k) ir-nil) γ v = ℘ {P} k v
 ℳ {Γ} (var x) γ v =
     v ⊑ γ x
 ℳ {Γ} (node (fun n) (ir-cons bN ir-nil)) =

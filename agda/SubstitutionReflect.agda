@@ -188,17 +188,17 @@ module ForLambdaModel
       subst-reflect : ∀ {Γ Δ} {δ : Env Δ} {M : Term Γ} {L : Term Δ}
                         {σ : Subst Γ Δ} {v}
                     → SubRef Γ Δ δ M L σ v
-      subst-reflect {M = lit {P} k ⦅ nil ⦆} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
+      subst-reflect {M = $ P k} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           ⟨ `⊥ , ⟨ wf-bot , ⟨ δ⊢σ↓⊥ , ℰLδv ⟩ ⟩ ⟩ 
       subst-reflect {Γ}{Δ}{δ}{` x}{L}{σ}{v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           subst-reflect-var {x = x}{σ} wfδ wfv ℰLδv refl δ⊢σ↓⊥
-      subst-reflect {Γ}{Δ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} {L} {σ} {v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥
+      subst-reflect {Γ}{Δ}{δ}{ƛ N} {L} {σ} {v} wfδ wfv ℰLδv L≡σM δ⊢σ↓⊥
           rewrite L≡σM =
           subst-reflect-lambda {N = N}{v = v} IH wfδ wfv ℰLδv refl δ⊢σ↓⊥
           where
           IH = λ {u}{w} → subst-reflect {δ = δ `, u} {M = N}
                               {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
-      subst-reflect {Γ}{Δ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
+      subst-reflect {Γ}{Δ}{δ}{L · M}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
                     L≡σM δ⊢σ↓⊥ rewrite L≡σM =
           subst-reflect-app {L = L}{M} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
           where

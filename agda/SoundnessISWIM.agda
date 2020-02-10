@@ -47,9 +47,9 @@ module SoundnessISWIM where
 ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
     → TermValue M
     → ℰ M γ ⊥
-ℰ-⊥ {M = lit {p} k ⦅ nil ⦆} V-lit = tt
+ℰ-⊥ {M = $ p k} V-lit = tt
 ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
-ℰ-⊥ {Γ}{γ}{(lam ⦅ cons (bind (ast N)) nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {Γ}{γ}{ƛ N} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
 
 
 reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}

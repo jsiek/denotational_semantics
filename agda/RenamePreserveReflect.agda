@@ -136,12 +136,12 @@ module RenamePreserveReflect
            → ℰ M γ v
              ------------------
            → ℰ (rename ρ M) δ v
-    rename-pres {M = lit {P} k ⦅ nil ⦆} ρ γ⊑δ∘ρ wfv ℰMγv = ℰMγv
+    rename-pres {M = $ P k} ρ γ⊑δ∘ρ wfv ℰMγv = ℰMγv
     rename-pres {v = v}{γ}{δ}{` x} ρ γ⊑δ∘ρ wfv ℰMγv =
         v  ⊑⟨ ℰMγv ⟩ γ x  ⊑⟨ γ⊑δ∘ρ x ⟩ δ (ρ x) ◼
-    rename-pres {Γ}{Δ}{v}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} ρ γ⊑δ∘ρ =
+    rename-pres {Γ}{Δ}{v}{γ}{δ}{ƛ N} ρ γ⊑δ∘ρ =
         ℱ-≲ (λ wfv₁ → rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ))
-    rename-pres {M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆} ρ γ⊑δ∘ρ =
+    rename-pres {M = L · M} ρ γ⊑δ∘ρ =
         ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
 
     ⊑-env : ∀ {Γ} {γ : Env Γ} {δ : Env Γ} {M v}
@@ -172,12 +172,12 @@ module RenamePreserveReflect
       → (δ ∘ ρ) `⊑ γ
         -------------------------
       → ℰ (rename ρ M) δ ≲ ℰ M γ
-    rename-reflect {M = lit {P} k ⦅ nil ⦆} δ∘ρ⊑γ wfv ℰρMδv = ℰρMδv
+    rename-reflect {M = $ P k} δ∘ρ⊑γ wfv ℰρMδv = ℰρMδv
     rename-reflect {Γ}{Δ}{γ}{δ}{` x} {ρ} δ∘ρ⊑γ {v} wfv ℰρMδv  =
        v  ⊑⟨ ℰρMδv ⟩ δ (ρ x)  ⊑⟨ δ∘ρ⊑γ x ⟩  γ x ◼
-    rename-reflect {Γ}{Δ}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} {ρ} δ∘ρ⊑γ =
+    rename-reflect {Γ}{Δ}{γ}{δ}{ƛ N} {ρ} δ∘ρ⊑γ =
        ℱ-≲ (λ wfv′ → rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)) 
-    rename-reflect {M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {ρ} δ∘ρ⊑γ =
+    rename-reflect {M = L · M} {ρ} δ∘ρ⊑γ =
        ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
 
     rename-inc-reflect : ∀ {Γ v′ v} {γ : Env Γ} { M : Term Γ}
