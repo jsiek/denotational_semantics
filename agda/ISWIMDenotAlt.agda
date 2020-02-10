@@ -43,10 +43,10 @@ _●′_ {Γ} D₁ D₂ γ w = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] Σ[ v�
     × v₃ ↦ w ⊑ v₁ × v₃ ⊑ v₂
 
 ℰ′ : ∀{Γ} → Term Γ → Denotation Γ
-ℰ′ (lit {P} k ⦅ nil ⦆) γ v = ℘ {P} k v
+ℰ′ ($ P k) γ v = ℘ {P} k v
 ℰ′ {Γ} (` x) γ v = v ≡ γ x
-ℰ′ {Γ} (lam ⦅ cons (bind (ast N)) nil ⦆) = ℱ (ℰ′ N)
-ℰ′ {Γ} (app ⦅ cons (ast L) (cons (ast M) nil) ⦆) = (ℰ′ L) ●′ (ℰ′ M)
+ℰ′ {Γ} (ƛ N) = ℱ (ℰ′ N)
+ℰ′ {Γ} (L · M) = (ℰ′ L) ●′ (ℰ′ M)
 
 AllFun⊥ : (u : Value) → Set
 AllFun⊥ ⊥ = ⊤
@@ -86,8 +86,8 @@ AllFun⊥ (u ⊔ v) = AllFun⊥ u × AllFun⊥ v
      → WFEnv ρ → wf v
      → ℰ′ M ρ v → ℰ M ρ v
 ℰ′→ℰ {Γ} {` x} {ρ} {v} wfρ wfv refl = ⊑-refl
-ℰ′→ℰ {Γ} {lit {P} k ⦅ nil ⦆} {ρ} {v} wfρ wfv v∈ℰ′Mρ = v∈ℰ′Mρ
-ℰ′→ℰ {Γ} {lam ⦅ cons (bind (ast N)) nil ⦆} {ρ} {v} wfρ wfv v∈ℰ′Mρ
+ℰ′→ℰ {Γ} {$ P k} {ρ} {v} wfρ wfv v∈ℰ′Mρ = v∈ℰ′Mρ
+ℰ′→ℰ {Γ} {ƛ N} {ρ} {v} wfρ wfv v∈ℰ′Mρ
     with ℱ-inv {Γ}{ℰ′ N}{ρ}{v} v∈ℰ′Mρ
 ... | ⟨ all , fv ⟩ =
     ℱ-intro IH fv
@@ -98,7 +98,7 @@ AllFun⊥ (u ⊔ v) = AllFun⊥ u × AllFun⊥ v
     ... | wf-fun wfu wfw =
         let wfρ' = WFEnv-extend{Γ}{ρ} wfρ wfu in
         ℰ′→ℰ {suc Γ}{N} (λ {x} → wfρ' {x}) wfw (all {u}{w} u↦w∈v)
-ℰ′→ℰ {Γ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {ρ} {v} wfρ wfv
+ℰ′→ℰ {Γ} {L · M} {ρ} {v} wfρ wfv
   ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ wfv1 , ⟨ wfv2 , ⟨ wfv3 , 
   ⟨ Lv1 , ⟨ Mv2 , ⟨ v3↦v4⊑v1 , v3⊑v2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
   let Lv1 = ℰ′→ℰ {Γ}{L} wfρ wfv1 Lv1 in  
@@ -165,12 +165,12 @@ Closed-~ Γ D = ∀{γ δ u v}
 
 ℰ′-~ {Γ}{γ}{δ}{` x}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv
      rewrite ℰMγu | ℰMδv = γ~δ {x}
-ℰ′-~ {M = lit {P} k ⦅ nil ⦆}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv =
+ℰ′-~ {M = $ P k}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv =
      ℘-~{P}{k}{u}{v} ℰMγu ℰMδv
-ℰ′-~ {Γ}{γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}{v} wfγ wfδ γ~δ wfu wfv
+ℰ′-~ {Γ}{γ}{δ}{ƛ N}{u}{v} wfγ wfδ γ~δ wfu wfv
      ℰMγu ℰMγv =
      ℱ-~′ {Γ}{ℰ′ N}{γ}{δ}{u}{v} (ℰ′-~{M = N}) wfγ wfδ γ~δ wfu wfv ℰMγu ℰMγv
-ℰ′-~ {Γ}{γ}{δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{u}{v} wfγ wfδ γ~δ
+ℰ′-~ {Γ}{γ}{δ}{L · M}{u}{v} wfγ wfδ γ~δ
       wfu wfv ℰMγu ℰMδv =
       ●-~′{Γ}{ℰ′ L}{ℰ′ M}{γ}{δ}{u}{v} (ℰ′-~{M = L}) (ℰ′-~{M = M}) wfγ wfδ γ~δ
       wfu wfv ℰMγu ℰMδv
@@ -181,9 +181,9 @@ Closed-~ Γ D = ∀{γ δ u v}
      → Σ[ v′ ∈ Value ] wf v′ × ℰ′ M ρ' v′ × v ⊑ v′
 ℰ→ℰ′ {Γ}{` x}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
     ⟨ ρ' x , ⟨ wfρ' , ⟨ refl , ⊑-trans ℰMρv (ρ⊑ρ' x) ⟩ ⟩ ⟩
-ℰ→ℰ′ {Γ}{lit {P} k ⦅ nil ⦆}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
+ℰ→ℰ′ {Γ}{$ P k}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
     ⟨ v , ⟨ wfv , ⟨ ℰMρv , ⊑-refl ⟩ ⟩ ⟩
-ℰ→ℰ′ {Γ}{lam ⦅ cons (bind (ast N)) nil ⦆}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
+ℰ→ℰ′ {Γ}{ƛ N}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
    G wfv ℰMρv
    where
    G : ∀{v} → wf v → ℱ (ℰ N) ρ v
@@ -209,7 +209,7 @@ Closed-~ Γ D = ∀{γ δ u v}
          ⟨ (v1′ ⊔ v2′) ,
          ⟨ (wf-⊔ v1′~v2′ wfv1′ wfv2′) , ⟨ ⟨ Mv1′ , Mv2′ ⟩ ,
            (⊑-conj-L (⊑-conj-R1 v⊑v1′) (⊑-conj-R2 v⊑v2′)) ⟩ ⟩ ⟩
-ℰ→ℰ′ {Γ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv
+ℰ→ℰ′ {Γ}{L · M}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv
    ⟨ u , ⟨ wfu , ⟨ Luw , Mu ⟩ ⟩ ⟩
     with ℰ→ℰ′ {Γ}{L} wfρ wfρ' ρ⊑ρ' (wf-fun wfu wfv) Luw
        | ℰ→ℰ′ {Γ}{M} wfρ wfρ' ρ⊑ρ' wfu Mu
