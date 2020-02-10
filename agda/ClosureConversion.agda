@@ -45,6 +45,9 @@ open IRMod renaming (AST to IR; `_ to var; _⦅_⦆ to node; cons to ir-cons;
    nil to ir-nil; ast to ir-ast; bind to ir-bind; rename to ir-rename) public
 open IRMod using (_•_; _⨟_; ↑; exts-cons-shift; bind-ast)
 
+pattern Ƒ n N = node (fun n) (ir-cons N ir-nil)
+pattern Ç n f fvs = node (close n) (ir-cons (ir-ast f) fvs)
+
 FV : ∀{Γ} → Term Γ → Var Γ → Bool
 FV {Γ} (` x) y
     with x var≟ y
@@ -155,9 +158,9 @@ convert-clos {Γ} (ƛ N)
     ρ maps from suc Γ to suc Δ
     ρ-inv maps from suc Δ to suc Γ
     -}
-    let f = ir-rename ρ′ (node {0} (fun (suc Δ)) (ir-cons (N′′ N′) ir-nil)) in
-    node {Γ} (close Δ) (ir-cons (ir-ast f)
-                                (free-vars {Δ} {≤-refl}))
+    let f = ir-rename ρ′ (Ƒ (suc Δ) (N′′ N′)) in
+    Ç Δ f (free-vars {Δ} {≤-refl})
+    
     where
     N′′ : IR (suc Δ) → Arg 0 (suc Δ)
     N′′ N′ rewrite sym (+-identityʳ Δ)        {- ugh! -}
