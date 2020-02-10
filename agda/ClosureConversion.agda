@@ -41,12 +41,14 @@ IR-sig (ir-lit p k) = []
 
 import Syntax3
 module IRMod = Syntax3 IROp IR-sig
-open IRMod renaming (AST to IR; `_ to var; _⦅_⦆ to node; cons to ir-cons;
+open IRMod renaming (AST to IR; `_ to ^_; _⦅_⦆ to node; cons to ir-cons;
    nil to ir-nil; ast to ir-ast; bind to ir-bind; rename to ir-rename) public
 open IRMod using (_•_; _⨟_; ↑; exts-cons-shift; bind-ast)
 
+pattern # p k = node (ir-lit p k) ir-nil 
 pattern Ƒ n N = node (fun n) (ir-cons N ir-nil)
-pattern Ç n f fvs = node (close n) (ir-cons (ir-ast f) fvs)
+pattern ⟪_,_,_⟫ n f fvs = node (close n) (ir-cons (ir-ast f) fvs)
+pattern _˙_ L M = node ir-app (ir-cons (ir-ast L) (ir-cons (ir-ast M) ir-nil))
 
 FV : ∀{Γ} → Term Γ → Var Γ → Bool
 FV {Γ} (` x) y
@@ -144,7 +146,7 @@ compressor {Γ} (suc n) lt M
 
 
 convert-clos : ∀{Γ} → Term Γ → IR Γ
-convert-clos (` x) = var x
+convert-clos (` x) = ^ x
 convert-clos {Γ} (ƛ N)
     with compressor {suc Γ} Γ ≤-refl N
 ... | ⟨ Δ , ⟨ ρ , ⟨ ρ-inv , pos ⟩ ⟩ ⟩
@@ -159,7 +161,7 @@ convert-clos {Γ} (ƛ N)
     ρ-inv maps from suc Δ to suc Γ
     -}
     let f = ir-rename ρ′ (Ƒ (suc Δ) (N′′ N′)) in
-    Ç Δ f (free-vars {Δ} {≤-refl})
+    ⟪ Δ , f , free-vars {Δ} {≤-refl} ⟫
     
     where
     N′′ : IR (suc Δ) → Arg 0 (suc Δ)
@@ -176,13 +178,12 @@ convert-clos {Γ} (ƛ N)
     free-vars {suc n} {s≤s {n = Δ′} lt} =     {- Δ = suc Δ′ -}
        let y : Var (suc Γ)
            y = ρ-inv (ℕ→var {suc Δ} (suc n) (s≤s (s≤s lt))) in
-       ir-cons (ir-ast (var (prev-var y {pos}))) (free-vars {n} {≤-step lt})
+       ir-cons (ir-ast (^ (prev-var y {pos}))) (free-vars {n} {≤-step lt})
 convert-clos (L · M) =
    let L′ = convert-clos L in
    let M′ = convert-clos M in
-   node ir-app (ir-cons (ir-ast L′) (ir-cons (ir-ast M′) ir-nil))
-convert-clos ($ p k) =
-   node (ir-lit p k) ir-nil 
+   L′ ˙ M′
+convert-clos ($ p k) = # p k
 
 {-
 
@@ -202,17 +203,17 @@ open import ModelCallByValue value_struct ordering consistent ℱ model_curry
 
 
 ℳ : ∀{Γ} → IR Γ → Denotation Γ
-ℳ (node (ir-lit P k) ir-nil) γ v = ℘ {P} k v
-ℳ {Γ} (var x) γ v =
+ℳ (# P k) γ v = ℘ {P} k v
+ℳ {Γ} (^ x) γ v =
     v ⊑ γ x
-ℳ {Γ} (node (fun n) (ir-cons bN ir-nil)) =
+ℳ {Γ} (Ƒ n bN) =
     curry-n n bN
     where
     curry-n : ∀{Γ} → (n : ℕ) → Arg Γ n → Denotation Γ
     curry-n {Γ} 0 (ir-ast N) = ℳ N
     curry-n {Γ} (suc n) (ir-bind bN) =
       ℱ (curry-n {suc Γ} n bN)
-ℳ {Γ} (node (close n) (ir-cons (ir-ast L) As)) =
+ℳ {Γ} ⟪ n , L , As ⟫ =
     apply-n n (ℳ {Γ} L) As
     where
     apply-n : (n : ℕ) → Denotation Γ → Args Γ (replicate n 0) → Denotation Γ
@@ -220,5 +221,5 @@ open import ModelCallByValue value_struct ordering consistent ℱ model_curry
     apply-n (suc n) D (ir-cons (ir-ast M) As) =
         let D′ = D ● ℳ {Γ} M in
         apply-n n D′ As
-ℳ {Γ} (node ir-app (ir-cons (ir-ast L) (ir-cons (ir-ast M) ir-nil))) =
+ℳ {Γ} (L ˙ M) =
     (ℳ L) ● (ℳ M)
