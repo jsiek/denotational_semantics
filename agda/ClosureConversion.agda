@@ -18,8 +18,17 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning
   using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
-
 open import Relation.Nullary using (Dec; yes; no)
+
+import Syntax3
+open import ValueConst
+open import ValueStructAux value_struct
+open import OrderingAux value_struct ordering
+open import Consistency
+open import ConsistentAux value_struct ordering consistent
+open import CurryConst
+open import ModelCurryConst
+open import ModelCallByValue value_struct ordering consistent ℱ model_curry
 
 {-
 
@@ -39,7 +48,6 @@ IR-sig (close n) = replicate (suc n) 0
 IR-sig ir-app = 0 ∷ 0 ∷ []
 IR-sig (ir-lit p k) = []
 
-import Syntax3
 module IRMod = Syntax3 IROp IR-sig
 open IRMod renaming (AST to IR; `_ to ^_; _⦅_⦆ to node; cons to ir-cons;
    nil to ir-nil; ast to ir-ast; bind to ir-bind; rename to ir-rename) public
@@ -192,20 +200,9 @@ convert-clos ($ p k) = # p k
  -}
 
 
-open import ValueConst
-open import ValueStructAux value_struct
-open import OrderingAux value_struct ordering
-open import Consistency
-open import ConsistentAux value_struct ordering consistent
-open import CurryConst
-open import ModelCurryConst
-open import ModelCallByValue value_struct ordering consistent ℱ model_curry
-
-
 ℳ : ∀{Γ} → IR Γ → Denotation Γ
 ℳ (# P k) γ v = ℘ {P} k v
-ℳ {Γ} (^ x) γ v =
-    v ⊑ γ x
+ℳ {Γ} (^ x) γ v = v ⊑ γ x
 ℳ {Γ} (Ƒ n bN) =
     curry-n n bN
     where
@@ -221,5 +218,69 @@ open import ModelCallByValue value_struct ordering consistent ℱ model_curry
     apply-n (suc n) D (ir-cons (ir-ast M) As) =
         let D′ = D ● ℳ {Γ} M in
         apply-n n D′ As
-ℳ {Γ} (L ˙ M) =
-    (ℳ L) ● (ℳ M)
+ℳ {Γ} (L ˙ M) = (ℳ L) ● (ℳ M)
+
+{-
+
+  A lower-level intermediate language that represents
+  closures as tuples.
+
+-}
+
+data IR2Op : Set where
+  ir2-fun : ℕ → IR2Op
+  tuple-nil : IR2Op
+  tuple-cons : IR2Op
+  ir2-car : IR2Op
+  ir2-cdr : IR2Op
+  ir2-app : IR2Op
+  ir2-lit : (p : Prim) → rep p → IR2Op
+
+IR2-sig : IR2Op → List ℕ
+IR2-sig (ir2-fun n) = n ∷ []
+IR2-sig tuple-nil = []
+IR2-sig tuple-cons = 0 ∷ 0 ∷ []
+IR2-sig ir2-car = 0 ∷ []
+IR2-sig ir2-cdr = 0 ∷ []
+IR2-sig ir2-app = 0 ∷ 0 ∷ []
+IR2-sig (ir2-lit p k) = []
+
+module IR2Mod = Syntax3 IR2Op IR2-sig
+open IR2Mod
+   renaming (AST to IR2; Arg to Arg2; `_ to ´_; _⦅_⦆ to ir2-node; cons to ir2-cons; nil to ir2-nil;
+      ast to ir2-ast; bind to ir2-bind)
+
+pattern ! p k = ir2-node (ir2-lit p k) ir2-nil
+pattern 𝑓 n N = ir2-node (ir2-fun n) (ir2-cons N ir2-nil)
+pattern _∙_ L M = ir2-node ir2-app (ir2-cons (ir2-ast L) (ir2-cons (ir2-ast M) ir2-nil))
+pattern 〈〉 = ir2-node tuple-nil ir2-nil
+pattern pair L M = ir2-node tuple-cons (ir2-cons (ir2-ast L) (ir2-cons (ir2-ast M) ir2-nil))
+pattern car M = ir2-node ir2-car (ir2-cons (ir2-ast M) ir2-nil)
+pattern cdr M = ir2-node ir2-cdr (ir2-cons (ir2-ast M) ir2-nil)
+
+⟬_,_⟭ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
+⟬_,_⟭ {Γ} D₁ D₂ γ ⊥ = False
+⟬_,_⟭ {Γ} D₁ D₂ γ (const k) = False
+⟬_,_⟭ {Γ} D₁ D₂ γ (v₁ ↦ v₂) = const 0 ⊑ v₁ × D₁ γ v₂ ⊎ const 1 ⊑ v₁ × D₂ γ v₂
+⟬_,_⟭ {Γ} D₁ D₂ γ (v₁ ⊔ v₂) = ⟬ D₁ , D₂ ⟭ γ v₁ × ⟬ D₁ , D₂ ⟭ γ v₂
+
+π₁ : ∀{Γ} → Denotation Γ → Denotation Γ
+π₁ {Γ} D = D ● (λ γ v → ℘ {base Nat} 0 v)
+
+π₂ : ∀{Γ} → Denotation Γ → Denotation Γ
+π₂ {Γ} D = D ● (λ γ v → ℘ {base Nat} 1 v)
+
+ℒ : ∀{Γ} → IR2 Γ → Denotation Γ
+ℒ (! P k) γ v = ℘ {P} k v
+ℒ (´ x) γ v = (v ⊑ γ x)
+ℒ (𝑓 n bN) = curry-n n bN
+    where
+    curry-n : ∀{Γ} → (n : ℕ) → Arg2 Γ n → Denotation Γ
+    curry-n {Γ} 0 (ir2-ast N) = ℒ N
+    curry-n {Γ} (suc n) (ir2-bind bN) =
+      ℱ (curry-n {suc Γ} n bN)
+ℒ (L ∙ M) = (ℒ L) ● (ℒ M)
+ℒ 〈〉 γ v = v ⊑ ⊥
+ℒ (pair L M) = ⟬ ℒ L , ℒ M ⟭
+ℒ (car M) = π₁ (ℒ M)
+ℒ (cdr M) = π₂ (ℒ M)
