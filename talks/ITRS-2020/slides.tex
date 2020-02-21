@@ -172,8 +172,8 @@
 \newcommand{\INT}[0]{\mathtt{int}}
 \newcommand{\REF}[1]{\mathtt{ref}\,#1}
 \newcommand{\fix}[1]{\mathtt{fix}\,#1.\,}
-\newcommand{\FST}[1]{\pi_1\, #1}
-\newcommand{\SND}[1]{\pi_2\, #1}
+\newcommand{\FST}[1]{\mathtt{fst}\, #1}
+\newcommand{\SND}[1]{\mathtt{snd}\, #1}
 \newcommand{\fst}[1]{\mathsf{fst}(#1)}
 \newcommand{\snd}[1]{\mathsf{snd}(#1)}
 \newcommand{\emptyenv}[0]{\mathsf{empty}}
@@ -247,7 +247,7 @@ moredelim=[is][\color{blue}]{~}{~},
 
 \garamond
 
-\title[Back to Denotational]{Back to the Future with \\ Denotational Semantics}
+\title[Filter Models, Correct Compilers]{Filter Models for Compiler Correctness}
 \author{Jeremy G. Siek \\[1ex]
  Indiana University, Bloomington
 }
@@ -285,6 +285,38 @@ March 6, 2020
 }
 %===============================================================================
 \frame{
+  \frametitle{Structure of a Compiler}
+
+  \Large
+  \hspace{1in}
+  \xymatrix@=30pt{
+  \text{MiniML} \ar[d]^{\text{lower}} \\
+  \text{IR1} \ar[d]^{\text{lower}} \\
+  \text{IR2} \ar[d] \ar@(dr,ur)[]_{\text{optimize}} \\
+  \vdots \ar[d]^{\text{lower}} \\
+  \text{x86 assembly code}
+  }
+}
+%===============================================================================
+\frame{
+\frametitle{Closure Conversion}
+
+\large
+\begin{align*}
+&\LET x = 3 \IN \\
+&\LET y = 3 \IN \\
+&\LET f = \lambda z. y + x + z \IN \\
+&(f \app 5) \\
+& \Downarrow \\
+&\LET x = 3 \IN \\
+&\LET y = 3 \IN \\
+&\LET f = \langle \lambda (fvs, z). fvs[0] + fvs[1] + z, [y , x] \rangle \IN \\
+&(\FST\, f)(\SND\, f, 5)
+\end{align*}
+
+}
+%===============================================================================
+\frame{
 \frametitle{Common Subexpression Elimination}
 
 \Large
@@ -296,15 +328,6 @@ March 6, 2020
 
 }
 
-%===============================================================================
-\frame{
-\frametitle{Closure Conversion}
-
-
-
-
-
-}
 %===============================================================================
 
 \end{document}
