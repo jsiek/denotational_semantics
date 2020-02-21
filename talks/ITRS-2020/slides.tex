@@ -1,0 +1,866 @@
+\documentclass[12pt]{beamer}
+%\usecolortheme{seagull}
+%\usecolortheme{wolverine} yuk
+%\usecolortheme{beetle}
+\usecolortheme{dove} % black on white
+\usepackage[T1]{fontenc}
+\usepackage{garamond}
+\usefonttheme{serif}
+\usepackage{multicol}
+\usepackage{pifont}
+\usepackage{etex}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{semantic}
+\usepackage[all]{xy}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{fancybox}
+\usepackage{stmaryrd}
+\usepackage{rotating}
+\usepackage{wasysym}
+\usepackage{ulem}
+
+\definecolor{darkgreen}{rgb}{0.0, 0.6, 0.3}
+
+\usepackage{enumitem}
+\setitemize{label=\usebeamerfont*{itemize item}%
+  \usebeamercolor[fg]{itemize item}
+  \usebeamertemplate{itemize item}}
+  \setlist{itemsep=1ex}
+
+
+
+\newcommand{\Gbox}[1]{\colorbox{lightgray}{#1}}
+\newcommand{\Rbox}[1]{\colorbox{pink}{#1}}
+
+\newcommand{\featstart}{\hfill}
+\newcommand{\featend}{\hfill\hfill}
+\newcommand{\feat}[1]{{\featstart#1\featend}}
+
+\newcommand{\Topcircle}{\begin{turn}{270}\Leftcircle\end{turn}}
+\newcommand{\BOTTOMCIRCLE}{\begin{turn}{270}\RIGHTCIRCLE\end{turn}}
+\newcommand{\halfcircle}{\parbox{0in}{\Topcircle}\parbox{1.65ex}{\BOTTOMCIRCLE}{}}
+
+\newcommand{\featY}{\feat{\CIRCLE}} % Has feature fully
+\newcommand{\featP}{\feat{\halfcircle}} % Has feature partially
+\newcommand{\featN}{\feat{\Circle}} % Does not have feature
+
+
+\newcommand{\labeltag}[1]{\label{#1}\tag{\textsc{#1}}}
+\newcommand{\type}{\vdash}
+\newcommand{\typeS}{\vdash_{STLC}}
+\newcommand{\typeG}{\vdash}
+\newcommand{\typeCC}{\vdash_{C}}
+
+\newcommand{\evall}{\Downarrow }
+\newcommand{\evallS}{\Downarrow_{STLC} }
+\newcommand{\evallG}{\Downarrow}
+\newcommand{\evallCC}{\Downarrow_{C}}
+\newcommand{\evallD}{\Downarrow_{DTLC}}
+
+\newcommand{\reduce}{\longrightarrow}
+\newcommand{\becomes}{\longrightarrow}
+
+%\newcommand{\EE}{{\cal E}}
+%\newcommand{\FF}{{\cal F}}
+\newcommand{\Hole}{\Box}
+
+\newcommand{\divergeG}{\Uparrow}
+\newcommand{\subtype}{<:}
+\newcommand{\consis}{\sim}
+
+\newcommand{\embed}[1]{\lceil #1 \rceil}
+\newcommand{\bl}[1]{{\color{blue} #1}}
+\newcommand{\rd}[1]{{\color{red} #1}}
+\newcommand{\pr}[1]{{\color{purple} #1}}
+\newcommand{\kw}[1]{\mathtt{#1}}
+
+\newcommand{\labels}[1]{\mathit{labels}(#1)}
+\newcommand{\static}[2]{\mathit{static}(#1,#2)}
+\newcommand{\safe}[1]{\mathrel{\mathit{safe}} #1}
+\newcommand{\lo}[1]{\overline{#1}}
+\newcommand{\rng}[1]{\mathit{rng}(#1)}
+
+\newcommand{\semi}{\mathbin{;}}
+\newcommand{\id}{\key{id}}
+\newcommand{\Id}[1]{\id_{#1}}
+\newcommand{\fail}[3]{\bot^{#1}_{#2 \Rightarrow #3}}
+\newcommand{\Fail}[1]{\bot^{#1}}
+\newcommand{\FAIL}[3]{\bot^{#2}}
+\newcommand{\qu}[2]{{{#2}\query^{#1}}}
+\newcommand{\pl}[1]{{#1\pling}}
+\newcommand{\query}{\mathtt{?}}
+\newcommand{\pling}{\mathtt{!}}
+
+\newcommand{\bcfun}[1]{\langle\!\langle #1 \rangle\!\rangle}
+\newcommand{\MergeT}{\sqcap}
+\newcommand{\RefC}[1]{\key{Ref}(#1)}
+\newcommand{\error}{\key{error}}
+
+
+\newcommand{\Obj}{\key{Obj}}
+\newcommand{\String}{\key{String}}
+\newcommand{\Double}{\key{Double}}
+
+%\newcommand{\If}[3]{\key{if}\,#1\key{if}\,#2\key{if}#3}
+
+
+\newcommand{\ba}{\begin{array}}
+\newcommand{\ea}{\end{array}}
+\newenvironment{stack}{\ba{@{}l@{}}}{\ea}
+\newenvironment{branch}{\left\{\ba{@{}l@{\qquad}l@{}}}{\ea\right\}}
+\newenvironment{syntax}{\[\ba{l@{\;\;}lcl}}{\ea\]}
+\newcommand{\dotspace}{.\,}
+\newcommand{\key}[1]{\ensuremath{\mathtt{#1}}}
+\newcommand{\Base}{B}
+\newcommand{\dyn}{\star}
+\newcommand{\Dyn}{\ensuremath{\star}}
+\newcommand{\Int}{\key{Int}}
+\newcommand{\Float}{\key{float}}
+\newcommand{\Bool}{\key{Bool}}
+\newcommand{\Str}{\key{String}}
+\newcommand{\Ref}{\key{Ref}\,}
+\newcommand{\tapp}{\;\,}
+\newcommand{\tu}{{\to}}
+\newcommand{\To}{\Rightarrow}
+\newcommand{\Let}{\key{let}\;}
+\newcommand{\Letrec}{\key{let}\,\key{rec}\;}
+\newcommand{\In}{\key{in}\;}
+\newcommand{\If}{\mathsf{if}\;}
+\newcommand{\Then}{\;\mathsf{then}\;}
+\newcommand{\Else}{\mathsf{else}\;}
+\newcommand{\True}{\key{true}}
+\newcommand{\False}{\key{false}}
+\newcommand{\as}{\mathrel{\key{as}}}
+\newcommand{\op}{\mathit{op}}
+\newcommand{\dom}[1]{\mathit{dom}(#1)}
+\newcommand{\cod}[1]{\mathit{cod}(#1)}
+\newcommand{\blame}[1]{\key{blame}\,#1}
+\newcommand{\pblame}[2]{\key{blame}\,#1@#2}
+\newcommand{\ledyn}{\sqsubseteq}
+\newcommand{\IS}{\mathrel{\mathtt{is}}}
+\newcommand{\cast}[1]{\overset{#1}{\Rightarrow}}
+%\newcommand{\mkcast}[1]{\langle\!\langle#1\rangle\!\rangle}
+\newcommand{\mkcast}[1]{(#1)}
+\newcommand{\alloc}{\key{ref}\,}
+\newcommand{\deref}{\texttt{!}}
+\newcommand{\update}{\mathrel{\texttt{:=}}}
+\newcommand{\all}[1]{\forall #1.\,}
+\newcommand{\ftv}[1]{\mathrm{ftv}(#1)}
+\newcommand{\CAST}[1]{\langle #1 \rangle}
+\newcommand{\new}[1]{\nu #1.\;}
+\newcommand{\case}[3]{\key{case}\,#1\,\key{of}\,\key{inl}\,x\Rightarrow\,#2\,| \,\key{inr}\,x\Rightarrow \,#3}
+\newcommand{\join}[2]{#1 \sqcup #2 }
+\newcommand{\meet}[2]{#1 \sqcap #2 }
+
+\newcommand{\EE}[2]{\mathcal{E}\llbracket #1 \rrbracket #2}
+\newcommand{\FF}[3]{\mathcal{F}(#1, #2, #3)}
+\newcommand{\CC}[1]{\mathcal{C}\llbracket #1 \rrbracket}
+
+\newcommand{\EXP}[1]{\,#1\,}
+\newcommand{\CE}[0]{\mathcal{E}}
+\newcommand{\SEM}[1]{\llbracket #1 \rrbracket}
+\newcommand{\ESEM}[1]{\llbracket #1 \rrbracket}
+\newcommand{\TSEM}[1]{\mathcal{T}\llbracket #1 \rrbracket}
+\newcommand{\lam}[1]{\lambda #1.\,}
+\newcommand{\LAM}[1]{\lambda\!\!\!\lambda #1.\,}
+\newcommand{\of}[0]{{:}}
+\newcommand{\by}[0]{{:=}}
+\newcommand{\INT}[0]{\mathtt{int}}
+\newcommand{\REF}[1]{\mathtt{ref}\,#1}
+\newcommand{\fix}[1]{\mathtt{fix}\,#1.\,}
+\newcommand{\FST}[1]{\pi_1\, #1}
+\newcommand{\SND}[1]{\pi_2\, #1}
+\newcommand{\fst}[1]{\mathsf{fst}(#1)}
+\newcommand{\snd}[1]{\mathsf{snd}(#1)}
+\newcommand{\emptyenv}[0]{\mathsf{empty}}
+\newcommand{\ext}[3]{\mathsf{extend}(#1,#2,#3)}
+\newcommand{\tyext}[1]{\mathsf{tyExtend}(#1)}
+\newcommand{\lookup}[2]{\mathsf{lookup}(#1,#2)}
+\newcommand{\shift}[3]{\,\uparrow^{#1}_{#2}(#3)}
+\newcommand{\app}[0]{\;}
+\newcommand{\LET}[0]{\mathbf{let}\,}
+\newcommand{\IN}[0]{\,\mathbf{in}\,}
+\newcommand{\abs}[1]{\mathsf{thunk}(#1)}
+\newcommand{\val}[1]{\overline{#1}}
+\newcommand{\CASE}[0]{\textsf{case}\,}
+\newcommand{\OF}[0]{\,\textsf{of}\,}
+%% \newcommand{\IF}[0]{\textbf{if}\,}
+%% \newcommand{\THEN}[0]{\,\textbf{then}\,}
+%% \newcommand{\ELSE}[0]{\,\textbf{else}\,}
+\newcommand{\IF}[0]{\mathsf{ifz}(}
+\newcommand{\THEN}[0]{,}
+\newcommand{\ELSE}[0]{,}
+\newcommand{\FI}[0]{)}
+\newcommand{\return}[0]{\mathsf{return}\;}
+\newcommand{\bind}[0]{\mathsf{bind}\;}
+\newcommand{\down}[0]{\mathsf{down}\;}
+\newcommand{\wrong}[0]{\mathsf{wrong}}
+\newcommand{\plus}[0]{\mathrel{\mathsf{plus}}}
+\newcommand{\zero}[0]{\mathsf{zero}}
+\newcommand{\SET}[1]{\mathcal{P}(#1)}
+\newcommand{\FSET}[1]{\mathcal{P}_f(#1)}
+\newcommand{\store}[0]{\mathsf{store}}
+\newcommand{\CHOOSE}[0]{\mathsf{choose}\,}
+
+\newcommand{\WF}[1]{\mathsf{wf}(#1)}
+\newcommand{\UP}[1]{\mathord{\uparrow} #1}
+\newcommand{\ATOMS}[1]{\mathit{atoms}(#1)}
+\newcommand{\sqinter}[0]{\bigsqcap}
+
+\newcommand*\oldmacro{}%
+\let\oldmacro\insertshorttitle%
+\renewcommand*\insertshorttitle{%
+  \oldmacro\hfill%
+  \insertframenumber\,/\,\inserttotalframenumber}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+%\newtheorem{definition}{Definition}
+\newtheorem{conjecture}[theorem]{\translate{Conjecture}}
+\newtheorem{proposition}[theorem]{\translate{Proposition}}
+
+\lstdefinestyle{basic}{
+%showstringspaces=false,
+language=Python,
+columns=fullflexible,
+%basicstyle=\sffamily\small,%
+basicstyle=\ttfamily,%
+%columns=fixed,
+%basewidth=0.49em,
+%lineskip=0pt,
+%escapechar=@,xleftmargin=1pc,%
+keywordstyle=\ttfamily,
+mathescape=true,%
+moredelim=**[is][\color{blue}]{@}{@},
+moredelim=[is][\color{red}]{|}{|},
+moredelim=[is][\color{blue}]{~}{~},
+%commentstyle=\rmfamily,%
+%morekeywords={return,fix,var,proc,fun,func},%
+%deletekeywords={int,bool}
+}
+\lstset{style=basic}
+
+\garamond
+
+\title[Back to Denotational]{Back to the Future with \\ Denotational Semantics}
+\author{Jeremy G. Siek \\[1ex]
+ Indiana University, Bloomington
+}
+\date{}
+%% \institute{\normalsize 
+%%  Indiana University, Bloomington
+%% }
+
+% 3 hours
+
+%\newcommand\footnotemark{}
+%\renewcommand\footnoterule{}
+\setbeamercolor{footnote mark}{fg=white}
+
+\begin{document}
+
+\frame{
+
+%% \begin{tabular}{ll} 
+%% \begin{minipage}{0.45\textwidth}
+\centering
+\large Filter Models for Compiler Correctness \\[2ex]
+\normalsize Jeremy G. Siek \\
+Indiana University\\
+Center for Programming Systems \\[2ex]
+10th Workshop on Intersection Types and Related Systems \\
+March 6, 2020
+%% \end{minipage}
+%% &
+%% \begin{minipage}{0.45\textwidth}
+%% \includegraphics[height=3in]{btf}
+%% \end{minipage}
+%% \end{tabular}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Common Subexpression Elimination}
+
+\Large
+\begin{gather*}
+  \lam{f} (f \app 5) + (f \app 5) \\
+   \stackrel{\mathrm{ctx}}{=} \\
+  \lam{f} \LET x = (f \app 5) \IN x + x
+\end{gather*}
+
+}
+
+%===============================================================================
+\frame{
+\frametitle{Closure Conversion}
+
+
+
+
+
+}
+%===============================================================================
+
+\end{document}
+%===============================================================================
+
+\frame{
+\frametitle{Tabulating Functions}
+
+Syntax of an applied lambda calculus:
+\[
+  \begin{array}{rcl}
+  && n \in \mathbb{Z} \qquad x \in \mathbb{X} \;\;\text{(program variables)}\\
+  e \in \mathbb{E} & ::= & x \mid \lam{x} e \mid e \; e \mid \\
+  & & n \mid e \oplus e \mid \IF e \THEN e \ELSE e  \FI\\
+  v & ::= & n \mid \lam{x} e \\
+  \oplus & ::= & + \mid - \mid \times 
+  \end{array}
+\]
+
+Denotations:
+\begin{center}
+  \fbox{\fbox{
+      $
+      \begin{array}{ll}
+      d ::= n \mid \{ d_1{\mapsto} d'_1,\ldots, d_n{\mapsto} d'_n \}\\[1ex]
+      \mathbb{D} = \mathbb{Z} + \mathcal{P}_{f}(\mathbb{D} \times \mathbb{D})
+      \end{array}
+      $
+}}
+\end{center}
+
+Let $t$, for table, range over $\mathcal{P}_{f}(\mathbb{D} \times \mathbb{D}) $.
+
+}
+
+%===============================================================================
+\frame{
+\frametitle{A Compositional Big-Step Semantics}
+\small
+\vspace{5pt}
+\hfill\fbox{$\rho \vdash e \Rightarrow d$}
+\begin{gather*}
+  \inference
+      { d \sqsubseteq \rho(x)}
+      {\rho \vdash x \Rightarrow d}
+  \;
+  \inference
+      {\forall\, d{\mapsto}d'\in t,\\ \rho(x{:=}d) \vdash e \Rightarrow d'}
+      {\rho \vdash \lam{x}e \Rightarrow t}
+  \;
+  \inference
+      {\rho \vdash e_1 \Rightarrow t &
+       \rho \vdash e_2 \Rightarrow d_2 \\
+      d \mapsto d' \in t & d \sqsubseteq d_2 & d_3 \sqsubseteq d'}
+      {\rho \vdash (e_1\app e_2) \Rightarrow d_3}
+  \\[2ex]
+  \inference{}{\rho \vdash n \Rightarrow n}
+  \qquad
+  \inference
+      {\rho \vdash e_1 \Rightarrow n_1 &
+       \rho \vdash e_2 \Rightarrow n_2}
+      {\rho \vdash e_1 \oplus e_2 \Rightarrow n_1 \oplus n_2}
+  \\[2ex]
+  \inference{\rho \vdash e_1 \Rightarrow 0 & 
+    \rho \vdash e_2 \Rightarrow d}
+            {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \FI \Rightarrow d}
+  \;
+  \inference{\rho \vdash e_1 \Rightarrow n & n \neq 0 &
+    \rho \vdash e_3 \Rightarrow d}
+            {\rho \vdash \IF e_1 \THEN e_2 \ELSE e_3 \FI \Rightarrow d}
+\end{gather*}
+\hrule
+\hrule
+\vspace{5pt}
+Comparison to a standard big-step semantics:
+\begin{gather*}
+  \inference{}
+            {\varrho \vdash \lam{x} e \Rightarrow \langle \lam{x}e,\varrho \rangle}
+  \qquad
+  \inference{\varrho \vdash e_1 \Rightarrow \langle \lam{x}e,\varrho' \rangle&
+             \varrho \vdash e_1 \Rightarrow v_2 \\
+             \varrho'(x\by v_2) \vdash e \Rightarrow v}
+            {\varrho \vdash (e_1 \app e_2) \Rightarrow v}
+\end{gather*}
+}
+%===============================================================================
+\frame{
+\frametitle{The Semantics in Denotational Form}
+
+Of course, relations are isomorphic to set-valued functions:
+\[
+  \SET{(\mathbb{X} \to \mathbb{D}) \times \mathbb{E} \times \mathbb{D}}
+  \quad\cong\quad
+  \mathbb{E} \to (\mathbb{X} \to \mathbb{D}) \to \SET{\mathbb{D}}
+\]
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{The Semantics in Denotational Form}
+
+\fbox{$\SEM{-}: \mathbb{E} \to (\mathbb{X} \to \mathbb{D}) \to \SET{\mathbb{D}}$}
+\begin{align*}
+\SEM{ n }\rho &= \{ n \} \\
+\SEM{ e_1 \oplus e_2 }\rho &= \{  n_1 \oplus n_2 \mid 
+   n_1 \in \SEM{ e_1 }\rho \text{ and } n_2 \in \SEM{ e_2 }\rho \} \\
+\SEM{ x }\rho &= \{ d \mid d \sqsubseteq \rho(x) \} \\
+\SEM{ \lam{x} e }\rho &= 
+  \{ t \mid \forall d\mapsto d'\in t,\, d' \in \SEM{ e }\rho(x{:=}d) \} \\
+\SEM{ e_1\;e_2 }\rho &= \left\{ d_3 \, \middle| 
+   \begin{array}{l}
+   \exists t\, d_2\, d\, d'.\, t \in \SEM{ e_1 }\rho,\, d_2 \in \SEM{ e_2 }\rho, \\
+   d\mapsto d' \in t, \, d \sqsubseteq d_2,\, d_3 \sqsubseteq d'
+   \end{array}
+\right\} \\
+\SEM{\IF e_1 \THEN e_2 \ELSE e_3 \FI}\rho &=
+\left\{ d\, \middle|\,
+  \begin{array}{l}
+   \exists n.\, n \in \SEM{e_1}\rho, \\
+   \quad (n= 0 \implies d \in \SEM{e_2}\rho) \text{ and}\\
+   \quad (n\neq 0 \implies d \in \SEM{e_3}\rho)
+  \end{array}
+  \right\}
+\end{align*}
+
+}
+
+%===============================================================================
+\frame{
+\frametitle{$\beta_v$-reduction}
+
+\textbf{Theorem} (Equality of $\beta_v$-reduction)
+\[
+\SEM{(\lam{x}e) \app v} = \SEM{e[v/x]}
+\]
+
+One direction of the proof relies on \\[2ex]
+
+\textbf{Lemma}  (Reverse Substitution)\\
+  If $d \in \SEM{e[v/x]}$ then
+  $\exists d' \in \SEM{v}\emptyset,\; d \in \SEM{e}\rho(x{:=}d')$.\\[2ex]
+
+which in turn relies on \\[2ex]
+
+\textbf{Lemma} (Combine Denotations of Values)\\
+If $d_1 \in \SEM{v}\rho$ and $d_2 \in \SEM{v}\rho$,
+then $d_1 \sqcup d_2 \in \SEM{v}\rho$.
+
+
+}
+
+%===============================================================================
+
+\frame{
+\frametitle{Goal: arbitrary $\beta$-reduction}
+
+To justify optimizing via function inlining, we'd like:\\[2ex]
+
+\textbf{Theorem} (Equality of $\beta$-reduction for CBV)\\
+\[
+\SEM{(\lam{x}e) \app e'} = \SEM{e[e'/x]}
+\qquad \text{if } \SEM{e'} \neq \emptyset
+\]
+\vspace{5pt}
+
+This requires\\[2ex]
+
+\textbf{Lemma} (Combine Denotations of Expressions)\\
+If $d_1 \in \SEM{e}\rho$ and $d_2 \in \SEM{e}\rho$,
+then $d_1 \sqcup d_2 \in \SEM{e}\rho$.
+
+}
+
+%===============================================================================
+\frame{
+   \frametitle{Tables are Relations, not Functions}
+
+A problem with the lambda's-as-tables approach:
+\begin{align*}
+  \lam{f} (f \app 5) + (f \app 5)
+  & \stackrel{\mathrm{ctx}}{=}
+  \lam{f} (\lam{x} x + x) \app (f \app 5)
+\\
+  \ESEM{\lam{f} (f \app 5) + (f \app 5)}
+  &\neq
+  \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 5)}
+\end{align*}
+
+Why not equal?
+\begin{align*}
+  R &= \{ 5\mapsto 1, 5\mapsto 2 \}\\
+  \{ R\mapsto 3 \} &\in \ESEM{\lam{f} (f \app 5) + (f \app 5)} \\
+  \{ R\mapsto 3 \} &\not\in \ESEM{\lam{f} (\lam{x} x + x) \app (f \app 5)} 
+\end{align*}
+   
+This is bad, we need this equality to justify a standard compiler
+optimization: common subexpression elimination!
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Restrict the tables to be functions}
+
+  \begin{itemize}
+    \item Recall the definition: a \textbf{function} $f$ is a relation
+      such that\\
+      if $(a,b) \in f$ and $(a,b') \in f$, then $b = b'$.
+    \item Can we add this restriction to the denotations?
+    \item Not quite, it would allow bogus tables such as
+      \[
+      \{ \{0{\mapsto} 1\} \mapsto 2, \{0{\mapsto} 1, 5{\mapsto} 6 \} \mapsto 3 \}
+      \]   
+  \end{itemize}
+
+  We need a generalization of equality that makes sense for
+  approximations of functions.
+  
+\begin{gather*}
+  \frac{}{n \sim n}
+  \qquad
+  \frac{\begin{array}{l}\forall d_1 d'_1 d_2 d'_2, d_1{\mapsto} d'_1 \in t_1 \land d_2 {\mapsto} d'_2 \in t_2 \\
+        \implies (d_1 \sim d_2 \land d'_1 \sim d'_2) \lor d_1 \not\sim d_2
+        \end{array}}
+    {t_1 \sim t_2}
+\end{gather*}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Determinism}
+
+  With this restriction, I was able to prove the following in December
+  of 2017. \\[2ex]
+
+  \textbf{Theorem} (Determinism)\\ If $d_1 \in \SEM{e}\rho$ and $d_2
+  \in \SEM{e}\rho$ , then $d_1 \sim d_2$. \\[2ex]
+
+  In general for partial orders, one often has
+  \[
+    a \sim b \text{ iff } \exists c,\; c = a \sqcup b
+  \]
+  So I thought that the lemma Combine Denotations of Expressions would
+  easily follow. \\[2ex]
+
+  It didn't.
+}
+%===============================================================================
+\frame{
+  \frametitle{Challenge \#1}
+
+
+  I had been using the follow definition of $\sqsubseteq$
+  \[
+    \inference{}{n \sqsubseteq n}
+    \qquad
+    \inference{t_1 \subseteq t_2}
+               {t_1 \sqsubseteq t_2}
+  \]
+  which leads to this definition of $\sqcup$:
+  \begin{align*}
+    n \sqcup n &= n \\
+    t_1 \sqcup t_2 &= t_1 \cup t_2
+  \end{align*}
+    
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Challenge \#1}
+  
+Let's try to prove Combine Denoations of Expression by induction on
+$e$. Consider the case for application: $e = (e_1 \app e_2)$. From $v
+\in \ESEM{e_1 \app e_2}\rho$ and $v' \in \ESEM{e_1 \app e_2}\rho'$ we
+need to show $v \sqcup v' \in \ESEM{e_1 \app e_2}$.
+We have something like
+\begin{gather*}
+t \in \ESEM{e_1}\rho \qquad v_2 \in \ESEM{e_2}\rho \qquad
+  v_2 \mapsto v \in t \\
+t' \in \ESEM{e_2}\rho' \qquad v'_2 \in \ESEM{e_2}\rho' \qquad
+  v'_2 \mapsto v' \in t
+\end{gather*}
+By the induction hypothesis we have
+\[
+t \sqcup t' \in \ESEM{e_1} \qquad
+v_2 \sqcup v'_2 \in \ESEM{e_2}
+\]
+We need to show that 
+\[
+   (v_2 \sqcup v'_2) \mapsto (v \sqcup v') \in t \sqcup t' 
+\]
+But we cannot. Set union does not mix together information from
+entries in $t$ and $t'$ to form new entries.
+
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Solution \#1: Intersection Types to the rescue!}
+
+  \begin{itemize}
+  \item Our denotations $\mathbb{D}$ and ordering $\sqsubseteq$ can be
+    viewed as a simple form of intersection types and subtyping.
+  \item Barendregt-Coppo-Dezani (BCD) subtyping solves challenge \#1
+    with the following rules:
+    \begin{gather*}
+      \inference{}{(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)}\\[2ex]
+      \inference{C <: A \quad B <: D}{A \to B <: C \to D}
+    \end{gather*}
+  \end{itemize}
+
+}
+
+%===============================================================================
+\frame{
+  \frametitle{Challenge \#2: Consistency and Subtyping}
+
+The following was easy to prove with $\mathbb{D}$ and ordering
+$\sqsubseteq$. \\
+But with intersection types, not so much.\\[2ex]
+  
+\textbf{Lemma} (Consistency and Subtyping)
+\begin{itemize}
+\item  If $A \sim B$, $A <: C$, and $B <: D$,
+  then $C \sim D$.
+\item If $A \not\sim B$, $C <: A$, $D <: B$, then $C \not\sim D$.
+\end{itemize}
+\vspace{5pt}
+
+I got stuck on the cases for subtyping via the transitivity rule.
+
+}
+%===============================================================================
+\frame{
+  \frametitle{BCD Subtyping}
+
+  \hfill\fbox{$A <: B$}
+\begin{gather*}
+\inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \\[2ex]
+\inference{}{A \sqcap B <: A} \quad
+\inference{}{A \sqcap B <: B} \quad
+\inference{C <: A \quad C <: B}{C <: A \sqcap B} \\[2ex]
+\inference{C <: A \quad B <: D}{A \to B <: C \to D}
+\quad
+\inference{}{(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)}
+\end{gather*}
+
+\vspace{10pt}
+
+\begin{center}
+  Fails the sub-formula property because of the transitivity rule.
+\end{center}
+
+}
+
+%===============================================================================
+\frame{
+  \frametitle{Solution \#2: Olivier Laurent to the rescue!}
+
+In \textit{Intersection Types with Subtyping by Means of Cut
+  Elimination} (Fund. Inf. 2012), Olivier Laurent defines subtyping
+without transitivity and instead proves it, but it does not satisfy
+the sub-formula property because of an additional rule. Olivier admits
+\begin{quote}
+``it would be much nicer and much more natural to go through a
+  sub-formula property''
+\end{quote}
+
+So I emailed Olivier in June and go the reply
+\begin{quote}
+``Indeed! I now have two different sequent-calculus systems which are
+  equivalent to BCD subtyping and satisfy the sub-formula property.  I
+  am currently writing a paper on this but it is not ready yet.''
+\end{quote}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Olivier's Definition of Subtyping}
+  
+  $A_1,\ldots,A_n \vdash B$
+   means 
+  $A_1 \sqcap \cdots \sqcap A_n <: B$.
+
+  Let $\Sigma$ be a sequence of types.
+
+  \vspace{10pt}
+  \hfill\fbox{$\Sigma \vdash A$}
+\begin{gather*}
+  \inference{\Sigma_1, \Sigma_2 \vdash A}
+       {\Sigma_1 , n, \Sigma_2 \vdash A} \qquad
+  \inference{\Sigma_1, \Sigma_2 \vdash A}
+       {\Sigma_1 , B \to C, \Sigma_2 \vdash A}
+   \\[2ex]
+   \inference{\Sigma \vdash A \quad \Sigma \vdash B}{\Sigma \vdash A \sqcap B}
+   \qquad
+   \inference{\Sigma_1,B,C,\Sigma_2 \vdash A}{\Sigma_1,B\sqcap C,\Sigma_2 \vdash A}
+   \\[2ex]
+   \inference{}{n \vdash n}
+   \qquad
+   \inference{A \vdash C_1 \cdots A \vdash C_n
+         &
+         D_1, \ldots, D_n \vdash B}
+        {C_1\to D_1,\ldots, C_n\to D_n \vdash A \to B}
+\end{gather*}
+
+\begin{center}
+Simple, elegant, beautiful!
+\end{center}
+
+}
+
+%===============================================================================
+\frame{
+  \frametitle{Olivier's Road to Transitivity}
+
+\noindent \textbf{Lemma} (Weakening)\\
+  If $\Sigma_1,\Sigma_2 \vdash A$,
+  then $\Sigma_1,B,\Sigma_2 \vdash A$. \\[1ex]
+
+\noindent \textbf{Lemma} (Axiom)\\
+$A \vdash A$ \\[1ex]
+
+\noindent \textbf{Lemma} (Permutation)\\
+  If $\Sigma_1 \vdash A$ and $\Sigma_2$ is a permutation of $\Sigma_1$,
+  then $\Sigma_2 \vdash A$. \\[1ex]
+  
+\noindent \textbf{Lemma} ($\sqcap L_e$) \\
+If $\Sigma_1,A\sqcap B,\Sigma_2 \vdash C$, then
+$\Sigma_1,A, B,\Sigma_2 \vdash C$. \\[1ex]
+
+\noindent \textbf{Lemma} (Collapse Duplicates) \\
+%
+If $\Sigma_1,A,A,\Sigma_2 \vdash C$, then $\Sigma_1,A,\Sigma_2 \vdash
+C$. \\[1ex]
+
+\noindent \textbf{Theorem} (Cut Elimination)\\
+  If $\Sigma_2 \vdash B$ and $\Sigma_1,B,\Sigma_3 \vdash C$,
+  then $\Sigma_1,\Sigma_2,\Sigma_3 \vdash C$. 
+  
+}  
+%===============================================================================
+\frame{
+  \frametitle{The Usual Properties of Subtyping }
+
+  \[
+    A <: B  \text{ iff } A \vdash B
+  \]
+  
+\textbf{Proposition} (Properties of Subtyping) 
+\begin{itemize}
+\item $A <: A$.
+\item If $A <: B$ and $B <: C$, then $A <: C$. 
+\item If $C <: A$ and $B <: D$, then $A \to B <: C \to D$.
+\item If $A_1 <: B$, then $A_1 \sqcap A_2 <: B$.
+\item If $A_2 <: B$, then $A_1 \sqcap A_2 <: B$.
+\item If $B <: A_1$ and $B <: A_2$, then $B <: A_1 \sqcap A_2$.
+\item If $A <: C$ and $B <: D$, then $A \sqcap B <: C \sqcap D$.
+\item $(A\to B) \sqcap (A \to C) <: A \to (B \sqcap C)$.
+\item $(A \to C) \sqcap (B \to D) <: (A\sqcap B) \to (C \sqcap D)$
+\end{itemize}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Back to Consistency and Subtyping}
+
+Definition of \textit{atoms}.
+\begin{gather*}
+  \ATOMS{n} = \{ n \} \qquad
+  \ATOMS{A\to B} = \{ A \to B \} \\
+  \ATOMS{A \sqcap B} = \ATOMS{A} \cup \ATOMS{B}
+\end{gather*}
+
+\textbf{Lemma} (Atomic Consistency) \\
+$A \sim B$ iff (for all $C \in \ATOMS{A}$ and $D \in \ATOMS{B}$, $C
+\sim D$).\\[1ex]
+
+\noindent \textbf{Lemma} (Atomic Subtyping)\\
+...\\[1ex]
+
+\noindent \textbf{Lemma} (Subtyping Inversion for Function Types)\\
+%
+If $C <: A \to B$, then ... \\[1ex]
+
+\noindent \textbf{Lemma} (Consistency and Subtyping)\\
+  If $A \sim B$, $A <: C$, and $B <: D$,
+  then $C \sim D$.
+  
+}
+%===============================================================================
+\frame{
+\frametitle{Back to Combining Denotations of Expressions}
+
+Definition of well-formed type.
+\begin{gather*}
+  \frac{}{\WF{n}}
+  \qquad
+  \frac{\WF{A} \quad \WF{B}}{\WF{A \to B}}
+  \qquad
+  \frac{A \sim B \quad \WF{A} \quad \WF{B}}{\WF{A \sqcap B}}
+\end{gather*}
+
+\noindent \textbf{Lemma} (Weakening)\\
+If $A \in \ESEM{e}\Gamma_1$ and $\Gamma_2 <: \Gamma_1$,
+then $A \in \ESEM{e}\Gamma_2$. \\[2ex]
+
+\noindent \textbf{Lemma} (Combining Denotations of Expressions)\\
+If $A_1 \in \ESEM{e}\Gamma_1$, $A_2 \in \ESEM{e}\Gamma_2$,
+$\WF{\Gamma_1}$, $\WF{\Gamma_2}$,
+and $\Gamma_1 \sim \Gamma_2$, \\
+then $A_1 \sqcap A_2 \in \ESEM{e}(\Gamma_1\sqcap\Gamma_2)$ and
+  $\WF{A_1 \sqcap A_2}$.\\[2ex]
+
+The following can then also be proved.\\[2ex]
+
+\noindent \textbf{Proposition} (Subsumption)\\
+If $A \in \ESEM{e}\Gamma$, $A <: B$, $\WF{B}$, $\WF{\Gamma}$,
+then $B \in \ESEM{e}\Gamma$. 
+
+}
+
+%===============================================================================
+
+\frame{
+  \frametitle{Conclusions}
+
+  \begin{itemize}
+  \item Restricting the tables to be functions gives us
+    determinism, common subexpression elimination, and
+    $\beta$-equality (function inlining)!
+    
+  \item Subtyping for intersections types: Olivier's elegant
+    formulation satisfies the sub-formula property!
+    
+  \end{itemize}
+}
+
+
+
+% LocalWords:  titlepage containsverbatim frametitle  Siek Taha lstlisting
+% LocalWords:  Rightarrow IU CBV Denotational SECD Landin Plotkin et
+% LocalWords:  texttt Rightarrow texttt texttt Rightarrow Findler deriv Wadler
+% LocalWords:  Longrightarrow Longrightarrow circ Wrigstad ldots inc bytecode
+% LocalWords:  includegraphics invokedynamic switchpoints unboxed xymatrix rrr
+% LocalWords:  vspace newsavebox DistExample lrbox linewidth mathtt mathtt emph
+% LocalWords:  vdash usebox mathbf mathit longmapsto mathsf subtyping emptyset
+% LocalWords:  Henglein's footnotesize Drossopoulou Igarashi Gronski Dimoulas
+% LocalWords:  varphi eval Jython microbenchmarks Fibonnaci vitousek bharadwaj
+% LocalWords:  Shashank  Barendregt al Coppo Dezani Salle Damas Rees
+%%  LocalWords:  Felleisen Compositional denotational rcl de Atkey AO
+%%  LocalWords:  lcl lccl Heh subsumption wrt Abramsky's btw BCDC BCD
+%%  LocalWords:  CDCHL Abramsky BDS iff Inhabitation CDHL HL Bool FV
+%%  LocalWords:  darkgreen Egidi Honsell Ronchi Rocca preorder Alessi
+%%  LocalWords:  Barbanera Ciancaglini nts dom Sem approximants ctx
+%%  LocalWords:  Hyland CDS polymorphism
