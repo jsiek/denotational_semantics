@@ -55,7 +55,7 @@ open IRMod using (_•_; _⨟_; ↑; exts-cons-shift; bind-ast)
 
 pattern # p k = node (ir-lit p k) ir-nil 
 pattern Ƒ n N = node (fun n) (ir-cons N ir-nil)
-pattern ⟪_,_,_⟫ n f fvs = node (close n) (ir-cons (ir-ast f) fvs)
+pattern ⟪_,_,_⟫ f n fvs = node (close n) (ir-cons (ir-ast f) fvs)
 pattern _˙_ L M = node ir-app (ir-cons (ir-ast L) (ir-cons (ir-ast M) ir-nil))
 
 FV : ∀{Γ} → Term Γ → Var Γ → Bool
@@ -169,7 +169,7 @@ convert-clos {Γ} (ƛ N)
     ρ-inv maps from suc Δ to suc Γ
     -}
     let f = ir-rename ρ′ (Ƒ (suc Δ) (N′′ N′)) in
-    ⟪ Δ , f , free-vars {Δ} {≤-refl} ⟫
+    ⟪ f , Δ , free-vars {Δ} {≤-refl} ⟫
     
     where
     N′′ : IR (suc Δ) → Arg 0 (suc Δ)
@@ -210,7 +210,7 @@ convert-clos ($ p k) = # p k
     curry-n {Γ} 0 (ir-ast N) = ℳ N
     curry-n {Γ} (suc n) (ir-bind bN) =
       ℱ (curry-n {suc Γ} n bN)
-ℳ {Γ} ⟪ n , L , As ⟫ =
+ℳ {Γ} ⟪ L , n , As ⟫ =
     apply-n n (ℳ {Γ} L) As
     where
     apply-n : (n : ℕ) → Denotation Γ → Args Γ (replicate n 0) → Denotation Γ
