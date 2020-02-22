@@ -1,7 +1,7 @@
 module ToANF where
 
 open import Lambda
-open import Denot
+open import ModelISWIM
 
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; cong₂)
@@ -15,6 +15,32 @@ open import Relation.Nullary.Negation using (contradiction)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit
+
+
+{-
+
+  An intermediate language in administrative-normal form (ANF).
+
+-}
+
+data Op : Set where
+  op-lam : Op
+  op-app : Op
+  op-let : Op
+  op-const : (p : Prim) → rep p → Op
+
+sig : Op → List ℕ
+sig op-lam = 1 ∷ []
+sig op-app = 0 ∷ 0 ∷ []
+sig op-let = 0 ∷ 1 ∷ []
+sig (op-const p k) = []
+
+import Syntax
+module ASTMod = Syntax3 Op sig
+open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
+                   rename; ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
+                   rename-id) public
+open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 
 data Simp : Context → Set where
   $_ :  ∀ {Γ}{p : Prim} → rep p → Simp Γ
