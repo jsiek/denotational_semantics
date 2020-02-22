@@ -1,6 +1,10 @@
 module ToANF where
 
+{-
 open import Lambda
+-}
+open import Primitives
+open import Variables
 open import ModelISWIM
 
 open import Relation.Binary.PropositionalEquality
@@ -9,12 +13,12 @@ open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Agda.Primitive using (lzero)
-open import Lambda
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary.Negation using (contradiction)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit
+open import Data.List
 
 
 {-
@@ -23,57 +27,77 @@ open import Data.Unit
 
 -}
 
-data Op : Set where
-  op-lam : Op
-  op-app : Op
-  op-let : Op
-  op-const : (p : Prim) → rep p → Op
+data OpANF : Set where
+  op-lam : OpANF
+  op-app : OpANF
+  op-let : OpANF
+  op-const : (p : Prim) → rep p → OpANF
 
-sig : Op → List ℕ
+sig : OpANF → List ℕ
 sig op-lam = 1 ∷ []
 sig op-app = 0 ∷ 0 ∷ []
 sig op-let = 0 ∷ 1 ∷ []
 sig (op-const p k) = []
 
-import Syntax
-module ASTMod = Syntax3 Op sig
-open ASTMod using (AST; `_; _⦅_⦆; Subst; Ctx; plug;
+import Syntax3
+module ASTMod = Syntax3 OpANF sig
+open ASTMod using (`_; _⦅_⦆; Subst; 
                    rename; ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
-                   rename-id) public
+                   rename-id)
+            renaming (AST to Term) public
 open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
 
-data Simp : Context → Set where
-  $_ :  ∀ {Γ}{p : Prim} → rep p → Simp Γ
+pattern $ p k = (op-const p k) ⦅ nil ⦆
+
+pattern ƛ N  = op-lam ⦅ cons (bind (ast N)) nil ⦆
+
+infixl 7  _·_
+pattern _·_ L M = op-app ⦅ cons (ast L) (cons (ast M) nil) ⦆
+
+pattern `let L M = op-let ⦅ cons (ast L) (cons (bind (ast M)) nil) ⦆
+
+{-
+
+ Predicates to restrict grammar to ANF
+
+-}
+
+data Simp : ∀{Γ} → Term Γ → Set where
+  S-const :  ∀ {Γ}{p : Prim}{k : rep p} → Simp {Γ} ($ p k)
   
-  `_ : ∀ {Γ}
-    → Γ ∋ ★
-      -----
-    → Simp Γ
+  S-var : ∀{Γ}{x : Var Γ} → Simp (` x)
 
-
-data ANF : Context → Set where
-  s_ : ∀ {Γ}
-    → Simp Γ
+data ANF : ∀{Γ} → Term Γ → Set where
+  simp : ∀ {Γ}{M : Term Γ}
+    → Simp M
       ------
-    → ANF Γ
+    → ANF M
 
-  ƛ_  :  ∀ {Γ}
-    → ANF (Γ , ★)
+  ANF-λ  :  ∀ {Γ}{N : Term (suc Γ)}
+    → ANF N
       -----------
-    → ANF Γ
+    → ANF (ƛ N)
 
-  _·_ : ∀ {Γ}
-    → Simp Γ
-    → Simp Γ
+  ANF-· : ∀ {Γ}{L M : Term Γ}
+    → Simp L
+    → Simp M
       ------
-    → ANF Γ
+    → ANF (L · M)
     
-  bind_then_ : ∀ {Γ}
-    → ANF Γ
-    → ANF (Γ , ★)
-      ------
-    → ANF Γ
+  ANF-let : ∀ {Γ}{L : Term Γ}{M : Term (suc Γ)}
+    → ANF {Γ} L
+    → ANF {suc Γ} M
+      --------------
+    → ANF (`let L M)
   
+ℳ : ∀{Γ} → Term Γ → Denotation Γ
+ℳ ($ p k) γ v = ℘ {p} k v
+ℳ (` x) γ v = v ⊑ γ x
+ℳ (ƛ N) = ℱ (ℳ N)
+ℳ (L · M) = (ℳ L) ● (ℳ M)
+ℳ (`let M N) = ℱ (ℳ N) ● (ℳ M)
+
+{-
 infix 3 _⊢s_↓_
 
 data _⊢s_↓_ : ∀{Γ} → Env Γ → Simp Γ → Value → Set where
@@ -377,3 +401,4 @@ ANF-equal {Γ} {L · M}{γ}{v} = ⟨ G , H ⟩
         H : ∀{v} → SemANF (to-ANF (L · M)) γ v → ℒ (L · M) γ v
         H (⊔-intro d₁ d₂) = ⊔-intro (H d₁) (H d₂)
         H (eval-bind d₁ d₂) = {!!}
+-}

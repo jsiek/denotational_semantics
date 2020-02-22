@@ -13,12 +13,12 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
 
 module ModelISWIM where
 
-open import ValueConst 
-open import ValueStructAux value_struct 
-open import OrderingAux value_struct ordering
-open import Consistency
-open import CurryConst
-open import ModelCurryConst
+open import ValueConst public
+open import ValueStructAux value_struct public
+open import OrderingAux value_struct ordering public
+open import Consistency public
+open import CurryConst public
+open import ModelCurryConst public
 
 open import ModelCallByValue value_struct ordering consistent ℱ model_curry
      public
