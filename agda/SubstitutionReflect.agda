@@ -299,8 +299,6 @@ module SubstReflectAppCBV where
     open import ModelISWIM
     open import CurryConst
     open import PrimConst
-    open ValueStructAux value_struct
-    open OrderingAux value_struct ordering
     open import ConsistentAux value_struct ordering consistent
     open import ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
     open RenamePreserveReflect.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply (λ {P} k v → ℘ {P} k v)

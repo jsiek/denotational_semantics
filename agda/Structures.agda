@@ -32,6 +32,11 @@ record ValueOrdering (D : ValueStruct) : Set₁ where
   field
     _⊑_ : Value → Value → Set
 
+  {-
+    The following rule is for call-by-name. Call-by-value should use a
+    different rule. But we use this rule in RenamePreserveRefect and
+    SubstitutionReflect. -Jeremy
+  -}
     ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
 
     ⊑-conj-L : ∀ {u v w}
