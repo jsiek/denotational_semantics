@@ -90,38 +90,6 @@ data _≈ₑ_ where
 γ≈ₑσ→γ[x]≈σ[x] {suc x} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) x<γ =
     γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ (≤-pred x<γ )
 
-{-
-_≈_ : Clos → (Term zero) → Set
-_≈ₑ_ : ∀{Γ} → ClosEnv Γ → Subst Γ zero → Set
-
-(clos {Γ} M γ) ≈ N = Σ[ σ ∈ Subst Γ zero ] γ ≈ₑ σ × (N ≡ ⟪ σ ⟫ (ƛ M))
-
-γ ≈ₑ σ = ∀{x} → (γ x) ≈ (σ x)
-
-
-≈ₑ-id : ∅' ≈ₑ (ids {Γ = zero})
-≈ₑ-id {()}
-
-
-ext-subst : ∀{Γ Δ} → Subst Γ Δ → Term Δ → Subst (suc Γ) Δ
-ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
-
-≈ₑ-ext : ∀ {Γ} {γ : ClosEnv Γ} {σ : Subst Γ zero} {c} {N : Term zero}
-      → γ ≈ₑ σ  →  c ≈ N
-        --------------------------
-      → (γ ,' c) ≈ₑ (ext-subst σ N)
-≈ₑ-ext {Γ} {γ} {σ} {c} {N} γ≈ₑσ c≈N {x} = goal
-   where
-   ext-cons : (γ ,' c) ≈ₑ (N • σ)
-   ext-cons {Z} = c≈N
-   ext-cons {S x} = γ≈ₑσ
-
-   goal : (γ ,' c) x ≈ ext-subst σ N x
-   goal
-       with ext-cons {x}
-   ... | a rewrite sym (subst-zero-exts-cons{Γ}{zero}{σ}{N}) = a
--}
-
 ≈→TermValue : ∀{V : Clos}{M : Term}
             → V ≈ M
             → TermValue M
