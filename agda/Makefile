@@ -5,11 +5,9 @@
 #	FunInverseBCDConst.agda \
 #	CurryBCDConst.agda \
 
-AGDA = Variables.agda \
-	Primitives.agda \
+AGDA =  Primitives.agda \
 	Structures.agda \
 	ValueConst.agda \
-	Syntax3.agda \
 	MultiStep.agda \
 	ValueStructAux.agda \
 	OrderingAux.agda \

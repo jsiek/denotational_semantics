@@ -7,7 +7,6 @@ open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤; tt)
 
-open import Variables
 open import Primitives
 open import ValueBCDConst
 

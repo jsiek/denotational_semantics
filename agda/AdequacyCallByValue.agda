@@ -1,4 +1,3 @@
-open import Variables
 open import Lambda
 open import LambdaCallByValue
 

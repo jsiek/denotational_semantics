@@ -19,7 +19,7 @@ module ISWIMDenot
 
   open import ISWIM
 
-  ℰ : ∀{Γ} → Term Γ → Denotation Γ
+  ℰ : ∀{Γ} → Term → Denotation Γ
   ℰ ($ P k) γ v = ℘ {P} k v
   ℰ {Γ} (` x) γ v = v ⊑ γ x
   ℰ {Γ} (ƛ N) = ℱ (ℰ N)
@@ -34,6 +34,6 @@ module ISWIMDenot
 
   infix 3 _`⊢_↓_
   _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
-  _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var Γ) → ℰ (σ x) δ (γ x))
+  _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var) → ℰ (σ x) δ (γ x))
 
 

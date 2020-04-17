@@ -1,4 +1,3 @@
-open import Variables
 open import Lambda
 open Reduction
   using (_—↠_; terminates; _≅_)

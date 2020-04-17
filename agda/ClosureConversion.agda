@@ -1,6 +1,5 @@
 module ClosureConversion where
 
-open import Variables public
 open import Primitives
 open import ISWIM
 

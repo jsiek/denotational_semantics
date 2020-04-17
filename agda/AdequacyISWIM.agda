@@ -1,4 +1,3 @@
-open import Variables
 open import Primitives
 open import Structures
 open import ValueConst

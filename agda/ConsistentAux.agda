@@ -6,11 +6,8 @@ open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
 
-
-open import Variables
 open import Structures
 import ValueStructAux
-
 
 module ConsistentAux
   (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)

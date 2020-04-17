@@ -1,6 +1,5 @@
 module Structures where
 
-open import Variables
 open import Primitives
 
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)

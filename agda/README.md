@@ -6,36 +6,55 @@ File Overview
 
    Miscellaneous small items.
 
-* `Structures`
+* Domain Construction and Properties
 
-   Structures ValueStruct, ValueOrdering, ModelCurry, and Consistent.
+   * `Structures`
 
-* `ValueStructAux`  (parameterized on ValueStruct)
+      Structures ValueStruct, ValueOrdering, ModelCurry, and Consistent.
 
-   * Environments (type `Env`) and operations on them.
-   * Type `Denotation`
+   * `ValueStructAux`  (parameterized on ValueStruct)
 
-* `OrderingAux` (parameterized on ValueStruct and ValueOrdering)
+      * Environments (type `Env`) and operations on them.
+      * Type `Denotation`
 
-   * Derived rules regarding `⊑`.
-   * Equational reasoning for `⊑`.
-   * Extending `⊑` to environments.
+   * `OrderingAux` (parameterized on ValueStruct and ValueOrdering)
 
-* `ConsistentAux` (parameterized on Consistent, etc.)
+      * Derived rules regarding `⊑`.
+      * Equational reasoning for `⊑`.
+      * Extending `⊑` to environments.
 
-   * denotational equality `≃` and inequality `≲`
-	 with notation for equational reasoning.
-   * Well-formed environments (`WFEnv`).
-   * Consistency for environments.
-   * Derived rules regarding `~`.
+   * `ConsistentAux` (parameterized on Consistent, etc.)
 
-* `CurryApplyStruct` (parameterized on Consistent, etc.)
+      * denotational equality `≃` and inequality `≲`
+            with notation for equational reasoning.
+      * Well-formed environments (`WFEnv`).
+      * Consistency for environments.
+      * Derived rules regarding `~`.
 
-   Structures `CurryStruct` and `CurryApplyStruct`.
-   
-* `CurryApplyAux` (parameterized by CurryApplyStruct)
+   * `CurryApplyStruct` (parameterized on Consistent, etc.)
 
-   Proves congruence rules wrt. ≃ for ℱ and ●. 
+      Structures `CurryStruct` and `CurryApplyStruct`.
+
+   * `CurryApplyAux` (parameterized by CurryApplyStruct)
+
+      Proves congruence rules wrt. ≃ for ℱ and ●. 
+
+   * `ValueBCD`
+
+     * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
+       types), the ⊑ ordering, and ℱ. Instances of ValueStruct,
+       ValueOrdering, and Consistent.
+     * Proves function inversion and stuff about AboveFun needed for
+       adequacy of call-by-name.
+
+   * `ValueConst`
+
+     * Adds constants, including primitive operators.
+
+   * `Consistency`
+
+     * Proof of the consistent subtyping property.
+     * Instance of the Consistent structure.
 
 * `LambdaDenot` (parameterized on ValueStruct and ValueOrdering)
 
@@ -63,23 +82,6 @@ File Overview
 
   Defines multi-step reduction generically given a reduction
   relation.
-
-* `ValueBCD`
-
-  * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
-    types), the ⊑ ordering, and ℱ. Instances of ValueStruct,
-    ValueOrdering, and Consistent.
-  * Proves function inversion and stuff about AboveFun needed for
-    adequacy of call-by-name.
-
-* `ValueConst`
-
-  * Adds constants, including primitive operators.
-
-* `Consistency`
-
-  * Proof of the consistent subtyping property.
-  * Instance of the Consistent structure.
 
 * `Lambda`
 

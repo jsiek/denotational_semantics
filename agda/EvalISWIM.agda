@@ -1,14 +1,13 @@
 open import Primitives
-open import Variables
 open import ISWIM
 open ISWIM.ASTMod
    using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; ast; nil; ⟪_⟫; _⨟_; subst-zero)
-open import Syntax3 Op sig
-   using (ids; _•_; subst-zero-exts-cons; sub-id; sub-sub)
-
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.List using ([])
+          exts; cons; bind; ast; nil; ⟦_⟧; ⟪_⟫; _⨟_; subst-zero;
+          id; _•_; subst-zero-exts-cons; sub-id; sub-sub;
+          WF; WF-var; WF-op; WF-ast; WF-nil; WF-cons)
+open import Data.Nat using (ℕ; zero; suc; _<_)
+open import Data.Nat.Properties using (≤-pred)
+open import Data.List using (List; []; _∷_; length)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -19,47 +18,56 @@ module EvalISWIM where
 
 Context = ℕ
 
-ValEnv : Context → Set
+data Val : Set
 
-data Val : Set where
+ValEnv : Set
+ValEnv = List Val
+
+data Val where
   val-const : ∀{p : Prim} → rep p → Val
-  val-clos : ∀{Γ} → (N : Term (suc Γ)) → ValEnv Γ → Val
+  val-clos : (N : Term) → (γ : ValEnv) → .{wf : WF (suc (length γ)) N} → Val
+  bogus : Val
 
-ValEnv Γ = ∀ (x : Var Γ) → Val
 
-∅' : ValEnv zero
-∅' ()
+∅' : ValEnv
+∅' = []
 
-_,'_ : ∀ {Γ} → ValEnv Γ → Val → ValEnv (suc Γ)
-(γ ,' c) Z = c
-(γ ,' c) (S x) = γ x
+_,'_ : ValEnv → Val → ValEnv
+(γ ,' c) = c ∷ γ
 
-data _⊢_⇓_ : ∀{Γ} → ValEnv Γ → (Term Γ) → Val → Set where
+nth : ValEnv → Var → Val
+nth [] 0 = bogus
+nth (v ∷ γ) 0 = v
+nth [] (suc x) = bogus
+nth (v ∷ γ) (suc x) = nth γ x
 
-  ⇓-lit : ∀{Γ}{γ : ValEnv Γ}{p : Prim}{k : rep p}
+
+data _⊢_⇓_ : ValEnv → Term → Val → Set where
+
+  ⇓-lit : ∀{γ : ValEnv}{p : Prim}{k : rep p}
           ---------------------------------
         → γ ⊢ $ p k ⇓ val-const {p} k
         
-  ⇓-var : ∀{Γ}{γ : ValEnv Γ}{x : Var Γ}
-          -------------
-        → γ ⊢ ` x ⇓ γ x
+  ⇓-var : ∀{γ : ValEnv}{x : Var}
+          -----------------
+        → γ ⊢ ` x ⇓ nth γ x
 
-  ⇓-lam : ∀{Γ}{γ : ValEnv Γ}{N : Term (suc Γ)}
-        → γ ⊢ ƛ N ⇓ val-clos N γ
+  ⇓-lam : ∀{γ : ValEnv}{N : Term}{wf : WF (suc (length γ)) N }
+        → γ ⊢ ƛ N ⇓ val-clos N γ {wf}
 
-  ⇓-app : ∀{Γ}{γ : ValEnv Γ}{L M : Term Γ}{Δ}{δ : ValEnv Δ}
-           {N : Term (suc Δ)}{V V′}
-       → γ ⊢ L ⇓ val-clos N δ  →  γ ⊢ M ⇓ V
+  ⇓-app : ∀{γ : ValEnv}{L M : Term}{δ : ValEnv}
+           {N : Term}{V V′}{wf : WF (suc (length δ)) N}
+       → γ ⊢ L ⇓ val-clos N δ {wf} →  γ ⊢ M ⇓ V
        → (δ ,' V) ⊢ N ⇓ V′
          ---------------------------------------------------
        → γ ⊢ L · M ⇓ V′
-  ⇓-prim : ∀{Γ}{γ : ValEnv Γ}{L M : Term Γ}{P : Prim}{B : Base}
+  ⇓-prim : ∀{γ : ValEnv}{L M : Term}{P : Prim}{B : Base}
                 {f : rep (B ⇒ P)}{k : base-rep B}
        → γ ⊢ L ⇓ val-const {B ⇒ P} f  →  γ ⊢ M ⇓ val-const {base B} k
          ------------------------------------------------------------
        → γ ⊢ L · M ⇓ val-const {P} (f k)
 
-⇓-determ : ∀{Γ}{γ : ValEnv Γ}{M : Term Γ}{V V' : Val}
+⇓-determ : ∀{γ : ValEnv}{M : Term}{V V' : Val}
          → γ ⊢ M ⇓ V → γ ⊢ M ⇓ V'
          → V ≡ V'
 ⇓-determ (⇓-lit) (⇓-lit) = refl         
@@ -78,6 +86,26 @@ data _⊢_⇓_ : ∀{Γ} → ValEnv Γ → (Term Γ) → Val → Set where
     with ⇓-determ mc₁ mc₁′
 ... | ()    
 
+data _≈_ : Val → Term → Set
+data _≈ₑ_ : ValEnv → Subst → Set
+
+data _≈_ where
+  ≈-const : ∀{N}{p}{k}
+     → N ≡ $ p k
+     → (val-const {p} k) ≈ N
+  ≈-clos : ∀ {σ}{γ}{M N : Term}{wf : WF (suc (length γ)) M}
+     → γ ≈ₑ σ
+     → (N ≡ ⟪ σ ⟫ (ƛ M))
+     → (val-clos M γ {wf}) ≈ N
+
+data _≈ₑ_ where
+  ≈ₑ-id : ∅' ≈ₑ id
+  ≈ₑ-ext : ∀ {γ : ValEnv} {σ : Subst} {c} {N : Term}
+      → γ ≈ₑ σ  →  c ≈ N
+        -------------------
+      → (γ ,' c) ≈ₑ (N • σ)
+
+{-
 _≈_ : Val → (Term zero) → Set
 _≈ₑ_ : ∀{Γ} → ValEnv Γ → Subst Γ zero → Set
 
@@ -87,18 +115,21 @@ _≈ₑ_ : ∀{Γ} → ValEnv Γ → Subst Γ zero → Set
 γ ≈ₑ σ = ∀{x} → (γ x) ≈ (σ x)
 
 
-≈ₑ-id : ∅' ≈ₑ (ids {Γ = zero})
+≈ₑ-id : ∅' ≈ₑ (id {Γ = zero})
 ≈ₑ-id {()}
+-}
 
-≈→TermValue : ∀{V : Val}{M : Term zero}
+≈→TermValue : ∀{V : Val}{M : Term}
             → V ≈ M
             → TermValue M
-≈→TermValue {val-const x} {M} refl = V-lit
-≈→TermValue {val-clos N x} {M} ⟨ _ , ⟨ _ , refl ⟩ ⟩ = V-ƛ
+≈→TermValue {val-const x} {M} (≈-const refl) = V-lit
+≈→TermValue {val-clos N x} {M} (≈-clos _ refl) = V-ƛ
 
+{-
 ext-subst : ∀{Γ Δ} → Subst Γ Δ → Term Δ → Subst (suc Γ) Δ
 ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
-
+-}
+{-
 ≈ₑ-ext : ∀ {Γ} {γ : ValEnv Γ} {σ : Subst Γ zero} {c} {N : Term zero}
       → γ ≈ₑ σ  →  c ≈ N
         --------------------------
@@ -113,26 +144,36 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
    goal
        with ext-cons {x}
    ... | a rewrite sym (subst-zero-exts-cons{Γ}{zero}{σ}{N}) = a
+-}
 
+γ≈ₑσ→γ[x]≈σ[x] : ∀{x}{γ}{σ}
+   → γ ≈ₑ σ
+   → x < length γ
+   → nth γ x ≈ ⟦ σ ⟧ x
+γ≈ₑσ→γ[x]≈σ[x] {zero} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) x<γ = c≈N
+γ≈ₑσ→γ[x]≈σ[x] {suc x} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) x<γ =
+    γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ (≤-pred x<γ )
 
-⇓→—↠×≈ : ∀{Γ}{γ : ValEnv Γ}{σ : Subst Γ zero}{M : Term Γ}{c : Val}
+⇓→—↠×≈ : ∀{γ : ValEnv}{σ : Subst}{M : Term}{c : Val}
+       → WF (length γ) M
        → γ ⊢ M ⇓ c  →  γ ≈ₑ σ
          ---------------------------------------
-       → Σ[ N ∈ Term zero ] (⟪ σ ⟫ M —↠ N) × c ≈ N
-⇓→—↠×≈ (⇓-lit {p = p}{k}) γ≈ₑσ =
-    ⟨ $ p k , ⟨ $ p k □ , refl ⟩ ⟩
-⇓→—↠×≈ {γ = γ}{σ} (⇓-var {x = x}) γ≈ₑσ = ⟨ σ x , ⟨ σ x □ , γ≈ₑσ ⟩ ⟩
-⇓→—↠×≈ {σ = σ} {c = val-clos N γ} ⇓-lam γ≈ₑσ =
-    ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ ⟩ ⟩
-⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
+       → Σ[ N ∈ Term ] (⟪ σ ⟫ M —↠ N) × c ≈ N
+⇓→—↠×≈ wf (⇓-lit {p = p}{k}) γ≈ₑσ =
+    ⟨ $ p k , ⟨ $ p k □ , ≈-const refl ⟩ ⟩
+⇓→—↠×≈ {γ = γ}{σ} (WF-var x lt) (⇓-var {x = x}) γ≈ₑσ = ⟨ ⟦ σ ⟧ x , ⟨ ⟦ σ ⟧ x □ , γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ lt ⟩ ⟩
+⇓→—↠×≈ {σ = σ} {c = val-clos N γ} wf (⇓-lam{wf = wf'}) γ≈ₑσ =
+    ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ≈-clos {wf = wf'} γ≈ₑσ refl ⟩ ⟩
+⇓→—↠×≈ {γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
+    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)))
     (⇓-prim {P = P}{B}{f}{k} L⇓f M⇓k) γ≈ₑσ 
-    with ⇓→—↠×≈{σ = σ} L⇓f γ≈ₑσ
-... | ⟨ L′ , ⟨ σL—↠f , L′≡ ⟩ ⟩
+    with ⇓→—↠×≈{σ = σ} wfL L⇓f γ≈ₑσ
+... | ⟨ L′ , ⟨ σL—↠f , ≈-const L′≡ ⟩ ⟩
     rewrite L′≡ 
-    with ⇓→—↠×≈{σ = σ} M⇓k γ≈ₑσ
-... | ⟨ M′ , ⟨ σM—↠M′ , M′≡ ⟩ ⟩
+    with ⇓→—↠×≈{σ = σ} wfM M⇓k γ≈ₑσ
+... | ⟨ M′ , ⟨ σM—↠M′ , ≈-const M′≡ ⟩ ⟩
     rewrite M′≡ =
-    ⟨ $ P (f k) , ⟨ r , refl ⟩ ⟩
+    ⟨ $ P (f k) , ⟨ r , ≈-const refl ⟩ ⟩
     where
     r = (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
         —↠⟨ appL-cong σL—↠f  ⟩
@@ -141,18 +182,19 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
         ($ (B ⇒ P) f) · ($ (base B) k)
         —→⟨ δ-rule ⟩
         ($ P (f k))  □
-⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
+⇓→—↠×≈ {γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
+    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)))
     (⇓-app {Γ}{δ = δ}{N}{V}{V′} L⇓ƛNδ M⇓V N⇓V′) γ≈ₑσ
-    with ⇓→—↠×≈{σ = σ} L⇓ƛNδ γ≈ₑσ
-... | ⟨ L′ , ⟨ σL—↠ƛτN , ⟨ τ , ⟨ δ≈ₑτ , L′≡ ⟩ ⟩ ⟩ ⟩
+    with ⇓→—↠×≈{σ = σ} wfL L⇓ƛNδ γ≈ₑσ
+... | ⟨ L′ , ⟨ σL—↠ƛτN , ≈-clos {σ = τ}{wf = wfN} δ≈ₑτ L′≡ ⟩ ⟩
     rewrite L′≡
-    with ⇓→—↠×≈{σ = σ} M⇓V γ≈ₑσ
+    with ⇓→—↠×≈{σ = σ} wfM M⇓V γ≈ₑσ
 ... | ⟨ M′ , ⟨ σM—↠M′ , V≈M′ ⟩ ⟩
-    with ⇓→—↠×≈ {σ = ext-subst τ M′} N⇓V′
-             (λ {x} → ≈ₑ-ext δ≈ₑτ V≈M′ {x} )
-       | β-rule{zero}{⟪ exts τ ⟫ N}{M′} (≈→TermValue V≈M′)
+    with ⇓→—↠×≈ {σ = M′ • τ} wfN N⇓V′ (≈ₑ-ext δ≈ₑτ V≈M′)
+       | β-rule {⟪ exts τ ⟫ N}{M′} (≈→TermValue V≈M′)
 ... | ⟨ N′ , ⟨ —↠N′ , c≈N′ ⟩ ⟩ | ƛτN·σM—→
-    rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero M′} =
+    rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero M′} 
+    | sym (subst-zero-exts-cons {τ}{M′}) =
     ⟨ N′ , ⟨ r , c≈N′ ⟩ ⟩
     where
     r = (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
@@ -165,12 +207,12 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
         —↠⟨ —↠N′ ⟩
         N′ □
 
-⇓→—↠ :  ∀{M : Term zero}{c : Val}
+⇓→—↠ :  ∀{M : Term}{c : Val} {wfM : WF 0 M}
      → ∅' ⊢ M ⇓ c
        -----------------------------------------
-     → Σ[ N ∈ Term zero ] TermValue N × (M —↠ N)
-⇓→—↠ {M}{c} M⇓c
-    with ⇓→—↠×≈{σ = ids} M⇓c ≈ₑ-id
+     → Σ[ N ∈ Term ] TermValue N × (M —↠ N)
+⇓→—↠ {M} {c} {wfM} M⇓c
+    with ⇓→—↠×≈{σ = id} wfM M⇓c ≈ₑ-id
 ... | ⟨ N , ⟨ rs , c≈N ⟩ ⟩
     rewrite sub-id{M = M} =
     ⟨ N , ⟨ (≈→TermValue c≈N) , rs ⟩ ⟩
