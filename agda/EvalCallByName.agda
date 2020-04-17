@@ -29,10 +29,6 @@ ClosEnv = List Clos
 
 _,'_ : ClosEnv → Clos → ClosEnv
 (γ ,' c) = c ∷ γ
-{-
-(γ ,' c) 0 = c
-(γ ,' c) (suc x) = γ x
--}
 
 nth : ClosEnv → Var → Clos
 nth [] 0 = clos (` 0) [] {- bogus -}
