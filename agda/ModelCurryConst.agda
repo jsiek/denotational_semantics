@@ -23,16 +23,16 @@ open import CurryApplyStruct value_struct ordering consistent
 
 module ModelCurryConst where
 
-ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+ℱ-⊔ : ∀{D : Denotation}{γ : Env} {u v : Value}
     → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
 ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
 
-ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
+ℱ-⊥ : ∀{D : Denotation}{γ : Env}
     → ℱ D γ ⊥
 ℱ-⊥ = tt
 
-ℱ-≲ : ∀{Γ Δ}{D : Denotation (suc Γ)}
-          {D′ : Denotation (suc Δ)}{γ : Env Γ}{δ : Env Δ}
+ℱ-≲ : ∀{D : Denotation}
+          {D′ : Denotation}{γ : Env}{δ : Env}
        → (∀{v : Value} → wf v → D (γ `, v) ≲ D′ (δ `, v))
        → ℱ D γ ≲ ℱ D′ δ
 ℱ-≲ D≲D′ {⊥} wfv _ = tt
@@ -126,15 +126,15 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
        (wf-cod wfu₁ wfv fu₁ du₁⊑v)
        (wf-cod wfu₂ wfv fu₂ du₂⊑v)
 
-ℱ-∈ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+ℱ-∈ : ∀{D : Denotation}{γ : Env} {v w : Value}
         → w ∈ v → ℱ D γ v → ℱ D γ w
-ℱ-∈ {Γ} {D} {γ} {⊥} {w} refl ℱv = tt
-ℱ-∈ {Γ} {D} {γ} {const x} {w} w∈v ()
-ℱ-∈ {Γ} {D} {γ} {v₁ ↦ v₂} {w} refl ℱv = ℱv
-ℱ-∈ {Γ} {D} {γ} {v₁ ⊔ v₂} {w} (inj₁ x) ⟨ ℱv₁ , ℱv₂ ⟩ = ℱ-∈ x ℱv₁
-ℱ-∈ {Γ} {D} {γ} {v₁ ⊔ v₂} {w} (inj₂ y) ⟨ ℱv₁ , ℱv₂ ⟩ = ℱ-∈ y ℱv₂
+ℱ-∈ {D} {γ} {⊥} {w} refl ℱv = tt
+ℱ-∈ {D} {γ} {const x} {w} w∈v ()
+ℱ-∈ {D} {γ} {v₁ ↦ v₂} {w} refl ℱv = ℱv
+ℱ-∈ {D} {γ} {v₁ ⊔ v₂} {w} (inj₁ x) ⟨ ℱv₁ , ℱv₂ ⟩ = ℱ-∈ x ℱv₁
+ℱ-∈ {D} {γ} {v₁ ⊔ v₂} {w} (inj₂ y) ⟨ ℱv₁ , ℱv₂ ⟩ = ℱ-∈ y ℱv₂
 
-¬k∈ℱ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v : Value}
+¬k∈ℱ : ∀{D : Denotation}{γ : Env} {v : Value}
          {b : Base}{k : base-rep b}
         → const {b} k ∈ v → ¬ ℱ D γ v
 ¬k∈ℱ {v = ⊥} () ℱv
@@ -144,24 +144,24 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
 ¬k∈ℱ {v = v₁ ⊔ v₂} (inj₂ y) ⟨ fst₁ , snd₁ ⟩ = ¬k∈ℱ y snd₁
 
 
-ℱ-⊆ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
+ℱ-⊆ : ∀{D : Denotation}{γ : Env} {v w : Value}
         → w ⊆ v → ℱ D γ v → ℱ D γ w
-ℱ-⊆ {Γ} {D} {γ} {v} {⊥} w⊆v ℱv = tt
-ℱ-⊆ {Γ} {D} {γ} {v} {const k} w⊆v ℱv =
+ℱ-⊆ {D} {γ} {v} {⊥} w⊆v ℱv = tt
+ℱ-⊆ {D} {γ} {v} {const k} w⊆v ℱv =
     ⊥-elim (contradiction ℱv (¬k∈ℱ (w⊆v refl)))
-ℱ-⊆ {Γ} {D} {γ} {v} {w₁ ↦ w₂} w⊆v ℱv = ℱ-∈ (w⊆v refl) ℱv
-ℱ-⊆ {Γ} {D} {γ} {v} {w₁ ⊔ w₂} w⊆v ℱv
+ℱ-⊆ {D} {γ} {v} {w₁ ↦ w₂} w⊆v ℱv = ℱ-∈ (w⊆v refl) ℱv
+ℱ-⊆ {D} {γ} {v} {w₁ ⊔ w₂} w⊆v ℱv
     with ⊔⊆-inv w⊆v
 ... | ⟨ w₁⊆v , w₂⊆v ⟩ =    
   ⟨ ℱ-⊆ w₁⊆v ℱv , ℱ-⊆ w₂⊆v ℱv ⟩
 
-ℱ-dom-cod : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{v w : Value}{fv : AllFun v}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w
+ℱ-dom-cod : ∀ {D : Denotation}{γ : Env}{v w : Value}{fv : AllFun v}
+       → WFDenot D → WFEnv γ → wf v → wf w
        → dom v {fv} ⊑ w → ℱ D γ v → ℱ D γ (dom v {fv} ↦ cod v {fv})
 ℱ-dom-cod {v = ⊥} {w} {()} wfd wfγ wfv wfw dv⊑w ℱv
 ℱ-dom-cod {v = const k} {w} {()} wfd wfγ wfv wfw dv⊑w ℱv
 ℱ-dom-cod {v = v₁ ↦ v₂} {w} {fv} wfd wfγ wfv wfw dv⊑w ℱv = ℱv
-ℱ-dom-cod {Γ}{D}{γ}{v₁ ⊔ v₂} {w} {⟨ fv₁ , fv₂ ⟩} wfd wfγ (wf-⊔ v₁~v₂ wfv₁ wfv₂) wfw
+ℱ-dom-cod {D}{γ}{v₁ ⊔ v₂} {w} {⟨ fv₁ , fv₂ ⟩} wfd wfγ (wf-⊔ v₁~v₂ wfv₁ wfv₂) wfw
     dv⊑w ⟨ ℱv₁ , ℱv₂ ⟩ =
   let dv₁⊑w = ⊔⊑R dv⊑w in
   let dv₂⊑w = ⊔⊑L dv⊑w in
@@ -193,8 +193,8 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
       Dγdv₁⊔dv₂-cv₁ Dγdv₁⊔dv₂-cv₂ 
         
 
-ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w
+ℱ-⊑ : ∀{D : Denotation}{γ : Env} {v w : Value}
+       → WFDenot D → WFEnv γ → wf v → wf w
         → w ⊑ v → ℱ D γ v → ℱ D γ w
 ℱ-⊑ d wfγ wfv wfw ⊑-⊥ ℱDγv = tt
 ℱ-⊑ d wfγ wfv wfw ⊑-const ()
@@ -204,7 +204,7 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
     ℱ-⊑ d wfγ wfv wfw w⊑v fst₁
 ℱ-⊑ d wfγ (wf-⊔ x wfv wfv₁) wfw (⊑-conj-R2 w⊑v) ⟨ fst₁ , snd₁ ⟩ =
     ℱ-⊑ d wfγ wfv₁ wfw w⊑v snd₁
-ℱ-⊑ {Γ} {D} {γ} d wfγ wfv (wf-fun wfw₁ wfw₂)
+ℱ-⊑ {D} {γ} d wfγ wfv (wf-fun wfw₁ wfw₂)
     (⊑-fun {v} {v′} {w₁} {w₂} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′) ℱDγv =
     let wfv′ = wf-⊆ v′⊆v wfv in
     let wfdv′ = wf-dom wfv′ wfw₁ fv′ dv′⊑w₁ in
@@ -221,14 +221,14 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
     Dγw₁w₂
 
 
-ℱ-~ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}{δ : Env Γ} {u v : Value}
-    → WFDenot (suc Γ) D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
+ℱ-~ : ∀{D : Denotation}{γ : Env}{δ : Env} {u v : Value}
+    → WFDenot D → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v
     → ℱ D γ u → ℱ D δ v → u ~ v
-ℱ-~ {D = D} {γ} {δ} {⊥} {v} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
-ℱ-~ {D = D} {γ} {δ} {const k} {v} wfd wfγ wfδ γ~δ wfu wfv () d2
-ℱ-~ {D = D} {γ} {δ} {u₁ ↦ u₂} {⊥} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
-ℱ-~ {D = D} {γ} {δ} {u₁ ↦ u₂} {const x} wfd wfγ wfδ γ~δ wfu wfv d1 ()
-ℱ-~ {Γ} {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd wfγ wfδ γ~δ (wf-fun wfu₁ wfu₂) (wf-fun wfv₁ wfv₂) d1 d2
+ℱ-~ {D} {γ} {δ} {⊥} {v} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
+ℱ-~ {D} {γ} {δ} {const k} {v} wfd wfγ wfδ γ~δ wfu wfv () d2
+ℱ-~ {D} {γ} {δ} {u₁ ↦ u₂} {⊥} wfd wfγ wfδ γ~δ wfu wfv d1 d2 = tt
+ℱ-~ {D} {γ} {δ} {u₁ ↦ u₂} {const x} wfd wfγ wfδ γ~δ wfu wfv d1 ()
+ℱ-~ {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd wfγ wfδ γ~δ (wf-fun wfu₁ wfu₂) (wf-fun wfv₁ wfv₂) d1 d2
     with consistent? u₁ v₁
 ... | no u₁~̸v₁ = inj₂ u₁~̸v₁
 ... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
@@ -238,11 +238,11 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
       γu₁~δv₁ = λ {x} → ~′-extend γ~δ u₁~v₁ {x}
       u₂~v₂ = WFDenot.~-closed wfd (λ {x} → wfγu₁ {x}) (λ {x} → wfδv₁ {x})
                  (λ {x} → γu₁~δv₁ {x}) wfu₂ wfv₂ d1 d2 
-ℱ-~ {Γ}{D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd wfγ wfδ γ~δ 
+ℱ-~ {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd wfγ wfδ γ~δ 
     (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst' , snd' ⟩ =
-    ⟨ ℱ-~ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₁} wfd wfγ wfδ γ~δ
+    ⟨ ℱ-~ {D}{γ}{δ}{u₁ ↦ u₂}{v₁} wfd wfγ wfδ γ~δ
            (wf-fun wfu₁ wfu₂) wfv₁ d1 fst' ,
-      ℱ-~ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₂} wfd wfγ wfδ γ~δ
+      ℱ-~ {D}{γ}{δ}{u₁ ↦ u₂}{v₂} wfd wfγ wfδ γ~δ
            (wf-fun wfu₁ wfu₂) wfv₂ d1 snd' ⟩
 ℱ-~ {D = D} {γ} {δ} {u₁ ⊔ u₂} {v} wfd wfγ wfδ γ~δ
     (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fst' , snd' ⟩ d2 =
@@ -253,8 +253,8 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
 model_curry : CurryStruct ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ;
                        ℱ-⊑ = ℱ-⊑ ;
-                       ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔ {Γ}{D}{γ}{u}{v} ;
-                       ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} ;
-                       ℱ-~ = λ {Γ}{D}{γ}{u}{v} → ℱ-~ {Γ}{D}{γ}{u}{v}
+                       ℱ-⊔ = λ {D}{γ}{u}{v} → ℱ-⊔ {D}{γ}{u}{v} ;
+                       ℱ-⊥ = λ {D}{γ} → ℱ-⊥ {D}{γ} ;
+                       ℱ-~ = λ {D}{γ}{u}{v} → ℱ-~ {D}{γ}{u}{v}
                      }
 

@@ -98,6 +98,10 @@ File Overview
       * Denotational values (⊥, ↦, ⊔) including constants
         and primitive operators.
 
+   * `CurryConst`
+
+      * Definition of ℱ and ℘ for the domain in ValueConst
+
    * `Consistency`
 
      * Proof of the consistent subtyping property.
@@ -141,7 +145,7 @@ File Overview
 
    * `PrimConst`
 
-      Properties of primitive constants.
+      Properties of primitive constants for domain in ValueConst.
 
    * `Compositionality` (parameterized on CurryApplyStruct)
 

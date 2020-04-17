@@ -12,7 +12,7 @@ open import Primitives
 open import ValueConst
 open import ValueStructAux value_struct
 
-ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
+ℱ : Denotation → Denotation
 ℱ D γ (v ↦ w) = D (γ `, v) w
 ℱ D γ ⊥ = ⊤
 ℱ D γ (const k) = Bot
