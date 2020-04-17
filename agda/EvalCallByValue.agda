@@ -1,12 +1,10 @@
-open import Variables
 open import Lambda
 open Lambda.ASTMod
-   using (`_; _⦅_⦆; Subst;
+   using (Var; `_; _⦅_⦆; Subst;
           exts; cons; bind; ast; nil; ⟪_⟫; _⨟_; subst-zero)
 open import Syntax3 Op sig
    using (ids; _•_; subst-zero-exts-cons; sub-id; sub-sub)
 open import LambdaCallByValue
-
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using ([])
