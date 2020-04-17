@@ -19,11 +19,11 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 module ModelCallByName where
 
 infixl 7 _●_
-_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
-_●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
+_●_ : Denotation → Denotation → Denotation
+_●_ D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
 
-●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
-          {D₁′ D₂′ : Denotation Δ}
+●-≲ : ∀{γ : Env}{δ : Env}{D₁ D₂ : Denotation}
+          {D₁′ D₂′ : Denotation}
        → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
        → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
 ●-≲ {γ = γ} {δ} {D₁} {D₂} {D₁′} {D₂′} D₁γ≲D₁′δ D₂γ≲D₂′δ {w} wfw (inj₁ w⊑⊥) =
@@ -34,8 +34,8 @@ _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) ×
 ... | a | b = inj₂ ⟨ v , ⟨ (D₁γ≲D₁′δ tt fst₁) , (D₂γ≲D₂′δ tt snd) ⟩ ⟩
 
 
-●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{u v : Value}
-    → WFDenot Γ D₁ → WFDenot Γ D₂
+●-⊔ : ∀{D₁ D₂ : Denotation}{γ : Env}{u v : Value}
+    → WFDenot D₁ → WFDenot D₂
     → WFEnv γ → wf u → wf v
     → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
 ●-⊔ {u = u} {v} wf1 wf2 wfγ wfu wfv (inj₁ u⊑⊥) (inj₁ v⊑⊥) =
@@ -48,15 +48,15 @@ _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) ×
   inj₂ ⟨ u' , ⟨ (WFDenot.⊑-closed wf1 (λ {x} → tt) tt tt lt fst₁) , snd ⟩ ⟩
   where lt : u' ↦ (u ⊔ v) ⊑ u' ↦ u
         lt = ⊑-fun ⊑-refl (⊑-conj-L ⊑-refl (⊑-trans v⊑⊥ ⊑-⊥))
-●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ wfu wfv (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
+●-⊔ {D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ wfu wfv (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
                     (inj₂ ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩) =
   let a = WFDenot.⊔-closed wf1 (λ {x} → tt) tt tt fst₁ fst₃ in                      
   inj₂ ⟨ (u' ⊔ v') ,
        ⟨ WFDenot.⊑-closed wf1 (λ {x} → tt) tt tt Dist⊔↦⊔ a ,
          WFDenot.⊔-closed wf2 (λ {x} → tt) tt tt snd snd₁ ⟩ ⟩
 
-●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
-    → WFDenot Γ D₁
+●-⊑ : ∀{D₁ D₂ : Denotation} {γ : Env} {v w : Value}
+    → WFDenot D₁
     → WFEnv γ → wf v → wf w
     → w ⊑ v
     → (D₁ ● D₂) γ v
@@ -67,24 +67,24 @@ _●_ {Γ} D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) ×
   where lt : v' ↦ w ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl w⊑v
 
-●-⊥ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ}
+●-⊥ : ∀{D₁ D₂ : Denotation} {γ : Env}
     → (D₁ ● D₂) γ ⊥
 ●-⊥ = inj₁ ⊑-⊥
 
 model_curry_apply : CurryApplyStruct.CurryApplyStruct value_struct ordering consistent _●_ ℱ
 model_curry_apply =
       record { model_curry = model_curry ;
-               ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
+               ●-≲ = λ {γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
                        ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y;
-               ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a (λ {x} → b{x}) c;
-               ●-⊔ = λ {a}{b}{c}{d}{e}{f} → ●-⊔ {a}{b}{c}{d}{e}{f} 
+               ●-⊑ = λ {D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a (λ {x} → b{x}) c;
+               ●-⊔ = λ {a}{b}{c}{d}{e} → ●-⊔ {a}{b}{c}{d}{e}
                }
 
 open import LambdaDenot value_struct ordering _●_ ℱ
 
-ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+ℰ-⊥ : ∀{γ : Env}{M : Term}
     → ℰ M γ ⊥
 ℰ-⊥ {M = ` x} = ⊑-⊥
-ℰ-⊥ {Γ}{γ}{M = lam ⦅ cons (bind (ast N)) nil ⦆} = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {γ}{M = lam ⦅ cons (bind (ast N)) nil ⦆} = ℱ-⊥ {ℰ N}{γ}
 ℰ-⊥ {M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆} = inj₁ ⊑-⊥
 

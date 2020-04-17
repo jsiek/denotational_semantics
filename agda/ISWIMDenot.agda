@@ -7,10 +7,9 @@ open import Data.Nat using (ℕ; suc ; zero)
 module ISWIMDenot
   (D : ValueStruct)
   (V : ValueOrdering D)
-  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
-       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
-     → ValueStructAux.Denotation D Γ)
+  (_●_ : ValueStructAux.Denotation D
+       → ValueStructAux.Denotation D → ValueStructAux.Denotation D)
+  (ℱ : ValueStructAux.Denotation D → ValueStructAux.Denotation D)
   (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
   where
   open ValueStruct D
@@ -19,21 +18,21 @@ module ISWIMDenot
 
   open import ISWIM
 
-  ℰ : ∀{Γ} → Term → Denotation Γ
+  ℰ : Term → Denotation
   ℰ ($ P k) γ v = ℘ {P} k v
-  ℰ {Γ} (` x) γ v = v ⊑ γ x
-  ℰ {Γ} (ƛ N) = ℱ (ℰ N)
-  ℰ {Γ} (L · M) = (ℰ L) ● (ℰ M)
+  ℰ (` x) γ v = v ⊑ γ x
+  ℰ (ƛ N) = ℱ (ℰ N)
+  ℰ (L · M) = (ℰ L) ● (ℰ M)
 
   {- The following is a duplication from Structures.LambdaDenot -}
-  split : ∀ {Γ} {M : Term (suc Γ)} {δ : Env (suc Γ)} {v}
+  split : ∀ {M : Term} {δ : Env} {v}
     → ℰ M δ v
       ------------------------
     → ℰ M (init δ `, last δ) v
   split {δ = δ} δMv rewrite init-last δ = δMv
 
   infix 3 _`⊢_↓_
-  _`⊢_↓_ : ∀{Δ Γ} → Env Δ → Subst Γ Δ → Env Γ → Set
-  _`⊢_↓_ {Δ}{Γ} δ σ γ = (∀ (x : Var) → ℰ (σ x) δ (γ x))
+  _`⊢_↓_ : Env → Subst → Env → Set
+  _`⊢_↓_ δ σ γ = (∀ (x : Var) → ℰ (⟦ σ ⟧ x) δ (γ x))
 
 

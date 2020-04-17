@@ -18,8 +18,7 @@ module ModelCallByValue
   (D : ValueStruct)
   (V : ValueOrdering D)
   (C : Consistent D V)
-  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
-            → ValueStructAux.Denotation D Γ)
+  (ℱ : ValueStructAux.Denotation D → ValueStructAux.Denotation D)
   (MC : CurryApplyStruct.CurryStruct D V C ℱ)
   where
 
@@ -34,11 +33,11 @@ open CurryApplyStruct D V C
 open CurryStruct MC
 
 infixl 7 _●_
-_●_ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
-_●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ γ v 
+_●_ : Denotation → Denotation → Denotation
+_●_ D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ γ v 
 
-●-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env  Δ}{D₁ D₂ : Denotation Γ}
-          {D₁′ D₂′ : Denotation Δ}
+●-≲ : ∀{γ : Env}{δ : Env}{D₁ D₂ : Denotation}
+          {D₁′ D₂′ : Denotation}
        → D₁ γ ≲ D₁′ δ  →  D₂ γ ≲ D₂′ δ
        → (D₁ ● D₂) γ ≲ (D₁′ ● D₂′) δ
 ●-≲ {γ = γ} {δ} {D₁} {D₂} {D₁′} {D₂′} D₁γ≲D₁′δ D₂γ≲D₂′δ {w} wfw
@@ -47,10 +46,10 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
 ... | a | b =
     ⟨ v , ⟨ wfv , ⟨ (D₁γ≲D₁′δ (wf-fun wfv wfw) fst₁) , (D₂γ≲D₂′δ wfv snd) ⟩ ⟩ ⟩
 
-●-~ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ}{δ : Env Γ} {u v : Value}
-    → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
+●-~ : ∀{D₁ D₂ : Denotation}{γ : Env}{δ : Env} {u v : Value}
+    → WFDenot D₁ → WFDenot D₂ → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
     → (D₁ ● D₂) γ u → (D₁ ● D₂) δ v → u ~ v
-●-~ {Γ}{D₁}{D₂}{γ}{δ}{u}{v} wf1 wf2 wfγ wfδ γ~δ wfu wfv 
+●-~ {D₁}{D₂}{γ}{δ}{u}{v} wf1 wf2 wfγ wfδ γ~δ wfu wfv 
     ⟨ u' , ⟨ wfu' , ⟨ fst₁ , snd ⟩ ⟩ ⟩ ⟨ v' , ⟨ wfv' , ⟨ fst₃ , snd₁ ⟩ ⟩ ⟩
     with WFDenot.~-closed wf1 wfγ wfδ γ~δ (wf-fun wfu' wfu) (wf-fun wfv' wfv)
         fst₁ fst₃
@@ -61,10 +60,10 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
     let u'~v' = WFDenot.~-closed wf2 wfγ wfδ γ~δ wfu' wfv' snd snd₁ in
     ⊥-elim (contradiction u'~v' u'~̸v')
 
-●-⊔ : ∀{Γ}{D₁ D₂ : Denotation Γ}{γ : Env Γ} {u v : Value}
-    → WFDenot Γ D₁ → WFDenot Γ D₂ → WFEnv γ → wf u → wf v
+●-⊔ : ∀{D₁ D₂ : Denotation}{γ : Env} {u v : Value}
+    → WFDenot D₁ → WFDenot D₂ → WFEnv γ → wf u → wf v
     → (D₁ ● D₂) γ u → (D₁ ● D₂) γ v → (D₁ ● D₂) γ (u ⊔ v)
-●-⊔ {Γ}{D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ wfu wfv
+●-⊔ {D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ wfu wfv
     ⟨ u' , ⟨ wfu' , ⟨ D₁γu'↦u , D₂γu' ⟩ ⟩ ⟩
     ⟨ v' , ⟨ wfv' , ⟨ D₁γv'↦v , D₂γv' ⟩ ⟩ ⟩ =
   let wf-u'↦u = wf-fun wfu' wfu in
@@ -73,9 +72,9 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
       a = WFDenot.⊔-closed wf1 wfγ (wf-fun wfu' wfu) (wf-fun wfv' wfv)
                            D₁γu'↦u D₁γv'↦v in
   let u'↦u~v'↦v = WFDenot.~-closed wf1 {γ}{γ} wfγ wfγ
-                   (~′-refl{Γ} (λ {y} → wfγ {y}))
+                   (~′-refl (λ {y} → wfγ {y}))
                    wf-u'↦u wf-v'↦v D₁γu'↦u D₁γv'↦v in
-  let u'~v' = WFDenot.~-closed wf2 {γ}{γ} wfγ wfγ (~′-refl{Γ} (λ {y} → wfγ {y}))
+  let u'~v' = WFDenot.~-closed wf2 {γ}{γ} wfγ wfγ (~′-refl (λ {y} → wfγ {y}))
                  wfu' wfv' D₂γu' D₂γv' in
   let u~v = ~-↦-~ u'↦u~v'↦v u'~v' in
   let wf-u'⊔v' = wf-⊔ u'~v' wfu' wfv' in
@@ -89,8 +88,8 @@ _●_ {Γ} D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ 
     WFDenot.⊔-closed wf2 wfγ wfu' wfv' D₂γu' D₂γv' ⟩ ⟩ ⟩
 
 
-●-⊑ : ∀{Γ}{D₁ D₂ : Denotation Γ} {γ : Env Γ} {v w : Value}
-    → WFDenot Γ D₁
+●-⊑ : ∀{D₁ D₂ : Denotation} {γ : Env} {v w : Value}
+    → WFDenot D₁
     → WFEnv γ → wf v → wf w
     → w ⊑ v
     → (D₁ ● D₂) γ v
@@ -109,9 +108,9 @@ model_curry_apply : CurryApplyStruct _●_ ℱ
 model_curry_apply =
     record {
            model_curry = MC ;
-           ●-≲ = λ {Γ}{Δ}{γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
+           ●-≲ = λ {γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
                    ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y ;
-           ●-⊑ = λ {Γ}{D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c ;
+           ●-⊑ = λ {D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c ;
            ●-⊔ = ●-⊔ ;
            ●-~ = ●-~ 
            }

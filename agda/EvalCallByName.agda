@@ -1,9 +1,9 @@
 open import Lambda
 open Lambda.Reduction
 open Lambda.ASTMod
-   using (Var; `_; _⦅_⦆; Subst;
+   using (`_; _⦅_⦆; Subst;
           exts; cons; bind; ast; nil; ⟦_⟧; ⟪_⟫; _⨟_; subst-zero;
-          id; _•_; subst-zero-exts-cons; sub-id; sub-sub)
+          subst-zero-exts-cons; sub-id; sub-sub)
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; []; _∷_)

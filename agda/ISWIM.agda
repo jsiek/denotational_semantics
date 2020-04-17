@@ -30,14 +30,13 @@ sig lam = 1 ∷ []
 sig app = 0 ∷ 0 ∷ []
 sig (lit p k) = []
 
-import Syntax
-module ASTMod = Syntax Op sig
-open ASTMod using (Var; `_; _⦅_⦆; Subst; Ctx; plug;
-                   rename; ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
-                   rename-id)
+open import Syntax using (Var; _•_; ↑; id) public
+module ASTMod = Syntax.OpSig Op sig
+open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug;
+                   rename; ⟦_⟧;
+                   ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
+                   rename-id; _⨟_; exts-cons-shift)
             renaming (ABT to AST) public
-open ASTMod using (_•_; _⨟_; ↑; exts-cons-shift)
-
 
 Term : Set
 Term = AST

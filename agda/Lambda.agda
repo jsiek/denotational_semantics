@@ -26,11 +26,9 @@ sig : Op → List ℕ
 sig lam = 1 ∷ []
 sig app = 0 ∷ 0 ∷ []
 
-import Syntax
-module ASTMod = Syntax Op sig
-open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug;
-                   rename; ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
-                   rename-id; _•_; _⨟_; ↑; exts-cons-shift)
+open import Syntax using (Var; _•_; ↑; id) public
+module ASTMod = Syntax.OpSig Op sig
+open ASTMod using (`_; _⦅_⦆; Ctx; plug; bind; ast; cons; nil; _[_])
             renaming (ABT to AST) public
 
 infixl 7  _·_

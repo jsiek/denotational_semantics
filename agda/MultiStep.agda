@@ -9,10 +9,10 @@ import Syntax
 module MultiStep
   (Op : Set)
   (sig : Op → List ℕ) 
-  (_—→_ : (Syntax.ABT Op sig) → (Syntax.ABT Op sig) → Set)
+  (_—→_ : (Syntax.OpSig.ABT Op sig) → (Syntax.OpSig.ABT Op sig) → Set)
   where
 
-  open Syntax Op sig
+  open Syntax.OpSig Op sig
 
   private Term : Set
   Term = ABT

@@ -8,8 +8,9 @@ module LambdaCallByValue where
 
 open import Utilities using (_iff_)
 open import Lambda
-open Lambda.ASTMod using (Var; `_; Subst; Ctx; plug; _[_])
-open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product
+  using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+  renaming (_,_ to ⟨_,_⟩)
 
 data TermValue : Term → Set where
 
