@@ -1,15 +1,12 @@
-open import Variables
 open import Lambda
 open Lambda.Reduction
 open Lambda.ASTMod
-   using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; ast; nil; ⟪_⟫; _⨟_; subst-zero)
-open import Syntax3 Op sig
-   using (ids; _•_; subst-zero-exts-cons; sub-id; sub-sub)
-
+   using (Var; `_; _⦅_⦆; Subst;
+          exts; cons; bind; ast; nil; ⟦_⟧; ⟪_⟫; _⨟_; subst-zero;
+          id; _•_; subst-zero-exts-cons; sub-id; sub-sub)
 
 open import Data.Nat using (ℕ; zero; suc)
-open import Data.List using ([])
+open import Data.List using (List; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -20,38 +17,47 @@ module EvalCallByName where
 
 Context = ℕ
 
-ClosEnv : Context → Set
+ClosEnv : Set
 
 data Clos : Set where
-  clos : ∀{Γ} → (M : Term Γ) → ClosEnv Γ → Clos
+  clos : (M : Term) → ClosEnv → Clos
 
-ClosEnv Γ = ∀ (x : Var Γ) → Clos
+ClosEnv = List Clos
 
-∅' : ClosEnv zero
-∅' ()
+∅' : ClosEnv
+∅' =  []
 
-_,'_ : ∀ {Γ} → ClosEnv Γ → Clos → ClosEnv (suc Γ)
-(γ ,' c) Z = c
-(γ ,' c) (S x) = γ x
+_,'_ : ClosEnv → Clos → ClosEnv
+(γ ,' c) = c ∷ γ
+{-
+(γ ,' c) 0 = c
+(γ ,' c) (suc x) = γ x
+-}
 
-data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Term Γ) → Clos → Set where
+nth : ClosEnv → Var → Clos
+nth [] 0 = clos (` 0) [] {- bogus -}
+nth (c ∷ γ) 0 = c
+nth [] (suc x) = clos (` (suc x)) [] {- bogus -}
+nth (x₁ ∷ γ) (suc x) = nth γ x
 
-  ⇓-var : ∀{Γ}{γ : ClosEnv Γ}{x : Var Γ}{Δ}{δ : ClosEnv Δ}{M : Term Δ}{V}
-        → γ x ≡ clos M δ
+data _⊢_⇓_ : ClosEnv → Term → Clos → Set where
+
+  ⇓-var : ∀{γ : ClosEnv}{x : Var}{δ : ClosEnv}{M : Term}{V}
+        → nth γ x ≡ clos M δ
         → δ ⊢ M ⇓ V
           -----------
         → γ ⊢ ` x ⇓ V
 
-  ⇓-lam : ∀{Γ}{γ : ClosEnv Γ}{N : Term (suc Γ)}
+  ⇓-lam : ∀{γ : ClosEnv}{N : Term}
         → γ ⊢ ƛ N ⇓ clos (ƛ N) γ
 
-  ⇓-app : ∀{Γ}{γ : ClosEnv Γ}{L M : Term Γ}{Δ}{δ : ClosEnv Δ}
-           {N : Term (suc Δ)}{V}
+  ⇓-app : ∀{γ : ClosEnv}{L M : Term}{δ : ClosEnv}
+           {N : Term}{V}
        → γ ⊢ L ⇓ clos (ƛ N) δ   →   (δ ,' clos M γ) ⊢ N ⇓ V
          ---------------------------------------------------
        → γ ⊢ L · M ⇓ V
 
-⇓-determ : ∀{Γ}{γ : ClosEnv Γ}{M : Term Γ}{V V' : Clos}
+⇓-determ : ∀{γ : ClosEnv}{M : Term}{V V' : Clos}
          → γ ⊢ M ⇓ V → γ ⊢ M ⇓ V'
          → V ≡ V'
 ⇓-determ (⇓-var eq1 mc) (⇓-var eq2 mc')
@@ -64,57 +70,47 @@ data _⊢_⇓_ : ∀{Γ} → ClosEnv Γ → (Term Γ) → Clos → Set where
 
 
 
-_≈_ : Clos → (Term zero) → Set
-_≈ₑ_ : ∀{Γ} → ClosEnv Γ → Subst Γ zero → Set
+_≈_ : Clos → Term → Set
+data _≈ₑ_ : ClosEnv → Subst → Set
 
-(clos {Γ} M γ) ≈ N = Σ[ σ ∈ Subst Γ zero ] γ ≈ₑ σ × (N ≡ ⟪ σ ⟫ M)
+(clos M γ) ≈ N = Σ[ σ ∈ Subst ] γ ≈ₑ σ × (N ≡ ⟪ σ ⟫ M)
 
-γ ≈ₑ σ = ∀{x} → (γ x) ≈ (σ x)
-
-
-≈ₑ-id : ∅' ≈ₑ (ids {Γ = zero})
-≈ₑ-id {()}
-
-
-ext-subst : ∀{Γ Δ} → Subst Γ Δ → Term Δ → Subst (suc Γ) Δ
-ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
-
-≈ₑ-ext : ∀ {Γ} {γ : ClosEnv Γ} {σ : Subst Γ zero} {c} {N : Term zero}
+data _≈ₑ_ where
+  ≈ₑ-id : ∅' ≈ₑ id
+  ≈ₑ-ext : ∀ {γ : ClosEnv} {σ : Subst} {c} {N : Term}
       → γ ≈ₑ σ  →  c ≈ N
-        --------------------------
-      → (γ ,' c) ≈ₑ (ext-subst σ N)
-≈ₑ-ext {Γ} {γ} {σ} {c} {N} γ≈ₑσ c≈N {x} = goal
-   where
-   ext-cons : (γ ,' c) ≈ₑ (N • σ)
-   ext-cons {Z} = c≈N
-   ext-cons {S x} = γ≈ₑσ
+        -------------------
+      → (γ ,' c) ≈ₑ (N • σ)
 
-   goal : (γ ,' c) x ≈ ext-subst σ N x
-   goal
-       with ext-cons {x}
-   ... | a rewrite sym (subst-zero-exts-cons{Γ}{zero}{σ}{N}) = a
+γ≈ₑσ→γ[x]≈σ[x] : ∀{x}{γ}{σ} → γ ≈ₑ σ → nth γ x ≈ ⟦ σ ⟧ x
+γ≈ₑσ→γ[x]≈σ[x] {zero} {.[]} {.(↑ 0)} ≈ₑ-id = ⟨ (↑ 0) , ⟨ ≈ₑ-id , refl ⟩ ⟩
+γ≈ₑσ→γ[x]≈σ[x] {suc x} {.[]} {.(↑ 0)} ≈ₑ-id = ⟨ (↑ 0) , ⟨ ≈ₑ-id , refl ⟩ ⟩
+γ≈ₑσ→γ[x]≈σ[x] {zero} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) = c≈N
+γ≈ₑσ→γ[x]≈σ[x] {suc x} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) =
+    γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ
 
 
-⇓→—↠×≈ : ∀{Γ}{γ : ClosEnv Γ}{σ : Subst Γ zero}{M : Term Γ}{c : Clos}
+⇓→—↠×≈ : ∀{γ : ClosEnv}{σ : Subst}{M : Term}{c : Clos}
        → γ ⊢ M ⇓ c  →  γ ≈ₑ σ
          ---------------------------------------
-       → Σ[ N ∈ Term zero ] (⟪ σ ⟫ M —↠ N) × c ≈ N
+       → Σ[ N ∈ Term ] (⟪ σ ⟫ M —↠ N) × c ≈ N
 ⇓→—↠×≈ {γ = γ} (⇓-var{x = x} γx≡Lδ δ⊢L⇓c) γ≈ₑσ
-    with γ x | γ≈ₑσ {x} | γx≡Lδ
+    with nth γ x | γ≈ₑσ→γ[x]≈σ[x] {x} γ≈ₑσ | γx≡Lδ
 ... | clos L δ | ⟨ τ , ⟨ δ≈ₑτ , σx≡τL ⟩ ⟩ | refl
     with ⇓→—↠×≈{σ = τ} δ⊢L⇓c δ≈ₑτ
 ... | ⟨ N , ⟨ τL—↠N , c≈N ⟩ ⟩ rewrite σx≡τL =
       ⟨ N , ⟨ τL—↠N , c≈N ⟩ ⟩
 ⇓→—↠×≈ {σ = σ} {c = clos (lam ⦅ cons (bind (ast N)) nil ⦆) γ} ⇓-lam γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ ⟩ ⟩
-⇓→—↠×≈{Γ}{γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c} (⇓-app {N = N} L⇓ƛNδ N⇓c) γ≈ₑσ
+⇓→—↠×≈ {γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
+       (⇓-app {N = N} L⇓ƛNδ N⇓c) γ≈ₑσ
     with ⇓→—↠×≈{σ = σ} L⇓ƛNδ γ≈ₑσ
 ... | ⟨ _ , ⟨ σL—↠ƛτN , ⟨ τ , ⟨ δ≈ₑτ , ≡ƛτN ⟩ ⟩ ⟩ ⟩ rewrite ≡ƛτN
-    with ⇓→—↠×≈ {σ = ext-subst τ (⟪ σ ⟫ M)} N⇓c
-           (λ {x} → ≈ₑ-ext{σ = τ} δ≈ₑτ ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩ {x})
-       | β-rule{zero}{⟪ exts τ ⟫ N}{⟪ σ ⟫ M}
+    with ⇓→—↠×≈ {σ = (⟪ σ ⟫ M) • τ} N⇓c (≈ₑ-ext δ≈ₑτ ⟨ σ , ⟨ γ≈ₑσ , refl ⟩ ⟩)
+       | β-rule {⟪ exts τ ⟫ N} {⟪ σ ⟫ M}
 ... | ⟨ N' , ⟨ —↠N' , c≈N' ⟩ ⟩ | ƛτN·σM—→
-    rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero (⟪ σ ⟫ M)} =
+    rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero (⟪ σ ⟫ M)}
+    | sym (subst-zero-exts-cons{τ}{⟪ σ ⟫ M}) =
     ⟨ N' , ⟨ r , c≈N' ⟩ ⟩
     where
     r = (app ⦅ cons (ast (⟪ σ ⟫ L)) (cons (ast (⟪ σ ⟫ M)) nil) ⦆)
@@ -125,12 +121,13 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
         —↠⟨ —↠N' ⟩
         N' □
 
-cbn→reduce :  ∀{M : Term zero}{Δ}{δ : ClosEnv Δ}{N′ : Term (suc Δ)}
+cbn→reduce :  ∀{M : Term}{δ : ClosEnv}{N′ : Term}
      → ∅' ⊢ M ⇓ clos (ƛ N′) δ
        -----------------------------
-     → Σ[ N ∈ Term (suc zero) ] (M —↠ ƛ N)
-cbn→reduce {M}{Δ}{δ}{N′} M⇓c
-    with ⇓→—↠×≈{σ = ids} M⇓c ≈ₑ-id
+     → Σ[ N ∈ Term ] (M —↠ ƛ N)
+cbn→reduce {M}{δ}{N′} M⇓c
+    with ⇓→—↠×≈{σ = id} M⇓c ≈ₑ-id
 ... | ⟨ N , ⟨ rs , ⟨ σ , ⟨ h , eq2 ⟩ ⟩ ⟩ ⟩
     rewrite sub-id{M = M} | eq2 =
     ⟨ ⟪ exts σ ⟫ N′ , rs ⟩
+

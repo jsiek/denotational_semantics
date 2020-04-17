@@ -1,3 +1,6 @@
+{-
+ OBSOLETE: replacing with abstract-binding-trees
+-}
 open import Variables
 
 open import Data.Bool

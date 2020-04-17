@@ -4,37 +4,37 @@ open import Data.List using (List; []; _∷_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
    renaming (_,_ to ⟨_,_⟩)
 
-import Syntax3
+import Syntax
 
 module MultiStep
   (Op : Set)
   (sig : Op → List ℕ) 
-  (_—→_ : ∀ {Γ} → (Syntax3.AST Op sig Γ) → (Syntax3.AST Op sig Γ) → Set)
+  (_—→_ : (Syntax.ABT Op sig) → (Syntax.ABT Op sig) → Set)
   where
 
-  open Syntax3 Op sig
+  open Syntax Op sig
 
-  private Term : ℕ → Set
-  Term Γ = AST Γ
+  private Term : Set
+  Term = ABT
 
   infix  2 _—↠_
   infixr 2 _—→⟨_⟩_
   infixr 2 _—↠⟨_⟩_
   infix  3 _□
 
-  data _—↠_ : ∀ {Γ} → (Term Γ) → (Term Γ) → Set where
+  data _—↠_ : Term → Term → Set where
 
-    _□ : ∀ {Γ} (M : Term Γ)
+    _□ : (M : Term)
         --------
       → M —↠ M
 
-    _—→⟨_⟩_ : ∀ {Γ} (L : Term Γ) {M N : Term Γ}
+    _—→⟨_⟩_ : ∀ (L : Term) {M N : Term}
       → L —→ M
       → M —↠ N
         ---------
       → L —↠ N
 
-  —↠-trans : ∀{Γ}{L M N : Term Γ}
+  —↠-trans : ∀{L M N : Term}
            → L —↠ M
            → M —↠ N
            → L —↠ N
@@ -42,7 +42,7 @@ module MultiStep
   —↠-trans (L —→⟨ r ⟩ lm) mn = L —→⟨ r ⟩ (—↠-trans lm mn)
 
 
-  _—↠⟨_⟩_ : ∀{Γ}(L : Term Γ) {M N : Term Γ}
+  _—↠⟨_⟩_ : ∀(L : Term) {M N : Term}
            → L —↠ M
            → M —↠ N
            → L —↠ N

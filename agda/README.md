@@ -2,14 +2,9 @@
 
 File Overview
 
-* `Variables`
+* `Utilities`
 
-  Defines de Bruijn indices, Rename, ext, and var≟.
-
-* `Syntax3`
-
-  Abstract binding trees a la Robert Harper,
-  substitution, and contexts. 
+   Miscellaneous small items.
 
 * `Structures`
 

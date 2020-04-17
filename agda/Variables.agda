@@ -1,3 +1,6 @@
+{-
+ OBSOLETE: replacing with abstract-binding-trees
+-}
 open import Data.Maybe 
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; z≤n; s≤s; ≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
