@@ -5,34 +5,38 @@
 #	FunInverseBCDConst.agda \
 #	CurryBCDConst.agda \
 
-AGDA =  Primitives.agda \
-	Structures.agda \
-	ValueConst.agda \
+AGDA =  Utilities.agda \
+	Primitives.agda \
+	\
 	MultiStep.agda \
+	Lambda.agda \
+	EvalCallByName.agda \
+	LambdaCallByValue.agda \
+	EvalCallByValue.agda \
+	ISWIM.agda \
+	EvalISWIM.agda \
+	\
+	Structures.agda \
 	ValueStructAux.agda \
 	OrderingAux.agda \
 	Consistency.agda \
 	ConsistentAux.agda \
+	ValueConst.agda \
+	ValueBCD.agda \
 	CurryConst.agda \
 	PrimConst.agda \
 	ModelCurryConst.agda \
 	WFDenotMod.agda \
 	CurryApplyStruct.agda \
 	CurryApplyAux.agda \
-	ISWIMDenot.agda \
-	ISWIMDenotAlt.agda \
-	Compositionality.agda \
-	ValueBCD.agda \
-	LambdaDenot.agda \
-	Lambda.agda \
-	LambdaCallByValue.agda \
-	ISWIM.agda \
-	EvalCallByName.agda \
-	EvalCallByValue.agda \
-	EvalISWIM.agda \
 	ModelCallByName.agda \
 	ModelCallByValue.agda \
 	ModelISWIM.agda \
+	\
+	LambdaDenot.agda \
+	ISWIMDenot.agda \
+	ISWIMDenotAlt.agda \
+	Compositionality.agda \
 	RenamePreserveReflect.agda \
 	Filter.agda \
 	SubstitutionPreserve.agda \

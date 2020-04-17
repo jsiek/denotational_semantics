@@ -23,7 +23,7 @@ module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
       
 
 
-  record WFDenot (Γ : ℕ) (D : Denotation Γ) : Set₁ where
+  record WFDenot (D : Denotation) : Set₁ where
     field
       ⊑-env : ∀{γ δ}{v}
                → WFEnv γ → WFEnv δ → wf v

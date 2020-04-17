@@ -1,12 +1,11 @@
-open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
-open import Data.Nat using (ℕ; zero; suc)
+open import Utilities using (extensionality)
+open import Data.Empty using (⊥-elim)
+open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
-open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
-open import Variables
 open import Structures
 
 {-
@@ -20,56 +19,61 @@ module ValueStructAux(D : ValueStruct) where
 
   open ValueStruct D
 
-  Env : ℕ → Set
-  Env Γ = Var Γ → Value
+  Var = ℕ
 
-  Denotation : ℕ → Set₁
-  Denotation Γ = Env Γ → Value → Set
+  Env : Set
+  Env = Var → Value
 
-  `∅ : Env zero
-  `∅ ()
+  Denotation : Set₁
+  Denotation = Env → Value → Set
 
-  `⊥ : ∀ {Γ} → Env Γ
+  `∅ : Env
+  `∅ x = ⊥    {- ??? -}
+
+  `⊥ : Env
   `⊥ x = ⊥
 
   infixl 5 _`,_
 
-  _`,_ : ∀ {Γ} → Env Γ → Value → Env (suc Γ)
-  (γ `, v) Z = v
-  (γ `, v) (S x) = γ x
+  _`,_ : Env → Value → Env
+  (γ `, v) 0 = v
+  (γ `, v) (suc x) = γ x
 
-  init : ∀ {Γ} → Env (suc Γ) → Env Γ
-  init γ x = γ (S x)
+  init : Env → Env
+  init γ x = γ (suc x)
 
-  last : ∀ {Γ} → Env (suc Γ) → Value
-  last γ = γ Z
+  last : Env → Value
+  last γ = γ 0
 
-  init-last : ∀ {Γ} → (γ : Env (suc Γ)) → γ ≡ (init γ `, last γ)
-  init-last {Γ} γ = extensionality lemma
+  init-last : (γ : Env) → γ ≡ (init γ `, last γ)
+  init-last γ = extensionality lemma
     where
-    lemma : ∀ (x : Var (suc Γ)) → γ x ≡ (init γ `, last γ) x
-    lemma Z      =  refl
-    lemma (S x)  =  refl
+    lemma : ∀ (x : Var) → γ x ≡ (init γ `, last γ) x
+    lemma 0      =  refl
+    lemma (suc x)  =  refl
 
-  _`⊔_ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ) → Env Γ
+  _`⊔_ : (γ : Env) → (δ : Env) → Env
   (γ `⊔ δ) x = γ x ⊔ δ x
 
-  _`≡_ : ∀ {Γ} → Env Γ → Env Γ → Set
-  _`≡_ {Γ} γ δ = (x : Var Γ) → γ x ≡ δ x
+  _`≡_ : Env → Env → Set
+  _`≡_ γ δ = (x : Var) → γ x ≡ δ x
 
-  const-env : ∀{Γ} → (x : Var Γ) → Value → Env Γ
-  const-env x v y with x var≟ y
+  const-env : (x : Var) → Value → Env
+  const-env x v y with x ≟ y
   ...             | yes _       = v
   ...             | no _        = ⊥
 
-  nth-const-env : ∀{Γ} {x : Var Γ} {v} → (const-env x v) x ≡ v
-  nth-const-env {x = x} rewrite var≟-refl x = refl
+  nth-const-env : ∀{x : Var} {v} → (const-env x v) x ≡ v
+  nth-const-env {x = x}
+      with x ≟ x
+  ... | yes eq = refl
+  ... | no neq = ⊥-elim (neq refl) 
 
-  diff-nth-const-env : ∀{Γ} {x y : Var Γ} {v}
+  diff-nth-const-env : ∀ {x y : Var} {v}
     → x ≢ y
       -------------------
     → const-env x v y ≡ ⊥
-  diff-nth-const-env {Γ} {x} {y} neq with x var≟ y
+  diff-nth-const-env {x} {y} neq with x ≟ y
   ...  | yes eq  =  ⊥-elim (neq eq)
   ...  | no _    =  refl
 

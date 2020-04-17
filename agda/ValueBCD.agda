@@ -1,4 +1,3 @@
-open import Variables
 open import Structures
 import Lambda
 open Lambda.ASTMod
@@ -35,16 +34,16 @@ value_struct = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔
 
 open import ValueStructAux value_struct
 
-ℱ : ∀{Γ} → Denotation (suc Γ) → Denotation Γ
+ℱ : Denotation → Denotation
 ℱ D γ (v ↦ w) = D (γ `, v) w
 ℱ D γ ⊥ = ⊤
 ℱ D γ (u ⊔ v) = (ℱ D γ u) × (ℱ D γ v)
 
-ℱ-⊔ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {u v : Value}
+ℱ-⊔ : ∀{D : Denotation}{γ : Env} {u v : Value}
     → ℱ D γ u → ℱ D γ v → ℱ D γ (u ⊔ v)
 ℱ-⊔ d1 d2 = ⟨ d1 , d2 ⟩
 
-ℱ-⊥ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ}
+ℱ-⊥ : ∀{D : Denotation}{γ : Env}
     → ℱ D γ ⊥
 ℱ-⊥ = tt
   
@@ -127,8 +126,8 @@ consistent = record {
 
 open import ConsistentAux value_struct ordering consistent
 
-ℱ-≲ : ∀{Γ Δ}{γ : Env Γ}{δ : Env Δ}{D : Denotation (suc Γ)}
-          {D′ : Denotation (suc Δ)}
+ℱ-≲ : ∀{γ : Env}{δ : Env}{D : Denotation}
+          {D′ : Denotation}
        → (∀{v : Value} → wf v → D (γ `, v) ≲ D′ (δ `, v))
        → ℱ D γ ≲ ℱ D′ δ
 ℱ-≲ D≲D′ {⊥} _ _ = tt
@@ -140,8 +139,8 @@ open import ConsistentAux value_struct ordering consistent
 
 open import WFDenotMod value_struct ordering consistent
 
-ℱ-⊑ : ∀{Γ}{D : Denotation (suc Γ)}{γ : Env Γ} {v w : Value}
-       → WFDenot (suc Γ) D → WFEnv γ → wf v → wf w
+ℱ-⊑ : ∀ {D : Denotation}{γ : Env} {v w : Value}
+       → WFDenot D → WFEnv γ → wf v → wf w
         → w ⊑ v → ℱ D γ v → ℱ D γ w
 ℱ-⊑ d wfγ wfv wfw ⊑-⊥ ℱDγv = tt
 ℱ-⊑ d wfγ wfv wfw (⊑-conj-L w⊑v w⊑v₁) ℱDγv =
@@ -154,7 +153,7 @@ open import WFDenotMod value_struct ordering consistent
 ℱ-⊑ d wfγ wfv wfw (⊑-trans w⊑v w⊑v₁) ℱDγv =
     ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v
       (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v₁ ℱDγv)
-ℱ-⊑ {Γ}{D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv wfw (⊑-fun v⊑v' w'⊑w) ℱDγv =
+ℱ-⊑ {D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv wfw (⊑-fun v⊑v' w'⊑w) ℱDγv =
   WFDenot.⊑-closed d (λ {x} → tt) tt tt w'⊑w
       (WFDenot.⊑-env d (λ {x} → tt) (λ {x} → tt) tt
          (`⊑-extend `⊑-refl v⊑v') ℱDγv)
@@ -165,8 +164,8 @@ open import WFDenotMod value_struct ordering consistent
 
 model_curry : CurryApplyStruct.CurryStruct value_struct ordering consistent ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
-                       ℱ-⊔ = λ {Γ}{D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
-                       ℱ-⊥ = λ {Γ}{D}{γ} → ℱ-⊥ {Γ}{D}{γ} }
+                       ℱ-⊔ = λ {D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
+                       ℱ-⊥ = λ {D}{γ} → ℱ-⊥ {D}{γ} }
                        
 {-
 

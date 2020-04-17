@@ -1,5 +1,4 @@
 open import Structures
-open import Variables
 open import Primitives
 import ValueStructAux
 import CurryApplyStruct

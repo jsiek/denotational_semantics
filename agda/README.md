@@ -1,12 +1,58 @@
-
-
 File Overview
+=============
 
 * `Utilities`
 
    Miscellaneous small items.
 
-* Domain Construction and Properties
+* `Primitives`
+
+   Mechanism for importing Agda values into a programming language to
+   be treated as constants.
+
+* Syntax and Operational Semantics
+
+   * `MultiStep`
+
+     Defines multi-step reduction generically given a reduction
+     relation.
+
+   * Lambda Calculus
+
+      * `Lambda`
+
+        Syntax, reduction, and contextual equivalence for the lambda
+        calculus.
+
+      * `EvalCallByName`
+
+        Call-by-name evaluation as a big-step relation.
+        Proves that CBN evaluation implies reduction to WHNF.
+
+   * CBV Lambda Calculus
+   
+      * `LambdaCallByValue`
+
+        Call-by-value reduction and contextual equivalence.
+
+      * `EvalCallByValue`
+
+        Call-by-value evaluation as a big-step relation.
+        Proves that CBV evaluation implies CBV reduction to WHNF.
+
+   * ISWIM (CBV Lambda Calclulus + constants)
+
+      * `ISWIM`
+
+        Call-by-value lambda calculus with constants and a δ reduction rule
+        for primitive operations.
+
+      * `EvalISWIM`
+
+        Call-by-value evaluation as a big-step relation.
+        Proves that CBV evaluation implies CBV reduction to WHNF.
+
+* Domain Construction
 
    * `Structures`
 
@@ -41,132 +87,111 @@ File Overview
 
    * `ValueBCD`
 
-     * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection
-       types), the ⊑ ordering, and ℱ. Instances of ValueStruct,
-       ValueOrdering, and Consistent.
-     * Proves function inversion and stuff about AboveFun needed for
-       adequacy of call-by-name.
+      * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection types),
+        the ⊑ ordering, and ℱ, appropriate for call-by-name.
+        Instances of ValueStruct, ValueOrdering, and Consistent.  *
+        Proves function inversion and stuff about AboveFun needed for
+        adequacy of call-by-name.
 
    * `ValueConst`
 
-     * Adds constants, including primitive operators.
+      * Denotational values (⊥, ↦, ⊔) including constants
+        and primitive operators.
 
    * `Consistency`
 
      * Proof of the consistent subtyping property.
      * Instance of the Consistent structure.
 
-* `LambdaDenot` (parameterized on ValueStruct and ValueOrdering)
+   * `ModelCallByName`
 
-  Denotational semantics of lambda calculus defined
-  generically in terms of ●, ℱ, Domain, and ValueOrdering.
+     * Definition of ● for CBN and a bunch of lemmas about it.
+     * An instance of LambdaModelBasics
 
-* `ISWIMDenot` (parameterized on ValueStruct and ValueOrdering)
+   * `ModelCallByValue` (parameterized on ValueStruct, etc.)
 
-  Denotational semantics of ISWIM defined
-  generically in terms of ●, ℱ, Domain, and ValueOrdering.
+     * Definition ● for CBV and a bunch of lemmas about it.
+     * An instance of CurryApplyStruct
 
-* `ISWIMDenotAlt`
+   * `ModelISWIM`
 
-  An alternative semantic definition of ISWIM that does not use `⊑`
-  in the variable case, but only in the meaning of application.
-  So it does not satisfy `ℰ-⊑`. Nevertheless, this version is equivalent
-  to the above version in the same way that an algorithmic
-  type system is equivalent to a declarative one.  
+     Instantiates the ModelCallByValue with the domain defined
+     in ValueConst.
 
-* `Compositionality` (parameterized on CurryApplyStruct)
 
-   Proof of compositionality for the lambda calculus and ISWIM.
+* Denotational Semantics
 
-* `MultiStep`
+   * `LambdaDenot` (parameterized on ValueStruct and ValueOrdering)
 
-  Defines multi-step reduction generically given a reduction
-  relation.
+     Denotational semantics of lambda calculus defined
+     generically in terms of ●, ℱ, Domain, and ValueOrdering.
 
-* `Lambda`
+   * `ISWIMDenot` (parameterized on ValueStruct and ValueOrdering)
 
-  Syntax, reduction, and contextual equivalence for the lambda
-  calculus.
+     Denotational semantics of ISWIM defined
+     generically in terms of ●, ℱ, Domain, and ValueOrdering.
 
-* `LambdaCallByValue`
+   * `ISWIMDenotAlt`
 
-  Call-by-value reduction and contextual equivalence.
+     An alternative semantic definition of ISWIM that does not use `⊑`
+     in the variable case, but only in the meaning of application.
+     So it does not satisfy `ℰ-⊑`. Nevertheless, this version is equivalent
+     to the above version in the same way that an algorithmic
+     type system is equivalent to a declarative one.  
 
-* `ISWIM`
+   * `PrimConst`
 
-  Call-by-value lambda calculus with constants and a δ reduction rule
-  for primitive operations.
+      Properties of primitive constants.
 
-* `EvalCallByName`
+   * `Compositionality` (parameterized on CurryApplyStruct)
 
-  Call-by-name evaluation as a big-step relation.
-  Proves that CBN evaluation implies reduction to WHNF.
+      Proof of compositionality for the lambda calculus and ISWIM.
 
-* `EvalCallByValue`
+   * Soundness of reduction with respect to denotational equality
 
-  Call-by-value evaluation as a big-step relation.
-  Proves that CBV evaluation implies CBV reduction to WHNF.
+      * `Filter` (requires CurryApplyStruct)
 
-* `EvalISWIM`
+        Proves admisibility of subsumption and ⊔ introduction.
 
-  Same as above, but with constants added.
+      * `RenamePreserveReflect` (parameterized on CurryApplyStruct)
 
-* `ModelCallByName`
+        Proves that renaming preserves and reflects denotations.
 
-  * ● for CBN and a bunch of lemmas about it.
-  * An instance of LambdaModelBasics
+      * `SubstitutionPreserve` (parameterized on CurryApplyStruct)
 
-* `ModelCallByValue`
+        Proves that substitution preserves denotations.
 
-  * ● for CBV and a bunch of lemmas about it.
-  * An instance of CurryApplyStruct
+      * `SubstitutionReflect`
 
-* `ModelISWIM`
+        Proves that substitution reflects denotations for the models
+        of CBN, CBV, and ISWIM.
 
-  Same as above for ISWIM. Just instantiates the ModelCallByValue
-  module with a different domain.
+      * `SoundnessCallByName`
 
-* `RenamePreserveReflect` (parameterized on CurryApplyStruct)
+        Proves soundness of lambda reduction wrt. CBN denotational model.
 
-  Proves that renaming preserves and reflects denotations.
+      * `SoundnessCallByValue`
 
-* `Filter` (requires CurryApplyStruct)
+        Proves soundness of call-by-value reduction wrt. CBV denotational model.
 
-  Proves admisibility of subsumption and ⊔ introduction.
+      * `SoundnessISWIM`
 
-* `SubstitutionPreserve` (parameterized on CurryApplyStruct)
+        Proves soundness of ISWIM reduction wrt. its denotational model.
 
-  Proves that substitution preserves denotations.
+   * Adequacy of denotational semantics with respect to reduction
 
-* `SubstitutionReflect`
+      * `AdequacyCallByName`
 
-  Proves that substitution reflects denotations for the models
-  of CBN, CBV, and ISWIM.
+        Proves adequacy of CBN model with respect to lambda reduction to WHNF.
+        Also proves that denotational equality implies contextual equivalence.
 
-* `SoundnessCallByName`
+      * `AdequacyCallByValue`
 
-  Proves soundness of lambda reduction wrt. CBN denotational model.
+        Proves adequacy of CBV model with respect to CBV reduction to WHNF.
+        Also proves that denotational equality implies contextual equivalence.
 
-* `SoundnessCallByValue`
+      * `AdequacyISWIM`
 
-  Proves soundness of call-by-value reduction wrt. CBV denotational model.
-
-* `SoundnessISWIM`
-
-  Proves soundness of ISWIM reduction wrt. its denotational model.
-
-* `AdequacyCallByName`
-
-  Proves adequacy of CBN model with respect to lambda reduction to WHNF.
-  Also proves that denotational equality implies contextual equivalence.
-
-* `AdequacyCallByValue`
-
-  Proves adequacy of CBV model with respect to CBV reduction to WHNF.
-  Also proves that denotational equality implies contextual equivalence.
-
-* `AdequacyISWIM`
-
-  Proves adequacy of ISWIM's model with respect to ISWIM reduction to
-  a value (literal or lambda abstraction).  Also proves that
-  denotational equality implies contextual equivalence.
+        Proves adequacy of ISWIM's model with respect to ISWIM reduction to
+        a value (literal or lambda abstraction).  Also proves that
+        denotational equality implies contextual equivalence.

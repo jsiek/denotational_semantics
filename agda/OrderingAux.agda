@@ -1,5 +1,5 @@
-open import Variables
 open import Structures
+open import Data.Nat using (ℕ; zero; suc)
 import ValueStructAux
 
 {-
@@ -48,27 +48,27 @@ module OrderingAux (D : ValueStruct) (V : ValueOrdering D) where
       → v ⊑ v
   (v ◼) =  ⊑-refl
 
-  _`⊑_ : ∀ {Γ} → Env Γ → Env Γ → Set
-  _`⊑_ {Γ} γ δ = (x : Var Γ) → γ x ⊑ δ x
+  _`⊑_ : Env → Env → Set
+  _`⊑_ γ δ = (x : Var) → γ x ⊑ δ x
 
-  `⊑-refl : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
-  `⊑-refl {Γ}{γ} x = ⊑-refl
+  `⊑-refl : ∀ {γ : Env} → γ `⊑ γ
+  `⊑-refl {γ} x = ⊑-refl
   
-  `⊑-extend : ∀ {Γ} {γ δ : Env Γ}{v w}
+  `⊑-extend : ∀ {γ δ : Env}{v w}
             → γ `⊑ δ → v ⊑ w
             → (γ `, v) `⊑ (δ `, w)
-  `⊑-extend {Γ} {γ} {δ} {v} {w} γ⊑δ v⊑w Z = v⊑w
-  `⊑-extend {Γ} {γ} {δ} {v} {w} γ⊑δ v⊑w (S x) = γ⊑δ x
+  `⊑-extend {γ} {δ} {v} {w} γ⊑δ v⊑w 0 = v⊑w
+  `⊑-extend {γ} {δ} {v} {w} γ⊑δ v⊑w (suc x) = γ⊑δ x
   
 
-  `Refl⊑ : ∀ {Γ} {γ : Env Γ} → γ `⊑ γ
-  `Refl⊑ {Γ} {γ} x = ⊑-refl {γ x}
+  `Refl⊑ : ∀ {γ : Env} → γ `⊑ γ
+  `Refl⊑ {γ} x = ⊑-refl {γ x}
 
-  EnvConjR1⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ)
+  EnvConjR1⊑ : (γ : Env) → (δ : Env)
              → γ `⊑ (γ `⊔ δ)
   EnvConjR1⊑ γ δ x = ⊑-conj-R1 ⊑-refl
 
-  EnvConjR2⊑ : ∀ {Γ} → (γ : Env Γ) → (δ : Env Γ)
+  EnvConjR2⊑ : (γ : Env) → (δ : Env)
              → δ `⊑ (γ `⊔ δ)
   EnvConjR2⊑ γ δ x = ⊑-conj-R2 ⊑-refl
 

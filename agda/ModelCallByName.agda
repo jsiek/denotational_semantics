@@ -6,9 +6,6 @@ open import Lambda
 open ASTMod using (`_; _⦅_⦆; cons; bind; nil)
 open import Structures
 open import WFDenotMod value_struct ordering consistent
-{-
-open ModelMod value_struct ordering consistent
--}
 import CurryApplyStruct
 open import ConsistentAux value_struct ordering consistent
 

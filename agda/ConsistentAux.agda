@@ -1,4 +1,5 @@
-open import Data.Nat using (ℕ; zero; suc)
+open import Utilities using (_iff_)
+open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -18,7 +19,6 @@ module ConsistentAux
   open import OrderingAux D V
   open Consistent C
   open ValueStructAux D
-
 
   _≲_ : (Value → Set) → (Value → Set) → Set
   d ≲ d' = ∀{v : Value} → wf v → d v → d' v
@@ -56,32 +56,32 @@ module ConsistentAux
   (d ☐) {v} =  ≲-refl {d}
 
 
-  WFEnv : ∀ {Γ : ℕ} → Env Γ → Set
-  WFEnv {Γ} γ = ∀{x : Var Γ} → wf (γ x)
+  WFEnv : Env → Set
+  WFEnv γ = ∀{x : Var} → wf (γ x)
 
-  WFEnv-extend : ∀{Γ}{γ : Env Γ}{v}
-              → WFEnv {Γ} γ
+  WFEnv-extend : ∀{γ : Env}{v}
+              → WFEnv γ
               → wf v
-              → WFEnv {suc Γ} (γ `, v)
-  WFEnv-extend {Γ} {γ} {v} wfγ wfv {Z} = wfv
-  WFEnv-extend {Γ} {γ} {v} wfγ wfv {S x} = wfγ
+              → WFEnv (γ `, v)
+  WFEnv-extend {γ} {v} wfγ wfv {0} = wfv
+  WFEnv-extend {γ} {v} wfγ wfv {suc x} = wfγ
 
   infix 3 _≃_
 
-  _≃_ : ∀ {Γ} → (Denotation Γ) → (Denotation Γ) → Set
-  (_≃_ {Γ} D₁ D₂) = (γ : Env Γ) → (v : Value) → WFEnv γ → wf v → D₁ γ v iff D₂ γ v
+  _≃_ : Denotation → Denotation → Set
+  (_≃_ D₁ D₂) = (γ : Env) → (v : Value) → WFEnv γ → wf v → D₁ γ v iff D₂ γ v
 
-  ≃-refl : ∀ {Γ } → {M : Denotation Γ}
+  ≃-refl : ∀ {M : Denotation}
     → M ≃ M
   ≃-refl γ v wfγ wfv = ⟨ (λ x → x) , (λ x → x) ⟩
 
-  ≃-sym : ∀ {Γ } → {M N : Denotation Γ}
+  ≃-sym : ∀ {M N : Denotation}
     → M ≃ N
       -----
     → N ≃ M
   ≃-sym eq γ v wfγ wfv = ⟨ (proj₂ (eq γ v wfγ wfv)) , (proj₁ (eq γ v wfγ wfv)) ⟩
 
-  ≃-trans : ∀ {Γ } → {M₁ M₂ M₃ : Denotation Γ}
+  ≃-trans : ∀ {M₁ M₂ M₃ : Denotation}
     → M₁ ≃ M₂
     → M₂ ≃ M₃
       -------
@@ -93,39 +93,39 @@ module ConsistentAux
   infixr 2 _≃⟨⟩_ _≃⟨_⟩_
   infix  3 _■
 
-  _≃⟨⟩_ : ∀ {Γ} (x : Denotation Γ) {y : Denotation Γ}
+  _≃⟨⟩_ : ∀ (x : Denotation) {y : Denotation}
       → x ≃ y
         -----
       → x ≃ y
   x ≃⟨⟩ x≃y  = x≃y
 
-  _≃⟨_⟩_ : ∀ {Γ} (x : Denotation Γ) {y z : Denotation Γ}
+  _≃⟨_⟩_ : ∀ (x : Denotation) {y z : Denotation}
       → x ≃ y
       → y ≃ z
         -----
       → x ≃ z
   (x ≃⟨ x≃y ⟩ y≃z) =  ≃-trans x≃y y≃z
 
-  _■ : ∀ {Γ} (d : Denotation Γ)
+  _■ : ∀ (d : Denotation)
         -----
       → d ≃ d
   (d ■) =  ≃-refl
 
 
-  _~′_ : ∀{Γ} → Env Γ → Env Γ → Set
-  _~′_ {Γ} γ δ = ∀{x : Var Γ} → γ x ~ δ x
+  _~′_ : Env → Env → Set
+  _~′_ γ δ = ∀{x : Var} → γ x ~ δ x
 
-  ~′-refl : ∀{Γ}{γ : Env Γ}
-              → WFEnv {Γ} γ
+  ~′-refl : ∀{γ : Env}
+              → WFEnv γ
               → γ ~′ γ
-  ~′-refl {Γ}{γ} wfγ {x} = ~-refl {γ x} {wfγ} 
+  ~′-refl {γ} wfγ {x} = ~-refl {γ x} {wfγ} 
 
 
-  ~′-extend : ∀{Γ}{γ δ : Env Γ}{u v}
+  ~′-extend : ∀{γ δ : Env}{u v}
             → γ ~′ δ → u ~ v
             → (γ `, u) ~′ (δ `, v)
-  ~′-extend γ~′δ u~v {Z} = u~v
-  ~′-extend γ~′δ u~v {S x} = γ~′δ
+  ~′-extend γ~′δ u~v {0} = u~v
+  ~′-extend γ~′δ u~v {suc x} = γ~′δ
 
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
@@ -147,8 +147,8 @@ module ConsistentAux
   ... | inj₁ ⟨ _ , w~w′ ⟩ = w~w′
   ... | inj₂ ¬v~v′ = ⊥-elim (contradiction v~v' ¬v~v′)
 
-  wf-const-env : ∀ {Γ}{x v} → wf v → ∀ {y} → wf (const-env {Γ} x v y)
-  wf-const-env {Γ}{x}{v} wfv {y}
-      with x var≟ y
+  wf-const-env : ∀ {x v} → wf v → ∀ {y} → wf (const-env x v y)
+  wf-const-env {x}{v} wfv {y}
+      with x ≟ y
   ... | yes eq = wfv
   ... | no neq = wf-bot
