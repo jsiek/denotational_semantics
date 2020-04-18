@@ -3,7 +3,7 @@ open import ISWIM
 open ISWIM.ASTMod
    using (`_; _⦅_⦆; Subst;
           exts; cons; bind; ast; nil; ⟦_⟧; ⟪_⟫; _⨟_; subst-zero;
-          id; _•_; subst-zero-exts-cons; sub-id; sub-sub;
+          subst-zero-exts-cons; sub-id; sub-sub;
           WF; WF-var; WF-op; WF-ast; WF-nil; WF-cons)
 open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Data.Nat.Properties using (≤-pred)
