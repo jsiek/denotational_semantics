@@ -16,10 +16,9 @@ module Compositionality where
 module DenotAux
   (D : ValueStruct)
   (V : ValueOrdering D) 
-  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
-       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
-      → ValueStructAux.Denotation D Γ)
+  (_●_ : ValueStructAux.Denotation D
+       → ValueStructAux.Denotation D → ValueStructAux.Denotation D)
+  (ℱ : ValueStructAux.Denotation D → ValueStructAux.Denotation D)
   (C : Consistent D V)
   (MB : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   where
@@ -35,11 +34,11 @@ module DenotAux
   open import Lambda
   open ASTMod
   
-  ƛ-⊥ : ∀{Γ}{N : Term (suc Γ)}{γ : Env Γ}
+  ƛ-⊥ : ∀{N : Term}{γ : Env}
       → ℰ (ƛ N) γ ⊥
   ƛ-⊥ = ℱ-⊥
 
-  compositionality : ∀{Γ Δ}{C : Ctx Γ Δ} {M N : Term Γ}
+  compositionality : ∀{C : Ctx} {M N : Term}
                 → ℰ M ≃ ℰ N
                   ---------------------------
                 → ℰ (plug C M) ≃ ℰ (plug C N)
@@ -57,10 +56,9 @@ module DenotAux
   
 module ISWIMDenotAux
   (D : ValueStruct) (V : ValueOrdering D) 
-  (_●_ : ∀{Γ} → ValueStructAux.Denotation D Γ
-       → ValueStructAux.Denotation D Γ → ValueStructAux.Denotation D Γ)
-  (ℱ : ∀{Γ} → ValueStructAux.Denotation D (suc Γ)
-       → ValueStructAux.Denotation D Γ)
+  (_●_ : ValueStructAux.Denotation D
+       → ValueStructAux.Denotation D → ValueStructAux.Denotation D)
+  (ℱ : ValueStructAux.Denotation D → ValueStructAux.Denotation D)
   (C : Consistent D V)
   (MB : CurryApplyStruct.CurryApplyStruct D V C _●_ ℱ)
   (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
@@ -78,11 +76,11 @@ module ISWIMDenotAux
   open import ISWIM
   open ASTMod
   
-  ƛ-⊥ : ∀{Γ}{N : Term (suc Γ)}{γ : Env Γ}
+  ƛ-⊥ : ∀{N : Term}{γ : Env}
       → ℰ (ƛ N) γ ⊥
   ƛ-⊥ = ℱ-⊥
 
-  compositionality : ∀{Γ Δ}{C : Ctx Γ Δ} {M N : Term Γ}
+  compositionality : ∀{C : Ctx} {M N : Term}
                 → ℰ M ≃ ℰ N
                   ---------------------------
                 → ℰ (plug C M) ≃ ℰ (plug C N)

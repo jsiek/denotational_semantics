@@ -95,15 +95,15 @@ AllFun⊥ (u ⊔ v) = AllFun⊥ u × AllFun⊥ v
     IH {u}{w} u↦w∈v
         with wf-∈ u↦w∈v wfv
     ... | wf-fun wfu wfw =
-        let wfρ' = WFEnv-extend{Γ}{ρ} wfρ wfu in
-        ℰ′→ℰ {suc Γ}{N} (λ {x} → wfρ' {x}) wfw (all {u}{w} u↦w∈v)
+        let wfρ' = WFEnv-extend {ρ} wfρ wfu in
+        ℰ′→ℰ {N} (λ {x} → wfρ' {x}) wfw (all {u}{w} u↦w∈v)
 ℰ′→ℰ {L · M} {ρ} {v} wfρ wfv
   ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ wfv1 , ⟨ wfv2 , ⟨ wfv3 , 
   ⟨ Lv1 , ⟨ Mv2 , ⟨ v3↦v4⊑v1 , v3⊑v2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
-  let Lv1 = ℰ′→ℰ{L} wfρ wfv1 Lv1 in  
-  let Mv2 = ℰ′→ℰ{M} wfρ wfv2 Mv2 in
+  let Lv1 = ℰ′→ℰ {L} wfρ wfv1 Lv1 in  
+  let Mv2 = ℰ′→ℰ {M} wfρ wfv2 Mv2 in
   let Lv3↦v = ℰ-⊑ {ρ}{L} wfρ wfv1 (wf-fun wfv3 wfv) v3↦v4⊑v1 Lv1 in
-  let Mv3 = ℰ-⊑{Γ}{ρ}{M} wfρ wfv2 wfv3 v3⊑v2 Mv2 in
+  let Mv3 = ℰ-⊑ {ρ}{M} wfρ wfv2 wfv3 v3⊑v2 Mv2 in
   ⟨ v₃ , ⟨ wfv3 , ⟨ Lv3↦v , Mv3 ⟩ ⟩ ⟩
 
 
@@ -129,16 +129,16 @@ Closed-~ D = ∀{γ δ u v}
 ... | no u₁~̸v₁ = inj₂ u₁~̸v₁
 ... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
       where
-      wfγu₁ = λ {x} → WFEnv-extend {Γ}{γ}{u₁} wfγ wfu₁ {x}
+      wfγu₁ = λ {x} → WFEnv-extend {γ}{u₁} wfγ wfu₁ {x}
       wfδv₁ = λ {x} → WFEnv-extend wfδ wfv₁ {x}
       γu₁~δv₁ = λ {x} → ~′-extend γ~δ u₁~v₁ {x}
       u₂~v₂ = D~ (λ {x} → wfγu₁ {x}) (λ {x} → wfδv₁ {x})
                  (λ {x} → γu₁~δv₁ {x}) wfu₂ wfv₂ d1 d2 
 ℱ-~′ {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} D~ wfγ wfδ γ~δ 
     (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst' , snd' ⟩ =
-    ⟨ ℱ-~′ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₁} D~ wfγ wfδ γ~δ
+    ⟨ ℱ-~′ {D}{γ}{δ}{u₁ ↦ u₂}{v₁} D~ wfγ wfδ γ~δ
            (wf-fun wfu₁ wfu₂) wfv₁ d1 fst' ,
-      ℱ-~′ {Γ}{D}{γ}{δ}{u₁ ↦ u₂}{v₂} D~ wfγ wfδ γ~δ
+      ℱ-~′ {D}{γ}{δ}{u₁ ↦ u₂}{v₂} D~ wfγ wfδ γ~δ
            (wf-fun wfu₁ wfu₂) wfv₂ d1 snd' ⟩
 ℱ-~′ {D = D} {γ} {δ} {u₁ ⊔ u₂} {v} D~ wfγ wfδ γ~δ
     (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fst' , snd' ⟩ d2 =
@@ -146,7 +146,7 @@ Closed-~ D = ∀{γ δ u v}
       ℱ-~′ {D = D}{γ}{δ}{u₂}{v} D~ wfγ wfδ γ~δ wfu₂ wfv snd' d2 ⟩
 
 
-●-~′ : ∀{D₁ D₂ : Denotation}{γ : Env Γ}{δ : Env} {u v : Value}
+●-~′ : ∀{D₁ D₂ : Denotation}{γ : Env}{δ : Env} {u v : Value}
     → Closed-~ D₁ → Closed-~ D₂ → WFEnv γ → WFEnv δ → γ ~′ δ → wf u → wf v 
     → (D₁ ●′ D₂) γ u → (D₁ ●′ D₂) δ v → u ~ v
 ●-~′{D₁}{D₂}{γ}{δ}{u}{v} wf1 wf2 wfγ wfδ γ~δ wfu wfv
@@ -168,10 +168,10 @@ Closed-~ D = ∀{γ δ u v}
      ℘-~{P}{k}{u}{v} ℰMγu ℰMδv
 ℰ′-~ {γ}{δ}{ƛ N}{u}{v} wfγ wfδ γ~δ wfu wfv
      ℰMγu ℰMγv =
-     ℱ-~′ {Γ}{ℰ′ N}{γ}{δ}{u}{v} (ℰ′-~{M = N}) wfγ wfδ γ~δ wfu wfv ℰMγu ℰMγv
+     ℱ-~′ {ℰ′ N}{γ}{δ}{u}{v} (ℰ′-~{M = N}) wfγ wfδ γ~δ wfu wfv ℰMγu ℰMγv
 ℰ′-~ {γ}{δ}{L · M}{u}{v} wfγ wfδ γ~δ
       wfu wfv ℰMγu ℰMδv =
-      ●-~′{Γ}{ℰ′ L}{ℰ′ M}{γ}{δ}{u}{v} (ℰ′-~{M = L}) (ℰ′-~{M = M}) wfγ wfδ γ~δ
+      ●-~′ {ℰ′ L}{ℰ′ M}{γ}{δ}{u}{v} (ℰ′-~{M = L}) (ℰ′-~{M = M}) wfγ wfδ γ~δ
       wfu wfv ℰMγu ℰMδv
 
 ℰ→ℰ′ : ∀{M : Term}{ρ ρ' : Env}{v : Value}
@@ -190,7 +190,7 @@ Closed-~ D = ∀{γ δ u v}
    G {⊥} wfv ℱNv = ⟨ ⊥ , ⟨ wf-bot , ⟨ tt , ⊑-⊥ ⟩ ⟩ ⟩
    G {const k} wfv ()
    G {v₁ ↦ v₂} (wf-fun wfv1 wfv2) ℱNv
-       with ℰ→ℰ′ {suc Γ}{N}{ρ `, v₁}{ρ' `, v₁}{v₂}
+       with ℰ→ℰ′ {N}{ρ `, v₁}{ρ' `, v₁}{v₂}
                   (λ {x} → WFEnv-extend wfρ wfv1 {x})
                   (λ {x} → WFEnv-extend wfρ' wfv1 {x})
                   (`⊑-extend ρ⊑ρ' ⊑-refl) wfv2 ℱNv
@@ -202,16 +202,16 @@ Closed-~ D = ∀{γ δ u v}
    ... | ⟨ v1′ , ⟨ wfv1′ , ⟨ Mv1′ , v⊑v1′ ⟩ ⟩ ⟩
        | ⟨ v2′ , ⟨ wfv2′ , ⟨ Mv2′ , v⊑v2′ ⟩ ⟩ ⟩ =
          let v1′~v2′ : v1′ ~ v2′
-             v1′~v2′ = ℱ-~′{Γ}{ℰ′ N}{u = v1′}{v = v2′}
-                           (ℰ′-~{M = N}) wfρ' wfρ' (~′-refl {Γ}{ρ'} wfρ')
+             v1′~v2′ = ℱ-~′ {ℰ′ N}{u = v1′}{v = v2′}
+                           (ℰ′-~{M = N}) wfρ' wfρ' (~′-refl {ρ'} wfρ')
                            wfv1′ wfv2′ Mv1′ Mv2′ in
          ⟨ (v1′ ⊔ v2′) ,
          ⟨ (wf-⊔ v1′~v2′ wfv1′ wfv2′) , ⟨ ⟨ Mv1′ , Mv2′ ⟩ ,
            (⊑-conj-L (⊑-conj-R1 v⊑v1′) (⊑-conj-R2 v⊑v2′)) ⟩ ⟩ ⟩
 ℰ→ℰ′ {L · M}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv
    ⟨ u , ⟨ wfu , ⟨ Luw , Mu ⟩ ⟩ ⟩
-    with ℰ→ℰ′ {Γ}{L} wfρ wfρ' ρ⊑ρ' (wf-fun wfu wfv) Luw
-       | ℰ→ℰ′ {Γ}{M} wfρ wfρ' ρ⊑ρ' wfu Mu
+    with ℰ→ℰ′ {L} wfρ wfρ' ρ⊑ρ' (wf-fun wfu wfv) Luw
+       | ℰ→ℰ′ {M} wfρ wfρ' ρ⊑ρ' wfu Mu
 ... | ⟨ v1 , ⟨ wfv1 , ⟨ Lv1 , uv⊑v1 ⟩ ⟩ ⟩
     | ⟨ u1 , ⟨ wfu1 , ⟨ Mu1 , u⊑u1 ⟩ ⟩ ⟩ =
       ⟨ v ,
