@@ -1,4 +1,3 @@
-open import Variables
 open import Primitives
 open import Structures
 open import ISWIM
@@ -6,7 +5,6 @@ open import ModelISWIM
 open import ValueConst
 open import CurryConst
 open import ModelCurryConst
-open import ValueStructAux value_struct
 open import Consistency
 open import ConsistentAux value_struct ordering consistent
 open import ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
@@ -40,30 +38,26 @@ open import Data.Unit using (⊤; tt)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 
-
 module SoundnessISWIM where
 
-
-ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+ℰ-⊥ : ∀{γ : Env}{M : Term}
     → TermValue M
     → ℰ M γ ⊥
 ℰ-⊥ {M = $ p k} V-lit = tt
 ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
-ℰ-⊥ {Γ}{γ}{ƛ N} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {γ}{ƛ N} V-ƛ = ℱ-⊥ {ℰ N}{γ}
 
-
-reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+reflect-beta : ∀{γ : Env}{M N}{v}
     → WFEnv γ → wf v
     → TermValue M
     → ℰ (N [ M ]) γ v
     → ℰ ((ƛ N) · M) γ v
-reflect-beta {Γ}{γ}{M}{N}{v} wfγ wfv Mv d 
+reflect-beta {γ}{M}{N}{v} wfγ wfv Mv d 
     with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) wfγ wfv
 ... | ⟨ v₂′ , ⟨ wfv₂ , ⟨ d₁′ , d₂′ ⟩ ⟩ ⟩ =
       ⟨ v₂′ , ⟨ wfv₂ , ⟨ d₂′ , d₁′ ⟩ ⟩ ⟩ 
 
-
-reflect : ∀ {Γ} {γ : Env Γ} {M M′ N}
+reflect : ∀ {γ : Env} {M M′ N}
   →  WFEnv γ
   →  M —→ M′  →   M′ ≡ N
     --------------------
@@ -78,7 +72,7 @@ reflect {γ = γ} wfγ (ξ₂-rule {L = L}{M}{M′} v M—→M′) L·M′≡N
         (≲-refl {d = ℰ L γ}) (reflect wfγ M—→M′ refl)
 reflect wfγ (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
     λ wfv → reflect-beta {M = M}{N} wfγ wfv Mv
-reflect wfγ (δ-rule {Γ}{B}{P}{f}{k}) M′≡N {v} wfv ℘fkv
+reflect wfγ (δ-rule {B}{P}{f}{k}) M′≡N {v} wfv ℘fkv
    rewrite sym M′≡N = 
     ⟨ const {B} k , ⟨ wf-const , ⟨ ⟨ k , ⟨ ⊑-const , ℘fkv ⟩ ⟩ , ℘kk ⟩ ⟩ ⟩
    where
@@ -91,8 +85,7 @@ reflect wfγ (δ-rule {Γ}{B}{P}{f}{k}) M′≡N {v} wfv ℘fkv
    G : ∀ {k₁} → const k ⊑ const k₁ → ℘ {P} (f k₁) v
    G ⊑-const = ℘fkv
 
-
-preserve : ∀ {Γ} {γ : Env Γ} {M N}
+preserve : ∀ {γ : Env} {M N}
   → M —→ N  →  WFEnv γ
     ------------------
   → ℰ M γ ≲ ℰ N γ
@@ -104,32 +97,31 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} v M—→M′) wfγ =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
               (λ wf x → x)
               (preserve M—→M′ wfγ)
-preserve {Γ}{γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}{_}
+preserve {γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}{_}
                 (β-rule{N = N}{M = M} Mv) wfγ wfv ℰƛN·Mγw
     with ℰƛN·Mγw
 ... | ⟨ v' , ⟨ wfv' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ ⟩ =
       substitution {N = N}{ M} {v'} wfγ wfv wfv' ℰNγvw ℰMγv 
-preserve {Γ} {γ} (δ-rule {Γ} {B} {P} {f} {k}) wfγ {v} wfv
+preserve {γ} (δ-rule {B} {P} {f} {k}) wfγ {v} wfv
    ⟨ u , ⟨ wfu , ⟨ ⟨ k′ , ⟨ k′⊑u , ℘fk′v ⟩ ⟩ , ℘ku ⟩ ⟩ ⟩
     with ⊑-trans k′⊑u (BelowConstk→⊑k {B}{k}{u} (℘k→BelowConstk {B}{k}{u} ℘ku))
 ... | ⊑-const = ℘fk′v   
     
-
-reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
+reduce-equal : ∀ {M : Term} {N : Term}
   → M —→ N
     ---------
   → ℰ M ≃ ℰ N
-reduce-equal {Γ}{M}{N} r γ v wfγ wfv =
+reduce-equal {M}{N} r γ v wfγ wfv =
     ⟨ preserve r wfγ wfv , reflect wfγ r refl wfv ⟩
 
 
-soundness : ∀{Γ} {M : Term Γ} {N : Term Γ}
+soundness : ∀ {M : Term} {N : Term}
   → TermValue N
   → M —↠ N
     -----------------
   → ℰ M ≃ ℰ N
 soundness Mv (M □) = ℰ M ≃⟨⟩ ℰ M ■
-soundness {Γ}{M}{N} Nv (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
+soundness {M}{N} Nv (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
      ℰ M
    ≃⟨ reduce-equal M—→M′ ⟩ 
      ℰ M′

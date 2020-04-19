@@ -1,4 +1,3 @@
-open import Variables
 open import Structures
 open import Lambda
 open import LambdaCallByValue
@@ -29,28 +28,26 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Unit using (⊤; tt)
 
-
 module SoundnessCallByValue where
 
-
-ℰ-⊥ : ∀{Γ}{γ : Env Γ}{M : Term Γ}
+ℰ-⊥ : ∀{γ : Env}{M : Term}
     → TermValue M
     → ℰ M γ ⊥
 ℰ-⊥ {M = (` x)} V-var = ⊑-⊥
-ℰ-⊥ {Γ}{γ}{(lam ⦅ cons (bind (ast N)) nil ⦆)} V-ƛ = ℱ-⊥ {Γ}{ℰ N}{γ}
+ℰ-⊥ {γ}{(lam ⦅ cons (bind (ast N)) nil ⦆)} V-ƛ = ℱ-⊥ {ℰ N}{γ}
 
 
-reflect-beta : ∀{Γ}{γ : Env Γ}{M N}{v}
+reflect-beta : ∀{γ : Env}{M N}{v}
     → TermValue M
     → ℰ (N [ M ]) γ v
     → ℰ ((ƛ N) · M) γ v
-reflect-beta {Γ}{γ}{M}{N}{v} Mv d 
+reflect-beta {γ}{M}{N}{v} Mv d 
     with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) (λ {x} → tt) tt
 ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
       ⟨ v₂′ , ⟨ tt , ⟨ d₂′ , d₁′ ⟩ ⟩ ⟩
 
 
-reflect : ∀ {Γ} {γ : Env Γ} {M M′ N}
+reflect : ∀ {γ : Env} {M M′ N}
   →  M —→ M′  →   M′ ≡ N
     ---------------------
     → ℰ N γ ≲ ℰ M γ
@@ -66,7 +63,7 @@ reflect (β-rule {N = N}{M = M} Mv) M′≡N rewrite sym M′≡N =
     λ wfv → reflect-beta {M = M}{N} Mv
 
 
-preserve : ∀ {Γ} {γ : Env Γ} {M N}
+preserve : ∀ {γ : Env} {M N}
   → M —→ N
     -------------
   → ℰ M γ ≲ ℰ N γ
@@ -78,26 +75,26 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} v M—→M′) =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
               (λ wf x → x)
               (preserve M—→M′)
-preserve {Γ}{γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}{_}
+preserve {γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}{_}
                (β-rule{N = N}{M = M} Mv) _ ℰƛN·Mγw
     with ℰƛN·Mγw
 ... | ⟨ v' , ⟨ wfv' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ ⟩ = 
       substitution{N = N}{M = M} {v'} (λ {x} → tt) tt tt ℰNγvw ℰMγv
 
 
-reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
+reduce-equal : ∀ {M : Term} {N : Term}
   → M —→ N
     ---------
   → ℰ M ≃ ℰ N
-reduce-equal {Γ}{M}{N} r γ v wfγ wfv = ⟨ preserve r tt , reflect r refl tt ⟩
+reduce-equal {M}{N} r γ v wfγ wfv = ⟨ preserve r tt , reflect r refl tt ⟩
 
 
-soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
+soundness : ∀ {M : Term} {N : Term}
   → M —↠ ƛ N
     -----------------
   → ℰ M ≃ ℰ (ƛ N)
 soundness (M □) = ℰ M ≃⟨⟩ ℰ M ■
-soundness {Γ}{M}{N} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
+soundness {M}{N} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
      ℰ M
    ≃⟨ reduce-equal M—→M′ ⟩ 
      ℰ M′

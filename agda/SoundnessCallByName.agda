@@ -7,8 +7,6 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Unit using (⊤; tt)
 
-
-open import Variables
 open import Structures
 open import Lambda
 open Lambda.ASTMod
@@ -32,19 +30,17 @@ open RenamePreserveReflect.ForLambda value_struct ordering consistent _●_ ℱ 
 import SubstitutionReflect
 open SubstitutionReflect.CallByName
 
-
-
 module SoundnessCallByName where
 
-reflect-beta : ∀{Γ}{γ : Env Γ}{M N}
+reflect-beta : ∀{γ : Env}{M N}
     → ℰ (N [ M ]) γ ≲ ℰ ((ƛ N) · M) γ
-reflect-beta {Γ}{γ}{M}{N} {v} wfv d
+reflect-beta {γ}{M}{N} {v} wfv d
     with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M}) (λ {x} → tt) tt 
 ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
       inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
 
 
-reflect : ∀ {Γ} {γ : Env Γ} {M M′ N}
+reflect : ∀ {γ : Env} {M M′ N}
   →  M —→ M′  →   M′ ≡ N
     --------------------------------
   →  ℰ N γ ≲ ℰ M γ
@@ -58,10 +54,10 @@ reflect {γ = γ} (ξ₂-rule {L = L}{M}{M′} M—→M′) L·M′≡N
                 (≲-refl {d = ℰ L γ}) (reflect M—→M′ refl)
 reflect (β-rule {N = N}{M = M}) M′≡N rewrite sym M′≡N =
     reflect-beta {M = M}{N}
-reflect (ζ-rule {Γ}{N}{N′} N—→N′) M′≡N {v} rewrite sym M′≡N =
+reflect (ζ-rule {N}{N′} N—→N′) M′≡N {v} rewrite sym M′≡N =
     ℱ-≲ (λ {v′} wfv′ → reflect N—→N′ refl) {v}
 
-preserve : ∀ {Γ} {γ : Env Γ} {M N}
+preserve : ∀ {γ : Env} {M N}
   → M —→ N
   → ℰ M γ ≲ ℰ N γ
 preserve {γ = γ} (ξ₁-rule{L = L}{L´}{M} L—→L′) =
@@ -72,28 +68,28 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
   ●-≲ {γ = γ}{γ}{D₁ = ℰ L}{D₂ = ℰ M}{D₁′ = ℰ L}{D₂′ = ℰ M′}
               (λ x y → y)
               (preserve M—→M′)
-preserve {Γ}{γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}
+preserve {γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}
                (β-rule{N = N}{M = M}) _ ℰƛN·Mγw 
     with ℰƛN·Mγw
 ... | inj₁ w⊑⊥ =
       ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (λ {x} → tt) tt tt w⊑⊥ (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) 
 ... | inj₂ ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
       substitution{N = N}{M = M} {v'} (λ {x} → tt) tt tt ℰNγvw ℰMγv 
-preserve (ζ-rule {Γ}{N}{N′} N—→N′) {v} = ℱ-≲ (λ wfv' → preserve N—→N′) {v}
+preserve (ζ-rule {N}{N′} N—→N′) {v} = ℱ-≲ (λ wfv' → preserve N—→N′) {v}
 
 
-reduce-equal : ∀ {Γ} {M : Term Γ} {N : Term Γ}
+reduce-equal : ∀ {M : Term} {N : Term}
   → M —→ N
     ---------
   → ℰ M ≃ ℰ N
-reduce-equal {Γ}{M}{N} r γ v wfγ wfv = ⟨ preserve r tt , reflect r refl tt ⟩
+reduce-equal {M}{N} r γ v wfγ wfv = ⟨ preserve r tt , reflect r refl tt ⟩
 
-soundness : ∀{Γ} {M : Term Γ} {N : Term (suc Γ)}
+soundness : ∀ {M : Term} {N : Term}
   → M —↠ ƛ N
     -----------------
   → ℰ M ≃ ℰ (ƛ N)
 soundness (M □) = ℰ M ≃⟨⟩ ℰ M ■
-soundness {Γ}{M}{N} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
+soundness {M}{N} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
      ℰ M
    ≃⟨ reduce-equal M—→M′ ⟩ 
      ℰ M′

@@ -28,8 +28,10 @@ sig app = 0 ∷ 0 ∷ []
 
 open import Syntax using (Var; _•_; ↑; id) public
 module ASTMod = Syntax.OpSig Op sig
-open ASTMod using (`_; _⦅_⦆; Ctx; plug; bind; ast; cons; nil; _[_])
-            renaming (ABT to AST) public
+open ASTMod
+    using (`_; _⦅_⦆; Ctx; plug; bind; ast; cons; nil; _[_])
+    renaming (ABT to AST) public
+open ASTMod using (WF; WF-Ctx; depth)    
 
 infixl 7  _·_
 
@@ -102,5 +104,5 @@ module Reduction where
   terminates  M = Σ[ N ∈ Term ] (M —↠ ƛ N)
 
   _≅_ : ∀ (M N : Term) → Set
-  (_≅_  M N) = ∀ {C : Ctx}
+  (_≅_  M N) = ∀ {C : Ctx}{wfC : WF-Ctx 0 C}{wfM : WF (depth C) M}{wfN : WF (depth C) N}
                 → (terminates (plug C M)) iff (terminates (plug C N))
