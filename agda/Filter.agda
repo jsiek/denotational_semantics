@@ -128,8 +128,8 @@ module Filter
                           ⊔-closed = ℰ-⊔ {M = L} ;
                           ~-closed = ℰ-~ {M = L} }
 
-    WF : ∀ {M : Term} → WFDenot (ℰ M)
-    WF {M} = record { ⊑-env = ⊑-env′ {M = M} ;
+    WFD : ∀ {M : Term} → WFDenot (ℰ M)
+    WFD {M} = record { ⊑-env = ⊑-env′ {M = M} ;
                       ⊑-closed = ℰ-⊑ {M = M} ;
                       ⊔-closed = ℰ-⊔ {M = M} ;
                       ~-closed = ℰ-~ {M = M} }
@@ -238,8 +238,8 @@ module Filter
                           ⊔-closed = ℰ-⊔ {M = L} ;
                           ~-closed = ℰ-~ {M = L} }
 
-    WF : ∀{M : Term} → WFDenot (ℰ M)
-    WF {M} = record { ⊑-env = ⊑-env′ {M = M} ;
+    WFD : ∀{M : Term} → WFDenot (ℰ M)
+    WFD {M} = record { ⊑-env = ⊑-env′ {M = M} ;
                       ⊑-closed = ℰ-⊑ {M = M} ;
                       ⊔-closed = ℰ-⊔ {M = M} ;
                       ~-closed = ℰ-~ {M = M} }

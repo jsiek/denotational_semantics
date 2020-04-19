@@ -272,6 +272,6 @@ denot-equal-contex-equal : ∀ {M N : Term}
     ---------
   → M ≅ N
 denot-equal-contex-equal{M}{N} eq {C}{wfC}{wfM}{wfN} =
-   ⟨ (λ tm → denot-equal-terminates{M = M}{wfC = wfC}{wfN = {!!}} eq tm) ,
-     (λ tn → denot-equal-terminates{M = N}{wfC = wfC}{wfN = {!!}} (≃-sym eq) tn) ⟩
+   ⟨ (λ tm → denot-equal-terminates{M = M}{wfC = wfC}{wfN = wfN} eq tm) ,
+     (λ tn → denot-equal-terminates{M = N}{wfC = wfC}{wfN = wfM} (≃-sym eq) tn) ⟩
 
