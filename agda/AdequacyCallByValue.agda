@@ -1,11 +1,12 @@
 open import Lambda
 open import LambdaCallByValue
-
+open import Utilities using (_iff_)
 open import ValueBCD
 open import EvalCallByValue
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
-          exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id)
+          exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
+          WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-rel)
 open import Structures
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -19,7 +20,8 @@ open import SoundnessCallByValue using (soundness; ℰ-⊥)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; s≤s; _<_)
+open import Data.List using (List; []; _∷_; length)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum
@@ -29,17 +31,32 @@ open import Relation.Nullary using (¬_)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Nullary using (Dec; yes; no)
 
-
 module AdequacyCallByValue where
 
-
 𝕍 : Value → Clos → Set
-𝕍 ⊥ (clos N γ) = ⊤
-𝕍 (v ↦ w) (clos N γ) =
+𝕍 ⊥ (clos N γ {wf}) = ⊤
+𝕍 (v ↦ w) (clos N γ {wf}) =
     (∀{c : Clos} → 𝕍 v c → Σ[ c' ∈ Clos ] (γ ,' c) ⊢ N ⇓ c'  ×  𝕍 w c')
-𝕍 (u ⊔ v) (clos N γ) = 𝕍 u (clos N γ) × 𝕍 v (clos N γ)
+𝕍 (u ⊔ v) (clos N γ {wf}) = 𝕍 u (clos N γ {wf}) × 𝕍 v (clos N γ {wf})
+𝕍 _ bogus = Bot
 
 
+data 𝔾 : Env → ClosEnv → Set where
+  𝔾-∅ : 𝔾 `∅ ∅'
+  𝔾-ext : ∀{γ : Env}{γ' : ClosEnv}{v c}
+        → 𝔾 γ γ' → 𝕍 v c 
+        → 𝔾 (γ `, v) (γ' ,' c)
+
+𝔾→𝕍 : (γ : Env) → (γ' : ClosEnv)
+    → 𝔾 γ γ'
+    → (x : Var) → (lt : x < length γ')
+    → 𝕍 (γ x) (nth γ' x)
+𝔾→𝕍 .(λ x₁ → ⊥) .[] 𝔾-∅ x ()
+𝔾→𝕍 .(_ `, _) .(_ ∷ _) (𝔾-ext 𝔾γγ' 𝔼vc) zero (s≤s lt) = 𝔼vc
+𝔾→𝕍 γ₂ (c ∷ γ') (𝔾-ext {γ}{γ'}{v}{c} 𝔾γγ' 𝔼vc) (suc x) (s≤s lt) =
+    𝔾→𝕍 γ γ' 𝔾γγ' x lt
+
+{-
 𝔾 : ∀{Γ} → Env Γ → ClosEnv Γ → Set
 𝔾 {Γ} γ γ' = ∀{x : Var Γ} → 𝕍 (γ x) (γ' x)
 
@@ -50,10 +67,18 @@ module AdequacyCallByValue where
       → 𝔾 γ γ' → 𝕍 v c → 𝔾 (γ `, v) (γ' ,' c)
 𝔾-ext {Γ} {γ} {γ'} g e {Z} = e
 𝔾-ext {Γ} {γ} {γ'} g e {S x} = g
+-}
 
+¬𝕍[bogus] : ∀ v → ¬ 𝕍 v bogus
+¬𝕍[bogus] ⊥ ()
+¬𝕍[bogus] (v ↦ v₁) ()
+¬𝕍[bogus] (v ⊔ v₁) ()
 
 sub-𝕍 : ∀{c : Clos}{v v'} → 𝕍 v c → v' ⊑ v → 𝕍 v' c
 
+sub-𝕍 {bogus}{v}{v'} 𝕍[bogus] ⊑-⊥ = ¬𝕍[bogus] _ 𝕍[bogus]
+sub-𝕍 {bogus} 𝕍[bogus] (⊑-conj-L x₁ x₂) = ¬𝕍[bogus] _ 𝕍[bogus]
+sub-𝕍 {bogus} vc (⊑-trans lt1 lt2) = sub-𝕍 (sub-𝕍 vc lt2) lt1
 sub-𝕍 {clos N γ} vc ⊑-⊥ = tt
 sub-𝕍 {clos N γ} vc (⊑-conj-L lt1 lt2) = ⟨ (sub-𝕍 vc lt1) , sub-𝕍 vc lt2 ⟩
 sub-𝕍 {clos N γ} ⟨ vv1 , vv2 ⟩ (⊑-conj-R1 lt) = sub-𝕍 vv1 lt
@@ -67,75 +92,84 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
 ... | ⟨ clos L δ , ⟨ L⇓c₂ , 𝕍w ⟩ ⟩
     | ⟨ c₃ , ⟨ L⇓c₃ , 𝕍w' ⟩ ⟩ rewrite ⇓-determ L⇓c₃ L⇓c₂ =
       ⟨ clos L δ , ⟨ L⇓c₂ , ⟨ 𝕍w , 𝕍w' ⟩ ⟩ ⟩
+... | ⟨ bogus , ⟨ L⇓c₂ , 𝕍w ⟩ ⟩
+    | ⟨ c₃ , ⟨ L⇓c₃ , 𝕍w' ⟩ ⟩ = ⊥-elim (¬𝕍[bogus] _ 𝕍w)
 
 
-𝔼 : ∀{Γ} → Value → Term Γ → ClosEnv Γ → Set
+𝔼 : Value → Term → ClosEnv → Set
 𝔼 v M γ = Σ[ c ∈ Clos ] γ ⊢ M ⇓ c × 𝕍 v c
 
-ℰ→𝔼 : ∀{Γ}{γ : Env Γ}{γ' : ClosEnv Γ}{M : Term Γ }{v}
-            → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
-ℰ→𝔼 {Γ} {γ} {γ'} {` x} {v} 𝔾γγ' ℰMγv =
-   ⟨ γ' x , ⟨ ⇓-var , sub-𝕍 (𝔾γγ' {x}) ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {lam ⦅ cons (bind (ast N)) nil ⦆} {v} 𝔾γγ' ℰMγv =
-   ⟨ clos N γ' , ⟨ ⇓-lam , G ℰMγv ⟩ ⟩
+ℰ→𝔼 : {γ : Env}{γ' : ClosEnv}{M : Term}{wf : WF (length γ') M }{v : Value}
+    → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
+ℰ→𝔼 {γ} {γ'} {` x}{WF-var x lt} {v} 𝔾γγ' ℰMγv =
+   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 (𝔾→𝕍 _ _ 𝔾γγ' x lt) ℰMγv ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {lam ⦅ cons (bind (ast N)) nil ⦆}
+             {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)} {v} 𝔾γγ' ℰMγv =
+   ⟨ clos N γ' , ⟨ ⇓-lam {wf = wfN} , G ℰMγv ⟩ ⟩
    where
-   G : ∀{v} → ℱ (ℰ N) γ v → 𝕍 v (clos N γ')
+   G : ∀{v} → ℱ (ℰ N) γ v → 𝕍 v (clos N γ' {wfN})
    G {⊥} ℱℰNγv = tt
    G {v ↦ w} ℱℰNγv {c} vc =
-      ℰ→𝔼 {M = N} {w} (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
+      ℰ→𝔼 {M = N} {wfN} {w} (𝔾-ext 𝔾γγ' vc) ℱℰNγv
    G {v₁ ⊔ v₂} ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ = ⟨ G {v₁} ℱℰNγv₁ , G {v₂} ℱℰNγv₂ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v} 𝔾γγ'
+ℰ→𝔼 {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆}
+             {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))}
+             {v} 𝔾γγ'
     ⟨ v₁ , ⟨ wfv , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
-    with ℰ→𝔼 {M = L} 𝔾γγ' d₁ | ℰ→𝔼 {M = M} 𝔾γγ' d₂
-... | ⟨ clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩
-    | ⟨ clos M' δ₂ , ⟨ M⇓M' , 𝕍v₁ ⟩ ⟩ 
+    with ℰ→𝔼 {M = L} {wfL} 𝔾γγ' d₁ 
+... | ⟨ clos L' δ₁  {wfL'} , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩
+    with ℰ→𝔼 {M = M} {wfM} 𝔾γγ' d₂
+... | ⟨ clos M' δ₂ , ⟨ M⇓M' , 𝕍v₁ ⟩ ⟩ 
     with 𝕍v₁↦v {clos M' δ₂} 𝕍v₁
 ... | ⟨ c , ⟨ L'⇓c , 𝕍v ⟩ ⟩ =
-    ⟨ c , ⟨ (⇓-app L⇓L' M⇓M' L'⇓c) , 𝕍v ⟩ ⟩
-  
+    ⟨ c , ⟨ (⇓-app {wf = WF-rel L' wfL'} L⇓L' M⇓M' L'⇓c) , 𝕍v ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {wf} {v} 𝔾γγ'
+    ⟨ v₁ , ⟨ wfv , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
+    | ⟨ clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩
+    | ⟨ bogus , ⟨ M⇓M' , 𝕍v₁ ⟩ ⟩ = ⊥-elim (¬𝕍[bogus] _ 𝕍v₁)
 
-adequacy : ∀{M : Term zero}{N : Term (suc zero)}
+adequacy : ∀{M : Term}{N : Term}{wfM : WF 0 M}
          → ℰ M ≃ ℰ (lam ⦅ cons (bind (ast N)) nil ⦆)
            ----------------------------------------------------------
-         → Σ[ Γ ∈ Context ] Σ[ N′ ∈ Term (suc Γ) ] Σ[ γ ∈ ClosEnv Γ ]
-            ∅' ⊢ M ⇓ clos N′ γ
-adequacy{M}{N} eq 
-    with ℰ→𝔼 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {x} → tt) tt)
-                  (ℰ-⊥ {γ = λ ()}{M = lam ⦅ cons (bind (ast N)) nil ⦆} V-ƛ))
-... | ⟨ clos {Γ} N′ γ , ⟨ M⇓c , Vc ⟩ ⟩ =
-    ⟨ Γ , ⟨ N′ , ⟨ γ , M⇓c ⟩ ⟩ ⟩
+         → Σ[ N′ ∈ Term ] Σ[ γ ∈ ClosEnv ] Σ[ wf ∈ WF (suc (length γ)) N′ ]
+            ∅' ⊢ M ⇓ clos N′ γ {wf}
+adequacy{M}{N}{wfM} eq 
+    with ℰ→𝔼 {wf = wfM} 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {x} → tt) tt)
+                  (ℰ-⊥ {γ = λ _ → ⊥}{M = lam ⦅ cons (bind (ast N)) nil ⦆} V-ƛ))
+... | ⟨ clos N′ γ , ⟨ M⇓c , Vc ⟩ ⟩ =
+    ⟨ N′ , ⟨ γ , ⟨ {!!} , M⇓c ⟩ ⟩ ⟩
 
 
-reduce→cbv : ∀ {M : Term zero} {N : Term (suc zero)}
+reduce→cbv : ∀ {M : Term} {N : Term}
            → M —↠ lam ⦅ cons (bind (ast N)) nil ⦆
-           → Σ[ Δ ∈ ℕ ] Σ[ N′ ∈ Term (suc Δ) ] Σ[ δ ∈ ClosEnv Δ ] 
-             ∅' ⊢ M ⇓ clos N′ δ
+           → Σ[ N′ ∈ Term ] Σ[ δ ∈ ClosEnv ] Σ[ wf ∈ WF (suc (length δ)) N′ ]
+             ∅' ⊢ M ⇓ clos N′ δ {wf}
 reduce→cbv {M}{N} M—↠ƛN = adequacy {M}{N} (soundness M—↠ƛN)
 
 
-cbv↔reduce : ∀ {M : Term zero}
-           → (Σ[ N ∈ Term (suc zero) ] (M —↠ lam ⦅ cons (bind (ast N)) nil ⦆))
+cbv↔reduce : ∀ {M : Term}
+           → (Σ[ N ∈ Term ] (M —↠ lam ⦅ cons (bind (ast N)) nil ⦆))
              iff
-             (Σ[ Δ ∈ ℕ ] Σ[ N′ ∈ Term (suc Δ) ] Σ[ δ ∈ ClosEnv Δ ]
-               ∅' ⊢ M ⇓ clos N′ δ)
+             (Σ[ N′ ∈ Term ] Σ[ δ ∈ ClosEnv ] Σ[ wf ∈ WF (suc (length δ)) N′ ]
+               ∅' ⊢ M ⇓ clos N′ δ {{!wf!}})
 cbv↔reduce {M} = ⟨ (λ x → reduce→cbv (proj₂ x)) ,
-                   (λ x → cbv→reduce (proj₂ (proj₂ (proj₂ x)))) ⟩
+                   (λ x → cbv→reduce {wfM = {!!}}{wfN′ = {!!}} {!!} {-(proj₂ (proj₂ x))-} ) ⟩
 
 
-denot-equal-terminates : ∀{Γ} {M N : Term Γ} {C : Ctx Γ zero}
+denot-equal-terminates : ∀{M N : Term} {C : Ctx}
   → ℰ M ≃ ℰ N  →  terminates (plug C M)
     -----------------------------------
   → terminates (plug C N)
-denot-equal-terminates {Γ}{M}{N}{C} ℰM≃ℰN ⟨ N′ , CM—↠ƛN′ ⟩ =
+denot-equal-terminates {M}{N}{C} ℰM≃ℰN ⟨ N′ , CM—↠ƛN′ ⟩ =
   let ℰCM≃ℰƛN′ = soundness CM—↠ƛN′ in
-  let ℰCM≃ℰCN = compositionality{Γ = Γ}{Δ = zero}{C = C} ℰM≃ℰN in
+  let ℰCM≃ℰCN = compositionality{C = C} ℰM≃ℰN in
   let ℰCN≃ℰƛN′ = ≃-trans (≃-sym ℰCM≃ℰCN) ℰCM≃ℰƛN′ in
-    cbv→reduce (proj₂ (proj₂ (proj₂ (adequacy{N = N′} ℰCN≃ℰƛN′))))
+    cbv→reduce {wfM = {!!}}{wfN′ = {!!}} {!!} {- (proj₂ (proj₂ (adequacy{N = N′} ℰCN≃ℰƛN′)) ) -}
 
-denot-equal-contex-equal : ∀{Γ} {M N : Term Γ}
+denot-equal-contex-equal : ∀{M N : Term}
   → ℰ M ≃ ℰ N
     ---------
   → M ≅ N
-denot-equal-contex-equal{Γ}{M}{N} eq {C} =
+denot-equal-contex-equal{M}{N} eq {C} =
    ⟨ (λ tm → denot-equal-terminates{M = M} eq tm) ,
      (λ tn → denot-equal-terminates{M = N} (≃-sym eq) tn) ⟩
