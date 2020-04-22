@@ -6,7 +6,8 @@ open import EvalCallByValue
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
-          WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-rel)
+          WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
+          WF-rel; WF-Ctx; WF-plug; depth)
 open import Structures
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -136,40 +137,45 @@ adequacy : ∀{M : Term}{N : Term}{wfM : WF 0 M}
 adequacy{M}{N}{wfM} eq 
     with ℰ→𝔼 {wf = wfM} 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {x} → tt) tt)
                   (ℰ-⊥ {γ = λ _ → ⊥}{M = lam ⦅ cons (bind (ast N)) nil ⦆} V-ƛ))
-... | ⟨ clos N′ γ , ⟨ M⇓c , Vc ⟩ ⟩ =
-    ⟨ N′ , ⟨ γ , ⟨ {!!} , M⇓c ⟩ ⟩ ⟩
+... | ⟨ clos N′ γ {wfN′} , ⟨ M⇓c , Vc ⟩ ⟩ =
+    ⟨ N′ , ⟨ γ , ⟨ WF-rel N′ wfN′ , M⇓c ⟩ ⟩ ⟩
 
 
-reduce→cbv : ∀ {M : Term} {N : Term}
+reduce→cbv : ∀ {M : Term} {N : Term}{wfM : WF 0 M}
            → M —↠ lam ⦅ cons (bind (ast N)) nil ⦆
            → Σ[ N′ ∈ Term ] Σ[ δ ∈ ClosEnv ] Σ[ wf ∈ WF (suc (length δ)) N′ ]
              ∅' ⊢ M ⇓ clos N′ δ {wf}
-reduce→cbv {M}{N} M—↠ƛN = adequacy {M}{N} (soundness M—↠ƛN)
+reduce→cbv {M}{N}{wfM} M—↠ƛN = adequacy {M}{N}{wfM} (soundness M—↠ƛN)
 
 
-cbv↔reduce : ∀ {M : Term}
+cbv↔reduce : ∀ {M : Term}{wfM : WF 0 M}
            → (Σ[ N ∈ Term ] (M —↠ lam ⦅ cons (bind (ast N)) nil ⦆))
              iff
              (Σ[ N′ ∈ Term ] Σ[ δ ∈ ClosEnv ] Σ[ wf ∈ WF (suc (length δ)) N′ ]
-               ∅' ⊢ M ⇓ clos N′ δ {{!wf!}})
-cbv↔reduce {M} = ⟨ (λ x → reduce→cbv (proj₂ x)) ,
-                   (λ x → cbv→reduce {wfM = {!!}}{wfN′ = {!!}} {!!} {-(proj₂ (proj₂ x))-} ) ⟩
+               ∅' ⊢ M ⇓ clos N′ δ {wf})
+cbv↔reduce {M}{wfM} =
+    ⟨ (λ x → reduce→cbv {wfM = wfM} (proj₂ x)) ,
+      (λ x → cbv→reduce {wfM = wfM}{wfN′ = proj₁ (proj₂ (proj₂ x))}
+              (proj₂ (proj₂ (proj₂ x))) ) ⟩
 
-
-denot-equal-terminates : ∀{M N : Term} {C : Ctx}
+denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (depth C) M}
+    {wfN : WF (depth C) N}{wfC : WF-Ctx 0 C}
   → ℰ M ≃ ℰ N  →  terminates (plug C M)
     -----------------------------------
   → terminates (plug C N)
-denot-equal-terminates {M}{N}{C} ℰM≃ℰN ⟨ N′ , CM—↠ƛN′ ⟩ =
+denot-equal-terminates {M}{N}{C}{wfM}{wfN}{wfC} ℰM≃ℰN ⟨ N′ , CM—↠ƛN′ ⟩ =
   let ℰCM≃ℰƛN′ = soundness CM—↠ƛN′ in
-  let ℰCM≃ℰCN = compositionality{C = C} ℰM≃ℰN in
+  let ℰCM≃ℰCN = compositionality{C = C}{N = N} ℰM≃ℰN in
   let ℰCN≃ℰƛN′ = ≃-trans (≃-sym ℰCM≃ℰCN) ℰCM≃ℰƛN′ in
-    cbv→reduce {wfM = {!!}}{wfN′ = {!!}} {!!} {- (proj₂ (proj₂ (adequacy{N = N′} ℰCN≃ℰƛN′)) ) -}
+  let adeq = adequacy{N = N′}{wfM = WF-plug wfC wfN} ℰCN≃ℰƛN′ in
+  let wfN′′ = proj₁ (proj₂ (proj₂ adeq)) in
+  let CN⇓N′′ = proj₂ (proj₂ (proj₂ adeq)) in
+    cbv→reduce {wfM = WF-plug wfC wfN}{wfN′ = wfN′′} CN⇓N′′
 
 denot-equal-contex-equal : ∀{M N : Term}
   → ℰ M ≃ ℰ N
     ---------
   → M ≅ N
-denot-equal-contex-equal{M}{N} eq {C} =
-   ⟨ (λ tm → denot-equal-terminates{M = M} eq tm) ,
-     (λ tn → denot-equal-terminates{M = N} (≃-sym eq) tn) ⟩
+denot-equal-contex-equal{M}{N} eq {C}{wfC}{wfM}{wfN} =
+   ⟨ (λ tm → denot-equal-terminates{M = M}{wfM = wfM}{wfN}{wfC} eq tm) ,
+     (λ tn → denot-equal-terminates{M = N}{wfM = wfN}{wfM}{wfC} (≃-sym eq) tn) ⟩
