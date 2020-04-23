@@ -1,8 +1,14 @@
+open import Utilities using (_iff_)
 open import Primitives
 open import Structures
 open import ValueConst
 open import EvalISWIM
 open import ISWIM
+open ISWIM.ASTMod
+   using (`_; _⦅_⦆; Subst; Ctx; plug;
+          exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
+          WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
+          WF-rel; WF-Ctx; WF-plug; ctx-depth)
 open import ValueConst
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -20,7 +26,8 @@ open import SoundnessISWIM using (soundness; ℰ-⊥)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; s≤s; _<_)
+open import Data.List using (List; []; _∷_; length)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum
@@ -35,29 +42,41 @@ module AdequacyISWIM where
 
 
 𝕍 : Value → Val → Set
-𝕍 ⊥ v = ⊤
+𝕍 ⊥ (val-const x) = ⊤
+𝕍 ⊥ (val-clos N γ) = ⊤
 𝕍 (const {B} k) (val-const {P} p) = ℘ {P} p (const {B} k)
 𝕍 (const {B} k) (val-clos N γ) = Bot
 𝕍 (v ↦ w) (val-const {P} p) = ℘ {P} p (v ↦ w)
 𝕍 (v ↦ w) (val-clos N γ) =
     (∀{c : Val} → 𝕍 v c → Σ[ c' ∈ Val ] (γ ,' c) ⊢ N ⇓ c'  ×  𝕍 w c')
 𝕍 (u ⊔ v) c = 𝕍 u c × 𝕍 v c
+𝕍 _ bogus = Bot
 
+data 𝔾 : Env → ValEnv → Set where
+  𝔾-∅ : 𝔾 `∅ ∅'
+  𝔾-ext : ∀{γ : Env}{γ' : ValEnv}{v c}
+        → 𝔾 γ γ' → 𝕍 v c 
+        → 𝔾 (γ `, v) (γ' ,' c)
 
-𝔾 : ∀{Γ} → Env Γ → ValEnv Γ → Set
-𝔾 {Γ} γ γ' = ∀{x : Var Γ} → 𝕍 (γ x) (γ' x)
+𝔾→𝕍 : (γ : Env) → (γ' : ValEnv)
+    → 𝔾 γ γ'
+    → (x : Var) → (lt : x < length γ')
+    → 𝕍 (γ x) (nth γ' x)
+𝔾→𝕍 .(λ x₁ → ⊥) .[] 𝔾-∅ x ()
+𝔾→𝕍 .(_ `, _) .(_ ∷ _) (𝔾-ext 𝔾γγ' 𝔼vc) zero (s≤s lt) = 𝔼vc
+𝔾→𝕍 γ₂ (c ∷ γ') (𝔾-ext {γ}{γ'}{v}{c} 𝔾γγ' 𝔼vc) (suc x) (s≤s lt) =
+    𝔾→𝕍 γ γ' 𝔾γγ' x lt
 
-𝔾-∅ : 𝔾 `∅ ∅'
-𝔾-∅ {()}
-
-𝔾-ext : ∀{Γ}{γ : Env Γ}{γ' : ValEnv Γ}{v c}
-      → 𝔾 γ γ' → 𝕍 v c → 𝔾 (γ `, v) (γ' ,' c)
-𝔾-ext {Γ} {γ} {γ'} g e {Z} = e
-𝔾-ext {Γ} {γ} {γ'} g e {S x} = g
+¬𝕍[bogus] : ∀ v → ¬ 𝕍 v bogus
+¬𝕍[bogus] ⊥ ()
+¬𝕍[bogus] (v ↦ w) ()
+¬𝕍[bogus] (v ⊔ w) ⟨ vv , vw ⟩ = ¬𝕍[bogus] v vv
 
 sub-𝕍 : ∀{c : Val}{v v'} → wf v → wf v' → 𝕍 v c → v' ⊑ v → 𝕍 v' c
 
-sub-𝕍 {c} wfv wfv' vc ⊑-⊥ = tt
+sub-𝕍 {val-const x} wfv wfv' vc ⊑-⊥ = tt
+sub-𝕍 {val-clos N γ} wfv wfv' vc ⊑-⊥ = tt
+sub-𝕍 {bogus}{v} wfv wfv' vc ⊑-⊥ = ¬𝕍[bogus] v vc
 sub-𝕍 {val-const {base B} k} wfv wfv' vc (⊑-const {B′} {k′})
     with base-eq? B B′
 ... | yes eq rewrite eq = vc
@@ -81,14 +100,17 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
 
    where
    𝕍-∈ : ∀{c}{u v} → 𝕍 u c → v ∈ u → 𝕍 v c
-   𝕍-∈ {c} {⊥} {v} 𝕍uc refl = tt
+   𝕍-∈ {val-const x} {⊥} {.⊥} 𝕍uc refl = tt
+   𝕍-∈ {val-clos N γ} {⊥} {.⊥} 𝕍uc refl = tt
    𝕍-∈ {c} {const k} {v} 𝕍uc refl = 𝕍uc
    𝕍-∈ {c} {u₁ ↦ u₂} {v} 𝕍uc refl = 𝕍uc
    𝕍-∈ {c} {u₁ ⊔ u₂} {v} ⟨ fst₁ , snd₁ ⟩ (inj₁ x) = 𝕍-∈ fst₁ x
    𝕍-∈ {c} {u₁ ⊔ u₂} {v} ⟨ fst₁ , snd₁ ⟩ (inj₂ y) = 𝕍-∈ snd₁ y
    
    𝕍-⊆ : ∀{c}{u v} → 𝕍 u c → v ⊆ u → 𝕍 v c
-   𝕍-⊆ {c} {u} {⊥} 𝕍uc v⊆u = tt
+   𝕍-⊆ {val-const x} {u} {⊥} 𝕍uc v⊆u = tt
+   𝕍-⊆ {val-clos N γ} {u} {⊥} 𝕍uc v⊆u = tt
+   𝕍-⊆ {bogus} {u} {⊥} 𝕍uc v⊆u = ¬𝕍[bogus] u 𝕍uc
    𝕍-⊆ {c} {u} {const k} 𝕍uc v⊆u = 𝕍-∈ 𝕍uc (v⊆u refl) 
    𝕍-⊆ {c} {u} {v₁ ↦ v₂} 𝕍uc v⊆u = 𝕍-∈ 𝕍uc (v⊆u refl) 
    𝕍-⊆ {c} {u} {v₁ ⊔ v₂} 𝕍uc v⊆u
@@ -115,7 +137,8 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
        | ⟨ c₂ , ⟨ L⇓c₂ , 𝕍w'c₂ ⟩ ⟩
        rewrite sym (⇓-determ L⇓c₁ L⇓c₂) =
        ⟨ c₁ , ⟨ L⇓c₁ , ⟨ 𝕍wc₁ , 𝕍w'c₂ ⟩ ⟩ ⟩
-       
+   dist {bogus} wfu v⊑u v'⊑u () 𝕍v'↦w'c
+
    𝕍-dom-cod : ∀{c}{u v}
              → wf v
              → (fu : AllFun u)
@@ -149,6 +172,7 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
         with  𝕍du′↦cu′c (sub-𝕍 wfv wfdu 𝕍vc du′⊑v)
    ... | ⟨ v' , ⟨ N⇓v' , 𝕍-cu-v' ⟩ ⟩ =
          ⟨ v' , ⟨ N⇓v' , sub-𝕍 wfcu wfw 𝕍-cu-v' w⊑cu′ ⟩ ⟩
+   lemma {c = bogus} wfv wfw wfdu wfcu du′⊑v w⊑cu′ ()
 
 
 
@@ -192,36 +216,41 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
 ℘pv→𝕍vp {P} {p} {v₁ ⊔ v₂} ⟨ ℘pv₁ , ℘pv₂ ⟩ =
   ⟨ ℘pv→𝕍vp {P}{p}{v₁} ℘pv₁ , ℘pv→𝕍vp {P}{p}{v₂} ℘pv₂ ⟩
 
-𝔼 : ∀{Γ} → Value → Term Γ → ValEnv Γ → Set
+𝔼 : Value → Term → ValEnv → Set
 𝔼 v M γ = Σ[ c ∈ Val ] γ ⊢ M ⇓ c × 𝕍 v c
 
-ℰ→𝔼 : ∀{Γ}{γ : Env Γ}{γ' : ValEnv Γ}{M : Term Γ }{v : Value}
+ℰ→𝔼 : ∀{γ : Env}{γ' : ValEnv}{M : Term}{wfM : WF (length γ') M}{v : Value}
     → WFEnv γ → wf v
     → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
-ℰ→𝔼 {Γ} {γ} {γ'} { $ P p} {v} wfγ wfv 𝔾γγ' ℰMγv =
+ℰ→𝔼 {γ} {γ'} { $ P p} {wf} {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ (val-const {P} p) , ⟨ ⇓-lit , ℘pv→𝕍vp {P}{p}{v} ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {` x} {v} wfγ wfv 𝔾γγ' ℰMγv =
-   ⟨ γ' x , ⟨ ⇓-var , sub-𝕍 wfγ wfv (𝔾γγ' {x}) ℰMγv ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {ƛ N} {v} wfγ wfv 𝔾γγ' ℰMγv =
-   ⟨ val-clos N γ' , ⟨ ⇓-lam , G {v} wfv ℰMγv ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {` x} {WF-var x lt} {v} wfγ wfv 𝔾γγ' ℰMγv =
+   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 wfγ wfv (𝔾→𝕍 _ _ 𝔾γγ' x lt) ℰMγv ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {ƛ N} {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)}
+   {v} wfγ wfv 𝔾γγ' ℰMγv =
+   ⟨ val-clos N γ' , ⟨ ⇓-lam {wf = wfN} , G {v} wfv ℰMγv ⟩ ⟩
    where
-   G : ∀{v} → wf v → ℱ (ℰ N) γ v → 𝕍 v (val-clos N γ')
+   G : ∀{v} → wf v → ℱ (ℰ N) γ v → 𝕍 v (val-clos N γ' {wfN})
    G {⊥} wfv ℱℰNγv = tt
    G {const {B} k} wfv ()
    G {v ↦ w} (wf-fun wfv wfw) ℱℰNγv {c} vc =
-      ℰ→𝔼 {M = N} {w} (λ {x} → WFEnv-extend wfγ wfv {x}) wfw
-          (λ {x} → 𝔾-ext 𝔾γγ' vc {x}) ℱℰNγv
+      ℰ→𝔼 {M = N} {wfN} {w} (λ {x} → WFEnv-extend wfγ wfv {x}) wfw
+          (𝔾-ext 𝔾γγ' vc) ℱℰNγv
    G {v₁ ⊔ v₂} (wf-⊔ _ wfv₁ wfv₂) ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ =
       ⟨ G {v₁} wfv₁ ℱℰNγv₁ , G {v₂} wfv₂ ℱℰNγv₂ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {L · M} {v} wfγ wfv 𝔾γγ'
+ℰ→𝔼 {γ} {γ'} {L · M}
+    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))}
+    {v} wfγ wfv 𝔾γγ'
     ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩
-    with ℰ→𝔼 {M = L} wfγ (wf-fun wfv₁ wfv) 𝔾γγ' d₁
-       | ℰ→𝔼 {M = M} wfγ wfv₁ 𝔾γγ' d₂
-... | ⟨ val-clos L' δ₁ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩ 
+    with ℰ→𝔼 {M = L}{wfL} wfγ (wf-fun wfv₁ wfv) 𝔾γγ' d₁
+       | ℰ→𝔼 {M = M}{wfM} wfγ wfv₁ 𝔾γγ' d₂
+... | ⟨ val-clos L' δ₁ {wfL'} , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩ 
     with 𝕍v₁↦v {c} 𝕍v₁
 ... | ⟨ c' , ⟨ L'⇓c' , 𝕍v ⟩ ⟩ =
-    ⟨ c' , ⟨ (⇓-app L⇓L' M⇓c L'⇓c') , 𝕍v ⟩ ⟩
-ℰ→𝔼 {Γ} {γ} {γ'} {L · M} {v} wfγ wfv 𝔾γγ'
+    ⟨ c' , ⟨ (⇓-app {wf = WF-rel L' wfL'} L⇓L' M⇓c L'⇓c') , 𝕍v ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {L · M}
+    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))}
+    {v} wfγ wfv 𝔾γγ'
     ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
     | ⟨ val-const {P} f , ⟨ L⇓f , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩
     with P
@@ -230,6 +259,7 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
     with 𝕍v₁↦v
 ... | ⟨ k , ⟨ k⊑v₁ , ℘fkv ⟩ ⟩
     with c
+... | bogus = ⊥-elim (¬𝕍[bogus] v₁ 𝕍v₁)
 ... | val-clos N γ₁ = ⊥-elim (sub-𝕍 wfv₁ wf-const 𝕍v₁ k⊑v₁)
 ... | val-const {B₁ ⇒ P₁} f′ = ⊥-elim (sub-𝕍 wfv₁ wf-const 𝕍v₁ k⊑v₁)
 ... | val-const {base B′} k′
@@ -238,48 +268,51 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
 ... | yes eq | 𝕍kc rewrite eq | 𝕍kc =
     ⟨ val-const {P′} (f k) , ⟨ ⇓-prim L⇓f M⇓c , ℘pv→𝕍vp {P′}{f k}{v} ℘fkv ⟩ ⟩ 
 
-adequacy : ∀{M : Term zero}{N : Term zero}
+adequacy : ∀{M : Term}{N : Term}{wfM : WF 0 M}
          → TermValue N
          → ℰ M ≃ ℰ N
            ----------------------------------------------------------
          → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
-adequacy{M}{N} Nv eq 
-    with ℰ→𝔼 (λ {}) wf-bot 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {}) wf-bot) (ℰ-⊥ {M = N} Nv))
+adequacy{M}{N}{wfM} Nv eq 
+    with ℰ→𝔼 {wfM = wfM}(λ {x} → wf-bot) wf-bot 𝔾-∅
+         (proj₂ (eq `∅ ⊥ (λ {x} → wf-bot) wf-bot) (ℰ-⊥ {M = N} Nv))
 ... | ⟨ c , ⟨ M⇓c , Vc ⟩ ⟩ = ⟨ c , M⇓c ⟩
 
-
-reduce→⇓ : ∀ {M : Term zero} {N : Term zero}
+reduce→⇓ : ∀ {M : Term} {N : Term}{wfM : WF 0 M}
            → TermValue N
            → M —↠ N
            → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
-reduce→⇓ {M}{N} Nv M—↠N = adequacy {M}{N} Nv (soundness Nv M—↠N)
+reduce→⇓ {M}{N}{wfM} Nv M—↠N = adequacy {M}{N}{wfM} Nv (soundness Nv M—↠N)
 
 
-⇓↔reduce : ∀ {M : Term zero}
-           → (Σ[ N ∈ Term zero ] TermValue N × (M —↠ N))
+⇓↔reduce : ∀ {M : Term}{wfM : WF 0 M}
+           → (Σ[ N ∈ Term ] TermValue N × (M —↠ N))
              iff
              (Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c)
-⇓↔reduce {M} = ⟨ (λ x → reduce→⇓ (proj₁ (proj₂ x)) (proj₂ (proj₂ x))) ,
-                 (λ x → ⇓→—↠ (proj₂ x)) ⟩
+⇓↔reduce {M}{wfM} =
+    ⟨ (λ x → reduce→⇓ {wfM = wfM} (proj₁ (proj₂ x)) (proj₂ (proj₂ x))) ,
+      (λ x → ⇓→—↠ {wfM = wfM} (proj₂ x)) ⟩
 
-
-denot-equal-terminates : ∀{Γ} {M N : Term Γ} {C : Ctx Γ zero}
+denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (ctx-depth C) M}
+    {wfN : WF (ctx-depth C) N}{wfC : WF-Ctx 0 C}
   → ℰ M ≃ ℰ N  →  terminates (plug C M)
     -----------------------------------
   → terminates (plug C N)
-denot-equal-terminates {Γ}{M}{N}{C} ℰM≃ℰN ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
-  let ℰCM≃ℰƛN′ = soundness Nv CM—↠N′ in
-  let ℰCM≃ℰCN = compositionality{Γ = Γ}{Δ = zero}{C = C} ℰM≃ℰN in
-  let ℰCN≃ℰƛN′ = ≃-trans (≃-sym ℰCM≃ℰCN) ℰCM≃ℰƛN′ in
-    ⇓→—↠ (proj₂ (adequacy{N = N′} Nv ℰCN≃ℰƛN′))
+denot-equal-terminates {M}{N}{C}{wfM}{wfN}{wfC}
+    ℰM≃ℰN ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
+    let ℰCM≃ℰƛN′ = soundness Nv CM—↠N′ in
+    let ℰCM≃ℰCN = compositionality{C = C} ℰM≃ℰN in
+    let ℰCN≃ℰƛN′ = ≃-trans (≃-sym ℰCM≃ℰCN) ℰCM≃ℰƛN′ in
+    let adeq = adequacy{N = N′}{wfM = WF-plug wfC wfN} Nv ℰCN≃ℰƛN′ in
+      ⇓→—↠ {wfM = WF-plug wfC wfN} (proj₂ adeq)
 
 
-denot-equal-contex-equal : ∀{Γ} {M N : Term Γ}
+denot-equal-contex-equal : ∀{M N : Term}
   → ℰ M ≃ ℰ N
     ---------
   → M ≅ N
-denot-equal-contex-equal{Γ}{M}{N} eq {C} =
-   ⟨ (λ tm → denot-equal-terminates{M = M} eq tm) ,
-     (λ tn → denot-equal-terminates{M = N} (≃-sym eq) tn) ⟩
+denot-equal-contex-equal {M}{N} eq {C}{wfC}{wfM}{wfN} =
+   ⟨ (λ tm → denot-equal-terminates{M = M}{wfM = wfM}{wfN}{wfC} eq tm) ,
+     (λ tn → denot-equal-terminates{M = N}{wfM = wfN}{wfM}{wfC} (≃-sym eq) tn) ⟩
 
 

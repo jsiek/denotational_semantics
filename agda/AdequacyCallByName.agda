@@ -10,7 +10,7 @@ open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
           WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-Ctx; WF-plug;
-          depth)
+          ctx-depth)
 open import Structures
 open import ModelCallByName
 open import ValueStructAux value_struct
@@ -257,7 +257,7 @@ cbn↔reduce {M}{wf} = ⟨ (λ x → reduce→cbn{wf = wf} (proj₂ x)) ,
                    (λ x → cbn→reduce (proj₂ (proj₂ x))) ⟩
 
 denot-equal-terminates : ∀ {M N : Term} {C : Ctx}
-    {wfC : WF-Ctx 0 C} {wfN : WF (depth C) N}
+    {wfC : WF-Ctx 0 C} {wfN : WF (ctx-depth C) N}
   → ℰ M ≃ ℰ N  →  terminates (plug C M)
     -----------------------------------
   → terminates (plug C N)

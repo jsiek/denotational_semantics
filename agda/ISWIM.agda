@@ -35,7 +35,7 @@ module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug;
                    rename; ⟦_⟧;
                    ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
-                   rename-id; _⨟_; exts-cons-shift; WF-Ctx)
+                   rename-id; _⨟_; exts-cons-shift; WF; WF-Ctx; ctx-depth)
             renaming (ABT to AST) public
 
 Term : Set
@@ -119,4 +119,5 @@ terminates  M = Σ[ N ∈ Term ] TermValue N × (M —↠ N)
 
 _≅_ : ∀(M N : Term) → Set
 (_≅_ M N) = ∀ {C : Ctx}{wfC : WF-Ctx 0 C}
+              {wfM : WF (ctx-depth C) M}{wfN : WF (ctx-depth C) N}
               → (terminates (plug C M)) iff (terminates (plug C N))

@@ -7,7 +7,7 @@ open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
           WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
-          WF-rel; WF-Ctx; WF-plug; depth)
+          WF-rel; WF-Ctx; WF-plug; ctx-depth)
 open import Structures
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -56,19 +56,6 @@ data 𝔾 : Env → ClosEnv → Set where
 𝔾→𝕍 .(_ `, _) .(_ ∷ _) (𝔾-ext 𝔾γγ' 𝔼vc) zero (s≤s lt) = 𝔼vc
 𝔾→𝕍 γ₂ (c ∷ γ') (𝔾-ext {γ}{γ'}{v}{c} 𝔾γγ' 𝔼vc) (suc x) (s≤s lt) =
     𝔾→𝕍 γ γ' 𝔾γγ' x lt
-
-{-
-𝔾 : ∀{Γ} → Env Γ → ClosEnv Γ → Set
-𝔾 {Γ} γ γ' = ∀{x : Var Γ} → 𝕍 (γ x) (γ' x)
-
-𝔾-∅ : 𝔾 `∅ ∅'
-𝔾-∅ {()}
-
-𝔾-ext : ∀{Γ}{γ : Env Γ}{γ' : ClosEnv Γ}{v c}
-      → 𝔾 γ γ' → 𝕍 v c → 𝔾 (γ `, v) (γ' ,' c)
-𝔾-ext {Γ} {γ} {γ'} g e {Z} = e
-𝔾-ext {Γ} {γ} {γ'} g e {S x} = g
--}
 
 ¬𝕍[bogus] : ∀ v → ¬ 𝕍 v bogus
 ¬𝕍[bogus] ⊥ ()
@@ -158,8 +145,8 @@ cbv↔reduce {M}{wfM} =
       (λ x → cbv→reduce {wfM = wfM}{wfN′ = proj₁ (proj₂ (proj₂ x))}
               (proj₂ (proj₂ (proj₂ x))) ) ⟩
 
-denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (depth C) M}
-    {wfN : WF (depth C) N}{wfC : WF-Ctx 0 C}
+denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (ctx-depth C) M}
+    {wfN : WF (ctx-depth C) N}{wfC : WF-Ctx 0 C}
   → ℰ M ≃ ℰ N  →  terminates (plug C M)
     -----------------------------------
   → terminates (plug C N)
