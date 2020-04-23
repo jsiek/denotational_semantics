@@ -8,7 +8,7 @@ module LambdaCallByValue where
 
 open import Utilities using (_iff_)
 open import Lambda
-open ASTMod using (WF; WF-Ctx; depth)
+open ASTMod using (WF; WF-Ctx; ctx-depth)
 open import Data.Product
   using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -73,5 +73,5 @@ terminates M = Σ[ N ∈ Term ] (M —↠ ƛ N)
 
 _≅_ : (M N : Term) → Set
 (_≅_ M N) = ∀ {C : Ctx}{wfC : WF-Ctx 0 C}
-                {wfM : WF (depth C) M}{wfN : WF (depth C) N}
+                {wfM : WF (ctx-depth C) M}{wfN : WF (ctx-depth C) N}
               → (terminates (plug C M)) iff (terminates (plug C N))
