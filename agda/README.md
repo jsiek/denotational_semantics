@@ -89,8 +89,9 @@ File Overview
 
       * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection types),
         the ⊑ ordering, and ℱ, appropriate for call-by-name.
-        Instances of ValueStruct, ValueOrdering, and Consistent.  *
-        Proves function inversion and stuff about AboveFun needed for
+        Instances of ValueStruct, ValueOrdering, and Consistent.
+
+      * Proves function inversion and stuff about AboveFun needed for
         adequacy of call-by-name.
 
    * `ValueConst`
