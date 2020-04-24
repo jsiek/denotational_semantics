@@ -79,7 +79,11 @@ File Overview
 
    * `CurryApplyStruct` (parameterized on Consistent, etc.)
 
-      Structures `CurryStruct` and `CurryApplyStruct`.
+      Structures `CurryStruct` and `CurryApplyStruct`.  These two
+      structures capture several properties about the `ℱ` and `●`
+      operators, such as being downward closed with respect to `⊑`,
+      being closed with respect to `⊔` and `~`, and properties about
+      `≲`.
 
    * `CurryApplyAux` (parameterized by CurryApplyStruct)
 
@@ -88,7 +92,7 @@ File Overview
    * `ValueBCD`
 
       * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection types),
-        the ⊑ ordering, and ℱ, appropriate for call-by-name.
+        the ⊑ ordering, and ℱ, for the lambda calculus.
         Instances of ValueStruct, ValueOrdering, and Consistent.
 
       * Proves function inversion and stuff about AboveFun needed for
@@ -99,14 +103,14 @@ File Overview
       * Denotational values (⊥, ↦, ⊔) including constants
         and primitive operators.
 
-   * `CurryConst`
+      * `CurryConst`
 
-      * Definition of ℱ and ℘ for the domain in ValueConst
+         * Definition of ℱ and ℘.
 
-   * `Consistency`
+      * `Consistency`
 
-     * Proof of the consistent subtyping property.
-     * Instance of the Consistent structure.
+        * Proof of the consistent subtyping property.
+        * Instance of the Consistent structure.
 
    * `ModelCallByName`
 
@@ -152,15 +156,16 @@ File Overview
 
       Proof of compositionality for the lambda calculus and ISWIM.
 
+   * `RenamePreserveReflect` (parameterized on CurryApplyStruct)
+
+      Proves that renaming preserves and reflects denotations.
+
+   * `Filter` (requires CurryApplyStruct)
+
+      Proves admisibility of subsumption and ⊔ introduction
+      for the lambda calculus (both CBN and CBV) and for ISWIM.
+
    * Soundness of reduction with respect to denotational equality
-
-      * `Filter` (requires CurryApplyStruct)
-
-        Proves admisibility of subsumption and ⊔ introduction.
-
-      * `RenamePreserveReflect` (parameterized on CurryApplyStruct)
-
-        Proves that renaming preserves and reflects denotations.
 
       * `SubstitutionPreserve` (parameterized on CurryApplyStruct)
 

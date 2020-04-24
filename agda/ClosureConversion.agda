@@ -19,7 +19,7 @@ open Relation.Binary.PropositionalEquality.≡-Reasoning
   using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Relation.Nullary using (Dec; yes; no)
 
-import Syntax3
+import Syntax
 open import ValueConst
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -47,63 +47,66 @@ IR-sig (close n) = replicate (suc n) 0
 IR-sig ir-app = 0 ∷ 0 ∷ []
 IR-sig (ir-lit p k) = []
 
-module IRMod = Syntax3 IROp IR-sig
-open IRMod renaming (AST to IR; `_ to ^_; _⦅_⦆ to node; cons to ir-cons;
+open Syntax using (Rename; _•_; ↑)
+module IRMod = Syntax.OpSig IROp IR-sig
+open IRMod renaming (ABT to IR; `_ to ^_; _⦅_⦆ to node; cons to ir-cons;
    nil to ir-nil; ast to ir-ast; bind to ir-bind; rename to ir-rename) public
-open IRMod using (_•_; _⨟_; ↑; exts-cons-shift; bind-ast)
+open IRMod using ( _⨟_; exts-cons-shift; bind-ast)
 
 pattern # p k = node (ir-lit p k) ir-nil 
 pattern Ƒ n N = node (fun n) (ir-cons N ir-nil)
 pattern ⟪_,_,_⟫ f n fvs = node (close n) (ir-cons (ir-ast f) fvs)
 pattern _˙_ L M = node ir-app (ir-cons (ir-ast L) (ir-cons (ir-ast M) ir-nil))
 
-FV : ∀{Γ} → Term Γ → Var Γ → Bool
-FV {Γ} (` x) y
-    with x var≟ y
+FV : Term → Var → Bool
+FV (` x) y
+    with x ≟ y
 ... | yes _ = true
 ... | no _ = false
-FV {Γ} (ƛ N) y = FV N (S y)
-FV {Γ} (L · M) y = FV L y ∨ FV M y
-FV {Γ} ($ p k) y = false
+FV (ƛ N) y = FV N (suc y)
+FV (L · M) y = FV L y ∨ FV M y
+FV ($ p k) y = false
 
-FV′ : ∀{Γ} → Term Γ → Var Γ → List (Var Γ)
-FV′ {Γ} M x
+FV′ : Term → Var → List Var
+FV′ M x
     with FV M x
 ... | true = x ∷ []
 ... | false = []
 
-FVs : ∀{Γ} → (n : ℕ) → (lt : suc n ≤ Γ) → Term Γ → List (Var Γ)
-FVs {Γ} zero lt M = FV′ M (ℕ→var zero lt)
-FVs {Γ} (suc n) lt M =
-  let ih = FVs n (≤-trans (n≤1+n (suc n)) lt) M in
-  FV′ M (ℕ→var (suc n) lt) ++ ih
+FVs : (n : ℕ) → Term → List Var
+FVs zero M = FV′ M zero
+FVs (suc n) M =
+  let ih = FVs n M in
+  FV′ M (suc n) ++ ih
 
-weaken-var : ∀{Δ} → Var Δ → Var (suc Δ)
-weaken-var Z = Z
-weaken-var (S x) = S (weaken-var x)
+weaken-var : Var → Var
+weaken-var 0 = 0
+weaken-var (suc x) = suc (weaken-var x)
 
-pos-var : ∀{Γ} → Var Γ → Set
-pos-var {.(suc _)} Z = False
-pos-var {.(suc _)} (S x) = True
+pos-var : Var → Set
+pos-var 0 = False
+pos-var (suc x) = True
 
-prev-var : ∀{Γ} → (x : Var (suc Γ)) → {nz : pos-var x} → Var Γ
-prev-var {Γ} Z {()}
-prev-var {Γ} (S x) {nz} = x
+prev-var : (x : Var) → {nz : pos-var x} → Var
+prev-var 0 {()}
+prev-var (suc x) {nz} = x
 
-strengthen-var : ∀{Δ} → (x : Var (suc Δ)) → Var Δ ⊎ (x ≡ ℕ→var Δ ≤-refl )
-strengthen-var {zero} Z = inj₂ refl
-strengthen-var {zero} (S ())
-strengthen-var {suc Δ} Z = inj₁ Z
-strengthen-var {suc Δ} (S x)
+{-
+strengthen-var : ∀{Δ} → (x : Var) → Var ⊎ (x ≡ Δ)
+strengthen-var {zero} 0 = inj₂ refl
+strengthen-var {zero} (suc ())
+strengthen-var {suc Δ} 0 = inj₁ 0
+strengthen-var {suc Δ} (suc x)
     with strengthen-var {Δ} x
-... | inj₁ x′ = inj₁ (S x′)
+... | inj₁ x′ = inj₁ (suc x′)
 ... | inj₂ eq rewrite eq = inj₂ refl
+-}
 
-
-pos-var-suc : ∀{Γ n}{lt} → pos-var (ℕ→var {Γ} (suc n) lt)
+{-
+pos-var-suc : ∀{Γ n : ℕ}{lt} → pos-var (suc n)
 pos-var-suc {zero} {n} {()}
 pos-var-suc {suc Γ} {n} {lt} = tt
-
+-}
 {-
 
   The compressor function produces a renaming for all the
@@ -112,15 +115,15 @@ pos-var-suc {suc Γ} {n} {lt} = tt
   zero.)
 
 -}
-  
-compressor : ∀{Γ} → (n : ℕ) → (lt : n < Γ) → Term Γ
-           → Σ[ Δ ∈ ℕ ] Σ[ ρ ∈ Rename Γ (suc Δ) ]
-             Σ[ ρ-inv ∈ Rename (suc Δ) Γ ] (∀{x} → pos-var (ρ-inv (S x)))
-compressor {Γ} zero lt M = ⟨ zero , ⟨ (λ x → Z) , ⟨ ρ-inv lt , (λ {}) ⟩ ⟩ ⟩
+{-  
+compressor : ∀{Γ} → (n : ℕ) → (lt : n < Γ) → Term
+           → Σ[ Δ ∈ ℕ ] Σ[ ρ ∈ Rename ]
+             Σ[ ρ-inv ∈ Rename ] (∀{x} → pos-var (ρ-inv (suc x)))
+compressor {Γ} zero lt M = ⟨ zero , ⟨ (λ x → 0) , ⟨ ρ-inv lt , (λ {}) ⟩ ⟩ ⟩
     where ρ-inv : 1 ≤ Γ → Rename 1 Γ
-          ρ-inv (s≤s lt) x = Z
+          ρ-inv (s≤s lt) x = 0
 compressor {Γ} (suc n) lt M
-    with FV M (ℕ→var (suc n) lt)
+    with FV M (suc n)
 ... | false = compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
 ... | true
     with compressor {Γ} n (≤-trans (n≤1+n (suc n)) lt) M
@@ -129,21 +132,25 @@ compressor {Γ} (suc n) lt M
     where
     ρ′ : Rename Γ (suc (suc Δ))
     ρ′ x
-        with x var≟ ℕ→var (suc n) lt
-    ... | yes eq = ℕ→var (suc Δ) ≤-refl
+        with x ≟ (suc n)
+    ... | yes eq = (suc Δ)
     ... | no neq = weaken-var (ρ x)
     
     ρ′-inv : Rename (suc (suc Δ)) Γ
-    ρ′-inv y
+    ρ′-inv y = ?
+{-
         with strengthen-var y
     ... | inj₁ y′ = ρ-inv y′
-    ... | inj₂ eq rewrite eq = ℕ→var (suc n) lt
-
-    G : ∀{x : Var (suc Δ)} → pos-var (ρ′-inv (S x))
-    G {x}
+    ... | inj₂ eq rewrite eq = (suc n)
+-}
+    G : ∀{x : Var (suc Δ)} → pos-var (ρ′-inv (suc x))
+    G {x} = ?
+{-
         with strengthen-var x
     ... | inj₁ x′ = nz
     ... | inj₂ eq rewrite eq = pos-var-suc
+-}
+-}
 
 {-
 
@@ -152,10 +159,11 @@ compressor {Γ} (suc n) lt M
  -}
 
 
-convert-clos : ∀{Γ} → Term Γ → IR Γ
+convert-clos : Term → IR
 convert-clos (` x) = ^ x
-convert-clos {Γ} (ƛ N)
-    with compressor {suc Γ} Γ ≤-refl N
+convert-clos (ƛ N) = ?
+{-
+with compressor {suc Γ} Γ ≤-refl N
 ... | ⟨ Δ , ⟨ ρ , ⟨ ρ-inv , pos ⟩ ⟩ ⟩
     with ir-rename ρ (convert-clos N)
 ... | N′ =
@@ -184,8 +192,9 @@ convert-clos {Γ} (ƛ N)
     free-vars {zero} {lt} = ir-nil
     free-vars {suc n} {s≤s {n = Δ′} lt} =     {- Δ = suc Δ′ -}
        let y : Var (suc Γ)
-           y = ρ-inv (ℕ→var {suc Δ} (suc n) (s≤s (s≤s lt))) in
+           y = ρ-inv (suc n) in
        ir-cons (ir-ast (^ (prev-var y {pos}))) (free-vars {n} {≤-step lt})
+-}
 convert-clos (L · M) =
    let L′ = convert-clos L in
    let M′ = convert-clos M in
@@ -199,25 +208,24 @@ convert-clos ($ p k) = # p k
  -}
 
 
-ℳ : ∀{Γ} → IR Γ → Denotation Γ
+ℳ : IR → Denotation
 ℳ (# P k) γ v = ℘ {P} k v
-ℳ {Γ} (^ x) γ v = v ⊑ γ x
-ℳ {Γ} (Ƒ n bN) =
+ℳ (^ x) γ v = v ⊑ γ x
+ℳ (Ƒ n bN) =
     curry-n n bN
     where
-    curry-n : ∀{Γ} → (n : ℕ) → Arg Γ n → Denotation Γ
-    curry-n {Γ} 0 (ir-ast N) = ℳ N
-    curry-n {Γ} (suc n) (ir-bind bN) =
-      ℱ (curry-n {suc Γ} n bN)
-ℳ {Γ} ⟪ L , n , As ⟫ =
-    apply-n n (ℳ {Γ} L) As
+    curry-n : (n : ℕ) → Arg n → Denotation
+    curry-n 0 (ir-ast N) = ℳ N
+    curry-n (suc n) (ir-bind bN) = ℱ (curry-n n bN)
+ℳ ⟪ L , n , As ⟫ =
+    apply-n n (ℳ L) As
     where
-    apply-n : (n : ℕ) → Denotation Γ → Args Γ (replicate n 0) → Denotation Γ
+    apply-n : (n : ℕ) → Denotation → Args (replicate n 0) → Denotation
     apply-n zero D ir-nil = D
     apply-n (suc n) D (ir-cons (ir-ast M) As) =
-        let D′ = D ● ℳ {Γ} M in
+        let D′ = D ● ℳ M in
         apply-n n D′ As
-ℳ {Γ} (L ˙ M) = (ℳ L) ● (ℳ M)
+ℳ (L ˙ M) = (ℳ L) ● (ℳ M)
 
 {-
 
@@ -244,9 +252,9 @@ IR2-sig ir2-cdr = 0 ∷ []
 IR2-sig ir2-app = 0 ∷ 0 ∷ []
 IR2-sig (ir2-lit p k) = []
 
-module IR2Mod = Syntax3 IR2Op IR2-sig
+module IR2Mod = Syntax.OpSig IR2Op IR2-sig
 open IR2Mod
-   renaming (AST to IR2; Arg to Arg2; `_ to ´_; _⦅_⦆ to ir2-node; cons to ir2-cons; nil to ir2-nil;
+   renaming (ABT to IR2; Arg to Arg2; `_ to ´_; _⦅_⦆ to ir2-node; cons to ir2-cons; nil to ir2-nil;
       ast to ir2-ast; bind to ir2-bind)
 
 pattern ! p k = ir2-node (ir2-lit p k) ir2-nil
@@ -257,27 +265,26 @@ pattern pair L M = ir2-node tuple-cons (ir2-cons (ir2-ast L) (ir2-cons (ir2-ast 
 pattern car M = ir2-node ir2-car (ir2-cons (ir2-ast M) ir2-nil)
 pattern cdr M = ir2-node ir2-cdr (ir2-cons (ir2-ast M) ir2-nil)
 
-⟬_,_⟭ : ∀{Γ} → Denotation Γ → Denotation Γ → Denotation Γ
-⟬_,_⟭ {Γ} D₁ D₂ γ ⊥ = False
-⟬_,_⟭ {Γ} D₁ D₂ γ (const k) = False
-⟬_,_⟭ {Γ} D₁ D₂ γ (v₁ ↦ v₂) = const 0 ⊑ v₁ × D₁ γ v₂ ⊎ const 1 ⊑ v₁ × D₂ γ v₂
-⟬_,_⟭ {Γ} D₁ D₂ γ (v₁ ⊔ v₂) = ⟬ D₁ , D₂ ⟭ γ v₁ × ⟬ D₁ , D₂ ⟭ γ v₂
+⟬_,_⟭ : Denotation → Denotation → Denotation
+⟬_,_⟭ D₁ D₂ γ ⊥ = False
+⟬_,_⟭ D₁ D₂ γ (const k) = False
+⟬_,_⟭ D₁ D₂ γ (v₁ ↦ v₂) = const 0 ⊑ v₁ × D₁ γ v₂ ⊎ const 1 ⊑ v₁ × D₂ γ v₂
+⟬_,_⟭ D₁ D₂ γ (v₁ ⊔ v₂) = ⟬ D₁ , D₂ ⟭ γ v₁ × ⟬ D₁ , D₂ ⟭ γ v₂
 
-π₁ : ∀{Γ} → Denotation Γ → Denotation Γ
-π₁ {Γ} D = D ● (λ γ v → ℘ {base Nat} 0 v)
+π₁ : Denotation → Denotation
+π₁ D = D ● (λ γ v → ℘ {base Nat} 0 v)
 
-π₂ : ∀{Γ} → Denotation Γ → Denotation Γ
-π₂ {Γ} D = D ● (λ γ v → ℘ {base Nat} 1 v)
+π₂ : Denotation → Denotation
+π₂ D = D ● (λ γ v → ℘ {base Nat} 1 v)
 
-ℒ : ∀{Γ} → IR2 Γ → Denotation Γ
+ℒ : IR2 → Denotation
 ℒ (! P k) γ v = ℘ {P} k v
 ℒ (´ x) γ v = (v ⊑ γ x)
 ℒ (𝑓 n bN) = curry-n n bN
     where
-    curry-n : ∀{Γ} → (n : ℕ) → Arg2 Γ n → Denotation Γ
-    curry-n {Γ} 0 (ir2-ast N) = ℒ N
-    curry-n {Γ} (suc n) (ir2-bind bN) =
-      ℱ (curry-n {suc Γ} n bN)
+    curry-n : (n : ℕ) → Arg2 n → Denotation
+    curry-n 0 (ir2-ast N) = ℒ N
+    curry-n (suc n) (ir2-bind bN) = ℱ (curry-n n bN)
 ℒ (L ∙ M) = (ℒ L) ● (ℒ M)
 ℒ 〈〉 γ v = v ⊑ ⊥
 ℒ (pair L M) = ⟬ ℒ L , ℒ M ⟭
