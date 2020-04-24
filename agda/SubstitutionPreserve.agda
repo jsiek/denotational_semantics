@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 open import Variables
 open import Structures
 open import Primitives
@@ -47,7 +49,7 @@ module SubstitutionPreserve
     open Lambda.ASTMod
        using (`_; _⦅_⦆; Subst; ⟦_⟧;
               exts; cons; ast; bind; nil; rename; ⟪_⟫; subst-zero; _[_];
-              rename-id; exts-0; exts-suc; rename-subst)
+              rename-subst)
     open import LambdaDenot D V _●_ ℱ
     open RenamePreserveReflect.ForLambda D V C _●_ ℱ MB
       using (⊑-env; rename-pres)
@@ -59,10 +61,9 @@ module SubstitutionPreserve
       → δ `⊢ σ ↓ γ
        --------------------------
       → δ `, v `⊢ exts σ ↓ γ `, v
-    subst-ext wfγ σ d 0 rewrite exts-0 σ = ⊑-refl
+    subst-ext wfγ σ d 0 = ⊑-refl
     subst-ext wfγ σ d (suc x′)
-        rewrite exts-suc σ x′ 
-        | sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
+        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
         rename-pres {M = ⟦ σ ⟧ x′} (↑ 1) (λ _ → ⊑-refl) wfγ (d x′)
 
     subst-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
@@ -118,7 +119,7 @@ module SubstitutionPreserve
     where
 
     open import ISWIM
-    open ASTMod using (exts-0; exts-suc; rename-subst)
+    open ASTMod using (rename-subst)
     open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
     open RenamePreserveReflect.ForISWIM D V C _●_ ℱ MB (λ {P} k v → ℘ {P} k v)
       using (⊑-env; rename-pres)
@@ -130,10 +131,9 @@ module SubstitutionPreserve
       → δ `⊢ σ ↓ γ
        --------------------------
       → δ `, v `⊢ exts σ ↓ γ `, v
-    subst-ext wfγ σ d 0 rewrite exts-0 σ = ⊑-refl
+    subst-ext wfγ σ d 0 = ⊑-refl
     subst-ext wfγ σ d (suc x′)
-        rewrite exts-suc σ x′ 
-        | sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
+        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
         rename-pres {M = ⟦ σ ⟧ x′} (↑ 1) (λ _ → ⊑-refl) wfγ (d x′)
 
     subst-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}

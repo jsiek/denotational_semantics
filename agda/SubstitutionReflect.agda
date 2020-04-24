@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 open import Primitives
 open import Structures
 import RenamePreserveReflect
@@ -104,7 +106,7 @@ module ForLambdaModel
                               {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
       subst-reflect {δ}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
                     L≡σM δ⊢σ↓⊥ rewrite L≡σM =
-          subst-reflect-app {L = L}{M} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
+          subst-reflect-app {L = L}{M}{σ} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
           where
           IH1 = λ {v} → subst-reflect {δ = δ} {M = L} {L = ⟪ σ ⟫ L} {σ = σ} {v}
           IH2 = λ {v} → subst-reflect {δ = δ} {M = M} {L = ⟪ σ ⟫ M} {σ = σ} {v}
@@ -132,10 +134,10 @@ module ForLambdaModel
         → ℰ (N [ M ]) δ v  → ℰ M δ ⊥ → WFEnv δ → wf v
           ------------------------------------------------
         → Σ[ w ∈ Value ] ℰ M δ w  ×  ℰ N (δ `, w) v
-      substitution-reflect{N = N}{M}{v} ℰNMδv ℰMδ⊥ wfδ wfv
-           with subst-reflect {M = N} wfδ wfv ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
+      substitution-reflect {δ}{N}{M}{v} ℰNMδv ℰMδ⊥ wfδ wfv
+           with subst-reflect {M = N}{σ = subst-zero M} wfδ wfv ℰNMδv refl (subst-zero-⊥ {δ}{M} ℰMδ⊥)
       ...  | ⟨ γ , ⟨ wfγ , ⟨ δσγ , γNv ⟩ ⟩ ⟩ 
-           with subst-zero-reflect δσγ
+           with subst-zero-reflect {M = M} δσγ
       ...  | ⟨ w , ⟨ γ⊑δw , δMw ⟩ ⟩ =
              ⟨ w , ⟨ δMw , ⊑-env {M = N} wfv γ⊑δw γNv  ⟩ ⟩
 
@@ -196,7 +198,7 @@ module ForLambdaModel
                               {L = ⟪ exts σ ⟫ N} {σ = exts σ} {v = w}
       subst-reflect {δ}{L · M}{_}{σ}{v} wfδ wfv ℰσL●ℰσMδv
                     L≡σM δ⊢σ↓⊥ rewrite L≡σM =
-          subst-reflect-app {L = L}{M} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
+          subst-reflect-app {L = L}{M}{σ} IH1 IH2 wfδ wfv ℰσL●ℰσMδv refl δ⊢σ↓⊥
           where
           IH1 = λ {v} → subst-reflect {δ = δ} {M = L} {L = ⟪ σ ⟫ L} {σ = σ} {v}
           IH2 = λ {v} → subst-reflect {δ = δ} {M = M} {L = ⟪ σ ⟫ M} {σ = σ} {v}
@@ -225,10 +227,10 @@ module ForLambdaModel
         → ℰ (N [ M ]) δ v  → ℰ M δ ⊥ → WFEnv δ → wf v
           ------------------------------------------------
         → Σ[ w ∈ Value ] wf w × ℰ M δ w  ×  ℰ N (δ `, w) v
-      substitution-reflect{N = N}{M}{v} ℰNMδv ℰMδ⊥ wfδ wfv
-           with subst-reflect {M = N} wfδ wfv ℰNMδv refl (subst-zero-⊥ ℰMδ⊥)
+      substitution-reflect {δ}{N}{M}{v} ℰNMδv ℰMδ⊥ wfδ wfv
+           with subst-reflect {M = N}{σ = subst-zero M} wfδ wfv ℰNMδv refl (subst-zero-⊥ {δ}{M} ℰMδ⊥)
       ...  | ⟨ γ , ⟨ wfγ , ⟨ δσγ , γNv ⟩ ⟩ ⟩ 
-           with subst-zero-reflect wfγ δσγ
+           with subst-zero-reflect {M = M} wfγ δσγ
       ...  | ⟨ w , ⟨ wfw , ⟨ γ⊑δw , δMw ⟩ ⟩ ⟩ =
              ⟨ w , ⟨ wfw , ⟨ δMw , ⊑-env {M = N} wfv γ⊑δw γNv ⟩ ⟩ ⟩ 
 
@@ -359,7 +361,7 @@ module SubstReflectLambdaBCD where
     open import LambdaDenot value_struct ordering _●_ ℱ
     open CurryApplyStruct.CurryApplyStruct MB
     open import Lambda
-    open ASTMod using (Subst; ⟪_⟫; ⟦_⟧; exts; exts-0; exts-suc; rename-subst)
+    open ASTMod using (Subst; ⟪_⟫; ⟦_⟧; exts; rename-subst)
     open import Compositionality
     open import ConsistentAux value_struct ordering consistent
     open DenotAux value_struct ordering _●_ ℱ consistent MB
@@ -379,7 +381,6 @@ module SubstReflectLambdaBCD where
         with IH {u}{w} (λ {x} → tt) tt ℰLδv refl (δu⊢extσ⊥ δ⊢σ↓⊥)
     ... | ⟨ γ , ⟨ wfγ , ⟨ subst-γ , m ⟩ ⟩ ⟩
           =
-        {-rewrite exts-suc σ x -}
           ⟨ init γ ,
           ⟨ (λ {x} → tt) ,
           ⟨ (λ x → rename-inc-reflect {M = ⟦ σ ⟧ x} tt (SG1 x)) ,
@@ -389,12 +390,11 @@ module SubstReflectLambdaBCD where
          SG0 : γ zero ⊑ u
          SG0
              with subst-γ 0
-         ... | sg rewrite exts-0 σ = sg
+         ... | sg = sg
          SG1 : ∀ x → _
          SG1 x
              with subst-γ (suc x)
-         ... | sg rewrite exts-suc σ x
-             | sym (rename-subst (↑ 1) (⟦ σ ⟧ x))= sg
+         ... | sg rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x))= sg
     subst-reflect-lambda {N = N}{σ}{u ⊔ w} IH wfδ wfv ⟨ aa , bb ⟩ L≡ δ⊢σ↓⊥
         with subst-reflect-lambda{N = N}{σ}{u} IH (λ {x} → tt) wfv aa L≡ δ⊢σ↓⊥
            | subst-reflect-lambda{N = N}{σ}{w} IH (λ {x} → tt) wfv bb L≡ δ⊢σ↓⊥
@@ -470,12 +470,11 @@ module SubstReflectLambdaConst where
           where
           SG0 : γ zero ⊑ u
           SG0 with subst-γ 0
-          ... | sg rewrite exts-0 σ = sg
+          ... | sg = sg
           SG1 : ∀ x → _
           SG1 x
               with subst-γ (suc x)
-          ... | sg rewrite exts-suc σ x
-              | sym (rename-subst (↑ 1) (⟦ σ ⟧ x))= sg
+          ... | sg rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x))= sg
     subst-reflect-lambda {δ}{N = N}{σ}{u ⊔ w} IH wfδ (wf-⊔ u~w wfu wfw) ⟨ aa , bb ⟩ L≡ δ⊢σ↓⊥
         with subst-reflect-lambda{N = N}{σ}{u} IH wfδ wfu aa L≡ δ⊢σ↓⊥
            | subst-reflect-lambda{N = N}{σ}{w} IH wfδ wfw bb L≡ δ⊢σ↓⊥

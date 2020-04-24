@@ -59,8 +59,7 @@ module RenamePreserveReflect
     open import Lambda
     open import LambdaDenot D V _●_ ℱ
     open ASTMod
-      using (Subst; exts; ⟦_⟧; rename;
-             exts-suc; rename-subst; rename-id)
+      using (Subst; exts; ⟦_⟧; rename; rename-subst; rename-id)
 
     rename-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
            → (ρ : Rename)
@@ -85,7 +84,7 @@ module RenamePreserveReflect
       → ℰ M δ v
     ⊑-env {γ}{δ}{M}{v} wfv γ⊑δ ℰMγv
           with rename-pres {v}{γ}{δ}{M} id γ⊑δ wfv ℰMγv
-    ... | d′ rewrite rename-id {M} =
+    ... | d′ =
           d′
 
     EnvExt⊑ : ∀ {γ : Env} {M v u₁ u₂}
@@ -110,7 +109,7 @@ module RenamePreserveReflect
     rename-reflect {γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆} {ρ} δ∘ρ⊑γ =
        ℱ-≲ (λ wfv′ → rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)) 
     rename-reflect {M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {ρ} δ∘ρ⊑γ =
-       ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
+       ●-≲ (rename-reflect{M = L}{ρ} δ∘ρ⊑γ) (rename-reflect{M = M}{ρ} δ∘ρ⊑γ)
 
     rename-inc-reflect : ∀ {v′ v} {γ : Env} { M : Term}
       → wf v
@@ -118,7 +117,7 @@ module RenamePreserveReflect
         ----------------------------
       → ℰ M γ v
     rename-inc-reflect {v = v}{M = M} wfv d =
-       rename-reflect {M = M} `Refl⊑ wfv d
+       rename-reflect {M = M}{↑ 1} `Refl⊑ wfv d
 
     δu⊢extσ⊥ : ∀{δ : Env}{σ : Subst}{u}
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
@@ -134,7 +133,7 @@ module RenamePreserveReflect
   
     open import ISWIM
     open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open ASTMod using (⟦_⟧; exts-0; exts-suc; rename-subst)
+    open ASTMod using (⟦_⟧; rename-subst)
 
     rename-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
            → (ρ : Rename)
@@ -185,18 +184,18 @@ module RenamePreserveReflect
     rename-reflect {γ}{δ}{ƛ N} {ρ} δ∘ρ⊑γ =
        ℱ-≲ (λ wfv′ → rename-reflect{M = N}{ρ = ext ρ} (⊑-ext-L δ∘ρ⊑γ)) 
     rename-reflect {M = L · M} {ρ} δ∘ρ⊑γ =
-       ●-≲ (rename-reflect{M = L} δ∘ρ⊑γ) (rename-reflect{M = M} δ∘ρ⊑γ)
+       ●-≲ (rename-reflect{M = L}{ρ} δ∘ρ⊑γ) (rename-reflect{M = M}{ρ} δ∘ρ⊑γ)
 
     rename-inc-reflect : ∀ {v′ v} {γ : Env} { M : Term}
       → wf v
       → ℰ (rename (↑ 1) M) (γ `, v′) v
         ----------------------------
       → ℰ M γ v
-    rename-inc-reflect {M = M} wfv d = rename-reflect {M = M} `Refl⊑ wfv d
+    rename-inc-reflect {M = M} wfv d = rename-reflect {M = M}{↑ 1} `Refl⊑ wfv d
 
     δu⊢extσ⊥ : ∀{δ : Env}{σ : Subst}{u}
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
-    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
+    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 = ⊑-⊥
     δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (suc x)
        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
        rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
