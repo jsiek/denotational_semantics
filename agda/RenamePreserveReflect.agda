@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 open import Structures
 open import Primitives
 open import Syntax using (Rename)
@@ -36,21 +38,21 @@ module RenamePreserveReflect
   open import ConsistentAux D V C
   open CurryApplyStruct.CurryApplyStruct MV
   open CurryApplyStruct.CurryStruct model_curry
-  open import Syntax using (Rename; ext; ⦉_⦊; ext-0; ext-suc)
+  open import Syntax using (Rename; ext; ⦉_⦊)
 
   ⊑-ext-R : ∀ {γ : Env} {δ : Env} {ρ : Rename}{v}
         → γ `⊑ (δ ∘ ⦉ ρ ⦊)
           ---------------------------------
         → (γ `, v) `⊑ ((δ `, v) ∘ ⦉ ext ρ ⦊)
-  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ 0 rewrite ext-0 ρ = ⊑-refl
-  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ (suc x) rewrite ext-suc ρ x = γ⊑δ∘ρ x
+  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ 0 = ⊑-refl
+  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ (suc x) = γ⊑δ∘ρ x
 
   ⊑-ext-L : ∀ {γ : Env} {δ : Env} {ρ : Rename} {v}
         → (δ ∘ ⦉ ρ ⦊) `⊑ γ
           ---------------------------------
         → ((δ `, v) ∘ ⦉ ext ρ ⦊) `⊑ (γ `, v)
-  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ 0 rewrite ext-0 ρ = ⊑-refl
-  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ (suc x) rewrite ext-suc ρ x = δ∘ρ⊑γ x
+  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ 0 = ⊑-refl
+  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ (suc x) = δ∘ρ⊑γ x
 
   module ForLambda where
   
@@ -58,7 +60,7 @@ module RenamePreserveReflect
     open import LambdaDenot D V _●_ ℱ
     open ASTMod
       using (Subst; exts; ⟦_⟧; rename;
-             exts-0; exts-suc; rename-subst; rename-id)
+             exts-suc; rename-subst; rename-id)
 
     rename-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
            → (ρ : Rename)
@@ -120,11 +122,11 @@ module RenamePreserveReflect
 
     δu⊢extσ⊥ : ∀{δ : Env}{σ : Subst}{u}
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
-    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
+    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 = ⊑-⊥
     δu⊢extσ⊥ {δ}{σ = σ}{u} δ⊢σ↓⊥ (suc x)
-        rewrite exts-suc σ x
-        | sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
+        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
         rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
+
 
   module ForISWIM
     (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
@@ -196,7 +198,6 @@ module RenamePreserveReflect
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
     δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
     δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (suc x)
-       rewrite exts-suc σ x
-       | sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
+       rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
        rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
 
