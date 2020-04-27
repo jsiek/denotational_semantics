@@ -71,8 +71,8 @@ num-FV n (suc i) M
 {-
 
   The compressor function produces a renaming that maps all the free
-  variables (above 0) in a term into a contiguous sequence of numbers
-  (above 0).
+  variables above 0 in a term into a contiguous sequence of numbers
+  starting at 1.
 
 -}
 
@@ -95,6 +95,17 @@ _ = refl
 _ : num-FV 1 5 test-M ≡ 2
 _ = refl
 
+add-binds : (n : ℕ) → IR → Arg n
+add-binds zero N = ir-ast N
+add-binds (suc n) N = ir-bind (add-binds n N)
+
+fv-refs : (n i k : ℕ) → (M : Term) → Args (replicate (num-FV n i M) 0)
+fv-refs n zero k M = ir-nil
+fv-refs n (suc i) k M
+    with FV? M n
+... | true = ir-cons (ir-ast (^ n)) (fv-refs (suc n) i (suc k) M)
+... | false = fv-refs (suc n) i k M
+
 {-
 
  Closure conversion 
@@ -109,19 +120,6 @@ convert-clos (ƛ N) {Γ} (WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)) =
   let nfv = num-FV 1 Γ N in
   let fun = Ƒ nfv (add-binds nfv N′) in
   ⟪ fun , nfv , fv-refs 1 Γ 1 N ⟫
-
-  where
-  add-binds : (n : ℕ) → IR → Arg n
-  add-binds zero N = ir-ast N
-  add-binds (suc n) N = ir-bind (add-binds n N)
-
-  fv-refs : (n i k : ℕ) → (M : Term) → Args (replicate (num-FV n i M) 0)
-  fv-refs n zero k M = ir-nil
-  fv-refs n (suc i) k M
-      with FV? M n
-  ... | true = ir-cons (ir-ast (^ n)) (fv-refs (suc n) i (suc k) M)
-  ... | false = fv-refs (suc n) i k M
-
 convert-clos (L · M) {Γ}
    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))) =
    let L′ = convert-clos L wfL in
