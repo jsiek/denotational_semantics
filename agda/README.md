@@ -205,3 +205,7 @@ File Overview
         Proves adequacy of ISWIM's model with respect to ISWIM reduction to
         a value (literal or lambda abstraction).  Also proves that
         denotational equality implies contextual equivalence.
+
+   * `ISWIMLanguage`
+
+      Collects all the definitions and theorems about the ISWIM language.
