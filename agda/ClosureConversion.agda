@@ -147,13 +147,10 @@ Correctness of Closure Conversion
 
 -}
 
-apply-curry-n : ∀{n Γ : ℕ} {N : Term}
-    {wfN : WF (suc Γ) N}{fvs : ir-Args (replicate n 0)}
+apply-curry : ∀{Γ : ℕ} {N : Term} {wfN : WF (suc Γ) N} {wfλN : WF Γ (ƛ N)}
   → ℳ (𝐶 N {suc Γ}{wfN}) ≃ ℰ N
-  → apply-n n (curry-n n (add-binds n (ir-rename (compressor 1 Γ 1 N) (𝐶 N {suc Γ} {wfN})))) fvs
-    ≃ ℱ (ℰ N)
-apply-curry-n {zero} {Γ} {N} {wfN} {ir-nil} ℳ𝐶N≃ℰN = {!!}
-apply-curry-n {suc n} {Γ} {N} {wfN} {fvs} ℳ𝐶N≃ℰN = {!!}
+  → ℳ (𝐶 (ƛ N) {Γ} {wfλN}) ≃ ℱ (ℰ N)
+apply-curry {Γ} {N} {wfN}{wfλN} ℳ𝐶N≃ℰN = {!!}
 
 𝐶-correct : ∀ Γ (M : Term) (wf : WF Γ M)
    → (ℳ (𝐶 M {Γ}{wf})) ≃ (ℰ M)
@@ -162,24 +159,16 @@ apply-curry-n {suc n} {Γ} {N} {wfN} {fvs} ℳ𝐶N≃ℰN = {!!}
 𝐶-correct Γ (ƛ N) wf@(WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)) =
    let IH = 𝐶-correct (suc Γ) N wfN in
       ℳ (𝐶 (ƛ N) {Γ} {wf})
-   ≃⟨⟩
-      ℳ ⟪ f , nfv , fv-refs 1 Γ 1 N′ ⟫
-   ≃⟨ {!!} ⟩
+   ≃⟨ apply-curry {Γ}{N}{wfN}{wf} IH ⟩
       ℱ (ℰ N)
    ≃⟨⟩
       ℰ (ƛ N)
    ■
-   where
-   ρ = compressor 1 Γ 1 N
-   N′ = ir-rename ρ (𝐶 N {suc Γ} {wfN})
-   nfv = num-FV 1 Γ N′
-   f = Ƒ nfv (ir-bind (add-binds nfv N′))
 𝐶-correct Γ (L · M)
             (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))) =
   let IH1 = 𝐶-correct Γ L wfL in
   let IH2 = 𝐶-correct Γ M wfM in
   ●-cong IH1 IH2
-
 
 {-
 
