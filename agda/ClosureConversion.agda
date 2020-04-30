@@ -33,7 +33,7 @@ data IROp : Set where
   ir-lit : (p : Prim) → rep p → IROp
 
 IR-sig : IROp → List ℕ
-IR-sig (fun n) = n ∷ []
+IR-sig (fun n) = suc n ∷ []
 IR-sig (close n) = replicate (suc n) 0
 IR-sig ir-app = 0 ∷ 0 ∷ []
 IR-sig (ir-lit p k) = []
@@ -106,7 +106,7 @@ fv-refs n (suc i) k M
   let ρ = compressor 1 Γ 1 N in
   let N′ = ir-rename ρ (𝐶 N {suc Γ} {wfN}) in
   let nfv = num-FV 1 Γ N′ in
-  let fun = Ƒ nfv (add-binds nfv N′) in
+  let fun = Ƒ nfv (ir-bind (add-binds nfv N′)) in
   ⟪ fun , nfv , fv-refs 1 Γ 1 N′ ⟫
 𝐶 (L · M) {Γ}
    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))} =
@@ -127,8 +127,8 @@ apply-n : (n : ℕ) → Denotation → ir-Args (replicate n 0) → Denotation
 ℳ : IR → Denotation
 ℳ (# P k) γ v = ℘ {P} k v
 ℳ (^ x) γ v = v ⊑ γ x
-ℳ (Ƒ n bN) =
-    curry-n n bN
+ℳ (Ƒ n bN) γ v =
+    curry-n (suc n) bN `∅ v
 ℳ ⟪ L , n , As ⟫ =
     apply-n n (ℳ L) As
 ℳ (L ˙ M) = (ℳ L) ● (ℳ M)
@@ -164,8 +164,6 @@ apply-curry-n {suc n} {Γ} {N} {wfN} {fvs} ℳ𝐶N≃ℰN = {!!}
       ℳ (𝐶 (ƛ N) {Γ} {wf})
    ≃⟨⟩
       ℳ ⟪ f , nfv , fv-refs 1 Γ 1 N′ ⟫
-   ≃⟨⟩
-      apply-n nfv (curry-n nfv (add-binds nfv N′)) (fv-refs 1 Γ 1 N′)
    ≃⟨ {!!} ⟩
       ℱ (ℰ N)
    ≃⟨⟩
@@ -175,7 +173,7 @@ apply-curry-n {suc n} {Γ} {N} {wfN} {fvs} ℳ𝐶N≃ℰN = {!!}
    ρ = compressor 1 Γ 1 N
    N′ = ir-rename ρ (𝐶 N {suc Γ} {wfN})
    nfv = num-FV 1 Γ N′
-   f = Ƒ nfv (add-binds nfv N′)
+   f = Ƒ nfv (ir-bind (add-binds nfv N′))
 𝐶-correct Γ (L · M)
             (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))) =
   let IH1 = 𝐶-correct Γ L wfL in
