@@ -21,10 +21,6 @@ open SubstitutionPreserve.ISWIM value_struct ordering _●_ ℱ consistent model
    ℘-⊑
    (λ {P} {k} {u} {v} → ℘-~ {P} {k} {u} {v})
 import RenamePreserveReflect
-open RenamePreserveReflect.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply
-   (λ {P} k v → ℘ {P} k v) using (⊑-env)  
-import SubstitutionReflect
-open SubstitutionReflect.ISWIM using (substitution-reflect)
 
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -39,6 +35,11 @@ open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (Dec; yes; no)
 
 module SoundnessISWIM where
+
+open RenamePreserveReflect.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply
+   (λ {P} k v → ℘ {P} k v) using (⊑-env; rename-pres) public
+import SubstitutionReflect
+open SubstitutionReflect.ISWIM using (substitution-reflect)
 
 ℰ-⊥ : ∀{γ : Env}{M : Term}
     → TermValue M
