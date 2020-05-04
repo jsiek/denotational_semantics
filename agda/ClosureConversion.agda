@@ -8,9 +8,11 @@ open import ISWIMLanguage
 open import Data.Bool using (Bool; true; false; _∨_)
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List; []; _∷_; _++_; length; replicate)
-open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; _+_; s≤s)
+open import Data.Maybe using (Maybe; nothing; just)
+open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; _+_; z≤n; s≤s)
 open import Data.Nat.Properties
-  using (≤-refl; ≤-trans; n≤1+n; +-identityʳ; ≤-step; +-comm)
+  using (≤-refl; ≤-reflexive; ≤-trans; n≤1+n; +-identityʳ; ≤-step; +-comm; ≤⇒≯;
+         ≤-antisym; +-suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -73,6 +75,72 @@ sum-FV (suc n) M
     with ir-FV? M (suc n)
 ... | true = suc (sum-FV n M)
 ... | false = sum-FV n M
+
+
+search-inv : ℕ → ℕ → ℕ → IR → Maybe ℕ
+search-inv 0 s x M = nothing
+search-inv (suc m) s x M
+    with sum-FV x M ≟ s
+... | yes s≡sum = just x
+... | no s≢sum = search-inv m s (suc x) M
+
+inv-sum-FV : ℕ → ℕ → IR → Maybe ℕ
+inv-sum-FV Γ s M = search-inv Γ s 0 M
+
+search-inv-sum : ∀{m s x y : ℕ}{M : IR}
+   → search-inv m s y M ≡ just x
+   → sum-FV x M ≡ s
+search-inv-sum {zero} ()
+search-inv-sum {suc m}{s}{x}{y}{M} eq
+    with sum-FV y M ≟ s | eq
+... | yes s≡sum | refl = s≡sum
+... | no s≢sum | eq' = search-inv-sum {m}{s}{x}{suc y} eq'
+
+inv-sum : ∀{Γ s x : ℕ}{M : IR}
+  → inv-sum-FV Γ s M ≡ just x
+  → sum-FV x M ≡ s
+inv-sum {Γ}{s}{x}{M} eq = search-inv-sum {Γ}{y = 0} eq
+
+≤→<⊎≡ : ∀{a b : ℕ}
+   → a ≤ b
+   → a < b ⊎ a ≡ b
+≤→<⊎≡ {.0} {zero} z≤n = inj₂ refl
+≤→<⊎≡ {.0} {suc b} z≤n = inj₁ (s≤s z≤n)
+≤→<⊎≡ {suc a}{suc b} (s≤s a≤b)
+    with ≤→<⊎≡ {a}{b} a≤b
+... | inj₁ lt = inj₁ (s≤s lt)
+... | inj₂ refl = inj₂ refl
+
+inv-sum-search : ∀{m s x y : ℕ}{M : IR}
+   → x < y + m
+   → y ≤ x
+   → sum-FV x M ≡ s
+   → (∀ y → sum-FV y M ≡ s → x ≤ y)
+   → search-inv m s y M ≡ just x
+inv-sum-search {zero} {s} {x} {y} {M} x<y+m y≤x ΣFV[x,M]=s least
+    rewrite +-comm y 0 = ⊥-elim (≤⇒≯ y≤x x<y+m)
+inv-sum-search {suc m} {s} {x} {y} {M} x<y+m y≤x ΣFV[x,M]=s least
+    with sum-FV y M ≟ s
+... | no s≢sum =
+      inv-sum-search {m}{s}{x}{suc y}{M} G H ΣFV[x,M]=s least
+      where
+      G : suc x ≤ suc (y + m)
+      G = ≤-trans x<y+m (≤-reflexive (+-suc y m))
+      H : suc y ≤ x
+      H   with ≤→<⊎≡ y≤x
+      ... | inj₁ y<x = y<x
+      ... | inj₂ refl = ⊥-elim (s≢sum ΣFV[x,M]=s)
+... | yes s≡sum
+    rewrite ≤-antisym (least y s≡sum) y≤x =
+      refl
+
+sum-inv : ∀{Γ}{s}{x}{M}
+  → x < Γ
+  → sum-FV x M ≡ s
+  → (∀ y → sum-FV y M ≡ s → x ≤ y)
+  → inv-sum-FV Γ s M ≡ just x
+sum-inv {Γ}{s}{x}{M} x<Γ eq least =
+  inv-sum-search {Γ}{s}{x}{0} x<Γ z≤n eq least
 
 {-
 
@@ -144,13 +212,36 @@ compressor-sum-FV { Γ} {x} {M} x<Γ = aux x<Γ
 
 -}
 
-expander : (n Γ : ℕ) → (M : IR) → Rename
+expander : (s Γ : ℕ) → (M : IR) → Rename
+expander s zero M = ↑ 0
+expander s (suc Γ) M
+    with inv-sum-FV (s + suc Γ) s M
+... | nothing = ↑ 0
+... | just x = x • expander (suc s) Γ M
+
+expander-inv-sum-FV : ∀{Γ}{x}{M}
+  → x < Γ
+  → (∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y)
+  → ⦉ expander 0 Γ M ⦊ (sum-FV x M) ≡ x
+expander-inv-sum-FV {Γ}{x}{M} least = {!!}
+  where
+  aux : ∀{Γ}{s}{M}{x}
+    → x < s + suc Γ
+    → (∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y)
+    → ⦉ expander s Γ M ⦊ (sum-FV x M) ≡ x
+  aux {0} {s} {M}{x} x<Γ least = {!!}
+  aux {suc Γ} {s} {M}{x} x<s+sΓ least =
+      let xx = sum-inv {s + suc Γ}{s}{x}{M} {!!} {!!} {!!} in
+      {!!}
+
+{-
 expander n 0 M = ↑ 0
 expander 0 (suc Γ) M = 0 • expander 1 Γ M
 expander (suc n) (suc Γ) M
     with ir-FV? M (suc n)
 ... | true = (suc n) • expander (suc (suc n)) Γ M
 ... | false = expander (suc (suc n)) Γ M
+-}
 
 _ : ir-rename (expander 0 8 test-M) test-M′ ≡ test-M
 _ = refl
@@ -183,6 +274,7 @@ exp {suc x} {zero} {suc Γ} {M} (s≤s x<Γ)
       {!!}
 exp {x} {suc n} {suc Γ} {M} x<Γ = {!!}
 
+{-
 expander-inv-sum-FV : ∀{x}{y}{Γ}{M}
   → y < Γ
   → ⦉ expander 0 Γ M ⦊ (sum-FV x M) ≡ x
@@ -197,6 +289,7 @@ expander-inv-sum-FV {x} {y} {Γ} {M} y<Γ = {!!}
         let IH = aux {Γ} {suc n} {suc 0} {M} {!!} in
         {!!}
   aux {suc Γ} {n} {suc x} {M} (s≤s x<Γ) = {!!}
+-}
 {-
       with ir-FV? M n
   ... | true = {!!}
