@@ -12,7 +12,7 @@ open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; _+_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-refl; ≤-reflexive; ≤-trans; n≤1+n; +-identityʳ; ≤-step; +-comm; ≤⇒≯;
-         ≤-antisym; +-suc)
+         ≤-antisym; +-suc; ≤∧≢⇒<)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -87,6 +87,29 @@ compress-sum-FV : ∀{Γ}{x}{M}
   → x < Γ
   → ⦉ compress Γ M ⦊ x ≡ sum-FV x M
 compress-sum-FV {Γ} {x} {M} x<Γ = ⦉make-ir-renaming⦊ x<Γ
+
+
+search-inv' : (m : ℕ) → (M : IR) → (s : ℕ) → (x : ℕ)
+            → sum-FV x M ≤ s
+            → s ≤ sum-FV (x + m) M
+            → Σ[ x' ∈ ℕ ] s ≡ sum-FV x' M
+search-inv' zero M s x sum[x]≤s s≤sum[x+m]
+    rewrite +-comm x 0 =
+    let s≡sum[x] = ≤-antisym s≤sum[x+m] sum[x]≤s in
+    ⟨ x ,  s≡sum[x] ⟩
+search-inv' (suc m) M s x sum[x]≤s s≤sum[x+m]
+    with s ≟ sum-FV x M
+... | yes refl = ⟨ x , refl ⟩
+... | no neq rewrite +-suc x m =
+    search-inv' m M s (suc x) G s≤sum[x+m]
+    where G : sum-FV (suc x) M ≤ s
+          G with ir-FV? M (suc x)
+          ... | true = ≤∧≢⇒< sum[x]≤s λ z → neq (sym z)
+          ... | false = sum[x]≤s
+
+{-
+  UNDER CONSTRUCTION
+-}
 
 
 search-inv : ℕ → ℕ → ℕ → IR → Maybe ℕ
