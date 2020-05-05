@@ -12,13 +12,13 @@ open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; _+_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-refl; ≤-reflexive; ≤-trans; n≤1+n; +-identityʳ; ≤-step; +-comm; ≤⇒≯;
-         ≤-antisym; +-suc; ≤∧≢⇒<)
+         ≤-antisym; +-suc; ≤∧≢⇒<; _≤?_; 1+n≰n; suc-injective; ≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; _≢_; refl; sym; cong; cong₂; inspect; [_])
+  using (_≡_; _≢_; refl; sym; trans; cong; cong₂; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning
   using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Relation.Nullary using (Dec; yes; no)
@@ -106,6 +106,57 @@ search-inv' (suc m) M s x sum[x]≤s s≤sum[x+m]
           G with ir-FV? M (suc x)
           ... | true = ≤∧≢⇒< sum[x]≤s λ z → neq (sym z)
           ... | false = sum[x]≤s
+
+sum-FV-inv : IR → ℕ → ℕ → ℕ
+sum-FV-inv M Γ s
+    with s ≤? sum-FV Γ M
+... | yes lt = proj₁ (search-inv' Γ M s 0 z≤n lt)
+... | no nlt = 0
+
+sum-FV-mono-≤-aux : ∀{M}{x}{d}
+  → sum-FV x M ≤ sum-FV (x + d) M
+sum-FV-mono-≤-aux {M} {x} {zero} rewrite +-comm x 0 = ≤-refl
+sum-FV-mono-≤-aux {M} {x} {suc d}
+    rewrite +-suc x d
+    with ir-FV? M (suc (x + d))
+... | true = ≤-step (sum-FV-mono-≤-aux {M} {x} {d})
+... | false = sum-FV-mono-≤-aux {M} {x} {d}
+
+≤→Σ+ : ∀ m n → m ≤ n → Σ[ d ∈ ℕ ] n ≡ m + d
+≤→Σ+ zero n m≤n = ⟨ n , refl ⟩
+≤→Σ+ (suc m) (suc n) (s≤s m≤n)
+    with ≤→Σ+ m (suc n) (≤-trans (≤-step ≤-refl) (s≤s m≤n))
+... | ⟨ 0 , eq ⟩ rewrite +-comm m 0 | sym eq = ⊥-elim (1+n≰n m≤n)
+... | ⟨ suc d , eq ⟩ rewrite +-suc m d | suc-injective eq =
+      ⟨ d , refl ⟩
+
+sum-FV-mono-≤ : ∀{M}{x}{y}
+  → x ≤ y
+  → sum-FV x M ≤ sum-FV y M
+sum-FV-mono-≤ {M} {x} {y} x≤y
+    with ≤→Σ+ x y x≤y
+... | ⟨ d , refl ⟩ = sum-FV-mono-≤-aux {M}{x}{d}
+
+sum-FV-inverse : ∀{Γ}{M}{x}
+  → x < Γ
+  → sum-FV-inv M Γ (sum-FV x M) ≡ x
+sum-FV-inverse {Γ}{M}{x} x<Γ
+    with sum-FV x M ≤? sum-FV Γ M
+... | no nlt = ⊥-elim (nlt (sum-FV-mono-≤ (≤-trans (≤-step ≤-refl) x<Γ)))
+... | yes lt
+    with search-inv' Γ M (sum-FV x M) 0 z≤n lt
+... | ⟨ x' , eq ⟩ = {!!} {- need stuff about least -}
+
+
+expand : ℕ → IR → Rename
+expand Γ M = make-ir-renaming (sum-FV-inv M Γ) (sum-FV Γ M)
+
+expand-sum-FV-inv : ∀{x}{Γ}{M}
+  → x < Γ
+  → ⦉ expand Γ M ⦊ (sum-FV x M) ≡ x
+expand-sum-FV-inv {x}{Γ}{M} x<Γ =
+    let xx = ⦉make-ir-renaming⦊ {ρ = (sum-FV-inv M Γ)} x<Γ in 
+    {!!}
 
 {-
   UNDER CONSTRUCTION
