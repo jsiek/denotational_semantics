@@ -47,7 +47,8 @@ open IRMod renaming (ABT to IR; `_ to ^_; _⦅_⦆ to node; cons to ir-cons;
    nil to ir-nil; ast to ir-ast; bind to ir-bind; rename to ir-rename;
    WF to ir-WF; FV? to ir-FV?; WF-op to ir-WF-op; WF-cons to ir-WF-cons;
    WF-nil to ir-WF-nil; WF-ast to ir-WF-ast; WF-bind to ir-WF-bind;
-   Arg to ir-Arg; Args to ir-Args) public
+   Arg to ir-Arg; Args to ir-Args; make-renaming to make-ir-renaming;
+   ⦉make-renaming⦊ to ⦉make-ir-renaming⦊) public
 open IRMod using (_⨟_; exts-cons-shift; bind-ast)
 
 pattern # p k = node (ir-lit p k) ir-nil 
@@ -64,8 +65,11 @@ num-FV n (suc i) M
 
 {-
 
- Inspired by counting sort, compute the cumulative sum of the number
- of free variables up to n, not including variable 0.
+  The compress function produces a renaming that maps all the free
+  variables above 0 in a term M into a contiguous sequence of numbers
+  starting at 1. Inspired by counting sort, it does this by compute
+  the cumulative sum of the number of free variables up to n, not
+  including variable 0.
 
 -}
 
@@ -75,6 +79,14 @@ sum-FV (suc n) M
     with ir-FV? M (suc n)
 ... | true = suc (sum-FV n M)
 ... | false = sum-FV n M
+
+compress : ℕ → IR → Rename
+compress Γ M = make-ir-renaming (λ x → sum-FV x M) Γ
+
+compress-sum-FV : ∀{Γ}{x}{M}
+  → x < Γ
+  → ⦉ compress Γ M ⦊ x ≡ sum-FV x M
+compress-sum-FV {Γ} {x} {M} x<Γ = ⦉make-ir-renaming⦊ x<Γ
 
 
 search-inv : ℕ → ℕ → ℕ → IR → Maybe ℕ
@@ -142,22 +154,6 @@ sum-inv : ∀{Γ}{s}{x}{M}
 sum-inv {Γ}{s}{x}{M} x<Γ eq least =
   inv-sum-search {Γ}{s}{x}{0} x<Γ z≤n eq least
 
-{-
-
-  The compressor function produces a renaming that maps all the free
-  variables above 0 in a term M into a contiguous sequence of numbers
-  starting at 1.
-
-  parameters
-  n: the current variable (start at 0)
-  Γ: the upper bound on the environment
-  M: a term that is the body of a ƛ
-
--}
-
-compressor : (n Γ : ℕ) → (M : IR) → Rename
-compressor n 0 M = ↑ 0 {- doesn't matter -}
-compressor n (suc Γ) M = (sum-FV n M) • compressor (suc n) Γ M 
 
 {- An example that includes 0 as a free variable. -}
 test-M : IR
@@ -173,36 +169,23 @@ test-N = ((^ 7) ˙ (^ 1)) ˙ ((^ 3) ˙ (^ 4))
 test-N′ : IR
 test-N′ = ((^ 4) ˙ (^ 1)) ˙ ((^ 2) ˙ (^ 3))
 
-_ : ir-rename (compressor 0 8 test-M) test-M ≡ test-M′
+_ : ir-rename (compress 8 test-M) test-M ≡ test-M′
 _ = refl
 
-_ : ir-rename (compressor 0 8 test-N) test-N ≡ test-N′
+_ : ir-rename (compress 8 test-N) test-N ≡ test-N′
 _ = refl
 
-_ : ⦉ compressor 0 8 test-M ⦊ 0 ≡ 0
+_ : ⦉ compress 8 test-M ⦊ 0 ≡ 0
 _ = refl
 
-_ : ⦉ compressor 0 8 test-M ⦊ 1 ≡ 1
+_ : ⦉ compress 8 test-M ⦊ 1 ≡ 1
 _ = refl
 
-_ : ⦉ compressor 0 8 test-M ⦊ 4 ≡ 2
+_ : ⦉ compress 8 test-M ⦊ 4 ≡ 2
 _ = refl
 
-_ : ⦉ compressor 0 8 test-M ⦊ 7 ≡ 3
+_ : ⦉ compress 8 test-M ⦊ 7 ≡ 3
 _ = refl
-
-compressor-sum-FV : ∀{Γ}{x}{M}
-  → x < Γ
-  → ⦉ compressor 0 Γ M ⦊ x ≡ sum-FV x M
-compressor-sum-FV { Γ} {x} {M} x<Γ = aux x<Γ
-  where
-  aux : ∀{Γ}{n}{x}{M} → x < Γ
-    → ⦉ compressor n Γ M ⦊ x ≡ sum-FV (n + x) M
-  aux {suc Γ} {n} {zero} {M} x<Γ
-      rewrite +-comm n zero = refl
-  aux {suc Γ} {n} {suc x} {M} (s≤s x<Γ)
-      rewrite +-comm n (suc x) | +-comm x n =
-      aux {Γ} {suc n} {x} {M} x<Γ
 
 {-
 
@@ -335,7 +318,7 @@ fv-refs n (suc i) k M
 𝒞 (` x) {Γ} {wfM} = ^ x
 𝒞 (ƛ N) {Γ} {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)} =
   let N′ = 𝒞 N {suc Γ} {wfN} in
-  let ρ = 0 • compressor 1 Γ N′ in
+  let ρ = compress Γ N′ in
   let rN′ = ir-rename ρ N′ in
   let nfv = num-FV 1 Γ N′ in
   let fun = Ƒ (suc nfv) (add-binds (suc nfv) rN′) in
@@ -383,10 +366,10 @@ Correctness of Closure Conversion
 
 {- Correctness of compressor -}
 
-compressor-pres : ∀{N : IR}{Γ}{γ : Env}{v w}
+compress-pres : ∀{N : IR}{Γ}{γ : Env}{v w}
   → ℳ N (γ `, v) w
-  → ℳ (ir-rename (0 • compressor 1 Γ N) N) (γ ∘ {!!} `, v) w
-compressor-pres {N} {Γ} {γ}{v}{w} ℳN[γ,v]w = {!!}
+  → ℳ (ir-rename (compress Γ N) N) (γ ∘ {!!} `, v) w
+compress-pres {N} {Γ} {γ}{v}{w} ℳN[γ,v]w = {!!}
 
 
 

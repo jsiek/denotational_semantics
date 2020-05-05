@@ -6,17 +6,18 @@ open import Syntax using (Rename)
 import ValueStructAux
 import CurryApplyStruct
 
-open import Data.Bool using (Bool)
+open import Data.Bool using (Bool; true; false; T; _∨_)
+open import Data.Bool.Properties using (∨-comm)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Data.List using (List; []; _∷_)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
+open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app; inspect; [_])
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
@@ -133,7 +134,7 @@ module RenamePreserveReflect
   
     open import ISWIM
     open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open ASTMod using (⟦_⟧; rename-subst)
+    open ASTMod using (⟦_⟧; rename-subst; FV?)
 
     rename-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
            → (ρ : Rename)
@@ -149,6 +150,60 @@ module RenamePreserveReflect
         ℱ-≲ (λ wfv₁ → rename-pres {M = N} (ext ρ) (⊑-ext-R γ⊑δ∘ρ))
     rename-pres {M = L · M} ρ γ⊑δ∘ρ =
         ●-≲ (rename-pres {M = L} ρ γ⊑δ∘ρ) (rename-pres {M = M} ρ γ⊑δ∘ρ)
+
+    {-
+
+     A stronger version of rename-pres that only requires the
+     environments to agree on free variables.
+
+     -}
+    rename-pres-FV : ∀ {M : Term} {v} {γ : Env} {δ : Env} 
+           → (ρ : Rename)
+           → (∀ x → T (FV? M x) → γ x ⊑ (δ ∘ ⦉ ρ ⦊) x)
+           → wf v
+           → ℰ M γ v
+             ------------------
+           → ℰ (rename ρ M) δ v
+    rename-pres-FV {` x} {v} {γ} {δ} ρ γ⊑δ∘ρ wfv ℰMγv =
+        v  ⊑⟨ ℰMγv ⟩ γ x  ⊑⟨ γ⊑δ∘ρ x G ⟩ δ (⦉ ρ ⦊ x) ◼
+        where
+        G : T (FV? (` x) x)
+        G   with x ≟ x
+        ... | yes xx = tt
+        ... | no xx = xx refl
+    rename-pres-FV {$ p k} {v} ρ γ⊑δ∘ρ wfv ℰMγv = ℰMγv
+    rename-pres-FV {ƛ N} {v} {γ} {δ} ρ γ⊑δ∘ρ =
+        ℱ-≲ (λ {v₁} wfv₁ {v₂} → rename-pres-FV {M = N} (ext ρ) G)
+        where
+        G : ∀{v₁} → (∀ x → T (FV? N x)
+            → (γ `, v₁) x ⊑ ((δ `, v₁) ∘ ⦉ ext ρ ⦊) x)
+        G {v₁} zero fvNx = ⊑-refl
+        G {v₁} (suc x) fvNx
+            with FV? N (suc x) | inspect (FV? N) (suc x)
+        ... | false | [ fvN[sx] ] = ⊥-elim fvNx
+        ... | true | [ fvN[sx] ] = γ⊑δ∘ρ x H
+            where H : T (FV? N (suc x) ∨ false)
+                  H rewrite ∨-comm (FV? N (suc x)) false
+                    | fvN[sx] = tt
+    rename-pres-FV {L · M} {v} {γ} {δ} ρ γ⊑δ∘ρ =
+        ●-≲ (rename-pres-FV {M = L} ρ γ⊑δ∘ρ[L])
+            (rename-pres-FV {M = M} ρ γ⊑δ∘ρ[M])
+        where
+        γ⊑δ∘ρ[L] : (∀ x → T (FV? L x) → γ x ⊑ (δ ∘ ⦉ ρ ⦊) x)
+        γ⊑δ∘ρ[L] x fvL
+            with FV? L x | inspect (FV? L) x
+        ... | false | [ fvLx ] = ⊥-elim fvL
+        ... | true | [ fvLx ]
+            with γ⊑δ∘ρ x
+        ... | γ⊑δ∘ρ[x] rewrite fvLx = γ⊑δ∘ρ[x] tt
+
+        γ⊑δ∘ρ[M] : (∀ x → T (FV? M x) → γ x ⊑ (δ ∘ ⦉ ρ ⦊) x)
+        γ⊑δ∘ρ[M] x fvM
+            with FV? M x | inspect (FV? M) x
+        ... | false | [ fvMx ] = ⊥-elim fvM
+        ... | true | [ fvMx ]
+            with γ⊑δ∘ρ x
+        ... | γ⊑δ∘ρ[x] rewrite fvMx | ∨-comm (FV? L x) true = γ⊑δ∘ρ[x] tt
 
     ⊑-env : ∀ {γ : Env} {δ : Env} {M v}
       → wf v
