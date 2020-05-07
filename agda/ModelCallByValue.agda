@@ -72,9 +72,9 @@ _●_ D₁ D₂ γ w = Σ[ v ∈ Value ] wf v × D₁ γ (v ↦ w) × D₂ γ v
       a = WFDenot.⊔-closed wf1 wfγ (wf-fun wfu' wfu) (wf-fun wfv' wfv)
                            D₁γu'↦u D₁γv'↦v in
   let u'↦u~v'↦v = WFDenot.~-closed wf1 {γ}{γ} wfγ wfγ
-                   (~′-refl (λ {y} → wfγ {y}))
+                   (~′-refl (λ y → wfγ y))
                    wf-u'↦u wf-v'↦v D₁γu'↦u D₁γv'↦v in
-  let u'~v' = WFDenot.~-closed wf2 {γ}{γ} wfγ wfγ (~′-refl (λ {y} → wfγ {y}))
+  let u'~v' = WFDenot.~-closed wf2 {γ}{γ} wfγ wfγ (~′-refl (λ y → wfγ y))
                  wfu' wfv' D₂γu' D₂γv' in
   let u~v = ~-↦-~ u'↦u~v'↦v u'~v' in
   let wf-u'⊔v' = wf-⊔ u'~v' wfu' wfv' in

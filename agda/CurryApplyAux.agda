@@ -33,8 +33,8 @@ module CurryApplyAux
            -----------
          → ℱ D ≃ ℱ D′
   ℱ-cong {D}{D′} D≃D′ γ v wfγ wfv =
-    ⟨ ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₁ (D≃D′ (γ `, w) v' (λ {x} → WFEnv-extend wfγ wfw {x}) wfv') Dv') wfv ,
-      ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₂ (D≃D′ (γ `, w) v' (λ {x} → WFEnv-extend wfγ wfw {x}) wfv') Dv') wfv ⟩
+    ⟨ ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₁ (D≃D′ (γ `, w) v' (WFEnv-extend wfγ wfw) wfv') Dv') wfv ,
+      ℱ-≲ (λ {w} wfw {v'} wfv' Dv' → proj₂ (D≃D′ (γ `, w) v' (WFEnv-extend wfγ wfw) wfv') Dv') wfv ⟩
 
 
   ●-cong : ∀ {D₁ D₁′ D₂ D₂′ : Denotation}

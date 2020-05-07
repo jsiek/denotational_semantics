@@ -57,14 +57,14 @@ module ConsistentAux
 
 
   WFEnv : Env → Set
-  WFEnv γ = ∀{x : Var} → wf (γ x)
+  WFEnv γ = ∀(x : Var) → wf (γ x)
 
-  WFEnv-extend : ∀{γ : Env}{v}
+  WFEnv-extend : ∀{γ : Env}{v : Value}
               → WFEnv γ
               → wf v
               → WFEnv (γ `, v)
-  WFEnv-extend {γ} {v} wfγ wfv {0} = wfv
-  WFEnv-extend {γ} {v} wfγ wfv {suc x} = wfγ
+  WFEnv-extend {γ} {v} wfγ wfv 0 = wfv
+  WFEnv-extend {γ} {v} wfγ wfv (suc x) = wfγ x
 
   infix 3 _≃_
 
@@ -113,19 +113,19 @@ module ConsistentAux
 
 
   _~′_ : Env → Env → Set
-  _~′_ γ δ = ∀{x : Var} → γ x ~ δ x
+  _~′_ γ δ = ∀(x : Var) → γ x ~ δ x
 
   ~′-refl : ∀{γ : Env}
               → WFEnv γ
               → γ ~′ γ
-  ~′-refl {γ} wfγ {x} = ~-refl {γ x} {wfγ} 
+  ~′-refl {γ} wfγ x = ~-refl {γ x} {wfγ x}
 
 
   ~′-extend : ∀{γ δ : Env}{u v}
             → γ ~′ δ → u ~ v
             → (γ `, u) ~′ (δ `, v)
-  ~′-extend γ~′δ u~v {0} = u~v
-  ~′-extend γ~′δ u~v {suc x} = γ~′δ
+  ~′-extend γ~′δ u~v 0 = u~v
+  ~′-extend γ~′δ u~v (suc x) = γ~′δ x
 
   app-consistency : ∀{u₁ u₂ v₁ w₁ v₂ w₂}
         → u₁ ~ u₂
