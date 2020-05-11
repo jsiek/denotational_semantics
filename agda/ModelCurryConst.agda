@@ -9,7 +9,6 @@ open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; cong; inspect; [_])
 
-open import Variables
 open import Primitives
 open import ValueConst
 open import CurryConst

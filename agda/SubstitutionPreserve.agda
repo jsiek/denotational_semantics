@@ -1,6 +1,5 @@
 {-# OPTIONS --rewriting #-}
 
-open import Variables
 open import Structures
 open import Primitives
 import RenamePreserveReflect

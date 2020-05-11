@@ -547,11 +547,11 @@ ordering = record
              ; ⊑-dist = ⊑-dist
              }
 
-{-
+{------------------------------------------------------------------------------
 
  Consistency
 
--}
+ -----------------------------------------------------------------------------}
 
 infix 4 _~_
 
@@ -727,6 +727,12 @@ consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (in
     consistent→atoms u₁~v u′∈u₁ v′∈v
 consistent→atoms {u₁ ⊔ u₂} {v} {u′} {v′} ⟨ u₁~v , u₂~v ⟩ (inj₂ u′∈u₂) v′∈v =
     consistent→atoms u₂~v u′∈u₂ v′∈v
+
+{------------------------------------------------------------------------------
+
+ Well-formed Values (internally consistent)
+
+ -----------------------------------------------------------------------------}
 
 data wf : Value → Set where
   wf-bot : wf ⊥

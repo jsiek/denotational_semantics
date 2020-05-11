@@ -88,18 +88,20 @@ compress-sum-FV : ∀{Γ}{x}{M}
   → ⦉ compress Γ M ⦊ x ≡ sum-FV x M
 compress-sum-FV {Γ} {x} {M} x<Γ = ⦉make-ir-renaming⦊ x<Γ
 
+least-sum-FV : IR → ℕ → Set
+least-sum-FV M x = ∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y
 
 search-inv' : (m : ℕ) → (M : IR) → (s : ℕ) → (x : ℕ)
             → sum-FV x M ≤ s
             → s ≤ sum-FV (x + m) M
-            → Σ[ x' ∈ ℕ ] s ≡ sum-FV x' M
+            → Σ[ x' ∈ ℕ ] s ≡ sum-FV x' M × least-sum-FV M x'
 search-inv' zero M s x sum[x]≤s s≤sum[x+m]
     rewrite +-comm x 0 =
     let s≡sum[x] = ≤-antisym s≤sum[x+m] sum[x]≤s in
-    ⟨ x ,  s≡sum[x] ⟩
+    ⟨ x ,  ⟨ s≡sum[x] , {!!} ⟩ ⟩
 search-inv' (suc m) M s x sum[x]≤s s≤sum[x+m]
     with s ≟ sum-FV x M
-... | yes refl = ⟨ x , refl ⟩
+... | yes refl = ⟨ x , ⟨ refl , {!!} ⟩ ⟩
 ... | no neq rewrite +-suc x m =
     search-inv' m M s (suc x) G s≤sum[x+m]
     where G : sum-FV (suc x) M ≤ s
