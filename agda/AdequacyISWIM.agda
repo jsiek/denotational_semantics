@@ -225,7 +225,7 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
 ℰ→𝔼 {γ} {γ'} { $ P p} {wf} {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ (val-const {P} p) , ⟨ ⇓-lit , ℘pv→𝕍vp {P}{p}{v} ℰMγv ⟩ ⟩
 ℰ→𝔼 {γ} {γ'} {` x} {WF-var x lt} {v} wfγ wfv 𝔾γγ' ℰMγv =
-   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 wfγ wfv (𝔾→𝕍 _ _ 𝔾γγ' x lt) ℰMγv ⟩ ⟩
+   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 (wfγ x) wfv (𝔾→𝕍 _ _ 𝔾γγ' x lt) ℰMγv ⟩ ⟩
 ℰ→𝔼 {γ} {γ'} {ƛ N} {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)}
    {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ val-clos N γ' , ⟨ ⇓-lam {wf = wfN} , G {v} wfv ℰMγv ⟩ ⟩
@@ -234,7 +234,7 @@ sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
    G {⊥} wfv ℱℰNγv = tt
    G {const {B} k} wfv ()
    G {v ↦ w} (wf-fun wfv wfw) ℱℰNγv {c} vc =
-      ℰ→𝔼 {M = N} {wfN} {w} (λ {x} → WFEnv-extend wfγ wfv {x}) wfw
+      ℰ→𝔼 {M = N} {wfN} {w} (WFEnv-extend wfγ wfv) wfw
           (𝔾-ext 𝔾γγ' vc) ℱℰNγv
    G {v₁ ⊔ v₂} (wf-⊔ _ wfv₁ wfv₂) ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ =
       ⟨ G {v₁} wfv₁ ℱℰNγv₁ , G {v₂} wfv₂ ℱℰNγv₂ ⟩
@@ -274,8 +274,8 @@ adequacy : ∀{M : Term}{N : Term}{wfM : WF 0 M}
            ----------------------------------------------------------
          → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
 adequacy{M}{N}{wfM} Nv eq 
-    with ℰ→𝔼 {wfM = wfM}(λ {x} → wf-bot) wf-bot 𝔾-∅
-         (proj₂ (eq `∅ ⊥ (λ {x} → wf-bot) wf-bot) (ℰ-⊥ {M = N} Nv))
+    with ℰ→𝔼 {wfM = wfM}(λ x → wf-bot) wf-bot 𝔾-∅
+         (proj₂ (eq `∅ ⊥ (λ x → wf-bot) wf-bot) (ℰ-⊥ {M = N} Nv))
 ... | ⟨ c , ⟨ M⇓c , Vc ⟩ ⟩ = ⟨ c , M⇓c ⟩
 
 reduce→⇓ : ∀ {M : Term} {N : Term}{wfM : WF 0 M}

@@ -176,19 +176,19 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
   let wf-γdv₁⊔dv₂ = WFEnv-extend wfγ (wf-⊔ dv₁~dv₂ wf-dv₁ wf-dv₂) in
   let Dγdv₁⊔dv₂-cv₁ = WFDenot.⊑-env wfd {γ `, dom v₁}
                         {γ `, (dom v₁ {fv₁} ⊔ dom v₂ {fv₂})}
-                        (λ {x} → wf-γdv₁ {x})
-                        (λ {x} → wf-γdv₁⊔dv₂ {x})
+                        (wf-γdv₁)
+                        (wf-γdv₁⊔dv₂)
                         wf-cv₁
                         (`⊑-extend `⊑-refl (⊑-conj-R1 ⊑-refl))
                         D-γdv₁-cv₁ in
   let Dγdv₁⊔dv₂-cv₂ = WFDenot.⊑-env wfd {γ `, dom v₂}
                         {γ `, (dom v₁ {fv₁} ⊔ dom v₂ {fv₂})}
-                        (λ {x} → wf-γdv₂ {x})
-                        (λ {x} → wf-γdv₁⊔dv₂ {x})
+                        (wf-γdv₂)
+                        (wf-γdv₁⊔dv₂)
                         wf-cv₂
                         (`⊑-extend `⊑-refl (⊑-conj-R2 ⊑-refl))
                         D-γdv₂-cv₂ in
-  WFDenot.⊔-closed wfd (λ {x} → wf-γdv₁⊔dv₂ {x}) wf-cv₁ wf-cv₂
+  WFDenot.⊔-closed wfd (wf-γdv₁⊔dv₂) wf-cv₁ wf-cv₂
       Dγdv₁⊔dv₂-cv₁ Dγdv₁⊔dv₂-cv₂ 
         
 
@@ -212,10 +212,10 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
     let Dγdv′cv′ = ℱ-dom-cod{v = v′} d wfγ wfv′ wfw₁ dv′⊑w₁ Dγv′ in
     let wfγw₁ = WFEnv-extend wfγ wfw₁ in
     let Dγw₁cv′ = WFDenot.⊑-env d {γ `, dom v′}{γ `, w₁}
-                    (λ {x} → WFEnv-extend wfγ wfdv′ {x})
-                    (λ {x} → wfγw₁ {x})
+                    (WFEnv-extend wfγ wfdv′)
+                    (wfγw₁)
                     wfcv′ (`⊑-extend `⊑-refl dv′⊑w₁) Dγdv′cv′ in
-    let Dγw₁w₂ = WFDenot.⊑-closed d {γ `, w₁} {cod v′}{w₂} (λ {x} → wfγw₁{x})
+    let Dγw₁w₂ = WFDenot.⊑-closed d {γ `, w₁} {cod v′}{w₂} (wfγw₁)
                    wfcv′ wfw₂ w₂⊑cv′ Dγw₁cv′ in
     Dγw₁w₂
 
@@ -232,11 +232,11 @@ wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂
 ... | no u₁~̸v₁ = inj₂ u₁~̸v₁
 ... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
       where
-      wfγu₁ = λ {x} → WFEnv-extend wfγ wfu₁ {x}
-      wfδv₁ = λ {x} → WFEnv-extend wfδ wfv₁ {x}
-      γu₁~δv₁ = λ {x} → ~′-extend γ~δ u₁~v₁ {x}
-      u₂~v₂ = WFDenot.~-closed wfd (λ {x} → wfγu₁ {x}) (λ {x} → wfδv₁ {x})
-                 (λ {x} → γu₁~δv₁ {x}) wfu₂ wfv₂ d1 d2 
+      wfγu₁ = WFEnv-extend wfγ wfu₁
+      wfδv₁ = WFEnv-extend wfδ wfv₁
+      γu₁~δv₁ = ~′-extend γ~δ u₁~v₁
+      u₂~v₂ = WFDenot.~-closed wfd (wfγu₁) (wfδv₁)
+                 (γu₁~δv₁) wfu₂ wfv₂ d1 d2 
 ℱ-~ {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd wfγ wfδ γ~δ 
     (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst' , snd' ⟩ =
     ⟨ ℱ-~ {D}{γ}{δ}{u₁ ↦ u₂}{v₁} wfd wfγ wfδ γ~δ

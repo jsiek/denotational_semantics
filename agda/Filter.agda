@@ -63,7 +63,7 @@ module Filter
         → w ⊑ v → ℰ M γ v → ℰ M γ w
 
     ℰ-~ {γ}{δ}{` x}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv =
-        ~-⊑ (γ~δ {x}) ℰMγu ℰMδv
+        ~-⊑ (γ~δ x) ℰMγu ℰMδv
     ℰ-~ {γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}{v} wfγ wfδ γ~δ wfu wfv
          ℰMγu ℰMδv =
        ℱ-~ {ℰ N}{γ}{δ}{u}{v} G wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv
@@ -141,7 +141,7 @@ module Filter
                  -------------------------
                → γ `⊢ σ ↓ (γ₁ `⊔ γ₂)
     subst-⊔ {σ = σ} wfγ wfγ₁ wfγ₂ γ₁-ok γ₂-ok x =
-        ℰ-⊔ {M = ⟦ σ ⟧ x} wfγ wfγ₁ wfγ₂ (γ₁-ok x) (γ₂-ok x)
+        ℰ-⊔ {M = ⟦ σ ⟧ x} wfγ (wfγ₁ x) (wfγ₂ x) (γ₁-ok x) (γ₂-ok x)
 
   module ForISWIM 
     (℘ : ∀{P : Prim} → rep P → ValueStruct.Value D → Set)
@@ -173,7 +173,7 @@ module Filter
         → WFEnv γ → wf v → wf w 
         → w ⊑ v → ℰ M γ v → ℰ M γ w
 
-    ℰ-~ {M = ` x} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv = ~-⊑ (γ~δ {x}) ℰMγu ℰMδv
+    ℰ-~ {M = ` x} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv = ~-⊑ (γ~δ x) ℰMγu ℰMδv
     ℰ-~ {M = $ P k} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv = ℘-~ ℰMγu ℰMδv
     ℰ-~ {γ}{δ}{lam ⦅ cons (bind (ast N)) nil ⦆}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv =
        ℱ-~ {ℰ N}{γ}{δ}{u}{v} G wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv
@@ -251,6 +251,6 @@ module Filter
                  -------------------------
                → γ `⊢ σ ↓ (γ₁ `⊔ γ₂)
     subst-⊔ {σ = σ} wfγ wfγ₁ wfγ₂ γ₁-ok γ₂-ok x =
-        ℰ-⊔ {M = ⟦ σ ⟧ x} wfγ wfγ₁ wfγ₂ (γ₁-ok x) (γ₂-ok x)
+        ℰ-⊔ {M = ⟦ σ ⟧ x} wfγ (wfγ₁ x) (wfγ₂ x) (γ₁-ok x) (γ₂-ok x)
 
 

@@ -147,8 +147,8 @@ module ConsistentAux
   ... | inj₁ ⟨ _ , w~w′ ⟩ = w~w′
   ... | inj₂ ¬v~v′ = ⊥-elim (contradiction v~v' ¬v~v′)
 
-  wf-const-env : ∀ {x v} → wf v → ∀ {y} → wf (const-env x v y)
-  wf-const-env {x}{v} wfv {y}
+  wf-const-env : ∀ {x v} → wf v → ∀ (y : Var) → wf (const-env x v y)
+  wf-const-env {x}{v} wfv y
       with x ≟ y
   ... | yes eq = wfv
   ... | no neq = wf-bot

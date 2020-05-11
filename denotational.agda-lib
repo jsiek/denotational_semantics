@@ -1,0 +1,3 @@
+name: denotational
+depend: standard-library abt
+include: agda

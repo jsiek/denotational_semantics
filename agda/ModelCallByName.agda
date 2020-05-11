@@ -20,7 +20,7 @@ module ModelCallByName where
 
 infixl 7 _●_
 _●_ : Denotation → Denotation → Denotation
-_●_ D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v 
+_●_ D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂ γ v
 
 ●-≲ : ∀{γ : Env}{δ : Env}{D₁ D₂ : Denotation}
           {D₁′ D₂′ : Denotation}
@@ -41,19 +41,19 @@ _●_ D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂
 ●-⊔ {u = u} {v} wf1 wf2 wfγ wfu wfv (inj₁ u⊑⊥) (inj₁ v⊑⊥) =
     inj₁ (⊑-conj-L u⊑⊥ v⊑⊥)
 ●-⊔ {u = u} {v} wf1 wf2 wfγ wfu wfv (inj₁ u⊑⊥) (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) =
-  inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed wf1 (λ {x} → tt) tt tt lt fst₁ , snd ⟩ ⟩
+  inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed wf1 (λ x → tt) tt tt lt fst₁ , snd ⟩ ⟩
   where lt : v' ↦ (u ⊔ v) ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl (⊑-conj-L (⊑-trans u⊑⊥ ⊑-⊥) ⊑-refl)
 ●-⊔ {u = u} {v} wf1 wf2 wfγ wfu wfv (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩) (inj₁ v⊑⊥) =
-  inj₂ ⟨ u' , ⟨ (WFDenot.⊑-closed wf1 (λ {x} → tt) tt tt lt fst₁) , snd ⟩ ⟩
+  inj₂ ⟨ u' , ⟨ (WFDenot.⊑-closed wf1 (λ x → tt) tt tt lt fst₁) , snd ⟩ ⟩
   where lt : u' ↦ (u ⊔ v) ⊑ u' ↦ u
         lt = ⊑-fun ⊑-refl (⊑-conj-L ⊑-refl (⊑-trans v⊑⊥ ⊑-⊥))
 ●-⊔ {D₁}{D₂}{γ}{u}{v} wf1 wf2 wfγ wfu wfv (inj₂ ⟨ u' , ⟨ fst₁ , snd ⟩ ⟩)
                     (inj₂ ⟨ v' , ⟨ fst₃ , snd₁ ⟩ ⟩) =
-  let a = WFDenot.⊔-closed wf1 (λ {x} → tt) tt tt fst₁ fst₃ in                      
+  let a = WFDenot.⊔-closed wf1 (λ x → tt) tt tt fst₁ fst₃ in
   inj₂ ⟨ (u' ⊔ v') ,
-       ⟨ WFDenot.⊑-closed wf1 (λ {x} → tt) tt tt Dist⊔↦⊔ a ,
-         WFDenot.⊔-closed wf2 (λ {x} → tt) tt tt snd snd₁ ⟩ ⟩
+       ⟨ WFDenot.⊑-closed wf1 (λ x → tt) tt tt Dist⊔↦⊔ a ,
+         WFDenot.⊔-closed wf2 (λ x → tt) tt tt snd snd₁ ⟩ ⟩
 
 ●-⊑ : ∀{D₁ D₂ : Denotation} {γ : Env} {v w : Value}
     → WFDenot D₁
@@ -63,7 +63,7 @@ _●_ D₁ D₂ γ w = w ⊑ ⊥ ⊎ Σ[ v ∈ Value ] D₁ γ (v ↦ w) × D₂
     → (D₁ ● D₂) γ w
 ●-⊑ d wfγ wfv wfw w⊑v  (inj₁ x) = inj₁ (⊑-trans w⊑v x)
 ●-⊑ {v = v}{w} d wfγ wfv wfw w⊑v (inj₂ ⟨ v' , ⟨ fst₁ , snd ⟩ ⟩) =
-  inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed d (λ {x} → tt) tt tt lt fst₁  , snd ⟩ ⟩
+  inj₂ ⟨ v' , ⟨ WFDenot.⊑-closed d (λ x → tt) tt tt lt fst₁  , snd ⟩ ⟩
   where lt : v' ↦ w ⊑ v' ↦ v
         lt = ⊑-fun ⊑-refl w⊑v
 
@@ -76,7 +76,7 @@ model_curry_apply =
       record { model_curry = model_curry ;
                ●-≲ = λ {γ}{δ}{D₁}{D₂}{D₁′}{D₂′} x y →
                        ●-≲ {D₁ = D₁}{D₂ = D₂}{D₁′ = D₁′}{D₂′ = D₂′} x y;
-               ●-⊑ = λ {D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a (λ {x} → b{x}) c;
+               ●-⊑ = λ {D₁}{D₂} a b c → ●-⊑ {D₂ = D₂} a b c;
                ●-⊔ = λ {a}{b}{c}{d}{e} → ●-⊔ {a}{b}{c}{d}{e}
                }
 

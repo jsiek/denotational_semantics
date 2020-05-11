@@ -144,21 +144,21 @@ open import WFDenotMod value_struct ordering consistent
         → w ⊑ v → ℱ D γ v → ℱ D γ w
 ℱ-⊑ d wfγ wfv wfw ⊑-⊥ ℱDγv = tt
 ℱ-⊑ d wfγ wfv wfw (⊑-conj-L w⊑v w⊑v₁) ℱDγv =
-    ⟨ (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v ℱDγv) ,
-      (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v₁ ℱDγv) ⟩
+    ⟨ (ℱ-⊑ d wfγ wfv wfw w⊑v ℱDγv) ,
+      (ℱ-⊑ d wfγ wfv wfw w⊑v₁ ℱDγv) ⟩
 ℱ-⊑ d wfγ wfv wfw (⊑-conj-R1 w⊑v) ℱDγv =
-    ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v (proj₁ ℱDγv)
+    ℱ-⊑ d wfγ wfv wfw w⊑v (proj₁ ℱDγv)
 ℱ-⊑ d wfγ wfv wfw (⊑-conj-R2 w⊑v) ℱDγv =
-    ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v (proj₂ ℱDγv)
+    ℱ-⊑ d wfγ wfv wfw w⊑v (proj₂ ℱDγv)
 ℱ-⊑ d wfγ wfv wfw (⊑-trans w⊑v w⊑v₁) ℱDγv =
-    ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v
-      (ℱ-⊑ d (λ {x} → wfγ{x}) wfv wfw w⊑v₁ ℱDγv)
+    ℱ-⊑ d wfγ wfv wfw w⊑v
+      (ℱ-⊑ d wfγ wfv wfw w⊑v₁ ℱDγv)
 ℱ-⊑ {D}{γ}{v ↦ w}{v' ↦ w'} d wfγ wfv wfw (⊑-fun v⊑v' w'⊑w) ℱDγv =
-  WFDenot.⊑-closed d (λ {x} → tt) tt tt w'⊑w
-      (WFDenot.⊑-env d (λ {x} → tt) (λ {x} → tt) tt
+  WFDenot.⊑-closed d (λ x → tt) tt tt w'⊑w
+      (WFDenot.⊑-env d (λ x → tt) (λ x → tt) tt
          (`⊑-extend `⊑-refl v⊑v') ℱDγv)
 ℱ-⊑ {γ = γ} d wfγ wfv wfw (⊑-dist{v = v}) ℱDγv =
-    WFDenot.⊔-closed d {γ = γ `, v} (λ {x} → tt) tt tt 
+    WFDenot.⊔-closed d {γ = γ `, v} (λ x → tt) tt tt 
         (proj₁ ℱDγv) (proj₂ ℱDγv)
 
 
@@ -166,7 +166,7 @@ model_curry : CurryApplyStruct.CurryStruct value_struct ordering consistent ℱ
 model_curry = record { ℱ-≲ = ℱ-≲ ; ℱ-⊑ = ℱ-⊑ ;
                        ℱ-⊔ = λ {D}{γ}{u}{v} → ℱ-⊔{D = D}{γ}{u}{v} ;
                        ℱ-⊥ = λ {D}{γ} → ℱ-⊥ {D}{γ} }
-                       
+
 {-
 
 This is not used. -Jeremy
