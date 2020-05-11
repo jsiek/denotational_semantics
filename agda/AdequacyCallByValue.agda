@@ -122,7 +122,7 @@ adequacy : ∀{M : Term}{N : Term}{wfM : WF 0 M}
          → Σ[ N′ ∈ Term ] Σ[ γ ∈ ClosEnv ] Σ[ wf ∈ WF (suc (length γ)) N′ ]
             ∅' ⊢ M ⇓ clos N′ γ {wf}
 adequacy{M}{N}{wfM} eq 
-    with ℰ→𝔼 {wf = wfM} 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ {x} → tt) tt)
+    with ℰ→𝔼 {wf = wfM} 𝔾-∅ (proj₂ (eq `∅ ⊥ (λ x → tt) tt)
                   (ℰ-⊥ {γ = λ _ → ⊥}{M = lam ⦅ cons (bind (ast N)) nil ⦆} V-ƛ))
 ... | ⟨ clos N′ γ {wfN′} , ⟨ M⇓c , Vc ⟩ ⟩ =
     ⟨ N′ , ⟨ γ , ⟨ WF-rel N′ wfN′ , M⇓c ⟩ ⟩ ⟩

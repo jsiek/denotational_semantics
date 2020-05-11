@@ -34,7 +34,7 @@ open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Nullary using (Dec; yes; no)
 
 module ISWIMDenotAlt where
-  
+
 infixl 7 _●′_
 _●′_ : Denotation → Denotation → Denotation
 _●′_ D₁ D₂ γ w = Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] Σ[ v₃ ∈ Value ]
@@ -96,7 +96,7 @@ AllFun⊥ (u ⊔ v) = AllFun⊥ u × AllFun⊥ v
         with wf-∈ u↦w∈v wfv
     ... | wf-fun wfu wfw =
         let wfρ' = WFEnv-extend {ρ} wfρ wfu in
-        ℰ′→ℰ {N} (λ {x} → wfρ' {x}) wfw (all {u}{w} u↦w∈v)
+        ℰ′→ℰ {N} wfρ' wfw (all {u}{w} u↦w∈v)
 ℰ′→ℰ {L · M} {ρ} {v} wfρ wfv
   ⟨ v₁ , ⟨ v₂ , ⟨ v₃ , ⟨ wfv1 , ⟨ wfv2 , ⟨ wfv3 , 
   ⟨ Lv1 , ⟨ Mv2 , ⟨ v3↦v4⊑v1 , v3⊑v2 ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
@@ -129,11 +129,11 @@ Closed-~ D = ∀{γ δ u v}
 ... | no u₁~̸v₁ = inj₂ u₁~̸v₁
 ... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
       where
-      wfγu₁ = λ {x} → WFEnv-extend {γ}{u₁} wfγ wfu₁ {x}
-      wfδv₁ = λ {x} → WFEnv-extend wfδ wfv₁ {x}
-      γu₁~δv₁ = λ {x} → ~′-extend γ~δ u₁~v₁ {x}
-      u₂~v₂ = D~ (λ {x} → wfγu₁ {x}) (λ {x} → wfδv₁ {x})
-                 (λ {x} → γu₁~δv₁ {x}) wfu₂ wfv₂ d1 d2 
+      wfγu₁ = WFEnv-extend {γ}{u₁} wfγ wfu₁
+      wfδv₁ = WFEnv-extend wfδ wfv₁
+      γu₁~δv₁ = ~′-extend γ~δ u₁~v₁
+      u₂~v₂ = D~ wfγu₁ wfδv₁
+                 γu₁~δv₁ wfu₂ wfv₂ d1 d2 
 ℱ-~′ {D} {γ} {δ} {u₁ ↦ u₂} {v₁ ⊔ v₂} D~ wfγ wfδ γ~δ 
     (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst' , snd' ⟩ =
     ⟨ ℱ-~′ {D}{γ}{δ}{u₁ ↦ u₂}{v₁} D~ wfγ wfδ γ~δ
@@ -163,7 +163,7 @@ Closed-~ D = ∀{γ δ u v}
     ⊥-elim (contradiction u'~v' u'~̸v')
 
 ℰ′-~ {γ}{δ}{` x}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv
-     rewrite ℰMγu | ℰMδv = γ~δ {x}
+     rewrite ℰMγu | ℰMδv = γ~δ x
 ℰ′-~ {M = $ P k}{u}{v} wfγ wfδ γ~δ wfu wfv ℰMγu ℰMδv =
      ℘-~{P}{k}{u}{v} ℰMγu ℰMδv
 ℰ′-~ {γ}{δ}{ƛ N}{u}{v} wfγ wfδ γ~δ wfu wfv
@@ -179,7 +179,7 @@ Closed-~ D = ∀{γ δ u v}
      → ℰ M ρ v
      → Σ[ v′ ∈ Value ] wf v′ × ℰ′ M ρ' v′ × v ⊑ v′
 ℰ→ℰ′ {` x}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
-    ⟨ ρ' x , ⟨ wfρ' , ⟨ refl , ⊑-trans ℰMρv (ρ⊑ρ' x) ⟩ ⟩ ⟩
+    ⟨ ρ' x , ⟨ wfρ' x , ⟨ refl , ⊑-trans ℰMρv (ρ⊑ρ' x) ⟩ ⟩ ⟩
 ℰ→ℰ′ {$ P k}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
     ⟨ v , ⟨ wfv , ⟨ ℰMρv , ⊑-refl ⟩ ⟩ ⟩
 ℰ→ℰ′ {ƛ N}{ρ}{ρ'}{v} wfρ wfρ' ρ⊑ρ' wfv ℰMρv =
@@ -191,8 +191,8 @@ Closed-~ D = ∀{γ δ u v}
    G {const k} wfv ()
    G {v₁ ↦ v₂} (wf-fun wfv1 wfv2) ℱNv
        with ℰ→ℰ′ {N}{ρ `, v₁}{ρ' `, v₁}{v₂}
-                  (λ {x} → WFEnv-extend wfρ wfv1 {x})
-                  (λ {x} → WFEnv-extend wfρ' wfv1 {x})
+                  (WFEnv-extend wfρ wfv1)
+                  (WFEnv-extend wfρ' wfv1)
                   (`⊑-extend ρ⊑ρ' ⊑-refl) wfv2 ℱNv
    ... | ⟨ v′ , ⟨ wfv′ , ⟨ Mv′ , v⊑v′ ⟩ ⟩ ⟩ =
          ⟨ v₁ ↦ v′ , ⟨ wf-fun wfv1 wfv′ , ⟨ Mv′ , ⊑-fun′ ⊑-refl v⊑v′ ⟩ ⟩ ⟩

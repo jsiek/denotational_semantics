@@ -42,7 +42,7 @@ reflect-beta : ∀{γ : Env}{M N}{v}
     → ℰ (N [ M ]) γ v
     → ℰ ((ƛ N) · M) γ v
 reflect-beta {γ}{M}{N}{v} Mv d 
-    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) (λ {x} → tt) tt
+    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M} Mv) (λ x → tt) tt
 ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
       ⟨ v₂′ , ⟨ tt , ⟨ d₂′ , d₁′ ⟩ ⟩ ⟩
 
@@ -79,7 +79,7 @@ preserve {γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (as
                (β-rule{N = N}{M = M} Mv) _ ℰƛN·Mγw
     with ℰƛN·Mγw
 ... | ⟨ v' , ⟨ wfv' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ ⟩ = 
-      substitution{N = N}{M = M} {v'} (λ {x} → tt) tt tt ℰNγvw ℰMγv
+      substitution{N = N}{M = M} {v'} (λ x → tt) tt tt ℰNγvw ℰMγv
 
 
 reduce-equal : ∀ {M : Term} {N : Term}

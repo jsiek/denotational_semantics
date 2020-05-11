@@ -234,7 +234,7 @@ adequacy : ∀{M : Term}{N : Term}{wf : WF 0 M}
              ∅' ⊢ M ⇓ clos (lam ⦅ cons (bind (ast N′)) nil ⦆) γ
 adequacy{M}{N}{wf} eq
     with ℰ→𝔼 {wf = wf} 𝔾-∅
-              ((proj₂ (eq `∅ (⊥ ↦ ⊥) (λ {x} → tt) tt)) (ℰ-⊥{M = N}))
+              ((proj₂ (eq `∅ (⊥ ↦ ⊥) (λ x → tt) tt)) (ℰ-⊥{M = N}))
               ⟨ ⊥ , ⟨ ⊥ , ⊑-refl ⟩ ⟩
 ... | ⟨ clos M′ γ , ⟨ M⇓c , Vc ⟩ ⟩
     with 𝕍→WHNF Vc

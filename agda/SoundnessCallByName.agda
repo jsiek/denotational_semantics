@@ -35,7 +35,7 @@ module SoundnessCallByName where
 reflect-beta : ∀{γ : Env}{M N}
     → ℰ (N [ M ]) γ ≲ ℰ ((ƛ N) · M) γ
 reflect-beta {γ}{M}{N} {v} wfv d
-    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M}) (λ {x} → tt) tt 
+    with substitution-reflect{N = N}{M = M} d (ℰ-⊥ {M = M}) (λ x → tt) tt 
 ... | ⟨ v₂′ , ⟨ d₁′ , d₂′ ⟩ ⟩ =
       inj₂ ⟨ v₂′ , ⟨ d₂′ , d₁′ ⟩ ⟩
 
@@ -69,12 +69,12 @@ preserve {γ = γ} (ξ₂-rule{L = L}{M}{M′} M—→M′) =
               (λ x y → y)
               (preserve M—→M′)
 preserve {γ}{app ⦅ cons (ast (lam ⦅ cons (bind (ast N)) nil ⦆)) (cons (ast M) nil) ⦆}
-               (β-rule{N = N}{M = M}) _ ℰƛN·Mγw 
+               (β-rule{N = N}{M = M}) _ ℰƛN·Mγw
     with ℰƛN·Mγw
 ... | inj₁ w⊑⊥ =
-      ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (λ {x} → tt) tt tt w⊑⊥ (ℰ-⊥{M = ⟪ subst-zero M ⟫ N}) 
-... | inj₂ ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ = 
-      substitution{N = N}{M = M} {v'} (λ {x} → tt) tt tt ℰNγvw ℰMγv 
+      ℰ-⊑ {M = ⟪ subst-zero M ⟫ N} (λ x → tt) tt tt w⊑⊥ (ℰ-⊥{M = ⟪ subst-zero M ⟫ N})
+... | inj₂ ⟨ v' , ⟨ ℰNγvw , ℰMγv ⟩ ⟩ =
+      substitution{N = N}{M = M} {v'} (λ x → tt) tt tt ℰNγvw ℰMγv
 preserve (ζ-rule {N}{N′} N—→N′) {v} = ℱ-≲ (λ wfv' → preserve N—→N′) {v}
 
 
