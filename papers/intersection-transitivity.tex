@@ -36,35 +36,55 @@
 
 
 \begin{abstract}
-  The subtyping relation for intersection type systems traditionally
-  employs a transitivity rule (Barendregt et al. 1983), which means
-  that the subtyping judgment does not enjoy the subformula property.
-  Laurent develops a sequent-style subtyping judgment, without
-  transitivity, and proves transitivity via a sequence of six lemmas
-  that culminate in cut-elimination (2018). This article presents a
-  subtyping judgment, in regular style, that satisfies the subformula
-  property, and presents a direct proof of transitivity. Borrowing
-  from Laurent's system, the rule for function types is essentially
-  the $\beta$-soundness property.  The main lemma required for the
-  transitivity proof is one that has been used to prove the inversion
-  principle for subtyping of function types. The choice of induction
-  principle for the proof of transitivity is subtle: we use
-  well-founded induction on the lexicographical ordering of the sum of
-  the depths of the first and last type followed by the sum of the
-  sizes of the middle and last type. The article concludes with a
-  proof that the new subtyping judgment is equivalent to that of
-  Barendregt, Coppo, and Dezani-Ciancaglini.
+  The subtyping rules for intersection type systems traditionally
+  employ a transitivity rule (Barendregt et al. 1983), which means
+  that subtyping does not enjoy the subformula property.  Laurent
+  develops a sequent-style subtyping system, without transitivity, and
+  proves transitivity via a sequence of six lemmas that culminate in
+  cut-elimination (2018). This article develops a subtyping system in
+  regular style that omits transitivity and provides a direct proof of
+  transitivity. The new system satisfies something like the subformula
+  property: every type occuring in the subtyping derivation of $A <:
+  B$ is a subformula of $A$ or $B$, or an intersection of such
+  subformulas.  Borrowing from Laurent's system, the rule for function
+  types is essentially the $\beta$-soundness property.  The main lemma
+  required for the transitivity proof is one that has been used to
+  prove the inversion principle for subtyping of function types. The
+  choice of induction principle for the proof of transitivity is
+  subtle: we use well-founded induction on the lexicographical
+  ordering of the sum of the depths of the first and last type
+  followed by the sum of the sizes of the middle and last type. The
+  article concludes with a proof that the new subtyping judgment is
+  equivalent to that of Barendregt, Coppo, and Dezani-Ciancaglini.
 \end{abstract}
 
 \section{Introduction}
 
 Intersection types were invented by Coppo, Dezani-Ciancaglini, and
 Salle, as a tool for studying normalization in the lambda
-calculus~\citep{Coppo:1979aa}. By varying the subtyping rules and atom
-types, researchers use intersection type systems to model many
-different
-calculi~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
-Perhaps the best-known of them is the BCD intersection type system of
+calculus~\citep{Coppo:1979aa}. Subsequently intersection types have
+been used for at least three purposes: to enhance the expressiveness
+of type systems
+~\citep{Reynolds:1988aa,Pierce:1991aa,Castagna:2014aa,Chaudhuri:2014aa,Oliveira:2016aa,Muehlboeck:2018aa,Bi:2019aa,Dunfield:2019aa,Microsoft:TypeScript2020aa,Dotty:2020aa},
+to increase the precision of static
+analyses~\citep{Turbak:1997aa,Palsberg:1998aa,Mossin:2003aa,Simoes:2007aa},
+and to express filter models for the denotational semantics of a
+variety of lambda calculi
+~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
+
+UNDER CONSTRUCTION
+
+A filter model
+
+\[
+   \llbracket M \rrbracket = \{ A \mid \emptyset \vdash M : A \}
+\]
+
+
+
+
+
+Perhaps the best-known  them is the BCD intersection type system of
 \citet{Barendregt:1983aa}. For this article we focus on the BCD
 system, following the presentation of \citet{Barendregt:2013aa}.  We
 conjecture that our results apply to other intersection type systems
