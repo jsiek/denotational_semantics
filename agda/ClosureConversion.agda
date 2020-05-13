@@ -12,7 +12,7 @@ open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; _+_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-refl; ≤-reflexive; ≤-trans; n≤1+n; +-identityʳ; ≤-step; +-comm; ≤⇒≯;
-         ≤-antisym; +-suc; ≤∧≢⇒<; _≤?_; 1+n≰n; suc-injective; ≤-pred)
+         ≤-antisym; +-suc; ≤∧≢⇒<; _≤?_; 1+n≰n; suc-injective; ≤-pred; ≰⇒>; <⇒≢)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -91,28 +91,47 @@ compress-sum-FV {Γ} {x} {M} x<Γ = ⦉make-ir-renaming⦊ x<Γ
 least-sum-FV : IR → ℕ → Set
 least-sum-FV M x = ∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y
 
+{-
+
+m : how many left in Γ
+s : the sum we're trying to invert
+x : the current input that we're trying
+
+-}
+
 search-inv' : (m : ℕ) → (M : IR) → (s : ℕ) → (x : ℕ)
             → sum-FV x M ≤ s
             → s ≤ sum-FV (x + m) M
+            → (∀ y → y < x → sum-FV y M < sum-FV x M)
             → Σ[ x' ∈ ℕ ] s ≡ sum-FV x' M × least-sum-FV M x'
-search-inv' zero M s x sum[x]≤s s≤sum[x+m]
+search-inv' zero M s x sum[x]≤s s≤sum[x+m] less
     rewrite +-comm x 0 =
     let s≡sum[x] = ≤-antisym s≤sum[x+m] sum[x]≤s in
-    ⟨ x ,  ⟨ s≡sum[x] , {!!} ⟩ ⟩
-search-inv' (suc m) M s x sum[x]≤s s≤sum[x+m]
+    ⟨ x ,  ⟨ s≡sum[x] , G ⟩ ⟩
+    where
+    G : (y : ℕ) → sum-FV y M ≡ sum-FV x M → x ≤ y
+    G y eq
+        with x ≤? y
+    ... | yes lt = lt
+    ... | no ¬x≤y =
+          let x>y = ≰⇒> ¬x≤y in
+          let aa = less y x>y in
+          ⊥-elim ((<⇒≢ aa) eq)
+search-inv' (suc m) M s x sum[x]≤s s≤sum[x+m] less
     with s ≟ sum-FV x M
 ... | yes refl = ⟨ x , ⟨ refl , {!!} ⟩ ⟩
 ... | no neq rewrite +-suc x m =
-    search-inv' m M s (suc x) G s≤sum[x+m]
+    search-inv' m M s (suc x) G s≤sum[x+m] {!!}
     where G : sum-FV (suc x) M ≤ s
-          G with ir-FV? M (suc x)
+          G   with ir-FV? M (suc x)
           ... | true = ≤∧≢⇒< sum[x]≤s λ z → neq (sym z)
           ... | false = sum[x]≤s
+
 
 sum-FV-inv : IR → ℕ → ℕ → ℕ
 sum-FV-inv M Γ s
     with s ≤? sum-FV Γ M
-... | yes lt = proj₁ (search-inv' Γ M s 0 z≤n lt)
+... | yes lt = proj₁ (search-inv' Γ M s 0 z≤n lt {!!})
 ... | no nlt = 0
 
 sum-FV-mono-≤-aux : ∀{M}{x}{d}
@@ -146,8 +165,8 @@ sum-FV-inverse {Γ}{M}{x} x<Γ
     with sum-FV x M ≤? sum-FV Γ M
 ... | no nlt = ⊥-elim (nlt (sum-FV-mono-≤ (≤-trans (≤-step ≤-refl) x<Γ)))
 ... | yes lt
-    with search-inv' Γ M (sum-FV x M) 0 z≤n lt
-... | ⟨ x' , eq ⟩ = {!!} {- need stuff about least -}
+    with search-inv' Γ M (sum-FV x M) 0 z≤n lt {!!}
+... | ⟨ x' , ⟨ eq , least ⟩ ⟩ = {!!} {- need stuff about least -}
 
 
 expand : ℕ → IR → Rename
