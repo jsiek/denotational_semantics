@@ -12,7 +12,8 @@ open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _≟_; _+_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-refl; ≤-reflexive; ≤-trans; n≤1+n; +-identityʳ; ≤-step; +-comm; ≤⇒≯;
-         ≤-antisym; +-suc; ≤∧≢⇒<; _≤?_; 1+n≰n; suc-injective; ≤-pred; ≰⇒>; <⇒≢)
+         ≤-antisym; +-suc; ≤∧≢⇒<; _≤?_; 1+n≰n; suc-injective; ≤-pred; ≰⇒>; <⇒≢;
+         <⇒≱)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -22,6 +23,24 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
   using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
 open import Relation.Nullary using (Dec; yes; no)
+
+≤→<⊎≡ : ∀{a b : ℕ}
+   → a ≤ b
+   → a < b ⊎ a ≡ b
+≤→<⊎≡ {.0} {zero} z≤n = inj₂ refl
+≤→<⊎≡ {.0} {suc b} z≤n = inj₁ (s≤s z≤n)
+≤→<⊎≡ {suc a}{suc b} (s≤s a≤b)
+    with ≤→<⊎≡ {a}{b} a≤b
+... | inj₁ lt = inj₁ (s≤s lt)
+... | inj₂ refl = inj₂ refl
+
+≤→Σ+ : ∀ m n → m ≤ n → Σ[ d ∈ ℕ ] n ≡ m + d
+≤→Σ+ zero n m≤n = ⟨ n , refl ⟩
+≤→Σ+ (suc m) (suc n) (s≤s m≤n)
+    with ≤→Σ+ m (suc n) (≤-trans (≤-step ≤-refl) (s≤s m≤n))
+... | ⟨ 0 , eq ⟩ rewrite +-comm m 0 | sym eq = ⊥-elim (1+n≰n m≤n)
+... | ⟨ suc d , eq ⟩ rewrite +-suc m d | suc-injective eq =
+      ⟨ d , refl ⟩
 
 {-
 
@@ -48,7 +67,8 @@ open IRMod renaming (ABT to IR; `_ to ^_; _⦅_⦆ to node; cons to ir-cons;
    WF to ir-WF; FV? to ir-FV?; WF-op to ir-WF-op; WF-cons to ir-WF-cons;
    WF-nil to ir-WF-nil; WF-ast to ir-WF-ast; WF-bind to ir-WF-bind;
    Arg to ir-Arg; Args to ir-Args; make-renaming to make-ir-renaming;
-   ⦉make-renaming⦊ to ⦉make-ir-renaming⦊) public
+   ⦉make-renaming⦊ to ⦉make-ir-renaming⦊;
+   rename→subst to ir-rename→subst) public
 open IRMod using (_⨟_; exts-cons-shift; bind-ast)
 
 pattern # p k = node (ir-lit p k) ir-nil 
@@ -91,48 +111,55 @@ compress-sum-FV {Γ} {x} {M} x<Γ = ⦉make-ir-renaming⦊ x<Γ
 least-sum-FV : IR → ℕ → Set
 least-sum-FV M x = ∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y
 
-{-
-
-m : how many left in Γ
-s : the sum we're trying to invert
-x : the current input that we're trying
-
--}
-
-search-inv' : (m : ℕ) → (M : IR) → (s : ℕ) → (x : ℕ)
-            → sum-FV x M ≤ s
-            → s ≤ sum-FV (x + m) M
-            → (∀ y → y < x → sum-FV y M < sum-FV x M)
-            → Σ[ x' ∈ ℕ ] s ≡ sum-FV x' M × least-sum-FV M x'
-search-inv' zero M s x sum[x]≤s s≤sum[x+m] less
-    rewrite +-comm x 0 =
-    let s≡sum[x] = ≤-antisym s≤sum[x+m] sum[x]≤s in
-    ⟨ x ,  ⟨ s≡sum[x] , G ⟩ ⟩
+search : (x : ℕ) → (M : IR) → (s : ℕ)
+       → (Σ[ x' ∈ ℕ ] s ≡ sum-FV x' M × least-sum-FV M x')
+         ⊎ (∀ y → y ≤ x → sum-FV y M < s)
+search zero M s
+    with s ≟ sum-FV 0 M
+... | yes s=sum[0] = inj₁ ⟨ 0 , ⟨ s=sum[0] , (λ y _ → z≤n) ⟩ ⟩
+... | no s≠sum[0] = inj₂ (G s≠sum[0])
     where
-    G : (y : ℕ) → sum-FV y M ≡ sum-FV x M → x ≤ y
-    G y eq
-        with x ≤? y
-    ... | yes lt = lt
-    ... | no ¬x≤y =
-          let x>y = ≰⇒> ¬x≤y in
-          let aa = less y x>y in
-          ⊥-elim ((<⇒≢ aa) eq)
-search-inv' (suc m) M s x sum[x]≤s s≤sum[x+m] less
-    with s ≟ sum-FV x M
-... | yes refl = ⟨ x , ⟨ refl , {!!} ⟩ ⟩
-... | no neq rewrite +-suc x m =
-    search-inv' m M s (suc x) G s≤sum[x+m] {!!}
-    where G : sum-FV (suc x) M ≤ s
-          G   with ir-FV? M (suc x)
-          ... | true = ≤∧≢⇒< sum[x]≤s λ z → neq (sym z)
-          ... | false = sum[x]≤s
-
+    G : ∀{s} → s ≢ 0 → (y : ℕ) → y ≤ 0 → suc (sum-FV y M) ≤ s
+    G {0} s≢0 .0 z≤n = ⊥-elim (s≢0 refl)
+    G {suc s} s≢0 .0 z≤n = s≤s z≤n
+search (suc x) M s
+    with search x M s
+... | inj₁ ⟨ x' , ⟨ s=sum[x'] , least ⟩ ⟩ =
+      inj₁ ⟨ x' , ⟨ s=sum[x'] , least ⟩ ⟩
+... | inj₂ less
+    with s ≟ sum-FV (suc x) M
+... | yes s=sum[1+x] = inj₁ ⟨ (suc x) , ⟨ s=sum[1+x] , G ⟩ ⟩
+    where
+    G : (y : ℕ) →  sum-FV y M ≡ (sum-FV (suc x) M) → suc x ≤ y
+    G y eq = ≰⇒> λ y≤x →
+       let sum[y]<s = less y y≤x in
+       let sum[y]=s = trans eq (sym s=sum[1+x]) in
+       (<⇒≢ sum[y]<s) sum[y]=s
+... | no s≢sum[1+x] = inj₂ G
+    where
+    G : (y : ℕ) → y ≤ suc x → suc (sum-FV y M) ≤ s
+    G y y≤1+x
+        with y ≤? x
+    ... | yes y≤x = less y y≤x
+    ... | no y≰x
+        with ≤→<⊎≡ y≤1+x
+    ... | inj₁ y<1+x = ⊥-elim (y≰x (≤-pred y<1+x))
+    ... | inj₂ refl
+        with ir-FV? M (suc x)
+    ... | true =
+          let sum[x]<x = less x ≤-refl in
+          ≤∧≢⇒< sum[x]<x λ z → s≢sum[1+x] (sym z)
+    ... | false = less x ≤-refl
+    
 
 sum-FV-inv : IR → ℕ → ℕ → ℕ
 sum-FV-inv M Γ s
     with s ≤? sum-FV Γ M
-... | yes lt = proj₁ (search-inv' Γ M s 0 z≤n lt {!!})
 ... | no nlt = 0
+... | yes s≤sum[Γ]
+    with search Γ M s
+... | inj₁ ⟨ x , ⟨ s=sum[x] , least ⟩ ⟩ = x
+... | inj₂ less = ⊥-elim ((≤⇒≯ s≤sum[Γ]) (less Γ ≤-refl))
 
 sum-FV-mono-≤-aux : ∀{M}{x}{d}
   → sum-FV x M ≤ sum-FV (x + d) M
@@ -143,14 +170,6 @@ sum-FV-mono-≤-aux {M} {x} {suc d}
 ... | true = ≤-step (sum-FV-mono-≤-aux {M} {x} {d})
 ... | false = sum-FV-mono-≤-aux {M} {x} {d}
 
-≤→Σ+ : ∀ m n → m ≤ n → Σ[ d ∈ ℕ ] n ≡ m + d
-≤→Σ+ zero n m≤n = ⟨ n , refl ⟩
-≤→Σ+ (suc m) (suc n) (s≤s m≤n)
-    with ≤→Σ+ m (suc n) (≤-trans (≤-step ≤-refl) (s≤s m≤n))
-... | ⟨ 0 , eq ⟩ rewrite +-comm m 0 | sym eq = ⊥-elim (1+n≰n m≤n)
-... | ⟨ suc d , eq ⟩ rewrite +-suc m d | suc-injective eq =
-      ⟨ d , refl ⟩
-
 sum-FV-mono-≤ : ∀{M}{x}{y}
   → x ≤ y
   → sum-FV x M ≤ sum-FV y M
@@ -160,95 +179,38 @@ sum-FV-mono-≤ {M} {x} {y} x≤y
 
 sum-FV-inverse : ∀{Γ}{M}{x}
   → x < Γ
+  → least-sum-FV M x
   → sum-FV-inv M Γ (sum-FV x M) ≡ x
-sum-FV-inverse {Γ}{M}{x} x<Γ
+sum-FV-inverse {Γ}{M}{x} x<Γ least
     with sum-FV x M ≤? sum-FV Γ M
 ... | no nlt = ⊥-elim (nlt (sum-FV-mono-≤ (≤-trans (≤-step ≤-refl) x<Γ)))
 ... | yes lt
-    with search-inv' Γ M (sum-FV x M) 0 z≤n lt {!!}
-... | ⟨ x' , ⟨ eq , least ⟩ ⟩ = {!!} {- need stuff about least -}
+    with search Γ M (sum-FV x M)
+... | inj₁ ⟨ x' , ⟨ eq , least' ⟩ ⟩ =
+      ≤-antisym (least' x eq) (least x' (sym eq))
+... | inj₂ less =
+      let a = less x (≤-trans (≤-step ≤-refl) x<Γ) in
+      ⊥-elim (1+n≰n a)
 
 
 expand : ℕ → IR → Rename
-expand Γ M = make-ir-renaming (sum-FV-inv M Γ) (sum-FV Γ M)
+expand Γ M = make-ir-renaming (sum-FV-inv M Γ) (suc (sum-FV Γ M))
 
 expand-sum-FV-inv : ∀{x}{Γ}{M}
   → x < Γ
+  → least-sum-FV M x
   → ⦉ expand Γ M ⦊ (sum-FV x M) ≡ x
-expand-sum-FV-inv {x}{Γ}{M} x<Γ =
-    let xx = ⦉make-ir-renaming⦊ {ρ = (sum-FV-inv M Γ)} x<Γ in 
-    {!!}
-
-{-
-  UNDER CONSTRUCTION
--}
-
-
-search-inv : ℕ → ℕ → ℕ → IR → Maybe ℕ
-search-inv 0 s x M = nothing
-search-inv (suc m) s x M
-    with sum-FV x M ≟ s
-... | yes s≡sum = just x
-... | no s≢sum = search-inv m s (suc x) M
-
-inv-sum-FV : ℕ → ℕ → IR → Maybe ℕ
-inv-sum-FV Γ s M = search-inv Γ s 0 M
-
-search-inv-sum : ∀{m s x y : ℕ}{M : IR}
-   → search-inv m s y M ≡ just x
-   → sum-FV x M ≡ s
-search-inv-sum {zero} ()
-search-inv-sum {suc m}{s}{x}{y}{M} eq
-    with sum-FV y M ≟ s | eq
-... | yes s≡sum | refl = s≡sum
-... | no s≢sum | eq' = search-inv-sum {m}{s}{x}{suc y} eq'
-
-inv-sum : ∀{Γ s x : ℕ}{M : IR}
-  → inv-sum-FV Γ s M ≡ just x
-  → sum-FV x M ≡ s
-inv-sum {Γ}{s}{x}{M} eq = search-inv-sum {Γ}{y = 0} eq
-
-≤→<⊎≡ : ∀{a b : ℕ}
-   → a ≤ b
-   → a < b ⊎ a ≡ b
-≤→<⊎≡ {.0} {zero} z≤n = inj₂ refl
-≤→<⊎≡ {.0} {suc b} z≤n = inj₁ (s≤s z≤n)
-≤→<⊎≡ {suc a}{suc b} (s≤s a≤b)
-    with ≤→<⊎≡ {a}{b} a≤b
-... | inj₁ lt = inj₁ (s≤s lt)
-... | inj₂ refl = inj₂ refl
-
-inv-sum-search : ∀{m s x y : ℕ}{M : IR}
-   → x < y + m
-   → y ≤ x
-   → sum-FV x M ≡ s
-   → (∀ y → sum-FV y M ≡ s → x ≤ y)
-   → search-inv m s y M ≡ just x
-inv-sum-search {zero} {s} {x} {y} {M} x<y+m y≤x ΣFV[x,M]=s least
-    rewrite +-comm y 0 = ⊥-elim (≤⇒≯ y≤x x<y+m)
-inv-sum-search {suc m} {s} {x} {y} {M} x<y+m y≤x ΣFV[x,M]=s least
-    with sum-FV y M ≟ s
-... | no s≢sum =
-      inv-sum-search {m}{s}{x}{suc y}{M} G H ΣFV[x,M]=s least
-      where
-      G : suc x ≤ suc (y + m)
-      G = ≤-trans x<y+m (≤-reflexive (+-suc y m))
-      H : suc y ≤ x
-      H   with ≤→<⊎≡ y≤x
-      ... | inj₁ y<x = y<x
-      ... | inj₂ refl = ⊥-elim (s≢sum ΣFV[x,M]=s)
-... | yes s≡sum
-    rewrite ≤-antisym (least y s≡sum) y≤x =
-      refl
-
-sum-inv : ∀{Γ}{s}{x}{M}
-  → x < Γ
-  → sum-FV x M ≡ s
-  → (∀ y → sum-FV y M ≡ s → x ≤ y)
-  → inv-sum-FV Γ s M ≡ just x
-sum-inv {Γ}{s}{x}{M} x<Γ eq least =
-  inv-sum-search {Γ}{s}{x}{0} x<Γ z≤n eq least
-
+expand-sum-FV-inv {x}{Γ}{M} x<Γ least =
+    let xx = ⦉make-ir-renaming⦊ {Γ = suc (sum-FV Γ M)} {x = sum-FV x M}{ρ = (sum-FV-inv M Γ)} (s≤s (sum-FV-mono-≤ (≤-trans (≤-step ≤-refl) x<Γ))) in 
+    begin
+        ⦉ expand Γ M ⦊ (sum-FV x M)
+    ≡⟨⟩
+        ⦉ make-ir-renaming (sum-FV-inv M Γ) (suc (sum-FV Γ M)) ⦊ (sum-FV x M)
+    ≡⟨ xx ⟩
+        sum-FV-inv M Γ (sum-FV x M)
+    ≡⟨ sum-FV-inverse x<Γ least ⟩
+        x
+    ∎
 
 {- An example that includes 0 as a free variable. -}
 test-M : IR
@@ -282,115 +244,23 @@ _ = refl
 _ : ⦉ compress 8 test-M ⦊ 7 ≡ 3
 _ = refl
 
-{-
-
-  The expander is the inverse of the compressor.
-  It maps a contiguous sequence of variables back to their
-  original locations.
-
--}
-
-expander : (s Γ : ℕ) → (M : IR) → Rename
-expander s zero M = ↑ 0
-expander s (suc Γ) M
-    with inv-sum-FV (s + suc Γ) s M
-... | nothing = ↑ 0
-... | just x = x • expander (suc s) Γ M
-
-expander-inv-sum-FV : ∀{Γ}{x}{M}
-  → x < Γ
-  → (∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y)
-  → ⦉ expander 0 Γ M ⦊ (sum-FV x M) ≡ x
-expander-inv-sum-FV {Γ}{x}{M} least = {!!}
-  where
-  aux : ∀{Γ}{s}{M}{x}
-    → x < s + suc Γ
-    → (∀ y → sum-FV y M ≡ sum-FV x M → x ≤ y)
-    → ⦉ expander s Γ M ⦊ (sum-FV x M) ≡ x
-  aux {0} {s} {M}{x} x<Γ least = {!!}
-  aux {suc Γ} {s} {M}{x} x<s+sΓ least =
-      let xx = sum-inv {s + suc Γ}{s}{x}{M} {!!} {!!} {!!} in
-      {!!}
-
-{-
-expander n 0 M = ↑ 0
-expander 0 (suc Γ) M = 0 • expander 1 Γ M
-expander (suc n) (suc Γ) M
-    with ir-FV? M (suc n)
-... | true = (suc n) • expander (suc (suc n)) Γ M
-... | false = expander (suc (suc n)) Γ M
--}
-
-_ : ir-rename (expander 0 8 test-M) test-M′ ≡ test-M
+_ : ir-rename (expand 8 test-M) test-M′ ≡ test-M
 _ = refl
 
-_ : ir-rename (expander 0 8 test-N) test-N′ ≡ test-N
+_ : ir-rename (expand 8 test-N) test-N′ ≡ test-N
 _ = refl
 
-_ : ⦉ expander 0 8 test-M ⦊ 0 ≡ 0
+_ : ⦉ expand 8 test-M ⦊ 0 ≡ 0
 _ = refl
 
-_ : ⦉ expander 0 8 test-M ⦊ 1 ≡ 1
+_ : ⦉ expand 8 test-M ⦊ 1 ≡ 1
 _ = refl
 
-_ : ⦉ expander 0 8 test-M ⦊ 2 ≡ 4
+_ : ⦉ expand 8 test-M ⦊ 2 ≡ 4
 _ = refl
 
-_ : ⦉ expander 0 8 test-M ⦊ 3 ≡ 7
+_ : ⦉ expand 8 test-M ⦊ 3 ≡ 7
 _ = refl
-
-exp : ∀{x}{n}{Γ}{M}
-  → x < Γ
-  → ⦉ expander n Γ M ⦊ (sum-FV (n + x) M) ≡ n + x
-exp {zero} {zero} {suc Γ} {M} x<Γ = refl
-exp {suc x} {zero} {suc Γ} {M} (s≤s x<Γ)
-    with exp {x}{1}{Γ}{M} x<Γ
-... | IH     
-    with ir-FV? M (suc x)
-... | true = {!!}
-... | false =
-      {!!}
-exp {x} {suc n} {suc Γ} {M} x<Γ = {!!}
-
-{-
-expander-inv-sum-FV : ∀{x}{y}{Γ}{M}
-  → y < Γ
-  → ⦉ expander 0 Γ M ⦊ (sum-FV x M) ≡ x
-expander-inv-sum-FV {x} {y} {Γ} {M} y<Γ = {!!}
-  where
-  aux : ∀{Γ}{n}{x}{M} → x < Γ
-    → ⦉ expander n Γ M ⦊ (sum-FV (n + x) M) ≡ (n + x)
-  aux {suc Γ} {n} {zero} {M} (s≤s x<Γ)
-      with ir-FV? M n
-  ... | true = {!!}
-  ... | false =
-        let IH = aux {Γ} {suc n} {suc 0} {M} {!!} in
-        {!!}
-  aux {suc Γ} {n} {suc x} {M} (s≤s x<Γ) = {!!}
--}
-{-
-      with ir-FV? M n
-  ... | true = {!!}
-  ... | false = aux {!!}
--}
-
-
-{-
-compress-expand : ∀{n i k}{M : IR}{x}
-  → i ≢ 0
-  → ⦉ (compressor n i M) ⨟ᵣ (expander n i M) ⦊ x  ≡ x
-compress-expand {n} {zero} {k} {M}{x} i≢0 = ⊥-elim (i≢0 refl)
-compress-expand {n} {suc i} {k} {M} {zero} i≢0 
-    with ir-FV? M n
-... | true = {!!}
-... | false = {!!}
-compress-expand {n} {suc i} {k} {M} {suc x} i≢0 = {!!}
-    with ir-FV? M n
-... | true = {!!}
-... | false = {!!}
--}
-
-
 
 {-
 
@@ -463,8 +333,13 @@ Correctness of Closure Conversion
 
 compress-pres : ∀{N : IR}{Γ}{γ : Env}{v w}
   → ℳ N (γ `, v) w
-  → ℳ (ir-rename (compress Γ N) N) (γ ∘ {!!} `, v) w
-compress-pres {N} {Γ} {γ}{v}{w} ℳN[γ,v]w = {!!}
+  → ℳ (ir-rename (compress Γ N) N) (γ ∘ ⦉ expand Γ N ⦊ `, v) w
+compress-pres {N} {Γ} {γ}{v}{w} ℳN[γ,v]w =
+{-
+   need rename-pres-FV for the IR! -Jeremy
+   let xx = rename-pres-FV (compress Γ N) {!!} {!!} ℳN[γ,v]w in
+-}
+   {!!}
 
 
 

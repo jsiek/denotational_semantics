@@ -37,7 +37,7 @@ open import Relation.Nullary using (Dec; yes; no)
 module SoundnessISWIM where
 
 open RenamePreserveReflect.ForISWIM value_struct ordering consistent _●_ ℱ model_curry_apply
-   (λ {P} k v → ℘ {P} k v) using (⊑-env; rename-pres) public
+   (λ {P} k v → ℘ {P} k v) using (⊑-env; rename-pres; rename-pres-FV) public
 import SubstitutionReflect
 open SubstitutionReflect.ISWIM using (substitution-reflect)
 
