@@ -34,14 +34,14 @@
 \newcommand{\depth}[1]{\mathsf{depth}(#1)}
 \newcommand{\size}[1]{\mathsf{size}(#1)}
 \newcommand{\inside}[0]{\inplus}
-\newcommand{\contains}[0]{\subsetpluseq}
+\newcommand{\containedin}[0]{\subsetpluseq}
 
 
 \begin{abstract}
-  The subtyping rules for intersection type systems traditionally
-  employ a transitivity rule (Barendregt et al. 1983), which means
-  that subtyping does not satisfy the subformula property, making it
-  more difficult to use in filter models for compiler verification.
+  The subtyping rules for intersection types traditionally employ a
+  transitivity rule (Barendregt et al. 1983), which means that
+  subtyping does not satisfy the subformula property, making it more
+  difficult to use in filter models for compiler verification.
   Laurent develops a sequent-style subtyping system, without
   transitivity, and proves transitivity via a sequence of six lemmas
   that culminate in cut-elimination (2018). This article develops a
@@ -51,11 +51,9 @@
   subformula property: every type occuring in the derivation of $A <:
   B$ is a subformula of $A$ or $B$, or an intersection of such
   subformulas.  Borrowing from Laurent's system, the rule for function
-  types is essentially the $\beta$-soundness property.  The main lemma
-  required for the transitivity proof is one that has been used to
-  prove the inversion principle for subtyping of function types. The
-  article concludes with a proof that the new subtyping system is
-  equivalent to that of Barendregt, Coppo, and Dezani-Ciancaglini.
+  types is essentially the $\beta$-soundness property. The article
+  proves that the new subtyping system is equivalent to that of
+  Barendregt, Coppo, and Dezani-Ciancaglini.
 \end{abstract}
 
 \section{Introduction}
@@ -234,13 +232,13 @@ transitivity (trans) rules.  We then prove transitivity directly,
 without the sequence of six lemmas, instead using one lemma that has
 been used to prove the inversion principle for subtyping of function
 types~\citep{Barendregt:2013aa}. The new subtyping system does not
-technically satisfy the subformula property but it satisfies a similar
-property: every type occuring in the derivation of $A <: B$ is a
-subformula of $A$ or $B$ or an intersection of such subformulas.
-This property is enough to ensure that if $A$ and $B$ are self
-consistent, then so are all the types that appear in the derivation of
-$A <: B$. As a result, the new subtyping system is highly suitable for
-mechanizing filter models.
+technically satisfy the subformula property but it satisfies what we
+call the \emph{subformula conjunction property}: every type occuring
+in the derivation of $A <: B$ is a subformula of $A$ or $B$ or an
+intersection of such subformulas.  This property is enough to ensure
+that if $A$ and $B$ are self consistent, then so are all the types
+that appear in the derivation of $A <: B$. As a result, the new
+subtyping system is highly suitable for mechanizing filter models.
 
 We discuss two recent developments regarding subtyping for
 intersection types in Section~\ref{sec:other-developments}.  We
@@ -302,7 +300,7 @@ ${\to}{\cap}$ (left to right) as much as possible.
 Our new subtyping judgment relies on a few definitions that are given
 in Figure~\ref{fig:aux}. These include the partial functions $\dom{A}$
 and $\cod{A}$, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
-relations $A \inside B$ and $A \contains B$.
+relations $A \inside B$ and $A \containedin B$.
 %
 The $\dom{A}$ and $\cod{A}$ partial functions return the domain or
 codomain if $A$ is a function type, respectively. If $A$ is an
@@ -315,18 +313,19 @@ $\cod{A}$ appears in lemma or theorem statement, we implicitly assume
 that $A$ is a type such that $\dom{A}$ and $\cod{A}$ are defined.
 %
 The $\topP{A}$ predicate identifies types that are equivalent to
-$\TOP$. The $\topInCod{A}$ predicate identifies types that have $\TOP$
-in their codomain.
+$\TOP$. (See Propostion~\ref{prop:top}(\ref{prop:AllBot-⊑-any}).) The
+$\topInCod{A}$ predicate identifies types that have $\TOP$ in their
+codomain.
 %
-The relations $A \inside B$ and $A \contains B$ enable the treatment
+The relations $A \inside B$ and $A \containedin B$ enable the treatment
 of a sequence of intersections $B_1 \cap \cdots \cap B_n$ (modulo
 associativity and commutativity) as if it was set of types $\{ B_1,
 \ldots, B_n \}$, where each $B_i$ is an atom or a function type.  We
 say that $A$ is a part of $B$ if $A \inside B$ and we say that $B$
-\emph{contains} $A$ if $A \contains B$.
+\emph{contains} $A$ if $A \containedin B$.
 
 \begin{proposition}\label{prop:union-subset-inv}
- \item If $A \cap B \contains C$, then $A \contains C$ and $B \contains C$. 
+ \item If $A \cap B \containedin C$, then $A \containedin C$ and $B \containedin C$. 
 \end{proposition}
 
 
@@ -349,9 +348,9 @@ say that $A$ is a part of $B$ if $A \inside B$ and we say that $B$
     \inference{A \inside C}{A \inside B \cap C}
   \end{gather*}
 
-  \fbox{$A \contains B$}
+  \fbox{$A \containedin B$}
   \[
-     A \contains B = \forall C.\, C \inside A \text{ implies } C \inside B
+     A \containedin B = \forall C.\, C \inside A \text{ implies } C \inside B
   \]
 
   \fbox{$\topP{A}$}
@@ -383,7 +382,7 @@ say that $A$ is a part of $B$ if $A \inside B$ and we say that $B$
     \text{(glb)} \; \inference{A <: C & A <: D}{A <: C \cap D} \\[3ex]
     (\to') \; \inference{C <: \dom{B} & \cod{B} <: D }{A <: C \to D}
     \begin{array}{l}
-      B \contains A\\
+      B \containedin A\\
       \neg\, \mathsf{top}(D) \\
       \neg \, \mathsf{topInCod}(B)
       \end{array}\\[3ex]
@@ -427,7 +426,7 @@ relation and the $\topP{A}$ predicate.
   \item (reflexivity) $A <: A$ \label{prop:⊑-refl}
   \item If $A <: B \cap C$, then $A <: B$ and $A <: C$. \label{prop:⊔⊑-inv}
   \item If $A <: B$ and $C \inside B$, then $A <: C$.\label{prop:in-sub-sub}
-  \item If $A <: B$ and $C \contains B$, then $A <: C$.\label{prop:subset-sub-sub}
+  \item If $A <: B$ and $C \containedin B$, then $A <: C$.\label{prop:subset-sub-sub}
   \end{enumerate}
 \end{proposition}
 \begin{proof}\ 
@@ -450,7 +449,7 @@ relation and the $\topP{A}$ predicate.
   \begin{enumerate}
   \item If $\topP{A}$ then $\topP{\cod{A}}$.\label{prop:AllBot-cod}
   \item If $\topP{A}$ and $B \inside A$, then $\topP{B}$.\label{prop:AllBot-in}
-  \item If $\topP{A}$ and $B \contains A$, then $\topP{B}$.\label{prop:AllBot-subset}
+  \item If $\topP{A}$ and $B \containedin A$, then $\topP{B}$.\label{prop:AllBot-subset}
   \item If $\topP{A}$ and $A <: B$, then $\topP{B}$.\label{prop:AllBot-⊑}
   \item If $\topP{A}$, then $B <: A$.\label{prop:AllBot-⊑-any}
   \end{enumerate}
@@ -462,15 +461,16 @@ relation and the $\topP{A}$ predicate.
   \item The proof is by induction on $B$. The cases for atoms and
     function types are proved by part \ref{prop:AllBot-in} of
     this proposition. In the case for
-    $B = B_1 \cap B_2$, from $B_1 \cap B_2 <: A$, we have
-    $B_1 <: A$ and $B_2 <: A$ (Proposition~\ref{prop:union-subset-inv}).
+    $B = B_1 \cap B_2$, from $B_1 \cap B_2 \containedin A$, we have
+    $B_1 \containedin A$ and $B_2 \containedin A$
+    (Proposition~\ref{prop:union-subset-inv}).
     Then by the induction hypotheses for $B_1$ and $B_2$ we have
     $\topP{B_1}$ and $\topP{B_2}$, from which we conclude
     that $\topP{B_1 \cap B_2}$.
   \item The proof is by induction on the derivation of $A <: B$.
     All of the cases are straightforward except for rule $(\to')$.
     In that case we have $B = B_1 \to B_2$ and some $A'$ such that
-    $A' \contains A$, $B_1 <: \dom{A'}$, $\cod{A'} <: B_2$, $\neg\,\topP{B_2}$,
+    $A' \containedin A$, $B_1 <: \dom{A'}$, $\cod{A'} <: B_2$, $\neg\,\topP{B_2}$,
     and $\neg\,\topInCod{A'}$. From the premise $\topP{A}$
     and part \ref{prop:AllBot-subset} of this proposition, we
     have $\topP{A'}$. Then by part \ref{prop:AllBot-cod}
@@ -489,7 +489,7 @@ into the following definition.
 \begin{definition}[factors]
   We say $C \to D$ \emph{factors} $A$
   if there exists some type $B$ such that
-  $B \contains A$, $C <: \dom{B}$, $\cod{B} <: D$, and
+  $B \containedin A$, $C <: \dom{B}$, $\cod{B} <: D$, and
   $\neg\,\mathsf{topInCod}(B)$.
 \end{definition}
 
@@ -530,11 +530,11 @@ factors $B$, then $\dom{A} \to \cod{A}$ also factors $B$.
   \item Case $A = A_1 \cap A_2$.  By the induction hypothesis for $A_1$
     and for $A_2$, we have that $\dom{A_1} \to \cod{A_1}$ factors $B$
     and so does $\dom{A_2} \to \cod{A_2}$.  So there exists
-    $B_1$ and $B_2$ such that $B_1 \contains B$, $\neg\,\topInCod{B_1}$,
+    $B_1$ and $B_2$ such that $B_1 \containedin B$, $\neg\,\topInCod{B_1}$,
     $\dom{A_1} <: \dom{B_1}$, $\cod{B_1} <: \cod{A_2}$ and similarly
     for $B_2$. We need to show that $\dom{A} \to \cod{A}$ factors
     $B$. We choose the witness $B_1 \cap B_2$.  Clearly we have $B_1 \cap
-    B_2 \contains B$ and $\neg \topInCod{B_1 \cap B_2}$.  Also, we have
+    B_2 \containedin B$ and $\neg \topInCod{B_1 \cap B_2}$.  Also, we have
     \[
     \dom{B_1} \cap \dom{B_2} <: \dom{A_1} \cap \dom{A_2}
     \]
@@ -548,25 +548,42 @@ factors $B$, then $\dom{A} \to \cod{A}$ also factors $B$.
 \end{proof}
 
 We now turn to the proof of transitivity, that if $A <: B$ and $B <:
-C$, then $A <: C$. The proof is by well-founded induction on the
-lexicographical ordering of the sum of the depths of $A$ and $C$
-followed by the sum of the sizes of $B$ and $C$. To be precise, we
-define this ordering as follows.
+C$, then $A <: C$.
+%
+The proof is by well-founded induction on the lexicographical ordering
+of the depth of $B$, the size of $B$, and then the size of $C$.  To be
+precise, we define this ordering as follows.
 \[
 \langle A, B, C \rangle \ll \langle A', B', C' \rangle
 =
 \begin{array}{l}
-\depth{A} + \depth{C} < \depth{A'} + \depth{C'}
-\text{ or } \\
-(\depth{A} + \depth{C}
-\leq
-\depth{A'} + \depth{C'} \\
-\text{ and }
-\size{B} + \size{C}
-<
-\size{B'} + \size{C'})
+\depth{B} < \depth{B'} \\
+\text{ or } \depth{B} \leq \depth{B'} \text{ and } \size{B} < \size{B'} \\
+\text{ or }
+  \depth{B} \leq \depth{B'} \text{ and } \size{B} \leq \size{B'}\\
+  \;\quad \text{ and } \size{C} < \size{C'}
 \end{array}
 \]
+%
+%% The proof is by well-founded induction on the lexicographical ordering
+%% of the sum of the depths of $A$ and $C$ followed by the sum of the
+%% sizes of $B$ and $C$. To be precise, we define this ordering as
+%% follows.
+%% \[
+%% \langle A, B, C \rangle \ll \langle A', B', C' \rangle
+%% =
+%% \begin{array}{l}
+%% \depth{A} + \depth{C} < \depth{A'} + \depth{C'}
+%% \text{ or } \\
+%% (\depth{A} + \depth{C}
+%% \leq
+%% \depth{A'} + \depth{C'} \\
+%% \text{ and }
+%% \size{B} + \size{C}
+%% <
+%% \size{B'} + \size{C'})
+%% \end{array}
+%% \]
 where $\size{A}$ is 
 \begin{align*}
   \size{\alpha} &= 0 \\
@@ -594,40 +611,52 @@ and $\depth{A}$ is
     B_2$.  We have $A <: B_1$ (Proposition~\ref{prop:subtyping} part
     \ref{prop:⊔⊑-inv}), so we conclude that $A <: C$ by the induction
     hypothesis, noting that $\langle A, B_1, C \rangle \ll \langle A,
-    B, C \rangle$ because $\size{B_1} < \size{B}$.
-  \item[Case (lb$_R$)] So $B = B_1 \cap B_2$, $B_2 <: C$, and $A <: B_1 \cap
-    B_2$.  We have $A <: B_2$ (Proposition~\ref{prop:subtyping} part
-    \ref{prop:⊔⊑-inv}), so we conclude that $A <: C$ by the induction
-    hypothesis, noting that $\langle A, B_2, C \rangle \ll \langle A,
-    B, C \rangle$ because $\depth{B_2} \leq \depth{B}$ and $\size{B_2}
-    < \size{B}$.
+    B, C \rangle$
+    %because $\size{B_1} < \size{B}$.
+    because $\depth{B_1} \le \depth{B}$
+    and $\size{B_1} < \size{B}$.
+  \item[Case (lb$_R$)] So $B = B_1 \cap B_2$, $B_2 <: C$, and $A <:
+    B_1 \cap B_2$.  We have $A <: B_2$
+    (Proposition~\ref{prop:subtyping} part \ref{prop:⊔⊑-inv}), so we
+    conclude that $A <: C$ by the induction hypothesis, noting that
+    $\langle A, B_2, C \rangle \ll \langle A, B, C \rangle$ because
+    $\depth{B_2} \leq \depth{B}$ and $\size{B_2} < \size{B}$.
+    
   \item[Case (glb)] We have $C = C_1 \cap C_2$, $B <: C_1$, and $B <:
     C_2$.  By the induction hypothesis, we have $A <: C_1$ and $A <:
     C_2$, noting that $\langle A, B, C_1 \rangle \ll \langle A, B, C
-    \rangle$ $\langle A, B, C_2 \rangle \ll \langle A, B, C\rangle$
-    because $\depth{C_1} \leq \depth{C}$, $\depth{C_2} \leq
-    \depth{C}$, $\size{C_1} < C$, and $\size{C_2} < C$.
+    \rangle$ and $\langle A, B, C_2 \rangle \ll \langle A, B, C\rangle$
+    %% because $\depth{C_1} \leq \depth{C}$, $\depth{C_2} \leq
+    %% \depth{C}$, $\size{C_1} < C$, and $\size{C_2} < C$.
+    because $\size{C_1} < C$ and $\size{C_2} < C$.
+    %
     We conclude $A <: C_1 \cap C_2$ by rule (glb).
   \item[Case $(\to')$] So $C = C_1 \to C_2$, $\neg \topP{C_2}$, and
     there exists $B'$ such that $C_1 <: \dom{B'}$, $\cod{B'} <: C_2$,
-    $B' \contains B$, and $\neg \topInCod{B'}$. From $A <: B$ and $B' \contains B$, we
+    $B' \containedin B$, and $\neg \topInCod{B'}$. From $A <: B$ and $B' \containedin B$, we
     have $A <: B'$ (Proposition~\ref{prop:subtyping} part
     \ref{prop:subset-sub-sub}). Thus, for any $B_1 \to B_2 \inside B'$,
     $B_1 \to B_2$ factors $A$ (Proposition~\ref{prop:⊑-fun-inv}). We
     have satisfied the premises of Lemma~\ref{lem:sub-inv-trans}, so
     $\dom{B'} \to \cod{B'}$ factors $A$. That means there exists $A'$
-    such that $A' \contains A$, $\neg\,\topInCod{A'}$, $\dom{B'} <: \dom{A'}$,
+    such that $A' \containedin A$, $\neg\,\topInCod{A'}$, $\dom{B'} <: \dom{A'}$,
     and $\cod{A'} <: \cod{B'}$. Then by the induction hypothesis, we
     have
     \[
     C_1 <: \dom{A'} \quad\text{and}\quad \cod{A'} <: C_2
     \]
     noting that
-    $\langle C_1, \dom{B'}, \dom{A'} \rangle \ll \langle A, B, C \rangle$
-    because $\depth{C_1} + \depth{\dom{A'}} < \depth{A} + \depth{C}$
+    \[
+    \langle C_1, \dom{B'}, \dom{A'} \rangle \ll \langle A, B, C \rangle
+    \]
     and
-    $\langle \cod{A'}, \cod{B'}, C_2 \rangle \ll \langle A, B, C \rangle$
-    because $\depth{\cod{A'}} + \depth{C_2} < \depth{A} + \depth{C}$.
+    \[
+    \langle \cod{A'}, \cod{B'}, C_2 \rangle \ll \langle A, B, C \rangle
+    \]
+%    because $\depth{C_1} + \depth{\dom{A'}} < \depth{A} + \depth{C}$
+    because $\depth{\dom{B'}} < \depth{B}$
+%    because $\depth{\cod{A'}} + \depth{C_2} < \depth{A} + \depth{C}$.
+    and $\depth{\cod{B'}} < \depth{B}$.
     We conclude that $A <: C_1 \to C_2$ by rule $(\to')$ witnessed by $A'$.
   \item[Case $(\TOP_{\mathrm{top}})$] We have $C = \TOP$ and
     conclude $A <: \TOP$ by rule $(\TOP_{\mathrm{top}})$.
@@ -731,7 +760,7 @@ and then show that $A <: B$ is equivalent to $A \leq B$.
       $A \leq C \cap D$ by (glb).
     \item[Case $(\to')$] By the induction hypothesis we have
       $C \leq \dom{B}$ and also $\cod{B} \leq D$.
-      From $B \contains A$ we have $A \leq B$.      
+      From $B \containedin A$ we have $A \leq B$.      
       Then by Lemma~\ref{lem:dv↦cv<:v} we have
       $B \leq \dom{B} \to \cod{B}$.
       Also, we have $\dom{B} \to \cod{B} \leq C \to D$ by rule $(\to)$.

@@ -1,0 +1,229 @@
+Reviewer 1
+==========
+
+>> The introduction is rather short and only gives one application for
+>> which the subformula would be interesting. Moreover it is not
+>> explained why the proposal from Laurent would not be appropriate for
+>> this application.
+
+The revision includes a new section "Motivations from Verified
+Compilation" that goes into much more detail regarding the need for
+what the revision now calls the "subformula conjunction property", and
+explains how we initially used Laurent's proposal but then later
+switched to the new system.
+
+>> While the inference system defining <: is claimed to satisfy the
+>> subformula property, it is not true strictly speaking. This is because
+>> dom(A) and cod(A) are not subformulas of A. E.g. the derivation of
+>> (A->B)/\(A->C)<:A->(B/\C) uses A/\A. Most of the consequences of the
+>> subformula property hold anyway because dom(A) and cod(A) are not so
+>> far from being subformulas of A (they are strictly smaller than A,
+>> contain no new atom or new connective, etc).
+
+True. The revision fixes this problem being more precise regarding the
+terminology, defining the "subformula conjunction property".  Also the
+revision explains why this property is enough for our purposes.
+
+>> The abstract mentions that the transitivity proof requires a subtle
+>> choice of the induction measure. Nevertheless it seems possible to
+>> simplify it by using a lexicographic ordering on (depth B, size B,
+>> size C) or on (depth B, size B + size C).
+
+Excellent, we've switched to the lexicographic ordering on
+(depth B, size B, size C).
+
+>> page 1, line -5: type systems -> type system
+>> page 2, line -15: then then -> then
+>> page 3, line 4: provide a link to the Agda development
+>> page 3, line 11: functions -> partial functions
+>> page 3, lines 18,19: point to Proposition 3(5)
+>> page 3, line -7: remarks about eta-reduction are not very clear
+>>                  BCD typing is not preserved under eta-reduction
+>> page 4, figure 3, A\subseteq B: missing \forall
+>> page 5, line -3: <: -> \subseteq (3 times)
+>> page 7, lines -2,-1: remove depth(B2)<=depth(B) and
+
+The revision fixes all of the above. 
+
+Reviewer 2
+==========
+
+>> Despite these strong points, I am sorry to have to recommend rejection
+>> of the paper in its current form.  There are two main reasons for
+>> this:
+
+>> 1. lack of details for the motivating connection to Siek's broader
+>>    project(s), alluded to in the Introduction but too briefly to
+>>    assess the value of this work on that basis.
+
+The revision includes a new section "Motivations from Verified
+Compilation" to address this problem.
+
+>> 2. failure, as also in the Laurent paper that seems to have been the
+>>    starting point for this work, to consider the deep line of work on
+>>    logical treatments of subtyping.  I will mention papers in this
+>>    line below.  The result is that Siek's formulation, while
+>>    technically correct, is set up in a pretty delicate (and, in my
+>>    view, not aesthetically or foundationally pleasing) way that I fear
+>>    is unlikely to be robust to changes in the type system.
+
+>> Main criticism 2:
+
+>> The second criticism is about positioning the work with respect to an
+>> important line of previous research concerned with the logical
+>> underpinnings of subtyping. A very well written and informative
+>> example is Tiuryn's "A Sequent Calculus for Subtyping Polymorphic
+>> Types", which devises several subtyping systems as logics, and relates
+>> to previous efforts in that direction. These works have a number of
+>> interesting advantages over the proposals of Laurent and Siek.
+
+>> First, they deal in a more compositional way with function types,
+>> using ideas from substructural logic. The need for substructuralism is
+>> due to the fact that usually one does not want to consider (a -> b ->
+>> c) to be a subtype of (b -> a -> c), though as intuitionistic
+>> formulas, these are equivalent.  In contrast, Siek's system handles
+>> function types through some very particular meta-level operations on
+>> type expressions and side conditions to the function subtyping rule
+>> (->').  I worry that these conditions will be brittle, and not work
+>> well in a setting where compositionality at the type level is
+>> required.  Imagine, for example, allowing type-level functions as in
+>> System F-omega.  Then particular checks on the forms of type
+>> expressions will fail in the presence of applications of type
+>> variables (i.e., abstracted type expressions), since we will not have
+>> a concrete type expression to apply these various checks and meta-level
+>> operations to.  So an approach that is based just on syntactic conditions
+>> on type expressions seems fragile and not likely to be extensible to
+>> richer type systems.
+
+>> A point worth noting in passing is that Tiuryn's paper actually
+>> presents a Curry-Howard view of subtyping and gives rules that derive
+>> coercions. In fact, the line of work goes back to a paper of
+>> Mitchell's which relates subtyping to typing by coercions which
+>> eta-reduce to the identity. (One can find similar ideas in Miquel's
+>> "Implicit Calculus of Constructions".) 
+
+>> @article{DBLP:journals/iandc/Tiuryn01, author = {Jerzy Tiuryn}, title = {A Sequent Calculus for Subtyping Polymorphic Types}, journal = {Inf. Comput.}, volume = {164}, number = {2}, pages = {345--369}, year = {2001}}
+
+>> Other comments:
+
+>> A. page 1: you say that BCD extends STLC with addition of intersection
+>>    types, a top type, and "an infinite collection of type constants".
+>>    The last of these surprised me as STLC usually includes base types
+>>    (at least one, or else there are no types at all).  If you can
+>>    clarify (very briefly -- do not want to distract from the main flow
+>>    of your discourse) that would be great.
+
+>> B. page 2, you write that the "BCD subtyping judgment does not enjoy
+>>    the subformula property".  But proof-theoretically, the subformula
+>>    property is a property of a proof system: a proof system has the
+>>    subformula property if for every closed proof of that proof system,
+>>    every formula occurring in the proof is a subformula of the theorem
+>>    proved by the proof.  So it is a (meta-level) type error to refer
+>>    to a judgment as having the subformula.  To be clear: it is not
+>>    even correct to say that the set of valid subtyping judgments has
+>>    the property, for different proof systems (some with, some without
+>>    the property) could give rise to the same valid judgments.  We are
+>>    speaking about whether some particular set of proof rules has the
+>>    property.  Even there we could imagine a distinction (which I did
+>>    not find in a brief literature search) between the *rules* having
+>>    the property (we could say intrinsic subformula property?) and the
+>>    proofs derivable from the rules having the property (extrinsic, the
+>>    definition I use just above). For say that the proof system
+>>    includes a spurious rule with some premise that is not a subformula
+>>    of the conclusion, but where that rule can never actually be
+>>    successfully used (due to other constraints in it) in a closed
+>>    derivation.  Then the proof system would have the subformula
+>>    property extrinsically but not intrinsically.
+
+>> C. page 3: you say that A \in B "indicates whether A is syntactically
+>>    a part of B".  This is not correct without some violence to the
+>>    usual notion of syntactic part.  For example, alpha is not \in
+>>    (alpha -> alpha) according to the rules of Figure 3.  This is again
+>>    part of what I find displeasing about this approach: we have some
+>>    very particular and not too intuitive (at least, not correctly
+>>    intuitively described, in this case!) notions that yes, do lead to
+>>    a correct system (this is proven in Agda).  But it would be much
+>>    more satisfying, in the spirit of Tiuryn's work, for example, and
+>>    the other works he cites and builds on, to see a compositional
+>>    treatment of function types via substructural typing.  This would
+>>    avoid these fiddly syntactic definitions.
+
+
+Reviewer 3
+==========
+
+>> “Transitivity of Subtyping for Intersection Types”
+
+>> The paper considers intersection type systems in the style of Coppo,
+>> Dezani-Ciancaglini, and Salle, and more closely Barendregt, Dekkers,
+>> and Statman (BCD). These systems typically include an explicit
+>> transitivity rule in the Subtyping relation, which, among other
+>> things, poses issues for inversion lemmas. The paper follows up on a
+>> recent result by Laurent who demonstrated that equivalent systems can
+>> be formulated without explicit transitivity. In comparison to Laurent,
+>> the paper presents a much simplified proof strategy, reducing six
+>> lemmas to one, and eliminating the need for a separate sequent-style
+>> system.
+
+>> With the adoption of intersection types into mainstream programming
+>> languages like TypeScript and Scala, the paper is timely, and it
+>> addresses an important question with a convincing solution, that may
+>> be useful for future large-scale language formalization efforts.
+
+>> The main technical innovation appears to be the design of the new
+>> subtyping judgment "<:" in Figure 4 (later shown to be equivalent to
+>> "≤" in BCD), and the induction metrics that enable the proof of
+>> Theorem 7 (transitivity).
+
+>> The paper is overall well written and clear, with a good level of
+>> detail provided for the proofs. The formal development is mechanized
+>> in Agda, which provides additional confidence in the results.
+
+>> The only question I had is specifically related to the recent adoption
+>> of intersection types in Scala and in formal work on the underlying
+>> DOT calculus. The need for transitivity elimination is also described
+>> in the OOPSLA'16 paper "Type Soundness for Dependent Object Types",
+>> and the apparent solution adopted there was to "push back" top-level
+>> uses of the transitivity rule further up into derivations, based on a
+>> lemma "A <: B /\ B <! C ==> A <! C" where "A <! C" is a subtyping
+>> derivation that does not end in the transitivity rule but may use it
+>> internally. While it is not possible to get rid of transitivity
+>> entirely in DOT, it seems possible to apply the "pushback" process to
+>> exhaustion in the BCD setting considered in this paper, and in fact
+>> I'm wondering if this is roughly equivalent to the induction metric
+>> "<<". Perhaps the author can give this some thought, and maybe a
+>> discussion of this piece of related work would be a useful addition
+>> (if only to strengthen the motivation).
+
+>> As far as I remember, DOT does not include the rule "(→∩)", however,
+>> adapted in similar way as "(lbL)" and "(lbR)" to support internal
+>> transitivity, it does not seem to pose any obvious major difficulties:
+
+
+>>    A' ≤ A   (B ∩ C) ≤ D
+>> -------------------------
+>> (A → B) ∩ (A → C) ≤ A' → D
+
+
+>> Minor notes:
+
+>> The paper has a few formatting issues with text running into the
+>> margin (p1, p8, some URLs in the bibliography).
+
+>> Typos: 
+
+>> "and then then prove transitivity" (p2) double "then"
+
+>> "Before moving on, we make note of some basic facts" perhaps "take
+>> note" or "make a note of"?
+
+>> Bibliography:
+
+>> "M. Dezani-Ciancaglini, F. Honsell, and Y. Motohama. Compositional
+>> characterisations of -terms" missing a lambda symbol
+
+>> "E. Engeler. Algebras and combinators. algebra universalis" capitalize
+>> journal title (?)
+
+>> "H. Ishihara and T. Kurata. Completeness of intersection and union
+>> type assignment systems for call-by-value -models." missing lambda
