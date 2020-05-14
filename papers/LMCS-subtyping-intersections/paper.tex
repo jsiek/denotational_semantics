@@ -27,12 +27,14 @@
 \maketitle
 
 \newcommand{\TOP}{\ensuremath{\mathtt{U}}}
-\newcommand{\dom}[1]{\mathsf{dom}(#1)}
-\newcommand{\cod}[1]{\mathsf{cod}(#1)}
+\newcommand{\dom}[1]{\cap\mathsf{dom}(#1)}
+\newcommand{\cod}[1]{\cap\mathsf{cod}(#1)}
 \newcommand{\topP}[1]{\mathsf{top}(#1)}
 \newcommand{\topInCod}[1]{\mathsf{topInCod}(#1)}
 \newcommand{\depth}[1]{\mathsf{depth}(#1)}
 \newcommand{\size}[1]{\mathsf{size}(#1)}
+\newcommand{\inside}[0]{\inplus}
+\newcommand{\contains}[0]{\subsetpluseq}
 
 
 \begin{abstract}
@@ -213,28 +215,32 @@ transitivity follows. Laurent mechanized these proofs in Coq.
 We immediately took advantage of Laurent's result to complete a filter
 model for the ISWIM
 language~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
-We mechanized the formal development and proofs in
-Isabelle~\citep{Siek:2018aa}.
+We mechanized the formal development and proofs using the Isabelle
+proof assistant~\citep{Siek:2018aa}.
 
 A year later we began to port this filter model to the Agda proof
-assistant, motivated by the need to use dependent types to make our
-development more reusable: we needed several variations on the filter
-model to give semantics to different languages, including ones that
-are call-by-value and call-by-name, and to the different intermediate
-languages used in our compiler. We found it tedious to repeat
-Laurent's proof of transitivity for each of these variations, and in
-the process developed an intuition that the sequent-style system was
-not necessary. The present article discusses how we were able to
-extract the key feature from Laurent's system, the rule for subtyping
-between function types (which effectively turns the $\beta$-soundness
-property~\citep{Barendregt:2013aa} into a subtyping rule) and splice
-it into the BCD subtyping system, replacing the function $(\to)$,
-distributivity $({\to}{\cap})$, and transitivity (trans) rules.  We
-then prove transitivity directly, without the sequence of six lemmas,
-instead using one lemma from the literature on inversion principles
-for subtyping of function types~\citep{Barendregt:2013aa}. The end
-product is a subtyping system that highly suitable for mechanizing
-filter models.
+assistant, motivated by the availability of dependent types to make
+our development more reusable: we needed several variations on the
+filter model to give semantics to different languages, including ones
+that are call-by-value and call-by-name, and to the different
+intermediate languages used in our compiler. We found it tedious to
+repeat Laurent's proof of transitivity for each of these variations,
+and in the process developed an intuition that the sequent-style
+system was not necessary. The present article discusses how we were
+able to extract the key feature from Laurent's system, the rule for
+subtyping between function types and adapt the BCD subtyping system,
+replacing the function $(\to)$, distributivity $({\to}{\cap})$, and
+transitivity (trans) rules.  We then prove transitivity directly,
+without the sequence of six lemmas, instead using one lemma that has
+been used to prove the inversion principle for subtyping of function
+types~\citep{Barendregt:2013aa}. The new subtyping system does not
+technically satisfy the subformula property but it satisfies a similar
+property: every type occuring in the derivation of $A <: B$ is a
+subformula of $A$ or $B$ or an intersection of such subformulas.
+This property is enough to ensure that if $A$ and $B$ are self
+consistent, then so are all the types that appear in the derivation of
+$A <: B$. As a result, the new subtyping system is highly suitable for
+mechanizing filter models.
 
 We discuss two recent developments regarding subtyping for
 intersection types in Section~\ref{sec:other-developments}.  We
@@ -296,7 +302,7 @@ ${\to}{\cap}$ (left to right) as much as possible.
 Our new subtyping judgment relies on a few definitions that are given
 in Figure~\ref{fig:aux}. These include the partial functions $\dom{A}$
 and $\cod{A}$, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
-relations $A \in B$ and $A \subseteq B$.
+relations $A \inside B$ and $A \contains B$.
 %
 The $\dom{A}$ and $\cod{A}$ partial functions return the domain or
 codomain if $A$ is a function type, respectively. If $A$ is an
@@ -312,12 +318,15 @@ The $\topP{A}$ predicate identifies types that are equivalent to
 $\TOP$. The $\topInCod{A}$ predicate identifies types that have $\TOP$
 in their codomain.
 %
-The relation $A \in B$ indicates whether $A$ is syntactically a part of $B$.
-The relation $A \subseteq B$ holds when every part of $A$ is a part of $B$.
-We say that $B$ \emph{contains} $A$ if $A \subseteq B$.
+The relations $A \inside B$ and $A \contains B$ enable the treatment
+of a sequence of intersections $B_1 \cap \cdots \cap B_n$ (modulo
+associativity and commutativity) as if it was set of types $\{ B_1,
+\ldots, B_n \}$, where each $B_i$ is an atom or a function type.  We
+say that $A$ is a part of $B$ if $A \inside B$ and we say that $B$
+\emph{contains} $A$ if $A \contains B$.
 
 \begin{proposition}\label{prop:union-subset-inv}
- \item If $A \cap B \subseteq C$, then $A \subseteq C$ and $B \subseteq C$. 
+ \item If $A \cap B \contains C$, then $A \contains C$ and $B \contains C$. 
 \end{proposition}
 
 
@@ -332,6 +341,19 @@ We say that $B$ \emph{contains} $A$ if $A \subseteq B$.
   \cod{A \cap B} &= \cod{A} \cap \cod {B}
   \end{align*}
 
+  \fbox{$A \inside B$}
+  \begin{gather*}
+    \inference{}{\alpha \inside \alpha}  \quad
+    \inference{}{A \to B \inside A \to B} \quad
+    \inference{A \inside B}{A \inside B \cap C} \quad
+    \inference{A \inside C}{A \inside B \cap C}
+  \end{gather*}
+
+  \fbox{$A \contains B$}
+  \[
+     A \contains B = \forall C.\, C \inside A \text{ implies } C \inside B
+  \]
+
   \fbox{$\topP{A}$}
   \begin{gather*}
     \inference{}{\topP{\TOP}}
@@ -341,23 +363,10 @@ We say that $B$ \emph{contains} $A$ if $A \subseteq B$.
     \inference{\topP{A} & \topP{B}}{\topP{A \cap B}}
   \end{gather*}
 
-  \fbox{$A \in B$}
-  \begin{gather*}
-    \inference{}{\alpha \in \alpha}  \quad
-    \inference{}{A \to B \in A \to B} \quad
-    \inference{A \in B}{A \in B \cap C} \quad
-    \inference{A \in C}{A \in B \cap C}
-  \end{gather*}
-
-  \fbox{$A \subseteq B$}
-  \[
-     A \subseteq B = ∀ C.\, C \in A \text{ implies } C \in B
-  \]
-
   \fbox{$\mathsf{topInCod}(D)$}
   \[
   \mathsf{topInCod}(D) =
-     \exists A B.\, A \to B \in D \text{ and } \mathsf{top}(B)  
+     \exists A B.\, A \to B \inside D \text{ and } \mathsf{top}(B)  
   \]
 
   \caption{Auxiliary Definitions}
@@ -373,9 +382,11 @@ We say that $B$ \emph{contains} $A$ if $A \subseteq B$.
     \text{(lb$_R$)} \; \inference{B <: C}{A \cap B <: C} \quad
     \text{(glb)} \; \inference{A <: C & A <: D}{A <: C \cap D} \\[3ex]
     (\to') \; \inference{C <: \dom{B} & \cod{B} <: D }{A <: C \to D}
-    \begin{array}{l} \neg\, \mathsf{top}(D) \\
-      \neg \, \mathsf{topInCod}(B) \\
-      B \subseteq A \end{array}\\[3ex]
+    \begin{array}{l}
+      B \contains A\\
+      \neg\, \mathsf{top}(D) \\
+      \neg \, \mathsf{topInCod}(B)
+      \end{array}\\[3ex]
     (\TOP_{\mathrm{top}}) \; \inference{}{A <: \TOP} \quad
     (\TOP{\to}') \; \inference{}{A <: C \to D}\;\mathsf{top}(D)
   \end{gather*}
@@ -388,24 +399,25 @@ The new intersection subtyping judgment, $A <: B$, is defined in
 Figure~\ref{fig:new-subtyping}. First, it does not include the (trans)
 rule.  It also replaces the (refl) rule with reflexivity for atoms
 (refl$_\alpha$). The most important rule is the one for function types
-$(\to')$, which subsumes $(\to)$ and $({\to}{\cap})$ in BCD subtyping.  The
-$(\to')$ rule essentially turns the $\beta$-soundness property into a
-subtyping rule. The $(\to')$ rule says that a type $A$ is a subtype of a
-function type $C \to D$ if a subset of $A$, call it $B$, has domain and
-codomain that are larger and smaller than $C$ and $D$,
-respectively. The use of a subset of $A$ enables this rule to absorb
-uses of (incl$_L$) and (incl$_R$) on the left.  The side conditions
-$\neg\;\topP{B}$ and $\neg\;\topInCod{D}$ are needed because of the
-$(\TOP{\to}')$ rule, which in turn is needed to preserve types under
-$\eta$-reduction.  In a system that does not involve $\eta$-reduction,
-the $(\TOP{\to}')$ rule can be omitted, as well as those side
+$(\to')$, which subsumes $(\to)$ and $({\to}{\cap})$ in BCD subtyping.
+The $(\to')$ rule essentially turns the $\beta$-soundness property
+into a subtyping rule~\citep{Barendregt:2013aa}. The $(\to')$ rule
+says that a type $A$ is a subtype of a function type $C \to D$ if a
+type contained in $A$, call it $B$, has domain and codomain that are
+larger and smaller than $C$ and $D$, respectively. The use of
+containment enables this rule to absorb uses of (incl$_L$) and
+(incl$_R$) on the left.  The side conditions $\neg\;\topP{B}$ and
+$\neg\;\topInCod{D}$ are needed because of the $(\TOP{\to}')$ rule,
+which in turn is needed to preserve types under $\eta$-reduction.  In
+the many systems that do not involve $\eta$-reduction, the
+$(\TOP{\to}')$ rule can be omitted, as well as these side
 conditions. The rules (lb$_L$) and (lb$_R$) adapt (incl$_L$) and
 (incl$_R$) to a system without transitivity, and have appeared many
 times in the literature~\citep{Bakel:1995aa}.  The $(\TOP{\to}')$ rule
-generalizes the $(\TOP{\to})$ rule, replacing the $\TOP$ on the left with
-any type $A$, because for transitivity, any type is below $\TOP$. The
-$(\TOP{\to}')$ rule also replaces the $\TOP$ in the codomain on the
-right with any type $D$ that is equivalent to $\TOP$.
+generalizes the $(\TOP{\to})$ rule, replacing the $\TOP$ on the left
+with any type $A$, because for transitivity, any type is below
+$\TOP$. The $(\TOP{\to}')$ rule replaces the $\TOP$ in the
+codomain on the right with any type $D$ that is equivalent to $\TOP$.
 
 Before moving on, we take note of some basic facts regarding the $<:$
 relation and the $\topP{A}$ predicate.
@@ -414,8 +426,8 @@ relation and the $\topP{A}$ predicate.
   \begin{enumerate}
   \item (reflexivity) $A <: A$ \label{prop:⊑-refl}
   \item If $A <: B \cap C$, then $A <: B$ and $A <: C$. \label{prop:⊔⊑-inv}
-  \item If $A <: B$ and $C \in B$, then $A <: C$.\label{prop:in-sub-sub}
-  \item If $A <: B$ and $C \subseteq B$, then $A <: C$.\label{prop:subset-sub-sub}
+  \item If $A <: B$ and $C \inside B$, then $A <: C$.\label{prop:in-sub-sub}
+  \item If $A <: B$ and $C \contains B$, then $A <: C$.\label{prop:subset-sub-sub}
   \end{enumerate}
 \end{proposition}
 \begin{proof}\ 
@@ -426,7 +438,7 @@ relation and the $\topP{A}$ predicate.
     Otherwise, apply rule $(\to')$
   \item The proof is by induction on the derivation of $A <: B \cap C$.
   \item The proof is by induction on $B$. In the case where $B = B_1
-    \cap B_2$, either $C \in B_1$ or $C \in B_2$, but in either case part
+    \cap B_2$, either $C \inside B_1$ or $C \inside B_2$, but in either case part
     \ref{prop:⊔⊑-inv} of this proposition fulfills the premise of
     the induction hypothesis, from which the conclusion follows.
   \item The proof  is by induction on $C$, using part \ref{prop:in-sub-sub}
@@ -437,8 +449,8 @@ relation and the $\topP{A}$ predicate.
 \begin{proposition}[Properties of $\topP{A}$]\ \label{prop:top}
   \begin{enumerate}
   \item If $\topP{A}$ then $\topP{\cod{A}}$.\label{prop:AllBot-cod}
-  \item If $\topP{A}$ and $B \in A$, then $\topP{B}$.\label{prop:AllBot-in}
-  \item If $\topP{A}$ and $B \subseteq A$, then $\topP{B}$.\label{prop:AllBot-subset}
+  \item If $\topP{A}$ and $B \inside A$, then $\topP{B}$.\label{prop:AllBot-in}
+  \item If $\topP{A}$ and $B \contains A$, then $\topP{B}$.\label{prop:AllBot-subset}
   \item If $\topP{A}$ and $A <: B$, then $\topP{B}$.\label{prop:AllBot-⊑}
   \item If $\topP{A}$, then $B <: A$.\label{prop:AllBot-⊑-any}
   \end{enumerate}
@@ -458,7 +470,7 @@ relation and the $\topP{A}$ predicate.
   \item The proof is by induction on the derivation of $A <: B$.
     All of the cases are straightforward except for rule $(\to')$.
     In that case we have $B = B_1 \to B_2$ and some $A'$ such that
-    $A' \subseteq A$, $B_1 <: \dom{A'}$, $\cod{A'} <: B_2$, $\neg\,\topP{B_2}$,
+    $A' \contains A$, $B_1 <: \dom{A'}$, $\cod{A'} <: B_2$, $\neg\,\topP{B_2}$,
     and $\neg\,\topInCod{A'}$. From the premise $\topP{A}$
     and part \ref{prop:AllBot-subset} of this proposition, we
     have $\topP{A'}$. Then by part \ref{prop:AllBot-cod}
@@ -477,17 +489,17 @@ into the following definition.
 \begin{definition}[factors]
   We say $C \to D$ \emph{factors} $A$
   if there exists some type $B$ such that
-  $B \subseteq A$, $C <: \dom{B}$, $\cod{B} <: D$, and
+  $B \contains A$, $C <: \dom{B}$, $\cod{B} <: D$, and
   $\neg\,\mathsf{topInCod}(B)$.
 \end{definition}
 
 \begin{proposition}[Inversion Principle for Function Types]
-  \label{prop:⊑-fun-inv}
-  If $A <: C'$, $C \to D \in C'$, and $\neg\,\mathsf{top}(D)$, then
+  \label{prop:⊑-fun-inv}\ \\
+  If $A <: B$, $C \to D \inside B$, and $\neg\,\mathsf{top}(D)$, then
   $C \to D$ factors $A$.
 \end{proposition}
 \begin{proof}
-  The proof is a straightforward induction on $A <: C'$.
+  The proof is a straightforward induction on $A <: B$.
 \end{proof}
 
 \section{Transitivity}
@@ -503,7 +515,7 @@ factors $B$, then $\dom{A} \to \cod{A}$ also factors $B$.
 \begin{lemma}\label{lem:sub-inv-trans}
   If
   \begin{itemize}
-  \item for any $C$ $D$, if $C \to D \in A$ and $\neg\,\mathsf{top}(D)$,
+  \item for any $C$ $D$, if $C \to D \inside A$ and $\neg\,\mathsf{top}(D)$,
     then $C \to D$ factors $B$, and
   \item $\neg\, \mathsf{topInCod}(A)$,
   \end{itemize}
@@ -518,11 +530,11 @@ factors $B$, then $\dom{A} \to \cod{A}$ also factors $B$.
   \item Case $A = A_1 \cap A_2$.  By the induction hypothesis for $A_1$
     and for $A_2$, we have that $\dom{A_1} \to \cod{A_1}$ factors $B$
     and so does $\dom{A_2} \to \cod{A_2}$.  So there exists
-    $B_1$ and $B_2$ such that $B_1 \subseteq B$, $\neg\,\topInCod{B_1}$,
+    $B_1$ and $B_2$ such that $B_1 \contains B$, $\neg\,\topInCod{B_1}$,
     $\dom{A_1} <: \dom{B_1}$, $\cod{B_1} <: \cod{A_2}$ and similarly
     for $B_2$. We need to show that $\dom{A} \to \cod{A}$ factors
     $B$. We choose the witness $B_1 \cap B_2$.  Clearly we have $B_1 \cap
-    B_2 \subseteq B$ and $\neg \topInCod{B_1 \cap B_2}$.  Also, we have
+    B_2 \contains B$ and $\neg \topInCod{B_1 \cap B_2}$.  Also, we have
     \[
     \dom{B_1} \cap \dom{B_2} <: \dom{A_1} \cap \dom{A_2}
     \]
@@ -598,13 +610,13 @@ and $\depth{A}$ is
     We conclude $A <: C_1 \cap C_2$ by rule (glb).
   \item[Case $(\to')$] So $C = C_1 \to C_2$, $\neg \topP{C_2}$, and
     there exists $B'$ such that $C_1 <: \dom{B'}$, $\cod{B'} <: C_2$,
-    $B' \subseteq B$, and $\neg \topInCod{B'}$. From $A <: B$ and $B' \subseteq B$, we
+    $B' \contains B$, and $\neg \topInCod{B'}$. From $A <: B$ and $B' \contains B$, we
     have $A <: B'$ (Proposition~\ref{prop:subtyping} part
-    \ref{prop:subset-sub-sub}). Thus, for any $B_1 \to B_2 \in B'$,
+    \ref{prop:subset-sub-sub}). Thus, for any $B_1 \to B_2 \inside B'$,
     $B_1 \to B_2$ factors $A$ (Proposition~\ref{prop:⊑-fun-inv}). We
     have satisfied the premises of Lemma~\ref{lem:sub-inv-trans}, so
     $\dom{B'} \to \cod{B'}$ factors $A$. That means there exists $A'$
-    such that $A' \subseteq A$, $\neg\,\topInCod{A'}$, $\dom{B'} <: \dom{A'}$,
+    such that $A' \contains A$, $\neg\,\topInCod{A'}$, $\dom{B'} <: \dom{A'}$,
     and $\cod{A'} <: \cod{B'}$. Then by the induction hypothesis, we
     have
     \[
@@ -719,7 +731,7 @@ and then show that $A <: B$ is equivalent to $A \leq B$.
       $A \leq C \cap D$ by (glb).
     \item[Case $(\to')$] By the induction hypothesis we have
       $C \leq \dom{B}$ and also $\cod{B} \leq D$.
-      From $B \subseteq A$ we have $A \leq B$.      
+      From $B \contains A$ we have $A \leq B$.      
       Then by Lemma~\ref{lem:dv↦cv<:v} we have
       $B \leq \dom{B} \to \cod{B}$.
       Also, we have $\dom{B} \to \cod{B} \leq C \to D$ by rule $(\to)$.
@@ -768,11 +780,12 @@ and then show that $A <: B$ is equivalent to $A \leq B$.
 \label{sec:conclude}
 
 In this article we present a new subtyping relation $A <: B$ for
-intersection types that enjoys the subformula property.  None of the
-rules of the new subtyping relation are particularly novel, but the
-fact that we can prove transitivity directly from them is!  We prove
-that the new relation is equivalent to the subtyping relation $A \leq B$
-of Barendregt, Coppo, and Dezani-Ciancaglini.
+intersection types that satisfies a property similar to the subformula
+property.  None of the rules of the new subtyping relation are
+particularly novel, but the fact that we can prove transitivity
+directly from is surprising!  We prove that the new relation is
+equivalent to the subtyping relation $A \leq B$ of Barendregt, Coppo,
+and Dezani-Ciancaglini.
 
 
 \section*{Acknowledgments}
