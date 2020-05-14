@@ -38,60 +38,52 @@
 \begin{abstract}
   The subtyping rules for intersection type systems traditionally
   employ a transitivity rule (Barendregt et al. 1983), which means
-  that subtyping does not enjoy the subformula property.  Laurent
-  develops a sequent-style subtyping system, without transitivity, and
-  proves transitivity via a sequence of six lemmas that culminate in
-  cut-elimination (2018). This article develops a subtyping system in
-  regular style that omits transitivity and provides a direct proof of
-  transitivity, significantly reducing the length of the proof. The
-  new system satisfies something like the subformula property: every
-  type occuring in the derivation of $A <: B$ is a subformula of $A$
-  or $B$, or an intersection of such subformulas.  Borrowing from
-  Laurent's system, the rule for function types is essentially the
-  $\beta$-soundness property.  The main lemma required for the
-  transitivity proof is one that has been used to prove the inversion
-  principle for subtyping of function types. The article concludes
-  with a proof that the new subtyping system is equivalent to that of
-  Barendregt, Coppo, and Dezani-Ciancaglini.
+  that subtyping does not satisfy the subformula property, making it
+  more difficult to use in filter models for compiler verification.
+  Laurent develops a sequent-style subtyping system, without
+  transitivity, and proves transitivity via a sequence of six lemmas
+  that culminate in cut-elimination (2018). This article develops a
+  subtyping system in regular style that omits transitivity and
+  provides a direct proof of transitivity, significantly reducing the
+  length of the proof. The new system satisfies something like the
+  subformula property: every type occuring in the derivation of $A <:
+  B$ is a subformula of $A$ or $B$, or an intersection of such
+  subformulas.  Borrowing from Laurent's system, the rule for function
+  types is essentially the $\beta$-soundness property.  The main lemma
+  required for the transitivity proof is one that has been used to
+  prove the inversion principle for subtyping of function types. The
+  article concludes with a proof that the new subtyping system is
+  equivalent to that of Barendregt, Coppo, and Dezani-Ciancaglini.
 \end{abstract}
 
 \section{Introduction}
 
 Intersection types were invented by Coppo, Dezani-Ciancaglini, and
-Salle as a tool for studying normalization in the lambda
-calculus~\citep{Coppo:1979aa}. Subsequently intersection types have
-been used for at least three purposes: to enhance the expressiveness
-of type systems
-~\citep{Reynolds:1988aa,Pierce:1991aa,Castagna:2014aa,Chaudhuri:2014aa,Oliveira:2016aa,Muehlboeck:2018aa,Bi:2019aa,Dunfield:2019aa,Microsoft:TypeScript2020aa,Dotty:2020aa},
-to increase the precision of static
-analyses~\citep{Turbak:1997aa,Palsberg:1998aa,Mossin:2003aa,Simoes:2007aa},
-and to express filter models for the denotational semantics of a
-variety of lambda calculi
-~\citep{Coppo:1980ab,Coppo:1981aa,Engeler:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Plotkin:1993ab,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa}.
+Salle to study normalization in the lambda
+calculus~\citep{Coppo:1979aa}. Subsequently intersection type systems
+have been used for at least three purposes:
+\begin{itemize}
+  \item as type systems for programming
+    languages~\citep{Reynolds:1988aa,Pierce:1991aa,Castagna:2014aa,Chaudhuri:2014aa,Oliveira:2016aa,Muehlboeck:2018aa,Bi:2019aa,Dunfield:2019aa,Microsoft:TypeScript2020aa,Dotty:2020aa},
+  \item to formulate precise static
+    analyses~\citep{Turbak:1997aa,Palsberg:1998aa,Mossin:2003aa,Simoes:2007aa},
+    and
+  \item to express filter models for the denotational semantics of a
+    variety of lambda
+    calculi~\citep{Coppo:1980ab,Coppo:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa,Barendregt:2013aa}.
+\end{itemize}
 
-The work in this 
+There are many intersection type systems; perhaps the best-known them
+is the BCD intersection type system of \citet{Barendregt:1983aa}. For
+this article we focus on the BCD system, following the presentation of
+\citet{Barendregt:2013aa}. We conjecture that our results apply to
+other intersection type systems that include the $({\to}{\cap})$ rule
+for distributing intersection and function types.
 
-A filter model
-
-\[
-   \llbracket M \rrbracket = \{ A \mid \emptyset \vdash M : A \}
-\]
-
-
-
-
-
-Perhaps the best-known  them is the BCD intersection type system of
-\citet{Barendregt:1983aa}. For this article we focus on the BCD
-system, following the presentation of \citet{Barendregt:2013aa}.  We
-conjecture that our results apply to other intersection type systems
-that include the $({\to}{\cap})$ rule for distributing intersection
-and function types.
-
-The BCD intersection type systems extends the simply-typed lambda
-calculus with the addition of intersection types, written $A \cap B$, a
-top type $\TOP$, and an infinite collection of type
-constants. Figure~\ref{fig:types} defines the grammar of types.
+The BCD intersection type system includes function types, $A \to B$,
+intersection types, $A \cap B$, a top type, $\TOP$, and an infinite
+collection of type constants. Figure~\ref{fig:types} defines the
+grammar of types.
 
 \begin{figure}[tbp]
   \[
@@ -111,13 +103,13 @@ if it has type $A$ and $A$ is a subtype of $B$, written $A \leq B$.
 \inference{\Gamma \vdash M : A & A \leq B}
           {\Gamma \vdash M : B}
 \]
-Figure~\ref{fig:BCD-subtyping} reviews the BCD rules for subtyping.
-Note that in the (trans) rule, the type $B$ appears in the premises
-but not in the conclusion. Thus, the BCD subtyping judgment does not
-enjoy the subformula property.  For many other subtyping systems, it
-is straightforward to remove the (trans) rule, modify the other rules,
-and then prove transitivity.  Unfortunately, the $({\to}{\cap})$
-rule of the BCD system significantly complicates the situation.
+Figure~\ref{fig:BCD-subtyping} reviews the BCD subtyping system.  Note
+that in the (trans) rule, the type $B$ appears in the premises but not
+in the conclusion. Thus, the BCD subtyping system does not satisfy the
+subformula property.  For many other subtyping systems, it is
+straightforward to remove the (trans) rule, modify the other rules,
+and then prove transitivity.  Unfortunately, the $({\to}{\cap})$ rule
+of the BCD system significantly complicates the situation.
 
 \begin{figure}[tbp]
   \fbox{$A \leq B$}
@@ -137,28 +129,140 @@ rule of the BCD system significantly complicates the situation.
   \label{fig:BCD-subtyping}
 \end{figure}
 
-The subformula property is a useful one. For example, the author uses
-intersection types to create denotational semantics (a filter model)
-for the ISWIM language, which includes constants and primitive
-operations~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
-This requires placing extra conditions on types and it is much easier
-to do so when subtyping satisfies the subformula property.
+\section{Motivations from Verified Compilation}
+
+Our interest in intersection type systems stems from our work on
+mechanized proofs of correctness for compiling functional programming
+languages. We are exploring whether the use of denotational semantics
+can streamline such proofs compared to the operational techniques,
+e.g., used to prove the correctness of
+CakeML~\citep{Kumar:2014aa,Owens:2017aa}. In particular, we are
+constructing filter models (based on intersection type systems)
+because they are relatively straightforward to mechanize in a proof
+assistant compared to traditional domain
+theory~\citep{Benton:2009ab,Dockins:2014aa}.  In a filter model, the
+meaning of a program $M$ is the set of all types that can be assigned
+to it by an intersection type system:
+\[
+   \llbracket M \rrbracket = \{ A \mid \emptyset \vdash M : A \}
+\]
+Most type systems are much too coarse of an abstraction to be used as
+filter models. Intersection type systems are special in that they can
+completely characterize the runtime behavior of a program.  To catch a
+glimpse of how filter models work, consider the meaning of the
+identity function in the $\lambda$-calculus.
+\[
+  \llbracket \lambda x.\, x \rrbracket =
+      \{ c_0 \to c_0, c_1 \to c_1, c_2 \to c_2, \ldots \}
+\]
+If one takes each type constant $c_i$ to be a singleton type for the
+number $i$, then the set of types assigned to the identity function
+starts to look like the graph of the function. Indeed, filter models
+are closely related to graph
+models~\citep{Scott:1976lq,Engeler:1981aa,Plotkin:1993ab}.
+
+One of the standard compiler transformations that we are interested in
+verifying is common subexpression elimination. For example, this
+transformation would replace the duplicated $(f \; x)$ terms in the
+following
+\[
+  M = \lambda f.\, \lambda h.\, \lambda x.\, h \; (f \; x) \; (f \; x)
+\]
+with a single instance of $(f\;x)$ that is let-bound to a variable $y$:
+\[
+M' = \lambda f.\, \lambda h.\, \lambda x.\,
+\mathsf{let}\; y = (f \; x) \;\mathsf{in}\;
+h \; y \; y
+\]
+Unfortunately, $M$ and $M'$ are not denotationally equal according to
+most filter models because filter models allow function graphs that
+represent arbitrary relations. The above transformation depends on $(f
+\; x)$ producing the same result every time, but a filter model
+associates arbitrary graphs with parameter $f$.
+
+This problem is not conceptually difficult to solve; one just needs to
+restrict the graphs to only allow approximations of functions. This
+can be accomplished by requiring every entry in a function's graph to
+be ``consistent''. Two function types, $A \to B$ and $A' \to B'$, are
+consistent, written $(A \to B) \sim (A' \to B')$, when either $A
+\not\sim A'$ or $A \sim A'$ and $B \sim B'$. Two type constants are
+consistent when they are equal. One would then hope to prove that for
+any term $M$, if $\Gamma \vdash M : C$ and $\Gamma \vdash M : C'$,
+then $C \sim C'$ as long as $C$, $C'$, and $\Gamma$ are self
+consistent. A key lemma needed for that proof is that consistency is
+upward closed with respect to subtyping: if $A \sim B$, $A <: C$, $B
+<: D$, then $C \sim D$.
+
+This brings us back to the transitivity rule and the subformula
+property. The proof of this lemma hits a snag in the cases where $A <:
+C$ and $B <: D$ are derived using the transitivity rule. The
+intermediate type is not guaranteed to be self consistent. We explored
+adding this guarantee to the transitivity rule, but it caused a
+significant increase in obligations elsewhere in the proof. By some
+serendipity, around that moment in time \citet{Laurent:2018aa}
+published the first subtyping system for intersection types that
+removes the transitivity rule and satisfies the subformula property.
+Laurent developed a sequent-style subtyping system, written $\Gamma
+\vdash B$, where $\Gamma$ is a sequence of types $A_1,\ldots,A_n$. The
+intuition is that $A_1,\ldots,A_n \vdash B$ corresponds to $A_1 \cap
+\cdots \cap A_n \leq B$. This system satisfies the subformula property
+and is equivalent to the BCD system. To prove this, Laurent
+establishes six lemmas that culminate in cut-elimination, from which
+transitivity follows. Laurent mechanized these proofs in Coq.
+
+We immediately took advantage of Laurent's result to complete a filter
+model for the ISWIM
+language~\citep{Landin:1966la,G.-D.-Plotkin:1975on,Felleisen:2009aa}.
+We mechanized the formal development and proofs in
+Isabelle~\citep{Siek:2018aa}.
+
+A year later we began to port this filter model to the Agda proof
+assistant, motivated by the need to use dependent types to make our
+development more reusable: we needed several variations on the filter
+model to give semantics to different languages, including ones that
+are call-by-value and call-by-name, and to the different intermediate
+languages used in our compiler. We found it tedious to repeat
+Laurent's proof of transitivity for each of these variations, and in
+the process developed an intuition that the sequent-style system was
+not necessary. The present article discusses how we were able to
+extract the key feature from Laurent's system, the rule for subtyping
+between function types (which effectively turns the $\beta$-soundness
+property~\citep{Barendregt:2013aa} into a subtyping rule) and splice
+it into the BCD subtyping system, replacing the function $(\to)$,
+distributivity $({\to}{\cap})$, and transitivity (trans) rules.  We
+then prove transitivity directly, without the sequence of six lemmas,
+instead using one lemma from the literature on inversion principles
+for subtyping of function types~\citep{Barendregt:2013aa}. The end
+product is a subtyping system that highly suitable for mechanizing
+filter models.
+
+We discuss two recent developments regarding subtyping for
+intersection types in Section~\ref{sec:other-developments}.  We
+present our new subtyping system in Section~\ref{sec:new-subtyping},
+prove transitivity in Section~\ref{sec:trans}, and prove its
+equivalence to BCD subtyping in Section~\ref{sec:equiv}. We make some
+concluding remarks in Section~\ref{sec:conclude}.
+
+The definitions and results in this article have been machine checked
+in Agda, in the file \texttt{agda/TransSubInter.agda} in the following
+repository.
+
+\begin{center}
+  \url{https://github.com/jsiek/denotational_semantics}
+\end{center}
+
+\section{Other Developments}
+\label{sec:other-developments}
 
 There has been a recent flurry of interest in subtyping for
-intersection types that has led to several systems that satisfy the
-subformula property. We discuss each of them in the next few
-paragraphs.
-
-\citet{Laurent:2018aa} introduces the ISC sequent-style system,
-written $\Gamma \vdash B$, where $\Gamma$ is a sequence of types
-$A_1,\ldots,A_n$. The intuition is that $A_1,\ldots,A_n \vdash B$
-corresponds to $A_1 \cap \cdots \cap A_n \leq B$. The ISC system satisfies the
-subformula property and is equivalent to the BCD system. To prove
-this, Laurent establishes six lemmas that culminate in
-cut-elimination, from which transitivity follows.
+intersection types that has led to two more systems that satisfy the
+subformula property, in addition to the one by \citet{Laurent:2018aa}
+discussed above. These two systems were developed for the purposes of
+type checking programming languages, and not for the construction of
+filter models, so the goals are somewhat different.
 
 \citet{Bi:2018aa} present a subtyping algorithm that satisfies the
-subformula property and prove that is equivalent to BCD
+subformula property and proves that it is equivalent to BCD
 subtyping. Their system is based on the decision procedure
 of~\citet{Pierce:1989aa} and takes the form $\mathcal{L} \vdash A
 \prec: B$, where $\mathcal{L}$ is a queue of types that are peeled off
@@ -181,26 +285,8 @@ client-supplied function to each collection of literals. To obtain a
 system equivalent to BCD, including the ${\to}{\cap}$ rule, the client
 side function saturates the collection of literals by applying
 ${\to}{\cap}$ (left to right) as much as possible.
-[todo: say something about the proof of transitivity]
+%[todo: say something about the proof of transitivity]
 
-This article presents a direct route to the subformula property and
-proof of transitivity for BCD subtyping. We present straightforward
-rules for a new subtyping relation $A <: B$ and directly prove
-transitivity. The key to $A <: B$ is a rule for function types similar
-to the one in Laurent's ISC, which effectively turns the
-$\beta$-soundness property~\citep{Barendregt:2013aa} into a subtyping
-rule. While the rules that define $A <: B$ are not particularly novel,
-the fact that transivity can be proved directly from them is
-suprising.
-
-We describe the new subtyping relation in
-Section~\ref{sec:new-subtyping}, prove transitivity in
-Section~\ref{sec:trans}, and prove its equivalence to BCD subtyping in
-Section~\ref{sec:equiv}. We make some concluding remarks in
-Section~\ref{sec:conclude}.
-
-The definitions and results in this article have been machine checked
-in Agda.
     
 %$λ^{\mathrm{BCD}}_\cap$
 
