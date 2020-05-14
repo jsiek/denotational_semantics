@@ -1,0 +1,71 @@
+Transitivity of Subtyping for Intersection Types
+
+Recommendation: The paper does not meet the high standards set by
+Logical Methods in Computer Science, and I recommend rejection.
+
+Overall evaluation: 4
+
+
+The paper introduces a new presentation of the subtyping relation of
+intersection types from the BCD system.
+
+The main property of this <: presentation is the absence of
+transitivity property in the definition. This is proposed as a key
+move towards the subformula property.
+A previous presentation by Laurent is mentioned to satisfy the
+subformula property but by relying on a sequent-style system.
+
+Section 1 recalls the definitions from BCD. Section 2 gives the new
+presentation <: with some basic properties. Section 3 contains the
+main proof: transitivity of the <: relation. Section 4 concludes with
+the equivalence between <: and the subtyping relation of BCD.
+
+The introduction is rather short and only gives one application for
+which the subformula would be interesting. Moreover it is not
+explained why the proposal from Laurent would not be appropriate for
+this application.
+
+The paper is well written with mainly technical content. It is mostly
+presented for specialists of the topic.
+
+The relation <: is defined page 4 with the use of 4 auxiliary
+predicates (\in, \subseteq, top, topInCod) and 2 auxiliary partial
+functions (dom, cod).
+The key novelty of <: is the (->') rule which mixes three ingredients:
+a notion of inclusion between intersection types (\subseteq), domain
+of intersection types (dom) and codomain of intersection types (cod).
+It might be interesting to separate concepts a bit more by considering
+a dedicated inclusion rule:   B<:C -> B\subseteq A -> A<:C
+This would simplify the (->') rule and would make (lbL) and (lbR)
+useless.
+
+While the inference system defining <: is claimed to satisfy the
+subformula property, it is not true strictly speaking. This is because
+dom(A) and cod(A) are not subformulas of A. E.g. the derivation of
+(A->B)/\(A->C)<:A->(B/\C) uses A/\A. Most of the consequences of the
+subformula property hold anyway because dom(A) and cod(A) are not so
+far from being subformulas of A (they are strictly smaller than A,
+contain no new atom or new connective, etc).
+
+The abstract mentions that the transitivity proof requires a subtle
+choice of the induction measure. Nevertheless it seems possible to
+simplify it by using a lexicographic ordering on (depth B, size B,
+size C) or on (depth B, size B + size C).
+
+To conclude, the paper does not exactly achieve the announced goal
+since the subformula property is not exactly satisfied. Whether this
+is a big problem or not would depend on application domains but this
+is not clearly discussed.
+Additionally there is no argument for this new proposal to be a
+significant progress with respect to the state of the art.
+
+page 1, line -5: type systems -> type system
+page 2, line -15: then then -> then
+page 3, line 4: provide a link to the Agda development
+page 3, line 11: functions -> partial functions
+page 3, lines 18,19: point to Proposition 3(5)
+page 3, line -7: remarks about eta-reduction are not very clear
+                 BCD typing is not preserved under eta-reduction
+page 4, figure 3, A\subseteq B: missing \forall
+page 5, line -3: <: -> \subseteq (3 times)
+page 7, lines -2,-1: remove depth(B2)<=depth(B) and
