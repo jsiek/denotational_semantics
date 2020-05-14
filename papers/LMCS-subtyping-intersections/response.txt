@@ -43,7 +43,13 @@ Excellent, we've switched to the lexicographic ordering on
 >> page 5, line -3: <: -> \subseteq (3 times)
 >> page 7, lines -2,-1: remove depth(B2)<=depth(B) and
 
-The revision fixes all of the above. 
+The revision fixes all of the above except for the last item on page 3
+regarding eta-reduction. The reviewer is mistaken. BCD typing is
+indeed preserved under eta reduction (see Proposition 12.1.15 and
+Corollary 14.2.9 of Lambda Calculus with Types by Barendregt, Dekkers,
+and Statman). Perhaps the reviewer was thinking of eta-expansion,
+which is not preserved by BCD typing.
+
 
 Reviewer 2
 ==========
@@ -113,6 +119,8 @@ Compilation" to address this problem.
 >>    clarify (very briefly -- do not want to distract from the main flow
 >>    of your discourse) that would be great.
 
+I've rephrased to remove mention of the STLC, as that was not necessary.
+
 >> B. page 2, you write that the "BCD subtyping judgment does not enjoy
 >>    the subformula property".  But proof-theoretically, the subformula
 >>    property is a property of a proof system: a proof system has the
@@ -135,6 +143,9 @@ Compilation" to address this problem.
 >>    derivation.  Then the proof system would have the subformula
 >>    property extrinsically but not intrinsically.
 
+The mistaken uses of "judgment" have been replaced with "subtyping system"
+(i.e. proof system).
+
 >> C. page 3: you say that A \in B "indicates whether A is syntactically
 >>    a part of B".  This is not correct without some violence to the
 >>    usual notion of syntactic part.  For example, alpha is not \in
@@ -147,6 +158,11 @@ Compilation" to address this problem.
 >>    the other works he cites and builds on, to see a compositional
 >>    treatment of function types via substructural typing.  This would
 >>    avoid these fiddly syntactic definitions.
+
+I've changed the notation for \in and \subseteq to make it clear
+that these notions are different from the usual ones.
+
+
 
 
 Reviewer 3
