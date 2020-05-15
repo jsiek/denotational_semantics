@@ -175,37 +175,6 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
    lemma {c = bogus} wfv wfw wfdu wfcu du′⊑v w⊑cu′ ()
 
 
-
-{-
-sub-𝕍 vc (⊑-trans {v = v₂} lt1 lt2) = sub-𝕍 (sub-𝕍 vc lt2) lt1
--}
-{-
-sub-𝕍 {val-const {P} f} vc (⊑-fun{v}{w}{v′}{w′} lt1 lt2)
-    with P
-... | base B = ⊥-elim vc
-... | B ⇒ P′ 
-    with vc
-... | ⟨ k , ⟨ k⊑v′ , ℘fkw′ ⟩ ⟩ =
-      ⟨ k , ⟨ (⊑-trans k⊑v′ lt1) , ℘-⊑ ℘fkw′ lt2 ⟩ ⟩
-sub-𝕍 {val-clos N γ} vc (⊑-fun lt1 lt2) ev1
-    with vc (sub-𝕍 ev1 lt1)
-... | ⟨ c , ⟨ Nc , v4 ⟩ ⟩ = ⟨ c , ⟨ Nc , sub-𝕍 v4 lt2 ⟩ ⟩
-sub-𝕍 {val-const {P} p} {v ↦ w ⊔ v ↦ w′} ⟨ vc1 , vc2 ⟩ ⊑-dist
-    with P
-... | base B = ⊥-elim vc1
-... | B ⇒ P′
-    with vc1 | vc2
-... | ⟨ k , ⟨ k⊑v , ℘pkw ⟩ ⟩ | ⟨ k′ , ⟨ k′⊑v , ℘pk′w′ ⟩ ⟩ 
-    rewrite k⊑v→k′⊑v→k′≡k ? k⊑v k′⊑v =
-      ⟨ k , ⟨ k⊑v , ⟨ ℘pkw , ℘pk′w′ ⟩ ⟩ ⟩
-
-sub-𝕍 {val-clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c
-    with vcw ev1c | vcw' ev1c
-... | ⟨ c , ⟨ L⇓c₂ , 𝕍w ⟩ ⟩
-    | ⟨ c₃ , ⟨ L⇓c₃ , 𝕍w' ⟩ ⟩ rewrite ⇓-determ L⇓c₃ L⇓c₂ =
-      ⟨ c , ⟨ L⇓c₂ , ⟨ 𝕍w , 𝕍w' ⟩ ⟩ ⟩
--}
-
 ℘pv→𝕍vp : ∀ {P : Prim} {p : rep P} {v : Value}
         → ℘ {P} p v
         → 𝕍 v (val-const {P} p)
