@@ -63,7 +63,7 @@ Intersection types were invented by Coppo, Dezani-Ciancaglini, and
 Salle to study normalization in the lambda
 calculus~\citep{Coppo:1979aa}. Subsequently intersection types have
 been used for at least three purposes:
-\begin{itemize}
+\begin{enumerate}
   \item in type systems for programming
     languages~\citep{Reynolds:1988aa,Pierce:1991aa,Castagna:2014aa,Chaudhuri:2014aa,Oliveira:2016aa,Amin:2017aa,Muehlboeck:2018aa,Bi:2019aa,Dunfield:2019aa,Microsoft:TypeScript2020aa,Dotty:2020aa},
   \item in precise static
@@ -72,12 +72,12 @@ been used for at least three purposes:
   \item in filter models for the denotational semantics of a variety
     of lambda
     calculi~\citep{Coppo:1980ab,Coppo:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa,Barendregt:2013aa}.
-\end{itemize}
+\end{enumerate}
 The motivation for this article comes from the third use of
 intersection types, in denotational semantics.  We are interested in
 constructing filter models for functional programming languages in
 support of mechanized compiler
-verification. Section~\ref{sec:motivation} describes how this research
+verification. Section~\ref{sec:motivation} describes how that research
 motivates the results in this article.
 
 There are many intersection type systems; perhaps the best-known them
@@ -252,8 +252,8 @@ call the \emph{subformula conjunction property}: every type occuring
 in the derivation of $A <: B$ is a subformula of $A$ or $B$ or an
 intersection of such subformulas.  This property is enough to ensure
 that if $A$ and $B$ are self consistent, then so are all the types
-that appear in the derivation of $A <: B$. As a result, the new
-subtyping system is highly suitable for mechanizing filter models.
+that appear in the derivation of $A <: B$.  Thus, the new subtyping
+system is suitable for mechanizing filter models.
 
 \section{Road Map}
 \label{sec:road-map}
@@ -278,14 +278,9 @@ repository.
 \label{sec:recent-developments}
 
 There has been a recent flurry of interest in subtyping for
-intersection types that has led to two algorithms that effectively
-satisfy the subformula property, in addition to the one by
-\citet{Laurent:2018aa} discussed above. These two algorithms were
-developed for the purposes of type checking programming languages, and
-not for the construction of filter models, so the goals are somewhat
-different. In short, the algorithms introduce complications for the
-sake of efficiency, which would be undesirable for use in a filter
-model.
+intersection types. We begin by discussing two algorithms that
+effectively satisfy the subformula property. We then discuss issues
+surrounding subtyping and transitivity in the Scala language.
 
 \citet{Bi:2018aa} present a subtyping algorithm that satisfies the
 subformula property and proves that it is equivalent to BCD
@@ -312,11 +307,34 @@ system equivalent to BCD, including the ${\to}{\cap}$ rule, the client
 side function saturates the collection of literals by applying
 ${\to}{\cap}$ (left to right) as much as possible.
 
-\section{A New Subtyping Judgment}
+These two algorithms were developed for the purposes of type checking
+programming languages, and not for the construction of filter models,
+so the goals are somewhat different. In short, the algorithms
+introduce complications for the sake of efficiency, which would be
+undesirable for use in a filter model.
+
+Research on the Scala programming language~\citep{Odersky:2004aa} has
+led to the development of the Dependent Object Types (DOT) calculus,
+which includes path-dependent types and intersection
+types~\citep{Amin:2016aa,Amin:2017aa}.  The interplay between
+path-dependent types, subtyping, and transitivity in DOT has proved a
+challenge in the proof of type soundness. Nevertheless,
+\citet{Rompf:2016aa} prove the inversion principle for function types
+using a ``pushback'' lemma that reorganizes any subtyping derivation
+such that the last rule to be applied is never transitivity. Applying
+such a lemma exhaustively might provide an alternative route to
+transitivity for the new subtyping system presented in this
+article. Conversely, the new subtyping system might enable the
+addition of distributivity of function and intersection types to
+DOT. However, we suspect that the pushback approach would encounter
+difficulties if applied to the original BCD subtyping rules.
+
+
+\section{A New Subtyping System}
 \label{sec:new-subtyping}
 
-Our new subtyping judgment relies on a few definitions that are given
-in Figure~\ref{fig:aux}. These include the partial functions $\dom{A}$
+Our new subtyping system relies on a few definitions that are given in
+Figure~\ref{fig:aux}. These include the partial functions $\dom{A}$
 and $\cod{A}$, the $\topP{A}$ and $\topInCod{A}$ predicates, and the
 relations $A \inside B$ and $A \containedin B$.
 %
@@ -352,10 +370,10 @@ that $B$ \emph{contains} $A$ if $A \containedin B$.
   \fbox{$\dom{A}, \cod{A}$}
   \begin{align*}
   \dom{A \to B} &= A \\
-  \dom{A \cap B} &= \dom{A} \cap \dom {B} \\
+  \dom{A \cap B} &= \dom{A} \,\cap\, \dom {B} \\
   \\
   \cod{A \to B} &= B \\
-  \cod{A \cap B} &= \cod{A} \cap \cod {B}
+  \cod{A \cap B} &= \cod{A} \,\cap\, \cod {B}
   \end{align*}
 
   \fbox{$A \inside B$}
@@ -407,34 +425,35 @@ that $B$ \emph{contains} $A$ if $A \containedin B$.
     (\TOP_{\mathrm{top}}) \; \inference{}{A <: \TOP} \quad
     (\TOP{\to}') \; \inference{}{A <: C \to D}\;\mathsf{top}(D)
   \end{gather*}
-  \caption{The New Subtyping Judgment}
+  \caption{The New Subtyping System}
   \label{fig:new-subtyping}
 \end{figure}
 
 
-The new intersection subtyping judgment, $A <: B$, is defined in
-Figure~\ref{fig:new-subtyping}. First, it does not include the (trans)
-rule.  It also replaces the (refl) rule with reflexivity for atoms
-(refl$_\alpha$). The most important rule is the one for function types
-$(\to')$, which subsumes $(\to)$ and $({\to}{\cap})$ in BCD subtyping.
-The $(\to')$ rule essentially turns the $\beta$-soundness property
-into a subtyping rule~\citep{Barendregt:2013aa}. The $(\to')$ rule
-says that a type $A$ is a subtype of a function type $C \to D$ if a
-type contained in $A$, call it $B$, has domain and codomain that are
-larger and smaller than $C$ and $D$, respectively. The use of
-containment enables this rule to absorb uses of (incl$_L$) and
-(incl$_R$) on the left.  The side conditions $\neg\;\topP{B}$ and
-$\neg\;\topInCod{D}$ are needed because of the $(\TOP{\to}')$ rule,
-which in turn is needed to preserve types under $\eta$-reduction.  In
-the many systems that do not involve $\eta$-reduction, the
-$(\TOP{\to}')$ rule can be omitted, as well as these side
-conditions. The rules (lb$_L$) and (lb$_R$) adapt (incl$_L$) and
-(incl$_R$) to a system without transitivity, and have appeared many
-times in the literature~\citep{Bakel:1995aa}.  The $(\TOP{\to}')$ rule
-generalizes the $(\TOP{\to})$ rule, replacing the $\TOP$ on the left
-with any type $A$, because for transitivity, any type is below
-$\TOP$. The $(\TOP{\to}')$ rule replaces the $\TOP$ in the
-codomain on the right with any type $D$ that is equivalent to $\TOP$.
+The new intersection subtyping system, with judgements of the form $A
+<: B$, is defined in Figure~\ref{fig:new-subtyping}. First, it does
+not include the (trans) rule.  It also replaces the (refl) rule with
+reflexivity for atoms (refl$_\alpha$). The most important rule is the
+one for function types $(\to')$, which subsumes $(\to)$ and
+$({\to}{\cap})$ in BCD subtyping.  The $(\to')$ rule essentially turns
+the $\beta$-soundness property into a subtyping
+rule~\citep{Barendregt:2013aa}. The $(\to')$ rule says that a type $A$
+is a subtype of a function type $C \to D$ if a type contained in $A$,
+call it $B$, has domain and codomain that are larger and smaller than
+$C$ and $D$, respectively. The use of containment enables this rule to
+absorb uses of (incl$_L$) and (incl$_R$) on the left.  The side
+conditions $\neg\;\topP{B}$ and $\neg\;\topInCod{D}$ are needed
+because of the $(\TOP{\to}')$ rule, which in turn is needed to
+preserve types under $\eta$-reduction.  In the many systems that do
+not involve $\eta$-reduction, the $(\TOP{\to}')$ rule can be omitted,
+as well as these side conditions. The rules (lb$_L$) and (lb$_R$)
+adapt (incl$_L$) and (incl$_R$) to a system without transitivity, and
+have appeared many times in the literature~\citep{Bakel:1995aa}.  The
+$(\TOP{\to}')$ rule generalizes the $(\TOP{\to})$ rule, replacing the
+$\TOP$ on the left with any type $A$, because for transitivity, any
+type is below $\TOP$. The $(\TOP{\to}')$ rule replaces the $\TOP$ in
+the codomain on the right with any type $D$ that is equivalent to
+$\TOP$.
 
 Before moving on, we take note of some basic facts regarding the $<:$
 relation and the $\topP{A}$ predicate.
@@ -523,12 +542,12 @@ into the following definition.
 \section{Transitivity}
 \label{sec:trans}
 
-The proof of transitivity relies on the following lemma, which is
+Our proof of transitivity relies on the following lemma, which is
 traditionally needed to prove the inversion principle for function
-types. However, it was not needed for our system because the rule
-$(\to')$ is already quite close to the inversion principle.
-The lemma states that if every function type $C \to D$ in A
-factors $B$, then $\dom{A} \to \cod{A}$ also factors $B$.
+types. (In our system this lemma is not needed to prove the inversion
+principle because the rule $(\to')$ is already quite close to the
+inversion principle.)  The lemma states that if every function type $C
+\to D$ in A factors $B$, then $\dom{A} \to \cod{A}$ also factors $B$.
 
 \begin{lemma}\label{lem:sub-inv-trans}
   If
@@ -625,16 +644,17 @@ and $\depth{A}$ is
   \begin{description}
   \item[Case (refl$_\alpha$)] We have $B = C = \alpha$.  From the premise $A <:
     B$ we immediately conclude that $A <: \alpha$.
-  \item[Case (lb$_L$)] So $B = B_1 \cap B_2$, $B_1 <: C$, and $A <: B_1 \cap
-    B_2$.  We have $A <: B_1$ (Proposition~\ref{prop:subtyping} part
+  \item[Case (lb$_L$)] So $B = B_1 \cap B_2$, $A <: B_1 \cap
+    B_2$, and $B_1 <: C$.
+    We have $A <: B_1$ (Proposition~\ref{prop:subtyping} part
     \ref{prop:⊔⊑-inv}), so we conclude that $A <: C$ by the induction
     hypothesis, noting that $\langle A, B_1, C \rangle \ll \langle A,
     B, C \rangle$
     %because $\size{B_1} < \size{B}$.
     because $\depth{B_1} \le \depth{B}$
     and $\size{B_1} < \size{B}$.
-  \item[Case (lb$_R$)] So $B = B_1 \cap B_2$, $B_2 <: C$, and $A <:
-    B_1 \cap B_2$.  We have $A <: B_2$
+  \item[Case (lb$_R$)] So $B = B_1 \cap B_2$, $A <:
+    B_1 \cap B_2$, and $B_2 <: C$.  We have $A <: B_2$
     (Proposition~\ref{prop:subtyping} part \ref{prop:⊔⊑-inv}), so we
     conclude that $A <: C$ by the induction hypothesis, noting that
     $\langle A, B_2, C \rangle \ll \langle A, B, C \rangle$ because

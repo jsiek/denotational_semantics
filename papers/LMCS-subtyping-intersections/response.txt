@@ -89,7 +89,7 @@ F-omega; intersection types already provide what is needed to express
 the runtime behavior of functional programs. The revision includes
 changes to the introduction to differentiate the varied uses of
 intersection type systems and to make it clear that the present
-article's motivation comes from denotational semantics, not type
+article's motivation comes from the realm of filter models, not type
 systems for programming languages.
 
 >> Other comments:
@@ -150,7 +150,10 @@ Reviewer 3
 >> discussion of this piece of related work would be a useful addition
 >> (if only to strengthen the motivation).
 
-
+That is an interesting connection. I think that this style of proof
+would work using the new function rule (→′) but not with the old rules
+(→) and (→∩). I've added a discussion of this connection to the
+revision.
 
 >> As far as I remember, DOT does not include the rule "(→∩)", however,
 >> adapted in similar way as "(lbL)" and "(lbR)" to support internal
@@ -200,3 +203,5 @@ that does not satisfy the subformula property.
 
 >> "H. Ishihara and T. Kurata. Completeness of intersection and union
 >> type assignment systems for call-by-value -models." missing lambda
+
+All of the above have been fixed in the revision.
