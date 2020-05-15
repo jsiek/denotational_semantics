@@ -131,36 +131,8 @@ these notions are different from the usual ones and added some
 explanation to provide an intuition for what they accomplish.
 
 
-
 Reviewer 3
 ==========
-
->> “Transitivity of Subtyping for Intersection Types”
-
->> The paper considers intersection type systems in the style of Coppo,
->> Dezani-Ciancaglini, and Salle, and more closely Barendregt, Dekkers,
->> and Statman (BCD). These systems typically include an explicit
->> transitivity rule in the Subtyping relation, which, among other
->> things, poses issues for inversion lemmas. The paper follows up on a
->> recent result by Laurent who demonstrated that equivalent systems can
->> be formulated without explicit transitivity. In comparison to Laurent,
->> the paper presents a much simplified proof strategy, reducing six
->> lemmas to one, and eliminating the need for a separate sequent-style
->> system.
-
->> With the adoption of intersection types into mainstream programming
->> languages like TypeScript and Scala, the paper is timely, and it
->> addresses an important question with a convincing solution, that may
->> be useful for future large-scale language formalization efforts.
-
->> The main technical innovation appears to be the design of the new
->> subtyping judgment "<:" in Figure 4 (later shown to be equivalent to
->> "≤" in BCD), and the induction metrics that enable the proof of
->> Theorem 7 (transitivity).
-
->> The paper is overall well written and clear, with a good level of
->> detail provided for the proofs. The formal development is mechanized
->> in Agda, which provides additional confidence in the results.
 
 >> The only question I had is specifically related to the recent adoption
 >> of intersection types in Scala and in formal work on the underlying
@@ -178,14 +150,32 @@ Reviewer 3
 >> discussion of this piece of related work would be a useful addition
 >> (if only to strengthen the motivation).
 
+
+
 >> As far as I remember, DOT does not include the rule "(→∩)", however,
 >> adapted in similar way as "(lbL)" and "(lbR)" to support internal
 >> transitivity, it does not seem to pose any obvious major difficulties:
-
-
 >>    A' ≤ A   (B ∩ C) ≤ D
 >> -------------------------
 >> (A → B) ∩ (A → C) ≤ A' → D
+
+I suspect that the above rule handles the case when (→∩) derives the
+A <: B premise of (trans), but not when (→∩) derives the B <: C premise
+of (trans).  In the 2012 article "Intersection types with subtyping by
+means of cut elimination", Laurent comes up with another rule that
+fixes that problem:
+
+D ≤ C → A    D ≤ C → B
+----------------------
+D ≤ C → (A ∩ B)
+
+but then he was forced to add another rule
+
+C ≤ A → D   D ≤ B
+-----------------
+C ≤ A → B
+
+that does not satisfy the subformula property.
 
 
 >> Minor notes:

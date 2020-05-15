@@ -2,12 +2,86 @@
 %% http://bibdesk.sourceforge.net/
 
 
-%% Created for Jeremy Siek at 2020-05-14 12:44:54 -0400 
+%% Created for Jeremy Siek at 2020-05-15 11:14:04 -0400 
 
 
 %% Saved with string encoding Unicode (UTF-8) 
 
 
+
+@inproceedings{Rompf:2016aa,
+	Address = {New York, NY, USA},
+	Author = {Rompf, Tiark and Amin, Nada},
+	Booktitle = {Proceedings of the 2016 ACM SIGPLAN International Conference on Object-Oriented Programming, Systems, Languages, and Applications},
+	Date-Added = {2020-05-15 10:57:33 -0400},
+	Date-Modified = {2020-05-15 10:57:35 -0400},
+	Doi = {10.1145/2983990.2984008},
+	Isbn = {9781450344449},
+	Keywords = {DOT, dependent object types, Scala, soundness},
+	Location = {Amsterdam, Netherlands},
+	Numpages = {18},
+	Pages = {624--641},
+	Publisher = {Association for Computing Machinery},
+	Series = {OOPSLA 2016},
+	Title = {Type Soundness for Dependent Object Types (DOT)},
+	Url = {https://doi.org/10.1145/2983990.2984008},
+	Year = {2016},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxATMzAyMjY3MS4yOTg0MDA4LnBkZk8RAUoAAAAAAUoAAgAADE1hY2ludG9zaCBIRAAAAAAAAAAAAAAAAAAAAAAAAABCRAAB/////xMzMDIyNjcxLjI5ODQwMDgucGRmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAFBERiAAAAAAAAEAAgAACiBjdQAAAAAAAAAAAAAAAAADYmliAAACACUvOlVzZXJzOmpzaWVrOmJpYjozMDIyNjcxLjI5ODQwMDgucGRmAAAOACgAEwAzADAAMgAyADYANwAxAC4AMgA5ADgANAAwADAAOAAuAHAAZABmAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIAI1VzZXJzL2pzaWVrL2JpYi8zMDIyNjcxLjI5ODQwMDgucGRmAAATAAEvAAAVAAIADP//AAAACAANABoAJAA6AAAAAAAAAgEAAAAAAAAABQAAAAAAAAAAAAAAAAAAAYg=},
+	Bdsk-Url-1 = {https://doi.org/10.1145/2983990.2984008}}
+
+@article{Tarditi:1996ab,
+	Address = {New York, NY, USA},
+	Author = {Tarditi, D. and Morrisett, G. and Cheng, P. and Stone, C. and Harper, R. and Lee, P.},
+	Date-Added = {2020-05-15 10:36:20 -0400},
+	Date-Modified = {2020-05-15 10:36:22 -0400},
+	Doi = {10.1145/249069.231414},
+	Issn = {0362-1340},
+	Issue_Date = {May 1996},
+	Journal = {SIGPLAN Not.},
+	Month = may,
+	Number = {5},
+	Numpages = {12},
+	Pages = {181--192},
+	Publisher = {Association for Computing Machinery},
+	Title = {TIL: A Type-Directed Optimizing Compiler for ML},
+	Url = {https://doi.org/10.1145/249069.231414},
+	Volume = {31},
+	Year = {1996},
+	Bdsk-Url-1 = {https://doi.org/10.1145/249069.231414}}
+
+@inproceedings{Tarditi:1996aa,
+	Address = {New York, NY, USA},
+	Author = {Tarditi, D. and Morrisett, G. and Cheng, P. and Stone, C. and Harper, R. and Lee, P.},
+	Booktitle = {Proceedings of the ACM SIGPLAN 1996 Conference on Programming Language Design and Implementation},
+	Date-Added = {2020-05-15 10:36:20 -0400},
+	Date-Modified = {2020-05-15 10:36:22 -0400},
+	Doi = {10.1145/231379.231414},
+	Isbn = {0897917952},
+	Location = {Philadelphia, Pennsylvania, USA},
+	Numpages = {12},
+	Pages = {181--192},
+	Publisher = {Association for Computing Machinery},
+	Series = {PLDI '96},
+	Title = {TIL: A Type-Directed Optimizing Compiler for ML},
+	Url = {https://doi.org/10.1145/231379.231414},
+	Year = {1996},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxARMjQ5MDY5LjIzMTQxNC5wZGZPEQFCAAAAAAFCAAIAAAxNYWNpbnRvc2ggSEQAAAAAAAAAAAAAAAAAAAAAAAAAQkQAAf////8RMjQ5MDY5LjIzMTQxNC5wZGYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////wAAAABQREYgAAAAAAABAAIAAAogY3UAAAAAAAAAAAAAAAAAA2JpYgAAAgAjLzpVc2Vyczpqc2llazpiaWI6MjQ5MDY5LjIzMTQxNC5wZGYAAA4AJAARADIANAA5ADAANgA5AC4AMgAzADEANAAxADQALgBwAGQAZgAPABoADABNAGEAYwBpAG4AdABvAHMAaAAgAEgARAASACFVc2Vycy9qc2llay9iaWIvMjQ5MDY5LjIzMTQxNC5wZGYAABMAAS8AABUAAgAM//8AAAAIAA0AGgAkADgAAAAAAAACAQAAAAAAAAAFAAAAAAAAAAAAAAAAAAABfg==},
+	Bdsk-Url-1 = {https://doi.org/10.1145/231379.231414}}
+
+@inproceedings{Chitil:1998aa,
+	Abstract = {Common subexpression elimination is a well-known compiler optimisation that saves time by avoiding the repetition of the same computation. In lazy functional languages, referential transparency renders the identification of common subexpressions very simple. More common subexpressions can be recognised because they can be of arbitrary type whereas standard common subexpression elimination only shares primitive values. However, because lazy functional languages decouple program structure from data space allocation and control flow, analysing its effects and deciding under which conditions the elimination of a common subexpression is beneficial proves to be quite difficult. We developed and implemented the transformation for the language Haskell by extending the Glasgow Haskell compiler. On real-world programs the transformation showed nearly no effect. The reason is that common subexpressions whose elimination could speed up programs are uncommon in lazy functional languages.},
+	Address = {Berlin, Heidelberg},
+	Author = {Chitil, Olaf},
+	Booktitle = {Implementation of Functional Languages},
+	Date-Added = {2020-05-15 10:29:03 -0400},
+	Date-Modified = {2020-05-15 10:29:04 -0400},
+	Editor = {Clack, Chris and Hammond, Kevin and Davie, Tony},
+	Isbn = {978-3-540-68528-9},
+	Pages = {53--71},
+	Publisher = {Springer Berlin Heidelberg},
+	Title = {Common subexpressions are uncommon in lazy functional languages},
+	Year = {1998},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxA1Q2hpdGlsMTk5OF9DaGFwdGVyX0NvbW1vblN1YmV4cHJlc3Npb25zQXJlVW5jb21tby5wZGZPEQHSAAAAAAHSAAIAAAxNYWNpbnRvc2ggSEQAAAAAAAAAAAAAAAAAAAAAAAAAQkQAAf////8fQ2hpdGlsMTk5OF9DaGFwdGVyI0ZGRkZGRkZGLnBkZgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////wAAAABQREYgAAAAAAABAAIAAAogY3UAAAAAAAAAAAAAAAAAA2JpYgAAAgBHLzpVc2Vyczpqc2llazpiaWI6Q2hpdGlsMTk5OF9DaGFwdGVyX0NvbW1vblN1YmV4cHJlc3Npb25zQXJlVW5jb21tby5wZGYAAA4AbAA1AEMAaABpAHQAaQBsADEAOQA5ADgAXwBDAGgAYQBwAHQAZQByAF8AQwBvAG0AbQBvAG4AUwB1AGIAZQB4AHAAcgBlAHMAcwBpAG8AbgBzAEEAcgBlAFUAbgBjAG8AbQBtAG8ALgBwAGQAZgAPABoADABNAGEAYwBpAG4AdABvAHMAaAAgAEgARAASAEVVc2Vycy9qc2llay9iaWIvQ2hpdGlsMTk5OF9DaGFwdGVyX0NvbW1vblN1YmV4cHJlc3Npb25zQXJlVW5jb21tby5wZGYAABMAAS8AABUAAgAM//8AAAAIAA0AGgAkAFwAAAAAAAACAQAAAAAAAAAFAAAAAAAAAAAAAAAAAAACMg==}}
 
 @url{Siek:2018aa,
 	Author = {Jeremy G. Siek},
@@ -163,6 +237,7 @@
 	Url = {http://www.sciencedirect.com/science/article/pii/S0890540100929419},
 	Volume = {164},
 	Year = {2001},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxAac2VxdWVudC1zdWJ0eXBpbmctcG9seS5wZGZPEQFkAAAAAAFkAAIAAAxNYWNpbnRvc2ggSEQAAAAAAAAAAAAAAAAAAAAAAAAAQkQAAf////8ac2VxdWVudC1zdWJ0eXBpbmctcG9seS5wZGYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////wAAAABQREYgAAAAAAABAAIAAAogY3UAAAAAAAAAAAAAAAAAA2JpYgAAAgAsLzpVc2Vyczpqc2llazpiaWI6c2VxdWVudC1zdWJ0eXBpbmctcG9seS5wZGYADgA2ABoAcwBlAHEAdQBlAG4AdAAtAHMAdQBiAHQAeQBwAGkAbgBnAC0AcABvAGwAeQAuAHAAZABmAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIAKlVzZXJzL2pzaWVrL2JpYi9zZXF1ZW50LXN1YnR5cGluZy1wb2x5LnBkZgATAAEvAAAVAAIADP//AAAACAANABoAJABBAAAAAAAAAgEAAAAAAAAABQAAAAAAAAAAAAAAAAAAAak=},
 	Bdsk-Url-1 = {http://www.sciencedirect.com/science/article/pii/S0890540100929419},
 	Bdsk-Url-2 = {https://doi.org/10.1006/inco.2000.2941}}
 
