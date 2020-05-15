@@ -20,7 +20,7 @@ switched to the new system.
 >> far from being subformulas of A (they are strictly smaller than A,
 >> contain no new atom or new connective, etc).
 
-True. The revision fixes this problem being more precise regarding the
+The revision fixes this problem by being more precise regarding
 terminology, defining the "subformula conjunction property".  Also the
 revision explains why this property is enough for our purposes.
 
@@ -43,20 +43,16 @@ Excellent, we've switched to the lexicographic ordering on
 >> page 5, line -3: <: -> \subseteq (3 times)
 >> page 7, lines -2,-1: remove depth(B2)<=depth(B) and
 
-The revision fixes all of the above except for the last item on page 3
-regarding eta-reduction. The reviewer is mistaken. BCD typing is
-indeed preserved under eta reduction (see Proposition 12.1.15 and
-Corollary 14.2.9 of Lambda Calculus with Types by Barendregt, Dekkers,
-and Statman). Perhaps the reviewer was thinking of eta-expansion,
-which is not preserved by BCD typing.
+The revision addresses all of the above except for the last item on
+page 3 regarding eta-reduction. BCD typing is indeed preserved under
+eta reduction (see Proposition 12.1.15 and Corollary 14.2.9 of Lambda
+Calculus with Types by Barendregt, Dekkers, and Statman). Perhaps the
+reviewer was thinking of eta-expansion, which is not preserved by BCD
+typing.
 
 
 Reviewer 2
 ==========
-
->> Despite these strong points, I am sorry to have to recommend rejection
->> of the paper in its current form.  There are two main reasons for
->> this:
 
 >> 1. lack of details for the motivating connection to Siek's broader
 >>    project(s), alluded to in the Introduction but too briefly to
@@ -67,48 +63,34 @@ Compilation" to address this problem.
 
 >> 2. failure, as also in the Laurent paper that seems to have been the
 >>    starting point for this work, to consider the deep line of work on
->>    logical treatments of subtyping.  I will mention papers in this
->>    line below.  The result is that Siek's formulation, while
->>    technically correct, is set up in a pretty delicate (and, in my
->>    view, not aesthetically or foundationally pleasing) way that I fear
->>    is unlikely to be robust to changes in the type system.
+>>    logical treatments of subtyping.
+>>
+>> ...  In contrast, Siek's system handles function types through some
+>> very particular meta-level operations on type expressions and side
+>> conditions to the function subtyping rule (->').  I worry that
+>> these conditions will be brittle, and not work well in a setting
+>> where compositionality at the type level is required.  Imagine, for
+>> example, allowing type-level functions as in System F-omega.  Then
+>> particular checks on the forms of type expressions will fail in the
+>> presence of applications of type variables (i.e., abstracted type
+>> expressions), since we will not have a concrete type expression to
+>> apply these various checks and meta-level operations to.  So an
+>> approach that is based just on syntactic conditions on type
+>> expressions seems fragile and not likely to be extensible to richer
+>> type systems.
 
->> Main criticism 2:
-
->> The second criticism is about positioning the work with respect to an
->> important line of previous research concerned with the logical
->> underpinnings of subtyping. A very well written and informative
->> example is Tiuryn's "A Sequent Calculus for Subtyping Polymorphic
->> Types", which devises several subtyping systems as logics, and relates
->> to previous efforts in that direction. These works have a number of
->> interesting advantages over the proposals of Laurent and Siek.
-
->> First, they deal in a more compositional way with function types,
->> using ideas from substructural logic. The need for substructuralism is
->> due to the fact that usually one does not want to consider (a -> b ->
->> c) to be a subtype of (b -> a -> c), though as intuitionistic
->> formulas, these are equivalent.  In contrast, Siek's system handles
->> function types through some very particular meta-level operations on
->> type expressions and side conditions to the function subtyping rule
->> (->').  I worry that these conditions will be brittle, and not work
->> well in a setting where compositionality at the type level is
->> required.  Imagine, for example, allowing type-level functions as in
->> System F-omega.  Then particular checks on the forms of type
->> expressions will fail in the presence of applications of type
->> variables (i.e., abstracted type expressions), since we will not have
->> a concrete type expression to apply these various checks and meta-level
->> operations to.  So an approach that is based just on syntactic conditions
->> on type expressions seems fragile and not likely to be extensible to
->> richer type systems.
-
->> A point worth noting in passing is that Tiuryn's paper actually
->> presents a Curry-Howard view of subtyping and gives rules that derive
->> coercions. In fact, the line of work goes back to a paper of
->> Mitchell's which relates subtyping to typing by coercions which
->> eta-reduce to the identity. (One can find similar ideas in Miquel's
->> "Implicit Calculus of Constructions".) 
-
->> @article{DBLP:journals/iandc/Tiuryn01, author = {Jerzy Tiuryn}, title = {A Sequent Calculus for Subtyping Polymorphic Types}, journal = {Inf. Comput.}, volume = {164}, number = {2}, pages = {345--369}, year = {2001}}
+The logical treatments of subtyping are indeed useful for extending to
+richer type systems for programming languages. The author has made use
+of them in the context of research on gradual typing.  However, the
+motivation for the present work is rather different: constructing
+filter models (denotational semantics) for programming languages. For
+that purpose, there is no need for richer type systems such as System
+F-omega; intersection types already provide what is needed to express
+the runtime behavior of functional programs. The revision includes
+changes to the introduction to differentiate the varied uses of
+intersection type systems and to make it clear that the present
+article's motivation comes from denotational semantics, not type
+systems for programming languages.
 
 >> Other comments:
 
@@ -126,22 +108,7 @@ I've rephrased to remove mention of the STLC, as that was not necessary.
 >>    property is a property of a proof system: a proof system has the
 >>    subformula property if for every closed proof of that proof system,
 >>    every formula occurring in the proof is a subformula of the theorem
->>    proved by the proof.  So it is a (meta-level) type error to refer
->>    to a judgment as having the subformula.  To be clear: it is not
->>    even correct to say that the set of valid subtyping judgments has
->>    the property, for different proof systems (some with, some without
->>    the property) could give rise to the same valid judgments.  We are
->>    speaking about whether some particular set of proof rules has the
->>    property.  Even there we could imagine a distinction (which I did
->>    not find in a brief literature search) between the *rules* having
->>    the property (we could say intrinsic subformula property?) and the
->>    proofs derivable from the rules having the property (extrinsic, the
->>    definition I use just above). For say that the proof system
->>    includes a spurious rule with some premise that is not a subformula
->>    of the conclusion, but where that rule can never actually be
->>    successfully used (due to other constraints in it) in a closed
->>    derivation.  Then the proof system would have the subformula
->>    property extrinsically but not intrinsically.
+>>    proved by the proof.
 
 The mistaken uses of "judgment" have been replaced with "subtyping system"
 (i.e. proof system).
@@ -159,9 +126,9 @@ The mistaken uses of "judgment" have been replaced with "subtyping system"
 >>    treatment of function types via substructural typing.  This would
 >>    avoid these fiddly syntactic definitions.
 
-I've changed the notation for \in and \subseteq to make it clear
-that these notions are different from the usual ones.
-
+I've changed the notation for \in and \subseteq to make it clear that
+these notions are different from the usual ones and added some
+explanation to provide an intuition for what they accomplish.
 
 
 

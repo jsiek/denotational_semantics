@@ -47,13 +47,13 @@
   that culminate in cut-elimination (2018). This article develops a
   subtyping system in regular style that omits transitivity and
   provides a direct proof of transitivity, significantly reducing the
-  length of the proof. The new system satisfies something like the
-  subformula property: every type occuring in the derivation of $A <:
-  B$ is a subformula of $A$ or $B$, or an intersection of such
-  subformulas.  Borrowing from Laurent's system, the rule for function
-  types is essentially the $\beta$-soundness property. The article
-  proves that the new subtyping system is equivalent to that of
-  Barendregt, Coppo, and Dezani-Ciancaglini.
+  length of the proof. Inspired by Laurent's system, the rule for
+  function types is essentially the $\beta$-soundness property.  The
+  new system satisfies the ``subformula conjunction property'': every
+  type occuring in the derivation of $A <: B$ is a subformula of $A$
+  or $B$, or an intersection of such subformulas. The article proves
+  that the new subtyping system is equivalent to that of Barendregt,
+  Coppo, and Dezani-Ciancaglini.
 \end{abstract}
 
 \section{Introduction}
@@ -72,6 +72,12 @@ have been used for at least three purposes:
     variety of lambda
     calculi~\citep{Coppo:1980ab,Coppo:1981aa,Coppo:1984aa,Honsell:1992aa,Abramsky:1993fk,Honsell:1999aa,Ishihara:2002aa,Rocca:2004aa,Dezani-Ciancaglini:2005aa,Alessi:2006aa,Barendregt:2013aa}.
 \end{itemize}
+The motivation for this article comes from the third use of
+intersection types, in denotational semantics.  We are interested in
+constructing filter models for functional programming languages in
+support of mechanized compiler
+verification. Section~\ref{sec:motivation} describes how this line of
+research motivated the results in this article.
 
 There are many intersection type systems; perhaps the best-known them
 is the BCD intersection type system of \citet{Barendregt:1983aa}. For
@@ -130,6 +136,7 @@ of the BCD system significantly complicates the situation.
 \end{figure}
 
 \section{Motivations from Verified Compilation}
+\label{sec:motivation}
 
 Our interest in intersection type systems stems from our work on
 mechanized proofs of correctness for compiling functional programming
@@ -317,12 +324,12 @@ $\TOP$. (See Propostion~\ref{prop:top}(\ref{prop:AllBot-⊑-any}).) The
 $\topInCod{A}$ predicate identifies types that have $\TOP$ in their
 codomain.
 %
-The relations $A \inside B$ and $A \containedin B$ enable the treatment
-of a sequence of intersections $B_1 \cap \cdots \cap B_n$ (modulo
-associativity and commutativity) as if it was set of types $\{ B_1,
-\ldots, B_n \}$, where each $B_i$ is an atom or a function type.  We
-say that $A$ is a part of $B$ if $A \inside B$ and we say that $B$
-\emph{contains} $A$ if $A \containedin B$.
+The relations $A \inside B$ and $A \containedin B$ enable the
+treatment of a sequence of intersections $B_1 \cap \cdots \cap B_n$
+(modulo associativity and commutativity) as if it were a set of types
+$\{ B_1, \ldots, B_n \}$, where each $B_i$ is an atom or a function
+type.  We say that $A$ is a part of $B$ if $A \inside B$ and we say
+that $B$ \emph{contains} $A$ if $A \containedin B$.
 
 \begin{proposition}\label{prop:union-subset-inv}
  \item If $A \cap B \containedin C$, then $A \containedin C$ and $B \containedin C$. 
