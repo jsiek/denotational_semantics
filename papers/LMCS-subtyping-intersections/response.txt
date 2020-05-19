@@ -79,18 +79,17 @@ Compilation" to address this problem.
 >> expressions seems fragile and not likely to be extensible to richer
 >> type systems.
 
-The logical treatments of subtyping are indeed useful for extending to
-richer type systems for programming languages. The author has made use
-of them in the context of research on gradual typing.  However, the
-motivation for the present work is rather different: constructing
-filter models (denotational semantics) for programming languages. For
-that purpose, there is no need for richer type systems such as System
-F-omega; intersection types already provide what is needed to express
-the runtime behavior of functional programs. The revision includes
-changes to the introduction to differentiate the varied uses of
-intersection type systems and to make it clear that the present
-article's motivation comes from the realm of filter models, not type
-systems for programming languages.
+Yes, the logical treatments of subtyping are useful for extending to
+richer type systems for programming languages. However, the motivation
+for the present work is in constructing filter models (denotational
+semantics) for programming languages. For that purpose, there is no
+need for richer type systems such as System F-omega; intersection
+types already provide what is needed to express the runtime behavior
+of functional programs. The revision includes changes to the
+introduction to differentiate the varied uses of intersection type
+systems and to make it clear that the present article's motivation
+comes from the realm of filter models, not type systems for
+programming languages.
 
 >> Other comments:
 
@@ -151,7 +150,7 @@ Reviewer 3
 >> (if only to strengthen the motivation).
 
 That is an interesting connection. I think that this style of proof
-would work using the new function rule (→′) but not with the old rules
+would work using the new function rule (→′) but not with the BCD rules
 (→) and (→∩). I've added a discussion of this connection to the
 revision.
 
@@ -182,25 +181,17 @@ that does not satisfy the subformula property.
 
 
 >> Minor notes:
-
 >> The paper has a few formatting issues with text running into the
 >> margin (p1, p8, some URLs in the bibliography).
-
 >> Typos: 
-
 >> "and then then prove transitivity" (p2) double "then"
-
 >> "Before moving on, we make note of some basic facts" perhaps "take
 >> note" or "make a note of"?
-
 >> Bibliography:
-
 >> "M. Dezani-Ciancaglini, F. Honsell, and Y. Motohama. Compositional
 >> characterisations of -terms" missing a lambda symbol
-
 >> "E. Engeler. Algebras and combinators. algebra universalis" capitalize
 >> journal title (?)
-
 >> "H. Ishihara and T. Kurata. Completeness of intersection and union
 >> type assignment systems for call-by-value -models." missing lambda
 

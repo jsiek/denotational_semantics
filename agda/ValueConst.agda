@@ -53,7 +53,7 @@ v ⊆ w = ∀{u} → u ∈ v → u ∈ w
 
 AllFun : (u : Value) → Set
 AllFun ⊥ = Bot
-AllFun (const x) = Bot
+AllFun (const k) = Bot
 AllFun (v ↦ w) = ⊤
 AllFun (u ⊔ v) = AllFun u × AllFun v 
 
