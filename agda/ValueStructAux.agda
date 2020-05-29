@@ -7,7 +7,7 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
 open import Structures
-open import Syntax using (Var)
+open import Var using (Var)
 
 {-
 

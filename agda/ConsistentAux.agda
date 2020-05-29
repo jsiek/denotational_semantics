@@ -6,7 +6,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
-open import Syntax using (Var)
+open import Var using (Var)
 open import Structures
 import ValueStructAux
 

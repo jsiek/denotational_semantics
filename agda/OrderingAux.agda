@@ -1,5 +1,5 @@
 open import Structures
-open import Syntax using (Var)
+open import Var using (Var)
 open import Data.Nat using (ℕ; zero; suc)
 import ValueStructAux
 
