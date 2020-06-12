@@ -23,7 +23,6 @@ open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app; subst)
 open Eq.≡-Reasoning
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-
 {- to do: 
 
    There's a bunch of duplication in these proofs that should
@@ -361,7 +360,7 @@ module SubstReflectLambdaBCD where
     open import LambdaDenot value_struct ordering _●_ ℱ
     open CurryApplyStruct.CurryApplyStruct MB
     open import Lambda
-    open ASTMod using (Subst; ⟪_⟫; ⟦_⟧; exts; rename-subst)
+    open ASTMod using (Subst; ⟪_⟫; ⟦_⟧; exts; rename-subst; exts-0; exts-suc-rename)
     open import Compositionality
     open import ConsistentAux value_struct ordering consistent
     open DenotAux value_struct ordering _●_ ℱ consistent MB
@@ -379,22 +378,25 @@ module SubstReflectLambdaBCD where
         ⟨ `⊥ , ⟨ (λ x → tt) , ⟨ δ⊢σ↓⊥ , ƛ-⊥ {N}{`⊥} ⟩ ⟩ ⟩ 
     subst-reflect-lambda {δ}{N = N}{σ} {u ↦ w} IH wfδ wfv ℰLδv L≡ δ⊢σ↓⊥
         with IH {u}{w} (λ x → tt) tt ℰLδv refl (δu⊢extσ⊥ δ⊢σ↓⊥)
-    ... | ⟨ γ , ⟨ wfγ , ⟨ subst-γ , m ⟩ ⟩ ⟩
+    ... | ⟨ γ , ⟨ wfγ , ⟨ subst-γ , m ⟩ ⟩ ⟩ 
           =
           ⟨ init γ ,
           ⟨ (λ x → tt) ,
-          ⟨ (λ x → rename-inc-reflect {M = ⟦ σ ⟧ x} tt (SG1 x)) ,
+          ⟨ RIR ,
             (let m' = split{M = N} m in
              EnvExt⊑ {M = N} tt SG0 m') ⟩ ⟩ ⟩
          where
          SG0 : γ zero ⊑ u
          SG0
              with subst-γ 0
-         ... | sg = sg
+         ... | sg rewrite exts-0 σ = sg
          SG1 : ∀ x → _
          SG1 x
              with subst-γ (suc x)
          ... | sg rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x))= sg
+         RIR : (x : ℕ) → ℰ (⟦ σ ⟧ x) δ (γ (suc x))
+         RIR x with SG1 x
+         ... | sg1 rewrite exts-suc-rename σ x = rename-inc-reflect {M = ⟦ σ ⟧ x} tt sg1
     subst-reflect-lambda {N = N}{σ}{u ⊔ w} IH wfδ wfv ⟨ aa , bb ⟩ L≡ δ⊢σ↓⊥
         with subst-reflect-lambda{N = N}{σ}{u} IH (λ x → tt) wfv aa L≡ δ⊢σ↓⊥
            | subst-reflect-lambda{N = N}{σ}{w} IH (λ x → tt) wfv bb L≡ δ⊢σ↓⊥
@@ -434,7 +436,7 @@ module SubstReflectLambdaConst where
     where
 
     open import ISWIM
-    open ASTMod using (exts-0; exts-suc; rename-subst)
+    open ASTMod using (exts-0; exts-suc-rename; rename-subst)
     open import ISWIMDenot value_struct ordering _●_ ℱ (λ {P} k v → ℘ {P} k v)
     open import Compositionality
     open ISWIMDenotAux value_struct ordering _●_ ℱ consistent MB (λ {P} k v → ℘ {P} k v)
@@ -464,17 +466,22 @@ module SubstReflectLambdaConst where
     ... | ⟨ γ , ⟨ wfγ , ⟨ subst-γ , m ⟩ ⟩ ⟩ =
           ⟨ init γ ,
           ⟨ (λ z → wfγ (suc z)) ,
-          ⟨ (λ x → rename-inc-reflect {M = ⟦ σ ⟧ x} (wfγ (suc x)) (SG1 x)) ,
+          ⟨ RIR ,
             (let m' = split{M = N} m in
              EnvExt⊑{M = N} wfw SG0 m') ⟩ ⟩ ⟩
           where
           SG0 : γ zero ⊑ u
           SG0 with subst-γ 0
-          ... | sg = sg
+          ... | sg rewrite exts-0 σ = sg
           SG1 : ∀ x → _
           SG1 x
               with subst-γ (suc x)
           ... | sg rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x))= sg
+          RIR : (x : ℕ) → ℰ (⟦ σ ⟧ x) δ (γ (suc x))
+          RIR x with SG1 x
+          ... | sg1 rewrite exts-suc-rename σ x =
+              rename-inc-reflect {M = ⟦ σ ⟧ x} (wfγ (suc x)) sg1
+      
     subst-reflect-lambda {δ}{N = N}{σ}{u ⊔ w} IH wfδ (wf-⊔ u~w wfu wfw) ⟨ aa , bb ⟩ L≡ δ⊢σ↓⊥
         with subst-reflect-lambda{N = N}{σ}{u} IH wfδ wfu aa L≡ δ⊢σ↓⊥
            | subst-reflect-lambda{N = N}{σ}{w} IH wfδ wfw bb L≡ δ⊢σ↓⊥
