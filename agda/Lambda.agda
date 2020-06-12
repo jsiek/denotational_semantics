@@ -26,7 +26,8 @@ sig : Op → List ℕ
 sig lam = 1 ∷ []
 sig app = 0 ∷ 0 ∷ []
 
-open import Syntax using (Var; _•_; ↑; id) public
+open import Var using (Var) public
+open import Syntax using (_•_; ↑; id) public
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod
     using (`_; _⦅_⦆; Ctx; plug; bind; ast; cons; nil; _[_])

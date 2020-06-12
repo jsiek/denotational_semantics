@@ -30,7 +30,8 @@ sig lam = 1 ∷ []
 sig app = 0 ∷ 0 ∷ []
 sig (lit p k) = []
 
-open import Syntax using (Var; _•_; ↑; id) public
+open import Var using (Var) public
+open import Syntax using (_•_; ↑; id) public
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug;
                    rename; ⟦_⟧;
