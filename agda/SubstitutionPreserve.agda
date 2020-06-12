@@ -62,7 +62,7 @@ module SubstitutionPreserve
       → δ `, v `⊢ exts σ ↓ γ `, v
     subst-ext wfγ σ d 0 rewrite exts-0 σ = ⊑-refl
     subst-ext wfγ σ d (suc x′) rewrite exts-suc-rename σ x′
-        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
+        | sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
         rename-pres {M = ⟦ σ ⟧ x′} (↑ 1) (λ _ → ⊑-refl) (wfγ x′) (d x′)
 
     subst-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
@@ -132,7 +132,7 @@ module SubstitutionPreserve
       → δ `, v `⊢ exts σ ↓ γ `, v
     subst-ext wfγ σ d 0 rewrite exts-0 σ = ⊑-refl
     subst-ext wfγ σ d (suc x′) rewrite exts-suc-rename σ x′ 
-        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
+        | sym (rename-subst (↑ 1) (⟦ σ ⟧ x′)) =
         rename-pres {M = ⟦ σ ⟧ x′} (↑ 1) (λ _ → ⊑-refl) (wfγ x′) (d x′)
 
     subst-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}

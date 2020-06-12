@@ -124,7 +124,7 @@ module RenamePreserveReflect
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
     δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
     δu⊢extσ⊥ {δ}{σ = σ}{u} δ⊢σ↓⊥ (suc x)
-        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) rewrite exts-suc-rename σ x =
+        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) | exts-suc-rename σ x =
         rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
 
 
@@ -252,6 +252,6 @@ module RenamePreserveReflect
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
     δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
     δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (suc x) rewrite exts-suc-rename σ x
-       rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
+       | sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
        rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
 
