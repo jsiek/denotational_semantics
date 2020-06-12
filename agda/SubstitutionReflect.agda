@@ -20,7 +20,7 @@ open import Data.Unit using (⊤; tt)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app; subst)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open Eq.≡-Reasoning
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 

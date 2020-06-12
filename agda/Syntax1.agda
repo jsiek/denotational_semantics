@@ -5,7 +5,7 @@ open import Data.List using (List; []; _∷_)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open Eq.≡-Reasoning
 
 postulate
   extensionality : ∀ {A B : Set} {f g : A → B}

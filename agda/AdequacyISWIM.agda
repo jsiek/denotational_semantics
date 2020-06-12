@@ -25,7 +25,7 @@ open import SoundnessISWIM using (soundness; ℰ-⊥)
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open Eq.≡-Reasoning
 open import Data.Nat using (ℕ; zero; suc; s≤s; _<_)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)

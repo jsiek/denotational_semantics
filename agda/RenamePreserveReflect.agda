@@ -18,7 +18,7 @@ open import Data.Unit using (⊤; tt)
 open import Function using (_∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app; inspect; [_])
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; _≡⟨_⟩_; _∎)
+open Eq.≡-Reasoning
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 module RenamePreserveReflect
@@ -39,28 +39,28 @@ module RenamePreserveReflect
   open import ConsistentAux D V C
   open CurryApplyStruct.CurryApplyStruct MV
   open CurryApplyStruct.CurryStruct model_curry
-  open import Syntax using (Rename; ext; ⦉_⦊)
+  open import Syntax using (Rename; ext; ⦉_⦊; ext-0; ext-suc)
 
   ⊑-ext-R : ∀ {γ : Env} {δ : Env} {ρ : Rename}{v}
         → γ `⊑ (δ ∘ ⦉ ρ ⦊)
           ---------------------------------
         → (γ `, v) `⊑ ((δ `, v) ∘ ⦉ ext ρ ⦊)
-  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ 0 = ⊑-refl
-  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ (suc x) = γ⊑δ∘ρ x
+  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ 0 rewrite ext-0 ρ = ⊑-refl
+  ⊑-ext-R {ρ = ρ}{v = v} γ⊑δ∘ρ (suc x) rewrite ext-suc ρ x = γ⊑δ∘ρ x
 
   ⊑-ext-L : ∀ {γ : Env} {δ : Env} {ρ : Rename} {v}
         → (δ ∘ ⦉ ρ ⦊) `⊑ γ
           ---------------------------------
         → ((δ `, v) ∘ ⦉ ext ρ ⦊) `⊑ (γ `, v)
-  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ 0 = ⊑-refl
-  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ (suc x) = δ∘ρ⊑γ x
+  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ 0 rewrite ext-0 ρ = ⊑-refl
+  ⊑-ext-L {ρ = ρ} δ∘ρ⊑γ (suc x) rewrite ext-suc ρ x = δ∘ρ⊑γ x
 
   module ForLambda where
   
     open import Lambda
     open import LambdaDenot D V _●_ ℱ
     open ASTMod
-      using (Subst; exts; ⟦_⟧; rename; rename-subst; rename-id)
+      using (Subst; exts; ⟦_⟧; rename; rename-subst; rename-id; exts-0; exts-suc-rename)
 
     rename-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
            → (ρ : Rename)
@@ -85,7 +85,7 @@ module RenamePreserveReflect
       → ℰ M δ v
     ⊑-env {γ}{δ}{M}{v} wfv γ⊑δ ℰMγv
           with rename-pres {v}{γ}{δ}{M} id γ⊑δ wfv ℰMγv
-    ... | d′ =
+    ... | d′ rewrite rename-id {M} =
           d′
 
     EnvExt⊑ : ∀ {γ : Env} {M v u₁ u₂}
@@ -122,9 +122,9 @@ module RenamePreserveReflect
 
     δu⊢extσ⊥ : ∀{δ : Env}{σ : Subst}{u}
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
-    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 = ⊑-⊥
+    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
     δu⊢extσ⊥ {δ}{σ = σ}{u} δ⊢σ↓⊥ (suc x)
-        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
+        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) rewrite exts-suc-rename σ x =
         rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
 
 
@@ -134,7 +134,7 @@ module RenamePreserveReflect
   
     open import ISWIM
     open import ISWIMDenot D V _●_ ℱ (λ {P} k v → ℘ {P} k v)
-    open ASTMod using (⟦_⟧; rename-subst; FV?)
+    open ASTMod using (⟦_⟧; rename-subst; FV?; exts-0; exts-suc-rename)
 
     rename-pres : ∀ {v} {γ : Env} {δ : Env} {M : Term}
            → (ρ : Rename)
@@ -177,8 +177,8 @@ module RenamePreserveReflect
         where
         G : ∀{v₁} → (∀ x → T (FV? N x)
             → (γ `, v₁) x ⊑ ((δ `, v₁) ∘ ⦉ ext ρ ⦊) x)
-        G {v₁} zero fvNx = ⊑-refl
-        G {v₁} (suc x) fvNx
+        G {v₁} zero fvNx rewrite ext-0 ρ = ⊑-refl
+        G {v₁} (suc x) fvNx rewrite ext-suc ρ x
             with FV? N (suc x) | inspect (FV? N) (suc x)
         ... | false | [ fvN[sx] ] = ⊥-elim fvNx
         ... | true | [ fvN[sx] ] = γ⊑δ∘ρ x H
@@ -250,8 +250,8 @@ module RenamePreserveReflect
 
     δu⊢extσ⊥ : ∀{δ : Env}{σ : Subst}{u}
              → δ `⊢ σ ↓ `⊥ → δ `, u `⊢ exts σ ↓ `⊥
-    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 = ⊑-⊥
-    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (suc x)
+    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ 0 rewrite exts-0 σ = ⊑-⊥
+    δu⊢extσ⊥ {σ = σ} δ⊢σ↓⊥ (suc x) rewrite exts-suc-rename σ x
        rewrite sym (rename-subst (↑ 1) (⟦ σ ⟧ x)) =
        rename-pres {M = ⟦ σ ⟧ x} (↑ 1) (λ x₁ → ⊑-refl) wf-bot (δ⊢σ↓⊥ x)
 
