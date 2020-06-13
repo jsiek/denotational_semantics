@@ -30,9 +30,10 @@ open import Var using (Var) public
 open import Syntax using (_•_; ↑; id) public
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod
-    using (`_; _⦅_⦆; Ctx; plug; bind; ast; cons; nil; _[_])
+    using (`_; _⦅_⦆; bind; ast; cons; nil; _[_])
     renaming (ABT to AST) public
-open ASTMod using (WF; WF-Ctx; ctx-depth)    
+module CtxMod = Syntax.Extra Op sig    
+open CtxMod using (Ctx; plug; WF; WF-Ctx; ctx-depth)    
 
 infixl 7  _·_
 
