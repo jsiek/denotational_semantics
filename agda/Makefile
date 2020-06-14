@@ -1,9 +1,8 @@
-%.agdai: %.agda
-	agda  $<
+ROOT = /Users/jsiek/denotational_semantics
+BUILD_DIR = $(ROOT)/_build/2.6.1/agda
 
-#	BelowBCDConst.agda \
-#	FunInverseBCDConst.agda \
-#	CurryBCDConst.agda \
+$(BUILD_DIR)/agda/%.agdai: %.agda
+	agda $<
 
 AGDA =  Utilities.agda \
 	Primitives.agda \
@@ -48,9 +47,9 @@ AGDA =  Utilities.agda \
 	AdequacyCallByValue.agda \
 	AdequacyISWIM.agda 
 
-AGDAI = $(AGDA:%.agda=%.agdai)
+AGDAI = $(AGDA:%.agda=$(BUILD_DIR)/agda/%.agdai)
 
 all: ${AGDA} ${AGDAI}
 
 clean:
-	rm -f *.agdai *~
+	rm -f $(BUILD_DIR)/agda/*.agdai *~

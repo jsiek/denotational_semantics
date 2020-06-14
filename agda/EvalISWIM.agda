@@ -3,12 +3,13 @@ open import ISWIM
 open ISWIM.ASTMod
    using (`_; _⦅_⦆; Subst;
           exts; cons; bind; ast; nil; ⟦_⟧; ⟪_⟫; _⨟_; subst-zero;
-          subst-zero-exts-cons; sub-id; sub-sub;
+          subst-zero-exts-cons; sub-id; sub-sub; len-mk-list;
           WF; WF-var; WF-op; WF-ast; WF-nil; WF-cons)
 open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Data.Nat.Properties using (≤-pred)
 open import Data.List using (List; []; _∷_; length)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans)
+open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl; sym; trans; subst)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Function using (_∘_)
@@ -161,11 +162,14 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
        → Σ[ N ∈ Term ] (⟪ σ ⟫ M —↠ N) × c ≈ N
 ⇓→—↠×≈ wf (⇓-lit {p = p}{k}) γ≈ₑσ =
     ⟨ $ p k , ⟨ $ p k □ , ≈-const refl ⟩ ⟩
-⇓→—↠×≈ {γ = γ}{σ} (WF-var x lt) (⇓-var {x = x}) γ≈ₑσ = ⟨ ⟦ σ ⟧ x , ⟨ ⟦ σ ⟧ x □ , γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ lt ⟩ ⟩
+⇓→—↠×≈ {γ = γ}{σ} (WF-var ∋x lt) (⇓-var {x = x}) γ≈ₑσ
+    with subst (λ □ → x < □) (len-mk-list (length γ)) lt
+... | lt' =
+    ⟨ ⟦ σ ⟧ x , ⟨ ⟦ σ ⟧ x □ , γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ lt' ⟩ ⟩
 ⇓→—↠×≈ {σ = σ} {c = val-clos N γ} wf (⇓-lam{wf = wf'}) γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ≈-clos {wf = wf'} γ≈ₑσ refl ⟩ ⟩
 ⇓→—↠×≈ {γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
-    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)))
+    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _)
     (⇓-prim {P = P}{B}{f}{k} L⇓f M⇓k) γ≈ₑσ 
     with ⇓→—↠×≈{σ = σ} wfL L⇓f γ≈ₑσ
 ... | ⟨ L′ , ⟨ σL—↠f , ≈-const L′≡ ⟩ ⟩
@@ -183,7 +187,7 @@ ext-subst{Γ}{Δ} σ N = ⟪ subst-zero N ⟫ ∘ exts σ
         —→⟨ δ-rule ⟩
         ($ P (f k))  □
 ⇓→—↠×≈ {γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
-    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)))
+    (WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _)
     (⇓-app {Γ}{δ = δ}{N}{V}{V′} L⇓ƛNδ M⇓V N⇓V′) γ≈ₑσ
     with ⇓→—↠×≈{σ = σ} wfL L⇓ƛNδ γ≈ₑσ
 ... | ⟨ L′ , ⟨ σL—↠ƛτN , ≈-clos {σ = τ}{wf = wfN} δ≈ₑτ L′≡ ⟩ ⟩

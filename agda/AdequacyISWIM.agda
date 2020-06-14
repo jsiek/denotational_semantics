@@ -8,7 +8,7 @@ open ISWIM.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
           WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
-          WF-rel; WF-Ctx; WF-plug; ctx-depth)
+          WF-rel; WF-Ctx; WF-plug; ctx-depth; len-mk-list)
 open import ValueConst
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -24,7 +24,7 @@ open ISWIMDenotAux value_struct ordering _●_ ℱ consistent model_curry_apply 
 open import SoundnessISWIM using (soundness; ℰ-⊥)
 
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
+open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app; subst)
 open Eq.≡-Reasoning
 open import Data.Nat using (ℕ; zero; suc; s≤s; _<_)
 open import Data.List using (List; []; _∷_; length)
@@ -193,9 +193,10 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
     → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
 ℰ→𝔼 {γ} {γ'} { $ P p} {wf} {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ (val-const {P} p) , ⟨ ⇓-lit , ℘pv→𝕍vp {P}{p}{v} ℰMγv ⟩ ⟩
-ℰ→𝔼 {γ} {γ'} {` x} {WF-var x lt} {v} wfγ wfv 𝔾γγ' ℰMγv =
-   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 (wfγ x) wfv (𝔾→𝕍 _ _ 𝔾γγ' x lt) ℰMγv ⟩ ⟩
-ℰ→𝔼 {γ} {γ'} {ƛ N} {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)}
+ℰ→𝔼 {γ} {γ'} {` x} {WF-var ∋x lt} {v} wfγ wfv 𝔾γγ' ℰMγv =
+    let lt' = subst (λ □ → x < □) (len-mk-list (length γ')) lt in
+   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 (wfγ x) wfv (𝔾→𝕍 _ _ 𝔾γγ' x lt') ℰMγv ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {ƛ N} {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil) _}
    {v} wfγ wfv 𝔾γγ' ℰMγv =
    ⟨ val-clos N γ' , ⟨ ⇓-lam {wf = wfN} , G {v} wfv ℰMγv ⟩ ⟩
    where
@@ -208,7 +209,7 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
    G {v₁ ⊔ v₂} (wf-⊔ _ wfv₁ wfv₂) ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ =
       ⟨ G {v₁} wfv₁ ℱℰNγv₁ , G {v₂} wfv₂ ℱℰNγv₂ ⟩
 ℰ→𝔼 {γ} {γ'} {L · M}
-    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))}
+    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}
     {v} wfγ wfv 𝔾γγ'
     ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩
     with ℰ→𝔼 {M = L}{wfL} wfγ (wf-fun wfv₁ wfv) 𝔾γγ' d₁
@@ -218,7 +219,7 @@ sub-𝕍 {c}{u}{v' = v ↦ w} wfu (wf-fun wfv wfw) 𝕍uc
 ... | ⟨ c' , ⟨ L'⇓c' , 𝕍v ⟩ ⟩ =
     ⟨ c' , ⟨ (⇓-app {wf = WF-rel L' wfL'} L⇓L' M⇓c L'⇓c') , 𝕍v ⟩ ⟩
 ℰ→𝔼 {γ} {γ'} {L · M}
-    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))}
+    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}
     {v} wfγ wfv 𝔾γγ'
     ⟨ v₁ , ⟨ wfv₁ , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
     | ⟨ val-const {P} f , ⟨ L⇓f , 𝕍v₁↦v ⟩ ⟩ | ⟨ c , ⟨ M⇓c , 𝕍v₁ ⟩ ⟩

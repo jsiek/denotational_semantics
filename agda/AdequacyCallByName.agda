@@ -9,8 +9,9 @@ open import EvalCallByName
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
-          WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-Ctx; WF-plug;
-          ctx-depth)
+          WF;
+          WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
+          WF-Ctx; WF-plug; ctx-depth; len-mk-list)
 open import Structures
 open import ModelCallByName
 open import ValueStructAux value_struct
@@ -22,7 +23,7 @@ open DenotAux value_struct ordering _●_ ℱ consistent model_curry_apply
 open import SoundnessCallByName using (soundness)
 
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
+open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app; subst)
 open Eq.≡-Reasoning
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
@@ -170,14 +171,16 @@ kth-x{γ' = γ'}{x = x} with nth γ' x
 
 ℰ→𝔼 : ∀{γ : Env}{γ' : ClosEnv}{M : Term}{v}{wf : WF (length γ') M }
             → 𝔾 γ γ' → ℰ M γ v → 𝔼 v (clos M γ')
-ℰ→𝔼 {γ} {γ'} {` x} {v}{WF-var x lt} 𝔾γγ' v⊑γx fγx
-    with kth-x{γ'}{x} | 𝔾→𝔼 γ γ' 𝔾γγ' x lt
+ℰ→𝔼 {γ} {γ'} {` x} {v}{WF-var ∋x lt} 𝔾γγ' v⊑γx fγx
+    with subst (λ □ → x < □) (len-mk-list (length γ')) lt
+... | lt'
+    with kth-x{γ'}{x} | 𝔾→𝔼 γ γ' 𝔾γγ' x lt'
 ... | ⟨ δ , ⟨ M' , eq ⟩ ⟩ | 𝔾γγ'x
     rewrite eq
     with 𝔾γγ'x (AboveFun-⊑ fγx v⊑γx)
 ... | ⟨ c , ⟨ M'⇓c , 𝕍γx ⟩ ⟩ =
       ⟨ c , ⟨ (⇓-var eq M'⇓c) , sub-𝕍 𝕍γx v⊑γx ⟩ ⟩
-ℰ→𝔼 {γ}{γ'}{lam ⦅ cons (bind (ast N)) nil ⦆}{v}{WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)} 𝔾γγ' ℰMγv fγx = G ℰMγv fγx
+ℰ→𝔼 {γ}{γ'}{lam ⦅ cons (bind (ast N)) nil ⦆}{v}{WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil) _} 𝔾γγ' ℰMγv fγx = G ℰMγv fγx
   where
   G : ∀{v}
     → ℱ (ℰ N) γ v
@@ -217,7 +220,7 @@ kth-x{γ' = γ'}{x = x} with nth γ' x
 ℰ→𝔼 {γ}{γ'}{app ⦅ cons (ast L) (cons (ast M) nil) ⦆}{v}{wf}𝔾γγ' (inj₁ v⊑⊥) fγx =
    ⊥-elim (contradiction (AboveFun-⊑ fγx v⊑⊥) AboveFun⊥ )
 ℰ→𝔼 {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {v}
-    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))} 𝔾γγ'
+    {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _} 𝔾γγ'
    (inj₂ ⟨ v₁ , ⟨ d₁ , d₂ ⟩ ⟩ ) fv
     with ℰ→𝔼 {wf = wfL} 𝔾γγ' d₁ ⟨ v₁ , ⟨ v , ⊑-refl ⟩ ⟩
 ... | ⟨ clos L' δ , ⟨ L⇓L' , 𝕍v₁↦v ⟩ ⟩ 

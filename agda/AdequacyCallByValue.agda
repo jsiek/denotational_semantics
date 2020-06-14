@@ -7,7 +7,7 @@ open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst; Ctx; plug;
           exts; cons; bind; nil; rename; ⟪_⟫; subst-zero; _[_]; rename-id;
           WF; WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
-          WF-rel; WF-Ctx; WF-plug; ctx-depth)
+          WF-rel; WF-Ctx; WF-plug; ctx-depth; len-mk-list)
 open import Structures
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
@@ -19,7 +19,7 @@ open DenotAux value_struct ordering _●_ ℱ consistent model_curry_apply
 open import SoundnessCallByValue using (soundness; ℰ-⊥)
 
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app)
+open Eq using (_≡_; _≢_; refl; trans; sym; cong; cong₂; cong-app; subst)
 open Eq.≡-Reasoning
 open import Data.Nat using (ℕ; zero; suc; s≤s; _<_)
 open import Data.List using (List; []; _∷_; length)
@@ -89,10 +89,11 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
 
 ℰ→𝔼 : {γ : Env}{γ' : ClosEnv}{M : Term}{wf : WF (length γ') M }{v : Value}
     → 𝔾 γ γ' → ℰ M γ v → 𝔼 v M γ'
-ℰ→𝔼 {γ} {γ'} {` x}{WF-var x lt} {v} 𝔾γγ' ℰMγv =
-   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 (𝔾→𝕍 _ _ 𝔾γγ' x lt) ℰMγv ⟩ ⟩
+ℰ→𝔼 {γ} {γ'} {` x}{WF-var ∋x lt} {v} 𝔾γγ' ℰMγv =
+   let lt' = subst (λ X → x < X) (len-mk-list (length γ')) lt in
+   ⟨ nth γ' x , ⟨ ⇓-var , sub-𝕍 (𝔾→𝕍 _ _ 𝔾γγ' x lt') ℰMγv ⟩ ⟩
 ℰ→𝔼 {γ} {γ'} {lam ⦅ cons (bind (ast N)) nil ⦆}
-             {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil)} {v} 𝔾γγ' ℰMγv =
+             {WF-op (WF-cons (WF-bind (WF-ast wfN)) WF-nil) _} {v} 𝔾γγ' ℰMγv =
    ⟨ clos N γ' , ⟨ ⇓-lam {wf = wfN} , G ℰMγv ⟩ ⟩
    where
    G : ∀{v} → ℱ (ℰ N) γ v → 𝕍 v (clos N γ' {wfN})
@@ -101,7 +102,7 @@ sub-𝕍 {clos N γ} {v ↦ w ⊔ v ↦ w'} ⟨ vcw , vcw' ⟩ ⊑-dist ev1c {-s
       ℰ→𝔼 {M = N} {wfN} {w} (𝔾-ext 𝔾γγ' vc) ℱℰNγv
    G {v₁ ⊔ v₂} ⟨ ℱℰNγv₁ , ℱℰNγv₂ ⟩ = ⟨ G {v₁} ℱℰNγv₁ , G {v₂} ℱℰNγv₂ ⟩
 ℰ→𝔼 {γ} {γ'} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆}
-             {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil))}
+             {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}
              {v} 𝔾γγ'
     ⟨ v₁ , ⟨ wfv , ⟨ d₁ , d₂ ⟩ ⟩ ⟩ 
     with ℰ→𝔼 {M = L} {wfL} 𝔾γγ' d₁ 
