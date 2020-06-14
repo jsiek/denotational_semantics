@@ -8,7 +8,7 @@ module LambdaCallByValue where
 
 open import Utilities using (_iff_)
 open import Lambda
-open CtxMod using (Ctx; plug; WF; WF-Ctx; ctx-depth)
+open ASTMod using (Ctx; plug; WF; WF-Ctx; ctx-depth)
 open import Data.Product
   using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
