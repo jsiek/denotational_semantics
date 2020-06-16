@@ -1,7 +1,10 @@
 open import Structures
 import ValueStructAux
 
+open import Data.Product using (_×_; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
 open import Data.Nat using (ℕ; zero; suc)
+import Relation.Binary.PropositionalEquality as Eq
+open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 
 module LambdaDenot
   (D : ValueStruct)
@@ -38,3 +41,28 @@ module LambdaDenot
   _`⊢_↓_ δ σ γ = (∀ (x : Var) → ℰ (⟦ σ ⟧ x) δ (γ x))
 
 
+  module Experiment
+    (𝐹 : (Value → Value → Set) → (Value → Set))
+    (_○_ : (Value → Set) → (Value → Set) → (Value → Set))
+    where
+    {-
+    (dᶠ ○ dₐ) w = Σ[ v ∈ Value ] dᶠ (v ↦ w) × dₐ v
+    -}
+    open import ScopedTuple
+    open import GenericSubstitution 
+    open import Fold Op sig
+    DenotSub : Substable Value
+    DenotSub = record { var→val = λ x → ⊥ ; shift = λ x → x
+                      ; var→val-suc-shift = refl }
+
+    denot-op : (op : Op) → Tuple (sig op) (Bind Value (Value → Set))
+             → Value → Set
+    denot-op lam ⟨ f , tt ⟩ = 𝐹 f
+    denot-op app ⟨ dᶠ , ⟨ dₐ , tt ⟩ ⟩ = dᶠ ○ dₐ
+
+    DenotFold : Fold Value (Value → Set)
+    DenotFold = record { S = DenotSub; ret = λ v w → w ⊑ v; fold-op = denot-op }
+    open Fold DenotFold
+
+    𝐸 : Term → GSubst Value → Value → Set
+    𝐸 M ρ = fold ρ M
