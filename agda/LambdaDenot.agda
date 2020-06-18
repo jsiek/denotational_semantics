@@ -47,11 +47,10 @@ module LambdaDenot
   module Experiment
     (𝐹 : (Value → Value → Set) → (Value → Set))
     (_○_ : (Value → Set) → (Value → Set) → (Value → Set))
-    (𝐹-cong : ∀ {x y : Bind Value (Value → Set) 1} → _⩳_ {b = 1} x y → 𝐹 x ≡ 𝐹 y)
+    (𝐹-cong : ∀ {x y : Bind Value (Value → Set) 1}
+            → _⩳_ {b = 1} x y   →   𝐹 x ≡ 𝐹 y)
     where
-    {-
-    (dᶠ ○ dₐ) w = Σ[ v ∈ Value ] dᶠ (v ↦ w) × dₐ v
-    -}
+    {- (dᶠ ○ dₐ) w = Σ[ v ∈ Value ] dᶠ (v ↦ w) × dₐ v -}
     open import ScopedTuple
 
     denot-op : (op : Op) → Tuple (sig op) (Bind Value (Value → Set))
@@ -78,17 +77,13 @@ module LambdaDenot
 
     op-cong : (op : Op) (rs rs' : Tuple (sig op) (Bind Value (Value → Set)))
        → zip _⩳_ rs rs' → denot-op op rs ≡ denot-op op rs'
-    op-cong lam ⟨ fst , tt ⟩ ⟨ fst₁ , tt ⟩ ⟨ fst₂ , tt ⟩ = 𝐹-cong fst₂
-    op-cong app ⟨ fst , ⟨ fst₁ , tt ⟩ ⟩ ⟨ fst₂ , ⟨ fst₃ , tt ⟩ ⟩ ⟨ refl , ⟨ refl , tt ⟩ ⟩ = refl
+    op-cong lam ⟨ r , tt ⟩ ⟨ r' , tt ⟩ ⟨ eq , tt ⟩ = 𝐹-cong eq
+    op-cong app ⟨ r , ⟨ rs , tt ⟩ ⟩ ⟨ r' , ⟨ rs' , tt ⟩ ⟩
+                ⟨ refl , ⟨ refl , tt ⟩ ⟩ = refl
 
-    {-
     open import Preserve Op sig
     SPFE : SubstPreserveFoldEnv DenotFold
-    SPFE = record
-             { shiftᶜ = λ d → d
-             ; op-cong = op-cong
-             ; ret-inj = {!!} {- ouch! -}
+    SPFE = record { shiftᶜ = λ d → d ; op-cong = op-cong
              ; shift-ret = λ vᶠ → refl
-             ; op-shift = λ op {rs↑}{rs} z → op-cong op rs↑ rs z
-             }
-    -}
+             ; op-shift = λ op {rs↑}{rs} z → op-cong op rs↑ rs z }
+
