@@ -15,7 +15,7 @@ AGDA =  Utilities.agda \
 	ISWIM.agda \
 	EvalISWIM.agda \
 	\
-	Structures.agda \
+	Values.agda \
 	ValueStructAux.agda \
 	OrderingAux.agda \
 	Consistency.agda \

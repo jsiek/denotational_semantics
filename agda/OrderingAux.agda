@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 open import Var using (Var)
 open import Data.Nat using (ℕ; zero; suc)
 import ValueStructAux

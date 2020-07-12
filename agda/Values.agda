@@ -1,4 +1,4 @@
-module Structures where
+module Values where
 
 open import Primitives
 
