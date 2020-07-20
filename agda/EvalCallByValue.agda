@@ -1,7 +1,7 @@
 open import Lambda
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;
-          exts; cons; bind; ast; nil; ⟦_⟧; ⟪_⟫; _⨟_; subst-zero;
+          cons; bind; ast; nil; ⟪_⟫; subst-zero;
           subst-zero-exts-cons; sub-id; sub-sub; len-mk-list;
           WF; WF-var; WF-op; WF-ast; WF-nil; WF-cons)
 open import LambdaCallByValue
@@ -86,7 +86,7 @@ data _≈ₑ_ where
 γ≈ₑσ→γ[x]≈σ[x] : ∀{x}{γ}{σ}
    → γ ≈ₑ σ
    → x < length γ
-   → nth γ x ≈ ⟦ σ ⟧ x
+   → nth γ x ≈ σ x
 γ≈ₑσ→γ[x]≈σ[x] {zero} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) x<γ = c≈N
 γ≈ₑσ→γ[x]≈σ[x] {suc x} {.(_ ∷ _)} {.(_ • _)} (≈ₑ-ext γ≈ₑσ c≈N) x<γ =
     γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ (≤-pred x<γ )
@@ -104,7 +104,7 @@ data _≈ₑ_ where
 ⇓→—↠×≈ {γ} {σ} (WF-var ∋x lt) (⇓-var {x = x}) γ≈ₑσ 
     with subst (λ □ → x < □) (len-mk-list (length γ)) lt
 ... | lt' =
-    ⟨ ⟦ σ ⟧ x , ⟨ (⟦ σ ⟧ x □) , (γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ lt') ⟩ ⟩
+    ⟨ σ x , ⟨ (σ x □) , (γ≈ₑσ→γ[x]≈σ[x] γ≈ₑσ lt') ⟩ ⟩
 ⇓→—↠×≈ {σ = σ} {c = clos N γ {wfN}} wf (⇓-lam {wf = wf'}) γ≈ₑσ =
     ⟨ ⟪ σ ⟫ (ƛ N) , ⟨ ⟪ σ ⟫ (ƛ N) □ , ≈-clos  {wf = wf'} γ≈ₑσ refl ⟩ ⟩
 ⇓→—↠×≈ {γ} {σ = σ} {app ⦅ cons (ast L) (cons (ast M) nil) ⦆} {c}
@@ -116,19 +116,19 @@ data _≈ₑ_ where
     with ⇓→—↠×≈{σ = σ} wfM M⇓V γ≈ₑσ
 ... | ⟨ M′ , ⟨ σM—↠M′ , V≈M′ ⟩ ⟩
     with ⇓→—↠×≈ {σ = M′ • τ } wfN N⇓V′ (≈ₑ-ext δ≈ₑτ V≈M′)
-       | β-rule{⟪ exts τ ⟫ N}{M′} (≈→TermValue {V}{M′} V≈M′)
+       | β-rule{⟪ ext τ ⟫ N}{M′} (≈→TermValue {V}{M′} V≈M′)
 ... | ⟨ N′ , ⟨ —↠N′ , c≈N′ ⟩ ⟩ | ƛτN·σM—→
-    rewrite sub-sub{M = N}{σ₁ = exts τ}{σ₂ = subst-zero M′}
+    rewrite sub-sub{M = N}{σ₁ = ext τ}{σ₂ = subst-zero M′}
     | sym (subst-zero-exts-cons {τ}{M′}) =
     ⟨ N′ , ⟨ r , c≈N′ ⟩ ⟩
     where
     r = (⟪ σ ⟫ L) · (⟪ σ ⟫ M)
         —↠⟨ appL-cong σL—↠ƛτN ⟩
-        (ƛ (⟪ exts τ ⟫ N)) · (⟪ σ ⟫ M)
+        (ƛ (⟪ ext τ ⟫ N)) · (⟪ σ ⟫ M)
         —↠⟨ appR-cong V-ƛ σM—↠M′ ⟩
-        (ƛ (⟪ exts τ ⟫ N)) · M′
+        (ƛ (⟪ ext τ ⟫ N)) · M′
         —→⟨ ƛτN·σM—→ ⟩
-        ⟪ exts τ ⨟ subst-zero M′ ⟫ N
+        ⟪ ext τ ⨟ subst-zero M′ ⟫ N
         —↠⟨ —↠N′ ⟩
         N′ □
 
@@ -141,5 +141,5 @@ cbv→reduce {M}{δ}{N′}{wfM}{wfN′} M⇓c
     with ⇓→—↠×≈{σ = id} wfM M⇓c ≈ₑ-id
 ... | ⟨ N , ⟨ rs , (≈-clos {σ} h eq2) ⟩ ⟩
     rewrite sub-id{M = M} | eq2 =
-    ⟨ ⟪ exts σ ⟫ N′ , rs ⟩
+    ⟨ ⟪ ext σ ⟫ N′ , rs ⟩
 

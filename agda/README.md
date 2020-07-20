@@ -54,9 +54,9 @@ File Overview
 
 * Domain Construction
 
-   * `Structures`
+   * `Values`
 
-      Structures ValueStruct, ValueOrdering, ModelCurry, and Consistent.
+      Defines the structures ValueStruct, ValueOrdering, and Consistent.
 
    * `ValueStructAux`  (parameterized on ValueStruct)
 

@@ -73,5 +73,5 @@ terminates M = Σ[ N ∈ Term ] (M —↠ ƛ N)
 
 _≅_ : (M N : Term) → Set
 (_≅_ M N) = ∀ {C : Ctx}{wfC : WF-Ctx 0 C}
-                {wfM : WF (ctx-depth C) M}{wfN : WF (ctx-depth C) N}
+                {wfM : WF (ctx-depth C 0) M}{wfN : WF (ctx-depth C 0) N}
               → (terminates (plug C M)) iff (terminates (plug C N))

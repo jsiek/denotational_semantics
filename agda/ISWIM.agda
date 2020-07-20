@@ -8,35 +8,32 @@ module ISWIM where
 
 open import Utilities using (_iff_)
 open import Primitives
+open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Bool  
 open import Data.List using (List; []; _∷_)
+open import Data.Product
+   using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Unit using (⊤; tt)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning
-open import Data.Product
-   using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Empty renaming (⊥ to Bot)
-open import Data.Unit using (⊤; tt)
-
+open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 data Op : Set where
   lam : Op
   app : Op
   lit : (p : Prim) → rep p → Op
 
-sig : Op → List ℕ
-sig lam = 1 ∷ []
-sig app = 0 ∷ 0 ∷ []
+sig : Op → List Sig
+sig lam = ν ■ ∷ []
+sig app = ■ ∷ ■ ∷ []
 sig (lit p k) = []
 
-open import Var using (Var) public
-open import Syntax using (_•_; ↑; id) public
 module ASTMod = Syntax.OpSig Op sig
-open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug;
-                   rename; ⟦_⟧;
-                   ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; exts;
-                   rename-id; _⨟_; exts-cons-shift; WF; WF-Ctx; ctx-depth;
+open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
+                   ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; 
+                   rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
                    WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var)
             renaming (ABT to AST) public
 
@@ -121,5 +118,5 @@ terminates  M = Σ[ N ∈ Term ] TermValue N × (M —↠ N)
 
 _≅_ : ∀(M N : Term) → Set
 (_≅_ M N) = ∀ {C : Ctx}{wfC : WF-Ctx 0 C}
-              {wfM : WF (ctx-depth C) M}{wfN : WF (ctx-depth C) N}
+              {wfM : WF (ctx-depth C 0) M}{wfN : WF (ctx-depth C 0) N}
               → (terminates (plug C M)) iff (terminates (plug C N))

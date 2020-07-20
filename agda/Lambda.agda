@@ -17,17 +17,16 @@ open Eq.≡-Reasoning
 open import Primitives
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
    renaming (_,_ to ⟨_,_⟩)
+open import Syntax using (Var; Sig; ■; ν; _•_; ↑; id; ext; _⨟_) public
 
 data Op : Set where
   lam : Op
   app : Op
 
-sig : Op → List ℕ
-sig lam = 1 ∷ []
-sig app = 0 ∷ 0 ∷ []
+sig : Op → List Sig
+sig lam = (ν ■) ∷ []
+sig app = ■ ∷ ■ ∷ []
 
-open import Var using (Var) public
-open import Syntax using (_•_; ↑; id) public
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod
     using (`_; _⦅_⦆; bind; ast; cons; nil; _[_];
@@ -106,5 +105,5 @@ module Reduction where
 
   _≅_ : ∀ (M N : Term) → Set
   (_≅_  M N) = ∀ {C : Ctx}{wfC : WF-Ctx 0 C}
-                 {wfM : WF (ctx-depth C) M}{wfN : WF (ctx-depth C) N}
+                 {wfM : WF (ctx-depth C 0) M}{wfN : WF (ctx-depth C 0) N}
                 → (terminates (plug C M)) iff (terminates (plug C N))

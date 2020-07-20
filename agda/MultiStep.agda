@@ -5,10 +5,11 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
    renaming (_,_ to ⟨_,_⟩)
 
 import Syntax
+open Syntax using (Sig)
 
 module MultiStep
   (Op : Set)
-  (sig : Op → List ℕ) 
+  (sig : Op → List Sig) 
   (_—→_ : (Syntax.OpSig.ABT Op sig) → (Syntax.OpSig.ABT Op sig) → Set)
   where
 
