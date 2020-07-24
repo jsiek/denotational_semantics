@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 open import Lambda
 open import LambdaCallByValue
 open Lambda.ASTMod

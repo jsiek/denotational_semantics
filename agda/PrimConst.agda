@@ -18,7 +18,7 @@ open import Data.Unit using (⊤; tt)
 open import Primitives
 open import ValueConst
 open import Consistency
-open import Structures
+open import Values
 open import CurryConst
 
 module PrimConst where

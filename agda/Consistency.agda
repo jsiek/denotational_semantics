@@ -18,7 +18,7 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Data.Unit using (⊤; tt)
 
 open import Primitives
-open import Structures
+open import Values
 open import ValueConst
 open import OrderingAux value_struct ordering
 

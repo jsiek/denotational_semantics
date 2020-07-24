@@ -1,6 +1,6 @@
 {-# OPTIONS --rewriting #-}
 
-open import Structures
+open import Values
 open import Primitives
 import RenamePreserveReflect
 import Filter

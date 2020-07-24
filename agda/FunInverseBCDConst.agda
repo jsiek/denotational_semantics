@@ -18,7 +18,7 @@ open import Relation.Binary.PropositionalEquality
 open import Variables
 open import Primitives
 open import ValueBCDConst
-open import Structures
+open import Values
 open DomainAux domain
 open OrderingAux domain ordering
 open import BelowBCDConst

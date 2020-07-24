@@ -7,7 +7,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Unit using (⊤; tt)
 
-open import Structures
+open import Values
 open import Lambda
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;

@@ -7,7 +7,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 import CurryApplyStruct
 import OrderingAux
 open import Primitives
-open import Structures
+open import Values
 import ValueStructAux
 import WFDenotMod
 

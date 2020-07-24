@@ -1,5 +1,5 @@
 open import Primitives
-open import Structures
+open import Values
 
 open import Data.Nat using (ℕ; suc ; zero; _+_; _≤′_; _<′_; _<_; _≤_;
     z≤n; s≤s; ≤′-refl; ≤′-step) renaming (_⊔_ to max)
@@ -7,7 +7,7 @@ open import Data.Nat.Properties
   using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
          +-mono-≤; +-mono-≤-<; +-mono-<-≤; +-comm; +-assoc; n≤1+n; 
          ≤-pred; m≤m+n; m≤n+m; ≤-reflexive; ≤′⇒≤; ≤⇒≤′; +-suc)
-open Data.Nat.Properties.≤-Reasoning
+{-open Data.Nat.Properties.≤-Reasoning-}
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -20,8 +20,6 @@ open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; sym; cong; inspect; [_])
-open Relation.Binary.PropositionalEquality.≡-Reasoning
-    renaming (begin_ to start_; _∎ to _□)
 
 module ValueConst where
 
@@ -101,12 +99,19 @@ data _⊑_ : Value → Value → Set where
          -------------------
        → v ↦ w ⊑ u
 
+{- Equivalence of denotational values -}
+
+_≘_ : Value → Value → Set
+v ≘ w = v ⊑ w × w ⊑ v
 
 ⊑-refl : ∀{v} → v ⊑ v
 ⊑-refl {⊥} = ⊑-⊥
 ⊑-refl {const k} = ⊑-const
 ⊑-refl {v ↦ w} = ⊑-fun{v ↦ w}{v ↦ w} (λ {u} z → z) tt (⊑-refl{v}) ⊑-refl
 ⊑-refl {v₁ ⊔ v₂} = ⊑-conj-L (⊑-conj-R1 ⊑-refl) (⊑-conj-R2 ⊑-refl)
+
+≘-refl : ∀{v} → v ≘ v
+≘-refl {v} = ⟨ ⊑-refl , ⊑-refl ⟩
 
 ⊔⊑R : ∀{B C A}
     → B ⊔ C ⊑ A
@@ -323,6 +328,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       let u₂⊑w = IH M2 {u₂}{v}{w} refl refl u₂⊑v v⊑w in
       ⊑-conj-L u₁⊑w u₂⊑w
       where
+      open Data.Nat.Properties.≤-Reasoning      
       M1a = begin
                depth u₁ + depth w
              ≤⟨ +-mono-≤ (m≤m⊔n (depth u₁) (depth u₂)) ≤-refl ⟩
@@ -358,6 +364,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       let v₁⊑w = ⊔⊑R v₁⊔v₂⊑w in
       IH M {u}{v₁}{w} refl refl u⊑v₁ v₁⊑w
       where
+      open Data.Nat.Properties.≤-Reasoning      
       Ma = begin
               suc (size u + size v₁)
            ≤⟨ ≤-reflexive (sym (+-suc (size u) (size v₁))) ⟩
@@ -373,6 +380,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       let v₂⊑w = ⊔⊑L v₁⊔v₂⊑w in
       IH M {u}{v₂}{w} refl refl u⊑v₂ v₂⊑w
       where
+      open Data.Nat.Properties.≤-Reasoning      
       Ma = begin
               suc (size u + size v₂)
            ≤⟨ ≤-reflexive (sym (+-suc (size u) (size v₂))) ⟩
@@ -397,7 +405,8 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       dw′≤w = ≤-trans (dom-depth-≤{w′}) (⊆→depth≤ w′⊆w)
       cw′≤w : depth (cod w′) ≤ depth w
       cw′≤w = ≤-trans (cod-depth-≤{w′}) (⊆→depth≤ w′⊆w)
-
+      
+      open Data.Nat.Properties.≤-Reasoning      
       M1a = begin
                suc (depth (dom w′) + depth u₁)
             ≤⟨ s≤s (≤-reflexive (+-comm (depth (dom w′)) (depth u₁))) ⟩
@@ -424,6 +433,32 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
 ⊑-trans : ∀{u v w} → u ⊑ v → v ⊑ w → u ⊑ w
 ⊑-trans {u} {v} {w} u⊑v v⊑w =
     ⊑-trans-rec (depth u + depth w) (size u + size v) refl refl u⊑v v⊑w
+
+≘-trans : ∀{u v w} → u ≘ v → v ≘ w → u ≘ w
+≘-trans {u} {v} {w} ⟨ u⊑v , v⊑u ⟩ ⟨ v⊑w , w⊑v ⟩ =
+    ⟨ ⊑-trans u⊑v v⊑w , ⊑-trans w⊑v v⊑u ⟩
+
+module ≘-Reasoning where
+  infixr 2 _≘⟨⟩_ _≘⟨_⟩_
+  infix  3 _∎
+  
+  _≘⟨⟩_ : ∀ (x : Value) {y : Value}
+    → x ≡ y
+      -----
+    → x ≘ y
+  x ≘⟨⟩ refl  =  ≘-refl
+  
+  _≘⟨_⟩_ : ∀ (x : Value) {y z : Value}
+    → x ≘ y
+    → y ≘ z
+      -----
+    → x ≘ z
+  x ≘⟨ x≘y ⟩ y≘z = ≘-trans x≘y y≘z
+
+  _∎ : ∀ (x : Value)
+      -----
+    → x ≘ x
+  x ∎  =  ≘-refl
 
 {-
   The traditional function subtyping rule is admissible.

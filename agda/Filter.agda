@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 open import Primitives
 import ValueStructAux
 import CurryApplyStruct

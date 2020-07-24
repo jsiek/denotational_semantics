@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 import Lambda
 open Lambda.ASTMod
    using (`_; _⦅_⦆; Subst;

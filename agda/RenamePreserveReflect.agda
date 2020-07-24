@@ -1,6 +1,6 @@
 {-# OPTIONS --rewriting #-}
 
-open import Structures
+open import Values
 open import Primitives
 open import Syntax using (Rename)
 import ValueStructAux

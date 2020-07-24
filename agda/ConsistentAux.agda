@@ -1,4 +1,4 @@
-open import Utilities using (_iff_)
+open import Utilities
 open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
@@ -68,18 +68,19 @@ module ConsistentAux
 
   infix 3 _≃_
 
-  _≃_ : Denotation → Denotation → Set
+  _≃_ : Denotation → Denotation → Set₁
   (_≃_ D₁ D₂) = (γ : Env) → (v : Value) → WFEnv γ → wf v → D₁ γ v iff D₂ γ v
 
   ≃-refl : ∀ {M : Denotation}
     → M ≃ M
-  ≃-refl γ v wfγ wfv = ⟨ (λ x → x) , (λ x → x) ⟩
+  ≃-refl γ v wfγ wfv = record { to = (λ x → x) ; from = (λ x → x) }
 
   ≃-sym : ∀ {M N : Denotation}
     → M ≃ N
       -----
     → N ≃ M
-  ≃-sym eq γ v wfγ wfv = ⟨ (proj₂ (eq γ v wfγ wfv)) , (proj₁ (eq γ v wfγ wfv)) ⟩
+  ≃-sym eq γ v wfγ wfv = record { to = Iso.from (eq γ v wfγ wfv)
+                                ; from = Iso.to (eq γ v wfγ wfv) }
 
   ≃-trans : ∀ {M₁ M₂ M₃ : Denotation}
     → M₁ ≃ M₂
@@ -87,8 +88,10 @@ module ConsistentAux
       -------
     → M₁ ≃ M₃
   ≃-trans eq1 eq2 γ v wfγ wfv =
-      ⟨ (λ z → proj₁ (eq2 γ v wfγ wfv) (proj₁ (eq1 γ v wfγ wfv) z)) ,
-        (λ z → proj₂ (eq1 γ v wfγ wfv) (proj₂ (eq2 γ v wfγ wfv) z)) ⟩
+      record { to = λ M₁γv → Iso.to (eq2 γ v wfγ wfv)
+                                    ((Iso.to (eq1 γ v wfγ wfv)) M₁γv)
+             ; from = λ M₂γv → Iso.from (eq1 γ v wfγ wfv)
+                                    ((Iso.from (eq2 γ v wfγ wfv)) M₂γv) }
 
   infixr 2 _≃⟨⟩_ _≃⟨_⟩_
   infix  3 _■

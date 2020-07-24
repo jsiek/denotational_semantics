@@ -1,5 +1,5 @@
 
-open import Structures
+open import Values
 open import LambdaV
   using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; Subst; ⌊_⌋; ⟪_⟫; lam; app)
 open LambdaV.ASTMod using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Subst; exts)

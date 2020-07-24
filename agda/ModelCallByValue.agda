@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 import ValueStructAux
 import OrderingAux
 import CurryApplyStruct

@@ -2,7 +2,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 
-open import Structures
+open import Values
 import ValueStructAux
 import OrderingAux
 import WFDenotMod

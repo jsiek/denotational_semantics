@@ -1,5 +1,5 @@
 open import Primitives
-open import Structures
+open import Values
 open import ISWIM
 open import ModelISWIM
 open import ValueConst

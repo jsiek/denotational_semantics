@@ -1,6 +1,6 @@
 open import Data.Nat using (ℕ; zero; suc)
 
-open import Structures
+open import Values
 import ValueStructAux
 import OrderingAux
 import WFDenotMod

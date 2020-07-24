@@ -1,7 +1,7 @@
 {-# OPTIONS --rewriting #-}
 
 open import Primitives
-open import Structures
+open import Values
 import RenamePreserveReflect
 import Filter
 import ValueStructAux

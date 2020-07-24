@@ -12,7 +12,7 @@ open import Relation.Binary.PropositionalEquality
 open import Primitives
 open import ValueConst
 open import CurryConst
-open import Structures
+open import Values
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
 open import Consistency

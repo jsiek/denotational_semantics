@@ -4,7 +4,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Unit.Polymorphic using (⊤; tt)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
-open import Structures
+open import Values
 import ValueStructAux
 
 module LambdaDenot
@@ -19,7 +19,7 @@ module LambdaDenot
   open ValueOrdering V
 
   open import Lambda
-  open ASTMod using (`_; _⦅_⦆; cons; bind; nil; Subst; ⟦_⟧)
+  open ASTMod using (`_; _⦅_⦆; cons; bind; nil; Subst)
 
   ℰ : Term → Denotation
   ℰ (` x) γ v = v ⊑ γ x
@@ -39,51 +39,5 @@ module LambdaDenot
 
   infix 3 _`⊢_↓_
   _`⊢_↓_ : Env → Subst → Env → Set
-  _`⊢_↓_ δ σ γ = (∀ (x : Var) → ℰ (⟦ σ ⟧ x) δ (γ x))
-
-  open import Fold Op sig
-  open RelBind {lsuc lzero}{Value}{Value → Set}{Value}{Value → Set} _≡_ _≡_
-
-  module Experiment
-    (𝐹 : (Value → Value → Set) → (Value → Set))
-    (_○_ : (Value → Set) → (Value → Set) → (Value → Set))
-    (𝐹-cong : ∀ {x y : Bind Value (Value → Set) 1}
-            → _⩳_ {b = 1} x y   →   𝐹 x ≡ 𝐹 y)
-    where
-    {- (dᶠ ○ dₐ) w = Σ[ v ∈ Value ] dᶠ (v ↦ w) × dₐ v -}
-    open import ScopedTuple
-
-    denot-op : (op : Op) → Tuple (sig op) (Bind Value (Value → Set))
-             → Value → Set
-    denot-op lam ⟨ f , tt ⟩ = 𝐹 f
-    denot-op app ⟨ dᶠ , ⟨ dₐ , tt ⟩ ⟩ = dᶠ ○ dₐ
-
-    open import GenericSubstitution
-
-    ValueIsShiftable : Shiftable Value
-    ValueIsShiftable = record { var→val = λ x → ⊥ ; shift = λ v → v
-                              ; var→val-suc-shift = refl }
-    open Shiftable ValueIsShiftable                        
-
-    open import Env ValueIsShiftable
-    
-    DenotFold : FoldEnv Env Value (Value → Set)
-    DenotFold = record { ret = λ v w → w ⊑ v; fold-op = denot-op
-                       ; env = FunIsEnv }
-    open FoldEnv DenotFold
-
-    𝐸 : Term → Env → Value → Set
-    𝐸 M ρ = fold ρ M
-
-    op-cong : (op : Op) (rs rs' : Tuple (sig op) (Bind Value (Value → Set)))
-       → zip _⩳_ rs rs' → denot-op op rs ≡ denot-op op rs'
-    op-cong lam ⟨ r , tt ⟩ ⟨ r' , tt ⟩ ⟨ eq , tt ⟩ = 𝐹-cong eq
-    op-cong app ⟨ r , ⟨ rs , tt ⟩ ⟩ ⟨ r' , ⟨ rs' , tt ⟩ ⟩
-                ⟨ refl , ⟨ refl , tt ⟩ ⟩ = refl
-
-    open import Preserve Op sig
-    SPFE : SubstPreserveFoldEnv DenotFold
-    SPFE = record { shiftᶜ = λ d → d ; op-cong = op-cong
-             ; shift-ret = λ vᶠ → refl
-             ; op-shift = λ op {rs↑}{rs} z → op-cong op rs↑ rs z }
+  _`⊢_↓_ δ σ γ = (∀ (x : Var) → ℰ (σ x) δ (γ x))
 

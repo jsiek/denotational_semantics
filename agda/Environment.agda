@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 open import Data.Nat using (ℕ; zero; suc)
 open import LambdaV using (Term; $; _·_; ƛ)
 open LambdaV.ASTMod using (Var; Z; S_; `_; extensionality; Rename; Subst; ext)

@@ -1,4 +1,4 @@
-open import Structures
+open import Values
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Unit using (⊤; tt)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)

@@ -12,7 +12,7 @@ open Lambda.ASTMod
           WF;
           WF-var; WF-op; WF-cons; WF-nil; WF-ast; WF-bind;
           WF-Ctx; WF-plug; ctx-depth; len-mk-list)
-open import Structures
+open import Values
 open import ModelCallByName
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering

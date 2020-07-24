@@ -1,15 +1,6 @@
 open import Primitives
-open import Structures
+open import Values
 open import ISWIM
-
-{-
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Unit using (⊤; tt)
-open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
-open import Relation.Nullary using (¬_; Dec; yes; no)
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
--}
 
 module ModelISWIM where
 

@@ -1,5 +1,5 @@
 open import Primitives
-open import Structures
+open import Values
 import ValueStructAux
 
 open import Data.Nat using (ℕ; suc ; zero)

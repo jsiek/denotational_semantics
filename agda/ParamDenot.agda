@@ -3,7 +3,7 @@ open import LambdaV
    using (AST; $; _·_; ƛ; Term; t-var; t-lam; t-app; lam; app; rename)
 open LambdaV.ASTMod
    using (Var; Z; S_; `_; α_; _⦅_⦆; extensionality; Rename; Subst; ext; exts)
-open import Structures
+open import Values
 
 open import Data.List using (List; []; _∷_)
 open import Function using (_∘_)

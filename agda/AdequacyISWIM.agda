@@ -1,6 +1,6 @@
 open import Utilities using (_iff_)
 open import Primitives
-open import Structures
+open import Values
 open import ValueConst
 open import EvalISWIM
 open import ISWIM

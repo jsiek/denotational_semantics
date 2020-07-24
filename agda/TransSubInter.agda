@@ -1,5 +1,5 @@
 open import Primitives
-open import Structures
+open import Values
 
 open import Data.Nat using (ℕ; suc ; zero) renaming (_≟_ to _=ℕ_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)

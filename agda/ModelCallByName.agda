@@ -1,10 +1,9 @@
-open import Structures
+open import Values
 open import ValueBCD
 open import ValueStructAux value_struct
 open import OrderingAux value_struct ordering
 open import Lambda
 open ASTMod using (`_; _⦅_⦆; cons; bind; nil)
-open import Structures
 open import WFDenotMod value_struct ordering consistent
 import CurryApplyStruct
 open import ConsistentAux value_struct ordering consistent
