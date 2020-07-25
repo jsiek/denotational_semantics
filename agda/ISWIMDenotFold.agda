@@ -4,7 +4,8 @@ open import Data.Empty renaming (⊥ to Bot)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Unit.Polymorphic using (⊤; tt)
+open import Data.Unit.Polymorphic renaming (⊤ to ptop ; tt to ptt)
+open import Data.Unit using (⊤; tt)
 open import Primitives
 open import ISWIM
 {- open import Level -}
@@ -22,6 +23,7 @@ open import Var
 open import FoldMapFusion Op sig
 open import Fold Op sig
 open Structures.WithOpSig Op sig
+open import WFDenotMod value_struct ordering consistent
 
 module ISWIMDenotFold where
 
@@ -40,8 +42,10 @@ instance
 {- Check the 𝐹-cong requirement needed for subst preserves denot
    fold. (See Experiment module in LambdaDenot.)  -}
 
+{--------     Analogous to CurryConst         ---------------------------------}
+
 {-
-  The 𝐹 operator is like ℱ except that it does not have an environment
+  The below 𝐹 operator is like ℱ except that it does not have an environment
   parameter.
 -}
 
@@ -50,6 +54,8 @@ instance
 𝐹 f (const k) = Bot
 𝐹 f (v ↦ w) = f v w
 𝐹 f (u ⊔ v) = 𝐹 f u × 𝐹 f v
+
+{--------     Analogous to ModelCurryConst    ---------------------------------}
 
 𝐹-⊔ : ∀{f : Value → 𝒫 Value}{u v : Value}
   → 𝐹 f u → 𝐹 f v → 𝐹 f (u ⊔ v)
@@ -91,6 +97,86 @@ D₁ ≲′ D₂ = ∀ (v : Value) → wf v → D₁ v → D₂ v
 𝐹-⊆ {f} {v} {w₁ ⊔ w₂} w⊆v 𝐹fv
     with ⊔⊆-inv w⊆v
 ... | ⟨ w₁⊆v , w₂⊆v ⟩ = ⟨ 𝐹-⊆ w₁⊆v 𝐹fv , 𝐹-⊆ w₂⊆v 𝐹fv ⟩
+
+{-
+  The following adapts WFDenod by changing the environment parameters
+  into Value parameters.
+-}
+record IdealFun (f : Value → 𝒫 Value) : Set₁ where
+  field ⊑-input : ∀{u v}{w} → wf u → wf v → wf w → u ⊑ v → f u w → f v w
+        ⊑-closed : ∀{u}{v w} → wf u → wf v → wf w
+                 → w ⊑ v → f u v → f u w
+        ⊔-closed : ∀{w u v} → wf w → wf u → wf v
+                 → f w u → f w v → f w (u ⊔ v)
+        ~-closed : ∀{w y u v} → wf w → wf y → wf u → wf v
+                 → w ~ y → f w u → f y v → u ~ v
+
+𝐹-dom-cod : ∀ {f : Value → 𝒫 Value}{v w : Value}{fv : AllFun v}
+       → IdealFun f → wf v → wf w
+       → dom v {fv} ⊑ w → 𝐹 f v → 𝐹 f (dom v {fv} ↦ cod v {fv})
+𝐹-dom-cod {v = ⊥} {w} {()} ifd wfv wfw dv⊑w 𝐹v
+𝐹-dom-cod {v = const k} {w} {()} ifd wfv wfw dv⊑w 𝐹v
+𝐹-dom-cod {v = v₁ ↦ v₂} {w} {fv} ifd wfv wfw dv⊑w 𝐹v = 𝐹v
+𝐹-dom-cod {f}{v₁ ⊔ v₂} {w} {⟨ fv₁ , fv₂ ⟩} ifd (wf-⊔ v₁~v₂ wfv₁ wfv₂) wfw
+    dv⊑w ⟨ 𝐹v₁ , 𝐹v₂ ⟩ =
+  let dv₁⊑w = ⊔⊑R dv⊑w in
+  let dv₂⊑w = ⊔⊑L dv⊑w in
+  let f-dv₁-cv₁ : f (dom v₁) (cod v₁)
+      f-dv₁-cv₁ = 𝐹-dom-cod{v = v₁} ifd wfv₁ wfw dv₁⊑w 𝐹v₁ in
+  let f-dv₂-cv₂ : f (dom v₂) (cod v₂)
+      f-dv₂-cv₂ = 𝐹-dom-cod{v = v₂} ifd wfv₂ wfw dv₂⊑w 𝐹v₂ in
+  let wf-dv₁ = wf-dom{v₁}{w} wfv₁ wfw fv₁ dv₁⊑w in
+  let wf-dv₂ = wf-dom{v₂}{w} wfv₂ wfw fv₂ dv₂⊑w  in
+  let wf-cv₁ = (wf-cod{v₁}{w} wfv₁ wfw fv₁ dv₁⊑w) in
+  let wf-cv₂ = (wf-cod{v₂}{w} wfv₂ wfw fv₂ dv₂⊑w) in
+  let dv₁~dv₂ = consistent-⊑ (~-refl{w}{wfw}) dv₁⊑w dv₂⊑w in
+  let wf-dv₁⊔dv₂ = wf-⊔ dv₁~dv₂ wf-dv₁ wf-dv₂ in
+  let f-dv₁⊔dv₂-cv₁ = IdealFun.⊑-input ifd wf-dv₁ wf-dv₁⊔dv₂ wf-cv₁
+                          (⊑-conj-R1 ⊑-refl) f-dv₁-cv₁ in
+  let f-dv₁⊔dv₂-cv₂ = IdealFun.⊑-input ifd wf-dv₂ wf-dv₁⊔dv₂ wf-cv₂
+                          (⊑-conj-R2 ⊑-refl) f-dv₂-cv₂  in
+  IdealFun.⊔-closed ifd wf-dv₁⊔dv₂ wf-cv₁ wf-cv₂ f-dv₁⊔dv₂-cv₁ f-dv₁⊔dv₂-cv₂
+
+𝐹-⊑ : ∀{f : Value → 𝒫 Value}{v w : Value}
+       → IdealFun f → wf v → wf w
+        → w ⊑ v → 𝐹 f v → 𝐹 f w
+𝐹-⊑ d wfv wfw ⊑-⊥ 𝐹fuv = tt
+𝐹-⊑ d wfv wfw ⊑-const ()
+𝐹-⊑ d wfv (wf-⊔ c xx yy) (⊑-conj-L w⊑v w⊑v₁) 𝐹fuv =
+    ⟨ (𝐹-⊑ d wfv xx w⊑v 𝐹fuv) , (𝐹-⊑ d wfv yy w⊑v₁ 𝐹fuv) ⟩
+𝐹-⊑ d (wf-⊔ x wfv wfv₁) wfw (⊑-conj-R1 w⊑v) ⟨ fst₁ , snd₁ ⟩ =
+    𝐹-⊑ d wfv wfw w⊑v fst₁
+𝐹-⊑ d (wf-⊔ x wfv wfv₁) wfw (⊑-conj-R2 w⊑v) ⟨ fst₁ , snd₁ ⟩ =
+    𝐹-⊑ d wfv₁ wfw w⊑v snd₁
+𝐹-⊑ {f} d wfv (wf-fun wfw₁ wfw₂)
+    (⊑-fun {v} {v′} {w₁} {w₂} v′⊆v fv′ dv′⊑w₁ w₂⊑cv′) 𝐹fuv =
+    let wfv′ = wf-⊆ v′⊆v wfv in
+    let wfdv′ = wf-dom wfv′ wfw₁ fv′ dv′⊑w₁ in
+    let wfcv′ = wf-cod wfv′ wfw₁ fv′ dv′⊑w₁ in
+    let fv′ = 𝐹-⊆ v′⊆v 𝐹fuv in
+    let fdv′cv′ = 𝐹-dom-cod{v = v′} d wfv′ wfw₁ dv′⊑w₁ fv′ in
+    let fw₁cv′ = IdealFun.⊑-input d wfdv′ wfw₁ wfcv′ dv′⊑w₁ fdv′cv′ in
+    IdealFun.⊑-closed d wfw₁ wfcv′ wfw₂ w₂⊑cv′ fw₁cv′
+
+𝐹-~ : ∀{f : Value → 𝒫 Value} {u v : Value}
+    → IdealFun f → wf u → wf v
+    → 𝐹 f u → 𝐹 f v → u ~ v
+𝐹-~ {f} {⊥} {v} wfd wfu wfv d1 d2 = tt
+𝐹-~ {f} {const k} {v} wfd wfu wfv () d2
+𝐹-~ {f} {u₁ ↦ u₂} {⊥} wfd  wfu wfv d1 d2 = tt
+𝐹-~ {f} {u₁ ↦ u₂} {const x} wfd wfu wfv d1 ()
+𝐹-~ {f} {u₁ ↦ u₂} {v₁ ↦ v₂} wfd (wf-fun wfu₁ wfu₂) (wf-fun wfv₁ wfv₂) d1 d2
+    with consistent? u₁ v₁
+... | no u₁~̸v₁ = inj₂ u₁~̸v₁
+... | yes u₁~v₁ = inj₁ ⟨ u₁~v₁ , u₂~v₂ ⟩
+      where u₂~v₂ = IdealFun.~-closed wfd wfu₁ wfv₁ wfu₂ wfv₂ u₁~v₁ d1 d2
+𝐹-~ {f} {u₁ ↦ u₂} {v₁ ⊔ v₂} wfd 
+    (wf-fun wfu₁ wfu₂) (wf-⊔ v₁~v₂ wfv₁ wfv₂) d1 ⟨ fst' , snd' ⟩ =
+    ⟨ 𝐹-~ {f}{u₁ ↦ u₂}{v₁} wfd (wf-fun wfu₁ wfu₂) wfv₁ d1 fst' ,
+      𝐹-~ {f}{u₁ ↦ u₂}{v₂} wfd (wf-fun wfu₁ wfu₂) wfv₂ d1 snd' ⟩
+𝐹-~ {f} {u₁ ⊔ u₂} {v} wfd 
+    (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fst' , snd' ⟩ d2 =
+    ⟨ 𝐹-~ {f}{u₁}{v} wfd wfu₁ wfv fst' d2 , 𝐹-~{f}{u₂}{v} wfd wfu₂ wfv snd' d2 ⟩
 
 {- UNDER CONSTRUCTION -}
 
@@ -135,9 +221,9 @@ _○_ D₁ D₂ w = Σ[ v ∈ Value ] wf v × D₁ (v ↦ w) × D₂ v
 
 denot-op : (op : Op) → Tuple (sig op) (Bind Value (𝒫 Value))
          → 𝒫 Value
-denot-op (lit p k) tt v = ℘ {p} k v
-denot-op lam ⟨ f , tt ⟩ = 𝐹 (λ v → lower (f v))
-denot-op app ⟨ lift dᶠ , ⟨ lift dₐ , tt ⟩ ⟩ = dᶠ ○ dₐ
+denot-op (lit p k) ptt v = ℘ {p} k v
+denot-op lam ⟨ f , ptt ⟩ = 𝐹 (λ v → lower (f v))
+denot-op app ⟨ lift dᶠ , ⟨ lift dₐ , ptt ⟩ ⟩ = dᶠ ○ dₐ
 
 instance
   Denot-is-Foldable : Foldable Value (𝒫 Value)
@@ -161,7 +247,7 @@ module _ where
   denot-op-shift : {op : Op}{rs↑ rs : Tuple (sig op) (Bind Value (𝒫 Value))}
      → zip (λ{b} → _⩳_{V₁ = Value}{Value}{𝒫 Value}{𝒫 Value}{b}) rs↑ rs
      → denot-op op rs↑ ≃′ denot-op op rs
-  denot-op-shift {lam} {⟨ f↑ , tt ⟩} {⟨ f , tt ⟩} ⟨ z , tt ⟩ =
+  denot-op-shift {lam} {⟨ f↑ , ptt ⟩} {⟨ f , ptt ⟩} ⟨ z , ptt ⟩ =
       {!!}
   denot-op-shift {app} {rs↑} {rs} zrs = {!!}
   denot-op-shift {lit p x} {rs↑} {rs} zrs = {!!}

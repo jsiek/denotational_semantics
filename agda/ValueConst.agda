@@ -833,3 +833,19 @@ wf-⊆ {v} {v′ ⊔ v′₁} v′⊔v′₁⊆v wfv
 ... | ⟨ v′⊆v , v′₁⊆v ⟩ =
     wf-⊔ (wf-⊆-~ wfv v′⊆v v′₁⊆v) (wf-⊆ v′⊆v wfv) (wf-⊆ v′₁⊆v wfv)
 
+open import OrderingAux value_struct ordering
+
+domu↦codu⊑u : ∀{u} → (fu : AllFun u) → dom u {fu} ↦ cod u {fu} ⊑ u
+domu↦codu⊑u {⊥} ()
+domu↦codu⊑u {const k} ()
+domu↦codu⊑u {v ↦ w} fu = ⊑-refl
+domu↦codu⊑u {u₁ ⊔ u₂} ⟨ fu₁ , fu₂ ⟩ =
+  let du₁↦cu₁⊑u₁ = domu↦codu⊑u {u₁} fu₁ in
+  let du₂↦cu₂⊑u₂ = (domu↦codu⊑u {u₂} fu₂) in
+    (dom u₁ ⊔ dom u₂) ↦ (cod u₁ ⊔ cod u₂)
+  ⊑⟨ Dist⊔↦⊔ ⟩
+    (dom u₁ {fu₁} ↦ cod u₁ {fu₁}) ⊔ (dom u₂ {fu₂} ↦ cod u₂ {fu₂})
+  ⊑⟨ ⊑-conj-L (⊑-conj-R1{w = u₂} du₁↦cu₁⊑u₁) (⊑-conj-R2{v = u₁} du₂↦cu₂⊑u₂) ⟩
+    u₁ ⊔ u₂
+  ◼
+

@@ -17,12 +17,10 @@ module WFDenotMod (D : ValueStruct) (V : ValueOrdering D) (C : Consistent D V)
 
   record Ideal (𝒟 : Value → Set) : Set₁ where
     field
-      ⊑-closed : ∀{v w} → 𝒟 v → w ⊑ v → 𝒟 w
-      ⊔-closed : ∀{u v} → 𝒟 u → 𝒟 v → 𝒟 (u ⊔ v)
-      ~-closed : ∀{u v} → 𝒟 u → 𝒟 v → u ~ v
+      ⊑-closed : ∀{v w} → wf v → 𝒟 v → w ⊑ v → 𝒟 w
+      ⊔-closed : ∀{u v} → wf u → wf v → 𝒟 u → 𝒟 v → 𝒟 (u ⊔ v)
+      ~-closed : ∀{u v} → wf u → wf v → 𝒟 u → 𝒟 v → u ~ v
       
-
-
   record WFDenot (D : Denotation) : Set₁ where
     field
       ⊑-env : ∀{γ δ}{v}

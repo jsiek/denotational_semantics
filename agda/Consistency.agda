@@ -611,6 +611,72 @@ app-join {u₁} {u₂} {v₁} {w₁} {v₂} {w₂} v₁↦w₁⊑u₁ v₂↦w�
   ⊑-trans xx yy
 
 
+wf-dom : ∀{u v}
+       → wf u → wf v
+       → (fu : AllFun u) → dom u {fu} ⊑ v
+       → wf (dom u {fu})
+wf-dom {⊥} wfu wfv () du⊑v
+wf-dom {const k} wfu wfv () du⊑v
+wf-dom {v ↦ w} (wf-fun wfv wfw) wf-v fu du⊑v = wfv
+wf-dom {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂ ⟩ du⊑v =
+  let du₁⊑v = ⊔⊑R du⊑v in
+  let du₂⊑v = ⊔⊑L du⊑v in
+  wf-⊔ (consistent-⊑ {v}{v} (~-refl{v}{wfv}) du₁⊑v du₂⊑v)
+       (wf-dom wfu₁ wfv fu₁ du₁⊑v)
+       (wf-dom wfu₂ wfv fu₂ du₂⊑v)
+
+↦~dom→cod : ∀{u₁ u₂ v}
+      → (fv : AllFun v)
+      → u₁ ~ dom v {fv}
+      → u₁ ↦ u₂ ~ v
+      → u₂ ~ cod v {fv}
+↦~dom→cod {u₁} {u₂} {⊥} () u₁~dv u₁↦u₂~v
+↦~dom→cod {u₁} {u₂} {const k} () u₁~dv u₁↦u₂~v
+↦~dom→cod {u₁} {u₂} {v₁ ↦ v₂} fv u₁~dv (inj₁ ⟨ fst₁ , snd₁ ⟩) = snd₁
+↦~dom→cod {u₁} {u₂} {v₁ ↦ v₂} fv u₁~dv (inj₂ y) = ⊥-elim (y u₁~dv)
+↦~dom→cod {u₁} {u₂} {v₁ ⊔ v₂} ⟨ fv₁ , fv₂ ⟩ u₁~dv ⟨ u₁↦u₂~v₁ , u₁↦u₂~v₂ ⟩ =
+  let u₁~dv₁ = u~v⊔w→u~v{u₁} u₁~dv in
+  let u₁~dv₂ = u~v⊔w→u~w{u₁} u₁~dv in
+  u~v⊔w{u₂}{cod v₁}{cod v₂}
+      (↦~dom→cod fv₁ u₁~dv₁ u₁↦u₂~v₁)
+      (↦~dom→cod fv₂ u₁~dv₂ u₁↦u₂~v₂)
+
+dom~→cod~ : ∀{u v}
+          → (fu : AllFun u)
+          → (fv : AllFun v)
+          → u ~ v
+          → dom u {fu} ~ dom v {fv}
+          → cod u {fu} ~ cod v {fv}
+dom~→cod~ {⊥} {v} () fv u~v du~dv
+dom~→cod~ {const k} {v} () fv u~v du~dv
+dom~→cod~ {u₁ ↦ u₂} {⊥} fu () u~v du~dv
+dom~→cod~ {u₁ ↦ u₂} {const k} fu () u~v du~dv
+dom~→cod~ {u₁ ↦ u₂} {v₁ ↦ v₂} fu fv (inj₁ ⟨ _ , u₂~v₂ ⟩) du~dv = u₂~v₂
+dom~→cod~ {u₁ ↦ u₂} {v₁ ↦ v₂} fu fv (inj₂ ¬u₁~v₁) du~dv = ⊥-elim (¬u₁~v₁ du~dv)
+dom~→cod~ {u₁ ↦ u₂} {v₁ ⊔ v₂} fu ⟨ fv₁ , fv₂ ⟩ ⟨ u₁↦u₂~v₁ , u₁↦u₂~v₂ ⟩ du~dv =
+  let u₁~dv₁ = u~v⊔w→u~v{u₁} du~dv in
+  let u₂~cv₁ = ↦~dom→cod fv₁ u₁~dv₁ u₁↦u₂~v₁ in
+  let u₁~dv₂ = u~v⊔w→u~w{u₁} du~dv in
+  let u₂~cv₂ = ↦~dom→cod fv₂ u₁~dv₂ u₁↦u₂~v₂ in  
+  u~v⊔w{u₂}{cod v₁}{cod v₂} u₂~cv₁ u₂~cv₂
+dom~→cod~ {u₁ ⊔ u₂} {v} ⟨ fu₁ , fu₂ ⟩ fv ⟨ u₁~v , u₂~v ⟩ ⟨ du₁~dv , du₂~dv ⟩ =
+  ⟨ dom~→cod~ fu₁ fv u₁~v du₁~dv , dom~→cod~ fu₂ fv u₂~v du₂~dv ⟩
+
+wf-cod : ∀{u v}
+       → wf u → wf v
+       → (fu : AllFun u)
+       → dom u {fu} ⊑ v
+       → wf (cod u {fu})
+wf-cod {⊥} wfu wfv () du⊑v
+wf-cod {const k} wfu wfv () du⊑v
+wf-cod {v ↦ w} (wf-fun wfv wfw) wf-v fu du⊑v = wfw
+wf-cod {u₁ ⊔ u₂}{v} (wf-⊔ u₁~u₂ wfu₁ wfu₂) wfv ⟨ fu₁ , fu₂ ⟩ du⊑v =
+  let du₁⊑v = ⊔⊑R du⊑v in
+  let du₂⊑v = ⊔⊑L du⊑v in
+  let du₁~du₂ = (consistent-⊑ {v}{v} (~-refl{v}{wfv}) du₁⊑v du₂⊑v) in
+  wf-⊔ (dom~→cod~ fu₁ fu₂ u₁~u₂ du₁~du₂)
+       (wf-cod wfu₁ wfv fu₁ du₁⊑v)
+       (wf-cod wfu₂ wfv fu₂ du₂⊑v)
 
 {------------------------------
   Consistent Domain
