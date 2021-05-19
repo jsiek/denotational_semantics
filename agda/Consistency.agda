@@ -3,7 +3,7 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Nat using (ℕ; suc ; zero; _+_; _<_; _≤_; s≤s)
   renaming (_⊔_ to max)
 open import Data.Nat.Properties
-  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
+  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; m≤n⊔m; ≤-step; ⊔-mono-≤;
          +-mono-≤-<; +-mono-<-≤; +-mono-≤; +-comm; n≤1+n;
          ≤-pred; ≤-reflexive)
 open Data.Nat.Properties.≤-Reasoning
@@ -551,7 +551,7 @@ consistent-⊑-aux {A}{B}{C}{D} {suc n} {m} A~B C⊑A D⊑B =
 
         m2 : measure n (cod Γ₁) C₂
         m2 =
-          let C₂<C = ≤-trans (_≤_.s≤s (n≤m⊔n (depth C₁) (depth C₂)))
+          let C₂<C = ≤-trans (_≤_.s≤s (m≤n⊔m (depth C₁) (depth C₂)))
                              (∈→depth≤ C₁↦C₂∈C) in
           let codΓ₁≤A = ≤-trans (cod-depth-≤ {Γ₁}) (⊆→depth≤ Γ₁⊆A) in
           let A+C≤n = ≤-pred m in

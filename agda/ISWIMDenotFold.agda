@@ -188,7 +188,7 @@ postulate
     → f ≡ g
 -}
 
-{- Eqivalence of the 𝒫 Value part of denotations -}
+{- Equivalence of the 𝒫 Value part of denotations -}
 
 _≃′_ : 𝒫 Value → 𝒫 Value → Set₁
 D₁ ≃′ D₂ = ∀ (v : Value) → D₁ v iff D₂ v
@@ -254,19 +254,65 @@ module _ where
 
   instance
     Value-is-ShiftId : ShiftId Value
-    Value-is-ShiftId = record { shift-id = λ x → {!!} {-refl-} }
+    Value-is-ShiftId = record { shift-id = λ x → ⟨ ⊑-⊥ , ⊑-⊥ ⟩ }
 
     PVal-is-FoldShift : FoldShift Value (𝒫 Value)
     PVal-is-FoldShift = record { shift-ret = λ v → extensionality λ x → refl
            ; op-shift = denot-op-shift }
-  
+
+  instance
+    Value-is-EquivRel : EquivRel Value
+    Value-is-EquivRel = record { ≈-refl = λ v → ≘-refl ; ≈-sym = ≘-sym ; ≈-trans = ≘-trans }
+
+    Value-is-Relatable : Relatable Value Value
+    Value-is-Relatable = record { var→val≈ = λ x → ⟨ ⊑-⊥ , ⊑-⊥ ⟩ ; shift≈ = λ z → z }
+
+    PVal-is-Relatable : Relatable (𝒫 Value) (𝒫 Value)
+    PVal-is-Relatable = record {
+        var→val≈ = λ x v → record { to = λ x → x ; from = λ z → z } ;
+        shift≈ = λ x v → record { to = Utilities.Iso.to (x v) ; from = Utilities.Iso.from (x v) } }
+
 {-
+  𝐹-equiv : ∀(v : Value) → (f₁ : Value → Lift lzero (𝒫 Value)) → (f₂ : Value → Lift lzero (𝒫 Value))
+          → (f₁=f₂ : {v₁ v₂ : Value} → v₁ ≘ v₂ → (f₁ v₁) ⩳ (f₂ v₂))
+          → 𝐹 (λ v₁ → lower (f₁ v₁)) v → 𝐹 (λ v₁ → lower (f₂ v₁)) v
+  𝐹-equiv v f₁ f₂ f₁=f₂ = {!!}
+-}
+
+  denot-op-equiv : ∀ {op : Op} {rs₁ rs₂ : Tuple (sig op) (Bind Value (𝒫 Value))}
+      → zip (λ {b} → _⩳_{V₁ = Value}{V₂ = Value}{C₁ = 𝒫 Value}{C₂ = 𝒫 Value}{b = b}) rs₁ rs₂
+      → denot-op op rs₁ ≃′ denot-op op rs₂
+  denot-op-equiv {lam} {⟨ f₁ , _ ⟩} {⟨ f₂ , _ ⟩} ⟨ eq , _ ⟩ v =
+      record { to = λ x → {!!} ; from = {!!} }
+  denot-op-equiv {app} {⟨ lift x₁ , ⟨ lift x₂ , _ ⟩ ⟩} {⟨ lift y₁ , ⟨ lift y₂ , _ ⟩ ⟩} ⟨ lift x₁≃y₁ , ⟨ lift x₂≃y₂ , _ ⟩ ⟩ v =
+      record { to = λ { ⟨ w , ⟨ wfw , ⟨ x1w→v , x2w ⟩ ⟩ ⟩ →
+                 ⟨ w , ⟨ wfw , ⟨ Utilities.Iso.to (x₁≃y₁ (w ↦ v)) x1w→v , Utilities.Iso.to (x₂≃y₂ w) x2w ⟩ ⟩ ⟩ } ;
+               from = λ { ⟨ w , ⟨ wfw , ⟨ x1w→v , x2w ⟩ ⟩ ⟩ →
+                 ⟨ w , ⟨ wfw , ⟨ Utilities.Iso.from (x₁≃y₁ (w ↦ v)) x1w→v , Utilities.Iso.from (x₂≃y₂ w) x2w ⟩ ⟩ ⟩ } }
+  denot-op-equiv {lit p x} rs₁=rs₂ = λ v → record { to = λ z → z ; from = λ z → z }
+
+  instance
+    V²-PVal²-is-Similar : Similar Value Value (𝒫 Value) (𝒫 Value) {{EqC = PVal-is-Equiv}}
+    V²-PVal²-is-Similar = record {
+          ret≈ = λ { ⟨ v₁⊑v₂ , v₂⊑v₁ ⟩ v → record { to = λ v⊑v₁ → ⊑-trans v⊑v₁ v₁⊑v₂ ; from = λ v⊑v₂ → ⊑-trans v⊑v₂ v₂⊑v₁ } };
+          op⩳ = denot-op-equiv }
+
+{-
+
+No instance of type Similar Value Value (Value → Set) (Value → Set)
+
 subst-pres-denot : ∀ {ρ ρ′ : Env} {σ : Subst} {M : Term}
    → σ ⨟ ρ ⩰ ρ′
    → 𝐸 (⟪ σ ⟫ M) ρ  ≡ 𝐸 M ρ′
 subst-pres-denot {ρ}{ρ′}{σ}{M} σ⨟ρ⩰ρ′ =
-  fold-subst-fusion M σ⨟ρ⩰ρ′ {!!}
+  let xx = fold-subst-fusion M σ⨟ρ⩰ρ′ {!!}
+  in ?
+  
 
+
+-}
+
+{-
 
 instance
   Value-is-Relatable : Relatable Value Value

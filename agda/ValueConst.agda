@@ -4,7 +4,7 @@ open import Values
 open import Data.Nat using (ℕ; suc ; zero; _+_; _≤′_; _<′_; _<_; _≤_;
     z≤n; s≤s; ≤′-refl; ≤′-step) renaming (_⊔_ to max)
 open import Data.Nat.Properties
-  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; n≤m⊔n; ≤-step; ⊔-mono-≤;
+  using (n≤0⇒n≡0; ≤-refl; ≤-trans; m≤m⊔n; m≤n⊔m; ≤-step; ⊔-mono-≤;
          +-mono-≤; +-mono-≤-<; +-mono-<-≤; +-comm; +-assoc; n≤1+n; 
          ≤-pred; m≤m+n; m≤n+m; ≤-reflexive; ≤′⇒≤; ≤⇒≤′; +-suc)
 {-open Data.Nat.Properties.≤-Reasoning-}
@@ -112,6 +112,9 @@ v ≘ w = v ⊑ w × w ⊑ v
 
 ≘-refl : ∀{v} → v ≘ v
 ≘-refl {v} = ⟨ ⊑-refl , ⊑-refl ⟩
+
+≘-sym : {u v : Value} → u ≘ v → v ≘ u
+≘-sym {u} {v} ⟨ u⊑v , v⊑u ⟩ = ⟨ v⊑u , u⊑v ⟩
 
 ⊔⊑R : ∀{B C A}
     → B ⊔ C ⊑ A
@@ -231,7 +234,7 @@ size (v₁ ⊔ v₂) = suc (size v₁ + size v₂)
 ∈→depth≤ {v₁ ⊔ v₂} {u} (inj₁ x) =
     ≤-trans (∈→depth≤ {v₁} {u} x) (m≤m⊔n (depth v₁) (depth v₂))
 ∈→depth≤ {v₁ ⊔ v₂} {u} (inj₂ y) =
-    ≤-trans (∈→depth≤ {v₂} {u} y) (n≤m⊔n (depth v₁) (depth v₂))
+    ≤-trans (∈→depth≤ {v₂} {u} y) (m≤n⊔m (depth v₁) (depth v₂))
 
 max-lub : ∀{x y z : ℕ} → x ≤ z → y ≤ z → max x y ≤ z
 max-lub {.0} {y} {z} _≤_.z≤n y≤z = y≤z
@@ -269,7 +272,7 @@ dom-depth-≤ {u ⊔ v} =
 cod-depth-≤ : ∀{u : Value}{fu : AllFun u} → depth (cod u {fu}) ≤ depth u
 cod-depth-≤ {⊥}{()}
 cod-depth-≤ {const k}{()}
-cod-depth-≤ {v ↦ w} = ≤-step (n≤m⊔n (depth v) (depth w))
+cod-depth-≤ {v ↦ w} = ≤-step (m≤n⊔m (depth v) (depth w))
 cod-depth-≤ {u ⊔ v} {⟨ fu , fv ⟩} =
   let ih1 = cod-depth-≤ {u}{fu} in
   let ih2 = cod-depth-≤ {v}{fv} in
@@ -347,7 +350,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       M1 = snd (≤⇒≤′ M1a) (≤⇒≤′ M1b)
       M2a = begin
                depth u₂ + depth w
-             ≤⟨ +-mono-≤ (n≤m⊔n (depth u₁) (depth u₂)) ≤-refl ⟩
+             ≤⟨ +-mono-≤ (m≤n⊔m (depth u₁) (depth u₂)) ≤-refl ⟩
                max (depth u₁) (depth u₂) + depth w
             ∎
       M2b = begin
@@ -420,7 +423,7 @@ data _<<_ : ℕ × ℕ → ℕ × ℕ → Set where
       M1 = fst (≤⇒≤′ M1a)
       M2a = begin
                suc (depth u₂ + depth (cod w′))
-            ≤⟨ s≤s (+-mono-≤ (n≤m⊔n (depth u₁) (depth u₂)) cw′≤w) ⟩
+            ≤⟨ s≤s (+-mono-≤ (m≤n⊔m (depth u₁) (depth u₂)) cw′≤w) ⟩
                suc (max (depth u₁) (depth u₂) + depth w)
             ∎ 
       M2 : ⟨ depth u₂ + depth (cod w′) ,
