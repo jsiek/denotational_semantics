@@ -16,7 +16,6 @@ open import Relation.Nullary.Negation using (contradiction)
 open import ScopedTuple hiding (𝒫)
 open import Sig
 open import Structures
-{-open import Syntax using (Shiftable; ShiftId) -}
 open import Utilities using (_iff_)
 open import Var
 
@@ -49,30 +48,33 @@ instance
   parameter.
 -}
 
-𝐹 : (Value → 𝒫 Value) → 𝒫 Value
+⌊_⌋ : Value → 𝒫 Value
+⌊ v ⌋ w = w ⊑ v 
+
+𝐹 : (𝒫 Value → 𝒫 Value) → 𝒫 Value
 𝐹 f ⊥ = ⊤
 𝐹 f (const k) = Bot
-𝐹 f (v ↦ w) = f v w
+𝐹 f (v ↦ w) = f ⌊ v ⌋ w
 𝐹 f (u ⊔ v) = 𝐹 f u × 𝐹 f v
 
 {--------     Analogous to ModelCurryConst    ---------------------------------}
 
-𝐹-⊔ : ∀{f : Value → 𝒫 Value}{u v : Value}
+𝐹-⊔ : ∀{f : 𝒫 Value → 𝒫 Value}{u v : Value}
   → 𝐹 f u → 𝐹 f v → 𝐹 f (u ⊔ v)
 𝐹-⊔ d1 d2 = ⟨ d1 , d2 ⟩  
 
-_≲′_ : 𝒫 Value → 𝒫 Value → Set
-D₁ ≲′ D₂ = ∀ (v : Value) → wf v → D₁ v → D₂ v
+_≲_ : 𝒫 Value → 𝒫 Value → Set
+D₁ ≲ D₂ = ∀ (v : Value) → wf v → D₁ v → D₂ v
 
-𝐹-≲′ : ∀{f f′ : Value → 𝒫 Value}
-   → (∀{v : Value} → wf v → f v ≲′ f′ v)
-   → 𝐹 f ≲′ 𝐹 f′
-𝐹-≲′ f≲f′ ⊥ wfv 𝐹fv = tt
-𝐹-≲′ f≲f′ (v ↦ w) (wf-fun wfv wfw) 𝐹fv = f≲f′ wfv w wfw 𝐹fv
-𝐹-≲′ f≲f′ (u ⊔ v) (wf-⊔ u~v wfu wfv) ⟨ 𝐹fu , 𝐹fv ⟩ =
-  ⟨ 𝐹-≲′ f≲f′ u wfu 𝐹fu , 𝐹-≲′ f≲f′ v wfv 𝐹fv ⟩
+𝐹-≲ : ∀{f f′ : 𝒫 Value → 𝒫 Value}
+   → (∀{v : Value} → wf v → f ⌊ v ⌋ ≲ f′ ⌊ v ⌋)
+   → 𝐹 f ≲ 𝐹 f′
+𝐹-≲ f≲f′ ⊥ wfv 𝐹fv = tt
+𝐹-≲ f≲f′ (v ↦ w) (wf-fun wfv wfw) 𝐹fv = f≲f′ wfv w wfw 𝐹fv
+𝐹-≲ f≲f′ (u ⊔ v) (wf-⊔ u~v wfu wfv) ⟨ 𝐹fu , 𝐹fv ⟩ =
+  ⟨ 𝐹-≲ f≲f′ u wfu 𝐹fu , 𝐹-≲ f≲f′ v wfv 𝐹fv ⟩
 
-¬k∈𝐹 : ∀{D : Value → 𝒫 Value} {v : Value}
+¬k∈𝐹 : ∀{D : 𝒫 Value → 𝒫 Value} {v : Value}
          {b : Base}{k : base-rep b}
         → const {b} k ∈ v → ¬ 𝐹 D v
 ¬k∈𝐹 {v = ⊥} () 𝐹v
@@ -81,7 +83,7 @@ D₁ ≲′ D₂ = ∀ (v : Value) → wf v → D₁ v → D₂ v
 ¬k∈𝐹 {v = v₁ ⊔ v₂} (inj₁ x) ⟨ fst₁ , snd₁ ⟩ = ¬k∈𝐹 x fst₁
 ¬k∈𝐹 {v = v₁ ⊔ v₂} (inj₂ y) ⟨ fst₁ , snd₁ ⟩ = ¬k∈𝐹 y snd₁
 
-𝐹-∈ : ∀{D : Value → 𝒫 Value} {v w : Value}
+𝐹-∈ : ∀{D : 𝒫 Value → 𝒫 Value} {v w : Value}
         → w ∈ v → 𝐹 D v → 𝐹 D w
 𝐹-∈ {D} {⊥} {w} refl tt = tt
 𝐹-∈ {D} {const k} {w} w∈v ()
@@ -89,7 +91,7 @@ D₁ ≲′ D₂ = ∀ (v : Value) → wf v → D₁ v → D₂ v
 𝐹-∈ {D} {v₁ ⊔ v₂} {w} (inj₁ x) ⟨ 𝐹v₁ , 𝐹v₂ ⟩ = 𝐹-∈ x 𝐹v₁
 𝐹-∈ {D} {v₁ ⊔ v₂} {w} (inj₂ y) ⟨ 𝐹v₁ , 𝐹v₂ ⟩ = 𝐹-∈ y 𝐹v₂
 
-𝐹-⊆ : ∀{f : Value → 𝒫 Value} {v w : Value}
+𝐹-⊆ : ∀{f : 𝒫 Value → 𝒫 Value} {v w : Value}
         → w ⊆ v → 𝐹 f v → 𝐹 f w
 𝐹-⊆ {f} {v} {⊥} w⊆v 𝐹fv = tt
 𝐹-⊆ {f} {v} {const k} w⊆v 𝐹fv = ⊥-elim (contradiction 𝐹fv (¬k∈𝐹 (w⊆v refl)))
@@ -102,16 +104,16 @@ D₁ ≲′ D₂ = ∀ (v : Value) → wf v → D₁ v → D₂ v
   The following adapts WFDenod by changing the environment parameters
   into Value parameters.
 -}
-record IdealFun (f : Value → 𝒫 Value) : Set₁ where
-  field ⊑-input : ∀{u v}{w} → wf u → wf v → wf w → u ⊑ v → f u w → f v w
+record IdealFun (f : 𝒫 Value → 𝒫 Value) : Set₁ where
+  field ⊑-input : ∀{u v}{w} → wf u → wf v → wf w → u ⊑ v → f ⌊ u ⌋ w → f ⌊ v ⌋ w
         ⊑-closed : ∀{u}{v w} → wf u → wf v → wf w
-                 → w ⊑ v → f u v → f u w
+                 → w ⊑ v → f ⌊ u ⌋ v → f ⌊ u ⌋ w
         ⊔-closed : ∀{w u v} → wf w → wf u → wf v
-                 → f w u → f w v → f w (u ⊔ v)
+                 → f ⌊ w ⌋ u → f ⌊ w ⌋ v → f ⌊ w ⌋ (u ⊔ v)
         ~-closed : ∀{w y u v} → wf w → wf y → wf u → wf v
-                 → w ~ y → f w u → f y v → u ~ v
+                 → w ~ y → f ⌊ w ⌋ u → f ⌊ y ⌋ v → u ~ v
 
-𝐹-dom-cod : ∀ {f : Value → 𝒫 Value}{v w : Value}{fv : AllFun v}
+𝐹-dom-cod : ∀ {f : 𝒫 Value → 𝒫 Value}{v w : Value}{fv : AllFun v}
        → IdealFun f → wf v → wf w
        → dom v {fv} ⊑ w → 𝐹 f v → 𝐹 f (dom v {fv} ↦ cod v {fv})
 𝐹-dom-cod {v = ⊥} {w} {()} ifd wfv wfw dv⊑w 𝐹v
@@ -121,9 +123,9 @@ record IdealFun (f : Value → 𝒫 Value) : Set₁ where
     dv⊑w ⟨ 𝐹v₁ , 𝐹v₂ ⟩ =
   let dv₁⊑w = ⊔⊑R dv⊑w in
   let dv₂⊑w = ⊔⊑L dv⊑w in
-  let f-dv₁-cv₁ : f (dom v₁) (cod v₁)
+  let f-dv₁-cv₁ : f ⌊ (dom v₁) ⌋ (cod v₁)
       f-dv₁-cv₁ = 𝐹-dom-cod{v = v₁} ifd wfv₁ wfw dv₁⊑w 𝐹v₁ in
-  let f-dv₂-cv₂ : f (dom v₂) (cod v₂)
+  let f-dv₂-cv₂ : f ⌊ (dom v₂) ⌋ (cod v₂)
       f-dv₂-cv₂ = 𝐹-dom-cod{v = v₂} ifd wfv₂ wfw dv₂⊑w 𝐹v₂ in
   let wf-dv₁ = wf-dom{v₁}{w} wfv₁ wfw fv₁ dv₁⊑w in
   let wf-dv₂ = wf-dom{v₂}{w} wfv₂ wfw fv₂ dv₂⊑w  in
@@ -137,7 +139,7 @@ record IdealFun (f : Value → 𝒫 Value) : Set₁ where
                           (⊑-conj-R2 ⊑-refl) f-dv₂-cv₂  in
   IdealFun.⊔-closed ifd wf-dv₁⊔dv₂ wf-cv₁ wf-cv₂ f-dv₁⊔dv₂-cv₁ f-dv₁⊔dv₂-cv₂
 
-𝐹-⊑ : ∀{f : Value → 𝒫 Value}{v w : Value}
+𝐹-⊑ : ∀{f : 𝒫 Value → 𝒫 Value}{v w : Value}
        → IdealFun f → wf v → wf w
         → w ⊑ v → 𝐹 f v → 𝐹 f w
 𝐹-⊑ d wfv wfw ⊑-⊥ 𝐹fuv = tt
@@ -158,7 +160,7 @@ record IdealFun (f : Value → 𝒫 Value) : Set₁ where
     let fw₁cv′ = IdealFun.⊑-input d wfdv′ wfw₁ wfcv′ dv′⊑w₁ fdv′cv′ in
     IdealFun.⊑-closed d wfw₁ wfcv′ wfw₂ w₂⊑cv′ fw₁cv′
 
-𝐹-~ : ∀{f : Value → 𝒫 Value} {u v : Value}
+𝐹-~ : ∀{f : 𝒫 Value → 𝒫 Value} {u v : Value}
     → IdealFun f → wf u → wf v
     → 𝐹 f u → 𝐹 f v → u ~ v
 𝐹-~ {f} {⊥} {v} wfd wfu wfv d1 d2 = tt
@@ -188,17 +190,40 @@ postulate
     → f ≡ g
 -}
 
-{- Equivalence of the 𝒫 Value part of denotations -}
+{- Equivalence of the 𝒫 Value part of denotations.
+   Denotational Equality. -}
 
-_≃′_ : 𝒫 Value → 𝒫 Value → Set₁
-D₁ ≃′ D₂ = ∀ (v : Value) → D₁ v iff D₂ v
+_≃_ : 𝒫 Value → 𝒫 Value → Set₁
+D₁ ≃ D₂ = ∀ (v : Value) → D₁ v iff D₂ v
+
+≃-refl : {d : 𝒫 Value} → d ≃ d
+≃-refl {d} = λ v → record { to = λ x → x ; from = λ z → z }
+
+open Utilities.Iso using (to; from)
+
+𝐹-≃ : ∀{f f↑ : 𝒫 Value → 𝒫 Value}
+     → (∀{v₁ v₂ : 𝒫 Value} → v₁ ≃ v₂ → f↑ v₁ ≃ f v₂)
+     → 𝐹 f↑ ≃ 𝐹 f
+𝐹-≃ eq ⊥ = record { to = λ _ → tt ; from = λ _ → tt }
+𝐹-≃ eq (const x) = record { to = λ z → z ; from = λ z → z }
+𝐹-≃ eq (v ↦ w) =
+    record {
+    to = to (eq (λ v → record { to = λ z → z ; from = λ z → z }) w) ;
+    from = from (eq (λ v → record { to = λ z → z ; from = λ z → z }) w)
+    }
+𝐹-≃ eq (v ⊔ w) =
+    let IH1 = 𝐹-≃ eq v in
+    let IH2 = 𝐹-≃ eq w in
+    record { to = λ { ⟨ x , y ⟩ → ⟨ to IH1 x , to IH2 y ⟩ } ;
+             from = λ { ⟨ x , y ⟩ → ⟨ from IH1 x , from IH2 y ⟩ } }
+
 
 instance
   Value-is-Equiv : Equiv Value Value
   Value-is-Equiv = record { _≈_ = _≘_ }
 
   PVal-is-Equiv : Equiv (𝒫 Value) (𝒫 Value)
-  PVal-is-Equiv = record { _≈_ = _≃′_ }
+  PVal-is-Equiv = record { _≈_ = _≃_ }
 
 {-
 𝐹-cong : ∀ {f g : Bind Value (𝒫 Value) (ν ■)}
@@ -215,23 +240,41 @@ instance
   open RelBind {lsuc lzero}{Value}{𝒫 Value}{Value}{𝒫 Value} _≡_ _≡_
 -}
 
+{- Denotational Function Application -} 
+
 infixl 7 _○_
 _○_ : (𝒫 Value) → (𝒫 Value) → (𝒫 Value)
 _○_ D₁ D₂ w = Σ[ v ∈ Value ] wf v × D₁ (v ↦ w) × D₂ v 
 
-denot-op : (op : Op) → Tuple (sig op) (Bind Value (𝒫 Value))
+
+≃-○ : ∀{v₁ v₂ w₁ w₂ : 𝒫 Value}
+    → v₁ ≃ w₁  →  v₂ ≃ w₂
+    →  (v₁ ○ v₂) ≃ (w₁ ○ w₂)
+≃-○ v₁=w₁ v₂=w₂ v = record {
+     to = λ { ⟨ w , ⟨ wfw , ⟨ v₁w↦v , v₂w ⟩ ⟩ ⟩ →
+              let xx = to (v₁=w₁ (w ↦ v)) in
+              let yy = to (v₂=w₂ w) in
+              ⟨ w , ⟨ wfw , ⟨ xx v₁w↦v , yy v₂w ⟩ ⟩ ⟩ }
+     ; from = λ { ⟨ v′ , ⟨ wfv′ , ⟨ w₁v′↦v , w₂v′ ⟩ ⟩ ⟩ →
+                  let xx = from (v₁=w₁ (v′ ↦ v)) in
+                  let yy = from (v₂=w₂ v′) in
+                  ⟨ v′ , ⟨ wfv′ , ⟨ xx w₁v′↦v , yy w₂v′ ⟩ ⟩ ⟩ } }
+
+denot-op : (op : Op) → Tuple (sig op) (Bind (𝒫 Value) (𝒫 Value))
          → 𝒫 Value
 denot-op (lit p k) ptt v = ℘ {p} k v
-denot-op lam ⟨ f , ptt ⟩ = 𝐹 (λ v → lower (f v))
-denot-op app ⟨ lift dᶠ , ⟨ lift dₐ , ptt ⟩ ⟩ = dᶠ ○ dₐ
+denot-op lam ⟨ f , ptt ⟩ = 𝐹 f
+denot-op app ⟨ dᶠ , ⟨ dₐ , ptt ⟩ ⟩ = dᶠ ○ dₐ
 
 instance
-  Denot-is-Foldable : Foldable Value (𝒫 Value)
-  Denot-is-Foldable = record { ret = λ v w → w ⊑ v; fold-op = denot-op }
+  Denot-is-Foldable : Foldable (𝒫 Value) (𝒫 Value)
+  Denot-is-Foldable = record { ret = λ v → v ; fold-op = denot-op }
 
-𝐸 : Term → Env → 𝒫 Value
+Env3 : Set₁
+Env3 = Var → 𝒫 Value
+
+𝐸 : Term → Env3 → 𝒫 Value
 𝐸 M ρ = fold ρ M
-
 
 module _ where
 {-
@@ -241,22 +284,26 @@ module _ where
      ≡⇑-Value-is-Equiv = record { _≈_ = λ v w → v ≘ ⇑ w }
      
      ≡⇑-PVal-Equiv : Equiv (𝒫 Value) (𝒫 Value)
-     ≡⇑-PVal-Equiv = record { _≈_ = λ D₁ D₂ → D₁ ≃′ ⇑ D₂ }
+     ≡⇑-PVal-Equiv = record { _≈_ = λ D₁ D₂ → D₁ ≃ ⇑ D₂ }
 -}
 
-  denot-op-shift : {op : Op}{rs↑ rs : Tuple (sig op) (Bind Value (𝒫 Value))}
-     → zip (λ{b} → _⩳_{V₁ = Value}{Value}{𝒫 Value}{𝒫 Value}{b}) rs↑ rs
-     → denot-op op rs↑ ≃′ denot-op op rs
-  denot-op-shift {lam} {⟨ f↑ , ptt ⟩} {⟨ f , ptt ⟩} ⟨ z , ptt ⟩ =
-      {!!}
-  denot-op-shift {app} {rs↑} {rs} zrs = {!!}
-  denot-op-shift {lit p x} {rs↑} {rs} zrs = {!!}
+
+  denot-op-shift : {op : Op}{rs↑ rs : Tuple (sig op) (Bind (𝒫 Value) (𝒫 Value))}
+     → zip (λ {b} → _⩳_{b = b}) rs↑ rs
+     → denot-op op rs↑ ≃ denot-op op rs
+  denot-op-shift {lam} {⟨ f↑ , _ ⟩} {⟨ f , _ ⟩} ⟨ z , _ ⟩ = 𝐹-≃ z
+  denot-op-shift {app} {⟨ v₁ , ⟨ v₂ , _ ⟩ ⟩} {⟨ w₁ , ⟨ w₂ , _ ⟩ ⟩}
+      ⟨ eq₁ , ⟨ eq₂ , _  ⟩ ⟩ = ≃-○ eq₁ eq₂
+  denot-op-shift {lit p x} {rs↑} {rs} zrs v =
+      record { to = λ z → z ; from = λ z → z }
 
   instance
+{-
     Value-is-ShiftId : ShiftId Value
     Value-is-ShiftId = record { shift-id = λ x → ⟨ ⊑-⊥ , ⊑-⊥ ⟩ }
+-}
 
-    PVal-is-FoldShift : FoldShift Value (𝒫 Value)
+    PVal-is-FoldShift : FoldShift (𝒫 Value) (𝒫 Value)
     PVal-is-FoldShift = record { shift-ret = λ v → extensionality λ x → refl
            ; op-shift = denot-op-shift }
 
@@ -270,7 +317,7 @@ module _ where
     PVal-is-Relatable : Relatable (𝒫 Value) (𝒫 Value)
     PVal-is-Relatable = record {
         var→val≈ = λ x v → record { to = λ x → x ; from = λ z → z } ;
-        shift≈ = λ x v → record { to = Utilities.Iso.to (x v) ; from = Utilities.Iso.from (x v) } }
+        shift≈ = λ x v → record { to = {!!} ; from = Utilities.Iso.from (x v) } }
 
 {-
   𝐹-equiv : ∀(v : Value) → (f₁ : Value → Lift lzero (𝒫 Value)) → (f₂ : Value → Lift lzero (𝒫 Value))
@@ -279,22 +326,22 @@ module _ where
   𝐹-equiv v f₁ f₂ f₁=f₂ = {!!}
 -}
 
-  denot-op-equiv : ∀ {op : Op} {rs₁ rs₂ : Tuple (sig op) (Bind Value (𝒫 Value))}
-      → zip (λ {b} → _⩳_{V₁ = Value}{V₂ = Value}{C₁ = 𝒫 Value}{C₂ = 𝒫 Value}{b = b}) rs₁ rs₂
-      → denot-op op rs₁ ≃′ denot-op op rs₂
+  denot-op-equiv : ∀ {op : Op} {rs₁ rs₂ : Tuple (sig op) (Bind (𝒫 Value) (𝒫 Value))}
+      → zip (λ {b} → _⩳_{V₁ = 𝒫 Value}{V₂ = 𝒫 Value}{C₁ = 𝒫 Value}{C₂ = 𝒫 Value}{b = b}) rs₁ rs₂
+      → denot-op op rs₁ ≃ denot-op op rs₂
   denot-op-equiv {lam} {⟨ f₁ , _ ⟩} {⟨ f₂ , _ ⟩} ⟨ eq , _ ⟩ v =
       record { to = λ x → {!!} ; from = {!!} }
-  denot-op-equiv {app} {⟨ lift x₁ , ⟨ lift x₂ , _ ⟩ ⟩} {⟨ lift y₁ , ⟨ lift y₂ , _ ⟩ ⟩} ⟨ lift x₁≃y₁ , ⟨ lift x₂≃y₂ , _ ⟩ ⟩ v =
+  denot-op-equiv {app} {⟨ x₁ , ⟨ x₂ , _ ⟩ ⟩} {⟨ y₁ , ⟨ y₂ , _ ⟩ ⟩} ⟨ x₁≃y₁ , ⟨ x₂≃y₂ , _ ⟩ ⟩ v =
       record { to = λ { ⟨ w , ⟨ wfw , ⟨ x1w→v , x2w ⟩ ⟩ ⟩ →
-                 ⟨ w , ⟨ wfw , ⟨ Utilities.Iso.to (x₁≃y₁ (w ↦ v)) x1w→v , Utilities.Iso.to (x₂≃y₂ w) x2w ⟩ ⟩ ⟩ } ;
+                 ⟨ w , ⟨ wfw , ⟨ {!!} , {!!} ⟩ ⟩ ⟩ } ;
                from = λ { ⟨ w , ⟨ wfw , ⟨ x1w→v , x2w ⟩ ⟩ ⟩ →
-                 ⟨ w , ⟨ wfw , ⟨ Utilities.Iso.from (x₁≃y₁ (w ↦ v)) x1w→v , Utilities.Iso.from (x₂≃y₂ w) x2w ⟩ ⟩ ⟩ } }
+                 ⟨ w , ⟨ wfw , ⟨ {!!} , {!!} ⟩ ⟩ ⟩ } }
   denot-op-equiv {lit p x} rs₁=rs₂ = λ v → record { to = λ z → z ; from = λ z → z }
 
   instance
-    V²-PVal²-is-Similar : Similar Value Value (𝒫 Value) (𝒫 Value) {{EqC = PVal-is-Equiv}}
+    V²-PVal²-is-Similar : Similar (𝒫 Value) (𝒫 Value) (𝒫 Value) (𝒫 Value) {{EqC = PVal-is-Equiv}}
     V²-PVal²-is-Similar = record {
-          ret≈ = λ { ⟨ v₁⊑v₂ , v₂⊑v₁ ⟩ v → record { to = λ v⊑v₁ → ⊑-trans v⊑v₁ v₁⊑v₂ ; from = λ v⊑v₂ → ⊑-trans v⊑v₂ v₂⊑v₁ } };
+          ret≈ = λ { a v → {!!} };
           op⩳ = denot-op-equiv }
 
 {-
@@ -347,3 +394,4 @@ op-cong app ⟨ r , ⟨ rs , tt ⟩ ⟩ ⟨ r' , ⟨ rs' , tt ⟩ ⟩
              ; shift-ret = λ vᶠ → refl
              ; op-shift = λ op {rs↑}{rs} z → op-cong op rs↑ rs z }
 -}
+

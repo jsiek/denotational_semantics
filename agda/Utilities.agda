@@ -15,7 +15,7 @@ _iff_ : ∀ {ℓ₁ ℓ₂} → Set ℓ₁ → Set ℓ₂ → Set (lsuc (ℓ₁ 
 P iff Q = Iso P Q
 
 postulate
-  extensionality : ∀ {A B : Set} {f g : A → B}
+  extensionality : ∀ {ℓ₁ ℓ₂ : Level}{A : Set ℓ₁}{B : Set ℓ₂} {f g : A → B}
     → (∀ (x : A) → f x ≡ g x)
       -----------------------
     → f ≡ g
