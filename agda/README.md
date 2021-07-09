@@ -89,6 +89,11 @@ File Overview
 
       Proves congruence rules wrt. ≃ for ℱ and ●. 
 
+   * `ModelCallByValue` (parameterized on ValueStruct, etc.)
+
+     * Definition ● for CBV and a bunch of lemmas about it.
+     * Instance of CurryApplyStruct
+
    * `ValueBCD`
 
       * Denotational values (⊥, ↦, ⊔) (aka. BCD intersection types),
@@ -98,10 +103,12 @@ File Overview
       * Proves function inversion and stuff about AboveFun needed for
         adequacy of call-by-name.
 
-   * `ValueConst`
+   * Domain for ISWIM
+   
+      * `ValueConst`
 
-      * Denotational values (⊥, ↦, ⊔) including constants
-        and primitive operators.
+         * Denotational values (⊥, ↦, ⊔) including constants
+           and primitive operators.
 
       * `CurryConst`
 
@@ -112,20 +119,19 @@ File Overview
         * Proof of the consistent subtyping property.
         * Instance of the Consistent structure.
 
-   * `ModelCallByName`
+      * `ModelCurryConst`
+	  
+	    * Instance of CurryStruct
+
+   * `ModelCallByName` (uses ValueBCD)
 
      * Definition of ● for CBN and a bunch of lemmas about it.
-     * An instance of LambdaModelBasics
+     * Instance of CurryApplyStruct.
 
-   * `ModelCallByValue` (parameterized on ValueStruct, etc.)
-
-     * Definition ● for CBV and a bunch of lemmas about it.
-     * An instance of CurryApplyStruct
-
-   * `ModelISWIM`
+   * `ModelISWIM` (uses ValueConst, etc.)
 
      Instantiates the ModelCallByValue with the domain defined
-     in ValueConst.
+     in ValueConst to obtain an instance of CurryApplyStruct.
 
 
 * Denotational Semantics

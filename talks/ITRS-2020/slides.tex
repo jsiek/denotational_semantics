@@ -4,8 +4,8 @@
 %\usecolortheme{beetle}
 \usecolortheme{dove} % black on white
 \usepackage[T1]{fontenc}
-\usepackage{garamond}
-\usefonttheme{serif}
+%\usepackage{garamond}
+%\usefonttheme{serif}
 \usepackage{multicol}
 \usepackage{pifont}
 \usepackage{etex}
@@ -245,9 +245,9 @@ moredelim=[is][\color{blue}]{~}{~},
 }
 \lstset{style=basic}
 
-\garamond
+%\garamond
 
-\title[Filter Models, Correct Compilers]{Filter Models for Compiler Correctness}
+\title{Filter Models for Compiler Correctness}
 \author{Jeremy G. Siek \\[1ex]
  Indiana University, Bloomington
 }
@@ -256,7 +256,7 @@ moredelim=[is][\color{blue}]{~}{~},
 %%  Indiana University, Bloomington
 %% }
 
-% 3 hours
+% 1 hou
 
 %\newcommand\footnotemark{}
 %\renewcommand\footnoterule{}
@@ -274,7 +274,7 @@ moredelim=[is][\color{blue}]{~}{~},
 Indiana University\\
 Center for Programming Systems \\[2ex]
 10th Workshop on Intersection Types and Related Systems \\
-March 6, 2020
+17 July 2021
 %% \end{minipage}
 %% &
 %% \begin{minipage}{0.45\textwidth}
@@ -285,16 +285,86 @@ March 6, 2020
 }
 %===============================================================================
 \frame{
-  \frametitle{Structure of a Compiler}
+  \frametitle{Outline}
 
-  \Large
+  \begin{itemize}
+  \item Intersections: Type System or Semantics?
+  \item Compilation of Functional Languages
+  \item Challenges and Solutions
+  \end{itemize}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Intersections: Type System or Semantics?}
+
+For call-by-value $\lambda$-calculus:\\
+\ \\
+\begin{tabular}{cc}
+ \fbox{
+ \begin{minipage}{0.45\textwidth}
+   \footnotesize
+\begin{gather*}
+  A ::= \bot \mid A \& A \mid A \to A\\[2ex]
+%  \inference{}{\Gamma \vdash c : \Delta(c)}\\[1ex]
+  \inference{x : A \in \Gamma & A <: B}{\Gamma \vdash x : B} \\[1ex]
+  \inference{\Gamma \vdash L : A \to B & \Gamma \vdash M : A}
+            {\Gamma \vdash L ~ M : B} \\[1ex]
+  \inference{\Gamma, x : A \vdash N : B}
+            {\Gamma \vdash \lambda x.N : A \to B} \\[1ex]
+  \inference{\Gamma \vdash \lambda x.N : A & \Gamma \vdash \lambda x.N : B}
+            {\Gamma \vdash \lambda x.N : A \& B} \\[1ex]
+  \inference{}
+            {\Gamma \vdash \lambda x.N : \bot}
+  %% \inference{\Gamma \vdash M : A & A <: B}
+  %%           {\Gamma \vdash M : B}
+\end{gather*}
+ \end{minipage}}
+  &
+  \fbox{
+    \begin{minipage}{0.45\textwidth}
+   \footnotesize
+    \begin{align*}
+      v & ::= \emptyset \mid v \sqcup v \mid v \mapsto v  \\[2ex]
+   \SEM{-} &: \mathbb{E} \to (\mathbb{X} \to \mathbb{V}) \to \SET{\mathbb{V}}\\[1ex]
+%   \SEM{c}\rho &= \Delta\SEM{c} \\
+   \SEM{x}\rho &= \{ v \mid v \sqsubseteq \rho(x) \} \\
+   \SEM{L~M}\rho &= \{ w \mid  v\mapsto w \in \SEM{L}\rho,  \\
+     & \qquad\quad\;\; v\in \SEM{M}\rho \} \\
+   \SEM{\lambda x. N}\rho &= \{ t \mid \forall v_1 \mapsto v_2 \in t, \\
+     & \qquad\quad\;\; v_2 \in \SEM{N}\rho(x{:=}v_1)\} 
+ \end{align*}
+  \end{minipage}
+  }
+\end{tabular}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Basic Properties}
+
+\textbf{Soundness}: If $M \longrightarrow^{*} V$, then $\SEM{M} = \SEM{V}$.\\[1ex]
+\textbf{Adequacy}: If $\SEM{M} = \SEM{V}$, then $\exists V, M \longrightarrow^{*} V$.\\[1ex]
+\textbf{Equality implies Equivalence}: \\
+  $\qquad \SEM{M} = \SEM{N}$ implies $M \overset{\mathrm{ctx}}{=} N$. \\[1ex]
+\ \\
+but \textbf{not Full Abstraction}: \\
+  $\qquad M \overset{\mathrm{ctx}}{=} N$ does not imply $\SEM{M} = \SEM{N}$ \\
+\ \\
+(but that's OK, we don't need that direction.)
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Compilation of Functional Languages}
+
   \hspace{1in}
   \xymatrix@=30pt{
-  \text{MiniML} \ar[d]^{\text{lower}} \\
-  \text{IR1} \ar[d]^{\text{lower}} \\
-  \text{IR2} \ar[d] \ar@(dr,ur)[]_{\text{optimize}} \\
-  \vdots \ar[d]^{\text{lower}} \\
-  \text{x86 assembly code}
+  \text{Scheme} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
+  \text{IR$_1$} \ar[d]^{\quad \text{\normalsize flatten}} \\
+  \text{IR$_2$} \ar[d]^{\quad \text{\normalsize select instructions}} \\
+  \text{IR$_3$} \ar[d]^{\quad \text{\normalsize register allocation}} \\
+  \text{x86}
   }
 }
 %===============================================================================
@@ -303,26 +373,25 @@ March 6, 2020
 
 \large
 \begin{align*}
-&\LET x = 3 \IN \\
-&\LET y = 3 \IN \\
-&\LET f = \lambda z. y + x + z \IN \\
-&(f \app 5) \\
+&\LET w = 5, x = 3, y = 3 \IN \\
+&\LET f = \lambda z.~ x + y + z \IN \\
+&f \app w \\
 & \Downarrow \\
-&\LET x = 3 \IN \\
-&\LET y = 3 \IN \\
-&\LET f = \langle \lambda (fvs, z). fvs[0] + fvs[1] + z, [y , x] \rangle \IN \\
-&(\FST\, f)(\SND\, f, 5)
+& \mathbf{fun}~ g(v, z) = v[0] + v[1] + z \\
+&\LET w = 5, x = 3, y = 3 \IN \\
+&\LET f = \langle g, \langle x , y \rangle \rangle \IN \\
+&f[0] \app f[1]\app w
 \end{align*}
 
 }
 %===============================================================================
 \frame{
-\frametitle{Common Subexpression Elimination}
+\frametitle{Optimize: Common Subexpression Elimination}
 
 \Large
 \begin{gather*}
   \lam{f} (f \app 5) + (f \app 5) \\
-   \stackrel{\mathrm{ctx}}{=} \\
+   \Downarrow \\
   \lam{f} \LET x = (f \app 5) \IN x + x
 \end{gather*}
 
@@ -330,7 +399,6 @@ March 6, 2020
 
 %===============================================================================
 
-\end{document}
 %===============================================================================
 
 \frame{
@@ -601,7 +669,7 @@ optimization: common subexpression elimination!
 \frame{
   \frametitle{Challenge \#1}
   
-Let's try to prove Combine Denoations of Expression by induction on
+Let's try to prove Combine Denotations of Expression by induction on
 $e$. Consider the case for application: $e = (e_1 \app e_2)$. From $v
 \in \ESEM{e_1 \app e_2}\rho$ and $v' \in \ESEM{e_1 \app e_2}\rho'$ we
 need to show $v \sqcup v' \in \ESEM{e_1 \app e_2}$.
@@ -869,7 +937,7 @@ then $B \in \ESEM{e}\Gamma$.
   \end{itemize}
 }
 
-
+\end{document}
 
 % LocalWords:  titlepage containsverbatim frametitle  Siek Taha lstlisting
 % LocalWords:  Rightarrow IU CBV Denotational SECD Landin Plotkin et
