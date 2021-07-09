@@ -298,7 +298,7 @@ Center for Programming Systems \\[2ex]
 \frame{
 \frametitle{Intersections: Type System or Semantics?}
 
-For call-by-value $\lambda$-calculus:\\
+A call-by-value $\lambda$-calculus:\\
 \ \\
 \begin{tabular}{cc}
  \fbox{
@@ -360,10 +360,10 @@ but \textbf{not Full Abstraction}: \\
 
   \hspace{1in}
   \xymatrix@=30pt{
-  \text{Scheme} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
-  \text{IR$_1$} \ar[d]^{\quad \text{\normalsize flatten}} \\
-  \text{IR$_2$} \ar[d]^{\quad \text{\normalsize select instructions}} \\
-  \text{IR$_3$} \ar[d]^{\quad \text{\normalsize register allocation}} \\
+  \text{ISWIM} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
+  \text{ISWIM$^{\dagger}$} \ar[d]^{\quad \text{\normalsize flatten}} \\
+  \text{ANF} \ar[d]^{\quad \text{\normalsize select instructions}} \\
+  \text{x86$^{*}$} \ar[d]^{\quad \text{\normalsize register allocation}} \\
   \text{x86}
   }
 }
@@ -389,16 +389,151 @@ but \textbf{not Full Abstraction}: \\
 \frametitle{Optimize: Common Subexpression Elimination}
 
 \Large
-\begin{gather*}
-  \lam{f} (f \app 5) + (f \app 5) \\
-   \Downarrow \\
-  \lam{f} \LET x = (f \app 5) \IN x + x
-\end{gather*}
+\begin{align*}
+&  \lam{f} (f \app 5) + (f \app 5) \\
+&   \Downarrow \\
+&  \lam{f} \LET x = (f \app 5) \IN x + x
+\end{align*}
 
+}
+%===============================================================================
+\frame{
+\frametitle{Goal: Correct Compilation}
+
+  \hspace{0.25in}
+  \xymatrix@=20pt{
+  \SEM{p_1} \ar@{=}[r]& \SEM{p_2}\ar@{=}[d] & \text{$p_1,p_2 \in $ ISWIM} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
+  &\SEM{p_3} \ar@{=}[d] & \text{$p_3 \in $ ISWIM$^{\dagger}$} \ar[d]^{\quad \text{\normalsize flatten}} \\
+  &\SEM{p_4} \ar@{=}[d] & \text{$p_4 \in $ ANF} \ar[d]^{\quad \text{\normalsize select instructions}} \\
+  &\SEM{p_5} \ar@{=}[d] & \text{$p_5 \in $ x86$^{*}$} \ar[d]^{\quad \text{\normalsize register allocation}} \\
+  &\SEM{p_6} & \text{$p_5 \in $ x86}
+  }
+  
 }
 
 %===============================================================================
+\frame{
+\frametitle{Challenge: the denotations of $\lambda$'s are relations}
 
+Recall the example of common subexpression elimination:
+\begin{align*}
+&  \lam{f} (f \app 5) + (f \app 5) \\
+&   \Downarrow \\
+&  \lam{f} \LET x = (f \app 5) \IN x + x
+\end{align*}
+Unfortunately
+\[
+\SEM{\lam{f} (f \app 5) + (f \app 5)} \neq \SEM{\lam{f} \LET x = (f \app 5) \IN x + x}
+\]
+because
+\begin{align*} 
+  F\mapsto 3  &\in \SEM{\lam{f} (f \app 5) + (f \app 5)} \\
+  F\mapsto 3  &\not\in \SEM{\lam{f} \LET x = (f \app 5) \IN x + x}
+\end{align*}
+where
+\[
+  F =  (5\mapsto 1) \sqcup (5\mapsto 2)
+\]
+
+}
+%===============================================================================
+\frame{
+\frametitle{Solution: restrict them to functions}
+
+Recall that if $f$ is a \textbf{function} and
+$v \mapsto w \in f$ and $v' \mapsto w' \in f$,
+then $v = v'$ implies $w = w'$.
+
+But applying that naively won't rule out:
+\begin{align*}
+& \; (0 \mapsto 1) \mapsto 2 \\
+\sqcup & \; ((0 \mapsto 1) \sqcup (5 \mapsto 6)) \mapsto 3
+\end{align*}
+
+We need to generalize the notion of equality to \textbf{consistency}.\\[1ex]
+\fbox{$v \sim v$}
+\vspace{-10pt}
+\begin{gather*}
+  \inference{}{c \sim c} \qquad
+  \inference{v \sim v' \text{ implies } w \sim w'}
+            {(v \mapsto w) \sim (v' \mapsto w')} \\[1ex]
+  \inference{u_1 \sim v & u_2 \sim v}{(u_1 \sqcup u_2) \sim v} \qquad
+  \inference{u \sim v_1 & u \sim v_2}{u \sim (v_1 \sqcup v_2)}
+\end{gather*}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Solution: restrict values to be internally consistent}
+
+\begin{gather*}
+  \inference{}{\WF{\emptyset}} \quad
+  \inference{}{\WF{c}} \quad
+  \inference{\WF{v} & \WF{w}}{\WF{v \mapsto w}} \\[2ex]
+  \inference{u \sim v & \WF{u} & \WF{v} }{\WF{u \sqcup v}}
+\end{gather*}
+
+Update the definition of $\SEM{-}$:
+\begin{align*}
+   \SEM{L~M}\rho &= \{ w \mid  \WF{v}, v\mapsto w \in \SEM{L}\rho, v\in \SEM{M}\rho \} \\
+\end{align*}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Challenge: consistency, ordering, and subformulas}
+
+We want to establish \\[2ex]
+
+\textbf{Theorem} (Determinism)\\ If $v_1 \in \SEM{e}\rho$ and $v_2
+\in \SEM{e}\rho$ , then $v_1 \sim v_2$. \\[2ex]
+
+which requires \\[2ex]
+
+\textbf{Lemma} (Consistency and Ordering)
+\begin{itemize}
+\item  If $u_1 \sim u_2$, $v_1 \sqsubseteq u_1$, and $v_2 \sqsubseteq u_2$,
+  then $v_1 \sim v_2$.
+\item If $u_1 \not\sim u_2$, $u_1 \sqsubseteq v_1$, $u_2 \sqsubseteq v_2$,
+  then $v_1 \not\sim v_2$.
+\end{itemize}
+
+\ \\
+but we get stuck on the following case for transitivity of $\sqsubseteq$ \\
+because $v$ may not be well formed even though $u$ and $w$ are.
+\[
+\inference{u \sqsubseteq v & v \sqsubseteq w}
+          {u \sqsubseteq w}
+\]
+
+}
+%===============================================================================
+\frame{
+\frametitle{Value ordering and BCD Subtyping}
+
+The value information ordering $u \sqsubseteq v$ is just the
+inverse of BCD Subtyping:
+
+\hfill\fbox{$A <: B$}
+\begin{gather*}
+\inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \\[2ex]
+\inference{}{A \& B <: A} \quad
+\inference{}{A \& B <: B} \quad
+\inference{C <: A \quad C <: B}{C <: A \& B} \\[2ex]
+\inference{C <: A \quad B <: D}{A \to B <: C \to D}
+\quad
+\inference{}{(A\to B) \& (A \to C) <: A \to (B \& C)}
+\end{gather*}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Solution: Subtyping Alternative}
+
+
+
+
+}
 %===============================================================================
 
 \frame{
