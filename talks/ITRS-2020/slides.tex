@@ -77,6 +77,7 @@
 \newcommand{\bl}[1]{{\color{blue} #1}}
 \newcommand{\rd}[1]{{\color{red} #1}}
 \newcommand{\pr}[1]{{\color{purple} #1}}
+\newcommand{\gr}[1]{{\color{darkgreen} #1}}
 \newcommand{\kw}[1]{\mathtt{#1}}
 
 \newcommand{\labels}[1]{\mathit{labels}(#1)}
@@ -366,7 +367,7 @@ but \textbf{not Full Abstraction}: \\
   \frametitle{Compilation of Functional Languages}
 
   \hspace{1in}
-  \xymatrix@=30pt{
+  \xymatrix@=20pt{
   \text{ISWIM} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
   \text{ISWIM$^{\dagger}$} \ar[d]^{\quad \text{\normalsize flatten}} \\
   \text{ANF} \ar[d]^{\quad \text{\normalsize select instructions}} \\
@@ -420,7 +421,7 @@ but \textbf{not Full Abstraction}: \\
 
 %===============================================================================
 \frame{
-\frametitle{Challenge: the denotations of $\lambda$'s are relations}
+\frametitle{Challenge: relations versus functions}
 
 Recall the example of common subexpression elimination:
 \begin{align*}
@@ -439,7 +440,7 @@ because
 \end{align*}
 where
 \[
-  F =  (5\mapsto 1) \sqcup (5\mapsto 2)
+  \rd{F =  (5\mapsto 1) \sqcup (5\mapsto 2)}
 \]
 
 }
@@ -462,8 +463,8 @@ We need to generalize the notion of equality to \textbf{consistency}.\\[1ex]
 \vspace{-10pt}
 \begin{gather*}
   \inference{}{c \sim c} \qquad
-  \inference{v \sim v' \text{ implies } w \sim w'}
-            {(v \mapsto w) \sim (v' \mapsto w')} \\[1ex]
+  \gr{\inference{v \sim v' \text{ implies } w \sim w'}
+            {(v \mapsto w) \sim (v' \mapsto w')}} \\[1ex]
   \inference{u_1 \sim v & u_2 \sim v}{(u_1 \sqcup u_2) \sim v} \qquad
   \inference{u \sim v_1 & u \sim v_2}{u \sim (v_1 \sqcup v_2)}
 \end{gather*}
@@ -477,12 +478,12 @@ We need to generalize the notion of equality to \textbf{consistency}.\\[1ex]
   \inference{}{\WF{\emptyset}} \quad
   \inference{}{\WF{c}} \quad
   \inference{\WF{v} & \WF{w}}{\WF{v \mapsto w}} \\[2ex]
-  \inference{u \sim v & \WF{u} & \WF{v} }{\WF{u \sqcup v}}
+  \inference{\gr{u \sim v} & \WF{u} & \WF{v} }{\WF{u \sqcup v}}
 \end{gather*}
 
 Update the definition of $\SEM{-}$:
 \begin{align*}
-   \SEM{L~M}\rho &= \{ w \mid  \WF{v}, v\mapsto w \in \SEM{L}\rho, v\in \SEM{M}\rho \} \\
+   \SEM{L~M}\rho &= \{ w \mid \gr{\WF{v}}, v\mapsto w \in \SEM{L}\rho, v\in \SEM{M}\rho \} \\
 \end{align*}
 
 }
@@ -505,7 +506,7 @@ then $v_1 \sim v_2$.\\
 but we get stuck on the following case for the transitivity rule of
 $\sqsubseteq$ because $v$ may not be well formed, though $u$ and $w$ are.
 \[
-\inference{u \sqsubseteq v & v \sqsubseteq w}
+\inference{u \sqsubseteq \rd{v} & \rd{v} \sqsubseteq w}
           {u \sqsubseteq w}
 \]
 
@@ -519,7 +520,7 @@ inverse of BCD Subtyping:
 
 \hfill\fbox{$A <: B$}
 \begin{gather*}
-\inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \quad \inference{}{A <: \top}\\[2ex]
+\inference{}{A <: A} \qquad \rd{\inference{A <: B \quad B <: C}{A <: C}} \quad \inference{}{A <: \top}\\[2ex]
 \inference{}{A \AND B <: A} \quad
 \inference{}{A \AND B <: B} \quad
 \inference{C <: A \quad C <: B}{C <: A \AND B} \\[2ex]
@@ -531,10 +532,10 @@ inverse of BCD Subtyping:
 }
 %===============================================================================
 \frame{
-\frametitle{Solution: Subtyping Alternative}
+\frametitle{Solution: Alternative Formulation}
 
 Laurent removes the transitivity rule and turns the $\beta$-soundness
-property into a rule in a sequent-style subtyping system (ITRS 2018).
+property into a rule in a sequent-style system (ITRS 2018).
 \[
    \inference{A \vdash C_1 \cdots A \vdash C_n
          &
@@ -545,19 +546,193 @@ property into a rule in a sequent-style subtyping system (ITRS 2018).
 But the sequents aren't necessary (Siek 2019). We can instead replace
 the standard function subtyping rule with the following.
 \[
-\inference{\mathsf{graph}(B) \subseteq \mathsf{graph}(A) \\
-           C <: \mathsf{dom}(B) & \mathsf{cod}(B) <: D}
+\inference{C <: \mathsf{dom}(B) & \mathsf{cod}(B) <: D}
           {A <: C \to D}
+          {\small \mathsf{graph}(B) \subseteq \mathsf{graph}(A)}
 \]
 where
-\begin{align*}
-  \mathsf{dom}(A \to B) &= A \\
-  \mathsf{dom}(A \AND B) &= \mathsf{dom}(A) \AND \mathsf{dom}(B) 
-\end{align*}
+\[
+  \mathsf{dom}(A \to B) = A, \qquad
+  \mathsf{dom}(A \AND B) = \mathsf{dom}(A) \AND \mathsf{dom}(B) 
+\]
 and similarly for $\mathsf{cod}$.
 
 }
 %===============================================================================
+\frame{
+\frametitle{Solution: Yet Another Formulation}
+
+Huang, Zhao, and Oliveira (2021) \\[1ex]
+
+Splitting \fbox{$B \triangleleft A \triangleright C$}
+\[
+\inference{}{A \triangleleft (A \AND B) \triangleright B}
+\qquad
+\inference{C \triangleleft B \triangleright D}
+          {(A \to C) \triangleleft (A \to B) \triangleright (A \to D)}
+\]
+
+Unsplittable (aka. Ordinary)
+\[
+   \overline{A} ::= \top \mid A \to \overline{A}
+\]
+
+Subtyping
+\begin{gather*}
+  \inference{A <: B & A <: C}            
+            {A <: D} \small{B \triangleleft D \triangleright C} \\[2ex]
+   \quad
+  \inference{A <: \overline{C}}  
+            {A \AND B <: \overline{C}}
+  \quad
+  \inference{B <: \overline{C}}
+            {A \AND B <: \overline{C}}
+  \quad
+  \inference{B <: A & C <: \overline{D}}
+            {A \to C <: B \to \overline{D}}
+\end{gather*}
+}  
+%===============================================================================
+\frame{
+  \frametitle{Challenge: Repetative Metatheory!}
+
+  \hspace{1in}
+  \xymatrix@=20pt{
+  \text{ISWIM} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
+  \text{ISWIM$^{\dagger}$} \ar[d]^{\quad \text{\normalsize flatten}} \\
+  \text{ANF} \ar[d]^{\quad \text{\normalsize select instructions}} \\
+  \text{x86$^{*}$} \ar[d]^{\quad \text{\normalsize register allocation}} \\
+  \text{x86}
+  }
+  
+}
+%===============================================================================
+\frame[containsverbatim]{
+  \frametitle{Solution: Abstract Binding Trees}
+
+  Adapt Harper's abstraction binding trees to Agda.\\
+  A generic AST that knows about variable binding and
+  is parameterized on the operators and their number of bindings.
+  
+  \begin{lstlisting}[basicstyle=\small,language=Haskell]
+  module AbstractBindingTree (Op : Set) (sig: Op $\to$ List $\mathbb{N}$) where
+    data ABT : Set where
+      var : $\mathbb{N}$ $\to$ ABT
+      apply : (op : Op) $\to$ Args (sig op) $\to$ ABT
+
+    data Args where
+      nil : Args []
+      cons : $\forall${b bs} $\to$ Arg b $\to$ Args bs $\to$ Args (b :: bs)  
+
+    data Arg : $\mathbb{N}$ $\to$ Set where
+      ast : ABT $\to$ Arg 0
+      bind : $\forall${b} $\to$ Arg b $\to$ Arg (suc b)
+  \end{lstlisting}
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Generic Theorems about ABT's}
+
+\textbf{Theorem} (Substitution Commutes with Itself)\ \\
+  For any ABT's $M,L,N$ of the same \textsf{Op} and \textsf{sig},
+\begin{gather*}
+  M[ x:= N ][ y := L ] = M[ y:= L][ x := N[y := L] ] \qquad \text{if }x \neq y
+%  \sigma (M[x := N]) = \sigma(M)[x := \sigma(N)] \qquad \text{if } x \notin \mathrm{dom}(\sigma)
+\end{gather*}
+
+\ \\
+
+\textbf{Theorem} (Substitution Commutes with Semantics) \\
+%
+For any semantics $\SEM{-}$, environment $\rho$, and ABT $M$,
+\[
+\SEM{M[x := N]} \rho = \SEM{M} \rho(x := \SEM{N}\rho)
+\]
+
+\footnote{Inspired by Allais, Atkey, Chapman, McBride, McKinna (ICFP 2018).}
+
+}
+%===============================================================================
+\frame{
+\frametitle{Graph Models vs. Filter Models}
+
+Graph Model:
+\[
+\SEM{-} : \mathbb{E} \to (\mathbb{X} \to \rd{\SET{\mathbb{V}}}) \to \SET{\mathbb{V}}
+\]
+\[
+\SEM{M[x := N]} \rho = \SEM{M} \rho(x := \SEM{N}\rho)
+\]
+
+Filter Model:
+\[
+\SEM{-} : \mathbb{E} \to (\mathbb{X} \to \rd{\mathbb{V}}) \to \SET{\mathbb{V}}
+\]
+\[
+\SEM{M[x := N]} \rho = \bigcup_{v \in \SEM{N}\rho} \SEM{M} \rho(x := v)
+\]
+
+We've been using filter models, but the graph models are a better fit
+for the generic theorems about ABTs.
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Graph Models vs. Filter Models}
+\begin{center}
+  Comparison of the semantic functions
+\end{center}
+\begin{tabular}{cc}
+ \fbox{
+ \begin{minipage}{0.45\textwidth}
+   \footnotesize
+    \begin{align*}
+   \SEM{-} &: \mathbb{E} \to (\mathbb{X} \to \rd{\SET{\mathbb{V}}}) \to \SET{\mathbb{V}}\\[1ex]
+   \SEM{x}\rho &= \rd{\rho(x)} \\
+   \SEM{L~M}\rho &= \{ w \mid  v\mapsto w \in \SEM{L}\rho,  \\
+     & \qquad\quad\;\; v\in \SEM{M}\rho \} \\
+   \SEM{\lambda x. N}\rho &= \{ w \mid \forall u {\mapsto} v \in \mathsf{graph}(w), \\
+   & \qquad\quad\;\; v \in \SEM{N}\rho(x{:=}\rd{\downarrow u})\} 
+ \end{align*}
+ \end{minipage}}
+  &
+  \fbox{
+    \begin{minipage}{0.45\textwidth}
+   \footnotesize
+    \begin{align*}
+   \SEM{-} &: \mathbb{E} \to (\mathbb{X} \to \rd{\mathbb{V}}) \to \SET{\mathbb{V}}\\[1ex]
+   \SEM{x}\rho &= \rd{\downarrow \rho(x)} \\
+   \SEM{L~M}\rho &= \{ w \mid  v\mapsto w \in \SEM{L}\rho,  \\
+     & \qquad\quad\;\; v\in \SEM{M}\rho \} \\
+   \SEM{\lambda x. N}\rho &= \{ w \mid \forall u {\mapsto} v \in \mathsf{graph}(w), \\
+   & \qquad\quad\;\; v \in \SEM{N}\rho(x{:=}\rd{u})\} 
+ \end{align*}
+\end{minipage}
+}
+\end{tabular} \\
+\ \\
+where
+\[
+\downarrow u = \{ v \mid v \sqsubseteq u \}
+\]
+
+}
+%===============================================================================
+\frame{
+  \frametitle{Conclusion}
+
+  \begin{itemize}
+  \item Intersection types make great denotational semantics.
+  \item Compilation correctness is a challenging application.  We still
+    have a long ways to go to put all these pieces together.
+  \item Generic syntax and metatheory may help us
+    manage the complexity.
+  \end{itemize}
+}
+%===============================================================================
+
+\end{document}
 
 \frame{
 \frametitle{Tabulating Functions}
