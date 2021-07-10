@@ -32,7 +32,8 @@
   \setlist{itemsep=1ex}
 
 
-
+\setbeamersize{text margin left=3mm,text margin right=15mm}
+  
 \newcommand{\Gbox}[1]{\colorbox{lightgray}{#1}}
 \newcommand{\Rbox}[1]{\colorbox{pink}{#1}}
 
@@ -155,6 +156,7 @@
 \newcommand{\case}[3]{\key{case}\,#1\,\key{of}\,\key{inl}\,x\Rightarrow\,#2\,| \,\key{inr}\,x\Rightarrow \,#3}
 \newcommand{\join}[2]{#1 \sqcup #2 }
 \newcommand{\meet}[2]{#1 \sqcap #2 }
+\newcommand{\AND}{\cap}
 
 \newcommand{\EE}[2]{\mathcal{E}\llbracket #1 \rrbracket #2}
 \newcommand{\FF}[3]{\mathcal{F}(#1, #2, #3)}
@@ -305,7 +307,7 @@ A call-by-value $\lambda$-calculus:\\
  \begin{minipage}{0.45\textwidth}
    \footnotesize
 \begin{gather*}
-  A ::= \bot \mid A \& A \mid A \to A\\[2ex]
+  A ::= \top \mid A \AND A \mid A \to A\\[2ex]
 %  \inference{}{\Gamma \vdash c : \Delta(c)}\\[1ex]
   \inference{x : A \in \Gamma & A <: B}{\Gamma \vdash x : B} \\[1ex]
   \inference{\Gamma \vdash L : A \to B & \Gamma \vdash M : A}
@@ -313,9 +315,9 @@ A call-by-value $\lambda$-calculus:\\
   \inference{\Gamma, x : A \vdash N : B}
             {\Gamma \vdash \lambda x.N : A \to B} \\[1ex]
   \inference{\Gamma \vdash \lambda x.N : A & \Gamma \vdash \lambda x.N : B}
-            {\Gamma \vdash \lambda x.N : A \& B} \\[1ex]
+            {\Gamma \vdash \lambda x.N : A \AND B} \\[1ex]
   \inference{}
-            {\Gamma \vdash \lambda x.N : \bot}
+            {\Gamma \vdash \lambda x.N : \top}
   %% \inference{\Gamma \vdash M : A & A <: B}
   %%           {\Gamma \vdash M : B}
 \end{gather*}
@@ -331,11 +333,16 @@ A call-by-value $\lambda$-calculus:\\
    \SEM{x}\rho &= \{ v \mid v \sqsubseteq \rho(x) \} \\
    \SEM{L~M}\rho &= \{ w \mid  v\mapsto w \in \SEM{L}\rho,  \\
      & \qquad\quad\;\; v\in \SEM{M}\rho \} \\
-   \SEM{\lambda x. N}\rho &= \{ t \mid \forall v_1 \mapsto v_2 \in t, \\
-     & \qquad\quad\;\; v_2 \in \SEM{N}\rho(x{:=}v_1)\} 
+   \SEM{\lambda x. N}\rho &= \{ v_3 \mid \forall v_1 {\mapsto} v_2 \in \mathsf{graph}(v_3), \\
+   & \qquad\quad\;\; v_2 \in \SEM{N}\rho(x{:=}v_1)\} 
  \end{align*}
-  \end{minipage}
-  }
+\begin{align*}    
+   \mathsf{graph}(\emptyset) &= \emptyset \\
+   \mathsf{graph}(v \mapsto w) &= \{ v \mapsto w \} \\
+   \mathsf{graph}(u \sqcup v) &= \mathsf{graph}(u) \cup \mathsf{graph}(v) 
+\end{align*}
+\end{minipage}
+}
 \end{tabular}
 
 }
@@ -490,17 +497,13 @@ We want to establish \\[2ex]
 
 which requires \\[2ex]
 
-\textbf{Lemma} (Consistency and Ordering)
-\begin{itemize}
-\item  If $u_1 \sim u_2$, $v_1 \sqsubseteq u_1$, and $v_2 \sqsubseteq u_2$,
-  then $v_1 \sim v_2$.
-\item If $u_1 \not\sim u_2$, $u_1 \sqsubseteq v_1$, $u_2 \sqsubseteq v_2$,
-  then $v_1 \not\sim v_2$.
-\end{itemize}
-
+\textbf{Lemma} (Consistency is Downward Closed) \\
+If $u_1 \sim u_2$, $v_1 \sqsubseteq u_1$, and $v_2 \sqsubseteq u_2$,
+then $v_1 \sim v_2$.\\
 \ \\
-but we get stuck on the following case for transitivity of $\sqsubseteq$ \\
-because $v$ may not be well formed even though $u$ and $w$ are.
+%
+but we get stuck on the following case for the transitivity rule of
+$\sqsubseteq$ because $v$ may not be well formed, though $u$ and $w$ are.
 \[
 \inference{u \sqsubseteq v & v \sqsubseteq w}
           {u \sqsubseteq w}
@@ -516,13 +519,13 @@ inverse of BCD Subtyping:
 
 \hfill\fbox{$A <: B$}
 \begin{gather*}
-\inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \\[2ex]
-\inference{}{A \& B <: A} \quad
-\inference{}{A \& B <: B} \quad
-\inference{C <: A \quad C <: B}{C <: A \& B} \\[2ex]
+\inference{}{A <: A} \qquad \inference{A <: B \quad B <: C}{A <: C} \quad \inference{}{A <: \top}\\[2ex]
+\inference{}{A \AND B <: A} \quad
+\inference{}{A \AND B <: B} \quad
+\inference{C <: A \quad C <: B}{C <: A \AND B} \\[2ex]
 \inference{C <: A \quad B <: D}{A \to B <: C \to D}
 \quad
-\inference{}{(A\to B) \& (A \to C) <: A \to (B \& C)}
+\inference{}{(A\to B) \AND (A \to C) <: A \to (B \AND C)}
 \end{gather*}
 
 }
@@ -530,8 +533,28 @@ inverse of BCD Subtyping:
 \frame{
 \frametitle{Solution: Subtyping Alternative}
 
+Laurent removes the transitivity rule and turns the $\beta$-soundness
+property into a rule in a sequent-style subtyping system (ITRS 2018).
+\[
+   \inference{A \vdash C_1 \cdots A \vdash C_n
+         &
+         D_1, \ldots, D_n \vdash B}
+        {C_1\to D_1,\ldots, C_n\to D_n \vdash A \to B}
+\]
 
-
+But the sequents aren't necessary (Siek 2019). We can instead replace
+the standard function subtyping rule with the following.
+\[
+\inference{\mathsf{graph}(B) \subseteq \mathsf{graph}(A) \\
+           C <: \mathsf{dom}(B) & \mathsf{cod}(B) <: D}
+          {A <: C \to D}
+\]
+where
+\begin{align*}
+  \mathsf{dom}(A \to B) &= A \\
+  \mathsf{dom}(A \AND B) &= \mathsf{dom}(A) \AND \mathsf{dom}(B) 
+\end{align*}
+and similarly for $\mathsf{cod}$.
 
 }
 %===============================================================================
