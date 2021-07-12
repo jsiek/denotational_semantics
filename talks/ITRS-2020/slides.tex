@@ -32,7 +32,7 @@
   \setlist{itemsep=1ex}
 
 
-\setbeamersize{text margin left=3mm,text margin right=15mm}
+\setbeamersize{text margin left=5mm,text margin right=5mm}
   
 \newcommand{\Gbox}[1]{\colorbox{lightgray}{#1}}
 \newcommand{\Rbox}[1]{\colorbox{pink}{#1}}
@@ -251,7 +251,7 @@ moredelim=[is][\color{blue}]{~}{~},
 %\garamond
 
 \title{Filter Models for Compiler Correctness}
-\author{Jeremy G. Siek \\[1ex]
+\author{Jeremy G. Siek \and Matthew Heimerdinger \\[1ex]
  Indiana University, Bloomington
 }
 \date{}
@@ -270,15 +270,15 @@ moredelim=[is][\color{blue}]{~}{~},
 \frame{
 
 %% \begin{tabular}{ll} 
-%% \begin{minipage}{0.45\textwidth}
+%\begin{minipage}{0.95\textwidth}
 \centering
-\large Filter Models for Compiler Correctness \\[2ex]
-\normalsize Jeremy G. Siek \\
+{\LARGE Filter Models for Compiler Correctness} \\[6ex]
+\normalsize Jeremy G. Siek \qquad Matthew Heimerdinger \\
 Indiana University\\
 Center for Programming Systems \\[2ex]
 10th Workshop on Intersection Types and Related Systems \\
 17 July 2021
-%% \end{minipage}
+%\end{minipage}
 %% &
 %% \begin{minipage}{0.45\textwidth}
 %% \includegraphics[height=3in]{btf}
@@ -292,7 +292,7 @@ Center for Programming Systems \\[2ex]
 
   \begin{itemize}
   \item Intersections: Type System or Semantics?
-  \item Compilation of Functional Languages
+  \item Compilation of a Functional Language
   \item Challenges and Solutions
   \end{itemize}
 
@@ -301,11 +301,11 @@ Center for Programming Systems \\[2ex]
 \frame{
 \frametitle{Intersections: Type System or Semantics?}
 
-A call-by-value $\lambda$-calculus:\\
 \ \\
+A call-by-value $\lambda$-calculus:\\
 \begin{tabular}{cc}
  \fbox{
- \begin{minipage}{0.45\textwidth}
+ \begin{minipage}{0.41\textwidth}
    \footnotesize
 \begin{gather*}
   A ::= \top \mid A \AND A \mid A \to A\\[2ex]
@@ -328,14 +328,14 @@ A call-by-value $\lambda$-calculus:\\
     \begin{minipage}{0.45\textwidth}
    \footnotesize
     \begin{align*}
-      v & ::= \emptyset \mid v \sqcup v \mid v \mapsto v  \\[2ex]
+   \mathbb{V} \ni u,v,w & ::= \emptyset \mid u \sqcup v \mid v \mapsto w  \\[2ex]
    \SEM{-} &: \mathbb{E} \to (\mathbb{X} \to \mathbb{V}) \to \SET{\mathbb{V}}\\[1ex]
 %   \SEM{c}\rho &= \Delta\SEM{c} \\
    \SEM{x}\rho &= \{ v \mid v \sqsubseteq \rho(x) \} \\
    \SEM{L~M}\rho &= \{ w \mid  v\mapsto w \in \SEM{L}\rho,  \\
      & \qquad\quad\;\; v\in \SEM{M}\rho \} \\
-   \SEM{\lambda x. N}\rho &= \{ v_3 \mid \forall v_1 {\mapsto} v_2 \in \mathsf{graph}(v_3), \\
-   & \qquad\quad\;\; v_2 \in \SEM{N}\rho(x{:=}v_1)\} 
+   \SEM{\lambda x. N}\rho &= \{ u \mid \forall v {\mapsto} w \in \mathsf{graph}(u), \\
+   & \qquad\quad\;\; w \in \SEM{N}\rho(x{:=}v)\} 
  \end{align*}
 \begin{align*}    
    \mathsf{graph}(\emptyset) &= \emptyset \\
@@ -364,7 +364,7 @@ but \textbf{not Full Abstraction}: \\
 }
 %===============================================================================
 \frame{
-  \frametitle{Compilation of Functional Languages}
+  \frametitle{Compilation of a Functional Language}
 
   \hspace{1in}
   \xymatrix@=20pt{
@@ -385,10 +385,10 @@ but \textbf{not Full Abstraction}: \\
 &\LET f = \lambda z.~ x + y + z \IN \\
 &f \app w \\
 & \Downarrow \\
-& \mathbf{fun}~ g(v, z) = v[0] + v[1] + z \\
+& \mathbf{fun}~ g(v, z) = \mathsf{fst}\, v + \mathsf{snd}\, v + z \\
 &\LET w = 5, x = 3, y = 3 \IN \\
 &\LET f = \langle g, \langle x , y \rangle \rangle \IN \\
-&f[0] \app f[1]\app w
+&(\mathsf{fst}\, f) \app (\mathsf{snd}\, f) \app w
 \end{align*}
 
 }
@@ -423,7 +423,7 @@ but \textbf{not Full Abstraction}: \\
 \frame{
 \frametitle{Challenge: relations versus functions}
 
-Recall the example of common subexpression elimination:
+Common subexpression elimination:
 \begin{align*}
 &  \lam{f} (f \app 5) + (f \app 5) \\
 &   \Downarrow \\
@@ -560,7 +560,24 @@ and similarly for $\mathsf{cod}$.
 }
 %===============================================================================
 \frame{
-\frametitle{Solution: Yet Another Formulation}
+\frametitle{Properties of the Filter Model}
+
+\begin{itemize}
+\item If $\rho_1 \sqsubseteq \rho_2$, then $\SEM{M}\rho_1 \subseteq
+  \SEM{M}\rho_2$.
+\item If $v \in \SEM{M}\rho$ and $w \sqsubseteq v$,
+  then $w \in \SEM{M}\rho$.
+\item If $v_1 \in \SEM{M}\rho$ and $v_2 \in \SEM{M}\rho$, then $v_1
+  \sim v_2$.
+\item If $v_1 \in \SEM{M}\rho$ and $v_2 \in \SEM{M}\rho$, then $v_1
+  \sqcup v_2 \in \SEM{M}\rho$.
+\end{itemize}
+
+
+}
+%===============================================================================
+\frame{
+\frametitle{Solution: Another Formulation}
 
 Huang, Zhao, and Oliveira (2021) \\[1ex]
 
@@ -631,6 +648,13 @@ Subtyping
 
 }
 %===============================================================================
+\frame[containsverbatim]{
+  \frametitle{Example ABT for ISWIM}
+
+  TODO
+  
+}
+%===============================================================================
 \frame{
   \frametitle{Generic Theorems about ABT's}
 
@@ -683,9 +707,8 @@ for the generic theorems about ABTs.
 \begin{center}
   Comparison of the semantic functions
 \end{center}
-\begin{tabular}{cc}
  \fbox{
- \begin{minipage}{0.45\textwidth}
+ \begin{minipage}{0.40\textwidth}
    \footnotesize
     \begin{align*}
    \SEM{-} &: \mathbb{E} \to (\mathbb{X} \to \rd{\SET{\mathbb{V}}}) \to \SET{\mathbb{V}}\\[1ex]
@@ -696,9 +719,9 @@ for the generic theorems about ABTs.
    & \qquad\quad\;\; v \in \SEM{N}\rho(x{:=}\rd{\downarrow u})\} 
  \end{align*}
  \end{minipage}}
-  &
+%
   \fbox{
-    \begin{minipage}{0.45\textwidth}
+    \begin{minipage}{0.40\textwidth}
    \footnotesize
     \begin{align*}
    \SEM{-} &: \mathbb{E} \to (\mathbb{X} \to \rd{\mathbb{V}}) \to \SET{\mathbb{V}}\\[1ex]
@@ -708,10 +731,8 @@ for the generic theorems about ABTs.
    \SEM{\lambda x. N}\rho &= \{ w \mid \forall u {\mapsto} v \in \mathsf{graph}(w), \\
    & \qquad\quad\;\; v \in \SEM{N}\rho(x{:=}\rd{u})\} 
  \end{align*}
-\end{minipage}
-}
-\end{tabular} \\
-\ \\
+\end{minipage}}
+\\[2ex]
 where
 \[
 \downarrow u = \{ v \mid v \sqsubseteq u \}
@@ -720,15 +741,51 @@ where
 }
 %===============================================================================
 \frame{
+\frametitle{Challenge: Intrinsic Difficulties}
+
+We factor closure conversion into the following steps: \\[2ex]
+
+\hspace{0.5in}
+\begin{minipage}{0.25\textwidth}
+\xymatrix@=20pt{
+  \text{ISWIM} \ar[d]^{\quad \text{\normalsize enclose}} \\
+  \text{ISWIM$_1$} \ar[d]^{\quad \text{\normalsize compress}} \\
+  \text{ISWIM$_2$} \ar[d]^{\quad \text{\normalsize \rd{delay}}} \\
+  \text{ISWIM$_3$} \ar[d]^{\quad \text{\normalsize concretize}} \\
+  \text{ISWIM$_4$} \ar[d]^{\quad \text{\normalsize hoist}} \\
+  \text{ISWIM$^\dagger$}
+}
+\end{minipage}
+\hspace{0.1in}
+\begin{minipage}{0.5\textwidth}
+\begin{align*}
+&\LET w = 5, x = 3, y = 3 \IN \\
+&\LET f = (\lambda x y, z.~ x + y + z)\rd{@}\langle x,y\rangle \IN \\
+&f \app w \\
+& \Downarrow \\
+&\LET w = 5, x = 3, y = 3 \IN \\
+&\LET f = \langle (\lambda x y, z.~ x + y + z), \langle x , y \rangle \rangle \IN \\
+&(\mathsf{fst}\app f) \rd{@} (\mathsf{snd}\app f) \app w
+\end{align*}
+
+Our proof of correctness using \\
+logical relations is still in progress.
+\end{minipage}
+
+}
+%===============================================================================
+\frame{
   \frametitle{Conclusion}
 
   \begin{itemize}
-  \item Intersection types make great denotational semantics.
-  \item Compilation correctness is a challenging application.  We still
-    have a long ways to go to put all these pieces together.
-  \item Generic syntax and metatheory may help us
-    manage the complexity.
+  \item Intersection types make for a denotational semantics
+    that is relatively easy to mechanize.
+  \item Compilation correctness is a challenging application. We've
+    made progress but still have a ways to go.
+  \item Generic syntax and metatheory is helping us manage the
+    complexity.
   \end{itemize}
+
 }
 %===============================================================================
 
