@@ -246,7 +246,7 @@ moredelim=[is][\color{red}]{|}{|},
 moredelim=[is][\color{blue}]{~}{~},
 %commentstyle=\rmfamily,%
 morekeywords={module,data,where,open},%
-deletekeywords={List,const}
+deletekeywords={List,const,map,Functor}
 }
 \lstset{style=basic}
 
@@ -294,7 +294,7 @@ Center for Programming Systems \\[2ex]
 
   \begin{itemize}
   \item Intersections: Type System or Semantics?
-  \item Compilation of a Functional Language
+  \item Compiling a Functional Language
   \item Challenges and Solutions
     \begin{itemize}
     \item Relations versus functions
@@ -373,7 +373,7 @@ That's OK, we don't need that direction.
 }
 %===============================================================================
 \frame{
-  \frametitle{Compilation of a Functional Language}
+  \frametitle{Compiling a Functional Language}
 
   \hspace{1in}
   \xymatrix@=20pt{
@@ -394,9 +394,9 @@ That's OK, we don't need that direction.
 &\LET f = \lambda z.~ \rd{x} + \rd{y} + z \IN \\
 &f \app w \\
 & \Downarrow \\
-& \mathbf{fun}~ g\,\rd{v \, z} = \rd{\mathsf{fst}\,v} + \rd{\mathsf{snd}\,v} + z \\
+& \mathbf{fun}~ lam\,\rd{v \, z} = \rd{\mathsf{fst}\,v} + \rd{\mathsf{snd}\,v} + z \\
 &\LET w = 5, x = 3, y = 3 \IN \\
-&\LET f = \rd{\langle g, \langle x , y \rangle \rangle} \IN \\
+&\LET f = \rd{\langle lam, \langle x , y \rangle \rangle} \IN \\
 &\rd{(\mathsf{fst}\,f) \app (\mathsf{snd}\,f)} \app w
 \end{align*}
 
@@ -620,23 +620,37 @@ Subtyping
 \end{gather*}
 }  
 %===============================================================================
-\frame[containsverbatim]{
+\frame{
 \frametitle{Challenge: Mechanizing Variables and Substitution}
 
-\ \\
-We use McBride's approach to de Bruijn indices. \\
+Since the POPLmark challenge in 2005, researchers have explored many
+approaches: \\[2ex]
+
+\begin{itemize}
+\item names
+\item de Bruijn indices
+\item locally nameless
+\item nominal logic
+\item higher-order abstract syntax
+\item parameterized higher-order abstract syntax
+\end{itemize}
+
+}
+%===============================================================================
+\frame[containsverbatim]{
+\frametitle{Solution: McBride's approach to de Bruijn indices}
 
 \begin{lstlisting}
-$(a \bullet f) \app 0 = a$
-$(a \bullet f) \app (suc\app n) = f \app n$
+(a $\bullet$ f) 0 = a         $\hspace{1.5in}\rho : \mathbb{N} \to \mathbb{N}$
+(a $\bullet$ f) (suc n) = f n $\hspace{0.8in}\sigma : \mathbb{N} \to \mathbb{E}$
   
-$\Uparrow \rho$ = $\lambda x.\, suc \app (\rho \app x)$
+$\Uparrow$ $\rho$ x = suc ($\rho$ x)
   
 rename $\rho$ x = $\rho$ x
 rename $\rho$ ($\lambda$ N) = $\lambda$ (rename (0 $\bullet$ $\Uparrow \rho$) N)
 rename $\rho$ (L $\cdot$ M) = (rename $\rho$ L) $\cdot$ (rename $\rho$ M)
 
-$\Uparrow \sigma$ = $\lambda x.\,$rename suc $(\sigma \app x)$
+$\Uparrow$ $\sigma$ x = rename suc ($\sigma$ x)
 
 subst $\sigma$ x =  $\sigma$ x
 subst $\sigma$ ($\lambda$ N) = $\lambda$ (subst (0 $\bullet$ $\Uparrow \sigma$) N)
@@ -646,8 +660,11 @@ subst $\sigma$ (L $\cdot$ M) =  (subst $\sigma$ L) $\cdot$ (subst $\sigma$ M)
 }
 %===============================================================================
 \frame{
-  \frametitle{Challenge: Repetative Metatheory!}
+  \frametitle{Challenge: Repetative Meta-theory!}
 
+  We need to prove properties about all of these languages: \\
+  \ \\ 
+  
   \hspace{1in}
   \xymatrix@=20pt{
   \text{ISWIM} \ar[d]^{\quad \text{\normalsize closure conversion}} \ar@(ul,ur)[]^{\quad \text{\normalsize optimize}}\\
@@ -792,6 +809,74 @@ where
 
 }
 %===============================================================================
+\frame[containsverbatim]{
+\frametitle{Graph Model: Application (F) and Abstraction (G)}
+
+\footnotesize
+\begin{align*}
+  \SEM{x}\rho &= \rho(x) \\
+  \SEM{L~M}\rho &= \gr{\{ w \mid  v\mapsto w \in \rd{\SEM{L}\rho}, v\in \rd{\SEM{M}\rho} \}} \\
+  \SEM{\lambda x. N}\rho &= \gr{\{ w \mid \forall u {\mapsto} v \in \mathsf{graph}(w), v \in \rd{\SEM{N}\rho(x{:=}\gr{\downarrow u})}\} }
+\end{align*}
+
+\begin{align*}
+  \gr{F} &: \mathcal{P}(\mathbb{V}) \to (\mathcal{P}(\mathbb{V}) \to \mathcal{P}(\mathbb{V})) \\
+  \gr{F}\app \rd{d_1} \app \rd{d_2} &= \gr{\{ w \mid  v\mapsto w \in \rd{d_1}, v\in \rd{d_2} \}} \\[2ex]
+  \gr{G} &: (\mathcal{P}(\mathbb{V}) \to \mathcal{P}(\mathbb{V})) \to \mathcal{P}(\mathbb{V})\\
+  \gr{G} \app \rd{f} & = \gr{\{ w \mid \forall u \mapsto v \in \mathsf{graph}(w), v \in \rd{f}(\downarrow u) \} }
+\end{align*}
+
+\begin{align*}
+  \SEM{x}\rho &= \rho(x) \\
+  \SEM{L~M}\rho &= \gr{F} \app \SEM{L}\rho \app \SEM{M}\rho \\
+  \SEM{\lambda x. N}\rho &= \gr{G} \app (\lambda d. \SEM{N}\rho(x{:=}d))
+\end{align*}
+
+}
+
+%===============================================================================
+\frame[containsverbatim]{
+\frametitle{Maps and Folds on ABTs}
+
+\begin{lstlisting}[basicstyle=\small]
+map : $\forall$ V. ($\mathbb{X}$ $\to$ V) $\to$ ABT $\to$ ABT
+   ($V$ is equiped with $\lceil - \rceil$ : V $\to$ ABT)
+rename = map $\mathbb{N}$
+subst = map ABT
+
+fold : $\forall$ V. Func V $\to$ V $\to$ ($\mathbb{X} \to V$) $\to$ ABT $\to$ V
+  where
+  Func V = (op : Op) $\to$ Tuple (sig op) (ArgTy V) $\to$ V
+  
+  ArgTy V 0 = V
+  ArgTy V (suc n) = V $\to$ ArgTy V n
+
+sem : Func $\mathcal{P}(\mathbb{V})$
+sem app = $\gr{F}$
+sem lam = $\gr{G}$
+$\SEM{M}\rho$ = fold sem $\emptyset$ $\rho$ $M$
+\end{lstlisting}
+ 
+}
+%===============================================================================
+\frame[containsverbatim]{
+\frametitle{Properties of Maps and Folds}
+
+map-map fusion:
+\[
+\mathtt{map}\app f_2\app (\mathtt{map}\app f_1\app M)
+ = \mathtt{map} \app (f_2 \circ f_1) \app M
+\]
+
+fold-map fusion:
+\[
+\mathtt{fold} \app f_2 \app d \app \delta \app (\mathsf{map} \app f_1\app M)
+= \mathtt{fold} \app f_2 \app d \app
+   (\lambda x. \mathtt{fold}\app f_2\app d\app \delta\app \lceil f_1 \app x \rceil)) \app M
+\]
+
+}
+%===============================================================================
 \frame{
 \frametitle{Challenge: Intrinsic Difficulties}
 
@@ -810,6 +895,7 @@ We factor closure conversion into the following steps: \\[2ex]
 \end{minipage}
 \hspace{0.1in}
 \begin{minipage}{0.5\textwidth}
+  delay:
 \begin{align*}
 &\LET w = 5, x = 3, y = 3 \IN \\
 &\LET f = (\lambda x y, z.~ x + y + z)\rd{@}\langle x,y\rangle \IN \\
