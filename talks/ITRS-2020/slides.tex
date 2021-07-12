@@ -13,6 +13,7 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
+%\usepackage{revsymb}
 \usepackage{semantic}
 \usepackage[all]{xy}
 \usepackage{color}
@@ -22,6 +23,7 @@
 \usepackage{rotating}
 \usepackage{wasysym}
 \usepackage{ulem}
+%\usepackage{txfonts}
 
 \definecolor{darkgreen}{rgb}{0.0, 0.6, 0.3}
 
@@ -229,7 +231,7 @@
 
 \lstdefinestyle{basic}{
 %showstringspaces=false,
-language=Python,
+language=Haskell,
 columns=fullflexible,
 %basicstyle=\sffamily\small,%
 basicstyle=\ttfamily,%
@@ -237,14 +239,14 @@ basicstyle=\ttfamily,%
 %basewidth=0.49em,
 %lineskip=0pt,
 %escapechar=@,xleftmargin=1pc,%
-keywordstyle=\ttfamily,
+%keywordstyle=\ttfamily,
 mathescape=true,%
 moredelim=**[is][\color{blue}]{@}{@},
 moredelim=[is][\color{red}]{|}{|},
 moredelim=[is][\color{blue}]{~}{~},
 %commentstyle=\rmfamily,%
-%morekeywords={return,fix,var,proc,fun,func},%
-%deletekeywords={int,bool}
+morekeywords={module,data,where,open},%
+deletekeywords={List,const}
 }
 \lstset{style=basic}
 
@@ -294,6 +296,13 @@ Center for Programming Systems \\[2ex]
   \item Intersections: Type System or Semantics?
   \item Compilation of a Functional Language
   \item Challenges and Solutions
+    \begin{itemize}
+    \item Relations versus functions
+    \item Subtyping and transitivity
+    \item Mechanizing Variables and Substitusion
+    \item Language-generic meta-theory
+    \item Intrinsic difficulties
+    \end{itemize}
   \end{itemize}
 
 }
@@ -303,9 +312,9 @@ Center for Programming Systems \\[2ex]
 
 \ \\
 A call-by-value $\lambda$-calculus:\\
-\begin{tabular}{cc}
+%\begin{tabular}{cc}
  \fbox{
- \begin{minipage}{0.41\textwidth}
+ \begin{minipage}{0.4\textwidth}
    \footnotesize
 \begin{gather*}
   A ::= \top \mid A \AND A \mid A \to A\\[2ex]
@@ -315,7 +324,7 @@ A call-by-value $\lambda$-calculus:\\
             {\Gamma \vdash L ~ M : B} \\[1ex]
   \inference{\Gamma, x : A \vdash N : B}
             {\Gamma \vdash \lambda x.N : A \to B} \\[1ex]
-  \inference{\Gamma \vdash \lambda x.N : A & \Gamma \vdash \lambda x.N : B}
+  \inference{\Gamma \vdash \lambda x.N : A \quad \Gamma \vdash \lambda x.N : B}
             {\Gamma \vdash \lambda x.N : A \AND B} \\[1ex]
   \inference{}
             {\Gamma \vdash \lambda x.N : \top}
@@ -323,9 +332,9 @@ A call-by-value $\lambda$-calculus:\\
   %%           {\Gamma \vdash M : B}
 \end{gather*}
  \end{minipage}}
-  &
+   $\simeq\,$%
   \fbox{
-    \begin{minipage}{0.45\textwidth}
+    \begin{minipage}{0.30\textwidth}
    \footnotesize
     \begin{align*}
    \mathbb{V} \ni u,v,w & ::= \emptyset \mid u \sqcup v \mid v \mapsto w  \\[2ex]
@@ -344,7 +353,7 @@ A call-by-value $\lambda$-calculus:\\
 \end{align*}
 \end{minipage}
 }
-\end{tabular}
+%\end{tabular}
 
 }
 %===============================================================================
@@ -356,10 +365,10 @@ A call-by-value $\lambda$-calculus:\\
 \textbf{Equality implies Equivalence}: \\
   $\qquad \SEM{M} = \SEM{N}$ implies $M \overset{\mathrm{ctx}}{=} N$. \\[1ex]
 \ \\
-but \textbf{not Full Abstraction}: \\
-  $\qquad M \overset{\mathrm{ctx}}{=} N$ does not imply $\SEM{M} = \SEM{N}$ \\
+\textbf{Not Full Abstraction}: \\
+  $\qquad M \overset{\mathrm{ctx}}{=} N$ does not imply $\SEM{M} = \SEM{N}$. \\
 \ \\
-(but that's OK, we don't need that direction.)
+That's OK, we don't need that direction.
 
 }
 %===============================================================================
@@ -382,13 +391,13 @@ but \textbf{not Full Abstraction}: \\
 \large
 \begin{align*}
 &\LET w = 5, x = 3, y = 3 \IN \\
-&\LET f = \lambda z.~ x + y + z \IN \\
+&\LET f = \lambda z.~ \rd{x} + \rd{y} + z \IN \\
 &f \app w \\
 & \Downarrow \\
-& \mathbf{fun}~ g(v, z) = \mathsf{fst}\, v + \mathsf{snd}\, v + z \\
+& \mathbf{fun}~ g\,\rd{v \, z} = \rd{\mathsf{fst}\,v} + \rd{\mathsf{snd}\,v} + z \\
 &\LET w = 5, x = 3, y = 3 \IN \\
-&\LET f = \langle g, \langle x , y \rangle \rangle \IN \\
-&(\mathsf{fst}\, f) \app (\mathsf{snd}\, f) \app w
+&\LET f = \rd{\langle g, \langle x , y \rangle \rangle} \IN \\
+&\rd{(\mathsf{fst}\,f) \app (\mathsf{snd}\,f)} \app w
 \end{align*}
 
 }
@@ -414,7 +423,7 @@ but \textbf{not Full Abstraction}: \\
   &\SEM{p_3} \ar@{=}[d] & \text{$p_3 \in $ ISWIM$^{\dagger}$} \ar[d]^{\quad \text{\normalsize flatten}} \\
   &\SEM{p_4} \ar@{=}[d] & \text{$p_4 \in $ ANF} \ar[d]^{\quad \text{\normalsize select instructions}} \\
   &\SEM{p_5} \ar@{=}[d] & \text{$p_5 \in $ x86$^{*}$} \ar[d]^{\quad \text{\normalsize register allocation}} \\
-  &\SEM{p_6} & \text{$p_5 \in $ x86}
+  &\SEM{p_6} & \text{$p_6 \in $ x86}
   }
   
 }
@@ -515,8 +524,8 @@ $\sqsubseteq$ because $v$ may not be well formed, though $u$ and $w$ are.
 \frame{
 \frametitle{Value ordering and BCD Subtyping}
 
-The value information ordering $u \sqsubseteq v$ is just the
-inverse of BCD Subtyping:
+The information ordering $u \sqsubseteq v$ is the inverse of BCD
+Subtyping: \\[2ex]
 
 \hfill\fbox{$A <: B$}
 \begin{gather*}
@@ -537,18 +546,18 @@ inverse of BCD Subtyping:
 Laurent removes the transitivity rule and turns the $\beta$-soundness
 property into a rule in a sequent-style system (ITRS 2018).
 \[
-   \inference{A \vdash C_1 \cdots A \vdash C_n
+   \inference{C \vdash A_1 \cdots C \vdash A_n
          &
-         D_1, \ldots, D_n \vdash B}
-        {C_1\to D_1,\ldots, C_n\to D_n \vdash A \to B}
+         B_1, \ldots, B_n \vdash D}
+        {A_1\to B_1,\ldots, A_n\to B_n \vdash C \to D}
 \]
 
 But the sequents aren't necessary (Siek 2019). We can instead replace
 the standard function subtyping rule with the following.
 \[
-\inference{C <: \mathsf{dom}(B) & \mathsf{cod}(B) <: D}
+\inference{C <: \mathsf{dom}(A') & \mathsf{cod}(A') <: D}
           {A <: C \to D}
-          {\small \mathsf{graph}(B) \subseteq \mathsf{graph}(A)}
+          {\small \mathsf{graph}(A') \subseteq \mathsf{graph}(A)}
 \]
 where
 \[
@@ -563,13 +572,14 @@ and similarly for $\mathsf{cod}$.
 \frametitle{Properties of the Filter Model}
 
 \begin{itemize}
-\item If $\rho_1 \sqsubseteq \rho_2$, then $\SEM{M}\rho_1 \subseteq
+\item (Weakening) If $\rho_1 \sqsubseteq \rho_2$, then $\SEM{M}\rho_1 \subseteq
   \SEM{M}\rho_2$.
-\item If $v \in \SEM{M}\rho$ and $w \sqsubseteq v$,
+\item (Subsumption) If $v \in \SEM{M}\rho$ and $w \sqsubseteq v$,
   then $w \in \SEM{M}\rho$.
-\item If $v_1 \in \SEM{M}\rho$ and $v_2 \in \SEM{M}\rho$, then $v_1
+\item (Determinism) If $v_1 \in \SEM{M}\rho$ and $v_2 \in \SEM{M}\rho$, then $v_1
   \sim v_2$.
-\item If $v_1 \in \SEM{M}\rho$ and $v_2 \in \SEM{M}\rho$, then $v_1
+\item ($\sqcup$-Intro.)
+  If $v_1 \in \SEM{M}\rho$ and $v_2 \in \SEM{M}\rho$, then $v_1
   \sqcup v_2 \in \SEM{M}\rho$.
 \end{itemize}
 
@@ -610,6 +620,31 @@ Subtyping
 \end{gather*}
 }  
 %===============================================================================
+\frame[containsverbatim]{
+\frametitle{Challenge: Mechanizing Variables and Substitution}
+
+\ \\
+We use McBride's approach to de Bruijn indices. \\
+
+\begin{lstlisting}
+$(a \bullet f) \app 0 = a$
+$(a \bullet f) \app (suc\app n) = f \app n$
+  
+$\Uparrow \rho$ = $\lambda x.\, suc \app (\rho \app x)$
+  
+rename $\rho$ x = $\rho$ x
+rename $\rho$ ($\lambda$ N) = $\lambda$ (rename (0 $\bullet$ $\Uparrow \rho$) N)
+rename $\rho$ (L $\cdot$ M) = (rename $\rho$ L) $\cdot$ (rename $\rho$ M)
+
+$\Uparrow \sigma$ = $\lambda x.\,$rename suc $(\sigma \app x)$
+
+subst $\sigma$ x =  $\sigma$ x
+subst $\sigma$ ($\lambda$ N) = $\lambda$ (subst (0 $\bullet$ $\Uparrow \sigma$) N)
+subst $\sigma$ (L $\cdot$ M) =  (subst $\sigma$ L) $\cdot$ (subst $\sigma$ M)
+\end{lstlisting}
+
+}
+%===============================================================================
 \frame{
   \frametitle{Challenge: Repetative Metatheory!}
 
@@ -631,7 +666,7 @@ Subtyping
   A generic AST that knows about variable binding and
   is parameterized on the operators and their number of bindings.
   
-  \begin{lstlisting}[basicstyle=\small,language=Haskell]
+  \begin{lstlisting}[basicstyle=\small]
   module AbstractBindingTree (Op : Set) (sig: Op $\to$ List $\mathbb{N}$) where
     data ABT : Set where
       var : $\mathbb{N}$ $\to$ ABT
@@ -651,7 +686,24 @@ Subtyping
 \frame[containsverbatim]{
   \frametitle{Example ABT for ISWIM}
 
-  TODO
+  \begin{lstlisting}[basicstyle=\small]
+  data LambdaOp : Set where
+    lam : LambdaOp
+    app : LambdaOp
+    lit : (p : Prim) $\to$ rep p $\to$ LambdaOp
+
+  lambdaSig : LambdaOp $\to$ List $\mathbb{N}$
+  lambdaSig lam = 1 :: []
+  lambdaSig app = 0 :: 0 :: []
+  lambdaSig (lit p k) = []
+
+  open import AbstractBindingTree LambdaOp lambdaSig
+  
+  pattern $\lambda$ N = apply lam (cons (bind (ast N)) nil)
+  pattern _$\cdot$_ L M = apply app (cons (ast L) (cons (ast M) nil))
+  pattern const p k = apply (lit p k) nil
+  \end{lstlisting}
+
   
 }
 %===============================================================================
@@ -764,7 +816,7 @@ We factor closure conversion into the following steps: \\[2ex]
 &f \app w \\
 & \Downarrow \\
 &\LET w = 5, x = 3, y = 3 \IN \\
-&\LET f = \langle (\lambda x y, z.~ x + y + z), \langle x , y \rangle \rangle \IN \\
+&\LET f = \rd{\langle} (\lambda x y, z.~ x + y + z), \langle x , y \rangle \rd{\rangle} \IN \\
 &(\mathsf{fst}\app f) \rd{@} (\mathsf{snd}\app f) \app w
 \end{align*}
 
