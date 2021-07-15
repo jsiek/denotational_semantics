@@ -297,11 +297,11 @@ Center for Programming Systems \\[2ex]
   \item Compiling a Functional Language
   \item Challenges and Solutions
     \begin{itemize}
-    \item Relations versus functions
-    \item Subtyping and transitivity
-    \item Mechanizing Variables and Substitusion
-    \item Language-generic meta-theory
-    \item Intrinsic difficulties
+    \item Relations versus Functions
+    \item Subtyping and Transitivity
+    \item Mechanizing Variables and Substitution
+    \item Language-Generic Meta-Theory
+    \item Intrinsic Difficulties in Compiler Correctness
     \end{itemize}
   \end{itemize}
 
@@ -587,7 +587,7 @@ and similarly for $\mathsf{cod}$.
 }
 %===============================================================================
 \frame{
-\frametitle{Solution: Another Formulation}
+\frametitle{Solution: Another Formulation of Subtypign}
 
 Huang, Zhao, and Oliveira (2021) \\[1ex]
 
@@ -606,6 +606,8 @@ Unsplittable (aka. Ordinary)
 
 Subtyping
 \begin{gather*}
+  \inference{}{A <: \top}
+  \quad
   \inference{A <: B & A <: C}            
             {A <: D} \small{B \triangleleft D \triangleright C} \\[2ex]
    \quad
@@ -898,7 +900,7 @@ We factor closure conversion into the following steps: \\[2ex]
   delay:
 \begin{align*}
 &\LET w = 5, x = 3, y = 3 \IN \\
-&\LET f = (\lambda x y, z.~ x + y + z)\rd{@}\langle x,y\rangle \IN \\
+&\LET f = (\lambda^{\rd{x y}} z.~ x + y + z) \IN \\
 &f \app w \\
 & \Downarrow \\
 &\LET w = 5, x = 3, y = 3 \IN \\
