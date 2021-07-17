@@ -325,7 +325,7 @@ A call-by-value $\lambda$-calculus:\\
   \inference{\Gamma, x : A \vdash N : B}
             {\Gamma \vdash \lambda x.N : A \to B} \\[1ex]
   \inference{\Gamma \vdash \lambda x.N : A \quad \Gamma \vdash \lambda x.N : B}
-            {\Gamma \vdash \lambda x.N : A \AND B} \\[1ex]
+            {\Gamma \vdash \lambda x.N : A \AND B} \\
   \inference{}
             {\Gamma \vdash \lambda x.N : \top}
   %% \inference{\Gamma \vdash M : A & A <: B}
@@ -343,14 +343,9 @@ A call-by-value $\lambda$-calculus:\\
    \SEM{x}\rho &= \{ v \mid v \sqsubseteq \rho(x) \} \\
    \SEM{L~M}\rho &= \{ w \mid  v\mapsto w \in \SEM{L}\rho,  \\
      & \qquad\quad\;\; v\in \SEM{M}\rho \} \\
-   \SEM{\lambda x. N}\rho &= \{ u \mid \forall v {\mapsto} w \in \mathsf{graph}(u), \\
+   \SEM{\lambda x. N}\rho &= \{ u \mid \forall v {\mapsto} w \in u, \\
    & \qquad\quad\;\; w \in \SEM{N}\rho(x{:=}v)\} 
  \end{align*}
-\begin{align*}    
-   \mathsf{graph}(\emptyset) &= \emptyset \\
-   \mathsf{graph}(v \mapsto w) &= \{ v \mapsto w \} \\
-   \mathsf{graph}(u \sqcup v) &= \mathsf{graph}(u) \cup \mathsf{graph}(v) 
-\end{align*}
 \end{minipage}
 }
 %\end{tabular}
@@ -768,8 +763,8 @@ Filter Model:
 \SEM{M[x := N]} \rho = \bigcup_{v \in \SEM{N}\rho} \SEM{M} \rho(x := v)
 \]
 
-We've been using filter models, but the graph models are a better fit
-for the generic theorems about ABTs.
+We've been using filter models, but the graph models seem to be a
+better fit for the generic theorems about ABTs.
 
 }
 %===============================================================================
