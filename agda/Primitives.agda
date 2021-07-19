@@ -5,7 +5,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 module Primitives where
 
 open import Data.Bool  using (Bool) renaming (_≟_ to _=?_)
-open import Data.Nat using (ℕ; _≟_) 
+open import Data.Nat using (ℕ; suc; zero; _≟_) 
 open import Data.Integer using (ℤ) renaming (_≟_ to _=int_)
 open import Data.Unit using (tt) renaming (⊤ to Top)
 open import Data.Empty using () renaming (⊥ to Bot)
@@ -36,6 +36,10 @@ base-rep Blame = Label
 rep : Prim → Set
 rep (base b) = base-rep b
 rep (b ⇒ p) = base-rep b → rep p
+
+arity : Prim → ℕ
+arity (base k) = 0
+arity (b ⇒ p) = suc (arity p)
 
 base-eq? : (B : Base) → (B' : Base) → Dec (B ≡ B')
 base-eq? Nat Nat = yes refl

@@ -86,7 +86,18 @@ Prod : {ℓ : Level} → ℕ → Set ℓ → Set ℓ
 Prod 0 A = ptop
 Prod (suc n) A = A × Prod n A
 
+{-
 ⟬_⟭ : ∀{n : ℕ} → Prod n (𝒫 Value) → 𝒫 Value
+⟬_⟭ {n = zero} ptop u = ⊤
+⟬_⟭ {n = suc n} ⟨ d , ds ⟩ u = (∀ w → d w → (const n) ↦ w ⊑ u) × ⟬ ds ⟭ u
+
+tuple≡prod : ∀ n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) ≡ Prod n (𝒫 Value)
+tuple≡prod zero = refl
+tuple≡prod (suc n) rewrite tuple≡prod n = refl
+
+-}
+
+⟬_⟭ : ∀{n : ℕ} → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → 𝒫 Value
 ⟬_⟭ {n = zero} ptop u = ⊤
 ⟬_⟭ {n = suc n} ⟨ d , ds ⟩ u = (∀ w → d w → (const n) ↦ w ⊑ u) × ⟬ ds ⟭ u
 
@@ -98,7 +109,4 @@ test = ⟨ (const 0) ,
        ⟨ wf-const , ⟨ ⟨ (λ w x → ⊑-fun′ ⊑-const (proj₂ x)) , tt ⟩ ,
        ⟨ ⊑-const , ⊑-const ⟩ ⟩ ⟩ ⟩
 
-tuple≡prod : ∀ n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) ≡ Prod n (𝒫 Value)
-tuple≡prod zero = refl
-tuple≡prod (suc n) rewrite tuple≡prod n = refl
 

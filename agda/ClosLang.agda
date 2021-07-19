@@ -30,18 +30,16 @@ open Relation.Binary.PropositionalEquality.≡-Reasoning
 open import Relation.Nullary using (Dec; yes; no)
 
 data ClosOp : Set where
-  fun  : ℕ → ClosOp    {- number of early parameters -}
-  early-app : ClosOp
+  fun  : ClosOp
   app : ClosOp
-  lit : (p : Prim) → rep p → ClosOp
+  papp : (p : Prim) → rep p → ClosOp
   tuple : ℕ → ClosOp       {- number of elements -}
   get : ℕ → ClosOp         {- which element -}
 
 closSig : ClosOp → List Sig
-closSig (fun n) = ℕ→sig (suc n) ∷ []
-closSig early-app = ■ ∷ ■ ∷ ■ ∷ []
+closSig fun = ν (ν ■) ∷ []
 closSig app = ■ ∷ ■ ∷ []
-closSig (lit p k) = []
+closSig (papp p k) = replicate (arity p) ■
 closSig (tuple n) = replicate n ■
 closSig (get i) = ■ ∷ []
 
@@ -55,21 +53,19 @@ open Syntax.OpSig ClosOp closSig
       cons to consᵪ; ast to astᵪ; bind to bindᵪ; clear to clearᵪ; nil to nilᵪ)
       public
 
-pattern # p k = lit p k ⦅ nil ⦆
-pattern 𝑓_,_ n bN = (fun n) ⦅ cons bN nil ⦆
-pattern _▪_^_ L M n = early-app ⦅ cons (ast L) (cons (ast M) (cons (ast n) nil)) ⦆
+pattern # p k = papp p k ⦅ nil ⦆
+pattern 𝑓_ N = fun ⦅ cons (bind (bind (ast N))) nil ⦆
 pattern _▫_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 pattern _❲_❳ M i = (get i) ⦅ cons (ast M) nil ⦆
 
 p0 = # (base Nat) 0
 p1 = # (base Nat) 0
-p+ = # (Nat ⇒ (Nat ⇒ base Nat)) _+_
 
 binds : (n : ℕ) → Clos → Arg (ℕ→sig n)
 binds zero N = ast N
 binds (suc n) N = bind (binds n N)
 
-test_cl = 𝑓 1 , (binds 2 p0) 
+test_cl = 𝑓 p0
 
 test_tup = (tuple 2) ⦅ cons (ast p0) (cons (ast p1) nil) ⦆
 
@@ -82,13 +78,31 @@ test_tup = (tuple 2) ⦅ cons (ast p0) (cons (ast p1) nil) ⦆
 open import Fold2 ClosOp closSig
 
 interp-clos  : (op : ClosOp) → Tuple (closSig op) (ArgTy (𝒫 Value)) → 𝒫 Value
-interp-clos (fun n) ⟨ N , _ ⟩ = 𝐺-iter (suc n) N
-interp-clos early-app ⟨ d₁ , ⟨ d₂ , ⟨ d₃ , _ ⟩ ⟩ ⟩ v =
-  Σ[ n ∈ ℕ ] d₃ (const n)  ×  𝐹-iter n d₁ d₂ v
+interp-clos fun ⟨ N , _ ⟩ = 𝐺-iter 2 N
 interp-clos app ⟨ d₁ , ⟨ d₂ , _ ⟩ ⟩ = 𝐹 d₁ d₂
-interp-clos (lit p c) args = ℘ {p} c 
-interp-clos (tuple n) args rewrite tuple≡prod n = ⟬ args ⟭
+interp-clos (papp p c) args = 𝐹-iter (arity p) (℘ {p} c) ⟬ args ⟭
+interp-clos (tuple n) args = ⟬ args ⟭
 interp-clos (get i) ⟨ d , _ ⟩ = ℕth d i
 
 𝒞⟦_⟧_ : Clos → (Var → 𝒫 Value) → 𝒫 Value
 𝒞⟦ M ⟧ ρ = fold interp-clos (λ v → False) ρ M
+
+𝒞⟦_⟧ₐ_ : ∀{b} → Arg b → (Var → 𝒫 Value) → ArgTy (𝒫 Value) b
+𝒞⟦ arg ⟧ₐ ρ = fold-arg interp-clos (λ v → False) ρ arg
+
+𝒞⟦_⟧₊_ : ∀{bs} → Args bs → (Var → 𝒫 Value) → Tuple bs (ArgTy (𝒫 Value))
+𝒞⟦ args ⟧₊ ρ = fold-args interp-clos (λ v → False) ρ args
+
+𝒞-fun : ∀ {N : Arg (ν (ν ■))}{ρ}
+    → 𝒞⟦ fun ⦑ cons N nil ⦒ ⟧ ρ ≡ 𝐺-iter 2 (𝒞⟦ N ⟧ₐ ρ)
+𝒞-fun {N}{ρ} = refl
+
+𝒞-app : ∀ {L M : Clos}{ρ}
+    → 𝒞⟦ L ▫ M ⟧ ρ ≡ 𝐹 (𝒞⟦ L ⟧ ρ) (𝒞⟦ M ⟧ ρ)
+𝒞-app {L}{M}{ρ} = refl
+
+𝒞-papp : ∀ {ρ}{p}{c}{args : Args (replicate (arity p) ■)}
+    → 𝒞⟦ papp p c ⦑ args ⦒ ⟧ ρ ≡ 𝐹-iter (arity p) (℘ {p} c) (⟬ 𝒞⟦ args ⟧₊ ρ ⟭)
+𝒞-papp {L}{M}{ρ} = refl
+
+

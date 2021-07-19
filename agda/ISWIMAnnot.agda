@@ -26,19 +26,16 @@ open import CurryConst
 
 data Op : Set where
   lam : ℕ → Op         {- number of free variables -}
-  app : Op
-  lit : (p : Prim) → rep p → Op
+  app : Op             {- application of lambda's -}
+  papp : (p : Prim) → rep p → Op  {- primitive application -}
 
 sig : Op → List Sig
-sig (lam n) = ℕ→sig (suc n) ∷ (replicate n ■)
+sig (lam n) = ν (ν ■) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
-sig (lit p k) = []
+sig (papp p k) = replicate (arity p) ■
 
 open Syntax.OpSig Op sig
-  hiding (ABT)
-  
-open Syntax.OpSig Op sig
-  using (`_; Arg; Args; ast; bind; clear; cons; nil)
+  using (`_; Arg; Args; ast; bind; clear; cons; nil; _⦅_⦆)
   renaming (ABT to ISWIMAnn) public
 
 pattern ƛ n bN = (lam n) ⦅ bN ⦆
@@ -46,15 +43,35 @@ pattern ƛ n bN = (lam n) ⦅ bN ⦆
 infixl 7  _·_
 pattern _·_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 
-pattern $ p k = lit p k ⦅ nil ⦆
-
 open import Fold2 Op sig
 
 interp-iswim  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
-interp-iswim (lam n) ⟨ f , args ⟩ rewrite tuple≡prod n =
-  𝐹-iter n (𝐺-iter (suc n) f) ⟬ args ⟭
+interp-iswim (lam n) ⟨ f , args ⟩ =
+    𝐹 (𝐺-iter 2 f) ⟬ args ⟭
 interp-iswim app ⟨ d₁ , ⟨ d₂ , _ ⟩ ⟩ = 𝐹 d₁ d₂
-interp-iswim (lit p c) args = ℘ {p} c 
+interp-iswim (papp p c) args =
+    𝐹-iter (arity p) (℘ {p} c) ⟬ args ⟭
 
 ℐ⟦_⟧_ : ISWIMAnn → (Var → 𝒫 Value) → 𝒫 Value
 ℐ⟦ M ⟧ ρ = fold interp-iswim (λ v → Bot) ρ M
+
+ℐ⟦_⟧ₐ_ : ∀{b} → Arg b → (Var → 𝒫 Value) → ArgTy (𝒫 Value) b
+ℐ⟦ arg ⟧ₐ ρ = fold-arg interp-iswim (λ v → Bot) ρ arg
+
+ℐ⟦_⟧₊_ : ∀{bs} → Args bs → (Var → 𝒫 Value) → Tuple bs (ArgTy (𝒫 Value))
+ℐ⟦ args ⟧₊ ρ = fold-args interp-iswim (λ v → Bot) ρ args
+
+ℐ-lam : ∀ {N : Arg (ν (ν ■))}{n}{ρ}{args : Args (replicate n ■)}
+    → ℐ⟦ lam n ⦅ cons N args ⦆ ⟧ ρ
+        ≡ 𝐹 (𝐺-iter 2 (ℐ⟦ N ⟧ₐ ρ)) ⟬ ℐ⟦ args ⟧₊ ρ ⟭
+ℐ-lam {L}{M}{ρ} = refl
+
+ℐ-app : ∀ {L M : ISWIMAnn}{ρ}
+    → ℐ⟦ L · M ⟧ ρ ≡ 𝐹 (ℐ⟦ L ⟧ ρ) (ℐ⟦ M ⟧ ρ)
+ℐ-app {L}{M}{ρ} = refl
+
+ℐ-papp : ∀ {ρ}{p}{c}{args : Args (replicate (arity p) ■)}
+    → ℐ⟦ papp p c ⦅ args ⦆ ⟧ ρ ≡ 𝐹-iter (arity p) (℘ {p} c) (⟬ ℐ⟦ args ⟧₊ ρ ⟭)
+ℐ-papp {L}{M}{ρ} = refl
+
+
