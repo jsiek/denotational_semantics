@@ -30,7 +30,7 @@ open Relation.Binary.PropositionalEquality.≡-Reasoning
 open import Relation.Nullary using (Dec; yes; no)
 
 data ClosOp : Set where
-  closure  : ℕ → ClosOp    {- number of early parameters -}
+  fun  : ℕ → ClosOp    {- number of early parameters -}
   early-app : ClosOp
   app : ClosOp
   lit : (p : Prim) → rep p → ClosOp
@@ -38,7 +38,7 @@ data ClosOp : Set where
   get : ℕ → ClosOp         {- which element -}
 
 closSig : ClosOp → List Sig
-closSig (closure n) = ℕ→sig (suc n) ∷ []
+closSig (fun n) = ℕ→sig (suc n) ∷ []
 closSig early-app = ■ ∷ ■ ∷ ■ ∷ []
 closSig app = ■ ∷ ■ ∷ []
 closSig (lit p k) = []
@@ -56,7 +56,7 @@ open Syntax.OpSig ClosOp closSig
       public
 
 pattern # p k = lit p k ⦅ nil ⦆
-pattern κ_,_ n bN = (closure n) ⦅ cons bN nil ⦆
+pattern 𝑓_,_ n bN = (fun n) ⦅ cons bN nil ⦆
 pattern _▪_^_ L M n = early-app ⦅ cons (ast L) (cons (ast M) (cons (ast n) nil)) ⦆
 pattern _▫_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 pattern _❲_❳ M i = (get i) ⦅ cons (ast M) nil ⦆
@@ -69,28 +69,20 @@ binds : (n : ℕ) → Clos → Arg (ℕ→sig n)
 binds zero N = ast N
 binds (suc n) N = bind (binds n N)
 
-test_cl = κ 1 , (binds 2 p0) 
+test_cl = 𝑓 1 , (binds 2 p0) 
 
 test_tup = (tuple 2) ⦅ cons (ast p0) (cons (ast p1) nil) ⦆
 
 〔_,_〕 : Clos → Clos → Clos
 〔 M , N 〕 = (tuple 2) ⦅ cons (ast M) (cons (ast N) nil) ⦆
 
-capture-args : (fs : List Var) → Args (replicate (length fs) ■)
-capture-args [] = nil
-capture-args (f ∷ fs) = cons (ast (% f)) (capture-args fs)
-
-capture : (fs : List Var) → Clos
-capture fs = (tuple (length fs)) ⦅ capture-args fs ⦆
+〔_,_,_〕 : Clos → Clos → Clos → Clos
+〔 L , M , N 〕 = (tuple 3) ⦅ cons (ast L) (cons (ast M) (cons (ast N) nil)) ⦆
 
 open import Fold2 ClosOp closSig
 
-tuple≡prod : ∀ n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) ≡ Prod n (𝒫 Value)
-tuple≡prod zero = refl
-tuple≡prod (suc n) rewrite tuple≡prod n = refl
-
 interp-clos  : (op : ClosOp) → Tuple (closSig op) (ArgTy (𝒫 Value)) → 𝒫 Value
-interp-clos (closure n) ⟨ N , _ ⟩ = 𝐺-iter (suc n) N
+interp-clos (fun n) ⟨ N , _ ⟩ = 𝐺-iter (suc n) N
 interp-clos early-app ⟨ d₁ , ⟨ d₂ , ⟨ d₃ , _ ⟩ ⟩ ⟩ v =
   Σ[ n ∈ ℕ ] d₃ (const n)  ×  𝐹-iter n d₁ d₂ v
 interp-clos app ⟨ d₁ , ⟨ d₂ , _ ⟩ ⟩ = 𝐹 d₁ d₂
@@ -98,5 +90,5 @@ interp-clos (lit p c) args = ℘ {p} c
 interp-clos (tuple n) args rewrite tuple≡prod n = ⟬ args ⟭
 interp-clos (get i) ⟨ d , _ ⟩ = ℕth d i
 
-⟦_⟧ₐ_ : Clos → (Var → 𝒫 Value) → 𝒫 Value
-⟦ M ⟧ₐ ρ = fold interp-clos (λ v → False) ρ M
+𝒞⟦_⟧_ : Clos → (Var → 𝒫 Value) → 𝒫 Value
+𝒞⟦ M ⟧ ρ = fold interp-clos (λ v → False) ρ M

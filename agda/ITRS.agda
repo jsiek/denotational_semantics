@@ -93,6 +93,6 @@ data Term : Set where
 -------------------------------------------------------------------------------}
 
 ⟦_⟧ : Term → (ℕ → Value) → Value → Set
-⟦ ` x ⟧ γ v = v ⊑ γ x
-⟦ L · M ⟧ γ w = Σ[ v ∈ Value ] wf v × ⟦ L ⟧ γ (v ↦ w) × ⟦ M ⟧ γ v 
-⟦ ƛ N ⟧ γ u = ∀ v w → v ↦ w ∈ u → ⟦ N ⟧ (v • γ) w
+⟦ ` x ⟧ ρ v = v ⊑ ρ x
+⟦ L · M ⟧ ρ w = Σ[ v ∈ Value ] wf v × ⟦ L ⟧ ρ (v ↦ w) × ⟦ M ⟧ ρ v 
+⟦ ƛ N ⟧ ρ u = ∀ v w → v ↦ w ∈ u → ⟦ N ⟧ (v • ρ) w

@@ -38,31 +38,23 @@ open Syntax.OpSig Op sig
   hiding (ABT)
   
 open Syntax.OpSig Op sig
-  using (`_; Arg; Args; ast; bind; clear)
+  using (`_; Arg; Args; ast; bind; clear; cons; nil)
   renaming (ABT to ISWIMAnn) public
 
-{-
-pattern ƛ bN fs = (lam n) ⦅ cons bN fs ⦆
+pattern ƛ n bN = (lam n) ⦅ bN ⦆
 
 infixl 7  _·_
 pattern _·_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 
 pattern $ p k = lit p k ⦅ nil ⦆
--}
 
 open import Fold2 Op sig
 
-early-args : ∀ n 
-  → Tuple (replicate n ■) (ArgTy (𝒫 Value))
-  → ArgTy (𝒫 Value) (ν (ℕ→sig n))
-  → 𝒫 Value
-early-args zero _ f = 𝐺 f
-early-args (suc n) ⟨ d , ds ⟩ f = early-args n ds (f d)
-
 interp-iswim  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
-interp-iswim (lam n) ⟨ f , args ⟩ = early-args n args f
+interp-iswim (lam n) ⟨ f , args ⟩ rewrite tuple≡prod n =
+  𝐹-iter n (𝐺-iter (suc n) f) ⟬ args ⟭
 interp-iswim app ⟨ d₁ , ⟨ d₂ , _ ⟩ ⟩ = 𝐹 d₁ d₂
 interp-iswim (lit p c) args = ℘ {p} c 
 
-⟦_⟧ₐ_ : ISWIMAnn → (Var → 𝒫 Value) → 𝒫 Value
-⟦ M ⟧ₐ ρ = fold interp-iswim (λ v → Bot) ρ M
+ℐ⟦_⟧_ : ISWIMAnn → (Var → 𝒫 Value) → 𝒫 Value
+ℐ⟦ M ⟧ ρ = fold interp-iswim (λ v → Bot) ρ M

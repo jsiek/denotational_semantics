@@ -4,12 +4,16 @@ import Level
 open import Agda.Primitive using (Level; lzero; lsuc)
 open import Data.Unit using (⊤; tt)
 open import Data.Empty renaming (⊥ to Bot)
+open import Data.List using (List; []; _∷_; _++_; length; replicate)
 open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit.Polymorphic renaming (⊤ to ptop ; tt to ptt)
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; refl; sym; trans; cong)
 
+open import ScopedTuple hiding (𝒫)
 open import ModelISWIM
 open import Sig
 
@@ -93,3 +97,8 @@ test : ℕth (⟬_⟭ {1} ⟨ ℕ⟦ 42 ⟧ , Level.lift tt ⟩) 0 (const 42)
 test = ⟨ (const 0) ,
        ⟨ wf-const , ⟨ ⟨ (λ w x → ⊑-fun′ ⊑-const (proj₂ x)) , tt ⟩ ,
        ⟨ ⊑-const , ⊑-const ⟩ ⟩ ⟩ ⟩
+
+tuple≡prod : ∀ n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) ≡ Prod n (𝒫 Value)
+tuple≡prod zero = refl
+tuple≡prod (suc n) rewrite tuple≡prod n = refl
+
