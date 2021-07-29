@@ -35,4 +35,18 @@ open import ValueStructAux value_struct
 ... | B ⇒ P′ = Σ[ k ∈ base-rep B ] (const {B} k ⊑ v × ℘ {P′} (f k) w)
 ℘ {P} f (u ⊔ v) = ℘ {P} f u × ℘ {P} f v
 
-
+{-
+  Alternative that starts with induction on P.
+-}
+℘′ : ∀{P : Prim} → rep P → Value → Set
+℘′ {base B} k ⊥ = ⊤
+℘′ {base B} k (const {B′} k′)
+    with base-eq? B B′
+... | yes eq rewrite eq = k ≡ k′
+... | no neq = Bot
+℘′ {base B} k (v ↦ w) = Bot
+℘′ {base B} k (u ⊔ v) = ℘′ {base B} k u × ℘′ {base B} k v
+℘′ {B ⇒ P} f ⊥ = ⊤
+℘′ {B ⇒ P} f (const k′) = Bot
+℘′ {B ⇒ P} f (v ↦ w) = Σ[ k ∈ base-rep B ] const {B} k ⊑ v × ℘′{P} (f k) w
+℘′ {B ⇒ P} f (u ⊔ v) = ℘′ {B ⇒ P} f u × ℘′ {B ⇒ P} f v

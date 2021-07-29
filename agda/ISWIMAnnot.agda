@@ -63,11 +63,11 @@ interp-iswim (papp p c) args =
 
 ℐ-lam : ∀ {N : Arg (ν (ν ■))}{n}{ρ}{args : Args (replicate n ■)}
     → ℐ⟦ lam n ⦅ cons N args ⦆ ⟧ ρ
-        ≡ 𝐹 (𝐺-iter 2 (ℐ⟦ N ⟧ₐ ρ)) ⟬ ℐ⟦ args ⟧₊ ρ ⟭
+        ≡ (𝐺-iter 2 (ℐ⟦ N ⟧ₐ ρ)) ▪ ⟬ ℐ⟦ args ⟧₊ ρ ⟭
 ℐ-lam {L}{M}{ρ} = refl
 
 ℐ-app : ∀ {L M : ISWIMAnn}{ρ}
-    → ℐ⟦ L · M ⟧ ρ ≡ 𝐹 (ℐ⟦ L ⟧ ρ) (ℐ⟦ M ⟧ ρ)
+    → ℐ⟦ L · M ⟧ ρ ≡ (ℐ⟦ L ⟧ ρ) ▪ (ℐ⟦ M ⟧ ρ)
 ℐ-app {L}{M}{ρ} = refl
 
 ℐ-papp : ∀ {ρ}{p}{c}{args : Args (replicate (arity p) ■)}

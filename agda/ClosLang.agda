@@ -28,6 +28,7 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning
 open import Relation.Nullary using (Dec; yes; no)
+open import Data.Unit.Polymorphic using (⊤; tt)
 
 data ClosOp : Set where
   fun  : ClosOp
@@ -78,7 +79,7 @@ test_tup = (tuple 2) ⦅ cons (ast p0) (cons (ast p1) nil) ⦆
 open import Fold2 ClosOp closSig
 
 interp-clos  : (op : ClosOp) → Tuple (closSig op) (ArgTy (𝒫 Value)) → 𝒫 Value
-interp-clos fun ⟨ N , _ ⟩ = 𝐺-iter 2 N
+interp-clos fun ⟨ λλN , _ ⟩ = 𝐺-iter 2 λλN
 interp-clos app ⟨ d₁ , ⟨ d₂ , _ ⟩ ⟩ = 𝐹 d₁ d₂
 interp-clos (papp p c) args = 𝐹-iter (arity p) (℘ {p} c) ⟬ args ⟭
 interp-clos (tuple n) args = ⟬ args ⟭
@@ -98,11 +99,27 @@ interp-clos (get i) ⟨ d , _ ⟩ = ℕth d i
 𝒞-fun {N}{ρ} = refl
 
 𝒞-app : ∀ {L M : Clos}{ρ}
-    → 𝒞⟦ L ▫ M ⟧ ρ ≡ 𝐹 (𝒞⟦ L ⟧ ρ) (𝒞⟦ M ⟧ ρ)
+    → 𝒞⟦ L ▫ M ⟧ ρ ≡ (𝒞⟦ L ⟧ ρ) ▪ (𝒞⟦ M ⟧ ρ)
 𝒞-app {L}{M}{ρ} = refl
 
 𝒞-papp : ∀ {ρ}{p}{c}{args : Args (replicate (arity p) ■)}
     → 𝒞⟦ papp p c ⦑ args ⦒ ⟧ ρ ≡ 𝐹-iter (arity p) (℘ {p} c) (⟬ 𝒞⟦ args ⟧₊ ρ ⟭)
 𝒞-papp {L}{M}{ρ} = refl
 
+𝒞-get : ∀ {M : Clos}{i : ℕ}{ρ}
+    → 𝒞⟦ M ❲ i ❳ ⟧ ρ ≡ ℕth (𝒞⟦ M ⟧ ρ) i
+𝒞-get {M}{i}{ρ} = refl
+
+𝒞-tuple : ∀ {n}{args}{ρ}
+    → 𝒞⟦ tuple n ⦑ args ⦒ ⟧ ρ ≡ ⟬ 𝒞⟦ args ⟧₊ ρ ⟭
+𝒞-tuple = refl
+
+𝒞-pair : ∀ {M N}{ρ}
+    → 𝒞⟦ 〔 M , N 〕 ⟧ ρ ≡ ⟬ ⟨ 𝒞⟦ M ⟧ ρ , ⟨ 𝒞⟦ N ⟧ ρ , tt ⟩ ⟩ ⟭
+𝒞-pair = refl
+
+𝒞-closure : ∀ {n}{N : Arg (ν (ν ■))}{args}{ρ}
+  → (𝒞⟦ 〔 (fun ⦑ cons N nil ⦒) , tuple n ⦑ args ⦒ 〕 ⟧ ρ)
+    ≡  ⟬ ⟨ 𝐺-iter 2 (𝒞⟦ N ⟧ₐ ρ) , ⟨ ⟬ 𝒞⟦ args ⟧₊ ρ ⟭ , tt ⟩ ⟩ ⟭
+𝒞-closure = refl
 
