@@ -104,13 +104,17 @@ delay-args-correct : ∀ {bs}{args : Args bs} {ρ ρ′ : Var → 𝒫 Value}
   → ≈-env ρ ρ′
   → (ℐ⟦ args ⟧₊ ρ) ≈₊ (𝒞⟦ delay-args args ⟧₊ ρ′)
 
-
 fwd-tuple : ∀ {v₁ : Value}
   {n}{args₁ args₂ : Tuple (replicate n ■) (ArgTy (𝒫 Value))}
-  → args₁ ≈₊ args₂
-  → ⟬ args₁ ⟭ v₁
+  → args₁ ≈₊ args₂  →  ⟬ args₁ ⟭ v₁
   → Σ[ v₂ ∈ Value ] ⟬ args₂ ⟭ v₂ × v₁ ≅ v₂
 fwd-tuple = {!!}
+
+bkwd-tuple : ∀ {v₂ : Value}
+  {n}{args₁ args₂ : Tuple (replicate n ■) (ArgTy (𝒫 Value))}
+  → args₁ ≈₊ args₂  →  ⟬ args₂ ⟭ v₂
+  → Σ[ v₁ ∈ Value ] ⟬ args₁ ⟭ v₁ × v₁ ≅ v₂
+bkwd-tuple = {!!}
 
 ≅↓≈ : ∀ {v₁ v₂ : Value}
   → v₁ ≅ v₂
@@ -141,7 +145,7 @@ delay-lam : ∀{N₁ N₂ : ArgTy (𝒫 Value) (ν (ν ■))}
   → _≈ₐ_{(ν (ν ■))} N₁ N₂
   → args₁ ≈₊ args₂
   → (𝐺-iter 2 N₁) ▪ ⟬ args₁ ⟭ ≈ ⟬ ⟨ 𝐺-iter 2 N₂ , ⟨ ⟬ args₂ ⟭ , tt ⟩ ⟩ ⟭
-delay-lam {N₁}{N₂}{n}{args₁}{args₂} N1≈N2 args≈ = ⟨ fwd , {!!} ⟩
+delay-lam {N₁}{N₂}{n}{args₁}{args₂} N1≈N2 args≈ = ⟨ fwd , bkwd ⟩
   where
   fwd : 𝐺-iter 2 N₁ ▪ ⟬ args₁ ⟭ ⪅ ⟬ ⟨ 𝐺-iter 2 N₂ , ⟨ ⟬ args₂ ⟭ , tt ⟩ ⟩ ⟭
   fwd ⊥ ⟨ v₁ , ⟨ wfv₁ , ⟨ w₁∈GN₁↓v₁ , v₁∈⟬args₁⟭ ⟩ ⟩ ⟩
@@ -171,6 +175,14 @@ delay-lam {N₁}{N₂}{n}{args₁}{args₂} N1≈N2 args≈ = ⟨ fwd , {!!} ⟩
     ⟨ ⟨ u₂′ , ⟨ xx , inj₁ 1↦u₂′∈w₂ ⟩ ⟩ , _ ⟩ ⟩ ,
       ≅-⊔ w1≈w2 w1′≈w2′ ⟩ ⟩
 
+  bkwd : 𝐺 (λ D → 𝐺 (λ D₁ → N₁ D D₁)) ▪ ⟬ args₁ ⟭ ⪆
+            ⟬ ⟨ 𝐺 (λ D → 𝐺 (λ D₁ → N₂ D D₁)) , ⟨ ⟬ args₂ ⟭ , tt ⟩ ⟩ ⟭
+  bkwd v₂ ⟨ ⟨ v₂′ , ⟨ v₂′∈GGN₂ , 0↦v2′∈v₂ ⟩ ⟩ ,
+          ⟨ ⟨ w₂ , ⟨ w2∈args₂ , 1↦w₂∈v₂ ⟩ ⟩ , tt ⟩ ⟩ 
+      with bkwd-tuple args≈ w2∈args₂
+  ... | ⟨ v₁ , ⟨ v₁∈args₁ , v₁=v₂ ⟩ ⟩ =
+            ⟨ {!!} , ⟨ ⟨ {!!} , ⟨ {!!} , ⟨ {!!} , {!!} ⟩ ⟩ ⟩ , {!!} ⟩ ⟩
+  
 delay-app : ∀{L₁ L₂ M₁ M₂ : 𝒫 Value}
    → L₁ ≈ L₂
    → M₁ ≈ M₂
