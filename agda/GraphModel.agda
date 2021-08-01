@@ -172,3 +172,15 @@ from (equal a b) = b
 ≃-trans (equal d12 d21) (equal d23 d32) =
     equal (≲-trans d12 d23) (≲-trans d32 d21)
 
+module ≃-Reasoning where
+
+  infixr 2 _≃⟨_⟩_
+  infix 3 _∎
+
+  _≃⟨_⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ D₃ : 𝒫 Value}
+     → D₁ ≃ D₂ → D₂ ≃ D₃ → D₁ ≃ D₃
+  D₁ ≃⟨ D₁≃D₂ ⟩ D₂≃D₃ = ≃-trans D₁≃D₂ D₂≃D₃
+
+  _∎ : ∀ (D : 𝒫 Value)
+     → D ≃ D
+  D ∎  =  ≃-refl
