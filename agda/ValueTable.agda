@@ -11,6 +11,9 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Data.List using (List ; _∷_ ; []; _++_) 
+{-
+open import Data.List.Membership.DecPropMembership renaming (_∈_ to mem)
+-}
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
