@@ -154,33 +154,34 @@ too?  Or should we use the neighborhood version?
 -}
 
 continuous : (F : 𝒫 Value → 𝒫 Value) → Set₁
-continuous F = ∀ X e → e ∈ F X → Σ[ D ∈ List Value ] mem D ≲ X × e ∈ F (mem D)
+continuous F = ∀ X e → e ∈ F X
+    → Σ[ D ∈ List Value ] D ≢ []  ×  mem D ≲ X  ×  e ∈ F (mem D)
 
 _⊏_ : 𝒫 Value → 𝒫 Value → Set
 E ⊏ D = ∀ e → e ∈ D → Σ[ d ∈ Value ] d ∈ D × e ⊑ d
 
 join-closed : (D : 𝒫 Value) → Set
-join-closed D = ∀ V → mem V ≲ D → Σ[ v ∈ Value ] v ∈ D × mem V ⊏ ⌈ v ⌉
+join-closed D = ∀ V → V ≢ [] →  mem V ≲ D → Σ[ v ∈ Value ] v ∈ D × mem V ⊏ ⌈ v ⌉
 
-monotone : (F : 𝒫 Value → 𝒫 Value) → Set₁
-monotone F = ∀ D₁ D₂ → D₁ ⊏ D₂ → F D₁ ≲ F D₂
+monotone-⊏ : (F : 𝒫 Value → 𝒫 Value) → Set₁
+monotone-⊏ F = ∀ D₁ D₂ → D₁ ⊏ D₂ → F D₁ ≲ F D₂
 
-cont-join-monotone : ∀ {F : 𝒫 Value → 𝒫 Value} {D : 𝒫 Value}
-  → continuous F → monotone F → join-closed D
+cont-join-monotone-⊏ : ∀ {F : 𝒫 Value → 𝒫 Value} {D : 𝒫 Value}
+  → continuous F → monotone-⊏ F → join-closed D
   → ∀ w → w ∈ F D → Σ[ v ∈ Value ] w ∈ F ⌈ v ⌉ × v ∈ D  
-cont-join-monotone {F}{D} Fcont Fmono Djoin w w∈FD 
+cont-join-monotone-⊏ {F}{D} Fcont Fmono Djoin w w∈FD 
     with Fcont D w w∈FD
-... | ⟨ E , ⟨ E<D , w∈FE ⟩ ⟩
-    with Djoin E E<D
+... | ⟨ E , ⟨ E≢[] , ⟨ E<D , w∈FE ⟩ ⟩ ⟩
+    with Djoin E E≢[] E<D
 ... | ⟨ v , ⟨ v∈D , E⊏v ⟩ ⟩ =
     let w∈Fv = Fmono (mem E) ⌈ v ⌉ E⊏v w w∈FE in
     ⟨ v , ⟨ w∈Fv , v∈D ⟩ ⟩
 
 ≲-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → continuous F → monotone F → join-closed D
+  → continuous F → monotone-⊏ F → join-closed D
   → F D ≲ (Λ F) ▪ D
 ≲-Λ-▪ Fcont Fmono Djoin w w∈FD
-    with cont-join-monotone Fcont Fmono Djoin w w∈FD
+    with cont-join-monotone-⊏ Fcont Fmono Djoin w w∈FD
 ... | ⟨ v , ⟨ w∈Fv , v∈D ⟩ ⟩ =
       ⟨ (⟨ v , w ⟩ ∷ []) ,
       ⟨ (λ { v₁ w₁ mem-here → w∈Fv}) ,
@@ -188,14 +189,14 @@ cont-join-monotone {F}{D} Fcont Fmono Djoin w w∈FD
       ⟨ mem-here , v∈D ⟩ ⟩ ⟩ ⟩
 
 Λ-▪-≲ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → monotone F
+  → monotone-⊏ F
   → (Λ F) ▪ D ≲ F D
 Λ-▪-≲ {F} {D} Fmono w ⟨ t , ⟨ t∈ΛF , ⟨ v , ⟨ v↦w∈t , v∈D ⟩ ⟩ ⟩ ⟩ =
   let w∈Fv = t∈ΛF v w v↦w∈t in
   Fmono ⌈ v ⌉ D (λ { v₁ v₁∈D → ⟨ v₁ , ⟨ v₁∈D , ⊑-refl ⟩ ⟩ }) w w∈Fv
 
 Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → continuous F → monotone F → join-closed D
+  → continuous F → monotone-⊏ F → join-closed D
   → (Λ F) ▪ D ≃ F D
 Λ-▪ {F}{D} Fcont Fmono Djoin =
   equal (Λ-▪-≲ Fmono) (≲-Λ-▪ Fcont Fmono Djoin)
