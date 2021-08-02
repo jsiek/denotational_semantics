@@ -24,6 +24,9 @@ infix 7 ⟦_⟧_
 ⟦_⟧_ : Term → (Var → 𝒫 Value) → 𝒫 Value
 ⟦ M ⟧ ρ = fold interp ∅ ρ M
 
+
+{- Substitution Lemma -}
+
 ⟦⟧-rename : ∀ {M : Term}{σ : Rename}{ρ : Var → 𝒫 Value}
   → ⟦ rename σ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ ` σ x ⟧ ρ)
 ⟦⟧-rename {M}{ρ} = fold-rename-fusion M
@@ -47,6 +50,20 @@ N [ M ] =  ⟪ M • id ⟫ N
   EQ : (x : Var) → ⟦ (N • id) x ⟧ ρ ≡ (⟦ N ⟧ ρ • ρ) x
   EQ zero = refl
   EQ (suc x) = refl
+
+
+{- Join Closed -}
+⟦⟧-join-closed : ∀ {M : Term}{ρ}
+   → (∀ x → join-closed (ρ x) )
+   → join-closed (⟦ M ⟧ ρ)
+⟦⟧-join-closed {` x} {ρ} ρ-closed = ρ-closed x
+⟦⟧-join-closed {L · M} {ρ} ρ-closed =
+  let IH1 = ⟦⟧-join-closed{L} ρ-closed in
+  let IH2 = ⟦⟧-join-closed{M} ρ-closed in
+  {!!}
+⟦⟧-join-closed {ƛ N} {ρ} ρ-closed = {!!}
+⟦⟧-join-closed {$ p k} {ρ} ρ-closed = {!!}
+
 
 infix 2 _—→_
 
