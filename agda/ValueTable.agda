@@ -133,12 +133,12 @@ module ≃-Reasoning where
   → D₁ ▪ D₂ ≃ D₁′ ▪ D₂′
 ▪-cong (equal x x₁) (equal x₂ x₃) = equal (▪-cong-≲ x x₂) (▪-cong-≲ x₁ x₃)
 
-monotonic : (F : 𝒫 Value → 𝒫 Value) → Set₁
-monotonic F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
+monotone : (F : 𝒫 Value → 𝒫 Value) → Set₁
+monotone F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
 
 Λᵗ-↦-∈ : ∀{t v w F D}
    → v ↦ w ∈ t  →  Λᵗ F t
-   → v ∈ D  →  monotonic F
+   → v ∈ D  →  monotone F
    → F D w
 Λᵗ-↦-∈ {.(⟨ _ , _ ⟩ ∷ _)}{v}{w}{F}{D} here ⟨ w∈Fv , _ ⟩ v∈D F-mono =
   F-mono ⌈ v ⌉ D (λ { v refl → v∈D }) w w∈Fv
@@ -146,12 +146,19 @@ monotonic F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
   Λᵗ-↦-∈{D = D} vw∈t ΛFt v∈D F-mono
 
 Λ-▪-≲ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → monotonic F
+  → monotone F
   → (Λ F) ▪ D ≲ F D
 Λ-▪-≲ {F} {D} Fmono w ⟨ t , ⟨ t∈ΛF , ⟨ v , ⟨ v↦w∈t , v∈D ⟩ ⟩ ⟩ ⟩ =
   Λᵗ-↦-∈ {D = D} v↦w∈t t∈ΛF v∈D Fmono
 
-{- aka continuous -}
+{- UNDER CONSTRUCTION
+
+continuous : (F : 𝒫 Value → 𝒫 Value) → Set
+continuous = ∀ X → e ∈ F X → Σ[ D ∈ List Value ] (mem D) ⊆ X × e ∈ F (mem D)
+
+-}
+
+{- aka continuous? -}
 finite : (F : 𝒫 Value → 𝒫 Value) → (D : 𝒫 Value) → Set
 finite F D = ∀ w → w ∈ F D → Σ[ v ∈ Value ] w ∈ F ⌈ v ⌉ × v ∈ D
 
@@ -164,7 +171,7 @@ finite F D = ∀ w → w ∈ F D → Σ[ v ∈ Value ] w ∈ F ⌈ v ⌉ × v �
   ⟨ ⟨ v , w ⟩ ∷ [] , ⟨ ⟨ w∈Fv , tt ⟩ , ⟨ v , ⟨ here , v∈D ⟩ ⟩ ⟩ ⟩
 
 Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → monotonic F → finite F D
+  → monotone F → finite F D
   → (Λ F) ▪ D ≃ F D
 Λ-▪ {F}{D} Fmono Ffin = equal (Λ-▪-≲ Fmono) (≲-Λ-▪ Ffin)
 
