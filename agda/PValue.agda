@@ -8,7 +8,7 @@ module PValue where
 
 open import Primitives
 open import Syntax using (Rename)
-open import ISWIM hiding (_[_]; id; _—→_)
+open import ISWIM hiding (_[_]; id; _—→_; _—↠_)
 open import Fold2 Op sig
 open import ScopedTuple hiding (𝒫)
 open import Sig
@@ -124,32 +124,28 @@ from (equal a b) = b
     equal (≲-trans d12 d23) (≲-trans d32 d21)
 
 module ≃-Reasoning where
-
   infixr 2 _≃⟨_⟩_
-  infix 3 _∎
-
-  _≃⟨_⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ D₃ : 𝒫 Value}
-     → D₁ ≃ D₂ → D₂ ≃ D₃ → D₁ ≃ D₃
+  _≃⟨_⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ D₃ : 𝒫 Value} → D₁ ≃ D₂ → D₂ ≃ D₃ → D₁ ≃ D₃
   D₁ ≃⟨ D₁≃D₂ ⟩ D₂≃D₃ = ≃-trans D₁≃D₂ D₂≃D₃
 
-  _∎ : ∀ (D : 𝒫 Value)
-     → D ≃ D
+  infix 3 _∎
+  _∎ : ∀ (D : 𝒫 Value) → D ≃ D
   D ∎  =  ≃-refl
 
 
 {- Application is a Congruence ------------------------------------------------------}
 
-▪-cong-≲ : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
-  → D₁ ≲ D₁′  →  D₂ ≲ D₂′
-  → D₁ ▪ D₂ ≲ D₁′ ▪ D₂′
-▪-cong-≲ D11 D22 w ⟨ V , ⟨ wv∈D1 , V<D2 ⟩ ⟩ =
-   ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , (λ d z → D22 d (V<D2 d z)) ⟩ ⟩
-
 ▪-cong : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
   → D₁ ≃ D₁′  →  D₂ ≃ D₂′
   → D₁ ▪ D₂ ≃ D₁′ ▪ D₂′
 ▪-cong (equal x x₁) (equal x₂ x₃) = equal (▪-cong-≲ x x₂) (▪-cong-≲ x₁ x₃)
-
+  where
+  ▪-cong-≲ : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
+    → D₁ ≲ D₁′  →  D₂ ≲ D₂′
+    → D₁ ▪ D₂ ≲ D₁′ ▪ D₂′
+  ▪-cong-≲ D11 D22 w ⟨ V , ⟨ wv∈D1 , V<D2 ⟩ ⟩ =
+     ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , (λ d z → D22 d (V<D2 d z)) ⟩ ⟩
+  
 
 {- Abstraction followed by Application is the identity ------------------------------}
 
@@ -209,9 +205,9 @@ infix 11 ⟦_⟧_
 
 {- Substitution Lemma (via fold-subst-fusion) ---------------------------------------}
 
-⟦⟧-subst : ∀ {M : Term}{σ : Subst}{ρ : Var → 𝒫 Value}
+⟦⟧-par-subst : ∀ {M : Term}{σ : Subst}{ρ : Var → 𝒫 Value}
   → ⟦ ⟪ σ ⟫ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ σ x ⟧ ρ)
-⟦⟧-subst {M}{ρ} = fold-subst-fusion M
+⟦⟧-par-subst {M}{ρ} = fold-subst-fusion M
 
 id : Subst
 id = (λ x → ` x)
@@ -219,10 +215,10 @@ id = (λ x → ` x)
 _[_] : Term → Term → Term
 N [ M ] =  ⟪ M • id ⟫ N
 
-⟦⟧-substitution : ∀ {M N : Term}{ρ : Var → 𝒫 Value}
+⟦⟧-subst : ∀ {M N : Term}{ρ : Var → 𝒫 Value}
   → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ ((⟦ N ⟧ ρ) • ρ)
-⟦⟧-substitution {M}{N}{ρ} =
-  subst (λ X → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ X) (extensionality EQ) (⟦⟧-subst {M}{N • id})
+⟦⟧-subst {M}{N}{ρ} =
+  subst (λ X → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ X) (extensionality EQ) (⟦⟧-par-subst {M}{N • id})
   where 
   EQ : (x : Var) → ⟦ (N • id) x ⟧ ρ ≡ (⟦ N ⟧ ρ • ρ) x
   EQ zero = refl
@@ -395,6 +391,10 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
     G zero d d∈ρ0 = (to ρ′x=D) d d∈ρ0 
     G (suc x) d m = ρ′⊆X•ρ (suc x) d m
 
+ISWIM-Λ-▪-id : ∀ {N : Term}{ρ}{D : 𝒫 Value}
+  → (Λ λ D → ⟦ N ⟧ (D • ρ)) ▪ D ≃ ⟦ N ⟧ (D • ρ)
+ISWIM-Λ-▪-id {N}{ρ}{D} =
+    Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}) (⟦⟧-monotone-one{N})
 
 {- Primitive Abstraction followed by Application is the identity --------------------}
 
@@ -450,42 +450,35 @@ data _—→_ : Term → Term → Set where
    → M —→ N
    → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ
 ⟦⟧—→ {L · M} {L′ · M} {ρ} (ξ₁-rule L—→L′) =
-  let IH = ⟦⟧—→{ρ = ρ} L—→L′ in
-    ⟦ L · M ⟧ ρ
-  ≃⟨ ≃-refl ⟩
-    (⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ)
-  ≃⟨ ▪-cong IH ≃-refl ⟩
-    (⟦ L′ ⟧ ρ) ▪ (⟦ M ⟧ ρ)
-  ≃⟨ ≃-refl ⟩
-    ⟦ L′ · M ⟧ ρ
-  ∎ where open ≃-Reasoning  
+    let IH = ⟦⟧—→{ρ = ρ} L—→L′ in
+    ⟦ L · M ⟧ ρ              ≃⟨ ≃-refl ⟩
+    (⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ)    ≃⟨ ▪-cong IH ≃-refl ⟩
+    (⟦ L′ ⟧ ρ) ▪ (⟦ M ⟧ ρ)   ≃⟨ ≃-refl ⟩
+    ⟦ L′ · M ⟧ ρ             ∎ where open ≃-Reasoning  
 ⟦⟧—→ {V · M} {.(_ · _)} {ρ} (ξ₂-rule {M′ = M′} v M—→M′) =
-  let IH = ⟦⟧—→{ρ = ρ} M—→M′ in
-    ⟦ V · M ⟧ ρ
-  ≃⟨ ≃-refl ⟩
-    (⟦ V ⟧ ρ) ▪ (⟦ M ⟧ ρ)
-  ≃⟨ ▪-cong (≃-refl{D = ⟦ V ⟧ ρ}) IH ⟩
-    (⟦ V ⟧ ρ) ▪ (⟦ M′ ⟧ ρ)
-  ≃⟨ ≃-refl ⟩
-    ⟦ V · M′ ⟧ ρ
-  ∎ where open ≃-Reasoning  
+    let IH = ⟦⟧—→{ρ = ρ} M—→M′ in
+    ⟦ V · M ⟧ ρ              ≃⟨ ≃-refl ⟩
+    (⟦ V ⟧ ρ) ▪ (⟦ M ⟧ ρ)    ≃⟨ ▪-cong (≃-refl{D = ⟦ V ⟧ ρ}) IH ⟩
+    (⟦ V ⟧ ρ) ▪ (⟦ M′ ⟧ ρ)   ≃⟨ ≃-refl ⟩
+    ⟦ V · M′ ⟧ ρ             ∎ where open ≃-Reasoning  
 ⟦⟧—→ {ƛ N · V} {_} {ρ} (β-rule v) =
-    ⟦ ƛ N · V ⟧ ρ
-  ≃⟨ ≃-refl ⟩
-     (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)
-  ≃⟨ Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}) (⟦⟧-monotone-one{N}) ⟩
-     ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)
-  ≃⟨ ≃-reflexive (sym (⟦⟧-substitution {N} {V} {ρ})) ⟩
-    ⟦ N [ V ] ⟧ ρ
-  ∎ where open ≃-Reasoning
+    ⟦ ƛ N · V ⟧ ρ                         ≃⟨ ≃-refl ⟩
+    (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ) ≃⟨ ISWIM-Λ-▪-id {N} ⟩
+    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)                   ≃⟨ ≃-reflexive (sym (⟦⟧-subst {N} {V} {ρ})) ⟩
+    ⟦ N [ V ] ⟧ ρ                         ∎ where open ≃-Reasoning
 ⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
-    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ
-  ≃⟨ ≃-refl ⟩
-    ⟦ $ (B ⇒ P) f ⟧ ρ ▪ ⟦ $ (base B) k ⟧ ρ
-  ≃⟨ ≃-refl ⟩
-    (℘ {B ⇒ P} f) ▪ (℘ {base B} k)
-  ≃⟨ ℘-▪-≃ {B}{P} ⟩
-    ℘ {P} (f k)
-  ≃⟨ ≃-refl ⟩
-    ⟦ $ P (f k) ⟧ ρ
-  ∎ where open ≃-Reasoning
+    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨ ≃-refl ⟩
+    (℘ {B ⇒ P} f) ▪ (℘ {base B} k)         ≃⟨ ℘-▪-≃ {B}{P} ⟩
+    ⟦ $ P (f k) ⟧ ρ                         ∎ where open ≃-Reasoning
+
+open import MultiStep Op sig _—→_ public
+
+soundness : ∀ {M N : Term} {ρ : Env}
+  → M —↠ ƛ N
+    -------------------
+  → ⟦ M ⟧ ρ ≃ ⟦ ƛ N ⟧ ρ
+soundness {M}{_}{ρ} (M □) = ⟦ M ⟧ ρ ≃⟨ ≃-refl ⟩ ⟦ M ⟧ ρ ∎ where open ≃-Reasoning
+soundness {M}{N}{ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
+    ⟦ M ⟧ ρ      ≃⟨ ⟦⟧—→ M—→M′ ⟩ 
+    ⟦ M′ ⟧ ρ     ≃⟨ soundness M′—↠N ⟩ 
+    ⟦ ƛ N ⟧ ρ    ∎ where open ≃-Reasoning
