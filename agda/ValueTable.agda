@@ -36,6 +36,9 @@ v ∈ D = D v
 _⊆_ : ∀{T : Set} → 𝒫 T → 𝒫 T → Set
 D ⊆ E = ∀ d → d ∈ D → d ∈ E
 
+⊆-trans : ∀{T : Set}{D E F : 𝒫 T} → D ⊆ E → E ⊆ F → D ⊆ F
+⊆-trans {T}{D}{E}{F} DE EF = λ d z → EF d (DE d z)
+
 {- List utilities -}
 
 data mem : ∀{T : Set} → List T → T → Set where
