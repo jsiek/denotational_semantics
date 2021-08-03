@@ -209,10 +209,6 @@ infix 11 ⟦_⟧_
 
 {- Substitution Lemma (via fold-subst-fusion) ---------------------------------------}
 
-⟦⟧-rename : ∀ {M : Term}{σ : Rename}{ρ : Var → 𝒫 Value}
-  → ⟦ rename σ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ ` σ x ⟧ ρ)
-⟦⟧-rename {M}{ρ} = fold-rename-fusion M
-
 ⟦⟧-subst : ∀ {M : Term}{σ : Subst}{ρ : Var → 𝒫 Value}
   → ⟦ ⟪ σ ⟫ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ σ x ⟧ ρ)
 ⟦⟧-subst {M}{ρ} = fold-subst-fusion M
@@ -226,8 +222,7 @@ N [ M ] =  ⟪ M • id ⟫ N
 ⟦⟧-substitution : ∀ {M N : Term}{ρ : Var → 𝒫 Value}
   → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ ((⟦ N ⟧ ρ) • ρ)
 ⟦⟧-substitution {M}{N}{ρ} =
-  subst (λ X → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ X) (extensionality EQ)
-        (⟦⟧-subst {M}{N • id})
+  subst (λ X → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ X) (extensionality EQ) (⟦⟧-subst {M}{N • id})
   where 
   EQ : (x : Var) → ⟦ (N • id) x ⟧ ρ ≡ (⟦ N ⟧ ρ • ρ) x
   EQ zero = refl
