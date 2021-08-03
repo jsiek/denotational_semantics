@@ -160,25 +160,22 @@ continuous F = ∀ X E → mem E ⊆ F X
 monotone : (F : 𝒫 Value → 𝒫 Value) → Set₁
 monotone F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
 
-Λ-▪-≲ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → monotone F
-  → (Λ F) ▪ D ≲ F D
-Λ-▪-≲ {F} {D} Fmono w ⟨ V , ⟨ w∈FV , V<D ⟩ ⟩ =
-   Fmono (mem V) D V<D w w∈FV
-
-≲-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
-  → continuous F
-  → F D ≲ (Λ F) ▪ D
-≲-Λ-▪ {F}{D} Fcont w w∈FD
-    with Fcont D (w ∷ []) λ { d mem-here → w∈FD }
-... | ⟨ E , ⟨ E<D , w∈FE ⟩ ⟩ = ⟨ E , ⟨ w∈FE w mem-here , E<D ⟩ ⟩
-
 Λ-▪-id : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
   → continuous F → monotone F
   → (Λ F) ▪ D ≃ F D
 Λ-▪-id {F}{D} Fcont Fmono = equal (Λ-▪-≲ Fmono) (≲-Λ-▪ Fcont)
+  where
+  Λ-▪-≲ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
+    → monotone F  →  (Λ F) ▪ D ≲ F D
+  Λ-▪-≲ {F} {D} Fmono w ⟨ V , ⟨ w∈FV , V<D ⟩ ⟩ = Fmono (mem V) D V<D w w∈FV
 
+  ≲-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
+    → continuous F  →  F D ≲ (Λ F) ▪ D
+  ≲-Λ-▪ {F}{D} Fcont w w∈FD
+      with Fcont D (w ∷ []) λ { d mem-here → w∈FD }
+  ... | ⟨ E , ⟨ E<D , w∈FE ⟩ ⟩ = ⟨ E , ⟨ w∈FE w mem-here , E<D ⟩ ⟩
 
+  
 {- Denotational Semantics of the ISWIM Language -------------------------------------}
 
 Env : Set₁
@@ -273,9 +270,7 @@ infix 6 _⊔ₑ_
 _⊔ₑ_ : Env → Env → Env
 (ρ₁ ⊔ₑ ρ₂) x v = ρ₁ x v ⊎ ρ₂ x v
 
-join-fin-env : ∀{ρ₁ ρ₂}
-  → fin-env ρ₁ → fin-env ρ₂
-  → fin-env (ρ₁ ⊔ₑ ρ₂)
+join-fin-env : ∀{ρ₁ ρ₂}  → fin-env ρ₁  →  fin-env ρ₂  →  fin-env (ρ₁ ⊔ₑ ρ₂)
 join-fin-env {ρ₁}{ρ₂} f1 f2 x
     with f1 x
 ... | ⟨ E1 , ρ₁<E1 ⟩
@@ -334,6 +329,10 @@ join-⊆-left {ρ₁}{ρ₂} = λ x d z → inj₁ z
 join-⊆-right : ∀{ρ₁ ρ₂} → ρ₂ ⊆ₑ ρ₁ ⊔ₑ ρ₂
 join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 
+⟦⟧-continuous-⊆ : ∀{M : Term}{ρ}{E}
+  → mem E ⊆ ⟦ M ⟧ ρ
+  → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem E ⊆ ⟦ M ⟧ ρ′
+
 ⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}
   → v ∈ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
@@ -345,25 +344,8 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈⟦L⟧ρ₁ ⟩ ⟩ ⟩ =
     G
     where
-    CM : ∀{V} → mem V ⊆ ⟦ M ⟧ ρ
-       → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem V ⊆ ⟦ M ⟧ ρ′
-    CM {[]} V⊆⟦M⟧ρ =
-     ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , (λ d ()) ⟩ ⟩ ⟩
-    CM {v ∷ V} V⊆⟦M⟧ρ 
-        with CM {V} λ d z → V⊆⟦M⟧ρ d (mem-there z)
-    ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆⟦M⟧ρ₂ ⟩ ⟩ ⟩
-        with ⟦⟧-continuous-env{M}{ρ}{v} (V⊆⟦M⟧ρ v mem-here)
-    ... | ⟨ ρ₃ , ⟨ fρ₃ , ⟨ ρ₃⊆ρ , v∈⟦M⟧ρ₃ ⟩ ⟩ ⟩ =
-        ⟨ ρ₄ , ⟨ (join-fin-env fρ₂ fρ₃) , ⟨ (join-lub ρ₂⊆ρ ρ₃⊆ρ) ,
-          v∷V⊆⟦M⟧ρ₄ ⟩ ⟩ ⟩
-        where
-        ρ₄ = ρ₂ ⊔ₑ ρ₃
-        v∷V⊆⟦M⟧ρ₄ : mem (v ∷ V) ⊆ ⟦ M ⟧ ρ₄
-        v∷V⊆⟦M⟧ρ₄ u mem-here = ⟦⟧-monotone {M}{ρ₃}{ρ₄} join-⊆-right u v∈⟦M⟧ρ₃
-        v∷V⊆⟦M⟧ρ₄ u (mem-there m) =
-           ⟦⟧-monotone {M}{ρ₂}{ρ₄} join-⊆-left u (V⊆⟦M⟧ρ₂ u m)
     G : Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  w ∈ ⟦ L · M ⟧ ρ′
-    G   with CM V⊆⟦M⟧ρ
+    G   with ⟦⟧-continuous-⊆{M} V⊆⟦M⟧ρ
     ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆⟦M⟧ρ₂ ⟩ ⟩ ⟩ =
           ⟨ ρ₃ , ⟨ join-fin-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ ,
             w∈⟦L·M⟧ρ₃ ⟩ ⟩ ⟩
@@ -388,9 +370,6 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 ⟦⟧-continuous-env {$ P k}{ρ}{v} v∈⟦M⟧ρ =
   ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , v∈⟦M⟧ρ ⟩ ⟩ ⟩
 
-⟦⟧-continuous-⊆ : ∀{M : Term}{ρ}{E}
-  → mem E ⊆ ⟦ M ⟧ ρ
-  → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem E ⊆ ⟦ M ⟧ ρ′
 ⟦⟧-continuous-⊆ {M}{ρ}{[]} []⊆⟦M⟧ρ =
   ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , (λ d ()) ⟩ ⟩ ⟩
 ⟦⟧-continuous-⊆ {M}{ρ}{v ∷ E} v∷E⊆⟦M⟧ρ
