@@ -1,14 +1,14 @@
 module PValue where
-
 {-
 
-  This one is closer to Scott and Engeler.
+  A denotational semantics of ISWIM based on the P(ω) model of Scott (1976)
+  and the Dₐ model of Engeler (1981).
 
 -}
 
 open import Primitives
 open import Syntax using (Rename)
-open import ISWIM hiding (subst-zero; _[_]; id; _—→_)
+open import ISWIM hiding (_[_]; id; _—→_)
 open import Fold2 Op sig
 open import ScopedTuple hiding (𝒫)
 open import Sig
@@ -16,18 +16,15 @@ open import Utilities using (extensionality)
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_) 
-open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _≟_; _<?_)
-open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
-  renaming (_,_ to ⟨_,_⟩)
+open import Data.Nat using (ℕ; zero; suc; _≟_)
+open import Data.Product using (_×_; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Unit using (tt) renaming (⊤ to True)
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app; subst)
-open import Relation.Nullary using (¬_; Dec; yes; no)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
+open import Relation.Nullary using (Dec; yes; no)
 
 module PValue where
 
-{- Set notation for predicates -}
+{- Set notation for predicates ------------------------------------------------------}
 
 𝒫 : Set → Set₁
 𝒫 V = V → Set
@@ -35,6 +32,7 @@ module PValue where
 ∅ : ∀{T} → 𝒫 T
 ∅ = λ v → False 
 
+{- the singleton set containing only v -}
 ⌈_⌉ : ∀ {T} → T → 𝒫 T
 ⌈ v ⌉ w = w ≡ v
 
@@ -46,14 +44,15 @@ infix 9 _⊆_
 _⊆_ : ∀{T : Set} → 𝒫 T → 𝒫 T → Set
 D ⊆ E = ∀ d → d ∈ D → d ∈ E
 
-⊆-trans : ∀{T : Set}{D E F : 𝒫 T} → D ⊆ E → E ⊆ F → D ⊆ F
-⊆-trans {T}{D}{E}{F} DE EF = λ d z → EF d (DE d z)
 
-{- Values -}
+{- Denotational Values --------------------------------------------------------------}
 
 data Value : Set where
   const : {b : Base} → base-rep b → Value
   _↦_ : List Value → Value → Value
+
+
+{- Finite Sets represented by Lists -------------------------------------------------}
 
 data mem : ∀{T : Set} → List T → T → Set where
   mem-here : ∀{T}{x : T}{ls} → mem (x ∷ ls) x
@@ -67,7 +66,8 @@ mem-++-right : ∀{T}{xs ys : List T}{x} → mem ys x → mem (xs ++ ys) x
 mem-++-right {T} {[]} m = m
 mem-++-right {T} {x ∷ xs} m = mem-there (mem-++-right m)
 
-{- Abstraction and Application -}
+
+{- Abstraction and Application ------------------------------------------------------}
 
 Λ : (𝒫 Value → 𝒫 Value) → 𝒫 Value
 Λ f (const k) = False
@@ -87,9 +87,8 @@ D₁ ▪ D₂ = λ w → Σ[ V ∈ List Value ] (V ↦ w ∈ D₁)  ×  (mem V �
 ℘ {B ⇒ P} f (V ↦ w) =
    Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ ℘ {P} (f k)
 
-{-
-  Denotational Equality and Inequality
- -}
+
+{- Denotational Equality and Approximation (less-than) ------------------------------}
 
 infix 6 _≲_
 _≲_ : 𝒫 Value → 𝒫 Value → Set
@@ -137,6 +136,9 @@ module ≃-Reasoning where
      → D ≃ D
   D ∎  =  ≃-refl
 
+
+{- Application is a Congruence ------------------------------------------------------}
+
 ▪-cong-≲ : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
   → D₁ ≲ D₁′  →  D₂ ≲ D₂′
   → D₁ ▪ D₂ ≲ D₁′ ▪ D₂′
@@ -147,6 +149,9 @@ module ≃-Reasoning where
   → D₁ ≃ D₁′  →  D₂ ≃ D₂′
   → D₁ ▪ D₂ ≃ D₁′ ▪ D₂′
 ▪-cong (equal x x₁) (equal x₂ x₃) = equal (▪-cong-≲ x x₂) (▪-cong-≲ x₁ x₃)
+
+
+{- Abstraction followed by Application is the identity ------------------------------}
 
 continuous : (F : 𝒫 Value → 𝒫 Value) → Set₁
 continuous F = ∀ X E → mem E ⊆ F X
@@ -168,13 +173,13 @@ monotone F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
     with Fcont D (w ∷ []) λ { d mem-here → w∈FD }
 ... | ⟨ E , ⟨ E<D , w∈FE ⟩ ⟩ = ⟨ E , ⟨ w∈FE w mem-here , E<D ⟩ ⟩
 
-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
+Λ-▪-id : ∀ {F : 𝒫 Value → 𝒫 Value}{D : 𝒫 Value}
   → continuous F → monotone F
   → (Λ F) ▪ D ≃ F D
-Λ-▪ {F}{D} Fcont Fmono = equal (Λ-▪-≲ Fmono) (≲-Λ-▪ Fcont)
+Λ-▪-id {F}{D} Fcont Fmono = equal (Λ-▪-≲ Fmono) (≲-Λ-▪ Fcont)
 
 
-{- ISWIM -}
+{- Denotational Semantics of the ISWIM Language -------------------------------------}
 
 Env : Set₁
 Env = Var → 𝒫 Value
@@ -205,7 +210,7 @@ infix 11 ⟦_⟧_
 ⟦⟧-prim = refl
 
 
-{- Substitution Lemma -}
+{- Substitution Lemma (via fold-subst-fusion) ---------------------------------------}
 
 ⟦⟧-rename : ∀ {M : Term}{σ : Rename}{ρ : Var → 𝒫 Value}
   → ⟦ rename σ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ ` σ x ⟧ ρ)
@@ -232,11 +237,9 @@ N [ M ] =  ⟪ M • id ⟫ N
   EQ (suc x) = refl
 
 
-{- Semantics is monotone -}
+{- Semantics is monotone ------------------------------------------------------------}
 
-⟦⟧-monotone : ∀{M : Term}{ρ ρ′}
-  → (∀ x → ρ x ≲ ρ′ x)
-  → ⟦ M ⟧ ρ ≲ ⟦ M ⟧ ρ′ 
+⟦⟧-monotone : ∀{M : Term}{ρ ρ′}  →  (∀ x → ρ x ≲ ρ′ x)  →  ⟦ M ⟧ ρ ≲ ⟦ M ⟧ ρ′ 
 ⟦⟧-monotone {` x} ρ<ρ′ = ρ<ρ′ x
 ⟦⟧-monotone {L · M} ρ<ρ′ w ⟨ V , ⟨ Vw∈L , V⊆M ⟩ ⟩ =
    let vw∈Lρ′ = ⟦⟧-monotone {L} ρ<ρ′ (V ↦ w) Vw∈L in
@@ -245,21 +248,21 @@ N [ M ] =  ⟪ M • id ⟫ N
 ⟦⟧-monotone {ƛ N}{ρ}{ρ′} ρ<ρ′ (const k) ()
 ⟦⟧-monotone {ƛ N}{ρ}{ρ′} ρ<ρ′ (V ↦ w) w∈⟦N⟧V•ρ =
   ⟦⟧-monotone {N}{mem V • ρ}{mem V • ρ′} G w w∈⟦N⟧V•ρ
-  where
-  G : (x : Var) → (mem V • ρ) x ≲ (mem V • ρ′) x
-  G zero = λ v z → z
-  G (suc x) = ρ<ρ′ x
+  where G : (x : Var) → (mem V • ρ) x ≲ (mem V • ρ′) x
+        G zero = λ v z → z
+        G (suc x) = ρ<ρ′ x
 ⟦⟧-monotone {$ p k} ρ<ρ′ v v∈℘k = v∈℘k
 
 ⟦⟧-monotone-one : ∀{N : Term}{ρ} → monotone (λ D → ⟦ N ⟧ (D • ρ))
 ⟦⟧-monotone-one {N}{ρ} D₁ D₂ D12 = ⟦⟧-monotone {N} G
-  where
-  G : (x : Var) → (D₁ • ρ) x ≲ (D₂ • ρ) x
-  G zero = D12
-  G (suc x) = λ v z → z
+  where G : (x : Var) → (D₁ • ρ) x ≲ (D₂ • ρ) x
+        G zero = D12
+        G (suc x) = λ v z → z
 
-{- Semantics is continuous -}
 
+{- Semantics is continuous ----------------------------------------------------------}
+
+{- environments whose codomain are finite sets -}
 fin-env : Env → Set
 fin-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≃ mem E
 
@@ -289,7 +292,7 @@ join-fin-env {ρ₁}{ρ₂} f1 f2 x
     H {x ∷ E} E<E1 .x mem-here = inj₁ ((from ρ₁<E1) x (E<E1 x mem-here))
     H {x ∷ E} E<E1 v (mem-there v∈E++E2) = H (λ v z → E<E1 v (mem-there z)) v v∈E++E2
 
-
+{- an environment that maps x to D and all other variables to ∅ -}
 single-env : Var → 𝒫 Value → Env
 single-env x D y
     with x ≟ y
@@ -309,22 +312,14 @@ _⊆ₑ_ : Env → Env → Set
 ⊆ₑ-trans : ∀{ρ₁ ρ₂ ρ₃} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
 ⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
 
-single-⊆ : ∀{ρ x v}
-   → v ∈ ρ x
-   → single-env x ⌈ v ⌉ ⊆ₑ ρ
+single-⊆ : ∀{ρ x v}  →  v ∈ ρ x  →  single-env x ⌈ v ⌉ ⊆ₑ ρ
 single-⊆ {ρ}{x} v∈ρx y v sing 
     with x ≟ y
 ... | yes refl rewrite sing = v∈ρx
 ... | no neq = ⊥-elim sing
 
-E⊆sing[xE]x : ∀{E}{x} → mem E ⊆ single-env x (mem E) x
-E⊆sing[xE]x {E}{x}
-    with x ≟ x
-... | yes refl = λ d z → z
-... | no neq = ⊥-elim (neq refl)
-
-v∈sing[xv]x : ∀{v}{x} → v ∈ single-env x ⌈ v ⌉ x
-v∈sing[xv]x {v}{x}
+v∈single[xv]x : ∀{v}{x} → v ∈ single-env x ⌈ v ⌉ x
+v∈single[xv]x {v}{x}
     with x ≟ x
 ... | yes refl = refl
 ... | no neq = ⊥-elim (neq refl)
@@ -342,11 +337,9 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 ⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}
   → v ∈ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
-  
 ⟦⟧-continuous-env {` x}{ρ}{v} v∈⟦x⟧ρ =
    ⟨ (single-env x ⌈ v ⌉) , ⟨ single-fin {v}{x} , ⟨ single-⊆ v∈⟦x⟧ρ ,
-     v∈sing[xv]x {v}{x} ⟩ ⟩ ⟩
-     
+     v∈single[xv]x {v}{x} ⟩ ⟩ ⟩
 ⟦⟧-continuous-env {L · M}{ρ}{w} ⟨ V , ⟨ V↦w∈⟦L⟧ρ , V⊆⟦M⟧ρ ⟩ ⟩
     with ⟦⟧-continuous-env{L}{ρ}{V ↦ w} V↦w∈⟦L⟧ρ
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈⟦L⟧ρ₁ ⟩ ⟩ ⟩ =
@@ -384,7 +377,6 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
         V⊆⟦M⟧ρ₃ v v∈V = ⟦⟧-monotone{M}{ρ₂}{ρ₃} ρ₂⊆ρ₄ v (V⊆⟦M⟧ρ₂ v v∈V)
         w∈⟦L·M⟧ρ₃ : w ∈ ⟦ L · M ⟧ ρ₃
         w∈⟦L·M⟧ρ₃ = ⟨ V , ⟨ V↦w∈⟦L⟧ρ₃ , V⊆⟦M⟧ρ₃ ⟩ ⟩
-
 ⟦⟧-continuous-env {ƛ N}{ρ}{V ↦ w} w∈⟦N⟧V•ρ
     with ⟦⟧-continuous-env{N}{mem V • ρ}{w} w∈⟦N⟧V•ρ
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧V•ρ′ ⟩ ⟩ ⟩ =    
@@ -393,7 +385,6 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
     where G : (x : Var) → ρ′ x ≲ (mem V • (λ x₁ → ρ′ (suc x₁))) x
           G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
           G (suc x) v v∈ρ′x = v∈ρ′x
-          
 ⟦⟧-continuous-env {$ P k}{ρ}{v} v∈⟦M⟧ρ =
   ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , v∈⟦M⟧ρ ⟩ ⟩ ⟩
 
@@ -429,6 +420,9 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
     G zero d d∈ρ0 = (to ρ′x=D) d d∈ρ0 
     G (suc x) d m = ρ′⊆X•ρ (suc x) d m
 
+
+{- Primitive Abstraction followed by Application is the identity --------------------}
+
 k∈℘k : ∀{B}{k} → const {B} k ∈ ℘ {base B} k
 k∈℘k {B}{k}
     with base-eq? B B
@@ -454,38 +448,33 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
                (λ {d mem-here → k∈℘k}) ⟩ ⟩
 
 
-{- Reduction -}
+{- Reduction semantics of ISWIM -}
 
 infix 2 _—→_
-
 data _—→_ : Term → Term → Set where
-
   ξ₁-rule : ∀  {L L′ M : Term}
     → L —→ L′
       ----------------
     → L · M —→ L′ · M
-
   ξ₂-rule : ∀  {L M M′ : Term}
     → TermValue L
     → M —→ M′
       ----------------
     → L · M —→ L · M′
-
   β-rule : ∀  {N : Term} {M : Term}
     → TermValue M
       ---------------------------------
     → (ƛ N) · M —→ N [ M ]
-
   δ-rule : ∀ {B}{P} {f : base-rep B → rep P} {k : base-rep B}
       ------------------------------------------------------------
     → _—→_  (($ (B ⇒ P) f) · ($ (base B) k)) ($ P (f k))
+
 
 {- Soundness of Reduction with respect to Denotations -}
 
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value}
    → M —→ N
    → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ
-   
 ⟦⟧—→ {L · M} {L′ · M} {ρ} (ξ₁-rule L—→L′) =
   let IH = ⟦⟧—→{ρ = ρ} L—→L′ in
     ⟦ L · M ⟧ ρ
@@ -512,7 +501,7 @@ data _—→_ : Term → Term → Set where
     ⟦ ƛ N · V ⟧ ρ
   ≃⟨ ≃-refl ⟩
      (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)
-  ≃⟨ Λ-▪ {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}) (⟦⟧-monotone-one{N}) ⟩
+  ≃⟨ Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}) (⟦⟧-monotone-one{N}) ⟩
      ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)
   ≃⟨ ≃-reflexive (sym (⟦⟧-substitution {N} {V} {ρ})) ⟩
     ⟦ N [ V ] ⟧ ρ
