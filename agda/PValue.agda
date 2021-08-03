@@ -296,14 +296,8 @@ single-env x D y
 ... | yes refl = D
 ... | no neq = ∅
 
-single-fin : ∀{E}{x} → fin-env (single-env x (mem E))
-single-fin {E}{x} y
-    with x ≟ y
-... | no neq = ⟨ [] , (equal (λ v ()) (λ v ())) ⟩
-... | yes refl = ⟨ E , ≃-refl ⟩
-
-single-fin2 : ∀{v}{x} → fin-env (single-env x ⌈ v ⌉)
-single-fin2 {v}{x} y
+single-fin : ∀{v}{x} → fin-env (single-env x ⌈ v ⌉)
+single-fin {v}{x} y
     with x ≟ y
 ... | no neq = ⟨ [] , (equal (λ v ()) (λ v ())) ⟩
 ... | yes refl = ⟨ v ∷ [] , equal (λ { v₁ refl → mem-here}) (λ { v₁ mem-here → refl}) ⟩
@@ -315,18 +309,10 @@ _⊆ₑ_ : Env → Env → Set
 ⊆ₑ-trans : ∀{ρ₁ ρ₂ ρ₃} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
 ⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
 
-single-⊆ : ∀{ρ x E}
-   → mem E ⊆ ρ x
-   → single-env x (mem E) ⊆ₑ ρ
-single-⊆ {ρ}{x}{E} E⊆ρx y v sing[xE]yv
-    with x ≟ y
-... | yes refl = E⊆ρx v sing[xE]yv
-... | no neq = ⊥-elim sing[xE]yv
-
-single-⊆-2 : ∀{ρ x v}
+single-⊆ : ∀{ρ x v}
    → v ∈ ρ x
    → single-env x ⌈ v ⌉ ⊆ₑ ρ
-single-⊆-2 {ρ}{x} v∈ρx y v sing 
+single-⊆ {ρ}{x} v∈ρx y v sing 
     with x ≟ y
 ... | yes refl rewrite sing = v∈ρx
 ... | no neq = ⊥-elim sing
@@ -358,8 +344,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
   
 ⟦⟧-continuous-env {` x}{ρ}{v} v∈⟦x⟧ρ =
-   let xx = single-fin {v ∷ []}{x} in
-   ⟨ (single-env x ⌈ v ⌉) , ⟨ single-fin2 {v}{x} , ⟨ single-⊆-2 v∈⟦x⟧ρ ,
+   ⟨ (single-env x ⌈ v ⌉) , ⟨ single-fin {v}{x} , ⟨ single-⊆ v∈⟦x⟧ρ ,
      v∈sing[xv]x {v}{x} ⟩ ⟩ ⟩
      
 ⟦⟧-continuous-env {L · M}{ρ}{w} ⟨ V , ⟨ V↦w∈⟦L⟧ρ , V⊆⟦M⟧ρ ⟩ ⟩
@@ -444,6 +429,30 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
     G zero d d∈ρ0 = (to ρ′x=D) d d∈ρ0 
     G (suc x) d m = ρ′⊆X•ρ (suc x) d m
 
+k∈℘k : ∀{B}{k} → const {B} k ∈ ℘ {base B} k
+k∈℘k {B}{k}
+    with base-eq? B B
+... | yes refl = refl
+... | no neq = neq refl
+
+k′∈℘k⇒k′≡k : ∀{B}{k}{k′} → const {B} k′ ∈ ℘ {base B} k → k′ ≡ k
+k′∈℘k⇒k′≡k {B}{k}{k′} m
+    with base-eq? B B
+... | yes refl = sym m
+... | no neq = ⊥-elim m
+
+℘-▪-≃ : ∀{B}{P}{f}{k}
+   → (℘ {B ⇒ P} f) ▪ (℘ {base B} k) ≃ ℘ {P} (f k)
+℘-▪-≃ {B}{P}{f}{k} = equal G H
+  where
+  G : ℘ {B ⇒ P} f ▪ ℘ k ≲ ℘ {P} (f k)
+  G w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , k′∈pk ⟩ ⟩
+      with k′∈pk (const k′) mem-here
+  ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
+  H : ℘ {P} (f k) ≲ ℘ {B ⇒ P} f ▪ ℘ k
+  H w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
+               (λ {d mem-here → k∈℘k}) ⟩ ⟩
+
 
 {- Reduction -}
 
@@ -471,7 +480,7 @@ data _—→_ : Term → Term → Set where
       ------------------------------------------------------------
     → _—→_  (($ (B ⇒ P) f) · ($ (base B) k)) ($ P (f k))
 
-{- Soundness of the Semantics -}
+{- Soundness of Reduction with respect to Denotations -}
 
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value}
    → M —→ N
@@ -509,4 +518,15 @@ data _—→_ : Term → Term → Set where
     ⟦ N [ V ] ⟧ ρ
   ∎
   where open ≃-Reasoning
-⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule = {!!}
+⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
+    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ
+  ≃⟨ ≃-refl ⟩
+    ⟦ $ (B ⇒ P) f ⟧ ρ ▪ ⟦ $ (base B) k ⟧ ρ
+  ≃⟨ ≃-refl ⟩
+    (℘ {B ⇒ P} f) ▪ (℘ {base B} k)
+  ≃⟨ ℘-▪-≃ {B}{P} ⟩
+    ℘ {P} (f k)
+  ≃⟨ ≃-refl ⟩
+    ⟦ $ P (f k) ⟧ ρ
+  ∎
+  where open ≃-Reasoning
