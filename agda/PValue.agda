@@ -176,19 +176,19 @@ monotone F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
   ... | ⟨ E , ⟨ E<D , w∈FE ⟩ ⟩ = ⟨ E , ⟨ w∈FE w mem-here , E<D ⟩ ⟩
 
   
-{- Denotational Semantics of the ISWIM Language -------------------------------------}
+{- Denotational Semantics of the ISWIM Language via fold ----------------------------}
 
 Env : Set₁
 Env = Var → 𝒫 Value
 
-interp  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
-interp lam ⟨ F , _ ⟩ = Λ F
-interp app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
-interp (lit P k) _ = ℘ {P} k
+interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
+interp-op lam ⟨ F , _ ⟩ = Λ F
+interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
+interp-op (lit P k) _ = ℘ {P} k
 
 infix 11 ⟦_⟧_
 ⟦_⟧_ : Term → Env → 𝒫 Value
-⟦ M ⟧ ρ = fold interp ∅ ρ M
+⟦ M ⟧ ρ = fold interp-op ∅ ρ M
 
 ⟦⟧-app : ∀{L M : Term}{ρ : Env}
   → ⟦ L · M ⟧ ρ ≡ ⟦ L ⟧ ρ ▪ ⟦ M ⟧ ρ
@@ -328,6 +328,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
   → mem E ⊆ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem E ⊆ ⟦ M ⟧ ρ′
 
+{- The Main Lemma -}
 ⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}
   → v ∈ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
@@ -376,7 +377,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
     G ⟩ ⟩ ⟩
     where
     ρ₃ = ρ₁ ⊔ₑ ρ₂
-    G : (d : Value) → mem (v ∷ E) d → fold interp (λ v₁ → False) ρ₃ M d
+    G : (d : Value) → mem (v ∷ E) d → d ∈ ⟦ M ⟧ ρ₃
     G d mem-here = ⟦⟧-monotone {M}{ρ₂}{ρ₃} join-⊆-right v v∈⟦M⟧ρ₂
     G d (mem-there m) = ⟦⟧-monotone {M}{ρ₁}{ρ₃} join-⊆-left d (E⊆⟦M⟧ρ₁ d m)
 
@@ -422,7 +423,7 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
                (λ {d mem-here → k∈℘k}) ⟩ ⟩
 
 
-{- Reduction semantics of ISWIM -}
+{- Reduction semantics of ISWIM -----------------------------------------------------}
 
 infix 2 _—→_
 data _—→_ : Term → Term → Set where
@@ -431,20 +432,19 @@ data _—→_ : Term → Term → Set where
       ----------------
     → L · M —→ L′ · M
   ξ₂-rule : ∀  {L M M′ : Term}
-    → TermValue L
-    → M —→ M′
-      ----------------
+    → TermValue L  →  M —→ M′
+      -----------------------
     → L · M —→ L · M′
-  β-rule : ∀  {N : Term} {M : Term}
+  β-rule : ∀  {N M : Term}
     → TermValue M
-      ---------------------------------
+      --------------------
     → (ƛ N) · M —→ N [ M ]
-  δ-rule : ∀ {B}{P} {f : base-rep B → rep P} {k : base-rep B}
-      ------------------------------------------------------------
-    → _—→_  (($ (B ⇒ P) f) · ($ (base B) k)) ($ P (f k))
+  δ-rule : ∀ {B}{P} {f : base-rep B → rep P} {k}
+      ---------------------------------------------
+    → ($ (B ⇒ P) f) · ($ (base B) k)  —→  $ P (f k)
 
 
-{- Soundness of Reduction with respect to Denotations -}
+{- Soundness of Reduction with respect to Denotations -------------------------------}
 
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value}
    → M —→ N
@@ -458,8 +458,7 @@ data _—→_ : Term → Term → Set where
     (⟦ L′ ⟧ ρ) ▪ (⟦ M ⟧ ρ)
   ≃⟨ ≃-refl ⟩
     ⟦ L′ · M ⟧ ρ
-  ∎
-  where open ≃-Reasoning  
+  ∎ where open ≃-Reasoning  
 ⟦⟧—→ {V · M} {.(_ · _)} {ρ} (ξ₂-rule {M′ = M′} v M—→M′) =
   let IH = ⟦⟧—→{ρ = ρ} M—→M′ in
     ⟦ V · M ⟧ ρ
@@ -469,8 +468,7 @@ data _—→_ : Term → Term → Set where
     (⟦ V ⟧ ρ) ▪ (⟦ M′ ⟧ ρ)
   ≃⟨ ≃-refl ⟩
     ⟦ V · M′ ⟧ ρ
-  ∎
-  where open ≃-Reasoning  
+  ∎ where open ≃-Reasoning  
 ⟦⟧—→ {ƛ N · V} {_} {ρ} (β-rule v) =
     ⟦ ƛ N · V ⟧ ρ
   ≃⟨ ≃-refl ⟩
@@ -479,8 +477,7 @@ data _—→_ : Term → Term → Set where
      ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)
   ≃⟨ ≃-reflexive (sym (⟦⟧-substitution {N} {V} {ρ})) ⟩
     ⟦ N [ V ] ⟧ ρ
-  ∎
-  where open ≃-Reasoning
+  ∎ where open ≃-Reasoning
 ⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
     ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ
   ≃⟨ ≃-refl ⟩
@@ -491,5 +488,4 @@ data _—→_ : Term → Term → Set where
     ℘ {P} (f k)
   ≃⟨ ≃-refl ⟩
     ⟦ $ P (f k) ⟧ ρ
-  ∎
-  where open ≃-Reasoning
+  ∎ where open ≃-Reasoning
