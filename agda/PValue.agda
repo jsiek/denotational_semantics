@@ -184,9 +184,25 @@ interp lam ⟨ F , _ ⟩ = Λ F
 interp app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
 interp (lit P k) _ = ℘ {P} k
 
-infix 10 ⟦_⟧_
+infix 11 ⟦_⟧_
 ⟦_⟧_ : Term → Env → 𝒫 Value
 ⟦ M ⟧ ρ = fold interp ∅ ρ M
+
+⟦⟧-app : ∀{L M : Term}{ρ : Env}
+  → ⟦ L · M ⟧ ρ ≡ ⟦ L ⟧ ρ ▪ ⟦ M ⟧ ρ
+⟦⟧-app = refl
+
+⟦⟧-lam : ∀{N : Term}{ρ : Env}
+  → ⟦ ƛ N ⟧ ρ ≡ Λ (λ D → ⟦ N ⟧ (D • ρ))
+⟦⟧-lam = refl
+
+⟦⟧-lam-2 : ∀{N : Term}{ρ : Env}{V w}
+  → V ↦ w ∈ ⟦ ƛ N ⟧ ρ ≡ w ∈ ⟦ N ⟧ (mem V • ρ)
+⟦⟧-lam-2 = refl
+
+⟦⟧-prim : ∀{P : Prim}{k : rep P}{ρ : Env}
+  → ⟦ $ P k ⟧ ρ ≡ ℘ {P} k
+⟦⟧-prim = refl
 
 
 {- Substitution Lemma -}
@@ -245,10 +261,10 @@ N [ M ] =  ⟪ M • id ⟫ N
 {- Semantics is continuous -}
 
 fin-env : Env → Set
-fin-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≲ mem E
+fin-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≃ mem E
 
 empty-fin : ∀{T : Set} → fin-env (λ x → ∅)
-empty-fin x = ⟨ [] , (λ v ()) ⟩
+empty-fin x = ⟨ [] , equal (λ v ()) (λ v ()) ⟩
 
 infix 6 _⊔ₑ_
 _⊔ₑ_ : Env → Env → Env
@@ -262,11 +278,17 @@ join-fin-env {ρ₁}{ρ₂} f1 f2 x
 ... | ⟨ E1 , ρ₁<E1 ⟩
     with f2 x
 ... | ⟨ E2 , ρ₂<E2 ⟩ =
-    ⟨ (E1 ++ E2) , G ⟩
+    ⟨ (E1 ++ E2) , equal G (H {E1} ≲-refl) ⟩
     where
     G : (v : Value) → ρ₁ x v ⊎ ρ₂ x v → mem (E1 ++ E2) v
-    G v (inj₁ ρ1x) = mem-++-left (ρ₁<E1 v ρ1x)
-    G v (inj₂ ρ2x) = mem-++-right (ρ₂<E2 v ρ2x)
+    G v (inj₁ ρ1x) = mem-++-left ((to ρ₁<E1) v ρ1x)
+    G v (inj₂ ρ2x) = mem-++-right ((to ρ₂<E2) v ρ2x)
+
+    H : ∀{E} → mem E ≲ mem E1 → mem (E ++ E2) ≲ (λ v → ρ₁ x v ⊎ ρ₂ x v)
+    H {[]} E<E1 v v∈E++E2 = inj₂ ((from ρ₂<E2) v v∈E++E2)
+    H {x ∷ E} E<E1 .x mem-here = inj₁ ((from ρ₁<E1) x (E<E1 x mem-here))
+    H {x ∷ E} E<E1 v (mem-there v∈E++E2) = H (λ v z → E<E1 v (mem-there z)) v v∈E++E2
+
 
 single-env : Var → 𝒫 Value → Env
 single-env x D y
@@ -275,12 +297,16 @@ single-env x D y
 ... | no neq = ∅
 
 single-fin : ∀{E}{x} → fin-env (single-env x (mem E))
-single-fin {E}{x} y = ⟨ E , G ⟩
-  where G : single-env x (mem E) y ≲ mem E
-        G v x₁
-            with x ≟ y
-        ... | yes refl = x₁
-        ... | no neq = ⊥-elim x₁
+single-fin {E}{x} y
+    with x ≟ y
+... | no neq = ⟨ [] , (equal (λ v ()) (λ v ())) ⟩
+... | yes refl = ⟨ E , ≃-refl ⟩
+
+single-fin2 : ∀{v}{x} → fin-env (single-env x ⌈ v ⌉)
+single-fin2 {v}{x} y
+    with x ≟ y
+... | no neq = ⟨ [] , (equal (λ v ()) (λ v ())) ⟩
+... | yes refl = ⟨ v ∷ [] , equal (λ { v₁ refl → mem-here}) (λ { v₁ mem-here → refl}) ⟩
 
 infix 5 _⊆ₑ_
 _⊆ₑ_ : Env → Env → Set
@@ -297,10 +323,24 @@ single-⊆ {ρ}{x}{E} E⊆ρx y v sing[xE]yv
 ... | yes refl = E⊆ρx v sing[xE]yv
 ... | no neq = ⊥-elim sing[xE]yv
 
+single-⊆-2 : ∀{ρ x v}
+   → v ∈ ρ x
+   → single-env x ⌈ v ⌉ ⊆ₑ ρ
+single-⊆-2 {ρ}{x} v∈ρx y v sing 
+    with x ≟ y
+... | yes refl rewrite sing = v∈ρx
+... | no neq = ⊥-elim sing
+
 E⊆sing[xE]x : ∀{E}{x} → mem E ⊆ single-env x (mem E) x
 E⊆sing[xE]x {E}{x}
     with x ≟ x
 ... | yes refl = λ d z → z
+... | no neq = ⊥-elim (neq refl)
+
+v∈sing[xv]x : ∀{v}{x} → v ∈ single-env x ⌈ v ⌉ x
+v∈sing[xv]x {v}{x}
+    with x ≟ x
+... | yes refl = refl
 ... | no neq = ⊥-elim (neq refl)
 
 join-lub : ∀{ρ ρ₁ ρ₂} → ρ₁ ⊆ₑ ρ → ρ₂ ⊆ₑ ρ → ρ₁ ⊔ₑ ρ₂ ⊆ₑ ρ
@@ -313,91 +353,97 @@ join-⊆-left {ρ₁}{ρ₂} = λ x d z → inj₁ z
 join-⊆-right : ∀{ρ₁ ρ₂} → ρ₂ ⊆ₑ ρ₁ ⊔ₑ ρ₂
 join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 
-⟦⟧-continuous-env : ∀{M : Term}{ρ}{E}
+⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}
+  → v ∈ ⟦ M ⟧ ρ
+  → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
+  
+⟦⟧-continuous-env {` x}{ρ}{v} v∈⟦x⟧ρ =
+   let xx = single-fin {v ∷ []}{x} in
+   ⟨ (single-env x ⌈ v ⌉) , ⟨ single-fin2 {v}{x} , ⟨ single-⊆-2 v∈⟦x⟧ρ ,
+     v∈sing[xv]x {v}{x} ⟩ ⟩ ⟩
+     
+⟦⟧-continuous-env {L · M}{ρ}{w} ⟨ V , ⟨ V↦w∈⟦L⟧ρ , V⊆⟦M⟧ρ ⟩ ⟩
+    with ⟦⟧-continuous-env{L}{ρ}{V ↦ w} V↦w∈⟦L⟧ρ
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈⟦L⟧ρ₁ ⟩ ⟩ ⟩ =
+    G
+    where
+    CM : ∀{V} → mem V ⊆ ⟦ M ⟧ ρ
+       → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem V ⊆ ⟦ M ⟧ ρ′
+    CM {[]} V⊆⟦M⟧ρ =
+     ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , (λ d ()) ⟩ ⟩ ⟩
+    CM {v ∷ V} V⊆⟦M⟧ρ 
+        with CM {V} λ d z → V⊆⟦M⟧ρ d (mem-there z)
+    ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆⟦M⟧ρ₂ ⟩ ⟩ ⟩
+        with ⟦⟧-continuous-env{M}{ρ}{v} (V⊆⟦M⟧ρ v mem-here)
+    ... | ⟨ ρ₃ , ⟨ fρ₃ , ⟨ ρ₃⊆ρ , v∈⟦M⟧ρ₃ ⟩ ⟩ ⟩ =
+        ⟨ ρ₄ , ⟨ (join-fin-env fρ₂ fρ₃) , ⟨ (join-lub ρ₂⊆ρ ρ₃⊆ρ) ,
+          v∷V⊆⟦M⟧ρ₄ ⟩ ⟩ ⟩
+        where
+        ρ₄ = ρ₂ ⊔ₑ ρ₃
+        v∷V⊆⟦M⟧ρ₄ : mem (v ∷ V) ⊆ ⟦ M ⟧ ρ₄
+        v∷V⊆⟦M⟧ρ₄ u mem-here = ⟦⟧-monotone {M}{ρ₃}{ρ₄} join-⊆-right u v∈⟦M⟧ρ₃
+        v∷V⊆⟦M⟧ρ₄ u (mem-there m) =
+           ⟦⟧-monotone {M}{ρ₂}{ρ₄} join-⊆-left u (V⊆⟦M⟧ρ₂ u m)
+    G : Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  w ∈ ⟦ L · M ⟧ ρ′
+    G   with CM V⊆⟦M⟧ρ
+    ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆⟦M⟧ρ₂ ⟩ ⟩ ⟩ =
+          ⟨ ρ₃ , ⟨ join-fin-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ ,
+            w∈⟦L·M⟧ρ₃ ⟩ ⟩ ⟩
+        where
+        ρ₃ = ρ₁ ⊔ₑ ρ₂
+        ρ₁⊆ρ₃ = λ x v z → inj₁ z
+        V↦w∈⟦L⟧ρ₃ : V ↦ w ∈ ⟦ L ⟧ ρ₃
+        V↦w∈⟦L⟧ρ₃ = ⟦⟧-monotone{L}{ρ₁}{ρ₃} ρ₁⊆ρ₃ (V ↦ w) V↦w∈⟦L⟧ρ₁
+        ρ₂⊆ρ₄ = λ x v z → inj₂ z
+        V⊆⟦M⟧ρ₃ : mem V ⊆ ⟦ M ⟧ ρ₃
+        V⊆⟦M⟧ρ₃ v v∈V = ⟦⟧-monotone{M}{ρ₂}{ρ₃} ρ₂⊆ρ₄ v (V⊆⟦M⟧ρ₂ v v∈V)
+        w∈⟦L·M⟧ρ₃ : w ∈ ⟦ L · M ⟧ ρ₃
+        w∈⟦L·M⟧ρ₃ = ⟨ V , ⟨ V↦w∈⟦L⟧ρ₃ , V⊆⟦M⟧ρ₃ ⟩ ⟩
+
+⟦⟧-continuous-env {ƛ N}{ρ}{V ↦ w} w∈⟦N⟧V•ρ
+    with ⟦⟧-continuous-env{N}{mem V • ρ}{w} w∈⟦N⟧V•ρ
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧V•ρ′ ⟩ ⟩ ⟩ =    
+      ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,
+        ⟦⟧-monotone{N}{ρ′}{mem V • (λ z → ρ′ (suc z))} G w w∈⟦N⟧V•ρ′ ⟩ ⟩ ⟩
+    where G : (x : Var) → ρ′ x ≲ (mem V • (λ x₁ → ρ′ (suc x₁))) x
+          G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
+          G (suc x) v v∈ρ′x = v∈ρ′x
+          
+⟦⟧-continuous-env {$ P k}{ρ}{v} v∈⟦M⟧ρ =
+  ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , v∈⟦M⟧ρ ⟩ ⟩ ⟩
+
+⟦⟧-continuous-⊆ : ∀{M : Term}{ρ}{E}
   → mem E ⊆ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem E ⊆ ⟦ M ⟧ ρ′
-  
-⟦⟧-continuous-env {` x}{ρ}{E} E⊆⟦M⟧ρ =
-   ⟨ single-env x (mem E) ,
-   ⟨ single-fin{E}{x} ,
-   ⟨ single-⊆ E⊆⟦M⟧ρ ,
-     E⊆sing[xE]x{E}{x} ⟩ ⟩ ⟩
-     
-⟦⟧-continuous-env {L · M}{ρ}{[]} E⊆⟦M⟧ρ =
-   ⟨ (λ x → ∅) , ⟨ (λ x → ⟨ [] , (λ x₁ ()) ⟩) , ⟨ (λ x d ()) , (λ d ()) ⟩ ⟩ ⟩
-   
-⟦⟧-continuous-env {L · M}{ρ}{w ∷ E} E⊆⟦M⟧ρ
-    with ⟦⟧-continuous-env {L · M}{ρ}{E} λ d z → E⊆⟦M⟧ρ d (mem-there z)
-... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , E⊆⟦L·M⟧ρ′ ⟩ ⟩ ⟩ 
-    with E⊆⟦M⟧ρ w mem-here
-... | ⟨ V , ⟨ V↦w∈⟦L⟧ρ , V⊆⟦M⟧ρ ⟩ ⟩ 
-    with ⟦⟧-continuous-env{L}{ρ}{(V ↦ w) ∷ []} λ { d mem-here → V↦w∈⟦L⟧ρ }
-... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , [V↦w]⊆⟦L⟧ρ₂ ⟩ ⟩ ⟩
-    with ⟦⟧-continuous-env{M}{ρ}{V} V⊆⟦M⟧ρ
-... | ⟨ ρ₃ , ⟨ fρ₃ , ⟨ ρ₃⊆ρ , V⊆⟦M⟧ρ₃ ⟩ ⟩ ⟩ =
-    ⟨ ρ₄ , ⟨ fin-ρ₄ , ⟨ ρ₄⊆ρ , w∷E⊆⟦L·M⟧ρ₄ ⟩ ⟩ ⟩
+⟦⟧-continuous-⊆ {M}{ρ}{[]} []⊆⟦M⟧ρ =
+  ⟨ (λ x → ∅) , ⟨ empty-fin{Value} , ⟨ (λ x d ()) , (λ d ()) ⟩ ⟩ ⟩
+⟦⟧-continuous-⊆ {M}{ρ}{v ∷ E} v∷E⊆⟦M⟧ρ
+    with ⟦⟧-continuous-⊆ {M}{ρ}{E} λ d z → v∷E⊆⟦M⟧ρ d (mem-there z)
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , E⊆⟦M⟧ρ₁ ⟩ ⟩ ⟩
+    with ⟦⟧-continuous-env {M}{ρ}{v} (v∷E⊆⟦M⟧ρ v mem-here)
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈⟦M⟧ρ₂ ⟩ ⟩ ⟩ =
+    ⟨ ρ₃ , ⟨ (join-fin-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
+    G ⟩ ⟩ ⟩
     where
-    ρ₄ = (ρ′ ⊔ₑ ρ₂) ⊔ₑ ρ₃
-    fin-ρ₄ : fin-env ρ₄
-    fin-ρ₄ = join-fin-env (join-fin-env fρ′ fρ₂) fρ₃
-    ρ₄⊆ρ : ρ₄ ⊆ₑ ρ
-    ρ₄⊆ρ = join-lub (join-lub ρ′⊆ρ ρ₂⊆ρ) ρ₃⊆ρ
-    ρ′⊆ρ₄ : ρ′ ⊆ₑ ρ₄
-    ρ′⊆ρ₄ = ⊆ₑ-trans join-⊆-left join-⊆-left
-    ρ₂⊆ρ₄ : ρ₂ ⊆ₑ ρ₄
-    ρ₂⊆ρ₄ = ⊆ₑ-trans join-⊆-right join-⊆-left
-    ρ₃⊆ρ₄ : ρ₃ ⊆ₑ ρ₄
-    ρ₃⊆ρ₄ = join-⊆-right
-    V↦w∈⟦L⟧ρ₄ : V ↦ w ∈ ⟦ L ⟧ ρ₄
-    V↦w∈⟦L⟧ρ₄ = ⟦⟧-monotone{L}{ρ₂}{ρ₄} ρ₂⊆ρ₄ (V ↦ w)
-                    ([V↦w]⊆⟦L⟧ρ₂ (V ↦ w) mem-here)
-    V⊆⟦M⟧ρ₄ : mem V ⊆ ⟦ M ⟧ ρ₄
-    V⊆⟦M⟧ρ₄ v v∈V = ⟦⟧-monotone{M}{ρ₃}{ρ₄} ρ₃⊆ρ₄ v (V⊆⟦M⟧ρ₃ v v∈V)
-    w∈⟦L·M⟧ρ₄ : w ∈ ⟦ L · M ⟧ ρ₄
-    w∈⟦L·M⟧ρ₄ = ⟨ V , ⟨ V↦w∈⟦L⟧ρ₄ , V⊆⟦M⟧ρ₄ ⟩ ⟩
-    E⊆⟦L·M⟧ρ₄ : mem E ⊆ ⟦ L · M ⟧ ρ₄
-    E⊆⟦L·M⟧ρ₄ w′ w′∈E =
-       let w′∈⟦L·M⟧ρ′ = E⊆⟦L·M⟧ρ′ w′ w′∈E in
-       ⟦⟧-monotone {L · M}{ρ′}{ρ₄} ρ′⊆ρ₄ w′ w′∈⟦L·M⟧ρ′ 
-    w∷E⊆⟦L·M⟧ρ₄ : mem (w ∷ E) ⊆ ⟦ L · M ⟧ ρ₄
-    w∷E⊆⟦L·M⟧ρ₄ v mem-here = w∈⟦L·M⟧ρ₄
-    w∷E⊆⟦L·M⟧ρ₄ v (mem-there v∈E) = E⊆⟦L·M⟧ρ₄ v v∈E
-
-⟦⟧-continuous-env {ƛ N}{ρ}{E} E⊆⟦M⟧ρ = {!!}
-⟦⟧-continuous-env {$ p k}{ρ}{E} E⊆⟦M⟧ρ = {!!}
-
-
-update : Env → ℕ → 𝒫 Value → Env → Env
-update ρ n D ρ′ x
-    with x <? n
-... | yes lt = ρ x
-... | no nlt
-    with x ≟ n
-... | yes refl = D
-... | no ne = ρ′ x
-
-⟦⟧-continuous-aux : ∀{N : Term}{ρ ρ′}{n}
-  → continuous (λ D → ⟦ N ⟧ (update ρ n D ρ′))
-⟦⟧-continuous-aux {` x}{ρ}{ρ′}{n} X E E⊆
-    with x <? n
-... | yes lt = ⟨ [] , ⟨ (λ { v () }) , E⊆ ⟩ ⟩
-... | no nlt
-    with x ≟ n
-... | yes refl = ⟨ E , ⟨ E⊆ , (λ d z → z) ⟩ ⟩
-... | no ne = ⟨ [] , ⟨ (λ { v () }) , E⊆ ⟩ ⟩
-⟦⟧-continuous-aux {L · M}{ρ}{ρ′}{n} X E E⊆
-    with ⟦⟧-continuous-aux {L}{ρ}{ρ′}{n} X {!!} {!!}
-... | ⟨ D₁ , ⟨ D<X , E<FD₁ ⟩ ⟩ =
-
-    {!!}
-
-⟦⟧-continuous-aux {ƛ N}{ρ} = {!!}
-⟦⟧-continuous-aux {$ p k}{ρ} = {!!}
+    ρ₃ = ρ₁ ⊔ₑ ρ₂
+    G : (d : Value) → mem (v ∷ E) d → fold interp (λ v₁ → False) ρ₃ M d
+    G d mem-here = ⟦⟧-monotone {M}{ρ₂}{ρ₃} join-⊆-right v v∈⟦M⟧ρ₂
+    G d (mem-there m) = ⟦⟧-monotone {M}{ρ₁}{ρ₃} join-⊆-left d (E⊆⟦M⟧ρ₁ d m)
 
 ⟦⟧-continuous : ∀{N : Term}{ρ}
   → continuous (λ D → ⟦ N ⟧ (D • ρ))
-⟦⟧-continuous {N}{ρ} =
-  {!!}
+⟦⟧-continuous {N}{ρ} X E E⊆⟦N⟧X•ρ
+    with ⟦⟧-continuous-⊆ {N}{X • ρ}{E} E⊆⟦N⟧X•ρ
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆X•ρ , E⊆⟦N⟧ρ′ ⟩ ⟩ ⟩
+    with fρ′ 0
+... | ⟨ D , ρ′x=D ⟩ =    
+    ⟨ D , ⟨ (λ v v∈D → ρ′⊆X•ρ 0 v ((from ρ′x=D) v v∈D)) ,
+      (λ d d∈E → ⟦⟧-monotone {N}{ρ′}{mem D • ρ} G d (E⊆⟦N⟧ρ′ d d∈E)) ⟩ ⟩
+    where
+    G : (x : Var) → ρ′ x ≲ (mem D • ρ) x
+    G zero d d∈ρ0 = (to ρ′x=D) d d∈ρ0 
+    G (suc x) d m = ρ′⊆X•ρ (suc x) d m
+
 
 {- Reduction -}
 
