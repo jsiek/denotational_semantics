@@ -8,7 +8,7 @@ module PValue where
 
 open import Primitives
 open import Syntax using (Rename)
-open import ISWIM2
+open import ISWIM hiding (Ctx)
 open import AbstractBindingTree Op sig using (Ctx; CHole)
 open import WellScoped Op sig using (WF-plug) 
 open import Fold2 Op sig
@@ -19,7 +19,8 @@ open import Utilities using (extensionality)
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length) 
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s)
-open import Data.Product using (_×_; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
+    renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Relation.Binary.PropositionalEquality
@@ -538,6 +539,8 @@ soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠
 
 {- Adequacy of Denotations -----------------------------------------------------}
 
+open import EvalISWIM
+
 𝕍 : Value → Val → Set
 𝕍s : List Value → Val → Set
 
@@ -606,7 +609,7 @@ data 𝔾 : Env → ValEnv → Set₁ where
    → 𝔾 ρ γ  →  v ∈ ⟦ M ⟧ ρ
    → Σ[ c ∈ Val ] γ ⊢ M ⇓ c  ×  (∀ u → u ∈ ⟦ M ⟧ ρ → 𝕍 u c)
 ⟦⟧⇒⇓ {` x}{γ}{WF-var ∋x lt}{ρ}{v} 𝔾ργ v∈⟦M⟧ρ =
-    let lt' = subst (λ □ → x < □) (ISWIM2.ASTMod.len-mk-list (length γ)) lt in
+    let lt' = subst (λ □ → x < □) (ISWIM.ASTMod.len-mk-list (length γ)) lt in
    ⟨ nth γ x , ⟨ ⇓-var , (λ v v∈ρx → 𝔾⇒𝕍{lt = lt'} 𝔾ργ v∈ρx) ⟩ ⟩
 ⟦⟧⇒⇓ {L · M}{γ}{WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}{ρ}
     {w} 𝔾ργ w∈LMρ = G
@@ -641,7 +644,7 @@ data 𝔾 : Env → ValEnv → Set₁ where
     Part2 {val-clos N γ′{wfN}}{c₂}{L}{M}{γ}{V}{w} L⇓c₁ 𝕍Vwc₁ M⇓ 𝕍sVc₂
        with 𝕍Vwc₁ {c₂} 𝕍sVc₂
     ... | ⟨ c₃ , ⟨ N⇓c₃ , 𝕍wc₃ ⟩ ⟩ =
-        ⟨ c₃ , ⟨ (⇓-app{wf = ISWIM2.ASTMod.WF-rel N wfN} L⇓c₁ M⇓ N⇓c₃) , 𝕍wc₃ ⟩ ⟩
+        ⟨ c₃ , ⟨ (⇓-app{wf = ISWIM.ASTMod.WF-rel N wfN} L⇓c₁ M⇓ N⇓c₃) , 𝕍wc₃ ⟩ ⟩
           
     G : Σ[ c ∈ Val ] γ ⊢ L · M ⇓ c  ×  (∀ u → u ∈ ⟦ L · M ⟧ ρ → 𝕍 u c)
     G   with Part1{L}{M}{wfL = wfL}{wfM} 𝔾ργ w∈LMρ
@@ -685,6 +688,8 @@ reduce→⇓ {M}{V}{wfM} v M—↠N =
    let NE-ρ = λ x → ⟨ ν , refl ⟩ in
    adequacy {M}{V}{wfM}{ρ = ρ}{NE-ρ} v (soundness{NE-ρ = NE-ρ} M—↠N)
 
+{- Denotational Equality implies Contextual Equivalence ------------------------}
+
 ⟦⟧-ƛ-cong : ∀{M N : Term}{ρ}
    → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
    → ⟦ ƛ M ⟧ ρ ≃ ⟦ ƛ N ⟧ ρ
@@ -718,8 +723,8 @@ compositionality{COp app (ccons (CAst C′) (cons (ast M′) nil) refl)}{M}{N}{�
 denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (ctx-depth C 0) M}
     {wfN : WF (ctx-depth C 0) N}{wfC : WF-Ctx 0 C}
   → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
-  →  terminates (plug C M)
-    -----------------------------------
+  → terminates (plug C M)
+    ---------------------------
   → terminates (plug C N)
 denot-equal-terminates {M}{N}{C}{wfM}{wfN}{wfC} M≃N ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
    let ρ = λ x → ⌈ ν ⌉ in
@@ -727,5 +732,14 @@ denot-equal-terminates {M}{N}{C}{wfM}{wfN}{wfC} M≃N ⟨ N′ , ⟨ Nv , CM—�
    let CM≃λN′ = soundness{ρ = ρ}{NE-ρ} CM—↠N′ in
    let CM≃CN = compositionality{C}{M}{N}{ρ} M≃N in
    let CN≃λN′ = ≃-trans (≃-sym CM≃CN) CM≃λN′ in
-   let adq = adequacy{plug C M}{N′}{wfM = WF-plug wfC wfM}{ρ}{NE-ρ} Nv CM≃λN′ in
-   {!!}
+   let adq = adequacy{plug C N}{N′}{wfM = WF-plug wfC wfN}{ρ}{NE-ρ} Nv CN≃λN′ in
+   ⇓→—↠ {wfM = WF-plug wfC wfN} (proj₂ adq)
+
+denot-equal-context-equal : ∀{M N : Term}
+  → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
+    ---------------------------
+  → M ≅ N
+denot-equal-context-equal {M}{N} eq {C}{wfC}{wfM}{wfN} =
+  record { to = λ tm → denot-equal-terminates{wfM = wfM}{wfN}{wfC} eq tm ;
+        from = λ tn → denot-equal-terminates{wfM = wfN}{wfM}{wfC} (≃-sym eq) tn }
+
