@@ -26,7 +26,12 @@ open import Sig
 open import Utilities using (extensionality)
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; _++_; length) 
+open import Data.List using (List ; _∷_ ; []; _++_; length)
+open import Data.List.Properties using (++-conicalˡ)
+open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
+open import Data.List.Membership.Propositional.Properties
+  using (∈-++⁺ˡ; ∈-++⁺ʳ)
+open import Data.List.Relation.Unary.Any using (here; there) 
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
@@ -63,27 +68,13 @@ nonempty{T} S = Σ[ x ∈ T ] x ∈ S
 
 {- Finite Sets represented by Lists --------------------------------------------}
 
-data mem : ∀{T : Set} → List T → T → Set where
-  mem-here : ∀{T}{x : T}{ls} → mem (x ∷ ls) x
-  mem-there : ∀{T}{x y : T}{ls} → mem ls x → mem (y ∷ ls) x
-
-mem-++-left : ∀{T}{xs ys : List T}{x} → mem xs x → mem (xs ++ ys) x
-mem-++-left {T} {x ∷ xs} mem-here = mem-here
-mem-++-left {T} {x ∷ xs} (mem-there x∈xs) = mem-there (mem-++-left x∈xs)
-
-mem-++-right : ∀{T}{xs ys : List T}{x} → mem ys x → mem (xs ++ ys) x
-mem-++-right {T} {[]} m = m
-mem-++-right {T} {x ∷ xs} m = mem-there (mem-++-right m)
-
-++-nonempty : ∀{T : Set}{E1 E2 : List T}
-  → E1 ≢ [] → E1 ++ E2 ≢ []
-++-nonempty {T} {[]} {E2} NE-E1 = λ _ → NE-E1 refl
-++-nonempty {T} {x ∷ E1} {E2} NE-E1 = λ ()
+mem : ∀{T : Set} → List T → T → Set
+mem {T} ls x = x ⋵ ls
 
 E≢[]⇒nonempty-mem : ∀{T}{E : List T}
   → E ≢ [] → nonempty (mem E)
 E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
-E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , mem-here ⟩
+E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
 
 
 {- Denotational Values ---------------------------------------------------------}
@@ -220,9 +211,9 @@ monotone F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
   ≲-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
     → continuous F  → nonempty X →  F X ≲ (Λ F) ▪ X
   ≲-Λ-▪ {F}{X} Fcont NE-X w w∈FX 
-      with Fcont X (w ∷ []) (λ { d mem-here → w∈FX }) NE-X
+      with Fcont X (w ∷ []) (λ { d (here refl) → w∈FX }) NE-X
   ... | ⟨ D , ⟨ D<X , ⟨ w∈FD , NE-D ⟩ ⟩ ⟩ =
-        ⟨ D , ⟨ ⟨ w∈FD w mem-here , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
+        ⟨ D , ⟨ ⟨ w∈FD w (here refl) , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
 
   
 {- Denotational Semantics of the ISWIM Language via fold -----------------------}
@@ -330,7 +321,7 @@ initial-fin ρ NE-ρ x
     with NE-ρ x
 ... | ⟨ v , v∈ρx ⟩ =
       ⟨ v ∷ [] ,
-      ⟨ equal (λ {w refl → mem-here}) (λ {w mem-here → refl}) , (λ ()) ⟩ ⟩
+      ⟨ equal (λ {w refl → (here refl)}) (λ {w (here refl) → refl}) , (λ ()) ⟩ ⟩
 
 initial-fin-⊆ : (ρ : Env) → (NE-ρ : nonempty-env ρ)
   → initial-fin-env ρ NE-ρ ⊆ₑ ρ
@@ -353,17 +344,18 @@ join-fin-env {ρ₁}{ρ₂} f1 f2 x
 ... | ⟨ E1 , ⟨ ρ₁=E1 , NE-E1 ⟩ ⟩
     with f2 x
 ... | ⟨ E2 , ⟨ ρ₂=E2 , NE-E2 ⟩ ⟩ =
-    ⟨ (E1 ++ E2) , ⟨ equal G (H {E1} ≲-refl) , ++-nonempty NE-E1 ⟩ ⟩
+    ⟨ (E1 ++ E2) , ⟨ equal G (H {E1} ≲-refl) ,
+      (λ E12=[] → NE-E1 (++-conicalˡ E1 E2 E12=[])) ⟩ ⟩
     where
     G : (v : Value) → ρ₁ x v ⊎ ρ₂ x v → mem (E1 ++ E2) v
-    G v (inj₁ ρ1x) = mem-++-left ((to ρ₁=E1) v ρ1x)
-    G v (inj₂ ρ2x) = mem-++-right ((to ρ₂=E2) v ρ2x)
+    G v (inj₁ ρ1x) = ∈-++⁺ˡ ((to ρ₁=E1) v ρ1x)
+    G v (inj₂ ρ2x) = ∈-++⁺ʳ E1 ((to ρ₂=E2) v ρ2x)
 
     H : ∀{E} → mem E ≲ mem E1 → mem (E ++ E2) ≲ (λ v → ρ₁ x v ⊎ ρ₂ x v)
     H {[]} E<E1 v v∈E++E2 = inj₂ ((from ρ₂=E2) v v∈E++E2)
-    H {x ∷ E} E<E1 .x mem-here = inj₁ ((from ρ₁=E1) x (E<E1 x mem-here))
-    H {x ∷ E} E<E1 v (mem-there v∈E++E2) =
-       H (λ v z → E<E1 v (mem-there z)) v v∈E++E2
+    H {x ∷ E} E<E1 .x (here refl) = inj₁ ((from ρ₁=E1) x (E<E1 x (here refl)))
+    H {x ∷ E} E<E1 v (there v∈E++E2) =
+       H (λ v z → E<E1 v (there z)) v v∈E++E2
 
 {- single-env maps x to D and another variable y to something in ρ y. -}
 single-env : Var → 𝒫 Value → (ρ : Env) → (NE-ρ : nonempty-env ρ) → Env
@@ -379,12 +371,12 @@ single-fin {v}{x}{ρ}{NE-ρ} y
     with x ≟ y
 ... | yes refl =
     ⟨ v ∷ [] ,
-    ⟨ equal (λ { v₁ refl → mem-here}) (λ { v₁ mem-here → refl}) , (λ ()) ⟩ ⟩
+    ⟨ equal (λ { v₁ refl → (here refl)}) (λ{ v₁ (here refl) → refl}) , (λ ()) ⟩ ⟩
 ... | no neq
     with NE-ρ y
 ... | ⟨ w , w∈ρy ⟩ =
     ⟨ w ∷ [] ,
-    ⟨ equal (λ { v₁ refl → mem-here}) (λ { v₁ mem-here → refl}) , (λ ()) ⟩ ⟩
+    ⟨ equal (λ { v₁ refl → here refl}) (λ { v₁ (here refl) → refl}) , (λ ()) ⟩ ⟩
 
 single-⊆ : ∀{ρ x v}{NE-ρ : nonempty-env ρ}
   →  v ∈ ρ x  →  single-env x ⌈ v ⌉ ρ NE-ρ ⊆ₑ ρ
@@ -461,17 +453,17 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
   ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
     (λ d ()) ⟩ ⟩ ⟩
 ⟦⟧-continuous-⊆ {M}{ρ}{v ∷ E}{NE-ρ} v∷E⊆⟦M⟧ρ
-    with ⟦⟧-continuous-⊆ {M}{ρ}{E}{NE-ρ} λ d z → v∷E⊆⟦M⟧ρ d (mem-there z)
+    with ⟦⟧-continuous-⊆ {M}{ρ}{E}{NE-ρ} λ d z → v∷E⊆⟦M⟧ρ d (there z)
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , E⊆⟦M⟧ρ₁ ⟩ ⟩ ⟩
-    with ⟦⟧-continuous-env {M}{ρ}{v}{NE-ρ} (v∷E⊆⟦M⟧ρ v mem-here)
+    with ⟦⟧-continuous-env {M}{ρ}{v}{NE-ρ} (v∷E⊆⟦M⟧ρ v (here refl))
 ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈⟦M⟧ρ₂ ⟩ ⟩ ⟩ =
     ⟨ ρ₃ , ⟨ (join-fin-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
     G ⟩ ⟩ ⟩
     where
     ρ₃ = ρ₁ ⊔ₑ ρ₂
     G : (d : Value) → mem (v ∷ E) d → d ∈ ⟦ M ⟧ ρ₃
-    G d mem-here = ⟦⟧-monotone {M}{ρ₂}{ρ₃} join-⊆-right v v∈⟦M⟧ρ₂
-    G d (mem-there m) = ⟦⟧-monotone {M}{ρ₁}{ρ₃} join-⊆-left d (E⊆⟦M⟧ρ₁ d m)
+    G d (here refl) = ⟦⟧-monotone {M}{ρ₂}{ρ₃} join-⊆-right v v∈⟦M⟧ρ₂
+    G d (there m) = ⟦⟧-monotone {M}{ρ₁}{ρ₃} join-⊆-left d (E⊆⟦M⟧ρ₁ d m)
 
 ⟦⟧-continuous : ∀{N : Term}{ρ}{NE-ρ : nonempty-env ρ}
   → continuous (λ D → ⟦ N ⟧ (D • ρ))
@@ -501,11 +493,11 @@ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
   where
   fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ≲ ℘ P (f k)
   fwd w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , ⟨ k′∈pk , _ ⟩ ⟩ ⟩
-      with k′∈pk (const k′) mem-here
+      with k′∈pk (const k′) (here refl)
   ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
   back : ℘ P (f k) ≲ ℘ (B ⇒ P) f ▪ ℘ (base B) k
   back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
-                ⟨ (λ {d mem-here → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
+                ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
 
 {- Soundness of Reduction with respect to Denotations --------------------------}
 
@@ -588,12 +580,12 @@ open import EvalISWIM {- the big-step semantics of ISWIM -}
 V⊆𝕍c⇒𝕍sV : ∀{V}{c} → (∀ u → mem V u → 𝕍 u c) → 𝕍s V c
 V⊆𝕍c⇒𝕍sV {[]} V⊆𝕍c = tt
 V⊆𝕍c⇒𝕍sV {v ∷ V} V⊆𝕍c =
-    ⟨ V⊆𝕍c v mem-here , V⊆𝕍c⇒𝕍sV (λ u z → V⊆𝕍c u (mem-there z)) ⟩
+    ⟨ V⊆𝕍c v (here refl) , V⊆𝕍c⇒𝕍sV (λ u z → V⊆𝕍c u (there z)) ⟩
 
 𝕍sV⇒V⊆𝕍c : ∀{V}{c} → 𝕍s V c → (∀ u → mem V u → 𝕍 u c)
 𝕍sV⇒V⊆𝕍c {[]} {c} vs u ()
-𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ .x mem-here = 𝕍c
-𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ u (mem-there u∈V) = 𝕍sV⇒V⊆𝕍c 𝕍sc u u∈V
+𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ .x (here refl) = 𝕍c
+𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ u (there u∈V) = 𝕍sV⇒V⊆𝕍c 𝕍sc u u∈V
 
 {- Relate denotational environments to big-step environments -}
 data 𝔾 : Env → ValEnv → Set₁ where
@@ -640,15 +632,15 @@ data 𝔾 : Env → ValEnv → Set₁ where
     ... | v ∷ V′
         with ⟦⟧⇒⇓ {L}{γ}{wfL}{ρ}{(v ∷ V′) ↦ w} 𝔾ργ V↦w∈⟦L⟧ρ
     ... | ⟨ c₁ , ⟨ L⇓c₁ , ⟦L⟧⊆𝕍c₁ ⟩ ⟩ 
-        with ⟦⟧⇒⇓ {M}{γ}{wfM}{ρ}{v} 𝔾ργ (V⊆⟦M⟧ρ v mem-here)
+        with ⟦⟧⇒⇓ {M}{γ}{wfM}{ρ}{v} 𝔾ργ (V⊆⟦M⟧ρ v (here refl))
     ... | ⟨ c₂ , ⟨ M⇓c₂ , ⟦M⟧⊆𝕍c₂ ⟩ ⟩ =
         Part2 L⇓c₁ 𝕍Vwc₁ M⇓c₂ 𝕍sc₂
         where
         𝕍Vwc₁ : 𝕍 ((v ∷ V′) ↦ w) c₁
         𝕍Vwc₁ = ⟦L⟧⊆𝕍c₁ ((v ∷ V′) ↦ w) V↦w∈⟦L⟧ρ
         𝕍sc₂ : 𝕍s (v ∷ V′) c₂
-        𝕍sc₂ = ⟨ (⟦M⟧⊆𝕍c₂ v (V⊆⟦M⟧ρ v mem-here)) ,
-                 (V⊆𝕍c⇒𝕍sV (λ u u∈V′ → ⟦M⟧⊆𝕍c₂ u (V⊆⟦M⟧ρ u (mem-there u∈V′)) )) ⟩
+        𝕍sc₂ = ⟨ (⟦M⟧⊆𝕍c₂ v (V⊆⟦M⟧ρ v (here refl))) ,
+                 (V⊆𝕍c⇒𝕍sV (λ u u∈V′ → ⟦M⟧⊆𝕍c₂ u (V⊆⟦M⟧ρ u (there u∈V′)) )) ⟩
     Part2 {val-const {B ⇒ P} f}{c₂}{L}{M}{γ}{V}{w}
         L⇓c₁ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ M⇓ ⟨ 𝕍kc₂ , _ ⟩ 
            rewrite 𝕍kc⇒c≡k {B}{k}{c₂} 𝕍kc₂ =
