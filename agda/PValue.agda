@@ -406,7 +406,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
   → mem E ⊆ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem E ⊆ ⟦ M ⟧ ρ′
 
-{- The Main Lemma -}
+{- the main lemma -}
 ⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}{NE-ρ : nonempty-env ρ}
   → v ∈ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
@@ -539,8 +539,9 @@ soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠
 
 {- Adequacy of Denotations -----------------------------------------------------}
 
-open import EvalISWIM
+open import EvalISWIM {- the big-step semantics of ISWIM -}
 
+{- Relate denotational values to big-step values -}
 𝕍 : Value → Val → Set
 𝕍s : List Value → Val → Set
 
@@ -585,6 +586,7 @@ V⊆𝕍c⇒𝕍sV {v ∷ V} V⊆𝕍c =
 𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ .x mem-here = 𝕍c
 𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ u (mem-there u∈V) = 𝕍sV⇒V⊆𝕍c 𝕍sc u u∈V
 
+{- Relate denotational environments to big-step environments -}
 data 𝔾 : Env → ValEnv → Set₁ where
   𝔾-∅ : ∀ {ρ} → 𝔾 ρ ∅'
   𝔾-ext : ∀{γ : Env}{γ' : ValEnv}{D c} → 𝔾 γ γ' → (∀ v → v ∈ D → 𝕍 v c)
@@ -605,6 +607,7 @@ data 𝔾 : Env → ValEnv → Set₁ where
 ℘pv⇒𝕍vp {v = V ↦ w} ℘pv = ℘pv
 ℘pv⇒𝕍vp {B ⇒ P} {p} {ν} ℘pv = tt
 
+{- the main lemma -}
 ⟦⟧⇒⇓ : ∀{M : Term}{γ}{wfM : WF (length γ) M}{ρ}{v}
    → 𝔾 ρ γ  →  v ∈ ⟦ M ⟧ ρ
    → Σ[ c ∈ Val ] γ ⊢ M ⇓ c  ×  (∀ u → u ∈ ⟦ M ⟧ ρ → 𝕍 u c)
@@ -679,6 +682,7 @@ adequacy{M}{V}{wfM}{ρ}{NE-ρ} Vval ⟦M⟧≃⟦V⟧
 ... | ⟨ c , ⟨ M⇓c , _ ⟩ ⟩ =
     ⟨ c , M⇓c ⟩
 
+{- corollary: reduction to a value implies big-step termination -}
 reduce→⇓ : ∀ {M V : Term}{wfM : WF 0 M}
    → TermValue V  →  M —↠ V
     -------------------------
@@ -687,6 +691,7 @@ reduce→⇓ {M}{V}{wfM} v M—↠N =
    let ρ = λ x → ⌈ ν ⌉ in
    let NE-ρ = λ x → ⟨ ν , refl ⟩ in
    adequacy {M}{V}{wfM}{ρ = ρ}{NE-ρ} v (soundness{NE-ρ = NE-ρ} M—↠N)
+
 
 {- Denotational Equality implies Contextual Equivalence ------------------------}
 
@@ -720,26 +725,25 @@ compositionality{COp app (ccons (CAst C′) (cons (ast M′) nil) refl)}{M}{N}{�
   ⟦M⟧=⟦N⟧ =
   ▪-cong{D₂ = ⟦ M′ ⟧ ρ} (compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧) ≃-refl
 
-denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (ctx-depth C 0) M}
-    {wfN : WF (ctx-depth C 0) N}{wfC : WF-Ctx 0 C}
-  → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
-  → terminates (plug C M)
-    ---------------------------
-  → terminates (plug C N)
-denot-equal-terminates {M}{N}{C}{wfM}{wfN}{wfC} M≃N ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
-   let ρ = λ x → ⌈ ν ⌉ in
-   let NE-ρ = λ x → ⟨ ν , refl ⟩ in
-   let CM≃λN′ = soundness{ρ = ρ}{NE-ρ} CM—↠N′ in
-   let CM≃CN = compositionality{C}{M}{N}{ρ} M≃N in
-   let CN≃λN′ = ≃-trans (≃-sym CM≃CN) CM≃λN′ in
-   let adq = adequacy{plug C N}{N′}{wfM = WF-plug wfC wfN}{ρ}{NE-ρ} Nv CN≃λN′ in
-   ⇓→—↠ {wfM = WF-plug wfC wfN} (proj₂ adq)
-
-denot-equal-context-equal : ∀{M N : Term}
+denot-equal⇒context-equal : ∀{M N : Term}
   → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
     ---------------------------
   → M ≅ N
-denot-equal-context-equal {M}{N} eq {C}{wfC}{wfM}{wfN} =
-  record { to = λ tm → denot-equal-terminates{wfM = wfM}{wfN}{wfC} eq tm ;
-        from = λ tn → denot-equal-terminates{wfM = wfN}{wfM}{wfC} (≃-sym eq) tn }
+denot-equal⇒context-equal {M}{N} eq {C}{wfC}{wfM}{wfN} =
+  record { to = λ tm → equal⇒terminates{wfM = wfM}{wfN}{wfC} eq tm ;
+           from = λ tn → equal⇒terminates{wfM = wfN}{wfM}{wfC} (≃-sym eq) tn }
+  where
+  equal⇒terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (ctx-depth C 0) M}
+      {wfN : WF (ctx-depth C 0) N}{wfC : WF-Ctx 0 C}
+    → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)  →  terminates (plug C M)
+    → terminates (plug C N)
+  equal⇒terminates {M}{N}{C}{wfM}{wfN}{wfC} M≃N ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
+     let ρ = λ x → ⌈ ν ⌉ in
+     let NE-ρ = λ x → ⟨ ν , refl ⟩ in
+     let CM≃λN′ = soundness{ρ = ρ}{NE-ρ} CM—↠N′ in
+     let CM≃CN = compositionality{C}{M}{N}{ρ} M≃N in
+     let CN≃λN′ = ≃-trans (≃-sym CM≃CN) CM≃λN′ in
+     let adq = adequacy{plug C N}{wfM = WF-plug wfC wfN}{ρ}{NE-ρ} Nv CN≃λN′ in
+     ⇓→—↠ {wfM = WF-plug wfC wfN} (proj₂ adq)
+
 
