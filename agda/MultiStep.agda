@@ -4,8 +4,7 @@ open import Data.List using (List; []; _∷_)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
    renaming (_,_ to ⟨_,_⟩)
 
-import Syntax
-open Syntax using (Sig)
+open import Syntax using (Sig)
 
 module MultiStep
   (Op : Set)

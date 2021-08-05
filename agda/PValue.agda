@@ -8,7 +8,9 @@ module PValue where
 
 open import Primitives
 open import Syntax using (Rename)
-open import ISWIM hiding (_[_]; id; _—→_; _—↠_)
+open import ISWIM2
+open import AbstractBindingTree Op sig using (Ctx; CHole)
+open import WellScoped Op sig using (WF-plug) 
 open import Fold2 Op sig
 open import ScopedTuple hiding (𝒫)
 open import Sig
@@ -20,7 +22,8 @@ open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s)
 open import Data.Product using (_×_; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; subst)
+open import Relation.Binary.PropositionalEquality
+    using (_≡_; _≢_; refl; sym; subst)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 module PValue where
@@ -32,7 +35,6 @@ module PValue where
 
 ∅ : ∀{T} → 𝒫 T
 ∅ = λ v → False 
-
 
 ⌈_⌉ : ∀ {T} → T → 𝒫 T     {- the singleton set containing only v -}
 ⌈ v ⌉ w = w ≡ v
@@ -160,10 +162,14 @@ from (equal a b) = b
     equal (≲-trans d12 d23) (≲-trans d32 d21)
 
 module ≃-Reasoning where
+  infixr 2 _≃⟨⟩_
+  _≃⟨⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ : 𝒫 Value} → D₁ ≃ D₂ → D₁ ≃ D₂
+  D₁ ≃⟨⟩ D₁≃D₂ = D₁≃D₂
+  
   infixr 2 _≃⟨_⟩_
   _≃⟨_⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ D₃ : 𝒫 Value} → D₁ ≃ D₂ → D₂ ≃ D₃ → D₁ ≃ D₃
   D₁ ≃⟨ D₁≃D₂ ⟩ D₂≃D₃ = ≃-trans D₁≃D₂ D₂≃D₃
-
+  
   infix 3 _∎
   _∎ : ∀ (D : 𝒫 Value) → D ≃ D
   D ∎  =  ≃-refl
@@ -255,16 +261,11 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
   → ⟦ ⟪ σ ⟫ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ σ x ⟧ ρ)
 ⟦⟧-par-subst {M}{ρ} = fold-subst-fusion M
 
-id : Subst
-id = (λ x → ` x)
-
-_[_] : Term → Term → Term
-N [ M ] =  ⟪ M • id ⟫ N
-
 ⟦⟧-subst : ∀ {M N : Term}{ρ : Var → 𝒫 Value}
   → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ ((⟦ N ⟧ ρ) • ρ)
 ⟦⟧-subst {M}{N}{ρ} =
-  subst (λ X → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ X) (extensionality EQ) (⟦⟧-par-subst {M}{N • id})
+  subst (λ X → ⟦ M [ N ] ⟧ ρ ≡ ⟦ M ⟧ X) (extensionality EQ)
+        (⟦⟧-par-subst {M}{N • id})
   where 
   EQ : (x : Var) → ⟦ (N • id) x ⟧ ρ ≡ (⟦ N ⟧ ρ • ρ) x
   EQ zero = refl
@@ -496,28 +497,6 @@ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
   back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
                 ⟨ (λ {d mem-here → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
 
-
-{- Reduction semantics of ISWIM ------------------------------------------------}
-
-infix 2 _—→_
-data _—→_ : Term → Term → Set where
-  ξ₁-rule : ∀  {L L′ M : Term}
-    → L —→ L′
-      ----------------
-    → L · M —→ L′ · M
-  ξ₂-rule : ∀  {L M M′ : Term}
-    → TermValue L  →  M —→ M′
-      -----------------------
-    → L · M —→ L · M′
-  β-rule : ∀  {N M : Term}
-    → TermValue M
-      --------------------
-    → (ƛ N) · M —→ N [ M ]
-  δ-rule : ∀ {B}{P} {f : base-rep B → rep P} {k}
-      ---------------------------------------------
-    → ($ (B ⇒ P) f) · ($ (base B) k)  —→  $ P (f k)
-
-
 {- Soundness of Reduction with respect to Denotations --------------------------}
 
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value} {NE-ρ : nonempty-env ρ}
@@ -525,42 +504,39 @@ data _—→_ : Term → Term → Set where
    → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ
 ⟦⟧—→ {L · M} {L′ · M} {ρ}{NE-ρ} (ξ₁-rule L—→L′) =
     let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} L—→L′ in
-    ⟦ L · M ⟧ ρ              ≃⟨ ≃-refl ⟩
+    ⟦ L · M ⟧ ρ              ≃⟨⟩
     (⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ)    ≃⟨ ▪-cong IH ≃-refl ⟩
-    (⟦ L′ ⟧ ρ) ▪ (⟦ M ⟧ ρ)   ≃⟨ ≃-refl ⟩
+    (⟦ L′ ⟧ ρ) ▪ (⟦ M ⟧ ρ)   ≃⟨⟩
     ⟦ L′ · M ⟧ ρ             ∎ where open ≃-Reasoning  
 ⟦⟧—→ {V · M} {.(_ · _)} {ρ}{NE-ρ} (ξ₂-rule {M′ = M′} v M—→M′) =
     let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
-    ⟦ V · M ⟧ ρ              ≃⟨ ≃-refl ⟩
+    ⟦ V · M ⟧ ρ              ≃⟨⟩
     (⟦ V ⟧ ρ) ▪ (⟦ M ⟧ ρ)    ≃⟨ ▪-cong (≃-refl{D = ⟦ V ⟧ ρ}) IH ⟩
-    (⟦ V ⟧ ρ) ▪ (⟦ M′ ⟧ ρ)   ≃⟨ ≃-refl ⟩
+    (⟦ V ⟧ ρ) ▪ (⟦ M′ ⟧ ρ)   ≃⟨⟩
     ⟦ V · M′ ⟧ ρ             ∎ where open ≃-Reasoning  
 ⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
-    ⟦ ƛ N · V ⟧ ρ                         ≃⟨ ≃-refl ⟩
+    ⟦ ƛ N · V ⟧ ρ                         ≃⟨⟩
     (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ) ≃⟨ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}
                                                    (value-nonempty NE-ρ v) ⟩
     ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)             ≃⟨ ≃-reflexive (sym (⟦⟧-subst {N} {V} {ρ})) ⟩
     ⟦ N [ V ] ⟧ ρ                   ∎ where open ≃-Reasoning
 ⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
-    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨ ≃-refl ⟩
+    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨⟩
     (℘ (B ⇒ P) f) ▪ (℘ (base B) k)         ≃⟨ ℘-▪-≃ {B}{P} ⟩
     ⟦ $ P (f k) ⟧ ρ                         ∎ where open ≃-Reasoning
 
-open import MultiStep Op sig _—→_ public
-
 soundness : ∀ {M N : Term} {ρ : Env}{NE-ρ : nonempty-env ρ}
-  → M —↠ ƛ N
+  → M —↠ N
     -------------------
-  → ⟦ M ⟧ ρ ≃ ⟦ ƛ N ⟧ ρ
-soundness {M}{_}{ρ} (M □) = ⟦ M ⟧ ρ ≃⟨ ≃-refl ⟩ ⟦ M ⟧ ρ ∎ where open ≃-Reasoning
+  → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ
+soundness {M}{_}{ρ} (M □) =
+    ⟦ M ⟧ ρ ≃⟨⟩ ⟦ M ⟧ ρ ∎ where open ≃-Reasoning
 soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠N) =
     ⟦ M ⟧ ρ      ≃⟨ ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ ⟩ 
     ⟦ M′ ⟧ ρ     ≃⟨ soundness{ρ = ρ}{NE-ρ} M′—↠N ⟩ 
-    ⟦ ƛ N ⟧ ρ    ∎ where open ≃-Reasoning
+    ⟦ N ⟧ ρ      ∎ where open ≃-Reasoning
 
 {- Adequacy of Denotations -----------------------------------------------------}
-
-open import EvalISWIM
 
 𝕍 : Value → Val → Set
 𝕍s : List Value → Val → Set
@@ -607,31 +583,31 @@ V⊆𝕍c⇒𝕍sV {v ∷ V} V⊆𝕍c =
 𝕍sV⇒V⊆𝕍c {x ∷ V} {c} ⟨ 𝕍c , 𝕍sc ⟩ u (mem-there u∈V) = 𝕍sV⇒V⊆𝕍c 𝕍sc u u∈V
 
 data 𝔾 : Env → ValEnv → Set₁ where
-  𝔾-∅ : 𝔾 (λ x → ∅) ∅'
+  𝔾-∅ : ∀ {ρ} → 𝔾 ρ ∅'
   𝔾-ext : ∀{γ : Env}{γ' : ValEnv}{D c} → 𝔾 γ γ' → (∀ v → v ∈ D → 𝕍 v c)
      → 𝔾 (D • γ) (γ' ,' c)
 
-𝔾→𝕍 : ∀ {ρ : Env}{γ : ValEnv}{x}{lt : x < length γ}{v}
+𝔾⇒𝕍 : ∀ {ρ : Env}{γ : ValEnv}{x}{lt : x < length γ}{v}
    → 𝔾 ρ γ  →  v ∈ ρ x  →  𝕍 v (nth γ x)
-𝔾→𝕍 {.(_ • _)} {.(_ ∷ _)} {zero} {s≤s lt} {v} (𝔾-ext 𝔾ργ D⊆V) v∈D = D⊆V v v∈D
-𝔾→𝕍 {.(_ • _)} {.(_ ∷ _)} {suc x} {s≤s lt} {v} (𝔾-ext 𝔾ργ D⊆V) v∈ρx =
-  𝔾→𝕍{lt = lt} 𝔾ργ v∈ρx
+𝔾⇒𝕍 {.(_ • _)} {.(_ ∷ _)} {zero} {s≤s lt} {v} (𝔾-ext 𝔾ργ D⊆V) v∈D = D⊆V v v∈D
+𝔾⇒𝕍 {.(_ • _)} {.(_ ∷ _)} {suc x} {s≤s lt} {v} (𝔾-ext 𝔾ργ D⊆V) v∈ρx =
+  𝔾⇒𝕍{lt = lt} 𝔾ργ v∈ρx
 
 ¬𝕍[bogus] : ∀ v → ¬ 𝕍 v bogus
 ¬𝕍[bogus] (const k) x = x
 ¬𝕍[bogus] (V ↦ w) x = x
 
-℘pv→𝕍vp : ∀ {P}{p}{v} →  ℘ P p v  →  𝕍 v (val-const {P} p)
-℘pv→𝕍vp {v = const k} ℘pv = ℘pv
-℘pv→𝕍vp {v = V ↦ w} ℘pv = ℘pv
-℘pv→𝕍vp {B ⇒ P} {p} {ν} ℘pv = tt
+℘pv⇒𝕍vp : ∀ {P}{p}{v} →  ℘ P p v  →  𝕍 v (val-const {P} p)
+℘pv⇒𝕍vp {v = const k} ℘pv = ℘pv
+℘pv⇒𝕍vp {v = V ↦ w} ℘pv = ℘pv
+℘pv⇒𝕍vp {B ⇒ P} {p} {ν} ℘pv = tt
 
 ⟦⟧⇒⇓ : ∀{M : Term}{γ}{wfM : WF (length γ) M}{ρ}{v}
    → 𝔾 ρ γ  →  v ∈ ⟦ M ⟧ ρ
    → Σ[ c ∈ Val ] γ ⊢ M ⇓ c  ×  (∀ u → u ∈ ⟦ M ⟧ ρ → 𝕍 u c)
 ⟦⟧⇒⇓ {` x}{γ}{WF-var ∋x lt}{ρ}{v} 𝔾ργ v∈⟦M⟧ρ =
-    let lt' = subst (λ □ → x < □) (ISWIM.ASTMod.len-mk-list (length γ)) lt in
-   ⟨ nth γ x , ⟨ ⇓-var , (λ v v∈ρx → 𝔾→𝕍{lt = lt'} 𝔾ργ v∈ρx) ⟩ ⟩
+    let lt' = subst (λ □ → x < □) (ISWIM2.ASTMod.len-mk-list (length γ)) lt in
+   ⟨ nth γ x , ⟨ ⇓-var , (λ v v∈ρx → 𝔾⇒𝕍{lt = lt'} 𝔾ργ v∈ρx) ⟩ ⟩
 ⟦⟧⇒⇓ {L · M}{γ}{WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}{ρ}
     {w} 𝔾ργ w∈LMρ = G
     where
@@ -658,7 +634,6 @@ data 𝔾 : Env → ValEnv → Set₁ where
         𝕍sc₂ : 𝕍s (v ∷ V′) c₂
         𝕍sc₂ = ⟨ (⟦M⟧⊆𝕍c₂ v (V⊆⟦M⟧ρ v mem-here)) ,
                  (V⊆𝕍c⇒𝕍sV (λ u u∈V′ → ⟦M⟧⊆𝕍c₂ u (V⊆⟦M⟧ρ u (mem-there u∈V′)) )) ⟩
-        
     Part2 {val-const {B ⇒ P} f}{c₂}{L}{M}{γ}{V}{w}
         L⇓c₁ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ M⇓ ⟨ 𝕍kc₂ , _ ⟩ 
            rewrite 𝕍kc⇒c≡k {B}{k}{c₂} 𝕍kc₂ =
@@ -666,7 +641,7 @@ data 𝔾 : Env → ValEnv → Set₁ where
     Part2 {val-clos N γ′{wfN}}{c₂}{L}{M}{γ}{V}{w} L⇓c₁ 𝕍Vwc₁ M⇓ 𝕍sVc₂
        with 𝕍Vwc₁ {c₂} 𝕍sVc₂
     ... | ⟨ c₃ , ⟨ N⇓c₃ , 𝕍wc₃ ⟩ ⟩ =
-        ⟨ c₃ , ⟨ (⇓-app{wf = ISWIM.ASTMod.WF-rel N wfN} L⇓c₁ M⇓ N⇓c₃) , 𝕍wc₃ ⟩ ⟩
+        ⟨ c₃ , ⟨ (⇓-app{wf = ISWIM2.ASTMod.WF-rel N wfN} L⇓c₁ M⇓ N⇓c₃) , 𝕍wc₃ ⟩ ⟩
           
     G : Σ[ c ∈ Val ] γ ⊢ L · M ⇓ c  ×  (∀ u → u ∈ ⟦ L · M ⟧ ρ → 𝕍 u c)
     G   with Part1{L}{M}{wfL = wfL}{wfM} 𝔾ργ w∈LMρ
@@ -688,5 +663,69 @@ data 𝔾 : Env → ValEnv → Set₁ where
     ... | ⟨ c′ , ⟨ N⇓c′ , ⟦N⟧⊆𝕍c′ ⟩ ⟩ =
           ⟨ c′ , ⟨ N⇓c′ , ⟦N⟧⊆𝕍c′ w w∈⟦N⟧[V•ρ] ⟩ ⟩
 ⟦⟧⇒⇓ {$ P k}{γ}{wfPk}{ρ}{v} 𝔾ργ v∈⟦M⟧ρ =
-    ⟨ val-const {P} k , ⟨ ⇓-lit , (λ u ℘pu → ℘pv→𝕍vp {P} ℘pu) ⟩ ⟩
+    ⟨ val-const {P} k , ⟨ ⇓-lit , (λ u ℘pu → ℘pv⇒𝕍vp {P} ℘pu) ⟩ ⟩
 
+adequacy : ∀{M V : Term}{wfM : WF 0 M}{ρ}{NE-ρ : nonempty-env ρ}
+   → TermValue V  →  ⟦ M ⟧ ρ ≃ ⟦ V ⟧ ρ
+    ----------------------------------
+   → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
+adequacy{M}{V}{wfM}{ρ}{NE-ρ} Vval ⟦M⟧≃⟦V⟧
+    with value-nonempty{V}{ρ} NE-ρ Vval
+... | ⟨ v , v∈⟦V⟧ ⟩
+    with ⟦⟧⇒⇓ {wfM = wfM} 𝔾-∅ (from ⟦M⟧≃⟦V⟧ v v∈⟦V⟧)
+... | ⟨ c , ⟨ M⇓c , _ ⟩ ⟩ =
+    ⟨ c , M⇓c ⟩
+
+reduce→⇓ : ∀ {M V : Term}{wfM : WF 0 M}
+   → TermValue V  →  M —↠ V
+    -------------------------
+   → Σ[ c ∈ Val ] ∅' ⊢ M ⇓ c
+reduce→⇓ {M}{V}{wfM} v M—↠N =
+   let ρ = λ x → ⌈ ν ⌉ in
+   let NE-ρ = λ x → ⟨ ν , refl ⟩ in
+   adequacy {M}{V}{wfM}{ρ = ρ}{NE-ρ} v (soundness{NE-ρ = NE-ρ} M—↠N)
+
+⟦⟧-ƛ-cong : ∀{M N : Term}{ρ}
+   → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
+   → ⟦ ƛ M ⟧ ρ ≃ ⟦ ƛ N ⟧ ρ
+⟦⟧-ƛ-cong {M}{N}{ρ} M=N = equal fwd back
+   where
+   fwd : ⟦ ƛ M ⟧ ρ ≲ ⟦ ƛ N ⟧ ρ
+   fwd (V ↦ w) ⟨ w∈⟦M⟧ , V≢[] ⟩ = ⟨ (to M=N w w∈⟦M⟧) , V≢[] ⟩
+   fwd ν xx = tt
+   back : ⟦ ƛ N ⟧ ρ ≲ ⟦ ƛ M ⟧ ρ
+   back (V ↦ w) ⟨ w∈⟦N⟧ , V≢[] ⟩ = ⟨ (from M=N w w∈⟦N⟧) , V≢[] ⟩
+   back ν xx = tt
+
+compositionality : ∀{C : Ctx} {M N : Term}{ρ}
+   → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
+    --------------------------------
+   → ⟦ plug C M ⟧ ρ ≃ ⟦ plug C N ⟧ ρ
+compositionality{CHole}{M}{N}{ρ} ⟦M⟧=⟦N⟧ = ⟦M⟧=⟦N⟧
+compositionality{COp lam (tcons (bind (ast N)) Cs refl)}{M}{_}{ρ} ⟦M⟧=⟦N⟧ =
+   equal (λ v z → z) (λ v z → z)
+compositionality{COp lam (ccons (CBind (CAst C′)) nil refl)}{M}{N}{ρ} ⟦M⟧=⟦N⟧ =
+   ⟦⟧-ƛ-cong{plug C′ M}{plug C′ N} λ {ρ} → compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧
+compositionality{COp app (tcons (ast L) (tcons x Cs refl) refl)}{M}{N}{ρ}
+   ⟦M⟧=⟦N⟧ = equal (λ v z → z) (λ v z → z)
+compositionality {COp app (tcons (ast L) (ccons (CAst C′) nil refl) refl)}
+   {M}{N}{ρ} ⟦M⟧=⟦N⟧ =
+   ▪-cong{⟦ L ⟧ ρ} ≃-refl (compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧)
+compositionality{COp app (ccons (CAst C′) (cons (ast M′) nil) refl)}{M}{N}{ρ}
+  ⟦M⟧=⟦N⟧ =
+  ▪-cong{D₂ = ⟦ M′ ⟧ ρ} (compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧) ≃-refl
+
+denot-equal-terminates : ∀{M N : Term} {C : Ctx}{wfM : WF (ctx-depth C 0) M}
+    {wfN : WF (ctx-depth C 0) N}{wfC : WF-Ctx 0 C}
+  → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
+  →  terminates (plug C M)
+    -----------------------------------
+  → terminates (plug C N)
+denot-equal-terminates {M}{N}{C}{wfM}{wfN}{wfC} M≃N ⟨ N′ , ⟨ Nv , CM—↠N′ ⟩ ⟩ =
+   let ρ = λ x → ⌈ ν ⌉ in
+   let NE-ρ = λ x → ⟨ ν , refl ⟩ in
+   let CM≃λN′ = soundness{ρ = ρ}{NE-ρ} CM—↠N′ in
+   let CM≃CN = compositionality{C}{M}{N}{ρ} M≃N in
+   let CN≃λN′ = ≃-trans (≃-sym CM≃CN) CM≃λN′ in
+   let adq = adequacy{plug C M}{N′}{wfM = WF-plug wfC wfM}{ρ}{NE-ρ} Nv CM≃λN′ in
+   {!!}

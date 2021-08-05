@@ -34,7 +34,8 @@ module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
                    ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; 
                    rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
-                   WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var)
+                   WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
+                   COp; CAst; CBind; ccons; tcons)
             renaming (ABT to AST) public
 
 Term : Set
