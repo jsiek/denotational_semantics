@@ -24,6 +24,7 @@ open import Fold2 Op sig
 open import ScopedTuple hiding (𝒫)
 open import Sig
 open import Utilities using (extensionality)
+open import SetsAsPredicates
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length)
@@ -42,29 +43,6 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 module PValue where
-
-{- Set notation for predicates -------------------------------------------------}
-
-𝒫 : Set → Set₁
-𝒫 V = V → Set
-
-∅ : ∀{T} → 𝒫 T
-∅ = λ v → False 
-
-⌈_⌉ : ∀ {T} → T → 𝒫 T     {- the singleton set containing only v -}
-⌈ v ⌉ w = w ≡ v
-
-infix 9 _∈_
-_∈_ : ∀{T : Set} → T → 𝒫 T → Set
-v ∈ D = D v
-
-infix 9 _⊆_
-_⊆_ : ∀{T : Set} → 𝒫 T → 𝒫 T → Set
-D ⊆ E = ∀ d → d ∈ D → d ∈ E
-
-nonempty : ∀{T : Set} → 𝒫 T → Set
-nonempty{T} S = Σ[ x ∈ T ] x ∈ S
-
 
 {- Finite Sets represented by Lists --------------------------------------------}
 
@@ -127,90 +105,41 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 ... | no neq = ⊥-elim m
 
 
-{- Denotational Equality and Approximation (less-than) -------------------------}
-
-infix 6 _≲_
-_≲_ : 𝒫 Value → 𝒫 Value → Set
-D₁ ≲ D₂ = ∀ (v : Value) → D₁ v → D₂ v
-
-≲-refl : {D : 𝒫 Value} → D ≲ D
-≲-refl {D} v Dv = Dv
-
-≲-trans : {D₁ D₂ D₃ : 𝒫 Value} → D₁ ≲ D₂ → D₂ ≲ D₃ → D₁ ≲ D₃
-≲-trans D12 D23 v D₁v = D23 v (D12 v D₁v)
-
-infix 6 _≃_
-data _≃_ : 𝒫 Value → 𝒫 Value → Set where
-  equal : ∀{D₁ D₂} → D₁ ≲ D₂  →  D₂ ≲ D₁  → D₁ ≃ D₂
-
-to : ∀{D₁ D₂} → D₁ ≃ D₂ → D₁ ≲ D₂
-to (equal a b) = a
-
-from : ∀{D₁ D₂} → D₁ ≃ D₂ → D₂ ≲ D₁
-from (equal a b) = b
-
-≃-refl : {D : 𝒫 Value} → D ≃ D
-≃-refl {D} = equal ≲-refl ≲-refl
-
-≃-reflexive : {D₁ D₂ : 𝒫 Value} → D₁ ≡ D₂ → D₁ ≃ D₂
-≃-reflexive refl = equal ≲-refl ≲-refl
-
-≃-sym : {D₁ D₂ : 𝒫 Value} → D₁ ≃ D₂ → D₂ ≃ D₁
-≃-sym (equal t f) = equal f t
-
-≃-trans : {D₁ D₂ D₃ : 𝒫 Value} → D₁ ≃ D₂ → D₂ ≃ D₃ → D₁ ≃ D₃
-≃-trans (equal d12 d21) (equal d23 d32) =
-    equal (≲-trans d12 d23) (≲-trans d32 d21)
-
-module ≃-Reasoning where
-  infixr 2 _≃⟨⟩_
-  _≃⟨⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ : 𝒫 Value} → D₁ ≃ D₂ → D₁ ≃ D₂
-  D₁ ≃⟨⟩ D₁≃D₂ = D₁≃D₂
-  
-  infixr 2 _≃⟨_⟩_
-  _≃⟨_⟩_ : ∀ (D₁ : 𝒫 Value) {D₂ D₃ : 𝒫 Value} → D₁ ≃ D₂ → D₂ ≃ D₃ → D₁ ≃ D₃
-  D₁ ≃⟨ D₁≃D₂ ⟩ D₂≃D₃ = ≃-trans D₁≃D₂ D₂≃D₃
-  
-  infix 3 _∎
-  _∎ : ∀ (D : 𝒫 Value) → D ≃ D
-  D ∎  =  ≃-refl
-
-
 {- Application is a Congruence -------------------------------------------------}
 
 ▪-cong : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
   → D₁ ≃ D₁′  →  D₂ ≃ D₂′
   → D₁ ▪ D₂ ≃ D₁′ ▪ D₂′
-▪-cong (equal x x₁) (equal x₂ x₃) = equal (▪-cong-≲ x x₂) (▪-cong-≲ x₁ x₃)
+▪-cong ⟨ x , x₁ ⟩ ⟨ x₂ , x₃ ⟩ = ⟨ (▪-cong-⊆ x x₂) , (▪-cong-⊆ x₁ x₃) ⟩
   where
-  ▪-cong-≲ : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
-    → D₁ ≲ D₁′  →  D₂ ≲ D₂′
-    → D₁ ▪ D₂ ≲ D₁′ ▪ D₂′
-  ▪-cong-≲ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
+  ▪-cong-⊆ : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
+    → D₁ ⊆ D₁′  →  D₂ ⊆ D₂′
+    → D₁ ▪ D₂ ⊆ D₁′ ▪ D₂′
+  ▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
      ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
   
 {- Abstraction followed by Application is the identity -------------------------}
 
 continuous : (F : 𝒫 Value → 𝒫 Value) → Set₁
 continuous F = ∀ X E → mem E ⊆ F X → nonempty X
-    → Σ[ D ∈ List Value ] mem D ≲ X  ×  mem E ⊆ F (mem D)  ×  D ≢ []
+    → Σ[ D ∈ List Value ] mem D ⊆ X  ×  mem E ⊆ F (mem D)  ×  D ≢ []
 
 monotone : (F : 𝒫 Value → 𝒫 Value) → Set₁
-monotone F = ∀ D₁ D₂ → D₁ ≲ D₂ → F D₁ ≲ F D₂
+monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
 
 Λ-▪-id : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
   → continuous F → monotone F → nonempty X
   → (Λ F) ▪ X ≃ F X
-Λ-▪-id {F}{X} Fcont Fmono NE-X = equal (Λ-▪-≲ Fmono) (≲-Λ-▪ Fcont NE-X)
+Λ-▪-id {F}{X} Fcont Fmono NE-X = ⟨ (Λ-▪-⊆ Fmono) , (⊆-Λ-▪ Fcont NE-X) ⟩
   where
-  Λ-▪-≲ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
-    → monotone F  →  (Λ F) ▪ X ≲ F X
-  Λ-▪-≲ {F} {X} Fmono w ⟨ V , ⟨ ⟨ w∈FV , _ ⟩ , ⟨ V<X , V≢[] ⟩ ⟩ ⟩ =
+  Λ-▪-⊆ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
+    → monotone F  →  (Λ F) ▪ X ⊆ F X
+  Λ-▪-⊆ {F} {X} Fmono w ⟨ V , ⟨ ⟨ w∈FV , _ ⟩ , ⟨ V<X , V≢[] ⟩ ⟩ ⟩ =
       Fmono (mem V) X V<X w w∈FV
 
-  ≲-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
-    → continuous F  → nonempty X →  F X ≲ (Λ F) ▪ X
-  ≲-Λ-▪ {F}{X} Fcont NE-X w w∈FX 
+  ⊆-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
+    → continuous F  → nonempty X →  F X ⊆ (Λ F) ▪ X
+  ⊆-Λ-▪ {F}{X} Fcont NE-X w w∈FX 
       with Fcont X (w ∷ []) (λ { d (here refl) → w∈FX }) NE-X
   ... | ⟨ D , ⟨ D<X , ⟨ w∈FD , NE-D ⟩ ⟩ ⟩ =
         ⟨ D , ⟨ ⟨ w∈FD w (here refl) , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
@@ -275,7 +204,7 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
 
 {- Denotations are monotone ----------------------------------------------------}
 
-⟦⟧-monotone : ∀{M : Term}{ρ ρ′}  →  (∀ x → ρ x ≲ ρ′ x)  →  ⟦ M ⟧ ρ ≲ ⟦ M ⟧ ρ′ 
+⟦⟧-monotone : ∀{M : Term}{ρ ρ′}  →  (∀ x → ρ x ⊆ ρ′ x)  →  ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′ 
 ⟦⟧-monotone {` x} ρ<ρ′ = ρ<ρ′ x
 ⟦⟧-monotone {L · M} ρ<ρ′ w ⟨ V , ⟨ Vw∈L , ⟨ V⊆M , V≢[] ⟩ ⟩ ⟩ =
    let vw∈Lρ′ = ⟦⟧-monotone {L} ρ<ρ′ (V ↦ w) Vw∈L in
@@ -284,7 +213,7 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
 ⟦⟧-monotone {ƛ N}{ρ}{ρ′} ρ<ρ′ (const k) ()
 ⟦⟧-monotone {ƛ N}{ρ}{ρ′} ρ<ρ′ (V ↦ w) ⟨ w∈⟦N⟧V•ρ , V≢[] ⟩ =
   ⟨ ⟦⟧-monotone {N}{mem V • ρ}{mem V • ρ′} G w w∈⟦N⟧V•ρ , V≢[] ⟩
-  where G : (x : Var) → (mem V • ρ) x ≲ (mem V • ρ′) x
+  where G : (x : Var) → (mem V • ρ) x ⊆ (mem V • ρ′) x
         G zero = λ v z → z
         G (suc x) = ρ<ρ′ x
 ⟦⟧-monotone {ƛ N}{ρ}{ρ′} ρ<ρ′ ν _ = tt
@@ -292,7 +221,7 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
 
 ⟦⟧-monotone-one : ∀{N : Term}{ρ} → monotone (λ D → ⟦ N ⟧ (D • ρ))
 ⟦⟧-monotone-one {N}{ρ} D₁ D₂ D12 = ⟦⟧-monotone {N} G
-  where G : (x : Var) → (D₁ • ρ) x ≲ (D₂ • ρ) x
+  where G : (x : Var) → (D₁ • ρ) x ⊆ (D₂ • ρ) x
         G zero = D12
         G (suc x) = λ v z → z
 
@@ -321,7 +250,7 @@ initial-fin ρ NE-ρ x
     with NE-ρ x
 ... | ⟨ v , v∈ρx ⟩ =
       ⟨ v ∷ [] ,
-      ⟨ equal (λ {w refl → (here refl)}) (λ {w (here refl) → refl}) , (λ ()) ⟩ ⟩
+      ⟨ ⟨ (λ {w refl → (here refl)}) , (λ {w (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 
 initial-fin-⊆ : (ρ : Env) → (NE-ρ : nonempty-env ρ)
   → initial-fin-env ρ NE-ρ ⊆ₑ ρ
@@ -344,16 +273,16 @@ join-fin-env {ρ₁}{ρ₂} f1 f2 x
 ... | ⟨ E1 , ⟨ ρ₁=E1 , NE-E1 ⟩ ⟩
     with f2 x
 ... | ⟨ E2 , ⟨ ρ₂=E2 , NE-E2 ⟩ ⟩ =
-    ⟨ (E1 ++ E2) , ⟨ equal G (H {E1} ≲-refl) ,
+    ⟨ (E1 ++ E2) , ⟨ ⟨ G , (H {E1} λ d z → z) ⟩ ,
       (λ E12=[] → NE-E1 (++-conicalˡ E1 E2 E12=[])) ⟩ ⟩
     where
     G : (v : Value) → ρ₁ x v ⊎ ρ₂ x v → mem (E1 ++ E2) v
-    G v (inj₁ ρ1x) = ∈-++⁺ˡ ((to ρ₁=E1) v ρ1x)
-    G v (inj₂ ρ2x) = ∈-++⁺ʳ E1 ((to ρ₂=E2) v ρ2x)
+    G v (inj₁ ρ1x) = ∈-++⁺ˡ ((proj₁ ρ₁=E1) v ρ1x)
+    G v (inj₂ ρ2x) = ∈-++⁺ʳ E1 ((proj₁ ρ₂=E2) v ρ2x)
 
-    H : ∀{E} → mem E ≲ mem E1 → mem (E ++ E2) ≲ (λ v → ρ₁ x v ⊎ ρ₂ x v)
-    H {[]} E<E1 v v∈E++E2 = inj₂ ((from ρ₂=E2) v v∈E++E2)
-    H {x ∷ E} E<E1 .x (here refl) = inj₁ ((from ρ₁=E1) x (E<E1 x (here refl)))
+    H : ∀{E} → mem E ⊆ mem E1 → mem (E ++ E2) ⊆ (λ v → ρ₁ x v ⊎ ρ₂ x v)
+    H {[]} E<E1 v v∈E++E2 = inj₂ ((proj₂ ρ₂=E2) v v∈E++E2)
+    H {x ∷ E} E<E1 .x (here refl) = inj₁ ((proj₂ ρ₁=E1) x (E<E1 x (here refl)))
     H {x ∷ E} E<E1 v (there v∈E++E2) =
        H (λ v z → E<E1 v (there z)) v v∈E++E2
 
@@ -371,12 +300,12 @@ single-fin {v}{x}{ρ}{NE-ρ} y
     with x ≟ y
 ... | yes refl =
     ⟨ v ∷ [] ,
-    ⟨ equal (λ { v₁ refl → (here refl)}) (λ{ v₁ (here refl) → refl}) , (λ ()) ⟩ ⟩
+    ⟨ ⟨ (λ { v₁ refl → (here refl)}) , (λ{ v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 ... | no neq
     with NE-ρ y
 ... | ⟨ w , w∈ρy ⟩ =
     ⟨ w ∷ [] ,
-    ⟨ equal (λ { v₁ refl → here refl}) (λ { v₁ (here refl) → refl}) , (λ ()) ⟩ ⟩
+    ⟨ ⟨ (λ { v₁ refl → here refl}) , (λ { v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 
 single-⊆ : ∀{ρ x v}{NE-ρ : nonempty-env ρ}
   →  v ∈ ρ x  →  single-env x ⌈ v ⌉ ρ NE-ρ ⊆ₑ ρ
@@ -439,7 +368,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧V•ρ′ ⟩ ⟩ ⟩ =    
     ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,
     ⟨ ⟦⟧-monotone{N}{ρ′}{mem V • (λ z → ρ′ (suc z))} G w w∈⟦N⟧V•ρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
-    where G : (x : Var) → ρ′ x ≲ (mem V • (λ x₁ → ρ′ (suc x₁))) x
+    where G : (x : Var) → ρ′ x ⊆ (mem V • (λ x₁ → ρ′ (suc x₁))) x
           G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
           G (suc x) v v∈ρ′x = v∈ρ′x
 ⟦⟧-continuous-env {ƛ N}{ρ}{ν}{NE-ρ} _ =
@@ -472,11 +401,11 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆X•ρ , E⊆⟦N⟧ρ′ ⟩ ⟩ ⟩
     with fρ′ 0
 ... | ⟨ D , ⟨ ρ′x=D , NE-D ⟩ ⟩ =
-    ⟨ D , ⟨ (λ v v∈D → ρ′⊆X•ρ 0 v ((from ρ′x=D) v v∈D)) ,
+    ⟨ D , ⟨ (λ v v∈D → ρ′⊆X•ρ 0 v ((proj₂ ρ′x=D) v v∈D)) ,
     ⟨ (λ d d∈E → ⟦⟧-monotone {N}{ρ′}{mem D • ρ} G d (E⊆⟦N⟧ρ′ d d∈E)) , NE-D ⟩ ⟩ ⟩
     where
-    G : (x : Var) → ρ′ x ≲ (mem D • ρ) x
-    G zero d d∈ρ0 = (to ρ′x=D) d d∈ρ0 
+    G : (x : Var) → ρ′ x ⊆ (mem D • ρ) x
+    G zero d d∈ρ0 = (proj₁ ρ′x=D) d d∈ρ0 
     G (suc x) d m = ρ′⊆X•ρ (suc x) d m
 
 ISWIM-Λ-▪-id : ∀ {N : Term}{ρ}{NE-ρ : nonempty-env ρ}{X : 𝒫 Value}
@@ -489,13 +418,13 @@ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
 {- Primitive Abstraction followed by Application is the identity ---------------}
 
 ℘-▪-≃ : ∀{B}{P}{f}{k}  →  (℘ (B ⇒ P) f) ▪ (℘ (base B) k) ≃ ℘ P (f k)
-℘-▪-≃ {B}{P}{f}{k} = equal fwd back
+℘-▪-≃ {B}{P}{f}{k} = ⟨ fwd , back ⟩
   where
-  fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ≲ ℘ P (f k)
+  fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ⊆ ℘ P (f k)
   fwd w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , ⟨ k′∈pk , _ ⟩ ⟩ ⟩
       with k′∈pk (const k′) (here refl)
   ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
-  back : ℘ P (f k) ≲ ℘ (B ⇒ P) f ▪ ℘ (base B) k
+  back : ℘ P (f k) ⊆ ℘ (B ⇒ P) f ▪ ℘ (base B) k
   back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
                 ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
 
@@ -679,7 +608,7 @@ adequacy : ∀{M V : Term}{wfM : WF 0 M}{ρ}{NE-ρ : nonempty-env ρ}
 adequacy{M}{V}{wfM}{ρ}{NE-ρ} Vval ⟦M⟧≃⟦V⟧
     with value-nonempty{V}{ρ} NE-ρ Vval
 ... | ⟨ v , v∈⟦V⟧ ⟩
-    with ⟦⟧⇒⇓ {wfM = wfM} 𝔾-∅ (from ⟦M⟧≃⟦V⟧ v v∈⟦V⟧)
+    with ⟦⟧⇒⇓ {wfM = wfM} 𝔾-∅ (proj₂ ⟦M⟧≃⟦V⟧ v v∈⟦V⟧)
 ... | ⟨ c , ⟨ M⇓c , _ ⟩ ⟩ =
     ⟨ c , M⇓c ⟩
 
@@ -699,13 +628,13 @@ reduce→⇓ {M}{V}{wfM} v M—↠N =
 ⟦⟧-ƛ-cong : ∀{M N : Term}{ρ}
    → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
    → ⟦ ƛ M ⟧ ρ ≃ ⟦ ƛ N ⟧ ρ
-⟦⟧-ƛ-cong {M}{N}{ρ} M=N = equal fwd back
+⟦⟧-ƛ-cong {M}{N}{ρ} M=N = ⟨ fwd , back ⟩
    where
-   fwd : ⟦ ƛ M ⟧ ρ ≲ ⟦ ƛ N ⟧ ρ
-   fwd (V ↦ w) ⟨ w∈⟦M⟧ , V≢[] ⟩ = ⟨ (to M=N w w∈⟦M⟧) , V≢[] ⟩
+   fwd : ⟦ ƛ M ⟧ ρ ⊆ ⟦ ƛ N ⟧ ρ
+   fwd (V ↦ w) ⟨ w∈⟦M⟧ , V≢[] ⟩ = ⟨ (proj₁ M=N w w∈⟦M⟧) , V≢[] ⟩
    fwd ν xx = tt
-   back : ⟦ ƛ N ⟧ ρ ≲ ⟦ ƛ M ⟧ ρ
-   back (V ↦ w) ⟨ w∈⟦N⟧ , V≢[] ⟩ = ⟨ (from M=N w w∈⟦N⟧) , V≢[] ⟩
+   back : ⟦ ƛ N ⟧ ρ ⊆ ⟦ ƛ M ⟧ ρ
+   back (V ↦ w) ⟨ w∈⟦N⟧ , V≢[] ⟩ = ⟨ (proj₂ M=N w w∈⟦N⟧) , V≢[] ⟩
    back ν xx = tt
 
 compositionality : ∀{C : Ctx} {M N : Term}{ρ}
@@ -716,7 +645,7 @@ compositionality{CHole}{M}{N}{ρ} ⟦M⟧=⟦N⟧ = ⟦M⟧=⟦N⟧
 compositionality{COp lam (ccons (CBind (CAst C′)) nil refl)}{M}{N}{ρ} ⟦M⟧=⟦N⟧ =
    ⟦⟧-ƛ-cong{plug C′ M}{plug C′ N} λ {ρ} → compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧
 compositionality{COp app (tcons (ast L) (tcons x Cs refl) refl)}{M}{N}{ρ}
-   ⟦M⟧=⟦N⟧ = equal (λ v z → z) (λ v z → z)
+   ⟦M⟧=⟦N⟧ = ⟨ (λ v z → z) , (λ v z → z) ⟩
 compositionality {COp app (tcons (ast L) (ccons (CAst C′) nil refl) refl)}
    {M}{N}{ρ} ⟦M⟧=⟦N⟧ =
    ▪-cong{⟦ L ⟧ ρ} ≃-refl (compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧)
