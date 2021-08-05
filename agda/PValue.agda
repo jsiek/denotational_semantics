@@ -4,6 +4,15 @@ module PValue where
   A denotational semantics of ISWIM, adapting the call-by-name models
   P(ω) of Scott (1976) and Dₐ of Engeler (1981) to call-by-value.
 
+  Theorems:
+  * soundness of reduction wrt. denotations
+  * adequacy of denotations wrt. reduction
+  * denotational equality implies contextual equivalence
+
+  Main Lemmas:
+  * denotations are continuous (for soundness)
+  * compositionality (for contextual equivalence)
+
 -}
 
 open import Primitives
