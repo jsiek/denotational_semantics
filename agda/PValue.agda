@@ -44,7 +44,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 
 module PValue where
 
-{- Finite Sets represented by Lists --------------------------------------------}
+{- Finite Sets represented by Lists -------------------------------------------}
 
 mem : ∀{T : Set} → List T → T → Set
 mem {T} ls x = x ⋵ ls
@@ -55,7 +55,7 @@ E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
 E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
 
 
-{- Denotational Values ---------------------------------------------------------}
+{- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
   const : {B : Base} → base-rep B → Value   {- A primitive constant of type B. -}
@@ -63,7 +63,7 @@ data Value : Set where
   ν : Value       {- A function. Needed for CBV to distinguish from diverging. -}
 
 
-{- Abstraction and Application -------------------------------------------------}
+{- Abstraction and Application ------------------------------------------------}
 
 Λ : (𝒫 Value → 𝒫 Value) → 𝒫 Value
 Λ f (const k) = False
@@ -105,7 +105,7 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 ... | no neq = ⊥-elim m
 
 
-{- Application is a Congruence -------------------------------------------------}
+{- Application is a Congruence ------------------------------------------------}
 
 ▪-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
   → D₁ ≃ D₃  →  D₂ ≃ D₄
@@ -118,7 +118,7 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
   ▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
      ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
   
-{- Abstraction followed by Application is the identity -------------------------}
+{- Abstraction followed by Application is the identity ------------------------}
 
 continuous : (F : 𝒫 Value → 𝒫 Value) → Set₁
 continuous F = ∀ X E → mem E ⊆ F X → nonempty X
@@ -145,7 +145,7 @@ monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
         ⟨ D , ⟨ ⟨ w∈FD w (here refl) , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
 
   
-{- Denotational Semantics of the ISWIM Language via fold -----------------------}
+{- Denotational Semantics of the ISWIM Language via fold ----------------------}
 
 interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
 interp-op lam ⟨ F , _ ⟩ = Λ F
@@ -172,7 +172,7 @@ infix 11 ⟦_⟧_
 ⟦⟧-prim = refl
 
 
-{- Syntactic values terminate (i.e., have nonempty denotations) ----------------}
+{- Syntactic values terminate (i.e., have nonempty denotations) ---------------}
 
 nonempty-env : Env → Set
 nonempty-env ρ = ∀ x → nonempty (ρ x)
@@ -185,7 +185,7 @@ value-nonempty NE-ρ (V-lit {base B} {k}) = ⟨ const k , k∈℘k ⟩
 value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
 
 
-{- Substitution Lemma (via fold-subst-fusion) ----------------------------------}
+{- Substitution Lemma (via fold-subst-fusion) ---------------------------------}
 
 ⟦⟧-par-subst : ∀ {M : Term}{σ : Subst}{ρ : Var → 𝒫 Value}
   → ⟦ ⟪ σ ⟫ M ⟧ ρ ≡ ⟦ M ⟧ (λ x → ⟦ σ x ⟧ ρ)
@@ -202,7 +202,7 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
   EQ (suc x) = refl
 
 
-{- Denotations are monotone ----------------------------------------------------}
+{- Denotations are monotone ---------------------------------------------------}
 
 ⟦⟧-monotone : ∀{M : Term}{ρ ρ′}  →  (∀ x → ρ x ⊆ ρ′ x)  →  ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′ 
 ⟦⟧-monotone {` x} ρ<ρ′ = ρ<ρ′ x
@@ -226,7 +226,7 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
         G (suc x) = λ v z → z
 
 
-{- Denotations are continuous --------------------------------------------------}
+{- Denotations are continuous -------------------------------------------------}
 
 infix 5 _⊆ₑ_
 _⊆ₑ_ : Env → Env → Set
@@ -417,7 +417,7 @@ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
     Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}{NE-ρ}) (⟦⟧-monotone-one{N})
         NE-X
 
-{- Primitive Abstraction followed by Application is the identity ---------------}
+{- Primitive Abstraction followed by Application is the identity --------------}
 
 ℘-▪-≃ : ∀{B}{P}{f}{k}  →  (℘ (B ⇒ P) f) ▪ (℘ (base B) k) ≃ ℘ P (f k)
 ℘-▪-≃ {B}{P}{f}{k} = ⟨ fwd , back ⟩
@@ -430,7 +430,7 @@ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
   back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
                 ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
 
-{- Soundness of Reduction with respect to Denotations --------------------------}
+{- Soundness of Reduction with respect to Denotations -------------------------}
 
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value} {NE-ρ : nonempty-env ρ}
    → M —→ N
@@ -469,7 +469,7 @@ soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠
     ⟦ M′ ⟧ ρ     ≃⟨ soundness{ρ = ρ}{NE-ρ} M′—↠N ⟩ 
     ⟦ N ⟧ ρ      ∎ where open ≃-Reasoning
 
-{- Adequacy of Denotations -----------------------------------------------------}
+{- Adequacy of Denotations ----------------------------------------------------}
 
 open import EvalISWIM {- the big-step semantics of ISWIM -}
 
@@ -626,7 +626,7 @@ reduce→⇓ {M}{V}{wfM} v M—↠N =
    adequacy {M}{V}{wfM}{ρ = ρ}{NE-ρ} v (soundness{NE-ρ = NE-ρ} M—↠N)
 
 
-{- Denotational Equality implies Contextual Equivalence ------------------------}
+{- Denotational Equality implies Contextual Equivalence -----------------------}
 
 ⟦⟧-ƛ-cong : ∀{M N : Term}{ρ}
    → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)

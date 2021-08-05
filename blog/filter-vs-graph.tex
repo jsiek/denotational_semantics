@@ -1,0 +1,52 @@
+\documentclass{article}
+%\usepackage{cmbright}
+\usepackage{natbib}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{mathabx}
+\usepackage{stmaryrd}
+\usepackage{semantic}
+%\usepackage{fullpage}
+%\usepackage{fontspec,unicode-math}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{constraint}[theorem]{Constraint}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\true}[0]{\mathsf{true}}
+\newcommand{\curry}[1]{\mathsf{curry}(#1)}
+\newcommand{\apply}[2]{\mathsf{apply}(#1, #2)}
+
+\title{Filter versus Graph Models}
+\author{Jeremy G. Siek}
+
+\begin{document}
+\maketitle
+
+Filter models and graph models are two different ways to give a
+denotational semantics to the lambda calculus. At first glance they
+appear quite different, but many of those differences do not matter.
+On the other hand, there are some differences that do matter.
+Differences that matter are ones that cause significant differences in
+the proofs about the semantics, such as proofs of soundness and
+adequacy with respect to the reduction semantics.
+
+
+
+
+
+
+
+
+
+
+\bibliographystyle{abbrvnat}
+\bibliography{all}
+
+\end{document}
