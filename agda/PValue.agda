@@ -721,8 +721,6 @@ compositionality : ∀{C : Ctx} {M N : Term}{ρ}
     --------------------------------
    → ⟦ plug C M ⟧ ρ ≃ ⟦ plug C N ⟧ ρ
 compositionality{CHole}{M}{N}{ρ} ⟦M⟧=⟦N⟧ = ⟦M⟧=⟦N⟧
-compositionality{COp lam (tcons (bind (ast N)) Cs refl)}{M}{_}{ρ} ⟦M⟧=⟦N⟧ =
-   equal (λ v z → z) (λ v z → z)
 compositionality{COp lam (ccons (CBind (CAst C′)) nil refl)}{M}{N}{ρ} ⟦M⟧=⟦N⟧ =
    ⟦⟧-ƛ-cong{plug C′ M}{plug C′ N} λ {ρ} → compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧
 compositionality{COp app (tcons (ast L) (tcons x Cs refl) refl)}{M}{N}{ρ}
