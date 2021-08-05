@@ -107,14 +107,14 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 
 {- Application is a Congruence -------------------------------------------------}
 
-▪-cong : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
-  → D₁ ≃ D₁′  →  D₂ ≃ D₂′
-  → D₁ ▪ D₂ ≃ D₁′ ▪ D₂′
-▪-cong ⟨ x , x₁ ⟩ ⟨ x₂ , x₃ ⟩ = ⟨ (▪-cong-⊆ x x₂) , (▪-cong-⊆ x₁ x₃) ⟩
+▪-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+  → D₁ ≃ D₃  →  D₂ ≃ D₄
+  → D₁ ▪ D₂ ≃ D₃ ▪ D₄
+▪-cong ⟨ d13 , d31 ⟩ ⟨ d24 , d42 ⟩ = ⟨ (▪-cong-⊆ d13 d24) , (▪-cong-⊆ d31 d42) ⟩
   where
-  ▪-cong-⊆ : ∀{D₁ D₂ D₁′ D₂′ : 𝒫 Value}
-    → D₁ ⊆ D₁′  →  D₂ ⊆ D₂′
-    → D₁ ▪ D₂ ⊆ D₁′ ▪ D₂′
+  ▪-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+    → D₁ ⊆ D₃  →  D₂ ⊆ D₄
+    → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
   ▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
      ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
   
@@ -239,6 +239,8 @@ _⊆ₑ_ : Env → Env → Set
 fin-env : Env → Set
 fin-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≃ mem E × E ≢ []
 
+{- creates an environment that maps each variable x to
+   a singleton set of some element in ρ x.  -}
 initial-fin-env : (ρ : Env) → (NE-ρ : nonempty-env ρ) → Env
 initial-fin-env ρ NE-ρ x
     with NE-ρ x
@@ -286,7 +288,7 @@ join-fin-env {ρ₁}{ρ₂} f1 f2 x
     H {x ∷ E} E<E1 v (there v∈E++E2) =
        H (λ v z → E<E1 v (there z)) v v∈E++E2
 
-{- single-env maps x to D and another variable y to something in ρ y. -}
+{- single-env maps x to D and any other variable y to something in ρ y. -}
 single-env : Var → 𝒫 Value → (ρ : Env) → (NE-ρ : nonempty-env ρ) → Env
 single-env x D ρ NE-ρ y
     with x ≟ y
@@ -332,14 +334,14 @@ join-⊆-left {ρ₁}{ρ₂} = λ x d z → inj₁ z
 join-⊆-right : ∀{ρ₁ ρ₂} → ρ₂ ⊆ₑ ρ₁ ⊔ₑ ρ₂
 join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 
+{- the main lemmas (mutually recursive) -}
+⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}{NE-ρ : nonempty-env ρ}
+  → v ∈ ⟦ M ⟧ ρ
+  → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
 ⟦⟧-continuous-⊆ : ∀{M : Term}{ρ}{E}{NE-ρ : nonempty-env ρ}
   → mem E ⊆ ⟦ M ⟧ ρ
   → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  mem E ⊆ ⟦ M ⟧ ρ′
 
-{- the main lemma -}
-⟦⟧-continuous-env : ∀{M : Term}{ρ}{v}{NE-ρ : nonempty-env ρ}
-  → v ∈ ⟦ M ⟧ ρ
-  → Σ[ ρ′ ∈ Env ] fin-env ρ′  ×  ρ′ ⊆ₑ ρ  ×  v ∈ ⟦ M ⟧ ρ′
 ⟦⟧-continuous-env {` x}{ρ}{v}{NE-ρ} v∈⟦x⟧ρ =
    ⟨ (single-env x ⌈ v ⌉ ρ NE-ρ) , ⟨ single-fin {v}{x} , ⟨ single-⊆ v∈⟦x⟧ρ ,
      v∈single[xv]x {v}{x} ⟩ ⟩ ⟩
@@ -612,7 +614,8 @@ adequacy{M}{V}{wfM}{ρ}{NE-ρ} Vval ⟦M⟧≃⟦V⟧
 ... | ⟨ c , ⟨ M⇓c , _ ⟩ ⟩ =
     ⟨ c , M⇓c ⟩
 
-{- corollary: reduction to a value implies big-step termination -}
+{- corollary of adequacy and soundness:
+   reduction to a value implies big-step termination -}
 reduce→⇓ : ∀ {M V : Term}{wfM : WF 0 M}
    → TermValue V  →  M —↠ V
     -------------------------
