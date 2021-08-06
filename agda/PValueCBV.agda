@@ -92,31 +92,30 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 
 {- Application is a Congruence ------------------------------------------------}
 
+▪-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+  → D₁ ⊆ D₃  →  D₂ ⊆ D₄
+  → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
+▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
+   ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
+     
 ▪-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
   → D₁ ≃ D₃  →  D₂ ≃ D₄
   → D₁ ▪ D₂ ≃ D₃ ▪ D₄
 ▪-cong ⟨ d13 , d31 ⟩ ⟨ d24 , d42 ⟩ = ⟨ (▪-cong-⊆ d13 d24) , (▪-cong-⊆ d31 d42) ⟩
-  where
-  ▪-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
-    → D₁ ⊆ D₃  →  D₂ ⊆ D₄
-    → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
-  ▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
-     ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
 
 
 {- Abstraction is Extensional ---- --------------------------------------------}
 
+Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
+  → (∀ {X} → F₁ X ⊆ F₂ X)
+  → Λ F₁ ⊆ Λ F₂
+Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (V ↦ w) ⟨ w∈F₁X , V≢[] ⟩ = ⟨ F₁⊆F₂ w w∈F₁X , V≢[] ⟩
+Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ν v∈ = tt
+
 Λ-ext : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ≃ F₂ X)
   → Λ F₁ ≃ Λ F₂
-Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ fwd , back ⟩
-    where
-    fwd : Λ F₁ ⊆ Λ F₂
-    fwd (V ↦ w) ⟨ w∈F₁V , V≢[] ⟩ = ⟨ (proj₁ F₁≃F₂ w w∈F₁V) , V≢[] ⟩
-    fwd ν v∈ΛF₁ = tt
-    back : Λ F₂ ⊆ Λ F₁
-    back (V ↦ w) ⟨ w∈F₂V , V≢[] ⟩ = ⟨ proj₂ F₁≃F₂ w w∈F₂V , V≢[] ⟩
-    back ν _ = tt
+Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ Λ-ext-⊆ (proj₁ F₁≃F₂) , Λ-ext-⊆ (proj₂ F₁≃F₂) ⟩
 
 {- Abstraction followed by Application is the identity ------------------------}
 

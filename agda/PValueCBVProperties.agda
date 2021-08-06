@@ -29,6 +29,20 @@ open import Fold2 Op sig
 open Syntax.OpSig Op sig
 open import WellScoped Op sig using (WF-plug) 
 
+rel-args : ∀{ℓ}{T : Set ℓ}
+   → (∀ b → ArgTy T b → ArgTy T b → Set₁)
+   → ∀ bs → Tuple bs (ArgTy T)
+   → Tuple bs (ArgTy T) → Set₁
+rel-args R [] xs ys = Lift (lsuc lzero) True
+rel-args R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ = (R b x y) × (rel-args R bs xs ys)
+
+⊆-arg : ∀ b → ArgTy (𝒫 Value) b → ArgTy (𝒫 Value) b → Set₁
+⊆-arg ■ x y = Lift (lsuc lzero) (x ⊆ y)
+⊆-arg (ν b) f g = ∀ X → ⊆-arg b (f X) (g X)
+⊆-arg (∁ b) x y = ⊆-arg b x y
+
+⊆-args = rel-args ⊆-arg
+
 record Semantics : Set₁ where
   field interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
   
@@ -41,36 +55,18 @@ record Semantics : Set₁ where
   ⟦_⟧₊_ : ∀{bs} → Args bs → Env  → Tuple bs (ArgTy (𝒫 Value))
   ⟦ args ⟧₊ ρ = fold-args interp-op ∅ ρ args
 
+  field mono-op : ∀{op}{xs}{ys} → ⊆-args (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
+  
 open Semantics {{...}}
 
 {- Monotonic ------------------------------------------------------------------}
 
-rel-args : ∀{ℓ}{T : Set ℓ}
-   → (∀ b → ArgTy T b → ArgTy T b → Set₁)
-   → ∀ bs → Tuple bs (ArgTy T)
-   → Tuple bs (ArgTy T) → Set₁
-rel-args R [] xs ys = Lift (lsuc lzero) True
-rel-args R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ = (R b x y) × (rel-args R bs xs ys)
-
-sub-arg : ∀ b → ArgTy (𝒫 Value) b → ArgTy (𝒫 Value) b → Set₁
-sub-arg ■ x y = Lift (lsuc lzero) (x ⊆ y)
-sub-arg (ν b) f g = ∀ X → sub-arg b (f X) (g X)
-sub-arg (∁ b) x y = sub-arg b x y
-
-sub-args = rel-args sub-arg
-
-record MonoSem : Set₁ where
-  field {{Sem}} : Semantics
-  field mono-op : ∀{op}{xs}{ys} → sub-args (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
-
-open MonoSem {{...}}
-
-⟦⟧-mono : ∀{{_ : MonoSem}} {ρ ρ′} (M : ABT)
+⟦⟧-mono : ∀{{_ : Semantics}} {ρ ρ′} (M : ABT)
   →  (∀ x → ρ x ⊆ ρ′ x)  →  ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
-⟦⟧-mono-arg : ∀{{_ : MonoSem}} {b}{ρ ρ′} (arg : Arg b)
-  →  (∀ x → ρ x ⊆ ρ′ x)  →  sub-arg b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
-⟦⟧-mono-args : ∀{{_ : MonoSem}} {bs}{ρ ρ′} (args : Args bs)
-  →  (∀ x → ρ x ⊆ ρ′ x)  →  sub-args bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
+⟦⟧-mono-arg : ∀{{_ : Semantics}} {b}{ρ ρ′} (arg : Arg b)
+  →  (∀ x → ρ x ⊆ ρ′ x)  →  ⊆-arg b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
+⟦⟧-mono-args : ∀{{_ : Semantics}} {bs}{ρ ρ′} (args : Args bs)
+  →  (∀ x → ρ x ⊆ ρ′ x)  →  ⊆-args bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
   
 ⟦⟧-mono {ρ}{ρ′} (` x) ρ<ρ′ = ρ<ρ′ x
 ⟦⟧-mono {ρ}{ρ′} (op ⦅ args ⦆) ρ<ρ′ = mono-op (⟦⟧-mono-args  args ρ<ρ′)
