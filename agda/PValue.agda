@@ -181,9 +181,6 @@ interp-op lam ⟨ F , _ ⟩ = Λ F
 interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
 interp-op (lit P k) _ = ℘ P k
 
-Env : Set₁
-Env = Var → 𝒫 Value
-
 infix 11 ⟦_⟧_
 ⟦_⟧_ : Term → Env → 𝒫 Value
 ⟦ M ⟧ ρ = fold interp-op ∅ ρ M
@@ -202,9 +199,6 @@ infix 11 ⟦_⟧_
 
 
 {- Syntactic values terminate (i.e., have nonempty denotations) ---------------}
-
-nonempty-env : Env → Set
-nonempty-env ρ = ∀ x → nonempty (ρ x)
 
 value-nonempty : ∀{V : Term}{ρ}
   → nonempty-env ρ → TermValue V → nonempty (⟦ V ⟧ ρ)
@@ -257,13 +251,6 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
 
 {- Denotations are continuous -------------------------------------------------}
 
-infix 5 _⊆ₑ_
-_⊆ₑ_ : Env → Env → Set
-ρ₁ ⊆ₑ ρ₂ = ∀ x → ρ₁ x ⊆ ρ₂ x
-
-⊆ₑ-trans : ∀{ρ₁ ρ₂ ρ₃} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
-⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
-
 {- environments whose codomain are finite nonempty sets -}
 fin-env : Env → Set
 fin-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≃ mem E × E ≢ []
@@ -288,11 +275,6 @@ initial-fin-⊆ : (ρ : Env) → (NE-ρ : nonempty-env ρ)
 initial-fin-⊆ ρ NE-ρ x v v∈initial
     with NE-ρ x
 ... | ⟨ w , w∈ρx ⟩ rewrite v∈initial = w∈ρx
-
-extend-nonempty-env : ∀{ρ}{X}
-   → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
-extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X
-extend-nonempty-env {ρ} {X} NE-ρ V≢[] (suc x) = NE-ρ x
 
 infix 6 _⊔ₑ_
 _⊔ₑ_ : Env → Env → Env
