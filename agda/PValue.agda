@@ -58,9 +58,9 @@ E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
 {- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
-  const : {B : Base} → base-rep B → Value   {- A primitive constant of type B. -}
-  _↦_ : List Value → Value → Value         {- An entry in a function's graph. -}
-  ν : Value       {- A function. Needed for CBV to distinguish from diverging. -}
+  const : {B : Base} → base-rep B → Value  {- A primitive constant of type B. -}
+  _↦_ : List Value → Value → Value        {- An entry in a function's graph. -}
+  ν : Value      {- A function. Needed for CBV to distinguish from diverging. -}
 
 
 {- Abstraction and Application ------------------------------------------------}
@@ -117,7 +117,22 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
     → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
   ▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
      ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
-  
+
+
+{- Abstraction is Extensional ---- --------------------------------------------}
+
+Λ-ext : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
+  → (∀ {X} → F₁ X ≃ F₂ X)
+  → Λ F₁ ≃ Λ F₂
+Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ fwd , back ⟩
+    where
+    fwd : Λ F₁ ⊆ Λ F₂
+    fwd (V ↦ w) ⟨ w∈F₁V , V≢[] ⟩ = ⟨ (proj₁ F₁≃F₂ w w∈F₁V) , V≢[] ⟩
+    fwd ν v∈ΛF₁ = tt
+    back : Λ F₂ ⊆ Λ F₁
+    back (V ↦ w) ⟨ w∈F₂V , V≢[] ⟩ = ⟨ proj₂ F₁≃F₂ w w∈F₂V , V≢[] ⟩
+    back ν _ = tt
+
 {- Abstraction followed by Application is the identity ------------------------}
 
 continuous : (F : 𝒫 Value → 𝒫 Value) → Set₁
@@ -145,6 +160,20 @@ monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
         ⟨ D , ⟨ ⟨ w∈FD w (here refl) , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
 
   
+{- Primitive Abstraction followed by Application is the identity --------------}
+
+℘-▪-≃ : ∀{B}{P}{f}{k}  →  (℘ (B ⇒ P) f) ▪ (℘ (base B) k) ≃ ℘ P (f k)
+℘-▪-≃ {B}{P}{f}{k} = ⟨ fwd , back ⟩
+  where
+  fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ⊆ ℘ P (f k)
+  fwd w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , ⟨ k′∈pk , _ ⟩ ⟩ ⟩
+      with k′∈pk (const k′) (here refl)
+  ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
+  back : ℘ P (f k) ⊆ ℘ (B ⇒ P) f ▪ ℘ (base B) k
+  back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
+                ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
+
+
 {- Denotational Semantics of the ISWIM Language via fold ----------------------}
 
 interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
@@ -369,7 +398,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
              {extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem V≢[])} w∈⟦N⟧V•ρ
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧V•ρ′ ⟩ ⟩ ⟩ =    
     ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,
-    ⟨ ⟦⟧-monotone{N}{ρ′}{mem V • (λ z → ρ′ (suc z))} G w w∈⟦N⟧V•ρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
+    ⟨ ⟦⟧-monotone{N}{ρ′}{mem V • (λ z → ρ′ (suc z))}G w w∈⟦N⟧V•ρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
     where G : (x : Var) → ρ′ x ⊆ (mem V • (λ x₁ → ρ′ (suc x₁))) x
           G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
           G (suc x) v v∈ρ′x = v∈ρ′x
@@ -414,21 +443,8 @@ ISWIM-Λ-▪-id : ∀ {N : Term}{ρ}{NE-ρ : nonempty-env ρ}{X : 𝒫 Value}
   → nonempty X
   → (Λ λ X → ⟦ N ⟧ (X • ρ)) ▪ X ≃ ⟦ N ⟧ (X • ρ)
 ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
-    Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}{NE-ρ}) (⟦⟧-monotone-one{N})
-        NE-X
-
-{- Primitive Abstraction followed by Application is the identity --------------}
-
-℘-▪-≃ : ∀{B}{P}{f}{k}  →  (℘ (B ⇒ P) f) ▪ (℘ (base B) k) ≃ ℘ P (f k)
-℘-▪-≃ {B}{P}{f}{k} = ⟨ fwd , back ⟩
-  where
-  fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ⊆ ℘ P (f k)
-  fwd w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , ⟨ k′∈pk , _ ⟩ ⟩ ⟩
-      with k′∈pk (const k′) (here refl)
-  ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
-  back : ℘ P (f k) ⊆ ℘ (B ⇒ P) f ▪ ℘ (base B) k
-  back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
-                ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
+    Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous{N}{ρ}{NE-ρ})
+        (⟦⟧-monotone-one{N}) NE-X
 
 {- Soundness of Reduction with respect to Denotations -------------------------}
 
@@ -451,8 +467,8 @@ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
     ⟦ ƛ N · V ⟧ ρ                         ≃⟨⟩
     (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ) ≃⟨ ISWIM-Λ-▪-id {N}{ρ}{NE-ρ}
                                                    (value-nonempty NE-ρ v) ⟩
-    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)             ≃⟨ ≃-reflexive (sym (⟦⟧-subst {N} {V} {ρ})) ⟩
-    ⟦ N [ V ] ⟧ ρ                   ∎ where open ≃-Reasoning
+    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)            ≃⟨ ≃-reflexive (sym (⟦⟧-subst {N} {V} {ρ})) ⟩
+    ⟦ N [ V ] ⟧ ρ                  ∎ where open ≃-Reasoning
 ⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
     ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨⟩
     (℘ (B ⇒ P) f) ▪ (℘ (base B) k)         ≃⟨ ℘-▪-≃ {B}{P} ⟩
@@ -492,18 +508,14 @@ open import EvalISWIM {- the big-step semantics of ISWIM -}
 𝕍s [] c = True
 𝕍s (v ∷ V) c = 𝕍 v c × 𝕍s V c
 
-𝕍kc⇒c≡k : ∀{B}{k}{c}
-  → 𝕍 (const {B} k) c
-  → c ≡ val-const {base B} k
+𝕍kc⇒c≡k : ∀{B}{k}{c} → 𝕍 (const {B} k) c  →  c ≡ val-const {base B} k
 𝕍kc⇒c≡k {B} {k} {val-const {P} k′} 𝕍kc
     with k′∈℘k⇒P≡B {P}{B} 𝕍kc
 ... | refl
     with k′∈℘k⇒k′≡k 𝕍kc
 ... | refl = refl
 
-℘⇒𝕍 : ∀{P}{k}{w}
-   → ℘ P k w
-   → 𝕍 w (val-const {P} k)
+℘⇒𝕍 : ∀{P}{k}{w}  → ℘ P k w  →  𝕍 w (val-const {P} k)
 ℘⇒𝕍 {P} {k} {const x} w∈k = w∈k
 ℘⇒𝕍 {P} {k} {x ↦ w} w∈k = w∈k
 ℘⇒𝕍 {B ⇒ P} {k} {ν} w∈k = tt
@@ -628,30 +640,18 @@ reduce→⇓ {M}{V}{wfM} v M—↠N =
 
 {- Denotational Equality implies Contextual Equivalence -----------------------}
 
-⟦⟧-ƛ-cong : ∀{M N : Term}{ρ}
-   → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
-   → ⟦ ƛ M ⟧ ρ ≃ ⟦ ƛ N ⟧ ρ
-⟦⟧-ƛ-cong {M}{N}{ρ} M=N = ⟨ fwd , back ⟩
-   where
-   fwd : ⟦ ƛ M ⟧ ρ ⊆ ⟦ ƛ N ⟧ ρ
-   fwd (V ↦ w) ⟨ w∈⟦M⟧ , V≢[] ⟩ = ⟨ (proj₁ M=N w w∈⟦M⟧) , V≢[] ⟩
-   fwd ν xx = tt
-   back : ⟦ ƛ N ⟧ ρ ⊆ ⟦ ƛ M ⟧ ρ
-   back (V ↦ w) ⟨ w∈⟦N⟧ , V≢[] ⟩ = ⟨ (proj₂ M=N w w∈⟦N⟧) , V≢[] ⟩
-   back ν xx = tt
-
 compositionality : ∀{C : Ctx} {M N : Term}{ρ}
    → (∀ {ρ} → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ)
     --------------------------------
    → ⟦ plug C M ⟧ ρ ≃ ⟦ plug C N ⟧ ρ
 compositionality{CHole}{M}{N}{ρ} ⟦M⟧=⟦N⟧ = ⟦M⟧=⟦N⟧
 compositionality{COp lam (ccons (CBind (CAst C′)) nil refl)}{M}{N}{ρ} ⟦M⟧=⟦N⟧ =
-   ⟦⟧-ƛ-cong{plug C′ M}{plug C′ N} λ {ρ} → compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧
-compositionality{COp app (tcons (ast L) (tcons x Cs refl) refl)}{M}{N}{ρ}
-   ⟦M⟧=⟦N⟧ = ⟨ (λ v z → z) , (λ v z → z) ⟩
+   Λ-ext λ {X} → compositionality {C′}{M}{N}{X • ρ} ⟦M⟧=⟦N⟧
+compositionality{COp app (tcons (ast L) (tcons x Cs refl) refl)} ⟦M⟧=⟦N⟧ =
+   ≃-refl
 compositionality {COp app (tcons (ast L) (ccons (CAst C′) nil refl) refl)}
    {M}{N}{ρ} ⟦M⟧=⟦N⟧ =
-   ▪-cong{⟦ L ⟧ ρ} ≃-refl (compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧)
+   ▪-cong{⟦ L ⟧ ρ} ≃-refl (compositionality {C′} ⟦M⟧=⟦N⟧)
 compositionality{COp app (ccons (CAst C′) (cons (ast M′) nil) refl)}{M}{N}{ρ}
   ⟦M⟧=⟦N⟧ =
   ▪-cong{D₂ = ⟦ M′ ⟧ ρ} (compositionality {C′}{M}{N}{ρ} ⟦M⟧=⟦N⟧) ≃-refl
