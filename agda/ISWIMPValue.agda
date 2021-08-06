@@ -39,6 +39,7 @@ interp-op lam ⟨ F , _ ⟩ = Λ F
 interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
 interp-op (lit P k) _ = ℘ P k
 
+{- interp-op is monotonic -}
 mono-op : {op : Op} {xs ys : Tuple (sig op) (ArgTy (𝒫 Value))}
    → ⊆-args (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
 mono-op {lam} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =

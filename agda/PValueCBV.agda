@@ -117,6 +117,7 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
   → Λ F₁ ≃ Λ F₂
 Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ Λ-ext-⊆ (proj₁ F₁≃F₂) , Λ-ext-⊆ (proj₂ F₁≃F₂) ⟩
 
+
 {- Abstraction followed by Application is the identity ------------------------}
 
 continuous : (F : 𝒫 Value → 𝒫 Value) → Set₁
