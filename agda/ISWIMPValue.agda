@@ -70,19 +70,8 @@ continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
    → pred-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
    → Σ[ ρ′ ∈ Env ] fin-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
-continuous-op {lam} {ρ} {NE-ρ} {V ↦ w} {cons (bind (ast N)) nil}
-    ⟨ w∈⟦N⟧V•ρ , V≢[] ⟩
-    ⟨ IH-N , _ ⟩
-    with IH-N V V≢[] w w∈⟦N⟧V•ρ
-... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧ρ′ ⟩ ⟩ ⟩ =
-    ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,
-    ⟨ ⟦⟧-monotone{ρ′}{mem V • (λ z → ρ′ (suc z))} N G w w∈⟦N⟧ρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
-    where G : (x : Var) → ρ′ x ⊆ (mem V • (λ x₁ → ρ′ (suc x₁))) x
-          G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
-          G (suc x) v v∈ρ′x = v∈ρ′x
-continuous-op {lam} {ρ} {NE-ρ} {ν} {cons (bind (ast N)) nil} v∈ IHs =
-    ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
-      tt ⟩ ⟩ ⟩
+continuous-op {lam} {ρ} {NE-ρ} {v} {cons (bind (ast N)) nil}
+    v∈Λ ⟨ IH-N , _ ⟩ =  Λ-continuous {NE-ρ = NE-ρ} v∈Λ IH-N (⟦⟧-monotone N)
 continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
     ▪-continuous {NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M

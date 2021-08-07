@@ -211,6 +211,47 @@ continuous-⊆ E ρ = ∀ V → mem V ⊆ E ρ
                      → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
                      → Σ[ ρ′ ∈ Env ] fin-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
 
+▪-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w}
+  → w ∈ (D ρ) ▪ (E ρ)
+  → (∀ v → continuous-∈ D ρ v) → (∀ v → continuous-∈ E ρ v)
+  → monotone-env D → monotone-env E → continuous-⊆ E ρ
+  → Σ[ ρ₃ ∈ Env ] fin-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ (D ρ₃) ▪ (E ρ₃)
+▪-continuous {D}{E}{ρ}{NE-ρ}{w} ⟨ V , ⟨ V↦w∈Dρ , ⟨ V⊆Eρ , V≢[] ⟩ ⟩ ⟩
+    IH-D IH-E mD mE cE
+    with IH-D (V ↦ w) V↦w∈Dρ 
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈Dρ₁ ⟩ ⟩ ⟩
+    with (cE V V⊆Eρ (λ v v∈V → IH-E v))
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆Eρ₂ ⟩ ⟩ ⟩ =
+   ⟨ ρ₃ , ⟨ join-fin-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ , w∈D▪Eρ₃ ⟩ ⟩ ⟩ 
+    where
+    ρ₃ = ρ₁ ⊔ₑ ρ₂
+    ρ₁⊆ρ₃ = λ x v z → inj₁ z
+    V↦w∈Dρ₃ : V ↦ w ∈ D ρ₃
+    V↦w∈Dρ₃ = mD ρ₁⊆ρ₃ (V ↦ w) V↦w∈Dρ₁
+    ρ₂⊆ρ₄ = λ x v z → inj₂ z
+    V⊆Eρ₃ : mem V ⊆ E ρ₃
+    V⊆Eρ₃ v v∈V = mE ρ₂⊆ρ₄ v (V⊆Eρ₂ v v∈V)
+    w∈D▪Eρ₃ : w ∈ (D ρ₃) ▪ (E ρ₃)
+    w∈D▪Eρ₃ = ⟨ V , ⟨ V↦w∈Dρ₃ , ⟨ V⊆Eρ₃ , V≢[] ⟩ ⟩ ⟩
+
+Λ-continuous : ∀{E : Env  → 𝒫 Value}{ρ}{NE-ρ}{v}
+  → v ∈ Λ (λ D → E (D • ρ))
+  → (∀ V → V ≢ [] → (v : Value)
+     → continuous-∈ E (mem V • ρ) v)
+  → monotone-env E
+  → Σ[ ρ′ ∈ Env ] fin-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ Λ (λ D → E (D • ρ′))
+Λ-continuous {E}{ρ}{NE-ρ}{V ↦ w} ⟨ w∈EV•ρ , V≢[] ⟩ IH mE
+    with IH V V≢[] w w∈EV•ρ
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈Eρ′ ⟩ ⟩ ⟩ =
+    ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,
+    ⟨ mE{ρ′}{mem V • (λ x → ρ′ (suc x))} G w w∈Eρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
+    where G : (x : Var) → ρ′ x ⊆ (mem V • (λ x₁ → ρ′ (suc x₁))) x
+          G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
+          G (suc x) v v∈ρ′x = v∈ρ′x
+Λ-continuous {E}{ρ}{NE-ρ}{ν} v∈Λ IH mE =
+  ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
+      tt ⟩ ⟩ ⟩
+
 ⟦⟧-continuous-⊆ : ∀{{_ : Semantics}}{ρ}{NE-ρ : nonempty-env ρ}
     (M : ABT) → continuous-⊆ ⟦ M ⟧ ρ
 ⟦⟧-continuous-⊆ {ρ = ρ} {NE-ρ} M [] V⊆⟦M⟧ρ v∈V⇒cont =
@@ -259,27 +300,5 @@ continuous-⊆ E ρ = ∀ V → mem V ⊆ E ρ
     ⟨ ⟦⟧-cont-env-arg {ρ}{NE-ρ}{b} arg ,
       ⟦⟧-cont-env-args {ρ} {NE-ρ} {bs} args ⟩
 
-▪-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w}
-  → w ∈ (D ρ) ▪ (E ρ)
-  → (∀ v → continuous-∈ D ρ v) → (∀ v → continuous-∈ E ρ v)
-  → monotone-env D → monotone-env E → continuous-⊆ E ρ
-  → Σ[ ρ₃ ∈ Env ] fin-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ (D ρ₃) ▪ (E ρ₃)
-▪-continuous {D}{E}{ρ}{NE-ρ}{w} ⟨ V , ⟨ V↦w∈Dρ , ⟨ V⊆Eρ , V≢[] ⟩ ⟩ ⟩
-    IH-D IH-E mD mE cE
-    with IH-D (V ↦ w) V↦w∈Dρ 
-... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈Dρ₁ ⟩ ⟩ ⟩
-    with (cE V V⊆Eρ (λ v v∈V → IH-E v))
-... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆Eρ₂ ⟩ ⟩ ⟩ =
-   ⟨ ρ₃ , ⟨ join-fin-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ , w∈D▪Eρ₃ ⟩ ⟩ ⟩ 
-    where
-    ρ₃ = ρ₁ ⊔ₑ ρ₂
-    ρ₁⊆ρ₃ = λ x v z → inj₁ z
-    V↦w∈Dρ₃ : V ↦ w ∈ D ρ₃
-    V↦w∈Dρ₃ = mD ρ₁⊆ρ₃ (V ↦ w) V↦w∈Dρ₁
-    ρ₂⊆ρ₄ = λ x v z → inj₂ z
-    V⊆Eρ₃ : mem V ⊆ E ρ₃
-    V⊆Eρ₃ v v∈V = mE ρ₂⊆ρ₄ v (V⊆Eρ₂ v v∈V)
-    w∈D▪Eρ₃ : w ∈ (D ρ₃) ▪ (E ρ₃)
-    w∈D▪Eρ₃ = ⟨ V , ⟨ V↦w∈Dρ₃ , ⟨ V⊆Eρ₃ , V≢[] ⟩ ⟩ ⟩
 
 
