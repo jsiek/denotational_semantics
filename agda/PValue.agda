@@ -63,6 +63,31 @@ data Value : Set where
   ν : Value      {- A function. Needed for CBV to distinguish from diverging. -}
 
 
+{- Environments ---------------------------------------------------------------}
+
+Env : Set₁
+Env = Var → 𝒫 Value
+
+nonempty-env : Env → Set
+nonempty-env ρ = ∀ x → nonempty (ρ x)
+
+infix 5 _⊆ₑ_
+_⊆ₑ_ : Env → Env → Set
+ρ₁ ⊆ₑ ρ₂ = ∀ x → ρ₁ x ⊆ ρ₂ x
+
+⊆ₑ-trans : ∀{ρ₁ ρ₂ ρ₃} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
+⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
+
+extend-nonempty-env : ∀{ρ}{X}
+   → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
+extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X
+extend-nonempty-env {ρ} {X} NE-ρ V≢[] (suc x) = NE-ρ x
+
+env-ext : ∀{ρ ρ′}{X} → ρ ⊆ₑ ρ′ → (x : Var) → (X • ρ) x ⊆ (X • ρ′) x
+env-ext ρ<ρ′ zero d d∈ = d∈
+env-ext ρ<ρ′ (suc x) = ρ<ρ′ x
+
+
 {- Abstraction and Application ------------------------------------------------}
 
 Λ : (𝒫 Value → 𝒫 Value) → 𝒫 Value
@@ -378,9 +403,9 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 ⟦⟧-continuous-env {ƛ N}{ρ}{V ↦ w}{NE-ρ} ⟨ w∈⟦N⟧V•ρ , V≢[] ⟩
     with ⟦⟧-continuous-env{N}{mem V • ρ}{w}
              {extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem V≢[])} w∈⟦N⟧V•ρ
-... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧V•ρ′ ⟩ ⟩ ⟩ =    
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈⟦N⟧ρ′ ⟩ ⟩ ⟩ =
     ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,
-    ⟨ ⟦⟧-monotone{N}{ρ′}{mem V • (λ z → ρ′ (suc z))}G w w∈⟦N⟧V•ρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
+    ⟨ ⟦⟧-monotone{N}{ρ′}{mem V • (λ z → ρ′ (suc z))}G w w∈⟦N⟧ρ′ , V≢[] ⟩ ⟩ ⟩ ⟩
     where G : (x : Var) → ρ′ x ⊆ (mem V • (λ x₁ → ρ′ (suc x₁))) x
           G zero v v∈ρ′x = ρ′⊆V•ρ 0 v v∈ρ′x
           G (suc x) v v∈ρ′x = v∈ρ′x
