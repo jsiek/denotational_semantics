@@ -211,16 +211,64 @@ continuous-⊆ E ρ = ∀ V → mem V ⊆ E ρ
                      → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
                      → Σ[ ρ′ ∈ Env ] fin-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
 
+⟦⟧-continuous-⊆ : ∀ E ρ (NE-ρ : nonempty-env ρ)
+    → monotone-env E → continuous-⊆ E ρ
+⟦⟧-continuous-⊆ E ρ NE-ρ mE [] V⊆E ∀v∈V⇒cont =
+   ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
+     (λ d ()) ⟩ ⟩ ⟩
+⟦⟧-continuous-⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
+    with ⟦⟧-continuous-⊆ E ρ NE-ρ mE V (λ d z → v∷V⊆Eρ d (there z))
+                (λ w w∈V w∈Mρ → v∈V⇒cont w (there w∈V) w∈Mρ)
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V⊆Eρ₁ ⟩ ⟩ ⟩
+    with v∈V⇒cont v (here refl) (v∷V⊆Eρ v (here refl))
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈Eρ₂ ⟩ ⟩ ⟩ =    
+    ⟨ ρ₃ , ⟨ (join-fin-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
+    G ⟩ ⟩ ⟩
+    where
+    ρ₃ = ρ₁ ⊔ₑ ρ₂
+    G : (d : Value) → mem (v ∷ V) d → d ∈ E ρ₃
+    G d (here refl) = mE {ρ₂}{ρ₃} join-⊆-right v v∈Eρ₂
+    G d (there m) = mE {ρ₁}{ρ₃} join-⊆-left d (V⊆Eρ₁ d m)
+
+{- the main lemma -}
+⟦⟧-continuous-env : ∀{{_ : ContinuousSemantics}}{ρ}{NE-ρ : nonempty-env ρ}
+    (M : ABT)
+  → ∀ v → continuous-∈ ⟦ M ⟧ ρ v
+⟦⟧-cont-env-arg : ∀{{_ : ContinuousSemantics}}
+    {ρ}{NE-ρ : nonempty-env ρ} {b}(arg : Arg b)
+  → Cont-Env-Arg ρ NE-ρ b arg 
+⟦⟧-cont-env-args : ∀{{_ : ContinuousSemantics}}
+    {ρ}{NE-ρ : nonempty-env ρ}{bs} (args : Args bs)
+  → pred-args (Cont-Env-Arg ρ NE-ρ) bs args
+
+⟦⟧-continuous-env {ρ}{NE-ρ} (` x) v v∈⟦M⟧ρ =
+   ⟨ (single-env x ⌈ v ⌉ ρ NE-ρ) , ⟨ (single-fin {v}{x}) , ⟨ (single-⊆ v∈⟦M⟧ρ) ,
+     (v∈single[xv]x {v}{x}) ⟩ ⟩ ⟩
+
+⟦⟧-continuous-env {ρ}{NE-ρ} (op ⦅ args ⦆) v v∈⟦M⟧ρ =
+    continuous-op{NE-ρ = NE-ρ} v∈⟦M⟧ρ (⟦⟧-cont-env-args {ρ}{NE-ρ} args)
+⟦⟧-cont-env-arg {ρ} {NE-ρ} {■} (ast M) v v∈⟦M⟧ρ =
+    ⟦⟧-continuous-env {ρ}{NE-ρ = NE-ρ} M v v∈⟦M⟧ρ
+⟦⟧-cont-env-arg {ρ} {NE-ρ} {ν b} (bind arg) V V≢[] =
+   let NE-V•ρ = (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem V≢[])) in
+   ⟦⟧-cont-env-arg {mem V • ρ}{NE-V•ρ} {b} arg
+⟦⟧-cont-env-arg {ρ} {NE-ρ} {∁ b} (clear arg) = lift tt
+
+⟦⟧-cont-env-args {ρ} {NE-ρ} {[]} nil = lift tt
+⟦⟧-cont-env-args {ρ} {NE-ρ} {b ∷ bs} (cons arg args) =
+    ⟨ ⟦⟧-cont-env-arg {ρ}{NE-ρ}{b} arg ,
+      ⟦⟧-cont-env-args {ρ} {NE-ρ} {bs} args ⟩
+
 ▪-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w}
   → w ∈ (D ρ) ▪ (E ρ)
   → (∀ v → continuous-∈ D ρ v) → (∀ v → continuous-∈ E ρ v)
-  → monotone-env D → monotone-env E → continuous-⊆ E ρ
+  → monotone-env D → monotone-env E
   → Σ[ ρ₃ ∈ Env ] fin-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ (D ρ₃) ▪ (E ρ₃)
 ▪-continuous {D}{E}{ρ}{NE-ρ}{w} ⟨ V , ⟨ V↦w∈Dρ , ⟨ V⊆Eρ , V≢[] ⟩ ⟩ ⟩
-    IH-D IH-E mD mE cE
+    IH-D IH-E mD mE
     with IH-D (V ↦ w) V↦w∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈Dρ₁ ⟩ ⟩ ⟩
-    with (cE V V⊆Eρ (λ v v∈V → IH-E v))
+    with ((⟦⟧-continuous-⊆ E ρ NE-ρ mE) V V⊆Eρ (λ v v∈V → IH-E v))
 ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆Eρ₂ ⟩ ⟩ ⟩ =
    ⟨ ρ₃ , ⟨ join-fin-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ , w∈D▪Eρ₃ ⟩ ⟩ ⟩ 
     where
@@ -251,54 +299,6 @@ continuous-⊆ E ρ = ∀ V → mem V ⊆ E ρ
 Λ-continuous {E}{ρ}{NE-ρ}{ν} v∈Λ IH mE =
   ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
       tt ⟩ ⟩ ⟩
-
-⟦⟧-continuous-⊆ : ∀{{_ : Semantics}}{ρ}{NE-ρ : nonempty-env ρ}
-    (M : ABT) → continuous-⊆ ⟦ M ⟧ ρ
-⟦⟧-continuous-⊆ {ρ = ρ} {NE-ρ} M [] V⊆⟦M⟧ρ v∈V⇒cont =
-  ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
-    (λ d ()) ⟩ ⟩ ⟩
-⟦⟧-continuous-⊆ {ρ = ρ} {NE-ρ} M (v ∷ E) v∷E⊆⟦M⟧ρ v∈V⇒cont
-    with ⟦⟧-continuous-⊆ {ρ = ρ}{NE-ρ} M E (λ d z → v∷E⊆⟦M⟧ρ d (there z))
-                (λ w w∈E w∈Mρ → v∈V⇒cont w (there w∈E) w∈Mρ)
-... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , E⊆⟦M⟧ρ₁ ⟩ ⟩ ⟩
-    with v∈V⇒cont v (here refl) (v∷E⊆⟦M⟧ρ v (here refl))
-... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈⟦M⟧ρ₂ ⟩ ⟩ ⟩ =    
-    ⟨ ρ₃ , ⟨ (join-fin-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
-    G ⟩ ⟩ ⟩
-    where
-    ρ₃ = ρ₁ ⊔ₑ ρ₂
-    G : (d : Value) → mem (v ∷ E) d → d ∈ ⟦ M ⟧ ρ₃
-    G d (here refl) = ⟦⟧-monotone {ρ₂}{ρ₃} M join-⊆-right v v∈⟦M⟧ρ₂
-    G d (there m) = ⟦⟧-monotone {ρ₁}{ρ₃} M join-⊆-left d (E⊆⟦M⟧ρ₁ d m)
-
-{- the main lemma -}
-⟦⟧-continuous-env : ∀{{_ : ContinuousSemantics}}{ρ}{NE-ρ : nonempty-env ρ}
-    (M : ABT)
-  → ∀ v → continuous-∈ ⟦ M ⟧ ρ v
-⟦⟧-cont-env-arg : ∀{{_ : ContinuousSemantics}}
-    {ρ}{NE-ρ : nonempty-env ρ} {b}(arg : Arg b)
-  → Cont-Env-Arg ρ NE-ρ b arg 
-⟦⟧-cont-env-args : ∀{{_ : ContinuousSemantics}}
-    {ρ}{NE-ρ : nonempty-env ρ}{bs} (args : Args bs)
-  → pred-args (Cont-Env-Arg ρ NE-ρ) bs args
-
-⟦⟧-continuous-env {ρ}{NE-ρ} (` x) v v∈⟦M⟧ρ =
-   ⟨ (single-env x ⌈ v ⌉ ρ NE-ρ) , ⟨ (single-fin {v}{x}) , ⟨ (single-⊆ v∈⟦M⟧ρ) ,
-     (v∈single[xv]x {v}{x}) ⟩ ⟩ ⟩
-
-⟦⟧-continuous-env {ρ}{NE-ρ} (op ⦅ args ⦆) v v∈⟦M⟧ρ =
-    continuous-op{NE-ρ = NE-ρ} v∈⟦M⟧ρ (⟦⟧-cont-env-args {ρ}{NE-ρ} args)
-⟦⟧-cont-env-arg {ρ} {NE-ρ} {■} (ast M) v v∈⟦M⟧ρ =
-    ⟦⟧-continuous-env {ρ}{NE-ρ = NE-ρ} M v v∈⟦M⟧ρ
-⟦⟧-cont-env-arg {ρ} {NE-ρ} {ν b} (bind arg) V V≢[] =
-   let NE-V•ρ = (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem V≢[])) in
-   ⟦⟧-cont-env-arg {mem V • ρ}{NE-V•ρ} {b} arg
-⟦⟧-cont-env-arg {ρ} {NE-ρ} {∁ b} (clear arg) = lift tt
-
-⟦⟧-cont-env-args {ρ} {NE-ρ} {[]} nil = lift tt
-⟦⟧-cont-env-args {ρ} {NE-ρ} {b ∷ bs} (cons arg args) =
-    ⟨ ⟦⟧-cont-env-arg {ρ}{NE-ρ}{b} arg ,
-      ⟦⟧-cont-env-args {ρ} {NE-ρ} {bs} args ⟩
 
 
 

@@ -71,14 +71,17 @@ continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → pred-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
    → Σ[ ρ′ ∈ Env ] fin-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
 continuous-op {lam} {ρ} {NE-ρ} {v} {cons (bind (ast N)) nil}
-    v∈Λ ⟨ IH-N , _ ⟩ =  Λ-continuous {NE-ρ = NE-ρ} v∈Λ IH-N (⟦⟧-monotone N)
+    v∈Λ ⟨ IH-N , _ ⟩ =
+    Λ-continuous {NE-ρ = NE-ρ} v∈Λ IH-N (⟦⟧-monotone N)
 continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
-    ▪-continuous {NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M
-        (⟦⟧-monotone L) (⟦⟧-monotone M) (⟦⟧-continuous-⊆ {ρ}{NE-ρ} M)
-continuous-op {lit p x} {ρ} {NE-ρ} {v} {args} IHs = {!!}
-
+    ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
+continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
+  ⟨ initial-fin-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
+    v∈⟦M⟧ρ ⟩ ⟩ ⟩
 
 instance
   ISWIM-Continuous : ContinuousSemantics
-  ISWIM-Continuous = record { continuous-op = {!!} }
+  ISWIM-Continuous = record { continuous-op =
+      λ{op}{ρ}{NE-ρ} → continuous-op{op}{ρ}{NE-ρ} }
+
