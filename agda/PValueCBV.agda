@@ -46,7 +46,7 @@ data Value : Set where
   const : {B : Base} → base-rep B → Value  {- A primitive constant of type B. -}
   _↦_ : List Value → Value → Value        {- An entry in a function's graph. -}
   ν : Value      {- A function. Needed for CBV to distinguish from diverging. -}
-
+  ❲_,_❳ : Value → Value → Value
 
 {- Abstraction and Application ------------------------------------------------}
 
@@ -54,6 +54,7 @@ data Value : Set where
 Λ f (const k) = False
 Λ f (V ↦ w) = w ∈ f (mem V)  ×  V ≢ []
 Λ f ν = True
+Λ f ❲ u , v ❳ = False
 
 infix 10 _▪_
 _▪_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
@@ -66,10 +67,22 @@ D₁ ▪ D₂ = λ w → Σ[ V ∈ List Value ] (V ↦ w ∈ D₁)  ×  (mem V �
 ... | no neq = False
 ℘ (base B) k (V ↦ w) = False
 ℘ (base B) k ν = False
+℘ (base B) k ❲ u , v ❳ = False
 ℘ (B ⇒ P) f (const k) = False
 ℘ (B ⇒ P) f (V ↦ w) =
    Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ ℘ P (f k)
 ℘ (B ⇒ P) f ν = True
+℘ (B ⇒ P) k ❲ u , v ❳ = False
+
+cons : 𝒫 Value → 𝒫 Value → 𝒫 Value
+cons D₁ D₂ ❲ u , v ❳ = u ∈ D₁ × v ∈ D₂
+cons D₁ D₂ _ = False
+
+car : 𝒫 Value → 𝒫 Value
+car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
+
+cdr : 𝒫 Value → 𝒫 Value
+cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
 
 k∈℘k : ∀{B}{k} → const {B} k ∈ ℘ (base B) k
 k∈℘k {B}{k}
@@ -95,8 +108,8 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 ▪-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
   → D₁ ⊆ D₃  →  D₂ ⊆ D₄
   → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
-▪-cong-⊆ D11 D22 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
-   ⟨ V , ⟨ (D11 (V ↦ w) wv∈D1) , ⟨ (λ d z → D22 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
+▪-cong-⊆ D13 D24 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
+   ⟨ V , ⟨ (D13 (V ↦ w) wv∈D1) , ⟨ (λ d z → D24 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
      
 ▪-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
   → D₁ ≃ D₃  →  D₂ ≃ D₄
@@ -157,6 +170,52 @@ monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
   back : ℘ P (f k) ⊆ ℘ (B ⇒ P) f ▪ ℘ (base B) k
   back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
                 ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
+
+{- Cons is a Congruence  ------------------------------------------------------}
+
+cons-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+  → D₁ ⊆ D₃  →  D₂ ⊆ D₄
+  → cons D₁ D₂ ⊆ cons D₃ D₄
+cons-cong-⊆ D13 D24 ❲ u , v ❳ ⟨ u∈D₁ , v∈D₂ ⟩ = ⟨ D13 u u∈D₁ , D24 v v∈D₂ ⟩
+
+cons-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+  → D₁ ≃ D₃  →  D₂ ≃ D₄
+  → cons D₁ D₂ ≃ cons D₃ D₄
+cons-cong ⟨ d13 , d31 ⟩ ⟨ d24 , d42 ⟩ =
+    ⟨ (cons-cong-⊆ d13 d24) , (cons-cong-⊆ d31 d42) ⟩
+
+car-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value}
+  → D₁ ⊆ D₃
+  → car D₁ ⊆ car D₃
+car-cong-⊆ D13 u ⟨ v , uv∈D₁ ⟩ = ⟨ v , D13 ❲ u , v ❳ uv∈D₁ ⟩
+
+cdr-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value}
+  → D₁ ⊆ D₃
+  → cdr D₁ ⊆ cdr D₃
+cdr-cong-⊆ D13 v ⟨ u , uv∈D₁ ⟩ = ⟨ u , D13 ❲ u , v ❳ uv∈D₁ ⟩
+
+{- Cons and Car  --------------------------------------------------------------}
+
+car-of-cons-⊆ : ∀{D₁ D₂ : 𝒫 Value}
+  → car (cons D₁ D₂) ⊆ D₁
+car-of-cons-⊆ {D₁} {D₂} u ⟨ v , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩ = u∈D₁
+
+car-of-cons : ∀{D₁ D₂ : 𝒫 Value}
+  → nonempty D₂
+  → car (cons D₁ D₂) ≃ D₁
+car-of-cons {D₁}{D₂} ⟨ v , v∈D₂ ⟩ =
+    ⟨ car-of-cons-⊆ , (λ u u∈D₁ → ⟨ v , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩) ⟩
+
+cdr-of-cons-⊆ : ∀{D₁ D₂ : 𝒫 Value}
+  → cdr (cons D₁ D₂) ⊆ D₂
+cdr-of-cons-⊆ {D₁} {D₂} v ⟨ u , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩ = v∈D₂
+
+cdr-of-cons : ∀{D₁ D₂ : 𝒫 Value}
+  → nonempty D₁
+  → cdr (cons D₁ D₂) ≃ D₂
+cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
+    ⟨ cdr-of-cons-⊆ , (λ v v∈D₂ → ⟨ u , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩) ⟩
+
 
 {- Environments ---------------------------------------------------------------}
 

@@ -15,16 +15,11 @@ open import PValueCBV
 open import SemanticProperties Op sig
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; _++_; length)
-open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
+open import Data.List using (List ; _∷_ ; []; length)
 open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Relation.Binary.PropositionalEquality
