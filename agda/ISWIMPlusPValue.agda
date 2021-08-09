@@ -141,8 +141,12 @@ value-nonempty NE-ρ (V-pair Mv Nv) = {!!}
     〘 ⟦ M ⟧ ρ , ⟦ N ⟧ ρ 〙      ≃⟨ cons-cong IH ≃-refl ⟩
     〘 ⟦ M′ ⟧ ρ , ⟦ N ⟧ ρ 〙     ≃⟨⟩
     ⟦ pair M′ N ⟧ ρ             ∎ where open ≃-Reasoning  
-
-⟦⟧—→ {.(pair L _)} {.(pair L _)} {ρ} {NE-ρ} (ξ-rule (F-×₂ L) M—→N) = {!!}
+⟦⟧—→ {.(pair V _)} {.(pair V _)} {ρ} {NE-ρ} (ξ-rule {M}{M′}(F-×₂ V {v}) M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ pair V M ⟧ ρ              ≃⟨⟩
+   〘 ⟦ V ⟧ ρ , ⟦ M ⟧ ρ 〙      ≃⟨ cons-cong (≃-refl{D = ⟦ V ⟧ ρ}) IH ⟩
+   〘 ⟦ V ⟧ ρ , ⟦ M′ ⟧ ρ 〙     ≃⟨⟩
+    ⟦ pair V M′ ⟧ ρ             ∎ where open ≃-Reasoning
 ⟦⟧—→ {.(fst _)} {.(fst _)} {ρ} {NE-ρ} (ξ-rule F-fst M—→N) = {!!}
 ⟦⟧—→ {.(snd _)} {.(snd _)} {ρ} {NE-ρ} (ξ-rule F-snd M—→N) = {!!}
 ⟦⟧—→ {.(ƛ _ · _)} {_} {ρ} {NE-ρ} (β-rule x) = {!!}
