@@ -363,10 +363,10 @@ v∈single[xv]x {v}{x}
 ... | no neq = ⊥-elim (neq refl)
 
 continuous-∈⇒⊆ : ∀ E ρ (NE-ρ : nonempty-env ρ)
-    → monotone-env E
-    → ∀ V → mem V ⊆ E ρ
-    → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
-    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
+   → monotone-env E
+   → ∀ V → mem V ⊆ E ρ
+   → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
+   → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
 continuous-∈⇒⊆ E ρ NE-ρ mE [] V⊆E ∀v∈V⇒cont =
    ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
    ⟨ initial-fin-⊆ ρ NE-ρ , (λ d ()) ⟩ ⟩ ⟩
@@ -426,8 +426,7 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
 
 cons-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w : Value}
   → w ∈ cons (D ρ) (E ρ)
-  → continuous-env D ρ → continuous-env E ρ
-  → monotone-env D → monotone-env E
+  → continuous-env D ρ → continuous-env E ρ → monotone-env D → monotone-env E
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ cons (D ρ₃) (E ρ₃)
 cons-continuous {D} {E} {ρ} {NE-ρ} {❲ u , v ❳} ⟨ u∈Dρ , v∈Eρ ⟩ cD cE mD mE
     with cD u u∈Dρ 
@@ -444,9 +443,7 @@ cons-continuous {D} {E} {ρ} {NE-ρ} {❲ u , v ❳} ⟨ u∈Dρ , v∈Eρ ⟩ c
     v∈Dρ₃ = mE ρ₂⊆ρ₃ v v∈Eρ₂
 
 car-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}
-  → u ∈ car (D ρ)
-  → continuous-env D ρ
-  → monotone-env D
+  → u ∈ car (D ρ) → continuous-env D ρ → monotone-env D
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ car (D ρ₃)
 car-continuous {D} {ρ} {NE-ρ} {u} ⟨ v , uv∈Dρ ⟩ cD mD
     with cD ❲ u , v ❳ uv∈Dρ 
@@ -454,9 +451,7 @@ car-continuous {D} {ρ} {NE-ρ} {u} ⟨ v , uv∈Dρ ⟩ cD mD
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ v , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
 
 cdr-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}
-  → u ∈ cdr (D ρ)
-  → continuous-env D ρ
-  → monotone-env D
+  → u ∈ cdr (D ρ) → continuous-env D ρ → monotone-env D
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ cdr (D ρ₃)
 cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
     with cD ❲ u , v ❳ uv∈Dρ 
