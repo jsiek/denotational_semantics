@@ -79,10 +79,12 @@ continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
     ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
 continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
-  ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
-    v∈⟦M⟧ρ ⟩ ⟩ ⟩
-continuous-op {pair-op}{ρ}{NE-ρ}{v}{cons (ast M) (cons (ast N) nil)} v∈⟦M⟧ρ =
-  {!!}
+    ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
+    ⟨ initial-fin-⊆ ρ NE-ρ ,
+      v∈⟦M⟧ρ ⟩ ⟩ ⟩
+continuous-op {pair-op}{ρ}{NE-ρ}{v}{cons (ast M) (cons (ast N) nil)} v∈⟦M⟧ρ
+    ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ =
+    cons-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M IH-N (⟦⟧-monotone M) (⟦⟧-monotone N)
 continuous-op {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ = {!!}
 continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ = {!!}
 
@@ -100,7 +102,10 @@ value-nonempty NE-ρ (V-var {x}) = NE-ρ x
 value-nonempty NE-ρ (V-ƛ) = ⟨ ν , tt ⟩
 value-nonempty NE-ρ (V-lit {base B} {k}) = ⟨ const k , k∈℘k ⟩
 value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
-value-nonempty NE-ρ (V-pair Mv Nv) = {!!}
+value-nonempty NE-ρ (V-pair Mv Nv)
+    with value-nonempty NE-ρ Mv | value-nonempty NE-ρ Nv
+... | ⟨ u , u∈ ⟩ | ⟨ v , v∈ ⟩ =
+    ⟨ ❲ u , v ❳ , ⟨ u∈ , v∈ ⟩ ⟩
 
 {- Substitution Lemma (via fold-subst-fusion) ---------------------------------}
 
@@ -173,36 +178,10 @@ value-nonempty NE-ρ (V-pair Mv Nv) = {!!}
     ⟦ fst (pair M N) ⟧ ρ          ≃⟨⟩ 
     car 〘 ⟦ M ⟧ ρ , ⟦ N ⟧ ρ 〙    ≃⟨ car-of-cons (value-nonempty NE-ρ Nv) ⟩ 
     ⟦ M ⟧ ρ                        ∎ where open ≃-Reasoning
-      
-⟦⟧—→ {.(snd (pair _ _))} {_} {ρ} {NE-ρ} (snd-rule {N}{M} Mv Nv) = {!!}
-
-{-
-⟦⟧—→ {L · M} {L′ · M} {ρ}{NE-ρ} (ξ-rule (F-·₁ M) L—→L′) =
-    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} L—→L′ in
-    ⟦ L · M ⟧ ρ              ≃⟨⟩
-    (⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ)    ≃⟨ ▪-cong IH ≃-refl ⟩
-    (⟦ L′ ⟧ ρ) ▪ (⟦ M ⟧ ρ)   ≃⟨⟩
-    ⟦ L′ · M ⟧ ρ             ∎ where open ≃-Reasoning  
-⟦⟧—→ {V · M} {.(_ · _)} {ρ}{NE-ρ} (ξ-rule {M′ = M′} (F-·₂ V {v}) M—→M′) =
-    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
-    ⟦ V · M ⟧ ρ              ≃⟨⟩
-    (⟦ V ⟧ ρ) ▪ (⟦ M ⟧ ρ)    ≃⟨ ▪-cong (≃-refl{D = ⟦ V ⟧ ρ}) IH ⟩
-    (⟦ V ⟧ ρ) ▪ (⟦ M′ ⟧ ρ)   ≃⟨⟩
-    ⟦ V · M′ ⟧ ρ             ∎ where open ≃-Reasoning
-⟦⟧—→ {pair L M} {pair L′ M} {ρ}{NE-ρ} (ξ-rule F L—→L′) = ?
-⟦⟧—→ {pair V M} {.(pair _ _)} {ρ}{NE-ρ} (ξ-rule {M′ = M′} F M—→M′) = ?
-
-⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
-    ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩
-    (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)   ≃⟨ Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}
-                                                   (value-nonempty NE-ρ v) ⟩
-    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)               ≃⟨ ≃-reflexive (sym (⟦⟧-subst{N}{V}{ρ})) ⟩
-    ⟦ N [ V ] ⟧ ρ                     ∎ where open ≃-Reasoning
-⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
-    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨⟩
-    (℘ (B ⇒ P) f) ▪ (℘ (base B) k)         ≃⟨ ℘-▪-≃ {B}{P} ⟩
-    ⟦ $ P (f k) ⟧ ρ                         ∎ where open ≃-Reasoning
--}
+⟦⟧—→ {.(snd (pair _ _))} {_} {ρ} {NE-ρ} (snd-rule {N}{M} Mv Nv) =
+    ⟦ snd (pair M N) ⟧ ρ          ≃⟨⟩ 
+    cdr 〘 ⟦ M ⟧ ρ , ⟦ N ⟧ ρ 〙    ≃⟨ cdr-of-cons (value-nonempty NE-ρ Mv) ⟩ 
+    ⟦ N ⟧ ρ                        ∎ where open ≃-Reasoning
 
 soundness : ∀ {M N : Term} {ρ : Env}{NE-ρ : nonempty-env ρ}
   → M —↠ N

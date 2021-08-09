@@ -423,3 +423,31 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
 Λ-continuous {E}{ρ}{NE-ρ}{ν} v∈Λ IH mE =
   ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
       tt ⟩ ⟩ ⟩
+
+cons-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w : Value}
+  → w ∈ cons (D ρ) (E ρ)
+  → continuous-env D ρ → continuous-env E ρ
+  → monotone-env D → monotone-env E
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ cons (D ρ₃) (E ρ₃)
+cons-continuous {D} {E} {ρ} {NE-ρ} {❲ u , v ❳} ⟨ u∈Dρ , v∈Eρ ⟩ cD cE mD mE
+    with cD u u∈Dρ 
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , u∈Dρ₁ ⟩ ⟩ ⟩
+    with cE v v∈Eρ 
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈Eρ₂ ⟩ ⟩ ⟩ =
+    ⟨ ρ₃ , ⟨ join-finite-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ ,
+    ⟨ u∈Dρ₃ , v∈Dρ₃ ⟩ ⟩ ⟩ ⟩
+    where
+    ρ₃ = ρ₁ ⊔ₑ ρ₂
+    ρ₁⊆ρ₃ = λ x v z → inj₁ z
+    u∈Dρ₃ = mD ρ₁⊆ρ₃ u u∈Dρ₁
+    ρ₂⊆ρ₃ = λ x v z → inj₂ z
+    v∈Dρ₃ = mE ρ₂⊆ρ₃ v v∈Eρ₂
+
+fst-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w : Value}
+  → w ∈ car (D ρ)
+  → continuous-env D ρ
+  → monotone-env D
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ cons (D ρ₃) (E ρ₃)
+cons-continuous {D} {E} {ρ} {NE-ρ} {❲ u , v ❳} ⟨ u∈Dρ , v∈Eρ ⟩ cD cE mD mE
+    with cD u u∈Dρ 
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , u∈Dρ₁ ⟩ ⟩ ⟩
