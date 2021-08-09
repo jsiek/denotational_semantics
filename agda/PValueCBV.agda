@@ -220,17 +220,18 @@ join-⊆-left {ρ₁}{ρ₂} = λ x d z → inj₁ z
 join-⊆-right : ∀{ρ₁ ρ₂} → ρ₂ ⊆ₑ ρ₁ ⊔ₑ ρ₂
 join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 
-continuous-∈ : (Env → 𝒫 Value) → Env → Value → Set₁
-continuous-∈ D ρ v = v ∈ D ρ → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
-
-continuous-env : (Env → 𝒫 Value) → Env → Set₁
-continuous-env D ρ = ∀ v → v ∈ D ρ
-                     → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
-
 monotone-env : (Env → 𝒫 Value) → Set₁
 monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ D ρ′
 
 {- Continuous -----------------------------------------------------------------}
+
+continuous-∈ : (Env → 𝒫 Value) → Env → Value → Set₁
+continuous-∈ D ρ v = v ∈ D ρ
+   → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
+
+continuous-env : (Env → 𝒫 Value) → Env → Set₁
+continuous-env D ρ = ∀ v → v ∈ D ρ
+                     → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
 
 {- creates an environment that maps each variable x to
    a singleton set of some element in ρ x.  -}
@@ -267,12 +268,12 @@ single-fin {v}{x}{ρ}{NE-ρ} y
     with x ≟ y
 ... | yes refl =
     ⟨ v ∷ [] ,
-    ⟨ ⟨ (λ { v₁ refl → (here refl)}) , (λ{ v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
+    ⟨ ⟨ (λ{v₁ refl → (here refl)}) , (λ{v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 ... | no neq
     with NE-ρ y
 ... | ⟨ w , w∈ρy ⟩ =
     ⟨ w ∷ [] ,
-    ⟨ ⟨ (λ { v₁ refl → here refl}) , (λ { v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
+    ⟨ ⟨ (λ{v₁ refl → here refl}) , (λ{v₁ (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 
 single-⊆ : ∀{ρ x v}{NE-ρ : nonempty-env ρ}
   →  v ∈ ρ x  →  single-env x ⌈ v ⌉ ρ NE-ρ ⊆ₑ ρ
@@ -295,8 +296,8 @@ continuous-∈⇒⊆ : ∀ E ρ (NE-ρ : nonempty-env ρ)
     → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
     → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
 continuous-∈⇒⊆ E ρ NE-ρ mE [] V⊆E ∀v∈V⇒cont =
-   ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
-     (λ d ()) ⟩ ⟩ ⟩
+   ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
+   ⟨ initial-fin-⊆ ρ NE-ρ , (λ d ()) ⟩ ⟩ ⟩
 continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
     with continuous-∈⇒⊆ E ρ NE-ρ mE V (λ d z → v∷V⊆Eρ d (there z))
                 (λ w w∈V w∈Mρ → v∈V⇒cont w (there w∈V) w∈Mρ)

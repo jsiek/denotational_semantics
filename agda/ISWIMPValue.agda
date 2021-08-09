@@ -11,8 +11,7 @@ open import Sig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import PValueCBV
-open import PValueCBVProperties Op sig
-
+open import SemanticProperties Op sig
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length)
