@@ -65,6 +65,7 @@ open Semantics {{...}}
   → ⟦ $ P k ⟧ ρ ≡ ℘ P k
 ⟦⟧-prim = refl
 
+{- interp-op is continuous -}
 continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
    → pred-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
@@ -342,5 +343,3 @@ denot-equal⇒context-equal {M}{N} eq {C}{wfC}{wfM}{wfN} =
      let CN≃λN′ = ≃-trans (≃-sym CM≃CN) CM≃λN′ in
      let adq = adequacy{plug C N}{wfM = WF-plug wfC wfN}{ρ}{NE-ρ} Nv CN≃λN′ in
      ⇓→—↠ {wfM = WF-plug wfC wfN} (proj₂ adq)
-
-
