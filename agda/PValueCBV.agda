@@ -189,10 +189,23 @@ car-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value}
   → car D₁ ⊆ car D₃
 car-cong-⊆ D13 u ⟨ v , uv∈D₁ ⟩ = ⟨ v , D13 ❲ u , v ❳ uv∈D₁ ⟩
 
+car-cong : ∀{D₁ D₃ : 𝒫 Value}
+  → D₁ ≃ D₃
+  → car D₁ ≃ car D₃
+car-cong ⟨ d13 , d31 ⟩  =
+    ⟨ (car-cong-⊆ d13) , (λ { u ⟨ v , uv∈D₃ ⟩  → ⟨ v , d31 ❲ u , v ❳ uv∈D₃ ⟩}) ⟩
+
 cdr-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value}
   → D₁ ⊆ D₃
   → cdr D₁ ⊆ cdr D₃
 cdr-cong-⊆ D13 v ⟨ u , uv∈D₁ ⟩ = ⟨ u , D13 ❲ u , v ❳ uv∈D₁ ⟩
+
+cdr-cong : ∀{D₁ D₃ : 𝒫 Value}
+  → D₁ ≃ D₃
+  → cdr D₁ ≃ cdr D₃
+cdr-cong ⟨ d13 , d31 ⟩  =
+    ⟨ (cdr-cong-⊆ d13) , (λ { v ⟨ u , uv∈D₃ ⟩ → ⟨ u , d31 ❲ u , v ❳ uv∈D₃ ⟩}) ⟩
+
 
 {- Cons and Car  --------------------------------------------------------------}
 

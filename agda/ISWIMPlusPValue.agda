@@ -147,12 +147,34 @@ value-nonempty NE-ρ (V-pair Mv Nv) = {!!}
    〘 ⟦ V ⟧ ρ , ⟦ M ⟧ ρ 〙      ≃⟨ cons-cong (≃-refl{D = ⟦ V ⟧ ρ}) IH ⟩
    〘 ⟦ V ⟧ ρ , ⟦ M′ ⟧ ρ 〙     ≃⟨⟩
     ⟦ pair V M′ ⟧ ρ             ∎ where open ≃-Reasoning
-⟦⟧—→ {.(fst _)} {.(fst _)} {ρ} {NE-ρ} (ξ-rule F-fst M—→N) = {!!}
-⟦⟧—→ {.(snd _)} {.(snd _)} {ρ} {NE-ρ} (ξ-rule F-snd M—→N) = {!!}
-⟦⟧—→ {.(ƛ _ · _)} {_} {ρ} {NE-ρ} (β-rule x) = {!!}
-⟦⟧—→ {.($ (_ ⇒ _) _ · $ (base _) _)} {_} {ρ} {NE-ρ} δ-rule = {!!}
-⟦⟧—→ {.(fst (pair N _))} {N} {ρ} {NE-ρ} (fst-rule x x₁) = {!!}
-⟦⟧—→ {.(snd (pair _ N))} {N} {ρ} {NE-ρ} (snd-rule x x₁) = {!!}
+⟦⟧—→ {.(fst _)} {.(fst _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-fst M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ fst M ⟧ ρ              ≃⟨⟩
+    car (⟦ M ⟧ ρ)            ≃⟨ car-cong IH ⟩
+    car (⟦ M′ ⟧ ρ)            ≃⟨⟩
+    ⟦ fst M′ ⟧ ρ             ∎ where open ≃-Reasoning
+⟦⟧—→ {.(snd _)} {.(snd _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-snd M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ snd M ⟧ ρ              ≃⟨⟩
+    cdr (⟦ M ⟧ ρ)            ≃⟨ cdr-cong IH ⟩
+    cdr (⟦ M′ ⟧ ρ)            ≃⟨⟩
+    ⟦ snd M′ ⟧ ρ             ∎ where open ≃-Reasoning
+⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
+    ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩
+    (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)   ≃⟨ Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}
+                                                   (value-nonempty NE-ρ v) ⟩
+    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)               ≃⟨ ≃-reflexive (sym (⟦⟧-subst{N}{V}{ρ})) ⟩
+    ⟦ N [ V ] ⟧ ρ                     ∎ where open ≃-Reasoning
+⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
+    ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨⟩
+    (℘ (B ⇒ P) f) ▪ (℘ (base B) k)         ≃⟨ ℘-▪-≃ {B}{P} ⟩
+    ⟦ $ P (f k) ⟧ ρ                         ∎ where open ≃-Reasoning
+⟦⟧—→ {.(fst (pair _ _))} {_} {ρ} {NE-ρ} (fst-rule {N}{M} Mv Nv) =
+    ⟦ fst (pair M N) ⟧ ρ          ≃⟨⟩ 
+    car 〘 ⟦ M ⟧ ρ , ⟦ N ⟧ ρ 〙    ≃⟨ car-of-cons (value-nonempty NE-ρ Nv) ⟩ 
+    ⟦ M ⟧ ρ                        ∎ where open ≃-Reasoning
+      
+⟦⟧—→ {.(snd (pair _ _))} {_} {ρ} {NE-ρ} (snd-rule {N}{M} Mv Nv) = {!!}
 
 {-
 ⟦⟧—→ {L · M} {L′ · M} {ρ}{NE-ρ} (ξ-rule (F-·₁ M) L—→L′) =
