@@ -84,9 +84,14 @@ continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
       v∈⟦M⟧ρ ⟩ ⟩ ⟩
 continuous-op {pair-op}{ρ}{NE-ρ}{v}{cons (ast M) (cons (ast N) nil)} v∈⟦M⟧ρ
     ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ =
-    cons-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M IH-N (⟦⟧-monotone M) (⟦⟧-monotone N)
-continuous-op {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ = {!!}
-continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ = {!!}
+    cons-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M IH-N
+        (⟦⟧-monotone M) (⟦⟧-monotone N)
+continuous-op {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
+    ⟨ IH-M , _ ⟩ =
+    car-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
+continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
+    ⟨ IH-M , _ ⟩ =
+    cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
 
 instance
   ISWIM-Continuous : ContinuousSemantics
