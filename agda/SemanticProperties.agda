@@ -78,7 +78,6 @@ record ContinuousSemantics : Set₁ where
 
 open ContinuousSemantics {{...}}
 
-
 {- Monotone -------------------------------------------------------------------}
 
 ⟦⟧-monotone : ∀{{_ : Semantics}} {ρ ρ′} (M : ABT)
@@ -101,6 +100,12 @@ open ContinuousSemantics {{...}}
 ⟦⟧-monotone-args {bs = b ∷ bs} (cons arg args) ρ<ρ′ =
   ⟨ ⟦⟧-monotone-arg arg ρ<ρ′ , ⟦⟧-monotone-args args ρ<ρ′ ⟩
 
+⟦⟧-monotone-one : ∀{{_ : Semantics}}{N : ABT}{ρ}
+   → monotone (λ D → ⟦ N ⟧ (D • ρ))
+⟦⟧-monotone-one {N}{ρ} D₁ D₂ D12 = ⟦⟧-monotone N G
+  where G : (x : Var) → (D₁ • ρ) x ⊆ (D₂ • ρ) x
+        G zero = D12
+        G (suc x) = λ v z → z
 
 {- Continuous -----------------------------------------------------------------}
 
@@ -139,3 +144,26 @@ open ContinuousSemantics {{...}}
 ⟦⟧-continuous-⊆ {ρ}{NE-ρ} M V V⊆Eρ =
     continuous-∈⇒⊆ ⟦ M ⟧ ρ NE-ρ (⟦⟧-monotone M) V V⊆Eρ
         (λ v v∈V → ⟦⟧-continuous {NE-ρ = NE-ρ} M v)
+
+⟦⟧-continuous-one : ∀{{_ : ContinuousSemantics}}{N : ABT}
+    {ρ}{NE-ρ : nonempty-env ρ}
+  → continuous (λ D → ⟦ N ⟧ (D • ρ))
+⟦⟧-continuous-one {N}{ρ}{NE-ρ} X E E⊆⟦N⟧X•ρ NE-X
+    with ⟦⟧-continuous-⊆ {X • ρ}{extend-nonempty-env NE-ρ NE-X} N E E⊆⟦N⟧X•ρ
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆X•ρ , E⊆⟦N⟧ρ′ ⟩ ⟩ ⟩
+    with fρ′ 0
+... | ⟨ D , ⟨ ρ′x=D , NE-D ⟩ ⟩ =
+    ⟨ D , ⟨ (λ v v∈D → ρ′⊆X•ρ 0 v ((proj₂ ρ′x=D) v v∈D)) ,
+    ⟨ (λ d d∈E → ⟦⟧-monotone {ρ′}{mem D • ρ} N G d (E⊆⟦N⟧ρ′ d d∈E)) , NE-D ⟩ ⟩ ⟩
+    where
+    G : (x : Var) → ρ′ x ⊆ (mem D • ρ) x
+    G zero d d∈ρ0 = (proj₁ ρ′x=D) d d∈ρ0 
+    G (suc x) d m = ρ′⊆X•ρ (suc x) d m
+
+Λ⟦⟧-▪-id : ∀ {{_ : ContinuousSemantics}}{N : ABT}{ρ}{NE-ρ : nonempty-env ρ}
+    {X : 𝒫 Value}
+  → nonempty X
+  → (Λ λ X → ⟦ N ⟧ (X • ρ)) ▪ X ≃ ⟦ N ⟧ (X • ρ)
+Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
+    Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous-one{N}{ρ}{NE-ρ})
+        (⟦⟧-monotone-one{N}) NE-X
