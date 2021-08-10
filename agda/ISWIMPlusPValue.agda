@@ -37,6 +37,8 @@ interp-op (lit P k) _ = ℘ P k
 interp-op pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
 interp-op fst-op ⟨ D , _ ⟩  = car D
 interp-op snd-op ⟨ D , _ ⟩ = cdr D
+interp-op (tuple n) args = make-tuple n args
+interp-op (get i) ⟨ D , _ ⟩ =  tuple-nth D i
 
 {- interp-op is monotonic -}
 mono-op : {op : Op} {xs ys : Tuple (sig op) (ArgTy (𝒫 Value))}
@@ -50,10 +52,28 @@ mono-op {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-cong-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-cong-⊆ D⊆E 
 mono-op {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-cong-⊆ D⊆E 
+mono-op {tuple n} {args₁}{args₂} IHs = mono-tuple n args₁ args₂ IHs
+    where
+    mono-tuple : ∀ n 
+       (args₁ : Tuple (Data.List.replicate n ■) (ArgTy (𝒫 Value)))
+       (args₂ : Tuple (Data.List.replicate n ■) (ArgTy (𝒫 Value)))
+       (IHs : ⊆-args (Data.List.replicate n ■) args₁ args₂)
+       → make-tuple n args₁ ⊆ make-tuple n args₂
+    mono-tuple zero args₁ args₂ IHs d _ = {!!}
+    mono-tuple (suc n) ⟨ D , args₁ ⟩ ⟨ E , args₂ ⟩ ⟨ lift DE , IHs ⟩ =
+        let IH = mono-tuple n args₁ args₂ IHs in
+        {!!}
+{-        
+        𝒫set-cong-⊆ i D (make-tuple (suc i) n args₁)
+            E (make-tuple (suc i) n args₂) DE IH
+-}
+mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ =
+    {!!}
 
 instance
   ISWIM-Semantics : Semantics
-  ISWIM-Semantics = record { interp-op = interp-op ; mono-op = mono-op }
+  ISWIM-Semantics = record { interp-op = interp-op ;
+                             mono-op = λ {op} → mono-op {op} }
 open Semantics {{...}}
 
 ⟦⟧-app : ∀{L M : Term}{ρ : Env}
@@ -93,6 +113,8 @@ continuous-op {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
 continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
+continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ = {!!}
+continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ = {!!}
 
 instance
   ISWIM-Continuous : ContinuousSemantics
@@ -112,6 +134,7 @@ value-nonempty NE-ρ (V-pair Mv Nv)
     with value-nonempty NE-ρ Mv | value-nonempty NE-ρ Nv
 ... | ⟨ u , u∈ ⟩ | ⟨ v , v∈ ⟩ =
     ⟨ ❲ u , v ❳ , ⟨ u∈ , v∈ ⟩ ⟩
+value-nonempty NE-ρ (V-tuple vs) = {!!}
 
 {- Substitution Lemma (via fold-subst-fusion) ---------------------------------}
 
@@ -170,6 +193,8 @@ value-nonempty NE-ρ (V-pair Mv Nv)
     cdr (⟦ M ⟧ ρ)            ≃⟨ cdr-cong IH ⟩
     cdr (⟦ M′ ⟧ ρ)            ≃⟨⟩
     ⟦ snd M′ ⟧ ρ             ∎ where open ≃-Reasoning
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-tuple vargs vs args) M—→M′) = {!!}
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-get i) M—→M′) = {!!}
 ⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
     ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩
     (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)   ≃⟨ Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}
@@ -188,6 +213,34 @@ value-nonempty NE-ρ (V-pair Mv Nv)
     ⟦ snd (pair M N) ⟧ ρ          ≃⟨⟩ 
     cdr 〘 ⟦ M ⟧ ρ , ⟦ N ⟧ ρ 〙    ≃⟨ cdr-of-cons (value-nonempty NE-ρ Mv) ⟩ 
     ⟦ N ⟧ ρ                        ∎ where open ≃-Reasoning
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (get-rule {n}{i}{args} vs) =
+    ⟦ get i ⦅ cons (ast (tuple n ⦅ args ⦆)) nil ⦆ ⟧ ρ   ≃⟨⟩
+    tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args ⟩
+    ⟦ nth-arg args i ⟧ ρ               ∎
+    where
+    open ≃-Reasoning
+    G : ∀ i n args → tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i
+                      ≃ ⟦ nth-arg args i ⟧ ρ
+    G i zero nil = ⟨ H , J ⟩
+      where
+      H : tuple-nth (make-tuple zero (⟦ nil ⟧₊ ρ)) i ⊆ ⟦ $ (base Nat) 0 ⟧ ρ
+      H v ⟨ vs , ⟨ ⫃-nil , refl ⟩ ⟩ = refl
+      J : ⟦ $ (base Nat) 0 ⟧ ρ ⊆ tuple-nth (make-tuple zero (⟦ nil ⟧₊ ρ)) i
+      J (const {B} k) xx
+          with base-eq? Nat B | xx
+      ... | yes refl | refl = ⟨ [] , ⟨ ⫃-nil , refl ⟩ ⟩
+      ... | no neq | ()
+
+    G 0 (suc n) (cons (ast M) args) =
+      tuple-nth (make-tuple (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) zero   ≃⟨⟩
+      tuple-nth (make-tuple (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) zero   ≃⟨ {!!} ⟩
+      ⟦ M ⟧ ρ                                  ≃⟨⟩
+      ⟦ nth-arg (cons (ast M) args) zero ⟧ ρ   ∎
+
+    G (suc i) (suc n) (cons (ast M) args) =
+        let IH = G i n args in
+        {!!}
+    
 
 soundness : ∀ {M N : Term} {ρ : Env}{NE-ρ : nonempty-env ρ}
   → M —↠ N
@@ -200,9 +253,7 @@ soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠
     ⟦ M′ ⟧ ρ     ≃⟨ soundness{ρ = ρ}{NE-ρ} M′—↠N ⟩ 
     ⟦ N ⟧ ρ      ∎ where open ≃-Reasoning
 
-{- Adequacy of Denotations ----------------------------------------------------}
-
-{- This proof is a lot like a progress lemma. -}
+{- Progress -------------------------------------------------------------------}
 
 ⟦⟧⇒—→ : ∀ (M : Term) {wfM : WF 0 M}{ρ : Env}{v : Value}
    → v ∈ ⟦ M ⟧ ρ
@@ -263,20 +314,3 @@ soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠
     inj₂ ⟨ M₂ , (snd-rule M1v M2v) ⟩
 ⟦⟧⇒—→ ($ P k) {wfM}{ρ}{v} v∈⟦M⟧ = inj₁ V-lit
 
-{-
-Can't prove adequacy this way! Termination problem.
-
-adequacy : ∀{M V : Term}{wfM : WF 0 M}{wfV : WF 0 V}{ρ}{NE-ρ : nonempty-env ρ}
-   → TermValue V  →  ⟦ M ⟧ ρ ≃ ⟦ V ⟧ ρ
-    --------------------------------------
-   → Σ[ V′ ∈ Term ] TermValue V′ × (M —↠ V′)
-adequacy{M}{V}{wfM}{wfV}{ρ}{NE-ρ} Vval ⟦M⟧≃⟦V⟧
-    with value-nonempty{V}{ρ} NE-ρ Vval
-... | ⟨ v , v∈⟦V⟧ ⟩
-    with ⟦⟧⇒—→ M {wfM} (proj₂ ⟦M⟧≃⟦V⟧ v v∈⟦V⟧)
-... | inj₁ Mv = ⟨ M , ⟨ Mv , M □ ⟩ ⟩
-... | inj₂ ⟨ M′ , M—→M′ ⟩
-    with adequacy{M′}{V}{{!!}}{wfV}{ρ = ρ}{NE-ρ} Vval (≃-trans (≃-sym (⟦⟧—→{NE-ρ = NE-ρ} M—→M′)) ⟦M⟧≃⟦V⟧)
-... | ⟨ V′ , ⟨ V′v , M′→V′ ⟩ ⟩ =    
-    {!!}
--}

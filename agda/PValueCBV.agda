@@ -12,9 +12,12 @@ open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import Var
 open import Substitution using (_•_)
+open import ScopedTuple hiding (𝒫)
+open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
+open import Sig
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; _++_; length)
+open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
 open import Data.List.Properties using (++-conicalˡ)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
@@ -25,6 +28,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
 open import Relation.Nullary using (¬_; Dec; yes; no)
@@ -47,6 +51,7 @@ data Value : Set where
   _↦_ : List Value → Value → Value        {- An entry in a function's graph. -}
   ν : Value      {- A function. Needed for CBV to distinguish from diverging. -}
   ❲_,_❳ : Value → Value → Value
+  ⟬_⟭ : List Value → Value 
 
 {- Abstraction and Application ------------------------------------------------}
 
@@ -55,6 +60,7 @@ data Value : Set where
 Λ f (V ↦ w) = w ∈ f (mem V)  ×  V ≢ []
 Λ f ν = True
 Λ f ❲ u , v ❳ = False
+Λ f ⟬ vs ⟭ = False
 
 infix 10 _▪_
 _▪_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
@@ -68,21 +74,13 @@ D₁ ▪ D₂ = λ w → Σ[ V ∈ List Value ] (V ↦ w ∈ D₁)  ×  (mem V �
 ℘ (base B) k (V ↦ w) = False
 ℘ (base B) k ν = False
 ℘ (base B) k ❲ u , v ❳ = False
+℘ (base B) k ⟬ vs ⟭ = False
 ℘ (B ⇒ P) f (const k) = False
 ℘ (B ⇒ P) f (V ↦ w) =
    Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ ℘ P (f k)
 ℘ (B ⇒ P) f ν = True
 ℘ (B ⇒ P) k ❲ u , v ❳ = False
-
-cons : 𝒫 Value → 𝒫 Value → 𝒫 Value
-cons D₁ D₂ ❲ u , v ❳ = u ∈ D₁ × v ∈ D₂
-cons D₁ D₂ _ = False
-
-car : 𝒫 Value → 𝒫 Value
-car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
-
-cdr : 𝒫 Value → 𝒫 Value
-cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
+℘ (B ⇒ P) k ⟬ vs ⟭ = False
 
 k∈℘k : ∀{B}{k} → const {B} k ∈ ℘ (base B) k
 k∈℘k {B}{k}
@@ -101,6 +99,57 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
     with base-eq? B B
 ... | yes refl = sym m
 ... | no neq = ⊥-elim m
+
+cons : 𝒫 Value → 𝒫 Value → 𝒫 Value
+cons D₁ D₂ ❲ u , v ❳ = u ∈ D₁ × v ∈ D₂
+cons D₁ D₂ _ = False
+
+car : 𝒫 Value → 𝒫 Value
+car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
+
+cdr : 𝒫 Value → 𝒫 Value
+cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
+
+{-
+𝒫any : 𝒫 Value
+𝒫any u = True
+
+𝒫set : ∀ (i : ℕ) → 𝒫 Value → 𝒫 Value → 𝒫 Value
+𝒫set i D Ds u = (Σ[ w ∈ Value ] u ≡ ((const i) ∷ []) ↦ w  ×  w ∈ D)  ⊎  Ds u
+
+make-tuple : ∀ (i : ℕ) n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → 𝒫 Value
+make-tuple i zero ptop = 𝒫any
+make-tuple i (suc n) ⟨ d , ds ⟩ = 𝒫set i d (make-tuple (suc i) n ds)
+-}
+
+data _⫃_ : ∀{n} → List Value → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → Set
+  where
+  ⫃-nil : [] ⫃ ptt
+  ⫃-cons : ∀{v : Value}{vs : List Value}{D : 𝒫 Value}
+            {n}{Ds : Tuple (replicate n ■) (ArgTy (𝒫 Value))}
+      → v ∈ D → vs ⫃ Ds → (v ∷ vs) ⫃ ⟨ D , Ds ⟩ 
+
+make-tuple : ∀ n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → 𝒫 Value
+make-tuple n Ds ⟬ vs ⟭ = vs ⫃ Ds
+make-tuple n Ds _ = False
+
+nth : List Value → ℕ → Value
+nth [] i = const 0
+nth (v ∷ vs) 0 = v
+nth (v ∷ vs) (suc i) = nth vs i
+
+tuple-nth : 𝒫 Value → ℕ → 𝒫 Value
+tuple-nth D i u = Σ[ vs ∈ List Value ] ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
+
+
+make-tuple-nth-0 : ∀{n}{D}{Ds}
+   → tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0 ≃ D
+make-tuple-nth-0 {n}{D}{Ds} = ⟨ G , {!!} ⟩
+  where
+  G : tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0 ⊆ D
+  G v ⟨ vs , ⟨ ⫃-cons v∈D vs⊆Ds , refl ⟩ ⟩ = v∈D
+  H : D ⊆ tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0
+  H v v∈D = ⟨ (v ∷ []) , ⟨ (⫃-cons v∈D {!!}) , refl ⟩ ⟩
 
 
 {- Application is a Congruence ------------------------------------------------}
@@ -206,6 +255,14 @@ cdr-cong : ∀{D₁ D₃ : 𝒫 Value}
 cdr-cong ⟨ d13 , d31 ⟩  =
     ⟨ (cdr-cong-⊆ d13) , (λ { v ⟨ u , uv∈D₃ ⟩ → ⟨ u , d31 ❲ u , v ❳ uv∈D₃ ⟩}) ⟩
 
+{-
+𝒫set-cong-⊆ : ∀ i (D Ds E Es : 𝒫 Value)
+   → D ⊆ E → Ds ⊆ Es
+   → 𝒫set i D Ds ⊆ 𝒫set i E Es
+𝒫set-cong-⊆ i D Ds E Es D⊆E Ds⊆Es u (inj₁ ⟨ w , ⟨ refl , w∈D ⟩ ⟩) =
+  inj₁ ⟨ w , ⟨ refl , (D⊆E w w∈D) ⟩ ⟩
+𝒫set-cong-⊆ i D Ds E Es D⊆E Ds⊆Es u (inj₂ u∈Ds) = inj₂ (Ds⊆Es u u∈Ds)
+-}  
 
 {- Cons and Car  --------------------------------------------------------------}
 
@@ -228,7 +285,6 @@ cdr-of-cons : ∀{D₁ D₂ : 𝒫 Value}
   → cdr (cons D₁ D₂) ≃ D₂
 cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
     ⟨ cdr-of-cons-⊆ , (λ v v∈D₂ → ⟨ u , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩) ⟩
-
 
 {- Environments ---------------------------------------------------------------}
 

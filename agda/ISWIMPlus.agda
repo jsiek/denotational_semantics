@@ -10,9 +10,10 @@ module ISWIMPlus where
 open import Utilities using (_iff_)
 open import Primitives
 open import Data.Empty renaming (⊥ to Bot)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Nat.Properties using (+-suc)
 open import Data.Bool  
-open import Data.List using (List; []; _∷_)
+open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
@@ -28,6 +29,8 @@ data Op : Set where
   pair-op : Op
   fst-op : Op
   snd-op : Op
+  tuple : ℕ → Op
+  get : ℕ → Op
 
 sig : Op → List Sig
 sig lam = ν ■ ∷ []
@@ -36,10 +39,12 @@ sig (lit p k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
+sig (tuple n) = replicate n ■
+sig (get i) = ■ ∷ []
 
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
-                   ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; 
+                   ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; Args;
                    rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
                    WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
                    COp; CAst; CBind; ccons; tcons)
@@ -58,6 +63,10 @@ pattern $ p k = lit p k ⦅ nil ⦆
 pattern pair L M = pair-op ⦅ cons (ast L) (cons (ast M) nil) ⦆
 pattern fst M = fst-op ⦅ cons (ast M) nil ⦆
 pattern snd M = snd-op ⦅ cons (ast M) nil ⦆
+
+pattern _❲_❳ M i = (get i) ⦅ cons (ast M) nil ⦆
+
+data ArgsValue : ∀ {bs} → Args bs → Set 
 
 data TermValue : Term → Set where
 
@@ -78,6 +87,16 @@ data TermValue : Term → Set where
       --------------------------
     → TermValue (pair M N)
 
+  V-tuple : ∀{n}{args : Args (replicate n ■)}
+    → ArgsValue args
+    → TermValue (tuple n ⦅ args ⦆)
+
+data ArgsValue where
+  V-nil : ArgsValue nil
+  V-cons : ∀ {M}{n}{args : Args (replicate n ■)}
+      → TermValue M
+      → ArgsValue (cons (ast M) args)
+
 data Frame : Set where
   F-·₁ : Term → Frame 
   F-·₂ : (M : Term) → {Mv : TermValue M} → Frame
@@ -85,6 +104,14 @@ data Frame : Set where
   F-×₂ : (L : Term) → {Lv : TermValue L} → Frame
   F-fst : Frame
   F-snd : Frame
+  F-tuple : ∀ {n m} → (vargs : Args (replicate n ■)) → ArgsValue vargs
+          → (args : Args (replicate m ■)) → Frame
+  F-get : ℕ → Frame
+
+append : ∀{n m} → (xs : Args (replicate n ■))
+  → (ys : Args (replicate m ■)) → Args (replicate (n + m) ■)
+append {zero} {m} nil ys = ys
+append {suc n} {m} (cons x xs) ys = cons x (append xs ys)
 
 fill : Term → Frame → Term
 fill L (F-·₁ M)  = L · M
@@ -93,6 +120,14 @@ fill M (F-×₁ N)  = pair M N
 fill N (F-×₂ M)  = pair M N
 fill M F-fst     = fst M
 fill M F-snd     = snd M
+fill M (F-tuple {n}{m} vargs vs args) =
+  tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆
+fill M (F-get i) = M ❲ i ❳
+
+nth-arg : ∀ {n} → Args (replicate n ■) → ℕ → Term
+nth-arg {zero} nil i = $ (base Nat) 0
+nth-arg {suc n} (cons (ast M) args) zero = M
+nth-arg {suc n} (cons (ast M) args) (suc i) = nth-arg {n} args i
 
 infix 2 _—→_
 
@@ -122,6 +157,9 @@ data _—→_ : Term → Term → Set where
       ---------------------------------
     → snd (pair M N) —→ N
 
+  get-rule : ∀{n i : ℕ}{args : Args (replicate n ■)}
+    → ArgsValue args
+    → (tuple n ⦅ args ⦆) ❲ i ❳ —→ nth-arg args i
 
 open import MultiStep Op sig _—→_ public
 
@@ -133,6 +171,7 @@ open import MultiStep Op sig _—→_ public
 —→-app-cong {M = M} δ-rule = ξ-rule (F-·₁ M) δ-rule
 —→-app-cong {M = M} (fst-rule Mv Nv) = ξ-rule (F-·₁ M) (fst-rule Mv Nv)
 —→-app-cong {M = M} (snd-rule Mv Nv) = ξ-rule (F-·₁ M) (snd-rule Mv Nv)
+—→-app-cong {M = M} (get-rule vargs) = ξ-rule (F-·₁ M) (get-rule vargs)
 
 appL-cong : ∀ {L L' M : Term}
          → L —↠ L'
@@ -168,22 +207,42 @@ pairR-cong {L}{M}{M'} v (M □) = pair L M □
 pairR-cong {L}{M}{M'} v (M —→⟨ r ⟩ rs) =
     pair L M —→⟨ ξ-rule (F-×₂ L {v}) r ⟩ pairR-cong v rs
 
-fstL-cong : ∀ {L L' M : Term}
+fst-cong : ∀ {L L' : Term}
          → L —↠ L'
            -------------------
          → (fst L) —↠ (fst L')
-fstL-cong {L}{L'}{M} (L □) = (fst L) □
-fstL-cong {L}{L'}{M} (L —→⟨ r ⟩ rs) =
-    (fst L) —→⟨ ξ-rule F-fst r ⟩ fstL-cong {M = M} rs
+fst-cong {L}{L'} (L □) = (fst L) □
+fst-cong {L}{L'} (L —→⟨ r ⟩ rs) =
+    (fst L) —→⟨ ξ-rule F-fst r ⟩ fst-cong rs
 
-sndL-cong : ∀ {L L' M : Term}
+snd-cong : ∀ {L L' : Term}
          → L —↠ L'
            -------------------
          → (snd L) —↠ (snd L')
-sndL-cong {L}{L'}{M} (L □) = (snd L) □
-sndL-cong {L}{L'}{M} (L —→⟨ r ⟩ rs) =
-    (snd L) —→⟨ ξ-rule F-snd r ⟩ sndL-cong {M = M} rs
+snd-cong {L}{L'} (L □) = (snd L) □
+snd-cong {L}{L'} (L —→⟨ r ⟩ rs) =
+    (snd L) —→⟨ ξ-rule F-snd r ⟩ snd-cong rs
 
+get-cong : ∀ {L L' : Term}{i}
+         → L —↠ L'
+           -------------------
+         → (L ❲ i ❳) —↠ (L' ❲ i ❳)
+get-cong {L}{L'}{i} (L □) = (L ❲ i ❳) □
+get-cong {L}{L'}{i} (L —→⟨ r ⟩ rs) =
+    L ❲ i ❳ —→⟨ ξ-rule (F-get i) r ⟩ get-cong rs
+
+tuple-cong : ∀{M M′ : Term}{n}{m}{vargs : Args (replicate n ■)}
+      {args : Args (replicate m ■)}
+   → ArgsValue vargs
+   → M —↠ M′
+   → tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆
+     —↠ tuple (n + suc m) ⦅ append vargs (cons (ast M′) args) ⦆
+tuple-cong {M} {.M} {n}{m} {vargs} {args} v (M □) =
+    tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆ □
+tuple-cong {M} {M″} {n}{m} {vargs} {args} v (M —→⟨ M→M′ ⟩ M—↠M″) =
+    tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆
+    —→⟨ ξ-rule (F-tuple vargs v args) M→M′ ⟩
+    (tuple-cong v M—↠M″)
 
 terminates : ∀(M : Term) → Set
 terminates  M = Σ[ N ∈ Term ] TermValue N × (M —↠ N)
