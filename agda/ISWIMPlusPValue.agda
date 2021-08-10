@@ -15,7 +15,7 @@ open import PValueCBV renaming (cons to 〘_,_〙)
 open import SemanticProperties Op sig
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; length)
+open import Data.List using (List ; _∷_ ; []; length; replicate)
 open import Data.List.Relation.Unary.Any using (here; there) 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
@@ -154,6 +154,13 @@ value-nonempty NE-ρ (V-tuple vs) = {!!}
 
 {- Soundness of Reduction with respect to Denotations -------------------------}
 
+ArgsValue⇒NE-∏ : ∀{n}{args : Args (Data.List.replicate n ■)}
+    {ρ}{NE-ρ : nonempty-env ρ}
+   → ArgsValue args → NE-∏ (⟦ args ⟧₊ ρ)
+ArgsValue⇒NE-∏ {zero} {nil} vs = NE-∏-nil
+ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
+    NE-∏-cons (value-nonempty NE-ρ Mv) (ArgsValue⇒NE-∏ {NE-ρ = NE-ρ} vs)
+
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value} {NE-ρ : nonempty-env ρ}
    → M —→ N
    → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ
@@ -215,13 +222,13 @@ value-nonempty NE-ρ (V-tuple vs) = {!!}
     ⟦ N ⟧ ρ                        ∎ where open ≃-Reasoning
 ⟦⟧—→ {_} {_} {ρ} {NE-ρ} (get-rule {n}{i}{args} vs) =
     ⟦ get i ⦅ cons (ast (tuple n ⦅ args ⦆)) nil ⦆ ⟧ ρ   ≃⟨⟩
-    tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args ⟩
+    tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args vs ⟩
     ⟦ nth-arg args i ⟧ ρ               ∎
     where
     open ≃-Reasoning
-    G : ∀ i n args → tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i
-                      ≃ ⟦ nth-arg args i ⟧ ρ
-    G i zero nil = ⟨ H , J ⟩
+    G : ∀ i n (args : Args (replicate n ■)) → ArgsValue args
+       → tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i ≃ ⟦ nth-arg args i ⟧ ρ
+    G i zero nil vs = ⟨ H , J ⟩
       where
       H : tuple-nth (make-tuple zero (⟦ nil ⟧₊ ρ)) i ⊆ ⟦ $ (base Nat) 0 ⟧ ρ
       H v ⟨ vs , ⟨ ⫃-nil , refl ⟩ ⟩ = refl
@@ -231,15 +238,20 @@ value-nonempty NE-ρ (V-tuple vs) = {!!}
       ... | yes refl | refl = ⟨ [] , ⟨ ⫃-nil , refl ⟩ ⟩
       ... | no neq | ()
 
-    G 0 (suc n) (cons (ast M) args) =
+    G 0 (suc n) (cons (ast M) args) (V-cons Mv vs) = 
       tuple-nth (make-tuple (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) zero   ≃⟨⟩
-      tuple-nth (make-tuple (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) zero   ≃⟨ {!!} ⟩
+      tuple-nth (make-tuple (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) zero   ≃⟨ make-tuple-nth-0 (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩
       ⟦ M ⟧ ρ                                  ≃⟨⟩
       ⟦ nth-arg (cons (ast M) args) zero ⟧ ρ   ∎
+    G (suc i) (suc n) (cons (ast M) args) (V-cons Mv vs) =
+        let IH = G i n args vs in
+        tuple-nth (make-tuple (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) (suc i) ≃⟨⟩ 
+        tuple-nth (make-tuple (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) (suc i)
+                                  ≃⟨ make-tuple-nth-suc (value-nonempty NE-ρ Mv)
+                                            (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩ 
+        tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i             ≃⟨ IH ⟩ 
+        ⟦ nth-arg args i ⟧ ρ ∎
 
-    G (suc i) (suc n) (cons (ast M) args) =
-        let IH = G i n args in
-        {!!}
     
 
 soundness : ∀ {M N : Term} {ρ : Env}{NE-ρ : nonempty-env ρ}
@@ -252,65 +264,4 @@ soundness {M}{N}{ρ}{NE-ρ} (_—→⟨_⟩_ M {M = M′} M—→M′ M′—↠
     ⟦ M ⟧ ρ      ≃⟨ ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ ⟩ 
     ⟦ M′ ⟧ ρ     ≃⟨ soundness{ρ = ρ}{NE-ρ} M′—↠N ⟩ 
     ⟦ N ⟧ ρ      ∎ where open ≃-Reasoning
-
-{- Progress -------------------------------------------------------------------}
-
-⟦⟧⇒—→ : ∀ (M : Term) {wfM : WF 0 M}{ρ : Env}{v : Value}
-   → v ∈ ⟦ M ⟧ ρ
-   → TermValue M ⊎ (Σ[ M′ ∈ Term ] (M —→ M′))
-⟦⟧⇒—→ (` x) {wfM}{ρ}{v} v∈⟦M⟧ = inj₁ V-var
-⟦⟧⇒—→ (L · M) {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}{ρ}
-    {w} ⟨ V , ⟨ V↦w∈⟦L⟧ρ , ⟨ V⊆⟦M⟧ρ , V≢[] ⟩ ⟩ ⟩
-    with ⟦⟧⇒—→ L {wfM = wfL}{ρ}{V ↦ w} V↦w∈⟦L⟧ρ
-... | inj₂ ⟨ L′ , L—→L′ ⟩ = inj₂ ⟨ (L′ · M) , (ξ-rule (F-·₁ M) L—→L′) ⟩
-... | inj₁ Lv
-    with V
-... | [] = ⊥-elim (V≢[] refl)
-... | v ∷ V′
-    with ⟦⟧⇒—→ M {wfM = wfM}{ρ}{v} (V⊆⟦M⟧ρ v (here refl))
-... | inj₂ ⟨ M′ , M—→M′ ⟩ = inj₂ ⟨ (L · M′) , (ξ-rule (F-·₂ L {Lv}) M—→M′) ⟩
-... | inj₁ Mv
-    with Lv | V↦w∈⟦L⟧ρ
-... | V-var | ∈ρx = ⊥-elim (not-WF-0-var wfL)
-... | V-ƛ {N = N} | ⟨ w∈⟦N⟧ , _ ⟩  = inj₂ ⟨ N [ M ] , β-rule Mv ⟩
-... | V-lit {B ⇒ P}{f} | ⟨ k , ⟨ refl , ℘fk ⟩ ⟩
-    with Mv | (V⊆⟦M⟧ρ v (here refl))
-... | V-pair L1v L2v | ()
-... | V-var | ∈ρx = ⊥-elim (not-WF-0-var wfM)
-... | V-lit {base B′}{k′} | k∈℘k′
-    with base-eq? B′ B
-... | yes refl = inj₂ ⟨ $ P (f k′) , δ-rule ⟩
-... | no neq = ⊥-elim k∈℘k′
-⟦⟧⇒—→ (ƛ N) {wfM}{ρ}{v} v∈⟦M⟧ = inj₁ V-ƛ
-⟦⟧⇒—→ (pair M N) {WF-op (WF-cons (WF-ast wfM) (WF-cons (WF-ast wfN) WF-nil)) _}
-    {ρ}{❲ u , v ❳} ⟨ u∈⟦M⟧ρ , v∈⟦N⟧ρ ⟩
-    with ⟦⟧⇒—→ M {wfM = wfM}{ρ}{u} u∈⟦M⟧ρ
-... | inj₂ ⟨ M′ , M—→M′ ⟩ = inj₂ ⟨ (pair M′ N) , (ξ-rule (F-×₁ N) M—→M′) ⟩
-... | inj₁ Mv
-    with ⟦⟧⇒—→ N {wfM = wfN}{ρ}{v} v∈⟦N⟧ρ
-... | inj₂ ⟨ N′ , N—→N′ ⟩ = inj₂ ⟨ (pair M N′) , (ξ-rule (F-×₂ M {Mv}) N—→N′) ⟩
-... | inj₁ Nv = inj₁ (V-pair Mv Nv)
-⟦⟧⇒—→ (fst M) {WF-op (WF-cons (WF-ast wfM) WF-nil) _}
-    {ρ}{u} ⟨ v , uv∈⟦M⟧ρ ⟩
-    with ⟦⟧⇒—→ M {wfM = wfM}{ρ}{❲ u , v ❳} uv∈⟦M⟧ρ
-... | inj₂ ⟨ M′ , M—→M′ ⟩ = inj₂ ⟨ (fst M′) , (ξ-rule F-fst M—→M′) ⟩
-... | inj₁ Mv
-    with Mv | uv∈⟦M⟧ρ
-... | V-var | uv∈ρx = ⊥-elim (not-WF-0-var wfM)
-... | V-ƛ | ()
-... | V-lit {B ⇒ P}{f} | ()
-... | V-pair {M₁}{M₂} M1v M2v | ⟨ u∈M1 , v∈M2 ⟩ =
-    inj₂ ⟨ M₁ , (fst-rule M1v M2v) ⟩
-⟦⟧⇒—→ (snd M) {WF-op (WF-cons (WF-ast wfM) WF-nil) _}
-    {ρ}{v} ⟨ u , uv∈⟦M⟧ρ ⟩
-    with ⟦⟧⇒—→ M {wfM = wfM}{ρ}{❲ u , v ❳} uv∈⟦M⟧ρ
-... | inj₂ ⟨ M′ , M—→M′ ⟩ = inj₂ ⟨ (snd M′) , (ξ-rule F-snd M—→M′) ⟩
-... | inj₁ Mv
-    with Mv | uv∈⟦M⟧ρ
-... | V-var | uv∈ρx = ⊥-elim (not-WF-0-var wfM)
-... | V-ƛ | ()
-... | V-lit {B ⇒ P}{f} | ()
-... | V-pair {M₁}{M₂} M1v M2v | ⟨ u∈M1 , v∈M2 ⟩ =
-    inj₂ ⟨ M₂ , (snd-rule M1v M2v) ⟩
-⟦⟧⇒—→ ($ P k) {wfM}{ρ}{v} v∈⟦M⟧ = inj₁ V-lit
 

@@ -122,14 +122,16 @@ make-tuple i zero ptop = 𝒫any
 make-tuple i (suc n) ⟨ d , ds ⟩ = 𝒫set i d (make-tuple (suc i) n ds)
 -}
 
-data _⫃_ : ∀{n} → List Value → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → Set
+∏ : ℕ → Set₁ → Set₁
+∏ n T = Tuple (replicate n ■) (ArgTy T)
+
+data _⫃_ : ∀{n} → List Value → ∏ n (𝒫 Value) → Set
   where
   ⫃-nil : [] ⫃ ptt
-  ⫃-cons : ∀{v : Value}{vs : List Value}{D : 𝒫 Value}
-            {n}{Ds : Tuple (replicate n ■) (ArgTy (𝒫 Value))}
+  ⫃-cons : ∀{v : Value}{vs : List Value}{D : 𝒫 Value}{n}{Ds : ∏ n (𝒫 Value)}
       → v ∈ D → vs ⫃ Ds → (v ∷ vs) ⫃ ⟨ D , Ds ⟩ 
 
-make-tuple : ∀ n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → 𝒫 Value
+make-tuple : ∀ n → ∏ n (𝒫 Value) → 𝒫 Value
 make-tuple n Ds ⟬ vs ⟭ = vs ⫃ Ds
 make-tuple n Ds _ = False
 
@@ -141,15 +143,45 @@ nth (v ∷ vs) (suc i) = nth vs i
 tuple-nth : 𝒫 Value → ℕ → 𝒫 Value
 tuple-nth D i u = Σ[ vs ∈ List Value ] ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
 
+data NE-∏ : ∀{n} → ∏ n (𝒫 Value) → Set where
+  NE-∏-nil : NE-∏ ptt
+  NE-∏-cons : ∀{D}{n}{Ds : ∏ n (𝒫 Value)}
+     → nonempty D → NE-∏ Ds → NE-∏ ⟨ D , Ds ⟩
+
+NE-∏⇒⫃ : ∀{n}{Ds : ∏ n (𝒫 Value)}
+   → NE-∏ Ds
+   → Σ[ vs ∈ List Value ] vs ⫃ Ds
+NE-∏⇒⫃ {zero} {ptt} NE-Ds = ⟨ [] , ⫃-nil ⟩
+NE-∏⇒⫃ {suc n} {⟨ D , Ds ⟩} (NE-∏-cons ⟨ v , v∈D ⟩ NE-Ds)
+    with NE-∏⇒⫃ {n} {Ds} NE-Ds
+... | ⟨ vs , vs⊆ ⟩ = ⟨ v ∷ vs , ⫃-cons v∈D vs⊆ ⟩
 
 make-tuple-nth-0 : ∀{n}{D}{Ds}
+   → NE-∏ Ds
    → tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0 ≃ D
-make-tuple-nth-0 {n}{D}{Ds} = ⟨ G , {!!} ⟩
+make-tuple-nth-0 {n}{D}{Ds} NE-Ds = ⟨ G , H ⟩
   where
   G : tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0 ⊆ D
   G v ⟨ vs , ⟨ ⫃-cons v∈D vs⊆Ds , refl ⟩ ⟩ = v∈D
   H : D ⊆ tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0
-  H v v∈D = ⟨ (v ∷ []) , ⟨ (⫃-cons v∈D {!!}) , refl ⟩ ⟩
+  H v v∈D
+      with NE-∏⇒⫃ NE-Ds
+  ... | ⟨ vs , vs⊆ ⟩ =
+        ⟨ (v ∷ vs) , ⟨ (⫃-cons v∈D vs⊆) , refl ⟩ ⟩
+
+make-tuple-nth-suc : ∀{i}{n}{D}{Ds}
+   → nonempty D → NE-∏ Ds
+   → tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) (suc i)
+   ≃ tuple-nth (make-tuple n Ds) i
+make-tuple-nth-suc {i}{n}{D}{Ds} ⟨ u , u∈D ⟩ NE-Ds = ⟨ G , H ⟩
+  where
+  G : tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) (suc i)
+      ⊆ tuple-nth (make-tuple n Ds) i
+  G v ⟨ vs , ⟨ ⫃-cons{v′}{vs′} v′∈D vs′⊆Ds , refl ⟩ ⟩ =
+      ⟨ vs′ , ⟨ vs′⊆Ds , refl ⟩ ⟩
+  H : tuple-nth (make-tuple n Ds) i
+      ⊆ tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) (suc i)
+  H v ⟨ vs , ⟨ vs⊆Ds , eq ⟩ ⟩ = ⟨ u ∷ vs , ⟨ (⫃-cons u∈D vs⊆Ds) , eq ⟩ ⟩
 
 
 {- Application is a Congruence ------------------------------------------------}

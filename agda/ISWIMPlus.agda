@@ -66,7 +66,7 @@ pattern snd M = snd-op ⦅ cons (ast M) nil ⦆
 
 pattern _❲_❳ M i = (get i) ⦅ cons (ast M) nil ⦆
 
-data ArgsValue : ∀ {bs} → Args bs → Set 
+data ArgsValue : ∀ {n} → Args (replicate n ■) → Set 
 
 data TermValue : Term → Set where
 
@@ -94,7 +94,7 @@ data TermValue : Term → Set where
 data ArgsValue where
   V-nil : ArgsValue nil
   V-cons : ∀ {M}{n}{args : Args (replicate n ■)}
-      → TermValue M
+      → TermValue M → ArgsValue args
       → ArgsValue (cons (ast M) args)
 
 data Frame : Set where
