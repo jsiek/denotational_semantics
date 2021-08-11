@@ -30,7 +30,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 
 {- Denotational Semantics of the ISWIM Language via fold ----------------------}
 
-interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
+interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
 interp-op lam ⟨ F , _ ⟩ = Λ F
 interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
 interp-op (lit P k) _ = ℘ P k
@@ -41,8 +41,8 @@ interp-op (tuple n) args = 𝒯 n args
 interp-op (get i) ⟨ D , _ ⟩ = proj D i
 
 {- interp-op is monotonic -}
-mono-op : {op : Op} {xs ys : Tuple (sig op) (ArgTy (𝒫 Value))}
-   → ⊆-args (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
+mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
+   → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
 mono-op {lam} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =
     Λ-ext-⊆ (λ {X} → lower (f⊆g X))
 mono-op {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
@@ -52,14 +52,9 @@ mono-op {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-cong-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-cong-⊆ D⊆E 
 mono-op {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-cong-⊆ D⊆E 
-mono-op {tuple n} {args₁}{args₂} IHs = 𝒯-cong-⊆ (⊆-args⇒⫃ IHs)
-  where
-  ⊆-args⇒⫃ : ∀{n}{xs ys} → ⊆-args (replicate n ■) xs ys → xs ⫃ ys
-  ⊆-args⇒⫃ {zero} {xs} {ys} xs⊆ys = tt
-  ⊆-args⇒⫃ {suc n} {⟨ x , xs ⟩} {⟨ y , ys ⟩} ⟨ x⊆y , xs⊆ys ⟩ =
-    ⟨ (lower x⊆y) , (⊆-args⇒⫃ xs⊆ys) ⟩
-mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ =
-    {!!}
+mono-op {tuple n} {args₁}{args₂} IHs =
+    𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ IHs)
+mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = proj-cong-⊆ D⊆E
 
 instance
   ISWIM-Semantics : Semantics
@@ -82,7 +77,7 @@ open Semantics {{...}}
 {- interp-op is continuous -}
 continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
-   → pred-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
+   → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
 continuous-op {lam} {ρ} {NE-ρ} {v} {cons (bind (ast N)) nil}
     v∈Λ ⟨ IH-N , _ ⟩ =
@@ -104,8 +99,14 @@ continuous-op {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
 continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
-continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ = {!!}
-continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ = {!!}
+continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
+   let Ds : Env → ∏ n (𝒫 Value)
+       Ds = ⟦ args ⟧₊ in
+   let xx : v ∈ 𝒯 n (Ds ρ)
+       xx = v∈⟦M⟧ρ in
+   {!!}
+continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
+    proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
 
 instance
   ISWIM-Continuous : ContinuousSemantics
@@ -148,9 +149,9 @@ value-nonempty NE-ρ (V-tuple vs) = {!!}
 ArgsValue⇒NE-∏ : ∀{n}{args : Args (Data.List.replicate n ■)}
     {ρ}{NE-ρ : nonempty-env ρ}
    → ArgsValue args → NE-∏ (⟦ args ⟧₊ ρ)
-ArgsValue⇒NE-∏ {zero} {nil} vs = NE-∏-nil
+ArgsValue⇒NE-∏ {zero} {nil} vs = {!!}
 ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
-    NE-∏-cons (value-nonempty NE-ρ Mv) (ArgsValue⇒NE-∏ {NE-ρ = NE-ρ} vs)
+    ⟨ value-nonempty NE-ρ Mv , ArgsValue⇒NE-∏ {NE-ρ = NE-ρ} vs ⟩
 
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value} {NE-ρ : nonempty-env ρ}
    → M —→ N

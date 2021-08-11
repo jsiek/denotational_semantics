@@ -28,10 +28,10 @@ open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
-open import Level using (lift)
+open import Level using (Level; lift)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 {- Finite Sets represented by Lists -------------------------------------------}
@@ -112,7 +112,7 @@ cdr : 𝒫 Value → 𝒫 Value
 cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
 
 ∏ : ℕ → Set₁ → Set₁
-∏ n T = Tuple (replicate n ■) (ArgTy T)
+∏ n T = Tuple (replicate n ■) (Result T)
 
 𝒯 : ∀ n → ∏ n (𝒫 Value) → 𝒫 Value
 𝒯 zero _ ⟬ [] ⟭ = True
@@ -127,16 +127,33 @@ nth (v ∷ vs) (suc i) = nth vs i
 proj : 𝒫 Value → ℕ → 𝒫 Value
 proj D i u = Σ[ vs ∈ List Value ] ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
 
-data NE-∏ : ∀{n} → ∏ n (𝒫 Value) → Set where
-  NE-∏-nil : NE-∏ ptt
-  NE-∏-cons : ∀{D}{n}{Ds : ∏ n (𝒫 Value)}
-     → nonempty D → NE-∏ Ds → NE-∏ ⟨ D , Ds ⟩
+all-∏ : ∀{n}{T : Set₁}{ℓ : Level} → (T → Set ℓ) → ∏ n T → Set ℓ
+all-∏ {zero}{T}{ℓ} P (lift tt) = ⊤
+all-∏ {suc n}{T}{ℓ} P ⟨ x , xs ⟩ = P x  ×  all-∏ P xs
+
+rel-∏ : ∀{n}{T : Set₁} → (T → T → Set) → ∏ n T → ∏ n T → Set
+rel-∏ {zero} R (lift tt) (lift tt) = True
+rel-∏ {suc n} R ⟨ x , xs ⟩ ⟨ y , ys ⟩ = R x y  ×  rel-∏ R xs ys
+
+rel-∏-sym : ∀{n}{T : Set₁}{R : T → T → Set}{Ds Es : ∏ n T}
+   → (∀ {x y} → R x y → R y x) → rel-∏ R Ds Es → rel-∏ R Es Ds
+rel-∏-sym {zero} {T} {R} {lift tt} {lift tt} R-sym tt = tt
+rel-∏-sym {suc n} {T} {R} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} R-sym ⟨ RDE , R[Ds,Es] ⟩ =
+    ⟨ (R-sym RDE) , (rel-∏-sym R-sym R[Ds,Es]) ⟩
+
+rel-∏-⇒ : ∀{n}{T : Set₁}{xs ys : ∏ n T}{R R′ : T → T → Set}
+   → (∀ x y → R x y → R′ x y) → rel-∏ R xs ys → rel-∏ R′ xs ys
+rel-∏-⇒ {zero} R⇒R′ tt = tt
+rel-∏-⇒ {suc n}{T}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
+    ⟨ R⇒R′ x y Rxy , rel-∏-⇒ R⇒R′ R[xs,ys] ⟩
+
+NE-∏ = λ {n} → all-∏{n}{𝒫 Value} nonempty
 
 NE-∏⇒𝒯 : ∀{n}{Ds : ∏ n (𝒫 Value)}
    → NE-∏ Ds
    → Σ[ vs ∈ List Value ] 𝒯 n Ds ⟬ vs ⟭
 NE-∏⇒𝒯 {zero} {ptt} NE-Ds = ⟨ [] , tt ⟩
-NE-∏⇒𝒯 {suc n} {⟨ D , Ds ⟩} (NE-∏-cons ⟨ v , v∈D ⟩ NE-Ds)
+NE-∏⇒𝒯 {suc n} {⟨ D , Ds ⟩} ⟨ ⟨ v , v∈D ⟩ , NE-Ds ⟩
     with NE-∏⇒𝒯 {n} {Ds} NE-Ds
 ... | ⟨ vs , vs⊆ ⟩ = ⟨ v ∷ vs , ⟨ v∈D , vs⊆ ⟩ ⟩
 
@@ -150,8 +167,7 @@ NE-∏⇒𝒯 {suc n} {⟨ D , Ds ⟩} (NE-∏-cons ⟨ v , v∈D ⟩ NE-Ds)
   H : D ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0
   H v v∈D
       with NE-∏⇒𝒯 NE-Ds
-  ... | ⟨ vs , vs⊆ ⟩ =
-        ⟨ (v ∷ vs) , ⟨ ⟨ v∈D , vs⊆ ⟩ , refl ⟩ ⟩
+  ... | ⟨ vs , vs⊆ ⟩ = ⟨ (v ∷ vs) , ⟨ ⟨ v∈D , vs⊆ ⟩ , refl ⟩ ⟩
 
 𝒯-nth-suc : ∀{i}{n}{D}{Ds}
    → nonempty D → NE-∏ Ds
@@ -159,12 +175,9 @@ NE-∏⇒𝒯 {suc n} {⟨ D , Ds ⟩} (NE-∏-cons ⟨ v , v∈D ⟩ NE-Ds)
    ≃ proj (𝒯 n Ds) i
 𝒯-nth-suc {i}{n}{D}{Ds} ⟨ u , u∈D ⟩ NE-Ds = ⟨ G , H ⟩
   where
-  G : proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
-      ⊆ proj (𝒯 n Ds) i
-  G u ⟨ v ∷ vs , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ =
-      ⟨ vs , ⟨ ⟬vs⟭∈𝒯Ds , refl ⟩ ⟩
-  H : proj (𝒯 n Ds) i
-      ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
+  G : proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i) ⊆ proj (𝒯 n Ds) i
+  G u ⟨ v ∷ vs , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ = ⟨ vs , ⟨ ⟬vs⟭∈𝒯Ds , refl ⟩ ⟩
+  H : proj (𝒯 n Ds) i ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
   H v ⟨ vs , ⟨ vs⊆Ds , eq ⟩ ⟩ = ⟨ u ∷ vs , ⟨ ⟨ u∈D , vs⊆Ds ⟩ , eq ⟩ ⟩
 
 
@@ -238,70 +251,59 @@ monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
 
 {- Cons is a Congruence  ------------------------------------------------------}
 
-cons-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
-  → D₁ ⊆ D₃  →  D₂ ⊆ D₄
+cons-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value} → D₁ ⊆ D₃  →  D₂ ⊆ D₄
   → cons D₁ D₂ ⊆ cons D₃ D₄
 cons-cong-⊆ D13 D24 ❲ u , v ❳ ⟨ u∈D₁ , v∈D₂ ⟩ = ⟨ D13 u u∈D₁ , D24 v v∈D₂ ⟩
 
-cons-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
-  → D₁ ≃ D₃  →  D₂ ≃ D₄
-  → cons D₁ D₂ ≃ cons D₃ D₄
+cons-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value} → D₁ ≃ D₃  →  D₂ ≃ D₄
+   → cons D₁ D₂ ≃ cons D₃ D₄
 cons-cong ⟨ d13 , d31 ⟩ ⟨ d24 , d42 ⟩ =
     ⟨ (cons-cong-⊆ d13 d24) , (cons-cong-⊆ d31 d42) ⟩
 
-car-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value}
-  → D₁ ⊆ D₃
-  → car D₁ ⊆ car D₃
+car-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value} → D₁ ⊆ D₃ → car D₁ ⊆ car D₃
 car-cong-⊆ D13 u ⟨ v , uv∈D₁ ⟩ = ⟨ v , D13 ❲ u , v ❳ uv∈D₁ ⟩
 
-car-cong : ∀{D₁ D₃ : 𝒫 Value}
-  → D₁ ≃ D₃
-  → car D₁ ≃ car D₃
+car-cong : ∀{D₁ D₃ : 𝒫 Value} → D₁ ≃ D₃ → car D₁ ≃ car D₃
 car-cong ⟨ d13 , d31 ⟩  =
     ⟨ (car-cong-⊆ d13) , (λ { u ⟨ v , uv∈D₃ ⟩  → ⟨ v , d31 ❲ u , v ❳ uv∈D₃ ⟩}) ⟩
 
-cdr-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value}
-  → D₁ ⊆ D₃
-  → cdr D₁ ⊆ cdr D₃
+cdr-cong-⊆ : ∀{D₁ D₃ : 𝒫 Value} → D₁ ⊆ D₃ → cdr D₁ ⊆ cdr D₃
 cdr-cong-⊆ D13 v ⟨ u , uv∈D₁ ⟩ = ⟨ u , D13 ❲ u , v ❳ uv∈D₁ ⟩
 
-cdr-cong : ∀{D₁ D₃ : 𝒫 Value}
-  → D₁ ≃ D₃
-  → cdr D₁ ≃ cdr D₃
+cdr-cong : ∀{D₁ D₃ : 𝒫 Value} → D₁ ≃ D₃ → cdr D₁ ≃ cdr D₃
 cdr-cong ⟨ d13 , d31 ⟩  =
     ⟨ (cdr-cong-⊆ d13) , (λ { v ⟨ u , uv∈D₃ ⟩ → ⟨ u , d31 ❲ u , v ❳ uv∈D₃ ⟩}) ⟩
 
 _⫃_ : ∀{n} → ∏ n (𝒫 Value) → ∏ n (𝒫 Value) → Set
-_⫃_ {zero} (lift tt) (lift tt) = True
-_⫃_ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = D ⊆ E  ×  (Ds ⫃ Es)
+_⫃_ {n} = rel-∏ {n} _⊆_
 
-𝒯-cong-⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)}
-  → Ds ⫃ Es
-  → 𝒯 n Ds ⊆ 𝒯 n Es
+𝒯-cong-⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)} → Ds ⫃ Es → 𝒯 n Ds ⊆ 𝒯 n Es
 𝒯-cong-⊆ {zero} {lift tt} {lift tt} Ds⊆Es v v∈ = v∈
 𝒯-cong-⊆ {suc n} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} ⟨ D⊆E , Ds⊆Es ⟩ ⟬ v ∷ vs ⟭
     ⟨ v∈D , vs∈𝒯Ds ⟩ = ⟨ (D⊆E v v∈D) , (𝒯-cong-⊆ Ds⊆Es ⟬ vs ⟭ vs∈𝒯Ds) ⟩
 
 _⩭_ : ∀{n} → ∏ n (𝒫 Value) → ∏ n (𝒫 Value) → Set
-_⩭_ {zero} (lift tt) (lift tt) = True
-_⩭_ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = D ≃ E  ×  Ds ⩭ Es
+_⩭_ {n} = rel-∏ {n} _≃_
 
-⩭⇒⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)}
-  → Ds ⩭ Es
-  → Ds ⫃ Es  ×  Es ⫃ Ds
-⩭⇒⊆ {zero} {lift tt} {lift tt} tt = ⟨ tt , tt ⟩
-⩭⇒⊆ {suc n} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} ⟨ D=E , Ds=Es ⟩ =
-    ⟨ ⟨ (proj₁ D=E) , (proj₁ (⩭⇒⊆ Ds=Es)) ⟩ ,
-    ⟨ (proj₂ D=E) , (proj₂ (⩭⇒⊆ Ds=Es)) ⟩ ⟩
+⩭-sym = λ {n}{Ds}{Es} → rel-∏-sym {n}{𝒫 Value}{R = _≃_}{Ds}{Es} ≃-sym 
 
-𝒯-cong-≃ : ∀{n}{Ds Es : ∏ n (𝒫 Value)}
-  → Ds ⩭ Es
-  → 𝒯 n Ds ≃ 𝒯 n Es
+⩭⇒⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)} → Ds ⩭ Es → Ds ⫃ Es  ×  Es ⫃ Ds
+⩭⇒⊆ {n}{Ds}{Es} Ds=Es =
+    ⟨ rel-∏-⇒ (λ x y → proj₁) Ds=Es , rel-∏-⇒ (λ x y → proj₁) (⩭-sym Ds=Es) ⟩
+    
+𝒯-cong-≃ : ∀{n}{Ds Es : ∏ n (𝒫 Value)} → Ds ⩭ Es → 𝒯 n Ds ≃ 𝒯 n Es
 𝒯-cong-≃ {n}{Ds}{Es} Ds=Es
     with ⩭⇒⊆ Ds=Es
 ... | ⟨ Ds⊆Es , Es⊆Ds ⟩ =    
   ⟨ 𝒯-cong-⊆ Ds⊆Es , 𝒯-cong-⊆ Es⊆Ds ⟩
-  
+
+proj-cong-⊆ : ∀{D E : 𝒫 Value}{i} → D ⊆ E → proj D i ⊆ proj E i
+proj-cong-⊆ D⊆E v ⟨ vs , ⟨ vs∈D , refl ⟩ ⟩ =
+                  ⟨ vs , ⟨ (D⊆E ⟬ vs ⟭ vs∈D) , refl ⟩ ⟩
+
+proj-cong-≃ : ∀{D E : 𝒫 Value}{i} → D ≃ E → proj D i ≃ proj E i
+proj-cong-≃ D≃E = ⟨ (proj-cong-⊆ (proj₁ D≃E)) , (proj-cong-⊆ (proj₂ D≃E)) ⟩  
+
 
 {- Cons and Car  --------------------------------------------------------------}
 
@@ -553,4 +555,40 @@ cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
 
+monotone-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Set₁
+monotone-envs {n} Ds = ∀{ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x) → Ds ρ ⫃ Ds ρ′ 
 
+continuous-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Env → Set₁
+continuous-envs {n} Ds ρ = ∀ v → v ∈ 𝒯 n (Ds ρ)
+                     → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ 𝒯 n (Ds ρ′)
+
+next-Ds : ∀{n}
+   → (Env → ∏ (suc n) (𝒫 Value))
+   → (Env → ∏ n (𝒫 Value))
+next-Ds Ds ρ
+    with Ds ρ
+... | ⟨ D , Ds′ ⟩ = Ds′
+
+𝒯-continuous : ∀{n}{Ds : Env → ∏ n (𝒫 Value)}{ρ}{NE-ρ : nonempty-env ρ}
+    {u : Value}
+  → u ∈ 𝒯 n (Ds ρ) → continuous-envs Ds ρ → monotone-envs Ds
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ 𝒯 n (Ds ρ₃)
+𝒯-continuous {zero} {Ds} {ρ} {NE-ρ} {u} u∈𝒯Ds cDs mDs
+    with Ds (initial-finite-env ρ NE-ρ) | u
+... | lift tt | ⟬ [] ⟭ =
+  ⟨ (initial-finite-env ρ NE-ρ) , ⟨ initial-fin ρ NE-ρ ,
+  ⟨ initial-fin-⊆ ρ NE-ρ , tt ⟩ ⟩ ⟩
+𝒯-continuous {suc n} {Ds} {ρ} {NE-ρ} {⟬ v ∷ vs ⟭} vs∈𝒯Ds cDs mDs =
+  let IH = 𝒯-continuous{n}{next-Ds Ds}{ρ}{NE-ρ}{⟬ vs ⟭} {!!} {!!} {!!} in
+  {!!}
+
+
+
+proj-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}{i}
+  → u ∈ proj (D ρ) i → continuous-env D ρ → monotone-env D
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ proj (D ρ₃) i
+proj-continuous {D} {ρ} {NE-ρ} {u} {i} ⟨ vs , ⟨ vs∈Dρ , refl ⟩ ⟩ cD mD
+    with cD ⟬ vs ⟭ vs∈Dρ
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , vs∈Dρ′ ⟩ ⟩ ⟩ =     
+    ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ ,
+    ⟨ vs , ⟨ mD (λ x d z → z) ⟬ vs ⟭ vs∈Dρ′ , refl ⟩ ⟩ ⟩ ⟩ ⟩

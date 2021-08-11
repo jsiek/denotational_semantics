@@ -1,5 +1,5 @@
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; _++_; length)
+open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
 open import Data.List.Properties using (++-conicalˡ)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
@@ -28,37 +28,52 @@ module SemanticProperties (Op : Set) (sig : Op → List Sig) where
 open Syntax.OpSig Op sig
 open import Fold2 Op sig
 
-rel-args : ∀{ℓ}{T : Set ℓ}
-   → (∀ b → ArgTy T b → ArgTy T b → Set₁)
-   → ∀ bs → Tuple bs (ArgTy T) → Tuple bs (ArgTy T) → Set₁
-rel-args R [] xs ys = Lift (lsuc lzero) True
-rel-args R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ = (R b x y) × (rel-args R bs xs ys)
+all-args : (∀ b → Arg b → Set₁) → ∀ bs → Args bs → Set₁
+all-args P [] args = Lift (lsuc lzero) True
+all-args P (b ∷ bs) (cons arg args) = P b arg × all-args P bs args
 
-⊆-arg : ∀ b → ArgTy (𝒫 Value) b → ArgTy (𝒫 Value) b → Set₁
-⊆-arg ■ x y = Lift (lsuc lzero) (x ⊆ y)
-⊆-arg (ν b) f g = ∀ X → ⊆-arg b (f X) (g X)
-⊆-arg (∁ b) x y = ⊆-arg b x y
+rel-results : ∀{ℓ}{T : Set ℓ}
+   → (∀ b → Result T b → Result T b → Set₁)
+   → ∀ bs → Tuple bs (Result T) → Tuple bs (Result T) → Set₁
+rel-results R [] xs ys = Lift (lsuc lzero) True
+rel-results R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ =
+    (R b x y) × (rel-results R bs xs ys)
 
-⊆-args = rel-args ⊆-arg
+⊆-result : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁
+⊆-result ■ x y = Lift (lsuc lzero) (x ⊆ y)
+⊆-result (ν b) f g = ∀ X → ⊆-result b (f X) (g X)
+⊆-result (∁ b) x y = ⊆-result b x y
 
-pred-args : (∀ b → Arg b → Set₁) → ∀ bs → Args bs → Set₁
-pred-args P [] args = Lift (lsuc lzero) True
-pred-args P (b ∷ bs) (cons arg args) = P b arg × pred-args P bs args
+⊆-results = rel-results ⊆-result
+
+⊆-result⇒⊆ : ∀ D E → ⊆-result ■ D E → D ⊆ E
+⊆-result⇒⊆ D E (lift D⊆E) = D⊆E
+
+rel-results⇒rel-∏ : ∀{n}{xs ys : ∏ n (𝒫 Value)}
+    {R : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁}
+    {R′ : 𝒫 Value → 𝒫 Value → Set}
+  → (∀ x y → R ■ x y → R′ x y)
+  → rel-results R (replicate n ■) xs ys
+  → rel-∏ R′ xs ys
+rel-results⇒rel-∏ {zero} R⇒R′ (lift tt) = tt
+rel-results⇒rel-∏ {suc n}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
+    ⟨ R⇒R′ x y Rxy , (rel-results⇒rel-∏ R⇒R′ R[xs,ys]) ⟩
+
 
 
 record Semantics : Set₁ where
-  field interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
+  field interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
   
   ⟦_⟧ : ABT → Env → 𝒫 Value
   ⟦ M ⟧ ρ = fold interp-op ∅ ρ M
 
-  ⟦_⟧ₐ : ∀{b} → Arg b → Env  → ArgTy (𝒫 Value) b
+  ⟦_⟧ₐ : ∀{b} → Arg b → Env  → Result (𝒫 Value) b
   ⟦ arg ⟧ₐ ρ = fold-arg interp-op ∅ ρ arg
 
-  ⟦_⟧₊ : ∀{bs} → Args bs → Env  → Tuple bs (ArgTy (𝒫 Value))
+  ⟦_⟧₊ : ∀{bs} → Args bs → Env  → Tuple bs (Result (𝒫 Value))
   ⟦ args ⟧₊ ρ = fold-args interp-op ∅ ρ args
 
-  field mono-op : ∀{op}{xs}{ys} → ⊆-args (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
+  field mono-op : ∀{op}{xs}{ys} → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
 
   Cont-Env-Arg : ∀ {{_ : Semantics}} (ρ : Env) (NE-ρ : nonempty-env ρ)
     → ∀ b → (arg : Arg b)  → Set₁
@@ -73,7 +88,7 @@ open Semantics {{...}}
 
 record ContinuousSemantics : Set₁ where
   field {{Sem}} : Semantics
-  field continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args} → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ → pred-args (Cont-Env-Arg ρ NE-ρ) (sig op) args  →   Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
+  field continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args} → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args  →   Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
 
 open ContinuousSemantics {{...}}
 
@@ -82,9 +97,9 @@ open ContinuousSemantics {{...}}
 ⟦⟧-monotone : ∀{{_ : Semantics}} {ρ ρ′} (M : ABT)
   →  ρ ⊆ₑ ρ′ →  ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
 ⟦⟧-monotone-arg : ∀{{_ : Semantics}} {b}{ρ ρ′} (arg : Arg b)
-  →  ρ ⊆ₑ ρ′ →  ⊆-arg b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
+  →  ρ ⊆ₑ ρ′ →  ⊆-result b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
 ⟦⟧-monotone-args : ∀{{_ : Semantics}} {bs}{ρ ρ′} (args : Args bs)
-  →  ρ ⊆ₑ ρ′  →  ⊆-args bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
+  →  ρ ⊆ₑ ρ′  →  ⊆-results bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
   
 ⟦⟧-monotone {ρ}{ρ′} (` x) ρ<ρ′ = ρ<ρ′ x
 ⟦⟧-monotone {ρ}{ρ′} (op ⦅ args ⦆) ρ<ρ′ = mono-op (⟦⟧-monotone-args  args ρ<ρ′)
@@ -116,7 +131,7 @@ open ContinuousSemantics {{...}}
   → Cont-Env-Arg ρ NE-ρ b arg 
 ⟦⟧-cont-env-args : ∀{{_ : ContinuousSemantics}}
     {ρ}{NE-ρ : nonempty-env ρ}{bs} (args : Args bs)
-  → pred-args (Cont-Env-Arg ρ NE-ρ) bs args
+  → all-args (Cont-Env-Arg ρ NE-ρ) bs args
 
 ⟦⟧-continuous {ρ}{NE-ρ} (` x) v v∈⟦M⟧ρ =
    ⟨ (single-env x ⌈ v ⌉ ρ NE-ρ) , ⟨ (single-fin {v}{x}) , ⟨ (single-⊆ v∈⟦M⟧ρ) ,
