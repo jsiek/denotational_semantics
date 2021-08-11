@@ -37,8 +37,8 @@ interp-op (lit P k) _ = ℘ P k
 interp-op pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
 interp-op fst-op ⟨ D , _ ⟩  = car D
 interp-op snd-op ⟨ D , _ ⟩ = cdr D
-interp-op (tuple n) args = make-tuple n args
-interp-op (get i) ⟨ D , _ ⟩ =  tuple-nth D i
+interp-op (tuple n) args = 𝒯 n args
+interp-op (get i) ⟨ D , _ ⟩ = proj D i
 
 {- interp-op is monotonic -}
 mono-op : {op : Op} {xs ys : Tuple (sig op) (ArgTy (𝒫 Value))}
@@ -52,21 +52,12 @@ mono-op {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-cong-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-cong-⊆ D⊆E 
 mono-op {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-cong-⊆ D⊆E 
-mono-op {tuple n} {args₁}{args₂} IHs = mono-tuple n args₁ args₂ IHs
-    where
-    mono-tuple : ∀ n 
-       (args₁ : Tuple (Data.List.replicate n ■) (ArgTy (𝒫 Value)))
-       (args₂ : Tuple (Data.List.replicate n ■) (ArgTy (𝒫 Value)))
-       (IHs : ⊆-args (Data.List.replicate n ■) args₁ args₂)
-       → make-tuple n args₁ ⊆ make-tuple n args₂
-    mono-tuple zero args₁ args₂ IHs d _ = {!!}
-    mono-tuple (suc n) ⟨ D , args₁ ⟩ ⟨ E , args₂ ⟩ ⟨ lift DE , IHs ⟩ =
-        let IH = mono-tuple n args₁ args₂ IHs in
-        {!!}
-{-        
-        𝒫set-cong-⊆ i D (make-tuple (suc i) n args₁)
-            E (make-tuple (suc i) n args₂) DE IH
--}
+mono-op {tuple n} {args₁}{args₂} IHs = 𝒯-cong-⊆ (⊆-args⇒⫃ IHs)
+  where
+  ⊆-args⇒⫃ : ∀{n}{xs ys} → ⊆-args (replicate n ■) xs ys → xs ⫃ ys
+  ⊆-args⇒⫃ {zero} {xs} {ys} xs⊆ys = tt
+  ⊆-args⇒⫃ {suc n} {⟨ x , xs ⟩} {⟨ y , ys ⟩} ⟨ x⊆y , xs⊆ys ⟩ =
+    ⟨ (lower x⊆y) , (⊆-args⇒⫃ xs⊆ys) ⟩
 mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ =
     {!!}
 
@@ -222,34 +213,34 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     ⟦ N ⟧ ρ                        ∎ where open ≃-Reasoning
 ⟦⟧—→ {_} {_} {ρ} {NE-ρ} (get-rule {n}{i}{args} vs) =
     ⟦ get i ⦅ cons (ast (tuple n ⦅ args ⦆)) nil ⦆ ⟧ ρ   ≃⟨⟩
-    tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args vs ⟩
+    proj (𝒯 n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args vs ⟩
     ⟦ nth-arg args i ⟧ ρ               ∎
     where
     open ≃-Reasoning
     G : ∀ i n (args : Args (replicate n ■)) → ArgsValue args
-       → tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i ≃ ⟦ nth-arg args i ⟧ ρ
+       → proj (𝒯 n (⟦ args ⟧₊ ρ)) i ≃ ⟦ nth-arg args i ⟧ ρ
     G i zero nil vs = ⟨ H , J ⟩
       where
-      H : tuple-nth (make-tuple zero (⟦ nil ⟧₊ ρ)) i ⊆ ⟦ $ (base Nat) 0 ⟧ ρ
-      H v ⟨ vs , ⟨ ⫃-nil , refl ⟩ ⟩ = refl
-      J : ⟦ $ (base Nat) 0 ⟧ ρ ⊆ tuple-nth (make-tuple zero (⟦ nil ⟧₊ ρ)) i
+      H : proj (𝒯 zero (⟦ nil ⟧₊ ρ)) i ⊆ ⟦ $ (base Nat) 0 ⟧ ρ
+      H v ⟨ vs , ⟨ _ , refl ⟩ ⟩ = {!!}
+      J : ⟦ $ (base Nat) 0 ⟧ ρ ⊆ proj (𝒯 zero (⟦ nil ⟧₊ ρ)) i
       J (const {B} k) xx
           with base-eq? Nat B | xx
-      ... | yes refl | refl = ⟨ [] , ⟨ ⫃-nil , refl ⟩ ⟩
+      ... | yes refl | refl = ⟨ [] , ⟨ {!!} , refl ⟩ ⟩
       ... | no neq | ()
 
     G 0 (suc n) (cons (ast M) args) (V-cons Mv vs) = 
-      tuple-nth (make-tuple (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) zero   ≃⟨⟩
-      tuple-nth (make-tuple (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) zero   ≃⟨ make-tuple-nth-0 (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩
+      proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) zero   ≃⟨⟩
+      proj (𝒯 (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) zero   ≃⟨ 𝒯-nth-0 (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩
       ⟦ M ⟧ ρ                                  ≃⟨⟩
       ⟦ nth-arg (cons (ast M) args) zero ⟧ ρ   ∎
     G (suc i) (suc n) (cons (ast M) args) (V-cons Mv vs) =
         let IH = G i n args vs in
-        tuple-nth (make-tuple (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) (suc i) ≃⟨⟩ 
-        tuple-nth (make-tuple (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) (suc i)
-                                  ≃⟨ make-tuple-nth-suc (value-nonempty NE-ρ Mv)
+        proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) (suc i) ≃⟨⟩ 
+        proj (𝒯 (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) (suc i)
+                                  ≃⟨ 𝒯-nth-suc (value-nonempty NE-ρ Mv)
                                             (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩ 
-        tuple-nth (make-tuple n (⟦ args ⟧₊ ρ)) i             ≃⟨ IH ⟩ 
+        proj (𝒯 n (⟦ args ⟧₊ ρ)) i             ≃⟨ IH ⟩ 
         ⟦ nth-arg args i ⟧ ρ ∎
 
     

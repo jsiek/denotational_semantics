@@ -31,6 +31,7 @@ open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
+open import Level using (lift)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 {- Finite Sets represented by Lists -------------------------------------------}
@@ -110,78 +111,61 @@ car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
 cdr : 𝒫 Value → 𝒫 Value
 cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
 
-{-
-𝒫any : 𝒫 Value
-𝒫any u = True
-
-𝒫set : ∀ (i : ℕ) → 𝒫 Value → 𝒫 Value → 𝒫 Value
-𝒫set i D Ds u = (Σ[ w ∈ Value ] u ≡ ((const i) ∷ []) ↦ w  ×  w ∈ D)  ⊎  Ds u
-
-make-tuple : ∀ (i : ℕ) n → Tuple (replicate n ■) (ArgTy (𝒫 Value)) → 𝒫 Value
-make-tuple i zero ptop = 𝒫any
-make-tuple i (suc n) ⟨ d , ds ⟩ = 𝒫set i d (make-tuple (suc i) n ds)
--}
-
 ∏ : ℕ → Set₁ → Set₁
 ∏ n T = Tuple (replicate n ■) (ArgTy T)
 
-data _⫃_ : ∀{n} → List Value → ∏ n (𝒫 Value) → Set
-  where
-  ⫃-nil : [] ⫃ ptt
-  ⫃-cons : ∀{v : Value}{vs : List Value}{D : 𝒫 Value}{n}{Ds : ∏ n (𝒫 Value)}
-      → v ∈ D → vs ⫃ Ds → (v ∷ vs) ⫃ ⟨ D , Ds ⟩ 
-
-make-tuple : ∀ n → ∏ n (𝒫 Value) → 𝒫 Value
-make-tuple n Ds ⟬ vs ⟭ = vs ⫃ Ds
-make-tuple n Ds _ = False
+𝒯 : ∀ n → ∏ n (𝒫 Value) → 𝒫 Value
+𝒯 zero _ ⟬ [] ⟭ = True
+𝒯 (suc n) ⟨ D , Ds ⟩ ⟬ v ∷ vs ⟭ = v ∈ D  ×  𝒯 n Ds ⟬ vs ⟭
+𝒯 n Ds _ = False
 
 nth : List Value → ℕ → Value
 nth [] i = const 0
 nth (v ∷ vs) 0 = v
 nth (v ∷ vs) (suc i) = nth vs i
 
-tuple-nth : 𝒫 Value → ℕ → 𝒫 Value
-tuple-nth D i u = Σ[ vs ∈ List Value ] ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
+proj : 𝒫 Value → ℕ → 𝒫 Value
+proj D i u = Σ[ vs ∈ List Value ] ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
 
 data NE-∏ : ∀{n} → ∏ n (𝒫 Value) → Set where
   NE-∏-nil : NE-∏ ptt
   NE-∏-cons : ∀{D}{n}{Ds : ∏ n (𝒫 Value)}
      → nonempty D → NE-∏ Ds → NE-∏ ⟨ D , Ds ⟩
 
-NE-∏⇒⫃ : ∀{n}{Ds : ∏ n (𝒫 Value)}
+NE-∏⇒𝒯 : ∀{n}{Ds : ∏ n (𝒫 Value)}
    → NE-∏ Ds
-   → Σ[ vs ∈ List Value ] vs ⫃ Ds
-NE-∏⇒⫃ {zero} {ptt} NE-Ds = ⟨ [] , ⫃-nil ⟩
-NE-∏⇒⫃ {suc n} {⟨ D , Ds ⟩} (NE-∏-cons ⟨ v , v∈D ⟩ NE-Ds)
-    with NE-∏⇒⫃ {n} {Ds} NE-Ds
-... | ⟨ vs , vs⊆ ⟩ = ⟨ v ∷ vs , ⫃-cons v∈D vs⊆ ⟩
+   → Σ[ vs ∈ List Value ] 𝒯 n Ds ⟬ vs ⟭
+NE-∏⇒𝒯 {zero} {ptt} NE-Ds = ⟨ [] , tt ⟩
+NE-∏⇒𝒯 {suc n} {⟨ D , Ds ⟩} (NE-∏-cons ⟨ v , v∈D ⟩ NE-Ds)
+    with NE-∏⇒𝒯 {n} {Ds} NE-Ds
+... | ⟨ vs , vs⊆ ⟩ = ⟨ v ∷ vs , ⟨ v∈D , vs⊆ ⟩ ⟩
 
-make-tuple-nth-0 : ∀{n}{D}{Ds}
+𝒯-nth-0 : ∀{n}{D}{Ds}
    → NE-∏ Ds
-   → tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0 ≃ D
-make-tuple-nth-0 {n}{D}{Ds} NE-Ds = ⟨ G , H ⟩
+   → proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0 ≃ D
+𝒯-nth-0 {n}{D}{Ds} NE-Ds = ⟨ G , H ⟩
   where
-  G : tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0 ⊆ D
-  G v ⟨ vs , ⟨ ⫃-cons v∈D vs⊆Ds , refl ⟩ ⟩ = v∈D
-  H : D ⊆ tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) 0
+  G : proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0 ⊆ D
+  G .v ⟨ v ∷ vs , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ = v∈D
+  H : D ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0
   H v v∈D
-      with NE-∏⇒⫃ NE-Ds
+      with NE-∏⇒𝒯 NE-Ds
   ... | ⟨ vs , vs⊆ ⟩ =
-        ⟨ (v ∷ vs) , ⟨ (⫃-cons v∈D vs⊆) , refl ⟩ ⟩
+        ⟨ (v ∷ vs) , ⟨ ⟨ v∈D , vs⊆ ⟩ , refl ⟩ ⟩
 
-make-tuple-nth-suc : ∀{i}{n}{D}{Ds}
+𝒯-nth-suc : ∀{i}{n}{D}{Ds}
    → nonempty D → NE-∏ Ds
-   → tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) (suc i)
-   ≃ tuple-nth (make-tuple n Ds) i
-make-tuple-nth-suc {i}{n}{D}{Ds} ⟨ u , u∈D ⟩ NE-Ds = ⟨ G , H ⟩
+   → proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
+   ≃ proj (𝒯 n Ds) i
+𝒯-nth-suc {i}{n}{D}{Ds} ⟨ u , u∈D ⟩ NE-Ds = ⟨ G , H ⟩
   where
-  G : tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) (suc i)
-      ⊆ tuple-nth (make-tuple n Ds) i
-  G v ⟨ vs , ⟨ ⫃-cons{v′}{vs′} v′∈D vs′⊆Ds , refl ⟩ ⟩ =
-      ⟨ vs′ , ⟨ vs′⊆Ds , refl ⟩ ⟩
-  H : tuple-nth (make-tuple n Ds) i
-      ⊆ tuple-nth (make-tuple (suc n) ⟨ D , Ds ⟩) (suc i)
-  H v ⟨ vs , ⟨ vs⊆Ds , eq ⟩ ⟩ = ⟨ u ∷ vs , ⟨ (⫃-cons u∈D vs⊆Ds) , eq ⟩ ⟩
+  G : proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
+      ⊆ proj (𝒯 n Ds) i
+  G u ⟨ v ∷ vs , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ =
+      ⟨ vs , ⟨ ⟬vs⟭∈𝒯Ds , refl ⟩ ⟩
+  H : proj (𝒯 n Ds) i
+      ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
+  H v ⟨ vs , ⟨ vs⊆Ds , eq ⟩ ⟩ = ⟨ u ∷ vs , ⟨ ⟨ u∈D , vs⊆Ds ⟩ , eq ⟩ ⟩
 
 
 {- Application is a Congruence ------------------------------------------------}
@@ -287,14 +271,37 @@ cdr-cong : ∀{D₁ D₃ : 𝒫 Value}
 cdr-cong ⟨ d13 , d31 ⟩  =
     ⟨ (cdr-cong-⊆ d13) , (λ { v ⟨ u , uv∈D₃ ⟩ → ⟨ u , d31 ❲ u , v ❳ uv∈D₃ ⟩}) ⟩
 
-{-
-𝒫set-cong-⊆ : ∀ i (D Ds E Es : 𝒫 Value)
-   → D ⊆ E → Ds ⊆ Es
-   → 𝒫set i D Ds ⊆ 𝒫set i E Es
-𝒫set-cong-⊆ i D Ds E Es D⊆E Ds⊆Es u (inj₁ ⟨ w , ⟨ refl , w∈D ⟩ ⟩) =
-  inj₁ ⟨ w , ⟨ refl , (D⊆E w w∈D) ⟩ ⟩
-𝒫set-cong-⊆ i D Ds E Es D⊆E Ds⊆Es u (inj₂ u∈Ds) = inj₂ (Ds⊆Es u u∈Ds)
--}  
+_⫃_ : ∀{n} → ∏ n (𝒫 Value) → ∏ n (𝒫 Value) → Set
+_⫃_ {zero} (lift tt) (lift tt) = True
+_⫃_ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = D ⊆ E  ×  (Ds ⫃ Es)
+
+𝒯-cong-⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)}
+  → Ds ⫃ Es
+  → 𝒯 n Ds ⊆ 𝒯 n Es
+𝒯-cong-⊆ {zero} {lift tt} {lift tt} Ds⊆Es v v∈ = v∈
+𝒯-cong-⊆ {suc n} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} ⟨ D⊆E , Ds⊆Es ⟩ ⟬ v ∷ vs ⟭
+    ⟨ v∈D , vs∈𝒯Ds ⟩ = ⟨ (D⊆E v v∈D) , (𝒯-cong-⊆ Ds⊆Es ⟬ vs ⟭ vs∈𝒯Ds) ⟩
+
+_⩭_ : ∀{n} → ∏ n (𝒫 Value) → ∏ n (𝒫 Value) → Set
+_⩭_ {zero} (lift tt) (lift tt) = True
+_⩭_ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = D ≃ E  ×  Ds ⩭ Es
+
+⩭⇒⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)}
+  → Ds ⩭ Es
+  → Ds ⫃ Es  ×  Es ⫃ Ds
+⩭⇒⊆ {zero} {lift tt} {lift tt} tt = ⟨ tt , tt ⟩
+⩭⇒⊆ {suc n} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} ⟨ D=E , Ds=Es ⟩ =
+    ⟨ ⟨ (proj₁ D=E) , (proj₁ (⩭⇒⊆ Ds=Es)) ⟩ ,
+    ⟨ (proj₂ D=E) , (proj₂ (⩭⇒⊆ Ds=Es)) ⟩ ⟩
+
+𝒯-cong-≃ : ∀{n}{Ds Es : ∏ n (𝒫 Value)}
+  → Ds ⩭ Es
+  → 𝒯 n Ds ≃ 𝒯 n Es
+𝒯-cong-≃ {n}{Ds}{Es} Ds=Es
+    with ⩭⇒⊆ Ds=Es
+... | ⟨ Ds⊆Es , Es⊆Ds ⟩ =    
+  ⟨ 𝒯-cong-⊆ Ds⊆Es , 𝒯-cong-⊆ Es⊆Ds ⟩
+  
 
 {- Cons and Car  --------------------------------------------------------------}
 
@@ -545,4 +552,5 @@ cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
     with cD ❲ u , v ❳ uv∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
+
 

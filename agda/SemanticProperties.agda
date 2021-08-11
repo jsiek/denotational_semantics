@@ -30,8 +30,7 @@ open import Fold2 Op sig
 
 rel-args : ∀{ℓ}{T : Set ℓ}
    → (∀ b → ArgTy T b → ArgTy T b → Set₁)
-   → ∀ bs → Tuple bs (ArgTy T)
-   → Tuple bs (ArgTy T) → Set₁
+   → ∀ bs → Tuple bs (ArgTy T) → Tuple bs (ArgTy T) → Set₁
 rel-args R [] xs ys = Lift (lsuc lzero) True
 rel-args R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ = (R b x y) × (rel-args R bs xs ys)
 
