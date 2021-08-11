@@ -119,6 +119,12 @@ cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
 𝒯 (suc n) ⟨ D , Ds ⟩ ⟬ v ∷ vs ⟭ = v ∈ D  ×  𝒯 n Ds ⟬ vs ⟭
 𝒯 n Ds _ = False
 
+v∈𝒯⇒v≡⟬vs⟭ : ∀{n}{Ds}{v}
+  → v ∈ 𝒯 n Ds
+  → Σ[ vs ∈ List Value ] v ≡ ⟬ vs ⟭
+v∈𝒯⇒v≡⟬vs⟭ {zero} {Ds} {⟬ x ⟭} v∈ = ⟨ x , refl ⟩
+v∈𝒯⇒v≡⟬vs⟭ {suc n} {Ds} {⟬ x ⟭} v∈ = ⟨ x , refl ⟩
+
 nth : List Value → ℕ → Value
 nth [] i = const 0
 nth (v ∷ vs) 0 = v
@@ -555,6 +561,14 @@ cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
 
+{-
+monotone-envs {zero} Ds = ⊤
+monotone-envs {suc n} Ds =
+  ∀{ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x) →
+      proj₁ (Ds ρ) ⊆ proj₁ (Ds ρ′) ×
+      proj₂ (Ds ρ) ⫃ proj₂ (Ds ρ′)
+-}
+
 monotone-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Set₁
 monotone-envs {n} Ds = ∀{ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x) → Ds ρ ⫃ Ds ρ′ 
 
@@ -562,27 +576,81 @@ continuous-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Env → Set₁
 continuous-envs {n} Ds ρ = ∀ v → v ∈ 𝒯 n (Ds ρ)
                      → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ 𝒯 n (Ds ρ′)
 
-next-Ds : ∀{n}
-   → (Env → ∏ (suc n) (𝒫 Value))
-   → (Env → ∏ n (𝒫 Value))
+next-Ds : ∀{n} → (Env → ∏ (suc n) (𝒫 Value)) → (Env → ∏ n (𝒫 Value))
 next-Ds Ds ρ
     with Ds ρ
 ... | ⟨ D , Ds′ ⟩ = Ds′
 
+next-Ds-proj₂ : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}{ρ}
+   → next-Ds Ds ρ ≡ proj₂ (Ds ρ)
+next-Ds-proj₂ {n} {Ds} {ρ}
+    with Ds ρ
+... | ⟨ a , b ⟩ = refl
+
+next-mono-envs : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}
+   → monotone-envs Ds
+   → monotone-envs (next-Ds Ds)
+next-mono-envs {n}{Ds} mDs {ρ}{ρ′} ρ⊆ρ′
+    with Ds ρ | Ds ρ′ | mDs {ρ}{ρ′} ρ⊆ρ′
+... | ⟨ Dρ , Dsρ ⟩  | ⟨ Dρ′ , Dsρ′ ⟩ | ⟨ Dρ⊆Dρ′ , Dsρ⊆Dsρ′ ⟩ =
+    Dsρ⊆Dsρ′
+
+next-NE-Ds : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}{ρ}
+  → NE-∏ (Ds ρ)
+  → NE-∏ (next-Ds Ds ρ)
+next-NE-Ds{n}{Ds}{ρ} NE-Ds
+    with Ds ρ | NE-Ds
+... | ⟨ Dρ , Dsρ ⟩ | ⟨ NE-D , NE-Ds′ ⟩ = NE-Ds′
+
+next-cont-envs : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}{ρ}{NE-ρ : nonempty-env ρ}
+   → NE-∏ (Ds ρ)
+   → continuous-envs Ds ρ
+   → continuous-envs (next-Ds Ds) ρ
+next-cont-envs {n} {Ds} {ρ}{NE-ρ} NE-Ds cDs u u∈
+    with Ds ρ | cDs | u∈ | NE-Ds
+... | ⟨ D , Ds′ ⟩ | cDDs | u∈′ | NE-DDs
+    with v∈𝒯⇒v≡⟬vs⟭ u∈′
+... | ⟨ vs , refl ⟩
+    with NE-DDs 
+... | ⟨ ⟨ v , v∈D ⟩ , NE-Ds′ ⟩ 
+    with cDDs ⟬ v ∷ vs ⟭ ⟨ v∈D , u∈′ ⟩
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , ⟨ aaa , vs∈Dsρ′ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , vs∈Dsρ′ ⟩ ⟩ ⟩
+
 𝒯-continuous : ∀{n}{Ds : Env → ∏ n (𝒫 Value)}{ρ}{NE-ρ : nonempty-env ρ}
     {u : Value}
   → u ∈ 𝒯 n (Ds ρ) → continuous-envs Ds ρ → monotone-envs Ds
+   → NE-∏ (Ds ρ)
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ 𝒯 n (Ds ρ₃)
-𝒯-continuous {zero} {Ds} {ρ} {NE-ρ} {u} u∈𝒯Ds cDs mDs
+𝒯-continuous {zero} {Ds} {ρ} {NE-ρ} {u} u∈𝒯Ds cDs mDs NE-Ds
     with Ds (initial-finite-env ρ NE-ρ) | u
 ... | lift tt | ⟬ [] ⟭ =
   ⟨ (initial-finite-env ρ NE-ρ) , ⟨ initial-fin ρ NE-ρ ,
   ⟨ initial-fin-⊆ ρ NE-ρ , tt ⟩ ⟩ ⟩
-𝒯-continuous {suc n} {Ds} {ρ} {NE-ρ} {⟬ v ∷ vs ⟭} vs∈𝒯Ds cDs mDs =
-  let IH = 𝒯-continuous{n}{next-Ds Ds}{ρ}{NE-ρ}{⟬ vs ⟭} {!!} {!!} {!!} in
-  {!!}
-
-
+𝒯-continuous {suc n} {Ds} {ρ} {NE-ρ} {⟬ v ∷ vs ⟭} ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩
+    cDs mDs NE-Ds
+    with 𝒯-continuous{n}{next-Ds Ds}{ρ}{NE-ρ}{⟬ vs ⟭}
+       (subst (λ X → ⟬ vs ⟭ ∈ 𝒯 n X) (sym (next-Ds-proj₂{n}{Ds}{ρ})) vs∈𝒯Dsρ)
+       (next-cont-envs{NE-ρ = NE-ρ} NE-Ds cDs) (next-mono-envs mDs)
+       (next-NE-Ds{Ds = Ds}{ρ} NE-Ds)
+       
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , vs∈𝒯Dsρ₁ ⟩ ⟩ ⟩
+    with cDs ⟬ v ∷ vs ⟭ ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , ⟨ v∈Dρ₂ , vs∈Dsρ₂ ⟩ ⟩ ⟩ ⟩
+    with mDs{ρ₁}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₁ z
+... | ⟨ _ , Dsρ₁⊆Dsρ₃ ⟩ 
+    with mDs{ρ₂}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₂ z
+... | ⟨ Dρ₂⊆Dρ₃ , _ ⟩ =
+    let vs∈Dsρ₃ = 𝒯-cong-⊆ Dsρ₁⊆Dsρ₃ ⟬ vs ⟭ vs∈𝒯Dsρ₁ in
+    let v∈Dρ₃ = Dρ₂⊆Dρ₃ v v∈Dρ₂ in
+    ⟨ ρ₃ , ⟨ (join-finite-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
+    ⟨ v∈Dρ₃ , vs∈Dsρ₃ ⟩ ⟩ ⟩ ⟩
+    where
+    ρ₃ = ρ₁ ⊔ₑ ρ₂
+    ρ₁⊆ρ₃ : ρ₁ ⊆ₑ ρ₃
+    ρ₁⊆ρ₃ = λ x v z → inj₁ z
+    ρ₂⊆ρ₃ : ρ₂ ⊆ₑ ρ₃
+    ρ₂⊆ρ₃ = λ x v z → inj₂ z
 
 proj-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}{i}
   → u ∈ proj (D ρ) i → continuous-env D ρ → monotone-env D

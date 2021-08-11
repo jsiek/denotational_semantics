@@ -100,11 +100,7 @@ continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
 continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
-   let Ds : Env → ∏ n (𝒫 Value)
-       Ds = ⟦ args ⟧₊ in
-   let xx : v ∈ 𝒯 n (Ds ρ)
-       xx = v∈⟦M⟧ρ in
-   {!!}
+   𝒯-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ {!!} {!!} {!!}
 continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
     proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
 
