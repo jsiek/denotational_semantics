@@ -31,7 +31,8 @@ open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
-open import Level using (Level; lift)
+open import Level using (Level; Lift; lift)
+    renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 {- Finite Sets represented by Lists -------------------------------------------}
@@ -398,6 +399,35 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 monotone-env : (Env → 𝒫 Value) → Set₁
 monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ D ρ′
 
+{- Needs a name ---------------------------------------------------------------}
+
+rel-results : ∀{ℓ}{T : Set ℓ}
+   → (∀ b → Result T b → Result T b → Set₁)
+   → ∀ bs → Tuple bs (Result T) → Tuple bs (Result T) → Set₁
+rel-results R [] xs ys = Lift (lsuc lzero) True
+rel-results R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ =
+    (R b x y) × (rel-results R bs xs ys)
+
+⊆-result : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁
+⊆-result ■ x y = Lift (lsuc lzero) (x ⊆ y)
+⊆-result (ν b) f g = ∀ X → ⊆-result b (f X) (g X)
+⊆-result (∁ b) x y = ⊆-result b x y
+
+⊆-results = rel-results ⊆-result
+
+⊆-result⇒⊆ : ∀ D E → ⊆-result ■ D E → D ⊆ E
+⊆-result⇒⊆ D E (lift D⊆E) = D⊆E
+
+rel-results⇒rel-∏ : ∀{n}{xs ys : ∏ n (𝒫 Value)}
+    {R : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁}
+    {R′ : 𝒫 Value → 𝒫 Value → Set}
+  → (∀ x y → R ■ x y → R′ x y)
+  → rel-results R (replicate n ■) xs ys
+  → rel-∏ R′ xs ys
+rel-results⇒rel-∏ {zero} R⇒R′ (lift tt) = tt
+rel-results⇒rel-∏ {suc n}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
+    ⟨ R⇒R′ x y Rxy , (rel-results⇒rel-∏ R⇒R′ R[xs,ys]) ⟩
+
 {- Continuous -----------------------------------------------------------------}
 
 continuous-∈ : (Env → 𝒫 Value) → Env → Value → Set₁
@@ -561,16 +591,8 @@ cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
 
-{-
-monotone-envs {zero} Ds = ⊤
-monotone-envs {suc n} Ds =
-  ∀{ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x) →
-      proj₁ (Ds ρ) ⊆ proj₁ (Ds ρ′) ×
-      proj₂ (Ds ρ) ⫃ proj₂ (Ds ρ′)
--}
-
-monotone-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Set₁
-monotone-envs {n} Ds = ∀{ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x) → Ds ρ ⫃ Ds ρ′ 
+mono-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Set₁
+mono-envs {n} Ds = ∀{ρ ρ′} → ρ ⊆ₑ ρ′ → ⊆-results (replicate n ■) (Ds ρ) (Ds ρ′)
 
 continuous-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Env → Set₁
 continuous-envs {n} Ds ρ = ∀ v → v ∈ 𝒯 n (Ds ρ)
@@ -588,12 +610,17 @@ next-Ds-proj₂ {n} {Ds} {ρ}
 ... | ⟨ a , b ⟩ = refl
 
 next-mono-envs : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}
-   → monotone-envs Ds
-   → monotone-envs (next-Ds Ds)
-next-mono-envs {n}{Ds} mDs {ρ}{ρ′} ρ⊆ρ′
-    with Ds ρ | Ds ρ′ | mDs {ρ}{ρ′} ρ⊆ρ′
-... | ⟨ Dρ , Dsρ ⟩  | ⟨ Dρ′ , Dsρ′ ⟩ | ⟨ Dρ⊆Dρ′ , Dsρ⊆Dsρ′ ⟩ =
-    Dsρ⊆Dsρ′
+   → mono-envs Ds → mono-envs (next-Ds Ds)
+next-mono-envs {zero} {Ds} mDs {ρ} {ρ′} _ = lift tt
+next-mono-envs {suc n} {Ds} mDs {ρ} {ρ′} ρ⊆ρ′
+    with Ds ρ | Ds ρ′ | mDs {ρ} {ρ′} ρ⊆ρ′
+... | ⟨ Dρ , Dsρ ⟩ | ⟨ Dρ′ , Dsρ′ ⟩ | ⟨ _ , mDs′ ⟩ = mDs′
+
+proj₁-mono-envs : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}{ρ}{ρ′}
+   → ρ ⊆ₑ ρ′  → mono-envs Ds → proj₁ (Ds ρ) ⊆ proj₁ (Ds ρ′)
+proj₁-mono-envs {n}{Ds}{ρ}{ρ′} ρ⊆ρ′ mDs
+    with Ds ρ | mDs {ρ}{ρ′} ρ⊆ρ′
+... | ⟨ Dρ , Dsρ ⟩ | ⟨ lift mD , _ ⟩ = mD
 
 next-NE-Ds : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}{ρ}
   → NE-∏ (Ds ρ)
@@ -602,55 +629,47 @@ next-NE-Ds{n}{Ds}{ρ} NE-Ds
     with Ds ρ | NE-Ds
 ... | ⟨ Dρ , Dsρ ⟩ | ⟨ NE-D , NE-Ds′ ⟩ = NE-Ds′
 
-next-cont-envs : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}{ρ}{NE-ρ : nonempty-env ρ}
-   → NE-∏ (Ds ρ)
+next-cont-envs : ∀{n}{Ds : Env → ∏ (suc n) (𝒫 Value)}
+     {ρ}{NE-ρ : nonempty-env ρ}{w}
+   → proj₁ (Ds ρ) w
    → continuous-envs Ds ρ
    → continuous-envs (next-Ds Ds) ρ
-next-cont-envs {n} {Ds} {ρ}{NE-ρ} NE-Ds cDs u u∈
-    with Ds ρ | cDs | u∈ | NE-Ds
-... | ⟨ D , Ds′ ⟩ | cDDs | u∈′ | NE-DDs
+next-cont-envs {n} {Ds} {ρ}{NE-ρ}{w} w∈Dsρ cDs u u∈
+    with Ds ρ | cDs | u∈ 
+... | ⟨ D , Ds′ ⟩ | cDDs | u∈′ 
     with v∈𝒯⇒v≡⟬vs⟭ u∈′
 ... | ⟨ vs , refl ⟩
-    with NE-DDs 
-... | ⟨ ⟨ v , v∈D ⟩ , NE-Ds′ ⟩ 
-    with cDDs ⟬ v ∷ vs ⟭ ⟨ v∈D , u∈′ ⟩
+    with cDDs ⟬ w ∷ vs ⟭ ⟨ w∈Dsρ , u∈′ ⟩
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , ⟨ aaa , vs∈Dsρ′ ⟩ ⟩ ⟩ ⟩ =
     ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , vs∈Dsρ′ ⟩ ⟩ ⟩
 
 𝒯-continuous : ∀{n}{Ds : Env → ∏ n (𝒫 Value)}{ρ}{NE-ρ : nonempty-env ρ}
     {u : Value}
-  → u ∈ 𝒯 n (Ds ρ) → continuous-envs Ds ρ → monotone-envs Ds
-   → NE-∏ (Ds ρ)
+  → u ∈ 𝒯 n (Ds ρ) → continuous-envs Ds ρ → mono-envs Ds
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ 𝒯 n (Ds ρ₃)
-𝒯-continuous {zero} {Ds} {ρ} {NE-ρ} {u} u∈𝒯Ds cDs mDs NE-Ds
+𝒯-continuous {zero} {Ds} {ρ} {NE-ρ} {u} u∈𝒯Ds cDs mDs 
     with Ds (initial-finite-env ρ NE-ρ) | u
 ... | lift tt | ⟬ [] ⟭ =
   ⟨ (initial-finite-env ρ NE-ρ) , ⟨ initial-fin ρ NE-ρ ,
   ⟨ initial-fin-⊆ ρ NE-ρ , tt ⟩ ⟩ ⟩
-𝒯-continuous {suc n} {Ds} {ρ} {NE-ρ} {⟬ v ∷ vs ⟭} ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩
-    cDs mDs NE-Ds
+𝒯-continuous {suc n} {Ds} {ρ} {NE-ρ} {⟬ v ∷ vs ⟭} ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩ cDs mDs 
     with 𝒯-continuous{n}{next-Ds Ds}{ρ}{NE-ρ}{⟬ vs ⟭}
        (subst (λ X → ⟬ vs ⟭ ∈ 𝒯 n X) (sym (next-Ds-proj₂{n}{Ds}{ρ})) vs∈𝒯Dsρ)
-       (next-cont-envs{NE-ρ = NE-ρ} NE-Ds cDs) (next-mono-envs mDs)
-       (next-NE-Ds{Ds = Ds}{ρ} NE-Ds)
-       
+       (next-cont-envs{NE-ρ = NE-ρ}{w = v} v∈Dρ cDs)
+       (λ {ρ}{ρ′} → next-mono-envs mDs {ρ}{ρ′})
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , vs∈𝒯Dsρ₁ ⟩ ⟩ ⟩
-    with cDs ⟬ v ∷ vs ⟭ ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩
+    with cDs ⟬ v ∷ vs ⟭ ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩ 
 ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , ⟨ v∈Dρ₂ , vs∈Dsρ₂ ⟩ ⟩ ⟩ ⟩
-    with mDs{ρ₁}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₁ z
+    with  mDs {ρ₁}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₁ z
 ... | ⟨ _ , Dsρ₁⊆Dsρ₃ ⟩ 
-    with mDs{ρ₂}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₂ z
-... | ⟨ Dρ₂⊆Dρ₃ , _ ⟩ =
-    let vs∈Dsρ₃ = 𝒯-cong-⊆ Dsρ₁⊆Dsρ₃ ⟬ vs ⟭ vs∈𝒯Dsρ₁ in
+    with  mDs {ρ₂}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₂ z
+... | ⟨ lift Dρ₂⊆Dρ₃ , _ ⟩ =
     let v∈Dρ₃ = Dρ₂⊆Dρ₃ v v∈Dρ₂ in
+    let vs∈Dsρ₃ = 𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ Dsρ₁⊆Dsρ₃) ⟬ vs ⟭ vs∈𝒯Dsρ₁ in
     ⟨ ρ₃ , ⟨ (join-finite-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
     ⟨ v∈Dρ₃ , vs∈Dsρ₃ ⟩ ⟩ ⟩ ⟩
     where
     ρ₃ = ρ₁ ⊔ₑ ρ₂
-    ρ₁⊆ρ₃ : ρ₁ ⊆ₑ ρ₃
-    ρ₁⊆ρ₃ = λ x v z → inj₁ z
-    ρ₂⊆ρ₃ : ρ₂ ⊆ₑ ρ₃
-    ρ₂⊆ρ₃ = λ x v z → inj₂ z
 
 proj-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}{i}
   → u ∈ proj (D ρ) i → continuous-env D ρ → monotone-env D

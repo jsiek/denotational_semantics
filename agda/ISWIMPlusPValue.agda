@@ -100,7 +100,24 @@ continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
 continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
-   𝒯-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ {!!} {!!} {!!}
+   𝒯-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ (cvt cont-args)
+       (⟦⟧-monotone-args args)
+   where {- The following is annoying. Can it be simplified? -}
+   cvt : ∀{n}{args : Args (replicate n ■)}
+       → all-args (Cont-Env-Arg ρ NE-ρ) (replicate n ■) args
+       → continuous-envs (⟦ args ⟧₊) ρ
+   cvt {zero} {nil} (lift tt) v v∈𝒯nil =
+       ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
+       ⟨ initial-fin-⊆ ρ NE-ρ , v∈𝒯nil ⟩ ⟩ ⟩
+   cvt {suc n} {cons (ast M) args} ⟨ cM , cont-args ⟩ ⟬ v ∷ vs ⟭ ⟨ v∈ , vs∈ ⟩
+       with cvt {n} {args} cont-args ⟬ vs ⟭ vs∈
+   ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , vs∈𝒯argsρ₁ ⟩ ⟩ ⟩
+       with cM v v∈
+   ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈𝒯Mρ₂ ⟩ ⟩ ⟩ =
+       ⟨ ρ₁ ⊔ₑ ρ₂ , ⟨ join-finite-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ ,
+       ⟨ ⟦⟧-monotone M (λ x d z → inj₂ z) v v∈𝒯Mρ₂ ,
+         𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆
+          (⟦⟧-monotone-args args (λ x d z → inj₁ z))) ⟬ vs ⟭ vs∈𝒯argsρ₁ ⟩ ⟩ ⟩ ⟩
 continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
     proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
 

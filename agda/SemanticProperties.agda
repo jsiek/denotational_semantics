@@ -32,35 +32,6 @@ all-args : (∀ b → Arg b → Set₁) → ∀ bs → Args bs → Set₁
 all-args P [] args = Lift (lsuc lzero) True
 all-args P (b ∷ bs) (cons arg args) = P b arg × all-args P bs args
 
-rel-results : ∀{ℓ}{T : Set ℓ}
-   → (∀ b → Result T b → Result T b → Set₁)
-   → ∀ bs → Tuple bs (Result T) → Tuple bs (Result T) → Set₁
-rel-results R [] xs ys = Lift (lsuc lzero) True
-rel-results R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ =
-    (R b x y) × (rel-results R bs xs ys)
-
-⊆-result : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁
-⊆-result ■ x y = Lift (lsuc lzero) (x ⊆ y)
-⊆-result (ν b) f g = ∀ X → ⊆-result b (f X) (g X)
-⊆-result (∁ b) x y = ⊆-result b x y
-
-⊆-results = rel-results ⊆-result
-
-⊆-result⇒⊆ : ∀ D E → ⊆-result ■ D E → D ⊆ E
-⊆-result⇒⊆ D E (lift D⊆E) = D⊆E
-
-rel-results⇒rel-∏ : ∀{n}{xs ys : ∏ n (𝒫 Value)}
-    {R : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁}
-    {R′ : 𝒫 Value → 𝒫 Value → Set}
-  → (∀ x y → R ■ x y → R′ x y)
-  → rel-results R (replicate n ■) xs ys
-  → rel-∏ R′ xs ys
-rel-results⇒rel-∏ {zero} R⇒R′ (lift tt) = tt
-rel-results⇒rel-∏ {suc n}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
-    ⟨ R⇒R′ x y Rxy , (rel-results⇒rel-∏ R⇒R′ R[xs,ys]) ⟩
-
-
-
 record Semantics : Set₁ where
   field interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
   
@@ -120,6 +91,7 @@ open ContinuousSemantics {{...}}
   where G : (x : Var) → (D₁ • ρ) x ⊆ (D₂ • ρ) x
         G zero = D12
         G (suc x) = λ v z → z
+
 
 {- Continuous -----------------------------------------------------------------}
 
