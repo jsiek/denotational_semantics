@@ -5,7 +5,7 @@ open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s; _+_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -172,3 +172,5 @@ all-Cont-Env-Arg⇒cont-envs {suc n} {cons (ast M) args}{ρ}{NE-ρ}
     ⟨ ⟦⟧-monotone M (λ x d z → inj₂ z) v v∈𝒯Mρ₂ ,
       𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆
        (⟦⟧-monotone-args args (λ x d z → inj₁ z))) ⟬ vs ⟭ vs∈𝒯argsρ₁ ⟩ ⟩ ⟩ ⟩
+
+

@@ -11,7 +11,7 @@ open import ScopedTuple hiding (𝒫)
 open import Sig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import PValueCBV renaming (cons to 〘_,_〙)
+open import PValueCBV
 open import SemanticProperties Op sig
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
@@ -158,6 +158,11 @@ ArgsValue⇒NE-∏ {zero} {nil} vs = lift tt
 ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     ⟨ value-nonempty NE-ρ Mv , ArgsValue⇒NE-∏ {NE-ρ = NE-ρ} vs ⟩
 
+⟦append₊⟧ : ∀{n m}{xs : Args (replicate n ■)}{ys : Args (replicate m ■)}{ρ}
+   → ⟦ append₊ xs ys ⟧₊ ρ ⩭ ∏-append (⟦ xs ⟧₊ ρ) (⟦ ys ⟧₊ ρ)
+⟦append₊⟧ {zero} {m} {nil} {ys} = ⩭-refl
+⟦append₊⟧ {suc n} {m} {cons x xs} {ys} = ⟨ ≃-refl , (⟦append₊⟧ {n}{m}{xs}{ys}) ⟩
+
 ⟦⟧—→ : ∀{M N : Term}{ρ : Var → 𝒫 Value} {NE-ρ : nonempty-env ρ}
    → M —→ N
    → ⟦ M ⟧ ρ ≃ ⟦ N ⟧ ρ
@@ -199,14 +204,20 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     ⟦ snd M′ ⟧ ρ             ∎ where open ≃-Reasoning
 ⟦⟧—→ {_}{_}{ρ}{NE-ρ} (ξ-rule {M}{M′} (F-tuple {n = n}{m} vargs vs args) M—→M′) =
     let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
-    ⟦ tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆ ⟧ ρ     ≃⟨⟩ 
-    𝒯 (n + suc m) (⟦ append vargs (cons (ast M) args) ⟧₊ ρ)
-        ≃⟨ 𝒯-cong-≃ {!!} ⟩ 
-    𝒯 (n + suc m) (⟦ append vargs (cons (ast M′) args) ⟧₊ ρ)        ≃⟨⟩ 
-    ⟦ tuple (n + suc m) ⦅ append vargs (cons (ast M′) args) ⦆ ⟧ ρ
+    ⟦ tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆ ⟧ ρ     ≃⟨⟩ 
+    𝒯 (n + suc m) (⟦ append₊ vargs (cons (ast M) args) ⟧₊ ρ)
+        ≃⟨ 𝒯-cong-≃ (⟦append₊⟧{n}{suc m}) ⟩ 
+    𝒯 (n + suc m) (∏-append (⟦ vargs ⟧₊ ρ) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩)
+        ≃⟨ 𝒯-cong-≃ (∏-append-⩭ ⩭-refl ⟨ IH , ⩭-refl ⟩) ⟩ 
+    𝒯 (n + suc m) (∏-append (⟦ vargs ⟧₊ ρ) ⟨ ⟦ M′ ⟧ ρ , ⟦ args ⟧₊ ρ ⟩)
+        ≃⟨ 𝒯-cong-≃ (⩭-sym (⟦append₊⟧{n}{suc m})) ⟩ 
+    𝒯 (n + suc m) (⟦ append₊ vargs (cons (ast M′) args) ⟧₊ ρ)        ≃⟨⟩ 
+    ⟦ tuple (n + suc m) ⦅ append₊ vargs (cons (ast M′) args) ⦆ ⟧ ρ
              ∎ where open ≃-Reasoning
-
-⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-get i) M—→M′) = {!!}
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-get i) M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ M ❲ i ❳ ⟧ ρ          ≃⟨ {!!} ⟩
+    ⟦ M′ ❲ i ❳ ⟧ ρ         ∎ where open ≃-Reasoning
 ⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
     ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩
     (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)   ≃⟨ Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}

@@ -23,7 +23,7 @@ open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s; _+_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -102,9 +102,9 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 ... | yes refl = sym m
 ... | no neq = ⊥-elim m
 
-cons : 𝒫 Value → 𝒫 Value → 𝒫 Value
-cons D₁ D₂ ❲ u , v ❳ = u ∈ D₁ × v ∈ D₂
-cons D₁ D₂ _ = False
+〘_,_〙 : 𝒫 Value → 𝒫 Value → 𝒫 Value
+〘 D₁ , D₂ 〙 ❲ u , v ❳ = u ∈ D₁ × v ∈ D₂
+〘 D₁ , D₂ 〙 _ = False
 
 car : 𝒫 Value → 𝒫 Value
 car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
@@ -141,6 +141,12 @@ all-∏ {suc n}{T}{ℓ} P ⟨ x , xs ⟩ = P x  ×  all-∏ P xs
 rel-∏ : ∀{n}{T : Set₁} → (T → T → Set) → ∏ n T → ∏ n T → Set
 rel-∏ {zero} R (lift tt) (lift tt) = True
 rel-∏ {suc n} R ⟨ x , xs ⟩ ⟨ y , ys ⟩ = R x y  ×  rel-∏ R xs ys
+
+rel-∏-refl : ∀{n}{T : Set₁}{R : T → T → Set}{Ds : ∏ n T}
+   → (∀ {x} → R x x) → rel-∏ R Ds Ds
+rel-∏-refl {zero} {T} {R} {Ds} R-refl = tt
+rel-∏-refl {suc n} {T} {R} {⟨ D , Ds ⟩} R-refl =
+    ⟨ R-refl , (rel-∏-refl R-refl) ⟩
 
 rel-∏-sym : ∀{n}{T : Set₁}{R : T → T → Set}{Ds Es : ∏ n T}
    → (∀ {x y} → R x y → R y x) → rel-∏ R Ds Es → rel-∏ R Es Ds
@@ -194,6 +200,9 @@ NE-∏⇒NE-𝒯{n}{Ds} NE-Ds
   H : proj (𝒯 n Ds) i ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
   H v ⟨ vs , ⟨ vs⊆Ds , eq ⟩ ⟩ = ⟨ u ∷ vs , ⟨ ⟨ u∈D , vs⊆Ds ⟩ , eq ⟩ ⟩
 
+∏-append : ∀{n}{m} → ∏ n (𝒫 Value) → ∏ m (𝒫 Value) → ∏ (n + m) (𝒫 Value)
+∏-append {zero} {m} Ds Es = Es
+∏-append {suc n} {m} ⟨ D , Ds ⟩ Es = ⟨ D , (∏-append Ds Es) ⟩
 
 {- Application is a Congruence ------------------------------------------------}
 
@@ -266,11 +275,11 @@ monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
 {- Cons is a Congruence  ------------------------------------------------------}
 
 cons-cong-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value} → D₁ ⊆ D₃  →  D₂ ⊆ D₄
-  → cons D₁ D₂ ⊆ cons D₃ D₄
+  → 〘 D₁ , D₂ 〙 ⊆ 〘 D₃ , D₄ 〙
 cons-cong-⊆ D13 D24 ❲ u , v ❳ ⟨ u∈D₁ , v∈D₂ ⟩ = ⟨ D13 u u∈D₁ , D24 v v∈D₂ ⟩
 
 cons-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value} → D₁ ≃ D₃  →  D₂ ≃ D₄
-   → cons D₁ D₂ ≃ cons D₃ D₄
+   → 〘 D₁ , D₂ 〙 ≃ 〘 D₃ , D₄ 〙
 cons-cong ⟨ d13 , d31 ⟩ ⟨ d24 , d42 ⟩ =
     ⟨ (cons-cong-⊆ d13 d24) , (cons-cong-⊆ d31 d42) ⟩
 
@@ -299,6 +308,8 @@ _⫃_ {n} = rel-∏ {n} _⊆_
 _⩭_ : ∀{n} → ∏ n (𝒫 Value) → ∏ n (𝒫 Value) → Set
 _⩭_ {n} = rel-∏ {n} _≃_
 
+⩭-refl = λ {n}{Ds} → rel-∏-refl {n}{𝒫 Value}{R = _≃_}{Ds} ≃-refl
+
 ⩭-sym = λ {n}{Ds}{Es} → rel-∏-sym {n}{𝒫 Value}{R = _≃_}{Ds}{Es} ≃-sym 
 
 ⩭⇒⊆ : ∀{n}{Ds Es : ∏ n (𝒫 Value)} → Ds ⩭ Es → Ds ⫃ Es  ×  Es ⫃ Ds
@@ -318,26 +329,39 @@ proj-cong-⊆ D⊆E v ⟨ vs , ⟨ vs∈D , refl ⟩ ⟩ =
 proj-cong-≃ : ∀{D E : 𝒫 Value}{i} → D ≃ E → proj D i ≃ proj E i
 proj-cong-≃ D≃E = ⟨ (proj-cong-⊆ (proj₁ D≃E)) , (proj-cong-⊆ (proj₂ D≃E)) ⟩  
 
+∏-append-⊆ : ∀{n}{m}{Ds Ds′ : ∏ n (𝒫 Value)}{Es Es′ : ∏ m (𝒫 Value)}
+   → Ds ⫃ Ds′ → Es ⫃ Es′
+   → ∏-append Ds Es ⫃ ∏-append Ds′ Es′
+∏-append-⊆ {zero} {m} {Ds} {Ds′} {Es} {Es′} Ds⊆Ds′ Es⊆Es′ = Es⊆Es′
+∏-append-⊆ {suc n} {m} {⟨ D , Ds ⟩} {⟨ D′ , Ds′ ⟩} {Es} {Es′} ⟨ D⊆D′ , Ds⊆Ds′ ⟩
+    Es⊆Es′ = ⟨ D⊆D′ , ∏-append-⊆ Ds⊆Ds′ Es⊆Es′ ⟩
+
+∏-append-⩭ : ∀{n}{m}{Ds Ds′ : ∏ n (𝒫 Value)}{Es Es′ : ∏ m (𝒫 Value)}
+   → Ds ⩭ Ds′ → Es ⩭ Es′
+   → ∏-append Ds Es ⩭ ∏-append Ds′ Es′
+∏-append-⩭ {zero} {m} {Ds} {Ds′} Ds=Ds′ Es=Es′ = Es=Es′
+∏-append-⩭ {suc n} {m} {⟨ D , Ds ⟩} {⟨ D′ , Ds′ ⟩} ⟨ D=D′ , Ds=Ds′ ⟩ Es=Es′ =
+    ⟨ D=D′ , ∏-append-⩭ Ds=Ds′ Es=Es′ ⟩
 
 {- Cons and Car  --------------------------------------------------------------}
 
 car-of-cons-⊆ : ∀{D₁ D₂ : 𝒫 Value}
-  → car (cons D₁ D₂) ⊆ D₁
+  → car (〘 D₁ , D₂ 〙) ⊆ D₁
 car-of-cons-⊆ {D₁} {D₂} u ⟨ v , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩ = u∈D₁
 
 car-of-cons : ∀{D₁ D₂ : 𝒫 Value}
   → nonempty D₂
-  → car (cons D₁ D₂) ≃ D₁
+  → car (〘 D₁ , D₂ 〙) ≃ D₁
 car-of-cons {D₁}{D₂} ⟨ v , v∈D₂ ⟩ =
     ⟨ car-of-cons-⊆ , (λ u u∈D₁ → ⟨ v , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩) ⟩
 
 cdr-of-cons-⊆ : ∀{D₁ D₂ : 𝒫 Value}
-  → cdr (cons D₁ D₂) ⊆ D₂
+  → cdr 〘 D₁ , D₂ 〙 ⊆ D₂
 cdr-of-cons-⊆ {D₁} {D₂} v ⟨ u , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩ = v∈D₂
 
 cdr-of-cons : ∀{D₁ D₂ : 𝒫 Value}
   → nonempty D₁
-  → cdr (cons D₁ D₂) ≃ D₂
+  → cdr 〘 D₁ , D₂ 〙 ≃ D₂
 cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
     ⟨ cdr-of-cons-⊆ , (λ v v∈D₂ → ⟨ u , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩) ⟩
 
@@ -565,9 +589,9 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
       tt ⟩ ⟩ ⟩
 
 cons-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w : Value}
-  → w ∈ cons (D ρ) (E ρ)
+  → w ∈ 〘 D ρ , E ρ 〙
   → continuous-env D ρ → continuous-env E ρ → monotone-env D → monotone-env E
-  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ cons (D ρ₃) (E ρ₃)
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ 〘 D ρ₃ , E ρ₃ 〙
 cons-continuous {D} {E} {ρ} {NE-ρ} {❲ u , v ❳} ⟨ u∈Dρ , v∈Eρ ⟩ cD cE mD mE
     with cD u u∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , u∈Dρ₁ ⟩ ⟩ ⟩

@@ -47,7 +47,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
                    ⟪_⟫; _[_]; subst-zero; bind; ast; cons; nil; Args;
                    rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
                    WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
-                   COp; CAst; CBind; ccons; tcons)
+                   COp; CAst; CBind; ccons; tcons; append₊)
             renaming (ABT to AST) public
 
 Term : Set
@@ -108,11 +108,6 @@ data Frame : Set where
           → (args : Args (replicate m ■)) → Frame
   F-get : ℕ → Frame
 
-append : ∀{n m} → (xs : Args (replicate n ■))
-  → (ys : Args (replicate m ■)) → Args (replicate (n + m) ■)
-append {zero} {m} nil ys = ys
-append {suc n} {m} (cons x xs) ys = cons x (append xs ys)
-
 fill : Term → Frame → Term
 fill L (F-·₁ M)  = L · M
 fill M (F-·₂ L)  = L · M
@@ -121,7 +116,7 @@ fill N (F-×₂ M)  = pair M N
 fill M F-fst     = fst M
 fill M F-snd     = snd M
 fill M (F-tuple {n}{m} vargs vs args) =
-  tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆
+  tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆
 fill M (F-get i) = M ❲ i ❳
 
 nth-arg : ∀ {n} → Args (replicate n ■) → ℕ → Term
@@ -235,12 +230,12 @@ tuple-cong : ∀{M M′ : Term}{n}{m}{vargs : Args (replicate n ■)}
       {args : Args (replicate m ■)}
    → ArgsValue vargs
    → M —↠ M′
-   → tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆
-     —↠ tuple (n + suc m) ⦅ append vargs (cons (ast M′) args) ⦆
+   → tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆
+     —↠ tuple (n + suc m) ⦅ append₊ vargs (cons (ast M′) args) ⦆
 tuple-cong {M} {.M} {n}{m} {vargs} {args} v (M □) =
-    tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆ □
+    tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆ □
 tuple-cong {M} {M″} {n}{m} {vargs} {args} v (M —→⟨ M→M′ ⟩ M—↠M″) =
-    tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆
+    tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆
     —→⟨ ξ-rule (F-tuple vargs v args) M→M′ ⟩
     (tuple-cong v M—↠M″)
 
