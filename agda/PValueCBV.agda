@@ -23,7 +23,8 @@ open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s; _+_)
+open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
+open import Data.Nat.Properties
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -132,7 +133,8 @@ nth (v ∷ vs) 0 = v
 nth (v ∷ vs) (suc i) = nth vs i
 
 proj : 𝒫 Value → ℕ → 𝒫 Value
-proj D i u = Σ[ vs ∈ List Value ] ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
+proj D i u = Σ[ vs ∈ List Value ]
+    i < length vs  ×  ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
 
 all-∏ : ∀{n}{T : Set₁}{ℓ : Level} → (T → Set ℓ) → ∏ n T → Set ℓ
 all-∏ {zero}{T}{ℓ} P (lift tt) = ⊤
@@ -183,11 +185,12 @@ NE-∏⇒NE-𝒯{n}{Ds} NE-Ds
 𝒯-nth-0 {n}{D}{Ds} NE-Ds = ⟨ G , H ⟩
   where
   G : proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0 ⊆ D
-  G .v ⟨ v ∷ vs , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ = v∈D
+  G .v ⟨ v ∷ vs , ⟨ lt , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ ⟩ = v∈D
+
   H : D ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0
   H v v∈D
       with NE-∏⇒𝒯 NE-Ds
-  ... | ⟨ vs , vs⊆ ⟩ = ⟨ (v ∷ vs) , ⟨ ⟨ v∈D , vs⊆ ⟩ , refl ⟩ ⟩
+  ... | ⟨ vs , vs⊆ ⟩ = ⟨ (v ∷ vs) , ⟨ s≤s z≤n , ⟨ ⟨ v∈D , vs⊆ ⟩ , refl ⟩ ⟩ ⟩
 
 𝒯-nth-suc : ∀{i}{n}{D}{Ds}
    → nonempty D → NE-∏ Ds
@@ -196,9 +199,11 @@ NE-∏⇒NE-𝒯{n}{Ds} NE-Ds
 𝒯-nth-suc {i}{n}{D}{Ds} ⟨ u , u∈D ⟩ NE-Ds = ⟨ G , H ⟩
   where
   G : proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i) ⊆ proj (𝒯 n Ds) i
-  G u ⟨ v ∷ vs , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ = ⟨ vs , ⟨ ⟬vs⟭∈𝒯Ds , refl ⟩ ⟩
+  G u ⟨ v ∷ vs , ⟨ s≤s lt , ⟨ ⟨ v∈D , ⟬vs⟭∈𝒯Ds ⟩ , refl ⟩ ⟩ ⟩ =
+      ⟨ vs , ⟨ lt , ⟨ ⟬vs⟭∈𝒯Ds , refl ⟩ ⟩ ⟩
   H : proj (𝒯 n Ds) i ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
-  H v ⟨ vs , ⟨ vs⊆Ds , eq ⟩ ⟩ = ⟨ u ∷ vs , ⟨ ⟨ u∈D , vs⊆Ds ⟩ , eq ⟩ ⟩
+  H v ⟨ vs , ⟨ lt , ⟨ vs⊆Ds , eq ⟩ ⟩ ⟩ =
+    ⟨ (u ∷ vs) , ⟨ s≤s lt , ⟨ ⟨ u∈D , vs⊆Ds ⟩ , eq ⟩ ⟩ ⟩
 
 ∏-append : ∀{n}{m} → ∏ n (𝒫 Value) → ∏ m (𝒫 Value) → ∏ (n + m) (𝒫 Value)
 ∏-append {zero} {m} Ds Es = Es
@@ -323,8 +328,8 @@ _⩭_ {n} = rel-∏ {n} _≃_
   ⟨ 𝒯-cong-⊆ Ds⊆Es , 𝒯-cong-⊆ Es⊆Ds ⟩
 
 proj-cong-⊆ : ∀{D E : 𝒫 Value}{i} → D ⊆ E → proj D i ⊆ proj E i
-proj-cong-⊆ D⊆E v ⟨ vs , ⟨ vs∈D , refl ⟩ ⟩ =
-                  ⟨ vs , ⟨ (D⊆E ⟬ vs ⟭ vs∈D) , refl ⟩ ⟩
+proj-cong-⊆ D⊆E v ⟨ vs , ⟨ lt , ⟨ vs∈D , refl ⟩ ⟩ ⟩ =
+                  ⟨ vs , ⟨ lt , ⟨ (D⊆E ⟬ vs ⟭ vs∈D) , refl ⟩ ⟩ ⟩
 
 proj-cong-≃ : ∀{D E : 𝒫 Value}{i} → D ≃ E → proj D i ≃ proj E i
 proj-cong-≃ D≃E = ⟨ (proj-cong-⊆ (proj₁ D≃E)) , (proj-cong-⊆ (proj₂ D≃E)) ⟩  
@@ -706,8 +711,8 @@ next-cont-envs {n} {Ds} {ρ}{NE-ρ}{w} w∈Dsρ cDs u u∈
 proj-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}{i}
   → u ∈ proj (D ρ) i → continuous-env D ρ → monotone-env D
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ proj (D ρ₃) i
-proj-continuous {D} {ρ} {NE-ρ} {u} {i} ⟨ vs , ⟨ vs∈Dρ , refl ⟩ ⟩ cD mD
+proj-continuous {D} {ρ} {NE-ρ} {u} {i} ⟨ vs , ⟨ lt , ⟨ vs∈Dρ , refl ⟩ ⟩ ⟩ cD mD
     with cD ⟬ vs ⟭ vs∈Dρ
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , vs∈Dρ′ ⟩ ⟩ ⟩ =     
     ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ ,
-    ⟨ vs , ⟨ mD (λ x d z → z) ⟬ vs ⟭ vs∈Dρ′ , refl ⟩ ⟩ ⟩ ⟩ ⟩
+    ⟨ vs , ⟨ lt , ⟨ mD (λ x d z → z) ⟬ vs ⟭ vs∈Dρ′ , refl ⟩ ⟩ ⟩ ⟩ ⟩ ⟩

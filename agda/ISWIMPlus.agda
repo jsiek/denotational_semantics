@@ -10,9 +10,8 @@ module ISWIMPlus where
 open import Utilities using (_iff_)
 open import Primitives
 open import Data.Empty renaming (⊥ to Bot)
-open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.Nat.Properties using (+-suc)
-open import Data.Bool  
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
@@ -153,7 +152,7 @@ data _—→_ : Term → Term → Set where
     → snd (pair M N) —→ N
 
   get-rule : ∀{n i : ℕ}{args : Args (replicate n ■)}
-    → ArgsValue args
+    → ArgsValue args  →  i < n
     → (tuple n ⦅ args ⦆) ❲ i ❳ —→ nth-arg args i
 
 open import MultiStep Op sig _—→_ public
@@ -166,7 +165,7 @@ open import MultiStep Op sig _—→_ public
 —→-app-cong {M = M} δ-rule = ξ-rule (F-·₁ M) δ-rule
 —→-app-cong {M = M} (fst-rule Mv Nv) = ξ-rule (F-·₁ M) (fst-rule Mv Nv)
 —→-app-cong {M = M} (snd-rule Mv Nv) = ξ-rule (F-·₁ M) (snd-rule Mv Nv)
-—→-app-cong {M = M} (get-rule vargs) = ξ-rule (F-·₁ M) (get-rule vargs)
+—→-app-cong {M = M} (get-rule vargs lt) = ξ-rule (F-·₁ M) (get-rule vargs lt)
 
 appL-cong : ∀ {L L' M : Term}
          → L —↠ L'

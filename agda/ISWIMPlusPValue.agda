@@ -114,6 +114,9 @@ open ContinuousSemantics {{...}}
 
 {- Syntactic values terminate (i.e., have nonempty denotations) ---------------}
 
+values-NE-∏ : ∀{n}{args : Args (replicate n ■)}{ρ}{NE-ρ : nonempty-env ρ}
+  → (vargs : ArgsValue args)  →  NE-∏ (⟦ args ⟧₊ ρ)
+
 value-nonempty : ∀{V : Term}{ρ}
   → nonempty-env ρ → TermValue V → nonempty (⟦ V ⟧ ρ)
 value-nonempty NE-ρ (V-var {x}) = NE-ρ x
@@ -125,13 +128,11 @@ value-nonempty NE-ρ (V-pair Mv Nv)
 ... | ⟨ u , u∈ ⟩ | ⟨ v , v∈ ⟩ =
     ⟨ ❲ u , v ❳ , ⟨ u∈ , v∈ ⟩ ⟩
 value-nonempty {ρ = ρ} NE-ρ (V-tuple {n}{args} vargs) =
-    NE-∏⇒NE-𝒯 (nonempty-results vargs)
-    where
-    nonempty-results : ∀{n}{args : Args (replicate n ■)}
-      → (vargs : ArgsValue args)  →  NE-∏ (⟦ args ⟧₊ ρ)
-    nonempty-results {zero} {nil} vargs = lift tt
-    nonempty-results {suc n} {cons (ast M) args′} (V-cons Mv vargs) =
-        ⟨ value-nonempty NE-ρ Mv , nonempty-results {n}{args′} vargs ⟩
+    NE-∏⇒NE-𝒯 (values-NE-∏ {NE-ρ = NE-ρ} vargs)
+
+values-NE-∏ {zero} {nil} vargs = lift tt
+values-NE-∏ {suc n} {cons (ast M) args′}{ρ}{NE-ρ} (V-cons Mv vargs) =
+    ⟨ value-nonempty NE-ρ Mv , values-NE-∏ {n}{args′}{ρ}{NE-ρ} vargs ⟩
 
 {- Substitution Lemma (via fold-subst-fusion) ---------------------------------}
 
@@ -216,7 +217,9 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
              ∎ where open ≃-Reasoning
 ⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-get i) M—→M′) =
     let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
-    ⟦ M ❲ i ❳ ⟧ ρ          ≃⟨ {!!} ⟩
+    ⟦ M ❲ i ❳ ⟧ ρ          ≃⟨⟩
+    proj (⟦ M ⟧ ρ) i       ≃⟨ proj-cong-≃ IH ⟩
+    proj (⟦ M′ ⟧ ρ) i       ≃⟨⟩
     ⟦ M′ ❲ i ❳ ⟧ ρ         ∎ where open ≃-Reasoning
 ⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
     ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩
@@ -236,39 +239,28 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     ⟦ snd (pair M N) ⟧ ρ          ≃⟨⟩ 
     cdr 〘 ⟦ M ⟧ ρ , ⟦ N ⟧ ρ 〙    ≃⟨ cdr-of-cons (value-nonempty NE-ρ Mv) ⟩ 
     ⟦ N ⟧ ρ                        ∎ where open ≃-Reasoning
-⟦⟧—→ {_} {_} {ρ} {NE-ρ} (get-rule {n}{i}{args} vs) =
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (get-rule {n}{i}{args} vs lt) =
     ⟦ get i ⦅ cons (ast (tuple n ⦅ args ⦆)) nil ⦆ ⟧ ρ   ≃⟨⟩
-    proj (𝒯 n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args vs ⟩
+    proj (𝒯 n (⟦ args ⟧₊ ρ)) i            ≃⟨ G i n args vs lt ⟩
     ⟦ nth-arg args i ⟧ ρ               ∎
     where
     open ≃-Reasoning
     G : ∀ i n (args : Args (replicate n ■)) → ArgsValue args
+       → i < n
        → proj (𝒯 n (⟦ args ⟧₊ ρ)) i ≃ ⟦ nth-arg args i ⟧ ρ
-    G i zero nil vs = ⟨ H , J ⟩
-      where
-      H : proj (𝒯 zero (⟦ nil ⟧₊ ρ)) i ⊆ ⟦ $ (base Nat) 0 ⟧ ρ
-      H v ⟨ vs , ⟨ _ , refl ⟩ ⟩ = {!!}
-      J : ⟦ $ (base Nat) 0 ⟧ ρ ⊆ proj (𝒯 zero (⟦ nil ⟧₊ ρ)) i
-      J (const {B} k) xx
-          with base-eq? Nat B | xx
-      ... | yes refl | refl = ⟨ [] , ⟨ {!!} , refl ⟩ ⟩
-      ... | no neq | ()
-
-    G 0 (suc n) (cons (ast M) args) (V-cons Mv vs) = 
-      proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) zero   ≃⟨⟩
-      proj (𝒯 (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) zero   ≃⟨ 𝒯-nth-0 (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩
-      ⟦ M ⟧ ρ                                  ≃⟨⟩
-      ⟦ nth-arg (cons (ast M) args) zero ⟧ ρ   ∎
-    G (suc i) (suc n) (cons (ast M) args) (V-cons Mv vs) =
-        let IH = G i n args vs in
-        proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) (suc i) ≃⟨⟩ 
-        proj (𝒯 (suc n) ⟨ ⟦ M ⟧ ρ , ⟦ args ⟧₊ ρ ⟩) (suc i)
-                                  ≃⟨ 𝒯-nth-suc (value-nonempty NE-ρ Mv)
-                                            (ArgsValue⇒NE-∏{NE-ρ = NE-ρ} vs) ⟩ 
-        proj (𝒯 n (⟦ args ⟧₊ ρ)) i             ≃⟨ IH ⟩ 
-        ⟦ nth-arg args i ⟧ ρ ∎
-
-    
+    G i 0 nil V-nil ()
+    G 0 (suc n) (cons (ast M) args) (V-cons Mv vargs) lt =
+        proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) 0
+                                 ≃⟨ 𝒯-nth-0 (values-NE-∏{NE-ρ = NE-ρ} vargs) ⟩
+        ⟦ M ⟧ ρ ≃⟨⟩
+        ⟦ nth-arg (cons (ast M) args) 0 ⟧ ρ   ∎
+    G (suc i) (suc n) (cons (ast M) args) (V-cons Mv vargs) (s≤s lt) =
+        proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) (suc i)
+                                          ≃⟨ 𝒯-nth-suc (value-nonempty NE-ρ Mv)
+                                              (values-NE-∏{NE-ρ = NE-ρ} vargs) ⟩
+        proj (𝒯 n (⟦ args ⟧₊ ρ)) i         ≃⟨ G i n args vargs lt ⟩
+        ⟦ nth-arg args i ⟧ ρ                ≃⟨⟩
+        ⟦ nth-arg (cons (ast M) args) (suc i) ⟧ ρ   ∎
 
 soundness : ∀ {M N : Term} {ρ : Env}{NE-ρ : nonempty-env ρ}
   → M —↠ N
