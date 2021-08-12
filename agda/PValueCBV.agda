@@ -164,6 +164,13 @@ NE-∏⇒𝒯 {suc n} {⟨ D , Ds ⟩} ⟨ ⟨ v , v∈D ⟩ , NE-Ds ⟩
     with NE-∏⇒𝒯 {n} {Ds} NE-Ds
 ... | ⟨ vs , vs⊆ ⟩ = ⟨ v ∷ vs , ⟨ v∈D , vs⊆ ⟩ ⟩
 
+NE-∏⇒NE-𝒯 : ∀{n}{Ds : ∏ n (𝒫 Value)}
+   → NE-∏ Ds
+   → nonempty (𝒯 n Ds)
+NE-∏⇒NE-𝒯{n}{Ds} NE-Ds
+    with NE-∏⇒𝒯 NE-Ds
+... | ⟨ vs , vs∈𝒯Ds ⟩ = ⟨ ⟬ vs ⟭ , vs∈𝒯Ds ⟩
+
 𝒯-nth-0 : ∀{n}{D}{Ds}
    → NE-∏ Ds
    → proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0 ≃ D
@@ -665,7 +672,8 @@ next-cont-envs {n} {Ds} {ρ}{NE-ρ}{w} w∈Dsρ cDs u u∈
     with  mDs {ρ₂}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₂ z
 ... | ⟨ lift Dρ₂⊆Dρ₃ , _ ⟩ =
     let v∈Dρ₃ = Dρ₂⊆Dρ₃ v v∈Dρ₂ in
-    let vs∈Dsρ₃ = 𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ Dsρ₁⊆Dsρ₃) ⟬ vs ⟭ vs∈𝒯Dsρ₁ in
+    let vs∈Dsρ₃ = 𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ Dsρ₁⊆Dsρ₃)
+                            ⟬ vs ⟭ vs∈𝒯Dsρ₁ in
     ⟨ ρ₃ , ⟨ (join-finite-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
     ⟨ v∈Dρ₃ , vs∈Dsρ₃ ⟩ ⟩ ⟩ ⟩
     where

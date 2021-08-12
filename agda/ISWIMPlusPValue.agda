@@ -17,7 +17,7 @@ open import SemanticProperties Op sig
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; length; replicate)
 open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _<_; s≤s; _+_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -37,7 +37,7 @@ interp-op (lit P k) _ = ℘ P k
 interp-op pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
 interp-op fst-op ⟨ D , _ ⟩  = car D
 interp-op snd-op ⟨ D , _ ⟩ = cdr D
-interp-op (tuple n) args = 𝒯 n args
+interp-op (tuple n) results = 𝒯 n results
 interp-op (get i) ⟨ D , _ ⟩ = proj D i
 
 {- interp-op is monotonic -}
@@ -100,24 +100,9 @@ continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
 continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
-   𝒯-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ (cvt cont-args)
+   𝒯-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ
+       (all-Cont-Env-Arg⇒cont-envs{NE-ρ = NE-ρ} cont-args)
        (⟦⟧-monotone-args args)
-   where {- The following is annoying. Can it be simplified? -}
-   cvt : ∀{n}{args : Args (replicate n ■)}
-       → all-args (Cont-Env-Arg ρ NE-ρ) (replicate n ■) args
-       → continuous-envs (⟦ args ⟧₊) ρ
-   cvt {zero} {nil} (lift tt) v v∈𝒯nil =
-       ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
-       ⟨ initial-fin-⊆ ρ NE-ρ , v∈𝒯nil ⟩ ⟩ ⟩
-   cvt {suc n} {cons (ast M) args} ⟨ cM , cont-args ⟩ ⟬ v ∷ vs ⟭ ⟨ v∈ , vs∈ ⟩
-       with cvt {n} {args} cont-args ⟬ vs ⟭ vs∈
-   ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , vs∈𝒯argsρ₁ ⟩ ⟩ ⟩
-       with cM v v∈
-   ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈𝒯Mρ₂ ⟩ ⟩ ⟩ =
-       ⟨ ρ₁ ⊔ₑ ρ₂ , ⟨ join-finite-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ ,
-       ⟨ ⟦⟧-monotone M (λ x d z → inj₂ z) v v∈𝒯Mρ₂ ,
-         𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆
-          (⟦⟧-monotone-args args (λ x d z → inj₁ z))) ⟬ vs ⟭ vs∈𝒯argsρ₁ ⟩ ⟩ ⟩ ⟩
 continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
     proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
 
@@ -139,7 +124,14 @@ value-nonempty NE-ρ (V-pair Mv Nv)
     with value-nonempty NE-ρ Mv | value-nonempty NE-ρ Nv
 ... | ⟨ u , u∈ ⟩ | ⟨ v , v∈ ⟩ =
     ⟨ ❲ u , v ❳ , ⟨ u∈ , v∈ ⟩ ⟩
-value-nonempty NE-ρ (V-tuple vs) = {!!}
+value-nonempty {ρ = ρ} NE-ρ (V-tuple {n}{args} vargs) =
+    NE-∏⇒NE-𝒯 (nonempty-results vargs)
+    where
+    nonempty-results : ∀{n}{args : Args (replicate n ■)}
+      → (vargs : ArgsValue args)  →  NE-∏ (⟦ args ⟧₊ ρ)
+    nonempty-results {zero} {nil} vargs = lift tt
+    nonempty-results {suc n} {cons (ast M) args′} (V-cons Mv vargs) =
+        ⟨ value-nonempty NE-ρ Mv , nonempty-results {n}{args′} vargs ⟩
 
 {- Substitution Lemma (via fold-subst-fusion) ---------------------------------}
 
@@ -162,7 +154,7 @@ value-nonempty NE-ρ (V-tuple vs) = {!!}
 ArgsValue⇒NE-∏ : ∀{n}{args : Args (Data.List.replicate n ■)}
     {ρ}{NE-ρ : nonempty-env ρ}
    → ArgsValue args → NE-∏ (⟦ args ⟧₊ ρ)
-ArgsValue⇒NE-∏ {zero} {nil} vs = {!!}
+ArgsValue⇒NE-∏ {zero} {nil} vs = lift tt
 ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     ⟨ value-nonempty NE-ρ Mv , ArgsValue⇒NE-∏ {NE-ρ = NE-ρ} vs ⟩
 
@@ -205,7 +197,15 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     cdr (⟦ M ⟧ ρ)            ≃⟨ cdr-cong IH ⟩
     cdr (⟦ M′ ⟧ ρ)            ≃⟨⟩
     ⟦ snd M′ ⟧ ρ             ∎ where open ≃-Reasoning
-⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-tuple vargs vs args) M—→M′) = {!!}
+⟦⟧—→ {_}{_}{ρ}{NE-ρ} (ξ-rule {M}{M′} (F-tuple {n = n}{m} vargs vs args) M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ tuple (n + suc m) ⦅ append vargs (cons (ast M) args) ⦆ ⟧ ρ     ≃⟨⟩ 
+    𝒯 (n + suc m) (⟦ append vargs (cons (ast M) args) ⟧₊ ρ)
+        ≃⟨ 𝒯-cong-≃ {!!} ⟩ 
+    𝒯 (n + suc m) (⟦ append vargs (cons (ast M′) args) ⟧₊ ρ)        ≃⟨⟩ 
+    ⟦ tuple (n + suc m) ⦅ append vargs (cons (ast M′) args) ⦆ ⟧ ρ
+             ∎ where open ≃-Reasoning
+
 ⟦⟧—→ {_} {_} {ρ} {NE-ρ} (ξ-rule {M}{M′} (F-get i) M—→M′) = {!!}
 ⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
     ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩

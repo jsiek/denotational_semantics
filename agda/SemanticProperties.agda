@@ -153,3 +153,22 @@ open ContinuousSemantics {{...}}
 Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}{X} NE-X =
     Λ-▪-id {λ D → ⟦ N ⟧ (D • ρ)} (⟦⟧-continuous-one{N}{ρ}{NE-ρ})
         (⟦⟧-monotone-one{N}) NE-X
+
+{- The following is annoying. Can it be simplified? -}
+all-Cont-Env-Arg⇒cont-envs : ∀{{_ : Semantics}}
+    {n}{args : Args (replicate n ■)}{ρ}{NE-ρ}
+    → all-args (Cont-Env-Arg ρ NE-ρ) (replicate n ■) args
+    → continuous-envs (⟦ args ⟧₊) ρ
+all-Cont-Env-Arg⇒cont-envs {zero} {nil}{ρ}{NE-ρ} (lift tt) v v∈𝒯nil =
+    ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
+    ⟨ initial-fin-⊆ ρ NE-ρ , v∈𝒯nil ⟩ ⟩ ⟩
+all-Cont-Env-Arg⇒cont-envs {suc n} {cons (ast M) args}{ρ}{NE-ρ}
+    ⟨ cM , cont-args ⟩ ⟬ v ∷ vs ⟭ ⟨ v∈ , vs∈ ⟩
+    with all-Cont-Env-Arg⇒cont-envs {n} {args}{ρ}{NE-ρ} cont-args ⟬ vs ⟭ vs∈
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , vs∈𝒯argsρ₁ ⟩ ⟩ ⟩
+    with cM v v∈
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈𝒯Mρ₂ ⟩ ⟩ ⟩ =
+    ⟨ ρ₁ ⊔ₑ ρ₂ , ⟨ join-finite-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ ,
+    ⟨ ⟦⟧-monotone M (λ x d z → inj₂ z) v v∈𝒯Mρ₂ ,
+      𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆
+       (⟦⟧-monotone-args args (λ x d z → inj₁ z))) ⟬ vs ⟭ vs∈𝒯argsρ₁ ⟩ ⟩ ⟩ ⟩
