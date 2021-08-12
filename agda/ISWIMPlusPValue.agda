@@ -39,6 +39,9 @@ interp-op fst-op ⟨ D , _ ⟩  = car D
 interp-op snd-op ⟨ D , _ ⟩ = cdr D
 interp-op (tuple n) results = 𝒯 n results
 interp-op (get i) ⟨ D , _ ⟩ = proj D i
+interp-op inl-op ⟨ D , _ ⟩ = ℒ D
+interp-op inr-op ⟨ D , _ ⟩ = ℛ D
+interp-op case-op ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ = 𝒞 D (Λ E) (Λ F)
 
 {- interp-op is monotonic -}
 mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
@@ -46,15 +49,21 @@ mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
 mono-op {lam} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =
     Λ-ext-⊆ (λ {X} → lower (f⊆g X))
 mono-op {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
-    ▪-cong-⊆ (lower a<c) (lower b<d)
+    ▪-mono-⊆ (lower a<c) (lower b<d)
 mono-op {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
 mono-op {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
-    ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-cong-⊆ D₁⊆E₁ D₂⊆E₂
-mono-op {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-cong-⊆ D⊆E 
-mono-op {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-cong-⊆ D⊆E 
+    ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
+mono-op {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 
+mono-op {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-mono-⊆ D⊆E 
 mono-op {tuple n} {args₁}{args₂} IHs =
-    𝒯-cong-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ IHs)
-mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = proj-cong-⊆ D⊆E
+    𝒯-mono-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ IHs)
+mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = proj-mono-⊆ D⊆E
+mono-op {inl-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = ℒ-mono-⊆ D⊆E
+mono-op {inr-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = ℛ-mono-⊆ D⊆E
+mono-op {case-op} {⟨ D₁ , ⟨ f₁ , ⟨ g₁ , _ ⟩ ⟩ ⟩}
+                  {⟨ D₂ , ⟨ f₂ , ⟨ g₂ , _ ⟩ ⟩ ⟩}
+                  ⟨ lift D₁⊆D₂ , ⟨ f₁⊆f₂ , ⟨ g₁⊆g₂ , _ ⟩ ⟩ ⟩ =
+    𝒞-mono-⊆ D₁⊆D₂ (λ X → lower (f₁⊆f₂ X)) (λ X → lower (g₁⊆g₂ X))
 
 instance
   ISWIM-Semantics : Semantics
@@ -105,6 +114,9 @@ continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
        (⟦⟧-monotone-args args)
 continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
     proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
+continuous-op {inl-op} x x₁ = {!!}
+continuous-op {inr-op} x x₁ = {!!}
+continuous-op {case-op} x x₁ = {!!}
 
 instance
   ISWIM-Continuous : ContinuousSemantics
@@ -129,6 +141,8 @@ value-nonempty NE-ρ (V-pair Mv Nv)
     ⟨ ❲ u , v ❳ , ⟨ u∈ , v∈ ⟩ ⟩
 value-nonempty {ρ = ρ} NE-ρ (V-tuple {n}{args} vargs) =
     NE-∏⇒NE-𝒯 (values-NE-∏ {NE-ρ = NE-ρ} vargs)
+value-nonempty {ρ = ρ} NE-ρ (V-inl vM) = {!!}
+value-nonempty {ρ = ρ} NE-ρ (V-inr vM) = {!!}
 
 values-NE-∏ {zero} {nil} vargs = lift tt
 values-NE-∏ {suc n} {cons (ast M) args′}{ρ}{NE-ρ} (V-cons Mv vargs) =
@@ -203,6 +217,8 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     cdr (⟦ M ⟧ ρ)            ≃⟨ cdr-cong IH ⟩
     cdr (⟦ M′ ⟧ ρ)            ≃⟨⟩
     ⟦ snd M′ ⟧ ρ             ∎ where open ≃-Reasoning
+⟦⟧—→ {.(inl _)} {.(inl _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-inl M—→M′) = {!!}
+⟦⟧—→ {.(inr _)} {.(inr _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-inr M—→M′) = {!!}
 ⟦⟧—→ {_}{_}{ρ}{NE-ρ} (ξ-rule {M}{M′} (F-tuple {n = n}{m} vargs vs args) M—→M′) =
     let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
     ⟦ tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆ ⟧ ρ     ≃⟨⟩ 
@@ -256,11 +272,28 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
         ⟦ nth-arg (cons (ast M) args) 0 ⟧ ρ   ∎
     G (suc i) (suc n) (cons (ast M) args) (V-cons Mv vargs) (s≤s lt) =
         proj (𝒯 (suc n) (⟦ cons (ast M) args ⟧₊ ρ)) (suc i)
-                                          ≃⟨ 𝒯-nth-suc (value-nonempty NE-ρ Mv)
-                                              (values-NE-∏{NE-ρ = NE-ρ} vargs) ⟩
+                                         ≃⟨ 𝒯-nth-suc (value-nonempty NE-ρ Mv)
+                                             (values-NE-∏{NE-ρ = NE-ρ} vargs) ⟩
         proj (𝒯 n (⟦ args ⟧₊ ρ)) i         ≃⟨ G i n args vargs lt ⟩
         ⟦ nth-arg args i ⟧ ρ                ≃⟨⟩
         ⟦ nth-arg (cons (ast M) args) (suc i) ⟧ ρ   ∎
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (inl-rule {V}{M}{N} Vv) =
+    ⟦ case (inl V) M N ⟧ ρ                       ≃⟨⟩
+    𝒞 (ℒ (⟦ V ⟧ ρ)) (Λ (λ D → ⟦ M ⟧ (D • ρ))) (Λ (λ D → ⟦ N ⟧ (D • ρ)))
+                     ≃⟨ ℒ-𝒞{G = (λ D → ⟦ N ⟧ (D • ρ))}
+                            (⟦⟧-continuous-one{M}{ρ}{NE-ρ}) (⟦⟧-monotone-one{M})
+                            (value-nonempty NE-ρ Vv) ⟩
+    ⟦ M ⟧ (⟦ V ⟧ ρ • ρ)       ≃⟨ ≃-reflexive (sym (⟦⟧-subst{M}{V}{ρ})) ⟩
+    ⟦ M [ V ] ⟧ ρ             ∎   where open ≃-Reasoning
+⟦⟧—→ {_} {_} {ρ} {NE-ρ} (inr-rule {V}{M}{N} Vv) =
+    ⟦ case (inr V) M N ⟧ ρ                       ≃⟨⟩
+    𝒞 (ℛ (⟦ V ⟧ ρ)) (Λ (λ D → ⟦ M ⟧ (D • ρ))) (Λ (λ D → ⟦ N ⟧ (D • ρ)))
+                     ≃⟨ ℛ-𝒞{F = (λ D → ⟦ M ⟧ (D • ρ))}
+                            (⟦⟧-continuous-one{N}{ρ}{NE-ρ}) (⟦⟧-monotone-one{N})
+                            (value-nonempty NE-ρ Vv) ⟩
+    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)       ≃⟨ ≃-reflexive (sym (⟦⟧-subst{N}{V}{ρ})) ⟩
+    ⟦ N [ V ] ⟧ ρ             ∎   where open ≃-Reasoning
+
 
 soundness : ∀ {M N : Term} {ρ : Env}{NE-ρ : nonempty-env ρ}
   → M —↠ N

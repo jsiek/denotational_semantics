@@ -30,6 +30,9 @@ data Op : Set where
   snd-op : Op
   tuple : ℕ → Op
   get : ℕ → Op
+  inl-op : Op
+  inr-op : Op
+  case-op : Op
 
 sig : Op → List Sig
 sig lam = ν ■ ∷ []
@@ -40,6 +43,9 @@ sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
 sig (tuple n) = replicate n ■
 sig (get i) = ■ ∷ []
+sig inl-op = ■ ∷ []
+sig inr-op = ■ ∷ []
+sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
 
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
@@ -64,6 +70,10 @@ pattern fst M = fst-op ⦅ cons (ast M) nil ⦆
 pattern snd M = snd-op ⦅ cons (ast M) nil ⦆
 
 pattern _❲_❳ M i = (get i) ⦅ cons (ast M) nil ⦆
+
+pattern inl M = inl-op ⦅ cons (ast M) nil ⦆
+pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
+pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
 data ArgsValue : ∀ {n} → Args (replicate n ■) → Set 
 
@@ -90,6 +100,16 @@ data TermValue : Term → Set where
     → ArgsValue args
     → TermValue (tuple n ⦅ args ⦆)
 
+  V-inl : ∀  {M : Term}
+    → TermValue M
+      --------------------------
+    → TermValue (inl M)
+
+  V-inr : ∀  {M : Term}
+    → TermValue M
+      --------------------------
+    → TermValue (inr M)
+
 data ArgsValue where
   V-nil : ArgsValue nil
   V-cons : ∀ {M}{n}{args : Args (replicate n ■)}
@@ -106,6 +126,8 @@ data Frame : Set where
   F-tuple : ∀ {n m} → (vargs : Args (replicate n ■)) → ArgsValue vargs
           → (args : Args (replicate m ■)) → Frame
   F-get : ℕ → Frame
+  F-inl : Frame
+  F-inr : Frame
 
 fill : Term → Frame → Term
 fill L (F-·₁ M)  = L · M
@@ -117,6 +139,8 @@ fill M F-snd     = snd M
 fill M (F-tuple {n}{m} vargs vs args) =
   tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆
 fill M (F-get i) = M ❲ i ❳
+fill M F-inl     = inl M
+fill M F-inr     = inr M
 
 nth-arg : ∀ {n} → Args (replicate n ■) → ℕ → Term
 nth-arg {zero} nil i = $ (base Nat) 0
@@ -127,12 +151,12 @@ infix 2 _—→_
 
 data _—→_ : Term → Term → Set where
 
-  ξ-rule : ∀  {L L′ : Term} (F : Frame)
+  ξ-rule : ∀ {L L′ : Term} (F : Frame)
     → L —→ L′
       ----------------
     → fill L F —→ fill L′ F
 
-  β-rule : ∀  {N : Term} {M : Term}
+  β-rule : ∀ {N M : Term}
     → TermValue M
       ---------------------------------
     → (ƛ N) · M —→ N [ M ]
@@ -141,19 +165,27 @@ data _—→_ : Term → Term → Set where
       ------------------------------------------------------------
     → _—→_  (($ (B ⇒ P) f) · ($ (base B) k)) ($ P (f k))
 
-  fst-rule : ∀  {N : Term} {M : Term}
+  fst-rule : ∀ {N M : Term}
     → TermValue M  →  TermValue N
       ---------------------------------
     → fst (pair M N) —→ M
 
-  snd-rule : ∀  {N : Term} {M : Term}
+  snd-rule : ∀ {N M : Term}
     → TermValue M  →  TermValue N
       ---------------------------------
     → snd (pair M N) —→ N
 
-  get-rule : ∀{n i : ℕ}{args : Args (replicate n ■)}
+  get-rule : ∀ {n i : ℕ}{args : Args (replicate n ■)}
     → ArgsValue args  →  i < n
     → (tuple n ⦅ args ⦆) ❲ i ❳ —→ nth-arg args i
+
+  inl-rule : ∀ {V M N : Term}
+    → TermValue V
+    → case (inl V) M N —→ M [ V ]
+
+  inr-rule : ∀ {V M N : Term}
+    → TermValue V
+    → case (inr V) M N —→ N [ V ]
 
 open import MultiStep Op sig _—→_ public
 
@@ -166,6 +198,8 @@ open import MultiStep Op sig _—→_ public
 —→-app-cong {M = M} (fst-rule Mv Nv) = ξ-rule (F-·₁ M) (fst-rule Mv Nv)
 —→-app-cong {M = M} (snd-rule Mv Nv) = ξ-rule (F-·₁ M) (snd-rule Mv Nv)
 —→-app-cong {M = M} (get-rule vargs lt) = ξ-rule (F-·₁ M) (get-rule vargs lt)
+—→-app-cong {M = M} (inl-rule Mv) = ξ-rule (F-·₁ M) (inl-rule Mv)
+—→-app-cong {M = M} (inr-rule Mv) = ξ-rule (F-·₁ M) (inr-rule Mv)
 
 appL-cong : ∀ {L L' M : Term}
          → L —↠ L'
