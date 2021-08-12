@@ -114,9 +114,11 @@ continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
        (⟦⟧-monotone-args args)
 continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
     proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
-continuous-op {inl-op} x x₁ = {!!}
-continuous-op {inr-op} x x₁ = {!!}
-continuous-op {case-op} x x₁ = {!!}
+continuous-op {inl-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
+    ℒ-continuous{NE-ρ = NE-ρ} v∈ cM (⟦⟧-monotone M)
+continuous-op {inr-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
+    ℛ-continuous{NE-ρ = NE-ρ} v∈ cM (⟦⟧-monotone M)
+continuous-op {case-op}{ρ}{NE-ρ}{v}{args} v∈ IHs = {!!}
 
 instance
   ISWIM-Continuous : ContinuousSemantics

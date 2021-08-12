@@ -122,11 +122,11 @@ proj D i u = Σ[ vs ∈ List Value ]
     i < length vs  ×  ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
 
 ℒ : 𝒫 Value → 𝒫 Value
-ℒ D (left V) = mem V ⊆ D
+ℒ D (left V) = V ≢ []  ×  mem V ⊆ D
 ℒ D _ = False
 
 ℛ : 𝒫 Value → 𝒫 Value
-ℛ D (right V) = mem V ⊆ D
+ℛ D (right V) = V ≢ []  ×  mem V ⊆ D
 ℛ D _ = False
 
 𝒞 : 𝒫 Value → 𝒫 Value → 𝒫 Value → 𝒫 Value
@@ -400,10 +400,12 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
 {- Case, Left, and Right ------------------------------------------------------}
 
 ℒ-mono-⊆ : ∀{D E : 𝒫 Value} → D ⊆ E → ℒ D ⊆ ℒ E
-ℒ-mono-⊆ {D} {E} D⊆E (left V) v∈ = λ d z → D⊆E d (v∈ d z)
+ℒ-mono-⊆ {D} {E} D⊆E (left V) ⟨ V≢[] , v∈ ⟩ =
+    ⟨ V≢[] , (λ d z → D⊆E d (v∈ d z)) ⟩
 
 ℛ-mono-⊆ : ∀{D E : 𝒫 Value} → D ⊆ E → ℛ D ⊆ ℛ E
-ℛ-mono-⊆ {D} {E} D⊆E (right V) v∈ = λ d z → D⊆E d (v∈ d z)
+ℛ-mono-⊆ {D} {E} D⊆E (right V) ⟨ V≢[] , v∈ ⟩ =
+    ⟨ V≢[] , (λ d z → D⊆E d (v∈ d z)) ⟩
 
 𝒞-mono-⊆ : ∀{f₁ f₂ g₁ g₂ : 𝒫 Value → 𝒫 Value}{D₁ D₂ : 𝒫 Value}
    → D₁ ⊆ D₂
@@ -424,14 +426,14 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
 ℒ-𝒞 {D}{F}{G} Fcont Fmono NE-D = ⟨ fwd , back ⟩
   where
   fwd : 𝒞 (ℒ D) (Λ F) (Λ G) ⊆ F D
-  fwd v (inj₁ ⟨ V , ⟨ V⊆D , ⟨ v∈F[V] , V≢[] ⟩ ⟩ ⟩) =
+  fwd v (inj₁ ⟨ V , ⟨ ⟨ _ , V⊆D ⟩ , ⟨ v∈F[V] , V≢[] ⟩ ⟩ ⟩) =
       Fmono (mem V) D V⊆D v v∈F[V]
 
   back : F D ⊆ 𝒞 (ℒ D) (Λ F) (Λ G)
   back v v∈F[D]
       with Fcont D (v ∷ []) (λ{d (here refl) → v∈F[D]}) NE-D
   ... | ⟨ E , ⟨ E⊆D , ⟨ v∈FE , NE-E ⟩ ⟩ ⟩ =
-      inj₁ ⟨ E , ⟨ E⊆D , ⟨ v∈FE v (here refl) , NE-E ⟩ ⟩ ⟩
+      inj₁ ⟨ E , ⟨ ⟨ NE-E , E⊆D ⟩ , ⟨ v∈FE v (here refl) , NE-E ⟩ ⟩ ⟩
 
 ℛ-𝒞 : ∀{D : 𝒫 Value}{F G : 𝒫 Value → 𝒫 Value}
    → continuous G → monotone G → nonempty D
@@ -439,14 +441,14 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
 ℛ-𝒞 {D}{F}{G} Gcont Gmono NE-D = ⟨ fwd , back ⟩
   where
   fwd : 𝒞 (ℛ D) (Λ F) (Λ G) ⊆ G D
-  fwd v (inj₂ ⟨ V , ⟨ V⊆D , ⟨ v∈G[V] , V≢[] ⟩ ⟩ ⟩) =
+  fwd v (inj₂ ⟨ V , ⟨ ⟨ _ , V⊆D ⟩ , ⟨ v∈G[V] , V≢[] ⟩ ⟩ ⟩) =
       Gmono (mem V) D V⊆D v v∈G[V]
 
   back : G D ⊆ 𝒞 (ℛ D) (Λ F) (Λ G)
   back v v∈G[D]
       with Gcont D (v ∷ []) (λ{d (here refl) → v∈G[D]}) NE-D
   ... | ⟨ E , ⟨ E⊆D , ⟨ v∈GE , NE-E ⟩ ⟩ ⟩ =
-      inj₂ ⟨ E , ⟨ E⊆D , ⟨ v∈GE v (here refl) , NE-E ⟩ ⟩ ⟩
+      inj₂ ⟨ E , ⟨ ⟨ NE-E , E⊆D ⟩ , ⟨ v∈GE v (here refl) , NE-E ⟩ ⟩ ⟩
 
 {- Environments ---------------------------------------------------------------}
 
@@ -794,3 +796,20 @@ proj-continuous {D} {ρ} {NE-ρ} {u} {i} ⟨ vs , ⟨ lt , ⟨ vs∈Dρ , refl �
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , vs∈Dρ′ ⟩ ⟩ ⟩ =     
     ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ ,
     ⟨ vs , ⟨ lt , ⟨ mD (λ x d z → z) ⟬ vs ⟭ vs∈Dρ′ , refl ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+
+ℒ-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}
+  → u ∈ ℒ (D ρ)  →  continuous-env D ρ  →  monotone-env D
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ ℒ (D ρ₃)
+ℒ-continuous {D} {ρ} {NE-ρ} {left U} ⟨ U≢[] , U⊆Dρ ⟩ cD mD
+    with continuous-∈⇒⊆ D ρ NE-ρ mD U U⊆Dρ (λ v v∈Dρ → cD v)
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , U⊆Dρ₁ ⟩ ⟩ ⟩ =
+    ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ U≢[] , U⊆Dρ₁ ⟩ ⟩ ⟩ ⟩
+
+ℛ-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}
+  → u ∈ ℛ (D ρ)  →  continuous-env D ρ  →  monotone-env D
+  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ ℛ (D ρ₃)
+ℛ-continuous {D} {ρ} {NE-ρ} {right U} ⟨ U≢[] , U⊆Dρ ⟩ cD mD
+    with continuous-∈⇒⊆ D ρ NE-ρ mD U U⊆Dρ (λ v v∈Dρ → cD v)
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , U⊆Dρ₁ ⟩ ⟩ ⟩ =
+    ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ U≢[] , U⊆Dρ₁ ⟩ ⟩ ⟩ ⟩
+
