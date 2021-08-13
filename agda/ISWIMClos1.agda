@@ -1,9 +1,7 @@
-module ISWIMClos where
+module ISWIMClos1 where
 {-
 
- The intermediate language after the delay pass of the compiler.
- It differs from ISWIM in that functions take two parameters and 
- functions are not lexically scoped.
+ The intermediate language before the delay pass of the compiler.
 
 -}
 
