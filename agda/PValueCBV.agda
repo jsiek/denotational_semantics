@@ -521,7 +521,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 monotone-env : (Env → 𝒫 Value) → Set₁
 monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ D ρ′
 
-{- Results and Products -------------------------------------------------------}
+{- Relations on Results and Products ------------------------------------------}
 
 rel-results : ∀{ℓ}{T : Set ℓ}
    → (∀ b → Result T b → Result T b → Set₁)

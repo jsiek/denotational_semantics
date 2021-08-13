@@ -34,15 +34,18 @@ all-args P (b ∷ bs) (cons arg args) = P b arg × all-args P bs args
 
 record Semantics : Set₁ where
   field interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
-  
+
+  init : 𝒫 Value
+  init = ⌈ ν ⌉
+
   ⟦_⟧ : ABT → Env → 𝒫 Value
-  ⟦ M ⟧ ρ = fold interp-op ∅ ρ M
+  ⟦ M ⟧ ρ = fold interp-op init ρ M
 
   ⟦_⟧ₐ : ∀{b} → Arg b → Env  → Result (𝒫 Value) b
-  ⟦ arg ⟧ₐ ρ = fold-arg interp-op ∅ ρ arg
+  ⟦ arg ⟧ₐ ρ = fold-arg interp-op init ρ arg
 
   ⟦_⟧₊ : ∀{bs} → Args bs → Env  → Tuple bs (Result (𝒫 Value))
-  ⟦ args ⟧₊ ρ = fold-args interp-op ∅ ρ args
+  ⟦ args ⟧₊ ρ = fold-args interp-op init ρ args
 
   field mono-op : ∀{op}{xs}{ys} → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
 
@@ -53,7 +56,8 @@ record Semantics : Set₁ where
     ∀ V → (ne : V ≢ [])
     → Cont-Env-Arg (mem V • ρ)
           (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem ne)) b arg
-  Cont-Env-Arg ρ NE-ρ (∁ b) (clear arg) = Lift (lsuc lzero) True
+  Cont-Env-Arg ρ NE-ρ (∁ b) (clear arg) =
+      Cont-Env-Arg (λ x → init) (λ x → ⟨ ν , refl ⟩) b arg
 
 open Semantics {{...}}
 
@@ -79,7 +83,7 @@ open ContinuousSemantics {{...}}
 ⟦⟧-monotone-arg {ν b}{ρ}{ρ′} (bind arg) ρ<ρ′ X =
     ⟦⟧-monotone-arg {b}{X • ρ}{X • ρ′} arg (env-ext ρ<ρ′)
 ⟦⟧-monotone-arg {∁ b} (clear arg) ρ<ρ′ =
-    ⟦⟧-monotone-arg {b}{λ x → ∅}{λ x → ∅} arg λ x d z → z
+    ⟦⟧-monotone-arg {b}{λ x → init}{λ x → init} arg λ x d z → z
 
 ⟦⟧-monotone-args {bs = []} nil ρ<ρ′ = lift tt
 ⟦⟧-monotone-args {bs = b ∷ bs} (cons arg args) ρ<ρ′ =
@@ -114,9 +118,10 @@ open ContinuousSemantics {{...}}
 ⟦⟧-cont-env-arg {ρ} {NE-ρ} {■} (ast M) v v∈⟦M⟧ρ =
     ⟦⟧-continuous {ρ}{NE-ρ = NE-ρ} M v v∈⟦M⟧ρ
 ⟦⟧-cont-env-arg {ρ} {NE-ρ} {ν b} (bind arg) V V≢[] =
-   let NE-V•ρ = (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem V≢[])) in
-   ⟦⟧-cont-env-arg {mem V • ρ}{NE-V•ρ} {b} arg
-⟦⟧-cont-env-arg {ρ} {NE-ρ} {∁ b} (clear arg) = lift tt
+    let NE-V•ρ = (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem V≢[])) in
+    ⟦⟧-cont-env-arg {mem V • ρ}{NE-V•ρ} {b} arg
+⟦⟧-cont-env-arg {ρ} {NE-ρ} {∁ b} (clear arg) =
+    ⟦⟧-cont-env-arg {λ x → init} {λ x → ⟨ ν , refl ⟩}{b} arg
 
 ⟦⟧-cont-env-args {ρ} {NE-ρ} {[]} nil = lift tt
 ⟦⟧-cont-env-args {ρ} {NE-ρ} {b ∷ bs} (cons arg args) =
