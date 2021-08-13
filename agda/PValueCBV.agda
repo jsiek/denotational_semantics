@@ -403,9 +403,15 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
 ℒ-mono-⊆ {D} {E} D⊆E (left V) ⟨ V≢[] , v∈ ⟩ =
     ⟨ V≢[] , (λ d z → D⊆E d (v∈ d z)) ⟩
 
+ℒ-cong : ∀{D E : 𝒫 Value} → D ≃ E → ℒ D ≃ ℒ E
+ℒ-cong {D}{E} ⟨ D⊆E , E⊆D ⟩ = ⟨ ℒ-mono-⊆ D⊆E , ℒ-mono-⊆ E⊆D ⟩
+
 ℛ-mono-⊆ : ∀{D E : 𝒫 Value} → D ⊆ E → ℛ D ⊆ ℛ E
 ℛ-mono-⊆ {D} {E} D⊆E (right V) ⟨ V≢[] , v∈ ⟩ =
     ⟨ V≢[] , (λ d z → D⊆E d (v∈ d z)) ⟩
+
+ℛ-cong : ∀{D E : 𝒫 Value} → D ≃ E → ℛ D ≃ ℛ E
+ℛ-cong {D}{E} ⟨ D⊆E , E⊆D ⟩ = ⟨ ℛ-mono-⊆ D⊆E , ℛ-mono-⊆ E⊆D ⟩
 
 𝒞-mono-⊆ : ∀{f₁ f₂ g₁ g₂ : 𝒫 Value → 𝒫 Value}{D₁ D₂ : 𝒫 Value}
    → D₁ ⊆ D₂
@@ -515,7 +521,7 @@ join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
 monotone-env : (Env → 𝒫 Value) → Set₁
 monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ D ρ′
 
-{- Needs a name ---------------------------------------------------------------}
+{- Results and Products -------------------------------------------------------}
 
 rel-results : ∀{ℓ}{T : Set ℓ}
    → (∀ b → Result T b → Result T b → Set₁)
@@ -812,4 +818,56 @@ proj-continuous {D} {ρ} {NE-ρ} {u} {i} ⟨ vs , ⟨ lt , ⟨ vs∈Dρ , refl �
     with continuous-∈⇒⊆ D ρ NE-ρ mD U U⊆Dρ (λ v v∈Dρ → cD v)
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , U⊆Dρ₁ ⟩ ⟩ ⟩ =
     ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ U≢[] , U⊆Dρ₁ ⟩ ⟩ ⟩ ⟩
+
+𝒞-continuous : ∀{D E F : Env → 𝒫 Value}{ρ : Env}{NE-ρ : nonempty-env ρ}{u}
+  → u ∈ 𝒞 (D ρ) (Λ (λ X → E (X • ρ))) (Λ (λ X → F (X • ρ)))
+  → continuous-env D ρ → monotone-env D
+  → (∀ V → V ≢ [] → continuous-env E (mem V • ρ)) → monotone-env E
+  → (∀ V → V ≢ [] → continuous-env F (mem V • ρ)) → monotone-env F
+  → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ
+      × u ∈ 𝒞 (D ρ′) (Λ (λ X → E (X • ρ′))) (Λ (λ X → F (X • ρ′)))
+𝒞-continuous {D}{E}{F} {ρ} {NE-ρ} {w}
+    (inj₁ ⟨ V , ⟨ inlV∈D , ⟨ w∈EV•ρ , V≢[] ⟩ ⟩ ⟩)
+    cD mD cE mE cF mF 
+    with cD (left V) inlV∈D
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , inlV∈Dρ₁ ⟩ ⟩ ⟩
+    with cE V V≢[] w w∈EV•ρ
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆V•ρ , w∈Eρ₂ ⟩ ⟩ ⟩ =
+    ⟨ ρ₃ , ⟨ join-finite-env fρ₁ fρ₂′ , ⟨ join-lub ρ₁⊆ρ ρ₂′⊆ρ , u∈𝒞ρ₃ ⟩ ⟩ ⟩
+    where
+    ρ₂′ = (λ x → ρ₂ (suc x))
+    ρ₃ = ρ₁ ⊔ₑ ρ₂′ 
+    fρ₂′ : finite-env ρ₂′
+    fρ₂′ x = fρ₂ (suc x)
+    ρ₂′⊆ρ : ρ₂′ ⊆ₑ ρ
+    ρ₂′⊆ρ x = ρ₂⊆V•ρ (suc x)
+    G : (x : ℕ) (d : Value) → ρ₂ x d → (mem V • ρ₃) x d
+    G zero d d∈ρ₂x = ρ₂⊆V•ρ zero d d∈ρ₂x
+    G (suc x) d d∈ρ₂x = inj₂ d∈ρ₂x
+    u∈𝒞ρ₃ = inj₁ ⟨ V , ⟨ (mD (λ x d z → inj₁ z) (left V) inlV∈Dρ₁) ,
+                  ⟨ (mE G w w∈Eρ₂) ,
+                    V≢[] ⟩ ⟩ ⟩
+𝒞-continuous {D}{E}{F} {ρ} {NE-ρ} {w}
+    (inj₂ ⟨ V , ⟨ inrV∈D , ⟨ w∈FV•ρ , V≢[] ⟩ ⟩ ⟩)
+    cD mD cE mE cF mF 
+    with cD (right V) inrV∈D
+... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , inrV∈Dρ₁ ⟩ ⟩ ⟩
+    with cF V V≢[] w w∈FV•ρ
+... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆V•ρ , w∈Fρ₂ ⟩ ⟩ ⟩ =
+    ⟨ ρ₃ , ⟨ join-finite-env fρ₁ fρ₂′ , ⟨ join-lub ρ₁⊆ρ ρ₂′⊆ρ , u∈𝒞ρ₃ ⟩ ⟩ ⟩
+    where
+    ρ₂′ = (λ x → ρ₂ (suc x))
+    ρ₃ = ρ₁ ⊔ₑ ρ₂′ 
+    fρ₂′ : finite-env ρ₂′
+    fρ₂′ x = fρ₂ (suc x)
+    ρ₂′⊆ρ : ρ₂′ ⊆ₑ ρ
+    ρ₂′⊆ρ x = ρ₂⊆V•ρ (suc x)
+    G : (x : ℕ) (d : Value) → ρ₂ x d → (mem V • ρ₃) x d
+    G zero d d∈ρ₂x = ρ₂⊆V•ρ zero d d∈ρ₂x
+    G (suc x) d d∈ρ₂x = inj₂ d∈ρ₂x
+    u∈𝒞ρ₃ = inj₂ ⟨ V , ⟨ (mD (λ x d z → inj₁ z) (right V) inrV∈Dρ₁) ,
+                  ⟨ (mF G w w∈Fρ₂) ,
+                    V≢[] ⟩ ⟩ ⟩
+
+
 

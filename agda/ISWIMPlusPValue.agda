@@ -118,7 +118,11 @@ continuous-op {inl-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
     ℒ-continuous{NE-ρ = NE-ρ} v∈ cM (⟦⟧-monotone M)
 continuous-op {inr-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
     ℛ-continuous{NE-ρ = NE-ρ} v∈ cM (⟦⟧-monotone M)
-continuous-op {case-op}{ρ}{NE-ρ}{v}{args} v∈ IHs = {!!}
+continuous-op {case-op}{ρ}{NE-ρ}{v}
+    {cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil))}
+    v∈ ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
+   𝒞-continuous{NE-ρ = NE-ρ} v∈ IH-L (⟦⟧-monotone L) IH-M (⟦⟧-monotone M)
+       IH-N (⟦⟧-monotone N)
 
 instance
   ISWIM-Continuous : ContinuousSemantics
@@ -143,8 +147,12 @@ value-nonempty NE-ρ (V-pair Mv Nv)
     ⟨ ❲ u , v ❳ , ⟨ u∈ , v∈ ⟩ ⟩
 value-nonempty {ρ = ρ} NE-ρ (V-tuple {n}{args} vargs) =
     NE-∏⇒NE-𝒯 (values-NE-∏ {NE-ρ = NE-ρ} vargs)
-value-nonempty {ρ = ρ} NE-ρ (V-inl vM) = {!!}
-value-nonempty {ρ = ρ} NE-ρ (V-inr vM) = {!!}
+value-nonempty {ρ = ρ} NE-ρ (V-inl Mv)
+    with value-nonempty NE-ρ Mv
+... | ⟨ u , u∈ ⟩ = ⟨ left (u ∷ []) , ⟨ (λ ()) , (λ{d (here refl) → u∈}) ⟩ ⟩
+value-nonempty {ρ = ρ} NE-ρ (V-inr Mv)
+    with value-nonempty NE-ρ Mv
+... | ⟨ u , u∈ ⟩ = ⟨ right (u ∷ []) , ⟨ (λ ()) , (λ{d (here refl) → u∈}) ⟩ ⟩
 
 values-NE-∏ {zero} {nil} vargs = lift tt
 values-NE-∏ {suc n} {cons (ast M) args′}{ρ}{NE-ρ} (V-cons Mv vargs) =
@@ -219,8 +227,18 @@ ArgsValue⇒NE-∏ {suc n} {cons (ast M) args}{ρ}{NE-ρ} (V-cons Mv vs) =
     cdr (⟦ M ⟧ ρ)            ≃⟨ cdr-cong IH ⟩
     cdr (⟦ M′ ⟧ ρ)            ≃⟨⟩
     ⟦ snd M′ ⟧ ρ             ∎ where open ≃-Reasoning
-⟦⟧—→ {.(inl _)} {.(inl _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-inl M—→M′) = {!!}
-⟦⟧—→ {.(inr _)} {.(inr _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-inr M—→M′) = {!!}
+⟦⟧—→ {.(inl _)} {.(inl _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-inl M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ inl M ⟧ ρ              ≃⟨⟩
+    ℒ (⟦ M ⟧ ρ)              ≃⟨ ℒ-cong IH ⟩
+    ℒ (⟦ M′ ⟧ ρ)             ≃⟨⟩
+    ⟦ inl M′ ⟧ ρ             ∎ where open ≃-Reasoning
+⟦⟧—→ {.(inr _)} {.(inr _)} {ρ} {NE-ρ} (ξ-rule {M}{M′} F-inr M—→M′) =
+    let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
+    ⟦ inr M ⟧ ρ              ≃⟨⟩
+    ℛ (⟦ M ⟧ ρ)              ≃⟨ ℛ-cong IH ⟩
+    ℛ (⟦ M′ ⟧ ρ)             ≃⟨⟩
+    ⟦ inr M′ ⟧ ρ             ∎ where open ≃-Reasoning
 ⟦⟧—→ {_}{_}{ρ}{NE-ρ} (ξ-rule {M}{M′} (F-tuple {n = n}{m} vargs vs args) M—→M′) =
     let IH = ⟦⟧—→{ρ = ρ}{NE-ρ} M—→M′ in
     ⟦ tuple (n + suc m) ⦅ append₊ vargs (cons (ast M) args) ⦆ ⟧ ρ     ≃⟨⟩ 

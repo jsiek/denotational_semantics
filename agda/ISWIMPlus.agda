@@ -1,7 +1,7 @@
 {- 
 
    ISWIMPlus: the call-by-value lambda calculus with constants,
-     products, etc.
+     pairs, tuples, sums, etc.
 
 -}
 
