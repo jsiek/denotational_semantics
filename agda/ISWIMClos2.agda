@@ -146,12 +146,18 @@ continuous-op {fun-op} {ρ} {NE-ρ} {v} {cons (clear (bind (bind (ast N)))) nil}
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
     ⟨ initial-fin-⊆ ρ NE-ρ , v∈⟦funN⟧ ⟩ ⟩ ⟩
 continuous-op {app} {ρ} {NE-ρ} {w}
-    {cons (ast L) (cons (ast M) (cons (ast N) nil))}
-    ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
-    ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
+   {cons (ast L) (cons (ast M) (cons (ast N) nil))}
+   ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
+   ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
 
-    ▪-continuous{λ ρ → ((⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ))}{⟦ N ⟧}{ρ}{NE-ρ}
-       {!!} {!!} IH-N {!!} (⟦⟧-monotone N)
+   ▪-continuous{λ ρ → ((⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ))}{⟦ N ⟧}{ρ}{NE-ρ}
+     ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
+     (λ v v∈ → ▪-continuous {!!} {!!} {!!} {!!} {!!})
+     IH-N
+     (λ {ρ}{ρ′} ρ⊆ρ′ →
+         ▪-mono-⊆ (⟦⟧-monotone{ρ = ρ}{ρ′} L ρ⊆ρ′)
+                  (⟦⟧-monotone{ρ = ρ}{ρ′} M ρ⊆ρ′))
+     (⟦⟧-monotone N)
 continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
     ⟨ initial-fin-⊆ ρ NE-ρ ,
