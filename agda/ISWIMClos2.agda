@@ -149,14 +149,13 @@ continuous-op {app} {ρ} {NE-ρ} {w}
    {cons (ast L) (cons (ast M) (cons (ast N) nil))}
    ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
    ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
-
    ▪-continuous{λ ρ → ((⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ))}{⟦ N ⟧}{ρ}{NE-ρ}
      ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
-     (λ v v∈ → ▪-continuous {!!} {!!} {!!} {!!} {!!})
+     (λ v v∈ → ▪-continuous {NE-ρ = NE-ρ} v∈ IH-L IH-M (⟦⟧-monotone L)
+                            (⟦⟧-monotone M))
      IH-N
-     (λ {ρ}{ρ′} ρ⊆ρ′ →
-         ▪-mono-⊆ (⟦⟧-monotone{ρ = ρ}{ρ′} L ρ⊆ρ′)
-                  (⟦⟧-monotone{ρ = ρ}{ρ′} M ρ⊆ρ′))
+     (λ {ρ}{ρ′} ρ⊆ρ′ → ▪-mono-⊆ (⟦⟧-monotone{ρ = ρ}{ρ′} L ρ⊆ρ′)
+                                (⟦⟧-monotone{ρ = ρ}{ρ′} M ρ⊆ρ′))
      (⟦⟧-monotone N)
 continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
@@ -189,7 +188,7 @@ continuous-op {case-op}{ρ}{NE-ρ}{v}
        IH-N (⟦⟧-monotone N)
 
 instance
-  ISWIM-Continuous : ContinuousSemantics
-  ISWIM-Continuous = record { continuous-op =
+  ISWIMClos2-Continuous : ContinuousSemantics
+  ISWIMClos2-Continuous = record { continuous-op =
       λ{op}{ρ}{NE-ρ} → continuous-op{op}{ρ}{NE-ρ} }
 open ContinuousSemantics {{...}}

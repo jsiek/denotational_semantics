@@ -137,10 +137,13 @@ continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
 continuous-op {clos-op n} {ρ} {NE-ρ} {v}
     {cons (clear (bind (bind (ast N)))) fvs}
-    v∈⟦funN⟧ ⟨ IH-N , _ ⟩ =
-    {- Wow, the lack of lexical scoping makes this case easy! -}
-    ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
-    ⟨ initial-fin-⊆ ρ NE-ρ , {!!} ⟩ ⟩ ⟩
+    ⟨ V , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvs , _ ⟩ ⟩ ⟩ ⟨ IH-N , IH-fvs ⟩
+    with continuous-∈⇒⊆ (λ ρ → 𝒯 n (⟦ fvs ⟧₊ ρ)) ρ NE-ρ
+            (⟦⟧-monotone (tuple n ⦅ fvs ⦆)) V V⊆𝒯fvs
+            (λ u _ u∈ → (all-Cont-Env-Arg⇒cont-envs{NE-ρ = NE-ρ} IH-fvs) u u∈)
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , V⊆𝒯fvsρ′ ⟩ ⟩ ⟩ =                          
+    ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ ,
+    ⟨ V , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvsρ′ , V≢[] ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
 continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
     ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
