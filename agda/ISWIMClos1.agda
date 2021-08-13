@@ -29,7 +29,7 @@ open Eq.≡-Reasoning
 {- Syntax ---------------------------------------------------------------------}
 
 data Op : Set where
-  fun-op : Op
+  clos-op : ℕ → Op
   app : Op
   lit : (p : Prim) → rep p → Op
   pair-op : Op
@@ -42,7 +42,7 @@ data Op : Set where
   case-op : Op
 
 sig : Op → List Sig
-sig fun-op = ∁ (ν (ν ■)) ∷ []
+sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
 sig (lit p k) = []
 sig pair-op = ■ ∷ ■ ∷ []
@@ -65,7 +65,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 Term : Set
 Term = AST
 
-pattern fun N = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆
+pattern clos n N fvs = (clos-op n) ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆
 
 infixl 7  _·_
 pattern _·_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
@@ -86,7 +86,7 @@ open import Fold2 Op sig
 open import SemanticProperties Op sig
 
 interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
-interp-op fun-op ⟨ F , _ ⟩ = Λ λ X → Λ λ Y → F X Y
+interp-op (clos-op n) ⟨ F , Ds ⟩ = (Λ λ X → Λ λ Y → F X Y) ▪ (𝒯 n Ds)
 interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
 interp-op (lit P k) _ = ℘ P k
 interp-op pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
@@ -100,8 +100,9 @@ interp-op case-op ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ = 𝒞 D (Λ E) (Λ F)
 
 mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
    → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
-mono-op {fun-op} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =
-    Λ-ext-⊆ λ {X} → Λ-ext-⊆ λ {Y} → lower (f⊆g X Y)
+mono-op {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs⊆ ⟩ =
+    ▪-mono-⊆ (Λ-ext-⊆ λ {X} → Λ-ext-⊆ λ {Y} → lower (f⊆g X Y))
+             (𝒯-mono-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ fvs⊆)) 
 mono-op {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
     ▪-mono-⊆ (lower a<c) (lower b<d)
 mono-op {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
@@ -125,19 +126,21 @@ instance
                                  mono-op = λ {op} → mono-op {op} }
 open Semantics {{...}}
 
-⟦⟧-fun : ∀{N : Term}{ρ : Env}
-  → ⟦ fun N ⟧ ρ ≡ Λ λ D → Λ λ E → ⟦ N ⟧ (E • D • (λ x → init))
-⟦⟧-fun = refl
+⟦⟧-clos : ∀{n}{N : Term}{fvs : Args (replicate n ■)}{ρ : Env}
+  → ⟦ clos n N fvs ⟧ ρ ≡ (Λ λ D → Λ λ E → ⟦ N ⟧ (E • D • (λ x → init)))
+                         ▪ (𝒯 n (⟦ fvs ⟧₊ ρ))
+⟦⟧-clos = refl
 
 continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
    → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
-continuous-op {fun-op} {ρ} {NE-ρ} {v} {cons (clear (bind (bind (ast N)))) nil}
+continuous-op {clos-op n} {ρ} {NE-ρ} {v}
+    {cons (clear (bind (bind (ast N)))) fvs}
     v∈⟦funN⟧ ⟨ IH-N , _ ⟩ =
     {- Wow, the lack of lexical scoping makes this case easy! -}
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
-    ⟨ initial-fin-⊆ ρ NE-ρ , v∈⟦funN⟧ ⟩ ⟩ ⟩
+    ⟨ initial-fin-⊆ ρ NE-ρ , {!!} ⟩ ⟩ ⟩
 continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
     ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)

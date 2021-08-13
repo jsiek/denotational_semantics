@@ -1,4 +1,4 @@
-module ISWIMClos where
+module ISWIMClos2 where
 {-
 
  The intermediate language after the delay pass of the compiler.
@@ -45,7 +45,7 @@ data Op : Set where
 
 sig : Op → List Sig
 sig fun-op = ∁ (ν (ν ■)) ∷ []
-sig app = ■ ∷ ■ ∷ []
+sig app = ■ ∷ ■ ∷ ■ ∷ []
 sig (lit p k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
@@ -69,8 +69,8 @@ Term = AST
 
 pattern fun N = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆
 
-infixl 7  _·_
-pattern _·_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
+infixl 7  _⦉_,_⦊
+pattern _⦉_,_⦊ L M N = app ⦅ cons (ast L) (cons (ast M) (cons (ast N) nil)) ⦆
 
 pattern $ p k = lit p k ⦅ nil ⦆
 
@@ -89,7 +89,7 @@ open import SemanticProperties Op sig
 
 interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
 interp-op fun-op ⟨ F , _ ⟩ = Λ λ X → Λ λ Y → F X Y
-interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
+interp-op app ⟨ D₁ , ⟨ D₂ , ⟨ D₃ , _ ⟩ ⟩ ⟩ = (D₁ ▪ D₂) ▪ D₃
 interp-op (lit P k) _ = ℘ P k
 interp-op pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
 interp-op fst-op ⟨ D , _ ⟩  = car D
@@ -104,8 +104,9 @@ mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
    → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
 mono-op {fun-op} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =
     Λ-ext-⊆ λ {X} → Λ-ext-⊆ λ {Y} → lower (f⊆g X Y)
-mono-op {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
-    ▪-mono-⊆ (lower a<c) (lower b<d)
+mono-op {app} {⟨ a , ⟨ b , ⟨ c , _ ⟩ ⟩ ⟩} {⟨ x , ⟨ y , ⟨ z , _ ⟩ ⟩ ⟩}
+    ⟨ a<x , ⟨ b<y , ⟨ c<z , _ ⟩ ⟩ ⟩ =
+    ▪-mono-⊆ (▪-mono-⊆ (lower a<x) (lower b<y)) (lower c<z)
 mono-op {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
 mono-op {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
@@ -140,9 +141,14 @@ continuous-op {fun-op} {ρ} {NE-ρ} {v} {cons (clear (bind (bind (ast N)))) nil}
     {- Wow, the lack of lexical scoping makes this case easy! -}
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
     ⟨ initial-fin-⊆ ρ NE-ρ , v∈⟦funN⟧ ⟩ ⟩ ⟩
-continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
-    w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
-    ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
+continuous-op {app} {ρ} {NE-ρ} {w}
+    {cons (ast L) (cons (ast M) (cons (ast N) nil))}
+    w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
+    let xx = ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ {!!} in
+    {!!}
+    {-
+▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
+-}
 continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
     ⟨ initial-fin-⊆ ρ NE-ρ ,
