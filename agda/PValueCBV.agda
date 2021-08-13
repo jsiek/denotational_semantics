@@ -187,6 +187,12 @@ k′∈℘k⇒k′≡k {B}{k}{k′} m
 ... | yes refl = sym m
 ... | no neq = ⊥-elim m
 
+v∈℘k⇒v≡k : ∀{v}{B}{k} → v ∈ ℘ (base B) k → v ≡ const {B} k
+v∈℘k⇒v≡k {const {B′} k′} {B} {k} v∈
+    with base-eq? B B′
+... | yes refl rewrite v∈ = refl
+... | no neq = ⊥-elim v∈
+
 v∈𝒯⇒v≡⟬vs⟭ : ∀{n}{Ds}{v}
   → v ∈ 𝒯 n Ds
   → Σ[ vs ∈ List Value ] v ≡ ⟬ vs ⟭

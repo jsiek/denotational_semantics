@@ -56,7 +56,8 @@ sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
 
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
-                   ⟪_⟫; _[_]; subst-zero; clear; bind; ast; cons; nil; Args;
+                   ⟪_⟫; _[_]; subst-zero; clear; bind; ast; cons; nil;
+                   Arg; Args;
                    rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
                    WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
                    COp; CAst; CBind; ccons; tcons; append₊)
@@ -85,57 +86,57 @@ pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (
 open import Fold2 Op sig
 open import SemanticProperties Op sig
 
-interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
-interp-op (clos-op n) ⟨ F , Ds ⟩ = (Λ λ X → Λ λ Y → F X Y) ▪ (𝒯 n Ds)
-interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
-interp-op (lit P k) _ = ℘ P k
-interp-op pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
-interp-op fst-op ⟨ D , _ ⟩  = car D
-interp-op snd-op ⟨ D , _ ⟩ = cdr D
-interp-op (tuple n) results = 𝒯 n results
-interp-op (get i) ⟨ D , _ ⟩ = proj D i
-interp-op inl-op ⟨ D , _ ⟩ = ℒ D
-interp-op inr-op ⟨ D , _ ⟩ = ℛ D
-interp-op case-op ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ = 𝒞 D (Λ E) (Λ F)
+interp-op1  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
+interp-op1 (clos-op n) ⟨ F , Ds ⟩ = (Λ λ X → Λ λ Y → F X Y) ▪ (𝒯 n Ds)
+interp-op1 app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
+interp-op1 (lit P k) _ = ℘ P k
+interp-op1 pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
+interp-op1 fst-op ⟨ D , _ ⟩  = car D
+interp-op1 snd-op ⟨ D , _ ⟩ = cdr D
+interp-op1 (tuple n) results = 𝒯 n results
+interp-op1 (get i) ⟨ D , _ ⟩ = proj D i
+interp-op1 inl-op ⟨ D , _ ⟩ = ℒ D
+interp-op1 inr-op ⟨ D , _ ⟩ = ℛ D
+interp-op1 case-op ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ = 𝒞 D (Λ E) (Λ F)
 
-mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
-   → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
-mono-op {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs⊆ ⟩ =
+mono-op1 : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
+   → ⊆-results (sig op) xs ys → interp-op1 op xs ⊆ interp-op1 op ys
+mono-op1 {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs⊆ ⟩ =
     ▪-mono-⊆ (Λ-ext-⊆ λ {X} → Λ-ext-⊆ λ {Y} → lower (f⊆g X Y))
              (𝒯-mono-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ fvs⊆)) 
-mono-op {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
+mono-op1 {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
     ▪-mono-⊆ (lower a<c) (lower b<d)
-mono-op {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
-mono-op {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
+mono-op1 {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
+mono-op1 {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
-mono-op {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 
-mono-op {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-mono-⊆ D⊆E 
-mono-op {tuple n} {args₁}{args₂} IHs =
+mono-op1 {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 
+mono-op1 {snd-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = cdr-mono-⊆ D⊆E 
+mono-op1 {tuple n} {args₁}{args₂} IHs =
     𝒯-mono-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ IHs)
-mono-op {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = proj-mono-⊆ D⊆E
-mono-op {inl-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = ℒ-mono-⊆ D⊆E
-mono-op {inr-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = ℛ-mono-⊆ D⊆E
-mono-op {case-op} {⟨ D₁ , ⟨ f₁ , ⟨ g₁ , _ ⟩ ⟩ ⟩}
+mono-op1 {get i} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = proj-mono-⊆ D⊆E
+mono-op1 {inl-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = ℒ-mono-⊆ D⊆E
+mono-op1 {inr-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = ℛ-mono-⊆ D⊆E
+mono-op1 {case-op} {⟨ D₁ , ⟨ f₁ , ⟨ g₁ , _ ⟩ ⟩ ⟩}
                   {⟨ D₂ , ⟨ f₂ , ⟨ g₂ , _ ⟩ ⟩ ⟩}
                   ⟨ lift D₁⊆D₂ , ⟨ f₁⊆f₂ , ⟨ g₁⊆g₂ , _ ⟩ ⟩ ⟩ =
     𝒞-mono-⊆ D₁⊆D₂ (λ X → lower (f₁⊆f₂ X)) (λ X → lower (g₁⊆g₂ X))
 
 instance
   ISWIMClos-Semantics : Semantics
-  ISWIMClos-Semantics = record { interp-op = interp-op ;
-                                 mono-op = λ {op} → mono-op {op} }
-open Semantics {{...}}
+  ISWIMClos-Semantics = record { interp-op = interp-op1 ;
+                                 mono-op = λ {op} → mono-op1 {op} }
+open Semantics {{...}} public
 
 ⟦⟧-clos : ∀{n}{N : Term}{fvs : Args (replicate n ■)}{ρ : Env}
   → ⟦ clos n N fvs ⟧ ρ ≡ (Λ λ D → Λ λ E → ⟦ N ⟧ (E • D • (λ x → init)))
                          ▪ (𝒯 n (⟦ fvs ⟧₊ ρ))
 ⟦⟧-clos = refl
 
-continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
+cont-op2 : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
    → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
-continuous-op {clos-op n} {ρ} {NE-ρ} {v}
+cont-op2 {clos-op n} {ρ} {NE-ρ} {v}
     {cons (clear (bind (bind (ast N)))) fvs}
     ⟨ V , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvs , _ ⟩ ⟩ ⟩ ⟨ IH-N , IH-fvs ⟩
     with continuous-∈⇒⊆ (λ ρ → 𝒯 n (⟦ fvs ⟧₊ ρ)) ρ NE-ρ
@@ -144,34 +145,34 @@ continuous-op {clos-op n} {ρ} {NE-ρ} {v}
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , V⊆𝒯fvsρ′ ⟩ ⟩ ⟩ =                          
     ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ ,
     ⟨ V , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvsρ′ , V≢[] ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-continuous-op {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
+cont-op2 {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
     ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
-continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
+cont-op2 {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
     ⟨ initial-fin-⊆ ρ NE-ρ ,
       v∈⟦M⟧ρ ⟩ ⟩ ⟩
-continuous-op {pair-op}{ρ}{NE-ρ}{v}{cons (ast M) (cons (ast N) nil)} v∈⟦M⟧ρ
+cont-op2 {pair-op}{ρ}{NE-ρ}{v}{cons (ast M) (cons (ast N) nil)} v∈⟦M⟧ρ
     ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ =
     cons-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M IH-N
         (⟦⟧-monotone M) (⟦⟧-monotone N)
-continuous-op {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
+cont-op2 {fst-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     car-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
-continuous-op {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
+cont-op2 {snd-op} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ
     ⟨ IH-M , _ ⟩ =
     cdr-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ IH-M (⟦⟧-monotone M)
-continuous-op {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
+cont-op2 {tuple n} {ρ} {NE-ρ} {v} {args} v∈⟦M⟧ρ cont-args =
    𝒯-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ
        (all-Cont-Env-Arg⇒cont-envs{NE-ρ = NE-ρ} cont-args)
        (⟦⟧-monotone-args args)
-continuous-op {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
+cont-op2 {get i} {ρ} {NE-ρ} {v} {cons (ast M) nil} v∈⟦M⟧ρ ⟨ cM , _ ⟩ =
     proj-continuous{NE-ρ = NE-ρ} v∈⟦M⟧ρ cM (⟦⟧-monotone M)
-continuous-op {inl-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
+cont-op2 {inl-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
     ℒ-continuous{NE-ρ = NE-ρ} v∈ cM (⟦⟧-monotone M)
-continuous-op {inr-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
+cont-op2 {inr-op}{ρ}{NE-ρ}{v}{cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
     ℛ-continuous{NE-ρ = NE-ρ} v∈ cM (⟦⟧-monotone M)
-continuous-op {case-op}{ρ}{NE-ρ}{v}
+cont-op2 {case-op}{ρ}{NE-ρ}{v}
     {cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil))}
     v∈ ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
    𝒞-continuous{NE-ρ = NE-ρ} v∈ IH-L (⟦⟧-monotone L) IH-M (⟦⟧-monotone M)
@@ -180,5 +181,5 @@ continuous-op {case-op}{ρ}{NE-ρ}{v}
 instance
   ISWIM-Continuous : ContinuousSemantics
   ISWIM-Continuous = record { continuous-op =
-      λ{op}{ρ}{NE-ρ} → continuous-op{op}{ρ}{NE-ρ} }
-open ContinuousSemantics {{...}}
+      λ{op}{ρ}{NE-ρ} → cont-op2{op}{ρ}{NE-ρ} }
+open ContinuousSemantics {{...}} public
