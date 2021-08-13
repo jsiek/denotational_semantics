@@ -132,6 +132,10 @@ open Semantics {{...}}
   → ⟦ fun N ⟧ ρ ≡ Λ λ D → Λ λ E → ⟦ N ⟧ (E • D • (λ x → init))
 ⟦⟧-fun = refl
 
+⟦⟧-app : ∀{L M N : Term}{ρ : Env}{w : Value}
+   → w ∈ ⟦ L ⦉ M , N ⦊ ⟧ ρ ≡ w ∈ ((⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ)) ▪ (⟦ N ⟧ ρ)
+⟦⟧-app = refl
+
 continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
    → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
@@ -143,12 +147,11 @@ continuous-op {fun-op} {ρ} {NE-ρ} {v} {cons (clear (bind (bind (ast N)))) nil}
     ⟨ initial-fin-⊆ ρ NE-ρ , v∈⟦funN⟧ ⟩ ⟩ ⟩
 continuous-op {app} {ρ} {NE-ρ} {w}
     {cons (ast L) (cons (ast M) (cons (ast N) nil))}
-    w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
-    let xx = ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ {!!} in
-    {!!}
-    {-
-▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)
--}
+    ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
+    ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
+
+    ▪-continuous{λ ρ → ((⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ))}{⟦ N ⟧}{ρ}{NE-ρ}
+       {!!} {!!} IH-N {!!} (⟦⟧-monotone N)
 continuous-op {lit p x} {ρ} {NE-ρ} {v} {nil} v∈⟦M⟧ρ _ =
     ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
     ⟨ initial-fin-⊆ ρ NE-ρ ,
