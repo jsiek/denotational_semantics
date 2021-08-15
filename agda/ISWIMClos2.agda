@@ -13,7 +13,7 @@ open import ScopedTuple hiding (𝒫)
 open import Sig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import PValueCBV
+open import PValueCBVAnnot
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -33,7 +33,7 @@ open Eq.≡-Reasoning
 data Op : Set where
   fun-op : Op
   app : Op
-  lit : (p : Prim) → rep p → Op
+  lit : (B : Base) → base-rep B → Op
   pair-op : Op
   fst-op : Op
   snd-op : Op
@@ -46,7 +46,7 @@ data Op : Set where
 sig : Op → List Sig
 sig fun-op = ∁ (ν (ν ■)) ∷ []
 sig app = ■ ∷ ■ ∷ ■ ∷ []
-sig (lit p k) = []
+sig (lit B k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
@@ -73,7 +73,7 @@ pattern fun N = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆
 infixl 7  _⦉_,_⦊
 pattern _⦉_,_⦊ L M N = app ⦅ cons (ast L) (cons (ast M) (cons (ast N) nil)) ⦆
 
-pattern $ p k = lit p k ⦅ nil ⦆
+pattern $ B k = lit B k ⦅ nil ⦆
 
 pattern pair L M = pair-op ⦅ cons (ast L) (cons (ast M) nil) ⦆
 pattern fst M = fst-op ⦅ cons (ast M) nil ⦆
@@ -86,12 +86,12 @@ pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
 pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
 open import Fold2 Op sig
-open import SemanticProperties Op sig
+open import SemanticPropertiesAnnot Op sig
 
 interp-op2  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
 interp-op2 fun-op ⟨ F , _ ⟩ = Λ λ X → Λ λ Y → F X Y
 interp-op2 app ⟨ D₁ , ⟨ D₂ , ⟨ D₃ , _ ⟩ ⟩ ⟩ = (D₁ ▪ D₂) ▪ D₃
-interp-op2 (lit P k) _ = ℘ P k
+interp-op2 (lit B k) _ = ℬ B k
 interp-op2 pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
 interp-op2 fst-op ⟨ D , _ ⟩  = car D
 interp-op2 snd-op ⟨ D , _ ⟩ = cdr D
@@ -148,10 +148,12 @@ cont-op2 {fun-op} {ρ} {NE-ρ} {v} {cons (clear (bind (bind (ast N)))) nil}
     ⟨ initial-fin-⊆ ρ NE-ρ , v∈⟦funN⟧ ⟩ ⟩ ⟩
 cont-op2 {app} {ρ} {NE-ρ} {w}
    {cons (ast L) (cons (ast M) (cons (ast N) nil))}
-   ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
+   ⟨ V , ⟨ FVS , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ ,
+         ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩ ⟩
    ⟨ IH-L , ⟨ IH-M , ⟨ IH-N , _ ⟩ ⟩ ⟩ =
    ▪-continuous{λ ρ → ((⟦ L ⟧ ρ) ▪ (⟦ M ⟧ ρ))}{⟦ N ⟧}{ρ}{NE-ρ}
-     ⟨ V , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ , ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩
+     ⟨ V , ⟨ FVS , ⟨ ⟨ V′ , ⟨ V′↦V↦w∈⟦L⟧ , ⟨ V′⊆⟦M⟧ , V′≢[] ⟩ ⟩ ⟩ ,
+           ⟨ V⊆⟦N⟧ , V≢[] ⟩ ⟩ ⟩ ⟩
      (λ v v∈ → ▪-continuous {NE-ρ = NE-ρ} v∈ IH-L IH-M (⟦⟧-monotone L)
                             (⟦⟧-monotone M))
      IH-N

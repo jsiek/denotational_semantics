@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module ISWIMClos1 where
 {-
 
@@ -11,7 +13,7 @@ open import ScopedTuple hiding (𝒫)
 open import Sig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import PValueCBV
+open import PValueCBVAnnot
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -31,7 +33,7 @@ open Eq.≡-Reasoning
 data Op : Set where
   clos-op : ℕ → Op
   app : Op
-  lit : (p : Prim) → rep p → Op
+  lit : (B : Base) → base-rep B → Op
   pair-op : Op
   fst-op : Op
   snd-op : Op
@@ -44,7 +46,7 @@ data Op : Set where
 sig : Op → List Sig
 sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
-sig (lit p k) = []
+sig (lit B k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
@@ -71,7 +73,7 @@ pattern clos n N fvs = (clos-op n) ⦅ cons (clear (bind (bind (ast N)))) fvs �
 infixl 7  _·_
 pattern _·_ L M = app ⦅ cons (ast L) (cons (ast M) nil) ⦆
 
-pattern $ p k = lit p k ⦅ nil ⦆
+pattern $ B k = lit B k ⦅ nil ⦆
 
 pattern pair L M = pair-op ⦅ cons (ast L) (cons (ast M) nil) ⦆
 pattern fst M = fst-op ⦅ cons (ast M) nil ⦆
@@ -84,12 +86,13 @@ pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
 pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
 open import Fold2 Op sig
-open import SemanticProperties Op sig
+open import SemanticPropertiesAnnot Op sig
 
 interp-op1  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
-interp-op1 (clos-op n) ⟨ F , Ds ⟩ = (Λ λ X → Λ λ Y → F X Y) ▪ (𝒯 n Ds)
+interp-op1 (clos-op n) ⟨ F , Ds ⟩ =
+    (Λ λ X → Λ′ (𝒯 n Ds) λ Y → F X Y) ▪ (𝒯 n Ds)
 interp-op1 app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
-interp-op1 (lit P k) _ = ℘ P k
+interp-op1 (lit B k) _ = ℬ B k
 interp-op1 pair-op ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = 〘 D₁ , D₂ 〙
 interp-op1 fst-op ⟨ D , _ ⟩  = car D
 interp-op1 snd-op ⟨ D , _ ⟩ = cdr D
@@ -101,9 +104,11 @@ interp-op1 case-op ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ = 𝒞 D (Λ E) (Λ F)
 
 mono-op1 : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
    → ⊆-results (sig op) xs ys → interp-op1 op xs ⊆ interp-op1 op ys
-mono-op1 {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs⊆ ⟩ =
+mono-op1 {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs⊆ ⟩ = {!!}
+{-
     ▪-mono-⊆ (Λ-ext-⊆ λ {X} → Λ-ext-⊆ λ {Y} → lower (f⊆g X Y))
              (𝒯-mono-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ fvs⊆)) 
+-}
 mono-op1 {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
     ▪-mono-⊆ (lower a<c) (lower b<d)
 mono-op1 {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
@@ -128,8 +133,9 @@ instance
 open Semantics {{...}} public
 
 ⟦⟧-clos : ∀{n}{N : Term}{fvs : Args (replicate n ■)}{ρ : Env}
-  → ⟦ clos n N fvs ⟧ ρ ≡ (Λ λ D → Λ λ E → ⟦ N ⟧ (E • D • (λ x → init)))
-                         ▪ (𝒯 n (⟦ fvs ⟧₊ ρ))
+  → ⟦ clos n N fvs ⟧ ρ ≡
+         (Λ λ D → Λ′ (𝒯 n (⟦ fvs ⟧₊ ρ)) λ E → ⟦ N ⟧ (E • D • (λ x → init)))
+             ▪ (𝒯 n (⟦ fvs ⟧₊ ρ))
 ⟦⟧-clos = refl
 
 cont-op2 : ∀{op}{ρ}{NE-ρ}{v}{args}
@@ -138,13 +144,17 @@ cont-op2 : ∀{op}{ρ}{NE-ρ}{v}{args}
    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
 cont-op2 {clos-op n} {ρ} {NE-ρ} {v}
     {cons (clear (bind (bind (ast N)))) fvs}
-    ⟨ V , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvs , _ ⟩ ⟩ ⟩ ⟨ IH-N , IH-fvs ⟩
+    ⟨ V , ⟨ FVS , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvs , _ ⟩ ⟩ ⟩ ⟩
+    ⟨ IH-N , IH-fvs ⟩
     with continuous-∈⇒⊆ (λ ρ → 𝒯 n (⟦ fvs ⟧₊ ρ)) ρ NE-ρ
             (⟦⟧-monotone (tuple n ⦅ fvs ⦆)) V V⊆𝒯fvs
             (λ u _ u∈ → (all-Cont-Env-Arg⇒cont-envs{NE-ρ = NE-ρ} IH-fvs) u u∈)
-... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , V⊆𝒯fvsρ′ ⟩ ⟩ ⟩ =                          
+... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ , V⊆𝒯fvsρ′ ⟩ ⟩ ⟩ =
+    {!!}
+    {-
     ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆ρ ,
-    ⟨ V , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvsρ′ , V≢[] ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+    ⟨ V , ⟨ FVS , ⟨ ⟨ v∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvsρ′ , V≢[] ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+    -}
 cont-op2 {app} {ρ} {NE-ρ} {w} {cons (ast L) (cons (ast M) nil)}
     w∈⟦L·M⟧ρ ⟨ IH-L , ⟨ IH-M , _ ⟩ ⟩ =
     ▪-continuous{NE-ρ = NE-ρ} w∈⟦L·M⟧ρ IH-L IH-M (⟦⟧-monotone L) (⟦⟧-monotone M)

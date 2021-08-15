@@ -8,20 +8,22 @@ open import ISWIMClos2
       cons to cons₂; ast to ast₂; nil to nil₂; _⦅_⦆ to _⦅_⦆₂;
       ⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧₂ₐ; ⟦_⟧₊ to ⟦_⟧₂₊)
 open import Primitives
-open import PValueCBV
+open import PValueCBVAnnot
 open import ScopedTuple hiding (𝒫)
 open import SetsAsPredicates
 open import Sig
 
 open import Data.List using (List; []; _∷_; _++_; length; replicate)
+open import Data.List.Relation.Unary.Any using (here; there) 
 open import Data.Nat using (ℕ; suc ; zero)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit.Polymorphic using (⊤; tt)
 open import Data.Unit renaming (tt to True)
+open import Level using (lift)
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; refl; sym; trans; cong)
+  using (_≡_; _≢_; refl; sym; trans; cong)
 open import Data.Empty using (⊥-elim)
 
 delay : Term → Term₂
@@ -30,8 +32,7 @@ delay-args : ∀{n} → Args (replicate n ■) → Args₂ (replicate n ■)
 delay (` x) = # x
 delay (clos n N fvs) = pair₂ (fun (delay N)) (tuple₂ n ⦅ delay-args fvs ⦆₂)
 delay (L · M) = let dL = delay L in (fst₂ dL) ⦉ snd₂ dL , delay M ⦊
-delay ($ (base B) k) = % (base B) k
-delay ($ (B ⇒ P) f) = pair₂ (fun {!!}) (% (base Nat) 0)
+delay ($ B k) = % B k
 delay (pair M N) = pair₂ (delay M) (delay N)
 delay (fst M) = fst₂ (delay M)
 delay (snd M) = snd₂ (delay M)
@@ -52,10 +53,10 @@ infix 6 _≅_
 data _≅_ : Value → Value → Set where
    ≅-const : ∀ {B} (k : base-rep B)
           → const {B} k ≅ const {B} k
-   ≅-↦ : ∀{u V V′}{w w′}
-      → V ≊ V′  →   w ≅ w′ 
-      → V ↦ w ≅ ❲ (u ∷ []) ↦ (V′ ↦ w′) , u ❳
-   ≅-ν : ∀{u} → ν ≅ ❲ ν , u ❳
+   ≅-↦ : ∀{fvs fvs′ FVS V V′}{w w′}
+      → V ≊ V′  →   w ≅ w′   →   fvs ≊ fvs′   →  ⟬ fvs′ ⟭ ∈ mem FVS
+      → fvs ⊢ V ↦ w ≅ ❲ [] ⊢ FVS ↦ ([] ⊢ V′ ↦ w′) , ⟬ fvs′ ⟭ ❳
+   ≅-ν : ∀{u} → ν ≅ ❲ ν , u ❳ {- needs work -}
    ≅-pair : ∀{u u′ v v′}
       → u ≅ u′  →  v ≅ v′ 
       → ❲ u , v ❳ ≅ ❲ u′ , v′ ❳
@@ -74,6 +75,35 @@ data _≊_ where
   ≊-cons : ∀{v v′}{vs vs′}
      → v ≅ v′  →   vs ≊ vs′ 
      → (v ∷ vs) ≊ (v′ ∷ vs′)
+
+tos : List Value → List Value
+
+to : Value → Value
+to (const k) = const k
+to (fvs ⊢ V ↦ w) =
+    ❲ [] ⊢ (⟬ tos fvs ⟭ ∷ []) ↦ ([] ⊢ tos V ↦ to w) , ⟬ tos fvs ⟭ ❳
+to ν = ❲ ν , const 0 ❳ {- needs work -}
+to ❲ u , v ❳ = ❲ to u , to v ❳
+to ⟬ vs ⟭ = ⟬ tos vs ⟭
+to (left V) = left (tos V)
+to (right V) = right (tos V)
+
+tos [] = []
+tos (v ∷ vs) = (to v) ∷ (tos vs)
+
+to⇒≅ : (v : Value) → v ≅ to v
+tos⇒≊ : (vs : List Value) → vs ≊ tos vs
+
+to⇒≅ (const k) = ≅-const k
+to⇒≅ (fvs ⊢ V ↦ w) = ≅-↦ (tos⇒≊ V) (to⇒≅ w) (tos⇒≊ fvs) (here refl)
+to⇒≅ ν = ≅-ν
+to⇒≅ ❲ u , v ❳ = ≅-pair (to⇒≅ u) (to⇒≅ v)
+to⇒≅ ⟬ vs ⟭ = ≅-tuple (tos⇒≊ vs)
+to⇒≅ (left V) = ≅-left (tos⇒≊ V)
+to⇒≅ (right V) = ≅-right (tos⇒≊ V)
+tos⇒≊ [] = ≊-nil
+tos⇒≊ (v ∷ vs) = ≊-cons (to⇒≅ v) (tos⇒≊ vs)
+
 
 infix 5 _≲_
 _≲_ : (𝒫 Value) → (𝒫 Value) → Set
@@ -103,6 +133,44 @@ data _≈₊_ : ∀ {bs} → Tuple bs (Result (𝒫 Value))
        → _≈ₐ_ {b} D₁ D₂ → Ds₁ ≈₊ Ds₂
        → _≈₊_ {b ∷ bs} ⟨ D₁ , Ds₁ ⟩  ⟨ D₂ , Ds₂ ⟩
 
+≲-env : (Var → 𝒫 Value) → (Var → 𝒫 Value) → Set
+≲-env ρ ρ′ = ∀ x → ρ x ≲ ρ′ x
+
+tos≢[] : ∀{vs} → vs ≢ [] → tos vs ≢ []
+tos≢[] {[]} xx _ = xx refl
+tos≢[] {v ∷ vs} xx = λ ()
+
+delay-correct : ∀ {ρ ρ′ : Var → 𝒫 Value} (M : Term)
+  → ≲-env ρ ρ′
+  → (⟦ M ⟧ ρ) ≲ (⟦ delay M ⟧₂ ρ′)
+delay-correct {ρ}{ρ′} (` x) ρ≲ρ′ = ρ≲ρ′ x
+delay-correct {ρ}{ρ′} (clos n N fvs) ρ≲ρ′ ν
+    ⟨ V , ⟨ FVS , ⟨ ⟨ w∈ΛN , V≢[] ⟩ , ⟨ V⊆𝒯fvsρ , _ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ to ν , ⟨ ⟨ True , {!!} ⟩ , (to⇒≅ ν) ⟩ ⟩
+delay-correct {ρ}{ρ′} (clos n N fvs) ρ≲ρ′ (FVS₁ ⊢ V₂ ↦ w)
+    ⟨ Vᶠ , ⟨ [] , ⟨ ⟨ ⟨ w∈N[V₂•Vᶠ] , ⟨ V₂≢[] , FVS₁∈𝒯fvs ⟩ ⟩ , ⟨ Vᶠ≢[] , refl ⟩ ⟩ ,
+           ⟨ Vᶠ⊆𝒯fvsρ , _ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ to (FVS₁ ⊢ V₂ ↦ w) , ⟨ ⟨ F , G ⟩ , (to⇒≅ (FVS₁ ⊢ V₂ ↦ w)) ⟩ ⟩
+    where
+    ρ₁ = (mem V₂ • mem (⟬ FVS₁ ⟭ ∷ []) • (λ x → ⌈ ν ⌉))
+    ρ₁′ = (mem (tos V₂) • mem (⟬ tos FVS₁ ⟭ ∷ []) • (λ x → ⌈ ν ⌉))
+    ρ₁<ρ₁′ : ≲-env ρ₁ ρ₁′
+    ρ₁<ρ₁′ = {!!}
+    IH-N : ⟦ N ⟧ ρ₁ ≲ ⟦ delay N ⟧₂ ρ₁′
+    IH-N = delay-correct {ρ₁}{ρ₁′} N ρ₁<ρ₁′
+    w′∈⟦dN⟧ρ₁ : to w ∈ ⟦ delay N ⟧₂ ρ₁
+    w′∈⟦dN⟧ρ₁
+        with IH-N w {!w∈N[V₂•Vᶠ]!} {- Vᶠ != (⟬ FVS₁ ⟭ ∷ []) -}
+    ... | ⟨ w′ , ⟨ w′∈dN , w≅w′ ⟩ ⟩ = {!!}
+
+    F = ⟨ ⟨ {!!} , {- Use IH on w∈N[V₂•Vᶠ] -}
+          ⟨ tos≢[] V₂≢[] ,
+            refl ⟩ ⟩ , ⟨ (λ ()) , refl ⟩ ⟩
+    G = {!!} {- Use IH on FVS₁∈𝒯fvs -}
+delay-correct {ρ}{ρ′} (L · M) ρ≲ρ′ v v∈ = {!!}
+delay-correct {ρ}{ρ′} M ρ≲ρ′ v v∈ = {!!}
+
+{-
 ≈-env : (Var → 𝒫 Value) → (Var → 𝒫 Value) → Set
 ≈-env ρ ρ′ = ∀ x → ρ x ≈ ρ′ x
 
@@ -115,13 +183,37 @@ delay-args-correct : ∀ {ρ ρ′ : Var → 𝒫 Value} n (args : Args (replica
   → (⟦ args ⟧₊ ρ) ≈₊ (⟦ delay-args args ⟧₂₊ ρ′)
 
 delay-correct (` x) ρ≈ρ′ = ρ≈ρ′ x
-delay-correct (clos n N fvs) ρ≈ρ′ = {!!}
-delay-correct (L · M) ρ≈ρ′ = {!!}
-delay-correct {ρ}{ρ′} ($ P k) ρ≈ρ′ = ⟨ {!!} , {!!} ⟩
+delay-correct {ρ}{ρ′} (clos n N fvs) ρ≈ρ′ = ⟨ G , {!!} ⟩
   where
-  G : ⟦ $ P k ⟧ ρ ≲ ⟦ % P k ⟧₂ ρ′
-  G v v∈ = {!!}
+  
+  G : ⟦ clos n N fvs ⟧ ρ ≲
+      ⟦ pair₂ (fun (delay N)) (tuple₂ n ⦅ delay-args fvs ⦆₂) ⟧₂ ρ′
+  G (E ↦ w) ⟨ [] , ⟨ ⟨ ⟨ w∈N[E•D•v] , E≢[] ⟩ , _ ⟩ , ⟨ D⊆𝒯fvs , D≢[] ⟩ ⟩ ⟩ =
+      ⊥-elim (D≢[] refl)
+  G (E ↦ w) ⟨ d ∷ D , ⟨ ⟨ ⟨ w∈N[E•D•v] , E≢[] ⟩ , _ ⟩ , ⟨ D⊆𝒯fvs , D≢[] ⟩ ⟩ ⟩
+      with v∈𝒯⇒v≡⟬vs⟭ (D⊆𝒯fvs d (here refl))
+  ... | ⟨ vs , refl ⟩ =
+      let ρ₁ = mem E • mem D • (λ x → ⌈ ν ⌉)
+      let ρ₂ = mem E • mem D • (λ x → ⌈ ν ⌉)
+      let IH = delay-correct{ρ₁}{?} N ? in
 
+      ⟨ ❲ {!!} , {!!} ❳ , ⟨ ⟨ {!!} , {!!} ⟩ , {!!} ⟩ ⟩
+
+
+  G ν ⟨ V , ⟨ ⟨ V↦w∈D , _ ⟩ , ⟨ V⊆E , V≢[] ⟩ ⟩ ⟩ =
+      ⟨ ❲ {!!} , {!!} ❳ , ⟨ {!!} , {!!} ⟩ ⟩
+  
+delay-correct (L · M) ρ≈ρ′ = {!!}
+delay-correct {ρ}{ρ′} ($ B k) ρ≈ρ′ = ⟨ G , H ⟩
+  where
+  G : ⟦ $ B k ⟧ ρ ≲ ⟦ % B k ⟧₂ ρ′
+  G v v∈
+      with v∈ℬk⇒v≡k{v}{B}{k} v∈
+  ... | refl = ⟨ v , ⟨ v∈ , ≅-const k ⟩ ⟩
+  H : ⟦ $ B k ⟧ ρ ≳ ⟦ % B k ⟧₂ ρ′
+  H v v∈
+      with v∈ℬk⇒v≡k{v}{B}{k} v∈
+  ... | refl = ⟨ v , ⟨ v∈ , ≅-const k ⟩ ⟩
 delay-correct (pair M N) ρ≈ρ′ = {!!}
 delay-correct (fst M) ρ≈ρ′ = {!!}
 delay-correct (snd M) ρ≈ρ′ = {!!}
@@ -133,3 +225,4 @@ delay-correct (case L M N) ρ≈ρ′ = {!!}
 
 delay-args-correct zero nil = {!!}
 delay-args-correct (suc n) (cons (ast M) args) = {!!}
+-}
