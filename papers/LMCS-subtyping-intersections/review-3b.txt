@@ -1,0 +1,49 @@
+Transitivity of Subtyping for Intersection Types
+
+Recommendation: The paper does not meet the high standards set by
+Logical Methods in Computer Science, and I recommend rejection.
+
+Overall evaluation: 5
+
+
+The paper introduces a new presentation of the subtyping relation of
+intersection types from the BCD system.
+
+The main property of this <: presentation is the absence of
+transitivity property in the definition. As a consequence the system
+satisfies the ``subformula conjunction property'' (a weakening of the
+subformula property).
+A previous presentation by Laurent is mentioned to satisfy the
+subformula property but by relying on a sequent-style system.
+
+There is a great improvement with respect to the first version
+regarding the introduction. The context and motivations are now much
+more clearly presented.
+
+Two main weaknesses remain.
+
+The "subformula conjunction property" is presented in the abstract, as
+well as in the introduction. However it is not formally defined in the
+technical part, and no proof that <: satisfies it is given. As a new
+property, it deserves some discussions. In particular it does not seem
+to ensure that types in a derivation of a given A <: B belong to a
+finite set of types computable from A and B (as the subformula
+property would ensure).
+
+Note that [10] and [29] ensure the traditional (stronger) subformula
+property.
+Comparison with [10] is extremely short. And comparison with [29]
+mostly relies on ``exchanging the six lemmas for just one'' which is
+not a very convincing measure. In particular since only two of them
+are required in [29] to get the subformula property, and here Theorem
+7 relies on Propositions 1, 2, 3, 5 and on Lemma 6. The main advantage
+of <: over the presentation of [29] is to avoid the use of sequents,
+but instead it relies on six other auxiliary functions and predicates
+over types.
+
+page 1, line -2: them -> of them
+page 2, line -2: import -> important
+page 8, line -2: cod(A')<:B -> cod(A')<:B2
+page 10, line 5: components A and A' are not considered on the right
+page 12, line 8: \neg,top -> \neg top
+page 13, line -6: them missing
