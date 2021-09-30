@@ -2,11 +2,25 @@
 
 REVIEW UPDATE ON REVISION
 
-I am glad to see that the author addressed all comments and questions from the initial cycle to my satisfaction. The revision is updated in several ways, including a more straightforward induction measure (as suggested by another reviewer), and the addition of a new section "Motivations from Verified Compilation" which goes into more detail regarding various choices in the development of the associated proofs and in general helps to set the scene. 
+I am glad to see that the author addressed all comments and questions
+from the initial cycle to my satisfaction. The revision is updated in
+several ways, including a more straightforward induction measure (as
+suggested by another reviewer), and the addition of a new section
+"Motivations from Verified Compilation" which goes into more detail
+regarding various choices in the development of the associated proofs
+and in general helps to set the scene.
 
-Finally, the paper now includes a thorough discussion of the "transitivity pushback" approach taken in related work and provides some intuition on difficulties in applying it to the original BCD subtyping rules. 
+Finally, the paper now includes a thorough discussion of the
+"transitivity pushback" approach taken in related work and provides
+some intuition on difficulties in applying it to the original BCD
+subtyping rules.
 
-The author also suggests in their response that the potential pushback-adapted "(→∩)" rule below may not be suitable when used in the B <: C premise of (trans) -- I may be missing something, but it seems to me that given that rule on the right, one would be able to arrive at the desired result using further pushback to invert the left premise of (trans), which is permitted during induction:
+The author also suggests in their response that the potential
+pushback-adapted "(→∩)" rule below may not be suitable when used in
+the B <: C premise of (trans) -- I may be missing something, but it
+seems to me that given that rule on the right, one would be able to
+arrive at the desired result using further pushback to invert the left
+premise of (trans), which is permitted during induction:
 
 W ≤ (A -> B) ∩ (A -> C)
 
@@ -44,17 +58,50 @@ In any case, this isn't a crucial point, so I'm happy to see this paper publishe
 
 REVIEW ON INITIAL SUBMISSION
 
-The paper considers intersection type systems in the style of Coppo, Dezani-Ciancaglini, and Salle, and more closely Barendregt, Dekkers, and Statman (BCD). These systems typically include an explicit transitivity rule in the Subtyping relation, which, among other things, poses issues for inversion lemmas. The paper follows up on a recent result by Laurent who demonstrated that equivalent systems can be formulated without explicit transitivity. In comparison to Laurent, the paper presents a much simplified proof strategy, reducing six lemmas to one, and eliminating the need for a separate sequent-style system. 
+The paper considers intersection type systems in the style of Coppo,
+Dezani-Ciancaglini, and Salle, and more closely Barendregt, Dekkers,
+and Statman (BCD). These systems typically include an explicit
+transitivity rule in the Subtyping relation, which, among other
+things, poses issues for inversion lemmas. The paper follows up on a
+recent result by Laurent who demonstrated that equivalent systems can
+be formulated without explicit transitivity. In comparison to Laurent,
+the paper presents a much simplified proof strategy, reducing six
+lemmas to one, and eliminating the need for a separate sequent-style
+system.
 
-With the adoption of intersection types into mainstream programming languages like TypeScript and Scala, the paper is timely, and it addresses an important question with a convincing solution, that may be useful for future large-scale language formalization efforts.
+With the adoption of intersection types into mainstream programming
+languages like TypeScript and Scala, the paper is timely, and it
+addresses an important question with a convincing solution, that may
+be useful for future large-scale language formalization efforts.
 
-The main technical innovation appears to be the design of the new subtyping judgment "<:" in Figure 4 (later shown to be equivalent to "≤" in BCD), and the induction metrics that enable the proof of Theorem 7 (transitivity).
+The main technical innovation appears to be the design of the new
+subtyping judgment "<:" in Figure 4 (later shown to be equivalent to
+"≤" in BCD), and the induction metrics that enable the proof of
+Theorem 7 (transitivity).
 
-The paper is overall well written and clear, with a good level of detail provided for the proofs. The formal development is mechanized in Agda, which provides additional confidence in the results.
+The paper is overall well written and clear, with a good level of
+detail provided for the proofs. The formal development is mechanized
+in Agda, which provides additional confidence in the results.
 
-The only question I had is specifically related to the recent adoption of intersection types in Scala and in formal work on the underlying DOT calculus. The need for transitivity elimination is also described in the OOPSLA'16 paper "Type Soundness for Dependent Object Types", and the apparent solution adopted there was to "push back" top-level uses of the transitivity rule further up into derivations, based on a lemma "A <: B /\ B <! C  ==>  A <! C" where "A <! C" is a subtyping derivation that does not end in the transitivity rule but may use it internally. While it is not possible to get rid of transitivity entirely in DOT, it seems possible to apply the "pushback" process to exhaustion in the BCD setting considered in this paper, and in fact I'm wondering if this is roughly equivalent to the induction metric "<<". Perhaps the author can give this some thought, and maybe a discussion of this piece of related work would be a useful addition (if only to strengthen the motivation).
+The only question I had is specifically related to the recent adoption
+of intersection types in Scala and in formal work on the underlying
+DOT calculus. The need for transitivity elimination is also described
+in the OOPSLA'16 paper "Type Soundness for Dependent Object Types",
+and the apparent solution adopted there was to "push back" top-level
+uses of the transitivity rule further up into derivations, based on a
+lemma "A <: B /\ B <! C ==> A <! C" where "A <! C" is a subtyping
+derivation that does not end in the transitivity rule but may use it
+internally. While it is not possible to get rid of transitivity
+entirely in DOT, it seems possible to apply the "pushback" process to
+exhaustion in the BCD setting considered in this paper, and in fact
+I'm wondering if this is roughly equivalent to the induction metric
+"<<". Perhaps the author can give this some thought, and maybe a
+discussion of this piece of related work would be a useful addition
+(if only to strengthen the motivation).
 
-As far as I remember, DOT does not include the rule "(→∩)", however, adapted in similar way as "(lbL)" and "(lbR)" to support internal transitivity, it does not seem to pose any obvious major difficulties:
+As far as I remember, DOT does not include the rule "(→∩)", however,
+adapted in similar way as "(lbL)" and "(lbR)" to support internal
+transitivity, it does not seem to pose any obvious major difficulties:
 
 
    A' ≤ A   (B ∩ C) ≤ D
