@@ -114,8 +114,6 @@ DComp-pres R (b ∷ bs) c cs d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻-pres ℊ-pres D E RDE 
 
 {-   =========== Preserved Properties ================ -}
 
-monotonicity : ∀ {A : Set} → 𝒫 A → 𝒫 A → Set
-monotonicity = _⊆_
 
 monotone : ∀ {A : Set} bs b → DenotFun (𝒫 A) bs b → Set₁
 monotone bs b 𝒻 = fun-rel-pres _⊆_ bs b 𝒻 𝒻
@@ -123,6 +121,11 @@ monotone bs b 𝒻 = fun-rel-pres _⊆_ bs b 𝒻 𝒻
 𝕆-monotone : ∀ {A : Set} {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
 𝕆-monotone sig 𝕆 = ops-rel-pres _⊆_ sig 𝕆 𝕆
 
+congruent : ∀ {A : Set} bs b → DenotFun (𝒫 A) bs b → Set₁
+congruent bs b 𝒻 = fun-rel-pres _≃_ bs b 𝒻 𝒻
+
+𝕆-congruent : ∀ {A : Set} {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
+𝕆-congruent sig 𝕆 = ops-rel-pres _≃_ sig 𝕆 𝕆
 
 Every : ∀ {A : Set} (R : Rel A lzero) → 𝒫 A → 𝒫 A → Set
 Every R A B = ∀ a b → a ∈ A → b ∈ B → R a b

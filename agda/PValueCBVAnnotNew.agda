@@ -52,6 +52,58 @@ E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
 E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
 
 
+{- Products (flat tuples) -----------------------------------------------------}
+{- Thought: just do this with full tuples with flat tuples as a special case -}
+
+Π : ∀ {ℓ} → ℕ → Set ℓ → Set ℓ
+Π n T = Tuple (replicate n ■) (Result T)
+
+Π-map : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} {n}
+  → (f : A → B) → Π n A → Π n B
+Π-map {n = zero} f (lift lower) = lift tt
+Π-map {n = suc n} f ⟨ fst , snd ⟩ = ⟨ f fst , Π-map f snd ⟩
+
+toΠ : ∀ {ℓ} {A : Set ℓ} (xs : List A) → Π (length xs) A
+toΠ [] = lift tt
+toΠ (x ∷ xs) = ⟨ x , toΠ xs ⟩
+
+toList : ∀ {ℓ} {A : Set ℓ} {n} → Π n A → List A
+toList {n = zero} _ = []
+toList {n = suc n} ⟨ x , xs ⟩ = x ∷ toList xs
+
+all-Π : ∀{ℓ}{ℓ'}{n}{T : Set ℓ} → (T → Set ℓ') → Π n T → Set ℓ'
+all-Π {n = zero} P (lift tt) = ⊤
+all-Π {n = suc n} P ⟨ x , xs ⟩ = P x  ×  all-Π P xs
+
+rel-Π : ∀{ℓ}{n}{T : Set ℓ} → (T → T → Set) → Π n T → Π n T → Set
+rel-Π {n = zero} R (lift tt) (lift tt) = True
+rel-Π {n = suc n} R ⟨ x , xs ⟩ ⟨ y , ys ⟩ = R x y  ×  rel-Π R xs ys
+
+NE-Π : ∀ {n}{T} → Π n (𝒫 T) → Set
+NE-Π {n}{T} = all-Π {n = n}{T = 𝒫 T} nonempty
+
+Π-append : ∀{ℓ}{A : Set ℓ}{n}{m} → Π n A → Π m A → Π (n + m) A
+Π-append {n = zero} {m} Ds Es = Es
+Π-append {n = suc n} {m} ⟨ D , Ds ⟩ Es = ⟨ D , (Π-append Ds Es) ⟩
+
+rel-Π-refl : ∀{ℓ}{n}{T : Set ℓ}{R : T → T → Set}{Ds : Π n T}
+   → (∀ {x} → R x x) → rel-Π R Ds Ds
+rel-Π-refl {n = zero} {T} {R} {Ds} R-refl = tt
+rel-Π-refl {n = suc n} {T} {R} {⟨ D , Ds ⟩} R-refl =
+    ⟨ R-refl , (rel-Π-refl R-refl) ⟩
+
+rel-Π-sym : ∀{ℓ}{n}{T : Set ℓ}{R : T → T → Set}{Ds Es : Π n T}
+   → (∀ {x y} → R x y → R y x) → rel-Π R Ds Es → rel-Π R Es Ds
+rel-Π-sym {n = zero} {T} {R} {lift tt} {lift tt} R-sym tt = tt
+rel-Π-sym {n = suc n} {T} {R} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} R-sym ⟨ RDE , R[Ds,Es] ⟩ =
+    ⟨ (R-sym RDE) , (rel-Π-sym R-sym R[Ds,Es]) ⟩
+
+rel-Π-⇒ : ∀{ℓ}{n}{T : Set ℓ}{xs ys : Π n T}{R R′ : T → T → Set}
+   → (∀ x y → R x y → R′ x y) → rel-Π R xs ys → rel-Π R′ xs ys
+rel-Π-⇒ {n = zero} R⇒R′ tt = tt
+rel-Π-⇒ {n = suc n}{T}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
+    ⟨ R⇒R′ x y Rxy , rel-Π-⇒ R⇒R′ R[xs,ys] ⟩
+
 {- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
@@ -80,7 +132,7 @@ const {B} x ~ const {B₁} x₁ with base-eq? B B₁
 ... | no neq = False
 const x ~ (x₁ ⊢ x₂ ↦ v) = False
 const x ~ ν = False
-const x ~ ω = False  {- need to determine if ω is related to everything, self, or nothing -}
+const x ~ ω = False  
 const x ~ ⦅ v , v₁ ⦆ = False
 const x ~ ∥ x₁ ∥ = False
 const x ~ left x₁ = False
@@ -104,7 +156,7 @@ const x ~ right x₁ = False
 ω ~ const x = False
 ω ~ (x ⊢ x₁ ↦ v) = False
 ω ~ ν = False
-ω ~ ω = True
+ω ~ ω = True {- starting with ω related with just itself -}
 ω ~ ⦅ v , v₁ ⦆ = False
 ω ~ ∥ x ∥ = False
 ω ~ left x = False
@@ -151,72 +203,50 @@ right x ~ right x₁ = x ≈ x₁
 _≋_ : 𝒫 Value → 𝒫 Value → Set
 D ≋ E = ∀ {d₁ d₂} → d₁ ∈ D → d₂ ∈ E → d₁ ~ d₂
 
+
 {- Denotational Operators -----------------------------------------------------}
 
-
-
-infix 10 _▪_
-_▪_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
-D₁ ▪ D₂ = λ w → Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ] (fvs ⊢ V ↦ w ∈ D₁)
+infix 10 _⋆_  {- \st -}
+_⋆_ : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+D₁ ⋆ D₂ = λ w → Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ] (fvs ⊢ V ↦ w ∈ D₁)
                   ×  (mem V ⊆ D₂)  ×  V ≢ []
 
-ℬ : (B : Base) → base-rep B → 𝒫 Value
+ℬ : (B : Base) → base-rep B → DenotOp (𝒫 Value) []
 ℬ B k (const {B′} k′)
     with base-eq? B B′
 ... | yes refl = k ≡ k′
 ... | no neq = False
 ℬ B k _ = False
 
-℘ : (P : Prim) → rep P → 𝒫 Value
-℘ (base B) k v = ℬ B k v
-℘ (B ⇒ P) f (const k) = False
-℘ (B ⇒ P) f (fvs ⊢ V ↦ w) =
-   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ ℘ P (f k)
-℘ (B ⇒ P) f ν = True
-℘ (B ⇒ P) f ω = False
-℘ (B ⇒ P) k ⦅ u , v ⦆ = False
-℘ (B ⇒ P) k ∥ vs ∥ = False
-℘ (B ⇒ P) k (left V) = False
-℘ (B ⇒ P) k (right V) = False
+𝓅 : (P : Prim) → rep P → DenotOp (𝒫 Value) []
+𝓅 (base B) k v = ℬ B k v
+𝓅 (B ⇒ P) f (const k) = False
+𝓅 (B ⇒ P) f (fvs ⊢ V ↦ w) =
+   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ 𝓅 P (f k)
+𝓅 (B ⇒ P) f ν = True
+𝓅 (B ⇒ P) f ω = False
+𝓅 (B ⇒ P) k ⦅ u , v ⦆ = False
+𝓅 (B ⇒ P) k ∥ vs ∥ = False
+𝓅 (B ⇒ P) k (left V) = False
+𝓅 (B ⇒ P) k (right V) = False
 
-〘_,_〙 : 𝒫 Value → 𝒫 Value → 𝒫 Value
+〘_,_〙 : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
 〘 D₁ , D₂ 〙 ⦅ u , v ⦆ = u ∈ D₁ × v ∈ D₂
 〘 D₁ , D₂ 〙 _ = False
 
-car : 𝒫 Value → 𝒫 Value
+car : DenotOp (𝒫 Value) (■ ∷ [])
 car D u = Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D
 
-cdr : 𝒫 Value → 𝒫 Value
+cdr : DenotOp (𝒫 Value) (■ ∷ [])
 cdr D v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 
-Π : ∀ {ℓ} → ℕ → Set ℓ → Set ℓ
-Π n T = Tuple (replicate n ■) (Result T)
+𝒯' : ∀ n → Π n (𝒫 Value) → 𝒫 Value
+𝒯' zero _ ∥ [] ∥ = True
+𝒯' (suc n) ⟨ D , Ds ⟩ ∥ v ∷ vs ∥ = v ∈ D  ×  𝒯' n Ds ∥ vs ∥
+𝒯' n Ds _ = False
 
-Π-map : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} {n}
-  → (f : A → B) → Π n A → Π n B
-Π-map {n = zero} f (lift lower) = lift tt
-Π-map {n = suc n} f ⟨ fst , snd ⟩ = ⟨ f fst , Π-map f snd ⟩
-
-toΠ : ∀ {ℓ} {A : Set ℓ} (xs : List A) → Π (length xs) A
-toΠ [] = lift tt
-toΠ (x ∷ xs) = ⟨ x , toΠ xs ⟩
-
-toList : ∀ {ℓ} {A : Set ℓ} {n} → Π n A → List A
-toList {n = zero} _ = []
-toList {n = suc n} ⟨ x , xs ⟩ = x ∷ toList xs
-
-all-Π : ∀{n}{T : Set₁}{ℓ : Level} → (T → Set ℓ) → Π n T → Set ℓ
-all-Π {zero}{T}{ℓ} P (lift tt) = ⊤
-all-Π {suc n}{T}{ℓ} P ⟨ x , xs ⟩ = P x  ×  all-Π P xs
-
-rel-Π : ∀{n}{T : Set₁} → (T → T → Set) → Π n T → Π n T → Set
-rel-Π {zero} R (lift tt) (lift tt) = True
-rel-Π {suc n} R ⟨ x , xs ⟩ ⟨ y , ys ⟩ = R x y  ×  rel-Π R xs ys
-
-𝒯 : ∀ n → Π n (𝒫 Value) → 𝒫 Value
-𝒯 zero _ ∥ [] ∥ = True
-𝒯 (suc n) ⟨ D , Ds ⟩ ∥ v ∷ vs ∥ = v ∈ D  ×  𝒯 n Ds ∥ vs ∥
-𝒯 n Ds _ = False
+𝒯 : ∀ n → DenotOp (𝒫 Value) (replicate n ■)
+𝒯 n = curryFun (𝒯' n)
 
 nth : List Value → ℕ → Value
 nth [] i = ω
@@ -227,15 +257,15 @@ proj : 𝒫 Value → ℕ → 𝒫 Value
 proj D i u = Σ[ vs ∈ List Value ]
     i < length vs  ×  ∥ vs ∥ ∈ D  ×  u ≡ nth vs i
 
-ℒ : 𝒫 Value → 𝒫 Value
+ℒ : DenotOp (𝒫 Value) (■ ∷ [])
 ℒ D (left V) = V ≢ []  ×  mem V ⊆ D
 ℒ D _ = False
 
-ℛ : 𝒫 Value → 𝒫 Value
+ℛ : DenotOp (𝒫 Value) (■ ∷ [])
 ℛ D (right V) = V ≢ []  ×  mem V ⊆ D
 ℛ D _ = False
 
-𝒞 : 𝒫 Value → 𝒫 Value → 𝒫 Value → 𝒫 Value
+𝒞 : DenotOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
 𝒞 D E F w = (Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ]
                  left V ∈ D  ×  fvs ⊢ V ↦ w ∈ E)
           ⊎ (Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ]
@@ -252,7 +282,6 @@ proj D i u = Σ[ vs ∈ List Value ]
 Λ f (left V) = False
 Λ f (right V) = False
 
-
 Λ' : ∀ (n : ℕ) → Π n (𝒫 Value)
                → (𝒫 Value → 𝒫 Value) → 𝒫 Value
 Λ' n ⟦fvs⟧ f (const k) = False
@@ -268,14 +297,30 @@ proj D i u = Σ[ vs ∈ List Value ]
 Λ' n ⟦fvs⟧ f (right x) = False
 
 Λ′ : ∀ (n : ℕ) → DenotOp (𝒫 Value) (ν ■ ∷ replicate n ■)
-Λ′ n f = curryFun λ z → Λ' n z f
+Λ′ n f = curryFun (λ z → Λ' n z f)
+
+
+
+{- Monotonicity of operators --------------------------------------------------}
+
+⋆-mono : monotone (■ ∷ ■ ∷ []) ■ _⋆_
+⋆-mono D D' D⊆ E E' E⊆ = ?
 
 
 
 
 {- 
 
-
+▪-mono-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+  → D₁ ⊆ D₃  →  D₂ ⊆ D₄
+  → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
+▪-mono-⊆ D13 D24 w ⟨ V , ⟨ fvs , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ ⟩ =
+   ⟨ V , ⟨ fvs , ⟨ (D13 (fvs ⊢ V ↦ w) wv∈D1) , ⟨ (λ d z → D24 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩ ⟩
+     
+▪-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+  → D₁ ≃ D₃  →  D₂ ≃ D₄
+  → D₁ ▪ D₂ ≃ D₃ ▪ D₄
+▪-cong ⟨ d13 , d31 ⟩ ⟨ d24 , d42 ⟩ = ⟨ (▪-mono-⊆ d13 d24) , (▪-mono-⊆ d31 d42) 
 
 
 
@@ -283,29 +328,7 @@ proj D i u = Σ[ vs ∈ List Value ]
 
 
 
-NE-Π = λ {n} → all-Π{n}{𝒫 Value} nonempty
 
-Π-append : ∀{n}{m} → Π n (𝒫 Value) → Π m (𝒫 Value) → Π (n + m) (𝒫 Value)
-Π-append {zero} {m} Ds Es = Es
-Π-append {suc n} {m} ⟨ D , Ds ⟩ Es = ⟨ D , (Π-append Ds Es) ⟩
-
-rel-Π-refl : ∀{n}{T : Set₁}{R : T → T → Set}{Ds : Π n T}
-   → (∀ {x} → R x x) → rel-Π R Ds Ds
-rel-Π-refl {zero} {T} {R} {Ds} R-refl = tt
-rel-Π-refl {suc n} {T} {R} {⟨ D , Ds ⟩} R-refl =
-    ⟨ R-refl , (rel-Π-refl R-refl) ⟩
-
-rel-Π-sym : ∀{n}{T : Set₁}{R : T → T → Set}{Ds Es : Π n T}
-   → (∀ {x y} → R x y → R y x) → rel-Π R Ds Es → rel-Π R Es Ds
-rel-Π-sym {zero} {T} {R} {lift tt} {lift tt} R-sym tt = tt
-rel-Π-sym {suc n} {T} {R} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} R-sym ⟨ RDE , R[Ds,Es] ⟩ =
-    ⟨ (R-sym RDE) , (rel-Π-sym R-sym R[Ds,Es]) ⟩
-
-rel-Π-⇒ : ∀{n}{T : Set₁}{xs ys : Π n T}{R R′ : T → T → Set}
-   → (∀ x y → R x y → R′ x y) → rel-Π R xs ys → rel-Π R′ xs ys
-rel-Π-⇒ {zero} R⇒R′ tt = tt
-rel-Π-⇒ {suc n}{T}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
-    ⟨ R⇒R′ x y Rxy , rel-Π-⇒ R⇒R′ R[xs,ys] ⟩
 
 {- Basic Properties of Denotational Operators ---------------------------------}
 
