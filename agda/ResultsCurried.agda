@@ -52,11 +52,11 @@ DenotOps A sig = ∀ op → DenotOp A (sig op)
 
 {- =============== Types for the preservation of a relation on a DenotFun/Op ================ -}
 
-Op-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-Op-Rel {ℓ} A = ∀ bs → DenotOp A bs → DenotOp A bs → Set (lsuc lzero l⊔ ℓ)
-
 Fun-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
 Fun-Rel {ℓ} A = ∀ bs c → DenotFun A bs c → DenotFun A bs c → Set (lsuc lzero l⊔ ℓ)
+
+Op-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+Op-Rel {ℓ} A = ∀ bs → DenotOp A bs → DenotOp A bs → Set (lsuc lzero l⊔ ℓ)
 
 DenotOps-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
 DenotOps-Rel {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DenotOps A sig → DenotOps A sig → Set (lsuc lzero l⊔ ℓ)
@@ -66,17 +66,16 @@ result-rel-pres {ℓ} R ■ a1 a2 = Lift (lsuc lzero l⊔ ℓ) (R a1 a2)
 result-rel-pres R (ν b) f1 f2 = ∀ a1 a2 → R a1 a2 → result-rel-pres R b (f1 a1) (f2 a2)
 result-rel-pres R (∁ b) = result-rel-pres R b
 
-op-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → Op-Rel A
-op-rel-pres {ℓ} R [] 𝒻 ℊ = Lift (lsuc lzero l⊔ ℓ) (R 𝒻 ℊ)
-op-rel-pres R (b ∷ bs) 𝒻 ℊ = ∀ D E → result-rel-pres R b D E → op-rel-pres R bs (𝒻 D) (ℊ E)
-
 fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → Fun-Rel A
 fun-rel-pres {ℓ} R [] c 𝒻 ℊ = result-rel-pres R c 𝒻 ℊ
 fun-rel-pres R (b ∷ bs) c 𝒻 ℊ = ∀ D E → result-rel-pres R b D E → fun-rel-pres R bs c (𝒻 D) (ℊ E)
 
+op-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → Op-Rel A
+op-rel-pres {ℓ} R [] 𝒻 ℊ = Lift (lsuc lzero l⊔ ℓ) (R 𝒻 ℊ)
+op-rel-pres R (b ∷ bs) 𝒻 ℊ = ∀ D E → result-rel-pres R b D E → op-rel-pres R bs (𝒻 D) (ℊ E)
+
 ops-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DenotOps-Rel A
 ops-rel-pres R sig 𝕆₁ 𝕆₂ = ∀ op → op-rel-pres R (sig op) (𝕆₁ op) (𝕆₂ op)
-
 
 
 DApp : ∀ {ℓ} {A : Set ℓ} b bs c
@@ -129,6 +128,10 @@ congruent bs b 𝒻 = fun-rel-pres _≃_ bs b 𝒻 𝒻
 
 Every : ∀ {A : Set} (R : Rel A lzero) → 𝒫 A → 𝒫 A → Set
 Every R A B = ∀ a b → a ∈ A → b ∈ B → R a b
+
+Every-⊆ : ∀ {T R A B U V}
+     → Every {T} R A B → U ⊆ A → V ⊆ B → Every R U V
+Every-⊆ A~B U⊆A V⊆B a b a∈U b∈V = A~B a b (U⊆A a a∈U) (V⊆B b b∈V)
 
 {- this can be used similarly... 
   for a denotational function: fun-rel-pres (Every R)
