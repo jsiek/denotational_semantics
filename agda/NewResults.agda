@@ -1,5 +1,5 @@
 
-module Results (Value : Set) where
+module NewResults (Value : Set) where
 
 open import Primitives
 open import Utilities using (extensionality)

@@ -1,5 +1,5 @@
 
-module ResultsCurried where
+module NewResultsCurried where
 
 open import Primitives
 open import Utilities using (extensionality)
@@ -71,8 +71,7 @@ fun-rel-pres {ℓ} R [] c 𝒻 ℊ = result-rel-pres R c 𝒻 ℊ
 fun-rel-pres R (b ∷ bs) c 𝒻 ℊ = ∀ D E → result-rel-pres R b D E → fun-rel-pres R bs c (𝒻 D) (ℊ E)
 
 op-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → Op-Rel A
-op-rel-pres {ℓ} R [] 𝒻 ℊ = Lift (lsuc lzero l⊔ ℓ) (R 𝒻 ℊ)
-op-rel-pres R (b ∷ bs) 𝒻 ℊ = ∀ D E → result-rel-pres R b D E → op-rel-pres R bs (𝒻 D) (ℊ E)
+op-rel-pres R bs = fun-rel-pres R bs ■
 
 ops-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DenotOps-Rel A
 ops-rel-pres R sig 𝕆₁ 𝕆₂ = ∀ op → op-rel-pres R (sig op) (𝕆₁ op) (𝕆₂ op)
@@ -109,6 +108,37 @@ DComp-pres : ∀ {ℓ}{A : Set ℓ} R bs c cs d
 DComp-pres R [] c cs d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻-pres ℊ-pres = ℊ-pres 𝒻1 𝒻2 𝒻-pres
 DComp-pres R (b ∷ bs) c cs d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻-pres ℊ-pres D E RDE = 
   DComp-pres R bs c cs d (𝒻1 D) (𝒻2 E) ℊ1 ℊ2 (𝒻-pres D E RDE) ℊ-pres
+
+Diter : ∀ {ℓ}{A : Set ℓ} (n : ℕ) bs c → (𝒻₀ : DenotFun A bs c) 
+     → (𝒻 : DenotFun A bs c → DenotFun A bs c)
+     → DenotFun A bs c
+Diter zero bs c 𝒻₀ 𝒻 = 𝒻₀
+Diter (suc n) bs c 𝒻₀ 𝒻 = 𝒻 (Diter n bs c 𝒻₀ 𝒻)
+
+Diter-pres : ∀ {ℓ}{A : Set ℓ} R (n : ℕ) bs c → (𝒻₀ 𝒻₀' : DenotFun A bs c)
+   → (𝒻 𝒻' : DenotFun A bs c → DenotFun A bs c)
+   → fun-rel-pres R bs c 𝒻₀ 𝒻₀'
+   → (∀ ℊ ℊ' → fun-rel-pres R bs c ℊ ℊ' → fun-rel-pres R bs c (𝒻 ℊ) (𝒻' ℊ'))
+   → fun-rel-pres R bs c (Diter n bs c 𝒻₀ 𝒻) (Diter n bs c 𝒻₀' 𝒻')
+Diter-pres R zero bs c 𝒻₀ 𝒻₀' 𝒻 𝒻' 𝒻₀~ 𝒻~ = 𝒻₀~
+Diter-pres R (suc n) bs c 𝒻₀ 𝒻₀' 𝒻 𝒻' 𝒻₀~ 𝒻~ = 
+  𝒻~ (Diter n bs c 𝒻₀ 𝒻) (Diter n bs c 𝒻₀' 𝒻') (Diter-pres R n bs c 𝒻₀ 𝒻₀' 𝒻 𝒻' 𝒻₀~ 𝒻~)
+
+DComp-rest : ∀ {ℓ} {A : Set ℓ} bs c d → DenotFun A bs c → DenotFun A (c ∷ bs) d
+  → DenotFun A bs d
+DComp-rest [] c d 𝒻 ℊ = ℊ 𝒻
+DComp-rest (x ∷ bs) c d 𝒻 ℊ D = DComp-rest bs c d (𝒻 D) (λ z → ℊ z D)
+
+DComp-rest-pres : ∀ {ℓ}{A : Set ℓ} R bs c d
+  → (𝒻1 𝒻2 : DenotFun A bs c)
+  → (ℊ1 ℊ2 : Result A c → DenotFun A bs d)
+  → fun-rel-pres R bs c 𝒻1 𝒻2
+  → fun-rel-pres R (c ∷ bs) d ℊ1 ℊ2
+  → fun-rel-pres R bs d (DComp-rest bs c d 𝒻1 ℊ1) (DComp-rest bs c d 𝒻2 ℊ2)
+DComp-rest-pres R [] c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ = ℊ~ 𝒻1 𝒻2 𝒻~
+DComp-rest-pres R (x ∷ bs) c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ D1 D2 D~ = 
+  DComp-rest-pres R bs c d (𝒻1 D1) (𝒻2 D2) (λ z → ℊ1 z D1) (λ z → ℊ2 z D2) 
+                  (𝒻~ D1 D2 D~) (λ D E z → ℊ~ D E z D1 D2 D~)
 
 
 {-   =========== Preserved Properties ================ -}
