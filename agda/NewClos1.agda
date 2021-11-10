@@ -12,7 +12,7 @@ module NewClos1 where
 open import Utilities using (_iff_)
 open import Primitives
 open import ScopedTuple hiding (𝒫)
-open import Sig
+open import NewSigUtil
 open import NewResultsCurried
 open import Utilities using (extensionality)
 open import SetsAsPredicates
