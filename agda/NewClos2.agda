@@ -75,7 +75,9 @@ DApp-n zero b 𝒻 = 𝒻
 DApp-n (suc n) b 𝒻 D = DApp-n n b (𝒻 D)
 
 𝕆-Clos2 : DenotOps (𝒫 Value) sig
-𝕆-Clos2 (clos-op n) 𝒻 = DComp-rest (replicate n ■) (ν ■) ■ (DApp-n n (ν ■) 𝒻) (Λ′ n)
+𝕆-Clos2 (clos-op n) 𝒻 = ?
+{- DComp-rest (replicate n ■) (ν ■) ■ (DApp-n n (ν ■) 𝒻) (Λ′ n)
+-}
 𝕆-Clos2 app = _⋆_
 𝕆-Clos2 (prim P f) = 𝓅 P f
 𝕆-Clos2 pair-op = ⟪_,_⟫
@@ -88,10 +90,13 @@ DApp-n (suc n) b 𝒻 D = DApp-n n b (𝒻 D)
 𝕆-Clos2 case-op = 𝒞-new
 
 𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
-𝕆-Clos2-mono (clos-op x) F1 F2 F~ = 
+𝕆-Clos2-mono (clos-op x) F1 F2 F~ = ?
+
+{-
   DComp-rest-pres _⊆_ (replicate x ■) (ν ■) ■ 
                   (DApp-n x (ν ■) F1) (DApp-n x (ν ■) F2) (Λ′ x) (Λ′ x) 
                   {!   !} {!   !}
+                  -}
 𝕆-Clos2-mono app = ⋆-mono
 𝕆-Clos2-mono (prim P x) = lift λ d x → x
 𝕆-Clos2-mono pair-op = cons-mono

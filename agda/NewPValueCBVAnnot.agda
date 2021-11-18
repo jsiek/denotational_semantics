@@ -43,15 +43,7 @@ open import Level using (Level; Lift; lift; lower)
     renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-{- Finite Sets represented by Lists -------------------------------------------}
 
-mem : ∀{T : Set} → List T → T → Set
-mem {T} ls x = x ⋵ ls
-
-E≢[]⇒nonempty-mem : ∀{T}{E : List T}
-  → E ≢ [] → nonempty (mem E)
-E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
-E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
 
 
 {- Products (flat tuples) -----------------------------------------------------}
@@ -430,13 +422,32 @@ car D u = Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D
 cdr : DenotOp (𝒫 Value) (■ ∷ [])
 cdr D v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 
-𝒯' : ∀ n → Π n (𝒫 Value) → 𝒫 Value
-𝒯' zero _ ∥ [] ∥ = True
-𝒯' (suc n) ⟨ D , Ds ⟩ ∥ v ∷ vs ∥ = v ∈ D  ×  𝒯' n Ds ∥ vs ∥
-𝒯' n Ds _ = False
+𝒯-cons : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+𝒯-cons D 𝒯Ds ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
+𝒯-cons D 𝒯Ds d = False
 
 𝒯 : ∀ n → DenotOp (𝒫 Value) (replicate n ■)
-𝒯 n = curryFun (𝒯' n)
+𝒯 n = Dfold ■ ■ n 𝒯-cons ⌈ ∥ [] ∥ ⌉
+
+{-
+𝒯 : ∀ n → DenotOp (𝒫 Value) (replicate n ■)
+𝒯 zero ∥ [] ∥ = True
+𝒯 zero d = False
+𝒯 (suc n) D = DComp-n-1 (replicate n ■) ■ ■ (𝒯 n) (𝒯-cons D)
+-}
+
+𝒜-cons : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+𝒜-cons D F ((fv ∷ fvs) ⊢ V ↦ w) = (mem fv) ⊆ D × fvs ⊢ V ↦ w ∈ F
+𝒜-cons D F d = False
+
+{-
+𝒜 : ∀ (n : ℕ) → DenotOp (𝒫 Value) (■ ∷ replicate n ■)
+𝒜 zero F = F
+𝒜 (suc n) F D = DComp-n-1 (replicate n ■) ■ ■ (𝒜 n F) (𝒜-cons D)
+-}
+
+𝒜 : ∀ n → DenotOp (𝒫 Value) (■ ∷ replicate n ■)
+𝒜 n F = Dfold ■ ■ n 𝒜-cons F
 
 nth : List Value → ℕ → Value
 nth [] i = ω
@@ -476,13 +487,16 @@ proj i D u = Σ[ vs ∈ List Value ]
 Λ f (left V) = False
 Λ f (right V) = False
 
-Λ' : ∀ (n : ℕ) → Π n (𝒫 Value)
-               → (𝒫 Value → 𝒫 Value) → 𝒫 Value
+
+
+{-
+
+Λ' : ∀ (n : ℕ) → (𝒫 Value → 𝒫 Value) → Π n (𝒫 Value)
+               → 𝒫 Value
 Λ' n ⟦fvs⟧ f (const k) = False
-Λ' n ⟦fvs⟧ f (fvs ⊢ V ↦ w) with n ≟ (length fvs)
-... | no neq = False
-... | yes refl = w ∈ f (mem V) × V ≢ [] 
-                            × rel-Π (_⊆_) (Π-map mem (toΠ fvs)) ⟦fvs⟧
+Λ' n ⟦fvs⟧ f (fvs ⊢ V ↦ w) = w ∈ f (mem V) × V ≢ [] × Σ[ n≡ ∈ n ≡ length fvs ]
+                            rel-Π (_⊆_) (Π-map mem (toΠ fvs)) 
+                                        (subst (λ z → Π z (𝒫 Value)) n≡ ⟦fvs⟧)
 Λ' n ⟦fvs⟧ f ν = True
 Λ' n ⟦fvs⟧ f ω = False
 Λ' n ⟦fvs⟧ f ⦅ v , v₁ ⦆ = False
@@ -491,8 +505,9 @@ proj i D u = Σ[ vs ∈ List Value ]
 Λ' n ⟦fvs⟧ f (right x) = False
 
 Λ′ : ∀ (n : ℕ) → DenotOp (𝒫 Value) (ν ■ ∷ replicate n ■)
-Λ′ n f = curryFun (λ z → Λ' n z f)
+Λ′ n f = curryFun (Λ' n f)
 
+-}
 
 {- Monotonicity and congruence of operators --------------------------------------------------}
 
@@ -653,6 +668,46 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   G = ⟨ lower (proj-mono i D D' (lift D<D')) 
       , lower (proj-mono i D' D (lift D'<D)) ⟩
 
+𝒯-cons-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒯-cons
+𝒯-cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
+  where
+  G : 𝒯-cons D E ⊆ 𝒯-cons D' E'
+  G ∥ d ∷ ds ∥ ⟨ d∈ , ds∈ ⟩ = ⟨ D⊆ d d∈ , E⊆ ∥ ds ∥ ds∈ ⟩
+
+𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
+𝒯-mono n = Dfold-pres _⊆_ ■ ■ n 𝒯-cons 𝒯-cons ⌈ ∥ [] ∥ ⌉ ⌈ ∥ [] ∥ ⌉  
+           𝒯-cons-mono (lift (λ d z → z))
+
+{-
+𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
+𝒯-mono zero = lift (λ d z → z)
+𝒯-mono (suc n) D D' (lift D⊆) = 
+  DComp-n-1-pres _⊆_ (replicate n ■) ■ ■ (𝒯 n) (𝒯 n) (𝒯-cons D) (𝒯-cons D') 
+                 (𝒯-mono n) (𝒯-cons-mono D D' (lift D⊆))
+-}
+
+𝒜-cons-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒜-cons
+𝒜-cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
+  where
+  G : 𝒜-cons D E ⊆ 𝒜-cons D' E'
+  G ((fv ∷ fvs) ⊢ V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
+    ⟨ (λ d z → D⊆ d (fv∈ d z)) , E⊆ (fvs ⊢ V ↦ w) d∈ ⟩
+
+𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
+𝒜-mono n F F' (lift F⊆) = Dfold-pres _⊆_ ■ ■ n 𝒜-cons 𝒜-cons F F' 
+  𝒜-cons-mono (lift F⊆)
+
+{-
+𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
+𝒜-mono zero F F' F⊆ = F⊆
+𝒜-mono (suc n) F F' (lift F⊆) D D' (lift D⊆) = 
+  DComp-n-1-pres _⊆_ (replicate n ■) ■ ■ (𝒜 n F) (𝒜 n F') (𝒜-cons D) (𝒜-cons D') 
+    (𝒜-mono n F F' (lift F⊆)) (𝒜-cons-mono D D' (lift D⊆))
+-}
+
+
+{-
+
 𝒯'-mono : ∀{n}(Ds Es : Π n (𝒫 Value)) → Ds ⫃ Es → 𝒯' n Ds ⊆ 𝒯' n Es
 𝒯'-mono {zero} _ _ Ds⊆Es v v∈ = v∈
 𝒯'-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D⊆E , Ds⊆Es ⟩ ∥ v ∷ vs ∥
@@ -668,6 +723,26 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
 
 𝒯-cong : ∀ n → congruent (replicate n ■) ■ (𝒯 n)
 𝒯-cong n = curry-rel n _≃_ (𝒯' n) (𝒯' n) (𝒯'-cong {n})
+
+Λ'-mono : ∀ n F G → result-rel-pres _⊆_ (ν ■) F G → ∀ (Ds Es : Π n (𝒫 Value)) 
+                  → rel-Π _⊆_ Ds Es → Λ' n Ds F ⊆ Λ' n Es G
+Λ'-mono n F G F⊆ Ds Es Ds⊆ ν d∈ = d∈
+Λ'-mono n F G F⊆ Ds Es Ds⊆ (fvs ⊢ V ↦ w) ⟨ w∈ , ⟨ Vne , ⟨ refl , fvs⊆Ds ⟩ ⟩ ⟩ = 
+      ⟨ lower (F⊆ (mem V) (mem V) (λ x z → z)) w w∈ 
+      , ⟨ Vne , ⟨ refl , helper fvs Ds Es Ds⊆ fvs⊆Ds ⟩ ⟩ ⟩
+  where
+  helper : ∀ fvs (Ds Es : Π (length fvs) (𝒫 Value))
+      → rel-Π _⊆_ Ds Es
+      → rel-Π _⊆_ (Π-map mem (toΠ fvs)) Ds
+      → rel-Π _⊆_ (Π-map mem (toΠ fvs)) Es
+  helper [] Ds Es Ds⊆Es fvs⊆Ds = tt
+  helper (fv ∷ fvs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D⊆E , Ds⊆Es ⟩ ⟨ fv⊆D , fvs⊆Ds ⟩ = 
+    ⟨ (λ d z → D⊆E d (fv⊆D d z)) , helper fvs Ds Es Ds⊆Es fvs⊆Ds ⟩
+
+Λ′-mono : ∀ n → monotone (ν ■ ∷ replicate n ■) ■ (Λ′ n)
+Λ′-mono n F G F⊆ = curry-rel n _⊆_ (λ z → Λ' n z F) (λ z → Λ' n z G) (Λ'-mono n F G F⊆)
+
+-}
 
 
 
@@ -790,18 +865,6 @@ proj-consis i D D' (lift D~) = lift G
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
 
-𝒯'-consis : ∀ n (Ds Es : Π n (𝒫 Value)) 
-  → rel-Π {n = n} (Every _~_) Ds Es 
-  → Every _~_ (𝒯' n Ds) (𝒯' n Es)
-𝒯'-consis zero _ _ Ds~Es ∥ [] ∥ ∥ [] ∥ u∈ v∈ = tt
-𝒯'-consis (suc n) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D~E , Ds~Es ⟩ 
-  ∥ u ∷ us ∥ ∥ v ∷ vs ∥ ⟨ u∈ , us∈ ⟩ ⟨ v∈ , vs∈ ⟩ = 
-   ⟨ D~E u v u∈ v∈ 
-   , 𝒯'-consis n Ds Es Ds~Es ∥ us ∥ ∥ vs ∥ us∈ vs∈ ⟩
-
-𝒯-consis : ∀ n → fun-consistent _~_ (replicate n ■) ■ (𝒯 n)
-𝒯-consis n = curry-rel n (Every _~_) (𝒯' n) (𝒯' n) (𝒯'-consis n)
-
 𝓅-consis : ∀ P f → fun-consistent _~_ [] ■ (𝓅 P f)
 𝓅-consis P f = lift (G P f)
   where
@@ -830,33 +893,64 @@ proj-consis i D D' (lift D~) = lift G
   G (x ⇒ P) f ν ν u∈ v∈ = tt
 
 
-Λ'-consis : ∀ n → (F F' : 𝒫 Value → 𝒫 Value)
-          → (Ds Es : Π n (𝒫 Value)) → {!   !}
-Λ'-consis n = {!   !}
+𝒯-cons-consis : fun-consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒯-cons
+𝒯-cons-consis D D' (lift D~) E E' (lift E~) = lift G
+  where
+  G : Every _~_ (𝒯-cons D E) (𝒯-cons D' E')
+  G ∥ u ∷ us ∥ ∥ v ∷ vs ∥ ⟨ u∈ , us∈ ⟩ ⟨ v∈ , vs∈ ⟩ = ⟨ D~ u v u∈ v∈ , E~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ ⟩
 
-{- 
-Λ′-consis : ∀ n → fun-consistent _~_ (ν ■ ∷ replicate n ■) ■ (Λ′ n)
-Λ′-consis n F F' = curry-rel n (Every _~_) (Λ' n F) (Λ' n F') (Λ'-consis n)
--}
+
+𝒯-consis : ∀ n → fun-consistent _~_ (replicate n ■) ■ (𝒯 n)
+𝒯-consis n = Dfold-pres (Every _~_) ■ ■ n 𝒯-cons 𝒯-cons ⌈ ∥ [] ∥ ⌉ ⌈ ∥ [] ∥ ⌉  
+           𝒯-cons-consis (lift G)
+  where
+  G : (x x₁ : Value) (x₂ : x ≡ ∥ [] ∥) (x₃ : x₁ ≡ ∥ [] ∥) → x ~ x₁ 
+  G .(∥ [] ∥) .(∥ [] ∥) refl refl = tt
+
+
+𝒜-cons-consis : fun-consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒜-cons
+𝒜-cons-consis D D' (lift D~) E E' (lift E~) = lift G
+  where
+  G : Every _~_ (𝒜-cons D E) (𝒜-cons D' E')
+  G ((fv ∷ fvs) ⊢ V ↦ w) ((fv' ∷ fvs') ⊢ V' ↦ w') ⟨ fvs⊆ , u∈ ⟩ ⟨ fvs'⊆ , v∈ ⟩
+     = E~ (fvs ⊢ V ↦ w) (fvs' ⊢ V' ↦ w') u∈ v∈
+
+𝒜-consis : ∀ n → fun-consistent _~_ (■ ∷ replicate n ■) ■ (𝒜 n)
+𝒜-consis n F F' F~ = Dfold-pres (Every _~_) ■ ■ n 𝒜-cons 𝒜-cons F F' 
+        𝒜-cons-consis F~
+
 
 {-
-lift G
+𝒜-cons-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒜-cons
+𝒜-cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
   where
-  G : Every _~_ (Λ′ F) (Λ′ F')
-  G ν (x ⊢ x₁ ↦ v) tt _ = tt
-  G ν ν tt _ = tt
-  G ([] ⊢ V ↦ w) ν ⟨ w∈F₁X , V≢[] ⟩ tt = tt
-  G ([] ⊢ V ↦ w) ([] ⊢ V' ↦ w') 
-    ⟨ w∈F₁X , V≢[] ⟩ ⟨ w∈F₁X' , V≢[]' ⟩ with V ≈? V'
-  ... | yes V≈V' = 
-    inj₂ ⟨ V≈V' , lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
-  ... | no ¬V≈V' = inj₁ ¬V≈V'
+  G : 𝒜-cons D E ⊆ 𝒜-cons D' E'
+  G ((fv ∷ fvs) ⊢ V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
+    ⟨ (λ d z → D⊆ d (fv∈ d z)) , E⊆ (fvs ⊢ V ↦ w) d∈ ⟩
+
+𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
+𝒜-mono zero F F' F⊆ = F⊆
+𝒜-mono (suc n) F F' (lift F⊆) D D' (lift D⊆) = 
+  DComp-n-1-pres _⊆_ (replicate n ■) ■ ■ (𝒜 n F) (𝒜 n F') (𝒜-cons D) (𝒜-cons D') 
+    (𝒜-mono n F F' (lift F⊆)) (𝒜-cons-mono D D' (lift D⊆))
 -}
+
+
+
 
 {- Continuity -----------------------------------------------------------------}
 
 {- Bear in mind that Continuity is a property related to environments.
-   That is, it involves some  evaluation function  -}
+   That is, it involves some  evaluation function  
+   
+   continuity is the property that whenever a value is in a denotation,
+   then there exists a finite environment for which that value is still in the denotation.
+   -}
+
+
+
+
+
 
 {-
 

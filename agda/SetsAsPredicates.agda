@@ -5,6 +5,9 @@ open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
+open import Data.List using (List; []; _∷_)
+open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
+open import Data.List.Relation.Unary.Any using (Any; here; there)
 
 𝒫 : Set → Set₁
 𝒫 V = V → Set
@@ -55,3 +58,14 @@ module ≃-Reasoning where
   infix 3 _∎
   _∎ : ∀ {T : Set}(D : 𝒫 T) → D ≃ D
   D ∎  =  ≃-refl
+
+
+{- Finite Sets represented by Lists -------------------------------------------}
+
+mem : ∀{T : Set} → List T → T → Set
+mem {T} ls x = x ⋵ ls
+
+E≢[]⇒nonempty-mem : ∀{T}{E : List T}
+  → E ≢ [] → nonempty (mem E)
+E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
+E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩

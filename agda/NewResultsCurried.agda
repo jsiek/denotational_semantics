@@ -77,6 +77,36 @@ ops-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DenotOps-Rel A
 ops-rel-pres R sig 𝕆₁ 𝕆₂ = ∀ op → op-rel-pres R (sig op) (𝕆₁ op) (𝕆₂ op)
 
 
+{- =============== Types for the preservation of a predicate on a DenotFun/Op ================ -}
+
+Fun-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+Fun-Pred {ℓ} A = ∀ bs c → DenotFun A bs c → Set (lsuc lzero l⊔ ℓ)
+
+Op-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+Op-Pred {ℓ} A = ∀ bs → DenotOp A bs → Set (lsuc lzero l⊔ ℓ)
+
+DenotOps-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+DenotOps-Pred {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DenotOps A sig → Set (lsuc lzero l⊔ ℓ)
+
+result-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → (∀ b → Result A b → Set (lsuc lzero l⊔ ℓ))
+result-pred-pres {ℓ} P ■ a = Lift (lsuc lzero l⊔ ℓ) (P a)
+result-pred-pres P (ν b) f = ∀ a → P a → result-pred-pres P b (f a)
+result-pred-pres P (∁ b) = result-pred-pres P b
+
+fun-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → Fun-Pred A
+fun-pred-pres {ℓ} P [] c 𝒻 = result-pred-pres P c 𝒻
+fun-pred-pres P (b ∷ bs) c 𝒻 = ∀ D → result-pred-pres P b D → fun-pred-pres P bs c (𝒻 D)
+
+op-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → Op-Pred A
+op-pred-pres P bs = fun-pred-pres P bs ■
+
+ops-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → DenotOps-Pred A
+ops-pred-pres P sig 𝕆 = ∀ op → op-pred-pres P (sig op) (𝕆 op)
+
+
+
+{- ============================= Combinators ============================= -}
+
 DApp : ∀ {ℓ} {A : Set ℓ} b bs c
   → DenotFun A (b ∷ bs) c → Result A b → DenotFun A bs c
 DApp b bs c F a = F a
@@ -140,6 +170,44 @@ DComp-rest-pres R (x ∷ bs) c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ D1 D2 D~ =
   DComp-rest-pres R bs c d (𝒻1 D1) (𝒻2 D2) (λ z → ℊ1 z D1) (λ z → ℊ2 z D2) 
                   (𝒻~ D1 D2 D~) (λ D E z → ℊ~ D E z D1 D2 D~)
 
+DComp-n-1 : ∀ {ℓ}{A : Set ℓ} bs c d → DenotFun A bs c → DenotFun A (c ∷ []) d → DenotFun A bs d
+DComp-n-1 [] c d 𝒻 ℊ = ℊ 𝒻
+DComp-n-1 (b ∷ bs) c d 𝒻 ℊ D = DComp-n-1 bs c d (𝒻 D) ℊ
+
+DComp-n-1-pres : ∀ {ℓ}{A : Set ℓ} R bs c d
+  → (𝒻1 𝒻2 : DenotFun A bs c)
+  → (ℊ1 ℊ2 : DenotFun A (c ∷ []) d)
+  → fun-rel-pres R bs c 𝒻1 𝒻2
+  → fun-rel-pres R (c ∷ []) d ℊ1 ℊ2
+  → fun-rel-pres R bs d (DComp-n-1 bs c d 𝒻1 ℊ1) (DComp-n-1 bs c d 𝒻2 ℊ2)
+DComp-n-1-pres R [] c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ = ℊ~ 𝒻1 𝒻2 𝒻~
+DComp-n-1-pres R (x ∷ bs) c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ D E D~ = 
+  DComp-n-1-pres R bs c d (𝒻1 D) (𝒻2 E) ℊ1 ℊ2 (𝒻~ D E D~) ℊ~
+
+Dmap : ∀ {ℓ}{A : Set ℓ} {b}{c}{d}{n} → DenotFun A (b ∷ []) c 
+     → DenotFun A (replicate n c) d →  DenotFun A (replicate n b) d
+Dmap {n = zero} 𝒻 F = F
+Dmap {n = suc n} 𝒻 F D = Dmap {n = n} 𝒻 (F (𝒻 D))
+
+Dfold : ∀ {ℓ}{A : Set ℓ} b c n → DenotFun A (b ∷ c ∷ []) c
+    → Result A c
+    → DenotFun A (replicate n b) c
+Dfold b c zero 𝒻 𝒸 = 𝒸
+Dfold b c (suc n) 𝒻 𝒸 D = 
+  DComp-n-1 (replicate n b) c c (Dfold b c n 𝒻 𝒸) (𝒻 D)
+
+Dfold-pres : ∀ {ℓ}{A : Set ℓ} R b c n
+  → (𝒻1 𝒻2 : DenotFun A (b ∷ c ∷ []) c)
+  → (𝒸1 𝒸2 : Result A c)
+  → fun-rel-pres R (b ∷ c ∷ []) c 𝒻1 𝒻2
+  → result-rel-pres R c 𝒸1 𝒸2
+  → fun-rel-pres R (replicate n b) c (Dfold b c n 𝒻1 𝒸1) (Dfold b c n 𝒻2 𝒸2)
+Dfold-pres R b c zero 𝒻1 𝒻2 𝒸1 𝒸2 𝒻~ 𝒸~ = 𝒸~
+Dfold-pres R b c (suc n) 𝒻1 𝒻2 𝒸1 𝒸2 𝒻~ 𝒸~ D1 D2 D~ = 
+  DComp-n-1-pres R (replicate n b) c c 
+                 (Dfold b c n 𝒻1 𝒸1) (Dfold b c n 𝒻2 𝒸2) (𝒻1 D1) (𝒻2 D2)
+                (Dfold-pres R b c n 𝒻1 𝒻2 𝒸1 𝒸2 𝒻~ 𝒸~) (𝒻~ D1 D2 D~)
+
 
 {-   =========== Preserved Properties ================ -}
 
@@ -181,6 +249,15 @@ fun-consistent consistent bs b 𝒻 = fun-rel-pres (Every consistent) bs b 𝒻 
 {- Continuity appears to be a different beast... relying on info about the environment -}
 {- But I wonder if a part of it can be factored into a propert about
   just the denotational operators -}
+
+finite : ∀ {A} → 𝒫 A → Set
+finite {A} S = Σ[ V ∈ List A ] S ⊆ (mem V)
+
+fun-finitary : ∀ {A} bs b → DenotFun (𝒫 A) bs b → Set₁
+fun-finitary bs b 𝒻 = fun-pred-pres finite bs b 𝒻
+
+𝕆-finitary : ∀ {A} {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
+𝕆-finitary sig 𝕆 = ops-pred-pres finite sig 𝕆
 
 
 {- =============== translating to and from tuples =============== -}

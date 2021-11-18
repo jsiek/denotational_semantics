@@ -70,7 +70,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 
 𝕆-Clos1 : DenotOps (𝒫 Value) sig
-𝕆-Clos1 (clos-op n) = Λ′ n
+𝕆-Clos1 (clos-op n) F = 𝒜 n (Λ F)
 𝕆-Clos1 app = _⋆_
 𝕆-Clos1 (prim P f) = 𝓅 P f
 𝕆-Clos1 pair-op = ⟪_,_⟫
