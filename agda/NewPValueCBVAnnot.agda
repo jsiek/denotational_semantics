@@ -133,7 +133,7 @@ uncurry-rel (suc n) R 𝒻 ℊ H ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D~E , Ds~Es �
 
 data Value : Set where
   const : {B : Base} → base-rep B → Value  {- A primitive constant of type B. -}
-  _⊢_↦_ : List (List Value) → List Value → Value → Value
+  _⊢_↦_ : List Value → List Value → Value → Value
       {- An entry in a function's graph. -}
   ν : Value      {- The empty function -}
   ω : Value      {- An error value, to serve as a default value in Envs and
@@ -389,7 +389,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 
 infix 10 _⋆_  {- \st -}
 _⋆_ : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
-D₁ ⋆ D₂ = λ w → Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ] (fvs ⊢ V ↦ w ∈ D₁)
+D₁ ⋆ D₂ = λ w → Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ] (fvs ⊢ V ↦ w ∈ D₁)
                   ×  (mem V ⊆ D₂)  ×  V ≢ []
 
 ℬ : (B : Base) → base-rep B → DenotOp (𝒫 Value) []
@@ -437,7 +437,7 @@ cdr D v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 -}
 
 𝒜-cons : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
-𝒜-cons D F ((fv ∷ fvs) ⊢ V ↦ w) = (mem fv) ⊆ D × fvs ⊢ V ↦ w ∈ F
+𝒜-cons D F ((fv ∷ fvs) ⊢ V ↦ w) = fv ∈ D × fvs ⊢ V ↦ w ∈ F
 𝒜-cons D F d = False
 
 {-
@@ -467,9 +467,9 @@ proj i D u = Σ[ vs ∈ List Value ]
 ℛ D _ = False
 
 𝒞 : DenotOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
-𝒞 D E F w = (Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ]
+𝒞 D E F w = (Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ]
                  left V ∈ D  ×  fvs ⊢ V ↦ w ∈ E)
-          ⊎ (Σ[ V ∈ List Value ] Σ[ fvs ∈ List (List Value) ]
+          ⊎ (Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ]
                  right V ∈ D  ×  fvs ⊢ V ↦ w ∈ F)
 
 𝒞-new : DenotOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
@@ -691,7 +691,7 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   where
   G : 𝒜-cons D E ⊆ 𝒜-cons D' E'
   G ((fv ∷ fvs) ⊢ V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
-    ⟨ (λ d z → D⊆ d (fv∈ d z)) , E⊆ (fvs ⊢ V ↦ w) d∈ ⟩
+    ⟨ D⊆ fv fv∈ , E⊆ (fvs ⊢ V ↦ w) d∈ ⟩
 
 𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
 𝒜-mono n F F' (lift F⊆) = Dfold-pres _⊆_ ■ ■ n 𝒜-cons 𝒜-cons F F' 
@@ -936,6 +936,71 @@ proj-consis i D D' (lift D~) = lift G
 -}
 
 
+
+{- Environments ---------------------------------------------------------------}
+
+Env : Set₁
+Env = Var → 𝒫 Value
+
+nonempty-env : Env → Set
+nonempty-env ρ = ∀ x → nonempty (ρ x)
+
+infix 5 _⊆ₑ_
+_⊆ₑ_ : Env → Env → Set
+ρ₁ ⊆ₑ ρ₂ = ∀ x → ρ₁ x ⊆ ρ₂ x
+
+⊆ₑ-trans : ∀{ρ₁ ρ₂ ρ₃} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
+⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
+
+extend-nonempty-env : ∀{ρ}{X}
+   → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
+extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X
+extend-nonempty-env {ρ} {X} NE-ρ V≢[] (suc x) = NE-ρ x
+
+env-ext : ∀{ρ ρ′}{X} → ρ ⊆ₑ ρ′ → (x : Var) → (X • ρ) x ⊆ (X • ρ′) x
+env-ext ρ<ρ′ zero d d∈ = d∈
+env-ext ρ<ρ′ (suc x) = ρ<ρ′ x
+
+{- environments whose codomain are finite nonempty sets -}
+finite-env : Env → Set
+finite-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≃ mem E × E ≢ []
+
+infix 6 _⊔ₑ_
+_⊔ₑ_ : Env → Env → Env
+(ρ₁ ⊔ₑ ρ₂) x v = ρ₁ x v ⊎ ρ₂ x v
+
+join-finite-env : ∀{ρ₁ ρ₂}  → finite-env ρ₁  →  finite-env ρ₂
+   → finite-env (ρ₁ ⊔ₑ ρ₂)
+join-finite-env {ρ₁}{ρ₂} f1 f2 x
+    with f1 x
+... | ⟨ E1 , ⟨ ρ₁=E1 , NE-E1 ⟩ ⟩
+    with f2 x
+... | ⟨ E2 , ⟨ ρ₂=E2 , NE-E2 ⟩ ⟩ =
+    ⟨ (E1 ++ E2) , ⟨ ⟨ G , (H {E1} λ d z → z) ⟩ ,
+      (λ E12=[] → NE-E1 (++-conicalˡ E1 E2 E12=[])) ⟩ ⟩
+    where
+    G : (v : Value) → ρ₁ x v ⊎ ρ₂ x v → mem (E1 ++ E2) v
+    G v (inj₁ ρ1x) = ∈-++⁺ˡ ((proj₁ ρ₁=E1) v ρ1x)
+    G v (inj₂ ρ2x) = ∈-++⁺ʳ E1 ((proj₁ ρ₂=E2) v ρ2x)
+
+    H : ∀{E} → mem E ⊆ mem E1 → mem (E ++ E2) ⊆ (λ v → ρ₁ x v ⊎ ρ₂ x v)
+    H {[]} E<E1 v v∈E++E2 = inj₂ ((proj₂ ρ₂=E2) v v∈E++E2)
+    H {x ∷ E} E<E1 .x (here refl) = inj₁ ((proj₂ ρ₁=E1) x (E<E1 x (here refl)))
+    H {x ∷ E} E<E1 v (there v∈E++E2) =
+       H (λ v z → E<E1 v (there z)) v v∈E++E2
+
+join-lub : ∀{ρ ρ₁ ρ₂} → ρ₁ ⊆ₑ ρ → ρ₂ ⊆ₑ ρ → ρ₁ ⊔ₑ ρ₂ ⊆ₑ ρ
+join-lub {ρ} {ρ₁} {ρ₂} ρ₁⊆ρ ρ₂⊆ρ x v (inj₁ v∈ρ₁x) = ρ₁⊆ρ x v v∈ρ₁x
+join-lub {ρ} {ρ₁} {ρ₂} ρ₁⊆ρ ρ₂⊆ρ x v (inj₂ v∈ρ₂x) = ρ₂⊆ρ x v v∈ρ₂x
+
+join-⊆-left : ∀{ρ₁ ρ₂} → ρ₁ ⊆ₑ ρ₁ ⊔ₑ ρ₂
+join-⊆-left {ρ₁}{ρ₂} = λ x d z → inj₁ z
+
+join-⊆-right : ∀{ρ₁ ρ₂} → ρ₂ ⊆ₑ ρ₁ ⊔ₑ ρ₂
+join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
+
+monotone-env : (Env → 𝒫 Value) → Set₁
+monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ D ρ′
 
 
 {- Continuity -----------------------------------------------------------------}

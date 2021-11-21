@@ -1,5 +1,5 @@
 
-module NewResultsCurried where
+module NewDOpSig where
 
 open import Primitives
 open import Utilities using (extensionality)
@@ -40,91 +40,91 @@ private
    A : Set ℓ
 
 
-DenotFun : ∀ {ℓ} (A : Set ℓ) → List Sig → Sig → Set ℓ
-DenotFun A [] c = Result A c
-DenotFun A (b ∷ bs) c = Result A b → DenotFun A bs c
+DFun : ∀ {ℓ} (A : Set ℓ) → List Sig → Sig → Set ℓ
+DFun A [] c = Result A c
+DFun A (b ∷ bs) c = Result A b → DFun A bs c
 
-DenotOp : ∀ {ℓ} A → List Sig → Set ℓ
-DenotOp A bs = DenotFun A bs ■
+DOp : ∀ {ℓ} A → List Sig → Set ℓ
+DOp A bs = DFun A bs ■
 
-DenotOps : ∀ {Op : Set} {ℓ} A → (sig : Op → List Sig) → Set ℓ
-DenotOps A sig = ∀ op → DenotOp A (sig op)
+DOpSig : ∀ {Op : Set} {ℓ} A → (sig : Op → List Sig) → Set ℓ
+DOpSig A sig = ∀ op → DOp A (sig op)
 
-{- =============== Types for the preservation of a relation on a DenotFun/Op ================ -}
+{- =============== Types for the preservation of a relation on a DFun/Op ================ -}
 
-Fun-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-Fun-Rel {ℓ} A = ∀ bs c → DenotFun A bs c → DenotFun A bs c → Set (lsuc lzero l⊔ ℓ)
+DFun-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+DFun-Rel {ℓ} A = ∀ bs c → DFun A bs c → DFun A bs c → Set (lsuc lzero l⊔ ℓ)
 
-Op-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-Op-Rel {ℓ} A = ∀ bs → DenotOp A bs → DenotOp A bs → Set (lsuc lzero l⊔ ℓ)
+DOp-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+DOp-Rel {ℓ} A = ∀ bs → DOp A bs → DOp A bs → Set (lsuc lzero l⊔ ℓ)
 
-DenotOps-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DenotOps-Rel {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DenotOps A sig → DenotOps A sig → Set (lsuc lzero l⊔ ℓ)
+DOpSig-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+DOpSig-Rel {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DOpSig A sig → DOpSig A sig → Set (lsuc lzero l⊔ ℓ)
 
 result-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → (∀ b → Result A b → Result A b → Set (lsuc lzero l⊔ ℓ))
 result-rel-pres {ℓ} R ■ a1 a2 = Lift (lsuc lzero l⊔ ℓ) (R a1 a2)
 result-rel-pres R (ν b) f1 f2 = ∀ a1 a2 → R a1 a2 → result-rel-pres R b (f1 a1) (f2 a2)
 result-rel-pres R (∁ b) = result-rel-pres R b
 
-fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → Fun-Rel A
+fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → DFun-Rel A
 fun-rel-pres {ℓ} R [] c 𝒻 ℊ = result-rel-pres R c 𝒻 ℊ
 fun-rel-pres R (b ∷ bs) c 𝒻 ℊ = ∀ D E → result-rel-pres R b D E → fun-rel-pres R bs c (𝒻 D) (ℊ E)
 
 op-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → Op-Rel A
 op-rel-pres R bs = fun-rel-pres R bs ■
 
-ops-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DenotOps-Rel A
-ops-rel-pres R sig 𝕆₁ 𝕆₂ = ∀ op → op-rel-pres R (sig op) (𝕆₁ op) (𝕆₂ op)
+opsig-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DOpSig-Rel A
+opsig-rel-pres R sig 𝕆₁ 𝕆₂ = ∀ op → op-rel-pres R (sig op) (𝕆₁ op) (𝕆₂ op)
 
 
-{- =============== Types for the preservation of a predicate on a DenotFun/Op ================ -}
+{- =============== Types for the preservation of a predicate on a DFun/Op ================ -}
 
-Fun-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-Fun-Pred {ℓ} A = ∀ bs c → DenotFun A bs c → Set (lsuc lzero l⊔ ℓ)
+DFun-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+DFun-Pred {ℓ} A = ∀ bs c → DFun A bs c → Set (lsuc lzero l⊔ ℓ)
 
 Op-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-Op-Pred {ℓ} A = ∀ bs → DenotOp A bs → Set (lsuc lzero l⊔ ℓ)
+Op-Pred {ℓ} A = ∀ bs → DOp A bs → Set (lsuc lzero l⊔ ℓ)
 
-DenotOps-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DenotOps-Pred {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DenotOps A sig → Set (lsuc lzero l⊔ ℓ)
+DOpSig-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
+DOpSig-Pred {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DOpSig A sig → Set (lsuc lzero l⊔ ℓ)
 
 result-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → (∀ b → Result A b → Set (lsuc lzero l⊔ ℓ))
 result-pred-pres {ℓ} P ■ a = Lift (lsuc lzero l⊔ ℓ) (P a)
 result-pred-pres P (ν b) f = ∀ a → P a → result-pred-pres P b (f a)
 result-pred-pres P (∁ b) = result-pred-pres P b
 
-fun-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → Fun-Pred A
+fun-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → DFun-Pred A
 fun-pred-pres {ℓ} P [] c 𝒻 = result-pred-pres P c 𝒻
 fun-pred-pres P (b ∷ bs) c 𝒻 = ∀ D → result-pred-pres P b D → fun-pred-pres P bs c (𝒻 D)
 
 op-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → Op-Pred A
 op-pred-pres P bs = fun-pred-pres P bs ■
 
-ops-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → DenotOps-Pred A
-ops-pred-pres P sig 𝕆 = ∀ op → op-pred-pres P (sig op) (𝕆 op)
+opsig-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → DOpSig-Pred A
+opsig-pred-pres P sig 𝕆 = ∀ op → op-pred-pres P (sig op) (𝕆 op)
 
 
 
 {- ============================= Combinators ============================= -}
 
 DApp : ∀ {ℓ} {A : Set ℓ} b bs c
-  → DenotFun A (b ∷ bs) c → Result A b → DenotFun A bs c
+  → DFun A (b ∷ bs) c → Result A b → DFun A bs c
 DApp b bs c F a = F a
 
 
 DComp1 : ∀ {ℓ} {A : Set ℓ} b c cs d
-  → DenotFun A (b ∷ []) c → DenotFun A (c ∷ cs) d
-  → DenotFun A (b ∷ cs) d
+  → DFun A (b ∷ []) c → DFun A (c ∷ cs) d
+  → DFun A (b ∷ cs) d
 DComp1 b c cs d 𝒻 ℊ = λ z → ℊ (𝒻 z)
 
 DComp : ∀ {ℓ} {A : Set ℓ} bs c cs d
-  → DenotFun A bs c → DenotFun A (c ∷ cs) d
-  → DenotFun A (bs ++ cs) d
+  → DFun A bs c → DFun A (c ∷ cs) d
+  → DFun A (bs ++ cs) d
 DComp [] c cs d 𝒻 ℊ = ℊ 𝒻
 DComp (x ∷ bs) c cs d 𝒻 ℊ = λ z → DComp bs c cs d (𝒻 z) ℊ
 
 DApp-pres : ∀ {ℓ}{A : Set ℓ} R b bs c
-   → (𝒻1 𝒻2 : DenotFun A (b ∷ bs) c) → (a1 a2 : Result A b )
+   → (𝒻1 𝒻2 : DFun A (b ∷ bs) c) → (a1 a2 : Result A b )
    → fun-rel-pres R (b ∷ bs) c 𝒻1 𝒻2
    → result-rel-pres R b a1 a2
    → fun-rel-pres R bs c (DApp b bs c 𝒻1 a1) (DApp b bs c 𝒻2 a2)
@@ -132,21 +132,21 @@ DApp-pres R b bs c 𝒻1 𝒻2 a1 a2 𝒻-pres a1Ra2 =
   𝒻-pres a1 a2 a1Ra2
   
 DComp-pres : ∀ {ℓ}{A : Set ℓ} R bs c cs d
-   (𝒻1 𝒻2 : DenotFun A bs c) (ℊ1 ℊ2 : DenotFun A (c ∷ cs) d)
+   (𝒻1 𝒻2 : DFun A bs c) (ℊ1 ℊ2 : DFun A (c ∷ cs) d)
     → fun-rel-pres R bs c 𝒻1 𝒻2 → fun-rel-pres R (c ∷ cs) d ℊ1 ℊ2
     → fun-rel-pres R (bs ++ cs) d (DComp bs c cs d 𝒻1 ℊ1) (DComp bs c cs d 𝒻2 ℊ2)
 DComp-pres R [] c cs d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻-pres ℊ-pres = ℊ-pres 𝒻1 𝒻2 𝒻-pres
 DComp-pres R (b ∷ bs) c cs d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻-pres ℊ-pres D E RDE = 
   DComp-pres R bs c cs d (𝒻1 D) (𝒻2 E) ℊ1 ℊ2 (𝒻-pres D E RDE) ℊ-pres
 
-Diter : ∀ {ℓ}{A : Set ℓ} (n : ℕ) bs c → (𝒻₀ : DenotFun A bs c) 
-     → (𝒻 : DenotFun A bs c → DenotFun A bs c)
-     → DenotFun A bs c
+Diter : ∀ {ℓ}{A : Set ℓ} (n : ℕ) bs c → (𝒻₀ : DFun A bs c) 
+     → (𝒻 : DFun A bs c → DFun A bs c)
+     → DFun A bs c
 Diter zero bs c 𝒻₀ 𝒻 = 𝒻₀
 Diter (suc n) bs c 𝒻₀ 𝒻 = 𝒻 (Diter n bs c 𝒻₀ 𝒻)
 
-Diter-pres : ∀ {ℓ}{A : Set ℓ} R (n : ℕ) bs c → (𝒻₀ 𝒻₀' : DenotFun A bs c)
-   → (𝒻 𝒻' : DenotFun A bs c → DenotFun A bs c)
+Diter-pres : ∀ {ℓ}{A : Set ℓ} R (n : ℕ) bs c → (𝒻₀ 𝒻₀' : DFun A bs c)
+   → (𝒻 𝒻' : DFun A bs c → DFun A bs c)
    → fun-rel-pres R bs c 𝒻₀ 𝒻₀'
    → (∀ ℊ ℊ' → fun-rel-pres R bs c ℊ ℊ' → fun-rel-pres R bs c (𝒻 ℊ) (𝒻' ℊ'))
    → fun-rel-pres R bs c (Diter n bs c 𝒻₀ 𝒻) (Diter n bs c 𝒻₀' 𝒻')
@@ -154,14 +154,14 @@ Diter-pres R zero bs c 𝒻₀ 𝒻₀' 𝒻 𝒻' 𝒻₀~ 𝒻~ = 𝒻₀~
 Diter-pres R (suc n) bs c 𝒻₀ 𝒻₀' 𝒻 𝒻' 𝒻₀~ 𝒻~ = 
   𝒻~ (Diter n bs c 𝒻₀ 𝒻) (Diter n bs c 𝒻₀' 𝒻') (Diter-pres R n bs c 𝒻₀ 𝒻₀' 𝒻 𝒻' 𝒻₀~ 𝒻~)
 
-DComp-rest : ∀ {ℓ} {A : Set ℓ} bs c d → DenotFun A bs c → DenotFun A (c ∷ bs) d
-  → DenotFun A bs d
+DComp-rest : ∀ {ℓ} {A : Set ℓ} bs c d → DFun A bs c → DFun A (c ∷ bs) d
+  → DFun A bs d
 DComp-rest [] c d 𝒻 ℊ = ℊ 𝒻
 DComp-rest (x ∷ bs) c d 𝒻 ℊ D = DComp-rest bs c d (𝒻 D) (λ z → ℊ z D)
 
 DComp-rest-pres : ∀ {ℓ}{A : Set ℓ} R bs c d
-  → (𝒻1 𝒻2 : DenotFun A bs c)
-  → (ℊ1 ℊ2 : Result A c → DenotFun A bs d)
+  → (𝒻1 𝒻2 : DFun A bs c)
+  → (ℊ1 ℊ2 : Result A c → DFun A bs d)
   → fun-rel-pres R bs c 𝒻1 𝒻2
   → fun-rel-pres R (c ∷ bs) d ℊ1 ℊ2
   → fun-rel-pres R bs d (DComp-rest bs c d 𝒻1 ℊ1) (DComp-rest bs c d 𝒻2 ℊ2)
@@ -170,13 +170,13 @@ DComp-rest-pres R (x ∷ bs) c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ D1 D2 D~ =
   DComp-rest-pres R bs c d (𝒻1 D1) (𝒻2 D2) (λ z → ℊ1 z D1) (λ z → ℊ2 z D2) 
                   (𝒻~ D1 D2 D~) (λ D E z → ℊ~ D E z D1 D2 D~)
 
-DComp-n-1 : ∀ {ℓ}{A : Set ℓ} bs c d → DenotFun A bs c → DenotFun A (c ∷ []) d → DenotFun A bs d
+DComp-n-1 : ∀ {ℓ}{A : Set ℓ} bs c d → DFun A bs c → DFun A (c ∷ []) d → DFun A bs d
 DComp-n-1 [] c d 𝒻 ℊ = ℊ 𝒻
 DComp-n-1 (b ∷ bs) c d 𝒻 ℊ D = DComp-n-1 bs c d (𝒻 D) ℊ
 
 DComp-n-1-pres : ∀ {ℓ}{A : Set ℓ} R bs c d
-  → (𝒻1 𝒻2 : DenotFun A bs c)
-  → (ℊ1 ℊ2 : DenotFun A (c ∷ []) d)
+  → (𝒻1 𝒻2 : DFun A bs c)
+  → (ℊ1 ℊ2 : DFun A (c ∷ []) d)
   → fun-rel-pres R bs c 𝒻1 𝒻2
   → fun-rel-pres R (c ∷ []) d ℊ1 ℊ2
   → fun-rel-pres R bs d (DComp-n-1 bs c d 𝒻1 ℊ1) (DComp-n-1 bs c d 𝒻2 ℊ2)
@@ -184,20 +184,20 @@ DComp-n-1-pres R [] c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ = ℊ~ 𝒻1 𝒻2 𝒻
 DComp-n-1-pres R (x ∷ bs) c d 𝒻1 𝒻2 ℊ1 ℊ2 𝒻~ ℊ~ D E D~ = 
   DComp-n-1-pres R bs c d (𝒻1 D) (𝒻2 E) ℊ1 ℊ2 (𝒻~ D E D~) ℊ~
 
-Dmap : ∀ {ℓ}{A : Set ℓ} {b}{c}{d}{n} → DenotFun A (b ∷ []) c 
-     → DenotFun A (replicate n c) d →  DenotFun A (replicate n b) d
+Dmap : ∀ {ℓ}{A : Set ℓ} {b}{c}{d}{n} → DFun A (b ∷ []) c 
+     → DFun A (replicate n c) d →  DFun A (replicate n b) d
 Dmap {n = zero} 𝒻 F = F
 Dmap {n = suc n} 𝒻 F D = Dmap {n = n} 𝒻 (F (𝒻 D))
 
-Dfold : ∀ {ℓ}{A : Set ℓ} b c n → DenotFun A (b ∷ c ∷ []) c
+Dfold : ∀ {ℓ}{A : Set ℓ} b c n → DFun A (b ∷ c ∷ []) c
     → Result A c
-    → DenotFun A (replicate n b) c
+    → DFun A (replicate n b) c
 Dfold b c zero 𝒻 𝒸 = 𝒸
 Dfold b c (suc n) 𝒻 𝒸 D = 
   DComp-n-1 (replicate n b) c c (Dfold b c n 𝒻 𝒸) (𝒻 D)
 
 Dfold-pres : ∀ {ℓ}{A : Set ℓ} R b c n
-  → (𝒻1 𝒻2 : DenotFun A (b ∷ c ∷ []) c)
+  → (𝒻1 𝒻2 : DFun A (b ∷ c ∷ []) c)
   → (𝒸1 𝒸2 : Result A c)
   → fun-rel-pres R (b ∷ c ∷ []) c 𝒻1 𝒻2
   → result-rel-pres R c 𝒸1 𝒸2
@@ -209,65 +209,19 @@ Dfold-pres R b c (suc n) 𝒻1 𝒻2 𝒸1 𝒸2 𝒻~ 𝒸~ D1 D2 D~ =
                 (Dfold-pres R b c n 𝒻1 𝒻2 𝒸1 𝒸2 𝒻~ 𝒸~) (𝒻~ D1 D2 D~)
 
 
-{-   =========== Preserved Properties ================ -}
-
-
-monotone : ∀ {A : Set} bs b → DenotFun (𝒫 A) bs b → Set₁
-monotone bs b 𝒻 = fun-rel-pres _⊆_ bs b 𝒻 𝒻
-
-𝕆-monotone : ∀ {A : Set} {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
-𝕆-monotone sig 𝕆 = ops-rel-pres _⊆_ sig 𝕆 𝕆
-
-congruent : ∀ {A : Set} bs b → DenotFun (𝒫 A) bs b → Set₁
-congruent bs b 𝒻 = fun-rel-pres _≃_ bs b 𝒻 𝒻
-
-𝕆-congruent : ∀ {A : Set} {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
-𝕆-congruent sig 𝕆 = ops-rel-pres _≃_ sig 𝕆 𝕆
-
-Every : ∀ {A : Set} (R : Rel A lzero) → 𝒫 A → 𝒫 A → Set
-Every R A B = ∀ a b → a ∈ A → b ∈ B → R a b
-
-Every-⊆ : ∀ {T R A B U V}
-     → Every {T} R A B → U ⊆ A → V ⊆ B → Every R U V
-Every-⊆ A~B U⊆A V⊆B a b a∈U b∈V = A~B a b (U⊆A a a∈U) (V⊆B b b∈V)
-
-{- this can be used similarly... 
-  for a denotational function: fun-rel-pres (Every R)
-  for a DenotOps : ops-rel-pres (Every R) 
--}
-
-{- for example, this can be used to define consistency, based on some 
-   consistent : Value → Value → Set -}
-
-fun-consistent : ∀ {A : Set} (consistent : A → A → Set) bs b → DenotFun (𝒫 A) bs b → Set₁
-fun-consistent consistent bs b 𝒻 = fun-rel-pres (Every consistent) bs b 𝒻 𝒻
-
-𝕆-consistent : ∀ {A : Set} (consistent : A → A → Set) {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
-𝕆-consistent consistent sig 𝕆 = ops-rel-pres (Every consistent) sig 𝕆 𝕆
-
-
-{- Continuity appears to be a different beast... relying on info about the environment -}
-{- But I wonder if a part of it can be factored into a propert about
-  just the denotational operators -}
-
-finite : ∀ {A} → 𝒫 A → Set
-finite {A} S = Σ[ V ∈ List A ] S ⊆ (mem V)
-
-fun-finitary : ∀ {A} bs b → DenotFun (𝒫 A) bs b → Set₁
-fun-finitary bs b 𝒻 = fun-pred-pres finite bs b 𝒻
-
-𝕆-finitary : ∀ {A} {Op} sig → DenotOps {Op = Op} (𝒫 A) sig → Set₁
-𝕆-finitary sig 𝕆 = ops-pred-pres finite sig 𝕆
-
 
 {- =============== translating to and from tuples =============== -}
 
-uncurryFun : ∀ {ℓ} {A : Set ℓ} {bs c} → DenotFun A bs c → (Tuple bs (Result A) → Result A c)
-uncurryFun {bs = []} 𝒻 _ = 𝒻
-uncurryFun {bs = (b ∷ bs)} 𝒻 ⟨ D , Ds ⟩ = uncurryFun (𝒻 D) Ds  
+uncurryDFun : ∀ {ℓ} {A : Set ℓ} {bs c} → DFun A bs c → (Tuple bs (Result A) → Result A c)
+uncurryDFun {bs = []} 𝒻 _ = 𝒻
+uncurryDFun {bs = (b ∷ bs)} 𝒻 ⟨ D , Ds ⟩ = uncurryDFun (𝒻 D) Ds  
 
-curryFun : ∀ {ℓ} {A : Set ℓ} {bs c} → (Tuple bs (Result A) → Result A c) → DenotFun A bs c
-curryFun {bs = []} 𝒻 = 𝒻 (lift tt)
-curryFun {bs = (b ∷ bs)} 𝒻 D = curryFun (λ Ds → 𝒻 ⟨ D , Ds ⟩)
+curryDFun : ∀ {ℓ} {A : Set ℓ} {bs c} → (Tuple bs (Result A) → Result A c) → DFun A bs c
+curryDFun {bs = []} 𝒻 = 𝒻 (lift tt)
+curryDFun {bs = (b ∷ bs)} 𝒻 D = curryDFun (λ Ds → 𝒻 ⟨ D , Ds ⟩)
+
+
+
+
 
 

@@ -16,7 +16,7 @@ module NewSyntaxUtil where
 
   infixr 7  _,,_
   pattern _,,_ M Ns = cons (ast M) Ns
-  pattern [] = nil
+  pattern Nil = nil
   pattern ⟩_,,_ M Ns = cons (bind (ast M)) Ns
   pattern !_,,_ M Ns = cons M Ns
 
@@ -24,7 +24,7 @@ module NewSyntaxUtil where
     → ∀ {bs} → Args Op1 sig1 bs → Args Op2 sig2 bs
   map-arg : ∀ {Op1 Op2 sig1 sig2} (f : ABT Op1 sig1 → ABT Op2 sig2)
     → ∀ {b} → Arg Op1 sig1 b → Arg Op2 sig2 b
-  map-args f [] = []
+  map-args f Nil = Nil
   map-args f (! arg ,, args) = ! map-arg f arg ,, map-args f args
   map-arg f (ast x) = ast (f x)
   map-arg f (bind arg) = bind (map-arg f arg)

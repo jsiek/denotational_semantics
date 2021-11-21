@@ -83,7 +83,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos1 case-op = 𝒞-new
 
 𝕆-Clos1-mono : 𝕆-monotone sig 𝕆-Clos1
-𝕆-Clos1-mono (clos-op x) = {!   !}
+𝕆-Clos1-mono (clos-op x) F F' F⊆ = 𝒜-mono x {!   !} {!   !} (Λ-mono {!   !} {!   !} {!    !})
 𝕆-Clos1-mono app = ⋆-mono
 𝕆-Clos1-mono (prim P x) = lift λ d x → x
 𝕆-Clos1-mono pair-op = cons-mono

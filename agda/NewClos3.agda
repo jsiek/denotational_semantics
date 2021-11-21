@@ -69,7 +69,8 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 
 𝕆-Clos3 : DenotOps (𝒫 Value) sig
-𝕆-Clos3 (clos-op n) 𝒻 = DComp-rest (replicate n ■) ■ ■ (𝒯 n) (λ T → Λ′ n (𝒻 T))
+𝕆-Clos3 (clos-op n) 𝒻 = 
+  DComp-rest (replicate n ■) ■ ■ (𝒯 n) (λ T → 𝒜 n (Λ (𝒻 T)))
 𝕆-Clos3 app = _⋆_
 𝕆-Clos3 (prim P f) = 𝓅 P f
 𝕆-Clos3 pair-op = ⟪_,_⟫
@@ -84,8 +85,10 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos3-mono : 𝕆-monotone sig 𝕆-Clos3
 𝕆-Clos3-mono (clos-op x) F1 F2 F~ = 
   DComp-rest-pres _⊆_ (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
-                  (λ T → Λ′ x (F1 T)) (λ T → Λ′ x (F2 T)) 
-                  (𝒯-mono x) {!   !}
+                  (λ T → 𝒜 x (Λ (F1 T))) (λ T → 𝒜 x (Λ (F2 T))) 
+                  (𝒯-mono x) 
+                  (λ T T' T⊆ → 𝒜-mono x (Λ (F1 T)) (Λ (F2 T')) 
+                               (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆))))
 𝕆-Clos3-mono app = ⋆-mono
 𝕆-Clos3-mono (prim P x) = lift λ d x → x
 𝕆-Clos3-mono pair-op = cons-mono
@@ -96,6 +99,28 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos3-mono inl-op = ℒ-mono
 𝕆-Clos3-mono inr-op = ℛ-mono
 𝕆-Clos3-mono case-op = 𝒞-new-mono
+
+𝕆-Clos3-consis : 𝕆-consistent _~_ sig 𝕆-Clos3
+𝕆-Clos3-consis (clos-op x) F1 F2 F~ = 
+  DComp-rest-pres (Every _~_) (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
+                  (λ T → 𝒜 x (Λ (F1 T))) ((λ T → 𝒜 x (Λ (F2 T)))) 
+  (𝒯-consis x) (λ T T' T~ → 𝒜-consis x (Λ (F1 T)) (Λ (F2 T')) 
+                            (Λ-consis (F1 T) (F2 T') (F~ T T' (lower T~))))
+𝕆-Clos3-consis app = ⋆-consis
+𝕆-Clos3-consis (prim P x) = 𝓅-consis P x
+𝕆-Clos3-consis pair-op = cons-consis
+𝕆-Clos3-consis fst-op = car-consis
+𝕆-Clos3-consis snd-op = cdr-consis
+𝕆-Clos3-consis (tuple x) = 𝒯-consis x
+𝕆-Clos3-consis (get x) = proj-consis x
+𝕆-Clos3-consis inl-op = ℒ-consis
+𝕆-Clos3-consis inr-op = ℛ-consis
+𝕆-Clos3-consis case-op = 𝒞-new-consis
+
+
+open import Fold2 Op sig
+open import NewSemanticProperties Op sig
+
 
 {-
 interp-op1  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
@@ -133,8 +158,7 @@ pattern inl M = inl-op ⦅ cons (ast M) nil ⦆
 pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
 pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
-open import Fold2 Op sig
-open import SemanticPropertiesAnnot Op sig
+
 
 
 

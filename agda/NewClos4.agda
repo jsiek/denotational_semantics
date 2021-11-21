@@ -96,6 +96,23 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos4-mono inr-op = ℛ-mono
 𝕆-Clos4-mono case-op = 𝒞-new-mono
 
+𝕆-Clos4-consis : 𝕆-consistent _~_ sig 𝕆-Clos4
+𝕆-Clos4-consis fun-op = 
+  DComp-pres (Every _~_) (∁ (ν (ν ■)) ∷ []) (ν ■) [] ■ 
+            (λ X Y → Λ (X Y)) (λ X Y → Λ (X Y)) Λ Λ 
+            (λ D1 D2 D~ E1 E2 E~ → Λ-consis (D1 E1) (D2 E2) (D~ E1 E2 E~)) Λ-consis
+𝕆-Clos4-consis app = 
+  DComp-pres (Every _~_) (■ ∷ ■ ∷ []) ■ (■ ∷ []) ■ _⋆_ _⋆_ _⋆_ _⋆_ ⋆-consis ⋆-consis
+𝕆-Clos4-consis (prim P x) = 𝓅-consis P x
+𝕆-Clos4-consis pair-op = cons-consis
+𝕆-Clos4-consis fst-op = car-consis
+𝕆-Clos4-consis snd-op = cdr-consis
+𝕆-Clos4-consis (tuple x) = 𝒯-consis x
+𝕆-Clos4-consis (get x) = proj-consis x
+𝕆-Clos4-consis inl-op = ℒ-consis
+𝕆-Clos4-consis inr-op = ℛ-consis
+𝕆-Clos4-consis case-op = 𝒞-new-consis
+
 {-
 
 interp-op2  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
