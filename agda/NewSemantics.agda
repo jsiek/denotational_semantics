@@ -34,11 +34,13 @@ open import Fold2 Op sig
 
 {- =================== Monotonic Semantics ================================= -}
 
-record Semantics (A : Set) : Set₁ where
-  field interp-op  : DOpSig (𝒫 A) sig
+record Semantics {A : Set} : Set₁ where
+  field 
+    error : A 
+    interp-op : DOpSig (𝒫 A) sig
 
   init : 𝒫 A
-  init v = False
+  init = ⌈ error ⌉
 
   ⟦_⟧ : ABT → Env A → 𝒫 A
   ⟦ M ⟧ ρ = fold interp-op init ρ M
@@ -51,37 +53,50 @@ record Semantics (A : Set) : Set₁ where
 
   field mono-op : 𝕆-monotone sig interp-op
 
-  {-
-  Cont-Env-Arg : ∀ {{_ : Semantics}} (ρ : Env) (NE-ρ : nonempty-env ρ)
-    → ∀ b → (arg : Arg b)  → Set₁
+  Cont-Env-Arg : ∀ {{_ : Semantics {A}}} (ρ : Env A) (NE-ρ : nonempty-env ρ)
+    → ∀ b → (arg : Arg b) → Set₁
   Cont-Env-Arg ρ NE-ρ ■ (ast M) = continuous-env ⟦ M ⟧ ρ
   Cont-Env-Arg ρ NE-ρ (ν b) (bind arg) =
     ∀ V → (ne : V ≢ [])
     → Cont-Env-Arg (mem V • ρ)
           (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem ne)) b arg
   Cont-Env-Arg ρ NE-ρ (∁ b) (clear arg) =
-      Cont-Env-Arg (λ x → init) (λ x → ⟨ ν , refl ⟩) b arg
-  -}
+      Cont-Env-Arg (λ x → init) (λ i → ⟨ error , refl ⟩) b arg
 
 open Semantics {{...}}
 
 {- =================== Consistent Semantics =============================== -}
 
+record ConsistentSemantics {A : Set} : Set₁ where
+  field 
+    {{Sem}} : Semantics {A}
+    consistency : A → A → Set
+    consistent-op : 𝕆-consistent consistency sig (Semantics.interp-op Sem)
+
+open ConsistentSemantics {{...}}
+
 
 {- =================== Continuous Semantics ====================== -}
-
-
-
-
-
-
-
-
-
 
 all-args : (∀ b → Arg b → Set₁) → ∀ bs → Args bs → Set₁
 all-args P [] args = Lift (lsuc lzero) True
 all-args P (b ∷ bs) (cons arg args) = P b arg × all-args P bs args
+
+record ContinuousSemantics {A : Set} : Set₁ where
+  field 
+    {{Sem}} : Semantics {A}
+    continuous-op : ∀{op}{ρ : Env A}{NE-ρ}{v}{args} → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args → Σ[ ρ′ ∈ Env A ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
+
+open ContinuousSemantics {{...}}
+
+
+
+
+
+
+
+
+
 
 
 {-

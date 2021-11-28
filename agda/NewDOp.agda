@@ -319,7 +319,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 𝓅 (base B) k v = ℬ B k v
 𝓅 (B ⇒ P) f _ (const k) = False
 𝓅 (B ⇒ P) f _ (fvs ⊢ V ↦ w) =
-   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ 𝓅 P (f k) (lift tt)
+   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ 𝓅 P (f k) (ptt)
 𝓅 (B ⇒ P) f _ ν = True
 𝓅 (B ⇒ P) f _ ω = False
 𝓅 (B ⇒ P) k _ ⦅ u , v ⦆ = False
@@ -439,8 +439,8 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
        ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ E<E' , E'<E ⟩ , _ ⟩ ⟩ = lift G
   where
   G : ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G = ⟨ lower (⋆-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D<D' , ⟨ lift E<E' , ptt ⟩ ⟩) 
+      , lower (⋆-mono ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ lift D'<D , ⟨ lift E'<E , ptt ⟩ ⟩) ⟩
 
 Λ-mono : monotone (ν ■ ∷ []) ■ Λ
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
@@ -489,8 +489,8 @@ pair-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩
        ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ E<E' , E'<E ⟩ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G = ⟨ lower (pair-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D<D' , ⟨ lift E<E' , ptt ⟩ ⟩) 
+      , lower (pair-mono ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ lift D'<D , ⟨ lift E'<E , ptt ⟩ ⟩) ⟩
 
 car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -502,8 +502,8 @@ car-cong : congruent (■ ∷ []) ■ car
 car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ≃ car ⟨ D' , ptt ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G = ⟨ lower (car-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
+      , lower (car-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
 
 cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -515,8 +515,8 @@ cdr-cong : congruent (■ ∷ []) ■ cdr
 cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
   where
   G : cdr ⟨ D , _ ⟩ ≃ cdr ⟨ D' , _ ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G = ⟨ lower (cdr-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
+      , lower (cdr-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
 
 
 ℒ-mono : monotone (■ ∷ []) ■ ℒ
@@ -529,8 +529,8 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
 ℒ-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
   where
   G : ℒ ⟨ D , ptt ⟩ ≃ ℒ ⟨ D' , ptt ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G = ⟨ lower (ℒ-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
+      , lower (ℒ-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
 
 ℛ-mono : monotone (■ ∷ []) ■ ℛ
 ℛ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -542,22 +542,24 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
 ℛ-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
   where
   G : ℛ ⟨ D , ptt ⟩ ≃ ℛ ⟨ D' , ptt ⟩
-  G = ⟨ lower (ℛ-mono D D' (lift D<D')) 
-      , lower (ℛ-mono D' D (lift D'<D)) ⟩
+  G = ⟨ lower (ℛ-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
+      , lower (ℛ-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
 
 𝒞-mono : monotone (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
-𝒞-mono D D' (lift D⊆) FL FL' (lift FL⊆) FR FR' (lift FR⊆) = lift G
+𝒞-mono ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+       ⟨ lift D⊆ , ⟨ lift FL⊆ , ⟨ lift FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where
-  G : 𝒞 D FL FR ⊆ 𝒞 D' FL' FR'
+  G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
   G d (inj₁ ⟨ V , ⟨ fvs , ⟨ inlV∈ , v∈ ⟩ ⟩ ⟩) = 
     inj₁ ⟨ V , ⟨ fvs , ⟨ D⊆ (left V) inlV∈ , FL⊆ (fvs ⊢ V ↦ d) v∈ ⟩ ⟩ ⟩
   G d (inj₂ ⟨ V , ⟨ fvs , ⟨ inrV∈ , v∈ ⟩ ⟩ ⟩) = 
     inj₂ ⟨ V , ⟨ fvs , ⟨ D⊆ (right V) inrV∈ , FR⊆ (fvs ⊢ V ↦ d) v∈ ⟩ ⟩ ⟩
 
 𝒞-new-mono : monotone (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞-new
-𝒞-new-mono D D' (lift D⊆) FL FL' FL⊆ FR FR' FR⊆ = lift G
+𝒞-new-mono ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+       ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where 
-  G : 𝒞-new D FL FR ⊆ 𝒞-new D' FL' FR'
+  G : 𝒞-new ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞-new ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
   G d (inj₁ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
     inj₁ ⟨ V , ⟨ D⊆ (left V) V∈ 
          , lower (FL⊆ (mem V) (mem V) (λ d z → z)) d d∈ ⟩ ⟩
@@ -566,30 +568,30 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
          , lower (FR⊆ (mem V) (mem V) (λ d z → z)) d d∈ ⟩ ⟩
 
 𝒞-cong : congruent (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
-𝒞-cong D D' (lift ⟨ D<D' , D'<D ⟩) FL FL' (lift ⟨ FL<FL' , FL'<FL ⟩)
-                                  FR FR' (lift ⟨ FR<FR' , FR'<FR ⟩) = lift G
+𝒞-cong ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+       ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ FL<FL' , FL'<FL ⟩ , ⟨ lift ⟨ FR<FR' , FR'<FR ⟩ , _ ⟩ ⟩ ⟩ = lift G
   where
-  G : 𝒞 D FL FR ≃ 𝒞 D' FL' FR'
-  G = ⟨ lower (𝒞-mono D D' (lift D<D') FL FL' (lift FL<FL') FR FR' (lift FR<FR')) 
-      , lower (𝒞-mono D' D (lift D'<D) FL' FL (lift FL'<FL) FR' FR (lift FR'<FR)) ⟩
+  G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩
+  G = ⟨ lower (𝒞-mono ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩ ⟨ lift D<D' , ⟨ lift FL<FL' , ⟨ lift FR<FR' , ptt ⟩ ⟩ ⟩) 
+      , lower (𝒞-mono ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩ ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ⟨ lift D'<D , ⟨ lift FL'<FL , ⟨ lift FR'<FR , ptt ⟩ ⟩ ⟩) ⟩
 
 proj-mono : ∀ i → monotone (■ ∷ []) ■ (proj i)
-proj-mono i D D' (lift D⊆) = lift G
+proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
-  G : proj i D ⊆ proj i D'
+  G : proj i ⟨ D , ptt ⟩ ⊆ proj i ⟨ D' , ptt ⟩
   G d ⟨ vs , ⟨ i< , ⟨ vs∈ , refl ⟩ ⟩ ⟩ = ⟨ vs , ⟨ i< , ⟨ D⊆ ∥ vs ∥ vs∈ , refl ⟩ ⟩ ⟩
 
 proj-cong : ∀ i → congruent (■ ∷ []) ■ (proj i)
-proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
+proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
   where
-  G : proj i D ≃ proj i D'
-  G = ⟨ lower (proj-mono i D D' (lift D<D')) 
-      , lower (proj-mono i D' D (lift D'<D)) ⟩
+  G : proj i ⟨ D , _ ⟩ ≃ proj i ⟨ D' , _ ⟩
+  G = ⟨ lower (proj-mono i ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
+      , lower (proj-mono i ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
 
 𝒯-cons-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒯-cons
-𝒯-cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
+𝒯-cons-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
-  G : 𝒯-cons D E ⊆ 𝒯-cons D' E'
+  G : 𝒯-cons ⟨ D , ⟨ E , _ ⟩ ⟩ ⊆ 𝒯-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩
   G ∥ d ∷ ds ∥ ⟨ d∈ , ds∈ ⟩ = ⟨ D⊆ d d∈ , E⊆ ∥ ds ∥ ds∈ ⟩
 
 𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
@@ -605,15 +607,15 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
 -}
 
 𝒜-cons-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒜-cons
-𝒜-cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
+𝒜-cons-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
-  G : 𝒜-cons D E ⊆ 𝒜-cons D' E'
+  G : 𝒜-cons ⟨ D , ⟨ E , _ ⟩ ⟩ ⊆ 𝒜-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩
   G ((fv ∷ fvs) ⊢ V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
     ⟨ D⊆ fv fv∈ , E⊆ (fvs ⊢ V ↦ w) d∈ ⟩
 
 𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
-𝒜-mono n F F' (lift F⊆) = Dfold-pres _⊆_ ■ ■ n 𝒜-cons 𝒜-cons F F' 
-  𝒜-cons-mono (lift F⊆)
+𝒜-mono n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ (lift F⊆) , Ds⊆ ⟩ = 
+  Dfold-pres _⊆_ ■ ■ n 𝒜-cons 𝒜-cons F F' 𝒜-cons-mono (lift F⊆) Ds Ds' Ds⊆
 
 {-
 𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
@@ -667,9 +669,9 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
 {- Consistency ----------------------------------------------------------------}
 
 ⋆-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ ⋆
-⋆-consis D D' (lift D~) E E' (lift E~) = lift G
+⋆-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
-  G : Every _~_ (D ⋆ E) (D' ⋆ E')
+  G : Every _~_ (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) (⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G u v ⟨ V , ⟨ fvs , ⟨ wv∈D , ⟨ V<E , Vne ⟩ ⟩ ⟩ ⟩ 
         ⟨ V' , ⟨ fvs' , ⟨ wv∈D' , ⟨ V<E' , Vne' ⟩ ⟩ ⟩ ⟩ 
         with D~ (fvs ⊢ V ↦ u) (fvs' ⊢ V' ↦ v) wv∈D wv∈D'
@@ -677,9 +679,9 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   ... | inj₂ y = proj₂ y
 
 Λ-consis : consistent _~_ (ν ■ ∷ []) ■ Λ
-Λ-consis F F' F~ = lift G
+Λ-consis ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F~ , _ ⟩ = lift G
   where
-  G : Every _~_ (Λ F) (Λ F')
+  G : Every _~_ (Λ ⟨ F , ptt ⟩) (Λ ⟨ F' , ptt ⟩)
   G ν (x ⊢ x₁ ↦ v) tt _ = tt
   G ν ν tt _ = tt
   G ([] ⊢ V ↦ w) ν ⟨ w∈F₁X , V≢[] ⟩ tt = tt
@@ -689,47 +691,48 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
     inj₂ ⟨ V≈V' , lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
   ... | no ¬V≈V' = inj₁ ¬V≈V'
 
-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
-cons-consis D D' (lift D~) E E' (lift E~) = lift G
+pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
+pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G ⦅ u , v ⦆ ⦅ u' , v' ⦆ ⟨ u∈D , v∈D ⟩ ⟨ u'∈D' , v'∈D' ⟩
     = ⟨ D~ u u' u∈D u'∈D' , E~ v v' v∈D v'∈D' ⟩
 
 car-consis : consistent _~_ (■ ∷ []) ■ car
-car-consis D D' (lift D~) = lift G
+car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (car D) (car D')
+  G : Every _~_ (car ⟨ D , ptt ⟩) (car ⟨ D' , ptt ⟩)
   G u u' ⟨ v , uv∈D ⟩ ⟨ v' , u'v'∈D' ⟩ 
     with D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ uv∈D u'v'∈D'
   ... | ⟨ u~ , v~ ⟩ = u~
 
 cdr-consis : consistent _~_ (■ ∷ []) ■ cdr
-cdr-consis D D' (lift D~) = lift G
+cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (cdr D) (cdr D')
+  G : Every _~_ (cdr ⟨ D , ptt ⟩) (cdr ⟨ D' , ptt ⟩)
   G v v' ⟨ u , uv∈D ⟩ ⟨ u' , u'v'∈D' ⟩ 
     with D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ uv∈D u'v'∈D'
   ... | ⟨ u~ , v~ ⟩ = v~
 
 ℒ-consis : consistent _~_ (■ ∷ []) ■ ℒ
-ℒ-consis D D' (lift D~) = lift G
+ℒ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (ℒ D) (ℒ D')
+  G : Every _~_ (ℒ ⟨ D , ptt ⟩) (ℒ ⟨ D' , ptt ⟩)
   G (left U) (left V) ⟨ Une , U∈ ⟩ ⟨ Vne , V∈ ⟩ 
     = Every⇒≈ U V (Every-⊆  D~ U∈ V∈)
 
 ℛ-consis : consistent _~_ (■ ∷ []) ■ ℛ
-ℛ-consis D D' (lift D~) = lift G
+ℛ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (ℛ D) (ℛ D')
+  G : Every _~_ (ℛ ⟨ D , ptt ⟩) (ℛ ⟨ D' , ptt ⟩)
   G (right U) (right V) ⟨ Une , U∈ ⟩ ⟨ Vne , V∈ ⟩ 
     = Every⇒≈ U V (Every-⊆  D~ U∈ V∈)
 
 𝒞-consis : consistent _~_ (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
-𝒞-consis D D' (lift D~) FL FL' (lift FL~) FR FR' (lift FR~) = lift G
+𝒞-consis ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+       ⟨ lift D~ , ⟨ lift FL~ , ⟨ lift FR~ , _ ⟩ ⟩ ⟩ = lift G
   where
-  G : Every _~_ (𝒞 D FL FR) (𝒞 D' FL' FR')
+  G : Every _~_ (𝒞 ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
   G u v (inj₁ ⟨ V , ⟨ fvs , ⟨ inlV∈ , v∈ ⟩ ⟩ ⟩)
         (inj₁ ⟨ V' , ⟨ fvs' , ⟨ inlV∈' , v∈' ⟩ ⟩ ⟩) 
     with FL~ (fvs ⊢ V ↦ u) (fvs' ⊢ V' ↦ v) v∈ v∈'
@@ -751,9 +754,10 @@ cdr-consis D D' (lift D~) = lift G
 
 
 𝒞-new-consis : consistent _~_ (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞-new
-𝒞-new-consis D D' (lift D~) FL FL' FL~ FR FR' FR~ = lift G
+𝒞-new-consis ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+       ⟨ lift D~ , ⟨ FL~ , ⟨ FR~ , _ ⟩ ⟩ ⟩ = lift G
   where 
-  G : Every _~_ (𝒞-new D FL FR) (𝒞-new D' FL' FR')
+  G : Every _~_ (𝒞-new ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞-new ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
   G u v (inj₁ ⟨ V , ⟨ V∈ , u∈ ⟩ ⟩) (inj₁ ⟨ V' , ⟨ V∈' , v∈ ⟩ ⟩)
    with D~ (left V) (left V') V∈ V∈'
   ... | V≈V' with FL~ (mem V) (mem V') (≈⇒Every V V' V≈V')
@@ -775,18 +779,18 @@ nth-~ (suc i) (x ∷ us) (x₁ ∷ vs) ⟨ fst , snd ⟩ i<us i<vs =
   nth-~ i us vs snd (≤-pred i<us) (≤-pred i<vs)
 
 proj-consis : ∀ i → consistent _~_ (■ ∷ []) ■ (proj i)
-proj-consis i D D' (lift D~) = lift G
+proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (proj i D) (proj i D')
+  G : Every _~_ (proj i ⟨ D , ptt ⟩) (proj i ⟨ D' , ptt ⟩)
   G u v ⟨ us , ⟨ i< , ⟨ us∈ , refl ⟩ ⟩ ⟩ 
        ⟨ vs , ⟨ i<' , ⟨ vs∈ , refl ⟩ ⟩ ⟩ 
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
 
 𝓅-consis : ∀ P f → consistent _~_ [] ■ (𝓅 P f)
-𝓅-consis P f = lift (G P f)
+𝓅-consis P f _ _ _ = lift (G P f)
   where
-  G : ∀ P f → Every _~_ (𝓅 P f) (𝓅 P f)
+  G : ∀ P f → Every _~_ (𝓅 P f ptt) (𝓅 P f ptt)
   G (base x) f (const {B} k) (const {B'} k') u∈ v∈ with base-eq? x B | base-eq? x B'
   ... | yes refl | yes refl with base-eq? x x
   ... | yes refl = trans (sym u∈) v∈
@@ -812,9 +816,9 @@ proj-consis i D D' (lift D~) = lift G
 
 
 𝒯-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒯-cons
-𝒯-cons-consis D D' (lift D~) E E' (lift E~) = lift G
+𝒯-cons-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
-  G : Every _~_ (𝒯-cons D E) (𝒯-cons D' E')
+  G : Every _~_ (𝒯-cons ⟨ D , ⟨ E , _ ⟩ ⟩) (𝒯-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩)
   G ∥ u ∷ us ∥ ∥ v ∷ vs ∥ ⟨ u∈ , us∈ ⟩ ⟨ v∈ , vs∈ ⟩ = ⟨ D~ u v u∈ v∈ , E~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ ⟩
 
 
@@ -827,31 +831,15 @@ proj-consis i D D' (lift D~) = lift G
 
 
 𝒜-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒜-cons
-𝒜-cons-consis D D' (lift D~) E E' (lift E~) = lift G
+𝒜-cons-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
-  G : Every _~_ (𝒜-cons D E) (𝒜-cons D' E')
+  G : Every _~_ (𝒜-cons ⟨ D , ⟨ E , _ ⟩ ⟩) (𝒜-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩)
   G ((fv ∷ fvs) ⊢ V ↦ w) ((fv' ∷ fvs') ⊢ V' ↦ w') ⟨ fvs⊆ , u∈ ⟩ ⟨ fvs'⊆ , v∈ ⟩
      = E~ (fvs ⊢ V ↦ w) (fvs' ⊢ V' ↦ w') u∈ v∈
 
 𝒜-consis : ∀ n → consistent _~_ (■ ∷ replicate n ■) ■ (𝒜 n)
-𝒜-consis n F F' F~ = Dfold-pres (Every _~_) ■ ■ n 𝒜-cons 𝒜-cons F F' 
-        𝒜-cons-consis F~
-
-
-{-
-𝒜-cons-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒜-cons
-𝒜-cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
-  where
-  G : 𝒜-cons D E ⊆ 𝒜-cons D' E'
-  G ((fv ∷ fvs) ⊢ V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
-    ⟨ (λ d z → D⊆ d (fv∈ d z)) , E⊆ (fvs ⊢ V ↦ w) d∈ ⟩
-
-𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
-𝒜-mono zero F F' F⊆ = F⊆
-𝒜-mono (suc n) F F' (lift F⊆) D D' (lift D⊆) = 
-  DComp-n-1-pres _⊆_ (replicate n ■) ■ ■ (𝒜 n F) (𝒜 n F') (𝒜-cons D) (𝒜-cons D') 
-    (𝒜-mono n F F' (lift F⊆)) (𝒜-cons-mono D D' (lift D⊆))
--}
+𝒜-consis n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
+  Dfold-pres (Every _~_) ■ ■ n 𝒜-cons 𝒜-cons F F' 𝒜-cons-consis F~ Ds Ds' Ds~
 
 
 
@@ -861,7 +849,7 @@ proj-consis i D D' (lift D~) = lift G
    That is, it involves some  evaluation function  
    
    continuity is the property that whenever a value is in a Dation,
-   then there exists a finite environment for which that value is still in the Dation.
+   then there exists a finite environment for which that value is still in the denotation.
    -}
 
 
@@ -873,7 +861,7 @@ proj-consis i D D' (lift D~) = lift G
 
 -}
 
-{- More Equations -------------------------------------------------------------}
+{- More Equations ----------------------------------------------------------}
 
 {-
 
@@ -1186,7 +1174,7 @@ rel-results⇒rel-Π : ∀{n}{xs ys : Π n (𝒫 Value)}
   → (∀ x y → R ■ x y → R′ x y)
   → rel-results R (replicate n ■) xs ys
   → rel-Π R′ xs ys
-rel-results⇒rel-Π {zero} R⇒R′ (lift tt) = tt
+rel-results⇒rel-Π {zero} R⇒R′ (ptt) = tt
 rel-results⇒rel-Π {suc n}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
     ⟨ R⇒R′ x y Rxy , (rel-results⇒rel-Π R⇒R′ R[xs,ys]) ⟩
 
@@ -1374,7 +1362,7 @@ next-Ds-proj₂ {n} {Ds} {ρ}
 
 next-mono-envs : ∀{n}{Ds : Env → Π (suc n) (𝒫 Value)}
    → mono-envs Ds → mono-envs (next-Ds Ds)
-next-mono-envs {zero} {Ds} mDs {ρ} {ρ′} _ = lift tt
+next-mono-envs {zero} {Ds} mDs {ρ} {ρ′} _ = ptt
 next-mono-envs {suc n} {Ds} mDs {ρ} {ρ′} ρ⊆ρ′
     with Ds ρ | Ds ρ′ | mDs {ρ} {ρ′} ρ⊆ρ′
 ... | ⟨ Dρ , Dsρ ⟩ | ⟨ Dρ′ , Dsρ′ ⟩ | ⟨ _ , mDs′ ⟩ = mDs′
@@ -1412,7 +1400,7 @@ next-cont-envs {n} {Ds} {ρ}{NE-ρ}{w} w∈Dsρ cDs u u∈
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ 𝒯 n (Ds ρ₃)
 𝒯-continuous {zero} {Ds} {ρ} {NE-ρ} {u} u∈𝒯Ds cDs mDs 
     with Ds (initial-finite-env ρ NE-ρ) | u
-... | lift tt | ∥ [] ∥ =
+... | ptt | ∥ [] ∥ =
   ⟨ (initial-finite-env ρ NE-ρ) , ⟨ initial-fin ρ NE-ρ ,
   ⟨ initial-fin-⊆ ρ NE-ρ , tt ⟩ ⟩ ⟩
 𝒯-continuous {suc n} {Ds} {ρ} {NE-ρ} {∥ v ∷ vs ∥} ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩ cDs mDs 

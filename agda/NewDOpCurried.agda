@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewPValueCBVAnnot where
+module NewDOpCurried where
 
 {-
 
@@ -17,8 +17,7 @@ open import Substitution using (_•_)
 open import ScopedTuple hiding (𝒫)
 open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import Sig
-open import NewDOpSig
-open import NewSemanticProperties
+open import NewResultsCurried
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -45,7 +44,92 @@ open import Level using (Level; Lift; lift; lower)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 
-{- Dational Values --------------------------------------------------------}
+
+
+{- Products (flat tuples) -----------------------------------------------------}
+{- Thought: just do this with full tuples with flat tuples as a special case -}
+
+Π : ∀ {ℓ} → ℕ → Set ℓ → Set ℓ
+Π n T = Tuple (replicate n ■) (Result T)
+
+Π-map : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} {n}
+  → (f : A → B) → Π n A → Π n B
+Π-map {n = zero} f (lift lower) = lift tt
+Π-map {n = suc n} f ⟨ fst , snd ⟩ = ⟨ f fst , Π-map f snd ⟩
+
+toΠ : ∀ {ℓ} {A : Set ℓ} (xs : List A) → Π (length xs) A
+toΠ [] = lift tt
+toΠ (x ∷ xs) = ⟨ x , toΠ xs ⟩
+
+toList : ∀ {ℓ} {A : Set ℓ} {n} → Π n A → List A
+toList {n = zero} _ = []
+toList {n = suc n} ⟨ x , xs ⟩ = x ∷ toList xs
+
+all-Π : ∀{ℓ}{ℓ'}{n}{T : Set ℓ} → (T → Set ℓ') → Π n T → Set ℓ'
+all-Π {n = zero} P (lift tt) = ⊤
+all-Π {n = suc n} P ⟨ x , xs ⟩ = P x  ×  all-Π P xs
+
+rel-Π : ∀{ℓ}{n}{T : Set ℓ} → (T → T → Set) → Π n T → Π n T → Set
+rel-Π {n = zero} R (lift tt) (lift tt) = True
+rel-Π {n = suc n} R ⟨ x , xs ⟩ ⟨ y , ys ⟩ = R x y  ×  rel-Π R xs ys
+
+NE-Π : ∀ {n}{T} → Π n (𝒫 T) → Set
+NE-Π {n}{T} = all-Π {n = n}{T = 𝒫 T} nonempty
+
+Π-append : ∀{ℓ}{A : Set ℓ}{n}{m} → Π n A → Π m A → Π (n + m) A
+Π-append {n = zero} {m} Ds Es = Es
+Π-append {n = suc n} {m} ⟨ D , Ds ⟩ Es = ⟨ D , (Π-append Ds Es) ⟩
+
+rel-Π-refl : ∀{ℓ}{n}{T : Set ℓ}{R : T → T → Set}{Ds : Π n T}
+   → (∀ {x} → R x x) → rel-Π R Ds Ds
+rel-Π-refl {n = zero} {T} {R} {Ds} R-refl = tt
+rel-Π-refl {n = suc n} {T} {R} {⟨ D , Ds ⟩} R-refl =
+    ⟨ R-refl , (rel-Π-refl R-refl) ⟩
+
+rel-Π-sym : ∀{ℓ}{n}{T : Set ℓ}{R : T → T → Set}{Ds Es : Π n T}
+   → (∀ {x y} → R x y → R y x) → rel-Π R Ds Es → rel-Π R Es Ds
+rel-Π-sym {n = zero} {T} {R} {lift tt} {lift tt} R-sym tt = tt
+rel-Π-sym {n = suc n} {T} {R} {⟨ D , Ds ⟩} {⟨ E , Es ⟩} R-sym ⟨ RDE , R[Ds,Es] ⟩ =
+    ⟨ (R-sym RDE) , (rel-Π-sym R-sym R[Ds,Es]) ⟩
+
+rel-Π-⇒ : ∀{ℓ}{n}{T : Set ℓ}{xs ys : Π n T}{R R′ : T → T → Set}
+   → (∀ x y → R x y → R′ x y) → rel-Π R xs ys → rel-Π R′ xs ys
+rel-Π-⇒ {n = zero} R⇒R′ tt = tt
+rel-Π-⇒ {n = suc n}{T}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
+    ⟨ R⇒R′ x y Rxy , rel-Π-⇒ R⇒R′ R[xs,ys] ⟩
+
+_⫃_ : ∀{A : Set}{n} → Π n (𝒫 A) → Π n (𝒫 A) → Set
+_⫃_ {A}{n} = rel-Π {n = n}{T = 𝒫 A} _⊆_
+
+_⩭_ : ∀{A : Set}{n} → Π n (𝒫 A) → Π n (𝒫 A) → Set
+_⩭_ {A}{n} = rel-Π {n = n}{T = 𝒫 A} _≃_
+
+⩭-refl = λ {A}{n}{Ds} → rel-Π-refl {n = n}{T = 𝒫 A}{R = _≃_}{Ds} ≃-refl
+
+⩭-sym = λ {A}{n}{Ds}{Es} → rel-Π-sym {n = n}{T = 𝒫 A}{R = _≃_}{Ds}{Es} ≃-sym 
+
+⩭⇒⊆ : ∀{A}{n}{Ds Es : Π n (𝒫 A)} → Ds ⩭ Es → Ds ⫃ Es  ×  Es ⫃ Ds
+⩭⇒⊆ {n}{Ds}{Es} Ds=Es =
+    ⟨ rel-Π-⇒ (λ x y → proj₁) Ds=Es , rel-Π-⇒ (λ x y → proj₁) (⩭-sym Ds=Es) ⟩
+
+
+curry-rel : ∀ {ℓ} {A : Set ℓ} n R (𝒻 ℊ : Π n A → A)
+  → (∀ (Ds Es : Π n A) → rel-Π R Ds Es → R (𝒻 Ds) (ℊ Es)) 
+  → fun-rel-pres R (replicate n ■) ■ (curryFun 𝒻) (curryFun ℊ)
+curry-rel zero R 𝒻 ℊ H = lift (H (lift tt) (lift tt) tt)
+curry-rel (suc n) R 𝒻 ℊ H D E (lift D~E) = 
+  curry-rel n R (λ z → 𝒻 ⟨ D , z ⟩) (λ z → ℊ ⟨ E , z ⟩) 
+            (λ Ds Es z → H ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D~E , z ⟩)
+
+uncurry-rel : ∀ {ℓ}{A : Set ℓ} n R (𝒻 ℊ : DenotOp A (replicate n ■))
+  → fun-rel-pres R (replicate n ■) ■ 𝒻 ℊ
+  → (∀ (Ds Es : Π n A) → rel-Π R Ds Es → R ((uncurryFun 𝒻) Ds) ((uncurryFun ℊ) Es))
+uncurry-rel zero R 𝒻 ℊ H D E _ = lower H
+uncurry-rel (suc n) R 𝒻 ℊ H ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D~E , Ds~Es ⟩ = 
+   uncurry-rel n R (𝒻 D) (ℊ E) (H D E (lift D~E)) Ds Es Ds~Es
+
+
+{- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
   const : {B : Base} → base-rep B → Value  {- A primitive constant of type B. -}
@@ -297,111 +381,111 @@ Every⇒≈ (x ∷ A) B A~B =
   ⟨ tabulate (λ {b} b∈B → A~B x b (here refl) b∈B) 
   , Every⇒≈ A B (λ a b a∈A b∈B → A~B a b (there a∈A) b∈B) ⟩
 
-{- Dational Operators -----------------------------------------------------}
+{- Denotational Operators -----------------------------------------------------}
 
 {-
 _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  Λ′
 -}
 
-{- \st -}
-⋆ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-⋆ ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = λ w → Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ] (fvs ⊢ V ↦ w ∈ D₁)
+infix 10 _⋆_  {- \st -}
+_⋆_ : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+D₁ ⋆ D₂ = λ w → Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ] (fvs ⊢ V ↦ w ∈ D₁)
                   ×  (mem V ⊆ D₂)  ×  V ≢ []
 
-ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
-ℬ B k _ (const {B′} k′)
+ℬ : (B : Base) → base-rep B → DenotOp (𝒫 Value) []
+ℬ B k (const {B′} k′)
     with base-eq? B B′
 ... | yes refl = k ≡ k′
 ... | no neq = False
-ℬ B k _ _ = False
+ℬ B k _ = False
 
-𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
+𝓅 : (P : Prim) → rep P → DenotOp (𝒫 Value) []
 𝓅 (base B) k v = ℬ B k v
-𝓅 (B ⇒ P) f _ (const k) = False
-𝓅 (B ⇒ P) f _ (fvs ⊢ V ↦ w) =
-   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ 𝓅 P (f k) (lift tt)
-𝓅 (B ⇒ P) f _ ν = True
-𝓅 (B ⇒ P) f _ ω = False
-𝓅 (B ⇒ P) k _ ⦅ u , v ⦆ = False
-𝓅 (B ⇒ P) k _ ∥ vs ∥ = False
-𝓅 (B ⇒ P) k _ (left V) = False
-𝓅 (B ⇒ P) k _ (right V) = False
+𝓅 (B ⇒ P) f (const k) = False
+𝓅 (B ⇒ P) f (fvs ⊢ V ↦ w) =
+   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ 𝓅 P (f k)
+𝓅 (B ⇒ P) f ν = True
+𝓅 (B ⇒ P) f ω = False
+𝓅 (B ⇒ P) k ⦅ u , v ⦆ = False
+𝓅 (B ⇒ P) k ∥ vs ∥ = False
+𝓅 (B ⇒ P) k (left V) = False
+𝓅 (B ⇒ P) k (right V) = False
 
 
-pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ u , v ⦆ = u ∈ D₁ × v ∈ D₂
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
+⟪_,_⟫ : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+⟪ D₁ , D₂ ⟫ ⦅ u , v ⦆ = u ∈ D₁ × v ∈ D₂
+⟪ D₁ , D₂ ⟫ _ = False
 
-car : DOp (𝒫 Value) (■ ∷ [])
-car ⟨ D , _ ⟩ u = Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D
+car : DenotOp (𝒫 Value) (■ ∷ [])
+car D u = Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D
 
-cdr : DOp (𝒫 Value) (■ ∷ [])
-cdr ⟨ D , _ ⟩ v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
+cdr : DenotOp (𝒫 Value) (■ ∷ [])
+cdr D v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 
-𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
-𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ d = False
+𝒯-cons : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+𝒯-cons D 𝒯Ds ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
+𝒯-cons D 𝒯Ds d = False
 
-𝒯 : ∀ n → DOp (𝒫 Value) (replicate n ■)
+𝒯 : ∀ n → DenotOp (𝒫 Value) (replicate n ■)
 𝒯 n = Dfold ■ ■ n 𝒯-cons ⌈ ∥ [] ∥ ⌉
 
 {-
-𝒯 : ∀ n → DOp (𝒫 Value) (replicate n ■)
+𝒯 : ∀ n → DenotOp (𝒫 Value) (replicate n ■)
 𝒯 zero ∥ [] ∥ = True
 𝒯 zero d = False
 𝒯 (suc n) D = DComp-n-1 (replicate n ■) ■ ■ (𝒯 n) (𝒯-cons D)
 -}
 
-𝒜-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ ((fv ∷ fvs) ⊢ V ↦ w) = fv ∈ D × fvs ⊢ V ↦ w ∈ F
-𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ d = False
+𝒜-cons : DenotOp (𝒫 Value) (■ ∷ ■ ∷ [])
+𝒜-cons D F ((fv ∷ fvs) ⊢ V ↦ w) = fv ∈ D × fvs ⊢ V ↦ w ∈ F
+𝒜-cons D F d = False
 
 {-
-𝒜 : ∀ (n : ℕ) → DOp (𝒫 Value) (■ ∷ replicate n ■)
+𝒜 : ∀ (n : ℕ) → DenotOp (𝒫 Value) (■ ∷ replicate n ■)
 𝒜 zero F = F
 𝒜 (suc n) F D = DComp-n-1 (replicate n ■) ■ ■ (𝒜 n F) (𝒜-cons D)
 -}
 
-𝒜 : ∀ n → DOp (𝒫 Value) (■ ∷ replicate n ■)
-𝒜 n ⟨ F , Ds ⟩ = Dfold ■ ■ n 𝒜-cons F Ds
+𝒜 : ∀ n → DenotOp (𝒫 Value) (■ ∷ replicate n ■)
+𝒜 n F = Dfold ■ ■ n 𝒜-cons F
 
 nth : List Value → ℕ → Value
 nth [] i = ω
 nth (v ∷ vs) 0 = v
 nth (v ∷ vs) (suc i) = nth vs i
 
-proj : ℕ → DOp (𝒫 Value) (■ ∷ [])
-proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
+proj : ℕ → DenotOp (𝒫 Value) (■ ∷ [])
+proj i D u = Σ[ vs ∈ List Value ]
     i < length vs  ×  ∥ vs ∥ ∈ D  ×  u ≡ nth vs i
 
-ℒ : DOp (𝒫 Value) (■ ∷ [])
-ℒ ⟨ D , _ ⟩ (left V) = V ≢ []  ×  mem V ⊆ D
-ℒ ⟨ D , _ ⟩ _ = False
+ℒ : DenotOp (𝒫 Value) (■ ∷ [])
+ℒ D (left V) = V ≢ []  ×  mem V ⊆ D
+ℒ D _ = False
 
-ℛ : DOp (𝒫 Value) (■ ∷ [])
-ℛ ⟨ D , _ ⟩ (right V) = V ≢ []  ×  mem V ⊆ D
-ℛ ⟨ D , _ ⟩ _ = False
+ℛ : DenotOp (𝒫 Value) (■ ∷ [])
+ℛ D (right V) = V ≢ []  ×  mem V ⊆ D
+ℛ D _ = False
 
-𝒞 : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
-𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = (Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ]
+𝒞 : DenotOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
+𝒞 D E F w = (Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ]
                  left V ∈ D  ×  fvs ⊢ V ↦ w ∈ E)
           ⊎ (Σ[ V ∈ List Value ] Σ[ fvs ∈ List Value ]
                  right V ∈ D  ×  fvs ⊢ V ↦ w ∈ F)
 
-𝒞-new : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞-new ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ V ∈ List Value ] left V ∈ D × w ∈ E (mem V) 
+𝒞-new : DenotOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
+𝒞-new D E F w = Σ[ V ∈ List Value ] left V ∈ D × w ∈ E (mem V) 
           ⊎ (Σ[ V ∈ List Value ] right V ∈ D × w ∈ F (mem V))
 
-Λ : DOp (𝒫 Value) (ν ■ ∷ [])
-Λ ⟨ f , _ ⟩ (const k) = False
-Λ ⟨ f , _ ⟩ ([] ⊢ V ↦ w) = w ∈ f (mem V)  ×  V ≢ []
-Λ ⟨ f , _ ⟩ ((b ∷ bs) ⊢ V ↦ w) = False
-Λ ⟨ f , _ ⟩ ν = True
-Λ ⟨ f , _ ⟩ ω = False
-Λ ⟨ f , _ ⟩ ⦅ u , v ⦆ = False
-Λ ⟨ f , _ ⟩ ∥ vs ∥ = False
-Λ ⟨ f , _ ⟩ (left V) = False
-Λ ⟨ f , _ ⟩ (right V) = False
+Λ : DenotOp (𝒫 Value) (ν ■ ∷ [])
+Λ f (const k) = False
+Λ f ([] ⊢ V ↦ w) = w ∈ f (mem V)  ×  V ≢ []
+Λ f ((b ∷ bs) ⊢ V ↦ w) = False
+Λ f ν = True
+Λ f ω = False
+Λ f ⦅ u , v ⦆ = False
+Λ f ∥ vs ∥ = False
+Λ f (left V) = False
+Λ f (right V) = False
 
 
 
@@ -420,128 +504,126 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
 Λ' n ⟦fvs⟧ f (left x) = False
 Λ' n ⟦fvs⟧ f (right x) = False
 
-Λ′ : ∀ (n : ℕ) → DOp (𝒫 Value) (ν ■ ∷ replicate n ■)
+Λ′ : ∀ (n : ℕ) → DenotOp (𝒫 Value) (ν ■ ∷ replicate n ■)
 Λ′ n f = curryFun (Λ' n f)
 
 -}
 
 {- Monotonicity and congruence of operators --------------------------------------------------}
 
-⋆-mono : monotone (■ ∷ ■ ∷ []) ■ ⋆
-⋆-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
+⋆-mono : monotone (■ ∷ ■ ∷ []) ■ _⋆_
+⋆-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
   where
-  G : ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  G : D ⋆ E ⊆ D' ⋆ E'
   G d ⟨ V , ⟨ fvs , ⟨ wv∈D , ⟨ V<E , Vne ⟩ ⟩ ⟩ ⟩ =
      ⟨ V , ⟨ fvs , ⟨ D⊆ (fvs ⊢ V ↦ d) wv∈D , ⟨ (λ d z → E⊆ d (V<E d z)) , Vne ⟩ ⟩ ⟩ ⟩
 
-⋆-cong : congruent (■ ∷ ■ ∷ []) ■ ⋆
-⋆-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
-       ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ E<E' , E'<E ⟩ , _ ⟩ ⟩ = lift G
+⋆-cong : congruent (■ ∷ ■ ∷ []) ■ _⋆_
+⋆-cong D D' (lift ⟨ D<D' , D'<D ⟩) E E' (lift ⟨ E<E' , E'<E ⟩) = lift G
   where
-  G : ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G : D ⋆ E ≃ D' ⋆ E'
+  G = ⟨ lower (⋆-mono D D' (lift D<D') E E' (lift E<E')) 
+      , lower (⋆-mono D' D (lift D'<D) E' E (lift E'<E)) ⟩
 
 Λ-mono : monotone (ν ■ ∷ []) ■ Λ
-Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
+Λ-mono F F' F⊆ = lift G
   where 
-  G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
+  G : Λ F ⊆ Λ F'
   G ([] ⊢ V ↦ w) ⟨ w∈F₁X , V≢[] ⟩ = 
     ⟨ lower (F⊆ (mem V) (mem V) (λ d z → z)) w w∈F₁X , V≢[] ⟩
   G ν v∈ = tt
 
 Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ⊆ F₂ X)
-  → Λ ⟨ F₁ , ptt ⟩ ⊆ Λ ⟨ F₂ , ptt ⟩
+  → Λ F₁ ⊆ Λ F₂
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ([] ⊢ V ↦ w) ⟨ w∈F₁X , V≢[] ⟩ =
     ⟨ F₁⊆F₂ w w∈F₁X , V≢[] ⟩
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ν v∈ = tt
 
 Λ-ext : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ≃ F₂ X)
-  → Λ ⟨ F₁ , ptt ⟩ ≃ Λ ⟨ F₂ , ptt ⟩
+  → Λ F₁ ≃ Λ F₂
 Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ Λ-ext-⊆ (proj₁ F₁≃F₂) , Λ-ext-⊆ (proj₂ F₁≃F₂) ⟩
 
 Λ-cong : congruent (ν ■ ∷ []) ■ Λ
-Λ-cong ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F≃ , _ ⟩ = lift ⟨ G1 , G2 ⟩
+Λ-cong F F' F≃ = lift ⟨ G1 , G2 ⟩
   where
-  G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
+  G1 : Λ F ⊆ Λ F'
   G1 ([] ⊢ V ↦ w) ⟨ w∈FV , Vne ⟩ = ⟨ proj₁ (lower
      (F≃ (mem V) (mem V)
           ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
              w w∈FV , Vne ⟩
   G1 ν tt = tt
-  G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
+  G2 : Λ F' ⊆ Λ F
   G2 ([] ⊢ V ↦ w) ⟨ w∈F'V , Vne ⟩ = ⟨  proj₂ (lower 
      (F≃ (mem V) (mem V) 
          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
          w w∈F'V  , Vne  ⟩
   G2 ν tt = tt
 
-pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
-pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
+cons-mono : monotone (■ ∷ ■ ∷ []) ■ ⟪_,_⟫
+cons-mono D D' (lift D⊆) E E' (lift E⊆) = lift G
   where
-  G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  G : ⟪ D , E ⟫ ⊆ ⟪ D' , E' ⟫
   G ⦅ u , v ⦆ ⟨ u∈D , v∈E ⟩ = ⟨ D⊆ u u∈D , E⊆ v v∈E ⟩
 
-pair-cong : congruent (■ ∷ ■ ∷ []) ■ pair
-pair-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
-       ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ E<E' , E'<E ⟩ , _ ⟩ ⟩ = lift G
+cons-cong : congruent (■ ∷ ■ ∷ []) ■ ⟪_,_⟫
+cons-cong D D' (lift ⟨ D<D' , D'<D ⟩) E E' (lift ⟨ E<E' , E'<E ⟩) = lift G
   where
-  G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G : ⟪ D , E ⟫ ≃ ⟪ D' , E' ⟫
+  G = ⟨ lower (cons-mono D D' (lift D<D') E E' (lift E<E')) 
+      , lower (cons-mono D' D (lift D'<D) E' E (lift E'<E)) ⟩
 
 car-mono : monotone (■ ∷ []) ■ car
-car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
+car-mono D D' (lift D⊆) = lift G
   where
-  G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
+  G : car D ⊆ car D'
   G u ⟨ v , uv∈D ⟩ = ⟨ v , D⊆ ⦅ u , v ⦆ uv∈D ⟩
 
 car-cong : congruent (■ ∷ []) ■ car
-car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
+car-cong D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   where
-  G : car ⟨ D , ptt ⟩ ≃ car ⟨ D' , ptt ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G : car D ≃ car D'
+  G = ⟨ lower (car-mono D D' (lift D<D')) 
+      , lower (car-mono D' D (lift D'<D)) ⟩
 
 cdr-mono : monotone (■ ∷ []) ■ cdr
-cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
+cdr-mono D D' (lift D⊆) = lift G
   where
-  G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
+  G : cdr D ⊆ cdr D'
   G v ⟨ u , uv∈D ⟩ = ⟨ u , D⊆ ⦅ u , v ⦆ uv∈D ⟩
 
 cdr-cong : congruent (■ ∷ []) ■ cdr
-cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
+cdr-cong D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   where
-  G : cdr ⟨ D , _ ⟩ ≃ cdr ⟨ D' , _ ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G : cdr D ≃ cdr D'
+  G = ⟨ lower (cdr-mono D D' (lift D<D')) 
+      , lower (cdr-mono D' D (lift D'<D)) ⟩
 
 
 ℒ-mono : monotone (■ ∷ []) ■ ℒ
-ℒ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
+ℒ-mono D D' (lift D⊆) = lift G
   where
-  G : ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ D' , ptt ⟩
+  G : ℒ D ⊆ ℒ D'
   G (left V) ⟨ Vne , V∈ ⟩ = ⟨ Vne , (λ d z → D⊆ d (V∈ d z)) ⟩
 
 ℒ-cong : congruent (■ ∷ []) ■ ℒ
-ℒ-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
+ℒ-cong D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   where
-  G : ℒ ⟨ D , ptt ⟩ ≃ ℒ ⟨ D' , ptt ⟩
-  G = ⟨ ? 
-      , ? ⟩
+  G : ℒ D ≃ ℒ D'
+  G = ⟨ lower (ℒ-mono D D' (lift D<D')) 
+      , lower (ℒ-mono D' D (lift D'<D)) ⟩
 
 ℛ-mono : monotone (■ ∷ []) ■ ℛ
-ℛ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
+ℛ-mono D D' (lift D⊆) = lift G
   where
-  G : ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ D' , ptt ⟩
+  G : ℛ D ⊆ ℛ D'
   G (right V) ⟨ Vne , V∈ ⟩ = ⟨ Vne , (λ d z → D⊆ d (V∈ d z)) ⟩
 
 ℛ-cong : congruent (■ ∷ []) ■ ℛ
-ℛ-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
+ℛ-cong D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   where
-  G : ℛ ⟨ D , ptt ⟩ ≃ ℛ ⟨ D' , ptt ⟩
+  G : ℛ D ≃ ℛ D'
   G = ⟨ lower (ℛ-mono D D' (lift D<D')) 
       , lower (ℛ-mono D' D (lift D'<D)) ⟩
 
@@ -666,7 +748,7 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
 
 {- Consistency ----------------------------------------------------------------}
 
-⋆-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ ⋆
+⋆-consis : fun-consistent _~_ (■ ∷ ■ ∷ []) ■ _⋆_
 ⋆-consis D D' (lift D~) E E' (lift E~) = lift G
   where
   G : Every _~_ (D ⋆ E) (D' ⋆ E')
@@ -676,7 +758,7 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
   ... | inj₁ x = ⊥-elim (x (Every⇒≈ V V' (Every-⊆ E~ V<E V<E')))
   ... | inj₂ y = proj₂ y
 
-Λ-consis : consistent _~_ (ν ■ ∷ []) ■ Λ
+Λ-consis : fun-consistent _~_ (ν ■ ∷ []) ■ Λ
 Λ-consis F F' F~ = lift G
   where
   G : Every _~_ (Λ F) (Λ F')
@@ -689,14 +771,14 @@ proj-cong i D D' (lift ⟨ D<D' , D'<D ⟩) = lift G
     inj₂ ⟨ V≈V' , lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
   ... | no ¬V≈V' = inj₁ ¬V≈V'
 
-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
+cons-consis : fun-consistent _~_ (■ ∷ ■ ∷ []) ■ ⟪_,_⟫
 cons-consis D D' (lift D~) E E' (lift E~) = lift G
   where
-  G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
+  G : Every _~_ ⟪ D , E ⟫  ⟪ D' , E' ⟫
   G ⦅ u , v ⦆ ⦅ u' , v' ⦆ ⟨ u∈D , v∈D ⟩ ⟨ u'∈D' , v'∈D' ⟩
     = ⟨ D~ u u' u∈D u'∈D' , E~ v v' v∈D v'∈D' ⟩
 
-car-consis : consistent _~_ (■ ∷ []) ■ car
+car-consis : fun-consistent _~_ (■ ∷ []) ■ car
 car-consis D D' (lift D~) = lift G
   where
   G : Every _~_ (car D) (car D')
@@ -704,7 +786,7 @@ car-consis D D' (lift D~) = lift G
     with D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ uv∈D u'v'∈D'
   ... | ⟨ u~ , v~ ⟩ = u~
 
-cdr-consis : consistent _~_ (■ ∷ []) ■ cdr
+cdr-consis : fun-consistent _~_ (■ ∷ []) ■ cdr
 cdr-consis D D' (lift D~) = lift G
   where
   G : Every _~_ (cdr D) (cdr D')
@@ -712,21 +794,21 @@ cdr-consis D D' (lift D~) = lift G
     with D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ uv∈D u'v'∈D'
   ... | ⟨ u~ , v~ ⟩ = v~
 
-ℒ-consis : consistent _~_ (■ ∷ []) ■ ℒ
+ℒ-consis : fun-consistent _~_ (■ ∷ []) ■ ℒ
 ℒ-consis D D' (lift D~) = lift G
   where
   G : Every _~_ (ℒ D) (ℒ D')
   G (left U) (left V) ⟨ Une , U∈ ⟩ ⟨ Vne , V∈ ⟩ 
     = Every⇒≈ U V (Every-⊆  D~ U∈ V∈)
 
-ℛ-consis : consistent _~_ (■ ∷ []) ■ ℛ
+ℛ-consis : fun-consistent _~_ (■ ∷ []) ■ ℛ
 ℛ-consis D D' (lift D~) = lift G
   where
   G : Every _~_ (ℛ D) (ℛ D')
   G (right U) (right V) ⟨ Une , U∈ ⟩ ⟨ Vne , V∈ ⟩ 
     = Every⇒≈ U V (Every-⊆  D~ U∈ V∈)
 
-𝒞-consis : consistent _~_ (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
+𝒞-consis : fun-consistent _~_ (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
 𝒞-consis D D' (lift D~) FL FL' (lift FL~) FR FR' (lift FR~) = lift G
   where
   G : Every _~_ (𝒞 D FL FR) (𝒞 D' FL' FR')
@@ -750,7 +832,7 @@ cdr-consis D D' (lift D~) = lift G
   ... | q = ⊥-elim (x q)
 
 
-𝒞-new-consis : consistent _~_ (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞-new
+𝒞-new-consis : fun-consistent _~_ (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞-new
 𝒞-new-consis D D' (lift D~) FL FL' FL~ FR FR' FR~ = lift G
   where 
   G : Every _~_ (𝒞-new D FL FR) (𝒞-new D' FL' FR')
@@ -774,7 +856,7 @@ nth-~ zero (x ∷ us) (x₁ ∷ vs) us~vs i<us i<vs = proj₁ us~vs
 nth-~ (suc i) (x ∷ us) (x₁ ∷ vs) ⟨ fst , snd ⟩ i<us i<vs = 
   nth-~ i us vs snd (≤-pred i<us) (≤-pred i<vs)
 
-proj-consis : ∀ i → consistent _~_ (■ ∷ []) ■ (proj i)
+proj-consis : ∀ i → fun-consistent _~_ (■ ∷ []) ■ (proj i)
 proj-consis i D D' (lift D~) = lift G
   where
   G : Every _~_ (proj i D) (proj i D')
@@ -783,7 +865,7 @@ proj-consis i D D' (lift D~) = lift G
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
 
-𝓅-consis : ∀ P f → consistent _~_ [] ■ (𝓅 P f)
+𝓅-consis : ∀ P f → fun-consistent _~_ [] ■ (𝓅 P f)
 𝓅-consis P f = lift (G P f)
   where
   G : ∀ P f → Every _~_ (𝓅 P f) (𝓅 P f)
@@ -811,14 +893,14 @@ proj-consis i D D' (lift D~) = lift G
   G (x ⇒ P) f ν ν u∈ v∈ = tt
 
 
-𝒯-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒯-cons
+𝒯-cons-consis : fun-consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒯-cons
 𝒯-cons-consis D D' (lift D~) E E' (lift E~) = lift G
   where
   G : Every _~_ (𝒯-cons D E) (𝒯-cons D' E')
   G ∥ u ∷ us ∥ ∥ v ∷ vs ∥ ⟨ u∈ , us∈ ⟩ ⟨ v∈ , vs∈ ⟩ = ⟨ D~ u v u∈ v∈ , E~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ ⟩
 
 
-𝒯-consis : ∀ n → consistent _~_ (replicate n ■) ■ (𝒯 n)
+𝒯-consis : ∀ n → fun-consistent _~_ (replicate n ■) ■ (𝒯 n)
 𝒯-consis n = Dfold-pres (Every _~_) ■ ■ n 𝒯-cons 𝒯-cons ⌈ ∥ [] ∥ ⌉ ⌈ ∥ [] ∥ ⌉  
            𝒯-cons-consis (lift G)
   where
@@ -826,14 +908,14 @@ proj-consis i D D' (lift D~) = lift G
   G .(∥ [] ∥) .(∥ [] ∥) refl refl = tt
 
 
-𝒜-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒜-cons
+𝒜-cons-consis : fun-consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒜-cons
 𝒜-cons-consis D D' (lift D~) E E' (lift E~) = lift G
   where
   G : Every _~_ (𝒜-cons D E) (𝒜-cons D' E')
   G ((fv ∷ fvs) ⊢ V ↦ w) ((fv' ∷ fvs') ⊢ V' ↦ w') ⟨ fvs⊆ , u∈ ⟩ ⟨ fvs'⊆ , v∈ ⟩
      = E~ (fvs ⊢ V ↦ w) (fvs' ⊢ V' ↦ w') u∈ v∈
 
-𝒜-consis : ∀ n → consistent _~_ (■ ∷ replicate n ■) ■ (𝒜 n)
+𝒜-consis : ∀ n → fun-consistent _~_ (■ ∷ replicate n ■) ■ (𝒜 n)
 𝒜-consis n F F' F~ = Dfold-pres (Every _~_) ■ ■ n 𝒜-cons 𝒜-cons F F' 
         𝒜-cons-consis F~
 
@@ -855,13 +937,79 @@ proj-consis i D D' (lift D~) = lift G
 
 
 
+{- Environments ---------------------------------------------------------------}
+
+Env : Set₁
+Env = Var → 𝒫 Value
+
+nonempty-env : Env → Set
+nonempty-env ρ = ∀ x → nonempty (ρ x)
+
+infix 5 _⊆ₑ_
+_⊆ₑ_ : Env → Env → Set
+ρ₁ ⊆ₑ ρ₂ = ∀ x → ρ₁ x ⊆ ρ₂ x
+
+⊆ₑ-trans : ∀{ρ₁ ρ₂ ρ₃} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
+⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
+
+extend-nonempty-env : ∀{ρ}{X}
+   → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
+extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X
+extend-nonempty-env {ρ} {X} NE-ρ V≢[] (suc x) = NE-ρ x
+
+env-ext : ∀{ρ ρ′}{X} → ρ ⊆ₑ ρ′ → (x : Var) → (X • ρ) x ⊆ (X • ρ′) x
+env-ext ρ<ρ′ zero d d∈ = d∈
+env-ext ρ<ρ′ (suc x) = ρ<ρ′ x
+
+{- environments whose codomain are finite nonempty sets -}
+finite-env : Env → Set
+finite-env ρ = ∀ x → Σ[ E ∈ List Value ] ρ x ≃ mem E × E ≢ []
+
+infix 6 _⊔ₑ_
+_⊔ₑ_ : Env → Env → Env
+(ρ₁ ⊔ₑ ρ₂) x v = ρ₁ x v ⊎ ρ₂ x v
+
+join-finite-env : ∀{ρ₁ ρ₂}  → finite-env ρ₁  →  finite-env ρ₂
+   → finite-env (ρ₁ ⊔ₑ ρ₂)
+join-finite-env {ρ₁}{ρ₂} f1 f2 x
+    with f1 x
+... | ⟨ E1 , ⟨ ρ₁=E1 , NE-E1 ⟩ ⟩
+    with f2 x
+... | ⟨ E2 , ⟨ ρ₂=E2 , NE-E2 ⟩ ⟩ =
+    ⟨ (E1 ++ E2) , ⟨ ⟨ G , (H {E1} λ d z → z) ⟩ ,
+      (λ E12=[] → NE-E1 (++-conicalˡ E1 E2 E12=[])) ⟩ ⟩
+    where
+    G : (v : Value) → ρ₁ x v ⊎ ρ₂ x v → mem (E1 ++ E2) v
+    G v (inj₁ ρ1x) = ∈-++⁺ˡ ((proj₁ ρ₁=E1) v ρ1x)
+    G v (inj₂ ρ2x) = ∈-++⁺ʳ E1 ((proj₁ ρ₂=E2) v ρ2x)
+
+    H : ∀{E} → mem E ⊆ mem E1 → mem (E ++ E2) ⊆ (λ v → ρ₁ x v ⊎ ρ₂ x v)
+    H {[]} E<E1 v v∈E++E2 = inj₂ ((proj₂ ρ₂=E2) v v∈E++E2)
+    H {x ∷ E} E<E1 .x (here refl) = inj₁ ((proj₂ ρ₁=E1) x (E<E1 x (here refl)))
+    H {x ∷ E} E<E1 v (there v∈E++E2) =
+       H (λ v z → E<E1 v (there z)) v v∈E++E2
+
+join-lub : ∀{ρ ρ₁ ρ₂} → ρ₁ ⊆ₑ ρ → ρ₂ ⊆ₑ ρ → ρ₁ ⊔ₑ ρ₂ ⊆ₑ ρ
+join-lub {ρ} {ρ₁} {ρ₂} ρ₁⊆ρ ρ₂⊆ρ x v (inj₁ v∈ρ₁x) = ρ₁⊆ρ x v v∈ρ₁x
+join-lub {ρ} {ρ₁} {ρ₂} ρ₁⊆ρ ρ₂⊆ρ x v (inj₂ v∈ρ₂x) = ρ₂⊆ρ x v v∈ρ₂x
+
+join-⊆-left : ∀{ρ₁ ρ₂} → ρ₁ ⊆ₑ ρ₁ ⊔ₑ ρ₂
+join-⊆-left {ρ₁}{ρ₂} = λ x d z → inj₁ z
+
+join-⊆-right : ∀{ρ₁ ρ₂} → ρ₂ ⊆ₑ ρ₁ ⊔ₑ ρ₂
+join-⊆-right {ρ₁}{ρ₂} = λ x d z → inj₂ z
+
+monotone-env : (Env → 𝒫 Value) → Set₁
+monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ D ρ′
+
+
 {- Continuity -----------------------------------------------------------------}
 
 {- Bear in mind that Continuity is a property related to environments.
    That is, it involves some  evaluation function  
    
-   continuity is the property that whenever a value is in a Dation,
-   then there exists a finite environment for which that value is still in the Dation.
+   continuity is the property that whenever a value is in a denotation,
+   then there exists a finite environment for which that value is still in the denotation.
    -}
 
 
@@ -884,7 +1032,7 @@ proj-consis i D D' (lift D~) = lift G
 
 
 
-{- Basic Properties of Dational Operators ---------------------------------}
+{- Basic Properties of Denotational Operators ---------------------------------}
 
 k∈℘k : ∀{B}{k} → const {B} k ∈ ℘ (base B) k
 k∈℘k {B}{k}

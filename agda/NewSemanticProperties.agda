@@ -84,17 +84,29 @@ env-ext : ∀{A}{ρ ρ′ : Env A}{X} → ρ ⊆ₑ ρ′ → (x : Var) → (X �
 env-ext ρ<ρ′ zero d d∈ = d∈
 env-ext ρ<ρ′ (suc x) = ρ<ρ′ x
 
-{- environments whose codomain are finite nonempty sets -}
-finite-env : ∀ {A} → Env A → Set
-finite-env {A} ρ = ∀ x → Σ[ E ∈ List A ] ρ x ≃ mem E × E ≢ []
+finiteNE : ∀ {A} → 𝒫 A → Set
+finiteNE {A} S = Σ[ V ∈ List A ] S ≃ (mem V) × V ≢ []
+
+{- environments whose codomain are finiteNE nonempty sets -}
+{- Note: I don't see any requirement that the finiteNE environments be nonempty
+  when showing that a trace is representative of a function,
+  so I want to remove the nonemptiness requirement,
+  but for convenience, I'm going to leave it alone for now and see how it goes. -}
+finiteNE-env : ∀ {A} → Env A → Set
+finiteNE-env {A} ρ = ∀ x → finiteNE (ρ x)
+
+extend-finiteNE-env : ∀ {A}{ρ : Env A}{X}
+  → finiteNE-env ρ → finiteNE X → finiteNE-env (X • ρ)
+extend-finiteNE-env fin-ρ fin-X zero = fin-X
+extend-finiteNE-env fin-ρ fin-X (suc i) = fin-ρ i
 
 infix 6 _⊔ₑ_
 _⊔ₑ_ : ∀ {A} → Env A → Env A → Env A
 (ρ₁ ⊔ₑ ρ₂) x v = ρ₁ x v ⊎ ρ₂ x v
 
-join-finite-env : ∀{A} {ρ₁ ρ₂ : Env A} → finite-env ρ₁  →  finite-env ρ₂
-   → finite-env (ρ₁ ⊔ₑ ρ₂)
-join-finite-env {A}{ρ₁}{ρ₂} f1 f2 x
+join-finiteNE-env : ∀{A} {ρ₁ ρ₂ : Env A} → finiteNE-env ρ₁  →  finiteNE-env ρ₂
+   → finiteNE-env (ρ₁ ⊔ₑ ρ₂)
+join-finiteNE-env {A}{ρ₁}{ρ₂} f1 f2 x
     with f1 x
 ... | ⟨ E1 , ⟨ ρ₁=E1 , NE-E1 ⟩ ⟩
     with f2 x
@@ -133,32 +145,90 @@ monotone-env D = ∀ {ρ ρ′} → (∀ x → ρ x ⊆ ρ′ x)  →  D ρ ⊆ 
 {- But I wonder if a part of it can be factored into a propert about
   just the Dational operators -}
 
-finite : ∀ {A} → 𝒫 A → Set
-finite {A} S = Σ[ V ∈ List A ] S ⊆ (mem V)
 
-fun-finitary : ∀ {A} bs b → DFun (𝒫 A) bs b → Set₁
-fun-finitary bs b 𝒻 = fun-pred-pres finite bs b 𝒻
 
-𝕆-finitary : ∀ {A} {Op} sig → DOpSig {Op = Op} (𝒫 A) sig → Set₁
-𝕆-finitary sig 𝕆 = opsig-pred-pres finite sig 𝕆
+{-
+tracebound-result-1 : ∀ {A} → (𝒫 A → 𝒫 A) → Set₁
+tracebound-result-1 {A} F = ∀ D d → d ∈ F D → Σ[ D' ∈ 𝒫 A ] finiteNE D' × D' ⊆ D × d ∈ F D'
+
+tracebound-result-2 : ∀ {A} → (𝒫 A → 𝒫 A → 𝒫 A) → Set₁
+tracebound-result-2 {A} F = ∀ D1 D2 d → d ∈ F D1 D2 → Σ[ D1' ∈ 𝒫 A ] finiteNE D1' × D1' ⊆ D1 × Σ[ D2' ∈ 𝒫 A ] finiteNE D2' × D2' ⊆ D2 × d ∈ F D1' D2'
+
+tracebound-result-n : ∀ {A} n F d → Set₁
+tracebound-result-n zero F d = d ∈ F
+tracebound-result-n {A} (suc n) F d = ∀ D → d ∈ F D → Σ[ D' ∈ 𝒫 A ] finiteNE D' × D' ⊆ D × tracebound-result-n n (F D') d
+
+-}
 
 continuous-∈ : ∀ {A} → (Env A → 𝒫 A) → Env A → A → Set₁
 continuous-∈ {A} D ρ v = v ∈ D ρ
-   → Σ[ ρ′ ∈ Env A ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
+   → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
 
 continuous-env : ∀ {A} → (Env A → 𝒫 A) → Env A → Set₁
 continuous-env {A} D ρ = ∀ v → v ∈ D ρ
-                     → Σ[ ρ′ ∈ Env A ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
+                     → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
+
+tracebound-result : ∀ {A : Set} b (F : Env A → Result (𝒫 A) b) (ρ : Env A) (ρ∁ : Env A) → Set₁
+tracebound-result {A} ■ F ρ ρ∁ = continuous-env F ρ
+tracebound-result {A} (ν b) F ρ ρ∁ = ∀ V → V ≢ [] → tracebound-result b (λ ρ' → F ρ' (mem V)) ((mem V) • ρ) ρ∁
+tracebound-result {A} (∁ b) F ρ ρ∁ = tracebound-result b F ρ∁ ρ∁
+
+
+all-results-tracebound : ∀ {A} b F ρ (ρ∁ : Env A) → finiteNE-env ρ → finiteNE-env ρ∁ → tracebound-result b F ρ ρ∁
+all-results-tracebound ■ F ρ ρ∁ fin-ρ fin-ρ∁ d d∈ = ⟨ ρ , ⟨ fin-ρ , ⟨ (λ i d d∈ρi → d∈ρi) , d∈ ⟩ ⟩ ⟩
+all-results-tracebound (ν b) F ρ ρ∁ fin-ρ fin-ρ∁ V Vne = 
+  all-results-tracebound b (λ ρ → F ρ (mem V)) (mem V • ρ) ρ∁ 
+                         (extend-finiteNE-env fin-ρ ⟨ V , ⟨ ≃-refl , Vne ⟩ ⟩) fin-ρ∁
+all-results-tracebound (∁ b) F ρ ρ∁ fin-ρ fin-ρ∁ = all-results-tracebound b F ρ∁ ρ∁ fin-ρ∁ fin-ρ∁
+
+
+
+{-
+denotationally,
+
+⟦ bind arg ⟧ₐ ρ = λ D → ⟦ arg ⟧ₐ (D • ρ)
+
+so ⟦ bind arg ⟧ₐ : Env → 𝒫 A → Result (𝒫 A) b
+   ⟦ arg ⟧ₐ : Env → Result (𝒫 A) b
+
+
+
+Cont-Env-Arg : ∀ {{_ : Semantics {A}}} (ρ : Env A) (NE-ρ : nonempty-env ρ)
+    → ∀ b → (arg : Arg b) → Set₁
+  Cont-Env-Arg ρ NE-ρ ■ (ast M) = continuous-env ⟦ M ⟧ ρ
+  Cont-Env-Arg ρ NE-ρ (ν b) (bind arg) =
+    ∀ V → (ne : V ≢ [])
+    → Cont-Env-Arg (mem V • ρ)
+          (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem ne)) b arg
+  Cont-Env-Arg ρ NE-ρ (∁ b) (clear arg) =
+      Cont-Env-Arg (λ x → init) (λ i → ⟨ error , refl ⟩) b arg
+
+all-args : (∀ b → Arg b → Set₁) → ∀ bs → Args bs → Set₁
+all-args P [] args = Lift (lsuc lzero) True
+all-args P (b ∷ bs) (cons arg args) = P b arg × all-args P bs args
+
+record ContinuousSemantics {A : Set} : Set₁ where
+  field 
+    {{Sem}} : Semantics {A}
+    continuous-op : 
+    ∀{op}{ρ : Env A}{NE-ρ}{v}{args} → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ 
+         → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args 
+         → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
+-}
+
+
+
+
 
 {- creates an environment that maps each variable x to
    a singleton set of some element in ρ x.  -}
-initial-finite-env : ∀ {A} (ρ : Env A) → (NE-ρ : nonempty-env ρ) → Env A
-initial-finite-env ρ NE-ρ x
+initial-finiteNE-env : ∀ {A} (ρ : Env A) → (NE-ρ : nonempty-env ρ) → Env A
+initial-finiteNE-env ρ NE-ρ x
     with NE-ρ x
 ... | ⟨ v , v∈ρx ⟩ = ⌈ v ⌉
 
 initial-fin : ∀ {A} (ρ : Env A) → (NE-ρ : nonempty-env ρ)
-   → finite-env (initial-finite-env ρ NE-ρ)
+   → finiteNE-env (initial-finiteNE-env ρ NE-ρ)
 initial-fin ρ NE-ρ x
     with NE-ρ x
 ... | ⟨ v , v∈ρx ⟩ =
@@ -166,7 +236,7 @@ initial-fin ρ NE-ρ x
       ⟨ ⟨ (λ {w refl → (here refl)}) , (λ {w (here refl) → refl}) ⟩ , (λ ()) ⟩ ⟩
 
 initial-fin-⊆ : ∀ {A} (ρ : Env A) → (NE-ρ : nonempty-env ρ)
-  → initial-finite-env ρ NE-ρ ⊆ₑ ρ
+  → initial-finiteNE-env ρ NE-ρ ⊆ₑ ρ
 initial-fin-⊆ ρ NE-ρ x v v∈initial
     with NE-ρ x
 ... | ⟨ w , w∈ρx ⟩ rewrite v∈initial = w∈ρx
@@ -180,7 +250,7 @@ single-env x D ρ NE-ρ y
     with NE-ρ y
 ... | ⟨ v , v∈ρy ⟩ = ⌈ v ⌉    
 
-single-fin : ∀{A}{v}{x}{ρ : Env A}{NE-ρ} → finite-env (single-env x ⌈ v ⌉ ρ NE-ρ)
+single-fin : ∀{A}{v}{x}{ρ : Env A}{NE-ρ} → finiteNE-env (single-env x ⌈ v ⌉ ρ NE-ρ)
 single-fin {A}{v}{x}{ρ}{NE-ρ} y
     with x ≟ y
 ... | yes refl =
@@ -211,9 +281,9 @@ continuous-∈⇒⊆ : ∀ {A} E (ρ : Env A) (NE-ρ : nonempty-env ρ)
    → monotone-env E
    → ∀ V → mem V ⊆ E ρ
    → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
-   → Σ[ ρ′ ∈ Env A ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
+   → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
 continuous-∈⇒⊆ E ρ NE-ρ mE [] V⊆E ∀v∈V⇒cont =
-   ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
+   ⟨ initial-finiteNE-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
    ⟨ initial-fin-⊆ ρ NE-ρ , (λ d ()) ⟩ ⟩ ⟩
 continuous-∈⇒⊆ {A} E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
     with continuous-∈⇒⊆ E ρ NE-ρ mE V (λ d z → v∷V⊆Eρ d (there z))
@@ -221,7 +291,7 @@ continuous-∈⇒⊆ {A} E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V⊆Eρ₁ ⟩ ⟩ ⟩
     with v∈V⇒cont v (here refl) (v∷V⊆Eρ v (here refl))
 ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈Eρ₂ ⟩ ⟩ ⟩ =    
-    ⟨ ρ₃ , ⟨ (join-finite-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
+    ⟨ ρ₃ , ⟨ (join-finiteNE-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
     G ⟩ ⟩ ⟩
     where
     ρ₃ = ρ₁ ⊔ₑ ρ₂
