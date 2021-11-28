@@ -18,7 +18,7 @@ open import ScopedTuple hiding (𝒫)
 open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import Sig
 open import NewDOpSig
-open import NewSemanticProperties
+open import NewDenotProperties
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
