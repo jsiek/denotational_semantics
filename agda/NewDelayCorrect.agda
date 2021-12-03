@@ -125,7 +125,7 @@ want to show
 fact: ∥ fvs ∥ ∈ 𝒯 FVs
 fact: w ∈ ⟦ F ⟧ (mem V • (𝒯 FVs) • init)
 but we want:  w' ∈ ⟦ F' ⟧ (mem V' • ⌈ ∥ fvs' ∥ ⌉ • init )
-
+and we only have our IH:  w' ∈ ⟦ F' ⟧ (mem V' • (map to (𝒯 FVs)) • init )
 
 
 if we want to define a _function_ on annotated values for the correctness of the delay pass,
