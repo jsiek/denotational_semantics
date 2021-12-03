@@ -22,25 +22,25 @@ module NewCompiler where
     {- renaming (AST to NewClos4.AST; cons to cons4; nil to nil4; ast to NewClos4.AST) -}
 
   var-range-desc : ∀ {Op sig} (m : ℕ) → AbstractBindingTree.Args Op sig (replicate m ■)
-  var-range-desc zero = []
+  var-range-desc zero = Nil
   var-range-desc (suc m) = (ABT.` m) ,, var-range-desc m
 
   annotate : (M : NewISWIM.AST) → NewClos1.AST
   annotate (` x) = NewClos1.AST.` x
-  annotate (lam ABT.⦅ ⟩ N ,, [] ⦆) = 
+  annotate (lam ABT.⦅ ⟩ N ,, Nil ⦆) = 
     clos-op m ABT.⦅ ⟩ N' ,, var-range-desc m ⦆
       where
       N' : NewClos1.AST
       N' = annotate N
       m : ℕ
       m = NewClos1.ASTMod.max-var N'
-  annotate (app ABT.⦅ M ,, N ,, [] ⦆) = 
-    app ABT.⦅ (annotate M) ,, (annotate M) ,, [] ⦆
-  annotate (prim P f ABT.⦅ [] ⦆) = prim P f ABT.⦅ [] ⦆
-  annotate (pair-op ABT.⦅ M ,, N ,, [] ⦆) = 
-    pair-op ABT.⦅ annotate M ,, annotate N ,, [] ⦆
-  annotate (fst-op ABT.⦅ M ,, [] ⦆) = fst-op ABT.⦅  annotate M ,, [] ⦆
-  annotate (snd-op ABT.⦅ N ,, [] ⦆) = snd-op ABT.⦅ annotate N ,, [] ⦆
+  annotate (app ABT.⦅ M ,, N ,, Nil ⦆) = 
+    app ABT.⦅ (annotate M) ,, (annotate M) ,, Nil ⦆
+  annotate (lit B k ABT.⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
+  annotate (pair-op ABT.⦅ M ,, N ,, Nil ⦆) = 
+    pair-op ABT.⦅ annotate M ,, annotate N ,, Nil ⦆
+  annotate (fst-op ABT.⦅ M ,, Nil ⦆) = fst-op ABT.⦅  annotate M ,, Nil ⦆
+  annotate (snd-op ABT.⦅ N ,, Nil ⦆) = snd-op ABT.⦅ annotate N ,, Nil ⦆
   annotate (tuple n ABT.⦅ Ms ⦆) = tuple n ABT.⦅ ann-map-args Ms ⦆
     where
     ann-map-arg : ∀ {b} → NewISWIM.Arg b → NewClos1.Arg b
@@ -48,13 +48,13 @@ module NewCompiler where
     ann-map-arg (bind arg) = NewClos1.bind (ann-map-arg arg)
     ann-map-arg (clear arg) = NewClos1.clear (ann-map-arg arg)
     ann-map-args : ∀ {bs} → NewISWIM.Args bs → NewClos1.Args bs
-    ann-map-args [] = []
+    ann-map-args Nil = Nil
     ann-map-args (! x ,, args) = ! ann-map-arg x ,, ann-map-args args
-  annotate (get n ABT.⦅ M ,, [] ⦆) = get n ABT.⦅ annotate M ,, [] ⦆
-  annotate (inl-op ABT.⦅ M ,, [] ⦆) = inl-op ABT.⦅ annotate M ,, [] ⦆
-  annotate (inr-op ABT.⦅ M ,, [] ⦆) = inr-op ABT.⦅ annotate M ,, [] ⦆
-  annotate (case-op ABT.⦅ L ,, ⟩ M ,, ⟩ N ,, [] ⦆) = 
-    case-op ABT.⦅ annotate L ,, ⟩ annotate M ,, ⟩ annotate N ,, [] ⦆
+  annotate (get n ABT.⦅ M ,, Nil ⦆) = get n ABT.⦅ annotate M ,, Nil ⦆
+  annotate (inl-op ABT.⦅ M ,, Nil ⦆) = inl-op ABT.⦅ annotate M ,, Nil ⦆
+  annotate (inr-op ABT.⦅ M ,, Nil ⦆) = inr-op ABT.⦅ annotate M ,, Nil ⦆
+  annotate (case-op ABT.⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = 
+    case-op ABT.⦅ annotate L ,, ⟩ annotate M ,, ⟩ annotate N ,, Nil ⦆
 
   data annotated : (M : NewClos1.AST) → Set where
     temp : ∀ M → annotated M
@@ -72,15 +72,15 @@ module NewCompiler where
     enc-map-arg (bind arg) = NewClos2.bind (enc-map-arg arg)
     enc-map-arg (clear arg) = NewClos2.clear (enc-map-arg arg)
     enc-map-args : ∀ {bs} → NewClos1.Args bs → NewClos2.Args bs
-    enc-map-args [] = []
+    enc-map-args Nil = Nil
     enc-map-args (! x ,, args) = ! enc-map-arg x ,, enc-map-args args
-  enclose (app ABT.⦅ M ,, N ,, [] ⦆) = 
-    app ABT.⦅ (enclose M) ,, (enclose M) ,, [] ⦆
-  enclose (prim P f ABT.⦅ [] ⦆) = prim P f ABT.⦅ [] ⦆
-  enclose (pair-op ABT.⦅ M ,, N ,, [] ⦆) = 
-    pair-op ABT.⦅ enclose M ,, enclose N ,, [] ⦆
-  enclose (fst-op ABT.⦅ M ,, [] ⦆) = fst-op ABT.⦅  enclose M ,, [] ⦆
-  enclose (snd-op ABT.⦅ N ,, [] ⦆) = snd-op ABT.⦅ enclose N ,, [] ⦆
+  enclose (app ABT.⦅ M ,, N ,, Nil ⦆) = 
+    app ABT.⦅ (enclose M) ,, (enclose M) ,, Nil ⦆
+  enclose (lit B k ABT.⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
+  enclose (pair-op ABT.⦅ M ,, N ,, Nil ⦆) = 
+    pair-op ABT.⦅ enclose M ,, enclose N ,, Nil ⦆
+  enclose (fst-op ABT.⦅ M ,, Nil ⦆) = fst-op ABT.⦅  enclose M ,, Nil ⦆
+  enclose (snd-op ABT.⦅ N ,, Nil ⦆) = snd-op ABT.⦅ enclose N ,, Nil ⦆
   enclose (tuple n ABT.⦅ Ms ⦆) = tuple n ABT.⦅ enc-map-args Ms ⦆
     where
     enc-map-arg : ∀ {b} → NewClos1.Arg b → NewClos2.Arg b
@@ -88,13 +88,13 @@ module NewCompiler where
     enc-map-arg (bind arg) = NewClos2.bind (enc-map-arg arg)
     enc-map-arg (clear arg) = NewClos2.clear (enc-map-arg arg)
     enc-map-args : ∀ {bs} → NewClos1.Args bs → NewClos2.Args bs
-    enc-map-args [] = []
+    enc-map-args Nil = Nil
     enc-map-args (! x ,, args) = ! enc-map-arg x ,, enc-map-args args
-  enclose (get n ABT.⦅ M ,, [] ⦆) = get n ABT.⦅ enclose M ,, [] ⦆
-  enclose (inl-op ABT.⦅ M ,, [] ⦆) = inl-op ABT.⦅ enclose M ,, [] ⦆
-  enclose (inr-op ABT.⦅ M ,, [] ⦆) = inr-op ABT.⦅ enclose M ,, [] ⦆
-  enclose (case-op ABT.⦅ L ,, ⟩ M ,, ⟩ N ,, [] ⦆) = 
-    case-op ABT.⦅ enclose L ,, ⟩ enclose M ,, ⟩ enclose N ,, [] ⦆
+  enclose (get n ABT.⦅ M ,, Nil ⦆) = get n ABT.⦅ enclose M ,, Nil ⦆
+  enclose (inl-op ABT.⦅ M ,, Nil ⦆) = inl-op ABT.⦅ enclose M ,, Nil ⦆
+  enclose (inr-op ABT.⦅ M ,, Nil ⦆) = inr-op ABT.⦅ enclose M ,, Nil ⦆
+  enclose (case-op ABT.⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = 
+    case-op ABT.⦅ enclose L ,, ⟩ enclose M ,, ⟩ enclose N ,, Nil ⦆
 
   optimize : (M : NewClos2.AST) → NewClos2.AST
   optimize M = {!   !}
@@ -103,7 +103,7 @@ module NewCompiler where
   concretize (` x) = ABT.` x
   concretize (clos-op n ⦅ x ⦆) = clos-op n ABT.⦅ {!   !} ⦆
   concretize (app ⦅ x ⦆) = {!   !}
-  concretize (prim P n ⦅ x ⦆) = {!   !}
+  concretize (lit B k ⦅ x ⦆) = {!   !}
   concretize (pair-op ⦅ x ⦆) = {!   !}
   concretize (fst-op ⦅ x ⦆) = {!   !}
   concretize (snd-op ⦅ x ⦆) = {!   !}
@@ -114,40 +114,27 @@ module NewCompiler where
   concretize (case-op ⦅ x ⦆) = {!   !}
 
   delay : (M : NewClos3.AST) → NewClos4.AST
+  del-map-args : ∀ {n} → NewClos3.Args (replicate n ■) → NewClos4.Args (replicate n ■)
   delay (` x) = ABT.` x
   delay (clos-op n ⦅ ! (clear (bind (bind (ast N)))) ,, FVs ⦆) = 
-    pair-op ABT.⦅ (fun-op ABT.⦅ ! (clear4 (bind4 (bind4 (ast4 (delay N))))) ,, [] ⦆) 
-               ,, (tuple n ABT.⦅ del-map-args FVs ⦆) ,, [] ⦆
-    where
-    del-map-arg : ∀ {b} → NewClos3.Arg b → NewClos4.Arg b
-    del-map-arg (ast x) = NewClos4.ast (delay x)
-    del-map-arg (bind arg) = NewClos4.bind (del-map-arg arg)
-    del-map-arg (clear arg) = NewClos4.clear (del-map-arg arg)
-    del-map-args : ∀ {bs} → NewClos3.Args bs → NewClos4.Args bs
-    del-map-args [] = []
-    del-map-args (! x ,, args) = ! del-map-arg x ,, del-map-args args
-  delay (app ⦅ M ,, N ,, [] ⦆) = 
-    app ABT.⦅ (fst-op ABT.⦅ delay M ,, [] ⦆) ,, 
-              (snd-op ABT.⦅ delay N ,, [] ⦆) ,, 
-              delay N ,, [] ⦆
-  delay (prim P n ⦅ [] ⦆) = prim P n ABT.⦅ [] ⦆
-  delay (pair-op ⦅ M ,, N ,, [] ⦆) = pair-op ABT.⦅ delay M ,, delay N ,, [] ⦆
-  delay (fst-op ⦅ M ,, [] ⦆) = fst-op ABT.⦅ delay M ,, [] ⦆
-  delay (snd-op ⦅ M ,, [] ⦆) = snd-op ABT.⦅ delay M ,, [] ⦆
+    pair-op ABT.⦅ (fun-op ABT.⦅ ! (clear4 (bind4 (bind4 (ast4 (delay N))))) ,, Nil ⦆) 
+               ,, (tuple n ABT.⦅ del-map-args FVs ⦆) ,, Nil ⦆
+  delay (app ⦅ M ,, N ,, Nil ⦆) = 
+    app ABT.⦅ (fst-op ABT.⦅ delay M ,, Nil ⦆) ,, 
+              (snd-op ABT.⦅ delay M ,, Nil ⦆) ,, 
+              delay N ,, Nil ⦆
+  delay (lit B k ⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
+  delay (pair-op ⦅ M ,, N ,, Nil ⦆) = pair-op ABT.⦅ delay M ,, delay N ,, Nil ⦆
+  delay (fst-op ⦅ M ,, Nil ⦆) = fst-op ABT.⦅ delay M ,, Nil ⦆
+  delay (snd-op ⦅ M ,, Nil ⦆) = snd-op ABT.⦅ delay M ,, Nil ⦆
   delay (tuple n ⦅ Ms ⦆) = tuple n ABT.⦅ del-map-args Ms ⦆
-    where
-    del-map-arg : ∀ {b} → NewClos3.Arg b → NewClos4.Arg b
-    del-map-arg (ast x) = NewClos4.ast (delay x)
-    del-map-arg (bind arg) = NewClos4.bind (del-map-arg arg)
-    del-map-arg (clear arg) = NewClos4.clear (del-map-arg arg)
-    del-map-args : ∀ {bs} → NewClos3.Args bs → NewClos4.Args bs
-    del-map-args [] = []
-    del-map-args (! x ,, args) = ! del-map-arg x ,, del-map-args args
-  delay (get n ⦅ M ,, [] ⦆) = get n ABT.⦅ delay M ,, [] ⦆
-  delay (inl-op ⦅ M ,, [] ⦆) = inl-op ABT.⦅ delay M ,, [] ⦆
-  delay (inr-op ⦅ M ,, [] ⦆) = inr-op ABT.⦅ delay M ,, [] ⦆
-  delay (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, [] ⦆) = case-op ABT.⦅ delay L ,, ⟩ delay M ,, ⟩ delay N ,, [] ⦆
+  delay (get n ⦅ M ,, Nil ⦆) = get n ABT.⦅ delay M ,, Nil ⦆
+  delay (inl-op ⦅ M ,, Nil ⦆) = inl-op ABT.⦅ delay M ,, Nil ⦆
+  delay (inr-op ⦅ M ,, Nil ⦆) = inr-op ABT.⦅ delay M ,, Nil ⦆
+  delay (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = case-op ABT.⦅ delay L ,, ⟩ delay M ,, ⟩ delay N ,, Nil ⦆
 
+  del-map-args {zero} Nil = Nil
+  del-map-args {suc n} (M ,, args) = delay M ,, del-map-args args
   
 {-
 
@@ -163,15 +150,15 @@ module NewCompiler where
     enc-map-arg (bind arg) = NewClos2.bind (enc-map-arg arg)
     enc-map-arg (clear arg) = NewClos2.clear (enc-map-arg arg)
     enc-map-args : ∀ {bs} → NewClos1.Args bs → NewClos2.Args bs
-    enc-map-args [] = []
+    enc-map-args Nil = Nil
     enc-map-args (! x ,, args) = ! enc-map-arg x ,, enc-map-args args
-  enclose (app ABT.⦅ M ,, N ,, [] ⦆) = 
-    app ABT.⦅ (enclose M) ,, (enclose M) ,, [] ⦆
-  enclose (prim P f ABT.⦅ [] ⦆) = prim P f ABT.⦅ [] ⦆
-  enclose (pair-op ABT.⦅ M ,, N ,, [] ⦆) = 
-    pair-op ABT.⦅ enclose M ,, enclose N ,, [] ⦆
-  enclose (fst-op ABT.⦅ M ,, [] ⦆) = fst-op ABT.⦅  enclose M ,, [] ⦆
-  enclose (snd-op ABT.⦅ N ,, [] ⦆) = snd-op ABT.⦅ enclose N ,, [] ⦆
+  enclose (app ABT.⦅ M ,, N ,, Nil ⦆) = 
+    app ABT.⦅ (enclose M) ,, (enclose M) ,, Nil ⦆
+  enclose (lit B k ABT.⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
+  enclose (pair-op ABT.⦅ M ,, N ,, Nil ⦆) = 
+    pair-op ABT.⦅ enclose M ,, enclose N ,, Nil ⦆
+  enclose (fst-op ABT.⦅ M ,, Nil ⦆) = fst-op ABT.⦅  enclose M ,, Nil ⦆
+  enclose (snd-op ABT.⦅ N ,, Nil ⦆) = snd-op ABT.⦅ enclose N ,, Nil ⦆
   enclose (tuple n ABT.⦅ Ms ⦆) = tuple n ABT.⦅ enc-map-args Ms ⦆
     where
     enc-map-arg : ∀ {b} → NewClos1.Arg b → NewClos2.Arg b
@@ -179,13 +166,13 @@ module NewCompiler where
     enc-map-arg (bind arg) = NewClos2.bind (enc-map-arg arg)
     enc-map-arg (clear arg) = NewClos2.clear (enc-map-arg arg)
     enc-map-args : ∀ {bs} → NewClos1.Args bs → NewClos2.Args bs
-    enc-map-args [] = []
+    enc-map-args Nil = Nil
     enc-map-args (! x ,, args) = ! enc-map-arg x ,, enc-map-args args
-  enclose (get n ABT.⦅ M ,, [] ⦆) = get n ABT.⦅ enclose M ,, [] ⦆
-  enclose (inl-op ABT.⦅ M ,, [] ⦆) = inl-op ABT.⦅ enclose M ,, [] ⦆
-  enclose (inr-op ABT.⦅ M ,, [] ⦆) = inr-op ABT.⦅ enclose M ,, [] ⦆
-  enclose (case-op ABT.⦅ L ,, ⟩ M ,, ⟩ N ,, [] ⦆) = 
-    case-op ABT.⦅ enclose L ,, ⟩ enclose M ,, ⟩ enclose N ,, [] ⦆
+  enclose (get n ABT.⦅ M ,, Nil ⦆) = get n ABT.⦅ enclose M ,, Nil ⦆
+  enclose (inl-op ABT.⦅ M ,, Nil ⦆) = inl-op ABT.⦅ enclose M ,, Nil ⦆
+  enclose (inr-op ABT.⦅ M ,, Nil ⦆) = inr-op ABT.⦅ enclose M ,, Nil ⦆
+  enclose (case-op ABT.⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = 
+    case-op ABT.⦅ enclose L ,, ⟩ enclose M ,, ⟩ enclose N ,, Nil ⦆
 
 -}
 

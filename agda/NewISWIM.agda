@@ -11,10 +11,11 @@ open import Utilities using (_iff_)
 open import Primitives
 open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
-open import NewResultsCurried
+open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import NewPValueCBVAnnot
+open import NewDOp
+open import NewDenotProperties
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -34,7 +35,7 @@ open Eq.≡-Reasoning
 data Op : Set where
   lam : Op
   app : Op
-  prim : (P : Prim) → rep P → Op
+  lit : (B : Base) → (k : base-rep B) → Op
   pair-op : Op
   fst-op : Op
   snd-op : Op
@@ -47,7 +48,7 @@ data Op : Set where
 sig : Op → List Sig
 sig lam = (ν ■) ∷ []
 sig app = ■ ∷ ■ ∷ []
-sig (prim P f) = []
+sig (lit B k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
@@ -71,24 +72,24 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 open import Fold2 Op sig
 
-𝕆-ISWIM : DenotOps (𝒫 Value) sig
-𝕆-ISWIM lam F = Λ F
-𝕆-ISWIM app M N = M ⋆ N
-𝕆-ISWIM (prim P f) = 𝓅 P f
-𝕆-ISWIM pair-op M N = ⟪ M , N ⟫
-𝕆-ISWIM fst-op M = car M
-𝕆-ISWIM snd-op M = cdr M
+𝕆-ISWIM : DOpSig (𝒫 Value) sig
+𝕆-ISWIM lam = Λ
+𝕆-ISWIM app = ⋆
+𝕆-ISWIM (lit B k) = ℬ B k
+𝕆-ISWIM pair-op = pair
+𝕆-ISWIM fst-op = car
+𝕆-ISWIM snd-op = cdr
 𝕆-ISWIM (tuple n) = 𝒯 n
-𝕆-ISWIM (get n) M = proj n M
-𝕆-ISWIM inl-op M = ℒ M
-𝕆-ISWIM inr-op M = ℛ M
-𝕆-ISWIM case-op L M N = 𝒞-new L M N
+𝕆-ISWIM (get n) = proj n
+𝕆-ISWIM inl-op = ℒ
+𝕆-ISWIM inr-op = ℛ
+𝕆-ISWIM case-op = 𝒞-new
 
 𝕆-ISWIM-mono : 𝕆-monotone sig 𝕆-ISWIM
 𝕆-ISWIM-mono lam = Λ-mono
 𝕆-ISWIM-mono app = ⋆-mono
-𝕆-ISWIM-mono (prim P x) = lift (λ x x₁ → x₁)
-𝕆-ISWIM-mono pair-op = cons-mono
+𝕆-ISWIM-mono (lit B k) _ _ _ = lift (λ x x₁ → x₁)
+𝕆-ISWIM-mono pair-op = pair-mono
 𝕆-ISWIM-mono fst-op = car-mono
 𝕆-ISWIM-mono snd-op = cdr-mono
 𝕆-ISWIM-mono (tuple n) = 𝒯-mono n
@@ -100,8 +101,8 @@ open import Fold2 Op sig
 𝕆-ISWIM-consis : 𝕆-consistent _~_ sig 𝕆-ISWIM
 𝕆-ISWIM-consis lam = Λ-consis
 𝕆-ISWIM-consis app = ⋆-consis
-𝕆-ISWIM-consis (prim P x) = 𝓅-consis P x
-𝕆-ISWIM-consis pair-op = cons-consis
+𝕆-ISWIM-consis (lit B k) = ℬ-consis B k
+𝕆-ISWIM-consis pair-op = pair-consis
 𝕆-ISWIM-consis fst-op = car-consis
 𝕆-ISWIM-consis snd-op = cdr-consis
 𝕆-ISWIM-consis (tuple n) = 𝒯-consis n

@@ -13,7 +13,7 @@ open import Primitives
 open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import NewDOpSig
-open import NewSemanticProperties
+open import NewDenotProperties
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDOp
@@ -37,7 +37,7 @@ open Eq.≡-Reasoning
 data Op : Set where
   clos-op : ℕ → Op
   app : Op
-  prim : (P : Prim) → rep P → Op
+  lit : (B : Base) → (k : base-rep B) → Op
   pair-op : Op
   fst-op : Op
   snd-op : Op
@@ -50,7 +50,7 @@ data Op : Set where
 sig : Op → List Sig
 sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
-sig (prim P f) = []
+sig (lit B k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
@@ -74,7 +74,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos3 (clos-op n) ⟨ F , Ds ⟩ = 𝒜 n ⟨ (Λ ⟨ F (𝒯 n Ds) , ptt ⟩) , Ds ⟩
   {- DComp-rest (replicate n ■) ■ ■ (𝒯 n) (λ T → 𝒜 n (Λ (𝒻 T))) -}
 𝕆-Clos3 app = ⋆
-𝕆-Clos3 (prim P f) = 𝓅 P f
+𝕆-Clos3 (lit B k) = ℬ B k
 𝕆-Clos3 pair-op = pair
 𝕆-Clos3 fst-op = car
 𝕆-Clos3 snd-op = cdr
@@ -96,7 +96,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
                   (λ T T' T⊆ → 𝒜-mono x (Λ (F1 T)) (Λ (F2 T')) 
                                (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆)))) -}
 𝕆-Clos3-mono app = ⋆-mono
-𝕆-Clos3-mono (prim P x) = λ Ds1 Ds2 Ds~ → lift (λ d z → z)
+𝕆-Clos3-mono (lit B k) _ _ _ = lift (λ d z → z)
 𝕆-Clos3-mono pair-op = pair-mono
 𝕆-Clos3-mono fst-op = car-mono
 𝕆-Clos3-mono snd-op = cdr-mono
@@ -117,7 +117,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
   (𝒯-consis x) (λ T T' T~ → 𝒜-consis x (Λ (F1 T)) (Λ (F2 T')) 
                             (Λ-consis (F1 T) (F2 T') (F~ T T' (lower T~)))) -}
 𝕆-Clos3-consis app = ⋆-consis
-𝕆-Clos3-consis (prim P x) = 𝓅-consis P x
+𝕆-Clos3-consis (lit B k) = ℬ-consis B k
 𝕆-Clos3-consis pair-op = pair-consis
 𝕆-Clos3-consis fst-op = car-consis
 𝕆-Clos3-consis snd-op = cdr-consis
@@ -129,12 +129,13 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 
 open import Fold2 Op sig
-open import NewSemantics Op sig
+open import NewSemantics Op sig public
 
 instance
-  Clos3-Semantics : Semantics Value
+  Clos3-Semantics : Semantics
   Clos3-Semantics = record { interp-op = 𝕆-Clos3 ;
-                                 mono-op = 𝕆-Clos3-mono }
+                               mono-op = 𝕆-Clos3-mono ;
+                               error = ω }
 open Semantics {{...}} public
 
 {-
@@ -186,7 +187,7 @@ mono-op1 {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs�
 -}
 mono-op1 {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
     ▪-mono-⊆ (lower a<c) (lower b<d)
-mono-op1 {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
+mono-op1 {lit B k} {xs} {ys} xs⊆ys d d∈k = d∈k
 mono-op1 {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op1 {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 

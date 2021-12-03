@@ -352,6 +352,9 @@ cdr ⟨ D , _ ⟩ v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 𝒯 (suc n) D = DComp-n-1 (replicate n ■) ■ ■ (𝒯 n) (𝒯-cons D)
 -}
 
+
+ 
+
 𝒜-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ ((fv ∷ fvs) ⊢ V ↦ w) = fv ∈ D × fvs ⊢ V ↦ w ∈ F
 𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ d = False
@@ -404,6 +407,12 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
 Λ ⟨ f , _ ⟩ (right V) = False
 
 
+un-𝒜 : ∀ n F Ds fvs V w → fvs ⊢ V ↦ w ∈ 𝒜 n ⟨ Λ F , Ds ⟩ 
+      → [] ⊢ V ↦ w ∈ Λ F × ∥ fvs ∥ ∈ 𝒯 n Ds
+un-𝒜 zero F Ds [] V w d∈ = ⟨ d∈ , refl ⟩
+un-𝒜 zero F Ds (x ∷ fvs) V w ()
+un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-𝒜 n F Ds fvs V w ds∈
+... | ⟨ q , q' ⟩ = ⟨ q , ⟨ d∈ , q' ⟩ ⟩
 
 {-
 
@@ -786,6 +795,15 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
        ⟨ vs , ⟨ i<' , ⟨ vs∈ , refl ⟩ ⟩ ⟩ 
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
+
+ℬ-consis : ∀ B k → consistent _~_ [] ■ (ℬ B k)
+ℬ-consis B k _ _ _ = lift G
+  where 
+  G : Every _~_ (ℬ B k ptt) (ℬ B k ptt)
+  G (const {B'} k) (const {B''} k') d∈ d'∈ with base-eq? B B' | base-eq? B B''
+  ... | yes refl | yes refl with base-eq? B B
+  ... | yes refl = trans (sym d∈) d'∈
+  ... | no neq = ⊥-elim (neq refl)
 
 𝓅-consis : ∀ P f → consistent _~_ [] ■ (𝓅 P f)
 𝓅-consis P f _ _ _ = lift (G P f)

@@ -13,10 +13,11 @@ open import Utilities using (_iff_)
 open import Primitives
 open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
-open import NewResultsCurried
+open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import NewPValueCBVAnnot
+open import NewDenotProperties
+open import NewDOp
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -26,6 +27,7 @@ open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -36,7 +38,7 @@ open Eq.≡-Reasoning
 data Op : Set where
   clos-op : ℕ → Op
   app : Op
-  prim : (P : Prim) → rep P → Op
+  lit : (B : Base) → base-rep B → Op
   pair-op : Op
   fst-op : Op
   snd-op : Op
@@ -49,7 +51,7 @@ data Op : Set where
 sig : Op → List Sig
 sig (clos-op n) = ν ■ ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
-sig (prim P f) = []
+sig (lit B k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
@@ -69,11 +71,11 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
             renaming (ABT to AST) public
 
 
-𝕆-Clos1 : DenotOps (𝒫 Value) sig
-𝕆-Clos1 (clos-op n) F = 𝒜 n (Λ F)
-𝕆-Clos1 app = _⋆_
-𝕆-Clos1 (prim P f) = 𝓅 P f
-𝕆-Clos1 pair-op = ⟪_,_⟫
+𝕆-Clos1 : DOpSig (𝒫 Value) sig
+𝕆-Clos1 (clos-op n) ⟨ F , Ds ⟩ = 𝒜 n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩
+𝕆-Clos1 app = ⋆
+𝕆-Clos1 (lit B k) = ℬ B k
+𝕆-Clos1 pair-op = pair
 𝕆-Clos1 fst-op = car
 𝕆-Clos1 snd-op = cdr
 𝕆-Clos1 (tuple n) = 𝒯 n
@@ -83,10 +85,12 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos1 case-op = 𝒞-new
 
 𝕆-Clos1-mono : 𝕆-monotone sig 𝕆-Clos1
-𝕆-Clos1-mono (clos-op x) F F' F⊆ = 𝒜-mono x {!   !} {!   !} (Λ-mono {!   !} {!   !} {!    !})
+𝕆-Clos1-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = 
+  𝒜-mono n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩  ⟨ Λ ⟨ F' , ptt ⟩ , Ds' ⟩ 
+           ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩ , Ds⊆ ⟩
 𝕆-Clos1-mono app = ⋆-mono
-𝕆-Clos1-mono (prim P x) = lift λ d x → x
-𝕆-Clos1-mono pair-op = cons-mono
+𝕆-Clos1-mono (lit B k) _ _ _ = lift λ d x → x
+𝕆-Clos1-mono pair-op = pair-mono
 𝕆-Clos1-mono fst-op = car-mono
 𝕆-Clos1-mono snd-op = cdr-mono
 𝕆-Clos1-mono (tuple x) = 𝒯-mono x
@@ -96,7 +100,19 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos1-mono case-op = 𝒞-new-mono
 
 𝕆-Clos1-consis : 𝕆-consistent _~_ sig 𝕆-Clos1
-𝕆-Clos1-consis op = {!   !}
+𝕆-Clos1-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
+  𝒜-consis n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩  ⟨ Λ ⟨ F' , ptt ⟩ , Ds' ⟩ 
+           ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , Ds~ ⟩
+𝕆-Clos1-consis app = ⋆-consis
+𝕆-Clos1-consis (lit B k) = ℬ-consis B k
+𝕆-Clos1-consis pair-op = pair-consis
+𝕆-Clos1-consis fst-op = car-consis
+𝕆-Clos1-consis snd-op = cdr-consis
+𝕆-Clos1-consis (tuple n) = 𝒯-consis n
+𝕆-Clos1-consis (get i) = proj-consis i
+𝕆-Clos1-consis inl-op = ℒ-consis
+𝕆-Clos1-consis inr-op = ℛ-consis
+𝕆-Clos1-consis case-op = 𝒞-new-consis
 
 
 {-
@@ -149,7 +165,7 @@ mono-op1 {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs�
 -}
 mono-op1 {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
     ▪-mono-⊆ (lower a<c) (lower b<d)
-mono-op1 {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
+mono-op1 {lit B k} {xs} {ys} xs⊆ys d d∈k = d∈k
 mono-op1 {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op1 {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 

@@ -12,10 +12,11 @@ open import Utilities using (_iff_)
 open import Primitives
 open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
-open import NewResultsCurried
+open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import NewPValueCBVAnnot
+open import NewDenotProperties
+open import NewDOp
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -25,6 +26,7 @@ open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -35,7 +37,7 @@ open Eq.≡-Reasoning
 data Op : Set where
   fun-op : Op
   app : Op
-  prim : (P : Prim) → rep P → Op
+  lit : (B : Base) → (k : base-rep B) → Op
   pair-op : Op
   fst-op : Op
   snd-op : Op
@@ -48,7 +50,7 @@ data Op : Set where
 sig : Op → List Sig
 sig fun-op = ∁ (ν (ν ■)) ∷ []
 sig app = ■ ∷ ■ ∷ ■ ∷ []
-sig (prim P f) = []
+sig (lit B k) = []
 sig pair-op = ■ ∷ ■ ∷ []
 sig fst-op = ■ ∷ []
 sig snd-op = ■ ∷ []
@@ -67,11 +69,11 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
                    COp; CAst; CBind; ccons; tcons; append₊)
             renaming (ABT to AST) public
 
-𝕆-Clos4 : DenotOps (𝒫 Value) sig
-𝕆-Clos4 fun-op F = Λ (λ X → Λ (λ Y → F X Y))
-𝕆-Clos4 app L M N = (L ⋆ M) ⋆ N
-𝕆-Clos4 (prim P x) = 𝓅 P x
-𝕆-Clos4 pair-op = ⟪_,_⟫
+𝕆-Clos4 : DOpSig (𝒫 Value) sig
+𝕆-Clos4 fun-op ⟨ F , _ ⟩ = Λ ⟨ (λ X → Λ ⟨ (λ Y → F X Y) , ptt ⟩) , ptt ⟩
+𝕆-Clos4 app ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ = ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩
+𝕆-Clos4 (lit B k) = ℬ B k
+𝕆-Clos4 pair-op = pair
 𝕆-Clos4 fst-op = car
 𝕆-Clos4 snd-op = cdr
 𝕆-Clos4 (tuple x) = 𝒯 x
@@ -81,13 +83,18 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos4 case-op = 𝒞-new
 
 𝕆-Clos4-mono : 𝕆-monotone sig 𝕆-Clos4
-𝕆-Clos4-mono fun-op F1 F2 F~ = 
-  Λ-mono (λ X → Λ (F1 X)) (λ X → Λ (F2 X)) 
-         (λ X1 X2 X~ → Λ-mono (F1 X1) (F2 X2) (F~ X1 X2 X~))
-𝕆-Clos4-mono app = 
-  DComp-pres _⊆_ (■ ∷ ■ ∷ []) ■ (■ ∷ []) ■ _⋆_ _⋆_ _⋆_ _⋆_ ⋆-mono ⋆-mono
-𝕆-Clos4-mono (prim P x) = lift λ d x → x
-𝕆-Clos4-mono pair-op = cons-mono
+𝕆-Clos4-mono fun-op ⟨ F1 , _ ⟩ ⟨ F2 , _ ⟩  ⟨ F~ , _ ⟩ = 
+  Λ-mono ⟨ (λ X → Λ ⟨ (F1 X) , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λ ⟨ (F2 X) , ptt ⟩) , ptt ⟩
+         ⟨ (λ X1 X2 X~ → Λ-mono ⟨ (F1 X1) , ptt ⟩ ⟨ (F2 X2) , ptt ⟩ 
+                                ⟨ (F~ X1 X2 X~) , ptt ⟩) , ptt ⟩
+𝕆-Clos4-mono app ⟨ L1 , ⟨ M1 , ⟨ N1 , _ ⟩ ⟩ ⟩ 
+                 ⟨ L2 , ⟨ M2 , ⟨ N2 , _ ⟩ ⟩ ⟩ ⟨ L~ , ⟨ M~ , ⟨ N~ , _ ⟩ ⟩ ⟩ = 
+  ⋆-mono ⟨ ⋆ ⟨ L1 , ⟨ M1 , ptt ⟩ ⟩ , ⟨ N1 , ptt ⟩ ⟩
+         ⟨ ⋆ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩ , ⟨ N2 , ptt ⟩ ⟩
+         ⟨ ⋆-mono ⟨ L1 , ⟨ M1 , ptt ⟩ ⟩ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩  ⟨ L~ , ⟨ M~ , ptt ⟩ ⟩ 
+         , ⟨ N~ , ptt ⟩ ⟩
+𝕆-Clos4-mono (lit B k) _ _ _ = lift (λ d d∈ → d∈)
+𝕆-Clos4-mono pair-op = pair-mono
 𝕆-Clos4-mono fst-op = car-mono
 𝕆-Clos4-mono snd-op = cdr-mono
 𝕆-Clos4-mono (tuple x) = 𝒯-mono x
@@ -97,14 +104,19 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos4-mono case-op = 𝒞-new-mono
 
 𝕆-Clos4-consis : 𝕆-consistent _~_ sig 𝕆-Clos4
-𝕆-Clos4-consis fun-op = 
-  DComp-pres (Every _~_) (∁ (ν (ν ■)) ∷ []) (ν ■) [] ■ 
-            (λ X Y → Λ (X Y)) (λ X Y → Λ (X Y)) Λ Λ 
-            (λ D1 D2 D~ E1 E2 E~ → Λ-consis (D1 E1) (D2 E2) (D~ E1 E2 E~)) Λ-consis
-𝕆-Clos4-consis app = 
-  DComp-pres (Every _~_) (■ ∷ ■ ∷ []) ■ (■ ∷ []) ■ _⋆_ _⋆_ _⋆_ _⋆_ ⋆-consis ⋆-consis
-𝕆-Clos4-consis (prim P x) = 𝓅-consis P x
-𝕆-Clos4-consis pair-op = cons-consis
+𝕆-Clos4-consis fun-op ⟨ F1 , _ ⟩ ⟨ F2 , _ ⟩  ⟨ F~ , _ ⟩ = 
+  Λ-consis ⟨ (λ X → Λ ⟨ (F1 X) , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λ ⟨ (F2 X) , ptt ⟩) , ptt ⟩
+         ⟨ (λ X1 X2 X~ → Λ-consis ⟨ (F1 X1) , ptt ⟩ ⟨ (F2 X2) , ptt ⟩ 
+                                ⟨ (F~ X1 X2 X~) , ptt ⟩) , ptt ⟩
+𝕆-Clos4-consis app ⟨ L1 , ⟨ M1 , ⟨ N1 , _ ⟩ ⟩ ⟩ 
+                 ⟨ L2 , ⟨ M2 , ⟨ N2 , _ ⟩ ⟩ ⟩ ⟨ L~ , ⟨ M~ , ⟨ N~ , _ ⟩ ⟩ ⟩ = 
+  ⋆-consis ⟨ ⋆ ⟨ L1 , ⟨ M1 , ptt ⟩ ⟩ , ⟨ N1 , ptt ⟩ ⟩
+         ⟨ ⋆ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩ , ⟨ N2 , ptt ⟩ ⟩
+         ⟨ ⋆-consis ⟨ L1 , ⟨ M1 , ptt ⟩ ⟩ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩  ⟨ L~ , ⟨ M~ , ptt ⟩ ⟩ 
+         , ⟨ N~ , ptt ⟩ ⟩
+ {- DComp-pres (Every _~_) (■ ∷ ■ ∷ []) ■ (■ ∷ []) ■ _⋆_ _⋆_ _⋆_ _⋆_ ⋆-consis ⋆-consis -}
+𝕆-Clos4-consis (lit B k) = ℬ-consis B k
+𝕆-Clos4-consis pair-op = pair-consis
 𝕆-Clos4-consis fst-op = car-consis
 𝕆-Clos4-consis snd-op = cdr-consis
 𝕆-Clos4-consis (tuple x) = 𝒯-consis x
@@ -112,6 +124,19 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos4-consis inl-op = ℒ-consis
 𝕆-Clos4-consis inr-op = ℛ-consis
 𝕆-Clos4-consis case-op = 𝒞-new-consis
+
+
+open import Fold2 Op sig
+open import NewSemantics Op sig public
+
+instance
+  Clos4-Semantics : Semantics
+  Clos4-Semantics = record { interp-op = 𝕆-Clos4 ;
+                                  mono-op = 𝕆-Clos4-mono ;
+                                  error = ω }
+open Semantics {{...}} public
+
+
 
 {-
 
@@ -148,8 +173,7 @@ pattern inl M = inl-op ⦅ cons (ast M) nil ⦆
 pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
 pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
-open import Fold2 Op sig
-open import SemanticPropertiesAnnot Op sig
+
 
 interp-op2  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
 interp-op2 fun-op ⟨ F , _ ⟩ = Λ λ X → Λ λ Y → F X Y
@@ -171,7 +195,7 @@ mono-op2 {fun-op} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =
 mono-op2 {app} {⟨ a , ⟨ b , ⟨ c , _ ⟩ ⟩ ⟩} {⟨ x , ⟨ y , ⟨ z , _ ⟩ ⟩ ⟩}
     ⟨ a<x , ⟨ b<y , ⟨ c<z , _ ⟩ ⟩ ⟩ =
     ▪-mono-⊆ (▪-mono-⊆ (lower a<x) (lower b<y)) (lower c<z)
-mono-op2 {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
+mono-op2 {lit B k} {xs} {ys} xs⊆ys d d∈k = d∈k
 mono-op2 {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op2 {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 
