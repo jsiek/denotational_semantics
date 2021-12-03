@@ -91,9 +91,21 @@ to-mem-rewrite V ρ (suc x) d d∈ρx = d∈ρx
 {-
 
 tos : List Value → List Value
-to : Value → Value
+to : Value → List Value
 to (const x) = const x
 to (fvs ⊢ V ↦ w) = ⦅ [] ⊢ (∥ tos fvs ∥ ∷ []) ↦ ([] ⊢ tos V ↦ to w) , ∥ tos fvs ∥ ⦆
+
+(to produces list of values)
+to (FVS ⊢ V ↦ w) =
+   [ ⦅ [] ⊢ tos FVS ↦ ([] ⊢ tos V ↦ to w) , tofvs ⦆
+   for tofvs in tos FVS]
+
+(multi-valued pairs)
+to (FVS ⊢ V ↦ w) = ⦅ ⌈ [] ⊢ tos FVS ↦ ([] ⊢ tos V ↦ to w) ⌉ , tos FVS ⦆
+⟦ ⦅ M , N ⦆ ⟧ρ = ⦅ V, W ⦆ where V ⊆ ⟦ M ⟧ρ, W ⊆ ⟦ N ⟧ρ
+⟦ fst M ⟧ρ = { v | v ∈ V, ⦅ V, W ⦆ ∈ ⟦ M ⟧ρ }
+
+
 to ν = ⦅ ν , ∥ [] ∥ ⦆
 to ω = ω
 to ⦅ v , v₁ ⦆ = ⦅ to v , to v₁ ⦆
