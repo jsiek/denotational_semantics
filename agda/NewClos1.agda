@@ -39,9 +39,6 @@ data Op : Set where
   clos-op : ℕ → Op
   app : Op
   lit : (B : Base) → base-rep B → Op
-  pair-op : Op
-  fst-op : Op
-  snd-op : Op
   tuple : ℕ → Op
   get : ℕ → Op
   inl-op : Op
@@ -52,9 +49,6 @@ sig : Op → List Sig
 sig (clos-op n) = ν ■ ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
-sig pair-op = ■ ∷ ■ ∷ []
-sig fst-op = ■ ∷ []
-sig snd-op = ■ ∷ []
 sig (tuple n) = replicate n ■
 sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
@@ -72,12 +66,9 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 
 𝕆-Clos1 : DOpSig (𝒫 Value) sig
-𝕆-Clos1 (clos-op n) ⟨ F , Ds ⟩ = 𝒜 n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩
+𝕆-Clos1 (clos-op n) ⟨ F , Ds ⟩ = {!   !} {- 𝒜 n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩ -}
 𝕆-Clos1 app = ⋆
 𝕆-Clos1 (lit B k) = ℬ B k
-𝕆-Clos1 pair-op = pair
-𝕆-Clos1 fst-op = car
-𝕆-Clos1 snd-op = cdr
 𝕆-Clos1 (tuple n) = 𝒯 n
 𝕆-Clos1 (get i) = proj i
 𝕆-Clos1 inl-op = ℒ
@@ -85,14 +76,12 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos1 case-op = 𝒞-new
 
 𝕆-Clos1-mono : 𝕆-monotone sig 𝕆-Clos1
-𝕆-Clos1-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = 
-  𝒜-mono n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩  ⟨ Λ ⟨ F' , ptt ⟩ , Ds' ⟩ 
+𝕆-Clos1-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = {!   !}
+ {- 𝒜-mono n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩  ⟨ Λ ⟨ F' , ptt ⟩ , Ds' ⟩ 
            ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩ , Ds⊆ ⟩
+           -}
 𝕆-Clos1-mono app = ⋆-mono
 𝕆-Clos1-mono (lit B k) _ _ _ = lift λ d x → x
-𝕆-Clos1-mono pair-op = pair-mono
-𝕆-Clos1-mono fst-op = car-mono
-𝕆-Clos1-mono snd-op = cdr-mono
 𝕆-Clos1-mono (tuple x) = 𝒯-mono x
 𝕆-Clos1-mono (get x) = proj-mono x
 𝕆-Clos1-mono inl-op = ℒ-mono
@@ -100,14 +89,12 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos1-mono case-op = 𝒞-new-mono
 
 𝕆-Clos1-consis : 𝕆-consistent _~_ sig 𝕆-Clos1
-𝕆-Clos1-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
-  𝒜-consis n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩  ⟨ Λ ⟨ F' , ptt ⟩ , Ds' ⟩ 
+𝕆-Clos1-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
+{-  𝒜-consis n ⟨ Λ ⟨ F , ptt ⟩ , Ds ⟩  ⟨ Λ ⟨ F' , ptt ⟩ , Ds' ⟩ 
            ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , Ds~ ⟩
+           -}
 𝕆-Clos1-consis app = ⋆-consis
 𝕆-Clos1-consis (lit B k) = ℬ-consis B k
-𝕆-Clos1-consis pair-op = pair-consis
-𝕆-Clos1-consis fst-op = car-consis
-𝕆-Clos1-consis snd-op = cdr-consis
 𝕆-Clos1-consis (tuple n) = 𝒯-consis n
 𝕆-Clos1-consis (get i) = proj-consis i
 𝕆-Clos1-consis inl-op = ℒ-consis

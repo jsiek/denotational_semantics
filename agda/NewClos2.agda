@@ -40,9 +40,6 @@ data Op : Set where
   clos-op : ℕ → Op
   app : Op
   lit : (B : Base) → (k : base-rep B) → Op
-  pair-op : Op
-  fst-op : Op
-  snd-op : Op
   tuple : ℕ → Op
   get : ℕ → Op
   inl-op : Op
@@ -53,9 +50,6 @@ sig : Op → List Sig
 sig (clos-op n) = ∁ (ν-n n (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
-sig pair-op = ■ ∷ ■ ∷ []
-sig fst-op = ■ ∷ []
-sig snd-op = ■ ∷ []
 sig (tuple n) = replicate n ■
 sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
@@ -87,12 +81,9 @@ DApp-n-consis (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩
   DApp-n-consis n b ⟨ F D , Ds ⟩ ⟨ F' D' , Ds' ⟩ ⟨ F~ D D' (lower D~) , Ds~ ⟩
 
 𝕆-Clos2 : DOpSig (𝒫 Value) sig
-𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = 𝒜 n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩
+𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = {!   !} {- 𝒜 n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩ -}
 𝕆-Clos2 app = ⋆
 𝕆-Clos2 (lit B k) = ℬ B k
-𝕆-Clos2 pair-op = pair
-𝕆-Clos2 fst-op = car
-𝕆-Clos2 snd-op = cdr
 𝕆-Clos2 (tuple n) = 𝒯 n
 𝕆-Clos2 (get i) = proj i
 𝕆-Clos2 inl-op = ℒ
@@ -101,17 +92,14 @@ DApp-n-consis (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩
 
 
 𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
-𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ =
-  𝒜-mono n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
+𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = {!   !}
+  {- 𝒜-mono n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
            ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ , Ds' ⟩ 
            ⟨ Λ-mono ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ 
                     ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ 
-                    ⟨ DApp-n-mono n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ , ptt ⟩ , Ds⊆ ⟩
+                    ⟨ DApp-n-mono n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ , ptt ⟩ , Ds⊆ ⟩ -}
 𝕆-Clos2-mono app = ⋆-mono
 𝕆-Clos2-mono (lit B k) _ _ _ = lift λ d x → x
-𝕆-Clos2-mono pair-op = pair-mono
-𝕆-Clos2-mono fst-op = car-mono
-𝕆-Clos2-mono snd-op = cdr-mono
 𝕆-Clos2-mono (tuple x) = 𝒯-mono x
 𝕆-Clos2-mono (get x) = proj-mono x
 𝕆-Clos2-mono inl-op = ℒ-mono
@@ -119,17 +107,14 @@ DApp-n-consis (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩
 𝕆-Clos2-mono case-op = 𝒞-new-mono
 
 𝕆-Clos2-consis : 𝕆-consistent _~_ sig 𝕆-Clos2
-𝕆-Clos2-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
-  𝒜-consis n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
+𝕆-Clos2-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
+{-  𝒜-consis n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
            ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ , Ds' ⟩ 
            ⟨ Λ-consis ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ 
                     ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ 
-                    ⟨ DApp-n-consis n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ , ptt ⟩ , Ds~ ⟩
+                    ⟨ DApp-n-consis n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ , ptt ⟩ , Ds~ ⟩ -}
 𝕆-Clos2-consis app = ⋆-consis
 𝕆-Clos2-consis (lit B k) = ℬ-consis B k
-𝕆-Clos2-consis pair-op = pair-consis
-𝕆-Clos2-consis fst-op = car-consis
-𝕆-Clos2-consis snd-op = cdr-consis
 𝕆-Clos2-consis (tuple n) = 𝒯-consis n
 𝕆-Clos2-consis (get i) = proj-consis i
 𝕆-Clos2-consis inl-op = ℒ-consis

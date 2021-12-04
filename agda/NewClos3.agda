@@ -12,6 +12,7 @@ open import Utilities using (_iff_)
 open import Primitives
 open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
+open import NewSyntaxUtil
 open import NewDOpSig
 open import NewDenotProperties
 open import Utilities using (extensionality)
@@ -23,6 +24,7 @@ open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate)
+open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
@@ -38,9 +40,6 @@ data Op : Set where
   clos-op : ℕ → Op
   app : Op
   lit : (B : Base) → (k : base-rep B) → Op
-  pair-op : Op
-  fst-op : Op
-  snd-op : Op
   tuple : ℕ → Op
   get : ℕ → Op
   inl-op : Op
@@ -51,9 +50,6 @@ sig : Op → List Sig
 sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
-sig pair-op = ■ ∷ ■ ∷ []
-sig fst-op = ■ ∷ []
-sig snd-op = ■ ∷ []
 sig (tuple n) = replicate n ■
 sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
@@ -71,13 +67,11 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 
 𝕆-Clos3 : DOpSig (𝒫 Value) sig
-𝕆-Clos3 (clos-op n) ⟨ F , Ds ⟩ = 𝒜 n ⟨ (Λ ⟨ F (𝒯 n Ds) , ptt ⟩) , Ds ⟩
+𝕆-Clos3 (clos-op n) ⟨ F , Ds ⟩ = 𝒜Λ ⟨ F , ⟨ 𝒯 n Ds , ptt ⟩ ⟩
+  {- Λn (suc zero) ⟨ F , ⟨ 𝒯 n Ds , ptt ⟩  ⟩ -} 
   {- DComp-rest (replicate n ■) ■ ■ (𝒯 n) (λ T → 𝒜 n (Λ (𝒻 T))) -}
 𝕆-Clos3 app = ⋆
 𝕆-Clos3 (lit B k) = ℬ B k
-𝕆-Clos3 pair-op = pair
-𝕆-Clos3 fst-op = car
-𝕆-Clos3 snd-op = cdr
 𝕆-Clos3 (tuple n) = 𝒯 n
 𝕆-Clos3 (get i) = proj i
 𝕆-Clos3 inl-op = ℒ
@@ -86,10 +80,16 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 
 𝕆-Clos3-mono : 𝕆-monotone sig 𝕆-Clos3
 𝕆-Clos3-mono (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
-  𝒜-mono x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
+     𝒜Λ-mono ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩
+              ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
+
+  {- Λn-mono (suc zero) ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩ 
+             ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
+  -}
+  {- 𝒜-mono x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
     ⟨ Λ-mono ⟨ F (𝒯 x Ds) , ptt ⟩ ⟨ F' (𝒯 x Ds') , ptt ⟩ 
              ⟨ F~ (𝒯 x Ds) (𝒯 x Ds') (lower (𝒯-mono x Ds Ds' Ds~)) , ptt ⟩ 
-    , Ds~ ⟩
+    , Ds~ ⟩ -}
   {- DComp-rest-pres _⊆_ (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
                   (λ T → 𝒜 x (Λ (F1 T))) (λ T → 𝒜 x (Λ (F2 T))) 
                   (𝒯-mono x) 
@@ -97,9 +97,6 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
                                (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆)))) -}
 𝕆-Clos3-mono app = ⋆-mono
 𝕆-Clos3-mono (lit B k) _ _ _ = lift (λ d z → z)
-𝕆-Clos3-mono pair-op = pair-mono
-𝕆-Clos3-mono fst-op = car-mono
-𝕆-Clos3-mono snd-op = cdr-mono
 𝕆-Clos3-mono (tuple x) = 𝒯-mono x
 𝕆-Clos3-mono (get x) = proj-mono x
 𝕆-Clos3-mono inl-op = ℒ-mono
@@ -107,20 +104,17 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos3-mono case-op = 𝒞-new-mono
 
 𝕆-Clos3-consis : 𝕆-consistent _~_ sig 𝕆-Clos3
-𝕆-Clos3-consis (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
-  𝒜-consis x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
+𝕆-Clos3-consis (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
+  {- 𝒜-consis x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
     ⟨ Λ-consis ⟨ F (𝒯 x Ds) , ptt ⟩ ⟨ F' (𝒯 x Ds') , ptt ⟩ 
              ⟨ F~ (𝒯 x Ds) (𝒯 x Ds') (lower (𝒯-consis x Ds Ds' Ds~)) , ptt ⟩ 
-    , Ds~ ⟩
+    , Ds~ ⟩ -}
   {- DComp-rest-pres (Every _~_) (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
                   (λ T → 𝒜 x (Λ (F1 T))) ((λ T → 𝒜 x (Λ (F2 T)))) 
   (𝒯-consis x) (λ T T' T~ → 𝒜-consis x (Λ (F1 T)) (Λ (F2 T')) 
                             (Λ-consis (F1 T) (F2 T') (F~ T T' (lower T~)))) -}
 𝕆-Clos3-consis app = ⋆-consis
 𝕆-Clos3-consis (lit B k) = ℬ-consis B k
-𝕆-Clos3-consis pair-op = pair-consis
-𝕆-Clos3-consis fst-op = car-consis
-𝕆-Clos3-consis snd-op = cdr-consis
 𝕆-Clos3-consis (tuple x) = 𝒯-consis x
 𝕆-Clos3-consis (get x) = proj-consis x
 𝕆-Clos3-consis inl-op = ℒ-consis
@@ -137,6 +131,20 @@ instance
                                mono-op = 𝕆-Clos3-mono ;
                                error = ω }
 open Semantics {{...}} public
+
+
+{-
+sig : Op → List Sig
+sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
+sig app = ■ ∷ ■ ∷ []
+sig (lit B k) = []
+sig (tuple n) = replicate n ■
+sig (get i) = ■ ∷ []
+sig inl-op = ■ ∷ []
+sig inr-op = ■ ∷ []
+sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
+-}
+
 
 {-
 interp-op1  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value

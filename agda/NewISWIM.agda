@@ -36,9 +36,6 @@ data Op : Set where
   lam : Op
   app : Op
   lit : (B : Base) → (k : base-rep B) → Op
-  pair-op : Op
-  fst-op : Op
-  snd-op : Op
   tuple : (n : ℕ) → Op
   get : (n : ℕ) → Op
   inl-op : Op
@@ -49,9 +46,6 @@ sig : Op → List Sig
 sig lam = (ν ■) ∷ []
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
-sig pair-op = ■ ∷ ■ ∷ []
-sig fst-op = ■ ∷ []
-sig snd-op = ■ ∷ []
 sig (tuple n) = replicate n ■
 sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
@@ -76,9 +70,6 @@ open import Fold2 Op sig
 𝕆-ISWIM lam = Λ
 𝕆-ISWIM app = ⋆
 𝕆-ISWIM (lit B k) = ℬ B k
-𝕆-ISWIM pair-op = pair
-𝕆-ISWIM fst-op = car
-𝕆-ISWIM snd-op = cdr
 𝕆-ISWIM (tuple n) = 𝒯 n
 𝕆-ISWIM (get n) = proj n
 𝕆-ISWIM inl-op = ℒ
@@ -89,9 +80,6 @@ open import Fold2 Op sig
 𝕆-ISWIM-mono lam = Λ-mono
 𝕆-ISWIM-mono app = ⋆-mono
 𝕆-ISWIM-mono (lit B k) _ _ _ = lift (λ x x₁ → x₁)
-𝕆-ISWIM-mono pair-op = pair-mono
-𝕆-ISWIM-mono fst-op = car-mono
-𝕆-ISWIM-mono snd-op = cdr-mono
 𝕆-ISWIM-mono (tuple n) = 𝒯-mono n
 𝕆-ISWIM-mono (get n) = proj-mono n
 𝕆-ISWIM-mono inl-op = ℒ-mono
@@ -102,9 +90,6 @@ open import Fold2 Op sig
 𝕆-ISWIM-consis lam = Λ-consis
 𝕆-ISWIM-consis app = ⋆-consis
 𝕆-ISWIM-consis (lit B k) = ℬ-consis B k
-𝕆-ISWIM-consis pair-op = pair-consis
-𝕆-ISWIM-consis fst-op = car-consis
-𝕆-ISWIM-consis snd-op = cdr-consis
 𝕆-ISWIM-consis (tuple n) = 𝒯-consis n
 𝕆-ISWIM-consis (get n) = proj-consis n
 𝕆-ISWIM-consis inl-op = ℒ-consis

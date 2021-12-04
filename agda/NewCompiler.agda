@@ -37,10 +37,6 @@ module NewCompiler where
   annotate (app ABT.⦅ M ,, N ,, Nil ⦆) = 
     app ABT.⦅ (annotate M) ,, (annotate M) ,, Nil ⦆
   annotate (lit B k ABT.⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
-  annotate (pair-op ABT.⦅ M ,, N ,, Nil ⦆) = 
-    pair-op ABT.⦅ annotate M ,, annotate N ,, Nil ⦆
-  annotate (fst-op ABT.⦅ M ,, Nil ⦆) = fst-op ABT.⦅  annotate M ,, Nil ⦆
-  annotate (snd-op ABT.⦅ N ,, Nil ⦆) = snd-op ABT.⦅ annotate N ,, Nil ⦆
   annotate (tuple n ABT.⦅ Ms ⦆) = tuple n ABT.⦅ ann-map-args Ms ⦆
     where
     ann-map-arg : ∀ {b} → NewISWIM.Arg b → NewClos1.Arg b
@@ -77,10 +73,6 @@ module NewCompiler where
   enclose (app ABT.⦅ M ,, N ,, Nil ⦆) = 
     app ABT.⦅ (enclose M) ,, (enclose M) ,, Nil ⦆
   enclose (lit B k ABT.⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
-  enclose (pair-op ABT.⦅ M ,, N ,, Nil ⦆) = 
-    pair-op ABT.⦅ enclose M ,, enclose N ,, Nil ⦆
-  enclose (fst-op ABT.⦅ M ,, Nil ⦆) = fst-op ABT.⦅  enclose M ,, Nil ⦆
-  enclose (snd-op ABT.⦅ N ,, Nil ⦆) = snd-op ABT.⦅ enclose N ,, Nil ⦆
   enclose (tuple n ABT.⦅ Ms ⦆) = tuple n ABT.⦅ enc-map-args Ms ⦆
     where
     enc-map-arg : ∀ {b} → NewClos1.Arg b → NewClos2.Arg b
@@ -104,9 +96,6 @@ module NewCompiler where
   concretize (clos-op n ⦅ x ⦆) = clos-op n ABT.⦅ {!   !} ⦆
   concretize (app ⦅ x ⦆) = {!   !}
   concretize (lit B k ⦅ x ⦆) = {!   !}
-  concretize (pair-op ⦅ x ⦆) = {!   !}
-  concretize (fst-op ⦅ x ⦆) = {!   !}
-  concretize (snd-op ⦅ x ⦆) = {!   !}
   concretize (tuple n ⦅ x ⦆) = {!   !}
   concretize (get n ⦅ x ⦆) = {!   !}
   concretize (inl-op ⦅ x ⦆) = {!   !}
@@ -124,9 +113,6 @@ module NewCompiler where
               (snd-op ABT.⦅ delay M ,, Nil ⦆) ,, 
               delay N ,, Nil ⦆
   delay (lit B k ⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
-  delay (pair-op ⦅ M ,, N ,, Nil ⦆) = pair-op ABT.⦅ delay M ,, delay N ,, Nil ⦆
-  delay (fst-op ⦅ M ,, Nil ⦆) = fst-op ABT.⦅ delay M ,, Nil ⦆
-  delay (snd-op ⦅ M ,, Nil ⦆) = snd-op ABT.⦅ delay M ,, Nil ⦆
   delay (tuple n ⦅ Ms ⦆) = tuple n ABT.⦅ del-map-args Ms ⦆
   delay (get n ⦅ M ,, Nil ⦆) = get n ABT.⦅ delay M ,, Nil ⦆
   delay (inl-op ⦅ M ,, Nil ⦆) = inl-op ABT.⦅ delay M ,, Nil ⦆
