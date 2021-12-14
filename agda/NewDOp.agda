@@ -19,6 +19,7 @@ open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
+open import NewDomain
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -32,7 +33,7 @@ open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
-open import Data.Nat.Properties
+open import Data.Nat.Properties using (≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
@@ -45,260 +46,7 @@ open import Level using (Level; Lift; lift; lower)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 
-{- Dational Values --------------------------------------------------------}
-
-data Value : Set where
-  const : {B : Base} → (k : base-rep B) → Value  {- A primitive constant of type B. -}
-  _,_⊢_↦_ : (fv : Value) → (FV : List Value) → (V : List Value) → (w : Value) → Value
-      {- An entry in a function's graph. -}
-  _,_⊢ν : (fv : Value) → (FV : List Value) → Value      {- The empty function -}
-  ω : Value      {- An error value, to serve as a default value in Envs and
-                    to differentiate from converging -}
-  ⦅_,_⦆ : (f : Value) → (FV : List Value) → Value  {- Pairs for Closure Representation -}
-  ∥_∥ : (ds : List Value) → Value                 {- Tuples -}
-  left : (V : List Value) → Value                {- Sums -}
-  right : (V : List Value) → Value               {- Sums -}
-
-
-
-{- Consistency ----------------------------------------------------------------}
-
-infix 5 _~_
-infix 5 _≈_
-
-_≈_ : List Value → List Value → Set
-_~_ : Value → Value → Set
-const {B} x ~ const {B₁} x₁ with base-eq? B B₁
-... | yes refl = x ≡ x₁
-... | no neq = False
-const x ~ (fv , FV ⊢ x₂ ↦ v) = False
-const x ~ (fv , FV ⊢ν) = False
-const x ~ ω = False  
-const x ~ ⦅ v , v₁ ⦆ = False
-const x ~ ∥ x₁ ∥ = False
-const x ~ left x₁ = False
-const x ~ right x₁ = False
-(fv , FV ⊢ x₁ ↦ u) ~ const x₂ = False
-(fv , us ⊢ v ↦ w) ~ (fv₁ , us₁ ⊢ v₁ ↦ w₁) = (¬ v ≈ v₁) ⊎ ( v ≈ v₁ × w ~ w₁ )
-(fv' , x ⊢ x₁ ↦ u) ~ (fv , FV ⊢ν) = True
-(fv' , x ⊢ x₁ ↦ u) ~ ω = False
-(fv' , x ⊢ x₁ ↦ u) ~ ⦅ v , v₁ ⦆ = False
-(fv' , x ⊢ x₁ ↦ u) ~ ∥ x₂ ∥ = False
-(fv' , x ⊢ x₁ ↦ u) ~ left x₂ = False
-(fv' , x ⊢ x₁ ↦ u) ~ right x₂ = False
-(fv , FV ⊢ν) ~ const x = False
-(fv , FV ⊢ν) ~ (fv' , x ⊢ x₁ ↦ v) = True
-(fv , FV ⊢ν) ~ (fv' , FV' ⊢ν) = True
-(fv , FV ⊢ν) ~ ω = False
-(fv , FV ⊢ν) ~ ⦅ v , v₁ ⦆ = False
-(fv , FV ⊢ν) ~ ∥ x ∥ = False
-(fv , FV ⊢ν) ~ left x = False
-(fv , FV ⊢ν) ~ right x = False
-ω ~ const x = False
-ω ~ (fv' , x ⊢ x₁ ↦ v) = False
-ω ~ (fv , FV ⊢ν) = False
-ω ~ ω = True {- starting with ω related with just itself -}
-ω ~ ⦅ v , v₁ ⦆ = False
-ω ~ ∥ x ∥ = False
-ω ~ left x = False
-ω ~ right x = False
-⦅ u , u₁ ⦆ ~ const x = False
-⦅ u , u₁ ⦆ ~ (fv' , x ⊢ x₁ ↦ v) = False
-⦅ u , u₁ ⦆ ~ (fv , FV ⊢ν) = False
-⦅ u , u₁ ⦆ ~ ω = False
-⦅ u , u₁ ⦆ ~ ⦅ v , v₁ ⦆ = u ~ v × u₁ ≈ v₁
-⦅ u , u₁ ⦆ ~ ∥ x ∥ = False
-⦅ u , u₁ ⦆ ~ left x = False
-⦅ u , u₁ ⦆ ~ right x = False
-∥ x ∥ ~ const x₁ = False
-∥ x ∥ ~ (fv' , FV' ⊢ x₂ ↦ v) = False
-∥ x ∥ ~ (fv , FV ⊢ν) = False
-∥ x ∥ ~ ω = False
-∥ x ∥ ~ ⦅ v , v₁ ⦆ = False
-∥ [] ∥ ~ ∥ [] ∥ = True
-∥ [] ∥ ~ ∥ x ∷ x₁ ∥ = False
-∥ x ∷ x₂ ∥ ~ ∥ [] ∥ = False
-∥ x ∷ xs ∥ ~ ∥ x₁ ∷ xs₁ ∥ = x ~ x₁ × ∥ xs ∥ ~ ∥ xs₁ ∥
-∥ x ∥ ~ left x₁ = False
-∥ x ∥ ~ right x₁ = False
-left x ~ const x₁ = False
-left x ~ (fv' , FV' ⊢ x₂ ↦ v) = False
-left x ~ (fv , FV ⊢ν) = False
-left x ~ ω = False
-left x ~ ⦅ v , v₁ ⦆ = False
-left x ~ ∥ x₁ ∥ = False
-left x ~ left x₁ = x ≈ x₁
-left x ~ right x₁ = False
-right x ~ const x₁ = False
-right x ~ (fv' , FV' ⊢ x₂ ↦ v) = False
-right x ~ (fv , FV ⊢ν) = False
-right x ~ ω = False
-right x ~ ⦅ v , v₁ ⦆ = False
-right x ~ ∥ x₁ ∥ = False
-right x ~ left x₁ = False
-right x ~ right x₁ = x ≈ x₁
-
-[] ≈ vs = True 
-(u ∷ us) ≈ vs = All (u ~_) vs × us ≈ vs
-
-≈[] : ∀ V → V ≈ []
-≈[] [] = tt
-≈[] (x ∷ V) = ⟨ All.[] , ≈[] V ⟩
-
-≈head : ∀ U v V → U ≈ (v ∷ V) → All (_~ v) U
-≈head [] v V U~vV = []
-≈head (x ∷ U) v V ⟨ x~v ∷ x~V , snd ⟩ = x~v ∷ ≈head U v V snd
-
-≈tail : ∀ U v V → U ≈ (v ∷ V) → U ≈ V
-≈tail [] v V U~vV = tt
-≈tail (x ∷ U) v V ⟨ x~v ∷ x~V , snd ⟩ = 
-  ⟨ x~V , ≈tail U v V snd ⟩
-
-
-≈-sym : ∀ U V → U ≈ V → V ≈ U
-~-sym-All : ∀ u V → All (_~ u) V → All (_~_ u) V
-~-sym : ∀ u v → u ~ v → v ~ u
-~-sym (const {B} x) (const {B₁} x₁) u~v 
-  with base-eq? B B₁ | u~v
-... | yes refl | refl = u~v
-... | no neq | ()
-~-sym (fv , fvs ⊢ V ↦ w) (fv' , fvs' ⊢ V' ↦ w') (inj₁ ¬V~V') = 
-  inj₁ λ z → ¬V~V' (≈-sym V' V z)
-~-sym (fv , fvs ⊢ V ↦ w) (fv' , fvs' ⊢ V' ↦ w') (inj₂ ⟨ V~V' , w~w' ⟩) = 
-  inj₂ ⟨ ≈-sym V V' V~V' , ~-sym w w' w~w' ⟩
-~-sym (fv' , x ⊢ x₁ ↦ u) (fv , FV ⊢ν) u~v = tt
-~-sym (fv , FV ⊢ν) (fv' , x ⊢ x₁ ↦ v) u~v = tt
-~-sym (fv , FV ⊢ν) (fv' , FV' ⊢ν) u~v = tt
-~-sym ω ω u~v = tt
-~-sym ⦅ u , u₁ ⦆ ⦅ v , v₁ ⦆ ⟨ fst , snd ⟩ = 
-  ⟨ ~-sym u v fst , ≈-sym u₁ v₁ snd ⟩
-~-sym ∥ [] ∥ ∥ [] ∥ u~v = tt
-~-sym ∥ x ∷ x₂ ∥ ∥ x₁ ∷ x₃ ∥ ⟨ fst , rst ⟩ = 
-  ⟨ ~-sym x x₁ fst , ~-sym ∥ x₂ ∥ ∥ x₃ ∥ rst ⟩
-~-sym (left x) (left x₁) u~v = ≈-sym x x₁ u~v
-~-sym (right x) (right x₁) u~v = ≈-sym x x₁ u~v
-
-~-sym-All u [] [] = []
-~-sym-All u (x ∷ xs) (px ∷ V~u) = 
-  ~-sym x u px ∷ ~-sym-All u xs V~u
-
-≈-sym U [] U≈V = tt
-≈-sym U (x ∷ V) U≈V = 
-  ⟨ ~-sym-All x U (≈head U x V U≈V) 
-  , ≈-sym U V (≈tail U x V U≈V) ⟩
-
-_×dec_ : ∀ {A B : Set} → Dec A → Dec B → Dec (A × B)
-(yes a) ×dec (yes b) = yes ⟨ a , b ⟩
-(yes a) ×dec (no b) = no (λ z → b (proj₂ z))
-(no a) ×dec decb = no (λ z → a (proj₁ z))
-
-_≈?_ : (U V : List Value) → Dec (U ≈ V)
-_~>?_ : (u : Value) (V : List Value) → Dec (All (u ~_) V)
-_~?_ : (u v : Value) → Dec (u ~ v)
-const {B} x ~? const {B'} x₁ with base-eq? B B'
-... | no neq = no (λ z → z)
-... | yes refl = base-rep-eq? x x₁
-const x ~? (fv' , FV' ⊢ x₂ ↦ v) = no (λ z → z)
-const x ~? (fv , FV ⊢ν) = no (λ z → z)
-const x ~? ω = no (λ z → z)
-const x ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-const x ~? ∥ x₁ ∥ = no (λ z → z)
-const x ~? left x₁ = no (λ z → z)
-const x ~? right x₁ = no (λ z → z)
-(fv' , x ⊢ x₁ ↦ u) ~? const x₂ = no (λ z → z)
-(fv , fvs ⊢ V ↦ w) ~? (fv' , fvs' ⊢ V' ↦ w') with V ≈? V'
-... | no ¬V~V' = yes (inj₁ ¬V~V')
-... | yes V~V' with w ~? w'
-... | no ¬w~w' = no (λ z → [ (λ x → x V~V') 
-                           , (λ x → ¬w~w' (proj₂ x)) ] z )
-... | yes w~w' = yes (inj₂ ⟨ V~V' , w~w' ⟩)
-(fv' , x ⊢ x₁ ↦ u) ~? (fv , FV ⊢ν) = yes tt
-(fv' , x ⊢ x₁ ↦ u) ~? ω = no (λ z → z)
-(fv' , x ⊢ x₁ ↦ u) ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-(fv' , x ⊢ x₁ ↦ u) ~? ∥ x₂ ∥ = no (λ z → z)
-(fv' , x ⊢ x₁ ↦ u) ~? left x₂ = no (λ z → z)
-(fv' , x ⊢ x₁ ↦ u) ~? right x₂ = no (λ z → z)
-(fv , FV ⊢ν) ~? const x = no (λ z → z)
-(fv , FV ⊢ν) ~? (fv' , x ⊢ x₁ ↦ v) = yes tt
-(fv , FV ⊢ν) ~? (fv' , FV' ⊢ν) = yes tt
-(fv , FV ⊢ν) ~? ω = no (λ z → z)
-(fv , FV ⊢ν) ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-(fv , FV ⊢ν) ~? ∥ x ∥ = no (λ z → z)
-(fv , FV ⊢ν) ~? left x = no (λ z → z)
-(fv , FV ⊢ν) ~? right x = no (λ z → z)
-ω ~? const x = no (λ z → z)
-ω ~? (fv' , x ⊢ x₁ ↦ v) = no (λ z → z)
-ω ~? (fv , FV ⊢ν) = no (λ z → z)
-ω ~? ω = yes tt
-ω ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-ω ~? ∥ x ∥ = no (λ z → z)
-ω ~? left x = no (λ z → z)
-ω ~? right x = no (λ z → z)
-⦅ u , u₁ ⦆ ~? const x = no (λ z → z)
-⦅ u , u₁ ⦆ ~? (fv' , x ⊢ x₁ ↦ v) = no (λ z → z)
-⦅ u , u₁ ⦆ ~? (fv , FV ⊢ν) = no (λ z → z)
-⦅ u , u₁ ⦆ ~? ω = no (λ z → z)
-⦅ u , u₁ ⦆ ~? ⦅ v , v₁ ⦆ = (u ~? v) ×dec (u₁ ≈? v₁)
-⦅ u , u₁ ⦆ ~? ∥ x ∥ = no (λ z → z)
-⦅ u , u₁ ⦆ ~? left x = no (λ z → z)
-⦅ u , u₁ ⦆ ~? right x = no (λ z → z)
-∥ x ∥ ~? const x₁ = no (λ z → z)
-∥ x ∥ ~? (fv' , FV' ⊢ x₂ ↦ v) = no (λ z → z)
-∥ x ∥ ~? (fv , FV ⊢ν) = no (λ z → z)
-∥ x ∥ ~? ω = no (λ z → z)
-∥ x ∥ ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-∥ [] ∥ ~? ∥ [] ∥ = yes tt
-∥ [] ∥ ~? ∥ x ∷ x₁ ∥ = no (λ z → z)
-∥ x ∷ x₂ ∥ ~? ∥ [] ∥ = no (λ z → z)
-∥ x ∷ x₂ ∥ ~? ∥ x₁ ∷ x₃ ∥ = (x ~? x₁) ×dec (∥ x₂ ∥ ~? ∥ x₃ ∥)
-∥ x ∥ ~? left x₁ = no (λ z → z)
-∥ x ∥ ~? right x₁ = no (λ z → z)
-left x ~? const x₁ = no (λ z → z)
-left x ~? (fv' , FV' ⊢ x₂ ↦ v) = no (λ z → z)
-left x ~? (fv , FV ⊢ν) = no (λ z → z)
-left x ~? ω = no (λ z → z)
-left x ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-left x ~? ∥ x₁ ∥ = no (λ z → z)
-left x ~? left x₁ = x ≈? x₁
-left x ~? right x₁ = no (λ z → z)
-right x ~? const x₁ = no (λ z → z)
-right x ~? (fv' , FV' ⊢ x₂ ↦ v) = no (λ z → z)
-right x ~? (fv , FV ⊢ν) = no (λ z → z)
-right x ~? ω = no (λ z → z)
-right x ~? ⦅ v , v₁ ⦆ = no (λ z → z)
-right x ~? ∥ x₁ ∥ = no (λ z → z)
-right x ~? left x₁ = no (λ z → z)
-right x ~? right x₁ = x ≈? x₁
-
-u ~>? [] = yes All.[]
-u ~>? (x ∷ V) with u ~? x
-... | no ¬u~x = no (λ z → ¬u~x (head z))
-... | yes u~x with u ~>? V 
-... | no ¬u~V = no λ z → ¬u~V (tail z)
-... | yes U~V = yes (u~x All.∷ U~V)
-
-[] ≈? V = yes tt
-(x ∷ U) ≈? V with x ~>? V
-... | no ¬x~V = no (λ z → ¬x~V (proj₁ z))
-... | yes x~V with U ≈? V
-... | no ¬U~V = no (λ z → ¬U~V (proj₂ z))
-... | yes U~V = yes ⟨ x~V , U~V ⟩
-
-
-
-≈⇒Every : ∀ A B → A ≈ B → Every _~_ (mem A) (mem B)
-≈⇒Every (x ∷ A) B ⟨ x~B , A~B ⟩ a b (here refl) b∈B = 
-  lookup x~B b∈B
-≈⇒Every (x ∷ A) B ⟨ x~B , A~B ⟩ a b (there a∈A) b∈B = 
-  ≈⇒Every A B A~B a b a∈A b∈B
-
-Every⇒≈ : ∀ A B → Every _~_ (mem A) (mem B) → A ≈ B
-Every⇒≈ [] B A~B = tt
-Every⇒≈ (x ∷ A) B A~B = 
-  ⟨ tabulate (λ {b} b∈B → A~B x b (here refl) b∈B) 
-  , Every⇒≈ A B (λ a b a∈A b∈B → A~B a b (there a∈A) b∈B) ⟩
-
-{- Dational Operators -----------------------------------------------------}
+{- Denotational Operators -----------------------------------------------------}
 
 {-
 _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  Λ′
@@ -334,7 +82,7 @@ pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f , FV ⦆ = f ∈ D₁ × (mem FV ⊆ 
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 car : DOp (𝒫 Value) (■ ∷ [])
-car ⟨ D , _ ⟩ f = Σ[ FV ∈ List Value ] ⦅ f , FV ⦆ ∈ D
+car ⟨ D , _ ⟩ f = Σ[ FV ∈ List Value ] ⦅ f , FV ⦆ ∈ D × FV ≢ []
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
 cdr ⟨ D , _ ⟩ fv = Σ[ f ∈ Value ] Σ[ FV ∈ List Value ] ⦅ f , FV ⦆ ∈ D × fv ∈ (mem FV)
@@ -422,9 +170,17 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
    that we can use to prove delay now... so this is for the case where there is one non-parameter in the environment. -}
 𝒜Λ : DOp (𝒫 Value) (ν (ν ■) ∷ ■ ∷ [])
 𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ν) = fv ∈ D × mem FV ⊆ D
-𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ V ↦ w) = ∃[ a ] ∃[ A ] fv ∈ D × mem FV ⊆ D × Λ ⟨ F (mem (fv ∷ FV)) , ptt ⟩ (a , A ⊢ V ↦ w)
+𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ V ↦ w) = 
+  fv ∈ D × mem FV ⊆ D × w ∈ F (mem (fv ∷ FV)) (mem V) × V ≢ []
 𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ d = False
 
+
+⊆Λ : DOp (𝒫 Value) (ν (ν ■) ∷ ■ ∷ [])
+⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ν) = True 
+⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv' , FV' ⊢ V ↦ w) = 
+  Σ[ fv ∈ Value ] Σ[ FV ∈ List Value ] 
+      fv ∈ D × mem FV ⊆ D × w ∈ F (mem (fv ∷ FV)) (mem V) × V ≢ []
+⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ d = False
 
 {-
 Λ-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
@@ -534,10 +290,10 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
   G : 𝒜Λ ⟨ F , ⟨ D , ptt ⟩ ⟩ ⊆ 𝒜Λ ⟨ F' , ⟨ D' , ptt ⟩ ⟩
   G (fv , FV ⊢ν) ⟨ fv∈D , FV⊆D ⟩  = 
     ⟨ lower D⊆ fv fv∈D , (λ d z → lower D⊆ d (FV⊆D d z)) ⟩
-  G (fv , FV ⊢ V ↦ w) ⟨ a , ⟨ A , ⟨ fv∈D , ⟨ FV⊆D , ⟨ w∈ , neV ⟩ ⟩ ⟩ ⟩ ⟩ =
-    ⟨ a , ⟨ A , ⟨ lower D⊆ fv fv∈D , ⟨ (λ d z → lower D⊆ d (FV⊆D d z)) 
+  G (fv , FV ⊢ V ↦ w) ⟨ fv∈D , ⟨ FV⊆D , ⟨ w∈ , neV ⟩ ⟩ ⟩ =
+    ⟨ lower D⊆ fv fv∈D , ⟨ (λ d z → lower D⊆ d (FV⊆D d z)) 
     , ⟨ lower (F⊆ (mem (fv ∷ FV)) (mem (fv ∷ FV)) (λ d z → z) 
-                  (mem V) (mem V) (λ d z → z)) w w∈ , neV ⟩ ⟩ ⟩ ⟩ ⟩
+                  (mem V) (mem V) (λ d z → z)) w w∈ , neV ⟩ ⟩ ⟩
 
 
 pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
@@ -558,7 +314,7 @@ car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
-  G u ⟨ V , p∈ ⟩ = ⟨ V , D⊆ ⦅ u , V ⦆ p∈ ⟩ 
+  G u ⟨ V , ⟨ p∈ , neV ⟩ ⟩ = ⟨ V , ⟨ D⊆ ⦅ u , V ⦆ p∈ , neV ⟩ ⟩ 
 
 car-cong : congruent (■ ∷ []) ■ car
 car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -766,7 +522,7 @@ car-consis : consistent _~_ (■ ∷ []) ■ car
 car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (car ⟨ D , ptt ⟩) (car ⟨ D' , ptt ⟩)
-  G u u' ⟨ V , uV∈D ⟩ ⟨ V' , uV'∈D' ⟩ 
+  G u u' ⟨ V , ⟨ uV∈D , neV ⟩ ⟩ ⟨ V' , ⟨ uV'∈D' , neV' ⟩ ⟩ 
     with D~ ⦅ u , V ⦆ ⦅ u' , V' ⦆ uV∈D uV'∈D'
   ... | ⟨ u~ , v~ ⟩ = u~
 
