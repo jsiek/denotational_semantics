@@ -54,8 +54,9 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 
 {- \st -}
 ⋆ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-⋆ ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = λ w → Σ[ V ∈ List Value ] Σ[ fv ∈ Value ] Σ[ fvs ∈ List Value ] (fv , fvs ⊢ V ↦ w ∈ D₁)
-                  ×  (mem V ⊆ D₂)  ×  V ≢ []
+⋆ ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ w = 
+    Σ[ v ∈ Value ] Σ[ V ∈ List Value ] Σ[ fv ∈ Value ] Σ[ fvs ∈ List Value ] 
+      (fv , fvs ⊢ v , V ↦ w ∈ D₁) × (mem (v ∷ V) ⊆ D₂)
 
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
 ℬ B k _ (const {B′} k′)
@@ -67,25 +68,25 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
 𝓅 (base B) k v = ℬ B k v
 𝓅 (B ⇒ P) f _ (const k) = False
-𝓅 (B ⇒ P) f _ (fv , fvs ⊢ V ↦ w) =
-   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ 𝓅 P (f k) (ptt)
+𝓅 (B ⇒ P) f _ (fv , fvs ⊢ v , V ↦ w) =
+   Σ[ k ∈ base-rep B ] v ≡ (const {B} k) × V ≡ [] ×  w ∈ 𝓅 P (f k) (ptt)
 𝓅 (B ⇒ P) f _ (fv , FV ⊢ν) = True
 𝓅 (B ⇒ P) f _ ω = False
-𝓅 (B ⇒ P) k _ ⦅ u , v ⦆ = False
+𝓅 (B ⇒ P) k _ ⦅ u ∣ fv , FV ⦆ = False
 𝓅 (B ⇒ P) k _ ∥ vs ∥ = False
 𝓅 (B ⇒ P) k _ (left V) = False
 𝓅 (B ⇒ P) k _ (right V) = False
 
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f , FV ⦆ = f ∈ D₁ × (mem FV ⊆ D₂ × FV ≢ [])
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ fv , FV ⦆ = f ∈ D₁ × mem (fv ∷ FV) ⊆ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 car : DOp (𝒫 Value) (■ ∷ [])
-car ⟨ D , _ ⟩ f = Σ[ FV ∈ List Value ] ⦅ f , FV ⦆ ∈ D × FV ≢ []
+car ⟨ D , _ ⟩ f = Σ[ fv ∈ Value ] Σ[ FV ∈ List Value ] ⦅ f ∣ fv , FV ⦆ ∈ D
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
-cdr ⟨ D , _ ⟩ fv = Σ[ f ∈ Value ] Σ[ FV ∈ List Value ] ⦅ f , FV ⦆ ∈ D × fv ∈ (mem FV)
+cdr ⟨ D , _ ⟩ fv = Σ[ f ∈ Value ] Σ[ fv' ∈ Value ] Σ[ FV ∈ List Value ] ⦅ f ∣ fv' , FV ⦆ ∈ D × fv ∈ (mem (fv' ∷ FV))
 
 𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
@@ -103,7 +104,7 @@ cdr ⟨ D , _ ⟩ fv = Σ[ f ∈ Value ] Σ[ FV ∈ List Value ] ⦅ f , FV ⦆ 
 
 {-
 𝒜-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ ((fv ∷ fvs) ⊢ V ↦ w) = fv ∈ D × fv , fvs ⊢ V ↦ w ∈ F
+𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ ((fv ∷ fvs) ⊢ v , V ↦ w) = fv ∈ D × fv , fvs ⊢ v , V ↦ w ∈ F
 𝒜-cons ⟨ D , ⟨ F , _ ⟩ ⟩ d = False
 
 {-
@@ -134,21 +135,21 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
 ℛ ⟨ D , _ ⟩ _ = False
 
 𝒞 : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
-𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = (Σ[ V ∈ List Value ] Σ[ fv ∈ Value ] Σ[ fvs ∈ List Value ]
-                 left V ∈ D  ×  fv , fvs ⊢ V ↦ w ∈ E)
-          ⊎ (Σ[ V ∈ List Value ] Σ[ fv ∈ Value ] Σ[ fvs ∈ List Value ]
-                 right V ∈ D  ×  fv , fvs ⊢ V ↦ w ∈ F)
+𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] Σ[ fv ∈ Value ] Σ[ fvs ∈ List Value ]
+                 left V ∈ D  ×  fv , fvs ⊢ v , V ↦ w ∈ E)
+          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] Σ[ fv ∈ Value ] Σ[ fvs ∈ List Value ]
+                 right V ∈ D  ×  fv , fvs ⊢ v , V ↦ w ∈ F)
 
 𝒞-new : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞-new ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ V ∈ List Value ] left V ∈ D × w ∈ E (mem V) 
-          ⊎ (Σ[ V ∈ List Value ] right V ∈ D × w ∈ F (mem V))
+𝒞-new ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] left (v ∷ V) ∈ D × w ∈ E (mem (v ∷ V)) 
+          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] right (v ∷ V) ∈ D × w ∈ F (mem (v ∷ V)))
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ (const k) = False
-Λ ⟨ f , _ ⟩ (_ , _ ⊢ V ↦ w) = w ∈ f (mem V)  ×  V ≢ []
+Λ ⟨ f , _ ⟩ (_ , _ ⊢ v , V ↦ w) = w ∈ f (mem (v ∷ V))
 Λ ⟨ f , _ ⟩ (_ , _ ⊢ν) = True
 Λ ⟨ f , _ ⟩ ω = False
-Λ ⟨ f , _ ⟩ ⦅ u , v ⦆ = False
+Λ ⟨ f , _ ⟩ ⦅ f ∣ fv , FV ⦆ = False
 Λ ⟨ f , _ ⟩ ∥ vs ∥ = False
 Λ ⟨ f , _ ⟩ (left V) = False
 Λ ⟨ f , _ ⟩ (right V) = False
@@ -159,7 +160,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
 {- n entries _besides_ the argument -}
 Λn : ∀ n → DOp (𝒫 Value) (fv , FV ⊢ν-n n (ν ■) ∷ replicate n ■)
 Λn zero ⟨ F , _ ⟩ = Λ ⟨ F , ptt ⟩
-Λn (suc n) ⟨ F , ⟨ D , Ds ⟩ ⟩ ((FV ∷ FVs) ⊢ V ↦ w) = (mem FV) ⊆ D × FV ≢ [] × Λn n ⟨ F (mem FV) , Ds ⟩ (FVs ⊢ V ↦ w)
+Λn (suc n) ⟨ F , ⟨ D , Ds ⟩ ⟩ ((FV ∷ FVs) ⊢ v , V ↦ w) = (mem FV) ⊆ D × FV ≢ [] × Λn n ⟨ F (mem FV) , Ds ⟩ (FVs ⊢ v , V ↦ w)
 Λn (suc n) ⟨ F , ⟨ D , Ds ⟩ ⟩ (fv , FV ⊢ν) = True
 Λn (suc n) ⟨ F , ⟨ D , Ds ⟩ ⟩ d = False
 -}
@@ -170,27 +171,27 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
    that we can use to prove delay now... so this is for the case where there is one non-parameter in the environment. -}
 𝒜Λ : DOp (𝒫 Value) (ν (ν ■) ∷ ■ ∷ [])
 𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ν) = fv ∈ D × mem FV ⊆ D
-𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ V ↦ w) = 
-  fv ∈ D × mem FV ⊆ D × w ∈ F (mem (fv ∷ FV)) (mem V) × V ≢ []
+𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ v , V ↦ w) = 
+  fv ∈ D × mem FV ⊆ D × w ∈ F (mem (fv ∷ FV)) (mem (v ∷ V))
 𝒜Λ ⟨ F , ⟨ D , _ ⟩ ⟩ d = False
 
 
 ⊆Λ : DOp (𝒫 Value) (ν (ν ■) ∷ ■ ∷ [])
 ⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv , FV ⊢ν) = True 
-⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv' , FV' ⊢ V ↦ w) = 
+⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ (fv' , FV' ⊢ v , V ↦ w) = 
   Σ[ fv ∈ Value ] Σ[ FV ∈ List Value ] 
-      fv ∈ D × mem FV ⊆ D × w ∈ F (mem (fv ∷ FV)) (mem V) × V ≢ []
+      fv ∈ D × mem FV ⊆ D × w ∈ F (mem (fv ∷ FV)) (mem (v ∷ V))
 ⊆Λ ⟨ F , ⟨ D , _ ⟩ ⟩ d = False
 
 {-
 Λ-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-Λ-cons ⟨ D , ⟨ F , _ ⟩ ⟩ ((fv ∷ fvs) ⊢ V ↦ w) = fv ∈ D × fv , fvs ⊢ V ↦ w ∈ F
+Λ-cons ⟨ D , ⟨ F , _ ⟩ ⟩ ((fv ∷ fvs) ⊢ v , V ↦ w) = fv ∈ D × fv , fvs ⊢ v , V ↦ w ∈ F
 Λ-cons ⟨ D , ⟨ F , _ ⟩ ⟩ d = False
 -}
 
 {-
-un-𝒜 : ∀ n F Ds fvs V w → fv , fvs ⊢ V ↦ w ∈ 𝒜 n ⟨ Λ F , Ds ⟩ 
-      → [] ⊢ V ↦ w ∈ Λ F × ∥ fvs ∥ ∈ 𝒯 n Ds
+un-𝒜 : ∀ n F Ds fvs V w → fv , fvs ⊢ v , V ↦ w ∈ 𝒜 n ⟨ Λ F , Ds ⟩ 
+      → [] ⊢ v , V ↦ w ∈ Λ F × ∥ fvs ∥ ∈ 𝒯 n Ds
 un-𝒜 zero F Ds [] V w d∈ = ⟨ d∈ , refl ⟩
 un-𝒜 zero F Ds (x ∷ fvs) V w ()
 un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-𝒜 n F Ds fvs V w ds∈
@@ -202,7 +203,7 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
 Λ' : ∀ (n : ℕ) → (𝒫 Value → 𝒫 Value) → Π n (𝒫 Value)
                → 𝒫 Value
 Λ' n ⟦fvs⟧ f (const k) = False
-Λ' n ⟦fvs⟧ f (fv , fvs ⊢ V ↦ w) = w ∈ f (mem V) × V ≢ [] × Σ[ n≡ ∈ n ≡ length fvs ]
+Λ' n ⟦fvs⟧ f (fv , fvs ⊢ v , V ↦ w) = w ∈ f (mem (v ∷ V)) × V ≢ [] × Σ[ n≡ ∈ n ≡ length fvs ]
                             rel-Π (_⊆_) (Π-map mem (toΠ fvs)) 
                                         (subst (λ z → Π z (𝒫 Value)) n≡ ⟦fvs⟧)
 Λ' n ⟦fvs⟧ f (fv , FV ⊢ν) = True
@@ -223,8 +224,8 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
 ⋆-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G d ⟨ V , ⟨ fv , ⟨ fvs , ⟨ wv∈D , ⟨ V<E , Vne ⟩ ⟩ ⟩ ⟩ ⟩ =
-     ⟨ V , ⟨ fv , ⟨ fvs , ⟨ D⊆ (fv , fvs ⊢ V ↦ d) wv∈D , ⟨ (λ d z → E⊆ d (V<E d z)) , Vne ⟩ ⟩ ⟩ ⟩ ⟩
+  G d ⟨ v , ⟨ V , ⟨ fv , ⟨ fvs , ⟨ wv∈D , V<E ⟩ ⟩ ⟩ ⟩ ⟩ =
+     ⟨ v , ⟨ V , ⟨ fv , ⟨ fvs , ⟨ D⊆ (fv , fvs ⊢ v , V ↦ d) wv∈D , (λ d z → E⊆ d (V<E d z)) ⟩ ⟩ ⟩ ⟩ ⟩
 
 ⋆-cong : congruent (■ ∷ ■ ∷ []) ■ ⋆
 ⋆-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
@@ -238,15 +239,15 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
   where 
   G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
-  G (_ , _ ⊢ V ↦ w) ⟨ w∈F₁X , V≢[] ⟩ = 
-    ⟨ lower (F⊆ (mem V) (mem V) (λ d z → z)) w w∈F₁X , V≢[] ⟩
+  G (_ , _ ⊢ v , V ↦ w) w∈F₁X = 
+    lower (F⊆ (mem (v ∷ V)) (mem ( v ∷ V)) (λ d z → z)) w w∈F₁X
   G (_ , _ ⊢ν) v∈ = tt
 
 Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ⊆ F₂ X)
   → Λ ⟨ F₁ , ptt ⟩ ⊆ Λ ⟨ F₂ , ptt ⟩
-Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (_ , _ ⊢ V ↦ w) ⟨ w∈F₁X , V≢[] ⟩ =
-    ⟨ F₁⊆F₂ w w∈F₁X , V≢[] ⟩
+Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (_ , _ ⊢ v , V ↦ w) w∈F₁X =
+    F₁⊆F₂ w w∈F₁X
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (_ , _ ⊢ν) v∈ = tt
 
 Λ-ext : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
@@ -258,16 +259,16 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
 Λ-cong ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F≃ , _ ⟩ = lift ⟨ G1 , G2 ⟩
   where
   G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
-  G1 (_ , _ ⊢ V ↦ w) ⟨ w∈FV , Vne ⟩ = ⟨ proj₁ (lower
-     (F≃ (mem V) (mem V)
+  G1 (_ , _ ⊢ v , V ↦ w) w∈FV = proj₁ (lower
+     (F≃ (mem (v ∷ V)) (mem (v ∷ V))
           ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
-             w w∈FV , Vne ⟩
+             w w∈FV
   G1 (_ , _ ⊢ν) tt = tt
   G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
-  G2 (_ , _ ⊢ V ↦ w) ⟨ w∈F'V , Vne ⟩ = ⟨  proj₂ (lower 
-     (F≃ (mem V) (mem V) 
+  G2 (_ , _ ⊢ v , V ↦ w) w∈F'V = proj₂ (lower 
+     (F≃ (mem (v ∷ V)) (mem (v ∷ V)) 
          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
-         w w∈F'V  , Vne  ⟩
+         w w∈F'V
   G2 (_ , _ ⊢ν) tt = tt
 
 {- 
@@ -277,11 +278,11 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
   where 
   G : Λn (suc n) ⟨ F , ⟨ D , Ds ⟩ ⟩ ⊆ Λn (suc n) ⟨ F' , ⟨ D' , Ds' ⟩ ⟩
   G (fv , FV ⊢ν) tt = tt
-  G ((FV ∷ FVs) ⊢ V ↦ d) ⟨ FV⊆D , ⟨ neFV , d∈ ⟩ ⟩ = 
+  G ((FV ∷ FVs) ⊢ v , V ↦ d) ⟨ FV⊆D , ⟨ neFV , d∈ ⟩ ⟩ = 
      ⟨ (λ z z∈ → lower D⊆ z (FV⊆D z z∈)) , ⟨ neFV , 
      lower (Λn-mono n ⟨ F (mem FV) , Ds ⟩ 
                    ⟨ F' (mem FV) , Ds' ⟩ ⟨ F⊆ (mem FV) (mem FV) (λ d z → z) , Ds⊆ ⟩)  
-                   (FVs ⊢ V ↦ d) d∈ ⟩ ⟩
+                   (FVs ⊢ v , V ↦ d) d∈ ⟩ ⟩
 -}
 
 𝒜Λ-mono : monotone (ν (ν ■) ∷ ■ ∷ []) ■ 𝒜Λ
@@ -290,17 +291,17 @@ un-𝒜 (suc n) F ⟨ D , Ds ⟩ (x ∷ fvs) V w ⟨ d∈ , ds∈ ⟩ with un-�
   G : 𝒜Λ ⟨ F , ⟨ D , ptt ⟩ ⟩ ⊆ 𝒜Λ ⟨ F' , ⟨ D' , ptt ⟩ ⟩
   G (fv , FV ⊢ν) ⟨ fv∈D , FV⊆D ⟩  = 
     ⟨ lower D⊆ fv fv∈D , (λ d z → lower D⊆ d (FV⊆D d z)) ⟩
-  G (fv , FV ⊢ V ↦ w) ⟨ fv∈D , ⟨ FV⊆D , ⟨ w∈ , neV ⟩ ⟩ ⟩ =
+  G (fv , FV ⊢ v , V ↦ w) ⟨ fv∈D , ⟨ FV⊆D , w∈ ⟩ ⟩ =
     ⟨ lower D⊆ fv fv∈D , ⟨ (λ d z → lower D⊆ d (FV⊆D d z)) 
-    , ⟨ lower (F⊆ (mem (fv ∷ FV)) (mem (fv ∷ FV)) (λ d z → z) 
-                  (mem V) (mem V) (λ d z → z)) w w∈ , neV ⟩ ⟩ ⟩
+    , lower (F⊆ (mem (fv ∷ FV)) (mem (fv ∷ FV)) (λ d z → z) 
+                  (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) w w∈ ⟩ ⟩
 
 
 pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ⦅ f , V ⦆ ⟨ f∈D , ⟨ V⊆E , neV ⟩ ⟩ = ⟨   D⊆ f f∈D , ⟨ (λ d z → E⊆ d (V⊆E d z)) , neV ⟩ ⟩
+  G ⦅ f ∣ fv , FV ⦆ ⟨ f∈D , V⊆E ⟩ = ⟨  D⊆ f f∈D , (λ d z → E⊆ d (V⊆E d z)) ⟩
 
 pair-cong : congruent (■ ∷ ■ ∷ []) ■ pair
 pair-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
@@ -314,7 +315,7 @@ car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
-  G u ⟨ V , ⟨ p∈ , neV ⟩ ⟩ = ⟨ V , ⟨ D⊆ ⦅ u , V ⦆ p∈ , neV ⟩ ⟩ 
+  G u ⟨ v , ⟨ V , p∈ ⟩ ⟩ = ⟨ v , ⟨ V , D⊆ ⦅ u ∣ v , V ⦆ p∈ ⟩ ⟩ 
 
 car-cong : congruent (■ ∷ []) ■ car
 car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -327,7 +328,7 @@ cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
-  G v ⟨ u , ⟨ V , ⟨ uV∈ , v∈ ⟩ ⟩ ⟩ = ⟨ u , ⟨ V , ⟨ D⊆ ⦅ u , V ⦆ uV∈ , v∈ ⟩ ⟩ ⟩
+  G v ⟨ u , ⟨ v , ⟨ V , ⟨ uV∈ , v∈ ⟩ ⟩ ⟩ ⟩ = ⟨ u , ⟨ v , ⟨ V , ⟨ D⊆ ⦅ u ∣ v , V ⦆ uV∈ , v∈ ⟩ ⟩ ⟩ ⟩
 
 cdr-cong : congruent (■ ∷ []) ■ cdr
 cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -368,22 +369,22 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
        ⟨ lift D⊆ , ⟨ lift FL⊆ , ⟨ lift FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ V , ⟨ fv , ⟨ fvs , ⟨ inlV∈ , v∈ ⟩ ⟩ ⟩ ⟩) = 
-    inj₁ ⟨ V , ⟨ fv , ⟨ fvs , ⟨ D⊆ (left V) inlV∈ , FL⊆ (fv , fvs ⊢ V ↦ d) v∈ ⟩ ⟩ ⟩ ⟩
-  G d (inj₂ ⟨ V , ⟨ fv , ⟨ fvs , ⟨ inrV∈ , v∈ ⟩ ⟩ ⟩ ⟩) = 
-    inj₂ ⟨ V , ⟨ fv , ⟨ fvs , ⟨ D⊆ (right V) inrV∈ , FR⊆ (fv , fvs ⊢ V ↦ d) v∈ ⟩ ⟩ ⟩ ⟩
+  G d (inj₁ ⟨ v , ⟨ V , ⟨ fv , ⟨ fvs , ⟨ inlV∈ , v∈ ⟩ ⟩ ⟩ ⟩) = 
+    inj₁ ⟨ v , ⟨ V , ⟨ fv , ⟨ fvs , ⟨ D⊆ (left V) inlV∈ , FL⊆ (fv , fvs ⊢ v , V ↦ d) v∈ ⟩ ⟩ ⟩ ⟩ ⟩
+  G d (inj₂ ⟨ v , ⟨ V , ⟨ fv , ⟨ fvs , ⟨ inrV∈ , v∈ ⟩ ⟩ ⟩ ⟩ ⟩) = 
+    inj₂ ⟨ v , ⟨ V , ⟨ fv , ⟨ fvs , ⟨ D⊆ (right V) inrV∈ , FR⊆ (fv , fvs ⊢ v , V ↦ d) v∈ ⟩ ⟩ ⟩ ⟩ ⟩
 
 𝒞-new-mono : monotone (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞-new
 𝒞-new-mono ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
        ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : 𝒞-new ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞-new ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
-    inj₁ ⟨ V , ⟨ D⊆ (left V) V∈ 
-         , lower (FL⊆ (mem V) (mem V) (λ d z → z)) d d∈ ⟩ ⟩
+  G d (inj₁ ⟨ v , ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩ ⟩) = 
+    inj₁ ⟨ v , ⟨ V , ⟨ D⊆ (left V) V∈ 
+         , lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
   G d (inj₂ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
     inj₂ ⟨ V , ⟨ D⊆ (right V) V∈ 
-         , lower (FR⊆ (mem V) (mem V) (λ d z → z)) d d∈ ⟩ ⟩
+         , lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩
 
 𝒞-cong : congruent (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
 𝒞-cong ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
@@ -428,8 +429,8 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
 𝒜-cons-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : 𝒜-cons ⟨ D , ⟨ E , _ ⟩ ⟩ ⊆ 𝒜-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩
-  G ((fv ∷ fvs) ⊢ V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
-    ⟨ D⊆ fv fv∈ , E⊆ (fv , fvs ⊢ V ↦ w) d∈ ⟩
+  G ((fv ∷ fvs) ⊢ v , V ↦ w) ⟨ fv∈ , d∈ ⟩ = 
+    ⟨ D⊆ fv fv∈ , E⊆ (fv , fvs ⊢ v , V ↦ w) d∈ ⟩
 
 𝒜-mono : ∀ n → monotone (■ ∷ replicate n ■) ■ (𝒜 n)
 𝒜-mono n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ (lift F⊆) , Ds⊆ ⟩ = 
@@ -466,8 +467,8 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
 Λ'-mono : ∀ n F G → result-rel-pres _⊆_ (ν ■) F G → ∀ (Ds Es : Π n (𝒫 Value)) 
                   → rel-Π _⊆_ Ds Es → Λ' n Ds F ⊆ Λ' n Es G
 Λ'-mono n F G F⊆ Ds Es Ds⊆ (fv , FV ⊢ν) d∈ = d∈
-Λ'-mono n F G F⊆ Ds Es Ds⊆ (fv , fvs ⊢ V ↦ w) ⟨ w∈ , ⟨ Vne , ⟨ refl , fvs⊆Ds ⟩ ⟩ ⟩ = 
-      ⟨ lower (F⊆ (mem V) (mem V) (λ x z → z)) w w∈ 
+Λ'-mono n F G F⊆ Ds Es Ds⊆ (fv , fvs ⊢ v , V ↦ w) ⟨ w∈ , ⟨ Vne , ⟨ refl , fvs⊆Ds ⟩ ⟩ ⟩ = 
+      ⟨ lower (F⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ x z → z)) w w∈ 
       , ⟨ Vne , ⟨ refl , helper fvs Ds Es Ds⊆ fvs⊆Ds ⟩ ⟩ ⟩
   where
   helper : ∀ fvs (Ds Es : Π (length fvs) (𝒫 Value))
@@ -493,7 +494,7 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
   G : Every _~_ (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) (⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G u v ⟨ V , ⟨ fv , ⟨ fvs , ⟨ wv∈D , ⟨ V<E , Vne ⟩ ⟩ ⟩ ⟩ ⟩ 
         ⟨ V' , ⟨ fv' , ⟨ fvs' , ⟨ wv∈D' , ⟨ V<E' , Vne' ⟩ ⟩ ⟩ ⟩ ⟩ 
-        with D~ (fv , fvs ⊢ V ↦ u) (fv' , fvs' ⊢ V' ↦ v) wv∈D wv∈D'
+        with D~ (fv , fvs ⊢ v , V ↦ u) (fv' , fvs' ⊢ v , V' ↦ v) wv∈D wv∈D'
   ... | inj₁ x = ⊥-elim (x (Every⇒≈ V V' (Every-⊆ E~ V<E V<E')))
   ... | inj₂ y = proj₂ y
 
@@ -503,11 +504,11 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
   G : Every _~_ (Λ ⟨ F , ptt ⟩) (Λ ⟨ F' , ptt ⟩)
   G (_ , _ ⊢ν) (_ , _ ⊢ x₁ ↦ v) tt _ = tt
   G (_ , _ ⊢ν) (_ , _ ⊢ν) tt _ = tt
-  G (_ , _ ⊢ V ↦ w) (_ , _ ⊢ν) ⟨ w∈F₁X , V≢[] ⟩ tt = tt
-  G (_ , _ ⊢ V ↦ w) (_ , _ ⊢ V' ↦ w') 
+  G (_ , _ ⊢ v , V ↦ w) (_ , _ ⊢ν) ⟨ w∈F₁X , V≢[] ⟩ tt = tt
+  G (_ , _ ⊢ v , V ↦ w) (_ , _ ⊢ v , V' ↦ w') 
     ⟨ w∈F₁X , V≢[] ⟩ ⟨ w∈F₁X' , V≢[]' ⟩ with V ≈? V'
   ... | yes V≈V' = 
-    inj₂ ⟨ V≈V' , lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
+    inj₂ ⟨ V≈V' , lower (F~ (mem (v ∷ V)) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
   ... | no ¬V≈V' = inj₁ ¬V≈V'
 
 pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
@@ -555,7 +556,7 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   G : Every _~_ (𝒞 ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
   G u v (inj₁ ⟨ V , ⟨ fv , ⟨ fvs , ⟨ inlV∈ , v∈ ⟩ ⟩ ⟩ ⟩)
         (inj₁ ⟨ V' , ⟨ fv' , ⟨ fvs' , ⟨ inlV∈' , v∈' ⟩ ⟩ ⟩ ⟩) 
-    with FL~ (fv , fvs ⊢ V ↦ u) (fv' , fvs' ⊢ V' ↦ v) v∈ v∈'
+    with FL~ (fv , fvs ⊢ v , V ↦ u) (fv' , fvs' ⊢ v , V' ↦ v) v∈ v∈'
   ... | inj₂ y = proj₂ y
   ... | inj₁ x with D~ (left V) (left V') inlV∈ inlV∈' 
   ... | q = ⊥-elim (x q)
@@ -567,7 +568,7 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
         ⊥-elim (D~ (right V) (left V') inrV∈ inlV∈')
   G u v (inj₂ ⟨ V , ⟨ fv , ⟨ fvs , ⟨ inrV∈ , u∈ ⟩ ⟩ ⟩ ⟩) 
         (inj₂ ⟨ V' , ⟨ fv' , ⟨ fvs' , ⟨ inrV∈' , v∈ ⟩ ⟩ ⟩ ⟩) 
-    with FR~ (fv , fvs ⊢ V ↦ u) (fv' , fvs' ⊢ V' ↦ v) u∈ v∈ 
+    with FR~ (fv , fvs ⊢ v , V ↦ u) (fv' , fvs' ⊢ v , V' ↦ v) u∈ v∈ 
   ... | inj₂ y = proj₂ y
   ... | inj₁ x with D~ (right V) (right V') inrV∈ inrV∈'
   ... | q = ⊥-elim (x q)
@@ -580,7 +581,7 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   G : Every _~_ (𝒞-new ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞-new ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
   G u v (inj₁ ⟨ V , ⟨ V∈ , u∈ ⟩ ⟩) (inj₁ ⟨ V' , ⟨ V∈' , v∈ ⟩ ⟩)
    with D~ (left V) (left V') V∈ V∈'
-  ... | V≈V' with FL~ (mem V) (mem V') (≈⇒Every V V' V≈V')
+  ... | V≈V' with FL~ (mem (v ∷ V)) (mem V') (≈⇒Every V V' V≈V')
   ... | lift FL-V~ = FL-V~ u v u∈ v∈
   G u v (inj₁ ⟨ V , ⟨ V∈ , u∈ ⟩ ⟩) (inj₂ ⟨ V' , ⟨ V∈' , v∈ ⟩ ⟩) = 
     ⊥-elim (D~ (left V) (right V') V∈ V∈')
@@ -588,7 +589,7 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
     ⊥-elim (D~ (right V) (left V') V∈ V∈')
   G u v (inj₂ ⟨ V , ⟨ V∈ , u∈ ⟩ ⟩) (inj₂ ⟨ V' , ⟨ V∈' , v∈ ⟩ ⟩) 
    with D~ (right V) (right V') V∈ V∈' 
-  ... | V≈V' with FR~ (mem V) (mem V') (≈⇒Every V V' V≈V')
+  ... | V≈V' with FR~ (mem (v ∷ V)) (mem V') (≈⇒Every V V' V≈V')
   ... | lift FR-V~ = FR-V~ u v u∈ v∈
 
 nth-~ : ∀ i us vs → ∥ us ∥ ~ ∥ vs ∥ → 
@@ -663,8 +664,8 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
 𝒜-cons-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
   G : Every _~_ (𝒜-cons ⟨ D , ⟨ E , _ ⟩ ⟩) (𝒜-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩)
-  G ((fv ∷ fvs) ⊢ V ↦ w) ((fv' ∷ fvs') ⊢ V' ↦ w') ⟨ fvs⊆ , u∈ ⟩ ⟨ fvs'⊆ , v∈ ⟩
-     = E~ (fv , fvs ⊢ V ↦ w) (fv' , fvs' ⊢ V' ↦ w') u∈ v∈
+  G ((fv ∷ fvs) ⊢ v , V ↦ w) ((fv' ∷ fvs') ⊢ v , V' ↦ w') ⟨ fvs⊆ , u∈ ⟩ ⟨ fvs'⊆ , v∈ ⟩
+     = E~ (fv , fvs ⊢ v , V ↦ w) (fv' , fvs' ⊢ v , V' ↦ w') u∈ v∈
 
 𝒜-consis : ∀ n → consistent _~_ (■ ∷ replicate n ■) ■ (𝒜 n)
 𝒜-consis n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
@@ -770,7 +771,7 @@ monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
   Λ-▪-⊆ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
     → monotone F  →  (Λ F) ▪ X ⊆ F X
   Λ-▪-⊆ {F} {X} Fmono w ⟨ V , ⟨ fvs , ⟨ ⟨ w∈FV , _ ⟩ , ⟨ V<X , V≢[] ⟩ ⟩ ⟩ ⟩ =
-      Fmono (mem V) X V<X w w∈FV
+      Fmono (mem (v ∷ V)) X V<X w w∈FV
 
   ⊆-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
     → continuous F  → nonempty X →  F X ⊆ (Λ F) ▪ X
@@ -873,7 +874,7 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
   where
   fwd : 𝒞 (ℒ D) (Λ F) (Λ G) ⊆ F D
   fwd v (inj₁ ⟨ V , ⟨ fvs , ⟨ ⟨ _ , V⊆D ⟩ , ⟨ v∈F[V] , V≢[] ⟩ ⟩ ⟩ ⟩) =
-      Fmono (mem V) D V⊆D v v∈F[V]
+      Fmono (mem (v ∷ V)) D V⊆D v v∈F[V]
 
   back : F D ⊆ 𝒞 (ℒ D) (Λ F) (Λ G)
   back v v∈F[D]
@@ -890,7 +891,7 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
   where
   fwd : 𝒞 (ℛ D) (Λ F) (Λ G) ⊆ G D
   fwd v (inj₂ ⟨ V , ⟨ fvs , ⟨ ⟨ _ , V⊆D ⟩ , ⟨ v∈G[V] , V≢[] ⟩ ⟩ ⟩ ⟩) =
-      Gmono (mem V) D V⊆D v v∈G[V]
+      Gmono (mem (v ∷ V)) D V⊆D v v∈G[V]
 
   back : G D ⊆ 𝒞 (ℛ D) (Λ F) (Λ G)
   back v v∈G[D]
@@ -1104,7 +1105,7 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ (D ρ₃) ▪ (E ρ₃)
 ▪-continuous {D}{E}{ρ}{NE-ρ}{w} ⟨ V , ⟨ fvs , ⟨ V↦w∈Dρ , ⟨ V⊆Eρ , V≢[] ⟩ ⟩ ⟩ ⟩
     IH-D IH-E mD mE
-    with IH-D (fv , fvs ⊢ V ↦ w) V↦w∈Dρ 
+    with IH-D (fv , fvs ⊢ v , V ↦ w) V↦w∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈Dρ₁ ⟩ ⟩ ⟩
     with ((continuous-∈⇒⊆ E ρ NE-ρ mE) V V⊆Eρ (λ v v∈V → IH-E v))
 ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆Eρ₂ ⟩ ⟩ ⟩ =
@@ -1112,8 +1113,8 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
     where
     ρ₃ = ρ₁ ⊔ₑ ρ₂
     ρ₁⊆ρ₃ = λ x v z → inj₁ z
-    V↦w∈Dρ₃ : fv , fvs ⊢ V ↦ w ∈ D ρ₃
-    V↦w∈Dρ₃ = mD ρ₁⊆ρ₃ (fv , fvs ⊢ V ↦ w) V↦w∈Dρ₁
+    V↦w∈Dρ₃ : fv , fvs ⊢ v , V ↦ w ∈ D ρ₃
+    V↦w∈Dρ₃ = mD ρ₁⊆ρ₃ (fv , fvs ⊢ v , V ↦ w) V↦w∈Dρ₁
     ρ₂⊆ρ₄ = λ x v z → inj₂ z
     V⊆Eρ₃ : mem V ⊆ E ρ₃
     V⊆Eρ₃ v v∈V = mE ρ₂⊆ρ₄ v (V⊆Eρ₂ v v∈V)
@@ -1125,7 +1126,7 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
   → (∀ V → V ≢ [] → continuous-env E (mem V • ρ))
   → monotone-env E
   → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ Λ (λ D → E (D • ρ′))
-Λ-continuous {E}{ρ}{NE-ρ}{fv , fvs ⊢ V ↦ w} ⟨ w∈EV•ρ , ⟨ V≢[] , fvs≡[] ⟩ ⟩ IH mE
+Λ-continuous {E}{ρ}{NE-ρ}{fv , fvs ⊢ v , V ↦ w} ⟨ w∈EV•ρ , ⟨ V≢[] , fvs≡[] ⟩ ⟩ IH mE
     with IH V V≢[] w w∈EV•ρ
 ... | ⟨ ρ′ , ⟨ fρ′ , ⟨ ρ′⊆V•ρ , w∈Eρ′ ⟩ ⟩ ⟩ =
     ⟨ (λ x → ρ′ (suc x)) , ⟨ (λ x → fρ′ (suc x)) , ⟨ (λ x → ρ′⊆V•ρ (suc x)) ,

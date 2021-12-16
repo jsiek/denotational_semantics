@@ -304,7 +304,8 @@ delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ d
 ... | no FV⊈ | G1 = 
    ⟨ fros V , ⟨ {!   !} , ⟨ {!   !} , ⟨ {!   !} , ⟨ G2 , fro-ne V neV ⟩ ⟩ ⟩ ⟩ ⟩ 
   where
-  G1 : 
+  G1 : ?
+  G1 = ?
   G2 : mem (fros V) ⊆ ⟦ N ⟧ (env-map fro ρ)
   G2 = delay-reflect-⊆ N ρ V V⊆N'
 ... | yes FV⊆ | G1
