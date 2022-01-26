@@ -1,3 +1,5 @@
+{-# OPTIONS --no-positivity-check #-}
+
 open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
@@ -162,154 +164,110 @@ del-map-args-preserve {zero} args ρ = lift tt
 del-map-args-preserve {suc n} (M ,, args) ρ = 
   ⟨ lift (delay-preserve M ρ) , del-map-args-preserve args ρ ⟩
 
+data _≈del_ : List Value → List Value → Set
+data _~del_ : Value → Value → Set where
+  ~del-const : ∀ {B} (k : base-rep B) → const k ~del const k
+  ~del-ω : ω ~del ω
+  ~del-L : ∀ {v V v' V'} 
+           → (v ∷ V) ≈del (v' ∷ V')
+           → (left v , V) ~del (left v' , V')
+  ~del-R : ∀ {v V v' V'} 
+           → (v ∷ V) ≈del (v' ∷ V')
+           → (right v , V) ~del (right v' , V')
+  ~del-ν : ∀ {fv FV fv' FV' a A b B c C} 
+           → mem (fv' ∷ FV') ⊆ mem (fv ∷ FV)
+           → (a , A ⊢ν) ~del ⦅ (b , B ⊢ fv' , FV' ↦ (c , C ⊢ν)) ∣ fv , FV ⦆
+  ~del-clos : ∀ {fv FV fv' FV' v V v' V' w w' a A b B c C} 
+           → mem (fv' ∷ FV') ⊆ mem (fv ∷ FV)
+           → ((¬ ((v ∷ V) ≈del (v' ∷ V'))) ⊎ ((v ∷ V) ≈del (v' ∷ V')) × w ~del w')
+           → (a , A ⊢ v , V ↦ w) ~del ⦅ (b , B ⊢ fv' , FV' ↦ (c , C ⊢ v' , V' ↦ w')) ∣ fv , FV ⦆
+  ~del-tup : ∀ {ds ds'}
+           → ds ≈del ds'
+           → ∥ ds ∥ ~del ∥ ds' ∥
+  ~del-pair : ∀ {d fv FV} → ⦅ d ∣ fv , FV ⦆ ~del ω
+
+data _≈del_ where
+  ≈del-nil : [] ≈del []
+  ≈del-cons : ∀ {v v' V V'}
+            → v ~del v'
+            → V ≈del V'
+            → (v ∷ V) ≈del (v' ∷ V')
+
+≈del-length : ∀ {V V'} → V ≈del V' → length V ≡ length V'
+≈del-length ≈del-nil = refl
+≈del-length (≈del-cons v~ V~) = cong suc (≈del-length V~)
+
+≈del-nth : ∀ {V V'} → V ≈del V' → ∀ i → nth V i ~del nth V' i
+≈del-nth ≈del-nil i = ~del-ω
+≈del-nth (≈del-cons v~ V~) zero = v~
+≈del-nth (≈del-cons v~ V~) (suc i) = ≈del-nth V~ i
+
+≈del-tos : ∀ ds → ds ≈del (tos ds)
+~del-to : ∀ d → d ~del (to d)
+~del-to (const k) = ~del-const k
+~del-to (d , FV ⊢ d₁ , V ↦ d₂) = ~del-clos (λ v z → z) (inj₂ ⟨ ≈del-cons (~del-to d₁) (≈del-tos V) , ~del-to d₂ ⟩)
+~del-to (d , FV ⊢ν) = ~del-ν (λ v z → z)
+~del-to ω = ~del-ω
+~del-to ⦅ d ∣ d₁ , FV ⦆ = ~del-pair
+~del-to ∥ ds ∥ = ~del-tup (≈del-tos ds)
+~del-to (left v , V) = ~del-L (≈del-cons (~del-to v) (≈del-tos V))
+~del-to (right v , V) = ~del-R (≈del-cons (~del-to v) (≈del-tos V))
+≈del-tos [] = ≈del-nil
+≈del-tos (x ∷ ds) = ≈del-cons (~del-to x) (≈del-tos ds)
+
+~del-env : Env Value → Env Value → Set
+~del-env ρ ρ' = ∀ i d → d ∈ ρ i → Σ[ d' ∈ Value ] d' ∈ ρ' i × d ~del d'
+
+~del-env-rev : Env Value → Env Value → Set
+~del-env-rev ρ ρ' = ∀ i d' → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × d ~del d'
+
+del-preserve : ∀ M ρ d → d ∈ ⟦ M ⟧ ρ → Σ[ ρ' ∈ Env Value ] ~del-env ρ ρ' × Σ[ d' ∈ Value ] d ~del d' × d' ∈ ⟦ delay M ⟧' ρ'
+del-preserve M ρ d d∈ = ⟨ env-map to ρ , ⟨ (λ i d' d'∈ → ⟨ to d' , ⟨ ⟨ d' , ⟨ d'∈ , refl ⟩ ⟩ , ~del-to d' ⟩ ⟩) , ⟨ to d , ⟨ ~del-to d , delay-preserve M ρ d d∈ ⟩ ⟩ ⟩ ⟩
 
 
-
-
-{-
-need to check for equality of fv' with fv
-and FV' with FV
-
--}
-
-fros : List Value → List Value
-fro : Value → Value
-fro (const x) = const x
-fro (fv , FV ⊢ v , V ↦ w) = ω
-fro (fv , FV ⊢ν) = ω
-fro ω = ω
-fro ⦅ (_ , _ ⊢ν) ∣ fv , FV ⦆ = fro fv , fros FV ⊢ν
-fro ⦅ (_ , _ ⊢ fv , FV ↦ (_ , _ ⊢ν)) ∣ fv' , FV' ⦆ = fro fv' , fros FV' ⊢ν
-fro ⦅ _ , _ ⊢ fv , FV ↦ (_ , _ ⊢ v , V ↦ w) ∣ fv' , FV' ⦆ 
-   with (fv ∷ FV) mem⊆? (fv' ∷ FV')
-... | yes FV⊆FV' = fro fv , fros FV ⊢ fro v , fros V ↦ fro w
-... | no FV⊈FV' = fro fv' , fros FV' ⊢ν
-fro ⦅ U ∣ v , V ⦆ = ω
-fro ∥ xs ∥ = ∥ fros xs ∥
-fro (left v , V) = left fro v , fros V
-fro (right v , V) = right fro v , fros V
-fros List.[] = []
-fros (d List.∷ ds) = fro d List.∷ fros ds
-
-
-fro-set : 𝒫 Value → 𝒫 Value
-fro-set S v = Σ[ d ∈ Value ] d ∈ S × v ≡ fro d
-
-_fro-⊆_ : 𝒫 Value → 𝒫 Value → Set
-A fro-⊆ B = ∀ d → d ∈ A → fro d ∈ B
-
-fro-ne : ∀ V → V ≢ [] → fros V ≢ []
-fro-ne [] neV = ⊥-elim (neV refl)
-fro-ne (x ∷ V) neV ()
-
-fros-length : ∀ V → length (fros V) ≡ length V
-fros-length [] = refl
-fros-length (x ∷ V) = cong suc (fros-length V)
-
-fros-nth : ∀ V i → fro (nth V i) ≡ nth (fros V) i
-fros-nth [] zero = refl
-fros-nth (x ∷ V) zero = refl
-fros-nth [] (suc i) = refl
-fros-nth (x ∷ V) (suc i) = fros-nth V i
-
-fro-∈-mem : ∀ {a}{V} → a ∈ (mem V) → fro a ∈ mem (fros V)
-fro-∈-mem (here px) = here (cong fro px)
-fro-∈-mem (there a∈) = there (fro-∈-mem a∈)
-
-∈-mem-fros : ∀ {d}{V} → d ∈ mem (fros V) → Σ[ a ∈ Value ] a ∈ mem V × d ≡ fro a
-∈-mem-fros {d} {x ∷ V} (here px) = ⟨ x , ⟨ here refl , px ⟩ ⟩
-∈-mem-fros {d} {x ∷ V} (there d∈) with ∈-mem-fros d∈
-... | ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = ⟨ a , ⟨ there a∈ , refl ⟩ ⟩
-
-fro-mem-rewrite : ∀ V ρ → env-map fro (mem V • ρ) ⊆ₑ (mem (fros V)) • env-map fro ρ
-fro-mem-rewrite V ρ zero d ⟨ a , ⟨ a∈V , refl ⟩ ⟩ = fro-∈-mem a∈V
-fro-mem-rewrite V ρ (suc x) d d∈ρx = d∈ρx
-
-
-data _⊑_⊔_ : Value → Value → Value → Set where
-  ⊑-clos-L : ∀ {f₁} f₂ {fv₁ fv₂ fv' FV₁ FV₂ FV'}
-           → (∀ d → d ∈ mem (fv' ∷ FV') → ((d ∈ mem (fv₁ ∷ FV₁)) 
-                                           ⊎ (d ∈ mem (fv₂ ∷ FV₂))))
-           → ⦅ f₁ ∣ fv' , FV' ⦆ ⊑ ⦅ f₁ ∣ fv₁ , FV₁ ⦆ ⊔ ⦅ f₂ ∣ fv₂ , FV₂ ⦆
-  ⊑-clos-R : ∀ f₁ {f₂ fv₁ fv₂ fv' FV₁ FV₂ FV'}
-           → (∀ d → d ∈ mem (fv' ∷ FV') → ((d ∈ mem (fv₁ ∷ FV₁)) 
-                                           ⊎ (d ∈ mem (fv₂ ∷ FV₂))))
-           → ⦅ f₂ ∣ fv' , FV' ⦆ ⊑ ⦅ f₁ ∣ fv₁ , FV₁ ⦆ ⊔ ⦅ f₂ ∣ fv₂ , FV₂ ⦆
-  {- the next case is probably not good enough, 
-     but I can workshop it while working on the theorem -}
-  ⊑-↦-L : ∀ {v₁ V₁ w₁ v₂ V₂ w₂ w a A b B}
-       → w ⊑ w₁ ⊔ w₂
-       → (a , A ⊢ v₁ , V₁ ↦ w) ⊑ (a , A ⊢ v₁ , V₁ ↦ w₁) ⊔ (b , B ⊢ v₂ , V₂ ↦ w₂)
-  {- also need other cases; will add as needed -}
-
-
-⊔-⊑-closed : ∀ M ρ v₁ v₂ d
-           {- insert same closed condition on ρ -}
-            → v₁ ∈ ⟦ delay M ⟧' ρ
-            → v₂ ∈ ⟦ delay M ⟧' ρ
-            → d ⊑ v₁ ⊔ v₂
-            → d ∈ ⟦ delay M ⟧' ρ
-⊔-⊑-closed (` x) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) 
-  ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (app ⦅ M ,, N ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (lit B k ⦅ Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (tuple zero ⦅ Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (tuple (suc n) ⦅ M ,, Ms ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (get i ⦅ M ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (inl-op ⦅ M ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (inr-op ⦅ M ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-
-
-{-crucial lemma: closures-are-products -}
-closures-are-products : ∀ M ρ f fv FV fv' FV'
-                      → mem (fv ∷ FV) ⊆ cdr ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ 
-                      → ⦅ f ∣ fv' , FV' ⦆ ∈ ⟦ delay M ⟧' ρ
-                      → ⦅ f ∣ fv , FV ⦆ ∈ ⟦ delay M ⟧' ρ
-closures-are-products M ρ f fv FV fv' FV' FV⊆ f∈ = 
-  ⊔-⊑-closed M ρ ⦅ f ∣ fv' , FV' ⦆ ⦅ proj₁ G ∣ fv , FV ⦆ ⦅ f ∣ fv , FV ⦆ 
-                  f∈ (proj₂ G) (⊑-clos-R (proj₁ G) (λ d d∈ → inj₂ d∈))
-  where 
-  G : Σ[ f' ∈ Value ] ⦅ f' ∣ fv , FV ⦆ ∈ ⟦ delay M ⟧' ρ
-  G = {!   !}
-  {- this proof is bad so far... just need to recur on FV and use f directly as the f'
-    with base case using ⦅ f ∣ fv' , FV' ⦆ -}
-
-
-delay-reflect' : ∀ M ρ d → d ∈ ⟦ delay M ⟧' ρ → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
-del-map-args-reflect' : ∀ {n} args ρ → results-rel-pres _fro-⊆_ (replicate n ■) (⟦ del-map-args {n} args ⟧₊' ρ) (⟦ args ⟧₊ (env-map fro ρ)) 
-delay-reflect'-⊆ : ∀ M ρ V → mem V ⊆ ⟦ delay M ⟧' ρ → mem (fros V) ⊆ ⟦ M ⟧ (env-map fro ρ)
-
-delay-reflect' (` x) ρ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
-delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ (fv , FV ⊢ν) ∣ fv' , FV' ⦆ ⟨ f∈ , T⊆ ⟩ 
+del-reflect : ∀ M ρ' d' → d' ∈ ⟦ delay M ⟧' ρ' 
+            → ∀ ρ → ~del-env-rev ρ ρ' → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ × d ~del d'
+{- del-args-reflect : ∀ {n} args ρ → results-rel-pres _fro-⊆_ (replicate n ■) (⟦ del-map-args {n} args ⟧₊' ρ) (⟦ args ⟧₊ (env-map fro ρ))  -}
+del-reflect-⊆ : ∀ M ρ' V' → mem V' ⊆ ⟦ delay M ⟧' ρ' → 
+   ∀ ρ → ~del-env-rev ρ ρ' → Σ[ V ∈ List Value ] mem V ⊆ ⟦ M ⟧ ρ × V ≈del V'
+del-reflect (` x) ρ' d' d'∈ ρ ρ~ = ρ~ x d' d'∈ {- ⟨ d , ⟨ d∈ , refl ⟩ ⟩ -}
+del-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ' 
+  ⦅ fv , FV ⊢ν ∣ fv' , FV' ⦆ ⟨ f∈ , T⊆ ⟩ ρ ρ~ 
+  = {!   !} 
+del-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ' 
+  ⦅ (a , A ⊢ fv , FV ↦ (b , B ⊢ν)) ∣ fv' , FV' ⦆ ⟨ f∈ , T⊆ ⟩ ρ ρ~ 
+  = {!   !}
+del-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ' 
+  ⦅ (a , A ⊢ fv , FV ↦ (b , B ⊢ v , V ↦ w)) ∣ fv' , FV' ⦆ ⟨ w∈ , T⊆ ⟩ ρ ρ~ 
+  = {!   !}
+{- ⦅ (fv , FV ⊢ν) ∣ fv' , FV' ⦆ ⟨ f∈ , T⊆ ⟩ 
   = ⟨ G3 (fro fv') (here refl) , (λ d d∈ → G3 d (there d∈)) ⟩
   where
   G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
-  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
+  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ del-reflect fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G3 : mem (fros (fv' ∷ FV')) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a (here refl) = G2 n fvs fv' (T⊆ fv' (here refl))
   G3 a (there a∈) with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (T⊆ b (there b∈))
-delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ (a , A ⊢ fv , FV ↦ (b , B ⊢ν)) ∣ fv' , FV' ⦆ ⟨ F⊆ , T⊆ ⟩
+del-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ (a , A ⊢ fv , FV ↦ (b , B ⊢ν)) ∣ fv' , FV' ⦆ ⟨ F⊆ , T⊆ ⟩
   = ⟨ G3 (fro fv') (here refl) , (λ d d∈ → G3 d (there d∈)) ⟩
   where
   G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
-  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
+  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ del-reflect fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G3 : mem (fros (fv' ∷ FV')) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 b (here refl) = G2 n fvs fv' (T⊆ fv' (here refl))
   G3 b (there b∈) with ∈-mem-fros b∈
   ... | ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = G2 n fvs a (T⊆ a (there a∈))
-delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ 
+del-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ 
   ⦅ (a , A ⊢ fv , FV ↦ (b , B ⊢ v , V ↦ w)) ∣ fv' , FV' ⦆ ⟨ w∈ , T⊆ ⟩
     with (fv ∷ FV) mem⊆? (fv' ∷ FV') 
 ... | no FV⊈ = ⟨ G3 (fro fv') (here refl) , (λ b b∈ → G3 b (there b∈)) ⟩
   where
   G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
-  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
+  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ del-reflect fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G3 : mem (fros (fv' ∷ FV')) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 b (here refl) = G2 n fvs fv' (T⊆ fv' (here refl))
   G3 b (there b∈) with ∈-mem-fros b∈
@@ -323,59 +281,35 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ
   H (suc (suc n)) d ⟨ a , ⟨ refl , refl ⟩ ⟩ = refl
   G1 : fro w ∈ ⟦ N ⟧ (mem (fros (v ∷ V)) • mem (fros (fv ∷ FV)) • (λ x → NewClos3.init))
   G1 = NewClos3.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) 
-          (delay-reflect' N (mem (v ∷ V) • mem (fv ∷ FV) • (λ _ x → x ≡ ω)) w 
+          (del-reflect N (mem (v ∷ V) • mem (fv ∷ FV) • (λ _ x → x ≡ ω)) w 
                      w∈)
   G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
-  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
+  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ del-reflect fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G3 : mem (fros (fv ∷ FV)) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 b (here refl) = G2 n fvs fv (T⊆ fv (FV⊆ fv (here refl)))
   G3 b (there b∈) with ∈-mem-fros b∈
   ... | ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = G2 n fvs a (T⊆ a (FV⊆ a (there a∈)))
-
-delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ d 
-   ⟨ v , ⟨ V , ⟨ fvouter , ⟨ FVouter , ⟨ inner-app , V⊆N' ⟩ ⟩ ⟩ ⟩ ⟩ with inner-app
-... | ⟨ fv , ⟨ FV , ⟨ a , ⟨ A , ⟨ ⟨ fv' , ⟨ FV' , ⦅FV↦V↦d∣FV'⦆∈M ⟩ ⟩ , FV⊆sndM' ⟩ ⟩ ⟩ ⟩ ⟩ = 
-  ⟨ fro v , ⟨ fros V , ⟨ fro fv , ⟨ fros FV , ⟨ G1+IH , G2 ⟩ ⟩ ⟩ ⟩ ⟩
-  where
-  G1 : ⦅ a , A ⊢ fv , FV ↦ (fvouter , FVouter ⊢ v , V ↦ d) ∣ fv , FV ⦆ ∈ ⟦ delay M ⟧' ρ
-  G1 = {! FV⊆sndM' !}
-  G1+IH : fro fv , fros FV ⊢ fro v , fros V ↦ fro d ∈ ⟦ M ⟧ (env-map fro ρ)
-  G1+IH with delay-reflect' M ρ ⦅ a , A ⊢ fv , FV ↦ (fvouter , FVouter ⊢ v , V ↦ d) ∣ fv , FV ⦆ G1 
-  ... | ihres with (fv ∷ FV) mem⊆? (fv ∷ FV)
-  ... | no neq = ⊥-elim (neq λ z z∈ → z∈)
-  ... | yes eq = ihres
-  G2 : mem (fros (v ∷ V)) ⊆ ⟦ N ⟧ (env-map fro ρ)
-  G2 = delay-reflect'-⊆ N ρ (v ∷ V) V⊆N'
-
-
-{-
-
-
-
 -}
-
-
-{-
-    with (fv ∷ FV) mem⊆? (fv' ∷ FV') | delay-reflect' M ρ ⦅ a , A ⊢ fv , FV ↦ (fvouter , FVouter ⊢ v , V ↦ d) ∣ fv' , FV' ⦆ U∈M'
-... | no FV⊈ |  q = ⊥-elim (FV⊈ G)
+del-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ' d' d'∈ ρ ρ~ = {!   !}
+{- 
+   ⟨ v , ⟨ V , ⟨ fvouter , ⟨ FVouter , ⟨ inner-app , V⊆N' ⟩ ⟩ ⟩ ⟩ ⟩ with inner-app
+... | ⟨ fv , ⟨ FV , ⟨ a , ⟨ A , ⟨ ⟨ fv' , ⟨ FV' , U∈M' ⟩ ⟩ , vV'⊆sndM' ⟩ ⟩ ⟩ ⟩ ⟩
+    with (fv ∷ FV) mem⊆? (fv' ∷ FV') | del-reflect M ρ ⦅ a , A ⊢ fv , FV ↦ (fvouter , FVouter ⊢ v , V ↦ d) ∣ fv' , FV' ⦆ U∈M'
+... | no FV⊈ |  q = ⟨ fro v , ⟨ fros V , ⟨ fro fv , ⟨ fros FV , ⟨ {!   !} , G2 ⟩ ⟩ ⟩ ⟩ ⟩
    {- ⟨ fro v , ⟨ fros V , ⟨ {!   !} , ⟨ {!   !} , ⟨ {!   !} , G2 ⟩ ⟩ ⟩ ⟩ -}
   where
-  G : mem (fv ∷ FV) ⊆ (mem (fv' ∷ FV'))
-  G d' d'∈ with FV⊆sndM' d' d'∈ 
-  ... | ⟨ q , ⟨ p , ⟨ P , ⟨ qP∈M , d'∈P ⟩ ⟩ ⟩ ⟩ = {! d'∈P !}
   {-
   G1 : {!   !}
-  G1 = {! delay-reflect' M   !}
+  G1 = {! del-reflect M   !}
   -}
   G2 : mem (fros (v ∷ V)) ⊆ ⟦ N ⟧ (env-map fro ρ)
-  G2 = delay-reflect'-⊆ N ρ (v ∷ V) V⊆N'
+  G2 = del-reflect-⊆ N ρ (v ∷ V) V⊆N'
 ... | yes FV⊆ | q
-  =  ⟨ fro v , ⟨ fros V , ⟨ fro fv , ⟨ fros FV , ⟨ {!   !} , G2 ⟩ ⟩ ⟩ ⟩ ⟩ 
+  =  ⟨ fro v , ⟨ fros V , ⟨ fro fv , ⟨ fros FV , ⟨ HOLE , G2 ⟩ ⟩ ⟩ ⟩ ⟩ 
   where
   G2 : mem (fros (v ∷ V)) ⊆ ⟦ N ⟧ (env-map fro ρ)
-  G2 = delay-reflect'-⊆ N ρ (v ∷ V) V⊆N' {- delay-reflect' M ρ ⦅ (fv' , FV' ⊢ fv ∷ FV ↦ (fvouter , FVouter ⊢ V ↦ d)) , U₂ ⦆ U∈M' -}
--}
+  G2 = del-reflect-⊆ N ρ (v ∷ V) V⊆N' {- del-reflect M ρ ⦅ (fv' , FV' ⊢ fv ∷ FV ↦ (fvouter , FVouter ⊢ V ↦ d)) , U₂ ⦆ U∈M' -}
 
 {- need two things:
 need to split U₂ up 
@@ -388,39 +322,61 @@ fro ⦅ _ , _ ⊢ (fv ∷ FV) ↦ (_ , _ ⊢ V ↦ w) , (fv' ∷ FV') ⦆
 
 
 -}
+-}
 
-delay-reflect' (lit B k ⦅ Nil ⦆) ρ (const {B'} k') d∈ = d∈
-delay-reflect' (tuple n ⦅ args ⦆) ρ d d∈ = G n args ρ d d∈
+del-reflect (lit B k ⦅ Nil ⦆) ρ' (const {B'} k') d'∈ ρ ρ~ = ⟨ const k' , ⟨ d'∈ , ~del-const k' ⟩ ⟩
+del-reflect (tuple n ⦅ args ⦆) ρ' d' d'∈ ρ ρ~ = {!   !}
+{- G n args ρ d d∈
   where
   G : ∀ n args ρ d → d ∈ ⟦ delay (tuple n ⦅ args ⦆) ⟧' ρ → fro d ∈ ⟦ tuple n ⦅ args ⦆ ⟧ (env-map fro ρ) 
   G zero args ρ d refl = refl
   G (suc n) (arg ,, args) ρ ∥ d ∷ ds ∥ ⟨ d∈ , ds∈ ⟩ with G n args ρ ∥ ds ∥ ds∈
-  ... | ds'∈ = ⟨ delay-reflect' arg ρ d d∈ , ds'∈ ⟩
-delay-reflect' (get i ⦅ M ,, Nil ⦆) ρ d ⟨ ds , ⟨ i≤ , ⟨ ds∈ , refl ⟩ ⟩ ⟩ = 
+  ... | ds'∈ = ⟨ del-reflect arg ρ d d∈ , ds'∈ ⟩
+-}
+del-reflect (get i ⦅ M ,, Nil ⦆) ρ' d' ⟨ ds' , ⟨ i≤ , ⟨ ds'∈ , refl ⟩ ⟩ ⟩ ρ ρ~ 
+  with del-reflect M ρ' ∥ ds' ∥ ds'∈ ρ ρ~
+... | ⟨ ∥ ds ∥ , ⟨ ds∈ , ~del-tup ds≈ ⟩ ⟩ = 
+  ⟨ nth ds i , 
+  ⟨ ⟨ ds , ⟨ subst (Data.Nat._<_ i) (sym (≈del-length ds≈)) i≤ , ⟨ ds∈ , refl ⟩ ⟩ ⟩ 
+    , ≈del-nth ds≈ i ⟩ ⟩
+{- ⟨ ds , ⟨ i≤ , ⟨ ds∈ , refl ⟩ ⟩ ⟩ = 
   ⟨ fros ds , ⟨ subst (Data.Nat._<_ i) (sym (fros-length ds)) i≤ 
-  , ⟨ delay-reflect' M ρ ∥ ds ∥ ds∈ , fros-nth ds i ⟩ ⟩ ⟩
-delay-reflect' (inl-op ⦅ M ,, Nil ⦆) ρ (left v , V) V⊆ = 
-  delay-reflect'-⊆ M ρ (v ∷ V) V⊆
-delay-reflect' (inr-op ⦅ M ,, Nil ⦆) ρ (right v , V) V⊆ = 
-  delay-reflect'-⊆ M ρ (v ∷ V) V⊆
-delay-reflect' (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d 
+  , ⟨ del-reflect M ρ ∥ ds ∥ ds∈ , fros-nth ds i ⟩ ⟩ ⟩
+-}
+del-reflect (inl-op ⦅ M ,, Nil ⦆) ρ' (left v' , V') V'⊆ ρ ρ~
+  with del-reflect M ρ' v' (V'⊆ v' (here refl)) ρ ρ~ | del-reflect-⊆ M ρ' V' (λ d z → V'⊆ d (there z)) ρ ρ~
+... | ⟨ v , ⟨ v∈ , v~ ⟩ ⟩ | ⟨ V , ⟨ V⊆ , V≈ ⟩ ⟩ = ⟨ left v , V , ⟨ G , ~del-L (≈del-cons v~ V≈) ⟩ ⟩ 
+  where
+  G : mem (v ∷ V) ⊆ ⟦ M ⟧ ρ
+  G d (here refl) = v∈
+  G d (there d∈) = V⊆ d d∈
+del-reflect (inr-op ⦅ M ,, Nil ⦆) ρ' (right v' , V') V'⊆ ρ ρ~  
+  with del-reflect M ρ' v' (V'⊆ v' (here refl)) ρ ρ~ | del-reflect-⊆ M ρ' V' (λ d z → V'⊆ d (there z)) ρ ρ~
+... | ⟨ v , ⟨ v∈ , v~ ⟩ ⟩ | ⟨ V , ⟨ V⊆ , V≈ ⟩ ⟩ = ⟨ right v , V , ⟨ G , ~del-R (≈del-cons v~ V≈) ⟩ ⟩ 
+  where
+  G : mem (v ∷ V) ⊆ ⟦ M ⟧ ρ
+  G d (here refl) = v∈
+  G d (there d∈) = V⊆ d d∈
+del-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ' d' d'∈ ρ ρ~ = {!   !}
+{- 
   (inj₁ ⟨ v , ⟨ V , ⟨ LV∈ , d∈ ⟩ ⟩ ⟩) = 
-   inj₁ ⟨ fro v , ⟨ fros V , ⟨ delay-reflect' L ρ (left v , V) LV∈ 
+   inj₁ ⟨ fro v , ⟨ fros V , ⟨ del-reflect L ρ (left v , V) LV∈ 
         , NewClos3.⟦⟧-monotone {{Clos3-Semantics}} M 
                                (fro-mem-rewrite (v ∷ V) ρ) (fro d) 
-                               (delay-reflect' M (mem (v ∷ V) • ρ) d d∈) ⟩ ⟩ ⟩
-delay-reflect' (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d 
+                               (del-reflect M (mem (v ∷ V) • ρ) d d∈) ⟩ ⟩ ⟩
+del-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d 
   (inj₂ ⟨ v , ⟨ V , ⟨ RV∈ , d∈ ⟩ ⟩ ⟩) = 
-   inj₂ ⟨ fro v , ⟨ fros V , ⟨ delay-reflect' L ρ (right v , V) RV∈ 
+   inj₂ ⟨ fro v , ⟨ fros V , ⟨ del-reflect L ρ (right v , V) RV∈ 
         , NewClos3.⟦⟧-monotone {{Clos3-Semantics}} N  
                                (fro-mem-rewrite (v ∷ V) ρ) (fro d) 
-                               (delay-reflect' N (mem (v ∷ V) • ρ) d d∈) ⟩ ⟩ ⟩
-delay-reflect'-⊆ M ρ [] V⊆ = λ d ()
-delay-reflect'-⊆ M ρ (d ∷ V) V⊆ d' (here refl) = 
-  delay-reflect' M ρ d (V⊆ d (here refl))
-delay-reflect'-⊆ M ρ (d ∷ V) V⊆ d' (there d'∈frosV) = 
-  delay-reflect'-⊆ M ρ V (λ x x∈ → V⊆ x (there x∈)) d' d'∈frosV
-del-map-args-reflect' {zero} args ρ = lift tt
-del-map-args-reflect' {suc n} (M ,, args) ρ = 
-  ⟨ lift (delay-reflect' M ρ) , del-map-args-reflect' args ρ ⟩
-
+                               (del-reflect N (mem (v ∷ V) • ρ) d d∈) ⟩ ⟩ ⟩
+-}
+del-reflect-⊆ M ρ' [] V'⊆ ρ ρ~ = ⟨ [] , ⟨ (λ x ()) , ≈del-nil ⟩ ⟩
+del-reflect-⊆ M ρ' (v' ∷ V') V'⊆ ρ ρ~ with 
+   del-reflect M ρ' v' (V'⊆ v' (here refl)) ρ ρ~ 
+   | del-reflect-⊆ M ρ' V' (λ d z → V'⊆ d (there z)) ρ ρ~
+... | ⟨ v , ⟨ v∈ , v~ ⟩ ⟩ | ⟨ V , ⟨ V⊆ , V≈ ⟩ ⟩ = ⟨ v ∷ V , ⟨ G , ≈del-cons v~ V≈ ⟩ ⟩
+  where
+  G : mem (v ∷ V) ⊆ ⟦ M ⟧ ρ
+  G d (here refl) = v∈
+  G d (there d∈) = V⊆ d d∈
