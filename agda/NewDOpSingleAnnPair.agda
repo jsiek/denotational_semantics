@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewDOpSingle where
+module NewDOpSingleAnnPair where
 
 {-
 
@@ -19,7 +19,7 @@ open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
-open import NewDomainSingle
+open import NewDomainSingleAnnPair
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -56,7 +56,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 {- \st -}
 ⋆ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 ⋆ ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ w = 
-    Σ[ v ∈ Value ] Σ[ V ∈ List Value ] 
+    Σ[ v ∈ Value ] Σ[ V ∈ List Value ]
       (v ∷ V ↦ w ∈ D₁) × (mem (v ∷ V) ⊆ D₂)
 
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
@@ -73,21 +73,21 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
    Σ[ k ∈ base-rep B ] v ≡ (const {B} k) × V ≡ [] ×  w ∈ 𝓅 P (f k) (ptt)
 𝓅 (B ⇒ P) f _ ν = True
 𝓅 (B ⇒ P) f _ ω = False
-𝓅 (B ⇒ P) k _ ⦅ u , fv ⦆ = False
+𝓅 (B ⇒ P) k _ (fv ∷ FV ⊢⦅ u , d₂ ⦆) = False
 𝓅 (B ⇒ P) k _ ∥ vs ∥ = False
 𝓅 (B ⇒ P) k _ (left v) = False
 𝓅 (B ⇒ P) k _ (right v) = False
 
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f , fv ⦆ = f ∈ D₁ × fv ∈ D₂
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) = mem (fv ∷ FV) ⊆ D₂ × d₁ ∈ D₁ × d₂ ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 car : DOp (𝒫 Value) (■ ∷ [])
-car ⟨ D , _ ⟩ f = Σ[ fv ∈ Value ] ⦅ f , fv ⦆ ∈ D
+car ⟨ D , _ ⟩ d₁ = Σ[ fv ∈ Value ] Σ[ FV ∈ List Value ] Σ[ d₂ ∈ Value ] (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) ∈ D
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
-cdr ⟨ D , _ ⟩ fv = Σ[ f ∈ Value ] ⦅ f , fv ⦆ ∈ D
+cdr ⟨ D , _ ⟩ d₂ = Σ[ fv ∈ Value ] Σ[ FV ∈ List Value ] Σ[ d₁ ∈ Value ] (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) ∈ D
 
 𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
@@ -146,7 +146,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
 Λ ⟨ f , _ ⟩ (v ∷ V ↦ w) = w ∈ f (mem (v ∷ V))
 Λ ⟨ f , _ ⟩ ν = True
 Λ ⟨ f , _ ⟩ ω = False
-Λ ⟨ f , _ ⟩ ⦅ d , fv ⦆ = False
+Λ ⟨ f , _ ⟩ (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) = False
 Λ ⟨ f , _ ⟩ ∥ vs ∥ = False
 Λ ⟨ f , _ ⟩ (left v) = False
 Λ ⟨ f , _ ⟩ (right v) = False
@@ -271,7 +271,7 @@ pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ⦅ f , fv ⦆ ⟨ f∈D , fv∈E ⟩ = ⟨  D⊆ f f∈D , E⊆ fv fv∈E ⟩
+  G (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) ⟨ FV⊆ , ⟨ f∈D , d₂∈E ⟩ ⟩ = ⟨ (λ d d∈ → E⊆ d (FV⊆ d d∈)) , ⟨ D⊆ d₁ f∈D , E⊆ d₂ d₂∈E ⟩ ⟩
 
 pair-cong : congruent (■ ∷ ■ ∷ []) ■ pair
 pair-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
@@ -285,7 +285,7 @@ car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
-  G u ⟨ v , p∈ ⟩ = ⟨ v , D⊆ ⦅ u , v ⦆ p∈ ⟩ 
+  G d₁ ⟨ fv , ⟨ FV , ⟨ d₂ , p∈ ⟩ ⟩ ⟩ = ⟨ fv , ⟨ FV , ⟨ d₂ , D⊆ (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) p∈ ⟩ ⟩ ⟩
 
 car-cong : congruent (■ ∷ []) ■ car
 car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -298,7 +298,7 @@ cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
-  G v ⟨ u , p∈ ⟩ = ⟨ u , D⊆ ⦅ u , v ⦆ p∈ ⟩
+  G d₂ ⟨ fv , ⟨ FV , ⟨ d₁ , p∈ ⟩ ⟩ ⟩ = ⟨ fv , ⟨ FV , ⟨ d₁ , D⊆ (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) p∈ ⟩ ⟩ ⟩
 
 cdr-cong : congruent (■ ∷ []) ■ cdr
 cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -477,25 +477,25 @@ pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
 pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
-  G ⦅ u , v ⦆ ⦅ u' , v' ⦆ ⟨ u∈ , v∈ ⟩ ⟨ u'∈ , v'∈ ⟩ = 
-    ⟨ D~ u u' u∈ u'∈ 
-      , E~ v v' v∈ v'∈ ⟩
+  G (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) (fv' ∷ FV' ⊢⦅ d₁' , d₂' ⦆) ⟨ FV⊆ , ⟨ d₁∈ , d₂∈ ⟩ ⟩ ⟨ FV'⊆ , ⟨ d₁'∈ , d₂'∈ ⟩ ⟩ = 
+    ⟨ D~ d₁ d₁' d₁∈ d₁'∈ 
+      , E~ d₂ d₂' d₂∈ d₂'∈ ⟩
 
 car-consis : consistent _~_ (■ ∷ []) ■ car
 car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (car ⟨ D , ptt ⟩) (car ⟨ D' , ptt ⟩)
-  G u u' ⟨ v , p∈ ⟩ ⟨ v' , p'∈ ⟩ 
-   with D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ p∈ p'∈
-  ... | ⟨ u~ , v~ ⟩ = u~
+  G d₁ d₁' ⟨ fv , ⟨ FV , ⟨ d₂ , p∈ ⟩ ⟩ ⟩ ⟨ fv' , ⟨ FV' , ⟨ d₂' , p'∈ ⟩ ⟩ ⟩ 
+   with D~ (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) (fv' ∷ FV' ⊢⦅ d₁' , d₂' ⦆) p∈ p'∈
+  ... | ⟨ d₁~ , d₂~ ⟩ = d₁~
 
 cdr-consis : consistent _~_ (■ ∷ []) ■ cdr
 cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (cdr ⟨ D , ptt ⟩) (cdr ⟨ D' , ptt ⟩)
-  G v v' ⟨ u , p∈ ⟩ ⟨ u' , p'∈ ⟩
-    with D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ p∈ p'∈
-  ... | ⟨ u~ , v~ ⟩ = v~
+  G d₂ d₂' ⟨ fv , ⟨ FV , ⟨ d₁ , p∈ ⟩ ⟩ ⟩ ⟨ fv' , ⟨ FV' , ⟨ d₁' , p'∈ ⟩ ⟩ ⟩
+    with D~ (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) (fv' ∷ FV' ⊢⦅ d₁' , d₂' ⦆) p∈ p'∈
+  ... | ⟨ d₁~ , d₂~ ⟩ = d₂~
 
 ℒ-consis : consistent _~_ (■ ∷ []) ■ ℒ
 ℒ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
@@ -1083,7 +1083,7 @@ cons-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w :
   → w ∈ 〘 D ρ , E ρ 〙
   → continuous-env D ρ → continuous-env E ρ → monotone-env D → monotone-env E
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ 〘 D ρ₃ , E ρ₃ 〙
-cons-continuous {D} {E} {ρ} {NE-ρ} {⦅ u , v ⦆} ⟨ u∈Dρ , v∈Eρ ⟩ cD cE mD mE
+cons-continuous {D} {E} {ρ} {NE-ρ} {(fv ∷ FV ⊢⦅ d₁ , d₂ ⦆)} ⟨ u∈Dρ , v∈Eρ ⟩ cD cE mD mE
     with cD u u∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , u∈Dρ₁ ⟩ ⟩ ⟩
     with cE v v∈Eρ 
@@ -1101,17 +1101,17 @@ car-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Va
   → u ∈ car (D ρ) → continuous-env D ρ → monotone-env D
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ car (D ρ₃)
 car-continuous {D} {ρ} {NE-ρ} {u} ⟨ v , uv∈Dρ ⟩ cD mD
-    with cD ⦅ u , v ⦆ uv∈Dρ 
+    with cD (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) uv∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
-      ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ v , mD (λ x d z → z) ⦅ u , v ⦆ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
+      ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ v , mD (λ x d z → z) (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
 
 cdr-continuous : ∀{D : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{u : Value}
   → u ∈ cdr (D ρ) → continuous-env D ρ → monotone-env D
   → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × u ∈ cdr (D ρ₃)
 cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
-    with cD ⦅ u , v ⦆ uv∈Dρ 
+    with cD (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) uv∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
-      ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ⦅ u , v ⦆ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
+      ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) (fv ∷ FV ⊢⦅ d₁ , d₂ ⦆) uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
 
 mono-envs : ∀{n} → (Env → Π n (𝒫 Value)) → Set₁
 mono-envs {n} Ds = ∀{ρ ρ′} → ρ ⊆ₑ ρ′ → ⊆-results (replicate n ■) (Ds ρ) (Ds ρ′)
