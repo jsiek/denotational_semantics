@@ -138,8 +138,8 @@ proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
 ℛ ⟨ D , _ ⟩ _ = False
 
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] All (λ d → left d ∈ D) (v ∷ V) × w ∈ E (mem (v ∷ V)) 
-          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] All (λ d → right d ∈ D) (v ∷ V) × w ∈ F (mem (v ∷ V)))
+𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) 
+          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)))
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ (const k) = False
@@ -340,11 +340,11 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
        ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ v , ⟨ V , ⟨ v∈ ∷ V⊆ , d∈ ⟩ ⟩ ⟩) = 
-    inj₁ ⟨ v , ⟨ V , ⟨ D⊆ (left v) v∈ ∷ allmap (λ {x} → D⊆ (left x)) V⊆ 
+  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
+    inj₁ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (left d) (V⊆ d z))
          , lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
-  G d (inj₂ ⟨ v , ⟨ V , ⟨ v∈ ∷ V⊆ , d∈ ⟩ ⟩ ⟩) = 
-    inj₂ ⟨ v , ⟨ V , ⟨ D⊆ (right v) v∈ ∷ allmap (λ {x} → D⊆ (right x)) V⊆ 
+  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
+    inj₂ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (right d) (V⊆ d z))
          , lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
 {-
 𝒞-cong : congruent (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
@@ -518,20 +518,20 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
        ⟨ lift D~ , ⟨ FL~ , ⟨ FR~ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : Every _~_ (𝒞 ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
-  G u w (inj₁ ⟨ v , ⟨ V , ⟨ v∈ ∷ V⊆ , u∈ ⟩ ⟩ ⟩ ) (inj₁ ⟨ v' , ⟨ V' , ⟨ v∈' ∷ V⊆' , w∈ ⟩ ⟩ ⟩)
+  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ ) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩)
     = lower (FL~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
-    V≈V' d d' d∈ d'∈ = D~ (left d) (left d') (lookup (v∈ ∷ V⊆) d∈) (lookup (v∈' ∷ V⊆') d'∈)
-  G u w (inj₁ ⟨ v , ⟨ V , ⟨ v∈ ∷ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ v∈' ∷ V⊆' , w∈ ⟩ ⟩ ⟩) = 
-    ⊥-elim (D~ (left v) (right v') v∈ v∈')
-  G u w (inj₂ ⟨ v , ⟨ V , ⟨ v∈ ∷ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₁ ⟨ v' , ⟨ V' , ⟨ v∈' ∷ V⊆' , w∈ ⟩ ⟩ ⟩) = 
-    ⊥-elim (D~ (right v) (left v') v∈ v∈')
-  G u w (inj₂ ⟨ v , ⟨ V , ⟨ v∈ ∷ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ v∈' ∷ V⊆' , w∈ ⟩ ⟩ ⟩)
+    V≈V' d d' d∈ d'∈ = D~ (left d) (left d') (V⊆ d d∈) (V⊆' d' d'∈)
+  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩) = 
+    ⊥-elim (D~ (left v) (right v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
+  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩) = 
+    ⊥-elim (D~ (right v) (left v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
+  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩)
     = lower (FR~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
-    V≈V' d d' d∈ d'∈ = D~ (right d) (right d') (lookup (v∈ ∷ V⊆) d∈) (lookup (v∈' ∷ V⊆') d'∈)
+    V≈V' d d' d∈ d'∈ = D~ (right d) (right d') (V⊆ d d∈) (V⊆' d' d'∈)
 
 nth-~ : ∀ i us vs → ∥ us ∥ ~ ∥ vs ∥ → 
     i < length us → i < length vs → 
