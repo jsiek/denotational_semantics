@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewClos3Single where
+module NewClos3Multi where
 {-
  This intermediate semantics uses a single binding 
    that accepts a tuple which is unpacked later.
@@ -17,8 +17,8 @@ open import NewDOpSig
 open import NewDenotProperties
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import NewDomainAnnLam
-open import NewDOpAnnLam
+open import NewDomainMultiAnnLam
+open import NewDOpMultiAnnLam
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)

@@ -184,7 +184,7 @@ fro ⦅ _ , _ ⊢ fv , FV ↦ (_ , _ ⊢ v , V ↦ w) ∣ fv' , FV' ⦆
    with (fv ∷ FV) mem⊆? (fv' ∷ FV')
 ... | yes FV⊆FV' = fro fv , fros FV ⊢ fro v , fros V ↦ fro w
 ... | no FV⊈FV' = fro fv' , fros FV' ⊢ν
-fro ⦅ U ∣ v , V ⦆ = ω
+fro ⦅ u ∣ v , V ⦆ = ω
 fro ∥ xs ∥ = ∥ fros xs ∥
 fro (left v , V) = left fro v , fros V
 fro (right v , V) = right fro v , fros V
@@ -225,56 +225,6 @@ fro-mem-rewrite : ∀ V ρ → env-map fro (mem V • ρ) ⊆ₑ (mem (fros V)) 
 fro-mem-rewrite V ρ zero d ⟨ a , ⟨ a∈V , refl ⟩ ⟩ = fro-∈-mem a∈V
 fro-mem-rewrite V ρ (suc x) d d∈ρx = d∈ρx
 
-
-data _⊑_⊔_ : Value → Value → Value → Set where
-  ⊑-clos-L : ∀ {f₁} f₂ {fv₁ fv₂ fv' FV₁ FV₂ FV'}
-           → (∀ d → d ∈ mem (fv' ∷ FV') → ((d ∈ mem (fv₁ ∷ FV₁)) 
-                                           ⊎ (d ∈ mem (fv₂ ∷ FV₂))))
-           → ⦅ f₁ ∣ fv' , FV' ⦆ ⊑ ⦅ f₁ ∣ fv₁ , FV₁ ⦆ ⊔ ⦅ f₂ ∣ fv₂ , FV₂ ⦆
-  ⊑-clos-R : ∀ f₁ {f₂ fv₁ fv₂ fv' FV₁ FV₂ FV'}
-           → (∀ d → d ∈ mem (fv' ∷ FV') → ((d ∈ mem (fv₁ ∷ FV₁)) 
-                                           ⊎ (d ∈ mem (fv₂ ∷ FV₂))))
-           → ⦅ f₂ ∣ fv' , FV' ⦆ ⊑ ⦅ f₁ ∣ fv₁ , FV₁ ⦆ ⊔ ⦅ f₂ ∣ fv₂ , FV₂ ⦆
-  {- the next case is probably not good enough, 
-     but I can workshop it while working on the theorem -}
-  ⊑-↦-L : ∀ {v₁ V₁ w₁ v₂ V₂ w₂ w a A b B}
-       → w ⊑ w₁ ⊔ w₂
-       → (a , A ⊢ v₁ , V₁ ↦ w) ⊑ (a , A ⊢ v₁ , V₁ ↦ w₁) ⊔ (b , B ⊢ v₂ , V₂ ↦ w₂)
-  {- also need other cases; will add as needed -}
-
-
-⊔-⊑-closed : ∀ M ρ v₁ v₂ d
-           {- insert same closed condition on ρ -}
-            → v₁ ∈ ⟦ delay M ⟧' ρ
-            → v₂ ∈ ⟦ delay M ⟧' ρ
-            → d ⊑ v₁ ⊔ v₂
-            → d ∈ ⟦ delay M ⟧' ρ
-⊔-⊑-closed (` x) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) 
-  ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (app ⦅ M ,, N ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (lit B k ⦅ Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (tuple zero ⦅ Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (tuple (suc n) ⦅ M ,, Ms ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (get i ⦅ M ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (inl-op ⦅ M ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (inr-op ⦅ M ,, Nil ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-⊔-⊑-closed (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ v₁ v₂ d v₁∈ v₂∈ d⊑v₁⊔v₂ = {!   !}
-
-
-{-crucial lemma: closures-are-products -}
-closures-are-products : ∀ M ρ f fv FV fv' FV'
-                      → mem (fv ∷ FV) ⊆ cdr ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ 
-                      → ⦅ f ∣ fv' , FV' ⦆ ∈ ⟦ delay M ⟧' ρ
-                      → ⦅ f ∣ fv , FV ⦆ ∈ ⟦ delay M ⟧' ρ
-closures-are-products M ρ f fv FV fv' FV' FV⊆ f∈ = 
-  ⊔-⊑-closed M ρ ⦅ f ∣ fv' , FV' ⦆ ⦅ proj₁ G ∣ fv , FV ⦆ ⦅ f ∣ fv , FV ⦆ 
-                  f∈ (proj₂ G) (⊑-clos-R (proj₁ G) (λ d d∈ → inj₂ d∈))
-  where 
-  G : Σ[ f' ∈ Value ] ⦅ f' ∣ fv , FV ⦆ ∈ ⟦ delay M ⟧' ρ
-  G = {!   !}
-  {- this proof is bad so far... just need to recur on FV and use f directly as the f'
-    with base case using ⦅ f ∣ fv' , FV' ⦆ -}
 
 
 delay-reflect' : ∀ M ρ d → d ∈ ⟦ delay M ⟧' ρ → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
