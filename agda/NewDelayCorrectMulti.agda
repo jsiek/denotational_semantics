@@ -330,15 +330,15 @@ permits monotonicity.
 
 -}
 
-data _⊢_≈fro_ : 𝒫 Value' → List Value' → List Value → Set
-data _⊢_~fros_ : 𝒫 Value' → List Value' → List Value → Set
-data _⊢_~fro_ : 𝒫 Value' → Value' → Value → Set where
+data _⊢_≈fro_ : 𝒫 Value' → List Value' → List Value → Set₁
+data _⊢_~fros_ : 𝒫 Value' → List Value' → List Value → Set₁
+data _⊢_~fro_ : 𝒫 Value' → Value' → Value → Set₁ where
   fro-ω : ∀ {D} → D ⊢ ω ~fro ω
   fro-const : ∀ {D B k} → D ⊢ const {B} k ~fro const k
   fro-left : ∀ {d d' D} → (d~ : D ⊢ d ~fro d')
-           → D ⊢ left d ~fro left d'
+           → Op4.ℒ ⟨ D , ptt ⟩ ⊢ left d ~fro left d'
   fro-right : ∀ {d d' D} → (d~ : D ⊢ d ~fro d')
-           → D ⊢ right d ~fro right d'
+           → Op4.ℛ ⟨ D , ptt ⟩ ⊢ right d ~fro right d'
   fro-tup : ∀ {ds ds' D} → (ds~ : D ⊢ ds ≈fro ds')
           → D ⊢ ∥ ds ∥ ~fro ∥ ds' ∥
   fro-ν : ∀ {FV FV' b D}
@@ -373,17 +373,66 @@ data _⊢_~fros_ where
 
 
 
-delay-reflect : ∀ M ρ' ρ 
-              → (∀ {i d d'} → d' ∈ ρ' i → d ∈ ρ i → ρ' i ⊢ d' ~fro d)
-              → ∀ d' d
-              → d' ∈ ⟦ delay M ⟧' ρ' → d ∈ ⟦ M ⟧ ρ 
-              → ⟦ delay M ⟧' ρ' ⊢ d' ~fro d
-delay-reflect M ρ' ρ ρ~ d' d d'∈ d∈ = {!   !}
 
+{- 
 
+This has to be existentially quantified on at least D 
+... this could become a mess... might need to say something like
+∃ d D. d ∈ ⟦ M ⟧ ρ × D ⊢ d' ~fro d      
 
+NOTES:
+ - the relation will have to be closed upward on denotations, relying on the monotonicity of the operators
+ - [theorem] × D ⊆ ⟦ M ⟧ ρ ??? 
+ - 
 
+-}
+delay-reflect : ∀ M (ρ' : Env Value') (ρ : Env Value)
+              → (∀ {i d'} → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × Σ[ D ∈ 𝒫 Value' ] D ⊢ d' ~fro d)
+              → ∀ d'
+              → d' ∈ ⟦ delay M ⟧' ρ' 
+              → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ ×
+                Σ[ D ∈ 𝒫 Value' ] D ⊢ d' ~fro d
+delay-reflect-⊆ : ∀ M ρ' ρ 
+              → (∀ {i d'} → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × Σ[ D ∈ 𝒫 Value' ] D ⊢ d' ~fro d)
+              → ∀ V'
+              → mem V' ⊆ ⟦ delay M ⟧' ρ'
+              → Σ[ V ∈ List Value ] mem V ⊆ ⟦ M ⟧ ρ ×
+                Σ[ D ∈ 𝒫 Value' ] D ⊢ V' ~fros V
+delay-reflect (` i) ρ' ρ ρ~ d' d'∈ = ρ~ d'∈
+delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ' ρ ρ~ (left d') d'∈ 
+  with (delay-reflect M ρ' ρ ρ~ d' d'∈)
+... | ⟨ d , ⟨ d∈ , ⟨ D , ~d ⟩ ⟩ ⟩ = ⟨ left d , ⟨ d∈ , ⟨ Op4.ℒ ⟨ D , ptt ⟩ , fro-left ~d ⟩ ⟩ ⟩
+delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ' ρ ρ~ (right d') d'∈
+  with (delay-reflect M ρ' ρ ρ~ d' d'∈)
+... | ⟨ d , ⟨ d∈ , ⟨ D , ~d ⟩ ⟩ ⟩ = ⟨ right d , ⟨ d∈ , ⟨ Op4.ℛ ⟨ D , ptt ⟩ , fro-right ~d ⟩ ⟩ ⟩
+delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ' ρ ρ~ d' 
+   (inj₁ ⟨ v' , ⟨ V' , ⟨ V'⊆ , d'∈ ⟩ ⟩ ⟩) 
+  with delay-reflect-⊆ L ρ' ρ ρ~ (v' ∷ V') {! V'⊆   !}
+... | ⟨ V , ⟨ V⊆ , ⟨ DV , ~V ⟩ ⟩ ⟩
+  with (delay-reflect M (mem (v' ∷ V') • ρ') {!   !} {!   !} d' d'∈)
+... | ⟨ d , ⟨ d∈ , ⟨ Dd , ~d ⟩ ⟩ ⟩ = 
+  ⟨ d , ⟨ inj₁ ⟨ {!   !} , ⟨ {!   !} , ⟨ {!   !} , d∈ ⟩ ⟩ ⟩ , ⟨ Dd , ~d ⟩ ⟩ ⟩
+delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ' ρ ρ~ d' 
+   (inj₂ ⟨ v' , ⟨ V' , ⟨ V'⊆ , d'∈ ⟩ ⟩ ⟩) = {!   !}
+delay-reflect M ρ' ρ ρ~ d' d'∈ = {!   !}
+delay-reflect-⊆ M ρ' ρ ρ~ [] V'⊆ = ⟨ [] , ⟨ (λ d ()) , ⟨ ⟦ delay M ⟧' ρ' , [] ⟩ ⟩ ⟩
+delay-reflect-⊆ M ρ' ρ ρ~ (d' ∷ V') V'⊆
+  with delay-reflect M ρ' ρ ρ~ d' (V'⊆ d' (here refl)) 
+     | delay-reflect-⊆ M ρ' ρ ρ~ V' (λ d z → V'⊆ d (there z))
+... | ⟨ d , ⟨ d∈ , ⟨ D1 , ~d ⟩ ⟩ ⟩ | ⟨ V , ⟨ V⊆ , ⟨ D2 , ~V ⟩ ⟩ ⟩ 
+    = ⟨ d ∷ V , ⟨ G , ⟨ {!   !} , {!   !} ⟩ ⟩ ⟩
+  where
+  G : mem (d ∷ V) ⊆ ⟦ M ⟧ ρ
+  G d' (here refl) = d∈
+  G d' (there d'∈) = V⊆ d' d'∈
 
+{-
+delay-reflect'-⊆ M ρ [] V⊆ = λ d ()
+delay-reflect'-⊆ M ρ (d ∷ V) V⊆ d' (here refl) = 
+  delay-reflect' M ρ d (V⊆ d (here refl))
+delay-reflect'-⊆ M ρ (d ∷ V) V⊆ d' (there d'∈frosV) = 
+  delay-reflect'-⊆ M ρ V (λ x x∈ → V⊆ x (there x∈)) d' d'∈frosV
+-}
 
 
 
