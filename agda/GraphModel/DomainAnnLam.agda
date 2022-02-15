@@ -1,6 +1,5 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 
-module NewDomainSingleAnnPair where
+module DomainAnnLam where
 
 {-
 
@@ -47,21 +46,17 @@ open import Level using (Level; Lift; lift; lower)
     renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Nullary.Decidable using (map′)
-open import Data.Bool using (Bool; true; false)
-  renaming (_≟_ to _b≟_)
 
 
 {- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
   const : {B : Base} → (k : base-rep B) → Value  {- A primitive constant of type B. -}
-  _∷_↦_ : (v : Value) → (V : List Value) → (w : Value) → Value
+  _∷_⊢_∷_↦_ : (fv : Value) → (FV : List Value) → (v : Value) → (V : List Value) → (w : Value) → Value
       {- An entry in a function's graph. -}
-  ν : Value      {- The empty function -}
+  _∷_⊢ν : (fv : Value) → (FV : List Value) → Value      {- The empty function -}
   ω : Value          {- An error value, to serve as a default value in Envs and
                         to differentiate from converging -}
-  ⦅_,_⦆⊢_ :             {- Closure Representations are just pairs -}
-      (d₁ : Value) → (d₂ : Value) → (b : Bool) → Value
   ∥_∥ : (ds : List Value) → Value                 {- Tuples -}
   left : (d : Value) → Value                      {- Sums -}
   right : (d : Value) → Value                     {- Sums -}
@@ -89,14 +84,6 @@ const-inj-base {B}{B'} refl = refl
 const-inj : ∀ {B k k'} → const {B} k ≡ const {B} k' → k ≡ k'
 const-inj refl = refl
 
-clos-inj : ∀ {d₁ d₂ d₁' d₂' b b'} → (⦅ d₁ , d₂ ⦆⊢ b) ≡ (⦅ d₁' , d₂' ⦆⊢ b') 
-            → d₁ ≡ d₁' × d₂ ≡ d₂' × b ≡ b'
-clos-inj refl = ⟨ refl , ⟨ refl , refl ⟩ ⟩
-
-clos-inj-uncurried : ∀ {d₁ d₂ d₁' d₂' b b'} → (⦅ d₁ , d₂ ⦆⊢ b) ≡ (⦅ d₁' , d₂' ⦆⊢ b') 
-  → ⟨ d₁ , ⟨ d₂ , b ⟩ ⟩ ≡ ⟨ d₁' , ⟨ d₂' , b' ⟩ ⟩
-clos-inj-uncurried refl = refl
-
 tup-inj : ∀ {ds ds'} → ∥ ds ∥ ≡ ∥ ds' ∥ → ds ≡ ds'
 tup-inj refl = refl
 
@@ -106,12 +93,15 @@ left-inj refl = refl
 right-inj : ∀ {v v'} → (right v) ≡ right v' → v ≡ v'
 right-inj refl = refl
 
-↦-inj : ∀ {v v' V V' w w'} →  v ∷ V ↦ w ≡ v' ∷ V' ↦ w'
-      → v ≡ v' × V ≡ V' × w ≡ w'
-↦-inj refl = ⟨ refl , ⟨ refl , refl ⟩ ⟩
+ν-inj : ∀ {fv fv' FV FV'} → fv ∷ FV ⊢ν ≡ (fv' ∷ FV' ⊢ν) → fv ≡ fv' × FV ≡ FV'
+ν-inj refl = ⟨ refl , refl ⟩
 
-↦-inj-uncurried : ∀ {v v' V V' w w'} → v ∷ V ↦ w ≡  v' ∷ V' ↦ w'
-      → ⟨ v , ⟨ V , w ⟩ ⟩ ≡ ⟨ v' , ⟨ V' , w' ⟩ ⟩
+↦-inj : ∀ {fv fv' FV FV' v v' V V' w w'} → fv ∷ FV ⊢  v ∷ V ↦ w ≡ fv' ∷ FV' ⊢ v' ∷ V' ↦ w'
+      → fv ≡ fv' × FV ≡ FV' × v ≡ v' × V ≡ V' × w ≡ w'
+↦-inj refl = ⟨ refl , ⟨ refl , ⟨ refl , ⟨ refl , refl ⟩ ⟩ ⟩ ⟩
+
+↦-inj-uncurried : ∀ {fv fv' FV FV' v v' V V' w w'} → fv ∷ FV ⊢ v ∷ V ↦ w ≡ fv' ∷ FV' ⊢  v' ∷ V' ↦ w'
+      → ⟨ fv , ⟨ FV , ⟨ v , ⟨ V , w ⟩ ⟩ ⟩ ⟩ ≡ ⟨ fv' , ⟨ FV' , ⟨ v' , ⟨ V' , w' ⟩ ⟩ ⟩ ⟩
 ↦-inj-uncurried refl = refl
 
 _d≟_ : (d₁ : Value) → (d₂ : Value) → Dec (d₁ ≡ d₂)
@@ -119,75 +109,59 @@ _ds≟_ : (ds₁ : List Value) → (ds₂ : List Value) → Dec (ds₁ ≡ ds₂
 const {B} k d≟ const {B'} k₁ with base-eq? B B'
 ... | no neq = no λ z → neq (const-inj-base z)
 ... | yes refl = map′ (cong (const {B})) const-inj (base-rep-eq? k k₁)
-const k d≟ ν = no (λ ())
-const k d≟ (v ∷ V ↦ w) = no (λ ())
+const k d≟ (fv' ∷ FV' ⊢ν) = no (λ ())
+const k d≟ (fv ∷ FV ⊢  v ∷ V ↦ w) = no (λ ())
 const k d≟ ω = no (λ ())
-const k d≟ (⦅ d₁' , d₂' ⦆⊢ b') = no (λ ())
 const k d≟ ∥ ds ∥ = no (λ ())
 const k d≟ (left v₁) = no (λ ())
 const k d≟ (right v₁) = no (λ ())
-(v ∷ V ↦ w) d≟ const k = no (λ ())
-(v ∷ V ↦ w) d≟ (v' ∷ V' ↦ w') = 
-  map′ (cong (λ z → proj₁ z ∷ proj₁ (proj₂ z) 
-                                              ↦ (proj₂ (proj₂ z))))
+(fv ∷ FV ⊢  v ∷ V ↦ w) d≟ const k = no (λ ())
+(fv ∷ FV ⊢ v ∷ V ↦ w) d≟ (fv' ∷ FV' ⊢  v' ∷ V' ↦ w') = 
+  map′ (cong (λ z → proj₁ z ∷ proj₁ (proj₂ z) ⊢ proj₁ (proj₂ (proj₂ z)) ∷ proj₁ (proj₂ (proj₂ (proj₂ z))) 
+                                              ↦ (proj₂ (proj₂ (proj₂ (proj₂ z))))))
         ↦-inj-uncurried 
-        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((v d≟ v') ×-dec
-        map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((V ds≟ V') ×-dec (w d≟ w'))))
-(v ∷ V ↦ w) d≟ ν = no (λ ())
-(v ∷ V ↦ w) d≟ ω = no (λ ())
-(v ∷ V ↦ w) d≟ (⦅ d₁' , d₂' ⦆⊢ b') = no (λ ())
-(v ∷ V ↦ w) d≟ ∥ ds ∥ = no (λ ())
-(v ∷ V ↦ w) d≟ (left v₁) = no (λ ())
-(v ∷ V ↦ w) d≟ (right v₁) = no (λ ())
-ν d≟ const k = no (λ ())
-ν d≟ (v ∷ V ↦ d₃) = no (λ ())
-ν d≟ ν = yes refl
-ν d≟ ω = no (λ ())
-ν d≟ (⦅ d₁' , d₂' ⦆⊢ b') = no (λ ())
-ν d≟ ∥ ds ∥ = no (λ ())
-ν d≟ (left v) = no (λ ())
-ν d≟  (right v) = no (λ ())
+        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((fv d≟ fv') ×-dec 
+        map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((FV ds≟ FV') ×-dec 
+        map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((v d≟ v') ×-dec
+        map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((V ds≟ V') ×-dec (w d≟ w'))))))
+(fv ∷ FV ⊢  v ∷ V ↦ w) d≟ (fv' ∷ FV' ⊢ν) = no (λ ())
+(fv ∷ FV ⊢  v ∷ V ↦ w) d≟ ω = no (λ ())
+(fv ∷ FV ⊢  v ∷ V ↦ w) d≟ ∥ ds ∥ = no (λ ())
+(fv ∷ FV ⊢  v ∷ V ↦ w) d≟ (left v₁) = no (λ ())
+(fv ∷ FV ⊢  v ∷ V ↦ w) d≟ (right v₁) = no (λ ())
+(fv ∷ FV ⊢ν) d≟ const k = no (λ ())
+(fv ∷ FV ⊢ν) d≟ (d₂ ∷ FV₁ ⊢ v ∷ V ↦ d₃) = no (λ ())
+(fv ∷ FV ⊢ν) d≟ (fv' ∷ FV' ⊢ν) = 
+  map′ (uncurry (cong₂ _∷_⊢ν)) ν-inj ((fv d≟ fv') ×-dec (FV ds≟ FV'))
+(fv ∷ FV ⊢ν) d≟ ω = no (λ ())
+(fv ∷ FV ⊢ν) d≟ ∥ ds ∥ = no (λ ())
+(fv ∷ FV ⊢ν) d≟ (left v) = no (λ ())
+(fv ∷ FV ⊢ν) d≟  (right v) = no (λ ())
 ω d≟ const k = no (λ ())
-ω d≟ (v ∷ V ↦ d₃) = no (λ ())
-ω d≟ ν = no (λ ())
+ω d≟ (d₂ ∷ FV ⊢ v ∷ V ↦ d₃) = no (λ ())
+ω d≟ (d₂ ∷ FV ⊢ν) = no (λ ())
 ω d≟ ω = yes refl
-ω d≟ (⦅ d₁ , d₂ ⦆⊢ b) = no (λ ())
 ω d≟ ∥ ds ∥ = no (λ ())
 ω d≟ (left v) = no (λ ())
 ω d≟  (right v) = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ const k = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ (v ∷ V ↦ d₃) = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ ν = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ ω = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ (⦅ d₁' , d₂' ⦆⊢ b') = 
-   map′ (cong (λ z → ⦅ proj₁ z , proj₁ (proj₂ z) ⦆⊢ (proj₂ (proj₂ z))))
-        clos-inj-uncurried 
-        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((d₁ d≟ d₁') ×-dec 
-        map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((d₂ d≟ d₂') ×-dec (b b≟ b'))))
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ ∥ ds ∥ = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟ (left v) = no (λ ())
-(⦅ d₁ , d₂ ⦆⊢ b) d≟  (right v) = no (λ ())
 ∥ ds ∥ d≟ const k = no (λ ())
-∥ ds ∥ d≟ (v ∷ V ↦ d₃) = no (λ ())
-∥ ds ∥ d≟ ν = no (λ ())
+∥ ds ∥ d≟ (d₂ ∷ FV ⊢ v ∷ V ↦ d₃) = no (λ ())
+∥ ds ∥ d≟ (d₂ ∷ FV ⊢ν) = no (λ ())
 ∥ ds ∥ d≟ ω = no (λ ())
-∥ ds ∥ d≟ (⦅ d₁ , d₂ ⦆⊢ b) = no (λ ())
 ∥ ds ∥ d≟ ∥ ds₁ ∥ = map′ (cong ∥_∥) tup-inj (ds ds≟ ds₁)
 ∥ ds ∥ d≟ (left v) = no (λ ())
 ∥ ds ∥ d≟  (right v) = no (λ ())
 (left v) d≟ const k = no (λ ())
-(left v) d≟ (v₁ ∷ V₁ ↦ d₃) = no (λ ())
-(left v) d≟ ν = no (λ ())
+(left v) d≟ (d₂ ∷ FV ⊢ v₁  ∷ V₁ ↦ d₃) = no (λ ())
+(left v) d≟ (d₂ ∷ FV ⊢ν) = no (λ ())
 (left v) d≟ ω = no (λ ())
-(left v) d≟ (⦅ d₁ , d₂ ⦆⊢ b) = no (λ ())
 (left v) d≟ ∥ ds ∥ = no (λ ())
 (left v) d≟ (left v₁) = map′ (cong left) left-inj (v d≟ v₁)
 (left v) d≟ (right v₁) = no (λ ())
 (right v) d≟ const k = no (λ ())
-(right v) d≟ (v₁ ∷ V₁ ↦ d₃) = no (λ ())
-(right v) d≟ ν = no (λ ())
+(right v) d≟ (d₂ ∷ FV ⊢ v₁ ∷ V₁ ↦ d₃) = no (λ ())
+(right v) d≟ (d₂ ∷ FV ⊢ν) = no (λ ())
 (right v) d≟ ω = no (λ ())
-(right v) d≟ (⦅ d₁ , d₂ ⦆⊢ b) = no (λ ())
 (right v) d≟ ∥ ds ∥ = no (λ ())
 (right v) d≟ (left v₁) = no (λ ())
 (right v) d≟ (right v₁) = map′ (cong right) right-inj (v d≟ v₁)
@@ -212,50 +186,37 @@ _~_ : Value → Value → Set
 const {B} x ~ const {B₁} x₁ with base-eq? B B₁
 ... | yes refl = x ≡ x₁
 ... | no neq = False
-const x ~ (v₁ ∷ V₁ ↦ v) = False
-const x ~ ν = False
+const x ~ (fv ∷ FV ⊢ v₁ ∷ V₁ ↦ v) = False
+const x ~ (fv ∷ FV ⊢ν) = False
 const x ~ ω = False  
-const x ~ (⦅ d₁ , d₂ ⦆⊢ b) = False
 const x ~ ∥ x₁ ∥ = False
 const x ~ (left x₁) = False
 const x ~ (right x₁) = False
-(v' ∷ V' ↦ w') ~ const x₂ = False
-(v ∷ V ↦ w) ~ (v' ∷ V' ↦ w') = (¬ (v ∷ V) ≈ (v' ∷ V')) ⊎ ( (v ∷ V) ≈ (v' ∷ V') × w ~ w' )
-(v' ∷ V' ↦ u) ~ ν = True
-(v' ∷ V' ↦ w') ~ ω = False
-(v' ∷ V' ↦ w') ~ (⦅ d₁' , d₂' ⦆⊢ b') = False
-(v' ∷ V' ↦ w') ~ ∥ x₂ ∥ = False
-(v' ∷ V' ↦ w') ~ (left x) = False
-(v' ∷ V' ↦ w') ~ (right x) = False
-ν ~ const x = False
-ν ~ (v' ∷ V' ↦ v) = True
-ν ~ ν = True
-ν ~ ω = False
-ν ~ (⦅ d₁' , d₂' ⦆⊢ b') = False
-ν ~ ∥ x ∥ = False
-ν ~ (left x) = False
-ν ~ (right x) = False
+(fv' ∷ FV' ⊢  v' ∷ V' ↦ w') ~ const x₂ = False
+(fv ∷ FV ⊢  v ∷ V ↦ w) ~ (fv' ∷ FV' ⊢  v' ∷ V' ↦ w') = (¬ (v ∷ V) ≈ (v' ∷ V')) ⊎ ( (v ∷ V) ≈ (v' ∷ V') × w ~ w' )
+(fv' ∷ FV' ⊢ v' ∷ V' ↦ u) ~ (fv ∷ FV ⊢ν) = True
+(fv' ∷ FV' ⊢  v' ∷ V' ↦ w') ~ ω = False
+(fv' ∷ FV' ⊢  v' ∷ V' ↦ w') ~ ∥ x₂ ∥ = False
+(fv' ∷ FV' ⊢  v' ∷ V' ↦ w') ~ (left x) = False
+(fv' ∷ FV' ⊢  v' ∷ V' ↦ w') ~ (right x) = False
+(fv ∷ FV ⊢ν) ~ const x = False
+(fv ∷ FV ⊢ν) ~ (fv' ∷ FV' ⊢ v' ∷ V' ↦ v) = True
+(fv ∷ FV ⊢ν) ~ (fv' ∷ FV' ⊢ν) = True
+(fv ∷ FV ⊢ν) ~ ω = False
+(fv ∷ FV ⊢ν) ~ ∥ x ∥ = False
+(fv ∷ FV ⊢ν) ~ (left x) = False
+(fv ∷ FV ⊢ν) ~ (right x) = False
 ω ~ const x = False
-ω ~ (v' ∷ V' ↦ v) = False
-ω ~ ν = False
+ω ~ (fv' ∷ x ⊢ v' ∷ V' ↦ v) = False
+ω ~ (fv ∷ FV ⊢ν) = False
 ω ~ ω = True {- starting with ω related with just itself -}
-ω ~ (⦅ d₁' , d₂' ⦆⊢ b') = False
 ω ~ ∥ x ∥ = False
 ω ~ (left x) = False
 ω ~ (right x) = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ const x = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ (v' ∷ V' ↦ v) = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ ν = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ ω = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ (⦅ d₁' , d₂' ⦆⊢ b') = d₁ ~ d₁' × d₂ ~ d₂'
-(⦅ d₁ , d₂ ⦆⊢ b) ~ ∥ x ∥ = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ (left x) = False
-(⦅ d₁ , d₂ ⦆⊢ b) ~ (right x) = False
 ∥ x ∥ ~ const x₁ = False
-∥ x ∥ ~ (v₁ ∷ V₁ ↦ v) = False
-∥ x ∥ ~ ν = False
+∥ x ∥ ~ (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = False
+∥ x ∥ ~ (fv ∷ FV ⊢ν) = False
 ∥ x ∥ ~ ω = False
-∥ x ∥ ~ (⦅ d₁' , d₂' ⦆⊢ b') = False
 ∥ [] ∥ ~ ∥ [] ∥ = True
 ∥ [] ∥ ~ ∥ x ∷ x₁ ∥ = False
 ∥ x ∷ x₂ ∥ ~ ∥ [] ∥ = False
@@ -263,18 +224,16 @@ const x ~ (right x₁) = False
 ∥ x ∥ ~ (left x₁) = False
 ∥ x ∥ ~ (right x₁) = False
 (left x) ~ const x₁ = False
-(left x) ~ (v₁ ∷ V₁ ↦ v) = False
-(left x) ~ ν = False
+(left x) ~ (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = False
+(left x) ~ (fv ∷ FV ⊢ν) = False
 (left x) ~ ω = False
-(left x) ~ (⦅ d₁' , d₂' ⦆⊢ b') = False
 (left x) ~ ∥ x₁ ∥ = False
 (left x) ~ (left x₁) = x ~ x₁
 (left x) ~ (right x₁) = False
 (right x) ~ const x₁ = False
-(right x) ~ (v₁ ∷ V₁ ↦ v) = False
-(right x) ~ ν = False
+(right x) ~ (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = False
+(right x) ~ (fv ∷ FV ⊢ν) = False
 (right x) ~ ω = False
-(right x) ~ (⦅ d₁' , d₂' ⦆⊢ b') = False
 (right x) ~ ∥ x₁ ∥ = False
 (right x) ~ (left x₁) = False
 (right x) ~ (right x₁) = x ~ x₁
@@ -303,16 +262,14 @@ const x ~ (right x₁) = False
   with base-eq? B B₁ | u~v
 ... | yes refl | refl = u~v
 ... | no neq | ()
-~-sym  (v ∷ V ↦ w)  (v' ∷ V' ↦ w') (inj₁ ¬V~V') = 
+~-sym (fv ∷ FV ⊢  v ∷ V ↦ w) (fv' ∷ FV' ⊢  v' ∷ V' ↦ w') (inj₁ ¬V~V') = 
   inj₁ λ z → ¬V~V' (≈-sym (v' ∷ V') (v ∷ V) z)
-~-sym  (v ∷ V ↦ w)  (v' ∷ V' ↦ w') (inj₂ ⟨ V~V' , w~w' ⟩) = 
+~-sym (fv ∷ FV ⊢  v ∷ V ↦ w) (fv' ∷ FV' ⊢  v' ∷ V' ↦ w') (inj₂ ⟨ V~V' , w~w' ⟩) = 
   inj₂ ⟨ ≈-sym (v ∷ V) (v' ∷ V') V~V' , ~-sym w w' w~w' ⟩
-~-sym (v' ∷ V' ↦ u) ν u~v = tt
-~-sym ν (v' ∷ V' ↦ v) u~v = tt
-~-sym ν ν u~v = tt
+~-sym (fv' ∷ x ⊢ v' ∷ V' ↦ u) (fv ∷ FV ⊢ν) u~v = tt
+~-sym (fv ∷ FV ⊢ν) (fv' ∷ x ⊢ v' ∷ V' ↦ v) u~v = tt
+~-sym (fv ∷ FV ⊢ν) (fv' ∷ FV' ⊢ν) u~v = tt
 ~-sym ω ω u~v = tt
-~-sym (⦅ d₁ , d₂ ⦆⊢ b) (⦅ d₁' , d₂' ⦆⊢ b') ⟨ fst , snd ⟩ = 
-  ⟨ ~-sym d₁ d₁' fst , ~-sym d₂ d₂' snd ⟩
 ~-sym ∥ [] ∥ ∥ [] ∥ u~v = tt
 ~-sym ∥ x ∷ x₂ ∥ ∥ x₁ ∷ x₃ ∥ ⟨ fst , rst ⟩ = 
   ⟨ ~-sym x x₁ fst , ~-sym ∥ x₂ ∥ ∥ x₃ ∥ rst ⟩
@@ -334,55 +291,42 @@ _~?_ : (u v : Value) → Dec (u ~ v)
 const {B} x ~? const {B'} x₁ with base-eq? B B'
 ... | no neq = no (λ z → z)
 ... | yes refl = base-rep-eq? x x₁
-const x ~? (v₁ ∷ V₁ ↦ v) = no (λ z → z)
-const x ~? ν = no (λ z → z)
+const x ~? (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = no (λ z → z)
+const x ~? (fv ∷ FV ⊢ν) = no (λ z → z)
 const x ~? ω = no (λ z → z)
-const x ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
 const x ~? ∥ x₁ ∥ = no (λ z → z)
 const x ~? (left x₁) = no (λ z → z)
 const x ~? (right x₁) = no (λ z → z)
-(v' ∷ V' ↦ u) ~? const x₂ = no (λ z → z)
-(v ∷ V ↦ w) ~?  (v' ∷ V' ↦ w') with (v ∷ V) ≈? (v' ∷ V')
+(fv' ∷ x ⊢ v' ∷ V' ↦ u) ~? const x₂ = no (λ z → z)
+(fv ∷ FV ⊢ v ∷ V ↦ w) ~? (fv' ∷ FV' ⊢  v' ∷ V' ↦ w') with (v ∷ V) ≈? (v' ∷ V')
 ... | no ¬V~V' = yes (inj₁ ¬V~V')
 ... | yes V~V' with w ~? w'
 ... | no ¬w~w' = no (λ z → [ (λ x → x V~V') 
                            , (λ x → ¬w~w' (proj₂ x)) ] z )
 ... | yes w~w' = yes (inj₂ ⟨ V~V' , w~w' ⟩)
-(v' ∷ V' ↦ w') ~? ν = yes tt
-(v' ∷ V' ↦ w') ~? ω = no (λ z → z)
-(v' ∷ V' ↦ w') ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
-(v' ∷ V' ↦ w') ~? ∥ x₂ ∥ = no (λ z → z)
-(v' ∷ V' ↦ w') ~? (left x) = no (λ z → z)
-(v' ∷ V' ↦ w') ~? (right x) = no (λ z → z)
-ν ~? const x = no (λ z → z)
-ν ~? (v' ∷ V' ↦ v) = yes tt
-ν ~? ν = yes tt
-ν ~? ω = no (λ z → z)
-ν ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
-ν ~? ∥ x ∥ = no (λ z → z)
-ν ~? (left x) = no (λ z → z)
-ν ~? (right x) = no (λ z → z)
+(fv' ∷ FV' ⊢ v' ∷ V' ↦ w') ~? (fv ∷ FV ⊢ν) = yes tt
+(fv' ∷ FV' ⊢ v' ∷ V' ↦ w') ~? ω = no (λ z → z)
+(fv' ∷ FV' ⊢ v' ∷ V' ↦ w') ~? ∥ x₂ ∥ = no (λ z → z)
+(fv' ∷ FV' ⊢ v' ∷ V' ↦ w') ~? (left x) = no (λ z → z)
+(fv' ∷ FV' ⊢ v' ∷ V' ↦ w') ~? (right x) = no (λ z → z)
+(fv ∷ FV ⊢ν) ~? const x = no (λ z → z)
+(fv ∷ FV ⊢ν) ~? (fv' ∷ x ⊢ v' ∷ V' ↦ v) = yes tt
+(fv ∷ FV ⊢ν) ~? (fv' ∷ FV' ⊢ν) = yes tt
+(fv ∷ FV ⊢ν) ~? ω = no (λ z → z)
+(fv ∷ FV ⊢ν) ~? ∥ x ∥ = no (λ z → z)
+(fv ∷ FV ⊢ν) ~? (left x) = no (λ z → z)
+(fv ∷ FV ⊢ν) ~? (right x) = no (λ z → z)
 ω ~? const x = no (λ z → z)
-ω ~? (v' ∷ V' ↦ v) = no (λ z → z)
-ω ~? ν = no (λ z → z)
+ω ~? (fv' ∷ x ⊢ v' ∷ V' ↦ v) = no (λ z → z)
+ω ~? (fv ∷ FV ⊢ν) = no (λ z → z)
 ω ~? ω = yes tt
-ω ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
 ω ~? ∥ x ∥ = no (λ z → z)
 ω ~? (left x) = no (λ z → z)
 ω ~? (right x) = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? const x = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? (v' ∷ V' ↦ v) = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? ν = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? ω = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? (⦅ d₁' , d₂' ⦆⊢ b') = (d₁ ~? d₁') ×-dec (d₂ ~? d₂')
-(⦅ d₁ , d₂ ⦆⊢ b) ~? ∥ x ∥ = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? (left x) = no (λ z → z)
-(⦅ d₁ , d₂ ⦆⊢ b) ~? (right x) = no (λ z → z)
 ∥ x ∥ ~? const x₁ = no (λ z → z)
-∥ x ∥ ~? (v₁ ∷ V₁ ↦ v) = no (λ z → z)
-∥ x ∥ ~? ν = no (λ z → z)
+∥ x ∥ ~? (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = no (λ z → z)
+∥ x ∥ ~? (fv ∷ FV ⊢ν) = no (λ z → z)
 ∥ x ∥ ~? ω = no (λ z → z)
-∥ x ∥ ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
 ∥ [] ∥ ~? ∥ [] ∥ = yes tt
 ∥ [] ∥ ~? ∥ x ∷ x₁ ∥ = no (λ z → z)
 ∥ x ∷ x₂ ∥ ~? ∥ [] ∥ = no (λ z → z)
@@ -390,18 +334,16 @@ const x ~? (right x₁) = no (λ z → z)
 ∥ x ∥ ~? (left x₁) = no (λ z → z)
 ∥ x ∥ ~? (right x₁) = no (λ z → z)
 (left x) ~? const x₁ = no (λ z → z)
-(left x) ~? (v₁ ∷ V₁ ↦ v) = no (λ z → z)
-(left x) ~? ν = no (λ z → z)
+(left x) ~? (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = no (λ z → z)
+(left x) ~? (fv ∷ FV ⊢ν) = no (λ z → z)
 (left x) ~? ω = no (λ z → z)
-(left x) ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
 (left x) ~? ∥ x₁ ∥ = no (λ z → z)
 (left x) ~? (left x₁) = x ~? x₁
 (left x) ~? (right x₁) = no (λ z → z)
 (right x) ~? const x₁ = no (λ z → z)
-(right x) ~? (v₁ ∷ V₁ ↦ v) = no (λ z → z)
-(right x) ~? ν = no (λ z → z)
+(right x) ~? (fv' ∷ FV' ⊢ v₁ ∷ V₁ ↦ v) = no (λ z → z)
+(right x) ~? (fv ∷ FV ⊢ν) = no (λ z → z)
 (right x) ~? ω = no (λ z → z)
-(right x) ~? (⦅ d₁' , d₂' ⦆⊢ b') = no (λ z → z)
 (right x) ~? ∥ x₁ ∥ = no (λ z → z)
 (right x) ~? (left x₁) = no (λ z → z)
 (right x) ~? (right x₁) = x ~? x₁

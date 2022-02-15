@@ -1,6 +1,5 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 
-module NewDomainMultiAnnPair where
+module DomainMultiAnnPair where
 
 {-
 

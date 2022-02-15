@@ -1,6 +1,5 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 
-module NewDomainSingle where
+module DomainSingle where
 
 {-
 

@@ -1,6 +1,5 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 
-module NewDomain where
+module GraphModel.Domain where
 
 {-
 

@@ -1,13 +1,10 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewClos2 where
+module GraphModel.ISWIM where
 {-
- This intermediate semantics surrounds abstractions with 
-   nested bindings wrapped and a "clear" ∁ to enclose the term.
- It uses "early application", which acts more like a nested let binding.
- This semantics is after the 'enclose' pass,
-   is before and after the 'optimize' pass,
-   and before the 'concretize/uncurry' pass.
+
+ The source language of the compiler
+
 -}
 
 open import Utilities using (_iff_)
@@ -17,9 +14,9 @@ open import NewSigUtil
 open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
+open import GraphModel.Domain
+open import GraphModel.DOp
 open import NewDenotProperties
-open import NewDomain
-open import NewDOp
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -29,7 +26,6 @@ open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -38,17 +34,17 @@ open Eq.≡-Reasoning
 {- Syntax ---------------------------------------------------------------------}
 
 data Op : Set where
-  clos-op : ℕ → Op
+  lam : Op
   app : Op
   lit : (B : Base) → (k : base-rep B) → Op
-  tuple : ℕ → Op
-  get : ℕ → Op
+  tuple : (n : ℕ) → Op
+  get : (n : ℕ) → Op
   inl-op : Op
   inr-op : Op
   case-op : Op
 
 sig : Op → List Sig
-sig (clos-op n) = ∁ (ν-n n (ν ■)) ∷ (replicate n ■)
+sig lam = (ν ■) ∷ []
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
 sig (tuple n) = replicate n ■
@@ -56,6 +52,8 @@ sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
+
+
 
 module ASTMod = Syntax.OpSig Op sig
 open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
@@ -67,62 +65,40 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
             renaming (ABT to AST) public
 
 
-DApp-n : ∀ (n : ℕ) b → DFun (𝒫 Value) (ν-n n b ∷ replicate n ■) b
-DApp-n zero b ⟨ 𝒻 , ptt ⟩ = 𝒻
-DApp-n (suc n) b ⟨ 𝒻 , ⟨ D , Ds ⟩ ⟩ = DApp-n n b ⟨ (𝒻 D) , Ds ⟩
+open import Fold2 Op sig
 
-DApp-n-mono : ∀ n b → monotone (ν-n n b ∷ replicate n ■) b (DApp-n n b)
-DApp-n-mono zero b ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = F⊆
-DApp-n-mono (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩ ⟨ F⊆ , ⟨ D⊆ , Ds⊆ ⟩ ⟩ = 
-  DApp-n-mono n b ⟨ F D , Ds ⟩ ⟨ F' D' , Ds' ⟩ ⟨ F⊆ D D' (lower D⊆) , Ds⊆ ⟩
+𝕆-ISWIM : DOpSig (𝒫 Value) sig
+𝕆-ISWIM lam = Λ
+𝕆-ISWIM app = ⋆
+𝕆-ISWIM (lit B k) = ℬ B k
+𝕆-ISWIM (tuple n) = 𝒯 n
+𝕆-ISWIM (get n) = proj n
+𝕆-ISWIM inl-op = ℒ
+𝕆-ISWIM inr-op = ℛ
+𝕆-ISWIM case-op = 𝒞-new
 
-DApp-n-consis : ∀ n b → consistent _~_ (ν-n n b ∷ replicate n ■) b (DApp-n n b)
-DApp-n-consis zero b ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = F~
-DApp-n-consis (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩ ⟨ F~ , ⟨ D~ , Ds~ ⟩ ⟩ = 
-  DApp-n-consis n b ⟨ F D , Ds ⟩ ⟨ F' D' , Ds' ⟩ ⟨ F~ D D' (lower D~) , Ds~ ⟩
+𝕆-ISWIM-mono : 𝕆-monotone sig 𝕆-ISWIM
+𝕆-ISWIM-mono lam = Λ-mono
+𝕆-ISWIM-mono app = ⋆-mono
+𝕆-ISWIM-mono (lit B k) _ _ _ = lift (λ x x₁ → x₁)
+𝕆-ISWIM-mono (tuple n) = 𝒯-mono n
+𝕆-ISWIM-mono (get n) = proj-mono n
+𝕆-ISWIM-mono inl-op = ℒ-mono
+𝕆-ISWIM-mono inr-op = ℛ-mono
+𝕆-ISWIM-mono case-op = 𝒞-new-mono
 
-𝕆-Clos2 : DOpSig (𝒫 Value) sig
-𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = {!   !} {- 𝒜 n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩ -}
-𝕆-Clos2 app = ⋆
-𝕆-Clos2 (lit B k) = ℬ B k
-𝕆-Clos2 (tuple n) = 𝒯 n
-𝕆-Clos2 (get i) = proj i
-𝕆-Clos2 inl-op = ℒ
-𝕆-Clos2 inr-op = ℛ
-𝕆-Clos2 case-op = 𝒞-new
-
-
-𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
-𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = {!   !}
-  {- 𝒜-mono n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
-           ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ , Ds' ⟩ 
-           ⟨ Λ-mono ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ 
-                    ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ 
-                    ⟨ DApp-n-mono n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ , ptt ⟩ , Ds⊆ ⟩ -}
-𝕆-Clos2-mono app = ⋆-mono
-𝕆-Clos2-mono (lit B k) _ _ _ = lift λ d x → x
-𝕆-Clos2-mono (tuple x) = 𝒯-mono x
-𝕆-Clos2-mono (get x) = proj-mono x
-𝕆-Clos2-mono inl-op = ℒ-mono
-𝕆-Clos2-mono inr-op = ℛ-mono
-𝕆-Clos2-mono case-op = 𝒞-new-mono
-
-𝕆-Clos2-consis : 𝕆-consistent _~_ sig 𝕆-Clos2
-𝕆-Clos2-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
-{-  𝒜-consis n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
-           ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ , Ds' ⟩ 
-           ⟨ Λ-consis ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ 
-                    ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ 
-                    ⟨ DApp-n-consis n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ , ptt ⟩ , Ds~ ⟩ -}
-𝕆-Clos2-consis app = ⋆-consis
-𝕆-Clos2-consis (lit B k) = ℬ-consis B k
-𝕆-Clos2-consis (tuple n) = 𝒯-consis n
-𝕆-Clos2-consis (get i) = proj-consis i
-𝕆-Clos2-consis inl-op = ℒ-consis
-𝕆-Clos2-consis inr-op = ℛ-consis
-𝕆-Clos2-consis case-op = 𝒞-new-consis
+𝕆-ISWIM-consis : 𝕆-consistent _~_ sig 𝕆-ISWIM
+𝕆-ISWIM-consis lam = Λ-consis
+𝕆-ISWIM-consis app = ⋆-consis
+𝕆-ISWIM-consis (lit B k) = ℬ-consis B k
+𝕆-ISWIM-consis (tuple n) = 𝒯-consis n
+𝕆-ISWIM-consis (get n) = proj-consis n
+𝕆-ISWIM-consis inl-op = ℒ-consis
+𝕆-ISWIM-consis inr-op = ℛ-consis
+𝕆-ISWIM-consis case-op = 𝒞-new-consis
 
 {-
+
 interp-op1  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
 interp-op1 (clos-op n) ⟨ F , Ds ⟩ =
     (Λ λ X → Λ′ (𝒯 n Ds) λ Y → F X Y) ▪ (𝒯 n Ds)
@@ -158,8 +134,7 @@ pattern inl M = inl-op ⦅ cons (ast M) nil ⦆
 pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
 pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
-open import Fold2 Op sig
-open import SemanticPropertiesAnnot Op sig
+
 
 
 
@@ -172,7 +147,7 @@ mono-op1 {clos-op n} {⟨ f , fvs₁ ⟩ } {⟨ g , fvs₂ ⟩} ⟨ f⊆g , fvs�
 -}
 mono-op1 {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
     ▪-mono-⊆ (lower a<c) (lower b<d)
-mono-op1 {lit B k} {xs} {ys} xs⊆ys d d∈k = d∈k
+mono-op1 {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
 mono-op1 {pair-op} {⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩} {⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩}
     ⟨ lift D₁⊆E₁ , ⟨ lift D₂⊆E₂ , _ ⟩ ⟩ = cons-mono-⊆ D₁⊆E₁ D₂⊆E₂
 mono-op1 {fst-op} {⟨ D , _ ⟩} {⟨ E , _ ⟩} ⟨ lift D⊆E , _ ⟩ = car-mono-⊆ D⊆E 
@@ -254,6 +229,4 @@ instance
   ISWIM-Continuous = record { continuous-op =
       λ{op}{ρ}{NE-ρ} → cont-op2{op}{ρ}{NE-ρ} }
 open ContinuousSemantics {{...}} public
-
-
 -}

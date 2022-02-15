@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewClos1 where
+module GraphModel.Clos1 where
 {-
  This intermediate semantics has arrows annotated 
    with (compact) free variable denotations.
@@ -17,8 +17,8 @@ open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import NewDomain
-open import NewDOp
+open import GraphModel.Domain
+open import GraphModel.DOp
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)

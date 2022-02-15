@@ -1,35 +1,35 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewClos3Multi where
+module GraphModel.Clos2 where
 {-
- This intermediate semantics uses a single binding 
-   that accepts a tuple which is unpacked later.
- This semantics is after the 'concretize/uncurry' pass,
-   and before the 'delay' pass.
+ This intermediate semantics surrounds abstractions with 
+   nested bindings wrapped and a "clear" ∁ to enclose the term.
+ It uses "early application", which acts more like a nested let binding.
+ This semantics is after the 'enclose' pass,
+   is before and after the 'optimize' pass,
+   and before the 'concretize/uncurry' pass.
 -}
 
 open import Utilities using (_iff_)
 open import Primitives
 open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
-open import NewSyntaxUtil
 open import NewDOpSig
-open import NewDenotProperties
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import NewDomainMultiAnnLam
-open import NewDOpMultiAnnLam
+open import NewDenotProperties
+open import GraphModel.Domain
+open import GraphModel.DOp
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate)
-open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
-open import Data.Unit.Polymorphic renaming (⊤ to p⊤; tt to ptt)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
@@ -48,7 +48,7 @@ data Op : Set where
   case-op : Op
 
 sig : Op → List Sig
-sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
+sig (clos-op n) = ∁ (ν-n n (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
 sig (tuple n) = replicate n ■
@@ -67,85 +67,60 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
             renaming (ABT to AST) public
 
 
-𝕆-Clos3 : DOpSig (𝒫 Value) sig
-𝕆-Clos3 (clos-op n) ⟨ F , Ds ⟩ = 𝒜Λ ⟨ F , ⟨ 𝒯 n Ds , ptt ⟩ ⟩
-  {- Λn (suc zero) ⟨ F , ⟨ 𝒯 n Ds , ptt ⟩  ⟩ -} 
-  {- DComp-rest (replicate n ■) ■ ■ (𝒯 n) (λ T → 𝒜 n (Λ (𝒻 T))) -}
-𝕆-Clos3 app = ⋆
-𝕆-Clos3 (lit B k) = ℬ B k
-𝕆-Clos3 (tuple n) = 𝒯 n
-𝕆-Clos3 (get i) = proj i
-𝕆-Clos3 inl-op = ℒ
-𝕆-Clos3 inr-op = ℛ
-𝕆-Clos3 case-op = 𝒞
+DApp-n : ∀ (n : ℕ) b → DFun (𝒫 Value) (ν-n n b ∷ replicate n ■) b
+DApp-n zero b ⟨ 𝒻 , ptt ⟩ = 𝒻
+DApp-n (suc n) b ⟨ 𝒻 , ⟨ D , Ds ⟩ ⟩ = DApp-n n b ⟨ (𝒻 D) , Ds ⟩
 
-𝕆-Clos3-mono : 𝕆-monotone sig 𝕆-Clos3
-𝕆-Clos3-mono (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
-     𝒜Λ-mono ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩
-              ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
+DApp-n-mono : ∀ n b → monotone (ν-n n b ∷ replicate n ■) b (DApp-n n b)
+DApp-n-mono zero b ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = F⊆
+DApp-n-mono (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩ ⟨ F⊆ , ⟨ D⊆ , Ds⊆ ⟩ ⟩ = 
+  DApp-n-mono n b ⟨ F D , Ds ⟩ ⟨ F' D' , Ds' ⟩ ⟨ F⊆ D D' (lower D⊆) , Ds⊆ ⟩
 
-  {- Λn-mono (suc zero) ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩ 
-             ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
-  -}
-  {- 𝒜-mono x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
-    ⟨ Λ-mono ⟨ F (𝒯 x Ds) , ptt ⟩ ⟨ F' (𝒯 x Ds') , ptt ⟩ 
-             ⟨ F~ (𝒯 x Ds) (𝒯 x Ds') (lower (𝒯-mono x Ds Ds' Ds~)) , ptt ⟩ 
-    , Ds~ ⟩ -}
-  {- DComp-rest-pres _⊆_ (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
-                  (λ T → 𝒜 x (Λ (F1 T))) (λ T → 𝒜 x (Λ (F2 T))) 
-                  (𝒯-mono x) 
-                  (λ T T' T⊆ → 𝒜-mono x (Λ (F1 T)) (Λ (F2 T')) 
-                               (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆)))) -}
-𝕆-Clos3-mono app = ⋆-mono
-𝕆-Clos3-mono (lit B k) _ _ _ = lift (λ d z → z)
-𝕆-Clos3-mono (tuple x) = 𝒯-mono x
-𝕆-Clos3-mono (get x) = proj-mono x
-𝕆-Clos3-mono inl-op = ℒ-mono
-𝕆-Clos3-mono inr-op = ℛ-mono
-𝕆-Clos3-mono case-op = 𝒞-mono
+DApp-n-consis : ∀ n b → consistent _~_ (ν-n n b ∷ replicate n ■) b (DApp-n n b)
+DApp-n-consis zero b ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = F~
+DApp-n-consis (suc n) b ⟨ F , ⟨ D , Ds ⟩ ⟩ ⟨ F' , ⟨ D' , Ds' ⟩ ⟩ ⟨ F~ , ⟨ D~ , Ds~ ⟩ ⟩ = 
+  DApp-n-consis n b ⟨ F D , Ds ⟩ ⟨ F' D' , Ds' ⟩ ⟨ F~ D D' (lower D~) , Ds~ ⟩
 
-𝕆-Clos3-consis : 𝕆-consistent _~_ sig 𝕆-Clos3
-𝕆-Clos3-consis (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
-  {- 𝒜-consis x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
-    ⟨ Λ-consis ⟨ F (𝒯 x Ds) , ptt ⟩ ⟨ F' (𝒯 x Ds') , ptt ⟩ 
-             ⟨ F~ (𝒯 x Ds) (𝒯 x Ds') (lower (𝒯-consis x Ds Ds' Ds~)) , ptt ⟩ 
-    , Ds~ ⟩ -}
-  {- DComp-rest-pres (Every _~_) (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
-                  (λ T → 𝒜 x (Λ (F1 T))) ((λ T → 𝒜 x (Λ (F2 T)))) 
-  (𝒯-consis x) (λ T T' T~ → 𝒜-consis x (Λ (F1 T)) (Λ (F2 T')) 
-                            (Λ-consis (F1 T) (F2 T') (F~ T T' (lower T~)))) -}
-𝕆-Clos3-consis app = ⋆-consis
-𝕆-Clos3-consis (lit B k) = ℬ-consis B k
-𝕆-Clos3-consis (tuple x) = 𝒯-consis x
-𝕆-Clos3-consis (get x) = proj-consis x
-𝕆-Clos3-consis inl-op = ℒ-consis
-𝕆-Clos3-consis inr-op = ℛ-consis
-𝕆-Clos3-consis case-op = 𝒞-consis
+𝕆-Clos2 : DOpSig (𝒫 Value) sig
+𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = {!   !} {- 𝒜 n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩ -}
+𝕆-Clos2 app = ⋆
+𝕆-Clos2 (lit B k) = ℬ B k
+𝕆-Clos2 (tuple n) = 𝒯 n
+𝕆-Clos2 (get i) = proj i
+𝕆-Clos2 inl-op = ℒ
+𝕆-Clos2 inr-op = ℛ
+𝕆-Clos2 case-op = 𝒞-new
 
 
-open import Fold2 Op sig
-open import NewSemantics Op sig public
+𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
+𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ = {!   !}
+  {- 𝒜-mono n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
+           ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ , Ds' ⟩ 
+           ⟨ Λ-mono ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ 
+                    ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ 
+                    ⟨ DApp-n-mono n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ , ptt ⟩ , Ds⊆ ⟩ -}
+𝕆-Clos2-mono app = ⋆-mono
+𝕆-Clos2-mono (lit B k) _ _ _ = lift λ d x → x
+𝕆-Clos2-mono (tuple x) = 𝒯-mono x
+𝕆-Clos2-mono (get x) = proj-mono x
+𝕆-Clos2-mono inl-op = ℒ-mono
+𝕆-Clos2-mono inr-op = ℛ-mono
+𝕆-Clos2-mono case-op = 𝒞-new-mono
 
-instance
-  Clos3-Semantics : Semantics
-  Clos3-Semantics = record { interp-op = 𝕆-Clos3 ;
-                               mono-op = 𝕆-Clos3-mono ;
-                               error = ω }
-open Semantics {{...}} public
-
-
-{-
-sig : Op → List Sig
-sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
-sig app = ■ ∷ ■ ∷ []
-sig (lit B k) = []
-sig (tuple n) = replicate n ■
-sig (get i) = ■ ∷ []
-sig inl-op = ■ ∷ []
-sig inr-op = ■ ∷ []
-sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
--}
-
+𝕆-Clos2-consis : 𝕆-consistent _~_ sig 𝕆-Clos2
+𝕆-Clos2-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
+{-  𝒜-consis n ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ , Ds ⟩  
+           ⟨ Λ ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ , Ds' ⟩ 
+           ⟨ Λ-consis ⟨ DApp-n n (ν ■) ⟨ F , Ds ⟩ , ptt ⟩ 
+                    ⟨ DApp-n n (ν ■) ⟨ F' , Ds' ⟩ , ptt ⟩ 
+                    ⟨ DApp-n-consis n (ν ■) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ , ptt ⟩ , Ds~ ⟩ -}
+𝕆-Clos2-consis app = ⋆-consis
+𝕆-Clos2-consis (lit B k) = ℬ-consis B k
+𝕆-Clos2-consis (tuple n) = 𝒯-consis n
+𝕆-Clos2-consis (get i) = proj-consis i
+𝕆-Clos2-consis inl-op = ℒ-consis
+𝕆-Clos2-consis inr-op = ℛ-consis
+𝕆-Clos2-consis case-op = 𝒞-new-consis
 
 {-
 interp-op1  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
@@ -183,7 +158,8 @@ pattern inl M = inl-op ⦅ cons (ast M) nil ⦆
 pattern inr M = inr-op ⦅ cons (ast M) nil ⦆
 pattern case L M N = case-op ⦅ cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil)) ⦆
 
-
+open import Fold2 Op sig
+open import SemanticPropertiesAnnot Op sig
 
 
 

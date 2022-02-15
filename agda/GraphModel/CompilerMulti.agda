@@ -8,16 +8,16 @@ open import AbstractBindingTree
 open import NewSyntaxUtil
 open import NewSigUtil
 
-module NewCompilerMulti where
-  open import NewISWIM 
+module GraphModel.CompilerMulti where
+  open import GraphModel.ISWIM as NewISWIM
     {- renaming (AST to AST0; cons to cons0; nil to nil0; ast to ast0) -}
-  open import NewClos1 
+  open import GraphModel.Clos1 as NewClos1
    {- renaming (AST to AST1; cons to cons1; nil to nil1; ast to ast1) -}
-  open import NewClos2 
+  open import GraphModel.Clos2 as NewClos2
    {- renaming (AST to NewClos2.AST; cons to cons2; nil to nil2; ast to NewClos2.AST) -}
-  open import NewClos3Multi
+  open import GraphModel.Clos3Multi as NewClos3Multi
    {- renaming (AST to NewClos3.AST; cons to cons3; nil to nil3; ast to NewClos3.AST) -}
-  open import NewClos4Multi
+  open import GraphModel.Clos4Multi as NewClos4Multi
     renaming (clear to clear4; bind to bind4; ast to ast4)
     {- renaming (AST to NewClos4.AST; cons to cons4; nil to nil4; ast to NewClos4.AST) -}
 

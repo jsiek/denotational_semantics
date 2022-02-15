@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module NewDOpAnnLam where
+module DOpAnnLam where
 
 {-
 
@@ -19,7 +19,7 @@ open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
-open import NewDomainAnnLam
+open import DomainAnnLam
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
