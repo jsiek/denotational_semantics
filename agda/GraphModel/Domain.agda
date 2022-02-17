@@ -11,12 +11,6 @@ module GraphModel.Domain where
 open import Primitives
 open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import Var
-open import Substitution using (_•_)
-open import ScopedTuple hiding (𝒫)
-open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
-open import NewSigUtil
-open import NewDOpSig
 open import NewDenotProperties
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)

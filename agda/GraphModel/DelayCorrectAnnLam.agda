@@ -24,6 +24,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; replicate; length; map)
 open import Data.List.Relation.Unary.Any using (Any; here; there)
   renaming (map to anymap)
+open import Data.List.Relation.Unary.All using (All; []; _∷_; head; tail; reduce)
 open import Data.List.Relation.Unary.Any.Properties using (map⁺; map⁻)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
@@ -74,7 +75,7 @@ data _~to_ : Value → Value' → Set where
   to-tup : ∀ {ds ds'} → (ds~ : ds ~tos ds') → ∥ ds ∥ ~to ∥ ds' ∥
   to-ν : ∀ {fv fv' FV FV'} → (fv ∷ FV) ~tos (fv' ∷ FV')
        → ∀ {fv''} → fv'' ∈ mem (fv' ∷ FV') 
-       → (fv ∷ FV ⊢ν) ~to (⦅ fv' ∷ FV' ↦ ν , fv'' ⦆)
+       → (fv ∷ FV ⊢ν) ~to ⦅ fv' ∷ FV' ↦ ν , fv'' ⦆)
 
 The main issue is this definition of ~tos, which doesn't seem powerful enough for function cases.
 data _~tos_ where
@@ -88,8 +89,8 @@ data _~tos_ where
 tos : List Value → List Value'
 to : Value → Value'
 to (const x) = const x
-to (FV ⊢ V ↦ w) = (⦅ (tos FV ↦ (tos V ↦ to w)) , tos FV ⦆)
-to (FV ⊢ν) = (⦅ (tos FV ↦ ν) , tos FV ⦆)
+to (FV ⊢ V ↦ w) = ⦅ (tos FV ↦ (tos V ↦ to w)) , tos FV ⦆
+to (FV ⊢ν) = ⦅ (tos FV ↦ ν) , tos FV ⦆
 to ω = ω
 to ∥ vs ∥ = ∥ tos vs ∥
 to (left v) = left (to v)
@@ -285,18 +286,18 @@ delay-reflect : ∀ M ρ d → d ∈ ⟦ delay M ⟧' ρ → fro d ∈ ⟦ M ⟧
   on the value; if it would fail, we map it to the empty function which is
   always in a function declaration.
 
-fro (⦅ ν , FV ⦆) = fros FV ⊢ν
-fro (⦅ FV' ↦ ν , FV ⦆) = fros FV ⊢ν
-fro (⦅ FV' ↦ (V ↦ w) , FV ⦆) = fros FV' ⊢ fros V ↦ fro w
-fro (⦅ FV' ↦ (V ↦ w) , FV ⦆) = fros FV ⊢ν {- NOT for app; this a default value for closure case -}
-fro (⦅ u , v ⦆) = ω
+fro ⦅ ν , FV ⦆) = fros FV ⊢ν
+fro ⦅ FV' ↦ ν , FV ⦆) = fros FV ⊢ν
+fro ⦅ FV' ↦ (V ↦ w) , FV ⦆) = fros FV' ⊢ fros V ↦ fro w
+fro ⦅ FV' ↦ (V ↦ w) , FV ⦆) = fros FV ⊢ν {- NOT for app; this a default value for closure case -}
+fro ⦅ u , v ⦆) = ω
 
 app M N ->  ((car M')  (cdr M')) N'
 d' ∈ target ==> d ∈ source  (where d' ~ d)
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (⦅ u , V ⦆) = u ∈ D₁ × mem V ⊆ D₂ × V ≢ []
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (⦅ U ↦ w , V ⦆) = 
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ u , V ⦆) = u ∈ D₁ × mem V ⊆ D₂ × V ≢ []
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ U ↦ w , V ⦆) = 
    (mem U ⊆ D₂ × U ≢ []) × (U ↦ w ∈ D₁) × mem V ⊆ D₂ × V ≢ []
 {- could do U ⊆ V also, would get neU for free -}
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
@@ -452,7 +453,6 @@ get-cdr D ⦅ u , v ∷ V ⦆ (+cdr-cdr-here +cdr) =
 get-cdr D ⦅ u , v ∷ V ⦆ (+cdr-cdr-there +cdr) = 
   get-cdr D ⦅ u , V ⦆ +cdr
 
-
 get-cdr-mono : ∀ {D D'} u {v u+v} (+cdr : add2cdr u v u+v) 
              → D' ⊆ D' → get-cdr D u +cdr ⊆ get-cdr D u +cdr
 get-cdr-mono (V ↦ u) (+cdr-↦ +cdr) D⊆ u+v u+v∈ = {!   !}
@@ -565,18 +565,310 @@ keylemma D ccD (v ∷ V') {f}{V} ⦅f,V⦆∈D V'⊆cdrD =
       (V'⊆cdrD v (here refl))
 
 
+{- =============================================================================
+   Current attempt
+   =============================================================================
+This get-cdr formulation is ugly.  Instead of adding a value to a cdr
+and checking elsewhere that the value sits in an appropriate denotation, we'll
+join values of similar shape, and this will ensure things sit in the right places.
+-}
+
+
+{- I want to start simple with consistent/joinable arrows... let's not worry 
+   just yet about whether there are cases where we can "join" domains of arrows -}
+
+data _≈≈_ : List Value' → List Value' → Set
+data _~∥~_ : List Value' → List Value' → Set
+data _~~_ : Value' → Value' → Set where
+  ~~-const : ∀ {B k} → const {B} k ~~ const k
+  ~~-ω : ω ~~ ω
+  ~~-ν-ν : ν ~~ ν
+  ~~-ν-↦ : ∀ {V w} → ν ~~ (V ↦ w)
+  ~~-↦-ν : ∀ {V w} → (V ↦ w) ~~ ν
+  ~~-↦-↦ : ∀ {V w w'} 
+          → (w~ : w ~~ w')
+          → (V ↦ w) ~~ (V ↦ w')
+  ~~-left : ∀ {d d'}
+          → (d~ : d ~~ d')
+          → left d ~~ left d'
+  ~~-right : ∀ {d d'}
+          → (d~ : d ~~ d')
+          → right d ~~ right d'
+  ~~-tup : ∀ {ds ds'}
+          → (ds~ : ds ~∥~ ds')
+          → ∥ ds ∥ ~~ ∥ ds' ∥
+  ~~-pair : ∀ {u u' V V'}
+          → (u~ : u ~~ u')
+          → (V≈ : V ≈≈ V')
+          → ⦅ u , V ⦆ ~~ ⦅ u' , V' ⦆
+data _~∥~_ where
+   [] : [] ~∥~ []
+   _∷_ : ∀ {d d' ds ds'}
+       → (d~ : d ~~ d')
+       → (ds~ : ds ~∥~ ds')
+       → (d ∷ ds) ~∥~ (d' ∷ ds')
+
+data _≈≈_ where
+  ≈≈[] : ∀ {V'} → [] ≈≈ V'
+  ≈≈∷ : ∀ {v V V'}
+     → All (v ~~_) V'
+     → V ≈≈ V'
+     → (v ∷ V) ≈≈ V'
+
+_⊔cdr_[_] : (u v : Value') → u ~~ v → Value'
+_⊔cdr∥_[_] : (ds ds' : List Value') → ds ~∥~ ds' → List Value'
+_⨆cdr_[_] : (V V' : List Value') → V ≈≈ V' → List Value'
+(const k) ⊔cdr .(const _) [ ~~-const ] = const k
+.ω ⊔cdr .ω [ ~~-ω ] = ω
+.ν ⊔cdr .ν [ ~~-ν-ν ] = ν
+.ν ⊔cdr (V ↦ w) [ ~~-ν-↦ ] = V ↦ w
+(V ↦ w) ⊔cdr .ν [ ~~-↦-ν ] = V ↦ w
+(V ↦ w) ⊔cdr (V ↦ w') [ ~~-↦-↦ w~ ] = V ↦ (w ⊔cdr w' [ w~ ])
+(left d) ⊔cdr (left d') [ ~~-left d~ ] = left (d ⊔cdr d' [ d~ ])
+(right d) ⊔cdr (right d') [ ~~-right d~ ] = right (d ⊔cdr d' [ d~ ])
+(∥ ds ∥) ⊔cdr (∥ ds' ∥) [ ~~-tup ds~ ] = ∥ ds ⊔cdr∥ ds' [ ds~ ] ∥
+⦅ u , V ⦆ ⊔cdr ⦅ u' , V' ⦆ [ ~~-pair u~ V≈ ] = 
+   ⦅ u ⊔cdr u' [ u~ ] , V ⨆cdr V' [ V≈ ] ⦆
+.[] ⊔cdr∥ .[] [ [] ] = []
+(d ∷ ds) ⊔cdr∥ (d' ∷ ds') [ d~ ∷ ds~ ] = d ⊔cdr d' [ d~ ] ∷ (ds ⊔cdr∥ ds' [ ds~ ])
+.[] ⨆cdr V' [ ≈≈[] ] = V'
+(v ∷ V) ⨆cdr V' [ ≈≈∷ v~ V≈ ] = 
+   reduce (λ {x} v~~x → v ⊔cdr x [ v~~x ]) v~ ++ (V ⨆cdr V' [ V≈ ]) 
+
+{-
+ : Value' → Value' → Value' → Set where
+  +cdr-pair : ∀ {u V v}
+     → add2cdr ⦅ u , V ⦆ v ⦅ u , v ∷ V ⦆
+  +cdr-↦ : ∀ {V w v w+v}
+     → add2cdr w v w+v
+     → add2cdr (V ↦ w) v (V ↦ w+v)
+  +cdr-left : ∀ {u v u+v}
+     → add2cdr u v u+v
+     → add2cdr (left u) v (left u+v)
+  +cdr-right : ∀ {u v u+v}
+     → add2cdr u v u+v
+     → add2cdr (right u) v (right u+v)
+  +cdr-head : ∀ {u v u+v us}
+     → add2cdr u v u+v
+     → add2cdr (∥ u ∷ us ∥) v (∥ u+v ∷ us ∥)
+  +cdr-tail : ∀ {u us v us+v}
+     → add2cdr (∥ us ∥) v (∥ us+v ∥)
+     → add2cdr (∥ u ∷ us ∥) v (∥ u ∷ us+v ∥)
+  +cdr-car : ∀ {u v u+v V}
+     → add2cdr u v u+v
+     → add2cdr ⦅ u , V ⦆ v ⦅ u+v , V ⦆
+  +cdr-cdr-here : ∀ {u v w v+w V}
+     → add2cdr v w v+w
+     → add2cdr ⦅ u , v ∷ V ⦆ w ⦅ u , v+w ∷ V ⦆
+  +cdr-cdr-there : ∀ {u V w V+w v}
+     → add2cdr ⦅ u , V ⦆ w ⦅ u , V+w ⦆
+     → add2cdr ⦅ u , v ∷ V ⦆ w ⦅ u , v ∷ V+w ⦆
+-}
+
+
+{- =============================================================================
+   ACTUAL Current attempt
+   =============================================================================
+The ~~ relation was not useful on its own, and I don't really want
+join to be a function (because the way it maps in the ≈≈ case explodes and is gross).
+
+So we want to define something similar, but that is just join as a relation.
+-}
+
+
+
+data _▹_◃_ : Value' → Value' → Value' → Set where
+    smash-pair-L : ∀ {u1 u2 V1 V2 v2}
+            → v2 ∈ mem V2
+            → ⦅ u1 , V1 ⦆ ▹ ⦅ u1 , v2 ∷ V1 ⦆ ◃ ⦅ u2 , V2 ⦆
+    smash-pair-R : ∀ {u1 u2 V1 V2 v1}
+            → v1 ∈ mem V1
+            → ⦅ u1 , V1 ⦆ ▹ ⦅ u2 , v1 ∷ V2 ⦆ ◃ ⦅ u2 , V2 ⦆
+    smash-↦ : ∀ {V w1 w2 w} 
+            → w1 ▹ w ◃ w2  
+            → (V ↦ w1) ▹ (V ↦ w) ◃ (V ↦ w2)
+    smash-left : ∀ {v1 v2 v} 
+            → v1 ▹ v ◃ v2
+            → left v1 ▹ left v ◃ left v2
+    smash-right : ∀ {v1 v2 v} 
+            → v1 ▹ v ◃ v2
+            → right v1 ▹ right v ◃ right v2
+    smash-car-L : ∀ {u1 u2 u V1 V2}
+            → (u⊔ : u1 ▹ u ◃ u2)
+            → ⦅ u1 , V1 ⦆ ▹ ⦅ u , V1 ⦆ ◃ ⦅ u2 , V2 ⦆
+    smash-car-R : ∀ {u1 u2 u V1 V2}
+            → (u⊔ : u1 ▹ u ◃ u2)
+            → ⦅ u1 , V1 ⦆ ▹ ⦅ u , V2 ⦆ ◃ ⦅ u2 , V2 ⦆
+    smash-cdr-here-L : ∀ {u1 u2 v1 v2 v V1 V2}
+            → (v⊔ : v1 ▹ v ◃ v2)
+            → (v2∈ : v2 ∈ mem V2)
+            → ⦅ u1 , v1 ∷ V1 ⦆ ▹ ⦅ u1 , v ∷ V1 ⦆ ◃ ⦅ u2 , V2 ⦆
+    smash-cdr-here-R : ∀ {u1 u2 v1 v2 v V1 V2}
+            → (v⊔ : v1 ▹ v ◃ v2)
+            → (v1∈ : v1 ∈ mem V1)
+            → ⦅ u1 , V1 ⦆ ▹ ⦅ u2 , v ∷ V1 ⦆ ◃ ⦅ u2 , v2 ∷ V2 ⦆
+    smash-cdr-there-L : ∀ {u1 u2 u v V1 V2 V}
+            → (V⨆ : ⦅ u1 , V1 ⦆ ▹ ⦅ u , V ⦆ ◃ ⦅ u2 , V2 ⦆)
+            → ⦅ u1 , v ∷ V1 ⦆ ▹ ⦅ u , v ∷ V ⦆ ◃ ⦅ u2 , V2 ⦆
+    smash-cdr-there-R : ∀ {u1 u2 u v V1 V2 V}
+            → (V⨆ : ⦅ u1 , V1 ⦆ ▹ ⦅ u , V ⦆ ◃ ⦅ u2 , V2 ⦆)
+            → ⦅ u1 , V1 ⦆ ▹ ⦅ u , v ∷ V ⦆ ◃ ⦅ u2 , v ∷ V2 ⦆
+    smash-nil : ∥ [] ∥ ▹ ∥ [] ∥ ◃ ∥ [] ∥
+    smash-cons : ∀ {d1 d2 d ds1 ds2 ds}
+            → (d⊔ : d1 ▹ d ◃ d2)
+            → (ds⊔ : ∥ ds1 ∥ ▹ ∥ ds ∥ ◃ ∥ ds2 ∥)
+            → ∥ d1 ∷ ds1 ∥ ▹ ∥ d ∷ ds ∥ ◃ ∥ d2 ∷ ds2 ∥
+  {-
+    smash-head : ∀ {v1 v2 v vs} → v1 ▹ v ◃ v2
+            → ∥ v1 ∷ vs ∥ ▹ ∥ v ∷ vs ∥ ◃ ∥ v2 ∷ vs ∥
+    smash-tail : ∀ {v vs1 vs2 vs} → ∥ vs1 ∥ ▹ ∥ vs ∥ ◃ ∥ vs2 ∥
+            → ∥ v ∷ vs1 ∥  ▹ ∥ v ∷ vs ∥ ◃ ∥ v ∷ vs2 ∥
+    -}
+
+data _▹[_]◃_ : List Value' → List Value' → List Value' → Set where
+    [] : [] ▹[ [] ]◃ []
+    _∷_ : ∀ {d1 d2 d ds1 ds2 ds}
+        → (d⊔ : d1 ▹ d ◃ d2)
+        → (ds⊔ : ds1 ▹[ ds ]◃ ds2)
+        → (d1 ∷ ds1) ▹[ (d ∷ ds) ]◃ (d2 ∷ ds2)
+data _▹▹_◃◃_ : List Value' → List Value' → List Value' → Set where
+    ▹[]◃ : ∀ {V2} → [] ▹▹ V2 ◃◃ V2
+    ▹∷◃ : ∀ {v1 V1 V1' V2 V}
+        → replicate (length V2) v1 ▹[ V1' ]◃ V2
+        → (V⨆ : V1 ▹▹ V ◃◃ V2)
+        → (v1 ∷ V1) ▹▹ V1' ++ V ◃◃ V2
+
+
+smash-mem : ∀ {d1 d2 d} → (smash : d1 ▹ d ◃ d2)
+          → ∀ {FV1 FV2} 
+          → d1 ∈ mem FV1 → d2 ∈ mem FV2 → List Value'
+smash-mem {d1} {d2} {d} smash {FV1 = d1 ∷ FV1} (here refl) d2∈ = d ∷ FV1
+smash-mem {d1} {d2} {d} smash {FV1 = d' ∷ FV1} (there d1∈) d2∈ = 
+   d' ∷ smash-mem smash d1∈ d2∈
+
+smash-mem-ne : ∀ {d1 d2 d} → (smash : d1 ▹ d ◃ d2)
+          → ∀ {FV1 FV2} 
+          → (d1∈ : d1 ∈ mem FV1) → (d2∈ : d2 ∈ mem FV2)
+          → d ∈ mem (smash-mem smash d1∈ d2∈)
+smash-mem-ne smash (here refl) d2∈ = here refl
+smash-mem-ne smash (there d1∈) d2∈ = there (smash-mem-ne smash d1∈ d2∈)
+
+smash-cdr-L : ∀ {d1 d2 d} → (smash : d1 ▹ d ◃ d2)
+          → ∀ {u1 u2 FV1 FV2} 
+          → (d1∈ : d1 ∈ mem FV1) → (d2∈ : d2 ∈ mem FV2)
+          → ⦅ u1 , FV1 ⦆ ▹ ⦅ u1 , smash-mem smash d1∈ d2∈ ⦆ ◃ ⦅ u2 , FV2 ⦆
+smash-cdr-L smash (here refl) d2∈ = smash-cdr-here-L smash d2∈
+smash-cdr-L smash (there d1∈) d2∈ = smash-cdr-there-L (smash-cdr-L smash d1∈ d2∈)
+
+smash-closed : (D : 𝒫 Value') → Set
+smash-closed D = ∀ v1 v2 v → v1 ▹ v ◃ v2 → v1 ∈ D → v2 ∈ D → v ∈ D
+
+smash-closure-n : ∀ (n : ℕ) (U : 𝒫 Value') → 𝒫 Value'
+smash-closure-n zero U = U
+smash-closure-n (suc n) U u = Σ[ u1 ∈ Value' ] Σ[ u2 ∈ Value' ] 
+  u1 ∈ smash-closure-n n U × u2 ∈ smash-closure-n n U × u1 ▹ u ◃ u2
+
+smash-closure : ∀ (U : 𝒫 Value') → 𝒫 Value'
+smash-closure U u = Σ[ n ∈ ℕ ] u ∈ smash-closure-n n U
+
+smash-closure-n-⊆-closed : ∀ n {S U} → smash-closed S → U ⊆ S → smash-closure-n n U ⊆ S
+smash-closure-n-⊆-closed zero closedS U⊆S d d∈scnU = U⊆S d d∈scnU
+smash-closure-n-⊆-closed (suc n) closedS U⊆S d 
+                        ⟨ d1 , ⟨ d2 , ⟨ d1∈ , ⟨ d2∈ , smash ⟩ ⟩ ⟩ ⟩ 
+  = closedS d1 d2 d smash (smash-closure-n-⊆-closed n closedS U⊆S d1 d1∈) 
+                          (smash-closure-n-⊆-closed n closedS U⊆S d2 d2∈)
+
+smash-closure-⊆-closed : ∀ {S U} → smash-closed S → U ⊆ S → smash-closure U ⊆ S
+smash-closure-⊆-closed closedS U⊆S d ⟨ n , d∈scUn ⟩ = 
+  smash-closure-n-⊆-closed n closedS U⊆S d d∈scUn
+
+
+smash-⟦⟧' : ∀ M' ρ' 
+          → (ρ'~ : ∀ i → smash-closed (ρ' i))
+          → smash-closed (⟦ M' ⟧' ρ')
+smash-⟦⟧' (# x) ρ' ρ'~ = ρ'~ x
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , V1 ⦆ ⦅ u2 , V2 ⦆ .(⦅ u1 , _ ∷ V1 ⦆) 
+          (smash-pair-L x) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , V1 ⦆ ⦅ u2 , V2 ⦆ .(⦅ u2 , _ ∷ V2 ⦆) 
+          (smash-pair-R x) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , V1 ⦆ ⦅ u2 , V2 ⦆ .(⦅ _ , V1 ⦆) 
+          (smash-car-L smash) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , V1 ⦆ ⦅ u2 , V2 ⦆ .(⦅ _ , V2 ⦆) 
+          (smash-car-R smash) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , .(_ ∷ _) ⦆ ⦅ u2 , V2 ⦆ .(⦅ u1 , _ ∷ _ ⦆) 
+          (smash-cdr-here-L smash v2∈) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , V1 ⦆ ⦅ u2 , .(_ ∷ _) ⦆ .(⦅ u2 , _ ∷ V1 ⦆) 
+          (smash-cdr-here-R smash v1∈) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , .(_ ∷ _) ⦆ ⦅ u2 , V2 ⦆ .(⦅ _ , _ ∷ _ ⦆) 
+          (smash-cdr-there-L smash) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (pair-op ⦅ M ,, N ,, Nil ⦆') ρ' ρ'~ ⦅ u1 , V1 ⦆ ⦅ u2 , .(_ ∷ _) ⦆ .(⦅ _ , _ ∷ _ ⦆) 
+          (smash-cdr-there-R smash) p1∈ p2∈ = {!   !}
+smash-⟦⟧' (fst-op ⦅ M ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash
+          ⟨ FV1 , ⟨ p1∈ , neFV1 ⟩ ⟩ ⟨ FV2 , ⟨ p2∈ , neFV2 ⟩ ⟩
+  with smash-⟦⟧' M ρ' ρ'~ ⦅ d1 , FV1 ⦆ ⦅ d2 , FV2 ⦆ ⦅ d , FV1 ⦆ 
+                 (smash-car-L smash) p1∈ p2∈
+... | IH
+    = ⟨ FV1 , ⟨ IH , neFV1 ⟩ ⟩
+smash-⟦⟧' (snd-op ⦅ M ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash
+  ⟨ f1 , ⟨ FV1 , ⟨ p1∈ , d1∈ ⟩ ⟩ ⟩  ⟨ f2 , ⟨ FV2 , ⟨ p2∈ , d2∈ ⟩ ⟩ ⟩
+  with smash-⟦⟧' M ρ' ρ'~ ⦅ f1 , FV1 ⦆ ⦅ f2 , FV2 ⦆
+                 ⦅ f1 , smash-mem smash d1∈ d2∈ ⦆
+                 (smash-cdr-L smash d1∈ d2∈) p1∈ p2∈
+... | IH
+    = ⟨ f1 , ⟨ smash-mem smash d1∈ d2∈ , ⟨ IH , smash-mem-ne smash d1∈ d2∈ ⟩ ⟩ ⟩
+
+smash-⟦⟧' (inl-op ⦅ M' ,, Nil ⦆') ρ' ρ'~ (left d1) (left d2) (left d)
+    (smash-left smash) d1∈ d2∈ = smash-⟦⟧' M' ρ' ρ'~ d1 d2 d smash d1∈ d2∈
+smash-⟦⟧' (inr-op ⦅ M' ,, Nil ⦆') ρ' ρ'~ (right d1) (right d2) (right d)
+    (smash-right smash) d1∈ d2∈ = smash-⟦⟧' M' ρ' ρ'~ d1 d2 d smash d1∈ d2∈
+smash-⟦⟧' (case-op ⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash 
+  (inj₁ ⟨ v1 , ⟨ V1 , ⟨ V1⊆ , d1∈M' ⟩ ⟩ ⟩)  (inj₁ ⟨ v2 , ⟨ V2 , ⟨ V2⊆ , d2∈M' ⟩ ⟩ ⟩)
+  with smash-⟦⟧' M' ((mem (v1 ∷ V1 ++ v2 ∷ V2)) • ρ') {!   !} d1 d2 d smash 
+                   {! d1∈M'  !} {! d2∈M'  !}
+... | IH = inj₁ ⟨ v1 , ⟨ V1 ++ (v2 ∷ V2) , ⟨ {!   !} , IH ⟩ ⟩ ⟩
+  {- in the IH, expand each of the environments for the d1∈ d2∈ premises -}
+  {- even-worse... we have to extend the environment by the 
+     smash-closure of v1 ∷ V1 ++ v2 ∷ V2... -}
+smash-⟦⟧' (case-op ⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash 
+  (inj₁ ⟨ v1 , ⟨ V1 , ⟨ V1⊆ , d1∈M' ⟩ ⟩ ⟩)  (inj₂ ⟨ v2 , ⟨ V2 , ⟨ V2⊆ , d2∈N' ⟩ ⟩ ⟩)
+  = {!   !} {- v1∈ and v2∈ contradict consistency of ⟦L'⟧  -}
+smash-⟦⟧' (case-op ⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash 
+  (inj₂ ⟨ v1 , ⟨ V1 , ⟨ V1⊆ , d1∈N' ⟩ ⟩ ⟩)  (inj₁ ⟨ v2 , ⟨ V2 , ⟨ V2⊆ , d2∈M' ⟩ ⟩ ⟩)
+  = {!   !} {- v1∈ and v2∈ contradict consistency of ⟦L'⟧  -}
+smash-⟦⟧' (case-op ⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash 
+  (inj₂ ⟨ v1 , ⟨ V1 , ⟨ V1⊆ , d1∈N' ⟩ ⟩ ⟩) (inj₂ ⟨ v2 , ⟨ V2 , ⟨ V2⊆ , d2∈N' ⟩ ⟩ ⟩)
+  = inj₂ {!   !}  {- similar to first case -}
+smash-⟦⟧' (fun-op ⦅ args ⦆') ρ' ρ'~ = {!   !}
+smash-⟦⟧' (app ⦅ L' ,, M' ,, N' ,, Nil ⦆') ρ' ρ'~ d1 d2 d smash d1∈ d2∈ = {!   !}
+smash-⟦⟧' (tuple n ⦅ args ⦆') ρ' ρ'~ d1 d2 d smash d1∈ d2∈ = {!   !}
+smash-⟦⟧' (get i ⦅ M' ,, Nil ⦆') ρ' ρ'~ d1 d2 smash d1∈ d2∈ = {!   !}
+
+
+
+keylemma' : ∀ D → smash-closed D
+         → ∀ V' {f V} → ⦅ f  , V ⦆ ∈ D
+         → mem V' ⊆ cdr ⟨ D , ptt ⟩
+         → ⦅ f , V' ++ V ⦆ ∈ D
+keylemma' D scD [] ⦅f,V⦆∈D V'⊆cdrD = ⦅f,V⦆∈D
+keylemma' D scD (v ∷ V') {f}{V} ⦅f,V⦆∈D V'⊆cdrD with V'⊆cdrD v (here refl)
+... | ⟨ f' , ⟨ FV , ⟨ p∈ , v∈FV ⟩ ⟩ ⟩ = 
+  scD ⦅ f' , FV ⦆ ⦅ f , V' ++ V ⦆ ⦅ f , v ∷ V' ++ V ⦆ (smash-pair-R v∈FV) 
+      p∈ 
+      (keylemma' D scD V' ⦅f,V⦆∈D (λ d z → V'⊆cdrD d (there z))) 
+
+
 fros : List Value' → List Value
 fro : Value' → Value
 fro (const x) = const x
 fro (V ↦ w) = ω
 fro ν = ω
 fro ω = ω
-fro (⦅ ν , FV ⦆) = fros FV ⊢ν
-fro (⦅ V ↦ ν , FV ⦆) = fros FV ⊢ν
-fro (⦅ FV' ↦ (V ↦ w) , FV ⦆) with FV' D4.mem⊆? FV
+fro ⦅ ν , FV ⦆ = fros FV ⊢ν
+fro ⦅ V ↦ ν , FV ⦆ = fros FV ⊢ν
+fro ⦅ FV' ↦ (V ↦ w) , FV ⦆ with FV' D4.mem⊆? FV
 ... | yes FV'⊆FV =  fros FV' ⊢ fros V ↦ fro w
 ... | no FV'⊈FV = fros FV ⊢ν
-fro (⦅ u , v ⦆) = ω
+fro ⦅ u , v ⦆ = ω
 fro ∥ xs ∥ = ∥ fros xs ∥
 fro (left v) = left (fro v)
 fro (right v) = right (fro v)
@@ -623,13 +915,13 @@ fro-∈-mem (there a∈) = there (fro-∈-mem a∈)
 
 
 delay-reflect' : ∀ M ρ
-  → (ρ~ : ∀ i → +cdr-closed (ρ i))
+  → (ρ~ : ∀ i → smash-closed (ρ i))
   → ∀ d → d ∈ ⟦ delay M ⟧' ρ → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
 del-map-args-reflect' : ∀ {n} args ρ
-  → (ρ~ : ∀ i → +cdr-closed (ρ i))
+  → (ρ~ : ∀ i → smash-closed (ρ i))
   → results-rel-pres' _fro-⊆_ (replicate n ■) (⟦ del-map-args {n} args ⟧₊' ρ) (⟦ args ⟧₊ (env-map fro ρ))
 delay-reflect'-⊆ : ∀ M ρ 
-  → (ρ~ : ∀ i → +cdr-closed (ρ i))
+  → (ρ~ : ∀ i → smash-closed (ρ i))
   → ∀ V → mem V ⊆ ⟦ delay M ⟧' ρ → mem (fros V) ⊆ ⟦ M ⟧ (env-map fro ρ)
 
 delay-reflect' (` x) ρ ρ~ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
@@ -699,9 +991,9 @@ delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ ρ~ d
   IHN : mem (fros V) ⊆ ⟦ N ⟧ (env-map fro ρ)
   IHN = delay-reflect'-⊆ N ρ ρ~ V V⊆N'
   G : ⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆ ∈ ⟦ delay M ⟧' ρ
-  G = keylemma (⟦ delay M ⟧' ρ) (+cdr-⟦⟧' (delay M) ρ ρ~) FV ⦅FV↦[V↦d],FV'⦆∈M' FV⊆cdrM'
+  G = keylemma' (⟦ delay M ⟧' ρ) (smash-⟦⟧' (delay M) ρ ρ~) FV ⦅FV↦[V↦d],FV'⦆∈M' FV⊆cdrM'
   IHM : (fros FV ⊢ fros V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
-  IHM with FV D4.mem⊆? (FV ++ FV') | delay-reflect' M ρ ρ~ (⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆) G
+  IHM with FV D4.mem⊆? (FV ++ FV') | delay-reflect' M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆ G
   ... | yes FV⊆FV | IH = IH
   ... | no FV⊈FV | IH = ⊥-elim (FV⊈FV (++-⊆₁ FV))
 delay-reflect' (lit B k ⦅ Nil ⦆) ρ ρ~ (const {B'} k') d∈ with base-eq? B B'
@@ -770,18 +1062,18 @@ data _⊢_~fro_ : 𝒫 Value' → Value' → Value → Set₁ where
           → D ⊢ ∥ ds ∥ ~fro ∥ ds' ∥
   fro-ν : ∀ {FV FV' b D}
         → (FV~ : D ⊢ FV ~fros FV')
-        → D ⊢ (⦅ ν , FV ⦆) ~fro (FV' ⊢ν)
+        → D ⊢ ⦅ ν , FV ⦆) ~fro (FV' ⊢ν)
   fro-↦-ν : ∀ {FV FV' V b D}
           → (FV~ : D ⊢ FV ~fros FV')
-          → D ⊢ (⦅ V ↦ ν , FV ⦆) ~fro (FV' ⊢ν) 
+          → D ⊢ ⦅ V ↦ ν , FV ⦆) ~fro (FV' ⊢ν) 
   fro-clos-true : ∀ {FV FV' V V' w w' FVcdr D}
           → (FV~ : D ⊢ FV ~fros FV')
           → (V~ : D ⊢ V ~fros V')
           → (w~ : D ⊢ w ~fro w')
-          → D ⊢ (⦅ FV ↦ (V ↦ w) , FVcdr ⦆) ~fro (FV' ⊢ V' ↦ w')
+          → D ⊢ ⦅ FV ↦ (V ↦ w) , FVcdr ⦆) ~fro (FV' ⊢ V' ↦ w')
   fro-clos-false : ∀ {FV FV' dom V w D}
           → (FV~ : D ⊢ FV ~fros FV')
-          → D ⊢ (⦅ dom ↦ (V ↦ w) , FV ⦆) ~fro (FV' ⊢ν)
+          → D ⊢ ⦅ dom ↦ (V ↦ w) , FV ⦆) ~fro (FV' ⊢ν)
 
 
 data _⊢_≈fro_ where
