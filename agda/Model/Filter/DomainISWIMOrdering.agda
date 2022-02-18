@@ -663,7 +663,7 @@ module Model.Filter.DomainISWIMOrdering where
 ⊑-tup-inv {suc n} {u ∷ us} {v ∷ vs} (⊑-split (split-tup (split-tup-head x)) us⊑vs us⊑vs') with ⊑-tup-inv us⊑vs | ⊑-tup-inv us⊑vs'
 ... | u⊑v₁ ∷ us⊑vs₁ | u⊑v₂ ∷ us⊑vs₂ = ⊑-split x u⊑v₁ u⊑v₂ ∷ us⊑vs₂
 ⊑-tup-inv {suc n} {u ∷ us} {v ∷ vs} (⊑-split (split-tup (split-tup-tail split)) us⊑vs us⊑vs') with ⊑-tup-inv us⊑vs | ⊑-tup-inv us⊑vs'
-... | u⊑v₁ ∷ us⊑vs₁ | u⊑v₂ ∷ us⊑vs₂ = u⊑v₂ ∷ ⊑-tup-inv (⊑-split (split-∥ split ∥) {!   !} {!   !} )  
+... | u⊑v₁ ∷ us⊑vs₁ | u⊑v₂ ∷ us⊑vs₂ = u⊑v₂ ∷ ⊑-tup-inv (⊑-split (split-∥ split ∥) HOLE HOLE )  
 
 
 ⊑-tup-inv : ∀ {n vs v}
@@ -719,10 +719,10 @@ module Model.Filter.DomainISWIMOrdering where
 ⊑-tup-inv' : ∀ {n} {vs₁} {vs₂} → ∥_∥ {n} vs₁ ⊑ ∥_∥ {n} vs₂ → Pointwise (_⊑_) vs₁ vs₂
 ⊑-tup-inv' {n} {vs₁} {vs₂} (⊑-tup {v' = v'} v'⊆vs₂ tup-∥ vs ∥₁⊑v') with v'⊆vs₂ {v'} refl
 ... | eq = subst (Pointwise _⊑_ vs₁) (tup-injective eq) vs₁⊑v'
-⊑-tup-inv' (⊑-tup v'⊆vs₂ (tup-⊔ tupv' tupv'') vs₁⊑v') = {!   !}
+⊑-tup-inv' (⊑-tup v'⊆vs₂ (tup-⊔ tupv' tupv'') vs₁⊑v') = HOLE
 
 ⊑-tup' : ∀ {n v₁ vs₁ v₂ vs₂} → v₁ ⊑ v₂ → ∥_∥ {n} vs₁ ⊑ ∥_∥ {n} vs₂ → tup (v₁ ∷ vs₁) ⊑ tup (v₂ ∷ vs₂)
-⊑-tup' {n} {v₁} {vs₁} {v₂} {vs₂} v₁⊑v₂ vs₁⊑vs₂ = ⊑-tup {suc n} {v₁ ∷ vs₁} {tup (v₂ ∷ vs₂)}  (λ x → x) tup-tup {!   !}
+⊑-tup' {n} {v₁} {vs₁} {v₂} {vs₂} v₁⊑v₂ vs₁⊑vs₂ = ⊑-tup {suc n} {v₁ ∷ vs₁} {tup (v₂ ∷ vs₂)}  (λ x → x) tup-tup HOLE
 
 {- The pointwise rules for pairles -}
 
@@ -747,3 +747,26 @@ module Model.Filter.DomainISWIMOrdering where
 -}
 
 -}
+
+
+  ¬k⊑ν : ∀ {B k} → ¬ (const {B} k ⊑ ν)
+  ¬k⊑ν (⊑-split () k⊑ν k⊑ν₁)
+
+
+
+  _P⊑?_ : ∀ {u v} → Proper u → Proper v → Dec (u ⊑ v)
+  ⊢'-ω P⊑? v = yes ⊑-ω
+  ⊢'-ν P⊑? v = {!   !}
+  ⊢'-const k P⊑? v = {!   !}
+  ⊢'-↦-å Pu Pu₁ åv₂ P⊑? v = {!   !}
+  ⊢'-pair-å Pu Pu₁ åv₁ åv₂ P⊑? v = {!   !}
+  ⊢'-nil P⊑? v = {!   !}
+  ⊢'-tup-å Pu Pu₁ åv åvs P⊑? v = {!   !}
+  ⊢'-left-å Pu åv P⊑? v = {!   !}
+  ⊢'-right-å Pu åv P⊑? v = {!   !}
+  ⊢'-split vL vR split Pu Pu₁ P⊑? v 
+    with Pu P⊑? v | Pu₁ P⊑? v
+  ... | yes <1 | yes <2 = yes (⊑-split split <1 <2)
+  ... | yes <1 | no ≮2 = no (λ z → (≮2 (proj₂ (⊑-inversion-split-R z split))))
+  ... | no ≮1 | yes <2 = no (λ z → (≮1 (proj₁ (⊑-inversion-split-R z split))))
+  ... | no ≮1 | no ≮2 = no (λ z → ≮2 (proj₂ (⊑-inversion-split-R z split)))
