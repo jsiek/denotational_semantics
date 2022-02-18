@@ -57,7 +57,7 @@ infix 5 _◃_▹_  {- prounounced "split" -}
 
 data Value : Set where
   ω : Value
-  ν : Value
+  _⊢ν : (FV : Value) → Value
   const : {B : Base} → (k : base-rep B) → Value
   _⊔_ : (u : Value) → (v : Value) → Value
   _⊢_↦_ : (FV : Value) → (v : Value) → (w : Value) → Value
@@ -74,7 +74,7 @@ Atomic-tup : ∀ {n} → Vec Value n → Set
 Atomic-tup [] = ⊤
 Atomic-tup (v ∷ vs) = Atomic v × Atomic-tup vs
 Atomic ω = ⊤
-Atomic ν = ⊤
+Atomic (FV ⊢ν) = ⊤
 Atomic (const k) = ⊤
 Atomic ⦅ v , v₁ ⦆ = Atomic v × Atomic v₁
 Atomic ∥ vs ∥ = Atomic-tup vs
@@ -88,7 +88,7 @@ atomic-tup? : ∀ {n} → (vs : Vec Value n) → Dec (Atomic-tup vs)
 atomic-tup? [] = yes tt
 atomic-tup? (v ∷ vs) = (atomic? v) ∧dec (atomic-tup? vs)
 atomic? ω = yes tt
-atomic? ν = yes tt
+atomic? (FV ⊢ν) = yes tt
 atomic? (const k) = yes tt
 atomic? ⦅ v , v₁ ⦆ = (atomic? v) ∧dec (atomic? v₁)
 atomic? ∥ [] ∥ = yes tt
@@ -152,7 +152,7 @@ data Proper : Value → Set where
  
   ⊢'-ω : Proper ω
 
-  ⊢'-ν : Proper ν
+  ⊢'-ν : ∀ {FV} → Proper (FV ⊢ν)
 
   ⊢'-const : ∀ {B} k → Proper (const {B} k)
 
@@ -298,7 +298,7 @@ proper-tup {n}{v}{vs} Pv Pvs with atomic? v
 
 proper : ∀ v → Proper v
 proper ω = ⊢'-ω
-proper ν = ⊢'-ν
+proper (FV ⊢ν) = ⊢'-ν
 proper (const k) = ⊢'-const k
 proper (v ⊔ v₁) = ⊢'-split v v₁ split-⊔ (proper v) (proper v₁)
 proper (FV ⊢ v ↦ v₁) = proper-↦ (proper v) (proper v₁)
@@ -322,7 +322,7 @@ tup-depth : ∀ {n} (vs : Vec Value n) → ℕ
 tup-depth {zero} [] = zero
 tup-depth {suc n} (v ∷ vs) = max (depth v) (tup-depth vs)
 depth ω = zero
-depth ν = zero
+depth (FV ⊢ν) = zero
 depth (const k) = zero
 depth (FV ⊢ v ↦ w) = suc (max (depth v) (depth w))
 depth (v₁ ⊔ v₂) = max (depth v₁) (depth v₂)
@@ -336,7 +336,7 @@ tup-size : ∀ {n} (vs : Vec Value n) → ℕ
 tup-size {zero} [] = zero
 tup-size {suc n} (v ∷ vs) = suc (size v + tup-size vs)
 size ω = zero
-size ν = zero
+size (FV ⊢ν) = zero
 size (const k) = zero
 size (FV ⊢ v ↦ w) = suc (size v + size w)
 size (v₁ ⊔ v₂) = suc (size v₁ + size v₂)

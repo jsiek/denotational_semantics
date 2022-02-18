@@ -40,9 +40,9 @@ module Model.Filter.DomainAnnFunOrdering where
 
     ⊑-ω : ∀ {v} → ω ⊑ v
   
-    ⊑-ν-ν : ν ⊑ ν
+    ⊑-ν-ν : ∀ {FV} → (FV ⊢ν) ⊑ (FV ⊢ν)
 
-    ⊑-ν-↦ : ∀ {FV v w} → ν ⊑ FV ⊢ v ↦ w
+    ⊑-ν-↦ : ∀ {FV v w} → (FV ⊢ν) ⊑ FV ⊢ v ↦ w
 
     ⊑-const : ∀ {B}{k} → const {B} k ⊑ const {B} k
 
@@ -243,7 +243,7 @@ module Model.Filter.DomainAnnFunOrdering where
 
   ⊑-refl : ∀ {v} → v ⊑ v
   ⊑-refl {ω} = ⊑-ω
-  ⊑-refl {ν} = ⊑-ν-ν
+  ⊑-refl {FV ⊢ν} = ⊑-ν-ν
   ⊑-refl {const k} = ⊑-const
   ⊑-refl {⦅ v , v₁ ⦆} = ⊑-pair ⊑-refl ⊑-refl
   ⊑-refl {∥ [] ∥} = ⊑-nil
@@ -385,10 +385,10 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-trans-proper .ω ⊢'-ω .ω w ⊑-ω v⊑w = v⊑w
   ⊑-trans-proper .ω ⊢'-ω u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper ω ⊢'-ω u₁ w u⊑v v⊑w) (⊑-trans-proper ω ⊢'-ω u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper .ν ⊢'-ν .ω w ⊑-ω v⊑w = ⊑-ω
-  ⊑-trans-proper .ν ⊢'-ν .ν w ⊑-ν-ν v⊑w = v⊑w
-  ⊑-trans-proper .ν ⊢'-ν u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
-    ⊑-split split (⊑-trans-proper ν ⊢'-ν u₁ w u⊑v v⊑w) (⊑-trans-proper ν ⊢'-ν u₂ w u⊑v₁ v⊑w)
+  ⊑-trans-proper .(_ ⊢ν) ⊢'-ν .ω w ⊑-ω v⊑w = ⊑-ω
+  ⊑-trans-proper .(_ ⊢ν) ⊢'-ν .(_ ⊢ν) w ⊑-ν-ν v⊑w = v⊑w
+  ⊑-trans-proper (FV ⊢ν) ⊢'-ν u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
+    ⊑-split split (⊑-trans-proper (FV ⊢ν) ⊢'-ν u₁ w u⊑v v⊑w) (⊑-trans-proper (FV ⊢ν) ⊢'-ν u₂ w u⊑v₁ v⊑w)
   ⊑-trans-proper .(const k) (⊢'-const k) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(const k) (⊢'-const k) .(const k) w ⊑-const v⊑w = v⊑w
   ⊑-trans-proper .(const k) (⊢'-const k) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
@@ -400,12 +400,12 @@ module Model.Filter.DomainAnnFunOrdering where
     G : ∀ u w → u ⊑ FV ⊢ v₁ ↦ v₂ → FV ⊢ v₁ ↦ v₂ ⊑ w → (∀ u w → u ⊑ v₁ → v₁ ⊑ w → u ⊑ w) 
                               → (∀ u w → u ⊑ v₂ → v₂ ⊑ w → u ⊑ w) → u ⊑ w
     G .ω w ⊑-ω v⊑w IH₁ IH₂ = ⊑-ω
-    G .ν .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R1-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
-      ⊑-⊔-R1-å tt (G ν w₁ ⊑-ν-↦ v⊑w IH₁ IH₂)
-    G .ν .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R2-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
-      ⊑-⊔-R2-å tt (G ν w₂ ⊑-ν-↦ v⊑w IH₁ IH₂)
-    G .ν .(_ ⊢ _ ↦ _) ⊑-ν-↦ (⊑-↦-å åu₂ v⊑w v⊑w₁) IH₁ IH₂ = ⊑-ν-↦
-    G .ν w ⊑-ν-↦ (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ = ⊥-elim (unsplittable (FV ⊢ v₁ ↦ v₂) åv₂ split)
+    G .(_ ⊢ν) .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R1-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
+      ⊑-⊔-R1-å tt (G (FV ⊢ν) w₁ ⊑-ν-↦ v⊑w IH₁ IH₂)
+    G .(_ ⊢ν) .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R2-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
+      ⊑-⊔-R2-å tt (G (FV ⊢ν) w₂ ⊑-ν-↦ v⊑w IH₁ IH₂)
+    G .(_ ⊢ν) .(_ ⊢ _ ↦ _) ⊑-ν-↦ (⊑-↦-å åu₂ v⊑w v⊑w₁) IH₁ IH₂ = ⊑-ν-↦
+    G .(_ ⊢ν) w ⊑-ν-↦ (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ = ⊥-elim (unsplittable (FV ⊢ v₁ ↦ v₂) åv₂ split)
     G .(_ ⊢ _ ↦ _) .(_ ⊔ _) (⊑-↦-å {FV}{u₁}{u₂} åu₂ u⊑v u⊑v₁) (⊑-⊔-R1-å {_}{w₁} åu v⊑w) IH₁ IH₂ = 
       ⊑-⊔-R1-å åu₂ (G (FV ⊢ u₁ ↦ u₂) w₁ (⊑-↦-å åu₂ u⊑v u⊑v₁) v⊑w IH₁ IH₂)
     G .(_ ⊢ _ ↦ _) .(_ ⊔ _) (⊑-↦-å {FV}{u₁}{u₂} åu₂ u⊑v u⊑v₁) (⊑-⊔-R2-å {_}{_}{w₂} åu v⊑w) IH₁ IH₂ = 
@@ -460,10 +460,10 @@ module Model.Filter.DomainAnnFunOrdering where
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
     ... | inj₁ x = IH₁ ω w x vL⊑w
     ... | inj₂ y = IH₂ ω w y vR⊑w
-    split-trans .ν ⊢'-ν u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
+    split-trans (FV ⊢ν) ⊢'-ν u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
-    ... | inj₁ x = IH₁ ν w x vL⊑w
-    ... | inj₂ y = IH₂ ν w y vR⊑w
+    ... | inj₁ x = IH₁ (FV ⊢ν) w x vL⊑w
+    ... | inj₂ y = IH₂ (FV ⊢ν) w y vR⊑w
     split-trans .(const k) (⊢'-const k) u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
     ... | inj₁ x = IH₁ (const k) w x vL⊑w
@@ -546,7 +546,7 @@ module Model.Filter.DomainAnnFunOrdering where
 
   tup-cons : Value → Value → Value
   tup-cons u ω = ω
-  tup-cons u ν = ω
+  tup-cons u (FV ⊢ν) = ω
   tup-cons u (const k) = ω
   tup-cons u (v ⊔ v₁) = ω
   tup-cons u (FV ⊢ v ↦ v₁) = ω

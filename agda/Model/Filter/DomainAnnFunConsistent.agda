@@ -36,29 +36,29 @@ module Model.Filter.DomainAnnFunConsistent where
   infix 4 _~_
 
   {-
-  question, should ν be consistent with functions?
+  question, should (FV ⊢ν) be consistent with functions?
   ... it would allow unioning... but that's something that shouldn't appear in our semantics
   -}
   _~_ : Value → Value → Set
   ω ~ v = ⊤
   (u₁ ⊔ u₂) ~ v = u₁ ~ v × u₂ ~ v
-  ν ~ v₁ ⊔ v₂ = ν ~ v₁ × ν ~ v₂
+  (FV ⊢ν) ~ v₁ ⊔ v₂ = (FV ⊢ν) ~ v₁ × (FV ⊢ν) ~ v₂
   const x ~ v₁ ⊔ v₂ = const x ~ v₁ × const x ~ v₂
   FV ⊢ u ↦ u₁ ~ v₁ ⊔ v₂ = FV ⊢ u ↦ u₁ ~ v₁ × FV ⊢ u ↦ u₁ ~ v₂
   ⦅ u , u₁ ⦆ ~ v₁ ⊔ v₂ = ⦅ u , u₁ ⦆ ~ v₁ × ⦅ u , u₁ ⦆ ~ v₂
   ∥ us ∥ ~ v₁ ⊔ v₂ = ∥ us ∥ ~ v₁ × ∥ us ∥ ~ v₂
   left u ~ v ⊔ v₁ = left u ~ v × left u ~ v₁
   right u ~ v ⊔ v₁ = right u ~ v × right u ~ v₁
-  ν ~ ω = ⊤
-  ν ~ ν = ⊤
-  ν ~ const x = Bot
-  ν ~ FV ⊢ v ↦ v₁ = ⊤
-  ν ~ ⦅ v , v₁ ⦆ = Bot
-  ν ~ ∥ vs ∥ = Bot
-  ν ~ left v = Bot
-  ν ~ right v = Bot
+  (FV ⊢ν) ~ ω = ⊤
+  (FV ⊢ν) ~ (FV' ⊢ν) = ⊤
+  (FV ⊢ν) ~ const x = Bot
+  (FV ⊢ν) ~ FV' ⊢ v ↦ v₁ = ⊤
+  (FV ⊢ν) ~ ⦅ v , v₁ ⦆ = Bot
+  (FV ⊢ν) ~ ∥ vs ∥ = Bot
+  (FV ⊢ν) ~ left v = Bot
+  (FV ⊢ν) ~ right v = Bot
   const {B} k ~ ω = ⊤
-  const {B} k ~ ν = Bot
+  const {B} k ~ (FV ⊢ν) = Bot
   const {B} k ~ const {B′} k′
     with base-eq? B B′
   ... | yes eq rewrite eq = k ≡ k′
@@ -69,7 +69,7 @@ module Model.Filter.DomainAnnFunConsistent where
   const k ~ left v = Bot
   const k ~ right v = Bot
   ⦅ u₁ , u₂ ⦆ ~ ω = ⊤
-  ⦅ u₁ , u₂ ⦆ ~ ν = Bot
+  ⦅ u₁ , u₂ ⦆ ~ (FV ⊢ν) = Bot
   ⦅ u₁ , u₂ ⦆ ~ const x = Bot
   ⦅ u₁ , u₂ ⦆ ~ ⦅ v₁ , v₂ ⦆ = u₁ ~ v₁ × u₂ ~ v₂
   ⦅ u₁ , u₂ ⦆ ~ ∥ vs ∥ = Bot
@@ -77,7 +77,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ⦅ u , u₁ ⦆ ~ left v = Bot
   ⦅ u , u₁ ⦆ ~ right v = Bot
   ∥ us ∥ ~ ω = ⊤
-  ∥ us ∥ ~ ν = Bot
+  ∥ us ∥ ~ (FV ⊢ν) = Bot
   ∥ us ∥ ~ const k = Bot
   ∥ us ∥ ~ ⦅ v , v₁ ⦆ = Bot
   ∥ [] ∥ ~ ∥ [] ∥ = ⊤
@@ -88,7 +88,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ∥ ds ∥ ~ left v = Bot
   ∥ ds ∥ ~ right v = Bot
   FV ⊢ v ↦ w ~ ω = ⊤
-  FV ⊢ v ↦ w ~ ν = ⊤
+  FV ⊢ v ↦ w ~ (FV' ⊢ν) = ⊤
   FV ⊢ v ↦ w ~ const k = Bot
   FV ⊢ v ↦ w ~ ⦅ v₁ , v₂ ⦆ = Bot
   FV ⊢ v ↦ w ~ ∥ vs ∥ = Bot
@@ -96,7 +96,7 @@ module Model.Filter.DomainAnnFunConsistent where
   FV ⊢ u ↦ u₁ ~ left v = Bot
   FV ⊢ u ↦ u₁ ~ right v = Bot
   left u ~ ω = ⊤
-  left u ~ ν = Bot
+  left u ~ (FV ⊢ν) = Bot
   left u ~ const k = Bot
   left u ~ FV ⊢ v ↦ v₁ = Bot
   left u ~ ⦅ v , v₁ ⦆ = Bot
@@ -104,7 +104,7 @@ module Model.Filter.DomainAnnFunConsistent where
   left u ~ left v = u ~ v
   left u ~ right v = Bot
   right u ~ ω = ⊤
-  right u ~ ν = Bot
+  right u ~ (FV ⊢ν) = Bot
   right u ~ const k = Bot
   right u ~ FV ⊢ v ↦ v₁ = Bot
   right u ~ ⦅ v , v₁ ⦆ = Bot
@@ -114,17 +114,17 @@ module Model.Filter.DomainAnnFunConsistent where
 
   _~?_ : (u : Value) → (v : Value) → Dec (u ~ v)
   ω ~? v = yes tt
-  ν ~? ω = yes tt
-  ν ~? ν = yes tt
-  ν ~? (const x) = no (λ z → z)
-  ν ~? (FV ⊢ v ↦ v₁) = yes tt
-  ν ~? (v ⊔ v₁) = ν ~? v ∧dec ν ~? v₁
-  ν ~? (⦅ v , v₁ ⦆) = no (λ z → z)
-  ν ~? ∥ vs ∥ = no (λ z → z)
-  ν ~? left v = no (λ z → z)
-  ν ~? right v = no (λ z → z)
+  (FV ⊢ν) ~? ω = yes tt
+  (FV ⊢ν) ~? (FV' ⊢ν) = yes tt
+  (FV ⊢ν) ~? (const x) = no (λ z → z)
+  (FV ⊢ν) ~? (FV' ⊢ v ↦ v₁) = yes tt
+  (FV ⊢ν) ~? (v ⊔ v₁) = (FV ⊢ν) ~? v ∧dec (FV ⊢ν) ~? v₁
+  (FV ⊢ν) ~? (⦅ v , v₁ ⦆) = no (λ z → z)
+  (FV ⊢ν) ~? ∥ vs ∥ = no (λ z → z)
+  (FV ⊢ν) ~? left v = no (λ z → z)
+  (FV ⊢ν) ~? right v = no (λ z → z)
   (const k) ~? ω = yes tt
-  (const k) ~? ν = no (λ z → z)
+  (const k) ~? (FV ⊢ν) = no (λ z → z)
   (const {B} k) ~? (const {B′} k′)
       with base-eq? B B′
   ... | yes eq rewrite eq = base-rep-eq? k k′
@@ -136,7 +136,7 @@ module Model.Filter.DomainAnnFunConsistent where
   const k ~? left v = no (λ z → z)
   const k ~? right v = no (λ z → z)
   (⦅ u₁ , u₂ ⦆) ~? ω = yes tt
-  (⦅ u₁ , u₂ ⦆) ~? ν = no (λ z → z)
+  (⦅ u₁ , u₂ ⦆) ~? (FV ⊢ν) = no (λ z → z)
   (⦅ u₁ , u₂ ⦆) ~? (const x) = no (λ z → z)
   (⦅ u , u₁ ⦆) ~? ∥ vs ∥ = no (λ z → z)
   (⦅ u₁ , u₂ ⦆) ~? (FV ⊢ v ↦ v₁) = no (λ z → z)
@@ -145,7 +145,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ⦅ u , u₁ ⦆ ~? left v = no (λ z → z)
   ⦅ u , u₁ ⦆ ~? right v = no (λ z → z)
   ∥ vs ∥ ~? ω = yes tt
-  ∥ vs ∥ ~? ν = no (λ z → z)
+  ∥ vs ∥ ~? (FV ⊢ν) = no (λ z → z)
   ∥ vs ∥ ~? (const k) = no (λ z → z)
   ∥ vs ∥ ~? (⦅ v , v₁ ⦆) = no (λ z → z)
   (∥ [] ∥) ~? (∥ [] ∥) = yes tt
@@ -157,7 +157,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ∥ ds ∥ ~? left v = no (λ z → z)
   ∥ ds ∥ ~? right v = no (λ z → z)
   (FV ⊢ u₁ ↦ u₂) ~? ω = yes tt
-  (FV ⊢ u₁ ↦ u₂) ~? ν = yes tt
+  (FV ⊢ u₁ ↦ u₂) ~? (FV' ⊢ν) = yes tt
   (FV ⊢ u₁ ↦ u₂) ~? (const x) = no (λ z → z)
   (FV ⊢ u₁ ↦ u₂) ~? (⦅ v₁ , v₂ ⦆) = no (λ z → z)
   (FV ⊢ u ↦ u₁) ~? ∥ vs ∥ = no (λ z → z)
@@ -167,7 +167,7 @@ module Model.Filter.DomainAnnFunConsistent where
   (FV ⊢ u ↦ u₁) ~? right v = no (λ z → z)
   (u₁ ⊔ u₂) ~? v = u₁ ~? v ∧dec u₂ ~? v
   left u ~? ω = yes tt
-  left u ~? ν = no (λ z → z)
+  left u ~? (FV ⊢ν) = no (λ z → z)
   left u ~? const k = no (λ z → z)
   left u ~? (v ⊔ v₁) = left u ~? v ∧dec left u ~? v₁
   left u ~? (FV ⊢ v ↦ v₁) = no (λ z → z)
@@ -176,7 +176,7 @@ module Model.Filter.DomainAnnFunConsistent where
   left u ~? left v = u ~? v
   left u ~? right v = no (λ z → z)
   right u ~? ω = yes tt
-  right u ~? ν = no (λ z → z)
+  right u ~? (FV ⊢ν) = no (λ z → z)
   right u ~? const k = no (λ z → z)
   right u ~? (v ⊔ v₁) = right u ~? v ∧dec right u ~? v₁
   right u ~? (FV ⊢ v ↦ v₁) = no (λ z → z)
@@ -188,7 +188,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ~-⊔-R : ∀ v {u₁ u₂} → v ~ u₁ → v ~ u₂
     → v ~ (u₁ ⊔ u₂)
   ~-⊔-R ω v~u₁ v~u₂ = tt
-  ~-⊔-R ν v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+  ~-⊔-R (FV ⊢ν) v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
   ~-⊔-R (const k) v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
   ~-⊔-R (⦅ v₁ , v₂ ⦆) v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
   ~-⊔-R ∥ vs ∥ v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
@@ -200,7 +200,7 @@ module Model.Filter.DomainAnnFunConsistent where
 
   ~-⊔-R-inv : ∀ v {u₁ u₂} → v ~ (u₁ ⊔ u₂) → v ~ u₁ × v ~ u₂
   ~-⊔-R-inv ω v~u = ⟨ tt , tt ⟩
-  ~-⊔-R-inv ν v~u = v~u
+  ~-⊔-R-inv (FV ⊢ν) v~u = v~u
   ~-⊔-R-inv (const x) v~u = v~u
   ~-⊔-R-inv (FV ⊢ v ↦ v₁) v~u = v~u
   ~-⊔-R-inv (v ⊔ v₁) ⟨ v~u , v₁~u ⟩ with ~-⊔-R-inv v v~u | ~-⊔-R-inv v₁ v₁~u
@@ -227,7 +227,7 @@ module Model.Filter.DomainAnnFunConsistent where
 
   ~-sym : ∀ u v → u ~ v → v ~ u
   ~-sym ω ω u~v = tt
-  ~-sym ω ν u~v = tt
+  ~-sym ω (FV ⊢ν) u~v = tt
   ~-sym ω (const x) u~v = tt
   ~-sym ω (FV ⊢ v ↦ v₁) u~v = tt
   ~-sym ω (v ⊔ v₁) u~v = ⟨ ~-sym ω v tt , ~-sym ω v₁ tt ⟩
@@ -235,10 +235,10 @@ module Model.Filter.DomainAnnFunConsistent where
   ~-sym ω ∥ vs ∥ u~v = tt
   ~-sym ω (left v) u~v = tt
   ~-sym ω (right v) u~v = tt
-  ~-sym ν ω u~v = tt
-  ~-sym ν ν u~v = tt
-  ~-sym ν (FV ⊢ v ↦ v₁) u~v = tt
-  ~-sym ν (v ⊔ v₁) ⟨ ⊥~v , ⊥~v₁ ⟩ = ⟨ ~-sym ν v ⊥~v , ~-sym ν v₁ ⊥~v₁ ⟩
+  ~-sym (FV ⊢ν) ω u~v = tt
+  ~-sym (FV ⊢ν) (FV' ⊢ν) u~v = tt
+  ~-sym (FV ⊢ν) (FV' ⊢ v ↦ v₁) u~v = tt
+  ~-sym (FV ⊢ν) (v ⊔ v₁) ⟨ ⊥~v , ⊥~v₁ ⟩ = ⟨ ~-sym (FV ⊢ν) v ⊥~v , ~-sym (FV ⊢ν) v₁ ⊥~v₁ ⟩
   ~-sym (const {B} x) ω u~v = tt
   ~-sym (const {B} x) (const {B'} x') u~v with base-eq? B B'
   ... | no neq = ⊥-elim u~v
@@ -256,7 +256,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ~-sym (∥ [] ∥) (∥ [] ∥) u~v = tt
   ~-sym ∥ x ∷ us ∥ ∥ x₁ ∷ vs ∥ u~v = ⟨ ~-sym x x₁ (proj₁ u~v) , ~-sym ∥ us ∥ ∥ vs ∥ (proj₂ u~v) ⟩
   ~-sym ∥ us ∥ (v ⊔ v₁) ⟨ us~v , us~v₁ ⟩ = ⟨ ~-sym ∥ us ∥ v us~v , ~-sym ∥ us ∥ v₁ us~v₁ ⟩
-  ~-sym (FV ⊢ u ↦ u₁) ν u~v = tt
+  ~-sym (FV ⊢ u ↦ u₁) (FV' ⊢ν) u~v = tt
   ~-sym (FV ⊢ u ↦ u₁) ω u~v = tt
   ~-sym (FV ⊢ u ↦ u₁) (FV' ⊢ v ↦ v₁) (inj₁ ¬u~v) = inj₁ (λ z → ¬u~v (~-sym v u z))
   ~-sym (FV ⊢ u ↦ u₁) (FV' ⊢ v ↦ v₁) (inj₂ u₁~v₁) = inj₂ (~-sym u₁ v₁ u₁~v₁)
@@ -275,7 +275,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ~-split : ∀ {u u₁ u₂} → u₁ ◃ u ▹ u₂ → ∀ v → u₁ ~ v → u₂ ~ v → u ~ v
   ~-split split-⊔ v ~L ~R = ⟨ ~L , ~R ⟩
   ~-split (split-↦ split) ω ~L ~R = tt
-  ~-split (split-↦ split) ν ~L ~R = tt
+  ~-split (split-↦ split) (FV ⊢ν) ~L ~R = tt
   ~-split (split-↦ split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-↦ split) v fst fst₁ , ~-split (split-↦ split) v₁ snd snd₁ ⟩
   ~-split (split-↦ split) (FV ⊢ v ↦ v₁) (inj₁ x) ~R = inj₁ x
@@ -319,7 +319,7 @@ module Model.Filter.DomainAnnFunConsistent where
   ~-split-inv : ∀ {u u₁ u₂} → u₁ ◃ u ▹ u₂ → ∀ v → u ~ v → u₁ ~ v × u₂ ~ v
   ~-split-inv split-⊔ v u~v = u~v
   ~-split-inv (split-↦ split) ω u~v = ⟨ tt , tt ⟩
-  ~-split-inv (split-↦ split) ν u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-↦ split) (FV ⊢ν) u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-↦ split) (v ⊔ v₁) ⟨ fst , snd ⟩
      with ~-split-inv (split-↦ split) v fst | ~-split-inv (split-↦ split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
@@ -370,7 +370,7 @@ module Model.Filter.DomainAnnFunConsistent where
 
   data wf : Value → Set where
     wf-ω : wf ω
-    wf-ν : wf ν
+    wf-ν : ∀ {FV} → wf (FV ⊢ν)
     wf-const : ∀ {B} k → wf (const {B} k)
     wf-fun : ∀ {FV u v} → (wfu : wf u) → (wfv : wf v) → wf (FV ⊢ u ↦ v)
     wf-⊔ : ∀ {u v} → (u~v : u ~ v) → (wfu : wf u) → (wfv : wf v) → wf (u ⊔ v)
@@ -400,7 +400,7 @@ module Model.Filter.DomainAnnFunConsistent where
 
   wf? : (v : Value) → Dec (wf v)
   wf? ω = yes wf-ω
-  wf? ν = yes wf-ν
+  wf? (FV ⊢ν) = yes wf-ν
   wf? (const k) = yes (wf-const k)
   wf? (v ⊔ v₁) with wf? v
   ... | no ¬wfv = no (λ z → ¬wfv (proj₁ (proj₂ (wf-⊔-inv z))))
@@ -438,7 +438,7 @@ module Model.Filter.DomainAnnFunConsistent where
 
   sc-å : ∀ v → Atomic v → sc v
   sc-å ω åv = tt
-  sc-å ν åv = tt
+  sc-å (FV ⊢ν) åv = tt
   sc-å (const {B} k) åv with base-eq? B B
   ... | no neq = ⊥-elim (neq refl)
   ... | yes refl with base-rep-eq? k k
@@ -547,7 +547,7 @@ module Model.Filter.DomainAnnFunConsistent where
   consistent-⊑-lemma ⊑-ω v u~v = tt
   consistent-⊑-lemma ⊑-ν-ν v u~v = u~v
   consistent-⊑-lemma ⊑-ν-↦ ω u~v = tt
-  consistent-⊑-lemma ⊑-ν-↦ ν u~v = tt
+  consistent-⊑-lemma ⊑-ν-↦ (FV ⊢ν) u~v = tt
   consistent-⊑-lemma ⊑-ν-↦ (v ⊔ v₁) ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma ⊑-ν-↦ v fst , consistent-⊑-lemma ⊑-ν-↦ v₁ snd ⟩
   consistent-⊑-lemma ⊑-ν-↦ (FV ⊢ v ↦ v₁) u~v = tt
@@ -568,7 +568,7 @@ module Model.Filter.DomainAnnFunConsistent where
   consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) ∥ x ∷ vs ∥ ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma ⊑u x fst , consistent-⊑-lemma ⊑u₁ ∥ vs ∥ snd ⟩
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ω u~v = tt
-  consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ν u~v = tt
+  consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) (FV ⊢ν) u~v = tt
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) (v ⊔ v₁) ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) v fst
     , consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) v₁ snd ⟩
