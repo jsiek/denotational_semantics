@@ -27,7 +27,7 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module Model.Filter.DomainValues where
+module Model.Filter.DomainISWIMValues where
 
 open import Primitives
 open import Model.Filter.DomainUtil

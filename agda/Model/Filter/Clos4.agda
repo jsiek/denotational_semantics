@@ -18,8 +18,8 @@ open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Model.Filter.Domain
-open import Model.Filter.Operation
+open import Model.Filter.DomainISWIM
+open import Model.Filter.OperationISWIM
 open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 open import Data.Empty renaming (⊥ to Bot)

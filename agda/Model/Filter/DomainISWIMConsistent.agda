@@ -21,12 +21,12 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module Model.Filter.DomainConsistent where
+module Model.Filter.DomainISWIMConsistent where
 
   open import Primitives
   open import Model.Filter.DomainUtil
-  open import Model.Filter.DomainValues
-  open import Model.Filter.DomainOrdering
+  open import Model.Filter.DomainISWIMValues
+  open import Model.Filter.DomainISWIMOrdering
 
 
   {-

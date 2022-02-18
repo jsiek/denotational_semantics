@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Model.Filter.Operation where
+module Model.Filter.OperationISWIM where
 
 {-
 
@@ -18,7 +18,7 @@ open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
-open import Model.Filter.Domain renaming (consistent to consistency)
+open import Model.Filter.DomainISWIM renaming (consistent to consistency)
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
