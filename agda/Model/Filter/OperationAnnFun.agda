@@ -55,7 +55,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ (ω ⊢ν) = True
-Λ ⟨ f , _ ⟩ (ω ⊢ V ↦ w) = w ∈ f (⌈ V ⌉)
+Λ ⟨ f , _ ⟩ (ω ⊢ V ↦ w) = w ∈ f (⊑-closure V)
 Λ ⟨ f , _ ⟩ (u ⊔ v) = Λ ⟨ f , _ ⟩ u × Λ ⟨ f , _ ⟩ v
 Λ ⟨ f , _ ⟩ d = False
 
@@ -89,7 +89,7 @@ annot d FV = d
    on a double-lambda -}
 𝒜Λ : DOp (𝒫 Value) (ν (ν ■) ∷ ■ ∷ [])
 𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (FV ⊢ν) = wf FV × FV ∈ 𝒯fvs
-𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (FV ⊢ V ↦ w) = w ∈ f (⌈ FV ⌉) (⌈ V ⌉) × FV ∈ 𝒯fvs
+𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (FV ⊢ V ↦ w) = w ∈ f (⌈ FV ⌉) (⊑-closure V) × FV ∈ 𝒯fvs
 𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (u ⊔ v) = 𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ u × 𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ v
 𝒜Λ ⟨ f , _ ⟩ d = False
 
@@ -176,8 +176,8 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
 𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = 
-  Σ[ V ∈ Value ] left V ∈ D × w ∈ E (⌈ V ⌉) 
-          ⊎ (Σ[ V ∈ Value ] right V ∈ D × w ∈ F (⌈ V ⌉))
+  Σ[ V ∈ Value ] left V ∈ D × w ∈ E (⊑-closure V) 
+          ⊎ (Σ[ V ∈ Value ] right V ∈ D × w ∈ F (⊑-closure V))
 
 
 {- Monotonicity and congruence of operators --------------------------------------------------}
@@ -209,7 +209,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
   where 
   G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
-  G (ω ⊢ V ↦ w) w∈F₁X = lower (F⊆ (⌈ V ⌉) (⌈ V ⌉) (λ d z → z)) w w∈F₁X
+  G (ω ⊢ V ↦ w) w∈F₁X = lower (F⊆ (⊑-closure V) (⊑-closure V) (λ d z → z)) w w∈F₁X
   G (ω ⊢ν) v∈ = tt
   G (d₁ ⊔ d₂) ⟨ d₁∈ , d₂∈ ⟩ = ⟨ G d₁ d₁∈ , G d₂ d₂∈ ⟩
 
@@ -231,14 +231,14 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
   where
   G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
   G1 (ω ⊢ V ↦ w) w∈FV = proj₁ (lower
-     (F≃ (⌈ V ⌉) (⌈ V ⌉)
+     (F≃ (⊑-closure V) (⊑-closure V)
           ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
              w w∈FV
   G1 (ω ⊢ν) tt = tt
   G1 (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G1 u u∈ , G1 v v∈ ⟩
   G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
   G2 (ω ⊢ V ↦ w) w∈F'V = proj₂ (lower 
-     (F≃ (⌈ V ⌉) (⌈ V ⌉) 
+     (F≃ (⊑-closure V) (⊑-closure V) 
          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
          w w∈F'V
   G2 (ω ⊢ν) tt = tt
@@ -337,10 +337,10 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
   where 
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
   G d (inj₁ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
-    inj₁ ⟨ V , ⟨ D⊆ (left V) V∈ , lower (FL⊆ ⌈ V ⌉ ⌈ V ⌉ (λ d z → z)) d d∈ ⟩ ⟩
+    inj₁ ⟨ V , ⟨ D⊆ (left V) V∈ , lower (FL⊆ (⊑-closure V) (⊑-closure V) (λ d z → z)) d d∈ ⟩ ⟩
   G d (inj₂ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
     inj₂ ⟨ V , ⟨ D⊆ (right V) V∈
-         , lower (FR⊆ ⌈ V ⌉ ⌈ V ⌉ (λ d z → z)) d d∈ ⟩ ⟩
+         , lower (FR⊆ (⊑-closure V) (⊑-closure V) (λ d z → z)) d d∈ ⟩ ⟩
 
 {-
 𝒞-cong : congruent (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞

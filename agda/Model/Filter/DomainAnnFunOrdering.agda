@@ -583,6 +583,27 @@ module Model.Filter.DomainAnnFunOrdering where
    ; ⊑-dist = ⊑-dist-fun
    }
 
+  ⊔-closed : (Value → Set) → Set
+  ⊔-closed D = ∀ u v → D u → D v 
+          → Σ[ u⊔v' ∈ Value ] D u⊔v' × (u ⊔ v) ⊑ u⊔v'
+
+  ⊑-closed : (Value → Set) → Set
+  ⊑-closed D = ∀ u v → D v → u ⊑ v → D u
+
+  ⊑-closure : Value → (Value → Set)
+  ⊑-closure V d = d ⊑ V
+
+  ⊑-closure-closed : ∀ V → ⊑-closed (⊑-closure V)
+  ⊑-closure-closed V u v v⊑V u⊑v = ⊑-trans u⊑v v⊑V
+
+  ⊑-closure-⊔-closed : ∀ V → ⊔-closed (⊑-closure V)
+  ⊑-closure-⊔-closed V u v u⊑V v⊑V = 
+    ⟨ V , ⟨ ⊑-refl , ⊑-split split-⊔ u⊑V v⊑V ⟩ ⟩
+
+  singleton-⊔-closed : ∀ V → ⊔-closed (λ v → v ≡ V)
+  singleton-⊔-closed V u .u refl refl = 
+    ⟨ u , ⟨ refl , ⊑-⊔-L ⊑-refl ⊑-refl ⟩ ⟩
+
 
 
 {-  
