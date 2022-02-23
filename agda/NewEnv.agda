@@ -49,6 +49,13 @@ _⊆ₑ_ : ∀ {A} → Env A → Env A → Set
 ⊆ₑ-trans : ∀{A}{ρ₁ ρ₂ ρ₃ : Env A} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
 ⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
 
+∀ₑ : ∀ {A} (P : 𝒫 A → Set) → Env A → Set
+∀ₑ P ρ = ∀ i → P (ρ i)
+
+∀ₑ-ext : ∀ {A ρ D} P → ∀ₑ {A} P ρ → P D → ∀ₑ P (D • ρ)
+∀ₑ-ext P Pρ PD zero = PD
+∀ₑ-ext P Pρ PD (suc i) = Pρ i
+
 extend-nonempty-env : ∀{A}{ρ : Env A}{X}
    → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
 extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X

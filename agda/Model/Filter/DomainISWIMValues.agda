@@ -8,28 +8,41 @@ open import Data.Nat.Properties
          ≤-pred; m≤m+n; m≤n+m; ≤-reflexive; ≤′⇒≤; ≤⇒≤′; +-suc;
          mono-≤-distrib-⊔; ⊔-lub; ⊔-assoc; ⊔-comm)
 open Data.Nat.Properties.≤-Reasoning using (begin_; _∎; step-≤)
-open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
+open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂; uncurry)
   renaming (_,_ to ⟨_,_⟩)
+open import Data.Product.Properties using (,-injective)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
 open import Data.Unit using (⊤; tt)
 open import Data.List using (List; _∷_ ; []; _++_)
+open import Data.List.Relation.Binary.Subset.Propositional using ()
+  renaming (_⊆_ to _l⊆_)
+open import Data.List.Relation.Unary.Any using (Any; here; there; any?)
+open import Data.List.Relation.Unary.All 
+  using ([]; _∷_; tabulate; all?)
+  renaming (All to listAll; head to listhead; tail to listtail; map to allmap; 
+            lookup to listlookup)
+open import Data.List.Properties using (++-conicalˡ; ∷-dec)
 open import Data.Vec using (Vec; []; _∷_; length; head; tail; lookup; zipWith)
+open import Data.Vec.Properties using (∷-injective; ≡-dec)
 open import Data.Vec.Relation.Binary.Pointwise.Inductive as PW using (Pointwise; []; _∷_; head; tail; uncons)
 open import Data.Vec.Relation.Unary.All using ([]; _∷_; All; head; tail; map)
 open import Data.Fin using (Fin)
+open import Data.Bool using (Bool; true; false)
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary using (Dec; yes; no)
-open import Data.Bool using (Bool; true; false)
 open import Relation.Nullary.Negation using (contradiction)
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; _≢_; refl; sym; cong; subst; inspect; [_])
+  using (_≡_; _≢_; refl; sym; cong; cong₂; subst; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
+open import Relation.Nullary.Decidable using (map′)
+open import Relation.Nullary.Product using (_×-dec_)
 
 module Model.Filter.DomainISWIMValues where
 
 open import Primitives
+open import SetsAsPredicates
 open import Model.Filter.DomainUtil
 
 
@@ -68,6 +81,9 @@ data Value : Set where
 
 value_struct : ValueStruct
 value_struct = record { Value = Value ; ⊥ = ω ; _↦_ = _↦_ ; _⊔_ = _⊔_}
+
+
+{- --- Splitting: Atomic and Proper values ---------------------------------- -}
 
 Atomic : Value → Set
 Atomic-tup : ∀ {n} → Vec Value n → Set
@@ -317,6 +333,10 @@ unsplittable ∥ v ∷ vs ∥ åv (split-tup-tail x split) = unsplittable ∥ vs
 unsplittable (left d) åv (split-left split) = unsplittable d åv split
 unsplittable (right d) åv (split-right split) = unsplittable d åv split
 
+
+
+{- Size/Depth -----------------------------------------------------------------}
+
 depth : (v : Value) → ℕ
 tup-depth : ∀ {n} (vs : Vec Value n) → ℕ
 tup-depth {zero} [] = zero
@@ -345,3 +365,147 @@ size (∥_∥ {n} vs) = suc (tup-size vs)
 size (left d) = suc (size d)
 size (right d) = suc (size d)
 
+{- Equality -------------------------------------------------------------------}
+
+l⊆→All∈ : ∀ {A : Set} (U V : List A) → U l⊆ V → listAll (λ z → Any (z ≡_) V) U
+l⊆→All∈ U V = tabulate
+
+All∈→l⊆ : ∀ {A : Set} {U V : List A} → listAll (λ z → Any (z ≡_) V) U → U l⊆ V
+All∈→l⊆ = listlookup
+
+_⊢_l⊆?_ : ∀ {A : Set} (≡? : ∀ (a b : A) → Dec (a ≡ b)) (U V : List A) → Dec (U l⊆ V)
+≡? ⊢ U l⊆? V = map′ All∈→l⊆ (l⊆→All∈ U V) (all? (λ x → any? (λ y → ≡? x y) V) U)
+
+l⊆→⊆ : ∀ {A : Set} (U V : List A) → U l⊆ V → mem U ⊆ mem V
+l⊆→⊆ U V Ul⊆V d = Ul⊆V {d}
+
+⊆→l⊆ : ∀ {A : Set} (U V : List A) → mem U ⊆ mem V → U l⊆ V
+⊆→l⊆ U V U⊆V {d} = U⊆V d
+
+const-inj-base : ∀ {B B' k k'} → const {B} k ≡ const {B'} k' → B ≡ B'
+const-inj-base {B}{B'} refl = refl
+
+const-inj : ∀ {B k k'} → const {B} k ≡ const {B} k' → k ≡ k'
+const-inj refl = refl
+
+tup-inj-easy : ∀ {n ds ds'} → ∥_∥ {n} ds ≡ ∥_∥ {n} ds' → ds ≡ ds'
+tup-inj-easy refl = refl
+
+tup-inj : ∀ {n n' ds ds'} → ∥_∥ {n} ds ≡ ∥_∥ {n'} ds' → 
+   Σ[ n≡n' ∈ n ≡ n' ] (subst (Vec Value) n≡n' ds) ≡ ds'
+tup-inj refl = ⟨ refl , refl ⟩
+
+left-inj : ∀ {v v'} → (left v) ≡ left v' → v ≡ v'
+left-inj refl = refl
+
+right-inj : ∀ {v v'} → (right v) ≡ right v' → v ≡ v'
+right-inj refl = refl
+
+↦-inj-uncurried : ∀ {V V' w w'} → V ↦ w ≡ V' ↦ w'
+      → ⟨ V , w ⟩ ≡ ⟨ V' , w' ⟩
+↦-inj-uncurried refl = refl
+
+pair-inj : ∀ {d₁ d₂ d₁' d₂'} → ⦅ d₁ , d₂ ⦆ ≡ ⦅ d₁' , d₂' ⦆ → d₁ ≡ d₁' × d₂ ≡ d₂'
+pair-inj refl = ⟨ refl , refl ⟩
+
+⊔-inj : ∀ {d₁ d₂ d₁' d₂'} → d₁ ⊔ d₂ ≡ d₁' ⊔ d₂' → d₁ ≡ d₁' × d₂ ≡ d₂'
+⊔-inj refl = ⟨ refl , refl ⟩
+
+_d≟_ : (d₁ : Value) → (d₂ : Value) → Dec (d₁ ≡ d₂)
+_ds≟_ : ∀ {n} → (ds₁ ds₂ : Vec Value n) → Dec (ds₁ ≡ ds₂)
+const {B} k d≟ const {B'} k₁ with base-eq? B B'
+... | no neq = no λ z → neq (const-inj-base z)
+... | yes refl = map′ (cong (const {B})) const-inj (base-rep-eq? k k₁)
+const k d≟ ν = no (λ ())
+const k d≟ (V ↦ w) = no (λ ())
+const k d≟ ω = no (λ ())
+const k d≟ ∥ ds ∥ = no (λ ())
+const k d≟ (left v₁) = no (λ ())
+const k d≟ (right v₁) = no (λ ())
+const k d≟ ⦅ u , v ⦆ = no (λ ())
+const k d≟ (u ⊔ v) = no (λ ())
+(V ↦ w) d≟ const k = no (λ ())
+(V ↦ w) d≟ (V' ↦ w') = 
+  map′ (cong (λ z → proj₁ z ↦ (proj₂ z)))
+        ↦-inj-uncurried 
+        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective ((V d≟ V') ×-dec (w d≟ w')))
+(V ↦ w) d≟ ν = no (λ ())
+(V ↦ w) d≟ ω = no (λ ())
+(V ↦ w) d≟ ∥ ds ∥ = no (λ ())
+(V ↦ w) d≟ (left v₁) = no (λ ())
+(V ↦ w) d≟ (right v₁) = no (λ ())
+(V ↦ w) d≟ ⦅ u , v ⦆ = no (λ ())
+(V ↦ w) d≟ (u ⊔ v) = no (λ ())
+ν d≟ const k = no (λ ())
+ν d≟ (V ↦ d₃) = no (λ ())
+ν d≟ ν = yes refl
+ν d≟ ω = no (λ ())
+ν d≟ ∥ ds ∥ = no (λ ())
+ν d≟ (left v) = no (λ ())
+ν d≟  (right v) = no (λ ())
+ν d≟ ⦅ u , v ⦆ = no (λ ())
+ν d≟ (u ⊔ v) = no (λ ())
+ω d≟ const k = no (λ ())
+ω d≟ (V ↦ d₃) = no (λ ())
+ω d≟ ν = no (λ ())
+ω d≟ ω = yes refl
+ω d≟ ∥ ds ∥ = no (λ ())
+ω d≟ (left v) = no (λ ())
+ω d≟  (right v) = no (λ ())
+ω d≟ ⦅ u , v ⦆ = no (λ ())
+ω d≟ (u ⊔ v) = no (λ ())
+∥ ds ∥ d≟ const k = no (λ ())
+∥ ds ∥ d≟ (V ↦ d₃) = no (λ ())
+∥ ds ∥ d≟ ν = no (λ ())
+∥ ds ∥ d≟ ω = no (λ ())
+∥_∥ {n} ds d≟ ∥_∥ {n'} ds' with n ≟ n'
+... | no neq = no λ z → neq (proj₁ (tup-inj z))
+... | yes refl = map′ (cong ∥_∥) tup-inj-easy (ds ds≟ ds')
+∥ ds ∥ d≟ (left v) = no (λ ())
+∥ ds ∥ d≟  (right v) = no (λ ())
+∥ ds ∥ d≟ ⦅ u , v ⦆ = no (λ ())
+∥ ds ∥ d≟ (u ⊔ v) = no (λ ())
+(left v) d≟ const k = no (λ ())
+(left v) d≟ (V₁ ↦ d₃) = no (λ ())
+(left v) d≟ ν = no (λ ())
+(left v) d≟ ω = no (λ ())
+(left v) d≟ ∥ ds ∥ = no (λ ())
+(left v) d≟ (left v₁) = map′ (cong left) left-inj (v d≟ v₁)
+(left v) d≟ (right v₁) = no (λ ())
+(left v) d≟ ⦅ u , v₁ ⦆ = no (λ ())
+(left v) d≟ (u ⊔ v₁) = no (λ ())
+(right v) d≟ const k = no (λ ())
+(right v) d≟ (V₁ ↦ d₃) = no (λ ())
+(right v) d≟ ν = no (λ ())
+(right v) d≟ ω = no (λ ())
+(right v) d≟ ∥ ds ∥ = no (λ ())
+(right v) d≟ (left v₁) = no (λ ())
+(right v) d≟ (right v₁) = map′ (cong right) right-inj (v d≟ v₁)
+(right v) d≟ ⦅ u , v₁ ⦆ = no (λ ())
+(right v) d≟ (u ⊔ v₁) = no (λ ())
+⦅ u , v ⦆ d≟ ω = no (λ ())
+⦅ u , v ⦆ d≟ (ν) = no (λ ())
+⦅ u , v ⦆ d≟ const k = no (λ ())
+⦅ u , v ⦆ d≟ (d ⊔ d₁) = no (λ ())
+⦅ u , v ⦆ d≟ (d₁ ↦ d₂) = no (λ ())
+⦅ u , v ⦆ d≟ ⦅ d , d₁ ⦆ = map′ (uncurry (cong₂ ⦅_,_⦆)) pair-inj ((u d≟ d) ×-dec (v d≟ d₁))
+⦅ u , v ⦆ d≟ ∥ ds ∥ = no (λ ())
+⦅ u , v ⦆ d≟ left d = no (λ ())
+⦅ u , v ⦆ d≟ right d = no (λ ())
+(u ⊔ v) d≟ ω = no (λ ())
+(u ⊔ v) d≟ (ν) = no (λ ())
+(u ⊔ v) d≟ const k = no (λ ())
+(u ⊔ v) d≟ (d ⊔ d₁) = map′ (uncurry (cong₂ _⊔_)) ⊔-inj ((u d≟ d) ×-dec (v d≟ d₁))
+(u ⊔ v) d≟ (d₁ ↦ d₂) = no (λ ())
+(u ⊔ v) d≟ ⦅ d , d₁ ⦆ = no (λ ())
+(u ⊔ v) d≟ ∥ ds ∥ = no (λ ())
+(u ⊔ v) d≟ left d = no (λ ())
+(u ⊔ v) d≟ right d = no (λ ())
+[] ds≟ [] = yes refl
+(d ∷ ds) ds≟ (d' ∷ ds') = map′ (uncurry (cong₂ _∷_)) ∷-injective ((d d≟ d') ×-dec (ds ds≟ ds'))
+
+_l⊆?_ : ∀ (U V : List Value) → Dec (U l⊆ V)
+U l⊆? V = _d≟_ ⊢ U l⊆? V
+
+_mem⊆?_ : ∀ (U V : List Value) → Dec (mem U ⊆ mem V)
+U mem⊆? V = map′ (l⊆→⊆ U V) (⊆→l⊆ U V) (U l⊆? V)

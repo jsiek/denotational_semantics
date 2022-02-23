@@ -55,7 +55,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ (ω ⊢ν) = True
-Λ ⟨ f , _ ⟩ (ω ⊢ V ↦ w) = w ∈ f (⌈ V ⌉) × wf V
+Λ ⟨ f , _ ⟩ (ω ⊢ V ↦ w) = w ∈ f (⌈ V ⌉)
 Λ ⟨ f , _ ⟩ (u ⊔ v) = Λ ⟨ f , _ ⟩ u × Λ ⟨ f , _ ⟩ v
 Λ ⟨ f , _ ⟩ d = False
 
@@ -77,6 +77,45 @@ annot d FV = d
 𝒜⋆ ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ d = 
    Σ[ x ∈ Value ] Σ[ V ∈ Value ] Σ[ w ∈ Value ] 
        (x ⊢ V ↦ w) ∈ D₁ × V ∈ D₂ × d ≡ annot w V
+
+
+
+
+
+
+{- Don't need the annotated lambda yet
+
+{- annotated lambda... should be equal to the result of the early application 
+   on a double-lambda -}
+𝒜Λ : DOp (𝒫 Value) (ν (ν ■) ∷ ■ ∷ [])
+𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (FV ⊢ν) = wf FV × FV ∈ 𝒯fvs
+𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (FV ⊢ V ↦ w) = w ∈ f (⌈ FV ⌉) (⌈ V ⌉) × FV ∈ 𝒯fvs
+𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ (u ⊔ v) = 𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ u × 𝒜Λ ⟨ f , ⟨ 𝒯fvs , _ ⟩ ⟩ v
+𝒜Λ ⟨ f , _ ⟩ d = False
+
+𝒜⋆⊆𝒜Λ : ∀ {f 𝒯fvs} → 𝒜⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ f X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯fvs , ptt ⟩ ⟩ ⊆ 𝒜Λ ⟨ f , ⟨ 𝒯fvs , ptt ⟩ ⟩
+𝒜⋆⊆𝒜Λ .(annot (w ⊢ν) FV) ⟨ ω , ⟨ FV , ⟨ w ⊢ν , ⟨ w∈ , ⟨ FV∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩ = 
+  ⟨ proj₂ w∈ , FV∈ ⟩
+𝒜⋆⊆𝒜Λ .(annot (ω ⊢ V ↦ w) FV) 
+  ⟨ ω , ⟨ FV , ⟨ ω ⊢ V ↦ w , ⟨ ⟨ ⟨ w∈ , wfV ⟩ , wfFV ⟩ , ⟨ FV∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩ = 
+  ⟨ ⟨ ⟨ w∈ , wfV ⟩ , wfFV ⟩ , FV∈ ⟩
+𝒜⋆⊆𝒜Λ .(annot (u ⊔ v) FV) ⟨ ω , ⟨ FV , ⟨ u ⊔ v , ⟨ ⟨ ⟨ u∈ , v∈ ⟩ , wfFV ⟩  , ⟨ FV∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩ 
+  = ⟨ 𝒜⋆⊆𝒜Λ (annot u FV) ⟨ ω , ⟨ FV , ⟨ u , ⟨ ⟨ u∈ , wfFV ⟩ , ⟨ FV∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩ 
+    , 𝒜⋆⊆𝒜Λ (annot v FV) ⟨ ω , ⟨ FV , ⟨ v , ⟨ ⟨ v∈ , wfFV ⟩ , ⟨ FV∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+
+
+𝒜Λ⊆𝒜⋆ : ∀ {f 𝒯fvs} → 𝒜Λ ⟨ f , ⟨ 𝒯fvs , ptt ⟩ ⟩ ⊆ 𝒜⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ f X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯fvs , ptt ⟩ ⟩
+𝒜Λ⊆𝒜⋆ (FV ⊢ν) d∈ = 
+  ⟨ ω , ⟨ FV , ⟨ ω ⊢ν , ⟨ ⟨ tt , proj₁ d∈ ⟩ , ⟨ proj₂ d∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩
+𝒜Λ⊆𝒜⋆ (FV ⊢ V ↦ w) d∈ = 
+  ⟨ ω , ⟨ FV , ⟨ ω ⊢ V ↦ w , ⟨ proj₁ d∈ , ⟨ proj₂ d∈ , refl ⟩ ⟩ ⟩ ⟩ ⟩
+𝒜Λ⊆𝒜⋆ (u ⊔ v) ⟨ u∈ , v∈ ⟩ with 𝒜Λ⊆𝒜⋆ u u∈ | 𝒜Λ⊆𝒜⋆ v v∈
+... | u∈' | v∈' = HOLE
+  {- this is true if the annotated application operator is join-closed 
+     and if the arguments are join-closed -}
+𝒜Λ-𝒜⋆ : ∀ {f 𝒯fvs} → 𝒜Λ ⟨ f , ⟨ 𝒯fvs , ptt ⟩ ⟩ ≃ 𝒜⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ f X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯fvs , ptt ⟩ ⟩
+𝒜Λ-𝒜⋆ = ⟨ HOLE , HOLE ⟩
+-}
 
 
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
@@ -136,9 +175,9 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 ℛ ⟨ D , _ ⟩ d = False
 
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) 
-          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)))
-
+𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = 
+  Σ[ V ∈ Value ] left V ∈ D × w ∈ E (⌈ V ⌉) 
+          ⊎ (Σ[ V ∈ Value ] right V ∈ D × w ∈ F (⌈ V ⌉))
 
 
 {- Monotonicity and congruence of operators --------------------------------------------------}
@@ -170,15 +209,15 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
   where 
   G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
-  G (ω ⊢ V ↦ w) ⟨ w∈F₁X , wfV ⟩ = ⟨ lower (F⊆ (⌈ V ⌉) (⌈ V ⌉) (λ d z → z)) w w∈F₁X , wfV ⟩
+  G (ω ⊢ V ↦ w) w∈F₁X = lower (F⊆ (⌈ V ⌉) (⌈ V ⌉) (λ d z → z)) w w∈F₁X
   G (ω ⊢ν) v∈ = tt
   G (d₁ ⊔ d₂) ⟨ d₁∈ , d₂∈ ⟩ = ⟨ G d₁ d₁∈ , G d₂ d₂∈ ⟩
 
 Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ⊆ F₂ X)
   → Λ ⟨ F₁ , ptt ⟩ ⊆ Λ ⟨ F₂ , ptt ⟩
-Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (ω ⊢ V ↦ w) ⟨ w∈F₁X , wfV ⟩ =
-    ⟨ F₁⊆F₂ w w∈F₁X , wfV ⟩
+Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (ω ⊢ V ↦ w) w∈F₁X =
+    F₁⊆F₂ w w∈F₁X
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (ω ⊢ν) v∈ = tt
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ Λ-ext-⊆ F₁⊆F₂ u u∈ , Λ-ext-⊆ F₁⊆F₂ v v∈ ⟩
 
@@ -191,17 +230,17 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-cong ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F≃ , _ ⟩ = lift ⟨ G1 , G2 ⟩
   where
   G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
-  G1 (ω ⊢ V ↦ w) ⟨ w∈FV , neV ⟩ = ⟨ proj₁ (lower
+  G1 (ω ⊢ V ↦ w) w∈FV = proj₁ (lower
      (F≃ (⌈ V ⌉) (⌈ V ⌉)
           ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
-             w w∈FV , neV ⟩
+             w w∈FV
   G1 (ω ⊢ν) tt = tt
   G1 (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G1 u u∈ , G1 v v∈ ⟩
   G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
-  G2 (ω ⊢ V ↦ w) ⟨ w∈F'V , neV ⟩ = ⟨ proj₂ (lower 
+  G2 (ω ⊢ V ↦ w) w∈F'V = proj₂ (lower 
      (F≃ (⌈ V ⌉) (⌈ V ⌉) 
          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
-         w w∈F'V , neV ⟩
+         w w∈F'V
   G2 (ω ⊢ν) tt = tt
   G2 (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G2 u u∈ , G2 v v∈ ⟩
 
@@ -297,12 +336,12 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
        ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (left d) (V⊆ d z)) 
-         , lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
-  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (right d) (V⊆ d z)) 
-         , lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
+  G d (inj₁ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
+    inj₁ ⟨ V , ⟨ D⊆ (left V) V∈ , lower (FL⊆ ⌈ V ⌉ ⌈ V ⌉ (λ d z → z)) d d∈ ⟩ ⟩
+  G d (inj₂ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
+    inj₂ ⟨ V , ⟨ D⊆ (right V) V∈
+         , lower (FR⊆ ⌈ V ⌉ ⌈ V ⌉ (λ d z → z)) d d∈ ⟩ ⟩
+
 {-
 𝒞-cong : congruent (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
 𝒞-cong ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 

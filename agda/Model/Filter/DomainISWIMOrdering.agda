@@ -749,24 +749,30 @@ module Model.Filter.DomainISWIMOrdering where
 -}
 
 
+{- proving the decidability of ordering is an interesting problem
+
+
   ¬k⊑ν : ∀ {B k} → ¬ (const {B} k ⊑ ν)
   ¬k⊑ν (⊑-split () k⊑ν k⊑ν₁)
 
-
+  
 
   _P⊑?_ : ∀ {u v} → Proper u → Proper v → Dec (u ⊑ v)
   ⊢'-ω P⊑? v = yes ⊑-ω
-  ⊢'-ν P⊑? v = {!   !}
-  ⊢'-const k P⊑? v = {!   !}
-  ⊢'-↦-å Pu Pu₁ åv₂ P⊑? v = {!   !}
-  ⊢'-pair-å Pu Pu₁ åv₁ åv₂ P⊑? v = {!   !}
-  ⊢'-nil P⊑? v = {!   !}
-  ⊢'-tup-å Pu Pu₁ åv åvs P⊑? v = {!   !}
-  ⊢'-left-å Pu åv P⊑? v = {!   !}
-  ⊢'-right-å Pu åv P⊑? v = {!   !}
+  ⊢'-ν P⊑? v = HOLE
+  ⊢'-const k P⊑? v = HOLE
+  ⊢'-↦-å Pu Pu₁ åv₂ P⊑? v = HOLE
+  ⊢'-pair-å Pu Pu₁ åv₁ åv₂ P⊑? v = HOLE
+  ⊢'-nil P⊑? v = HOLE
+  ⊢'-tup-å Pu Pu₁ åv åvs P⊑? v = HOLE
+  ⊢'-left-å Pu åv P⊑? v = HOLE
+  ⊢'-right-å Pu åv P⊑? v = HOLE
   ⊢'-split vL vR split Pu Pu₁ P⊑? v 
     with Pu P⊑? v | Pu₁ P⊑? v
   ... | yes <1 | yes <2 = yes (⊑-split split <1 <2)
   ... | yes <1 | no ≮2 = no (λ z → (≮2 (proj₂ (⊑-inversion-split-R z split))))
   ... | no ≮1 | yes <2 = no (λ z → (≮1 (proj₁ (⊑-inversion-split-R z split))))
   ... | no ≮1 | no ≮2 = no (λ z → ≮2 (proj₂ (⊑-inversion-split-R z split)))
+
+
+-}

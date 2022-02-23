@@ -115,12 +115,13 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 ℛ ⟨ D , _ ⟩ d = False
 
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) 
-          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)))
+𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = 
+  Σ[ V ∈ Value ] left V ∈ D × w ∈ E (⌈ V ⌉) 
+          ⊎ (Σ[ V ∈ Value ] right V ∈ D × w ∈ F (⌈ V ⌉))
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ ν = True
-Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (⌈ V ⌉) × wf V
+Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (⌈ V ⌉)
 Λ ⟨ f , _ ⟩ (u ⊔ v) = Λ ⟨ f , _ ⟩ u × Λ ⟨ f , _ ⟩ v
 Λ ⟨ f , _ ⟩ d = False
 
@@ -145,15 +146,15 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
   where 
   G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
-  G (V ↦ w) ⟨ w∈F₁X , wfV ⟩ = ⟨ lower (F⊆ (⌈ V ⌉) (⌈ V ⌉) (λ d z → z)) w w∈F₁X , wfV ⟩
+  G (V ↦ w) w∈F₁X = lower (F⊆ (⌈ V ⌉) (⌈ V ⌉) (λ d z → z)) w w∈F₁X
   G ν v∈ = tt
   G (d₁ ⊔ d₂) ⟨ d₁∈ , d₂∈ ⟩ = ⟨ G d₁ d₁∈ , G d₂ d₂∈ ⟩
 
 Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ⊆ F₂ X)
   → Λ ⟨ F₁ , ptt ⟩ ⊆ Λ ⟨ F₂ , ptt ⟩
-Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (V ↦ w) ⟨ w∈F₁X , wfV ⟩ =
-    ⟨ F₁⊆F₂ w w∈F₁X , wfV ⟩
+Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (V ↦ w) w∈F₁X =
+    F₁⊆F₂ w w∈F₁X
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ν v∈ = tt
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ Λ-ext-⊆ F₁⊆F₂ u u∈ , Λ-ext-⊆ F₁⊆F₂ v v∈ ⟩
 
@@ -166,17 +167,17 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-cong ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F≃ , _ ⟩ = lift ⟨ G1 , G2 ⟩
   where
   G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
-  G1 (V ↦ w) ⟨ w∈FV , neV ⟩ = ⟨ proj₁ (lower
+  G1 (V ↦ w) w∈FV = proj₁ (lower
      (F≃ (⌈ V ⌉) (⌈ V ⌉)
           ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
-             w w∈FV , neV ⟩
+             w w∈FV
   G1 ν tt = tt
   G1 (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G1 u u∈ , G1 v v∈ ⟩
   G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
-  G2 (V ↦ w) ⟨ w∈F'V , neV ⟩ = ⟨ proj₂ (lower 
+  G2 (V ↦ w) w∈F'V = proj₂ (lower 
      (F≃ (⌈ V ⌉) (⌈ V ⌉) 
          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
-         w w∈F'V , neV ⟩
+         w w∈F'V
   G2 ν tt = tt
   G2 (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G2 u u∈ , G2 v v∈ ⟩
 
@@ -272,12 +273,11 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
        ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (left d) (V⊆ d z)) 
-         , lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
-  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (right d) (V⊆ d z)) 
-         , lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
+  G d (inj₁ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
+    inj₁ ⟨ V , ⟨ D⊆ (left V) V∈ , lower (FL⊆ ⌈ V ⌉ ⌈ V ⌉ (λ d z → z)) d d∈ ⟩ ⟩
+  G d (inj₂ ⟨ V , ⟨ V∈ , d∈ ⟩ ⟩) = 
+    inj₂ ⟨ V , ⟨ D⊆ (right V) V∈
+         , lower (FR⊆ ⌈ V ⌉ ⌈ V ⌉ (λ d z → z)) d d∈ ⟩ ⟩
 {-
 𝒞-cong : congruent (■ ∷ ■ ∷ ■ ∷ []) ■ 𝒞
 𝒞-cong ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
