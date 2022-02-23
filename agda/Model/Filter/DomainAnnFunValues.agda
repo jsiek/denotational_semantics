@@ -168,11 +168,11 @@ data _◃_▹_ : (v₁ v v₂ : Value) → Set where
 
 ¬å⇒split : ∀ v → ¬ (Atomic v) → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ◃ v ▹ v₂
 ¬å⇒split ω ¬åv = ⊥-elim (¬åv tt)
-¬å⇒split ν ¬åv = ⊥-elim (¬åv tt)
+¬å⇒split (FV ⊢ν) ¬åv = ⊥-elim (¬åv tt)
 ¬å⇒split (const k) ¬åv = ⊥-elim (¬åv tt)
 ¬å⇒split (v ⊔ v₁) ¬åv = ⟨ v , ⟨ v₁ , split-⊔ ⟩ ⟩
-¬å⇒split (v ↦ w) ¬åv with ¬å⇒split w ¬åv
-... | ⟨ w₁ , ⟨ w₂ , split ⟩ ⟩ = ⟨ v ↦ w₁ , ⟨ v ↦ w₂ , split-↦ split ⟩ ⟩
+¬å⇒split (FV ⊢ v ↦ w) ¬åv with ¬å⇒split w ¬åv
+... | ⟨ w₁ , ⟨ w₂ , split ⟩ ⟩ = ⟨ FV ⊢ v ↦ w₁ , ⟨ FV ⊢ v ↦ w₂ , split-↦ split ⟩ ⟩
 ¬å⇒split ⦅ u , v ⦆ ¬åv = {!   !}
 ¬å⇒split ∥ [] ∥ ¬åv = ⊥-elim (¬åv tt)
 ¬å⇒split ∥ x ∷ ds ∥ ¬åv = {!   !}
