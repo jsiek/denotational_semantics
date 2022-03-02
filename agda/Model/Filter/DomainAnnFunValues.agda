@@ -70,13 +70,18 @@ infixl 6 _⊔_
 infix 5 _◃_▹_  {- prounounced "split" -}
 {- ◂ \tw and \tw2 ▹ (or \tw[right arrow key])  -}
 
+
+{- Went with half-pair values instead of using ⦅ u , ω ⦆ and ⦅ ω , v ⦆ atoms
+  just because breaking ⦅ u , v ⦆ into those two cases and a default non-atomic case
+  turned out to be a pain -}
 data Value : Set where
   ω : Value
   _⊢ν : (FV : Value) → Value
   const : {B : Base} → (k : base-rep B) → Value
   _⊔_ : (u : Value) → (v : Value) → Value
   _⊢_↦_ : (FV : Value) → (v : Value) → (w : Value) → Value
-  ⦅_,_⦆ : (d₁ : Value) → (d₂ : Value) → Value
+  ⦅_∣ : (u : Value) → Value
+  ∣_⦆ : (v : Value) → Value
   ∥_∥ : {n : ℕ} → (ds : Vec Value n) → Value
   left : (d : Value) → Value
   right : (d : Value) → Value
@@ -94,7 +99,8 @@ Atomic-tup (v ∷ vs) = Atomic v × Atomic-tup vs
 Atomic ω = ⊤
 Atomic (FV ⊢ν) = ⊤
 Atomic (const k) = ⊤
-Atomic ⦅ v , v₁ ⦆ = Atomic v × Atomic v₁
+Atomic ⦅ u ∣ = Atomic u
+Atomic ∣ v ⦆ = Atomic v
 Atomic ∥ vs ∥ = Atomic-tup vs
 Atomic (FV ⊢ v ↦ v₁) = Atomic v₁
 Atomic (left d) = Atomic d
@@ -108,20 +114,14 @@ atomic-tup? (v ∷ vs) = (atomic? v) ∧dec (atomic-tup? vs)
 atomic? ω = yes tt
 atomic? (FV ⊢ν) = yes tt
 atomic? (const k) = yes tt
-atomic? ⦅ v , v₁ ⦆ = (atomic? v) ∧dec (atomic? v₁)
+atomic? ⦅ u ∣ = atomic? u
+atomic? ∣ v ⦆ = atomic? v
 atomic? ∥ [] ∥ = yes tt
 atomic? ∥ v ∷ vs ∥ = (atomic? v) ∧dec (atomic? ∥ vs ∥)
 atomic? (FV ⊢ v ↦ v₁) = atomic? v₁
 atomic? (v ⊔ u) = no (λ z → z)
 atomic? (left d) = atomic? d
 atomic? (right d) = atomic? d
-
-data Flat : Value → Set where
-  flat-atom : ∀ {v} → Atomic v → Flat v
-  flat-⊔ : ∀ {u v} → Flat u → Flat v → Flat (u ⊔ v)
-
-_⊔flat_ : Σ[ v ∈ Value ] Flat v → Σ[ w ∈ Value ] Flat w → Σ[ vw ∈ Value ] Flat vw
-⟨ v , flatv ⟩ ⊔flat ⟨ w , flatw ⟩ = ⟨ v ⊔ w , flat-⊔ flatv flatw ⟩
 
 data _◃_▹_ : (v₁ v v₂ : Value) → Set where
   
@@ -134,16 +134,15 @@ data _◃_▹_ : (v₁ v v₂ : Value) → Set where
       -----------------------------
         → FV ⊢ u ↦ v₁ ◃ FV ⊢ u ↦ v ▹ FV ⊢ u ↦ v₂ 
 
-  split-pair-fst : ∀ {u u₁ u₂ v}
+  split-fst : ∀ {u u₁ u₂}
         →           u₁ ◃ u ▹ u₂ 
       -------------------------------------
-        → ⦅ u₁ , v ⦆ ◃ ⦅ u , v ⦆ ▹ ⦅ u₂ , v ⦆
+        → ⦅ u₁ ∣ ◃ ⦅ u ∣ ▹ ⦅ u₂ ∣
 
-  split-pair-snd : ∀ {u v v₁ v₂}
-        → Atomic u
+  split-snd : ∀ {v v₁ v₂}
         →           v₁ ◃ v ▹ v₂
       --------------------------------------
-        → ⦅ u , v₁ ⦆ ◃ ⦅ u , v ⦆ ▹ ⦅ u , v₂ ⦆
+        → ∣ v₁ ⦆ ◃ ∣ v ⦆ ▹ ∣ v₂ ⦆
 
   split-tup-head : ∀ {n v v₁ v₂} {vs : Vec Value n}
         →                v₁ ◃ v ▹ v₂ 
@@ -166,18 +165,6 @@ data _◃_▹_ : (v₁ v v₂ : Value) → Set where
       ----------------------------------------------
         → right d₁ ◃ right d ▹ right d₂
 
-¬å⇒split : ∀ v → ¬ (Atomic v) → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ◃ v ▹ v₂
-¬å⇒split ω ¬åv = ⊥-elim (¬åv tt)
-¬å⇒split (FV ⊢ν) ¬åv = ⊥-elim (¬åv tt)
-¬å⇒split (const k) ¬åv = ⊥-elim (¬åv tt)
-¬å⇒split (v ⊔ v₁) ¬åv = ⟨ v , ⟨ v₁ , split-⊔ ⟩ ⟩
-¬å⇒split (FV ⊢ v ↦ w) ¬åv with ¬å⇒split w ¬åv
-... | ⟨ w₁ , ⟨ w₂ , split ⟩ ⟩ = ⟨ FV ⊢ v ↦ w₁ , ⟨ FV ⊢ v ↦ w₂ , split-↦ split ⟩ ⟩
-¬å⇒split ⦅ u , v ⦆ ¬åv = {!   !}
-¬å⇒split ∥ [] ∥ ¬åv = ⊥-elim (¬åv tt)
-¬å⇒split ∥ x ∷ ds ∥ ¬åv = {!   !}
-¬å⇒split (left v) ¬åv = {!   !}
-¬å⇒split (right v) ¬åv = {!   !}
 
 data Proper : Value → Set where
  
@@ -193,10 +180,15 @@ data Proper : Value → Set where
             → (åv₂ :  Atomic v₂)
             → Proper (FV ⊢ v₁ ↦ v₂)
 
-  ⊢'-pair-å : ∀ {v₁ v₂} 
-            → (⊢'v₁ : Proper v₁) → (⊢'v₂ : Proper v₂) 
-            → (åv₁ : Atomic v₁) → (åv₂ : Atomic v₂)
-            → Proper ⦅ v₁ , v₂ ⦆
+  ⊢'-fst-å : ∀ {v₁} 
+            → (⊢'v₁ : Proper v₁)
+            → (åv₁ : Atomic v₁)
+            → Proper ⦅ v₁ ∣
+  
+  ⊢'-snd-å : ∀ {v₂} 
+            → (⊢'v₂ : Proper v₂) 
+            → (åv₂ : Atomic v₂)
+            → Proper ∣ v₂ ⦆
   
   ⊢'-nil : Proper ∥ [] ∥
 
@@ -228,7 +220,8 @@ proper-left ⊢'-ω = ⊢'-left-å ⊢'-ω tt
 proper-left ⊢'-ν = ⊢'-left-å ⊢'-ν tt
 proper-left (⊢'-const k) = ⊢'-left-å (⊢'-const k) tt
 proper-left (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-left-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
-proper-left (⊢'-pair-å Pd Pd₁ åv₁ åv₂) = ⊢'-left-å (⊢'-pair-å Pd Pd₁ åv₁ åv₂) ⟨ åv₁ , åv₂ ⟩
+proper-left (⊢'-fst-å Pd₁ åv₁) = ⊢'-left-å (⊢'-fst-å Pd₁ åv₁) åv₁
+proper-left (⊢'-snd-å Pd₁ åv₁) = ⊢'-left-å (⊢'-snd-å Pd₁ åv₁) åv₁
 proper-left ⊢'-nil = ⊢'-left-å ⊢'-nil tt
 proper-left (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-left-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
 proper-left (⊢'-left-å Pd åv) = ⊢'-left-å (proper-left Pd) åv
@@ -241,7 +234,8 @@ proper-right ⊢'-ω = ⊢'-right-å ⊢'-ω tt
 proper-right ⊢'-ν = ⊢'-right-å ⊢'-ν tt
 proper-right (⊢'-const k) = ⊢'-right-å (⊢'-const k) tt
 proper-right (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-right-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
-proper-right (⊢'-pair-å Pd Pd₁ åv₁ åv₂) = ⊢'-right-å (⊢'-pair-å Pd Pd₁ åv₁ åv₂) ⟨ åv₁ , åv₂ ⟩
+proper-right (⊢'-fst-å Pd₁ åv₁) = ⊢'-right-å (⊢'-fst-å Pd₁ åv₁) åv₁
+proper-right (⊢'-snd-å Pd₁ åv₁) = ⊢'-right-å (⊢'-snd-å Pd₁ åv₁) åv₁
 proper-right ⊢'-nil = ⊢'-right-å ⊢'-nil tt
 proper-right (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-right-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
 proper-right (⊢'-left-å Pd åv) = ⊢'-right-å (⊢'-left-å Pd åv) åv
@@ -255,8 +249,10 @@ proper-↦ Pu ⊢'-ω = ⊢'-↦-å ⊢'-ω Pu tt
 proper-↦ Pu ⊢'-ν = ⊢'-↦-å ⊢'-ν Pu tt
 proper-↦ Pu (⊢'-const k) = ⊢'-↦-å (⊢'-const k) Pu tt
 proper-↦ Pu (⊢'-↦-å Pv Pv₁ åv₂) = ⊢'-↦-å (proper-↦ Pv₁ Pv) Pu åv₂
-proper-↦ Pu (⊢'-pair-å Pv Pv₁ åv₁ åv₂) = 
-  ⊢'-↦-å (⊢'-pair-å Pv Pv₁ åv₁ åv₂) Pu ⟨ åv₁ , åv₂ ⟩
+proper-↦ Pu (⊢'-fst-å Pv åv₁) = 
+  ⊢'-↦-å (⊢'-fst-å Pv åv₁) Pu åv₁
+proper-↦ Pu (⊢'-snd-å Pv åv₁) = 
+  ⊢'-↦-å (⊢'-snd-å Pv åv₁) Pu åv₁
 proper-↦ Pu ⊢'-nil = ⊢'-↦-å ⊢'-nil Pu tt
 proper-↦ Pu (⊢'-tup-å Pv Pv₁ åv åvs) = 
   ⊢'-↦-å (⊢'-tup-å Pv Pv₁ åv åvs) Pu ⟨ åv , åvs ⟩
@@ -265,36 +261,33 @@ proper-↦ Pu (⊢'-right-å Pv åv) = ⊢'-↦-å (⊢'-right-å Pv åv) Pu åv
 proper-↦ {FV} {u} Pu (⊢'-split vL vR split Pv Pv₁) = 
   ⊢'-split (FV ⊢ u ↦ vL) (FV ⊢ u ↦ vR) (split-↦ split) (proper-↦ Pu Pv) (proper-↦ Pu Pv₁)
 
-proper-pair-atomic-1 : ∀ {u v} → Proper u → Proper v → Atomic u → Proper ⦅ u , v ⦆
-proper-pair-atomic-1 Pu ⊢'-ω åu = ⊢'-pair-å Pu ⊢'-ω åu tt
-proper-pair-atomic-1 Pu ⊢'-ν åu = ⊢'-pair-å Pu ⊢'-ν åu tt
-proper-pair-atomic-1 Pu (⊢'-const k) åu = ⊢'-pair-å Pu (⊢'-const k) åu tt
-proper-pair-atomic-1 Pu (⊢'-↦-å Pv Pv₁ åv₂) åu = ⊢'-pair-å Pu (⊢'-↦-å Pv Pv₁ åv₂) åu åv₂
-proper-pair-atomic-1 Pu (⊢'-pair-å Pv Pv₁ åv₁ åv₂) åu = ⊢'-pair-å Pu (proper-pair-atomic-1 Pv Pv₁ åv₁) åu ⟨ åv₁ , åv₂ ⟩
-proper-pair-atomic-1 Pu ⊢'-nil åu = ⊢'-pair-å Pu ⊢'-nil åu tt
-proper-pair-atomic-1 Pu (⊢'-tup-å Pv Pv₁ åv åvs) åu = ⊢'-pair-å Pu (⊢'-tup-å Pv Pv₁ åv åvs) åu ⟨ åv , åvs ⟩
-proper-pair-atomic-1 Pu (⊢'-left-å Pd åd) åu = ⊢'-pair-å Pu (⊢'-left-å Pd åd) åu åd
-proper-pair-atomic-1 Pu (⊢'-right-å Pd åd) åu = ⊢'-pair-å Pu (⊢'-right-å Pd åd) åu åd
-proper-pair-atomic-1 {u} Pu (⊢'-split vL vR split Pv Pv₁) åu = 
-  ⊢'-split ⦅ u , vL ⦆ ⦅ u , vR ⦆ (split-pair-snd åu split)
-     (proper-pair-atomic-1 Pu Pv åu) (proper-pair-atomic-1 Pu Pv₁ åu)
+proper-fst : ∀ {d} → Proper d → Proper ⦅ d ∣
+proper-fst ⊢'-ω = ⊢'-fst-å ⊢'-ω tt
+proper-fst ⊢'-ν = ⊢'-fst-å ⊢'-ν tt
+proper-fst (⊢'-const k) = ⊢'-fst-å (⊢'-const k) tt
+proper-fst (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-fst-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
+proper-fst (⊢'-fst-å Pd₁ åv₁) = ⊢'-fst-å (proper-fst Pd₁) åv₁
+proper-fst (⊢'-snd-å Pd₁ åv₁) = ⊢'-fst-å (⊢'-snd-å Pd₁ åv₁) åv₁
+proper-fst ⊢'-nil = ⊢'-fst-å ⊢'-nil tt
+proper-fst (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-fst-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
+proper-fst (⊢'-left-å Pd åv) = ⊢'-fst-å (⊢'-left-å Pd åv) åv
+proper-fst (⊢'-right-å Pd åv) = ⊢'-fst-å (⊢'-right-å Pd åv) åv
+proper-fst (⊢'-split vL vR split Pd Pd₁) = 
+  ⊢'-split ⦅ vL ∣ ⦅ vR ∣ (split-fst split) (proper-fst Pd) (proper-fst Pd₁)
 
-proper-pair : ∀ {u v} → Proper u → Proper v → Proper ⦅ u , v ⦆
-proper-pair {u} {v} Pu Pv with atomic? u
-... | yes åu = proper-pair-atomic-1 Pu Pv åu
-... | no ¬åu with Pu
-... | ⊢'-ω = ⊥-elim (¬åu tt)
-... | ⊢'-ν = ⊥-elim (¬åu tt)
-... | ⊢'-const k = ⊥-elim (¬åu tt)
-... | ⊢'-↦-å Pu₁ Pu₂ åv₂ = ⊥-elim (¬åu åv₂)
-... | ⊢'-pair-å Pu₁ Pu₂ åv₁ åv₂ = ⊥-elim (¬åu ⟨ åv₁ , åv₂ ⟩)
-... | ⊢'-nil = ⊥-elim (¬åu tt)
-... | ⊢'-tup-å Pu₁ Pu₂ åv åvs = ⊥-elim (¬åu ⟨ åv , åvs ⟩)
-... | ⊢'-left-å Pd åd = ⊥-elim (¬åu åd)
-... | ⊢'-right-å Pd åd = ⊥-elim (¬åu åd)
-... | ⊢'-split vL vR split Pu₁ Pu₂ = 
-  ⊢'-split ⦅ vL , v ⦆ ⦅ vR , v ⦆ (split-pair-fst split) 
-           (proper-pair Pu₁ Pv) (proper-pair Pu₂ Pv) 
+proper-snd : ∀ {d} → Proper d → Proper ∣ d ⦆
+proper-snd ⊢'-ω = ⊢'-snd-å ⊢'-ω tt
+proper-snd ⊢'-ν = ⊢'-snd-å ⊢'-ν tt
+proper-snd (⊢'-const k) = ⊢'-snd-å (⊢'-const k) tt
+proper-snd (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-snd-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
+proper-snd (⊢'-fst-å Pd₁ åv₁) = ⊢'-snd-å (⊢'-fst-å Pd₁ åv₁) åv₁
+proper-snd (⊢'-snd-å Pd₁ åv₁) = ⊢'-snd-å (proper-snd Pd₁) åv₁
+proper-snd ⊢'-nil = ⊢'-snd-å ⊢'-nil tt
+proper-snd (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-snd-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
+proper-snd (⊢'-left-å Pd åv) = ⊢'-snd-å (⊢'-left-å Pd åv) åv
+proper-snd (⊢'-right-å Pd åv) = ⊢'-snd-å (⊢'-right-å Pd åv) åv
+proper-snd (⊢'-split vL vR split Pd Pd₁) = 
+  ⊢'-split ∣ vL ⦆ ∣ vR ⦆ (split-snd split) (proper-snd Pd) (proper-snd Pd₁)
 
 
 proper-tup-atomic-head : ∀ {n v vs} → Proper v → Proper (∥_∥ {n} vs) → Atomic v → Proper ∥ v ∷ vs ∥
@@ -317,7 +310,8 @@ proper-tup {n}{v}{vs} Pv Pvs with atomic? v
 ... | ⊢'-ν = ⊥-elim (¬åv tt)
 ... | ⊢'-const k = ⊥-elim (¬åv tt)
 ... | ⊢'-↦-å Pu₁ Pu₂ åv₂ = ⊥-elim (¬åv åv₂)
-... | ⊢'-pair-å Pu₁ Pu₂ åv₁ åv₂ = ⊥-elim (¬åv ⟨ åv₁ , åv₂ ⟩)
+... | ⊢'-fst-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
+... | ⊢'-snd-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
 ... | ⊢'-nil = ⊥-elim (¬åv tt)
 ... | ⊢'-tup-å Pu₁ Pu₂ åv' åvs = ⊥-elim (¬åv ⟨ åv' , åvs ⟩)
 ... | ⊢'-left-å Pd åd = ⊥-elim (¬åv åd)
@@ -333,7 +327,8 @@ proper (FV ⊢ν) = ⊢'-ν
 proper (const k) = ⊢'-const k
 proper (v ⊔ v₁) = ⊢'-split v v₁ split-⊔ (proper v) (proper v₁)
 proper (FV ⊢ v ↦ v₁) = proper-↦ (proper v) (proper v₁)
-proper ⦅ v , v₁ ⦆ = proper-pair (proper v) (proper v₁)
+proper ⦅ u ∣ = proper-fst (proper u)
+proper ∣ v ⦆ = proper-snd (proper v)
 proper ∥ [] ∥ = ⊢'-nil
 proper ∥ v ∷ vs ∥ = proper-tup (proper v) (proper ∥ vs ∥)
 proper (left d) = proper-left (proper d)
@@ -341,14 +336,26 @@ proper (right d) = proper-right (proper d)
 
 unsplittable : ∀ v → Atomic v → ∀ {v₁ v₂} → ¬ (v₁ ◃ v ▹ v₂)
 unsplittable (FV ⊢ v ↦ v₁) åv (split-↦ split) = unsplittable v₁ åv split
-unsplittable ⦅ v , v₁ ⦆ åv (split-pair-fst split) = unsplittable v (proj₁ åv) split
-unsplittable ⦅ v , v₁ ⦆ åv (split-pair-snd x split) = unsplittable v₁ (proj₂ åv) split
+unsplittable ⦅ v ∣ åv (split-fst split) = unsplittable v åv split
+unsplittable ∣ v ⦆ åv (split-snd split) = unsplittable v åv split
 unsplittable ∥ v ∷ vs ∥ åv (split-tup-head split) = unsplittable v (proj₁ åv) split
 unsplittable ∥ v ∷ vs ∥ åv (split-tup-tail x split) = unsplittable ∥ vs ∥ (proj₂ åv) split
 unsplittable (left d) åv (split-left split) = unsplittable d åv split
 unsplittable (right d) åv (split-right split) = unsplittable d åv split
 
-
+¬å⇒split : ∀ v → ¬ (Atomic v) → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ◃ v ▹ v₂
+¬å⇒split v ¬åv with (proper v)
+... | ⊢'-ω = ⊥-elim (¬åv tt)
+... | ⊢'-ν = ⊥-elim (¬åv tt)
+... | ⊢'-const k = ⊥-elim (¬åv tt)
+... | ⊢'-↦-å Pv Pv₁ åv₂ = ⊥-elim (¬åv åv₂)
+... | ⊢'-fst-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
+... | ⊢'-snd-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
+... | ⊢'-nil = ⊥-elim (¬åv tt)
+... | ⊢'-tup-å Pv Pv₁ åv åvs = ⊥-elim (¬åv ⟨ åv , åvs ⟩)
+... | ⊢'-left-å Pv åv = ⊥-elim (¬åv åv)
+... | ⊢'-right-å Pv åv = ⊥-elim (¬åv åv)
+... | ⊢'-split vL vR split Pv Pv₁ = ⟨ vL , ⟨ vR , split ⟩ ⟩
 
 {- Size/Depth -----------------------------------------------------------------}
 
@@ -361,7 +368,8 @@ depth (FV ⊢ν) = zero
 depth (const k) = zero
 depth (FV ⊢ v ↦ w) = suc (max (depth v) (depth w))
 depth (v₁ ⊔ v₂) = max (depth v₁) (depth v₂)
-depth ⦅ v₁ , v₂ ⦆ = suc (max (depth v₁) (depth v₂))
+depth ⦅ v ∣ = suc (depth v)
+depth ∣ v ⦆ = suc (depth v)
 depth ∥ vs ∥ = suc (tup-depth vs)
 depth (left d) = suc (depth d)
 depth (right d) = suc (depth d)
@@ -375,7 +383,8 @@ size (FV ⊢ν) = zero
 size (const k) = zero
 size (FV ⊢ v ↦ w) = suc (size v + size w)
 size (v₁ ⊔ v₂) = suc (size v₁ + size v₂)
-size ⦅ v₁ , v₂ ⦆ = suc (size v₁ + size v₂)
+size ⦅ u ∣ = suc (size u)
+size ∣ v ⦆ = suc (size v)
 size (∥_∥ {n} vs) = suc (tup-size vs)
 size (left d) = suc (size d)
 size (right d) = suc (size d)
@@ -418,15 +427,18 @@ left-inj refl = refl
 right-inj : ∀ {v v'} → (right v) ≡ right v' → v ≡ v'
 right-inj refl = refl
 
+fst-inj : ∀ {v v'} → ⦅ v ∣ ≡ ⦅ v' ∣ → v ≡ v'
+fst-inj refl = refl
+
+snd-inj : ∀ {v v'} → ∣ v ⦆ ≡ ∣ v' ⦆ → v ≡ v'
+snd-inj refl = refl
+
 ν-inj : ∀ {FV FV'} → FV ⊢ν ≡ (FV' ⊢ν) → FV ≡ FV'
 ν-inj refl = refl
 
 ↦-inj-uncurried : ∀ {FV FV' V V' w w'} → FV ⊢ V ↦ w ≡ FV' ⊢ V' ↦ w'
       → ⟨ FV , ⟨ V , w ⟩ ⟩ ≡ ⟨ FV' , ⟨ V' , w' ⟩ ⟩
 ↦-inj-uncurried refl = refl
-
-pair-inj : ∀ {d₁ d₂ d₁' d₂'} → ⦅ d₁ , d₂ ⦆ ≡ ⦅ d₁' , d₂' ⦆ → d₁ ≡ d₁' × d₂ ≡ d₂'
-pair-inj refl = ⟨ refl , refl ⟩
 
 ⊔-inj : ∀ {d₁ d₂ d₁' d₂'} → d₁ ⊔ d₂ ≡ d₁' ⊔ d₂' → d₁ ≡ d₁' × d₂ ≡ d₂'
 ⊔-inj refl = ⟨ refl , refl ⟩
@@ -442,8 +454,9 @@ const k d≟ ω = no (λ ())
 const k d≟ ∥ ds ∥ = no (λ ())
 const k d≟ (left v₁) = no (λ ())
 const k d≟ (right v₁) = no (λ ())
-const k d≟ ⦅ u , v ⦆ = no (λ ())
 const k d≟ (u ⊔ v) = no (λ ())
+const k d≟ ⦅ v ∣ = no (λ ())
+const k d≟ ∣ v ⦆ = no (λ ())
 (FV ⊢ V ↦ w) d≟ const k = no (λ ())
 (FV ⊢ V ↦ w) d≟ (FV' ⊢ V' ↦ w') = 
   map′ (cong (λ z → proj₁ z ⊢ proj₁ (proj₂ z) ↦ (proj₂ (proj₂ z))))
@@ -455,8 +468,9 @@ const k d≟ (u ⊔ v) = no (λ ())
 (FV ⊢ V ↦ w) d≟ ∥ ds ∥ = no (λ ())
 (FV ⊢ V ↦ w) d≟ (left v₁) = no (λ ())
 (FV ⊢ V ↦ w) d≟ (right v₁) = no (λ ())
-(FV ⊢ V ↦ w) d≟ ⦅ u , v ⦆ = no (λ ())
 (FV ⊢ V ↦ w) d≟ (u ⊔ v) = no (λ ())
+(u ⊢ u₁ ↦ u₂) d≟ ⦅ v ∣ = no (λ ())
+(u ⊢ u₁ ↦ u₂) d≟ ∣ v ⦆ = no (λ ())
 (FV ⊢ν) d≟ const k = no (λ ())
 (FV ⊢ν) d≟ (FV₁ ⊢ V ↦ d₃) = no (λ ())
 (FV ⊢ν) d≟ (FV' ⊢ν) = map′ (cong _⊢ν) ν-inj (FV d≟ FV')
@@ -464,8 +478,9 @@ const k d≟ (u ⊔ v) = no (λ ())
 (FV ⊢ν) d≟ ∥ ds ∥ = no (λ ())
 (FV ⊢ν) d≟ (left v) = no (λ ())
 (FV ⊢ν) d≟  (right v) = no (λ ())
-(FV ⊢ν) d≟ ⦅ u , v ⦆ = no (λ ())
 (FV ⊢ν) d≟ (u ⊔ v) = no (λ ())
+(u ⊢ν) d≟ ⦅ v ∣ = no (λ ())
+(u ⊢ν) d≟ ∣ v ⦆ = no (λ ())
 ω d≟ const k = no (λ ())
 ω d≟ (FV ⊢ V ↦ d₃) = no (λ ())
 ω d≟ (FV ⊢ν) = no (λ ())
@@ -473,8 +488,9 @@ const k d≟ (u ⊔ v) = no (λ ())
 ω d≟ ∥ ds ∥ = no (λ ())
 ω d≟ (left v) = no (λ ())
 ω d≟  (right v) = no (λ ())
-ω d≟ ⦅ u , v ⦆ = no (λ ())
 ω d≟ (u ⊔ v) = no (λ ())
+ω d≟ ⦅ v ∣ = no (λ ())
+ω d≟ ∣ v ⦆ = no (λ ())
 ∥ ds ∥ d≟ const k = no (λ ())
 ∥ ds ∥ d≟ (FV ⊢ V ↦ d₃) = no (λ ())
 ∥ ds ∥ d≟ (FV ⊢ν) = no (λ ())
@@ -484,8 +500,9 @@ const k d≟ (u ⊔ v) = no (λ ())
 ... | yes refl = map′ (cong ∥_∥) tup-inj-easy (ds ds≟ ds')
 ∥ ds ∥ d≟ (left v) = no (λ ())
 ∥ ds ∥ d≟  (right v) = no (λ ())
-∥ ds ∥ d≟ ⦅ u , v ⦆ = no (λ ())
 ∥ ds ∥ d≟ (u ⊔ v) = no (λ ())
+∥ ds ∥ d≟ ⦅ v ∣ = no (λ ())
+∥ ds ∥ d≟ ∣ v ⦆ = no (λ ())
 (left v) d≟ const k = no (λ ())
 (left v) d≟ (FV ⊢ V₁ ↦ d₃) = no (λ ())
 (left v) d≟ (FV ⊢ν) = no (λ ())
@@ -493,8 +510,9 @@ const k d≟ (u ⊔ v) = no (λ ())
 (left v) d≟ ∥ ds ∥ = no (λ ())
 (left v) d≟ (left v₁) = map′ (cong left) left-inj (v d≟ v₁)
 (left v) d≟ (right v₁) = no (λ ())
-(left v) d≟ ⦅ u , v₁ ⦆ = no (λ ())
 (left v) d≟ (u ⊔ v₁) = no (λ ())
+left u d≟ ⦅ v ∣ = no (λ ())
+left u d≟ ∣ v ⦆ = no (λ ())
 (right v) d≟ const k = no (λ ())
 (right v) d≟ (FV ⊢ V₁ ↦ d₃) = no (λ ())
 (right v) d≟ (FV ⊢ν) = no (λ ())
@@ -502,26 +520,39 @@ const k d≟ (u ⊔ v) = no (λ ())
 (right v) d≟ ∥ ds ∥ = no (λ ())
 (right v) d≟ (left v₁) = no (λ ())
 (right v) d≟ (right v₁) = map′ (cong right) right-inj (v d≟ v₁)
-(right v) d≟ ⦅ u , v₁ ⦆ = no (λ ())
 (right v) d≟ (u ⊔ v₁) = no (λ ())
-⦅ u , v ⦆ d≟ ω = no (λ ())
-⦅ u , v ⦆ d≟ (d ⊢ν) = no (λ ())
-⦅ u , v ⦆ d≟ const k = no (λ ())
-⦅ u , v ⦆ d≟ (d ⊔ d₁) = no (λ ())
-⦅ u , v ⦆ d≟ (d ⊢ d₁ ↦ d₂) = no (λ ())
-⦅ u , v ⦆ d≟ ⦅ d , d₁ ⦆ = map′ (uncurry (cong₂ ⦅_,_⦆)) pair-inj ((u d≟ d) ×-dec (v d≟ d₁))
-⦅ u , v ⦆ d≟ ∥ ds ∥ = no (λ ())
-⦅ u , v ⦆ d≟ left d = no (λ ())
-⦅ u , v ⦆ d≟ right d = no (λ ())
+right u d≟ ⦅ v ∣ = no (λ ())
+right u d≟ ∣ v ⦆ = no (λ ())
 (u ⊔ v) d≟ ω = no (λ ())
 (u ⊔ v) d≟ (d ⊢ν) = no (λ ())
 (u ⊔ v) d≟ const k = no (λ ())
 (u ⊔ v) d≟ (d ⊔ d₁) = map′ (uncurry (cong₂ _⊔_)) ⊔-inj ((u d≟ d) ×-dec (v d≟ d₁))
 (u ⊔ v) d≟ (d ⊢ d₁ ↦ d₂) = no (λ ())
-(u ⊔ v) d≟ ⦅ d , d₁ ⦆ = no (λ ())
 (u ⊔ v) d≟ ∥ ds ∥ = no (λ ())
 (u ⊔ v) d≟ left d = no (λ ())
 (u ⊔ v) d≟ right d = no (λ ())
+(u ⊔ u₁) d≟ ⦅ v ∣ = no (λ ())
+(u ⊔ u₁) d≟ ∣ v ⦆ = no (λ ())
+⦅ u ∣ d≟ ω = no (λ ())
+⦅ u ∣ d≟ (v ⊢ν) = no (λ ())
+⦅ u ∣ d≟ const k = no (λ ())
+⦅ u ∣ d≟ (v ⊔ v₁) = no (λ ())
+⦅ u ∣ d≟ (v ⊢ v₁ ↦ v₂) = no (λ ())
+⦅ u ∣ d≟ ⦅ v ∣ = map′ (cong ⦅_∣) fst-inj (u d≟ v)
+⦅ u ∣ d≟ ∣ v ⦆ = no (λ ())
+⦅ u ∣ d≟ ∥ ds ∥ = no (λ ())
+⦅ u ∣ d≟ left v = no (λ ())
+⦅ u ∣ d≟ right v = no (λ ())
+∣ u ⦆ d≟ ω = no (λ ())
+∣ u ⦆ d≟ (v ⊢ν) = no (λ ())
+∣ u ⦆ d≟ const k = no (λ ())
+∣ u ⦆ d≟ (v ⊔ v₁) = no (λ ())
+∣ u ⦆ d≟ (v ⊢ v₁ ↦ v₂) = no (λ ())
+∣ u ⦆ d≟ ⦅ v ∣ = no (λ ())
+∣ u ⦆ d≟ ∣ v ⦆ = map′ (cong ∣_⦆) snd-inj (u d≟ v)
+∣ u ⦆ d≟ ∥ ds ∥ = no (λ ())
+∣ u ⦆ d≟ left v = no (λ ())
+∣ u ⦆ d≟ right v = no (λ ())
 [] ds≟ [] = yes refl
 (d ∷ ds) ds≟ (d' ∷ ds') = map′ (uncurry (cong₂ _∷_)) ∷-injective ((d d≟ d') ×-dec (ds ds≟ ds'))
 
