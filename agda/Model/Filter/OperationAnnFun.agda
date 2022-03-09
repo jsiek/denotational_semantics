@@ -135,16 +135,32 @@ annot d FV = d
 𝓅 (B ⇒ P) f _ (u ⊔ v) = 𝓅 (B ⇒ P) f ptt u × 𝓅 (B ⇒ P) f ptt v
 𝓅 (B ⇒ P) f _ d = False
 
+{-
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f , FV ⦆ = f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
+-}
+
+pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] f ∈ D₁ × FV ∈ D₂
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
+
+
+𝒜pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
+𝒜pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = 𝒜pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × 𝒜pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v
+𝒜pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] Σ[ d ∈ Value ] (d ∈ D₁ × f ≡ annot d FV) × FV ∈ D₂
+𝒜pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
+𝒜pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 car : DOp (𝒫 Value) (■ ∷ [])
-car ⟨ D , _ ⟩ f = Σ[ FV ∈ Value ] ⦅ f , FV ⦆ ∈ D
+car ⟨ D , _ ⟩ f = ⦅ f ∣ ∈ D
+
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
-cdr ⟨ D , _ ⟩ FV = Σ[ f ∈ Value ] ⦅ f , FV ⦆ ∈ D
+cdr ⟨ D , _ ⟩ FV = ∣ FV ⦆ ∈ D
 
 𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
@@ -257,14 +273,22 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
                    ⟨ F' (mem FV) , Ds' ⟩ ⟨ F⊆ (mem FV) (mem FV) (λ d z → z) , Ds⊆ ⟩)  
                    (FVs ⊢ v , FV ⊢ V ↦ d) d∈ ⟩ ⟩
 -}
-
+𝒜pair-mono : monotone (■ ∷ ■ ∷ []) ■ 𝒜pair
+𝒜pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
+  where
+  G : 𝒜pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ 𝒜pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  G ⦅ d ∣ ⟨ FV , ⟨ f , ⟨ ⟨ f∈D , refl ⟩ , FV∈E ⟩ ⟩ ⟩ = 
+    ⟨ FV , ⟨ f , ⟨ ⟨ D⊆ f f∈D , refl ⟩ , E⊆ FV FV∈E ⟩ ⟩ ⟩
+  G ∣ FV ⦆ ⟨ f , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
+  G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 
 
 pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ⦅ f , FV ⦆ ⟨ f∈D , FV∈E ⟩ = ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩
+  G ⦅ f ∣ ⟨ FV , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
+  G ∣ FV ⦆ ⟨ f , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 
 pair-cong : congruent (■ ∷ ■ ∷ []) ■ pair
@@ -279,7 +303,7 @@ car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
-  G u ⟨ v , p∈ ⟩ = ⟨ v , D⊆ ⦅ u , v ⦆ p∈ ⟩ 
+  G u u∈ = D⊆ ⦅ u ∣ u∈ 
 
 car-cong : congruent (■ ∷ []) ■ car
 car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -292,8 +316,8 @@ cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
-  G v ⟨ u , p∈ ⟩ = ⟨ u , D⊆ ⦅ u , v ⦆ p∈ ⟩
-
+  G v v∈ = D⊆ ∣ v ⦆ v∈
+  
 cdr-cong : congruent (■ ∷ []) ■ cdr
 cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
   where

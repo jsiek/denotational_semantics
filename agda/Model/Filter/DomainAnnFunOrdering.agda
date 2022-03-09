@@ -40,9 +40,17 @@ module Model.Filter.DomainAnnFunOrdering where
 
     ⊑-ω : ∀ {v} → ω ⊑ v
   
-    ⊑-ν-ν : ∀ {FV} → (FV ⊢ν) ⊑ (FV ⊢ν)
+    ⊑-ν-ν-å : ∀ {FV FV'} 
+      → (åFV : Atomic FV)
+      → (FV⊑ : FV ⊑ FV')
+        ------------------
+      → (FV ⊢ν) ⊑ (FV' ⊢ν)
 
-    ⊑-ν-↦ : ∀ {FV v w} → (FV ⊢ν) ⊑ FV ⊢ v ↦ w
+    ⊑-ν-↦-å : ∀ {FV FV' v w}
+      → (åFV : Atomic FV)
+      → (FV⊑ : FV ⊑ FV')
+        ----------------------
+      → (FV ⊢ν) ⊑ FV' ⊢ v ↦ w
 
     ⊑-const : ∀ {B}{k} → const {B} k ⊑ const {B} k
 
@@ -79,12 +87,14 @@ module Model.Filter.DomainAnnFunOrdering where
        ------------------------------
        → ∥ u ∷ us ∥ ⊑ ∥ v ∷ vs ∥
 
-    ⊑-↦-å : ∀ {FV u₁ u₂ v₁ v₂}
+    ⊑-↦-å : ∀ {FV FV' u₁ u₂ v₁ v₂}
        → (åu₂ : Atomic u₂)
+       → (åFV : Atomic FV)
+       → (⊑FV : FV ⊑ FV')
        → (⊑cod : u₂ ⊑ v₂)
        → (dom⊑ : v₁ ⊑ u₁)
        ------------------
-       → FV ⊢ u₁ ↦ u₂ ⊑ FV ⊢ v₁ ↦ v₂ 
+       → FV ⊢ u₁ ↦ u₂ ⊑ FV' ⊢ v₁ ↦ v₂ 
 
     ⊑-left-å : ∀ {u v}
       → (åu : Atomic u)
@@ -109,8 +119,8 @@ module Model.Filter.DomainAnnFunOrdering where
 
   ⊑-⊔-R1 : ∀ {u v₁ v₂} → u ⊑ v₁ → u ⊑ v₁ ⊔ v₂
   ⊑-⊔-R1 ⊑-ω = ⊑-ω
-  ⊑-⊔-R1 ⊑-ν-ν = ⊑-⊔-R1-å tt ⊑-ν-ν
-  ⊑-⊔-R1 ⊑-ν-↦ = ⊑-⊔-R1-å tt ⊑-ν-↦
+  ⊑-⊔-R1 (⊑-ν-ν-å åFV u⊑v) = ⊑-⊔-R1-å åFV (⊑-ν-ν-å åFV u⊑v)
+  ⊑-⊔-R1 (⊑-ν-↦-å åFV u⊑v) = ⊑-⊔-R1-å åFV (⊑-ν-↦-å åFV u⊑v)
   ⊑-⊔-R1 ⊑-const = ⊑-⊔-R1-å tt ⊑-const
   ⊑-⊔-R1 (⊑-⊔-R1-å åu u⊑v₁) = ⊑-⊔-R1-å åu (⊑-⊔-R1 u⊑v₁)
   ⊑-⊔-R1 (⊑-⊔-R2-å åu u⊑v₁) = ⊑-⊔-R1-å åu (⊑-⊔-R2-å åu u⊑v₁)
@@ -118,16 +128,15 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-⊔-R1 (⊑-snd-å åu u⊑v) = ⊑-⊔-R1-å åu (⊑-snd-å åu u⊑v)
   ⊑-⊔-R1 ⊑-nil = ⊑-⊔-R1-å tt ⊑-nil
   ⊑-⊔-R1 (⊑-tup-å åus u⊑v₁ us[⊑]vs) = ⊑-⊔-R1-å åus (⊑-tup-å åus u⊑v₁ us[⊑]vs)
-  ⊑-⊔-R1 (⊑-↦-å åu₂ u⊑v₁ u⊑v₂) = ⊑-⊔-R1-å åu₂ (⊑-↦-å åu₂ u⊑v₁ u⊑v₂)
+  ⊑-⊔-R1 (⊑-↦-å åu₂ åFV FV⊑ u⊑v₁ u⊑v₂) = ⊑-⊔-R1-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV FV⊑ u⊑v₁ u⊑v₂)
   ⊑-⊔-R1 (⊑-left-å åu q) = ⊑-⊔-R1-å åu (⊑-left-å åu q)
   ⊑-⊔-R1 (⊑-right-å åu q) = ⊑-⊔-R1-å åu (⊑-right-å åu q)
   ⊑-⊔-R1 (⊑-split split u⊑v₁ u⊑v₂) = ⊑-split split (⊑-⊔-R1 u⊑v₁) (⊑-⊔-R1 u⊑v₂)
 
-
   ⊑-⊔-R2 : ∀ {u v₁ v₂} → u ⊑ v₂ → u ⊑ v₁ ⊔ v₂
   ⊑-⊔-R2 ⊑-ω = ⊑-ω
-  ⊑-⊔-R2 ⊑-ν-ν = ⊑-⊔-R2-å tt ⊑-ν-ν
-  ⊑-⊔-R2 ⊑-ν-↦ = ⊑-⊔-R2-å tt ⊑-ν-↦
+  ⊑-⊔-R2 (⊑-ν-ν-å åFV u⊑v) = ⊑-⊔-R2-å åFV (⊑-ν-ν-å åFV u⊑v)
+  ⊑-⊔-R2 (⊑-ν-↦-å åFV u⊏v) = ⊑-⊔-R2-å åFV (⊑-ν-↦-å åFV u⊏v)
   ⊑-⊔-R2 ⊑-const = ⊑-⊔-R2-å tt ⊑-const
   ⊑-⊔-R2 (⊑-⊔-R1-å åu u⊑v₂) = ⊑-⊔-R2-å åu (⊑-⊔-R1-å åu u⊑v₂)
   ⊑-⊔-R2 (⊑-⊔-R2-å åu u⊑v₂) = ⊑-⊔-R2-å åu (⊑-⊔-R2 u⊑v₂)
@@ -135,7 +144,7 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-⊔-R2 (⊑-snd-å åu u⊑v) = ⊑-⊔-R2-å åu (⊑-snd-å åu u⊑v)
   ⊑-⊔-R2 ⊑-nil = ⊑-⊔-R2-å tt ⊑-nil
   ⊑-⊔-R2 (⊑-tup-å åus u⊑v₂ us[⊑]vs) = ⊑-⊔-R2-å åus (⊑-tup-å åus u⊑v₂ us[⊑]vs)
-  ⊑-⊔-R2 (⊑-↦-å åu₂ u⊑v₂ u⊑v₃) = ⊑-⊔-R2-å åu₂ (⊑-↦-å åu₂ u⊑v₂ u⊑v₃)
+  ⊑-⊔-R2 (⊑-↦-å åu₂ åFV FV⊑ u⊑v₂ u⊑v₃) = ⊑-⊔-R2-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV FV⊑ u⊑v₂ u⊑v₃)
   ⊑-⊔-R2 (⊑-left-å åu q) = ⊑-⊔-R2-å åu (⊑-left-å åu q)
   ⊑-⊔-R2 (⊑-right-å åu q) = ⊑-⊔-R2-å åu (⊑-right-å åu q)
   ⊑-⊔-R2 (⊑-split split u⊑v₂ u⊑v₃) = ⊑-split split (⊑-⊔-R2 u⊑v₂) (⊑-⊔-R2 u⊑v₃)
@@ -145,8 +154,8 @@ module Model.Filter.DomainAnnFunOrdering where
 
   ⊑-fst : ∀ {u v} → u ⊑ v → ⦅ u ∣ ⊑ ⦅ v ∣
   ⊑-fst ⊑-ω = ⊑-fst-å tt ⊑-ω
-  ⊑-fst ⊑-ν-ν = ⊑-fst-å tt ⊑-ν-ν
-  ⊑-fst ⊑-ν-↦ = ⊑-fst-å tt ⊑-ν-↦
+  ⊑-fst (⊑-ν-ν-å åFV u⊑v) = ⊑-fst-å åFV (⊑-ν-ν-å åFV u⊑v)
+  ⊑-fst (⊑-ν-↦-å åFV u⊑v) = ⊑-fst-å åFV (⊑-ν-↦-å åFV u⊑v)
   ⊑-fst ⊑-const = ⊑-fst-å tt ⊑-const
   ⊑-fst (⊑-⊔-R1-å åu u⊑v) = ⊑-fst-å åu (⊑-⊔-R1-å åu u⊑v)
   ⊑-fst (⊑-⊔-R2-å åu u⊑v) = ⊑-fst-å åu (⊑-⊔-R2-å åu u⊑v)
@@ -154,15 +163,15 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-fst (⊑-snd-å åu u⊑v) = ⊑-fst-å åu (⊑-snd-å åu u⊑v)
   ⊑-fst ⊑-nil = ⊑-fst-å tt ⊑-nil
   ⊑-fst (⊑-tup-å åus u⊑v u⊑v₁) = ⊑-fst-å åus (⊑-tup-å åus u⊑v u⊑v₁)
-  ⊑-fst (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-fst-å åu₂ (⊑-↦-å åu₂ u⊑v u⊑v₁)
+  ⊑-fst (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) = ⊑-fst-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂)
   ⊑-fst (⊑-left-å åu u⊑v) = ⊑-fst-å åu (⊑-left-å åu u⊑v)
   ⊑-fst (⊑-right-å åu u⊑v) = ⊑-fst-å åu (⊑-right-å åu u⊑v)
   ⊑-fst (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-fst split) (⊑-fst u⊑v) (⊑-fst u⊑v₁)
 
   ⊑-snd : ∀ {u v} → u ⊑ v → ∣ u ⦆ ⊑ ∣ v ⦆
   ⊑-snd ⊑-ω = ⊑-snd-å tt ⊑-ω
-  ⊑-snd ⊑-ν-ν = ⊑-snd-å tt ⊑-ν-ν
-  ⊑-snd ⊑-ν-↦ = ⊑-snd-å tt ⊑-ν-↦
+  ⊑-snd (⊑-ν-ν-å åFV u⊑v) = ⊑-snd-å åFV (⊑-ν-ν-å åFV u⊑v)
+  ⊑-snd (⊑-ν-↦-å åFV u⊑v) = ⊑-snd-å åFV (⊑-ν-↦-å åFV u⊑v)
   ⊑-snd ⊑-const = ⊑-snd-å tt ⊑-const
   ⊑-snd (⊑-⊔-R1-å åu u⊑v) = ⊑-snd-å åu (⊑-⊔-R1-å åu u⊑v)
   ⊑-snd (⊑-⊔-R2-å åu u⊑v) = ⊑-snd-å åu (⊑-⊔-R2-å åu u⊑v)
@@ -170,11 +179,10 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-snd (⊑-snd-å åu u⊑v) = ⊑-snd-å åu (⊑-snd u⊑v)
   ⊑-snd ⊑-nil = ⊑-snd-å tt ⊑-nil
   ⊑-snd (⊑-tup-å åus u⊑v u⊑v₁) = ⊑-snd-å åus (⊑-tup-å åus u⊑v u⊑v₁)
-  ⊑-snd (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-snd-å åu₂ (⊑-↦-å åu₂ u⊑v u⊑v₁)
+  ⊑-snd (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) = ⊑-snd-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂)
   ⊑-snd (⊑-left-å åu u⊑v) = ⊑-snd-å åu (⊑-left-å åu u⊑v)
   ⊑-snd (⊑-right-å åu u⊑v) = ⊑-snd-å åu (⊑-right-å åu u⊑v)
   ⊑-snd (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-snd split) (⊑-snd u⊑v) (⊑-snd u⊑v₁)
-
 
   ⊑-tup : ∀ {n u v} {us vs : Vec Value n} → u ⊑ v → ∥ us ∥ ⊑ ∥ vs ∥ → ∥ u ∷ us ∥ ⊑ ∥ v ∷ vs ∥
   ⊑-tup {u = u} {us = us} u⊑v us⊑vs with atomic? u
@@ -185,8 +193,8 @@ module Model.Filter.DomainAnnFunOrdering where
   ... | ⊑-split (split-tup-tail x x₁) q q₁ = ⊑-split (split-tup-tail åu (split-tup-tail x x₁)) (⊑-tup u⊑v q) (⊑-tup u⊑v q₁)
   ⊑-tup {u = u} {us = us} u⊑v us⊑vs | no ¬åu with u⊑v
   ... | ⊑-ω = ⊥-elim (¬åu tt)
-  ... | ⊑-ν-ν = ⊥-elim (¬åu tt)
-  ... | ⊑-ν-↦ = ⊥-elim (¬åu tt)
+  ... | ⊑-ν-ν-å åu u⊑v' = ⊥-elim (¬åu åu)
+  ... | ⊑-ν-↦-å åu u⊑v' = ⊥-elim (¬åu åu)
   ... | ⊑-const = ⊥-elim (¬åu tt)
   ... | ⊑-⊔-R1-å åu u⊑v₁ = ⊥-elim (¬åu åu)
   ... | ⊑-⊔-R2-å åu u⊑v₁ = ⊥-elim (¬åu åu)
@@ -194,18 +202,35 @@ module Model.Filter.DomainAnnFunOrdering where
   ... | ⊑-snd-å åu q = ⊥-elim (¬åu åu)
   ... | ⊑-nil = ⊥-elim (¬åu tt)
   ... | ⊑-tup-å åus u⊑v₁ us[⊑]vs = ⊥-elim (¬åu åus)
-  ... | ⊑-↦-å åu₂ u⊑v₁ u⊑v₂ = ⊥-elim (¬åu åu₂)
+  ... | ⊑-↦-å åu₂ åu' u⊑v' u⊑v₁ u⊑v₂ = ⊥-elim (¬åu ⟨ åu₂ , åu' ⟩)
   ... | ⊑-left-å åu q = ⊥-elim (¬åu åu)
   ... | ⊑-right-å åu q = ⊥-elim (¬åu åu)
   ... | ⊑-split split u⊑v₁ u⊑v₂ = ⊑-split (split-tup-head split) (⊑-tup u⊑v₁ us⊑vs) (⊑-tup u⊑v₂ us⊑vs)
 
-  ⊑-↦ : ∀ {FV u₁ u₂ v₁ v₂} → v₁ ⊑ u₁ →  u₂ ⊑ v₂ → FV ⊢ u₁ ↦ u₂ ⊑ FV ⊢ v₁ ↦ v₂
-  ⊑-↦ {FV}{u₁}{u₂} dom⊑ ⊑cod with atomic? u₂
-  ... | yes åu₂ = ⊑-↦-å åu₂ ⊑cod dom⊑
-  ... | no ¬åu₂ with ⊑cod 
+  ⊑-↦ : ∀ {FV FV' u₁ u₂ v₁ v₂} → FV ⊑ FV' → v₁ ⊑ u₁ →  u₂ ⊑ v₂ → FV ⊢ u₁ ↦ u₂ ⊑ FV' ⊢ v₁ ↦ v₂
+  ⊑-↦ {FV}{FV'}{u₁}{u₂} ⊑FV dom⊑ ⊑cod with atomic? u₂
+  ... | yes åu₂ with atomic? FV
+  ... | yes åFV = ⊑-↦-å åu₂ åFV ⊑FV ⊑cod dom⊑
+  ... | no ¬åFV with ⊑FV
+  ... | ⊑-ω = ⊥-elim (¬åFV tt)
+  ... | ⊑-ν-ν-å åFV ⊑FV₁ = ⊥-elim (¬åFV åFV)
+  ... | ⊑-ν-↦-å åFV ⊑FV₁ = ⊥-elim (¬åFV åFV)
+  ... | ⊑-const = ⊥-elim (¬åFV tt)
+  ... | ⊑-⊔-R1-å åu ⊑FV₁ = ⊥-elim (¬åFV åu)
+  ... | ⊑-⊔-R2-å åu ⊑FV₁ = ⊥-elim (¬åFV åu)
+  ... | ⊑-fst-å åu ⊑FV₁ = ⊥-elim (¬åFV åu)
+  ... | ⊑-snd-å åu ⊑FV₁ = ⊥-elim (¬åFV åu)
+  ... | ⊑-nil = ⊥-elim (¬åFV tt)
+  ... | ⊑-tup-å åus ⊑FV₁ ⊑FV₂ = ⊥-elim (¬åFV åus)
+  ... | ⊑-↦-å åu₃ åFV ⊑FV₁ ⊑FV₂ ⊑FV₃ = ⊥-elim (¬åFV ⟨ åu₃ , åFV ⟩)
+  ... | ⊑-left-å åu ⊑FV₁ = ⊥-elim (¬åFV åu)
+  ... | ⊑-right-å åu ⊑FV₁ = ⊥-elim (¬åFV åu)
+  ... | ⊑-split split ⊑FV₁ ⊑FV₂ = 
+    ⊑-split (split-↦-ann åu₂ split) (⊑-↦ ⊑FV₁ dom⊑ ⊑cod) (⊑-↦ ⊑FV₂ dom⊑ ⊑cod)
+  ⊑-↦ {FV}{FV'}{u₁}{u₂} ⊑FV dom⊑ ⊑cod | no ¬åu₂ with ⊑cod 
   ... | ⊑-ω = ⊥-elim (¬åu₂ tt)
-  ... | ⊑-ν-ν = ⊥-elim (¬åu₂ tt)
-  ... | ⊑-ν-↦ = ⊥-elim (¬åu₂ tt)
+  ... | ⊑-ν-ν-å åu u⊑v' = ⊥-elim (¬åu₂ åu)
+  ... | ⊑-ν-↦-å åu u⊑v' = ⊥-elim (¬åu₂ åu)
   ... | ⊑-const = ⊥-elim (¬åu₂ tt)
   ... | ⊑-⊔-R1-å åu u₂⊑v₂ = ⊥-elim (¬åu₂ åu)
   ... | ⊑-⊔-R2-å åu u₂⊑v₂ = ⊥-elim (¬åu₂ åu)
@@ -213,15 +238,16 @@ module Model.Filter.DomainAnnFunOrdering where
   ... | ⊑-snd-å åu q = ⊥-elim (¬åu₂ åu)
   ... | ⊑-nil = ⊥-elim (¬åu₂ tt)
   ... | ⊑-tup-å åus u₂⊑v₂ us[⊑]vs = ⊥-elim (¬åu₂ åus)
-  ... | ⊑-↦-å åu₂ u₂⊑v₂ u₂⊑v₃ = ⊥-elim (¬åu₂ åu₂)
+  ... | ⊑-↦-å åu₂ åu' u⊑v' u₂⊑v₂ u₂⊑v₃ = ⊥-elim (¬åu₂ ⟨ åu₂ , åu' ⟩)
   ... | ⊑-left-å åu q = ⊥-elim (¬åu₂ åu)
   ... | ⊑-right-å åu q = ⊥-elim (¬åu₂ åu)
-  ... | ⊑-split split u₂⊑v₂ u₂⊑v₃ = ⊑-split (split-↦ split) (⊑-↦ dom⊑ u₂⊑v₂) (⊑-↦ dom⊑ u₂⊑v₃)
+  ... | ⊑-split split u₂⊑v₂ u₂⊑v₃ = ⊑-split (split-↦ split) (⊑-↦ ⊑FV dom⊑ u₂⊑v₂) (⊑-↦ ⊑FV dom⊑ u₂⊑v₃)
+  
 
   ⊑-left : ∀ {u v} → u ⊑ v → left u ⊑ left v
   ⊑-left ⊑-ω = ⊑-left-å tt ⊑-ω
-  ⊑-left ⊑-ν-ν = ⊑-left-å tt ⊑-ν-ν
-  ⊑-left ⊑-ν-↦ = ⊑-left-å tt ⊑-ν-↦
+  ⊑-left (⊑-ν-ν-å åFV u⊑v) = ⊑-left-å åFV (⊑-ν-ν-å åFV u⊑v)
+  ⊑-left (⊑-ν-↦-å åFV u⊑v) = ⊑-left-å åFV (⊑-ν-↦-å åFV u⊑v)
   ⊑-left ⊑-const = ⊑-left-å tt ⊑-const
   ⊑-left (⊑-⊔-R1-å åu u⊑v) = ⊑-left-å åu (⊑-⊔-R1-å åu u⊑v)
   ⊑-left (⊑-⊔-R2-å åu u⊑v) = ⊑-left-å åu (⊑-⊔-R2-å åu u⊑v)
@@ -229,15 +255,15 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-left (⊑-snd-å åu u⊑v) = ⊑-left-å åu (⊑-snd-å åu u⊑v)
   ⊑-left ⊑-nil = ⊑-left-å tt ⊑-nil
   ⊑-left (⊑-tup-å åus u⊑v u⊑v₁) = ⊑-left-å åus (⊑-tup-å åus u⊑v u⊑v₁)
-  ⊑-left (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-left-å åu₂ (⊑-↦-å åu₂ u⊑v u⊑v₁)
+  ⊑-left (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) = ⊑-left-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂)
   ⊑-left (⊑-left-å åu u⊑v) = ⊑-left-å åu (⊑-left u⊑v)
   ⊑-left (⊑-right-å åu u⊑v) = ⊑-left-å åu (⊑-right-å åu u⊑v)
   ⊑-left (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-left split) (⊑-left u⊑v) (⊑-left u⊑v₁)
 
   ⊑-right : ∀ {u v} → u ⊑ v → right u ⊑ right v
   ⊑-right ⊑-ω = ⊑-right-å tt ⊑-ω
-  ⊑-right ⊑-ν-ν = ⊑-right-å tt ⊑-ν-ν
-  ⊑-right ⊑-ν-↦ = ⊑-right-å tt ⊑-ν-↦
+  ⊑-right (⊑-ν-ν-å åFV u⊑v) = ⊑-right-å åFV (⊑-ν-ν-å åFV u⊑v)
+  ⊑-right (⊑-ν-↦-å åFV u⊑v) = ⊑-right-å åFV (⊑-ν-↦-å åFV u⊑v)
   ⊑-right ⊑-const = ⊑-right-å tt ⊑-const
   ⊑-right (⊑-⊔-R1-å åu u⊑v) = ⊑-right-å åu (⊑-⊔-R1-å åu u⊑v)
   ⊑-right (⊑-⊔-R2-å åu u⊑v) = ⊑-right-å åu (⊑-⊔-R2-å åu u⊑v)
@@ -245,106 +271,182 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-right (⊑-snd-å åu u⊑v) = ⊑-right-å åu (⊑-snd-å åu u⊑v)
   ⊑-right ⊑-nil = ⊑-right-å tt ⊑-nil
   ⊑-right (⊑-tup-å åus u⊑v u⊑v₁) = ⊑-right-å åus (⊑-tup-å åus u⊑v u⊑v₁)
-  ⊑-right (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-right-å åu₂ (⊑-↦-å åu₂ u⊑v u⊑v₁)
+  ⊑-right (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) = ⊑-right-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂)
   ⊑-right (⊑-left-å åu u⊑v) = ⊑-right-å åu (⊑-left-å åu u⊑v)
   ⊑-right (⊑-right-å åu u⊑v) = ⊑-right-å åu (⊑-right u⊑v)
   ⊑-right (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-right split) (⊑-right u⊑v) (⊑-right u⊑v₁)
 
+  ⊑-ν-ν : ∀ {FV FV'} → FV ⊑ FV' → FV ⊢ν ⊑ FV' ⊢ν
+  ⊑-ν-ν ⊑-ω = ⊑-ν-ν-å tt ⊑-ω
+  ⊑-ν-ν (⊑-ν-ν-å åFV FV⊑) = ⊑-ν-ν-å åFV (⊑-ν-ν FV⊑)
+  ⊑-ν-ν (⊑-ν-↦-å åFV FV⊑) = ⊑-ν-ν-å åFV (⊑-ν-↦-å åFV FV⊑)
+  ⊑-ν-ν ⊑-const = ⊑-ν-ν-å tt ⊑-const
+  ⊑-ν-ν (⊑-⊔-R1-å åu FV⊑) = ⊑-ν-ν-å åu (⊑-⊔-R1-å åu FV⊑)
+  ⊑-ν-ν (⊑-⊔-R2-å åu FV⊑) = ⊑-ν-ν-å åu (⊑-⊔-R2-å åu FV⊑)
+  ⊑-ν-ν (⊑-fst-å åu FV⊑) = ⊑-ν-ν-å åu (⊑-fst-å åu FV⊑)
+  ⊑-ν-ν (⊑-snd-å åu FV⊑) = ⊑-ν-ν-å åu (⊑-snd-å åu FV⊑)
+  ⊑-ν-ν ⊑-nil = ⊑-ν-ν-å tt ⊑-nil
+  ⊑-ν-ν (⊑-tup-å åus FV⊑ FV⊑₁) = ⊑-ν-ν-å åus (⊑-tup-å åus FV⊑ FV⊑₁)
+  ⊑-ν-ν (⊑-↦-å åu₂ åFV FV⊑ FV⊑₁ FV⊑₂) = ⊑-ν-ν-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV FV⊑ FV⊑₁ FV⊑₂)
+  ⊑-ν-ν (⊑-left-å åu FV⊑) = ⊑-ν-ν-å åu (⊑-left-å åu FV⊑)
+  ⊑-ν-ν (⊑-right-å åu FV⊑) = ⊑-ν-ν-å åu (⊑-right-å åu FV⊑)
+  ⊑-ν-ν (⊑-split split FV⊑ FV⊑₁) = ⊑-split (split-ν split) (⊑-ν-ν FV⊑) (⊑-ν-ν FV⊑₁)
+
+  ⊑-ν-↦ : ∀ {FV FV' u v} → FV ⊑ FV' → FV ⊢ν ⊑ FV' ⊢ u ↦ v
+  ⊑-ν-↦ ⊑-ω = ⊑-ν-↦-å tt ⊑-ω
+  ⊑-ν-↦ (⊑-ν-ν-å åFV FV⊑) = ⊑-ν-↦-å åFV (⊑-ν-ν-å åFV FV⊑)
+  ⊑-ν-↦ (⊑-ν-↦-å åFV FV⊑) = ⊑-ν-↦-å åFV (⊑-ν-↦ FV⊑)
+  ⊑-ν-↦ ⊑-const = ⊑-ν-↦-å tt ⊑-const
+  ⊑-ν-↦ (⊑-⊔-R1-å åu FV⊑) = ⊑-ν-↦-å åu (⊑-⊔-R1-å åu FV⊑)
+  ⊑-ν-↦ (⊑-⊔-R2-å åu FV⊑) = ⊑-ν-↦-å åu (⊑-⊔-R2-å åu FV⊑)
+  ⊑-ν-↦ (⊑-fst-å åu FV⊑) = ⊑-ν-↦-å åu (⊑-fst-å åu FV⊑)
+  ⊑-ν-↦ (⊑-snd-å åu FV⊑) = ⊑-ν-↦-å åu (⊑-snd-å åu FV⊑)
+  ⊑-ν-↦ ⊑-nil = ⊑-ν-↦-å tt ⊑-nil
+  ⊑-ν-↦ (⊑-tup-å åus FV⊑ FV⊑₁) = ⊑-ν-↦-å åus (⊑-tup-å åus FV⊑ FV⊑₁)
+  ⊑-ν-↦ (⊑-↦-å åu₂ åFV FV⊑ FV⊑₁ FV⊑₂) = ⊑-ν-↦-å ⟨ åu₂ , åFV ⟩ (⊑-↦-å åu₂ åFV FV⊑ FV⊑₁ FV⊑₂)
+  ⊑-ν-↦ (⊑-left-å åu FV⊑) = ⊑-ν-↦-å åu (⊑-left-å åu FV⊑)
+  ⊑-ν-↦ (⊑-right-å åu FV⊑) = ⊑-ν-↦-å åu (⊑-right-å åu FV⊑)
+  ⊑-ν-↦ (⊑-split split FV⊑ FV⊑₁) = ⊑-split (split-ν split) (⊑-ν-↦ FV⊑) (⊑-ν-↦ FV⊑₁)
+
   ⊑-refl : ∀ {v} → v ⊑ v
   ⊑-refl {ω} = ⊑-ω
-  ⊑-refl {FV ⊢ν} = ⊑-ν-ν
+  ⊑-refl {FV ⊢ν} = ⊑-ν-ν ⊑-refl
   ⊑-refl {const k} = ⊑-const
   ⊑-refl {⦅ u ∣} = ⊑-fst ⊑-refl
   ⊑-refl {∣ v ⦆} = ⊑-snd ⊑-refl
   ⊑-refl {∥ [] ∥} = ⊑-nil
   ⊑-refl {∥ v ∷ vs ∥} = ⊑-tup ⊑-refl ⊑-refl
-  ⊑-refl {FV ⊢ v ↦ v₁} = ⊑-↦ ⊑-refl ⊑-refl
+  ⊑-refl {FV ⊢ v ↦ v₁} = ⊑-↦ ⊑-refl ⊑-refl ⊑-refl
   ⊑-refl {v ⊔ v₁} = ⊑-⊔-L (⊑-⊔-R1 ⊑-refl) (⊑-⊔-R2 ⊑-refl)
   ⊑-refl {left d} = ⊑-left ⊑-refl
   ⊑-refl {right d} = ⊑-right ⊑-refl
 
-  split-inv-↦ : ∀ {FV u u'} → Proper (FV ⊢ u ↦ u') → Proper u × Proper u'
-  split-inv-↦ (⊢'-↦-å P↦ P↦₁ åv₂) = ⟨ P↦₁ , P↦ ⟩
-  split-inv-↦ {FV} {u} {u'} (⊢'-split (FV ⊢ vL ↦ v₁) (FV ⊢ vR ↦ v₂) (split-↦ split) P↦ P↦₁) = 
-    ⟨ proj₁ (split-inv-↦ P↦₁) , ⊢'-split v₁ v₂ split (proj₂ (split-inv-↦ P↦)) (proj₂ (split-inv-↦ P↦₁)) ⟩
+
+  proper-↦-inv : ∀ {FV u v} → Proper (FV ⊢ u ↦ v) → Proper FV × Proper u × Proper v
+  proper-↦-inv (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) = ⟨ Pd , ⟨ Pd₁ , Pd₂ ⟩ ⟩
+  proper-↦-inv {FV}{u}{v} (⊢'-split (FV ⊢ u ↦ v₁) (FV ⊢ u ↦ v₂) (split-↦ split) Pd Pd₁) 
+    with proper-↦-inv Pd | proper-↦-inv Pd₁
+  ... | ⟨ PFV , ⟨ Pu , Pv ⟩ ⟩  | ⟨ PFV' , ⟨ Pu' , Pv' ⟩ ⟩ = 
+    ⟨ PFV' , ⟨ Pu' , ⊢'-split v₁ v₂ split Pv Pv' ⟩ ⟩
+  proper-↦-inv {FV}{u}{v} (⊢'-split (FVL ⊢ u ↦ v) (FVR ⊢ u ↦ v) (split-↦-ann åw split) Pd Pd₁) 
+    with proper-↦-inv Pd | proper-↦-inv Pd₁
+  ... | ⟨ PFV , ⟨ Pu , Pv ⟩ ⟩  | ⟨ PFV' , ⟨ Pu' , Pv' ⟩ ⟩ = 
+    ⟨ ⊢'-split FVL FVR split PFV PFV' , ⟨ Pu' , Pv' ⟩ ⟩
 
 
-  split-inv-tup : ∀ {n u us} → Proper (∥_∥ {suc n} (u ∷ us)) → Proper u × Proper (∥ us ∥)
-  split-inv-tup (⊢'-tup-å Ptup Ptup₁ åv åvs) = ⟨ Ptup , Ptup₁ ⟩
-  split-inv-tup (⊢'-split (∥ vL ∷ vs ∥) (∥ vR ∷ vs ∥) (split-tup-head split) Ptup Ptup₁) = 
-    ⟨ ⊢'-split vL vR split (proj₁ (split-inv-tup Ptup)) (proj₁ (split-inv-tup Ptup₁)) , proj₂ (split-inv-tup Ptup₁) ⟩
-  split-inv-tup (⊢'-split (∥ v ∷ vsL ∥) (∥ v ∷ vsR ∥) (split-tup-tail x split) Ptup Ptup₁) = 
-    ⟨ proj₁ (split-inv-tup Ptup₁) , ⊢'-split (∥ vsL ∥) (∥ vsR ∥) split (proj₂ (split-inv-tup Ptup)) (proj₂ (split-inv-tup Ptup₁)) ⟩
+  proper-tup-inv : ∀ {n u us} → Proper (∥_∥ {suc n} (u ∷ us)) → Proper u × Proper (∥ us ∥)
+  proper-tup-inv (⊢'-tup-å Ptup Ptup₁ åv åvs) = ⟨ Ptup , Ptup₁ ⟩
+  proper-tup-inv (⊢'-split (∥ vL ∷ vs ∥) (∥ vR ∷ vs ∥) (split-tup-head split) Ptup Ptup₁) = 
+    ⟨ ⊢'-split vL vR split (proj₁ (proper-tup-inv Ptup)) (proj₁ (proper-tup-inv Ptup₁)) , proj₂ (proper-tup-inv Ptup₁) ⟩
+  proper-tup-inv (⊢'-split (∥ v ∷ vsL ∥) (∥ v ∷ vsR ∥) (split-tup-tail x split) Ptup Ptup₁) = 
+    ⟨ proj₁ (proper-tup-inv Ptup₁) , ⊢'-split (∥ vsL ∥) (∥ vsR ∥) split (proj₂ (proper-tup-inv Ptup)) (proj₂ (proper-tup-inv Ptup₁)) ⟩
 
-  split-inv-⊔ : ∀ {u v} → Proper (u ⊔ v) → Proper u × Proper v
-  split-inv-⊔ (⊢'-split vL vR split-⊔ P⊔ P⊔₁) = ⟨ P⊔ , P⊔₁ ⟩
+  proper-⊔-inv : ∀ {u v} → Proper (u ⊔ v) → Proper u × Proper v
+  proper-⊔-inv (⊢'-split vL vR split-⊔ P⊔ P⊔₁) = ⟨ P⊔ , P⊔₁ ⟩
+
 
   split-unique : ∀ {u uL uR} → uL ◃ u ▹ uR → ∀ {uL' uR'} → uL' ◃ u ▹ uR' → uL' ≡ uL × uR' ≡ uR
-  split-unique split-⊔ split-⊔ = ⟨ refl , refl ⟩
-  split-unique {u = FV ⊢ u ↦ u₁} (split-↦ split) (split-↦ split') with split-unique split split'
-  ... | ⟨ H₁ , H₂ ⟩ = ⟨ cong (FV ⊢ u ↦_) H₁ , cong (FV ⊢ u ↦_) H₂ ⟩
-  split-unique {u = ⦅ u ∣} (split-fst split) (split-fst split') with split-unique split split'
+  split-unique {u = .(_ ⊔ _)} split-⊔ split-⊔ = ⟨ refl , refl ⟩
+  split-unique {u = .(_ ⊢ν)} (split-ν split) (split-ν split')
+     with split-unique split split'
   ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
-  split-unique {u = ∣ u ⦆} (split-snd split) (split-snd split') with split-unique split split'
+  split-unique {u = .(_ ⊢ _ ↦ _)} (split-↦ split) (split-↦ split')
+     with split-unique split split'
   ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
-  split-unique {u = ∥ u ∷ us ∥} (split-tup-head split) (split-tup-head split') with split-unique split split'
-  ... | ⟨ H₁ , H₂ ⟩ = ⟨ cong (λ z → ∥ z ∷ us ∥) H₁ , cong (λ z → ∥ z ∷ us ∥) H₂ ⟩
-  split-unique {u = ∥ u ∷ us ∥} (split-tup-head split) (split-tup-tail x split') = ⊥-elim (unsplittable u x split)
-  split-unique {u = ∥ u ∷ us ∥} (split-tup-tail x split) (split-tup-head split') = ⊥-elim (unsplittable u x split')
-  split-unique {u = ∥ u ∷ us ∥} (split-tup-tail x split) (split-tup-tail x₁ split') with split-unique split split'
+  split-unique {u = (FV ⊢ u ↦ v)} (split-↦ split) (split-↦-ann åw split') 
+    = ⊥-elim (unsplittable v åw split)
+  split-unique {u = (FV ⊢ u ↦ v)} (split-↦-ann åw split) (split-↦ split') 
+    = ⊥-elim (unsplittable v åw split')
+  split-unique {u = .(_ ⊢ _ ↦ _)} (split-↦-ann åw split) (split-↦-ann åw₁ split') 
+     with split-unique split split'
   ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
-  split-unique {u = left u} (split-left split) (split-left split') with split-unique split split'
+  split-unique {u = .(⦅ _ ∣)} (split-fst split) (split-fst split')
+     with split-unique split split'
   ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
-  split-unique {u = right u} (split-right split) (split-right split') with split-unique split split'
+  split-unique {u = .(∣ _ ⦆)} (split-snd split) (split-snd split')
+     with split-unique split split'
   ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
-
+  split-unique {u = .(∥ _ ∷ _ ∥)} (split-tup-head split) (split-tup-head split')
+     with split-unique split split'
+  ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
+  split-unique {u = (∥ u ∷ us ∥)} (split-tup-head split) (split-tup-tail x split') 
+    = ⊥-elim (unsplittable u x split)
+  split-unique {u = (∥ u ∷ us ∥)} (split-tup-tail x split) (split-tup-head split') 
+    = ⊥-elim (unsplittable u x split')
+  split-unique {u = .(∥ _ ∷ _ ∥)} (split-tup-tail x split) (split-tup-tail x₁ split')
+     with split-unique split split'
+  ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
+  split-unique {u = .(left _)} (split-left split) (split-left split')
+     with split-unique split split'
+  ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
+  split-unique {u = .(right _)} (split-right split) (split-right split')
+     with split-unique split split'
+  ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
 
   ⊑-inversion-split-L : ∀ {u v v₁ v₂} → u ⊑ v → v₁ ◃ v ▹ v₂ → Atomic u → u ⊑ v₁ ⊎ u ⊑ v₂
   ⊑-inversion-split-L ⊑-ω split åu = inj₁ ⊑-ω
-  ⊑-inversion-split-L ⊑-ν-↦ (split-↦ split) åu = inj₁ ⊑-ν-↦
+  ⊑-inversion-split-L (⊑-ν-ν-å åFV u⊑v) (split-ν split) åu
+    with ⊑-inversion-split-L u⊑v split åu
+  ... | inj₁ x = inj₁ (⊑-ν-ν-å åFV x)
+  ... | inj₂ y = inj₂ (⊑-ν-ν-å åFV y)
+  ⊑-inversion-split-L (⊑-ν-↦-å åFV u⊑v) (split-↦ split) åu = inj₁ (⊑-ν-↦-å åu u⊑v)
+  ⊑-inversion-split-L (⊑-ν-↦-å åFV u⊑v) (split-↦-ann åw split) åu
+    with ⊑-inversion-split-L u⊑v split åu
+  ... | inj₁ x = inj₁ (⊑-ν-↦-å åFV x)
+  ... | inj₂ y = inj₂ (⊑-ν-↦-å åFV y)
   ⊑-inversion-split-L (⊑-⊔-R1-å åu₁ u⊑v) split-⊔ åu = inj₁ u⊑v
   ⊑-inversion-split-L (⊑-⊔-R2-å åu₁ u⊑v) split-⊔ åu = inj₂ u⊑v
-  ⊑-inversion-split-L (⊑-tup-å åus u⊑v u⊑v₁) (split-tup-head split) åu 
-    with ⊑-inversion-split-L u⊑v split (proj₁ åu)
-  ... | inj₁ x = inj₁ (⊑-tup-å åus x u⊑v₁)
-  ... | inj₂ y = inj₂ (⊑-tup-å åus y u⊑v₁)
-  ⊑-inversion-split-L (⊑-tup-å åus u⊑v u⊑v₁) (split-tup-tail x split) åu 
-    with ⊑-inversion-split-L u⊑v₁ split (proj₂ åu)
-  ... | inj₁ x = inj₁ (⊑-tup-å åus u⊑v x)
-  ... | inj₂ y = inj₂ (⊑-tup-å åus u⊑v y)
-  ⊑-inversion-split-L (⊑-↦-å åu₂ u⊑v u⊑v₁) (split-↦ split) åu 
-    with ⊑-inversion-split-L u⊑v split åu
-  ... | inj₁ x = inj₁ (⊑-↦-å åu₂ x u⊑v₁)
-  ... | inj₂ y = inj₂ (⊑-↦-å åu₂ y u⊑v₁)
-  ⊑-inversion-split-L {.(⦅ _ ∣)} (⊑-fst-å åu₁ u⊑v) (split-fst split) åu
+  ⊑-inversion-split-L (⊑-fst-å åu₁ u⊑v) (split-fst split) åu
     with ⊑-inversion-split-L u⊑v split åu
   ... | inj₁ x = inj₁ (⊑-fst-å åu₁ x)
   ... | inj₂ y = inj₂ (⊑-fst-å åu₁ y)
-  ⊑-inversion-split-L {.(∣ _ ⦆)} (⊑-snd-å åu₁ u⊑v) (split-snd split) åu
+  ⊑-inversion-split-L (⊑-snd-å åu₁ u⊑v) (split-snd split) åu
     with ⊑-inversion-split-L u⊑v split åu
   ... | inj₁ x = inj₁ (⊑-snd-å åu₁ x)
   ... | inj₂ y = inj₂ (⊑-snd-å åu₁ y)
-  ⊑-inversion-split-L {.(left _)} (⊑-left-å åu₁ u⊑v) (split-left split) åu
+  ⊑-inversion-split-L (⊑-tup-å åus u⊑v u⊑v₁) (split-tup-head split) åu 
+    with ⊑-inversion-split-L u⊑v split (proj₁ åu)
+  ... | inj₁ x = inj₁ (⊑-tup-å åu x u⊑v₁)
+  ... | inj₂ y = inj₂ (⊑-tup-å åu y u⊑v₁)
+  ⊑-inversion-split-L (⊑-tup-å åus u⊑v u⊑v₁) (split-tup-tail x split) åu
+    with ⊑-inversion-split-L u⊑v₁ split (proj₂ åu)
+  ... | inj₁ x = inj₁ (⊑-tup-å åu u⊑v x)
+  ... | inj₂ y = inj₂ (⊑-tup-å åu u⊑v y)
+  ⊑-inversion-split-L (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) (split-↦ split) åu
+    with ⊑-inversion-split-L u⊑v₁ split (proj₁ åu)
+  ... | inj₁ x = inj₁ (⊑-↦-å (proj₁ åu) (proj₂ åu) u⊑v x u⊑v₂)
+  ... | inj₂ y = inj₂ (⊑-↦-å (proj₁ åu) (proj₂ åu) u⊑v y u⊑v₂)
+  ⊑-inversion-split-L (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) (split-↦-ann åw split) åu
+    with ⊑-inversion-split-L u⊑v split (proj₂ åu)
+  ... | inj₁ x = inj₁ (⊑-↦-å (proj₁ åu) (proj₂ åu) x u⊑v₁ u⊑v₂)
+  ... | inj₂ y = inj₂ (⊑-↦-å (proj₁ åu) (proj₂ åu) y u⊑v₁ u⊑v₂)
+  ⊑-inversion-split-L (⊑-left-å åu₁ u⊑v) (split-left split) åu
     with ⊑-inversion-split-L u⊑v split åu
   ... | inj₁ x = inj₁ (⊑-left-å åu₁ x)
   ... | inj₂ y = inj₂ (⊑-left-å åu₁ y)
-  ⊑-inversion-split-L {.(right _)} (⊑-right-å åu₁ u⊑v) (split-right split) åu
+  ⊑-inversion-split-L (⊑-right-å åu₁ u⊑v) (split-right split) åu
     with ⊑-inversion-split-L u⊑v split åu
   ... | inj₁ x = inj₁ (⊑-right-å åu₁ x)
   ... | inj₂ y = inj₂ (⊑-right-å åu₁ y)
-  ⊑-inversion-split-L {u} (⊑-split split₁ u⊑v u⊑v₁) split åu = ⊥-elim (unsplittable u åu split₁ )
-
+  ⊑-inversion-split-L {u} (⊑-split split₁ u⊑v u⊑v₁) split åu 
+    = ⊥-elim (unsplittable u åu split₁)
 
 
   ⊑-inversion-split-R : ∀ {u v u₁ u₂} → u ⊑ v → u₁ ◃ u ▹ u₂ → u₁ ⊑ v × u₂ ⊑ v
+  ⊑-inversion-split-R (⊑-ν-ν-å åFV u⊑v) (split-ν split)
+    with ⊑-inversion-split-R u⊑v split
+  ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-ν-ν IH₁ , ⊑-ν-ν IH₂ ⟩
+  ⊑-inversion-split-R (⊑-ν-↦-å åFV u⊑v) (split-ν split)
+    with ⊑-inversion-split-R u⊑v split
+  ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-ν-↦ IH₁ , ⊑-ν-↦ IH₂ ⟩
   ⊑-inversion-split-R (⊑-⊔-R1-å åu u⊑v) split with ⊑-inversion-split-R u⊑v split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-⊔-R1 IH₁ , ⊑-⊔-R1 IH₂ ⟩
-  ⊑-inversion-split-R (⊑-⊔-R2-å åu u⊑v) split with ⊑-inversion-split-R u⊑v split 
+  ⊑-inversion-split-R (⊑-⊔-R2-å åu u⊑v) split with ⊑-inversion-split-R u⊑v split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-⊔-R2 IH₁ , ⊑-⊔-R2 IH₂ ⟩
-  ⊑-inversion-split-R (⊑-fst-å åu u⊑v) (split-fst split) 
+  ⊑-inversion-split-R (⊑-fst-å åu u⊑v) (split-fst split)
     with ⊑-inversion-split-R u⊑v split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-fst IH₁ , ⊑-fst IH₂ ⟩
-  ⊑-inversion-split-R (⊑-snd-å åu u⊑v) (split-snd split) 
+  ⊑-inversion-split-R (⊑-snd-å åu u⊑v) (split-snd split)
     with ⊑-inversion-split-R u⊑v split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-snd IH₁ , ⊑-snd IH₂ ⟩
   ⊑-inversion-split-R (⊑-tup-å åus u⊑v u⊑v₁) (split-tup-head split)
@@ -353,19 +455,23 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-inversion-split-R (⊑-tup-å åus u⊑v u⊑v₁) (split-tup-tail x split)
     with ⊑-inversion-split-R u⊑v₁ split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-tup u⊑v IH₁ , ⊑-tup u⊑v IH₂ ⟩
-  ⊑-inversion-split-R (⊑-↦-å åu₂ u⊑v u⊑v₁) (split-↦ split) 
+  ⊑-inversion-split-R (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) (split-↦ split)
+    with ⊑-inversion-split-R u⊑v₁ split
+  ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-↦ u⊑v u⊑v₂ IH₁ , ⊑-↦ u⊑v u⊑v₂ IH₂ ⟩
+  ⊑-inversion-split-R (⊑-↦-å åu₂ åFV u⊑v u⊑v₁ u⊑v₂) (split-↦-ann åw split)
     with ⊑-inversion-split-R u⊑v split
-  ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-↦ u⊑v₁ IH₁ , ⊑-↦ u⊑v₁ IH₂ ⟩
-  ⊑-inversion-split-R (⊑-left-å åu u⊑v) (split-left split) 
+  ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-↦ IH₁ u⊑v₂ u⊑v₁ , ⊑-↦ IH₂ u⊑v₂ u⊑v₁ ⟩
+  ⊑-inversion-split-R (⊑-left-å åu u⊑v) (split-left split)
     with ⊑-inversion-split-R u⊑v split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-left IH₁ , ⊑-left IH₂ ⟩
-  ⊑-inversion-split-R (⊑-right-å åu u⊑v) (split-right split) 
+  ⊑-inversion-split-R (⊑-right-å åu u⊑v) (split-right split)
     with ⊑-inversion-split-R u⊑v split
   ... | ⟨ IH₁ , IH₂ ⟩ = ⟨ ⊑-right IH₁ , ⊑-right IH₂ ⟩
-  ⊑-inversion-split-R {u} {v} (⊑-split split₁ u⊑v u⊑v₁) split 
-    with split-unique split₁ split
-  ... | ⟨ q , q' ⟩ = ⟨ subst (_⊑ v) (sym q) u⊑v , subst (_⊑ v) (sym q') u⊑v₁ ⟩
+  ⊑-inversion-split-R {u}{v} (⊑-split split₁ u⊑v u⊑v₁) split with split-unique split₁ split
+  ... | ⟨ refl , refl ⟩ = ⟨ u⊑v , u⊑v₁ ⟩
 
+
+{-
   proper-split-L : ∀ {v v₁ v₂} → Proper v → v₁ ◃ v ▹ v₂ → Proper v₁
   proper-split-L .{_ ⊢ _ ↦ _} (⊢'-↦-å {FV}{v}{v'} Pv Pv₁ åv₂) split = ⊥-elim (unsplittable (FV ⊢ v ↦ v') åv₂ split)
   proper-split-L .{⦅ _ ∣} (⊢'-fst-å {v} Pv åv) split = ⊥-elim (unsplittable ⦅ v ∣ åv split)
@@ -383,43 +489,63 @@ module Model.Filter.DomainAnnFunOrdering where
   proper-split-R .{left _} (⊢'-left-å {u} Pu åu) split = ⊥-elim (unsplittable (left u) åu split)
   proper-split-R .{right _} (⊢'-right-å {u} Pu åu) split = ⊥-elim (unsplittable (right u) åu split)
   proper-split-R .{_} (⊢'-split vL vR split₁ Pv Pv₁) split = subst Proper (proj₂ (split-unique split split₁)) Pv₁
-
+-}
 
   ⊑-trans-proper : ∀ v → Proper v → ∀ u w → u ⊑ v → v ⊑ w → u ⊑ w
   ⊑-trans-proper .ω ⊢'-ω .ω w ⊑-ω v⊑w = v⊑w
   ⊑-trans-proper .ω ⊢'-ω u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper ω ⊢'-ω u₁ w u⊑v v⊑w) (⊑-trans-proper ω ⊢'-ω u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper .(_ ⊢ν) ⊢'-ν .ω w ⊑-ω v⊑w = ⊑-ω
-  ⊑-trans-proper .(_ ⊢ν) ⊢'-ν .(_ ⊢ν) w ⊑-ν-ν v⊑w = v⊑w
-  ⊑-trans-proper (FV ⊢ν) ⊢'-ν u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
-    ⊑-split split (⊑-trans-proper (FV ⊢ν) ⊢'-ν u₁ w u⊑v v⊑w) (⊑-trans-proper (FV ⊢ν) ⊢'-ν u₂ w u⊑v₁ v⊑w)
+  ⊑-trans-proper .(_ ⊢ν) (⊢'-ν PFV åFV) .ω w ⊑-ω v⊑w = ⊑-ω
+  ⊑-trans-proper .(_ ⊢ν) (⊢'-ν {FV} PFV åFV) .(_ ⊢ν) w (⊑-ν-ν-å {FV₁} åFV₁ FV⊑) v⊑w
+    = G (FV₁ ⊢ν) w (⊑-ν-ν-å åFV₁ FV⊑) v⊑w (⊑-trans-proper FV PFV)
+    where
+    G : ∀ u w → u ⊑ FV ⊢ν → FV ⊢ν ⊑ w → (∀ u w → u ⊑ FV → FV ⊑ w → u ⊑ w) → u ⊑ w
+    G .ω w ⊑-ω v⊑w IH = ⊑-ω
+    G .(_ ⊢ν) .(_ ⊢ν) (⊑-ν-ν-å {FV'}{FV₁'} åFV' u⊑v) (⊑-ν-ν-å {FV''}{FV₁''} åFV'' v⊑w) IH 
+      = ⊑-ν-ν-å åFV' (IH FV' FV₁'' u⊑v v⊑w)
+    G .(_ ⊢ν) .(_ ⊢ _ ↦ _) (⊑-ν-ν-å {FV'}{FV₁'} åFV' u⊑v) (⊑-ν-↦-å {FV''}{FV₁''} åFV'' v⊑w) IH 
+      = ⊑-ν-↦-å åFV' (IH FV' FV₁'' u⊑v v⊑w)
+    G .(_ ⊢ν) .(_ ⊔ _) (⊑-ν-ν-å {FV'}{FV₁'} åFV' u⊑v) (⊑-⊔-R1-å {u'}{v'}{w'} åu v⊑w) IH 
+      = ⊑-⊔-R1-å åFV' (G (FV' ⊢ν) v' (⊑-ν-ν-å åFV' u⊑v) v⊑w IH)
+    G .(_ ⊢ν) .(_ ⊔ _) (⊑-ν-ν-å {FV'}{FV₁'} åFV' u⊑v) (⊑-⊔-R2-å {u'}{v'}{w'} åu v⊑w) IH 
+      = ⊑-⊔-R2-å åFV' (G (FV' ⊢ν) w' (⊑-ν-ν-å åFV' u⊑v) v⊑w IH)
+    G .(_ ⊢ν) w (⊑-ν-ν-å åFV' u⊑v) (⊑-split split v⊑w v⊑w₁) IH 
+      = ⊥-elim (unsplittable (FV ⊢ν) åFV split)
+    G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH = 
+      ⊑-split split (G u₁ w u⊑v v⊑w IH) (G u₂ w u⊑v₁ v⊑w IH)
+  ⊑-trans-proper (FV ⊢ν) (⊢'-ν PFV åFV) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
+    ⊑-split split (⊑-trans-proper (FV ⊢ν) (⊢'-ν PFV åFV) u₁ w u⊑v v⊑w) (⊑-trans-proper (FV ⊢ν) (⊢'-ν PFV åFV) u₂ w u⊑v₁ v⊑w)
   ⊑-trans-proper .(const k) (⊢'-const k) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(const k) (⊢'-const k) .(const k) w ⊑-const v⊑w = v⊑w
   ⊑-trans-proper .(const k) (⊢'-const k) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper (const k) (⊢'-const k) u₁ w u⊑v v⊑w) 
                   (⊑-trans-proper (const k) (⊢'-const k) u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper .(_ ⊢ _ ↦ _) (⊢'-↦-å {FV} {v₁} {v₂} Pv Pv₁ åv₂) u w u⊑v v⊑w = 
-      G u w u⊑v v⊑w (⊑-trans-proper v₁ Pv₁) (⊑-trans-proper v₂ Pv)
+  ⊑-trans-proper .(_ ⊢ _ ↦ _) (⊢'-↦-å {FV}{v₁}{v₂} PFV Pv Pv₁ åv₂ åFV) u w u⊑v v⊑w = 
+      G u w u⊑v v⊑w (⊑-trans-proper FV PFV) (⊑-trans-proper v₁ Pv) (⊑-trans-proper v₂ Pv₁)
     where
-    G : ∀ u w → u ⊑ FV ⊢ v₁ ↦ v₂ → FV ⊢ v₁ ↦ v₂ ⊑ w → (∀ u w → u ⊑ v₁ → v₁ ⊑ w → u ⊑ w) 
+    G : ∀ u w → u ⊑ FV ⊢ v₁ ↦ v₂ → FV ⊢ v₁ ↦ v₂ ⊑ w 
+                              → (∀ u w → u ⊑ FV → FV ⊑ w → u ⊑ w)
+                              → (∀ u w → u ⊑ v₁ → v₁ ⊑ w → u ⊑ w) 
                               → (∀ u w → u ⊑ v₂ → v₂ ⊑ w → u ⊑ w) → u ⊑ w
-    G .ω w ⊑-ω v⊑w IH₁ IH₂ = ⊑-ω
-    G .(_ ⊢ν) .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R1-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
-      ⊑-⊔-R1-å tt (G (FV ⊢ν) w₁ ⊑-ν-↦ v⊑w IH₁ IH₂)
-    G .(_ ⊢ν) .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R2-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
-      ⊑-⊔-R2-å tt (G (FV ⊢ν) w₂ ⊑-ν-↦ v⊑w IH₁ IH₂)
-    G .(_ ⊢ν) .(_ ⊢ _ ↦ _) ⊑-ν-↦ (⊑-↦-å åu₂ v⊑w v⊑w₁) IH₁ IH₂ = ⊑-ν-↦
-    G .(_ ⊢ν) w ⊑-ν-↦ (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ = ⊥-elim (unsplittable (FV ⊢ v₁ ↦ v₂) åv₂ split)
-    G .(_ ⊢ _ ↦ _) .(_ ⊔ _) (⊑-↦-å {FV}{u₁}{u₂} åu₂ u⊑v u⊑v₁) (⊑-⊔-R1-å {_}{w₁} åu v⊑w) IH₁ IH₂ = 
-      ⊑-⊔-R1-å åu₂ (G (FV ⊢ u₁ ↦ u₂) w₁ (⊑-↦-å åu₂ u⊑v u⊑v₁) v⊑w IH₁ IH₂)
-    G .(_ ⊢ _ ↦ _) .(_ ⊔ _) (⊑-↦-å {FV}{u₁}{u₂} åu₂ u⊑v u⊑v₁) (⊑-⊔-R2-å {_}{_}{w₂} åu v⊑w) IH₁ IH₂ = 
-      ⊑-⊔-R2-å åu₂ (G (FV ⊢ u₁ ↦ u₂) w₂ (⊑-↦-å åu₂ u⊑v u⊑v₁) v⊑w IH₁ IH₂)
-    G .(_ ⊢ _ ↦ _) .(_ ⊢ _ ↦ _) (⊑-↦-å {FV}{u₁}{u₂} åu₂ u⊑v u⊑v₁) (⊑-↦-å {_}{_}{_}{w₁}{w₂} åu₃ v⊑w v⊑w₁) IH₁ IH₂ = 
-      ⊑-↦-å åu₂ (IH₂ u₂ w₂ u⊑v v⊑w) (IH₁ w₁ u₁ v⊑w₁ u⊑v₁)
-    G .(_ ⊢ _ ↦ _) w (⊑-↦-å {FV}{u₁}{u₂} åu₂ u⊑v u⊑v₁) (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ = 
-      ⊥-elim (unsplittable (FV ⊢ v₁ ↦ v₂) åv₂ split)
-    G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH₁ IH₂ = 
-      ⊑-split split (G u₁ w u⊑v v⊑w IH₁ IH₂) (G u₂ w u⊑v₁ v⊑w IH₁ IH₂)
+    G .ω w ⊑-ω v⊑w IH₁ IH₂ IH₃ = ⊑-ω
+    G (FV' ⊢ν) .(_ ⊔ _) (⊑-ν-↦-å PFV' åFV') (⊑-⊔-R1-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ IH₃ = 
+      ⊑-⊔-R1-å PFV' (G (FV' ⊢ν) w₁ (⊑-ν-↦-å PFV' åFV') v⊑w IH₁ IH₂ IH₃)
+    G (FV' ⊢ν) .(_ ⊔ _) (⊑-ν-↦-å PFV' åFV') (⊑-⊔-R2-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ IH₃ = 
+      ⊑-⊔-R2-å PFV' (G (FV' ⊢ν) w₂ (⊑-ν-↦-å PFV' åFV') v⊑w IH₁ IH₂ IH₃)
+    G (FV' ⊢ν) (FV'' ⊢ _ ↦ _) (⊑-ν-↦-å PFV' åFV')  (⊑-↦-å åu₂ åFV FV⊑ v⊑w v⊑w₁) IH₁ IH₂ IH₃ 
+      = ⊑-ν-↦ (IH₁ FV' FV'' åFV' FV⊑)
+    G (FV' ⊢ν) w (⊑-ν-↦-å PFV' åFV') (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ IH₃ = ⊥-elim (unsplittable (FV ⊢ v₁ ↦ v₂) ⟨ åv₂ , åFV ⟩ split)
+    G .(_ ⊢ _ ↦ _) .(_ ⊔ _) (⊑-↦-å {FV₁}{FV₂}{u₁}{u₂} åu₂ åFV FV⊑ u⊑v u⊑v₁) (⊑-⊔-R1-å {_}{w₁} åu v⊑w) IH₁ IH₂ IH₃ = 
+      ⊑-⊔-R1-å ⟨ åu₂ , åFV ⟩ (G (FV₁ ⊢ u₁ ↦ u₂) w₁ (⊑-↦-å åu₂ åFV FV⊑ u⊑v u⊑v₁) v⊑w IH₁ IH₂ IH₃)
+    G .(_ ⊢ _ ↦ _) .(_ ⊔ _) (⊑-↦-å {FV₁}{FV₂}{u₁}{u₂} åu₂ åFV FV⊑ u⊑v u⊑v₁) (⊑-⊔-R2-å {_}{_}{w₂} åu v⊑w) IH₁ IH₂ IH₃ = 
+      ⊑-⊔-R2-å ⟨ åu₂ , åFV ⟩ (G (FV₁ ⊢ u₁ ↦ u₂) w₂ (⊑-↦-å åu₂ åFV FV⊑ u⊑v u⊑v₁) v⊑w IH₁ IH₂ IH₃)
+    G .(_ ⊢ _ ↦ _) .(_ ⊢ _ ↦ _) (⊑-↦-å {FV₁}{FV₂}{u₁}{u₂} åu₂ åFV FV⊑ u⊑v u⊑v₁) 
+                                 (⊑-↦-å {FV'}{FV''}{u'}{u''}{w₁}{w₂} åu₃ åFV' FV'⊑ v⊑w v⊑w₁) IH₁ IH₂ IH₃ = 
+        ⊑-↦-å åu₂ åFV (IH₁ FV₁ FV'' FV⊑ FV'⊑) (IH₃ u₂ w₂ u⊑v v⊑w) (IH₂ w₁ u₁ v⊑w₁ u⊑v₁)
+    G .(_ ⊢ _ ↦ _) w (⊑-↦-å {FV₁}{FV₂}{u₁}{u₂} åu₂ åFV' FV⊑ u⊑v u⊑v₁) (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ IH₃ = 
+      ⊥-elim (unsplittable (FV₂ ⊢ v₁ ↦ v₂) ⟨ åv₂ , åFV ⟩  split)
+    G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH₁ IH₂ IH₃ = 
+      ⊑-split split (G u₁ w u⊑v v⊑w IH₁ IH₂ IH₃) (G u₂ w u⊑v₁ v⊑w IH₁ IH₂ IH₃)
   ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å Pv åv₁) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å {v} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper ⦅ v ∣ (⊢'-fst-å Pv åv) u₁ w u⊑v v⊑w)
@@ -477,62 +603,6 @@ module Model.Filter.DomainAnnFunOrdering where
     G .(∥ _ ∷ _ ∥) w (⊑-tup-å åus u⊑v u⊑v₁) (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ = 
       ⊥-elim (unsplittable (∥ v ∷ vs ∥) ⟨ åv , åvs ⟩ split)
     G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH₁ IH₂ = ⊑-split split (G u₁ w u⊑v v⊑w IH₁ IH₂) (G u₂ w u⊑v₁ v⊑w IH₁ IH₂)
-  ⊑-trans-proper v (⊢'-split vL vR split PvL PvR) u w u⊑v v⊑w = 
-    split-trans u (proper u) u⊑v (⊑-trans-proper vL PvL) (⊑-trans-proper vR PvR)
-    where 
-    split-trans : ∀ u → Proper u → u ⊑ v
-      → (∀ u w → u ⊑ vL → vL ⊑ w → u ⊑ w)
-      → (∀ u w → u ⊑ vR → vR ⊑ w → u ⊑ w) → u ⊑ w
-    split-trans .ω ⊢'-ω u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
-    ... | inj₁ x = IH₁ ω w x vL⊑w
-    ... | inj₂ y = IH₂ ω w y vR⊑w
-    split-trans (FV ⊢ν) ⊢'-ν u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
-    ... | inj₁ x = IH₁ (FV ⊢ν) w x vL⊑w
-    ... | inj₂ y = IH₂ (FV ⊢ν) w y vR⊑w
-    split-trans .(const k) (⊢'-const k) u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
-    ... | inj₁ x = IH₁ (const k) w x vL⊑w
-    ... | inj₂ y = IH₂ (const k) w y vR⊑w
-    split-trans .(_ ⊢ _ ↦ _) (⊢'-↦-å {FV} {v₁} {v₂} Pu Pu₁ åv₂) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åv₂
-    ... | inj₁ x = IH₁ (FV ⊢ v₁ ↦ v₂) w x vL⊑w
-    ... | inj₂ y = IH₂ (FV ⊢ v₁ ↦ v₂) w y vR⊑w
-    split-trans .(⦅ _ ∣) (⊢'-fst-å {u} Pu åu) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
-    ... | inj₁ x = IH₁ ⦅ u ∣ w x vL⊑w
-    ... | inj₂ y = IH₂ ⦅ u ∣ w y vR⊑w
-    split-trans .(∣ _ ⦆) (⊢'-snd-å {u} Pu åu) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
-    ... | inj₁ x = IH₁ (∣ u ⦆) w x vL⊑w
-    ... | inj₂ y = IH₂ (∣ u ⦆) w y vR⊑w
-    split-trans .(∥ [] ∥) ⊢'-nil u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
-    ... | inj₁ x = IH₁ (∥ [] ∥) w x vL⊑w
-    ... | inj₂ y = IH₂ (∥ [] ∥) w y vR⊑w
-    split-trans .(∥ _ ∷ _ ∥) (⊢'-tup-å {n}{v}{vs} Pu Pu₁ åv åvs) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split ⟨ åv , åvs ⟩
-    ... | inj₁ x = IH₁ (∥ v ∷ vs ∥) w x vL⊑w
-    ... | inj₂ y = IH₂ (∥ v ∷ vs ∥) w y vR⊑w
-    split-trans .(left _) (⊢'-left-å {u} Pu åu) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
-    ... | inj₁ x = IH₁ (left u) w x vL⊑w
-    ... | inj₂ y = IH₂ (left u) w y vR⊑w
-    split-trans .(right _) (⊢'-right-å {u} Pu åu) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
-    ... | inj₁ x = IH₁ (right u) w x vL⊑w
-    ... | inj₂ y = IH₂ (right u) w y vR⊑w
-    split-trans u (⊢'-split uL uR split' Pu Pu₁) u⊑v IH₁ IH₂ 
-      with ⊑-inversion-split-R u⊑v split'
-    ... | ⟨ uL⊑v , uR⊑v ⟩ = 
-      ⊑-split split' (split-trans uL Pu uL⊑v IH₁ IH₂) (split-trans uR Pu₁ uR⊑v IH₁ IH₂)
   ⊑-trans-proper .(left _) (⊢'-left-å Pv åv) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(left _) (⊢'-left-å {v} Pv åv) .(left _) w (⊑-left-å {u} åu u⊑v) v⊑w 
     = G (left u) w (⊑-left-å åu u⊑v) v⊑w (⊑-trans-proper v Pv)
@@ -571,11 +641,67 @@ module Model.Filter.DomainAnnFunOrdering where
   ⊑-trans-proper .(right _) (⊢'-right-å {v} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper (right v) (⊢'-right-å Pv åv) u₁ w u⊑v v⊑w)
                   (⊑-trans-proper (right v) (⊢'-right-å Pv åv) u₂ w u⊑v₁ v⊑w)
-
-
+  ⊑-trans-proper v (⊢'-split vL vR split PvL PvR) u w u⊑v v⊑w = 
+    split-trans u (proper u) u⊑v (⊑-trans-proper vL PvL) (⊑-trans-proper vR PvR)
+    where 
+    split-trans : ∀ u → Proper u → u ⊑ v
+      → (∀ u w → u ⊑ vL → vL ⊑ w → u ⊑ w)
+      → (∀ u w → u ⊑ vR → vR ⊑ w → u ⊑ w) → u ⊑ w
+    split-trans .ω ⊢'-ω u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
+    ... | inj₁ x = IH₁ ω w x vL⊑w
+    ... | inj₂ y = IH₂ ω w y vR⊑w
+    split-trans (FV ⊢ν) (⊢'-ν PFV åFV) u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åFV
+    ... | inj₁ x = IH₁ (FV ⊢ν) w x vL⊑w
+    ... | inj₂ y = IH₂ (FV ⊢ν) w y vR⊑w
+    split-trans .(const k) (⊢'-const k) u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
+    ... | inj₁ x = IH₁ (const k) w x vL⊑w
+    ... | inj₂ y = IH₂ (const k) w y vR⊑w
+    split-trans .(_ ⊢ _ ↦ _) (⊢'-↦-å {FV}{v₁}{v₂} Pu Pu₁ PFV åFV åv₂) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split ⟨ åFV , åv₂ ⟩
+    ... | inj₁ x = IH₁ (FV ⊢ v₁ ↦ v₂) w x vL⊑w
+    ... | inj₂ y = IH₂ (FV ⊢ v₁ ↦ v₂) w y vR⊑w
+    split-trans .(⦅ _ ∣) (⊢'-fst-å {u} Pu åu) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
+    ... | inj₁ x = IH₁ ⦅ u ∣ w x vL⊑w
+    ... | inj₂ y = IH₂ ⦅ u ∣ w y vR⊑w
+    split-trans .(∣ _ ⦆) (⊢'-snd-å {u} Pu åu) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
+    ... | inj₁ x = IH₁ (∣ u ⦆) w x vL⊑w
+    ... | inj₂ y = IH₂ (∣ u ⦆) w y vR⊑w
+    split-trans .(∥ [] ∥) ⊢'-nil u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
+    ... | inj₁ x = IH₁ (∥ [] ∥) w x vL⊑w
+    ... | inj₂ y = IH₂ (∥ [] ∥) w y vR⊑w
+    split-trans .(∥ _ ∷ _ ∥) (⊢'-tup-å {n}{v}{vs} Pu Pu₁ åv åvs) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split ⟨ åv , åvs ⟩
+    ... | inj₁ x = IH₁ (∥ v ∷ vs ∥) w x vL⊑w
+    ... | inj₂ y = IH₂ (∥ v ∷ vs ∥) w y vR⊑w
+    split-trans .(left _) (⊢'-left-å {u} Pu åu) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
+    ... | inj₁ x = IH₁ (left u) w x vL⊑w
+    ... | inj₂ y = IH₂ (left u) w y vR⊑w
+    split-trans .(right _) (⊢'-right-å {u} Pu åu) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R v⊑w split
+    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split åu
+    ... | inj₁ x = IH₁ (right u) w x vL⊑w
+    ... | inj₂ y = IH₂ (right u) w y vR⊑w
+    split-trans u (⊢'-split uL uR split' Pu Pu₁) u⊑v IH₁ IH₂ 
+      with ⊑-inversion-split-R u⊑v split'
+    ... | ⟨ uL⊑v , uR⊑v ⟩ = 
+      ⊑-split split' (split-trans uL Pu uL⊑v IH₁ IH₂) (split-trans uR Pu₁ uR⊑v IH₁ IH₂)
+  
   ⊑-trans : ∀ {u v w} → u ⊑ v → v ⊑ w → u ⊑ w
   ⊑-trans {u}{v}{w} u⊑v v⊑w = ⊑-trans-proper v (proper v) u w u⊑v v⊑w
 
+  {-
   tup-cons : Value → Value → Value
   tup-cons u ω = ω
   tup-cons u (FV ⊢ν) = ω
@@ -587,7 +713,7 @@ module Model.Filter.DomainAnnFunOrdering where
   tup-cons u (left v) = ω
   tup-cons u (right v) = ω
   tup-cons u (∥ vs ∥) = ∥ u ∷ vs ∥
-
+-}
 
  {- This is the distributivity rule for each splitting -}
   ⊑-dist-⊔ : ∀ {v vL vR}
@@ -627,7 +753,7 @@ module Model.Filter.DomainAnnFunOrdering where
    ; ⊑-conj-R1 = ⊑-⊔-R1
    ; ⊑-conj-R2 = ⊑-⊔-R2
    ; ⊑-trans = ⊑-trans
-   ; ⊑-fun = ⊑-↦
+   ; ⊑-fun = ⊑-↦ ⊑-ω
    ; ⊑-refl = ⊑-refl
    ; ⊑-dist = ⊑-dist-fun
    }
@@ -815,5 +941,4 @@ module Model.Filter.DomainAnnFunOrdering where
 
 
 -}
-
 -}

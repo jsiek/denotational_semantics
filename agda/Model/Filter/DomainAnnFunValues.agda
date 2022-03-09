@@ -97,12 +97,12 @@ Atomic-tup : ∀ {n} → Vec Value n → Set
 Atomic-tup [] = ⊤
 Atomic-tup (v ∷ vs) = Atomic v × Atomic-tup vs
 Atomic ω = ⊤
-Atomic (FV ⊢ν) = ⊤
+Atomic (FV ⊢ν) = Atomic FV
 Atomic (const k) = ⊤
 Atomic ⦅ u ∣ = Atomic u
 Atomic ∣ v ⦆ = Atomic v
 Atomic ∥ vs ∥ = Atomic-tup vs
-Atomic (FV ⊢ v ↦ v₁) = Atomic v₁
+Atomic (FV ⊢ v ↦ v₁) = Atomic v₁ × Atomic FV
 Atomic (left d) = Atomic d
 Atomic (right d) = Atomic d
 Atomic (v ⊔ v₁) = Bot
@@ -112,13 +112,13 @@ atomic-tup? : ∀ {n} → (vs : Vec Value n) → Dec (Atomic-tup vs)
 atomic-tup? [] = yes tt
 atomic-tup? (v ∷ vs) = (atomic? v) ∧dec (atomic-tup? vs)
 atomic? ω = yes tt
-atomic? (FV ⊢ν) = yes tt
+atomic? (FV ⊢ν) = atomic? FV
 atomic? (const k) = yes tt
 atomic? ⦅ u ∣ = atomic? u
 atomic? ∣ v ⦆ = atomic? v
 atomic? ∥ [] ∥ = yes tt
 atomic? ∥ v ∷ vs ∥ = (atomic? v) ∧dec (atomic? ∥ vs ∥)
-atomic? (FV ⊢ v ↦ v₁) = atomic? v₁
+atomic? (FV ⊢ v ↦ v₁) = atomic? v₁ ∧dec atomic? FV
 atomic? (v ⊔ u) = no (λ z → z)
 atomic? (left d) = atomic? d
 atomic? (right d) = atomic? d
@@ -129,10 +129,21 @@ data _◃_▹_ : (v₁ v v₂ : Value) → Set where
         ----------------
         → u ◃ u ⊔ v ▹ v
   
+  split-ν : ∀ {u uL uR}
+        →      uL ◃ u ▹ uR
+        -----------------------------
+        → uL ⊢ν ◃ u ⊢ν ▹ uR ⊢ν
+
   split-↦ : ∀ {FV u v v₁ v₂}
         →       v₁ ◃ v ▹ v₂
       -----------------------------
         → FV ⊢ u ↦ v₁ ◃ FV ⊢ u ↦ v ▹ FV ⊢ u ↦ v₂ 
+
+  split-↦-ann : ∀ {FV FVL FVR V w}
+        →      (åw : Atomic w)
+        →              FVL ◃ FV ▹ FVR
+      ----------------------------------------------
+        → FVL ⊢ V ↦ w ◃ FV ⊢ V ↦ w ▹ FVR ⊢ V ↦ w
 
   split-fst : ∀ {u u₁ u₂}
         →           u₁ ◃ u ▹ u₂ 
@@ -170,15 +181,20 @@ data Proper : Value → Set where
  
   ⊢'-ω : Proper ω
 
-  ⊢'-ν : ∀ {FV} → Proper (FV ⊢ν)
+  ⊢'-ν : ∀ {FV} 
+       → (⊢'FV : Proper FV)
+       → (åFV : Atomic FV)
+       → Proper (FV ⊢ν)
 
   ⊢'-const : ∀ {B} k → Proper (const {B} k)
 
-  ⊢'-↦-å : ∀ {FV v₁ v₂}
-            → (⊢'v₂ : Proper v₂)
-            → (⊢'v₁ : Proper v₁)
-            → (åv₂ :  Atomic v₂)
-            → Proper (FV ⊢ v₁ ↦ v₂)
+  ⊢'-↦-å : ∀ {FV V w}
+            → (⊢'FV : Proper FV)
+            → (⊢'V : Proper V)
+            → (⊢'w : Proper w)
+            → (åw :  Atomic w)
+            → (åFV : Atomic FV)
+            → Proper (FV ⊢ V ↦ w)
 
   ⊢'-fst-å : ∀ {v₁} 
             → (⊢'v₁ : Proper v₁)
@@ -217,11 +233,12 @@ data Proper : Value → Set where
 
 proper-left : ∀ {d} → Proper d → Proper (left d)
 proper-left ⊢'-ω = ⊢'-left-å ⊢'-ω tt
-proper-left ⊢'-ν = ⊢'-left-å ⊢'-ν tt
+proper-left (⊢'-ν Pd åFV) = ⊢'-left-å (⊢'-ν Pd åFV) åFV
 proper-left (⊢'-const k) = ⊢'-left-å (⊢'-const k) tt
-proper-left (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-left-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
-proper-left (⊢'-fst-å Pd₁ åv₁) = ⊢'-left-å (⊢'-fst-å Pd₁ åv₁) åv₁
-proper-left (⊢'-snd-å Pd₁ åv₁) = ⊢'-left-å (⊢'-snd-å Pd₁ åv₁) åv₁
+proper-left (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) = 
+  ⊢'-left-å (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) ⟨ åw , åFV ⟩
+proper-left (⊢'-fst-å Pd åv₁) = ⊢'-left-å (⊢'-fst-å Pd åv₁) åv₁
+proper-left (⊢'-snd-å Pd åv₂) = ⊢'-left-å (⊢'-snd-å Pd åv₂) åv₂
 proper-left ⊢'-nil = ⊢'-left-å ⊢'-nil tt
 proper-left (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-left-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
 proper-left (⊢'-left-å Pd åv) = ⊢'-left-å (proper-left Pd) åv
@@ -229,13 +246,16 @@ proper-left (⊢'-right-å Pd åv) = ⊢'-left-å (⊢'-right-å Pd åv) åv
 proper-left (⊢'-split vL vR split Pd Pd₁) = 
   ⊢'-split (left vL) (left vR) (split-left split) (proper-left Pd) (proper-left Pd₁)
 
+
+
 proper-right : ∀ {d} → Proper d → Proper (right d)
 proper-right ⊢'-ω = ⊢'-right-å ⊢'-ω tt
-proper-right ⊢'-ν = ⊢'-right-å ⊢'-ν tt
+proper-right (⊢'-ν Pd åFV) = ⊢'-right-å (⊢'-ν Pd åFV) åFV
 proper-right (⊢'-const k) = ⊢'-right-å (⊢'-const k) tt
-proper-right (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-right-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
-proper-right (⊢'-fst-å Pd₁ åv₁) = ⊢'-right-å (⊢'-fst-å Pd₁ åv₁) åv₁
-proper-right (⊢'-snd-å Pd₁ åv₁) = ⊢'-right-å (⊢'-snd-å Pd₁ åv₁) åv₁
+proper-right (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) =
+   ⊢'-right-å (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) ⟨ åw , åFV ⟩
+proper-right (⊢'-fst-å Pd åv₁) = ⊢'-right-å (⊢'-fst-å Pd åv₁) åv₁
+proper-right (⊢'-snd-å Pd åv₂) = ⊢'-right-å (⊢'-snd-å Pd åv₂) åv₂
 proper-right ⊢'-nil = ⊢'-right-å ⊢'-nil tt
 proper-right (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-right-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
 proper-right (⊢'-left-å Pd åv) = ⊢'-right-å (⊢'-left-å Pd åv) åv
@@ -244,30 +264,62 @@ proper-right (⊢'-split vL vR split Pd Pd₁) =
   ⊢'-split (right vL) (right vR) (split-right split) (proper-right Pd) (proper-right Pd₁)
 
 
-proper-↦ : ∀ {FV u v} → Proper u → Proper v → Proper (FV ⊢ u ↦ v)
-proper-↦ Pu ⊢'-ω = ⊢'-↦-å ⊢'-ω Pu tt
-proper-↦ Pu ⊢'-ν = ⊢'-↦-å ⊢'-ν Pu tt
-proper-↦ Pu (⊢'-const k) = ⊢'-↦-å (⊢'-const k) Pu tt
-proper-↦ Pu (⊢'-↦-å Pv Pv₁ åv₂) = ⊢'-↦-å (proper-↦ Pv₁ Pv) Pu åv₂
-proper-↦ Pu (⊢'-fst-å Pv åv₁) = 
-  ⊢'-↦-å (⊢'-fst-å Pv åv₁) Pu åv₁
-proper-↦ Pu (⊢'-snd-å Pv åv₁) = 
-  ⊢'-↦-å (⊢'-snd-å Pv åv₁) Pu åv₁
-proper-↦ Pu ⊢'-nil = ⊢'-↦-å ⊢'-nil Pu tt
-proper-↦ Pu (⊢'-tup-å Pv Pv₁ åv åvs) = 
-  ⊢'-↦-å (⊢'-tup-å Pv Pv₁ åv åvs) Pu ⟨ åv , åvs ⟩
-proper-↦ Pu (⊢'-left-å Pv åv) = ⊢'-↦-å (⊢'-left-å Pv åv) Pu åv
-proper-↦ Pu (⊢'-right-å Pv åv) = ⊢'-↦-å (⊢'-right-å Pv åv) Pu åv
-proper-↦ {FV} {u} Pu (⊢'-split vL vR split Pv Pv₁) = 
-  ⊢'-split (FV ⊢ u ↦ vL) (FV ⊢ u ↦ vR) (split-↦ split) (proper-↦ Pu Pv) (proper-↦ Pu Pv₁)
+proper-ν : ∀ {FV} → Proper FV → Proper (FV ⊢ν)
+proper-ν ⊢'-ω = ⊢'-ν ⊢'-ω tt
+proper-ν (⊢'-ν PFV åFV) = ⊢'-ν (proper-ν PFV) åFV
+proper-ν (⊢'-const k) = ⊢'-ν (⊢'-const k) tt
+proper-ν (⊢'-↦-å PFV PFV₁ PFV₂ åw åFV) = ⊢'-ν (⊢'-↦-å PFV PFV₁ PFV₂ åw åFV) ⟨ åw , åFV ⟩
+proper-ν (⊢'-fst-å PFV åv₁) = ⊢'-ν (⊢'-fst-å PFV åv₁) åv₁
+proper-ν (⊢'-snd-å PFV åv₂) = ⊢'-ν (⊢'-snd-å PFV åv₂) åv₂
+proper-ν ⊢'-nil = ⊢'-ν ⊢'-nil tt
+proper-ν (⊢'-tup-å PFV PFV₁ åv åvs) = ⊢'-ν (⊢'-tup-å PFV PFV₁ åv åvs) ⟨ åv , åvs ⟩
+proper-ν (⊢'-left-å PFV åv) = ⊢'-ν (⊢'-left-å PFV åv) åv
+proper-ν (⊢'-right-å PFV åv) = ⊢'-ν (⊢'-right-å PFV åv) åv
+proper-ν (⊢'-split vL vR split PFV PFV₁) =
+  ⊢'-split (vL ⊢ν) (vR ⊢ν) (split-ν split) (proper-ν PFV) (proper-ν PFV₁)
+
+proper-↦-ann : ∀ {FV u v} → Proper FV → Proper u → Proper v → Atomic v → Proper (FV ⊢ u ↦ v)
+proper-↦-ann ⊢'-ω Pu Pv åv = ⊢'-↦-å ⊢'-ω Pu Pv åv tt
+proper-↦-ann (⊢'-ν PFV åFV) Pu Pv åv = ⊢'-↦-å (⊢'-ν PFV åFV) Pu Pv åv åFV
+proper-↦-ann (⊢'-const k) Pu Pv åv = ⊢'-↦-å (⊢'-const k) Pu Pv åv tt
+proper-↦-ann (⊢'-↦-å PFV PFV₁ PFV₂ åw åFV) Pu Pv åv = 
+  ⊢'-↦-å (proper-↦-ann PFV PFV₁ PFV₂ åw) Pu Pv åv ⟨ åw , åFV ⟩
+proper-↦-ann (⊢'-fst-å PFV åv₁) Pu Pv åv = ⊢'-↦-å (⊢'-fst-å PFV åv₁) Pu Pv åv åv₁
+proper-↦-ann (⊢'-snd-å PFV åv₂) Pu Pv åv = ⊢'-↦-å (⊢'-snd-å PFV åv₂) Pu Pv åv åv₂
+proper-↦-ann ⊢'-nil Pu Pv åv = ⊢'-↦-å ⊢'-nil Pu Pv åv tt
+proper-↦-ann (⊢'-tup-å PFV PFV₁ åv₁ åvs) Pu Pv åv = 
+  ⊢'-↦-å (⊢'-tup-å PFV PFV₁ åv₁ åvs) Pu Pv åv ⟨ åv₁ , åvs ⟩
+proper-↦-ann (⊢'-left-å PFV åv₁) Pu Pv åv = ⊢'-↦-å (⊢'-left-å PFV åv₁) Pu Pv åv åv₁
+proper-↦-ann (⊢'-right-å PFV åv₁) Pu Pv åv = ⊢'-↦-å (⊢'-right-å PFV åv₁) Pu Pv åv åv₁
+proper-↦-ann {FV}{u}{v}(⊢'-split vL vR split PFV PFV₁) Pu Pv åv = 
+  ⊢'-split (vL ⊢ u ↦ v) (vR ⊢ u ↦ v) (split-↦-ann åv split) 
+           (proper-↦-ann PFV Pu Pv åv) (proper-↦-ann PFV₁ Pu Pv åv)
+
+proper-↦ : ∀ {FV u v} → Proper FV → Proper u → Proper v → Proper (FV ⊢ u ↦ v)
+proper-↦ {FV}{u}{v} PFV Pu Pv with atomic? v
+... | yes åv = proper-↦-ann PFV Pu Pv åv
+... | no ¬åv with Pv
+... | ⊢'-ω = ⊥-elim (¬åv tt)
+... | ⊢'-ν Pv₁ åFV = ⊥-elim (¬åv åFV)
+... | ⊢'-const k = ⊥-elim (¬åv tt)
+... | ⊢'-↦-å Pv₁ Pv₂ Pv₃ åw åFV = ⊥-elim (¬åv ⟨ åw , åFV ⟩)
+... | ⊢'-fst-å Pv₁ åv₁ = ⊥-elim (¬åv åv₁)
+... | ⊢'-snd-å Pv₁ åv₂ = ⊥-elim (¬åv åv₂)
+... | ⊢'-nil = ⊥-elim (¬åv tt)
+... | ⊢'-tup-å Pv₁ Pv₂ åv åvs = ⊥-elim (¬åv ⟨ åv , åvs ⟩)
+... | ⊢'-left-å Pv₁ åv = ⊥-elim (¬åv åv)
+... | ⊢'-right-å Pv₁ åv = ⊥-elim (¬åv åv)
+... | ⊢'-split vL vR split Pv₁ Pv₂ = 
+   ⊢'-split (FV ⊢ u ↦ vL) (FV ⊢ u ↦ vR) (split-↦ split) 
+            (proper-↦ PFV Pu Pv₁) (proper-↦ PFV Pu Pv₂)
 
 proper-fst : ∀ {d} → Proper d → Proper ⦅ d ∣
 proper-fst ⊢'-ω = ⊢'-fst-å ⊢'-ω tt
-proper-fst ⊢'-ν = ⊢'-fst-å ⊢'-ν tt
+proper-fst (⊢'-ν Pd åFV) = ⊢'-fst-å (⊢'-ν Pd åFV) åFV
 proper-fst (⊢'-const k) = ⊢'-fst-å (⊢'-const k) tt
-proper-fst (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-fst-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
-proper-fst (⊢'-fst-å Pd₁ åv₁) = ⊢'-fst-å (proper-fst Pd₁) åv₁
-proper-fst (⊢'-snd-å Pd₁ åv₁) = ⊢'-fst-å (⊢'-snd-å Pd₁ åv₁) åv₁
+proper-fst (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) = ⊢'-fst-å (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) ⟨ åw , åFV ⟩
+proper-fst (⊢'-fst-å Pd åv₁) = ⊢'-fst-å (proper-fst Pd) åv₁
+proper-fst (⊢'-snd-å Pd åv₂) = ⊢'-fst-å (⊢'-snd-å Pd åv₂) åv₂
 proper-fst ⊢'-nil = ⊢'-fst-å ⊢'-nil tt
 proper-fst (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-fst-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
 proper-fst (⊢'-left-å Pd åv) = ⊢'-fst-å (⊢'-left-å Pd åv) åv
@@ -275,20 +327,20 @@ proper-fst (⊢'-right-å Pd åv) = ⊢'-fst-å (⊢'-right-å Pd åv) åv
 proper-fst (⊢'-split vL vR split Pd Pd₁) = 
   ⊢'-split ⦅ vL ∣ ⦅ vR ∣ (split-fst split) (proper-fst Pd) (proper-fst Pd₁)
 
+
 proper-snd : ∀ {d} → Proper d → Proper ∣ d ⦆
 proper-snd ⊢'-ω = ⊢'-snd-å ⊢'-ω tt
-proper-snd ⊢'-ν = ⊢'-snd-å ⊢'-ν tt
+proper-snd (⊢'-ν Pd åFV) = ⊢'-snd-å (⊢'-ν Pd åFV) åFV
 proper-snd (⊢'-const k) = ⊢'-snd-å (⊢'-const k) tt
-proper-snd (⊢'-↦-å Pd Pd₁ åv₂) = ⊢'-snd-å (⊢'-↦-å Pd Pd₁ åv₂) åv₂
-proper-snd (⊢'-fst-å Pd₁ åv₁) = ⊢'-snd-å (⊢'-fst-å Pd₁ åv₁) åv₁
-proper-snd (⊢'-snd-å Pd₁ åv₁) = ⊢'-snd-å (proper-snd Pd₁) åv₁
+proper-snd (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) = ⊢'-snd-å (⊢'-↦-å Pd Pd₁ Pd₂ åw åFV) ⟨ åw , åFV ⟩
+proper-snd (⊢'-fst-å Pd åv₁) = ⊢'-snd-å (⊢'-fst-å Pd åv₁) åv₁
+proper-snd (⊢'-snd-å Pd åv₂) = ⊢'-snd-å (proper-snd Pd) åv₂
 proper-snd ⊢'-nil = ⊢'-snd-å ⊢'-nil tt
 proper-snd (⊢'-tup-å Pd Pd₁ åv åvs) = ⊢'-snd-å (⊢'-tup-å Pd Pd₁ åv åvs) ⟨ åv , åvs ⟩
 proper-snd (⊢'-left-å Pd åv) = ⊢'-snd-å (⊢'-left-å Pd åv) åv
 proper-snd (⊢'-right-å Pd åv) = ⊢'-snd-å (⊢'-right-å Pd åv) åv
 proper-snd (⊢'-split vL vR split Pd Pd₁) = 
   ⊢'-split ∣ vL ⦆ ∣ vR ⦆ (split-snd split) (proper-snd Pd) (proper-snd Pd₁)
-
 
 proper-tup-atomic-head : ∀ {n v vs} → Proper v → Proper (∥_∥ {n} vs) → Atomic v → Proper ∥ v ∷ vs ∥
 proper-tup-atomic-head Pv ⊢'-nil åv = ⊢'-tup-å Pv ⊢'-nil åv tt
@@ -307,9 +359,9 @@ proper-tup {n}{v}{vs} Pv Pvs with atomic? v
 ... | yes åv = proper-tup-atomic-head Pv Pvs åv
 ... | no ¬åv with Pv
 ... | ⊢'-ω = ⊥-elim (¬åv tt)
-... | ⊢'-ν = ⊥-elim (¬åv tt)
+... | ⊢'-ν PFV åFV = ⊥-elim (¬åv åFV)
 ... | ⊢'-const k = ⊥-elim (¬åv tt)
-... | ⊢'-↦-å Pu₁ Pu₂ åv₂ = ⊥-elim (¬åv åv₂)
+... | ⊢'-↦-å PFV Pu₁ Pu₂ åv₂ åFV = ⊥-elim (¬åv ⟨ åv₂ , åFV ⟩)
 ... | ⊢'-fst-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
 ... | ⊢'-snd-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
 ... | ⊢'-nil = ⊥-elim (¬åv tt)
@@ -320,13 +372,12 @@ proper-tup {n}{v}{vs} Pv Pvs with atomic? v
    ⊢'-split ∥ vL ∷ vs ∥ ∥ vR ∷ vs ∥ (split-tup-head split) 
             (proper-tup Pv₁ Pvs) (proper-tup Pv₂ Pvs)
 
-
 proper : ∀ v → Proper v
 proper ω = ⊢'-ω
-proper (FV ⊢ν) = ⊢'-ν
+proper (FV ⊢ν) = proper-ν (proper FV)
 proper (const k) = ⊢'-const k
 proper (v ⊔ v₁) = ⊢'-split v v₁ split-⊔ (proper v) (proper v₁)
-proper (FV ⊢ v ↦ v₁) = proper-↦ (proper v) (proper v₁)
+proper (FV ⊢ v ↦ v₁) = proper-↦ (proper FV) (proper v) (proper v₁)
 proper ⦅ u ∣ = proper-fst (proper u)
 proper ∣ v ⦆ = proper-snd (proper v)
 proper ∥ [] ∥ = ⊢'-nil
@@ -334,8 +385,11 @@ proper ∥ v ∷ vs ∥ = proper-tup (proper v) (proper ∥ vs ∥)
 proper (left d) = proper-left (proper d)
 proper (right d) = proper-right (proper d)
 
+
 unsplittable : ∀ v → Atomic v → ∀ {v₁ v₂} → ¬ (v₁ ◃ v ▹ v₂)
-unsplittable (FV ⊢ v ↦ v₁) åv (split-↦ split) = unsplittable v₁ åv split
+unsplittable (FV ⊢ν) åv (split-ν split) = unsplittable FV åv split
+unsplittable (FV ⊢ u ↦ v) åv (split-↦-ann åw split) = unsplittable FV (proj₂ åv) split
+unsplittable (FV ⊢ v ↦ v₁) ⟨ åv , åFV ⟩ (split-↦ split) = unsplittable v₁ åv split
 unsplittable ⦅ v ∣ åv (split-fst split) = unsplittable v åv split
 unsplittable ∣ v ⦆ åv (split-snd split) = unsplittable v åv split
 unsplittable ∥ v ∷ vs ∥ åv (split-tup-head split) = unsplittable v (proj₁ åv) split
@@ -346,9 +400,9 @@ unsplittable (right d) åv (split-right split) = unsplittable d åv split
 ¬å⇒split : ∀ v → ¬ (Atomic v) → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ◃ v ▹ v₂
 ¬å⇒split v ¬åv with (proper v)
 ... | ⊢'-ω = ⊥-elim (¬åv tt)
-... | ⊢'-ν = ⊥-elim (¬åv tt)
+... | ⊢'-ν PFV åFV = ⊥-elim (¬åv åFV)
 ... | ⊢'-const k = ⊥-elim (¬åv tt)
-... | ⊢'-↦-å Pv Pv₁ åv₂ = ⊥-elim (¬åv åv₂)
+... | ⊢'-↦-å PFV Pv Pv₁ åv₂ åFV = ⊥-elim (¬åv ⟨ åv₂ , åFV ⟩)
 ... | ⊢'-fst-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
 ... | ⊢'-snd-å Pu₁ åv₁ = ⊥-elim (¬åv åv₁)
 ... | ⊢'-nil = ⊥-elim (¬åv tt)
