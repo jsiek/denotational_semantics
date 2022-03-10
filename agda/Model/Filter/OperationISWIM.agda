@@ -45,7 +45,6 @@ open import Level using (Level; Lift; lift; lower)
     renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-
 {- Denotational Operators -----------------------------------------------------}
 
 {-
@@ -59,7 +58,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
     Σ[ V ∈ Value ] (V ↦ w) ∈ D₁ × V ∈ D₂ 
 
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
-ℬ B k _ ⊥ = True
+ℬ B k _ ω = True
 ℬ B k _ (const {B′} k′)
     with base-eq? B B′
 ... | yes refl = k ≡ k′
@@ -69,7 +68,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 
 𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
 𝓅 (base B) k v = ℬ B k v
-𝓅 (B ⇒ P) f _ ⊥ = True
+𝓅 (B ⇒ P) f _ ω = True
 𝓅 (B ⇒ P) f _ ν = True
 𝓅 (B ⇒ P) f _ (const {B'} k ↦ w) with base-eq? B B'
 ... | yes refl = w ∈ 𝓅 P (f k) ptt
@@ -78,7 +77,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 𝓅 (B ⇒ P) f _ d = False
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⊥ = True
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ω = True
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v
@@ -91,7 +90,7 @@ cdr : DOp (𝒫 Value) (■ ∷ [])
 cdr ⟨ D , _ ⟩ FV = ∣ FV ⦆ ∈ D
 
 𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ⊥ = True
+𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ω = True
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ (u ⊔ v) = 
   𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ u × 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ v
@@ -110,13 +109,13 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
      ∥ vs ∥ ∈ D × u ≡ nth vs i
 
 ℒ : DOp (𝒫 Value) (■ ∷ [])
-ℒ ⟨ D , _ ⟩ ⊥ = True
+ℒ ⟨ D , _ ⟩ ω = True
 ℒ ⟨ D , _ ⟩ (left d) = d ∈ D
 ℒ ⟨ D , _ ⟩ (u ⊔ v) = ℒ ⟨ D , _ ⟩ u × ℒ ⟨ D , _ ⟩ v
 ℒ ⟨ D , _ ⟩ d = False
 
 ℛ : DOp (𝒫 Value) (■ ∷ [])
-ℛ ⟨ D , _ ⟩ ⊥ = True
+ℛ ⟨ D , _ ⟩ ω = True
 ℛ ⟨ D , _ ⟩ (right d) = d ∈ D
 ℛ ⟨ D , _ ⟩ (u ⊔ v) = ℛ ⟨ D , _ ⟩ u × ℛ ⟨ D , _ ⟩ v
 ℛ ⟨ D , _ ⟩ d = False
@@ -127,7 +126,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
           ⊎ (Σ[ V ∈ Value ] right V ∈ D × w ∈ F (⊑-closure V))
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
-Λ ⟨ f , _ ⟩ ⊥ = True
+Λ ⟨ f , _ ⟩ ω = True
 Λ ⟨ f , _ ⟩ ν = True
 Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (⊑-closure V)
 Λ ⟨ f , _ ⟩ (u ⊔ v) = Λ ⟨ f , _ ⟩ u × Λ ⟨ f , _ ⟩ v
@@ -154,7 +153,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
   where 
   G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
-  G ⊥ _ = tt
+  G ω _ = tt
   G (V ↦ w) w∈F₁X = lower (F⊆ (⊑-closure V) (⊑-closure V) (λ d z → z)) w w∈F₁X
   G ν v∈ = tt
   G (d₁ ⊔ d₂) ⟨ d₁∈ , d₂∈ ⟩ = ⟨ G d₁ d₁∈ , G d₂ d₂∈ ⟩
@@ -162,7 +161,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
   → (∀ {X} → F₁ X ⊆ F₂ X)
   → Λ ⟨ F₁ , ptt ⟩ ⊆ Λ ⟨ F₂ , ptt ⟩
-Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ⊥ v∈ = tt
+Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ω v∈ = tt
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (V ↦ w) w∈F₁X =
     F₁⊆F₂ w w∈F₁X
 Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ν v∈ = tt
@@ -177,7 +176,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 Λ-cong ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F≃ , _ ⟩ = lift ⟨ G1 , G2 ⟩
   where
   G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
-  G1 ⊥ tt = tt
+  G1 ω tt = tt
   G1 (V ↦ w) w∈FV = proj₁ (lower
      (F≃ (⊑-closure V) (⊑-closure V)
           ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
@@ -185,7 +184,7 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
   G1 ν tt = tt
   G1 (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G1 u u∈ , G1 v v∈ ⟩
   G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
-  G2 ⊥ tt = tt
+  G2 ω tt = tt
   G2 (V ↦ w) w∈F'V = proj₂ (lower 
      (F≃ (⊑-closure V) (⊑-closure V) 
          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
@@ -213,7 +212,7 @@ pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ⊥ tt = tt
+  G ω tt = tt
   G ⦅ f ∣ ⟨ FV , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
   G ∣ FV ⦆ ⟨ f , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
@@ -257,7 +256,7 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
 ℒ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ D' , ptt ⟩
-  G ⊥ tt = tt
+  G ω tt = tt
   G (left v) v∈ = D⊆ v v∈
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 
@@ -272,7 +271,7 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
 ℛ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ D' , ptt ⟩
-  G ⊥ tt = tt
+  G ω tt = tt
   G (right v) v∈ = D⊆ v v∈
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 
@@ -321,7 +320,7 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
 𝒯-cons-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : 𝒯-cons ⟨ D , ⟨ E , _ ⟩ ⟩ ⊆ 𝒯-cons ⟨ D' , ⟨ E' , _ ⟩ ⟩
-  G ⊥ tt = tt
+  G ω tt = tt
   G ∥ d ∷ ds ∥ ⟨ d∈ , ds∈ ⟩ = ⟨ D⊆ d d∈ , E⊆ ∥ ds ∥ ds∈ ⟩
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 

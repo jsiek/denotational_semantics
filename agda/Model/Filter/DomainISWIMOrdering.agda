@@ -10,7 +10,7 @@ open Data.Nat.Properties.≤-Reasoning using (begin_; _∎; step-≤)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
-open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.Unit using (⊤; tt)
 open import Data.Bool using (Bool; true; false; _∨_; _∧_; not)
 open import Data.List using (List; _∷_ ; []; _++_)
@@ -38,9 +38,7 @@ module Model.Filter.DomainISWIMOrdering where
 
     {- Atomic Rules :  we use å (\aa) as an abbreviation for atomic -}
 
-    ⊑-⊥ : ∀ {v} → ⊥ ⊑ v
-  
-    ⊑-ω : ω ⊑ ω
+    ⊑-ω : ∀ {v} → ω ⊑ v
 
     ⊑-ν-ν : ν ⊑ ν
 
@@ -110,8 +108,7 @@ module Model.Filter.DomainISWIMOrdering where
 
 
   ⊑-⊔-R1 : ∀ {u v₁ v₂} → u ⊑ v₁ → u ⊑ v₁ ⊔ v₂
-  ⊑-⊔-R1 ⊑-⊥ = ⊑-⊥
-  ⊑-⊔-R1 ⊑-ω = ⊑-⊔-R1-å tt ⊑-ω
+  ⊑-⊔-R1 ⊑-ω = ⊑-ω
   ⊑-⊔-R1 ⊑-ν-ν = ⊑-⊔-R1-å tt ⊑-ν-ν
   ⊑-⊔-R1 ⊑-ν-↦ = ⊑-⊔-R1-å tt ⊑-ν-↦
   ⊑-⊔-R1 ⊑-const = ⊑-⊔-R1-å tt ⊑-const
@@ -127,8 +124,7 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-⊔-R1 (⊑-split split u⊑v₁ u⊑v₂) = ⊑-split split (⊑-⊔-R1 u⊑v₁) (⊑-⊔-R1 u⊑v₂)
 
   ⊑-⊔-R2 : ∀ {u v₁ v₂} → u ⊑ v₂ → u ⊑ v₁ ⊔ v₂
-  ⊑-⊔-R2 ⊑-⊥ = ⊑-⊥
-  ⊑-⊔-R2 ⊑-ω = ⊑-⊔-R2-å tt ⊑-ω
+  ⊑-⊔-R2 ⊑-ω = ⊑-ω
   ⊑-⊔-R2 ⊑-ν-ν = ⊑-⊔-R2-å tt ⊑-ν-ν
   ⊑-⊔-R2 ⊑-ν-↦ = ⊑-⊔-R2-å tt ⊑-ν-↦
   ⊑-⊔-R2 ⊑-const = ⊑-⊔-R2-å tt ⊑-const
@@ -147,7 +143,6 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-⊔-L 1⊑ 2⊑ = ⊑-split split-⊔ 1⊑ 2⊑
 
   ⊑-fst : ∀ {u v} → u ⊑ v → ⦅ u ∣ ⊑ ⦅ v ∣
-  ⊑-fst ⊑-⊥ = ⊑-fst-å tt ⊑-⊥
   ⊑-fst ⊑-ω = ⊑-fst-å tt ⊑-ω
   ⊑-fst ⊑-ν-ν = ⊑-fst-å tt ⊑-ν-ν
   ⊑-fst ⊑-ν-↦ = ⊑-fst-å tt ⊑-ν-↦
@@ -164,7 +159,6 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-fst (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-fst split) (⊑-fst u⊑v) (⊑-fst u⊑v₁)
 
   ⊑-snd : ∀ {u v} → u ⊑ v → ∣ u ⦆ ⊑ ∣ v ⦆
-  ⊑-snd ⊑-⊥ = ⊑-snd-å tt ⊑-⊥
   ⊑-snd ⊑-ω = ⊑-snd-å tt ⊑-ω
   ⊑-snd ⊑-ν-ν = ⊑-snd-å tt ⊑-ν-ν
   ⊑-snd ⊑-ν-↦ = ⊑-snd-å tt ⊑-ν-↦
@@ -188,7 +182,6 @@ module Model.Filter.DomainISWIMOrdering where
   ... | ⊑-split (split-tup-head x) q q₁ = ⊑-split (split-tup-tail åu (split-tup-head x)) (⊑-tup u⊑v q) (⊑-tup u⊑v q₁)
   ... | ⊑-split (split-tup-tail x x₁) q q₁ = ⊑-split (split-tup-tail åu (split-tup-tail x x₁)) (⊑-tup u⊑v q) (⊑-tup u⊑v q₁)
   ⊑-tup {u = u} {us = us} u⊑v us⊑vs | no ¬åu with u⊑v
-  ... | ⊑-⊥ = ⊥-elim (¬åu tt)
   ... | ⊑-ω = ⊥-elim (¬åu tt)
   ... | ⊑-ν-ν = ⊥-elim (¬åu tt)
   ... | ⊑-ν-↦ = ⊥-elim (¬åu tt)
@@ -208,7 +201,6 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-↦ {u₁}{u₂} dom⊑ ⊑cod with atomic? u₂
   ... | yes åu₂ = ⊑-↦-å åu₂ ⊑cod dom⊑
   ... | no ¬åu₂ with ⊑cod 
-  ... | ⊑-⊥ = ⊥-elim (¬åu₂ tt)
   ... | ⊑-ω = ⊥-elim (¬åu₂ tt)
   ... | ⊑-ν-ν = ⊥-elim (¬åu₂ tt)
   ... | ⊑-ν-↦ = ⊥-elim (¬åu₂ tt)
@@ -226,7 +218,6 @@ module Model.Filter.DomainISWIMOrdering where
   
 
   ⊑-left : ∀ {u v} → u ⊑ v → left u ⊑ left v
-  ⊑-left ⊑-⊥ = ⊑-left-å tt ⊑-⊥
   ⊑-left ⊑-ω = ⊑-left-å tt ⊑-ω
   ⊑-left ⊑-ν-ν = ⊑-left-å tt ⊑-ν-ν
   ⊑-left ⊑-ν-↦ = ⊑-left-å tt ⊑-ν-↦
@@ -243,7 +234,6 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-left (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-left split) (⊑-left u⊑v) (⊑-left u⊑v₁)
 
   ⊑-right : ∀ {u v} → u ⊑ v → right u ⊑ right v
-  ⊑-right ⊑-⊥ = ⊑-right-å tt ⊑-⊥
   ⊑-right ⊑-ω = ⊑-right-å tt ⊑-ω
   ⊑-right ⊑-ν-ν = ⊑-right-å tt ⊑-ν-ν
   ⊑-right ⊑-ν-↦ = ⊑-right-å tt ⊑-ν-↦
@@ -260,7 +250,6 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-right (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-right split) (⊑-right u⊑v) (⊑-right u⊑v₁)
 
   ⊑-refl : ∀ {v} → v ⊑ v
-  ⊑-refl {⊥} = ⊑-⊥
   ⊑-refl {ω} = ⊑-ω
   ⊑-refl {ν} = ⊑-ν-ν
   ⊑-refl {const k} = ⊑-const
@@ -303,7 +292,7 @@ module Model.Filter.DomainISWIMOrdering where
   ... | ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
 
   ⊑-inversion-split-L : ∀ {u v v₁ v₂} → u ⊑ v → v₁ ◃ v ▹ v₂ → Atomic u → u ⊑ v₁ ⊎ u ⊑ v₂
-  ⊑-inversion-split-L ⊑-⊥ split åu = inj₁ ⊑-⊥
+  ⊑-inversion-split-L ⊑-ω split åu = inj₁ ⊑-ω
   ⊑-inversion-split-L ⊑-ν-ν split = ⊥-elim (unsplittable ν tt split)
   ⊑-inversion-split-L ⊑-ν-↦ (split-↦ split) åu = inj₁ ⊑-ν-↦
   ⊑-inversion-split-L (⊑-⊔-R1-å åu₁ u⊑v) split-⊔ åu = inj₁ u⊑v
@@ -393,19 +382,14 @@ module Model.Filter.DomainISWIMOrdering where
 -}
 
   ⊑-trans-proper : ∀ v → Proper v → ∀ u w → u ⊑ v → v ⊑ w → u ⊑ w
-  ⊑-trans-proper .⊥ ⊢'-⊥ .⊥ w ⊑-⊥ v⊑w = v⊑w
-  ⊑-trans-proper .⊥ ⊢'-⊥ u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
-    ⊑-split split (⊑-trans-proper ⊥ ⊢'-⊥ u₁ w u⊑v v⊑w) (⊑-trans-proper ⊥ ⊢'-⊥ u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper .ω ⊢'-ω .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
   ⊑-trans-proper .ω ⊢'-ω .ω w ⊑-ω v⊑w = v⊑w
   ⊑-trans-proper .ω ⊢'-ω u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
-    ⊑-split split (⊑-trans-proper ω ⊢'-ω u₁ w u⊑v v⊑w) 
-                  (⊑-trans-proper ω ⊢'-ω u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper ν ⊢'-ν .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+    ⊑-split split (⊑-trans-proper ω ⊢'-ω u₁ w u⊑v v⊑w) (⊑-trans-proper ω ⊢'-ω u₂ w u⊑v₁ v⊑w)
+  ⊑-trans-proper ν ⊢'-ν .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper ν ⊢'-ν ν w ⊑-ν-ν v⊑w = v⊑w
   ⊑-trans-proper ν ⊢'-ν u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper ν ⊢'-ν u₁ w u⊑v v⊑w) (⊑-trans-proper ν ⊢'-ν u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper .(const k) (⊢'-const k) .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+  ⊑-trans-proper .(const k) (⊢'-const k) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(const k) (⊢'-const k) .(const k) w ⊑-const v⊑w = v⊑w
   ⊑-trans-proper .(const k) (⊢'-const k) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper (const k) (⊢'-const k) u₁ w u⊑v v⊑w) 
@@ -416,7 +400,7 @@ module Model.Filter.DomainISWIMOrdering where
     G : ∀ u w → u ⊑ v₁ ↦ v₂ → v₁ ↦ v₂ ⊑ w
                               → (∀ u w → u ⊑ v₁ → v₁ ⊑ w → u ⊑ w) 
                               → (∀ u w → u ⊑ v₂ → v₂ ⊑ w → u ⊑ w) → u ⊑ w
-    G .⊥ w ⊑-⊥ v⊑w IH₁ IH₂ = ⊑-⊥
+    G .ω w ⊑-ω v⊑w IH₁ IH₂ = ⊑-ω
     G ν .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R1-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
       ⊑-⊔-R1-å tt (G ν w₁ ⊑-ν-↦ v⊑w IH₁ IH₂)
     G ν .(_ ⊔ _) ⊑-ν-↦ (⊑-⊔-R2-å {_}{w₁}{w₂} åu v⊑w) IH₁ IH₂ = 
@@ -435,7 +419,7 @@ module Model.Filter.DomainISWIMOrdering where
       ⊥-elim (unsplittable (v₁ ↦ v₂) åv₂ split)
     G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH₁ IH₂ = 
       ⊑-split split (G u₁ w u⊑v v⊑w IH₁ IH₂) (G u₂ w u⊑v₁ v⊑w IH₁ IH₂)
-  ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å Pv åv₁) .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+  ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å Pv åv₁) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å {v} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper ⦅ v ∣ (⊢'-fst-å Pv åv) u₁ w u⊑v v⊑w)
                   (⊑-trans-proper ⦅ v ∣ (⊢'-fst-å Pv åv) u₂ w u⊑v₁ v⊑w)  
@@ -443,7 +427,7 @@ module Model.Filter.DomainISWIMOrdering where
     = G (⦅ u ∣) w (⊑-fst-å åu u⊑v) v⊑w (⊑-trans-proper v Pv)
     where
     G : ∀ u w → u ⊑ ⦅ v ∣ → ⦅ v ∣ ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) → u ⊑ w
-    G .⊥ w ⊑-⊥ Lv⊑w IH = ⊑-⊥
+    G .ω w ⊑-ω Lv⊑w IH = ⊑-ω
     G .(⦅ _ ∣) .(_ ⊔ _) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R1-å {_} {w₁} åu₁ Lv⊑w) IH = 
       ⊑-⊔-R1-å åu (G (⦅ u₁ ∣) w₁ (⊑-fst-å åu u⊑Lv) Lv⊑w IH)
     G .(⦅ _ ∣) .(_ ⊔ _) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R2-å {_} {_} {w₁} åu₁ Lv⊑w) IH = 
@@ -454,7 +438,7 @@ module Model.Filter.DomainISWIMOrdering where
       ⊥-elim (unsplittable (⦅ v ∣) åv split)
     G u w (⊑-split {u} {u₁} {u₂} split u⊑Lv u⊑Lv₁) Lv⊑w IH = 
       ⊑-split split (G u₁ w u⊑Lv Lv⊑w IH) (G u₂ w u⊑Lv₁ Lv⊑w IH)
-  ⊑-trans-proper .(∣ _ ⦆) (⊢'-snd-å Pv åv₂) .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+  ⊑-trans-proper .(∣ _ ⦆) (⊢'-snd-å Pv åv₂) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(∣ _ ⦆) (⊢'-snd-å {v} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper ∣ v ⦆ (⊢'-snd-å Pv åv) u₁ w u⊑v v⊑w)
                   (⊑-trans-proper ∣ v ⦆ (⊢'-snd-å Pv åv) u₂ w u⊑v₁ v⊑w)
@@ -462,7 +446,7 @@ module Model.Filter.DomainISWIMOrdering where
     = G (∣ u ⦆) w (⊑-snd-å åu u⊑v) v⊑w (⊑-trans-proper v Pv)
     where
     G : ∀ u w → u ⊑ ∣ v ⦆ → ∣ v ⦆ ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) → u ⊑ w
-    G .⊥ w ⊑-⊥ Lv⊑w IH = ⊑-⊥
+    G .ω w ⊑-ω Lv⊑w IH = ⊑-ω
     G .(∣ _ ⦆) .(_ ⊔ _) (⊑-snd-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R1-å {_} {w₁} åu₁ Lv⊑w) IH = 
       ⊑-⊔-R1-å åu (G (∣ u₁ ⦆) w₁ (⊑-snd-å åu u⊑Lv) Lv⊑w IH)
     G .(∣ _ ⦆) .(_ ⊔ _) (⊑-snd-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R2-å {_} {_} {w₁} åu₁ Lv⊑w) IH = 
@@ -473,7 +457,7 @@ module Model.Filter.DomainISWIMOrdering where
       ⊥-elim (unsplittable (∣ v ⦆) åv split)
     G u w (⊑-split {u} {u₁} {u₂} split u⊑Lv u⊑Lv₁) Lv⊑w IH = 
       ⊑-split split (G u₁ w u⊑Lv Lv⊑w IH) (G u₂ w u⊑Lv₁ Lv⊑w IH)
-  ⊑-trans-proper .(∥ [] ∥) ⊢'-nil .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+  ⊑-trans-proper .(∥ [] ∥) ⊢'-nil .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(∥ [] ∥) ⊢'-nil .(∥ [] ∥) w ⊑-nil v⊑w = v⊑w
   ⊑-trans-proper .(∥ [] ∥) ⊢'-nil u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper (∥ [] ∥) ⊢'-nil u₁ w u⊑v v⊑w) (⊑-trans-proper (∥ [] ∥) ⊢'-nil u₂ w u⊑v₁ v⊑w)
@@ -482,7 +466,7 @@ module Model.Filter.DomainISWIMOrdering where
     where
     G : ∀ u w → u ⊑ ∥ v ∷ vs ∥ → ∥ v ∷ vs ∥ ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) 
                               → (∀ u w → u ⊑ (∥ vs ∥) → (∥ vs ∥) ⊑ w → u ⊑ w) → u ⊑ w
-    G .⊥ v ⊑-⊥ v⊑w IH₁ IH₂ = ⊑-⊥
+    G .ω v ⊑-ω v⊑w IH₁ IH₂ = ⊑-ω
     G .(∥ u ∷ _ ∥) .(_ ⊔ _) (⊑-tup-å {n} {u} {_} {us} åus u⊑v u⊑v₁) (⊑-⊔-R1-å {_}{w₁} åu v⊑w) IH₁ IH₂ = 
       ⊑-⊔-R1 (G (∥ u ∷ us ∥) w₁ (⊑-tup-å åus u⊑v u⊑v₁) v⊑w IH₁ IH₂)
     G .(∥ u ∷ _ ∥) .(_ ⊔ _) (⊑-tup-å {n} {u} {_} {us} åus u⊑v u⊑v₁) (⊑-⊔-R2-å {_}{_}{w₂} åu v⊑w) IH₁ IH₂ = 
@@ -492,12 +476,12 @@ module Model.Filter.DomainISWIMOrdering where
     G .(∥ _ ∷ _ ∥) w (⊑-tup-å åus u⊑v u⊑v₁) (⊑-split split v⊑w v⊑w₁) IH₁ IH₂ = 
       ⊥-elim (unsplittable (∥ v ∷ vs ∥) ⟨ åv , åvs ⟩ split)
     G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH₁ IH₂ = ⊑-split split (G u₁ w u⊑v v⊑w IH₁ IH₂) (G u₂ w u⊑v₁ v⊑w IH₁ IH₂)
-  ⊑-trans-proper .(left _) (⊢'-left-å Pv åv) .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+  ⊑-trans-proper .(left _) (⊢'-left-å Pv åv) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(left _) (⊢'-left-å {v} Pv åv) .(left _) w (⊑-left-å {u} åu u⊑v) v⊑w 
     = G (left u) w (⊑-left-å åu u⊑v) v⊑w (⊑-trans-proper v Pv)
     where
     G : ∀ u w → u ⊑ left v → left v ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) → u ⊑ w
-    G .⊥ w ⊑-⊥ Lv⊑w IH = ⊑-⊥
+    G .ω w ⊑-ω Lv⊑w IH = ⊑-ω
     G .(left _) .(_ ⊔ _) (⊑-left-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R1-å {_} {w₁} åu₁ Lv⊑w) IH = 
       ⊑-⊔-R1-å åu (G (left u₁) w₁ (⊑-left-å åu u⊑Lv) Lv⊑w IH)
     G .(left _) .(_ ⊔ _) (⊑-left-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R2-å {_} {_} {w₁} åu₁ Lv⊑w) IH = 
@@ -511,12 +495,12 @@ module Model.Filter.DomainISWIMOrdering where
   ⊑-trans-proper .(left _) (⊢'-left-å {v} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
     ⊑-split split (⊑-trans-proper (left v) (⊢'-left-å Pv åv) u₁ w u⊑v v⊑w)
                   (⊑-trans-proper (left v) (⊢'-left-å Pv åv) u₂ w u⊑v₁ v⊑w)
-  ⊑-trans-proper .(right _) (⊢'-right-å Pv åv) .⊥ w ⊑-⊥ v⊑w = ⊑-⊥
+  ⊑-trans-proper .(right _) (⊢'-right-å Pv åv) .ω w ⊑-ω v⊑w = ⊑-ω
   ⊑-trans-proper .(right _) (⊢'-right-å {v} Pv åv) .(right _) w (⊑-right-å {u} åu u⊑v) v⊑w 
     = G (right u) w (⊑-right-å åu u⊑v) v⊑w (⊑-trans-proper v Pv)
     where
     G : ∀ u w → u ⊑ right v → right v ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) → u ⊑ w
-    G .⊥ w ⊑-⊥ Rv⊑w IH = ⊑-⊥
+    G .ω w ⊑-ω Rv⊑w IH = ⊑-ω
     G .(right _) .(_ ⊔ _) (⊑-right-å {u₁}{v₁} åu u⊑Rv) (⊑-⊔-R1-å {_}{w₁} åu₁ Rv⊑w) IH = 
       ⊑-⊔-R1-å åu (G (right u₁) w₁ (⊑-right-å åu u⊑Rv) Rv⊑w IH)
     G .(right _) .(_ ⊔ _) (⊑-right-å {u₁}{v₁} åu u⊑Rv) (⊑-⊔-R2-å {_}{_}{w₁} åu₁ Rv⊑w) IH = 
@@ -536,10 +520,6 @@ module Model.Filter.DomainISWIMOrdering where
     split-trans : ∀ u → Proper u → u ⊑ v
       → (∀ u w → u ⊑ vL → vL ⊑ w → u ⊑ w)
       → (∀ u w → u ⊑ vR → vR ⊑ w → u ⊑ w) → u ⊑ w
-    split-trans .⊥ ⊢'-⊥ u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
-    ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
-    ... | inj₁ x = IH₁ ⊥ w x vL⊑w
-    ... | inj₂ y = IH₂ ⊥ w y vR⊑w
     split-trans .ω ⊢'-ω u⊑v IH₁ IH₂ with ⊑-inversion-split-R v⊑w split
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-inversion-split-L u⊑v split tt
     ... | inj₁ x = IH₁ ω w x vL⊑w
@@ -596,15 +576,15 @@ module Model.Filter.DomainISWIMOrdering where
 
   {-
   tup-cons : Value → Value → Value
-  tup-cons u ⊥ = ⊥
-  tup-cons u ν = ⊥
-  tup-cons u (const k) = ⊥
-  tup-cons u (v ⊔ v₁) = ⊥
-  tup-cons u (v ↦ v₁) = ⊥
-  tup-cons u (⦅ v ∣) = ⊥
-  tup-cons u (∣ v ⦆) = ⊥
-  tup-cons u (left v) = ⊥
-  tup-cons u (right v) = ⊥
+  tup-cons u ω = ω
+  tup-cons u ν = ω
+  tup-cons u (const k) = ω
+  tup-cons u (v ⊔ v₁) = ω
+  tup-cons u (v ↦ v₁) = ω
+  tup-cons u (⦅ v ∣) = ω
+  tup-cons u (∣ v ⦆) = ω
+  tup-cons u (left v) = ω
+  tup-cons u (right v) = ω
   tup-cons u (∥ vs ∥) = ∥ u ∷ vs ∥
 -}
 
@@ -637,11 +617,10 @@ module Model.Filter.DomainISWIMOrdering where
                               (⊑-⊔-R1 (⊑-⊔-R2 ⊑-refl))
                               (⊑-⊔-R2 (⊑-⊔-R2 ⊑-refl)))
 
-
   ordering : ValueOrdering value_struct
   ordering = record
    { _⊑_ = _⊑_
-   ; ⊑-⊥ = ⊑-⊥
+   ; ⊑-⊥ = ⊑-ω
    ; ⊑-conj-L = ⊑-⊔-L
    ; ⊑-conj-R1 = ⊑-⊔-R1
    ; ⊑-conj-R2 = ⊑-⊔-R2

@@ -9,8 +9,8 @@ open Data.Nat.Properties.≤-Reasoning using (begin_; _∎; step-≤)
 open import Data.Product using (_×_; Σ; Σ-syntax; ∃; proj₁; proj₂)
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
-open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
-open import Data.Unit using (⊤; tt)
+open import Data.Empty using (⊥-elim) renaming (⊥ to False)
+open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.List using (List; _∷_ ; [])
 open import Data.Vec using (Vec; []; _∷_; length; head; tail)
 open import Data.Vec.Relation.Unary.All using (All; []; _∷_; head; tail)
@@ -41,9 +41,8 @@ module Model.Filter.DomainISWIMConsistent where
   ... it would allow unioning... but that's something that shouldn't appear in our semantics
   -}
   _~_ : Value → Value → Set
-  ⊥ ~ v = ⊤
+  ω ~ v = True
   (u₁ ⊔ u₂) ~ v = u₁ ~ v × u₂ ~ v
-  ω ~ v₁ ⊔ v₂ = ω ~ v₁ × ω ~ v₂
   ν ~ v₁ ⊔ v₂ = ν ~ v₁ × ν ~ v₂
   const x ~ v₁ ⊔ v₂ = const x ~ v₁ × const x ~ v₂
   u ↦ u₁ ~ v₁ ⊔ v₂ = u ↦ u₁ ~ v₁ × u ↦ u₁ ~ v₂
@@ -52,125 +51,88 @@ module Model.Filter.DomainISWIMConsistent where
   ∥ us ∥ ~ v₁ ⊔ v₂ = ∥ us ∥ ~ v₁ × ∥ us ∥ ~ v₂
   left u ~ v ⊔ v₁ = left u ~ v × left u ~ v₁
   right u ~ v ⊔ v₁ = right u ~ v × right u ~ v₁
-  ω ~ ⊥ = ⊤
-  ω ~ ω = ⊤
-  ω ~ ν = Bot
-  ω ~ const k = Bot
-  ω ~ v ↦ v₁ = Bot
-  ω ~ ⦅ v ∣ = Bot
-  ω ~ ∣ v ⦆ = Bot
-  ω ~ ∥ ds ∥ = Bot
-  ω ~ left v = Bot
-  ω ~ right v = Bot
-  ν ~ ω = Bot
-  const k ~ ω = Bot
-  u ↦ u₁ ~ ω = Bot
-  ⦅ u ∣ ~ ω = Bot
-  ∣ u ⦆ ~ ω = Bot
-  ∥ ds ∥ ~ ω = Bot
-  left u ~ ω = Bot
-  right u ~ ω = Bot
-  ν ~ ⊥ = ⊤
-  ν ~ ν = ⊤
-  ν ~ const x = Bot
-  ν ~ v ↦ v₁ = ⊤
-  ν ~ ⦅ v ∣ = Bot
-  ν ~ ∣ v₁ ⦆ = Bot
-  ν ~ ∥ vs ∥ = Bot
-  ν ~ left v = Bot
-  ν ~ right v = Bot
-  const {B} k ~ ⊥ = ⊤
-  const {B} k ~ ν = Bot
+  ν ~ ω = True
+  ν ~ ν = True
+  ν ~ const x = False
+  ν ~ v ↦ v₁ = True
+  ν ~ ⦅ v ∣ = False
+  ν ~ ∣ v₁ ⦆ = False
+  ν ~ ∥ vs ∥ = False
+  ν ~ left v = False
+  ν ~ right v = False
+  const {B} k ~ ω = True
+  const {B} k ~ ν = False
   const {B} k ~ const {B′} k′
     with base-eq? B B′
   ... | yes eq rewrite eq = k ≡ k′
-  ... | no neq = Bot
-  const {B} k ~ ⦅ v₁ ∣ = Bot
-  const {B} k ~ ∣ v₂ ⦆ = Bot
-  const {B} k ~ ∥ vs ∥ = Bot
-  const {B} k ~ v ↦ w = Bot
-  const k ~ left v = Bot
-  const k ~ right v = Bot
-  ⦅ u ∣ ~ ⊥ = ⊤
-  ⦅ u ∣ ~ ν = Bot
-  ⦅ u ∣ ~ const k = Bot
-  ⦅ u ∣ ~ v₁ ↦ v₂ = Bot
+  ... | no neq = False
+  const {B} k ~ ⦅ v₁ ∣ = False
+  const {B} k ~ ∣ v₂ ⦆ = False
+  const {B} k ~ ∥ vs ∥ = False
+  const {B} k ~ v ↦ w = False
+  const k ~ left v = False
+  const k ~ right v = False
+  ⦅ u ∣ ~ ω = True
+  ⦅ u ∣ ~ ν = False
+  ⦅ u ∣ ~ const k = False
+  ⦅ u ∣ ~ v₁ ↦ v₂ = False
   ⦅ u ∣ ~ ⦅ v ∣ = u ~ v
-  ⦅ u ∣ ~ ∣ v ⦆ = ⊤
-  ⦅ u ∣ ~ ∥ ds ∥ = Bot
-  ⦅ u ∣ ~ left v = Bot
-  ⦅ u ∣ ~ right v = Bot
-  ∣ u ⦆ ~ ⊥ = ⊤
-  ∣ u ⦆ ~ ν = Bot
-  ∣ u ⦆ ~ const k = Bot
-  ∣ u ⦆ ~ v₁ ↦ v₂ = Bot
-  ∣ u ⦆ ~ ⦅ v ∣ = ⊤
+  ⦅ u ∣ ~ ∣ v ⦆ = True
+  ⦅ u ∣ ~ ∥ ds ∥ = False
+  ⦅ u ∣ ~ left v = False
+  ⦅ u ∣ ~ right v = False
+  ∣ u ⦆ ~ ω = True
+  ∣ u ⦆ ~ ν = False
+  ∣ u ⦆ ~ const k = False
+  ∣ u ⦆ ~ v₁ ↦ v₂ = False
+  ∣ u ⦆ ~ ⦅ v ∣ = True
   ∣ u ⦆ ~ ∣ v ⦆ = u ~ v
-  ∣ u ⦆ ~ ∥ ds ∥ = Bot
-  ∣ u ⦆ ~ left v = Bot
-  ∣ u ⦆ ~ right v = Bot
-  ∥ us ∥ ~ ⊥ = ⊤
-  ∥ us ∥ ~ ν = Bot
-  ∥ us ∥ ~ const k = Bot
-  ∥ us ∥ ~ ⦅ v ∣ = Bot
-  ∥ us ∥ ~ ∣ v₁ ⦆ = Bot
-  ∥ [] ∥ ~ ∥ [] ∥ = ⊤
-  ∥ [] ∥ ~ ∥ v ∷ vs ∥ = Bot
-  ∥ u ∷ us ∥ ~ ∥ [] ∥ = Bot
+  ∣ u ⦆ ~ ∥ ds ∥ = False
+  ∣ u ⦆ ~ left v = False
+  ∣ u ⦆ ~ right v = False
+  ∥ us ∥ ~ ω = True
+  ∥ us ∥ ~ ν = False
+  ∥ us ∥ ~ const k = False
+  ∥ us ∥ ~ ⦅ v ∣ = False
+  ∥ us ∥ ~ ∣ v₁ ⦆ = False
+  ∥ [] ∥ ~ ∥ [] ∥ = True
+  ∥ [] ∥ ~ ∥ v ∷ vs ∥ = False
+  ∥ u ∷ us ∥ ~ ∥ [] ∥ = False
   ∥ u ∷ us ∥ ~ ∥ v ∷ vs ∥ = u ~ v × ∥ us ∥ ~ ∥ vs ∥
-  ∥ us ∥ ~ v ↦ w = Bot
-  ∥ ds ∥ ~ left v = Bot
-  ∥ ds ∥ ~ right v = Bot
-  v ↦ w ~ ⊥ = ⊤
-  v ↦ w ~ ν = ⊤
-  v ↦ w ~ const k = Bot
-  v ↦ w ~ ⦅ v₁ ∣ = Bot
-  v ↦ w ~ ∣ v₂ ⦆ = Bot
-  v ↦ w ~ ∥ vs ∥ = Bot
+  ∥ us ∥ ~ v ↦ w = False
+  ∥ ds ∥ ~ left v = False
+  ∥ ds ∥ ~ right v = False
+  v ↦ w ~ ω = True
+  v ↦ w ~ ν = True
+  v ↦ w ~ const k = False
+  v ↦ w ~ ⦅ v₁ ∣ = False
+  v ↦ w ~ ∣ v₂ ⦆ = False
+  v ↦ w ~ ∥ vs ∥ = False
   v ↦ w ~ v' ↦ w' = (¬ (v ~ v') ⊎ w ~ w')
-  u ↦ u₁ ~ left v = Bot
-  u ↦ u₁ ~ right v = Bot
-  left u ~ ⊥ = ⊤
-  left u ~ ν = Bot
-  left u ~ const k = Bot
-  left u ~ v ↦ v₁ = Bot
-  left u ~ ⦅ v ∣ = Bot
-  left u ~ ∣ v₁ ⦆ = Bot
-  left u ~ ∥ ds ∥ = Bot
+  u ↦ u₁ ~ left v = False
+  u ↦ u₁ ~ right v = False
+  left u ~ ω = True
+  left u ~ ν = False
+  left u ~ const k = False
+  left u ~ v ↦ v₁ = False
+  left u ~ ⦅ v ∣ = False
+  left u ~ ∣ v₁ ⦆ = False
+  left u ~ ∥ ds ∥ = False
   left u ~ left v = u ~ v
-  left u ~ right v = Bot
-  right u ~ ⊥ = ⊤
-  right u ~ ν = Bot
-  right u ~ const k = Bot
-  right u ~ v ↦ v₁ = Bot
-  right u ~ ⦅ v ∣ = Bot
-  right u ~ ∣ v₁ ⦆ = Bot
-  right u ~ ∥ ds ∥ = Bot
-  right u ~ left v = Bot
+  left u ~ right v = False
+  right u ~ ω = True
+  right u ~ ν = False
+  right u ~ const k = False
+  right u ~ v ↦ v₁ = False
+  right u ~ ⦅ v ∣ = False
+  right u ~ ∣ v₁ ⦆ = False
+  right u ~ ∥ ds ∥ = False
+  right u ~ left v = False
   right u ~ right v = u ~ v
 
   _~?_ : (u : Value) → (v : Value) → Dec (u ~ v)
-  ⊥ ~? v = yes tt
-  ω ~? ⊥ = yes tt
-  ω ~? ω = yes tt
-  ω ~? ν = no (λ z → z)
-  ω ~? const k = no (λ z → z)
-  ω ~? (v ⊔ v₁) = ω ~? v ∧dec (ω ~? v₁)
-  ω ~? (v ↦ v₁) = no (λ z → z)
-  ω ~? ⦅ v ∣ = no (λ z → z)
-  ω ~? ∣ v ⦆ = no (λ z → z)
-  ω ~? ∥ ds ∥ = no (λ z → z)
-  ω ~? left v = no (λ z → z)
-  ω ~? right v = no (λ z → z)
-  ν ~? ω = no (λ z → z)
-  const k ~? ω = no (λ z → z)
-  (u ↦ u₁) ~? ω = no (λ z → z)
-  ⦅ u ∣ ~? ω = no (λ z → z)
-  ∣ u ⦆ ~? ω = no (λ z → z)
-  ∥ ds ∥ ~? ω = no (λ z → z)
-  left u ~? ω = no (λ z → z)
-  right u ~? ω = no (λ z → z)
-  ν ~? ⊥ = yes tt
+  ω ~? v = yes tt
+  ν ~? ω = yes tt
   ν ~? ν = yes tt
   ν ~? const k = no (λ z → z)
   ν ~? (v ⊔ v₁) = (ν ~? v) ×-dec (ν ~? v₁) 
@@ -180,7 +142,7 @@ module Model.Filter.DomainISWIMConsistent where
   ν ~? ∥ ds ∥ = no (λ z → z)
   ν ~? left v = no (λ z → z)
   ν ~? right v = no (λ z → z)
-  const k ~? ⊥ = yes tt
+  const k ~? ω = yes tt
   const k ~? ν = no (λ z → z)
   (const {B} k) ~? (const {B′} k′)
       with base-eq? B B′
@@ -194,7 +156,7 @@ module Model.Filter.DomainISWIMConsistent where
   const k ~? left v = no (λ z → z)
   const k ~? right v = no (λ z → z)
   (u ⊔ u₁) ~? v = (u ~? v) ×-dec (u₁ ~? v)
-  (u₁ ↦ u₂) ~? ⊥ = yes tt
+  (u₁ ↦ u₂) ~? ω = yes tt
   (u₁ ↦ u₂) ~? ν = yes tt
   (u₁ ↦ u₂) ~? const k = no (λ z → z)
   (u₁ ↦ u₂) ~? (v ⊔ v₁) = ((u₁ ↦ u₂) ~? v) ×-dec ((u₁ ↦ u₂) ~? v₁)
@@ -204,7 +166,7 @@ module Model.Filter.DomainISWIMConsistent where
   (u₁ ↦ u₂) ~? ∥ ds ∥ = no (λ z → z)
   (u₁ ↦ u₂) ~? left v = no (λ z → z)
   (u₁ ↦ u₂) ~? right v = no (λ z → z)
-  ⦅ u ∣ ~? ⊥ = yes tt
+  ⦅ u ∣ ~? ω = yes tt
   ⦅ u ∣ ~? ν = no (λ z → z)
   ⦅ u ∣ ~? const k = no (λ z → z)
   ⦅ u ∣ ~? (v ⊔ v₁) = (⦅ u ∣ ~? v) ×-dec (⦅ u ∣ ~? v₁)
@@ -214,7 +176,7 @@ module Model.Filter.DomainISWIMConsistent where
   ⦅ u ∣ ~? ∥ ds ∥ = no (λ z → z)
   ⦅ u ∣ ~? left v = no (λ z → z)
   ⦅ u ∣ ~? right v = no (λ z → z)
-  ∣ u ⦆ ~? ⊥ = yes tt
+  ∣ u ⦆ ~? ω = yes tt
   ∣ u ⦆ ~? ν = no (λ z → z)
   ∣ u ⦆ ~? const k = no (λ z → z)
   ∣ u ⦆ ~? (v ⊔ v₁) = (∣ u ⦆ ~? v) ×-dec (∣ u ⦆ ~? v₁)
@@ -224,7 +186,7 @@ module Model.Filter.DomainISWIMConsistent where
   ∣ u ⦆ ~? ∥ ds ∥ = no (λ z → z)
   ∣ u ⦆ ~? left v = no (λ z → z)
   ∣ u ⦆ ~? right v = no (λ z → z)
-  ∥ ds ∥ ~? ⊥ = yes tt
+  ∥ ds ∥ ~? ω = yes tt
   ∥ ds ∥ ~? ν = no (λ z → z)
   ∥ ds ∥ ~? const k = no (λ z → z)
   ∥ ds ∥ ~? (v ⊔ v₁) = (∥ ds ∥ ~? v) ×-dec (∥ ds ∥ ~? v₁)
@@ -237,7 +199,7 @@ module Model.Filter.DomainISWIMConsistent where
   ∥ x ∷ ds ∥ ~? ∥ x₁ ∷ ds₁ ∥ = (x ~? x₁) ×-dec (∥ ds ∥ ~? ∥ ds₁ ∥)
   ∥ ds ∥ ~? left v = no (λ z → z)
   ∥ ds ∥ ~? right v = no (λ z → z)
-  left u ~? ⊥ = yes tt
+  left u ~? ω = yes tt
   left u ~? ν = no (λ z → z)
   left u ~? const k = no (λ z → z)
   left u ~? (v ⊔ v₁) = (left u ~? v) ×-dec (left u ~? v₁)
@@ -247,7 +209,7 @@ module Model.Filter.DomainISWIMConsistent where
   left u ~? ∥ ds ∥ = no (λ z → z)
   left u ~? left v = u ~? v
   left u ~? right v = no (λ z → z)
-  right u ~? ⊥ = yes tt
+  right u ~? ω = yes tt
   right u ~? ν = no (λ z → z)
   right u ~? const k = no (λ z → z)
   right u ~? (v ⊔ v₁) = (right u ~? v) ×-dec (right u ~? v₁)
@@ -260,8 +222,7 @@ module Model.Filter.DomainISWIMConsistent where
 
   ~-⊔-R : ∀ v {u₁ u₂} → v ~ u₁ → v ~ u₂
     → v ~ (u₁ ⊔ u₂)
-  ~-⊔-R ⊥ v~u₁ v~u₂ = tt
-  ~-⊔-R ω v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
+  ~-⊔-R ω v~u₁ v~u₂ = tt
   ~-⊔-R ν v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
   ~-⊔-R (const k) v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
   ~-⊔-R (⦅ v₁ ∣) v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
@@ -274,8 +235,7 @@ module Model.Filter.DomainISWIMConsistent where
   ~-⊔-R (right v) v~u₁ v~u₂ = ⟨ v~u₁ , v~u₂ ⟩
 
   ~-⊔-R-inv : ∀ v {u₁ u₂} → v ~ (u₁ ⊔ u₂) → v ~ u₁ × v ~ u₂
-  ~-⊔-R-inv ⊥ v~u = ⟨ tt , tt ⟩
-  ~-⊔-R-inv ω v~u = v~u
+  ~-⊔-R-inv ω v~u = ⟨ tt , tt ⟩
   ~-⊔-R-inv ν v~u = v~u
   ~-⊔-R-inv (const x) v~u = v~u
   ~-⊔-R-inv (v ↦ v₁) v~u = v~u
@@ -303,25 +263,21 @@ module Model.Filter.DomainISWIMConsistent where
   ... | no ¬v~v' = inj₂ ¬v~v'    
 
   ~-sym : ∀ u v → u ~ v → v ~ u
-  ~-sym ⊥ ⊥ u~v = tt
-  ~-sym ⊥ ν u~v = tt
-  ~-sym ⊥ (const k) u~v = tt
-  ~-sym ⊥ (v ⊔ v₁) u~v = ⟨ ~-sym ⊥ v tt , ~-sym ⊥ v₁ tt ⟩
-  ~-sym ⊥ (v₁ ↦ v₂) u~v = tt
-  ~-sym ⊥ ⦅ v ∣ u~v = tt
-  ~-sym ⊥ ∣ v ⦆ u~v = tt
-  ~-sym ⊥ ∥ ds ∥ u~v = tt
-  ~-sym ⊥ (left v) u~v = tt
-  ~-sym ⊥ (right v) u~v = tt
-  ~-sym ⊥ ω u~v = tt
-  ~-sym ω ⊥ u~v = tt
   ~-sym ω ω u~v = tt
-  ~-sym ω (v ⊔ v₁) u~v = ⟨ ~-sym ω v (proj₁ u~v) , ~-sym ω v₁ (proj₂ u~v) ⟩
-  ~-sym ν ⊥ u~v = tt
+  ~-sym ω ν u~v = tt
+  ~-sym ω (const k) u~v = tt
+  ~-sym ω (v ⊔ v₁) u~v = ⟨ ~-sym ω v tt , ~-sym ω v₁ tt ⟩
+  ~-sym ω (v₁ ↦ v₂) u~v = tt
+  ~-sym ω ⦅ v ∣ u~v = tt
+  ~-sym ω ∣ v ⦆ u~v = tt
+  ~-sym ω ∥ ds ∥ u~v = tt
+  ~-sym ω (left v) u~v = tt
+  ~-sym ω (right v) u~v = tt
+  ~-sym ν ω u~v = tt
   ~-sym ν ν u~v = tt
   ~-sym ν (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym ν v fst , ~-sym ν v₁ snd ⟩
   ~-sym ν (v₁ ↦ v₂) u~v = tt
-  ~-sym (const k) ⊥ u~v = tt
+  ~-sym (const k) ω u~v = tt
   ~-sym (const {B} k) (const {B'} k₁) u~v with base-eq? B B'
   ... | no neq = ⊥-elim u~v
   ... | yes refl with base-eq? B B
@@ -329,69 +285,69 @@ module Model.Filter.DomainISWIMConsistent where
   ... | yes refl = sym u~v
   ~-sym (const k) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (const k) v fst , ~-sym (const k) v₁ snd ⟩
   ~-sym (u ⊔ u₁) v ⟨ fst , snd ⟩ = ~-⊔-R v (~-sym u v fst) (~-sym u₁ v snd)
-  ~-sym (u₁ ↦ u₂) ⊥ u~v = tt
+  ~-sym (u₁ ↦ u₂) ω u~v = tt
   ~-sym (u₁ ↦ u₂) ν u~v = tt
   ~-sym (u₁ ↦ u₂) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (u₁ ↦ u₂) v fst , ~-sym (u₁ ↦ u₂) v₁ snd ⟩
   ~-sym (u₁ ↦ u₂) (v₁ ↦ v₂) (inj₁ x) = inj₁ (λ x' → x (~-sym v₁ u₁ x'))
   ~-sym (u₁ ↦ u₂) (v₁ ↦ v₂) (inj₂ y) = inj₂ (~-sym u₂ v₂ y)
-  ~-sym ⦅ u ∣ ⊥ u~v = tt
+  ~-sym ⦅ u ∣ ω u~v = tt
   ~-sym ⦅ u ∣ (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym ⦅ u ∣ v fst , ~-sym ⦅ u ∣ v₁ snd ⟩
   ~-sym ⦅ u ∣ ⦅ v ∣ u~v = ~-sym u v u~v
   ~-sym ⦅ u ∣ ∣ v ⦆ u~v = tt
-  ~-sym ∣ u ⦆ ⊥ u~v = tt
+  ~-sym ∣ u ⦆ ω u~v = tt
   ~-sym ∣ u ⦆ (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym ∣ u ⦆ v fst , ~-sym ∣ u ⦆ v₁ snd ⟩
   ~-sym ∣ u ⦆ ⦅ v ∣ u~v = tt
   ~-sym ∣ u ⦆ ∣ v ⦆ u~v = ~-sym u v u~v
-  ~-sym ∥ ds ∥ ⊥ u~v = tt
+  ~-sym ∥ ds ∥ ω u~v = tt
   ~-sym ∥ ds ∥ (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym ∥ ds ∥ v fst , ~-sym ∥ ds ∥ v₁ snd ⟩
   ~-sym ∥ [] ∥ ∥ [] ∥ u~v = tt
   ~-sym ∥ x ∷ ds ∥ ∥ x₁ ∷ ds₁ ∥ ⟨ fst , snd ⟩ = ⟨ ~-sym x x₁ fst , ~-sym ∥ ds ∥ ∥ ds₁ ∥ snd ⟩
-  ~-sym (left u) ⊥ u~v = tt
+  ~-sym (left u) ω u~v = tt
   ~-sym (left u) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (left u) v fst , ~-sym (left u) v₁ snd ⟩
   ~-sym (left u) (left v) u~v = ~-sym u v u~v
-  ~-sym (right u) ⊥ u~v = tt
+  ~-sym (right u) ω u~v = tt
   ~-sym (right u) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (right u) v fst , ~-sym (right u) v₁ snd ⟩
   ~-sym (right u) (right v) u~v = ~-sym u v u~v
 
   ~-split : ∀ {u u₁ u₂} → u₁ ◃ u ▹ u₂ → ∀ v → u₁ ~ v → u₂ ~ v → u ~ v
   ~-split split-⊔ v ~L ~R = ⟨ ~L , ~R ⟩
-  ~-split (split-↦ split) ⊥ ~L ~R = tt
+  ~-split (split-↦ split) ω ~L ~R = tt
   ~-split (split-↦ split) ν ~L ~R = ~R
   ~-split (split-↦ split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-↦ split) v fst fst₁ , ~-split (split-↦ split) v₁ snd snd₁ ⟩
   ~-split (split-↦ split) (v ↦ v₁) (inj₁ x) ~R = inj₁ x
   ~-split (split-↦ split) (v ↦ v₁) (inj₂ y) (inj₁ x) = inj₁ x
   ~-split (split-↦ split) (v ↦ v₁) (inj₂ y) (inj₂ y₁) = inj₂ (~-split split v₁ y y₁)
-  ~-split (split-fst split) ⊥ ~L ~R = tt
+  ~-split (split-fst split) ω ~L ~R = tt
   ~-split (split-fst split) ∣ v ⦆ ~L ~R = tt
   ~-split (split-fst split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-fst split) v fst fst₁ 
     , ~-split (split-fst split) v₁ snd snd₁ ⟩
   ~-split (split-fst split) (⦅ v ∣) ~L ~R = ~-split split v ~L ~R
-  ~-split (split-snd split) ⊥ tt tt = tt
+  ~-split (split-snd split) ω tt tt = tt
   ~-split (split-snd split) ⦅ v ∣ ~L ~R = tt
   ~-split (split-snd split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-snd split) v fst fst₁ 
     , ~-split (split-snd split) v₁ snd snd₁ ⟩
   ~-split (split-snd split) (∣ v₁ ⦆) ~L ~R = ~-split split v₁ ~L ~R
-  ~-split (split-tup-head split) ⊥ ~L ~R = tt
+  ~-split (split-tup-head split) ω ~L ~R = tt
   ~-split (split-tup-head split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-tup-head split) v fst fst₁ 
     , ~-split (split-tup-head split) v₁ snd snd₁ ⟩
   ~-split (split-tup-head split) ∥ v ∷ vs ∥ ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split split v fst fst₁ , snd₁ ⟩
-  ~-split (split-tup-tail x split) ⊥ tt tt = tt
+  ~-split (split-tup-tail x split) ω tt tt = tt
   ~-split (split-tup-tail x split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-tup-tail x split) v fst fst₁ 
     , ~-split (split-tup-tail x split) v₁ snd snd₁ ⟩
   ~-split (split-tup-tail x split) ∥ v ∷ vs ∥ ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ fst₁ , ~-split split ∥ vs ∥ snd snd₁ ⟩
-  ~-split (split-left split) ⊥ u₁~v u₂~v = tt
+  ~-split (split-left split) ω u₁~v u₂~v = tt
   ~-split (split-left split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ =
    ⟨ ~-split (split-left split) v fst fst₁ , ~-split (split-left split) v₁ snd snd₁ ⟩
   ~-split (split-left split) (left v) u₁~v u₂~v = 
     ~-split split v u₁~v u₂~v
-  ~-split (split-right split) ⊥ u₁~v u₂~v = tt 
+  ~-split (split-right split) ω u₁~v u₂~v = tt 
   ~-split (split-right split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
    ⟨ ~-split (split-right split) v fst fst₁ , ~-split (split-right split) v₁ snd snd₁ ⟩
   ~-split (split-right split) (right v) u₁~v u₂~v = 
@@ -399,7 +355,7 @@ module Model.Filter.DomainISWIMConsistent where
 
   ~-split-inv : ∀ {u u₁ u₂} → u₁ ◃ u ▹ u₂ → ∀ v → u ~ v → u₁ ~ v × u₂ ~ v
   ~-split-inv split-⊔ v u~v = u~v
-  ~-split-inv (split-↦ split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-↦ split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-↦ split) ν u~v = ⟨ u~v , u~v ⟩
   ~-split-inv (split-↦ split) (v ⊔ v₁) ⟨ fst , snd ⟩
      with ~-split-inv (split-↦ split) v fst | ~-split-inv (split-↦ split) v₁ snd
@@ -407,36 +363,36 @@ module Model.Filter.DomainISWIMConsistent where
   ~-split-inv (split-↦ split) (v ↦ v₁) (inj₁ x) = ⟨ inj₁ x , inj₁ x ⟩
   ~-split-inv (split-↦ split) (v ↦ v₁) (inj₂ y) with ~-split-inv split v₁ y
   ... | ⟨ L~ , R~ ⟩ = ⟨ inj₂ L~ , inj₂ R~ ⟩
-  ~-split-inv (split-fst split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-fst split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-fst split) ∣ v ⦆ u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-fst split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-fst split) v fst | ~-split-inv (split-fst split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
   ~-split-inv (split-fst split) (⦅ v ∣) u~v = ~-split-inv split v u~v
-  ~-split-inv (split-snd split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-snd split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-snd split) ⦅ v ∣ u~v = ⟨ tt , tt ⟩ 
   ~-split-inv (split-snd split) (v ⊔ v₁) ⟨ fst , snd ⟩ 
     with ~-split-inv (split-snd split) v fst | ~-split-inv (split-snd split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
   ~-split-inv (split-snd split) (∣ v₁ ⦆) u~v = ~-split-inv split v₁ u~v
-  ~-split-inv (split-tup-head split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-tup-head split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-tup-head split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-tup-head split) v fst | ~-split-inv (split-tup-head split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
   ~-split-inv (split-tup-head split) ∥ x ∷ vs ∥ ⟨ fst , snd ⟩ with ~-split-inv split x fst
   ... | ⟨ L~ , R~ ⟩ = ⟨ ⟨ L~ , snd ⟩ , ⟨ R~ , snd ⟩ ⟩
-  ~-split-inv (split-tup-tail x split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-tup-tail x split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-tup-tail x split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-tup-tail x split) v fst | ~-split-inv (split-tup-tail x split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
   ~-split-inv (split-tup-tail x split) ∥ x₁ ∷ vs ∥ ⟨ fst , snd ⟩ with ~-split-inv split ∥ vs ∥ snd
   ... | ⟨ L~ , R~ ⟩ = ⟨ ⟨ fst , L~ ⟩ , ⟨ fst , R~ ⟩ ⟩
-  ~-split-inv (split-left split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-left split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-left split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-left split) v fst | ~-split-inv (split-left split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
   ~-split-inv (split-left split) (left v) u~v = ~-split-inv split v u~v
-  ~-split-inv (split-right split) ⊥ u~v = ⟨ tt , tt ⟩
+  ~-split-inv (split-right split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-right split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-right split) v fst | ~-split-inv (split-right split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
@@ -452,7 +408,6 @@ module Model.Filter.DomainISWIMConsistent where
 
 
   data wf : Value → Set where
-    wf-⊥ : wf ⊥
     wf-ω : wf ω
     wf-ν : wf ν
     wf-const : ∀ {B} k → wf (const {B} k)
@@ -487,7 +442,6 @@ module Model.Filter.DomainISWIMConsistent where
   wf-right-inv (wf-right wfd) = wfd
 
   wf? : (v : Value) → Dec (wf v)
-  wf? ⊥ = yes wf-⊥
   wf? ω = yes wf-ω
   wf? ν = yes wf-ν
   wf? (const k) = yes (wf-const k)
@@ -527,7 +481,6 @@ module Model.Filter.DomainISWIMConsistent where
   ... | yes wfd = yes (wf-right wfd)
 
   sc-å : ∀ v → Atomic v → sc v
-  sc-å ⊥ åv = tt
   sc-å ω åv = tt
   sc-å ν åv = tt
   sc-å (const {B} k) åv with base-eq? B B
@@ -579,7 +532,6 @@ module Model.Filter.DomainISWIMConsistent where
   sc-split-inv (split-right split) scd = sc-split-inv split scd
 
   ~-refl : ∀ {v} → wf v → v ~ v
-  ~-refl wf-⊥ = tt
   ~-refl wf-ω = tt
   ~-refl wf-ν = tt
   ~-refl (wf-const {B} k) with base-eq? B B
@@ -641,14 +593,13 @@ module Model.Filter.DomainISWIMConsistent where
       → ∀ v
       → u ~ v
       → u' ~ v
-  consistent-⊑-lemma ⊑-⊥ v u~v = tt
-  consistent-⊑-lemma ⊑-ω v u~v = u~v 
-  consistent-⊑-lemma ⊑-ν-ν ⊥ u~v = tt
+  consistent-⊑-lemma ⊑-ω v u~v = tt
+  consistent-⊑-lemma ⊑-ν-ν ω u~v = tt
   consistent-⊑-lemma ⊑-ν-ν ν u~v = tt
   consistent-⊑-lemma ⊑-ν-ν (v ⊔ v₁) u~v = 
     ⟨ consistent-⊑-lemma ⊑-ν-ν v (proj₁ u~v) , consistent-⊑-lemma ⊑-ν-ν v₁ (proj₂ u~v) ⟩
   consistent-⊑-lemma ⊑-ν-ν (v₁ ↦ v₂) u~v = tt
-  consistent-⊑-lemma ⊑-ν-↦ ⊥ u~v = tt
+  consistent-⊑-lemma ⊑-ν-↦ ω u~v = tt
   consistent-⊑-lemma ⊑-ν-↦ ν u~v = tt
   consistent-⊑-lemma ⊑-ν-↦ (v ⊔ v₁) ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma ⊑-ν-↦ v fst , consistent-⊑-lemma ⊑-ν-↦ v₁ snd ⟩
@@ -656,24 +607,24 @@ module Model.Filter.DomainISWIMConsistent where
   consistent-⊑-lemma ⊑-const v u~v = u~v
   consistent-⊑-lemma (⊑-⊔-R1-å åu ⊑u) v u~v = consistent-⊑-lemma ⊑u v (proj₁ u~v)
   consistent-⊑-lemma (⊑-⊔-R2-å åu ⊑u) v u~v = consistent-⊑-lemma ⊑u v (proj₂ u~v)
-  consistent-⊑-lemma (⊑-fst-å åu ⊑u) ⊥ u~v = tt
+  consistent-⊑-lemma (⊑-fst-å åu ⊑u) ω u~v = tt
   consistent-⊑-lemma (⊑-fst-å åu ⊑u) (v ⊔ v₁) u~v = 
     ⟨ consistent-⊑-lemma (⊑-fst-å åu ⊑u) v (proj₁ u~v) , consistent-⊑-lemma (⊑-fst-å åu ⊑u) v₁ (proj₂ u~v) ⟩
   consistent-⊑-lemma (⊑-fst-å åu ⊑u) ⦅ v ∣ u~v = consistent-⊑-lemma ⊑u v u~v
   consistent-⊑-lemma (⊑-fst-å åu ⊑u) ∣ v ⦆ u~v = tt
-  consistent-⊑-lemma (⊑-snd-å åu ⊑u) ⊥ u~v = tt
+  consistent-⊑-lemma (⊑-snd-å åu ⊑u) ω u~v = tt
   consistent-⊑-lemma (⊑-snd-å åu ⊑u) (v ⊔ v₁) u~v = 
     ⟨ consistent-⊑-lemma (⊑-snd-å åu ⊑u) v (proj₁ u~v) , consistent-⊑-lemma (⊑-snd-å åu ⊑u) v₁ (proj₂ u~v) ⟩
   consistent-⊑-lemma (⊑-snd-å åu ⊑u) ⦅ v ∣ u~v = tt
   consistent-⊑-lemma (⊑-snd-å åu ⊑u) ∣ v ⦆ u~v = consistent-⊑-lemma ⊑u v u~v
   consistent-⊑-lemma ⊑-nil v u~v = u~v
-  consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) ⊥ u~v = tt
+  consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) ω u~v = tt
   consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) (v ⊔ v₁) ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) v fst 
     , consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) v₁ snd ⟩
   consistent-⊑-lemma (⊑-tup-å åus ⊑u ⊑u₁) ∥ x ∷ vs ∥ ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma ⊑u x fst , consistent-⊑-lemma ⊑u₁ ∥ vs ∥ snd ⟩
-  consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ⊥ u~v = tt
+  consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ω u~v = tt
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ν u~v = tt
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) (v ⊔ v₁) ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) v fst
@@ -682,12 +633,12 @@ module Model.Filter.DomainISWIMConsistent where
     inj₁ (λ u₁~v → x (consistent-⊑-lemma ⊑u₁ v u₁~v)) 
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) (v ↦ v₁) (inj₂ y) = 
     inj₂ (consistent-⊑-lemma ⊑u v₁ y)
-  consistent-⊑-lemma (⊑-left-å åu ⊑u) ⊥ u~v = tt
+  consistent-⊑-lemma (⊑-left-å åu ⊑u) ω u~v = tt
   consistent-⊑-lemma (⊑-left-å åu ⊑u) (left v) u~v = consistent-⊑-lemma ⊑u v u~v
   consistent-⊑-lemma (⊑-left-å åu ⊑u) (v ⊔ v₁) u~v = 
     ⟨ consistent-⊑-lemma (⊑-left-å åu ⊑u) v (proj₁ u~v) 
     , consistent-⊑-lemma (⊑-left-å åu ⊑u) v₁ (proj₂ u~v) ⟩
-  consistent-⊑-lemma (⊑-right-å åu ⊑u) ⊥ u~v = tt
+  consistent-⊑-lemma (⊑-right-å åu ⊑u) ω u~v = tt
   consistent-⊑-lemma (⊑-right-å åu ⊑u) (v ⊔ v₁) u~v = 
     ⟨ consistent-⊑-lemma (⊑-right-å åu ⊑u) v (proj₁ u~v) 
     , consistent-⊑-lemma (⊑-right-å åu ⊑u) v₁ (proj₂ u~v) ⟩
@@ -707,7 +658,7 @@ module Model.Filter.DomainISWIMConsistent where
   consistent = record {
       _~_ = _~_
     ; wf = wf
-    ; wf-bot = wf-⊥
+    ; wf-bot = wf-ω
     ; wf-⊔ = wf-⊔
     ; wf-fun = wf-fun
     ; wf-fun-inv = wf-fun-inv

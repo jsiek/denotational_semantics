@@ -14,7 +14,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Product.Properties using (,-injective)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
-open import Data.Empty using (⊥-elim) renaming (⊥ to Bot)
+open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.Unit using (⊤; tt)
 open import Data.List using (List; _∷_ ; []; _++_)
 open import Data.List.Relation.Binary.Subset.Propositional using ()
@@ -75,8 +75,7 @@ infix 5 _◃_▹_  {- prounounced "split" -}
   just because breaking ⦅ u , v ⦆ into those two cases and a default non-atomic case
   turned out to be a pain -}
 data Value : Set where
-  ⊥ : Value {- represents no info -}
-  ω : Value {- represents an error -}
+  ω : Value {- represents no info -}
   ν : Value
   const : {B : Base} → (k : base-rep B) → Value
   _⊔_ : (u : Value) → (v : Value) → Value
@@ -88,7 +87,7 @@ data Value : Set where
   right : (d : Value) → Value
 
 value_struct : ValueStruct
-value_struct = record { Value = Value ; ⊥ = ⊥ ; _↦_ = _↦_ ; _⊔_ = _⊔_}
+value_struct = record { Value = Value ; ⊥ = ω ; _↦_ = _↦_ ; _⊔_ = _⊔_}
 
 
 {- --- Splitting: Atomic and Proper values ---------------------------------- -}
@@ -98,7 +97,6 @@ Atomic-tup : ∀ {n} → Vec Value n → Set
 Atomic-tup [] = ⊤
 Atomic-tup (v ∷ vs) = Atomic v × Atomic-tup vs
 Atomic ω = ⊤
-Atomic ⊥ = ⊤
 Atomic ν = ⊤
 Atomic (const k) = ⊤
 Atomic ⦅ u ∣ = Atomic u
@@ -107,13 +105,12 @@ Atomic ∥ vs ∥ = Atomic-tup vs
 Atomic (v ↦ v₁) = Atomic v₁
 Atomic (left d) = Atomic d
 Atomic (right d) = Atomic d
-Atomic (v ⊔ v₁) = Bot
+Atomic (v ⊔ v₁) = False
 
 atomic? : (v : Value) → Dec (Atomic v)
 atomic-tup? : ∀ {n} → (vs : Vec Value n) → Dec (Atomic-tup vs)
 atomic-tup? [] = yes tt
 atomic-tup? (v ∷ vs) = (atomic? v) ∧dec (atomic-tup? vs)
-atomic? ⊥ = yes tt
 atomic? ω = yes tt
 atomic? ν = yes tt
 atomic? (const k) = yes tt
@@ -171,8 +168,6 @@ data _◃_▹_ : (v₁ v v₂ : Value) → Set where
 
 data Proper : Value → Set where
  
-  ⊢'-⊥ : Proper ⊥
-
   ⊢'-ω : Proper ω
 
   ⊢'-ν : Proper ν
@@ -223,7 +218,6 @@ data Proper : Value → Set where
 proper-left : ∀ {d} → Proper d → Proper (left d)
 proper-left ⊢'-ω = ⊢'-left-å ⊢'-ω tt
 proper-left ⊢'-ν = ⊢'-left-å ⊢'-ν tt
-proper-left ⊢'-⊥ = ⊢'-left-å ⊢'-⊥ tt
 proper-left (⊢'-const k) = ⊢'-left-å (⊢'-const k) tt
 proper-left (⊢'-↦-å Pd₁ Pd₂ åw) = ⊢'-left-å (⊢'-↦-å Pd₁ Pd₂ åw) åw 
 proper-left (⊢'-fst-å Pd åv₁) = ⊢'-left-å (⊢'-fst-å Pd åv₁) åv₁
@@ -238,7 +232,6 @@ proper-left (⊢'-split vL vR split Pd Pd₁) =
 
 
 proper-right : ∀ {d} → Proper d → Proper (right d)
-proper-right ⊢'-⊥ = ⊢'-right-å ⊢'-⊥ tt
 proper-right ⊢'-ω = ⊢'-right-å ⊢'-ω tt
 proper-right ⊢'-ν = ⊢'-right-å ⊢'-ν tt
 proper-right (⊢'-const k) = ⊢'-right-å (⊢'-const k) tt
@@ -257,7 +250,6 @@ proper-↦ : ∀ {u v} → Proper u → Proper v → Proper (u ↦ v)
 proper-↦ {u}{v} Pu Pv with atomic? v
 ... | yes åv = ⊢'-↦-å Pu Pv åv
 ... | no ¬åv with Pv
-... | ⊢'-⊥ = ⊥-elim (¬åv tt)
 ... | ⊢'-ω = ⊥-elim (¬åv tt)
 ... | ⊢'-ν = ⊥-elim (¬åv tt)
 ... | ⊢'-const k = ⊥-elim (¬åv tt)
@@ -273,7 +265,6 @@ proper-↦ {u}{v} Pu Pv with atomic? v
             (proper-↦ Pu Pv₁) (proper-↦ Pu Pv₂)
 
 proper-fst : ∀ {d} → Proper d → Proper ⦅ d ∣
-proper-fst ⊢'-⊥ = ⊢'-fst-å ⊢'-⊥ tt
 proper-fst ⊢'-ω = ⊢'-fst-å ⊢'-ω tt
 proper-fst ⊢'-ν = ⊢'-fst-å ⊢'-ν tt
 proper-fst (⊢'-const k) = ⊢'-fst-å (⊢'-const k) tt
@@ -289,7 +280,6 @@ proper-fst (⊢'-split vL vR split Pd Pd₁) =
 
 
 proper-snd : ∀ {d} → Proper d → Proper ∣ d ⦆
-proper-snd ⊢'-⊥ = ⊢'-snd-å ⊢'-⊥ tt
 proper-snd ⊢'-ω = ⊢'-snd-å ⊢'-ω tt
 proper-snd ⊢'-ν = ⊢'-snd-å ⊢'-ν tt
 proper-snd (⊢'-const k) = ⊢'-snd-å (⊢'-const k) tt
@@ -319,7 +309,6 @@ proper-tup : ∀ {n v vs} → Proper v → Proper (∥_∥ {n} vs) → Proper �
 proper-tup {n}{v}{vs} Pv Pvs with atomic? v
 ... | yes åv = proper-tup-atomic-head Pv Pvs åv
 ... | no ¬åv with Pv
-... | ⊢'-⊥ = ⊥-elim (¬åv tt)
 ... | ⊢'-ω = ⊥-elim (¬åv tt)
 ... | ⊢'-ν = ⊥-elim (¬åv tt)
 ... | ⊢'-const k = ⊥-elim (¬åv tt)
@@ -335,7 +324,6 @@ proper-tup {n}{v}{vs} Pv Pvs with atomic? v
             (proper-tup Pv₁ Pvs) (proper-tup Pv₂ Pvs)
 
 proper : ∀ v → Proper v
-proper ⊥ = ⊢'-⊥
 proper ω = ⊢'-ω
 proper ν = ⊢'-ν
 proper (const k) = ⊢'-const k
@@ -360,7 +348,6 @@ unsplittable (right d) åv (split-right split) = unsplittable d åv split
 
 ¬å⇒split : ∀ v → ¬ (Atomic v) → Σ[ v₁ ∈ Value ] Σ[ v₂ ∈ Value ] v₁ ◃ v ▹ v₂
 ¬å⇒split v ¬åv with (proper v)
-... | ⊢'-⊥ = ⊥-elim (¬åv tt)
 ... | ⊢'-ω = ⊥-elim (¬åv tt)
 ... | ⊢'-ν = ⊥-elim (¬åv tt)
 ... | ⊢'-const k = ⊥-elim (¬åv tt)
@@ -380,7 +367,6 @@ tup-depth : ∀ {n} (vs : Vec Value n) → ℕ
 tup-depth {zero} [] = zero
 tup-depth {suc n} (v ∷ vs) = max (depth v) (tup-depth vs)
 depth ω = zero
-depth ⊥ = zero
 depth ν = zero
 depth (const k) = zero
 depth ( v ↦ w) = suc (max (depth v) (depth w))
@@ -396,7 +382,6 @@ tup-size : ∀ {n} (vs : Vec Value n) → ℕ
 tup-size {zero} [] = zero
 tup-size {suc n} (v ∷ vs) = suc (size v + tup-size vs)
 size ω = zero
-size ⊥ = zero
 size ν = zero
 size (const k) = zero
 size ( v ↦ w) = suc (size v + size w)
@@ -567,27 +552,6 @@ right u d≟ ∣ v ⦆ = no (λ ())
 ∣ u ⦆ d≟ ∥ ds ∥ = no (λ ())
 ∣ u ⦆ d≟ left v = no (λ ())
 ∣ u ⦆ d≟ right v = no (λ ())
-⊥ d≟ ⊥ = yes refl
-⊥ d≟ ω = no (λ ())
-⊥ d≟ ν = no (λ ())
-⊥ d≟ const k = no (λ ())
-⊥ d≟ (v ⊔ v₁) = no (λ ())
-⊥ d≟ (v ↦ v₁) = no (λ ())
-⊥ d≟ ⦅ v ∣ = no (λ ())
-⊥ d≟ ∣ v ⦆ = no (λ ())
-⊥ d≟ ∥ ds ∥ = no (λ ())
-⊥ d≟ left v = no (λ ())
-⊥ d≟ right v = no (λ ())
-ω d≟ ⊥ = no (λ ())
-ν d≟ ⊥ = no (λ ())
-const k d≟ ⊥ = no (λ ())
-(u ⊔ u₁) d≟ ⊥ = no (λ ())
-(u ↦ u₁) d≟ ⊥ = no (λ ())
-⦅ u ∣ d≟ ⊥ = no (λ ())
-∣ u ⦆ d≟ ⊥ = no (λ ())
-∥ ds ∥ d≟ ⊥ = no (λ ())
-left u d≟ ⊥ = no (λ ())
-right u d≟ ⊥ = no (λ ())
 [] ds≟ [] = yes refl
 (d ∷ ds) ds≟ (d' ∷ ds') = map′ (uncurry (cong₂ _∷_)) ∷-injective ((d d≟ d') ×-dec (ds ds≟ ds'))
 

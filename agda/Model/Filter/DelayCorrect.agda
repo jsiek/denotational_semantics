@@ -322,44 +322,23 @@ del-map-args-preserve {suc n} (M ,, args) ρ =
   -}
 
 
+
+
 fros : ∀ {n} → Vec Value' n  → Vec Value n
 fro : Value' → Value
 fro (const x) = const x
 fro (V ↦ w) = ω
 fro ν = ω
 fro ω = ω
-fro ⊥ = ω {-⊥-}
-
-fro ⦅ u ∣ = ω {-⊥-}   {- for these two lines... -}
-fro ∣ FV ⦆ = ω {-⊥-}  {- we  could do better than this, but I'm not sure we need to -}
-
+fro ⦅ u ∣ = ω  {- for these two lines... -}
+fro ∣ FV ⦆ = ω  {- we  could do better than this, but I'm not sure we need to -}
 fro ∥ xs ∥ = ∥ fros xs ∥
 fro (left v) = left (fro v)
 fro (right v) = right (fro v)
-fro (ω ⊔ v) = fro ω ⊔ fro v
-fro (ν ⊔ v) = fro ν ⊔ fro v
-fro (⊥ ⊔ v) = fro ω {-⊥-} ⊔ fro v
-fro (const k ⊔ v) = fro (const k) ⊔ fro v
-fro (u ⊔ u₁ ⊔ v) = fro (u ⊔ u₁) ⊔ fro v
-fro (u ↦ u₁ ⊔ v) = fro (u ↦ u₁) ⊔ fro v
-fro (⦅ u ∣ ⊔ ω) = fro ⦅ u ∣ ⊔ fro ω
-fro (⦅ u ∣ ⊔ ⊥) = fro ⦅ u ∣ ⊔ fro ω {-⊥-}
-fro (⦅ u ∣ ⊔ ν) = fro ⦅ u ∣ ⊔ fro ν
-fro (⦅ u ∣ ⊔ const k) = fro ⦅ u ∣ ⊔ fro (const k)
-fro (⦅ u ∣ ⊔ (v ⊔ v₁)) = fro ⦅ u ∣ ⊔ fro (v ⊔ v₁)
-fro (⦅ u ∣ ⊔ v ↦ v₁) = fro ⦅ u ∣ ⊔ fro (v ↦ v₁)
-fro (⦅ u ∣ ⊔ ⦅ v ∣) = fro ⦅ u ∣ ⊔ fro ⦅ v ∣
-fro ⦅ FV ↦ (V ↦ w) , FV' ⦆' with FV DTarget.d≟ FV'
+fro (⦅ FV ↦ (V ↦ w) ∣ ⊔ ∣ FV' ⦆) with FV DTarget.d≟ FV'
 ... | yes refl = (fro FV) ⊢ fro V ↦ fro w
 ... | no neq = fro FV' ⊢ν
-fro ⦅ u , v ⦆' = (fro ⦅ u ∣) ⊔ (fro ∣ v ⦆)
-fro (⦅ u ∣ ⊔ ∥ ds ∥) = fro ⦅ u ∣ ⊔ fro ∥ ds ∥
-fro (⦅ u ∣ ⊔ left v) = fro ⦅ u ∣ ⊔ fro (left v)
-fro (⦅ u ∣ ⊔ right v) = fro ⦅ u ∣ ⊔ fro (right v)
-fro (∣ u ⦆ ⊔ v) = fro ∣ u ⦆ ⊔ fro v
-fro (∥ ds ∥ ⊔ v) = fro ∥ ds ∥ ⊔ fro v
-fro (left u ⊔ v) = fro (left u) ⊔ fro v
-fro (right u ⊔ v) = fro (right u) ⊔ fro v
+fro (u ⊔ v) = fro u ⊔ fro v
 fros [] = []
 fros (d ∷ ds) = fro d ∷ fros ds
 
@@ -430,22 +409,10 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ u 
   ⟨ ⟨ FV , ⟨ ⟨ u∈ , v∈ ⟩ , FV∈ ⟩ ⟩ , ⟨ f , ⟨ f∈ , d₁∈ ⟩ ⟩ ⟩ =
   ⟨ {!   !} , ⟨ {!   !} , ⟨ {!   !} 
    , ⟨ {!   !} , ⟨ {!   !} , {!   !} ⟩ ⟩ ⟩ ⟩ ⟩
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (⦅ u ∣ ⊔ ⦅ v ∣) ⟨ u∈ , v∈ ⟩ 
-  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ u ∣ u∈
-     | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ v ∣ v∈
-... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro ⦅ u ∣) (fro ⦅ v ∣) IHu IHv
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (⦅ u ∣ ⊔ (vL ⊔ vR)) ⟨ u∈ , v∈ ⟩ 
-  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ u ∣ u∈
-     | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (vL ⊔ vR) v∈
-... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro ⦅ u ∣) (fro (vL ⊔ vR)) IHu IHv
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (∣ u ⦆ ⊔ v) ⟨ u∈ , v∈ ⟩ 
-  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ u ⦆ u∈
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ 
+  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ u u∈
      | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ v v∈
-... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro ∣ u ⦆) (fro v) IHu IHv
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ((uL ⊔ uR) ⊔ v) ⟨ u∈ , v∈ ⟩ 
-  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (uL ⊔ uR) u∈
-     | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ v v∈
-... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro (uL ⊔ uR)) (fro v) IHu IHv
+... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro u) (fro v) IHu IHv
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ∣  
   ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = {!   !}
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ d ⦆ 
