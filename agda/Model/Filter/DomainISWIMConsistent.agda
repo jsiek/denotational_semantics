@@ -19,6 +19,8 @@ open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Product using (_×-dec_)
+open import Relation.Nullary.Sum using (_⊎-dec_)
+open import Relation.Nullary.Negation using (¬?)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; subst; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning
@@ -65,9 +67,7 @@ module Model.Filter.DomainISWIMConsistent where
   const {B} k ~ ω = True
   const {B} k ~ ν = False
   const {B} k ~ const {B′} k′
-    with base-eq? B B′
-  ... | yes refl = k ≡ k′
-  ... | no neq = False
+    = Σ[ B≡ ∈ B ≡ B′ ] (subst base-rep B≡ k) ≡ k′ 
   const {B} k ~ ⦅ v₁ ∣ = False
   const {B} k ~ ∣ v₂ ⦆ = False
   const {B} k ~ (tup[ i ] d) = False
@@ -97,9 +97,8 @@ module Model.Filter.DomainISWIMConsistent where
   (tup[ i ] d) ~ const k = False
   (tup[ i ] d) ~ ⦅ v ∣ = False
   (tup[ i ] d) ~ ∣ v₁ ⦆ = False
-  (tup[_]_ {n} i d) ~ (tup[_]_ {n'} i' d') with n ≟ n'
-  ... | no neq = False
-  ... | yes refl = (¬ (i ≡ i')) ⊎ (i ≡ i' × d ~ d')
+  (tup[_]_ {n} i d) ~ (tup[_]_ {n'} i' d') 
+    = Σ[ n≡ ∈ n ≡ n' ] ((¬ ((subst Fin n≡ i) ≡ i')) ⊎ ((subst Fin n≡ i) ≡ i' × d ~ d'))
   (tup[ i ] d) ~ v ↦ w = False
   (tup[ i ] d) ~ left v = False
   (tup[ i ] d) ~ right v = False
@@ -131,6 +130,16 @@ module Model.Filter.DomainISWIMConsistent where
   right u ~ left v = False
   right u ~ right v = u ~ v
 
+  ~-const-inv : ∀ {B k k'} → const {B} k ~ const k' 
+    → k ≡ k'
+  ~-const-inv ⟨ refl , snd ⟩ = snd
+
+  ~-tup-inv : ∀ {n}{i i' : Fin n}{d d'} → tup[ i ] d ~ tup[ i' ] d'
+    → (¬ (i ≡ i')) ⊎ (i ≡ i' × d ~ d')
+  ~-tup-inv ⟨ refl , snd ⟩ = snd
+
+  
+
   _~?_ : (u : Value) → (v : Value) → Dec (u ~ v)
   ω ~? v = yes tt
   ν ~? ω = yes tt
@@ -147,8 +156,10 @@ module Model.Filter.DomainISWIMConsistent where
   const k ~? ν = no (λ z → z)
   (const {B} k) ~? (const {B′} k′)
       with base-eq? B B′
-  ... | yes eq rewrite eq = base-rep-eq? k k′
-  ... | no neq = no (λ z → z)
+  ... | no neq = no (λ z → neq (proj₁ z))
+  ... | yes refl with base-rep-eq? k k′
+  ... | yes refl = yes ⟨ refl , refl ⟩
+  ... | no neq = no λ z → neq (~-const-inv z)
   const k ~? (v ⊔ v₁) = (const k ~? v) ×-dec (const k ~? v₁)
   const k ~? (v₁ ↦ v₂) = no (λ z → z)
   const k ~? ⦅ v ∣ = no (λ z → z)
@@ -195,8 +206,13 @@ module Model.Filter.DomainISWIMConsistent where
   (tup[ i ] d) ~? ⦅ v ∣ = no (λ z → z)
   (tup[ i ] d) ~? ∣ v ⦆ = no (λ z → z)
   (tup[_]_ {n} i d) ~? (tup[_]_ {n'} i' d') with n ≟ n'
-  ... | no neq = no (λ z → z)
-  ... | yes refl = ¬dec (i fin≟ i') ∨dec (i fin≟ i') ∧dec (d ~? d')
+  ... | no neq = no (λ z → neq (proj₁ z))
+  ... | yes refl with i fin≟ i'
+  ... | no neq = yes ⟨ refl , inj₁ neq ⟩
+  ... | yes refl with d ~? d'
+  ... | yes d~ = yes ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩
+  ... | no ¬d~ = no λ z → ¬d~ ([ (λ x → ⊥-elim (x refl)) 
+                               , (λ x → proj₂ x) ] (~-tup-inv {n}{i}{i'}{d} z))
   (tup[ i ] d) ~? left v = no (λ z → z)
   (tup[ i ] d) ~? right v = no (λ z → z)
   left u ~? ω = yes tt
@@ -278,11 +294,7 @@ module Model.Filter.DomainISWIMConsistent where
   ~-sym ν (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym ν v fst , ~-sym ν v₁ snd ⟩
   ~-sym ν (v₁ ↦ v₂) u~v = tt
   ~-sym (const k) ω u~v = tt
-  ~-sym (const {B} k) (const {B'} k₁) u~v with base-eq? B B'
-  ... | no neq = ⊥-elim u~v
-  ... | yes refl with base-eq? B B
-  ... | no neq = neq refl
-  ... | yes refl = sym u~v
+  ~-sym (const {B} k) (const {B'} k₁) ⟨ refl , refl ⟩ = ⟨ refl , refl ⟩
   ~-sym (const k) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (const k) v fst , ~-sym (const k) v₁ snd ⟩
   ~-sym (u ⊔ u₁) v ⟨ fst , snd ⟩ = ~-⊔-R v (~-sym u v fst) (~-sym u₁ v snd)
   ~-sym (u₁ ↦ u₂) ω u~v = tt
@@ -300,12 +312,10 @@ module Model.Filter.DomainISWIMConsistent where
   ~-sym ∣ u ⦆ ∣ v ⦆ u~v = ~-sym u v u~v
   ~-sym (tup[ i ] d) ω u~v = tt
   ~-sym (tup[ i ] d) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (tup[ i ] d) v fst , ~-sym (tup[ i ] d) v₁ snd ⟩
-  ~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') d~d' with n ≟ n' | n' ≟ n | d~d'
-  ... | no neq | no neq' | d~d' = d~d'
-  ... | no neq | yes refl | _ = ⊥-elim (neq refl)
-  ... | yes refl | no neq | _ = ⊥-elim (neq refl)
-  ... | yes refl | yes refl | inj₁ x = inj₁ λ z → x (sym z)
-  ... | yes refl | yes refl | inj₂ y = inj₂ ⟨ sym (proj₁ y) , ~-sym d d' (proj₂ y) ⟩
+  ~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') ⟨ refl , inj₁ neq ⟩ = 
+    ⟨ refl , inj₁ (λ z → neq (sym z)) ⟩
+  ~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩ =
+     ⟨ refl , inj₂ ⟨ refl , ~-sym d d' d~ ⟩ ⟩
   ~-sym (left u) ω u~v = tt
   ~-sym (left u) (v ⊔ v₁) ⟨ fst , snd ⟩ = ⟨ ~-sym (left u) v fst , ~-sym (left u) v₁ snd ⟩
   ~-sym (left u) (left v) u~v = ~-sym u v u~v
@@ -339,13 +349,10 @@ module Model.Filter.DomainISWIMConsistent where
   ~-split (split-tup split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ = 
     ⟨ ~-split (split-tup split) v fst fst₁ 
     , ~-split (split-tup split) v₁ snd snd₁ ⟩
-  ~-split (split-tup {n} split) (tup[_]_ {n'} i' d') ~L ~R 
-    with n ≟ n' | ~L | ~R
-  ... | no neq | () | ()
-  ... | yes refl | inj₁ neq | ~R = inj₁ neq
-  ... | yes refl | inj₂ ⟨ refl , dL~ ⟩ | inj₁ x = ⊥-elim (x refl)
-  ... | yes refl | inj₂ ⟨ refl , dL~ ⟩ | inj₂ y = 
-    inj₂ ⟨ refl , ~-split split d' dL~ (proj₂ y) ⟩
+  ~-split (split-tup {n} split) (tup[_]_ {n'} i' d') ⟨ refl , ~L ⟩ ⟨ refl , ~R ⟩ 
+   = ⟨ refl , [ (λ z → inj₁ z) 
+             , (λ z → [ (λ z' → ⊥-elim (z' (proj₁ z))) 
+                      , (λ z' → inj₂ ⟨ proj₁ z' , ~-split split d' (proj₂ z) (proj₂ z') ⟩) ] ~R ) ] ~L ⟩
   ~-split (split-left split) ω u₁~v u₂~v = tt
   ~-split (split-left split) (v ⊔ v₁) ⟨ fst , snd ⟩ ⟨ fst₁ , snd₁ ⟩ =
    ⟨ ~-split (split-left split) v fst fst₁ , ~-split (split-left split) v₁ snd snd₁ ⟩
@@ -383,11 +390,12 @@ module Model.Filter.DomainISWIMConsistent where
   ~-split-inv (split-tup split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-tup split) v fst | ~-split-inv (split-tup split) v₁ snd
   ... | ⟨ fstL~ , fstR~ ⟩ | ⟨ sndL~ , sndR~ ⟩ = ⟨ ⟨ fstL~ , sndL~ ⟩ , ⟨ fstR~ , sndR~ ⟩ ⟩
-  ~-split-inv (split-tup {n} split) (tup[_]_ {n'} i' d') u~v with n ≟ n' | u~v
-  ... | no neq | u~v = ⊥-elim u~v
-  ... | yes refl | inj₁ neq = ⟨ inj₁ neq , inj₁ neq ⟩
-  ... | yes refl | inj₂ ⟨ refl , d~ ⟩ with ~-split-inv split d' d~
-  ... | ⟨ dL~ , dR~ ⟩ = ⟨ inj₂ ⟨ refl , dL~ ⟩ , inj₂ ⟨ refl , dR~ ⟩ ⟩
+  ~-split-inv (split-tup {n} split) (tup[_]_ {.n} i' d') ⟨ refl , inj₁ x ⟩ = 
+    ⟨ ⟨ refl , inj₁ x ⟩ , ⟨ refl , inj₁ x ⟩ ⟩
+  ~-split-inv (split-tup {n} split) (tup[_]_ {.n} i' d') ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩ 
+     with ~-split-inv split d' d~
+  ... | ⟨ ~dL , ~dR ⟩ = 
+    ⟨ ⟨ refl , inj₂ ⟨ refl , ~dL ⟩ ⟩ , ⟨ refl , inj₂ ⟨ refl , ~dR ⟩ ⟩ ⟩
   ~-split-inv (split-left split) ω u~v = ⟨ tt , tt ⟩
   ~-split-inv (split-left split) (v ⊔ v₁) ⟨ fst , snd ⟩
     with ~-split-inv (split-left split) v fst | ~-split-inv (split-left split) v₁ snd
@@ -475,17 +483,11 @@ module Model.Filter.DomainISWIMConsistent where
   sc-å : ∀ v → Atomic v → sc v
   sc-å ω åv = tt
   sc-å ν åv = tt
-  sc-å (const {B} k) åv with base-eq? B B
-  ... | no neq = ⊥-elim (neq refl)
-  ... | yes refl with base-rep-eq? k k
-  ... | no neq = ⊥-elim (neq refl)
-  ... | yes refl = refl
+  sc-å (const {B} k) åv = ⟨ refl , refl ⟩
   sc-å (v ↦ v₁) åv₁ = inj₂ (sc-å v₁ åv₁)
   sc-å ⦅ d ∣ åd = sc-å d åd
   sc-å ∣ d ⦆ åd = sc-å d åd
-  sc-å (tup[_]_ {n} i d) åd with n ≟ n
-  ... | no neq = ⊥-elim (neq refl)
-  ... | yes refl = inj₂ ⟨ refl , sc-å d åd ⟩
+  sc-å (tup[_]_ {n} i d) åd = ⟨ refl , inj₂ ⟨ refl , sc-å d åd ⟩ ⟩
   sc-å (left d) åd = sc-å d åd
   sc-å (right d) åd = sc-å d åd
 
@@ -497,16 +499,11 @@ module Model.Filter.DomainISWIMConsistent where
   sc-↦ u v (inj₂ y) = inj₂ y
 
   sc-tup : ∀ d → sc d → ∀ {n}{i : Fin n} → sc (tup[ i ] d)
-  sc-tup d scd {n} with n ≟ n
-  ... | no neq = ⊥-elim (neq refl)
-  ... | yes refl = inj₂ ⟨ refl , scd ⟩
+  sc-tup d scd {n} = ⟨ refl , inj₂ ⟨ refl , scd ⟩ ⟩
 
   sc-tup-inv : ∀ {n}{i : Fin n} d → sc (tup[ i ] d) → sc d
-  sc-tup-inv {n} d sctup with n ≟ n
-  ... | no neq = ⊥-elim (neq refl)
-  ... | yes refl with sctup
-  ... | inj₁ x = ⊥-elim (x refl)
-  ... | inj₂ y = proj₂ y
+  sc-tup-inv {n} d ⟨ refl , inj₁ x ⟩ = ⊥-elim (x refl)
+  sc-tup-inv {n} d ⟨ refl , inj₂ ⟨ refl , scd ⟩ ⟩ = scd
 
   sc-split : ∀ {v v₁ v₂} → v₁ ◃ v ▹ v₂ → sc v₁ → sc v₂ → v₁ ~ v₂ → sc v
   sc-split (split-⊔ {v₁}{v₂}) scL scR L~R = sc-⊔ v₁ v₂ scL scR L~R
@@ -517,12 +514,11 @@ module Model.Filter.DomainISWIMConsistent where
   sc-split (split-↦ split) (inj₂ y) (inj₂ y₁) (inj₂ y₂) = inj₂ (sc-split split y y₁ y₂)
   sc-split (split-fst split) scd₁ scd₂ d₁~d₂ = sc-split split scd₁ scd₂ d₁~d₂
   sc-split (split-snd split) scd₁ scd₂ d₁~d₂ = sc-split split scd₁ scd₂ d₁~d₂
-  sc-split (split-tup {n}{i}{d}{dL}{dR} split) scd₁ scd₂ d₁~d₂ 
-    with n ≟ n | d₁~d₂ | sc-tup-inv dL scd₁ | sc-tup-inv dR scd₂
-  ... | no neq | _ | _ | _ = ⊥-elim (neq refl)
-  ... | yes refl | inj₁ neq | _ | _ = ⊥-elim (neq refl)
-  ... | yes refl | inj₂ ⟨ refl , dL~dR ⟩ | scdL | scdR = 
-    inj₂ ⟨ refl , sc-split split scdL scdR dL~dR ⟩
+  sc-split (split-tup {n} {i} {d} {dL} {dR} split) ⟨ refl , inj₁ x ⟩ ⟨ refl , ~R ⟩ ⟨ refl , L~R ⟩ = ⊥-elim (x refl)
+  sc-split (split-tup {n} {i} {d} {dL} {dR} split) ⟨ refl , inj₂ y ⟩ ⟨ refl , inj₁ x ⟩ ⟨ refl , L~R ⟩ = ⊥-elim (x refl)
+  sc-split (split-tup {n} {i} {d} {dL} {dR} split) ⟨ refl , inj₂ y ⟩ ⟨ refl , inj₂ y₁ ⟩ ⟨ refl , inj₁ L~R ⟩ = ⊥-elim (L~R refl) 
+  sc-split (split-tup {n} {i} {d} {dL} {dR} split) ⟨ refl , inj₂ y ⟩ ⟨ refl , inj₂ y₁ ⟩ ⟨ refl , inj₂ L~R ⟩ = 
+    ⟨ refl , inj₂ ⟨ refl , sc-split split (proj₂ y) (proj₂ y₁) (proj₂ L~R) ⟩ ⟩
   sc-split (split-left split) scd₁ scd₂ d₁~d₂ = sc-split split scd₁ scd₂ d₁~d₂
   sc-split (split-right split) scd₁ scd₂ d₁~d₂ = sc-split split scd₁ scd₂ d₁~d₂
 
@@ -534,22 +530,22 @@ module Model.Filter.DomainISWIMConsistent where
   sc-split-inv (split-fst split) scd = sc-split-inv split scd
   sc-split-inv (split-snd split) scd = sc-split-inv split scd
   sc-split-inv (split-tup {n}{i}{d} split) scd with sc-split-inv split (sc-tup-inv d scd)
-  ... | ⟨ scdL , ⟨ scdR , L~R ⟩ ⟩ = ⟨ {! inj₂ ⟨ refl , scdL ⟩  !} , ⟨ {!   !} , {!   !} ⟩ ⟩
+  ... | ⟨ scdL , ⟨ scdR , L~R ⟩ ⟩ = 
+    ⟨ ⟨ refl , inj₂ ⟨ refl , scdL ⟩ ⟩ , ⟨ ⟨ refl , inj₂ ⟨ refl , scdR ⟩ ⟩ 
+    , ⟨ refl , inj₂ ⟨ refl , L~R ⟩ ⟩ ⟩ ⟩
   sc-split-inv (split-left split) scd = sc-split-inv split scd
   sc-split-inv (split-right split) scd = sc-split-inv split scd
 
   ~-refl : ∀ {v} → wf v → v ~ v
   ~-refl wf-ω = tt
   ~-refl wf-ν = tt
-  ~-refl (wf-const {B} k) with base-eq? B B
-  ... | no neq = ⊥-elim (neq refl)
-  ... | yes refl = refl
+  ~-refl (wf-const {B} k) = ⟨ refl , refl ⟩
   ~-refl (wf-fun wfv wfv₁) = inj₂ (~-refl wfv₁)
   ~-refl (wf-⊔ {u}{v} u~v wfv wfv₁) = 
     ~-⊔-cong {u}{v}{u}{v} (~-refl wfv) u~v (~-sym u v u~v) (~-refl wfv₁)
   ~-refl (wf-fst wfd) = ~-refl wfd
   ~-refl (wf-snd wfd) = ~-refl wfd
-  ~-refl (wf-tup wfv) = {!   !}
+  ~-refl (wf-tup wfv) = ⟨ refl , inj₂ ⟨ refl , ~-refl wfv ⟩ ⟩
   ~-refl (wf-left wfd) = ~-refl wfd
   ~-refl (wf-right wfd) = ~-refl wfd
 
@@ -566,7 +562,9 @@ module Model.Filter.DomainISWIMConsistent where
     = wf-fun wfR (wf-split split y wfL₁ wfR₁)
   wf-split (split-fst split) ~fst (wf-fst wfL) (wf-fst wfR) = wf-fst (wf-split split ~fst wfL wfR)
   wf-split (split-snd split) ~snd (wf-snd wfL) (wf-snd wfR) = wf-snd (wf-split split ~snd wfL wfR)
-  wf-split (split-tup split) ~tup (wf-tup wfL) (wf-tup wfR) = wf-tup {!   !}
+  wf-split (split-tup split) ⟨ refl , inj₁ x ⟩ (wf-tup wfL) (wf-tup wfR) = ⊥-elim (x refl)
+  wf-split (split-tup split) ⟨ refl , inj₂ y ⟩ (wf-tup wfL) (wf-tup wfR) = 
+    wf-tup (wf-split split (proj₂ y) wfL wfR)
   wf-split (split-left split) d₁~d₂ (wf-left wfd₁) (wf-left wfd₂) = wf-left (wf-split split  d₁~d₂ wfd₁ wfd₂)
   wf-split (split-right split) d₁~d₂ (wf-right wfd₁) (wf-right wfd₂) = wf-right (wf-split split  d₁~d₂ wfd₁ wfd₂)
 
@@ -582,7 +580,9 @@ module Model.Filter.DomainISWIMConsistent where
     ⟨ proj₁ (wf-split-inv split wfv) , ⟨ wf-snd (proj₁ (proj₂ (wf-split-inv split wfv))) 
     , wf-snd (proj₂ (proj₂ (wf-split-inv split wfv))) ⟩ ⟩
   wf-split-inv (split-tup split) (wf-tup wfd) =
-    ⟨ {!   !} , {!   !} ⟩
+    ⟨ ⟨ refl , inj₂ ⟨ refl , proj₁ (wf-split-inv split wfd) ⟩ ⟩ 
+    , ⟨ wf-tup (proj₁ (proj₂ (wf-split-inv split wfd))) 
+    , wf-tup (proj₂ (proj₂ (wf-split-inv split wfd))) ⟩ ⟩
   wf-split-inv (split-left split) (wf-left wfd) with wf-split-inv split wfd
   ... | ⟨ d~ , ⟨ wfd1 , wfd2 ⟩ ⟩ = ⟨ d~ , ⟨ wf-left wfd1 , wf-left wfd2 ⟩ ⟩
   wf-split-inv (split-right split) (wf-right wfd) with wf-split-inv split wfd
@@ -622,7 +622,9 @@ module Model.Filter.DomainISWIMConsistent where
   consistent-⊑-lemma (⊑-tup-å åd ⊑d) (v ⊔ v₁) ⟨ fst , snd ⟩ = 
     ⟨ consistent-⊑-lemma (⊑-tup-å åd ⊑d) v fst 
     , consistent-⊑-lemma (⊑-tup-å åd ⊑d) v₁ snd ⟩
-  consistent-⊑-lemma (⊑-tup-å åd ⊑d) (tup[ i ] d) d~ = {!   !}
+  consistent-⊑-lemma (⊑-tup-å åd ⊑d) (tup[ i ] d) ⟨ refl , inj₁ x ⟩ = ⟨ refl , inj₁ x ⟩
+  consistent-⊑-lemma (⊑-tup-å åd ⊑d) (tup[ i ] d) ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩ = 
+    ⟨ refl , inj₂ ⟨ refl , consistent-⊑-lemma ⊑d d d~ ⟩ ⟩
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ω u~v = tt
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) ν u~v = tt
   consistent-⊑-lemma (⊑-↦-å åu₂ ⊑u ⊑u₁) (v ⊔ v₁) ⟨ fst , snd ⟩ = 
