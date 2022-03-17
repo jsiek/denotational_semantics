@@ -28,6 +28,7 @@ open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Fin using (Fin)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
@@ -42,7 +43,7 @@ data Op : Set where
   app : Op
   lit : (B : Base) → (k : base-rep B) → Op
   tuple : ℕ → Op
-  get : ℕ → Op
+  get : ∀ {n} (i : Fin n) → Op
   inl-op : Op
   inr-op : Op
   case-op : Op
@@ -80,8 +81,8 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos3 case-op = 𝒞
 
 𝕆-Clos3-mono : 𝕆-monotone sig 𝕆-Clos3
-𝕆-Clos3-mono (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
-    𝒜⋆-mono ⟨ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ 
+𝕆-Clos3-mono (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = {!   !}
+    {- 𝒜⋆-mono ⟨ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ 
             ⟨ Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩ 
             ⟨ Λ-mono ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ 
                      ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩ 
@@ -89,6 +90,7 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
                                            ⟨ F' D' , ptt ⟩ 
                                            ⟨ F~ D D' D⊆ , ptt ⟩) , ptt ⟩ 
             , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
+    -}
      {- Λ-mono ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩
               ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩ -}
 
@@ -106,8 +108,8 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
                                (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆)))) -}
 𝕆-Clos3-mono app = ⋆-mono
 𝕆-Clos3-mono (lit B k) _ _ _ = lift (λ d z → z)
-𝕆-Clos3-mono (tuple x) = 𝒯-mono x
-𝕆-Clos3-mono (get x) = proj-mono x
+𝕆-Clos3-mono (tuple x) = {!   !}
+𝕆-Clos3-mono (get x) = {!   !}
 𝕆-Clos3-mono inl-op = ℒ-mono
 𝕆-Clos3-mono inr-op = ℛ-mono
 𝕆-Clos3-mono case-op = 𝒞-mono

@@ -28,6 +28,7 @@ open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Fin using (Fin)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
@@ -45,7 +46,7 @@ data Op : Set where
   fst-op : Op
   snd-op : Op
   tuple : ℕ → Op
-  get : ℕ → Op
+  get : ∀ {n} (i : Fin n) → Op
   inl-op : Op
   inr-op : Op
   case-op : Op
@@ -100,8 +101,8 @@ open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename;
 𝕆-Clos4-mono pair-op = pair-mono
 𝕆-Clos4-mono fst-op = car-mono
 𝕆-Clos4-mono snd-op = cdr-mono
-𝕆-Clos4-mono (tuple x) = 𝒯-mono x
-𝕆-Clos4-mono (get x) = proj-mono x
+𝕆-Clos4-mono (tuple x) = {!   !}
+𝕆-Clos4-mono (get x) = {!   !}
 𝕆-Clos4-mono inl-op = ℒ-mono
 𝕆-Clos4-mono inr-op = ℛ-mono
 𝕆-Clos4-mono case-op = 𝒞-mono

@@ -36,6 +36,7 @@ open import Data.Nat.Properties using (≤-pred)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Vec using (Vec; []; _∷_)
+open import Data.Fin using (Fin; suc; zero)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
@@ -89,6 +90,35 @@ car ⟨ D , _ ⟩ f = ⦅ f ∣ ∈ D
 cdr : DOp (𝒫 Value) (■ ∷ [])
 cdr ⟨ D , _ ⟩ FV = ∣ FV ⦆ ∈ D
 
+
+nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n) → Result A ■
+nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
+nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
+
+𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
+𝒯 n Ds ω = True
+𝒯 n Ds (u ⊔ v) = 𝒯 n Ds u × 𝒯 n Ds v
+𝒯 n Ds (tup[_]_ {n'} i d) = Σ[ n≡ ∈ n' ≡ n ] d ∈ (nthD Ds (subst Fin n≡ i))
+𝒯 n Ds d = False
+
+proj : ∀ {n} → Fin n → DOp (𝒫 Value) (■ ∷ [])
+proj i ⟨ D , _ ⟩ d = (tup[ i ] d) ∈ D
+
+
+
+{-
+nth : ∀ {n} → Vec Value n → ℕ → Value
+nth [] i = ω
+nth (v ∷ vs) 0 = v
+nth (v ∷ vs) (suc i) = nth vs i
+
+proj : ℕ → DOp (𝒫 Value) (■ ∷ [])
+proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
+     ∥ vs ∥ ∈ D × u ≡ nth vs i
+-}
+
+
+{-
 𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ω = True
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
@@ -98,7 +128,9 @@ cdr ⟨ D , _ ⟩ FV = ∣ FV ⦆ ∈ D
 
 𝒯 : ∀ n → DOp (𝒫 Value) (replicate n ■)
 𝒯 n = Dfold ■ ■ n 𝒯-cons ⌈ ∥ [] ∥ ⌉
+-}
 
+{-
 nth : ∀ {n} → Vec Value n → ℕ → Value
 nth [] i = ω
 nth (v ∷ vs) 0 = v
@@ -107,6 +139,9 @@ nth (v ∷ vs) (suc i) = nth vs i
 proj : ℕ → DOp (𝒫 Value) (■ ∷ [])
 proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
      ∥ vs ∥ ∈ D × u ≡ nth vs i
+-}
+
+
 
 ℒ : DOp (𝒫 Value) (■ ∷ [])
 ℒ ⟨ D , _ ⟩ ω = True
@@ -303,6 +338,7 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
       , lower (𝒞-mono ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩ ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ⟨ lift D'<D , ⟨ lift FL'<FL , ⟨ lift FR'<FR , ptt ⟩ ⟩ ⟩) ⟩
 -}
 
+{-
 proj-mono : ∀ i → monotone (■ ∷ []) ■ (proj i)
 proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
@@ -327,7 +363,7 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
 𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
 𝒯-mono n = Dfold-pres _⊆_ ■ ■ n 𝒯-cons 𝒯-cons ⌈ ∥ [] ∥ ⌉ ⌈ ∥ [] ∥ ⌉  
            𝒯-cons-mono (lift (λ d z → z))
-
+-}
 
 {-
 
@@ -416,6 +452,7 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (right d) (right d') (V⊆ d d∈) (V⊆' d' d'∈)
 
+{-
 nth-~ : ∀ i us vs → ∥ us ∥ ~ ∥ vs ∥ → 
     i < length us → i < length vs → 
     nth us i ~ nth vs i
@@ -431,6 +468,8 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
        ⟨ vs , ⟨ i<' , ⟨ vs∈ , refl ⟩ ⟩ ⟩ 
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
+-}
+
 
 ℬ-consis : ∀ B k → consistent _~_ [] ■ (ℬ B k)
 ℬ-consis B k _ _ _ = lift G
@@ -468,7 +507,7 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   G (x ⇒ P) f ν (V ↦ w) u∈ v∈ = tt
   G (x ⇒ P) f ν ν u∈ v∈ = tt
 
-
+{-
 𝒯-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒯-cons
 𝒯-cons-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
@@ -482,6 +521,7 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : (x x₁ : Value) (x₂ : x ≡ ∥ [] ∥) (x₃ : x₁ ≡ ∥ [] ∥) → x ~ x₁ 
   G .(∥ [] ∥) .(∥ [] ∥) refl refl = tt
+-}
 
 {-
 𝒜-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒜-cons
