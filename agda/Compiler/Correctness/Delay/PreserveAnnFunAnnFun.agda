@@ -5,22 +5,14 @@ open import NewSyntaxUtil
 open import SetsAsPredicates
 open import NewDOpSig
 open import NewDenotProperties
-open import Model.Filter.DomainAnnFun as DSource
-open import Model.Filter.DomainISWIM as DTarget
-  renaming (Value to Value'; wf to wf'; _~_ to _~'_; _d≟_ to _d≟'_;
-            ⊔-closed to ⊔-closed'; singleton-⊔-closed to singleton-⊔-closed';
-            _⊑_ to _⊑'_; ⊑-closed to ⊑-closed';
-            ⊑-closure to ⊑-closure'; ⊑-closure-closed to ⊑-closure'-closed;
-            ⊑-closure-⊔-closed to ⊑-closure'-⊔-closed;
-            ⊑-refl to ⊑-refl'; _◃_▹_ to _◃'_▹'_)
-open import Model.Filter.OperationAnnFun as OpSource
-open import Model.Filter.OperationISWIM as OpTarget
+open import Model.Filter.DomainAnnFun as Domain
+open import Model.Filter.OperationAnnFun as Operation
 open import Model.Filter.Clos3 as LangSource
-open import Model.Filter.Clos4 as LangTarget
+open import Model.Filter.Clos4AnnFun as LangTarget
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊';
             ast to ast'; bind to bind'; clear to clear')
-open import Model.Filter.Delay using (delay; del-map-args)
+open import Model.Filter.DelayAnnFun using (delay; del-map-args)
 open import NewEnv
 open import Primitives
 import Fold2
@@ -34,7 +26,6 @@ open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.List.Relation.Unary.All using (All; []; _∷_; head; tail; reduce)
 open import Data.List.Relation.Unary.Any.Properties using (map⁺; map⁻)
 open import Data.Vec using (Vec; _∷_; [])
-open import Data.Fin using (Fin; suc; zero)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
@@ -49,7 +40,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool using (Bool; true; false)
 
-module Model.Filter.DelayCorrect where
+module Model.Filter.DelayAnnFunCorrect where
 
 {- NOTE: Need to search for TODO and resolve issues -}
 
@@ -84,8 +75,8 @@ So, what this means is that if we eschew finite sets in our pairs, then we need 
 
 The relation for the forward pass for multi is annoying enough to write that I would rather stay with special closures for now.
 
-data _~tos_ : List Value → List Value' → Set
-data _~to_ : Value → Value' → Set where
+data _~tos_ : List Value → List Value → Set
+data _~to_ : Value → Value → Set where
   to-const : ∀ {B k} → const {B} k ~to (const k)
   to-ω : ω ~to ω
   to-left : ∀ {d d'} → (d~ : d ~to d') → left d ~to (left d')
@@ -104,97 +95,52 @@ data _~tos_ where
  -}
 
 
-tos : ∀ {n} → Vec Value n → Vec Value' n
-to : Value → Value'
+tos : ∀ {n} → Vec Value n → Vec Value n
+to : Value → Value
 to (const x) = const x
-to (FV ⊢ V ↦ w) = ⦅ (to FV ↦ (to V ↦ to w)) ∣ ⊔ ∣ to FV ⦆
-to (FV ⊢ν) = ⦅ (to FV ↦ ν) ∣ ⊔ ∣ to FV ⦆
+to (FV ⊢ V ↦ w) = ⦅ (to FV ⊢ to FV ↦ (ω ⊢ to V ↦ to w)) ∣ ⊔ ∣ to FV ⦆
+to (FV ⊢ν) = ⦅ (to FV ⊢ to FV ↦ (ω ⊢ν)) ∣ ⊔ ∣ to FV ⦆
 to ω = ω
-to (tup[ i ] d) = tup[ i ] (to d)
+to ∥ vs ∥ = ∥ tos vs ∥
 to (left v) = left (to v)
 to (right v) = right (to v)
-to ⦅ u ∣ = ⦅ to u ∣
-to ∣ v ⦆ = ∣ to v ⦆
+to ⦅ u ∣ = ω
+to ∣ v ⦆ = ω
 to (u ⊔ v) = to u ⊔ (to v)
 tos [] = []
 tos (d ∷ ds) = to d ∷ tos ds
 
-to-set : 𝒫 Value → 𝒫 Value'
+to-set : 𝒫 Value → 𝒫 Value
 to-set S v = Σ[ d ∈ Value ] d ∈ S × v ≡ to d
 
-_to-⊆_ : 𝒫 Value → 𝒫 Value' → Set
+_to-⊆_ : 𝒫 Value → 𝒫 Value → Set
 A to-⊆ B = ∀ d → d ∈ A → to d ∈ B
 
 env-map : ∀ {A B : Set} → (A → B) → (ℕ → 𝒫 A) → (ℕ → 𝒫 B)
 env-map {A} {B} f ρ x b = Σ[ a ∈ A ] a ∈ (ρ x) × b ≡ f a
 
-
-{-
-tos-nth : ∀ {n} V i → to (OpSource.nth {n} V i) ≡ OpTarget.nth (tos V) i
+tos-nth : ∀ {n} V i → to (nth {n} V i) ≡ nth (tos V) i
 tos-nth [] zero = refl
 tos-nth (x ∷ V) zero = refl
 tos-nth [] (suc i) = refl
 tos-nth (x ∷ V) (suc i) = tos-nth V i
--}
-
-to-split-⊑ : ∀ {u uL uR} → uL ◃ u ▹ uR → to u ⊑' (to uL ⊔ to uR)
-to-split-⊑ split-⊔ = DTarget.⊔⊑⊔ ⊑-refl' ⊑-refl'
-to-split-⊑ {FV ⊢ u ↦ v}{FV ⊢ u ↦ vL}{FV ⊢ u ↦ vR} (split-↦ split) = 
-  DTarget.⊑-⊔-L (DTarget.⊑-trans {⦅ to FV ↦ to u ↦ to v ∣}
-    {⦅ to FV ↦ to u ↦ to vL ∣ ⊔ ⦅ to FV ↦ to u ↦ to vR ∣}
-    {⦅ to FV ↦ to u ↦ to vL , to FV ⦆' ⊔  ⦅ to FV ↦ to u ↦ to vR , to FV ⦆'}
-     (DTarget.⊑-trans {⦅ to FV ↦ to u ↦ to v ∣}{⦅ to FV ↦ to u ↦ (to vL ⊔ to vR) ∣}
-                       {⦅ to FV ↦ to u ↦ to vL ∣ ⊔ ⦅ to FV ↦ to u ↦ to vR ∣} 
-                       (DTarget.⊑-fst (DTarget.⊑-↦ ⊑-refl' (DTarget.⊑-↦ ⊑-refl' (to-split-⊑ split)))) 
-                       (DTarget.⊑-dist-⊔ (split-fst (split-↦ (split-↦ split-⊔))))) 
-                       (DTarget.⊔⊑⊔ (DTarget.⊑-⊔-R1 ⊑-refl') (DTarget.⊑-⊔-R1 ⊑-refl'))) 
-                       (DTarget.⊑-⊔-R1 (DTarget.⊑-⊔-R2 ⊑-refl'))
-to-split-⊑ (split-fst split) = DTarget.⊑-trans (DTarget.⊑-fst (to-split-⊑ split)) 
-                                           (DTarget.⊑-dist-⊔ (split-fst split-⊔))
-to-split-⊑ (split-snd split) = DTarget.⊑-trans (DTarget.⊑-snd (to-split-⊑ split)) 
-                                           (DTarget.⊑-dist-⊔ (split-snd split-⊔))
-to-split-⊑ (split-tup split) = DTarget.⊑-trans (DTarget.⊑-tup (to-split-⊑ split)) 
-                                           (DTarget.⊑-dist-⊔ (split-tup split-⊔))
-to-split-⊑ (split-left split) = DTarget.⊑-trans (DTarget.⊑-left (to-split-⊑ split)) 
-                                           (DTarget.⊑-dist-⊔ (split-left split-⊔))
-to-split-⊑ (split-right split) = DTarget.⊑-trans (DTarget.⊑-right (to-split-⊑ split)) 
-                                           (DTarget.⊑-dist-⊔ (split-right split-⊔))
-
-to-mono : ∀ {u v} → u ⊑ v → to u ⊑' to v
-to-mono ⊑-ω = ⊑-ω
-to-mono ⊑-ν-ν = ⊑-refl'
-to-mono ⊑-ν-↦ = 
-  DTarget.⊔⊑⊔ (DTarget.⊑-fst (DTarget.⊑-↦ ⊑-refl' ⊑-ν-↦)) ⊑-refl'
-to-mono ⊑-const = ⊑-const
-to-mono (⊑-⊔-R1-å åu u⊑v) = DTarget.⊑-⊔-R1 (to-mono u⊑v)
-to-mono (⊑-⊔-R2-å åu u⊑v) = DTarget.⊑-⊔-R2 (to-mono u⊑v)
-to-mono (⊑-fst-å åu u⊑v) = DTarget.⊑-fst (to-mono u⊑v)
-to-mono (⊑-snd-å åu u⊑v) = DTarget.⊑-snd (to-mono u⊑v)
-to-mono (⊑-tup-å åu u⊑v) = DTarget.⊑-tup (to-mono u⊑v)
-to-mono (⊑-↦-å åu₂ u⊑v u⊑v₁) = 
-  DTarget.⊔⊑⊔ (DTarget.⊑-fst (DTarget.⊑-↦ ⊑-refl' (DTarget.⊑-↦ (to-mono u⊑v) (to-mono u⊑v₁)))) 
-               ⊑-refl'
-to-mono (⊑-left-å åu u⊑v) = DTarget.⊑-left (to-mono u⊑v)
-to-mono (⊑-right-å åu u⊑v) = DTarget.⊑-right (to-mono u⊑v)
-to-mono (⊑-split split ⊑L ⊑R) = 
-  DTarget.⊑-trans (to-split-⊑ split) (DTarget.⊑-⊔-L (to-mono ⊑L) (to-mono ⊑R))
 
 {-
-to-mono : ∀ {u v} → u ⊑ v → to u ⊑' to v
+to-mono : ∀ {u v} → u ⊑ v → to u ⊑ to v
 to-mono ⊑-ω = ⊑-ω
-to-mono (⊑-ν-ν-å åFV FV⊑)  = DTarget.⊑-fst (DTarget.⊑-↦ (to-mono FV⊑) ?)
-to-mono (⊑-ν-↦-å åFV FV⊑) = DTarget.⊑-fst ?
+to-mono (⊑-ν-ν-å åFV FV⊑)  = ⊑-fst (⊑-↦ (to-mono FV⊑) ?)
+to-mono (⊑-ν-↦-å åFV FV⊑) = ⊑-fst ?
 to-mono ⊑-const = ⊑-const
-to-mono (⊑-⊔-R1-å åu u⊑v) = DTarget.⊑-⊔-R1 (to-mono u⊑v)
-to-mono (⊑-⊔-R2-å åu u⊑v) = DTarget.⊑-⊔-R2 (to-mono u⊑v)
-to-mono (⊑-fst-å åfst u⊑v) = DTarget.⊑-fst (to-mono u⊑v)
-to-mono (⊑-snd-å åsnd u⊑v) = DTarget.⊑-snd (to-mono u⊑v)
-to-mono ⊑-nil = DTarget.⊑-nil
-to-mono (⊑-tup-å åus u⊑v u⊑v₁) = DTarget.⊑-tup (to-mono u⊑v) (to-mono u⊑v₁)
+to-mono (⊑-⊔-R1-å åu u⊑v) = ⊑-⊔-R1 (to-mono u⊑v)
+to-mono (⊑-⊔-R2-å åu u⊑v) = ⊑-⊔-R2 (to-mono u⊑v)
+to-mono (⊑-fst-å åfst u⊑v) = ⊑-fst (to-mono u⊑v)
+to-mono (⊑-snd-å åsnd u⊑v) = ⊑-snd (to-mono u⊑v)
+to-mono ⊑-nil = ⊑-nil
+to-mono (⊑-tup-å åus u⊑v u⊑v₁) = ⊑-tup (to-mono u⊑v) (to-mono u⊑v₁)
 to-mono (⊑-↦-å åu₂ åFV FV⊑ u⊑v u⊑v₁) = 
-  DTarget.⊑-fst (DTarget.⊑-↦ (to-mono FV⊑) (DTarget.⊑-↦ (to-mono u⊑v₁) (to-mono u⊑v)))              
-to-mono (⊑-left-å åu u⊑v) = DTarget.⊑-left (to-mono u⊑v)
-to-mono (⊑-right-å åu u⊑v) = DTarget.⊑-right (to-mono u⊑v)
+  ⊑-fst (⊑-↦ (to-mono FV⊑) (⊑-↦ (to-mono u⊑v₁) (to-mono u⊑v)))              
+to-mono (⊑-left-å åu u⊑v) = ⊑-left (to-mono u⊑v)
+to-mono (⊑-right-å åu u⊑v) = ⊑-right (to-mono u⊑v)
 to-mono (⊑-split split u⊑v u⊑v₁) = {!   !}
 -}
 
@@ -227,10 +173,9 @@ to-mem-rewrite V ρ zero d ⟨ a , ⟨ a∈V , refl ⟩ ⟩ = to-∈-mem a∈V
 to-mem-rewrite V ρ (suc x) d d∈ρx = d∈ρx
 -}
 
-
 postulate
-  ⟦⟧'-⊑-closed : ∀ (M : AST') ρ (u v : Value') → v ∈ ⟦ M ⟧' ρ → u ⊑' v → u ∈ ⟦ M ⟧' ρ
-  ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value') → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
+  ⟦⟧'-⊑-closed : ∀ (M : AST') ρ (u v : Value) → v ∈ ⟦ M ⟧' ρ → u ⊑ v → u ∈ ⟦ M ⟧' ρ
+  ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value) → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
                 → (u ⊔ v) ∈ ⟦ M ⟧' ρ
   ⟦⟧-⊔-closed : ∀ (M : AST) ρ (u v : Value) → u ∈ ⟦ M ⟧ ρ → v ∈ ⟦ M ⟧ ρ
                 → (u ⊔ v) ∈ ⟦ M ⟧ ρ
@@ -239,48 +184,45 @@ postulate
 
 helpful-lemma : ∀ M ρ u v → (u ⊔ v) ∈ ⟦ M ⟧' ρ → u ∈ ⟦ M ⟧' ρ × v ∈ ⟦ M ⟧' ρ
 helpful-lemma M ρ u v u⊔v∈M = 
-  ⟨ ⟦⟧'-⊑-closed M ρ u (u ⊔ v) u⊔v∈M (DTarget.⊑-⊔-R1 ⊑-refl') 
-  , ⟦⟧'-⊑-closed M ρ v (u ⊔ v) u⊔v∈M (DTarget.⊑-⊔-R2 ⊑-refl') ⟩
+  ⟨ ⟦⟧'-⊑-closed M ρ u (u ⊔ v) u⊔v∈M (⊑-⊔-R1 ⊑-refl) 
+  , ⟦⟧'-⊑-closed M ρ v (u ⊔ v) u⊔v∈M (⊑-⊔-R2 ⊑-refl) ⟩
 
 delay-preserve : ∀ M ρ d → d ∈ ⟦ M ⟧ ρ → to d ∈ ⟦ delay M ⟧' (env-map to ρ)
-delay-args-preserve-nth : ∀ {n} args (i : Fin n) ρ d 
-   → d ∈ OpSource.nthD (⟦ args ⟧₊ ρ) i
-   → to d ∈ OpTarget.nthD (⟦ del-map-args args ⟧₊' (env-map to ρ)) i
 delay-preserve (` x) ρ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
 delay-preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d 
   ⟨ ω , ⟨ FV , ⟨ w , ⟨ w∈ΛN[FV] , ⟨ FV∈𝒯fvs , refl ⟩ ⟩ ⟩ ⟩ ⟩ with w | w∈ΛN[FV]
-... | ω | tt = tt
-... | ω ⊢ν | tt = ⟨ ⟨ to FV , ⟨ tt , G3 ⟩ ⟩ 
-    , ⟨ to FV ↦ ν , ⟨ tt , G3 ⟩ ⟩ ⟩
+... | ω ⊢ν | tt = ⟨ ⟨ to FV , ⟨ ω ⊢ to FV ↦ (ω ⊢ν) , ⟨ ⟨ tt , refl ⟩ , G3 ⟩ ⟩ ⟩ 
+    , ⟨ ω ⊢ to FV ↦ (ω ⊢ν) , ⟨ tt , G3 ⟩ ⟩ ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ ρ) 
-                 → to d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
-  G2 n fvs ω d∈ = tt
-  G2 n fvs (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = ⟨ G2 n fvs d d∈ , G2 n fvs d₁ d₁∈ ⟩
-  G2 n fvs (tup[ i ] d) ⟨ refl , d∈ ⟩ = 
-    ⟨ refl , delay-args-preserve-nth fvs i ρ d d∈ ⟩
-  G3 : to FV ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ fvs ⟧₊ ρ) 
+                 → to d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
+  G2 zero fvs d refl = refl
+  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-preserve fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
+  G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
+    ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
+  G3 : to FV ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
   G3 = G2 n fvs FV FV∈𝒯fvs
 delay-preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d 
   ⟨ ω , ⟨ FV , ⟨ w , ⟨ w∈ΛN[FV] , ⟨ FV∈𝒯fvs , refl ⟩ ⟩ ⟩ ⟩ ⟩ 
     | ω ⊢ V ↦ w' | w'∈N[FV][V] = 
-  ⟨ ⟨ to FV , ⟨ G1 , G3 ⟩ ⟩  
-  , ⟨ to FV ↦ to V ↦ to w' , ⟨ G1 , G3 ⟩ ⟩ ⟩
+  ⟨ ⟨ to FV , ⟨ ω ⊢ to FV ↦ ω ⊢ to V ↦ to w' , ⟨ ⟨ G1 , refl ⟩ , G3 ⟩ ⟩ ⟩  
+  , ⟨ ω ⊢ to FV ↦ (ω ⊢ to V ↦ to w') , ⟨ G1 , G3 ⟩ ⟩ ⟩
   where
   IH : to w' ∈ ⟦ delay N ⟧' (env-map to ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)))
   IH = delay-preserve N ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)) w' w'∈N[FV][V]
-  H : (env-map to ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure' (to V)) • (⊑-closure' (to FV)) • (λ i d → d ≡ ω))
-  H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = to-mono a⊑
-  H (suc zero) d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = to-mono a⊑
+  H : (env-map to ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (to V)) • (⊑-closure (to FV)) • (λ i d → d ≡ ω))
+  H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! to-mono  !}
+  H (suc zero) d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! to-mono  !}
   H (suc (suc i)) d ⟨ a , ⟨ refl , refl ⟩ ⟩ = refl
-  G1 : to w' ∈ ⟦ delay N ⟧' ((⊑-closure' (to V)) • (⊑-closure' (to FV)) • (λ i d → d ≡ ω))
+  G1 : to w' ∈ ⟦ delay N ⟧' ((⊑-closure (to V)) • (⊑-closure (to FV)) • (λ i d → d ≡ ω))
   G1 = LangTarget.⟦⟧-monotone {{Clos4-Semantics}} (delay N) H (to w') IH
-  G2 : ∀ n fvs d → d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ ρ) 
-                 → to d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
-  G2 n fvs ω d∈ = tt
-  G2 n fvs (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = ⟨ G2 n fvs d d∈ , G2 n fvs d₁ d₁∈ ⟩
-  G2 n fvs (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , delay-args-preserve-nth fvs i ρ d d∈ ⟩
-  G3 : to FV ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ fvs ⟧₊ ρ) 
+                 → to d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
+  G2 zero fvs d refl = refl
+  G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-preserve fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
+  G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
+    ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
+  G3 : to FV ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' (env-map to ρ))
   G3 = G2 n fvs FV FV∈𝒯fvs
 delay-preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d 
   ⟨ ω , ⟨ FV , ⟨ w , ⟨ w∈ΛN[FV] , ⟨ FV∈𝒯fvs , refl ⟩ ⟩ ⟩ ⟩ ⟩
@@ -300,12 +242,11 @@ delay-preserve (app ⦅ M ,, N ,, Nil ⦆) ρ d
     ⟨ FV , ⟨ V , ⟨ FV⊢V↦d∈M , V∈N ⟩ ⟩ ⟩ 
   with delay-preserve M ρ (FV ⊢ V ↦ d) FV⊢V↦d∈M | delay-preserve N ρ V V∈N
 ... | IHM | toV∈N' = 
-  ⟨ to V , ⟨ ⟨ to FV , IHM' ⟩ , toV∈N' ⟩ ⟩
+  ⟨ ω , ⟨ to V , ⟨ ⟨ to FV , ⟨ to FV , IHM' ⟩ ⟩ , toV∈N' ⟩ ⟩ ⟩
   where
-  IHM' : ⦅ to FV ↦ to V ↦ to d ∣ ∈ ⟦ delay M ⟧' (env-map to ρ)
+  IHM' : ⦅ to FV ⊢ to FV ↦ (ω ⊢ to V ↦ to d) ∣ ∈ ⟦ delay M ⟧' (env-map to ρ)
        × ∣ to FV ⦆ ∈ ⟦ delay M ⟧' (env-map to ρ)
-  IHM' = helpful-lemma (delay M) (env-map to ρ) ⦅ to FV ↦ to V ↦ to d ∣ ∣ to FV ⦆ IHM
-delay-preserve (lit B k ⦅ Nil ⦆) ρ ω tt = tt
+  IHM' = helpful-lemma (delay M) (env-map to ρ) ⦅ to FV ⊢ to FV ↦ (ω ⊢ to V ↦ to d) ∣ ∣ to FV ⦆ IHM
 delay-preserve (lit B k ⦅ Nil ⦆) ρ (const {B'} k') d∈ with base-eq? B B'
 ... | yes refl = d∈
 ... | no neq = d∈
@@ -315,19 +256,19 @@ delay-preserve (lit B k ⦅ Nil ⦆) ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ =
 delay-preserve (tuple n ⦅ args ⦆) ρ d d∈ = G n args ρ d d∈
   where
   G : ∀ n args ρ d → d ∈ ⟦ tuple n ⦅ args ⦆ ⟧ ρ → to d ∈ ⟦ delay (tuple n ⦅ args ⦆ ) ⟧' (env-map to ρ) 
-  G n args ρ ω tt = tt
-  G n args ρ (tup[ i ] d) ⟨ refl , d∈ ⟩ = 
-   ⟨ refl , delay-args-preserve-nth args i ρ d d∈ ⟩
-  G n args ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
-    ⟨ G n args ρ u u∈ , G n args ρ v v∈ ⟩
-delay-preserve (get i ⦅ M ,, Nil ⦆) ρ d d∈ = delay-preserve M ρ (tup[ i ] d) d∈
-delay-preserve (inl-op ⦅ M ,, Nil ⦆) ρ ω tt = tt
+  G zero args ρ d refl = refl
+  G (suc n) (arg ,, args) ρ ∥ d ∷ ds ∥ ⟨ d∈ , ds∈ ⟩ with G n args ρ ∥ ds ∥ ds∈
+  ... | ds'∈ = ⟨ delay-preserve arg ρ d d∈ , ds'∈ ⟩
+{- TODO this definition is wrong and isn't union-closed yet -}
+  G (suc n) args ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
+    ⟨ G (suc n) args ρ u u∈ , G (suc n) args ρ v v∈ ⟩
+delay-preserve (get i ⦅ M ,, Nil ⦆) ρ d ⟨ n , ⟨ ds , ⟨ ds∈ , refl ⟩ ⟩ ⟩ = 
+  ⟨ n , ⟨ tos ds , ⟨ delay-preserve M ρ ∥ ds ∥ ds∈ , tos-nth ds i ⟩ ⟩ ⟩
 delay-preserve (inl-op ⦅ M ,, Nil ⦆) ρ (left v) v∈ = 
   delay-preserve M ρ v v∈
 delay-preserve (inl-op ⦅ M ,, Nil ⦆) ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ =
   ⟨ delay-preserve (inl-op ⦅ M ,, Nil ⦆) ρ u u∈ 
   , delay-preserve (inl-op ⦅ M ,, Nil ⦆) ρ v v∈ ⟩
-delay-preserve (inr-op ⦅ M ,, Nil ⦆) ρ ω tt = tt
 delay-preserve (inr-op ⦅ M ,, Nil ⦆) ρ (right v) v∈ = 
   delay-preserve M ρ v v∈
 delay-preserve (inr-op ⦅ M ,, Nil ⦆) ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
@@ -339,10 +280,10 @@ delay-preserve (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d
   where
   IH : to d ∈ ⟦ delay M ⟧' (env-map to ((⊑-closure V) • ρ))
   IH = delay-preserve M ((⊑-closure V) • ρ) d d∈
-  H : (env-map to ((⊑-closure V) • ρ)) ⊆ₑ ((⊑-closure' (to V)) • env-map to ρ)
-  H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = to-mono a⊑
+  H : (env-map to ((⊑-closure V) • ρ)) ⊆ₑ ((⊑-closure (to V)) • env-map to ρ)
+  H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! to-mono   !}
   H (suc i) d ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = ⟨ a , ⟨ a∈ , refl ⟩ ⟩
-  G1 : to d ∈ ⟦ delay M ⟧' ((⊑-closure' (to V)) • env-map to ρ)
+  G1 : to d ∈ ⟦ delay M ⟧' ((⊑-closure (to V)) • env-map to ρ)
   G1 = LangTarget.⟦⟧-monotone {{Clos4-Semantics}} (delay M) H (to d) IH
 delay-preserve (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d
   (inj₂ ⟨ V , ⟨ RV∈ , d∈ ⟩ ⟩) = 
@@ -350,16 +291,13 @@ delay-preserve (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d
   where
   IH : to d ∈ ⟦ delay N ⟧' (env-map to ((⊑-closure V) • ρ))
   IH = delay-preserve N ((⊑-closure V) • ρ) d d∈
-  H : (env-map to ((⊑-closure V) • ρ)) ⊆ₑ ((⊑-closure' (to V)) • env-map to ρ)
-  H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = to-mono a⊑
+  H : (env-map to ((⊑-closure V) • ρ)) ⊆ₑ ((⊑-closure (to V)) • env-map to ρ)
+  H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! to-mono   !}
   H (suc i) d ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = ⟨ a , ⟨ a∈ , refl ⟩ ⟩
-  G1 : to d ∈ ⟦ delay N ⟧' ((⊑-closure' (to V)) • env-map to ρ)
+  G1 : to d ∈ ⟦ delay N ⟧' ((⊑-closure (to V)) • env-map to ρ)
   G1 = LangTarget.⟦⟧-monotone {{Clos4-Semantics}} (delay N) H (to d) IH
 
-delay-args-preserve-nth {.(suc _)} (arg ,, args) zero ρ d d∈ = delay-preserve arg ρ d d∈
-delay-args-preserve-nth {.(suc _)} (arg ,, args) (suc i) ρ d d∈ = delay-args-preserve-nth args i ρ d d∈
 
-{-
 {-
 del-map-args-preserve : ∀ {n} args ρ → results-rel-pres' _to-⊆_ (replicate n ■) (⟦ args ⟧₊ ρ) (⟦ del-map-args {n} args ⟧₊' (env-map to ρ))
 delay-preserve-⊆ : ∀ M ρ V → mem V ⊆ ⟦ M ⟧ ρ → mem (tos V) ⊆ ⟦ delay M ⟧' (env-map to ρ)
@@ -376,28 +314,47 @@ del-map-args-preserve {suc n} (M ,, args) ρ =
   -}
 
 
-
-
-fros : ∀ {n} → Vec Value' n  → Vec Value n
-fro : Value' → Value
+fros : ∀ {n} → Vec Value n  → Vec Value n
+fro : Value → Value
 fro (const x) = const x
-fro (V ↦ w) = ω
-fro ν = ω
+fro (FV ⊢ V ↦ w) = ω
+fro (FV ⊢ν) = ω
 fro ω = ω
-fro ⦅ u ∣ = ω  {- for these two lines... -}
-fro ∣ FV ⦆ = ω  {- we  could do better than this, but I'm not sure we need to -}
+fro ⦅ FV' ⊢ν ∣ = fro FV' ⊢ν
+fro ⦅ FV' ⊢ FV ↦ _ ⊢ν ∣ = fro FV ⊢ν
+fro ⦅ FV' ⊢ FV ↦ (V ↦ w) ∣ = fro FV ⊢ν
+fro ⦅ u ∣ = ω
+fro ∣ FV ⦆ = fro FV ⊢ν
 fro ∥ xs ∥ = ∥ fros xs ∥
 fro (left v) = left (fro v)
 fro (right v) = right (fro v)
-fro (⦅ FV ↦ (V ↦ w) ∣ ⊔ ∣ FV' ⦆) with FV DTarget.d≟ FV'
+fro (ω ⊔ v) = fro ω ⊔ fro v
+fro (ν ⊔ v) = fro ν ⊔ fro v
+fro (const k ⊔ v) = fro (const k) ⊔ fro v
+fro (u ⊔ u₁ ⊔ v) = fro (u ⊔ u₁) ⊔ fro v
+fro (u ↦ u₁ ⊔ v) = fro (u ↦ u₁) ⊔ fro v
+fro (⦅ u ∣ ⊔ ω) = fro ⦅ u ∣ ⊔ fro ω
+fro (⦅ u ∣ ⊔ ν) = fro ⦅ u ∣ ⊔ fro ν
+fro (⦅ u ∣ ⊔ const k) = fro ⦅ u ∣ ⊔ fro (const k)
+fro (⦅ u ∣ ⊔ (v ⊔ v₁)) = fro ⦅ u ∣ ⊔ fro (v ⊔ v₁)
+fro (⦅ u ∣ ⊔ v ↦ v₁) = fro ⦅ u ∣ ⊔ fro (v ↦ v₁)
+fro (⦅ u ∣ ⊔ ⦅ v ∣) = fro ⦅ u ∣ ⊔ fro ⦅ v ∣
+fro ⦅ FV ↦ (V ↦ w) , FV' ⦆' with FV d≟ FV'
 ... | yes refl = (fro FV) ⊢ fro V ↦ fro w
 ... | no neq = fro FV' ⊢ν
-fro (u ⊔ v) = fro u ⊔ fro v
+fro ⦅ u , v ⦆' = (fro ⦅ u ∣) ⊔ (fro ∣ v ⦆)
+fro (⦅ u ∣ ⊔ ∥ ds ∥) = fro ⦅ u ∣ ⊔ fro ∥ ds ∥
+fro (⦅ u ∣ ⊔ left v) = fro ⦅ u ∣ ⊔ fro (left v)
+fro (⦅ u ∣ ⊔ right v) = fro ⦅ u ∣ ⊔ fro (right v)
+fro (∣ u ⦆ ⊔ v) = fro ∣ u ⦆ ⊔ fro v
+fro (∥ ds ∥ ⊔ v) = fro ∥ ds ∥ ⊔ fro v
+fro (left u ⊔ v) = fro (left u) ⊔ fro v
+fro (right u ⊔ v) = fro (right u) ⊔ fro v
 fros [] = []
 fros (d ∷ ds) = fro d ∷ fros ds
 
 
-fros-nth : ∀ {n} V i → fro (OpTarget.nth {n} V i) ≡ OpSource.nth (fros V) i
+fros-nth : ∀ {n} V i → fro (nth {n} V i) ≡ nth (fros V) i
 fros-nth [] zero = refl
 fros-nth (x ∷ V) zero = refl
 fros-nth [] (suc i) = refl
@@ -410,20 +367,20 @@ delay-reflect : ∀ M ρ
 delay-reflect (` x) ρ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ 
   ⦅ FV ↦ V ↦ w , d₁ ⦆' ⟨ ⟨ FV' , ⟨ w∈ , FV'∈ ⟩ ⟩ , ⟨ f , ⟨ f∈ , d₁∈ ⟩ ⟩ ⟩ 
-  with FV DTarget.d≟ d₁
+  with FV d≟ d₁
 ... | yes refl = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ fro V ↦ fro w 
                  , ⟨ G1 , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where
-  IH : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω)))
-  IH = delay-reflect N ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω)) w w∈
-  H : (env-map fro ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
+  IH : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)))
+  IH = delay-reflect N ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)) w w∈
+  H : (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
   H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! fro-mono !}
   H (suc zero) d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! fro-mono !}
   H (suc (suc i)) d ⟨ a , ⟨ refl , refl ⟩ ⟩ = refl
   G1 : fro w ∈ ⟦ N ⟧ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
   G1 = LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) IH
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
@@ -431,13 +388,13 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ
     = ⟨ G2 (suc n) (fv ,, fvs) (u ⊔ u₁) u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
   G2 (suc n) (fv ,, fvs) (∥ ds ∥ ⊔ v) ⟨ u∈ , v∈ ⟩
     = ⟨ G2 (suc n) (fv ,, fvs) ∥ ds ∥ u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro d₁ ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro d₁ ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs d₁ d₁∈
 ... | no neq = ⟨ ω , ⟨ fro d₁ , ⟨ ω ⊢ν 
                 , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
@@ -445,10 +402,8 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ
     = ⟨ G2 (suc n) (fv ,, fvs) (u ⊔ u₁) u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
   G2 (suc n) (fv ,, fvs) (∥ ds ∥ ⊔ v) ⟨ u∈ , v∈ ⟩
     = ⟨ G2 (suc n) (fv ,, fvs) ∥ ds ∥ u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro d₁ ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro d₁ ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs d₁ d₁∈
-
-{-
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ FV ↦ ν , d₁ ⦆' 
    ⟨ ⟨ FV' , ⟨ ν∈ , FV∈ ⟩ ⟩ , ⟨ f , ⟨ f∈ , d₁∈ ⟩ ⟩ ⟩ = 
    ⟨ ω , ⟨ {!   !} , ⟨ {!   !} 
@@ -465,17 +420,26 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ u 
   ⟨ ⟨ FV , ⟨ ⟨ u∈ , v∈ ⟩ , FV∈ ⟩ ⟩ , ⟨ f , ⟨ f∈ , d₁∈ ⟩ ⟩ ⟩ =
   ⟨ {!   !} , ⟨ {!   !} , ⟨ {!   !} 
    , ⟨ {!   !} , ⟨ {!   !} , {!   !} ⟩ ⟩ ⟩ ⟩ ⟩
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (u ⊔ v) ⟨ u∈ , v∈ ⟩ 
-  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ u u∈
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (⦅ u ∣ ⊔ ⦅ v ∣) ⟨ u∈ , v∈ ⟩ 
+  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ u ∣ u∈
+     | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ v ∣ v∈
+... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro ⦅ u ∣) (fro ⦅ v ∣) IHu IHv
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (⦅ u ∣ ⊔ (vL ⊔ vR)) ⟨ u∈ , v∈ ⟩ 
+  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ u ∣ u∈
+     | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (vL ⊔ vR) v∈
+... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro ⦅ u ∣) (fro (vL ⊔ vR)) IHu IHv
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (∣ u ⦆ ⊔ v) ⟨ u∈ , v∈ ⟩ 
+  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ u ⦆ u∈
      | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ v v∈
-... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro u) (fro v) IHu IHv
+... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro ∣ u ⦆) (fro v) IHu IHv
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ((uL ⊔ uR) ⊔ v) ⟨ u∈ , v∈ ⟩ 
+  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (uL ⊔ uR) u∈
+     | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ v v∈
+... | IHu | IHv = ⟦⟧-⊔-closed (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) (env-map fro ρ) (fro (uL ⊔ uR)) (fro v) IHu IHv
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ∣  
   ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = {!   !}
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ d ⦆ 
   ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = {!   !}
--}
-
-
 delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ d 
   ⟨ V , ⟨ ⟨ FV , ⟨ FV↦V↦d∈carM' , FV∈cdrM' ⟩ ⟩ , V∈N ⟩ ⟩ 
   = ⟨ fro FV , ⟨ fro V , ⟨ IHM , IHN ⟩ ⟩ ⟩
@@ -486,7 +450,7 @@ delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ d
   ⦅FV↦V↦d,FV⦆∈M' = 
       ⟦⟧'-⊔-closed (delay M) ρ ⦅ FV ↦ V ↦ d ∣ ∣ FV ⦆ FV↦V↦d∈carM' FV∈cdrM'
   IHM : (fro FV ⊢ fro V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
-  IHM with FV DTarget.d≟ FV 
+  IHM with FV d≟ FV 
         | delay-reflect M ρ ⦅ FV ↦ (V ↦ d) , FV ⦆' ⦅FV↦V↦d,FV⦆∈M' 
   ... | yes refl | IHM' = IHM'
   ... | no neq | IHM' = ⊥-elim (neq refl)
@@ -532,9 +496,9 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d
   (inj₁ ⟨ V , ⟨ LV∈ , d∈ ⟩ ⟩) = 
    inj₁ ⟨ fro V , ⟨ G 
         , LangSource.⟦⟧-monotone {{Clos3-Semantics}} M H (fro d) 
-            (delay-reflect M ((⊑-closure' V) • ρ) d d∈) ⟩ ⟩
+            (delay-reflect M ((⊑-closure V) • ρ) d d∈) ⟩ ⟩
     where
-    H : env-map fro ((⊑-closure' V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
     H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! fro-mono  !}
     H (suc i) d d∈ = d∈
     G : left (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
@@ -543,9 +507,9 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d
   (inj₂ ⟨ V , ⟨ RV∈ , d∈ ⟩ ⟩) =
    inj₂ ⟨ fro V , ⟨ G 
         , LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro d) 
-            (delay-reflect N ((⊑-closure' V) • ρ) d d∈) ⟩ ⟩
+            (delay-reflect N ((⊑-closure V) • ρ) d d∈) ⟩ ⟩
     where
-    H : env-map fro ((⊑-closure' V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
     H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = {! fro-mono  !}
     H (suc i) d d∈ = d∈
     G : right (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
@@ -557,65 +521,65 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d
 ⦅ ν , FV ⦆ 
   ⟨ tt , FV∈ ⟩ = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ν , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where 
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ ν , FV ⦆ 
   ⟨ tt , FV∈ ⟩ = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ν , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where 
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
   ⟨ w∈N , FV∈ ⟩ 
   with FV' d≟' FV
 ... | no FV'≠ = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ν , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where 
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
   ⟨ w∈N , FV∈ ⟩ | yes refl = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ fro V ↦ fro w , ⟨ G1 , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where
   init-closed : ∀ₑ ⊔-closed' (λ i v → v ≡ ω)
   init-closed i = singleton-⊔-closed' ω
-  IH : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω)))
-  IH = delay-reflect N ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω)) 
+  IH : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)))
+  IH = delay-reflect N ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)) 
                      (∀ₑ-ext ⊔-closed' (∀ₑ-ext ⊔-closed' init-closed 
-                                       (⊑-closure'-⊔-closed FV')) 
-                                       (⊑-closure'-⊔-closed V)) w w∈N
-  H : (env-map fro ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
+                                       (⊑-closure-⊔-closed FV')) 
+                                       (⊑-closure-⊔-closed V)) w w∈N
+  H : (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
   H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
   H (suc zero) d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
   H (suc (suc i)) d ⟨ a , ⟨ refl , refl ⟩ ⟩ = refl
   G1 : fro w ∈ ⟦ N ⟧ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
   G1 = LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) IH
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (u ⊔ v) , FV ⦆ 
   d∈
@@ -648,7 +612,7 @@ delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ ρ~ d
   witness : ⦅ FV ↦ (V ↦ d) , FV ⦆ ∈ ⟦ delay M ⟧' ρ
   witness = ⊑-closed-⟦⟧' (delay M) ρ {!   !} 
             ⦅ FV ↦ V ↦ d , FV ⦆ ⦅ FV ↦ V ↦ d ⊔ f , FV' ⊔ FV ⦆ pre-witness
-            (DTarget.⊑-pair (DTarget.⊑-⊔-R1 ⊑-refl') (DTarget.⊑-⊔-R2 ⊑-refl'))
+            (⊑-pair (⊑-⊔-R1 ⊑-refl) (⊑-⊔-R2 ⊑-refl))
   IH : (fro FV ⊢ fro V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
   IH with FV d≟' FV | delay-reflect M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ⦆ witness
   ... | no neq | _ = ⊥-elim (neq refl)
@@ -684,9 +648,9 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ ρ~ d
   (inj₁ ⟨ V , ⟨ LV∈ , d∈ ⟩ ⟩) = 
    inj₁ ⟨ fro V , ⟨ G 
         , LangSource.⟦⟧-monotone {{Clos3-Semantics}} M H (fro d) 
-            (delay-reflect M ((⊑-closure' V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure'-⊔-closed V)) d d∈) ⟩ ⟩
+            (delay-reflect M ((⊑-closure V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure-⊔-closed V)) d d∈) ⟩ ⟩
     where
-    H : env-map fro ((⊑-closure' V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
     H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
     H (suc i) d d∈ = d∈
     G : left (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
@@ -695,9 +659,9 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ ρ~ d
   (inj₂ ⟨ V , ⟨ RV∈ , d∈ ⟩ ⟩) =
    inj₂ ⟨ fro V , ⟨ G 
         , LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro d) 
-            (delay-reflect N ((⊑-closure' V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure'-⊔-closed V)) d d∈) ⟩ ⟩
+            (delay-reflect N ((⊑-closure V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure-⊔-closed V)) d d∈) ⟩ ⟩
     where
-    H : env-map fro ((⊑-closure' V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
     H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
     H (suc i) d d∈ = d∈
     G : right (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
@@ -710,41 +674,41 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ ρ~ d
 
 
 
-fro-set : 𝒫 Value' → 𝒫 Value
-fro-set S v = Σ[ d ∈ Value' ] d ∈ S × v ≡ fro d
+fro-set : 𝒫 Value → 𝒫 Value
+fro-set S v = Σ[ d ∈ Value ] d ∈ S × v ≡ fro d
 
-_fro-⊆_ : 𝒫 Value' → 𝒫 Value → Set
+_fro-⊆_ : 𝒫 Value → 𝒫 Value → Set
 A fro-⊆ B = ∀ d → d ∈ A → fro d ∈ B
 
-fros-nth : ∀ {n} V i → fro (OpTarget.nth {n} V i) ≡ OpSource.nth (fros V) i
+fros-nth : ∀ {n} V i → fro (nth {n} V i) ≡ nth (fros V) i
 fros-nth [] zero = refl
 fros-nth (x ∷ V) zero = refl
 fros-nth [] (suc i) = refl
 fros-nth (x ∷ V) (suc i) = fros-nth V i
 
 
-fro-mono : ∀ {u v} → u ⊑' v → fro u ⊑ fro v
+fro-mono : ∀ {u v} → u ⊑ v → fro u ⊑ fro v
 fro-mono ⊑-ω = ⊑-ω
 fro-mono ⊑-ν-ν = ⊑-ω
 fro-mono ⊑-ν-↦ = ⊑-ω
 fro-mono ⊑-const = ⊑-const
-fro-mono (⊑-⊔-R1-å åu u⊑v) = DSource.⊑-⊔-R1 (fro-mono u⊑v)
-fro-mono (⊑-⊔-R2-å åu u⊑v) = DSource.⊑-⊔-R2 (fro-mono u⊑v)
+fro-mono (⊑-⊔-R1-å åu u⊑v) = ⊑-⊔-R1 (fro-mono u⊑v)
+fro-mono (⊑-⊔-R2-å åu u⊑v) = ⊑-⊔-R2 (fro-mono u⊑v)
 fro-mono (⊑-pair-å {u} {u'} {v} {v'} åfst åsnd u⊑v u⊑v₁) = {!  !}
 fro-mono ⊑-nil = ⊑-nil
-fro-mono (⊑-tup-å åus u⊑v u⊑v₁) = DSource.⊑-tup (fro-mono u⊑v) (fro-mono u⊑v₁)
+fro-mono (⊑-tup-å åus u⊑v u⊑v₁) = ⊑-tup (fro-mono u⊑v) (fro-mono u⊑v₁)
 fro-mono (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-ω
-fro-mono (⊑-left-å åu u⊑v) = DSource.⊑-left (fro-mono u⊑v)
-fro-mono (⊑-right-å åu u⊑v) = DSource.⊑-right (fro-mono u⊑v)
+fro-mono (⊑-left-å åu u⊑v) = ⊑-left (fro-mono u⊑v)
+fro-mono (⊑-right-å åu u⊑v) = ⊑-right (fro-mono u⊑v)
 fro-mono (⊑-split split u⊑v u⊑v₁) = 
-  DSource.⊑-split {!   !} (fro-mono u⊑v) (fro-mono u⊑v₁)
+  ⊑-split {!   !} (fro-mono u⊑v) (fro-mono u⊑v₁)
 
 {-
 fro-∈-mem : ∀ {a}{V} → a ∈ (mem V) → fro a ∈ mem (fros V)
 fro-∈-mem (here px) = here (cong fro px)
 fro-∈-mem (there a∈) = there (fro-∈-mem a∈)
 
-∈-mem-fros : ∀ {d}{V} → d ∈ mem (fros V) → Σ[ a ∈ Value' ] a ∈ mem V × d ≡ fro a
+∈-mem-fros : ∀ {d}{V} → d ∈ mem (fros V) → Σ[ a ∈ Value ] a ∈ mem V × d ≡ fro a
 ∈-mem-fros {d} {x ∷ V} (here px) = ⟨ x , ⟨ here refl , px ⟩ ⟩
 ∈-mem-fros {d} {x ∷ V} (there d∈) with ∈-mem-fros d∈
 ... | ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = ⟨ a , ⟨ there a∈ , refl ⟩ ⟩
@@ -758,7 +722,7 @@ fro-∈-mem (there a∈) = there (fro-∈-mem a∈)
 ++-⊆₁ (x ∷ FV) d (there d∈) = there (++-⊆₁ FV d d∈)
 -}
 
-reg-⊔-closed' : (𝒫 Value') → Set
+reg-⊔-closed' : (𝒫 Value) → Set
 reg-⊔-closed' D = ∀ u v → u ∈ D → v ∈ D → (u ⊔ v) ∈ D
 
 postulate 
@@ -871,65 +835,65 @@ delay-reflect (` x) ρ ρ~ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ ν , FV ⦆ 
   ⟨ tt , FV∈ ⟩ = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ν , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where 
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ ν , FV ⦆ 
   ⟨ tt , FV∈ ⟩ = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ν , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where 
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
   ⟨ w∈N , FV∈ ⟩ 
   with FV' d≟' FV
 ... | no FV'≠ = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ν , ⟨ tt , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where 
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
   ⟨ w∈N , FV∈ ⟩ | yes refl = ⟨ ω , ⟨ fro FV , ⟨ ω ⊢ fro V ↦ fro w , ⟨ G1 , ⟨ G3 , refl ⟩ ⟩ ⟩ ⟩ ⟩
   where
   init-closed : ∀ₑ ⊔-closed' (λ i v → v ≡ ω)
   init-closed i = singleton-⊔-closed' ω
-  IH : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω)))
-  IH = delay-reflect N ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω)) 
+  IH : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)))
+  IH = delay-reflect N ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)) 
                      (∀ₑ-ext ⊔-closed' (∀ₑ-ext ⊔-closed' init-closed 
-                                       (⊑-closure'-⊔-closed FV')) 
-                                       (⊑-closure'-⊔-closed V)) w w∈N
-  H : (env-map fro ((⊑-closure' V) • (⊑-closure' FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
+                                       (⊑-closure-⊔-closed FV')) 
+                                       (⊑-closure-⊔-closed V)) w w∈N
+  H : (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
   H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
   H (suc zero) d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
   H (suc (suc i)) d ⟨ a , ⟨ refl , refl ⟩ ⟩ = refl
   G1 : fro w ∈ ⟦ N ⟧ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
   G1 = LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) IH
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = 
     ⟨ delay-reflect fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
   G2 (suc n) (fv ,, fvs) (u ⊔ v) ⟨ u∈ , v∈ ⟩ = 
     ⟨ G2 (suc n) (fv ,, fvs) u u∈ , G2 (suc n) (fv ,, fvs) v v∈ ⟩
-  G3 : fro FV ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 = G2 n fvs FV FV∈
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (u ⊔ v) , FV ⦆ 
   d∈
@@ -962,7 +926,7 @@ delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ ρ~ d
   witness : ⦅ FV ↦ (V ↦ d) , FV ⦆ ∈ ⟦ delay M ⟧' ρ
   witness = ⊑-closed-⟦⟧' (delay M) ρ {!   !} 
             ⦅ FV ↦ V ↦ d , FV ⦆ ⦅ FV ↦ V ↦ d ⊔ f , FV' ⊔ FV ⦆ pre-witness
-            (DTarget.⊑-pair (DTarget.⊑-⊔-R1 ⊑-refl') (DTarget.⊑-⊔-R2 ⊑-refl'))
+            (⊑-pair (⊑-⊔-R1 ⊑-refl) (⊑-⊔-R2 ⊑-refl))
   IH : (fro FV ⊢ fro V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
   IH with FV d≟' FV | delay-reflect M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ⦆ witness
   ... | no neq | _ = ⊥-elim (neq refl)
@@ -998,9 +962,9 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ ρ~ d
   (inj₁ ⟨ V , ⟨ LV∈ , d∈ ⟩ ⟩) = 
    inj₁ ⟨ fro V , ⟨ G 
         , LangSource.⟦⟧-monotone {{Clos3-Semantics}} M H (fro d) 
-            (delay-reflect M ((⊑-closure' V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure'-⊔-closed V)) d d∈) ⟩ ⟩
+            (delay-reflect M ((⊑-closure V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure-⊔-closed V)) d d∈) ⟩ ⟩
     where
-    H : env-map fro ((⊑-closure' V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
     H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
     H (suc i) d d∈ = d∈
     G : left (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
@@ -1009,9 +973,9 @@ delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ ρ~ d
   (inj₂ ⟨ V , ⟨ RV∈ , d∈ ⟩ ⟩) =
    inj₂ ⟨ fro V , ⟨ G 
         , LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro d) 
-            (delay-reflect N ((⊑-closure' V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure'-⊔-closed V)) d d∈) ⟩ ⟩
+            (delay-reflect N ((⊑-closure V) • ρ) (∀ₑ-ext ⊔-closed' ρ~ (⊑-closure-⊔-closed V)) d d∈) ⟩ ⟩
     where
-    H : env-map fro ((⊑-closure' V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
     H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
     H (suc i) d d∈ = d∈
     G : right (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
@@ -1036,22 +1000,22 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ �
   ⟨ tt , ⟨ FV⊆ , neFV ⟩ ⟩ = 
   ⟨ G3 , fro-ne FV neFV ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ ν , FV ⦆ 
   ⟨ ⟨ tt , neFV' ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ = 
   ⟨ G3 , fro-ne FV neFV ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
@@ -1059,14 +1023,14 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ �
   = ?
 {-
 
-  with FV' DTarget.mem⊆? FV
+  with FV' mem⊆? FV
 ... | no FV'⊈  = ⟨ G3 , fro-ne FV neFV ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
@@ -1085,10 +1049,10 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ �
   G1 = LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) 
           (delay-reflect' N (mem V • mem FV' • (λ _ x → x ≡ ω)) {!   !} w 
                      w∈N)
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 -}
@@ -1105,7 +1069,7 @@ delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ ρ~ d
   G = keylemma' (⟦ delay M ⟧' ρ) (smash-⟦⟧' (delay M) ρ ρ~) FV ⦅FV↦[V↦d],FV'⦆∈M' FV⊆cdrM'
   IHM : (fros FV ⊢ fros V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
   IHM = ?
-{- with FV DTarget.mem⊆? (FV ++ FV') | delay-reflect' M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆ G
+{- with FV mem⊆? (FV ++ FV') | delay-reflect' M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆ G
   ... | yes FV⊆FV | IH = IH
   ... | no FV⊈FV | IH = ⊥-elim (FV⊈FV (++-⊆₁ FV)) -}
 delay-reflect' (lit B k ⦅ Nil ⦆) ρ ρ~ (const {B'} k') d∈ with base-eq? B B'
@@ -1329,7 +1293,7 @@ A ↦ (x ⊔ x' , Y ++ Y')
 {-
 
 {-
-data add2cdr : Value' → Value' → Value' → Set where
+data add2cdr : Value → Value → Value → Set where
   +cdr-pair : ∀ {u V v}
      → add2cdr ⦅ u , V ⦆ v ⦅ u , v ∷ V ⦆
   +cdr-↦ : ∀ {V w v w+v}
@@ -1357,17 +1321,17 @@ data add2cdr : Value' → Value' → Value' → Set where
      → add2cdr ⦅ u , V ⦆ w ⦅ u , V+w ⦆
      → add2cdr ⦅ u , v ∷ V ⦆ w ⦅ u , v ∷ V+w ⦆
 
-get-cdr : ∀ (D : 𝒫 Value') u {v u+v} → add2cdr u v u+v
-        → 𝒫 Value'
+get-cdr : ∀ (D : 𝒫 Value) u {v u+v} → add2cdr u v u+v
+        → 𝒫 Value
 get-cdr D u +cdr-pair = cdr ⟨ D , ptt ⟩
 get-cdr D (V ↦ w) (+cdr-↦ +cdr) = 
-  get-cdr (OpTarget.⋆ ⟨ D , ⟨ mem V , ptt ⟩ ⟩) w +cdr
+  get-cdr (⋆ ⟨ D , ⟨ mem V , ptt ⟩ ⟩) w +cdr
 get-cdr D (left u) (+cdr-left +cdr) = 
-  get-cdr (OpTarget.𝒞 ⟨ D , ⟨ (λ V v → v ∈ V) , ⟨ (λ V v → v ∈ V) , ptt ⟩ ⟩ ⟩) u +cdr
+  get-cdr (𝒞 ⟨ D , ⟨ (λ V v → v ∈ V) , ⟨ (λ V v → v ∈ V) , ptt ⟩ ⟩ ⟩) u +cdr
 get-cdr D (right u) (+cdr-right +cdr) =
-  get-cdr (OpTarget.𝒞 ⟨ D , ⟨ (λ V v → v ∈ V) , ⟨ (λ V v → v ∈ V) , ptt ⟩ ⟩ ⟩) u +cdr
+  get-cdr (𝒞 ⟨ D , ⟨ (λ V v → v ∈ V) , ⟨ (λ V v → v ∈ V) , ptt ⟩ ⟩ ⟩) u +cdr
 get-cdr D ∥ u ∷ us ∥ (+cdr-head +cdr) = 
-  get-cdr (OpTarget.proj 0 ⟨ D , ptt ⟩) u +cdr
+  get-cdr (proj 0 ⟨ D , ptt ⟩) u +cdr
 get-cdr D ∥ u ∷ us ∥ (+cdr-tail +cdr) = 
   get-cdr (rest ⟨ D , ptt ⟩) ∥ us ∥ +cdr
 get-cdr D ⦅ u , V ⦆ (+cdr-car +cdr) = 
@@ -1389,19 +1353,19 @@ get-cdr-mono ∥ .(_ ∷ _) ∥ (+cdr-tail +cdr) D⊆ u+v u+v∈ = HOLE
 get-cdr-mono (left u) (+cdr-left +cdr) D⊆ u+v u+v∈ = HOLE
 get-cdr-mono (right u) (+cdr-right +cdr) D⊆ u+v u+v∈ = HOLE
 
-+cdr-closed : (D : 𝒫 Value') → Set
++cdr-closed : (D : 𝒫 Value) → Set
 +cdr-closed D = ∀ u v u+v 
               → (+cdr : add2cdr u v u+v)
               → u ∈ D → v ∈ get-cdr D u +cdr
               → u+v ∈ D
 
-cdr-closure-n : ℕ → (D : 𝒫 Value') → 𝒫 Value'
+cdr-closure-n : ℕ → (D : 𝒫 Value) → 𝒫 Value
 cdr-closure-n zero D = D
 cdr-closure-n (suc n) D d+v = 
-  Σ[ d ∈ Value' ] Σ[ v ∈ Value' ] Σ[ +cdr ∈ add2cdr d v d+v ] 
+  Σ[ d ∈ Value ] Σ[ v ∈ Value ] Σ[ +cdr ∈ add2cdr d v d+v ] 
      (d ∈ (cdr-closure-n n D) × v ∈ get-cdr (cdr-closure-n n D) d +cdr)
 
-cdr-closure : 𝒫 Value' → 𝒫 Value'
+cdr-closure : 𝒫 Value → 𝒫 Value
 cdr-closure D d = Σ[ n ∈ ℕ ] cdr-closure-n n D d
 
 cdr-closure-closed : ∀ D → +cdr-closed (cdr-closure D)
@@ -1427,20 +1391,20 @@ smash-closure-⊆-closed closedS U⊆S d ⟨ n , d∈scUn ⟩ =
 
 -}   
 {-
-cdr-closure-n : ∀ (n : ℕ) → (D : 𝒫 Value') → 𝒫 Value'
+cdr-closure-n : ∀ (n : ℕ) → (D : 𝒫 Value) → 𝒫 Value
 cdr-closure zero D = D
 cdr-closure (suc n) D d+v = 
-  Σ[ d ∈ Value' ] Σ[ v ∈ Value' ] Σ[ +cdr ∈ add2cdr d v d+v ] (d ∈ D × v ∈ get-cdr D d +cdr)
+  Σ[ d ∈ Value ] Σ[ v ∈ Value ] Σ[ +cdr ∈ add2cdr d v d+v ] (d ∈ D × v ∈ get-cdr D d +cdr)
 
-smash-closed : (D : 𝒫 Value') → Set
+smash-closed : (D : 𝒫 Value) → Set
 smash-closed D = ∀ v1 v2 v → v1 ▹ v ◃ v2 → v1 ∈ D → v2 ∈ D → v ∈ D
 
-smash-closure-n : ∀ (n : ℕ) (U : 𝒫 Value') → 𝒫 Value'
+smash-closure-n : ∀ (n : ℕ) (U : 𝒫 Value) → 𝒫 Value
 smash-closure-n zero U = U
-smash-closure-n (suc n) U u = Σ[ u1 ∈ Value' ] Σ[ u2 ∈ Value' ] 
+smash-closure-n (suc n) U u = Σ[ u1 ∈ Value ] Σ[ u2 ∈ Value ] 
   u1 ∈ smash-closure-n n U × u2 ∈ smash-closure-n n U × u1 ▹ u ◃ u2
 
-smash-closure : ∀ (U : 𝒫 Value') → 𝒫 Value'
+smash-closure : ∀ (U : 𝒫 Value) → 𝒫 Value
 smash-closure U u = Σ[ n ∈ ℕ ] u ∈ smash-closure-n n U
 
 -}
@@ -1501,9 +1465,9 @@ join values of similar shape, and this will ensure things sit in the right place
 {- I want to start simple with consistent/joinable arrows... let's not worry 
    just yet about whether there are cases where we can "join" domains of arrows -}
 
-data _≈≈_ : List Value' → List Value' → Set
-data _~∥~_ : List Value' → List Value' → Set
-data _~~_ : Value' → Value' → Set where
+data _≈≈_ : List Value → List Value → Set
+data _~∥~_ : List Value → List Value → Set
+data _~~_ : Value → Value → Set where
   ~~-const : ∀ {B k} → const {B} k ~~ const k
   ~~-ω : ω ~~ ω
   ~~-ν-ν : ν ~~ ν
@@ -1539,9 +1503,9 @@ data _≈≈_ where
      → V ≈≈ V'
      → (v ∷ V) ≈≈ V'
 
-_⊔cdr_[_] : (u v : Value') → u ~~ v → Value'
-_⊔cdr∥_[_] : (ds ds' : List Value') → ds ~∥~ ds' → List Value'
-_⨆cdr_[_] : (V V' : List Value') → V ≈≈ V' → List Value'
+_⊔cdr_[_] : (u v : Value) → u ~~ v → Value
+_⊔cdr∥_[_] : (ds ds' : List Value) → ds ~∥~ ds' → List Value
+_⨆cdr_[_] : (V V' : List Value) → V ≈≈ V' → List Value
 (const k) ⊔cdr .(const _) [ ~~-const ] = const k
 .ω ⊔cdr .ω [ ~~-ω ] = ω
 .ν ⊔cdr .ν [ ~~-ν-ν ] = ν
@@ -1560,7 +1524,7 @@ _⨆cdr_[_] : (V V' : List Value') → V ≈≈ V' → List Value'
    reduce (λ {x} v~~x → v ⊔cdr x [ v~~x ]) v~ ++ (V ⨆cdr V' [ V≈ ]) 
 
 {-
- : Value' → Value' → Value' → Set where
+ : Value → Value → Value → Set where
   +cdr-pair : ∀ {u V v}
      → add2cdr ⦅ u , V ⦆ v ⦅ u , v ∷ V ⦆
   +cdr-↦ : ∀ {V w v w+v}
@@ -1601,7 +1565,7 @@ So we want to define something similar, but that is just join as a relation.
 
 
 
-data _▹_◃_ : Value' → Value' → Value' → Set where
+data _▹_◃_ : Value → Value → Value → Set where
     smash-pair-L : ∀ {u1 u2 V1 V2 v2}
             → v2 ∈ mem V2
             → ⦅ u1 , V1 ⦆ ▹ ⦅ u1 , v2 ∷ V1 ⦆ ◃ ⦅ u2 , V2 ⦆
@@ -1647,13 +1611,13 @@ data _▹_◃_ : Value' → Value' → Value' → Set where
             → ∥ v ∷ vs1 ∥  ▹ ∥ v ∷ vs ∥ ◃ ∥ v ∷ vs2 ∥
     -}
 
-data _▹[_]◃_ : List Value' → List Value' → List Value' → Set where
+data _▹[_]◃_ : List Value → List Value → List Value → Set where
     [] : [] ▹[ [] ]◃ []
     _∷_ : ∀ {d1 d2 d ds1 ds2 ds}
         → (d⊔ : d1 ▹ d ◃ d2)
         → (ds⊔ : ds1 ▹[ ds ]◃ ds2)
         → (d1 ∷ ds1) ▹[ (d ∷ ds) ]◃ (d2 ∷ ds2)
-data _▹▹_◃◃_ : List Value' → List Value' → List Value' → Set where
+data _▹▹_◃◃_ : List Value → List Value → List Value → Set where
     ▹[]◃ : ∀ {V2} → [] ▹▹ V2 ◃◃ V2
     ▹∷◃ : ∀ {v1 V1 V2 V}
         → (V⨆ : V1 ▹▹ V ◃◃ V2)
@@ -1662,7 +1626,7 @@ data _▹▹_◃◃_ : List Value' → List Value' → List Value' → Set where
 
 smash-mem : ∀ {d1 d2 d} → (smash : d1 ▹ d ◃ d2)
           → ∀ {FV1 FV2} 
-          → d1 ∈ mem FV1 → d2 ∈ mem FV2 → List Value'
+          → d1 ∈ mem FV1 → d2 ∈ mem FV2 → List Value
 smash-mem {d1} {d2} {d} smash {FV1 = d1 ∷ FV1} (here refl) d2∈ = d ∷ FV1
 smash-mem {d1} {d2} {d} smash {FV1 = d' ∷ FV1} (there d1∈) d2∈ = 
    d' ∷ smash-mem smash d1∈ d2∈
@@ -1681,15 +1645,15 @@ smash-cdr-L : ∀ {d1 d2 d} → (smash : d1 ▹ d ◃ d2)
 smash-cdr-L smash (here refl) d2∈ = smash-cdr-here-L smash d2∈
 smash-cdr-L smash (there d1∈) d2∈ = smash-cdr-there-L (smash-cdr-L smash d1∈ d2∈)
 
-smash-closed : (D : 𝒫 Value') → Set
+smash-closed : (D : 𝒫 Value) → Set
 smash-closed D = ∀ v1 v2 v → v1 ▹ v ◃ v2 → v1 ∈ D → v2 ∈ D → v ∈ D
 
-smash-closure-n : ∀ (n : ℕ) (U : 𝒫 Value') → 𝒫 Value'
+smash-closure-n : ∀ (n : ℕ) (U : 𝒫 Value) → 𝒫 Value
 smash-closure-n zero U = U
-smash-closure-n (suc n) U u = Σ[ u1 ∈ Value' ] Σ[ u2 ∈ Value' ] 
+smash-closure-n (suc n) U u = Σ[ u1 ∈ Value ] Σ[ u2 ∈ Value ] 
   u1 ∈ smash-closure-n n U × u2 ∈ smash-closure-n n U × u1 ▹ u ◃ u2
 
-smash-closure : ∀ (U : 𝒫 Value') → 𝒫 Value'
+smash-closure : ∀ (U : 𝒫 Value) → 𝒫 Value
 smash-closure U u = Σ[ n ∈ ℕ ] u ∈ smash-closure-n n U
 
 smash-closure-n-⊆-closed : ∀ n {S U} → smash-closed S → U ⊆ S → smash-closure-n n U ⊆ S
@@ -1768,7 +1732,7 @@ smash-⟦⟧' (get i ⦅ M' ,, Nil ⦆') ρ' ρ'~ d1 d2 smash d1∈ d2∈ = {!  
 
 keylemma' : ∀ D → smash-closed D
          → ∀ V' {f V} → ⦅ f  , V ⦆ ∈ D
-         → mem V' ⊆ OpTarget.cdr ⟨ D , ptt ⟩
+         → mem V' ⊆ cdr ⟨ D , ptt ⟩
          → ⦅ f , V' ++ V ⦆ ∈ D
 keylemma' D scD [] ⦅f,V⦆∈D V'⊆cdrD = ⦅f,V⦆∈D
 keylemma' D scD (v ∷ V') {f}{V} ⦅f,V⦆∈D V'⊆cdrD with V'⊆cdrD v (here refl)
@@ -1778,8 +1742,8 @@ keylemma' D scD (v ∷ V') {f}{V} ⦅f,V⦆∈D V'⊆cdrD with V'⊆cdrD v (here
       (keylemma' D scD V' ⦅f,V⦆∈D (λ d z → V'⊆cdrD d (there z))) 
 
 
-fros : List Value' → List Value
-fro : Value' → Value
+fros : List Value → List Value
+fro : Value → Value
 fro (const x) = const x
 fro (V ↦ w) = ω
 fro ν = ω
@@ -1797,10 +1761,10 @@ fros List.[] = []
 fros (d List.∷ ds) = fro d List.∷ fros ds
 
 
-fro-set : 𝒫 Value' → 𝒫 Value
-fro-set S v = Σ[ d ∈ Value' ] d ∈ S × v ≡ fro d
+fro-set : 𝒫 Value → 𝒫 Value
+fro-set S v = Σ[ d ∈ Value ] d ∈ S × v ≡ fro d
 
-_fro-⊆_ : 𝒫 Value' → 𝒫 Value → Set
+_fro-⊆_ : 𝒫 Value → 𝒫 Value → Set
 A fro-⊆ B = ∀ d → d ∈ A → fro d ∈ B
 
 fro-ne : ∀ V → V ≢ [] → fros V ≢ []
@@ -1811,7 +1775,7 @@ fros-length : ∀ V → length (fros V) ≡ length V
 fros-length [] = refl
 fros-length (x ∷ V) = cong suc (fros-length V)
 
-fros-nth : ∀ V i → fro (OpTarget.nth V i) ≡ OpSource.nth (fros V) i
+fros-nth : ∀ V i → fro (nth V i) ≡ nth (fros V) i
 fros-nth [] zero = refl
 fros-nth (x ∷ V) zero = refl
 fros-nth [] (suc i) = refl
@@ -1821,7 +1785,7 @@ fro-∈-mem : ∀ {a}{V} → a ∈ (mem V) → fro a ∈ mem (fros V)
 fro-∈-mem (here px) = here (cong fro px)
 fro-∈-mem (there a∈) = there (fro-∈-mem a∈)
 
-∈-mem-fros : ∀ {d}{V} → d ∈ mem (fros V) → Σ[ a ∈ Value' ] a ∈ mem V × d ≡ fro a
+∈-mem-fros : ∀ {d}{V} → d ∈ mem (fros V) → Σ[ a ∈ Value ] a ∈ mem V × d ≡ fro a
 ∈-mem-fros {d} {x ∷ V} (here px) = ⟨ x , ⟨ here refl , px ⟩ ⟩
 ∈-mem-fros {d} {x ∷ V} (there d∈) with ∈-mem-fros d∈
 ... | ⟨ a , ⟨ a∈ , refl ⟩ ⟩ = ⟨ a , ⟨ there a∈ , refl ⟩ ⟩
@@ -1850,22 +1814,22 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ �
   ⟨ tt , ⟨ FV⊆ , neFV ⟩ ⟩ = 
   ⟨ G3 , fro-ne FV neFV ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ ν , FV ⦆ 
   ⟨ ⟨ tt , neFV' ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ = 
   ⟨ G3 , fro-ne FV neFV ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
@@ -1873,14 +1837,14 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ �
   = ?
 {-
 
-  with FV' DTarget.mem⊆? FV
+  with FV' mem⊆? FV
 ... | no FV'⊈  = ⟨ G3 , fro-ne FV neFV ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
-                 → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ ⦅ FV' ↦ (V ↦ w) , FV ⦆ 
@@ -1899,10 +1863,10 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ~ �
   G1 = LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) 
           (delay-reflect' N (mem V • mem FV' • (λ _ x → x ≡ ω)) {!   !} w 
                      w∈N)
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ ρ~ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a a∈ with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b b∈)
 -}
@@ -1919,7 +1883,7 @@ delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ ρ~ d
   G = keylemma' (⟦ delay M ⟧' ρ) (smash-⟦⟧' (delay M) ρ ρ~) FV ⦅FV↦[V↦d],FV'⦆∈M' FV⊆cdrM'
   IHM : (fros FV ⊢ fros V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
   IHM = ?
-{- with FV DTarget.mem⊆? (FV ++ FV') | delay-reflect' M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆ G
+{- with FV mem⊆? (FV ++ FV') | delay-reflect' M ρ ρ~ ⦅ FV ↦ (V ↦ d) , FV ++ FV' ⦆ G
   ... | yes FV⊆FV | IH = IH
   ... | no FV⊈FV | IH = ⊥-elim (FV⊈FV (++-⊆₁ FV)) -}
 delay-reflect' (lit B k ⦅ Nil ⦆) ρ ρ~ (const {B'} k') d∈ with base-eq? B B'
@@ -1975,15 +1939,15 @@ del-map-args-reflect' {suc n} (M ,, args) ρ ρ~ =
 
 
 {-
-data _⊢_≈fro_ : 𝒫 Value' → List Value' → List Value → Set₁
-data _⊢_~fros_ : 𝒫 Value' → List Value' → List Value → Set₁
-data _⊢_~fro_ : 𝒫 Value' → Value' → Value → Set₁ where
+data _⊢_≈fro_ : 𝒫 Value → List Value → List Value → Set₁
+data _⊢_~fros_ : 𝒫 Value → List Value → List Value → Set₁
+data _⊢_~fro_ : 𝒫 Value → Value → Value → Set₁ where
   fro-ω : ∀ {D} → D ⊢ ω ~fro ω
   fro-const : ∀ {D B k} → D ⊢ const {B} k ~fro const k
   fro-left : ∀ {d d' D} → (d~ : D ⊢ d ~fro d')
-           → OpTarget.ℒ ⟨ D , ptt ⟩ ⊢ left d ~fro left d'
+           → ℒ ⟨ D , ptt ⟩ ⊢ left d ~fro left d'
   fro-right : ∀ {d d' D} → (d~ : D ⊢ d ~fro d')
-           → OpTarget.ℛ ⟨ D , ptt ⟩ ⊢ right d ~fro right d'
+           → ℛ ⟨ D , ptt ⟩ ⊢ right d ~fro right d'
   fro-tup : ∀ {ds ds' D} → (ds~ : D ⊢ ds ≈fro ds')
           → D ⊢ ∥ ds ∥ ~fro ∥ ds' ∥
   fro-ν : ∀ {FV FV' b D}
@@ -2031,25 +1995,25 @@ NOTES:
  - 
 
 -}
-delay-reflect : ∀ M (ρ' : Env Value') (ρ : Env Value)
-              → (∀ {i d'} → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × Σ[ D ∈ 𝒫 Value' ] D ⊢ d' ~fro d)
+delay-reflect : ∀ M (ρ' : Env Value) (ρ : Env Value)
+              → (∀ {i d'} → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × Σ[ D ∈ 𝒫 Value ] D ⊢ d' ~fro d)
               → ∀ d'
               → d' ∈ ⟦ delay M ⟧' ρ' 
               → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ ×
-                Σ[ D ∈ 𝒫 Value' ] D ⊢ d' ~fro d
+                Σ[ D ∈ 𝒫 Value ] D ⊢ d' ~fro d
 delay-reflect-⊆ : ∀ M ρ' ρ 
-              → (∀ {i d'} → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × Σ[ D ∈ 𝒫 Value' ] D ⊢ d' ~fro d)
+              → (∀ {i d'} → d' ∈ ρ' i → Σ[ d ∈ Value ] d ∈ ρ i × Σ[ D ∈ 𝒫 Value ] D ⊢ d' ~fro d)
               → ∀ V'
               → mem V' ⊆ ⟦ delay M ⟧' ρ'
               → Σ[ V ∈ List Value ] mem V ⊆ ⟦ M ⟧ ρ ×
-                Σ[ D ∈ 𝒫 Value' ] D ⊢ V' ~fros V
+                Σ[ D ∈ 𝒫 Value ] D ⊢ V' ~fros V
 delay-reflect (` i) ρ' ρ ρ~ d' d'∈ = ρ~ d'∈
 delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ' ρ ρ~ (left d') d'∈ 
   with (delay-reflect M ρ' ρ ρ~ d' d'∈)
-... | ⟨ d , ⟨ d∈ , ⟨ D , ~d ⟩ ⟩ ⟩ = ⟨ left d , ⟨ d∈ , ⟨ OpTarget.ℒ ⟨ D , ptt ⟩ , fro-left ~d ⟩ ⟩ ⟩
+... | ⟨ d , ⟨ d∈ , ⟨ D , ~d ⟩ ⟩ ⟩ = ⟨ left d , ⟨ d∈ , ⟨ ℒ ⟨ D , ptt ⟩ , fro-left ~d ⟩ ⟩ ⟩
 delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ' ρ ρ~ (right d') d'∈
   with (delay-reflect M ρ' ρ ρ~ d' d'∈)
-... | ⟨ d , ⟨ d∈ , ⟨ D , ~d ⟩ ⟩ ⟩ = ⟨ right d , ⟨ d∈ , ⟨ OpTarget.ℛ ⟨ D , ptt ⟩ , fro-right ~d ⟩ ⟩ ⟩
+... | ⟨ d , ⟨ d∈ , ⟨ D , ~d ⟩ ⟩ ⟩ = ⟨ right d , ⟨ d∈ , ⟨ ℛ ⟨ D , ptt ⟩ , fro-right ~d ⟩ ⟩ ⟩
 delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ' ρ ρ~ d' 
    (inj₁ ⟨ v' , ⟨ V' , ⟨ V'⊆ , d'∈ ⟩ ⟩ ⟩) 
   with delay-reflect-⊆ L ρ' ρ ρ~ (v' ∷ V') {! V'⊆   !}
@@ -2171,32 +2135,32 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d d�
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ( ⦅ ν , fv' ⦆) ⟨ FV⊆ , ⟨ f∈ , fv'∈ ⟩ ⟩ 
   = ⟨ G2 n fvs fv (FV⊆ fv (here refl)) , (λ d' d'∈ → G3 d' (there d'∈)) ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a (here refl) = G2 n fvs fv (FV⊆ fv (here refl))
   G3 a (there a∈) with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b (there b∈))
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (fv ∷ FV ⊢⦅ fv' ∷ FV' ↦ ν , fv'' ⦆) ⟨ FV⊆ , ⟨ f∈ , fv''∈ ⟩ ⟩
   = ⟨ G2 n fvs fv (FV⊆ fv (here refl)) , (λ d' d'∈ → G3 d' (there d'∈)) ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a (here refl) = G2 n fvs fv (FV⊆ fv (here refl))
   G3 a (there a∈) with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b (there b∈))
 delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ 
    (fv ∷ FV ⊢⦅ fv' ∷ FV' ↦ (v ∷ V ↦ w) , fv'' ⦆) ⟨ FV⊆ , ⟨ w∈ , fv''∈ ⟩ ⟩
-   with (fv' ∷ FV') DTarget.mem⊆? FV
+   with (fv' ∷ FV') mem⊆? FV
 ... | no FV'⊈ = ⟨ G2 n fvs fv (FV⊆ fv (here refl)) , (λ d' d'∈ → G3 d' (there d'∈)) ⟩
   where
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a (here refl) = G2 n fvs fv (FV⊆ fv (here refl))
   G3 a (there a∈) with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b (there b∈))
@@ -2213,10 +2177,10 @@ delay-reflect' (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ
   G1 = LangSource.⟦⟧-monotone {{Clos3-Semantics}} N H (fro w) 
           (delay-reflect' N (mem (v ∷ V) • mem (fv' ∷ FV') • (λ _ x → x ≡ ω)) w 
                      w∈)
-  G2 : ∀ n fvs d → d ∈ OpTarget.𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G2 : ∀ n fvs d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ) → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G2 zero fvs d refl = refl
   G2 (suc n) (fv ,, fvs) (∥ d ∷ ds ∥) ⟨ d∈ , ds∈ ⟩ = ⟨ delay-reflect' fv ρ d d∈ , G2 n fvs ∥ ds ∥ ds∈ ⟩
-  G3 : mem (fros FV) ⊆ OpSource.𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  G3 : mem (fros FV) ⊆ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
   G3 a (here refl) = G2 n fvs fv (FV⊆ fv (here refl))
   G3 a (there a∈) with ∈-mem-fros a∈
   ... | ⟨ b , ⟨ b∈ , refl ⟩ ⟩ = G2 n fvs b (FV⊆ b (there b∈))
@@ -2227,7 +2191,7 @@ delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ d
 
 {-
    with delay-reflect' M ρ (fv' ∷ FV' ⊢⦅ fv ∷ FV ↦ (v ∷ V ↦ d) , fv'' ⦆) ⦅FV↦V↦d∣FV'⦆∈M
-... | IHM with FV DTarget.mem⊆? (fv' ∷ FV')
+... | IHM with FV mem⊆? (fv' ∷ FV')
 ... | yes FV⊆ =
    ⟨ fro v , ⟨ fros V , ⟨ fro fv , ⟨ fros FV , ⟨ IHM , delay-reflect'-⊆ N ρ (v ∷ V) V⊆N' ⟩ ⟩ ⟩ ⟩ ⟩
 ... | no ¬FV⊆ = HOLE
@@ -2245,7 +2209,7 @@ delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ d
   G1 = {! FV⊆sndM' !}
   G1+IH : (fro v ∷ fros V ↦ fro d) ∈ ⟦ M ⟧ (env-map fro ρ)
   G1+IH with delay-reflect' M ρ (fv ∷ FV ⊢⦅ ( fv ∷ FV ↦ ( v ∷ V ↦ d)) , fv ⦆) G1 
-  ... | ihres with FV DTarget.mem⊆? FV
+  ... | ihres with FV mem⊆? FV
   ... | no neq = ⊥-elim (neq λ z z∈ → z∈)
   ... | yes eq = ihres
   G2 : mem (fros (v ∷ V)) ⊆ ⟦ N ⟧ (env-map fro ρ)
@@ -2339,7 +2303,4 @@ del-map-args-reflect' {suc n} (M ,, args) ρ =
 
 -}
 -}
--}
-
-
 -}

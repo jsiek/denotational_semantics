@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 
 open import Function using (_∘_)
 open import Data.Nat using (ℕ; suc ; zero; _+_; _≤′_; _<′_; _<_; _≤_;
@@ -11,7 +13,7 @@ open import Data.Product using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; p
   renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.Unit using (⊤; tt)
+open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Bool using (Bool; true; false; _∨_; _∧_; not)
 open import Data.List using (List; _∷_ ; []; _++_)
 open import Data.Vec using (Vec; []; _∷_; length; head; tail; lookup; zipWith)
@@ -19,7 +21,10 @@ open import Data.Vec.Relation.Binary.Pointwise.Inductive as PW using (Pointwise;
 open import Data.Fin using (Fin)
 open import Relation.Nullary using (¬_)
 open import Relation.Nullary using (Dec; yes; no)
-open import Relation.Nullary.Negation using (contradiction)
+open import Relation.Nullary.Decidable using (map′)
+open import Relation.Nullary.Product using (_×-dec_)
+open import Relation.Nullary.Sum using (_⊎-dec_)
+open import Relation.Nullary.Negation using (¬?; contradiction)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; cong; subst; inspect; [_])
 open Relation.Binary.PropositionalEquality.≡-Reasoning
@@ -715,10 +720,10 @@ module Model.Filter.DomainISWIMOrdering where
 ⊑-tup-inv' : ∀ {n} {vs₁} {vs₂} → ∥_∥ {n} vs₁ ⊑ ∥_∥ {n} vs₂ → Pointwise (_⊑_) vs₁ vs₂
 ⊑-tup-inv' {n} {vs₁} {vs₂} (⊑-tup {v' = v'} v'⊆vs₂ tup-∥ vs ∥₁⊑v') with v'⊆vs₂ {v'} refl
 ... | eq = subst (Pointwise _⊑_ vs₁) (tup-injective eq) vs₁⊑v'
-⊑-tup-inv' (⊑-tup v'⊆vs₂ (tup-⊔ tupv' tupv'') vs₁⊑v') = {!   !}
+⊑-tup-inv' (⊑-tup v'⊆vs₂ (tup-⊔ tupv' tupv'') vs₁⊑v') = HOLE
 
 ⊑-tup' : ∀ {n v₁ vs₁ v₂ vs₂} → v₁ ⊑ v₂ → ∥_∥ {n} vs₁ ⊑ ∥_∥ {n} vs₂ → tup (v₁ ∷ vs₁) ⊑ tup (v₂ ∷ vs₂)
-⊑-tup' {n} {v₁} {vs₁} {v₂} {vs₂} v₁⊑v₂ vs₁⊑vs₂ = ⊑-tup {suc n} {v₁ ∷ vs₁} {tup (v₂ ∷ vs₂)}  (λ x → x) tup-tup {!   !}
+⊑-tup' {n} {v₁} {vs₁} {v₂} {vs₂} v₁⊑v₂ vs₁⊑vs₂ = ⊑-tup {suc n} {v₁ ∷ vs₁} {tup (v₂ ∷ vs₂)}  (λ x → x) tup-tup HOLE
 
 {- The pointwise rules for pairles -}
 
@@ -742,3 +747,98 @@ module Model.Filter.DomainISWIMOrdering where
 
 -}
 -}
+
+
+
+{------------------------- Decidability --------------------------------------}
+
+  infix 5 _[_]⊑?_
+  infix 5 _⊑?_
+
+  hasFun : Value → Set
+  hasFun ν = True
+  hasFun (v ↦ w) = True
+  hasFun (u ⊔ v) = hasFun u ⊎ hasFun v
+  hasFun u = False
+
+  hasFun? : ∀ v → Dec (hasFun v)
+  hasFun? ω = no (λ z → z)
+  hasFun? ν = yes tt
+  hasFun? (const k) = no (λ z → z)
+  hasFun? (v ⊔ v₁) = hasFun? v ⊎-dec hasFun? v₁
+  hasFun? (v ↦ v₁) = yes tt
+  hasFun? ⦅ v ∣ = no (λ z → z)
+  hasFun? ∣ v ⦆ = no (λ z → z)
+  hasFun? (tup[ i ] v) = no (λ z → z)
+  hasFun? (left v) = no (λ z → z)
+  hasFun? (right v) = no (λ z → z)
+
+  ν⊑-hasFun : ∀ w → hasFun w → ν ⊑ w
+  ν⊑-hasFun ν hasFunw = ⊑-ν-ν
+  ν⊑-hasFun (w ⊔ w₁) (inj₁ x) = ⊑-⊔-R1-å tt (ν⊑-hasFun w x)
+  ν⊑-hasFun (w ⊔ w₁) (inj₂ y) = ⊑-⊔-R2-å tt (ν⊑-hasFun w₁ y)
+  ν⊑-hasFun (w ↦ w₁) hasFunw = ⊑-ν-↦
+
+  ν⊑-hasFun-inv : ∀ w → ν ⊑ w → hasFun w
+  ν⊑-hasFun-inv .ν ⊑-ν-ν = tt
+  ν⊑-hasFun-inv .(_ ↦ _) ⊑-ν-↦ = tt
+  ν⊑-hasFun-inv (v ⊔ w) (⊑-⊔-R1-å åu ν⊑w) = inj₁ (ν⊑-hasFun-inv v ν⊑w)
+  ν⊑-hasFun-inv (v ⊔ w) (⊑-⊔-R2-å åu ν⊑w) = inj₂ (ν⊑-hasFun-inv w ν⊑w)
+
+  ν⊑? : ∀ (w : Value) → Dec (ν ⊑ w)
+  ν⊑? w = map′ (ν⊑-hasFun w) (ν⊑-hasFun-inv w) (hasFun? w)
+
+
+  has-k : ∀ {B} (k : base-rep B) → Value → Set
+  has-k {B} k (const {B'} k') = Σ[ B≡ ∈ B ≡ B' ] (subst base-rep B≡ k) ≡ k' 
+  has-k k (u ⊔ v) = has-k k u ⊎ has-k k v
+  has-k k u = False
+
+  has-k-const-inv : ∀ {B k k'} → has-k {B} k (const {B} k') 
+    → k ≡ k'
+  has-k-const-inv ⟨ refl , snd ⟩ = snd
+
+  has-k? : ∀ {B} k v → Dec (has-k {B} k v)
+  has-k? k ω = no (λ z → z)
+  has-k? k ν = no (λ z → z)
+  has-k? {B} k (const {B'} k') with base-eq? B B'
+  ... | no neq = no λ z → neq (proj₁ z)
+  ... | yes refl with base-rep-eq? k k'
+  ... | no neq = no λ z → neq (has-k-const-inv z)
+  ... | yes refl = yes ⟨ refl , refl ⟩
+  has-k? k (v ⊔ v₁) = has-k? k v ⊎-dec has-k? k v₁
+  has-k? k (v ↦ v₁) = no (λ z → z)
+  has-k? k ⦅ v ∣ = no (λ z → z)
+  has-k? k ∣ v ⦆ = no (λ z → z)
+  has-k? k (tup[ i ] v) = no (λ z → z)
+  has-k? k (left v) = no (λ z → z)
+  has-k? k (right v) = no (λ z → z)
+
+  k⊑-has-k : ∀ {B} k v → has-k {B} k v → const k ⊑ v
+  k⊑-has-k k (const k₁) ⟨ refl , refl ⟩ = ⊑-const
+  k⊑-has-k k (v ⊔ v₁) (inj₁ x) = ⊑-⊔-R1-å tt (k⊑-has-k k v x)
+  k⊑-has-k k (v ⊔ v₁) (inj₂ y) = ⊑-⊔-R2-å tt (k⊑-has-k k v₁ y)
+
+  k⊑-has-k-inv : ∀ {B} k w → const {B} k ⊑ w → has-k k w
+  k⊑-has-k-inv k .(const k) ⊑-const = ⟨ refl , refl ⟩
+  k⊑-has-k-inv k (v ⊔ w) (⊑-⊔-R1-å åu k⊑w) = inj₁ (k⊑-has-k-inv k v k⊑w)
+  k⊑-has-k-inv k (v ⊔ w) (⊑-⊔-R2-å åu k⊑w) = inj₂ (k⊑-has-k-inv k w k⊑w)
+
+  k⊑? : ∀ {B} k w → Dec (const {B} k ⊑ w)
+  k⊑? k w = map′ (k⊑-has-k k w) (k⊑-has-k-inv k w) (has-k? k w)
+
+  _[_]⊑?_ : ∀ (u : Value) (i : ℕ) (v : Value)
+        → i ≡ size u → Dec (u ⊑ v)
+  (ω [ zero ]⊑? v) refl = yes ⊑-ω
+  (ν [ zero ]⊑? v) refl = ν⊑? v
+  (const k [ zero ]⊑? v) refl = k⊑? k v
+  (u ⊔ u₁ [ suc i ]⊑? v) i≡ = {!   !}
+  (u ↦ u₁ [ suc i ]⊑? v) i≡ = {!   !}
+  (⦅ u ∣ [ suc i ]⊑? v) i≡ = {!   !}
+  (∣ u ⦆ [ suc i ]⊑? v) i≡ = {!   !}
+  (tup[ i₁ ] u [ suc i ]⊑? v) i≡ = {!   !}
+  (left u [ suc i ]⊑? v) i≡ = {!   !}
+  (right u [ suc i ]⊑? v) i≡ = {!   !}
+
+  _⊑?_ : ∀ u v → Dec (u ⊑ v)
+  u ⊑? v = (u [ size u ]⊑? v) refl
