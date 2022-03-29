@@ -1,6 +1,3 @@
-
-{-# OPTIONS --allow-unsolved-metas #-}
-
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; replicate)
 
@@ -8,10 +5,13 @@ open import AbstractBindingTree
 open import NewSyntaxUtil
 open import NewSigUtil
 
-module Model.Filter.Delay where
-  open import Model.Filter.Clos3 as Source
-  open import Model.Filter.Clos4 as Target
-    renaming (clear to clear'; bind to bind'; ast to ast')
+module Compiler.Compile.Delay where
+  open import Compiler.Lang.Clos3 as Source
+  open import Compiler.Lang.Clos4 as Target
+    renaming (clear to clear'; bind to bind'; ast to ast';
+              AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
+              _⦅_⦆ to _⦅_⦆')
+              
 
   delay : (M : Source.AST) → Target.AST
   del-map-args : ∀ {n} → Source.Args (replicate n ■) → Target.Args (replicate n ■)

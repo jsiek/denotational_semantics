@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Model.Filter.Clos3 where
+module Compiler.Model.Filter.Sem.Clos3Iswim where
 {-
 
  In this intermediate semantics all functions take two parameters,
@@ -18,9 +18,9 @@ open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Model.Filter.DomainAnnFun
-open import Model.Filter.OperationAnnFun
-open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
+open import Compiler.Model.Filter.Domain.ISWIM.Domain
+open import Compiler.Model.Filter.Domain.ISWIM.Ops
+open import Compiler.Lang.Clos3 public
 
 open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
@@ -36,40 +36,10 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning
 
-{- Syntax ---------------------------------------------------------------------}
-
-data Op : Set where
-  clos-op : ℕ → Op
-  app : Op
-  lit : (B : Base) → (k : base-rep B) → Op
-  tuple : ℕ → Op
-  get : ∀ {n} (i : Fin n) → Op
-  inl-op : Op
-  inr-op : Op
-  case-op : Op
-
-sig : Op → List Sig
-sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
-sig app = ■ ∷ ■ ∷ []
-sig (lit B k) = []
-sig (tuple n) = replicate n ■
-sig (get i) = ■ ∷ []
-sig inl-op = ■ ∷ []
-sig inr-op = ■ ∷ []
-sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
-
-module ASTMod = Syntax.OpSig Op sig
-open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
-                   ⟪_⟫; _[_]; subst-zero; clear; bind; ast; cons; nil;
-                   Arg; Args;
-                   rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
-                   WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
-                   COp; CAst; CBind; ccons; tcons; append₊)
-            renaming (ABT to AST) public
 
 𝕆-Clos3 : DOpSig (𝒫 Value) sig
 𝕆-Clos3 (clos-op n) ⟨ F , Ds ⟩ = 
-  𝒜⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ 
+  ⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ 
      , ⟨ 𝒯 n Ds 
      , ptt ⟩ ⟩
 𝕆-Clos3 app = ⋆

@@ -1,4 +1,4 @@
-module Model.Filter.DomainUtil where
+module Compiler.Model.Filter.Domain.Util where
 
 open import Primitives
 

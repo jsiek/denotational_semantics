@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Model.Filter.OperationAnnFun where
+module Compiler.Model.Filter.Domain.AnnFun.Ops where
 
 {-
 
@@ -18,7 +18,7 @@ open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
-open import Model.Filter.DomainAnnFun renaming (consistent to consistency)
+open import Compiler.Model.Filter.Domain.AnnFun.Domain renaming (consistent to consistency)
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -148,6 +148,7 @@ pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ω = True
+{- pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ FV ↦ f ∣ = (FV ↦ f) ∈ D₁ × FV ∈ D₂ -}
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v

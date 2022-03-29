@@ -25,11 +25,11 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module Model.Filter.DomainAnnFunOrdering where
+module Compiler.Model.Filter.Domain.AnnFun.Ordering where
 
-  open import Model.Filter.DomainUtil
+  open import Compiler.Model.Filter.Domain.Util
   open import Primitives
-  open import Model.Filter.DomainAnnFunValues
+  open import Compiler.Model.Filter.Domain.AnnFun.Values
 
 
   infix 5 _⊑_

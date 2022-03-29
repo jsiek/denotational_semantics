@@ -25,17 +25,17 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module Model.Filter.DomainAnnFun where
+module Compiler.Model.Filter.Domain.AnnFun.Domain where
 
 
   open import Primitives
   open import Utilities using (extensionality)
   open import SetsAsPredicates
   open import NewDenotProperties hiding (consistent)
-  open import Model.Filter.DomainUtil public
-  open import Model.Filter.DomainAnnFunValues public
-  open import Model.Filter.DomainAnnFunOrdering public
-  open import Model.Filter.DomainAnnFunConsistent public
+  open import Compiler.Model.Filter.Domain.Util public
+  open import Compiler.Model.Filter.Domain.AnnFun.Values public
+  open import Compiler.Model.Filter.Domain.AnnFun.Ordering public
+  open import Compiler.Model.Filter.Domain.AnnFun.Consistent public
 
   ISWIM : Domain
   ISWIM = record

@@ -41,114 +41,63 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool using (Bool; true; false)
 
-module Compiler.Correctness.Delay.ReflectIswimIswim where
+module Compiler.Correctness.Delay.ReflectIswimIswimFail where
 
-{- Record of working times on "easy" version of the reverse proof -}
-{- 3:22 - _
-
-
+{- 
+simpler fro version in this file
+... ought to make another new file for failure next.
 -}
-
 
 fro : Value → Value
 fro ω = ω
-fro ν = ν  {- for mapping over closure functions -}
+fro ν = ν  {- for recursion in car case -}
 fro (const k) = const k
-fro (V ↦ w) = fro V ↦ fro w {- for mapping over closure functions -}
-fro ⦅ u ∣ = ω
-{-
+fro (u ⊔ v) = fro u ⊔ fro v  {- nice and uniform -}
+fro (V ↦ w) = fro V ↦ fro w {- for recursion in car case -}
 fro ⦅ ν ∣ = ω
-fro ⦅ FV ↦ u ∣ = ω {- I might want this to be ν,
-    but then we'll need additional info from the language -}
-fro ⦅ u ⊔ v ∣ = fro ⦅ u ∣ ⊔ fro ⦅ v ∣ {- nice and uniform -}
-fro ⦅ x ∣ = ω  {- catch-all case -} -}
-fro (⦅ FV ↦ u ∣ ⊔ ∣ FV' ⦆) with FV ⊑? FV'
-... | yes FV⊑ = fro u {- trying to handle this case uniformly -}
-... | no FV⋢ = ν
-fro (u ⊔ v) = fro u ⊔ fro v  {- catch-all case, nice and uniform -}
+fro ⦅ FV ↦ u ∣ = fro u   {- Needed condition :  Also ∣ FV ⦆ is also in the denotation -}
+fro ⦅ u ⊔ v ∣ = fro ⦅ u ∣ ⊔ fro ⦅ v ∣ {- also in closure; let's see if this terminates -}
+fro ⦅ x ∣ = ω  {- doesn't occur in the target language -}
 fro ∣ v ⦆ = ω {- always in closure denotation -}
 fro (tup[ i ] v) = tup[ i ] (fro v)
 fro (left v) = left (fro v)
 fro (right v) = right (fro v)
 
-fro left (u ⊔ v) = left (fro u ⊔ v)  = cases
-fro left (u ⊔ v) = left (fro u ⊔ v) = 
-fro left u ⊔ left v = left (fro u) ⊔ left (fro v)
-    but what if?
-    fro left u  ⊔ left v = left fro (u ⊔ v)
-
-
-{-
-bad example?
-
-with FV ⊑ FV'
-fro (left (⦅ FV ↦ u ∣ ⊔ ∣ FV' ⦆))
-= left (fro (a ⊔ b))
-= left (fro u)
-
-now we split
-
-fro (left a) ◃ fro (left (a ⊔ b)) ▹ fro (left b)
-  = ω                                  = ω
-
-so fro (uL ⊔ uR) = ω ⊔ ω  ⊑ left (Fro u) = fro u
-
+{- theorem: 
+  d ∈ ⟦ delay M ⟧ → fro d ∈ ⟦ M ⟧ ⊎ failure ⟦ delay M ⟧ d
 -}
 
 
-fro-dist : ∀ u v → (fro u ⊔ fro v) ⊑ fro (u ⊔ v)
-fro-dist ⦅ FV ↦ u ∣ ∣ FV' ⦆ with FV ⊑? FV'
-... | yes FV⊑ = ⊑-⊔-L ⊑-ω ⊑-ω
-... | no FV⋢ = ⊑-⊔-L ⊑-ω ⊑-ω
-fro-dist ω v = ⊑-refl
-fro-dist ν v = ⊑-refl
-fro-dist (const k) v = ⊑-refl
-fro-dist (u ⊔ u₁) v = ⊑-refl
-fro-dist (u ↦ u₁) v = ⊑-refl
-fro-dist ⦅ ω ∣ v = ⊑-refl
-fro-dist ⦅ ν ∣ v = ⊑-refl
-fro-dist ⦅ const k ∣ v = ⊑-refl
-fro-dist ⦅ u ⊔ u₁ ∣ v = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ ω = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ ν = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ (const k) = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ (v ⊔ v₁) = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ (v ↦ v₁) = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ ⦅ v ∣ = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ (tup[ i ] v) = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ (left v) = ⊑-refl
-fro-dist ⦅ u ↦ u₁ ∣ (right v) = ⊑-refl
-fro-dist ⦅ ⦅ u ∣ ∣ v = ⊑-refl
-fro-dist ⦅ ∣ u ⦆ ∣ v = ⊑-refl
-fro-dist ⦅ tup[ i ] u ∣ v = ⊑-refl
-fro-dist ⦅ left u ∣ v = ⊑-refl
-fro-dist ⦅ right u ∣ v = ⊑-refl
-fro-dist ∣ u ⦆ v = ⊑-refl
-fro-dist (tup[ i ] u) v = ⊑-refl
-fro-dist (left u) v = ⊑-refl
-fro-dist (right u) v = ⊑-refl
+data failure : 𝒫 Value → Value → Set₁ where
+  fail-base : ∀ {D FV V w}
+            → ¬ (∣ FV ⦆ ∈ D)
+            → failure D ⦅ FV ↦ (V ↦ w) ∣
+  fail-↦ : ∀ {F V w} 
+         → failure (F (⊑-closure V)) w
+         → failure (Λ ⟨ F , ptt ⟩) (V ↦ w)
+  fail-pair-car : ∀ {D D' d}
+         → failure D d
+         → failure (pair ⟨ D , ⟨ D' , ptt ⟩ ⟩) ⦅ d ∣
+  fail-pair-cdr : ∀ {D D' d}
+         → failure D' d
+         → failure (pair ⟨ D , ⟨ D' , ptt ⟩ ⟩) ∣ d ⦆
+  fail-tup : ∀ {n} {i : Fin n} {fvs}{d}
+         → failure (nthD fvs i) d
+         → failure (𝒯 n fvs) (tup[ i ] d)
+  fail-left : ∀ {D d}
+            → failure D d
+            → failure (ℒ ⟨ D , ptt ⟩) (left d)
+  fail-right : ∀ {D d}
+            → failure D d
+            → failure (ℛ ⟨ D , ptt ⟩) (right d)
 
-
-
-{- fro-dist-inv : ∀ u v → (fro (u ⊔ v) ⊑ fro u ⊔ fro v)
-             ⊎ (Σ[ FV ∈ Value ] Σ[ u' ∈ Value ] Σ[ FV' ∈ Value ]
-                 u ≡ ⦅ FV ↦ u' ∣ × v ≡ ∣ FV' ⦆ × FV ⊑ FV'
--}
 
 fro-Atomic : ∀ v → Atomic v → Atomic (fro v)
 fro-Atomic ω åv = tt
 fro-Atomic ν åv = tt
 fro-Atomic (const k) åv = tt
 fro-Atomic (v ↦ v₁) åv = fro-Atomic v₁ åv
-fro-Atomic ⦅ v ↦ (v₁ ↦ v₂) ∣ åv = tt
-fro-Atomic ⦅ v ↦ ω ∣ åv = tt
-fro-Atomic ⦅ v ↦ ν ∣ åv = tt
-fro-Atomic ⦅ v ↦ const k ∣ åv = tt
-fro-Atomic ⦅ v ↦ ⦅ v₁ ∣ ∣ åv = tt
-fro-Atomic ⦅ v ↦ ∣ v₁ ⦆ ∣ åv = tt
-fro-Atomic ⦅ v ↦ tup[ i ] v₁ ∣ åv = tt
-fro-Atomic ⦅ v ↦ left v₁ ∣ åv = tt
-fro-Atomic ⦅ v ↦ right v₁ ∣ åv = tt
+fro-Atomic ⦅ v ↦ u ∣ åu = fro-Atomic u åu
 fro-Atomic ⦅ ω ∣ åv = tt
 fro-Atomic ⦅ ν ∣ åv = tt
 fro-Atomic ⦅ const k ∣ åv = tt
@@ -162,63 +111,11 @@ fro-Atomic (tup[ i ] v) åv = fro-Atomic v åv
 fro-Atomic (left v) åv = fro-Atomic v åv
 fro-Atomic (right v) åv = fro-Atomic v åv
 
-fro-mono : ∀ {u v} → u ⊑ v → fro u ⊑ fro v
-fro-split-⊑ : ∀ {u uL uR} → uL ◃ u ▹ uR → fro u ⊑ fro (uL ⊔ uR)
-fro-upper-bound : ∀ {uL uR v} → uL ⊑ v → uR ⊑ v → fro (uL ⊔ uR) ⊑ fro v
-
-fro-mono ⊑-ω = ⊑-ω
-fro-mono ⊑-ν-ν = ⊑-ν-ν
-fro-mono ⊑-ν-↦ = ⊑-ν-↦
-fro-mono ⊑-const = ⊑-const
-fro-mono {u} {v ⊔ w} (⊑-⊔-R1-å åu u⊑v) = 
-  ⊑-trans (⊑-⊔-R1 (fro-mono u⊑v)) (fro-dist v w)
-fro-mono {u} {v ⊔ w} (⊑-⊔-R2-å åu u⊑v) = 
-  ⊑-trans (⊑-⊔-R2 (fro-mono u⊑v)) (fro-dist v w)
-fro-mono (⊑-fst-å åu u⊑v) = ⊑-ω
-fro-mono (⊑-snd-å åu u⊑v) = ⊑-ω
-fro-mono (⊑-tup-å åu u⊑v) = ⊑-tup (fro-mono u⊑v)
-fro-mono (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-↦ (fro-mono u⊑v₁) (fro-mono u⊑v)
-fro-mono (⊑-left-å åu u⊑v) = ⊑-left (fro-mono u⊑v)
-fro-mono (⊑-right-å åu u⊑v) = ⊑-right (fro-mono u⊑v)
-fro-mono (⊑-split {u} split u⊑v u⊑v₁) = ⊑-trans (fro-split-⊑ split) (fro-upper-bound u⊑v u⊑v₁)
-
-fro-split-⊑ {.(uL ⊔ uR)} {uL} {uR} split-⊔ = ⊑-refl
-fro-split-⊑ {.(_ ↦ _)} {.(_ ↦ _)} {.(_ ↦ _)} (split-↦ split) = 
-  {! fro-mono    !}
-fro-split-⊑ {.(⦅ _ ∣)} {.(⦅ _ ∣)} {.(⦅ _ ∣)} (split-fst split) = {!   !}
-fro-split-⊑ {.(∣ _ ⦆)} {.(∣ _ ⦆)} {.(∣ _ ⦆)} (split-snd split) = {!   !}
-fro-split-⊑ {.(tup[ _ ] _)} {.(tup[ _ ] _)} {.(tup[ _ ] _)} (split-tup split) = {!   !}
-fro-split-⊑ {.(left _)} {.(left _)} {.(left _)} (split-left split) = {!   !}
-fro-split-⊑ {.(right _)} {.(right _)} {.(right _)} (split-right split) = {!   !}
-
-fro-upper-bound {uL} {uR} {v} L⊑ R⊑ = {! !}
-
-
-
-{-
-ν-⊑-fro-fst : ∀ {u w} → ν ⊑ fro ⦅ u ↦ w ∣
-ν-⊑-fro-fst {u} {ω} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {ν} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {const k} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {w ⊔ w₁} = ⊑-⊔-R1-å tt ν-⊑-fro-fst
-ν-⊑-fro-fst {u} {w ↦ w₁} = ⊑-ν-↦
-ν-⊑-fro-fst {u} {⦅ w ∣} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {∣ w ⦆} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {tup[ i ] w} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {left w} = ⊑-ν-ν
-ν-⊑-fro-fst {u} {right w} = ⊑-ν-ν
-
 fro-split-⊑ : ∀ {u uL uR} → uL ◃ u ▹ uR → fro u ⊑ fro uL ⊔ fro uR
 fro-split-⊑ split-⊔ = ⊔⊑⊔ ⊑-refl ⊑-refl
 fro-split-⊑ (split-↦ split) = ⊑-trans (⊑-↦ ⊑-refl (fro-split-⊑ split)) ⊑-dist-fun
 fro-split-⊑ {⦅ .(uL ⊔ uR) ∣} {⦅ uL ∣} {⦅ uR ∣} (split-fst split-⊔) = ⊔⊑⊔ ⊑-refl ⊑-refl
-fro-split-⊑ (split-fst (split-↦ split-⊔)) = fro-split-⊑ split-⊔
-fro-split-⊑ (split-fst (split-↦ (split-↦ split))) = fro-split-⊑ (split-↦ split)
-fro-split-⊑ (split-fst (split-↦ (split-fst split))) = ⊑-⊔-R1-å tt ⊑-ν-ν
-fro-split-⊑ (split-fst (split-↦ (split-snd split))) = ⊑-⊔-R1-å tt ⊑-ν-ν
-fro-split-⊑ (split-fst (split-↦ (split-tup split))) = ⊑-⊔-R1-å tt ⊑-ν-ν
-fro-split-⊑ (split-fst (split-↦ (split-left split))) = ⊑-⊔-R1-å tt ⊑-ν-ν
-fro-split-⊑ (split-fst (split-↦ (split-right split))) = ⊑-⊔-R1-å tt ⊑-ν-ν
+fro-split-⊑ (split-fst (split-↦ split)) = fro-split-⊑ split
 fro-split-⊑ (split-fst (split-fst split)) = ⊑-ω
 fro-split-⊑ (split-fst (split-snd split)) = ⊑-ω
 fro-split-⊑ (split-fst (split-tup split)) = ⊑-ω
@@ -241,37 +138,18 @@ fro-mono {⦅ u ∣}{⦅ v ∣} (⊑-fst-å åu u⊑v) = G u v åu u⊑v
   where
   G : ∀ u v → Atomic u → u ⊑ v → fro ⦅ u ∣ ⊑ fro ⦅ v ∣
   G .ω v åu ⊑-ω = ⊑-ω
-  G .ν .ν åu ⊑-ν-ν = ⊑-ν-ν
-  G .ν .(_ ↦ _) åu ⊑-ν-↦ = ν-⊑-fro-fst
+  G .ν .ν åu ⊑-ν-ν = ⊑-ω
+  G .ν .(_ ↦ _) åu ⊑-ν-↦ = ⊑-ω
   G .(const _) .(const _) åu ⊑-const = ⊑-ω
   G u (v ⊔ w) åu (⊑-⊔-R1-å åu₁ u⊑v) = ⊑-⊔-R1 (G u v åu u⊑v)
   G u (v ⊔ w) åu (⊑-⊔-R2-å åu₁ u⊑v) = ⊑-⊔-R2 (G u w åu u⊑v)
   G .(⦅ _ ∣) .(⦅ _ ∣) åu (⊑-fst-å åu₁ u⊑v) = ⊑-ω
   G .(∣ _ ⦆) .(∣ _ ⦆) åu (⊑-snd-å åu₁ u⊑v) = ⊑-ω
   G .(tup[ _ ] _) .(tup[ _ ] _) åu (⊑-tup-å åu₁ u⊑v) = ⊑-ω
-  G (uV ↦ u) (vV ↦ v) åu (⊑-↦-å åu₂ u⊑v u⊑v₁) = G' uV u vV v åu u⊑v u⊑v₁
-     where
-     G' : ∀ uV u vV v → Atomic u → u ⊑ v → vV ⊑ uV
-        → fro ⦅ uV ↦ u ∣ ⊑ fro ⦅ vV ↦ v ∣
-     G' uV .ω vV v åu ⊑-ω vV⊑uV = ν-⊑-fro-fst
-     G' uV .ν vV .ν åu ⊑-ν-ν vV⊑uV = ⊑-ν-ν
-     G' uV .ν vV .(_ ↦ _) åu ⊑-ν-↦ vV⊑uV = ⊑-ν-↦
-     G' uV .(const _) vV .(const _) åu ⊑-const vV⊑uV = ⊑-ν-ν
-     G' uV u vV (v ⊔ w) åu (⊑-⊔-R1-å åu₁ u⊑v) vV⊑uV = 
-       ⊑-⊔-R1 (G' uV u vV v åu₁ u⊑v vV⊑uV)
-     G' uV u vV (v ⊔ w) åu (⊑-⊔-R2-å åu₁ u⊑v) vV⊑uV = 
-       ⊑-⊔-R2 (G' uV u vV w åu₁ u⊑v vV⊑uV)
-     G' uV .(⦅ _ ∣) vV .(⦅ _ ∣) åu (⊑-fst-å åu₁ u⊑v) vV⊑uV = ⊑-ν-ν
-     G' uV .(∣ _ ⦆) vV .(∣ _ ⦆) åu (⊑-snd-å åu₁ u⊑v) vV⊑uV = ⊑-ν-ν
-     G' uV .(tup[ _ ] _) vV .(tup[ _ ] _) åu (⊑-tup-å åu₁ u⊑v) vV⊑uV = ⊑-ν-ν
-     G' uV (uV' ↦ u) vV (vV' ↦ v) åu (⊑-↦-å åu₂ u⊑v u⊑v₁) vV⊑uV = 
-        ⊑-↦ (fro-mono u⊑v₁) (fro-mono u⊑v)
-     G' uV .(left _) vV .(left _) åu (⊑-left-å åu₁ u⊑v) vV⊑uV = ⊑-ν-ν
-     G' uV .(right _) vV .(right _) åu (⊑-right-å åu₁ u⊑v) vV⊑uV = ⊑-ν-ν
-     G' uV u vV v åu (⊑-split split u⊑v u⊑v₁) vV⊑uV = ⊥-elim (unsplittable u åu split)
+  G (uV ↦ u) (vV ↦ v) åu (⊑-↦-å åu₂ u⊑v u⊑v₁) = fro-mono u⊑v
   G .(left _) .(left _) åu (⊑-left-å åu₁ u⊑v) = ⊑-ω
   G .(right _) .(right _) åu (⊑-right-å åu₁ u⊑v) = ⊑-ω
-  G u v åu (⊑-split split u⊑v u⊑v₁) = ⊥-elim (unsplittable u åu split)
+  G u v åu (⊑-split split u⊑v u⊑v₁) = ⊥-elim (unsplittable u åu split) 
 fro-mono (⊑-snd-å åu u⊑v) = ⊑-ω
 fro-mono (⊑-tup-å åu u⊑v) = ⊑-tup (fro-mono u⊑v)
 fro-mono (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-↦ (fro-mono u⊑v₁) (fro-mono u⊑v)
@@ -279,7 +157,6 @@ fro-mono (⊑-left-å åu u⊑v) = ⊑-left (fro-mono u⊑v)
 fro-mono (⊑-right-å åu u⊑v) = ⊑-right (fro-mono u⊑v)
 fro-mono (⊑-split {u}{uL}{uR} split uL⊑v uR⊑v) = 
   ⊑-trans (fro-split-⊑ split) (⊑-split split-⊔ (fro-mono uL⊑v) (fro-mono uR⊑v))
-
 
 env-map : ∀ {A B : Set} → (A → B) → (ℕ → 𝒫 A) → (ℕ → 𝒫 B)
 env-map {A} {B} f ρ x b = Σ[ a ∈ A ] a ∈ (ρ x) × b ≡ f a
@@ -309,7 +186,6 @@ helpful-lemma M ρ u v u⊔v∈M =
 
 
 delay-reflect : ∀ M ρ
-  {- → (ρ~ : ∀ₑ ⊔-closed' ρ) -}
   → ∀ d → d ∈ ⟦ delay M ⟧' ρ → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
 delay-args-reflect-nth : ∀ {n} args (i : Fin n) ρ d 
    → d ∈ nthD (⟦ del-map-args args ⟧₊' ρ) i
@@ -342,7 +218,11 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (d ⊔
                                                      (⊑-⊔-R2 ⊑-refl)) D⊆) 
                                           d' d'∈) , ptt ⟩) 
                      (fro d₁) IHd₁
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ∣ d∈ = {! d  !}
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ ω ∣ d∈ = ⟨ ω , ⟨ tt , tt ⟩ ⟩
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ ν ∣ d∈ = ⟨ ω , ⟨ tt , tt ⟩ ⟩
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ⊔ d₁ ∣ d∈ = {!   !}
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ↦ d₁ ∣ 
+  ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ fro FV , ⟨ {! d∈   !} , {!  !} ⟩ ⟩
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ d ⦆ d∈ = 
   ⟨ ω , ⟨ tt , tt ⟩ ⟩
 delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ d 
@@ -2679,6 +2559,3 @@ del-map-args-reflect' {suc n} (M ,, args) ρ =
 
 -}
 
-
-
--}

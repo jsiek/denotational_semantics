@@ -26,12 +26,12 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module Model.Filter.DomainAnnFunConsistent where
+module Compiler.Model.Filter.Domain.AnnFun.Consistent where
 
   open import Primitives
-  open import Model.Filter.DomainUtil
-  open import Model.Filter.DomainAnnFunValues
-  open import Model.Filter.DomainAnnFunOrdering
+  open import Compiler.Model.Filter.Domain.Util
+  open import Compiler.Model.Filter.Domain.AnnFun.Values
+  open import Compiler.Model.Filter.Domain.AnnFun.Ordering
 
 
   {-

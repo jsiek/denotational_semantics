@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Model.Filter.Clos4 where
+module Compiler.Model.Filter.Sem.Clos4Iswim where
 {-
 
  In this intermediate semantics all functions take two parameters,
@@ -18,9 +18,9 @@ open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Model.Filter.DomainISWIM
-open import Model.Filter.OperationISWIM
-open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
+open import Compiler.Model.Filter.Domain.ISWIM.Domain
+open import Compiler.Model.Filter.Domain.ISWIM.Ops
+open import Compiler.Lang.Clos4 public
 
 open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
@@ -36,42 +36,8 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning
 
-{- Syntax ---------------------------------------------------------------------}
 
-data Op : Set where
-  fun-op : Op
-  app : Op
-  lit : (B : Base) → (k : base-rep B) → Op
-  pair-op : Op
-  fst-op : Op
-  snd-op : Op
-  tuple : ℕ → Op
-  get : ∀ {n} (i : Fin n) → Op
-  inl-op : Op
-  inr-op : Op
-  case-op : Op
 
-sig : Op → List Sig
-sig fun-op = ∁ (ν (ν ■)) ∷ []
-sig app = ■ ∷ ■ ∷ ■ ∷ []
-sig (lit B k) = []
-sig pair-op = ■ ∷ ■ ∷ []
-sig fst-op = ■ ∷ []
-sig snd-op = ■ ∷ []
-sig (tuple n) = replicate n ■
-sig (get i) = ■ ∷ []
-sig inl-op = ■ ∷ []
-sig inr-op = ■ ∷ []
-sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
-
-module ASTMod = Syntax.OpSig Op sig
-open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
-                   ⟪_⟫; _[_]; subst-zero; clear; bind; ast; cons; nil;
-                   Arg; Args;
-                   rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
-                   WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
-                   COp; CAst; CBind; ccons; tcons; append₊)
-            renaming (ABT to AST) public
 
 𝕆-Clos4 : DOpSig (𝒫 Value) sig
 𝕆-Clos4 fun-op ⟨ F , _ ⟩ = Λ ⟨ (λ X → Λ ⟨ (λ Y → F X Y) , ptt ⟩) , ptt ⟩

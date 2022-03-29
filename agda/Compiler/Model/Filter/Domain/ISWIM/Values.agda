@@ -42,11 +42,11 @@ open Relation.Binary.PropositionalEquality.≡-Reasoning
 open import Relation.Nullary.Decidable using (map′)
 open import Relation.Nullary.Product using (_×-dec_)
 
-module Model.Filter.DomainISWIMValues where
+module Compiler.Model.Filter.Domain.ISWIM.Values where
 
 open import Primitives
 open import SetsAsPredicates
-open import Model.Filter.DomainUtil
+open import Compiler.Model.Filter.Domain.Util
 
 
 infix 4 _∧dec_
