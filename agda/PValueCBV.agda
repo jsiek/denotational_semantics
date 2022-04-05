@@ -37,17 +37,6 @@ open import Level using (Level; Lift; lift)
     renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-{- Finite Sets represented by Lists -------------------------------------------}
-
-mem : ∀{T : Set} → List T → T → Set
-mem {T} ls x = x ⋵ ls
-
-E≢[]⇒nonempty-mem : ∀{T}{E : List T}
-  → E ≢ [] → nonempty (mem E)
-E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
-E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
-
-
 {- Denotational Values --------------------------------------------------------}
 
 data Value : Set where
@@ -788,9 +777,9 @@ next-cont-envs {n} {Ds} {ρ}{NE-ρ}{w} w∈Dsρ cDs u u∈
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , vs∈𝒯Dsρ₁ ⟩ ⟩ ⟩
     with cDs ⟬ v ∷ vs ⟭ ⟨ v∈Dρ , vs∈𝒯Dsρ ⟩ 
 ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , ⟨ v∈Dρ₂ , vs∈Dsρ₂ ⟩ ⟩ ⟩ ⟩
-    with  mDs {ρ₁}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₁ z
+    with  mDs {ρ₁}{ρ₁ ⊔ₑ ρ₂} (λ x d z → inj₁ z)
 ... | ⟨ _ , Dsρ₁⊆Dsρ₃ ⟩ 
-    with  mDs {ρ₂}{ρ₁ ⊔ₑ ρ₂} λ x d z → inj₂ z
+    with  mDs {ρ₂}{ρ₁ ⊔ₑ ρ₂} (λ x d z → inj₂ z)
 ... | ⟨ lift Dρ₂⊆Dρ₃ , _ ⟩ =
     let v∈Dρ₃ = Dρ₂⊆Dρ₃ v v∈Dρ₂ in
     let vs∈Dsρ₃ = 𝒯-mono-⊆ (rel-results⇒rel-∏ ⊆-result⇒⊆ Dsρ₁⊆Dsρ₃)

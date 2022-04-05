@@ -3,6 +3,7 @@ module SetsAsPredicates where
 open import Data.Empty renaming (⊥ to False)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
 open import Data.List using (List; []; _∷_)
@@ -28,6 +29,14 @@ nonempty{T} S = Σ[ x ∈ T ] x ∈ S
 infix 9 _⊆_
 _⊆_ : ∀{T : Set} → 𝒫 T → 𝒫 T → Set
 D ⊆ E = ∀ d → d ∈ D → d ∈ E
+
+infix 9 _∪_
+_∪_ : ∀{T : Set} → 𝒫 T → 𝒫 T → 𝒫 T
+(D ∪ E) d = d ∈ D ⊎ d ∈ E
+
+infix 9 _∩_
+_∩_ : ∀{T : Set} → 𝒫 T → 𝒫 T → 𝒫 T
+(D ∩ E) d = d ∈ D × d ∈ E
 
 infix 6 _≃_
 _≃_ : ∀{T : Set} → 𝒫 T → 𝒫 T → Set
