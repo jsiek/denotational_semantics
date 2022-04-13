@@ -7,11 +7,16 @@ open import NewDOpSig
 open import NewDenotProperties
 open import Compiler.Model.Filter.Domain.ISWIM.Domain as Domain
 open import Compiler.Model.Filter.Domain.ISWIM.Ops as Ops
+open import Compiler.Lang.Clos3 as Clos3
+open import Compiler.Lang.Clos4 as Clos4
+  renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
+            _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
 open import Compiler.Model.Filter.Sem.Clos3Iswim as Source
 open import Compiler.Model.Filter.Sem.Clos4Iswim as Target
-  renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
-            _⦅_⦆ to _⦅_⦆'; ⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊';
-            ast to ast'; bind to bind'; clear to clear')
+open import Compiler.Model.Filter.Sem.Clos4Good as Good
+open import NewSemantics Clos4.Op Clos4.sig as Clos4Sem
+open Clos4Sem.Semantics Clos4Iswim-Semantics renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
+open Clos4Sem.Semantics Clos4Good-Semantics renaming (⟦_⟧ to ⟦_⟧G; ⟦_⟧ₐ to ⟦_⟧ₐG; ⟦_⟧₊ to ⟦_⟧₊G)
 open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv
 open import Primitives
@@ -43,7 +48,7 @@ open import Relation.Nullary.Sum using (_⊎-dec_)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool using (Bool; true; false)
 
-module Compiler.Correctness.Delay.ReflectIswimIswimGood where
+module Compiler.Correctness.Delay.ReflectIswimGood where
 
 {- 
 simpler fro version in this file
@@ -69,6 +74,447 @@ fro (right v) = right (fro v)
 env-map : ∀ {A B : Set} → (A → B) → (ℕ → 𝒫 A) → (ℕ → 𝒫 B)
 env-map {A} {B} f ρ x b = Σ[ a ∈ A ] a ∈ (ρ x) × b ≡ f a
 
+
+fro-split-⊑ : ∀ {u uL uR} → uL ◃ u ▹ uR → fro u ⊑ fro uL ⊔ fro uR
+fro-split-⊑ split-⊔ = ⊔⊑⊔ ⊑-refl ⊑-refl
+fro-split-⊑ (split-↦ split) = ⊑-trans (⊑-↦ ⊑-refl (fro-split-⊑ split)) ⊑-dist-fun
+fro-split-⊑ {⦅ .(uL ⊔ uR) ∣} {⦅ uL ∣} {⦅ uR ∣} (split-fst split-⊔) = ⊔⊑⊔ ⊑-refl ⊑-refl
+fro-split-⊑ (split-fst (split-↦ split)) = fro-split-⊑ split
+fro-split-⊑ (split-fst (split-fst split)) = ⊑-ω
+fro-split-⊑ (split-fst (split-snd split)) = ⊑-ω
+fro-split-⊑ (split-fst (split-tup split)) = ⊑-ω
+fro-split-⊑ (split-fst (split-left split)) = ⊑-ω
+fro-split-⊑ (split-fst (split-right split)) = ⊑-ω
+fro-split-⊑ (split-snd split) = ⊑-ω
+fro-split-⊑ (split-tup split) = ⊑-trans (⊑-tup (fro-split-⊑ split)) ⊑-dist-tup
+fro-split-⊑ (split-left split) = ⊑-trans (⊑-left (fro-split-⊑ split)) ⊑-dist-left
+fro-split-⊑ (split-right split) = ⊑-trans (⊑-right (fro-split-⊑ split)) ⊑-dist-right
+
+
+fro-mono : ∀ {u v} → u ⊑ v → fro u ⊑ fro v
+fro-mono ⊑-ω = ⊑-ω
+fro-mono ⊑-ν-ν = ⊑-ν-ν
+fro-mono ⊑-ν-↦ = ⊑-ν-↦
+fro-mono ⊑-const = ⊑-const
+fro-mono (⊑-⊔-R1-å åu u⊑v) = ⊑-⊔-R1 (fro-mono u⊑v)
+fro-mono (⊑-⊔-R2-å åu u⊑v) = ⊑-⊔-R2 (fro-mono u⊑v)
+fro-mono {⦅ u ∣}{⦅ v ∣} (⊑-fst-å åu u⊑v) = G u v åu u⊑v
+  where
+  G : ∀ u v → Atomic u → u ⊑ v → fro ⦅ u ∣ ⊑ fro ⦅ v ∣
+  G .ω v åu ⊑-ω = ⊑-ω
+  G .ν .ν åu ⊑-ν-ν = ⊑-ω
+  G .ν .(_ ↦ _) åu ⊑-ν-↦ = ⊑-ω
+  G .(const _) .(const _) åu ⊑-const = ⊑-ω
+  G u (v ⊔ w) åu (⊑-⊔-R1-å åu₁ u⊑v) = ⊑-⊔-R1 (G u v åu u⊑v)
+  G u (v ⊔ w) åu (⊑-⊔-R2-å åu₁ u⊑v) = ⊑-⊔-R2 (G u w åu u⊑v)
+  G .(⦅ _ ∣) .(⦅ _ ∣) åu (⊑-fst-å åu₁ u⊑v) = ⊑-ω
+  G .(∣ _ ⦆) .(∣ _ ⦆) åu (⊑-snd-å åu₁ u⊑v) = ⊑-ω
+  G .(tup[ _ ] _) .(tup[ _ ] _) åu (⊑-tup-å åu₁ u⊑v) = ⊑-ω
+  G (uV ↦ u) (vV ↦ v) åu (⊑-↦-å åu₂ u⊑v u⊑v₁) = fro-mono u⊑v
+  G .(left _) .(left _) åu (⊑-left-å åu₁ u⊑v) = ⊑-ω
+  G .(right _) .(right _) åu (⊑-right-å åu₁ u⊑v) = ⊑-ω
+  G u v åu (⊑-split split u⊑v u⊑v₁) = ⊥-elim (unsplittable u åu split) 
+fro-mono (⊑-snd-å åu u⊑v) = ⊑-ω
+fro-mono (⊑-tup-å åu u⊑v) = ⊑-tup (fro-mono u⊑v)
+fro-mono (⊑-↦-å åu₂ u⊑v u⊑v₁) = ⊑-↦ (fro-mono u⊑v₁) (fro-mono u⊑v)
+fro-mono (⊑-left-å åu u⊑v) = ⊑-left (fro-mono u⊑v)
+fro-mono (⊑-right-å åu u⊑v) = ⊑-right (fro-mono u⊑v)
+fro-mono (⊑-split {u}{uL}{uR} split uL⊑v uR⊑v) = 
+  ⊑-trans (fro-split-⊑ split) (⊑-split split-⊔ (fro-mono uL⊑v) (fro-mono uR⊑v))
+
+
+⊆ₑ-refl : ∀ {A : Set} {ρ : Env A} → ρ ⊆ₑ ρ
+⊆ₑ-refl i d d∈ = d∈
+
+env-ext-⊆ : ∀ {A}{ρ ρ' : Env A}{D D'} → ρ ⊆ₑ ρ' → D ⊆ D' → (D • ρ) ⊆ₑ (D' • ρ')
+env-ext-⊆ ρ⊆ D⊆ zero d d∈ = D⊆ d d∈
+env-ext-⊆ ρ⊆ D⊆ (suc i) d d∈ = ρ⊆ i d d∈
+
+env-ext-⊑-⊆ : ∀ {ρ ρ' V V'} → ρ ⊆ₑ ρ' → V ⊑ V' → (⊑-closure V • ρ) ⊆ₑ (⊑-closure V' • ρ')
+env-ext-⊑-⊆ ρ⊆ V⊑ = env-ext-⊆ ρ⊆ λ d d⊑ → ⊑-trans d⊑ V⊑
+
+
+
+{- outline:
+  delayreflect : fro ∷ Clos4Good ⇒ Clos3ISWIM
+  Goodadequate : ISWIM ≈ Good
+  
+  -}
+
+
+{- first theorem: fro defines a mapping to reflect the Good delay semantics -}
+
+delay-reflect : ∀ M ρ d → d ∈ ⟦ delay M ⟧G ρ → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
+delay-args-reflect-nth : ∀ {n} args (i : Fin n) ρ d 
+   → d ∈ nthD (⟦ del-map-args args ⟧₊G ρ) i
+   → fro d ∈ nthD (⟦ args ⟧₊ (env-map fro ρ)) i
+delay-reflect-𝒯 : ∀ n fvs ρ d → d ∈ 𝒯 n (⟦ del-map-args fvs ⟧₊G ρ) 
+                 → fro d ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+
+delay-reflect (` x) ρ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ω d∈ = 
+  ⟨ ω , ⟨ tt , (λ i → delay-args-reflect-nth fvs i ρ ω ((proj₂ d∈) i)) ⟩ ⟩
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ 
+  with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d d∈
+   | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d₁ d₁∈ 
+... | ⟨ V , ⟨ IHd , V∈ ⟩ ⟩ | ⟨ V₁ , ⟨ IHd₁ , V₁∈ ⟩ ⟩ = 
+   ⟨ V ⊔ V₁ , ⟨ ⟨ Gd , Gd₁ ⟩ , ⟨ V∈ , V₁∈ ⟩ ⟩ ⟩
+  where
+  Gd : (fro d) ∈ Λ ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure (V ⊔ V₁) • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩
+  Gd = lower (Λ-mono ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure V • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ z → ⟦ N ⟧ (z • ⊑-closure (V ⊔ V₁) • (λ _ x → x ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ D D' D⊆ → lift λ d' d'∈ → 
+                       Source.⟦⟧-monotone N 
+                                          (env-ext-⊆ (env-ext-⊑-⊆ ⊆ₑ-refl 
+                                                     (⊑-⊔-R1 ⊑-refl)) D⊆) 
+                                          d' d'∈) , ptt ⟩) 
+                     (fro d) IHd
+  Gd₁ : (fro d₁) ∈ Λ ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure (V ⊔ V₁) • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩
+  Gd₁ = lower (Λ-mono ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure V₁ • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ z → ⟦ N ⟧ (z • ⊑-closure (V ⊔ V₁) • (λ _ x → x ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ D D' D⊆ → lift λ d' d'∈ → 
+                       Source.⟦⟧-monotone N 
+                                          (env-ext-⊆ (env-ext-⊑-⊆ ⊆ₑ-refl 
+                                                     (⊑-⊔-R2 ⊑-refl)) D⊆) 
+                                          d' d'∈) , ptt ⟩) 
+                     (fro d₁) IHd₁
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ∣ d∈
+  = delay-reflect-car ρ d d∈
+  where
+  delay-reflect-car : ∀ ρ d → ⦅ d ∣ ∈ ⟦ delay (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ⟧G ρ
+                    → fro ⦅ d ∣ ∈ ⟦ clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆ ⟧ (env-map fro ρ)
+  delay-reflect-car ρ ω ⟨ FV , ⟨ tt , FV∈ ⟩ ⟩ = ⟨ fro FV , ⟨ tt , delay-reflect-𝒯 n fvs ρ FV FV∈ ⟩ ⟩
+  delay-reflect-car ρ ν ⟨ FV , ⟨ tt , FV∈ ⟩ ⟩ = ⟨ fro FV , ⟨ tt , delay-reflect-𝒯 n fvs ρ FV FV∈ ⟩ ⟩
+  delay-reflect-car ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ 
+    with delay-reflect-car ρ d d∈
+      | delay-reflect-car ρ d₁ d₁∈
+  ... | ⟨ V , ⟨ IHd , V∈ ⟩ ⟩ | ⟨ V₁ , ⟨ IHd₁ , V₁∈ ⟩ ⟩
+    = ⟨ V ⊔ V₁ , ⟨ ⟨ Gd , Gd₁ ⟩ , ⟨ V∈ , V₁∈ ⟩ ⟩ ⟩ 
+    where
+    Gd : (fro ⦅ d ∣) ∈ Λ ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure (V ⊔ V₁) • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩
+    Gd = lower (Λ-mono ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure V • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ z → ⟦ N ⟧ (z • ⊑-closure (V ⊔ V₁) • (λ _ x → x ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ D D' D⊆ → lift λ d' d'∈ → 
+                       Source.⟦⟧-monotone N 
+                                          (env-ext-⊆ (env-ext-⊑-⊆ ⊆ₑ-refl 
+                                                     (⊑-⊔-R1 ⊑-refl)) D⊆) 
+                                          d' d'∈) , ptt ⟩) 
+                     (fro ⦅ d ∣) IHd
+    Gd₁ : (fro ⦅ d₁ ∣) ∈ Λ ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure (V ⊔ V₁) • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩
+    Gd₁ = lower (Λ-mono ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure V₁ • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ z → ⟦ N ⟧ (z • ⊑-closure (V ⊔ V₁) • (λ _ x → x ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ D D' D⊆ → lift λ d' d'∈ → 
+                       Source.⟦⟧-monotone N 
+                                          (env-ext-⊆ (env-ext-⊑-⊆ ⊆ₑ-refl 
+                                                     (⊑-⊔-R2 ⊑-refl)) D⊆) 
+                                          d' d'∈) , ptt ⟩) 
+                     (fro ⦅ d₁ ∣) IHd₁
+  delay-reflect-car ρ (FV ↦ d) ⟨ d∈ , FV∈ ⟩ = delay-reflect-car-fun ρ d ⟨ d∈ , FV∈ ⟩
+    where
+    delay-reflect-car-fun : ∀ ρ d → ⦅ FV ↦ d ∣ ∈  ⟦ delay (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ⟧G ρ
+                           → fro ⦅ FV ↦ d ∣ ∈ ⟦ clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆ ⟧ (env-map fro ρ)
+    delay-reflect-car-fun ρ ω ⟨ tt , FV∈ ⟩ = ⟨ fro FV , ⟨ tt , delay-reflect-𝒯 n fvs ρ FV FV∈ ⟩ ⟩
+    delay-reflect-car-fun ρ ν ⟨ tt , FV∈ ⟩ = ⟨ fro FV , ⟨ tt , delay-reflect-𝒯 n fvs ρ FV FV∈ ⟩ ⟩
+    delay-reflect-car-fun ρ (d ⊔ d₁) ⟨ ⟨ d∈ , d₁∈ ⟩ , FV∈ ⟩
+      with delay-reflect-car-fun ρ d ⟨ d∈ , FV∈ ⟩
+        | delay-reflect-car-fun ρ d₁ ⟨ d₁∈ , FV∈ ⟩
+    ... | ⟨ V , ⟨ IHd , V∈ ⟩ ⟩ | ⟨ V₁ , ⟨ IHd₁ , V₁∈ ⟩ ⟩
+      = ⟨ V ⊔ V₁ , ⟨ ⟨ Gd , Gd₁ ⟩ , ⟨ V∈ , V₁∈ ⟩ ⟩ ⟩
+      where
+      Gd : (fro ⦅ FV ↦ d ∣) ∈ Λ ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure (V ⊔ V₁) • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩
+      Gd = lower (Λ-mono ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure V • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ z → ⟦ N ⟧ (z • ⊑-closure (V ⊔ V₁) • (λ _ x → x ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ D D' D⊆ → lift λ d' d'∈ → 
+                       Source.⟦⟧-monotone N 
+                                          (env-ext-⊆ (env-ext-⊑-⊆ ⊆ₑ-refl 
+                                                     (⊑-⊔-R1 ⊑-refl)) D⊆) 
+                                          d' d'∈) , ptt ⟩) 
+                     (fro ⦅ FV ↦ d ∣) IHd
+      Gd₁ : (fro ⦅ FV ↦ d₁ ∣) ∈ Λ ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure (V ⊔ V₁) • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩
+      Gd₁ = lower (Λ-mono ⟨ (λ x → ⟦ N ⟧ (x • ⊑-closure V₁ • (λ _ x₁ → x₁ ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ z → ⟦ N ⟧ (z • ⊑-closure (V ⊔ V₁) • (λ _ x → x ≡ ω))) , ptt ⟩ 
+                     ⟨ (λ D D' D⊆ → lift λ d' d'∈ → 
+                       Source.⟦⟧-monotone N 
+                                          (env-ext-⊆ (env-ext-⊑-⊆ ⊆ₑ-refl 
+                                                     (⊑-⊔-R2 ⊑-refl)) D⊆) 
+                                          d' d'∈) , ptt ⟩) 
+                     (fro ⦅ FV ↦ d₁ ∣) IHd₁
+    delay-reflect-car-fun ρ (V ↦ w) ⟨ w∈N , FV∈ ⟩ = 
+      ⟨ fro FV , ⟨ Source.⟦⟧-monotone {{Clos3-Semantics}} N ρ⊆ (fro w) IHw 
+               , delay-reflect-𝒯 n fvs ρ FV FV∈ ⟩ ⟩
+      where
+      IHw : fro w ∈ ⟦ N ⟧ (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)))
+      IHw = delay-reflect N ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω)) w w∈N
+      ρ⊆ : (env-map fro ((⊑-closure V) • (⊑-closure FV) • (λ i d → d ≡ ω))) ⊆ₑ ((⊑-closure (fro V)) • (⊑-closure (fro FV)) • (λ i d → d ≡ ω))
+      ρ⊆ zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
+      ρ⊆ (suc zero) d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
+      ρ⊆ (suc (suc i)) d ⟨ a , ⟨ refl , refl ⟩ ⟩ = refl
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ FV ⦆ ⟨ f , ⟨ f∈ , FV∈ ⟩ ⟩ = 
+  ⟨ fro FV , ⟨ tt , IHFV ⟩ ⟩
+  where
+  IHFV : fro FV ∈ 𝒯 n (⟦ fvs ⟧₊ (env-map fro ρ))
+  IHFV = delay-reflect-𝒯 n fvs ρ FV FV∈
+delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ d 
+  ⟨ V , ⟨ ⟨ FV , ⟨ FV↦V↦d∈carM' , FV∈cdrM' ⟩ ⟩ , V∈N ⟩ ⟩ 
+  = ⟨ fro V , ⟨ delay-reflect M ρ ⦅ FV ↦ V ↦ d ∣ FV↦V↦d∈carM' 
+            ,  delay-reflect N ρ V V∈N ⟩ ⟩
+delay-reflect (lit B k ⦅ Nil ⦆) ρ ω d∈ = tt
+delay-reflect (lit B k ⦅ Nil ⦆) ρ (const k₁) d∈ = d∈
+delay-reflect (lit B k ⦅ Nil ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = 
+  ⟨ delay-reflect (lit B k ⦅ Nil ⦆) ρ d d∈ 
+  , delay-reflect (lit B k ⦅ Nil ⦆) ρ d₁ d₁∈ ⟩
+delay-reflect (tuple n ⦅ args ⦆) ρ ω d∈ i = delay-args-reflect-nth args i ρ ω (d∈ i)
+delay-reflect (tuple n ⦅ args ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ =
+  ⟨ delay-reflect (tuple n ⦅ args ⦆) ρ d d∈ 
+  , delay-reflect (tuple n ⦅ args ⦆) ρ d₁ d₁∈ ⟩
+delay-reflect (tuple (suc n) ⦅ args ⦆) ρ (tup[ i ] d) ⟨ refl , d∈ ⟩ = 
+  ⟨ refl , delay-args-reflect-nth args i ρ d d∈ ⟩
+delay-reflect (get i ⦅ M ,, Nil ⦆) ρ d d∈ = delay-reflect M ρ (tup[ i ] d) d∈
+delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ω d∈ = delay-reflect M ρ ω d∈
+delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = 
+  ⟨ delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ d d∈ 
+  , delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ d₁ d₁∈ ⟩
+delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ (left d) d∈ = delay-reflect M ρ d d∈
+delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ω d∈ = delay-reflect M ρ ω d∈
+delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ =
+  ⟨ delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ d d∈ 
+  , delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ d₁ d₁∈ ⟩
+delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ (right d) d∈ = delay-reflect M ρ d d∈
+delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d 
+  (inj₁ ⟨ V , ⟨ LV∈ , d∈ ⟩ ⟩) = 
+   inj₁ ⟨ fro V , ⟨ G 
+        , Source.⟦⟧-monotone {{Clos3-Semantics}} M H (fro d) 
+            (delay-reflect M ((⊑-closure V) • ρ) d d∈) ⟩ ⟩
+    where
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
+    H (suc i) d d∈ = d∈
+    G : left (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
+    G = delay-reflect L ρ (left V) LV∈
+delay-reflect (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d 
+  (inj₂ ⟨ V , ⟨ RV∈ , d∈ ⟩ ⟩) =
+   inj₂ ⟨ fro V , ⟨ G 
+        , Source.⟦⟧-monotone {{Clos3-Semantics}} N H (fro d) 
+            (delay-reflect N ((⊑-closure V) • ρ) d d∈) ⟩ ⟩
+    where
+    H : env-map fro ((⊑-closure V) • ρ) ⊆ₑ (⊑-closure (fro V)) • env-map fro ρ
+    H zero d ⟨ a , ⟨ a⊑ , refl ⟩ ⟩ = fro-mono a⊑
+    H (suc i) d d∈ = d∈
+    G : right (fro V) ∈ ⟦ L ⟧ (env-map fro ρ)
+    G = delay-reflect L ρ (right V) RV∈
+
+delay-args-reflect-nth {suc n} (arg ,, args) zero ρ d d∈ = 
+  delay-reflect arg ρ d d∈
+delay-args-reflect-nth {suc n} (arg ,, args) (suc i) ρ d d∈ = 
+  delay-args-reflect-nth args i ρ d d∈
+
+delay-reflect-𝒯 n fvs ρ ω d∈ i = delay-args-reflect-nth fvs i ρ ω (d∈ i)
+delay-reflect-𝒯 n fvs ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = ⟨ delay-reflect-𝒯 n fvs ρ d d∈ , delay-reflect-𝒯 n fvs ρ d₁ d₁∈ ⟩
+delay-reflect-𝒯 (suc n) fvs ρ (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , delay-args-reflect-nth fvs i ρ d d∈ ⟩
+
+
+
+{- second theorem: Good is sound and adequate with respect to ISWIM -}
+{- one direction is easy, as long as denotations are closed under unions,
+   because the good denotations are a subset of the general denotations -}
+
+
+{-
+postulate
+  ⟦⟧'-⊑-closed : ∀ (M : AST') ρ (u v : Value) → v ∈ ⟦ M ⟧' ρ → u ⊑ v → u ∈ ⟦ M ⟧' ρ
+  ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value) → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
+                → (u ⊔ v) ∈ ⟦ M ⟧' ρ
+  ⟦⟧-⊔-closed : ∀ (M : AST) ρ (u v : Value) → u ∈ ⟦ M ⟧ ρ → v ∈ ⟦ M ⟧ ρ
+                → (u ⊔ v) ∈ ⟦ M ⟧ ρ
+  ⟦⟧-⊑-closed : ∀ (M : AST) ρ (u v : Value) → v ∈ ⟦ M ⟧ ρ → u ⊑ v → u ∈ ⟦ M ⟧ ρ 
+
+helpful-lemma : ∀ M ρ u v → (u ⊔ v) ∈ ⟦ M ⟧' ρ → u ∈ ⟦ M ⟧' ρ × v ∈ ⟦ M ⟧' ρ
+helpful-lemma M ρ u v u⊔v∈M = 
+  ⟨ ⟦⟧'-⊑-closed M ρ u (u ⊔ v) u⊔v∈M (⊑-⊔-R1 ⊑-refl) 
+  , ⟦⟧'-⊑-closed M ρ v (u ⊔ v) u⊔v∈M (⊑-⊔-R2 ⊑-refl) ⟩
+-}
+{-
+postulate
+  ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value) → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
+                → (u ⊔ v) ∈ ⟦ M ⟧' ρ
+-}
+
+restricted-pair⊆pair : ∀ {D D' E E'} 
+   → (⊔-closed-D' : ∀ u v → u ∈ D' → v ∈ D' → (u ⊔ v) ∈ D') → D ⊆ D' → E ⊆ E' 
+   → restricted-pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+restricted-pair⊆pair ⊔-closed-D' D⊆ E⊆ ω ⟨ ω∈D , ω∈E ⟩ = ⟨ D⊆ ω ω∈D , E⊆ ω ω∈E ⟩
+restricted-pair⊆pair ⊔-closed-D' D⊆ E⊆ (h ⊔ d) ⟨ h∈rp , d∈rp ⟩ = 
+  ⟨ restricted-pair⊆pair ⊔-closed-D' D⊆ E⊆ h h∈rp , restricted-pair⊆pair ⊔-closed-D' D⊆ E⊆ d d∈rp ⟩
+restricted-pair⊆pair {D}{D'}{E}{E'} ⊔-closed-D' D⊆ E⊆ ⦅ d ∣ d∈ = helper d d∈
+  where
+  helper : ∀ d →  ⦅ d ∣ ∈ restricted-pair ⟨ D , ⟨ E , ptt ⟩ ⟩ → ⦅ d ∣ ∈ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  helper ω ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ ω d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper ν ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ ν d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper (const k) ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ (const k) d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩
+    with helper d d∈ | helper d₁ d₁∈
+  ... | ⟨ FV , ⟨ IHd , FV∈ ⟩ ⟩ | ⟨ FV₁ , ⟨ IHd₁ , FV₁∈ ⟩ ⟩ = 
+    ⟨ FV , ⟨ ⊔-closed-D' d d₁ IHd IHd₁ , FV∈ ⟩ ⟩
+  helper (d ↦ d₁) ⟨ d∈ , FV∈ ⟩ = ⟨ d , ⟨ D⊆ (d ↦ d₁) d∈ , E⊆ d FV∈ ⟩ ⟩
+  helper ⦅ d ∣ ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ ⦅ d ∣ d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper ∣ d ⦆ ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ ∣ d ⦆ d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper (tup[ i ] d) ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ (tup[ i ] d) d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper (left d) ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ (left d) d∈ , E⊆ FV FV∈ ⟩ ⟩
+  helper (right d) ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ (right d) d∈ , E⊆ FV FV∈ ⟩ ⟩
+restricted-pair⊆pair ⊔-closed-D' D⊆ E⊆ ∣ d ⦆ ⟨ f , ⟨ f∈D , d∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ d d∈E ⟩ ⟩
+
+
+Clos4Good⊆Clos4Iswim : ∀ M ρ → ⟦ delay M ⟧G ρ ⊆ ⟦ delay M ⟧' ρ
+Clos4Good⊆Clos4Iswim (` x) ρ d d∈ = d∈
+Clos4Good⊆Clos4Iswim (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d d∈ = 
+  restricted-pair⊆pair (λ u v u∈ v∈ → ⟨ u∈ , v∈ ⟩) {!   !} {!   !} d d∈
+  {- holes above and below in this lemma are all just monotonicity of operators -}
+  {- don't even need to postulate ⊔-closed because it's evident in the case of the Λ operator -}
+  {- might need to make it ρ ρ' , such that ρ ⊆ₑ ρ', but that's doable
+     ... actually, this is unlikely, because we extend the environment with a closed-down value,
+         not a denotation of a piece of code. -}
+Clos4Good⊆Clos4Iswim (app ⦅ M ,, N ,, Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good⊆Clos4Iswim (lit B k ⦅ Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good⊆Clos4Iswim (tuple n ⦅ args ⦆) ρ d d∈ = {!   !}
+Clos4Good⊆Clos4Iswim (get i ⦅ M ,, Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good⊆Clos4Iswim (inl-op ⦅ M ,, Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good⊆Clos4Iswim (inr-op ⦅ M ,, Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good⊆Clos4Iswim (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ d d∈ = {!   !}
+
+
+{- remaining theorem statement -}
+
+TtoG : Value → Value
+TtoG ω = ω
+TtoG ν = ν
+TtoG (const k) = const k
+TtoG (⦅ FV ↦ V ↦ d ∣ ⊔ ∣ FV' ⦆) with FV d≟ FV'
+... | yes refl = ⦅ FV ↦ V ↦ d ∣ ⊔ ∣ FV ⦆
+... | no neq = ⦅ ν ∣ ⊔ ∣ FV' ⦆
+TtoG (d ⊔ d₁) = (TtoG d) ⊔ (TtoG d₁)
+TtoG (d ↦ d₁) = (TtoG d) ↦ (TtoG d₁)
+TtoG ⦅ d ∣ = ⦅ ν ∣
+TtoG ∣ d ⦆ = ∣ TtoG d ⦆
+TtoG (tup[ i ] d) = tup[ i ] (TtoG d)
+TtoG (left d) = left (TtoG d)
+TtoG (right d) = right (TtoG d)
+
+
+TtoG-mono' : ∀ {u v} → u ⊑ v → TtoG u ⊑ TtoG v
+TtoG-mono' ⊑-ω = {!   !}
+TtoG-mono' ⊑-ν-ν = {!   !}
+TtoG-mono' ⊑-ν-↦ = {!   !}
+TtoG-mono' ⊑-const = {!   !}
+TtoG-mono' (⊑-⊔-R1-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-⊔-R2-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-fst-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-snd-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-tup-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-↦-å åu₂ u⊑v u⊑v₁) = {!   !}
+TtoG-mono' (⊑-left-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-right-å åu u⊑v) = {!   !}
+TtoG-mono' (⊑-split split u⊑v u⊑v₁) = {!   !}
+
+TtoG-mono : ∀ M ρ u v 
+          → (ρH : ∀ i u v → u ∈ ρ i → v ∈ ρ i → u ⊑ v → TtoG u ⊑ TtoG v)
+          → u ∈ ⟦ delay M ⟧' ρ → v ∈ ⟦ delay M ⟧' ρ → u ⊑ v → TtoG u ⊑ (TtoG v)
+TtoG-mono (` x) ρ u v Hρ u∈ v∈ u⊑v = Hρ x u v u∈ v∈ u⊑v
+TtoG-mono (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+{- TtoG-mono (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (d ⊔ d₁) d∈ = {!   !}
+TtoG-mono (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ∣ d∈ = helper-car ρ d d∈
+  where
+  closure = (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆)
+  helper-car : ∀ ρ d → ⦅ d ∣ ∈ ⟦ delay closure ⟧' ρ → Σ[ d' ∈ Value ] d' ∈ ⟦ delay closure ⟧G ρ
+  helper-car ρ ω d∈ = {!   !}
+  helper-car ρ ν d∈ = {!   !}
+  helper-car ρ (d ⊔ d₁) d∈ = {!   !}
+  helper-car ρ (FV ↦ d) d∈ = helper-car-fun ρ d d∈
+    where
+    helper-car-fun : ∀ ρ d → ⦅ FV ↦ d ∣ ∈ ⟦ delay closure ⟧' ρ → Σ[ d' ∈ Value ] d' ∈ ⟦ delay closure ⟧G ρ
+    helper-car-fun ρ ω ⟨ FV' , ⟨ tt , FV'∈ ⟩ ⟩ = ⟨ ⦅ ν ∣ , ⟨ {!   !} , ⟨ tt , {!   !} ⟩ ⟩ ⟩
+    helper-car-fun ρ ν ⟨ FV' , ⟨ tt , FV'∈ ⟩ ⟩ = ⟨ ⦅ ν ∣ , ⟨ {!   !} , ⟨ tt , {!   !} ⟩ ⟩ ⟩
+    helper-car-fun ρ (d ⊔ d₁) ⟨ FV' , ⟨ ⟨ d∈ , d₁∈ ⟩ , FV'∈ ⟩ ⟩ 
+      with helper-car-fun ρ d ⟨ FV' , ⟨ d∈ , FV'∈ ⟩ ⟩ | helper-car-fun ρ d₁ ⟨ FV' , ⟨ d₁∈ , FV'∈ ⟩ ⟩
+    ... | ⟨ d' , d'∈ ⟩ | ⟨ d₁' , d₁'∈ ⟩ = ⟨ d' ⊔ d₁' , ⟨ d'∈ , d₁'∈ ⟩ ⟩
+    helper-car-fun ρ (V ↦ w) ⟨ FV' , ⟨ w∈ , FV∈ ⟩ ⟩ with FV' d≟ FV
+    ... | yes refl = ⟨ ⦅ FV ↦ V ↦ w ∣ , ⟨ {! w∈  !} , {!   !} ⟩ ⟩
+    ... | no neq = ⟨ ⦅ ν ∣ , ⟨ {!   !} , {!   !} ⟩ ⟩
+TtoG-mono (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ d ⦆ d∈ = {!   !}
+-}
+TtoG-mono (app ⦅ M ,, N ,, Nil ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+TtoG-mono (lit B k ⦅ Nil ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+TtoG-mono (tuple n ⦅ args ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+TtoG-mono (get i ⦅ M ,, Nil ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+TtoG-mono (inl-op ⦅ M ,, Nil ⦆) ρ .ω v Hρ u∈ v∈ ⊑-ω = ⊑-ω
+TtoG-mono (inl-op ⦅ M ,, Nil ⦆) ρ u .(_ ⊔ _) Hρ u∈ v∈ (⊑-⊔-R1-å åu u⊑v) = {!   !}
+TtoG-mono (inl-op ⦅ M ,, Nil ⦆) ρ u .(_ ⊔ _) Hρ u∈ v∈ (⊑-⊔-R2-å åu u⊑v) = {!   !}
+TtoG-mono (inl-op ⦅ M ,, Nil ⦆) ρ (left u) (left v) Hρ u∈ v∈ (⊑-left-å åu u⊑v) = 
+  ⊑-left (TtoG-mono M ρ u v Hρ u∈ v∈ u⊑v)
+TtoG-mono (inl-op ⦅ M ,, Nil ⦆) ρ u v Hρ u∈ v∈ (⊑-split split u⊑v u⊑v₁) = {!   !}
+TtoG-mono (inr-op ⦅ M ,, Nil ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+TtoG-mono (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ u v Hρ u∈ v∈ u⊑v = {!   !}
+
+{- 
+ _⊢_~G_ : 𝒫 Value → Value → Value → Set
+  base-no : ∣ FV ⦆ ∉ D → D ⊢ ⦅ FV ↦ V ↦ w ∣ ~G ⦅ ν ∣
+  base-yes : 
+      (cond : ∀ FVD VD wD 
+                → FVD ⊢ FV ~G FV'
+                → VD ⊢ V ~G V'
+                → wD ⊢ w ~G w')
+       → ∣ FV ⦆ ∈ D → D ⊢ ⦅ FV ↦ V ↦ w ∣ ~G ⦅ FV' ↦ V' ↦ w' ∣
+  inl :  D ⊢ d ~G d' → (ℒ D) ⊢ (inl d) ~G (inl d')
+         (unℒ D) .....   D ⊢ 
+
+_~G_ : Value → Value → Set
+  base-no :  {- is there a way to make this case not overlap with with yes? -} ⦅ FV ↦ V ↦ w ∣ ~G ⦅ ν ∣
+  base-yes : 
+            ⦅ FV ↦ V ↦ w ∣ ⊔ ∣ FV ⦆ ~G ⦅ FV' ↦ V' ↦ w' ∣ ⊔ ∣ FV' ⦆
+  inl :  D ⊢ d ~G d' → (ℒ D) ⊢ (inl d) ~G (inl d')
+         (unℒ D) .....   D ⊢ 
+-}
+
+{- need ρ'?
+   need d ~ d'?
+ -}
+Clos4Good-adequate : ∀ M ρ d → d ∈ ⟦ delay M ⟧' ρ 
+                   → Σ[ d' ∈ Value ] d' ∈ ⟦ delay M ⟧G ρ
+
+              {- d ∈ ⟦ delay M ⟧' ρ → Σ[ d' ∈ Value ] d' ∈ ⟦ delay M ⟧G ρ' × (⟦ delay M ⟧ ρ) ⊢ d ~ d' -}
+Clos4Good-adequate (` x) ρ d d∈ = ⟨ d , d∈ ⟩
+Clos4Good-adequate (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ω d∈ = {!   !}
+Clos4Good-adequate (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (d ⊔ d₁) d∈ = {!   !}
+Clos4Good-adequate (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ∣ d∈ = helper-car ρ d d∈
+  where
+  closure = (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆)
+  helper-car : ∀ ρ d → ⦅ d ∣ ∈ ⟦ delay closure ⟧' ρ → Σ[ d' ∈ Value ] d' ∈ ⟦ delay closure ⟧G ρ
+  helper-car ρ ω d∈ = {!   !}
+  helper-car ρ ν d∈ = {!   !}
+  helper-car ρ (d ⊔ d₁) d∈ = {!   !}
+  helper-car ρ (FV ↦ d) d∈ = helper-car-fun ρ d d∈
+    where
+    helper-car-fun : ∀ ρ d → ⦅ FV ↦ d ∣ ∈ ⟦ delay closure ⟧' ρ → Σ[ d' ∈ Value ] d' ∈ ⟦ delay closure ⟧G ρ
+    helper-car-fun ρ ω ⟨ FV' , ⟨ tt , FV'∈ ⟩ ⟩ = ⟨ ⦅ ν ∣ , ⟨ {!   !} , ⟨ tt , {!   !} ⟩ ⟩ ⟩
+    helper-car-fun ρ ν ⟨ FV' , ⟨ tt , FV'∈ ⟩ ⟩ = ⟨ ⦅ ν ∣ , ⟨ {!   !} , ⟨ tt , {!   !} ⟩ ⟩ ⟩
+    helper-car-fun ρ (d ⊔ d₁) ⟨ FV' , ⟨ ⟨ d∈ , d₁∈ ⟩ , FV'∈ ⟩ ⟩ 
+      with helper-car-fun ρ d ⟨ FV' , ⟨ d∈ , FV'∈ ⟩ ⟩ | helper-car-fun ρ d₁ ⟨ FV' , ⟨ d₁∈ , FV'∈ ⟩ ⟩
+    ... | ⟨ d' , d'∈ ⟩ | ⟨ d₁' , d₁'∈ ⟩ = ⟨ d' ⊔ d₁' , ⟨ d'∈ , d₁'∈ ⟩ ⟩
+    helper-car-fun ρ (V ↦ w) ⟨ FV' , ⟨ w∈ , FV∈ ⟩ ⟩ with FV' d≟ FV
+    ... | yes refl = ⟨ ⦅ FV ↦ V ↦ w ∣ , ⟨ {! w∈  !} , {!   !} ⟩ ⟩
+    ... | no neq = ⟨ ⦅ ν ∣ , ⟨ {!   !} , {!   !} ⟩ ⟩
+Clos4Good-adequate (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ d ⦆ d∈ = {!   !}
+Clos4Good-adequate (app ⦅ M ,, N ,, Nil ⦆) ρ d ⟨ V , ⟨ ⟨ FV , ⟨ FV↦V↦d∈carM , FV∈cdrM ⟩ ⟩ , V∈ ⟩ ⟩ = {!   !}
+Clos4Good-adequate (lit B k ⦅ Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good-adequate (tuple n ⦅ args ⦆) ρ d d∈ = {!   !}
+Clos4Good-adequate (get i ⦅ M ,, Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good-adequate (inl-op ⦅ M ,, Nil ⦆) ρ ω d∈ = {!   !}
+Clos4Good-adequate (inl-op ⦅ M ,, Nil ⦆) ρ (d ⊔ d₁) d∈ = {!   !}
+Clos4Good-adequate (inl-op ⦅ M ,, Nil ⦆) ρ (left d) d∈ = {!   !}
+Clos4Good-adequate (inr-op ⦅ M ,, Nil ⦆) ρ d d∈ = {!   !}
+Clos4Good-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ d d∈ = {!   !}
+
+
+{-
 postulate
   ⟦⟧'-⊑-closed : ∀ (M : AST') ρ (u v : Value) → v ∈ ⟦ M ⟧' ρ → u ⊑ v → u ∈ ⟦ M ⟧' ρ
   ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value) → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
@@ -2881,3 +3327,5 @@ del-map-args-reflect' {suc n} (M ,, args) ρ =
 
 
 -}
+
+-}  

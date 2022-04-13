@@ -87,6 +87,8 @@ pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 restricted-pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ω = ω ∈ D₁ × ω ∈ D₂
 restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ FV ↦ w ∣ = (FV ↦ w) ∈ D₁ × FV ∈ D₂
+restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ u ⊔ v ∣ = 
+  restricted-pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ ⦅ u ∣ × restricted-pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ ⦅ v ∣
 restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] f ∈ D₁ × FV ∈ D₂
 restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
 restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = 
