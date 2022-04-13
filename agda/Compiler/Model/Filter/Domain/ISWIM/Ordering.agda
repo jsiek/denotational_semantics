@@ -594,6 +594,11 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
     ⟨ u , ⟨ refl , ⊑-⊔-L ⊑-refl ⊑-refl ⟩ ⟩
 
 
+  ⊑-⊔-R1-inv : ∀ {u v w} → u ⊔ v ⊑ w → u ⊑ w
+  ⊑-⊔-R1-inv (⊑-split split-⊔ u⊔v⊑w u⊔v⊑w₁) = u⊔v⊑w
+
+  ⊑-⊔-R2-inv : ∀ {u v w} → u ⊔ v ⊑ w → v ⊑ w
+  ⊑-⊔-R2-inv (⊑-split split-⊔ u⊔v⊑w u⊔v⊑w₁) = u⊔v⊑w₁
 
 {-  
 

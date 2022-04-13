@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Compiler.Model.Filter.Sem.Clos4Iswim where
+module Compiler.Model.Filter.Sem.Clos4Good where
 {-
 
  In this intermediate semantics all functions take two parameters,
@@ -43,7 +43,7 @@ open Eq.≡-Reasoning
 𝕆-Clos4 fun-op ⟨ F , _ ⟩ = Λ ⟨ (λ X → Λ ⟨ (λ Y → F X Y) , ptt ⟩) , ptt ⟩
 𝕆-Clos4 app ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ = ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩
 𝕆-Clos4 (lit B k) = ℬ B k
-𝕆-Clos4 pair-op = pair
+𝕆-Clos4 pair-op = restricted-pair
 𝕆-Clos4 fst-op = car
 𝕆-Clos4 snd-op = cdr
 𝕆-Clos4 (tuple x) = 𝒯 x
@@ -64,7 +64,7 @@ open Eq.≡-Reasoning
          ⟨ ⋆-mono ⟨ L1 , ⟨ M1 , ptt ⟩ ⟩ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩  ⟨ L~ , ⟨ M~ , ptt ⟩ ⟩ 
          , ⟨ N~ , ptt ⟩ ⟩
 𝕆-Clos4-mono (lit B k) _ _ _ = lift (λ d d∈ → d∈)
-𝕆-Clos4-mono pair-op = pair-mono
+𝕆-Clos4-mono pair-op = {!   !}
 𝕆-Clos4-mono fst-op = car-mono
 𝕆-Clos4-mono snd-op = cdr-mono
 𝕆-Clos4-mono (tuple x) = {!   !}
@@ -104,7 +104,7 @@ open import Fold2 Op sig
 open import NewSemantics Op sig
 
 instance
-  Clos4Iswim-Semantics : Semantics
-  Clos4Iswim-Semantics = record { interp-op = 𝕆-Clos4 ;
+  Clos4Good-Semantics : Semantics
+  Clos4Good-Semantics = record { interp-op = 𝕆-Clos4 ;
                                   mono-op = 𝕆-Clos4-mono ;
                                   error = ω }

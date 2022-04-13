@@ -20,7 +20,7 @@ open import SetsAsPredicates
 open import NewDenotProperties
 open import Compiler.Model.Filter.Domain.ISWIM.Domain
 open import Compiler.Model.Filter.Domain.ISWIM.Ops
-open import Compiler.Lang.Clos3 public
+open import Compiler.Lang.Clos3
 
 open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)

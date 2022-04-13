@@ -351,13 +351,25 @@ depth : (v : Value) → ℕ
 depth ω = zero
 depth ν = zero
 depth (const k) = zero
-depth ( v ↦ w) = suc (max (depth v) (depth w))
+depth (v ↦ w) = suc (max (depth v) (depth w))
 depth (v₁ ⊔ v₂) = max (depth v₁) (depth v₂)
 depth ⦅ v ∣ = suc (depth v)
 depth ∣ v ⦆ = suc (depth v)
 depth (tup[ i ] d) = suc (depth d)
 depth (left d) = suc (depth d)
 depth (right d) = suc (depth d)
+
+data depth' : Value → ℕ → Set where
+   depth'-ω : ∀ {n} → depth' ω n
+   depth'-ν : ∀ {n} → depth' ν n
+   depth'-k : ∀ {B k n} → depth' (const {B} k) n
+   depth'-↦ : ∀ {V w n} → depth' V n → depth' w n → depth' (V ↦ w) (suc n)
+   depth'-⊔ : ∀ {u v n} → depth' u n → depth' v n → depth' (u ⊔ v) n
+   depth'-car : ∀ {d n} → depth' d n → depth' ⦅ d ∣ (suc n)
+   depth'-cdr : ∀ {d n} → depth' d n → depth' ∣ d ⦆ (suc n)
+   depth'-tup : ∀ {n'} {i : Fin n'} {d n} → depth' d n → depth' (tup[ i ] d) (suc n)
+   depth'-left : ∀ {d n} → depth' d n → depth' (left d) (suc n)
+   depth'-right : ∀ {d n} → depth' d n → depth' (right d) (suc n)
 
 size : (v : Value) → ℕ
 size ω = zero
