@@ -50,7 +50,7 @@ open import Relation.Nullary.Product using (_×-dec_)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool using (Bool; true; false)
 
-module Compiler.Correctness.Delay.Goodness where
+module Compiler.Correctness.Delay.GoodnessNew where
 
   un-left : Value → Value
   un-left (left d) = d
@@ -83,6 +83,11 @@ module Compiler.Correctness.Delay.Goodness where
   un-left-mono (⊑-split (split-tup split) u⊑v u⊑v₁) = ⊑-ω
   un-left-mono (⊑-split (split-left split) u⊑v u⊑v₁) = ⊑-split split (un-left-mono u⊑v) (un-left-mono u⊑v₁)
   un-left-mono (⊑-split (split-right split) u⊑v u⊑v₁) = ⊑-ω
+
+  un-left-ℒ : ∀ {D} → (⊔-closed D) → ∀ d → d ∈ ℒ ⟨ D , ptt ⟩ → un-left d ∈ D
+  un-left-ℒ ⊔D ω d∈ = d∈
+  un-left-ℒ ⊔D (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⊔D (un-left u) (un-left v) (un-left-ℒ ⊔D u u∈) (un-left-ℒ ⊔D v v∈)
+  un-left-ℒ ⊔D (left d) d∈ = d∈
 
   un-cdr : Value → Value
   un-cdr ∣ d ⦆ = d
@@ -328,13 +333,14 @@ we check
 
   -}
 
+
   mkGood : (ctxt : Value) → Value → Value
   mkGood ctxt ⦅ FV ↦ w ∣ with ∣ FV ⦆ ⊑? ctxt
   ... | yes FV⊑ctxt = ⦅ mkGood FV FV      {- ctxt =? (FV ⊔ un-cdr ctxt)-}
-                        ↦ mkGood (un-↦ FV ctxt) w ∣   {- same ctxt here? -}
+                        ↦ mkGood w w ∣   {- same ctxt here? -}
   ... | no FV⋢ctxt = ⦅ ν ∣
   mkGood ctxt (u ⊔ v) = mkGood ctxt u ⊔ mkGood ctxt v
-  mkGood ctxt (V ↦ w) = mkGood V V ↦ mkGood (un-↦ V ctxt) w
+  mkGood ctxt (V ↦ w) = mkGood V V ↦ mkGood w w {- context for w: un-↦ V ctxt ?? -}
   mkGood ctxt ω = ω
   mkGood ctxt ν = ν
   mkGood ctxt (const k) = const k
@@ -345,102 +351,7 @@ we check
   mkGood ctxt (left v) = left (mkGood (un-left ctxt) v)
   mkGood ctxt (right v) = right (mkGood (un-right ctxt) v)
 
-  
-  {-
-  "un-↦ V v applies v to V"
-  that is, it takes the codomains of all arrows in v that have a domain smaller than V
-  -}
 
-  counterexample :  ∀ {U u V v} → U ↦ u ⊑ V ↦ v →
-        {- ==   "u ⊑ v × V ⊑ U" -}
-     un-↦ U (U ↦ u ⊔ V ↦ v) ⊑ (un-↦ V (V ↦ v ⊔ U ↦ u))
-    {- by V ⊑ U ==  "u ⊔ v ⊑ v"  -} 
-  counterexample (⊑-↦-å åu₂ u⊑v V⊑U) = {!   !}
-  counterexample (⊑-split split U↦u⊑V↦V U↦u⊑V↦V₁) = {!   !}
-
-{- so we have u and v where u ⊑ v, ctxt-u ⊑ ctxt-v, but 
-   the context of the codomain of u ⋢ the context of the codomain of v -}
-{- in fact, we have guaranteed that 
-  the ctxt of the codomain of v ⊑ the ctxt of the codomain of u -}
-
-{- the problem is that if I am a smaller codomain,
-   then I am evaluated in a larger context.
-
-   --> U ↦ u ⊑ V ↦ v
-   --> U ↦ u ⊔ V ↦ v ⊑ "--" (by refl)
-   ctxt = ctxt' = U ↦ u ⊔ V ↦ v
-   V ⊑ U
-
-   u ⊑ v
-   ctxt-u = un-↦ U ctxt = u ⊔ v
-   ctxt-v = un-↦ V ctxt = v
-
-   mkGood ctxt (U ↦ u) ⊑ mkGood ctxt' (V ↦ v)
-
-     mkGood U U ↦ mkGood (un-↦ U ctxt) u 
-   ⊑ mkGood V V ↦ mkGood (un-↦ V ctxt') v
-  
-     mkGood U U ↦ mkGood (u ⊔ v) u 
-   ⊑ mkGood V V ↦ mkGood v v
-
-  V ⊑ U
-  mkGood V V ⊑ mkGood U U
-
-   requirement:
-   mkGood (u ⊔ v) u ⊑ 
-   mkGood v v
-
-
-
-
-
-
-   In the extreme, because we can inflate domains to be arbitrarily large,
-   for the smaller value, the codomain can be guaranteed to be evaluated in the context of the entire
-   codomain of its context. 
-   Meanwhile, it is hard to state that the domain of an arrow being large enough
-   to produce its codomain is enough to guarantee that it is large enough to produce
-   the values needed to show that it's codomain is good.
-   -}
-
-  {- 
-  but if we mkGood a codomain with ctxt itself, is this enough? 
-  I'm going to try this in GoodnessNew.agda
-   + For introduction cases, we're okay as long as mkGood works, even if it
-     removes a lot of information from a lot of values.
-   + For the purposes of elimination cases, we are producing a witness,
-     and we can bring to bear the existence of values in a down-closed ⊔-closed denotation.
-   + in this case, what this means is that if the context of the codomain of an arrow should be
-    "un-↦ (dom arrow) context"
-    then we're fine to set the context of the codomain as the codomain itself as long
-    as we're guaranteed that given an arrow V ↦ w in context ctxt,
-    then some arrow exists in the denotation equal to
-    V ↦ (un-↦ V ctxt)
-    
-  -}
-
-
-  mkGood-split-⊑ : ∀ ctxt {u uL uR} → uL ◃ u ▹ uR → mkGood ctxt u ⊑ mkGood ctxt uL ⊔ mkGood ctxt uR
-  mkGood-split-⊑ ctxt split-⊔ = ⊑-refl
-  mkGood-split-⊑ ctxt {V ↦ u} (split-↦ split) = ⊑-trans (⊑-↦ ⊑-refl (mkGood-split-⊑ (un-↦ V ctxt) split)) ⊑-dist-fun
-  mkGood-split-⊑ ctxt (split-fst split) = mkGood-split-⊑-fst ctxt split (λ ctxt' → mkGood-split-⊑ ctxt' split)
-    where 
-    mkGood-split-⊑-fst : ∀ ctxt {u uL uR} → uL ◃ u ▹ uR → (IH : ∀ ctxt → mkGood ctxt u ⊑ mkGood ctxt uL ⊔ mkGood ctxt uR) 
-       → mkGood ctxt ⦅ u ∣ ⊑ mkGood ctxt ⦅ uL ∣ ⊔ mkGood ctxt ⦅ uR ∣
-    mkGood-split-⊑-fst ctxt split-⊔ IH = ⊑-refl
-    mkGood-split-⊑-fst ctxt {V ↦ u} (split-↦ split) IH with ∣ V ⦆ ⊑? ctxt
-    ... | yes V⊑ctxt = ⊑-trans (⊑-fst (IH ctxt)) ⊑-dist-fst
-    ... | no V⋢ctxt = ⊑-⊔-R1 ⊑-refl
-    mkGood-split-⊑-fst ctxt (split-fst split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
-    mkGood-split-⊑-fst ctxt (split-snd split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
-    mkGood-split-⊑-fst ctxt (split-tup split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
-    mkGood-split-⊑-fst ctxt (split-left split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
-    mkGood-split-⊑-fst ctxt (split-right split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
-  mkGood-split-⊑ ctxt (split-snd split) = ⊑-trans (⊑-snd (mkGood-split-⊑ (un-cdr ctxt) split)) ⊑-dist-snd
-  mkGood-split-⊑ ctxt (split-tup {n}{i} split) = ⊑-trans (⊑-tup (mkGood-split-⊑ (un-tup i ctxt) split)) ⊑-dist-tup
-  mkGood-split-⊑ ctxt (split-left split) = ⊑-trans (⊑-left (mkGood-split-⊑ (un-left ctxt) split)) ⊑-dist-left
-  mkGood-split-⊑ ctxt (split-right split) = ⊑-trans (⊑-right (mkGood-split-⊑ (un-right ctxt) split)) ⊑-dist-right
-  
   ω⊑mkGoodcar : ∀ {ctxt d} → ⦅ ω ∣ ⊑ mkGood ctxt ⦅ d ∣
   ω⊑mkGoodcar {ctxt} {ω} = ⊑-refl
   ω⊑mkGoodcar {ctxt} {ν} = ⊑-fst ⊑-ω
@@ -463,6 +374,7 @@ we check
   ν⊑mkGoodcar {ctxt} {v ⊔ w} (⊑-⊔-R1-å åu ν⊑v) = ⊑-⊔-R1 (ν⊑mkGoodcar ν⊑v)
   ν⊑mkGoodcar {ctxt} {v ⊔ w} (⊑-⊔-R2-å åu ν⊑w) = ⊑-⊔-R2 (ν⊑mkGoodcar ν⊑w)
 
+
   mkGood-ctxt : ∀ ctxt ctxt' d → ctxt ⊑ ctxt' → mkGood ctxt d ⊑ mkGood ctxt' d
   mkGood-ctxt ctxt ctxt' ω ctxt⊑ = ⊑-ω
   mkGood-ctxt ctxt ctxt' ν ctxt⊑ = ⊑-ν-ν
@@ -470,7 +382,7 @@ we check
   mkGood-ctxt ctxt ctxt' (d ⊔ d₁) ctxt⊑ = 
     ⊔⊑⊔ (mkGood-ctxt ctxt ctxt' d ctxt⊑) (mkGood-ctxt ctxt ctxt' d₁ ctxt⊑)
   mkGood-ctxt ctxt ctxt' (d ↦ d₁) ctxt⊑ = 
-    ⊑-↦ ⊑-refl (mkGood-ctxt (un-↦ d ctxt) (un-↦ d ctxt') d₁ (un-↦-mono ctxt⊑ ⊑-refl))
+    ⊑-↦ ⊑-refl (mkGood-ctxt d₁ d₁ d₁ ⊑-refl)
   mkGood-ctxt ctxt ctxt' ⦅ d ∣ ctxt⊑ = mkGood-ctxt-car ctxt ctxt' d ctxt⊑
     where
     mkGood-ctxt-car : ∀ ctxt ctxt' d → ctxt ⊑ ctxt' → mkGood ctxt ⦅ d ∣ ⊑ mkGood ctxt' ⦅ d ∣
@@ -484,7 +396,7 @@ we check
     ... | yes FV⊑ctxt with ∣ FV ⦆ ⊑? ctxt'
     ... | no FV⋢ctxt' = ⊥-elim (FV⋢ctxt' (⊑-trans FV⊑ctxt ctxt⊑))
     ... | yes FV⊑ctxt'
-      = ⊑-fst (⊑-↦ ⊑-refl (mkGood-ctxt (un-↦ FV ctxt) (un-↦ FV ctxt') w (un-↦-mono ctxt⊑ ⊑-refl)))
+      = ⊑-fst (⊑-↦ ⊑-refl (mkGood-ctxt w w w ⊑-refl))
     mkGood-ctxt-car ctxt ctxt' ⦅ d ∣ ctxt⊑ = 
       ⊑-fst (mkGood-ctxt-car (un-cdr ctxt) (un-cdr ctxt') d 
                                   (un-cdr-mono ctxt⊑))
@@ -508,7 +420,36 @@ we check
     ⊑-left (mkGood-ctxt (un-left ctxt) (un-left ctxt') d (un-left-mono ctxt⊑))
   mkGood-ctxt ctxt ctxt' (right d) ctxt⊑ = 
     ⊑-right (mkGood-ctxt (un-right ctxt) (un-right ctxt') d (un-right-mono ctxt⊑))
+
+
+ 
+  {- ⊑-trans (⊑-↦ ⊑-refl (mkGood-split-⊑ (un-↦ V ctxt) split)) ⊑-dist-fun -}
+
+  mkGood-split-⊑ : ∀ ctxt {u uL uR} → uL ◃ u ▹ uR → mkGood ctxt u ⊑ mkGood ctxt uL ⊔ mkGood ctxt uR
+  mkGood-split-⊑ ctxt split-⊔ = ⊑-refl
+  mkGood-split-⊑ ctxt {V ↦ u} (split-↦ {V}{u}{uL}{uR} split) = 
+    ⊑-trans (⊑-↦ ⊑-refl {!   !}) ⊑-dist-fun
+  mkGood-split-⊑ ctxt (split-fst split) = mkGood-split-⊑-fst ctxt split (λ ctxt' → mkGood-split-⊑ ctxt' split)
+    where 
+    mkGood-split-⊑-fst : ∀ ctxt {u uL uR} → uL ◃ u ▹ uR → (IH : ∀ ctxt → mkGood ctxt u ⊑ mkGood ctxt uL ⊔ mkGood ctxt uR) 
+       → mkGood ctxt ⦅ u ∣ ⊑ mkGood ctxt ⦅ uL ∣ ⊔ mkGood ctxt ⦅ uR ∣
+    mkGood-split-⊑-fst ctxt split-⊔ IH = ⊑-refl
+    mkGood-split-⊑-fst ctxt {V ↦ u} (split-↦ split) IH with ∣ V ⦆ ⊑? ctxt
+    ... | yes V⊑ctxt = ⊑-trans (⊑-fst (IH ctxt)) ⊑-dist-fst
+    ... | no V⋢ctxt = ⊑-⊔-R1 ⊑-refl
+    mkGood-split-⊑-fst ctxt (split-fst split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
+    mkGood-split-⊑-fst ctxt (split-snd split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
+    mkGood-split-⊑-fst ctxt (split-tup split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
+    mkGood-split-⊑-fst ctxt (split-left split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
+    mkGood-split-⊑-fst ctxt (split-right split) IH = ⊑-trans (⊑-fst (IH (un-cdr ctxt))) ⊑-dist-fst
+  mkGood-split-⊑ ctxt (split-snd split) = ⊑-trans (⊑-snd (mkGood-split-⊑ (un-cdr ctxt) split)) ⊑-dist-snd
+  mkGood-split-⊑ ctxt (split-tup {n}{i} split) = ⊑-trans (⊑-tup (mkGood-split-⊑ (un-tup i ctxt) split)) ⊑-dist-tup
+  mkGood-split-⊑ ctxt (split-left split) = ⊑-trans (⊑-left (mkGood-split-⊑ (un-left ctxt) split)) ⊑-dist-left
+  mkGood-split-⊑ ctxt (split-right split) = ⊑-trans (⊑-right (mkGood-split-⊑ (un-right ctxt) split)) ⊑-dist-right
   
+
+
+   
   mkGood-mono-ctxt : ∀ ctxt ctxt' d d' → ctxt ⊑ ctxt' → d ⊑ d' → mkGood ctxt d ⊑ mkGood ctxt' d'
   mkGood-mono-ctxt ctxt ctxt' .ω d' ctxt⊑ ⊑-ω = ⊑-ω
   mkGood-mono-ctxt ctxt ctxt' .ν .ν ctxt⊑ ⊑-ν-ν = ⊑-ν-ν
@@ -544,7 +485,7 @@ we check
     ... | yes U⊑ctxt with ∣ V ⦆ ⊑? ctxt'
     ... | no V⋢ctxt' = ⊥-elim (V⋢ctxt' (⊑-trans (⊑-snd d⊑₁) (⊑-trans U⊑ctxt ctxt⊑)))
     ... | yes V⊑ctxt' = ⊑-fst (⊑-↦ (mkGood-mono-ctxt V U V U d⊑₁ d⊑₁) 
-                                    (mkGood-mono-ctxt (un-↦ U ctxt) (un-↦ V ctxt') u v (un-↦-mono ctxt⊑ {! d⊑₁  !}) d⊑))
+                                    (mkGood-mono-ctxt u v u v d⊑ d⊑))
     mkGood-mono-ctxt-fst ctxt ctxt' (left u) (left v) ctxt⊑ (⊑-left-å åu d⊑) = 
       ⊑-fst (⊑-left (mkGood-mono-ctxt (un-left (un-cdr ctxt)) (un-left (un-cdr ctxt')) u v 
                                       (un-left-mono (un-cdr-mono ctxt⊑)) d⊑))
@@ -561,8 +502,8 @@ we check
     ⊑-tup (mkGood-mono-ctxt (un-tup i ctxt) (un-tup i ctxt') d d' (un-tup-mono ctxt⊑) d⊑)
   mkGood-mono-ctxt ctxt ctxt' (V ↦ w) (V' ↦ w') ctxt⊑ (⊑-↦-å åu₂ w⊑w' V'⊑V) = 
     ⊑-↦ (mkGood-mono-ctxt V' V V' V V'⊑V V'⊑V) 
-         (mkGood-mono-ctxt (un-↦ V ctxt) (un-↦ V' ctxt') w w' 
-                           {!   !}
+         (mkGood-mono-ctxt w w' w w' 
+                           w⊑w' 
                            w⊑w')
   mkGood-mono-ctxt ctxt ctxt' (left d) (left d') ctxt⊑ (⊑-left-å åu d⊑) = 
     ⊑-left (mkGood-mono-ctxt (un-left ctxt) (un-left ctxt') d d' (un-left-mono ctxt⊑) d⊑)
@@ -572,45 +513,13 @@ we check
     ⊑-trans (mkGood-split-⊑ ctxt split) (⊑-⊔-L (mkGood-mono-ctxt ctxt ctxt' uL d' ctxt⊑ d⊑) 
                                                 (mkGood-mono-ctxt ctxt ctxt' uR d' ctxt⊑ d⊑₁))
 
-  mkGood-mono : ∀ ctxt ctxt' d d' → d ⊑ d' → ctxt ⊑ ctxt' × ctxt' ⊑ ctxt → mkGood ctxt d ⊑ mkGood ctxt' d'
-  mkGood-mono ctxt ctxt' .ω d' ⊑-ω ctxt≃ = ⊑-ω
-  mkGood-mono ctxt ctxt' .ν .ν ⊑-ν-ν ctxt≃ = ⊑-ν-ν
-  mkGood-mono ctxt ctxt' .ν .(_ ↦ _) ⊑-ν-↦ ctxt≃ = ⊑-ν-↦
-  mkGood-mono ctxt ctxt' .(const _) .(const _) ⊑-const ctxt≃ = ⊑-const
-  mkGood-mono ctxt ctxt' d (v ⊔ w) (⊑-⊔-R1-å åu d⊑) ctxt≃ = 
-    ⊑-⊔-R1 (mkGood-mono ctxt ctxt' d v d⊑ ctxt≃)
-  mkGood-mono ctxt ctxt' d (v ⊔ w) (⊑-⊔-R2-å åu d⊑) ctxt≃ = 
-    ⊑-⊔-R2 (mkGood-mono ctxt ctxt' d w d⊑ ctxt≃)
-  mkGood-mono ctxt ctxt' ⦅ u ∣ ⦅ v ∣ (⊑-fst-å åu d⊑) ctxt≃ = {!  !}
-  mkGood-mono ctxt ctxt' ∣ u ⦆ ∣ v ⦆ (⊑-snd-å åu d⊑) ctxt≃ = 
-    ⊑-snd (mkGood-mono (un-cdr ctxt) (un-cdr ctxt') u v d⊑ ⟨ un-cdr-mono (proj₁ ctxt≃) , un-cdr-mono (proj₂ ctxt≃) ⟩)
-  mkGood-mono ctxt ctxt' (tup[ i ] u) (tup[ i ] v) (⊑-tup-å åu d⊑) ctxt≃ = 
-    ⊑-tup (mkGood-mono (un-tup i ctxt) (un-tup i ctxt') u v d⊑ ⟨ un-tup-mono (proj₁ ctxt≃) , un-tup-mono (proj₂ ctxt≃) ⟩)
-  mkGood-mono ctxt ctxt' (U ↦ u) (V ↦ v) (⊑-↦-å åu₂ d⊑ d⊑₁) ctxt≃ = 
-    ⊑-↦ {! mkGood-mono V U V U d⊑₁   !} {!   !}
+  postulate
+    ⊔-closed-Target : ∀ M ρ → ⊔-closed (⟦ M ⟧' ρ)
 
-  {- 
-    ⊑-↦ (mkGood-mono V U V U d⊑₁ {!   !}) (mkGood-mono (un-↦ U ctxt) (un-↦ V ctxt') u v d⊑ 
-         ⟨ un-↦-mono (proj₁ ctxt≃) {!   !} , un-↦-mono (proj₂ ctxt≃) d⊑₁ ⟩)
-         -}
-  mkGood-mono ctxt ctxt' (left u) (left v) (⊑-left-å åu d⊑) ctxt≃ = 
-    ⊑-left (mkGood-mono (un-left ctxt) (un-left ctxt') u v d⊑ ⟨ un-left-mono (proj₁ ctxt≃) , un-left-mono (proj₂ ctxt≃) ⟩)
-  mkGood-mono ctxt ctxt' (right u) (right v) (⊑-right-å åu d⊑) ctxt≃ =
-    ⊑-right (mkGood-mono (un-right ctxt) (un-right ctxt') u v d⊑ ⟨ un-right-mono (proj₁ ctxt≃) , un-right-mono (proj₂ ctxt≃) ⟩)
-  mkGood-mono ctxt ctxt' d d' (⊑-split {d}{dL}{dR} split d⊑ d⊑₁) ctxt≃ = 
-    ⊑-trans (mkGood-split-⊑ ctxt split) (⊑-⊔-L (mkGood-mono ctxt ctxt' dL d' d⊑ ctxt≃) 
-                                                (mkGood-mono ctxt ctxt' dR d' d⊑₁ ctxt≃))
+  ρ-ext : Env Value → Value → Env Value
+  ρ-ext ρ a = (⊑-closure a) • ρ
 
-  {-
-  mkGood-mono : ∀ ctxt ctxt' d d' → d ⊑ d' → ctxt ⊑ ctxt' → mkGood ctxt d ⊑ mkGood ctxt' d'
 
-  doesn't work: (env-map (λ d → mkGood d d) ρ)
-  -}
-
-  {-
-  ⦅ V ↦ w ∣    ⦅ V ↦ w ∣
-  
-  -}
 
   Target-to-Good : ∀ M ρ d ctxt 
         → d ∈ ⟦ delay M ⟧' ρ → ctxt ∈ ⟦ delay M ⟧' ρ
@@ -623,126 +532,125 @@ we check
           → mkGood ctxt d ∈ ⟦ delay M ⟧G ρ'
   Target-to-Good (` x) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = ρ~ x d ctxt d∈ ctxt∈ d⊑ctxt
   Target-to-Good (clos-op x₁ ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (app ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
+  Target-to-Good (app ⦅ M ,, N ,, Nil ⦆) ρ d ctxt 
+    ⟨ V , ⟨ ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ , V∈ ⟩ ⟩  ctxt∈ d⊑ctxt ρ' ρ~ = 
+     ⟨ mkGood V V , ⟨ ⟨ mkGood FV FV , ⟨ G1 , IHM2 ⟩ ⟩ , IHN ⟩ ⟩
+     where
+     IHM1 : ⦅ mkGood FV FV ↦ mkGood V V ↦ mkGood d d ∣ ∈ ⟦ delay M ⟧G ρ'
+     IHM1 with Target-to-Good M ρ ⦅ FV ↦ V ↦ d ∣ (⦅ FV ↦ V ↦ d ∣ ⊔ ∣ FV ⦆) d∈ {!   !} {!   !} ρ' ρ~  
+     ... | IH with ∣ FV ⦆ ⊑? (⦅ FV ↦ V ↦ d ∣ ⊔ ∣ FV ⦆)
+     ... | no FV⋢ = ⊥-elim (FV⋢ (⊑-⊔-R2 ⊑-refl)) 
+     ... | yes FV⊑ = IH
+     G1 : ⦅ mkGood FV FV ↦ mkGood V V ↦ mkGood ctxt d ∣ ∈ ⟦ delay M ⟧G ρ'
+     G1 = {!    !}
+     helper : ∀ {A B ctxt d ctxt'} → ctxt' ⊑ ctxt
+                → ⦅ A ↦ B ↦ mkGood ctxt d ∣ ⊑ ⦅ A ↦ B ↦ mkGood ctxt' d ∣
+     helper ctxt⊑ = ⊑-fst (⊑-↦ ⊑-refl (⊑-↦ ⊑-refl {! mkGood-ctxt   !}))
+     IHM2 : ∣ mkGood FV FV ⦆ ∈ ⟦ delay M ⟧G ρ'
+     IHM2 = Target-to-Good M ρ ∣ FV ⦆ ∣ FV ⦆ FV∈ FV∈ ⊑-refl ρ' ρ~
+     IHN : mkGood V V ∈ ⟦ delay N ⟧G ρ'
+     IHN = Target-to-Good N ρ V V V∈ V∈ ⊑-refl ρ' ρ~
   Target-to-Good (lit B k ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
   Target-to-Good (tuple x₁ ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
   Target-to-Good (get i ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
   Target-to-Good (inl-op ⦅ M ,, Nil ⦆) ρ ω ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = 
     Target-to-Good M ρ ω ω d∈ d∈ ⊑-ω ρ' ρ~
   Target-to-Good (inl-op ⦅ M ,, Nil ⦆) ρ (left d) ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = 
-    Target-to-Good M ρ d (un-left ctxt) d∈ {!   !} (un-left-⊑ d⊑ctxt) ρ' ρ~  {- will need join-closed-ness -}
+    Target-to-Good M ρ d (un-left ctxt) d∈ (un-left-ℒ (⊔-closed-Target (delay M) ρ) ctxt ctxt∈) (un-left-⊑ d⊑ctxt) ρ' ρ~  {- will need join-closed-ness -}
   Target-to-Good (inl-op ⦅ M ,, Nil ⦆) ρ (u ⊔ v) ctxt ⟨ u∈ , v∈ ⟩ ctxt∈ d⊑ctxt ρ' ρ~ = 
     ⟨ Target-to-Good (inl-op ⦅ M ,, Nil ⦆) ρ u ctxt u∈ ctxt∈ (proj₁ (⊑-split-inv-R d⊑ctxt split-⊔)) ρ' ρ~ 
     , Target-to-Good (inl-op ⦅ M ,, Nil ⦆) ρ v ctxt v∈ ctxt∈ (proj₂ (⊑-split-inv-R d⊑ctxt split-⊔)) ρ' ρ~ ⟩
   Target-to-Good (inr-op ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (case-op ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
+  Target-to-Good (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d ctxt 
+    (inj₁ ⟨ V , ⟨ LV∈L , d∈M ⟩ ⟩) ctxt∈ d⊑ctxt ρ' ρ~ = 
+    inj₁ ⟨ mkGood V V , ⟨ Target-to-Good L ρ (left V) (left V) LV∈L LV∈L ⊑-refl ρ' ρ~ 
+                      , {!  !} ⟩ ⟩
+    where
+    V•ρ'~ : ∀ i d ctxt → d ∈ (ρ-ext ρ V) i → ctxt ∈ (ρ-ext ρ V) i
+          → d ⊑ ctxt → (mkGood ctxt d) ∈ (ρ-ext ρ' (mkGood V V)) i
+    V•ρ'~ zero d ctxt d∈ ctxt∈ d⊑ctxt = mkGood-mono-ctxt ctxt V d V ctxt∈ (⊑-trans d⊑ctxt ctxt∈)
+    V•ρ'~ (suc i) d ctxt d∈ ctxt∈ d⊑ctxt = ρ~ i d ctxt d∈ ctxt∈ d⊑ctxt
+    IHM : mkGood d d ∈ ⟦ delay M ⟧G (ρ-ext ρ' (mkGood V V))
+    IHM = Target-to-Good M (ρ-ext ρ V) d d d∈M d∈M ⊑-refl (ρ-ext ρ' (mkGood V V)) V•ρ'~
+    G1 : mkGood ctxt d ∈ ⟦ delay M ⟧G (ρ-ext ρ' (mkGood V V))
+    G1 = {!    !}
+  Target-to-Good (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d ctxt 
+    (inj₂ ⟨ V , ⟨ RV∈L , d∈N ⟩ ⟩) ctxt∈ d⊑ctxt ρ' ρ~ = 
+    inj₂ ⟨ mkGood V V , ⟨ {!   !} , {!   !} ⟩ ⟩
   
-  {- Let's try to make this a function
-  data mkGood : (ctxt : Value) → (input : Value) → (output : Value) → Set where
-    mkGood-base-keep : ∀ {ctxt FV FV' w w'}
-                    → (cond : ∣ FV ⦆ ⊑ ctxt)
-                    → mkGood (FV ⊔ (un-cdr ctxt)) FV FV'
-                    → mkGood (un-↦ (FV ⊔ (un-cdr ctxt)) ctxt) w w'
-                    → mkGood ctxt ⦅ FV ↦ w ∣ ⦅ FV' ↦ w' ∣
-    mkGood-base-toss : ∀ {ctxt FV w}
-                   → (¬cond : ¬ (∣ FV ⦆ ⊑ ctxt))
-                   → mkGood ctxt ⦅ FV ↦ w ∣ ⦅ ν ∣
-    mkGood-↦ : ∀ {ctxt V V' w w'}
-              → mkGood V V V'
-              → mkGood (un-↦ V ctxt) w w'
-              → mkGood ctxt (V ↦ w) (V' ↦ w')
-    mkGood-⊔ : ∀ {ctxt u v u' v'}
-             → mkGood ctxt u u'
-             → mkGood ctxt v v'
-             → mkGood ctxt (u ⊔ v) (u' ⊔ v')
-    mkGood-left : ∀ {ctxt d d'}
-                → mkGood (un-left ctxt) d d'
-                → mkGood ctxt (left d) (left d')
- 
 
-  {- what does a theorem statement look like? -}
-  Target-to-Good : ∀ M ρ d ctxt 
-        → d ∈ ⟦ delay M ⟧' ρ → ctxt ∈ ⟦ delay M ⟧' ρ
-        → d ⊑ ctxt
-        → ∀ d' ρ'
-          → (d~ : mkGood ctxt d d')
-          → (ρ~ : ∀ i d ctxt d' → d ∈ ρ i 
-                                → ctxt ∈ ρ i 
-                                → d ⊑ ctxt 
-                                → mkGood ctxt d d'
-                                → d' ∈ ρ' i)
-          → d' ∈ ⟦ delay M ⟧G ρ'
-  Target-to-Good (` x) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = ρ~ x d ctxt d' d∈ ctxt∈ d⊑ctxt d~
-  Target-to-Good (clos-op x₁ ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (app ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (lit B k ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (tuple x₁ ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (get i ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (inl-op ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (inr-op ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
-  Target-to-Good (case-op ⦅ x ⦆) ρ d ctxt d∈ ctxt∈ d⊑ctxt ρ' ρ~ = {!   !}
+  Target-to-Good' : ∀ M ρ d 
+        → ∀ ρ'
+        → (ρ~ : ∀ i d → d ∈ ρ i 
+                      → Σ[ ctxt ∈ Value ] ctxt ∈ ρ i 
+                          × d ⊑ ctxt  {- this condition might not be necessary -}
+                          × mkGood ctxt d ∈ ρ' i)
+        → d ∈ ⟦ delay M ⟧' ρ 
+        → Σ[ ctxt ∈ Value ] ctxt ∈ ⟦ delay M ⟧' ρ × d ⊑ ctxt
+            × mkGood ctxt d ∈ ⟦ delay M ⟧G ρ'
+  Target-to-Good' (` x) ρ d ρ' ρ~ = ρ~ x d
+  Target-to-Good' (clos-op x₁ ⦅ x ⦆) ρ d ρ' ρ~ d∈ = {!   !}
+  Target-to-Good' (app ⦅ M ,, N ,, Nil ⦆) ρ d ρ' ρ~ 
+    ⟨ V , ⟨ ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ , V∈ ⟩ ⟩ = 
+    ⟨ d , ⟨ ⟨ V , ⟨ ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ , V∈ ⟩ ⟩ , ⟨ ⊑-refl 
+    , ⟨ mkGood (proj₁ IHN) V , ⟨ ⟨ mkGood (un-cdr (proj₁ IHM2)) FV , ⟨ {!   !} , proj₂ (proj₂ (proj₂ IHM2)) ⟩ ⟩ , proj₂ (proj₂ (proj₂ IHN)) ⟩ ⟩ ⟩ ⟩ ⟩
+    where
+    IHM1 : Σ[ fctxt ∈ Value ] fctxt ∈ ⟦ delay M ⟧' ρ × ⦅ FV ↦ V ↦ d ∣ ⊑ fctxt 
+              × mkGood fctxt ⦅ FV ↦ V ↦ d ∣ ∈ ⟦ delay M ⟧G ρ'
+    IHM1 = Target-to-Good' M ρ ⦅ FV ↦ V ↦ d ∣ ρ' ρ~ d∈
+    IHM2 : Σ[ FVctxt ∈ Value ] FVctxt ∈ ⟦ delay M ⟧' ρ × ∣ FV ⦆ ⊑ FVctxt
+              × mkGood FVctxt ∣ FV ⦆ ∈ ⟦ delay M ⟧G ρ'
+    IHM2 = Target-to-Good' M ρ ∣ FV ⦆ ρ' ρ~ FV∈
+    IHN : Σ[ Vctxt ∈ Value ] Vctxt ∈ ⟦ delay N ⟧' ρ × V ⊑ Vctxt × mkGood Vctxt V ∈ ⟦ delay N ⟧G ρ'
+    IHN = Target-to-Good' N ρ V ρ' ρ~ V∈
+    {- ⟨ mkGood V V , ⟨ ⟨ mkGood FV FV , ⟨ G1 , IHM2 ⟩ ⟩ , IHN ⟩ ⟩
+     where
+     IHM1 : ⦅ mkGood FV FV ↦ mkGood V V ↦ mkGood d d ∣ ∈ ⟦ delay M ⟧G ρ'
+     IHM1 with Target-to-Good M ρ ⦅ FV ↦ V ↦ d ∣ (⦅ FV ↦ V ↦ d ∣ ⊔ ∣ FV ⦆) d∈ {!   !} {!   !} ρ' ρ~  
+     ... | IH with ∣ FV ⦆ ⊑? (⦅ FV ↦ V ↦ d ∣ ⊔ ∣ FV ⦆)
+     ... | no FV⋢ = ⊥-elim (FV⋢ (⊑-⊔-R2 ⊑-refl)) 
+     ... | yes FV⊑ = IH
+     G1 : ⦅ mkGood FV FV ↦ mkGood V V ↦ mkGood ctxt d ∣ ∈ ⟦ delay M ⟧G ρ'
+     G1 = {!    !}
+     helper : ∀ {A B ctxt d ctxt'} → ctxt' ⊑ ctxt
+                → ⦅ A ↦ B ↦ mkGood ctxt d ∣ ⊑ ⦅ A ↦ B ↦ mkGood ctxt' d ∣
+     helper ctxt⊑ = ⊑-fst (⊑-↦ ⊑-refl (⊑-↦ ⊑-refl {! mkGood-ctxt   !}))
+     IHM2 : ∣ mkGood FV FV ⦆ ∈ ⟦ delay M ⟧G ρ'
+     IHM2 = Target-to-Good M ρ ∣ FV ⦆ ∣ FV ⦆ FV∈ FV∈ ⊑-refl ρ' ρ~
+     IHN : mkGood V V ∈ ⟦ delay N ⟧G ρ'
+     IHN = Target-to-Good N ρ V V V∈ V∈ ⊑-refl ρ' ρ~
   -}
-
-
-  {- what does a monotonicity condition look like? -}
-
-
-{- EXTRA attempts
-
-   data _good-with_ : Value → Value → Set where
-    good-base : ∀ {FV u v} 
-             → ∣ FV ⦆ ⊑ v
-             → ⦅ FV ↦ u ∣ good-with v
-    good-⊔-R1 : ∀ {u v₁ v₂}   {- could try to define this using atomicity and splitting            -}
-             → u good-with v₁
-             → u good-with (v₁ ⊔ v₂)
-    good-⊔-R2 : ∀ {u v₁ v₂}
-             → u good-with v₂
-             → u good-with (v₁ ⊔ v₂)
-    good-⊔-L : ∀ {u₁ u₂ v}
-             → (u₁ ⊔ u₂) good-with v
-    good-↦ : ∀ {V w v}
-            → w good-with v
-            → (V ↦ w) good-with (V ↦ v)   {- could do V V' V⊑V' (V' ↦ v) -}
-    good-car : ∀ {u v} → u good-with v
-            → ⦅ u ∣ good-with ⦅ v ∣
-    good-cdr : ∀ {u v} → u good-with v
-            → ∣ u ⦆ good-with ∣ v ⦆
-    good-tup : ∀ {n}{i : Fin n}{u v} → u good-with v 
-            → (tup[ i ] u) good-with (tup[ i ] v)
-    good-left : ∀ {u v} → u good-with v 
-             → (left u) good-with (left v)
-    good-right : ∀ {u v} → u good-with v 
-              → (right u) good-with (right v) 
-
-
-
-  data hasF : Value → Set where
-    hasF-base : ∀ {FV u} → hasF ⦅ FV ↦ u ∣
-    hasF-⊔-L : ∀ {u v} → hasF u → hasF (u ⊔ v)
-    hasF-⊔-R : ∀ {u v} → hasF v → hasF (u ⊔ v)
-    hasF-left : ∀ {v} → hasF v → hasF (left v)
-  
-  hasF? : ∀ (v : Value) → Dec (hasF v)
-  hasF? v = {!   !}
-
-  _applies-to_ : ∀ {u} → (𝕗u : hasF u) → Value → Set
-  (hasF-base {FV}{u}) applies-to v = ∣ FV ⦆ ⊑ v
-  (hasF-⊔-L 𝕗u) applies-to v = 𝕗u applies-to v
-  (hasF-⊔-R 𝕗u) applies-to v = 𝕗u applies-to v
-  (hasF-left 𝕗u) applies-to v = 𝕗u applies-to (un-left v)
-
-
-  _applies-to?_ : ∀ {u}(𝕗u : hasF u) (v : Value) → Dec (𝕗u applies-to v)
-  hasF-base {FV} applies-to? v = ∣ FV ⦆ ⊑? v
-  hasF-⊔-L 𝕗u applies-to? v = 𝕗u applies-to? v
-  hasF-⊔-R 𝕗u applies-to? v = 𝕗u applies-to? v
-  hasF-left 𝕗u applies-to? v = 𝕗u applies-to? (un-left v)
+  Target-to-Good' (lit B k ⦅ x ⦆) ρ d ρ' ρ~ d∈ = {!   !}
+  Target-to-Good' (tuple x₁ ⦅ x ⦆) ρ d ρ' ρ~ d∈ = {!   !}
+  Target-to-Good' (get i ⦅ x ⦆) ρ d ρ' ρ~ d∈ = {!   !}
+  Target-to-Good' (inl-op ⦅ M ,, Nil ⦆) ρ ω ρ' ρ~ d∈ = {!   !}
+    {- Target-to-Good' M ρ ω ω d∈ d∈ ⊑-ω ρ' ρ~ -}
+  Target-to-Good' (inl-op ⦅ M ,, Nil ⦆) ρ (left d) ρ' ρ~ d∈ = {!   !}
+    {- Target-to-Good' M ρ d (un-left ctxt) d∈ (un-left-ℒ (⊔-closed-Target (delay M) ρ) ctxt ctxt∈) (un-left-⊑ d⊑ctxt) ρ' ρ~ -} {- will need join-closed-ness -}
+  Target-to-Good' (inl-op ⦅ M ,, Nil ⦆) ρ (u ⊔ v) ρ' ρ~ ⟨ u∈ , v∈ ⟩ = {!   !}
+   {-
+    ⟨ Target-to-Good' (inl-op ⦅ M ,, Nil ⦆) ρ u ctxt u∈ ctxt∈ (proj₁ (⊑-split-inv-R d⊑ctxt split-⊔)) ρ' ρ~ 
+    , Target-to-Good' (inl-op ⦅ M ,, Nil ⦆) ρ v ctxt v∈ ctxt∈ (proj₂ (⊑-split-inv-R d⊑ctxt split-⊔)) ρ' ρ~ ⟩
+    -}
+  Target-to-Good' (inr-op ⦅ x ⦆) ρ d ρ' ρ~ d∈ = {!   !}
+  Target-to-Good' (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d ρ' ρ~
+    (inj₁ ⟨ V , ⟨ LV∈L , d∈M ⟩ ⟩) = {!   !}
+  {-
+    inj₁ ⟨ mkGood V V , ⟨ Target-to-Good L ρ (left V) (left V) LV∈L LV∈L ⊑-refl ρ' ρ~ 
+                      , {!  !} ⟩ ⟩
+    where
+    V•ρ'~ : ∀ i d ctxt → d ∈ (ρ-ext ρ V) i → ctxt ∈ (ρ-ext ρ V) i
+          → d ⊑ ctxt → (mkGood ctxt d) ∈ (ρ-ext ρ' (mkGood V V)) i
+    V•ρ'~ zero d ctxt d∈ ctxt∈ d⊑ctxt = mkGood-mono-ctxt ctxt V d V ctxt∈ (⊑-trans d⊑ctxt ctxt∈)
+    V•ρ'~ (suc i) d ctxt d∈ ctxt∈ d⊑ctxt = ρ~ i d ctxt d∈ ctxt∈ d⊑ctxt
+    IHM : mkGood d d ∈ ⟦ delay M ⟧G (ρ-ext ρ' (mkGood V V))
+    IHM = Target-to-Good M (ρ-ext ρ V) d d d∈M d∈M ⊑-refl (ρ-ext ρ' (mkGood V V)) V•ρ'~
+    G1 : mkGood ctxt d ∈ ⟦ delay M ⟧G (ρ-ext ρ' (mkGood V V))
+    G1 = {!    !}
+    -}
+  Target-to-Good' (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ d ρ' ρ~
+    (inj₂ ⟨ V , ⟨ RV∈L , d∈N ⟩ ⟩) = {!   !}
+    {- inj₂ ⟨ mkGood V V , ⟨ {!   !} , {!   !} ⟩ ⟩ -}
 
 
 
-
-
-
-
-  -}   

@@ -1,12 +1,5 @@
 
-module Model.Graph.DomainISWIM where
-
-{-
-
-  This is an adaptation of the call-by-name models P(ω) of Scott
-  (1976) and Dₐ of Engeler (1981) to call-by-value.
-
--}
+module Compiler.Model.Graph.Domain.ISWIM.Domain where
 
 open import Primitives
 open import Utilities using (extensionality)
@@ -33,6 +26,8 @@ open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
+open import Data.Fin using (Fin; zero; suc)
+open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax; uncurry)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Product.Properties using (,-injective)
@@ -63,7 +58,7 @@ data Value : Set where
             which we split up into car and cdr behaviors 
             for easier distributivity properties
             Think of a pair ⦅ u , V ⦆ as ⦅ u ∣ ⊔ ∣ V ⦆ -}
-  ∥_∥ : (ds : List Value) → Value                 {- Tuples -}
+  tup[_]_ : ∀ {n} (i : Fin n) → (d : Value) → Value                 {- Tuples -}
   left : (d : Value) → Value                      {- Sums -}
   right : (d : Value) → Value                     {- Sums -}
 
@@ -96,8 +91,24 @@ fst-inj refl = refl
 snd-inj : ∀ {v v'} → ∣ v ⦆ ≡ ∣ v' ⦆ → v ≡ v'
 snd-inj refl = refl
 
-tup-inj : ∀ {ds ds'} → ∥ ds ∥ ≡ ∥ ds' ∥ → ds ≡ ds'
-tup-inj refl = refl
+tup-inj-easy : ∀ {n} {i i' : Fin n} {d d'} → (tup[ i ] d) ≡ (tup[ i' ] d') 
+   → ⟨ i , d ⟩ ≡ ⟨ i' , d' ⟩
+tup-inj-easy refl = refl
+
+tup-inj : ∀ {n n'} {i : Fin n} {i' : Fin n'} {d d'} 
+        → (tup[ i ] d) ≡ (tup[ i' ] d') → 
+   Σ[ n≡n' ∈ n ≡ n' ] (subst Fin n≡n' i) ≡ i' × d ≡ d'
+tup-inj refl = ⟨ refl , ⟨ refl , refl ⟩ ⟩
+
+tup-inj-uncurried : ∀ {n n'} {i : Fin n} {i' : Fin n'} {d d'} 
+        → (tup[ i ] d) ≡ (tup[ i' ] d') → 
+   Σ[ n≡n' ∈ n ≡ n' ] ⟨ (subst Fin n≡n' i) , d ⟩ ≡ ⟨ i' , d' ⟩
+tup-inj-uncurried refl = ⟨ refl , refl ⟩
+
+tup-inj-uncurried' : ∀ {n n'} {i : Fin n} {i' : Fin n'} {d d'} 
+        → (tup[ i ] d) ≡ (tup[ i' ] d') → (n≡n' : n ≡ n') →
+   ⟨ (subst Fin n≡n' i) , d ⟩ ≡ ⟨ i' , d' ⟩
+tup-inj-uncurried' refl refl = refl
 
 left-inj : ∀ {v v'} → (left v) ≡ left v' → v ≡ v'
 left-inj refl = refl
@@ -123,7 +134,7 @@ const k d≟ (V ↦ w) = no (λ ())
 const k d≟ ω = no (λ ())
 const k d≟ ⦅ d₁' ∣ = no (λ ())
 const k d≟ ∣ d₂' ⦆ = no (λ ())
-const k d≟ ∥ ds ∥ = no (λ ())
+const k d≟ (tup[ i ] d) = no (λ ())
 const k d≟ (left v₁) = no (λ ())
 const k d≟ (right v₁) = no (λ ())
 (V ↦ w) d≟ const k = no (λ ())
@@ -132,7 +143,7 @@ const k d≟ (right v₁) = no (λ ())
 (V ↦ w) d≟ ω = no (λ ())
 (V ↦ w) d≟ ⦅ d₁' ∣ = no (λ ())
 (V ↦ w) d≟ ∣ d₂' ⦆ = no (λ ())
-(V ↦ w) d≟ ∥ ds ∥ = no (λ ())
+(V ↦ w) d≟ (tup[ i ] d) = no (λ ())
 (V ↦ w) d≟ (left v₁) = no (λ ())
 (V ↦ w) d≟ (right v₁) = no (λ ())
 ν d≟ const k = no (λ ())
@@ -141,7 +152,7 @@ const k d≟ (right v₁) = no (λ ())
 ν d≟ ω = no (λ ())
 ν d≟ ⦅ d₁' ∣ = no (λ ())
 ν d≟ ∣ d₂' ⦆ = no (λ ())
-ν d≟ ∥ ds ∥ = no (λ ())
+ν d≟ (tup[ i ] d) = no (λ ())
 ν d≟ (left v) = no (λ ())
 ν d≟  (right v) = no (λ ())
 ω d≟ const k = no (λ ())
@@ -150,7 +161,7 @@ const k d≟ (right v₁) = no (λ ())
 ω d≟ ω = yes refl
 ω d≟ ⦅ d₁ ∣ = no (λ ())
 ω d≟ ∣ d₂ ⦆ = no (λ ())
-ω d≟ ∥ ds ∥ = no (λ ())
+ω d≟ (tup[ i ] d) = no (λ ())
 ω d≟ (left v) = no (λ ())
 ω d≟ (right v) = no (λ ())
 ⦅ u ∣ d≟ const k = no (λ ())
@@ -159,7 +170,7 @@ const k d≟ (right v₁) = no (λ ())
 ⦅ u ∣ d≟ ω = no (λ ())
 ⦅ u ∣ d≟ ⦅ v ∣ = map′ (cong ⦅_∣) fst-inj (u d≟ v)
 ⦅ u ∣ d≟ ∣ V ⦆ = no (λ ())
-⦅ u ∣ d≟ ∥ ds ∥ = no (λ ())
+⦅ u ∣ d≟ (tup[ i ] d) = no (λ ())
 ⦅ u ∣ d≟ left v = no (λ ())
 ⦅ u ∣ d≟ right v = no (λ ())
 ∣ V ⦆ d≟ const k = no (λ ())
@@ -168,25 +179,29 @@ const k d≟ (right v₁) = no (λ ())
 ∣ V ⦆ d≟ ω = no (λ ())
 ∣ V ⦆ d≟ ⦅ v ∣ = no (λ ())
 ∣ V ⦆ d≟ ∣ V₁ ⦆ = map′ (cong ∣_⦆) snd-inj (V ds≟ V₁)
-∣ V ⦆ d≟ ∥ ds ∥ = no (λ ())
+∣ V ⦆ d≟ (tup[ i ] d) = no (λ ())
 ∣ V ⦆ d≟ left v = no (λ ())
 ∣ V ⦆ d≟ right v = no (λ ())
-∥ ds ∥ d≟ const k = no (λ ())
-∥ ds ∥ d≟ (V ↦ d₃) = no (λ ())
-∥ ds ∥ d≟ ν = no (λ ())
-∥ ds ∥ d≟ ω = no (λ ())
-∥ ds ∥ d≟ ⦅ d₁ ∣ = no (λ ())
-∥ ds ∥ d≟ ∣ d₂ ⦆ = no (λ ())
-∥ ds ∥ d≟ ∥ ds₁ ∥ = map′ (cong ∥_∥) tup-inj (ds ds≟ ds₁)
-∥ ds ∥ d≟ (left v) = no (λ ())
-∥ ds ∥ d≟  (right v) = no (λ ())
+(tup[ i ] d) d≟ const k = no (λ ())
+(tup[ i ] d) d≟ (V ↦ d₃) = no (λ ())
+(tup[ i ] d) d≟ ν = no (λ ())
+(tup[ i ] d) d≟ ω = no (λ ())
+(tup[_]_ {n} i d) d≟ (tup[_]_ {n'} i' d') with n ≟ n'
+... | no neq = no λ z → neq (proj₁ (tup-inj z))
+... | yes refl = map′ (cong (λ z → tup[ proj₁ z ] proj₂ z))
+        (λ z → tup-inj-uncurried' z refl)
+        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective (i fin≟ i' ×-dec (d d≟ d')))
+(tup[ i ] d) d≟ (left v) = no (λ ())
+(tup[ i ] d) d≟ (right v) = no (λ ())
+(tup[ i ] d) d≟ ⦅ v ∣ = no (λ ())
+(tup[ i ] d) d≟ ∣ v ⦆ = no (λ ())
 (left v) d≟ const k = no (λ ())
 (left v) d≟ (V₁ ↦ d₃) = no (λ ())
 (left v) d≟ ν = no (λ ())
 (left v) d≟ ω = no (λ ())
 (left v) d≟ ⦅ d₁ ∣ = no (λ ())
 (left v) d≟ ∣ d₂ ⦆ = no (λ ())
-(left v) d≟ ∥ ds ∥ = no (λ ())
+(left v) d≟ (tup[ i ] d) = no (λ ())
 (left v) d≟ (left v₁) = map′ (cong left) left-inj (v d≟ v₁)
 (left v) d≟ (right v₁) = no (λ ())
 (right v) d≟ const k = no (λ ())
@@ -195,7 +210,7 @@ const k d≟ (right v₁) = no (λ ())
 (right v) d≟ ω = no (λ ())
 (right v) d≟ ⦅ d₁ ∣ = no (λ ())
 (right v) d≟ ∣ d₂ ⦆ = no (λ ())
-(right v) d≟ ∥ ds ∥ = no (λ ())
+(right v) d≟ (tup[ i ] d) = no (λ ())
 (right v) d≟ (left v₁) = no (λ ())
 (right v) d≟ (right v₁) = map′ (cong right) right-inj (v d≟ v₁)
 [] ds≟ [] = yes refl
@@ -224,7 +239,7 @@ const x ~ ν = False
 const x ~ ω = False  
 const x ~ ⦅ d₁ ∣ = False
 const x ~ ∣ d₂ ⦆ = False
-const x ~ ∥ x₁ ∥ = False
+const x ~ (tup[ i ] d') = False
 const x ~ (left x₁) = False
 const x ~ (right x₁) = False
 (V' ↦ w') ~ const x₂ = False
@@ -233,7 +248,7 @@ const x ~ (right x₁) = False
 (V' ↦ w') ~ ω = False
 (V' ↦ w') ~ ⦅ d₁' ∣ = False
 (V' ↦ w') ~ ∣ d₂' ⦆ = False
-(V' ↦ w') ~ ∥ x₂ ∥ = False
+(V' ↦ w') ~ (tup[ i ] d') = False
 (V' ↦ w') ~ (left x) = False
 (V' ↦ w') ~ (right x) = False
 ν ~ const x = False
@@ -242,7 +257,7 @@ const x ~ (right x₁) = False
 ν ~ ω = False
 ν ~ ⦅ d₁' ∣ = False
 ν ~ ∣ d₂' ⦆ = False
-ν ~ ∥ x ∥ = False
+ν ~ (tup[ i ] d') = False
 ν ~ (left x) = False
 ν ~ (right x) = False
 ω ~ const x = False
@@ -251,7 +266,7 @@ const x ~ (right x₁) = False
 ω ~ ω = True {- starting with ω related with just itself -}
 ω ~ ⦅ d₁' ∣ = False
 ω ~ ∣ d₂' ⦆ = False
-ω ~ ∥ x ∥ = False
+ω ~ (tup[ i ] d') = False
 ω ~ (left x) = False
 ω ~ (right x) = False
 ⦅ u ∣ ~ const k = False
@@ -260,7 +275,7 @@ const x ~ (right x₁) = False
 ⦅ u ∣ ~ ω = False
 ⦅ u ∣ ~ ⦅ v ∣ = u ~ v
 ⦅ u ∣ ~ ∣ V ⦆ = True
-⦅ u ∣ ~ ∥ ds ∥ = False
+⦅ u ∣ ~ (tup[ i ] d) = False
 ⦅ u ∣ ~ left v = False
 ⦅ u ∣ ~ right v = False
 ∣ V ⦆ ~ const k = False
@@ -269,28 +284,26 @@ const x ~ (right x₁) = False
 ∣ V ⦆ ~ ω = False
 ∣ V ⦆ ~ ⦅ v ∣ = True
 ∣ V ⦆ ~ ∣ V₁ ⦆ = V ≈ V₁
-∣ V ⦆ ~ ∥ ds ∥ = False
+∣ V ⦆ ~ (tup[ i ] d) = False
 ∣ V ⦆ ~ left v = False
 ∣ V ⦆ ~ right v = False
-∥ x ∥ ~ const x₁ = False
-∥ x ∥ ~ (V₁ ↦ v) = False
-∥ x ∥ ~ ν = False
-∥ x ∥ ~ ω = False
-∥ x ∥ ~ ⦅ d₁' ∣ = False
-∥ x ∥ ~ ∣ d₂' ⦆ = False
-∥ [] ∥ ~ ∥ [] ∥ = True
-∥ [] ∥ ~ ∥ x ∷ x₁ ∥ = False
-∥ x ∷ x₂ ∥ ~ ∥ [] ∥ = False
-∥ x ∷ xs ∥ ~ ∥ x₁ ∷ xs₁ ∥ = x ~ x₁ × ∥ xs ∥ ~ ∥ xs₁ ∥
-∥ x ∥ ~ (left x₁) = False
-∥ x ∥ ~ (right x₁) = False
+(tup[ i ] d') ~ const x₁ = False
+(tup[ i ] d') ~ (V₁ ↦ v) = False
+(tup[ i ] d') ~ ν = False
+(tup[ i ] d') ~ ω = False
+(tup[ i ] d') ~ ⦅ d₁' ∣ = False
+(tup[ i ] d') ~ ∣ d₂' ⦆ = False
+(tup[_]_ {n} i d) ~ (tup[_]_ {n'} i' d') 
+    = Σ[ n≡ ∈ n ≡ n' ] ((¬ ((subst Fin n≡ i) ≡ i')) ⊎ ((subst Fin n≡ i) ≡ i' × d ~ d'))
+(tup[ i ] d') ~ (left x₁) = False
+(tup[ i ] d') ~ (right x₁) = False
 (left x) ~ const x₁ = False
 (left x) ~ (V₁ ↦ v) = False
 (left x) ~ ν = False
 (left x) ~ ω = False
 (left x) ~ ⦅ d₁' ∣ = False
 (left x) ~ ∣ d₂' ⦆ = False
-(left x) ~ ∥ x₁ ∥ = False
+(left x) ~ (tup[ i ] d') = False
 (left x) ~ (left x₁) = x ~ x₁
 (left x) ~ (right x₁) = False
 (right x) ~ const x₁ = False
@@ -299,7 +312,7 @@ const x ~ (right x₁) = False
 (right x) ~ ω = False
 (right x) ~ ⦅ d₁' ∣ = False
 (right x) ~ ∣ d₂' ⦆ = False
-(right x) ~ ∥ x₁ ∥ = False
+(right x) ~ (tup[ i ] d') = False
 (right x) ~ (left x₁) = False
 (right x) ~ (right x₁) = x ~ x₁
 
@@ -339,9 +352,10 @@ const x ~ (right x₁) = False
 ~-sym ⦅ u ∣ ∣ V ⦆ u~v = tt
 ~-sym ∣ V ⦆ ⦅ v ∣ u~v = tt
 ~-sym ∣ V ⦆ ∣ V₁ ⦆ u~v = ≈-sym V V₁ u~v
-~-sym ∥ [] ∥ ∥ [] ∥ u~v = tt
-~-sym ∥ x ∷ x₂ ∥ ∥ x₁ ∷ x₃ ∥ ⟨ fst , rst ⟩ = 
-  ⟨ ~-sym x x₁ fst , ~-sym ∥ x₂ ∥ ∥ x₃ ∥ rst ⟩
+~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') ⟨ refl , inj₁ neq ⟩ = 
+    ⟨ refl , inj₁ (λ z → neq (sym z)) ⟩
+~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩ =
+    ⟨ refl , inj₂ ⟨ refl , ~-sym d d' d~ ⟩ ⟩
 ~-sym (left x) (left x₁) u~v = ~-sym x x₁ u~v
 ~-sym (right x) (right x₁) u~v = ~-sym x x₁ u~v
 
@@ -354,6 +368,10 @@ const x ~ (right x₁) = False
   ⟨ ~-sym-All x U (≈head U x V U≈V) 
   , ≈-sym U V (≈tail U x V U≈V) ⟩
 
+~-tup-inv : ∀ {n}{i i' : Fin n}{d d'} → tup[ i ] d ~ tup[ i' ] d'
+    → (¬ (i ≡ i')) ⊎ (i ≡ i' × d ~ d')
+~-tup-inv ⟨ refl , snd ⟩ = snd
+
 _≈?_ : (U V : List Value) → Dec (U ≈ V)
 _~>?_ : (u : Value) (V : List Value) → Dec (All (u ~_) V)
 _~?_ : (u v : Value) → Dec (u ~ v)
@@ -365,7 +383,7 @@ const x ~? ν = no (λ z → z)
 const x ~? ω = no (λ z → z)
 const x ~? ⦅ d₁' ∣ = no (λ z → z)
 const x ~? ∣ d₂' ⦆ = no (λ z → z)
-const x ~? ∥ x₁ ∥ = no (λ z → z)
+const x ~? (tup[ i ] d') = no (λ z → z)
 const x ~? (left x₁) = no (λ z → z)
 const x ~? (right x₁) = no (λ z → z)
 (V' ↦ u) ~? const x₂ = no (λ z → z)
@@ -379,7 +397,7 @@ const x ~? (right x₁) = no (λ z → z)
 (V' ↦ w') ~? ω = no (λ z → z)
 (V' ↦ w') ~? ⦅ d₁' ∣ = no (λ z → z)
 (V' ↦ w') ~? ∣ d₂' ⦆ = no (λ z → z)
-(V' ↦ w') ~? ∥ x₂ ∥ = no (λ z → z)
+(V' ↦ w') ~? (tup[ i ] d') = no (λ z → z)
 (V' ↦ w') ~? (left x) = no (λ z → z)
 (V' ↦ w') ~? (right x) = no (λ z → z)
 ν ~? const x = no (λ z → z)
@@ -388,7 +406,7 @@ const x ~? (right x₁) = no (λ z → z)
 ν ~? ω = no (λ z → z)
 ν ~? ⦅ d₁' ∣ = no (λ z → z)
 ν ~? ∣ d₂' ⦆ = no (λ z → z)
-ν ~? ∥ x ∥ = no (λ z → z)
+ν ~? (tup[ i ] d') = no (λ z → z)
 ν ~? (left x) = no (λ z → z)
 ν ~? (right x) = no (λ z → z)
 ω ~? const x = no (λ z → z)
@@ -397,7 +415,7 @@ const x ~? (right x₁) = no (λ z → z)
 ω ~? ω = yes tt
 ω ~? ⦅ d₁' ∣ = no (λ z → z)
 ω ~? ∣ d₂' ⦆ = no (λ z → z)
-ω ~? ∥ x ∥ = no (λ z → z)
+ω ~? (tup[ i ] d') = no (λ z → z)
 ω ~? (left x) = no (λ z → z)
 ω ~? (right x) = no (λ z → z)
 ⦅ u ∣ ~? const k = no λ z → z
@@ -406,7 +424,7 @@ const x ~? (right x₁) = no (λ z → z)
 ⦅ u ∣ ~? ω = no (λ z → z)
 ⦅ u ∣ ~? ⦅ v ∣ = u ~? v
 ⦅ u ∣ ~? ∣ V ⦆ = yes tt
-⦅ u ∣ ~? ∥ ds ∥ = no (λ z → z)
+⦅ u ∣ ~? (tup[ i ] d) = no (λ z → z)
 ⦅ u ∣ ~? left v = no (λ z → z)
 ⦅ u ∣ ~? right v = no (λ z → z)
 ∣ V ⦆ ~? const k = no (λ z → z)
@@ -415,28 +433,32 @@ const x ~? (right x₁) = no (λ z → z)
 ∣ V ⦆ ~? ω = no (λ z → z)
 ∣ V ⦆ ~? ⦅ v ∣ = yes tt
 ∣ V ⦆ ~? ∣ V₁ ⦆ = V ≈? V₁
-∣ V ⦆ ~? ∥ ds ∥ = no (λ z → z)
+∣ V ⦆ ~? (tup[ i ] d) = no (λ z → z)
 ∣ V ⦆ ~? left v = no (λ z → z)
 ∣ V ⦆ ~? right v = no (λ z → z)
-∥ x ∥ ~? const x₁ = no (λ z → z)
-∥ x ∥ ~? (V₁ ↦ v) = no (λ z → z)
-∥ x ∥ ~? ν = no (λ z → z)
-∥ x ∥ ~? ω = no (λ z → z)
-∥ x ∥ ~? ⦅ d₁' ∣ = no (λ z → z)
-∥ x ∥ ~? ∣ d₂' ⦆ = no (λ z → z)
-∥ [] ∥ ~? ∥ [] ∥ = yes tt
-∥ [] ∥ ~? ∥ x ∷ x₁ ∥ = no (λ z → z)
-∥ x ∷ x₂ ∥ ~? ∥ [] ∥ = no (λ z → z)
-∥ x ∷ x₂ ∥ ~? ∥ x₁ ∷ x₃ ∥ = (x ~? x₁) ×-dec (∥ x₂ ∥ ~? ∥ x₃ ∥)
-∥ x ∥ ~? (left x₁) = no (λ z → z)
-∥ x ∥ ~? (right x₁) = no (λ z → z)
+(tup[ i ] d') ~? const x₁ = no (λ z → z)
+(tup[ i ] d') ~? (V₁ ↦ v) = no (λ z → z)
+(tup[ i ] d') ~? ν = no (λ z → z)
+(tup[ i ] d') ~? ω = no (λ z → z)
+(tup[ i ] d') ~? ⦅ d₁' ∣ = no (λ z → z)
+(tup[ i ] d') ~? ∣ d₂' ⦆ = no (λ z → z)
+(tup[_]_ {n} i d) ~? (tup[_]_ {n'} i' d') with n ≟ n'
+... | no neq = no (λ z → neq (proj₁ z))
+... | yes refl with i fin≟ i'
+... | no neq = yes ⟨ refl , inj₁ neq ⟩
+... | yes refl with d ~? d'
+... | yes d~ = yes ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩
+... | no ¬d~ = no λ z → ¬d~ ([ (λ x → ⊥-elim (x refl)) 
+                            , (λ x → proj₂ x) ] (~-tup-inv {n}{i}{i'}{d} z))
+(tup[ i ] d') ~? (left x₁) = no (λ z → z)
+(tup[ i ] d') ~? (right x₁) = no (λ z → z)
 (left x) ~? const x₁ = no (λ z → z)
 (left x) ~? (V₁ ↦ v) = no (λ z → z)
 (left x) ~? ν = no (λ z → z)
 (left x) ~? ω = no (λ z → z)
 (left x) ~? ⦅ d₁' ∣ = no (λ z → z)
 (left x) ~? ∣ d₂' ⦆ = no (λ z → z)
-(left x) ~? ∥ x₁ ∥ = no (λ z → z)
+(left x) ~? (tup[ i ] d') = no (λ z → z)
 (left x) ~? (left x₁) = x ~? x₁
 (left x) ~? (right x₁) = no (λ z → z)
 (right x) ~? const x₁ = no (λ z → z)
@@ -445,7 +467,7 @@ const x ~? (right x₁) = no (λ z → z)
 (right x) ~? ω = no (λ z → z)
 (right x) ~? ⦅ d₁' ∣ = no (λ z → z)
 (right x) ~? ∣ d₂' ⦆ = no (λ z → z)
-(right x) ~? ∥ x₁ ∥ = no (λ z → z)
+(right x) ~? (tup[ i ] d') = no (λ z → z)
 (right x) ~? (left x₁) = no (λ z → z)
 (right x) ~? (right x₁) = x ~? x₁
 

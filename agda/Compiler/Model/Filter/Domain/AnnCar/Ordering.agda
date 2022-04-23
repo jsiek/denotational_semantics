@@ -30,11 +30,11 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
     renaming (begin_ to start_; _∎ to _□)
 
-module Compiler.Model.Filter.Domain.ISWIM.Ordering where
+module Compiler.Model.Filter.Domain.AnnCar.Ordering where
 
   open import Compiler.Model.Filter.Domain.Util
   open import Primitives
-  open import Compiler.Model.Filter.Domain.ISWIM.Values
+  open import Compiler.Model.Filter.Domain.AnnCar.Values
 
 
   infix 5 _⊑_
@@ -63,11 +63,20 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
          -----------
        → u ⊑ v ⊔ w
 
-    ⊑-fst-å : ∀ {u v}
+    ⊑-fst-å : ∀ {u v b}
        → (åu : Atomic u)
        → (u⊑v : u ⊑ v)
         ------------------
-       → ⦅ u ∣ ⊑ ⦅ v ∣
+       → ⦅ u , false ∣ ⊑ ⦅ v , b ∣
+
+    ⊑-fst-å-true : ∀ {u v}
+       → (åu : Atomic u)
+       → (u⊑v : u ⊑ v)
+       → (v⊑u : v ⊑ u)
+        ------------------
+       → ⦅ u , true ∣ ⊑ ⦅ v , true ∣
+   {- could make u invariant/equivalent instead of syntactically equal
+      ... but this is sufficient for reflexivity -}
 
     ⊑-snd-å : ∀ {u v}
        → (åu : Atomic u)
@@ -190,7 +199,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   ⊑-⊔-L : ∀ {u₁ u₂ v} → u₁ ⊑ v → u₂ ⊑ v → u₁ ⊔ u₂ ⊑ v
   ⊑-⊔-L 1⊑ 2⊑ = ⊑-split split-⊔ 1⊑ 2⊑
 
-  ⊑-fst : ∀ {u v} → u ⊑ v → ⦅ u ∣ ⊑ ⦅ v ∣
+  ⊑-fst : ∀ {u v b} → u ⊑ v → ⦅ u , false ∣ ⊑ ⦅ v , b ∣
   ⊑-fst ⊑-ω = ⊑-fst-å tt ⊑-ω
   ⊑-fst ⊑-ν-ν = ⊑-fst-å tt ⊑-ν-ν
   ⊑-fst ⊑-ν-↦ = ⊑-fst-å tt ⊑-ν-↦
@@ -204,6 +213,25 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   ⊑-fst (⊑-left-å åu u⊑v) = ⊑-fst-å åu (⊑-left-å åu u⊑v)
   ⊑-fst (⊑-right-å åu u⊑v) = ⊑-fst-å åu (⊑-right-å åu u⊑v)
   ⊑-fst (⊑-split split u⊑v u⊑v₁) = ⊑-split (split-fst split) (⊑-fst u⊑v) (⊑-fst u⊑v₁)
+
+  ⊑-fst-true : ∀ {u v} → u ⊑ v → v ⊑ u → ⦅ u , true ∣ ⊑ ⦅ v , true ∣
+  ⊑-fst-true ⊑-ω v⊑u = ⊑-fst-å-true tt ⊑-ω v⊑u
+  ⊑-fst-true ⊑-ν-ν v⊑u = ⊑-fst-å-true tt v⊑u v⊑u
+  ⊑-fst-true ⊑-ν-↦ v⊑u = ⊑-fst-å-true tt ⊑-ν-↦ v⊑u
+  ⊑-fst-true ⊑-const v⊑u = ⊑-fst-å-true tt v⊑u v⊑u
+  ⊑-fst-true (⊑-⊔-R1-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-⊔-R1-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-⊔-R2-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-⊔-R2-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-fst-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-fst-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-fst-å-true åu u⊑v u⊑v₁) v⊑u = ⊑-fst-å-true åu (⊑-fst-true u⊑v u⊑v₁) v⊑u
+  ⊑-fst-true (⊑-snd-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-snd-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-tup-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-tup-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-↦-å åu₂ u⊑v u⊑v₁) v⊑u = ⊑-fst-å-true åu₂ (⊑-↦-å åu₂ u⊑v u⊑v₁) v⊑u
+  ⊑-fst-true (⊑-left-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-left-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-right-å åu u⊑v) v⊑u = ⊑-fst-å-true åu (⊑-right-å åu u⊑v) v⊑u
+  ⊑-fst-true (⊑-split split u⊑v u⊑v₁) v⊑u = 
+    ⊑-split (split-fst split) (⊑-fst-true u⊑v {!  ⟨ v⊑u , split ⟩   !}) 
+                              (⊑-fst-true u⊑v₁ {!   !})
+
 
   ⊑-snd : ∀ {u v} → u ⊑ v → ∣ u ⦆ ⊑ ∣ v ⦆
   ⊑-snd ⊑-ω = ⊑-snd-å tt ⊑-ω
@@ -288,7 +316,8 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   ⊑-refl {ω} = ⊑-ω
   ⊑-refl {ν} = ⊑-ν-ν
   ⊑-refl {const k} = ⊑-const
-  ⊑-refl {⦅ u ∣} = ⊑-fst ⊑-refl
+  ⊑-refl {⦅ u , true ∣} = ⊑-fst-true ⊑-refl ⊑-refl
+  ⊑-refl {⦅ u , false ∣} = ⊑-fst ⊑-refl
   ⊑-refl {∣ v ⦆} = ⊑-snd ⊑-refl
   ⊑-refl {tup[ i ] d} = ⊑-tup ⊑-refl
   ⊑-refl {v ↦ v₁} = ⊑-↦ ⊑-refl ⊑-refl
@@ -300,7 +329,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
 {-
   proper-split-L : ∀ {v v₁ v₂} → Proper v → v₁ ◃ v ▹ v₂ → Proper v₁
   proper-split-L .{ _ ↦ _} (⊢'-↦-å {v}{v'} Pv Pv₁ åv₂) split = ⊥-elim (unsplittable (v ↦ v') åv₂ split)
-  proper-split-L .{⦅ _ ∣} (⊢'-fst-å {v} Pv åv) split = ⊥-elim (unsplittable ⦅ v ∣ åv split)
+  proper-split-L .{⦅ _ , _ ∣} (⊢'-fst-å {v} Pv åv) split = ⊥-elim (unsplittable ⦅ v , b ∣ åv split)
   proper-split-L .{∣ _ ⦆} (⊢'-snd-å {v} Pv åv) split = ⊥-elim (unsplittable ∣ v ⦆ åv split) 
   proper-split-L .{∥ _ ∷ _ ∥} (⊢'-tup-å {n}{v}{vs} Pv Pv₁ åv åvs) split = ⊥-elim (unsplittable (∥ v ∷ vs ∥) ⟨ åv , åvs ⟩ split)
   proper-split-L .{left _} (⊢'-left-å {u} Pu åu) split = ⊥-elim (unsplittable (left u) åu split)
@@ -309,7 +338,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
 
   proper-split-R : ∀ {v v₁ v₂} → Proper v → v₁ ◃ v ▹ v₂ → Proper v₂
   proper-split-R .{ _ ↦ _} (⊢'-↦-å {v}{v'} Pv Pv₁ åv₂) split = ⊥-elim (unsplittable (v ↦ v') åv₂ split)
-  proper-split-R .{⦅ _ ∣} (⊢'-fst-å {v} Pv åv) split = ⊥-elim (unsplittable ⦅ v ∣ åv split)
+  proper-split-R .{⦅ _ , _ ∣} (⊢'-fst-å {v} Pv åv) split = ⊥-elim (unsplittable ⦅ v , b ∣ åv split)
   proper-split-R .{∣ _ ⦆} (⊢'-snd-å {v} Pv åv) split = ⊥-elim (unsplittable ∣ v ⦆ åv split) 
   proper-split-R .{∥ _ ∷ _ ∥} (⊢'-tup-å {n}{v}{vs} Pv Pv₁ åv åvs) split = ⊥-elim (unsplittable (∥ v ∷ vs ∥) ⟨ åv , åvs ⟩ split)
   proper-split-R .{left _} (⊢'-left-å {u} Pu åu) split = ⊥-elim (unsplittable (left u) åu split)
@@ -355,23 +384,23 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
       ⊥-elim (unsplittable (v₁ ↦ v₂) åv₂ split)
     G u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w IH₁ IH₂ = 
       ⊑-split split (G u₁ w u⊑v v⊑w IH₁ IH₂) (G u₂ w u⊑v₁ v⊑w IH₁ IH₂)
-  ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å Pv åv₁) .ω w ⊑-ω v⊑w = ⊑-ω
-  ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å {v} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
-    ⊑-split split (⊑-trans-proper ⦅ v ∣ (⊢'-fst-å Pv åv) u₁ w u⊑v v⊑w)
-                  (⊑-trans-proper ⦅ v ∣ (⊢'-fst-å Pv åv) u₂ w u⊑v₁ v⊑w)  
-  ⊑-trans-proper .(⦅ _ ∣) (⊢'-fst-å {v} Pv åv) .(⦅ _ ∣) w (⊑-fst-å {u} åu u⊑v) v⊑w
-    = G (⦅ u ∣) w (⊑-fst-å åu u⊑v) v⊑w (⊑-trans-proper v Pv)
+  ⊑-trans-proper .(⦅ _ , _ ∣) (⊢'-fst-å Pv åv₁) .ω w ⊑-ω v⊑w = ⊑-ω
+  ⊑-trans-proper .(⦅ _ , _ ∣) (⊢'-fst-å {v}{b} Pv åv) u w (⊑-split {_}{u₁}{u₂} split u⊑v u⊑v₁) v⊑w = 
+    ⊑-split split (⊑-trans-proper ⦅ v , b ∣ (⊢'-fst-å Pv åv) u₁ w u⊑v v⊑w)
+                  (⊑-trans-proper ⦅ v , b ∣ (⊢'-fst-å Pv åv) u₂ w u⊑v₁ v⊑w)  
+  ⊑-trans-proper .(⦅ _ , _ ∣) (⊢'-fst-å {v}{b} Pv åv) .(⦅ _ , _ ∣) w (⊑-fst-å {u} åu u⊑v) v⊑w
+    = G (⦅ u , {!   !} ∣) w {!   !} v⊑w (⊑-trans-proper v Pv)
     where
-    G : ∀ u w → u ⊑ ⦅ v ∣ → ⦅ v ∣ ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) → u ⊑ w
+    G : ∀ u w → u ⊑ ⦅ v , b ∣ → ⦅ v , b ∣ ⊑ w → (∀ u w → u ⊑ v → v ⊑ w → u ⊑ w) → u ⊑ w
     G .ω w ⊑-ω Lv⊑w IH = ⊑-ω
-    G .(⦅ _ ∣) .(_ ⊔ _) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R1-å {_} {w₁} åu₁ Lv⊑w) IH = 
-      ⊑-⊔-R1-å åu (G (⦅ u₁ ∣) w₁ (⊑-fst-å åu u⊑Lv) Lv⊑w IH)
-    G .(⦅ _ ∣) .(_ ⊔ _) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R2-å {_} {_} {w₁} åu₁ Lv⊑w) IH = 
-      ⊑-⊔-R2-å åu (G (⦅ u₁ ∣) w₁ (⊑-fst-å åu u⊑Lv) Lv⊑w IH)
-    G .(⦅ _ ∣) .(⦅ _ ∣) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-fst-å {_} {w₁} åu₁ Lv⊑w) IH = 
+    G .(⦅ _ , _ ∣) .(_ ⊔ _) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R1-å {_} {w₁} åu₁ Lv⊑w) IH = 
+      ⊑-⊔-R1-å åu (G (⦅ u₁ , {!   !} ∣) w₁ {!   !} Lv⊑w IH)
+    G .(⦅ _ , _ ∣) .(_ ⊔ _) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-⊔-R2-å {_} {_} {w₁} åu₁ Lv⊑w) IH = 
+      ⊑-⊔-R2-å åu (G (⦅ u₁ , {!   !} ∣) w₁ {!   !} Lv⊑w IH)
+    G .(⦅ _ , _ ∣) .(⦅ _ , _ ∣) (⊑-fst-å {u₁} {v₁} åu u⊑Lv) (⊑-fst-å {_} {w₁} åu₁ Lv⊑w) IH = 
       ⊑-fst-å åu (IH u₁ w₁ u⊑Lv Lv⊑w)
-    G .(⦅ _ ∣) w (⊑-fst-å åu u⊑Lv) (⊑-split split Lv⊑w Lv⊑w₁) IH = 
-      ⊥-elim (unsplittable (⦅ v ∣) åv split)
+    G .(⦅ _ , _ ∣) w (⊑-fst-å åu u⊑Lv) (⊑-split split Lv⊑w Lv⊑w₁) IH = 
+      ⊥-elim (unsplittable (⦅ v , b ∣) åv split)
     G u w (⊑-split {u} {u₁} {u₂} split u⊑Lv u⊑Lv₁) Lv⊑w IH = 
       ⊑-split split (G u₁ w u⊑Lv Lv⊑w IH) (G u₂ w u⊑Lv₁ Lv⊑w IH)
   ⊑-trans-proper .(∣ _ ⦆) (⊢'-snd-å Pv åv₂) .ω w ⊑-ω v⊑w = ⊑-ω
@@ -469,11 +498,11 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-split-inv-L u⊑v split åv₂
     ... | inj₁ x = IH₁ (v₁ ↦ v₂) w x vL⊑w
     ... | inj₂ y = IH₂ (v₁ ↦ v₂) w y vR⊑w
-    split-trans .(⦅ _ ∣) (⊢'-fst-å {u} Pu åu) u⊑v IH₁ IH₂ 
+    split-trans .(⦅ _ , _ ∣) (⊢'-fst-å {u}{b} Pu åu) u⊑v IH₁ IH₂ 
       with ⊑-split-inv-R v⊑w split
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-split-inv-L u⊑v split åu
-    ... | inj₁ x = IH₁ ⦅ u ∣ w x vL⊑w
-    ... | inj₂ y = IH₂ ⦅ u ∣ w y vR⊑w
+    ... | inj₁ x = IH₁ ⦅ u , b ∣ w x vL⊑w
+    ... | inj₂ y = IH₂ ⦅ u , b ∣ w y vR⊑w
     split-trans .(∣ _ ⦆) (⊢'-snd-å {u} Pu åu) u⊑v IH₁ IH₂ 
       with ⊑-split-inv-R v⊑w split
     ... | ⟨ vL⊑w , vR⊑w ⟩ with ⊑-split-inv-L u⊑v split åu
@@ -509,7 +538,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   tup-cons u (const k) = ω
   tup-cons u (v ⊔ v₁) = ω
   tup-cons u (v ↦ v₁) = ω
-  tup-cons u (⦅ v ∣) = ω
+  tup-cons u (⦅ v , b ∣) = ω
   tup-cons u (∣ v ⦆) = ω
   tup-cons u (left v) = ω
   tup-cons u (right v) = ω
@@ -529,7 +558,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
      → v ↦ (wL ⊔ wR) ⊑ (v ↦ wL) ⊔ (v ↦ wR)
   ⊑-dist-fun {v}{wL}{wR} = ⊑-split (split-↦ split-⊔) (⊑-⊔-R1 ⊑-refl) (⊑-⊔-R2 ⊑-refl)
   
-  ⊑-dist-fst : ∀ {uL uR} → ⦅ uL ⊔ uR ∣ ⊑ ⦅ uL ∣ ⊔ ⦅ uR ∣
+  ⊑-dist-fst : ∀ {uL uR b} → ⦅ uL ⊔ uR , b ∣ ⊑ ⦅ uL , b ∣ ⊔ ⦅ uR , b ∣
   ⊑-dist-fst = ⊑-dist-⊔ (split-fst split-⊔)
 
   ⊑-dist-snd : ∀ {uL uR} → ∣ uL ⊔ uR ⦆ ⊑ ∣ uL ⦆ ⊔ ∣ uR ⦆
@@ -547,10 +576,10 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   ⊔⊑⊔ : ∀ {uL uR vL vR} → uL ⊑ vL → uR ⊑ vR → uL ⊔ uR ⊑ vL ⊔ vR
   ⊔⊑⊔ ⊑L ⊑R = ⊑-⊔-L (⊑-⊔-R1 ⊑L) (⊑-⊔-R2 ⊑R)
 
-  pattern ⦅_,_⦆' u v = ⦅ u ∣ ⊔ ∣ v ⦆
+  pattern ⦅_,_,_⦆' u b v = ⦅ u , b ∣ ⊔ ∣ v ⦆
 
-  ⊑-dist-pair-example : ∀ {uL uR vL vR}
-    → ⦅ uL ⊔ uR , vL ⊔ vR ⦆' ⊑ ⦅ uL , vL ⦆' ⊔ ⦅ uR , vR ⦆'
+  ⊑-dist-pair-example : ∀ {uL uR b vL vR}
+    → ⦅ uL ⊔ uR , b , vL ⊔ vR ⦆' ⊑ ⦅ uL , b , vL ⦆' ⊔ ⦅ uR , b , vR ⦆'
   ⊑-dist-pair-example {uL}{uR}{vL}{vR} = 
     ⊑-split split-⊔ (⊑-split (split-fst split-⊔) 
                               (⊑-⊔-R1 (⊑-⊔-R1 ⊑-refl)) 
@@ -572,8 +601,8 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
    ; ⊑-dist = ⊑-dist-fun
    }
 
-  ⊔-closed-⊑ : (Value → Set) → Set
-  ⊔-closed-⊑ D = ∀ u v → D u → D v 
+  ⊔-closed : (Value → Set) → Set
+  ⊔-closed D = ∀ u v → D u → D v 
           → Σ[ u⊔v' ∈ Value ] D u⊔v' × (u ⊔ v) ⊑ u⊔v'
 
   ⊑-closed : (Value → Set) → Set
@@ -585,27 +614,15 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   ⊑-closure-closed : ∀ V → ⊑-closed (⊑-closure V)
   ⊑-closure-closed V u v v⊑V u⊑v = ⊑-trans u⊑v v⊑V
 
-  ⊑-closure-⊔-closed-⊑ : ∀ V → ⊔-closed-⊑ (⊑-closure V)
-  ⊑-closure-⊔-closed-⊑ V u v u⊑V v⊑V = 
+  ⊑-closure-⊔-closed : ∀ V → ⊔-closed (⊑-closure V)
+  ⊑-closure-⊔-closed V u v u⊑V v⊑V = 
     ⟨ V , ⟨ ⊑-refl , ⊑-split split-⊔ u⊑V v⊑V ⟩ ⟩
 
-  singleton-⊔-closed-⊑ : ∀ V → ⊔-closed-⊑ (λ v → v ≡ V)
-  singleton-⊔-closed-⊑ V u .u refl refl = 
+  singleton-⊔-closed : ∀ V → ⊔-closed (λ v → v ≡ V)
+  singleton-⊔-closed V u .u refl refl = 
     ⟨ u , ⟨ refl , ⊑-⊔-L ⊑-refl ⊑-refl ⟩ ⟩
 
-  ⊔-closed : (Value → Set) → Set
-  ⊔-closed D = ∀ u v → D u → D v → D (u ⊔ v)
 
-  ⊔-closed-from-⊔-⊑ : ∀ D → ⊔-closed-⊑ D → ⊑-closed D → ⊔-closed D
-  ⊔-closed-from-⊔-⊑ D ⊔D ⊑D u v u∈ v∈ = ⊑D (u ⊔ v) (proj₁ (⊔D u v u∈ v∈)) 
-                                                    (proj₁ (proj₂ (⊔D u v u∈ v∈))) 
-                                                    (proj₂ (proj₂ (⊔D u v u∈ v∈)))
-
-  ⊑-⊔-R1-inv : ∀ {u v w} → u ⊔ v ⊑ w → u ⊑ w
-  ⊑-⊔-R1-inv (⊑-split split-⊔ u⊔v⊑w u⊔v⊑w₁) = u⊔v⊑w
-
-  ⊑-⊔-R2-inv : ∀ {u v w} → u ⊔ v ⊑ w → v ⊑ w
-  ⊑-⊔-R2-inv (⊑-split split-⊔ u⊔v⊑w u⊔v⊑w₁) = u⊔v⊑w₁
 
 {-  
 
@@ -779,7 +796,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   hasFun? (const k) = no (λ z → z)
   hasFun? (v ⊔ v₁) = hasFun? v ⊎-dec hasFun? v₁
   hasFun? (v ↦ v₁) = yes tt
-  hasFun? ⦅ v ∣ = no (λ z → z)
+  hasFun? ⦅ v , b ∣ = no (λ z → z)
   hasFun? ∣ v ⦆ = no (λ z → z)
   hasFun? (tup[ i ] v) = no (λ z → z)
   hasFun? (left v) = no (λ z → z)
@@ -820,7 +837,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   ... | yes refl = yes ⟨ refl , refl ⟩
   has-k? k (v ⊔ v₁) = has-k? k v ⊎-dec has-k? k v₁
   has-k? k (v ↦ v₁) = no (λ z → z)
-  has-k? k ⦅ v ∣ = no (λ z → z)
+  has-k? k ⦅ v , b ∣ = no (λ z → z)
   has-k? k ∣ v ⦆ = no (λ z → z)
   has-k? k (tup[ i ] v) = no (λ z → z)
   has-k? k (left v) = no (λ z → z)
@@ -846,7 +863,7 @@ module Compiler.Model.Filter.Domain.ISWIM.Ordering where
   (const k [ zero ]⊑? v) refl = k⊑? k v
   (u ⊔ u₁ [ suc i ]⊑? v) i≡ = {!   !}
   (u ↦ u₁ [ suc i ]⊑? v) i≡ = {!   !}
-  (⦅ u ∣ [ suc i ]⊑? v) i≡ = {!   !}
+  (⦅ u , b ∣ [ suc i ]⊑? v) i≡ = {!   !}
   (∣ u ⦆ [ suc i ]⊑? v) i≡ = {!   !}
   (tup[ i₁ ] u [ suc i ]⊑? v) i≡ = {!   !}
   (left u [ suc i ]⊑? v) i≡ = {!   !}
