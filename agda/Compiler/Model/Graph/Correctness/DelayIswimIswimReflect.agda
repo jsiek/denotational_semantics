@@ -51,6 +51,7 @@ module Compiler.Model.Graph.Correctness.DelayIswimIswimReflect where
     LSum : (T : Type') → Type'
     RSum : (T : Type') → Type'
     Tup : ∀ (n : ℕ) → (Ts : Vec Type' n) → Type'
+    Err : Type'
 
   data Type : Set where
     Const : ∀ {B : Base} → (k : base-rep B) → Type
@@ -58,7 +59,20 @@ module Compiler.Model.Graph.Correctness.DelayIswimIswimReflect where
     LSum : (T : Type) → Type
     RSum : (T : Type) → Type
     Tup : ∀ (n : ℕ) → (Ts : Vec Type n) → Type
+    Err : Type
     
+
+  froT : Type' → Type
+  froTs : ∀ n → Vec Type' n → Vec Type n
+  froTs zero [] = []
+  froTs (suc n) (T ∷ Ts) = froT T ∷ froTs n Ts
+  froT (Const k) = Const k
+  froT (Clos n FVTs) = Fun
+  froT (LSum T) = LSum (froT T)
+  froT (RSum T) = RSum (froT T)
+  froT (Tup n Ts) = Tup n (froTs n Ts)
+  froT Err = Err
+
 
   hasType' : Type' → Value → Set
   hasType'List : Type' → List Value → Set
@@ -78,6 +92,29 @@ module Compiler.Model.Graph.Correctness.DelayIswimIswimReflect where
   ... | yes refl = hasType' (lookup Ts i) d
   ... | no neq = False
   hasType' (Tup n Ts) d = False
+  hasType' Err ω = True
+  hasType' Err d = False
+
+
+  hasType : Type → Value → Set
+  hasTypeList : Type → List Value → Set
+  hasTypeList T [] = True
+  hasTypeList T (d ∷ ds) = hasType T d × hasTypeList T ds
+  hasType Fun ν = True
+  hasType Fun (v ↦ w) = True 
+  hasType Fun d = False
+  hasType (Const k) d = d ≡ const k
+  hasType (LSum T) (left d) = hasType T d
+  hasType (LSum T) d = False
+  hasType (RSum T) (right d) = hasType T d
+  hasType (RSum T) d = False
+  hasType (Tup n Ts) (tup[_]_ {n'} i d) with n ≟ n'
+  ... | yes refl = hasType (lookup Ts i) d
+  ... | no neq = False
+  hasType (Tup n Ts) d = False
+  hasType Err ω = True
+  hasType Err d = False
+
 
   {- well-typed denotations -}
   _∶_ : 𝒫 Value → Type' → Set
@@ -136,22 +173,37 @@ rest ⟨ D , _ ⟩ _ = False
      fro-step-tup : ∀ n (i : Fin n) → Vec Type' n → 𝒫 Value → 𝒫 Value → Set₁
      fro-step-tup (suc n) zero (T ∷ Ts) Dₜ Dₛ = fro-step c rec T (Fst n Dₜ) (Fst n Dₛ)
      fro-step-tup (suc n) (suc i) (T ∷ Ts) Dₜ Dₛ = fro-step-tup n i Ts (Rst Dₜ) (Rst Dₛ)
+  fro-step c rec Err Dₜ Dₛ = Lift (lsuc lzero) (Dₜ ≃ Dₛ)
   
   fro : ∀ (c : ℕ) → (T : Type') → (Dₜ : 𝒫 Value) → (Dₛ : 𝒫 Value) → Set₁
   fro = cRec (λ _ → Type' → 𝒫 Value → 𝒫 Value → Set₁) fro-step
 
 
-  delay-reflect : ∀ M ρ ρ' → (ρ~ : ∀ i T → (ρ' i) ∶ T → Σ[ c ∈ ℕ ] fro c T (ρ' i) (ρ i)) 
+  {-
+  wishlist: 
+  for each intro operator, we need to eliminate on its typing to fix the type
+  -}
+
+  delay-reflect : ∀ M ρ ρ' 
+     → (ρ~ : ∀ i T d' → d' ∈ (ρ' i) → hasType' T d' 
+           → Σ[ d ∈ Value ] d ∈ ρ i × hasType (froT T) d)
+     → ∀ T d' → d' ∈ ⟦ delay M ⟧' ρ' → hasType' T d' 
+     → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ × hasType (froT T) d
+  delay-reflect M ρ ρ' ρ~ T d' d'∈ d'∶T = {!   !}
+
+
+
+  delay-reflect' : ∀ M ρ ρ' → (ρ~ : ∀ i T → (ρ' i) ∶ T → Σ[ c ∈ ℕ ] fro c T (ρ' i) (ρ i)) 
                 → ∀ T → (⟦ delay M ⟧' ρ') ∶ T → Σ[ c ∈ ℕ ] fro c T (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ)
-  delay-reflect (` x) ρ ρ' ρ~ T M'∶T = ρ~ x T M'∶T
-  delay-reflect (clos-op x ⦅ ! (clear (bind (bind (ast N)))) ,, fvs ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
-  delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
-  delay-reflect (lit B k ⦅ Nil ⦆) ρ ρ' ρ~ T M'∶T = ?
-  delay-reflect (tuple x ⦅ args ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
-  delay-reflect (get i ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
-  delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
-  delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
-  delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (` x) ρ ρ' ρ~ T M'∶T = ρ~ x T M'∶T
+  delay-reflect' (clos-op x ⦅ ! (clear (bind (bind (ast N)))) ,, fvs ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (lit B k ⦅ Nil ⦆) ρ ρ' ρ~ T M'∶T = {! !}
+  delay-reflect' (tuple x ⦅ args ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (get i ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (inl-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
+  delay-reflect' (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
 
 {-
   fro : (c : ℕ) → (T : Type') → (Dₜ : 𝒫 Value) → (Dₛ : 𝒫 Value) → Set₁

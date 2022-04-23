@@ -101,10 +101,11 @@ open Eq.≡-Reasoning
 -}
 
 open import Fold2 Op sig
-open import NewSemantics Op sig
+open import NewSemantics Op sig public
 
 instance
   Clos4Iswim-Semantics : Semantics
   Clos4Iswim-Semantics = record { interp-op = 𝕆-Clos4 ;
                                   mono-op = 𝕆-Clos4-mono ;
                                   error = ω }
+open Semantics {{...}} public
