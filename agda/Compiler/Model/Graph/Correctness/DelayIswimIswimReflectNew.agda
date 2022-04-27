@@ -28,10 +28,10 @@ open import Data.List.Relation.Unary.Any using (Any; here; there)
   renaming (map to anymap)
 open import Data.List.Relation.Unary.All using (All; []; _∷_; head; tail; reduce)
 open import Data.List.Relation.Unary.Any.Properties using (map⁺; map⁻)
-open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
+open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax; swap)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality
@@ -42,10 +42,154 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool using (Bool; true; false)
 
-module Compiler.Model.Graph.Correctness.DelayIswimIswimReflect where
+module Compiler.Model.Graph.Correctness.DelayIswimIswimReflectNew where
 
 
-  data Type' : Set where
+{- shorthand operators, and eliminations -}
+
+  _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
+  D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
+  
+  ƛ : (𝒫 Value → 𝒫 Value) → 𝒫 Value
+  ƛ F = Λ ⟨ F , ptt ⟩
+
+  Car : 𝒫 Value → 𝒫 Value
+  Car D = car ⟨ D , ptt ⟩
+
+  Cdr : 𝒫 Value → 𝒫 Value
+  Cdr D = cdr ⟨ D , ptt ⟩
+
+  GetLeft : 𝒫 Value → 𝒫 Value
+  GetLeft D = 𝒞 ⟨ D , ⟨ (λ D' → D') , ⟨ (λ D' d → False) , ptt ⟩ ⟩ ⟩
+
+  GetRight : 𝒫 Value → 𝒫 Value
+  GetRight D = 𝒞 ⟨ D , ⟨ (λ D' d → False) , ⟨ (λ D' → D') , ptt ⟩ ⟩ ⟩
+
+  Fst : ∀ n → 𝒫 Value → 𝒫 Value
+  Fst n D = proj {suc n} zero ⟨ D , ptt ⟩
+
+  Rst : 𝒫 Value → 𝒫 Value
+  Rst D (tup[ i ] d) = tup[ suc i ] d ∈ D
+  Rst D d = False
+
+  Nth : ∀ {n} (i : Fin n) → 𝒫 Value → 𝒫 Value
+  Nth i D = proj i ⟨ D , ptt ⟩
+
+  fro : ∀ (dₜ : Value) → (Dₜ : 𝒫 Value) → (Dₛ : 𝒫 Value) → Set₁
+  froList : ∀ (Vₜ : List Value) → (Dₜ : 𝒫 Value) → (Dₛ : 𝒫 Value) → Set₁
+  froList [] _ _ = Lift (lsuc lzero) True
+  froList (v ∷ V) Dₜ Dₛ = fro v Dₜ Dₛ × froList V Dₜ Dₛ
+  fro (const k) Dₜ Dₛ = Lift (lsuc lzero) (Dₜ ≃ Dₛ)
+  fro (V ↦ dₜ) Dₜ Dₛ = Lift (lsuc lzero) False {- will never come up -}
+  fro ν Dₜ Dₛ = Lift (lsuc lzero) False {- will never come up -}
+  fro ω Dₜ Dₛ = Lift (lsuc lzero) (Dₜ ≃ Dₛ) {- similar to const case -}
+  fro ⦅ FV ↦ (V ↦ w) ∣ Dₜ Dₛ =  
+     (∀ Eₛ Eₜ → froList V Eₛ Eₜ
+                → fro w (((Car Dₜ)  ● (Cdr Dₜ)) ● Eₜ) (Dₛ ● Eₛ))
+  fro ⦅ FV ↦ ν ∣ Dₜ Dₛ = Lift (lsuc lzero) True  {- ??? ...can't survive self-app -}
+  fro ⦅ ν ∣ Dₜ Dₛ = Lift (lsuc lzero) True
+  fro ⦅ d ∣ Dₜ Dₛ = Lift (lsuc lzero) False {- will never come up -}
+  fro ∣ V ⦆ Dₜ Dₛ = froList V (Cdr Dₜ) (Cdr Dₛ)  {- is this how to handle lists of values? -}
+  fro (tup[_]_ {n} i dₜ) Dₜ Dₛ = fro dₜ (Nth i Dₜ) (Nth i Dₛ)
+  fro (left dₜ) Dₜ Dₛ = fro dₜ (GetLeft Dₜ) (GetLeft Dₛ)
+  fro (right dₜ) Dₜ Dₛ = fro dₜ (GetRight Dₜ) (GetRight Dₛ)
+
+  fro-cong : ∀ Dₜ Dₛ Dₜ' Dₛ' → Dₛ ≃ Dₛ' → Dₜ ≃ Dₜ' → ∀ d → fro d Dₜ Dₛ → fro d Dₜ' Dₛ'
+  froList-cong : ∀ Dₜ Dₛ Dₜ' Dₛ' → Dₛ ≃ Dₛ' → Dₜ ≃ Dₜ' → ∀ V → froList V Dₜ Dₛ → froList V Dₜ' Dₛ'
+  froList-cong Dₜ Dₛ Dₜ' Dₛ' Dₛ≃ Dₜ≃ [] fro-V = lift tt
+  froList-cong Dₜ Dₛ Dₜ' Dₛ' Dₛ≃ Dₜ≃ (v ∷ V) ⟨ fro-v , fro-V ⟩ = 
+    ⟨ fro-cong Dₜ Dₛ Dₜ' Dₛ' Dₛ≃ Dₜ≃ v fro-v , froList-cong Dₜ Dₛ Dₜ' Dₛ' Dₛ≃ Dₜ≃ V fro-V ⟩
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ (const k) (lift ⟨ Dₜ⊆Dₛ , Dₛ⊆Dₜ ⟩) = 
+    lift ⟨ (λ d z → Dₛ⊆ d (Dₜ⊆Dₛ d (⊆Dₜ d z))) , (λ d z → Dₜ⊆ d (Dₛ⊆Dₜ d (⊆Dₛ d z))) ⟩
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ ω (lift ⟨ Dₜ⊆Dₛ , Dₛ⊆Dₜ ⟩) = 
+    lift ⟨ (λ x x₁ → Dₛ⊆ x (Dₜ⊆Dₛ x (⊆Dₜ x x₁))) , (λ x x₁ → Dₜ⊆ x (Dₛ⊆Dₜ x (⊆Dₛ x x₁))) ⟩
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' Dₛ≃ Dₜ≃ ⦅ V ↦ (V₁ ↦ d) ∣ fro-d Eₛ Eₜ froE = 
+    fro-cong ((Car Dₜ ● Cdr Dₜ) ● Eₜ) (Dₛ ● Eₛ) ((Car Dₜ' ● Cdr Dₜ') ● Eₜ) (Dₛ' ● Eₛ) 
+             (lower (⋆-cong ⟨ Dₛ , ⟨ Eₛ , ptt ⟩ ⟩ ⟨ Dₛ' , ⟨ Eₛ , ptt ⟩ ⟩ ⟨ lift Dₛ≃ , ⟨ lift ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩ , ptt ⟩ ⟩)) 
+             (lower (⋆-cong ⟨ Car Dₜ ● Cdr Dₜ , ⟨ Eₜ , ptt ⟩ ⟩ ⟨ Car Dₜ' ● Cdr Dₜ' , ⟨ Eₜ , ptt ⟩ ⟩ 
+                            ⟨ ⋆-cong ⟨ Car Dₜ , ⟨ Cdr Dₜ , ptt ⟩ ⟩ ⟨ Car Dₜ' , ⟨ Cdr Dₜ' , ptt ⟩ ⟩ 
+                                    ⟨ car-cong ⟨ Dₜ , ptt ⟩ ⟨ Dₜ' , ptt ⟩ ⟨ lift Dₜ≃ , ptt ⟩ 
+                                    , ⟨ cdr-cong ⟨ Dₜ , ptt ⟩ ⟨ Dₜ' , ptt ⟩ ⟨ lift Dₜ≃ , ptt ⟩ , ptt ⟩ ⟩ 
+                    , ⟨ lift ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩ , ptt ⟩ ⟩)) d (fro-d Eₛ Eₜ froE)
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ ⦅ V ↦ ν ∣ fro-d = lift tt
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ ⦅ ν ∣ fro-d = lift tt
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' Dₛ≃ Dₜ≃ ∣ V ⦆ fro-d = 
+    froList-cong (Cdr Dₜ) (Cdr Dₛ) (Cdr Dₜ') (Cdr Dₛ') 
+                 (lower (cdr-cong ⟨ Dₛ , ptt ⟩  ⟨ Dₛ' , ptt ⟩ ⟨ lift Dₛ≃ ,  ptt ⟩))
+                 (lower (cdr-cong ⟨ Dₜ , ptt ⟩ ⟨ Dₜ' , ptt ⟩ ⟨ lift Dₜ≃ , ptt ⟩ ))
+                 V fro-d
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ (tup[ i ] d) fro-d = {!   !}
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ (left d) fro-d = {!   !}
+  fro-cong Dₜ Dₛ Dₜ' Dₛ' ⟨ Dₛ⊆ , ⊆Dₛ ⟩ ⟨ Dₜ⊆ , ⊆Dₜ ⟩ (right d) fro-d = {!   !} 
+
+  GetLeft-ℒ : ∀ D → GetLeft (ℒ ⟨ D , ptt ⟩) ≃ D
+  GetLeft-ℒ D = ⟨ (λ d d∈ → [ (λ d∈₁ → proj₁ (proj₂ (proj₂ d∈₁)) d (proj₂ (proj₂ (proj₂ d∈₁)))) 
+                            , (λ d∈₂ → ⊥-elim (proj₂ (proj₂ (proj₂ d∈₂)))) ] d∈) 
+                , (λ d d∈ → inj₁ ⟨ d , ⟨ [] , ⟨ (λ z → λ { (here refl) → d∈ }) , here refl ⟩ ⟩ ⟩) ⟩
+
+  delay-reflect' : ∀ M ρ ρ' → (ρ~ : ∀ i d' → d' ∈ ρ' i → fro d' (ρ' i) (ρ i)) 
+                 → ∀ d' → d' ∈ ⟦ delay M ⟧' ρ' → fro d' (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ)
+  delay-reflect' (` x) ρ ρ' ρ~ = ρ~ x
+  delay-reflect' (clos-op x ⦅ ! (clear (bind (bind (ast N)))) ,, fvs ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect' (app ⦅ M ,, N ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect' (lit B k ⦅ Nil ⦆) ρ ρ' ρ~ (const k') d'∈ = lift ⟨ (λ d z → z) , (λ d z → z) ⟩
+  delay-reflect' (tuple x ⦅ args ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect' (get i ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect' (inl-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ (left d') d'∈ = 
+    fro-cong (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ) 
+             (GetLeft (ℒ ⟨ ⟦ delay M ⟧' ρ' , ptt ⟩)) (GetLeft (ℒ ⟨ ⟦ M ⟧ ρ , ptt ⟩)) 
+             (swap (GetLeft-ℒ (⟦ M ⟧ ρ))) (swap (GetLeft-ℒ (⟦ delay M ⟧' ρ'))) d' IHM
+    where
+    IHM : fro d' (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ)
+    IHM = delay-reflect' M ρ ρ' ρ~ d' d'∈
+  delay-reflect' (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect' (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+
+
+  delay-reflect : ∀ M ρ ρ' 
+     → (ρ~ : ∀ i d' → d' ∈ (ρ' i) 
+           → Σ[ d ∈ Value ] d ∈ ρ i × fro d' (ρ' i) (ρ i))
+     → ∀ d' → d' ∈ ⟦ delay M ⟧' ρ' 
+     → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ × fro d' (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ)
+  delay-reflect (` x) ρ ρ' ρ~ = ρ~ x
+  delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ ρ' ρ~ d' 
+    ⟨ V' , ⟨ ⟨ FV' , ⟨ ⦅FV'↦V'↦d'∣∈M' , ⟨ FV'⊆cdrM' , neFV' ⟩ ⟩ ⟩ , ⟨ V'⊆N' , neV' ⟩ ⟩ ⟩
+    = {!   !}
+    {-
+    where
+    carM∶T' : Σ[ n ∈ ℕ ] Σ[ FVTs ∈ Vec Type' n ] (hasType' (Clos n FVTs) ⦅ FV' ↦ (V' ↦ d') ∣)
+    carM∶T' = {!   !}
+    n' : ℕ
+    n' = proj₁ carM∶T'
+    FVTs : Vec Type' n'
+    FVTs = proj₁ (proj₂ carM∶T')
+    IHcarM : Σ[ f ∈ Value ] f ∈ ⟦ M ⟧ ρ × hasType Fun f
+           × Σ[ c ∈ ℕ ] fro c (Clos n' FVTs) (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ)
+    IHcarM = delay-reflect M ρ ρ' ρ~ (Clos n' FVTs) (⦅ (FV' ↦ (V' ↦ d')) ∣) ⦅FV'↦V'↦d'∣∈M' tt
+    IHcdrM : {! ∀ fv' → fv' ∈ mem FV'
+           → Σ[ fv ∈ Value ] ∣ fv ⦆ ∈ ⟦ N ⟧ ρ × hasType ? ∣ fv ⦆ 
+           × Σ[ c ∈ ℕ ] fro c ? (⟦ delay N ⟧' ρ') (⟦ N ⟧ ρ)  !}
+    IHcdrM = {!   !}
+    V'∶T' : ∀ v' → v' ∈ mem V' → Σ[ Tv' ∈ Type' ] hasType' Tv' v'
+    V'∶T' v' v'∈V' = {!   !}
+    IHN : ∀ v' → (v'∈V' : v' ∈ mem V') 
+        → Σ[ v ∈ Value ] v ∈ ⟦ N ⟧ ρ × hasType (froT (proj₁ (V'∶T' v' v'∈V'))) v 
+        × Σ[ c ∈ ℕ ] fro c (proj₁ (V'∶T' v' v'∈V')) (⟦ delay N ⟧' ρ') (⟦ N ⟧ ρ)
+    IHN v' v'∈V' = delay-reflect N ρ ρ' ρ~ (proj₁ (V'∶T' v' v'∈V')) v' 
+                                 (V'⊆N' v' v'∈V') (proj₂ (V'∶T' v' v'∈V'))
+    -}
+  delay-reflect (lit B k ⦅ Nil ⦆) ρ ρ' ρ~ (const k'') ⟨ refl , refl ⟩ = 
+    ⟨ const k , ⟨ ⟨ refl , refl ⟩ , lift ⟨ (λ d z → z) , (λ d z → z) ⟩ ⟩ ⟩
+  delay-reflect (tuple n ⦅ args ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (get i ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+
+  
+
+  {- data Type' : Set where
     Const : ∀ {B : Base} → (k : base-rep B) → Type'
     Clos : ∀ (n : ℕ) → (FVTs : Vec Type' n) → Type'   {- Clos =  Prod Fun Tup  -}
     LSum : (T : Type') → Type'
@@ -59,7 +203,7 @@ module Compiler.Model.Graph.Correctness.DelayIswimIswimReflect where
     LSum : (T : Type) → Type
     RSum : (T : Type) → Type
     Tup : ∀ (n : ℕ) → (Ts : Vec Type n) → Type
-    Err : Type
+    Err : Type 
     
 
   froT : Type' → Type
@@ -122,30 +266,7 @@ module Compiler.Model.Graph.Correctness.DelayIswimIswimReflect where
   D ∶ T = ∀ d → d ∈ D → hasType' T d
 
 
-  _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
-  D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
-  
-  ƛ : (𝒫 Value → 𝒫 Value) → 𝒫 Value
-  ƛ F = Λ ⟨ F , ptt ⟩
 
-  Car : 𝒫 Value → 𝒫 Value
-  Car D = car ⟨ D , ptt ⟩
-
-  Cdr : 𝒫 Value → 𝒫 Value
-  Cdr D = cdr ⟨ D , ptt ⟩
-
-  GetLeft : 𝒫 Value → 𝒫 Value
-  GetLeft D = 𝒞 ⟨ D , ⟨ (λ D' → D') , ⟨ (λ D' d → False) , ptt ⟩ ⟩ ⟩
-
-  GetRight : 𝒫 Value → 𝒫 Value
-  GetRight D = 𝒞 ⟨ D , ⟨ (λ D' d → False) , ⟨ (λ D' → D') , ptt ⟩ ⟩ ⟩
-
-  Fst : ∀ n → 𝒫 Value → 𝒫 Value
-  Fst n D = proj {suc n} zero ⟨ D , ptt ⟩
-
-  Rst : 𝒫 Value → 𝒫 Value
-  Rst D (tup[ i ] d) = tup[ suc i ] d ∈ D
-  Rst D d = False
 
 {-
 rest : DOp (𝒫 Value) (■ ∷ [])
@@ -221,7 +342,7 @@ rest ⟨ D , _ ⟩ _ = False
      → (Σ[ T' ∈ Type' ] Σ[ c ∈ ℕ ] fro c T' (⟦ delay M ⟧' ρ') (⟦ M ⟧ ρ))
        × ∀ d' → d' ∈ ⟦ delay M ⟧' ρ' → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ
   delay-reflect (` x) ρ ρ' ρ~ = ρ~ x
-  delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ' ρ~ T' d' d'∈ d'∶T' = {!   !}
+  delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
   delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ ρ' ρ~ T' d' 
     ⟨ V' , ⟨ ⟨ FV' , ⟨ ⦅FV'↦V'↦d'∣∈M' , ⟨ FV'⊆cdrM' , neFV' ⟩ ⟩ ⟩ , ⟨ V'⊆N' , neV' ⟩ ⟩ ⟩ d'∶T' 
     = {!   !}
@@ -248,11 +369,11 @@ rest ⟨ D , _ ⟩ _ = False
                                  (V'⊆N' v' v'∈V') (proj₂ (V'∶T' v' v'∈V'))
   delay-reflect (lit B k ⦅ Nil ⦆) ρ ρ' ρ~ (Const k') (const k'') ⟨ refl , refl ⟩ refl = 
     ⟨ const k , ⟨ ⟨ refl , refl ⟩ , ⟨ refl , ⟨ suc zero , lift ⟨ (λ d z → z) , (λ d z → z) ⟩ ⟩ ⟩ ⟩ ⟩
-  delay-reflect (tuple n ⦅ args ⦆) ρ ρ' ρ~ T' d' d'∈ d'∶T' = {!   !}
-  delay-reflect (get i ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T' d' d'∈ d'∶T' = {!   !}
-  delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T' d' d'∈ d'∶T' = {!   !}
-  delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T' d' d'∈ d'∶T' = {!   !}
-  delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ T' d' d'∈ d'∶T' = {!   !}
+  delay-reflect (tuple n ⦅ args ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (get i ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
+  delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ d' d'∈ = {!   !}
 
 
 
@@ -268,6 +389,9 @@ rest ⟨ D , _ ⟩ _ = False
   delay-reflect' (inr-op ⦅ M ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
   delay-reflect' (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ ρ' ρ~ T M'∶T = {!   !}
 
+
+
+-}
 {-
   fro : (c : ℕ) → (T : Type') → (Dₜ : 𝒫 Value) → (Dₛ : 𝒫 Value) → Set₁
   fro c (Const k) Dₜ Dₛ = Lift (lsuc lzero) (Dₜ ≃ Dₛ)

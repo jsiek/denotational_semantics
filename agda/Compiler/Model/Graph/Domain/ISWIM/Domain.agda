@@ -231,9 +231,7 @@ infix 5 _≈_
 
 _≈_ : List Value → List Value → Set
 _~_ : Value → Value → Set
-const {B} x ~ const {B₁} x₁ with base-eq? B B₁
-... | yes refl = x ≡ x₁
-... | no neq = False
+const {B} x ~ const {B₁} x₁ = Σ[ B≡ ∈ B ≡ B₁ ] (subst base-rep B≡ x) ≡ x₁
 const x ~ (V₁ ↦ v) = False
 const x ~ ν = False
 const x ~ ω = False  
@@ -336,10 +334,7 @@ const x ~ (right x₁) = False
 ≈-sym : ∀ U V → U ≈ V → V ≈ U
 ~-sym-All : ∀ u V → All (_~ u) V → All (_~_ u) V
 ~-sym : ∀ u v → u ~ v → v ~ u
-~-sym (const {B} x) (const {B₁} x₁) u~v 
-  with base-eq? B B₁ | u~v
-... | yes refl | refl = u~v
-... | no neq | ()
+~-sym (const {B} x) (const {B₁} x₁) ⟨ refl , u~v ⟩ = ⟨ refl , sym u~v ⟩
 ~-sym  (V ↦ w)  (V' ↦ w') (inj₁ ¬V~V') = 
   inj₁ λ z → ¬V~V' (≈-sym V' V z)
 ~-sym  (V ↦ w)  (V' ↦ w') (inj₂ ⟨ V~V' , w~w' ⟩) = 
@@ -372,12 +367,18 @@ const x ~ (right x₁) = False
     → (¬ (i ≡ i')) ⊎ (i ≡ i' × d ~ d')
 ~-tup-inv ⟨ refl , snd ⟩ = snd
 
+~-const-inv : ∀ {B k k'} → const {B} k ~ const k' 
+    → k ≡ k'
+~-const-inv ⟨ refl , snd ⟩ = snd
+
 _≈?_ : (U V : List Value) → Dec (U ≈ V)
 _~>?_ : (u : Value) (V : List Value) → Dec (All (u ~_) V)
 _~?_ : (u v : Value) → Dec (u ~ v)
 const {B} x ~? const {B'} x₁ with base-eq? B B'
-... | no neq = no (λ z → z)
-... | yes refl = base-rep-eq? x x₁
+... | no neq = no λ z → neq (proj₁ z)
+... | yes refl with base-rep-eq? x x₁
+... | no neq = no λ z → neq (~-const-inv z)
+... | yes refl = yes ⟨ refl , refl ⟩
 const x ~? (V₁ ↦ v) = no (λ z → z)
 const x ~? ν = no (λ z → z)
 const x ~? ω = no (λ z → z)

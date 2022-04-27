@@ -54,10 +54,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
       (V ↦ w ∈ D₁) × (mem V ⊆ D₂) × V ≢ []
 
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
-ℬ B k _ (const {B′} k′)
-    with base-eq? B B′
-... | yes refl = k ≡ k′
-... | no neq = False
+ℬ B k _ (const {B′} k′) = Σ[ B≡ ∈ B ≡ B′ ] (subst base-rep B≡ k) ≡ k′
 ℬ B k _ _ = False
 
 𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
@@ -564,34 +561,25 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
 ℬ-consis B k _ _ _ = lift G
   where 
   G : Every _~_ (ℬ B k ptt) (ℬ B k ptt)
-  G (const {B'} k) (const {B''} k') d∈ d'∈ with base-eq? B B' | base-eq? B B''
-  ... | yes refl | yes refl with base-eq? B B
-  ... | yes refl = trans (sym d∈) d'∈
-  ... | no neq = ⊥-elim (neq refl)
+  G (const {B'} k) (const {B''} k') ⟨ refl , d∈ ⟩  ⟨ refl , d'∈ ⟩ = ⟨ refl , trans (sym d∈) d'∈ ⟩
 
 𝓅-consis : ∀ P f → consistent _~_ [] ■ (𝓅 P f)
 𝓅-consis P f _ _ _ = lift (G P f)
   where
   G : ∀ P f → Every _~_ (𝓅 P f ptt) (𝓅 P f ptt)
-  G (base x) f (const {B} k) (const {B'} k') u∈ v∈ with base-eq? x B | base-eq? x B'
-  ... | yes refl | yes refl with base-eq? x x
-  ... | yes refl = trans (sym u∈) v∈
-  ... | no neq = ⊥-elim (neq refl)
+  G (base x) f (const {B} k) (const {B'} k') ⟨ refl , k∈ ⟩  ⟨ refl , k'∈ ⟩ = 
+    lower (ℬ-consis B k ptt ptt ptt) (const k) (const k') ⟨ refl , refl ⟩ ⟨ refl , trans (sym k∈) k'∈ ⟩
   G (x ⇒ P) f (.(const k ∷ []) ↦ u) (.(const k' ∷ []) ↦ v) 
     ⟨ k , ⟨ refl , u∈ ⟩ ⟩ ⟨ k' , ⟨ refl , v∈ ⟩ ⟩ with base-eq? x x | base-rep-eq? k k' 
   ... | no neq | q = ⊥-elim (neq refl )
   ... | yes refl | no neq = inj₁ (λ z → H (head (proj₁ z)))
     where
     H : const k ~ const k' → False
-    H z with base-eq? x x | z
-    ... | no neq | q = ⊥-elim (neq refl)
-    ... | yes refl | q = neq q
+    H ⟨ refl , k≡ ⟩ = neq k≡
   ... | yes refl | yes refl = inj₂ ⟨ ⟨ H ∷ [] , tt ⟩ , G P (f k) u v u∈ v∈ ⟩
     where
     H : const k ~ const k
-    H with base-eq? x x
-    ... | no neq = ⊥-elim (neq refl)
-    ... | yes refl = refl
+    H = ⟨ refl , refl ⟩
   G (x ⇒ P) f (V ↦ u) ν u∈ v∈ = tt
   G (x ⇒ P) f ν (V ↦ w) u∈ v∈ = tt
   G (x ⇒ P) f ν ν u∈ v∈ = tt
