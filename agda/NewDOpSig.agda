@@ -83,6 +83,17 @@ results-rel-pres' R [] _ _ = ⊤
 results-rel-pres' R (b ∷ bs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = 
   result-rel-pres' R b D E × results-rel-pres' R bs Ds Es
 
+result-rel-pres-1 : ∀ {ℓ} {A B : Set ℓ} (R : A → B → Set (lsuc lzero)) → (∀ b → Result A b → Result B b → Set (lsuc lzero l⊔ ℓ))
+result-rel-pres-1 {ℓ} R ■ a b = Lift (lsuc lzero l⊔ ℓ) (R a b)
+result-rel-pres-1 R (ν 𝓈) f g = ∀ a b → R a b → result-rel-pres-1 R 𝓈 (f a) (g b)
+result-rel-pres-1 R (∁ 𝓈) = result-rel-pres-1 R 𝓈
+
+results-rel-pres-1 : ∀ {ℓ} {A B : Set ℓ} (R : A → B → Set (lsuc lzero)) 
+      → (∀ bs → Results A bs → Results B bs → Set (lsuc lzero l⊔ ℓ))
+results-rel-pres-1 R [] _ _ = ⊤
+results-rel-pres-1 R (b ∷ bs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = 
+  result-rel-pres-1 R b D E × results-rel-pres-1 R bs Ds Es
+
 fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → DFun-Rel A
 fun-rel-pres R bs c f g = ∀ Ds Es → results-rel-pres R bs Ds Es → result-rel-pres R c (f Ds) (g Es)
 
