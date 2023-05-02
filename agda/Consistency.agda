@@ -261,7 +261,7 @@ Funs∈ {⊥} f with f {⊥} refl
 Funs∈ {const {B} k} f = ⊥-elim (not-Fun-k (f refl))
 Funs∈ {v ↦ w} f = ⟨ v , ⟨ w , refl ⟩ ⟩
 Funs∈ {u ⊔ u′} f
-    with Funs∈ λ z → f (inj₁ z)
+    with Funs∈ (λ z → f (inj₁ z))
 ... | ⟨ v , ⟨ w , m ⟩ ⟩ = ⟨ v , ⟨ w , (inj₁ m) ⟩ ⟩
 
 

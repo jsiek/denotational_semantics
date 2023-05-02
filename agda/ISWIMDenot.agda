@@ -33,6 +33,6 @@ module ISWIMDenot
 
   infix 3 _`⊢_↓_
   _`⊢_↓_ : Env → Subst → Env → Set
-  _`⊢_↓_ δ σ γ = (∀ (x : Var) → ℰ (⟦ σ ⟧ x) δ (γ x))
+  _`⊢_↓_ δ σ γ = (∀ (x : Var) → ℰ (σ x) δ (γ x))
 
 

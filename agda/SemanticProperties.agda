@@ -160,6 +160,7 @@ open ContinuousSemantics {{...}}
         (⟦⟧-monotone-one{N}) NE-X
 
 {- The following is annoying. Can it be simplified? -}
+{-
 all-Cont-Env-Arg⇒cont-envs : ∀{{_ : Semantics}}
     {n}{args : Args (replicate n ■)}{ρ}{NE-ρ}
     → all-args (Cont-Env-Arg ρ NE-ρ) (replicate n ■) args
@@ -179,3 +180,4 @@ all-Cont-Env-Arg⇒cont-envs {suc n} {cons (ast M) args}{ρ}{NE-ρ}
        (⟦⟧-monotone-args args (λ x d z → inj₁ z))) ⟬ vs ⟭ vs∈𝒯argsρ₁ ⟩ ⟩ ⟩ ⟩
 
 
+-}

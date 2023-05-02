@@ -29,18 +29,18 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 
 {- Denotational Semantics of the ISWIM Language via fold ----------------------}
 
-interp-op  : (op : Op) → Tuple (sig op) (ArgTy (𝒫 Value)) → 𝒫 Value
+interp-op  : (op : Op) → Tuple (sig op) (Result (𝒫 Value)) → 𝒫 Value
 interp-op lam ⟨ F , _ ⟩ = Λ F
 interp-op app ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ = D₁ ▪ D₂
 interp-op (lit P k) _ = ℘ P k
 
 {- interp-op is monotonic -}
-mono-op : {op : Op} {xs ys : Tuple (sig op) (ArgTy (𝒫 Value))}
-   → ⊆-args (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
+mono-op : {op : Op} {xs ys : Tuple (sig op) (Result (𝒫 Value))}
+   → ⊆-results (sig op) xs ys → interp-op op xs ⊆ interp-op op ys
 mono-op {lam} {⟨ f , _ ⟩ } {⟨ g , _ ⟩} ⟨ f⊆g , _ ⟩ =
     Λ-ext-⊆ (λ {X} → lower (f⊆g X))
 mono-op {app} {⟨ a , ⟨ b , _ ⟩ ⟩} {⟨ c , ⟨ d , _ ⟩ ⟩} ⟨ a<c , ⟨ b<d , _ ⟩ ⟩ =
-    ▪-cong-⊆ (lower a<c) (lower b<d)
+    ▪-mono-⊆ (lower a<c) (lower b<d)
 mono-op {lit P k} {xs} {ys} xs⊆ys d d∈k = d∈k
 
 instance
@@ -63,7 +63,7 @@ open Semantics {{...}}
 {- interp-op is continuous -}
 continuous-op : ∀{op}{ρ}{NE-ρ}{v}{args}
    → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ
-   → pred-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
+   → all-args (Cont-Env-Arg ρ NE-ρ) (sig op) args
    → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ (⟦ op ⦅ args ⦆ ⟧ ρ′)
 continuous-op {lam} {ρ} {NE-ρ} {v} {cons (bind (ast N)) nil}
     v∈Λ ⟨ IH-N , _ ⟩ =
@@ -197,7 +197,7 @@ data 𝔾 : Env → ValEnv → Set₁ where
      → 𝔾 (D • γ) (γ' ,' c)
 
 𝔾⇒𝕍 : ∀ {ρ : Env}{γ : ValEnv}{x}{lt : x < length γ}{v}
-   → 𝔾 ρ γ  →  v ∈ ρ x  →  𝕍 v (nth γ x)
+   → 𝔾 ρ γ  →  v ∈ ρ x  →  𝕍 v (EvalISWIM.nth γ x)
 𝔾⇒𝕍 {.(_ • _)} {.(_ ∷ _)} {zero} {s≤s lt} {v} (𝔾-ext 𝔾ργ D⊆V) v∈D = D⊆V v v∈D
 𝔾⇒𝕍 {.(_ • _)} {.(_ ∷ _)} {suc x} {s≤s lt} {v} (𝔾-ext 𝔾ργ D⊆V) v∈ρx =
   𝔾⇒𝕍{lt = lt} 𝔾ργ v∈ρx
@@ -217,7 +217,7 @@ data 𝔾 : Env → ValEnv → Set₁ where
    → Σ[ c ∈ Val ] γ ⊢ M ⇓ c  ×  (∀ u → u ∈ ⟦ M ⟧ ρ → 𝕍 u c)
 ⟦⟧⇒⇓ {` x}{γ}{WF-var ∋x lt}{ρ}{v} 𝔾ργ v∈⟦M⟧ρ =
     let lt' = subst (λ □ → x < □) (len-mk-list (length γ)) lt in
-   ⟨ nth γ x , ⟨ ⇓-var , (λ v v∈ρx → 𝔾⇒𝕍{lt = lt'} 𝔾ργ v∈ρx) ⟩ ⟩
+   ⟨ EvalISWIM.nth γ x , ⟨ ⇓-var , (λ v v∈ρx → 𝔾⇒𝕍{lt = lt'} 𝔾ργ v∈ρx) ⟩ ⟩
 ⟦⟧⇒⇓ {L · M}{γ}
     {WF-op (WF-cons (WF-ast wfL) (WF-cons (WF-ast wfM) WF-nil)) _}
     {ρ}{w} 𝔾ργ w∈LMρ = G

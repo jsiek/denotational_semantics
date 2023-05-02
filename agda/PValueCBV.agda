@@ -43,10 +43,12 @@ data Value : Set where
   const : {B : Base} → base-rep B → Value  {- A primitive constant of type B. -}
   _↦_ : List Value → Value → Value        {- An entry in a function's graph. -}
   ν : Value      {- A function. Needed for CBV to distinguish from diverging. -}
+{-
   ❲_,_❳ : Value → Value → Value            {- Pairs -}
   ⟬_⟭ : List Value → Value                 {- Tuples -}
   left : List Value → Value                {- Sums -}
   right : List Value → Value               {- Sums -}
+-}
 
 {- Denotational Operators -----------------------------------------------------}
 
@@ -54,11 +56,14 @@ data Value : Set where
 Λ f (const k) = False
 Λ f (V ↦ w) = w ∈ f (mem V)  ×  V ≢ []
 Λ f ν = True
+{-
 Λ f ❲ u , v ❳ = False
 Λ f ⟬ vs ⟭ = False
 Λ f (left V) = False
 Λ f (right V) = False
+-}
 
+--abstract
 infix 10 _▪_
 _▪_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D₁ ▪ D₂ = λ w → Σ[ V ∈ List Value ] (V ↦ w ∈ D₁)  ×  (mem V ⊆ D₂)  ×  V ≢ []
@@ -70,19 +75,24 @@ D₁ ▪ D₂ = λ w → Σ[ V ∈ List Value ] (V ↦ w ∈ D₁)  ×  (mem V �
 ... | no neq = False
 ℘ (base B) k (V ↦ w) = False
 ℘ (base B) k ν = False
+{-
 ℘ (base B) k ❲ u , v ❳ = False
 ℘ (base B) k ⟬ vs ⟭ = False
 ℘ (base B) k (left V) = False
 ℘ (base B) k (right V) = False
+-}
 ℘ (B ⇒ P) f (const k) = False
 ℘ (B ⇒ P) f (V ↦ w) =
    Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ []  ×  w ∈ ℘ P (f k)
 ℘ (B ⇒ P) f ν = True
+{-
 ℘ (B ⇒ P) k ❲ u , v ❳ = False
 ℘ (B ⇒ P) k ⟬ vs ⟭ = False
 ℘ (B ⇒ P) k (left V) = False
 ℘ (B ⇒ P) k (right V) = False
+-}
 
+{-
 〘_,_〙 : 𝒫 Value → 𝒫 Value → 𝒫 Value
 〘 D₁ , D₂ 〙 ❲ u , v ❳ = u ∈ D₁ × v ∈ D₂
 〘 D₁ , D₂ 〙 _ = False
@@ -92,20 +102,24 @@ car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
 
 cdr : 𝒫 Value → 𝒫 Value
 cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
+-}
 
 ∏ : ℕ → Set₁ → Set₁
 ∏ n T = Tuple (replicate n ■) (Result T)
 
+{-
 𝒯 : ∀ n → ∏ n (𝒫 Value) → 𝒫 Value
 𝒯 zero _ ⟬ [] ⟭ = True
 𝒯 (suc n) ⟨ D , Ds ⟩ ⟬ v ∷ vs ⟭ = v ∈ D  ×  𝒯 n Ds ⟬ vs ⟭
 𝒯 n Ds _ = False
+-}
 
 nth : List Value → ℕ → Value
 nth [] i = const 0
 nth (v ∷ vs) 0 = v
 nth (v ∷ vs) (suc i) = nth vs i
 
+{-
 proj : 𝒫 Value → ℕ → 𝒫 Value
 proj D i u = Σ[ vs ∈ List Value ]
     i < length vs  ×  ⟬ vs ⟭ ∈ D  ×  u ≡ nth vs i
@@ -121,9 +135,11 @@ proj D i u = Σ[ vs ∈ List Value ]
 𝒞 : 𝒫 Value → 𝒫 Value → 𝒫 Value → 𝒫 Value
 𝒞 D E F w = (Σ[ V ∈ List Value ] left V ∈ D  ×  V ↦ w ∈ E)
           ⊎ (Σ[ V ∈ List Value ] right V ∈ D  ×  V ↦ w ∈ F)
+-}
 
 {- Stuff about Products -------------------------------------------------------}
 
+{-
 all-∏ : ∀{n}{T : Set₁}{ℓ : Level} → (T → Set ℓ) → ∏ n T → Set ℓ
 all-∏ {zero}{T}{ℓ} P (lift tt) = ⊤
 all-∏ {suc n}{T}{ℓ} P ⟨ x , xs ⟩ = P x  ×  all-∏ P xs
@@ -155,6 +171,7 @@ rel-∏-⇒ : ∀{n}{T : Set₁}{xs ys : ∏ n T}{R R′ : T → T → Set}
 rel-∏-⇒ {zero} R⇒R′ tt = tt
 rel-∏-⇒ {suc n}{T}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
     ⟨ R⇒R′ x y Rxy , rel-∏-⇒ R⇒R′ R[xs,ys] ⟩
+-}
 
 {- Basic Properties of Denotational Operators ---------------------------------}
 
@@ -182,6 +199,7 @@ v∈℘k⇒v≡k {const {B′} k′} {B} {k} v∈
 ... | yes refl rewrite v∈ = refl
 ... | no neq = ⊥-elim v∈
 
+{-
 v∈𝒯⇒v≡⟬vs⟭ : ∀{n}{Ds}{v}
   → v ∈ 𝒯 n Ds
   → Σ[ vs ∈ List Value ] v ≡ ⟬ vs ⟭
@@ -202,14 +220,16 @@ NE-∏⇒NE-𝒯 : ∀{n}{Ds : ∏ n (𝒫 Value)}
 NE-∏⇒NE-𝒯{n}{Ds} NE-Ds
     with NE-∏⇒𝒯 NE-Ds
 ... | ⟨ vs , vs∈𝒯Ds ⟩ = ⟨ ⟬ vs ⟭ , vs∈𝒯Ds ⟩
+-}
 
 {- Application is a Congruence ------------------------------------------------}
 
-▪-mono-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
-  → D₁ ⊆ D₃  →  D₂ ⊆ D₄
-  → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
-▪-mono-⊆ D13 D24 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
-   ⟨ V , ⟨ (D13 (V ↦ w) wv∈D1) , ⟨ (λ d z → D24 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
+abstract
+  ▪-mono-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
+    → D₁ ⊆ D₃  →  D₂ ⊆ D₄
+    → D₁ ▪ D₂ ⊆ D₃ ▪ D₄
+  ▪-mono-⊆ D13 D24 w ⟨ V , ⟨ wv∈D1 , ⟨ V<D2 , V≢[] ⟩ ⟩ ⟩ =
+     ⟨ V , ⟨ (D13 (V ↦ w) wv∈D1) , ⟨ (λ d z → D24 d (V<D2 d z)) , V≢[] ⟩ ⟩ ⟩
      
 ▪-cong : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value}
   → D₁ ≃ D₃  →  D₂ ≃ D₄
@@ -240,39 +260,42 @@ continuous F = ∀ X E → mem E ⊆ F X → nonempty X
 monotone : (F : 𝒫 Value → 𝒫 Value) → Set₁
 monotone F = ∀ D₁ D₂ → D₁ ⊆ D₂ → F D₁ ⊆ F D₂
 
-Λ-▪-id : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
-  → continuous F → monotone F → nonempty X
-  → (Λ F) ▪ X ≃ F X
-Λ-▪-id {F}{X} Fcont Fmono NE-X = ⟨ (Λ-▪-⊆ Fmono) , (⊆-Λ-▪ Fcont NE-X) ⟩
-  where
-  Λ-▪-⊆ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
-    → monotone F  →  (Λ F) ▪ X ⊆ F X
-  Λ-▪-⊆ {F} {X} Fmono w ⟨ V , ⟨ ⟨ w∈FV , _ ⟩ , ⟨ V<X , V≢[] ⟩ ⟩ ⟩ =
-      Fmono (mem V) X V<X w w∈FV
+abstract
+  Λ-▪-id : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
+    → continuous F → monotone F → nonempty X
+    → (Λ F) ▪ X ≃ F X
+  Λ-▪-id {F}{X} Fcont Fmono NE-X = ⟨ (Λ-▪-⊆ Fmono) , (⊆-Λ-▪ Fcont NE-X) ⟩
+    where
+    Λ-▪-⊆ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
+      → monotone F  →  (Λ F) ▪ X ⊆ F X
+    Λ-▪-⊆ {F} {X} Fmono w ⟨ V , ⟨ ⟨ w∈FV , _ ⟩ , ⟨ V<X , V≢[] ⟩ ⟩ ⟩ =
+        Fmono (mem V) X V<X w w∈FV
 
-  ⊆-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
-    → continuous F  → nonempty X →  F X ⊆ (Λ F) ▪ X
-  ⊆-Λ-▪ {F}{X} Fcont NE-X w w∈FX 
-      with Fcont X (w ∷ []) (λ { d (here refl) → w∈FX }) NE-X
-  ... | ⟨ D , ⟨ D<X , ⟨ w∈FD , NE-D ⟩ ⟩ ⟩ =
-        ⟨ D , ⟨ ⟨ w∈FD w (here refl) , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
+    ⊆-Λ-▪ : ∀ {F : 𝒫 Value → 𝒫 Value}{X : 𝒫 Value}
+      → continuous F  → nonempty X →  F X ⊆ (Λ F) ▪ X
+    ⊆-Λ-▪ {F}{X} Fcont NE-X w w∈FX 
+        with Fcont X (w ∷ []) (λ { d (here refl) → w∈FX }) NE-X
+    ... | ⟨ D , ⟨ D<X , ⟨ w∈FD , NE-D ⟩ ⟩ ⟩ =
+          ⟨ D , ⟨ ⟨ w∈FD w (here refl) , NE-D ⟩ , ⟨ D<X , NE-D ⟩ ⟩ ⟩
 
   
 {- Primitive Abstraction followed by Application is the identity --------------}
 
-℘-▪-≃ : ∀{B}{P}{f}{k}  →  (℘ (B ⇒ P) f) ▪ (℘ (base B) k) ≃ ℘ P (f k)
-℘-▪-≃ {B}{P}{f}{k} = ⟨ fwd , back ⟩
-  where
-  fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ⊆ ℘ P (f k)
-  fwd w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , ⟨ k′∈pk , _ ⟩ ⟩ ⟩
-      with k′∈pk (const k′) (here refl)
-  ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
-  back : ℘ P (f k) ⊆ ℘ (B ⇒ P) f ▪ ℘ (base B) k
-  back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
-                ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
+abstract
+  ℘-▪-≃ : ∀{B}{P}{f}{k}  →  (℘ (B ⇒ P) f) ▪ (℘ (base B) k) ≃ ℘ P (f k)
+  ℘-▪-≃ {B}{P}{f}{k} = ⟨ fwd , back ⟩
+    where
+    fwd : ℘ (B ⇒ P) f ▪ ℘ (base B) k ⊆ ℘ P (f k)
+    fwd w ⟨ V , ⟨ ⟨ k′ , ⟨ refl , w∈fk′ ⟩ ⟩ , ⟨ k′∈pk , _ ⟩ ⟩ ⟩
+        with k′∈pk (const k′) (here refl)
+    ... | pkk′ rewrite k′∈℘k⇒k′≡k pkk′ = w∈fk′
+    back : ℘ P (f k) ⊆ ℘ (B ⇒ P) f ▪ ℘ (base B) k
+    back w w∈fk = ⟨ (const k ∷ []) , ⟨ ⟨ k , ⟨ refl , w∈fk ⟩ ⟩ ,
+                  ⟨ (λ {d (here refl) → k∈℘k}) , (λ ()) ⟩ ⟩ ⟩
 
 {- Cons is a Congruence  ------------------------------------------------------}
 
+{-
 cons-mono-⊆ : ∀{D₁ D₂ D₃ D₄ : 𝒫 Value} → D₁ ⊆ D₃  →  D₂ ⊆ D₄
   → 〘 D₁ , D₂ 〙 ⊆ 〘 D₃ , D₄ 〙
 cons-mono-⊆ D13 D24 ❲ u , v ❳ ⟨ u∈D₁ , v∈D₂ ⟩ = ⟨ D13 u u∈D₁ , D24 v v∈D₂ ⟩
@@ -341,9 +364,11 @@ proj-cong-≃ D≃E = ⟨ (proj-mono-⊆ (proj₁ D≃E)) , (proj-mono-⊆ (proj
 ∏-append-⩭ {zero} {m} {Ds} {Ds′} Ds=Ds′ Es=Es′ = Es=Es′
 ∏-append-⩭ {suc n} {m} {⟨ D , Ds ⟩} {⟨ D′ , Ds′ ⟩} ⟨ D=D′ , Ds=Ds′ ⟩ Es=Es′ =
     ⟨ D=D′ , ∏-append-⩭ Ds=Ds′ Es=Es′ ⟩
+-}
 
 {- Cons and Car  --------------------------------------------------------------}
 
+{-
 car-of-cons-⊆ : ∀{D₁ D₂ : 𝒫 Value}
   → car (〘 D₁ , D₂ 〙) ⊆ D₁
 car-of-cons-⊆ {D₁} {D₂} u ⟨ v , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩ = u∈D₁
@@ -363,9 +388,11 @@ cdr-of-cons : ∀{D₁ D₂ : 𝒫 Value}
   → cdr 〘 D₁ , D₂ 〙 ≃ D₂
 cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
     ⟨ cdr-of-cons-⊆ , (λ v v∈D₂ → ⟨ u , ⟨ u∈D₁ , v∈D₂ ⟩ ⟩) ⟩
+-}
 
 {- Project from a Tuple -------------------------------------------------------}
 
+{-
 𝒯-nth-0 : ∀{n}{D}{Ds}
    → NE-∏ Ds
    → proj (𝒯 (suc n) ⟨ D , Ds ⟩) 0 ≃ D
@@ -391,9 +418,11 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
   H : proj (𝒯 n Ds) i ⊆ proj (𝒯 (suc n) ⟨ D , Ds ⟩) (suc i)
   H v ⟨ vs , ⟨ lt , ⟨ vs⊆Ds , eq ⟩ ⟩ ⟩ =
     ⟨ (u ∷ vs) , ⟨ s≤s lt , ⟨ ⟨ u∈D , vs⊆Ds ⟩ , eq ⟩ ⟩ ⟩
+-}
 
 {- Case, Left, and Right ------------------------------------------------------}
 
+{-
 ℒ-mono-⊆ : ∀{D E : 𝒫 Value} → D ⊆ E → ℒ D ⊆ ℒ E
 ℒ-mono-⊆ {D} {E} D⊆E (left V) ⟨ V≢[] , v∈ ⟩ =
     ⟨ V≢[] , (λ d z → D⊆E d (v∈ d z)) ⟩
@@ -450,7 +479,7 @@ cdr-of-cons {D₁}{D₂} ⟨ u , u∈D₁ ⟩ =
       with Gcont D (v ∷ []) (λ{d (here refl) → v∈G[D]}) NE-D
   ... | ⟨ E , ⟨ E⊆D , ⟨ v∈GE , NE-E ⟩ ⟩ ⟩ =
       inj₂ ⟨ E , ⟨ ⟨ NE-E , E⊆D ⟩ , ⟨ v∈GE v (here refl) , NE-E ⟩ ⟩ ⟩
-
+-}
 {- Environments ---------------------------------------------------------------}
 
 Env : Set₁
@@ -535,6 +564,7 @@ rel-results R (b ∷ bs) ⟨ x , xs ⟩ ⟨ y , ys ⟩ =
 ⊆-result⇒⊆ : ∀ D E → ⊆-result ■ D E → D ⊆ E
 ⊆-result⇒⊆ D E (lift D⊆E) = D⊆E
 
+{-
 rel-results⇒rel-∏ : ∀{n}{xs ys : ∏ n (𝒫 Value)}
     {R : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁}
     {R′ : 𝒫 Value → 𝒫 Value → Set}
@@ -544,6 +574,7 @@ rel-results⇒rel-∏ : ∀{n}{xs ys : ∏ n (𝒫 Value)}
 rel-results⇒rel-∏ {zero} R⇒R′ (lift tt) = tt
 rel-results⇒rel-∏ {suc n}{⟨ x , xs ⟩}{⟨ y , ys ⟩} R⇒R′ ⟨ Rxy , R[xs,ys] ⟩ =
     ⟨ R⇒R′ x y Rxy , (rel-results⇒rel-∏ R⇒R′ R[xs,ys]) ⟩
+-}
 
 {- Continuous -----------------------------------------------------------------}
 
@@ -634,28 +665,32 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
     G d (here refl) = mE {ρ₂}{ρ₃} join-⊆-right v v∈Eρ₂
     G d (there m) = mE {ρ₁}{ρ₃} join-⊆-left d (V⊆Eρ₁ d m)
 
-▪-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w}
-  → w ∈ (D ρ) ▪ (E ρ)
-  → continuous-env D ρ → continuous-env E ρ
-  → monotone-env D → monotone-env E
-  → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ (D ρ₃) ▪ (E ρ₃)
-▪-continuous {D}{E}{ρ}{NE-ρ}{w} ⟨ V , ⟨ V↦w∈Dρ , ⟨ V⊆Eρ , V≢[] ⟩ ⟩ ⟩
-    IH-D IH-E mD mE
-    with IH-D (V ↦ w) V↦w∈Dρ 
-... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈Dρ₁ ⟩ ⟩ ⟩
-    with ((continuous-∈⇒⊆ E ρ NE-ρ mE) V V⊆Eρ (λ v v∈V → IH-E v))
-... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆Eρ₂ ⟩ ⟩ ⟩ =
-   ⟨ ρ₃ , ⟨ join-finite-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ , w∈D▪Eρ₃ ⟩ ⟩ ⟩ 
-    where
-    ρ₃ = ρ₁ ⊔ₑ ρ₂
-    ρ₁⊆ρ₃ = λ x v z → inj₁ z
-    V↦w∈Dρ₃ : V ↦ w ∈ D ρ₃
-    V↦w∈Dρ₃ = mD ρ₁⊆ρ₃ (V ↦ w) V↦w∈Dρ₁
-    ρ₂⊆ρ₄ = λ x v z → inj₂ z
-    V⊆Eρ₃ : mem V ⊆ E ρ₃
-    V⊆Eρ₃ v v∈V = mE ρ₂⊆ρ₄ v (V⊆Eρ₂ v v∈V)
-    w∈D▪Eρ₃ : w ∈ (D ρ₃) ▪ (E ρ₃)
-    w∈D▪Eρ₃ = ⟨ V , ⟨ V↦w∈Dρ₃ , ⟨ V⊆Eρ₃ , V≢[] ⟩ ⟩ ⟩
+abstract
+  ▪-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w}
+    → w ∈ (D ρ) ▪ (E ρ)
+    → continuous-env D ρ → continuous-env E ρ
+    → monotone-env D → monotone-env E
+    → Σ[ ρ₃ ∈ Env ] finite-env ρ₃ × ρ₃ ⊆ₑ ρ × w ∈ (D ρ₃) ▪ (E ρ₃)
+  ▪-continuous {D}{E}{ρ}{NE-ρ}{w} ⟨ V , ⟨ V↦w∈Dρ , ⟨ V⊆Eρ , V≢[] ⟩ ⟩ ⟩
+      IH-D IH-E mD mE
+      with IH-D (V ↦ w) V↦w∈Dρ 
+  ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V↦w∈Dρ₁ ⟩ ⟩ ⟩
+      with ((continuous-∈⇒⊆ E ρ NE-ρ mE) V V⊆Eρ (λ v v∈V → IH-E v))
+  ... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , V⊆Eρ₂ ⟩ ⟩ ⟩ =
+     ⟨ ρ₃ , ⟨ join-finite-env fρ₁ fρ₂ , ⟨ join-lub ρ₁⊆ρ ρ₂⊆ρ , w∈D▪Eρ₃ ⟩ ⟩ ⟩ 
+      where
+      ρ₃ : Env
+      ρ₃ = ρ₁ ⊔ₑ ρ₂
+      ρ₁⊆ρ₃ : ρ₁ ⊆ₑ ρ₃
+      ρ₁⊆ρ₃ = λ x v z → inj₁ z
+      V↦w∈Dρ₃ : V ↦ w ∈ D ρ₃
+      V↦w∈Dρ₃ = mD ρ₁⊆ρ₃ (V ↦ w) V↦w∈Dρ₁
+      ρ₂⊆ρ₃ : ρ₂ ⊆ₑ ρ₃
+      ρ₂⊆ρ₃ = λ x v z → inj₂ z
+      V⊆Eρ₃ : mem V ⊆ E ρ₃
+      V⊆Eρ₃ v v∈V = mE ρ₂⊆ρ₃ v (V⊆Eρ₂ v v∈V)
+      w∈D▪Eρ₃ : w ∈ (D ρ₃) ▪ (E ρ₃)
+      w∈D▪Eρ₃ = ⟨ V , ⟨ V↦w∈Dρ₃ , ⟨ V⊆Eρ₃ , V≢[] ⟩ ⟩ ⟩
 
 Λ-continuous : ∀{E : Env  → 𝒫 Value}{ρ}{NE-ρ}{v}
   → v ∈ Λ (λ D → E (D • ρ))
@@ -674,6 +709,7 @@ continuous-∈⇒⊆ E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
   ⟨ initial-finite-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ , ⟨ initial-fin-⊆ ρ NE-ρ ,
       tt ⟩ ⟩ ⟩
 
+{-
 cons-continuous : ∀{D E : Env → 𝒫 Value}{ρ}{NE-ρ : nonempty-env ρ}{w : Value}
   → w ∈ 〘 D ρ , E ρ 〙
   → continuous-env D ρ → continuous-env E ρ → monotone-env D → monotone-env E
@@ -707,14 +743,16 @@ cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
     with cD ❲ u , v ❳ uv∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
-
+-}
 mono-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Set₁
 mono-envs {n} Ds = ∀{ρ ρ′} → ρ ⊆ₑ ρ′ → ⊆-results (replicate n ■) (Ds ρ) (Ds ρ′)
 
+{-
 continuous-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Env → Set₁
 continuous-envs {n} Ds ρ = ∀ v → v ∈ 𝒯 n (Ds ρ)
                      → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ 𝒯 n (Ds ρ′)
-
+-}
+{-
 next-Ds : ∀{n} → (Env → ∏ (suc n) (𝒫 Value)) → (Env → ∏ n (𝒫 Value))
 next-Ds Ds ρ
     with Ds ρ
@@ -864,5 +902,104 @@ proj-continuous {D} {ρ} {NE-ρ} {u} {i} ⟨ vs , ⟨ lt , ⟨ vs∈Dρ , refl �
                   ⟨ (mF G w w∈Fρ₂) ,
                     V≢[] ⟩ ⟩ ⟩
 
+-}
+
+
+{- Decidable Equality for Values ----------------------------------------------}
+
+_≡?_ : (u : Value) → (v : Value) → Dec (u ≡ v)
+_≡?s_ : (U : List Value) → (V : List Value) → Dec (U ≡ V)
+const {B} c ≡? const {B′} c′
+    with base-eq? B B′
+... | no neq = no λ { refl → neq refl }
+... | yes refl
+    with base-rep-eq? c c′
+... | no neq = no λ { refl → neq refl }
+... | yes refl = yes refl
+const x ≡? (x₁ ↦ v) = no λ ()
+const x ≡? ν = no λ ()
+{-
+const x ≡? ❲ v , v₁ ❳ = no λ ()
+const x ≡? ⟬ x₁ ⟭ = no λ ()
+const x ≡? left x₁ = no λ ()
+const x ≡? right x₁ = no λ ()
+-}
+(V ↦ w) ≡? const x = no λ ()
+(V ↦ w) ≡? (V′ ↦ w′)
+    with V ≡?s V′ | w ≡? w′
+... | yes refl | yes refl = yes refl
+... | yes refl | no neq = no λ { refl → neq refl }
+... | no neq | yes refl = no λ { refl → neq refl }
+... | no neq | no neq′ = no λ { refl → neq refl }
+(V ↦ w) ≡? ν = no λ ()
+{-
+(V ↦ w) ≡? ❲ u , u₁ ❳ = no λ ()
+(V ↦ w) ≡? ⟬ x ⟭ = no λ ()
+(V ↦ w) ≡? left x = no λ ()
+(V ↦ w) ≡? right x = no λ ()
+-}
+ν ≡? const x = no λ ()
+ν ≡? (x ↦ v) = no λ ()
+ν ≡? ν = yes refl
+{-
+ν ≡? ❲ v , v₁ ❳ = no λ ()
+ν ≡? ⟬ x ⟭ = no λ ()
+ν ≡? left x = no λ ()
+ν ≡? right x = no λ ()
+-}
+{-
+❲ u , u₁ ❳ ≡? const x = no λ ()
+❲ u , u₁ ❳ ≡? (x ↦ v) = no λ ()
+❲ u , u₁ ❳ ≡? ν = no λ ()
+❲ u , u₁ ❳ ≡? ❲ v , v₁ ❳
+    with u ≡? v | u₁ ≡? v₁
+... | yes refl | yes refl = yes refl
+... | yes refl | no neq = no λ { refl → neq refl }
+... | no neq | yes refl = no λ { refl → neq refl }
+... | no neq | no neq′ = no λ { refl → neq refl }
+❲ u , u₁ ❳ ≡? ⟬ x ⟭ = no λ ()
+❲ u , u₁ ❳ ≡? left x = no λ ()
+❲ u , u₁ ❳ ≡? right x = no λ ()
+⟬ x ⟭ ≡? const x₁ = no λ ()
+⟬ x ⟭ ≡? (x₁ ↦ v) = no λ ()
+⟬ x ⟭ ≡? ν = no λ ()
+⟬ x ⟭ ≡? ❲ v , v₁ ❳ = no λ ()
+⟬ x ⟭ ≡? ⟬ x₁ ⟭
+    with x ≡?s x₁
+... | yes refl = yes refl
+... | no neq = no λ { refl → neq refl }
+⟬ x ⟭ ≡? left x₁ = no λ ()
+⟬ x ⟭ ≡? right x₁ = no λ ()
+left x ≡? const x₁ = no λ ()
+left x ≡? (x₁ ↦ v) = no λ ()
+left x ≡? ν = no λ ()
+left x ≡? ❲ v , v₁ ❳ = no λ ()
+left x ≡? ⟬ x₁ ⟭ = no λ ()
+left x ≡? left x₁
+    with x ≡?s x₁
+... | yes refl = yes refl
+... | no neq = no λ { refl → neq refl }
+left x ≡? right x₁ = no λ ()
+right x ≡? const x₁ = no λ ()
+right x ≡? (x₁ ↦ v) = no λ ()
+right x ≡? ν = no λ ()
+right x ≡? ❲ v , v₁ ❳ = no λ ()
+right x ≡? ⟬ x₁ ⟭ = no λ ()
+right x ≡? left x₁ = no λ ()
+right x ≡? right x₁
+    with x ≡?s x₁
+... | yes refl = yes refl
+... | no neq = no λ { refl → neq refl }
+-}
+
+[] ≡?s [] = yes refl
+[] ≡?s (x ∷ V) = no λ ()
+(x ∷ U) ≡?s [] = no λ ()
+(x ∷ U) ≡?s (x₁ ∷ V)
+    with x ≡? x₁ | U ≡?s V
+... | yes refl | yes refl = yes refl
+... | yes refl | no neq = no λ { refl → neq refl }
+... | no neq | yes refl = no λ { refl → neq refl }
+... | no neq | no neq′ = no λ { refl → neq refl }
 
 
