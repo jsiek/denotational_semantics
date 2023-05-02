@@ -103,10 +103,10 @@ car D u = Σ[ v ∈ Value ] ❲ u , v ❳ ∈ D
 cdr : 𝒫 Value → 𝒫 Value
 cdr D v = Σ[ u ∈ Value ] ❲ u , v ❳ ∈ D
 -}
-
+{-
 ∏ : ℕ → Set₁ → Set₁
 ∏ n T = Tuple (replicate n ■) (Result T)
-
+-}
 {-
 𝒯 : ∀ n → ∏ n (𝒫 Value) → 𝒫 Value
 𝒯 zero _ ⟬ [] ⟭ = True
@@ -743,11 +743,10 @@ cdr-continuous {D} {ρ} {NE-ρ} {v} ⟨ u , uv∈Dρ ⟩ cD mD
     with cD ❲ u , v ❳ uv∈Dρ 
 ... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , uv∈Dρ₁ ⟩ ⟩ ⟩ =
       ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , ⟨ u , mD (λ x d z → z) ❲ u , v ❳ uv∈Dρ₁ ⟩ ⟩ ⟩ ⟩
--}
+
 mono-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Set₁
 mono-envs {n} Ds = ∀{ρ ρ′} → ρ ⊆ₑ ρ′ → ⊆-results (replicate n ■) (Ds ρ) (Ds ρ′)
 
-{-
 continuous-envs : ∀{n} → (Env → ∏ n (𝒫 Value)) → Env → Set₁
 continuous-envs {n} Ds ρ = ∀ v → v ∈ 𝒯 n (Ds ρ)
                      → Σ[ ρ′ ∈ Env ] finite-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ 𝒯 n (Ds ρ′)
