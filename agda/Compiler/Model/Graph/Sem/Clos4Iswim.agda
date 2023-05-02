@@ -1,6 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Compiler.Model.Filter.Sem.Clos4Iswim where
+module Compiler.Model.Graph.Sem.Clos4Iswim where
 {-
 
  In this intermediate semantics all functions take two parameters,
@@ -18,8 +18,8 @@ open import NewDOpSig
 open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Compiler.Model.Filter.Domain.ISWIM.Domain
-open import Compiler.Model.Filter.Domain.ISWIM.Ops
+open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos4
 
 open import Data.Empty renaming (⊥ to Bot)
@@ -28,15 +28,12 @@ open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Fin using (Fin)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
 open Eq.≡-Reasoning
-
-
 
 
 𝕆-Clos4 : DOpSig (𝒫 Value) sig
@@ -104,8 +101,8 @@ open import Fold2 Op sig
 open import NewSemantics Op sig public
 
 instance
-  Clos4Iswim-Semantics : Semantics
-  Clos4Iswim-Semantics = record { interp-op = 𝕆-Clos4 ;
+  Clos4-Semantics : Semantics
+  Clos4-Semantics = record { interp-op = 𝕆-Clos4 ;
                                   mono-op = 𝕆-Clos4-mono ;
                                   error = ω }
 open Semantics {{...}} public

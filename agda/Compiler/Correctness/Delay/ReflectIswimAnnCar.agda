@@ -30,7 +30,7 @@ open import Data.Fin using (Fin; suc; zero)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality
@@ -38,12 +38,10 @@ open import Relation.Binary.PropositionalEquality
 open import Level using (Level; Lift; lift; lower)
     renaming (zero to lzero; suc to lsuc; _⊔_ to _l⊔_)
 open import Relation.Nullary using (¬_; Dec; yes; no)
-open import Relation.Nullary.Decidable using (map′)
-open import Relation.Nullary.Sum using (_⊎-dec_)
 open import Relation.Binary.Core using (Rel)
 open import Data.Bool using (Bool; true; false)
 
-module Compiler.Correctness.Delay.ReflectIswimIswimGood where
+module Compiler.Correctness.Delay.ReflectIswimAnnCar where
 
 {- 
 simpler fro version in this file
@@ -57,364 +55,36 @@ fro (const k) = const k
 fro (u ⊔ v) = fro u ⊔ fro v  {- nice and uniform -}
 fro (V ↦ w) = fro V ↦ fro w {- for recursion in car case -}
 fro ⦅ ν ∣ = ω
-fro ⦅ FV ↦ u ∣ = fro u   {- Needed condition :  Also ∣ FV ⦆ is also in the denotation -}
+fro ⦅ FV ↦ u ∣ = fro u
 fro ⦅ u ⊔ v ∣ = fro ⦅ u ∣ ⊔ fro ⦅ v ∣ {- also in closure; let's see if this terminates -}
-fro ⦅ x ∣ = ω  {- doesn't occur in the target language -}
+fro ⦅ x ∣ = ω  {- doesn't  matter -}
 fro ∣ v ⦆ = ω {- always in closure denotation -}
 fro (tup[ i ] v) = tup[ i ] (fro v)
 fro (left v) = left (fro v)
 fro (right v) = right (fro v)
 
-
-env-map : ∀ {A B : Set} → (A → B) → (ℕ → 𝒫 A) → (ℕ → 𝒫 B)
-env-map {A} {B} f ρ x b = Σ[ a ∈ A ] a ∈ (ρ x) × b ≡ f a
-
-postulate
-  ⟦⟧'-⊑-closed : ∀ (M : AST') ρ (u v : Value) → v ∈ ⟦ M ⟧' ρ → u ⊑ v → u ∈ ⟦ M ⟧' ρ
-  ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value) → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
-                → (u ⊔ v) ∈ ⟦ M ⟧' ρ
-  ⟦⟧-⊔-closed : ∀ (M : AST) ρ (u v : Value) → u ∈ ⟦ M ⟧ ρ → v ∈ ⟦ M ⟧ ρ
-                → (u ⊔ v) ∈ ⟦ M ⟧ ρ
-  ⟦⟧-⊑-closed : ∀ (M : AST) ρ (u v : Value) → v ∈ ⟦ M ⟧ ρ → u ⊑ v → u ∈ ⟦ M ⟧ ρ 
-
-
-{-
-
-base case: Closure denotation
-  want to insure that all the "car"s are good.. 
-  in that they have corresponding "cdrs" for self-application
-other cases: Denotation that has some closure denotation nested down in it
-  want to insure that after elimination, we're left with a good closure denotation
-
-⦅ V ↦ w ∣    then want ∣ V ⦆
-
-left ⦅ V ↦ w ∣   then we want  left ∣ V ⦆
-
-locate things like V in there to build things like left ∣ V ⦆
-
--}
-
-
-data has-Fun : Value → Set where
-   𝕗-base : ∀ {V w}
-          → (åw : Atomic w)
-          → has-Fun ⦅ V ↦ w ∣
-   𝕗-↦ : ∀ {V w}
-       → (𝕗w : has-Fun w)
-       → has-Fun (V ↦ w)
-   𝕗-left : ∀ {d}
-          → (𝕗d : has-Fun d)
-          → has-Fun (left d)
-   𝕗-right : ∀ {d}
-          → (𝕗d : has-Fun d)
-          → has-Fun (right d)
-   𝕗-car : ∀ {V}{w}
-          → (𝕗w : has-Fun w)
-          → has-Fun ⦅ V ↦ w ∣
-   𝕗-cdr : ∀ {d}
-          → (𝕗d : has-Fun d)
-          → has-Fun (∣ d ⦆)
-   𝕗-tup : ∀ {n}{i : Fin n}{d}
-          → (𝕗d : has-Fun d)
-          → has-Fun (tup[ i ] d)
-
-𝕗-car-inv : ∀ {FV w} → has-Fun ⦅ FV ↦ w ∣ → Atomic w ⊎ has-Fun w
-𝕗-car-inv (𝕗-base åw) = inj₁ åw
-𝕗-car-inv (𝕗-car 𝕗w) = inj₂ 𝕗w
-
-𝕗-left-inv : ∀ {v} → has-Fun (left v) → has-Fun v
-𝕗-left-inv (𝕗-left hf) = hf
-
-𝕗-right-inv : ∀ {v} → has-Fun (right v) → has-Fun v
-𝕗-right-inv (𝕗-right hf) = hf
-
-𝕗-tup-inv : ∀ {n} {i : Fin n} {v} → has-Fun (tup[ i ] v) → has-Fun v
-𝕗-tup-inv (𝕗-tup hf) = hf
-
-𝕗-cdr-inv : ∀ {v} → has-Fun (∣ v ⦆) → has-Fun v
-𝕗-cdr-inv (𝕗-cdr hf) = hf
-
-𝕗-↦-inv : ∀ {v w} → has-Fun (v ↦ w) → has-Fun w
-𝕗-↦-inv (𝕗-↦ hf) = hf
-
-has-Fun? : ∀ v → Dec (has-Fun v)
-has-Fun? ω = no (λ ())
-has-Fun? ν = no (λ ())
-has-Fun? (const k) = no (λ ())
-has-Fun? (v ⊔ v₁) = no (λ ())
-has-Fun? (v ↦ v₁) = map′ 𝕗-↦ 𝕗-↦-inv (has-Fun? v₁)
-has-Fun? ⦅ ω ∣ = no (λ ())
-has-Fun? ⦅ ν ∣ = no (λ ())
-has-Fun? ⦅ const k ∣ = no (λ ())
-has-Fun? ⦅ v ⊔ v₁ ∣ = no (λ ())
-has-Fun? ⦅ v ↦ v₁ ∣ = map′ [ 𝕗-base , 𝕗-car ] 𝕗-car-inv ((atomic? v₁) ⊎-dec (has-Fun? v₁))
-has-Fun? ⦅ ⦅ v ∣ ∣ = no (λ ())
-has-Fun? ⦅ ∣ v ⦆ ∣ = no (λ ())
-has-Fun? ⦅ tup[ i ] v ∣ = no (λ ())
-has-Fun? ⦅ left v ∣ = no (λ ())
-has-Fun? ⦅ right v ∣ = no (λ ())
-has-Fun? ∣ v ⦆ = map′ 𝕗-cdr 𝕗-cdr-inv (has-Fun? v)
-has-Fun? (tup[ i ] v) = map′ 𝕗-tup 𝕗-tup-inv (has-Fun? v)
-has-Fun? (left v) = map′ 𝕗-left 𝕗-left-inv (has-Fun? v)
-has-Fun? (right v) = map′ 𝕗-right 𝕗-right-inv (has-Fun? v)
-
-𝕗→å : ∀ {d} → has-Fun d → Atomic d
-𝕗→å (𝕗-base åw) = åw
-𝕗→å (𝕗-↦ 𝕗d) = 𝕗→å 𝕗d
-𝕗→å (𝕗-left 𝕗d) = 𝕗→å 𝕗d
-𝕗→å (𝕗-right 𝕗d) = 𝕗→å 𝕗d
-𝕗→å (𝕗-car 𝕗d) = 𝕗→å 𝕗d
-𝕗→å (𝕗-cdr 𝕗d) = 𝕗→å 𝕗d
-𝕗→å (𝕗-tup 𝕗d) = 𝕗→å 𝕗d
-
-𝕗-dom : ∀ {d} → has-Fun d → Value
-𝕗-dom (𝕗-base {V} åw) = ∣ V ⦆
-𝕗-dom (𝕗-↦ {V} 𝕗d) = V ↦ (𝕗-dom 𝕗d)
-𝕗-dom (𝕗-left 𝕗d) = left (𝕗-dom 𝕗d)
-𝕗-dom (𝕗-right 𝕗d) = right (𝕗-dom 𝕗d)
-𝕗-dom (𝕗-car {V} 𝕗w) = ⦅ V ↦ 𝕗-dom 𝕗w ∣
-𝕗-dom (𝕗-cdr 𝕗d) = ∣ 𝕗-dom 𝕗d ⦆
-𝕗-dom (𝕗-tup {n}{i} 𝕗d) = tup[ i ] (𝕗-dom 𝕗d)
-
-
-
-Self-Applicable : (D : 𝒫 Value) → Set
-Self-Applicable D = ∀ {d} → (𝕗d : has-Fun d) → d ∈ D → 𝕗-dom 𝕗d ∈ D
-
-𝕗-make-self-applicable : ∀ {d} → has-Fun d → Value → Value
-𝕗-make-self-applicable (𝕗-base {V'}{w} åw) V = ⦅ V ↦ w ∣
-𝕗-make-self-applicable (𝕗-↦ {V'} 𝕗d) V = V' ↦ (𝕗-make-self-applicable 𝕗d V)
-𝕗-make-self-applicable (𝕗-left 𝕗d) V = left (𝕗-make-self-applicable 𝕗d V)
-𝕗-make-self-applicable (𝕗-right 𝕗d) V = right (𝕗-make-self-applicable 𝕗d V)
-𝕗-make-self-applicable (𝕗-car 𝕗d) V = ⦅ 𝕗-make-self-applicable 𝕗d V ∣
-𝕗-make-self-applicable (𝕗-cdr 𝕗d) V = ∣ 𝕗-make-self-applicable 𝕗d V ⦆
-𝕗-make-self-applicable (𝕗-tup {n}{i} 𝕗d) V = tup[ i ] (𝕗-make-self-applicable 𝕗d V)
-
-make-self-applicable : Value → Value → Value
-make-self-applicable d V with has-Fun? d
-... | yes 𝕗d = 𝕗-make-self-applicable 𝕗d V
-... | no ¬𝕗d = d
-
-{- might need a better algorithm for this, because
- the the car + ↦ case  might leave some base-sort badness
-
- ... is  it possible to just make a failed arrow become flat ν?
--}
-𝕗-make-ν : ∀ {d} → has-Fun d → Value
-𝕗-make-ν (𝕗-base åw) = ⦅ ν ∣
-𝕗-make-ν (𝕗-↦ {V} 𝕗d) = V ↦ (𝕗-make-ν 𝕗d)
-𝕗-make-ν (𝕗-left 𝕗d) = left (𝕗-make-ν 𝕗d)
-𝕗-make-ν (𝕗-right 𝕗d) = right (𝕗-make-ν 𝕗d)
-𝕗-make-ν (𝕗-car 𝕗d) = ⦅ 𝕗-make-ν 𝕗d ∣
-𝕗-make-ν (𝕗-cdr 𝕗d) = ∣ 𝕗-make-ν 𝕗d ⦆
-𝕗-make-ν (𝕗-tup {n}{i} 𝕗d) = tup[ i ] (𝕗-make-ν 𝕗d)
-
-
-data _⊢_~good_ : 𝒫 Value → Value → Value → Set where
-    ~good-𝕗-yes : ∀ {D d}
-                → (cond : ∀ (𝕗d : has-Fun d) → 𝕗-dom 𝕗d ∈ D)
-                → D ⊢ d ~good d
-    ~good-𝕗-no : ∀ {D d} → (𝕗d : has-Fun d) → ¬ (𝕗-dom 𝕗d ∈ D) → D ⊢ d ~good (𝕗-make-ν 𝕗d)
-    ~good-¬𝕗 : ∀ {D d} → ¬ (has-Fun d) → D ⊢ d ~good d 
-   
-
-
-
-{-
-{- TODO : Expand this into a relation specifically designed for this proof
-   that will carry conditions from introduction rules to elimination rules -}
-
-data _⊢_~good_ : Bool → Value → Value → Set where
-    good-base-yes : ∀ {V w} → true ⊢ ⦅ V ↦ w ∣ ~good ⦅ V ↦ w ∣
-    good-base-no : ∀ {V w} → false ⊢ ⦅ V ↦ w ∣ ~good ⦅ ν ∣
-    good-↦ : ∀ {b b' b'' V V' w w'} 
-            → (cond : b ⊢ V ~good V' → b' ⊢ w ~good w')
-            → b'' ⊢ V ↦ w ~good (V' ↦ w')
-    good-const : ∀ {b B k} → b ⊢ const {B} k ~good (const k)
-    good-ω : ∀ {b} → b ⊢ ω ~good ω
-    good-ν : ∀ {b} → b ⊢ ν ~good ν
-    good-tup : ∀ {b}{n}{i : Fin n}{d d'} 
-             → b ⊢ d ~good d' → b ⊢ (tup[ i ] d) ~good (tup[ i ] d')
-    good-car : ∀ {b d d'} → b ⊢ d ~good d' → b ⊢ ⦅ d ∣ ~good ⦅ d' ∣
-    good-cdr : ∀ {b d d'} → b ⊢ d ~good d' → b ⊢ ∣ d ⦆ ~good ∣ d' ⦆
-    good-left : ∀ {b d d'} → b ⊢ d ~good d' → b ⊢ (left d) ~good (left d')
-    good-right : ∀ {b d d'} → b ⊢ d ~good d' → b ⊢ (right d) ~good (right d')
-
-
-
-_~self-app_ : Value → Value → Set
-d ~self-app d' = Σ[ V ∈ Value ] d' ≡ make-self-applicable d V
-
-
-
-
-NonEmpty : (D : 𝒫 Value) → Set
-NonEmpty D = Σ[ d ∈ Value ] d ∈ D
-
-Self-Applicable-≃ : ∀ {D D'} → D ≃ D' → Self-Applicable D → Self-Applicable D'
-Self-Applicable-≃ ⟨ D⊆ , D'⊆ ⟩ goodD {d} 𝕗d d∈D' = 
-  D⊆ (𝕗-dom 𝕗d) (goodD 𝕗d (D'⊆ d d∈D'))
-
-ℒ-Self-Applicable : ∀ {D} → Self-Applicable D → Self-Applicable (ℒ ⟨ D , ptt ⟩)
-ℒ-Self-Applicable goodD (𝕗-left 𝕗d) d∈ℒD = goodD 𝕗d d∈ℒD
-
-ℛ-Self-Applicable : ∀ {D} → Self-Applicable D → Self-Applicable (ℛ ⟨ D , ptt ⟩)
-ℛ-Self-Applicable goodD (𝕗-right 𝕗d) d∈ℛD = goodD 𝕗d d∈ℛD
-
-{- note that pairs are not generally good -}
-restricted-pair-good : ∀ {D E} → Self-Applicable D → Self-Applicable E → Self-Applicable (restricted-pair ⟨ D , ⟨ E , ptt ⟩ ⟩)
-restricted-pair-good goodD goodE (𝕗-base {FV}{w} åw) ⟨ FV↦w∈D , FV∈E ⟩ = 
-  ⟨ FV ↦ w , ⟨ FV↦w∈D , FV∈E ⟩ ⟩
-restricted-pair-good goodD goodE (𝕗-car {FV}{w} 𝕗w) ⟨ FV↦w∈D , FV∈E ⟩ = 
- ⟨ goodD (𝕗-↦ 𝕗w) FV↦w∈D , FV∈E ⟩
-restricted-pair-good goodD goodE (𝕗-cdr {d} 𝕗d) ⟨ f , ⟨ f∈D , d∈E ⟩ ⟩ = 
-  ⟨ f , ⟨ f∈D , goodE 𝕗d d∈E ⟩ ⟩
-
-
-restricted-pair⊆pair : ∀ {D E} → restricted-pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D , ⟨ E , ptt ⟩ ⟩
-restricted-pair⊆pair {D} {E} ω d∈rpD,E = d∈rpD,E
-restricted-pair⊆pair {D} {E} (h ⊔ d) ⟨ h∈rp , d∈rp ⟩ = 
-  ⟨ restricted-pair⊆pair h h∈rp , restricted-pair⊆pair d d∈rp ⟩
-restricted-pair⊆pair {D} {E} ⦅ FV ↦ w ∣ ⟨ FV↦w∈D , FV∈E ⟩ = ⟨ FV , ⟨ FV↦w∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ ω ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ ν ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ const k ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ d ⊔ d₁ ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ ⦅ d ∣ ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ ∣ d ⦆ ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ tup[ i ] d ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ left d ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ⦅ right d ∣ ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ d∈D , FV∈E ⟩ ⟩
-restricted-pair⊆pair {D} {E} ∣ d ⦆ ⟨ f , ⟨ f∈D , d∈E ⟩ ⟩ = ⟨ f , ⟨ f∈D , d∈E ⟩ ⟩
-
-
-app-case-good-unified : ∀ D E → Self-Applicable D → Self-Applicable E
-  → Self-Applicable (⋆ ⟨ ⋆ ⟨ car ⟨ D , ptt ⟩ , ⟨ cdr ⟨ D , ptt ⟩ , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩)
-app-case-good-unified D E GD GE {d} 𝕗d ⟨ V , ⟨ ⟨ FV , ⟨ d∈carD , FV∈cdrD ⟩ ⟩ , V∈E ⟩ ⟩ = 
-  ⟨ V , ⟨ ⟨ FV , ⟨ GD {⦅ FV ↦ V ↦ d ∣} (𝕗-car (𝕗-↦ 𝕗d)) d∈carD , FV∈cdrD ⟩ ⟩ , V∈E ⟩ ⟩
-
-app-case-good : ∀ D1 D2 E → Self-Applicable D1 → Self-Applicable D2 → Self-Applicable E
-  → Self-Applicable (⋆ ⟨ ⋆ ⟨ car ⟨ D1 , ptt ⟩ , ⟨ cdr ⟨ D2 , ptt ⟩ , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩)
-app-case-good D1 D2 E GD1 GD2 GE {d} 𝕗d ⟨ V , ⟨ ⟨ FV , ⟨ d∈carD1 , FV∈cdrD2 ⟩ ⟩ , V∈E ⟩ ⟩ = 
-  ⟨ V , ⟨ ⟨ FV , ⟨ GD1 {⦅ FV ↦ V ↦ d ∣} (𝕗-car (𝕗-↦ 𝕗d)) d∈carD1 , FV∈cdrD2 ⟩ ⟩ , V∈E ⟩ ⟩
-
-{- helpers for induction steps -}
-good-singleton : ∀ {v} → ¬ (has-Fun v) → Self-Applicable ⌈ v ⌉
-good-singleton {v} ¬𝕗v 𝕗v refl = ⊥-elim (¬𝕗v 𝕗v)
-
-¬𝕗-ω : ¬ (has-Fun ω)
-¬𝕗-ω ()
-
-¬𝕗-ν : ¬ (has-Fun ν)
-¬𝕗-ν ()
-
-¬𝕗-k : ∀ {B k} → ¬ (has-Fun (const {B} k))
-¬𝕗-k ()
-
-has-good-related-subset : 𝒫 Value → Value → Set₁
-has-good-related-subset D d = Σ[ D' ∈ 𝒫 Value ] D' ⊆ D × Self-Applicable D' 
-                            × Σ[ d' ∈ Value ] d' ∈ D' × d ~self-app d'
-
-delay-has-good-subset : ∀ M ρ → (∀ i d → ρ i d → has-good-related-subset (ρ i) d)
-    → ∀ d → d ∈ ⟦ delay M ⟧' ρ
-    → has-good-related-subset (⟦ delay M ⟧' ρ) d
-delay-has-good-subset (` x) ρ Hρ d d∈M' = Hρ x d d∈M'
-delay-has-good-subset (clos-op x ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ Hρ d d∈M' = {!   !} 
-delay-has-good-subset (app ⦅ M ,, N ,, Nil ⦆) ρ Hρ d ⟨ V , ⟨ ⟨ FV , ⟨ d∈car⟦M⟧ , FV∈cdr⟦M⟧ ⟩ ⟩ , V∈N ⟩ ⟩ = 
-  ⟨ full-app , ⟨ lower full-app-⊆ , ⟨ app-case-good M1 M2 N' GM1 GM2 GN' , ⟨ {!   !} , ⟨ {!  !} , {!   !} ⟩ ⟩ ⟩ ⟩ ⟩
-  where
-  IHcarM : has-good-related-subset (⟦ delay  M ⟧' ρ) ⦅ FV ↦ V ↦ d ∣
-  IHcarM = delay-has-good-subset M ρ Hρ ⦅ FV ↦ V ↦ d ∣ d∈car⟦M⟧
-  M1 = proj₁ IHcarM
-  M1⊆⟦M⟧ = proj₁ (proj₂ IHcarM)
-  GM1 = proj₁ (proj₂ (proj₂ IHcarM))
-  f' = proj₁ (proj₂ (proj₂ (proj₂ IHcarM)))
-  f'∈M1 = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ IHcarM))))
-  f~f' = proj₂ (proj₂ (proj₂ (proj₂ (proj₂ IHcarM))))
-  IHcdrM : has-good-related-subset (⟦ delay M ⟧' ρ) ∣ FV ⦆
-  IHcdrM = delay-has-good-subset M ρ Hρ ∣ FV ⦆ FV∈cdr⟦M⟧
-  M2 = proj₁ IHcdrM
-  M2⊆⟦M⟧ = proj₁ (proj₂ IHcdrM)
-  GM2 = proj₁ (proj₂ (proj₂ IHcdrM))
-  FV' = proj₁ (proj₂ (proj₂ (proj₂ IHcdrM)))
-  FV'∈M2 = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ IHcdrM))))
-  FV~FV' = proj₂ (proj₂ (proj₂ (proj₂ (proj₂ IHcdrM))))
-  IHN : has-good-related-subset (⟦ delay N ⟧' ρ) V
-  IHN = delay-has-good-subset N ρ Hρ V V∈N
-  N' = proj₁ IHN
-  N'⊆N = proj₁ (proj₂ IHN)
-  GN' = proj₁ (proj₂ (proj₂ IHN))
-  V' = proj₁ (proj₂ (proj₂ (proj₂ IHN)))
-  V'∈N' = proj₁ (proj₂ (proj₂ (proj₂ (proj₂ IHN))))
-  V~V' = proj₂ (proj₂ (proj₂ (proj₂ (proj₂ IHN))))
-  carM = car ⟨ M1 , ptt ⟩
-  cdrM = cdr ⟨ M2 , ptt ⟩
-  self-app = ⋆ ⟨ carM , ⟨ cdrM , ptt ⟩ ⟩
-  full-app = ⋆ ⟨ self-app , ⟨ N' , ptt ⟩ ⟩
-  car⊆ = car-mono ⟨ M1 , ptt ⟩ ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ ⟨ lift M1⊆⟦M⟧ , ptt ⟩
-  cdr⊆ = cdr-mono ⟨ M2 , ptt ⟩ ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ ⟨ lift M2⊆⟦M⟧ , ptt ⟩
-  self-app-⊆ = ⋆-mono ⟨ carM , ⟨ cdrM , ptt ⟩ ⟩ 
-                      ⟨ car ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ , ⟨ cdr ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ , ptt ⟩ ⟩
-                      ⟨ car⊆ , ⟨ cdr⊆ , ptt ⟩ ⟩
-  full-app-⊆ = ⋆-mono ⟨ self-app , ⟨ N' , ptt ⟩ ⟩
-                      ⟨ ⋆ ⟨ car ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ 
-                          , ⟨ cdr ⟨ ⟦ delay M ⟧' ρ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ ⟦ delay N ⟧' ρ , ptt ⟩ ⟩
-                      ⟨ self-app-⊆ , ⟨ lift N'⊆N , ptt ⟩ ⟩
-  self-app-res : {!   !} ∈ self-app
-  self-app-res = ⟨ {!   !} , ⟨ {! f'∈M1  !} , {! FV'∈M2  !} ⟩ ⟩
-  full-app-res : {!   !} ∈ full-app
-  full-app-res = ⟨ V' , ⟨ {!   !} , V'∈N' ⟩ ⟩
-  lastbit : Σ[ d'' ∈ Value ] d'' ∈ full-app × d ~self-app d''
-  lastbit with  atomic? d | has-Fun? d | f' | f'∈M1 | f~f'
-  ... | yes åd | yes 𝕗d | ⦅ FV1 ↦ V1 ↦ d1 ∣ | f'∈M1 | ⟨ .FV1 , refl ⟩ = 
-     ⟨ 𝕗-make-self-applicable 𝕗d FV1 , ⟨ ⟨ V' , ⟨ ⟨ {!   !} , ⟨ {!   !} , {!   !} ⟩ ⟩ , V'∈N' ⟩ ⟩ , ⟨ FV1 , refl ⟩ ⟩ ⟩
-  ... | yes åd | no 𝕗d | ⦅ FV1 ↦ V1 ↦ d1 ∣ | f'∈M1 | ⟨ .FV1 , refl ⟩ = {!   !}
-  ... | no ¬åd | yes 𝕗d | ⦅ FV1 ↦ d1 ∣ | f'∈M1 | f~f' = 
-    {!   !}
-  ... | no ¬åd | no ¬𝕗d | ⦅ FV1 ↦ d1 ∣ | f'∈M1 | f~f' = 
-    {!   !}
-delay-has-good-subset (lit B k ⦅ Nil ⦆) ρ Hρ d d∈M' = {!   !}
-delay-has-good-subset (tuple x ⦅ fvs ⦆) ρ Hρ d d∈M' = {!   !}
-delay-has-good-subset (get i ⦅ M ,, Nil ⦆) ρ Hρ d d∈M' = {!   !}
-delay-has-good-subset (inl-op ⦅ M ,, Nil ⦆) ρ Hρ d d∈M' = {!   !}
-delay-has-good-subset (inr-op ⦅ M ,, Nil ⦆) ρ Hρ d d∈M' = {!   !}
-delay-has-good-subset (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ Hρ d (inj₁ x) 
-  = {!  !}
-delay-has-good-subset (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ Hρ d (inj₂ y) = {!   !}
-
-
-reflect-delay-good : ∀ M ρ D → Self-Applicable D → ∀ d → d ∈ D → D ⊆ ⟦ delay M ⟧' ρ 
-                   → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
-reflect-delay-good (` x) ρ D goodD d d∈D D⊆ = ⟨ d , ⟨ D⊆ d d∈D , refl ⟩ ⟩
-reflect-delay-good (clos-op x ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ D goodD d d∈D D⊆ = {!   !}
-reflect-delay-good (app ⦅ M ,, N ,, Nil ⦆) ρ D goodD d d∈D D⊆ = {!   !}
-reflect-delay-good (lit B k ⦅ Nil ⦆) ρ D goodD d d∈D D⊆ = {!   !}
-reflect-delay-good (tuple x ⦅ fvs ⦆) ρ D goodD d d∈D D⊆ = {!   !}
-reflect-delay-good (get i ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ = {!   !}
-reflect-delay-good (inl-op ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ with d | D⊆ d d∈D
-... | ω | ω∈M = {!   !} 
-reflect-delay-good (inl-op ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ | left d' | d'∈M = {!   !} 
-reflect-delay-good (inl-op ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ | u ⊔ v | ⟨ u∈M' , v∈M' ⟩ = {!   !} 
-reflect-delay-good (inr-op ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ with d | D⊆ d d∈D
-... | ω | ω∈M' = {!   !}
-reflect-delay-good (inr-op ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ | right d' | d'∈D = 
-   {!   !}
-reflect-delay-good (inr-op ⦅ M ,, Nil ⦆) ρ D goodD d d∈D D⊆ | u ⊔ v | ⟨ u∈M , v∈M ⟩ =
-   {!   !}
-reflect-delay-good (case-op ⦅ L ,, (⟩ M ,, (⟩ N ,, Nil)) ⦆) ρ D goodD d d∈D D⊆
-  = {!  !}
-
-{-
-
-car-Self-Applicable : ∀ {D} → Self-Applicable D → Self-Applicable (car ⟨ D , ptt ⟩)
-car-Self-Applicable goodD (𝕗-car 𝕗d) d∈carD = goodD 𝕗d d∈carD
-
-cdr-Self-Applicable : ∀ {D} → Self-Applicable D → Self-Applicable (cdr ⟨ D , ptt ⟩)
-cdr-Self-Applicable goodD (𝕗-right 𝕗d) d∈cdrD = goodD 𝕗d d∈cdrD
-
--}
-
-
+data failure : 𝒫 Value → Value → Set₁ where
+  fail-base : ∀ {D FV V w}
+            → ¬ (∣ FV ⦆ ∈ D)
+            → failure D ⦅ FV ↦ (V ↦ w) ∣
+  fail-↦ : ∀ {F V w} 
+         → failure (F (⊑-closure V)) w
+         → failure (Λ ⟨ F , ptt ⟩) (V ↦ w)
+  fail-pair-car : ∀ {D D' d}
+         → failure D d
+         → failure (pair ⟨ D , ⟨ D' , ptt ⟩ ⟩) ⦅ d ∣
+  fail-pair-cdr : ∀ {D D' d}
+         → failure D' d
+         → failure (pair ⟨ D , ⟨ D' , ptt ⟩ ⟩) ∣ d ⦆
+  fail-tup : ∀ {n} {i : Fin n} {fvs}{d}
+         → failure (nthD fvs i) d
+         → failure (𝒯 n fvs) (tup[ i ] d)
+  fail-left : ∀ {D d}
+            → failure D d
+            → failure (ℒ ⟨ D , ptt ⟩) (left d)
+  fail-right : ∀ {D d}
+            → failure D d
+            → failure (ℛ ⟨ D , ptt ⟩) (right d)
 
 
 fro-Atomic : ∀ v → Atomic v → Atomic (fro v)
@@ -483,6 +153,16 @@ fro-mono (⊑-right-å åu u⊑v) = ⊑-right (fro-mono u⊑v)
 fro-mono (⊑-split {u}{uL}{uR} split uL⊑v uR⊑v) = 
   ⊑-trans (fro-split-⊑ split) (⊑-split split-⊔ (fro-mono uL⊑v) (fro-mono uR⊑v))
 
+env-map : ∀ {A B : Set} → (A → B) → (ℕ → 𝒫 A) → (ℕ → 𝒫 B)
+env-map {A} {B} f ρ x b = Σ[ a ∈ A ] a ∈ (ρ x) × b ≡ f a
+
+postulate
+  ⟦⟧'-⊑-closed : ∀ (M : AST') ρ (u v : Value) → v ∈ ⟦ M ⟧' ρ → u ⊑ v → u ∈ ⟦ M ⟧' ρ
+  ⟦⟧'-⊔-closed : ∀ (M : AST') ρ (u v : Value) → u ∈ ⟦ M ⟧' ρ → v ∈ ⟦ M ⟧' ρ
+                → (u ⊔ v) ∈ ⟦ M ⟧' ρ
+  ⟦⟧-⊔-closed : ∀ (M : AST) ρ (u v : Value) → u ∈ ⟦ M ⟧ ρ → v ∈ ⟦ M ⟧ ρ
+                → (u ⊔ v) ∈ ⟦ M ⟧ ρ
+  ⟦⟧-⊑-closed : ∀ (M : AST) ρ (u v : Value) → v ∈ ⟦ M ⟧ ρ → u ⊑ v → u ∈ ⟦ M ⟧ ρ 
 
 ⊆ₑ-refl : ∀ {A : Set} {ρ : Env A} → ρ ⊆ₑ ρ
 ⊆ₑ-refl i d d∈ = d∈
@@ -501,6 +181,7 @@ helpful-lemma M ρ u v u⊔v∈M =
 
 
 delay-reflect : ∀ M ρ
+  {- → (ρ~ : ∀ₑ ⊔-closed' ρ) -}
   → ∀ d → d ∈ ⟦ delay M ⟧' ρ → fro d ∈ ⟦ M ⟧ (env-map fro ρ)
 delay-args-reflect-nth : ∀ {n} args (i : Fin n) ρ d 
    → d ∈ nthD (⟦ del-map-args args ⟧₊' ρ) i
@@ -508,7 +189,7 @@ delay-args-reflect-nth : ∀ {n} args (i : Fin n) ρ d
 
 delay-reflect (` x) ρ d d∈ = ⟨ d , ⟨ d∈ , refl ⟩ ⟩
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ω d∈ = 
-  ⟨ ω , ⟨ tt , {!   !} ⟩ ⟩
+  ⟨ ω , ⟨ tt , tt ⟩ ⟩
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ 
   with delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d d∈
    | delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ d₁ d₁∈ 
@@ -533,16 +214,13 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ (d ⊔
                                                      (⊑-⊔-R2 ⊑-refl)) D⊆) 
                                           d' d'∈) , ptt ⟩) 
                      (fro d₁) IHd₁
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ ω ∣ ⟨ FV , ⟨ tt , FV∈ ⟩ ⟩ 
-  = ⟨ ω , ⟨ tt , {!   !} ⟩ ⟩
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ ν ∣ d∈ 
-  = ⟨ ω , ⟨ tt , {!   !} ⟩ ⟩
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ⊔ d₁ ∣ d∈ 
-  = {!   !}
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ ω ∣ d∈ = ⟨ ω , ⟨ tt , tt ⟩ ⟩
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ ν ∣ d∈ = ⟨ ω , ⟨ tt , tt ⟩ ⟩
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ⊔ d₁ ∣ d∈ = {!   !}
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ⦅ d ↦ d₁ ∣ 
-  ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ fro FV , ⟨ {! d∈   !} , {!  !} ⟩ ⟩
+  ⟨ FV , ⟨ d∈ , FV∈ ⟩ ⟩ = ⟨ fro FV , ⟨ {!   !} , {!  !} ⟩ ⟩
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ρ ∣ d ⦆ d∈ = 
-  ⟨ ω , ⟨ tt , {!   !} ⟩ ⟩
+  ⟨ ω , ⟨ tt , tt ⟩ ⟩
 delay-reflect (app ⦅ M ,, N ,, Nil ⦆) ρ d 
   ⟨ V , ⟨ ⟨ FV , ⟨ FV↦V↦d∈carM' , FV∈cdrM' ⟩ ⟩ , V∈N ⟩ ⟩ 
   = ⟨ fro V , ⟨ delay-reflect M ρ ⦅ FV ↦ V ↦ d ∣ FV↦V↦d∈carM' 
@@ -552,19 +230,19 @@ delay-reflect (lit B k ⦅ Nil ⦆) ρ (const k₁) d∈ = d∈
 delay-reflect (lit B k ⦅ Nil ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = 
   ⟨ delay-reflect (lit B k ⦅ Nil ⦆) ρ d d∈ 
   , delay-reflect (lit B k ⦅ Nil ⦆) ρ d₁ d₁∈ ⟩
-delay-reflect (tuple n ⦅ args ⦆) ρ ω d∈ = {!   !}
+delay-reflect (tuple n ⦅ args ⦆) ρ ω d∈ = tt
 delay-reflect (tuple n ⦅ args ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ =
   ⟨ delay-reflect (tuple n ⦅ args ⦆) ρ d d∈ 
   , delay-reflect (tuple n ⦅ args ⦆) ρ d₁ d₁∈ ⟩
 delay-reflect (tuple (suc n) ⦅ args ⦆) ρ (tup[ i ] d) ⟨ refl , d∈ ⟩ = 
   ⟨ refl , delay-args-reflect-nth args i ρ d d∈ ⟩
 delay-reflect (get i ⦅ M ,, Nil ⦆) ρ d d∈ = delay-reflect M ρ (tup[ i ] d) d∈
-delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ω d∈ = delay-reflect M ρ ω d∈
+delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ ω d∈ = tt
 delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ = 
   ⟨ delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ d d∈ 
   , delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ d₁ d₁∈ ⟩
 delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ (left d) d∈ = delay-reflect M ρ d d∈
-delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ω d∈ = delay-reflect M ρ ω d∈
+delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ ω d∈ = tt
 delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ (d ⊔ d₁) ⟨ d∈ , d₁∈ ⟩ =
   ⟨ delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ d d∈ 
   , delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ d₁ d₁∈ ⟩
@@ -596,7 +274,6 @@ delay-args-reflect-nth {suc n} (arg ,, args) zero ρ d d∈ =
   delay-reflect arg ρ d d∈
 delay-args-reflect-nth {suc n} (arg ,, args) (suc i) ρ d d∈ = 
   delay-args-reflect-nth args i ρ d d∈
-
 
 
 
@@ -2878,6 +2555,3 @@ del-map-args-reflect' {suc n} (M ,, args) ρ =
 
 -}
 
-
-
--}

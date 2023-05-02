@@ -1,13 +1,6 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module Model.Graph.OperationISWIM where
-
-{-
-
-  This is an adaptation of the call-by-name models P(ω) of Scott
-  (1976) and Dₐ of Engeler (1981) to call-by-value.
-
--}
+module Compiler.Model.Graph.Domain.ISWIM.Ops where
 
 open import Primitives
 open import Utilities using (extensionality)
@@ -19,7 +12,7 @@ open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
-open import Model.Graph.DomainISWIM
+open import Compiler.Model.Graph.Domain.ISWIM.Domain
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -34,6 +27,7 @@ open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
 open import Data.Nat.Properties using (≤-pred)
+open import Data.Fin using (Fin; zero; suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
@@ -60,10 +54,7 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
       (V ↦ w ∈ D₁) × (mem V ⊆ D₂) × V ≢ []
 
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
-ℬ B k _ (const {B′} k′)
-    with base-eq? B B′
-... | yes refl = k ≡ k′
-... | no neq = False
+ℬ B k _ (const {B′} k′) = Σ[ B≡ ∈ B ≡ B′ ] (subst base-rep B≡ k) ≡ k′
 ℬ B k _ _ = False
 
 𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
@@ -85,6 +76,18 @@ car ⟨ D , _ ⟩ f = ⦅ f ∣ ∈ D
 cdr : DOp (𝒫 Value) (■ ∷ [])
 cdr ⟨ D , _ ⟩ fv = Σ[ FV ∈ List Value ] ∣ FV ⦆ ∈ D × fv ∈ mem FV
 
+nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n) → Result A ■
+nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
+nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
+
+𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
+𝒯 (suc n) Ds (tup[_]_ {n'} i d) = Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i))
+𝒯 n Ds d = False
+
+proj : ∀ {n} → Fin n → DOp (𝒫 Value) (■ ∷ [])
+proj i ⟨ D , _ ⟩ d = (tup[ i ] d) ∈ D
+
+{-
 𝒯-cons : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ ∥ d ∷ ds ∥ = d ∈ D × ∥ ds ∥ ∈ 𝒯Ds
 𝒯-cons ⟨ D , ⟨ 𝒯Ds , _ ⟩ ⟩ d = False
@@ -125,9 +128,13 @@ proj : ℕ → DOp (𝒫 Value) (■ ∷ [])
 proj i ⟨ D , _ ⟩ u = Σ[ vs ∈ List Value ]
     i < length vs  ×  ∥ vs ∥ ∈ D  ×  u ≡ nth vs i
 
+-}
+
+{-
 rest : DOp (𝒫 Value) (■ ∷ [])
 rest ⟨ D , _ ⟩ ∥ vs ∥ = Σ[ v ∈ Value ] ∥ v ∷ vs ∥ ∈ D
 rest ⟨ D , _ ⟩ _ = False
+-}
 
 ℒ : DOp (𝒫 Value) (■ ∷ [])
 ℒ ⟨ D , _ ⟩ (left v) = v ∈ D
@@ -352,6 +359,7 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
       , lower (𝒞-mono ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩ ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ⟨ lift D'<D , ⟨ lift FL'<FL , ⟨ lift FR'<FR , ptt ⟩ ⟩ ⟩) ⟩
 -}
 
+{-
 proj-mono : ∀ i → monotone (■ ∷ []) ■ (proj i)
 proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
@@ -374,6 +382,8 @@ proj-cong i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ 
 𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
 𝒯-mono n = Dfold-pres _⊆_ ■ ■ n 𝒯-cons 𝒯-cons ⌈ ∥ [] ∥ ⌉ ⌈ ∥ [] ∥ ⌉  
            𝒯-cons-mono (lift (λ d z → z))
+-}
+
 
 {-
 𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
@@ -529,6 +539,7 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (right d) (right d') (V⊆ d d∈) (V⊆' d' d'∈)
 
+{-
 nth-~ : ∀ i us vs → ∥ us ∥ ~ ∥ vs ∥ → 
     i < length us → i < length vs → 
     nth us i ~ nth vs i
@@ -544,44 +555,36 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
        ⟨ vs , ⟨ i<' , ⟨ vs∈ , refl ⟩ ⟩ ⟩ 
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
+-}
 
 ℬ-consis : ∀ B k → consistent _~_ [] ■ (ℬ B k)
 ℬ-consis B k _ _ _ = lift G
   where 
   G : Every _~_ (ℬ B k ptt) (ℬ B k ptt)
-  G (const {B'} k) (const {B''} k') d∈ d'∈ with base-eq? B B' | base-eq? B B''
-  ... | yes refl | yes refl with base-eq? B B
-  ... | yes refl = trans (sym d∈) d'∈
-  ... | no neq = ⊥-elim (neq refl)
+  G (const {B'} k) (const {B''} k') ⟨ refl , d∈ ⟩  ⟨ refl , d'∈ ⟩ = ⟨ refl , trans (sym d∈) d'∈ ⟩
 
 𝓅-consis : ∀ P f → consistent _~_ [] ■ (𝓅 P f)
 𝓅-consis P f _ _ _ = lift (G P f)
   where
   G : ∀ P f → Every _~_ (𝓅 P f ptt) (𝓅 P f ptt)
-  G (base x) f (const {B} k) (const {B'} k') u∈ v∈ with base-eq? x B | base-eq? x B'
-  ... | yes refl | yes refl with base-eq? x x
-  ... | yes refl = trans (sym u∈) v∈
-  ... | no neq = ⊥-elim (neq refl)
+  G (base x) f (const {B} k) (const {B'} k') ⟨ refl , k∈ ⟩  ⟨ refl , k'∈ ⟩ = 
+    lower (ℬ-consis B k ptt ptt ptt) (const k) (const k') ⟨ refl , refl ⟩ ⟨ refl , trans (sym k∈) k'∈ ⟩
   G (x ⇒ P) f (.(const k ∷ []) ↦ u) (.(const k' ∷ []) ↦ v) 
     ⟨ k , ⟨ refl , u∈ ⟩ ⟩ ⟨ k' , ⟨ refl , v∈ ⟩ ⟩ with base-eq? x x | base-rep-eq? k k' 
   ... | no neq | q = ⊥-elim (neq refl )
   ... | yes refl | no neq = inj₁ (λ z → H (head (proj₁ z)))
     where
     H : const k ~ const k' → False
-    H z with base-eq? x x | z
-    ... | no neq | q = ⊥-elim (neq refl)
-    ... | yes refl | q = neq q
+    H ⟨ refl , k≡ ⟩ = neq k≡
   ... | yes refl | yes refl = inj₂ ⟨ ⟨ H ∷ [] , tt ⟩ , G P (f k) u v u∈ v∈ ⟩
     where
     H : const k ~ const k
-    H with base-eq? x x
-    ... | no neq = ⊥-elim (neq refl)
-    ... | yes refl = refl
+    H = ⟨ refl , refl ⟩
   G (x ⇒ P) f (V ↦ u) ν u∈ v∈ = tt
   G (x ⇒ P) f ν (V ↦ w) u∈ v∈ = tt
   G (x ⇒ P) f ν ν u∈ v∈ = tt
 
-
+{-
 𝒯-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒯-cons
 𝒯-cons-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
@@ -595,6 +598,7 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : (x x₁ : Value) (x₂ : x ≡ ∥ [] ∥) (x₃ : x₁ ≡ ∥ [] ∥) → x ~ x₁ 
   G .(∥ [] ∥) .(∥ [] ∥) refl refl = tt
+-}
 
 {-
 𝒜-cons-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ 𝒜-cons

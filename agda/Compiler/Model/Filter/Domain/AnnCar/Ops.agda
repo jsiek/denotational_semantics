@@ -78,23 +78,11 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 𝓅 (B ⇒ P) f _ d = False
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ω = ω ∈ D₁ × ω ∈ D₂
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ω = True
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
-
-restricted-pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ω = ω ∈ D₁ × ω ∈ D₂
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ FV ↦ w ∣ = (FV ↦ w) ∈ D₁ × FV ∈ D₂
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ u ⊔ v ∣ = 
-  restricted-pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ ⦅ u ∣ × restricted-pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ ⦅ v ∣
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ Value ] f ∈ D₁ × FV ∈ D₂
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × FV ∈ D₂
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ (u ⊔ v) = 
-  restricted-pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ u × restricted-pair ⟨ D₁ , ⟨ D₂ , ptt ⟩ ⟩ v
-restricted-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
-
 
 car : DOp (𝒫 Value) (■ ∷ [])
 car ⟨ D , _ ⟩ f = ⦅ f ∣ ∈ D
@@ -108,7 +96,7 @@ nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
 nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
 
 𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
-𝒯 n Ds ω = ∀ (i : Fin n) → ω ∈ nthD Ds i
+𝒯 n Ds ω = True
 𝒯 n Ds (u ⊔ v) = 𝒯 n Ds u × 𝒯 n Ds v
 𝒯 (suc n) Ds (tup[_]_ {n'} i d) = Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i))
 𝒯 n Ds d = False
@@ -156,13 +144,13 @@ proj i ⟨ D , _ ⟩ u = Σ[ n ∈ ℕ ] Σ[ vs ∈ Vec Value n ]
 
 
 ℒ : DOp (𝒫 Value) (■ ∷ [])
-ℒ ⟨ D , _ ⟩ ω = ω ∈ D
+ℒ ⟨ D , _ ⟩ ω = True
 ℒ ⟨ D , _ ⟩ (left d) = d ∈ D
 ℒ ⟨ D , _ ⟩ (u ⊔ v) = ℒ ⟨ D , _ ⟩ u × ℒ ⟨ D , _ ⟩ v
 ℒ ⟨ D , _ ⟩ d = False
 
 ℛ : DOp (𝒫 Value) (■ ∷ [])
-ℛ ⟨ D , _ ⟩ ω = ω ∈ D
+ℛ ⟨ D , _ ⟩ ω = True
 ℛ ⟨ D , _ ⟩ (right d) = d ∈ D
 ℛ ⟨ D , _ ⟩ (u ⊔ v) = ℛ ⟨ D , _ ⟩ u × ℛ ⟨ D , _ ⟩ v
 ℛ ⟨ D , _ ⟩ d = False
@@ -259,7 +247,7 @@ pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ω ⟨ ω∈D , ω∈E ⟩ = ⟨ D⊆ ω ω∈D , E⊆ ω ω∈E ⟩
+  G ω tt = tt
   G ⦅ f ∣ ⟨ FV , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ FV , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
   G ∣ FV ⦆ ⟨ f , ⟨ f∈D , FV∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ FV FV∈E ⟩ ⟩
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
@@ -303,7 +291,7 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
 ℒ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ D' , ptt ⟩
-  G ω ω∈D = D⊆ ω ω∈D
+  G ω tt = tt
   G (left v) v∈ = D⊆ v v∈
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 
@@ -318,7 +306,7 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
 ℛ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ D' , ptt ⟩
-  G ω ω∈D = D⊆ ω ω∈D
+  G ω tt = tt
   G (right v) v∈ = D⊆ v v∈
   G (u ⊔ v) ⟨ u∈ , v∈ ⟩ = ⟨ G u u∈ , G v v∈ ⟩
 
