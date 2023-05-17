@@ -121,6 +121,19 @@ abstract
   → Λ F₁ ≃ Λ F₂
 Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ Λ-ext-⊆ (proj₁ F₁≃F₂) , Λ-ext-⊆ (proj₂ F₁≃F₂) ⟩
 
+Λ-ext-CBV-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
+  → (∀ {X} → nonempty X → F₁ X ⊆ F₂ X)
+  → Λ F₁ ⊆ Λ F₂
+Λ-ext-CBV-⊆ {F₁} {F₂} F₁⊆F₂ (V ↦ w) ⟨ w∈F₁X , V≢[] ⟩ =
+    ⟨ F₁⊆F₂ (E≢[]⇒nonempty-mem V≢[]) w w∈F₁X , V≢[] ⟩
+Λ-ext-CBV-⊆ {F₁} {F₂} F₁⊆F₂ ν v∈ = tt
+
+Λ-ext-CBV : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
+  → (∀ {X} → nonempty X → F₁ X ≃ F₂ X)
+  → Λ F₁ ≃ Λ F₂
+Λ-ext-CBV {F₁}{F₂} F₁≃F₂ =
+    ⟨ Λ-ext-CBV-⊆ (λ neX → proj₁ (F₁≃F₂ neX))
+    , Λ-ext-CBV-⊆ (λ neX → proj₂ (F₁≃F₂ neX)) ⟩
 
 {- Abstraction followed by Application is the identity ------------------------}
 

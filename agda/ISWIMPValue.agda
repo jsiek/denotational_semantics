@@ -125,9 +125,10 @@ value-nonempty NE-ρ (V-lit {B ⇒ P} {k}) = ⟨ ν , tt ⟩
     ⟦ V · M′ ⟧ ρ             ∎ where open ≃-Reasoning  
 ⟦⟧—→ {ƛ N · V} {_} {ρ} {NE-ρ} (β-rule v) =
     ⟦ ƛ N · V ⟧ ρ                           ≃⟨⟩
-    (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)   ≃⟨ Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}
-                                                   (value-nonempty NE-ρ v) ⟩
-    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)               ≃⟨ ≃-reflexive (sym (⟦⟧-subst{N}{V}{ρ})) ⟩
+    (Λ (λ D → ⟦ N ⟧ (D • ρ))) ▪ (⟦ V ⟧ ρ)
+             ≃⟨ Λ⟦⟧-▪-id {N}{ρ}{NE-ρ}  (value-nonempty NE-ρ v) ⟩
+    ⟦ N ⟧ (⟦ V ⟧ ρ • ρ)
+                ≃⟨ ≃-reflexive (sym (⟦⟧-subst{N}{V}{ρ})) ⟩
     ⟦ N [ V ] ⟧ ρ                     ∎ where open ≃-Reasoning
 ⟦⟧—→ {($ (B ⇒ P) f · $ (base B) k)} {_} {ρ} δ-rule =
     ⟦ $ (B ⇒ P) f · $ (base B) k ⟧ ρ        ≃⟨⟩
