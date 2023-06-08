@@ -1,7 +1,7 @@
 {-# OPTIONS --rewriting #-}
 open import Primitives
 open import SetsAsPredicates
-open import Sig
+open import Sig renaming (ν to bnd)
 open import Var
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
@@ -59,6 +59,7 @@ data Op : Set where
   seq : Op
   choice : Op
   equal : Op
+  exist : Op
   
 sig : Op → List Sig
 sig app = ■ ∷ ■ ∷ []
@@ -68,6 +69,7 @@ sig (tup (suc n)) = ■ ∷ (sig (tup n))
 sig seq = ■ ∷ ■ ∷ []
 sig choice = ■ ∷ ■ ∷ []
 sig equal = ■ ∷ ■ ∷ []
+sig exist = bnd ■ ∷ []
 
 open import rewriting.AbstractBindingTree Op sig
   hiding (_⨟_)
@@ -86,6 +88,8 @@ pattern _⍮_ L M = seq ⦅ cons (ast L) (cons (ast M) nil) ⦆
 
 infixl 7  _⩦_
 pattern _⩦_ L M = equal ⦅ cons (ast L) (cons (ast M) nil) ⦆
+
+pattern ∃̇ L = exist ⦅ cons (bind (ast L)) nil ⦆
 
 ∏ : ℕ → Set₁ → Set₁
 ∏ zero T = ⊤ᵖ
@@ -118,6 +122,10 @@ D ⨟ E = {!!}
 𝓔⟦ v₁ · v₂ ⟧ ρ = 𝓥⟦ v₁ ⟧ ρ ▪ 𝓥⟦ v₂ ⟧ ρ
 𝓔⟦ e₁ ∣ e₂ ⟧ ρ = {!!}
 𝓔⟦ e₁ ⍮ e₂ ⟧ ρ = 𝓔⟦ e₁ ⟧ ρ ⨟ 𝓔⟦ e₂ ⟧ ρ
-𝓔⟦ e₁ ⩦ e₂ ⟧ ρ = {!!}
+𝓔⟦ e₁ ⩦ e₂ ⟧ ρ =
+   let vs₁ = 𝓔⟦ e₁ ⟧ ρ in
+   let vs₂ = 𝓔⟦ e₂ ⟧ ρ in
+   {!!}
+𝓔⟦ ∃̇ e ⟧ ρ = {!!}
 𝓔⟦ v ⟧ ρ = unit (𝓥⟦ v ⟧ ρ)
 

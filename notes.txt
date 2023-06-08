@@ -1,3 +1,52 @@
+Correctness of the Delay pass
+
+Denotations
+
+D     infinite set of d's
+Dᶠ     finite set of d's
+d ::= Dᶠ ↦ d | ⟨d,...,d⟩ | ν
+
+Application Operator
+
+D₁ ▪ D₂ = { d | Dᶠ ↦ d ∈ D₁ and Dᶠ ⊆ D₂ and Dᶠ not empty}
+
+Abstraction Operator
+
+(Λ F) = {ν} ∪ { Dᶠ ↦ d | d ∈ F(Dᶠ) }
+
+Source Language:
+
+L,M,N ::= x | L(M) | λ x y. N @ M | ⟨ M₁ , ... , Mₙ ⟩ | L [ i ]
+
+⟦ x ⟧ρ = ρ x
+⟦ L(M) ⟧ρ = ⟦ L ⟧ρ ▪ ⟦ M ⟧ρ
+⟦ λ x y. N @ M ⟧ρ = Λ D. ⟦ N ⟧ρ[x ↦ ⟦ M ⟧ρ][y ↦ D]
+⟦ ⟨ M₁ , ... , Mₙ ⟩ ⟧ρ = { ⟨d₁,...,dₙ⟩ | for i=1..n, dᵢ ∈ ⟦ Mᵢ ⟧ρ }
+⟦ L [ i ] ⟧ρ = { dᵢ | ⟨d₁,...,dₙ⟩ ∈ ⟦ L ⟧ρ }
+
+Target Language:
+
+L,M,N ::= x | L(M,N) | λ x y. N | ⟨ M₁ , ... , Mₙ ⟩ | M [ n ]
+
+⟦ x ⟧ρ = ρ x
+⟦ L(M,N) ⟧ρ = (⟦ L ⟧ρ ▪ ⟦ M ⟧ρ) ▪ ⟦ N ⟧ρ
+⟦ λ x y. N ⟧ρ = Λ D₁. Λ D₂. ⟦ N ⟧ρ[x ↦ D₁][y ↦ D₂]
+⟦ ⟨ M₁ , ... , Mₙ ⟩ ⟧ρ = { ⟨d₁,...,dₙ⟩ | for i=1..n, dᵢ ∈ ⟦ Mᵢ ⟧ρ }
+⟦ L [ i ] ⟧ρ = { dᵢ | ⟨d₁,...,dₙ⟩ ∈ ⟦ L ⟧ρ }
+
+Delay Pass
+
+D(x)                 = x
+D(L(M))              = let c = D(L) in c[0](c[1],M)
+D(λ x y. N @ M)      = ⟨ λ x y. N , M ⟩
+D(⟨ M₁ , ... , Mₙ ⟩) = ⟨ D(M₁) , ..., D(Mₙ) ⟩
+D(L [ i ])           = D(L) [ i ]
+
+
+
+
+================================================================================
+
 determ:
   If X ∈ [e]ρ1 and Y ∈ [e]ρ2,
   then (X ∩ Y) ∈ [e](ρ1 ∩ ρ2).
