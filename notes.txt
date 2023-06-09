@@ -1,48 +1,112 @@
-Correctness of the Delay pass
+Delay pass of closure conversion
 
-Denotations
+Source Denotations
 
 D     infinite set of d's
 Dᶠ     finite set of d's
-d ::= Dᶠ ↦ d | ⟨d,...,d⟩ | ν
+d ::= Dᶠ ↦ d | ν | ⟨d,...,d⟩ | error
 
 Application Operator
 
 D₁ ▪ D₂ = { d | Dᶠ ↦ d ∈ D₁ and Dᶠ ⊆ D₂ and Dᶠ not empty}
+          ∪ { error | error ∈ D₁ ∪ D₂}
+	  ∪ { error | ⟨d₁,...,dₙ⟩ ∈ D₁ }
 
 Abstraction Operator
 
-(Λ F) = {ν} ∪ { Dᶠ ↦ d | d ∈ F(Dᶠ) }
+Λ F = {ν} ∪ { Dᶠ ↦ d | d ∈ F(Dᶠ), error ∉ Dᶠ }
+
+Product Operator
+
+∏ [D₁, ..., Dₙ] = { ⟨d₁,...,dₙ⟩ | ∀ i∈{1..n}, dᵢ ∈ Dᵢ, dᵢ ≠ error }
+                  ∪ { error | ∃i, error ∈ Dᵢ}
+
+Index Operator
+
+D[i] = { dᵢ | ⟨d₀,...,dₙ⟩ ∈ D }
+        ∪ { error | d ∈ ⟦ L ⟧ρ, d ≠ ⟨dₒ,...,dₙ⟩ }
 
 Source Language:
 
-L,M,N ::= x | L(M) | λ x y. N @ M | ⟨ M₁ , ... , Mₙ ⟩ | L [ i ]
+L,M,N ::= x | L(M) | λ x y. N @ M | ⟨ M₀ , ... , Mₙ ⟩ | L [ i ]
 
 ⟦ x ⟧ρ = ρ x
 ⟦ L(M) ⟧ρ = ⟦ L ⟧ρ ▪ ⟦ M ⟧ρ
-⟦ λ x y. N @ M ⟧ρ = Λ D. ⟦ N ⟧ρ[x ↦ ⟦ M ⟧ρ][y ↦ D]
-⟦ ⟨ M₁ , ... , Mₙ ⟩ ⟧ρ = { ⟨d₁,...,dₙ⟩ | for i=1..n, dᵢ ∈ ⟦ Mᵢ ⟧ρ }
-⟦ L [ i ] ⟧ρ = { dᵢ | ⟨d₁,...,dₙ⟩ ∈ ⟦ L ⟧ρ }
+⟦ λ x y. N @ M ⟧ρ = (Λ λD₁. Λ λD₂. ⟦ N ⟧ρ[x ↦ D₁][y ↦ D₂]) ▪ ⟦ M ⟧ρ
+⟦ ⟨ M₀ , ... , Mₙ ⟩ ⟧ρ = ∏ { ⟦ Mᵢ ⟧ρ | i ∈ 0..n}
+⟦ L [ i ] ⟧ρ = ⟦ L ⟧ρ [ i ]
+
+Target Denotations
+
+D     infinite set of d's
+Dᶠ     finite set of d's
+d ::= Dᶠ ↦ d | ν | ⟨d,...,d⟩ | error | injᶜ d | injᵗ d
+
+Application Operator
+
+D₁ ▪ D₂ = { d | Dᶠ ↦ d ∈ D₁ and Dᶠ ⊆ D₂ and Dᶠ not empty}
+          ∪ { error | error ∈ D₁ ∪ D₂}
+	  ∪ { error | d₁ ∈ D₁, d₁ ≠ Dᶠ ↦ d and d₁ ≠ ν }
+
+Closure Injection Operator
+
+InjC D = { injᶜ d | d ∈ D } ∪ {error | error ∈ ⟦ M ⟧ρ}
+
+Closure Projection Operator
+
+ProjC D = { d | injᶜ d ∈ D } ∪ {error | error ∈ ⟦ M ⟧ρ}
+          ∪ { error | d ∈ ⟦ M ⟧ρ, d ≠ injᶜ d′ }
+
+Tuple Injection Operator
+
+InjT D = { injᵗ d | d ∈ D } ∪ {error | error ∈ ⟦ M ⟧ρ}
+
+Tuple Projection Operator
+
+ProjT D = { d | injᵗ d ∈ D } ∪ {error | error ∈ ⟦ M ⟧ρ}
+          ∪ { error | d ∈ ⟦ M ⟧ρ, d ≠ injᵗ d′ }
 
 Target Language:
 
-L,M,N ::= x | L(M,N) | λ x y. N | ⟨ M₁ , ... , Mₙ ⟩ | M [ n ]
+L,M,N ::= x | L(M,N) | λ (x, y). N | ⟨ M₁ , ... , Mₙ ⟩ | M [ n ]
+        | injC M | injT M | projC M | projT M
 
 ⟦ x ⟧ρ = ρ x
 ⟦ L(M,N) ⟧ρ = (⟦ L ⟧ρ ▪ ⟦ M ⟧ρ) ▪ ⟦ N ⟧ρ
-⟦ λ x y. N ⟧ρ = Λ D₁. Λ D₂. ⟦ N ⟧ρ[x ↦ D₁][y ↦ D₂]
-⟦ ⟨ M₁ , ... , Mₙ ⟩ ⟧ρ = { ⟨d₁,...,dₙ⟩ | for i=1..n, dᵢ ∈ ⟦ Mᵢ ⟧ρ }
-⟦ L [ i ] ⟧ρ = { dᵢ | ⟨d₁,...,dₙ⟩ ∈ ⟦ L ⟧ρ }
+⟦ λ x y. N ⟧ρ = Λ λD₁. Λ λD₂. ⟦ N ⟧ρ[x ↦ D₁][y ↦ D₂]
+⟦ ⟨ M₁ , ... , Mₙ ⟩ ⟧ρ = ∏ [ ⟦ Mᵢ ⟧ρ | i ∈ 1..n ]
+⟦ L [ i ] ⟧ρ = { dᵢ | ⟨d₁,...,dₙ⟩ ∈ ⟦ L ⟧ρ } ∪ {error | error ∈ ⟦ L ⟧ρ}
+⟦ injC M ⟧ρ = InjC ⟦ M ⟧ρ
+⟦ injT M ⟧ρ = InjT ⟦ M ⟧ρ
+⟦ projC M ⟧ρ = ProjC ⟦ M ⟧ρ
+⟦ projT M ⟧ρ = ProjT ⟦ M ⟧ρ
 
 Delay Pass
 
 D(x)                 = x
-D(L(M))              = let c = D(L) in c[0](c[1],M)
-D(λ x y. N @ M)      = ⟨ λ x y. N , M ⟩
-D(⟨ M₁ , ... , Mₙ ⟩) = ⟨ D(M₁) , ..., D(Mₙ) ⟩
-D(L [ i ])           = D(L) [ i ]
+D(L(M))              = let c = projC D(L) in c[0](c[1], M)
+D(λ x y. N @ M)      = injC ⟨ λ x y. N , M ⟩
+D(⟨ M₁ , ... , Mₙ ⟩) = injT ⟨ D(M₁) , ..., D(Mₙ) ⟩
+D(L [ i ])           = (projT D(L)) [ i ]
 
+Predicates
 
+IsInjC(D) = ∃d. injᶜ d ∈ D
+IsInjT(D,n) = ∃d. injᵗ d ∈ D and IsTup(ProjT D, n)
+IsFun(D) = ν ∈ D
+IsTup(D,n) = ∃d₁,...,dₙ. ⟨d₁,...,dₙ⟩ ∈ D
+
+Relating Source and Target Denotations
+
+"bulk" definition on D's
+
+D₁ ≈ D₂ =
+  (IsFun(D₁) and IsInjC(D₂) and
+   ∀ D₃ D₄. ▷ (D₃ ≈ D₄) → ▷ ((D₁ ▪ D₃) ≈ (let F = (ProjC D₂) in
+                                         F[0] ▪ F[1] ▪ D₄)))
+  or
+  (∃ n. IsTup(D,n) and IsInjT(D₂,n) and 
+   ∀ i ∈ 1..n, ▷ (D[i] ≈ ProjT(D₂)[i]))
 
 
 ================================================================================

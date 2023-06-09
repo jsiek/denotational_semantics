@@ -1,5 +1,4 @@
 
-
 Recall that closure conversion lowers lexically-scoped functions into
 a flat-closure representation, which pairs a function pointer with a
 tuple of values for the function's free variables. The crux of this
@@ -11,7 +10,7 @@ language of "delay" and `⟦-⟧ₜ` be the semantics for its target.  (Both
 languages are variants of the untyped lambda calculus.)  We tried to
 prove something like:
 
-    ⟦ M ⟧ₛ ρ ≈ ⟦ D(M) ⟧ₜ ρ
+    (∀ x. ρ(x) ≈ ρ'(x)) implies ⟦ M ⟧ₛ ρ ≈ ⟦ D(M) ⟧ₜ ρ'
    
 where much of the difficulty was in finding an appropriate definition
 for the `≈` relation. In a denotational semantics based on the graph
@@ -45,7 +44,7 @@ creation of another tuple that contains those two items and
     ===> "delay"
 	let y = 4 in 
 	let z = 5 in 
-	let add = ⟨(λ fv x. x + fv[0] + fv[1]) , ⟨ y , z ⟩ ⟩ in
+	let add = ⟨(λ (fv, x). x + fv[0] + fv[1]) , ⟨ y , z ⟩ ⟩ in
 	add[0](add[1], 3)
 
 Focusing on the "delay" transformation of the lambda abstractions
