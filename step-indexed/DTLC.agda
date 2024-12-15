@@ -264,10 +264,10 @@ pre-𝒱 (closV N ρ) = ∀ᵒ[ W ] ▷ᵒ 𝒱ᵒ⟦ W ⟧ →ᵒ ▷ᵒ (ℰ�
 𝓖 [] = []
 𝓖 (V ∷ ρ) = 𝒱⟦ V ⟧ ∷ 𝓖 ρ
 
-interp-var : ∀ x ρ i V
+interp-var-get : ∀ x ρ i V
   → interp (` x) ρ i ≡ just V
   → get ρ x ≡ just V
-interp-var x ρ (suc i) V ixV = ixV
+interp-var-get x ρ (suc i) V ixV = ixV
 
 lookup-𝓖 : ∀ ρ y V → get ρ y ≡ just V → 𝓖 ρ ⊢ᵒ 𝒱⟦ V ⟧
 lookup-𝓖 (V ∷ ρ) zero V refl = Zᵒ
@@ -283,21 +283,31 @@ exist-⟦⟧ⱽ : ∀ V → ∃[ v ] ⟦ V ⟧ⱽ v
 exist-⟦⟧ⱽ (natV n) = (nat n) , refl
 exist-⟦⟧ⱽ (closV N ρ) = (func []) , []
 
-denot-var : ∀ ρ x V
+get-denot-var : ∀ ρ x V
   → get ρ x ≡ just V
  → ∃[ v ] ⟦ ` x ⟧ ⟦ ρ ⟧ᴱ v
-denot-var ρ x V ρxV
+get-denot-var ρ x V ρxV
   rewrite get-⟦ρ⟧{ρ} ρxV = exist-⟦⟧ⱽ V
 
 fundamental : ∀ M ρ → 𝓖 ρ ⊢ᵒ ℰ⟦ M ⟧ ρ
 fundamental (` x) ρ =
   substᵒ (≡ᵒ-sym (ℰ-stmt (` x) ρ)) (Λᵒ[ V ] →ᵒI
     (pureᵒE Zᵒ (λ {(i , ixρV) →
-      let ρxV = interp-var x ρ i V ixρV in
+      let ρxV = interp-var-get x ρ i V ixρV in
       (Sᵒ (lookup-𝓖 ρ x V ρxV))
-      ,ᵒ pureᵒI (denot-var ρ x V ρxV)})))
+      ,ᵒ pureᵒI (get-denot-var ρ x V ρxV)})))
 
-fundamental (ƛ N) ρ = {!!}
+fundamental (ƛ N) ρ =
+  substᵒ (≡ᵒ-sym (ℰ-stmt (ƛ N) ρ)) (Λᵒ[ V ] →ᵒI 
+    (pureᵒE Zᵒ (λ {(suc i , refl) →
+     (substᵒ (≡ᵒ-sym 𝒱-fun) (Λᵒ[ W ] →ᵒI
+       let IH = →ᵒI-rev (▷→ (monoᵒ (→ᵒI (fundamental N (W ∷ ρ))))) in
+       weaken{▷ᵒ 𝒱⟦ W ⟧ ∷ 𝓖 ρ}{ϕ = ▷ᵒ (ℰ⟦ N ⟧ (W ∷ ρ))} IH
+       (Zᵒ ,ₚ (drop (drop ⊂-refl)))))
+     ,ᵒ
+     {!!}
+     })))
+
 fundamental (L · M) ρ = {!!}
 fundamental `zero ρ = {!!}
 fundamental (`suc M) ρ = {!!}
