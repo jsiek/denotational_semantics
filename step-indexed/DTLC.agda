@@ -222,21 +222,86 @@ subtractLess (suc i) (suc k) (suc n) k≤n = subtractLess i k n k≤n
 
 interpTo : Term → List Value → Value → Setⁱ
 interpTo M ρ V =
-  record { # = λ { 0 → ⊤ₚ ;
-                  (suc k) → ⌊ ∃[ i ] interp M ρ (i ∸ k) ≡ just V ⌋ }
-         ; down = λ { n Pn zero k≤n → ttₚ ;
-                      (suc n) (squash (i , Pi)) (suc k) k≤n →
+  record { # = λ { k → ⌊ ∃[ i ] interp M ρ (i ∸ k) ≡ just V ⌋ }
+         ; down = λ { n (squash (i , Pi)) k k≤n →
                      let i-n≤i-k = subtractLess i k n k≤n in
                      squash (i , interpMono M ρ (i ∸ n) (i ∸ k) V Pi i-n≤i-k)}
-         ; tz = ttₚ }
+         }
 
 {- Here's the logical relation -}
 
 {- This is essentially the theorem we want to prove. -}
-pre-ℰ M ρ = ∀ᵒ[ V ] (interpTo M ρ V) ⁱ
-            →ᵒ (pre-𝒱 V ×ᵒ (∃ᵒ[ v ] ((⟦ M ⟧ ⟦ ρ ⟧ᴱ v) ᵒ)))
+pre-ℰ M ρ = ∀ᵒ[ V ] (∃[ i ] interp M ρ i ≡ just V) ᵒ
+            →ᵒ (pre-𝒱 V ×ᵒ ((∃[ v ] (⟦ M ⟧ ⟦ ρ ⟧ᴱ v)) ᵒ))
 pre-𝒱 (natV n) = ⊤ᵒ
 pre-𝒱 (closV N ρ) = ∀ᵒ[ W ] ▷ᵒ 𝒱ᵒ⟦ W ⟧ →ᵒ ▷ᵒ (ℰᵒ⟦ N ⟧ (W ∷ ρ))
+
+
+{- use fixpointᵒ to get the equations we want for ℰ and 𝒱. -}
+
+ℰ-stmt : ∀ M ρ → ℰ⟦ M ⟧ ρ ≡ᵒ (∀ᵒ[ V ] (∃[ i ] interp M ρ i ≡ just V) ᵒ
+                                →ᵒ (𝒱⟦ V ⟧ ×ᵒ ((∃[ v ] (⟦ M ⟧ ⟦ ρ ⟧ᴱ v)) ᵒ)))
+ℰ-stmt M ρ = 
+  ℰ⟦ M ⟧ ρ                               ⩦⟨ ≡ᵒ-refl refl ⟩
+  μᵒ pre-𝒱⊎ℰ (inj₂ (M , ρ))             ⩦⟨ fixpointᵒ pre-𝒱⊎ℰ (inj₂ (M , ρ)) ⟩
+  letᵒ (μᵒ pre-𝒱⊎ℰ) (pre-𝒱⊎ℰ (inj₂ (M , ρ))) 
+      ⩦⟨ cong-∀ᵒ (λ V → cong-→ᵒ (≡ᵒ-refl refl)
+           (cong-×ᵒ (≡ᵒ-sym (fixpointᵒ pre-𝒱⊎ℰ (inj₁ V)))
+                    (≡ᵒ-refl refl))) ⟩
+  (∀ᵒ[ V ] (∃[ i ] interp M ρ i ≡ just V) ᵒ
+      →ᵒ (𝒱⟦ V ⟧ ×ᵒ ((∃[ v ] (⟦ M ⟧ ⟦ ρ ⟧ᴱ v)) ᵒ)))
+  ∎
+
+𝒱-nat : ∀{n} → 𝒱⟦ natV n ⟧ ≡ᵒ ⊤ᵒ
+𝒱-nat {n} = fixpointᵒ pre-𝒱⊎ℰ (inj₁ (natV n))
+
+𝒱-fun : ∀{N}{ρ} → 𝒱⟦ closV N ρ ⟧
+    ≡ᵒ (∀ᵒ[ W ] ((▷ᵒ (𝒱⟦ W ⟧)) →ᵒ (▷ᵒ (ℰ⟦ N ⟧ (W ∷ ρ)))))
+𝒱-fun {N}{ρ} = fixpointᵒ pre-𝒱⊎ℰ (inj₁ (closV N ρ))
+
+
+𝓖 : List Value → List (Setᵒ [] [])
+𝓖 [] = []
+𝓖 (V ∷ ρ) = 𝒱⟦ V ⟧ ∷ 𝓖 ρ
+
+interp-var : ∀ x ρ i V
+  → interp (` x) ρ i ≡ just V
+  → get ρ x ≡ just V
+interp-var x ρ (suc i) V ixV = ixV
+
+lookup-𝓖 : ∀ ρ y V → get ρ y ≡ just V → 𝓖 ρ ⊢ᵒ 𝒱⟦ V ⟧
+lookup-𝓖 (V ∷ ρ) zero V refl = Zᵒ
+lookup-𝓖 (W ∷ ρ) (suc y) V ρyV = Sᵒ (lookup-𝓖 ρ y V ρyV)
+
+get-⟦ρ⟧ : ∀ {ρ x V}
+  → get ρ x ≡ just V
+  → get ⟦ ρ ⟧ᴱ x ≡ just ⟦ V ⟧ⱽ
+get-⟦ρ⟧ {V ∷ ρ} {zero} refl = refl
+get-⟦ρ⟧ {V ∷ ρ} {suc x} ρx = get-⟦ρ⟧{ρ}{x} ρx
+
+exist-⟦⟧ⱽ : ∀ V → ∃[ v ] ⟦ V ⟧ⱽ v
+exist-⟦⟧ⱽ (natV n) = (nat n) , refl
+exist-⟦⟧ⱽ (closV N ρ) = (func []) , []
+
+denot-var : ∀ ρ x V
+  → get ρ x ≡ just V
+ → ∃[ v ] ⟦ ` x ⟧ ⟦ ρ ⟧ᴱ v
+denot-var ρ x V ρxV
+  rewrite get-⟦ρ⟧{ρ} ρxV = exist-⟦⟧ⱽ V
+
+fundamental : ∀ M ρ → 𝓖 ρ ⊢ᵒ ℰ⟦ M ⟧ ρ
+fundamental (` x) ρ =
+  substᵒ (≡ᵒ-sym (ℰ-stmt (` x) ρ)) (Λᵒ[ V ] →ᵒI
+    (pureᵒE Zᵒ (λ {(i , ixρV) →
+      let ρxV = interp-var x ρ i V ixρV in
+      (Sᵒ (lookup-𝓖 ρ x V ρxV))
+      ,ᵒ pureᵒI (denot-var ρ x V ρxV)})))
+
+fundamental (ƛ N) ρ = {!!}
+fundamental (L · M) ρ = {!!}
+fundamental `zero ρ = {!!}
+fundamental (`suc M) ρ = {!!}
+fundamental (case L M N) ρ = {!!}
 
 
 {---- Failed attempt, but so close. --}
@@ -324,22 +389,12 @@ interpDenot{case L M N}{ρ}{suc i} Mv ⟦V⟧w | just W | Mv′
 𝔾 i [] = ⊤
 𝔾 i (V ∷ ρ) = 𝕍 i V × 𝔾 i ρ
 
-exist-⟦⟧ⱽ : ∀ V → ∃[ v ] ⟦ V ⟧ⱽ v
-exist-⟦⟧ⱽ (natV n) = (nat n) , refl
-exist-⟦⟧ⱽ (closV N ρ) = (func []) , []
-
 get-𝔾 : ∀ {ρ x V i}
   → get ρ x ≡ just V
   → 𝔾 i ρ
   → 𝕍 i V
 get-𝔾 {V ∷ ρ} {zero} refl (𝕍iV , 𝔾iρ) = 𝕍iV
 get-𝔾 {V ∷ ρ} {suc x} ρx (𝕍iV , 𝔾iρ) = get-𝔾 ρx 𝔾iρ
-
-get-⟦ρ⟧ : ∀ {ρ x V}
-  → get ρ x ≡ just V
-  → get ⟦ ρ ⟧ᴱ x ≡ just ⟦ V ⟧ⱽ
-get-⟦ρ⟧ {V ∷ ρ} {zero} refl = refl
-get-⟦ρ⟧ {V ∷ ρ} {suc x} ρx = get-⟦ρ⟧{ρ}{x} ρx
 
 𝔼mono : ∀ i M ρ → 𝔼 (suc i) M ρ → 𝔼 i M ρ
 𝔼mono i M ρ 𝔼Mρ = {!!}
