@@ -40,7 +40,7 @@ F ^ (suc n)  =  F ∘ (F ^ n)
 ⟦_⟧ⱽ : ∀{Γ : List Type}{V : Term}{T : Type} → Γ ⊢ⱽ V ⦂ T → ⟦ Γ ⟧ᴸ → ⟦ T ⟧ᵗ
 ⟦ ⊢ⱽzero ⟧ⱽ ρ = 0
 ⟦ ⊢ⱽsuc ⊢V ⟧ⱽ ρ = suc (⟦ ⊢V ⟧ⱽ ρ)
-⟦ ⊢ⱽƛ ⊢N ⟧ⱽ ρ = λ a n → ⟦ ⊢N ⟧ (a , ρ) n
+⟦ ⊢ⱽƛ ⊢N ⟧ⱽ ρ = λ a → ⟦ ⊢N ⟧ (a , ρ)
 ⟦ ⊢ⱽμ{Γ}{V}{A}{B} ⊢V ⟧ⱽ ρ a n =
   (F ^ (suc n)) (λ a n → nothing) a n
   where
