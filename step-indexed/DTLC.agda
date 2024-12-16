@@ -239,9 +239,9 @@ pre-𝒱 (closV N ρ) = ∀ᵒ[ W ] ▷ᵒ 𝒱ᵒ⟦ W ⟧ →ᵒ ▷ᵒ (ℰ�
 
 {- use fixpointᵒ to get the equations we want for ℰ and 𝒱. -}
 
-ℰ-stmt : ∀ M ρ → ℰ⟦ M ⟧ ρ ≡ᵒ (∀ᵒ[ V ] (∃[ i ] interp M ρ i ≡ just V) ᵒ
+ℰ-def : ∀ M ρ → ℰ⟦ M ⟧ ρ ≡ᵒ (∀ᵒ[ V ] (∃[ i ] interp M ρ i ≡ just V) ᵒ
                                 →ᵒ (𝒱⟦ V ⟧ ×ᵒ ((∃[ v ] (⟦ M ⟧ ⟦ ρ ⟧ᴱ v)) ᵒ)))
-ℰ-stmt M ρ = 
+ℰ-def M ρ = 
   ℰ⟦ M ⟧ ρ                               ⩦⟨ ≡ᵒ-refl refl ⟩
   μᵒ pre-𝒱⊎ℰ (inj₂ (M , ρ))             ⩦⟨ fixpointᵒ pre-𝒱⊎ℰ (inj₂ (M , ρ)) ⟩
   letᵒ (μᵒ pre-𝒱⊎ℰ) (pre-𝒱⊎ℰ (inj₂ (M , ρ))) 
@@ -283,6 +283,32 @@ exist-⟦⟧ⱽ : ∀ V → ∃[ v ] ⟦ V ⟧ⱽ v
 exist-⟦⟧ⱽ (natV n) = (nat n) , refl
 exist-⟦⟧ⱽ (closV N ρ) = (func []) , []
 
+interp-app : ∀ {L M : Term}{ρ : List Value}{i : ℕ}{V : Value}
+  → interp (L · M) ρ i ≡ just V
+  → (∃[ j ] (∃[ N ] ∃[ ρ′ ] interp L ρ j ≡ just (closV N ρ′)
+     × (∃[ W ] interp M ρ j ≡ just W
+     × interp N (W ∷ ρ′) j ≡ just V)))
+interp-app {L} {M} {ρ} {suc i} {V} iLMρV
+    with interp L ρ i in iLC | iLMρV
+... | nothing | ()
+... | just (closV N ρ′) | iLMρV′
+    with interp M ρ i in iMW | iLMρV′
+... | nothing | ()
+... | just W | iNWρV =
+    i , N , ρ′ , iLC , W , iMW , iNWρV
+    
+interp-app-cont : ∀ {L M : Term}{ρ : List Value}{i : ℕ}{V : Value} {P : Prop}
+  → interp (L · M) ρ i ≡ just V
+  → (∀ j N ρ′ W → interp L ρ j ≡ just (closV N ρ′)
+     → interp M ρ j ≡ just W
+     → interp N (W ∷ ρ′) j ≡ just V
+     → P)
+  → P
+interp-app-cont{L}{M}{ρ}{i} iLMρV cont
+    with interp-app{L}{M}{ρ}{i} iLMρV
+... | j , N , ρ′ , iLN , W , iMW , iNWV = cont j N ρ′ W iLN iMW iNWV
+
+
 get-denot-var : ∀ ρ x V
   → get ρ x ≡ just V
  → ∃[ v ] ⟦ ` x ⟧ ⟦ ρ ⟧ᴱ v
@@ -291,24 +317,40 @@ get-denot-var ρ x V ρxV
 
 fundamental : ∀ M ρ → 𝓖 ρ ⊢ᵒ ℰ⟦ M ⟧ ρ
 fundamental (` x) ρ =
-  substᵒ (≡ᵒ-sym (ℰ-stmt (` x) ρ)) (Λᵒ[ V ] →ᵒI
+  substᵒ (≡ᵒ-sym (ℰ-def (` x) ρ)) (Λᵒ[ V ] →ᵒI
     (pureᵒE Zᵒ (λ {(i , ixρV) →
       let ρxV = interp-var-get x ρ i V ixρV in
       (Sᵒ (lookup-𝓖 ρ x V ρxV))
       ,ᵒ pureᵒI (get-denot-var ρ x V ρxV)})))
 
 fundamental (ƛ N) ρ =
-  substᵒ (≡ᵒ-sym (ℰ-stmt (ƛ N) ρ)) (Λᵒ[ V ] →ᵒI 
+  substᵒ (≡ᵒ-sym (ℰ-def (ƛ N) ρ)) (Λᵒ[ V ] →ᵒI 
     (pureᵒE Zᵒ (λ {(suc i , refl) →
      (substᵒ (≡ᵒ-sym 𝒱-fun) (Λᵒ[ W ] →ᵒI
        let IH = →ᵒI-rev (▷→ (monoᵒ (→ᵒI (fundamental N (W ∷ ρ))))) in
        weaken{▷ᵒ 𝒱⟦ W ⟧ ∷ 𝓖 ρ}{ϕ = ▷ᵒ (ℰ⟦ N ⟧ (W ∷ ρ))} IH
        (Zᵒ ,ₚ (drop (drop ⊂-refl)))))
      ,ᵒ
-     {!!}
+     pureᵒI ((func []) , [])
      })))
 
-fundamental (L · M) ρ = {!!}
+fundamental (L · M) ρ =
+  let IHL = substᵒ (ℰ-def L ρ) (fundamental L ρ) in
+  let IHM = substᵒ (ℰ-def M ρ) (fundamental M ρ) in
+  substᵒ (≡ᵒ-sym (ℰ-def (L · M) ρ)) (Λᵒ[ V ] →ᵒI
+    (pureᵒE Zᵒ λ {(i , iLMV) →
+            interp-app-cont{L}{M}{ρ}{i} iLMV
+            (λ j N ρ′ W iLN iMW iNWV →
+            let IHM′ = →ᵒE (∀ᵒE IHM W) (pureᵒI (j , iMW)) in
+            let IHL′ = →ᵒE (∀ᵒE IHL (closV N ρ′)) (pureᵒI (j , iLN)) in
+            let 𝒱⟦W⟧ = proj₁ᵒ IHM′ in
+            let 𝒱⟦Nρ′⟧ = proj₁ᵒ IHL′ in
+            let ▷ℰN = →ᵒE (∀ᵒE (substᵒ (𝒱-fun {N}{ρ′}) 𝒱⟦Nρ′⟧) W)
+                          (monoᵒ 𝒱⟦W⟧) in
+            pureᵒE (proj₂ᵒ (Sᵒ IHM′)) λ {(w , ⟦M⟧w) →
+            {- Need to think about the ▷ᵒ's -}
+            {!!}
+            })}))
 fundamental `zero ρ = {!!}
 fundamental (`suc M) ρ = {!!}
 fundamental (case L M N) ρ = {!!}
