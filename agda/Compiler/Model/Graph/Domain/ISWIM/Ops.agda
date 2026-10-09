@@ -1,5 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 module Compiler.Model.Graph.Domain.ISWIM.Ops where
 
 open import Primitives
@@ -28,6 +26,7 @@ open import Data.List.Membership.Propositional.Properties
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
 open import Data.Nat.Properties using (≤-pred)
 open import Data.Fin using (Fin; zero; suc)
+open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
@@ -81,6 +80,7 @@ nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
 nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
 
 𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
+𝒯 zero Ds ⟨⟩ = True
 𝒯 (suc n) Ds (tup[_]_ {n'} i d) = Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i))
 𝒯 n Ds d = False
 
@@ -359,6 +359,32 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
       , lower (𝒞-mono ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩ ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ⟨ lift D'<D , ⟨ lift FL'<FL , ⟨ lift FR'<FR , ptt ⟩ ⟩ ⟩) ⟩
 -}
 
+nthD-mono : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
+  → results-rel-pres _⊆_ (replicate n ■) Ds Es → (i : Fin n) → nthD Ds i ⊆ nthD Es i
+nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D⊆ , _ ⟩ zero = D⊆
+nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD-mono Ds Es Ds⊆ i
+
+𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
+𝒯-mono zero Ds Es Ds⊆ = lift G
+  where
+  G : 𝒯 zero Ds ⊆ 𝒯 zero Es
+  G ⟨⟩ tt = tt
+𝒯-mono (suc n) Ds Es Ds⊆ = lift G
+  where
+  G : 𝒯 (suc n) Ds ⊆ 𝒯 (suc n) Es
+  G (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , nthD-mono Ds Es Ds⊆ i d d∈ ⟩
+  G (const k) ()
+  G (V ↦ w) ()
+  G ν ()
+  G ω ()
+  G ⦅ u ∣ ()
+  G ∣ V ⦆ ()
+  G (left d) ()
+  G (right d) ()
+
+proj-mono : ∀ {n} (i : Fin n) → monotone (■ ∷ []) ■ (proj i)
+proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → D⊆ (tup[ i ] d))
+
 {-
 proj-mono : ∀ i → monotone (■ ∷ []) ■ (proj i)
 proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -556,6 +582,32 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
 -}
+
+nthD-consis : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
+  → results-rel-pres (Every _~_) (replicate n ■) Ds Es
+  → (i : Fin n) → Every _~_ (nthD Ds i) (nthD Es i)
+nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D~ , _ ⟩ zero = D~
+nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds~ ⟩ (suc i) = nthD-consis Ds Es Ds~ i
+
+𝒯-consis : ∀ n → consistent _~_ (replicate n ■) ■ (𝒯 n)
+𝒯-consis zero Ds Es Ds~ = lift G
+  where
+  G : Every _~_ (𝒯 zero Ds) (𝒯 zero Es)
+  G ⟨⟩ ⟨⟩ tt tt = tt
+𝒯-consis (suc n) Ds Es Ds~ = lift G
+  where
+  G : Every _~_ (𝒯 (suc n) Ds) (𝒯 (suc n) Es)
+  G (tup[ i ] d) (tup[ i' ] d') ⟨ refl , d∈ ⟩ ⟨ refl , d'∈ ⟩ with i fin≟ i'
+  ... | yes refl = ⟨ refl , inj₂ ⟨ refl , nthD-consis Ds Es Ds~ i d d' d∈ d'∈ ⟩ ⟩
+  ... | no neq = ⟨ refl , inj₁ neq ⟩
+
+proj-consis : ∀ {n} (i : Fin n) → consistent _~_ (■ ∷ []) ■ (proj i)
+proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D~ , _ ⟩ = lift G
+  where
+  G : Every _~_ (proj i ⟨ D , ptt ⟩) (proj i ⟨ D' , ptt ⟩)
+  G d d' d∈ d'∈ with D~ (tup[ i ] d) (tup[ i ] d') d∈ d'∈
+  ... | ⟨ refl , inj₁ neq ⟩ = ⊥-elim (neq refl)
+  ... | ⟨ refl , inj₂ ⟨ _ , d~ ⟩ ⟩ = d~
 
 ℬ-consis : ∀ B k → consistent _~_ [] ■ (ℬ B k)
 ℬ-consis B k _ _ _ = lift G

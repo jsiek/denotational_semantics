@@ -1,5 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 module Compiler.Model.Graph.Sem.Clos4Iswim where
 {-
 
@@ -64,16 +62,12 @@ open Eq.≡-Reasoning
 𝕆-Clos4-mono pair-op = pair-mono
 𝕆-Clos4-mono fst-op = car-mono
 𝕆-Clos4-mono snd-op = cdr-mono
-𝕆-Clos4-mono (tuple x) = {!   !}
-𝕆-Clos4-mono (get x) = {!   !}
+𝕆-Clos4-mono (tuple x) = 𝒯-mono x
+𝕆-Clos4-mono (get x) = proj-mono x
 𝕆-Clos4-mono inl-op = ℒ-mono
 𝕆-Clos4-mono inr-op = ℛ-mono
 𝕆-Clos4-mono case-op = 𝒞-mono
 
-𝕆-Clos4-consis : 𝕆-consistent _~_ sig 𝕆-Clos4
-𝕆-Clos4-consis = {!   !}
-
-{-
 𝕆-Clos4-consis : 𝕆-consistent _~_ sig 𝕆-Clos4
 𝕆-Clos4-consis fun-op ⟨ F1 , _ ⟩ ⟨ F2 , _ ⟩  ⟨ F~ , _ ⟩ = 
   Λ-consis ⟨ (λ X → Λ ⟨ (F1 X) , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λ ⟨ (F2 X) , ptt ⟩) , ptt ⟩
@@ -85,7 +79,6 @@ open Eq.≡-Reasoning
          ⟨ ⋆ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩ , ⟨ N2 , ptt ⟩ ⟩
          ⟨ ⋆-consis ⟨ L1 , ⟨ M1 , ptt ⟩ ⟩ ⟨ L2 , ⟨ M2 , ptt ⟩ ⟩  ⟨ L~ , ⟨ M~ , ptt ⟩ ⟩ 
          , ⟨ N~ , ptt ⟩ ⟩
- {- DComp-pres (Every _~_) (■ ∷ ■ ∷ []) ■ (■ ∷ []) ■ _⋆_ _⋆_ _⋆_ _⋆_ ⋆-consis ⋆-consis -}
 𝕆-Clos4-consis (lit B k) = ℬ-consis B k
 𝕆-Clos4-consis pair-op = pair-consis
 𝕆-Clos4-consis fst-op = car-consis
@@ -95,7 +88,6 @@ open Eq.≡-Reasoning
 𝕆-Clos4-consis inl-op = ℒ-consis
 𝕆-Clos4-consis inr-op = ℛ-consis
 𝕆-Clos4-consis case-op = 𝒞-consis
--}
 
 open import Fold2 Op sig
 open import NewSemantics Op sig public
