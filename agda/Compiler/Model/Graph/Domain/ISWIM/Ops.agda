@@ -28,6 +28,7 @@ open import Data.List.Membership.Propositional.Properties
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
 open import Data.Nat.Properties using (≤-pred)
 open import Data.Fin using (Fin; zero; suc)
+open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
@@ -579,6 +580,29 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
     with D~ ∥ us ∥ ∥ vs ∥ us∈ vs∈ 
   ... | q = nth-~ i us vs q i< i<'
 -}
+
+nthD-consis : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
+  → results-rel-pres (Every _~_) (replicate n ■) Ds Es
+  → (i : Fin n) → Every _~_ (nthD Ds i) (nthD Es i)
+nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D~ , _ ⟩ zero = D~
+nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds~ ⟩ (suc i) = nthD-consis Ds Es Ds~ i
+
+𝒯-consis : ∀ n → consistent _~_ (replicate n ■) ■ (𝒯 n)
+𝒯-consis zero Ds Es Ds~ = lift (λ u v ())
+𝒯-consis (suc n) Ds Es Ds~ = lift G
+  where
+  G : Every _~_ (𝒯 (suc n) Ds) (𝒯 (suc n) Es)
+  G (tup[ i ] d) (tup[ i' ] d') ⟨ refl , d∈ ⟩ ⟨ refl , d'∈ ⟩ with i fin≟ i'
+  ... | yes refl = ⟨ refl , inj₂ ⟨ refl , nthD-consis Ds Es Ds~ i d d' d∈ d'∈ ⟩ ⟩
+  ... | no neq = ⟨ refl , inj₁ neq ⟩
+
+proj-consis : ∀ {n} (i : Fin n) → consistent _~_ (■ ∷ []) ■ (proj i)
+proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D~ , _ ⟩ = lift G
+  where
+  G : Every _~_ (proj i ⟨ D , ptt ⟩) (proj i ⟨ D' , ptt ⟩)
+  G d d' d∈ d'∈ with D~ (tup[ i ] d) (tup[ i ] d') d∈ d'∈
+  ... | ⟨ refl , inj₁ neq ⟩ = ⊥-elim (neq refl)
+  ... | ⟨ refl , inj₂ ⟨ _ , d~ ⟩ ⟩ = d~
 
 ℬ-consis : ∀ B k → consistent _~_ [] ■ (ℬ B k)
 ℬ-consis B k _ _ _ = lift G

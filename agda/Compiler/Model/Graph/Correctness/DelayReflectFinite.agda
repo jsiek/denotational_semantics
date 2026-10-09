@@ -14,10 +14,12 @@
   so junk entries and mixed closures never produce a target-only result.
 
   Assumptions (postulates):
-  - ⟦⟧'-consis : target denotations are consistent.
   - src-continuous : source denotations are continuous. This is the
     conclusion of NewSemantics.⟦⟧-continuous, which would follow from a
     ContinuousSemantics instance for Clos3.
+
+  Target denotations are consistent (⟦⟧'-consis), which follows from the
+  consistency of the target operators (𝕆-Clos4-consis).
 -}
 
 open import NewSigUtil
@@ -35,7 +37,8 @@ open import Compiler.Model.Graph.Sem.Clos3Iswim as S3
 open import Compiler.Model.Graph.Sem.Clos4Iswim as S4 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Compile.Delay using (delay; del-map-args)
-open import NewEnv using (nonempty-env; extend-nonempty-env)
+open import NewEnv using (nonempty-env; extend-nonempty-env; •-~)
+open import NewDenotProperties using (Every)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; z≤n; _⊔_)
@@ -53,6 +56,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
+open import Level using (lift; lower)
 
 module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 
@@ -134,9 +138,27 @@ open import Compiler.Model.Graph.Correctness.DelayFiniteRel
 
 {- Assumptions ----------------------------------------------------------------}
 
-postulate
-  ⟦⟧'-consis : ∀ (M' : AST') (ρ' : Env) → (∀ x → consis (ρ' x)) → consis (⟦ M' ⟧' ρ')
+{- target denotations are consistent, by induction on the term -}
+⟦⟧'-consis-env : ∀ (M' : AST') {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
+  → Every _~_ (⟦ M' ⟧' ρ₁) (⟦ M' ⟧' ρ₂)
+⟦⟧'-consis-arg : ∀ {b} (arg : Arg' b) {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
+  → result-rel-pres (Every _~_) b (⟦ arg ⟧ₐ' ρ₁) (⟦ arg ⟧ₐ' ρ₂)
+⟦⟧'-consis-args : ∀ {bs} (args : Args' bs) {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
+  → results-rel-pres (Every _~_) bs (⟦ args ⟧₊' ρ₁) (⟦ args ⟧₊' ρ₂)
 
+⟦⟧'-consis-env (# x) ρ~ = ρ~ x
+⟦⟧'-consis-env (op ⦅ args ⦆') {ρ₁}{ρ₂} ρ~ =
+  lower (𝕆-Clos4-consis op (⟦ args ⟧₊' ρ₁) (⟦ args ⟧₊' ρ₂) (⟦⟧'-consis-args args ρ~))
+⟦⟧'-consis-arg (ast' M') ρ~ = lift (⟦⟧'-consis-env M' ρ~)
+⟦⟧'-consis-arg (bind' arg) ρ~ = λ X Y X~Y → ⟦⟧'-consis-arg arg (•-~ (Every _~_) ρ~ X~Y)
+⟦⟧'-consis-arg (clear' arg) ρ~ = ⟦⟧'-consis-arg arg (λ x → Init-consis)
+⟦⟧'-consis-args nil ρ~ = ptt
+⟦⟧'-consis-args (cons arg args) ρ~ = ⟨ ⟦⟧'-consis-arg arg ρ~ , ⟦⟧'-consis-args args ρ~ ⟩
+
+⟦⟧'-consis : ∀ (M' : AST') (ρ' : Env) → (∀ x → consis (ρ' x)) → consis (⟦ M' ⟧' ρ')
+⟦⟧'-consis M' ρ' ρ'~ = ⟦⟧'-consis-env M' ρ'~
+
+postulate
   src-continuous : ∀ (M : AST) (ρ : Env) → nonempty-env ρ → ∀ v → v ∈ ⟦ M ⟧ ρ
     → Σ[ Vs ∈ (Var → List Value) ] (∀ x → Vs x ≢ [] × mem (Vs x) ⊆ ρ x)
                                    × v ∈ ⟦ M ⟧ (λ x → mem (Vs x))
