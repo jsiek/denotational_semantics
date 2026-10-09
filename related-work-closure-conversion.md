@@ -20,6 +20,52 @@ Each entry says how closely it was checked:
 4. **Untyped mechanized proofs mostly avoid Pitts.** Mechanized proofs of closure conversion for untyped or dynamically typed languages are almost all *operational* and *step-indexed*: CertiCoq, CakeML, Pilsner. One Coq paper (2208.14260) reports that Pitts-style untyped relations fail Coq's strict-positivity check. Agda has the same check.
 5. **A third way to discharge `▷`.** Guarded domain theory and partiality-monad semantics give denotations that contain steps, so `▷` can be discharged (Møgelberg–Paviotti; Danielsson). This is a third option beside the finite-observation relation and Pitts, and it is closest to the `step-indexed/` experiments in this repo.
 
+## Comparison table
+
+One row per compiler or transformation paper, starting with this project. Purely theoretical works (Pitts, Reynolds, Abramsky, guarded domain theory) have no compiler and are not included.
+
+**Reading the cells**
+- "?" means the cell was not confirmed from what was read; check the paper.
+- **TC** means the source language is Turing complete.
+- **CC** means closure conversion.
+- **LR** means logical relation.
+
+| Work | Source language | TC | Semantics | CC | Other passes | Proof technique | Mechanized | Divergence |
+|---|---|---|---|---|---|---|---|---|
+| **This project: delay pass (Clos3 → Clos4)** | **Untyped ISWIM-like λ with tuples and sums** | **Yes** | **Denotational on both sides (graph models)** | **Yes** (delay is the core step) | Earlier stages: enclose, optimize, concretize | Proposed: one-sided relations indexed by finite observations | **Agda** (in progress) | Yes (one side denotes ∅ exactly when the other does) |
+| Chlipala, PLDI 2007 | STLC | No (total) | Denotational into Coq types; coinductive traces from `Alloc` on | Yes | CPS, allocation, flattening, codegen | Type-indexed LR | Coq | Not in source (total) |
+| Chlipala, POPL 2010 | Untyped Mini-ML with references and exceptions | Yes | Big-step operational (PHOAS, closure heap) | Yes | CPS, CSE, codegen | Simulation over derivations; code related syntactically | Coq | No (terminating programs only) |
+| Danielsson, ICFP 2012 | Untyped λ with constants | Yes | Closure-based interpreter in the partiality monad ("not denotational"); functional small-step VM | **No** (λ compiles to a VM closure) | Compile to stack VM | Structural value map `comp_v`; weak bisimilarity | Agda | Yes, plus crashes |
+| Benton & Hur, ICFP 2009 | Simply typed λ with recursion | Yes | Source: domain-theoretic denotational. Target: SECD-style operational | No | Compile to SECD-style machine | Biorthogonal, step-indexed LR | Coq | Yes |
+| Nielsen, BRICS 2000 | Typed functional language | ? | Denotational | No (defunctionalization) | — | LR | No (paper) | Terminating programs only |
+| Paraskevopoulou & Appel, ICFP 2019 (CertiCoq) | Untyped CPS λ (an IL; the source is Gallina) | Yes (IL) | Operational, with profiling (time/space) | Yes (flat closures) | Part of CertiCoq | Step-indexed LR | Coq | ? |
+| Paraskevopoulou, Li, Appel, ICFP 2021 (CertiCoq) | Untyped λ ILs | Yes (IL) | Operational | Yes | Uncurrying, inlining, shrink reductions, … | Step-indexed LR, composed across passes | Coq | Yes |
+| CakeML backend (Owens et al. 2017; Tan et al. 2019) | Typed ML source; CC is on the untyped IL ClosLang | Yes | Functional big-step with clocks | Yes (`clos_to_bvl`) | Many backend passes | Simulation | HOL4 | Yes (clocks) |
+| Pilsner, ICFP 2015 | ML-like higher-order imperative language | Yes | Operational | ? | Multi-pass, through a CPS IL | Parametric inter-language simulations | Coq | ? |
+| Wang & Nadathur, ESOP 2016 | Typed functional language | ? | Operational | Yes (typed CC) | CPS, code hoisting | Step-indexed LR | Abella (λProlog) | ? |
+| Savary Bélanger, Monnier, Pientka, CPP 2013 / JFR 2015 | STLC | No | None (type preservation only) | Yes | CPS, hoisting | Typing by construction (HOAS) | Beluga | n/a |
+| Jamner et al., Pyrosome, OOPSLA 2025 | STLC extended to System F with references and recursive functions | Yes | Equational theories | Yes | CPS, others | Equivalence preservation | Coq | ? |
+| Minamide, Morrisett, Harper, POPL 1996 | Typed λ (simple and polymorphic) | ? | Operational | Yes (typed, existentials) | — | Type-indexed LR | No (paper) | ? |
+| Ahmed & Blume, ICFP 2008 | System F with existential and recursive types | Yes | Operational | Yes | — | Step-indexed LR plus back-translation (full abstraction) | No (paper) | Yes |
+| Perconti & Ahmed, ESOP 2014 | Typed language with recursion | Yes | Operational, multi-language | Yes | Two-pass compiler, including CC | Step-indexed LR over a multi-language | ? | ? |
+| Bowman & Ahmed, PLDI 2018 | Calculus of Constructions | No (normalizing) | Type-theoretic | Yes (type-preserving) | — | Model of CC-CC in CC | ? | n/a |
+| Sullivan, Downen, Ariola, PPDP 2023 | Call-by-push-value | ? | Equational theory plus abstract machine | Yes (as β/η steps) | — | Soundness of equational theory; LR for the machine | ? | ? |
+| Wand & Steckler, POPL 1994 / TOPLAS 1997 | Untyped (Scheme-like) | Yes | Operational (labelled transition system) | Yes (selective, lightweight) | — | Flow-analysis constraints | No (paper) | ? |
+| Biernacki & Polesiuk, OlivierFest 2025 | Untyped CBV λ with call/cc and abort | Yes | Operational | No (CPS translation) | — | Untyped step-indexed LR, defined by eliminators | ? | Yes |
+
+**How this project differs.** It is the only row that combines all of the following:
+- an untyped, Turing-complete source;
+- closure conversion;
+- denotational semantics on both sides;
+- mechanization.
+
+The other denotational rows each lack something:
+- Chlipala 2007 is typed and total.
+- Benton–Hur is denotational only on the source side, and its compiler does no closure conversion.
+- Nielsen is typed and does defunctionalization rather than closure conversion.
+
+Every mechanized untyped closure-conversion proof in the table is operational.
+
 ---
 
 ## 1. Closure conversion proved correct with denotational semantics
