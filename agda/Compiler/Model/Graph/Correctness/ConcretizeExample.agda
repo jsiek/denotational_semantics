@@ -28,6 +28,7 @@ open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
 
 open import Data.Nat using (ℕ)
+open import Data.Fin using (zero)
 open import Data.List using ([]; _∷_)
 open import Data.List.Relation.Unary.Any using (here)
 open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)
@@ -49,18 +50,14 @@ prog = case-op ⦅ inl-op ⦅ lit-nat 7 ,, Nil ⦆
               ,, ⟩ lit-nat 0
               ,, Nil ⦆
 
-prog-good : Good prog
-prog-good = good-case (good-inl good-lit)
-                      (good-app (good-clos good-var (fv-cons fv-nil)) good-lit)
-                      good-lit
-
 prog-is-7 : const {Nat} 7 ∈ ⟦ prog ⟧ ρ₀
 prog-is-7 = inj₁ ⟨ const 7 , ⟨ [] , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , app∋ ⟩ ⟩ ⟩
   where
   app∋ : const {Nat} 7 ∈ ⟦ app ⦅ const-x ,, lit-nat 5 ,, Nil ⦆ ⟧ (mem (const {Nat} 7 ∷ []) • ρ₀)
-  app∋ = ⟨ const 5 ∷ [] , ⟨ ⟨ here refl , (λ ()) ⟩
+  {- the closure applies because its free variable x has a value, 7 -}
+  app∋ = ⟨ const 5 ∷ [] , ⟨ ⟨ (λ { zero → ⟨ const 7 , here refl ⟩ }) , ⟨ here refl , (λ ()) ⟩ ⟩
                           , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
 
 {- after concretize and delay, the program still produces 7 -}
 compiled-is-7 : const {Nat} 7 ∈ S4.⟦ delay (concretize-program prog) ⟧ ρ₀
-compiled-is-7 = proj₁ (compile-correct-const prog prog-good 7) prog-is-7
+compiled-is-7 = proj₁ (compile-correct-const prog 7) prog-is-7

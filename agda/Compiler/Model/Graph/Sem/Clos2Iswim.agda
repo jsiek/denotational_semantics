@@ -4,6 +4,8 @@ module Compiler.Model.Graph.Sem.Clos2Iswim where
  In this intermediate semantics a closure binds its free variables like a
    nested let: its body is applied directly to the denotations of the free
    variable expressions, and the result is a function of the argument.
+   Like tuples, closures are strict: a closure has no values unless each
+   of its free variables has one.
  This semantics is after the 'enclose' pass,
    and before the 'concretize' pass.
 
@@ -47,8 +49,12 @@ apply-n-mono zero F F' _ _ F~ _ = F~
 apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~ ⟩ =
   apply-n-mono n (F D) (F' D') Ds Ds' (F~ D D' D⊆) Ds~
 
+{- D, provided that each of the n sets in Ds is nonempty -}
+guard-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
+guard-n n Ds D w = (∀ i → nonempty (nthD Ds i)) × w ∈ D
+
 𝕆-Clos2 : DOpSig (𝒫 Value) sig
-𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = Λ ⟨ apply-n n F Ds , ptt ⟩
+𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩)
 𝕆-Clos2 app = ⋆
 𝕆-Clos2 (lit B k) = ℬ B k
 𝕆-Clos2 (tuple n) = 𝒯 n
@@ -58,9 +64,13 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2 case-op = 𝒞
 
 𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
-𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
-  Λ-mono ⟨ apply-n n F Ds , ptt ⟩ ⟨ apply-n n F' Ds' , ptt ⟩
-         ⟨ apply-n-mono n F F' Ds Ds' F~ Ds~ , ptt ⟩
+𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = lift G
+  where
+  Λ⊆ = lower (Λ-mono ⟨ apply-n n F Ds , ptt ⟩ ⟨ apply-n n F' Ds' , ptt ⟩
+                     ⟨ apply-n-mono n F F' Ds Ds' F~ Ds~ , ptt ⟩)
+  G : guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩) ⊆ guard-n n Ds' (Λ ⟨ apply-n n F' Ds' , ptt ⟩)
+  G w ⟨ ne , w∈ ⟩ =
+    ⟨ (λ i → ⟨ proj₁ (ne i) , nthD-mono Ds Ds' Ds~ i _ (proj₂ (ne i)) ⟩) , Λ⊆ w w∈ ⟩
 𝕆-Clos2-mono app = ⋆-mono
 𝕆-Clos2-mono (lit B k) _ _ _ = lift (λ d z → z)
 𝕆-Clos2-mono (tuple x) = 𝒯-mono x

@@ -19,7 +19,7 @@ open import NewEnv
          initial-finiteNE-env; initial-fin; initial-fin-⊆; monotone-env)
 
 open import Data.Nat using (zero; suc)
-open import Data.Fin using (Fin)
+open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate) renaming (map to lmap)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈-map⁻)
@@ -148,13 +148,33 @@ cdr-cont c fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ with c ∣ FV ⦆ e∈
 𝒯-mono-env : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)}
   → (∀ i → Mono (λ ρ → nthD (Ds ρ) i)) → Mono (λ ρ → 𝒯 n (Ds ρ))
 𝒯-mono-env {zero} m ρ⊆ ⟨⟩ tt = tt
-𝒯-mono-env {suc n} m ρ⊆ (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , m i ρ⊆ d d∈ ⟩
+𝒯-mono-env {suc n} m ρ⊆ (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
+  ⟨ refl , ⟨ m i ρ⊆ d d∈ , (λ j → ⟨ proj₁ (ne j) , m j ρ⊆ _ (proj₂ (ne j)) ⟩) ⟩ ⟩
+
+{- one finite approximation in which each of finitely many sets is nonempty -}
+cover : ∀ {m} (Es : Fin m → VEnv → 𝒫 Value) {ρ} → nonempty-env ρ
+  → (∀ j → Mono (Es j)) → (∀ j → Cont (Es j) ρ) → (∀ j → nonempty (Es j ρ))
+  → Σ[ a ∈ Approx ρ ] (∀ j → nonempty (Es j (env a)))
+cover {zero} Es NE ms cs nes = ⟨ approx-init NE , (λ ()) ⟩
+cover {suc m} Es NE ms cs nes
+    with one (Es zero) (cs zero) (proj₂ (nes zero))
+       | cover (λ j → Es (suc j)) NE (λ j → ms (suc j)) (λ j → cs (suc j)) (λ j → nes (suc j))
+... | ⟨ a , e∈ ⟩ | ⟨ b , f ⟩ = ⟨ approx-join a b , G ⟩
+  where
+  G : ∀ j → nonempty (Es j (env (approx-join a b)))
+  G zero = ⟨ _ , ms zero (join-l a b) _ e∈ ⟩
+  G (suc j) = ⟨ proj₁ (f j) , ms (suc j) (join-r a b) _ (proj₂ (f j)) ⟩
 
 𝒯-cont : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)} {ρ} → nonempty-env ρ
+  → (∀ i → Mono (λ ρ → nthD (Ds ρ) i))
   → (∀ i → Cont (λ ρ → nthD (Ds ρ) i) ρ) → Cont (λ ρ → 𝒯 n (Ds ρ)) ρ
-𝒯-cont {zero} {Ds} NE c ⟨⟩ tt = done (λ ρ → 𝒯 zero (Ds ρ)) (approx-init NE) ⟨⟩ tt
-𝒯-cont {suc n} NE c (tup[ i ] d) ⟨ refl , d∈ ⟩ with c i d d∈
-... | ⟨ ρ′ , ⟨ f , ⟨ s , d∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ refl , d∈′ ⟩ ⟩ ⟩ ⟩
+𝒯-cont {zero} {Ds} NE m c ⟨⟩ tt = done (λ ρ → 𝒯 zero (Ds ρ)) (approx-init NE) ⟨⟩ tt
+𝒯-cont {suc n} {Ds} NE m c (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩
+    with one (λ ρ → nthD (Ds ρ) i) (c i) d∈ | cover (λ j ρ → nthD (Ds ρ) j) NE m c ne
+... | ⟨ a , d∈′ ⟩ | ⟨ b , ne′ ⟩ =
+  done (λ ρ → 𝒯 (suc n) (Ds ρ)) (approx-join a b) (tup[ i ] d)
+    ⟨ refl , ⟨ m i (join-l a b) d d∈′
+             , (λ j → ⟨ proj₁ (ne′ j) , m j (join-r a b) _ (proj₂ (ne′ j)) ⟩) ⟩ ⟩
 
 proj-mono-env : ∀ {n} (i : Fin n) {E} → Mono E → Mono (λ ρ → proj i ⟨ E ρ , ptt ⟩)
 proj-mono-env i m ρ⊆ d d∈ = m ρ⊆ (tup[ i ] d) d∈

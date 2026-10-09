@@ -81,7 +81,9 @@ nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
 
 𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
 𝒯 zero Ds ⟨⟩ = True
-𝒯 (suc n) Ds (tup[_]_ {n'} i d) = Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i))
+{- tuples are strict: a tuple has a value only when all of its components do -}
+𝒯 (suc n) Ds (tup[_]_ {n'} i d) =
+  Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i)) × (∀ j → nonempty (nthD Ds j))
 𝒯 n Ds d = False
 
 proj : ∀ {n} → Fin n → DOp (𝒫 Value) (■ ∷ [])
@@ -372,7 +374,9 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
 𝒯-mono (suc n) Ds Es Ds⊆ = lift G
   where
   G : 𝒯 (suc n) Ds ⊆ 𝒯 (suc n) Es
-  G (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , nthD-mono Ds Es Ds⊆ i d d∈ ⟩
+  G (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
+    ⟨ refl , ⟨ nthD-mono Ds Es Ds⊆ i d d∈
+           , (λ j → ⟨ proj₁ (ne j) , nthD-mono Ds Es Ds⊆ j _ (proj₂ (ne j)) ⟩) ⟩ ⟩
   G (const k) ()
   G (V ↦ w) ()
   G ν ()
@@ -381,6 +385,11 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
   G ∣ V ⦆ ()
   G (left d) ()
   G (right d) ()
+
+{- tuples are strict: if any component is empty, so is the tuple -}
+𝒯-strict : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) (i : Fin n)
+  → nthD Ds i ⊆ ∅ → 𝒯 n Ds ⊆ ∅
+𝒯-strict (suc n) Ds i empty (tup[ j ] d) ⟨ refl , ⟨ _ , ne ⟩ ⟩ = empty _ (proj₂ (ne i))
 
 proj-mono : ∀ {n} (i : Fin n) → monotone (■ ∷ []) ■ (proj i)
 proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → D⊆ (tup[ i ] d))
@@ -597,7 +606,7 @@ nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds~ ⟩ (suc i) = nthD
 𝒯-consis (suc n) Ds Es Ds~ = lift G
   where
   G : Every _~_ (𝒯 (suc n) Ds) (𝒯 (suc n) Es)
-  G (tup[ i ] d) (tup[ i' ] d') ⟨ refl , d∈ ⟩ ⟨ refl , d'∈ ⟩ with i fin≟ i'
+  G (tup[ i ] d) (tup[ i' ] d') ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ ⟨ refl , ⟨ d'∈ , _ ⟩ ⟩ with i fin≟ i'
   ... | yes refl = ⟨ refl , inj₂ ⟨ refl , nthD-consis Ds Es Ds~ i d d' d∈ d'∈ ⟩ ⟩
   ... | no neq = ⟨ refl , inj₁ neq ⟩
 
