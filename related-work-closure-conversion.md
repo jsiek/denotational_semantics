@@ -16,7 +16,7 @@ Each entry says how closely it was checked:
 2. **No precedent for the proposed relation.** Nothing found defines a logical relation indexed by *finite sets of graph-model observations from one side*, which is the proposal in issue #1.
    - The nearest relatives are Abramsky's "compact elements as formulas" view, Pitts's relational properties of domains, and the older inclusive-predicate method (Milne–Strachey, Reynolds, Mulmuley).
    - None of these is stated in this form, so the idea may be new. A closer read of the domain-theory and intersection-type literature is needed before claiming that.
-3. **The closest denotational precedent is Chlipala (PLDI 2007), and its source is typed.** It notes that its target domains "allow more behavior" than the source, which is the same phenomenon as the junk entries here. Typing sidesteps the problem.
+3. **The closest denotational precedent is Chlipala (PLDI 2007), but its source is STLC, which is typed and total.** It notes that its target domains "allow more behavior" than the source, which is the same phenomenon as the junk entries here. Typing sidesteps the problem, and with no recursion there are no recursive domains. Chlipala's untyped follow-up (POPL 2010) includes closure conversion, but it is operational and covers terminating programs only.
 4. **Untyped mechanized proofs mostly avoid Pitts.** Mechanized proofs of closure conversion for untyped or dynamically typed languages are almost all *operational* and *step-indexed*: CertiCoq, CakeML, Pilsner. One Coq paper (2208.14260) reports that Pitts-style untyped relations fail Coq's strict-positivity check. Agda has the same check.
 5. **A third way to discharge `▷`.** Guarded domain theory and partiality-monad semantics give denotations that contain steps, so `▷` can be discharged (Møgelberg–Paviotti; Danielsson). This is a third option beside the finite-observation relation and Pitts, and it is closest to the `step-indexed/` experiments in this repo.
 
@@ -30,6 +30,7 @@ Each entry says how closely it was checked:
   - **Proof method.** Correctness uses logical relations "defined recursively on type structure", with existential witnesses at function type, in the style of Plotkin 1973.
   - **Junk is acknowledged and sidestepped.** §7 says the semantics are not fully abstract because target domains "allow more behavior" than the source; for example, function spaces range over all Coq functions. That this is acceptable is "borne out by our success in using this logical relation to prove a final theorem whose statement does not depend on such quantifications."
   - **Relevance.** This is the same junk-entry phenomenon as `blog/stuck.md`. Typing makes the relation definable by induction on types.
+  - **Caveat: not a precedent for the hard parts.** The source is STLC, which is total and not Turing complete, and the `CC` pass is typed and total. Denotations are plain Coq functions, so there are no recursive domains and no divergence. Non-termination appears only later, at the `Alloc` stage, through coinductive traces. Chlipala's untyped follow-up (POPL 2010, section 3) is operational.
 
 - **Siek, "Help! We're Failing to Prove Correctness of Closure Conversion using Denotational Semantics (Graph Models)", blog post, June 2023.** [read, including comments]
   <http://siek.blogspot.com/2023/06/help-were-failing-to-prove-correctness.html>
@@ -145,10 +146,19 @@ Each entry says how closely it was checked:
   - Isabelle/HOL compiler specification that includes a closure-conversion phase.
   - The extent of the semantic proofs is not confirmed.
 
-- **Danielsson, "Operational Semantics Using the Partiality Monad", ICFP 2012.** [abstract] <https://www.cse.chalmers.se/~nad/publications/danielsson-semantics-partiality-monad.html>
-  - **Agda.** Untyped λ-calculus given as total definitional interpreters in the coinductive partiality monad.
-  - Proves a compiler to a VM correct, including closure-based modules (`Lambda.Closure.*`).
-  - Relevance: it shows that "denotations with steps" make an untyped compiler-correctness proof tractable in Agda.
+- **Danielsson, "Operational Semantics Using the Partiality Monad", ICFP 2012.** [read §1, §5–8] <https://www.cse.chalmers.se/~nad/publications/danielsson-semantics-partiality-monad.html>
+  - **Agda.** Untyped λ-calculus with constants. The semantics is an environment-and-closure definitional interpreter, `⟦_⟧ : Tm n → Env n → (Maybe Value)⊥`, in the coinductive partiality monad.
+  - **The author says it is *not* denotational:** it is "not defined in a compositional way", and the semantic domain is "rather syntactic: it includes closures".
+  - **Compiler:** to a Leroy–Grall stack VM. `comp (lam t) c = clo (comp t [ret]) :: c`.
+  - **There is no closure conversion.** The VM closure captures the whole environment and is atomic. The `Lambda.Closure.*` module names refer to the closure-based *semantics*, not to closure conversion.
+  - **Correctness:** `exec ⟨comp t [], [], []⟩ ≈ (⟦t⟧ [] >>= return ∘ comp_v)`. One weak-bisimilarity statement covers termination, divergence and crashes. Source and VM values are related by a *function* `comp_v`, defined structurally on syntactic closures.
+  - **Relevance:** it shows that a semantics with steps makes an untyped compiler-correctness proof tractable in Agda. It does not face the junk or mixed-variance problems.
+
+- **Chlipala, "A Verified Compiler for an Impure Functional Language", POPL 2010.** [read §1–4] <https://adam.chlipala.net/papers/ImpurePOPL10/ImpurePOPL10.pdf>
+  - **Coq.** An *untyped* Mini-ML with references and exceptions, compiled to idealized assembly. Passes include CPS conversion and **closure conversion**.
+  - Semantics: big-step operational, with PHOAS and a closure heap.
+  - **Only terminating programs are covered.** The main theorem is forward: "if (·, e) ⇓ (h, r) then …"; non-termination is ignored.
+  - **How it stays well-founded without types or step indices.** Function values are labels into a closure heap. The relation for functions, `H ⊢ Fix(n) ≃ Fix(n')`, requires the code bodies to be *syntactically* compatible (one is the translation of the other) under a context of related variable pairs. This is a simulation over evaluation derivations, not a semantic logical relation, so no mixed-variance definition is needed.
 
 - **Benton & Hur, "Biorthogonality, Step-Indexing and Compiler Correctness", ICFP 2009.** [abstract]
   <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/icfp074-benton.pdf>
@@ -205,6 +215,7 @@ Each entry says how closely it was checked:
   - Intensional denotations that count unfold/fold steps. Adequacy is proved with a guarded-recursive logical relation, and a further relation recovers extensional equivalence.
   - Predecessors: Paviotti, Møgelberg, Birkedal, "A Model of PCF in Guarded Type Theory", MFPS 2015 [known]; Birkedal, Møgelberg, Schwinghammer, Støvring, "First Steps in Synthetic Guarded Domain Theory", LICS 2011 [known].
   - Relevance: if the graph-model application operator consumed a "later", the bulk relation in `notes.txt` could be discharged as in step-indexing. Agda's `--guarded` mode or the SIL library could host this.
+  - **No closure-conversion or compiler-correctness result was found in the guarded line of work.** It proves adequacy, contextual equivalence, type soundness and graduality (Giovannini–New, arXiv 2411.12822). Guarded Interaction Trees (Frumin, Timany, Birkedal, POPL 2024; ESOP 2025 follow-up; <https://arxiv.org/pdf/2307.08514>) give modular denotational semantics in Iris/Coq, with adequacy and cross-language interoperability, but no compiler. [abstract]
 
 - **Danielsson 2012** (section 3) and **Capretta, "General Recursion via Coinductive Types", LMCS 2005** [known].
   - The partiality/delay monad as denotations with steps.
