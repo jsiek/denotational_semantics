@@ -1,5 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 module Compiler.Model.Graph.Domain.ISWIM.Ops where
 
 open import Primitives

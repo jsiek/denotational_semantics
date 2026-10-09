@@ -13,13 +13,12 @@
   halves of target closures meet, and they meet inside the finite list V',
   so junk entries and mixed closures never produce a target-only result.
 
-  Assumptions (postulates):
-  - src-continuous : source denotations are continuous. This is the
-    conclusion of NewSemantics.⟦⟧-continuous, which would follow from a
-    ContinuousSemantics instance for Clos3.
-
-  Target denotations are consistent (⟦⟧'-consis), which follows from the
-  consistency of the target operators (𝕆-Clos4-consis).
+  The proof uses two properties of the semantics:
+  - target denotations are consistent (⟦⟧'-consis), which follows from the
+    consistency of the target operators (𝕆-Clos4-consis);
+  - source denotations are continuous (src-continuous), from
+    NewSemantics.⟦⟧-continuous and the ContinuousSemantics instance in
+    Sem.Clos3IswimContinuous.
 -}
 
 open import NewSigUtil
@@ -40,6 +39,7 @@ open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env; extend-nonempty-env; •-~)
 open import NewDenotProperties using (Every)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
+import Compiler.Model.Graph.Sem.Clos3IswimContinuous as C3
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; z≤n; _⊔_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; m≤m⊔n; m≤n⊔m; n≤1+n)
@@ -136,7 +136,7 @@ open import Compiler.Model.Graph.Correctness.DelayFiniteRel
   Args-⊆ (λ s → Apps-⊆ s (λ d z → z)) Apps-flat ●-mono-l Bnd-Args Bnd-Apps
   public
 
-{- Assumptions ----------------------------------------------------------------}
+{- Properties of the semantics ------------------------------------------------}
 
 {- target denotations are consistent, by induction on the term -}
 ⟦⟧'-consis-env : ∀ (M' : AST') {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
@@ -158,10 +158,11 @@ open import Compiler.Model.Graph.Correctness.DelayFiniteRel
 ⟦⟧'-consis : ∀ (M' : AST') (ρ' : Env) → (∀ x → consis (ρ' x)) → consis (⟦ M' ⟧' ρ')
 ⟦⟧'-consis M' ρ' ρ'~ = ⟦⟧'-consis-env M' ρ'~
 
-postulate
-  src-continuous : ∀ (M : AST) (ρ : Env) → nonempty-env ρ → ∀ v → v ∈ ⟦ M ⟧ ρ
-    → Σ[ Vs ∈ (Var → List Value) ] (∀ x → Vs x ≢ [] × mem (Vs x) ⊆ ρ x)
-                                   × v ∈ ⟦ M ⟧ (λ x → mem (Vs x))
+{- source denotations are continuous -}
+src-continuous : ∀ (M : AST) (ρ : Env) → nonempty-env ρ → ∀ v → v ∈ ⟦ M ⟧ ρ
+  → Σ[ Vs ∈ (Var → List Value) ] (∀ x → Vs x ≢ [] × mem (Vs x) ⊆ ρ x)
+                                 × v ∈ ⟦ M ⟧ (λ x → mem (Vs x))
+src-continuous = C3.term-continuous
 
 cont-1 : ∀ (M : AST) (ρ : Env) (X : 𝒫 Value) → nonempty-env ρ → nonempty X
   → ∀ x → x ∈ ⟦ M ⟧ (X • ρ)

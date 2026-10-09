@@ -13,8 +13,9 @@
   is needed. In exchange, the case for case-op needs R-++, because a
   source scrutinee may contain both left and right elements.
 
-  Assumptions (postulates):
-  - tgt-continuous : target denotations are continuous.
+  Target denotations are continuous (tgt-continuous), from
+  NewSemantics.⟦⟧-continuous and the ContinuousSemantics instance in
+  Sem.Clos4IswimContinuous.
 -}
 
 open import NewSigUtil
@@ -35,6 +36,7 @@ open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 import Compiler.Model.Graph.Correctness.DelayReflectFinite as Reflect
+import Compiler.Model.Graph.Sem.Clos4IswimContinuous as C4
 
 open import Data.Nat using (ℕ; zero; suc; _≤_; s≤s)
 open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m)
@@ -219,12 +221,13 @@ R-++ (suc k) {V₁}{V₂}{D} r₁ r₂ = record
     ... | ⟨ U₁ , ⟨ U₁⊆U , ⟨ U₁⊆A , W⊆' ⟩ ⟩ ⟩ =
       O₂.app-obs U₁ E U₁⊆A tt (R-⊆ k U₁⊆U rU) W W⊆'
 
-{- Assumptions ----------------------------------------------------------------}
+{- Continuity -----------------------------------------------------------------}
 
-postulate
-  tgt-continuous : ∀ (M' : AST') (ρ' : Env) → nonempty-env ρ' → ∀ v → v ∈ ⟦ M' ⟧' ρ'
-    → Σ[ Vs ∈ (Var → List Value) ] (∀ x → Vs x ≢ [] × mem (Vs x) ⊆ ρ' x)
-                                   × v ∈ ⟦ M' ⟧' (λ x → mem (Vs x))
+{- target denotations are continuous -}
+tgt-continuous : ∀ (M' : AST') (ρ' : Env) → nonempty-env ρ' → ∀ v → v ∈ ⟦ M' ⟧' ρ'
+  → Σ[ Vs ∈ (Var → List Value) ] (∀ x → Vs x ≢ [] × mem (Vs x) ⊆ ρ' x)
+                                 × v ∈ ⟦ M' ⟧' (λ x → mem (Vs x))
+tgt-continuous = C4.term-continuous
 
 cont-1' : ∀ (M' : AST') (ρ' : Env) (X : 𝒫 Value) → nonempty-env ρ' → nonempty X
   → ∀ x → x ∈ ⟦ M' ⟧' (X • ρ')
