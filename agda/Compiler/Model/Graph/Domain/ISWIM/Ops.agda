@@ -80,6 +80,7 @@ nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
 nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
 
 𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
+𝒯 zero Ds ⟨⟩ = True
 𝒯 (suc n) Ds (tup[_]_ {n'} i d) = Σ[ n≡ ∈ n' ≡ suc n ] d ∈ (nthD Ds (subst Fin n≡ i))
 𝒯 n Ds d = False
 
@@ -364,7 +365,10 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D⊆ , _ ⟩ zero = D�
 nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD-mono Ds Es Ds⊆ i
 
 𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
-𝒯-mono zero Ds Es Ds⊆ = lift (λ d ())
+𝒯-mono zero Ds Es Ds⊆ = lift G
+  where
+  G : 𝒯 zero Ds ⊆ 𝒯 zero Es
+  G ⟨⟩ tt = tt
 𝒯-mono (suc n) Ds Es Ds⊆ = lift G
   where
   G : 𝒯 (suc n) Ds ⊆ 𝒯 (suc n) Es
@@ -586,7 +590,10 @@ nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D~ , _ ⟩ zero = D~
 nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds~ ⟩ (suc i) = nthD-consis Ds Es Ds~ i
 
 𝒯-consis : ∀ n → consistent _~_ (replicate n ■) ■ (𝒯 n)
-𝒯-consis zero Ds Es Ds~ = lift (λ u v ())
+𝒯-consis zero Ds Es Ds~ = lift G
+  where
+  G : Every _~_ (𝒯 zero Ds) (𝒯 zero Es)
+  G ⟨⟩ ⟨⟩ tt tt = tt
 𝒯-consis (suc n) Ds Es Ds~ = lift G
   where
   G : Every _~_ (𝒯 (suc n) Ds) (𝒯 (suc n) Es)

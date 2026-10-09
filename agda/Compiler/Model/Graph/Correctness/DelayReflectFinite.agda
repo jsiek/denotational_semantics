@@ -367,7 +367,8 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ 
 reflect-nth {suc n} (M ,, args) ρ' ρ NE ρ'~ ρ⊳ zero = delay-reflect M ρ' ρ NE ρ'~ ρ⊳
 reflect-nth {suc n} (M ,, args) ρ' ρ NE ρ'~ ρ⊳ (suc i) = reflect-nth args ρ' ρ NE ρ'~ ρ⊳ i
 
-reflect-𝒯 {zero} args ρ' ρ NE ρ'~ ρ⊳ V' k V'⊆ bV = R-∅ k V'⊆
+reflect-𝒯 {zero} args ρ' ρ NE ρ'~ ρ⊳ V' k V'⊆ bV =
+  R-flat k (λ v v∈ → proj₁ (𝒯0-flat v (V'⊆ v v∈))) (λ v v∈ → proj₂ (𝒯0-flat v (V'⊆ v v∈)))
 reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' zero V'⊆ bV = ptt
 reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)

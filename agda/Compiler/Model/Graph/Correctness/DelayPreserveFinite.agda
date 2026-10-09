@@ -414,7 +414,8 @@ delay-preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = preserve-case L M 
 preserve-nth {suc n} (M ,, args) ρ ρ' NE' ρ⊳ zero = delay-preserve M ρ ρ' NE' ρ⊳
 preserve-nth {suc n} (M ,, args) ρ ρ' NE' ρ⊳ (suc i) = preserve-nth args ρ ρ' NE' ρ⊳ i
 
-preserve-𝒯 {zero} args ρ ρ' NE' ρ⊳ V k V⊆ bV = R-∅ k V⊆
+preserve-𝒯 {zero} args ρ ρ' NE' ρ⊳ V k V⊆ bV =
+  R-flat k (λ v v∈ → proj₁ (𝒯0-flat v (V⊆ v v∈))) (λ v v∈ → proj₂ (𝒯0-flat v (V⊆ v v∈)))
 preserve-𝒯 {suc n} args ρ ρ' NE' ρ⊳ V zero V⊆ bV = ptt
 preserve-𝒯 {suc n} args ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
   { const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)

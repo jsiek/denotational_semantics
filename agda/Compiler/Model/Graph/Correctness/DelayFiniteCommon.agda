@@ -89,6 +89,7 @@ depth ∣ V ⦆ = suc (depths V)
 depth (tup[ i ] d) = suc (depth d)
 depth (left d) = suc (depth d)
 depth (right d) = suc (depth d)
+depth ⟨⟩ = 0
 depths [] = 0
 depths (v ∷ V) = depth v ⊔ depths V
 
@@ -159,6 +160,7 @@ Cdr-mono D⊆ d ⟨ FVs , ⟨ ∣FVs⦆∈ , d∈FVs ⟩ ⟩ = ⟨ FVs , ⟨ D�
 data Flat : Value → Set where
   flat-const : ∀ {B} {c : base-rep B} → Flat (const c)
   flat-ω : Flat ω
+  flat-⟨⟩ : Flat ⟨⟩
 
 flat-car : ∀ {u} → Flat ⦅ u ∣ → False
 flat-car ()
@@ -174,6 +176,10 @@ flat-left ()
 
 flat-right : ∀ {d} → Flat (right d) → False
 flat-right ()
+
+{- the empty tuple has only the observation ⟨⟩, whatever its operands -}
+𝒯0-flat : ∀ {Ds Es} v → v ∈ 𝒯 0 Ds → v ∈ 𝒯 0 Es × Flat v
+𝒯0-flat ⟨⟩ tt = ⟨ tt , flat-⟨⟩ ⟩
 
 Init-flat : ∀ {v} → v ∈ Init → Flat v
 Init-flat refl = flat-ω

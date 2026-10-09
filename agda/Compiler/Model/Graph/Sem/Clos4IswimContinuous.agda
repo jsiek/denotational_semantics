@@ -62,7 +62,7 @@ Clos4-continuous-op {fst-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ �
 Clos4-continuous-op {snd-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
   cdr-cont {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
 Clos4-continuous-op {tuple n} {ρ} {NE} {v} {args} v∈ cs =
-  𝒯-cont {Ds = λ ρ → ⟦ args ⟧₊ ρ} (args-nth-cont args {ρ} {NE} cs) v v∈
+  𝒯-cont {Ds = λ ρ → ⟦ args ⟧₊ ρ} NE (args-nth-cont args {ρ} {NE} cs) v v∈
 Clos4-continuous-op {get i} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
   proj-cont i {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
 Clos4-continuous-op {inl-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =

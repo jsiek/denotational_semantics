@@ -26,6 +26,7 @@ open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (inj₁; inj₂)
+open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
@@ -146,11 +147,13 @@ cdr-cont c fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ with c ∣ FV ⦆ e∈
 
 𝒯-mono-env : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)}
   → (∀ i → Mono (λ ρ → nthD (Ds ρ) i)) → Mono (λ ρ → 𝒯 n (Ds ρ))
+𝒯-mono-env {zero} m ρ⊆ ⟨⟩ tt = tt
 𝒯-mono-env {suc n} m ρ⊆ (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , m i ρ⊆ d d∈ ⟩
 
-𝒯-cont : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)} {ρ}
+𝒯-cont : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)} {ρ} → nonempty-env ρ
   → (∀ i → Cont (λ ρ → nthD (Ds ρ) i) ρ) → Cont (λ ρ → 𝒯 n (Ds ρ)) ρ
-𝒯-cont {suc n} c (tup[ i ] d) ⟨ refl , d∈ ⟩ with c i d d∈
+𝒯-cont {zero} {Ds} NE c ⟨⟩ tt = done (λ ρ → 𝒯 zero (Ds ρ)) (approx-init NE) ⟨⟩ tt
+𝒯-cont {suc n} NE c (tup[ i ] d) ⟨ refl , d∈ ⟩ with c i d d∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , d∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ refl , d∈′ ⟩ ⟩ ⟩ ⟩
 
 proj-mono-env : ∀ {n} (i : Fin n) {E} → Mono E → Mono (λ ρ → proj i ⟨ E ρ , ptt ⟩)

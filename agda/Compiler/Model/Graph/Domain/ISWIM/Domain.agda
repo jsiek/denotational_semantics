@@ -61,6 +61,7 @@ data Value : Set where
   tup[_]_ : ∀ {n} (i : Fin n) → (d : Value) → Value                 {- Tuples -}
   left : (d : Value) → Value                      {- Sums -}
   right : (d : Value) → Value                     {- Sums -}
+  ⟨⟩ : Value                                      {- the empty tuple -}
 
 {- Equality -------------------------------------------------------------------}
 
@@ -213,6 +214,25 @@ const k d≟ (right v₁) = no (λ ())
 (right v) d≟ (tup[ i ] d) = no (λ ())
 (right v) d≟ (left v₁) = no (λ ())
 (right v) d≟ (right v₁) = map′ (cong right) right-inj (v d≟ v₁)
+⟨⟩ d≟ ⟨⟩ = yes refl
+⟨⟩ d≟ (const k) = no (λ ())
+⟨⟩ d≟ (V ↦ w) = no (λ ())
+⟨⟩ d≟ ν = no (λ ())
+⟨⟩ d≟ ω = no (λ ())
+⟨⟩ d≟ ⦅ u ∣ = no (λ ())
+⟨⟩ d≟ ∣ V ⦆ = no (λ ())
+⟨⟩ d≟ (tup[ i ] d) = no (λ ())
+⟨⟩ d≟ (left v) = no (λ ())
+⟨⟩ d≟ (right v) = no (λ ())
+(const k) d≟ ⟨⟩ = no (λ ())
+(V ↦ w) d≟ ⟨⟩ = no (λ ())
+ν d≟ ⟨⟩ = no (λ ())
+ω d≟ ⟨⟩ = no (λ ())
+⦅ u ∣ d≟ ⟨⟩ = no (λ ())
+∣ V ⦆ d≟ ⟨⟩ = no (λ ())
+(tup[ i ] d) d≟ ⟨⟩ = no (λ ())
+(left v) d≟ ⟨⟩ = no (λ ())
+(right v) d≟ ⟨⟩ = no (λ ())
 [] ds≟ [] = yes refl
 [] ds≟ (x ∷ ds₂) = no (λ ())
 (x ∷ ds₁) ds≟ [] = no (λ ())
@@ -313,6 +333,25 @@ const x ~ (right x₁) = False
 (right x) ~ (tup[ i ] d') = False
 (right x) ~ (left x₁) = False
 (right x) ~ (right x₁) = x ~ x₁
+⟨⟩ ~ ⟨⟩ = True
+⟨⟩ ~ (const k) = False
+⟨⟩ ~ (V ↦ w) = False
+⟨⟩ ~ ν = False
+⟨⟩ ~ ω = False
+⟨⟩ ~ ⦅ u ∣ = False
+⟨⟩ ~ ∣ V ⦆ = False
+⟨⟩ ~ (tup[ i ] d) = False
+⟨⟩ ~ (left v) = False
+⟨⟩ ~ (right v) = False
+(const k) ~ ⟨⟩ = False
+(V ↦ w) ~ ⟨⟩ = False
+ν ~ ⟨⟩ = False
+ω ~ ⟨⟩ = False
+⦅ u ∣ ~ ⟨⟩ = False
+∣ V ⦆ ~ ⟨⟩ = False
+(tup[ i ] d) ~ ⟨⟩ = False
+(left v) ~ ⟨⟩ = False
+(right v) ~ ⟨⟩ = False
 
 [] ≈ vs = True 
 (u ∷ us) ≈ vs = All (u ~_) vs × us ≈ vs
@@ -353,6 +392,7 @@ const x ~ (right x₁) = False
     ⟨ refl , inj₂ ⟨ refl , ~-sym d d' d~ ⟩ ⟩
 ~-sym (left x) (left x₁) u~v = ~-sym x x₁ u~v
 ~-sym (right x) (right x₁) u~v = ~-sym x x₁ u~v
+~-sym ⟨⟩ ⟨⟩ u~v = tt
 
 ~-sym-All u [] [] = []
 ~-sym-All u (x ∷ xs) (px ∷ V~u) = 
@@ -471,6 +511,25 @@ const x ~? (right x₁) = no (λ z → z)
 (right x) ~? (tup[ i ] d') = no (λ z → z)
 (right x) ~? (left x₁) = no (λ z → z)
 (right x) ~? (right x₁) = x ~? x₁
+⟨⟩ ~? ⟨⟩ = yes tt
+⟨⟩ ~? (const k) = no (λ z → z)
+⟨⟩ ~? (V ↦ w) = no (λ z → z)
+⟨⟩ ~? ν = no (λ z → z)
+⟨⟩ ~? ω = no (λ z → z)
+⟨⟩ ~? ⦅ u ∣ = no (λ z → z)
+⟨⟩ ~? ∣ V ⦆ = no (λ z → z)
+⟨⟩ ~? (tup[ i ] d) = no (λ z → z)
+⟨⟩ ~? (left v) = no (λ z → z)
+⟨⟩ ~? (right v) = no (λ z → z)
+(const k) ~? ⟨⟩ = no (λ z → z)
+(V ↦ w) ~? ⟨⟩ = no (λ z → z)
+ν ~? ⟨⟩ = no (λ z → z)
+ω ~? ⟨⟩ = no (λ z → z)
+⦅ u ∣ ~? ⟨⟩ = no (λ z → z)
+∣ V ⦆ ~? ⟨⟩ = no (λ z → z)
+(tup[ i ] d) ~? ⟨⟩ = no (λ z → z)
+(left v) ~? ⟨⟩ = no (λ z → z)
+(right v) ~? ⟨⟩ = no (λ z → z)
 
 u ~>? [] = yes All.[]
 u ~>? (x ∷ V) with u ~? x
