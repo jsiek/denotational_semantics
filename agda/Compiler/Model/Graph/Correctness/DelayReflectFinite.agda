@@ -4,11 +4,10 @@
   (Clos3 → Clos4), using a logical relation indexed by *finite lists of
   target observations* (see issue #1).
 
-  For a finite list V' of target values and a source set D, the relation
-  V' ⊳ D is defined by recursion on the depth of V'. We encode the
-  well-founded recursion with fuel: R k V' D only looks at the parts of V'
-  that have depth < k, and R-irr shows that the fuel is irrelevant as long
-  as it bounds the depth of V' (Bnd k V').
+  The relation R k V' D (see DelayFiniteRel) relates a finite list V' of
+  target values to a source set D. Here it is instantiated with target
+  application on the observed side (Args-of, Apps) and source application
+  (_●_) on the other side.
 
   The function clause (app-obs) is the only place where the car and cdr
   halves of target closures meet, and they meet inside the finite list V',
@@ -37,7 +36,7 @@ open import Compiler.Model.Graph.Sem.Clos4Iswim as S4 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
-import NewEnv
+open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; z≤n; _⊔_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; m≤m⊔n; m≤n⊔m; n≤1+n)
@@ -56,35 +55,6 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
 
 module Compiler.Model.Graph.Correctness.DelayReflectFinite where
-
-{- Shorthands ----------------------------------------------------------------}
-
-consis : 𝒫 Value → Set
-consis D = ∀ u v → u ∈ D → v ∈ D → u ~ v
-
-_●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
-D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
-
-Car : 𝒫 Value → 𝒫 Value
-Car D = car ⟨ D , ptt ⟩
-
-Cdr : 𝒫 Value → 𝒫 Value
-Cdr D = cdr ⟨ D , ptt ⟩
-
-Nth : ∀ {n} → Fin n → 𝒫 Value → 𝒫 Value
-Nth i D = proj i ⟨ D , ptt ⟩
-
-Lefts : 𝒫 Value → 𝒫 Value
-Lefts D d = left d ∈ D
-
-Rights : 𝒫 Value → 𝒫 Value
-Rights D d = right d ∈ D
-
-Init : 𝒫 Value
-Init = ⌈ ω ⌉
-
-Env : Set₁
-Env = NewEnv.Env Value
 
 {- Observations of a finite list of target values ----------------------------}
 
@@ -119,52 +89,6 @@ record AppWit (V' U' : List Value) (w : Value) : Set where
 Apps : List Value → List Value → 𝒫 Value
 Apps V' U' = AppWit V' U'
 
-Nths : ∀ {n} → Fin n → List Value → 𝒫 Value
-Nths i V' d = tup[ i ] d ⋵ V'
-
-Lefts' : List Value → 𝒫 Value
-Lefts' V' d = left d ⋵ V'
-
-Rights' : List Value → 𝒫 Value
-Rights' V' d = right d ⋵ V'
-
-{- The relation ---------------------------------------------------------------}
-
-record Obs (R : List Value → 𝒫 Value → Set₁) (V' : List Value) (D : 𝒫 Value) : Set₁ where
-  field
-    const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V' → const c ∈ D
-    ω-obs : ω ⋵ V' → ω ∈ D
-    nonempty-obs : V' ≢ [] → nonempty D
-    app-obs : ∀ U' E → mem U' ⊆ Args-of V' → consis (mem U') → R U' E
-            → ∀ W' → mem W' ⊆ Apps V' U' → R W' (D ● E)
-    nth-obs : ∀ {n} (i : Fin n) W' → mem W' ⊆ Nths i V' → R W' (Nth i D)
-    left-obs : ∀ W' → mem W' ⊆ Lefts' V' → R W' (Lefts D)
-    right-obs : ∀ W' → mem W' ⊆ Rights' V' → R W' (Rights D)
-
-R : ℕ → List Value → 𝒫 Value → Set₁
-R zero V' D = pTrue
-R (suc k) V' D = Obs (R k) V' D
-
-{- Depth ----------------------------------------------------------------------}
-
-depth : Value → ℕ
-depths : List Value → ℕ
-depth (const k) = 0
-depth (V ↦ w) = suc (depths V ⊔ depth w)
-depth ν = 0
-depth ω = 0
-depth ⦅ u ∣ = suc (depth u)
-depth ∣ V ⦆ = suc (depths V)
-depth (tup[ i ] d) = suc (depth d)
-depth (left d) = suc (depth d)
-depth (right d) = suc (depth d)
-depths [] = 0
-depths (v ∷ V) = depth v ⊔ depths V
-
-depth-⋵ : ∀ {v V} → v ⋵ V → depth v ≤ depths V
-depth-⋵ {v} {.v ∷ V} (here refl) = m≤m⊔n (depth v) (depths V)
-depth-⋵ {v} {u ∷ V} (there v∈) = ≤-trans (depth-⋵ v∈) (m≤n⊔m (depth u) (depths V))
-
 d-arg : ∀ {u FV U₀ w} → u ⋵ U₀ → suc (depth u) ≤ depth ⦅ FV ↦ (U₀ ↦ w) ∣
 d-arg {u}{FV}{U₀}{w} u∈ =
   s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n (depths U₀) (depth w))
@@ -175,24 +99,6 @@ d-app {FV}{U₀}{w} =
   s≤s (≤-trans (m≤n⊔m (depths U₀) (depth w))
       (≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (n≤1+n _))))
 
-{- Bnd k V' says that every element of V' has depth less than k -}
-Bnd : ℕ → List Value → Set
-Bnd k V = ∀ v → v ⋵ V → depth v < k
-
-Bnd-depths : ∀ V → Bnd (suc (depths V)) V
-Bnd-depths V v v∈ = s≤s (depth-⋵ v∈)
-
-Bnd-single : ∀ v → Bnd (suc (depth v)) (v ∷ [])
-Bnd-single v .v (here refl) = ≤-refl
-
-Bnd-⊆ : ∀ {k V W} → mem W ⊆ mem V → Bnd k V → Bnd k W
-Bnd-⊆ W⊆V bV w w∈ = bV w (W⊆V w w∈)
-
-<-shrink : ∀ {a b k} → suc a ≤ b → b < suc k → a < k
-<-shrink sa≤b (s≤s b≤k) = ≤-trans sa≤b b≤k
-
-<0 : ∀ {n} → n < 0 → False
-<0 ()
 
 Bnd-Args : ∀ {k V' U'} → Bnd (suc k) V' → mem U' ⊆ Args-of V' → Bnd k U'
 Bnd-Args bV U'⊆ u u∈ with U'⊆ u u∈
@@ -202,33 +108,6 @@ Bnd-Apps : ∀ {k V' U' W'} → Bnd (suc k) V' → mem W' ⊆ Apps V' U' → Bnd
 Bnd-Apps bV W'⊆ w w∈ with W'⊆ w w∈
 ... | appwit FV U₀ e∈ _ _ _ _ = <-shrink (d-app {FV}{U₀}{w}) (bV _ e∈)
 
-Bnd-Nths : ∀ {k V' W' n} {i : Fin n} → Bnd (suc k) V' → mem W' ⊆ Nths i V' → Bnd k W'
-Bnd-Nths bV W'⊆ d d∈ = <-shrink ≤-refl (bV _ (W'⊆ d d∈))
-
-Bnd-Lefts : ∀ {k V' W'} → Bnd (suc k) V' → mem W' ⊆ Lefts' V' → Bnd k W'
-Bnd-Lefts bV W'⊆ d d∈ = <-shrink ≤-refl (bV _ (W'⊆ d d∈))
-
-Bnd-Rights : ∀ {k V' W'} → Bnd (suc k) V' → mem W' ⊆ Rights' V' → Bnd k W'
-Bnd-Rights bV W'⊆ d d∈ = <-shrink ≤-refl (bV _ (W'⊆ d d∈))
-
-{- List helpers ---------------------------------------------------------------}
-
-ne-mem : ∀ {V : List Value}{D : 𝒫 Value} → V ≢ [] → mem V ⊆ D → nonempty D
-ne-mem {[]} ne _ = ⊥-elim (ne refl)
-ne-mem {v ∷ V} _ V⊆ = ⟨ v , V⊆ v (here refl) ⟩
-
-ne-head : ∀ {V : List Value} → V ≢ [] → Σ[ v ∈ Value ] v ⋵ V
-ne-head {[]} ne = ⊥-elim (ne refl)
-ne-head {v ∷ V} _ = ⟨ v , here refl ⟩
-
-ne-⊆ : ∀ {V₁ V₂ : List Value} → mem V₁ ⊆ mem V₂ → V₁ ≢ [] → V₂ ≢ []
-ne-⊆ {[]} _ ne = ⊥-elim (ne refl)
-ne-⊆ {x ∷ V₁} {[]} s _ with s x (here refl)
-... | ()
-ne-⊆ {x ∷ V₁} {y ∷ V₂} s _ = λ ()
-
-single⊆ : ∀ {v : Value}{D : 𝒫 Value} → v ∈ D → mem (v ∷ []) ⊆ D
-single⊆ v∈ _ (here refl) = v∈
 
 Cdrs-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → Cdrs V₁ ⊆ Cdrs V₂
 Cdrs-⊆ s fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ = ⟨ FV , ⟨ s _ e∈ , fv∈ ⟩ ⟩
@@ -242,117 +121,16 @@ Apps-⊆ s t w (appwit FV U₀ e∈ neFV FV⊆ neU U₀⊆) =
   appwit FV U₀ (s _ e∈) neFV (λ d d∈ → Cdrs-⊆ s d (FV⊆ d d∈)) neU
          (λ d d∈ → t d (U₀⊆ d d∈))
 
-●-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ● E) ⊆ (D₂ ● E)
-●-mono-l D⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩
 
-{- Values that have no observations besides themselves -}
-data Flat : Value → Set where
-  flat-const : ∀ {B} {c : base-rep B} → Flat (const c)
-  flat-ω : Flat ω
+Apps-flat : ∀ {V' U'} → (∀ v → v ⋵ V' → Flat v) → Apps V' U' ⊆ ∅
+Apps-flat fl w (appwit FV U₀ e∈ _ _ _ _) = flat-car (fl _ e∈)
 
-flat-car : ∀ {u} → Flat ⦅ u ∣ → False
-flat-car ()
+{- The relation ---------------------------------------------------------------}
 
-flat-tup : ∀ {n} {i : Fin n} {d} → Flat (tup[ i ] d) → False
-flat-tup ()
-
-flat-left : ∀ {d} → Flat (left d) → False
-flat-left ()
-
-flat-right : ∀ {d} → Flat (right d) → False
-flat-right ()
-
-Init-flat : ∀ {v} → v ∈ Init → Flat v
-Init-flat refl = flat-ω
-
-Init-consis : consis Init
-Init-consis .ω .ω refl refl = tt
-
-{- Basic properties of R ------------------------------------------------------}
-
-R-∅ : ∀ k {V' D} → mem V' ⊆ ∅ → R k V' D
-R-∅ zero _ = ptt
-R-∅ (suc k) {V'} V'⊆∅ = record
-  { const-obs = λ c c∈ → ⊥-elim (V'⊆∅ _ c∈)
-  ; ω-obs = λ ω∈ → ⊥-elim (V'⊆∅ _ ω∈)
-  ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V'⊆∅))
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆∅ _ (AppWit.entry∈ (W'⊆ w w∈)))
-  ; nth-obs = λ i W' W'⊆ → R-∅ k (λ d d∈ → V'⊆∅ _ (W'⊆ d d∈))
-  ; left-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆∅ _ (W'⊆ d d∈))
-  ; right-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆∅ _ (W'⊆ d d∈))
-  }
-
-R-flat : ∀ k {V' D} → mem V' ⊆ D → (∀ v → v ⋵ V' → Flat v) → R k V' D
-R-flat zero _ _ = ptt
-R-flat (suc k) {V'} V'⊆ fl = record
-  { const-obs = λ c c∈ → V'⊆ _ c∈
-  ; ω-obs = λ ω∈ → V'⊆ ω ω∈
-  ; nonempty-obs = λ ne → ne-mem ne V'⊆
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → flat-car (fl _ (AppWit.entry∈ (W'⊆ w w∈))))
-  ; nth-obs = λ i W' W'⊆ → R-∅ k (λ d d∈ → flat-tup (fl _ (W'⊆ d d∈)))
-  ; left-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → flat-left (fl _ (W'⊆ d d∈)))
-  ; right-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → flat-right (fl _ (W'⊆ d d∈)))
-  }
-
-{- antitone in the target list -}
-R-⊆ : ∀ k {V₁ V₂ D} → mem V₁ ⊆ mem V₂ → R k V₂ D → R k V₁ D
-R-⊆ zero _ _ = ptt
-R-⊆ (suc k) {V₁}{V₂} V₁⊆V₂ r = record
-  { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
-  ; ω-obs = λ ω∈ → ω-obs (V₁⊆V₂ _ ω∈)
-  ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
-  ; app-obs = λ U' E U'⊆ U'~ rU W' W'⊆ →
-      app-obs U' E (λ u u∈ → Args-⊆ V₁⊆V₂ u (U'⊆ u u∈)) U'~ rU W'
-              (λ w w∈ → Apps-⊆ V₁⊆V₂ (λ d z → z) w (W'⊆ w w∈))
-  ; nth-obs = λ i W' W'⊆ → nth-obs i W' (λ d d∈ → V₁⊆V₂ _ (W'⊆ d d∈))
-  ; left-obs = λ W' W'⊆ → left-obs W' (λ d d∈ → V₁⊆V₂ _ (W'⊆ d d∈))
-  ; right-obs = λ W' W'⊆ → right-obs W' (λ d d∈ → V₁⊆V₂ _ (W'⊆ d d∈))
-  }
-  where open Obs r
-
-{- monotone in the source set -}
-R-mono : ∀ k {V' D₁ D₂} → D₁ ⊆ D₂ → R k V' D₁ → R k V' D₂
-R-mono zero _ _ = ptt
-R-mono (suc k) D⊆ r = record
-  { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
-  ; ω-obs = λ ω∈ → D⊆ ω (ω-obs ω∈)
-  ; nonempty-obs = λ ne → ⟨ proj₁ (nonempty-obs ne) , D⊆ _ (proj₂ (nonempty-obs ne)) ⟩
-  ; app-obs = λ U' E U'⊆ U'~ rU W' W'⊆ →
-      R-mono k (●-mono-l D⊆) (app-obs U' E U'⊆ U'~ rU W' W'⊆)
-  ; nth-obs = λ i W' W'⊆ → R-mono k (λ d → D⊆ (tup[ i ] d)) (nth-obs i W' W'⊆)
-  ; left-obs = λ W' W'⊆ → R-mono k (λ d → D⊆ (left d)) (left-obs W' W'⊆)
-  ; right-obs = λ W' W'⊆ → R-mono k (λ d → D⊆ (right d)) (right-obs W' W'⊆)
-  }
-  where open Obs r
-
-{- the fuel is irrelevant once it bounds the depth of the target list -}
-R-irr : ∀ k j {V' D} → Bnd k V' → Bnd j V' → R k V' D → R j V' D
-R-irr k zero _ _ _ = ptt
-R-irr zero (suc j) bk _ _ = R-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
-R-irr (suc k) (suc j) bk bj r = record
-  { const-obs = const-obs
-  ; ω-obs = ω-obs
-  ; nonempty-obs = nonempty-obs
-  ; app-obs = λ U' E U'⊆ U'~ rU W' W'⊆ →
-      R-irr k j (Bnd-Apps bk W'⊆) (Bnd-Apps bj W'⊆)
-        (app-obs U' E U'⊆ U'~
-           (R-irr j k (Bnd-Args bj U'⊆) (Bnd-Args bk U'⊆) rU) W' W'⊆)
-  ; nth-obs = λ i W' W'⊆ →
-      R-irr k j (Bnd-Nths bk W'⊆) (Bnd-Nths bj W'⊆) (nth-obs i W' W'⊆)
-  ; left-obs = λ W' W'⊆ →
-      R-irr k j (Bnd-Lefts bk W'⊆) (Bnd-Lefts bj W'⊆) (left-obs W' W'⊆)
-  ; right-obs = λ W' W'⊆ →
-      R-irr k j (Bnd-Rights bk W'⊆) (Bnd-Rights bj W'⊆) (right-obs W' W'⊆)
-  }
-  where open Obs r
-
-{- Environments ---------------------------------------------------------------}
-
-infix 4 _⊳ₑ_
-_⊳ₑ_ : Env → Env → Set₁
-ρ' ⊳ₑ ρ = ∀ x V' k → mem V' ⊆ ρ' x → Bnd k V' → R k V' (ρ x)
+open import Compiler.Model.Graph.Correctness.DelayFiniteRel
+  Args-of Apps _●_ (λ U' → consis (mem U'))
+  Args-⊆ (λ s → Apps-⊆ s (λ d z → z)) Apps-flat ●-mono-l Bnd-Args Bnd-Apps
+  public
 
 {- Assumptions ----------------------------------------------------------------}
 
@@ -385,54 +163,6 @@ cont-1 M ρ X NE NE-X x x∈ = go (src-continuous M (X • ρ) (extend-nonempty-
     helper (Vs 0) (proj₁ (ok 0)) (proj₂ (ok 0))
       (S3.⟦⟧-monotone {ρ = λ y → mem (Vs y)} {ρ′ = mem (Vs 0) • ρ} M (env⊆ Vs ok) x x∈fin)
 
-{- Inversion lemmas -----------------------------------------------------------}
-
-pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
-pair-ne ⦅ f ∣ ⟨ FV , ⟨ _ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne FV⊆
-pair-ne ∣ FV ⦆ ⟨ f , ⟨ _ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne FV⊆
-pair-ne (const k) ()
-pair-ne (V ↦ w) ()
-pair-ne ν ()
-pair-ne ω ()
-pair-ne (tup[ i ] d) ()
-pair-ne (left d) ()
-pair-ne (right d) ()
-
-cdr-pair : ∀ {A B : 𝒫 Value}{FV} → ∣ FV ⦆ ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → mem FV ⊆ B
-cdr-pair ⟨ f , ⟨ _ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = FV⊆
-
-ℒ-inv : ∀ {D : 𝒫 Value} v → v ∈ ℒ ⟨ D , ptt ⟩ → Σ[ d ∈ Value ] v ≡ left d × d ∈ D
-ℒ-inv (left d) d∈ = ⟨ d , ⟨ refl , d∈ ⟩ ⟩
-ℒ-inv (const k) ()
-ℒ-inv (V ↦ w) ()
-ℒ-inv ν ()
-ℒ-inv ω ()
-ℒ-inv ⦅ u ∣ ()
-ℒ-inv ∣ V ⦆ ()
-ℒ-inv (tup[ i ] d) ()
-ℒ-inv (right d) ()
-
-ℛ-inv : ∀ {D : 𝒫 Value} v → v ∈ ℛ ⟨ D , ptt ⟩ → Σ[ d ∈ Value ] v ≡ right d × d ∈ D
-ℛ-inv (right d) d∈ = ⟨ d , ⟨ refl , d∈ ⟩ ⟩
-ℛ-inv (const k) ()
-ℛ-inv (V ↦ w) ()
-ℛ-inv ν ()
-ℛ-inv ω ()
-ℛ-inv ⦅ u ∣ ()
-ℛ-inv ∣ V ⦆ ()
-ℛ-inv (tup[ i ] d) ()
-ℛ-inv (left d) ()
-
-ℬ-flat : ∀ {B} {c : base-rep B} v → v ∈ ℬ B c ptt → Flat v
-ℬ-flat (const k) _ = flat-const
-ℬ-flat (V ↦ w) ()
-ℬ-flat ν ()
-ℬ-flat ω ()
-ℬ-flat ⦅ u ∣ ()
-ℬ-flat ∣ V ⦆ ()
-ℬ-flat (tup[ i ] d) ()
-ℬ-flat (left d) ()
-ℬ-flat (right d) ()
 
 {- Collecting the finite witnesses of a target application -------------------}
 
@@ -869,16 +599,10 @@ reflect-case-right L M N ρ' ρ NE ρ'~ ρ⊳ v rv V' k V'⊆ bV = R-mono k N⊆
 
 {- The end theorem (backward half) --------------------------------------------}
 
-ρ₀ : Env
-ρ₀ = λ _ → Init
-
-ρ₀⊳ρ₀ : ρ₀ ⊳ₑ ρ₀
-ρ₀⊳ρ₀ x V' k V'⊆ bV = R-flat k V'⊆ (λ v v∈ → Init-flat (V'⊆ v v∈))
-
 delay-reflect-closed : ∀ (M : AST) V' k → mem V' ⊆ ⟦ delay M ⟧' ρ₀ → Bnd k V'
   → R k V' (⟦ M ⟧ ρ₀)
 delay-reflect-closed M =
-  delay-reflect M ρ₀ ρ₀ (λ _ → ⟨ ω , refl ⟩) (λ _ → Init-consis) ρ₀⊳ρ₀
+  delay-reflect M ρ₀ ρ₀ (λ _ → ⟨ ω , refl ⟩) (λ _ → Init-consis) Init⊳Init
 
 reflect-const : ∀ (M : AST) {B} (c : base-rep B)
   → const c ∈ ⟦ delay M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀

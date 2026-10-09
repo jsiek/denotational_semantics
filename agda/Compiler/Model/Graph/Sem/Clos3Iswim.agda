@@ -57,7 +57,7 @@ open Eq.≡-Reasoning
                      ⟨ (λ D D' D⊆ → Λ-mono ⟨ F D , ptt ⟩ 
                                            ⟨ F' D' , ptt ⟩ 
                                            ⟨ F~ D D' D⊆ , ptt ⟩) , ptt ⟩ 
-            , ⟨ {!   !} , ptt ⟩ ⟩
+            , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
      {- Λ-mono ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩
               ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩ -}
 
@@ -75,8 +75,8 @@ open Eq.≡-Reasoning
                                (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆)))) -}
 𝕆-Clos3-mono app = ⋆-mono
 𝕆-Clos3-mono (lit B k) _ _ _ = lift (λ d z → z)
-𝕆-Clos3-mono (tuple x) = {!   !}
-𝕆-Clos3-mono (get x) = {!   !}
+𝕆-Clos3-mono (tuple x) = 𝒯-mono x
+𝕆-Clos3-mono (get x) = proj-mono x
 𝕆-Clos3-mono inl-op = ℒ-mono
 𝕆-Clos3-mono inr-op = ℛ-mono
 𝕆-Clos3-mono case-op = 𝒞-mono

@@ -359,6 +359,29 @@ cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = l
       , lower (𝒞-mono ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩ ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩ ⟨ lift D'<D , ⟨ lift FL'<FL , ⟨ lift FR'<FR , ptt ⟩ ⟩ ⟩) ⟩
 -}
 
+nthD-mono : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
+  → results-rel-pres _⊆_ (replicate n ■) Ds Es → (i : Fin n) → nthD Ds i ⊆ nthD Es i
+nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D⊆ , _ ⟩ zero = D⊆
+nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD-mono Ds Es Ds⊆ i
+
+𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
+𝒯-mono zero Ds Es Ds⊆ = lift (λ d ())
+𝒯-mono (suc n) Ds Es Ds⊆ = lift G
+  where
+  G : 𝒯 (suc n) Ds ⊆ 𝒯 (suc n) Es
+  G (tup[ i ] d) ⟨ refl , d∈ ⟩ = ⟨ refl , nthD-mono Ds Es Ds⊆ i d d∈ ⟩
+  G (const k) ()
+  G (V ↦ w) ()
+  G ν ()
+  G ω ()
+  G ⦅ u ∣ ()
+  G ∣ V ⦆ ()
+  G (left d) ()
+  G (right d) ()
+
+proj-mono : ∀ {n} (i : Fin n) → monotone (■ ∷ []) ■ (proj i)
+proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → D⊆ (tup[ i ] d))
+
 {-
 proj-mono : ∀ i → monotone (■ ∷ []) ■ (proj i)
 proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G

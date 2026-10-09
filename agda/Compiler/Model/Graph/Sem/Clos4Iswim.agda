@@ -64,8 +64,8 @@ open Eq.≡-Reasoning
 𝕆-Clos4-mono pair-op = pair-mono
 𝕆-Clos4-mono fst-op = car-mono
 𝕆-Clos4-mono snd-op = cdr-mono
-𝕆-Clos4-mono (tuple x) = {!   !}
-𝕆-Clos4-mono (get x) = {!   !}
+𝕆-Clos4-mono (tuple x) = 𝒯-mono x
+𝕆-Clos4-mono (get x) = proj-mono x
 𝕆-Clos4-mono inl-op = ℒ-mono
 𝕆-Clos4-mono inr-op = ℛ-mono
 𝕆-Clos4-mono case-op = 𝒞-mono
