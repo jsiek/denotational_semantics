@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   An end-to-end example for the pipeline Clos1 → Clos4:

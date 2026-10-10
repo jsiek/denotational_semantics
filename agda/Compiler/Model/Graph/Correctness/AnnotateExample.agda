@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   An end-to-end example from ISWIM to Clos4:

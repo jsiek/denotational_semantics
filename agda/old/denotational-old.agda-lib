@@ -1,0 +1,3 @@
+name: denotational-old
+depend: standard-library abt
+include: .

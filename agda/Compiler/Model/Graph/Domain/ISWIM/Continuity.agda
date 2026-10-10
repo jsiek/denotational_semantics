@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   Continuity of the ISWIM graph-model operators.

@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.List using (List; []; _∷_)
 open import Data.Sum using (_⊎_)

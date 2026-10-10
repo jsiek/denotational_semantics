@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   Backward (reflect) direction of the correctness of the delay pass

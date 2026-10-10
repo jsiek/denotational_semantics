@@ -1,5 +1,3 @@
-{-# OPTIONS --safe #-}
-
 module Compiler.Lang.Clos2 where
 
 {-

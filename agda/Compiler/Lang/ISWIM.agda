@@ -1,5 +1,3 @@
-{-# OPTIONS --safe #-}
-
 module Compiler.Lang.ISWIM where
 
 {-

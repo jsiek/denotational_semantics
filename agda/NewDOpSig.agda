@@ -1,5 +1,3 @@
-{-# OPTIONS --safe #-}
-
 module NewDOpSig where
 
 open import Primitives

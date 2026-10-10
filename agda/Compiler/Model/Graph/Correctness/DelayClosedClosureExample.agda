@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   A regression test for closures with no free variables.

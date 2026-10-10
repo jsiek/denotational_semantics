@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --safe #-}
+{-# OPTIONS --without-K #-}
 {- Extracted from the abt library (github.com/jsiek/abstract-binding-trees,
    commit 1387c40): just the fold, without the fusion lemmas. -}
 open import Agda.Primitive using (Level)

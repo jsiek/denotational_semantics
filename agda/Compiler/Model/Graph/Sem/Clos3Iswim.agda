@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 module Compiler.Model.Graph.Sem.Clos3Iswim where
 {-
 

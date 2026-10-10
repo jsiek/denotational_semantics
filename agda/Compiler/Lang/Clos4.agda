@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 module Compiler.Lang.Clos4 where
 {-
 

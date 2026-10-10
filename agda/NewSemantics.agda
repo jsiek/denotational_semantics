@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
 open import Data.List.Properties using (++-conicalˡ)

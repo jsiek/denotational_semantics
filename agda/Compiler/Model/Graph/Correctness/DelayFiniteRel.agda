@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   A logical relation indexed by finite lists of observations from one side

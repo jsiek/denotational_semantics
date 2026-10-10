@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   Correctness of the enclose pass (Clos1 → Clos2).

@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 {-
 
   Definitions shared by the finite-observation logical relations for the

@@ -1,4 +1,3 @@
-{-# OPTIONS --safe #-}
 module Compiler.Model.Graph.Domain.ISWIM.Ops where
 
 open import Primitives

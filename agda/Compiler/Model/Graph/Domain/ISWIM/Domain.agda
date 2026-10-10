@@ -1,5 +1,3 @@
-{-# OPTIONS --safe #-}
-
 module Compiler.Model.Graph.Domain.ISWIM.Domain where
 
 open import Primitives
@@ -33,7 +31,7 @@ open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax; uncurry)
     renaming (_,_ to ⟨_,_⟩)
 open import Data.Product.Properties using (,-injective)
-open import Relation.Nullary.Product using (_×-dec_)
+open import Relation.Nullary.Decidable using (_×?_)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
@@ -141,7 +139,7 @@ const k d≟ (tup[ i ] d) = no (λ ())
 const k d≟ (left v₁) = no (λ ())
 const k d≟ (right v₁) = no (λ ())
 (V ↦ w) d≟ const k = no (λ ())
-(V ↦ w) d≟ (V' ↦ w') = map′ (uncurry (cong₂ _↦_)) ↦-inj ((V ds≟ V') ×-dec (w d≟ w'))
+(V ↦ w) d≟ (V' ↦ w') = map′ (uncurry (cong₂ _↦_)) ↦-inj ((V ds≟ V') ×? (w d≟ w'))
 (V ↦ w) d≟ ν = no (λ ())
 (V ↦ w) d≟ ω = no (λ ())
 (V ↦ w) d≟ ⦅ d₁' ∣ = no (λ ())
@@ -193,7 +191,7 @@ const k d≟ (right v₁) = no (λ ())
 ... | no neq = no λ z → neq (proj₁ (tup-inj z))
 ... | yes refl = map′ (cong (λ z → tup[ proj₁ z ] proj₂ z))
         (λ z → tup-inj-uncurried' z refl)
-        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective (i fin≟ i' ×-dec (d d≟ d')))
+        (map′ (uncurry (cong₂ ⟨_,_⟩)) ,-injective (i fin≟ i' ×? (d d≟ d')))
 (tup[ i ] d) d≟ (left v) = no (λ ())
 (tup[ i ] d) d≟ (right v) = no (λ ())
 (tup[ i ] d) d≟ ⦅ v ∣ = no (λ ())
