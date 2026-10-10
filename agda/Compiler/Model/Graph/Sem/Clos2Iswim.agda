@@ -49,10 +49,6 @@ apply-n-mono zero F F' _ _ F~ _ = F~
 apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~ ⟩ =
   apply-n-mono n (F D) (F' D') Ds Ds' (F~ D D' D⊆) Ds~
 
-{- D, provided that each of the n sets in Ds is nonempty -}
-guard-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
-guard-n n Ds D w = (∀ i → nonempty (nthD Ds i)) × w ∈ D
-
 𝕆-Clos2 : DOpSig (𝒫 Value) sig
 𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩)
 𝕆-Clos2 app = ⋆
