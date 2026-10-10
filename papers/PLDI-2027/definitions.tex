@@ -105,10 +105,12 @@ Using names instead of de Bruijn indices changes a few definitions:
 \[
 \begin{array}{rcl}
   c &\in& \text{constants} \qquad x, y, z, e, f \in \X \\[1ex]
-  \V \ni u, v, w &::=& c \mid V \mapsto w \mid \nu \mid \omega
+  \V \ni d, u, v, w &::=& c \mid V \mapsto w \mid \nu \mid \omega
      \mid \carv{u} \mid \cdrv{v}
      \mid \tup{i}{v} \mid \Left{v} \mid \Right{v} \mid \emptytup \\
-  U, V, W &\in& \FSET{\V}
+  U, V, W &\in& \FSET{\V} \\
+  D, E, X, Y &\in& \SET{\V} \\
+  F, G &:& \SET{\V} \to \SET{\V}
 \end{array}
 \]
 
