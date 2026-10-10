@@ -6,8 +6,8 @@ Denotational semantics based on graph and filter models
 `agda/All.agda` gathers a closure-conversion compiler and its
 correctness proofs, in the graph model:
 
-    ISWIM --annotate--> Clos1 --enclose--> Clos2 --optimize--> Clos2
-          --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5
+    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+          --delay--> Clos4 --globalize--> Clos5
 
 The end-to-end theorem is in
 `agda/Compiler/Model/Graph/Correctness/CompilerCorrect.agda`.

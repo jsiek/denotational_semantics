@@ -3,7 +3,7 @@ module Compiler.Model.Graph.Sem.ISWIM where
 
  The graph-model semantics of ISWIM. A function denotes the function of
    its argument given by its body, which sees the surrounding environment.
- This semantics is before the 'annotate' pass.
+ This semantics is before the 'enclose' pass.
 
 -}
 

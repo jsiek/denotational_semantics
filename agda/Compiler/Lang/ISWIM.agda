@@ -4,7 +4,7 @@ module Compiler.Lang.ISWIM where
  The source language: ISWIM, an untyped lambda calculus with constants,
    tuples and sums. A function lam ⦅ (y. N) ⦆ refers to the surrounding
    variables directly.
- This language is before the 'annotate' pass.
+ This language is before the 'enclose' pass.
 -}
 
 open import Primitives
