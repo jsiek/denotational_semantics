@@ -49,6 +49,55 @@
 \begin{document}
 \maketitle
 
+\section*{About this document}
+
+This is a summary, for review, of the definitions in the Agda development
+of the closure-conversion compiler in \texttt{agda/Compiler}.
+It uses the notation of \texttt{talks/ITRS-2020} and named variables
+instead of de Bruijn indices.
+
+\paragraph{Contents.}
+\begin{enumerate}
+\item \textbf{Values and operators:}
+  \begin{itemize}
+  \item the value domain and environments, with $\rho_0(x) = \{\omega\}$;
+  \item the operators $\star$, $\Lambda$, $\key{pair}$/$\key{car}$/$\key{cdr}$,
+    strict $\mathcal{T}$, $\key{proj}$, $\mathcal{L}$/$\mathcal{R}$/$\mathcal{C}$,
+    $\key{guard}$, and $\odot$;
+  \item consistency ($\sim$, $\consis$) and continuity.
+  \end{itemize}
+\item \textbf{Languages:} the syntax of ISWIM and Clos1--Clos5, including Clos5 programs.
+\item \textbf{Semantics:} the clauses all languages share, then each language's own
+  clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$.
+\item \textbf{Compilation:} annotate, enclose, optimize, concretize, delay (with the let),
+  and globalize.
+\item \textbf{Relations and lemma statements:}
+  \begin{itemize}
+  \item $\mathit{Enclosed}$, plus the annotate, enclose and optimize equalities;
+  \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
+  \item for delay, $\mathit{depth}$/$\mathit{Bnd}$, the generic relation $\mathcal{R}_k$
+    with its preservation and reflection instances, $\rhd$, and the let equation;
+  \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
+  \item the end-to-end theorem.
+  \end{itemize}
+\end{enumerate}
+
+\paragraph{Where it doesn't match the Agda literally.}
+Using names instead of de Bruijn indices changes a few definitions:
+\begin{itemize}
+\item \textbf{Annotate} lists $\FV(\lam{y} N)$ as the closure's free variables.
+  The Agda lists the first $m$ surrounding variables, enough to cover every
+  variable the body uses.
+\item \textbf{Optimize} has no renaming parameter. It keeps $x_i$ when
+  $x_i \in \FV(N)$ or $M_i$ isn't a variable.
+\item \textbf{Concretize}'s map has no fallback for variables past the free
+  variables. Closed code can't refer to them.
+\item \textbf{Tuple indices} run from $1$ to $n$.
+\item \textbf{Global definitions} are listed oldest first, so $\funref{k}$ names $d_k$.
+\end{itemize}
+
+\paragraph{Building.} \texttt{latexmk -pdf definitions.tex}
+
 \section{Values and Operators}
 
 \subsection{Values}
