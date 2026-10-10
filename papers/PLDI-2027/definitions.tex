@@ -1,0 +1,513 @@
+\documentclass[10pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+
+\newcommand{\SEM}[1]{\llbracket #1 \rrbracket}
+\newcommand{\key}[1]{\mathsf{#1}}
+\newcommand{\pass}[1]{\mathit{#1}}
+\newcommand{\lam}[1]{\lambda #1.\,}
+\newcommand{\clos}[2]{\lambda^{#1}\, #2.\,}
+\newcommand{\Let}{\key{let}\;}
+\newcommand{\In}{\;\key{in}\;}
+\newcommand{\inl}{\key{inl}\,}
+\newcommand{\inr}{\key{inr}\,}
+\newcommand{\Case}[5]{\key{case}\;#1\;\key{of}\;\key{inl}\,#2 \Rightarrow #3 \mid \key{inr}\,#4 \Rightarrow #5}
+\newcommand{\tuple}[1]{\langle #1 \rangle}
+\newcommand{\prj}[1]{\pi_{#1}\,}
+\newcommand{\fun}[1]{\key{fun}(#1)}
+\newcommand{\funref}[1]{\key{fun}_{#1}}
+\newcommand{\pair}[2]{\key{pair}(#1, #2)}
+\newcommand{\FST}{\key{fst}\,}
+\newcommand{\SND}{\key{snd}\,}
+\newcommand{\SET}[1]{\mathcal{P}(#1)}
+\newcommand{\FSET}[1]{\mathcal{P}_f(#1)}
+\newcommand{\V}{\mathbb{V}}
+\newcommand{\X}{\mathbb{X}}
+\newcommand{\carv}[1]{\llparenthesis #1 \,\rvert}
+\newcommand{\cdrv}[1]{\lvert\, #1 \rrparenthesis}
+\newcommand{\tup}[2]{\key{tup}_{#1}(#2)}
+\newcommand{\Left}[1]{\key{left}(#1)}
+\newcommand{\Right}[1]{\key{right}(#1)}
+\newcommand{\emptytup}{\langle\rangle}
+\newcommand{\FV}{\mathrm{FV}}
+\newcommand{\ext}[3]{#1(#2{:=}#3)}
+\newcommand{\app}{\star}
+\newcommand{\NE}{\neq\emptyset}
+\newcommand{\Rel}[3]{\mathcal{R}_{#1}(#2, #3)}
+\newcommand{\Bnd}[2]{\mathit{Bnd}_{#1}(#2)}
+\newcommand{\consis}{\mathit{consis}}
+
+\newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
+
+\title{Denotational Closure Conversion: Definitions}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Values and Operators}
+
+\subsection{Values}
+
+\[
+\begin{array}{rcl}
+  c &\in& \text{constants} \qquad x, y, z, e, f \in \X \\[1ex]
+  \V \ni u, v, w &::=& c \mid V \mapsto w \mid \nu \mid \omega
+     \mid \carv{u} \mid \cdrv{V}
+     \mid \tup{i}{v} \mid \Left{v} \mid \Right{v} \mid \emptytup \\
+  U, V, W &\in& \FSET{\V}
+\end{array}
+\]
+
+\[
+\begin{array}{rcl}
+  \rho &:& \X \to \SET{\V} \\
+  \rho_0(x) &=& \{\omega\} \\
+  D \simeq E &\iff& D \subseteq E \text{ and } E \subseteq D \\
+  \rho \simeq \rho' &\iff& \forall x.\; \rho(x) \simeq \rho'(x)
+\end{array}
+\]
+
+\subsection{Operators}
+
+\begin{align*}
+  D \app E &= \{ w \mid \exists V \NE.\; (V \mapsto w) \in D,\; V \subseteq E \} \\
+  \Lambda(F) &= \{ V \mapsto w \mid V \NE,\; w \in F(V) \} \cup \{ \nu \} \\
+  \mathcal{B}(c) &= \{ c \} \\
+  \key{pair}(D, E) &= \{ \carv{u} \mid u \in D,\; \exists V \NE.\; V \subseteq E \}
+    \cup \{ \cdrv{V} \mid V \NE,\; V \subseteq E,\; D \NE \} \\
+  \key{car}(D) &= \{ u \mid \carv{u} \in D \} \\
+  \key{cdr}(D) &= \{ v \mid \exists V.\; \cdrv{V} \in D,\; v \in V \} \\
+  \mathcal{T}() &= \{ \emptytup \} \\
+  \mathcal{T}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; D_j \NE \}
+     \qquad (n > 0) \\
+  \key{proj}_i(D) &= \{ d \mid \tup{i}{d} \in D \} \\
+  \mathcal{L}(D) &= \{ \Left{d} \mid d \in D \} \\
+  \mathcal{R}(D) &= \{ \Right{d} \mid d \in D \} \\
+  \mathcal{C}(D, F, G) &=
+    \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Left{v} \in D),\; w \in F(V) \} \\
+    &\cup\; \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Right{v} \in D),\; w \in G(V) \} \\
+  \key{guard}(D_1,\ldots,D_n; E) &= \{ w \mid (\forall i.\; D_i \NE),\; w \in E \}
+\end{align*}
+
+\begin{align*}
+  D \odot E &= (\key{car}(D) \app \key{cdr}(D)) \app E
+\end{align*}
+
+\subsection{Consistency}
+
+\begin{align*}
+  c \sim c' &\iff c = c' \\
+  (V \mapsto w) \sim (V' \mapsto w') &\iff V \not\approx V' \;\lor\; (V \approx V' \land w \sim w') \\
+  (V \mapsto w) \sim \nu, \quad \nu \sim (V \mapsto w), \quad \nu \sim \nu &\iff \mathsf{true} \\
+  \omega \sim \omega, \quad \emptytup \sim \emptytup &\iff \mathsf{true} \\
+  \carv{u} \sim \carv{v} &\iff u \sim v \\
+  \carv{u} \sim \cdrv{V}, \quad \cdrv{V} \sim \carv{u} &\iff \mathsf{true} \\
+  \cdrv{V} \sim \cdrv{V'} &\iff V \approx V' \\
+  \tup{i}{d} \sim \tup{j}{d'} &\iff n = n' \land (i \neq j \lor d \sim d')
+     \qquad (i \in \{1..n\},\; j \in \{1..n'\}) \\
+  \Left{d} \sim \Left{d'} &\iff d \sim d' \\
+  \Right{d} \sim \Right{d'} &\iff d \sim d' \\
+  u \sim v &\iff \mathsf{false} \quad \text{otherwise} \\[1ex]
+  V \approx V' &\iff \forall u \in V, v \in V'.\; u \sim v \\
+  \consis(D) &\iff \forall u, v \in D.\; u \sim v
+\end{align*}
+
+\subsection{Continuity}
+
+\begin{align*}
+  \rho' \subseteq \rho &\iff \forall x.\; \rho'(x) \subseteq \rho(x) \\
+  \mathit{finiteNE}(\rho') &\iff \forall x.\; \exists V \NE.\; \rho'(x) = V \\
+  \mathit{continuous}(\mathcal{E}) &\iff
+    \forall \rho\, v.\; (\forall x.\; \rho(x) \NE) \land v \in \mathcal{E}(\rho) \\
+    &\qquad \implies \exists \rho'.\; \mathit{finiteNE}(\rho'),\; \rho' \subseteq \rho,\; v \in \mathcal{E}(\rho')
+\end{align*}
+
+%===============================================================================
+\section{Languages}
+
+\subsection{ISWIM}
+
+\begin{syntax}
+  & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+
+\subsection{Clos1}
+
+\begin{syntax}
+  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{y} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+
+\subsection{Clos2}
+
+\begin{syntax}
+  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+\[
+  \FV(N) \subseteq \{x_1,\ldots,x_n,y\} \text{ in } \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N
+\]
+
+\subsection{Clos3}
+
+\begin{syntax}
+  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{e\, y} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+\[
+  \FV(N) \subseteq \{e,y\} \text{ in } \clos{M_1\ldots M_n}{e\, y} N
+\]
+
+\subsection{Clos4}
+
+\begin{syntax}
+  & L, M, N &::=& x \mid \fun{e\,y.\,N} \mid L(M, N) \mid c
+    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
+  &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
+    \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+    \mid \Let x = M \In N
+\end{syntax}
+\[
+  \FV(N) \subseteq \{e,y\} \text{ in } \fun{e\,y.\,N}
+\]
+
+\subsection{Clos5}
+
+\begin{syntax}
+  & L, M, N &::=& x \mid \funref{k} \mid L(M, N) \mid c
+    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
+  &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
+    \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+    \mid \Let x = M \In N \\[1ex]
+  & d &::=& e\,y.\,N \qquad\qquad (\FV(N) \subseteq \{e, y\}) \\
+  & P &::=& (d_0, \ldots, d_{m-1};\; M)
+\end{syntax}
+
+%===============================================================================
+\section{Semantics}
+
+\[
+  \SEM{-}^{\mathrm{ISWIM}}, \SEM{-}^{\mathrm{1}}, \ldots, \SEM{-}^{\mathrm{4}}
+    : \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V}
+  \qquad
+  \SEM{-}_T : \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V}
+\]
+
+\subsection{Clauses common to all languages}
+
+\begin{align*}
+  \SEM{x}\rho &= \rho(x) \\
+  \SEM{c}\rho &= \mathcal{B}(c) \\
+  \SEM{\tuple{M_1,\ldots,M_n}}\rho &= \mathcal{T}(\SEM{M_1}\rho, \ldots, \SEM{M_n}\rho) \\
+  \SEM{\prj{i} M}\rho &= \key{proj}_i(\SEM{M}\rho) \\
+  \SEM{\inl M}\rho &= \mathcal{L}(\SEM{M}\rho) \\
+  \SEM{\inr M}\rho &= \mathcal{R}(\SEM{M}\rho) \\
+  \SEM{\Case{L}{x}{M}{y}{N}}\rho &=
+     \mathcal{C}(\SEM{L}\rho,\; \lambda X.\, \SEM{M}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}\ext{\rho}{y}{Y})
+\end{align*}
+
+\subsection{ISWIM}
+
+\begin{align*}
+  \SEM{\lam{x} N}\rho &= \Lambda(\lambda X.\, \SEM{N}\ext{\rho}{x}{X}) \\
+  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+\end{align*}
+
+\subsection{Clos1}
+
+\begin{align*}
+  \SEM{\clos{M_1\ldots M_n}{y} N}\rho &=
+    \key{guard}(\SEM{M_1}\rho, \ldots, \SEM{M_n}\rho;\;
+       \Lambda(\lambda Y.\, \SEM{N}\ext{\rho}{y}{Y})) \\
+  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+\end{align*}
+
+\subsection{Clos2}
+
+\begin{align*}
+  \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}\rho &=
+    \key{guard}(D_1, \ldots, D_n;\;
+       \Lambda(\lambda Y.\, \SEM{N}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y)))
+    \\ &\qquad\text{where } D_i = \SEM{M_i}\rho \\
+  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+\end{align*}
+
+\subsection{Clos3}
+
+\begin{align*}
+  \SEM{\clos{M_1\ldots M_n}{e\, y} N}\rho &=
+    \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}\rho_0(e{:=}X, y{:=}Y)))
+    \app \mathcal{T}(\SEM{M_1}\rho, \ldots, \SEM{M_n}\rho) \\
+  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+\end{align*}
+
+\subsection{Clos4}
+
+\begin{align*}
+  \SEM{\fun{e\,y.\,N}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}\rho_0(e{:=}X, y{:=}Y))) \\
+  \SEM{L(M, N)}\rho &= (\SEM{L}\rho \app \SEM{M}\rho) \app \SEM{N}\rho \\
+  \SEM{\pair{M}{N}}\rho &= \key{pair}(\SEM{M}\rho, \SEM{N}\rho) \\
+  \SEM{\FST M}\rho &= \key{car}(\SEM{M}\rho) \\
+  \SEM{\SND M}\rho &= \key{cdr}(\SEM{M}\rho) \\
+  \SEM{\Let x = M \In N}\rho &= \Lambda(\lambda X.\, \SEM{N}\ext{\rho}{x}{X}) \app \SEM{M}\rho
+\end{align*}
+
+\subsection{Clos5}
+
+\[
+  T : \mathbb{N} \to \SET{\V}
+\]
+\begin{align*}
+  \SEM{\funref{k}}_T\rho &= T(k) \\
+  \SEM{L(M, N)}_T\rho &= (\SEM{L}_T\rho \app \SEM{M}_T\rho) \app \SEM{N}_T\rho \\
+  \SEM{\pair{M}{N}}_T\rho &= \key{pair}(\SEM{M}_T\rho, \SEM{N}_T\rho) \\
+  \SEM{\FST M}_T\rho &= \key{car}(\SEM{M}_T\rho) \\
+  \SEM{\SND M}_T\rho &= \key{cdr}(\SEM{M}_T\rho) \\
+  \SEM{\Let x = M \In N}_T\rho &= \Lambda(\lambda X.\, \SEM{N}_T\ext{\rho}{x}{X}) \app \SEM{M}_T\rho
+\end{align*}
+(the common clauses are as above, with $\SEM{-}_T$ in place of $\SEM{-}$)
+
+\begin{align*}
+  \key{code}_T(e\,y.\,N) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}_T\rho_0(e{:=}X, y{:=}Y))) \\[1ex]
+  \key{table}(d_0,\ldots,d_{m-1})(k) &=
+    \begin{cases}
+      \key{code}_{\key{table}(d_0,\ldots,d_{k-1})}(d_k) & k < m \\
+      \emptyset & \text{otherwise}
+    \end{cases} \\[1ex]
+  \SEM{(d_0, \ldots, d_{m-1};\; M)} &= \SEM{M}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
+\end{align*}
+
+%===============================================================================
+\section{Compilation}
+
+\[
+  \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
+     \circ \pass{optimize} \circ \pass{enclose} \circ \pass{annotate}
+\]
+
+In each pass, the clauses not shown are homomorphic.
+
+\subsection{Annotate (ISWIM $\to$ Clos1)}
+
+\begin{align*}
+  \pass{annotate}(\lam{y} N) &= \clos{x_1\ldots x_n}{y} \pass{annotate}(N)
+    \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
+\end{align*}
+
+\subsection{Enclose (Clos1 $\to$ Clos2)}
+
+\begin{align*}
+  \pass{enclose}(\clos{x_1\ldots x_n}{y} N) &=
+     \clos{x_1\ldots x_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
+\end{align*}
+
+\subsection{Optimize (Clos2 $\to$ Clos2)}
+
+\begin{align*}
+  \pass{optimize}(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
+    \clos{M'_{i_1}\ldots M'_{i_k}}{x_{i_1}\ldots x_{i_k}\, y} \pass{optimize}(N) \\
+  \text{where } M'_i &= \pass{optimize}(M_i) \\
+  \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \text{ or } M_i \text{ is not a variable} \}
+\end{align*}
+
+\subsection{Concretize (Clos2 $\to$ Clos3)}
+
+\[
+  \mathit{Ref} \ni r ::= x \mid \prj{i} x
+  \qquad\qquad
+  \varphi : \X \to \mathit{Ref}
+\]
+\begin{align*}
+  \pass{concretize}_\varphi(x) &= \varphi(x) \\
+  \pass{concretize}_\varphi(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
+    \clos{\pass{concretize}_\varphi(M_1)\ldots\pass{concretize}_\varphi(M_n)}{e\,y}
+       \pass{concretize}_{\varphi_n}(N) \\
+  \text{where } \varphi_n &= \{ y \mapsto y,\; x_1 \mapsto \prj{1} e,\; \ldots,\; x_n \mapsto \prj{n} e \},
+    \quad e \text{ fresh} \\
+  \pass{concretize}_\varphi(\Case{L}{x}{M}{y}{N}) &=
+    \key{case}\;\pass{concretize}_\varphi(L)\;\key{of} \\
+    &\qquad \key{inl}\,x \Rightarrow \pass{concretize}_{\ext{\varphi}{x}{x}}(M)
+     \mid \key{inr}\,y \Rightarrow \pass{concretize}_{\ext{\varphi}{y}{y}}(N)
+\end{align*}
+
+\subsection{Delay (Clos3 $\to$ Clos4)}
+
+\begin{align*}
+  \pass{delay}(\clos{M_1\ldots M_n}{e\,y} N) &=
+    \pair{\fun{e\,y.\,\pass{delay}(N)}}{\tuple{\pass{delay}(M_1),\ldots,\pass{delay}(M_n)}} \\
+  \pass{delay}(L\;M) &=
+    \Let f = \pass{delay}(L) \In (\FST f)(\SND f, \pass{delay}(M))
+    \qquad f \text{ fresh}
+\end{align*}
+
+\subsection{Globalize (Clos4 $\to$ Clos5)}
+
+\[
+  \vec{d} = d_0, \ldots, d_{m-1}
+  \qquad
+  \pass{glob}(M, \vec{d}) = (M', \vec{d}')
+\]
+\begin{align*}
+  \pass{glob}(x, \vec{d}) &= (x, \vec{d}) \\
+  \pass{glob}(\fun{e\,y.\,N}, \vec{d}) &= (\funref{|\vec{d}_1|},\; \vec{d}_1, (e\,y.\,N'))
+     \quad\text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d}) \\
+  \pass{glob}(\mathit{op}(\bar{x}_1.A_1, \ldots, \bar{x}_n.A_n), \vec{d}_0)
+     &= (\mathit{op}(\bar{x}_1.A'_1, \ldots, \bar{x}_n.A'_n), \vec{d}_n)
+     \quad\text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1}) \\[1ex]
+  \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
+\end{align*}
+
+%===============================================================================
+\section{Relations}
+
+\subsection{Annotate and Enclose}
+
+\begin{align*}
+  \mathit{Enclosed}(M) &\iff \text{every closure in } M \text{ has the form }
+    \clos{x_1\ldots x_n}{y} N \text{ with } \FV(N) \subseteq \{x_1,\ldots,x_n,y\}
+\end{align*}
+
+\[
+\begin{array}{l}
+  \forall x \in \FV(M).\; \rho_1(x) \simeq \rho_2(x), \quad \forall x.\; \rho_2(x) \NE
+  \implies \SEM{M}^{\mathrm{ISWIM}}\rho_1 \simeq \SEM{\pass{annotate}(M)}^{\mathrm{1}}\rho_2 \\[1ex]
+  \mathit{Enclosed}(M), \quad \forall x \in \FV(M).\; \rho_1(x) \simeq \rho_2(x)
+  \implies \SEM{M}^{\mathrm{1}}\rho_1 \simeq \SEM{\pass{enclose}(M)}^{\mathrm{2}}\rho_2
+\end{array}
+\]
+
+\subsection{Optimize}
+
+\[
+  \forall x \in \FV(M).\; \rho(x) \simeq \rho'(x), \quad \forall x.\; \rho(x) \NE
+  \implies \SEM{M}^{\mathrm{2}}\rho \simeq \SEM{\pass{optimize}(M)}^{\mathrm{2}}\rho'
+\]
+
+\subsection{Concretize}
+
+\begin{align*}
+  \SEM{x}_r\rho &= \rho(x) \\
+  \SEM{\prj{i} x}_r\rho &= \key{proj}_i(\rho(x)) \\[1ex]
+  \rho_2 \sim_\varphi \rho_3 &\iff \forall x.\; \rho_2(x) \simeq \SEM{\varphi(x)}_r\rho_3
+\end{align*}
+\[
+  \rho_2 \sim_\varphi \rho_3 \implies
+  \SEM{M}^{\mathrm{2}}\rho_2 \simeq \SEM{\pass{concretize}_\varphi(M)}^{\mathrm{3}}\rho_3
+\]
+
+\subsection{Delay}
+
+\paragraph{Depth.}
+\begin{align*}
+  \mathit{depth}(c) = \mathit{depth}(\nu) = \mathit{depth}(\omega) = \mathit{depth}(\emptytup) &= 0 \\
+  \mathit{depth}(V \mapsto w) &= 1 + \max(\mathit{depth}(V), \mathit{depth}(w)) \\
+  \mathit{depth}(\carv{u}) &= 1 + \mathit{depth}(u) \\
+  \mathit{depth}(\cdrv{V}) &= 1 + \mathit{depth}(V) \\
+  \mathit{depth}(\tup{i}{d}) = \mathit{depth}(\Left{d}) = \mathit{depth}(\Right{d})
+    &= 1 + \mathit{depth}(d) \\
+  \mathit{depth}(V) &= \max_{v \in V} \mathit{depth}(v) \\[1ex]
+  \Bnd{k}{V} &\iff \forall v \in V.\; \mathit{depth}(v) < k
+\end{align*}
+
+\paragraph{The logical relation.}
+Parameterized by
+$\mathit{Args} : \FSET{\V} \to \SET{\V}$,
+$\mathit{Apps} : \FSET{\V} \to \FSET{\V} \to \SET{\V}$,
+$\circledast : \SET{\V} \to \SET{\V} \to \SET{\V}$, and
+$\mathit{Good} : \FSET{\V} \to \mathsf{Prop}$.
+\begin{align*}
+  \Rel{0}{V}{D} &\iff \mathsf{true} \\
+  \Rel{k+1}{V}{D} &\iff
+  \begin{array}[t]{l}
+    \forall c \in V.\; c \in D \\
+    \land\; (\omega \in V \implies \omega \in D) \\
+    \land\; (V \NE \implies D \NE) \\
+    \land\; \forall U\, E.\; U \subseteq \mathit{Args}(V) \land \mathit{Good}(U) \land \Rel{k}{U}{E}
+       \implies \forall W \subseteq \mathit{Apps}(V, U).\; \Rel{k}{W}{D \circledast E} \\
+    \land\; \forall i\, W.\; W \subseteq \{ d \mid \tup{i}{d} \in V \}
+       \implies \Rel{k}{W}{\key{proj}_i(D)} \\
+    \land\; \forall W.\; W \subseteq \{ d \mid \Left{d} \in V \}
+       \implies \Rel{k}{W}{\{ d \mid \Left{d} \in D \}} \\
+    \land\; \forall W.\; W \subseteq \{ d \mid \Right{d} \in V \}
+       \implies \Rel{k}{W}{\{ d \mid \Right{d} \in D \}}
+  \end{array} \\[1ex]
+  \rho_1 \rhd \rho_2 &\iff \forall x\, V\, k.\; V \subseteq \rho_1(x) \land \Bnd{k}{V}
+     \implies \Rel{k}{V}{\rho_2(x)}
+\end{align*}
+
+\paragraph{Preservation instance} (observations of Clos3, sets of Clos4).
+\begin{align*}
+  \mathit{Args}(V) &= \{ u \mid \exists U_0\, w.\; (U_0 \mapsto w) \in V,\; u \in U_0 \} \\
+  \mathit{Apps}(V, U) &= \{ w \mid \exists U_0 \NE.\; (U_0 \mapsto w) \in V,\; U_0 \subseteq U \} \\
+  D \circledast E &= D \odot E \\
+  \mathit{Good}(U) &= \mathsf{true}
+\end{align*}
+
+\paragraph{Reflection instance} (observations of Clos4, sets of Clos3).
+\begin{align*}
+  \mathit{Cdrs}(V') &= \{ v \mid \exists V.\; \cdrv{V} \in V',\; v \in V \} \\
+  \mathit{Args}(V') &= \{ u \mid \exists F\, U_0\, w.\; \carv{F \mapsto (U_0 \mapsto w)} \in V',\; u \in U_0 \} \\
+  \mathit{Apps}(V', U') &= \{ w \mid \exists F \NE.\; \exists U_0 \NE.\;
+     \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \mathit{Cdrs}(V'),\; U_0 \subseteq U' \} \\
+  D \circledast E &= D \app E \\
+  \mathit{Good}(U') &= \consis(U')
+\end{align*}
+
+\paragraph{Lemmas.}
+\[
+\begin{array}{l}
+  \forall x.\; \rho'(x) \NE, \quad \rho \rhd \rho', \\
+  \qquad V \subseteq \SEM{M}^{\mathrm{3}}\rho, \quad \Bnd{k}{V}
+  \implies \Rel{k}{V}{\SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'}
+  \qquad\text{(preservation instance)} \\[1ex]
+  \forall x.\; \rho(x) \NE, \quad \forall x.\; \consis(\rho'(x)), \quad \rho' \rhd \rho, \\
+  \qquad V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho', \quad \Bnd{k}{V'}
+  \implies \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho}
+  \qquad\text{(reflection instance)} \\[1ex]
+  f \notin \FV(N) \implies
+  \SEM{\Let f = L \In (\FST f)(\SND f, N)}^{\mathrm{4}}\rho \simeq \SEM{L}^{\mathrm{4}}\rho \odot \SEM{N}^{\mathrm{4}}\rho \\[1ex]
+  \mathit{continuous}(\SEM{M}^{\mathrm{3}}), \qquad
+  \mathit{continuous}(\SEM{M}^{\mathrm{4}}), \qquad
+  \consis(\rho'(x)) \text{ for all } x \implies \consis(\SEM{M}^{\mathrm{4}}\rho')
+\end{array}
+\]
+
+\subsection{Globalize}
+
+\begin{align*}
+  \mathit{Extends}(\vec{d}, \vec{d}') &\iff \vec{d} \text{ is a prefix of } \vec{d}' \\
+  \mathit{RB}_n(M) &\iff \text{every } \funref{k} \text{ in } M \text{ has } k < n \\
+  \mathit{Agree}_n(T, T') &\iff \forall k < n.\; T(k) \simeq T'(k)
+\end{align*}
+\[
+\begin{array}{l}
+  \pass{glob}(M, \vec{d}) = (M', \vec{d}') \implies
+     \mathit{Extends}(\vec{d}, \vec{d}') \land \mathit{RB}_{|\vec{d}'|}(M') \\[1ex]
+  \mathit{Agree}_n(T, T'), \quad \mathit{RB}_n(M), \quad \rho \simeq \rho'
+     \implies \SEM{M}_T\rho \simeq \SEM{M}_{T'}\rho' \\[1ex]
+  \pass{glob}(M, \vec{d}) = (M', \vec{d}'), \quad \rho \simeq \rho'
+     \implies \SEM{M}^{\mathrm{4}}\rho \simeq \SEM{M'}_{\key{table}(\vec{d}')}\rho' \\[1ex]
+  \SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}
+\end{array}
+\]
+
+\subsection{End to End}
+
+\[
+\begin{array}{l}
+  c \in \SEM{M}^{\mathrm{ISWIM}}\rho_0 \iff c \in \SEM{\pass{compile}(M)} \\[1ex]
+  \SEM{M}^{\mathrm{ISWIM}}\rho_0 \NE \iff \SEM{\pass{compile}(M)} \NE
+\end{array}
+\]
+
+\end{document}
