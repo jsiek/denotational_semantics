@@ -46,7 +46,7 @@ Clos3-continuous-op : ∀ {op} {ρ : Env Value} {NE : nonempty-env ρ} {v} {args
 Clos3-continuous-op {clos-op n} {ρ} {NE} {v} {cons (clear a) fvs} v∈ ⟨ _ , cs ⟩ =
   ⋆-cont {E₁ = λ _ → Fun} {E₂ = λ ρ → 𝒯 n (⟦ fvs ⟧₊ ρ)} NE
     (const-mono {D = Fun}) (𝒯-mono-env {Ds = λ ρ → ⟦ fvs ⟧₊ ρ} (args-nth-mono fvs))
-    (const-cont {D = Fun} NE) (𝒯-cont {Ds = λ ρ → ⟦ fvs ⟧₊ ρ} NE (args-nth-cont fvs {ρ} {NE} cs))
+    (const-cont {D = Fun} NE) (𝒯-cont {Ds = λ ρ → ⟦ fvs ⟧₊ ρ} NE (args-nth-mono fvs) (args-nth-cont fvs {ρ} {NE} cs))
     v v∈
   where
   {- the code of a closure does not depend on the environment -}
@@ -57,7 +57,7 @@ Clos3-continuous-op {app} {ρ} {NE} {v} {cons (ast L) (cons (ast N) nil)} v∈
 Clos3-continuous-op {lit B k} {ρ} {NE} {v} {nil} v∈ _ =
   const-cont {D = ⟦ lit B k ⦅ nil ⦆ ⟧ ρ} NE v v∈
 Clos3-continuous-op {tuple n} {ρ} {NE} {v} {args} v∈ cs =
-  𝒯-cont {Ds = λ ρ → ⟦ args ⟧₊ ρ} NE (args-nth-cont args {ρ} {NE} cs) v v∈
+  𝒯-cont {Ds = λ ρ → ⟦ args ⟧₊ ρ} NE (args-nth-mono args) (args-nth-cont args {ρ} {NE} cs) v v∈
 Clos3-continuous-op {get i} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
   proj-cont i {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
 Clos3-continuous-op {inl-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =

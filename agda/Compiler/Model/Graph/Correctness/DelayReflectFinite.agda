@@ -384,11 +384,15 @@ reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   Ds' = ⟦ del-map-args args ⟧₊' ρ'
   Ds = ⟦ args ⟧₊ ρ
 
+  {- each nonempty component on one side is nonempty on the other -}
+  comp-ne : ∀ j → nonempty (nthD Ds' j) → nonempty (nthD Ds j)
+  comp-ne j ⟨ d , d∈ ⟩ =
+    Obs.nonempty-obs (reflect-nth args ρ' ρ NE ρ'~ ρ⊳ j (d ∷ []) (suc (depth d))
+                        (single⊆ d∈) (Bnd-single d)) (λ ())
+
   tup-ne' : ∀ v → v ∈ 𝒯 (suc n) Ds' → nonempty (𝒯 (suc n) Ds)
-  tup-ne' (tup[ i ] d) ⟨ refl , d∈ ⟩
-      with Obs.nonempty-obs (reflect-nth args ρ' ρ NE ρ'~ ρ⊳ i (d ∷ []) (suc (depth d))
-                               (single⊆ d∈) (Bnd-single d)) (λ ())
-  ... | ⟨ d₀ , d₀∈ ⟩ = ⟨ tup[ i ] d₀ , ⟨ refl , d₀∈ ⟩ ⟩
+  tup-ne' (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ with comp-ne i ⟨ d , d∈ ⟩
+  ... | ⟨ d₀ , d₀∈ ⟩ = ⟨ tup[ i ] d₀ , ⟨ refl , ⟨ d₀∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ ⟩
   tup-ne' (const k) ()
   tup-ne' (V ↦ w) ()
   tup-ne' ν ()
@@ -404,13 +408,13 @@ reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Nths i V' → R k W' (Nth i (𝒯 (suc n) Ds))
   nth-case i [] _ = R-∅ k (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V'⊆ _ (W'⊆ w (here refl))
-  ... | ⟨ refl , _ ⟩ =
-    R-mono k (λ d d∈ → ⟨ refl , d∈ ⟩)
+  ... | ⟨ refl , ⟨ _ , ne ⟩ ⟩ =
+    R-mono k (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩)
       (reflect-nth args ρ' ρ NE ρ'~ ρ⊳ i (w ∷ W') k sub (Bnd-Nths bV W'⊆))
     where
     sub : mem (w ∷ W') ⊆ nthD Ds' i
     sub d d∈ with V'⊆ _ (W'⊆ d d∈)
-    ... | ⟨ refl , d∈' ⟩ = d∈'
+    ... | ⟨ refl , ⟨ d∈' , _ ⟩ ⟩ = d∈'
 
 reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' zero V'⊆ bV = ptt
 reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
