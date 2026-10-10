@@ -1,0 +1,96 @@
+{-
+
+  A CEK-style abstract machine for ISWIM (call by value, left to right).
+  A function value is a closure of the function's body and the whole
+  environment it was created in. See the design note in Smallstep.agda.
+
+-}
+
+module Compiler.Operational.Machine.ISWIM where
+
+open import Primitives using (Base; base-rep)
+open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import Compiler.Lang.ISWIM
+open import Compiler.Operational.Observation
+open import Compiler.Operational.Smallstep using (Semantics; Next; next; stop; machine)
+open import Compiler.Operational.Machine.Common
+
+open import Data.Fin using (Fin)
+open import Data.List using (List; []; _∷_; replicate; reverse)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (ℕ; zero; suc)
+
+data Val : Set where
+  clo : AST → List Val → Val           {- body (under one binder), environment -}
+  const : (B : Base) → base-rep B → Val
+  tup : List Val → Val
+  inl : Val → Val
+  inr : Val → Val
+
+Env : Set
+Env = List Val
+
+data Cont : Set where
+  halt : Cont
+  appL : AST → Env → Cont → Cont       {- evaluating the function; next the argument -}
+  appR : Val → Cont → Cont             {- evaluating the argument of this function -}
+  tupK : List Val → List AST → Env → Cont → Cont   {- values so far (reversed), rest -}
+  getK : ∀ {n} → Fin n → Cont → Cont
+  inlK : Cont → Cont
+  inrK : Cont → Cont
+  caseK : AST → AST → Env → Cont → Cont
+
+data State : Set where
+  eval : AST → Env → Cont → State
+  ret : Val → Cont → State
+
+obs : Val → Obs
+obs-list : List Val → List Obs
+obs (clo N ρ) = o-fun
+obs (const B k) = o-const B k
+obs (tup vs) = o-tuple (obs-list vs)
+obs (inl v) = o-inl (obs v)
+obs (inr v) = o-inr (obs v)
+obs-list [] = []
+obs-list (v ∷ vs) = obs v ∷ obs-list vs
+
+args→list : ∀ {n} → Args (replicate n ■) → List AST
+args→list {zero} Nil = []
+args→list {suc n} (M ,, args) = M ∷ args→list args
+
+{- evaluate the rest of a tuple's components, or build it -}
+tuple-next : List Val → List AST → Env → Cont → State
+tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ
+tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
+
+{- return a value, if there is one -}
+ret? : Maybe Val → Cont → Next State
+ret? (just v) κ = next (ret v κ)
+ret? nothing κ = stop o-wrong
+
+step : State → Next State
+step (eval (` x) ρ κ) = ret? (ρ ‼ x) κ
+step (eval (lam ⦅ ⟩ N ,, Nil ⦆) ρ κ) = next (ret (clo N ρ) κ)
+step (eval (app ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (appL M ρ κ))
+step (eval (lit B k ⦅ Nil ⦆) ρ κ) = next (ret (const B k) κ)
+step (eval (tuple n ⦅ args ⦆) ρ κ) = next (tuple-next [] (args→list args) ρ κ)
+step (eval (get i ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (getK i κ))
+step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
+step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
+step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
+step (ret v halt) = stop (obs v)
+step (ret v (appL M ρ κ)) = next (eval M ρ (appR v κ))
+step (ret w (appR (clo N ρ) κ)) = next (eval N (w ∷ ρ) κ)
+step (ret w (appR _ κ)) = stop o-wrong
+step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
+step (ret (tup vs) (getK i κ)) = ret? (proj i vs) κ
+step (ret _ (getK i κ)) = stop o-wrong
+step (ret v (inlK κ)) = next (ret (inl v) κ)
+step (ret v (inrK κ)) = next (ret (inr v) κ)
+step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
+step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
+step (ret _ (caseK M N ρ κ)) = stop o-wrong
+
+{- a program starts in the empty environment with the empty continuation -}
+sem : AST → Semantics
+sem M = machine State step (eval M [] halt)

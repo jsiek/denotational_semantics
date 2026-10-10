@@ -75,3 +75,23 @@ import Compiler.Model.Graph.Correctness.ConcretizeExample
 import Compiler.Model.Graph.Correctness.EncloseExample
 import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.CompilerExample
+
+{- ---------------------------------------------------------------------------
+   The operational (CompCert-style) development, independent of the graph
+   model above: small-step machines and forward simulations.
+   --------------------------------------------------------------------------- -}
+
+{- shared by any operational semantics: observations, end-theorem shape -}
+import Compiler.Operational.Observation
+
+{- the generic framework: transition systems, forward simulations -}
+import Compiler.Operational.Smallstep
+import Compiler.Operational.Simulation
+
+{- the machines -}
+import Compiler.Operational.Machine.Common
+import Compiler.Operational.Machine.ISWIM
+import Compiler.Operational.Machine.Clos2
+
+{- correctness of each pass -}
+import Compiler.Operational.Correctness.EncloseSim
