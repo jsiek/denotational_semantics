@@ -39,6 +39,7 @@ open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env; extend-nonempty-env; •-~)
 open import NewDenotProperties using (Every)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
+open import Compiler.Model.Graph.Correctness.DelayApp using (let-app-≃)
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous as C3
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; z≤n; _⊔_)
@@ -286,7 +287,8 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) =
   reflect-clos n N fvs
 
 delay-reflect (app ⦅ L ,, N ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' k V'⊆ bV
-    with collect (⟦ delay L ⟧' ρ') (⟦ delay N ⟧' ρ') V' V'⊆
+    with collect (⟦ delay L ⟧' ρ') (⟦ delay N ⟧' ρ') V'
+           (λ d d∈ → proj₁ (let-app-≃ (delay L) (delay N) ρ') d (V'⊆ d d∈))
 ... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , ⟨ V'⊆Apps , U⊆Args ⟩ ⟩ ⟩ ⟩ ⟩ =
   R-irr (depths W) k (Bnd-Apps (Bnd-depths W) V'⊆Apps) bV
     (Obs.app-obs (delay-reflect L ρ' ρ NE ρ'~ ρ⊳ W (suc (depths W)) W⊆L' (Bnd-depths W))

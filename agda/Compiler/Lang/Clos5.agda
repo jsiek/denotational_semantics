@@ -48,6 +48,7 @@ data Op : Set where
   inl-op : Op
   inr-op : Op
   case-op : Op
+  let-op : Op
 
 sig : Op → List Sig
 sig (fun-ref k) = []
@@ -61,6 +62,7 @@ sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
+sig let-op = ■ ∷ ν ■ ∷ []
 
 import abt.AbstractBindingTree
 module ASTMod = abt.AbstractBindingTree Op sig
