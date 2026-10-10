@@ -210,7 +210,7 @@ cdr-pair ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = v∈
 ℒ-inv ν ()
 ℒ-inv ω ()
 ℒ-inv ⦅ u ∣ ()
-ℒ-inv ∣ V ⦆ ()
+ℒ-inv ∣ v ⦆ ()
 ℒ-inv (tup[ i ] d) ()
 ℒ-inv (right d) ()
 
@@ -221,7 +221,7 @@ cdr-pair ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = v∈
 ℛ-inv ν ()
 ℛ-inv ω ()
 ℛ-inv ⦅ u ∣ ()
-ℛ-inv ∣ V ⦆ ()
+ℛ-inv ∣ v ⦆ ()
 ℛ-inv (tup[ i ] d) ()
 ℛ-inv (left d) ()
 
@@ -231,7 +231,7 @@ cdr-pair ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = v∈
 ℬ-flat ν ()
 ℬ-flat ω ()
 ℬ-flat ⦅ u ∣ ()
-ℬ-flat ∣ V ⦆ ()
+ℬ-flat ∣ v ⦆ ()
 ℬ-flat (tup[ i ] d) ()
 ℬ-flat (left d) ()
 ℬ-flat (right d) ()

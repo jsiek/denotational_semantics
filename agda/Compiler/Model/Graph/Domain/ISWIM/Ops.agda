@@ -384,7 +384,7 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
   G ν ()
   G ω ()
   G ⦅ u ∣ ()
-  G ∣ V ⦆ ()
+  G ∣ v ⦆ ()
   G (left d) ()
   G (right d) ()
 
@@ -526,8 +526,8 @@ pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , 
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G ⦅ u ∣ ⦅ u' ∣ ⟨ v , ⟨ u∈ , v∈ ⟩ ⟩  ⟨ v' , ⟨ u'∈ , v'∈ ⟩ ⟩ = 
     D~ u u' u∈ u'∈
-  G ⦅ u ∣ ∣ V ⦆ u∈ V∈ = tt
-  G ∣ V ⦆ ⦅ u ∣ V∈ u∈ = tt
+  G ⦅ u ∣ ∣ v ⦆ u∈ v∈ = tt
+  G ∣ v ⦆ ⦅ u ∣ v∈ u∈ = tt
   G ∣ v ⦆ ∣ v' ⦆ ⟨ u , ⟨ u∈ , v∈ ⟩ ⟩ ⟨ u' , ⟨ u'∈ , v'∈ ⟩ ⟩ = E~ v v' v∈ v'∈
 
 car-consis : consistent _~_ (■ ∷ []) ■ car

@@ -393,7 +393,7 @@ reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   tup-ne' ν ()
   tup-ne' ω ()
   tup-ne' ⦅ u ∣ ()
-  tup-ne' ∣ V ⦆ ()
+  tup-ne' ∣ v ⦆ ()
   tup-ne' (left d) ()
   tup-ne' (right d) ()
 
