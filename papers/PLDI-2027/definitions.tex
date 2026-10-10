@@ -50,7 +50,7 @@
 \newcommand{\Rel}[3]{\mathcal{R}_{#1}(#2, #3)}
 \newcommand{\Bnd}[2]{\mathit{Bnd}_{#1}(#2)}
 \newcommand{\consis}{\mathit{consis}}
-\newcommand{\obseq}{\approx_{\mathrm{obs}}}
+\newcommand{\obseq}{\cong}
 
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
 
@@ -558,17 +558,18 @@ If $f \notin \FV(N)$, then
 \end{lemma}
 
 \begin{lemma}[Delay Preserves]\label{lem:delay-preserve}
-In the preservation instance, if $\rho'(x) \NE$ for every $x$, $\rho \rhd \rho'$,
-$V \subseteq \SEM{M}^{\mathrm{3}}\rho$, and $\Bnd{k}{V}$, then
+In the preservation instance, if $\rho'(x) \NE$ for every $x$ and
+$\rho \rhd \rho'$, then for every $k$ and every
+$V \subseteq \SEM{M}^{\mathrm{3}}\rho$ with $\Bnd{k}{V}$,
 \[
   \Rel{k}{V}{\SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'} .
 \]
 \end{lemma}
 
 \begin{lemma}[Delay Reflects]\label{lem:delay-reflect}
-In the reflection instance, if $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$,
-$\rho' \rhd \rho$, $V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$,
-and $\Bnd{k}{V'}$, then
+In the reflection instance, if $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$
+and $\rho' \rhd \rho$, then for every $k$ and every
+$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$ with $\Bnd{k}{V'}$,
 \[
   \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
