@@ -472,10 +472,13 @@ In each pass, the clauses not shown are homomorphic.
 
 \paragraph{The logical relation.}
 Parameterized by
-$\mathit{Args} : \FSET{\V} \to \SET{\V}$,
-$\mathit{Apps} : \FSET{\V} \to \FSET{\V} \to \SET{\V}$,
-$\circledast : \SET{\V} \to \SET{\V} \to \SET{\V}$, and
-$\mathit{Good} : \FSET{\V} \to \mathsf{Prop}$.
+\begin{align*}
+\mathit{Args}& : \FSET{\V} \to \SET{\V}, \\
+\mathit{Apps}& : \FSET{\V} \to \FSET{\V} \to \SET{\V}, \\
+\circledast & : \SET{\V} \to \SET{\V} \to \SET{\V}, \text{ and } \\
+\mathit{Good} &: \FSET{\V} \to \mathsf{Prop}.
+\end{align*}
+
 \begin{align*}
   \Rel{0}{V}{D} &\iff \mathsf{true} \\
   \Rel{k+1}{V}{D} &\iff
