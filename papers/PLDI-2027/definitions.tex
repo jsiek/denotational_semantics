@@ -574,19 +574,19 @@ If $f \notin \FV(N)$, then
 
 \begin{lemma}[Delay Preserves]\label{lem:delay-preserve}
 In the preservation instance, if $\rho'(x) \NE$ for every $x$ and
-$\rho \rhd \rho'$, then for every $k$ and every
-$V \subseteq \SEM{M}^{\mathrm{3}}\rho$ with $\Bnd{k}{V}$,
+$\rho \rhd \rho'$, then for every $k$ and every $V$ with $\Bnd{k}{V}$,
 \[
-  \Rel{k}{V}{\SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'} .
+  V \subseteq \SEM{M}^{\mathrm{3}}\rho
+  \implies \Rel{k}{V}{\SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'} .
 \]
 \end{lemma}
 
 \begin{lemma}[Delay Reflects]\label{lem:delay-reflect}
 In the reflection instance, if $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$
-and $\rho' \rhd \rho$, then for every $k$ and every
-$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$ with $\Bnd{k}{V'}$,
+and $\rho' \rhd \rho$, then for every $k$ and every $V'$ with $\Bnd{k}{V'}$,
 \[
-  \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
+  V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'
+  \implies \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
 \end{lemma}
 
