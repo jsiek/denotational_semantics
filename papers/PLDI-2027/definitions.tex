@@ -479,16 +479,16 @@ Parameterized by
 \end{align*}
 
 \begin{align*}
-  \mathit{Args}(V) &= \{ u \mid \exists U_0\, w.\; \mathit{Entry}(V, U_0, w),\; u \in U_0 \} \\
-  \mathit{Apps}(V, U) &= \{ w \mid \exists U_0 \NE.\; \mathit{Entry}(V, U_0, w),\; U_0 \subseteq U \} \\[1ex]
+  \mathit{Calls}(V) &= \{ (U_1 \cup \cdots \cup U_n,\, \{w_1, \ldots, w_n\}) \mid
+     \mathit{Entry}(V, U_i, w_i),\; U_i \NE \text{ for } 1 \leq i \leq n \} \\[1ex]
   \Rel{0}{V}{D} &\iff \mathsf{true} \\
   \Rel{k+1}{V}{D} &\iff
   \begin{array}[t]{l}
     \forall c \in V.\; c \in D \\
     \land\; (\omega \in V \implies \omega \in D) \\
     \land\; (V \NE \implies D \NE) \\
-    \land\; \forall U\, E.\; U \subseteq \mathit{Args}(V) \land \mathit{Good}(U) \land \Rel{k}{U}{E}
-       \implies \forall W \subseteq \mathit{Apps}(V, U).\; \Rel{k}{W}{D \circledast E} \\
+    \land\; \forall (U, W) \in \mathit{Calls}(V).\; \forall E.\;
+       \mathit{Good}(U) \land \Rel{k}{U}{E} \implies \Rel{k}{W}{D \circledast E} \\
     \land\; \forall i\, W.\; W \subseteq \{ d \mid \tup{i}{d} \in V \}
        \implies \Rel{k}{W}{\key{proj}_i(D)} \\
     \land\; \forall W.\; W \subseteq \{ d \mid \Left{d} \in V \}

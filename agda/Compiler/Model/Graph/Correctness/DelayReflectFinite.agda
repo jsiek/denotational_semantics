@@ -172,26 +172,25 @@ collect-cdrs L' FV FV⊆ = ⟨ lmap ∣_⦆ FV , ⟨ G , (λ fv fv∈ → ∈-ma
   G d d∈ with ∈-map⁻ ∣_⦆ d∈
   ... | ⟨ fv , ⟨ fv∈ , refl ⟩ ⟩ = FV⊆ fv fv∈
 
+{- a target application V' ⊆ (car L' ● cdr L') ● N' is a batch of calls of
+   a finite W ⊆ L' on a finite U ⊆ N' -}
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ ((Car L' ● Cdr L') ● N')
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
-      mem W ⊆ L' × mem U ⊆ N' × mem V' ⊆ AppsOf W U × mem U ⊆ ArgsOf W
-collect L' N' [] _ =
-  ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩ ⟩ ⟩ ⟩
+      mem W ⊆ L' × mem U ⊆ N' × Calls W U V'
+collect L' N' [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , [] ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
     with V'⊆ w (here refl) | collect L' N' V' (λ d d∈ → V'⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ e∈L' , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
-    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , ⟨ V'⊆A , U⊆A ⟩ ⟩ ⟩ ⟩ ⟩
+    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩
     with collect-cdrs L' FV FV⊆Cdr
 ... | ⟨ C , ⟨ C⊆L' , FV⊆C ⟩ ⟩ =
-  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , ⟨ A' , UA' ⟩ ⟩ ⟩ ⟩ ⟩
+  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , ⟨ ent , neU₀ ⟩ ∷ Calls-⊆ inW cs ⟩ ⟩ ⟩ ⟩
   where
   e = ⦅ FV ↦ (U₀ ↦ w) ∣
   inC : mem C ⊆ mem (e ∷ (C ++ W))
   inC d d∈ = there (∈-++⁺ˡ d∈)
   inW : mem W ⊆ mem (e ∷ (C ++ W))
   inW d d∈ = there (∈-++⁺ʳ C d∈)
-  inU : mem U ⊆ mem (U₀ ++ U)
-  inU d d∈ = ∈-++⁺ʳ U₀ d∈
 
   W⊆' : mem (e ∷ (C ++ W)) ⊆ L'
   W⊆' _ (here refl) = e∈L'
@@ -206,15 +205,6 @@ collect L' N' (w ∷ V') V'⊆
 
   ent : CarEntry (e ∷ (C ++ W)) U₀ w
   ent = car-entry FV (here refl) neFV (λ d d∈ → Cdrs-⊆ inC d (FV⊆C d d∈))
-
-  A' : mem (w ∷ V') ⊆ AppsOf (e ∷ (C ++ W)) (U₀ ++ U)
-  A' _ (here refl) = appwit U₀ ent neU₀ (λ d d∈ → ∈-++⁺ˡ d∈)
-  A' d (there d∈) = AppsOf-⊆ inW inU d (V'⊆A d d∈)
-
-  UA' : mem (U₀ ++ U) ⊆ ArgsOf (e ∷ (C ++ W))
-  UA' d d∈ with ∈-++⁻ U₀ d∈
-  ... | inj₁ d∈U₀ = argwit U₀ w ent d∈U₀
-  ... | inj₂ d∈U = ArgsOf-⊆ inW d (U⊆A d d∈U)
 
 {- The fundamental lemma ------------------------------------------------------}
 
@@ -257,12 +247,11 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) =
 delay-reflect (app ⦅ L ,, N ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' k V'⊆ bV
     with collect (⟦ delay L ⟧' ρ') (⟦ delay N ⟧' ρ') V'
            (λ d d∈ → proj₁ (let-app-≃ (delay L) (delay N) ρ') d (V'⊆ d d∈))
-... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , ⟨ V'⊆Apps , U⊆Args ⟩ ⟩ ⟩ ⟩ ⟩ =
-  R-irr (depths W) k (Bnd-AppsOf (Bnd-depths W) V'⊆Apps) bV
+... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
+  R-irr (depths W) k (Bnd-Calls-apps (Bnd-depths W) cs) bV
     (Obs.app-obs (delay-reflect L ρ' ρ NE ρ'~ ρ⊳ W (suc (depths W)) W⊆L' (Bnd-depths W))
-       U (⟦ N ⟧ ρ) U⊆Args U~
-       (delay-reflect N ρ' ρ NE ρ'~ ρ⊳ U (depths W) U⊆N' (Bnd-ArgsOf (Bnd-depths W) U⊆Args))
-       V' V'⊆Apps)
+       cs (⟦ N ⟧ ρ) U~
+       (delay-reflect N ρ' ρ NE ρ'~ ρ⊳ U (depths W) U⊆N' (Bnd-Calls-args (Bnd-depths W) cs)))
   where
   N'~ = ⟦⟧'-consis (delay N) ρ' ρ'~
   U~ : consis (mem U)
@@ -290,8 +279,7 @@ delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V'⊆ _ ω∈)
   ; nonempty-obs = λ ne → inl-ne (ne-head ne)
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆ _ (CarEntry.car∈ (AppWit.entry (W'⊆ w w∈))))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ e → V'⊆ _ (CarEntry.car∈ e)) cs)
   ; nth-obs = λ i W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; left-obs = λ W' W'⊆ →
       delay-reflect M ρ' ρ NE ρ'~ ρ⊳ W' k (λ d d∈ → V'⊆ _ (W'⊆ d d∈)) (Bnd-Lefts bV W'⊆)
@@ -310,8 +298,7 @@ delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V'⊆ _ ω∈)
   ; nonempty-obs = λ ne → inr-ne (ne-head ne)
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆ _ (CarEntry.car∈ (AppWit.entry (W'⊆ w w∈))))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ e → V'⊆ _ (CarEntry.car∈ e)) cs)
   ; nth-obs = λ i W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; left-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; right-obs = λ W' W'⊆ →
@@ -344,8 +331,7 @@ reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V'⊆ _ ω∈)
   ; nonempty-obs = λ ne → tup-ne (ne-head ne)
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆ _ (CarEntry.car∈ (AppWit.entry (W'⊆ w w∈))))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ e → V'⊆ _ (CarEntry.car∈ e)) cs)
   ; nth-obs = nth-case
   ; left-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; right-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
@@ -417,18 +403,18 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   Cdrs⊆T' : Cdrs V' ⊆ T'
   Cdrs⊆T' fv e∈ = cdr-pair {B = T'} (V'⊆ _ e∈)
 
-  clos-app : ∀ j → Bnd (suc j) V' → ∀ U' E → mem U' ⊆ ArgsOf V' → consis (mem U')
-    → R j U' E → ∀ W' → mem W' ⊆ AppsOf V' U' → R j W' (D ● E)
-  clos-app zero _ U' E _ _ _ W' _ = ptt
-  clos-app (suc j) bV' U' E U'⊆ U'~ rU [] _ = R-∅ (suc j) (λ _ ())
-  clos-app (suc j) bV' U' E U'⊆ U'~ rU (w ∷ W') W'⊆ = R-mono (suc j) N⊆ IH
+  clos-app : ∀ j → Bnd (suc j) V' → ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U')
+    → R j U' E → R j W' (D ● E)
+  clos-app zero _ _ E _ _ = ptt
+  clos-app (suc j) bV' [] E U'~ rU = R-∅ (suc j) (λ _ ())
+  clos-app (suc j) bV' {U'} {w ∷ W'} cs E U'~ rU = R-mono (suc j) N⊆ IH
     where
-    wit = W'⊆ w (here refl)
+    wit = Calls-∈ cs (here refl)
 
     NE-E : nonempty E
-    NE-E = Obs.nonempty-obs rU (ne-⊆ (AppWit.U₀⊆ wit) (AppWit.U₀≢[] wit))
+    NE-E = Obs.nonempty-obs rU (ne-⊆ (Call.U₀⊆ wit) (Call.U₀≢[] wit))
 
-    ent = AppWit.entry wit
+    ent = Call.entry wit
 
     NE-T : nonempty T
     NE-T = T-ne (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → Cdrs⊆T' d (CarEntry.FV⊆ ent d d∈)))
@@ -440,8 +426,8 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
     ρ'' = mem U' • Cdrs V' • (λ _ → Init)
 
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay N ⟧' ρ''
-    W⊆B x x∈ with W'⊆ x x∈
-    ... | appwit U₀ (car-entry FV e∈ neFV FV⊆) neU U₀⊆ with V'⊆ _ e∈
+    W⊆B x x∈ with Calls-∈ cs x∈
+    ... | call U₀ (car-entry FV e∈ neFV FV⊆) neU U₀⊆ with V'⊆ _ e∈
     ... | ⟨ t , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
       S4.⟦⟧-monotone {ρ = mem U₀ • mem FV • (λ _ → Init)} {ρ′ = ρ''} (delay N) env⊆ x x∈B
       where
@@ -462,13 +448,13 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
 
     ρ''⊳ρs : ρ'' ⊳ₑ ρs
     ρ''⊳ρs zero Y' i Y'⊆ bY =
-      R-irr (suc j) i (Bnd-⊆ Y'⊆ (Bnd-ArgsOf bV' U'⊆)) bY (R-⊆ (suc j) Y'⊆ rU)
+      R-irr (suc j) i (Bnd-⊆ Y'⊆ (Bnd-Calls-args bV' cs)) bY (R-⊆ (suc j) Y'⊆ rU)
     ρ''⊳ρs (suc zero) Y' i Y'⊆ bY =
       reflect-𝒯 fvs ρ' ρ NE ρ'~ ρ⊳ Y' i (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈)) bY
     ρ''⊳ρs (suc (suc x)) Y' i Y'⊆ bY = R-flat i Y'⊆ (λ v v∈ → Init-flat (Y'⊆ v v∈))
 
     IH : R (suc j) (w ∷ W') (⟦ N ⟧ ρs)
-    IH = delay-reflect N ρ'' ρs NE-ρs ρ''~ ρ''⊳ρs (w ∷ W') (suc j) W⊆B (Bnd-AppsOf bV' W'⊆)
+    IH = delay-reflect N ρ'' ρs NE-ρs ρ''~ ρ''⊳ρs (w ∷ W') (suc j) W⊆B (Bnd-Calls-apps bV' cs)
 
     {- the beta rule for early application, using continuity -}
     N⊆ : ⟦ N ⟧ ρs ⊆ (D ● E)
