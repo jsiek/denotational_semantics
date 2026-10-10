@@ -64,6 +64,10 @@ module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 
 {- Observations of a finite list of target values ----------------------------}
 
+{- the functions stored in the car halves of V' -}
+Cars : List Value → 𝒫 Value
+Cars V' = car ⟨ mem V' , ptt ⟩
+
 {- the free variables stored in the cdr halves of V' -}
 Cdrs : List Value → 𝒫 Value
 Cdrs V' = cdr ⟨ mem V' , ptt ⟩
@@ -81,13 +85,13 @@ d-app {FV}{U₀}{w} =
 Cdrs-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → Cdrs V₁ ⊆ Cdrs V₂
 Cdrs-⊆ s fv e∈ = s _ e∈
 
-{- the function entries of V': a car half ⦅ FV ↦ (U₀ ↦ w) ∣ in V' whose
-   free variables FV are stored in the cdr halves of V' -}
+{- the function entries of V': a function FV ↦ (U₀ ↦ w) in the car halves
+   of V' whose free variables FV are stored in the cdr halves of V' -}
 record CarEntry (V' U₀ : List Value) (w : Value) : Set where
   constructor car-entry
   field
     FV : List Value
-    car∈ : ⦅ FV ↦ (U₀ ↦ w) ∣ ⋵ V'
+    car∈ : (FV ↦ (U₀ ↦ w)) ∈ Cars V'
     FV≢[] : FV ≢ []
     FV⊆ : mem FV ⊆ Cdrs V'
 
