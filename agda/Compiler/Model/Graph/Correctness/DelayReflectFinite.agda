@@ -66,7 +66,7 @@ module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 
 {- the free variables stored in the cdr halves of V' -}
 Cdrs : List Value → 𝒫 Value
-Cdrs V' fv = ∣ fv ⦆ ⋵ V'
+Cdrs V' = cdr ⟨ mem V' , ptt ⟩
 
 d-arg : ∀ {u FV U₀ w} → u ⋵ U₀ → suc (depth u) ≤ depth ⦅ FV ↦ (U₀ ↦ w) ∣
 d-arg {u}{FV}{U₀}{w} u∈ =
