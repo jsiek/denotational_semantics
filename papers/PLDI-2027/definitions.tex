@@ -106,7 +106,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 \begin{array}{rcl}
   c &\in& \text{constants} \qquad x, y, z, e, f \in \X \\[1ex]
   \V \ni u, v, w &::=& c \mid V \mapsto w \mid \nu \mid \omega
-     \mid \carv{u} \mid \cdrv{V}
+     \mid \carv{u} \mid \cdrv{v}
      \mid \tup{i}{v} \mid \Left{v} \mid \Right{v} \mid \emptytup \\
   U, V, W &\in& \FSET{\V}
 \end{array}
@@ -127,10 +127,10 @@ Using names instead of de Bruijn indices changes a few definitions:
   D \app E &= \{ w \mid \exists V \NE.\; (V \mapsto w) \in D,\; V \subseteq E \} \\
   \Lambda(F) &= \{ V \mapsto w \mid V \NE,\; w \in F(V) \} \cup \{ \nu \} \\
   \mathcal{B}(c) &= \{ c \} \\
-  \key{pair}(D, E) &= \{ \carv{u} \mid u \in D,\; \exists V \NE.\; V \subseteq E \}
-    \cup \{ \cdrv{V} \mid V \NE,\; V \subseteq E,\; D \NE \} \\
+  \key{pair}(D, E) &= \{ \carv{u} \mid u \in D,\; E \NE \}
+    \cup \{ \cdrv{v} \mid D \NE,\; v \in E \} \\
   \key{car}(D) &= \{ u \mid \carv{u} \in D \} \\
-  \key{cdr}(D) &= \{ v \mid \exists V.\; \cdrv{V} \in D,\; v \in V \} \\
+  \key{cdr}(D) &= \{ v \mid \cdrv{v} \in D \} \\
   \mathcal{T}() &= \{ \emptytup \} \\
   \mathcal{T}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; D_j \NE \}
      \qquad (n > 0) \\
@@ -155,8 +155,8 @@ Using names instead of de Bruijn indices changes a few definitions:
   (V \mapsto w) \sim \nu, \quad \nu \sim (V \mapsto w), \quad \nu \sim \nu &\iff \mathsf{true} \\
   \omega \sim \omega, \quad \emptytup \sim \emptytup &\iff \mathsf{true} \\
   \carv{u} \sim \carv{v} &\iff u \sim v \\
-  \carv{u} \sim \cdrv{V}, \quad \cdrv{V} \sim \carv{u} &\iff \mathsf{true} \\
-  \cdrv{V} \sim \cdrv{V'} &\iff V \approx V' \\
+  \carv{u} \sim \cdrv{v}, \quad \cdrv{v} \sim \carv{u} &\iff \mathsf{true} \\
+  \cdrv{u} \sim \cdrv{v} &\iff u \sim v \\
   \tup{i}{d} \sim \tup{j}{d'} &\iff n = n' \land (i \neq j \lor d \sim d')
      \qquad (i \in \{1..n\},\; j \in \{1..n'\}) \\
   \Left{d} \sim \Left{d'} &\iff d \sim d' \\
@@ -461,7 +461,7 @@ In each pass, the clauses not shown are homomorphic.
   \mathit{depth}(c) = \mathit{depth}(\nu) = \mathit{depth}(\omega) = \mathit{depth}(\emptytup) &= 0 \\
   \mathit{depth}(V \mapsto w) &= 1 + \max(\mathit{depth}(V), \mathit{depth}(w)) \\
   \mathit{depth}(\carv{u}) &= 1 + \mathit{depth}(u) \\
-  \mathit{depth}(\cdrv{V}) &= 1 + \mathit{depth}(V) \\
+  \mathit{depth}(\cdrv{v}) &= 1 + \mathit{depth}(v) \\
   \mathit{depth}(\tup{i}{d}) = \mathit{depth}(\Left{d}) = \mathit{depth}(\Right{d})
     &= 1 + \mathit{depth}(d) \\
   \mathit{depth}(V) &= \max_{v \in V} \mathit{depth}(v) \\[1ex]
@@ -504,7 +504,7 @@ $\mathit{Good} : \FSET{\V} \to \mathsf{Prop}$.
 
 \paragraph{Reflection instance} (observations of Clos4, sets of Clos3).
 \begin{align*}
-  \mathit{Cdrs}(V') &= \{ v \mid \exists V.\; \cdrv{V} \in V',\; v \in V \} \\
+  \mathit{Cdrs}(V') &= \{ v \mid \cdrv{v} \in V' \} \\
   \mathit{Args}(V') &= \{ u \mid \exists F\, U_0\, w.\; \carv{F \mapsto (U_0 \mapsto w)} \in V',\; u \in U_0 \} \\
   \mathit{Apps}(V', U') &= \{ w \mid \exists F \NE.\; \exists U_0 \NE.\;
      \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \mathit{Cdrs}(V'),\; U_0 \subseteq U' \} \\

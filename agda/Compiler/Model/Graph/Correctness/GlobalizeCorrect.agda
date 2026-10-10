@@ -85,18 +85,14 @@ pair-≃ : ∀ {D E D' E'} → RRs (■ ∷ ■ ∷ []) ⟨ D , ⟨ E , ptt ⟩ 
 pair-≃ {D} {E} {D'} {E'} ⟨ lift ⟨ D⊆ , D⊇ ⟩ , ⟨ lift ⟨ E⊆ , E⊇ ⟩ , _ ⟩ ⟩ = ⟨ G D⊆ E⊆ , G D⊇ E⊇ ⟩
   where
   G : ∀ {A B A' B'} → A ⊆ A' → B ⊆ B' → pair ⟨ A , ⟨ B , ptt ⟩ ⟩ ⊆ pair ⟨ A' , ⟨ B' , ptt ⟩ ⟩
-  G A⊆ B⊆ ⦅ f ∣ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ =
-    ⟨ FV , ⟨ A⊆ f f∈ , ⟨ (λ d d∈ → B⊆ d (FV⊆ d d∈)) , ne ⟩ ⟩ ⟩
-  G A⊆ B⊆ ∣ FV ⦆ ⟨ f , ⟨ f∈ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ =
-    ⟨ f , ⟨ A⊆ f f∈ , ⟨ (λ d d∈ → B⊆ d (FV⊆ d d∈)) , ne ⟩ ⟩ ⟩
+  G A⊆ B⊆ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ v , ⟨ A⊆ f f∈ , B⊆ v v∈ ⟩ ⟩
+  G A⊆ B⊆ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ f , ⟨ A⊆ f f∈ , B⊆ v v∈ ⟩ ⟩
 
 car-≃ : ∀ {D D'} → RRs (■ ∷ []) ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ → car ⟨ D , ptt ⟩ ≃ car ⟨ D' , ptt ⟩
 car-≃ ⟨ lift ⟨ D⊆ , D⊇ ⟩ , _ ⟩ = ⟨ (λ f → D⊆ ⦅ f ∣) , (λ f → D⊇ ⦅ f ∣) ⟩
 
 cdr-≃ : ∀ {D D'} → RRs (■ ∷ []) ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ → cdr ⟨ D , ptt ⟩ ≃ cdr ⟨ D' , ptt ⟩
-cdr-≃ ⟨ lift ⟨ D⊆ , D⊇ ⟩ , _ ⟩ =
-  ⟨ (λ { fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ → ⟨ FV , ⟨ D⊆ ∣ FV ⦆ e∈ , fv∈ ⟩ ⟩ })
-  , (λ { fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ → ⟨ FV , ⟨ D⊇ ∣ FV ⦆ e∈ , fv∈ ⟩ ⟩ }) ⟩
+cdr-≃ ⟨ lift ⟨ D⊆ , D⊇ ⟩ , _ ⟩ = ⟨ (λ v → D⊆ ∣ v ⦆) , (λ v → D⊇ ∣ v ⦆) ⟩
 
 case-≃ : ∀ {D F G D' F' G'}
   → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩

@@ -65,7 +65,7 @@ module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 
 {- the free variables stored in the cdr halves of V' -}
 Cdrs : List Value → 𝒫 Value
-Cdrs V' fv = Σ[ FV ∈ List Value ] ∣ FV ⦆ ⋵ V' × fv ⋵ FV
+Cdrs V' fv = ∣ fv ⦆ ⋵ V'
 
 {- the arguments that the car halves of V' are prepared to accept -}
 record ArgWit (V' : List Value) (u : Value) : Set where
@@ -115,7 +115,7 @@ Bnd-Apps bV W'⊆ w w∈ with W'⊆ w w∈
 
 
 Cdrs-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → Cdrs V₁ ⊆ Cdrs V₂
-Cdrs-⊆ s fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ = ⟨ FV , ⟨ s _ e∈ , fv∈ ⟩ ⟩
+Cdrs-⊆ s fv e∈ = s _ e∈
 
 Args-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → Args-of V₁ ⊆ Args-of V₂
 Args-⊆ s u (argwit FV U₀ w e∈ u∈) = argwit FV U₀ w (s _ e∈) u∈
@@ -192,18 +192,11 @@ cont-1 M ρ X NE NE-X x x∈ = go (src-continuous M (X • ρ) (extend-nonempty-
 
 collect-cdrs : ∀ (L' : 𝒫 Value) FV → mem FV ⊆ Cdr L'
   → Σ[ C ∈ List Value ] mem C ⊆ L' × mem FV ⊆ Cdrs C
-collect-cdrs L' [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
-collect-cdrs L' (fv ∷ FV) FV⊆
-    with FV⊆ fv (here refl) | collect-cdrs L' FV (λ d d∈ → FV⊆ d (there d∈))
-... | ⟨ FVs , ⟨ ∣FVs⦆∈L' , fv∈FVs ⟩ ⟩ | ⟨ C , ⟨ C⊆L' , FV⊆C ⟩ ⟩ =
-  ⟨ ∣ FVs ⦆ ∷ C , ⟨ G , H ⟩ ⟩
+collect-cdrs L' FV FV⊆ = ⟨ lmap ∣_⦆ FV , ⟨ G , (λ fv fv∈ → ∈-map⁺ ∣_⦆ fv∈) ⟩ ⟩
   where
-  G : mem (∣ FVs ⦆ ∷ C) ⊆ L'
-  G _ (here refl) = ∣FVs⦆∈L'
-  G d (there d∈) = C⊆L' d d∈
-  H : mem (fv ∷ FV) ⊆ Cdrs (∣ FVs ⦆ ∷ C)
-  H _ (here refl) = ⟨ FVs , ⟨ here refl , fv∈FVs ⟩ ⟩
-  H d (there d∈) = Cdrs-⊆ (λ _ → there) d (FV⊆C d d∈)
+  G : mem (lmap ∣_⦆ FV) ⊆ L'
+  G d d∈ with ∈-map⁻ ∣_⦆ d∈
+  ... | ⟨ fv , ⟨ fv∈ , refl ⟩ ⟩ = FV⊆ fv fv∈
 
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ ((Car L' ● Cdr L') ● N')
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
@@ -447,7 +440,7 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   ... | ⟨ t , t∈ ⟩ = ⟨ ν , ⟨ t ∷ [] , ⟨ ⟨ tt , (λ ()) ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩ ⟩
 
   Cdrs⊆T' : Cdrs V' ⊆ T'
-  Cdrs⊆T' fv ⟨ FVs , ⟨ e∈ , fv∈ ⟩ ⟩ = cdr-pair (V'⊆ _ e∈) fv fv∈
+  Cdrs⊆T' fv e∈ = cdr-pair {B = T'} (V'⊆ _ e∈)
 
   clos-app : ∀ j → Bnd (suc j) V' → ∀ U' E → mem U' ⊆ Args-of V' → consis (mem U')
     → R j U' E → ∀ W' → mem W' ⊆ Apps V' U' → R j W' (D ● E)
@@ -472,7 +465,7 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay N ⟧' ρ''
     W⊆B x x∈ with W'⊆ x x∈
     ... | appwit FV U₀ e∈ neFV FV⊆ neU U₀⊆ with V'⊆ _ e∈
-    ... | ⟨ FVs , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
+    ... | ⟨ t , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
       S4.⟦⟧-monotone {ρ = mem U₀ • mem FV • (λ _ → Init)} {ρ′ = ρ''} (delay N) env⊆ x x∈B
       where
       env⊆ : ∀ y → (mem U₀ • mem FV • (λ _ → Init)) y ⊆ ρ'' y

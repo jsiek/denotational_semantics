@@ -135,23 +135,21 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 {- Pairs ----------------------------------------------------------------------}
 
 pair-mono-env : ∀ {E₁ E₂} → Mono E₁ → Mono E₂ → Mono (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩)
-pair-mono-env m₁ m₂ ρ⊆ ⦅ f ∣ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ =
-  ⟨ FV , ⟨ m₁ ρ⊆ f f∈ , ⟨ (λ d d∈ → m₂ ρ⊆ d (FV⊆ d d∈)) , ne ⟩ ⟩ ⟩
-pair-mono-env m₁ m₂ ρ⊆ ∣ FV ⦆ ⟨ f , ⟨ f∈ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ =
-  ⟨ f , ⟨ m₁ ρ⊆ f f∈ , ⟨ (λ d d∈ → m₂ ρ⊆ d (FV⊆ d d∈)) , ne ⟩ ⟩ ⟩
+pair-mono-env m₁ m₂ ρ⊆ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ v , ⟨ m₁ ρ⊆ f f∈ , m₂ ρ⊆ v v∈ ⟩ ⟩
+pair-mono-env m₁ m₂ ρ⊆ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ f , ⟨ m₁ ρ⊆ f f∈ , m₂ ρ⊆ v v∈ ⟩ ⟩
 
 pair-cont : ∀ {E₁ E₂ ρ} → nonempty-env ρ → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
   → Cont (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ f ∣ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩
-    with one E₁ c₁ f∈ | many E₂ NE m₂ c₂ FV FV⊆
-... | ⟨ a , f∈′ ⟩ | ⟨ b , FV⊆′ ⟩ =
+pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩
+    with one E₁ c₁ f∈ | one E₂ c₂ v∈
+... | ⟨ a , f∈′ ⟩ | ⟨ b , v∈′ ⟩ =
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ f ∣
-    ⟨ FV , ⟨ m₁ (join-l a b) f f∈′ , ⟨ (λ d d∈ → m₂ (join-r a b) d (FV⊆′ d d∈)) , ne ⟩ ⟩ ⟩
-pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ∣ FV ⦆ ⟨ f , ⟨ f∈ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩
-    with one E₁ c₁ f∈ | many E₂ NE m₂ c₂ FV FV⊆
-... | ⟨ a , f∈′ ⟩ | ⟨ b , FV⊆′ ⟩ =
-  done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ∣ FV ⦆
-    ⟨ f , ⟨ m₁ (join-l a b) f f∈′ , ⟨ (λ d d∈ → m₂ (join-r a b) d (FV⊆′ d d∈)) , ne ⟩ ⟩ ⟩
+    ⟨ v , ⟨ m₁ (join-l a b) f f∈′ , m₂ (join-r a b) v v∈′ ⟩ ⟩
+pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ ⟩ ⟩
+    with one E₁ c₁ f∈ | one E₂ c₂ v∈
+... | ⟨ a , f∈′ ⟩ | ⟨ b , v∈′ ⟩ =
+  done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ∣ v ⦆
+    ⟨ f , ⟨ m₁ (join-l a b) f f∈′ , m₂ (join-r a b) v v∈′ ⟩ ⟩
 
 car-mono-env : ∀ {E} → Mono E → Mono (λ ρ → car ⟨ E ρ , ptt ⟩)
 car-mono-env m ρ⊆ f f∈ = m ρ⊆ ⦅ f ∣ f∈
@@ -160,11 +158,10 @@ car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) 
 car-cont c f f∈ = c ⦅ f ∣ f∈
 
 cdr-mono-env : ∀ {E} → Mono E → Mono (λ ρ → cdr ⟨ E ρ , ptt ⟩)
-cdr-mono-env m ρ⊆ fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ = ⟨ FV , ⟨ m ρ⊆ ∣ FV ⦆ e∈ , fv∈ ⟩ ⟩
+cdr-mono-env m ρ⊆ v v∈ = m ρ⊆ ∣ v ⦆ v∈
 
 cdr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
-cdr-cont c fv ⟨ FV , ⟨ e∈ , fv∈ ⟩ ⟩ with c ∣ FV ⦆ e∈
-... | ⟨ ρ′ , ⟨ f , ⟨ s , e∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ FV , ⟨ e∈′ , fv∈ ⟩ ⟩ ⟩ ⟩ ⟩
+cdr-cont c v v∈ = c ∣ v ⦆ v∈
 
 {- Tuples ---------------------------------------------------------------------}
 
