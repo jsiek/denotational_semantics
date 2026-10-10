@@ -6,7 +6,8 @@
   with the backward direction (DelayReflectFinite).
 
   Here R k V D' relates a finite list V of source values to a target set
-  D'. The function clause applies the functions in V to a list of
+  D'. The function entries of V (FunEntry) are its elements U₀ ↦ w, and
+  the function clause applies the functions in V to a list of
   arguments U, and relates the results to the target application
   (car D' ⋆ cdr D') ⋆ E'. Source application cannot pair a function with
   a foreign environment, so unlike the backward direction no consistency
@@ -39,7 +40,7 @@ open import Compiler.Model.Graph.Correctness.DelayApp using (let-app-≃)
 import Compiler.Model.Graph.Correctness.DelayReflectFinite as Reflect
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous as C4
 
-open import Data.Nat using (ℕ; zero; suc; _≤_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s)
 open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; replicate) renaming (map to lmap)
@@ -59,29 +60,9 @@ module Compiler.Model.Graph.Correctness.DelayPreserveFinite where
 
 {- Observations of a finite list of source values ----------------------------}
 
-{- the arguments that the functions in V are prepared to accept -}
-record SArgWit (V : List Value) (u : Value) : Set where
-  constructor sargwit
-  field
-    U₀ : List Value
-    w : Value
-    entry∈ : (U₀ ↦ w) ⋵ V
-    u∈U₀ : u ⋵ U₀
-
-SArgs : List Value → 𝒫 Value
-SArgs V = SArgWit V
-
-{- the results of applying the functions in V to the arguments U -}
-record SAppWit (V U : List Value) (w : Value) : Set where
-  constructor sappwit
-  field
-    U₀ : List Value
-    entry∈ : (U₀ ↦ w) ⋵ V
-    U₀≢[] : U₀ ≢ []
-    U₀⊆ : mem U₀ ⊆ mem U
-
-SApps : List Value → List Value → 𝒫 Value
-SApps V U = SAppWit V U
+{- the function entries of V -}
+FunEntry : List Value → List Value → Value → Set
+FunEntry V U₀ w = (U₀ ↦ w) ⋵ V
 
 d-sarg : ∀ {u U₀ w} → u ⋵ U₀ → suc (depth u) ≤ depth (U₀ ↦ w)
 d-sarg {u}{U₀}{w} u∈ = s≤s (≤-trans (depth-⋵ u∈) (m≤m⊔n (depths U₀) (depth w)))
@@ -89,29 +70,16 @@ d-sarg {u}{U₀}{w} u∈ = s≤s (≤-trans (depth-⋵ u∈) (m≤m⊔n (depths 
 d-sapp : ∀ {U₀ w} → suc (depth w) ≤ depth (U₀ ↦ w)
 d-sapp {U₀}{w} = s≤s (m≤n⊔m (depths U₀) (depth w))
 
-Bnd-SArgs : ∀ {k V U} → Bnd (suc k) V → mem U ⊆ SArgs V → Bnd k U
-Bnd-SArgs bV U⊆ u u∈ with U⊆ u u∈
-... | sargwit U₀ w e∈ u∈U₀ = <-shrink (d-sarg {w = w} u∈U₀) (bV _ e∈)
-
-Bnd-SApps : ∀ {k V U W} → Bnd (suc k) V → mem W ⊆ SApps V U → Bnd k W
-Bnd-SApps bV W⊆ w w∈ with W⊆ w w∈
-... | sappwit U₀ e∈ _ _ = <-shrink (d-sapp {U₀}{w}) (bV _ e∈)
-
-SArgs-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → SArgs V₁ ⊆ SArgs V₂
-SArgs-⊆ s u (sargwit U₀ w e∈ u∈) = sargwit U₀ w (s _ e∈) u∈
-
-SApps-⊆ : ∀ {V₁ V₂ U₁ U₂} → mem V₁ ⊆ mem V₂ → mem U₁ ⊆ mem U₂
-        → SApps V₁ U₁ ⊆ SApps V₂ U₂
-SApps-⊆ s t w (sappwit U₀ e∈ ne U₀⊆) = sappwit U₀ (s _ e∈) ne (λ d d∈ → t d (U₀⊆ d d∈))
-
-SApps-flat : ∀ {V U} → (∀ v → v ⋵ V → Flat v) → SApps V U ⊆ ∅
-SApps-flat fl w (sappwit U₀ e∈ _ _) = flat-fun (fl _ e∈)
+Bnd-FunEntry : ∀ {k V U₀ w} → Bnd (suc k) V → FunEntry V U₀ w
+             → Bnd k U₀ × depth w < k
+Bnd-FunEntry {U₀ = U₀}{w} bV e∈ =
+  ⟨ (λ u u∈ → <-shrink (d-sarg {w = w} u∈) (bV _ e∈)) , <-shrink (d-sapp {U₀}{w}) (bV _ e∈) ⟩
 
 {- The relation ---------------------------------------------------------------}
 
 open import Compiler.Model.Graph.Correctness.DelayFiniteRel
-  SArgs SApps _⊙_ (λ _ → True)
-  SArgs-⊆ (λ s → SApps-⊆ s (λ d z → z)) SApps-flat ⊙-mono-l Bnd-SArgs Bnd-SApps
+  FunEntry _⊙_ (λ _ → True)
+  (λ s e∈ → s _ e∈) (λ fl e∈ → flat-fun (fl _ e∈)) ⊙-mono-l Bnd-FunEntry
   public
 
 {- Unions of source observations ---------------------------------------------}
@@ -152,25 +120,25 @@ partition {P}{Q} (w ∷ W) W⊆
   ... | inj₂ (there d∈W₂) = there (W⊇' d (∈-++⁺ʳ W₁ d∈W₂))
 
 {- the arguments actually used by a list of application results -}
-restrict : ∀ {V U} W → mem W ⊆ SApps V U
-  → Σ[ U₁ ∈ List Value ] mem U₁ ⊆ mem U × mem U₁ ⊆ SArgs V × mem W ⊆ SApps V U₁
+restrict : ∀ {V U} W → mem W ⊆ AppsOf V U
+  → Σ[ U₁ ∈ List Value ] mem U₁ ⊆ mem U × mem U₁ ⊆ ArgsOf V × mem W ⊆ AppsOf V U₁
 restrict [] _ = ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩ ⟩
 restrict {V}{U} (w ∷ W) W⊆
     with W⊆ w (here refl) | restrict W (λ d d∈ → W⊆ d (there d∈))
-... | sappwit U₀ e∈ ne U₀⊆ | ⟨ U₁ , ⟨ U₁⊆U , ⟨ U₁⊆A , W⊆' ⟩ ⟩ ⟩ =
+... | appwit U₀ e∈ ne U₀⊆ | ⟨ U₁ , ⟨ U₁⊆U , ⟨ U₁⊆A , W⊆' ⟩ ⟩ ⟩ =
   ⟨ U₀ ++ U₁ , ⟨ G , ⟨ H , K ⟩ ⟩ ⟩
   where
   G : mem (U₀ ++ U₁) ⊆ mem U
   G d d∈ with ∈-++⁻ U₀ d∈
   ... | inj₁ d∈U₀ = U₀⊆ d d∈U₀
   ... | inj₂ d∈U₁ = U₁⊆U d d∈U₁
-  H : mem (U₀ ++ U₁) ⊆ SArgs V
+  H : mem (U₀ ++ U₁) ⊆ ArgsOf V
   H d d∈ with ∈-++⁻ U₀ d∈
-  ... | inj₁ d∈U₀ = sargwit U₀ w e∈ d∈U₀
+  ... | inj₁ d∈U₀ = argwit U₀ w e∈ d∈U₀
   ... | inj₂ d∈U₁ = U₁⊆A d d∈U₁
-  K : mem (w ∷ W) ⊆ SApps V (U₀ ++ U₁)
-  K _ (here refl) = sappwit U₀ e∈ ne (λ d d∈ → ∈-++⁺ˡ d∈)
-  K d (there d∈) = SApps-⊆ (λ _ z → z) (λ _ z → ∈-++⁺ʳ U₀ z) d (W⊆' d d∈)
+  K : mem (w ∷ W) ⊆ AppsOf V (U₀ ++ U₁)
+  K _ (here refl) = appwit U₀ e∈ ne (λ d d∈ → ∈-++⁺ˡ d∈)
+  K d (there d∈) = AppsOf-⊆ (λ _ z → z) (λ _ z → ∈-++⁺ʳ U₀ z) d (W⊆' d d∈)
 
 ne-++ : ∀ (V₁ V₂ : List Value) → V₁ ++ V₂ ≢ [] → V₁ ≢ [] ⊎ V₂ ≢ []
 ne-++ [] V₂ ne = inj₂ ne
@@ -203,21 +171,21 @@ R-++ (suc k) {V₁}{V₂}{D} r₁ r₂ = record
   ... | ⟨ W₁ , ⟨ W₂ , ⟨ W₁⊆ , ⟨ W₂⊆ , ⟨ W⊆' , _ ⟩ ⟩ ⟩ ⟩ ⟩ =
     R-⊆ k W⊆' (R-++ k (f W₁ W₁⊆) (g W₂ W₂⊆))
 
-  side : ∀ {U w} → SAppWit (V₁ ++ V₂) U w → (SApps V₁ U ∪ SApps V₂ U) w
-  side (sappwit U₀ e∈ ne U₀⊆) with ∈-++⁻ V₁ e∈
-  ... | inj₁ e∈₁ = inj₁ (sappwit U₀ e∈₁ ne U₀⊆)
-  ... | inj₂ e∈₂ = inj₂ (sappwit U₀ e∈₂ ne U₀⊆)
+  side : ∀ {U w} → AppWit (V₁ ++ V₂) U w → (AppsOf V₁ U ∪ AppsOf V₂ U) w
+  side (appwit U₀ e∈ ne U₀⊆) with ∈-++⁻ V₁ e∈
+  ... | inj₁ e∈₁ = inj₁ (appwit U₀ e∈₁ ne U₀⊆)
+  ... | inj₂ e∈₂ = inj₂ (appwit U₀ e∈₂ ne U₀⊆)
 
-  app-++ : ∀ U E → mem U ⊆ SArgs (V₁ ++ V₂) → True → R k U E
-    → ∀ W → mem W ⊆ SApps (V₁ ++ V₂) U → R k W (D ⊙ E)
+  app-++ : ∀ U E → mem U ⊆ ArgsOf (V₁ ++ V₂) → True → R k U E
+    → ∀ W → mem W ⊆ AppsOf (V₁ ++ V₂) U → R k W (D ⊙ E)
   app-++ U E _ _ rU W W⊆ =
-    split (SApps V₁ U) (SApps V₂ U) (D ⊙ E) f₁ f₂ W (λ w w∈ → side (W⊆ w w∈))
+    split (AppsOf V₁ U) (AppsOf V₂ U) (D ⊙ E) f₁ f₂ W (λ w w∈ → side (W⊆ w w∈))
     where
-    f₁ : ∀ W → mem W ⊆ SApps V₁ U → R k W (D ⊙ E)
+    f₁ : ∀ W → mem W ⊆ AppsOf V₁ U → R k W (D ⊙ E)
     f₁ W W⊆ with restrict W W⊆
     ... | ⟨ U₁ , ⟨ U₁⊆U , ⟨ U₁⊆A , W⊆' ⟩ ⟩ ⟩ =
       O₁.app-obs U₁ E U₁⊆A tt (R-⊆ k U₁⊆U rU) W W⊆'
-    f₂ : ∀ W → mem W ⊆ SApps V₂ U → R k W (D ⊙ E)
+    f₂ : ∀ W → mem W ⊆ AppsOf V₂ U → R k W (D ⊙ E)
     f₂ W W⊆ with restrict W W⊆
     ... | ⟨ U₁ , ⟨ U₁⊆U , ⟨ U₁⊆A , W⊆' ⟩ ⟩ ⟩ =
       O₂.app-obs U₁ E U₁⊆A tt (R-⊆ k U₁⊆U rU) W W⊆'
@@ -256,7 +224,7 @@ cont-1' M' ρ' X NE NE-X x x∈ = go (tgt-continuous M' (X • ρ') (extend-none
 
 collect : ∀ (L N : 𝒫 Value) V → mem V ⊆ (L ● N)
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
-      mem W ⊆ L × mem U ⊆ N × mem V ⊆ SApps W U × mem U ⊆ SArgs W
+      mem W ⊆ L × mem U ⊆ N × mem V ⊆ AppsOf W U × mem U ⊆ ArgsOf W
 collect L N [] _ =
   ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩ ⟩ ⟩ ⟩
 collect L N (w ∷ V) V⊆
@@ -279,14 +247,14 @@ collect L N (w ∷ V) V⊆
   ... | inj₁ d∈U₀ = U₀⊆N d d∈U₀
   ... | inj₂ d∈U = U⊆ d d∈U
 
-  A' : mem (w ∷ V) ⊆ SApps ((U₀ ↦ w) ∷ W) (U₀ ++ U)
-  A' _ (here refl) = sappwit U₀ (here refl) neU₀ (λ d d∈ → ∈-++⁺ˡ d∈)
-  A' d (there d∈) = SApps-⊆ inW inU d (V⊆A d d∈)
+  A' : mem (w ∷ V) ⊆ AppsOf ((U₀ ↦ w) ∷ W) (U₀ ++ U)
+  A' _ (here refl) = appwit U₀ (here refl) neU₀ (λ d d∈ → ∈-++⁺ˡ d∈)
+  A' d (there d∈) = AppsOf-⊆ inW inU d (V⊆A d d∈)
 
-  UA' : mem (U₀ ++ U) ⊆ SArgs ((U₀ ↦ w) ∷ W)
+  UA' : mem (U₀ ++ U) ⊆ ArgsOf ((U₀ ↦ w) ∷ W)
   UA' d d∈ with ∈-++⁻ U₀ d∈
-  ... | inj₁ d∈U₀ = sargwit U₀ w (here refl) d∈U₀
-  ... | inj₂ d∈U = SArgs-⊆ inW d (U⊆A d d∈U)
+  ... | inj₁ d∈U₀ = argwit U₀ w (here refl) d∈U₀
+  ... | inj₂ d∈U = ArgsOf-⊆ inW d (U⊆A d d∈U)
 
 {- each source result of a case comes from one of the branches -}
 case-side : ∀ (L M N : AST) (ρ : Env) {x} → x ∈ ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ ρ
@@ -348,10 +316,10 @@ delay-preserve (app ⦅ L ,, N ,, Nil ⦆) ρ ρ' NE' ρ⊳ V k V⊆ bV
     with collect (⟦ L ⟧ ρ) (⟦ N ⟧ ρ) V V⊆
 ... | ⟨ W , ⟨ U , ⟨ W⊆L , ⟨ U⊆N , ⟨ V⊆Apps , U⊆Args ⟩ ⟩ ⟩ ⟩ ⟩ =
   R-mono k (proj₂ (let-app-≃ (delay L) (delay N) ρ'))
-    (R-irr (depths W) k (Bnd-SApps (Bnd-depths W) V⊆Apps) bV
+    (R-irr (depths W) k (Bnd-AppsOf (Bnd-depths W) V⊆Apps) bV
       (Obs.app-obs (delay-preserve L ρ ρ' NE' ρ⊳ W (suc (depths W)) W⊆L (Bnd-depths W))
          U (⟦ delay N ⟧' ρ') U⊆Args tt
-         (delay-preserve N ρ ρ' NE' ρ⊳ U (depths W) U⊆N (Bnd-SArgs (Bnd-depths W) U⊆Args))
+         (delay-preserve N ρ ρ' NE' ρ⊳ U (depths W) U⊆N (Bnd-ArgsOf (Bnd-depths W) U⊆Args))
          V V⊆Apps))
 
 delay-preserve (lit B c ⦅ Nil ⦆) ρ ρ' NE' ρ⊳ V k V⊆ bV =
@@ -377,7 +345,7 @@ delay-preserve (inl-op ⦅ M ,, Nil ⦆) ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = re
   ; ω-obs = λ ω∈ → ⊥-elim (V⊆ _ ω∈)
   ; nonempty-obs = λ ne → inl-ne (ne-head ne)
   ; app-obs = λ U E _ _ _ W W⊆ →
-      R-∅ k (λ w w∈ → V⊆ _ (SAppWit.entry∈ (W⊆ w w∈)))
+      R-∅ k (λ w w∈ → V⊆ _ (AppWit.entry (W⊆ w w∈)))
   ; nth-obs = λ i W W⊆ → R-∅ k (λ d d∈ → V⊆ _ (W⊆ d d∈))
   ; left-obs = λ W W⊆ →
       delay-preserve M ρ ρ' NE' ρ⊳ W k (λ d d∈ → V⊆ _ (W⊆ d d∈)) (Bnd-Lefts bV W⊆)
@@ -397,7 +365,7 @@ delay-preserve (inr-op ⦅ M ,, Nil ⦆) ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = re
   ; ω-obs = λ ω∈ → ⊥-elim (V⊆ _ ω∈)
   ; nonempty-obs = λ ne → inr-ne (ne-head ne)
   ; app-obs = λ U E _ _ _ W W⊆ →
-      R-∅ k (λ w w∈ → V⊆ _ (SAppWit.entry∈ (W⊆ w w∈)))
+      R-∅ k (λ w w∈ → V⊆ _ (AppWit.entry (W⊆ w w∈)))
   ; nth-obs = λ i W W⊆ → R-∅ k (λ d d∈ → V⊆ _ (W⊆ d d∈))
   ; left-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆ _ (W⊆ d d∈))
   ; right-obs = λ W W⊆ →
@@ -424,7 +392,7 @@ preserve-𝒯 {suc n} args ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
   ; ω-obs = λ ω∈ → ⊥-elim (V⊆ _ ω∈)
   ; nonempty-obs = λ ne → tup-ne (ne-head ne)
   ; app-obs = λ U E _ _ _ W W⊆ →
-      R-∅ k (λ w w∈ → V⊆ _ (SAppWit.entry∈ (W⊆ w w∈)))
+      R-∅ k (λ w w∈ → V⊆ _ (AppWit.entry (W⊆ w w∈)))
   ; nth-obs = nth-case
   ; left-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆ _ (W⊆ d d∈))
   ; right-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆ _ (W⊆ d d∈))
@@ -522,8 +490,8 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
     H u (there u∈) with f u u∈
     ... | ⟨ Vt' , ⟨ s , u∈' ⟩ ⟩ = ⟨ Vt' , ⟨ (λ d d∈ → ∈-++⁺ʳ Vt (s d d∈)) , u∈' ⟩ ⟩
 
-  clos-app : ∀ j → Bnd (suc j) V → ∀ U E' → mem U ⊆ SArgs V → R j U E'
-    → ∀ X → mem X ⊆ SApps V U → R j X (P' ⊙ E')
+  clos-app : ∀ j → Bnd (suc j) V → ∀ U E' → mem U ⊆ ArgsOf V → R j U E'
+    → ∀ X → mem X ⊆ AppsOf V U → R j X (P' ⊙ E')
   clos-app zero _ U E' _ _ X _ = ptt
   clos-app (suc j) bV' U E' U⊆ rU [] _ = R-∅ (suc j) (λ _ ())
   clos-app (suc j) bV' U E' U⊆ rU (x ∷ X) X⊆ = R-mono (suc j) B⊆ IH
@@ -536,10 +504,10 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
     wit = X⊆ x (here refl)
 
     NE-E' : nonempty E'
-    NE-E' = Obs.nonempty-obs rU (ne-⊆ (SAppWit.U₀⊆ wit) (SAppWit.U₀≢[] wit))
+    NE-E' = Obs.nonempty-obs rU (ne-⊆ (AppWit.U₀⊆ wit) (AppWit.U₀≢[] wit))
 
     NE-T' : nonempty T'
-    NE-T' = T'-ne (T-ne (SAppWit.U₀ wit ↦ x) (V⊆ _ (SAppWit.entry∈ wit)))
+    NE-T' = T'-ne (T-ne (AppWit.U₀ wit ↦ x) (V⊆ _ (AppWit.entry wit)))
 
     ρs : Env
     ρs = mem U • mem Vs • (λ _ → Init)
@@ -549,7 +517,7 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
 
     X⊆B : mem (x ∷ X) ⊆ ⟦ N ⟧ ρs
     X⊆B y y∈ with X⊆ y y∈
-    ... | sappwit U₀ e∈ _ U₀⊆U with envOf _ e∈
+    ... | appwit U₀ e∈ _ U₀⊆U with envOf _ e∈
     ... | ⟨ Vt , ⟨ Vt⊆Vs , ⟨ y∈B , _ ⟩ ⟩ ⟩ =
       S3.⟦⟧-monotone {ρ = mem U₀ • mem Vt • (λ _ → Init)} {ρ′ = ρs} N env⊆ y y∈B
       where
@@ -565,13 +533,13 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
 
     ρs⊳ρt : ρs ⊳ₑ ρt
     ρs⊳ρt zero Y i Y⊆ bY =
-      R-irr (suc j) i (Bnd-⊆ Y⊆ (Bnd-SArgs bV' U⊆)) bY (R-⊆ (suc j) Y⊆ rU)
+      R-irr (suc j) i (Bnd-⊆ Y⊆ (Bnd-ArgsOf bV' U⊆)) bY (R-⊆ (suc j) Y⊆ rU)
     ρs⊳ρt (suc zero) Y i Y⊆ bY =
       preserve-𝒯 fvs ρ ρ' NE' ρ⊳ Y i (λ y y∈ → Vs⊆T y (Y⊆ y y∈)) bY
     ρs⊳ρt (suc (suc z)) Y i Y⊆ bY = R-flat i Y⊆ (λ v v∈ → Init-flat (Y⊆ v v∈))
 
     IH : R (suc j) (x ∷ X) (⟦ delay N ⟧' ρt)
-    IH = delay-preserve N ρs ρt NE-ρt ρs⊳ρt (x ∷ X) (suc j) X⊆B (Bnd-SApps bV' X⊆)
+    IH = delay-preserve N ρs ρt NE-ρt ρs⊳ρt (x ∷ X) (suc j) X⊆B (Bnd-AppsOf bV' X⊆)
 
     {- the target closure, applied to its own environment, is the body -}
     B⊆ : ⟦ delay N ⟧' ρt ⊆ (P' ⊙ E')

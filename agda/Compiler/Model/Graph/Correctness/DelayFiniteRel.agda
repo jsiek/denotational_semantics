@@ -10,10 +10,13 @@
   it bounds the depth of V (Bnd k V).
 
   The parameters describe function application on each side:
-  - ArgsOf V : the arguments that the functions in V are prepared to accept,
-  - AppsOf V U : the results of applying the functions in V to the list U,
+  - Entry V U₀ w : V contains a function entry U₀ ↦ w,
   - D ⊚ E : application on the other side,
   - Good U : a side condition on the arguments (consistency, for reflect).
+
+  From Entry we define, once for both sides,
+  - ArgsOf V : the arguments that the functions in V are prepared to accept,
+  - AppsOf V U : the results of applying the functions in V to the list U.
 
 -}
 
@@ -22,27 +25,70 @@ open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
-open import Data.Empty using (⊥-elim)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
+open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 
 module Compiler.Model.Graph.Correctness.DelayFiniteRel
-  (ArgsOf : List Value → 𝒫 Value)
-  (AppsOf : List Value → List Value → 𝒫 Value)
+  (Entry : List Value → List Value → Value → Set)
   (_⊚_ : 𝒫 Value → 𝒫 Value → 𝒫 Value)
   (Good : List Value → Set)
-  (ArgsOf-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → ArgsOf V₁ ⊆ ArgsOf V₂)
-  (AppsOf-⊆ : ∀ {V₁ V₂ U} → mem V₁ ⊆ mem V₂ → AppsOf V₁ U ⊆ AppsOf V₂ U)
-  (AppsOf-flat : ∀ {V U} → (∀ v → v ⋵ V → Flat v) → AppsOf V U ⊆ ∅)
+  (Entry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → Entry V₁ U₀ w → Entry V₂ U₀ w)
+  (Entry-flat : ∀ {V U₀ w} → (∀ v → v ⋵ V → Flat v) → Entry V U₀ w → ⊥)
   (⊚-mono : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊚ E) ⊆ (D₂ ⊚ E))
-  (Bnd-ArgsOf : ∀ {k V U} → Bnd (suc k) V → mem U ⊆ ArgsOf V → Bnd k U)
-  (Bnd-AppsOf : ∀ {k V U W} → Bnd (suc k) V → mem W ⊆ AppsOf V U → Bnd k W)
+  (Bnd-Entry : ∀ {k V U₀ w} → Bnd (suc k) V → Entry V U₀ w → Bnd k U₀ × depth w < k)
   where
+
+{- Arguments and results of the functions in a finite list --------------------}
+
+{- the arguments that the functions in V are prepared to accept -}
+record ArgWit (V : List Value) (u : Value) : Set where
+  constructor argwit
+  field
+    U₀ : List Value
+    w : Value
+    entry : Entry V U₀ w
+    u∈U₀ : u ⋵ U₀
+
+ArgsOf : List Value → 𝒫 Value
+ArgsOf V = ArgWit V
+
+{- the results of applying the functions in V to the arguments U -}
+record AppWit (V U : List Value) (w : Value) : Set where
+  constructor appwit
+  field
+    U₀ : List Value
+    entry : Entry V U₀ w
+    U₀≢[] : U₀ ≢ []
+    U₀⊆ : mem U₀ ⊆ mem U
+
+AppsOf : List Value → List Value → 𝒫 Value
+AppsOf V U = AppWit V U
+
+ArgsOf-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → ArgsOf V₁ ⊆ ArgsOf V₂
+ArgsOf-⊆ s u (argwit U₀ w e u∈) = argwit U₀ w (Entry-⊆ s e) u∈
+
+AppsOf-⊆ : ∀ {V₁ V₂ U₁ U₂} → mem V₁ ⊆ mem V₂ → mem U₁ ⊆ mem U₂
+         → AppsOf V₁ U₁ ⊆ AppsOf V₂ U₂
+AppsOf-⊆ s t w (appwit U₀ e ne U₀⊆) = appwit U₀ (Entry-⊆ s e) ne (λ d d∈ → t d (U₀⊆ d d∈))
+
+AppsOf-flat : ∀ {V U} → (∀ v → v ⋵ V → Flat v) → AppsOf V U ⊆ ∅
+AppsOf-flat fl w (appwit U₀ e _ _) = ⊥-elim (Entry-flat fl e)
+
+Bnd-ArgsOf : ∀ {k V U} → Bnd (suc k) V → mem U ⊆ ArgsOf V → Bnd k U
+Bnd-ArgsOf bV U⊆ u u∈ with U⊆ u u∈
+... | argwit U₀ w e u∈U₀ = proj₁ (Bnd-Entry bV e) u u∈U₀
+
+Bnd-AppsOf : ∀ {k V U W} → Bnd (suc k) V → mem W ⊆ AppsOf V U → Bnd k W
+Bnd-AppsOf bV W⊆ w w∈ with W⊆ w w∈
+... | appwit U₀ e _ _ = proj₂ (Bnd-Entry bV e)
+
+{- The relation ---------------------------------------------------------------}
 
 record Obs (R : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫 Value) : Set₁ where
   field
@@ -97,7 +143,7 @@ R-⊆ (suc k) {V₁}{V₂} V₁⊆V₂ r = record
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
   ; app-obs = λ U E U⊆ gU rU W W⊆ →
       app-obs U E (λ u u∈ → ArgsOf-⊆ V₁⊆V₂ u (U⊆ u u∈)) gU rU W
-              (λ w w∈ → AppsOf-⊆ V₁⊆V₂ w (W⊆ w w∈))
+              (λ w w∈ → AppsOf-⊆ V₁⊆V₂ (λ d z → z) w (W⊆ w w∈))
   ; nth-obs = λ i W W⊆ → nth-obs i W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   ; left-obs = λ W W⊆ → left-obs W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   ; right-obs = λ W W⊆ → right-obs W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
