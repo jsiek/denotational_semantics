@@ -19,7 +19,7 @@ import Compiler.Lang.Clos4 as L4
 import Compiler.Lang.Clos5 as L5
 open import Compiler.Compile.Globalize using (globalize)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
-open import Compiler.Model.Graph.Correctness.AnnotateExample using (prog; prog-is-7)
+open import Compiler.Model.Graph.Correctness.EncloseExample using (prog; prog-is-7)
 open import Compiler.Model.Graph.Correctness.CompilerCorrect
 
 open import NewSyntaxUtil

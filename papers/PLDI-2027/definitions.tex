@@ -78,14 +78,14 @@ instead of de Bruijn indices.
     $\key{guard}$, and $\odot$;
   \item consistency ($\sim$, $\consis$) and continuity.
   \end{itemize}
-\item \textbf{Languages:} the syntax of ISWIM and Clos1--Clos5, including Clos5 programs.
+\item \textbf{Languages:} the syntax of ISWIM and Clos2--Clos5, including Clos5 programs.
 \item \textbf{Semantics:} the clauses all languages share, then each language's own
   clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$.
-\item \textbf{Compilation:} annotate, enclose, optimize, concretize, delay (with the let),
+\item \textbf{Compilation:} enclose, optimize, concretize, delay (with the let),
   and globalize.
 \item \textbf{Relations and lemma statements:}
   \begin{itemize}
-  \item $\mathit{Enclosed}$, plus the annotate, enclose and optimize equalities;
+  \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, $\mathit{depth}$/$\mathit{Bnd}$, the generic relation $\mathcal{R}_k$
     with its preservation and reflection instances, $\rhd$, and the let equation;
@@ -97,10 +97,10 @@ instead of de Bruijn indices.
 \paragraph{Where it doesn't match the Agda literally.}
 Using names instead of de Bruijn indices changes a few definitions:
 \begin{itemize}
-\item \textbf{Annotate} lists $\FV(\lam{y} N)$ as the closure's free variables.
+\item \textbf{Enclose} lists $\FV(\lam{y} N)$ as the closure's free variables.
   The Agda lists the first $m$ surrounding variables, enough to cover every
   variable the body uses.
-\item \textbf{Closure free variables} are variables in Clos1 and Clos2 and
+\item \textbf{Closure free variables} are variables in Clos2 and
   references in Clos3, which is all the passes produce. The Agda allows
   arbitrary terms there.
 \item \textbf{Optimize} has no renaming parameter. It keeps $x_i$ when
@@ -211,21 +211,9 @@ The source language: a call-by-value $\lambda$-calculus with constants, tuples, 
   \FV(\lam{y} N) = \FV(N) \setminus \{y\}
 \]
 
-\subsection{Clos1}
-
-Like ISWIM, but each $\lambda$ is annotated with its free variables $x_1\ldots x_n$; the body still refers to the surrounding variables directly.
-\begin{syntax}
-  & L, M, N &::=& x \mid \clos{x_1\ldots x_n}{y} N \mid L\;M \mid c
-    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
-\end{syntax}
-\[
-  \FV(\clos{x_1\ldots x_n}{y} N) = \{x_1, \ldots, x_n\} \cup (\FV(N) \setminus \{y\})
-\]
-
 \subsection{Clos2}
 
-Each closure now binds the values of its free variables $z_1\ldots z_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
+Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its free variables $z_1\ldots z_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
 \begin{syntax}
   & L, M, N &::=& x \mid \clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
@@ -279,14 +267,14 @@ Like Clos4, but the code is hoisted into a program's list of global definitions 
 \section{Semantics}
 
 \begin{align*}
-  \SEM{-}^{\mathrm{ISWIM}}, \SEM{-}^{\mathrm{1}}, \ldots, \SEM{-}^{\mathrm{4}}
+  \SEM{-}^{\mathrm{ISWIM}}, \SEM{-}^{\mathrm{2}}, \ldots, \SEM{-}^{\mathrm{4}}
     &: \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V} \\
   \SEM{-}^{\mathrm{5}}_T
     &: \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V}
     \qquad (T : \mathbb{N} \to \SET{\V}) \\
   \SEM{-}^{\mathrm{5}} &: \mathit{Program} \to \SET{\V}
 \end{align*}
-For each language $\ell \in \{\mathrm{ISWIM}, 1, 2, 3, 4\}$, $\SEM{-}^{\ell}$ is
+For each language $\ell \in \{\mathrm{ISWIM}, 2, 3, 4\}$, $\SEM{-}^{\ell}$ is
 defined by the common clauses below together with the clauses for $\ell$.
 
 \subsection{Clauses common to all languages}
@@ -307,15 +295,6 @@ defined by the common clauses below together with the clauses for $\ell$.
 \begin{align*}
   \SEM{\lam{x} N}^{\mathrm{ISWIM}}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{ISWIM}}\ext{\rho}{x}{X}) \\
   \SEM{L\;M}^{\mathrm{ISWIM}}\rho &= \SEM{L}^{\mathrm{ISWIM}}\rho \app \SEM{M}^{\mathrm{ISWIM}}\rho
-\end{align*}
-
-\subsection{Clos1}
-
-\begin{align*}
-  \SEM{\clos{x_1\ldots x_n}{y} N}^{\mathrm{1}}\rho &=
-    \key{guard}(\rho(x_1), \ldots, \rho(x_n);\;
-       \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{1}}\ext{\rho}{y}{Y})) \\
-  \SEM{L\;M}^{\mathrm{1}}\rho &= \SEM{L}^{\mathrm{1}}\rho \app \SEM{M}^{\mathrm{1}}\rho
 \end{align*}
 
 \subsection{Clos2}
@@ -375,25 +354,17 @@ together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SE
 
 \[
   \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
-     \circ \pass{optimize} \circ \pass{enclose} \circ \pass{annotate}
+     \circ \pass{optimize} \circ \pass{enclose}
 \]
 
 In each pass, the clauses not shown are homomorphic.
 
-\subsection{Annotate (ISWIM $\to$ Clos1)}
+\subsection{Enclose (ISWIM $\to$ Clos2)}
 
-Annotate decides which variables each closure captures: its free variables.
+Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
 \begin{align*}
-  \pass{annotate}(\lam{y} N) &= \clos{x_1\ldots x_n}{y} \pass{annotate}(N)
+  \pass{enclose}(\lam{y} N) &= \clos{x_1\ldots x_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
     \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
-\end{align*}
-
-\subsection{Enclose (Clos1 $\to$ Clos2)}
-
-Enclose closes off each closure's body, so that it sees the captured values only through its own bound names.
-\begin{align*}
-  \pass{enclose}(\clos{x_1\ldots x_n}{y} N) &=
-     \clos{x_1\ldots x_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
 \end{align*}
 
 \subsection{Optimize (Clos2 $\to$ Clos2)}
@@ -457,25 +428,13 @@ Globalize hoists all code into a table of global definitions and replaces each p
 %===============================================================================
 \section{Relations}
 
-\subsection{Annotate and Enclose}
+\subsection{Enclose}
 
-\begin{align*}
-  \mathit{Enclosed}(M) &\iff \text{every closure } \clos{x_1\ldots x_n}{y} N \text{ in } M \text{ has }
-    \FV(\clos{x_1\ldots x_n}{y} N) = \{x_1,\ldots,x_n\}
-\end{align*}
-
-\begin{lemma}[Correctness of Annotate]\label{lem:annotate}
+\begin{lemma}[Correctness of Enclose]\label{lem:enclose}
 If $\rho_1(x) \simeq \rho_2(x)$ for every $x \in \FV(M)$
 and $\rho_2(x) \NE$ for every $x$, then
 \[
-  \SEM{M}^{\mathrm{ISWIM}}\rho_1 \simeq \SEM{\pass{annotate}(M)}^{\mathrm{1}}\rho_2 .
-\]
-\end{lemma}
-
-\begin{lemma}[Correctness of Enclose]\label{lem:enclose}
-If $\mathit{Enclosed}(M)$ and $\rho_1(x) \simeq \rho_2(x)$ for every $x \in \FV(M)$, then
-\[
-  \SEM{M}^{\mathrm{1}}\rho_1 \simeq \SEM{\pass{enclose}(M)}^{\mathrm{2}}\rho_2 .
+  \SEM{M}^{\mathrm{ISWIM}}\rho_1 \simeq \SEM{\pass{enclose}(M)}^{\mathrm{2}}\rho_2 .
 \]
 \end{lemma}
 
