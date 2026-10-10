@@ -198,6 +198,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \subsection{ISWIM}
 
+The source language: a call-by-value $\lambda$-calculus with constants, tuples, and sums.
 \begin{syntax}
   & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
@@ -206,6 +207,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \subsection{Clos1}
 
+Like ISWIM, but each $\lambda$ is annotated with terms $M_1\ldots M_n$ for its free variables; the body still refers to the surrounding variables directly.
 \begin{syntax}
   & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
@@ -214,6 +216,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \subsection{Clos2}
 
+Each closure now binds the values of $M_1\ldots M_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
 \begin{syntax}
   & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
@@ -225,6 +228,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \subsection{Clos3}
 
+Each closure now packs $M_1\ldots M_n$ into one tuple bound to $e$, so its body reaches the free variables by projections from $e$.
 \begin{syntax}
   & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{e\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
@@ -236,6 +240,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \subsection{Clos4}
 
+Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$ is used by the delayed application.
 \begin{syntax}
   & L, M, N &::=& x \mid \fun{e\,y.\,N} \mid L(M, N) \mid c
     \mid \pair{M}{N} \mid \FST M \mid \SND M \\
@@ -249,6 +254,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \subsection{Clos5}
 
+Like Clos4, but the code is hoisted into a program's list of global definitions $d_k$, which terms refer to as $\funref{k}$.
 \begin{syntax}
   & L, M, N &::=& x \mid \funref{k} \mid L(M, N) \mid c
     \mid \pair{M}{N} \mid \FST M \mid \SND M \\
@@ -262,95 +268,96 @@ Using names instead of de Bruijn indices changes a few definitions:
 %===============================================================================
 \section{Semantics}
 
-\[
+\begin{align*}
   \SEM{-}^{\mathrm{ISWIM}}, \SEM{-}^{\mathrm{1}}, \ldots, \SEM{-}^{\mathrm{4}}
-    : \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V}
-  \qquad
-  \SEM{-}_T : \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V}
-\]
+    &: \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V} \\
+  \SEM{-}^{\mathrm{5}}_T
+    &: \mathit{Term} \to (\X \to \SET{\V}) \to \SET{\V}
+    \qquad (T : \mathbb{N} \to \SET{\V}) \\
+  \SEM{-}^{\mathrm{5}} &: \mathit{Program} \to \SET{\V}
+\end{align*}
+For each language $\ell \in \{\mathrm{ISWIM}, 1, 2, 3, 4\}$, $\SEM{-}^{\ell}$ is
+defined by the common clauses below together with the clauses for $\ell$.
 
 \subsection{Clauses common to all languages}
 
 \begin{align*}
-  \SEM{x}\rho &= \rho(x) \\
-  \SEM{c}\rho &= \mathcal{B}(c) \\
-  \SEM{\tuple{M_1,\ldots,M_n}}\rho &= \mathcal{T}(\SEM{M_1}\rho, \ldots, \SEM{M_n}\rho) \\
-  \SEM{\prj{i} M}\rho &= \key{proj}_i(\SEM{M}\rho) \\
-  \SEM{\inl M}\rho &= \mathcal{L}(\SEM{M}\rho) \\
-  \SEM{\inr M}\rho &= \mathcal{R}(\SEM{M}\rho) \\
-  \SEM{\Case{L}{x}{M}{y}{N}}\rho &=
-     \mathcal{C}(\SEM{L}\rho,\; \lambda X.\, \SEM{M}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}\ext{\rho}{y}{Y})
+  \SEM{x}^{\ell}\rho &= \rho(x) \\
+  \SEM{c}^{\ell}\rho &= \mathcal{B}(c) \\
+  \SEM{\tuple{M_1,\ldots,M_n}}^{\ell}\rho &= \mathcal{T}(\SEM{M_1}^{\ell}\rho, \ldots, \SEM{M_n}^{\ell}\rho) \\
+  \SEM{\prj{i} M}^{\ell}\rho &= \key{proj}_i(\SEM{M}^{\ell}\rho) \\
+  \SEM{\inl M}^{\ell}\rho &= \mathcal{L}(\SEM{M}^{\ell}\rho) \\
+  \SEM{\inr M}^{\ell}\rho &= \mathcal{R}(\SEM{M}^{\ell}\rho) \\
+  \SEM{\Case{L}{x}{M}{y}{N}}^{\ell}\rho &=
+     \mathcal{C}(\SEM{L}^{\ell}\rho,\; \lambda X.\, \SEM{M}^{\ell}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}^{\ell}\ext{\rho}{y}{Y})
 \end{align*}
 
 \subsection{ISWIM}
 
 \begin{align*}
-  \SEM{\lam{x} N}\rho &= \Lambda(\lambda X.\, \SEM{N}\ext{\rho}{x}{X}) \\
-  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+  \SEM{\lam{x} N}^{\mathrm{ISWIM}}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{ISWIM}}\ext{\rho}{x}{X}) \\
+  \SEM{L\;M}^{\mathrm{ISWIM}}\rho &= \SEM{L}^{\mathrm{ISWIM}}\rho \app \SEM{M}^{\mathrm{ISWIM}}\rho
 \end{align*}
 
 \subsection{Clos1}
 
 \begin{align*}
-  \SEM{\clos{M_1\ldots M_n}{y} N}\rho &=
-    \key{guard}(\SEM{M_1}\rho, \ldots, \SEM{M_n}\rho;\;
-       \Lambda(\lambda Y.\, \SEM{N}\ext{\rho}{y}{Y})) \\
-  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+  \SEM{\clos{M_1\ldots M_n}{y} N}^{\mathrm{1}}\rho &=
+    \key{guard}(\SEM{M_1}^{\mathrm{1}}\rho, \ldots, \SEM{M_n}^{\mathrm{1}}\rho;\;
+       \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{1}}\ext{\rho}{y}{Y})) \\
+  \SEM{L\;M}^{\mathrm{1}}\rho &= \SEM{L}^{\mathrm{1}}\rho \app \SEM{M}^{\mathrm{1}}\rho
 \end{align*}
 
 \subsection{Clos2}
 
 \begin{align*}
-  \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}\rho &=
+  \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}^{\mathrm{2}}\rho &=
     \key{guard}(D_1, \ldots, D_n;\;
-       \Lambda(\lambda Y.\, \SEM{N}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y)))
-    \\ &\qquad\text{where } D_i = \SEM{M_i}\rho \\
-  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+       \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{2}}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y)))
+    \\ &\qquad\text{where } D_i = \SEM{M_i}^{\mathrm{2}}\rho \\
+  \SEM{L\;M}^{\mathrm{2}}\rho &= \SEM{L}^{\mathrm{2}}\rho \app \SEM{M}^{\mathrm{2}}\rho
 \end{align*}
 
 \subsection{Clos3}
 
 \begin{align*}
-  \SEM{\clos{M_1\ldots M_n}{e\, y} N}\rho &=
-    \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}\rho_0(e{:=}X, y{:=}Y)))
-    \app \mathcal{T}(\SEM{M_1}\rho, \ldots, \SEM{M_n}\rho) \\
-  \SEM{L\;M}\rho &= \SEM{L}\rho \app \SEM{M}\rho
+  \SEM{\clos{M_1\ldots M_n}{e\, y} N}^{\mathrm{3}}\rho &=
+    \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{3}}\rho_0(e{:=}X, y{:=}Y)))
+    \app \mathcal{T}(\SEM{M_1}^{\mathrm{3}}\rho, \ldots, \SEM{M_n}^{\mathrm{3}}\rho) \\
+  \SEM{L\;M}^{\mathrm{3}}\rho &= \SEM{L}^{\mathrm{3}}\rho \app \SEM{M}^{\mathrm{3}}\rho
 \end{align*}
 
 \subsection{Clos4}
 
 \begin{align*}
-  \SEM{\fun{e\,y.\,N}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}\rho_0(e{:=}X, y{:=}Y))) \\
-  \SEM{L(M, N)}\rho &= (\SEM{L}\rho \app \SEM{M}\rho) \app \SEM{N}\rho \\
-  \SEM{\pair{M}{N}}\rho &= \key{pair}(\SEM{M}\rho, \SEM{N}\rho) \\
-  \SEM{\FST M}\rho &= \key{car}(\SEM{M}\rho) \\
-  \SEM{\SND M}\rho &= \key{cdr}(\SEM{M}\rho) \\
-  \SEM{\Let x = M \In N}\rho &= \Lambda(\lambda X.\, \SEM{N}\ext{\rho}{x}{X}) \app \SEM{M}\rho
+  \SEM{\fun{e\,y.\,N}}^{\mathrm{4}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{4}}\rho_0(e{:=}X, y{:=}Y))) \\
+  \SEM{L(M, N)}^{\mathrm{4}}\rho &= (\SEM{L}^{\mathrm{4}}\rho \app \SEM{M}^{\mathrm{4}}\rho) \app \SEM{N}^{\mathrm{4}}\rho \\
+  \SEM{\pair{M}{N}}^{\mathrm{4}}\rho &= \key{pair}(\SEM{M}^{\mathrm{4}}\rho, \SEM{N}^{\mathrm{4}}\rho) \\
+  \SEM{\FST M}^{\mathrm{4}}\rho &= \key{car}(\SEM{M}^{\mathrm{4}}\rho) \\
+  \SEM{\SND M}^{\mathrm{4}}\rho &= \key{cdr}(\SEM{M}^{\mathrm{4}}\rho) \\
+  \SEM{\Let x = M \In N}^{\mathrm{4}}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{4}}\ext{\rho}{x}{X}) \app \SEM{M}^{\mathrm{4}}\rho
 \end{align*}
 
 \subsection{Clos5}
 
-\[
-  T : \mathbb{N} \to \SET{\V}
-\]
 \begin{align*}
-  \SEM{\funref{k}}_T\rho &= T(k) \\
-  \SEM{L(M, N)}_T\rho &= (\SEM{L}_T\rho \app \SEM{M}_T\rho) \app \SEM{N}_T\rho \\
-  \SEM{\pair{M}{N}}_T\rho &= \key{pair}(\SEM{M}_T\rho, \SEM{N}_T\rho) \\
-  \SEM{\FST M}_T\rho &= \key{car}(\SEM{M}_T\rho) \\
-  \SEM{\SND M}_T\rho &= \key{cdr}(\SEM{M}_T\rho) \\
-  \SEM{\Let x = M \In N}_T\rho &= \Lambda(\lambda X.\, \SEM{N}_T\ext{\rho}{x}{X}) \app \SEM{M}_T\rho
+  \SEM{\funref{k}}^{\mathrm{5}}_T\rho &= T(k) \\
+  \SEM{L(M, N)}^{\mathrm{5}}_T\rho &= (\SEM{L}^{\mathrm{5}}_T\rho \app \SEM{M}^{\mathrm{5}}_T\rho) \app \SEM{N}^{\mathrm{5}}_T\rho \\
+  \SEM{\pair{M}{N}}^{\mathrm{5}}_T\rho &= \key{pair}(\SEM{M}^{\mathrm{5}}_T\rho, \SEM{N}^{\mathrm{5}}_T\rho) \\
+  \SEM{\FST M}^{\mathrm{5}}_T\rho &= \key{car}(\SEM{M}^{\mathrm{5}}_T\rho) \\
+  \SEM{\SND M}^{\mathrm{5}}_T\rho &= \key{cdr}(\SEM{M}^{\mathrm{5}}_T\rho) \\
+  \SEM{\Let x = M \In N}^{\mathrm{5}}_T\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{5}}_T\ext{\rho}{x}{X}) \app \SEM{M}^{\mathrm{5}}_T\rho
 \end{align*}
-(the common clauses are as above, with $\SEM{-}_T$ in place of $\SEM{-}$)
+together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SEM{-}^{\ell}$.
 
 \begin{align*}
-  \key{code}_T(e\,y.\,N) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}_T\rho_0(e{:=}X, y{:=}Y))) \\[1ex]
+  \key{code}_T(e\,y.\,N) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{5}}_T\rho_0(e{:=}X, y{:=}Y))) \\[1ex]
   \key{table}(d_0,\ldots,d_{m-1})(k) &=
     \begin{cases}
       \key{code}_{\key{table}(d_0,\ldots,d_{k-1})}(d_k) & k < m \\
       \emptyset & \text{otherwise}
     \end{cases} \\[1ex]
-  \SEM{(d_0, \ldots, d_{m-1};\; M)} &= \SEM{M}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
+  \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\mathrm{5}} &= \SEM{M}^{\mathrm{5}}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
 \end{align*}
 
 %===============================================================================
@@ -589,16 +596,16 @@ $\mathit{Extends}(\vec{d}, \vec{d}')$ and $\mathit{RB}_{|\vec{d}'|}(M')$.
 
 \begin{lemma}[Table Agreement]\label{lem:agree}
 If $\mathit{Agree}_n(T, T')$, $\mathit{RB}_n(M)$, and $\rho \simeq \rho'$, then
-$\SEM{M}_T\rho \simeq \SEM{M}_{T'}\rho'$.
+$\SEM{M}^{\mathrm{5}}_T\rho \simeq \SEM{M}^{\mathrm{5}}_{T'}\rho'$.
 \end{lemma}
 
 \begin{lemma}[Correctness of Glob]\label{lem:glob}
 If $\pass{glob}(M, \vec{d}) = (M', \vec{d}')$ and $\rho \simeq \rho'$, then
-$\SEM{M}^{\mathrm{4}}\rho \simeq \SEM{M'}_{\key{table}(\vec{d}')}\rho'$.
+$\SEM{M}^{\mathrm{4}}\rho \simeq \SEM{M'}^{\mathrm{5}}_{\key{table}(\vec{d}')}\rho'$.
 \end{lemma}
 
 \begin{lemma}[Correctness of Globalize]\label{lem:globalize}
-$\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}$.
+$\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\mathrm{5}}$.
 \end{lemma}
 
 \subsection{End to End}
@@ -610,7 +617,7 @@ $\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}$.
 \begin{theorem}[Compiler Correctness]\label{thm:compiler}
 For every ISWIM program $M$,
 \[
-  \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile}(M)} .
+  \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile}(M)}^{\mathrm{5}} .
 \]
 \end{theorem}
 
