@@ -85,7 +85,7 @@ depth (V ↦ w) = suc (depths V ⊔ depth w)
 depth ν = 0
 depth ω = 0
 depth ⦅ u ∣ = suc (depth u)
-depth ∣ V ⦆ = suc (depths V)
+depth ∣ v ⦆ = suc (depth v)
 depth (tup[ i ] d) = suc (depth d)
 depth (left d) = suc (depth d)
 depth (right d) = suc (depth d)
@@ -148,7 +148,7 @@ single⊆ v∈ _ (here refl) = v∈
 ●-mono-l D⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩
 
 Cdr-mono : ∀ {D₁ D₂} → D₁ ⊆ D₂ → Cdr D₁ ⊆ Cdr D₂
-Cdr-mono D⊆ d ⟨ FVs , ⟨ ∣FVs⦆∈ , d∈FVs ⟩ ⟩ = ⟨ FVs , ⟨ D⊆ _ ∣FVs⦆∈ , d∈FVs ⟩ ⟩
+Cdr-mono D⊆ d ∣d⦆∈ = D⊆ ∣ d ⦆ ∣d⦆∈
 
 ⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
 ⊙-mono-l {D₁}{D₂} D⊆ w ⟨ U , ⟨ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
@@ -190,8 +190,8 @@ Init-consis .ω .ω refl refl = tt
 {- Inversion lemmas -----------------------------------------------------------}
 
 pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
-pair-ne ⦅ f ∣ ⟨ FV , ⟨ _ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne FV⊆
-pair-ne ∣ FV ⦆ ⟨ f , ⟨ _ , ⟨ FV⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne FV⊆
+pair-ne ⦅ f ∣ ⟨ v , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
+pair-ne ∣ v ⦆ ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
 pair-ne (const k) ()
 pair-ne (V ↦ w) ()
 pair-ne ν ()
@@ -200,8 +200,8 @@ pair-ne (tup[ i ] d) ()
 pair-ne (left d) ()
 pair-ne (right d) ()
 
-cdr-pair : ∀ {A B : 𝒫 Value}{FV} → ∣ FV ⦆ ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → mem FV ⊆ B
-cdr-pair ⟨ f , ⟨ _ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = FV⊆
+cdr-pair : ∀ {A B : 𝒫 Value}{v} → ∣ v ⦆ ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → v ∈ B
+cdr-pair ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = v∈
 
 ℒ-inv : ∀ {D : 𝒫 Value} v → v ∈ ℒ ⟨ D , ptt ⟩ → Σ[ d ∈ Value ] v ≡ left d × d ∈ D
 ℒ-inv (left d) d∈ = ⟨ d , ⟨ refl , d∈ ⟩ ⟩
@@ -210,7 +210,7 @@ cdr-pair ⟨ f , ⟨ _ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = FV⊆
 ℒ-inv ν ()
 ℒ-inv ω ()
 ℒ-inv ⦅ u ∣ ()
-ℒ-inv ∣ V ⦆ ()
+ℒ-inv ∣ v ⦆ ()
 ℒ-inv (tup[ i ] d) ()
 ℒ-inv (right d) ()
 
@@ -221,7 +221,7 @@ cdr-pair ⟨ f , ⟨ _ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = FV⊆
 ℛ-inv ν ()
 ℛ-inv ω ()
 ℛ-inv ⦅ u ∣ ()
-ℛ-inv ∣ V ⦆ ()
+ℛ-inv ∣ v ⦆ ()
 ℛ-inv (tup[ i ] d) ()
 ℛ-inv (left d) ()
 
@@ -231,7 +231,7 @@ cdr-pair ⟨ f , ⟨ _ , ⟨ FV⊆ , _ ⟩ ⟩ ⟩ = FV⊆
 ℬ-flat ν ()
 ℬ-flat ω ()
 ℬ-flat ⦅ u ∣ ()
-ℬ-flat ∣ V ⦆ ()
+ℬ-flat ∣ v ⦆ ()
 ℬ-flat (tup[ i ] d) ()
 ℬ-flat (left d) ()
 ℬ-flat (right d) ()

@@ -53,11 +53,12 @@ data Value : Set where
   ω : Value          {- An error value, to serve as a default value in Envs and
                         to differentiate from converging -}
   ⦅_∣ : (u : Value) → Value  
-  ∣_⦆ : (V : List Value) → Value
-         {- closure values are pairs with multi-value snds (to store environments), 
-            which we split up into car and cdr behaviors 
-            for easier distributivity properties
-            Think of a pair ⦅ u , V ⦆ as ⦅ u ∣ ⊔ ∣ V ⦆ -}
+  ∣_⦆ : (v : Value) → Value
+         {- closure values are pairs, which we split up into car and cdr
+            behaviors for easier distributivity properties.
+            Think of a pair ⦅ u , v ⦆ as ⦅ u ∣ ⊔ ∣ v ⦆.  A closure whose
+            environment is approximated by several values v₁ … vₙ is
+            represented by the elements ∣ v₁ ⦆ … ∣ vₙ ⦆ of its denotation. -}
   tup[_]_ : ∀ {n} (i : Fin n) → (d : Value) → Value                 {- Tuples -}
   left : (d : Value) → Value                      {- Sums -}
   right : (d : Value) → Value                     {- Sums -}
@@ -170,19 +171,19 @@ const k d≟ (right v₁) = no (λ ())
 ⦅ u ∣ d≟ ν = no (λ ())
 ⦅ u ∣ d≟ ω = no (λ ())
 ⦅ u ∣ d≟ ⦅ v ∣ = map′ (cong ⦅_∣) fst-inj (u d≟ v)
-⦅ u ∣ d≟ ∣ V ⦆ = no (λ ())
+⦅ u ∣ d≟ ∣ v ⦆ = no (λ ())
 ⦅ u ∣ d≟ (tup[ i ] d) = no (λ ())
 ⦅ u ∣ d≟ left v = no (λ ())
 ⦅ u ∣ d≟ right v = no (λ ())
-∣ V ⦆ d≟ const k = no (λ ())
-∣ V ⦆ d≟ (V₁ ↦ v) = no (λ ())
-∣ V ⦆ d≟ ν = no (λ ())
-∣ V ⦆ d≟ ω = no (λ ())
-∣ V ⦆ d≟ ⦅ v ∣ = no (λ ())
-∣ V ⦆ d≟ ∣ V₁ ⦆ = map′ (cong ∣_⦆) snd-inj (V ds≟ V₁)
-∣ V ⦆ d≟ (tup[ i ] d) = no (λ ())
-∣ V ⦆ d≟ left v = no (λ ())
-∣ V ⦆ d≟ right v = no (λ ())
+∣ v ⦆ d≟ const k = no (λ ())
+∣ v ⦆ d≟ (V₁ ↦ w) = no (λ ())
+∣ v ⦆ d≟ ν = no (λ ())
+∣ v ⦆ d≟ ω = no (λ ())
+∣ v ⦆ d≟ ⦅ w ∣ = no (λ ())
+∣ v ⦆ d≟ ∣ v₁ ⦆ = map′ (cong ∣_⦆) snd-inj (v d≟ v₁)
+∣ v ⦆ d≟ (tup[ i ] d) = no (λ ())
+∣ v ⦆ d≟ left w = no (λ ())
+∣ v ⦆ d≟ right w = no (λ ())
 (tup[ i ] d) d≟ const k = no (λ ())
 (tup[ i ] d) d≟ (V ↦ d₃) = no (λ ())
 (tup[ i ] d) d≟ ν = no (λ ())
@@ -220,7 +221,7 @@ const k d≟ (right v₁) = no (λ ())
 ⟨⟩ d≟ ν = no (λ ())
 ⟨⟩ d≟ ω = no (λ ())
 ⟨⟩ d≟ ⦅ u ∣ = no (λ ())
-⟨⟩ d≟ ∣ V ⦆ = no (λ ())
+⟨⟩ d≟ ∣ v ⦆ = no (λ ())
 ⟨⟩ d≟ (tup[ i ] d) = no (λ ())
 ⟨⟩ d≟ (left v) = no (λ ())
 ⟨⟩ d≟ (right v) = no (λ ())
@@ -229,7 +230,7 @@ const k d≟ (right v₁) = no (λ ())
 ν d≟ ⟨⟩ = no (λ ())
 ω d≟ ⟨⟩ = no (λ ())
 ⦅ u ∣ d≟ ⟨⟩ = no (λ ())
-∣ V ⦆ d≟ ⟨⟩ = no (λ ())
+∣ v ⦆ d≟ ⟨⟩ = no (λ ())
 (tup[ i ] d) d≟ ⟨⟩ = no (λ ())
 (left v) d≟ ⟨⟩ = no (λ ())
 (right v) d≟ ⟨⟩ = no (λ ())
@@ -292,19 +293,19 @@ const x ~ (right x₁) = False
 ⦅ u ∣ ~ ν = False
 ⦅ u ∣ ~ ω = False
 ⦅ u ∣ ~ ⦅ v ∣ = u ~ v
-⦅ u ∣ ~ ∣ V ⦆ = True
+⦅ u ∣ ~ ∣ v ⦆ = True
 ⦅ u ∣ ~ (tup[ i ] d) = False
 ⦅ u ∣ ~ left v = False
 ⦅ u ∣ ~ right v = False
-∣ V ⦆ ~ const k = False
-∣ V ⦆ ~ (V₁ ↦ v) = False
-∣ V ⦆ ~ ν = False
-∣ V ⦆ ~ ω = False
-∣ V ⦆ ~ ⦅ v ∣ = True
-∣ V ⦆ ~ ∣ V₁ ⦆ = V ≈ V₁
-∣ V ⦆ ~ (tup[ i ] d) = False
-∣ V ⦆ ~ left v = False
-∣ V ⦆ ~ right v = False
+∣ v ⦆ ~ const k = False
+∣ v ⦆ ~ (V₁ ↦ w) = False
+∣ v ⦆ ~ ν = False
+∣ v ⦆ ~ ω = False
+∣ v ⦆ ~ ⦅ w ∣ = True
+∣ v ⦆ ~ ∣ v₁ ⦆ = v ~ v₁
+∣ v ⦆ ~ (tup[ i ] d) = False
+∣ v ⦆ ~ left w = False
+∣ v ⦆ ~ right w = False
 (tup[ i ] d') ~ const x₁ = False
 (tup[ i ] d') ~ (V₁ ↦ v) = False
 (tup[ i ] d') ~ ν = False
@@ -339,7 +340,7 @@ const x ~ (right x₁) = False
 ⟨⟩ ~ ν = False
 ⟨⟩ ~ ω = False
 ⟨⟩ ~ ⦅ u ∣ = False
-⟨⟩ ~ ∣ V ⦆ = False
+⟨⟩ ~ ∣ v ⦆ = False
 ⟨⟩ ~ (tup[ i ] d) = False
 ⟨⟩ ~ (left v) = False
 ⟨⟩ ~ (right v) = False
@@ -348,7 +349,7 @@ const x ~ (right x₁) = False
 ν ~ ⟨⟩ = False
 ω ~ ⟨⟩ = False
 ⦅ u ∣ ~ ⟨⟩ = False
-∣ V ⦆ ~ ⟨⟩ = False
+∣ v ⦆ ~ ⟨⟩ = False
 (tup[ i ] d) ~ ⟨⟩ = False
 (left v) ~ ⟨⟩ = False
 (right v) ~ ⟨⟩ = False
@@ -383,9 +384,9 @@ const x ~ (right x₁) = False
 ~-sym ν ν u~v = tt
 ~-sym ω ω u~v = tt
 ~-sym ⦅ u ∣ ⦅ v ∣ u~v = ~-sym u v u~v
-~-sym ⦅ u ∣ ∣ V ⦆ u~v = tt
-~-sym ∣ V ⦆ ⦅ v ∣ u~v = tt
-~-sym ∣ V ⦆ ∣ V₁ ⦆ u~v = ≈-sym V V₁ u~v
+~-sym ⦅ u ∣ ∣ v ⦆ u~v = tt
+~-sym ∣ v ⦆ ⦅ w ∣ u~v = tt
+~-sym ∣ v ⦆ ∣ v₁ ⦆ u~v = ~-sym v v₁ u~v
 ~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') ⟨ refl , inj₁ neq ⟩ = 
     ⟨ refl , inj₁ (λ z → neq (sym z)) ⟩
 ~-sym (tup[_]_ {n} i d) (tup[_]_ {n'} i' d') ⟨ refl , inj₂ ⟨ refl , d~ ⟩ ⟩ =
@@ -464,19 +465,19 @@ const x ~? (right x₁) = no (λ z → z)
 ⦅ u ∣ ~? ν = no (λ z → z)
 ⦅ u ∣ ~? ω = no (λ z → z)
 ⦅ u ∣ ~? ⦅ v ∣ = u ~? v
-⦅ u ∣ ~? ∣ V ⦆ = yes tt
+⦅ u ∣ ~? ∣ v ⦆ = yes tt
 ⦅ u ∣ ~? (tup[ i ] d) = no (λ z → z)
 ⦅ u ∣ ~? left v = no (λ z → z)
 ⦅ u ∣ ~? right v = no (λ z → z)
-∣ V ⦆ ~? const k = no (λ z → z)
-∣ V ⦆ ~? (V₁ ↦ v) = no (λ z → z)
-∣ V ⦆ ~? ν = no (λ z → z)
-∣ V ⦆ ~? ω = no (λ z → z)
-∣ V ⦆ ~? ⦅ v ∣ = yes tt
-∣ V ⦆ ~? ∣ V₁ ⦆ = V ≈? V₁
-∣ V ⦆ ~? (tup[ i ] d) = no (λ z → z)
-∣ V ⦆ ~? left v = no (λ z → z)
-∣ V ⦆ ~? right v = no (λ z → z)
+∣ v ⦆ ~? const k = no (λ z → z)
+∣ v ⦆ ~? (V₁ ↦ w) = no (λ z → z)
+∣ v ⦆ ~? ν = no (λ z → z)
+∣ v ⦆ ~? ω = no (λ z → z)
+∣ v ⦆ ~? ⦅ w ∣ = yes tt
+∣ v ⦆ ~? ∣ v₁ ⦆ = v ~? v₁
+∣ v ⦆ ~? (tup[ i ] d) = no (λ z → z)
+∣ v ⦆ ~? left w = no (λ z → z)
+∣ v ⦆ ~? right w = no (λ z → z)
 (tup[ i ] d') ~? const x₁ = no (λ z → z)
 (tup[ i ] d') ~? (V₁ ↦ v) = no (λ z → z)
 (tup[ i ] d') ~? ν = no (λ z → z)
@@ -517,7 +518,7 @@ const x ~? (right x₁) = no (λ z → z)
 ⟨⟩ ~? ν = no (λ z → z)
 ⟨⟩ ~? ω = no (λ z → z)
 ⟨⟩ ~? ⦅ u ∣ = no (λ z → z)
-⟨⟩ ~? ∣ V ⦆ = no (λ z → z)
+⟨⟩ ~? ∣ v ⦆ = no (λ z → z)
 ⟨⟩ ~? (tup[ i ] d) = no (λ z → z)
 ⟨⟩ ~? (left v) = no (λ z → z)
 ⟨⟩ ~? (right v) = no (λ z → z)
@@ -526,7 +527,7 @@ const x ~? (right x₁) = no (λ z → z)
 ν ~? ⟨⟩ = no (λ z → z)
 ω ~? ⟨⟩ = no (λ z → z)
 ⦅ u ∣ ~? ⟨⟩ = no (λ z → z)
-∣ V ⦆ ~? ⟨⟩ = no (λ z → z)
+∣ v ⦆ ~? ⟨⟩ = no (λ z → z)
 (tup[ i ] d) ~? ⟨⟩ = no (λ z → z)
 (left v) ~? ⟨⟩ = no (λ z → z)
 (right v) ~? ⟨⟩ = no (λ z → z)

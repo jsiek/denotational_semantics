@@ -66,15 +66,16 @@ _⋆_  Λ  cons  car  cdr  ℒ  ℛ  𝒞  (proj i)  (𝒯' n)  (𝒯 n)  Λ'  �
 
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ FV ∈ List Value ] f ∈ D₁ × mem FV ⊆ D₂ × FV ≢ []
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ FV ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × mem FV ⊆ D₂ × FV ≢ []
+{- pairs are strict: each half requires the other component to be nonempty -}
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ v ∈ Value ] f ∈ D₁ × v ∈ D₂
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ v ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × v ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 car : DOp (𝒫 Value) (■ ∷ [])
 car ⟨ D , _ ⟩ f = ⦅ f ∣ ∈ D
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
-cdr ⟨ D , _ ⟩ fv = Σ[ FV ∈ List Value ] ∣ FV ⦆ ∈ D × fv ∈ mem FV
+cdr ⟨ D , _ ⟩ v = ∣ v ⦆ ∈ D
 
 nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n) → Result A ■
 nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
@@ -276,8 +277,8 @@ pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ⦅ f ∣  ⟨ FV , ⟨ f∈D , ⟨ FV⊆E , neFV ⟩ ⟩ ⟩ = ⟨ FV , ⟨ D⊆ f f∈D , ⟨ (λ d z → E⊆ d (FV⊆E d z)) , neFV ⟩ ⟩ ⟩
-  G ∣ FV ⦆ ⟨ f , ⟨ f∈D , ⟨ FV⊆E , neFV ⟩ ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , ⟨ (λ d z → E⊆ d (FV⊆E d z)) , neFV ⟩ ⟩ ⟩
+  G ⦅ f ∣ ⟨ v , ⟨ f∈D , v∈E ⟩ ⟩ = ⟨ v , ⟨ D⊆ f f∈D , E⊆ v v∈E ⟩ ⟩
+  G ∣ v ⦆ ⟨ f , ⟨ f∈D , v∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ v v∈E ⟩ ⟩
 
 pair-cong : congruent (■ ∷ ■ ∷ []) ■ pair
 pair-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
@@ -304,7 +305,7 @@ cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
-  G v ⟨ V , ⟨ V∈ , v∈V ⟩ ⟩ = ⟨ V , ⟨ D⊆ ∣ V ⦆ V∈ , v∈V ⟩ ⟩
+  G v v∈ = D⊆ ∣ v ⦆ v∈
 
 cdr-cong : congruent (■ ∷ []) ■ cdr
 cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
@@ -383,7 +384,7 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
   G ν ()
   G ω ()
   G ⦅ u ∣ ()
-  G ∣ V ⦆ ()
+  G ∣ v ⦆ ()
   G (left d) ()
   G (right d) ()
 
@@ -523,12 +524,11 @@ pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
 pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
-  G ⦅ u ∣ ⦅ u' ∣ ⟨ V , ⟨ u∈ , V⊆ ⟩ ⟩  ⟨ V' , ⟨ u'∈ , V'⊆ ⟩ ⟩ = 
+  G ⦅ u ∣ ⦅ u' ∣ ⟨ v , ⟨ u∈ , v∈ ⟩ ⟩  ⟨ v' , ⟨ u'∈ , v'∈ ⟩ ⟩ = 
     D~ u u' u∈ u'∈
-  G ⦅ u ∣ ∣ V ⦆ u∈ V∈ = tt
-  G ∣ V ⦆ ⦅ u ∣ V∈ u∈ = tt
-  G ∣ V ⦆ ∣ V' ⦆ ⟨ u , ⟨ u∈ , V⊆ ⟩ ⟩ ⟨ u' , ⟨ u'∈ , V'⊆ ⟩ ⟩ = 
-    Every⇒≈ V V' (λ a b z z₁ → E~ a b (proj₁ V⊆ a z) (proj₁ V'⊆ b z₁))
+  G ⦅ u ∣ ∣ v ⦆ u∈ v∈ = tt
+  G ∣ v ⦆ ⦅ u ∣ v∈ u∈ = tt
+  G ∣ v ⦆ ∣ v' ⦆ ⟨ u , ⟨ u∈ , v∈ ⟩ ⟩ ⟨ u' , ⟨ u'∈ , v'∈ ⟩ ⟩ = E~ v v' v∈ v'∈
 
 car-consis : consistent _~_ (■ ∷ []) ■ car
 car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
@@ -540,8 +540,7 @@ cdr-consis : consistent _~_ (■ ∷ []) ■ cdr
 cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (cdr ⟨ D , ptt ⟩) (cdr ⟨ D' , ptt ⟩)
-  G v v' ⟨ V , ⟨ V∈ , v∈V ⟩ ⟩ ⟨ V' , ⟨ V'∈ , v'∈V' ⟩ ⟩
-    = ≈⇒Every V V' (D~ ∣ V ⦆ ∣ V' ⦆ V∈ V'∈) v v' v∈V v'∈V'
+  G v v' v∈ v'∈ = D~ ∣ v ⦆ ∣ v' ⦆ v∈ v'∈
 
 ℒ-consis : consistent _~_ (■ ∷ []) ■ ℒ
 ℒ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G

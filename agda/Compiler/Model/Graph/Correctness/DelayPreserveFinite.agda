@@ -447,7 +447,7 @@ preserve-𝒯 {suc n} args ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
   tup-ne' ν ()
   tup-ne' ω ()
   tup-ne' ⦅ u ∣ ()
-  tup-ne' ∣ V ⦆ ()
+  tup-ne' ∣ v ⦆ ()
   tup-ne' (left d) ()
   tup-ne' (right d) ()
 
@@ -499,7 +499,7 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
   {- a target closure contains ⦅ ν ∣ as soon as its environment is nonempty -}
   P'-ne : Σ[ v ∈ Value ] v ⋵ V → nonempty P'
   P'-ne ⟨ v , v∈ ⟩ with T'-ne (T-ne v (V⊆ v v∈))
-  ... | ⟨ t' , t'∈ ⟩ = ⟨ ⦅ ν ∣ , ⟨ t' ∷ [] , ⟨ tt , ⟨ single⊆ t'∈ , (λ ()) ⟩ ⟩ ⟩ ⟩
+  ... | ⟨ t' , t'∈ ⟩ = ⟨ ⦅ ν ∣ , ⟨ t' , ⟨ tt , t'∈ ⟩ ⟩ ⟩
 
   {- the environments captured by the elements of V, all at once -}
   collect-env : ∀ V₀ → mem V₀ ⊆ D
@@ -576,9 +576,9 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
     {- the target closure, applied to its own environment, is the body -}
     B⊆ : ⟦ delay N ⟧' ρt ⊆ (P' ⊙ E')
     B⊆ y y∈ with tgt-continuous (delay N) ρt NE-ρt y y∈
-    ... | ⟨ Vs' , ⟨ ok , y∈fin ⟩ ⟩ =
-      ⟨ Vs' 0 , ⟨ ⟨ Vs' 1 , ⟨ ⟨ Vs' 1 , ⟨ ⟨ ⟨ y∈' , proj₁ (ok 0) ⟩ , proj₁ (ok 1) ⟩
-                                       , ⟨ proj₂ (ok 1) , proj₁ (ok 1) ⟩ ⟩ ⟩
+    ... | ⟨ Vs' , ⟨ ok , y∈fin ⟩ ⟩ with ne-mem (proj₁ (ok 1)) (proj₂ (ok 1))
+    ... | ⟨ t' , t'∈ ⟩ =
+      ⟨ Vs' 0 , ⟨ ⟨ Vs' 1 , ⟨ ⟨ t' , ⟨ ⟨ ⟨ y∈' , proj₁ (ok 0) ⟩ , proj₁ (ok 1) ⟩ , t'∈ ⟩ ⟩
                           , ⟨ cdr⊆ , proj₁ (ok 1) ⟩ ⟩ ⟩
                 , ⟨ proj₂ (ok 0) , proj₁ (ok 0) ⟩ ⟩ ⟩
       where
@@ -590,7 +590,7 @@ preserve-clos n N fvs ρ ρ' NE' ρ⊳ V (suc k) V⊆ bV = record
                            {ρ′ = mem (Vs' 0) • mem (Vs' 1) • (λ _ → Init)}
                            (delay N) env⊆ y y∈fin
       cdr⊆ : mem (Vs' 1) ⊆ Cdr P'
-      cdr⊆ d d∈ = ⟨ Vs' 1 , ⟨ ⟨ ν , ⟨ tt , ⟨ proj₂ (ok 1) , proj₁ (ok 1) ⟩ ⟩ ⟩ , d∈ ⟩ ⟩
+      cdr⊆ d d∈ = ⟨ ν , ⟨ tt , proj₂ (ok 1) d d∈ ⟩ ⟩
 
 preserve-case L M N ρ ρ' NE' ρ⊳ V k V⊆ bV
     with partition V (λ v v∈ → case-side L M N ρ (V⊆ v v∈))
