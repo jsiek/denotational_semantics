@@ -7,7 +7,10 @@ Denotational semantics based on graph and filter models
 correctness proofs, in the graph model:
 
     ISWIM --annotate--> Clos1 --enclose--> Clos2 --optimize--> Clos2
-          --concretize--> Clos3 --delay--> Clos4
+          --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5
+
+The end-to-end theorem is in
+`agda/Compiler/Model/Graph/Correctness/CompilerCorrect.agda`.
 
 It needs only the Agda standard library, and is checked with `--safe`
 (so nothing postulated is used). From the root of the repository:
