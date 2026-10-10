@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 {-
 
   Correctness of the concretize pass (Clos2 → Clos3).

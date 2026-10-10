@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 {-
 
   The Clos3 semantics is continuous: a ContinuousSemantics instance built

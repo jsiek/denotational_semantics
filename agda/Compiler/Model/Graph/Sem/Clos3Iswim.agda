@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module Compiler.Model.Graph.Sem.Clos3Iswim where
 {-
 
@@ -8,12 +9,10 @@ module Compiler.Model.Graph.Sem.Clos3Iswim where
 
 -}
 
-open import Utilities using (_iff_)
 open import Primitives
-open import ScopedTuple hiding (𝒫)
+open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import NewDOpSig
-open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
@@ -80,7 +79,7 @@ open Eq.≡-Reasoning
 𝕆-Clos3-mono case-op = 𝒞-mono
 
 
-open import Fold2 Op sig
+open import abt.Fold2 Op sig
 open import NewSemantics Op sig public
 
 instance

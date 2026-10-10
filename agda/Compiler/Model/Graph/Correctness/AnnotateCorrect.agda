@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 {-
 
   Correctness of the annotate pass (ISWIM → Clos1), and of the whole

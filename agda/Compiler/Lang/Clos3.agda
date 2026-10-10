@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 
 module Compiler.Lang.Clos3 where
 
@@ -9,15 +10,15 @@ module Compiler.Lang.Clos3 where
    and before the 'delay' pass.
 -}
 
-open import Utilities using (_iff_)
 open import Primitives
-open import ScopedTuple hiding (𝒫)
+open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import NewDOpSig
-open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
+open import abt.Sig using (Sig; ∁; ν; ■) public
+open import abt.Var using (Var) public
+open import abt.GSubst using (_•_) public
 
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
@@ -50,11 +51,7 @@ sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
 
-module ASTMod = Syntax.OpSig Op sig
-open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
-                   ⟪_⟫; _[_]; subst-zero; clear; bind; ast; cons; nil;
-                   Arg; Args;
-                   rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
-                   WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
-                   COp; CAst; CBind; ccons; tcons; append₊)
+import abt.AbstractBindingTree
+module ASTMod = abt.AbstractBindingTree Op sig
+open ASTMod using (`_; _⦅_⦆; clear; bind; ast; cons; nil; Arg; Args)
             renaming (ABT to AST) public

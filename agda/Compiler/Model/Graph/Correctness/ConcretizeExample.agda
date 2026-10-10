@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 {-
 
   An end-to-end example for concretize and delay: a closure that captures

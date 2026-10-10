@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 {-
 
   Correctness of the back half of the closure-conversion pipeline:

@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module SetsAsPredicates where
 
 open import Data.Empty renaming (⊥ to False)

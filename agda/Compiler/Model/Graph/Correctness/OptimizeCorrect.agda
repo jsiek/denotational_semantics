@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 {-
 
   Correctness of the optimize pass (Clos2 → Clos2).

@@ -1,8 +1,9 @@
+{-# OPTIONS --safe #-}
 module NewSyntaxUtil where
 
   open import Data.Nat using (ℕ; zero; suc)
 
-  open import AbstractBindingTree
+  open import abt.AbstractBindingTree
   open import NewSigUtil
 
   bind-n : ∀ {Op} {sig} {b} n → Arg Op sig b → Arg Op sig (ν-n n b)

@@ -1,7 +1,8 @@
+{-# OPTIONS --safe #-}
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; replicate)
 
-open import AbstractBindingTree
+open import abt.AbstractBindingTree
 open import NewSyntaxUtil
 open import NewSigUtil
 

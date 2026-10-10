@@ -1,8 +1,9 @@
+{-# OPTIONS --safe #-}
 open import Data.Nat using (ℕ; zero; suc)
 
 module NewSigUtil where
 
-  open import Sig public hiding (ν-n)
+  open import abt.Sig public hiding (ν-n)
   
   
   ν-n : ℕ → Sig → Sig

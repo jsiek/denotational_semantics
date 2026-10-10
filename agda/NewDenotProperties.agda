@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
 open import Data.List.Properties using (++-conicalˡ)
@@ -16,13 +17,14 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 open import Primitives
-open import ScopedTuple hiding (𝒫)
+open import abt.ScopedTuple hiding (𝒫)
 open import SetsAsPredicates
-open import Syntax hiding (⌈_⌉)
+open import abt.Sig
+open import abt.Var
+open import abt.GSubst using (_•_)
 open import NewSigUtil
 open import NewSyntaxUtil
 open import NewDOpSig
-open import Utilities using (extensionality)
 
 module NewDenotProperties where
 

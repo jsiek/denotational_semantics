@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; replicate)
 open import Relation.Nullary using (Dec; yes; no)

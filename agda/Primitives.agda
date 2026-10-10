@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; cong; cong₂; cong-app)
 open import Relation.Nullary using (¬_; Dec; yes; no)

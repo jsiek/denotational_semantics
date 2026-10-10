@@ -1,14 +1,16 @@
+{-# OPTIONS --safe #-}
 
 module NewDOpSig where
 
 open import Primitives
-open import Utilities using (extensionality)
 open import SetsAsPredicates
-open import Var
-open import Substitution using (_•_)
-open import ScopedTuple hiding (𝒫)
-open import Syntax using (Sig; ext; ν; ■; Var; _•_; ↑; id; _⨟_) public
-open import Sig
+open import abt.Var
+open import abt.GSubst using (_•_)
+open import abt.ScopedTuple hiding (𝒫)
+open import abt.Sig using (Sig; ν; ■) public
+open import abt.Var using (Var) public
+open import abt.GSubst using (_•_) public
+open import abt.Sig
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate; map)
