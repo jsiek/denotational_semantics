@@ -216,6 +216,9 @@ Like ISWIM, but each $\lambda$ is annotated with its free variables $x_1\ldots x
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
 \end{syntax}
+\[
+  \FV(\clos{x_1\ldots x_n}{y} N) = \{x_1, \ldots, x_n\} \cup (\FV(N) \setminus \{y\})
+\]
 
 \subsection{Clos2}
 
