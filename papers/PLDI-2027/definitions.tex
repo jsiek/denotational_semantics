@@ -382,6 +382,7 @@ In each pass, the clauses not shown are homomorphic.
 
 \subsection{Annotate (ISWIM $\to$ Clos1)}
 
+Annotate decides which variables each closure captures: its free variables.
 \begin{align*}
   \pass{annotate}(\lam{y} N) &= \clos{x_1\ldots x_n}{y} \pass{annotate}(N)
     \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
@@ -389,6 +390,7 @@ In each pass, the clauses not shown are homomorphic.
 
 \subsection{Enclose (Clos1 $\to$ Clos2)}
 
+Enclose closes off each closure's body, so that it sees the captured values only through its own bound names.
 \begin{align*}
   \pass{enclose}(\clos{x_1\ldots x_n}{y} N) &=
      \clos{x_1\ldots x_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
@@ -396,6 +398,7 @@ In each pass, the clauses not shown are homomorphic.
 
 \subsection{Optimize (Clos2 $\to$ Clos2)}
 
+Optimize removes the captured variables that the body does not use.
 \begin{align*}
   \pass{optimize}(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
     \clos{z_{i_1}\ldots z_{i_k}}{x_{i_1}\ldots x_{i_k}\, y} \pass{optimize}(N) \\
@@ -404,6 +407,7 @@ In each pass, the clauses not shown are homomorphic.
 
 \subsection{Concretize (Clos2 $\to$ Clos3)}
 
+Concretize stores each closure's captured values in a single tuple and turns their uses in the body into projections from that tuple.
 \[
   \varphi : \X \to \mathit{Ref}
   \qquad (\mathit{Ref} \text{ is the set of Clos3 references } r)
@@ -423,6 +427,7 @@ In each pass, the clauses not shown are homomorphic.
 
 \subsection{Delay (Clos3 $\to$ Clos4)}
 
+Delay represents each closure as an explicit pair of closed code and its environment tuple, and makes application pass the environment to the code.
 \begin{align*}
   \pass{delay}(\clos{r_1\ldots r_n}{e\,y} N) &=
     \pair{\fun{e\,y.\,\pass{delay}(N)}}{\tuple{r_1,\ldots,r_n}} \\
@@ -433,6 +438,7 @@ In each pass, the clauses not shown are homomorphic.
 
 \subsection{Globalize (Clos4 $\to$ Clos5)}
 
+Globalize hoists all code into a table of global definitions and replaces each piece of code by a reference to its entry.
 \[
   \vec{d} = d_0, \ldots, d_{m-1}
   \qquad
