@@ -386,6 +386,10 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
   G (left d) ()
   G (right d) ()
 
+{- D, provided that each of the n sets in Ds is nonempty (for strict closures) -}
+guard-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
+guard-n n Ds D w = (∀ i → nonempty (nthD Ds i)) × w ∈ D
+
 {- tuples are strict: if any component is empty, so is the tuple -}
 𝒯-strict : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) (i : Fin n)
   → nthD Ds i ⊆ ∅ → 𝒯 n Ds ⊆ ∅
