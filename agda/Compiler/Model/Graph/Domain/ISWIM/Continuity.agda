@@ -95,6 +95,29 @@ const-mono _ d d∈ = d∈
 const-cont : ∀ {D : 𝒫 Value}{ρ} → nonempty-env ρ → Cont (λ _ → D) ρ
 const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
+{- Functions, whose body B binds one variable -----------------------------------}
+
+Λ-mono-env : ∀ {B : VEnv → 𝒫 Value} → Mono B → Mono (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩)
+Λ-mono-env m ρ⊆ ν tt = tt
+Λ-mono-env m ρ⊆ (V ↦ w) ⟨ w∈ , neV ⟩ = ⟨ m (env⊆ ρ⊆) w w∈ , neV ⟩
+  where
+  env⊆ : ∀ {ρ ρ′ : VEnv} → (∀ x → ρ x ⊆ ρ′ x) → ∀ x → (mem V • ρ) x ⊆ (mem V • ρ′) x
+  env⊆ ρ⊆ zero = λ d d∈ → d∈
+  env⊆ ρ⊆ (suc x) = ρ⊆ x
+
+Λ-cont : ∀ {B : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Mono B
+  → (∀ V → V ≢ [] → Cont B (mem V • ρ))
+  → Cont (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) ρ
+Λ-cont {B} NE m c ν tt = done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) (approx-init NE) ν tt
+Λ-cont {B} NE m c (V ↦ w) ⟨ w∈ , neV ⟩ with c V neV w w∈
+... | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
+  done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) t (V ↦ w) ⟨ m env⊆ w w∈₂ , neV ⟩
+  where
+  t = approx-tail (approx ρ₂ f₂ s₂)
+  env⊆ : ∀ x → ρ₂ x ⊆ (mem V • env t) x
+  env⊆ zero = s₂ zero
+  env⊆ (suc x) = λ d d∈ → d∈
+
 {- Application ----------------------------------------------------------------}
 
 ⋆-mono-env : ∀ {E₁ E₂} → Mono E₁ → Mono E₂ → Mono (λ ρ → ⋆ ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩)

@@ -35,6 +35,7 @@ open import Compiler.Model.Graph.Sem.Clos4Iswim as S4 renaming
 open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
+open import Compiler.Model.Graph.Correctness.DelayApp using (let-app-≃)
 import Compiler.Model.Graph.Correctness.DelayReflectFinite as Reflect
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous as C4
 
@@ -346,11 +347,12 @@ delay-preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) =
 delay-preserve (app ⦅ L ,, N ,, Nil ⦆) ρ ρ' NE' ρ⊳ V k V⊆ bV
     with collect (⟦ L ⟧ ρ) (⟦ N ⟧ ρ) V V⊆
 ... | ⟨ W , ⟨ U , ⟨ W⊆L , ⟨ U⊆N , ⟨ V⊆Apps , U⊆Args ⟩ ⟩ ⟩ ⟩ ⟩ =
-  R-irr (depths W) k (Bnd-SApps (Bnd-depths W) V⊆Apps) bV
-    (Obs.app-obs (delay-preserve L ρ ρ' NE' ρ⊳ W (suc (depths W)) W⊆L (Bnd-depths W))
-       U (⟦ delay N ⟧' ρ') U⊆Args tt
-       (delay-preserve N ρ ρ' NE' ρ⊳ U (depths W) U⊆N (Bnd-SArgs (Bnd-depths W) U⊆Args))
-       V V⊆Apps)
+  R-mono k (proj₂ (let-app-≃ (delay L) (delay N) ρ'))
+    (R-irr (depths W) k (Bnd-SApps (Bnd-depths W) V⊆Apps) bV
+      (Obs.app-obs (delay-preserve L ρ ρ' NE' ρ⊳ W (suc (depths W)) W⊆L (Bnd-depths W))
+         U (⟦ delay N ⟧' ρ') U⊆Args tt
+         (delay-preserve N ρ ρ' NE' ρ⊳ U (depths W) U⊆N (Bnd-SArgs (Bnd-depths W) U⊆Args))
+         V V⊆Apps))
 
 delay-preserve (lit B c ⦅ Nil ⦆) ρ ρ' NE' ρ⊳ V k V⊆ bV =
   R-flat k V⊆ (λ v v∈ → ℬ-flat v (V⊆ v v∈))

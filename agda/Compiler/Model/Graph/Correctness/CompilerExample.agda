@@ -23,7 +23,7 @@ open import Compiler.Model.Graph.Correctness.AnnotateExample using (prog; prog-i
 open import Compiler.Model.Graph.Correctness.CompilerCorrect
 
 open import NewSyntaxUtil
-open import Data.List using ([]; _∷_)
+open import Data.List using ([]; _∷_; length)
 open import Data.Product using (proj₁)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
@@ -41,6 +41,11 @@ nested-globalized : globalize nested
   ≡ L5.program (L5.fun-ref 0 L5.⦅ Nil ⦆ ∷ L5.lit Nat 5 L5.⦅ Nil ⦆ ∷ [])
                (L5.fun-ref 1 L5.⦅ Nil ⦆)
 nested-globalized = refl
+
+{- each function's code becomes exactly one global definition: delay binds
+   the operator of an application with a let instead of copying it -}
+two-definitions : length (L5.Program.defs (compile prog)) ≡ 2
+two-definitions = refl
 
 compiled-is-7 : const {Nat} 7 ∈ ⟦ compile prog ⟧ₚ
 compiled-is-7 = proj₁ (compile-correct-const prog 7) prog-is-7

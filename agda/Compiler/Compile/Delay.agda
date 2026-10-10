@@ -11,6 +11,7 @@ module Compiler.Compile.Delay where
     renaming (clear to clear'; bind to bind'; ast to ast';
               AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
               _⦅_⦆ to _⦅_⦆')
+  open import Compiler.Lang.Rename Target.Op Target.sig using (shift)
               
 
   delay : (M : Source.AST) → Target.AST
@@ -19,10 +20,13 @@ module Compiler.Compile.Delay where
   delay (clos-op n ⦅ ! (clear (bind (bind (ast N)))) ,, FVs ⦆) = 
     pair-op ABT.⦅ (fun-op ABT.⦅ ! (clear' (bind' (bind' (ast' (delay N))))) ,, Nil ⦆) 
                ,, (tuple n ABT.⦅ del-map-args FVs ⦆) ,, Nil ⦆
-  delay (app ⦅ M ,, N ,, Nil ⦆) = 
-    app ABT.⦅ (fst-op ABT.⦅ delay M ,, Nil ⦆) ,, 
-              (snd-op ABT.⦅ delay M ,, Nil ⦆) ,, 
-              delay N ,, Nil ⦆
+  {- the closure M is computed once and bound by a let, so that both its
+     code (fst) and its environment (snd) come from the same value -}
+  delay (app ⦅ M ,, N ,, Nil ⦆) =
+    let-op ABT.⦅ delay M ,,
+                 ⟩ (app ABT.⦅ (fst-op ABT.⦅ # 0 ,, Nil ⦆) ,,
+                              (snd-op ABT.⦅ # 0 ,, Nil ⦆) ,,
+                              shift (delay N) ,, Nil ⦆) ,, Nil ⦆
   delay (lit B k ⦅ Nil ⦆) = lit B k ABT.⦅ Nil ⦆
   delay (tuple n ⦅ Ms ⦆) = tuple n ABT.⦅ del-map-args Ms ⦆
   delay (get n ⦅ M ,, Nil ⦆) = get n ABT.⦅ delay M ,, Nil ⦆

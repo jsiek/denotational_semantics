@@ -118,6 +118,18 @@ case-≃ {D} {F} {G} {D'} {F'} {G'} ⟨ lift ⟨ D⊆ , D⊇ ⟩ , ⟨ F≃ , �
     inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → D⊇ (right d) (all d d∈))
                      , proj₂ (lower (G≃ (mem (v ∷ V)) (mem (v ∷ V)) ≃-refl)) w w∈ ⟩ ⟩ ⟩
 
+{- let x = D in F x, which means (λx. F x) D -}
+let-≃ : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
+  → ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ≃ ⋆ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+let-≃ {D} {F} {D'} {F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = ⋆-≃ ⟨ G₁ , G₂ ⟩ (lower D≃)
+  where
+  G₁ : Λ ⟨ F , ptt ⟩ ⊆ Λ ⟨ F' , ptt ⟩
+  G₁ ν tt = tt
+  G₁ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ proj₁ (lower (F≃ (mem V) (mem V) ≃-refl)) w w∈ , ne ⟩
+  G₂ : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
+  G₂ ν tt = tt
+  G₂ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ proj₂ (lower (F≃ (mem V) (mem V) ≃-refl)) w w∈ , ne ⟩
+
 {- the code of a function: Λ X. Λ Y. F X Y -}
 ΛΛ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
   → Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ ≃ Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩
@@ -162,6 +174,7 @@ RB-mono (L5.get x L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 RB-mono (L5.inl-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 RB-mono (L5.inr-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 RB-mono (L5.case-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
+RB-mono (L5.let-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 
 RB-arg-mono (L5.ast M) n≤m r = RB-mono M n≤m r
 RB-arg-mono (L5.bind a) n≤m r = RB-arg-mono a n≤m r
@@ -224,6 +237,7 @@ stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel =
 stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel =
   ℛ-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
 stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = case-≃ (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = let-≃ (stab-args n T T' args ρ ρ' ag r rel)
 
 stab-arg n T T' (L5.ast M) ρ ρ' ag r rel = lift (stab n T T' M ρ ρ' ag r rel)
 stab-arg n T T' (L5.bind a) ρ ρ' ag r rel =
@@ -261,6 +275,7 @@ glob-shape (get i ⦅ args ⦆) ds = glob-shape-args args ds
 glob-shape (inl-op ⦅ args ⦆) ds = glob-shape-args args ds
 glob-shape (inr-op ⦅ args ⦆) ds = glob-shape-args args ds
 glob-shape (case-op ⦅ args ⦆) ds = glob-shape-args args ds
+glob-shape (let-op ⦅ args ⦆) ds = glob-shape-args args ds
 
 glob-shape-arg (ast M) ds = glob-shape M ds
 glob-shape-arg (bind a) ds = glob-shape-arg a ds
@@ -297,6 +312,7 @@ glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = proj-≃ i (lower (proj₁ (glob-s
 glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = ℒ-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
 glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = ℛ-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
 glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = case-≃ (glob-sem-args args ds ρ ρ' rel)
+glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = let-≃ (glob-sem-args args ds ρ ρ' rel)
 
 glob-sem-arg (ast M) ds ρ ρ' rel = lift (glob-sem M ds ρ ρ' rel)
 glob-sem-arg (bind a) ds ρ ρ' rel =

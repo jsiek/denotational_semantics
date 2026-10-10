@@ -31,6 +31,7 @@ import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4
 import Compiler.Lang.Clos5
 import Compiler.Lang.Uses
+import Compiler.Lang.Rename
 
 {- the passes -}
 import Compiler.Compile.Annotate
@@ -53,6 +54,7 @@ import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
 import Compiler.Model.Graph.Sem.Clos5Iswim
+import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
 import Compiler.Model.Graph.Correctness.AnnotateCorrect
@@ -61,6 +63,7 @@ import Compiler.Model.Graph.Correctness.OptimizeCorrect
 import Compiler.Model.Graph.Correctness.ConcretizeCorrect
 import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 import Compiler.Model.Graph.Correctness.DelayFiniteRel
+import Compiler.Model.Graph.Correctness.DelayApp
 import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserveFinite
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect

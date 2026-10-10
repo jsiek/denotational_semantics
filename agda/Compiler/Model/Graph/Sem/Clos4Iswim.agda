@@ -44,6 +44,8 @@ open Eq.≡-Reasoning
 𝕆-Clos4 inl-op = ℒ
 𝕆-Clos4 inr-op = ℛ
 𝕆-Clos4 case-op = 𝒞
+{- let x = M in N means (λx. N) M -}
+𝕆-Clos4 let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
 𝕆-Clos4-mono : 𝕆-monotone sig 𝕆-Clos4
 𝕆-Clos4-mono fun-op ⟨ F1 , _ ⟩ ⟨ F2 , _ ⟩  ⟨ F~ , _ ⟩ = 
@@ -65,6 +67,9 @@ open Eq.≡-Reasoning
 𝕆-Clos4-mono inl-op = ℒ-mono
 𝕆-Clos4-mono inr-op = ℛ-mono
 𝕆-Clos4-mono case-op = 𝒞-mono
+𝕆-Clos4-mono let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
+  ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+         ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
 𝕆-Clos4-consis : 𝕆-consistent _~_ sig 𝕆-Clos4
 𝕆-Clos4-consis fun-op ⟨ F1 , _ ⟩ ⟨ F2 , _ ⟩  ⟨ F~ , _ ⟩ = 
@@ -86,6 +91,9 @@ open Eq.≡-Reasoning
 𝕆-Clos4-consis inl-op = ℒ-consis
 𝕆-Clos4-consis inr-op = ℛ-consis
 𝕆-Clos4-consis case-op = 𝒞-consis
+𝕆-Clos4-consis let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
+  ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+           ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
 open import abt.Fold2 Op sig
 open import NewSemantics Op sig public

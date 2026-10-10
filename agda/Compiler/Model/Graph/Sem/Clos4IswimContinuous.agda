@@ -75,6 +75,12 @@ Clos4-continuous-op {case-op} {ρ} {NE} {v}
   𝒞-cont {L = λ ρ → ⟦ L ⟧ ρ} {B₁ = λ ρ → ⟦ M ⟧ ρ} {B₂ = λ ρ → ⟦ N ⟧ ρ} NE
     (term-mono L) cL (term-mono M) cM (term-mono N) cN v v∈
 
+Clos4-continuous-op {let-op} {ρ} {NE} {v} {cons (ast M) (cons (bind (ast N)) nil)} v∈
+    ⟨ cM , ⟨ cN , _ ⟩ ⟩ =
+  ⋆-cont {E₁ = λ ρ → Λ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩} {E₂ = λ ρ → ⟦ M ⟧ ρ} NE
+    (Λ-mono-env {B = λ ρ → ⟦ N ⟧ ρ} (term-mono N)) (term-mono M)
+    (Λ-cont {B = λ ρ → ⟦ N ⟧ ρ} NE (term-mono N) cN) cM v v∈
+
 Clos4-Continuous : ContinuousSemantics
 Clos4-Continuous = record
   { Sem = Clos4-Semantics
