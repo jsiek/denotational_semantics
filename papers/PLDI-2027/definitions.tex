@@ -472,9 +472,12 @@ In each pass, the clauses not shown are homomorphic.
 
 \paragraph{The logical relation.}
 Parameterized by
-$\mathit{Entry} : \FSET{\V} \to \FSET{\V} \to \V \to \mathsf{Prop}$,
-$\circledast : \SET{\V} \to \SET{\V} \to \SET{\V}$, and
-$\mathit{Good} : \FSET{\V} \to \mathsf{Prop}$.
+\begin{align*}
+\mathit{Entry}& : \FSET{\V} \to \FSET{\V} \to \V \to \mathsf{Prop}, \\
+\circledast & : \SET{\V} \to \SET{\V} \to \SET{\V}, \text{ and } \\
+\mathit{Good} &: \FSET{\V} \to \mathsf{Prop}.
+\end{align*}
+
 \begin{align*}
   \mathit{Args}(V) &= \{ u \mid \exists U_0\, w.\; \mathit{Entry}(V, U_0, w),\; u \in U_0 \} \\
   \mathit{Apps}(V, U) &= \{ w \mid \exists U_0 \NE.\; \mathit{Entry}(V, U_0, w),\; U_0 \subseteq U \} \\[1ex]
