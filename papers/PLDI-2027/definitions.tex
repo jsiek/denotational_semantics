@@ -100,8 +100,11 @@ Using names instead of de Bruijn indices changes a few definitions:
 \item \textbf{Annotate} lists $\FV(\lam{y} N)$ as the closure's free variables.
   The Agda lists the first $m$ surrounding variables, enough to cover every
   variable the body uses.
+\item \textbf{Closure free variables} are variables in Clos1 and Clos2 and
+  references in Clos3, which is all the passes produce. The Agda allows
+  arbitrary terms there.
 \item \textbf{Optimize} has no renaming parameter. It keeps $x_i$ when
-  $x_i \in \FV(N)$ or $M_i$ isn't a variable.
+  $x_i \in \FV(N)$.
 \item \textbf{Concretize}'s map has no fallback for variables past the free
   variables. Closed code can't refer to them.
 \item \textbf{Tuple indices} run from $1$ to $n$.
@@ -207,35 +210,36 @@ The source language: a call-by-value $\lambda$-calculus with constants, tuples, 
 
 \subsection{Clos1}
 
-Like ISWIM, but each $\lambda$ is annotated with terms $M_1\ldots M_n$ for its free variables; the body still refers to the surrounding variables directly.
+Like ISWIM, but each $\lambda$ is annotated with its free variables $x_1\ldots x_n$; the body still refers to the surrounding variables directly.
 \begin{syntax}
-  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{y} N \mid L\;M \mid c
+  & L, M, N &::=& x \mid \clos{x_1\ldots x_n}{y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
 \end{syntax}
 
 \subsection{Clos2}
 
-Each closure now binds the values of $M_1\ldots M_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
+Each closure now binds the values of its free variables $z_1\ldots z_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
 \begin{syntax}
-  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
+  & L, M, N &::=& x \mid \clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
 \end{syntax}
 \[
-  \FV(N) \subseteq \{x_1,\ldots,x_n,y\} \text{ in } \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N
+  \FV(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) = \{z_1, \ldots, z_n\}
 \]
 
 \subsection{Clos3}
 
-Each closure now packs $M_1\ldots M_n$ into one tuple bound to $e$, so its body reaches the free variables by projections from $e$.
+Each closure now packs references $r_1\ldots r_n$ to its free variables into one tuple bound to $e$, so its body reaches them by projections from $e$.
 \begin{syntax}
-  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{e\, y} N \mid L\;M \mid c
+  & r &::=& x \mid \prj{i} x \\
+  & L, M, N &::=& x \mid \clos{r_1\ldots r_n}{e\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
 \end{syntax}
 \[
-  \FV(N) \subseteq \{e,y\} \text{ in } \clos{M_1\ldots M_n}{e\, y} N
+  \FV(\clos{r_1\ldots r_n}{e\, y} N) = \FV(r_1) \cup \cdots \cup \FV(r_n)
 \]
 
 \subsection{Clos4}
@@ -249,7 +253,7 @@ Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, 
     \mid \Let x = M \In N
 \end{syntax}
 \[
-  \FV(N) \subseteq \{e,y\} \text{ in } \fun{e\,y.\,N}
+  \FV(\fun{e\,y.\,N}) = \emptyset
 \]
 
 \subsection{Clos5}
@@ -261,7 +265,7 @@ Like Clos4, but the code is hoisted into a program's list of global definitions 
   &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
     \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
     \mid \Let x = M \In N \\[1ex]
-  & d &::=& e\,y.\,N \qquad\qquad (\FV(N) \subseteq \{e, y\}) \\
+  & d &::=& e\,y.\,N \qquad\qquad (\FV(e\,y.\,N) = \emptyset) \\
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
@@ -302,8 +306,8 @@ defined by the common clauses below together with the clauses for $\ell$.
 \subsection{Clos1}
 
 \begin{align*}
-  \SEM{\clos{M_1\ldots M_n}{y} N}^{\mathrm{1}}\rho &=
-    \key{guard}(\SEM{M_1}^{\mathrm{1}}\rho, \ldots, \SEM{M_n}^{\mathrm{1}}\rho;\;
+  \SEM{\clos{x_1\ldots x_n}{y} N}^{\mathrm{1}}\rho &=
+    \key{guard}(\rho(x_1), \ldots, \rho(x_n);\;
        \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{1}}\ext{\rho}{y}{Y})) \\
   \SEM{L\;M}^{\mathrm{1}}\rho &= \SEM{L}^{\mathrm{1}}\rho \app \SEM{M}^{\mathrm{1}}\rho
 \end{align*}
@@ -311,19 +315,19 @@ defined by the common clauses below together with the clauses for $\ell$.
 \subsection{Clos2}
 
 \begin{align*}
-  \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}^{\mathrm{2}}\rho &=
+  \SEM{\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N}^{\mathrm{2}}\rho &=
     \key{guard}(D_1, \ldots, D_n;\;
        \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{2}}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y)))
-    \\ &\qquad\text{where } D_i = \SEM{M_i}^{\mathrm{2}}\rho \\
+    \\ &\qquad\text{where } D_i = \rho(z_i) \\
   \SEM{L\;M}^{\mathrm{2}}\rho &= \SEM{L}^{\mathrm{2}}\rho \app \SEM{M}^{\mathrm{2}}\rho
 \end{align*}
 
 \subsection{Clos3}
 
 \begin{align*}
-  \SEM{\clos{M_1\ldots M_n}{e\, y} N}^{\mathrm{3}}\rho &=
+  \SEM{\clos{r_1\ldots r_n}{e\, y} N}^{\mathrm{3}}\rho &=
     \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{3}}\rho_0(e{:=}X, y{:=}Y)))
-    \app \mathcal{T}(\SEM{M_1}^{\mathrm{3}}\rho, \ldots, \SEM{M_n}^{\mathrm{3}}\rho) \\
+    \app \mathcal{T}(\SEM{r_1}^{\mathrm{3}}\rho, \ldots, \SEM{r_n}^{\mathrm{3}}\rho) \\
   \SEM{L\;M}^{\mathrm{3}}\rho &= \SEM{L}^{\mathrm{3}}\rho \app \SEM{M}^{\mathrm{3}}\rho
 \end{align*}
 
@@ -387,23 +391,21 @@ In each pass, the clauses not shown are homomorphic.
 \subsection{Optimize (Clos2 $\to$ Clos2)}
 
 \begin{align*}
-  \pass{optimize}(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
-    \clos{M'_{i_1}\ldots M'_{i_k}}{x_{i_1}\ldots x_{i_k}\, y} \pass{optimize}(N) \\
-  \text{where } M'_i &= \pass{optimize}(M_i) \\
-  \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \text{ or } M_i \text{ is not a variable} \}
+  \pass{optimize}(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
+    \clos{z_{i_1}\ldots z_{i_k}}{x_{i_1}\ldots x_{i_k}\, y} \pass{optimize}(N) \\
+  \text{where } \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \}
 \end{align*}
 
 \subsection{Concretize (Clos2 $\to$ Clos3)}
 
 \[
-  \mathit{Ref} \ni r ::= x \mid \prj{i} x
-  \qquad\qquad
   \varphi : \X \to \mathit{Ref}
+  \qquad (\mathit{Ref} \text{ is the set of Clos3 references } r)
 \]
 \begin{align*}
   \pass{concretize}_\varphi(x) &= \varphi(x) \\
-  \pass{concretize}_\varphi(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
-    \clos{\pass{concretize}_\varphi(M_1)\ldots\pass{concretize}_\varphi(M_n)}{e\,y}
+  \pass{concretize}_\varphi(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
+    \clos{\varphi(z_1)\ldots\varphi(z_n)}{e\,y}
        \pass{concretize}_{\varphi_n}(N) \\
   \text{where } \varphi_n &= \{ y \mapsto y,\; x_1 \mapsto \prj{1} e,\; \ldots,\; x_n \mapsto \prj{n} e \},
     \quad e \text{ fresh} \\
@@ -416,8 +418,8 @@ In each pass, the clauses not shown are homomorphic.
 \subsection{Delay (Clos3 $\to$ Clos4)}
 
 \begin{align*}
-  \pass{delay}(\clos{M_1\ldots M_n}{e\,y} N) &=
-    \pair{\fun{e\,y.\,\pass{delay}(N)}}{\tuple{\pass{delay}(M_1),\ldots,\pass{delay}(M_n)}} \\
+  \pass{delay}(\clos{r_1\ldots r_n}{e\,y} N) &=
+    \pair{\fun{e\,y.\,\pass{delay}(N)}}{\tuple{r_1,\ldots,r_n}} \\
   \pass{delay}(L\;M) &=
     \Let f = \pass{delay}(L) \In (\FST f)(\SND f, \pass{delay}(M))
     \qquad f \text{ fresh}
@@ -446,8 +448,8 @@ In each pass, the clauses not shown are homomorphic.
 \subsection{Annotate and Enclose}
 
 \begin{align*}
-  \mathit{Enclosed}(M) &\iff \text{every closure in } M \text{ has the form }
-    \clos{x_1\ldots x_n}{y} N \text{ with } \FV(N) \subseteq \{x_1,\ldots,x_n,y\}
+  \mathit{Enclosed}(M) &\iff \text{every closure } \clos{x_1\ldots x_n}{y} N \text{ in } M \text{ has }
+    \FV(\clos{x_1\ldots x_n}{y} N) = \{x_1,\ldots,x_n\}
 \end{align*}
 
 \begin{lemma}[Correctness of Annotate]\label{lem:annotate}
