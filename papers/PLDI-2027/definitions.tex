@@ -207,6 +207,9 @@ The source language: a call-by-value $\lambda$-calculus with constants, tuples, 
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
 \end{syntax}
+\[
+  \FV(\lam{y} N) = \FV(N) \setminus \{y\}
+\]
 
 \subsection{Clos1}
 
