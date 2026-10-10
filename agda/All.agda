@@ -3,7 +3,7 @@
   The closure-conversion compiler and its correctness proofs.
 
     ISWIM --annotate--> Clos1 --enclose--> Clos2 --optimize--> Clos2
-          --concretize--> Clos3 --delay--> Clos4
+          --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5
 
   Check everything with
 
@@ -29,6 +29,7 @@ import Compiler.Lang.Clos1
 import Compiler.Lang.Clos2
 import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4
+import Compiler.Lang.Clos5
 import Compiler.Lang.Uses
 
 {- the passes -}
@@ -37,6 +38,7 @@ import Compiler.Compile.Enclose
 import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
 import Compiler.Compile.Delay
+import Compiler.Compile.Globalize
 
 {- the graph model and the semantics of each language -}
 import Compiler.Model.Graph.Domain.ISWIM.Domain
@@ -50,6 +52,7 @@ import Compiler.Model.Graph.Sem.Clos3IswimConsistent
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
+import Compiler.Model.Graph.Sem.Clos5Iswim
 
 {- correctness of each pass -}
 import Compiler.Model.Graph.Correctness.AnnotateCorrect
@@ -60,13 +63,16 @@ import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 import Compiler.Model.Graph.Correctness.DelayFiniteRel
 import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserveFinite
+import Compiler.Model.Graph.Correctness.GlobalizeCorrect
 
-{- the end-to-end theorems: PipelineCorrect (Clos1 → Clos4) and
-   AnnotateCorrect.compile-iswim-correct-const / -nonempty (ISWIM → Clos4) -}
+{- the end-to-end theorems: CompilerCorrect (ISWIM → Clos5), built from
+   PipelineCorrect (Clos1 → Clos4) and AnnotateCorrect (ISWIM → Clos4) -}
 import Compiler.Model.Graph.Correctness.PipelineCorrect
+import Compiler.Model.Graph.Correctness.CompilerCorrect
 
 {- examples -}
 import Compiler.Model.Graph.Correctness.DelayClosedClosureExample
 import Compiler.Model.Graph.Correctness.ConcretizeExample
 import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.AnnotateExample
+import Compiler.Model.Graph.Correctness.CompilerExample
