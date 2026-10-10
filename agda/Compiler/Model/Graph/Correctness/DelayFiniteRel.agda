@@ -10,10 +10,15 @@
   it bounds the depth of V (Bnd k V).
 
   The parameters describe function application on each side:
-  - ArgsOf V : the arguments that the functions in V are prepared to accept,
-  - AppsOf V U : the results of applying the functions in V to the list U,
+  - Entry V U₀ w : V contains a function entry U₀ ↦ w,
   - D ⊚ E : application on the other side,
   - Good U : a side condition on the arguments (consistency, for reflect).
+
+  From Entry we define, once for both sides, the batches of calls of V:
+  Calls V U W says that each w in W is the result of a function entry
+  U₀ ↦ w of V (with U₀ nonempty), and U is the union of those U₀. The
+  function clause relates the arguments U of a batch to an argument set
+  E on the other side, and the results W to the application D ⊚ E.
 
 -}
 
@@ -22,35 +27,82 @@ open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_)
+open import Data.List using (List; []; _∷_; _++_)
+open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
-open import Data.Empty using (⊥-elim)
+open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
+open import Data.Sum using (inj₁; inj₂)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
+open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
-open import Relation.Binary.PropositionalEquality using (_≢_)
+open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Compiler.Model.Graph.Correctness.DelayFiniteRel
-  (ArgsOf : List Value → 𝒫 Value)
-  (AppsOf : List Value → List Value → 𝒫 Value)
+  (Entry : List Value → List Value → Value → Set)
   (_⊚_ : 𝒫 Value → 𝒫 Value → 𝒫 Value)
   (Good : List Value → Set)
-  (ArgsOf-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → ArgsOf V₁ ⊆ ArgsOf V₂)
-  (AppsOf-⊆ : ∀ {V₁ V₂ U} → mem V₁ ⊆ mem V₂ → AppsOf V₁ U ⊆ AppsOf V₂ U)
-  (AppsOf-flat : ∀ {V U} → (∀ v → v ⋵ V → Flat v) → AppsOf V U ⊆ ∅)
+  (Entry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → Entry V₁ U₀ w → Entry V₂ U₀ w)
+  (Entry-flat : ∀ {V U₀ w} → (∀ v → v ⋵ V → Flat v) → Entry V U₀ w → ⊥)
   (⊚-mono : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊚ E) ⊆ (D₂ ⊚ E))
-  (Bnd-ArgsOf : ∀ {k V U} → Bnd (suc k) V → mem U ⊆ ArgsOf V → Bnd k U)
-  (Bnd-AppsOf : ∀ {k V U W} → Bnd (suc k) V → mem W ⊆ AppsOf V U → Bnd k W)
+  (Bnd-Entry : ∀ {k V U₀ w} → Bnd (suc k) V → Entry V U₀ w → Bnd k U₀ × depth w < k)
   where
+
+{- Batches of calls of the functions in a finite list -------------------------}
+
+{- Calls V U W: each w in W is the result of a function entry U₀ ↦ w of V,
+   and U is the union of the (nonempty) arguments U₀ of those entries -}
+infixr 5 _∷_
+data Calls (V : List Value) : List Value → List Value → Set where
+  [] : Calls V [] []
+  _∷_ : ∀ {U₀ w U W} → Entry V U₀ w × U₀ ≢ [] → Calls V U W → Calls V (U₀ ++ U) (w ∷ W)
+
+{- one call of a batch: w is the result of an entry U₀ ↦ w of V with U₀ ⊆ U -}
+record Call (V U : List Value) (w : Value) : Set where
+  constructor call
+  field
+    U₀ : List Value
+    entry : Entry V U₀ w
+    U₀≢[] : U₀ ≢ []
+    U₀⊆ : mem U₀ ⊆ mem U
+
+Calls-∈ : ∀ {V U W w} → Calls V U W → w ⋵ W → Call V U w
+Calls-∈ (_∷_ {U₀ = U₀} ⟨ e , ne ⟩ cs) (here refl) = call U₀ e ne (λ d d∈ → ∈-++⁺ˡ d∈)
+Calls-∈ (_∷_ {U₀ = U₀} _ cs) (there w∈) with Calls-∈ cs w∈
+... | call U₁ e ne U₁⊆ = call U₁ e ne (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈))
+
+Calls-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → Calls V₁ U W → Calls V₂ U W
+Calls-⊆ s [] = []
+Calls-⊆ s (⟨ e , ne ⟩ ∷ cs) = ⟨ Entry-⊆ s e , ne ⟩ ∷ Calls-⊆ s cs
+
+{- a list without function entries makes no calls -}
+Calls-none : ∀ {V U W} → (∀ {U₀ w} → Entry V U₀ w → ⊥) → Calls V U W → mem W ⊆ ∅
+Calls-none no [] _ ()
+Calls-none no (⟨ e , _ ⟩ ∷ _) _ _ = ⊥-elim (no e)
+
+Calls-flat : ∀ {V U W} → (∀ v → v ⋵ V → Flat v) → Calls V U W → mem W ⊆ ∅
+Calls-flat fl = Calls-none (Entry-flat fl)
+
+Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
+Bnd-Calls-args bV [] _ ()
+Bnd-Calls-args bV (_∷_ {U₀ = U₀} ⟨ e , _ ⟩ cs) u u∈ with ∈-++⁻ U₀ u∈
+... | inj₁ u∈U₀ = proj₁ (Bnd-Entry bV e) u u∈U₀
+... | inj₂ u∈U = Bnd-Calls-args bV cs u u∈U
+
+Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
+Bnd-Calls-apps bV [] _ ()
+Bnd-Calls-apps bV (⟨ e , _ ⟩ ∷ cs) _ (here refl) = proj₂ (Bnd-Entry bV e)
+Bnd-Calls-apps bV (_ ∷ cs) w (there w∈) = Bnd-Calls-apps bV cs w w∈
+
+{- The relation ---------------------------------------------------------------}
 
 record Obs (R : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫 Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     ω-obs : ω ⋵ V → ω ∈ D
     nonempty-obs : V ≢ [] → nonempty D
-    app-obs : ∀ U E → mem U ⊆ ArgsOf V → Good U → R U E
-            → ∀ W → mem W ⊆ AppsOf V U → R W (D ⊚ E)
+    app-obs : ∀ {U W} → Calls V U W → ∀ E → Good U → R U E → R W (D ⊚ E)
     nth-obs : ∀ {n} (i : Fin n) W → mem W ⊆ Nths i V → R W (Nth i D)
     left-obs : ∀ W → mem W ⊆ Lefts' V → R W (Lefts D)
     right-obs : ∀ W → mem W ⊆ Rights' V → R W (Rights D)
@@ -69,8 +121,7 @@ R-∅ (suc k) {V} V⊆∅ = record
   { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V⊆∅ _ ω∈)
   ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V⊆∅))
-  ; app-obs = λ U E _ _ _ W W⊆ →
-      R-∅ k (λ w w∈ → AppsOf-flat (λ v v∈ → ⊥-elim (V⊆∅ v v∈)) w (W⊆ w w∈))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-flat (λ v v∈ → ⊥-elim (V⊆∅ v v∈)) cs)
   ; nth-obs = λ i W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
   ; left-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
   ; right-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
@@ -82,7 +133,7 @@ R-flat (suc k) {V} V⊆ fl = record
   { const-obs = λ c c∈ → V⊆ _ c∈
   ; ω-obs = λ ω∈ → V⊆ ω ω∈
   ; nonempty-obs = λ ne → ne-mem ne V⊆
-  ; app-obs = λ U E _ _ _ W W⊆ → R-∅ k (λ w w∈ → AppsOf-flat fl w (W⊆ w w∈))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-flat fl cs)
   ; nth-obs = λ i W W⊆ → R-∅ k (λ d d∈ → flat-tup (fl _ (W⊆ d d∈)))
   ; left-obs = λ W W⊆ → R-∅ k (λ d d∈ → flat-left (fl _ (W⊆ d d∈)))
   ; right-obs = λ W W⊆ → R-∅ k (λ d d∈ → flat-right (fl _ (W⊆ d d∈)))
@@ -95,9 +146,7 @@ R-⊆ (suc k) {V₁}{V₂} V₁⊆V₂ r = record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
   ; ω-obs = λ ω∈ → ω-obs (V₁⊆V₂ _ ω∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
-  ; app-obs = λ U E U⊆ gU rU W W⊆ →
-      app-obs U E (λ u u∈ → ArgsOf-⊆ V₁⊆V₂ u (U⊆ u u∈)) gU rU W
-              (λ w w∈ → AppsOf-⊆ V₁⊆V₂ w (W⊆ w w∈))
+  ; app-obs = λ cs → app-obs (Calls-⊆ V₁⊆V₂ cs)
   ; nth-obs = λ i W W⊆ → nth-obs i W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   ; left-obs = λ W W⊆ → left-obs W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   ; right-obs = λ W W⊆ → right-obs W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
@@ -111,8 +160,7 @@ R-mono (suc k) D⊆ r = record
   { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
   ; ω-obs = λ ω∈ → D⊆ ω (ω-obs ω∈)
   ; nonempty-obs = λ ne → ⟨ proj₁ (nonempty-obs ne) , D⊆ _ (proj₂ (nonempty-obs ne)) ⟩
-  ; app-obs = λ U E U⊆ gU rU W W⊆ →
-      R-mono k (⊚-mono D⊆) (app-obs U E U⊆ gU rU W W⊆)
+  ; app-obs = λ cs E gU rU → R-mono k (⊚-mono D⊆) (app-obs cs E gU rU)
   ; nth-obs = λ i W W⊆ → R-mono k (λ d → D⊆ (tup[ i ] d)) (nth-obs i W W⊆)
   ; left-obs = λ W W⊆ → R-mono k (λ d → D⊆ (left d)) (left-obs W W⊆)
   ; right-obs = λ W W⊆ → R-mono k (λ d → D⊆ (right d)) (right-obs W W⊆)
@@ -127,10 +175,9 @@ R-irr (suc k) (suc j) bk bj r = record
   { const-obs = const-obs
   ; ω-obs = ω-obs
   ; nonempty-obs = nonempty-obs
-  ; app-obs = λ U E U⊆ gU rU W W⊆ →
-      R-irr k j (Bnd-AppsOf bk W⊆) (Bnd-AppsOf bj W⊆)
-        (app-obs U E U⊆ gU
-           (R-irr j k (Bnd-ArgsOf bj U⊆) (Bnd-ArgsOf bk U⊆) rU) W W⊆)
+  ; app-obs = λ cs E gU rU →
+      R-irr k j (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
+        (app-obs cs E gU (R-irr j k (Bnd-Calls-args bj cs) (Bnd-Calls-args bk cs) rU))
   ; nth-obs = λ i W W⊆ →
       R-irr k j (Bnd-Nths bk W⊆) (Bnd-Nths bj W⊆) (nth-obs i W W⊆)
   ; left-obs = λ W W⊆ →

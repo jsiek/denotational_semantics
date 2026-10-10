@@ -6,8 +6,9 @@
 
   The relation R k V' D (see DelayFiniteRel) relates a finite list V' of
   target values to a source set D. Here it is instantiated with target
-  application on the observed side (Args-of, Apps) and source application
-  (_●_) on the other side.
+  application on the observed side, whose function entries (CarEntry) are
+  the car halves of the closures in V' with free variables in the cdr
+  halves of V', and source application (_●_) on the other side.
 
   The function clause (app-obs) is the only place where the car and cdr
   halves of target closures meet, and they meet inside the finite list V',
@@ -67,33 +68,6 @@ module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 Cdrs : List Value → 𝒫 Value
 Cdrs V' fv = ∣ fv ⦆ ⋵ V'
 
-{- the arguments that the car halves of V' are prepared to accept -}
-record ArgWit (V' : List Value) (u : Value) : Set where
-  constructor argwit
-  field
-    FV U₀ : List Value
-    w : Value
-    entry∈ : ⦅ FV ↦ (U₀ ↦ w) ∣ ⋵ V'
-    u∈U₀ : u ⋵ U₀
-
-Args-of : List Value → 𝒫 Value
-Args-of V' = ArgWit V'
-
-{- the results of applying the car halves of V' to the cdr halves of V'
-   and to the arguments U' -}
-record AppWit (V' U' : List Value) (w : Value) : Set where
-  constructor appwit
-  field
-    FV U₀ : List Value
-    entry∈ : ⦅ FV ↦ (U₀ ↦ w) ∣ ⋵ V'
-    FV≢[] : FV ≢ []
-    FV⊆ : mem FV ⊆ Cdrs V'
-    U₀≢[] : U₀ ≢ []
-    U₀⊆ : mem U₀ ⊆ mem U'
-
-Apps : List Value → List Value → 𝒫 Value
-Apps V' U' = AppWit V' U'
-
 d-arg : ∀ {u FV U₀ w} → u ⋵ U₀ → suc (depth u) ≤ depth ⦅ FV ↦ (U₀ ↦ w) ∣
 d-arg {u}{FV}{U₀}{w} u∈ =
   s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n (depths U₀) (depth w))
@@ -104,37 +78,37 @@ d-app {FV}{U₀}{w} =
   s≤s (≤-trans (m≤n⊔m (depths U₀) (depth w))
       (≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (n≤1+n _))))
 
-
-Bnd-Args : ∀ {k V' U'} → Bnd (suc k) V' → mem U' ⊆ Args-of V' → Bnd k U'
-Bnd-Args bV U'⊆ u u∈ with U'⊆ u u∈
-... | argwit FV U₀ w e∈ u∈U₀ = <-shrink (d-arg {FV = FV}{w = w} u∈U₀) (bV _ e∈)
-
-Bnd-Apps : ∀ {k V' U' W'} → Bnd (suc k) V' → mem W' ⊆ Apps V' U' → Bnd k W'
-Bnd-Apps bV W'⊆ w w∈ with W'⊆ w w∈
-... | appwit FV U₀ e∈ _ _ _ _ = <-shrink (d-app {FV}{U₀}{w}) (bV _ e∈)
-
-
 Cdrs-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → Cdrs V₁ ⊆ Cdrs V₂
 Cdrs-⊆ s fv e∈ = s _ e∈
 
-Args-⊆ : ∀ {V₁ V₂} → mem V₁ ⊆ mem V₂ → Args-of V₁ ⊆ Args-of V₂
-Args-⊆ s u (argwit FV U₀ w e∈ u∈) = argwit FV U₀ w (s _ e∈) u∈
+{- the function entries of V': a car half ⦅ FV ↦ (U₀ ↦ w) ∣ in V' whose
+   free variables FV are stored in the cdr halves of V' -}
+record CarEntry (V' U₀ : List Value) (w : Value) : Set where
+  constructor car-entry
+  field
+    FV : List Value
+    car∈ : ⦅ FV ↦ (U₀ ↦ w) ∣ ⋵ V'
+    FV≢[] : FV ≢ []
+    FV⊆ : mem FV ⊆ Cdrs V'
 
-Apps-⊆ : ∀ {V₁ V₂ U₁ U₂} → mem V₁ ⊆ mem V₂ → mem U₁ ⊆ mem U₂
-       → Apps V₁ U₁ ⊆ Apps V₂ U₂
-Apps-⊆ s t w (appwit FV U₀ e∈ neFV FV⊆ neU U₀⊆) =
-  appwit FV U₀ (s _ e∈) neFV (λ d d∈ → Cdrs-⊆ s d (FV⊆ d d∈)) neU
-         (λ d d∈ → t d (U₀⊆ d d∈))
+CarEntry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → CarEntry V₁ U₀ w → CarEntry V₂ U₀ w
+CarEntry-⊆ s (car-entry FV e∈ neFV FV⊆) =
+  car-entry FV (s _ e∈) neFV (λ d d∈ → Cdrs-⊆ s d (FV⊆ d d∈))
 
+CarEntry-flat : ∀ {V' U₀ w} → (∀ v → v ⋵ V' → Flat v) → CarEntry V' U₀ w → False
+CarEntry-flat fl (car-entry FV e∈ _ _) = flat-car (fl _ e∈)
 
-Apps-flat : ∀ {V' U'} → (∀ v → v ⋵ V' → Flat v) → Apps V' U' ⊆ ∅
-Apps-flat fl w (appwit FV U₀ e∈ _ _ _ _) = flat-car (fl _ e∈)
+Bnd-CarEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → CarEntry V' U₀ w
+             → Bnd k U₀ × depth w < k
+Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV e∈ _ _) =
+  ⟨ (λ u u∈ → <-shrink (d-arg {FV = FV}{w = w} u∈) (bV _ e∈))
+  , <-shrink (d-app {FV}{U₀}{w}) (bV _ e∈) ⟩
 
 {- The relation ---------------------------------------------------------------}
 
 open import Compiler.Model.Graph.Correctness.DelayFiniteRel
-  Args-of Apps _●_ (λ U' → consis (mem U'))
-  Args-⊆ (λ s → Apps-⊆ s (λ d z → z)) Apps-flat ●-mono-l Bnd-Args Bnd-Apps
+  CarEntry _●_ (λ U' → consis (mem U'))
+  CarEntry-⊆ CarEntry-flat ●-mono-l Bnd-CarEntry
   public
 
 {- Properties of the semantics ------------------------------------------------}
@@ -198,26 +172,25 @@ collect-cdrs L' FV FV⊆ = ⟨ lmap ∣_⦆ FV , ⟨ G , (λ fv fv∈ → ∈-ma
   G d d∈ with ∈-map⁻ ∣_⦆ d∈
   ... | ⟨ fv , ⟨ fv∈ , refl ⟩ ⟩ = FV⊆ fv fv∈
 
+{- a target application V' ⊆ (car L' ● cdr L') ● N' is a batch of calls of
+   a finite W ⊆ L' on a finite U ⊆ N' -}
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ ((Car L' ● Cdr L') ● N')
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
-      mem W ⊆ L' × mem U ⊆ N' × mem V' ⊆ Apps W U × mem U ⊆ Args-of W
-collect L' N' [] _ =
-  ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩ ⟩ ⟩ ⟩
+      mem W ⊆ L' × mem U ⊆ N' × Calls W U V'
+collect L' N' [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , [] ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
     with V'⊆ w (here refl) | collect L' N' V' (λ d d∈ → V'⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ e∈L' , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
-    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , ⟨ V'⊆A , U⊆A ⟩ ⟩ ⟩ ⟩ ⟩
+    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩
     with collect-cdrs L' FV FV⊆Cdr
 ... | ⟨ C , ⟨ C⊆L' , FV⊆C ⟩ ⟩ =
-  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , ⟨ A' , UA' ⟩ ⟩ ⟩ ⟩ ⟩
+  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , ⟨ ent , neU₀ ⟩ ∷ Calls-⊆ inW cs ⟩ ⟩ ⟩ ⟩
   where
   e = ⦅ FV ↦ (U₀ ↦ w) ∣
   inC : mem C ⊆ mem (e ∷ (C ++ W))
   inC d d∈ = there (∈-++⁺ˡ d∈)
   inW : mem W ⊆ mem (e ∷ (C ++ W))
   inW d d∈ = there (∈-++⁺ʳ C d∈)
-  inU : mem U ⊆ mem (U₀ ++ U)
-  inU d d∈ = ∈-++⁺ʳ U₀ d∈
 
   W⊆' : mem (e ∷ (C ++ W)) ⊆ L'
   W⊆' _ (here refl) = e∈L'
@@ -230,16 +203,8 @@ collect L' N' (w ∷ V') V'⊆
   ... | inj₁ d∈U₀ = U₀⊆N' d d∈U₀
   ... | inj₂ d∈U = U⊆ d d∈U
 
-  A' : mem (w ∷ V') ⊆ Apps (e ∷ (C ++ W)) (U₀ ++ U)
-  A' _ (here refl) =
-    appwit FV U₀ (here refl) neFV (λ d d∈ → Cdrs-⊆ inC d (FV⊆C d d∈)) neU₀
-           (λ d d∈ → ∈-++⁺ˡ d∈)
-  A' d (there d∈) = Apps-⊆ inW inU d (V'⊆A d d∈)
-
-  UA' : mem (U₀ ++ U) ⊆ Args-of (e ∷ (C ++ W))
-  UA' d d∈ with ∈-++⁻ U₀ d∈
-  ... | inj₁ d∈U₀ = argwit FV U₀ w (here refl) d∈U₀
-  ... | inj₂ d∈U = Args-⊆ inW d (U⊆A d d∈U)
+  ent : CarEntry (e ∷ (C ++ W)) U₀ w
+  ent = car-entry FV (here refl) neFV (λ d d∈ → Cdrs-⊆ inC d (FV⊆C d d∈))
 
 {- The fundamental lemma ------------------------------------------------------}
 
@@ -282,12 +247,11 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) =
 delay-reflect (app ⦅ L ,, N ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' k V'⊆ bV
     with collect (⟦ delay L ⟧' ρ') (⟦ delay N ⟧' ρ') V'
            (λ d d∈ → proj₁ (let-app-≃ (delay L) (delay N) ρ') d (V'⊆ d d∈))
-... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , ⟨ V'⊆Apps , U⊆Args ⟩ ⟩ ⟩ ⟩ ⟩ =
-  R-irr (depths W) k (Bnd-Apps (Bnd-depths W) V'⊆Apps) bV
+... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
+  R-irr (depths W) k (Bnd-Calls-apps (Bnd-depths W) cs) bV
     (Obs.app-obs (delay-reflect L ρ' ρ NE ρ'~ ρ⊳ W (suc (depths W)) W⊆L' (Bnd-depths W))
-       U (⟦ N ⟧ ρ) U⊆Args U~
-       (delay-reflect N ρ' ρ NE ρ'~ ρ⊳ U (depths W) U⊆N' (Bnd-Args (Bnd-depths W) U⊆Args))
-       V' V'⊆Apps)
+       cs (⟦ N ⟧ ρ) U~
+       (delay-reflect N ρ' ρ NE ρ'~ ρ⊳ U (depths W) U⊆N' (Bnd-Calls-args (Bnd-depths W) cs)))
   where
   N'~ = ⟦⟧'-consis (delay N) ρ' ρ'~
   U~ : consis (mem U)
@@ -315,8 +279,7 @@ delay-reflect (inl-op ⦅ M ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V'⊆ _ ω∈)
   ; nonempty-obs = λ ne → inl-ne (ne-head ne)
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆ _ (AppWit.entry∈ (W'⊆ w w∈)))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ e → V'⊆ _ (CarEntry.car∈ e)) cs)
   ; nth-obs = λ i W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; left-obs = λ W' W'⊆ →
       delay-reflect M ρ' ρ NE ρ'~ ρ⊳ W' k (λ d d∈ → V'⊆ _ (W'⊆ d d∈)) (Bnd-Lefts bV W'⊆)
@@ -335,8 +298,7 @@ delay-reflect (inr-op ⦅ M ,, Nil ⦆) ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V'⊆ _ ω∈)
   ; nonempty-obs = λ ne → inr-ne (ne-head ne)
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆ _ (AppWit.entry∈ (W'⊆ w w∈)))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ e → V'⊆ _ (CarEntry.car∈ e)) cs)
   ; nth-obs = λ i W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; left-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; right-obs = λ W' W'⊆ →
@@ -369,8 +331,7 @@ reflect-𝒯 {suc n} args ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; ω-obs = λ ω∈ → ⊥-elim (V'⊆ _ ω∈)
   ; nonempty-obs = λ ne → tup-ne (ne-head ne)
-  ; app-obs = λ U' E _ _ _ W' W'⊆ →
-      R-∅ k (λ w w∈ → V'⊆ _ (AppWit.entry∈ (W'⊆ w w∈)))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ e → V'⊆ _ (CarEntry.car∈ e)) cs)
   ; nth-obs = nth-case
   ; left-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
   ; right-obs = λ W' W'⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W'⊆ d d∈))
@@ -442,19 +403,21 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
   Cdrs⊆T' : Cdrs V' ⊆ T'
   Cdrs⊆T' fv e∈ = cdr-pair {B = T'} (V'⊆ _ e∈)
 
-  clos-app : ∀ j → Bnd (suc j) V' → ∀ U' E → mem U' ⊆ Args-of V' → consis (mem U')
-    → R j U' E → ∀ W' → mem W' ⊆ Apps V' U' → R j W' (D ● E)
-  clos-app zero _ U' E _ _ _ W' _ = ptt
-  clos-app (suc j) bV' U' E U'⊆ U'~ rU [] _ = R-∅ (suc j) (λ _ ())
-  clos-app (suc j) bV' U' E U'⊆ U'~ rU (w ∷ W') W'⊆ = R-mono (suc j) N⊆ IH
+  clos-app : ∀ j → Bnd (suc j) V' → ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U')
+    → R j U' E → R j W' (D ● E)
+  clos-app zero _ _ E _ _ = ptt
+  clos-app (suc j) bV' [] E U'~ rU = R-∅ (suc j) (λ _ ())
+  clos-app (suc j) bV' {U'} {w ∷ W'} cs E U'~ rU = R-mono (suc j) N⊆ IH
     where
-    wit = W'⊆ w (here refl)
+    wit = Calls-∈ cs (here refl)
 
     NE-E : nonempty E
-    NE-E = Obs.nonempty-obs rU (ne-⊆ (AppWit.U₀⊆ wit) (AppWit.U₀≢[] wit))
+    NE-E = Obs.nonempty-obs rU (ne-⊆ (Call.U₀⊆ wit) (Call.U₀≢[] wit))
+
+    ent = Call.entry wit
 
     NE-T : nonempty T
-    NE-T = T-ne (ne-mem (AppWit.FV≢[] wit) (λ d d∈ → Cdrs⊆T' d (AppWit.FV⊆ wit d d∈)))
+    NE-T = T-ne (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → Cdrs⊆T' d (CarEntry.FV⊆ ent d d∈)))
 
     ρs : Env
     ρs = E • T • (λ _ → Init)
@@ -463,8 +426,8 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
     ρ'' = mem U' • Cdrs V' • (λ _ → Init)
 
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay N ⟧' ρ''
-    W⊆B x x∈ with W'⊆ x x∈
-    ... | appwit FV U₀ e∈ neFV FV⊆ neU U₀⊆ with V'⊆ _ e∈
+    W⊆B x x∈ with Calls-∈ cs x∈
+    ... | call U₀ (car-entry FV e∈ neFV FV⊆) neU U₀⊆ with V'⊆ _ e∈
     ... | ⟨ t , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
       S4.⟦⟧-monotone {ρ = mem U₀ • mem FV • (λ _ → Init)} {ρ′ = ρ''} (delay N) env⊆ x x∈B
       where
@@ -485,13 +448,13 @@ reflect-clos n N fvs ρ' ρ NE ρ'~ ρ⊳ V' (suc k) V'⊆ bV = record
 
     ρ''⊳ρs : ρ'' ⊳ₑ ρs
     ρ''⊳ρs zero Y' i Y'⊆ bY =
-      R-irr (suc j) i (Bnd-⊆ Y'⊆ (Bnd-Args bV' U'⊆)) bY (R-⊆ (suc j) Y'⊆ rU)
+      R-irr (suc j) i (Bnd-⊆ Y'⊆ (Bnd-Calls-args bV' cs)) bY (R-⊆ (suc j) Y'⊆ rU)
     ρ''⊳ρs (suc zero) Y' i Y'⊆ bY =
       reflect-𝒯 fvs ρ' ρ NE ρ'~ ρ⊳ Y' i (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈)) bY
     ρ''⊳ρs (suc (suc x)) Y' i Y'⊆ bY = R-flat i Y'⊆ (λ v v∈ → Init-flat (Y'⊆ v v∈))
 
     IH : R (suc j) (w ∷ W') (⟦ N ⟧ ρs)
-    IH = delay-reflect N ρ'' ρs NE-ρs ρ''~ ρ''⊳ρs (w ∷ W') (suc j) W⊆B (Bnd-Apps bV' W'⊆)
+    IH = delay-reflect N ρ'' ρs NE-ρs ρ''~ ρ''⊳ρs (w ∷ W') (suc j) W⊆B (Bnd-Calls-apps bV' cs)
 
     {- the beta rule for early application, using continuity -}
     N⊆ : ⟦ N ⟧ ρs ⊆ (D ● E)

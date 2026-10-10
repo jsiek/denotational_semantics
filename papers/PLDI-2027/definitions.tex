@@ -473,21 +473,22 @@ In each pass, the clauses not shown are homomorphic.
 \paragraph{The logical relation.}
 Parameterized by
 \begin{align*}
-\mathit{Args}& : \FSET{\V} \to \SET{\V}, \\
-\mathit{Apps}& : \FSET{\V} \to \FSET{\V} \to \SET{\V}, \\
+\mathit{Entry}& : \FSET{\V} \to \FSET{\V} \to \V \to \mathsf{Prop}, \\
 \circledast & : \SET{\V} \to \SET{\V} \to \SET{\V}, \text{ and } \\
 \mathit{Good} &: \FSET{\V} \to \mathsf{Prop}.
 \end{align*}
 
 \begin{align*}
+  \mathit{Calls}(V) &= \{ (U_1 \cup \cdots \cup U_n,\, \{w_1, \ldots, w_n\}) \mid
+     \mathit{Entry}(V, U_i, w_i),\; U_i \NE \text{ for } 1 \leq i \leq n \} \\[1ex]
   \Rel{0}{V}{D} &\iff \mathsf{true} \\
   \Rel{k+1}{V}{D} &\iff
   \begin{array}[t]{l}
     \forall c \in V.\; c \in D \\
     \land\; (\omega \in V \implies \omega \in D) \\
     \land\; (V \NE \implies D \NE) \\
-    \land\; \forall U\, E.\; U \subseteq \mathit{Args}(V) \land \mathit{Good}(U) \land \Rel{k}{U}{E}
-       \implies \forall W \subseteq \mathit{Apps}(V, U).\; \Rel{k}{W}{D \circledast E} \\
+    \land\; \forall (U, W) \in \mathit{Calls}(V).\; \forall E.\;
+       \mathit{Good}(U) \land \Rel{k}{U}{E} \implies \Rel{k}{W}{D \circledast E} \\
     \land\; \forall i\, W.\; W \subseteq \{ d \mid \tup{i}{d} \in V \}
        \implies \Rel{k}{W}{\key{proj}_i(D)} \\
     \land\; \forall W.\; W \subseteq \{ d \mid \Left{d} \in V \}
@@ -501,8 +502,7 @@ Parameterized by
 
 \paragraph{Preservation instance} (observations of Clos3, sets of Clos4).
 \begin{align*}
-  \mathit{Args}(V) &= \{ u \mid \exists U_0\, w.\; (U_0 \mapsto w) \in V,\; u \in U_0 \} \\
-  \mathit{Apps}(V, U) &= \{ w \mid \exists U_0 \NE.\; (U_0 \mapsto w) \in V,\; U_0 \subseteq U \} \\
+  \mathit{Entry}(V, U_0, w) &\iff (U_0 \mapsto w) \in V \\
   D \circledast E &= D \odot E \\
   \mathit{Good}(U) &= \mathsf{true}
 \end{align*}
@@ -510,9 +510,8 @@ Parameterized by
 \paragraph{Reflection instance} (observations of Clos4, sets of Clos3).
 \begin{align*}
   \mathit{Cdrs}(V') &= \{ v \mid \cdrv{v} \in V' \} \\
-  \mathit{Args}(V') &= \{ u \mid \exists F\, U_0\, w.\; \carv{F \mapsto (U_0 \mapsto w)} \in V',\; u \in U_0 \} \\
-  \mathit{Apps}(V', U') &= \{ w \mid \exists F \NE.\; \exists U_0 \NE.\;
-     \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \mathit{Cdrs}(V'),\; U_0 \subseteq U' \} \\
+  \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\;
+     \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \mathit{Cdrs}(V') \\
   D \circledast E &= D \app E \\
   \mathit{Good}(U') &= \consis(U')
 \end{align*}
