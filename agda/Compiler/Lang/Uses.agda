@@ -5,7 +5,8 @@ open import Data.Empty using (⊥)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Decidable.Core using (_⊎?_)
-open import Syntax using (Sig; ν; ■; ∁; Var)
+open import abt.Sig using (Sig; ν; ■; ∁)
+open import abt.Var using (Var)
 
 {-
   Which variables a term uses. A cleared argument (∁) cannot see the
@@ -13,7 +14,7 @@ open import Syntax using (Sig; ν; ■; ∁; Var)
 -}
 module Compiler.Lang.Uses (Op : Set) (sig : Op → List Sig) where
 
-open Syntax.OpSig Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
+open import abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
   renaming (ABT to AST; Arg to Arg; Args to Args)
 
 Uses : Var → AST → Set

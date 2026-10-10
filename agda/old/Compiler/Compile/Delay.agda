@@ -1,7 +1,7 @@
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; replicate)
 
-open import abt.AbstractBindingTree
+open import AbstractBindingTree
 open import NewSyntaxUtil
 open import NewSigUtil
 

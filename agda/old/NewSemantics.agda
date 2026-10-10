@@ -17,21 +17,20 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
+open import ScopedTuple hiding (𝒫)
 open import SetsAsPredicates
-open import abt.Sig
-open import abt.Var
-open import abt.GSubst using (_•_)
+open import Syntax hiding (⌈_⌉)
 open import NewSigUtil
 open import NewSyntaxUtil
 open import NewDOpSig
+open import Utilities using (extensionality)
 open import NewDenotProperties
 open import NewEnv
 
 module NewSemantics (Op : Set) (sig : Op → List Sig) where
 
-open import abt.AbstractBindingTree Op sig
-open import abt.Fold2 Op sig
+open Syntax.OpSig Op sig
+open import Fold2 Op sig
 
 
 {- =================== Monotonic Semantics ================================= -}

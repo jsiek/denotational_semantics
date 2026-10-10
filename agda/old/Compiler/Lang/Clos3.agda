@@ -1,23 +1,23 @@
-module Compiler.Lang.Clos2 where
+
+module Compiler.Lang.Clos3 where
 
 {-
- In this intermediate language, a closure binds its free variables
-   one at a time, around the function body:
-   clos-op n ⦅ ∁ (x₁ ... xₙ y. N) , fv₁ , ... , fvₙ ⦆
-   where N may refer only to the argument y and the free variables x₁ ... xₙ.
- This language is after the 'enclose' pass,
-   and before the 'concretize' pass.
+ In this intermediate language,
+   we perform early application of functions 
+   on a tuple that captures the local enviroment.
+ This language is after the 'uncurry' pass,
+   and before the 'delay' pass.
 -}
 
+open import Utilities using (_iff_)
 open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
+open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import NewDOpSig
+open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
-open import abt.Sig using (Sig; ∁; ν; ■) public
-open import abt.Var using (Var) public
-open import abt.GSubst using (_•_) public
+open import Syntax using (Sig; ext; ∁; ν; ■; Var; _•_; ↑; id; _⨟_) public
 
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
@@ -41,7 +41,7 @@ data Op : Set where
   case-op : Op
 
 sig : Op → List Sig
-sig (clos-op n) = ∁ (ν-n n (ν ■)) ∷ (replicate n ■)
+sig (clos-op n) = ∁ (ν (ν ■)) ∷ (replicate n ■)
 sig app = ■ ∷ ■ ∷ []
 sig (lit B k) = []
 sig (tuple n) = replicate n ■
@@ -50,7 +50,11 @@ sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
 
-import abt.AbstractBindingTree
-module ASTMod = abt.AbstractBindingTree Op sig
-open ASTMod using (`_; _⦅_⦆; clear; bind; ast; cons; nil; Arg; Args)
+module ASTMod = Syntax.OpSig Op sig
+open ASTMod using (`_; _⦅_⦆; Subst; Ctx; plug; rename; 
+                   ⟪_⟫; _[_]; subst-zero; clear; bind; ast; cons; nil;
+                   Arg; Args;
+                   rename-id; exts-cons-shift; WF; WF-Ctx; ctx-depth;
+                   WF-op; WF-cons; WF-nil; WF-ast; WF-bind; WF-var;
+                   COp; CAst; CBind; ccons; tcons; append₊)
             renaming (ABT to AST) public

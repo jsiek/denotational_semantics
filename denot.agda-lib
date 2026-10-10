@@ -1,3 +1,0 @@
-name: denot
-depend: standard-library abt sil
-include: agda step-indexed

@@ -1,10 +1,7 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 module Compiler.Model.Graph.Sem.Clos3IswimConsistent where
 {-
 
- Consistency of the Clos3 operators. The case for clos-op is still open,
- so this lives apart from Clos3Iswim to keep that module free of holes.
+ Consistency of the Clos3 operators.
 
 -}
 
@@ -16,16 +13,18 @@ open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos3
 open import Compiler.Model.Graph.Sem.Clos3Iswim
 
+open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+
 𝕆-Clos3-consis : 𝕆-consistent _~_ sig 𝕆-Clos3
-𝕆-Clos3-consis (clos-op x) = {!   !}
-  {- 𝒜-consis x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩
-    ⟨ Λ-consis ⟨ F (𝒯 x Ds) , ptt ⟩ ⟨ F' (𝒯 x Ds') , ptt ⟩
-             ⟨ F~ (𝒯 x Ds) (𝒯 x Ds') (lower (𝒯-consis x Ds Ds' Ds~)) , ptt ⟩
-    , Ds~ ⟩ -}
-  {- DComp-rest-pres (Every _~_) (replicate x ■) ■ ■ (𝒯 x) (𝒯 x)
-                  (λ T → 𝒜 x (Λ (F1 T))) ((λ T → 𝒜 x (Λ (F2 T))))
-  (𝒯-consis x) (λ T T' T~ → 𝒜-consis x (Λ (F1 T)) (Λ (F2 T'))
-                            (Λ-consis (F1 T) (F2 T') (F~ T T' (lower T~)))) -}
+{- a closure applies its code to the tuple of its free variables -}
+𝕆-Clos3-consis (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
+  ⋆-consis ⟨ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 n Ds , ptt ⟩ ⟩
+           ⟨ Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 n Ds' , ptt ⟩ ⟩
+           ⟨ Λ-consis ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩
+                      ⟨ (λ X X' X~ → Λ-consis ⟨ F X , ptt ⟩ ⟨ F' X' , ptt ⟩
+                                               ⟨ F~ X X' X~ , ptt ⟩) , ptt ⟩
+           , ⟨ 𝒯-consis n Ds Ds' Ds~ , ptt ⟩ ⟩
 𝕆-Clos3-consis app = ⋆-consis
 𝕆-Clos3-consis (lit B k) = ℬ-consis B k
 𝕆-Clos3-consis (tuple x) = 𝒯-consis x

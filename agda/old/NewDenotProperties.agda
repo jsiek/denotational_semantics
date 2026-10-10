@@ -16,14 +16,13 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
+open import ScopedTuple hiding (𝒫)
 open import SetsAsPredicates
-open import abt.Sig
-open import abt.Var
-open import abt.GSubst using (_•_)
+open import Syntax hiding (⌈_⌉)
 open import NewSigUtil
 open import NewSyntaxUtil
 open import NewDOpSig
+open import Utilities using (extensionality)
 
 module NewDenotProperties where
 

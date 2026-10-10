@@ -8,10 +8,12 @@ module Compiler.Model.Graph.Sem.Clos4Iswim where
 
 -}
 
+open import Utilities using (_iff_)
 open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
+open import ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import NewDOpSig
+open import Utilities using (extensionality)
 open import SetsAsPredicates
 open import NewDenotProperties
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
@@ -87,7 +89,7 @@ open Eq.≡-Reasoning
 𝕆-Clos4-consis inr-op = ℛ-consis
 𝕆-Clos4-consis case-op = 𝒞-consis
 
-open import abt.Fold2 Op sig
+open import Fold2 Op sig
 open import NewSemantics Op sig public
 
 instance
