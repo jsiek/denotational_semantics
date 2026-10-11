@@ -76,6 +76,7 @@ import Compiler.Model.Graph.Correctness.DelayApp
 import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserve
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect
+import Compiler.Model.Graph.Correctness.RCOCorrect
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
