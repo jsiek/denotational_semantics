@@ -943,6 +943,8 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 
 \subsection{Clos4}
 
+An application checks that its operator is code when it calls it, after
+evaluating all three operands.
 \[
 \begin{array}{rcl}
   v, f, u &::=& \funV{e\, y.\, N} \mid \pairV{v}{w} \mid \cdots \\
@@ -959,8 +961,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \ev{(\FST M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{fstK}{\kappa}} \\
   \ev{(\SND M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{sndK}{\kappa}} \\
   \ev{(\Let x = M \In N)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{letK}{x.N, \rho, \kappa}} \\[1ex]
-  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} & f = \funV{\ldots} \\
-  & \stp \wrong & \text{otherwise} \\
+  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} \\
   \rt{u}{\Kf{appE}{f, N, \rho, \kappa}} & \nxt \ev{N}{\rho}{\Kf{appA}{f, u, \kappa}} \\
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa} & f = \funV{e\, y.\, N} \\
   & \stp \wrong & \text{otherwise} \\
@@ -987,8 +988,6 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\[1ex]
-  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} & f = \codeV{k} \\
-  & \stp \wrong & \text{otherwise} \\
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
     & f = \codeV{k},\; k < m,\; d_k = e\,y.\,N \\
   & \stp \wrong & \text{otherwise}
@@ -1576,6 +1575,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
 
 \subsection{Clos4}
 
+As in the machine, the operator is checked after all three operands.
 \begin{align*}
   \EV{4}{k}\,\rho\,\fun{e\,y.\,N} &= \Ret \funV{e\, y.\, N} \\
   \EV{4}{k}\,\rho\,L(M, N) &= \EV{4}{k}\,\rho\,L \bind \APP{4}{k}\,\rho\,M\,N \\
@@ -1586,10 +1586,9 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
   \EV{4}{k}\,\rho\,(\Let x = M \In N) &=
     \EV{4}{k}\,\rho\,M \bind \lambda v.\, \EV{4}{k}\,\ext{\rho}{x}{v}\,N \\[1ex]
   \APP{4}{k}\,\rho\,M\,N\,f &=
+    \EV{4}{k}\,\rho\,M \bind \lambda u.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\,
     \begin{cases}
-      \EV{4}{k}\,\rho\,M \bind \lambda u.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\,
-        \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\}
-        & f = \funV{e\, y.\, B} \\
+      \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\} & f = \funV{e\, y.\, B} \\
       \wrong & \text{otherwise}
     \end{cases} \\
   \key{first}(v) &=
@@ -1605,10 +1604,9 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
 \begin{align*}
   \EV{\vec{d}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\[1ex]
   \APP{\vec{d}}{k}\,\rho\,M\,N\,f &=
+    \EV{\vec{d}}{k}\,\rho\,M \bind \lambda u.\, \EV{\vec{d}}{k}\,\rho\,N \bind \lambda w.\,
     \begin{cases}
-      \EV{\vec{d}}{k}\,\rho\,M \bind \lambda u.\, \EV{\vec{d}}{k}\,\rho\,N \bind \lambda w.\,
-        \CALL{\vec{d}}{k}\,j\,u\,w
-        & f = \codeV{j} \\
+      \CALL{\vec{d}}{k}\,j\,u\,w & f = \codeV{j} \\
       \wrong & \text{otherwise}
     \end{cases} \\
   \CALL{\vec{d}}{k}\,j\,u\,w &=
