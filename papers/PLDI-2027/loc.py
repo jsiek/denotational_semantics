@@ -60,6 +60,13 @@ GROUPS = [
     ('adeq', 'end to end', [O + 'Adequacy/EndToEnd.agda']),
 
     ('examples', 'examples', [G + 'Correctness/*Example.agda']),
+
+    # not in the totals: a direct backward simulation for delay, without
+    # determinism, for comparison (see loc.md)
+    ('exp', 'operational: direct backward simulation for delay — framework',
+     [O + 'Backward.agda']),
+    ('exp', 'operational: direct backward simulation for delay — delay',
+     [O + 'Correctness/DelayBackSim.agda']),
 ]
 
 
@@ -124,6 +131,12 @@ def main():
             adeq += counts[(side, name)]
             print(f'| {name} | {counts[(side, name)]} |')
     print(f'| **total** | **{adeq}** |')
+    print()
+    print('| experiment (not in the totals) | lines |')
+    print('|---|---:|')
+    for side, name, _ in GROUPS:
+        if side == 'exp':
+            print(f'| {name} | {counts[(side, name)]} |')
     print()
     print(f"Not counted: shared code ({counts[('shared', 'syntax, languages, compiler passes')]} "
           f"lines: syntax, languages, compiler passes) and examples "
