@@ -39,8 +39,8 @@ Table = ℕ → 𝒫 Value
 𝕆-Clos5 T snd-op = cdr
 𝕆-Clos5 T (tuple x) = 𝒯 x
 𝕆-Clos5 T (get x) = proj x
-𝕆-Clos5 T inl-op = ℒ
-𝕆-Clos5 T inr-op = ℛ
+𝕆-Clos5 T inl-op = inl
+𝕆-Clos5 T inr-op = inr
 𝕆-Clos5 T case-op = 𝒞
 𝕆-Clos5 T let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 

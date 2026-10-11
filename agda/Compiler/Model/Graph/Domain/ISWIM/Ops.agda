@@ -66,13 +66,13 @@ nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
 proj : ∀ {n} → Fin n → DOp (𝒫 Value) (■ ∷ [])
 proj i ⟨ D , _ ⟩ d = (tup[ i ] d) ∈ D
 
-ℒ : DOp (𝒫 Value) (■ ∷ [])
-ℒ ⟨ D , _ ⟩ (left v) = v ∈ D
-ℒ ⟨ D , _ ⟩ _ = False
+inl : DOp (𝒫 Value) (■ ∷ [])
+inl ⟨ D , _ ⟩ (left v) = v ∈ D
+inl ⟨ D , _ ⟩ _ = False
 
-ℛ : DOp (𝒫 Value) (■ ∷ [])
-ℛ ⟨ D , _ ⟩ (right v) = v ∈ D
-ℛ ⟨ D , _ ⟩ _ = False
+inr : DOp (𝒫 Value) (■ ∷ [])
+inr ⟨ D , _ ⟩ (right v) = v ∈ D
+inr ⟨ D , _ ⟩ _ = False
 
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
 𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) 
@@ -120,16 +120,16 @@ cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
   G v v∈ = D⊆ ∣ v ⦆ v∈
 
-ℒ-mono : monotone (■ ∷ []) ■ ℒ
-ℒ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
+inl-mono : monotone (■ ∷ []) ■ inl
+inl-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
-  G : ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ D' , ptt ⟩
+  G : inl ⟨ D , ptt ⟩ ⊆ inl ⟨ D' , ptt ⟩
   G (left v) v∈ = D⊆ v v∈
 
-ℛ-mono : monotone (■ ∷ []) ■ ℛ
-ℛ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
+inr-mono : monotone (■ ∷ []) ■ inr
+inr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
-  G : ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ D' , ptt ⟩
+  G : inr ⟨ D , ptt ⟩ ⊆ inr ⟨ D' , ptt ⟩
   G (right v) v∈ = D⊆ v v∈
 
 𝒞-mono : monotone (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞
@@ -219,17 +219,17 @@ cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   G : Every _~_ (cdr ⟨ D , ptt ⟩) (cdr ⟨ D' , ptt ⟩)
   G v v' v∈ v'∈ = D~ ∣ v ⦆ ∣ v' ⦆ v∈ v'∈
 
-ℒ-consis : consistent _~_ (■ ∷ []) ■ ℒ
-ℒ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
+inl-consis : consistent _~_ (■ ∷ []) ■ inl
+inl-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (ℒ ⟨ D , ptt ⟩) (ℒ ⟨ D' , ptt ⟩)
+  G : Every _~_ (inl ⟨ D , ptt ⟩) (inl ⟨ D' , ptt ⟩)
   G (left u) (left v) U∈ V∈ 
     = D~ u v U∈ V∈
 
-ℛ-consis : consistent _~_ (■ ∷ []) ■ ℛ
-ℛ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
+inr-consis : consistent _~_ (■ ∷ []) ■ inr
+inr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
-  G : Every _~_ (ℛ ⟨ D , ptt ⟩) (ℛ ⟨ D' , ptt ⟩)
+  G : Every _~_ (inr ⟨ D , ptt ⟩) (inr ⟨ D' , ptt ⟩)
   G (right u) (right v) U∈ V∈ 
     = D~ u v U∈ V∈
 

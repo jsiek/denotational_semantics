@@ -48,8 +48,8 @@ open import Relation.Binary.PropositionalEquality using (_≢_)
 𝕆-Clos5-mono T snd-op = cdr-mono
 𝕆-Clos5-mono T (tuple x) = 𝒯-mono x
 𝕆-Clos5-mono T (get x) = proj-mono x
-𝕆-Clos5-mono T inl-op = ℒ-mono
-𝕆-Clos5-mono T inr-op = ℛ-mono
+𝕆-Clos5-mono T inl-op = inl-mono
+𝕆-Clos5-mono T inr-op = inr-mono
 𝕆-Clos5-mono T case-op = 𝒞-mono
 𝕆-Clos5-mono T let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
   ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
@@ -106,9 +106,9 @@ module _ (T : Table) where
   Clos5-continuous-op {get i} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
     proj-cont i {E = λ ρ → ⟦ M ⟧[ T ] ρ} cM v v∈
   Clos5-continuous-op {inl-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
-    ℒ-cont {E = λ ρ → ⟦ M ⟧[ T ] ρ} cM v v∈
+    inl-cont {E = λ ρ → ⟦ M ⟧[ T ] ρ} cM v v∈
   Clos5-continuous-op {inr-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
-    ℛ-cont {E = λ ρ → ⟦ M ⟧[ T ] ρ} cM v v∈
+    inr-cont {E = λ ρ → ⟦ M ⟧[ T ] ρ} cM v v∈
   Clos5-continuous-op {case-op} {ρ} {NE} {v}
       {cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil))} v∈
       ⟨ cL , ⟨ cM , ⟨ cN , _ ⟩ ⟩ ⟩ =

@@ -32,7 +32,7 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_∣; ∣_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; ℒ; ℛ; 𝒞; Λ; car; cdr; pair-mono)
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
   renaming (proj to dproj; pair to dpair)
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim
@@ -43,11 +43,12 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
 open import Compiler.Operational.Machine.Common
-open import Compiler.Operational.Machine.Clos5
+open import Compiler.Operational.Machine.Clos5 hiding (inl; inr)
+import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import Compiler.Operational.Correctness.GlobalizeSim using (_⊑_; ∷-⊑)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→length)
 open import Compiler.Operational.Adequacy.Soundness
-  using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; ℒ-⊆; ℛ-⊆)
+  using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
 open import Compiler.Operational.Adequacy.Clos5WF using (WF; DefsWF)
 open import Compiler.Operational.Adequacy.Clos5Continuous using (⟦⟧[]-monotone; term-continuous)
 import Compiler.Operational.Adequacy.Clos5Common as Common
@@ -98,8 +99,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒱 (pair v w) = dpair ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
   𝒱 (const B k) = ℬ B k ptt
   𝒱 (tup vs) = 𝒯L (𝒱s vs)
-  𝒱 (inl v) = ℒ ⟨ 𝒱 v , ptt ⟩
-  𝒱 (inr v) = ℛ ⟨ 𝒱 v , ptt ⟩
+  𝒱 (T.inl v) = inl ⟨ 𝒱 v , ptt ⟩
+  𝒱 (T.inr v) = inr ⟨ 𝒱 v , ptt ⟩
 
   𝒱s [] = []
   𝒱s (v ∷ vs) = 𝒱 v ∷ 𝒱s vs
@@ -127,8 +128,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦 (sndK κ) D = 𝒦 κ (cdr ⟨ D , ptt ⟩)
   𝒦 (tupK vs Ms γ κ) D = 𝒦 κ (𝒯L (rev𝒱 vs (D ∷ ⟦ Ms ⟧* (𝓔 γ))))
   𝒦 (getK i κ) D = 𝒦 κ (dproj i ⟨ D , ptt ⟩)
-  𝒦 (inlK κ) D = 𝒦 κ (ℒ ⟨ D , ptt ⟩)
-  𝒦 (inrK κ) D = 𝒦 κ (ℛ ⟨ D , ptt ⟩)
+  𝒦 (inlK κ) D = 𝒦 κ (inl ⟨ D , ptt ⟩)
+  𝒦 (inrK κ) D = 𝒦 κ (inr ⟨ D , ptt ⟩)
   𝒦 (caseK M N γ κ) D =
     𝒦 κ (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧⁺ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
   𝒦 (letK N γ κ) D = 𝒦 κ (⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
@@ -173,8 +174,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ =
     𝒦-mono κ (𝒯L-mono _ _ (rev𝒱-mono vs (D ∷ _) (E ∷ _) ⟨ D⊆ , ⊆L-refl _ ⟩))
   𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ λ d d∈ → D⊆ _ d∈
-  𝒦-mono (inlK κ) D⊆ = 𝒦-mono κ (ℒ-⊆ D⊆)
-  𝒦-mono (inrK κ) D⊆ = 𝒦-mono κ (ℛ-⊆ D⊆)
+  𝒦-mono (inlK κ) D⊆ = 𝒦-mono κ (inl-⊆ D⊆)
+  𝒦-mono (inrK κ) D⊆ = 𝒦-mono κ (inr-⊆ D⊆)
   𝒦-mono (caseK M N γ κ) D⊆ = 𝒦-mono κ G
     where
     G : _ ⊆ _
@@ -202,9 +203,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒱-nonempty (tup (v ∷ vs)) with 𝒱-nonempty v
   ... | ⟨ d , d∈ ⟩ =
     ⟨ tup[_]_ {suc (length vs)} zero d , ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱s-nonempty vs ⟩ ⟩ ⟩
-  𝒱-nonempty (inl v) with 𝒱-nonempty v
+  𝒱-nonempty (T.inl v) with 𝒱-nonempty v
   ... | ⟨ d , d∈ ⟩ = ⟨ left d , d∈ ⟩
-  𝒱-nonempty (inr v) with 𝒱-nonempty v
+  𝒱-nonempty (T.inr v) with 𝒱-nonempty v
   ... | ⟨ d , d∈ ⟩ = ⟨ right d , d∈ ⟩
 
   𝒱s-nonempty [] = tt
@@ -324,8 +325,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (ret (pair v w) (appF M N γ κ)) ()
   step-⊆ (ret (const B k) (appF M N γ κ)) ()
   step-⊆ (ret (tup vs) (appF M N γ κ)) ()
-  step-⊆ (ret (inl v) (appF M N γ κ)) ()
-  step-⊆ (ret (inr v) (appF M N γ κ)) ()
+  step-⊆ (ret (T.inl v) (appF M N γ κ)) ()
+  step-⊆ (ret (T.inr v) (appF M N γ κ)) ()
   step-⊆ (ret e (appE f N γ κ)) refl d d∈ = d∈
   step-⊆ (ret w (appA (code k) e κ)) eq with global ds k in g
   step-⊆ (ret w (appA (code k) e κ)) refl | just B = 𝒦-mono κ (call-⊆ k w e g)
@@ -333,22 +334,22 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (ret w (appA (pair _ _) e κ)) ()
   step-⊆ (ret w (appA (const B k) e κ)) ()
   step-⊆ (ret w (appA (tup vs) e κ)) ()
-  step-⊆ (ret w (appA (inl v) e κ)) ()
-  step-⊆ (ret w (appA (inr v) e κ)) ()
+  step-⊆ (ret w (appA (T.inl v) e κ)) ()
+  step-⊆ (ret w (appA (T.inr v) e κ)) ()
   step-⊆ (ret v (pairL M γ κ)) refl d d∈ = d∈
   step-⊆ (ret w (pairR v κ)) refl d d∈ = d∈
   step-⊆ (ret (pair v w) (fstK κ)) refl = 𝒦-mono κ λ d d∈ → ⟨ proj₁ (𝒱-nonempty w) , ⟨ d∈ , proj₂ (𝒱-nonempty w) ⟩ ⟩
   step-⊆ (ret (code k) (fstK κ)) ()
   step-⊆ (ret (const B k) (fstK κ)) ()
   step-⊆ (ret (tup vs) (fstK κ)) ()
-  step-⊆ (ret (inl v) (fstK κ)) ()
-  step-⊆ (ret (inr v) (fstK κ)) ()
+  step-⊆ (ret (T.inl v) (fstK κ)) ()
+  step-⊆ (ret (T.inr v) (fstK κ)) ()
   step-⊆ (ret (pair v w) (sndK κ)) refl = 𝒦-mono κ λ d d∈ → ⟨ proj₁ (𝒱-nonempty v) , ⟨ proj₂ (𝒱-nonempty v) , d∈ ⟩ ⟩
   step-⊆ (ret (code k) (sndK κ)) ()
   step-⊆ (ret (const B k) (sndK κ)) ()
   step-⊆ (ret (tup vs) (sndK κ)) ()
-  step-⊆ (ret (inl v) (sndK κ)) ()
-  step-⊆ (ret (inr v) (sndK κ)) ()
+  step-⊆ (ret (T.inl v) (sndK κ)) ()
+  step-⊆ (ret (T.inr v) (sndK κ)) ()
   step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
   step-⊆ (ret (tup vs) (getK i κ)) eq with proj i vs in p
   step-⊆ (ret (tup vs) (getK i κ)) refl | just v =
@@ -357,17 +358,17 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (ret (code k) (getK i κ)) ()
   step-⊆ (ret (pair v w) (getK i κ)) ()
   step-⊆ (ret (const B k) (getK i κ)) ()
-  step-⊆ (ret (inl v) (getK i κ)) ()
-  step-⊆ (ret (inr v) (getK i κ)) ()
+  step-⊆ (ret (T.inl v) (getK i κ)) ()
+  step-⊆ (ret (T.inr v) (getK i κ)) ()
   step-⊆ (ret v (inlK κ)) refl d d∈ = d∈
   step-⊆ (ret v (inrK κ)) refl d d∈ = d∈
-  step-⊆ (ret (inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
+  step-⊆ (ret (T.inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
     where
     β : ⟦ M ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in M γ v d d∈
     ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
     ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩
-  step-⊆ (ret (inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
+  step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
     where
     β : ⟦ N ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in N γ v d d∈
@@ -400,9 +401,9 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
     ⟨ tup[_]_ {suc (length vs)} zero d
     , ⟨ ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , 𝒱s-nonempty (v ∷ vs) ⟩ , ⟨ length-obs-list vs , sh ⟩ ⟩ ⟩
-  𝒱-shape (inl v) with 𝒱-shape v
+  𝒱-shape (T.inl v) with 𝒱-shape v
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ d∈ , sh ⟩ ⟩
-  𝒱-shape (inr v) with 𝒱-shape v
+  𝒱-shape (T.inr v) with 𝒱-shape v
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ d∈ , sh ⟩ ⟩
 
   private
@@ -431,8 +432,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret (pair v w) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (const B k) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (tup vs) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inl v) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inr v) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inl v) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inr v) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret e (appE f N γ κ)) () ans
   halts (ret w (appA (code k) e κ)) eq ans with global ds k
   halts (ret w (appA (code k) e κ)) () ans | just B
@@ -440,22 +441,22 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret w (appA (pair _ _) e κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret w (appA (const B k) e κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret w (appA (tup vs) e κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (inl v) e κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (inr v) e κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret w (appA (T.inl v) e κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret w (appA (T.inr v) e κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret v (pairL M γ κ)) () ans
   halts (ret w (pairR v κ)) () ans
   halts (ret (pair v w) (fstK κ)) () ans
   halts (ret (code k) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (const B k) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (tup vs) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inl v) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inr v) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inl v) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inr v) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (pair v w) (sndK κ)) () ans
   halts (ret (code k) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (const B k) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (tup vs) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inl v) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inr v) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inl v) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inr v) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret v (tupK vs Ms γ κ)) () ans
   halts (ret (tup vs) (getK i κ)) eq ans with proj i vs
   halts (ret (tup vs) (getK i κ)) () ans | just v
@@ -463,12 +464,12 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret (code k) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (pair v w) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (const B k) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inl v) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (inr v) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inl v) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (T.inr v) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret v (inlK κ)) () ans
   halts (ret v (inrK κ)) () ans
-  halts (ret (inl v) (caseK M N γ κ)) () ans
-  halts (ret (inr v) (caseK M N γ κ)) () ans
+  halts (ret (T.inl v) (caseK M N γ κ)) () ans
+  halts (ret (T.inr v) (caseK M N γ κ)) () ans
   halts (ret (code k) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (pair v w) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (const B k) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)

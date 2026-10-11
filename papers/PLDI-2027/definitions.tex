@@ -47,7 +47,7 @@
 \newcommand{\ext}[3]{#1(#2{:=}#3)}
 \newcommand{\app}{\star}
 \newcommand{\NE}{\neq\emptyset}
-\newcommand{\Rel}[3]{\mathcal{R}_{#1}(#2, #3)}
+\newcommand{\Rel}[2]{\mathcal{R}(#1, #2)}
 \newcommand{\consis}{\mathit{consis}}
 \newcommand{\obseq}{\cong}
 
@@ -73,7 +73,7 @@ instead of de Bruijn indices.
   \begin{itemize}
   \item the value domain and environments, with $\rho_0(x) = \{\omega\}$;
   \item the operators $\star$, $\Lambda$, $\key{pair}$/$\key{car}$/$\key{cdr}$,
-    strict $\mathcal{T}$, $\key{proj}$, $\mathcal{L}$/$\mathcal{R}$/$\mathcal{C}$,
+    strict $\mathcal{T}$, $\key{proj}$, $\key{inl}$/$\key{inr}$/$\mathcal{C}$,
     $\key{guard}$, and $\odot$;
   \item consistency ($\sim$, $\consis$) and continuity.
   \end{itemize}
@@ -87,7 +87,7 @@ instead of de Bruijn indices.
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, the let equation, the element-wise relation $\sqsubseteq$
-    for preservation, and $\mathit{depth}$, $\mathcal{R}_k$, and $\rhd$
+    for preservation, and $\mathit{depth}$, $\mathcal{R}$, and $\rhd$
     for reflection;
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item the end-to-end theorem.
@@ -155,8 +155,8 @@ Using names instead of de Bruijn indices changes a few definitions:
   \mathcal{T}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; D_j \NE \}
      \qquad (n > 0) \\
   \key{proj}_i(D) &= \{ d \mid \tup{i}{d} \in D \} \\
-  \mathcal{L}(D) &= \{ \Left{d} \mid d \in D \} \\
-  \mathcal{R}(D) &= \{ \Right{d} \mid d \in D \} \\
+  \key{inl}(D) &= \{ \Left{d} \mid d \in D \} \\
+  \key{inr}(D) &= \{ \Right{d} \mid d \in D \} \\
   \mathcal{C}(D, F, G) &=
     \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Left{v} \in D),\; w \in F(V) \} \\
     &\cup\; \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Right{v} \in D),\; w \in G(V) \} \\
@@ -284,8 +284,8 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{c}^{\ell}\rho &= \mathcal{B}(c) \\
   \SEM{\tuple{M_1,\ldots,M_n}}^{\ell}\rho &= \mathcal{T}(\SEM{M_1}^{\ell}\rho, \ldots, \SEM{M_n}^{\ell}\rho) \\
   \SEM{\prj{i} M}^{\ell}\rho &= \key{proj}_i(\SEM{M}^{\ell}\rho) \\
-  \SEM{\inl M}^{\ell}\rho &= \mathcal{L}(\SEM{M}^{\ell}\rho) \\
-  \SEM{\inr M}^{\ell}\rho &= \mathcal{R}(\SEM{M}^{\ell}\rho) \\
+  \SEM{\inl M}^{\ell}\rho &= \key{inl}(\SEM{M}^{\ell}\rho) \\
+  \SEM{\inr M}^{\ell}\rho &= \key{inr}(\SEM{M}^{\ell}\rho) \\
   \SEM{\Case{L}{x}{M}{y}{N}}^{\ell}\rho &=
      \mathcal{C}(\SEM{L}^{\ell}\rho,\; \lambda X.\, \SEM{M}^{\ell}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}^{\ell}\ext{\rho}{y}{Y})
 \end{align*}
@@ -516,33 +516,35 @@ $v \in \SEM{M}^{\mathrm{3}}\rho$, then
 \end{align*}
 
 \paragraph{Reflection.}
-The relation $\Rel{k}{V'}{D}$ between a finite set $V'$ of Clos4 values and
-a set $D$ of Clos3 values, where $t$ ranges over the tags
-$\key{tup}_i$, $\key{left}$, and $\key{right}$.
+The relation $\Rel{V'}{D}$ between a finite set $V'$ of Clos4 values and
+a set $D$ of Clos3 values, defined by recursion on $\mathit{depth}(V')$,
+where $t$ ranges over the tags $\key{tup}_i$, $\key{left}$, and $\key{right}$,
+and $U$ and $W$ range over finite sets of Clos4 values.
 \begin{align*}
   \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\;
      \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \key{cdr}(V') \\
-  \mathit{Calls}(V') &= \{ (U_1 \cup \cdots \cup U_n,\, \{w_1, \ldots, w_n\}) \mid
-     \mathit{Entry}(V', U_i, w_i),\; U_i \NE \text{ for } 1 \leq i \leq n \} \\[1ex]
-  \Rel{0}{V'}{D} &\iff \mathsf{true} \\
-  \Rel{k+1}{V'}{D} &\iff
+  \mathit{Calls}(V', U, W) &\iff
+  \begin{array}[t]{l}
+    \forall w \in W.\; \exists U_0 \NE.\; \mathit{Entry}(V', U_0, w) \land U_0 \subseteq U \\
+    \land\; \forall u \in U.\; \exists U_0\, w.\; \mathit{Entry}(V', U_0, w) \land u \in U_0
+  \end{array} \\[1ex]
+  \Rel{V'}{D} &\iff
   \begin{array}[t]{l}
     \forall c \in V'.\; c \in D \\
     \land\; (V' \NE \implies D \NE) \\
-    \land\; \forall (U, W) \in \mathit{Calls}(V').\; \forall E.\;
-       \consis(U) \land \Rel{k}{U}{E} \implies \Rel{k}{W}{D \app E} \\
+    \land\; \forall U\, W\, E.\;
+       \mathit{Calls}(V', U, W) \land \consis(U) \land \Rel{U}{E} \implies \Rel{W}{D \app E} \\
     \land\; \forall t\, W.\; W \subseteq \{ d \mid t(d) \in V' \}
-       \implies \Rel{k}{W}{\{ d \mid t(d) \in D \}}
+       \implies \Rel{W}{\{ d \mid t(d) \in D \}}
   \end{array} \\[1ex]
-  \rho' \rhd \rho &\iff \forall x\, V'\, k.\; V' \subseteq \rho'(x) \land \mathit{depth}(V') < k
-     \implies \Rel{k}{V'}{\rho(x)}
+  \rho' \rhd \rho &\iff \forall x\, V'.\; V' \subseteq \rho'(x) \implies \Rel{V'}{\rho(x)}
 \end{align*}
 
 \begin{lemma}[Delay Reflects]\label{lem:delay-reflect}
-If $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$, $\rho' \rhd \rho$,
-$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$, and $\mathit{depth}(V') < k$, then
+If $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$, $\rho' \rhd \rho$, and
+$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$, then
 \[
-  \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
+  \Rel{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
 \end{lemma}
 

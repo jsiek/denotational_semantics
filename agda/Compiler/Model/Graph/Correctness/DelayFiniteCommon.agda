@@ -19,12 +19,12 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
+open import Data.Product using (_×_)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
+open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Compiler.Model.Graph.Correctness.DelayFiniteCommon where
 
@@ -105,12 +105,6 @@ Bnd k V = ∀ v → v ⋵ V → depth v < k
 
 Bnd-depths : ∀ V → Bnd (suc (depths V)) V
 Bnd-depths V v v∈ = s≤s (depth-⋵ v∈)
-
-Bnd-single : ∀ v → Bnd (suc (depth v)) (v ∷ [])
-Bnd-single v .v (here refl) = ≤-refl
-
-Bnd-⊆ : ∀ {k V W} → mem W ⊆ mem V → Bnd k V → Bnd k W
-Bnd-⊆ W⊆V bV w w∈ = bV w (W⊆V w w∈)
 
 <-shrink : ∀ {a b k} → suc a ≤ b → b < suc k → a < k
 <-shrink sa≤b (s≤s b≤k) = ≤-trans sa≤b b≤k

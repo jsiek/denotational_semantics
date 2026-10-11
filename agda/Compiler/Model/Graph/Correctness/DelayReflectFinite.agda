@@ -35,10 +35,11 @@ open import Compiler.Model.Graph.Correctness.DelayFiniteRel
 open import Compiler.Model.Graph.Correctness.DelayApp using (let-app-≃)
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous as C3
 
-open import Data.Nat using (ℕ; zero; suc; s≤s)
+open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; replicate) renaming (map to lmap)
 open import Data.List.Relation.Unary.Any using (here; there)
+open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻; ∈-map⁺; ∈-map⁻)
 open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
@@ -46,7 +47,7 @@ open import Data.Empty using (⊥-elim)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
+open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Level using (lift; lower)
 
 module Compiler.Model.Graph.Correctness.DelayReflectFinite where
@@ -117,12 +118,13 @@ clos-β N {T}{E} NE-T NE-E x x∈ with C3.term-continuous N _ NE x x∈
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ (L' ⊙ N')
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
       mem W ⊆ L' × mem U ⊆ N' × Calls W U V'
-collect L' N' [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , [] ⟩ ⟩ ⟩ ⟩
+collect L' N' [] _ =
+  ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
     with V'⊆ w (here refl) | collect L' N' V' (λ d d∈ → V'⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ e∈L' , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
     | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩ =
-  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , ⟨ ent , neU₀ ⟩ ∷ Calls-⊆ inW cs ⟩ ⟩ ⟩ ⟩
+  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , record { results = res ; args = arg } ⟩ ⟩ ⟩ ⟩
   where
   e = ⦅ FV ↦ (U₀ ↦ w) ∣
   C = lmap ∣_⦆ FV
@@ -144,6 +146,19 @@ collect L' N' (w ∷ V') V'⊆
   ent : CarEntry (e ∷ (C ++ W)) U₀ w
   ent = car-entry FV (here refl) neFV (λ d d∈ → there (∈-++⁺ˡ (∈-map⁺ ∣_⦆ d∈)))
 
+  res : ∀ x → x ⋵ (w ∷ V') → Σ[ U₁ ∈ List Value ]
+          CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
+  res _ (here refl) = ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ d → ∈-++⁺ˡ) ⟩ ⟩ ⟩
+  res x (there x∈) = let ⟨ U₁ , ⟨ e₁ , ⟨ ne , U₁⊆ ⟩ ⟩ ⟩ = Calls.results cs x x∈
+                     in ⟨ U₁ , ⟨ CarEntry-⊆ inW e₁ , ⟨ ne , (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈)) ⟩ ⟩ ⟩
+
+  arg : ∀ u → u ⋵ (U₀ ++ U) → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ]
+          CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
+  arg u u∈ with ∈-++⁻ U₀ u∈
+  ... | inj₁ u∈U₀ = ⟨ U₀ , ⟨ w , ⟨ ent , u∈U₀ ⟩ ⟩ ⟩
+  ... | inj₂ u∈U = let ⟨ U₁ , ⟨ x , ⟨ e₁ , u∈₁ ⟩ ⟩ ⟩ = Calls.args cs u u∈U
+                   in ⟨ U₁ , ⟨ x , ⟨ CarEntry-⊆ inW e₁ , u∈₁ ⟩ ⟩ ⟩
+
 {- The fundamental lemma ------------------------------------------------------}
 
 {- the hypotheses on the environments -}
@@ -155,51 +170,41 @@ record Envs (ρ' ρ : Env) : Set₁ where
     ρ⊳ : ρ' ⊳ₑ ρ
 
 delay-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ
-  → ∀ V' k → mem V' ⊆ ⟦ delay M ⟧' ρ' → Bnd k V' → R k V' (⟦ M ⟧ ρ)
+  → ∀ V' → mem V' ⊆ ⟦ delay M ⟧' ρ' → R V' (⟦ M ⟧ ρ)
 
 reflect-nth : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → (i : Fin n) → ∀ V' k → mem V' ⊆ nthD (⟦ del-map-args args ⟧₊' ρ') i → Bnd k V'
-  → R k V' (nthD (⟦ args ⟧₊ ρ) i)
+  → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ del-map-args args ⟧₊' ρ') i
+  → R V' (nthD (⟦ args ⟧₊ ρ) i)
 
 reflect-𝒯 : ∀ {n} (args : L3.Args (replicate n ■)) {ρ' ρ} → Envs ρ' ρ
-  → ∀ V' k → mem V' ⊆ 𝒯 n (⟦ del-map-args args ⟧₊' ρ') → Bnd k V'
-  → R k V' (𝒯 n (⟦ args ⟧₊ ρ))
+  → ∀ V' → mem V' ⊆ 𝒯 n (⟦ del-map-args args ⟧₊' ρ') → R V' (𝒯 n (⟦ args ⟧₊ ρ))
 
 {- a nonempty target set yields a nonempty source set -}
 ne-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → nonempty (⟦ delay M ⟧' ρ') → nonempty (⟦ M ⟧ ρ)
 ne-reflect M E ⟨ v , v∈ ⟩ =
-  Obs.nonempty-obs (delay-reflect M E (v ∷ []) (suc (depth v)) (single⊆ v∈) (Bnd-single v)) (λ ())
+  Obs.nonempty-obs (unfold (delay-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
 
 {- the tagged parts of a reflected set are related -}
-tag-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → ∀ t W j → mem W ⊆ Untag t (⟦ delay M ⟧' ρ')
-  → Bnd j W → R j W (Untag t (⟦ M ⟧ ρ))
-tag-reflect M E t W j W⊆ bW =
-  Obs.tag-obs (delay-reflect M E (lmap (tag t) W) (suc j) mW bm) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
+tag-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ → ∀ t W → mem W ⊆ Untag t (⟦ delay M ⟧' ρ')
+  → R W (Untag t (⟦ M ⟧ ρ))
+tag-reflect M E t W W⊆ =
+  Obs.tag-obs (unfold (delay-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
   where
   mW : mem (lmap (tag t) W) ⊆ _
   mW d d∈ with ∈-map⁻ (tag t) d∈
   ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = W⊆ x x∈
-  bm : Bnd (suc j) (lmap (tag t) W)
-  bm d d∈ with ∈-map⁻ (tag t) d∈
-  ... | ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = Bnd-tag t (bW x x∈)
-    where
-    Bnd-tag : ∀ t {x j} → depth x Data.Nat.< j → depth (tag t x) Data.Nat.< suc j
-    Bnd-tag (tupT i) = s≤s
-    Bnd-tag leftT = s≤s
-    Bnd-tag rightT = s≤s
 
 {- the cases for case-op: by consistency, all the target results come from
    the branch B on the side s of the scrutinee L -}
 reflect-branch : ∀ (s : Tag) (L B : AST) {ρ' ρ C} → Envs ρ' ρ
   → ∀ v → tag s v ∈ ⟦ delay L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
-  → ∀ V' k → mem V' ⊆ ⟦ delay B ⟧' (Untag s (⟦ delay L ⟧' ρ') • ρ') → Bnd k V' → R k V' C
-reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' k V'⊆ bV =
-  R-mono k (B⊆ NE-s) (delay-reflect B (envs NE' ρ'~' ρ⊳') V' k V'⊆ bV)
+  → ∀ V' → mem V' ⊆ ⟦ delay B ⟧' (Untag s (⟦ delay L ⟧' ρ') • ρ') → R V' C
+reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' V'⊆ =
+  R-mono (B⊆ NE-s) (delay-reflect B (envs NE' ρ'~' ρ⊳') V' V'⊆)
   where
   open Envs E
-  NE-s = Obs.nonempty-obs (tag-reflect L E s (v ∷ []) (suc (depth v)) (single⊆ sv) (Bnd-single v))
-           (λ ())
+  NE-s = Obs.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
   NE' : nonempty-env (Untag s (⟦ L ⟧ ρ) • ρ)
   NE' zero = NE-s
   NE' (suc x) = NE x
@@ -210,11 +215,11 @@ reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' k V'⊆ bV =
   ρ⊳' zero = tag-reflect L E s
   ρ⊳' (suc x) = ρ⊳ x
 
-ℒ-ne : ∀ {D : 𝒫 Value} v → v ∈ ℒ ⟨ D , ptt ⟩ → nonempty D
-ℒ-ne (left d) d∈ = ⟨ d , d∈ ⟩
+inl-ne : ∀ {D : 𝒫 Value} v → v ∈ inl ⟨ D , ptt ⟩ → nonempty D
+inl-ne (left d) d∈ = ⟨ d , d∈ ⟩
 
-ℛ-ne : ∀ {D : 𝒫 Value} v → v ∈ ℛ ⟨ D , ptt ⟩ → nonempty D
-ℛ-ne (right d) d∈ = ⟨ d , d∈ ⟩
+inr-ne : ∀ {D : 𝒫 Value} v → v ∈ inr ⟨ D , ptt ⟩ → nonempty D
+inr-ne (right d) d∈ = ⟨ d , d∈ ⟩
 
 pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
 pair-ne ⦅ f ∣ ⟨ v , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
@@ -227,52 +232,48 @@ pair-tag rightT ()
 
 delay-reflect (` x) E = Envs.ρ⊳ E x
 
-delay-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} E V' k V'⊆ bV
+delay-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} E V' V'⊆
     with collect (⟦ delay L ⟧' ρ') (⟦ delay N ⟧' ρ') V'
            (λ d d∈ → proj₁ (let-app-≃ (delay L) (delay N) ρ') d (V'⊆ d d∈))
 ... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
-  R-irr (depths W) k (Bnd-Calls-apps (Bnd-depths W) cs) bV
-    (Obs.app-obs (delay-reflect L E W (suc (depths W)) W⊆L' (Bnd-depths W))
-       cs _ U~ (delay-reflect N E U (depths W) U⊆N' (Bnd-Calls-args (Bnd-depths W) cs)))
+  Obs.app-obs (unfold (delay-reflect L E W W⊆L')) cs _ U~ (delay-reflect N E U U⊆N')
   where
   U~ : consis (mem U)
   U~ a b a∈ b∈ = ⟦⟧'-consis (delay N) ρ' (Envs.ρ'~ E) a b (U⊆N' a a∈) (U⊆N' b b∈)
 
-delay-reflect (lit B c ⦅ Nil ⦆) E V' k V'⊆ bV = R-flat k V'⊆ (λ v v∈ → ℬ-flat v (V'⊆ v v∈))
+delay-reflect (lit B c ⦅ Nil ⦆) E V' V'⊆ = R-flat V'⊆ (λ v v∈ → ℬ-flat v (V'⊆ v v∈))
 
 delay-reflect (tuple n ⦅ args ⦆) = reflect-𝒯 args
 
 delay-reflect (get i ⦅ M ,, Nil ⦆) E = tag-reflect M E (tupT i)
 
-delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' zero V'⊆ bV = ptt
-delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' (suc k) V'⊆ bV = record
+delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
-                              ⟨ m , m∈ ⟩ = ne-reflect M E (ℒ-ne v v∈) in ⟨ left m , m∈ ⟩
-  ; app-obs = λ cs _ _ _ → R-∅ k (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
+                              ⟨ m , m∈ ⟩ = ne-reflect M E (inl-ne v v∈) in ⟨ left m , m∈ ⟩
+  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
   ; tag-obs = λ { leftT W W⊆ →
-                    delay-reflect M E W k (λ d d∈ → V'⊆ _ (W⊆ d d∈)) (Bnd-Untag leftT bV W⊆)
-                ; rightT W W⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; (tupT i) W W⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
+                    delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
   }
 
-delay-reflect (inr-op ⦅ M ,, Nil ⦆) E V' zero V'⊆ bV = ptt
-delay-reflect (inr-op ⦅ M ,, Nil ⦆) E V' (suc k) V'⊆ bV = record
+delay-reflect (inr-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
-                              ⟨ m , m∈ ⟩ = ne-reflect M E (ℛ-ne v v∈) in ⟨ right m , m∈ ⟩
-  ; app-obs = λ cs _ _ _ → R-∅ k (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
+                              ⟨ m , m∈ ⟩ = ne-reflect M E (inr-ne v v∈) in ⟨ right m , m∈ ⟩
+  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
   ; tag-obs = λ { rightT W W⊆ →
-                    delay-reflect M E W k (λ d d∈ → V'⊆ _ (W⊆ d d∈)) (Bnd-Untag rightT bV W⊆)
-                ; leftT W W⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; (tupT i) W W⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
+                    delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
   }
 
-delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) E [] k V'⊆ bV = R-∅ k (λ _ ())
-delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V') k V'⊆ bV
+delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) E [] V'⊆ = R-∅ (λ _ ())
+delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V') V'⊆
     with V'⊆ w (here refl)
 ... | inj₁ ⟨ v , ⟨ _ , ⟨ allL , _ ⟩ ⟩ ⟩ =
-  reflect-branch leftT L M E v lv (λ a~b → a~b) M⊆ (w ∷ V') k V'⊆F bV
+  reflect-branch leftT L M E v lv (λ a~b → a~b) M⊆ (w ∷ V') V'⊆F
   where
   lv = allL v (here refl)
   M⊆ : nonempty (Lefts (⟦ L ⟧ ρ)) → ⟦ M ⟧ (Lefts (⟦ L ⟧ ρ) • ρ) ⊆ _
@@ -285,7 +286,7 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   ... | inj₂ ⟨ u , ⟨ U , ⟨ allR , _ ⟩ ⟩ ⟩ =
     ⊥-elim (⟦⟧'-consis (delay L) ρ' (Envs.ρ'~ E) _ _ lv (allR u (here refl)))
 ... | inj₂ ⟨ v , ⟨ _ , ⟨ allR , _ ⟩ ⟩ ⟩ =
-  reflect-branch rightT L N E v rv (λ a~b → a~b) N⊆ (w ∷ V') k V'⊆G bV
+  reflect-branch rightT L N E v rv (λ a~b → a~b) N⊆ (w ∷ V') V'⊆G
   where
   rv = allR v (here refl)
   N⊆ : nonempty (Rights (⟦ L ⟧ ρ)) → ⟦ N ⟧ (Rights (⟦ L ⟧ ρ) • ρ) ⊆ _
@@ -298,14 +299,13 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   ... | inj₁ ⟨ u , ⟨ U , ⟨ allL , _ ⟩ ⟩ ⟩ =
     ⊥-elim (⟦⟧'-consis (delay L) ρ' (Envs.ρ'~ E) _ _ rv (allL u (here refl)))
 
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) E V' zero V'⊆ bV = ptt
-delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ} E V' (suc k) V'⊆ bV =
-  record
+delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ} E V' V'⊆ =
+  fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ t , t∈ ⟩ = T-ne (let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆ in pair-ne v v∈)
                           in ⟨ ν , ⟨ t ∷ [] , ⟨ ⟨ tt , (λ ()) ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩ ⟩
-  ; app-obs = clos-app k bV
-  ; tag-obs = λ t W W⊆ → R-∅ k (λ d d∈ → pair-tag t (V'⊆ _ (W⊆ d d∈)))
+  ; app-obs = clos-app
+  ; tag-obs = λ t W W⊆ → R-∅ (λ d d∈ → pair-tag t (V'⊆ _ (W⊆ d d∈)))
   }
   where
   open Envs E
@@ -315,30 +315,27 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
 
   T-ne : nonempty T' → nonempty T
   T-ne ⟨ t' , t'∈ ⟩ =
-    Obs.nonempty-obs (reflect-𝒯 fvs E (t' ∷ []) (suc (depth t')) (single⊆ t'∈) (Bnd-single t')) (λ ())
+    Obs.nonempty-obs (unfold (reflect-𝒯 fvs E (t' ∷ []) (single⊆ t'∈))) (λ ())
 
   Cdrs⊆T' : Cdrs V' ⊆ T'
   Cdrs⊆T' fv e∈ = let ⟨ _ , ⟨ _ , fv∈ ⟩ ⟩ = V'⊆ _ e∈ in fv∈
 
-  clos-app : ∀ j → Bnd (suc j) V' → ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U')
-    → R j U' E → R j W' (D ● E)
-  clos-app zero _ _ E _ _ = ptt
-  clos-app (suc j) bV' [] E U'~ rU = R-∅ (suc j) (λ _ ())
-  clos-app (suc j) bV' {U'} {w ∷ W'} cs Es U'~ rU =
-    R-mono (suc j) (clos-β N NE-T NE-E)
-      (delay-reflect N (envs NE-ρs ρ''~ ρ''⊳ρs) (w ∷ W') (suc j) W⊆B (Bnd-Calls-apps bV' cs))
+  clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U') → R U' E → R W' (D ● E)
+  clos-app {W' = []} _ E U'~ rU = R-∅ (λ _ ())
+  clos-app {U'} {w ∷ W'} cs Es U'~ rU =
+    R-mono (clos-β N NE-T NE-E) (delay-reflect N (envs NE-ρs ρ''~ ρ''⊳ρs) (w ∷ W') W⊆B)
     where
-    wit = Calls-∈ cs (here refl)
-    ent = Call.entry wit
-    NE-E = Obs.nonempty-obs rU (ne-⊆ (Call.U₀⊆ wit) (Call.U₀≢[] wit))
+    wit = Calls.results cs w (here refl)
+    ent = proj₁ (proj₂ wit)
+    NE-E = Obs.nonempty-obs (unfold rU) (ne-⊆ (proj₂ (proj₂ (proj₂ wit))) (proj₁ (proj₂ (proj₂ wit))))
     NE-T = T-ne (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → Cdrs⊆T' d (CarEntry.FV⊆ ent d d∈)))
 
     ρ'' : Env
     ρ'' = mem U' • Cdrs V' • (λ _ → Init)
 
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay N ⟧' ρ''
-    W⊆B x x∈ with Calls-∈ cs x∈
-    ... | call U₀ (car-entry FV e∈ neFV FV⊆) neU U₀⊆ with V'⊆ _ e∈
+    W⊆B x x∈ with Calls.results cs x x∈
+    ... | ⟨ U₀ , ⟨ car-entry FV e∈ neFV FV⊆ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
     ... | ⟨ t , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
       S4.⟦⟧-monotone (delay N) (λ { zero → U₀⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z })
         x x∈B
@@ -355,24 +352,22 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
     NE-ρs (suc (suc y)) = ⟨ ω , refl ⟩
 
     ρ''⊳ρs : ρ'' ⊳ₑ (Es • T • (λ _ → Init))
-    ρ''⊳ρs zero Y' i Y'⊆ bY =
-      R-irr (suc j) i (Bnd-⊆ Y'⊆ (Bnd-Calls-args bV' cs)) bY (R-⊆ (suc j) Y'⊆ rU)
-    ρ''⊳ρs (suc zero) Y' i Y'⊆ bY = reflect-𝒯 fvs E Y' i (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈)) bY
-    ρ''⊳ρs (suc (suc x)) Y' i Y'⊆ bY = R-flat i Y'⊆ (λ v v∈ → Init-flat (Y'⊆ v v∈))
+    ρ''⊳ρs zero Y' Y'⊆ = R-⊆ Y'⊆ rU
+    ρ''⊳ρs (suc zero) Y' Y'⊆ = reflect-𝒯 fvs E Y' (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈))
+    ρ''⊳ρs (suc (suc x)) Y' Y'⊆ = R-flat Y'⊆ (λ v v∈ → Init-flat (Y'⊆ v v∈))
 
 reflect-nth (M ,, args) E zero = delay-reflect M E
 reflect-nth (M ,, args) E (suc i) = reflect-nth args E i
 
-reflect-𝒯 {zero} args E V' k V'⊆ bV =
-  R-flat k (λ v v∈ → proj₁ (𝒯0-flat v (V'⊆ v v∈))) (λ v v∈ → proj₂ (𝒯0-flat v (V'⊆ v v∈)))
-reflect-𝒯 {suc n} args E V' zero V'⊆ bV = ptt
-reflect-𝒯 {suc n} args {ρ'}{ρ} E V' (suc k) V'⊆ bV = record
+reflect-𝒯 {zero} args E V' V'⊆ =
+  R-flat (λ v v∈ → proj₁ (𝒯0-flat v (V'⊆ v v∈))) (λ v v∈ → proj₂ (𝒯0-flat v (V'⊆ v v∈)))
+reflect-𝒯 {suc n} args {ρ'}{ρ} E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → tup-ne (ne-mem ne V'⊆)
-  ; app-obs = λ cs _ _ _ → R-∅ k (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
+  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
   ; tag-obs = λ { (tupT i) W W⊆ → nth-case i W W⊆
-                ; leftT W W⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; rightT W W⊆ → R-∅ k (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
+                ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
   }
   where
   Ds' = ⟦ del-map-args args ⟧₊' ρ'
@@ -380,19 +375,19 @@ reflect-𝒯 {suc n} args {ρ'}{ρ} E V' (suc k) V'⊆ bV = record
 
   comp-ne : ∀ j → nonempty (nthD Ds' j) → nonempty (nthD Ds j)
   comp-ne j ⟨ d , d∈ ⟩ =
-    Obs.nonempty-obs (reflect-nth args E j (d ∷ []) (suc (depth d)) (single⊆ d∈) (Bnd-single d)) (λ ())
+    Obs.nonempty-obs (unfold (reflect-nth args E j (d ∷ []) (single⊆ d∈))) (λ ())
 
   tup-ne : nonempty (𝒯 (suc n) Ds') → nonempty (𝒯 (suc n) Ds)
   tup-ne ⟨ tup[ i ] d , ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ ⟩ =
     let ⟨ d₀ , d₀∈ ⟩ = comp-ne i ⟨ d , d∈ ⟩ in ⟨ tup[ i ] d₀ , ⟨ refl , ⟨ d₀∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ ⟩
 
   nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Untag (tupT i) (mem V')
-    → R k W' (Untag (tupT i) (𝒯 (suc n) Ds))
-  nth-case i [] _ = R-∅ k (λ _ ())
+    → R W' (Untag (tupT i) (𝒯 (suc n) Ds))
+  nth-case i [] _ = R-∅ (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V'⊆ _ (W'⊆ w (here refl))
   ... | ⟨ refl , ⟨ _ , ne ⟩ ⟩ =
-    R-mono k (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩)
-      (reflect-nth args E i (w ∷ W') k sub (Bnd-Untag (tupT i) bV W'⊆))
+    R-mono (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩)
+      (reflect-nth args E i (w ∷ W') sub)
     where
     sub : mem (w ∷ W') ⊆ nthD Ds' i
     sub d d∈ with V'⊆ _ (W'⊆ d d∈)
@@ -406,8 +401,7 @@ Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Init-consis) Init⊳Init
 reflect-const : ∀ (M : AST) {B} (c : base-rep B)
   → const c ∈ ⟦ delay M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀
 reflect-const M c c∈ =
-  Obs.const-obs (delay-reflect M Envs₀ (const c ∷ []) 1 (single⊆ c∈) (Bnd-single (const c)))
-    c (here refl)
+  Obs.const-obs (unfold (delay-reflect M Envs₀ (const c ∷ []) (single⊆ c∈))) c (here refl)
 
 reflect-nonempty : ∀ (M : AST) → nonempty (⟦ delay M ⟧' ρ₀) → nonempty (⟦ M ⟧ ρ₀)
 reflect-nonempty M = ne-reflect M Envs₀

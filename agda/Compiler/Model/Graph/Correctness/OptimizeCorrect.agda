@@ -26,7 +26,7 @@ open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
-  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃; 𝒞-≃)
+  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
@@ -145,9 +145,9 @@ opt-correct (tuple n ⦅ args ⦆) r ρ ρ' NE rel = 𝒯-≃ n (opt-args-correc
 opt-correct (get i ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
   proj-≃ i (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
 opt-correct (inl-op ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
-  ℒ-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
+  inl-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
 opt-correct (inr-op ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
-  ℛ-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
+  inr-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
 opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) M ⟧ (X • ρ')}
       {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) N ⟧ (X • ρ')}
