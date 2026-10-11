@@ -49,7 +49,7 @@ import Compiler.Operational.Machine.Clos4 as T
 open import Compiler.Operational.Correctness.DelaySim
   using (_≈_; clos≈; const≈; tup≈; inl≈; inr≈; EnvRel; env; Del; snd0; app-body;
          _≈k_; halt; appL; appR; tupK; closK; getK; inlK; inrK; caseK;
-         obs≈; look; env-ext; env-skip; env-body; del-args)
+         primL; primR; obs≈; prim≈; look; env-ext; env-skip; env-body; del-args)
 
 open import Compiler.Lang.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
@@ -162,6 +162,7 @@ module _ (P : AST) where
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (inrK k))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
     steps (one refl) (eval~ refl ρ (caseK ρ k))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (primL ρ k))
   sim (ret~ halt r) = stops ε (cong stop (obs≈ r))
   sim (ret~ (appL ρ k) r) = waits wait (let-body~ ρ k r)
   sim (ret~ (appR {N} r' k) r) =
@@ -180,6 +181,8 @@ module _ (P : AST) where
   sim (ret~ (caseK ρ k) (clos≈ _)) = stops ε refl
   sim (ret~ (caseK ρ k) const≈) = stops ε refl
   sim (ret~ (caseK ρ k) (tup≈ _)) = stops ε refl
+  sim (ret~ (primL ρ k) r) = steps (one refl) (eval~ refl ρ (primR r k))
+  sim (ret~ (primR {p} r k) s) = ret?-reflects (prim≈ p r s) k refl
   sim (clos-fun~ ρ k) = waits wait (clos-code~ ρ k)
   sim (clos-code~ ρ k) = waits wait (clos-env~ ρ k)
   sim (clos-env~ {r} {fvs = fvs} ρ k) =

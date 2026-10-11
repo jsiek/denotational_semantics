@@ -41,7 +41,9 @@ import Compiler.Operational.Machine.Clos5 as T
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_; length; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (just)
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (zero; suc)
 open import Data.Product using (_,_; proj₁; proj₂)
@@ -91,6 +93,9 @@ module Rel (D : Defs) where
       → S.caseK M N ρ₁ κ₁ ≈k T.caseK M' N' ρ₂ κ₂
     letK : ∀ {N N' ρ₁ ρ₂ κ₁ κ₂} → N ↝ N' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
       → S.letK N ρ₁ κ₁ ≈k T.letK N' ρ₂ κ₂
+    primL : ∀ {p M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
+      → S.primL p M ρ₁ κ₁ ≈k T.primL p M' ρ₂ κ₂
+    primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
 
   data _~_ : S.State → T.State → Set where
     eval~ : ∀ {M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
@@ -108,6 +113,14 @@ module Rel (D : Defs) where
   obs≈ (inr≈ r) = cong o-inr (obs≈ r)
   obs≈-list [] = refl
   obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+  {- related operands give related results of a primitive -}
+  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+  ... | nothing = M.nothing
+  ... | just (int n) = M.just const≈
+  ... | just (bool true) = M.just (inl≈ (tup≈ []))
+  ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
   {- a subterm, whose table is extended by the rest of the term -}
   sub↝ : ∀ {M ds ds'} → proj₂ (glob M ds) ⊑ ds' → ds' ⊑ D → M ↝ proj₁ (glob M ds)
@@ -177,6 +190,8 @@ module _ (D : Defs) (M₀ : C.AST) where
     where d₁ = proj₂ (glob L ds)
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} (glob↝ p) ρ κ) =
     steps (one refl) (eval~ (sub↝ (glob-grows N _) p) ρ (letK (glob↝ p) ρ κ))
+  sim (eval~ {M = prim q ⦅ L ,, M ,, Nil ⦆} (glob↝ p) ρ κ) =
+    steps (one refl) (eval~ (sub↝ (glob-grows M _) p) ρ (primL (glob↝ p) ρ κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(fun≈ _) (appF gM gN ρ κ)) = steps (one refl) (eval~ gM ρ (appE r gN ρ κ))
   sim (ret~ (pair≈ _ _) (appF gM gN ρ κ)) = stops refl
@@ -223,6 +238,8 @@ module _ (D : Defs) (M₀ : C.AST) where
   sim (ret~ const≈ (caseK _ _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ _ κ)) = stops refl
   sim (ret~ r (letK gN ρ κ)) = steps (one refl) (eval~ gN (r ∷ ρ) κ)
+  sim (ret~ r (primL gM ρ κ)) = steps (one refl) (eval~ gM ρ (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
 
 {- The end theorem -------------------------------------------------------------}
 

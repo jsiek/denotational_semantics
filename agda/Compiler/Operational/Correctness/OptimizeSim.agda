@@ -50,7 +50,9 @@ open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_; map; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Maybe using (just)
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _≤_; z≤n; s≤s)
 open import Data.Nat.Properties
@@ -133,6 +135,9 @@ data _≈k_ : T.Cont → T.Cont → Set where
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → T.inrK κ₁ ≈k T.inrK κ₂
   caseK : ∀ {M N r ρ₁ ρ₂ κ₁ κ₂} → Agree M 1 r ρ₁ ρ₂ → Agree N 1 r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → T.caseK M N ρ₁ κ₁ ≈k T.caseK (optimize (ext-var r) M) (optimize (ext-var r) N) ρ₂ κ₂
+  primL : ∀ {p M r ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → T.primL p M ρ₁ κ₁ ≈k T.primL p (optimize r M) ρ₂ κ₂
+  primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → T.primR p v κ₁ ≈k T.primR p w κ₂
 
 {- Match i s₁ s₂, with index i. While the source evaluates a dropped free
    variable (drop-eval~, drop-ret~), the target waits at the state that
@@ -163,6 +168,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (T.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- Agreement of environments ---------------------------------------------------}
 
@@ -313,6 +326,9 @@ module _ (P : AST) where
         (caseK (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag)
                (agree-sub (λ w → proj₁ (proj₂ (proj₂ w))) (λ x u → inj₂ (inj₂ (inj₁ u))) ag)
                κ))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
+    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
+                            (primL (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
@@ -339,6 +355,8 @@ module _ (P : AST) where
   sim (ret~ (clo≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
+  sim (ret~ r (primL ag κ)) = steps (one refl) (eval~ ag (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
   {- the stuttering steps: the target does not move -}
   sim (drop-eval~ N₀ bld nu e ag κ) rewrite e = stutters (n<1+n _) (drop-ret~ N₀ bld nu ag κ)
   sim (drop-ret~ {v = v} {fvs = fvs} N₀ bld nu ag κ)

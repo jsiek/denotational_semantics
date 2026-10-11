@@ -13,7 +13,8 @@
 
 module Compiler.Operational.Machine.Clos3 where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
+open import Compiler.Lang.Prim using (Prim; Out; int; bool)
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos3
 open import Compiler.Observation
@@ -22,7 +23,8 @@ open import Compiler.Lang.ListUtil
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Bool using (true; false)
+open import Data.Maybe using (Maybe; just; nothing; map)
 
 data Val : Set where
   clos : AST → Val → Val                {- body, tuple of its free variables -}
@@ -44,6 +46,8 @@ data Cont : Set where
   inlK : Cont → Cont
   inrK : Cont → Cont
   caseK : AST → AST → Env → Cont → Cont
+  primL : Prim → AST → Env → Cont → Cont   {- evaluating the first operand -}
+  primR : Prim → Val → Cont → Cont         {- evaluating the second operand -}
 
 data State : Set where
   eval : AST → Env → Cont → State
@@ -63,6 +67,16 @@ tuple-next : List Val → List AST → Env → Cont → State
 tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ
 tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
+{- the value of a primitive's result -}
+out : Out → Val
+out (int n) = const Int n
+out (bool true) = inl (tup [])
+out (bool false) = inr (tup [])
+
+{- a primitive on two values, if they are integers -}
+prim? : Prim → Val → Val → Maybe Val
+prim? p v w = map out (δ? p (obs v) (obs w))
+
 ret? : Maybe Val → Cont → Next State
 ret? (just v) κ = next (ret v κ)
 ret? nothing κ = stop o-wrong
@@ -78,6 +92,7 @@ step (eval (get i ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (getK i κ))
 step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
 step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
+step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (ret v halt) = stop (obs v)
 step (ret v@(clos _ _) (appL M ρ κ)) = next (eval M ρ (appR v κ))
 step (ret _ (appL M ρ κ)) = stop o-wrong
@@ -92,6 +107,8 @@ step (ret v (inrK κ)) = next (ret (inr v) κ)
 step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret _ (caseK M N ρ κ)) = stop o-wrong
+step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p v κ))
+step (ret w (primR p v κ)) = ret? (prim? p v w) κ
 
 sem : AST → Machine
 sem M = machine State step (eval M [] halt)
