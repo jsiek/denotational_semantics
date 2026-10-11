@@ -64,9 +64,7 @@ import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserve
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect
 
-{- the end-to-end theorems: CompilerCorrect (ISWIM → Clos5), built from
-   PipelineCorrect (ISWIM → Clos4) -}
-import Compiler.Model.Graph.Correctness.PipelineCorrect
+{- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
 
 {- examples -}

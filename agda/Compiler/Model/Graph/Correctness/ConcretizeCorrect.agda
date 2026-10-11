@@ -33,12 +33,8 @@ open import Compiler.Model.Graph.Sem.Clos2Iswim as S2
 open import Compiler.Model.Graph.Sem.Clos3Iswim as S3 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous as C3
-import Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open import Compiler.Compile.Concretize
-open import Compiler.Compile.Delay using (delay)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
-open import Compiler.Model.Graph.Correctness.DelayPreserve
-  using (delay-correct-const; delay-correct-nonempty)
 open import NewEnv using (nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)
@@ -306,32 +302,7 @@ body-correct n (suc k) (bind a) = body-correct n k a
 args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ rel zero = concretize-correct M φ ρ₂ ρ₃ rel
 args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ rel (suc i) = args-correct args φ ρ₂ ρ₃ rel i
 
-{- The end theorems -----------------------------------------------------------}
+{- The end theorem ------------------------------------------------------------}
 
 concretize-correct-closed : ∀ (M : AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ concretize-program M ⟧' ρ₀
 concretize-correct-closed M = concretize-correct M var ρ₀ ρ₀ (λ x → ≃-refl)
-
-{- Composed with the delay pass: for a closed program, Clos2 → Clos3 → Clos4
-   preserves and reflects the constants it produces and whether it produces
-   anything at all. -}
-compile-correct-const : ∀ (M : AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ S4.⟦ delay (concretize-program M) ⟧ ρ₀)
-  × (const c ∈ S4.⟦ delay (concretize-program M) ⟧ ρ₀ → const c ∈ ⟦ M ⟧ ρ₀)
-compile-correct-const M c =
-  ⟨ (λ c∈ → proj₁ (delay-correct-const M' c) (proj₁ M≃ _ c∈))
-  , (λ c∈ → proj₂ M≃ _ (proj₂ (delay-correct-const M' c) c∈)) ⟩
-  where
-  M' = concretize-program M
-  M≃ = concretize-correct-closed M
-
-compile-correct-nonempty : ∀ (M : AST)
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty (S4.⟦ delay (concretize-program M) ⟧ ρ₀))
-  × (nonempty (S4.⟦ delay (concretize-program M) ⟧ ρ₀) → nonempty (⟦ M ⟧ ρ₀))
-compile-correct-nonempty M =
-  ⟨ (λ ne → proj₁ (delay-correct-nonempty M')
-                ⟨ proj₁ ne , proj₁ M≃ _ (proj₂ ne) ⟩)
-  , (λ ne → let ne' = proj₂ (delay-correct-nonempty M') ne in
-            ⟨ proj₁ ne' , proj₂ M≃ _ (proj₂ ne') ⟩) ⟩
-  where
-  M' = concretize-program M
-  M≃ = concretize-correct-closed M

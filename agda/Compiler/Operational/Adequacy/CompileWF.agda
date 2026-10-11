@@ -37,8 +37,7 @@ open import Compiler.Compile.Enclose using (enclose)
 import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (glob-shape)
-open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile)
-import Compiler.Model.Graph.Correctness.PipelineCorrect as PC
+open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile; compile₄)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; replicate)
@@ -309,7 +308,7 @@ module Glob where
 compile-wf : ∀ M → Closed M → F.WF (compile M)
 compile-wf M c = proj₂ G , proj₂ (glob-shape M₄ []) , proj₁ G
   where
-  M₄ = PC.compile M
+  M₄ = compile₄ M
   M₂ = enclose M
   M₂' = Compiler.Compile.Optimize.optimize-program M₂
   M₃ = Compiler.Compile.Concretize.concretize-program M₂'

@@ -1,13 +1,13 @@
 {-
 
-  An end-to-end example for the pipeline ISWIM → Clos4:
+  An end-to-end example for the whole compiler ISWIM → Clos5:
 
     (λx. λy. λz. x) 7 3 1
 
   enclose captures the first two surrounding variables, x and y, in the
   innermost closure, because its body uses x; but the body does not use
   y, so optimize stops capturing it. The program produces 7 in ISWIM, so
-  by the pipeline theorem the compiled Clos4 program produces 7 as well.
+  by the end theorem the compiled Clos5 program produces 7 as well.
 
 -}
 
@@ -19,12 +19,12 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
-import Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open import Compiler.Compile.Enclose using (enclose)
 open import Compiler.Compile.Optimize using (optimize-program)
 import Compiler.Lang.Clos2 as L2
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
-open import Compiler.Model.Graph.Correctness.PipelineCorrect
+open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
+open import Compiler.Model.Graph.Correctness.CompilerCorrect
 
 open import Data.Nat using (ℕ)
 open import Data.List using ([]; _∷_)
@@ -73,6 +73,6 @@ prog-is-7 =
         , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
     , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
 
-{- after enclose, optimize, concretize and delay, the program still produces 7 -}
-compiled-is-7 : const {Nat} 7 ∈ S4.⟦ compile prog ⟧ ρ₀
-compiled-is-7 = proj₁ (pipeline-correct-const prog 7) prog-is-7
+{- after the whole compiler, the program still produces 7 -}
+compiled-is-7 : const {Nat} 7 ∈ ⟦ compile prog ⟧ₚ
+compiled-is-7 = proj₁ (compile-correct-const prog 7) prog-is-7
