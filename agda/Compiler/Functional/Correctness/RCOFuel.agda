@@ -28,7 +28,8 @@
   the variables must be in scope (Scoped): main in the empty
   environment, and each definition in its two parameters. The only fact
   about scoping that the proof uses is that a variable operand is bound
-  (Bnd). The compiler produces such programs (compile-wf).
+  (Bnd). The compiler produces such programs (compile-scoped,
+  Compile/PipelineScope.agda).
 
 -}
 
@@ -50,8 +51,7 @@ import Compiler.Functional.Interp.ISWIM as ISWIM
 open import Compiler.Compile.Pipeline using (compile; compile-mon)
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Functional.Correctness.CompilerFuel using (compile-correct)
-import Compiler.Operational.Adequacy.Clos5WF as F
-open import Compiler.Operational.Adequacy.CompileWF using (compile-wf)
+open import Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
 
 open import Data.List using (List; []; _∷_; _++_; _∷ʳ_; [_]; length; replicate; reverse; map)
 open import Data.List.Properties using (++-assoc)
@@ -404,20 +404,10 @@ rco-run ds wds ck ρ M w = ≡→rel (run≈ ds wds ck ρ M w)
 
 {- The end theorem: for every scoped Clos5 program --------------------------------}
 
-{- main in the empty environment, each definition in its two parameters -}
-Scoped : Program → Set
-Scoped (program ds M) = All (WS 2) ds × WS 0 M
-
 rco-correct : ∀ P → Scoped P → Equivalent (T.sem P) (T.sem (rco-program P))
 rco-correct (program ds M) (wds , w) = clocked _≡_ (cong obs) λ ck → rco-run ds wds ck [] M w
 
 {- The whole compiler, into monadic normal form ------------------------------------}
 
 compile-mon-correct : ∀ M → Closed M → Equivalent (ISWIM.sem M) (T.sem (compile-mon M))
-compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M) (scoped {compile M} (compile-wf M c)))
-  where
-  defs : ∀ {ds} → F.DefsWF ds → All (WS 2) ds
-  defs {[]} _ = []
-  defs {N ∷ Ns} ((_ , w) , d) = w ∷ defs d
-  scoped : ∀ {P} → F.WF P → Scoped P
-  scoped (d , _ , w) = defs d , w
+compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M) (compile-scoped M c))

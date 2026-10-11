@@ -14,7 +14,7 @@
     (RB, part of DefsWF), the two agree (stab, from GlobalizeCorrect).
     Calling code k on an environment e and an argument w (two β steps at
     once) needs the continuity of the Clos5 semantics in the two
-    parameters (Clos5Continuous.agda).
+    parameters (Model/Graph/Sem/Clos5IswimContinuous.agda).
 
   * Values must denote nonempty sets (for β, for pairs and for tuples),
     but a reference past the end of the table denotes ∅. So states are
@@ -51,7 +51,7 @@ open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→le
 open import Compiler.Operational.Adequacy.Soundness
   using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
 open import Compiler.Operational.Adequacy.Clos5WF using (WF; DefsWF)
-open import Compiler.Operational.Adequacy.Clos5Continuous using (⟦⟧[]-monotone; term-continuous)
+open import Compiler.Model.Graph.Sem.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous)
 import Compiler.Operational.Adequacy.Clos5Common as Common
 
 open import Data.Bool using (true; false)

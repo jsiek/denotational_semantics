@@ -20,7 +20,7 @@ module Compiler.Operational.Adequacy.Clos5WF where
 
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (RB) public
-open import Compiler.Operational.Adequacy.Scope Op sig public
+open import Compiler.Lang.ScopeRename Op sig public
 
 open import Data.List using (List; []; _∷_; length)
 open import Data.Product using (_×_)

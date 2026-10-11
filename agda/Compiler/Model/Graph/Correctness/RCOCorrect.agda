@@ -32,7 +32,7 @@ open import Compiler.Compile.RCO
   using (rco; rco-args; rco-program; atom?; lift; case-on)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ; init)
-open import Compiler.Operational.Adequacy.Clos5Continuous
+open import Compiler.Model.Graph.Sem.Clos5IswimContinuous
   using (Clos5-Semantics; ⟦⟧[]-monotone; term-continuous)
 import Compiler.Model.Graph.Sem.RenameSem Op sig as RenameSem
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect

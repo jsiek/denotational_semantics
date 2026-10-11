@@ -36,7 +36,7 @@
   the source before a later complex operand runs, but in the target only
   after it; e.g. app (x, M, 0) with x unbound goes wrong, while
   let y = M in app (x, y, 0) diverges when M does. The compiler produces
-  well-scoped programs (compile-wf, Adequacy/CompileWF.agda).
+  well-scoped programs (compile-scoped, Compile/PipelineScope.agda).
 
 -}
 
@@ -61,8 +61,7 @@ import Compiler.Operational.Machine.ISWIM as S
 open import Compiler.Compile.Pipeline using (compile; compile-mon)
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Operational.Correctness.CompilerSim using (compile-correct)
-open import Compiler.Operational.Adequacy.CompileWF using (compile-wf)
-import Compiler.Operational.Adequacy.Clos5WF as F
+open import Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)
@@ -582,10 +581,6 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
 
 {- The end theorem -----------------------------------------------------------------}
 
-{- main is closed and each definition uses only its two parameters -}
-Scoped : Program → Set
-Scoped (program ds M) = All (WS 2) ds × WS 0 M
-
 rco-fsim : ∀ P → Scoped P → FSim (T.sem P) (T.sem (rco-program P))
 rco-fsim (program ds M) (wds , wM) = record
   { match = Match
@@ -597,17 +592,6 @@ rco-correct : ∀ P → Scoped P → Equivalent (T.sem P) (T.sem (rco-program P)
 rco-correct P s = equivalent (rco-fsim P s)
 
 {- The whole compiler, into monadic normal form --------------------------------}
-
-{- the compiler produces well-scoped programs (Adequacy/CompileWF.agda) -}
-defs-scoped : ∀ ds → F.DefsWF ds → All (WS 2) ds
-defs-scoped [] _ = []
-defs-scoped (N ∷ Ns) ((_ , w) , d) = w ∷ defs-scoped Ns d
-
-wf-scoped : ∀ P → F.WF P → Scoped P
-wf-scoped (program ds M) (d , _ , w) = defs-scoped ds d , w
-
-compile-scoped : ∀ M → Closed M → Scoped (compile M)
-compile-scoped M c = wf-scoped (compile M) (compile-wf M c)
 
 compile-mon-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile-mon M))
 compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M) (compile-scoped M c))

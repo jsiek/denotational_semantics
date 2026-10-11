@@ -32,6 +32,7 @@ import Compiler.Lang.Clos5
 import Compiler.Lang.Uses
 import Compiler.Lang.Rename
 import Compiler.Lang.Scope
+import Compiler.Lang.ScopeRename
 import Compiler.Lang.ListUtil
 import Compiler.Lang.Mon
 
@@ -47,6 +48,9 @@ import Compiler.Compile.Pipeline
 {- syntactic facts about the passes, used by both operational styles -}
 import Compiler.Compile.EncloseScope
 import Compiler.Compile.GlobalizeTable
+{- the compiler produces well-scoped Clos5 programs (Scoped), the
+   precondition of both operational proofs of remove complex operands -}
+import Compiler.Compile.PipelineScope
 
 {- observations and the end-theorem shape, shared by both operational styles -}
 import Compiler.Observation
@@ -64,6 +68,7 @@ import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
 import Compiler.Model.Graph.Sem.Clos5Iswim
+import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
@@ -127,11 +132,9 @@ import Compiler.Operational.Adequacy.ISWIM
 {- the same for the Clos5 machine, for well-formed programs (which the
    compiler produces), and the compiler's correctness in the graph model
    observed through the ISWIM and Clos5 machines -}
-import Compiler.Operational.Adequacy.Scope
 import Compiler.Operational.Adequacy.Clos5WF
 import Compiler.Operational.Adequacy.CompileWF
 import Compiler.Operational.Adequacy.Clos5Common
-import Compiler.Operational.Adequacy.Clos5Continuous
 import Compiler.Operational.Adequacy.Clos5Soundness
 import Compiler.Operational.Adequacy.Clos5LogRel
 import Compiler.Operational.Adequacy.Clos5
