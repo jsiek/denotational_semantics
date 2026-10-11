@@ -62,10 +62,10 @@ open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_; s≤s)
 open import Data.Nat.Properties using (+-identityʳ; +-suc; ≤-pred; ≮⇒≥; m≤n⇒m<n∨m≡n)
-open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
+open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; subst₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; subst₂; cong₂)
 open import Relation.Nullary using (yes; no)
 
 {- Lists -----------------------------------------------------------------------}
@@ -95,11 +95,11 @@ conc-body≡ n zero (bind (ast N)) = refl
 conc-body≡ n (suc k) (bind a) = conc-body≡ n k a
 
 conc-list : ∀ {n} φ (args : C2.Args (replicate n ■))
-  → T.args→list (conc-args φ args) ≡ map (concretize φ) (S.args→list args)
+  → args→list (conc-args φ args) ≡ map (concretize φ) (args→list args)
 conc-list {zero} φ Nil = refl
 conc-list {suc n} φ (M ,, args) = cong (concretize φ M ∷_) (conc-list φ args)
 
-args-length : ∀ {n} (args : C2.Args (replicate n ■)) → length (S.args→list args) ≡ n
+args-length : ∀ {n} (args : C2.Args (replicate n ■)) → length (args→list args) ≡ n
 args-length {zero} Nil = refl
 args-length {suc n} (M ,, args) = cong suc (args-length args)
 
@@ -170,9 +170,7 @@ obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
 obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂' (obs≈ r) (obs≈-list rs)
-  where cong₂' : ∀ {a b : Obs} {as bs} → a ≡ b → as ≡ bs → a ∷ as ≡ b ∷ bs
-        cong₂' refl refl = refl
+obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- The free variables of a closure ---------------------------------------------}
 
@@ -273,7 +271,7 @@ module _ (P : C3.AST) where
   sim (eval~ {M = ` x} () _ _)
   sim (eval~ {M = clos-op n ⦅ cons (clear a) fvs ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
     after (one refl)
-      (subst₂ (λ Ns B → Reach (S.clos-next (S.body n a) [] (S.args→list fvs) ρ₂ κ₂)
+      (subst₂ (λ Ns B → Reach (S.clos-next (S.body n a) [] (args→list fvs) ρ₂ κ₂)
                               (T.tuple-next [] Ns ρ₃ (T.closK B κ₃)))
               (sym (conc-list φ fvs)) (sym (conc-body≡ n n a))
               (clos-next~ [] er (trans (+-identityʳ _) (args-length fvs)) κ))
@@ -281,7 +279,7 @@ module _ (P : C3.AST) where
   sim (eval~ {M = lit B k ⦅ Nil ⦆} _ er κ) = steps (one refl) (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
     after (one refl)
-      (subst (λ Ns → Reach (S.tuple-next [] (S.args→list args) ρ₂ κ₂) (T.tuple-next [] Ns ρ₃ κ₃))
+      (subst (λ Ns → Reach (S.tuple-next [] (args→list args) ρ₂ κ₂) (T.tuple-next [] Ns ρ₃ κ₃))
              (sym (conc-list φ args)) (tuple-next~ [] er κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (getK κ))
   sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (inlK κ))
@@ -321,28 +319,7 @@ init~ (` x) = var~ M.nothing halt refl
 init~ (op ⦅ args ⦆) = eval~ tt env-empty halt
 
 concretize-fsim : ∀ M → FSim (S.sem M) (T.sem (concretize-program M))
-concretize-fsim M = plus-simulation _~_ (_ , refl , init~ M) (sim (concretize-program M))
+concretize-fsim M = plus-simulation _~_ (init~ M) (sim (concretize-program M))
 
 concretize-correct : ∀ M → Equivalent (S.sem M) (T.sem (concretize-program M))
-concretize-correct M =
-  equivalent (concretize-fsim M) machine-det machine-progress machine-det machine-progress
-
-{- in particular -}
-
-concretize-const : ∀ M B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (concretize-program M)) (o-const B k)
-concretize-const M B k = Equivalent.terminates (concretize-correct M) (o-const B k)
-
-concretize-converges : ∀ M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (concretize-program M)))
-concretize-converges M =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = concretize-correct M
-
-concretize-wrong : ∀ M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (concretize-program M)) o-wrong
-concretize-wrong M = Equivalent.terminates (concretize-correct M) o-wrong
-
-concretize-diverges : ∀ M → Diverges (S.sem M) ⇔ Diverges (T.sem (concretize-program M))
-concretize-diverges M = Equivalent.diverges (concretize-correct M)
+concretize-correct M = equivalent (concretize-fsim M)

@@ -50,9 +50,10 @@ open import Compiler.Model.Graph.Correctness.CompilerCorrect
   using (compile; compile-correct-const; compile-correct-nonempty)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
-  using (Terminates; Diverges; machine-det; diverges-not-terminates; next; stop)
+  using (Terminates; Diverges; diverges-not-terminates; next; stop)
 open import Compiler.Operational.Machine.ISWIM
-open import Compiler.Operational.Correctness.EncloseSim using (Closed; uses-bound)
+open import Compiler.Operational.Correctness.EncloseSim using (Closed)
+open import Compiler.Lang.Uses Op sig using (uses-bound)
 open import Compiler.Operational.Adequacy.Common
 open import Compiler.Operational.Adequacy.Soundness using (soundness) public
 open import Compiler.Operational.Adequacy.LogRel
@@ -84,7 +85,7 @@ adequacy : ∀ M → Closed M → ∀ {d} → d ∈ ⟦ M ⟧ ρ₀
   → Σ[ o ∈ Obs ] Terminates (sem M) o × ShapeOf o d
 adequacy M c {d} d∈ with adequate M (closed-𝔾 M c) d∈
 ... | ⟨ v , ⟨ e , r ⟩ ⟩ =
-  ⟨ obs v , ⟨ ⟨ eval M [] halt , ⟨ ret v halt , ⟨ refl , ⟨ ↠→star (e halt) , refl ⟩ ⟩ ⟩ ⟩
+  ⟨ obs v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩
             , 𝕍-shape d v r ⟩ ⟩
 
 adequacy-const : ∀ M → Closed M → ∀ {B} {k : base-rep B}
@@ -99,7 +100,7 @@ adequacy-converges M c ⟨ d , d∈ ⟩ with adequacy M c d∈
 {- The machine terminates with at most one observation ----------------------}
 
 terminates-det : ∀ M {o₁ o₂} → Terminates (sem M) o₁ → Terminates (sem M) o₂ → o₁ ≡ o₂
-terminates-det M ⟨ _ , ⟨ t₁ , ⟨ refl , ⟨ σ₁ , f₁ ⟩ ⟩ ⟩ ⟩ ⟨ _ , ⟨ t₂ , ⟨ refl , ⟨ σ₂ , f₂ ⟩ ⟩ ⟩ ⟩
+terminates-det M ⟨ t₁ , ⟨ σ₁ , f₁ ⟩ ⟩ ⟨ t₂ , ⟨ σ₂ , f₂ ⟩ ⟩
     with ↠-final-det (star→↠ σ₁) (star→↠ σ₂) f₁ f₂
 ... | refl with trans (sym f₁) f₂
 ... | refl = refl
@@ -120,7 +121,7 @@ wrong-empty M c w d d∈ with adequacy M c d∈
 
 diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M c div d d∈ with adequacy M c d∈
-... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates machine-det div t
+... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t
 
 {- The compiler, observed through the ISWIM machine ---------------------------}
 

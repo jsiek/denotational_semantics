@@ -17,16 +17,15 @@
 module Compiler.Operational.Machine.Clos4 where
 
 open import Primitives using (Base; base-rep)
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos4
 open import Compiler.Operational.Observation
-open import Compiler.Operational.Smallstep using (Semantics; Next; next; stop; machine)
+open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Common
 
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; replicate; reverse)
+open import Data.List using (List; []; _∷_; reverse)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc)
 
 data Val : Set where
   fun : AST → Val                       {- code, under the environment and argument -}
@@ -69,10 +68,6 @@ obs (inl v) = o-inl (obs v)
 obs (inr v) = o-inr (obs v)
 obs-list [] = []
 obs-list (v ∷ vs) = obs v ∷ obs-list vs
-
-args→list : ∀ {n} → Args (replicate n ■) → List AST
-args→list {zero} Nil = []
-args→list {suc n} (M ,, args) = M ∷ args→list args
 
 tuple-next : List Val → List AST → Env → Cont → State
 tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ
@@ -118,5 +113,5 @@ step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret _ (caseK M N ρ κ)) = stop o-wrong
 step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)
 
-sem : AST → Semantics
+sem : AST → Machine
 sem M = machine State step (eval M [] halt)

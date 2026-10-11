@@ -204,7 +204,7 @@ module _ (P : AST) where
 delay-bsim : ∀ M → BSim (S.sem M) (T.sem (delay M))
 delay-bsim M =
   machine-bsim Match
-    (_ , _ , refl , eval~ (sym (rename-id (delay M))) (env (λ x → M.nothing)) halt)
+    (_ , eval~ (sym (rename-id (delay M))) (env (λ x → M.nothing)) halt)
     (sim M)
 
 delay-back-terminates : ∀ M {o} → Terminates (T.sem (delay M)) o → Terminates (S.sem M) o

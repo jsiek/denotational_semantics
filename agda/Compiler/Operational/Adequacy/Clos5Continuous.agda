@@ -14,7 +14,6 @@
 module Compiler.Operational.Adequacy.Clos5Continuous where
 
 open import SetsAsPredicates
-open import NewDOpSig
 open import NewDenotProperties
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
@@ -25,10 +24,10 @@ open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_)
 open import NewSemantics Op sig
   using (Semantics; ContinuousSemantics; continuous-args; ⟦⟧-monotone; ⟦⟧-continuous)
 
-open import Data.Nat using (zero; suc)
+open import Data.Nat using (suc)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; replicate)
-open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
+open import Data.List using (List; []; replicate)
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift)

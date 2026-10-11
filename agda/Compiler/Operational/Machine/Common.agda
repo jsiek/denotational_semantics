@@ -1,7 +1,8 @@
 {-
 
   List operations shared by the machines: looking up a variable in an
-  environment, and projecting from a tuple of a given size.
+  environment, projecting from a tuple of a given size, and listing the
+  subterms of a tuple.
 
 -}
 
@@ -9,13 +10,16 @@ module Compiler.Operational.Machine.Common where
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; length)
+open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _<_; s≤s; z≤n)
+open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Product using (Σ-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import abt.Sig using (■)
+open import abt.AbstractBindingTree using (ABT; Args)
+open import NewSyntaxUtil using (_,,_)
 
 private variable
   A B : Set
@@ -57,3 +61,8 @@ module _ {R : A → B → Set} where
     with has-length n ws
   ... | true = M.just r
   ... | false = M.nothing
+
+{- the subterms of a tuple or of a closure's free variables -}
+args→list : ∀ {Op sig n} → Args Op sig (replicate n ■) → List (ABT Op sig)
+args→list {n = zero} Nil = []
+args→list {n = suc n} (M ,, args) = M ∷ args→list args

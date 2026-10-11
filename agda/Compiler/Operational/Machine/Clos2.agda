@@ -14,16 +14,16 @@ module Compiler.Operational.Machine.Clos2 where
 
 open import Primitives using (Base; base-rep)
 open import NewSigUtil using (ν-n)
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Operational.Observation
-open import Compiler.Operational.Smallstep using (Semantics; Next; next; stop; machine)
+open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Common
 
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; replicate; reverse)
+open import Data.List using (List; []; _∷_; reverse)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (zero; suc)
 
 data Val : Set where
   clos : AST → List Val → Val           {- body, values of its free variables -}
@@ -59,10 +59,6 @@ obs (inl v) = o-inl (obs v)
 obs (inr v) = o-inr (obs v)
 obs-list [] = []
 obs-list (v ∷ vs) = obs v ∷ obs-list vs
-
-args→list : ∀ {n} → Args (replicate n ■) → List AST
-args→list {zero} Nil = []
-args→list {suc n} (M ,, args) = M ∷ args→list args
 
 {- the body of a closure, under its n free variables and its parameter -}
 body : ∀ n → Arg (ν-n n (ν ■)) → AST
@@ -108,5 +104,5 @@ step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret _ (caseK M N ρ κ)) = stop o-wrong
 
-sem : AST → Semantics
+sem : AST → Machine
 sem M = machine State step (eval M [] halt)

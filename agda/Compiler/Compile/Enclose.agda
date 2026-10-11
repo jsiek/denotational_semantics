@@ -1,4 +1,4 @@
-open import Data.Nat using (ℕ; zero; suc; _∸_; _⊔_)
+open import Data.Nat using (ℕ; zero; suc; _∸_)
 open import Data.List using (List; replicate)
 
 open import NewSyntaxUtil
@@ -24,19 +24,7 @@ module Compiler.Compile.Enclose where
   open import Compiler.Compile.Optimize using (bind-n-ast)
 
   {- one more than the largest variable a term uses, or 0 if it uses none -}
-  bound : AST → ℕ
-  bound-arg : ∀ {b} → Arg b → ℕ
-  bound-args : ∀ {bs} → Args bs → ℕ
-
-  bound (` x) = suc x
-  bound (op ⦅ args ⦆) = bound-args args
-
-  bound-arg (ast M) = bound M
-  bound-arg (bind a) = bound-arg a ∸ 1
-  bound-arg (clear a) = 0
-
-  bound-args nil = 0
-  bound-args (cons a args) = bound-arg a ⊔ bound-args args
+  open import Compiler.Lang.Uses Source.Op Source.sig using (bound; bound-arg; bound-args)
 
   {- the free variables of a closure: ` (n - 1) , ... , ` 0 -}
   fv-vars : ∀ n → Args' (replicate n ■)

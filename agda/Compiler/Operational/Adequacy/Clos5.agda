@@ -30,14 +30,14 @@
 
 module Compiler.Operational.Adequacy.Clos5 where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (base-rep)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain using (Value) renaming (const to dconst)
-open import Compiler.Lang.Clos5 using (Program; program)
+open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
-  using (Terminates; Diverges; machine-det; diverges-not-terminates)
+  using (Terminates; Diverges; diverges-not-terminates)
 open import Compiler.Operational.Machine.Clos5
 open import Compiler.Operational.Correctness.GlobalizeSim using (⊑-refl)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
@@ -47,8 +47,7 @@ open import Compiler.Operational.Adequacy.CompileWF using (compile-wf) public
 import Compiler.Operational.Adequacy.Clos5Common as C
 import Compiler.Operational.Adequacy.Clos5LogRel as LR
 
-open import Data.List using ([]; _∷_)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)
 open import Relation.Nullary using (¬_)
 
@@ -70,7 +69,7 @@ adequacy : ∀ P → WF P → ∀ {d} → d ∈ ⟦ P ⟧ₚ
 adequacy (program ds M) ⟨ wfd , ⟨ _ , ws ⟩ ⟩ {d} d∈
     with LR.adequate ds M (LR.tab ds ds ⊑-refl wfd) ws (λ x ()) d∈
 ... | ⟨ v , ⟨ e , r ⟩ ⟩ =
-  ⟨ obs v , ⟨ ⟨ eval M [] halt , ⟨ ret v halt , ⟨ refl , ⟨ C.↠→star ds (e halt) , refl ⟩ ⟩ ⟩ ⟩
+  ⟨ obs v , ⟨ ⟨ ret v halt , ⟨ C.↠→star ds (e halt) , refl ⟩ ⟩
             , LR.𝕍-shape ds d v r ⟩ ⟩
 
 adequacy-const : ∀ P → WF P → ∀ {B} {k : base-rep B}
@@ -85,7 +84,7 @@ adequacy-converges P wf ⟨ d , d∈ ⟩ with adequacy P wf d∈
 {- The machine terminates with at most one observation ----------------------}
 
 terminates-det : ∀ P {o₁ o₂} → Terminates (sem P) o₁ → Terminates (sem P) o₂ → o₁ ≡ o₂
-terminates-det (program ds M) ⟨ _ , ⟨ t₁ , ⟨ refl , ⟨ σ₁ , f₁ ⟩ ⟩ ⟩ ⟩ ⟨ _ , ⟨ t₂ , ⟨ refl , ⟨ σ₂ , f₂ ⟩ ⟩ ⟩ ⟩
+terminates-det (program ds M) ⟨ t₁ , ⟨ σ₁ , f₁ ⟩ ⟩ ⟨ t₂ , ⟨ σ₂ , f₂ ⟩ ⟩
     with C.↠-final-det ds (C.star→↠ ds σ₁) (C.star→↠ ds σ₂) f₁ f₂
 ... | refl with trans (sym f₁) f₂
 ... | refl = refl
@@ -106,4 +105,4 @@ wrong-empty P wf w d d∈ with adequacy P wf d∈
 
 diverges-empty : ∀ P → WF P → Diverges (sem P) → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
 diverges-empty P wf div d d∈ with adequacy P wf d∈
-... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates machine-det div t
+... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t

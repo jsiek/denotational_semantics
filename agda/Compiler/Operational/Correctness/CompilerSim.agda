@@ -5,11 +5,11 @@
     ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
-  The forward simulations of the five passes compose into one from the
-  ISWIM machine to the Clos5 machine, and since both machines are
-  deterministic and total, the compiled program terminates with the same
-  observation as the original, goes wrong exactly when it does, and
-  diverges exactly when it does.
+  Each pass is proved by a forward simulation, which, since all the
+  machines are deterministic and total, gives its end theorem
+  (Equivalent). These end theorems compose (equiv-trans): the compiled
+  program terminates with the same observation as the original, goes
+  wrong exactly when it does, and diverges exactly when it does.
 
   The compiler is the one of the denotational end-to-end theorem
   (Compiler.Model.Graph.Correctness.CompilerCorrect), and it is
@@ -26,11 +26,11 @@ open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Operational.Correctness.EncloseSim using (Closed)
-open import Compiler.Operational.Correctness.OptimizeSim using (enclose-optimize-fsim)
-open import Compiler.Operational.Correctness.ConcretizeSim using (concretize-fsim)
-open import Compiler.Operational.Correctness.DelaySim using (delay-fsim)
-open import Compiler.Operational.Correctness.GlobalizeSim using (globalize-fsim)
+open import Compiler.Operational.Correctness.EncloseSim using (Closed; enclose-correct)
+open import Compiler.Operational.Correctness.OptimizeSim using (optimize-correct; enclose-closed)
+open import Compiler.Operational.Correctness.ConcretizeSim using (concretize-correct)
+open import Compiler.Operational.Correctness.DelaySim using (delay-correct)
+open import Compiler.Operational.Correctness.GlobalizeSim using (globalize-correct)
 import Compiler.Operational.Machine.ISWIM as S
 import Compiler.Operational.Machine.Clos5 as T
 
@@ -38,14 +38,10 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 {- The end theorem -------------------------------------------------------------}
 
-compile-fsim : ∀ M → Closed M → FSim (S.sem M) (T.sem (compile M))
-compile-fsim M c =
-  compose (enclose-optimize-fsim M c)
-    (compose (concretize-fsim _) (compose (delay-fsim _) (globalize-fsim _)))
-
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equivalent (compile-fsim M c) machine-det machine-progress machine-det machine-progress
+  equiv-trans (enclose-correct M c) (equiv-trans (optimize-correct _ (enclose-closed M c))
+    (equiv-trans (concretize-correct _) (equiv-trans (delay-correct _) (globalize-correct _))))
 
 {- in particular -}
 

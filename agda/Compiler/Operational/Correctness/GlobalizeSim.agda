@@ -41,11 +41,11 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; _++_; [_]; length; replicate; reverse)
 open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; length-reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Maybe using (just)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Data.Nat using (zero; suc)
+open import Data.Product using (Σ-syntax; _,_; proj₁; proj₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 
 {- Growing tables --------------------------------------------------------------}
 
@@ -168,16 +168,14 @@ module Rel (D : Defs) where
   obs≈ (inl≈ r) = cong o-inl (obs≈ r)
   obs≈ (inr≈ r) = cong o-inr (obs≈ r)
   obs≈-list [] = refl
-  obs≈-list (r ∷ rs) = cong₂' (obs≈ r) (obs≈-list rs)
-    where cong₂' : ∀ {a b : Obs} {as bs} → a ≡ b → as ≡ bs → a ∷ as ≡ b ∷ bs
-          cong₂' refl refl = refl
+  obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
   {- a subterm, whose table is extended by the rest of the term -}
   sub↝ : ∀ {M ds ds'} → proj₂ (glob M ds) ⊑ ds' → ds' ⊑ D → M ↝ proj₁ (glob M ds)
   sub↝ p q = glob↝ (⊑-trans p q)
 
   glob-list : ∀ {n} (args : Args (replicate n ■)) ds → proj₂ (glob-args args ds) ⊑ D
-    → Pointwise _↝_ (S.args→list args) (T.args→list (proj₁ (glob-args args ds)))
+    → Pointwise _↝_ (args→list args) (args→list (proj₁ (glob-args args ds)))
   glob-list {zero} Nil ds p = []
   glob-list {suc n} (M ,, args) ds p =
     sub↝ (glob-grows-args args _) p ∷ glob-list args (proj₂ (glob M ds)) p
@@ -293,30 +291,9 @@ module _ (D : Defs) (M₀ : C.AST) where
 
 globalize-fsim : ∀ M → FSim (S.sem M) (T.sem (globalize M))
 globalize-fsim M =
-  plus-simulation _~_ (_ , refl , eval~ (glob↝ ⊑-refl) [] halt) (sim D (proj₁ (glob M [])))
+  plus-simulation _~_ (eval~ (glob↝ ⊑-refl) [] halt) (sim D (proj₁ (glob M [])))
   where D = proj₂ (glob M [])
         open Rel D
 
 globalize-correct : ∀ M → Equivalent (S.sem M) (T.sem (globalize M))
-globalize-correct M =
-  equivalent (globalize-fsim M) machine-det machine-progress machine-det machine-progress
-
-{- in particular -}
-
-globalize-const : ∀ M → ∀ B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (globalize M)) (o-const B k)
-globalize-const M B k = Equivalent.terminates (globalize-correct M) (o-const B k)
-
-globalize-converges : ∀ M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (globalize M)))
-globalize-converges M =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = globalize-correct M
-
-globalize-wrong : ∀ M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (globalize M)) o-wrong
-globalize-wrong M = Equivalent.terminates (globalize-correct M) o-wrong
-
-globalize-diverges : ∀ M → Diverges (S.sem M) ⇔ Diverges (T.sem (globalize M))
-globalize-diverges M = Equivalent.diverges (globalize-correct M)
+globalize-correct M = equivalent (globalize-fsim M)
