@@ -48,7 +48,6 @@
 \newcommand{\app}{\star}
 \newcommand{\NE}{\neq\emptyset}
 \newcommand{\Rel}[3]{\mathcal{R}_{#1}(#2, #3)}
-\newcommand{\Bnd}[2]{\mathit{Bnd}_{#1}(#2)}
 \newcommand{\consis}{\mathit{consis}}
 \newcommand{\obseq}{\cong}
 
@@ -88,7 +87,7 @@ instead of de Bruijn indices.
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, the let equation, the element-wise relation $\sqsubseteq$
-    for preservation, and $\mathit{depth}$/$\mathit{Bnd}$, $\mathcal{R}_k$, and $\rhd$
+    for preservation, and $\mathit{depth}$, $\mathcal{R}_k$, and $\rhd$
     for reflection;
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item the end-to-end theorem.
@@ -512,8 +511,8 @@ $v \in \SEM{M}^{\mathrm{3}}\rho$, then
   \mathit{depth}(\cdrv{v}) &= 1 + \mathit{depth}(v) \\
   \mathit{depth}(\tup{i}{d}) = \mathit{depth}(\Left{d}) = \mathit{depth}(\Right{d})
     &= 1 + \mathit{depth}(d) \\
-  \mathit{depth}(V) &= \max_{v \in V} \mathit{depth}(v) \\[1ex]
-  \Bnd{k}{V} &\iff \forall v \in V.\; \mathit{depth}(v) < k
+  \mathit{depth}(\emptyset) &= 0 \\
+  \mathit{depth}(V) &= \max_{v \in V} \mathit{depth}(v)
 \end{align*}
 
 \paragraph{Reflection.}
@@ -535,13 +534,13 @@ $\key{tup}_i$, $\key{left}$, and $\key{right}$.
     \land\; \forall t\, W.\; W \subseteq \{ d \mid t(d) \in V' \}
        \implies \Rel{k}{W}{\{ d \mid t(d) \in D \}}
   \end{array} \\[1ex]
-  \rho' \rhd \rho &\iff \forall x\, V'\, k.\; V' \subseteq \rho'(x) \land \Bnd{k}{V'}
+  \rho' \rhd \rho &\iff \forall x\, V'\, k.\; V' \subseteq \rho'(x) \land \mathit{depth}(V') < k
      \implies \Rel{k}{V'}{\rho(x)}
 \end{align*}
 
 \begin{lemma}[Delay Reflects]\label{lem:delay-reflect}
 If $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$, $\rho' \rhd \rho$,
-$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$, and $\Bnd{k}{V'}$, then
+$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$, and $\mathit{depth}(V') < k$, then
 \[
   \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
