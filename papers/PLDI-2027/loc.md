@@ -30,11 +30,11 @@ Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines
 
 | adequacy (denotational side only) | lines |
 |---|---:|
-| ISWIM | 757 |
-| Clos5 | 941 |
+| ISWIM | 758 |
+| Clos5 | 942 |
 | well-formedness of compiled programs | 289 |
 | end to end | 24 |
-| **total** | **2011** |
+| **total** | **2013** |
 
 Not counted: code that both proofs use (791 lines: syntax, languages, compiler passes) and examples (185 lines).
 
