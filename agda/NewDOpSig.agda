@@ -15,11 +15,6 @@ open import Level using (Level; Lift; lift)
 open import Relation.Binary.Core using (Rel)
 
 
-private
-  variable
-   ℓ : Level
-   A : Set ℓ
-
 Results : ∀ {ℓ} → Set ℓ → List Sig → Set ℓ
 Results A bs = Tuple bs (Result A)
 
@@ -32,16 +27,7 @@ DOp A bs = DFun A bs ■
 DOpSig : ∀ {Op : Set} {ℓ} A → (sig : Op → List Sig) → Set ℓ
 DOpSig A sig = ∀ op → DOp A (sig op)
 
-{- =============== Types for the preservation of a relation on a DFun/Op ================ -}
-
-DFun-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DFun-Rel {ℓ} A = ∀ bs c → DFun A bs c → DFun A bs c → Set (lsuc lzero l⊔ ℓ)
-
-DOp-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DOp-Rel {ℓ} A = ∀ bs → DOp A bs → DOp A bs → Set (lsuc lzero l⊔ ℓ)
-
-DOpSig-Rel : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DOpSig-Rel {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DOpSig A sig → DOpSig A sig → Set (lsuc lzero l⊔ ℓ)
+{- =============== The preservation of a relation by a DFun/DOpSig ================ -}
 
 result-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → (∀ b → Result A b → Result A b → Set (lsuc lzero l⊔ ℓ))
 result-rel-pres {ℓ} R ■ a1 a2 = Lift (lsuc lzero l⊔ ℓ) (R a1 a2)
@@ -53,13 +39,10 @@ results-rel-pres R [] _ _ = ⊤
 results-rel-pres R (b ∷ bs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = 
   result-rel-pres R b D E × results-rel-pres R bs Ds Es
 
-fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → DFun-Rel A
+fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero)
+  → ∀ bs c → DFun A bs c → DFun A bs c → Set (lsuc lzero l⊔ ℓ)
 fun-rel-pres R bs c f g = ∀ Ds Es → results-rel-pres R bs Ds Es → result-rel-pres R c (f Ds) (g Es)
 
-op-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → DOp-Rel A
-op-rel-pres R bs = fun-rel-pres R bs ■
-
-opsig-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DOpSig-Rel A
-opsig-rel-pres R sig O₁ O₂ = ∀ op → op-rel-pres R (sig op) (O₁ op) (O₂ op)
-
-
+opsig-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero)
+  → ∀ {Op} (sig : Op → List Sig) → DOpSig A sig → DOpSig A sig → Set (lsuc lzero l⊔ ℓ)
+opsig-rel-pres R sig O₁ O₂ = ∀ op → fun-rel-pres R (sig op) ■ (O₁ op) (O₂ op)
