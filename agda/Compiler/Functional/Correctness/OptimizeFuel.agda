@@ -18,7 +18,7 @@
   collected so far agree through the renumbering b of positions that
   prune computes from the free variables already seen (Collected).
 
-  The precondition is well-scopedness (WS 0, from OptimizeSim.agda), which
+  The precondition is well-scopedness (WS 0, Compiler.Lang.Scope), which
   enclose establishes for closed ISWIM programs (enclose-closed).
 
 -}
@@ -31,10 +31,10 @@ open import Compiler.Lang.Clos2
 open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
 open import Compiler.Compile.Enclose using (enclose)
-open import Compiler.Operational.Correctness.OptimizeSim
-  using (WS; WS-arg; Closed; ws-uses; enclose-closed)
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; proj-pw)
+open import Compiler.Lang.Scope Op sig using (WS; WS-arg; ws-uses)
+open import Compiler.Compile.EncloseScope using (Closed; enclose-closed)
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil using (_‼_; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.ISWIM as S
 import Compiler.Functional.Interp.Clos2 as T
@@ -247,11 +247,11 @@ branch≈ ck M N agM agN (tup≈ _) = wrong
 
 {- The end theorem -------------------------------------------------------------}
 
-optimize-correct : ∀ M → Closed M → Equivalent (T.sem M) (T.sem (optimize-program M))
+optimize-correct : ∀ M → WS 0 M → Equivalent (T.sem M) (T.sem (optimize-program M))
 optimize-correct M c =
   clocked _≈_ obs≈ (λ ck → run≈ ck M (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))))
 
 {- enclose, then optimize, for closed ISWIM programs -}
-enclose-optimize-correct : ∀ M → EF.Closed M → Equivalent (S.sem M) (T.sem (optimize-program (enclose M)))
+enclose-optimize-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (optimize-program (enclose M)))
 enclose-optimize-correct M c =
   equiv-trans (EF.enclose-correct M c) (optimize-correct (enclose M) (enclose-closed M c))

@@ -40,12 +40,12 @@ open import Compiler.Model.Graph.Sem.Clos5Iswim
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (stab; Agree)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 open import Compiler.Operational.Machine.Clos5 hiding (inl; inr)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
-open import Compiler.Operational.Correctness.GlobalizeSim using (_⊑_; ∷-⊑)
+open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→length)
 open import Compiler.Operational.Adequacy.Soundness
   using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)

@@ -31,7 +31,7 @@
 
 module Compiler.Operational.Backward where
 
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 
 open import Data.Nat using (ℕ; zero; suc; _<_)

@@ -13,8 +13,8 @@ module Compiler.Functional.Interp.Clos3 where
 open import Primitives using (Base; base-rep)
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos3
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; proj)
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil using (_‼_; proj)
 open import Compiler.Functional.Clock
 
 open import Data.Fin using (Fin)

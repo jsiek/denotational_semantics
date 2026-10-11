@@ -26,7 +26,7 @@
   The program must be well scoped (WS 0 M): every variable is bound, so
   in particular a closure's code uses only its parameter and free
   variables. enclose produces such programs from closed ISWIM programs
-  (enclose-closed).
+  (enclose-closed, in Compiler.Compile.EncloseScope).
 
 -}
 
@@ -37,14 +37,12 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
-open import Compiler.Compile.Enclose using (enclose; enc-args; fv-vars)
-import Compiler.Lang.ISWIM as I
-open import Compiler.Lang.Uses I.Op I.sig using (bound; bound-args)
+open import Compiler.Lang.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
 import Compiler.Operational.Correctness.EncloseSim as E
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 import Compiler.Operational.Machine.Clos2 as T
 
 open import Data.Empty using (⊥-elim)
@@ -54,50 +52,15 @@ open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; rev
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Maybe using (just)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _∸_; _≤_; _<_; z≤n; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _≤_; z≤n; s≤s)
 open import Data.Nat.Properties
-  using (≤-refl; ≤-trans; ≤-pred; <-≤-trans; <-irrefl; n<1+n; n≤1+n; n≮0;
-         +-suc; +-identityʳ; +-monoʳ-≤; m≤n+m∸n; m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o)
+  using (≤-refl; ≤-pred; <-≤-trans; <-irrefl; n<1+n; n≮0; +-suc; +-identityʳ; +-monoʳ-≤)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-{- Well-scoped terms ----------------------------------------------------------}
-
-{- WS k M: every variable of M is bound, in a context of k variables; the
-   code of a closure (∁) is in a context of its own binders only -}
-WS : ℕ → AST → Set
-WS-arg : ∀ {b} → ℕ → Arg b → Set
-WS-args : ∀ {bs} → ℕ → Args bs → Set
-
-WS k (` x) = x < k
-WS k (op ⦅ args ⦆) = WS-args k args
-
-WS-arg k (ast M) = WS k M
-WS-arg k (bind a) = WS-arg (suc k) a
-WS-arg k (clear a) = WS-arg 0 a
-
-WS-args k nil = ⊤
-WS-args k (cons a args) = WS-arg k a × WS-args k args
-
-Closed : AST → Set
-Closed M = WS 0 M
-
-ws-uses : ∀ {k x} M → WS k M → Uses x M → x < k
-ws-uses-arg : ∀ {b k x} (a : Arg b) → WS-arg k a → UsesArg x a → x < k
-ws-uses-args : ∀ {bs k x} (args : Args bs) → WS-args k args → UsesArgs x args → x < k
-
-ws-uses (` x) w refl = w
-ws-uses (op ⦅ args ⦆) w u = ws-uses-args args w u
-
-ws-uses-arg (ast M) w u = ws-uses M w u
-ws-uses-arg (bind a) w u = ≤-pred (ws-uses-arg a w u)
-ws-uses-arg (clear a) w ()
-
-ws-uses-args (cons a args) (w , ws) (inj₁ u) = ws-uses-arg a w u
-ws-uses-args (cons a args) (w , ws) (inj₂ u) = ws-uses-args args ws u
+{- Well-scoped terms (Compiler.Lang.Scope) ------------------------------------}
 
 {- the code of a closure with n free variables -}
 ws-body : ∀ n k (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (T.body n a)
@@ -384,60 +347,11 @@ module _ (P : AST) where
 
 {- The end theorem -------------------------------------------------------------}
 
-optimize-fsim : ∀ M → Closed M → FSim (T.sem M) (T.sem (optimize-program M))
+optimize-fsim : ∀ M → WS 0 M → FSim (T.sem M) (T.sem (optimize-program M))
 optimize-fsim M c =
   record { match = Match
          ; init = 0 , eval~ {r = λ x → x} (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))) halt
          ; sim = sim (optimize-program M) }
 
-optimize-correct : ∀ M → Closed M → Equivalent (T.sem M) (T.sem (optimize-program M))
+optimize-correct : ∀ M → WS 0 M → Equivalent (T.sem M) (T.sem (optimize-program M))
 optimize-correct M c = equivalent (optimize-fsim M c)
-
-{- enclose produces well-scoped programs ---------------------------------------}
-
-{- enclose of a closed ISWIM program is well scoped -}
-module Enclosed where
-  open I using (`_; _⦅_⦆; lam; app; lit; tuple; get; inl-op; inr-op; case-op)
-
-  bind-n-ws : ∀ m k N → WS (suc (m + k)) N → WS-arg k (bind-n-ast m N)
-  bind-n-ws zero k N w = w
-  bind-n-ws (suc m) k N w = bind-n-ws m (suc k) N (subst (λ x → WS (suc x) N) (sym (+-suc m k)) w)
-
-  fv-vars-ws : ∀ m {k} → m ≤ k → WS-args k (fv-vars m)
-  fv-vars-ws zero _ = tt
-  fv-vars-ws (suc m) le = le , fv-vars-ws m (≤-trans (n≤1+n m) le)
-
-  ⊔ˡ = m⊔n≤o⇒m≤o
-  ⊔ʳ = m⊔n≤o⇒n≤o
-
-  {- under one binder -}
-  ∸1 : ∀ {k} b → b ∸ 1 ≤ k → b ≤ suc k
-  ∸1 b le = ≤-trans (m≤n+m∸n b 1) (s≤s le)
-
-  enclose-ws : ∀ {k} (M : I.AST) → bound M ≤ k → WS k (enclose M)
-  enc-args-ws : ∀ {n k} (args : I.Args (replicate n ■)) → bound-args args ≤ k
-    → WS-args k (enc-args args)
-
-  enclose-ws (` x) b = b
-  enclose-ws (lam ⦅ ⟩ N ,, Nil ⦆) b =
-    bind-n-ws (bound N ∸ 1) 0 (enclose N)
-      (enclose-ws N (subst (λ x → bound N ≤ suc x) (sym (+-identityʳ _)) (m≤n+m∸n (bound N) 1)))
-    , fv-vars-ws (bound N ∸ 1) (⊔ˡ _ _ b)
-  enclose-ws (app ⦅ L ,, M ,, Nil ⦆) b =
-    enclose-ws L (⊔ˡ _ _ b) , enclose-ws M (⊔ˡ _ _ (⊔ʳ (bound L) _ b)) , tt
-  enclose-ws (lit B k ⦅ Nil ⦆) b = tt
-  enclose-ws (tuple n ⦅ args ⦆) b = enc-args-ws args b
-  enclose-ws (get i ⦅ M ,, Nil ⦆) b = enclose-ws M (⊔ˡ _ _ b) , tt
-  enclose-ws (inl-op ⦅ M ,, Nil ⦆) b = enclose-ws M (⊔ˡ _ _ b) , tt
-  enclose-ws (inr-op ⦅ M ,, Nil ⦆) b = enclose-ws M (⊔ˡ _ _ b) , tt
-  enclose-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) b =
-    enclose-ws L (⊔ˡ _ _ b)
-    , enclose-ws M (∸1 (bound M) (⊔ˡ _ _ (⊔ʳ (bound L) _ b)))
-    , enclose-ws N (∸1 (bound N) (⊔ˡ _ _ (⊔ʳ (bound M ∸ 1) _ (⊔ʳ (bound L) _ b))))
-    , tt
-
-  enc-args-ws {zero} Nil b = tt
-  enc-args-ws {suc n} (M ,, args) b = enclose-ws M (⊔ˡ _ _ b) , enc-args-ws args (⊔ʳ (bound M) _ b)
-
-enclose-closed : ∀ M → E.Closed M → Closed (enclose M)
-enclose-closed M c = Enclosed.enclose-ws M (subst (_≤ 0) (sym c) z≤n)

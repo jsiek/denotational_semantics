@@ -14,8 +14,8 @@ module Compiler.Functional.Interp.Clos5 where
 open import Primitives using (Base; base-rep)
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos5
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; proj)
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil using (_‼_; proj)
 open import Compiler.Functional.Clock
 
 open import Data.Fin using (Fin)
@@ -54,10 +54,6 @@ first (pair v w) = ret v
 first _ = wrong
 second (pair v w) = ret w
 second _ = wrong
-
-{- definition k, counting from the oldest; the table is newest first -}
-global : List AST → ℕ → Maybe AST
-global ds k = reverse ds ‼ k
 
 {- the interpreter for a program with global definitions ds -}
 module _ (ds : List AST) where

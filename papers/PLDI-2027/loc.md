@@ -5,7 +5,7 @@ ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3 --delay--> Cl
 
 * **Denotational:** a graph-model semantics for each language and one correctness proof per pass, in `agda/Compiler/Model/Graph/`. The theorem is `CompilerCorrect`: the source and compiled program produce the same constants, and one denotation is nonempty exactly when the other is.
 * **CompCert-style:** a small-step CEK machine for each language and one forward simulation per pass, in `agda/Compiler/Operational/`. The theorem is `CompilerSim`: the two programs terminate with the same observation, including going wrong, and one diverges exactly when the other does.
-* **CakeML-style:** a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, in `agda/Compiler/Functional/`. The theorem has the same shape as the CompCert-style one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock. So far only enclose is proved.
+* **CakeML-style:** a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, in `agda/Compiler/Functional/`. The theorem is `CompilerFuel`. It has the same shape as the CompCert-style one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock.
 
 Counts are code lines: lines that are neither blank nor comments. The table is regenerated with
 `python3 papers/PLDI-2027/loc.py` from the repository root. The script fails if any Agda module is not assigned to a group.
@@ -16,16 +16,16 @@ As of this PR:
 
 | component | denotational | CompCert-style | CakeML-style |
 |---|---:|---:|---:|
-| generic infrastructure | 303 | 209 | 80 |
+| generic infrastructure | 303 | 188 | 80 |
 | domain, operators, continuity | 451 | — | — |
-| semantics of the languages | 458 | 457 | 311 |
-| enclose | 98 | 207 | 150 |
-| optimize | 152 | 319 | — |
-| concretize | 234 | 218 | — |
-| delay | 824 | 198 | — |
-| globalize | 235 | 223 | — |
-| composition | 56 | 31 | — |
-| **total** | **2811** | **1862** | **541** |
+| semantics of the languages | 458 | 408 | 309 |
+| enclose | 98 | 206 | 149 |
+| optimize | 152 | 257 | 181 |
+| concretize | 234 | 205 | 142 |
+| delay | 824 | 151 | 105 |
+| globalize | 235 | 179 | 127 |
+| composition | 56 | 32 | 37 |
+| **total** | **2811** | **1626** | **1130** |
 
 Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines. It turns `CompilerCorrect` into a statement about running programs (`Adequacy/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed.
 
@@ -33,9 +33,9 @@ Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines
 |---|---:|
 | ISWIM | 749 |
 | Clos5 | 926 |
-| well-formedness of compiled programs | 289 |
+| well-formedness of compiled programs | 282 |
 | end to end | 24 |
-| **total** | **1988** |
+| **total** | **1981** |
 
 An experiment, not in the totals, is described [below](#experiment-a-direct-backward-simulation-for-delay):
 
@@ -44,14 +44,20 @@ An experiment, not in the totals, is described [below](#experiment-a-direct-back
 | CompCert-style: direct backward simulation for delay — framework | 94 |
 | CompCert-style: direct backward simulation for delay — delay | 146 |
 
-Not counted: code that all three proofs use (805 lines: syntax, languages, compiler passes) and examples (185 lines).
+Not counted: code that is shared (1071 lines: syntax, languages, compiler passes, observations, and the machine-independent lemmas both operational styles use) and examples (185 lines). The shared code is listed below.
 
 ## What the groups contain
 
+* **shared (not counted):** the abt library, the languages and the compiler passes, which all three proofs use; the observations and the end-theorem shape (`Compiler/Observation.agda`); and the machine-independent lemmas that both operational styles use:
+  * `Lang/ListUtil.agda`: lookup in an environment, projection from a tuple, and lemmas about lookups (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`);
+  * `Lang/Scope.agda`: well-scoped terms for any signature and `ws-uses` (from `OptimizeSim`; adequacy's `Scope` now reuses it);
+  * `Lang/Rename.agda`: the renaming lemmas `rename-cong`, `rename-fuse`, `rename-id` (from `DelaySim`);
+  * `Compile/EncloseScope.agda`: closed ISWIM programs and `enclose-closed` (from `EncloseSim` and `OptimizeSim`);
+  * `Compile/GlobalizeTable.agda`: growing tables `_⊑_`, `glob-grows` and `global-⊑` (from `GlobalizeSim`); the table lookup `global` itself moved to `Lang/Clos5.agda`, so the machine and the interpreter use the same one.
 * **generic infrastructure:**
   * denotational: sets as predicates, environments, generic semantics, monotonicity and continuity over operator signatures;
-  * CompCert-style: observations, small-step transition systems, forward simulation, and the iff end theorem;
-  * CakeML-style: results with timeout, the clocked end theorem, and the lemma that related results for every clock give it. It reuses the CompCert-style observations (`Observation.agda`) and the list lookup and projection of `Machine/Common.agda`, counted on that side.
+  * CompCert-style: small-step transition systems, forward simulation, and the iff end theorem;
+  * CakeML-style: results with timeout, the clocked end theorem, and the lemma that related results for every clock give it. It imports nothing from the CompCert-style development.
 * **domain, operators, continuity:** the graph-model values, consistency, the semantic operators and their monotonicity, consistency and continuity lemmas.
 * **semantics of the languages:**
   * denotational: the semantics of ISWIM and Clos2 through Clos5, plus the continuity instances the proofs use;
@@ -87,21 +93,31 @@ Not counted: code that all three proofs use (805 lines: syntax, languages, compi
 | 2026-10-11 | delay relation without visible fuel, Calls as a predicate (PR #17) | 2825 | 2134 | — |
 | 2026-10-11 | joined pairs ⦅ u , v ⦆ instead of the halves ⦅ u ∣ and ∣ v ⦆ (PR #18) | 2823 | 2134 | — |
 | 2026-10-11 | CompCert-style cleanup: framework specialised to step-function machines, end theorems composed instead of simulations, no per-pass corollaries, shared `uses-bound`, pruned imports (PR #20) | 2811 | 1862 | — |
-| 2026-10-11 | CakeML-style pilot: clocked interpreters for all five languages, enclose clock for clock (this PR) | 2811 | 1862 | 541 |
+| 2026-10-11 | CakeML-style pilot: clocked interpreters for all five languages, enclose clock for clock | 2811 | 1862 | 541 |
+| 2026-10-11 | CakeML-style complete: all five passes clock for clock, composition (`CompilerFuel`); machine-independent lemmas and observations moved to shared modules, so neither operational style imports the other (this PR) | 2811 | 1626 | 1130 |
 
-PR #16 also changed the grouping: the shared counts now include `Primitives`, `NewSigUtil` and `NewSyntaxUtil`, and `ISWIMContinuous` moved to adequacy. Earlier rows used slightly different groups, so they are only roughly comparable.
+PR #16 also changed the grouping: the shared counts now include `Primitives`, `NewSigUtil` and `NewSyntaxUtil`, and `ISWIMContinuous` moved to adequacy. Earlier rows used slightly different groups, so they are only roughly comparable. The last row moved 236 lines from the CompCert-style column to the shared code (net, per row: generic infrastructure −21 for the observations, machines −49 for the list lookups, optimize −62 and enclose −1 for well-scopedness and closedness, concretize −13 and globalize −44 for list and table lemmas, delay −47 for the renaming lemmas, composition +1); the shared code grew from 805 to 1071 lines, and adequacy shrank by 7 because its `Scope` now reuses the shared well-scopedness; before it, the CakeML-style column imported those lemmas from the CompCert-style modules and was undercounted (1099 lines with four passes done, against 1130 now with all five and the composition).
 
 ## The CakeML-style proof
 
 Each interpreter is `eval : ℕ → Env → AST → Result Val`, where `Result Val` is `timeout`, `wrong` or `ret v`. It is defined by recursion on the clock and the term. The clock goes down only at a function call, and a call with clock 0 times out. The interpreter goes wrong exactly where its machine gets stuck, and it evaluates in the same order: left to right, with the operator checked to be a function before the argument is evaluated.
 
-No pass adds or removes function calls. Enclose, optimize, concretize and globalize map each application to one application. Delay maps it to a `let` around one application, and `let` does not tick. So every pass can be proved **clock for clock**: for every clock, the program and its compilation both time out, both go wrong, or both return related values. A generic lemma (`clocked`, 17 lines) turns this into both directions of the end theorem. There is no determinism argument and no simulation diagram.
+No pass adds or removes function calls. Enclose, optimize, concretize and globalize map each application to one application. Delay maps it to a `let` around one application, and `let` does not tick. So every pass is proved **clock for clock**: for every clock, the program and its compilation both time out, both go wrong, or both return related values. A generic lemma (`clocked`, 17 lines) turns this into both directions of the end theorem. There is no determinism argument and no simulation diagram. The end theorem `compile-correct` in `CompilerFuel` composes the five results with `equiv-trans`, for the same `compile` and the same precondition (a closed ISWIM program) as `CompilerSim`.
 
-Enclose takes 150 lines here and 207 in the CompCert-style proof (`EncloseSim`). Both use the same value relation and the same environment agreement. The difference is in the continuation relation and the per-frame cases, which the interpreter does not have: a step of a frame becomes a `>>=` and `bind-rel`.
+The value relations and environment agreements are the same as in the CompCert-style proofs. The saving is in everything the machines add: the continuation relation, one case per frame, and the states where one machine is ahead of the other. Pass by pass (CakeML-style against CompCert-style):
+
+* **enclose (149 against 206).** The difference is the continuation relation and the per-frame cases: a step of a frame becomes a `>>=` and `bind-rel`. Building a closure takes several Clos2 steps for one ISWIM step, which the machine proof matches by a plus; the interpreter just evaluates the captured variables.
+* **optimize (181 against 257).** The source evaluates the free variables that the optimized closure drops, and the target does not. The machine proof needs a measure simulation: a match indexed by a natural number that each such stuttering step decreases, with states for the middle of dropping a variable. The interpreter has **no stuttering index**: a dropped free variable is a variable, which makes no call and, in a well-scoped program, cannot go wrong, so the two interpreters call functions in lock step.
+* **concretize (142 against 205).** A free variable becomes a projection from the tuple, three Clos3 steps for one Clos2 step, and building a closure takes one extra step. The machine proof relates a Clos2 state to a Clos3 state that is ahead of it (`Reach`, `enter`). The interpreter proof has **no run-ahead states**: a projection ``get i ⦅ ` 1 ⦆`` and the tuple of free variables are each evaluated in one go, with no intermediate state to relate.
+* **delay (105 against 151).** An application becomes `let x = L' in app (fst x) (snd x) (shift M')`. The machine proof needs the run-ahead state `retT` and the four administrative steps that reach it. The interpreter proof has **no run-ahead state**: the `let`, `fst` and `snd` compute away, and `let` does not tick.
+* **globalize (127 against 179).** Both proofs use the same **table-indexed relation**: the Clos5 program runs with the table D that the pass made for the whole program, the relation is indexed by D, and code `fun N` is related to `code k` when the table made by globalizing N is part of D. The lemmas about growing tables are shared. The difference is again the continuation relation and the frames.
+* **composition (37 against 32).** Agda cannot infer the intermediate programs through the interpreters' `sem`, so the CakeML-style composition names them.
+
+The clocked interpreters (309 lines) are smaller than the machines (408): no continuations and no states. The generic part (80 lines against 188) has no transition systems, simulations or determinism lemmas.
 
 ## Why delay costs more on the denotational side
 
-As of this PR; the denotational proof is 824 lines and the CompCert-style one 198.
+As of this PR; the denotational proof is 824 lines and the CompCert-style one 151.
 
 **Denotational** (`Correctness/Delay*.agda`):
 
@@ -125,18 +141,19 @@ As of this PR; the denotational proof is 824 lines and the CompCert-style one 19
 
 | part | lines |
 |---|---:|
-| renaming lemmas, generic over any syntax | 54 |
 | relations: values, terms, environments, continuations; the run-ahead state | 58 |
 | the simulation, all cases | 66 |
 | end theorem | 7 |
-| imports | 13 |
+| imports | 20 |
 
-**Where the ≈ 4.2× comes from:**
+Its renaming lemmas, generic over any syntax (43 lines), are now shared (`Lang/Rename.agda`) and not counted.
 
-1. **Two directions instead of one: about 479 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. In the CompCert-style proof, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 345 lines, roughly 1.7× `DelaySim`.
+**Where the ≈ 5.5× comes from:**
+
+1. **Two directions instead of one: about 479 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. In the CompCert-style proof, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 345 lines, roughly 2.3× `DelaySim`.
 2. **Finite observations in reflect: about 195 lines, plus part of the app case.** Pairs are joined (one value ⦅ u , v ⦆), but a target call still takes its code from `car C` and its free variables from `cdr C` separately, possibly from different pairs. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index.
 3. **β needs side conditions: about 130 lines.** In the graph model, β for closures, `let` and `case` holds only with nonemptiness and continuity. That costs `clos-β` and `cont-0` on both sides, the application equation, and consistency for `case`. Operationally, β is a machine step.
-4. **Imports: 82 lines against 13.**
+4. **Imports: 82 lines against 20.**
 5. **Per-construct cases are comparable once the plumbing is gone.** Preserve's fundamental lemma is 78 lines against 66 for the simulation cases.
 
 The cost is not in the compositional, per-construct reasoning. It is in the backward direction forced by the change of representation (item 1), and in the side conditions β needs in the graph model (item 3). The CompCert-style proof pays for the backward direction once, through determinism. The denotational proof pays for it in each pass that is not an equation, and delay is the only such pass.
@@ -148,7 +165,7 @@ The CompCert-style proof gets the backward direction of every pass from forward 
 * `Operational/Backward.agda` (framework). A CompCert-style backward simulation. The target moves, and the source answers each target step with a plus, or with a star that decreases a well-founded measure. A target stop with o is answered by a source star to a stop with o. Since the machines are total, no source-safety premise is needed. The end theorems are:
   * `backward-terminates : Terminates L₂ o → Terminates L₁ o`, for every o including o-wrong;
   * `backward-diverges : Diverges∞ L₂ → Diverges∞ L₁`, where `Diverges∞` is an infinite run. Without determinism, "runs of every length" (`Diverges`) does not give an infinite run, so the hypothesis must be one. The measure makes the simulation productive: along an infinite target run, the source cannot wait forever.
-* `Correctness/DelayBackSim.agda` (delay). The end theorems are `delay-back-terminates` and `delay-back-diverges`, for every Clos3 program. It reuses DelaySim's relations on values, environments and continuations, and its renaming lemmas (about 100 lines). The new part is the state relation. Where the target takes administrative steps for one source step, the source waits and the index counts the target steps left:
+* `Correctness/DelayBackSim.agda` (delay). The end theorems are `delay-back-terminates` and `delay-back-diverges`, for every Clos3 program. It reuses DelaySim's relations on values, environments and continuations (58 lines), and the shared renaming lemmas. The new part is the state relation. Where the target takes administrative steps for one source step, the source waits and the index counts the target steps left:
   * 3 when building a closure;
   * 9 when a call returns its operator to the let frame: the let body, fst, the variable, the pair check, then snd, the variable, and the return to appE.
 
@@ -156,9 +173,9 @@ The CompCert-style proof gets the backward direction of every pass from forward 
 
 | | lines |
 |---|---:|
-| delay, forward (`DelaySim`) | 198 |
+| delay, forward (`DelaySim`) | 151 |
 | delay, direct backward (`DelayBackSim`) | 146 |
-| – the same, standalone (with the ≈ 100 reused lines) | ≈ 246 |
+| – the same, standalone (with the 58 reused lines) | ≈ 204 |
 | generic: backward from forward + determinism (in `Smallstep`, `Simulation`) | 71 |
 | generic: direct backward simulation (`Backward`) | 94 |
 | delay, denotational reflect (`DelayReflectFinite` + `DelayFiniteRel`) | 453 |
@@ -167,6 +184,6 @@ The 71 lines are the parts of the forward framework that exist only to get the b
 
 **What this shows:**
 
-* A direct CompCert-style backward proof of delay is about as big as the forward one: 146 lines on top of the shared relations, or about 246 standalone, against 198. The cases are as easy as the forward cases (one line each, by computation of the step function). The extra lines list the administrative target states, 12 constructors of the state relation and one `waits` line per state.
+* A direct CompCert-style backward proof of delay is about as big as the forward one: 146 lines on top of the shared relations, or about 204 standalone, against 151. The cases are as easy as the forward cases (one line each, by computation of the step function). The extra lines list the administrative target states, 12 constructors of the state relation and one `waits` line per state.
 * It stays well under the denotational reflect (453 lines in its two modules, 479 with the depth bound it uses). So the CompCert-style advantage on delay is not only "backward comes free from determinism". Even without determinism, a step-indexed backward simulation needs no finite-observation machinery. A target run is a finite sequence of steps, each answered locally, while a denotational element of a target application summarizes many calls at once.
 * Generically, the direct backward framework (94) is somewhat larger than the determinism argument (71). And a non-deterministic language would need it alongside a forward simulation in every pass that changes representation, here about 150 lines more for delay. The determinism argument is paid once.

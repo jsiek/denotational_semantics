@@ -39,81 +39,25 @@
 module Compiler.Operational.Correctness.DelaySim where
 
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; replicate)
+open import Data.List using ([]; _∷_; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
-open import abt.Sig using (Sig)
-open import abt.Var using (Var)
-
-{- Renaming lemmas, for any signature ------------------------------------------}
-
-module RenameLemmas (Op : Set) (sig : Op → List Sig) where
-  open import abt.AbstractBindingTree Op sig renaming (ABT to AST)
-  open import Compiler.Lang.Rename Op sig
-
-  private
-    Pw : (Var → Var) → (Var → Var) → Set
-    Pw f g = ∀ x → f x ≡ g x
-
-  ext-cong : ∀ {f g} → Pw f g → Pw (ext f) (ext g)
-  ext-cong eq zero = refl
-  ext-cong eq (suc x) = cong suc (eq x)
-
-  rename-cong : ∀ {f g} → Pw f g → ∀ M → rename f M ≡ rename g M
-  rename-cong-arg : ∀ {f g b} → Pw f g → (a : Arg b) → rename-arg f a ≡ rename-arg g a
-  rename-cong-args : ∀ {f g bs} → Pw f g → (as : Args bs) → rename-args f as ≡ rename-args g as
-  rename-cong eq (` x) = cong `_ (eq x)
-  rename-cong eq (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-cong-args eq as)
-  rename-cong-arg eq (ast M) = cong ast (rename-cong eq M)
-  rename-cong-arg eq (bind a) = cong bind (rename-cong-arg (ext-cong eq) a)
-  rename-cong-arg eq (clear a) = refl
-  rename-cong-args eq nil = refl
-  rename-cong-args eq (cons a as) = cong₂ cons (rename-cong-arg eq a) (rename-cong-args eq as)
-
-  rename-fuse : ∀ f g M → rename f (rename g M) ≡ rename (λ x → f (g x)) M
-  rename-fuse-arg : ∀ f g {b} (a : Arg b)
-    → rename-arg f (rename-arg g a) ≡ rename-arg (λ x → f (g x)) a
-  rename-fuse-args : ∀ f g {bs} (as : Args bs)
-    → rename-args f (rename-args g as) ≡ rename-args (λ x → f (g x)) as
-  rename-fuse f g (` x) = refl
-  rename-fuse f g (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-fuse-args f g as)
-  rename-fuse-arg f g (ast M) = cong ast (rename-fuse f g M)
-  rename-fuse-arg f g (bind a) =
-    cong bind (trans (rename-fuse-arg (ext f) (ext g) a) (rename-cong-arg ext-fuse a))
-    where ext-fuse : Pw (λ x → ext f (ext g x)) (ext (λ x → f (g x)))
-          ext-fuse zero = refl
-          ext-fuse (suc x) = refl
-  rename-fuse-arg f g (clear a) = refl
-  rename-fuse-args f g nil = refl
-  rename-fuse-args f g (cons a as) = cong₂ cons (rename-fuse-arg f g a) (rename-fuse-args f g as)
-
-  rename-id : ∀ M → rename (λ x → x) M ≡ M
-  rename-id-arg : ∀ {f b} → Pw f (λ x → x) → (a : Arg b) → rename-arg f a ≡ a
-  rename-id-args : ∀ {f bs} → Pw f (λ x → x) → (as : Args bs) → rename-args f as ≡ as
-  rename-id (` x) = refl
-  rename-id (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-id-args (λ x → refl) as)
-  rename-id-arg eq (ast M) = cong ast (trans (rename-cong eq M) (rename-id M))
-  rename-id-arg eq (bind a) = cong bind (rename-id-arg (λ { zero → refl ; (suc x) → cong suc (eq x) }) a)
-  rename-id-arg eq (clear a) = refl
-  rename-id-args eq nil = refl
-  rename-id-args eq (cons a as) = cong₂ cons (rename-id-arg eq a) (rename-id-args eq as)
-
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as C4
 open import Compiler.Compile.Delay
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 import Compiler.Operational.Machine.Clos3 as S
 import Compiler.Operational.Machine.Clos4 as T
 
-open import Compiler.Lang.Rename C4.Op C4.sig using (ext; rename; rename-args; shift)
-open RenameLemmas C4.Op C4.sig using (rename-fuse; rename-id)
+open import Compiler.Lang.Rename C4.Op C4.sig
+  using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 {- The simulation relation -----------------------------------------------------}
 

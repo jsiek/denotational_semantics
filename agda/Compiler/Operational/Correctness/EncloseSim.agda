@@ -29,10 +29,11 @@ import Compiler.Lang.Clos2 as C
 open import Compiler.Lang.Uses Op sig
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
-open import Compiler.Operational.Observation
+open import Compiler.Compile.EncloseScope using (Closed)
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 import Compiler.Operational.Machine.ISWIM as S
 import Compiler.Operational.Machine.Clos2 as T
 
@@ -259,10 +260,6 @@ module _ (P : C.AST) where
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
 
 {- The end theorem -------------------------------------------------------------}
-
-{- a closed program uses no variables -}
-Closed : AST → Set
-Closed M = bound M ≡ 0
 
 agree-closed : ∀ M → Closed M → Agree M 0 [] []
 agree-closed M c = agree (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x M u)))) (subst (_≤ 0) (sym c) z≤n)

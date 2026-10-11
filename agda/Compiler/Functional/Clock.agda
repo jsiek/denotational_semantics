@@ -35,7 +35,7 @@
 
 module Compiler.Functional.Clock where
 
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M

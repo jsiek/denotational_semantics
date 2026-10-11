@@ -17,8 +17,12 @@ F = 'agda/Compiler/Functional/'
 
 # (side, group, glob patterns)
 GROUPS = [
+    # also the machine-independent lemmas both operational styles use:
+    # Lang/{ListUtil,Scope,Rename}, Compile/{EncloseScope,GlobalizeTable},
+    # and the observations (Observation.agda)
     ('shared', 'syntax, languages, compiler passes',
      ['agda/abt/*.agda', 'agda/Compiler/Lang/*.agda', 'agda/Compiler/Compile/*.agda',
+      'agda/Compiler/Observation.agda',
       'agda/Primitives.agda', 'agda/NewSigUtil.agda', 'agda/NewSyntaxUtil.agda']),
 
     ('den', 'generic infrastructure',
@@ -41,7 +45,7 @@ GROUPS = [
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     ('op', 'generic infrastructure',
-     [O + 'Observation.agda', O + 'Smallstep.agda', O + 'Simulation.agda']),
+     [O + 'Smallstep.agda', O + 'Simulation.agda']),
     ('op', 'semantics of the languages', [O + 'Machine/*.agda']),
     ('op', 'enclose', [O + 'Correctness/EncloseSim.agda']),
     ('op', 'optimize', [O + 'Correctness/OptimizeSim.agda']),
@@ -153,7 +157,8 @@ def main():
             print(f'| {name} | {counts[(side, name)]} |')
     print()
     print(f"Not counted: shared code ({counts[('shared', 'syntax, languages, compiler passes')]} "
-          f"lines: syntax, languages, compiler passes) and examples "
+          f"lines: syntax, languages, compiler passes, observations, and the "
+          f"machine-independent lemmas both operational styles use) and examples "
           f"({counts[('examples', 'examples')]} lines).")
 
 

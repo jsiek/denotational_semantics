@@ -25,15 +25,14 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as C4
 open import Compiler.Compile.Delay
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; proj-pw)
-open import Compiler.Operational.Correctness.DelaySim using (module RenameLemmas)
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil using (_‼_; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos3 as S
 import Compiler.Functional.Interp.Clos4 as T
 
-open import Compiler.Lang.Rename C4.Op C4.sig using (ext; rename; rename-args; shift)
-open RenameLemmas C4.Op C4.sig using (rename-fuse; rename-id)
+open import Compiler.Lang.Rename C4.Op C4.sig
+  using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 open import Data.List using (List; []; _∷_; replicate; reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)

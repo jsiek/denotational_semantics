@@ -30,11 +30,11 @@ module Compiler.Operational.Adequacy.EndToEnd where
 open import Primitives using (Base; base-rep)
 open import Compiler.Lang.ISWIM using (AST)
 open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Terminates)
 import Compiler.Operational.Machine.ISWIM as I
 import Compiler.Operational.Machine.Clos5 as C5
-open import Compiler.Operational.Correctness.EncloseSim using (Closed)
+open import Compiler.Compile.EncloseScope using (Closed)
 import Compiler.Operational.Adequacy.ISWIM as AI
 import Compiler.Operational.Adequacy.Clos5 as A5
 

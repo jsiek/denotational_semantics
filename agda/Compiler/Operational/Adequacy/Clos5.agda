@@ -35,11 +35,11 @@ open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain using (Value) renaming (const to dconst)
 open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
   using (Terminates; Diverges; diverges-not-terminates)
 open import Compiler.Operational.Machine.Clos5
-open import Compiler.Operational.Correctness.GlobalizeSim using (⊑-refl)
+open import Compiler.Compile.GlobalizeTable using (⊑-refl)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import Compiler.Operational.Adequacy.Clos5WF using (WF) public
 open import Compiler.Operational.Adequacy.Clos5Soundness using (soundness) public

@@ -33,10 +33,9 @@ import Compiler.Lang.Clos2 as C2
 open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op;
                cons; clear; bind; ast; ν; ■; Var; Args)
 open import Compiler.Compile.Concretize
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; proj; has-length; proj-pw)
-open import Compiler.Operational.Correctness.ConcretizeSim
-  using (‼-snoc-<; ‼-snoc-length; ‼-≥; length-snoc)
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil
+  using (_‼_; proj; has-length; proj-pw; ‼-snoc-<; ‼-snoc-length; ‼-≥; length-snoc)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos2 as S
 import Compiler.Functional.Interp.Clos3 as T

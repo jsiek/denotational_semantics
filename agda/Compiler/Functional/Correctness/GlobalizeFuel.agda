@@ -7,7 +7,8 @@
   application, so the two interpreters call functions in lock step.
 
   As in the CompCert-style proof (Operational/Correctness/GlobalizeSim.agda),
-  whose lemmas about growing tables are reused here, the Clos5 interpreter
+  which shares the lemmas about growing tables (Compile/GlobalizeTable.agda)
+  with this one, the Clos5 interpreter
   runs with the table D that the pass made for the whole program, and the
   relation is indexed by D. A subterm M is compiled to proj₁ (glob M ds)
   for the table ds made before it, and the table made after it,
@@ -23,10 +24,11 @@ module Compiler.Functional.Correctness.GlobalizeFuel where
 
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos4
+open import Compiler.Lang.Clos5 using (global)
 open import Compiler.Compile.Globalize
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; proj-pw)
-open import Compiler.Operational.Correctness.GlobalizeSim
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil using (_‼_; proj-pw)
+open import Compiler.Compile.GlobalizeTable
   using (_⊑_; ⊑-refl; ⊑-trans; ∷-⊑; glob-grows; glob-grows-args; global-⊑)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos4 as S
@@ -92,10 +94,6 @@ module Rel (D : Defs) where
   second≈ (inl≈ _) = wrong
   second≈ (inr≈ _) = wrong
 
-  {- global-⊑, for the interpreter's lookup in the table -}
-  global≡ : ∀ {d ds} → d ∷ ds ⊑ D → T.global D (length ds) ≡ just d
-  global≡ = global-⊑
-
   {- Clock for clock -------------------------------------------------------------}
 
   {- M, globalized after the table ds, with the table it makes part of D -}
@@ -109,7 +107,7 @@ module Rel (D : Defs) where
     → f ≈ g → RelResult _≈_ (S.apply ck ρ₁ M N f)
                 (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
   call≈ : ∀ ck {ρ₁ ρ₂} N ds (q : proj₁ (glob N ds) ∷ proj₂ (glob N ds) ⊑ D) → ρ₁ ≈ρ ρ₂
-    → RelResult _≈_ (S.call ck N ρ₁) (T.call D ck (T.global D (length (proj₂ (glob N ds)))) ρ₂)
+    → RelResult _≈_ (S.call ck N ρ₁) (T.call D ck (global D (length (proj₂ (glob N ds)))) ρ₂)
   branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
     → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
                 (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
@@ -158,7 +156,7 @@ module Rel (D : Defs) where
   apply≈ ck M N ds p ρ (inr≈ _) = wrong
 
   {- calling code k finds the globalized body in D -}
-  call≈ ck N ds q ρ rewrite global≡ q = go ck
+  call≈ ck N ds q ρ rewrite global-⊑ q = go ck
     where
     go : ∀ ck → RelResult _≈_ (S.call ck N _) (T.call D ck (just (proj₁ (glob N ds))) _)
     go zero = timeout

@@ -32,7 +32,7 @@ open import Compiler.Lang.Uses Op sig
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 open import Compiler.Operational.Machine.ISWIM
 open import Compiler.Operational.Smallstep using (next; stop)
 open import Compiler.Operational.Adequacy.Common

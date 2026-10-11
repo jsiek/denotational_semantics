@@ -24,8 +24,9 @@ open import Compiler.Lang.ISWIM
 open import Compiler.Lang.Uses Op sig
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
-open import Compiler.Operational.Observation
-open import Compiler.Operational.Machine.Common using (_‼_; ‼-<; proj-pw)
+open import Compiler.Compile.EncloseScope using (Closed)
+open import Compiler.Observation
+open import Compiler.Lang.ListUtil using (_‼_; ‼-<; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.ISWIM as S
 import Compiler.Functional.Interp.Clos2 as T
@@ -192,10 +193,6 @@ branch≈ ck M N agM agN const≈ = wrong
 branch≈ ck M N agM agN (tup≈ _) = wrong
 
 {- The end theorem -------------------------------------------------------------}
-
-{- a closed program uses no variables -}
-Closed : AST → Set
-Closed M = bound M ≡ 0
 
 agree-closed : ∀ M → Closed M → Agree M 0 [] []
 agree-closed M c = agree (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x M u)))) (subst (_≤ 0) (sym c) z≤n)

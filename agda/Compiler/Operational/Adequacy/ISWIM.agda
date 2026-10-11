@@ -48,11 +48,11 @@ open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import Compiler.Model.Graph.Correctness.CompilerCorrect
   using (compile; compile-correct-const; compile-correct-nonempty)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; next; stop)
 open import Compiler.Operational.Machine.ISWIM
-open import Compiler.Operational.Correctness.EncloseSim using (Closed)
+open import Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Lang.Uses Op sig using (uses-bound)
 open import Compiler.Operational.Adequacy.Common
 open import Compiler.Operational.Adequacy.Soundness using (soundness) public

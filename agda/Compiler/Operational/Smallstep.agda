@@ -43,7 +43,7 @@
     the forward simulation is given directly: a match indexed by a
     natural number, which such a step must decrease.
 
-  * Layout: Observation.agda (shared by any semantics), Smallstep.agda and
+  * Layout: ../Observation.agda (shared with the clocked interpreters), Smallstep.agda and
     Simulation.agda (the framework), Machine/*.agda (one per language),
     Correctness/*Sim.agda (one per pass).
 
@@ -51,7 +51,7 @@
 
 module Compiler.Operational.Smallstep where
 
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Nat using (ℕ; zero; suc; _+_)
