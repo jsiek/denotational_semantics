@@ -123,3 +123,8 @@ import Compiler.Operational.Adequacy.Clos5Soundness
 import Compiler.Operational.Adequacy.Clos5LogRel
 import Compiler.Operational.Adequacy.Clos5
 import Compiler.Operational.Adequacy.EndToEnd
+
+{- experiment: a direct backward simulation for delay, without determinism,
+   for comparison (see papers/PLDI-2027/loc.md) -}
+import Compiler.Operational.Backward
+import Compiler.Operational.Correctness.DelayBackSim

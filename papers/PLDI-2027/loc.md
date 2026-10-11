@@ -36,6 +36,13 @@ Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines
 | end to end | 24 |
 | **total** | **1993** |
 
+An experiment, not in the totals, is described [below](#experiment-a-direct-backward-simulation-for-delay):
+
+| experiment (not in the totals) | lines |
+|---|---:|
+| operational: direct backward simulation for delay — framework | 97 |
+| operational: direct backward simulation for delay — delay | 146 |
+
 Not counted: code that both proofs use (791 lines: syntax, languages, compiler passes) and examples (185 lines).
 
 ## What the groups contain
@@ -87,19 +94,19 @@ As of this PR; the denotational proof is 824 lines and the operational one 218.
 
 | part | lines | what it is |
 |---|---:|---|
-| **backward direction (reflect)** | **≈ 507** | |
-| – finite-observation machinery | 207 | the relation R with the call batches (130), depth and `Bnd` (26), `collect` (39), which extracts finite witnesses of a target call, and `cdr-witness` (12), which picks finitely many pairs whose cdrs cover the free variables of a call |
+| **backward direction (reflect)** | **479** | |
+| – finite-observation machinery | 195 | the relation R with the call batches (130), depth and `Bnd` (26), `collect` (39), which extracts finite witnesses of a target call |
 | – fundamental lemma | 193 | one case per construct, plus helpers for nonemptiness, tags, pairs and case branches |
 | – semantic side conditions | 48 | consistency of Clos4 terms (16); a source β-law and a "one finite part of the bound variable suffices" lemma (32) |
 | – imports and end theorem | 43 | |
-| **forward direction (preserve)** | **≈ 208** | |
+| **forward direction (preserve)** | **208** | |
 | – the relation ⊑ and its lemmas | 44 | |
 | – target laws | 41 | a β-law for closures, `case` contains its branch, one finite part suffices |
 | – fundamental lemma | 78 | |
 | – imports and end theorem | 45 | |
-| **shared** | **≈ 107** | |
+| **shared** | **137** | |
 | – the `let`/`fst`/`snd` application equation | 42 | `DelayApp` |
-| – shorthands, list helpers, flat values | 65 | |
+| – shorthands, list helpers, flat values, `cdr-witness` (finitely many pairs whose cdrs cover a list) | 95 | |
 
 **Operational** (`Correctness/DelaySim.agda`):
 
@@ -113,10 +120,40 @@ As of this PR; the denotational proof is 824 lines and the operational one 218.
 
 **Where the ≈ 3.8× comes from:**
 
-1. **Two directions instead of one: about 507 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 315 lines, roughly 1.4× `DelaySim`.
-2. **Finite observations in reflect: about 207 lines, plus part of the app case.** Pairs are joined (one value ⦅ u , v ⦆), but a target call still takes its code from `car C` and its free variables from `cdr C` separately, possibly from different pairs. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index.
+1. **Two directions instead of one: about 479 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 345 lines, roughly 1.6× `DelaySim`.
+2. **Finite observations in reflect: about 195 lines, plus part of the app case.** Pairs are joined (one value ⦅ u , v ⦆), but a target call still takes its code from `car C` and its free variables from `cdr C` separately, possibly from different pairs. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index.
 3. **β needs side conditions: about 130 lines.** In the graph model, β for closures, `let` and `case` holds only with nonemptiness and continuity. That costs `clos-β` and `cont-0` on both sides, the application equation, and consistency for `case`. Operationally, β is a machine step.
 4. **Imports: 82 lines against 11.**
 5. **Per-construct cases are comparable once the plumbing is gone.** Preserve's fundamental lemma is 78 lines against 66 for the simulation cases.
 
 The cost is not in the compositional, per-construct reasoning. It is in the backward direction forced by the change of representation (item 1), and in the side conditions β needs in the graph model (item 3). Operational proofs pay for the backward direction once, through determinism. The denotational proof pays for it in each pass that is not an equation, and delay is the only such pass.
+
+## Experiment: a direct backward simulation for delay
+
+The operational proof gets the backward direction of every pass from forward simulation plus determinism. A non-deterministic language cannot do that. This experiment measures what it would pay instead: the backward direction of delay, proved by a backward simulation that uses the determinism of neither machine. It is the operational counterpart of the denotational reflect.
+
+* `Operational/Backward.agda` (framework). A CompCert-style backward simulation. The target moves, and the source answers each target step with a plus, or with a star that decreases a well-founded measure. A target stop with o is answered by a source star to a stop with o. Since the machines are total, no source-safety premise is needed. The end theorems are:
+  * `backward-terminates : Terminates L₂ o → Terminates L₁ o`, for every o including o-wrong;
+  * `backward-diverges : Diverges∞ L₂ → Diverges∞ L₁`, where `Diverges∞` is an infinite run. Without determinism, "runs of every length" (`Diverges`) does not give an infinite run, so the hypothesis must be one. The measure makes the simulation productive: along an infinite target run, the source cannot wait forever.
+* `Correctness/DelayBackSim.agda` (delay). The end theorems are `delay-back-terminates` and `delay-back-diverges`, for every Clos3 program. It reuses DelaySim's relations on values, environments and continuations, and its renaming lemmas (about 100 lines). The new part is the state relation. Where the target takes administrative steps for one source step, the source waits and the index counts the target steps left:
+  * 3 when building a closure;
+  * 9 when a call returns its operator to the let frame: the let body, fst, the variable, the pair check, then snd, the variable, and the return to appE.
+
+  These intermediate target states are listed one by one. The forward proof jumps over them with a target star, and it needs only one run-ahead state (`retT`).
+
+| | lines |
+|---|---:|
+| delay, forward (`DelaySim`) | 218 |
+| delay, direct backward (`DelayBackSim`) | 146 |
+| – the same, standalone (with the ≈ 100 reused lines) | ≈ 246 |
+| generic: backward from forward + determinism (in `Smallstep`, `Simulation`) | 128 |
+| generic: direct backward simulation (`Backward`) | 97 |
+| delay, denotational reflect (`DelayReflectFinite` + `DelayFiniteRel`) | 453 |
+
+The 128 lines are the parts of the forward framework that exist only to get the backward direction: `Deterministic` and `Progressive`, `star→steps`, `steps-det-skip`, `diverges-not-terminates`, `never-final-diverges`, `machine-det` and `machine-progress`, `back`, `backward-terminates`, and `equivalent`. They are paid once for all five passes.
+
+**What this shows:**
+
+* A direct operational backward proof of delay is about as big as the forward one: 146 lines on top of the shared relations, or about 246 standalone, against 218. The cases are as easy as the forward cases (one line each, by computation of the step function). The extra lines list the administrative target states, 12 constructors of the state relation and one `waits` line per state.
+* It stays well under the denotational reflect (453 lines in its two modules, 479 with the depth bound it uses). So the operational advantage on delay is not only "backward comes free from determinism". Even without determinism, a step-indexed backward simulation needs no finite-observation machinery. A target run is a finite sequence of steps, each answered locally, while a denotational element of a target application summarizes many calls at once.
+* Generically, the direct backward framework (97) is a little smaller than the determinism argument (128). But a non-deterministic language would need it alongside a forward simulation in every pass that changes representation, here about 150 lines more for delay. The determinism argument is paid once.
