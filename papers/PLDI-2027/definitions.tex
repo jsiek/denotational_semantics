@@ -50,9 +50,42 @@
 \newcommand{\consis}{\mathit{consis}}
 \newcommand{\obseq}{\cong}
 
+% the CompCert-style proof
+\newcommand{\ev}[3]{\key{eval}\;#1\;#2\;#3}
+\newcommand{\rt}[2]{\key{ret}\;#1\;#2}
+\newcommand{\nxt}{\key{next}\;}
+\newcommand{\stp}{\key{stop}\;}
+\newcommand{\wrong}{\key{wrong}}
+\newcommand{\retq}{\key{ret?}}
+\newcommand{\Mach}[1]{\mathcal{M}^{#1}}
+\newcommand{\step}[1]{\mathit{step}^{#1}}
+\newcommand{\start}[1]{\mathit{start}^{#1}}
+\newcommand{\obs}{\mathit{obs}}
+\newcommand{\Final}{\mathit{Final}}
+\newcommand{\Term}{\mathit{Terminates}}
+\newcommand{\Div}{\mathit{Diverges}}
+\newcommand{\Equiv}{\mathit{Equivalent}}
+\newcommand{\FSim}{\mathit{FSim}}
+\newcommand{\BSim}{\mathit{BSim}}
+\newcommand{\cloV}[2]{\key{clo}(#1,\, #2)}
+\newcommand{\closV}[2]{\key{clos}(#1;\, #2)}
+\newcommand{\tupV}[1]{\key{tup}(#1)}
+\newcommand{\pairV}[2]{\key{pair}(#1, #2)}
+\newcommand{\funV}[1]{\key{fun}(#1)}
+\newcommand{\codeV}[1]{\key{code}_{#1}}
+\newcommand{\inlV}{\key{inl}\;}
+\newcommand{\inrV}{\key{inr}\;}
+\newcommand{\Kf}[2]{\key{#1}(#2)}
+\newcommand{\halt}{\key{halt}}
+\newcommand{\tnext}{\mathit{tuple\text{-}next}}
+\newcommand{\cnext}{\mathit{clos\text{-}next}}
+\newcommand{\lto}{\longrightarrow}
+\newcommand{\approxk}{\approx_k}
+\newcommand{\approxq}{\approx^{?}}
+
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
 
-\title{Denotational Closure Conversion: Definitions}
+\title{Closure Conversion: Definitions}
 \author{}
 \date{}
 
@@ -68,21 +101,20 @@ instead of de Bruijn indices.
 
 \paragraph{Contents.}
 \begin{enumerate}
-\item \textbf{Values and operators:}
+\item \textbf{The compiler:}
+  \begin{itemize}
+  \item the syntax of ISWIM and Clos2--Clos5, including Clos5 programs;
+  \item enclose, optimize, concretize, delay (with the let), and globalize.
+  \end{itemize}
+\item \textbf{Denotational proof:}
   \begin{itemize}
   \item the value domain and environments, with $\rho_0(x) = \{\omega\}$;
   \item the operators $\star$, $\Lambda$, $\key{pair}$/$\key{car}$/$\key{cdr}$,
     strict $\mathcal{T}$, $\key{proj}$, $\key{inl}$/$\key{inr}$/$\mathcal{C}$,
     $\key{guard}$, and $\odot$;
-  \item consistency ($\sim$, $\consis$) and continuity.
-  \end{itemize}
-\item \textbf{Languages:} the syntax of ISWIM and Clos2--Clos5, including Clos5 programs.
-\item \textbf{Semantics:} the clauses all languages share, then each language's own
-  clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$.
-\item \textbf{Compilation:} enclose, optimize, concretize, delay (with the let),
-  and globalize.
-\item \textbf{Relations and lemma statements:}
-  \begin{itemize}
+  \item consistency ($\sim$, $\consis$) and continuity;
+  \item the semantics: the clauses all languages share, then each language's own
+    clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$;
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, the let equation, the element-wise relation $\sqsubseteq$
@@ -90,6 +122,19 @@ instead of de Bruijn indices.
     for reflection;
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item the end-to-end theorem.
+  \end{itemize}
+\item \textbf{CompCert-style proof:}
+  \begin{itemize}
+  \item observations, machines as step functions, termination, divergence,
+    and determinism;
+  \item the machines of ISWIM and Clos2--Clos5: values, continuation frames,
+    and transitions;
+  \item forward simulations, $\mathit{Equivalent}$, and the theorem that a
+    forward simulation gives $\mathit{Equivalent}$;
+  \item for each pass, the relations $\approx$, $\approx_k$, and $\sim$ on
+    values, continuations, and states, and its correctness theorem;
+  \item the end-to-end theorem;
+  \item backward simulations, and the direct backward simulation for delay.
   \end{itemize}
 \end{enumerate}
 
@@ -112,8 +157,183 @@ Using names instead of de Bruijn indices changes a few definitions:
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty}.
 \end{itemize}
+In the CompCert-style proof:
+\begin{itemize}
+\item \textbf{Machine environments} are finite maps from variables.
+  The Agda uses lists indexed by de Bruijn indices, and a Clos2 closure
+  holds the values of its free variables last first.
+\item \textbf{Values collected} in $\key{tupK}$ and $\key{closK}$ frames are
+  listed in order. The Agda lists them in reverse.
+\item \textbf{Projections} $\prj{i} M$ carry the arity $n$ of the tuple,
+  as \texttt{get} does in the Agda ($i : \mathtt{Fin}\;n$).
+\item \textbf{Enclose}'s $\approx_X$ needs no bound on the Clos2 environment.
+  The Agda's \texttt{Agree} also asks that the Clos2 environment covers
+  the variables the closure captures.
+\item \textbf{Optimize}'s relations need no renaming. The Agda relates
+  variable $x$ to $r(x)$ for the renaming $r$ that optimize carries, and
+  the values collected for a closure through the renumbering of positions
+  that \texttt{prune} computes. $\mathit{Scoped}$ and $\mathit{WS}$ are
+  \texttt{WS}.
+\item \textbf{Concretize}'s $\approx_\varphi$ ranges over the domain of
+  $\varphi$. The Agda's $\varphi$ is total, mapping a variable past a
+  closure's free variables to an unbound one, so its theorem has no
+  precondition.
+\item \textbf{Delay}'s $\approx^{?}$ on environments skips the fresh variables $f$.
+  The Agda relates environments through a renaming that skips the
+  let-bound variables.
+\item \textbf{Global definitions} in the Agda's Clos5 machine and globalize
+  relation are listed newest first.
+\end{itemize}
 
 \paragraph{Building.} \texttt{latexmk -pdf definitions.tex}
+
+%===============================================================================
+\part{The Compiler}
+
+\section{Languages}
+
+\subsection{ISWIM}
+
+The source language: a call-by-value $\lambda$-calculus with constants, tuples, and sums.
+\begin{syntax}
+  & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+\[
+  \FV(\lam{y} N) = \FV(N) \setminus \{y\}
+\]
+
+\subsection{Clos2}
+
+Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its free variables $z_1\ldots z_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
+\begin{syntax}
+  & L, M, N &::=& x \mid \clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+\[
+  \FV(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) = \{z_1, \ldots, z_n\}
+\]
+
+\subsection{Clos3}
+
+Each closure now packs references $r_1\ldots r_n$ to its free variables into one tuple bound to $e$, so its body reaches them by projections from $e$.
+\begin{syntax}
+  & r &::=& x \mid \prj{i} x \\
+  & L, M, N &::=& x \mid \clos{r_1\ldots r_n}{e\, y} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+\end{syntax}
+\[
+  \FV(\clos{r_1\ldots r_n}{e\, y} N) = \FV(r_1) \cup \cdots \cup \FV(r_n)
+\]
+
+\subsection{Clos4}
+
+Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$ is used by the delayed application.
+\begin{syntax}
+  & L, M, N &::=& x \mid \fun{e\,y.\,N} \mid L(M, N) \mid c
+    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
+  &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
+    \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+    \mid \Let x = M \In N
+\end{syntax}
+\[
+  \FV(\fun{e\,y.\,N}) = \emptyset
+\]
+
+\subsection{Clos5}
+
+Like Clos4, but the code is hoisted into a program's list of global definitions $d_k$, which terms refer to as $\funref{k}$.
+\begin{syntax}
+  & L, M, N &::=& x \mid \funref{k} \mid L(M, N) \mid c
+    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
+  &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
+    \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+    \mid \Let x = M \In N \\[1ex]
+  & d &::=& e\,y.\,N \qquad\qquad (\FV(e\,y.\,N) = \emptyset) \\
+  & P &::=& (d_0, \ldots, d_{m-1};\; M)
+\end{syntax}
+
+%===============================================================================
+\section{Compilation}
+
+\[
+  \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
+     \circ \pass{optimize} \circ \pass{enclose}
+\]
+
+In each pass, the clauses not shown are homomorphic.
+
+\subsection{Enclose (ISWIM $\to$ Clos2)}
+
+Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
+\begin{align*}
+  \pass{enclose}(\lam{y} N) &= \clos{x_1\ldots x_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
+    \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
+\end{align*}
+
+\subsection{Optimize (Clos2 $\to$ Clos2)}
+
+Optimize removes the captured variables that the body does not use.
+\begin{align*}
+  \pass{optimize}(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
+    \clos{z_{i_1}\ldots z_{i_k}}{x_{i_1}\ldots x_{i_k}\, y} \pass{optimize}(N) \\
+  \text{where } \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \}
+\end{align*}
+
+\subsection{Concretize (Clos2 $\to$ Clos3)}
+
+Concretize stores each closure's captured values in a single tuple and turns their uses in the body into projections from that tuple.
+\[
+  \varphi : \X \to \mathit{Ref}
+  \qquad (\mathit{Ref} \text{ is the set of Clos3 references } r)
+\]
+\begin{align*}
+  \pass{concretize}_\varphi(x) &= \varphi(x) \\
+  \pass{concretize}_\varphi(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
+    \clos{\varphi(z_1)\ldots\varphi(z_n)}{e\,y}
+       \pass{concretize}_{\varphi_n}(N) \\
+  \text{where } \varphi_n &= \{ y \mapsto y,\; x_1 \mapsto \prj{1} e,\; \ldots,\; x_n \mapsto \prj{n} e \},
+    \quad e \text{ fresh} \\
+  \pass{concretize}_\varphi(\Case{L}{x}{M}{y}{N}) &=
+    \key{case}\;\pass{concretize}_\varphi(L)\;\key{of} \\
+    &\qquad \key{inl}\,x \Rightarrow \pass{concretize}_{\ext{\varphi}{x}{x}}(M)
+     \mid \key{inr}\,y \Rightarrow \pass{concretize}_{\ext{\varphi}{y}{y}}(N)
+\end{align*}
+
+\subsection{Delay (Clos3 $\to$ Clos4)}
+
+Delay represents each closure as an explicit pair of closed code and its environment tuple, and makes application pass the environment to the code.
+\begin{align*}
+  \pass{delay}(\clos{r_1\ldots r_n}{e\,y} N) &=
+    \pair{\fun{e\,y.\,\pass{delay}(N)}}{\tuple{r_1,\ldots,r_n}} \\
+  \pass{delay}(L\;M) &=
+    \Let f = \pass{delay}(L) \In (\FST f)(\SND f, \pass{delay}(M))
+    \qquad f \text{ fresh}
+\end{align*}
+
+\subsection{Globalize (Clos4 $\to$ Clos5)}
+
+Globalize hoists all code into a table of global definitions and replaces each piece of code by a reference to its entry.
+\[
+  \vec{d} = d_0, \ldots, d_{m-1}
+  \qquad
+  \pass{glob}(M, \vec{d}) = (M', \vec{d}')
+\]
+\begin{align*}
+  \pass{glob}(x, \vec{d}) &= (x, \vec{d}) \\
+  \pass{glob}(\fun{e\,y.\,N}, \vec{d}) &= (\funref{|\vec{d}_1|},\; \vec{d}_1, (e\,y.\,N'))
+     \quad\text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d}) \\
+  \pass{glob}(\mathit{op}(\bar{x}_1.A_1, \ldots, \bar{x}_n.A_n), \vec{d}_0)
+     &= (\mathit{op}(\bar{x}_1.A'_1, \ldots, \bar{x}_n.A'_n), \vec{d}_n)
+     \quad\text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1}) \\[1ex]
+  \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
+\end{align*}
+
+%===============================================================================
+\part{Denotational Proof}
 
 \section{Values and Operators}
 
@@ -191,73 +411,6 @@ Using names instead of de Bruijn indices changes a few definitions:
     \forall \rho\, v.\; (\forall x.\; \rho(x) \NE) \land v \in \mathcal{E}(\rho) \\
     &\qquad \implies \exists \rho'.\; \mathit{finiteNE}(\rho'),\; \rho' \subseteq \rho,\; v \in \mathcal{E}(\rho')
 \end{align*}
-
-%===============================================================================
-\section{Languages}
-
-\subsection{ISWIM}
-
-The source language: a call-by-value $\lambda$-calculus with constants, tuples, and sums.
-\begin{syntax}
-  & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
-    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
-\end{syntax}
-\[
-  \FV(\lam{y} N) = \FV(N) \setminus \{y\}
-\]
-
-\subsection{Clos2}
-
-Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its free variables $z_1\ldots z_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
-\begin{syntax}
-  & L, M, N &::=& x \mid \clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
-    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
-\end{syntax}
-\[
-  \FV(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) = \{z_1, \ldots, z_n\}
-\]
-
-\subsection{Clos3}
-
-Each closure now packs references $r_1\ldots r_n$ to its free variables into one tuple bound to $e$, so its body reaches them by projections from $e$.
-\begin{syntax}
-  & r &::=& x \mid \prj{i} x \\
-  & L, M, N &::=& x \mid \clos{r_1\ldots r_n}{e\, y} N \mid L\;M \mid c
-    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
-\end{syntax}
-\[
-  \FV(\clos{r_1\ldots r_n}{e\, y} N) = \FV(r_1) \cup \cdots \cup \FV(r_n)
-\]
-
-\subsection{Clos4}
-
-Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$ is used by the delayed application.
-\begin{syntax}
-  & L, M, N &::=& x \mid \fun{e\,y.\,N} \mid L(M, N) \mid c
-    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
-  &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
-    \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
-    \mid \Let x = M \In N
-\end{syntax}
-\[
-  \FV(\fun{e\,y.\,N}) = \emptyset
-\]
-
-\subsection{Clos5}
-
-Like Clos4, but the code is hoisted into a program's list of global definitions $d_k$, which terms refer to as $\funref{k}$.
-\begin{syntax}
-  & L, M, N &::=& x \mid \funref{k} \mid L(M, N) \mid c
-    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
-  &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
-    \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
-    \mid \Let x = M \In N \\[1ex]
-  & d &::=& e\,y.\,N \qquad\qquad (\FV(e\,y.\,N) = \emptyset) \\
-  & P &::=& (d_0, \ldots, d_{m-1};\; M)
-\end{syntax}
 
 %===============================================================================
 \section{Semantics}
@@ -343,82 +496,6 @@ together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SE
       \emptyset & \text{otherwise}
     \end{cases} \\[1ex]
   \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\mathrm{5}} &= \SEM{M}^{\mathrm{5}}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
-\end{align*}
-
-%===============================================================================
-\section{Compilation}
-
-\[
-  \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
-     \circ \pass{optimize} \circ \pass{enclose}
-\]
-
-In each pass, the clauses not shown are homomorphic.
-
-\subsection{Enclose (ISWIM $\to$ Clos2)}
-
-Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
-\begin{align*}
-  \pass{enclose}(\lam{y} N) &= \clos{x_1\ldots x_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
-    \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
-\end{align*}
-
-\subsection{Optimize (Clos2 $\to$ Clos2)}
-
-Optimize removes the captured variables that the body does not use.
-\begin{align*}
-  \pass{optimize}(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
-    \clos{z_{i_1}\ldots z_{i_k}}{x_{i_1}\ldots x_{i_k}\, y} \pass{optimize}(N) \\
-  \text{where } \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \}
-\end{align*}
-
-\subsection{Concretize (Clos2 $\to$ Clos3)}
-
-Concretize stores each closure's captured values in a single tuple and turns their uses in the body into projections from that tuple.
-\[
-  \varphi : \X \to \mathit{Ref}
-  \qquad (\mathit{Ref} \text{ is the set of Clos3 references } r)
-\]
-\begin{align*}
-  \pass{concretize}_\varphi(x) &= \varphi(x) \\
-  \pass{concretize}_\varphi(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) &=
-    \clos{\varphi(z_1)\ldots\varphi(z_n)}{e\,y}
-       \pass{concretize}_{\varphi_n}(N) \\
-  \text{where } \varphi_n &= \{ y \mapsto y,\; x_1 \mapsto \prj{1} e,\; \ldots,\; x_n \mapsto \prj{n} e \},
-    \quad e \text{ fresh} \\
-  \pass{concretize}_\varphi(\Case{L}{x}{M}{y}{N}) &=
-    \key{case}\;\pass{concretize}_\varphi(L)\;\key{of} \\
-    &\qquad \key{inl}\,x \Rightarrow \pass{concretize}_{\ext{\varphi}{x}{x}}(M)
-     \mid \key{inr}\,y \Rightarrow \pass{concretize}_{\ext{\varphi}{y}{y}}(N)
-\end{align*}
-
-\subsection{Delay (Clos3 $\to$ Clos4)}
-
-Delay represents each closure as an explicit pair of closed code and its environment tuple, and makes application pass the environment to the code.
-\begin{align*}
-  \pass{delay}(\clos{r_1\ldots r_n}{e\,y} N) &=
-    \pair{\fun{e\,y.\,\pass{delay}(N)}}{\tuple{r_1,\ldots,r_n}} \\
-  \pass{delay}(L\;M) &=
-    \Let f = \pass{delay}(L) \In (\FST f)(\SND f, \pass{delay}(M))
-    \qquad f \text{ fresh}
-\end{align*}
-
-\subsection{Globalize (Clos4 $\to$ Clos5)}
-
-Globalize hoists all code into a table of global definitions and replaces each piece of code by a reference to its entry.
-\[
-  \vec{d} = d_0, \ldots, d_{m-1}
-  \qquad
-  \pass{glob}(M, \vec{d}) = (M', \vec{d}')
-\]
-\begin{align*}
-  \pass{glob}(x, \vec{d}) &= (x, \vec{d}) \\
-  \pass{glob}(\fun{e\,y.\,N}, \vec{d}) &= (\funref{|\vec{d}_1|},\; \vec{d}_1, (e\,y.\,N'))
-     \quad\text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d}) \\
-  \pass{glob}(\mathit{op}(\bar{x}_1.A_1, \ldots, \bar{x}_n.A_n), \vec{d}_0)
-     &= (\mathit{op}(\bar{x}_1.A'_1, \ldots, \bar{x}_n.A'_n), \vec{d}_n)
-     \quad\text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1}) \\[1ex]
-  \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
 \end{align*}
 
 %===============================================================================
@@ -579,6 +656,646 @@ For every ISWIM program $M$,
 \[
   \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile}(M)}^{\mathrm{5}} .
 \]
+\end{theorem}
+
+%===============================================================================
+\part{CompCert-Style Proof}
+
+\section{Observations and Machines}
+
+\subsection{Observations}
+
+\[
+  o ::= c \mid \key{fun} \mid \key{tuple}(o_1, \ldots, o_n) \mid \inl o \mid \inr o \mid \wrong
+\]
+
+\subsection{Machines}
+
+A machine is a step function, which either moves to the next state or stops with an observation.
+\begin{align*}
+  \mathit{Next}(S) &::= \nxt s \mid \stp o \qquad (s \in S) \\
+  L &= (S_L,\; \step{L} : S_L \to \mathit{Next}(S_L),\; \start{L} \in S_L)
+\end{align*}
+\begin{align*}
+  s \lto_L s' &\iff \step{L}(s) = \nxt s' \\
+  \Final_L(s, o) &\iff \step{L}(s) = \stp o \\
+  \Term_L(o) &\iff \exists s.\; \start{L} \lto_L^* s \land \Final_L(s, o) \\
+  \Div_L &\iff \forall n.\; \exists s.\; \start{L} \lto_L^n s
+\end{align*}
+where $\lto_L^*$, $\lto_L^+$, and $\lto_L^n$ are zero or more, one or more, and exactly $n$ steps.
+
+\begin{lemma}[Determinism]\label{lem:det}
+If $s \lto_L s_1$ and $s \lto_L s_2$, then $s_1 = s_2$.
+If $\Final_L(s, o)$ and $\Final_L(s, o')$, then $o = o'$.
+If $\Final_L(s, o)$, then there is no $s'$ with $s \lto_L s'$.
+\end{lemma}
+
+\begin{lemma}[Divergence]\label{lem:div}
+If $\Div_L$, then not $\Term_L(o)$.
+If $\Final_L(s, o)$ for no $o$ and no $s$ with $\start{L} \lto_L^* s$, then $\Div_L$.
+\end{lemma}
+
+%-------------------------------------------------------------------------------
+\section{The Machines}
+
+\subsection{Definitions shared by all machines}
+
+\[
+\begin{array}{rcl}
+  s &::=& \ev{M}{\rho}{\kappa} \mid \rt{v}{\kappa} \\
+  \rho &:& \X \rightharpoonup \mathit{Val} \quad \text{(finite)} \qquad
+  \emptyset, \quad \ext{\rho}{x}{v}, \quad \{x_1 {\mapsto} v_1, \ldots, x_n {\mapsto} v_n\}
+\end{array}
+\]
+\begin{align*}
+  \retq(v, \kappa) &= \nxt \rt{v}{\kappa} \\
+  \retq(\bot, \kappa) &= \stp \wrong \\[1ex]
+  \key{proj}^n_i(v_1, \ldots, v_m) &=
+    \begin{cases} v_i & m = n \\ \bot & \text{otherwise} \end{cases}
+    \qquad (\prj{i} \text{ of arity } n) \\[1ex]
+  \tnext(\bar{v};\, \epsilon;\, \rho;\, \kappa) &= \rt{\tupV{\bar{v}}}{\kappa} \\
+  \tnext(\bar{v};\, M\,\bar{M};\, \rho;\, \kappa) &= \ev{M}{\rho}{\Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa}} \\[1ex]
+  \obs(c) &= c \\
+  \obs(\tupV{v_1, \ldots, v_n}) &= \key{tuple}(\obs(v_1), \ldots, \obs(v_n)) \\
+  \obs(\inlV v) &= \inl \obs(v) \\
+  \obs(\inrV v) &= \inr \obs(v) \\
+  \obs(v) &= \key{fun} \quad \text{otherwise (closures, code, and pairs)} \\[1ex]
+  \Mach{\ell}(M) &= (\mathit{State}^{\ell},\; \step{\ell},\; \ev{M}{\emptyset}{\halt})
+\end{align*}
+We write $s \mapsto n$ for $\step{\ell}(s) = n$.
+
+\subsection{Rules common to all machines}
+
+\[
+\begin{array}{rcl}
+  v &::=& \cdots \mid c \mid \tupV{v_1, \ldots, v_n} \mid \inlV v \mid \inrV v \\
+  \kappa &::=& \cdots \mid \halt \mid \Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa} \mid \Kf{getK_i}{\kappa}
+    \mid \Kf{inlK}{\kappa} \mid \Kf{inrK}{\kappa} \mid \Kf{caseK}{x.M, y.N, \rho, \kappa}
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{x}{\rho}{\kappa} & \retq(\rho(x), \kappa) \\
+  \ev{c}{\rho}{\kappa} & \nxt \rt{c}{\kappa} \\
+  \ev{\tuple{M_1, \ldots, M_n}}{\rho}{\kappa} & \nxt \tnext(\epsilon;\, M_1 \ldots M_n;\, \rho;\, \kappa) \\
+  \ev{(\prj{i} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{getK_i}{\kappa}} \\
+  \ev{(\inl M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{inlK}{\kappa}} \\
+  \ev{(\inr M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{inrK}{\kappa}} \\
+  \ev{(\Case{L}{x}{M}{y}{N})}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} \\[1ex]
+  \rt{v}{\halt} & \stp \obs(v) \\
+  \rt{v}{\Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa}} & \nxt \tnext(\bar{v}\,v;\, \bar{M};\, \rho;\, \kappa) \\
+  \rt{v}{\Kf{getK_i}{\kappa}} & \retq(\key{proj}^n_i(\bar{v}), \kappa) & v = \tupV{\bar{v}} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{v}{\Kf{inlK}{\kappa}} & \nxt \rt{(\inlV v)}{\kappa} \\
+  \rt{v}{\Kf{inrK}{\kappa}} & \nxt \rt{(\inrV v)}{\kappa} \\
+  \rt{v}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{M}{\ext{\rho}{x}{u}}{\kappa} & v = \inlV u \\
+  & \nxt \ev{N}{\ext{\rho}{y}{u}}{\kappa} & v = \inrV u \\
+  & \stp \wrong & \text{otherwise}
+\end{array}
+\]
+
+\subsection{ISWIM}
+
+\[
+\begin{array}{rcl}
+  v &::=& \cloV{\lam{x} N}{\rho} \mid \cdots \\
+  \kappa &::=& \Kf{appL}{M, \rho, \kappa} \mid \Kf{appR}{v, \kappa} \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{(\lam{x} N)}{\rho}{\kappa} & \nxt \rt{\cloV{\lam{x} N}{\rho}}{\kappa} \\
+  \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
+  \rt{v}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{v, \kappa}} & v = \cloV{\lam{x} N}{\rho'} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{w}{\Kf{appR}{v, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{w}}{\kappa} & v = \cloV{\lam{x} N}{\rho} \\
+  & \stp \wrong & \text{otherwise}
+\end{array}
+\]
+
+\subsection{Clos2}
+
+\[
+\begin{array}{rcl}
+  v &::=& \closV{x_1 \ldots x_n\, y.\, N}{v_1 \ldots v_n} \mid \cdots \\
+  \kappa &::=& \Kf{appL}{M, \rho, \kappa} \mid \Kf{appR}{v, \kappa}
+    \mid \Kf{closK}{x_1 \ldots x_n\, y.\, N, \bar{v}, \bar{M}, \rho, \kappa} \mid \cdots
+\end{array}
+\]
+\begin{align*}
+  \cnext(\bar{x}\, y.\, N;\, \bar{v};\, \epsilon;\, \rho;\, \kappa) &= \rt{\closV{\bar{x}\, y.\, N}{\bar{v}}}{\kappa} \\
+  \cnext(\bar{x}\, y.\, N;\, \bar{v};\, M\,\bar{M};\, \rho;\, \kappa) &=
+    \ev{M}{\rho}{\Kf{closK}{\bar{x}\, y.\, N, \bar{v}, \bar{M}, \rho, \kappa}}
+\end{align*}
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{(\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N)}{\rho}{\kappa} &
+    \nxt \cnext(x_1 \ldots x_n\, y.\, N;\, \epsilon;\, z_1 \ldots z_n;\, \rho;\, \kappa) \\
+  \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
+  \rt{v}{\Kf{closK}{\bar{x}\, y.\, N, \bar{v}, \bar{M}, \rho, \kappa}} &
+    \nxt \cnext(\bar{x}\, y.\, N;\, \bar{v}\,v;\, \bar{M};\, \rho;\, \kappa) \\
+  \rt{v}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{v, \kappa}} & v = \closV{\ldots}{\ldots} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{w}{\Kf{appR}{v, \kappa}} & \nxt \ev{N}{\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}}{\kappa}
+    & v = \closV{\bar{x}\, y.\, N}{\bar{v}} \\
+  & \stp \wrong & \text{otherwise}
+\end{array}
+\]
+
+\subsection{Clos3}
+
+\[
+\begin{array}{rcl}
+  v &::=& \closV{e\, y.\, N}{v} \mid \cdots \\
+  \kappa &::=& \Kf{appL}{M, \rho, \kappa} \mid \Kf{appR}{v, \kappa} \mid \Kf{closK}{e\, y.\, N, \kappa} \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{(\clos{r_1 \ldots r_n}{e\, y} N)}{\rho}{\kappa} &
+    \nxt \tnext(\epsilon;\, r_1 \ldots r_n;\, \rho;\, \Kf{closK}{e\, y.\, N, \kappa}) \\
+  \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
+  \rt{v}{\Kf{closK}{e\, y.\, N, \kappa}} & \nxt \rt{\closV{e\, y.\, N}{v}}{\kappa} \\
+  \rt{v}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{v, \kappa}} & v = \closV{\ldots}{\ldots} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{w}{\Kf{appR}{v, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
+    & v = \closV{e\, y.\, N}{u} \\
+  & \stp \wrong & \text{otherwise}
+\end{array}
+\]
+
+\subsection{Clos4}
+
+\[
+\begin{array}{rcl}
+  v, f, u &::=& \funV{e\, y.\, N} \mid \pairV{v}{w} \mid \cdots \\
+  \kappa &::=& \Kf{appF}{M, N, \rho, \kappa} \mid \Kf{appE}{f, N, \rho, \kappa} \mid \Kf{appA}{f, u, \kappa}
+    \mid \Kf{pairL}{N, \rho, \kappa} \mid \Kf{pairR}{v, \kappa} \\
+  &\mid& \Kf{fstK}{\kappa} \mid \Kf{sndK}{\kappa} \mid \Kf{letK}{x.N, \rho, \kappa} \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{\fun{e\,y.\,N}}{\rho}{\kappa} & \nxt \rt{\funV{e\, y.\, N}}{\kappa} \\
+  \ev{L(M, N)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appF}{M, N, \rho, \kappa}} \\
+  \ev{\pair{M}{N}}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{pairL}{N, \rho, \kappa}} \\
+  \ev{(\FST M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{fstK}{\kappa}} \\
+  \ev{(\SND M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{sndK}{\kappa}} \\
+  \ev{(\Let x = M \In N)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{letK}{x.N, \rho, \kappa}} \\[1ex]
+  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} & f = \funV{\ldots} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{u}{\Kf{appE}{f, N, \rho, \kappa}} & \nxt \ev{N}{\rho}{\Kf{appA}{f, u, \kappa}} \\
+  \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa} & f = \funV{e\, y.\, N} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{v}{\Kf{pairL}{N, \rho, \kappa}} & \nxt \ev{N}{\rho}{\Kf{pairR}{v, \kappa}} \\
+  \rt{w}{\Kf{pairR}{v, \kappa}} & \nxt \rt{\pairV{v}{w}}{\kappa} \\
+  \rt{v}{\Kf{fstK}{\kappa}} & \nxt \rt{v_1}{\kappa} & v = \pairV{v_1}{v_2} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{v}{\Kf{sndK}{\kappa}} & \nxt \rt{v_2}{\kappa} & v = \pairV{v_1}{v_2} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{v}{\Kf{letK}{x.N, \rho, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{v}}{\kappa}
+\end{array}
+\]
+
+\subsection{Clos5}
+
+The machine of a program runs with its global definitions.
+\[
+\begin{array}{rcl}
+  v, f, u &::=& \codeV{k} \mid \pairV{v}{w} \mid \cdots \\
+  \Mach{5}(d_0, \ldots, d_{m-1};\; M) &=& (\mathit{State}^{5},\; \step{5}_{d_0 \ldots d_{m-1}},\; \ev{M}{\emptyset}{\halt})
+\end{array}
+\]
+The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of Clos4, with $\codeV{k}$ in place of $\funV{e\,y.\,N}$:
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\[1ex]
+  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} & f = \codeV{k} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
+    & f = \codeV{k},\; k < m,\; d_k = e\,y.\,N \\
+  & \stp \wrong & \text{otherwise}
+\end{array}
+\]
+
+%-------------------------------------------------------------------------------
+\section{Simulations}
+
+A forward simulation from $L_1$ to $L_2$ is a family of relations
+$s_1 \sim_i s_2$ between their states, indexed by $i \in \mathbb{N}$.
+\begin{align*}
+  \FSim(L_1, L_2, \sim) &\iff
+  \begin{array}[t]{l}
+    \exists i.\; \start{L_1} \sim_i \start{L_2} \\
+    \land\; \forall i\, s_1\, s_2.\; s_1 \sim_i s_2 \implies \mathit{Answers}_i(\step{L_1}(s_1), s_2)
+  \end{array} \\[1ex]
+  \mathit{Answers}_i(\stp o, s_2) &\iff \Final_{L_2}(s_2, o) \\
+  \mathit{Answers}_i(\nxt s_1', s_2) &\iff
+    (\exists j\, s_2'.\; s_2 \lto_{L_2}^+ s_2' \land s_1' \sim_j s_2')
+    \lor (\exists j < i.\; s_1' \sim_j s_2)
+\end{align*}
+A plus simulation from $L_1$ to $L_2$ is a relation $s_1 \sim s_2$ between their states.
+\begin{align*}
+  \mathit{PlusSim}(L_1, L_2, \sim) &\iff
+    \start{L_1} \sim \start{L_2} \land
+    \forall s_1\, s_2.\; s_1 \sim s_2 \implies \mathit{Answers}^+(\step{L_1}(s_1), s_2) \\[1ex]
+  \mathit{Answers}^+(\stp o, s_2) &\iff \Final_{L_2}(s_2, o) \\
+  \mathit{Answers}^+(\nxt s_1', s_2) &\iff \exists s_2'.\; s_2 \lto_{L_2}^+ s_2' \land s_1' \sim s_2'
+\end{align*}
+\begin{align*}
+  \Equiv(L_1, L_2) &\iff
+    (\forall o.\; \Term_{L_1}(o) \iff \Term_{L_2}(o)) \land (\Div_{L_1} \iff \Div_{L_2})
+\end{align*}
+
+\begin{lemma}[Plus Simulation]\label{lem:plus-sim}
+If $\mathit{PlusSim}(L_1, L_2, \sim)$, then $\FSim(L_1, L_2, \sim')$
+where $s_1 \sim'_i s_2 \iff s_1 \sim s_2$.
+\end{lemma}
+
+\begin{lemma}[Forward Termination]\label{lem:fwd-term}
+If $\FSim(L_1, L_2, \sim)$ and $\Term_{L_1}(o)$, then $\Term_{L_2}(o)$.
+\end{lemma}
+
+\begin{lemma}[Backward Termination]\label{lem:bwd-term}
+If $\FSim(L_1, L_2, \sim)$ and $\Term_{L_2}(o)$, then $\Term_{L_1}(o)$.
+\end{lemma}
+
+\begin{theorem}[Forward Simulation Gives Equivalence]\label{thm:equivalent}
+If $\FSim(L_1, L_2, \sim)$, then $\Equiv(L_1, L_2)$.
+\end{theorem}
+
+\begin{lemma}[Equivalence Composes]\label{lem:equiv-trans}
+If $\Equiv(L_1, L_2)$ and $\Equiv(L_2, L_3)$, then
+\[
+  \Equiv(L_1, L_3) .
+\]
+\end{lemma}
+
+%-------------------------------------------------------------------------------
+\section{Relations}
+
+Each pass relates source and target values ($v \approx w$), continuations
+($\kappa_1 \approxk \kappa_2$), and states ($s_1 \sim s_2$).
+The clauses of $\approx$ not shown are
+$c \approx c$, $\tupV{\bar{v}} \approx \tupV{\bar{w}}$ if $\bar{v} \approx \bar{w}$,
+and $\inlV v \approx \inlV w$ and $\inrV v \approx \inrV w$ if $v \approx w$.
+The frames of $\approxk$ not shown are related when they are the same frame
+with related values and related rest ($\halt \approxk \halt$,
+$\Kf{appR}{v, \kappa_1} \approxk \Kf{appR}{w, \kappa_2}$ if $v \approx w$ and
+$\kappa_1 \approxk \kappa_2$, \ldots).
+\begin{align*}
+  \bar{v} \approx \bar{w} &\iff |\bar{v}| = |\bar{w}| \land \forall i.\; v_i \approx w_i \\
+  v^? \approxq w^? &\iff (v^? = \bot \land w^? = \bot) \lor (v^? = v \land w^? = w \land v \approx w) \\
+  \rho_1 \approx_X \rho_2 &\iff \forall x \in X.\; \exists v\, w.\;
+    \rho_1(x) = v \land \rho_2(x) = w \land v \approx w \\
+  \FV(M_1 \ldots M_n) &= \FV(M_1) \cup \cdots \cup \FV(M_n)
+\end{align*}
+
+\begin{lemma}[Related Values Are Observed Alike]\label{lem:obs}
+In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
+\end{lemma}
+
+\subsection{Enclose}
+
+\begin{align*}
+  \cloV{\lam{y} N}{\rho_1} \approx \closV{x_1 \ldots x_n\, y.\, \pass{enclose}(N)}{v_1 \ldots v_n}
+    &\iff \rho_1 \approx_{\FV(\lam{y} N)} \{x_1 {\mapsto} v_1, \ldots, x_n {\mapsto} v_n\} \\[1ex]
+  \Kf{appL}{M, \rho_1, \kappa_1} \approxk \Kf{appL}{\pass{enclose}(M), \rho_2, \kappa_2}
+    &\iff \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{tupK}{\bar{v}, \bar{M}, \rho_1, \kappa_1} \approxk \Kf{tupK}{\bar{w}, \pass{enclose}(\bar{M}), \rho_2, \kappa_2}
+    &\iff \bar{v} \approx \bar{w} \land \rho_1 \approx_{\FV(\bar{M})} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{caseK}{x.M, y.N, \rho_1, \kappa_1} \approxk {}&
+    \Kf{caseK}{x.\pass{enclose}(M), y.\pass{enclose}(N), \rho_2, \kappa_2} \\
+    &\iff \rho_1 \approx_{\FV(\lam{x} M) \cup \FV(\lam{y} N)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\[1ex]
+  \ev{M}{\rho_1}{\kappa_1} \sim \ev{\pass{enclose}(M)}{\rho_2}{\kappa_2}
+    &\iff \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim \rt{w}{\kappa_2} &\iff v \approx w \land \kappa_1 \approxk \kappa_2
+\end{align*}
+
+\begin{lemma}[Enclose Simulation]\label{lem:enclose-fsim}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \mathit{PlusSim}(\Mach{\mathrm{ISWIM}}(M), \Mach{2}(\pass{enclose}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Enclose]\label{thm:enclose-correct}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{2}(\pass{enclose}(M))) .
+\]
+\end{theorem}
+
+\subsection{Optimize}
+
+For a closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$, let
+$\{ i_1 < \cdots < i_k \} = \{ i \mid x_i \in \FV(N) \}$, as in optimize, and
+\[
+  \bar{x}'_{<j} = x_{i_l} \ldots \quad (i_l < j) \qquad
+  \bar{z}'_{>j} = z_{i_l} \ldots \quad (i_l > j) \qquad
+  \bar{x}' = \bar{x}'_{<n+1} .
+\]
+\begin{align*}
+  \mathit{Scoped}(M) &\iff \text{every closure } \clos{\bar{z}}{\bar{x}\, y} N \text{ in } M
+    \text{ has } \FV(N) \subseteq \{\bar{x}, y\} \\
+  \mathit{WS}(M) &\iff \mathit{Scoped}(M) \land \FV(M) = \emptyset \\
+  \mathit{Built}^j_N(v_1 \ldots v_{j-1}, \bar{w}) &\iff \mathit{Scoped}(N) \land
+    \{x_1 {\mapsto} v_1, \ldots, x_{j-1} {\mapsto} v_{j-1}\}
+    \approx_{\FV(N) \cap \{x_1, \ldots, x_{j-1}\}} \{\bar{x}'_{<j} {\mapsto} \bar{w}\}
+\end{align*}
+\begin{align*}
+  \closV{\bar{x}\, y.\, N}{\bar{v}} \approx {}& \closV{\bar{x}'\, y.\, \pass{optimize}(N)}{\bar{w}} \\
+    &\iff \mathit{Scoped}(N) \land
+      \{\bar{x} {\mapsto} \bar{v}\} \approx_{\FV(N) \setminus \{y\}} \{\bar{x}' {\mapsto} \bar{w}\} \\[1ex]
+  \Kf{appL}{M, \rho_1, \kappa_1} \approxk {}& \Kf{appL}{\pass{optimize}(M), \rho_2, \kappa_2} \\
+    &\iff \mathit{Scoped}(M) \land \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{tupK}{\bar{v}, \bar{M}, \rho_1, \kappa_1} \approxk {}&
+    \Kf{tupK}{\bar{w}, \pass{optimize}(\bar{M}), \rho_2, \kappa_2} \\
+    &\iff \bar{v} \approx \bar{w} \land (\forall i.\; \mathit{Scoped}(M_i)) \land
+      \rho_1 \approx_{\FV(\bar{M})} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{caseK}{x.M, y.N, \rho_1, \kappa_1} \approxk {}&
+    \Kf{caseK}{x.\pass{optimize}(M), y.\pass{optimize}(N), \rho_2, \kappa_2} \\
+    &\iff \mathit{Scoped}(M) \land \mathit{Scoped}(N) \land
+      \rho_1 \approx_{\FV(\lam{x} M) \cup \FV(\lam{y} N)} \rho_2 \\
+    &\qquad \land\; \kappa_1 \approxk \kappa_2 \\
+  \Kf{closK}{\bar{x}\, y.\, N, \bar{v}, z_{j+1} \ldots z_n, \rho_1, \kappa_1} \approxk {}&
+    \Kf{closK}{\bar{x}'\, y.\, \pass{optimize}(N), \bar{w}, \bar{z}'_{>j}, \rho_2, \kappa_2} \\
+    &\iff x_j \in \FV(N) \land \mathit{Built}^j_N(\bar{v}, \bar{w}) \land
+      \rho_1 \approx_{\{z_{j+1}, \ldots, z_n\}} \rho_2 \land \kappa_1 \approxk \kappa_2
+\end{align*}
+The states are related with an index, which is $0$ except while the source
+evaluates a free variable $z_j$ that optimize drops.
+\begin{align*}
+  \ev{M}{\rho_1}{\kappa_1} \sim_0 \ev{\pass{optimize}(M)}{\rho_2}{\kappa_2}
+    &\iff \mathit{Scoped}(M) \land \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim_0 \rt{w}{\kappa_2} &\iff v \approx w \land \kappa_1 \approxk \kappa_2 \\
+  \ev{z_j}{\rho_1}{\kappa'_1} \sim_{2(n-j)+2} s_2
+    &\iff \mathit{Drop}_j \land \rho_1(z_j) \text{ is defined} \\
+  \rt{v}{\kappa'_1} \sim_{2(n-j)+1} s_2 &\iff \mathit{Drop}_j
+\end{align*}
+where
+\begin{align*}
+  \kappa'_1 &= \Kf{closK}{\bar{x}\, y.\, N, \bar{v}, z_{j+1} \ldots z_n, \rho_1, \kappa_1} \\
+  s_2 &= \cnext(\bar{x}'\, y.\, \pass{optimize}(N);\, \bar{w};\, \bar{z}'_{>j};\, \rho_2;\, \kappa_2) \\
+  \mathit{Drop}_j &\iff x_j \notin \FV(N) \land \mathit{Built}^j_N(\bar{v}, \bar{w}) \land
+      \rho_1 \approx_{\{z_{j+1}, \ldots, z_n\}} \rho_2 \land \kappa_1 \approxk \kappa_2
+\end{align*}
+
+\begin{lemma}[Enclose Is Well Scoped]\label{lem:enclose-ws}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \mathit{WS}(\pass{enclose}(M)) .
+\]
+\end{lemma}
+
+\begin{lemma}[Optimize Simulation]\label{lem:optimize-fsim}
+For every Clos2 term $M$,
+\[
+  \mathit{WS}(M) \implies \FSim(\Mach{2}(M), \Mach{2}(\pass{optimize}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Optimize]\label{thm:optimize-correct}
+For every Clos2 term $M$,
+\[
+  \mathit{WS}(M) \implies \Equiv(\Mach{2}(M), \Mach{2}(\pass{optimize}(M))) .
+\]
+\end{theorem}
+
+\subsection{Concretize}
+
+\begin{align*}
+  \rho_2 \approx_\varphi \rho_3 &\iff \forall x \in \mathrm{dom}(\varphi).\;
+    \begin{cases}
+      \rho_2(x) \approxq \rho_3(z) & \varphi(x) = z \\
+      \exists \bar{t}.\; \rho_3(z) = \tupV{\bar{t}} \land \rho_2(x) \approxq \key{proj}^n_i(\bar{t})
+        & \varphi(x) = \prj{i} z
+    \end{cases}
+\end{align*}
+\begin{align*}
+  \closV{x_1 \ldots x_n\, y.\, N}{\bar{v}} \approx {}&
+    \closV{e\, y.\, \pass{concretize}_{\varphi_n}(N)}{\tupV{\bar{t}}}
+    \iff \bar{v} \approx \bar{t} \\[1ex]
+  \Kf{appL}{M, \rho_2, \kappa_2} \approxk {}&
+    \Kf{appL}{\pass{concretize}_\varphi(M), \rho_3, \kappa_3}
+    \iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \Kf{tupK}{\bar{v}, \bar{M}, \rho_2, \kappa_2} \approxk {}&
+    \Kf{tupK}{\bar{w}, \pass{concretize}_\varphi(\bar{M}), \rho_3, \kappa_3}
+    \iff \bar{v} \approx \bar{w} \land \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \Kf{caseK}{x.M, y.N, \rho_2, \kappa_2} \approxk {}&
+    \Kf{caseK}{x.\pass{concretize}_{\ext{\varphi}{x}{x}}(M),\,
+               y.\pass{concretize}_{\ext{\varphi}{y}{y}}(N), \rho_3, \kappa_3} \\
+    &\iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \Kf{closK}{x_1 \ldots x_n\, y.\, N, \bar{v}, \bar{M}, \rho_2, \kappa_2} \approxk {}&
+    \Kf{tupK}{\bar{w}, \pass{concretize}_\varphi(\bar{M}), \rho_3,
+      \Kf{closK}{e\, y.\, \pass{concretize}_{\varphi_n}(N), \kappa_3}} \\
+    &\iff \bar{v} \approx \bar{w} \land \rho_2 \approx_\varphi \rho_3
+      \land |\bar{v}| + 1 + |\bar{M}| = n \land \kappa_2 \approxk \kappa_3 \\[1ex]
+  \ev{M}{\rho_2}{\kappa_2} \sim {}& \ev{\pass{concretize}_\varphi(M)}{\rho_3}{\kappa_3}
+    \iff M \notin \X \land \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \ev{x}{\rho_2}{\kappa_2} \sim {}& s_3
+    \iff \exists w^?.\; \rho_2(x) \approxq w^? \land \kappa_2 \approxk \kappa_3
+      \land \step{3}(s_3) = \retq(w^?, \kappa_3) \\
+  \rt{v}{\kappa_2} \sim {}& \rt{w}{\kappa_3} \iff v \approx w \land \kappa_2 \approxk \kappa_3
+\end{align*}
+
+\begin{lemma}[Concretize Simulation]\label{lem:concretize-fsim}
+For every Clos2 term $M$,
+\[
+  \mathit{PlusSim}(\Mach{2}(M), \Mach{3}(\pass{concretize}_{\mathit{id}}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Concretize]\label{thm:concretize-correct}
+For every Clos2 term $M$,
+\[
+  \Equiv(\Mach{2}(M), \Mach{3}(\pass{concretize}_{\mathit{id}}(M))) .
+\]
+\end{theorem}
+
+\subsection{Delay}
+
+\begin{align*}
+  \rho_1 \approxq \rho_2 &\iff \forall x.\; x \text{ is not a fresh variable } f \text{ of delay}
+    \implies \rho_1(x) \approxq \rho_2(x)
+\end{align*}
+\begin{align*}
+  \closV{e\, y.\, N}{v} \approx \pairV{\funV{e\, y.\, \pass{delay}(N)}}{w} &\iff v \approx w
+\end{align*}
+\begin{align*}
+  \Kf{appL}{M, \rho_1, \kappa_1} \approxk {}& \Kf{letK}{f.\,L_M, \rho_2, \kappa_2} \\
+    &\iff \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{appR}{\closV{e\, y.\, N}{v}, \kappa_1} \approxk {}& \Kf{appA}{\funV{e\, y.\, \pass{delay}(N)}, w, \kappa_2} \\
+    &\iff v \approx w \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{tupK}{\bar{v}, \bar{M}, \rho_1, \kappa_1} \approxk {}& \Kf{tupK}{\bar{w}, \pass{delay}(\bar{M}), \rho_2, \kappa_2} \\
+    &\iff \bar{v} \approx \bar{w} \land \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{closK}{e\, y.\, N, \kappa_1} \approxk {}& \Kf{pairR}{\funV{e\, y.\, \pass{delay}(N)}, \kappa_2} \\
+    &\iff \kappa_1 \approxk \kappa_2 \\
+  \Kf{caseK}{x.M, y.N, \rho_1, \kappa_1} \approxk {}& \Kf{caseK}{x.\pass{delay}(M), y.\pass{delay}(N), \rho_2, \kappa_2} \\
+    &\iff \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2
+\end{align*}
+\begin{align*}
+  \ev{M}{\rho_1}{\kappa_1} \sim {}& \ev{\pass{delay}(M)}{\rho_2}{\kappa_2}
+    \iff \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim {}& \rt{w}{\kappa_2}
+    \iff v \approx w \land \kappa_1 \approxk \kappa_2 \land \kappa_1 \neq \Kf{appL}{\ldots} \\
+  \rt{v}{\Kf{appL}{M, \rho_1, \kappa_1}} \sim {}& \rt{w}{\Kf{fstK}{\kappa_F}}
+    \iff v \approx w \land \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2
+\end{align*}
+where $L_M = (\FST f)(\SND f, \pass{delay}(M))$, as in delay, and
+$\kappa_F = \Kf{appF}{\SND f, \pass{delay}(M), \ext{\rho_2}{f}{w}, \kappa_2}$.
+
+\begin{lemma}[Delay Simulation]\label{lem:delay-fsim}
+For every Clos3 term $M$,
+\[
+  \mathit{PlusSim}(\Mach{3}(M), \Mach{4}(\pass{delay}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Delay]\label{thm:delay-correct}
+For every Clos3 term $M$,
+\[
+  \Equiv(\Mach{3}(M), \Mach{4}(\pass{delay}(M))) .
+\]
+\end{theorem}
+
+\subsection{Globalize}
+
+The relations are those for the table $D$ that globalize makes for the whole program.
+\begin{align*}
+  M \leadsto M' &\iff \exists \vec{d}\, \vec{d}'.\;
+    \pass{glob}(M, \vec{d}) = (M', \vec{d}') \land \mathit{Extends}(\vec{d}', D) \\[1ex]
+  \funV{e\, y.\, N} \approx \codeV{k} &\iff \exists \vec{d}\, \vec{d}'\, N'.\;
+    \pass{glob}(N, \vec{d}) = (N', \vec{d}') \land
+    \mathit{Extends}((\vec{d}', e\,y.\,N'), D) \land k = |\vec{d}'| \\
+  \pairV{v}{w} \approx \pairV{v'}{w'} &\iff v \approx v' \land w \approx w' \\
+  \rho_1 \approx \rho_2 &\iff \mathrm{dom}(\rho_1) = \mathrm{dom}(\rho_2) \land
+    \rho_1 \approx_{\mathrm{dom}(\rho_1)} \rho_2
+\end{align*}
+Each frame is related to the same frame when its terms are related by
+$\leadsto$, its values and environments by $\approx$, and its rest by $\approxk$;
+for example,
+\begin{align*}
+  \Kf{appF}{M, N, \rho_1, \kappa_1} \approxk \Kf{appF}{M', N', \rho_2, \kappa_2}
+    &\iff M \leadsto M' \land N \leadsto N' \land \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\[1ex]
+  \ev{M}{\rho_1}{\kappa_1} \sim \ev{M'}{\rho_2}{\kappa_2}
+    &\iff M \leadsto M' \land \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim \rt{w}{\kappa_2} &\iff v \approx w \land \kappa_1 \approxk \kappa_2
+\end{align*}
+
+\begin{lemma}[Definitions Stay Put]\label{lem:global-extends}
+If $\mathit{Extends}((\vec{d}, d), D)$, then $D_{|\vec{d}|} = d$.
+\end{lemma}
+
+\begin{lemma}[Globalize Simulation]\label{lem:globalize-fsim}
+For every Clos4 term $M$, if $\pass{globalize}(M) = (D;\; M')$, then
+\[
+  \mathit{PlusSim}(\Mach{4}(M), \Mach{5}(D;\; M'), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Globalize]\label{thm:globalize-correct}
+For every Clos4 term $M$,
+\[
+  \Equiv(\Mach{4}(M), \Mach{5}(\pass{globalize}(M))) .
+\]
+\end{theorem}
+
+\subsection{End to End}
+
+\begin{theorem}[Compiler Correctness, CompCert Style]\label{thm:compiler-sim}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile}(M))) .
+\]
+\end{theorem}
+
+%-------------------------------------------------------------------------------
+\section{Backward Simulation for Delay}
+
+The direct backward simulation for delay, which does not use determinism.
+\begin{align*}
+  \Div^\infty_L &\iff \exists g : \mathbb{N} \to S_L.\;
+    g(0) = \start{L} \land \forall n.\; g(n) \lto_L g(n+1) \\[1ex]
+  \BSim(L_1, L_2, \sim, \prec) &\iff
+  \begin{array}[t]{l}
+    \prec \text{ is well founded} \\
+    \land\; \exists i.\; \start{L_1} \sim_i \start{L_2} \\
+    \land\; \forall i\, s_1\, s_2\, o.\; s_1 \sim_i s_2 \land \Final_{L_2}(s_2, o) \implies
+      \exists s_1'.\; s_1 \lto_{L_1}^* s_1' \land \Final_{L_1}(s_1', o) \\
+    \land\; \forall i\, s_1\, s_2\, s_2'.\; s_1 \sim_i s_2 \land s_2 \lto_{L_2} s_2' \implies
+      \exists i'\, s_1'.\; s_1' \sim_{i'} s_2' \\
+    \qquad \land\; (s_1 \lto_{L_1}^+ s_1' \lor (s_1 \lto_{L_1}^* s_1' \land i' \prec i))
+  \end{array}
+\end{align*}
+
+\begin{lemma}[Infinite Runs]\label{lem:div-inf}
+If $\Div^\infty_L$, then $\Div_L$.
+\end{lemma}
+
+\begin{theorem}[Backward Simulation Reflects]\label{thm:bsim}
+If $\BSim(L_1, L_2, \sim, \prec)$, then
+\begin{align*}
+  \Term_{L_2}(o) &\implies \Term_{L_1}(o) \\
+  \Div^\infty_{L_2} &\implies \Div^\infty_{L_1} .
+\end{align*}
+\end{theorem}
+
+The relations $\approx$, $\approxq$, and $\approxk$ are those of the forward
+simulation for delay. The states are related with an index in $\mathbb{N}$,
+the target steps left before the source moves.
+\begin{align*}
+  \ev{M}{\rho_1}{\kappa_1} &\sim_3 \ev{\pass{delay}(M)}{\rho_2}{\kappa_2} \\
+  \rt{v}{\kappa_1} &\sim_9 \rt{w}{\kappa_2}
+\end{align*}
+when $\rho_1 \approxq \rho_2$, $\kappa_1 \approxk \kappa_2$, and $v \approx w$.
+While the target builds a closure, with
+$s_1 = \ev{(\clos{\bar{r}}{e\, y} N)}{\rho_1}{\kappa_1}$
+and $\phi = \funV{e\, y.\, \pass{delay}(N)}$,
+\begin{align*}
+  s_1 &\sim_2 \ev{\fun{e\,y.\,\pass{delay}(N)}}{\rho_2}{\Kf{pairL}{\tuple{\bar{r}}, \rho_2, \kappa_2}} \\
+  s_1 &\sim_1 \rt{\phi}{\Kf{pairL}{\tuple{\bar{r}}, \rho_2, \kappa_2}} \\
+  s_1 &\sim_0 \ev{\tuple{\bar{r}}}{\rho_2}{\Kf{pairR}{\phi, \kappa_2}} .
+\end{align*}
+While the target calls a closure, with $L_M$ as in delay and
+\[
+  s_1 = \rt{v}{\Kf{appL}{M, \rho_1, \kappa_1}}, \qquad
+  \rho_2' = \ext{\rho_2}{f}{w}, \qquad
+  \kappa_F = \Kf{appF}{\SND f, \pass{delay}(M), \rho_2', \kappa_2},
+\]
+\begin{align*}
+  s_1 &\sim_8 \ev{L_M}{\rho_2'}{\kappa_2} \\
+  s_1 &\sim_7 \ev{(\FST f)}{\rho_2'}{\kappa_F} \\
+  s_1 &\sim_6 \ev{f}{\rho_2'}{\Kf{fstK}{\kappa_F}} \\
+  s_1 &\sim_5 \rt{w}{\Kf{fstK}{\kappa_F}}
+\end{align*}
+and, when moreover $v = \closV{e\, y.\, N}{v'}$ and $w = \pairV{\phi}{u}$ with $v' \approx u$,
+\[
+  \kappa_E = \Kf{appE}{\phi, \pass{delay}(M), \rho_2', \kappa_2},
+\]
+\begin{align*}
+  s_1 &\sim_4 \rt{\phi}{\kappa_F} \\
+  s_1 &\sim_3 \ev{(\SND f)}{\rho_2'}{\kappa_E} \\
+  s_1 &\sim_2 \ev{f}{\rho_2'}{\Kf{sndK}{\kappa_E}} \\
+  s_1 &\sim_1 \rt{w}{\Kf{sndK}{\kappa_E}} \\
+  s_1 &\sim_0 \rt{u}{\kappa_E} .
+\end{align*}
+
+\begin{lemma}[Delay Backward Simulation]\label{lem:delay-bsim}
+For every Clos3 term $M$,
+\[
+  \BSim(\Mach{3}(M), \Mach{4}(\pass{delay}(M)), \sim, <) .
+\]
+\end{lemma}
+
+\begin{theorem}[Delay Reflects]\label{thm:delay-reflects}
+For every Clos3 term $M$,
+\begin{align*}
+  \Term_{\Mach{4}(\pass{delay}(M))}(o) &\implies \Term_{\Mach{3}(M)}(o) \\
+  \Div^\infty_{\Mach{4}(\pass{delay}(M))} &\implies \Div^\infty_{\Mach{3}(M)} .
+\end{align*}
 \end{theorem}
 
 \end{document}
