@@ -16,7 +16,7 @@ not reached by all three proofs; shared modules reached by all three are
 not counted anywhere.  Adequacy, an add-on to the denotational proof, also
 counts the shared modules it reaches that the denotational total does not
 already count.  The script also fails if one proof reaches another proof's
-modules.
+modules, or adequacy's.
 """
 import glob, os, re, sys
 
@@ -27,7 +27,8 @@ F = 'agda/Compiler/Functional/'
 # (side, group, glob patterns)
 GROUPS = [
     # also the machine-independent lemmas both operational styles use:
-    # Lang/{ListUtil,Scope,Rename}, Compile/{EncloseScope,GlobalizeTable},
+    # Lang/{ListUtil,Scope,ScopeRename,Rename},
+    # Compile/{EncloseScope,GlobalizeTable,PipelineScope},
     # and the observations (Observation.agda).  Those not used by all three
     # proofs are counted in each proof that uses them (see main).
     ('shared', 'syntax, languages, compiler passes',
@@ -43,7 +44,7 @@ GROUPS = [
      [G + 'Sem/ISWIM.agda', G + 'Sem/Clos2Iswim.agda', G + 'Sem/Clos3Iswim.agda',
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
-      G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda']),
+      G + 'Sem/Clos5IswimContinuous.agda', G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
     ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
@@ -52,6 +53,8 @@ GROUPS = [
       G + 'Correctness/DelayApp.agda', G + 'Correctness/DelayPreserve.agda',
       G + 'Correctness/DelayReflectFinite.agda']),
     ('den', 'globalize', [G + 'Correctness/GlobalizeCorrect.agda']),
+    # each rco module also proves compile-mon (compile then rco) end to end
+    ('den', 'rco', [G + 'Correctness/RCOCorrect.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     ('op', 'generic infrastructure',
@@ -62,6 +65,7 @@ GROUPS = [
     ('op', 'concretize', [O + 'Correctness/ConcretizeSim.agda']),
     ('op', 'delay', [O + 'Correctness/DelaySim.agda']),
     ('op', 'globalize', [O + 'Correctness/GlobalizeSim.agda']),
+    ('op', 'rco', [O + 'Correctness/RCOSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
 
     ('ck', 'generic infrastructure', [F + 'Clock.agda']),
@@ -71,17 +75,17 @@ GROUPS = [
     ('ck', 'concretize', [F + 'Correctness/ConcretizeFuel.agda']),
     ('ck', 'delay', [F + 'Correctness/DelayFuel.agda']),
     ('ck', 'globalize', [F + 'Correctness/GlobalizeFuel.agda']),
+    ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
     ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
      [O + 'Adequacy/Common.agda', O + 'Adequacy/Soundness.agda', O + 'Adequacy/LogRel.agda',
       O + 'Adequacy/ISWIM.agda', G + 'Sem/ISWIMContinuous.agda']),
     ('adeq', 'Clos5',
-     [O + 'Adequacy/Clos5Common.agda', O + 'Adequacy/Clos5Continuous.agda',
-      O + 'Adequacy/Clos5Soundness.agda', O + 'Adequacy/Clos5LogRel.agda',
+     [O + 'Adequacy/Clos5Common.agda', O + 'Adequacy/Clos5Soundness.agda', O + 'Adequacy/Clos5LogRel.agda',
       O + 'Adequacy/Clos5.agda']),
     ('adeq', 'well-formedness of compiled programs',
-     [O + 'Adequacy/Scope.agda', O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda']),
+     [O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda']),
     ('adeq', 'end to end', [O + 'Adequacy/EndToEnd.agda']),
 
     ('examples', 'examples',
@@ -176,9 +180,9 @@ def main():
     reach = {s: reachable(own[s], graph) for s in own}
 
     # The proofs must be independent: no proof reaches another proof's modules
-    # (adequacy, examples and the experiments may use anything).
+    # nor adequacy's (adequacy, examples and the experiments may use anything).
     for s in SIDES:
-        for t in SIDES:
+        for t in SIDES + ('adeq',):
             bad = sorted(reach[s] & own[t]) if s != t else []
             if bad:
                 sys.exit(f'{NAMES[s]} imports {NAMES[t]} modules:\n  ' + '\n  '.join(bad))
@@ -193,7 +197,7 @@ def main():
 
     rows = ['generic infrastructure', 'domain, operators, continuity',
             'semantics of the languages', 'enclose', 'optimize', 'concretize',
-            'delay', 'globalize', 'composition']
+            'delay', 'globalize', 'rco', 'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
     print('|---|---:|---:|---:|')

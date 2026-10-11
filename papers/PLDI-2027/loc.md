@@ -2,13 +2,14 @@
 
 All three proofs establish end-to-end correctness for the same compiler, `compile`, which runs
 ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5.
+Each also proves a sixth pass, remove complex operands (rco, Clos5 --rco--> Clos5, into monadic normal form), and the compiler `compile-mon` that runs `compile` and then rco, end to end (see [Remove complex operands](#remove-complex-operands)).
 
 * **Denotational:** a graph-model semantics for each language and one correctness proof per pass, in `agda/Compiler/Model/Graph/`. The theorem is `CompilerCorrect`: the source and compiled program produce the same constants, and one denotation is nonempty exactly when the other is.
 * **CompCert-style:** a small-step CEK machine for each language and one forward simulation per pass, in `agda/Compiler/Operational/`. The theorem is `CompilerSim`: the two programs terminate with the same observation, including going wrong, and one diverges exactly when the other does.
 * **CakeML-style:** a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, in `agda/Compiler/Functional/`. The theorem is `CompilerFuel`. It has the same shape as the CompCert-style one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock.
 
 Counts are code lines: lines that are neither blank nor comments. The tables are regenerated with
-`python3 papers/PLDI-2027/loc.py` from the repository root. The script fails if any Agda module is not assigned to a group, or if one proof imports another proof's modules.
+`python3 papers/PLDI-2027/loc.py` from the repository root. The script fails if any Agda module is not assigned to a group, or if one proof imports another proof's modules or adequacy's.
 
 **How totals are computed.** Each module belongs to one group: one of the three proofs, adequacy, shared, examples, or the experiment. A proof's total is its own modules plus every shared module that it imports, directly or transitively, *unless all three proofs import it*. So each column is the standalone size of that proof, apart from what is common to all three: the abt library, the languages, the compiler passes and `compile` (`Compiler/Compile/Pipeline.agda`), and the lemmas all three use. Those are not counted in any column. A shared module that only some proofs use is counted in each of them; it is the row "shared modules not used by all three proofs", listed [below](#shared-modules). Examples are not counted. Adequacy is reported separately (see below). The import graph is read from the `import` and `open import` lines.
 
@@ -20,26 +21,27 @@ As of this PR:
 |---|---:|---:|---:|
 | generic infrastructure | 303 | 188 | 80 |
 | domain, operators, continuity | 482 | — | — |
-| semantics of the languages | 474 | 471 | 364 |
+| semantics of the languages | 591 | 471 | 364 |
 | enclose | 101 | 222 | 162 |
 | optimize | 155 | 273 | 194 |
 | concretize | 242 | 218 | 152 |
 | delay | 859 | 168 | 116 |
 | globalize | 242 | 189 | 134 |
+| rco | 237 | 449 | 298 |
 | composition | 49 | 32 | 37 |
-| shared modules not used by all three proofs | 28 | 165 | 165 |
-| **total** | **2935** | **1926** | **1404** |
+| shared modules not used by all three proofs | 28 | 443 | 443 |
+| **total** | **3289** | **2653** | **1980** |
 
-Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines. It turns `CompilerCorrect` into a statement about running programs (`Adequacy/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, well-scopedness and growing tables, 165 lines); the denotational total plus the adequacy total is then standalone, except for the machines (471 lines), which adequacy reuses from the CompCert-style proof and which are not counted again.
+Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines. It turns `CompilerCorrect` into a statement about running programs (`Adequacy/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, well-scopedness, the scoping of `compile`'s output and growing tables, 443 lines); the denotational total plus the adequacy total is then standalone, except for the machines (471 lines), which adequacy reuses from the CompCert-style proof and which are not counted again.
 
 | adequacy (denotational side only) | lines |
 |---|---:|
 | ISWIM | 798 |
-| Clos5 | 964 |
-| well-formedness of compiled programs | 287 |
+| Clos5 | 847 |
+| well-formedness of compiled programs | 60 |
 | end to end | 24 |
-| shared modules not used by all three proofs, nor by the denotational one | 165 |
-| **total** | **2238** |
+| shared modules not used by all three proofs, nor by the denotational one | 443 |
+| **total** | **2172** |
 
 An experiment, not in the totals, is described [below](#experiment-a-direct-backward-simulation-for-delay):
 
@@ -60,6 +62,7 @@ An experiment, not in the totals, is described [below](#experiment-a-direct-back
 | `Compiler.Compile.GlobalizeTable` | 52 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.Optimize` | 62 | all three proofs |
 | `Compiler.Compile.Pipeline` | 16 | all three proofs |
+| `Compiler.Compile.PipelineScope` | 249 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.RCO` | 120 | all three proofs |
 | `Compiler.Lang.Clos2` | 39 | all three proofs |
 | `Compiler.Lang.Clos3` | 39 | all three proofs |
@@ -71,6 +74,7 @@ An experiment, not in the totals, is described [below](#experiment-a-direct-back
 | `Compiler.Lang.Prim` | 13 | all three proofs |
 | `Compiler.Lang.Rename` | 65 | all three proofs |
 | `Compiler.Lang.Scope` | 32 | CompCert-style, CakeML-style, adequacy |
+| `Compiler.Lang.ScopeRename` | 29 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Lang.Uses` | 55 | all three proofs |
 | `Compiler.Observation` | 26 | CompCert-style, CakeML-style, adequacy |
 | `NewSigUtil` | 6 | all three proofs |
@@ -83,26 +87,28 @@ An experiment, not in the totals, is described [below](#experiment-a-direct-back
 | `abt.Sig` | 18 | all three proofs |
 | `abt.Var` | 23 | all three proofs |
 
-Shared by all three proofs, and not counted: 25 modules, 1093 lines. Counted in the denotational total: `abt.Fold2` (28), the fold of the abt library, used by its generic semantics. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Lang.Scope` (32) and `Observation` (26), 165 lines. Examples, not counted: 212 lines.
+Shared by all three proofs, and not counted: 25 modules, 1093 lines. Counted in the denotational total: `abt.Fold2` (28), the fold of the abt library, used by its generic semantics. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Compile.PipelineScope` (249), `Lang.Scope` (32), `Lang.ScopeRename` (29) and `Observation` (26), 443 lines. Examples, not counted: 212 lines.
 
 ## What the groups contain
 
 * **shared (counted only in the proofs that use it when not all three do, see above):** the abt library, the languages, the compiler passes and their composition `compile` (`Compile/Pipeline.agda`), which all three proofs use; the observations and the end-theorem shape (`Compiler/Observation.agda`); and the machine-independent lemmas that both operational styles use:
   * `Lang/ListUtil.agda`: lookup in an environment, projection from a tuple, and lemmas about lookups (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`);
-  * `Lang/Scope.agda`: well-scoped terms for any signature and `ws-uses` (from `OptimizeSim`; adequacy's `Scope` now reuses it);
+  * `Lang/Scope.agda`: well-scoped terms for any signature and `ws-uses` (from `OptimizeSim`);
+  * `Lang/ScopeRename.agda`: renaming preserves well-scopedness (formerly adequacy's `Scope`);
   * `Lang/Rename.agda`: the renaming lemmas `rename-cong`, `rename-fuse`, `rename-id` (from `DelaySim`);
   * `Compile/EncloseScope.agda`: closed ISWIM programs and `enclose-closed` (from `EncloseSim` and `OptimizeSim`);
-  * `Compile/GlobalizeTable.agda`: growing tables `_⊑_`, `glob-grows` and `global-⊑` (from `GlobalizeSim`); the table lookup `global` itself moved to `Lang/Clos5.agda`, so the machine and the interpreter use the same one.
+  * `Compile/GlobalizeTable.agda`: growing tables `_⊑_`, `glob-grows` and `global-⊑` (from `GlobalizeSim`); the table lookup `global` itself moved to `Lang/Clos5.agda`, so the machine and the interpreter use the same one;
+  * `Compile/PipelineScope.agda`: well-scoped Clos5 programs (`Scoped`, the precondition of both operational rco proofs) and `compile-scoped`, that `compile` produces them from closed ISWIM programs, one lemma per pass (formerly the well-scopedness half of adequacy's `CompileWF`). Only the end-to-end `compile-mon` theorems of the operational proofs use it.
 * **generic infrastructure:**
   * denotational: sets as predicates, environments, generic semantics, monotonicity and continuity over operator signatures;
   * CompCert-style: small-step transition systems, forward simulation, and the iff end theorem;
   * CakeML-style: results with timeout, the clocked end theorem, and the lemma that related results for every clock give it. It imports nothing from the CompCert-style development.
 * **domain, operators, continuity:** the graph-model values, consistency, the semantic operators and their monotonicity, consistency and continuity lemmas.
 * **semantics of the languages:**
-  * denotational: the semantics of ISWIM and Clos2 through Clos5, plus the continuity instances the proofs use;
+  * denotational: the semantics of ISWIM and Clos2 through Clos5, plus the continuity instances the proofs use (for Clos5, `Sem/Clos5IswimContinuous.agda`, used by rco and by adequacy);
   * CompCert-style: the six machines;
   * CakeML-style: the five clocked interpreters (Clos5's takes the table of global definitions).
-* **one row per pass:** that pass's correctness proof.
+* **one row per pass:** that pass's correctness proof. The rco row also contains the end-to-end theorem for `compile-mon`, a corollary of the composition and the rco theorem (11 lines in the denotational proof, 2 in each operational one), in all three styles.
 * **composition:** the end-to-end theorem built from the per-pass results. The compiler `compile` itself is shared (`Compile/Pipeline.agda`), so neither operational proof imports the denotational one.
 * **shared modules not used by all three proofs:** see [Shared modules](#shared-modules).
 
@@ -123,6 +129,9 @@ Shared by all three proofs, and not counted: 25 modules, 1093 lines. Counted in 
   The cost falls only on passes that change representation. When ⟦pass M⟧ ≃ ⟦M⟧ (enclose, optimize, concretize, globalize), both directions come from the equation at once, with no determinism argument.
 * **Machines.** The ISWIM, Clos2 and Clos3 machines check that an operator is a function before evaluating the argument. Delay needs this to preserve going wrong: it takes the closure apart with `fst` before the argument. The Clos4 and Clos5 machines check that the operator is code only at the call, after all three operands, like an indirect call instruction, so that rco, which let-binds all the operands before the call, preserves going wrong. On delay's output the late check always passes, since a non-closure has already gone wrong at `fst`.
 
+* **Clos5 continuity is denotational.** The continuity of the Clos5 semantics in the environment (117 lines), formerly adequacy's `Clos5Continuous`, is now `Model/Graph/Sem/Clos5IswimContinuous.agda`, in the denotational row "semantics of the languages", because the rco proof uses it (for the let laws). Adequacy reuses it from there and does not count it again; adequacy's Clos5 row shrank by the same 117 lines.
+* **The rco preconditions differ.** The denotational rco theorem is an equation with no precondition on programs; both operational ones need `Scoped`, and their end-to-end `compile-mon` theorems therefore pay for `compile-scoped` (278 lines with `ScopeRename`, in the shared row). See [Remove complex operands](#remove-complex-operands).
+
 ## History
 
 | date | change | denotational | CompCert-style | CakeML-style |
@@ -139,6 +148,7 @@ Shared by all three proofs, and not counted: 25 modules, 1093 lines. Counted in 
 | 2026-10-11 | the same code, new method: shared modules not used by all three proofs counted in each proof that uses them (PR #24) | 2832 | 1783 | 1287 |
 | 2026-10-11 | arithmetic: sub and eq (PR #25) | 2935 | 1933 | 1407 |
 | 2026-10-11 | late code check in Clos4/Clos5 (this PR) | 2935 | 1926 | 1404 |
+| 2026-10-11 | remove complex operands, all three proofs; Clos5 continuity to the denotational side, scoping of `compile` to the shared code (this PR) | 3289 (+354) | 2653 (+727) | 1980 (+576) |
 
 The two PR #24 rows are the same code counted two ways. Before, every shared module was left out of all totals, although four of them (157 lines) are used only by the two operational proofs and adequacy, and one (`abt.Fold2`, 28 lines) only by the denotational proof and adequacy; now these count in each proof that uses them (+28, +157, +157), and adequacy grows from 1981 to 2138. Moving `compile` took 7 lines from the denotational composition (the definitions and their imports); the shared code went from 1071 to 1069 lines (+13 for `Pipeline`, −15 for the dead imports).
 
@@ -182,6 +192,27 @@ PR #16 also changed the grouping: the shared counts now include `Primitives`, `N
 * **Clos5 soundness** loses the stuck cases at `appF` in `step-⊆` and `halts` (five each).
 * **Interpreters.** Clos4's `call` takes the operator value and goes wrong on a non-code one; Clos5's `apply` passes `code? f` (the definition, if `f` is a code pointer) to its existing `call`.
 
+**Remove complex operands (this PR).** The new rows, and what moved:
+
+| component | denotational | CompCert-style | CakeML-style |
+|---|---:|---:|---:|
+| semantics of the languages | +117 | 0 | 0 |
+| rco | +237 | +449 | +298 |
+| shared modules not used by all three proofs | 0 | +278 | +278 |
+| **total** | **+354** | **+727** | **+576** |
+
+The +117 is `Clos5IswimContinuous`, moved from adequacy; the +278 are `PipelineScope` and `ScopeRename`, the scoping of `compile`'s output, moved from adequacy's well-formedness and split from its RB half. Adequacy went from 2238 to 2172 lines: Clos5 −117, well-formedness 287 → 60, shared +278 (the split costs 51 lines: `CompileWF` now proves only that each definition refers to older ones, `glob-rb`, and pairs it with `compile-scoped`).
+
+## Remove complex operands
+
+The pass (`Compile/RCO.agda`, Clos5 → Clos5, shared) binds every complex operand of a construct to a fresh variable by a `let`, left to right, and leaves atoms (variables, literals, code pointers) in place, shifted under the new lets; the result is in monadic normal form (`Lang/Mon.agda`). It adds no calls and `let` does not tick. The late code check in the Clos4 and Clos5 machines and interpreters (see [Caveats](#caveats)) was added for this pass: with the check right after the operator, `app ⦅ L , M , N ⦆` with a non-code L goes wrong before M runs, while its rco, `let x = L in let y = M in …`, would run M first.
+
+* **Denotational (237 lines): an exact equation.** `rco-correct : ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ` for nonempty ρ, and `rco-program-correct : ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ` for **every** program, with no scoping precondition. The laws are that `let` is strict and otherwise substitutes the meaning of its right-hand side (`let-strict`, `let-β`, which uses the continuity of Clos5), and that every construct whose operands rco names is a strict congruence (`Strict`); one lemma for the let chain (`lift-≃`) then gives each construct in one line. Order of evaluation is invisible: going wrong and divergence both denote ∅, and an unbound variable denotes {ω}.
+* **CompCert-style (449 lines).** A forward simulation of the Clos5 machine by itself, for programs in `Scoped`. The target environment has the values of the lets in front, so terms are related up to a renaming (`Ren`). The source frames of a construct are related to the target's remaining let chain by `Pend` (one constructor per operand: a complex operand runs in lock step under a let frame, an atom is evaluated by the source while the target waits, with a decreasing index, and at the end the target runs the construct on its atoms up to the same final frame, `retT`).
+* **CakeML-style (298 lines): clock for clock, with equality of results.** For `Scoped` programs, `eval ds ck ρ M ≡ eval (map rco ds) ck ρ (rco M)` for every clock (`run≈`): values contain no code, so they are equal, not just related. The key lemma is the let chain (`lets≈`): evaluating the chain evaluates the complex operands left to right and then the construct with the atoms bound to their values; renaming commutes with evaluation (`ren`).
+
+**Why the operational proofs need `Scoped`.** An atom left in place is evaluated after the complex operands that follow it. An unbound variable goes wrong when it is evaluated, so it would go wrong later: ``pair (` 0) L`` with L a loop goes wrong in the empty environment, while its rco, ``let x = L in pair (` 1) (` 0)``, diverges. In the denotational semantics both denote ∅, so the equation holds anyway. `Scoped` (main closed, each definition in its two parameters) rules this out; the compiler produces such programs (`compile-scoped`, 249 + 29 lines, counted in both operational totals because only their `compile-mon` theorems use it).
+
 ## The CakeML-style proof
 
 Each interpreter is `eval : ℕ → Env → AST → Result Val`, where `Result Val` is `timeout`, `wrong` or `ret v`. It is defined by recursion on the clock and the term. The clock goes down only at a function call, and a call with clock 0 times out. The interpreter goes wrong exactly where its machine gets stuck, and it evaluates in the same order: left to right, with the operator checked to be a function before the argument is evaluated (in Clos4 and Clos5: at the call, after all three operands).
@@ -197,7 +228,7 @@ The value relations and environment agreements are the same as in the CompCert-s
 * **globalize (134 against 189).** Both proofs use the same **table-indexed relation**: the Clos5 program runs with the table D that the pass made for the whole program, the relation is indexed by D, and code `fun N` is related to `code k` when the table made by globalizing N is part of D. The lemmas about growing tables are shared. The difference is again the continuation relation and the frames.
 * **composition (37 against 32).** Agda cannot infer the intermediate programs through the interpreters' `sem`, so the CakeML-style composition names them.
 
-The clocked interpreters (364 lines) are smaller than the machines (471): no continuations and no states. The generic part (80 lines against 188) has no transition systems, simulations or determinism lemmas. In all, the CakeML-style proof is 1404 lines against 1926, both counting the 165 lines of shared syntactic lemmas and observations that only the two operational proofs use.
+The clocked interpreters (364 lines) are smaller than the machines (471): no continuations and no states. The generic part (80 lines against 188) has no transition systems, simulations or determinism lemmas. In all, the CakeML-style proof is 1980 lines against 2653, both counting the 443 lines of shared syntactic lemmas and observations that only the two operational proofs use (165 before rco).
 
 ## Why delay costs more on the denotational side
 
