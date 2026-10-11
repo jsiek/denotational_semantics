@@ -31,7 +31,7 @@ Closed M = bound M ≡ 0
 
 {- enclose of a closed ISWIM program is well scoped -}
 module Enclosed where
-  open I using (`_; _⦅_⦆; lam; app; lit; tuple; get; inl-op; inr-op; case-op)
+  open I using (`_; _⦅_⦆; lam; app; lit; tuple; get; inl-op; inr-op; case-op; prim)
 
   bind-n-ws : ∀ m k N → WS (suc (m + k)) N → WS-arg k (bind-n-ast m N)
   bind-n-ws zero k N w = w
@@ -69,6 +69,8 @@ module Enclosed where
     , enclose-ws M (∸1 (bound M) (⊔ˡ _ _ (⊔ʳ (bound L) _ b)))
     , enclose-ws N (∸1 (bound N) (⊔ˡ _ _ (⊔ʳ (bound M ∸ 1) _ (⊔ʳ (bound L) _ b))))
     , tt
+  enclose-ws (prim p ⦅ L ,, M ,, Nil ⦆) b =
+    enclose-ws L (⊔ˡ _ _ b) , enclose-ws M (⊔ˡ _ _ (⊔ʳ (bound L) _ b)) , tt
 
   enc-args-ws {zero} Nil b = tt
   enc-args-ws {suc n} (M ,, args) b = enclose-ws M (⊔ˡ _ _ b) , enc-args-ws args (⊔ʳ (bound M) _ b)

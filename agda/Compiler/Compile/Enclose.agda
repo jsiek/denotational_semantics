@@ -49,6 +49,7 @@ module Compiler.Compile.Enclose where
   enclose (inr-op ⦅ M ,, Nil ⦆) = inr-op ⦅ enclose M ,, Nil ⦆'
   enclose (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
     case-op ⦅ enclose L ,, ⟩ enclose M ,, ⟩ enclose N ,, Nil ⦆'
+  enclose (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ enclose L ,, enclose M ,, Nil ⦆'
 
   enc-args {zero} Nil = Nil
   enc-args {suc n} (M ,, args) = enclose M ,, enc-args args

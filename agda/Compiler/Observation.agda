@@ -14,7 +14,9 @@
 
 module Compiler.Observation where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
+open import Compiler.Lang.Prim using (Prim; Out; δ)
+open import Data.Maybe using (Maybe; just; nothing)
 open import Data.List using (List)
 open import Data.Product using (_×_; Σ-syntax)
 open import Relation.Binary.PropositionalEquality using (_≡_)
@@ -27,6 +29,12 @@ data Obs : Set where
   o-inl : Obs → Obs
   o-inr : Obs → Obs
   o-wrong : Obs
+
+{- a primitive operation looks at its operands only through their
+   observations: it applies to two integers, and is undefined otherwise -}
+δ? : Prim → Obs → Obs → Maybe Out
+δ? p (o-const Int n) (o-const Int m) = just (δ p n m)
+δ? p _ _ = nothing
 
 {- a successful result: anything but going wrong -}
 Answer : Obs → Set

@@ -11,6 +11,7 @@ module Compiler.Lang.Clos5 where
 -}
 
 open import Primitives
+open import Compiler.Lang.Prim using (Prim)
 open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import abt.Sig using (Sig; ∁; ν; ■) public
@@ -47,6 +48,7 @@ data Op : Set where
   inl-op : Op
   inr-op : Op
   case-op : Op
+  prim : Prim → Op      {- a primitive operation on integers (Lang/Prim) -}
   let-op : Op
 
 sig : Op → List Sig
@@ -61,6 +63,7 @@ sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
+sig (prim p) = ■ ∷ ■ ∷ []
 sig let-op = ■ ∷ ν ■ ∷ []
 
 import abt.AbstractBindingTree
