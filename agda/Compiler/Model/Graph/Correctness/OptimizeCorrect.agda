@@ -26,7 +26,7 @@ open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
-  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃)
+  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃; 𝒞-≃)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
@@ -148,40 +148,19 @@ opt-correct (inl-op ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
   ℒ-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
 opt-correct (inr-op ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
   ℛ-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel = ⟨ G , H ⟩
+opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
+  𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) M ⟧ (X • ρ')}
+      {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) N ⟧ (X • ρ')}
+      (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
+      (λ v V → opt-correct M (ext-var r) _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
+      (λ v V → opt-correct N (ext-var r) _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
   where
-  L≃ = opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u))
-
-  NE-ext : ∀ v V → nonempty-env (mem (v ∷ V) • ρ)
-  NE-ext v V = extend-nonempty-env NE ⟨ v , here refl ⟩
-
-  M≃ : ∀ v V → ⟦ M ⟧ (mem (v ∷ V) • ρ) ≃ ⟦ optimize (ext-var r) M ⟧ (mem (v ∷ V) • ρ')
-  M≃ v V = opt-correct M (ext-var r) _ _ (NE-ext v V) relM
-    where
-    relM : ∀ x → Uses x M → (mem (v ∷ V) • ρ) x ≃ (mem (v ∷ V) • ρ') (ext-var r x)
-    relM zero _ = ≃-refl
-    relM (suc x) u = rel x (inj₂ (inj₁ u))
-
-  N≃ : ∀ v V → ⟦ N ⟧ (mem (v ∷ V) • ρ) ≃ ⟦ optimize (ext-var r) N ⟧ (mem (v ∷ V) • ρ')
-  N≃ v V = opt-correct N (ext-var r) _ _ (NE-ext v V) relN
-    where
-    relN : ∀ x → Uses x N → (mem (v ∷ V) • ρ) x ≃ (mem (v ∷ V) • ρ') (ext-var r x)
-    relN zero _ = ≃-refl
-    relN (suc x) u = rel x (inj₂ (inj₂ (inj₁ u)))
-
-  G : ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ ρ
-      ⊆ ⟦ optimize r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ⟧ ρ'
-  G w (inj₁ ⟨ v , ⟨ V , ⟨ allL , w∈ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₁ L≃ (left d) (allL d d∈)) , proj₁ (M≃ v V) w w∈ ⟩ ⟩ ⟩
-  G w (inj₂ ⟨ v , ⟨ V , ⟨ allR , w∈ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₁ L≃ (right d) (allR d d∈)) , proj₁ (N≃ v V) w w∈ ⟩ ⟩ ⟩
-
-  H : ⟦ optimize r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ⟧ ρ'
-      ⊆ ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ ρ
-  H w (inj₁ ⟨ v , ⟨ V , ⟨ allL , w∈ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₂ L≃ (left d) (allL d d∈)) , proj₂ (M≃ v V) w w∈ ⟩ ⟩ ⟩
-  H w (inj₂ ⟨ v , ⟨ V , ⟨ allR , w∈ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₂ L≃ (right d) (allR d d∈)) , proj₂ (N≃ v V) w w∈ ⟩ ⟩ ⟩
+  NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ)
+  NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩
+  rel-ext : ∀ B {X} → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
+    → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
+  rel-ext B rx zero _ = ≃-refl
+  rel-ext B rx (suc x) u = rx x u
 
 opt-body-correct r zero (bind (ast N)) ρ ρ' NE rel = opt-correct N r ρ ρ' NE rel
 opt-body-correct r (suc k) (bind a) = opt-body-correct r k a

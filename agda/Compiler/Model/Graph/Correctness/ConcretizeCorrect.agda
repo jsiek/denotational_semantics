@@ -244,6 +244,23 @@ proj-≃ i ⟨ D⊆ , D⊇ ⟩ = ⟨ (λ d → D⊆ (tup[ i ] d)) , (λ d → D�
   H : ℛ ⟨ E , ptt ⟩ ⊆ ℛ ⟨ D , ptt ⟩
   H (right d) d∈ = D⊇ d d∈
 
+{- case analysis, whose branches are compared on nonempty finite sets -}
+𝒞-≃ : ∀ {D D' F F' G G'} → D ≃ D'
+  → (∀ v V → F (mem (v ∷ V)) ≃ F' (mem (v ∷ V)))
+  → (∀ v V → G (mem (v ∷ V)) ≃ G' (mem (v ∷ V)))
+  → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
+𝒞-≃ {F = F} {F'} {G} {G'} D≃ F≃ G≃ =
+  ⟨ H {B = F} {F'} {G} {G'} (proj₁ D≃) (λ v V → proj₁ (F≃ v V)) (λ v V → proj₁ (G≃ v V))
+  , H {B = F'} {F} {G'} {G} (proj₂ D≃) (λ v V → proj₂ (F≃ v V)) (λ v V → proj₂ (G≃ v V)) ⟩
+  where
+  H : ∀ {A A' B B' C C'} → A ⊆ A' → (∀ v V → B (mem (v ∷ V)) ⊆ B' (mem (v ∷ V)))
+    → (∀ v V → C (mem (v ∷ V)) ⊆ C' (mem (v ∷ V)))
+    → 𝒞 ⟨ A , ⟨ B , ⟨ C , ptt ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ A' , ⟨ B' , ⟨ C' , ptt ⟩ ⟩ ⟩
+  H A⊆ B⊆ C⊆ w (inj₁ ⟨ v , ⟨ V , ⟨ all , w∈ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ (left d) (all d d∈)) , B⊆ v V w w∈ ⟩ ⟩ ⟩
+  H A⊆ B⊆ C⊆ w (inj₂ ⟨ v , ⟨ V , ⟨ all , w∈ ⟩ ⟩ ⟩) =
+    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ (right d) (all d d∈)) , C⊆ v V w w∈ ⟩ ⟩ ⟩
+
 {- The main lemma -------------------------------------------------------------}
 
 concretize-correct : ∀ (M : AST) φ ρ₂ ρ₃ → EnvRel φ ρ₂ ρ₃
@@ -272,37 +289,16 @@ concretize-correct (inl-op ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ rel =
   ℒ-≃ (concretize-correct M φ ρ₂ ρ₃ rel)
 concretize-correct (inr-op ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ rel =
   ℛ-≃ (concretize-correct M φ ρ₂ ρ₃ rel)
-concretize-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ rel = ⟨ G , H ⟩
+concretize-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ rel =
+  𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) M ⟧' (X • ρ₃)}
+      {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)}
+      (concretize-correct L φ ρ₂ ρ₃ rel)
+      (λ v V → concretize-correct M (ext-ref φ) _ _ (rel-ext (mem (v ∷ V))))
+      (λ v V → concretize-correct N (ext-ref φ) _ _ (rel-ext (mem (v ∷ V))))
   where
-  L≃ = concretize-correct L φ ρ₂ ρ₃ rel
-
   rel-ext : ∀ X → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
   rel-ext X zero = ≃-refl
   rel-ext X (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
-
-  M≃ : ∀ X → ⟦ M ⟧ (X • ρ₂) ≃ ⟦ concretize (ext-ref φ) M ⟧' (X • ρ₃)
-  M≃ X = concretize-correct M (ext-ref φ) (X • ρ₂) (X • ρ₃) (rel-ext X)
-
-  N≃ : ∀ X → ⟦ N ⟧ (X • ρ₂) ≃ ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)
-  N≃ X = concretize-correct N (ext-ref φ) (X • ρ₂) (X • ρ₃) (rel-ext X)
-
-  G : ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ ρ₂
-      ⊆ ⟦ concretize φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ⟧' ρ₃
-  G w (inj₁ ⟨ v , ⟨ V , ⟨ allL , w∈ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₁ L≃ (left d) (allL d d∈))
-                     , proj₁ (M≃ (mem (v ∷ V))) w w∈ ⟩ ⟩ ⟩
-  G w (inj₂ ⟨ v , ⟨ V , ⟨ allR , w∈ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₁ L≃ (right d) (allR d d∈))
-                     , proj₁ (N≃ (mem (v ∷ V))) w w∈ ⟩ ⟩ ⟩
-
-  H : ⟦ concretize φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ⟧' ρ₃
-      ⊆ ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ ρ₂
-  H w (inj₁ ⟨ v , ⟨ V , ⟨ allL , w∈ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₂ L≃ (left d) (allL d d∈))
-                     , proj₂ (M≃ (mem (v ∷ V))) w w∈ ⟩ ⟩ ⟩
-  H w (inj₂ ⟨ v , ⟨ V , ⟨ allR , w∈ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₂ L≃ (right d) (allR d d∈))
-                     , proj₂ (N≃ (mem (v ∷ V))) w w∈ ⟩ ⟩ ⟩
 
 body-correct n zero (bind (ast N)) ρ₂ ρ₃ rel = concretize-correct N (fv-ref n) ρ₂ ρ₃ rel
 body-correct n (suc k) (bind a) = body-correct n k a
