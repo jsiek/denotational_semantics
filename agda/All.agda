@@ -103,6 +103,8 @@ import Compiler.Operational.Correctness.OptimizeSim
 import Compiler.Operational.Correctness.ConcretizeSim
 import Compiler.Operational.Correctness.DelaySim
 import Compiler.Operational.Correctness.GlobalizeSim
+{- the whole compiler, by composing the simulations of the passes -}
+import Compiler.Operational.Correctness.CompilerSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
