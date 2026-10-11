@@ -41,14 +41,14 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length; map; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Maybe using (just)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _≤_; _<_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-trans; ≤-pred; m≤m⊔n; m≤n⊔m; +-monoʳ-≤; m≤n+m∸n;
          +-identityʳ; +-suc; n≤1+n; m≤n⇒m<n∨m≡n)
-open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Product using (_×_; Σ-syntax; _,_)
+open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 
 {- The simulation relation -----------------------------------------------------}

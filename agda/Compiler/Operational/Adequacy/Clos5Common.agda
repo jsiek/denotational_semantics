@@ -16,10 +16,9 @@ open import Compiler.Lang.Clos5 using (AST)
 module Compiler.Operational.Adequacy.Clos5Common (ds : List AST) where
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain using (Value; ν)
+open import Compiler.Model.Graph.Domain.ISWIM.Domain using (ν)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (table) renaming (code to codeD)
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (table-ext; table-top)
-open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep using (Star; ε; _◅_; next; stop; machine)
 open import Compiler.Operational.Machine.Common using (_‼_)
 open import Compiler.Operational.Machine.Clos5
@@ -29,12 +28,12 @@ open import Compiler.Operational.Adequacy.Clos5WF using (DefsWF)
 open import Data.List.Properties
   using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
 open import Data.Maybe using (just)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; s≤s)
+open import Data.Nat using (zero; suc; _<_; _≟_)
 open import Data.Nat.Properties using (n<1+n; ≤-pred; m≤n⇒m<n∨m≡n)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₂)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
 open import Relation.Nullary using (yes; no)
 open import Data.Empty using (⊥-elim)
 

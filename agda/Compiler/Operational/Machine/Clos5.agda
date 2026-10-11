@@ -14,16 +14,16 @@
 module Compiler.Operational.Machine.Clos5 where
 
 open import Primitives using (Base; base-rep)
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos5
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Common
 
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; replicate; reverse)
+open import Data.List using (List; []; _∷_; reverse)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ)
 
 data Val : Set where
   code : ℕ → Val                        {- a reference to a global definition -}

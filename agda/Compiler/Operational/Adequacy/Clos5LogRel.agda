@@ -36,7 +36,6 @@ open import Compiler.Lang.Clos5 using (AST)
 
 module Compiler.Operational.Adequacy.Clos5LogRel (ds : List AST) where
 
-open import Primitives using (Base; base-rep)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
@@ -46,28 +45,26 @@ open import Compiler.Lang.Clos5 hiding (AST)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
 import NewEnv
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Operational.Machine.Common
 open import Compiler.Operational.Machine.Clos5
-open import Compiler.Operational.Smallstep using (next; stop)
 open import Compiler.Operational.Correctness.GlobalizeSim using (_⊑_; ∷-⊑; global-⊑)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; ShapeAt; length→has-length)
 open import Compiler.Operational.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
 open import Compiler.Operational.Adequacy.Clos5Common ds
 
-open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List.Base using (reverseAcc)
 open import Data.List.Properties using (reverse-involutive)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
-open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; s≤s; z≤n)
+open import Data.Maybe using (just)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; s≤s)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
 
 VEnv : Set₁

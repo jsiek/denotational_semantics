@@ -30,10 +30,10 @@
 
 module Compiler.Operational.Adequacy.Clos5 where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (base-rep)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain using (Value) renaming (const to dconst)
-open import Compiler.Lang.Clos5 using (Program; program)
+open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
@@ -47,8 +47,7 @@ open import Compiler.Operational.Adequacy.CompileWF using (compile-wf) public
 import Compiler.Operational.Adequacy.Clos5Common as C
 import Compiler.Operational.Adequacy.Clos5LogRel as LR
 
-open import Data.List using ([]; _∷_)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)
 open import Relation.Nullary using (¬_)
 

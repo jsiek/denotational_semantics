@@ -62,7 +62,7 @@ open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_; s≤s)
 open import Data.Nat.Properties using (+-identityʳ; +-suc; ≤-pred; ≮⇒≥; m≤n⇒m<n∨m≡n)
-open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
+open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; subst₂; cong₂)

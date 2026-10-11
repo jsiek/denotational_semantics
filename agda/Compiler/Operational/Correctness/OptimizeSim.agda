@@ -45,22 +45,21 @@ open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
 open import Compiler.Operational.Machine.Common
-import Compiler.Operational.Machine.ISWIM as S
 import Compiler.Operational.Machine.Clos2 as T
 
-open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; map; replicate)
+open import Data.List using ([]; _∷_; map; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Maybe using (just)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _∸_; _≤_; _<_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-refl; ≤-trans; ≤-pred; <-≤-trans; <-irrefl; n<1+n; n≤1+n; n≮0;
          +-suc; +-identityʳ; +-monoʳ-≤; m≤n+m∸n; m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o)
-open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
+open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 open import Relation.Nullary using (¬_; Dec; yes; no)

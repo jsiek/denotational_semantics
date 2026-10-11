@@ -13,7 +13,7 @@ open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
 
 open import Data.Empty using (⊥-elim)
-open import Data.Nat using (ℕ; zero; suc; _+_; _<_; s≤s; z≤n)
+open import Data.Nat using (ℕ; suc; _+_; _<_; s≤s; z≤n)
 open import Data.Nat.Properties using (m<m+n)
 open import Data.Nat.Induction using (<-wellFounded)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)

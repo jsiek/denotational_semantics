@@ -41,10 +41,9 @@ module Compiler.Operational.Correctness.DelaySim where
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
-open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
+open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
 open import abt.Sig using (Sig)
 open import abt.Var using (Var)

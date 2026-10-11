@@ -28,8 +28,8 @@
 
   * A pass is proved correct by a forward simulation (Simulation.agda):
     one source step is matched by one or more target steps, or by no
-    target step when a natural-number index of the match decreases. Since both
-    machines are deterministic and total, this gives the end theorem
+    target step when a natural-number index of the match decreases. Since
+    both machines are deterministic and total, this gives the end theorem
     (Equivalent): the program and its compilation terminate with the same
     observations (including o-wrong), and one diverges iff the other does.
     We never need "terminates or diverges", which is not constructive.

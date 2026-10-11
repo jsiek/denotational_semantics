@@ -41,10 +41,10 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; _++_; [_]; length; replicate; reverse)
 open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; length-reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Maybe using (just)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
+open import Data.Nat using (zero; suc)
+open import Data.Product using (Σ-syntax; _,_; proj₁; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 
 {- Growing tables --------------------------------------------------------------}

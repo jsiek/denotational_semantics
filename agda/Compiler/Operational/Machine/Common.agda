@@ -14,12 +14,12 @@ open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _<_; s≤s; z≤n)
+open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Product using (Σ-syntax; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import abt.Sig using (■)
 open import abt.AbstractBindingTree using (ABT; Args)
-open import NewSyntaxUtil using (_,,_; Nil)
+open import NewSyntaxUtil using (_,,_)
 
 private variable
   A B : Set

@@ -14,16 +14,16 @@ module Compiler.Operational.Machine.Clos2 where
 
 open import Primitives using (Base; base-rep)
 open import NewSigUtil using (ν-n)
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Common
 
 open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; replicate; reverse)
+open import Data.List using (List; []; _∷_; reverse)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (zero; suc)
 
 data Val : Set where
   clos : AST → List Val → Val           {- body, values of its free variables -}
