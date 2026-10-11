@@ -65,3 +65,45 @@ Not counted: code that both proofs use (791 lines: syntax, languages, compiler p
 | 2026-10-11 | dead code, consistency, shared lemmas (PR #16) | 2836 | 2134 |
 
 PR #16 also changed the grouping: the shared counts now include `Primitives`, `NewSigUtil` and `NewSyntaxUtil`, and `ISWIMContinuous` moved to adequacy. Earlier rows used slightly different groups, so they are only roughly comparable.
+
+## Why delay costs more on the denotational side
+
+As of master `43a574d`; the denotational proof is 824 lines and the operational one 218.
+
+**Denotational** (`Correctness/Delay*.agda`):
+
+| part | lines | what it is |
+|---|---:|---|
+| **backward direction (reflect)** | **≈ 505** | |
+| – finite-observation machinery | 184 | the relation R with the call batches (127), depth and `Bnd` (31), `collect` (26), which extracts finite witnesses of a target call |
+| – fundamental lemma | 214 | one case per construct, plus helpers for nonemptiness, tags, pairs and case branches |
+| – semantic side conditions | 48 | consistency of Clos4 terms (16); a source β-law and a "one finite part of the bound variable suffices" lemma (32) |
+| – imports and end theorem | 43 | |
+| **forward direction (preserve)** | **≈ 210** | |
+| – the relation ⊑ and its lemmas | 46 | |
+| – target laws | 41 | a β-law for closures, `case` contains its branch, one finite part suffices |
+| – fundamental lemma | 78 | |
+| – imports and end theorem | 45 | |
+| **shared** | **≈ 110** | |
+| – the `let`/`fst`/`snd` application equation | 45 | `DelayApp` |
+| – shorthands, list helpers, flat values | 62 | |
+
+**Operational** (`Correctness/DelaySim.agda`):
+
+| part | lines |
+|---|---:|
+| renaming lemmas, generic over any syntax | 62 |
+| relations: values, terms, environments, continuations; the run-ahead state | 58 |
+| the simulation, all cases | 66 |
+| end theorems (40% are corollaries) | 21 |
+| imports | 11 |
+
+**Where the ≈ 3.8× comes from:**
+
+1. **Two directions instead of one: about 505 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 320 lines, roughly 1.5× `DelaySim`.
+2. **Finite observations in reflect: about 184 lines, plus part of the app case.** A target call takes its code from `car C` and its free variables from `cdr C` separately. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index. Joined pairs (a pair as one value) were tried and do not change this.
+3. **β needs side conditions: about 130 lines.** In the graph model, β for closures, `let` and `case` holds only with nonemptiness and continuity. That costs `clos-β` and `cont-0` on both sides, the application equation, and consistency for `case`. Operationally, β is a machine step.
+4. **Imports: 82 lines against 11.**
+5. **Per-construct cases are comparable once the plumbing is gone.** Preserve's fundamental lemma is 78 lines against 66 for the simulation cases.
+
+The cost is not in the compositional, per-construct reasoning. It is in the backward direction forced by the change of representation (item 1), and in the side conditions β needs in the graph model (item 3). Operational proofs pay for the backward direction once, through determinism. The denotational proof pays for it in each pass that is not an equation, and delay is the only such pass.
