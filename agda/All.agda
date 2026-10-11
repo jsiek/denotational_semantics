@@ -112,3 +112,16 @@ import Compiler.Operational.Adequacy.Common
 import Compiler.Operational.Adequacy.Soundness
 import Compiler.Operational.Adequacy.LogRel
 import Compiler.Operational.Adequacy.ISWIM
+
+{- the same for the Clos5 machine, for well-formed programs (which the
+   compiler produces), and the compiler's correctness in the graph model
+   observed through the ISWIM and Clos5 machines -}
+import Compiler.Operational.Adequacy.Scope
+import Compiler.Operational.Adequacy.Clos5WF
+import Compiler.Operational.Adequacy.CompileWF
+import Compiler.Operational.Adequacy.Clos5Common
+import Compiler.Operational.Adequacy.Clos5Continuous
+import Compiler.Operational.Adequacy.Clos5Soundness
+import Compiler.Operational.Adequacy.Clos5LogRel
+import Compiler.Operational.Adequacy.Clos5
+import Compiler.Operational.Adequacy.EndToEnd
