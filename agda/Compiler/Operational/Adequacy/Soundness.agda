@@ -23,7 +23,7 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_∣; ∣_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; ℒ; ℛ; 𝒞; Λ) renaming (proj to dproj)
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ) renaming (proj to dproj)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀; Init)
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone)
@@ -33,7 +33,8 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
 open import Compiler.Operational.Machine.Common
-open import Compiler.Operational.Machine.ISWIM
+open import Compiler.Operational.Machine.ISWIM hiding (inl; inr)
+import Compiler.Operational.Machine.ISWIM as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Common
 
 open import Data.Bool using (true; false)
@@ -111,8 +112,8 @@ AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ 
 𝒱 (clo N γ) = Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
 𝒱 (const B k) = ℬ B k ptt
 𝒱 (tup vs) = 𝒯L (𝒱s vs)
-𝒱 (inl v) = ℒ ⟨ 𝒱 v , ptt ⟩
-𝒱 (inr v) = ℛ ⟨ 𝒱 v , ptt ⟩
+𝒱 (T.inl v) = inl ⟨ 𝒱 v , ptt ⟩
+𝒱 (T.inr v) = inr ⟨ 𝒱 v , ptt ⟩
 
 𝒱s [] = []
 𝒱s (v ∷ vs) = 𝒱 v ∷ 𝒱s vs
@@ -130,29 +131,29 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 ⟦ [] ⟧* ρ = []
 ⟦ M ∷ Ms ⟧* ρ = ⟦ M ⟧ ρ ∷ ⟦ Ms ⟧* ρ
 
-ℒ-⊆ : ∀ {D E} → D ⊆ E → ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ E , ptt ⟩
-ℒ-⊆ D⊆ (left d) d∈ = D⊆ d d∈
-ℒ-⊆ D⊆ (dconst k) ()
-ℒ-⊆ D⊆ (V ↦ w) ()
-ℒ-⊆ D⊆ ν ()
-ℒ-⊆ D⊆ ω ()
-ℒ-⊆ D⊆ ⦅ u ∣ ()
-ℒ-⊆ D⊆ ∣ u ⦆ ()
-ℒ-⊆ D⊆ (tup[ i ] d) ()
-ℒ-⊆ D⊆ (right d) ()
-ℒ-⊆ D⊆ ⟨⟩ ()
+inl-⊆ : ∀ {D E} → D ⊆ E → inl ⟨ D , ptt ⟩ ⊆ inl ⟨ E , ptt ⟩
+inl-⊆ D⊆ (left d) d∈ = D⊆ d d∈
+inl-⊆ D⊆ (dconst k) ()
+inl-⊆ D⊆ (V ↦ w) ()
+inl-⊆ D⊆ ν ()
+inl-⊆ D⊆ ω ()
+inl-⊆ D⊆ ⦅ u ∣ ()
+inl-⊆ D⊆ ∣ u ⦆ ()
+inl-⊆ D⊆ (tup[ i ] d) ()
+inl-⊆ D⊆ (right d) ()
+inl-⊆ D⊆ ⟨⟩ ()
 
-ℛ-⊆ : ∀ {D E} → D ⊆ E → ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ E , ptt ⟩
-ℛ-⊆ D⊆ (right d) d∈ = D⊆ d d∈
-ℛ-⊆ D⊆ (dconst k) ()
-ℛ-⊆ D⊆ (V ↦ w) ()
-ℛ-⊆ D⊆ ν ()
-ℛ-⊆ D⊆ ω ()
-ℛ-⊆ D⊆ ⦅ u ∣ ()
-ℛ-⊆ D⊆ ∣ u ⦆ ()
-ℛ-⊆ D⊆ (tup[ i ] d) ()
-ℛ-⊆ D⊆ (left d) ()
-ℛ-⊆ D⊆ ⟨⟩ ()
+inr-⊆ : ∀ {D E} → D ⊆ E → inr ⟨ D , ptt ⟩ ⊆ inr ⟨ E , ptt ⟩
+inr-⊆ D⊆ (right d) d∈ = D⊆ d d∈
+inr-⊆ D⊆ (dconst k) ()
+inr-⊆ D⊆ (V ↦ w) ()
+inr-⊆ D⊆ ν ()
+inr-⊆ D⊆ ω ()
+inr-⊆ D⊆ ⦅ u ∣ ()
+inr-⊆ D⊆ ∣ u ⦆ ()
+inr-⊆ D⊆ (tup[ i ] d) ()
+inr-⊆ D⊆ (left d) ()
+inr-⊆ D⊆ ⟨⟩ ()
 
 𝒦 : Cont → 𝒫 Value → 𝒫 Value
 𝒦 halt D = D
@@ -160,8 +161,8 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦 (appR v κ) D = 𝒦 κ (⋆ ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
 𝒦 (tupK vs Ms γ κ) D = 𝒦 κ (𝒯L (rev𝒱 vs (D ∷ ⟦ Ms ⟧* (𝓔 γ))))
 𝒦 (getK i κ) D = 𝒦 κ (dproj i ⟨ D , ptt ⟩)
-𝒦 (inlK κ) D = 𝒦 κ (ℒ ⟨ D , ptt ⟩)
-𝒦 (inrK κ) D = 𝒦 κ (ℛ ⟨ D , ptt ⟩)
+𝒦 (inlK κ) D = 𝒦 κ (inl ⟨ D , ptt ⟩)
+𝒦 (inrK κ) D = 𝒦 κ (inr ⟨ D , ptt ⟩)
 𝒦 (caseK M N γ κ) D =
   𝒦 κ (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
 
@@ -183,8 +184,8 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
 𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ =
   𝒦-mono κ (𝒯L-mono _ _ (rev𝒱-mono vs (D ∷ _) (E ∷ _) ⟨ D⊆ , ⊆L-refl _ ⟩))
 𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ λ d d∈ → D⊆ _ d∈
-𝒦-mono (inlK κ) D⊆ = 𝒦-mono κ (ℒ-⊆ D⊆)
-𝒦-mono (inrK κ) D⊆ = 𝒦-mono κ (ℛ-⊆ D⊆)
+𝒦-mono (inlK κ) D⊆ = 𝒦-mono κ (inl-⊆ D⊆)
+𝒦-mono (inrK κ) D⊆ = 𝒦-mono κ (inr-⊆ D⊆)
 𝒦-mono (caseK M N γ κ) D⊆ = 𝒦-mono κ G
   where
   G : _ ⊆ _
@@ -205,9 +206,9 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
   length-𝒱s : ∀ vs → length (𝒱s vs) ≡ length vs
   length-𝒱s [] = refl
   length-𝒱s (v ∷ vs) = cong suc (length-𝒱s vs)
-𝒱-nonempty (inl v) with 𝒱-nonempty v
+𝒱-nonempty (T.inl v) with 𝒱-nonempty v
 ... | ⟨ d , d∈ ⟩ = ⟨ left d , d∈ ⟩
-𝒱-nonempty (inr v) with 𝒱-nonempty v
+𝒱-nonempty (T.inr v) with 𝒱-nonempty v
 ... | ⟨ d , d∈ ⟩ = ⟨ right d , d∈ ⟩
 
 𝒱s-nonempty [] = tt
@@ -302,8 +303,8 @@ step-⊆ (ret v halt) ()
 step-⊆ (ret (clo N γ) (appL M γ' κ)) refl d d∈ = d∈
 step-⊆ (ret (const B k) (appL M γ' κ)) ()
 step-⊆ (ret (tup vs) (appL M γ' κ)) ()
-step-⊆ (ret (inl v) (appL M γ' κ)) ()
-step-⊆ (ret (inr v) (appL M γ' κ)) ()
+step-⊆ (ret (T.inl v) (appL M γ' κ)) ()
+step-⊆ (ret (T.inr v) (appL M γ' κ)) ()
 step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ β
   where
   β : ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
@@ -311,8 +312,8 @@ step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ β
   ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ne ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 step-⊆ (ret w (appR (const B k) κ)) ()
 step-⊆ (ret w (appR (tup vs) κ)) ()
-step-⊆ (ret w (appR (inl v) κ)) ()
-step-⊆ (ret w (appR (inr v) κ)) ()
+step-⊆ (ret w (appR (T.inl v) κ)) ()
+step-⊆ (ret w (appR (T.inr v) κ)) ()
 step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
 step-⊆ (ret (tup vs) (getK i κ)) eq with proj i vs in p
 step-⊆ (ret (tup vs) (getK i κ)) refl | just v =
@@ -320,17 +321,17 @@ step-⊆ (ret (tup vs) (getK i κ)) refl | just v =
 step-⊆ (ret (tup vs) (getK i κ)) () | nothing
 step-⊆ (ret (clo N γ) (getK i κ)) ()
 step-⊆ (ret (const B k) (getK i κ)) ()
-step-⊆ (ret (inl v) (getK i κ)) ()
-step-⊆ (ret (inr v) (getK i κ)) ()
+step-⊆ (ret (T.inl v) (getK i κ)) ()
+step-⊆ (ret (T.inr v) (getK i κ)) ()
 step-⊆ (ret v (inlK κ)) refl d d∈ = d∈
 step-⊆ (ret v (inrK κ)) refl d d∈ = d∈
-step-⊆ (ret (inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
+step-⊆ (ret (T.inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
   where
   β : ⟦ M ⟧ (𝓔 (v ∷ γ)) ⊆ _
   β d d∈ with body-in M γ v d d∈
   ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
   ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩
-step-⊆ (ret (inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
+step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
   where
   β : ⟦ N ⟧ (𝓔 (v ∷ γ)) ⊆ _
   β d d∈ with body-in N γ v d d∈
@@ -359,9 +360,9 @@ step-⊆ (ret (tup vs) (caseK M N γ κ)) ()
   len : ∀ vs → length (𝒱s vs) ≡ length vs
   len [] = refl
   len (v ∷ vs) = cong suc (len vs)
-𝒱-shape (inl v) with 𝒱-shape v
+𝒱-shape (T.inl v) with 𝒱-shape v
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ d∈ , sh ⟩ ⟩
-𝒱-shape (inr v) with 𝒱-shape v
+𝒱-shape (T.inr v) with 𝒱-shape v
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ d∈ , sh ⟩ ⟩
 
 {- a state that stops with an answer has an element of that shape -}
@@ -380,19 +381,19 @@ final-shape (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) () ans
 final-shape (ret v halt) refl ans = 𝒱-shape v
 final-shape (ret (const B k) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (tup vs) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
-final-shape (ret (inl v) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
-final-shape (ret (inr v) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret (T.inl v) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret (T.inr v) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret w (appR (const B k) κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret w (appR (tup vs) κ)) refl ans = ⊥-elim (ans refl)
-final-shape (ret w (appR (inl v) κ)) refl ans = ⊥-elim (ans refl)
-final-shape (ret w (appR (inr v) κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret w (appR (T.inl v) κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret w (appR (T.inr v) κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (tup vs) (getK i κ)) eq ans with proj i vs
 final-shape (ret (tup vs) (getK i κ)) () ans | just v
 final-shape (ret (tup vs) (getK i κ)) refl ans | nothing = ⊥-elim (ans refl)
 final-shape (ret (clo N γ) (getK i κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (const B k) (getK i κ)) refl ans = ⊥-elim (ans refl)
-final-shape (ret (inl v) (getK i κ)) refl ans = ⊥-elim (ans refl)
-final-shape (ret (inr v) (getK i κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret (T.inl v) (getK i κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret (T.inr v) (getK i κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (clo N' γ') (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (const B k) (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (tup vs) (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)

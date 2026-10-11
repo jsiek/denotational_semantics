@@ -30,8 +30,8 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos4 snd-op = cdr
 𝕆-Clos4 (tuple x) = 𝒯 x
 𝕆-Clos4 (get x) = proj x
-𝕆-Clos4 inl-op = ℒ
-𝕆-Clos4 inr-op = ℛ
+𝕆-Clos4 inl-op = inl
+𝕆-Clos4 inr-op = inr
 𝕆-Clos4 case-op = 𝒞
 {- let x = M in N means (λx. N) M -}
 𝕆-Clos4 let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
@@ -53,8 +53,8 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos4-mono snd-op = cdr-mono
 𝕆-Clos4-mono (tuple x) = 𝒯-mono x
 𝕆-Clos4-mono (get x) = proj-mono x
-𝕆-Clos4-mono inl-op = ℒ-mono
-𝕆-Clos4-mono inr-op = ℛ-mono
+𝕆-Clos4-mono inl-op = inl-mono
+𝕆-Clos4-mono inr-op = inr-mono
 𝕆-Clos4-mono case-op = 𝒞-mono
 𝕆-Clos4-mono let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
   ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
@@ -77,8 +77,8 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos4-consis snd-op = cdr-consis
 𝕆-Clos4-consis (tuple x) = 𝒯-consis x
 𝕆-Clos4-consis (get x) = proj-consis x
-𝕆-Clos4-consis inl-op = ℒ-consis
-𝕆-Clos4-consis inr-op = ℛ-consis
+𝕆-Clos4-consis inl-op = inl-consis
+𝕆-Clos4-consis inr-op = inr-consis
 𝕆-Clos4-consis case-op = 𝒞-consis
 𝕆-Clos4-consis let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
   ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩

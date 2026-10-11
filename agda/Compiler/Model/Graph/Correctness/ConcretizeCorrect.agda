@@ -224,20 +224,20 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ body = ⟨ G , H ⟩
 proj-≃ : ∀ {n} (i : Fin n) {D E} → D ≃ E → proj i ⟨ D , ptt ⟩ ≃ proj i ⟨ E , ptt ⟩
 proj-≃ i ⟨ D⊆ , D⊇ ⟩ = ⟨ (λ d → D⊆ (tup[ i ] d)) , (λ d → D⊇ (tup[ i ] d)) ⟩
 
-ℒ-≃ : ∀ {D E} → D ≃ E → ℒ ⟨ D , ptt ⟩ ≃ ℒ ⟨ E , ptt ⟩
-ℒ-≃ {D} {E} ⟨ D⊆ , D⊇ ⟩ = ⟨ G , H ⟩
+inl-≃ : ∀ {D E} → D ≃ E → inl ⟨ D , ptt ⟩ ≃ inl ⟨ E , ptt ⟩
+inl-≃ {D} {E} ⟨ D⊆ , D⊇ ⟩ = ⟨ G , H ⟩
   where
-  G : ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ E , ptt ⟩
+  G : inl ⟨ D , ptt ⟩ ⊆ inl ⟨ E , ptt ⟩
   G (left d) d∈ = D⊆ d d∈
-  H : ℒ ⟨ E , ptt ⟩ ⊆ ℒ ⟨ D , ptt ⟩
+  H : inl ⟨ E , ptt ⟩ ⊆ inl ⟨ D , ptt ⟩
   H (left d) d∈ = D⊇ d d∈
 
-ℛ-≃ : ∀ {D E} → D ≃ E → ℛ ⟨ D , ptt ⟩ ≃ ℛ ⟨ E , ptt ⟩
-ℛ-≃ {D} {E} ⟨ D⊆ , D⊇ ⟩ = ⟨ G , H ⟩
+inr-≃ : ∀ {D E} → D ≃ E → inr ⟨ D , ptt ⟩ ≃ inr ⟨ E , ptt ⟩
+inr-≃ {D} {E} ⟨ D⊆ , D⊇ ⟩ = ⟨ G , H ⟩
   where
-  G : ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ E , ptt ⟩
+  G : inr ⟨ D , ptt ⟩ ⊆ inr ⟨ E , ptt ⟩
   G (right d) d∈ = D⊆ d d∈
-  H : ℛ ⟨ E , ptt ⟩ ⊆ ℛ ⟨ D , ptt ⟩
+  H : inr ⟨ E , ptt ⟩ ⊆ inr ⟨ D , ptt ⟩
   H (right d) d∈ = D⊇ d d∈
 
 {- case analysis, whose branches are compared on nonempty finite sets -}
@@ -282,9 +282,9 @@ concretize-correct (tuple n ⦅ args ⦆) φ ρ₂ ρ₃ rel =
 concretize-correct (get i ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ rel =
   proj-≃ i (concretize-correct M φ ρ₂ ρ₃ rel)
 concretize-correct (inl-op ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ rel =
-  ℒ-≃ (concretize-correct M φ ρ₂ ρ₃ rel)
+  inl-≃ (concretize-correct M φ ρ₂ ρ₃ rel)
 concretize-correct (inr-op ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ rel =
-  ℛ-≃ (concretize-correct M φ ρ₂ ρ₃ rel)
+  inr-≃ (concretize-correct M φ ρ₂ ρ₃ rel)
 concretize-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) M ⟧' (X • ρ₃)}
       {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)}

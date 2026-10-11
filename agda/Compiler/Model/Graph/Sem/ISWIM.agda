@@ -22,8 +22,8 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-ISWIM (lit B k) = ℬ B k
 𝕆-ISWIM (tuple n) = 𝒯 n
 𝕆-ISWIM (get i) = proj i
-𝕆-ISWIM inl-op = ℒ
-𝕆-ISWIM inr-op = ℛ
+𝕆-ISWIM inl-op = inl
+𝕆-ISWIM inr-op = inr
 𝕆-ISWIM case-op = 𝒞
 
 𝕆-ISWIM-mono : 𝕆-monotone sig 𝕆-ISWIM
@@ -32,8 +32,8 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-ISWIM-mono (lit B k) _ _ _ = lift (λ d z → z)
 𝕆-ISWIM-mono (tuple x) = 𝒯-mono x
 𝕆-ISWIM-mono (get x) = proj-mono x
-𝕆-ISWIM-mono inl-op = ℒ-mono
-𝕆-ISWIM-mono inr-op = ℛ-mono
+𝕆-ISWIM-mono inl-op = inl-mono
+𝕆-ISWIM-mono inr-op = inr-mono
 𝕆-ISWIM-mono case-op = 𝒞-mono
 
 open import NewSemantics Op sig public

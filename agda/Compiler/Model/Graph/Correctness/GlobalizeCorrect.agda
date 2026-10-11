@@ -28,7 +28,7 @@ open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
 open import Compiler.Compile.Globalize
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; ρ₀)
-open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃; 𝒞-≃)
+open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; <-≤-trans; <-irrefl; n<1+n; m≤n+m; n≤1+n)
@@ -212,9 +212,9 @@ stab n T T' (L5.tuple x L5.⦅ args ⦆) ρ ρ' ag r rel =
 stab n T T' (L5.get i L5.⦅ args ⦆) ρ ρ' ag r rel =
   proj-≃ i (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
 stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel =
-  ℒ-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
+  inl-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
 stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel =
-  ℛ-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
+  inr-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
 stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = case-≃ (stab-args n T T' args ρ ρ' ag r rel)
 stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = let-≃ (stab-args n T T' args ρ ρ' ag r rel)
 
@@ -288,8 +288,8 @@ glob-sem (fst-op ⦅ args ⦆) ds ρ ρ' rel = car-≃ (glob-sem-args args ds ρ
 glob-sem (snd-op ⦅ args ⦆) ds ρ ρ' rel = cdr-≃ (glob-sem-args args ds ρ ρ' rel)
 glob-sem (tuple n ⦅ args ⦆) ds ρ ρ' rel = 𝒯-≃ n (nthD-≃ _ _ (glob-sem-args args ds ρ ρ' rel))
 glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = proj-≃ i (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
-glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = ℒ-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
-glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = ℛ-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
+glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = inl-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
+glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = inr-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
 glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = case-≃ (glob-sem-args args ds ρ ρ' rel)
 glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = let-≃ (glob-sem-args args ds ρ ρ' rel)
 

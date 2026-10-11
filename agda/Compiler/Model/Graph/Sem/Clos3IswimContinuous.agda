@@ -43,9 +43,9 @@ Clos3-continuous-op {tuple n} {ρ} {NE} {v} {args} v∈ cs =
 Clos3-continuous-op {get i} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
   proj-cont i {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
 Clos3-continuous-op {inl-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
-  ℒ-cont {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
+  inl-cont {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
 Clos3-continuous-op {inr-op} {ρ} {NE} {v} {cons (ast M) nil} v∈ ⟨ cM , _ ⟩ =
-  ℛ-cont {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
+  inr-cont {E = λ ρ → ⟦ M ⟧ ρ} cM v v∈
 Clos3-continuous-op {case-op} {ρ} {NE} {v}
     {cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil))} v∈
     ⟨ cL , ⟨ cM , ⟨ cN , _ ⟩ ⟩ ⟩ =

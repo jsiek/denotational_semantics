@@ -215,11 +215,11 @@ reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' V'⊆ =
   ρ⊳' zero = tag-reflect L E s
   ρ⊳' (suc x) = ρ⊳ x
 
-ℒ-ne : ∀ {D : 𝒫 Value} v → v ∈ ℒ ⟨ D , ptt ⟩ → nonempty D
-ℒ-ne (left d) d∈ = ⟨ d , d∈ ⟩
+inl-ne : ∀ {D : 𝒫 Value} v → v ∈ inl ⟨ D , ptt ⟩ → nonempty D
+inl-ne (left d) d∈ = ⟨ d , d∈ ⟩
 
-ℛ-ne : ∀ {D : 𝒫 Value} v → v ∈ ℛ ⟨ D , ptt ⟩ → nonempty D
-ℛ-ne (right d) d∈ = ⟨ d , d∈ ⟩
+inr-ne : ∀ {D : 𝒫 Value} v → v ∈ inr ⟨ D , ptt ⟩ → nonempty D
+inr-ne (right d) d∈ = ⟨ d , d∈ ⟩
 
 pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
 pair-ne ⦅ f ∣ ⟨ v , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
@@ -250,7 +250,7 @@ delay-reflect (get i ⦅ M ,, Nil ⦆) E = tag-reflect M E (tupT i)
 delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
-                              ⟨ m , m∈ ⟩ = ne-reflect M E (ℒ-ne v v∈) in ⟨ left m , m∈ ⟩
+                              ⟨ m , m∈ ⟩ = ne-reflect M E (inl-ne v v∈) in ⟨ left m , m∈ ⟩
   ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
   ; tag-obs = λ { leftT W W⊆ →
                     delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
@@ -261,7 +261,7 @@ delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
 delay-reflect (inr-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
-                              ⟨ m , m∈ ⟩ = ne-reflect M E (ℛ-ne v v∈) in ⟨ right m , m∈ ⟩
+                              ⟨ m , m∈ ⟩ = ne-reflect M E (inr-ne v v∈) in ⟨ right m , m∈ ⟩
   ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
   ; tag-obs = λ { rightT W W⊆ →
                     delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))

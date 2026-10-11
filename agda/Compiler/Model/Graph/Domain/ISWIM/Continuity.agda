@@ -185,11 +185,11 @@ proj-cont i c d d∈ = c (tup[ i ] d) d∈
 
 {- Sums -----------------------------------------------------------------------}
 
-ℒ-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → ℒ ⟨ E ρ , ptt ⟩) ρ
-ℒ-cont c (left d) d∈ = c d d∈
+inl-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → inl ⟨ E ρ , ptt ⟩) ρ
+inl-cont c (left d) d∈ = c d d∈
 
-ℛ-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → ℛ ⟨ E ρ , ptt ⟩) ρ
-ℛ-cont c (right d) d∈ = c d d∈
+inr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → inr ⟨ E ρ , ptt ⟩) ρ
+inr-cont c (right d) d∈ = c d d∈
 
 {- Case analysis, whose branches B₁ and B₂ bind one variable -}
 map-left⊆ : ∀ {D : 𝒫 Value} {U} → (∀ d → d ∈ mem U → left d ∈ D) → mem (lmap left U) ⊆ D

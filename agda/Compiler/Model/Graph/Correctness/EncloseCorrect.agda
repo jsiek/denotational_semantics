@@ -28,7 +28,7 @@ open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; ρ₀)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
-  using (init₀; push; apply-push; push-plus; ⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃; 𝒞-≃)
+  using (init₀; push; apply-push; push-plus; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
 open import Compiler.Model.Graph.Correctness.OptimizeCorrect using (unbind-bind; push-ne)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 
@@ -128,9 +128,9 @@ enc-correct (tuple n ⦅ args ⦆) ρ₁ ρ₂ NE rel = 𝒯-≃ n (enc-args-cor
 enc-correct (get i ⦅ M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   proj-≃ i (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
 enc-correct (inl-op ⦅ M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
-  ℒ-≃ (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
+  inl-≃ (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
 enc-correct (inr-op ⦅ M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
-  ℛ-≃ (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
+  inr-≃ (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
 enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₁)} {λ X → ⟦ enclose M ⟧₂ (X • ρ₂)}
       {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ enclose N ⟧₂ (X • ρ₂)}

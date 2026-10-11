@@ -45,8 +45,8 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2 (lit B k) = ℬ B k
 𝕆-Clos2 (tuple n) = 𝒯 n
 𝕆-Clos2 (get i) = proj i
-𝕆-Clos2 inl-op = ℒ
-𝕆-Clos2 inr-op = ℛ
+𝕆-Clos2 inl-op = inl
+𝕆-Clos2 inr-op = inr
 𝕆-Clos2 case-op = 𝒞
 
 𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
@@ -61,8 +61,8 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2-mono (lit B k) _ _ _ = lift (λ d z → z)
 𝕆-Clos2-mono (tuple x) = 𝒯-mono x
 𝕆-Clos2-mono (get x) = proj-mono x
-𝕆-Clos2-mono inl-op = ℒ-mono
-𝕆-Clos2-mono inr-op = ℛ-mono
+𝕆-Clos2-mono inl-op = inl-mono
+𝕆-Clos2-mono inr-op = inr-mono
 𝕆-Clos2-mono case-op = 𝒞-mono
 
 open import NewSemantics Op sig public
