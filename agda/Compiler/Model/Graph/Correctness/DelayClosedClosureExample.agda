@@ -20,7 +20,7 @@ open import Compiler.Model.Graph.Sem.Clos3Iswim
 import Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open import Compiler.Compile.Delay using (delay)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
-open import Compiler.Model.Graph.Correctness.DelayPreserveFinite using (preserve-const)
+open import Compiler.Model.Graph.Correctness.DelayPreserve using (preserve-const)
 
 open import Data.List using ([]; _∷_)
 open import Data.List.Relation.Unary.Any using (here)

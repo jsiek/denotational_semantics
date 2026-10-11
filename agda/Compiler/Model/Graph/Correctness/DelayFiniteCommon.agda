@@ -1,8 +1,8 @@
 {-
 
-  Definitions shared by the finite-observation logical relations for the
-  delay pass (see DelayFiniteRel, DelayReflectFinite, DelayPreserveFinite):
-  operator shorthands, the depth of values, and small lemmas about
+  Definitions shared by the proofs for the delay pass (DelayPreserve,
+  DelayFiniteRel, DelayReflectFinite) and the other passes: operator
+  shorthands, environments, the depth of values, and small lemmas about
   finite lists of values.
 
 -}
@@ -49,14 +49,27 @@ Cdr D = cdr ⟨ D , ptt ⟩
 _⊙_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ⊙ E = (Car D ● Cdr D) ● E
 
+{- the projections of the values with a given tag: proj i, left, right -}
+data Tag : Set where
+  tupT : ∀ {n} → Fin n → Tag
+  leftT rightT : Tag
+
+tag : Tag → Value → Value
+tag (tupT i) d = tup[ i ] d
+tag leftT d = left d
+tag rightT d = right d
+
+Untag : Tag → 𝒫 Value → 𝒫 Value
+Untag t D d = tag t d ∈ D
+
 Nth : ∀ {n} → Fin n → 𝒫 Value → 𝒫 Value
-Nth i D = proj i ⟨ D , ptt ⟩
+Nth i = Untag (tupT i)
 
 Lefts : 𝒫 Value → 𝒫 Value
-Lefts D d = left d ∈ D
+Lefts = Untag leftT
 
 Rights : 𝒫 Value → 𝒫 Value
-Rights D d = right d ∈ D
+Rights = Untag rightT
 
 Init : 𝒫 Value
 Init = ⌈ ω ⌉
@@ -64,17 +77,6 @@ Init = ⌈ ω ⌉
 {- the environment of a closed program -}
 ρ₀ : Env
 ρ₀ = λ _ → Init
-
-{- projections of a finite list of values -}
-
-Nths : ∀ {n} → Fin n → List Value → 𝒫 Value
-Nths i V d = tup[ i ] d ⋵ V
-
-Lefts' : List Value → 𝒫 Value
-Lefts' V d = left d ⋵ V
-
-Rights' : List Value → 𝒫 Value
-Rights' V d = right d ⋵ V
 
 {- Depth ----------------------------------------------------------------------}
 
@@ -113,27 +115,16 @@ Bnd-⊆ W⊆V bV w w∈ = bV w (W⊆V w w∈)
 <-shrink : ∀ {a b k} → suc a ≤ b → b < suc k → a < k
 <-shrink sa≤b (s≤s b≤k) = ≤-trans sa≤b b≤k
 
-<0 : ∀ {n} → n < 0 → False
-<0 ()
-
-Bnd-Nths : ∀ {k V W n} {i : Fin n} → Bnd (suc k) V → mem W ⊆ Nths i V → Bnd k W
-Bnd-Nths bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
-
-Bnd-Lefts : ∀ {k V W} → Bnd (suc k) V → mem W ⊆ Lefts' V → Bnd k W
-Bnd-Lefts bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
-
-Bnd-Rights : ∀ {k V W} → Bnd (suc k) V → mem W ⊆ Rights' V → Bnd k W
-Bnd-Rights bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
+Bnd-Untag : ∀ {k V W} t → Bnd (suc k) V → mem W ⊆ Untag t (mem V) → Bnd k W
+Bnd-Untag (tupT i) bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
+Bnd-Untag leftT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
+Bnd-Untag rightT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 
 {- List helpers ---------------------------------------------------------------}
 
 ne-mem : ∀ {V : List Value}{D : 𝒫 Value} → V ≢ [] → mem V ⊆ D → nonempty D
 ne-mem {[]} ne _ = ⊥-elim (ne refl)
 ne-mem {v ∷ V} _ V⊆ = ⟨ v , V⊆ v (here refl) ⟩
-
-ne-head : ∀ {V : List Value} → V ≢ [] → Σ[ v ∈ Value ] v ⋵ V
-ne-head {[]} ne = ⊥-elim (ne refl)
-ne-head {v ∷ V} _ = ⟨ v , here refl ⟩
 
 ne-⊆ : ∀ {V₁ V₂ : List Value} → mem V₁ ⊆ mem V₂ → V₁ ≢ [] → V₂ ≢ []
 ne-⊆ {[]} _ ne = ⊥-elim (ne refl)
@@ -147,13 +138,9 @@ single⊆ v∈ _ (here refl) = v∈
 ●-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ● E) ⊆ (D₂ ● E)
 ●-mono-l D⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩
 
-Cdr-mono : ∀ {D₁ D₂} → D₁ ⊆ D₂ → Cdr D₁ ⊆ Cdr D₂
-Cdr-mono D⊆ d ∣d⦆∈ = D⊆ ∣ d ⦆ ∣d⦆∈
-
 ⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
-⊙-mono-l {D₁}{D₂} D⊆ w ⟨ U , ⟨ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  ⟨ U , ⟨ ⟨ FV , ⟨ D⊆ _ f∈ , ⟨ (λ d d∈ → Cdr-mono {D₁}{D₂} D⊆ d (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩
-        , ⟨ U⊆ , neU ⟩ ⟩ ⟩
+⊙-mono-l D⊆ w ⟨ U , ⟨ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
+  ⟨ U , ⟨ ⟨ FV , ⟨ D⊆ _ f∈ , ⟨ (λ d d∈ → D⊆ ∣ d ⦆ (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩
 
 {- Values that have no observations besides themselves ------------------------}
 
@@ -162,20 +149,10 @@ data Flat : Value → Set where
   flat-ω : Flat ω
   flat-⟨⟩ : Flat ⟨⟩
 
-flat-car : ∀ {u} → Flat ⦅ u ∣ → False
-flat-car ()
-
-flat-fun : ∀ {V w} → Flat (V ↦ w) → False
-flat-fun ()
-
-flat-tup : ∀ {n} {i : Fin n} {d} → Flat (tup[ i ] d) → False
-flat-tup ()
-
-flat-left : ∀ {d} → Flat (left d) → False
-flat-left ()
-
-flat-right : ∀ {d} → Flat (right d) → False
-flat-right ()
+flat-tag : ∀ t {d} → Flat (tag t d) → False
+flat-tag (tupT i) ()
+flat-tag leftT ()
+flat-tag rightT ()
 
 {- the empty tuple has only the observation ⟨⟩, whatever its operands -}
 𝒯0-flat : ∀ {Ds Es} v → v ∈ 𝒯 0 Ds → v ∈ 𝒯 0 Es × Flat v
@@ -187,51 +164,5 @@ Init-flat refl = flat-ω
 Init-consis : consis Init
 Init-consis .ω .ω refl refl = tt
 
-{- Inversion lemmas -----------------------------------------------------------}
-
-pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
-pair-ne ⦅ f ∣ ⟨ v , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
-pair-ne ∣ v ⦆ ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
-pair-ne (const k) ()
-pair-ne (V ↦ w) ()
-pair-ne ν ()
-pair-ne ω ()
-pair-ne (tup[ i ] d) ()
-pair-ne (left d) ()
-pair-ne (right d) ()
-
-cdr-pair : ∀ {A B : 𝒫 Value}{v} → ∣ v ⦆ ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → v ∈ B
-cdr-pair ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = v∈
-
-ℒ-inv : ∀ {D : 𝒫 Value} v → v ∈ ℒ ⟨ D , ptt ⟩ → Σ[ d ∈ Value ] v ≡ left d × d ∈ D
-ℒ-inv (left d) d∈ = ⟨ d , ⟨ refl , d∈ ⟩ ⟩
-ℒ-inv (const k) ()
-ℒ-inv (V ↦ w) ()
-ℒ-inv ν ()
-ℒ-inv ω ()
-ℒ-inv ⦅ u ∣ ()
-ℒ-inv ∣ v ⦆ ()
-ℒ-inv (tup[ i ] d) ()
-ℒ-inv (right d) ()
-
-ℛ-inv : ∀ {D : 𝒫 Value} v → v ∈ ℛ ⟨ D , ptt ⟩ → Σ[ d ∈ Value ] v ≡ right d × d ∈ D
-ℛ-inv (right d) d∈ = ⟨ d , ⟨ refl , d∈ ⟩ ⟩
-ℛ-inv (const k) ()
-ℛ-inv (V ↦ w) ()
-ℛ-inv ν ()
-ℛ-inv ω ()
-ℛ-inv ⦅ u ∣ ()
-ℛ-inv ∣ v ⦆ ()
-ℛ-inv (tup[ i ] d) ()
-ℛ-inv (left d) ()
-
 ℬ-flat : ∀ {B} {c : base-rep B} v → v ∈ ℬ B c ptt → Flat v
 ℬ-flat (const k) _ = flat-const
-ℬ-flat (V ↦ w) ()
-ℬ-flat ν ()
-ℬ-flat ω ()
-ℬ-flat ⦅ u ∣ ()
-ℬ-flat ∣ v ⦆ ()
-ℬ-flat (tup[ i ] d) ()
-ℬ-flat (left d) ()
-ℬ-flat (right d) ()
