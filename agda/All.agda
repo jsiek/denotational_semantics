@@ -47,6 +47,7 @@ import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos3Iswim
 import Compiler.Model.Graph.Sem.Clos3IswimConsistent
+import Compiler.Model.Graph.Sem.ISWIMContinuous
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
@@ -98,3 +99,10 @@ import Compiler.Operational.Machine.Clos5
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
+
+{- soundness and adequacy of the graph model for the ISWIM machine, which
+   connect the two developments -}
+import Compiler.Operational.Adequacy.Common
+import Compiler.Operational.Adequacy.Soundness
+import Compiler.Operational.Adequacy.LogRel
+import Compiler.Operational.Adequacy.ISWIM
