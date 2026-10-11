@@ -11,13 +11,13 @@
   of V' (Bnd k V'). The fuel stays private: unfold and fold show that
   R V' D holds exactly when the clauses Obs R V' D hold.
 
-  A target closure is split into the car halves ⦅ FV ↦ (U₀ ↦ w) ∣ of its
-  code and the cdr halves ∣ fv ⦆ of its environment. A call takes its
-  code from car C and its free variables FV from cdr C separately, and FV
-  is a finite set of observations, so a single target value says nothing
-  about a call (this would be so even if pairs were single values). The function entries of V' (CarEntry)
-  are the codes in the car halves of V' whose free variables FV are in
-  the cdr halves of V'. Calls V' U W says that each w in W is the result
+  A target closure denotes pairs ⦅ f , t ⦆ of a code entry f and an
+  environment value t. A call takes its code entry FV ↦ (U₀ ↦ w) from
+  car C and its free variables FV from cdr C separately, possibly from
+  different pairs, and FV is a finite set of observations, so a single
+  target value says nothing about a call. The function entries of V'
+  (CarEntry) are the code entries in the cars of the pairs in V' whose
+  free variables FV are in the cdrs of the pairs in V'. Calls V' U W says that each w in W is the result
   of a function entry U₀ ↦ w of V' with U₀ ⊆ U, and that each u in U is
   an argument of a function entry of V' (so U is no deeper than V'). The
   function clause relates the arguments U of a batch to an argument set E
@@ -43,7 +43,7 @@ module Compiler.Model.Graph.Correctness.DelayFiniteRel where
 
 {- The function entries of a finite list of target values --------------------}
 
-{- the free variables stored in the cdr halves of V' -}
+{- the free variables stored in the cdrs of the pairs in V' -}
 Cdrs : List Value → 𝒫 Value
 Cdrs V' = Cdr (mem V')
 
@@ -51,18 +51,20 @@ record CarEntry (V' U₀ : List Value) (w : Value) : Set where
   constructor car-entry
   field
     FV : List Value
-    car∈ : ⦅ FV ↦ (U₀ ↦ w) ∣ ⋵ V'
+    env : Value
+    car∈ : ⦅ FV ↦ (U₀ ↦ w) , env ⦆ ⋵ V'
     FV≢[] : FV ≢ []
     FV⊆ : mem FV ⊆ Cdrs V'
 
 CarEntry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → CarEntry V₁ U₀ w → CarEntry V₂ U₀ w
-CarEntry-⊆ s (car-entry FV e∈ neFV FV⊆) = car-entry FV (s _ e∈) neFV (λ d d∈ → s _ (FV⊆ d d∈))
+CarEntry-⊆ s (car-entry FV t e∈ neFV FV⊆) =
+  car-entry FV t (s _ e∈) neFV (λ d d∈ → let ⟨ u , i ⟩ = FV⊆ d d∈ in ⟨ u , s _ i ⟩)
 
 Bnd-CarEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → CarEntry V' U₀ w → Bnd k U₀ × depth w < k
-Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV e∈ _ _) =
+Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV t e∈ _ _) =
   ⟨ (λ u u∈ → <-shrink (s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n _ (depth w)) up))) (bV _ e∈))
   , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
-  where up = ≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (n≤1+n _))
+  where up = ≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (≤-trans (n≤1+n _) (m≤m⊔n _ (depth t))))
 
 {- Batches of calls ------------------------------------------------------------}
 
@@ -80,9 +82,9 @@ Calls-⊆ s cs = record
   ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Calls.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ CarEntry-⊆ s e , r ⟩ ⟩ ⟩
   }
 
-{- a list without car halves makes no calls -}
-Calls-none : ∀ {V U W} → (∀ u → ⦅ u ∣ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
-Calls-none no cs w w∈ = no _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w w∈))))
+{- a list without pairs makes no calls -}
+Calls-none : ∀ {V U W} → (∀ u v → ⦅ u , v ⦆ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
+Calls-none no cs w w∈ = no _ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w w∈))))
 
 Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
 Bnd-Calls-args bV cs u u∈ =
@@ -134,7 +136,7 @@ private
   R′-∅ (suc k) {V} V⊆∅ = record
     { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
     ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V⊆∅))
-    ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u u∈ → V⊆∅ _ u∈) cs)
+    ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u v uv∈ → V⊆∅ _ uv∈) cs)
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
@@ -143,10 +145,10 @@ private
   R′-flat (suc k) {V} V⊆ fl = record
     { const-obs = λ c c∈ → V⊆ _ c∈
     ; nonempty-obs = λ ne → ne-mem ne V⊆
-    ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u u∈ → noflat (fl _ u∈)) cs)
+    ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → flat-tag t (fl _ (W⊆ d d∈)))
     }
-    where noflat : ∀ {u} → Flat ⦅ u ∣ → ⊥
+    where noflat : ∀ {u v} → Flat ⦅ u , v ⦆ → ⊥
           noflat ()
 
   R′-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R′ k V D₁ → R′ k V D₂

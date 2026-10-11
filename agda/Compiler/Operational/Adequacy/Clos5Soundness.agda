@@ -29,7 +29,7 @@ module Compiler.Operational.Adequacy.Clos5Soundness where
 open import Primitives using (Base; base-rep)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-  using (Value; _↦_; ν; ω; ⦅_∣; ∣_⦆; tup[_]_; left; right; ⟨⟩)
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
   using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
@@ -169,8 +169,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     where
     G : dpair ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩ ⊆ dpair ⟨ 𝒱 v , ⟨ E , ptt ⟩ ⟩
     G = pair-⊆ {𝒱 v} {𝒱 v} {D} {E} (λ d z → z) D⊆
-  𝒦-mono (fstK κ) D⊆ = 𝒦-mono κ (λ d d∈ → D⊆ _ d∈)
-  𝒦-mono (sndK κ) D⊆ = 𝒦-mono κ (λ d d∈ → D⊆ _ d∈)
+  𝒦-mono (fstK κ) D⊆ = 𝒦-mono κ (λ { d ⟨ e , de∈ ⟩ → ⟨ e , D⊆ _ de∈ ⟩ })
+  𝒦-mono (sndK κ) D⊆ = 𝒦-mono κ (λ { e ⟨ d , de∈ ⟩ → ⟨ d , D⊆ _ de∈ ⟩ })
   𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ =
     𝒦-mono κ (𝒯L-mono _ _ (rev𝒱-mono vs (D ∷ _) (E ∷ _) ⟨ D⊆ , ⊆L-refl _ ⟩))
   𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ λ d d∈ → D⊆ _ d∈
@@ -197,7 +197,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   𝒱-nonempty (code k) = ⟨ ν , inj₂ refl ⟩
   𝒱-nonempty (pair v w) with 𝒱-nonempty v | 𝒱-nonempty w
-  ... | ⟨ d , d∈ ⟩ | ⟨ e , e∈ ⟩ = ⟨ ⦅ d ∣ , ⟨ e , ⟨ d∈ , e∈ ⟩ ⟩ ⟩
+  ... | ⟨ d , d∈ ⟩ | ⟨ e , e∈ ⟩ = ⟨ ⦅ d , e ⦆ , ⟨ d∈ , e∈ ⟩ ⟩
   𝒱-nonempty (const B k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
   𝒱-nonempty (tup []) = ⟨ ⟨⟩ , tt ⟩
   𝒱-nonempty (tup (v ∷ vs)) with 𝒱-nonempty v
@@ -394,7 +394,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒱-shape : ∀ v → Σ[ d ∈ Value ] d ∈ 𝒱 v × ShapeOf (obs v) d
   𝒱-shape (code k) = ⟨ ν , ⟨ inj₂ refl , tt ⟩ ⟩
   𝒱-shape (pair v w) with 𝒱-nonempty v | 𝒱-nonempty w
-  ... | ⟨ d , d∈ ⟩ | ⟨ e , e∈ ⟩ = ⟨ ⦅ d ∣ , ⟨ ⟨ e , ⟨ d∈ , e∈ ⟩ ⟩ , tt ⟩ ⟩
+  ... | ⟨ d , d∈ ⟩ | ⟨ e , e∈ ⟩ = ⟨ ⦅ d , e ⦆ , ⟨ ⟨ d∈ , e∈ ⟩ , tt ⟩ ⟩
   𝒱-shape (const B k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , refl ⟩ ⟩
   𝒱-shape (tup []) = ⟨ ⟨⟩ , ⟨ tt , refl ⟩ ⟩
   𝒱-shape (tup (v ∷ vs)) with 𝒱-shape v

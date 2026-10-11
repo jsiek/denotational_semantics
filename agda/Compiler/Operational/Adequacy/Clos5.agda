@@ -14,8 +14,8 @@
   so that ⟦ P ⟧ₚ contains const k exactly when the machine terminates
   with o-const B k (const-iff), and is nonempty exactly when the machine
   terminates with an answer (nonempty-iff). The machine observes code
-  pointers and pairs (closures) as functions, o-fun; a pair denotes the
-  entries ⦅ u ∣ and ∣ v ⦆, which ShapeOf o-fun allows.
+  pointers and pairs (closures) as functions, o-fun; a pair denotes
+  entries ⦅ u , v ⦆, which ShapeOf o-fun allows.
 
   The approach is as for ISWIM (Adequacy/ISWIM.agda): soundness by a
   denotation of machine states that shrinks under steps

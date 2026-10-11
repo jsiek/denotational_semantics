@@ -19,7 +19,7 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.Product using (_×_)
+open import Data.Product using (_×_; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.Unit using (tt)
@@ -86,8 +86,7 @@ depth (const k) = 0
 depth (V ↦ w) = suc (depths V ⊔ depth w)
 depth ν = 0
 depth ω = 0
-depth ⦅ u ∣ = suc (depth u)
-depth ∣ v ⦆ = suc (depth v)
+depth ⦅ u , v ⦆ = suc (depth u ⊔ depth v)
 depth (tup[ i ] d) = suc (depth d)
 depth (left d) = suc (depth d)
 depth (right d) = suc (depth d)
@@ -132,9 +131,27 @@ single⊆ v∈ _ (here refl) = v∈
 ●-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ● E) ⊆ (D₂ ● E)
 ●-mono-l D⊆ w ⟨ V , ⟨ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩ = ⟨ V , ⟨ D⊆ _ V↦w∈ , ⟨ V⊆E , neV ⟩ ⟩ ⟩
 
+Cdr-mono : ∀ {D₁ D₂} → D₁ ⊆ D₂ → Cdr D₁ ⊆ Cdr D₂
+Cdr-mono D⊆ v ⟨ u , uv∈ ⟩ = ⟨ u , D⊆ _ uv∈ ⟩
+
+{- finitely many elements of L whose cdrs cover the list FV -}
+cdr-witness : ∀ {L} FV → mem FV ⊆ Cdr L
+  → Σ[ P ∈ List Value ] mem P ⊆ L × mem FV ⊆ Cdr (mem P)
+cdr-witness [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
+cdr-witness (fv ∷ FV) FV⊆ with FV⊆ fv (here refl) | cdr-witness FV (λ d d∈ → FV⊆ d (there d∈))
+... | ⟨ u , u∈ ⟩ | ⟨ P , ⟨ P⊆ , FV⊆P ⟩ ⟩ = ⟨ ⦅ u , fv ⦆ ∷ P , ⟨ P⊆′ , FV⊆′ ⟩ ⟩
+  where
+  P⊆′ : mem (⦅ u , fv ⦆ ∷ P) ⊆ _
+  P⊆′ _ (here refl) = u∈
+  P⊆′ d (there d∈) = P⊆ d d∈
+  FV⊆′ : mem (fv ∷ FV) ⊆ Cdr (mem (⦅ u , fv ⦆ ∷ P))
+  FV⊆′ _ (here refl) = ⟨ u , here refl ⟩
+  FV⊆′ d (there d∈) = let ⟨ u′ , i ⟩ = FV⊆P d d∈ in ⟨ u′ , there i ⟩
+
 ⊙-mono-l : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊙ E) ⊆ (D₂ ⊙ E)
-⊙-mono-l D⊆ w ⟨ U , ⟨ ⟨ FV , ⟨ f∈ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  ⟨ U , ⟨ ⟨ FV , ⟨ D⊆ _ f∈ , ⟨ (λ d d∈ → D⊆ ∣ d ⦆ (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩
+⊙-mono-l D⊆ w ⟨ U , ⟨ ⟨ FV , ⟨ ⟨ t , f∈ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
+  ⟨ U , ⟨ ⟨ FV , ⟨ ⟨ t , D⊆ _ f∈ ⟩ , ⟨ (λ d d∈ → Cdr-mono D⊆ d (FV⊆ d d∈)) , neFV ⟩ ⟩ ⟩
+        , ⟨ U⊆ , neU ⟩ ⟩ ⟩
 
 {- Values that have no observations besides themselves ------------------------}
 
