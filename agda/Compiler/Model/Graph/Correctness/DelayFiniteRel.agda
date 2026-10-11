@@ -1,34 +1,35 @@
 {-
 
-  A logical relation indexed by finite lists of observations from one side
-  of the delay pass, generic in which side that is (see issue #1).
+  The logical relation for the backward (reflect) direction of the delay
+  pass, indexed by finite lists of target observations (see issue #1).
 
-  R k V D relates a finite list V of values, from the side being simulated,
-  to an arbitrary set D from the other side. It is defined by recursion on
-  the depth of V, which we encode with fuel: R k V D only looks at the parts
-  of V of depth < k, and R-irr shows that the fuel is irrelevant as long as
-  it bounds the depth of V (Bnd k V).
+  R k V' D relates a finite list V' of target values to a source set D.
+  It is defined by recursion on the depth of V', which we encode with
+  fuel: R k V' D only looks at the parts of V' of depth < k, and R-irr
+  shows that the fuel is irrelevant as long as it bounds the depth of V'
+  (Bnd k V').
 
-  The parameters describe function application on each side:
-  - Entry V U₀ w : V contains a function entry U₀ ↦ w,
-  - D ⊚ E : application on the other side,
-  - Good U : a side condition on the arguments (consistency, for reflect).
-
-  From Entry we define, once for both sides, the batches of calls of V:
-  Calls V U W says that each w in W is the result of a function entry
-  U₀ ↦ w of V (with U₀ nonempty), and U is the union of those U₀. The
-  function clause relates the arguments U of a batch to an argument set
-  E on the other side, and the results W to the application D ⊚ E.
+  A target closure is split into the car halves ⦅ FV ↦ (U₀ ↦ w) ∣ of its
+  code and the cdr halves ∣ fv ⦆ of its environment. A call takes its
+  code from car C and its free variables FV from cdr C separately, and FV
+  is a finite set of observations, so a single target value says nothing
+  about a call (this would be so even if pairs were single values). The function entries of V' (CarEntry)
+  are the codes in the car halves of V' whose free variables FV are in
+  the cdr halves of V'. Calls V' U W says that each w in W is the result
+  of a function entry U₀ ↦ w of V', and U is the union of those U₀. The
+  function clause relates the arguments U of a batch to an argument set E
+  of the source, and the results W to the source application D ● E.
 
 -}
 
 open import SetsAsPredicates
 open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
-open import Data.Nat using (ℕ; zero; suc; _<_)
-open import Data.Fin using (Fin)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s)
+open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; n≤1+n)
 open import Data.List using (List; []; _∷_; _++_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
@@ -39,31 +40,44 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Compiler.Model.Graph.Correctness.DelayFiniteRel
-  (Entry : List Value → List Value → Value → Set)
-  (_⊚_ : 𝒫 Value → 𝒫 Value → 𝒫 Value)
-  (Good : List Value → Set)
-  (Entry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → Entry V₁ U₀ w → Entry V₂ U₀ w)
-  (Entry-flat : ∀ {V U₀ w} → (∀ v → v ⋵ V → Flat v) → Entry V U₀ w → ⊥)
-  (⊚-mono : ∀ {D₁ D₂ E} → D₁ ⊆ D₂ → (D₁ ⊚ E) ⊆ (D₂ ⊚ E))
-  (Bnd-Entry : ∀ {k V U₀ w} → Bnd (suc k) V → Entry V U₀ w → Bnd k U₀ × depth w < k)
-  where
+module Compiler.Model.Graph.Correctness.DelayFiniteRel where
 
-{- Batches of calls of the functions in a finite list -------------------------}
+{- The function entries of a finite list of target values --------------------}
 
-{- Calls V U W: each w in W is the result of a function entry U₀ ↦ w of V,
-   and U is the union of the (nonempty) arguments U₀ of those entries -}
+{- the free variables stored in the cdr halves of V' -}
+Cdrs : List Value → 𝒫 Value
+Cdrs V' = Cdr (mem V')
+
+record CarEntry (V' U₀ : List Value) (w : Value) : Set where
+  constructor car-entry
+  field
+    FV : List Value
+    car∈ : ⦅ FV ↦ (U₀ ↦ w) ∣ ⋵ V'
+    FV≢[] : FV ≢ []
+    FV⊆ : mem FV ⊆ Cdrs V'
+
+CarEntry-⊆ : ∀ {V₁ V₂ U₀ w} → mem V₁ ⊆ mem V₂ → CarEntry V₁ U₀ w → CarEntry V₂ U₀ w
+CarEntry-⊆ s (car-entry FV e∈ neFV FV⊆) = car-entry FV (s _ e∈) neFV (λ d d∈ → s _ (FV⊆ d d∈))
+
+Bnd-CarEntry : ∀ {k V' U₀ w} → Bnd (suc k) V' → CarEntry V' U₀ w → Bnd k U₀ × depth w < k
+Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV e∈ _ _) =
+  ⟨ (λ u u∈ → <-shrink (s≤s (≤-trans (depth-⋵ u∈) (≤-trans (m≤m⊔n _ (depth w)) up))) (bV _ e∈))
+  , <-shrink (s≤s (≤-trans (m≤n⊔m (depths U₀) _) up)) (bV _ e∈) ⟩
+  where up = ≤-trans (n≤1+n _) (≤-trans (m≤n⊔m (depths FV) _) (n≤1+n _))
+
+{- Batches of calls ------------------------------------------------------------}
+
 infixr 5 _∷_
 data Calls (V : List Value) : List Value → List Value → Set where
   [] : Calls V [] []
-  _∷_ : ∀ {U₀ w U W} → Entry V U₀ w × U₀ ≢ [] → Calls V U W → Calls V (U₀ ++ U) (w ∷ W)
+  _∷_ : ∀ {U₀ w U W} → CarEntry V U₀ w × U₀ ≢ [] → Calls V U W → Calls V (U₀ ++ U) (w ∷ W)
 
 {- one call of a batch: w is the result of an entry U₀ ↦ w of V with U₀ ⊆ U -}
 record Call (V U : List Value) (w : Value) : Set where
   constructor call
   field
     U₀ : List Value
-    entry : Entry V U₀ w
+    entry : CarEntry V U₀ w
     U₀≢[] : U₀ ≢ []
     U₀⊆ : mem U₀ ⊆ mem U
 
@@ -74,25 +88,22 @@ Calls-∈ (_∷_ {U₀ = U₀} _ cs) (there w∈) with Calls-∈ cs w∈
 
 Calls-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → Calls V₁ U W → Calls V₂ U W
 Calls-⊆ s [] = []
-Calls-⊆ s (⟨ e , ne ⟩ ∷ cs) = ⟨ Entry-⊆ s e , ne ⟩ ∷ Calls-⊆ s cs
+Calls-⊆ s (⟨ e , ne ⟩ ∷ cs) = ⟨ CarEntry-⊆ s e , ne ⟩ ∷ Calls-⊆ s cs
 
-{- a list without function entries makes no calls -}
-Calls-none : ∀ {V U W} → (∀ {U₀ w} → Entry V U₀ w → ⊥) → Calls V U W → mem W ⊆ ∅
+{- a list without car halves makes no calls -}
+Calls-none : ∀ {V U W} → (∀ u → ⦅ u ∣ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
 Calls-none no [] _ ()
-Calls-none no (⟨ e , _ ⟩ ∷ _) _ _ = ⊥-elim (no e)
-
-Calls-flat : ∀ {V U W} → (∀ v → v ⋵ V → Flat v) → Calls V U W → mem W ⊆ ∅
-Calls-flat fl = Calls-none (Entry-flat fl)
+Calls-none no (⟨ e , _ ⟩ ∷ _) _ _ = no _ (CarEntry.car∈ e)
 
 Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
 Bnd-Calls-args bV [] _ ()
 Bnd-Calls-args bV (_∷_ {U₀ = U₀} ⟨ e , _ ⟩ cs) u u∈ with ∈-++⁻ U₀ u∈
-... | inj₁ u∈U₀ = proj₁ (Bnd-Entry bV e) u u∈U₀
+... | inj₁ u∈U₀ = proj₁ (Bnd-CarEntry bV e) u u∈U₀
 ... | inj₂ u∈U = Bnd-Calls-args bV cs u u∈U
 
 Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
 Bnd-Calls-apps bV [] _ ()
-Bnd-Calls-apps bV (⟨ e , _ ⟩ ∷ cs) _ (here refl) = proj₂ (Bnd-Entry bV e)
+Bnd-Calls-apps bV (⟨ e , _ ⟩ ∷ cs) _ (here refl) = proj₂ (Bnd-CarEntry bV e)
 Bnd-Calls-apps bV (_ ∷ cs) w (there w∈) = Bnd-Calls-apps bV cs w w∈
 
 {- The relation ---------------------------------------------------------------}
@@ -100,12 +111,9 @@ Bnd-Calls-apps bV (_ ∷ cs) w (there w∈) = Bnd-Calls-apps bV cs w w∈
 record Obs (R : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫 Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
-    ω-obs : ω ⋵ V → ω ∈ D
     nonempty-obs : V ≢ [] → nonempty D
-    app-obs : ∀ {U W} → Calls V U W → ∀ E → Good U → R U E → R W (D ⊚ E)
-    nth-obs : ∀ {n} (i : Fin n) W → mem W ⊆ Nths i V → R W (Nth i D)
-    left-obs : ∀ W → mem W ⊆ Lefts' V → R W (Lefts D)
-    right-obs : ∀ W → mem W ⊆ Rights' V → R W (Rights D)
+    app-obs : ∀ {U W} → Calls V U W → ∀ E → consis (mem U) → R U E → R W (D ● E)
+    tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → R W (Untag t D)
 
 R : ℕ → List Value → 𝒫 Value → Set₁
 R zero V D = pTrue
@@ -119,37 +127,30 @@ R-∅ : ∀ k {V D} → mem V ⊆ ∅ → R k V D
 R-∅ zero _ = ptt
 R-∅ (suc k) {V} V⊆∅ = record
   { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
-  ; ω-obs = λ ω∈ → ⊥-elim (V⊆∅ _ ω∈)
   ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V⊆∅))
-  ; app-obs = λ cs E _ _ → R-∅ k (Calls-flat (λ v v∈ → ⊥-elim (V⊆∅ v v∈)) cs)
-  ; nth-obs = λ i W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
-  ; left-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
-  ; right-obs = λ W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ u u∈ → V⊆∅ _ u∈) cs)
+  ; tag-obs = λ t W W⊆ → R-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
   }
 
 R-flat : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R k V D
 R-flat zero _ _ = ptt
 R-flat (suc k) {V} V⊆ fl = record
   { const-obs = λ c c∈ → V⊆ _ c∈
-  ; ω-obs = λ ω∈ → V⊆ ω ω∈
   ; nonempty-obs = λ ne → ne-mem ne V⊆
-  ; app-obs = λ cs E _ _ → R-∅ k (Calls-flat fl cs)
-  ; nth-obs = λ i W W⊆ → R-∅ k (λ d d∈ → flat-tup (fl _ (W⊆ d d∈)))
-  ; left-obs = λ W W⊆ → R-∅ k (λ d d∈ → flat-left (fl _ (W⊆ d d∈)))
-  ; right-obs = λ W W⊆ → R-∅ k (λ d d∈ → flat-right (fl _ (W⊆ d d∈)))
+  ; app-obs = λ cs E _ _ → R-∅ k (Calls-none (λ u u∈ → noflat (fl _ u∈)) cs)
+  ; tag-obs = λ t W W⊆ → R-∅ k (λ d d∈ → flat-tag t (fl _ (W⊆ d d∈)))
   }
+  where noflat : ∀ {u} → Flat ⦅ u ∣ → ⊥
+        noflat ()
 
 {- antitone in the list of observations -}
 R-⊆ : ∀ k {V₁ V₂ D} → mem V₁ ⊆ mem V₂ → R k V₂ D → R k V₁ D
 R-⊆ zero _ _ = ptt
 R-⊆ (suc k) {V₁}{V₂} V₁⊆V₂ r = record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
-  ; ω-obs = λ ω∈ → ω-obs (V₁⊆V₂ _ ω∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
   ; app-obs = λ cs → app-obs (Calls-⊆ V₁⊆V₂ cs)
-  ; nth-obs = λ i W W⊆ → nth-obs i W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
-  ; left-obs = λ W W⊆ → left-obs W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
-  ; right-obs = λ W W⊆ → right-obs W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
+  ; tag-obs = λ t W W⊆ → tag-obs t W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   }
   where open Obs r
 
@@ -158,12 +159,9 @@ R-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R k V D₁ → R k V D₂
 R-mono zero _ _ = ptt
 R-mono (suc k) D⊆ r = record
   { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
-  ; ω-obs = λ ω∈ → D⊆ ω (ω-obs ω∈)
   ; nonempty-obs = λ ne → ⟨ proj₁ (nonempty-obs ne) , D⊆ _ (proj₂ (nonempty-obs ne)) ⟩
-  ; app-obs = λ cs E gU rU → R-mono k (⊚-mono D⊆) (app-obs cs E gU rU)
-  ; nth-obs = λ i W W⊆ → R-mono k (λ d → D⊆ (tup[ i ] d)) (nth-obs i W W⊆)
-  ; left-obs = λ W W⊆ → R-mono k (λ d → D⊆ (left d)) (left-obs W W⊆)
-  ; right-obs = λ W W⊆ → R-mono k (λ d → D⊆ (right d)) (right-obs W W⊆)
+  ; app-obs = λ cs E gU rU → R-mono k (●-mono-l D⊆) (app-obs cs E gU rU)
+  ; tag-obs = λ t W W⊆ → R-mono k (λ d → D⊆ (tag t d)) (tag-obs t W W⊆)
   }
   where open Obs r
 
@@ -171,19 +169,16 @@ R-mono (suc k) D⊆ r = record
 R-irr : ∀ k j {V D} → Bnd k V → Bnd j V → R k V D → R j V D
 R-irr k zero _ _ _ = ptt
 R-irr zero (suc j) bk _ _ = R-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
+  where <0 : ∀ {n} → n < 0 → ⊥
+        <0 ()
 R-irr (suc k) (suc j) bk bj r = record
   { const-obs = const-obs
-  ; ω-obs = ω-obs
   ; nonempty-obs = nonempty-obs
   ; app-obs = λ cs E gU rU →
       R-irr k j (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
         (app-obs cs E gU (R-irr j k (Bnd-Calls-args bj cs) (Bnd-Calls-args bk cs) rU))
-  ; nth-obs = λ i W W⊆ →
-      R-irr k j (Bnd-Nths bk W⊆) (Bnd-Nths bj W⊆) (nth-obs i W W⊆)
-  ; left-obs = λ W W⊆ →
-      R-irr k j (Bnd-Lefts bk W⊆) (Bnd-Lefts bj W⊆) (left-obs W W⊆)
-  ; right-obs = λ W W⊆ →
-      R-irr k j (Bnd-Rights bk W⊆) (Bnd-Rights bj W⊆) (right-obs W W⊆)
+  ; tag-obs = λ t W W⊆ →
+      R-irr k j (Bnd-Untag t bk W⊆) (Bnd-Untag t bj W⊆) (tag-obs t W W⊆)
   }
   where open Obs r
 

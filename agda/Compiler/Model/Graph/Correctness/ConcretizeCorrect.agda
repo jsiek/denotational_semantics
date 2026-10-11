@@ -37,7 +37,7 @@ import Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open import Compiler.Compile.Concretize
 open import Compiler.Compile.Delay using (delay)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
-open import Compiler.Model.Graph.Correctness.DelayPreserveFinite
+open import Compiler.Model.Graph.Correctness.DelayPreserve
   using (delay-correct-const; delay-correct-nonempty)
 open import NewEnv using (nonempty-env)
 

@@ -87,8 +87,9 @@ instead of de Bruijn indices.
   \begin{itemize}
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
-  \item for delay, $\mathit{depth}$/$\mathit{Bnd}$, the generic relation $\mathcal{R}_k$
-    with its preservation and reflection instances, $\rhd$, and the let equation;
+  \item for delay, the let equation, the element-wise relation $\sqsubseteq$
+    for preservation, and $\mathit{depth}$/$\mathit{Bnd}$, $\mathcal{R}_k$, and $\rhd$
+    for reflection;
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item the end-to-end theorem.
   \end{itemize}
@@ -464,63 +465,6 @@ If $\rho_2 \sim_\varphi \rho_3$, then
 
 \subsection{Delay}
 
-\paragraph{Depth.}
-\begin{align*}
-  \mathit{depth}(c) = \mathit{depth}(\nu) = \mathit{depth}(\omega) = \mathit{depth}(\emptytup) &= 0 \\
-  \mathit{depth}(V \mapsto w) &= 1 + \max(\mathit{depth}(V), \mathit{depth}(w)) \\
-  \mathit{depth}(\carv{u}) &= 1 + \mathit{depth}(u) \\
-  \mathit{depth}(\cdrv{v}) &= 1 + \mathit{depth}(v) \\
-  \mathit{depth}(\tup{i}{d}) = \mathit{depth}(\Left{d}) = \mathit{depth}(\Right{d})
-    &= 1 + \mathit{depth}(d) \\
-  \mathit{depth}(V) &= \max_{v \in V} \mathit{depth}(v) \\[1ex]
-  \Bnd{k}{V} &\iff \forall v \in V.\; \mathit{depth}(v) < k
-\end{align*}
-
-\paragraph{The logical relation.}
-Parameterized by
-\begin{align*}
-\mathit{Entry}& : \FSET{\V} \to \FSET{\V} \to \V \to \mathsf{Prop}, \\
-\circledast & : \SET{\V} \to \SET{\V} \to \SET{\V}, \text{ and } \\
-\mathit{Good} &: \FSET{\V} \to \mathsf{Prop}.
-\end{align*}
-
-\begin{align*}
-  \mathit{Calls}(V) &= \{ (U_1 \cup \cdots \cup U_n,\, \{w_1, \ldots, w_n\}) \mid
-     \mathit{Entry}(V, U_i, w_i),\; U_i \NE \text{ for } 1 \leq i \leq n \} \\[1ex]
-  \Rel{0}{V}{D} &\iff \mathsf{true} \\
-  \Rel{k+1}{V}{D} &\iff
-  \begin{array}[t]{l}
-    \forall c \in V.\; c \in D \\
-    \land\; (\omega \in V \implies \omega \in D) \\
-    \land\; (V \NE \implies D \NE) \\
-    \land\; \forall (U, W) \in \mathit{Calls}(V).\; \forall E.\;
-       \mathit{Good}(U) \land \Rel{k}{U}{E} \implies \Rel{k}{W}{D \circledast E} \\
-    \land\; \forall i\, W.\; W \subseteq \{ d \mid \tup{i}{d} \in V \}
-       \implies \Rel{k}{W}{\key{proj}_i(D)} \\
-    \land\; \forall W.\; W \subseteq \{ d \mid \Left{d} \in V \}
-       \implies \Rel{k}{W}{\{ d \mid \Left{d} \in D \}} \\
-    \land\; \forall W.\; W \subseteq \{ d \mid \Right{d} \in V \}
-       \implies \Rel{k}{W}{\{ d \mid \Right{d} \in D \}}
-  \end{array} \\[1ex]
-  \rho_1 \rhd \rho_2 &\iff \forall x\, V\, k.\; V \subseteq \rho_1(x) \land \Bnd{k}{V}
-     \implies \Rel{k}{V}{\rho_2(x)}
-\end{align*}
-
-\paragraph{Preservation instance} (observations of Clos3, sets of Clos4).
-\begin{align*}
-  \mathit{Entry}(V, U_0, w) &\iff (U_0 \mapsto w) \in V \\
-  D \circledast E &= D \odot E \\
-  \mathit{Good}(U) &= \mathsf{true}
-\end{align*}
-
-\paragraph{Reflection instance} (observations of Clos4, sets of Clos3).
-\begin{align*}
-  \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\;
-     (F \mapsto (U_0 \mapsto w)) \in \key{car}(V'),\; F \subseteq \key{cdr}(V') \\
-  D \circledast E &= D \app E \\
-  \mathit{Good}(U') &= \consis(U')
-\end{align*}
-
 \begin{lemma}[Continuity]\label{lem:continuity}
 $\SEM{M}^{\mathrm{3}}$ and $\SEM{M}^{\mathrm{4}}$ are continuous.
 \end{lemma}
@@ -537,21 +481,69 @@ If $f \notin \FV(N)$, then
 \]
 \end{lemma}
 
+\paragraph{Preservation.}
+The relation $v \sqsubseteq D'$ between a Clos3 value $v$ and a set $D'$ of
+Clos4 values is defined by recursion on $v$.
+\begin{align*}
+  \nu \sqsubseteq D' &\iff D' \NE \\
+  (U \mapsto w) \sqsubseteq D' &\iff D' \NE \land
+     \forall E'.\; U \sqsubseteq E' \implies w \sqsubseteq D' \odot E' \\
+  \tup{i}{d} \sqsubseteq D' &\iff d \sqsubseteq \key{proj}_i(D') \\
+  \Left{d} \sqsubseteq D' &\iff d \sqsubseteq \{ d' \mid \Left{d'} \in D' \} \\
+  \Right{d} \sqsubseteq D' &\iff d \sqsubseteq \{ d' \mid \Right{d'} \in D' \} \\
+  v \sqsubseteq D' &\iff v \in D' \quad \text{otherwise} \\[1ex]
+  U \sqsubseteq E' &\iff \forall u \in U.\; u \sqsubseteq E' \\
+  \rho \sqsubseteq \rho' &\iff \forall x.\; \forall v \in \rho(x).\; v \sqsubseteq \rho'(x)
+\end{align*}
+
 \begin{lemma}[Delay Preserves]\label{lem:delay-preserve}
-In the preservation instance, if $\rho'(x) \NE$ for every $x$ and
-$\rho \rhd \rho'$, then for every $k$ and every $V$ with $\Bnd{k}{V}$,
+If $\rho'(x) \NE$ for every $x$, $\rho \sqsubseteq \rho'$, and
+$v \in \SEM{M}^{\mathrm{3}}\rho$, then
 \[
-  V \subseteq \SEM{M}^{\mathrm{3}}\rho
-  \implies \Rel{k}{V}{\SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'} .
+  v \sqsubseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho' .
 \]
 \end{lemma}
 
+\paragraph{Depth.}
+\begin{align*}
+  \mathit{depth}(c) = \mathit{depth}(\nu) = \mathit{depth}(\omega) = \mathit{depth}(\emptytup) &= 0 \\
+  \mathit{depth}(V \mapsto w) &= 1 + \max(\mathit{depth}(V), \mathit{depth}(w)) \\
+  \mathit{depth}(\carv{u}) &= 1 + \mathit{depth}(u) \\
+  \mathit{depth}(\cdrv{v}) &= 1 + \mathit{depth}(v) \\
+  \mathit{depth}(\tup{i}{d}) = \mathit{depth}(\Left{d}) = \mathit{depth}(\Right{d})
+    &= 1 + \mathit{depth}(d) \\
+  \mathit{depth}(V) &= \max_{v \in V} \mathit{depth}(v) \\[1ex]
+  \Bnd{k}{V} &\iff \forall v \in V.\; \mathit{depth}(v) < k
+\end{align*}
+
+\paragraph{Reflection.}
+The relation $\Rel{k}{V'}{D}$ between a finite set $V'$ of Clos4 values and
+a set $D$ of Clos3 values, where $t$ ranges over the tags
+$\key{tup}_i$, $\key{left}$, and $\key{right}$.
+\begin{align*}
+  \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\;
+     \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \key{cdr}(V') \\
+  \mathit{Calls}(V') &= \{ (U_1 \cup \cdots \cup U_n,\, \{w_1, \ldots, w_n\}) \mid
+     \mathit{Entry}(V', U_i, w_i),\; U_i \NE \text{ for } 1 \leq i \leq n \} \\[1ex]
+  \Rel{0}{V'}{D} &\iff \mathsf{true} \\
+  \Rel{k+1}{V'}{D} &\iff
+  \begin{array}[t]{l}
+    \forall c \in V'.\; c \in D \\
+    \land\; (V' \NE \implies D \NE) \\
+    \land\; \forall (U, W) \in \mathit{Calls}(V').\; \forall E.\;
+       \consis(U) \land \Rel{k}{U}{E} \implies \Rel{k}{W}{D \app E} \\
+    \land\; \forall t\, W.\; W \subseteq \{ d \mid t(d) \in V' \}
+       \implies \Rel{k}{W}{\{ d \mid t(d) \in D \}}
+  \end{array} \\[1ex]
+  \rho' \rhd \rho &\iff \forall x\, V'\, k.\; V' \subseteq \rho'(x) \land \Bnd{k}{V'}
+     \implies \Rel{k}{V'}{\rho(x)}
+\end{align*}
+
 \begin{lemma}[Delay Reflects]\label{lem:delay-reflect}
-In the reflection instance, if $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$
-and $\rho' \rhd \rho$, then for every $k$ and every $V'$ with $\Bnd{k}{V'}$,
+If $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$, $\rho' \rhd \rho$,
+$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$, and $\Bnd{k}{V'}$, then
 \[
-  V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'
-  \implies \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
+  \Rel{k}{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
 \end{lemma}
 
