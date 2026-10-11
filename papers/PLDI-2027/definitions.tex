@@ -42,6 +42,8 @@
 \newcommand{\Left}[1]{\key{left}(#1)}
 \newcommand{\Right}[1]{\key{right}(#1)}
 \newcommand{\emptytup}{\langle\rangle}
+\newcommand{\prim}[3]{#1(#2, #3)}
+\newcommand{\res}[1]{\lceil #1 \rceil}
 \newcommand{\FV}{\mathrm{FV}}
 \newcommand{\ext}[3]{#1(#2{:=}#3)}
 \newcommand{\app}{\star}
@@ -118,7 +120,8 @@ instead of de Bruijn indices.
 \begin{enumerate}
 \item \textbf{The compiler:}
   \begin{itemize}
-  \item the syntax of ISWIM and Clos2--Clos5, including Clos5 programs;
+  \item the syntax of ISWIM and Clos2--Clos5, including Clos5 programs,
+    and the primitives $\key{sub}$ and $\key{eq}$;
   \item enclose, optimize, concretize, delay (with the let), and globalize.
   \end{itemize}
 \item \textbf{Denotational proof:}
@@ -126,7 +129,7 @@ instead of de Bruijn indices.
   \item the value domain and environments, with $\rho_0(x) = \{\omega\}$;
   \item the operators $\star$, $\Lambda$, $\key{pair}$/$\key{car}$/$\key{cdr}$,
     strict $\mathcal{T}$, $\key{proj}$, $\key{inl}$/$\key{inr}$/$\mathcal{C}$,
-    $\key{guard}$, and $\odot$;
+    $\key{guard}$, $\key{prim}_p$, and $\odot$;
   \item consistency ($\sim$, $\consis$) and continuity;
   \item the semantics: the clauses all languages share, then each language's own
     clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$;
@@ -189,6 +192,9 @@ In the CompCert-style proof:
   holds the values of its free variables last first.
 \item \textbf{Values collected} in $\key{tupK}$ and $\key{closK}$ frames are
   listed in order. The Agda lists them in reverse.
+\item \textbf{Primitives} test their operands through their observations
+  ($\delta^?$ on $\obs(v)$ and $\obs(w)$), which are integers
+  exactly when the values are.
 \item \textbf{Projections} $\prj{i} M$ carry the arity $n$ of the tuple,
   as \texttt{get} does in the Agda ($i : \mathtt{Fin}\;n$).
 \item \textbf{Enclose}'s $\approx_X$ needs no bound on the Clos2 environment.
@@ -241,14 +247,20 @@ In the CakeML-style proof:
 
 \subsection{ISWIM}
 
-The source language: a call-by-value $\lambda$-calculus with constants, tuples, and sums.
+The source language: a call-by-value $\lambda$-calculus with constants, tuples, sums, and primitive operations $p$ on integers $n, m$.
+There are no booleans: $\key{eq}$ returns $\inl\tuple{}$ for true and $\inr\tuple{}$ for false, so $\key{case}$ serves as $\key{if}$.
 \begin{syntax}
+  & p &::=& \key{sub} \mid \key{eq} \\
   & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
 \end{syntax}
 \[
   \FV(\lam{y} N) = \FV(N) \setminus \{y\}
+  \qquad
+  \delta(\key{sub}, n, m) = n - m
+  \qquad
+  \delta(\key{eq}, n, m) = (n = m)
 \]
 
 \subsection{Clos2}
@@ -257,7 +269,7 @@ Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its fr
 \begin{syntax}
   & L, M, N &::=& x \mid \clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
 \end{syntax}
 \[
   \FV(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) = \{z_1, \ldots, z_n\}
@@ -270,7 +282,7 @@ Each closure now packs references $r_1\ldots r_n$ to its free variables into one
   & r &::=& x \mid \prj{i} x \\
   & L, M, N &::=& x \mid \clos{r_1\ldots r_n}{e\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
-  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
+  &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
 \end{syntax}
 \[
   \FV(\clos{r_1\ldots r_n}{e\, y} N) = \FV(r_1) \cup \cdots \cup \FV(r_n)
@@ -281,7 +293,7 @@ Each closure now packs references $r_1\ldots r_n$ to its free variables into one
 Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$ is used by the delayed application.
 \begin{syntax}
   & L, M, N &::=& x \mid \fun{e\,y.\,N} \mid L(M, N) \mid c
-    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
+    \mid \pair{M}{N} \mid \FST M \mid \SND M \mid \prim{p}{L}{M} \\
   &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
     \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
     \mid \Let x = M \In N
@@ -295,7 +307,7 @@ Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, 
 Like Clos4, but the code is hoisted into a program's list of global definitions $d_k$, which terms refer to as $\funref{k}$.
 \begin{syntax}
   & L, M, N &::=& x \mid \funref{k} \mid L(M, N) \mid c
-    \mid \pair{M}{N} \mid \FST M \mid \SND M \\
+    \mid \pair{M}{N} \mid \FST M \mid \SND M \mid \prim{p}{L}{M} \\
   &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
     \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
     \mid \Let x = M \In N \\[1ex]
@@ -425,8 +437,10 @@ Globalize hoists all code into a table of global definitions and replaces each p
   \mathcal{C}(D, F, G) &=
     \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Left{v} \in D),\; w \in F(V) \} \\
     &\cup\; \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Right{v} \in D),\; w \in G(V) \} \\
-  \key{guard}(D_1,\ldots,D_n; E) &= \{ w \mid (\forall i.\; D_i \NE),\; w \in E \}
+  \key{guard}(D_1,\ldots,D_n; E) &= \{ w \mid (\forall i.\; D_i \NE),\; w \in E \} \\
+  \key{prim}_p(D, E) &= \{ \res{\delta(p, n, m)} \mid n \in D,\; m \in E \}
 \end{align*}
+where $\res{n} = n$, $\res{\mathsf{true}} = \Left{\emptytup}$, and $\res{\mathsf{false}} = \Right{\emptytup}$.
 
 \begin{align*}
   D \odot E &= (\key{car}(D) \app \key{cdr}(D)) \app E
@@ -483,7 +497,8 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{\inl M}^{\ell}\rho &= \key{inl}(\SEM{M}^{\ell}\rho) \\
   \SEM{\inr M}^{\ell}\rho &= \key{inr}(\SEM{M}^{\ell}\rho) \\
   \SEM{\Case{L}{x}{M}{y}{N}}^{\ell}\rho &=
-     \mathcal{C}(\SEM{L}^{\ell}\rho,\; \lambda X.\, \SEM{M}^{\ell}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}^{\ell}\ext{\rho}{y}{Y})
+     \mathcal{C}(\SEM{L}^{\ell}\rho,\; \lambda X.\, \SEM{M}^{\ell}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}^{\ell}\ext{\rho}{y}{Y}) \\
+  \SEM{\prim{p}{L}{M}}^{\ell}\rho &= \key{prim}_p(\SEM{L}^{\ell}\rho, \SEM{M}^{\ell}\rho)
 \end{align*}
 
 \subsection{ISWIM}
@@ -767,6 +782,7 @@ If $\Final_L(s, o)$ for no $o$ and no $s$ with $\start{L} \lto_L^* s$, then $\Di
   \obs(\inlV v) &= \inl \obs(v) \\
   \obs(\inrV v) &= \inr \obs(v) \\
   \obs(v) &= \key{fun} \quad \text{otherwise (closures, code, and pairs)} \\[1ex]
+  \res{n} &= n, \quad \res{\mathsf{true}} = \inlV \tupV{}, \quad \res{\mathsf{false}} = \inrV \tupV{} \\[1ex]
   \Mach{\ell}(M) &= (\mathit{State}^{\ell},\; \step{\ell},\; \ev{M}{\emptyset}{\halt})
 \end{align*}
 We write $s \mapsto n$ for $\step{\ell}(s) = n$.
@@ -777,7 +793,8 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \begin{array}{rcl}
   v &::=& \cdots \mid c \mid \tupV{v_1, \ldots, v_n} \mid \inlV v \mid \inrV v \\
   \kappa &::=& \cdots \mid \halt \mid \Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa} \mid \Kf{getK_i}{\kappa}
-    \mid \Kf{inlK}{\kappa} \mid \Kf{inrK}{\kappa} \mid \Kf{caseK}{x.M, y.N, \rho, \kappa}
+    \mid \Kf{inlK}{\kappa} \mid \Kf{inrK}{\kappa} \mid \Kf{caseK}{x.M, y.N, \rho, \kappa} \\
+  &\mid& \Kf{primL_p}{M, \rho, \kappa} \mid \Kf{primR_p}{v, \kappa}
 \end{array}
 \]
 \[
@@ -788,7 +805,8 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \ev{(\prj{i} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{getK_i}{\kappa}} \\
   \ev{(\inl M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{inlK}{\kappa}} \\
   \ev{(\inr M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{inrK}{\kappa}} \\
-  \ev{(\Case{L}{x}{M}{y}{N})}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} \\[1ex]
+  \ev{(\Case{L}{x}{M}{y}{N})}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} \\
+  \ev{\prim{p}{L}{M}}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{primL_p}{M, \rho, \kappa}} \\[1ex]
   \rt{v}{\halt} & \stp \obs(v) \\
   \rt{v}{\Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa}} & \nxt \tnext(\bar{v}\,v;\, \bar{M};\, \rho;\, \kappa) \\
   \rt{v}{\Kf{getK_i}{\kappa}} & \retq(\key{proj}^n_i(\bar{v}), \kappa) & v = \tupV{\bar{v}} \\
@@ -797,6 +815,9 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \rt{v}{\Kf{inrK}{\kappa}} & \nxt \rt{(\inrV v)}{\kappa} \\
   \rt{v}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{M}{\ext{\rho}{x}{u}}{\kappa} & v = \inlV u \\
   & \nxt \ev{N}{\ext{\rho}{y}{u}}{\kappa} & v = \inrV u \\
+  & \stp \wrong & \text{otherwise} \\
+  \rt{v}{\Kf{primL_p}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{primR_p}{v, \kappa}} \\
+  \rt{w}{\Kf{primR_p}{v, \kappa}} & \nxt \rt{\res{\delta(p, n, m)}}{\kappa} & v = n,\; w = m \\
   & \stp \wrong & \text{otherwise}
 \end{array}
 \]
@@ -1013,7 +1034,9 @@ In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
     &\iff \bar{v} \approx \bar{w} \land \rho_1 \approx_{\FV(\bar{M})} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
   \Kf{caseK}{x.M, y.N, \rho_1, \kappa_1} \approxk {}&
     \Kf{caseK}{x.\pass{enclose}(M), y.\pass{enclose}(N), \rho_2, \kappa_2} \\
-    &\iff \rho_1 \approx_{\FV(\lam{x} M) \cup \FV(\lam{y} N)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\[1ex]
+    &\iff \rho_1 \approx_{\FV(\lam{x} M) \cup \FV(\lam{y} N)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{primL_p}{M, \rho_1, \kappa_1} \approxk \Kf{primL_p}{\pass{enclose}(M), \rho_2, \kappa_2}
+    &\iff \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\[1ex]
   \ev{M}{\rho_1}{\kappa_1} \sim \ev{\pass{enclose}(M)}{\rho_2}{\kappa_2}
     &\iff \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
   \rt{v}{\kappa_1} \sim \rt{w}{\kappa_2} &\iff v \approx w \land \kappa_1 \approxk \kappa_2
@@ -1057,6 +1080,8 @@ $\{ i_1 < \cdots < i_k \} = \{ i \mid x_i \in \FV(N) \}$, as in optimize, and
     &\iff \mathit{Scoped}(N) \land
       \{\bar{x} {\mapsto} \bar{v}\} \approx_{\FV(N) \setminus \{y\}} \{\bar{x}' {\mapsto} \bar{w}\} \\[1ex]
   \Kf{appL}{M, \rho_1, \kappa_1} \approxk {}& \Kf{appL}{\pass{optimize}(M), \rho_2, \kappa_2} \\
+    &\iff \mathit{Scoped}(M) \land \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{primL_p}{M, \rho_1, \kappa_1} \approxk {}& \Kf{primL_p}{\pass{optimize}(M), \rho_2, \kappa_2} \\
     &\iff \mathit{Scoped}(M) \land \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
   \Kf{tupK}{\bar{v}, \bar{M}, \rho_1, \kappa_1} \approxk {}&
     \Kf{tupK}{\bar{w}, \pass{optimize}(\bar{M}), \rho_2, \kappa_2} \\
@@ -1128,6 +1153,9 @@ For every Clos2 term $M$,
   \Kf{appL}{M, \rho_2, \kappa_2} \approxk {}&
     \Kf{appL}{\pass{concretize}_\varphi(M), \rho_3, \kappa_3}
     \iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \Kf{primL_p}{M, \rho_2, \kappa_2} \approxk {}&
+    \Kf{primL_p}{\pass{concretize}_\varphi(M), \rho_3, \kappa_3}
+    \iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
   \Kf{tupK}{\bar{v}, \bar{M}, \rho_2, \kappa_2} \approxk {}&
     \Kf{tupK}{\bar{w}, \pass{concretize}_\varphi(\bar{M}), \rho_3, \kappa_3}
     \iff \bar{v} \approx \bar{w} \land \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
@@ -1181,7 +1209,9 @@ For every Clos2 term $M$,
   \Kf{closK}{e\, y.\, N, \kappa_1} \approxk {}& \Kf{pairR}{\funV{e\, y.\, \pass{delay}(N)}, \kappa_2} \\
     &\iff \kappa_1 \approxk \kappa_2 \\
   \Kf{caseK}{x.M, y.N, \rho_1, \kappa_1} \approxk {}& \Kf{caseK}{x.\pass{delay}(M), y.\pass{delay}(N), \rho_2, \kappa_2} \\
-    &\iff \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2
+    &\iff \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{primL_p}{M, \rho_1, \kappa_1} \approxk {}& \Kf{primL_p}{\pass{delay}(M), \rho_2, \kappa_2}
+    \iff \rho_1 \approxq \rho_2 \land \kappa_1 \approxk \kappa_2
 \end{align*}
 \begin{align*}
   \ev{M}{\rho_1}{\kappa_1} \sim {}& \ev{\pass{delay}(M)}{\rho_2}{\kappa_2}
@@ -1433,12 +1463,16 @@ called; every other construct evaluates its subterms with the same clock.
   \EV{\ell}{k}\,\rho\,(\inl M) &= \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \Ret (\inlV v) \\
   \EV{\ell}{k}\,\rho\,(\inr M) &= \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \Ret (\inrV v) \\
   \EV{\ell}{k}\,\rho\,(\Case{L}{x}{M}{y}{N}) &=
-    \EV{\ell}{k}\,\rho\,L \bind \BR{\ell}{k}\,\rho\,(x.M)\,(y.N) \\[1ex]
+    \EV{\ell}{k}\,\rho\,L \bind \BR{\ell}{k}\,\rho\,(x.M)\,(y.N) \\
+  \EV{\ell}{k}\,\rho\,\prim{p}{L}{M} &=
+    \EV{\ell}{k}\,\rho\,L \bind \lambda v.\, \EV{\ell}{k}\,\rho\,M \bind \lambda w.\, \key{prim}_p(v, w) \\[1ex]
   \EVS{\ell}{k}\,\rho\,\epsilon &= \Ret \epsilon \\
   \EVS{\ell}{k}\,\rho\,(M\,\bar{M}) &=
     \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \EVS{\ell}{k}\,\rho\,\bar{M} \bind \lambda \bar{v}.\, \Ret (v\,\bar{v}) \\[1ex]
   \key{get}^n_i(v) &=
     \begin{cases} \lift{\key{proj}^n_i(\bar{v})} & v = \tupV{\bar{v}} \\ \wrong & \text{otherwise} \end{cases} \\
+  \key{prim}_p(v, w) &=
+    \begin{cases} \Ret \res{\delta(p, n, m)} & v = n,\; w = m \\ \wrong & \text{otherwise} \end{cases} \\
   \BR{\ell}{k}\,\rho\,(x.M)\,(y.N)\,v &=
     \begin{cases}
       \EV{\ell}{k}\,\ext{\rho}{x}{u}\,M & v = \inlV u \\
@@ -1448,7 +1482,7 @@ called; every other construct evaluates its subterms with the same clock.
   \CALL{\ell}{0}\,N\,\rho &= \tmo \\
   \CALL{\ell}{k+1}\,N\,\rho &= \EV{\ell}{k}\,\rho\,N
 \end{align*}
-Here $\key{proj}^n_i$ is that of Section~\ref{sec:machine-shared}.
+Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared}.
 
 \subsection{ISWIM}
 
