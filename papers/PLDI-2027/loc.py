@@ -8,6 +8,15 @@ A code line is a line that is not blank and not a comment ({- -} blocks,
 All.agda) must belong to exactly one group; the script fails otherwise,
 so new modules cannot go uncounted.  A group of the CakeML-style side may
 have no files yet (a pass not yet proved); it is shown as —.
+
+Totals come from the import graph (`import`/`open import` lines, with or
+without `as`, `using`, module arguments or `public`).  A proof's total is
+its own modules plus the shared modules it reaches transitively that are
+not reached by all three proofs; shared modules reached by all three are
+not counted anywhere.  Adequacy, an add-on to the denotational proof, also
+counts the shared modules it reaches that the denotational total does not
+already count.  The script also fails if one proof reaches another proof's
+modules.
 """
 import glob, os, re, sys
 
@@ -19,7 +28,8 @@ F = 'agda/Compiler/Functional/'
 GROUPS = [
     # also the machine-independent lemmas both operational styles use:
     # Lang/{ListUtil,Scope,Rename}, Compile/{EncloseScope,GlobalizeTable},
-    # and the observations (Observation.agda)
+    # and the observations (Observation.agda).  Those not used by all three
+    # proofs are counted in each proof that uses them (see main).
     ('shared', 'syntax, languages, compiler passes',
      ['agda/abt/*.agda', 'agda/Compiler/Lang/*.agda', 'agda/Compiler/Compile/*.agda',
       'agda/Compiler/Observation.agda',
@@ -85,8 +95,8 @@ GROUPS = [
 ]
 
 
-def code_lines(path):
-    s = open(path, encoding='utf-8').read()
+def strip_comments(s):
+    """The text of s without {- -} blocks and -- line comments (newlines kept)."""
     out, i, depth = [], 0, 0
     while i < len(s):
         if s.startswith('{-', i):
@@ -98,16 +108,49 @@ def code_lines(path):
                 out.append('\n')
             i += 1; continue
         out.append(s[i]); i += 1
-    n = 0
-    for line in ''.join(out).split('\n'):
-        line = re.sub(r'(^|\s)--.*$', '', line)
-        if line.strip():
-            n += 1
-    return n
+    return '\n'.join(re.sub(r'(^|\s)--.*$', '', line)
+                     for line in ''.join(out).split('\n'))
+
+
+def code_lines(path):
+    text = strip_comments(open(path, encoding='utf-8').read())
+    return sum(1 for line in text.split('\n') if line.strip())
+
+
+# `import M`, `open import M`, `import M as X`, `open import M args using (…)`,
+# `… public`, with the module name possibly on the next line.
+IMPORT = re.compile(r'(?<![^\s;{(])(?:open\s+)?import\s+([^\s;(){}]+)')
+
+
+def imports(path):
+    """Files under agda/ that path imports (library modules are ignored)."""
+    text = strip_comments(open(path, encoding='utf-8').read())
+    out = set()
+    for m in IMPORT.finditer(text):
+        f = 'agda/' + m.group(1).replace('.', '/') + '.agda'
+        if os.path.exists(f):
+            out.add(f)
+    return out
+
+
+def reachable(roots, graph):
+    seen, todo = set(), list(roots)
+    while todo:
+        f = todo.pop()
+        if f not in seen:
+            seen.add(f)
+            todo.extend(graph[f])
+    return seen
+
+
+SIDES = ('den', 'op', 'ck')
+NAMES = {'den': 'denotational', 'op': 'CompCert-style', 'ck': 'CakeML-style',
+         'adeq': 'adequacy'}
+EXTRA = 'shared modules not used by all three proofs'
 
 
 def main():
-    seen, counts = {}, {}
+    seen, counts, files_of = {}, {}, {}
     for side, name, pats in GROUPS:
         files = sorted({f for p in pats for f in glob.glob(p)})
         if not files:
@@ -118,6 +161,7 @@ def main():
             if f in seen:
                 sys.exit(f'{f} is in two groups')
             seen[f] = (side, name)
+        files_of[(side, name)] = files
         counts[(side, name)] = sum(code_lines(f) for f in files)
     every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
              if not f.startswith('agda/old/') and f != 'agda/All.agda'}
@@ -125,21 +169,47 @@ def main():
     if missing:
         sys.exit('not in any group:\n  ' + '\n  '.join(missing))
 
+    graph = {f: imports(f) for f in every}
+    own = {s: {f for f, (side, _) in seen.items() if side == s}
+           for s in SIDES + ('adeq',)}
+    reach = {s: reachable(own[s], graph) for s in own}
+
+    # The proofs must be independent: no proof reaches another proof's modules
+    # (adequacy, examples and the experiments may use anything).
+    for s in SIDES:
+        for t in SIDES:
+            bad = sorted(reach[s] & own[t]) if s != t else []
+            if bad:
+                sys.exit(f'{NAMES[s]} imports {NAMES[t]} modules:\n  ' + '\n  '.join(bad))
+
+    shared = {f for f, (side, _) in seen.items() if side == 'shared'}
+    by_all = shared & reach['den'] & reach['op'] & reach['ck']
+    extra = {s: sorted((shared & reach[s]) - by_all) for s in SIDES}
+    # Adequacy is an add-on to the denotational proof, so shared modules that
+    # the denotational proof already counts are not counted again.
+    extra['adeq'] = sorted((shared & reach['adeq']) - by_all - set(extra['den']))
+    unused = sorted(shared - set().union(*(reach[s] for s in own)))
+
     rows = ['generic infrastructure', 'domain, operators, continuity',
             'semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'composition']
-    sides = ('den', 'op', 'ck')
-    total = {side: 0 for side in sides}
+    total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
     print('|---|---:|---:|---:|')
     for r in rows:
         cells = []
-        for side in sides:
+        for side in SIDES:
             n = counts.get((side, r))
             total[side] += n or 0
             cells.append(str(n) if n is not None else '—')
         print(f'| {r} | ' + ' | '.join(cells) + ' |')
-    print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in sides) + ' |')
+    cells = []
+    for side in SIDES:
+        n = sum(code_lines(f) for f in extra[side])
+        total[side] += n
+        cells.append(str(n) if extra[side] else '—')
+    print(f'| {EXTRA} | ' + ' | '.join(cells) + ' |')
+    print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in SIDES) + ' |')
     print()
     print('| adequacy (denotational side only) | lines |')
     print('|---|---:|')
@@ -148,6 +218,9 @@ def main():
         if side == 'adeq':
             adeq += counts[(side, name)]
             print(f'| {name} | {counts[(side, name)]} |')
+    n = sum(code_lines(f) for f in extra['adeq'])
+    adeq += n
+    print(f'| {EXTRA}, nor by the denotational one | {n if extra["adeq"] else "—"} |')
     print(f'| **total** | **{adeq}** |')
     print()
     print('| experiment (not in the totals) | lines |')
@@ -156,10 +229,24 @@ def main():
         if side == 'exp':
             print(f'| {name} | {counts[(side, name)]} |')
     print()
-    print(f"Not counted: shared code ({counts[('shared', 'syntax, languages, compiler passes')]} "
-          f"lines: syntax, languages, compiler passes, observations, and the "
-          f"machine-independent lemmas both operational styles use) and examples "
-          f"({counts[('examples', 'examples')]} lines).")
+
+    def mods(fs):
+        return ', '.join(f'`{f[len("agda/"):-len(".agda")].replace("/", ".")}` ({code_lines(f)})'
+                         for f in fs) or 'none'
+    print('| shared module | lines | used by |')
+    print('|---|---:|---|')
+    for f in sorted(shared):
+        users = [NAMES[s] for s in SIDES + ('adeq',) if f in reach[s]]
+        tag = 'all three proofs' if f in by_all else (', '.join(users) or 'no proof')
+        print(f'| `{f[len("agda/"):-len(".agda")].replace("/", ".")}` | {code_lines(f)} | {tag} |')
+    print()
+    nall = sum(code_lines(f) for f in by_all)
+    print(f'Shared by all three proofs, not counted: {len(by_all)} modules, {nall} lines.')
+    for s in SIDES + ('adeq',):
+        print(f'Counted in {NAMES[s]}: {mods(extra[s])}.')
+    if unused:
+        print(f'Shared but used by no proof: {mods(unused)}.')
+    print(f"Examples, not counted: {counts[('examples', 'examples')]} lines.")
 
 
 if __name__ == '__main__':
