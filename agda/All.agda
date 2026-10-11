@@ -161,6 +161,7 @@ import Compiler.Functional.Correctness.OptimizeFuel
 import Compiler.Functional.Correctness.ConcretizeFuel
 import Compiler.Functional.Correctness.DelayFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
+import Compiler.Functional.Correctness.RCOFuel
 
 {- correctness of the whole compiler -}
 import Compiler.Functional.Correctness.CompilerFuel
