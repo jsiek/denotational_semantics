@@ -148,3 +148,4 @@ import Compiler.Functional.Interp.Clos5
 {- correctness of each pass -}
 import Compiler.Functional.Correctness.EncloseFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
+import Compiler.Functional.Correctness.ConcretizeFuel
