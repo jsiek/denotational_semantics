@@ -295,25 +295,4 @@ enclose-fsim M c =
   plus-simulation _~_ (eval~ (agree-closed M c) halt) (sim (enclose M))
 
 enclose-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (enclose M))
-enclose-correct M c =
-  equivalent (enclose-fsim M c)
-
-{- in particular -}
-
-enclose-const : ∀ M → Closed M → ∀ B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (enclose M)) (o-const B k)
-enclose-const M c B k = Equivalent.terminates (enclose-correct M c) (o-const B k)
-
-enclose-converges : ∀ M → Closed M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (enclose M)))
-enclose-converges M c =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = enclose-correct M c
-
-enclose-wrong : ∀ M → Closed M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (enclose M)) o-wrong
-enclose-wrong M c = Equivalent.terminates (enclose-correct M c) o-wrong
-
-enclose-diverges : ∀ M → Closed M → Diverges (S.sem M) ⇔ Diverges (T.sem (enclose M))
-enclose-diverges M c = Equivalent.diverges (enclose-correct M c)
+enclose-correct M c = equivalent (enclose-fsim M c)

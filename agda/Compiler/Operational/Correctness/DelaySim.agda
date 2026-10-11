@@ -296,24 +296,4 @@ delay-fsim M =
     (sim (delay M))
 
 delay-correct : ∀ M → Equivalent (S.sem M) (T.sem (delay M))
-delay-correct M =
-  equivalent (delay-fsim M)
-
-{- in particular -}
-
-delay-const : ∀ M B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (delay M)) (o-const B k)
-delay-const M B k = Equivalent.terminates (delay-correct M) (o-const B k)
-
-delay-converges : ∀ M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (delay M)))
-delay-converges M =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = delay-correct M
-
-delay-wrong : ∀ M → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (delay M)) o-wrong
-delay-wrong M = Equivalent.terminates (delay-correct M) o-wrong
-
-delay-diverges : ∀ M → Diverges (S.sem M) ⇔ Diverges (T.sem (delay M))
-delay-diverges M = Equivalent.diverges (delay-correct M)
+delay-correct M = equivalent (delay-fsim M)

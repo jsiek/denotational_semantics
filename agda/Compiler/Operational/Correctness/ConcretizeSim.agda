@@ -324,25 +324,4 @@ concretize-fsim : ∀ M → FSim (S.sem M) (T.sem (concretize-program M))
 concretize-fsim M = plus-simulation _~_ (init~ M) (sim (concretize-program M))
 
 concretize-correct : ∀ M → Equivalent (S.sem M) (T.sem (concretize-program M))
-concretize-correct M =
-  equivalent (concretize-fsim M)
-
-{- in particular -}
-
-concretize-const : ∀ M B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (concretize-program M)) (o-const B k)
-concretize-const M B k = Equivalent.terminates (concretize-correct M) (o-const B k)
-
-concretize-converges : ∀ M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (concretize-program M)))
-concretize-converges M =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = concretize-correct M
-
-concretize-wrong : ∀ M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (concretize-program M)) o-wrong
-concretize-wrong M = Equivalent.terminates (concretize-correct M) o-wrong
-
-concretize-diverges : ∀ M → Diverges (S.sem M) ⇔ Diverges (T.sem (concretize-program M))
-concretize-diverges M = Equivalent.diverges (concretize-correct M)
+concretize-correct M = equivalent (concretize-fsim M)

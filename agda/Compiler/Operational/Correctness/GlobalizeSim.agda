@@ -298,25 +298,4 @@ globalize-fsim M =
         open Rel D
 
 globalize-correct : ∀ M → Equivalent (S.sem M) (T.sem (globalize M))
-globalize-correct M =
-  equivalent (globalize-fsim M)
-
-{- in particular -}
-
-globalize-const : ∀ M → ∀ B k
-  → Terminates (S.sem M) (o-const B k) ⇔ Terminates (T.sem (globalize M)) (o-const B k)
-globalize-const M B k = Equivalent.terminates (globalize-correct M) (o-const B k)
-
-globalize-converges : ∀ M
-  → Converges (Terminates (S.sem M)) ⇔ Converges (Terminates (T.sem (globalize M)))
-globalize-converges M =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = globalize-correct M
-
-globalize-wrong : ∀ M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (globalize M)) o-wrong
-globalize-wrong M = Equivalent.terminates (globalize-correct M) o-wrong
-
-globalize-diverges : ∀ M → Diverges (S.sem M) ⇔ Diverges (T.sem (globalize M))
-globalize-diverges M = Equivalent.diverges (globalize-correct M)
+globalize-correct M = equivalent (globalize-fsim M)

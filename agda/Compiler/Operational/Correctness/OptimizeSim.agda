@@ -393,31 +393,9 @@ optimize-fsim M c =
          ; sim = sim (optimize-program M) }
 
 optimize-correct : ∀ M → Closed M → Equivalent (T.sem M) (T.sem (optimize-program M))
-optimize-correct M c =
-  equivalent (optimize-fsim M c)
+optimize-correct M c = equivalent (optimize-fsim M c)
 
-{- in particular -}
-
-optimize-const : ∀ M → Closed M → ∀ B k
-  → Terminates (T.sem M) (o-const B k) ⇔ Terminates (T.sem (optimize-program M)) (o-const B k)
-optimize-const M c B k = Equivalent.terminates (optimize-correct M c) (o-const B k)
-
-optimize-converges : ∀ M → Closed M
-  → Converges (Terminates (T.sem M)) ⇔ Converges (Terminates (T.sem (optimize-program M)))
-optimize-converges M c =
-    (λ { (o , a , t) → o , a , proj₁ (Equivalent.terminates E o) t })
-  , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
-  where E = optimize-correct M c
-
-optimize-wrong : ∀ M → Closed M
-  → Terminates (T.sem M) o-wrong ⇔ Terminates (T.sem (optimize-program M)) o-wrong
-optimize-wrong M c = Equivalent.terminates (optimize-correct M c) o-wrong
-
-optimize-diverges : ∀ M → Closed M
-  → Diverges (T.sem M) ⇔ Diverges (T.sem (optimize-program M))
-optimize-diverges M c = Equivalent.diverges (optimize-correct M c)
-
-{- Composing with enclose ------------------------------------------------------}
+{- enclose produces well-scoped programs ---------------------------------------}
 
 {- enclose of a closed ISWIM program is well scoped -}
 module Enclosed where
