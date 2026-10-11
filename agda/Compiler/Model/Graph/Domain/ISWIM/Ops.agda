@@ -52,14 +52,6 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 ℬ B k _ (const {B′} k′) = Σ[ B≡ ∈ B ≡ B′ ] (subst base-rep B≡ k) ≡ k′
 ℬ B k _ _ = False
 
-𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
-𝓅 (base B) k v = ℬ B k v
-𝓅 (B ⇒ P) f _ (V ↦ w) =
-   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ [] ×  w ∈ 𝓅 P (f k) (ptt)
-𝓅 (B ⇒ P) f _ ν = True
-𝓅 (B ⇒ P) f _ d = False
-
-
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 {- pairs are strict: each half requires the other component to be nonempty -}
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ v ∈ Value ] f ∈ D₁ × v ∈ D₂

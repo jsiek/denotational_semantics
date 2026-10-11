@@ -134,10 +134,6 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
 {- Pairs ----------------------------------------------------------------------}
 
-pair-mono-env : ∀ {E₁ E₂} → Mono E₁ → Mono E₂ → Mono (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩)
-pair-mono-env m₁ m₂ ρ⊆ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ v , ⟨ m₁ ρ⊆ f f∈ , m₂ ρ⊆ v v∈ ⟩ ⟩
-pair-mono-env m₁ m₂ ρ⊆ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ f , ⟨ m₁ ρ⊆ f f∈ , m₂ ρ⊆ v v∈ ⟩ ⟩
-
 pair-cont : ∀ {E₁ E₂ ρ} → nonempty-env ρ → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
   → Cont (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
 pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩
@@ -151,14 +147,8 @@ pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ 
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ∣ v ⦆
     ⟨ f , ⟨ m₁ (join-l a b) f f∈′ , m₂ (join-r a b) v v∈′ ⟩ ⟩
 
-car-mono-env : ∀ {E} → Mono E → Mono (λ ρ → car ⟨ E ρ , ptt ⟩)
-car-mono-env m ρ⊆ f f∈ = m ρ⊆ ⦅ f ∣ f∈
-
 car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
 car-cont c f f∈ = c ⦅ f ∣ f∈
-
-cdr-mono-env : ∀ {E} → Mono E → Mono (λ ρ → cdr ⟨ E ρ , ptt ⟩)
-cdr-mono-env m ρ⊆ v v∈ = m ρ⊆ ∣ v ⦆ v∈
 
 cdr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
 cdr-cont c v v∈ = c ∣ v ⦆ v∈
@@ -196,22 +186,13 @@ cover {suc m} Es NE ms cs nes
     ⟨ refl , ⟨ m i (join-l a b) d d∈′
              , (λ j → ⟨ proj₁ (ne′ j) , m j (join-r a b) _ (proj₂ (ne′ j)) ⟩) ⟩ ⟩
 
-proj-mono-env : ∀ {n} (i : Fin n) {E} → Mono E → Mono (λ ρ → proj i ⟨ E ρ , ptt ⟩)
-proj-mono-env i m ρ⊆ d d∈ = m ρ⊆ (tup[ i ] d) d∈
-
 proj-cont : ∀ {n} (i : Fin n) {E ρ} → Cont E ρ → Cont (λ ρ → proj i ⟨ E ρ , ptt ⟩) ρ
 proj-cont i c d d∈ = c (tup[ i ] d) d∈
 
 {- Sums -----------------------------------------------------------------------}
 
-ℒ-mono-env : ∀ {E} → Mono E → Mono (λ ρ → ℒ ⟨ E ρ , ptt ⟩)
-ℒ-mono-env m ρ⊆ (left d) d∈ = m ρ⊆ d d∈
-
 ℒ-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → ℒ ⟨ E ρ , ptt ⟩) ρ
 ℒ-cont c (left d) d∈ = c d d∈
-
-ℛ-mono-env : ∀ {E} → Mono E → Mono (λ ρ → ℛ ⟨ E ρ , ptt ⟩)
-ℛ-mono-env m ρ⊆ (right d) d∈ = m ρ⊆ d d∈
 
 ℛ-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → ℛ ⟨ E ρ , ptt ⟩) ρ
 ℛ-cont c (right d) d∈ = c d d∈

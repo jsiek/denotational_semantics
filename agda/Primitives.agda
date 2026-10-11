@@ -18,10 +18,6 @@ data Base : Set where
   Void : Base
   Blame : Base
 
-data Prim : Set where
-  base : Base → Prim
-  _⇒_ : Base → Prim → Prim
-
 data Label : Set where
   label : ℕ → Label
 
@@ -32,14 +28,6 @@ base-rep 𝔹 = Bool
 base-rep Unit = Top
 base-rep Void = Bot
 base-rep Blame = Label
-
-rep : Prim → Set
-rep (base b) = base-rep b
-rep (b ⇒ p) = base-rep b → rep p
-
-arity : Prim → ℕ
-arity (base k) = 0
-arity (b ⇒ p) = suc (arity p)
 
 base-eq? : (B : Base) → (B' : Base) → Dec (B ≡ B')
 base-eq? Nat Nat = yes refl

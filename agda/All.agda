@@ -46,7 +46,6 @@ import Compiler.Model.Graph.Domain.ISWIM.Continuity
 import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos3Iswim
-import Compiler.Model.Graph.Sem.Clos3IswimConsistent
 import Compiler.Model.Graph.Sem.ISWIMContinuous
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim

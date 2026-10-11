@@ -47,16 +47,6 @@ infix 5 _⊆ₑ_
 _⊆ₑ_ : ∀ {A} → Env A → Env A → Set
 ρ₁ ⊆ₑ ρ₂ = ρ₁ ~ₑ[ _⊆_ ] ρ₂
 
-⊆ₑ-trans : ∀{A}{ρ₁ ρ₂ ρ₃ : Env A} → ρ₁ ⊆ₑ ρ₂ → ρ₂ ⊆ₑ ρ₃ → ρ₁ ⊆ₑ ρ₃
-⊆ₑ-trans {ρ₁}{ρ₂}{ρ₃} r12 r23 x = λ d z → r23 x d (r12 x d z)
-
-∀ₑ : ∀ {A} (P : 𝒫 A → Set) → Env A → Set
-∀ₑ P ρ = ∀ i → P (ρ i)
-
-∀ₑ-ext : ∀ {A ρ D} P → ∀ₑ {A} P ρ → P D → ∀ₑ P (D • ρ)
-∀ₑ-ext P Pρ PD zero = PD
-∀ₑ-ext P Pρ PD (suc i) = Pρ i
-
 extend-nonempty-env : ∀{A}{ρ : Env A}{X}
    → nonempty-env ρ  →  nonempty X  →  nonempty-env (X • ρ)
 extend-nonempty-env {ρ} {X} NE-ρ NE-X zero = NE-X
@@ -77,11 +67,6 @@ finiteNE {A} S = Σ[ V ∈ List A ] S ≃ (mem V) × V ≢ []
 {- environments whose codomain are finite nonempty sets -}
 finiteNE-env : ∀ {A} → Env A → Set
 finiteNE-env {A} ρ = ∀ x → finiteNE (ρ x)
-
-extend-finiteNE-env : ∀ {A}{ρ : Env A}{X}
-  → finiteNE-env ρ → finiteNE X → finiteNE-env (X • ρ)
-extend-finiteNE-env fin-ρ fin-X zero = fin-X
-extend-finiteNE-env fin-ρ fin-X (suc i) = fin-ρ i
 
 infix 6 _⊔ₑ_
 _⊔ₑ_ : ∀ {A} → Env A → Env A → Env A

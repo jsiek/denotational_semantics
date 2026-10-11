@@ -72,28 +72,6 @@ results-rel-pres R [] _ _ = ⊤
 results-rel-pres R (b ∷ bs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = 
   result-rel-pres R b D E × results-rel-pres R bs Ds Es
 
-result-rel-pres' : ∀ {ℓ} {A B : Set ℓ} (R : A → B → Set) → (∀ b → Result A b → Result B b → Set (lsuc lzero l⊔ ℓ))
-result-rel-pres' {ℓ} R ■ a b = Lift (lsuc lzero l⊔ ℓ) (R a b)
-result-rel-pres' R (ν 𝓈) f g = ∀ a b → R a b → result-rel-pres' R 𝓈 (f a) (g b)
-result-rel-pres' R (∁ 𝓈) = result-rel-pres' R 𝓈
-
-results-rel-pres' : ∀ {ℓ} {A B : Set ℓ} (R : A → B → Set) 
-      → (∀ bs → Results A bs → Results B bs → Set (lsuc lzero l⊔ ℓ))
-results-rel-pres' R [] _ _ = ⊤
-results-rel-pres' R (b ∷ bs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = 
-  result-rel-pres' R b D E × results-rel-pres' R bs Ds Es
-
-result-rel-pres-1 : ∀ {ℓ} {A B : Set ℓ} (R : A → B → Set (lsuc lzero)) → (∀ b → Result A b → Result B b → Set (lsuc lzero l⊔ ℓ))
-result-rel-pres-1 {ℓ} R ■ a b = Lift (lsuc lzero l⊔ ℓ) (R a b)
-result-rel-pres-1 R (ν 𝓈) f g = ∀ a b → R a b → result-rel-pres-1 R 𝓈 (f a) (g b)
-result-rel-pres-1 R (∁ 𝓈) = result-rel-pres-1 R 𝓈
-
-results-rel-pres-1 : ∀ {ℓ} {A B : Set ℓ} (R : A → B → Set (lsuc lzero)) 
-      → (∀ bs → Results A bs → Results B bs → Set (lsuc lzero l⊔ ℓ))
-results-rel-pres-1 R [] _ _ = ⊤
-results-rel-pres-1 R (b ∷ bs) ⟨ D , Ds ⟩ ⟨ E , Es ⟩ = 
-  result-rel-pres-1 R b D E × results-rel-pres-1 R bs Ds Es
-
 fun-rel-pres : ∀ {ℓ}{A : Set ℓ} → (R : Rel A lzero) → DFun-Rel A
 fun-rel-pres R bs c f g = ∀ Ds Es → results-rel-pres R bs Ds Es → result-rel-pres R c (f Ds) (g Es)
 
@@ -104,57 +82,3 @@ opsig-rel-pres : ∀ {ℓ} {A : Set ℓ} (R : Rel A lzero) → DOpSig-Rel A
 opsig-rel-pres R sig O₁ O₂ = ∀ op → op-rel-pres R (sig op) (O₁ op) (O₂ op)
 
 
-{- =============== Types for the preservation of a predicate on a DFun/Op ================ -}
-
-DFun-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DFun-Pred {ℓ} A = ∀ bs c → DFun A bs c → Set (lsuc lzero l⊔ ℓ)
-
-Op-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-Op-Pred {ℓ} A = ∀ bs → DOp A bs → Set (lsuc lzero l⊔ ℓ)
-
-DOpSig-Pred : ∀ {ℓ} (A : Set ℓ) → Set (lsuc (lsuc lzero) l⊔ lsuc ℓ)
-DOpSig-Pred {ℓ} A = ∀ {Op} (sig : Op → List Sig) → DOpSig A sig → Set (lsuc lzero l⊔ ℓ)
-
-result-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → (∀ b → Result A b → Set (lsuc lzero l⊔ ℓ))
-result-pred-pres {ℓ} P ■ a = Lift (lsuc lzero l⊔ ℓ) (P a)
-result-pred-pres P (ν b) f = ∀ a → P a → result-pred-pres P b (f a)
-result-pred-pres P (∁ b) = result-pred-pres P b
-
-results-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → (∀ bs → Results A bs → Set (lsuc lzero l⊔ ℓ))
-results-pred-pres P [] _ = ⊤
-results-pred-pres P (b ∷ bs) ⟨ D , Ds ⟩ = 
-  result-pred-pres P b D × results-pred-pres P bs Ds
-
-fun-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → DFun-Pred A
-fun-pred-pres {ℓ} P bs c F = ∀ Ds → results-pred-pres P bs Ds → result-pred-pres P c (F Ds)
-
-op-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → Op-Pred A
-op-pred-pres P bs = fun-pred-pres P bs ■
-
-{- ============================= Combinators ============================= -}
-
-DApp1 : ∀ {ℓ} {A : Set ℓ} b bs c
-  → DFun A (b ∷ bs) c → Result A b → DFun A bs c
-DApp1 b bs c F a Ds = F ⟨ a , Ds ⟩
-
-DComp1 : ∀ {ℓ} {A : Set ℓ} b c cs d
-  → DFun A (b ∷ []) c → DFun A (c ∷ cs) d
-  → DFun A (b ∷ cs) d
-DComp1 b c cs d f g ⟨ D , Ds ⟩ = g ⟨ f ⟨ D , ptt ⟩ , Ds ⟩
-
-Dfold : ∀ {ℓ}{A : Set ℓ} b c n → DFun A (b ∷ c ∷ []) c
-    → Result A c
-    → DFun A (replicate n b) c
-Dfold b c zero f a (ptt) = a
-Dfold b c (suc n) f a ⟨ D , Ds ⟩ = f ⟨ D , ⟨ Dfold b c n f a Ds , ptt ⟩ ⟩
-
-Dfold-pres : ∀ {ℓ}{A : Set ℓ} R b c n
-  → (f1 f2 : DFun A (b ∷ c ∷ []) c)
-  → (a1 a2 : Result A c)
-  → fun-rel-pres R (b ∷ c ∷ []) c f1 f2
-  → result-rel-pres R c a1 a2
-  → fun-rel-pres R (replicate n b) c (Dfold b c n f1 a1) (Dfold b c n f2 a2)
-Dfold-pres R b c zero f1 f2 a1 a2 f~ a~ _ _ _ = a~
-Dfold-pres R b c (suc n) f1 f2 a1 a2 f~ a~ ⟨ D1 , Ds1 ⟩ ⟨ D2 , Ds2 ⟩ ⟨ D~ , Ds~ ⟩ = 
-  f~ ⟨ D1 , ⟨ Dfold b c n f1 a1 Ds1 , ptt ⟩ ⟩ ⟨ D2 , ⟨ Dfold b c n f2 a2 Ds2 , ptt ⟩ ⟩ 
-     ⟨ D~ , ⟨ Dfold-pres R b c n f1 f2 a1 a2 f~ a~ Ds1 Ds2 Ds~ , ptt ⟩ ⟩

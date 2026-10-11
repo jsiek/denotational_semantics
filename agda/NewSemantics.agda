@@ -58,49 +58,11 @@ record Semantics {A : Set} : Set₁ where
 
 open Semantics {{...}}
 
-{- =================== Consistent Semantics =============================== -}
-
-record ConsistentSemantics {A : Set} : Set₁ where
-  field 
-    {{Sem}} : Semantics {A}
-    consistency : A → A → Set
-    consistent-op : 𝕆-consistent consistency sig (Semantics.interp-op Sem)
-
-open ConsistentSemantics {{...}}
-
 {- =================== Continuous Semantics ====================== -}
-
-continuous-∈ : ∀ {A} → (Env A → 𝒫 A) → Env A → A → Set₁
-continuous-∈ {A} D ρ v = v ∈ D ρ
-   → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
 
 continuous-env : ∀ {A} → (Env A → 𝒫 A) → Env A → Set₁
 continuous-env {A} D ρ = ∀ v → v ∈ D ρ
                      → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
-
-
-continuous-∈⇒⊆ : ∀ {A} E (ρ : Env A) (NE-ρ : nonempty-env ρ)
-   → monotone-env E
-   → ∀ V → mem V ⊆ E ρ
-   → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
-   → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
-continuous-∈⇒⊆ E ρ NE-ρ mE [] V⊆E ∀v∈V⇒cont =
-   ⟨ initial-finiteNE-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
-   ⟨ initial-fin-⊆ ρ NE-ρ , (λ d ()) ⟩ ⟩ ⟩
-continuous-∈⇒⊆ {A} E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
-    with continuous-∈⇒⊆ E ρ NE-ρ mE V (λ d z → v∷V⊆Eρ d (there z))
-                (λ w w∈V w∈Mρ → v∈V⇒cont w (there w∈V) w∈Mρ)
-... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V⊆Eρ₁ ⟩ ⟩ ⟩
-    with v∈V⇒cont v (here refl) (v∷V⊆Eρ v (here refl))
-... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈Eρ₂ ⟩ ⟩ ⟩ =    
-    ⟨ ρ₃ , ⟨ (join-finiteNE-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
-    G ⟩ ⟩ ⟩
-    where
-    ρ₃ = ρ₁ ⊔ₑ ρ₂
-    G : (d : A) → mem (v ∷ V) d → d ∈ E ρ₃
-    G d (here refl) = mE {ρ₂}{ρ₃} join-⊆-right v v∈Eρ₂
-    G d (there m) = mE {ρ₁}{ρ₃} join-⊆-left d (V⊆Eρ₁ d m)
-
 
 
 continuous-arg : ∀ {A} {{_ : Semantics {A}}} (ρ : Env A) (NE-ρ : nonempty-env ρ)
