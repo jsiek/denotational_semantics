@@ -47,6 +47,7 @@ import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos3Iswim
 import Compiler.Model.Graph.Sem.Clos3IswimConsistent
+import Compiler.Model.Graph.Sem.ISWIMContinuous
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
@@ -75,3 +76,52 @@ import Compiler.Model.Graph.Correctness.ConcretizeExample
 import Compiler.Model.Graph.Correctness.EncloseExample
 import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.CompilerExample
+
+{- ---------------------------------------------------------------------------
+   The operational (CompCert-style) development, independent of the graph
+   model above: small-step machines and forward simulations.
+   --------------------------------------------------------------------------- -}
+
+{- shared by any operational semantics: observations, end-theorem shape -}
+import Compiler.Operational.Observation
+
+{- the generic framework: transition systems, forward simulations -}
+import Compiler.Operational.Smallstep
+import Compiler.Operational.Simulation
+
+{- the machines -}
+import Compiler.Operational.Machine.Common
+import Compiler.Operational.Machine.ISWIM
+import Compiler.Operational.Machine.Clos2
+import Compiler.Operational.Machine.Clos3
+import Compiler.Operational.Machine.Clos4
+import Compiler.Operational.Machine.Clos5
+
+{- correctness of each pass -}
+import Compiler.Operational.Correctness.EncloseSim
+import Compiler.Operational.Correctness.OptimizeSim
+import Compiler.Operational.Correctness.ConcretizeSim
+import Compiler.Operational.Correctness.DelaySim
+import Compiler.Operational.Correctness.GlobalizeSim
+{- the whole compiler, by composing the simulations of the passes -}
+import Compiler.Operational.Correctness.CompilerSim
+
+{- soundness and adequacy of the graph model for the ISWIM machine, which
+   connect the two developments -}
+import Compiler.Operational.Adequacy.Common
+import Compiler.Operational.Adequacy.Soundness
+import Compiler.Operational.Adequacy.LogRel
+import Compiler.Operational.Adequacy.ISWIM
+
+{- the same for the Clos5 machine, for well-formed programs (which the
+   compiler produces), and the compiler's correctness in the graph model
+   observed through the ISWIM and Clos5 machines -}
+import Compiler.Operational.Adequacy.Scope
+import Compiler.Operational.Adequacy.Clos5WF
+import Compiler.Operational.Adequacy.CompileWF
+import Compiler.Operational.Adequacy.Clos5Common
+import Compiler.Operational.Adequacy.Clos5Continuous
+import Compiler.Operational.Adequacy.Clos5Soundness
+import Compiler.Operational.Adequacy.Clos5LogRel
+import Compiler.Operational.Adequacy.Clos5
+import Compiler.Operational.Adequacy.EndToEnd

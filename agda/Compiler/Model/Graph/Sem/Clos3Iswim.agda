@@ -54,21 +54,6 @@ open Eq.≡-Reasoning
                                            ⟨ F' D' , ptt ⟩ 
                                            ⟨ F~ D D' D⊆ , ptt ⟩) , ptt ⟩ 
             , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
-     {- Λ-mono ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩
-              ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩ -}
-
-  {- Λn-mono (suc zero) ⟨ F , ⟨ 𝒯 x Ds , ptt ⟩ ⟩ ⟨ F' , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩ 
-             ⟨ F~ , ⟨ 𝒯-mono x Ds Ds' Ds~ , ptt ⟩ ⟩
-  -}
-  {- 𝒜-mono x ⟨ Λ ⟨ F (𝒯 x Ds) , ptt ⟩ , Ds ⟩ ⟨ Λ ⟨ F' (𝒯 x Ds') , ptt ⟩ , Ds' ⟩ 
-    ⟨ Λ-mono ⟨ F (𝒯 x Ds) , ptt ⟩ ⟨ F' (𝒯 x Ds') , ptt ⟩ 
-             ⟨ F~ (𝒯 x Ds) (𝒯 x Ds') (lower (𝒯-mono x Ds Ds' Ds~)) , ptt ⟩ 
-    , Ds~ ⟩ -}
-  {- DComp-rest-pres _⊆_ (replicate x ■) ■ ■ (𝒯 x) (𝒯 x) 
-                  (λ T → 𝒜 x (Λ (F1 T))) (λ T → 𝒜 x (Λ (F2 T))) 
-                  (𝒯-mono x) 
-                  (λ T T' T⊆ → 𝒜-mono x (Λ (F1 T)) (Λ (F2 T')) 
-                               (Λ-mono (F1 T) (F2 T') (F~ T T' (lower T⊆)))) -}
 𝕆-Clos3-mono app = ⋆-mono
 𝕆-Clos3-mono (lit B k) _ _ _ = lift (λ d z → z)
 𝕆-Clos3-mono (tuple x) = 𝒯-mono x
