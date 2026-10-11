@@ -8,7 +8,9 @@
   * ShapeOf o d, when a denotational value d has the shape of an
     observation o: the constant itself, a function entry, an entry of
     the right component of a tuple of the right size, a left or right
-    injection.
+    injection. A function is also observed through the entries of a pair
+    (⦅ u ∣ or ∣ v ⦆), which is how closures are represented after delay
+    (Adequacy/Clos5.agda); the ISWIM semantics never produces them.
 
 -}
 
@@ -77,6 +79,8 @@ ShapeAt : ∀ {n} → Fin n → List Obs → Value → Set
 ShapeOf (o-const B k) d = d ≡ const {B} k
 ShapeOf o-fun ν = ⊤
 ShapeOf o-fun (V ↦ w) = ⊤
+ShapeOf o-fun ⦅ u ∣ = ⊤
+ShapeOf o-fun ∣ v ⦆ = ⊤
 ShapeOf (o-tuple os) ⟨⟩ = os ≡ []
 ShapeOf (o-tuple os) (tup[ i ] d) = ShapeAt i os d
 ShapeOf (o-inl o) (left d) = ShapeOf o d
