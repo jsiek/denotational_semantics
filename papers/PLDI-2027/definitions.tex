@@ -73,7 +73,7 @@ instead of de Bruijn indices.
   \begin{itemize}
   \item the value domain and environments, with $\rho_0(x) = \{\omega\}$;
   \item the operators $\star$, $\Lambda$, $\key{pair}$/$\key{car}$/$\key{cdr}$,
-    strict $\mathcal{T}$, $\key{proj}$, $\mathcal{L}$/$\mathcal{R}$/$\mathcal{C}$,
+    strict $\mathcal{T}$, $\key{proj}$, $\key{inl}$/$\key{inr}$/$\mathcal{C}$,
     $\key{guard}$, and $\odot$;
   \item consistency ($\sim$, $\consis$) and continuity.
   \end{itemize}
@@ -155,8 +155,8 @@ Using names instead of de Bruijn indices changes a few definitions:
   \mathcal{T}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; D_j \NE \}
      \qquad (n > 0) \\
   \key{proj}_i(D) &= \{ d \mid \tup{i}{d} \in D \} \\
-  \mathcal{L}(D) &= \{ \Left{d} \mid d \in D \} \\
-  \mathcal{R}(D) &= \{ \Right{d} \mid d \in D \} \\
+  \key{inl}(D) &= \{ \Left{d} \mid d \in D \} \\
+  \key{inr}(D) &= \{ \Right{d} \mid d \in D \} \\
   \mathcal{C}(D, F, G) &=
     \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Left{v} \in D),\; w \in F(V) \} \\
     &\cup\; \{ w \mid \exists V \NE.\; (\forall v \in V.\; \Right{v} \in D),\; w \in G(V) \} \\
@@ -284,8 +284,8 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{c}^{\ell}\rho &= \mathcal{B}(c) \\
   \SEM{\tuple{M_1,\ldots,M_n}}^{\ell}\rho &= \mathcal{T}(\SEM{M_1}^{\ell}\rho, \ldots, \SEM{M_n}^{\ell}\rho) \\
   \SEM{\prj{i} M}^{\ell}\rho &= \key{proj}_i(\SEM{M}^{\ell}\rho) \\
-  \SEM{\inl M}^{\ell}\rho &= \mathcal{L}(\SEM{M}^{\ell}\rho) \\
-  \SEM{\inr M}^{\ell}\rho &= \mathcal{R}(\SEM{M}^{\ell}\rho) \\
+  \SEM{\inl M}^{\ell}\rho &= \key{inl}(\SEM{M}^{\ell}\rho) \\
+  \SEM{\inr M}^{\ell}\rho &= \key{inr}(\SEM{M}^{\ell}\rho) \\
   \SEM{\Case{L}{x}{M}{y}{N}}^{\ell}\rho &=
      \mathcal{C}(\SEM{L}^{\ell}\rho,\; \lambda X.\, \SEM{M}^{\ell}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}^{\ell}\ext{\rho}{y}{Y})
 \end{align*}
