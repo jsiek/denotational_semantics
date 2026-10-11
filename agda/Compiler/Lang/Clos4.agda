@@ -12,9 +12,6 @@ module Compiler.Lang.Clos4 where
 open import Primitives
 open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
-open import NewDOpSig
-open import SetsAsPredicates
-open import NewDenotProperties
 open import abt.Sig using (Sig; ∁; ν; ■) public
 open import abt.Var using (Var) public
 open import abt.GSubst using (_•_) public

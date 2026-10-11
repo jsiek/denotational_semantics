@@ -29,7 +29,7 @@ module Compiler.Operational.Adequacy.EndToEnd where
 
 open import Primitives using (Base; base-rep)
 open import Compiler.Lang.ISWIM using (AST)
-open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile)
+open import Compiler.Compile.Pipeline using (compile)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Terminates)
 import Compiler.Operational.Machine.ISWIM as I

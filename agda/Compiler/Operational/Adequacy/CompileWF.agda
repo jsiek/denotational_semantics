@@ -38,7 +38,7 @@ open import Compiler.Compile.Enclose using (enclose)
 import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (glob-shape)
-open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile; compile₄)
+open import Compiler.Compile.Pipeline using (compile; compile₄)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; replicate)

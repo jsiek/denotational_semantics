@@ -40,6 +40,7 @@ import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
 import Compiler.Compile.Delay
 import Compiler.Compile.Globalize
+import Compiler.Compile.Pipeline
 
 {- syntactic facts about the passes, used by both operational styles -}
 import Compiler.Compile.EncloseScope

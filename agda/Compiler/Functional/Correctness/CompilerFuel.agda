@@ -10,8 +10,8 @@
   program terminates with the same observation as the original, goes
   wrong exactly when it does, and diverges exactly when it does.
 
-  The compiler is the one of the denotational end-to-end theorem
-  (Compiler.Model.Graph.Correctness.CompilerCorrect) and of the
+  The compiler is Compiler.Compile.Pipeline.compile, the one of the
+  denotational end-to-end theorem (CompilerCorrect) and of the
   CompCert-style one (CompilerSim), and it is definitionally the
   composition of the passes as the per-pass theorems state them. The
   only precondition is that of enclose: the ISWIM program is closed.
@@ -20,7 +20,7 @@
 
 module Compiler.Functional.Correctness.CompilerFuel where
 
-open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile)
+open import Compiler.Compile.Pipeline using (compile)
 open import Compiler.Observation
 open import Compiler.Compile.Enclose using (enclose)
 open import Compiler.Compile.EncloseScope using (Closed)

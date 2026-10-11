@@ -19,14 +19,10 @@ open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
-import Compiler.Lang.Clos4 as L4
-import Compiler.Lang.Clos5 as L5
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import Compiler.Compile.Enclose using (enclose)
 open import Compiler.Compile.Optimize using (optimize-program)
 open import Compiler.Compile.Concretize using (concretize-program)
-open import Compiler.Compile.Delay using (delay)
-open import Compiler.Compile.Globalize using (globalize)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
 open import Compiler.Model.Graph.Correctness.EncloseCorrect using (enclose-correct-closed)
 open import Compiler.Model.Graph.Correctness.OptimizeCorrect using (optimize-correct-closed)
@@ -39,11 +35,7 @@ open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_�
 
 module Compiler.Model.Graph.Correctness.CompilerCorrect where
 
-compile₄ : AST → L4.AST
-compile₄ M = delay (concretize-program (optimize-program (enclose M)))
-
-compile : AST → L5.Program
-compile M = globalize (compile₄ M)
+open import Compiler.Compile.Pipeline using (compile; compile₄) public
 
 {- D and D' produce the same constants, and one is nonempty iff the other is -}
 infix 4 _⇔_
