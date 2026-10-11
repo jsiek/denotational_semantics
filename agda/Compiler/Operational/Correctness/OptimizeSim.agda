@@ -26,7 +26,7 @@
   The program must be well scoped (WS 0 M): every variable is bound, so
   in particular a closure's code uses only its parameter and free
   variables. enclose produces such programs from closed ISWIM programs
-  (enclose-closed), and the passes compose (enclose-optimize-correct).
+  (enclose-closed).
 
 -}
 
@@ -465,13 +465,3 @@ module Enclosed where
 
 enclose-closed : ∀ M → E.Closed M → Closed (enclose M)
 enclose-closed M c = Enclosed.enclose-ws M (subst (_≤ 0) (sym c) z≤n)
-
-enclose-optimize-fsim : ∀ M → E.Closed M
-  → FSim (S.sem M) (T.sem (optimize-program (enclose M)))
-enclose-optimize-fsim M c =
-  compose (E.enclose-fsim M c) (optimize-fsim (enclose M) (enclose-closed M c))
-
-enclose-optimize-correct : ∀ M → E.Closed M
-  → Equivalent (S.sem M) (T.sem (optimize-program (enclose M)))
-enclose-optimize-correct M c =
-  equivalent (enclose-optimize-fsim M c) machine-det machine-progress machine-det machine-progress

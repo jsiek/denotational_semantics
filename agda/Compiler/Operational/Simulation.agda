@@ -1,8 +1,8 @@
 {-
 
-  Forward simulations, in the spirit of CompCert's Smallstep library:
-  their composition, and the end theorem that a forward simulation
-  between deterministic, total transition systems makes them equivalent.
+  Forward simulations, in the spirit of CompCert's Smallstep library, and
+  the end theorem that a forward simulation between deterministic, total
+  transition systems makes them equivalent; equivalence composes.
   See the design note in Smallstep.agda.
 
 -}
@@ -21,7 +21,6 @@ open import Data.Product.Relation.Binary.Lex.Strict using (×-Lex; ×-wellFounde
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Induction.WellFounded using (WellFounded; Acc; acc)
-open import Relation.Binary.Construct.Closure.Transitive as TC using (TransClosure; [_]; _∷ʳ_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
 {- Forward simulations --------------------------------------------------------}
@@ -52,75 +51,6 @@ module _ {L₁ L₂ : Semantics} (F : FSim L₁ L₂) where
     star-of : ∀ {s s' i' i} → Plus L₂ s s' ⊎ (Star L₂ s s' × i' ≺ i) → Star L₂ s s'
     star-of (inj₁ π) = plus→star π
     star-of (inj₂ (σ , _)) = σ
-
-  {- one step of a plus: either a target plus, or a target star with the
-     index decreasing in the transitive closure -}
-  sim-plus : ∀ {i s₁ s₁' s₁'' s₂} → match i s₁ s₂ → Step L₁ s₁ s₁' → Star L₁ s₁' s₁''
-    → Σ[ i' ∈ Index ] Σ[ s₂' ∈ State L₂ ]
-        (Plus L₂ s₂ s₂' ⊎ (Star L₂ s₂ s₂' × TransClosure _≺_ i' i)) × match i' s₁'' s₂'
-  sim-plus m st ε with step m st
-  ... | i' , s₂' , inj₁ π , m' = i' , s₂' , inj₁ π , m'
-  ... | i' , s₂' , inj₂ (σ , lt) , m' = i' , s₂' , inj₂ (σ , [ lt ]) , m'
-  sim-plus m st (st' ◅ σ) with step m st
-  ... | i₁ , s₂₁ , r , m₁ with sim-plus m₁ st' σ
-  ...   | i' , s₂' , r' , m' = i' , s₂' , combine r r' , m'
-    where
-    combine : ∀ {a b c i₁ i' i} → Plus L₂ a b ⊎ (Star L₂ a b × i₁ ≺ i)
-      → Plus L₂ b c ⊎ (Star L₂ b c × TransClosure _≺_ i' i₁)
-      → Plus L₂ a c ⊎ (Star L₂ a c × TransClosure _≺_ i' i)
-    combine (inj₁ π) r' = inj₁ (plus-star π (star-of r'))
-      where star-of : ∀ {b c} → Plus L₂ b c ⊎ (Star L₂ b c × _) → Star L₂ b c
-            star-of (inj₁ π) = plus→star π
-            star-of (inj₂ (σ , _)) = σ
-    combine (inj₂ (σ₁ , lt₁)) (inj₁ π) = inj₁ (star-plus σ₁ π)
-    combine (inj₂ (σ₁ , lt₁)) (inj₂ (σ₂ , lt₂)) = inj₂ (σ₁ ◅◅ σ₂ , lt₂ ∷ʳ lt₁)
-
-{- Composition ----------------------------------------------------------------}
-
-compose : ∀ {L₁ L₂ L₃} → FSim L₁ L₂ → FSim L₂ L₃ → FSim L₁ L₃
-compose {L₁} {L₂} {L₃} F G = record
-  { Index = Idx
-  ; _≺_ = _⊏_
-  ; wf = ×-wellFounded (TC.wellFounded G._≺_ G.wf) F.wf
-  ; match = M
-  ; init = init
-  ; final = λ { (s₂ , m₁ , m₂) fin → G.final m₂ (F.final m₁ fin) }
-  ; step = step
-  }
-  where
-  module F = FSim F
-  module G = FSim G
-
-  Idx = G.Index × F.Index
-  _⊏_ : Idx → Idx → Set
-  _⊏_ = ×-Lex _≡_ (TransClosure G._≺_) F._≺_
-
-  M : Idx → State L₁ → State L₃ → Set
-  M (j , i) s₁ s₃ = Σ[ s₂ ∈ State L₂ ] F.match i s₁ s₂ × G.match j s₂ s₃
-
-  Res : Idx → State L₃ → State L₁ → Set
-  Res ji s₃ s₁' = Σ[ ji' ∈ Idx ] Σ[ s₃' ∈ State L₃ ]
-    (Plus L₃ s₃ s₃' ⊎ (Star L₃ s₃ s₃' × ji' ⊏ ji)) × M ji' s₁' s₃'
-
-  init : ∀ {s₁} → Initial L₁ s₁ → Σ[ ji ∈ Idx ] Σ[ s₃ ∈ State L₃ ] Initial L₃ s₃ × M ji s₁ s₃
-  init i₁ with F.init i₁
-  ... | i , s₂ , i₂ , m₁ with G.init i₂
-  ...   | j , s₃ , i₃ , m₂ = (j , i) , s₃ , i₃ , s₂ , m₁ , m₂
-
-  {- after the first simulation took a plus in L₂ -}
-  after-plus : ∀ {j i i' s₁' s₂' s₃} → F.match i' s₁' s₂'
-    → (Σ[ j' ∈ G.Index ] Σ[ s₃' ∈ State L₃ ]
-         (Plus L₃ s₃ s₃' ⊎ (Star L₃ s₃ s₃' × TransClosure G._≺_ j' j)) × G.match j' s₂' s₃')
-    → Res (j , i) s₃ s₁'
-  after-plus {i' = i'} m₁' (j' , s₃' , inj₁ π , m₂') = (j' , i') , s₃' , inj₁ π , _ , m₁' , m₂'
-  after-plus {i' = i'} m₁' (j' , s₃' , inj₂ (σ , lt) , m₂') =
-    (j' , i') , s₃' , inj₂ (σ , inj₁ lt) , _ , m₁' , m₂'
-
-  step : ∀ {ji s₁ s₃ s₁'} → M ji s₁ s₃ → Step L₁ s₁ s₁' → Res ji s₃ s₁'
-  step {j , i} (s₂ , m₁ , m₂) st with F.step m₁ st
-  ... | i' , s₂' , inj₁ (plus st₂ σ₂) , m₁' = after-plus m₁' (sim-plus G m₂ st₂ σ₂)
-  ... | i' , s₂' , inj₂ (ε , lt) , m₁' = (j , i') , _ , inj₂ (ε , inj₂ (refl , lt)) , s₂' , m₁' , m₂
-  ... | i' , s₂' , inj₂ (st₂ ◅ σ₂ , lt) , m₁' = after-plus m₁' (sim-plus G m₂ st₂ σ₂)
 
 {- Simulations of machines in which every step is matched by a target plus ---}
 
@@ -188,6 +118,16 @@ record Equivalent (L₁ L₂ : Semantics) : Set where
   field
     terminates : SameObs (Terminates L₁) (Terminates L₂)
     diverges : Diverges L₁ ⇔ Diverges L₂
+
+{- equivalence composes -}
+equiv-trans : ∀ {L₁ L₂ L₃} → Equivalent L₁ L₂ → Equivalent L₂ L₃ → Equivalent L₁ L₃
+equiv-trans E F = record
+  { terminates = λ o → (λ t → proj₁ (F.terminates o) (proj₁ (E.terminates o) t))
+                     , (λ t → proj₂ (E.terminates o) (proj₂ (F.terminates o) t))
+  ; diverges = (λ d → proj₁ F.diverges (proj₁ E.diverges d))
+             , (λ d → proj₂ E.diverges (proj₂ F.diverges d)) }
+  where module E = Equivalent E
+        module F = Equivalent F
 
 module _ {L₁ L₂ : Semantics} (F : FSim L₁ L₂) where
   open FSim F
