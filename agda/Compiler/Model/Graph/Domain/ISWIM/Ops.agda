@@ -184,9 +184,7 @@ proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → 
   G : Every _~_ (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) (⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G u w ⟨ V , ⟨ u∈D , ⟨ V<E , neV ⟩ ⟩ ⟩
         ⟨ V' , ⟨ w∈D' , ⟨ V<E' , neV' ⟩ ⟩ ⟩
-        with D~ (V ↦ u) (V' ↦ w) u∈D w∈D'
-  ... | inj₁ x = ⊥-elim (x (Every⇒≈ V V' (Every-⊆ E~ V<E V<E')))
-  ... | inj₂ y = proj₂ y
+    = D~ (V ↦ u) (V' ↦ w) u∈D w∈D' (Every⇒≈ V V' (Every-⊆ E~ V<E V<E'))
 
 Λ-consis : consistent _~_ (ν ■ ∷ []) ■ Λ
 Λ-consis ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F~ , _ ⟩ = lift G
@@ -196,10 +194,8 @@ proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → 
   G ν ν tt _ = tt
   G (V ↦ w) ν w∈F₁X tt = tt
   G (V ↦ w) (V' ↦ w') 
-    ⟨ w∈F₁X , neV ⟩ ⟨ w∈F₁X' , neV' ⟩ with V ≈? V'
-  ... | yes V≈V' = 
-    inj₂ ⟨ V≈V' , lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
-  ... | no ¬V≈V' = inj₁ ¬V≈V'
+    ⟨ w∈F₁X , neV ⟩ ⟨ w∈F₁X' , neV' ⟩ = λ V≈V' →
+    lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X'
 
 pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
 pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
