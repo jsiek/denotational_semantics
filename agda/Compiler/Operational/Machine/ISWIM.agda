@@ -79,7 +79,10 @@ step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
 step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
 step (ret v halt) = stop (obs v)
-step (ret v (appL M ρ κ)) = next (eval M ρ (appR v κ))
+{- the operator is checked before the argument is evaluated, so that
+   delay, which takes the operator apart first, preserves going wrong -}
+step (ret v@(clo _ _) (appL M ρ κ)) = next (eval M ρ (appR v κ))
+step (ret _ (appL M ρ κ)) = stop o-wrong
 step (ret w (appR (clo N ρ) κ)) = next (eval N (w ∷ ρ) κ)
 step (ret w (appR _ κ)) = stop o-wrong
 step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)

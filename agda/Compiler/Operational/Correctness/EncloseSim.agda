@@ -255,7 +255,11 @@ module _ (P : C.AST) where
                               (≤-trans (m≤n⊔m (bound M ∸ 1) _) (m≤n⊔m (bound L) _))))) ag)
                κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
+  sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
+  sim (ret~ const≈ (appL ag κ)) = stops refl
+  sim (ret~ (tup≈ _) (appL ag κ)) = stops refl
+  sim (ret~ (inl≈ _) (appL ag κ)) = stops refl
+  sim (ret~ (inr≈ _) (appL ag κ)) = stops refl
   sim (ret~ r (appR (clo≈ ag) κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
   sim (ret~ r (appR const≈ κ)) = stops refl
   sim (ret~ r (appR (tup≈ _) κ)) = stops refl
