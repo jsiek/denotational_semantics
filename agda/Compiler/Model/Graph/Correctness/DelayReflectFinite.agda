@@ -39,6 +39,7 @@ open import Data.Nat using (ℕ; zero; suc; s≤s)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; replicate) renaming (map to lmap)
 open import Data.List.Relation.Unary.Any using (here; there)
+open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻; ∈-map⁺; ∈-map⁻)
 open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
@@ -117,12 +118,13 @@ clos-β N {T}{E} NE-T NE-E x x∈ with C3.term-continuous N _ NE x x∈
 collect : ∀ (L' N' : 𝒫 Value) V' → mem V' ⊆ (L' ⊙ N')
   → Σ[ W ∈ List Value ] Σ[ U ∈ List Value ]
       mem W ⊆ L' × mem U ⊆ N' × Calls W U V'
-collect L' N' [] _ = ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , [] ⟩ ⟩ ⟩ ⟩
+collect L' N' [] _ =
+  ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
     with V'⊆ w (here refl) | collect L' N' V' (λ d d∈ → V'⊆ d (there d∈))
 ... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ e∈L' , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
     | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩ =
-  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , ⟨ ent , neU₀ ⟩ ∷ Calls-⊆ inW cs ⟩ ⟩ ⟩ ⟩
+  ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , record { results = res ; args = arg } ⟩ ⟩ ⟩ ⟩
   where
   e = ⦅ FV ↦ (U₀ ↦ w) ∣
   C = lmap ∣_⦆ FV
@@ -143,6 +145,19 @@ collect L' N' (w ∷ V') V'⊆
 
   ent : CarEntry (e ∷ (C ++ W)) U₀ w
   ent = car-entry FV (here refl) neFV (λ d d∈ → there (∈-++⁺ˡ (∈-map⁺ ∣_⦆ d∈)))
+
+  res : ∀ x → x ⋵ (w ∷ V') → Σ[ U₁ ∈ List Value ]
+          CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
+  res _ (here refl) = ⟨ U₀ , ⟨ ent , ⟨ neU₀ , (λ d → ∈-++⁺ˡ) ⟩ ⟩ ⟩
+  res x (there x∈) = let ⟨ U₁ , ⟨ e₁ , ⟨ ne , U₁⊆ ⟩ ⟩ ⟩ = Calls.results cs x x∈
+                     in ⟨ U₁ , ⟨ CarEntry-⊆ inW e₁ , ⟨ ne , (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈)) ⟩ ⟩ ⟩
+
+  arg : ∀ u → u ⋵ (U₀ ++ U) → Σ[ U₁ ∈ List Value ] Σ[ x ∈ Value ]
+          CarEntry (e ∷ (C ++ W)) U₁ x × u ⋵ U₁
+  arg u u∈ with ∈-++⁻ U₀ u∈
+  ... | inj₁ u∈U₀ = ⟨ U₀ , ⟨ w , ⟨ ent , u∈U₀ ⟩ ⟩ ⟩
+  ... | inj₂ u∈U = let ⟨ U₁ , ⟨ x , ⟨ e₁ , u∈₁ ⟩ ⟩ ⟩ = Calls.args cs u u∈U
+                   in ⟨ U₁ , ⟨ x , ⟨ CarEntry-⊆ inW e₁ , u∈₁ ⟩ ⟩ ⟩
 
 {- The fundamental lemma ------------------------------------------------------}
 
@@ -323,22 +338,22 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
   clos-app : ∀ j → Bnd (suc j) V' → ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U')
     → R j U' E → R j W' (D ● E)
   clos-app zero _ _ E _ _ = ptt
-  clos-app (suc j) bV' [] E U'~ rU = R-∅ (suc j) (λ _ ())
+  clos-app (suc j) bV' {W' = []} _ E U'~ rU = R-∅ (suc j) (λ _ ())
   clos-app (suc j) bV' {U'} {w ∷ W'} cs Es U'~ rU =
     R-mono (suc j) (clos-β N NE-T NE-E)
       (delay-reflect N (envs NE-ρs ρ''~ ρ''⊳ρs) (w ∷ W') (suc j) W⊆B (Bnd-Calls-apps bV' cs))
     where
-    wit = Calls-∈ cs (here refl)
-    ent = Call.entry wit
-    NE-E = Obs.nonempty-obs rU (ne-⊆ (Call.U₀⊆ wit) (Call.U₀≢[] wit))
+    wit = Calls.results cs w (here refl)
+    ent = proj₁ (proj₂ wit)
+    NE-E = Obs.nonempty-obs rU (ne-⊆ (proj₂ (proj₂ (proj₂ wit))) (proj₁ (proj₂ (proj₂ wit))))
     NE-T = T-ne (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → Cdrs⊆T' d (CarEntry.FV⊆ ent d d∈)))
 
     ρ'' : Env
     ρ'' = mem U' • Cdrs V' • (λ _ → Init)
 
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay N ⟧' ρ''
-    W⊆B x x∈ with Calls-∈ cs x∈
-    ... | call U₀ (car-entry FV e∈ neFV FV⊆) neU U₀⊆ with V'⊆ _ e∈
+    W⊆B x x∈ with Calls.results cs x x∈
+    ... | ⟨ U₀ , ⟨ car-entry FV e∈ neFV FV⊆ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
     ... | ⟨ t , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
       S4.⟦⟧-monotone (delay N) (λ { zero → U₀⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z })
         x x∈B

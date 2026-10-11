@@ -16,7 +16,8 @@
   about a call (this would be so even if pairs were single values). The function entries of V' (CarEntry)
   are the codes in the car halves of V' whose free variables FV are in
   the cdr halves of V'. Calls V' U W says that each w in W is the result
-  of a function entry U₀ ↦ w of V', and U is the union of those U₀. The
+  of a function entry U₀ ↦ w of V' with U₀ ⊆ U, and that each u in U is
+  an argument of a function entry of V' (so U is no deeper than V'). The
   function clause relates the arguments U of a batch to an argument set E
   of the source, and the results W to the source application D ● E.
 
@@ -27,17 +28,14 @@ open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; n≤1+n)
-open import Data.List using (List; []; _∷_; _++_)
-open import Data.List.Relation.Unary.Any using (here; there)
+open import Data.List using (List; []; _∷_)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
+open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
-open import Relation.Binary.PropositionalEquality using (_≢_; refl)
+open import Relation.Binary.PropositionalEquality using (_≢_)
 
 module Compiler.Model.Graph.Correctness.DelayFiniteRel where
 
@@ -66,44 +64,30 @@ Bnd-CarEntry {U₀ = U₀}{w} bV (car-entry FV e∈ _ _) =
 
 {- Batches of calls ------------------------------------------------------------}
 
-infixr 5 _∷_
-data Calls (V : List Value) : List Value → List Value → Set where
-  [] : Calls V [] []
-  _∷_ : ∀ {U₀ w U W} → CarEntry V U₀ w × U₀ ≢ [] → Calls V U W → Calls V (U₀ ++ U) (w ∷ W)
-
-{- one call of a batch: w is the result of an entry U₀ ↦ w of V with U₀ ⊆ U -}
-record Call (V U : List Value) (w : Value) : Set where
-  constructor call
+{- U and W form a batch of calls of V: each w in W is the result of a
+   function entry U₀ ↦ w of V with U₀ ⊆ U, and each u in U is an argument
+   of a function entry of V -}
+record Calls (V U W : List Value) : Set where
   field
-    U₀ : List Value
-    entry : CarEntry V U₀ w
-    U₀≢[] : U₀ ≢ []
-    U₀⊆ : mem U₀ ⊆ mem U
-
-Calls-∈ : ∀ {V U W w} → Calls V U W → w ⋵ W → Call V U w
-Calls-∈ (_∷_ {U₀ = U₀} ⟨ e , ne ⟩ cs) (here refl) = call U₀ e ne (λ d d∈ → ∈-++⁺ˡ d∈)
-Calls-∈ (_∷_ {U₀ = U₀} _ cs) (there w∈) with Calls-∈ cs w∈
-... | call U₁ e ne U₁⊆ = call U₁ e ne (λ d d∈ → ∈-++⁺ʳ U₀ (U₁⊆ d d∈))
+    results : ∀ w → w ⋵ W → Σ[ U₀ ∈ List Value ] CarEntry V U₀ w × U₀ ≢ [] × mem U₀ ⊆ mem U
+    args : ∀ u → u ⋵ U → Σ[ U₀ ∈ List Value ] Σ[ w ∈ Value ] CarEntry V U₀ w × u ⋵ U₀
 
 Calls-⊆ : ∀ {V₁ V₂ U W} → mem V₁ ⊆ mem V₂ → Calls V₁ U W → Calls V₂ U W
-Calls-⊆ s [] = []
-Calls-⊆ s (⟨ e , ne ⟩ ∷ cs) = ⟨ CarEntry-⊆ s e , ne ⟩ ∷ Calls-⊆ s cs
+Calls-⊆ s cs = record
+  { results = λ w w∈ → let ⟨ U₀ , ⟨ e , r ⟩ ⟩ = Calls.results cs w w∈ in ⟨ U₀ , ⟨ CarEntry-⊆ s e , r ⟩ ⟩
+  ; args = λ u u∈ → let ⟨ U₀ , ⟨ w , ⟨ e , r ⟩ ⟩ ⟩ = Calls.args cs u u∈ in ⟨ U₀ , ⟨ w , ⟨ CarEntry-⊆ s e , r ⟩ ⟩ ⟩
+  }
 
 {- a list without car halves makes no calls -}
 Calls-none : ∀ {V U W} → (∀ u → ⦅ u ∣ ⋵ V → ⊥) → Calls V U W → mem W ⊆ ∅
-Calls-none no [] _ ()
-Calls-none no (⟨ e , _ ⟩ ∷ _) _ _ = no _ (CarEntry.car∈ e)
+Calls-none no cs w w∈ = no _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w w∈))))
 
 Bnd-Calls-args : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k U
-Bnd-Calls-args bV [] _ ()
-Bnd-Calls-args bV (_∷_ {U₀ = U₀} ⟨ e , _ ⟩ cs) u u∈ with ∈-++⁻ U₀ u∈
-... | inj₁ u∈U₀ = proj₁ (Bnd-CarEntry bV e) u u∈U₀
-... | inj₂ u∈U = Bnd-Calls-args bV cs u u∈U
+Bnd-Calls-args bV cs u u∈ =
+  let ⟨ _ , ⟨ _ , ⟨ e , u∈U₀ ⟩ ⟩ ⟩ = Calls.args cs u u∈ in proj₁ (Bnd-CarEntry bV e) u u∈U₀
 
 Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
-Bnd-Calls-apps bV [] _ ()
-Bnd-Calls-apps bV (⟨ e , _ ⟩ ∷ cs) _ (here refl) = proj₂ (Bnd-CarEntry bV e)
-Bnd-Calls-apps bV (_ ∷ cs) w (there w∈) = Bnd-Calls-apps bV cs w w∈
+Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.results cs w w∈))))
 
 {- The relation ---------------------------------------------------------------}
 
