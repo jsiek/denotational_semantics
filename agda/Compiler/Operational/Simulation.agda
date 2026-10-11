@@ -148,6 +148,40 @@ plus-simulation {S₁} {step} {s₀} {L₂} R (s₂ , i₂ , m₀) sim = record
   step' {s₁ = s₁} m eq with step s₁ | sim m
   step' m refl | next s₁' | steps π m' = tt , _ , inj₁ π , m'
 
+{- Simulations of machines in which a source step may also be matched by no
+   target step (stuttering), when the index of the match decreases -------}
+
+data Answers≺ {S₁ : Set} (L₂ : Semantics) (R : ℕ → S₁ → State L₂ → Set) (i : ℕ)
+  : Next S₁ → State L₂ → Set where
+  stops : ∀ {o s₂} → Final L₂ s₂ o → Answers≺ L₂ R i (stop o) s₂
+  steps : ∀ {j s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R j s₁' s₂' → Answers≺ L₂ R i (next s₁') s₂
+  stutters : ∀ {j s₁' s₂} → j < i → R j s₁' s₂ → Answers≺ L₂ R i (next s₁') s₂
+
+measure-simulation : ∀ {S₁ : Set} {step : S₁ → Next S₁} {s₀ : S₁} {L₂ : Semantics}
+  → (R : ℕ → S₁ → State L₂ → Set)
+  → (Σ[ i ∈ ℕ ] Σ[ s₂ ∈ State L₂ ] Initial L₂ s₂ × R i s₀ s₂)
+  → (∀ {i s₁ s₂} → R i s₁ s₂ → Answers≺ L₂ R i (step s₁) s₂)
+  → FSim (machine S₁ step s₀) L₂
+measure-simulation {S₁} {step} {s₀} {L₂} R (i₀ , s₂ , i₂ , m₀) sim = record
+  { Index = ℕ
+  ; _≺_ = _<_
+  ; wf = <-wellFounded
+  ; match = R
+  ; init = λ { refl → i₀ , s₂ , i₂ , m₀ }
+  ; final = final
+  ; step = step'
+  }
+  where
+  final : ∀ {i s₁ s₂ o} → R i s₁ s₂ → step s₁ ≡ stop o → Final L₂ s₂ o
+  final {s₁ = s₁} m eq with step s₁ | sim m
+  final m refl | stop o | stops fin = fin
+
+  step' : ∀ {i s₁ s₂ s₁'} → R i s₁ s₂ → step s₁ ≡ next s₁'
+    → Σ[ i' ∈ ℕ ] Σ[ s₂' ∈ State L₂ ] (Plus L₂ s₂ s₂' ⊎ (Star L₂ s₂ s₂' × i' < i)) × R i' s₁' s₂'
+  step' {s₁ = s₁} m eq with step s₁ | sim m
+  step' m refl | next s₁' | steps π m' = _ , _ , inj₁ π , m'
+  step' m refl | next s₁' | stutters lt m' = _ , _ , inj₂ (ε , lt) , m'
+
 {- The end theorem ------------------------------------------------------------}
 
 record Equivalent (L₁ L₂ : Semantics) : Set where

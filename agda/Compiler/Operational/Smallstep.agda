@@ -37,7 +37,11 @@
     plus-simulation builds the forward simulation from one lemma,
       sim : s₁ ~ s₂ → Answers L₂ _~_ (step s₁) s₂
     (the target stops with the same observation, or takes a plus to a
-    matching state), proved by cases on the match.
+    matching state), proved by cases on the match. When some source
+    steps are matched by no target step (as for optimize, where the
+    source evaluates free variables that the target drops),
+    measure-simulation takes a match indexed by a natural number, and
+    such a step must decrease it.
 
   * Layout: Observation.agda (shared by any semantics), Smallstep.agda and
     Simulation.agda (the framework), Machine/*.agda (one per language),
