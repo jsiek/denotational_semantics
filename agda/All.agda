@@ -99,6 +99,9 @@ import Compiler.Operational.Machine.Clos5
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
+import Compiler.Operational.Correctness.OptimizeSim
+import Compiler.Operational.Correctness.ConcretizeSim
+import Compiler.Operational.Correctness.DelaySim
 import Compiler.Operational.Correctness.GlobalizeSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
@@ -107,5 +110,3 @@ import Compiler.Operational.Adequacy.Common
 import Compiler.Operational.Adequacy.Soundness
 import Compiler.Operational.Adequacy.LogRel
 import Compiler.Operational.Adequacy.ISWIM
-import Compiler.Operational.Correctness.ConcretizeSim
-import Compiler.Operational.Correctness.DelaySim
