@@ -24,7 +24,6 @@ module Compiler.Functional.Correctness.GlobalizeFuel where
 
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos4
-open import Compiler.Lang.Clos5 using (global)
 open import Compiler.Compile.Globalize
 open import Compiler.Observation
 open import Compiler.Lang.Prim using (int; bool)
@@ -116,8 +115,8 @@ module Rel (D : Defs) where
   apply≈ : ∀ ck {ρ₁ ρ₂ f g} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
     → f ≈ g → RelResult _≈_ (S.apply ck ρ₁ M N f)
                 (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
-  call≈ : ∀ ck {ρ₁ ρ₂} N ds (q : proj₁ (glob N ds) ∷ proj₂ (glob N ds) ⊑ D) → ρ₁ ≈ρ ρ₂
-    → RelResult _≈_ (S.call ck N ρ₁) (T.call D ck (global D (length (proj₂ (glob N ds)))) ρ₂)
+  call≈ : ∀ ck {ρ₁ ρ₂ f g} → f ≈ g → ρ₁ ≈ρ ρ₂
+    → RelResult _≈_ (S.call ck (S.code? f) ρ₁) (T.call D ck (T.code? D g) ρ₂)
   branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
     → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
                 (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
@@ -159,21 +158,18 @@ module Rel (D : Defs) where
     bind-rel (run≈ ck M ds (⊑-trans (glob-grows-args args _) p) ρ)
              (λ r → args≈ ck args _ p ρ (r ∷ rs))
 
-  apply≈ ck M N ds p ρ (fun≈ {N'} {ds'} q) =
+  apply≈ ck M N ds p ρ f =
     bind-rel (run≈ ck M ds (⊑-trans (glob-grows N _) p) ρ) λ e →
-    bind-rel (run≈ ck N _ p ρ) λ w → call≈ ck N' ds' q (w ∷ e ∷ [])
-  apply≈ ck M N ds p ρ (pair≈ _ _) = wrong
-  apply≈ ck M N ds p ρ const≈ = wrong
-  apply≈ ck M N ds p ρ (tup≈ _) = wrong
-  apply≈ ck M N ds p ρ (inl≈ _) = wrong
-  apply≈ ck M N ds p ρ (inr≈ _) = wrong
+    bind-rel (run≈ ck N _ p ρ) λ w → call≈ ck f (w ∷ e ∷ [])
 
   {- calling code k finds the globalized body in D -}
-  call≈ ck N ds q ρ rewrite global-⊑ q = go ck
-    where
-    go : ∀ ck → RelResult _≈_ (S.call ck N _) (T.call D ck (just (proj₁ (glob N ds))) _)
-    go zero = timeout
-    go (suc ck) = run≈ ck N ds (∷-⊑ q) ρ
+  call≈ zero (fun≈ q) ρ rewrite global-⊑ q = timeout
+  call≈ (suc ck) (fun≈ {N} {ds} q) ρ rewrite global-⊑ q = run≈ ck N ds (∷-⊑ q) ρ
+  call≈ ck (pair≈ _ _) ρ = wrong
+  call≈ ck const≈ ρ = wrong
+  call≈ ck (tup≈ _) ρ = wrong
+  call≈ ck (inl≈ _) ρ = wrong
+  call≈ ck (inr≈ _) ρ = wrong
 
   branch≈ ck M N ds p ρ (inl≈ r) = run≈ ck M ds (⊑-trans (glob-grows N _) p) (r ∷ ρ)
   branch≈ ck M N ds p ρ (inr≈ r) = run≈ ck N _ p (r ∷ ρ)

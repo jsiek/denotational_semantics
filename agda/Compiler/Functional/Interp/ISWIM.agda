@@ -79,7 +79,8 @@ eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
 eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = eval ck ρ M >>= λ v → eval-args ck ρ (v ∷ vs) args
 
-{- the operator is checked before the argument is evaluated -}
+{- the operator is checked before the argument is evaluated (Clos4 and
+   Clos5 check only at the call; see Operational/Machine/ISWIM.agda) -}
 apply ck ρ M (clo N ρ') = eval ck ρ M >>= λ w → call ck N (w ∷ ρ')
 apply ck ρ M _ = wrong
 

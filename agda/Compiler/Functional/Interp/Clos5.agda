@@ -5,7 +5,9 @@
   except that a program runs with its table of global definitions, a
   reference fun-ref k evaluates to a code pointer (code k), and calling
   code k looks up definition k in the table, going wrong if there is
-  none (before the clock is consulted). See the design note in Clock.agda.
+  none. As in Clos4, the operator is checked to be code at the call,
+  after the operands and before the clock is consulted. See the design
+  note in Clock.agda.
 
 -}
 
@@ -72,6 +74,7 @@ module _ (ds : List AST) where
   eval : ℕ → Env → AST → Result Val
   eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
   apply : ℕ → Env → AST → AST → Val → Result Val
+  code? : Val → Maybe AST
   call : ℕ → Maybe AST → Env → Result Val
   branch : ℕ → Env → AST → AST → Val → Result Val
 
@@ -95,9 +98,12 @@ module _ (ds : List AST) where
   eval-args {zero} ck ρ vs Nil = ret vs
   eval-args {suc n} ck ρ vs (M ,, args) = eval ck ρ M >>= λ v → eval-args ck ρ (v ∷ vs) args
 
-  apply ck ρ M N (code k) =
-    eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck (global ds k) (w ∷ e ∷ [])
-  apply ck ρ M N _ = wrong
+  apply ck ρ M N f =
+    eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck (code? f) (w ∷ e ∷ [])
+
+  {- the definition a code pointer refers to -}
+  code? (code k) = global ds k
+  code? _ = nothing
 
   call ck nothing ρ = wrong
   call zero (just N) ρ = timeout

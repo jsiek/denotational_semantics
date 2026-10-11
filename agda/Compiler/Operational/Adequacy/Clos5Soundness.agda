@@ -347,12 +347,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   step-⊆ (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
   step-⊆ (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
   step-⊆ (ret v halt) ()
-  step-⊆ (ret (code k) (appF M N γ κ)) refl d d∈ = d∈
-  step-⊆ (ret (pair v w) (appF M N γ κ)) ()
-  step-⊆ (ret (const B k) (appF M N γ κ)) ()
-  step-⊆ (ret (tup vs) (appF M N γ κ)) ()
-  step-⊆ (ret (T.inl v) (appF M N γ κ)) ()
-  step-⊆ (ret (T.inr v) (appF M N γ κ)) ()
+  step-⊆ (ret f (appF M N γ κ)) refl d d∈ = d∈
   step-⊆ (ret e (appE f N γ κ)) refl d d∈ = d∈
   step-⊆ (ret w (appA (code k) e κ)) eq with global ds k in g
   step-⊆ (ret w (appA (code k) e κ)) refl | just B = 𝒦-mono κ (call-⊆ k w e g)
@@ -459,12 +454,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) () ans
   halts (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) () ans
   halts (ret v halt) refl ans = ⟨ v , ⟨ refl , refl ⟩ ⟩
-  halts (ret (code k) (appF M N γ κ)) () ans
-  halts (ret (pair v w) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (const B k) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (tup vs) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inl v) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inr v) (appF M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret f (appF M N γ κ)) () ans
   halts (ret e (appE f N γ κ)) () ans
   halts (ret w (appA (code k) e κ)) eq ans with global ds k
   halts (ret w (appA (code k) e κ)) () ans | just B
