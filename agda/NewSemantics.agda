@@ -1,28 +1,15 @@
-open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
-open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
-open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s; _+_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc; _⊔_ to _l⊔_)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
-open import Relation.Nullary using (¬_; Dec; yes; no)
 
-open import Primitives
 open import abt.ScopedTuple hiding (𝒫)
 open import SetsAsPredicates
 open import abt.Sig
-open import abt.Var
-open import abt.GSubst using (_•_)
-open import NewSigUtil
 open import NewSyntaxUtil
 open import NewDOpSig
 open import NewDenotProperties
@@ -58,50 +45,7 @@ record Semantics {A : Set} : Set₁ where
 
 open Semantics {{...}}
 
-{- =================== Consistent Semantics =============================== -}
-
-record ConsistentSemantics {A : Set} : Set₁ where
-  field 
-    {{Sem}} : Semantics {A}
-    consistency : A → A → Set
-    consistent-op : 𝕆-consistent consistency sig (Semantics.interp-op Sem)
-
-open ConsistentSemantics {{...}}
-
 {- =================== Continuous Semantics ====================== -}
-
-continuous-∈ : ∀ {A} → (Env A → 𝒫 A) → Env A → A → Set₁
-continuous-∈ {A} D ρ v = v ∈ D ρ
-   → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
-
-continuous-env : ∀ {A} → (Env A → 𝒫 A) → Env A → Set₁
-continuous-env {A} D ρ = ∀ v → v ∈ D ρ
-                     → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
-
-
-continuous-∈⇒⊆ : ∀ {A} E (ρ : Env A) (NE-ρ : nonempty-env ρ)
-   → monotone-env E
-   → ∀ V → mem V ⊆ E ρ
-   → (∀ v → v ∈ mem V → continuous-∈ E ρ v)
-   → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ E ρ′
-continuous-∈⇒⊆ E ρ NE-ρ mE [] V⊆E ∀v∈V⇒cont =
-   ⟨ initial-finiteNE-env ρ NE-ρ , ⟨ initial-fin ρ NE-ρ ,
-   ⟨ initial-fin-⊆ ρ NE-ρ , (λ d ()) ⟩ ⟩ ⟩
-continuous-∈⇒⊆ {A} E ρ NE-ρ mE (v ∷ V) v∷V⊆Eρ v∈V⇒cont
-    with continuous-∈⇒⊆ E ρ NE-ρ mE V (λ d z → v∷V⊆Eρ d (there z))
-                (λ w w∈V w∈Mρ → v∈V⇒cont w (there w∈V) w∈Mρ)
-... | ⟨ ρ₁ , ⟨ fρ₁ , ⟨ ρ₁⊆ρ , V⊆Eρ₁ ⟩ ⟩ ⟩
-    with v∈V⇒cont v (here refl) (v∷V⊆Eρ v (here refl))
-... | ⟨ ρ₂ , ⟨ fρ₂ , ⟨ ρ₂⊆ρ , v∈Eρ₂ ⟩ ⟩ ⟩ =    
-    ⟨ ρ₃ , ⟨ (join-finiteNE-env fρ₁ fρ₂) , ⟨ (join-lub ρ₁⊆ρ ρ₂⊆ρ) ,
-    G ⟩ ⟩ ⟩
-    where
-    ρ₃ = ρ₁ ⊔ₑ ρ₂
-    G : (d : A) → mem (v ∷ V) d → d ∈ E ρ₃
-    G d (here refl) = mE {ρ₂}{ρ₃} join-⊆-right v v∈Eρ₂
-    G d (there m) = mE {ρ₁}{ρ₃} join-⊆-left d (V⊆Eρ₁ d m)
-
-
 
 continuous-arg : ∀ {A} {{_ : Semantics {A}}} (ρ : Env A) (NE-ρ : nonempty-env ρ)
     → ∀ b → (arg : Arg b) → Set₁

@@ -9,23 +9,22 @@
 
   In Clos2 the closure binds x and then y; concretize puts x in a tuple
   and replaces it by a projection from that tuple. The program produces 7
-  in Clos2, so by the end theorem it produces 7 after concretize and delay.
+  in Clos2, so by the theorems for concretize and delay it produces 7 after concretize and delay.
 
 -}
 
-open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos2
 open import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open import Compiler.Compile.Concretize using (concretize-program)
 open import Compiler.Compile.Delay using (delay)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
-open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
+open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (concretize-correct-closed)
+open import Compiler.Model.Graph.Correctness.DelayPreserve using (delay-correct-const)
 
 open import Data.Nat using (ℕ)
 open import Data.Fin using (zero)
@@ -60,4 +59,5 @@ prog-is-7 = inj₁ ⟨ const 7 , ⟨ [] , ⟨ (λ { _ (here refl) → ⟨ refl ,
 
 {- after concretize and delay, the program still produces 7 -}
 compiled-is-7 : const {Nat} 7 ∈ S4.⟦ delay (concretize-program prog) ⟧ ρ₀
-compiled-is-7 = proj₁ (compile-correct-const prog 7) prog-is-7
+compiled-is-7 =
+  proj₁ (delay-correct-const (concretize-program prog) 7) (proj₁ (concretize-correct-closed prog) _ prog-is-7)

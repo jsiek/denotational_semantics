@@ -17,10 +17,8 @@
 -}
 
 open import NewSigUtil
-open import NewSyntaxUtil
 open import SetsAsPredicates
 open import NewDOpSig
-open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos4
@@ -30,7 +28,7 @@ open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
 open import Compiler.Compile.Globalize
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; ρ₀)
-open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃)
+open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; ℒ-≃; ℛ-≃; 𝒞-≃)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; <-≤-trans; <-irrefl; n<1+n; m≤n+m; n≤1+n)
@@ -38,7 +36,6 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; length; replicate)
 open import Data.List.Properties using (length-++)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
@@ -97,22 +94,8 @@ cdr-≃ ⟨ lift ⟨ D⊆ , D⊇ ⟩ , _ ⟩ = ⟨ (λ v → D⊆ ∣ v ⦆) , (
 case-≃ : ∀ {D F G D' F' G'}
   → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
   → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-case-≃ {D} {F} {G} {D'} {F'} {G'} ⟨ lift ⟨ D⊆ , D⊇ ⟩ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ = ⟨ H₁ , H₂ ⟩
-  where
-  H₁ : 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-  H₁ w (inj₁ ⟨ v , ⟨ V , ⟨ all , w∈ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → D⊆ (left d) (all d d∈))
-                     , proj₁ (lower (F≃ (mem (v ∷ V)) (mem (v ∷ V)) ≃-refl)) w w∈ ⟩ ⟩ ⟩
-  H₁ w (inj₂ ⟨ v , ⟨ V , ⟨ all , w∈ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → D⊆ (right d) (all d d∈))
-                     , proj₁ (lower (G≃ (mem (v ∷ V)) (mem (v ∷ V)) ≃-refl)) w w∈ ⟩ ⟩ ⟩
-  H₂ : 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
-  H₂ w (inj₁ ⟨ v , ⟨ V , ⟨ all , w∈ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → D⊇ (left d) (all d d∈))
-                     , proj₂ (lower (F≃ (mem (v ∷ V)) (mem (v ∷ V)) ≃-refl)) w w∈ ⟩ ⟩ ⟩
-  H₂ w (inj₂ ⟨ v , ⟨ V , ⟨ all , w∈ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → D⊇ (right d) (all d d∈))
-                     , proj₂ (lower (G≃ (mem (v ∷ V)) (mem (v ∷ V)) ≃-refl)) w w∈ ⟩ ⟩ ⟩
+case-≃ {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
+  𝒞-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ v V → lower (F≃ _ _ ≃-refl)) (λ v V → lower (G≃ _ _ ≃-refl))
 
 {- let x = D in F x, which means (λx. F x) D -}
 let-≃ : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩

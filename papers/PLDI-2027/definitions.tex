@@ -171,7 +171,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 
 \begin{align*}
   c \sim c' &\iff c = c' \\
-  (V \mapsto w) \sim (V' \mapsto w') &\iff V \not\approx V' \;\lor\; (V \approx V' \land w \sim w') \\
+  (V \mapsto w) \sim (V' \mapsto w') &\iff (V \approx V' \implies w \sim w') \\
   (V \mapsto w) \sim \nu, \quad \nu \sim (V \mapsto w), \quad \nu \sim \nu &\iff \mathsf{true} \\
   \omega \sim \omega, \quad \emptytup \sim \emptytup &\iff \mathsf{true} \\
   \carv{u} \sim \carv{v} &\iff u \sim v \\

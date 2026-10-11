@@ -14,9 +14,7 @@ open import SetsAsPredicates
 open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-open import NewEnv
-  using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env; join-lub;
-         initial-finiteNE-env; initial-fin; initial-fin-⊆; monotone-env)
+open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -26,21 +24,15 @@ open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Compiler.Model.Graph.Domain.ISWIM.Continuity where
 
+open import NewEnv using () renaming (monotone-env to Mono; continuous-env to Cont) public
+
 VEnv : Set₁
 VEnv = Env Value
-
-{- E is continuous at ρ (the same as NewSemantics.continuous-env) -}
-Cont : (VEnv → 𝒫 Value) → VEnv → Set₁
-Cont E ρ = ∀ v → v ∈ E ρ → Σ[ ρ′ ∈ VEnv ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ E ρ′
-
-Mono : (VEnv → 𝒫 Value) → Set₁
-Mono = monotone-env
 
 {- Finite approximations of an environment ----------------------------------}
 
@@ -53,11 +45,13 @@ record Approx (ρ : VEnv) : Set₁ where
 open Approx
 
 approx-init : ∀ {ρ} → nonempty-env ρ → Approx ρ
-approx-init {ρ} NE = approx (initial-finiteNE-env ρ NE) (initial-fin ρ NE) (initial-fin-⊆ ρ NE)
+approx-init NE = approx (λ x → ⌈ proj₁ (NE x) ⌉)
+  (λ x → ⟨ proj₁ (NE x) ∷ [] , ⟨ ⟨ (λ { _ refl → here refl }) , (λ { _ (here refl) → refl }) ⟩ , (λ ()) ⟩ ⟩)
+  (λ { x _ refl → proj₂ (NE x) })
 
 approx-join : ∀ {ρ} → Approx ρ → Approx ρ → Approx ρ
 approx-join (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) =
-  approx (ρ₁ ⊔ₑ ρ₂) (join-finiteNE-env f₁ f₂) (join-lub s₁ s₂)
+  approx (ρ₁ ⊔ₑ ρ₂) (join-finiteNE-env f₁ f₂) (λ { x v (inj₁ v∈) → s₁ x v v∈ ; x v (inj₂ v∈) → s₂ x v v∈ })
 
 join-l : ∀ {ρ} (a b : Approx ρ) → env a ⊆ₑ env (approx-join a b)
 join-l (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) x d d∈ = inj₁ d∈
@@ -134,10 +128,6 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
 {- Pairs ----------------------------------------------------------------------}
 
-pair-mono-env : ∀ {E₁ E₂} → Mono E₁ → Mono E₂ → Mono (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩)
-pair-mono-env m₁ m₂ ρ⊆ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ v , ⟨ m₁ ρ⊆ f f∈ , m₂ ρ⊆ v v∈ ⟩ ⟩
-pair-mono-env m₁ m₂ ρ⊆ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ ⟩ ⟩ = ⟨ f , ⟨ m₁ ρ⊆ f f∈ , m₂ ρ⊆ v v∈ ⟩ ⟩
-
 pair-cont : ∀ {E₁ E₂ ρ} → nonempty-env ρ → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
   → Cont (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
 pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩
@@ -151,14 +141,8 @@ pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ 
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ∣ v ⦆
     ⟨ f , ⟨ m₁ (join-l a b) f f∈′ , m₂ (join-r a b) v v∈′ ⟩ ⟩
 
-car-mono-env : ∀ {E} → Mono E → Mono (λ ρ → car ⟨ E ρ , ptt ⟩)
-car-mono-env m ρ⊆ f f∈ = m ρ⊆ ⦅ f ∣ f∈
-
 car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
 car-cont c f f∈ = c ⦅ f ∣ f∈
-
-cdr-mono-env : ∀ {E} → Mono E → Mono (λ ρ → cdr ⟨ E ρ , ptt ⟩)
-cdr-mono-env m ρ⊆ v v∈ = m ρ⊆ ∣ v ⦆ v∈
 
 cdr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
 cdr-cont c v v∈ = c ∣ v ⦆ v∈
@@ -196,22 +180,13 @@ cover {suc m} Es NE ms cs nes
     ⟨ refl , ⟨ m i (join-l a b) d d∈′
              , (λ j → ⟨ proj₁ (ne′ j) , m j (join-r a b) _ (proj₂ (ne′ j)) ⟩) ⟩ ⟩
 
-proj-mono-env : ∀ {n} (i : Fin n) {E} → Mono E → Mono (λ ρ → proj i ⟨ E ρ , ptt ⟩)
-proj-mono-env i m ρ⊆ d d∈ = m ρ⊆ (tup[ i ] d) d∈
-
 proj-cont : ∀ {n} (i : Fin n) {E ρ} → Cont E ρ → Cont (λ ρ → proj i ⟨ E ρ , ptt ⟩) ρ
 proj-cont i c d d∈ = c (tup[ i ] d) d∈
 
 {- Sums -----------------------------------------------------------------------}
 
-ℒ-mono-env : ∀ {E} → Mono E → Mono (λ ρ → ℒ ⟨ E ρ , ptt ⟩)
-ℒ-mono-env m ρ⊆ (left d) d∈ = m ρ⊆ d d∈
-
 ℒ-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → ℒ ⟨ E ρ , ptt ⟩) ρ
 ℒ-cont c (left d) d∈ = c d d∈
-
-ℛ-mono-env : ∀ {E} → Mono E → Mono (λ ρ → ℛ ⟨ E ρ , ptt ⟩)
-ℛ-mono-env m ρ⊆ (right d) d∈ = m ρ⊆ d d∈
 
 ℛ-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → ℛ ⟨ E ρ , ptt ⟩) ρ
 ℛ-cont c (right d) d∈ = c d d∈

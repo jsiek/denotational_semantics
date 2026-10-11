@@ -14,7 +14,6 @@
   - source denotations are continuous (C3.term-continuous).
 -}
 
-open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import NewDOpSig
@@ -40,7 +39,6 @@ open import Data.Nat using (ℕ; zero; suc; s≤s)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; replicate) renaming (map to lmap)
 open import Data.List.Relation.Unary.Any using (here; there)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.List.Membership.Propositional.Properties
   using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻; ∈-map⁺; ∈-map⁻)
 open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩ )

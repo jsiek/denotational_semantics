@@ -8,47 +8,29 @@
 -}
 
 open import SetsAsPredicates
-open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Model.Graph.Domain.ISWIM.Continuity
 open import Compiler.Lang.ISWIM
+open import Compiler.Model.Graph.Sem.Continuous Op sig using (args-nth-mono; args-nth-cont)
 open import Compiler.Model.Graph.Sem.ISWIM
 open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; extend-nonempty-env)
 
 open import Data.Nat using (zero; suc)
-open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 
 module Compiler.Model.Graph.Sem.ISWIMContinuous where
-
-term-mono : ∀ (M : AST) → Mono (λ ρ → ⟦ M ⟧ ρ)
-term-mono M ρ⊆ = ⟦⟧-monotone M ρ⊆
-
-args-nth-mono : ∀ {n} (args : Args (replicate n ■)) (i : Fin n)
-  → Mono (λ ρ → nthD (⟦ args ⟧₊ ρ) i)
-args-nth-mono {suc n} (cons (ast M) args) zero ρ⊆ = ⟦⟧-monotone M ρ⊆
-args-nth-mono {suc n} (cons (ast M) args) (suc i) ρ⊆ = args-nth-mono args i ρ⊆
-
-args-nth-cont : ∀ {n} (args : Args (replicate n ■)) {ρ : Env Value} {NE : nonempty-env ρ}
-  → continuous-args ρ NE (replicate n ■) args
-  → (i : Fin n) → Cont (λ ρ → nthD (⟦ args ⟧₊ ρ) i) ρ
-args-nth-cont {suc n} (cons (ast M) args) ⟨ cM , cs ⟩ zero = cM
-args-nth-cont {suc n} (cons (ast M) args) {ρ} {NE} ⟨ cM , cs ⟩ (suc i) =
-  args-nth-cont args {ρ} {NE} cs i
 
 ISWIM-continuous-op : ∀ {op} {ρ : Env Value} {NE : nonempty-env ρ} {v} {args}
   → v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ → continuous-args ρ NE (sig op) args
   → Σ[ ρ′ ∈ Env Value ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ ⟦ op ⦅ args ⦆ ⟧ ρ′
 ISWIM-continuous-op {lam} {ρ} {NE} {v} {cons (bind (ast N)) nil} v∈ ⟨ cN , _ ⟩ =
-  Λ-cont {B = λ ρ → ⟦ N ⟧ ρ} NE (term-mono N) cN v v∈
+  Λ-cont {B = λ ρ → ⟦ N ⟧ ρ} NE (⟦⟧-monotone N) cN v v∈
 ISWIM-continuous-op {app} {ρ} {NE} {v} {cons (ast L) (cons (ast N) nil)} v∈
     ⟨ cL , ⟨ cN , _ ⟩ ⟩ =
-  ⋆-cont {E₁ = λ ρ → ⟦ L ⟧ ρ} {E₂ = λ ρ → ⟦ N ⟧ ρ} NE (term-mono L) (term-mono N) cL cN v v∈
+  ⋆-cont {E₁ = λ ρ → ⟦ L ⟧ ρ} {E₂ = λ ρ → ⟦ N ⟧ ρ} NE (⟦⟧-monotone L) (⟦⟧-monotone N) cL cN v v∈
 ISWIM-continuous-op {lit B k} {ρ} {NE} {v} {nil} v∈ _ =
   const-cont {D = ⟦ lit B k ⦅ nil ⦆ ⟧ ρ} NE v v∈
 ISWIM-continuous-op {tuple n} {ρ} {NE} {v} {args} v∈ cs =
@@ -63,7 +45,7 @@ ISWIM-continuous-op {case-op} {ρ} {NE} {v}
     {cons (ast L) (cons (bind (ast M)) (cons (bind (ast N)) nil))} v∈
     ⟨ cL , ⟨ cM , ⟨ cN , _ ⟩ ⟩ ⟩ =
   𝒞-cont {L = λ ρ → ⟦ L ⟧ ρ} {B₁ = λ ρ → ⟦ M ⟧ ρ} {B₂ = λ ρ → ⟦ N ⟧ ρ} NE
-    (term-mono L) cL (term-mono M) cM (term-mono N) cN v v∈
+    (⟦⟧-monotone L) cL (⟦⟧-monotone M) cM (⟦⟧-monotone N) cN v v∈
 
 ISWIM-Continuous : ContinuousSemantics
 ISWIM-Continuous = record

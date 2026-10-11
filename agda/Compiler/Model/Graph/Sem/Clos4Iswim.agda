@@ -8,9 +8,6 @@ module Compiler.Model.Graph.Sem.Clos4Iswim where
 
 -}
 
-open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
-open import NewSigUtil
 open import NewDOpSig
 open import SetsAsPredicates
 open import NewDenotProperties
@@ -18,18 +15,10 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos4
 
-open import Data.Empty renaming (⊥ to Bot)
-open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
-open import Data.Nat.Properties using (+-suc)
-open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
-open Eq.≡-Reasoning
 
 
 𝕆-Clos4 : DOpSig (𝒫 Value) sig
@@ -95,7 +84,6 @@ open Eq.≡-Reasoning
   ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
            ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
-open import abt.Fold2 Op sig
 open import NewSemantics Op sig public
 
 instance

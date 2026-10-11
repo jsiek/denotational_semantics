@@ -46,7 +46,7 @@ import Compiler.Model.Graph.Domain.ISWIM.Continuity
 import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos3Iswim
-import Compiler.Model.Graph.Sem.Clos3IswimConsistent
+import Compiler.Model.Graph.Sem.Continuous
 import Compiler.Model.Graph.Sem.ISWIMContinuous
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
@@ -65,9 +65,7 @@ import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserve
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect
 
-{- the end-to-end theorems: CompilerCorrect (ISWIM → Clos5), built from
-   PipelineCorrect (ISWIM → Clos4) -}
-import Compiler.Model.Graph.Correctness.PipelineCorrect
+{- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
 
 {- examples -}

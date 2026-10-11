@@ -10,7 +10,6 @@ module Compiler.Model.Graph.Sem.Clos5Iswim where
 
 -}
 
-open import Primitives
 open import SetsAsPredicates
 open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
@@ -19,7 +18,6 @@ open import Compiler.Lang.Clos5
 open import abt.Fold2 Op sig using (fold; fold-arg; fold-args)
 open import abt.ScopedTuple using (Tuple)
 open import abt.Sig using (Result)
-open import abt.GSubst using (_•_)
 open import NewEnv using (Env)
 
 open import Data.Nat using (ℕ; zero; suc; _≟_)

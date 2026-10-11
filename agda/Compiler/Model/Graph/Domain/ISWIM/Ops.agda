@@ -2,9 +2,6 @@ module Compiler.Model.Graph.Domain.ISWIM.Ops where
 
 open import Primitives
 open import SetsAsPredicates
-open import abt.Var
-open import abt.GSubst using (_•_)
-open import abt.ScopedTuple hiding (𝒫)
 open import abt.Sig using (Sig; ν; ■) public
 open import abt.Var using (Var) public
 open import abt.GSubst using (_•_) public
@@ -16,16 +13,7 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
 open import Data.List.Relation.Unary.Any using (Any; here; there)
-open import Data.List.Relation.Unary.All 
-  using (All; []; _∷_; head; tail; lookup; tabulate; all?)
-  renaming (map to allmap)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
-open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
-open import Data.Nat.Properties using (≤-pred)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)
@@ -51,14 +39,6 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
 ℬ B k _ (const {B′} k′) = Σ[ B≡ ∈ B ≡ B′ ] (subst base-rep B≡ k) ≡ k′
 ℬ B k _ _ = False
-
-𝓅 : (P : Prim) → rep P → DOp (𝒫 Value) []
-𝓅 (base B) k v = ℬ B k v
-𝓅 (B ⇒ P) f _ (V ↦ w) =
-   Σ[ k ∈ base-rep B ] V ≡ (const {B} k) ∷ [] ×  w ∈ 𝓅 P (f k) (ptt)
-𝓅 (B ⇒ P) f _ ν = True
-𝓅 (B ⇒ P) f _ d = False
-
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 {- pairs are strict: each half requires the other component to be nonempty -}
@@ -204,9 +184,7 @@ proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → 
   G : Every _~_ (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) (⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G u w ⟨ V , ⟨ u∈D , ⟨ V<E , neV ⟩ ⟩ ⟩
         ⟨ V' , ⟨ w∈D' , ⟨ V<E' , neV' ⟩ ⟩ ⟩
-        with D~ (V ↦ u) (V' ↦ w) u∈D w∈D'
-  ... | inj₁ x = ⊥-elim (x (Every⇒≈ V V' (Every-⊆ E~ V<E V<E')))
-  ... | inj₂ y = proj₂ y
+    = D~ (V ↦ u) (V' ↦ w) u∈D w∈D' (Every⇒≈ V V' (Every-⊆ E~ V<E V<E'))
 
 Λ-consis : consistent _~_ (ν ■ ∷ []) ■ Λ
 Λ-consis ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F~ , _ ⟩ = lift G
@@ -216,10 +194,8 @@ proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → 
   G ν ν tt _ = tt
   G (V ↦ w) ν w∈F₁X tt = tt
   G (V ↦ w) (V' ↦ w') 
-    ⟨ w∈F₁X , neV ⟩ ⟨ w∈F₁X' , neV' ⟩ with V ≈? V'
-  ... | yes V≈V' = 
-    inj₂ ⟨ V≈V' , lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X' ⟩
-  ... | no ¬V≈V' = inj₁ ¬V≈V'
+    ⟨ w∈F₁X , neV ⟩ ⟨ w∈F₁X' , neV' ⟩ = λ V≈V' →
+    lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X'
 
 pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
 pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G

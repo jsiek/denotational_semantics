@@ -9,6 +9,9 @@
   constants as the original, and produces something exactly when the
   original does.
 
+  Every pass but delay preserves denotations exactly (≃); delay preserves
+  and reflects constants and nonemptiness, which is what Same records.
+
 -}
 
 open import SetsAsPredicates
@@ -16,38 +19,67 @@ open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
+import Compiler.Lang.Clos4 as L4
 import Compiler.Lang.Clos5 as L5
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
+open import Compiler.Compile.Enclose using (enclose)
+open import Compiler.Compile.Optimize using (optimize-program)
+open import Compiler.Compile.Concretize using (concretize-program)
+open import Compiler.Compile.Delay using (delay)
 open import Compiler.Compile.Globalize using (globalize)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
-open import Compiler.Model.Graph.Correctness.PipelineCorrect
-  using (pipeline-correct-const; pipeline-correct-nonempty)
-  renaming (compile to compile₄)
+open import Compiler.Model.Graph.Correctness.EncloseCorrect using (enclose-correct-closed)
+open import Compiler.Model.Graph.Correctness.OptimizeCorrect using (optimize-correct-closed)
+open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (concretize-correct-closed)
+open import Compiler.Model.Graph.Correctness.DelayPreserve
+  using (delay-correct-const; delay-correct-nonempty)
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (globalize-correct)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
 module Compiler.Model.Graph.Correctness.CompilerCorrect where
 
+compile₄ : AST → L4.AST
+compile₄ M = delay (concretize-program (optimize-program (enclose M)))
+
 compile : AST → L5.Program
 compile M = globalize (compile₄ M)
+
+{- D and D' produce the same constants, and one is nonempty iff the other is -}
+infix 4 _⇔_
+_⇔_ : Set → Set → Set
+A ⇔ B = (A → B) × (B → A)
+
+Same : 𝒫 Value → 𝒫 Value → Set
+Same D D' = (∀ {B} (c : base-rep B) → const c ∈ D ⇔ const c ∈ D') × (nonempty D ⇔ nonempty D')
+
+⇔-trans : ∀ {A B C} → A ⇔ B → B ⇔ C → A ⇔ C
+⇔-trans ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
+
+Same-trans : ∀ {D D' D''} → Same D D' → Same D' D'' → Same D D''
+Same-trans ⟨ c₁ , n₁ ⟩ ⟨ c₂ , n₂ ⟩ = ⟨ (λ c → ⇔-trans (c₁ c) (c₂ c)) , ⇔-trans n₁ n₂ ⟩
+
+≃→Same : ∀ {D D'} → D ≃ D' → Same D D'
+≃→Same ⟨ D⊆ , D⊇ ⟩ = ⟨ (λ c → ⟨ D⊆ _ , D⊇ _ ⟩) , ⟨ ne D⊆ , ne D⊇ ⟩ ⟩
+  where ne = λ {A B : 𝒫 Value} (A⊆ : A ⊆ B) (n : nonempty A) → ⟨ proj₁ n , A⊆ _ (proj₂ n) ⟩
+
+compile-same : ∀ (M : AST) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧ₚ
+compile-same M =
+  Same-trans (≃→Same (≃-trans (enclose-correct-closed M)
+                     (≃-trans (optimize-correct-closed M₂) (concretize-correct-closed M₂'))))
+  (Same-trans ⟨ delay-correct-const M₃ , delay-correct-nonempty M₃ ⟩
+              (≃→Same (globalize-correct (compile₄ M))))
+  where
+  M₂ = enclose M
+  M₂' = optimize-program M₂
+  M₃ = concretize-program M₂'
 
 compile-correct-const : ∀ (M : AST) → ∀ {B} (c : base-rep B)
   → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧ₚ)
   × (const c ∈ ⟦ compile M ⟧ₚ → const c ∈ ⟦ M ⟧ ρ₀)
-compile-correct-const M c =
-  ⟨ (λ c∈ → proj₁ G≃ _ (proj₁ rest c∈))
-  , (λ c∈ → proj₂ rest (proj₂ G≃ _ c∈)) ⟩
-  where
-  rest = pipeline-correct-const M c
-  G≃ = globalize-correct (compile₄ M)
+compile-correct-const M = proj₁ (compile-same M)
 
 compile-correct-nonempty : ∀ (M : AST)
   → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile M ⟧ₚ)
   × (nonempty ⟦ compile M ⟧ₚ → nonempty (⟦ M ⟧ ρ₀))
-compile-correct-nonempty M =
-  ⟨ (λ ne → let ne' = proj₁ rest ne in ⟨ proj₁ ne' , proj₁ G≃ _ (proj₂ ne') ⟩)
-  , (λ ne → proj₂ rest ⟨ proj₁ ne , proj₂ G≃ _ (proj₂ ne) ⟩) ⟩
-  where
-  rest = pipeline-correct-nonempty M
-  G≃ = globalize-correct (compile₄ M)
+compile-correct-nonempty M = proj₂ (compile-same M)
