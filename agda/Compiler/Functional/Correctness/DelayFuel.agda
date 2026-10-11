@@ -26,6 +26,8 @@ open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as C4
 open import Compiler.Compile.Delay
 open import Compiler.Observation
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
 open import Compiler.Lang.ListUtil using (_‼_; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos3 as S
@@ -36,6 +38,7 @@ open import Compiler.Lang.Rename C4.Op C4.sig
 
 open import Data.List using (List; []; _∷_; replicate; reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂; subst)
@@ -70,6 +73,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- Clock for clock ---------------------------------------------------------------}
 
@@ -120,6 +131,8 @@ run≈ ck r (get i ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) get≈
   get≈ (inr≈ _) = wrong
 run≈ ck r (inl-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inl≈ v))
 run≈ ck r (inr-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inr≈ v))
+run≈ ck r (prim p ⦅ L ,, M ,, Nil ⦆) ρ =
+  bind-rel (run≈ ck r L ρ) λ v → bind-rel (run≈ ck r M ρ) λ w → from-maybe-rel (prim≈ p v w)
 run≈ ck r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ =
   bind-rel (run≈ ck r L ρ) (branch≈ ck r M N ρ)
 

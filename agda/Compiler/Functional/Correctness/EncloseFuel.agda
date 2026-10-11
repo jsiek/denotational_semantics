@@ -26,6 +26,8 @@ open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Observation
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
 open import Compiler.Lang.ListUtil using (_‼_; ‼-<; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.ISWIM as S
@@ -34,7 +36,8 @@ import Compiler.Functional.Interp.Clos2 as T
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (just)
+open import Data.Maybe using (just; nothing)
+import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _≤_; _<_; z≤n; s≤s)
 open import Data.Nat.Properties
   using (≤-trans; ≤-pred; m≤m⊔n; m≤n⊔m; +-monoʳ-≤; m≤n+m∸n;
@@ -74,6 +77,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- Agreement of environments ---------------------------------------------------}
 
@@ -162,6 +173,10 @@ run≈ ck (inl-op ⦅ M ,, Nil ⦆) ag =
   bind-rel (run≈ ck M (agree-sub (λ x → inj₁) ⊔-left ag)) (λ r → ret (inl≈ r))
 run≈ ck (inr-op ⦅ M ,, Nil ⦆) ag =
   bind-rel (run≈ ck M (agree-sub (λ x → inj₁) ⊔-left ag)) (λ r → ret (inr≈ r))
+run≈ ck (prim p ⦅ L ,, M ,, Nil ⦆) ag =
+  bind-rel (run≈ ck L (agree-sub (λ x → inj₁) ⊔-left ag)) λ r →
+  bind-rel (run≈ ck M (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag)) λ s →
+  from-maybe-rel (prim≈ p r s)
 run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ag =
   bind-rel (run≈ ck L (agree-sub (λ x → inj₁) ⊔-left ag))
     (branch≈ ck M N

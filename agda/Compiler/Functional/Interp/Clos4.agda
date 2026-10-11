@@ -12,15 +12,18 @@
 
 module Compiler.Functional.Interp.Clos4 where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
+open import Compiler.Lang.Prim using (Prim; Out; int; bool)
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos4
 open import Compiler.Observation
 open import Compiler.Lang.ListUtil using (_‼_; proj)
 open import Compiler.Functional.Clock
 
+open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse; replicate)
+open import Data.Maybe using (Maybe; map)
 open import Data.Nat using (ℕ; zero; suc)
 
 data Val : Set where
@@ -44,6 +47,15 @@ obs (inl v) = o-inl (obs v)
 obs (inr v) = o-inr (obs v)
 obs-list [] = []
 obs-list (v ∷ vs) = obs v ∷ obs-list vs
+
+{- the value of a primitive's result; eq gives inl ⟨⟩ or inr ⟨⟩ -}
+out : Out → Val
+out (int n) = const Int n
+out (bool true) = inl (tup [])
+out (bool false) = inr (tup [])
+
+prim? : Prim → Val → Val → Maybe Val
+prim? p v w = map out (δ? p (obs v) (obs w))
 
 project : ∀ {n} → Fin n → Val → Result Val
 project i (tup vs) = from-maybe (proj i vs)
@@ -75,6 +87,8 @@ eval ck ρ (get i ⦅ M ,, Nil ⦆) = eval ck ρ M >>= project i
 eval ck ρ (inl-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= λ v → ret (inl v)
 eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= λ v → ret (inr v)
 eval ck ρ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ L >>= branch ck ρ M N
+eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
+  eval ck ρ L >>= λ v → eval ck ρ M >>= λ w → from-maybe (prim? p v w)
 eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ M >>= λ v → eval ck (v ∷ ρ) N
 
 eval-args {zero} ck ρ vs Nil = ret vs
