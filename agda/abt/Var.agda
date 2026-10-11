@@ -16,18 +16,6 @@ module abt.Var where
 Var : Set
 Var = ℕ
 
-{-
-data Lift (ℓᵛ : Level) {ℓᶜ : Level} (C : Set ℓᶜ) : Set (ℓᵛ ⊔ ℓᶜ) where
-  lift : C → Lift ℓᵛ C
-
-lower : ∀{ℓᵛ ℓᶜ}{C : Set ℓᶜ} → Lift ℓᵛ C → C
-lower (lift c) = c
-
-lift-lower-id : ∀{ℓᵛ ℓᶜ}{C : Set ℓᶜ} (lc : Lift ℓᵛ C)
-  → lift (lower lc) ≡ lc
-lift-lower-id (lift c) = refl
--}
-
 private
   variable
     ℓ : Level
@@ -64,4 +52,3 @@ BType I (∁ b) = BType I b
 BTypes : ∀{ℓ} → Set ℓ → List Sig → Set ℓ
 BTypes I [] = ⊤
 BTypes I (b ∷ bs) = BType I b × BTypes I bs
-
