@@ -127,3 +127,4 @@ import Compiler.Operational.Adequacy.EndToEnd
 {- experiment: a direct backward simulation for delay, without determinism,
    for comparison (see papers/PLDI-2027/loc.md) -}
 import Compiler.Operational.Backward
+import Compiler.Operational.Correctness.DelayBackSim
