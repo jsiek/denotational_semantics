@@ -16,12 +16,9 @@
 
 -}
 
-open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
-open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos4
 open import Compiler.Lang.Rename Op sig using (shift)
 open import Compiler.Model.Graph.Sem.Clos4Iswim
@@ -32,7 +29,6 @@ open import Data.List using (_∷_; map)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈-map⁻)
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (refl)
 
 module Compiler.Model.Graph.Correctness.DelayApp where

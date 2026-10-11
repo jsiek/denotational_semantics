@@ -17,10 +17,8 @@
 -}
 
 open import NewSigUtil
-open import NewSyntaxUtil
 open import SetsAsPredicates
 open import NewDOpSig
-open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos4
@@ -38,7 +36,6 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _++_; length; replicate)
 open import Data.List.Properties using (length-++)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)

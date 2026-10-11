@@ -20,7 +20,6 @@
 
 -}
 
-open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
