@@ -54,6 +54,17 @@ Not counted: code that both proofs use (791 lines: syntax, languages, compiler p
 
 * **The two theorems differ.** The operational theorem is stronger: it separates going wrong from divergence. In the graph model, both denote ∅.
 * **Determinism.** The operational proof relies on every machine being deterministic and total. The backward direction of each pass comes from forward simulation plus determinism, and the framework proves that once.
+* **Why "backward = forward + determinism" has no denotational counterpart.** Consistency of denotations plays the role of determinism. Take c ∈ ⟦pass M⟧ and suppose ⟦M⟧ has an element.
+  * If it is a constant c′, the forward direction puts c′ in ⟦pass M⟧, and consistency forces c = c′.
+  * If it is a function, tuple or sum, consistency rules out c.
+
+  That leaves ⟦M⟧ = ∅, and showing that ⟦pass M⟧ = ∅ too is a reflection argument. A forward relation cannot carry absence.
+
+  This is inherent in a continuous semantics. Every element of a denotation is a finite observation, evidence available after finitely much computation. Termination with a result is a finite observation; divergence is not, since no finite evidence shows that a program diverges. So divergence can only appear as the absence of elements, and an element marking divergence would make the semantics non-monotone. The operational proof avoids this because its divergence is an infinite run, a coinductive object that forward simulation maps to another infinite run.
+
+  Adding an error element for stuck programs would not change this. It would make going wrong a finite observation, handled by the forward direction plus consistency, but ∅ would still mean divergence and would still have to be reflected. Avoiding the reflection would take a coinductive semantics, such as the delay monad or traces, and that gives up the finite-observation style.
+
+  The cost falls only on passes that change representation. When ⟦pass M⟧ ≃ ⟦M⟧ (enclose, optimize, concretize, globalize), both directions come from the equation at once, with no determinism argument.
 * **Machines.** The machines check that an operator is a function before evaluating the argument. Delay needs this to preserve going wrong.
 
 ## History
