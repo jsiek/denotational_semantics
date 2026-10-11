@@ -8,8 +8,8 @@
   * ShapeOf o d, when a denotational value d has the shape of an
     observation o: the constant itself, a function entry, an entry of
     the right component of a tuple of the right size, a left or right
-    injection. A function is also observed through the entries of a pair
-    (⦅ u ∣ or ∣ v ⦆), which is how closures are represented after delay
+    injection. A function is also observed through the entries ⦅ u , v ⦆
+    of a pair, which is how closures are represented after delay
     (Adequacy/Clos5.agda); the ISWIM semantics never produces them.
 
 -}
@@ -18,7 +18,7 @@ module Compiler.Operational.Adequacy.Common where
 
 open import Primitives using (Base; base-rep)
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-  using (Value; const; _↦_; ν; ω; ⦅_∣; ∣_⦆; tup[_]_; left; right; ⟨⟩)
+  using (Value; const; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
   using (Star; ε; _◅_; next; stop; machine)
@@ -79,8 +79,7 @@ ShapeAt : ∀ {n} → Fin n → List Obs → Value → Set
 ShapeOf (o-const B k) d = d ≡ const {B} k
 ShapeOf o-fun ν = ⊤
 ShapeOf o-fun (V ↦ w) = ⊤
-ShapeOf o-fun ⦅ u ∣ = ⊤
-ShapeOf o-fun ∣ v ⦆ = ⊤
+ShapeOf o-fun ⦅ u , v ⦆ = ⊤
 ShapeOf (o-tuple os) ⟨⟩ = os ≡ []
 ShapeOf (o-tuple os) (tup[ i ] d) = ShapeAt i os d
 ShapeOf (o-inl o) (left d) = ShapeOf o d
@@ -101,8 +100,7 @@ shape-answer {o-inr o} s ()
 shape-answer {o-wrong} {V ↦ w} () refl
 shape-answer {o-wrong} {ν} () refl
 shape-answer {o-wrong} {ω} () refl
-shape-answer {o-wrong} {⦅ u ∣} () refl
-shape-answer {o-wrong} {∣ v ⦆} () refl
+shape-answer {o-wrong} {⦅ u , v ⦆} () refl
 shape-answer {o-wrong} {tup[ i ] d} () refl
 shape-answer {o-wrong} {left d} () refl
 shape-answer {o-wrong} {right d} () refl

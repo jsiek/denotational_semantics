@@ -37,8 +37,7 @@
 \newcommand{\FSET}[1]{\mathcal{P}_f(#1)}
 \newcommand{\V}{\mathbb{V}}
 \newcommand{\X}{\mathbb{X}}
-\newcommand{\carv}[1]{\llparenthesis #1 \,\rvert}
-\newcommand{\cdrv}[1]{\lvert\, #1 \rrparenthesis}
+\newcommand{\pairv}[2]{\llparenthesis #1, #2 \rrparenthesis}
 \newcommand{\tup}[2]{\key{tup}_{#1}(#2)}
 \newcommand{\Left}[1]{\key{left}(#1)}
 \newcommand{\Right}[1]{\key{right}(#1)}
@@ -124,7 +123,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 \begin{array}{rcl}
   c &\in& \text{constants} \qquad x, y, z, e, f \in \X \\[1ex]
   \V \ni d, u, v, w &::=& c \mid V \mapsto w \mid \nu \mid \omega
-     \mid \carv{u} \mid \cdrv{v}
+     \mid \pairv{u}{v}
      \mid \tup{i}{v} \mid \Left{v} \mid \Right{v} \mid \emptytup \\
   U, V, W &\in& \FSET{\V} \\
   D, E, X, Y &\in& \SET{\V} \\
@@ -147,10 +146,9 @@ Using names instead of de Bruijn indices changes a few definitions:
   D \app E &= \{ w \mid \exists V \NE.\; (V \mapsto w) \in D,\; V \subseteq E \} \\
   \Lambda(F) &= \{ V \mapsto w \mid V \NE,\; w \in F(V) \} \cup \{ \nu \} \\
   \mathcal{B}(c) &= \{ c \} \\
-  \key{pair}(D, E) &= \{ \carv{u} \mid u \in D,\; E \NE \}
-    \cup \{ \cdrv{v} \mid D \NE,\; v \in E \} \\
-  \key{car}(D) &= \{ u \mid \carv{u} \in D \} \\
-  \key{cdr}(D) &= \{ v \mid \cdrv{v} \in D \} \\
+  \key{pair}(D, E) &= \{ \pairv{u}{v} \mid u \in D,\; v \in E \} \\
+  \key{car}(D) &= \{ u \mid \exists v.\; \pairv{u}{v} \in D \} \\
+  \key{cdr}(D) &= \{ v \mid \exists u.\; \pairv{u}{v} \in D \} \\
   \mathcal{T}() &= \{ \emptytup \} \\
   \mathcal{T}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; D_j \NE \}
      \qquad (n > 0) \\
@@ -174,9 +172,7 @@ Using names instead of de Bruijn indices changes a few definitions:
   (V \mapsto w) \sim (V' \mapsto w') &\iff (V \approx V' \implies w \sim w') \\
   (V \mapsto w) \sim \nu, \quad \nu \sim (V \mapsto w), \quad \nu \sim \nu &\iff \mathsf{true} \\
   \omega \sim \omega, \quad \emptytup \sim \emptytup &\iff \mathsf{true} \\
-  \carv{u} \sim \carv{v} &\iff u \sim v \\
-  \carv{u} \sim \cdrv{v}, \quad \cdrv{v} \sim \carv{u} &\iff \mathsf{true} \\
-  \cdrv{u} \sim \cdrv{v} &\iff u \sim v \\
+  \pairv{u}{v} \sim \pairv{u'}{v'} &\iff u \sim u' \land v \sim v' \\
   \tup{i}{d} \sim \tup{j}{d'} &\iff n = n' \land (i \neq j \lor d \sim d')
      \qquad (i \in \{1..n\},\; j \in \{1..n'\}) \\
   \Left{d} \sim \Left{d'} &\iff d \sim d' \\
@@ -507,8 +503,7 @@ $v \in \SEM{M}^{\mathrm{3}}\rho$, then
 \begin{align*}
   \mathit{depth}(c) = \mathit{depth}(\nu) = \mathit{depth}(\omega) = \mathit{depth}(\emptytup) &= 0 \\
   \mathit{depth}(V \mapsto w) &= 1 + \max(\mathit{depth}(V), \mathit{depth}(w)) \\
-  \mathit{depth}(\carv{u}) &= 1 + \mathit{depth}(u) \\
-  \mathit{depth}(\cdrv{v}) &= 1 + \mathit{depth}(v) \\
+  \mathit{depth}(\pairv{u}{v}) &= 1 + \max(\mathit{depth}(u), \mathit{depth}(v)) \\
   \mathit{depth}(\tup{i}{d}) = \mathit{depth}(\Left{d}) = \mathit{depth}(\Right{d})
     &= 1 + \mathit{depth}(d) \\
   \mathit{depth}(\emptyset) &= 0 \\
@@ -521,8 +516,8 @@ a set $D$ of Clos3 values, defined by recursion on $\mathit{depth}(V')$,
 where $t$ ranges over the tags $\key{tup}_i$, $\key{left}$, and $\key{right}$,
 and $U$ and $W$ range over finite sets of Clos4 values.
 \begin{align*}
-  \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\;
-     \carv{F \mapsto (U_0 \mapsto w)} \in V',\; F \subseteq \key{cdr}(V') \\
+  \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\; \exists d.\;
+     \pairv{F \mapsto (U_0 \mapsto w)}{d} \in V',\; F \subseteq \key{cdr}(V') \\
   \mathit{Calls}(V', U, W) &\iff
   \begin{array}[t]{l}
     \forall w \in W.\; \exists U_0 \NE.\; \mathit{Entry}(V', U_0, w) \land U_0 \subseteq U \\

@@ -4,8 +4,8 @@
   (Clos3 → Clos4), using the logical relation of DelayFiniteRel, indexed
   by *finite lists of target observations* (see issue #1).
 
-  The function clause (app-obs) is the only place where the car and cdr
-  halves of target closures meet, and they meet inside the finite list V',
+  The function clause (app-obs) is the only place where the cars and cdrs
+  of target closures meet, and they meet inside the finite list V',
   so junk entries and mixed closures never produce a target-only result.
 
   The proof uses two properties of the semantics:
@@ -122,12 +122,13 @@ collect L' N' [] _ =
   ⟨ [] , ⟨ [] , ⟨ (λ _ ()) , ⟨ (λ _ ()) , record { results = λ _ () ; args = λ _ () } ⟩ ⟩ ⟩ ⟩
 collect L' N' (w ∷ V') V'⊆
     with V'⊆ w (here refl) | collect L' N' V' (λ d d∈ → V'⊆ d (there d∈))
-... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ e∈L' , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
-    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩ =
+... | ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , e∈L' ⟩ , ⟨ FV⊆Cdr , neFV ⟩ ⟩ ⟩ , ⟨ U₀⊆N' , neU₀ ⟩ ⟩ ⟩
+    | ⟨ W , ⟨ U , ⟨ W⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩
+    with cdr-witness FV FV⊆Cdr
+... | ⟨ C , ⟨ C⊆L' , FV⊆C ⟩ ⟩ =
   ⟨ e ∷ (C ++ W) , ⟨ U₀ ++ U , ⟨ W⊆' , ⟨ U⊆' , record { results = res ; args = arg } ⟩ ⟩ ⟩ ⟩
   where
-  e = ⦅ FV ↦ (U₀ ↦ w) ∣
-  C = lmap ∣_⦆ FV
+  e = ⦅ FV ↦ (U₀ ↦ w) , t ⦆
   inW : mem W ⊆ mem (e ∷ (C ++ W))
   inW d d∈ = there (∈-++⁺ʳ C d∈)
 
@@ -135,8 +136,7 @@ collect L' N' (w ∷ V') V'⊆
   W⊆' _ (here refl) = e∈L'
   W⊆' d (there d∈) with ∈-++⁻ C d∈
   ... | inj₂ d∈W = W⊆ d d∈W
-  ... | inj₁ d∈C with ∈-map⁻ ∣_⦆ d∈C
-  ... | ⟨ fv , ⟨ fv∈ , refl ⟩ ⟩ = FV⊆Cdr fv fv∈
+  ... | inj₁ d∈C = C⊆L' d d∈C
 
   U⊆' : mem (U₀ ++ U) ⊆ N'
   U⊆' d d∈ with ∈-++⁻ U₀ d∈
@@ -144,7 +144,8 @@ collect L' N' (w ∷ V') V'⊆
   ... | inj₂ d∈U = U⊆ d d∈U
 
   ent : CarEntry (e ∷ (C ++ W)) U₀ w
-  ent = car-entry FV (here refl) neFV (λ d d∈ → there (∈-++⁺ˡ (∈-map⁺ ∣_⦆ d∈)))
+  ent = car-entry FV t (here refl) neFV
+          (λ d d∈ → let ⟨ u , i ⟩ = FV⊆C d d∈ in ⟨ u , there (∈-++⁺ˡ i) ⟩)
 
   res : ∀ x → x ⋵ (w ∷ V') → Σ[ U₁ ∈ List Value ]
           CarEntry (e ∷ (C ++ W)) U₁ x × U₁ ≢ [] × mem U₁ ⊆ mem (U₀ ++ U)
@@ -222,8 +223,7 @@ inr-ne : ∀ {D : 𝒫 Value} v → v ∈ inr ⟨ D , ptt ⟩ → nonempty D
 inr-ne (right d) d∈ = ⟨ d , d∈ ⟩
 
 pair-ne : ∀ {A B : 𝒫 Value} v → v ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → nonempty B
-pair-ne ⦅ f ∣ ⟨ v , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
-pair-ne ∣ v ⦆ ⟨ f , ⟨ _ , v∈ ⟩ ⟩ = ⟨ v , v∈ ⟩
+pair-ne ⦅ u , v ⦆ ⟨ _ , v∈ ⟩ = ⟨ v , v∈ ⟩
 
 pair-tag : ∀ {A B : 𝒫 Value} t {d} → tag t d ∈ pair ⟨ A , ⟨ B , ptt ⟩ ⟩ → Data.Empty.⊥
 pair-tag (tupT i) ()
@@ -251,7 +251,7 @@ delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
                               ⟨ m , m∈ ⟩ = ne-reflect M E (inl-ne v v∈) in ⟨ left m , m∈ ⟩
-  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
+  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { leftT W W⊆ →
                     delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
@@ -262,7 +262,7 @@ delay-reflect (inr-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
                               ⟨ m , m∈ ⟩ = ne-reflect M E (inr-ne v v∈) in ⟨ right m , m∈ ⟩
-  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
+  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { rightT W W⊆ →
                     delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
@@ -318,7 +318,7 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
     Obs.nonempty-obs (unfold (reflect-𝒯 fvs E (t' ∷ []) (single⊆ t'∈))) (λ ())
 
   Cdrs⊆T' : Cdrs V' ⊆ T'
-  Cdrs⊆T' fv e∈ = let ⟨ _ , ⟨ _ , fv∈ ⟩ ⟩ = V'⊆ _ e∈ in fv∈
+  Cdrs⊆T' fv ⟨ _ , e∈ ⟩ = proj₂ (V'⊆ _ e∈)
 
   clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U') → R U' E → R W' (D ● E)
   clos-app {W' = []} _ E U'~ rU = R-∅ (λ _ ())
@@ -335,8 +335,8 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
 
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay N ⟧' ρ''
     W⊆B x x∈ with Calls.results cs x x∈
-    ... | ⟨ U₀ , ⟨ car-entry FV e∈ neFV FV⊆ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
-    ... | ⟨ t , ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ ⟩ =
+    ... | ⟨ U₀ , ⟨ car-entry FV t e∈ neFV FV⊆ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
+    ... | ⟨ ⟨ ⟨ x∈B , _ ⟩ , _ ⟩ , _ ⟩ =
       S4.⟦⟧-monotone (delay N) (λ { zero → U₀⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z })
         x x∈B
 
@@ -364,7 +364,7 @@ reflect-𝒯 {zero} args E V' V'⊆ =
 reflect-𝒯 {suc n} args {ρ'}{ρ} E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → tup-ne (ne-mem ne V'⊆)
-  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u u∈ → V'⊆ _ u∈) cs)
+  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { (tupT i) W W⊆ → nth-case i W W⊆
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }

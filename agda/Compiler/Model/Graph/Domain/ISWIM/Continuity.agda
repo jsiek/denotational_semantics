@@ -130,22 +130,19 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
 pair-cont : ∀ {E₁ E₂ ρ} → nonempty-env ρ → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
   → Cont (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ f ∣ ⟨ v , ⟨ f∈ , v∈ ⟩ ⟩
-    with one E₁ c₁ f∈ | one E₂ c₂ v∈
-... | ⟨ a , f∈′ ⟩ | ⟨ b , v∈′ ⟩ =
-  done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ f ∣
-    ⟨ v , ⟨ m₁ (join-l a b) f f∈′ , m₂ (join-r a b) v v∈′ ⟩ ⟩
-pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ∣ v ⦆ ⟨ f , ⟨ f∈ , v∈ ⟩ ⟩
-    with one E₁ c₁ f∈ | one E₂ c₂ v∈
-... | ⟨ a , f∈′ ⟩ | ⟨ b , v∈′ ⟩ =
-  done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ∣ v ⦆
-    ⟨ f , ⟨ m₁ (join-l a b) f f∈′ , m₂ (join-r a b) v v∈′ ⟩ ⟩
+pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩
+    with one E₁ c₁ u∈ | one E₂ c₂ v∈
+... | ⟨ a , u∈′ ⟩ | ⟨ b , v∈′ ⟩ =
+  done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ u , v ⦆
+    ⟨ m₁ (join-l a b) u u∈′ , m₂ (join-r a b) v v∈′ ⟩
 
 car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
-car-cont c f f∈ = c ⦅ f ∣ f∈
+car-cont {E} c u ⟨ v , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
+... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ v , uv∈′ ⟩ ⟩ ⟩ ⟩
 
 cdr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
-cdr-cont c v v∈ = c ∣ v ⦆ v∈
+cdr-cont {E} c v ⟨ u , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
+... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ u , uv∈′ ⟩ ⟩ ⟩ ⟩
 
 {- Tuples ---------------------------------------------------------------------}
 

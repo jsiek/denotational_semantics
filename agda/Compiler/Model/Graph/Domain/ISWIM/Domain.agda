@@ -28,13 +28,11 @@ data Value : Set where
   ν : Value      {- The empty function -}
   ω : Value          {- An error value, to serve as a default value in Envs and
                         to differentiate from converging -}
-  ⦅_∣ : (u : Value) → Value  
-  ∣_⦆ : (v : Value) → Value
-         {- closure values are pairs, which we split up into car and cdr
-            behaviors for easier distributivity properties.
-            Think of a pair ⦅ u , v ⦆ as ⦅ u ∣ ⊔ ∣ v ⦆.  A closure whose
-            environment is approximated by several values v₁ … vₙ is
-            represented by the elements ∣ v₁ ⦆ … ∣ vₙ ⦆ of its denotation. -}
+  ⦅_,_⦆ : (u : Value) → (v : Value) → Value
+         {- A pair. A closure is a pair of its code and its environment;
+            a closure whose environment is approximated by several values
+            v₁ … vₙ is represented by the elements ⦅ f , v₁ ⦆ … ⦅ f , vₙ ⦆
+            of its denotation. -}
   tup[_]_ : ∀ {n} (i : Fin n) → (d : Value) → Value                 {- Tuples -}
   left : (d : Value) → Value                      {- Sums -}
   right : (d : Value) → Value                     {- Sums -}
@@ -53,10 +51,7 @@ const {B} x ~ const {B₁} x₁ = Σ[ B≡ ∈ B ≡ B₁ ] (subst base-rep B≡
 ν ~ (V ↦ w) = True
 ν ~ ν = True
 ω ~ ω = True {- ω is related to just itself -}
-⦅ u ∣ ~ ⦅ v ∣ = u ~ v
-⦅ u ∣ ~ ∣ v ⦆ = True
-∣ v ⦆ ~ ⦅ w ∣ = True
-∣ v ⦆ ~ ∣ v₁ ⦆ = v ~ v₁
+⦅ u , v ⦆ ~ ⦅ u' , v' ⦆ = u ~ u' × v ~ v'
 (tup[_]_ {n} i d) ~ (tup[_]_ {n'} i' d')
     = Σ[ n≡ ∈ n ≡ n' ] ((¬ ((subst Fin n≡ i) ≡ i')) ⊎ ((subst Fin n≡ i) ≡ i' × d ~ d'))
 (left x) ~ (left x₁) = x ~ x₁

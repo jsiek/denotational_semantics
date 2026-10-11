@@ -41,16 +41,14 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 ℬ B k _ _ = False
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-{- pairs are strict: each half requires the other component to be nonempty -}
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ f ∣ = Σ[ v ∈ Value ] f ∈ D₁ × v ∈ D₂
-pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ∣ v ⦆ = Σ[ f ∈ Value ] f ∈ D₁ × v ∈ D₂
+pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ u , v ⦆ = u ∈ D₁ × v ∈ D₂
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ _ = False
 
 car : DOp (𝒫 Value) (■ ∷ [])
-car ⟨ D , _ ⟩ f = ⦅ f ∣ ∈ D
+car ⟨ D , _ ⟩ u = Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
-cdr ⟨ D , _ ⟩ v = ∣ v ⦆ ∈ D
+cdr ⟨ D , _ ⟩ v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
 
 nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n) → Result A ■
 nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
@@ -105,20 +103,19 @@ pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G ⦅ f ∣ ⟨ v , ⟨ f∈D , v∈E ⟩ ⟩ = ⟨ v , ⟨ D⊆ f f∈D , E⊆ v v∈E ⟩ ⟩
-  G ∣ v ⦆ ⟨ f , ⟨ f∈D , v∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ v v∈E ⟩ ⟩
+  G ⦅ u , v ⦆ ⟨ u∈D , v∈E ⟩ = ⟨ D⊆ u u∈D , E⊆ v v∈E ⟩
 
 car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
-  G u u∈ = D⊆ ⦅ u ∣ u∈
+  G u ⟨ v , uv∈ ⟩ = ⟨ v , D⊆ ⦅ u , v ⦆ uv∈ ⟩
 
 cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
-  G v v∈ = D⊆ ∣ v ⦆ v∈
+  G v ⟨ u , uv∈ ⟩ = ⟨ u , D⊆ ⦅ u , v ⦆ uv∈ ⟩
 
 inl-mono : monotone (■ ∷ []) ■ inl
 inl-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -164,8 +161,7 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
   G (V ↦ w) ()
   G ν ()
   G ω ()
-  G ⦅ u ∣ ()
-  G ∣ v ⦆ ()
+  G ⦅ u , v ⦆ ()
   G (left d) ()
   G (right d) ()
 
@@ -201,23 +197,19 @@ pair-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pair
 pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
   where
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
-  G ⦅ u ∣ ⦅ u' ∣ ⟨ v , ⟨ u∈ , v∈ ⟩ ⟩  ⟨ v' , ⟨ u'∈ , v'∈ ⟩ ⟩ = 
-    D~ u u' u∈ u'∈
-  G ⦅ u ∣ ∣ v ⦆ u∈ v∈ = tt
-  G ∣ v ⦆ ⦅ u ∣ v∈ u∈ = tt
-  G ∣ v ⦆ ∣ v' ⦆ ⟨ u , ⟨ u∈ , v∈ ⟩ ⟩ ⟨ u' , ⟨ u'∈ , v'∈ ⟩ ⟩ = E~ v v' v∈ v'∈
+  G ⦅ u , v ⦆ ⦅ u' , v' ⦆ ⟨ u∈ , v∈ ⟩ ⟨ u'∈ , v'∈ ⟩ = ⟨ D~ u u' u∈ u'∈ , E~ v v' v∈ v'∈ ⟩
 
 car-consis : consistent _~_ (■ ∷ []) ■ car
 car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (car ⟨ D , ptt ⟩) (car ⟨ D' , ptt ⟩)
-  G u u' u∈ u'∈ = D~ ⦅ u ∣ ⦅ u' ∣ u∈ u'∈
+  G u u' ⟨ v , u∈ ⟩ ⟨ v' , u'∈ ⟩ = proj₁ (D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ u∈ u'∈)
 
 cdr-consis : consistent _~_ (■ ∷ []) ■ cdr
 cdr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (cdr ⟨ D , ptt ⟩) (cdr ⟨ D' , ptt ⟩)
-  G v v' v∈ v'∈ = D~ ∣ v ⦆ ∣ v' ⦆ v∈ v'∈
+  G v v' ⟨ u , v∈ ⟩ ⟨ u' , v'∈ ⟩ = proj₂ (D~ ⦅ u , v ⦆ ⦅ u' , v' ⦆ v∈ v'∈)
 
 inl-consis : consistent _~_ (■ ∷ []) ■ inl
 inl-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G

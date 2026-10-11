@@ -79,8 +79,7 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-mono (right d) D⊆ = ⊑-mono d (λ d → D⊆ (right d))
 ⊑-mono (const k) D⊆ (lift v∈) = lift (D⊆ _ v∈)
 ⊑-mono ω D⊆ (lift v∈) = lift (D⊆ _ v∈)
-⊑-mono ⦅ u ∣ D⊆ (lift v∈) = lift (D⊆ _ v∈)
-⊑-mono ∣ u ⦆ D⊆ (lift v∈) = lift (D⊆ _ v∈)
+⊑-mono ⦅ u , v ⦆ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
 ⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
@@ -91,8 +90,7 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-ne (right d) d⊑ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ right d' , d'∈ ⟩
 ⊑-ne (const k) (lift v∈) = ⟨ _ , v∈ ⟩
 ⊑-ne ω (lift v∈) = ⟨ _ , v∈ ⟩
-⊑-ne ⦅ u ∣ (lift v∈) = ⟨ _ , v∈ ⟩
-⊑-ne ∣ u ⦆ (lift v∈) = ⟨ _ , v∈ ⟩
+⊑-ne ⦅ u , v ⦆ (lift v∈) = ⟨ _ , v∈ ⟩
 ⊑-ne ⟨⟩ (lift v∈) = ⟨ _ , v∈ ⟩
 
 flat-⊑ : ∀ {v D'} → Flat v → v ∈ D' → v ⊑ D'
@@ -213,7 +211,7 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE �
   NE-T' : nonempty T'
   NE-T' = let ⟨ fv , fv∈ ⟩ = ne-mem neFV (λ d d∈ → d∈) in ⊑-ne fv (fv⊑ fv fv∈)
   NE-P' : nonempty P'
-  NE-P' = ⟨ ⦅ ν ∣ , ⟨ proj₁ NE-T' , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩
+  NE-P' = ⟨ ⦅ ν , proj₁ NE-T' ⦆ , ⟨ tt , proj₂ NE-T' ⟩ ⟩
 
   G : ∀ v → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → Init))) , ptt ⟩
     → v ⊑ P'

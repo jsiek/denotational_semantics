@@ -16,7 +16,8 @@
     definition at k that, run on values related to all of X and Y,
     returns a value related to w.
 
-  * A pair is related to the entries ⦅ u ∣ and ∣ v ⦆ of its components.
+  * A pair is related to the entries ⦅ u , v ⦆ whose components are
+    related to its components.
 
   * The meaning of a reference is the table entry, so the fundamental
     lemma assumes that the table is related to the code pointers (𝕋),
@@ -38,7 +39,7 @@ module Compiler.Operational.Adequacy.Clos5LogRel (ds : List AST) where
 open import Primitives using (Base; base-rep)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-  using (Value; _↦_; ν; ω; ⦅_∣; ∣_⦆; tup[_]_; left; right; ⟨⟩)
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD)
 open import Compiler.Lang.Clos5 hiding (AST)
@@ -92,8 +93,7 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝕍 (dconst {B} k) v = v ≡ const B k
 𝕍 ν (code k) = ⊤
 𝕍 (X ↦ w) (code k) = 𝕍code X w k
-𝕍 ⦅ u ∣ (pair v w) = 𝕍 u v
-𝕍 ∣ u ⦆ (pair v w) = 𝕍 u w
+𝕍 ⦅ u₁ , u₂ ⦆ (pair v w) = 𝕍 u₁ v × 𝕍 u₂ w
 𝕍 ⟨⟩ (tup vs) = vs ≡ []
 𝕍 (tup[ i ] d) (tup vs) = 𝕍At i d vs
 𝕍 (left d) (inl v) = 𝕍 d v
@@ -128,8 +128,7 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝕍-shape (dconst k) (const B k) refl = refl
 𝕍-shape ν (code k) r = tt
 𝕍-shape (X ↦ w) (code k) r = tt
-𝕍-shape ⦅ u ∣ (pair v w) r = tt
-𝕍-shape ∣ u ⦆ (pair v w) r = tt
+𝕍-shape ⦅ u₁ , u₂ ⦆ (pair v w) r = tt
 𝕍-shape ⟨⟩ (tup []) refl = refl
 𝕍-shape (tup[ i ] d) (tup vs) r = 𝕍At-shape i d vs r
 𝕍-shape (left d) (inl v) r = 𝕍-shape d v r
@@ -208,21 +207,17 @@ adequate (lit B k ⦅ Nil ⦆) {d = dconst k'} 𝕋T w G ⟨ refl , refl ⟩ =
 adequate (lit B k ⦅ Nil ⦆) {d = V ↦ w'} 𝕋T w G ()
 adequate (lit B k ⦅ Nil ⦆) {d = ν} 𝕋T w G ()
 adequate (lit B k ⦅ Nil ⦆) {d = ω} 𝕋T w G ()
-adequate (lit B k ⦅ Nil ⦆) {d = ⦅ u ∣} 𝕋T w G ()
-adequate (lit B k ⦅ Nil ⦆) {d = ∣ u ⦆} 𝕋T w G ()
+adequate (lit B k ⦅ Nil ⦆) {d = ⦅ u , v ⦆} 𝕋T w G ()
 adequate (lit B k ⦅ Nil ⦆) {d = tup[ i ] d} 𝕋T w G ()
 adequate (lit B k ⦅ Nil ⦆) {d = left d} 𝕋T w G ()
 adequate (lit B k ⦅ Nil ⦆) {d = right d} 𝕋T w G ()
 adequate (lit B k ⦅ Nil ⦆) {d = ⟨⟩} 𝕋T w G ()
 
-adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {γ = γ} {d = ⦅ u ∣} 𝕋T ⟨ wL , ⟨ wM , _ ⟩ ⟩ G ⟨ e , ⟨ u∈ , e∈ ⟩ ⟩
-    with adequate L 𝕋T wL G u∈ | adequate M 𝕋T wM G e∈
-... | ⟨ v₁ , ⟨ e₁ , r ⟩ ⟩ | ⟨ v₂ , ⟨ e₂ , _ ⟩ ⟩ =
-  ⟨ pair v₁ v₂ , ⟨ (λ κ → refl ∷↠ e₁ (pairL M γ κ) ++↠ refl ∷↠ e₂ (pairR v₁ κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
-adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {γ = γ} {d = ∣ u ⦆} 𝕋T ⟨ wL , ⟨ wM , _ ⟩ ⟩ G ⟨ f , ⟨ f∈ , u∈ ⟩ ⟩
-    with adequate L 𝕋T wL G f∈ | adequate M 𝕋T wM G u∈
-... | ⟨ v₁ , ⟨ e₁ , _ ⟩ ⟩ | ⟨ v₂ , ⟨ e₂ , r ⟩ ⟩ =
-  ⟨ pair v₁ v₂ , ⟨ (λ κ → refl ∷↠ e₁ (pairL M γ κ) ++↠ refl ∷↠ e₂ (pairR v₁ κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
+adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {γ = γ} {d = ⦅ u₁ , u₂ ⦆} 𝕋T ⟨ wL , ⟨ wM , _ ⟩ ⟩ G ⟨ u₁∈ , u₂∈ ⟩
+    with adequate L 𝕋T wL G u₁∈ | adequate M 𝕋T wM G u₂∈
+... | ⟨ v₁ , ⟨ e₁ , r₁ ⟩ ⟩ | ⟨ v₂ , ⟨ e₂ , r₂ ⟩ ⟩ =
+  ⟨ pair v₁ v₂ , ⟨ (λ κ → refl ∷↠ e₁ (pairL M γ κ) ++↠ refl ∷↠ e₂ (pairR v₁ κ) ++↠ refl ∷↠ done)
+               , ⟨ r₁ , r₂ ⟩ ⟩ ⟩
 adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = dconst k} 𝕋T w G ()
 adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = V ↦ w'} 𝕋T w G ()
 adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = ν} 𝕋T w G ()
@@ -232,11 +227,11 @@ adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = left d} 𝕋T w G ()
 adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = right d} 𝕋T w G ()
 adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = ⟨⟩} 𝕋T w G ()
 
-adequate (fst-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wM , _ ⟩ G d∈ with adequate M 𝕋T wM G d∈
-... | ⟨ pair v₁ v₂ , ⟨ e , r ⟩ ⟩ = ⟨ v₁ , ⟨ (λ κ → refl ∷↠ e (fstK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
+adequate (fst-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wM , _ ⟩ G ⟨ _ , d∈ ⟩ with adequate M 𝕋T wM G d∈
+... | ⟨ pair v₁ v₂ , ⟨ e , ⟨ r , _ ⟩ ⟩ ⟩ = ⟨ v₁ , ⟨ (λ κ → refl ∷↠ e (fstK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
 
-adequate (snd-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wM , _ ⟩ G d∈ with adequate M 𝕋T wM G d∈
-... | ⟨ pair v₁ v₂ , ⟨ e , r ⟩ ⟩ = ⟨ v₂ , ⟨ (λ κ → refl ∷↠ e (sndK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
+adequate (snd-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wM , _ ⟩ G ⟨ _ , d∈ ⟩ with adequate M 𝕋T wM G d∈
+... | ⟨ pair v₁ v₂ , ⟨ e , ⟨ _ , r ⟩ ⟩ ⟩ = ⟨ v₂ , ⟨ (λ κ → refl ∷↠ e (sndK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
 
 adequate (tuple zero ⦅ Nil ⦆) {d = ⟨⟩} 𝕋T w G tt = ⟨ tup [] , ⟨ (λ κ → refl ∷↠ done) , refl ⟩ ⟩
 adequate (tuple (suc n) ⦅ args ⦆) {γ = γ} {d = tup[ i ] d} 𝕋T w G ⟨ refl , ⟨ d∈ , ne ⟩ ⟩
@@ -255,10 +250,8 @@ adequate (tuple zero ⦅ Nil ⦆) {d = ν} 𝕋T w G ()
 adequate (tuple (suc n) ⦅ args ⦆) {d = ν} 𝕋T w G ()
 adequate (tuple zero ⦅ Nil ⦆) {d = ω} 𝕋T w G ()
 adequate (tuple (suc n) ⦅ args ⦆) {d = ω} 𝕋T w G ()
-adequate (tuple zero ⦅ Nil ⦆) {d = ⦅ u ∣} 𝕋T w G ()
-adequate (tuple (suc n) ⦅ args ⦆) {d = ⦅ u ∣} 𝕋T w G ()
-adequate (tuple zero ⦅ Nil ⦆) {d = ∣ u ⦆} 𝕋T w G ()
-adequate (tuple (suc n) ⦅ args ⦆) {d = ∣ u ⦆} 𝕋T w G ()
+adequate (tuple zero ⦅ Nil ⦆) {d = ⦅ u , v ⦆} 𝕋T w G ()
+adequate (tuple (suc n) ⦅ args ⦆) {d = ⦅ u , v ⦆} 𝕋T w G ()
 adequate (tuple zero ⦅ Nil ⦆) {d = left d} 𝕋T w G ()
 adequate (tuple (suc n) ⦅ args ⦆) {d = left d} 𝕋T w G ()
 adequate (tuple zero ⦅ Nil ⦆) {d = right d} 𝕋T w G ()
@@ -276,8 +269,7 @@ adequate (inl-op ⦅ M ,, Nil ⦆) {d = dconst k} 𝕋T w G ()
 adequate (inl-op ⦅ M ,, Nil ⦆) {d = V ↦ w'} 𝕋T w G ()
 adequate (inl-op ⦅ M ,, Nil ⦆) {d = ν} 𝕋T w G ()
 adequate (inl-op ⦅ M ,, Nil ⦆) {d = ω} 𝕋T w G ()
-adequate (inl-op ⦅ M ,, Nil ⦆) {d = ⦅ u ∣} 𝕋T w G ()
-adequate (inl-op ⦅ M ,, Nil ⦆) {d = ∣ u ⦆} 𝕋T w G ()
+adequate (inl-op ⦅ M ,, Nil ⦆) {d = ⦅ u , v ⦆} 𝕋T w G ()
 adequate (inl-op ⦅ M ,, Nil ⦆) {d = tup[ i ] d} 𝕋T w G ()
 adequate (inl-op ⦅ M ,, Nil ⦆) {d = right d} 𝕋T w G ()
 adequate (inl-op ⦅ M ,, Nil ⦆) {d = ⟨⟩} 𝕋T w G ()
@@ -288,8 +280,7 @@ adequate (inr-op ⦅ M ,, Nil ⦆) {d = dconst k} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = V ↦ w'} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ν} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ω} 𝕋T w G ()
-adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⦅ u ∣} 𝕋T w G ()
-adequate (inr-op ⦅ M ,, Nil ⦆) {d = ∣ u ⦆} 𝕋T w G ()
+adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⦅ u , v ⦆} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = tup[ i ] d} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = left d} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⟨⟩} 𝕋T w G ()
