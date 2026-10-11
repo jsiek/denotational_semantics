@@ -108,3 +108,4 @@ import Compiler.Operational.Adequacy.Soundness
 import Compiler.Operational.Adequacy.LogRel
 import Compiler.Operational.Adequacy.ISWIM
 import Compiler.Operational.Correctness.ConcretizeSim
+import Compiler.Operational.Correctness.DelaySim
