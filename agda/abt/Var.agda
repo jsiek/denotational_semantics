@@ -28,27 +28,3 @@ _∋_⦂_ : List I → Var → I → Set (levelOfType I)
 _∋_⦂_ {I = I} [] x A = ⊥
 _∋_⦂_ (B ∷ Γ) zero A = A ≡ B
 _∋_⦂_ (B ∷ Γ) (suc x) A = Γ ∋ x ⦂ A
-
-∋x→< : Γ ∋ x ⦂ A → x < (length Γ)
-∋x→< {Γ = []} {x} ()
-∋x→< {Γ = B ∷ Γ} {x = zero} ∋x = s≤s z≤n
-∋x→< {Γ = B ∷ Γ} {x = suc x} ∋x = s≤s (∋x→< {Γ = Γ} ∋x)
-
-<→∋x : ∀{Γ : List {a = lzero} ⊤}{x A} → x < (length Γ) → Γ ∋ x ⦂ A
-<→∋x {Γ = B ∷ Γ} {x = zero} x<Γ = refl
-<→∋x {Γ = B ∷ Γ} {x = suc x} (s≤s x<Γ) = <→∋x {Γ = Γ} x<Γ 
-
-∋++ : Γ ∋ x ⦂ A  → (Δ ++ Γ) ∋ (length Δ + x) ⦂ A  
-∋++ {Δ = []} ∋ΔΓ = ∋ΔΓ
-∋++ {Δ = B ∷ Δ} ∋ΔΓ = ∋++ {Δ = Δ} ∋ΔΓ
-
-{--- types for bound variables ---}
-
-BType : ∀{ℓ} → Set ℓ → Sig → Set ℓ
-BType I ■ = ⊤
-BType I (ν b) = I × BType I b
-BType I (∁ b) = BType I b
-
-BTypes : ∀{ℓ} → Set ℓ → List Sig → Set ℓ
-BTypes I [] = ⊤
-BTypes I (b ∷ bs) = BType I b × BTypes I bs

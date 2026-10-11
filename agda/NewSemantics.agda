@@ -119,18 +119,6 @@ continuous-args ρ NE-ρ [] Nil = pTrue
 continuous-args ρ NE-ρ (b ∷ bs) (! arg ,, args) = 
   continuous-arg ρ NE-ρ b arg × continuous-args ρ NE-ρ bs args
 
-
-{- an attempt at defining a property for monotonicity 
-   that can be proved for the op cases without a Semantics -}
-continuous-arg-D : ∀ {A} (E : ∀ b → Env A → Result (𝒫 A) b) (ρ∁ : Env A) (NE-ρ∁ : nonempty-env ρ∁) (ρ : Env A) (NE-ρ : nonempty-env ρ)
-   → ∀ (b : Sig) → Set₁
-continuous-arg-D E ρ∁ NE-ρ∁ ρ NE-ρ ■ = continuous-env (E ■) ρ
-continuous-arg-D E ρ∁ NE-ρ∁ ρ NE-ρ (ν b) = ∀ V → (neV : V ≢ []) → continuous-arg-D E ρ∁ NE-ρ∁ (mem V • ρ) (extend-nonempty-env NE-ρ (E≢[]⇒nonempty-mem neV)) b
-continuous-arg-D E ρ∁ NE-ρ∁ ρ NE-ρ (∁ b) = continuous-arg-D E ρ∁ NE-ρ∁ ρ∁ NE-ρ∁ b
-
-
-
-
 record ContinuousSemantics {A : Set} : Set₁ where
   field 
     {{Sem}} : Semantics {A}
@@ -162,15 +150,6 @@ open ContinuousSemantics {{...}}
 ⟦⟧-monotone-args {A} {bs = []} nil ρ<ρ′ = lift tt
 ⟦⟧-monotone-args {A} {bs = b ∷ bs} (cons arg args) ρ<ρ′ =
   ⟨ ⟦⟧-monotone-arg arg ρ<ρ′ , ⟦⟧-monotone-args args ρ<ρ′ ⟩
-
-⟦⟧-monotone-bind : ∀{A} {{_ : Semantics {A}}}{N : ABT}{ρ}
-   D E → D ⊆ E → ⟦ N ⟧ (D • ρ) ⊆ ⟦ N ⟧ (E • ρ)
-⟦⟧-monotone-bind {A}{N}{ρ} D₁ D₂ D12 = ⟦⟧-monotone N G
-  where G : (x : Var) → (D₁ • ρ) x ⊆ (D₂ • ρ) x
-        G zero = D12
-        G (suc x) = λ v z → z
-
-
 
 {- Continuous -----------------------------------------------------------------}
 
@@ -204,12 +183,3 @@ open ContinuousSemantics {{...}}
       ⟦⟧-cont-env-args {A} {ρ} {NE-ρ} {bs} args ⟩
 
 
-
-⟦⟧-continuous-⊆  : ∀{A} {{_ : ContinuousSemantics {A}}}{ρ}{NE-ρ : nonempty-env ρ}
-    (M : ABT)
-  → ∀ V → mem V ⊆ ⟦ M ⟧ ρ
-  → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × mem V ⊆ ⟦ M ⟧ ρ′
-⟦⟧-continuous-⊆ {A}{ρ}{NE-ρ} M V V⊆Eρ =
-    continuous-∈⇒⊆ ⟦ M ⟧ ρ NE-ρ (⟦⟧-monotone M) V V⊆Eρ
-        (λ v v∈V → ⟦⟧-continuous {NE-ρ = NE-ρ} M v)
- 

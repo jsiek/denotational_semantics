@@ -131,10 +131,6 @@ fun-pred-pres {ℓ} P bs c F = ∀ Ds → results-pred-pres P bs Ds → result-p
 op-pred-pres : ∀ {ℓ}{A : Set ℓ} → (P : A → Set) → Op-Pred A
 op-pred-pres P bs = fun-pred-pres P bs ■
 
-opsig-pred-pres : ∀ {ℓ} {A : Set ℓ} (P : A → Set) → DOpSig-Pred A
-opsig-pred-pres P sig O = ∀ op → op-pred-pres P (sig op) (O op)
-
-
 {- ============================= Combinators ============================= -}
 
 DApp1 : ∀ {ℓ} {A : Set ℓ} b bs c
@@ -151,22 +147,6 @@ Dfold : ∀ {ℓ}{A : Set ℓ} b c n → DFun A (b ∷ c ∷ []) c
     → DFun A (replicate n b) c
 Dfold b c zero f a (ptt) = a
 Dfold b c (suc n) f a ⟨ D , Ds ⟩ = f ⟨ D , ⟨ Dfold b c n f a Ds , ptt ⟩ ⟩
-
-DApp1-pres : ∀ {ℓ}{A : Set ℓ} R b bs c
-   → (f1 f2 : DFun A (b ∷ bs) c) → (a1 a2 : Result A b )
-   → fun-rel-pres R (b ∷ bs) c f1 f2
-   → result-rel-pres R b a1 a2
-   → fun-rel-pres R bs c (DApp1 b bs c f1 a1) (DApp1 b bs c f2 a2)
-DApp1-pres R b bs c f1 f2 a1 a2 f-pres a1Ra2 Ds1 Ds2 Ds1RDs2 = 
-  f-pres ⟨ a1 , Ds1 ⟩ ⟨ a2 , Ds2 ⟩ ⟨ a1Ra2 , Ds1RDs2 ⟩
-
-DComp1-pres : ∀ {ℓ}{A : Set ℓ} R b c cs d
-   (f1 f2 : DFun A (b ∷ []) c) (g1 g2 : DFun A (c ∷ cs) d)
-    → fun-rel-pres R (b ∷ []) c f1 f2 → fun-rel-pres R (c ∷ cs) d g1 g2
-    → fun-rel-pres R (b ∷ cs) d (DComp1 b c cs d f1 g1) (DComp1 b c cs d f2 g2)
-DComp1-pres R b c cs d f1 f2 g1 g2 f-pres g-pres ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ ERD , EsRDs ⟩ = 
-  g-pres  ⟨ f1  ⟨ D , ptt ⟩ , Ds ⟩ ⟨ f2 ⟨ E , ptt ⟩ , Es ⟩ 
-          ⟨ f-pres ⟨ D , ptt ⟩ ⟨ E , ptt ⟩ ⟨ ERD , ptt ⟩ , EsRDs ⟩
 
 Dfold-pres : ∀ {ℓ}{A : Set ℓ} R b c n
   → (f1 f2 : DFun A (b ∷ c ∷ []) c)

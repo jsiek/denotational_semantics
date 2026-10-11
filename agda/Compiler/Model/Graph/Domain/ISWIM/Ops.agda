@@ -113,14 +113,6 @@ proj i ⟨ D , _ ⟩ d = (tup[ i ] d) ∈ D
   G d ⟨ V , ⟨ wv∈D , ⟨ V<E , neV ⟩ ⟩ ⟩ =
      ⟨ V , ⟨ D⊆ (V ↦ d) wv∈D , ⟨ (λ d z → E⊆ d (V<E d z)) , neV ⟩ ⟩ ⟩
 
-⋆-cong : congruent (■ ∷ ■ ∷ []) ■ ⋆
-⋆-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
-       ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ E<E' , E'<E ⟩ , _ ⟩ ⟩ = lift G
-  where
-  G : ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G = ⟨ lower (⋆-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D<D' , ⟨ lift E<E' , ptt ⟩ ⟩) 
-      , lower (⋆-mono ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ lift D'<D , ⟨ lift E'<E , ptt ⟩ ⟩) ⟩
-
 Λ-mono : monotone (ν ■ ∷ []) ■ Λ
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
   where 
@@ -129,34 +121,6 @@ proj i ⟨ D , _ ⟩ d = (tup[ i ] d) ∈ D
     ⟨ lower (F⊆ (mem V) (mem V) (λ d z → z)) w w∈F₁X , neV ⟩
   G ν v∈ = tt
 
-Λ-ext-⊆ : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
-  → (∀ {X} → F₁ X ⊆ F₂ X)
-  → Λ ⟨ F₁ , ptt ⟩ ⊆ Λ ⟨ F₂ , ptt ⟩
-Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ (V ↦ w) ⟨ w∈F₁X , neV ⟩ =
-    ⟨ F₁⊆F₂ w w∈F₁X , neV ⟩
-Λ-ext-⊆ {F₁} {F₂} F₁⊆F₂ ν v∈ = tt
-
-Λ-ext : ∀{F₁ F₂ : (𝒫 Value) → (𝒫 Value)}
-  → (∀ {X} → F₁ X ≃ F₂ X)
-  → Λ ⟨ F₁ , ptt ⟩ ≃ Λ ⟨ F₂ , ptt ⟩
-Λ-ext {F₁}{F₂} F₁≃F₂ = ⟨ Λ-ext-⊆ (proj₁ F₁≃F₂) , Λ-ext-⊆ (proj₂ F₁≃F₂) ⟩
-
-Λ-cong : congruent (ν ■ ∷ []) ■ Λ
-Λ-cong ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F≃ , _ ⟩ = lift ⟨ G1 , G2 ⟩
-  where
-  G1 : Λ ⟨ F , _ ⟩ ⊆ Λ ⟨ F' , _ ⟩
-  G1 (V ↦ w) ⟨ w∈FV , neV ⟩ = ⟨ proj₁ (lower
-     (F≃ (mem V) (mem V)
-          ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩))
-             w w∈FV , neV ⟩
-  G1 ν tt = tt
-  G2 : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
-  G2 (V ↦ w) ⟨ w∈F'V , neV ⟩ = ⟨ proj₂ (lower 
-     (F≃ (mem V) (mem V) 
-         ⟨ (λ x x₁ → x₁) , (λ x x₁ → x₁) ⟩)) 
-         w w∈F'V , neV ⟩
-  G2 ν tt = tt
-
 pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where
@@ -164,26 +128,11 @@ pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , 
   G ⦅ f ∣ ⟨ v , ⟨ f∈D , v∈E ⟩ ⟩ = ⟨ v , ⟨ D⊆ f f∈D , E⊆ v v∈E ⟩ ⟩
   G ∣ v ⦆ ⟨ f , ⟨ f∈D , v∈E ⟩ ⟩ = ⟨ f , ⟨ D⊆ f f∈D , E⊆ v v∈E ⟩ ⟩
 
-pair-cong : congruent (■ ∷ ■ ∷ []) ■ pair
-pair-cong ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ 
-       ⟨ lift ⟨ D<D' , D'<D ⟩ , ⟨ lift ⟨ E<E' , E'<E ⟩ , _ ⟩ ⟩ = lift G
-  where
-  G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  G = ⟨ lower (pair-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D<D' , ⟨ lift E<E' , ptt ⟩ ⟩) 
-      , lower (pair-mono ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ lift D'<D , ⟨ lift E'<E , ptt ⟩ ⟩) ⟩
-
 car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : car ⟨ D , ptt ⟩ ⊆ car ⟨ D' , ptt ⟩
   G u u∈ = D⊆ ⦅ u ∣ u∈
-
-car-cong : congruent (■ ∷ []) ■ car
-car-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
-  where
-  G : car ⟨ D , ptt ⟩ ≃ car ⟨ D' , ptt ⟩
-  G = ⟨ lower (car-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
-      , lower (car-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
 
 cdr-mono : monotone (■ ∷ []) ■ cdr
 cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -191,40 +140,17 @@ cdr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   G : cdr ⟨ D , _ ⟩ ⊆ cdr ⟨ D' , _ ⟩
   G v v∈ = D⊆ ∣ v ⦆ v∈
 
-cdr-cong : congruent (■ ∷ []) ■ cdr
-cdr-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
-  where
-  G : cdr ⟨ D , _ ⟩ ≃ cdr ⟨ D' , _ ⟩
-  G = ⟨ lower (cdr-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
-      , lower (cdr-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
-
-
 ℒ-mono : monotone (■ ∷ []) ■ ℒ
 ℒ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : ℒ ⟨ D , ptt ⟩ ⊆ ℒ ⟨ D' , ptt ⟩
   G (left v) v∈ = D⊆ v v∈
 
-ℒ-cong : congruent (■ ∷ []) ■ ℒ
-ℒ-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
-  where
-  G : ℒ ⟨ D , ptt ⟩ ≃ ℒ ⟨ D' , ptt ⟩
-  G = ⟨ lower (ℒ-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
-      , lower (ℒ-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
-
 ℛ-mono : monotone (■ ∷ []) ■ ℛ
 ℛ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   where
   G : ℛ ⟨ D , ptt ⟩ ⊆ ℛ ⟨ D' , ptt ⟩
   G (right v) v∈ = D⊆ v v∈
-
-ℛ-cong : congruent (■ ∷ []) ■ ℛ
-ℛ-cong ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift ⟨ D<D' , D'<D ⟩) , _ ⟩ = lift G
-  where
-  G : ℛ ⟨ D , ptt ⟩ ≃ ℛ ⟨ D' , ptt ⟩
-  G = ⟨ lower (ℛ-mono ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ ⟨ lift D<D' , ptt ⟩) 
-      , lower (ℛ-mono ⟨ D' , ptt ⟩ ⟨ D , ptt ⟩ ⟨ lift D'<D , ptt ⟩) ⟩
-
 
 𝒞-mono : monotone (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞
 𝒞-mono ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
@@ -266,11 +192,6 @@ nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD
 {- D, provided that each of the n sets in Ds is nonempty (for strict closures) -}
 guard-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
 guard-n n Ds D w = (∀ i → nonempty (nthD Ds i)) × w ∈ D
-
-{- tuples are strict: if any component is empty, so is the tuple -}
-𝒯-strict : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) (i : Fin n)
-  → nthD Ds i ⊆ ∅ → 𝒯 n Ds ⊆ ∅
-𝒯-strict (suc n) Ds i empty (tup[ j ] d) ⟨ refl , ⟨ _ , ne ⟩ ⟩ = empty _ (proj₂ (ne i))
 
 proj-mono : ∀ {n} (i : Fin n) → monotone (■ ∷ []) ■ (proj i)
 proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → D⊆ (tup[ i ] d))
@@ -389,24 +310,3 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D~ , _ ⟩ = lift G
   where 
   G : Every _~_ (ℬ B k ptt) (ℬ B k ptt)
   G (const {B'} k) (const {B''} k') ⟨ refl , d∈ ⟩  ⟨ refl , d'∈ ⟩ = ⟨ refl , trans (sym d∈) d'∈ ⟩
-
-𝓅-consis : ∀ P f → consistent _~_ [] ■ (𝓅 P f)
-𝓅-consis P f _ _ _ = lift (G P f)
-  where
-  G : ∀ P f → Every _~_ (𝓅 P f ptt) (𝓅 P f ptt)
-  G (base x) f (const {B} k) (const {B'} k') ⟨ refl , k∈ ⟩  ⟨ refl , k'∈ ⟩ = 
-    lower (ℬ-consis B k ptt ptt ptt) (const k) (const k') ⟨ refl , refl ⟩ ⟨ refl , trans (sym k∈) k'∈ ⟩
-  G (x ⇒ P) f (.(const k ∷ []) ↦ u) (.(const k' ∷ []) ↦ v) 
-    ⟨ k , ⟨ refl , u∈ ⟩ ⟩ ⟨ k' , ⟨ refl , v∈ ⟩ ⟩ with base-eq? x x | base-rep-eq? k k' 
-  ... | no neq | q = ⊥-elim (neq refl )
-  ... | yes refl | no neq = inj₁ (λ z → H (head (proj₁ z)))
-    where
-    H : const k ~ const k' → False
-    H ⟨ refl , k≡ ⟩ = neq k≡
-  ... | yes refl | yes refl = inj₂ ⟨ ⟨ H ∷ [] , tt ⟩ , G P (f k) u v u∈ v∈ ⟩
-    where
-    H : const k ~ const k
-    H = ⟨ refl , refl ⟩
-  G (x ⇒ P) f (V ↦ u) ν u∈ v∈ = tt
-  G (x ⇒ P) f ν (V ↦ w) u∈ v∈ = tt
-  G (x ⇒ P) f ν ν u∈ v∈ = tt
