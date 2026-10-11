@@ -15,35 +15,35 @@ As of this PR:
 
 | component | denotational | operational |
 |---|---:|---:|
-| generic infrastructure | 303 | 357 |
+| generic infrastructure | 303 | 209 |
 | domain, operators, continuity | 451 | — |
-| semantics of the languages | 458 | 469 |
-| enclose | 110 | 236 |
-| optimize | 152 | 345 |
-| concretize | 234 | 235 |
-| delay | 824 | 218 |
-| globalize | 235 | 240 |
-| composition | 56 | 34 |
-| **total** | **2823** | **2134** |
+| semantics of the languages | 458 | 457 |
+| enclose | 98 | 207 |
+| optimize | 152 | 319 |
+| concretize | 234 | 218 |
+| delay | 824 | 198 |
+| globalize | 235 | 223 |
+| composition | 56 | 31 |
+| **total** | **2811** | **1862** |
 
 Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines. It turns `CompilerCorrect` into a statement about running programs (`Adequacy/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed.
 
 | adequacy (denotational side only) | lines |
 |---|---:|
-| ISWIM | 748 |
-| Clos5 | 932 |
+| ISWIM | 749 |
+| Clos5 | 926 |
 | well-formedness of compiled programs | 289 |
 | end to end | 24 |
-| **total** | **1993** |
+| **total** | **1988** |
 
 An experiment, not in the totals, is described [below](#experiment-a-direct-backward-simulation-for-delay):
 
 | experiment (not in the totals) | lines |
 |---|---:|
-| operational: direct backward simulation for delay — framework | 97 |
+| operational: direct backward simulation for delay — framework | 94 |
 | operational: direct backward simulation for delay — delay | 146 |
 
-Not counted: code that both proofs use (791 lines: syntax, languages, compiler passes) and examples (185 lines).
+Not counted: code that both proofs use (805 lines: syntax, languages, compiler passes) and examples (185 lines).
 
 ## What the groups contain
 
@@ -82,13 +82,14 @@ Not counted: code that both proofs use (791 lines: syntax, languages, compiler p
 | 2026-10-11 | leaner delay proof (PR #15) | 3725 | 2134 |
 | 2026-10-11 | dead code, consistency, shared lemmas (PR #16) | 2836 | 2134 |
 | 2026-10-11 | delay relation without visible fuel, Calls as a predicate (PR #17) | 2825 | 2134 |
-| 2026-10-11 | joined pairs ⦅ u , v ⦆ instead of the halves ⦅ u ∣ and ∣ v ⦆ (this PR) | 2823 | 2134 |
+| 2026-10-11 | joined pairs ⦅ u , v ⦆ instead of the halves ⦅ u ∣ and ∣ v ⦆ (PR #18) | 2823 | 2134 |
+| 2026-10-11 | operational cleanup: framework specialised to step-function machines, end theorems composed instead of simulations, no per-pass corollaries, shared `uses-bound`, pruned imports (this PR) | 2811 | 1862 |
 
 PR #16 also changed the grouping: the shared counts now include `Primitives`, `NewSigUtil` and `NewSyntaxUtil`, and `ISWIMContinuous` moved to adequacy. Earlier rows used slightly different groups, so they are only roughly comparable.
 
 ## Why delay costs more on the denotational side
 
-As of this PR; the denotational proof is 824 lines and the operational one 218.
+As of this PR; the denotational proof is 824 lines and the operational one 198.
 
 **Denotational** (`Correctness/Delay*.agda`):
 
@@ -112,18 +113,18 @@ As of this PR; the denotational proof is 824 lines and the operational one 218.
 
 | part | lines |
 |---|---:|
-| renaming lemmas, generic over any syntax | 62 |
+| renaming lemmas, generic over any syntax | 54 |
 | relations: values, terms, environments, continuations; the run-ahead state | 58 |
 | the simulation, all cases | 66 |
-| end theorems (40% are corollaries) | 21 |
-| imports | 11 |
+| end theorem | 7 |
+| imports | 13 |
 
-**Where the ≈ 3.8× comes from:**
+**Where the ≈ 4.2× comes from:**
 
-1. **Two directions instead of one: about 479 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 345 lines, roughly 1.6× `DelaySim`.
+1. **Two directions instead of one: about 479 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 345 lines, roughly 1.7× `DelaySim`.
 2. **Finite observations in reflect: about 195 lines, plus part of the app case.** Pairs are joined (one value ⦅ u , v ⦆), but a target call still takes its code from `car C` and its free variables from `cdr C` separately, possibly from different pairs. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index.
 3. **β needs side conditions: about 130 lines.** In the graph model, β for closures, `let` and `case` holds only with nonemptiness and continuity. That costs `clos-β` and `cont-0` on both sides, the application equation, and consistency for `case`. Operationally, β is a machine step.
-4. **Imports: 82 lines against 11.**
+4. **Imports: 82 lines against 13.**
 5. **Per-construct cases are comparable once the plumbing is gone.** Preserve's fundamental lemma is 78 lines against 66 for the simulation cases.
 
 The cost is not in the compositional, per-construct reasoning. It is in the backward direction forced by the change of representation (item 1), and in the side conditions β needs in the graph model (item 3). Operational proofs pay for the backward direction once, through determinism. The denotational proof pays for it in each pass that is not an equation, and delay is the only such pass.
@@ -143,17 +144,17 @@ The operational proof gets the backward direction of every pass from forward sim
 
 | | lines |
 |---|---:|
-| delay, forward (`DelaySim`) | 218 |
+| delay, forward (`DelaySim`) | 198 |
 | delay, direct backward (`DelayBackSim`) | 146 |
 | – the same, standalone (with the ≈ 100 reused lines) | ≈ 246 |
-| generic: backward from forward + determinism (in `Smallstep`, `Simulation`) | 128 |
-| generic: direct backward simulation (`Backward`) | 97 |
+| generic: backward from forward + determinism (in `Smallstep`, `Simulation`) | 71 |
+| generic: direct backward simulation (`Backward`) | 94 |
 | delay, denotational reflect (`DelayReflectFinite` + `DelayFiniteRel`) | 453 |
 
-The 128 lines are the parts of the forward framework that exist only to get the backward direction: `Deterministic` and `Progressive`, `star→steps`, `steps-det-skip`, `diverges-not-terminates`, `never-final-diverges`, `machine-det` and `machine-progress`, `back`, `backward-terminates`, and `equivalent`. They are paid once for all five passes.
+The 71 lines are the parts of the forward framework that exist only to get the backward direction: the determinism lemmas `step-det`, `final-det` and `final-nostep`, `star→steps`, `steps-det-skip`, `diverges-not-terminates`, `never-final-diverges`, `back` and its measure, `backward-terminates`, and `equivalent`. They are paid once for all five passes.
 
 **What this shows:**
 
-* A direct operational backward proof of delay is about as big as the forward one: 146 lines on top of the shared relations, or about 246 standalone, against 218. The cases are as easy as the forward cases (one line each, by computation of the step function). The extra lines list the administrative target states, 12 constructors of the state relation and one `waits` line per state.
+* A direct operational backward proof of delay is about as big as the forward one: 146 lines on top of the shared relations, or about 246 standalone, against 198. The cases are as easy as the forward cases (one line each, by computation of the step function). The extra lines list the administrative target states, 12 constructors of the state relation and one `waits` line per state.
 * It stays well under the denotational reflect (453 lines in its two modules, 479 with the depth bound it uses). So the operational advantage on delay is not only "backward comes free from determinism". Even without determinism, a step-indexed backward simulation needs no finite-observation machinery. A target run is a finite sequence of steps, each answered locally, while a denotational element of a target application summarizes many calls at once.
-* Generically, the direct backward framework (97) is a little smaller than the determinism argument (128). But a non-deterministic language would need it alongside a forward simulation in every pass that changes representation, here about 150 lines more for delay. The determinism argument is paid once.
+* Generically, the direct backward framework (94) is somewhat larger than the determinism argument (71). And a non-deterministic language would need it alongside a forward simulation in every pass that changes representation, here about 150 lines more for delay. The determinism argument is paid once.
