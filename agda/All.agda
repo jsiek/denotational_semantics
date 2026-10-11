@@ -98,3 +98,4 @@ import Compiler.Operational.Machine.Clos5
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
+import Compiler.Operational.Correctness.ConcretizeSim
