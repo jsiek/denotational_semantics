@@ -21,12 +21,13 @@
 
 module Compiler.Operational.Adequacy.LogRel where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD)
+open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD) renaming (out to dout)
+open import Compiler.Lang.Prim using (int; bool; δ)
 open import Compiler.Lang.ISWIM
 open import Compiler.Lang.Uses Op sig
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊)
@@ -94,6 +95,11 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝕍At-proj : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
 𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
 𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
+
+𝕍-out : ∀ r → 𝕍 (dout r) (out r)
+𝕍-out (int k) = refl
+𝕍-out (bool true) = refl
+𝕍-out (bool false) = refl
 
 {- related values are observed in the shape of the denotational value -}
 𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
@@ -259,6 +265,13 @@ adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₂ ⟨ u 
               (λ d d∈ → adequate L (λ x p → G x (inj₁ p)) (allR d d∈)) eL))) w∈
 ... | ⟨ v , ⟨ eN , r ⟩ ⟩ =
   ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eN κ) , r ⟩ ⟩
+
+adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} G ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩
+    with adequate L (λ x q → G x (inj₁ q)) n∈ | adequate M (λ x q → G x (inj₂ (inj₁ q))) m∈
+... | ⟨ _ , ⟨ eL , refl ⟩ ⟩ | ⟨ _ , ⟨ eM , refl ⟩ ⟩ =
+  ⟨ out (δ p n m)
+  , ⟨ (λ κ → refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ eM (primR p (const Int n) κ) ++↠ refl ∷↠ done)
+    , 𝕍-out (δ p n m) ⟩ ⟩
 
 adequate-args {zero} Nil G ne = ⟨ [] , ⟨ [] , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
 adequate-args {suc n} (M ,, args) G ne

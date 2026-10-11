@@ -26,14 +26,15 @@
 
 module Compiler.Operational.Adequacy.Clos5Soundness where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
+open import Compiler.Lang.Prim using (int; bool; δ)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
-  renaming (proj to dproj; pair to dpair)
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono; primD)
+  renaming (proj to dproj; pair to dpair; out to dout)
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
@@ -46,7 +47,7 @@ open import Compiler.Lang.ListUtil
 open import Compiler.Operational.Machine.Clos5 hiding (inl; inr)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑)
-open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→length)
+open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→length; δ?-inv)
 open import Compiler.Operational.Adequacy.Soundness
   using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
 open import Compiler.Operational.Adequacy.Clos5WF using (WF; DefsWF)
@@ -133,6 +134,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦 (caseK M N γ κ) D =
     𝒦 κ (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧⁺ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
   𝒦 (letK N γ κ) D = 𝒦 κ (⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
+  𝒦 (primL p M γ κ) D = 𝒦 κ (primD p ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
+  𝒦 (primR p v κ) D = 𝒦 κ (primD p ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
 
   𝒮 : State → 𝒫 Value
   𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧⁺ (𝓔 γ))
@@ -186,6 +189,10 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     G : ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
       ⊆ ⋆ ⟨ Λ ⟨ (λ X → ⟦ N ⟧⁺ (X • 𝓔 γ)) , ptt ⟩ , ⟨ E , ptt ⟩ ⟩
     G w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
+  𝒦-mono (primL p M γ κ) D⊆ =
+    𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , rest ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , rest ⟩ ⟩ ⟩ }
+  𝒦-mono (primR p v κ) D⊆ =
+    𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
 
   {- every value denotes a nonempty set -}
   𝒱-nonempty : ∀ v → nonempty (𝒱 v)
@@ -301,6 +308,25 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   proj-𝒱s {suc n} zero (v ∷ vs) () d d∈ | false
   proj-𝒱s (suc i) (v ∷ vs) eq d d∈ = proj-𝒱s i vs eq d d∈
 
+  {- Primitives -----------------------------------------------------------------}
+
+  int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ 𝒱 v
+  int-in (const B k) refl = ⟨ refl , refl ⟩
+
+  𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
+  𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
+  𝒱-out (bool true) (left ⟨⟩) tt = refl
+  𝒱-out (bool false) (right ⟨⟩) tt = refl
+  𝒱-out (bool true) (left (tup[ zero ] d)) ⟨ () , _ ⟩
+  𝒱-out (bool true) (left (tup[ suc i ] d)) ⟨ () , _ ⟩
+  𝒱-out (bool false) (right (tup[ zero ] d)) ⟨ () , _ ⟩
+  𝒱-out (bool false) (right (tup[ suc i ] d)) ⟨ () , _ ⟩
+
+  prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primD p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+  prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
+  ... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ =
+    ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩
+
   {- Steps shrink the denotation of the state --------------------------------}
 
   step-⊆ : ∀ s {s'} → step ds s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
@@ -383,6 +409,11 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     β : ⟦ N ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in N γ v d d∈
     ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ne ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+  step-⊆ (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+  step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
+  step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
+  step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
+  step-⊆ (ret w (primR p v κ)) () | nothing
 
   ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
   ↠-⊆ done d d∈ = d∈
@@ -475,6 +506,11 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret (const B k) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret (tup vs) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
   halts (ret v (letK N γ κ)) () ans
+  halts (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) () ans
+  halts (ret v (primL p M γ κ)) () ans
+  halts (ret w (primR p v κ)) eq ans with δ? p (obs v) (obs w)
+  halts (ret w (primR p v κ)) () ans | just r
+  halts (ret w (primR p v κ)) eq ans | nothing = ⊥-elim (wrong eq ans)
 
   final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
   final-shape s fin ans with halts s fin ans
