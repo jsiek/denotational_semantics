@@ -4,10 +4,9 @@
   follows the CEK machine (Operational/Machine/Clos4.agda). The code of a
   function, fun-op ⦅ ∁ (x. y. N) ⦆, is closed, so its value is just N
   (fun N). app ⦅ L , M , N ⦆ evaluates the code L, the environment M
-  and the argument N, then checks that L's value is code (before the
-  clock is consulted) and runs it in the environment y, x. As in the
-  machine, a pair, like bare code, is observed as a function. See the
-  design note in Clock.agda.
+  and the argument N, then checks that L's value is code and runs it in
+  the environment y, x. As in the machine, a pair, like bare code, is
+  observed as a function. See the design note in Clock.agda.
 
 -}
 
@@ -24,7 +23,7 @@ open import Compiler.Functional.Clock
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse; replicate)
-open import Data.Maybe using (Maybe; just; nothing; map)
+open import Data.Maybe using (Maybe; map)
 open import Data.Nat using (ℕ; zero; suc)
 
 data Val : Set where
@@ -68,16 +67,12 @@ first _ = wrong
 second (pair v w) = ret w
 second _ = wrong
 
-{- the code of a function value -}
-code? : Val → Maybe AST
-code? (fun N) = just N
-code? _ = nothing
-
 eval : ℕ → Env → AST → Result Val
 eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
 {- apply code to the environment M and the argument N -}
 apply : ℕ → Env → AST → AST → Val → Result Val
-call : ℕ → Maybe AST → Env → Result Val
+{- call code f, going wrong (before the clock is consulted) if f is not code -}
+call : Val → ℕ → Env → Result Val
 branch : ℕ → Env → AST → AST → Val → Result Val
 
 eval ck ρ (` x) = from-maybe (ρ ‼ x)
@@ -100,12 +95,11 @@ eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ M >>= λ v → eval c
 eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = eval ck ρ M >>= λ v → eval-args ck ρ (v ∷ vs) args
 
-apply ck ρ M N f =
-  eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck (code? f) (w ∷ e ∷ [])
+apply ck ρ M N f = eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call f ck (w ∷ e ∷ [])
 
-call ck nothing ρ = wrong
-call zero (just N) ρ = timeout
-call (suc ck) (just N) ρ = eval ck ρ N
+call (fun N) zero ρ = timeout
+call (fun N) (suc ck) ρ = eval ck ρ N
+call _ ck ρ = wrong
 
 branch ck ρ M N (inl v) = eval ck (v ∷ ρ) M
 branch ck ρ M N (inr v) = eval ck (v ∷ ρ) N

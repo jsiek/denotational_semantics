@@ -98,8 +98,7 @@ module _ (ds : List AST) where
   eval-args {zero} ck ρ vs Nil = ret vs
   eval-args {suc n} ck ρ vs (M ,, args) = eval ck ρ M >>= λ v → eval-args ck ρ (v ∷ vs) args
 
-  apply ck ρ M N f =
-    eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck (code? f) (w ∷ e ∷ [])
+  apply ck ρ M N f = eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck (code? f) (w ∷ e ∷ [])
 
   {- the definition a code pointer refers to -}
   code? (code k) = global ds k

@@ -116,7 +116,7 @@ module Rel (D : Defs) where
     → f ≈ g → RelResult _≈_ (S.apply ck ρ₁ M N f)
                 (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
   call≈ : ∀ ck {ρ₁ ρ₂ f g} → f ≈ g → ρ₁ ≈ρ ρ₂
-    → RelResult _≈_ (S.call ck (S.code? f) ρ₁) (T.call D ck (T.code? D g) ρ₂)
+    → RelResult _≈_ (S.call f ck ρ₁) (T.call D ck (T.code? D g) ρ₂)
   branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
     → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
                 (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
