@@ -94,19 +94,19 @@ As of this PR; the denotational proof is 824 lines and the operational one 218.
 
 | part | lines | what it is |
 |---|---:|---|
-| **backward direction (reflect)** | **≈ 507** | |
-| – finite-observation machinery | 207 | the relation R with the call batches (130), depth and `Bnd` (26), `collect` (39), which extracts finite witnesses of a target call, and `cdr-witness` (12), which picks finitely many pairs whose cdrs cover the free variables of a call |
+| **backward direction (reflect)** | **479** | |
+| – finite-observation machinery | 195 | the relation R with the call batches (130), depth and `Bnd` (26), `collect` (39), which extracts finite witnesses of a target call |
 | – fundamental lemma | 193 | one case per construct, plus helpers for nonemptiness, tags, pairs and case branches |
 | – semantic side conditions | 48 | consistency of Clos4 terms (16); a source β-law and a "one finite part of the bound variable suffices" lemma (32) |
 | – imports and end theorem | 43 | |
-| **forward direction (preserve)** | **≈ 208** | |
+| **forward direction (preserve)** | **208** | |
 | – the relation ⊑ and its lemmas | 44 | |
 | – target laws | 41 | a β-law for closures, `case` contains its branch, one finite part suffices |
 | – fundamental lemma | 78 | |
 | – imports and end theorem | 45 | |
-| **shared** | **≈ 107** | |
+| **shared** | **137** | |
 | – the `let`/`fst`/`snd` application equation | 42 | `DelayApp` |
-| – shorthands, list helpers, flat values | 65 | |
+| – shorthands, list helpers, flat values, `cdr-witness` (finitely many pairs whose cdrs cover a list) | 95 | |
 
 **Operational** (`Correctness/DelaySim.agda`):
 
@@ -120,8 +120,8 @@ As of this PR; the denotational proof is 824 lines and the operational one 218.
 
 **Where the ≈ 3.8× comes from:**
 
-1. **Two directions instead of one: about 507 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 315 lines, roughly 1.4× `DelaySim`.
-2. **Finite observations in reflect: about 207 lines, plus part of the app case.** Pairs are joined (one value ⦅ u , v ⦆), but a target call still takes its code from `car C` and its free variables from `cdr C` separately, possibly from different pairs. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index.
+1. **Two directions instead of one: about 479 lines.** Delay changes how functions are represented, so the result is not an equation, and preserve and reflect need different relations. Operationally, the backward direction comes from forward simulation plus determinism. The generic framework proves that once, and it is counted there. Preserve alone plus the shared part is about 345 lines, roughly 1.6× `DelaySim`.
+2. **Finite observations in reflect: about 195 lines, plus part of the app case.** Pairs are joined (one value ⦅ u , v ⦆), but a target call still takes its code from `car C` and its free variables from `cdr C` separately, possibly from different pairs. A single target value says nothing about a call, so the relation ranges over finite lists, with batches and a depth index.
 3. **β needs side conditions: about 130 lines.** In the graph model, β for closures, `let` and `case` holds only with nonemptiness and continuity. That costs `clos-β` and `cont-0` on both sides, the application equation, and consistency for `case`. Operationally, β is a machine step.
 4. **Imports: 82 lines against 11.**
 5. **Per-construct cases are comparable once the plumbing is gone.** Preserve's fundamental lemma is 78 lines against 66 for the simulation cases.
@@ -155,5 +155,5 @@ The 128 lines are the parts of the forward framework that exist only to get the 
 **What this shows:**
 
 * A direct operational backward proof of delay is about as big as the forward one: 146 lines on top of the shared relations, or about 246 standalone, against 218. The cases are as easy as the forward cases (one line each, by computation of the step function). The extra lines list the administrative target states, 12 constructors of the state relation and one `waits` line per state.
-* It stays well under the denotational reflect (453 lines, ≈ 507 with its side conditions). So the operational advantage on delay is not only "backward comes free from determinism". Even without determinism, a step-indexed backward simulation needs no finite-observation machinery. A target run is a finite sequence of steps, each answered locally, while a denotational element of a target application summarizes many calls at once.
+* It stays well under the denotational reflect (453 lines in its two modules, 479 with the depth bound it uses). So the operational advantage on delay is not only "backward comes free from determinism". Even without determinism, a step-indexed backward simulation needs no finite-observation machinery. A target run is a finite sequence of steps, each answered locally, while a denotational element of a target application summarizes many calls at once.
 * Generically, the direct backward framework (97) is a little smaller than the determinism argument (128). But a non-deterministic language would need it alongside a forward simulation in every pass that changes representation, here about 150 lines more for delay. The determinism argument is paid once.
