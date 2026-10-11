@@ -45,10 +45,10 @@ open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case
                cons; clear; bind; ast; ν; ■; Var)
 import Compiler.Lang.Clos3 as C3
 open import Compiler.Compile.Concretize
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 import Compiler.Operational.Machine.Clos2 as S
 import Compiler.Operational.Machine.Clos3 as T
 
@@ -60,33 +60,13 @@ open import Data.List.Properties using (unfold-reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_)
 open import Data.Nat.Properties using (+-identityʳ; +-suc; ≤-pred; ≮⇒≥; m≤n⇒m<n∨m≡n)
 open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; subst₂; cong₂)
 open import Relation.Nullary using (yes; no)
-
-{- Lists -----------------------------------------------------------------------}
-
-module _ {A : Set} where
-
-  ‼-snoc-< : ∀ (vs : List A) v k → k < length vs → (vs ∷ʳ v) ‼ k ≡ vs ‼ k
-  ‼-snoc-< (u ∷ vs) v zero _ = refl
-  ‼-snoc-< (u ∷ vs) v (suc k) (s≤s k<) = ‼-snoc-< vs v k k<
-
-  ‼-snoc-length : ∀ (vs : List A) v → (vs ∷ʳ v) ‼ length vs ≡ just v
-  ‼-snoc-length [] v = refl
-  ‼-snoc-length (u ∷ vs) v = ‼-snoc-length vs v
-
-  ‼-≥ : ∀ (vs : List A) k → length vs ≤ k → vs ‼ k ≡ nothing
-  ‼-≥ [] k _ = refl
-  ‼-≥ (u ∷ vs) (suc k) (s≤s le) = ‼-≥ vs k le
-
-  length-snoc : ∀ (vs : List A) v → length (vs ∷ʳ v) ≡ suc (length vs)
-  length-snoc [] v = refl
-  length-snoc (u ∷ vs) v = cong suc (length-snoc vs v)
 
 {- The compiler, on the machines' views of the syntax --------------------------}
 

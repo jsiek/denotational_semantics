@@ -46,9 +46,9 @@ open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 open import Compiler.Operational.Machine.Clos5
-open import Compiler.Operational.Correctness.GlobalizeSim using (_⊑_; ∷-⊑; global-⊑)
+open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; ShapeAt; length→has-length)
 open import Compiler.Operational.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
 open import Compiler.Operational.Adequacy.Clos5Common ds

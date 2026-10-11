@@ -19,10 +19,10 @@ module Compiler.Operational.Adequacy.Common where
 open import Primitives using (Base; base-rep)
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; const; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
   using (Star; ε; _◅_; next; stop; machine)
-open import Compiler.Operational.Machine.Common using (has-length)
+open import Compiler.Lang.ListUtil using (has-length)
 open import Compiler.Operational.Machine.ISWIM
 
 open import Data.Bool using (true; false)

@@ -9,7 +9,7 @@
 
 module Compiler.Operational.Simulation where
 
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 
 open import Data.Empty using (⊥-elim)

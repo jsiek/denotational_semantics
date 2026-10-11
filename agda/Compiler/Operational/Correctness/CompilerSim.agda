@@ -23,11 +23,12 @@
 module Compiler.Operational.Correctness.CompilerSim where
 
 open import Compiler.Model.Graph.Correctness.CompilerCorrect using (compile)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Operational.Correctness.EncloseSim using (Closed; enclose-correct)
-open import Compiler.Operational.Correctness.OptimizeSim using (optimize-correct; enclose-closed)
+open import Compiler.Compile.EncloseScope using (Closed; enclose-closed)
+open import Compiler.Operational.Correctness.EncloseSim using (enclose-correct)
+open import Compiler.Operational.Correctness.OptimizeSim using (optimize-correct)
 open import Compiler.Operational.Correctness.ConcretizeSim using (concretize-correct)
 open import Compiler.Operational.Correctness.DelaySim using (delay-correct)
 open import Compiler.Operational.Correctness.GlobalizeSim using (globalize-correct)

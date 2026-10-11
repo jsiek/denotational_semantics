@@ -30,9 +30,9 @@ open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-mo
 open import Compiler.Model.Graph.Sem.ISWIMContinuous using (body-continuous)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 open import Compiler.Operational.Machine.ISWIM hiding (inl; inr)
 import Compiler.Operational.Machine.ISWIM as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Common

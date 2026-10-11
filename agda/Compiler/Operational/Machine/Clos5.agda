@@ -16,9 +16,9 @@ module Compiler.Operational.Machine.Clos5 where
 open import Primitives using (Base; base-rep)
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos5
-open import Compiler.Operational.Observation
+open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
-open import Compiler.Operational.Machine.Common
+open import Compiler.Lang.ListUtil
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse)
@@ -74,10 +74,6 @@ tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 ret? : Maybe Val → Cont → Next State
 ret? (just v) κ = next (ret v κ)
 ret? nothing κ = stop o-wrong
-
-{- definition k, counting from the oldest; the table is newest first -}
-global : List AST → ℕ → Maybe AST
-global ds k = reverse ds ‼ k
 
 {- run code, if there is any, in the environment y, x -}
 call : Maybe AST → Val → Val → Cont → Next State

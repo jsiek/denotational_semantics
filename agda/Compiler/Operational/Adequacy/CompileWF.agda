@@ -3,8 +3,8 @@
   The compiler produces well-formed Clos5 programs (Clos5WF.agda) from
   closed ISWIM programs: compile-wf.
 
-  Each pass preserves well-scopedness (WS, from Scope.agda, and
-  OptimizeSim.WS for Clos2), starting from enclose-closed (OptimizeSim):
+  Each pass preserves well-scopedness (WS, Compiler.Lang.Scope), starting
+  from enclose-closed (Compiler.Compile.EncloseScope):
 
   * optimize: the code of a closure, renamed by ext-var (index P), uses
     only the free variables that prune keeps, whose new positions are
@@ -29,10 +29,11 @@ import Compiler.Lang.Clos2 as C2
 import Compiler.Lang.Clos3 as C3
 import Compiler.Lang.Clos4 as C4
 import Compiler.Lang.Clos5 as C5
+import Compiler.Lang.Scope
 import Compiler.Operational.Adequacy.Scope
 import Compiler.Operational.Adequacy.Clos5WF as F
-import Compiler.Operational.Correctness.OptimizeSim as OS
-open import Compiler.Operational.Correctness.EncloseSim using (Closed)
+import Compiler.Compile.EncloseScope as ES
+open ES using (Closed)
 open import Compiler.Compile.Enclose using (enclose)
 import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
@@ -51,6 +52,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (Dec; yes; no)
 open import abt.Var using (Var)
 
+module W2 = Compiler.Lang.Scope C2.Op C2.sig
 module W3 = Compiler.Operational.Adequacy.Scope C3.Op C3.sig
 module W4 = Compiler.Operational.Adequacy.Scope C4.Op C4.sig
 
@@ -63,7 +65,7 @@ module Opt where
   open C2
   open import Compiler.Compile.Optimize
   open import Compiler.Compile.Concretize using (unbind-n)
-  open OS using (WS; WS-arg; WS-args; ws-uses)
+  open W2 using (WS; WS-arg; WS-args; ws-uses)
 
   module _ (r : Var → Var) {U : ℕ → Set} (dec : ∀ j → Dec (U j)) where
 
@@ -120,7 +122,7 @@ module Opt where
 
   optimize-ws r (` x) w h = h x refl
   optimize-ws r (clos-op n ⦅ ! clear a ,, fvs ⦆) (wa , ws) h =
-    OS.Enclosed.bind-n-ws c 0 body'
+    ES.Enclosed.bind-n-ws c 0 body'
       (subst (λ x → WS (suc x) body') (sym (+-identityʳ c))
         (opt-body-ws (ext-var (index P)) n a wa h'))
     , kept-ws r dec n fvs (λ k → k) ws (λ x u → h x (inj₂ u))
@@ -178,7 +180,7 @@ module Opt where
 module Conc where
   open C2
   open import Compiler.Compile.Concretize
-  open OS using (WS; WS-arg; WS-args)
+  open W2 using (WS; WS-arg; WS-args)
 
   RefOK : ℕ → Ref → Set
   RefOK k (var x) = x < k
@@ -313,4 +315,4 @@ compile-wf M c = proj₂ G , proj₂ (glob-shape M₄ []) , proj₁ G
   M₂' = Compiler.Compile.Optimize.optimize-program M₂
   M₃ = Compiler.Compile.Concretize.concretize-program M₂'
   G = Glob.glob-wf M₄ [] (Del.delay-ws M₃ (Conc.concretize-closed M₂'
-        (Opt.optimize-closed M₂ (OS.enclose-closed M c)))) tt
+        (Opt.optimize-closed M₂ (ES.enclose-closed M c)))) tt

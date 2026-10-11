@@ -1,8 +1,8 @@
 {-
 
   What a run of a program can be seen to do, shared by every language
-  and by every style of semantics (small-step machines here; a big-step
-  semantics with fuel or logical relations could reuse it).
+  and by both operational styles of semantics: the small-step machines
+  (Operational/) and the clocked interpreters (Functional/).
 
   A finished run is observed through its final value, forgetting the code
   and environment inside closures, or as going wrong.
@@ -12,7 +12,7 @@
 
 -}
 
-module Compiler.Operational.Observation where
+module Compiler.Observation where
 
 open import Primitives using (Base; base-rep)
 open import Data.List using (List)

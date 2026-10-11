@@ -11,7 +11,7 @@
 -}
 
 open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse)
-open import Compiler.Lang.Clos5 using (AST)
+open import Compiler.Lang.Clos5 using (AST; global)
 
 module Compiler.Operational.Adequacy.Clos5Common (ds : List AST) where
 
@@ -20,9 +20,9 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain using (ν)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (table) renaming (code to codeD)
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (table-ext; table-top)
 open import Compiler.Operational.Smallstep using (Star; ε; _◅_; next; stop; machine)
-open import Compiler.Operational.Machine.Common using (_‼_)
+open import Compiler.Lang.ListUtil using (_‼_)
 open import Compiler.Operational.Machine.Clos5
-open import Compiler.Operational.Correctness.GlobalizeSim using (_⊑_)
+open import Compiler.Compile.GlobalizeTable using (_⊑_)
 open import Compiler.Operational.Adequacy.Clos5WF using (DefsWF)
 
 open import Data.List.Properties

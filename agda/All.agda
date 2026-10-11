@@ -31,6 +31,8 @@ import Compiler.Lang.Clos4
 import Compiler.Lang.Clos5
 import Compiler.Lang.Uses
 import Compiler.Lang.Rename
+import Compiler.Lang.Scope
+import Compiler.Lang.ListUtil
 
 {- the passes -}
 import Compiler.Compile.Enclose
@@ -38,6 +40,13 @@ import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
 import Compiler.Compile.Delay
 import Compiler.Compile.Globalize
+
+{- syntactic facts about the passes, used by both operational styles -}
+import Compiler.Compile.EncloseScope
+import Compiler.Compile.GlobalizeTable
+
+{- observations and the end-theorem shape, shared by both operational styles -}
+import Compiler.Observation
 
 {- the graph model and the semantics of each language -}
 import Compiler.Model.Graph.Domain.ISWIM.Domain
@@ -80,15 +89,11 @@ import Compiler.Model.Graph.Correctness.CompilerExample
    model above: small-step machines and forward simulations.
    --------------------------------------------------------------------------- -}
 
-{- shared by any operational semantics: observations, end-theorem shape -}
-import Compiler.Operational.Observation
-
 {- the generic framework: transition systems, forward simulations -}
 import Compiler.Operational.Smallstep
 import Compiler.Operational.Simulation
 
 {- the machines -}
-import Compiler.Operational.Machine.Common
 import Compiler.Operational.Machine.ISWIM
 import Compiler.Operational.Machine.Clos2
 import Compiler.Operational.Machine.Clos3
@@ -128,3 +133,30 @@ import Compiler.Operational.Adequacy.EndToEnd
    for comparison (see papers/PLDI-2027/loc.md) -}
 import Compiler.Operational.Backward
 import Compiler.Operational.Correctness.DelayBackSim
+
+{- ---------------------------------------------------------------------------
+   The CakeML-style (functional big-step, clocked) development: a clocked
+   interpreter per language and clock-for-clock proofs of the passes.
+   It shares with the CompCert-style development only the neutral modules
+   above (observations, list lookups, scoping, renaming and table lemmas).
+   --------------------------------------------------------------------------- -}
+
+{- results, clocks, the end-theorem shape, clock-for-clock correctness -}
+import Compiler.Functional.Clock
+
+{- the interpreters -}
+import Compiler.Functional.Interp.ISWIM
+import Compiler.Functional.Interp.Clos2
+import Compiler.Functional.Interp.Clos3
+import Compiler.Functional.Interp.Clos4
+import Compiler.Functional.Interp.Clos5
+
+{- correctness of each pass -}
+import Compiler.Functional.Correctness.EncloseFuel
+import Compiler.Functional.Correctness.OptimizeFuel
+import Compiler.Functional.Correctness.ConcretizeFuel
+import Compiler.Functional.Correctness.DelayFuel
+import Compiler.Functional.Correctness.GlobalizeFuel
+
+{- correctness of the whole compiler -}
+import Compiler.Functional.Correctness.CompilerFuel

@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
-"""Count code lines of the two compiler-correctness proofs.
+"""Count code lines of the three compiler-correctness proofs.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
 
 A code line is a line that is not blank and not a comment ({- -} blocks,
 -- line comments).  Every .agda file under agda/ (except agda/old/ and
 All.agda) must belong to exactly one group; the script fails otherwise,
-so new modules cannot go uncounted.
+so new modules cannot go uncounted.  A group of the CakeML-style side may
+have no files yet (a pass not yet proved); it is shown as —.
 """
 import glob, os, re, sys
 
 G = 'agda/Compiler/Model/Graph/'
 O = 'agda/Compiler/Operational/'
+F = 'agda/Compiler/Functional/'
 
 # (side, group, glob patterns)
 GROUPS = [
+    # also the machine-independent lemmas both operational styles use:
+    # Lang/{ListUtil,Scope,Rename}, Compile/{EncloseScope,GlobalizeTable},
+    # and the observations (Observation.agda)
     ('shared', 'syntax, languages, compiler passes',
      ['agda/abt/*.agda', 'agda/Compiler/Lang/*.agda', 'agda/Compiler/Compile/*.agda',
+      'agda/Compiler/Observation.agda',
       'agda/Primitives.agda', 'agda/NewSigUtil.agda', 'agda/NewSyntaxUtil.agda']),
 
     ('den', 'generic infrastructure',
@@ -39,7 +45,7 @@ GROUPS = [
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     ('op', 'generic infrastructure',
-     [O + 'Observation.agda', O + 'Smallstep.agda', O + 'Simulation.agda']),
+     [O + 'Smallstep.agda', O + 'Simulation.agda']),
     ('op', 'semantics of the languages', [O + 'Machine/*.agda']),
     ('op', 'enclose', [O + 'Correctness/EncloseSim.agda']),
     ('op', 'optimize', [O + 'Correctness/OptimizeSim.agda']),
@@ -47,6 +53,15 @@ GROUPS = [
     ('op', 'delay', [O + 'Correctness/DelaySim.agda']),
     ('op', 'globalize', [O + 'Correctness/GlobalizeSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
+
+    ('ck', 'generic infrastructure', [F + 'Clock.agda']),
+    ('ck', 'semantics of the languages', [F + 'Interp/*.agda']),
+    ('ck', 'enclose', [F + 'Correctness/EncloseFuel.agda']),
+    ('ck', 'optimize', [F + 'Correctness/OptimizeFuel.agda']),
+    ('ck', 'concretize', [F + 'Correctness/ConcretizeFuel.agda']),
+    ('ck', 'delay', [F + 'Correctness/DelayFuel.agda']),
+    ('ck', 'globalize', [F + 'Correctness/GlobalizeFuel.agda']),
+    ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
      [O + 'Adequacy/Common.agda', O + 'Adequacy/Soundness.agda', O + 'Adequacy/LogRel.agda',
@@ -63,9 +78,9 @@ GROUPS = [
 
     # not in the totals: a direct backward simulation for delay, without
     # determinism, for comparison (see loc.md)
-    ('exp', 'operational: direct backward simulation for delay — framework',
+    ('exp', 'CompCert-style: direct backward simulation for delay — framework',
      [O + 'Backward.agda']),
-    ('exp', 'operational: direct backward simulation for delay — delay',
+    ('exp', 'CompCert-style: direct backward simulation for delay — delay',
      [O + 'Correctness/DelayBackSim.agda']),
 ]
 
@@ -96,6 +111,8 @@ def main():
     for side, name, pats in GROUPS:
         files = sorted({f for p in pats for f in glob.glob(p)})
         if not files:
+            if side == 'ck':
+                continue
             sys.exit(f'no files for group {side}/{name}')
         for f in files:
             if f in seen:
@@ -111,17 +128,18 @@ def main():
     rows = ['generic infrastructure', 'domain, operators, continuity',
             'semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'composition']
-    total = {'den': 0, 'op': 0}
-    print('| component | denotational | operational |')
-    print('|---|---:|---:|')
+    sides = ('den', 'op', 'ck')
+    total = {side: 0 for side in sides}
+    print('| component | denotational | CompCert-style | CakeML-style |')
+    print('|---|---:|---:|---:|')
     for r in rows:
         cells = []
-        for side in ('den', 'op'):
+        for side in sides:
             n = counts.get((side, r))
             total[side] += n or 0
             cells.append(str(n) if n is not None else '—')
-        print(f'| {r} | {cells[0]} | {cells[1]} |')
-    print(f"| **total** | **{total['den']}** | **{total['op']}** |")
+        print(f'| {r} | ' + ' | '.join(cells) + ' |')
+    print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in sides) + ' |')
     print()
     print('| adequacy (denotational side only) | lines |')
     print('|---|---:|')
@@ -139,7 +157,8 @@ def main():
             print(f'| {name} | {counts[(side, name)]} |')
     print()
     print(f"Not counted: shared code ({counts[('shared', 'syntax, languages, compiler passes')]} "
-          f"lines: syntax, languages, compiler passes) and examples "
+          f"lines: syntax, languages, compiler passes, observations, and the "
+          f"machine-independent lemmas both operational styles use) and examples "
           f"({counts[('examples', 'examples')]} lines).")
 
 
