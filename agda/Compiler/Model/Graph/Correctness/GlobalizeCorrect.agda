@@ -28,7 +28,7 @@ open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
 open import Compiler.Compile.Globalize
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; ρ₀)
-open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
+open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; <-≤-trans; <-irrefl; n<1+n; m≤n+m; n≤1+n)
@@ -110,6 +110,10 @@ let-≃ {D} {F} {D'} {F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = ⋆-≃ ⟨ G₁ , G
   G₂ ν tt = tt
   G₂ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ proj₂ (lower (F≃ (mem V) (mem V) ≃-refl)) w w∈ , ne ⟩
 
+prim-≃ : ∀ p {D E D' E'} → RRs (■ ∷ ■ ∷ []) ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+prim-≃ p ⟨ D≃ , ⟨ E≃ , _ ⟩ ⟩ = primD-≃ p (lower D≃) (lower E≃)
+
 {- the code of a function: Λ X. Λ Y. F X Y -}
 ΛΛ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
   → Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ ≃ Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩
@@ -155,6 +159,7 @@ RB-mono (L5.inl-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 RB-mono (L5.inr-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 RB-mono (L5.case-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 RB-mono (L5.let-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
+RB-mono (L5.prim p L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
 
 RB-arg-mono (L5.ast M) n≤m r = RB-mono M n≤m r
 RB-arg-mono (L5.bind a) n≤m r = RB-arg-mono a n≤m r
@@ -218,6 +223,7 @@ stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel =
   inr-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
 stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = case-≃ (stab-args n T T' args ρ ρ' ag r rel)
 stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = let-≃ (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = prim-≃ p (stab-args n T T' args ρ ρ' ag r rel)
 
 stab-arg n T T' (L5.ast M) ρ ρ' ag r rel = lift (stab n T T' M ρ ρ' ag r rel)
 stab-arg n T T' (L5.bind a) ρ ρ' ag r rel =
@@ -256,6 +262,7 @@ glob-shape (inl-op ⦅ args ⦆) ds = glob-shape-args args ds
 glob-shape (inr-op ⦅ args ⦆) ds = glob-shape-args args ds
 glob-shape (case-op ⦅ args ⦆) ds = glob-shape-args args ds
 glob-shape (let-op ⦅ args ⦆) ds = glob-shape-args args ds
+glob-shape (prim p ⦅ args ⦆) ds = glob-shape-args args ds
 
 glob-shape-arg (ast M) ds = glob-shape M ds
 glob-shape-arg (bind a) ds = glob-shape-arg a ds
@@ -293,6 +300,7 @@ glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = inl-≃ (lower (proj₁ (glob-sem
 glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = inr-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
 glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = case-≃ (glob-sem-args args ds ρ ρ' rel)
 glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = let-≃ (glob-sem-args args ds ρ ρ' rel)
+glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = prim-≃ p (glob-sem-args args ds ρ ρ' rel)
 
 glob-sem-arg (ast M) ds ρ ρ' rel = lift (glob-sem M ds ρ ρ' rel)
 glob-sem-arg (bind a) ds ρ ρ' rel =

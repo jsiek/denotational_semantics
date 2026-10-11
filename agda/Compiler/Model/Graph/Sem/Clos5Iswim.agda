@@ -42,6 +42,7 @@ Table = ℕ → 𝒫 Value
 𝕆-Clos5 T inl-op = inl
 𝕆-Clos5 T inr-op = inr
 𝕆-Clos5 T case-op = 𝒞
+𝕆-Clos5 T (prim p) = primD p
 𝕆-Clos5 T let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
 init : 𝒫 Value

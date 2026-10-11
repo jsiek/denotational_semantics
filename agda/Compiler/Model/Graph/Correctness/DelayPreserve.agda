@@ -33,8 +33,8 @@ open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
-  using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; Flat; ℬ-flat;
-         flat-const; flat-ω; flat-⟨⟩)
+  using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat;
+         Data; flat-data; out-data)
 open import Compiler.Model.Graph.Correctness.DelayApp using (let-app-≃)
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous as C4
 import Compiler.Model.Graph.Correctness.DelayReflectFinite as Reflect
@@ -50,6 +50,7 @@ open import Data.Empty using (⊥-elim)
 open import Data.Unit.Polymorphic using () renaming (⊤ to pTrue; tt to ptt)
 open import Level using (Lift; lift; lower) renaming (suc to lsuc; zero to lzero)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl)
+open import Compiler.Lang.Prim using (δ)
 
 module Compiler.Model.Graph.Correctness.DelayPreserve where
 
@@ -93,10 +94,12 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-ne ⦅ u , v ⦆ (lift v∈) = ⟨ _ , v∈ ⟩
 ⊑-ne ⟨⟩ (lift v∈) = ⟨ _ , v∈ ⟩
 
-flat-⊑ : ∀ {v D'} → Flat v → v ∈ D' → v ⊑ D'
-flat-⊑ flat-const v∈ = lift v∈
-flat-⊑ flat-ω v∈ = lift v∈
-flat-⊑ flat-⟨⟩ v∈ = lift v∈
+data-⊑ : ∀ v {D'} → Data v → v ∈ D' → v ⊑ D'
+data-⊑ (left d) dd v∈ = data-⊑ d dd v∈
+data-⊑ (right d) dd v∈ = data-⊑ d dd v∈
+data-⊑ (const k) _ v∈ = lift v∈
+data-⊑ ω _ v∈ = lift v∈
+data-⊑ ⟨⟩ _ v∈ = lift v∈
 
 ⊑*-intro : ∀ U {D E'} → mem U ⊆ D → (∀ v → v ∈ D → v ⊑ E') → U ⊑* E'
 ⊑*-intro [] U⊆ f = ptt
@@ -170,7 +173,10 @@ preserve (` x) NE ρ⊑ = ρ⊑ x
 preserve (app ⦅ L ,, N ,, Nil ⦆) {ρ}{ρ'} NE ρ⊑ v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
   ⊑-mono v (proj₂ (let-app-≃ (delay L) (delay N) ρ'))
     (proj₂ (preserve L NE ρ⊑ (U ↦ v) U↦v∈) _ (⊑*-intro U U⊆ (preserve N NE ρ⊑)))
-preserve (lit B k ⦅ Nil ⦆) NE ρ⊑ v v∈ = flat-⊑ (ℬ-flat v v∈) v∈
+preserve (lit B k ⦅ Nil ⦆) NE ρ⊑ v v∈ = data-⊑ v (flat-data (ℬ-flat v v∈)) v∈
+preserve (prim p ⦅ L ,, M ,, Nil ⦆) {ρ' = ρ'} NE ρ⊑ _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
+  data-⊑ (out (δ p n m)) {⟦ delay (prim p ⦅ L ,, M ,, Nil ⦆) ⟧' ρ'} (out-data (δ p n m))
+    ⟨ n , ⟨ m , ⟨ lower (preserve L NE ρ⊑ _ n∈) , ⟨ lower (preserve M NE ρ⊑ _ m∈) , refl ⟩ ⟩ ⟩ ⟩
 preserve (tuple n ⦅ args ⦆) = preserve-𝒯 args
 preserve (get i ⦅ M ,, Nil ⦆) NE ρ⊑ v v∈ = preserve M NE ρ⊑ (tup[ i ] v) v∈
 preserve (inl-op ⦅ M ,, Nil ⦆) NE ρ⊑ (left v) v∈ = preserve M NE ρ⊑ v v∈

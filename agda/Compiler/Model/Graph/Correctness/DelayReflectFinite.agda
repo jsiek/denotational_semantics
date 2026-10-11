@@ -49,6 +49,7 @@ open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Level using (lift; lower)
+open import Compiler.Lang.Prim using (δ)
 
 module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 
@@ -242,6 +243,18 @@ delay-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} E V' V'⊆
   U~ a b a∈ b∈ = ⟦⟧'-consis (delay N) ρ' (Envs.ρ'~ E) a b (U⊆N' a a∈) (U⊆N' b b∈)
 
 delay-reflect (lit B c ⦅ Nil ⦆) E V' V'⊆ = R-flat V'⊆ (λ v v∈ → ℬ-flat v (V'⊆ v v∈))
+
+delay-reflect (prim p ⦅ L ,, M ,, Nil ⦆) E V' V'⊆ = R-data V⊆ dt
+  where
+  const-reflect : ∀ N {c : base-rep Int} → const c ∈ ⟦ delay N ⟧' _ → const c ∈ ⟦ N ⟧ _
+  const-reflect N {c} c∈ = Obs.const-obs (unfold (delay-reflect N E (const c ∷ []) (single⊆ c∈))) c (here refl)
+  V⊆ : mem V' ⊆ ⟦ prim p ⦅ L ,, M ,, Nil ⦆ ⟧ _
+  V⊆ v v∈ with V'⊆ v v∈
+  ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
+    ⟨ n , ⟨ m , ⟨ const-reflect L n∈ , ⟨ const-reflect M m∈ , refl ⟩ ⟩ ⟩ ⟩
+  dt : ∀ v → v ⋵ V' → Data v
+  dt v v∈ with V'⊆ v v∈
+  ... | ⟨ n , ⟨ m , ⟨ _ , ⟨ _ , refl ⟩ ⟩ ⟩ ⟩ = out-data (δ p n m)
 
 delay-reflect (tuple n ⦅ args ⦆) = reflect-𝒯 args
 

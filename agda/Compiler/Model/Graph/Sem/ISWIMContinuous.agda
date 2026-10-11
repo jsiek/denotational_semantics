@@ -46,6 +46,9 @@ ISWIM-continuous-op {case-op} {ρ} {NE} {v}
     ⟨ cL , ⟨ cM , ⟨ cN , _ ⟩ ⟩ ⟩ =
   𝒞-cont {L = λ ρ → ⟦ L ⟧ ρ} {B₁ = λ ρ → ⟦ M ⟧ ρ} {B₂ = λ ρ → ⟦ N ⟧ ρ} NE
     (⟦⟧-monotone L) cL (⟦⟧-monotone M) cM (⟦⟧-monotone N) cN v v∈
+ISWIM-continuous-op {prim p} {ρ} {NE} {v}
+    {cons (ast L) (cons (ast M) nil)} v∈ ⟨ cL , ⟨ cM , _ ⟩ ⟩ =
+  primD-cont p {E₁ = λ ρ → ⟦ L ⟧ ρ} {E₂ = λ ρ → ⟦ M ⟧ ρ} (⟦⟧-monotone L) (⟦⟧-monotone M) cL cM v v∈
 
 ISWIM-Continuous : ContinuousSemantics
 ISWIM-Continuous = record

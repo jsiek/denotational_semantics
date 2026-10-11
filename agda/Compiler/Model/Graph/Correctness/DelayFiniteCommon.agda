@@ -21,10 +21,12 @@ open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
 open import Data.Product using (_×_; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
-open import Data.Empty using (⊥-elim) renaming (⊥ to False)
+open import Data.Empty using (⊥-elim)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
+open import Data.Bool using (true; false)
+open import Compiler.Lang.Prim using (int; bool)
 
 module Compiler.Model.Graph.Correctness.DelayFiniteCommon where
 
@@ -160,10 +162,27 @@ data Flat : Value → Set where
   flat-ω : Flat ω
   flat-⟨⟩ : Flat ⟨⟩
 
-flat-tag : ∀ t {d} → Flat (tag t d) → False
-flat-tag (tupT i) ()
-flat-tag leftT ()
-flat-tag rightT ()
+{- first-order data: flat values under left and right, such as the
+   results of the primitives -}
+Data : Value → Set
+Data (left d) = Data d
+Data (right d) = Data d
+Data v = Flat v
+
+flat-data : ∀ {v} → Flat v → Data v
+flat-data flat-const = flat-const
+flat-data flat-ω = flat-ω
+flat-data flat-⟨⟩ = flat-⟨⟩
+
+data-untag : ∀ t {d} → Data (tag t d) → Data d
+data-untag (tupT i) ()
+data-untag leftT dd = dd
+data-untag rightT dd = dd
+
+out-data : ∀ o → Data (out o)
+out-data (int n) = flat-const
+out-data (bool true) = flat-⟨⟩
+out-data (bool false) = flat-⟨⟩
 
 {- the empty tuple has only the observation ⟨⟩, whatever its operands -}
 𝒯0-flat : ∀ {Ds Es} v → v ∈ 𝒯 0 Ds → v ∈ 𝒯 0 Es × Flat v

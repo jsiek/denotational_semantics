@@ -48,6 +48,7 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2 inl-op = inl
 𝕆-Clos2 inr-op = inr
 𝕆-Clos2 case-op = 𝒞
+𝕆-Clos2 (prim p) = primD p
 
 𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
 𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = lift G
@@ -64,6 +65,7 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2-mono inl-op = inl-mono
 𝕆-Clos2-mono inr-op = inr-mono
 𝕆-Clos2-mono case-op = 𝒞-mono
+𝕆-Clos2-mono (prim p) = primD-mono p
 
 open import NewSemantics Op sig public
 

@@ -49,6 +49,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong)
 open import Relation.Nullary using (¬_; yes; no)
+open import Level using (lift; lower)
 
 module Compiler.Model.Graph.Correctness.ConcretizeCorrect where
 
@@ -204,6 +205,12 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ body = ⟨ G , H ⟩
   , (λ w → λ { ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ →
                ⟨ V , ⟨ D⊇ _ e∈ , ⟨ (λ d d∈ → E⊇ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ }) ⟩
 
+primD-≃ : ∀ p {D D' E E'} → D ≃ D' → E ≃ E'
+  → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+primD-≃ p ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ =
+  ⟨ lower (primD-mono p _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
+  , lower (primD-mono p _ _ ⟨ lift D⊇ , ⟨ lift E⊇ , ptt ⟩ ⟩) ⟩
+
 𝒯-≃ : ∀ n {Ds Es : Results (𝒫 Value) (replicate n ■)}
   → (∀ i → nthD Ds i ≃ nthD Es i) → 𝒯 n Ds ≃ 𝒯 n Es
 𝒯-≃ zero {Ds} {Es} _ = ⟨ G , H ⟩
@@ -295,6 +302,8 @@ concretize-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ r
   rel-ext : ∀ X → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
   rel-ext X zero = ≃-refl
   rel-ext X (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
+concretize-correct (prim p ⦅ L ,, M ,, Nil ⦆) φ ρ₂ ρ₃ rel =
+  primD-≃ p (concretize-correct L φ ρ₂ ρ₃ rel) (concretize-correct M φ ρ₂ ρ₃ rel)
 
 body-correct n zero (bind (ast N)) ρ₂ ρ₃ rel = concretize-correct N (fv-ref n) ρ₂ ρ₃ rel
 body-correct n (suc k) (bind a) = body-correct n k a

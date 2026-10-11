@@ -62,6 +62,9 @@ Clos4-continuous-op {let-op} {ρ} {NE} {v} {cons (ast M) (cons (bind (ast N)) ni
   ⋆-cont {E₁ = λ ρ → Λ ⟨ (λ X → ⟦ N ⟧ (X • ρ)) , ptt ⟩} {E₂ = λ ρ → ⟦ M ⟧ ρ} NE
     (Λ-mono-env {B = λ ρ → ⟦ N ⟧ ρ} (⟦⟧-monotone N)) (⟦⟧-monotone M)
     (Λ-cont {B = λ ρ → ⟦ N ⟧ ρ} NE (⟦⟧-monotone N) cN) cM v v∈
+Clos4-continuous-op {prim p} {ρ} {NE} {v}
+    {cons (ast L) (cons (ast M) nil)} v∈ ⟨ cL , ⟨ cM , _ ⟩ ⟩ =
+  primD-cont p {E₁ = λ ρ → ⟦ L ⟧ ρ} {E₂ = λ ρ → ⟦ M ⟧ ρ} (⟦⟧-monotone L) (⟦⟧-monotone M) cL cM v v∈
 
 Clos4-Continuous : ContinuousSemantics
 Clos4-Continuous = record

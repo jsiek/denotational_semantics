@@ -25,6 +25,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-ISWIM inl-op = inl
 𝕆-ISWIM inr-op = inr
 𝕆-ISWIM case-op = 𝒞
+𝕆-ISWIM (prim p) = primD p
 
 𝕆-ISWIM-mono : 𝕆-monotone sig 𝕆-ISWIM
 𝕆-ISWIM-mono lam = Λ-mono
@@ -35,6 +36,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-ISWIM-mono inl-op = inl-mono
 𝕆-ISWIM-mono inr-op = inr-mono
 𝕆-ISWIM-mono case-op = 𝒞-mono
+𝕆-ISWIM-mono (prim p) = primD-mono p
 
 open import NewSemantics Op sig public
 

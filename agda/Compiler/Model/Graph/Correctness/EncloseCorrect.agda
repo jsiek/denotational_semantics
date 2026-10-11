@@ -28,7 +28,7 @@ open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; ρ₀)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
-  using (init₀; push; apply-push; push-plus; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
+  using (init₀; push; apply-push; push-plus; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 open import Compiler.Model.Graph.Correctness.OptimizeCorrect using (unbind-bind; push-ne)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 
@@ -124,6 +124,9 @@ enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   rel-ext : ∀ B {X} → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x) → ∀ x → Uses x B → (X • ρ₁) x ≃ (X • ρ₂) x
   rel-ext B r zero _ = ≃-refl
   rel-ext B r (suc x) u = r x u
+enc-correct (prim p ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
+  primD-≃ p (enc-correct L ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
+            (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₂ (inj₁ u))))
 
 enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ NE rel zero =
   enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u))
