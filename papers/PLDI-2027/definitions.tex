@@ -83,6 +83,21 @@
 \newcommand{\approxk}{\approx_k}
 \newcommand{\approxq}{\approx^{?}}
 
+% the CakeML-style proof
+\newcommand{\tmo}{\key{timeout}}
+\newcommand{\Ret}{\key{ret}\;}
+\newcommand{\bind}{\mathbin{>\!\!>\!\!=}}
+\newcommand{\lift}[1]{\lfloor #1 \rfloor}
+\newcommand{\run}{\mathit{run}}
+\newcommand{\outc}{\mathit{out}}
+\newcommand{\RelRes}[1]{\mathit{RelResult}_{#1}}
+\newcommand{\EV}[2]{\key{eval}^{#1}_{#2}}
+\newcommand{\EVS}[2]{\key{evals}^{#1}_{#2}}
+\newcommand{\APP}[2]{\key{apply}^{#1}_{#2}}
+\newcommand{\CALL}[2]{\key{call}^{#1}_{#2}}
+\newcommand{\BR}[2]{\key{branch}^{#1}_{#2}}
+\newcommand{\Interp}[1]{\mathcal{I}^{#1}}
+
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
 
 \title{Closure Conversion: Definitions}
@@ -136,6 +151,16 @@ instead of de Bruijn indices.
   \item the end-to-end theorem;
   \item backward simulations, and the direct backward simulation for delay.
   \end{itemize}
+\item \textbf{CakeML-style proof:}
+  \begin{itemize}
+  \item results, clocked programs, termination, divergence, and $\mathit{Equivalent}$;
+  \item $\mathit{RelResult}$, and the theorem that related results for every
+    clock give $\mathit{Equivalent}$;
+  \item the clocked interpreters of ISWIM and Clos2--Clos5;
+  \item for each pass, the lemma relating the interpreters clock for clock,
+    and its correctness theorem;
+  \item the end-to-end theorem.
+  \end{itemize}
 \end{enumerate}
 
 \paragraph{Where it doesn't match the Agda literally.}
@@ -172,8 +197,10 @@ In the CompCert-style proof:
 \item \textbf{Optimize}'s relations need no renaming. The Agda relates
   variable $x$ to $r(x)$ for the renaming $r$ that optimize carries, and
   the values collected for a closure through the renumbering of positions
-  that \texttt{prune} computes. $\mathit{Scoped}$ and $\mathit{WS}$ are
-  \texttt{WS}.
+  that \texttt{prune} computes. $\mathit{Scoped}$ is \texttt{WS}, and
+  $\mathit{WS}(M)$ is \texttt{WS 0 M}.
+\item \textbf{Closed} ISWIM terms, $\FV(M) = \emptyset$, are the Agda's
+  \texttt{Closed}.
 \item \textbf{Concretize}'s $\approx_\varphi$ ranges over the domain of
   $\varphi$. The Agda's $\varphi$ is total, mapping a variable past a
   closure's free variables to an unbound one, so its theorem has no
@@ -183,6 +210,26 @@ In the CompCert-style proof:
   let-bound variables.
 \item \textbf{Global definitions} in the Agda's Clos5 machine and globalize
   relation are listed newest first.
+\end{itemize}
+In the CakeML-style proof:
+\begin{itemize}
+\item \textbf{Environments, values, and relations} are those of the
+  CompCert-style proof, so the items above about them apply here too.
+\item \textbf{Values collected} by $\key{evals}$ are listed in order. The
+  Agda's \texttt{eval-args} conses them onto an accumulator, last first,
+  and a tuple reverses them.
+\item \textbf{Optimize}'s lemma for the free variables of a closure is
+  stated with $\mathit{Built}$. The Agda's \texttt{prune}$\approx$ relates the
+  values collected so far through the renumbering of positions that
+  \texttt{prune} computes (\texttt{Collected}).
+\item \textbf{Delay}'s lemma relates $M$ to $\pass{delay}(M)$. The Agda
+  relates $M$ to \texttt{rename r (delay M)} for a renaming \texttt{r}
+  of the environments, since the operand of an application is evaluated
+  under the let-bound variable.
+\item \textbf{The Clos5 interpreter}'s table is listed newest first in the
+  Agda, which looks up definition $j$ in its reverse (\texttt{global}).
+\item \textbf{Clocked programs} are the Agda's \texttt{Semantics}, and
+  $\outc$ is \texttt{outcome}, which returns a \texttt{Maybe Obs}.
 \end{itemize}
 
 \paragraph{Building.} \texttt{latexmk -pdf definitions.tex}
@@ -663,7 +710,7 @@ For every ISWIM program $M$,
 
 \section{Observations and Machines}
 
-\subsection{Observations}
+\subsection{Observations}\label{sec:obs}
 
 \[
   o ::= c \mid \key{fun} \mid \key{tuple}(o_1, \ldots, o_n) \mid \inl o \mid \inr o \mid \wrong
@@ -696,9 +743,9 @@ If $\Final_L(s, o)$ for no $o$ and no $s$ with $\start{L} \lto_L^* s$, then $\Di
 \end{lemma}
 
 %-------------------------------------------------------------------------------
-\section{The Machines}
+\section{The Machines}\label{sec:machines}
 
-\subsection{Definitions shared by all machines}
+\subsection{Definitions shared by all machines}\label{sec:machine-shared}
 
 \[
 \begin{array}{rcl}
@@ -879,7 +926,7 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
 \]
 
 %-------------------------------------------------------------------------------
-\section{Simulations}
+\section{Simulations}\label{sec:sims}
 
 A forward simulation from $L_1$ to $L_2$ is a family of relations
 $s_1 \sim_i s_2$ between their states, indexed by $i \in \mathbb{N}$.
@@ -932,7 +979,7 @@ If $\Equiv(L_1, L_2)$ and $\Equiv(L_2, L_3)$, then
 \end{lemma}
 
 %-------------------------------------------------------------------------------
-\section{Relations}
+\section{Relations}\label{sec:sim-relations}
 
 Each pass relates source and target values ($v \approx w$), continuations
 ($\kappa_1 \approxk \kappa_2$), and states ($s_1 \sim s_2$).
@@ -955,7 +1002,7 @@ $\kappa_1 \approxk \kappa_2$, \ldots).
 In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
 \end{lemma}
 
-\subsection{Enclose}
+\subsection{Enclose}\label{sec:sim-enclose}
 
 \begin{align*}
   \cloV{\lam{y} N}{\rho_1} \approx \closV{x_1 \ldots x_n\, y.\, \pass{enclose}(N)}{v_1 \ldots v_n}
@@ -988,7 +1035,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{Optimize}
+\subsection{Optimize}\label{sec:sim-optimize}
 
 For a closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$, let
 $\{ i_1 < \cdots < i_k \} = \{ i \mid x_i \in \FV(N) \}$, as in optimize, and
@@ -1064,7 +1111,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Concretize}
+\subsection{Concretize}\label{sec:sim-concretize}
 
 \begin{align*}
   \rho_2 \approx_\varphi \rho_3 &\iff \forall x \in \mathrm{dom}(\varphi).\;
@@ -1115,7 +1162,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Delay}
+\subsection{Delay}\label{sec:sim-delay}
 
 \begin{align*}
   \rho_1 \approxq \rho_2 &\iff \forall x.\; x \text{ is not a fresh variable } f \text{ of delay}
@@ -1161,7 +1208,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{Globalize}
+\subsection{Globalize}\label{sec:sim-globalize}
 
 The relations are those for the table $D$ that globalize makes for the whole program.
 \begin{align*}
@@ -1296,6 +1343,317 @@ For every Clos3 term $M$,
   \Term_{\Mach{4}(\pass{delay}(M))}(o) &\implies \Term_{\Mach{3}(M)}(o) \\
   \Div^\infty_{\Mach{4}(\pass{delay}(M))} &\implies \Div^\infty_{\Mach{3}(M)} .
 \end{align*}
+\end{theorem}
+
+%===============================================================================
+\part{CakeML-Style Proof}
+
+\section{Results and Clocks}
+
+\subsection{Results}
+
+\begin{align*}
+  r &::= \tmo \mid \wrong \mid \Ret v \\[1ex]
+  \tmo \bind f &= \tmo \\
+  \wrong \bind f &= \wrong \\
+  \Ret v \bind f &= f(v) \\[1ex]
+  \lift{v} &= \Ret v \\
+  \lift{\bot} &= \wrong
+\end{align*}
+
+\subsection{Programs}
+
+A clocked program gives a result for every clock.
+\begin{align*}
+  P &= (\obs_P,\; \run_P : \mathbb{N} \to \mathit{Result}) \\[1ex]
+  \outc_P(\tmo) &= \bot \\
+  \outc_P(\wrong) &= \wrong \\
+  \outc_P(\Ret v) &= \obs_P(v) \\[1ex]
+  \Term_P(o) &\iff \exists k.\; \outc_P(\run_P(k)) = o \\
+  \Div_P &\iff \forall k.\; \run_P(k) = \tmo \\
+  \Equiv(P_1, P_2) &\iff
+    (\forall o.\; \Term_{P_1}(o) \iff \Term_{P_2}(o)) \land (\Div_{P_1} \iff \Div_{P_2})
+\end{align*}
+The observations $o$ are those of Section~\ref{sec:obs}, and $\Equiv$ has the
+shape of the CompCert-style one (Section~\ref{sec:sims}).
+
+\subsection{Clock for Clock}
+
+\begin{align*}
+  \RelRes{R}(\tmo, \tmo), \quad \RelRes{R}(\wrong, \wrong) &\iff \mathsf{true} \\
+  \RelRes{R}(\Ret v, \Ret w) &\iff v \mathrel{R} w \\
+  \RelRes{R}(r_1, r_2) &\iff \mathsf{false} \quad \text{otherwise}
+\end{align*}
+
+\begin{lemma}[Related Binds]\label{lem:bind-rel}
+If $\RelRes{R}(r_1, r_2)$ and $\RelRes{R'}(f(v), g(w))$ for every $v \mathrel{R} w$, then
+\[
+  \RelRes{R'}(r_1 \bind f,\; r_2 \bind g) .
+\]
+\end{lemma}
+
+\begin{theorem}[Clock for Clock Gives Equivalence]\label{thm:clocked}
+If $\obs_{P_1}(v) = \obs_{P_2}(w)$ for every $v \mathrel{R} w$ and
+$\RelRes{R}(\run_{P_1}(k), \run_{P_2}(k))$ for every clock $k$, then
+\[
+  \Equiv(P_1, P_2) .
+\]
+\end{theorem}
+
+\begin{lemma}[Clocked Equivalence Composes]\label{lem:equiv-trans-clk}
+If $\Equiv(P_1, P_2)$ and $\Equiv(P_2, P_3)$, then
+\[
+  \Equiv(P_1, P_3) .
+\]
+\end{lemma}
+
+%-------------------------------------------------------------------------------
+\section{The Interpreters}
+
+Each interpreter uses the values and environments of its language's machine
+(Section~\ref{sec:machines}). The clock $k$ decreases only when a function is
+called; every other construct evaluates its subterms with the same clock.
+\begin{align*}
+  \EV{\ell}{k} &: \mathit{Env} \to \mathit{Term} \to \mathit{Result}
+    \qquad (\ell \in \{\mathrm{ISWIM}, 2, 3, 4\}) \\
+  \EV{\vec{d}}{k} &: \mathit{Env} \to \mathit{Term} \to \mathit{Result}
+    \qquad (\vec{d} = d_0, \ldots, d_{m-1}) \\[1ex]
+  \Interp{\ell}(M) &= (\obs,\; \lambda k.\, \EV{\ell}{k}\,\emptyset\,M) \\
+  \Interp{5}(\vec{d};\; M) &= (\obs,\; \lambda k.\, \EV{\vec{d}}{k}\,\emptyset\,M)
+\end{align*}
+
+\subsection{Clauses common to all interpreters}
+
+\begin{align*}
+  \EV{\ell}{k}\,\rho\,x &= \lift{\rho(x)} \\
+  \EV{\ell}{k}\,\rho\,c &= \Ret c \\
+  \EV{\ell}{k}\,\rho\,\tuple{M_1, \ldots, M_n} &=
+    \EVS{\ell}{k}\,\rho\,(M_1 \ldots M_n) \bind \lambda \bar{v}.\, \Ret \tupV{\bar{v}} \\
+  \EV{\ell}{k}\,\rho\,(\prj{i} M) &= \EV{\ell}{k}\,\rho\,M \bind \key{get}^n_i \\
+  \EV{\ell}{k}\,\rho\,(\inl M) &= \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \Ret (\inlV v) \\
+  \EV{\ell}{k}\,\rho\,(\inr M) &= \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \Ret (\inrV v) \\
+  \EV{\ell}{k}\,\rho\,(\Case{L}{x}{M}{y}{N}) &=
+    \EV{\ell}{k}\,\rho\,L \bind \BR{\ell}{k}\,\rho\,(x.M)\,(y.N) \\[1ex]
+  \EVS{\ell}{k}\,\rho\,\epsilon &= \Ret \epsilon \\
+  \EVS{\ell}{k}\,\rho\,(M\,\bar{M}) &=
+    \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \EVS{\ell}{k}\,\rho\,\bar{M} \bind \lambda \bar{v}.\, \Ret (v\,\bar{v}) \\[1ex]
+  \key{get}^n_i(v) &=
+    \begin{cases} \lift{\key{proj}^n_i(\bar{v})} & v = \tupV{\bar{v}} \\ \wrong & \text{otherwise} \end{cases} \\
+  \BR{\ell}{k}\,\rho\,(x.M)\,(y.N)\,v &=
+    \begin{cases}
+      \EV{\ell}{k}\,\ext{\rho}{x}{u}\,M & v = \inlV u \\
+      \EV{\ell}{k}\,\ext{\rho}{y}{u}\,N & v = \inrV u \\
+      \wrong & \text{otherwise}
+    \end{cases} \\[1ex]
+  \CALL{\ell}{0}\,N\,\rho &= \tmo \\
+  \CALL{\ell}{k+1}\,N\,\rho &= \EV{\ell}{k}\,\rho\,N
+\end{align*}
+Here $\key{proj}^n_i$ is that of Section~\ref{sec:machine-shared}.
+
+\subsection{ISWIM}
+
+\begin{align*}
+  \EV{\mathrm{ISWIM}}{k}\,\rho\,(\lam{x} N) &= \Ret \cloV{\lam{x} N}{\rho} \\
+  \EV{\mathrm{ISWIM}}{k}\,\rho\,(L\;M) &= \EV{\mathrm{ISWIM}}{k}\,\rho\,L \bind \APP{\mathrm{ISWIM}}{k}\,\rho\,M \\[1ex]
+  \APP{\mathrm{ISWIM}}{k}\,\rho\,M\,f &=
+    \begin{cases}
+      \EV{\mathrm{ISWIM}}{k}\,\rho\,M \bind \lambda w.\, \CALL{\mathrm{ISWIM}}{k}\,N\,\ext{\rho'}{x}{w}
+        & f = \cloV{\lam{x} N}{\rho'} \\
+      \wrong & \text{otherwise}
+    \end{cases}
+\end{align*}
+
+\subsection{Clos2}
+
+\begin{align*}
+  \EV{2}{k}\,\rho\,(\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N) &=
+    \EVS{2}{k}\,\rho\,(z_1 \ldots z_n) \bind \lambda \bar{v}.\, \Ret \closV{x_1 \ldots x_n\, y.\, N}{\bar{v}} \\
+  \EV{2}{k}\,\rho\,(L\;M) &= \EV{2}{k}\,\rho\,L \bind \APP{2}{k}\,\rho\,M \\[1ex]
+  \APP{2}{k}\,\rho\,M\,f &=
+    \begin{cases}
+      \EV{2}{k}\,\rho\,M \bind \lambda w.\, \CALL{2}{k}\,N\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}
+        & f = \closV{\bar{x}\, y.\, N}{\bar{v}} \\
+      \wrong & \text{otherwise}
+    \end{cases}
+\end{align*}
+
+\subsection{Clos3}
+
+\begin{align*}
+  \EV{3}{k}\,\rho\,(\clos{r_1 \ldots r_n}{e\, y} N) &=
+    \EVS{3}{k}\,\rho\,(r_1 \ldots r_n) \bind \lambda \bar{v}.\, \Ret \closV{e\, y.\, N}{\tupV{\bar{v}}} \\
+  \EV{3}{k}\,\rho\,(L\;M) &= \EV{3}{k}\,\rho\,L \bind \APP{3}{k}\,\rho\,M \\[1ex]
+  \APP{3}{k}\,\rho\,M\,f &=
+    \begin{cases}
+      \EV{3}{k}\,\rho\,M \bind \lambda w.\, \CALL{3}{k}\,N\,\{e {\mapsto} u, y {\mapsto} w\}
+        & f = \closV{e\, y.\, N}{u} \\
+      \wrong & \text{otherwise}
+    \end{cases}
+\end{align*}
+
+\subsection{Clos4}
+
+\begin{align*}
+  \EV{4}{k}\,\rho\,\fun{e\,y.\,N} &= \Ret \funV{e\, y.\, N} \\
+  \EV{4}{k}\,\rho\,L(M, N) &= \EV{4}{k}\,\rho\,L \bind \APP{4}{k}\,\rho\,M\,N \\
+  \EV{4}{k}\,\rho\,\pair{M}{N} &=
+    \EV{4}{k}\,\rho\,M \bind \lambda v.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\, \Ret \pairV{v}{w} \\
+  \EV{4}{k}\,\rho\,(\FST M) &= \EV{4}{k}\,\rho\,M \bind \key{first} \\
+  \EV{4}{k}\,\rho\,(\SND M) &= \EV{4}{k}\,\rho\,M \bind \key{second} \\
+  \EV{4}{k}\,\rho\,(\Let x = M \In N) &=
+    \EV{4}{k}\,\rho\,M \bind \lambda v.\, \EV{4}{k}\,\ext{\rho}{x}{v}\,N \\[1ex]
+  \APP{4}{k}\,\rho\,M\,N\,f &=
+    \begin{cases}
+      \EV{4}{k}\,\rho\,M \bind \lambda u.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\,
+        \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\}
+        & f = \funV{e\, y.\, B} \\
+      \wrong & \text{otherwise}
+    \end{cases} \\
+  \key{first}(v) &=
+    \begin{cases} \Ret v_1 & v = \pairV{v_1}{v_2} \\ \wrong & \text{otherwise} \end{cases} \\
+  \key{second}(v) &=
+    \begin{cases} \Ret v_2 & v = \pairV{v_1}{v_2} \\ \wrong & \text{otherwise} \end{cases}
+\end{align*}
+
+\subsection{Clos5}
+
+The interpreter of a program runs with its global definitions $\vec{d} = d_0, \ldots, d_{m-1}$.
+Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, except
+\begin{align*}
+  \EV{\vec{d}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\[1ex]
+  \APP{\vec{d}}{k}\,\rho\,M\,N\,f &=
+    \begin{cases}
+      \EV{\vec{d}}{k}\,\rho\,M \bind \lambda u.\, \EV{\vec{d}}{k}\,\rho\,N \bind \lambda w.\,
+        \CALL{\vec{d}}{k}\,j\,u\,w
+        & f = \codeV{j} \\
+      \wrong & \text{otherwise}
+    \end{cases} \\
+  \CALL{\vec{d}}{k}\,j\,u\,w &=
+    \begin{cases}
+      \wrong & j \geq m \\
+      \tmo & j < m,\; k = 0 \\
+      \EV{\vec{d}}{k'}\,\{e {\mapsto} u, y {\mapsto} w\}\,N & j < m,\; k = k' + 1,\; d_j = e\,y.\,N
+    \end{cases}
+\end{align*}
+
+%-------------------------------------------------------------------------------
+\section{Relations}
+
+Each pass relates source and target values by the relation $\approx$ of its
+forward simulation (Section~\ref{sec:sim-relations}), and environments by the
+relation used there for the states $\ev{M}{\rho_1}{\kappa_1} \sim \ev{M'}{\rho_2}{\kappa_2}$.
+By Lemma~\ref{lem:obs}, if $v \approx w$, then $\obs(v) = \obs(w)$.
+
+\subsection{Enclose}
+
+The relations $\approx$ and $\approx_X$ are those of Section~\ref{sec:sim-enclose}.
+
+\begin{lemma}[Enclose, Clock for Clock]\label{lem:enclose-clk}
+If $\rho_1 \approx_{\FV(M)} \rho_2$, then for every clock $k$,
+\[
+  \RelRes{\approx}(\EV{\mathrm{ISWIM}}{k}\,\rho_1\,M,\; \EV{2}{k}\,\rho_2\,\pass{enclose}(M)) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Enclose, CakeML Style]\label{thm:enclose-clk}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{2}(\pass{enclose}(M))) .
+\]
+\end{theorem}
+
+\subsection{Optimize}
+
+The relations $\approx$, $\approx_X$, $\mathit{Scoped}$, $\mathit{WS}$, and
+$\mathit{Built}^j_N$ are those of Section~\ref{sec:sim-optimize}.
+
+\begin{lemma}[Optimize, Clock for Clock]\label{lem:optimize-clk}
+If $\mathit{Scoped}(M)$ and $\rho_1 \approx_{\FV(M)} \rho_2$, then for every clock $k$,
+\[
+  \RelRes{\approx}(\EV{2}{k}\,\rho_1\,M,\; \EV{2}{k}\,\rho_2\,\pass{optimize}(M)) .
+\]
+\end{lemma}
+
+\begin{lemma}[Free Variables of a Closure]\label{lem:prune-clk}
+If $\mathit{Scoped}(N)$ and $\rho_1 \approx_{\{z_1, \ldots, z_n\}} \rho_2$,
+then for every clock $k$,
+\[
+  \RelRes{\mathit{Built}^{n+1}_N}(\EVS{2}{k}\,\rho_1\,(z_1 \ldots z_n),\;
+    \EVS{2}{k}\,\rho_2\,\bar{z}'_{>0})
+\]
+for the closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$.
+\end{lemma}
+
+\begin{theorem}[Correctness of Optimize, CakeML Style]\label{thm:optimize-clk}
+For every Clos2 term $M$,
+\[
+  \mathit{WS}(M) \implies \Equiv(\Interp{2}(M), \Interp{2}(\pass{optimize}(M))) .
+\]
+\end{theorem}
+
+\subsection{Concretize}
+
+The relations $\approx$ and $\approx_\varphi$ are those of Section~\ref{sec:sim-concretize}.
+
+\begin{lemma}[Concretize, Clock for Clock]\label{lem:concretize-clk}
+If $\rho_2 \approx_\varphi \rho_3$, then for every clock $k$,
+\[
+  \RelRes{\approx}(\EV{2}{k}\,\rho_2\,M,\; \EV{3}{k}\,\rho_3\,\pass{concretize}_\varphi(M)) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Concretize, CakeML Style]\label{thm:concretize-clk}
+For every Clos2 term $M$,
+\[
+  \Equiv(\Interp{2}(M), \Interp{3}(\pass{concretize}_{\mathit{id}}(M))) .
+\]
+\end{theorem}
+
+\subsection{Delay}
+
+The relations $\approx$ and $\approxq$ are those of Section~\ref{sec:sim-delay}.
+
+\begin{lemma}[Delay, Clock for Clock]\label{lem:delay-clk}
+If $\rho_1 \approxq \rho_2$, then for every clock $k$,
+\[
+  \RelRes{\approx}(\EV{3}{k}\,\rho_1\,M,\; \EV{4}{k}\,\rho_2\,\pass{delay}(M)) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Delay, CakeML Style]\label{thm:delay-clk}
+For every Clos3 term $M$,
+\[
+  \Equiv(\Interp{3}(M), \Interp{4}(\pass{delay}(M))) .
+\]
+\end{theorem}
+
+\subsection{Globalize}
+
+The relations $\leadsto$ and $\approx$, for the table $D$ that globalize makes
+for the whole program, are those of Section~\ref{sec:sim-globalize}.
+
+\begin{lemma}[Globalize, Clock for Clock]\label{lem:globalize-clk}
+If $M \leadsto M'$ and $\rho_1 \approx \rho_2$, then for every clock $k$,
+\[
+  \RelRes{\approx}(\EV{4}{k}\,\rho_1\,M,\; \EV{D}{k}\,\rho_2\,M') .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Globalize, CakeML Style]\label{thm:globalize-clk}
+For every Clos4 term $M$,
+\[
+  \Equiv(\Interp{4}(M), \Interp{5}(\pass{globalize}(M))) .
+\]
+\end{theorem}
+
+\subsection{End to End}
+
+\begin{theorem}[Compiler Correctness, CakeML Style]\label{thm:compiler-clk}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile}(M))) .
+\]
 \end{theorem}
 
 \end{document}
