@@ -45,30 +45,11 @@ open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _≤_; _<_; z≤n; s≤s)
 open import Data.Nat.Properties
-  using (≤-trans; ≤-pred; <-≤-trans; n<1+n; m≤m⊔n; m≤n⊔m; +-monoʳ-≤; m≤n+m∸n;
+  using (≤-trans; ≤-pred; m≤m⊔n; m≤n⊔m; +-monoʳ-≤; m≤n+m∸n;
          +-identityʳ; +-suc; n≤1+n; m≤n⇒m<n∨m≡n)
 open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
-
-{- Every variable a term uses is below its bound -------------------------------}
-
-<-∸1 : ∀ {x b} → suc x < b → x < b ∸ 1
-<-∸1 {x} {suc b} sx<sb = ≤-pred sx<sb
-
-uses-bound : ∀ x (M : AST) → Uses x M → x < bound M
-uses-bound-arg : ∀ {b} x (a : Arg b) → UsesArg x a → x < bound-arg a
-uses-bound-args : ∀ {bs} x (args : Args bs) → UsesArgs x args → x < bound-args args
-
-uses-bound x (` .x) refl = n<1+n x
-uses-bound x (op ⦅ args ⦆) u = uses-bound-args x args u
-
-uses-bound-arg x (ast M) u = uses-bound x M u
-uses-bound-arg x (bind a) u = <-∸1 (uses-bound-arg (suc x) a u)
-
-uses-bound-args x (cons a args) (inj₁ u) = <-≤-trans (uses-bound-arg x a u) (m≤m⊔n _ _)
-uses-bound-args x (cons a args) (inj₂ u) =
-  <-≤-trans (uses-bound-args x args u) (m≤n⊔m (bound-arg a) _)
 
 {- The simulation relation -----------------------------------------------------}
 

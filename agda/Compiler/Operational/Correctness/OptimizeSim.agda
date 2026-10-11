@@ -36,9 +36,10 @@ open import NewSigUtil using (ν-n)
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Compile.Concretize using (unbind-n)
-open import Compiler.Compile.Optimize
-open import Compiler.Compile.Enclose using (enclose; enc-args; bound; bound-args; fv-vars)
+open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
+open import Compiler.Compile.Enclose using (enclose; enc-args; fv-vars)
 import Compiler.Lang.ISWIM as I
+open import Compiler.Lang.Uses I.Op I.sig using (bound; bound-args)
 import Compiler.Operational.Correctness.EncloseSim as E
 open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep

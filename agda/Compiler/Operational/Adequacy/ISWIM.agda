@@ -52,7 +52,8 @@ open import Compiler.Operational.Observation
 open import Compiler.Operational.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; next; stop)
 open import Compiler.Operational.Machine.ISWIM
-open import Compiler.Operational.Correctness.EncloseSim using (Closed; uses-bound)
+open import Compiler.Operational.Correctness.EncloseSim using (Closed)
+open import Compiler.Lang.Uses Op sig using (uses-bound)
 open import Compiler.Operational.Adequacy.Common
 open import Compiler.Operational.Adequacy.Soundness using (soundness) public
 open import Compiler.Operational.Adequacy.LogRel
