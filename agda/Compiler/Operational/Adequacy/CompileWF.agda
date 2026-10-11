@@ -156,6 +156,8 @@ module Opt where
     hN : ∀ x → Uses x N → ext-var r x < suc _
     hN zero _ = s≤s z≤n
     hN (suc x) u = s≤s (h x (inj₂ (inj₂ (inj₁ u))))
+  optimize-ws r (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h =
+    optimize-ws r L wL (λ x u → h x (inj₁ u)) , optimize-ws r M wM (λ x u → h x (inj₂ (inj₁ u))) , tt
 
   opt-args-ws r {zero} Nil w h = tt
   opt-args-ws r {suc n} (M ,, args) (w , ws) h =
@@ -225,6 +227,7 @@ module Conc where
   conc-ws φ (inr-op ⦅ M ,, Nil ⦆) (w , _) h = conc-ws φ M w h , tt
   conc-ws φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) h =
     conc-ws φ L wL h , conc-ws (ext-ref φ) M wM (fits-ext h) , conc-ws (ext-ref φ) N wN (fits-ext h) , tt
+  conc-ws φ (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h = conc-ws φ L wL h , conc-ws φ M wM h , tt
 
   conc-body-ws n zero (bind (ast N)) w h = conc-ws (fv-ref n) N w h
   conc-body-ws n (suc m) {k} (bind a) w h =
@@ -260,6 +263,7 @@ module Del where
   delay-ws (inr-op ⦅ M ,, Nil ⦆) (w , _) = delay-ws M w , tt
   delay-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) =
     delay-ws L wL , delay-ws M wM , delay-ws N wN , tt
+  delay-ws (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) = delay-ws L wL , delay-ws M wM , tt
 
   del-args-ws {zero} Nil w = tt
   del-args-ws {suc n} (M ,, args) (w , ws) = delay-ws M w , del-args-ws args ws
@@ -293,6 +297,7 @@ module Glob where
   glob-wf (inr-op ⦅ args ⦆) ds w d = glob-wf-args args ds w d
   glob-wf (case-op ⦅ args ⦆) ds w d = glob-wf-args args ds w d
   glob-wf (let-op ⦅ args ⦆) ds w d = glob-wf-args args ds w d
+  glob-wf (prim p ⦅ args ⦆) ds w d = glob-wf-args args ds w d
 
   glob-wf-arg (ast M) ds w d = glob-wf M ds w d
   glob-wf-arg (bind a) ds w d = glob-wf-arg a ds w d

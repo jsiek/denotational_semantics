@@ -10,6 +10,7 @@ module Compiler.Lang.Clos2 where
 -}
 
 open import Primitives
+open import Compiler.Lang.Prim using (Prim)
 open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import abt.Sig using (Sig; ∁; ν; ■) public
@@ -36,6 +37,7 @@ data Op : Set where
   inl-op : Op
   inr-op : Op
   case-op : Op
+  prim : Prim → Op      {- a primitive operation on integers (Lang/Prim) -}
 
 sig : Op → List Sig
 sig (clos-op n) = ∁ (ν-n n (ν ■)) ∷ (replicate n ■)
@@ -46,6 +48,7 @@ sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
+sig (prim p) = ■ ∷ ■ ∷ []
 
 import abt.AbstractBindingTree
 module ASTMod = abt.AbstractBindingTree Op sig

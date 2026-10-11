@@ -32,6 +32,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos3 inl-op = inl
 𝕆-Clos3 inr-op = inr
 𝕆-Clos3 case-op = 𝒞
+𝕆-Clos3 (prim p) = primD p
 
 𝕆-Clos3-mono : 𝕆-monotone sig 𝕆-Clos3
 𝕆-Clos3-mono (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = 
@@ -50,6 +51,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos3-mono inl-op = inl-mono
 𝕆-Clos3-mono inr-op = inr-mono
 𝕆-Clos3-mono case-op = 𝒞-mono
+𝕆-Clos3-mono (prim p) = primD-mono p
 
 
 open import NewSemantics Op sig public

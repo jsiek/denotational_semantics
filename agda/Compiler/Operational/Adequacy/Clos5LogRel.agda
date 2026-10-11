@@ -40,7 +40,10 @@ open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD)
+open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD) renaming (out to dout)
+open import Compiler.Lang.Prim using (int; bool; δ)
+open import Primitives using (Int)
+open import Data.Bool using (true; false)
 open import Compiler.Lang.Clos5 hiding (AST)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
@@ -118,6 +121,11 @@ _⊢_⇓_ : Env → AST → Val → Set
 𝕍At-proj : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
 𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
 𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
+
+𝕍-out : ∀ r → 𝕍 (dout r) (out r)
+𝕍-out (int k) = refl
+𝕍-out (bool true) = refl
+𝕍-out (bool false) = refl
 
 {- related values are observed in the shape of the denotational value -}
 𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
@@ -310,6 +318,13 @@ adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wM , ⟨ wN , _ 
            (all→𝕍s (u ∷ U) (collect 𝕍 (u ∷ U) (λ d' d'∈ → adequate M 𝕋T wM G (U⊆ d' d'∈)) eM))) d∈
 ... | ⟨ v , ⟨ eN , r ⟩ ⟩ =
   ⟨ v , ⟨ (λ κ → refl ∷↠ eM (letK N γ κ) ++↠ refl ∷↠ eN κ) , r ⟩ ⟩
+
+adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , ⟨ wM , _ ⟩ ⟩ G ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩
+    with adequate L 𝕋T wL G n∈ | adequate M 𝕋T wM G m∈
+... | ⟨ _ , ⟨ eL , refl ⟩ ⟩ | ⟨ _ , ⟨ eM , refl ⟩ ⟩ =
+  ⟨ out (δ p n m)
+  , ⟨ (λ κ → refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ eM (primR p (const Int n) κ) ++↠ refl ∷↠ done)
+    , 𝕍-out (δ p n m) ⟩ ⟩
 
 adequate-args {zero} Nil 𝕋T w G ne = ⟨ [] , ⟨ [] , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
 adequate-args {suc n} (M ,, args) 𝕋T ⟨ wM , ws ⟩ G ne

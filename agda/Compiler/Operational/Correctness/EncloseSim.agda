@@ -42,7 +42,9 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length; map; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Maybe using (just)
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _≤_; _<_; z≤n; s≤s)
 open import Data.Nat.Properties
@@ -86,6 +88,9 @@ data _≈k_ : S.Cont → T.Cont → Set where
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inrK κ₁ ≈k T.inrK κ₂
   caseK : ∀ {M N ρ₁ ρ₂ κ₁ κ₂} → Agree M 1 ρ₁ ρ₂ → Agree N 1 ρ₁ ρ₂ → κ₁ ≈k κ₂
     → S.caseK M N ρ₁ κ₁ ≈k T.caseK (enclose M) (enclose N) ρ₂ κ₂
+  primL : ∀ {p M ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → S.primL p M ρ₁ κ₁ ≈k T.primL p (enclose M) ρ₂ κ₂
+  primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
 
 data _~_ : S.State → T.State → Set where
   eval~ : ∀ {M ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 ρ₁ ρ₂ → κ₁ ≈k κ₂
@@ -102,6 +107,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- Agreement of environments ---------------------------------------------------}
 
@@ -234,6 +247,9 @@ module _ (P : C.AST) where
                             (s≤s (≤-trans (m≤m⊔n (bound N ∸ 1) 0)
                               (≤-trans (m≤n⊔m (bound M ∸ 1) _) (m≤n⊔m (bound L) _))))) ag)
                κ))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
+    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
+                            (primL (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
@@ -258,6 +274,8 @@ module _ (P : C.AST) where
   sim (ret~ (clo≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
+  sim (ret~ r (primL ag κ)) = steps (one refl) (eval~ ag (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
 
 {- The end theorem -------------------------------------------------------------}
 

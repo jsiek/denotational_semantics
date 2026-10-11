@@ -30,10 +30,12 @@ module Compiler.Functional.Correctness.ConcretizeFuel where
 open import NewSigUtil using (ν-n)
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 import Compiler.Lang.Clos2 as C2
-open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op;
+open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim;
                cons; clear; bind; ast; ν; ■; Var; Args)
 open import Compiler.Compile.Concretize
 open import Compiler.Observation
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
 open import Compiler.Lang.ListUtil
   using (_‼_; proj; has-length; proj-pw; ‼-snoc-<; ‼-snoc-length; ‼-≥; length-snoc)
 open import Compiler.Functional.Clock
@@ -46,7 +48,7 @@ open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; _∷ʳ_; length; replicate; reverse)
 open import Data.List.Properties using (unfold-reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just)
+open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_)
 open import Data.Nat.Properties using (+-identityʳ; +-suc; ≤-pred; ≮⇒≥; m≤n⇒m<n∨m≡n)
@@ -93,6 +95,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- The free variables of a closure ---------------------------------------------}
 
@@ -188,6 +198,8 @@ run≈ ck (tuple n ⦅ args ⦆) er = bind-rel (args≈ ck args er [] refl) (λ 
 run≈ ck (get i ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (project≈ i)
 run≈ ck (inl-op ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → ret (inl≈ r))
 run≈ ck (inr-op ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → ret (inr≈ r))
+run≈ ck (prim p ⦅ L ,, M ,, Nil ⦆) er =
+  bind-rel (run≈ ck L er) λ r → bind-rel (run≈ ck M er) λ s → from-maybe-rel (prim≈ p r s)
 run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) er = bind-rel (run≈ ck L er) (branch≈ ck M N er)
 
 args≈ ck {zero} {vs = vs} Nil er rs len = ret (rs , trans (sym (+-identityʳ (length vs))) len)

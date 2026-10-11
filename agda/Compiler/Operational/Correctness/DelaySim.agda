@@ -41,6 +41,9 @@ module Compiler.Operational.Correctness.DelaySim where
 open import Data.Fin using (Fin)
 open import Data.List using ([]; _∷_; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
@@ -100,6 +103,9 @@ data _≈k_ : S.Cont → T.Cont → Set where
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inrK κ₁ ≈k T.inrK κ₂
   caseK : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → S.caseK M N ρ₁ κ₁ ≈k T.caseK (rename (ext r) (delay M)) (rename (ext r) (delay N)) ρ₂ κ₂
+  primL : ∀ {p r M ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → S.primL p M ρ₁ κ₁ ≈k T.primL p (rename r (delay M)) ρ₂ κ₂
+  primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
 
 {- the target state related to returning w to κ₁: for appL, the target has
    already run the let body up to taking the first component of w -}
@@ -123,6 +129,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- Related environments ------------------------------------------------------}
 
@@ -165,6 +179,8 @@ module _ (P : C4.AST) where
   ret-reach (inlK _) = ε
   ret-reach (inrK _) = ε
   ret-reach (caseK _ _) = ε
+  ret-reach (primL _ _) = ε
+  ret-reach (primR _ _) = ε
 
   {- answering a step that returns a value -}
   ret-answers : ∀ {s₂ v w κ₁ κ₂} → Plus L₂ s₂ (T.ret w κ₂) → v ≈ w → (k : κ₁ ≈k κ₂)
@@ -198,6 +214,7 @@ module _ (P : C4.AST) where
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (inrK k))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
     steps (one refl) (eval~ refl ρ (caseK ρ k))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (primL ρ k))
   sim (ret~ halt r) = stops (cong stop (sym (obs≈ r)))
   {- calling a closure: fst, then snd, then evaluate the operand -}
   sim (ret~ (appL {r} {M} ρ k) (clos≈ r')) =
@@ -224,6 +241,8 @@ module _ (P : C4.AST) where
   sim (ret~ (caseK ρ k) (clos≈ _)) = stops refl
   sim (ret~ (caseK ρ k) const≈) = stops refl
   sim (ret~ (caseK ρ k) (tup≈ _)) = stops refl
+  sim (ret~ (primL ρ k) r) = steps (one refl) (eval~ refl ρ (primR r k))
+  sim (ret~ (primR {p} r k) s) = ret?-answers (prim≈ p r s) k refl
 
 {- The end theorem: for every Clos3 program -----------------------------------}
 

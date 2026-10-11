@@ -78,6 +78,7 @@ module Compiler.Compile.Concretize where
   concretize φ (inr-op ⦅ M ,, Nil ⦆) = inr-op ⦅ concretize φ M ,, Nil ⦆'
   concretize φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
     case-op ⦅ concretize φ L ,, ⟩ concretize (ext-ref φ) M ,, ⟩ concretize (ext-ref φ) N ,, Nil ⦆'
+  concretize φ (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
 
   {- conc-body n k a is concretize (fv-ref n) (unbind-n k a) -}
   conc-body n zero (bind (ast N)) = concretize (fv-ref n) N

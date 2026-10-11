@@ -26,6 +26,9 @@ open import Relation.Binary.PropositionalEquality
 open import Level using (Level; Lift; lift; lower)
     renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
+open import Data.Bool using (true; false)
+open import Data.Integer using (ℤ)
+open import Compiler.Lang.Prim using (Prim; Out; int; bool; δ)
 
 
 {- Denotational Operators -----------------------------------------------------}
@@ -76,6 +79,18 @@ inr ⟨ D , _ ⟩ _ = False
 𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) 
           ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)))
 
+{- the value of the result of a primitive: eq returns left ⟨⟩ for true
+   and right ⟨⟩ for false -}
+out : Out → Value
+out (int n) = const {Int} n
+out (bool true) = left ⟨⟩
+out (bool false) = right ⟨⟩
+
+{- a primitive applies to the integers in its operands -}
+primD : Prim → DOp (𝒫 Value) (■ ∷ ■ ∷ [])
+primD p ⟨ D , ⟨ E , _ ⟩ ⟩ v =
+  Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] const {Int} n ∈ D × const {Int} m ∈ E × v ≡ out (δ p n m)
+
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
 Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (mem V) × V ≢ []
 Λ ⟨ f , _ ⟩ ν = True
@@ -104,6 +119,10 @@ pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , 
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
   G ⦅ u , v ⦆ ⟨ u∈D , v∈E ⟩ = ⟨ D⊆ u u∈D , E⊆ v v∈E ⟩
+
+primD-mono : ∀ p → monotone (■ ∷ ■ ∷ []) ■ (primD p)
+primD-mono p ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ =
+  lift (λ { v ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , ⟨ E⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ })
 
 car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -198,6 +217,19 @@ pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , 
   where
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G ⦅ u , v ⦆ ⦅ u' , v' ⦆ ⟨ u∈ , v∈ ⟩ ⟨ u'∈ , v'∈ ⟩ = ⟨ D~ u u' u∈ u'∈ , E~ v v' v∈ v'∈ ⟩
+
+out-~ : ∀ o → out o ~ out o
+out-~ (int n) = ⟨ refl , refl ⟩
+out-~ (bool true) = tt
+out-~ (bool false) = tt
+
+primD-consis : ∀ p → consistent _~_ (■ ∷ ■ ∷ []) ■ (primD p)
+primD-consis p ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
+  where
+  G : Every _~_ (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) (primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
+  G _ _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ ⟨ n' , ⟨ m' , ⟨ n'∈ , ⟨ m'∈ , refl ⟩ ⟩ ⟩ ⟩
+      with D~ _ _ n∈ n'∈ | E~ _ _ m∈ m'∈
+  ... | ⟨ refl , refl ⟩ | ⟨ refl , refl ⟩ = out-~ (δ p n m)
 
 car-consis : consistent _~_ (■ ∷ []) ■ car
 car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G

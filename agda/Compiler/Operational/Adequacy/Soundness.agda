@@ -17,13 +17,14 @@
 
 module Compiler.Operational.Adequacy.Soundness where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
+open import Compiler.Lang.Prim using (Out; int; bool; δ)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ) renaming (proj to dproj)
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; primD) renaming (proj to dproj; out to dout)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀; Init)
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone)
@@ -164,6 +165,9 @@ inr-⊆ D⊆ ⟨⟩ ()
 𝒦 (caseK M N γ κ) D =
   𝒦 κ (𝒞 ⟨ D , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
 
+𝒦 (primL p M γ κ) D = 𝒦 κ (primD p ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
+𝒦 (primR p v κ) D = 𝒦 κ (primD p ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
+
 𝒮 : State → 𝒫 Value
 𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧ (𝓔 γ))
 𝒮 (ret v κ) = 𝒦 κ (𝒱 v)
@@ -189,6 +193,10 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
   G : _ ⊆ _
   G w (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩) = inj₁ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allL d d∈)) , w∈ ⟩ ⟩ ⟩
   G w (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩) = inj₂ ⟨ u , ⟨ U , ⟨ (λ d d∈ → D⊆ _ (allR d d∈)) , w∈ ⟩ ⟩ ⟩
+𝒦-mono (primL p M γ κ) D⊆ =
+  𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , rest ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , rest ⟩ ⟩ ⟩ }
+𝒦-mono (primR p v κ) D⊆ =
+  𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
 
 {- every value denotes a nonempty set, so every environment is nonempty -}
 𝒱-nonempty : ∀ v → nonempty (𝒱 v)
@@ -282,6 +290,24 @@ proj-𝒱s {suc n} zero (v ∷ vs) refl d d∈ | true =
 proj-𝒱s {suc n} zero (v ∷ vs) () d d∈ | false
 proj-𝒱s (suc i) (v ∷ vs) eq d d∈ = proj-𝒱s i vs eq d d∈
 
+{- Primitives -------------------------------------------------------------------}
+
+int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ 𝒱 v
+int-in (const B k) refl = ⟨ refl , refl ⟩
+
+𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
+𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
+𝒱-out (bool true) (left ⟨⟩) tt = refl
+𝒱-out (bool false) (right ⟨⟩) tt = refl
+𝒱-out (bool true) (left (tup[ zero ] d)) ⟨ () , _ ⟩
+𝒱-out (bool true) (left (tup[ suc i ] d)) ⟨ () , _ ⟩
+𝒱-out (bool false) (right (tup[ zero ] d)) ⟨ () , _ ⟩
+𝒱-out (bool false) (right (tup[ suc i ] d)) ⟨ () , _ ⟩
+
+prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primD p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
+... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ = ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩
+
 {- Steps shrink the denotation of the state --------------------------------}
 
 step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
@@ -338,6 +364,11 @@ step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
 step-⊆ (ret (clo N' γ') (caseK M N γ κ)) ()
 step-⊆ (ret (const B k) (caseK M N γ κ)) ()
 step-⊆ (ret (tup vs) (caseK M N γ κ)) ()
+step-⊆ (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
+step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
+step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
+step-⊆ (ret w (primR p v κ)) () | nothing
 
 ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
 ↠-⊆ done d d∈ = d∈
@@ -376,6 +407,7 @@ final-shape (eval (get i ⦅ M ,, Nil ⦆) γ κ) () ans
 final-shape (eval (inl-op ⦅ M ,, Nil ⦆) γ κ) () ans
 final-shape (eval (inr-op ⦅ M ,, Nil ⦆) γ κ) () ans
 final-shape (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) () ans
+final-shape (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) () ans
 final-shape (ret v halt) refl ans = 𝒱-shape v
 final-shape (ret (const B k) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (tup vs) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
@@ -395,6 +427,9 @@ final-shape (ret (T.inr v) (getK i κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (clo N' γ') (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (const B k) (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (tup vs) (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)
+final-shape (ret w (primR p v κ)) eq ans with δ? p (obs v) (obs w)
+final-shape (ret w (primR p v κ)) () ans | just r
+final-shape (ret w (primR p v κ)) refl ans | nothing = ⊥-elim (ans refl)
 
 {- Soundness ------------------------------------------------------------------}
 

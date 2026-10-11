@@ -16,7 +16,8 @@
 
 module Compiler.Operational.Adequacy.Common where
 
-open import Primitives using (Base; base-rep)
+open import Primitives using (Base; base-rep; Int)
+open import Compiler.Lang.Prim using (Prim; Out; δ)
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
   using (Value; const; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
 open import Compiler.Observation
@@ -28,6 +29,8 @@ open import Compiler.Operational.Machine.ISWIM
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
+open import Data.Integer using (ℤ)
+open import Data.Maybe using (just)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
@@ -114,6 +117,11 @@ shape-const {o-tuple os} ()
 shape-const {o-inl o} ()
 shape-const {o-inr o} ()
 shape-const {o-wrong} ()
+
+{- a primitive is defined only on two integers -}
+δ?-inv : ∀ p o₁ o₂ {r : Out} → δ? p o₁ o₂ ≡ just r
+  → Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] o₁ ≡ o-const Int n × o₂ ≡ o-const Int m × r ≡ δ p n m
+δ?-inv p (o-const Int n) (o-const Int m) refl = n , m , refl , refl , refl
 
 {- Lengths ----------------------------------------------------------------------}
 

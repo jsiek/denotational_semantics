@@ -53,6 +53,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_)
 𝕆-Clos5-mono T let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
   ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
          ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
+𝕆-Clos5-mono T (prim p) = primD-mono p
 
 {- ⟦ M ⟧[ T ] is the meaning of M in this semantics -}
 Clos5-Semantics : Table → Semantics
@@ -118,6 +119,9 @@ module _ (T : Table) where
     ⋆-cont {E₁ = λ ρ → Λ ⟨ (λ X → ⟦ N ⟧[ T ] (X • ρ)) , ptt ⟩} {E₂ = λ ρ → ⟦ M ⟧[ T ] ρ} NE
       (Λ-mono-env {B = λ ρ → ⟦ N ⟧[ T ] ρ} (term-mono N)) (term-mono M)
       (Λ-cont {B = λ ρ → ⟦ N ⟧[ T ] ρ} NE (term-mono N) cN) cM v v∈
+  Clos5-continuous-op {prim p} {ρ} {NE} {v} {cons (ast L) (cons (ast M) nil)} v∈
+      ⟨ cL , ⟨ cM , _ ⟩ ⟩ =
+    primD-cont p {E₁ = λ ρ → ⟦ L ⟧[ T ] ρ} {E₂ = λ ρ → ⟦ M ⟧[ T ] ρ} (term-mono L) (term-mono M) cL cM v v∈
 
   Clos5-Continuous : ContinuousSemantics
   Clos5-Continuous = record

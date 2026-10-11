@@ -27,6 +27,8 @@ open import Compiler.Lang.Clos4
 open import Compiler.Lang.Clos5 using (global)
 open import Compiler.Compile.Globalize
 open import Compiler.Observation
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
 open import Compiler.Lang.ListUtil using (_‼_; proj-pw)
 open import Compiler.Compile.GlobalizeTable
   using (_⊑_; ⊑-refl; ⊑-trans; ∷-⊑; glob-grows; glob-grows-args; global-⊑)
@@ -36,7 +38,7 @@ import Compiler.Functional.Interp.Clos5 as T
 
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (just)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (zero; suc)
 open import Data.Product using (proj₁; proj₂)
@@ -71,6 +73,14 @@ module Rel (D : Defs) where
   obs≈ (inr≈ r) = cong o-inr (obs≈ r)
   obs≈-list [] = refl
   obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+  {- related operands give related results of a primitive -}
+  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+  ... | nothing = M.nothing
+  ... | just (int n) = M.just const≈
+  ... | just (bool true) = M.just (inl≈ (tup≈ []))
+  ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
   lookup-pw : ∀ x {ρ₁ ρ₂} → ρ₁ ≈ρ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
   lookup-pw x [] = M.nothing
@@ -138,6 +148,9 @@ module Rel (D : Defs) where
   run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
     bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
              (branch≈ ck M N _ p ρ)
+  run≈ ck (prim q ⦅ L ,, M ,, Nil ⦆) ds p ρ =
+    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) p) ρ) λ r →
+    bind-rel (run≈ ck M _ p ρ) λ r' → from-maybe-rel (prim≈ q r r')
   run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
     bind-rel (run≈ ck M ds (⊑-trans (glob-grows N _) p) ρ) λ r → run≈ ck N _ p (r ∷ ρ)
 

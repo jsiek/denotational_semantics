@@ -26,7 +26,7 @@ open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
-  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
+  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 open import NewEnv using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
@@ -161,6 +161,9 @@ opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
     → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
   rel-ext B rx zero _ = ≃-refl
   rel-ext B rx (suc x) u = rx x u
+opt-correct (prim p ⦅ L ,, M ,, Nil ⦆) r ρ ρ' NE rel =
+  primD-≃ p (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
+            (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₂ (inj₁ u))))
 
 opt-body-correct r zero (bind (ast N)) ρ ρ' NE rel = opt-correct N r ρ ρ' NE rel
 opt-body-correct r (suc k) (bind a) = opt-body-correct r k a

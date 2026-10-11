@@ -140,15 +140,16 @@ private
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  R′-flat : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R′ k V D
-  R′-flat zero _ _ = ptt
-  R′-flat (suc k) {V} V⊆ fl = record
+  R′-data : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k V D
+  R′-data zero _ _ = ptt
+  R′-data (suc k) {V} V⊆ fl = record
     { const-obs = λ c c∈ → V⊆ _ c∈
     ; nonempty-obs = λ ne → ne-mem ne V⊆
     ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
-    ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → flat-tag t (fl _ (W⊆ d d∈)))
+    ; tag-obs = λ t W W⊆ →
+        R′-data k (λ d d∈ → V⊆ _ (W⊆ d d∈)) (λ d d∈ → data-untag t (fl _ (W⊆ d d∈)))
     }
-    where noflat : ∀ {u v} → Flat ⦅ u , v ⦆ → ⊥
+    where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
   R′-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R′ k V D₁ → R′ k V D₂
@@ -182,7 +183,10 @@ R-∅ : ∀ {V D} → mem V ⊆ ∅ → R V D
 R-∅ = R′-∅ _
 
 R-flat : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R V D
-R-flat = R′-flat _
+R-flat V⊆ fl = R′-data _ V⊆ (λ v v∈ → flat-data (fl v v∈))
+
+R-data : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R V D
+R-data = R′-data _
 
 {- monotone in the set on the other side -}
 R-mono : ∀ {V D₁ D₂} → D₁ ⊆ D₂ → R V D₁ → R V D₂

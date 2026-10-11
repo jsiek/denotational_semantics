@@ -57,6 +57,8 @@ module Compiler.Compile.Globalize where
     ⟨ case-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
   glob (let-op ⦅ args ⦆) ds =
     ⟨ let-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
+  glob (prim p ⦅ args ⦆) ds =
+    ⟨ prim p ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
 
   glob-arg (ast M) ds = ⟨ ast' (proj₁ (glob M ds)) , proj₂ (glob M ds) ⟩
   glob-arg (bind a) ds = ⟨ bind' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩

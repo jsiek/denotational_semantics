@@ -41,7 +41,7 @@ module Compiler.Operational.Correctness.ConcretizeSim where
 open import NewSigUtil using (ν-n)
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 import Compiler.Lang.Clos2 as C2
-open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op;
+open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim;
                cons; clear; bind; ast; ν; ■; Var)
 import Compiler.Lang.Clos3 as C3
 open import Compiler.Compile.Concretize
@@ -52,7 +52,8 @@ open import Compiler.Lang.ListUtil
 import Compiler.Operational.Machine.Clos2 as S
 import Compiler.Operational.Machine.Clos3 as T
 
-open import Data.Bool using (true)
+open import Compiler.Lang.Prim using (int; bool)
+open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; _∷ʳ_; length; map; replicate; reverse)
@@ -128,6 +129,9 @@ data _≈k_ : S.Cont → T.Cont → Set where
   inrK : ∀ {κ₂ κ₃} → κ₂ ≈k κ₃ → S.inrK κ₂ ≈k T.inrK κ₃
   caseK : ∀ {M N φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
     → S.caseK M N ρ₂ κ₂ ≈k T.caseK (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) ρ₃ κ₃
+  primL : ∀ {p M φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
+    → S.primL p M ρ₂ κ₂ ≈k T.primL p (concretize φ M) ρ₃ κ₃
+  primR : ∀ {p v w κ₂ κ₃} → v ≈ w → κ₂ ≈k κ₃ → S.primR p v κ₂ ≈k T.primR p w κ₃
 
 NotVar : C2.AST → Set
 NotVar (` x) = ⊥
@@ -151,6 +155,14 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
 obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+
+{- related operands give related results of a primitive -}
+prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
+prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
+... | nothing = M.nothing
+... | just (int n) = M.just const≈
+... | just (bool true) = M.just (inl≈ (tup≈ []))
+... | just (bool false) = M.just (inr≈ (tup≈ []))
 
 {- The free variables of a closure ---------------------------------------------}
 
@@ -266,6 +278,7 @@ module _ (P : C3.AST) where
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (inrK κ))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} _ er κ) =
     after (one refl) (enter L er (caseK er κ))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} _ er κ) = after (one refl) (enter L er (primL er κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL {M = M} er κ)) = after (one refl) (enter M er (appR r κ))
   sim (ret~ const≈ (appL er κ)) = stops refl
@@ -291,6 +304,8 @@ module _ (P : C3.AST) where
   sim (ret~ (clo≈ _) (caseK _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ κ)) = stops refl
+  sim (ret~ r (primL {M = M} er κ)) = after (one refl) (enter M er (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
 
 {- The end theorem: for every Clos2 program ------------------------------------}
 

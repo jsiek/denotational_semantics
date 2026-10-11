@@ -57,6 +57,7 @@ glob-grows (inl-op ⦅ args ⦆) ds = glob-grows-args args ds
 glob-grows (inr-op ⦅ args ⦆) ds = glob-grows-args args ds
 glob-grows (case-op ⦅ args ⦆) ds = glob-grows-args args ds
 glob-grows (let-op ⦅ args ⦆) ds = glob-grows-args args ds
+glob-grows (prim p ⦅ args ⦆) ds = glob-grows-args args ds
 
 glob-grows-arg (ast M) ds = glob-grows M ds
 glob-grows-arg (bind a) ds = glob-grows-arg a ds

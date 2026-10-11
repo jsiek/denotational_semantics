@@ -33,6 +33,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos4 inl-op = inl
 𝕆-Clos4 inr-op = inr
 𝕆-Clos4 case-op = 𝒞
+𝕆-Clos4 (prim p) = primD p
 {- let x = M in N means (λx. N) M -}
 𝕆-Clos4 let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
@@ -56,6 +57,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos4-mono inl-op = inl-mono
 𝕆-Clos4-mono inr-op = inr-mono
 𝕆-Clos4-mono case-op = 𝒞-mono
+𝕆-Clos4-mono (prim p) = primD-mono p
 𝕆-Clos4-mono let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
   ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
          ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
@@ -80,6 +82,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos4-consis inl-op = inl-consis
 𝕆-Clos4-consis inr-op = inr-consis
 𝕆-Clos4-consis case-op = 𝒞-consis
+𝕆-Clos4-consis (prim p) = primD-consis p
 𝕆-Clos4-consis let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
   ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
            ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩

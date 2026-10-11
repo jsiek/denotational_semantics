@@ -2,12 +2,15 @@ module Compiler.Lang.ISWIM where
 
 {-
  The source language: ISWIM, an untyped lambda calculus with constants,
-   tuples and sums. A function lam ⦅ (y. N) ⦆ refers to the surrounding
-   variables directly.
+   tuples, sums, and the primitive operations sub and eq on integers.
+   There are no booleans: eq returns inl ⟨⟩ for true and inr ⟨⟩ for false
+   (⟨⟩ is the empty tuple), so case serves as if (see Lang/Prim).
+ A function lam ⦅ (y. N) ⦆ refers to the surrounding variables directly.
  This language is before the 'enclose' pass.
 -}
 
 open import Primitives
+open import Compiler.Lang.Prim using (Prim)
 open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import abt.Sig using (Sig; ∁; ν; ■) public
@@ -34,6 +37,7 @@ data Op : Set where
   inl-op : Op
   inr-op : Op
   case-op : Op
+  prim : Prim → Op      {- a primitive operation on integers (Lang/Prim) -}
 
 sig : Op → List Sig
 sig lam = ν ■ ∷ []
@@ -44,6 +48,7 @@ sig (get i) = ■ ∷ []
 sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
+sig (prim p) = ■ ∷ ■ ∷ []
 
 import abt.AbstractBindingTree
 module ASTMod = abt.AbstractBindingTree Op sig
