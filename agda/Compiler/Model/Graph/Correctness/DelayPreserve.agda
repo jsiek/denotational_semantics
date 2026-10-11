@@ -12,9 +12,9 @@
   the target operators, so that the cases for get, inl and inr are
   immediate. No fuel or finite lists of observations are needed, unlike
   the backward direction (DelayReflectFinite): there the observed side is
-  the target, where a closure is split into car and cdr halves that only
-  mean something together, so a single target value cannot be related on
-  its own.
+  the target, where a call takes its code from car C and its free
+  variables from cdr C separately, so a single target value cannot be
+  related on its own.
 
   The end theorem at the bottom combines both directions.
 

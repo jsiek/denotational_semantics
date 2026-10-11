@@ -10,8 +10,10 @@
   (Bnd k V').
 
   A target closure is split into the car halves ⦅ FV ↦ (U₀ ↦ w) ∣ of its
-  code and the cdr halves ∣ fv ⦆ of its environment, so a single target
-  value says nothing about a call. The function entries of V' (CarEntry)
+  code and the cdr halves ∣ fv ⦆ of its environment. A call takes its
+  code from car C and its free variables FV from cdr C separately, and FV
+  is a finite set of observations, so a single target value says nothing
+  about a call (this would be so even if pairs were single values). The function entries of V' (CarEntry)
   are the codes in the car halves of V' whose free variables FV are in
   the cdr halves of V'. Calls V' U W says that each w in W is the result
   of a function entry U₀ ↦ w of V', and U is the union of those U₀. The
