@@ -81,7 +81,7 @@ An experiment, not in the totals, is described [below](#experiment-a-direct-back
 | `abt.Sig` | 18 | all three proofs |
 | `abt.Var` | 23 | all three proofs |
 
-Shared by all three proofs, and not counted: 23 modules, 918 lines. Counted in the denotational total: `abt.Fold2` (28), the fold of the abt library, used by its generic semantics. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Lang.Scope` (32) and `Observation` (26), 165 lines. Examples, not counted: 185 lines.
+Shared by all three proofs, and not counted: 25 modules, 1093 lines. Counted in the denotational total: `abt.Fold2` (28), the fold of the abt library, used by its generic semantics. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Lang.Scope` (32) and `Observation` (26), 165 lines. Examples, not counted: 212 lines.
 
 ## What the groups contain
 

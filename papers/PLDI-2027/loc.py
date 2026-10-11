@@ -84,7 +84,8 @@ GROUPS = [
      [O + 'Adequacy/Scope.agda', O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda']),
     ('adeq', 'end to end', [O + 'Adequacy/EndToEnd.agda']),
 
-    ('examples', 'examples', [G + 'Correctness/*Example.agda']),
+    ('examples', 'examples',
+     [G + 'Correctness/*Example.agda', 'agda/Compiler/Compile/Examples/*.agda']),
 
     # not in the totals: a direct backward simulation for delay, without
     # determinism, for comparison (see loc.md)

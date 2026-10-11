@@ -315,12 +315,30 @@ Like Clos4, but the code is hoisted into a program's list of global definitions 
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
+\subsection{Monadic Clos5}
+
+The sublanguage of Clos5 in monadic normal form: the operands of every construct but $\key{let}$ are atoms $a$, while the right-hand side and body of $\key{let}$ and the branches of $\key{case}$ may be complex.
+\begin{syntax}
+  & a &::=& x \mid \funref{k} \mid c \\
+  & M, N &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
+    \mid \prim{p}{a_1}{a_2} \\
+  &&& \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
+    \mid \inl a \mid \inr a \mid \Case{a}{x}{M}{y}{N}
+    \mid \Let x = M \In N \\[1ex]
+  & d &::=& e\,y.\,N \\
+  & P &::=& (d_0, \ldots, d_{m-1};\; M)
+\end{syntax}
+
 %===============================================================================
 \section{Compilation}
 
 \[
   \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
      \circ \pass{optimize} \circ \pass{enclose}
+\]
+
+\[
+  \pass{compile\text{-}mon} = \pass{rco} \circ \pass{compile}
 \]
 
 In each pass, the clauses not shown are homomorphic.
@@ -389,6 +407,37 @@ Globalize hoists all code into a table of global definitions and replaces each p
      &= (\mathit{op}(\bar{x}_1.A'_1, \ldots, \bar{x}_n.A'_n), \vec{d}_n)
      \quad\text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1}) \\[1ex]
   \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
+\end{align*}
+
+\subsection{Remove Complex Operands (Clos5 $\to$ Monadic Clos5)}
+
+Remove complex operands binds each complex operand to a fresh variable with a $\key{let}$, from left to right, so that every operand becomes an atom.
+\[
+  \vec{b} = x_1{=}M_1, \ldots, x_k{=}M_k
+  \qquad
+  \pass{atomize}(M_1, \ldots, M_n) = (\vec{b};\; a_1, \ldots, a_n)
+\]
+\begin{align*}
+  \pass{atomize}(\epsilon) &= (\epsilon;\; \epsilon) \\
+  \pass{atomize}(a, \vec{M}) &= (\vec{b};\; a, \vec{a})
+     \quad\text{where } (\vec{b}; \vec{a}) = \pass{atomize}(\vec{M}) \\
+  \pass{atomize}(M, \vec{M}) &= (x{=}M, \vec{b};\; x, \vec{a})
+     \quad\text{where } (\vec{b}; \vec{a}) = \pass{atomize}(\vec{M}),\
+     M \text{ not an atom},\ x \text{ fresh} \\[1ex]
+  \pass{lets}(\epsilon, N) &= N \\
+  \pass{lets}((x{=}M, \vec{b}), N) &= \Let x = M \In \pass{lets}(\vec{b}, N)
+\end{align*}
+\[
+  \mathit{op}(M_1, \ldots, M_n) \in \{\, L(M, N),\ \pair{M}{N},\ \FST M,\ \SND M,\ \prim{p}{M}{N},\
+     \tuple{M_1, \ldots, M_n},\ \prj{i} M,\ \inl M,\ \inr M \,\}
+\]
+\begin{align*}
+  \pass{rco}(\mathit{op}(M_1, \ldots, M_n)) &= \pass{lets}(\vec{b}, \mathit{op}(a_1, \ldots, a_n)) \\
+  &\qquad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(\pass{rco}(M_1), \ldots, \pass{rco}(M_n)) \\
+  \pass{rco}(\Case{L}{x}{M}{y}{N}) &= \pass{lets}(\vec{b}, \Case{a}{x}{M'}{y}{N'}) \\
+  &\qquad \text{where } (\vec{b}; a) = \pass{atomize}(\pass{rco}(L)),\ M' = \pass{rco}(M),\ N' = \pass{rco}(N) \\
+  \pass{rco}((d_0, \ldots, d_{m-1};\; M)) &= (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M)) \\
+  \pass{rco}(e\,y.\,N) &= e\,y.\,\pass{rco}(N)
 \end{align*}
 
 %===============================================================================
