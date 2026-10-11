@@ -150,3 +150,4 @@ import Compiler.Functional.Correctness.EncloseFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
 import Compiler.Functional.Correctness.ConcretizeFuel
 import Compiler.Functional.Correctness.DelayFuel
+import Compiler.Functional.Correctness.OptimizeFuel
