@@ -113,6 +113,9 @@ import Compiler.Operational.Correctness.DelaySim
 import Compiler.Operational.Correctness.GlobalizeSim
 {- the whole compiler, by composing the simulations of the passes -}
 import Compiler.Operational.Correctness.CompilerSim
+{- remove complex operands (Clos5 → Clos5), and the compiler into monadic
+   normal form -}
+import Compiler.Operational.Correctness.RCOSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
