@@ -1,36 +1,17 @@
 module NewDOpSig where
 
-open import Primitives
-open import SetsAsPredicates
-open import abt.Var
-open import abt.GSubst using (_•_)
 open import abt.ScopedTuple hiding (𝒫)
 open import abt.Sig using (Sig; ν; ■) public
 open import abt.Var using (Var) public
 open import abt.GSubst using (_•_) public
 open import abt.Sig
 
-open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate; map)
-open import Data.List.Relation.Unary.Any using (Any)
-open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
-open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.List.Relation.Binary.Pointwise.Base using (Pointwise; []; _∷_)
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
-open import Data.Nat.Properties
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
     renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Unit using (tt) renaming (⊤ to True)
 open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality
-    using (_≡_; _≢_; refl; sym; subst)
 open import Level using (Level; Lift; lift)
     renaming (zero to lzero; suc to lsuc; _⊔_ to _l⊔_)
-open import Relation.Nullary using (¬_; Dec; yes; no)
 open import Relation.Binary.Core using (Rel)
 
 

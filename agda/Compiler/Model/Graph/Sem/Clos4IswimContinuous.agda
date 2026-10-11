@@ -7,7 +7,6 @@
 -}
 
 open import SetsAsPredicates
-open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Model.Graph.Domain.ISWIM.Continuity

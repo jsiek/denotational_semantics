@@ -15,11 +15,8 @@
 
 -}
 
-open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
-open import NewDOpSig
-open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.ISWIM
@@ -43,7 +40,6 @@ open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Unary.Any using (here)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
 open import Relation.Nullary using (yes; no)
 

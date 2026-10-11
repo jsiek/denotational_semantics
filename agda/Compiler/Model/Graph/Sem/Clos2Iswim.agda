@@ -11,8 +11,6 @@ module Compiler.Model.Graph.Sem.Clos2Iswim where
 
 -}
 
-open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
 open import NewSigUtil
 open import NewDOpSig
 open import SetsAsPredicates
@@ -21,18 +19,12 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos2
 
-open import Data.Empty renaming (⊥ to Bot)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
-open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 open import Level renaming (zero to lzero; suc to lsuc)
-import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; _≢_; refl; sym; cong; cong₂; cong-app)
-open Eq.≡-Reasoning
 
 {- apply a curried function of n sets to the denotations of the free variables -}
 apply-n : ∀ n {b} → Result (𝒫 Value) (ν-n n b) → Results (𝒫 Value) (replicate n ■)
@@ -73,7 +65,6 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2-mono inr-op = ℛ-mono
 𝕆-Clos2-mono case-op = 𝒞-mono
 
-open import abt.Fold2 Op sig
 open import NewSemantics Op sig public
 
 instance

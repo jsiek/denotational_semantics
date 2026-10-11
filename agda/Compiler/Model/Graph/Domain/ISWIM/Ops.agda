@@ -2,9 +2,6 @@ module Compiler.Model.Graph.Domain.ISWIM.Ops where
 
 open import Primitives
 open import SetsAsPredicates
-open import abt.Var
-open import abt.GSubst using (_•_)
-open import abt.ScopedTuple hiding (𝒫)
 open import abt.Sig using (Sig; ν; ■) public
 open import abt.Var using (Var) public
 open import abt.GSubst using (_•_) public
@@ -16,16 +13,7 @@ open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
 open import Data.List.Relation.Unary.Any using (Any; here; there)
-open import Data.List.Relation.Unary.All 
-  using (All; []; _∷_; head; tail; lookup; tabulate; all?)
-  renaming (map to allmap)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
-open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
-open import Data.Nat.Properties using (≤-pred)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax)

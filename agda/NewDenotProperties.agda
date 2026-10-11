@@ -1,28 +1,5 @@
-open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
-open import Data.List.Properties using (++-conicalˡ)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
-open import Data.List.Relation.Unary.Any using (here; there) 
-open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; s≤s; _+_)
-open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂)
-    renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Unit using (tt) renaming (⊤ to True)
-open import Level renaming (zero to lzero; suc to lsuc; _⊔_ to _l⊔_)
-open import Relation.Binary.PropositionalEquality
-    using (_≡_; _≢_; refl; sym; subst)
-open import Relation.Nullary using (¬_; Dec; yes; no)
 
-open import Primitives
-open import abt.ScopedTuple hiding (𝒫)
 open import SetsAsPredicates
-open import abt.Sig
-open import abt.Var
-open import abt.GSubst using (_•_)
-open import NewSigUtil
-open import NewSyntaxUtil
 open import NewDOpSig
 
 module NewDenotProperties where

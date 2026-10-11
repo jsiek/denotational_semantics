@@ -8,7 +8,6 @@
 -}
 
 open import SetsAsPredicates
-open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Model.Graph.Domain.ISWIM.Continuity
@@ -21,7 +20,6 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 
 module Compiler.Model.Graph.Sem.ISWIMContinuous where

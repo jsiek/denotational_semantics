@@ -3,9 +3,6 @@ open import Data.List using (List; []; _∷_)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (tt)
 open import Level using (lift; lower)
-open import abt.Sig using (Sig; ■; ν; ∁; Result)
-open import abt.Var using (Var)
-open import abt.GSubst using (_•_)
 open import SetsAsPredicates
 open import NewDOpSig
 open import NewEnv using (Env)

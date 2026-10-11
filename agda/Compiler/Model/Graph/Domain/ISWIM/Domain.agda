@@ -2,14 +2,9 @@ module Compiler.Model.Graph.Domain.ISWIM.Domain where
 
 open import Primitives
 open import SetsAsPredicates
-open import abt.Var
-open import abt.GSubst using (_•_)
-open import abt.ScopedTuple hiding (𝒫)
 open import abt.Sig using (Sig; ν; ■) public
 open import abt.Var using (Var) public
 open import abt.GSubst using (_•_) public
-open import NewSigUtil
-open import NewDOpSig
 open import NewDenotProperties
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
@@ -18,29 +13,16 @@ open import Data.List.Relation.Unary.Any using (Any; here; there; any?)
 open import Data.List.Relation.Unary.All 
   using (All; []; _∷_; head; tail; lookup; tabulate; all?)
   renaming (map to allmap)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
-open import Data.List.Relation.Binary.Subset.Propositional using ()
-  renaming (_⊆_ to _l⊆_)
-open import Data.List.Properties using (++-conicalˡ; ∷-dec)
-open import Data.List.Membership.Propositional renaming (_∈_ to _⋵_)
-open import Data.List.Membership.Propositional.Properties
-  using (∈-++⁺ˡ; ∈-++⁺ʳ)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<_; z≤n; s≤s; _+_)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Data.Product using (_×_; Σ; Σ-syntax; proj₁; proj₂; ∃; ∃-syntax; uncurry)
     renaming (_,_ to ⟨_,_⟩)
-open import Data.Product.Properties using (,-injective)
-open import Relation.Nullary.Decidable using (_×?_)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 open import Data.Unit using (tt) renaming (⊤ to True)
-open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; trans; subst; cong; cong₂)
-open import Level using (Level; Lift; lift; lower)
-    renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
-open import Relation.Nullary.Decidable using (map′)
 
 
 {- Denotational Values --------------------------------------------------------}

@@ -18,7 +18,6 @@ open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import NewDOpSig
-open import Primitives
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.Clos2
@@ -39,8 +38,6 @@ open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
-open import Data.Unit using (tt)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; subst)
 open import Relation.Nullary using (Dec; yes; no)
