@@ -492,10 +492,9 @@ Clos4 values is defined by recursion on $v$.
 \end{align*}
 
 \begin{lemma}[Delay Preserves]\label{lem:delay-preserve}
-If $\rho'(x) \NE$ for every $x$, $\rho \sqsubseteq \rho'$, and
-$v \in \SEM{M}^{\mathrm{3}}\rho$, then
+If $\rho'(x) \NE$ for every $x$ and $\rho \sqsubseteq \rho'$, then for every $v$,
 \[
-  v \sqsubseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho' .
+  v \in \SEM{M}^{\mathrm{3}}\rho \implies v \sqsubseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho' .
 \]
 \end{lemma}
 
@@ -536,10 +535,10 @@ and $U$ and $W$ range over finite sets of Clos4 values.
 \end{align*}
 
 \begin{lemma}[Delay Reflects]\label{lem:delay-reflect}
-If $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$, $\rho' \rhd \rho$, and
-$V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho'$, then
+If $\rho(x) \NE$ and $\consis(\rho'(x))$ for every $x$ and $\rho' \rhd \rho$,
+then for every finite $V'$,
 \[
-  \Rel{V'}{\SEM{M}^{\mathrm{3}}\rho} .
+  V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho' \implies \Rel{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
 \end{lemma}
 
