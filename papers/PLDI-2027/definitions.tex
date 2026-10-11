@@ -197,8 +197,10 @@ In the CompCert-style proof:
 \item \textbf{Optimize}'s relations need no renaming. The Agda relates
   variable $x$ to $r(x)$ for the renaming $r$ that optimize carries, and
   the values collected for a closure through the renumbering of positions
-  that \texttt{prune} computes. $\mathit{Scoped}$ and $\mathit{WS}$ are
-  \texttt{WS}.
+  that \texttt{prune} computes. $\mathit{Scoped}$ is \texttt{WS}, and
+  $\mathit{WS}(M)$ is \texttt{WS 0 M}.
+\item \textbf{Closed} ISWIM terms, $\FV(M) = \emptyset$, are the Agda's
+  \texttt{Closed}.
 \item \textbf{Concretize}'s $\approx_\varphi$ ranges over the domain of
   $\varphi$. The Agda's $\varphi$ is total, mapping a variable past a
   closure's free variables to an unbound one, so its theorem has no
