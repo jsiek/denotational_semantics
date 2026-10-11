@@ -92,6 +92,9 @@ import Compiler.Operational.Simulation
 import Compiler.Operational.Machine.Common
 import Compiler.Operational.Machine.ISWIM
 import Compiler.Operational.Machine.Clos2
+import Compiler.Operational.Machine.Clos3
+import Compiler.Operational.Machine.Clos4
+import Compiler.Operational.Machine.Clos5
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
