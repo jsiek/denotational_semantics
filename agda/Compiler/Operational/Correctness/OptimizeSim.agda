@@ -61,7 +61,7 @@ open import Data.Nat.Properties
 open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
 {- Well-scoped terms ----------------------------------------------------------}
@@ -162,9 +162,9 @@ data _≈k_ : T.Cont → T.Cont → Set where
     → T.tupK vs Ms ρ₁ κ₁ ≈k T.tupK ws (map (optimize r) Ms) ρ₂ κ₂
   closK : ∀ {N m b vs ws r ρ₁ ρ₂ κ₁ κ₂} {fvs : Args (replicate m ■)} (N₀ : AST)
     → Building N (Used N₀) (suc m) b vs ws → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → T.closK N vs (T.args→list fvs) ρ₁ κ₁
+    → T.closK N vs (args→list fvs) ρ₁ κ₁
       ≈k T.closK (optimize (ext-var (index (prune m r (used? N₀) fvs (keep-base b)))) N) ws
-                 (T.args→list (kept (prune m r (used? N₀) fvs (keep-base b)))) ρ₂ κ₂
+                 (args→list (kept (prune m r (used? N₀) fvs (keep-base b)))) ρ₂ κ₂
   getK : ∀ {n} {i : Fin n} {κ₁ κ₂} → κ₁ ≈k κ₂ → T.getK i κ₁ ≈k T.getK i κ₂
   inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → T.inlK κ₁ ≈k T.inlK κ₂
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → T.inrK κ₁ ≈k T.inrK κ₂
@@ -181,14 +181,14 @@ data Match : ℕ → T.State → T.State → Set where
   drop-eval~ : ∀ {N m b vs ws y v r ρ₁ ρ₂ κ₁ κ₂} {fvs : Args (replicate m ■)} (N₀ : AST)
     → Building N (Used N₀) (suc m) b vs ws → ¬ Used N₀ m → ρ₁ ‼ y ≡ just v
     → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match (suc (suc (m * 2))) (T.eval (` y) ρ₁ (T.closK N vs (T.args→list fvs) ρ₁ κ₁))
+    → Match (suc (suc (m * 2))) (T.eval (` y) ρ₁ (T.closK N vs (args→list fvs) ρ₁ κ₁))
         (T.clos-next (optimize (ext-var (index (prune m r (used? N₀) fvs (drop-base b)))) N) ws
-                     (T.args→list (kept (prune m r (used? N₀) fvs (drop-base b)))) ρ₂ κ₂)
+                     (args→list (kept (prune m r (used? N₀) fvs (drop-base b)))) ρ₂ κ₂)
   drop-ret~ : ∀ {N m b vs ws v r ρ₁ ρ₂ κ₁ κ₂} {fvs : Args (replicate m ■)} (N₀ : AST)
     → Building N (Used N₀) (suc m) b vs ws → ¬ Used N₀ m → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match (suc (m * 2)) (T.ret v (T.closK N vs (T.args→list fvs) ρ₁ κ₁))
+    → Match (suc (m * 2)) (T.ret v (T.closK N vs (args→list fvs) ρ₁ κ₁))
         (T.clos-next (optimize (ext-var (index (prune m r (used? N₀) fvs (drop-base b)))) N) ws
-                     (T.args→list (kept (prune m r (used? N₀) fvs (drop-base b)))) ρ₂ κ₂)
+                     (args→list (kept (prune m r (used? N₀) fvs (drop-base b)))) ρ₂ κ₂)
 
 {- Related values are observed alike -}
 obs≈ : ∀ {v w} → v ≈ w → T.obs v ≡ T.obs w
@@ -199,9 +199,7 @@ obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
 obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂' (obs≈ r) (obs≈-list rs)
-  where cong₂' : ∀ {a b : Obs} {as bs} → a ≡ b → as ≡ bs → a ∷ as ≡ b ∷ bs
-        cong₂' refl refl = refl
+obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- Agreement of environments ---------------------------------------------------}
 
@@ -220,7 +218,7 @@ agree-sub sc sub (agree w look) = agree (sc w) (λ x u → look x (sub x u))
 
 agree-all : ∀ {n j r ρ₁ ρ₂} (args : Args (replicate n ■)) → WS-args j args
   → (∀ x → UsesArgs x args → Lookup ρ₁ x ρ₂ (r x))
-  → All (λ M → Agree M 0 r ρ₁ ρ₂) (T.args→list args)
+  → All (λ M → Agree M 0 r ρ₁ ρ₂) (args→list args)
 agree-all {zero} Nil _ look = []
 agree-all {suc n} (M ,, args) (w , ws) look =
   agree w (λ x u → look x (inj₁ u)) ∷ agree-all args ws (λ x u → look x (inj₂ u))
@@ -247,7 +245,7 @@ drop-building {N} {U} {m} {b} {vs} {ws} {v} nu (building sc us col) = building s
 
 {- the source and target code of a closure -}
 opt-list : ∀ {n} r (args : Args (replicate n ■))
-  → T.args→list (opt-args r args) ≡ map (optimize r) (T.args→list args)
+  → args→list (opt-args r args) ≡ map (optimize r) (args→list args)
 opt-list {zero} r Nil = refl
 opt-list {suc n} r (M ,, args) = cong (optimize r M ∷_) (opt-list r args)
 
@@ -284,9 +282,9 @@ module _ (P : AST) where
      (drop-eval~), or none left (ret~ of the closure) -}
   clos-next~ : ∀ {N m b vs ws r ρ₁ ρ₂ κ₁ κ₂} (N₀ : AST) (fvs : Args (replicate m ■))
     → Building N (Used N₀) m b vs ws → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Σ[ i ∈ ℕ ] i ≤ m * 2 × Match i (T.clos-next N vs (T.args→list fvs) ρ₁ κ₁)
+    → Σ[ i ∈ ℕ ] i ≤ m * 2 × Match i (T.clos-next N vs (args→list fvs) ρ₁ κ₁)
         (T.clos-next (optimize (ext-var (index (prune m r (used? N₀) fvs b))) N) ws
-                     (T.args→list (kept (prune m r (used? N₀) fvs b))) ρ₂ κ₂)
+                     (args→list (kept (prune m r (used? N₀) fvs b))) ρ₂ κ₂)
   clos-next~ {m = zero} N₀ Nil (building (_ , sc) us col) _ κ =
     0 , z≤n , ret~ (clo≈ (agree sc (λ x u → col x (us x u)))) κ
   clos-next~ {m = suc m} N₀ ((` y) ,, fvs) bld (agree-args (w , ws) look) κ
@@ -319,7 +317,7 @@ module _ (P : AST) where
          (≤-pred (ws-uses (T.body n a) sc (subst (Uses (suc (n + k))) (unbind-body n a) u)))
          (+-monoʳ-≤ n z≤n))))
   ... | i , _ , m =
-    steps (one refl) (subst (λ B → Match i _ (T.clos-next B [] (T.args→list (kept Q)) ρ₂ κ₂))
+    steps (one refl) (subst (λ B → Match i _ (T.clos-next B [] (args→list (kept Q)) ρ₂ κ₂))
                             (sym eq) m)
     where
     Q = prune n r (λ j → uses? (suc j) (unbind-n n a)) fvs (λ k → k)
@@ -337,7 +335,7 @@ module _ (P : AST) where
   sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = steps (one refl) (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {r} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree w look) κ) =
     steps (one refl)
-          (subst (λ Ns → Match 0 (T.tuple-next [] (T.args→list args) ρ₁ κ₁) (T.tuple-next [] Ns ρ₂ κ₂))
+          (subst (λ Ns → Match 0 (T.tuple-next [] (args→list args) ρ₁ κ₁) (T.tuple-next [] Ns ρ₂ κ₂))
                  (sym (opt-list r args))
                  (tuple-next~ [] (agree-all args w look) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =

@@ -92,20 +92,15 @@ module RenameLemmas (Op : Set) (sig : Op → List Sig) where
   rename-fuse-args f g (cons a as) = cong₂ cons (rename-fuse-arg f g a) (rename-fuse-args f g as)
 
   rename-id : ∀ M → rename (λ x → x) M ≡ M
-  rename-id M = trans (rename-cong ext-id M) (go M)
-    where
-    ext-id : Pw (λ x → x) (λ x → x)
-    ext-id x = refl
-    go : ∀ M → rename (λ x → x) M ≡ M
-    go-arg : ∀ {f b} → Pw f (λ x → x) → (a : Arg b) → rename-arg f a ≡ a
-    go-args : ∀ {f bs} → Pw f (λ x → x) → (as : Args bs) → rename-args f as ≡ as
-    go (` x) = refl
-    go (op ⦅ as ⦆) = cong (op ⦅_⦆) (go-args ext-id as)
-    go-arg eq (ast M) = cong ast (trans (rename-cong eq M) (go M))
-    go-arg eq (bind a) = cong bind (go-arg (λ { zero → refl ; (suc x) → cong suc (eq x) }) a)
-    go-arg eq (clear a) = refl
-    go-args eq nil = refl
-    go-args eq (cons a as) = cong₂ cons (go-arg eq a) (go-args eq as)
+  rename-id-arg : ∀ {f b} → Pw f (λ x → x) → (a : Arg b) → rename-arg f a ≡ a
+  rename-id-args : ∀ {f bs} → Pw f (λ x → x) → (as : Args bs) → rename-args f as ≡ as
+  rename-id (` x) = refl
+  rename-id (op ⦅ as ⦆) = cong (op ⦅_⦆) (rename-id-args (λ x → refl) as)
+  rename-id-arg eq (ast M) = cong ast (trans (rename-cong eq M) (rename-id M))
+  rename-id-arg eq (bind a) = cong bind (rename-id-arg (λ { zero → refl ; (suc x) → cong suc (eq x) }) a)
+  rename-id-arg eq (clear a) = refl
+  rename-id-args eq nil = refl
+  rename-id-args eq (cons a as) = cong₂ cons (rename-id-arg eq a) (rename-id-args eq as)
 
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos3
@@ -203,7 +198,7 @@ env-body : ∀ {v w u e} → v ≈ w → u ≈ e → EnvRel (λ x → x) (v ∷ 
 env-body r r' = env λ { zero → M.just r ; (suc zero) → M.just r' ; (suc (suc x)) → M.nothing }
 
 del-args : ∀ {n} r (as : Args (replicate n ■))
-  → Pointwise (Del r) (S.args→list as) (T.args→list (rename-args r (del-map-args as)))
+  → Pointwise (Del r) (args→list as) (args→list (rename-args r (del-map-args as)))
 del-args {zero} r Nil = []
 del-args {suc n} r (M ,, as) = refl ∷ del-args r as
 

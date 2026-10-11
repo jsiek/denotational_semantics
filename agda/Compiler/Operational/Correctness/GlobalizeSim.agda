@@ -45,7 +45,7 @@ open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 
 {- Growing tables --------------------------------------------------------------}
 
@@ -168,16 +168,14 @@ module Rel (D : Defs) where
   obs≈ (inl≈ r) = cong o-inl (obs≈ r)
   obs≈ (inr≈ r) = cong o-inr (obs≈ r)
   obs≈-list [] = refl
-  obs≈-list (r ∷ rs) = cong₂' (obs≈ r) (obs≈-list rs)
-    where cong₂' : ∀ {a b : Obs} {as bs} → a ≡ b → as ≡ bs → a ∷ as ≡ b ∷ bs
-          cong₂' refl refl = refl
+  obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
   {- a subterm, whose table is extended by the rest of the term -}
   sub↝ : ∀ {M ds ds'} → proj₂ (glob M ds) ⊑ ds' → ds' ⊑ D → M ↝ proj₁ (glob M ds)
   sub↝ p q = glob↝ (⊑-trans p q)
 
   glob-list : ∀ {n} (args : Args (replicate n ■)) ds → proj₂ (glob-args args ds) ⊑ D
-    → Pointwise _↝_ (S.args→list args) (T.args→list (proj₁ (glob-args args ds)))
+    → Pointwise _↝_ (args→list args) (args→list (proj₁ (glob-args args ds)))
   glob-list {zero} Nil ds p = []
   glob-list {suc n} (M ,, args) ds p =
     sub↝ (glob-grows-args args _) p ∷ glob-list args (proj₂ (glob M ds)) p

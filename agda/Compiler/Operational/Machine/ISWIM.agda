@@ -54,10 +54,6 @@ obs (inr v) = o-inr (obs v)
 obs-list [] = []
 obs-list (v ∷ vs) = obs v ∷ obs-list vs
 
-args→list : ∀ {n} → Args (replicate n ■) → List AST
-args→list {zero} Nil = []
-args→list {suc n} (M ,, args) = M ∷ args→list args
-
 {- evaluate the rest of a tuple's components, or build it -}
 tuple-next : List Val → List AST → Env → Cont → State
 tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ

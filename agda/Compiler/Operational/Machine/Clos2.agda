@@ -60,10 +60,6 @@ obs (inr v) = o-inr (obs v)
 obs-list [] = []
 obs-list (v ∷ vs) = obs v ∷ obs-list vs
 
-args→list : ∀ {n} → Args (replicate n ■) → List AST
-args→list {zero} Nil = []
-args→list {suc n} (M ,, args) = M ∷ args→list args
-
 {- the body of a closure, under its n free variables and its parameter -}
 body : ∀ n → Arg (ν-n n (ν ■)) → AST
 body zero (bind (ast N)) = N

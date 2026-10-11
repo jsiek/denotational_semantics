@@ -49,7 +49,7 @@ open import Data.Nat.Properties
          +-identityʳ; +-suc; n≤1+n; m≤n⇒m<n∨m≡n)
 open import Data.Product using (_×_; Σ; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 
 {- Every variable a term uses is below its bound -------------------------------}
 
@@ -119,9 +119,7 @@ obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
 obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂' (obs≈ r) (obs≈-list rs)
-  where cong₂' : ∀ {a b : Obs} {as bs} → a ≡ b → as ≡ bs → a ∷ as ≡ b ∷ bs
-        cong₂' refl refl = refl
+obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
 
 {- Agreement of environments ---------------------------------------------------}
 
@@ -149,14 +147,14 @@ agree-sub {k} sub b (agree look b₀) = agree (λ x u → look x (sub x u)) (≤
 
 agree-args : ∀ {n ρ₁ ρ₂} (args : Args (replicate n ■))
   → (∀ x → UsesArgs x args → Lookup x ρ₁ ρ₂) → bound-args args ≤ length ρ₂
-  → All (λ M → Agree M 0 ρ₁ ρ₂) (S.args→list args)
+  → All (λ M → Agree M 0 ρ₁ ρ₂) (args→list args)
 agree-args {zero} Nil look b = []
 agree-args {suc n} (M ,, args) look b =
   agree (λ x u → look x (inj₁ u)) (≤-trans (m≤m⊔n _ _) b)
   ∷ agree-args args (λ x u → look x (inj₂ u)) (≤-trans (m≤n⊔m (bound M) _) b)
 
 enc-list : ∀ {n} (args : Args (replicate n ■))
-  → T.args→list (enc-args args) ≡ map enclose (S.args→list args)
+  → args→list (enc-args args) ≡ map enclose (args→list args)
 enc-list {zero} Nil = refl
 enc-list {suc n} (M ,, args) = cong (enclose M ∷_) (enc-list args)
 
@@ -191,7 +189,7 @@ module _ (P : C.AST) where
   {- evaluating the captured variables ` (j - 1) , ... , ` 0 -}
   capture : ∀ j {N vs ρ κ} → j ≤ length ρ
     → Σ[ vs' ∈ List T.Val ]
-        Star L₂ (T.clos-next N vs (T.args→list (fv-vars j)) ρ κ) (T.ret (T.clos N vs') κ)
+        Star L₂ (T.clos-next N vs (args→list (fv-vars j)) ρ κ) (T.ret (T.clos N vs') κ)
         × length vs' ≡ j + length vs
         × (∀ x → x < j → vs' ‼ x ≡ ρ ‼ x)
         × (∀ x → vs' ‼ (j + x) ≡ vs ‼ x)
@@ -199,7 +197,7 @@ module _ (P : C.AST) where
   capture (suc j) {N} {vs} {ρ} {κ} j< with ‼-< ρ j j<
   ... | v , eq with capture j {N} {v ∷ vs} {ρ} {κ} (≤-trans (n≤1+n j) j<)
   ...   | vs' , σ , len , pre , suf =
-    vs' , cong (λ mv → T.ret? mv (T.closK N vs (T.args→list (fv-vars j)) ρ κ)) eq ◅ refl ◅ σ , trans len (+-suc j _) , pre' , suf'
+    vs' , cong (λ mv → T.ret? mv (T.closK N vs (args→list (fv-vars j)) ρ κ)) eq ◅ refl ◅ σ , trans len (+-suc j _) , pre' , suf'
     where
 
     pre' : ∀ x → x < suc j → vs' ‼ x ≡ ρ ‼ x
@@ -235,7 +233,7 @@ module _ (P : C.AST) where
   sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = steps (one refl) (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ) =
     steps (one refl)
-          (subst (λ Ns → S.tuple-next [] (S.args→list args) ρ₁ κ₁ ~ T.tuple-next [] Ns ρ₂ κ₂)
+          (subst (λ Ns → S.tuple-next [] (args→list args) ρ₁ κ₁ ~ T.tuple-next [] Ns ρ₂ κ₂)
                  (sym (enc-list args))
                  (tuple-next~ [] (agree-args args look b) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =
