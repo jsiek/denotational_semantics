@@ -128,3 +128,22 @@ import Compiler.Operational.Adequacy.EndToEnd
    for comparison (see papers/PLDI-2027/loc.md) -}
 import Compiler.Operational.Backward
 import Compiler.Operational.Correctness.DelayBackSim
+
+{- ---------------------------------------------------------------------------
+   The CakeML-style (functional big-step, clocked) development: a clocked
+   interpreter per language and clock-for-clock proofs of the passes.
+   It shares only the observations with the CompCert-style development.
+   --------------------------------------------------------------------------- -}
+
+{- results, clocks, the end-theorem shape, clock-for-clock correctness -}
+import Compiler.Functional.Clock
+
+{- the interpreters -}
+import Compiler.Functional.Interp.ISWIM
+import Compiler.Functional.Interp.Clos2
+import Compiler.Functional.Interp.Clos3
+import Compiler.Functional.Interp.Clos4
+import Compiler.Functional.Interp.Clos5
+
+{- correctness of each pass -}
+import Compiler.Functional.Correctness.EncloseFuel
