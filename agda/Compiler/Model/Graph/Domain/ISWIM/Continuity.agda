@@ -14,9 +14,7 @@ open import SetsAsPredicates
 open import NewDOpSig
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-open import NewEnv
-  using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env; join-lub;
-         initial-finiteNE-env; initial-fin; initial-fin-⊆; monotone-env)
+open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -31,15 +29,10 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module Compiler.Model.Graph.Domain.ISWIM.Continuity where
 
+open import NewEnv using () renaming (monotone-env to Mono; continuous-env to Cont) public
+
 VEnv : Set₁
 VEnv = Env Value
-
-{- E is continuous at ρ (the same as NewSemantics.continuous-env) -}
-Cont : (VEnv → 𝒫 Value) → VEnv → Set₁
-Cont E ρ = ∀ v → v ∈ E ρ → Σ[ ρ′ ∈ VEnv ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ E ρ′
-
-Mono : (VEnv → 𝒫 Value) → Set₁
-Mono = monotone-env
 
 {- Finite approximations of an environment ----------------------------------}
 
@@ -52,11 +45,13 @@ record Approx (ρ : VEnv) : Set₁ where
 open Approx
 
 approx-init : ∀ {ρ} → nonempty-env ρ → Approx ρ
-approx-init {ρ} NE = approx (initial-finiteNE-env ρ NE) (initial-fin ρ NE) (initial-fin-⊆ ρ NE)
+approx-init NE = approx (λ x → ⌈ proj₁ (NE x) ⌉)
+  (λ x → ⟨ proj₁ (NE x) ∷ [] , ⟨ ⟨ (λ { _ refl → here refl }) , (λ { _ (here refl) → refl }) ⟩ , (λ ()) ⟩ ⟩)
+  (λ { x _ refl → proj₂ (NE x) })
 
 approx-join : ∀ {ρ} → Approx ρ → Approx ρ → Approx ρ
 approx-join (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) =
-  approx (ρ₁ ⊔ₑ ρ₂) (join-finiteNE-env f₁ f₂) (join-lub s₁ s₂)
+  approx (ρ₁ ⊔ₑ ρ₂) (join-finiteNE-env f₁ f₂) (λ { x v (inj₁ v∈) → s₁ x v v∈ ; x v (inj₂ v∈) → s₂ x v v∈ })
 
 join-l : ∀ {ρ} (a b : Approx ρ) → env a ⊆ₑ env (approx-join a b)
 join-l (approx ρ₁ f₁ s₁) (approx ρ₂ f₂ s₂) x d d∈ = inj₁ d∈

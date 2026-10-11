@@ -47,11 +47,6 @@ open Semantics {{...}}
 
 {- =================== Continuous Semantics ====================== -}
 
-continuous-env : ∀ {A} → (Env A → 𝒫 A) → Env A → Set₁
-continuous-env {A} D ρ = ∀ v → v ∈ D ρ
-                     → Σ[ ρ′ ∈ Env A ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ  × v ∈ D ρ′
-
-
 continuous-arg : ∀ {A} {{_ : Semantics {A}}} (ρ : Env A) (NE-ρ : nonempty-env ρ)
     → ∀ b → (arg : Arg b) → Set₁
 continuous-arg ρ NE-ρ ■ (ast M) = continuous-env ⟦ M ⟧ ρ
