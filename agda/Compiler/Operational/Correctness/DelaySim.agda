@@ -292,12 +292,12 @@ module _ (P : C4.AST) where
 delay-fsim : ∀ M → FSim (S.sem M) (T.sem (delay M))
 delay-fsim M =
   plus-simulation _~_
-    (_ , refl , eval~ (sym (rename-id (delay M))) (env (λ x → M.nothing)) halt)
+    (eval~ (sym (rename-id (delay M))) (env (λ x → M.nothing)) halt)
     (sim (delay M))
 
 delay-correct : ∀ M → Equivalent (S.sem M) (T.sem (delay M))
 delay-correct M =
-  equivalent (delay-fsim M) machine-det machine-progress machine-det machine-progress
+  equivalent (delay-fsim M)
 
 {- in particular -}
 

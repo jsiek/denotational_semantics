@@ -486,7 +486,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
    of the shape of o in its denotation -}
 soundness : ∀ P → WF P → ∀ {o} → Terminates (sem P) o → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₚ × ShapeOf o d
-soundness (program ds M) ⟨ wfd , ⟨ rb , _ ⟩ ⟩ (⟨ s₀ , ⟨ s , ⟨ refl , ⟨ σ , fin ⟩ ⟩ ⟩ ⟩) ans
+soundness (program ds M) ⟨ wfd , ⟨ rb , _ ⟩ ⟩ (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
     with final-shape ds wfd s fin ans
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
   ⟨ d , ⟨ proj₁ (stab (length ds) (T⁺ ds wfd) (table ds) M ρ ρ ag rb (λ x → ≃-refl)) d

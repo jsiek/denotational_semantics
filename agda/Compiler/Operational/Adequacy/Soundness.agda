@@ -402,7 +402,7 @@ final-shape (ret (tup vs) (caseK M N γ κ)) refl ans = ⊥-elim (ans refl)
    of o in its denotation -}
 soundness : ∀ M {o} → Terminates (sem M) o → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × ShapeOf o d
-soundness M (⟨ s₀ , ⟨ s , ⟨ refl , ⟨ σ , fin ⟩ ⟩ ⟩ ⟩) ans
+soundness M (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
     with final-shape s fin ans
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
   ⟨ d , ⟨ ⟦⟧-monotone M (λ x d z → z) d (↠-⊆ (star→↠ σ) d d∈) , sh ⟩ ⟩

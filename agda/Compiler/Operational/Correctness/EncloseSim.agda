@@ -292,11 +292,11 @@ agree-closed M c = agree (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x
 
 enclose-fsim : ∀ M → Closed M → FSim (S.sem M) (T.sem (enclose M))
 enclose-fsim M c =
-  plus-simulation _~_ (_ , refl , eval~ (agree-closed M c) halt) (sim (enclose M))
+  plus-simulation _~_ (eval~ (agree-closed M c) halt) (sim (enclose M))
 
 enclose-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (enclose M))
 enclose-correct M c =
-  equivalent (enclose-fsim M c) machine-det machine-progress machine-det machine-progress
+  equivalent (enclose-fsim M c)
 
 {- in particular -}
 

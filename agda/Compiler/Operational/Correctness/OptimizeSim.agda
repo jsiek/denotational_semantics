@@ -388,13 +388,13 @@ module _ (P : AST) where
 
 optimize-fsim : ∀ M → Closed M → FSim (T.sem M) (T.sem (optimize-program M))
 optimize-fsim M c =
-  measure-simulation Match
-    (0 , _ , refl , eval~ {r = λ x → x} (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))) halt)
-    (sim (optimize-program M))
+  record { match = Match
+         ; init = 0 , eval~ {r = λ x → x} (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))) halt
+         ; sim = sim (optimize-program M) }
 
 optimize-correct : ∀ M → Closed M → Equivalent (T.sem M) (T.sem (optimize-program M))
 optimize-correct M c =
-  equivalent (optimize-fsim M c) machine-det machine-progress machine-det machine-progress
+  equivalent (optimize-fsim M c)
 
 {- in particular -}
 

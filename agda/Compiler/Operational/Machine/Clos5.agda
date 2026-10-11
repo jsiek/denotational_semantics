@@ -17,7 +17,7 @@ open import Primitives using (Base; base-rep)
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos5
 open import Compiler.Operational.Observation
-open import Compiler.Operational.Smallstep using (Semantics; Next; next; stop; machine)
+open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Common
 
 open import Data.Fin using (Fin)
@@ -126,5 +126,5 @@ step ds (ret _ (caseK M N ρ κ)) = stop o-wrong
 step ds (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)
 
 {- a program starts with its main expression -}
-sem : Program → Semantics
+sem : Program → Machine
 sem (program ds M) = machine State (step ds) (eval M [] halt)

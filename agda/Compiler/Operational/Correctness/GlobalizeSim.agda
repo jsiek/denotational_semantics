@@ -293,13 +293,13 @@ module _ (D : Defs) (M₀ : C.AST) where
 
 globalize-fsim : ∀ M → FSim (S.sem M) (T.sem (globalize M))
 globalize-fsim M =
-  plus-simulation _~_ (_ , refl , eval~ (glob↝ ⊑-refl) [] halt) (sim D (proj₁ (glob M [])))
+  plus-simulation _~_ (eval~ (glob↝ ⊑-refl) [] halt) (sim D (proj₁ (glob M [])))
   where D = proj₂ (glob M [])
         open Rel D
 
 globalize-correct : ∀ M → Equivalent (S.sem M) (T.sem (globalize M))
 globalize-correct M =
-  equivalent (globalize-fsim M) machine-det machine-progress machine-det machine-progress
+  equivalent (globalize-fsim M)
 
 {- in particular -}
 

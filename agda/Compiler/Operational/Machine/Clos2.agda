@@ -17,7 +17,7 @@ open import NewSigUtil using (ν-n)
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Operational.Observation
-open import Compiler.Operational.Smallstep using (Semantics; Next; next; stop; machine)
+open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Common
 
 open import Data.Fin using (Fin)
@@ -108,5 +108,5 @@ step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret _ (caseK M N ρ κ)) = stop o-wrong
 
-sem : AST → Semantics
+sem : AST → Machine
 sem M = machine State step (eval M [] halt)

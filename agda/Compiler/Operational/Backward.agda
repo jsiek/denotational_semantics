@@ -12,7 +12,7 @@
   A backward simulation matches each target state with a source state.
   The target is the one that moves:
 
-  * every initial target state matches some initial source state;
+  * the start of the target matches the start of the source;
   * when the target stops with o, the source reaches a stop with o;
   * a target step is answered by a source plus, or by a source star that
     decreases a well-founded measure (the source waits while the target
@@ -39,19 +39,19 @@ open import Data.Nat.Induction using (<-wellFounded)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Induction.WellFounded using (WellFounded; Acc; acc)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
 {- Infinite runs -------------------------------------------------------------}
 
-Forever : (L : Semantics) → State L → Set
+Forever : (L : Machine) → State L → Set
 Forever L s = Σ[ f ∈ (ℕ → State L) ] f 0 ≡ s × (∀ n → Step L (f n) (f (suc n)))
 
-Diverges∞ : Semantics → Set
-Diverges∞ L = Σ[ s₀ ∈ State L ] Initial L s₀ × Forever L s₀
+Diverges∞ : Machine → Set
+Diverges∞ L = Forever L (start L)
 
 {- an infinite run has runs of every length -}
 diverges∞→diverges : ∀ {L} → Diverges∞ L → Diverges L
-diverges∞→diverges {L} (s₀ , i₀ , f , refl , st) = s₀ , i₀ , λ n → f n , go n f st
+diverges∞→diverges {L} (f , e , st) n = f n , subst (λ s → Steps L n s (f n)) e (go n f st)
   where
   go : ∀ n (g : ℕ → State L) → (∀ k → Step L (g k) (g (suc k))) → Steps L n (g 0) (g n)
   go zero g st = zero
@@ -59,14 +59,13 @@ diverges∞→diverges {L} (s₀ , i₀ , f , refl , st) = s₀ , i₀ , λ n �
 
 {- Backward simulations ------------------------------------------------------}
 
-record BSim (L₁ L₂ : Semantics) : Set₁ where
+record BSim (L₁ L₂ : Machine) : Set₁ where
   field
     Index : Set
     _≺_ : Index → Index → Set
     wf : WellFounded _≺_
     match : Index → State L₁ → State L₂ → Set
-    init : ∀ {s₂} → Initial L₂ s₂
-      → Σ[ i ∈ Index ] Σ[ s₁ ∈ State L₁ ] Initial L₁ s₁ × match i s₁ s₂
+    init : Σ[ i ∈ Index ] match i (start L₁) (start L₂)
     final : ∀ {i s₁ s₂ o} → match i s₁ s₂ → Final L₂ s₂ o
       → Σ[ s₁' ∈ State L₁ ] Star L₁ s₁ s₁' × Final L₁ s₁' o
     step : ∀ {i s₁ s₂ s₂'} → match i s₁ s₂ → Step L₂ s₂ s₂'
@@ -75,7 +74,7 @@ record BSim (L₁ L₂ : Semantics) : Set₁ where
 
 {- The end theorems ----------------------------------------------------------}
 
-module _ {L₁ L₂ : Semantics} (B : BSim L₁ L₂) where
+module _ {L₁ L₂ : Machine} (B : BSim L₁ L₂) where
   open BSim B
 
   private
@@ -92,9 +91,7 @@ module _ {L₁ L₂ : Semantics} (B : BSim L₁ L₂) where
   ...   | s , σ , fin₁ = s , star-of r ◅◅ σ , fin₁
 
   backward-terminates : ∀ {o} → Terminates L₂ o → Terminates L₁ o
-  backward-terminates (t₀ , t , j₀ , τ , fin) with init j₀
-  ... | i , s₀ , i₀ , m with back-star m τ fin
-  ...   | s , σ , fin₁ = s₀ , s , i₀ , σ , fin₁
+  backward-terminates (t , τ , fin) = back-star (proj₂ init) τ fin
 
   {- along an infinite target run, the source eventually takes a step -}
   module _ {f : ℕ → State L₂} (run : ∀ n → Step L₂ (f n) (f (suc n))) where
@@ -116,11 +113,10 @@ module _ {L₁ L₂ : Semantics} (B : BSim L₁ L₂) where
     ... | k' , i' , s₁' , plus st σ , m' = _ , st , k' , i' , s₁' , σ , m'
 
   backward-diverges : Diverges∞ L₂ → Diverges∞ L₁
-  backward-diverges (t₀ , j₀ , f , refl , run) with init j₀
-  ... | i , s₀ , i₀ , m = s₀ , i₀ , (λ n → proj₁ (g n)) , refl , λ n → proj₁ (proj₂ (advance run (proj₂ (g n))))
+  backward-diverges (f , e , run) = (λ n → proj₁ (g n)) , refl , λ n → proj₁ (proj₂ (advance run (proj₂ (g n))))
     where
     g : ℕ → Σ[ s ∈ State L₁ ] Ahead run s
-    g zero = s₀ , 0 , i , s₀ , ε , m
+    g zero = start L₁ , 0 , proj₁ init , start L₁ , ε , subst (match _ (start L₁)) (sym e) (proj₂ init)
     g (suc n) = proj₁ (advance run (proj₂ (g n))) , proj₂ (proj₂ (advance run (proj₂ (g n))))
 
 {- Backward simulations whose target is a machine ----------------------------}
@@ -128,27 +124,28 @@ module _ {L₁ L₂ : Semantics} (B : BSim L₁ L₂) where
 {- How a source state answers what a target machine does next: by reaching
    a stop with the same observation, by a plus to a state that matches the
    next target state, or by waiting, when the measure decreases -}
-data Reflects (L₁ : Semantics) {S₂ : Set} (R : ℕ → State L₁ → S₂ → Set) (i : ℕ)
+data Reflects (L₁ : Machine) {S₂ : Set} (R : ℕ → State L₁ → S₂ → Set) (i : ℕ)
   (s₁ : State L₁) : Next S₂ → Set where
   stops : ∀ {o s₁'} → Star L₁ s₁ s₁' → Final L₁ s₁' o → Reflects L₁ R i s₁ (stop o)
   steps : ∀ {j s₁' s₂'} → Plus L₁ s₁ s₁' → R j s₁' s₂' → Reflects L₁ R i s₁ (next s₂')
   waits : ∀ {j s₂'} → j < i → R j s₁ s₂' → Reflects L₁ R i s₁ (next s₂')
 
-machine-bsim : ∀ {L₁ : Semantics} {S₂ : Set} {step : S₂ → Next S₂} {s₀ : S₂}
-  → (R : ℕ → State L₁ → S₂ → Set)
-  → (Σ[ i ∈ ℕ ] Σ[ s₁ ∈ State L₁ ] Initial L₁ s₁ × R i s₁ s₀)
-  → (∀ {i s₁ s₂} → R i s₁ s₂ → Reflects L₁ R i s₁ (step s₂))
-  → BSim L₁ (machine S₂ step s₀)
-machine-bsim {L₁} {S₂} {step} {s₀} R (i₀ , s₁ , i₁ , m₀) sim = record
+machine-bsim : ∀ {L₁ L₂ : Machine}
+  → (R : ℕ → State L₁ → State L₂ → Set)
+  → (Σ[ i ∈ ℕ ] R i (start L₁) (start L₂))
+  → (∀ {i s₁ s₂} → R i s₁ s₂ → Reflects L₁ R i s₁ (Machine.step L₂ s₂))
+  → BSim L₁ L₂
+machine-bsim {L₁} {L₂} R init sim = record
   { Index = ℕ
   ; _≺_ = _<_
   ; wf = <-wellFounded
   ; match = R
-  ; init = λ { refl → i₀ , s₁ , i₁ , m₀ }
+  ; init = init
   ; final = final
   ; step = step'
   }
   where
+  open Machine L₂ using (step)
   final : ∀ {i s₁ s₂ o} → R i s₁ s₂ → step s₂ ≡ stop o
     → Σ[ s₁' ∈ State L₁ ] Star L₁ s₁ s₁' × Final L₁ s₁' o
   final {s₂ = s₂} m eq with step s₂ | sim m

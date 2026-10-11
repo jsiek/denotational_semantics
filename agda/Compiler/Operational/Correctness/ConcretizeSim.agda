@@ -321,11 +321,11 @@ init~ (` x) = var~ M.nothing halt refl
 init~ (op ⦅ args ⦆) = eval~ tt env-empty halt
 
 concretize-fsim : ∀ M → FSim (S.sem M) (T.sem (concretize-program M))
-concretize-fsim M = plus-simulation _~_ (_ , refl , init~ M) (sim (concretize-program M))
+concretize-fsim M = plus-simulation _~_ (init~ M) (sim (concretize-program M))
 
 concretize-correct : ∀ M → Equivalent (S.sem M) (T.sem (concretize-program M))
 concretize-correct M =
-  equivalent (concretize-fsim M) machine-det machine-progress machine-det machine-progress
+  equivalent (concretize-fsim M)
 
 {- in particular -}
 
