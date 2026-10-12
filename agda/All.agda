@@ -114,6 +114,7 @@ import Compiler.Operational.Machine.Clos2
 import Compiler.Operational.Machine.Clos3
 import Compiler.Operational.Machine.Clos4
 import Compiler.Operational.Machine.Clos5
+import Compiler.Operational.Machine.Imp
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
@@ -126,6 +127,8 @@ import Compiler.Operational.Correctness.CompilerSim
 {- remove complex operands (Clos5 → Clos5), and the compiler into monadic
    normal form -}
 import Compiler.Operational.Correctness.RCOSim
+{- lift locals (monadic Clos5 → Imp), and the compiler into Imp -}
+import Compiler.Operational.Correctness.LiftLocalsSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}

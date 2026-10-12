@@ -68,6 +68,7 @@ GROUPS = [
     ('op', 'delay', [O + 'Correctness/DelaySim.agda']),
     ('op', 'globalize', [O + 'Correctness/GlobalizeSim.agda']),
     ('op', 'rco', [O + 'Correctness/RCOSim.agda']),
+    ('op', 'lift locals', [O + 'Correctness/LiftLocalsSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
 
     ('ck', 'generic infrastructure', [F + 'Clock.agda']),
