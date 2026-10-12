@@ -28,12 +28,12 @@ open import Compiler.Compile.Delay
 open import Compiler.Observation
 open import Compiler.Lang.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Compiler.Lang.ListUtil using (_‼_; proj-pw)
+open import ListUtil using (_‼_; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos3 as S
 import Compiler.Functional.Interp.Clos4 as T
 
-open import Compiler.Lang.Rename C4.Op C4.sig
+open import Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 open import Data.List using (List; []; _∷_; replicate; reverse)

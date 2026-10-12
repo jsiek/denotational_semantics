@@ -17,11 +17,11 @@
 
 open import NewSyntaxUtil
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.Clos4
-open import Compiler.Lang.Rename Op sig using (shift)
+open import Syntax.Rename Op sig using (shift)
 open import Compiler.Model.Graph.Sem.Clos4Iswim
-open import Compiler.Model.Graph.Sem.RenameSem Op sig using (shift-≃)
+open import RenameSem Op sig using (shift-≃)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; _●_; Car; Cdr; _⊙_; Cdr-mono; cdr-witness)
 
 open import Data.List using (_∷_)

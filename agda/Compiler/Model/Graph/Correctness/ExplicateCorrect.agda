@@ -45,8 +45,9 @@
 open import SetsAsPredicates
 open import NewDOpSig using (results-rel-pres)
 open import NewDenotProperties using (Every)
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign; body; program)
 import Compiler.Lang.CFG as C

@@ -32,7 +32,7 @@ module Compiler.Operational.Adequacy.Clos5 where
 
 open import Primitives using (base-rep)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain using (Value) renaming (const to dconst)
+open import GraphModel.Domain using (Value) renaming (const to dconst)
 open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import Compiler.Observation

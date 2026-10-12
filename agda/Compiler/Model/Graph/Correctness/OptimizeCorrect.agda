@@ -18,8 +18,9 @@ open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos2
 open import Compiler.Model.Graph.Sem.Clos2Iswim
 open import Compiler.Compile.Concretize using (unbind-n)

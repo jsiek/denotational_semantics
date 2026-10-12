@@ -28,7 +28,7 @@ open import Compiler.Lang.Mon
 open import Compiler.Lang.Imp using (Body)
 import Compiler.Lang.Imp as Imp
 open import Compiler.Compile.LiftLocals
-open import Compiler.Lang.ListUtil using (_‼_; ‼-++; ‼-≥)
+open import ListUtil using (_‼_; ‼-++; ‼-≥)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos5 as C
 import Compiler.Functional.Interp.Imp as I

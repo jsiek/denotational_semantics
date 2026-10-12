@@ -18,7 +18,7 @@
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign)
 import Compiler.Lang.CFG as C

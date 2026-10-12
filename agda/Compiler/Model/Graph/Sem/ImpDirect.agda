@@ -23,8 +23,8 @@ module Compiler.Model.Graph.Sem.ImpDirect where
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import Compiler.Model.Graph.Sem.Imp
   using (Table; init; Store; read; _[_↦_]; 𝒜; 𝒜s; 𝒮; zeros; frame; tables) public
 open import Compiler.Lang.Imp

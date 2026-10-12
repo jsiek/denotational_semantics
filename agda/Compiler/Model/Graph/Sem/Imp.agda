@@ -30,8 +30,9 @@ module Compiler.Model.Graph.Sem.Imp where
 
 open import SetsAsPredicates
 open import NewDOpSig using (Results)
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (Table; init) public
 open import Compiler.Lang.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
 open import Primitives using (Int)

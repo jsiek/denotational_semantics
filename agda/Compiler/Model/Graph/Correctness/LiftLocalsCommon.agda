@@ -20,7 +20,7 @@
 
 open import SetsAsPredicates
 open import NewDOpSig using (Results)
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.Clos5 using (Args)
 open import Compiler.Lang.Mon
 import Compiler.Lang.Imp as I

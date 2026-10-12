@@ -13,7 +13,7 @@
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.Clos3
 open import Compiler.Model.Graph.Sem.Clos3Iswim
 import Compiler.Model.Graph.Sem.Clos4Iswim as S4

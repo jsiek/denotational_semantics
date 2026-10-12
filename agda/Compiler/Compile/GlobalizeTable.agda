@@ -13,7 +13,7 @@ module Compiler.Compile.GlobalizeTable where
 open import Compiler.Lang.Clos4
 open import Compiler.Lang.Clos5 using (global)
 open import Compiler.Compile.Globalize
-open import Compiler.Lang.ListUtil using (_‼_; ‼-++)
+open import ListUtil using (_‼_; ‼-++)
 
 open import Data.List using ([]; _∷_; _++_; [_]; length; reverse)
 open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; length-reverse)

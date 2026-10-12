@@ -41,7 +41,7 @@ module Compiler.Operational.Adequacy.ISWIM where
 
 open import Primitives using (Base; base-rep)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain using (Value) renaming (const to dconst)
+open import GraphModel.Domain using (Value) renaming (const to dconst)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧)
@@ -53,7 +53,7 @@ open import Compiler.Operational.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; next; stop)
 open import Compiler.Operational.Machine.ISWIM
 open import Compiler.Compile.EncloseScope using (Closed)
-open import Compiler.Lang.Uses Op sig using (uses-bound)
+open import Syntax.Uses Op sig using (uses-bound)
 open import Compiler.Operational.Adequacy.Common
 open import Compiler.Operational.Adequacy.Soundness using (soundness) public
 open import Compiler.Operational.Adequacy.LogRel

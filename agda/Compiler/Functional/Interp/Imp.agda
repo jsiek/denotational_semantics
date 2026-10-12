@@ -22,7 +22,7 @@ module Compiler.Functional.Interp.Imp where
 
 open import Primitives using (Int)
 open import Compiler.Lang.Imp
-open import Compiler.Lang.ListUtil using (_‼_)
+open import ListUtil using (_‼_)
 open import Compiler.Functional.Clock
 open import Compiler.Functional.Interp.Clos5
   using (Val; code; pair; const; tup; inl; inr; obs; prim?; project; first; second)

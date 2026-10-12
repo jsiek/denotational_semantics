@@ -14,8 +14,8 @@ open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim as S2

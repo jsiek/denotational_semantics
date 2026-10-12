@@ -19,8 +19,9 @@
 open import NewSigUtil
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos4
 import Compiler.Lang.Clos5 as L5
 open import Compiler.Model.Graph.Sem.Clos4Iswim

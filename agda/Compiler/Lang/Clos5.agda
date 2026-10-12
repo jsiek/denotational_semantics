@@ -23,7 +23,7 @@ open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.Nat.Properties using (+-suc)
 open import Data.List using (List; []; _∷_; replicate; reverse)
 open import Data.Maybe using (Maybe)
-open import Compiler.Lang.ListUtil using (_‼_)
+open import ListUtil using (_‼_)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Fin using (Fin)

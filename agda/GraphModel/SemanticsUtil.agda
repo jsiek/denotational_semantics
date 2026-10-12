@@ -8,9 +8,9 @@
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD)
-open import Compiler.Model.Graph.Domain.ISWIM.Continuity using (Mono; Cont)
+open import GraphModel.Domain
+open import GraphModel.Ops using (nthD)
+open import GraphModel.Continuity using (Mono; Cont)
 open import NewEnv using (Env; nonempty-env)
 
 open import Data.Fin using (Fin; zero; suc)
@@ -18,7 +18,7 @@ open import Data.List using (List; []; replicate)
 open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 
-module Compiler.Model.Graph.Sem.Continuous (Op : Set) (sig : Op → List Sig) where
+module GraphModel.SemanticsUtil (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig
 open import NewSemantics Op sig

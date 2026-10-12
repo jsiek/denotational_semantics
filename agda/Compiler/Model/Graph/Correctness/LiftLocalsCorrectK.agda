@@ -29,8 +29,9 @@
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Lang.Mon
 open import Compiler.Compile.LiftLocals using (lift; height; lift-defs; lift-program)

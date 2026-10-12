@@ -26,14 +26,14 @@ module Compiler.Operational.Correctness.EncloseSim where
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.ISWIM
 import Compiler.Lang.Clos2 as C
-open import Compiler.Lang.Uses Op sig
+open import Syntax.Uses Op sig
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Lang.ListUtil
+open import ListUtil
 import Compiler.Operational.Machine.ISWIM as S
 import Compiler.Operational.Machine.Clos2 as T
 

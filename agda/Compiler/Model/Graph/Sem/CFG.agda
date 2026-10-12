@@ -30,8 +30,8 @@ module Compiler.Model.Graph.Sem.CFG where
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import Compiler.Model.Graph.Sem.Imp
   using (Table; init; Store; _[_↦_]; checked; 𝒜; 𝒮; zeros; frame) public
 open import Compiler.Lang.CFG

@@ -1,6 +1,6 @@
 {-
 
-  enclose produces well-scoped Clos2 programs (WS 0, Compiler.Lang.Scope)
+  enclose produces well-scoped Clos2 programs (WS 0, Syntax.Scope)
   from closed ISWIM programs, ones whose bound is 0 (Closed). The
   CompCert-style and CakeML-style proofs of optimize need well-scoped
   programs; the adequacy proof for Clos5 also uses this.
@@ -12,8 +12,8 @@ module Compiler.Compile.EncloseScope where
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos2 using (AST; Op; sig; ■)
 import Compiler.Lang.ISWIM as I
-open import Compiler.Lang.Uses I.Op I.sig using (bound; bound-args)
-open import Compiler.Lang.Scope Op sig using (WS; WS-arg; WS-args)
+open import Syntax.Uses I.Op I.sig using (bound; bound-args)
+open import Syntax.Scope Op sig using (WS; WS-arg; WS-args)
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose using (enclose; enc-args; fv-vars)
 

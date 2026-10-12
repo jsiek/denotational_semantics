@@ -11,8 +11,9 @@ module Compiler.Model.Graph.Sem.Clos4Iswim where
 open import NewDOpSig
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos4
 
 open import Data.Product

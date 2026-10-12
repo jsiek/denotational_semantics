@@ -48,7 +48,7 @@ open import Compiler.Compile.Concretize
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Lang.ListUtil
+open import ListUtil
 import Compiler.Operational.Machine.Clos2 as S
 import Compiler.Operational.Machine.Clos3 as T
 

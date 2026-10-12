@@ -38,7 +38,7 @@ open import Compiler.Lang.Imp
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Compiler.Operational.Machine.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; prim?) public
-open import Compiler.Lang.ListUtil using (_‼_; proj)
+open import ListUtil using (_‼_; proj)
 
 open import Data.Fin using (Fin)
 open import Data.Integer using (0ℤ)

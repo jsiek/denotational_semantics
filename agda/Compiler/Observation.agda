@@ -21,6 +21,7 @@ open import Data.List using (List)
 open import Data.Product using (_×_; Σ-syntax)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_)
+open import Iff using (_⇔_) public
 
 data Obs : Set where
   o-const : (B : Base) → base-rep B → Obs
@@ -39,13 +40,6 @@ data Obs : Set where
 {- a successful result: anything but going wrong -}
 Answer : Obs → Set
 Answer o = ¬ (o ≡ o-wrong)
-
-_⇔_ : Set → Set → Set
-A ⇔ B = (A → B) × (B → A)
-
-{- the end-theorem shape, for any notion of "terminates with o" -}
-SameObs : (Obs → Set) → (Obs → Set) → Set
-SameObs T₁ T₂ = ∀ o → T₁ o ⇔ T₂ o
 
 {- terminating with some answer -}
 Converges : (Obs → Set) → Set

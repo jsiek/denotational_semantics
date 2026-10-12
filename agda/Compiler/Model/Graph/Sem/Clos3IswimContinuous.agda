@@ -1,18 +1,19 @@
 {-
 
   The Clos3 semantics is continuous: a ContinuousSemantics instance built
-  from the per-operator lemmas in Domain.ISWIM.Continuity, and the
+  from the per-operator lemmas in GraphModel.Continuity, and the
   resulting continuity of every term (from NewSemantics.⟦⟧-continuous).
 
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
-open import Compiler.Model.Graph.Domain.ISWIM.Continuity
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import GraphModel.Continuity
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos3
-open import Compiler.Model.Graph.Sem.Continuous Op sig using (args-nth-mono; args-nth-cont)
-import Compiler.Model.Graph.Sem.Continuous Op sig as G
+open import GraphModel.SemanticsUtil Op sig using (args-nth-mono; args-nth-cont)
+import GraphModel.SemanticsUtil Op sig as G
 open import Compiler.Model.Graph.Sem.Clos3Iswim
 open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_)
 

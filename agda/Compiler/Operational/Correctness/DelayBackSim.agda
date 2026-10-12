@@ -43,7 +43,7 @@ open import Compiler.Compile.Delay
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Backward
-open import Compiler.Lang.ListUtil
+open import ListUtil
 import Compiler.Operational.Machine.Clos3 as S
 import Compiler.Operational.Machine.Clos4 as T
 open import Compiler.Operational.Correctness.DelaySim
@@ -51,7 +51,7 @@ open import Compiler.Operational.Correctness.DelaySim
          _≈k_; halt; appL; appR; tupK; closK; getK; inlK; inrK; caseK;
          primL; primR; obs≈; prim≈; look; env-ext; env-skip; env-body; del-args)
 
-open import Compiler.Lang.Rename C4.Op C4.sig
+open import Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 {- The target states between two source steps ----------------------------------}

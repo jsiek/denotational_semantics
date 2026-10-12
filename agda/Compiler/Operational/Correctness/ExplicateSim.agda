@@ -35,7 +35,7 @@ open import Compiler.Lang.CFG using (Tail; goto; block)
 open import Compiler.Compile.Explicate
 open import Compiler.Compile.Pipeline using (compile-imp; compile-cfg)
 open import Compiler.Compile.EncloseScope using (Closed)
-open import Compiler.Lang.ListUtil using (_‼_)
+open import ListUtil using (_‼_)
 open import Compiler.Operational.Smallstep using (Machine; next; plus; Star; ε; _◅_)
 open import Compiler.Operational.Simulation
   using (Answers≺; stops; steps; stutters; FSim; Equivalent; equivalent; equiv-trans)

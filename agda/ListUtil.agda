@@ -6,7 +6,7 @@
 
 -}
 
-module Compiler.Lang.ListUtil where
+module ListUtil where
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)

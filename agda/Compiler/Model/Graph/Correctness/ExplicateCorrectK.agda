@@ -27,8 +27,8 @@
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import Compiler.Lang.Imp as I
   using (simple; case; assign; body; program)
 import Compiler.Lang.CFG as C

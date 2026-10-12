@@ -1,4 +1,4 @@
-module Compiler.Model.Graph.Domain.ISWIM.Domain where
+module GraphModel.Domain where
 
 open import Primitives
 open import SetsAsPredicates

@@ -23,17 +23,18 @@ module Compiler.Operational.Adequacy.LogRel where
 
 open import Primitives using (Base; base-rep; Int)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD) renaming (out to dout)
+open import GraphModel.Ops using (nthD)
+open import Compiler.Model.Graph.Prim using () renaming (out to dout)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import Compiler.Lang.ISWIM
-open import Compiler.Lang.Uses Op sig
+open import Syntax.Uses Op sig
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Operational.Machine.ISWIM
 open import Compiler.Operational.Smallstep using (next; stop)
 open import Compiler.Operational.Adequacy.Common

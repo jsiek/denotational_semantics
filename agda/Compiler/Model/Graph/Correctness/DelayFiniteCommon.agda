@@ -9,8 +9,9 @@
 
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 import NewEnv
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; _⊔_)

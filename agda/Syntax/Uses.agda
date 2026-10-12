@@ -14,7 +14,7 @@ open import abt.Var using (Var)
   variables around it, so it uses none of them. Every variable a term
   uses is below its bound.
 -}
-module Compiler.Lang.Uses (Op : Set) (sig : Op → List Sig) where
+module Syntax.Uses (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
   renaming (ABT to AST; Arg to Arg; Args to Args)

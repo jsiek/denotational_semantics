@@ -14,7 +14,7 @@
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
 open import Compiler.Compile.Enclose using (enclose)

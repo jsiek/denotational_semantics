@@ -12,7 +12,7 @@
     right-hand side for the variable (let-strict, let-β; let-β uses
     continuity, hence a nonempty environment, and binds a finite part
     of the right-hand side, hence a consistent one);
-  - renaming (Sem/RenameSem.agda), for the atoms and the operands that
+  - renaming (RenameSem.agda), for the atoms and the operands that
     the lets put under more binders;
   - every operator of a construct whose operands rco names is strict
     (a Strict operator below), so binding an operand first by a strict
@@ -25,17 +25,18 @@
 
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
-open import Compiler.Lang.Rename Op sig using (rename; rename-args; ext)
+open import Syntax.Rename Op sig using (rename; rename-args; ext)
 open import Compiler.Compile.RCO
   using (rco; rco-args; rco-program; atom?; lift; case-on)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ; init)
 open import Compiler.Model.Graph.Sem.Clos5IswimContinuous
   using (Clos5-Semantics; ⟦⟧[]-monotone; term-continuous; Clos5-con; table-con)
-import Compiler.Model.Graph.Sem.RenameSem Op sig as RenameSem
+import RenameSem Op sig as RenameSem
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect
   using (RRs; nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect

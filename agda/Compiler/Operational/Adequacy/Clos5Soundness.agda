@@ -29,13 +29,14 @@ module Compiler.Operational.Adequacy.Clos5Soundness where
 open import Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono; primD;
+open import GraphModel.Ops
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono;
          pair-consis; ℬ-consis; inl-consis; inr-consis)
-  renaming (proj to dproj; pair to dpair; out to dout)
+  renaming (proj to dproj; pair to dpair)
+open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
@@ -44,7 +45,7 @@ import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Operational.Machine.Clos5 hiding (inl; inr)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑)

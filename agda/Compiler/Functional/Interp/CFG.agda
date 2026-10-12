@@ -23,7 +23,7 @@
 module Compiler.Functional.Interp.CFG where
 
 open import Compiler.Lang.CFG
-open import Compiler.Lang.ListUtil using (_‼_)
+open import ListUtil using (_‼_)
 open import Compiler.Functional.Clock
 open import Compiler.Functional.Interp.Clos5 using (Val; code; obs)
 open import Compiler.Functional.Interp.Imp using (Frame; zero-val; atom; eval-simple; inj?; set)

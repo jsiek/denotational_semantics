@@ -17,10 +17,11 @@
 
 open import NewSyntaxUtil
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.ISWIM
-open import Compiler.Lang.Uses Op sig
+open import Syntax.Uses Op sig
 open import Compiler.Model.Graph.Sem.ISWIM
 open import Compiler.Model.Graph.Sem.Clos2Iswim as S2 renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)

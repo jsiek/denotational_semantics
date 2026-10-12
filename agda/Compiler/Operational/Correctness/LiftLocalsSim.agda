@@ -36,7 +36,7 @@ import Compiler.Lang.Clos5 as L5
 import Compiler.Lang.Imp as Imp
 open import Compiler.Lang.Mon
 open import Compiler.Compile.LiftLocals
-open import Compiler.Lang.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj)
+open import ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
   using (Machine; next; plus; Star; ε; _◅_; Answers; stops; steps)

@@ -1,6 +1,6 @@
 {-
 
-  Continuity of the ISWIM graph-model operators.
+  Continuity of the graph-model operators.
 
   Each lemma says that an operator preserves continuity: if the
   denotations of its operands are monotone and continuous at ρ (every
@@ -12,8 +12,8 @@
 
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
 
 open import Data.Nat using (zero; suc)
@@ -27,7 +27,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Compiler.Model.Graph.Domain.ISWIM.Continuity where
+module GraphModel.Continuity where
 
 open import NewEnv using () renaming (monotone-env to Mono; continuous-env to Cont) public
 
@@ -135,14 +135,6 @@ pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩
 ... | ⟨ a , u∈′ ⟩ | ⟨ b , v∈′ ⟩ =
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ u , v ⦆
     ⟨ m₁ (join-l a b) u u∈′ , m₂ (join-r a b) v v∈′ ⟩
-
-primD-cont : ∀ p {E₁ E₂ ρ} → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
-  → Cont (λ ρ → primD p ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-primD-cont p {E₁}{E₂} m₁ m₂ c₁ c₂ v ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩
-    with one E₁ c₁ n∈ | one E₂ c₂ m∈
-... | ⟨ a , n∈′ ⟩ | ⟨ b , m∈′ ⟩ =
-  done (λ ρ → primD p ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) v
-    ⟨ n , ⟨ m , ⟨ m₁ (join-l a b) _ n∈′ , ⟨ m₂ (join-r a b) _ m∈′ , eq ⟩ ⟩ ⟩ ⟩
 
 car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
 car-cont {E} c u ⟨ v , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈

@@ -20,12 +20,13 @@ module Compiler.Operational.Adequacy.Soundness where
 open import Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Out; int; bool; δ)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; primD; Λ-consis; ℬ-consis; inl-consis; inr-consis)
-  renaming (proj to dproj; out to dout)
+open import GraphModel.Ops
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; Λ-consis; ℬ-consis; inl-consis; inr-consis)
+  renaming (proj to dproj)
+open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import NewDenotProperties using (Every)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (yes; no)
@@ -38,7 +39,7 @@ import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Operational.Machine.ISWIM hiding (inl; inr)
 import Compiler.Operational.Machine.ISWIM as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Common

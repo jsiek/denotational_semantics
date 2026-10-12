@@ -6,14 +6,14 @@ open import abt.Sig using (Sig)
 open import abt.Var using (Var)
 
 {-
-  Renaming preserves well-scopedness (WS, Compiler.Lang.Scope).
+  Renaming preserves well-scopedness (WS, Syntax.Scope).
 -}
-module Compiler.Lang.ScopeRename (Op : Set) (sig : Op → List Sig) where
+module Syntax.ScopeRename (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
   renaming (ABT to AST; Arg to Arg; Args to Args)
-open import Compiler.Lang.Rename Op sig using (ext; rename; rename-arg; rename-args; shift)
-open import Compiler.Lang.Scope Op sig using (WS; WS-arg; WS-args) public
+open import Syntax.Rename Op sig using (ext; rename; rename-arg; rename-args; shift)
+open import Syntax.Scope Op sig using (WS; WS-arg; WS-args) public
 
 {- Renaming ----------------------------------------------------------------------}
 

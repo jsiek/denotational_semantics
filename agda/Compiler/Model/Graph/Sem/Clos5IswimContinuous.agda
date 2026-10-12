@@ -3,7 +3,7 @@
   The Clos5 semantics, for a fixed table T of global definitions, is
   monotone and continuous in the environment: a Semantics and a
   ContinuousSemantics instance built from the per-operator lemmas in
-  Domain.ISWIM.Continuity, as for Clos4 (Sem/Clos4IswimContinuous.agda);
+  GraphModel.Continuity, as for Clos4 (Sem/Clos4IswimContinuous.agda);
   a reference to a global definition is a constant.
 
   Used by the correctness of remove complex operands
@@ -17,9 +17,10 @@ module Compiler.Model.Graph.Sem.Clos5IswimContinuous where
 
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
-open import Compiler.Model.Graph.Domain.ISWIM.Continuity
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import GraphModel.Continuity
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (Table; 𝕆-Clos5; ⟦_⟧[_]; ⟦_⟧₊[_]; table)
 open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _~ₑ[_]_; •-~)

@@ -23,17 +23,30 @@ import abt.GSubst
 import abt.AbstractBindingTree
 import abt.Fold2
 
+{- language-independent infrastructure: lemmas about the syntax of any
+   signature, list lookups, the graph model (values, operators,
+   continuity), and the frameworks of the small-step and clocked styles -}
+import Syntax.Uses
+import Syntax.Rename
+import Syntax.Scope
+import Syntax.ScopeRename
+import ListUtil
+import RenameSem
+import GraphModel.Domain
+import GraphModel.Ops
+import GraphModel.Continuity
+import GraphModel.SemanticsUtil
+import Iff
+import Smallstep
+import Simulation
+import Clocked
+
 {- the languages -}
 import Compiler.Lang.ISWIM
 import Compiler.Lang.Clos2
 import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4
 import Compiler.Lang.Clos5
-import Compiler.Lang.Uses
-import Compiler.Lang.Rename
-import Compiler.Lang.Scope
-import Compiler.Lang.ScopeRename
-import Compiler.Lang.ListUtil
 import Compiler.Lang.Mon
 import Compiler.Lang.Imp
 import Compiler.Lang.CFG
@@ -59,14 +72,12 @@ import Compiler.Compile.PipelineScope
 {- observations and the end-theorem shape, shared by both operational styles -}
 import Compiler.Observation
 
-{- the graph model and the semantics of each language -}
-import Compiler.Model.Graph.Domain.ISWIM.Domain
-import Compiler.Model.Graph.Domain.ISWIM.Ops
-import Compiler.Model.Graph.Domain.ISWIM.Continuity
+{- the graph-model meaning of the primitives, and the semantics of each
+   language -}
+import Compiler.Model.Graph.Prim
 import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos3Iswim
-import Compiler.Model.Graph.Sem.Continuous
 import Compiler.Model.Graph.Sem.ISWIMContinuous
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
@@ -77,7 +88,6 @@ import Compiler.Model.Graph.Sem.Imp
 import Compiler.Model.Graph.Sem.CFG
 import Compiler.Model.Graph.Sem.ImpK
 import Compiler.Model.Graph.Sem.ImpDirect
-import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
 import Compiler.Model.Graph.Correctness.EncloseCorrect
@@ -116,7 +126,8 @@ import Compiler.Compile.Examples.ExplicateExample
    model above: small-step machines and forward simulations.
    --------------------------------------------------------------------------- -}
 
-{- the generic framework: transition systems, forward simulations -}
+{- the framework (transition systems, forward simulations), at this
+   compiler's observations -}
 import Compiler.Operational.Smallstep
 import Compiler.Operational.Simulation
 
@@ -175,7 +186,8 @@ import Compiler.Operational.Correctness.DelayBackSim
    above (observations, list lookups, scoping, renaming and table lemmas).
    --------------------------------------------------------------------------- -}
 
-{- results, clocks, the end-theorem shape, clock-for-clock correctness -}
+{- results, clocks, the end-theorem shape, clock-for-clock correctness,
+   at this compiler's observations -}
 import Compiler.Functional.Clock
 
 {- the interpreters -}

@@ -27,7 +27,7 @@
 
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
