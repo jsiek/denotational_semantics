@@ -129,7 +129,7 @@ GROUPS = [
       O + 'Adequacy/ISWIM.agda', G + 'Sem/ISWIMContinuous.agda']),
     ('adeq', 'Clos5',
      [O + 'Adequacy/Clos5Common.agda', O + 'Adequacy/Clos5Soundness.agda', O + 'Adequacy/Clos5LogRel.agda',
-      O + 'Adequacy/Clos5.agda']),
+      O + 'Adequacy/Clos5.agda', O + 'Adequacy/Values.agda']),
     ('adeq', 'well-formedness of compiled programs',
      [O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda']),
     ('adeq', 'end to end', [O + 'Adequacy/EndToEnd.agda']),

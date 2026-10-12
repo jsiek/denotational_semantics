@@ -19,11 +19,11 @@ open import SetsAsPredicates
 open import GraphModel.Domain using (ν)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (table) renaming (code to codeD)
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (table-ext; table-top)
-open import Compiler.Operational.Smallstep using (Star; ε; _◅_; next; stop; machine)
 open import ListUtil using (_‼_)
 open import Compiler.Operational.Machine.Clos5
 open import Compiler.Compile.GlobalizeTable using (_⊑_)
 open import Compiler.Operational.Adequacy.Clos5WF using (DefsWF)
+open import Compiler.Operational.Adequacy.Common using (module Runs)
 
 open import Data.List.Properties
   using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
@@ -39,43 +39,7 @@ open import Data.Empty using (⊥-elim)
 
 {- Runs of the machine -----------------------------------------------------------}
 
-infixr 5 _∷↠_
-infix 4 _↠_
-data _↠_ : State → State → Set where
-  done : ∀ {s} → s ↠ s
-  _∷↠_ : ∀ {s s' s''} → step ds s ≡ next s' → s' ↠ s'' → s ↠ s''
-
-infixr 5 _++↠_
-_++↠_ : ∀ {s s' s''} → s ↠ s' → s' ↠ s'' → s ↠ s''
-done ++↠ τ = τ
-(st ∷↠ σ) ++↠ τ = st ∷↠ (σ ++↠ τ)
-
-↠→star : ∀ {s₀ s t} → s ↠ t → Star (machine State (step ds) s₀) s t
-↠→star done = ε
-↠→star (st ∷↠ σ) = st ◅ ↠→star σ
-
-star→↠ : ∀ {s₀ s t} → Star (machine State (step ds) s₀) s t → s ↠ t
-star→↠ ε = done
-star→↠ (st ◅ σ) = st ∷↠ star→↠ σ
-
-private
-  next-inj : ∀ {a b : State} → next a ≡ next b → a ≡ b
-  next-inj refl = refl
-
-{- two runs to final states end in the same state -}
-↠-final-det : ∀ {s t₁ t₂ o₁ o₂} → s ↠ t₁ → s ↠ t₂
-  → step ds t₁ ≡ stop o₁ → step ds t₂ ≡ stop o₂ → t₁ ≡ t₂
-↠-final-det done done f₁ f₂ = refl
-↠-final-det done (st ∷↠ σ) f₁ f₂ with trans (sym f₁) st
-... | ()
-↠-final-det (st ∷↠ σ) done f₁ f₂ with trans (sym f₂) st
-... | ()
-↠-final-det (st₁ ∷↠ σ₁) (st₂ ∷↠ σ₂) f₁ f₂ with next-inj (trans (sym st₁) st₂)
-... | refl = ↠-final-det σ₁ σ₂ f₁ f₂
-
-length-obs-list : ∀ vs → length (obs-list vs) ≡ length vs
-length-obs-list [] = refl
-length-obs-list (v ∷ vs) = cong suc (length-obs-list vs)
+open Runs (step ds) public
 
 {- The table of global definitions ------------------------------------------------}
 

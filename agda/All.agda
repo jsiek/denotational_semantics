@@ -176,6 +176,7 @@ import Compiler.Operational.Adequacy.ISWIM
 import Compiler.Operational.Adequacy.Clos5WF
 import Compiler.Operational.Adequacy.CompileWF
 import Compiler.Operational.Adequacy.Clos5Common
+import Compiler.Operational.Adequacy.Values
 import Compiler.Operational.Adequacy.Clos5Soundness
 import Compiler.Operational.Adequacy.Clos5LogRel
 import Compiler.Operational.Adequacy.Clos5
