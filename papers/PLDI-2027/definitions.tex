@@ -52,7 +52,7 @@
 \newcommand{\consis}{\mathit{consis}}
 \newcommand{\obseq}{\cong}
 
-% the CompCert-style proof
+% the simulation proof
 \newcommand{\ev}[3]{\key{eval}\;#1\;#2\;#3}
 \newcommand{\rt}[2]{\key{ret}\;#1\;#2}
 \newcommand{\nxt}{\key{next}\;}
@@ -90,7 +90,7 @@
 \newcommand{\approxk}{\approx_k}
 \newcommand{\approxq}{\approx^{?}}
 
-% the CakeML-style proof
+% the interpreter proof
 \newcommand{\tmo}{\key{timeout}}
 \newcommand{\Ret}{\key{ret}\;}
 \newcommand{\bind}{\mathbin{>\!\!>\!\!=}}
@@ -161,7 +161,7 @@ denotational lemmas, the syntax lemmas, forward simulations) are under
   \item x86 with variables over abstract values (X86), select
     instructions into it, and $\pass{compile\text{-}x86}$.
   \end{itemize}
-\item \textbf{Denotational proof:}
+\item \textbf{Denotational: graph model:}
   \begin{itemize}
   \item the value domain and environments, with $\rho_0(x) = \{\omega\}$;
   \item the operators $\star$, $\Lambda$, $\key{pair}$/$\key{car}$/$\key{cdr}$,
@@ -202,7 +202,7 @@ denotational lemmas, the syntax lemmas, forward simulations) are under
   \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
     $\pass{compile\text{-}imp}$, $\pass{compile\text{-}cfg}$, and $\pass{compile\text{-}x86}$.
   \end{itemize}
-\item \textbf{CompCert-style proof:}
+\item \textbf{CEK machine + simulation:}
   \begin{itemize}
   \item observations, machines as step functions, termination, divergence,
     and determinism;
@@ -229,7 +229,7 @@ denotational lemmas, the syntax lemmas, forward simulations) are under
     $\pass{compile\text{-}imp}$, $\pass{compile\text{-}cfg}$, and $\pass{compile\text{-}x86}$;
   \item backward simulations, and the direct backward simulation for delay.
   \end{itemize}
-\item \textbf{CakeML-style proof:}
+\item \textbf{Clocked interpreter + value relations:}
   \begin{itemize}
   \item results, clocked programs, termination, divergence, and $\mathit{Equivalent}$;
   \item $\mathit{RelResult}$, and the theorem that related results for every
@@ -307,7 +307,7 @@ Using names instead of de Bruijn indices changes a few definitions:
   and \texttt{start-}$\simeq$ (\texttt{proof/Compiler/Model/Graph/Correctness/SelectCorrect.agda}).
   $B \mathrel{\mathit{BR}} B'$ is \texttt{BR B B'}.\end{sloppypar}
 \end{itemize}
-In the CompCert-style proof:
+In the simulation proof:
 \begin{itemize}
 \item \textbf{Machine environments} are finite maps from variables.
   The Agda uses lists indexed by de Bruijn indices, and a Clos2 closure
@@ -352,10 +352,10 @@ In the CompCert-style proof:
 \item \textbf{The frames of simple expressions} $F$ in the Imp and CFG
   machines are wrapped in a continuation by \texttt{frm}: $F \cdot \kappa$ is
   \texttt{frm F $\kappa$}.
-\item \textbf{Explicate}'s Imp states $\evi{a}{\sigma}{\kappa}$, for an
+\item \begin{sloppypar}\textbf{Explicate}'s Imp states $\evi{a}{\sigma}{\kappa}$, for an
   atom $a$, are the Agda's \texttt{eval (simple (atm a)) $\varphi$ $\kappa$}.
   The machines and the simulation are in \texttt{Machine/CFG.agda} and
-  \texttt{proof/Compiler/Operational/Correctness/ExplicateSim.agda}.
+  \texttt{proof/Compiler/Operational/Correctness/ExplicateSim.agda}.\end{sloppypar}
 \item \textbf{The X86 machine}'s state $\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho$
   is the Agda's \texttt{run is j bs} $\sigma$ \texttt{f} $\varphi$ $\rho$, where
   $\sigma$ is the call stack and $\varphi$ the frame.
@@ -367,10 +367,10 @@ In the CompCert-style proof:
   \ref{lem:sel-simple-sim}, and~\ref{lem:fate} are \texttt{to-dest},
   \texttt{simple}, and \texttt{fate}.
 \end{itemize}
-In the CakeML-style proof:
+In the interpreter proof:
 \begin{itemize}
 \item \textbf{Environments, values, and relations} are those of the
-  CompCert-style proof, so the items above about them apply here too.
+  simulation proof, so the items above about them apply here too.
 \item \textbf{Values collected} by $\key{evals}$ are listed in order. The
   Agda's \texttt{eval-args} conses them onto an accumulator, last first,
   and a tuple reverses them.
@@ -790,7 +790,7 @@ $\key{movq}\; \%\key{rdi}, 0;\ \key{movq}\; \%\key{rsi}, 1$, which moves its
 free variables and argument to the slots where its body expects them.
 
 %===============================================================================
-\part{Denotational Proof}
+\part{Denotational: Graph Model}
 
 \section{Values and Operators}
 
@@ -1723,7 +1723,7 @@ by Theorems~\ref{thm:compile-cfg} and~\ref{thm:select}.
 \end{theorem}
 
 %===============================================================================
-\part{CompCert-Style Proof}
+\part{CEK Machine + Simulation}
 
 \section{Observations and Machines}
 
@@ -2588,7 +2588,7 @@ For every Clos5 program $P$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of RCO, CompCert Style]\label{thm:rco-sim}
+\begin{theorem}[Correctness of RCO, Simulation]\label{thm:rco-sim}
 For every Clos5 program $P$,
 \[
   \mathit{Scoped}_5(P) \implies \Equiv(\Mach{5}(P), \Mach{5}(\pass{rco}(P))) .
@@ -2658,7 +2658,7 @@ For every monadic Clos5 program $P$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Lift Locals, CompCert Style]\label{thm:lift-sim}
+\begin{theorem}[Correctness of Lift Locals, Simulation]\label{thm:lift-sim}
 For every monadic Clos5 program $P$,
 \[
   \Equiv(\Mach{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P))) .
@@ -2741,7 +2741,7 @@ For every Imp program $P$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Explicate Control, CompCert Style]\label{thm:explicate-sim}
+\begin{theorem}[Correctness of Explicate Control, Simulation]\label{thm:explicate-sim}
 For every Imp program $P$,
 \[
   \Equiv(\Mach{\mathrm{Imp}}(P), \Mach{\mathrm{CFG}}(\pass{explicate}(P))) .
@@ -2816,7 +2816,7 @@ For every CFG program $P$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Select Instructions, CompCert Style]\label{thm:select-sim}
+\begin{theorem}[Correctness of Select Instructions, Simulation]\label{thm:select-sim}
 For every CFG program $P$,
 \[
   \Equiv(\Mach{\mathrm{CFG}}(P), \Mach{\mathrm{X86}}(\pass{select}(P))) .
@@ -2826,14 +2826,14 @@ There is no precondition.
 
 \subsection{End to End}
 
-\begin{theorem}[Compiler Correctness, CompCert Style]\label{thm:compiler-sim}
+\begin{theorem}[Compiler Correctness, Simulation]\label{thm:compiler-sim}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile}(M))) .
 \]
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-Mon, CompCert Style]\label{thm:compile-mon-sim}
+\begin{theorem}[Correctness of Compile-Mon, Simulation]\label{thm:compile-mon-sim}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile\text{-}mon}(M))) ,
@@ -2842,7 +2842,7 @@ by Theorems~\ref{thm:compiler-sim} and~\ref{thm:rco-sim}, Lemma~\ref{lem:compile
 and Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-Imp, CompCert Style]\label{thm:compile-imp-sim}
+\begin{theorem}[Correctness of Compile-Imp, Simulation]\label{thm:compile-imp-sim}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{Imp}}(\pass{compile\text{-}imp}(M))) ,
@@ -2850,7 +2850,7 @@ For every ISWIM term $M$,
 by Theorems~\ref{thm:compile-mon-sim} and~\ref{thm:lift-sim} and Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-CFG, CompCert Style]\label{thm:compile-cfg-sim}
+\begin{theorem}[Correctness of Compile-CFG, Simulation]\label{thm:compile-cfg-sim}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{CFG}}(\pass{compile\text{-}cfg}(M))) ,
@@ -2858,7 +2858,7 @@ For every ISWIM term $M$,
 by Theorems~\ref{thm:compile-imp-sim} and~\ref{thm:explicate-sim} and Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-X86, CompCert Style]\label{thm:compile-x86-sim}
+\begin{theorem}[Correctness of Compile-X86, Simulation]\label{thm:compile-x86-sim}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
@@ -2953,7 +2953,7 @@ For every Clos3 term $M$,
 \end{theorem}
 
 %===============================================================================
-\part{CakeML-Style Proof}
+\part{Clocked Interpreter + Value Relations}
 
 \section{Results and Clocks}
 
@@ -2982,7 +2982,7 @@ A clocked program gives a result for every clock.
     (\forall o.\; \Term_{P_1}(o) \iff \Term_{P_2}(o)) \land (\Div_{P_1} \iff \Div_{P_2})
 \end{align*}
 The observations $o$ are those of Section~\ref{sec:obs}, and $\Equiv$ has the
-shape of the CompCert-style one (Section~\ref{sec:sims}).
+shape of the simulation one (Section~\ref{sec:sims}).
 
 \subsection{Clock for Clock}
 
@@ -3325,7 +3325,7 @@ If $\rho_1 \approx_{\FV(M)} \rho_2$, then for every clock $k$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Enclose, CakeML Style]\label{thm:enclose-clk}
+\begin{theorem}[Correctness of Enclose, Interpreter]\label{thm:enclose-clk}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies
@@ -3355,7 +3355,7 @@ then for every clock $k$,
 for the closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$.
 \end{lemma}
 
-\begin{theorem}[Correctness of Optimize, CakeML Style]\label{thm:optimize-clk}
+\begin{theorem}[Correctness of Optimize, Interpreter]\label{thm:optimize-clk}
 For every Clos2 term $M$,
 \[
   \mathit{WS}(M) \implies \Equiv(\Interp{2}(M), \Interp{2}(\pass{optimize}(M))) .
@@ -3373,7 +3373,7 @@ If $\rho_2 \approx_\varphi \rho_3$, then for every clock $k$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Concretize, CakeML Style]\label{thm:concretize-clk}
+\begin{theorem}[Correctness of Concretize, Interpreter]\label{thm:concretize-clk}
 For every Clos2 term $M$,
 \[
   \Equiv(\Interp{2}(M), \Interp{3}(\pass{concretize}_{\mathit{id}}(M))) .
@@ -3391,7 +3391,7 @@ If $\rho_1 \approxq \rho_2$, then for every clock $k$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Delay, CakeML Style]\label{thm:delay-clk}
+\begin{theorem}[Correctness of Delay, Interpreter]\label{thm:delay-clk}
 For every Clos3 term $M$,
 \[
   \Equiv(\Interp{3}(M), \Interp{4}(\pass{delay}(M))) .
@@ -3410,7 +3410,7 @@ If $M \leadsto M'$ and $\rho_1 \approx \rho_2$, then for every clock $k$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Globalize, CakeML Style]\label{thm:globalize-clk}
+\begin{theorem}[Correctness of Globalize, Interpreter]\label{thm:globalize-clk}
 For every Clos4 term $M$,
 \[
   \Equiv(\Interp{4}(M), \Interp{5}(\pass{globalize}(M))) .
@@ -3442,7 +3442,7 @@ then for every clock $k$,
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of RCO, CakeML Style]\label{thm:rco-clk}
+\begin{theorem}[Correctness of RCO, Interpreter]\label{thm:rco-clk}
 For every Clos5 program $P$,
 \[
   \mathit{Scoped}_5(P) \implies \Equiv(\Interp{5}(P), \Interp{5}(\pass{rco}(P))) .
@@ -3468,7 +3468,7 @@ If $|\rho| + \mathit{height}(M) \leq n$ and $\rho \approx^n_\varphi \sigma$, the
 \]
 \end{lemma}
 
-\begin{theorem}[Correctness of Lift Locals, CakeML Style]\label{thm:lift-clk}
+\begin{theorem}[Correctness of Lift Locals, Interpreter]\label{thm:lift-clk}
 For every monadic Clos5 program $P$,
 \[
   \Equiv(\Interp{5}(P), \Interp{\mathrm{Imp}}(\pass{lift}(P))) .
@@ -3520,7 +3520,7 @@ For every Imp expression $e$ and blocks $\vec{t}$,
 Calls agree at every clock, by induction on the clock and
 Lemma~\ref{lem:tail-ok}.
 
-\begin{theorem}[Correctness of Explicate Control, CakeML Style]\label{thm:explicate-clk}
+\begin{theorem}[Correctness of Explicate Control, Interpreter]\label{thm:explicate-clk}
 For every Imp program $P$,
 \[
   \Equiv(\Interp{\mathrm{Imp}}(P), \Interp{\mathrm{CFG}}(\pass{explicate}(P))) .
@@ -3565,7 +3565,7 @@ Calls agree at every clock, by induction on the clock and
 Lemma~\ref{lem:sel-tail-ok}: the prologue moves $\rdi$ and $\rsi$ to
 slots $0$ and $1$, giving the frame $u\, w\, 0^{n-2}$ of CFG.
 
-\begin{theorem}[Correctness of Select Instructions, CakeML Style]\label{thm:select-clk}
+\begin{theorem}[Correctness of Select Instructions, Interpreter]\label{thm:select-clk}
 For every CFG program $P$,
 \[
   \Equiv(\Interp{\mathrm{CFG}}(P), \Interp{\mathrm{X86}}(\pass{select}(P))) ,
@@ -3576,14 +3576,14 @@ There is no precondition.
 
 \subsection{End to End}
 
-\begin{theorem}[Compiler Correctness, CakeML Style]\label{thm:compiler-clk}
+\begin{theorem}[Compiler Correctness, Interpreter]\label{thm:compiler-clk}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile}(M))) .
 \]
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-Mon, CakeML Style]\label{thm:compile-mon-clk}
+\begin{theorem}[Correctness of Compile-Mon, Interpreter]\label{thm:compile-mon-clk}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile\text{-}mon}(M))) ,
@@ -3592,7 +3592,7 @@ by Theorems~\ref{thm:compiler-clk} and~\ref{thm:rco-clk}, Lemma~\ref{lem:compile
 and Lemma~\ref{lem:equiv-trans-clk}.
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-Imp, CakeML Style]\label{thm:compile-imp-clk}
+\begin{theorem}[Correctness of Compile-Imp, Interpreter]\label{thm:compile-imp-clk}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{Imp}}(\pass{compile\text{-}imp}(M))) ,
@@ -3600,7 +3600,7 @@ For every ISWIM term $M$,
 by Theorems~\ref{thm:compile-mon-clk} and~\ref{thm:lift-clk} and Lemma~\ref{lem:equiv-trans-clk}.
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-CFG, CakeML Style]\label{thm:compile-cfg-clk}
+\begin{theorem}[Correctness of Compile-CFG, Interpreter]\label{thm:compile-cfg-clk}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{CFG}}(\pass{compile\text{-}cfg}(M))) ,
@@ -3608,7 +3608,7 @@ For every ISWIM term $M$,
 by Theorems~\ref{thm:compile-imp-clk} and~\ref{thm:explicate-clk} and Lemma~\ref{lem:equiv-trans-clk}.
 \end{theorem}
 
-\begin{theorem}[Correctness of Compile-X86, CakeML Style]\label{thm:compile-x86-clk}
+\begin{theorem}[Correctness of Compile-X86, Interpreter]\label{thm:compile-x86-clk}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,

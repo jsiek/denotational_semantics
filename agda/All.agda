@@ -28,8 +28,8 @@ module All where
    --------------------------------------------------------------------------- -}
 
 import Theorems.Denotational
-import Theorems.CompCert
-import Theorems.CakeML
+import Theorems.Simulation
+import Theorems.Interpreter
 import Theorems.Adequacy
 
 {- ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ import proof.Compiler.Compile.Examples.ExplicateExample
 import proof.Compiler.Compile.Examples.SelectExample
 
 {- ---------------------------------------------------------------------------
-   proof/: the operational (CompCert-style) development, independent of
+   proof/: the CEK machine + simulation development, independent of
    the graph model: forward simulations between small-step machines
    --------------------------------------------------------------------------- -}
 
@@ -177,7 +177,7 @@ import proof.Compiler.Operational.Adequacy.X86
 import proof.Compiler.Operational.Adequacy.EndToEnd
 
 {- ---------------------------------------------------------------------------
-   proof/: the CakeML-style (functional big-step, clocked) development:
+   proof/: the clocked interpreter + value relations development:
    clock-for-clock proofs between clocked interpreters
    --------------------------------------------------------------------------- -}
 

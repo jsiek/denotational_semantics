@@ -4,9 +4,9 @@ Denotational semantics based on graph and filter models
 ## The closure-conversion compiler
 
 `agda/All.agda` gathers a closure-conversion compiler, from ISWIM to
-X86, and its correctness proofs, in three styles (a denotational graph
-model, CompCert-style forward simulations, CakeML-style clocked
-interpreters), with the adequacy of the graph model for the machines:
+X86, and its correctness proofs, in three styles (denotational: graph
+model; CEK machine + simulation, after CompCert; clocked interpreter +
+value relations, after CakeML), with the adequacy of the graph model for the machines:
 
     ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5

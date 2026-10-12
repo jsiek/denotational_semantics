@@ -6,7 +6,7 @@
   or return related values. Globalize maps each application to one
   application, so the two interpreters call functions in lock step.
 
-  As in the CompCert-style proof (Operational/Correctness/GlobalizeSim.agda),
+  As in the simulation proof (Operational/Correctness/GlobalizeSim.agda),
   which shares the lemmas about growing tables (Compile/GlobalizeTable.agda)
   with this one, the Clos5 interpreter
   runs with the table D that the pass made for the whole program, and the

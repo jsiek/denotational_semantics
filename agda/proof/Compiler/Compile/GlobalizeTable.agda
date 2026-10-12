@@ -3,7 +3,7 @@
   The table of global definitions that the globalize pass threads through
   the term only grows (_⊑_: ds' extends ds with newer definitions), and a
   definition stays where it is as the table grows (global-⊑). Shared by
-  the CompCert-style and CakeML-style proofs of globalize and by the
+  the simulation and interpreter proofs of globalize and by the
   adequacy proof for Clos5.
 
 -}

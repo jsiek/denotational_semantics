@@ -1,6 +1,7 @@
 {-
 
-  Correctness of the whole closure-conversion compiler, CompCert style:
+  Correctness of the whole closure-conversion compiler, by CEK machines and
+  forward simulations:
 
     ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5

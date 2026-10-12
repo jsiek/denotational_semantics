@@ -9,7 +9,7 @@ A code line is a line that is not blank, not a comment ({- -} blocks,
 `open import`, with its continuation lines): imports depend on how
 finely a development is split into modules, not on its content.  Every .agda file under agda/ (except agda/old/ and
 All.agda) must belong to exactly one group; the script fails otherwise,
-so new modules cannot go uncounted.  A group of the CakeML-style side may
+so new modules cannot go uncounted.  A group of the interpreter side may
 have no files yet (a pass not yet proved); it is shown as —.
 
 The code is split into an audit surface (agda/Theorems/, the public
@@ -182,17 +182,17 @@ GROUPS = [
 
     # not in the totals: a direct backward simulation for delay, without
     # determinism, for comparison (see loc.md)
-    ('exp', 'CompCert-style: direct backward simulation for delay — framework',
+    ('exp', 'simulation: direct backward simulation for delay — framework',
      [OP + 'Backward.agda']),
-    ('exp', 'CompCert-style: direct backward simulation for delay — delay',
+    ('exp', 'simulation: direct backward simulation for delay — delay',
      [OP + 'Correctness/DelayBackSim.agda']),
     # not in the totals: the direct semantics of Imp (Sem/ImpDirect.agda),
     # an alternative to the continuation-passing one, and lift locals and
     # explicate control proved against it.  They also use Sem/Imp.agda,
     # LiftLocalsCommon and ExplicateCommon, counted in the main rows.
-    ('exp', 'denotational: direct Imp — semantics', [GP + 'Sem/ImpDirect.agda']),
-    ('exp', 'denotational: direct Imp — lift locals', [GP + 'Correctness/LiftLocalsCorrect.agda']),
-    ('exp', 'denotational: direct Imp — explicate control',
+    ('exp', 'graph model: direct Imp — semantics', [GP + 'Sem/ImpDirect.agda']),
+    ('exp', 'graph model: direct Imp — lift locals', [GP + 'Correctness/LiftLocalsCorrect.agda']),
+    ('exp', 'graph model: direct Imp — explicate control',
      [GP + 'Correctness/ExplicateCorrect.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
@@ -200,8 +200,8 @@ GROUPS = [
     ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
 ]
 
-THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/CompCert.agda',
-            'ck': 'agda/Theorems/CakeML.agda', 'adeq': 'agda/Theorems/Adequacy.agda'}
+THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simulation.agda',
+            'ck': 'agda/Theorems/Interpreter.agda', 'adeq': 'agda/Theorems/Adequacy.agda'}
 
 
 def strip_comments(s):
@@ -280,7 +280,10 @@ def modname(u):
 
 
 SIDES = ('den', 'op', 'ck')
-NAMES = {'den': 'denotational', 'op': 'CompCert-style', 'ck': 'CakeML-style',
+# column labels, and the short names used in lists and messages
+LABELS = {'den': 'denotational: graph model', 'op': 'CEK machine + simulation',
+          'ck': 'clocked interpreter + value relations', 'adeq': 'adequacy'}
+NAMES = {'den': 'graph model', 'op': 'simulation', 'ck': 'interpreter',
          'adeq': 'adequacy'}
 EXTRA = 'shared modules not used by all three proofs'
 
@@ -376,7 +379,7 @@ def main():
             'select instructions',
             'composition']
     total = {side: 0 for side in SIDES}
-    print('| component | denotational | CompCert-style | CakeML-style |')
+    print('| component | ' + ' | '.join(LABELS[s] for s in SIDES) + ' |')
     print('|---|---:|---:|---:|')
     for r in rows:
         cells = []
@@ -397,7 +400,7 @@ def main():
     def lines(us):
         return sum(ulines(u) for u in us)
     print('| language-independent infrastructure (not in the totals) | lines | '
-          + ' | '.join(f'used by {NAMES[s]}' for s in SIDES) + ' |')
+          + ' | '.join(f'used by {LABELS[s]}' for s in SIDES) + ' |')
     print('|---|---:|' + '---:|' * len(SIDES))
     itotal = {s: 0 for s in SIDES}
     for side, name, _ in GROUPS:
@@ -452,11 +455,11 @@ def main():
     sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in ALL}
     shared_all = set().union(*sh.values())
     print('| audit surface (not in the totals) | lines | '
-          + ' | '.join(f'read for {NAMES[s]}' for s in ALL) + ' |')
+          + ' | '.join(f'read for {LABELS[s]}' for s in ALL) + ' |')
     print('|---|---:|' + '---:|' * len(ALL))
     print(f'| languages, compiler passes, syntax, base types (shared) | {flines(shared_all)} | '
           + ' | '.join(str(flines(sh[s])) for s in ALL) + ' |')
-    SEMS = {'den': 'graph model: domain, operators, semantics of each language',
+    SEMS = {'den': 'domain, operators, semantics of each language',
             'op': 'small-step machines, transition systems',
             'ck': 'clocked interpreters, results'}
     sem_files = {s: {f for f in sreach[s] if kind(f) == 'semantics'} for s in ALL}

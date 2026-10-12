@@ -28,7 +28,7 @@
   * A program terminates with o if, for some clock, it returns a value
     observed as o, or goes wrong and o is o-wrong; it diverges if it times
     out for every clock. The end theorem (Equivalent) has the shape of
-    the CompCert-style one, over the same observations (Observation.agda).
+    the simulation one, over the same observations (Observation.agda).
 
   * No pass adds or removes function calls, so a pass is proved correct
     clock for clock: for every clock, the program and its compilation
