@@ -16,7 +16,9 @@ module Compiler.Model.Graph.Sem.Imp where
  of the store it leaves are ⋆ ⟨ Λ F , D₁ ⟩, where D₁ is the value of e₁
  and F X is the value (or the slot) after e₂, run in the store that e₁
  leaves with X in slot x. Likewise case is 𝒞, both for its value and for
- each slot of the store it leaves.
+ each slot of the store it leaves. A run of e₂ (or of a branch) leaves
+ its store only if it has a value: a run that goes wrong or diverges
+ leaves no store behind.
 
  As in Clos5, the meaning depends on a table T of the global definitions.
  A call app f e a applies the meaning of f to those of e and a, as in
@@ -70,19 +72,23 @@ checked n x σ r with x <? n
 𝒜s T n σ [] = ptt
 𝒜s T n σ (a ∷ as) = ⟨ 𝒜 T n σ a , 𝒜s T n σ as ⟩
 
+{- slot y of the store that r leaves, if r has a value -}
+_↓_ : 𝒫 Value × Store → ℕ → 𝒫 Value
+(r ↓ y) w = w ∈ proj₂ r y × nonempty (proj₁ r)
+
 {- case on A, the branches E₁ and E₂ given the payload: 𝒞, for the value
    and for each slot of the store -}
 caseₛ : 𝒫 Value → (𝒫 Value → 𝒫 Value × Store) → (𝒫 Value → 𝒫 Value × Store) → 𝒫 Value × Store
 caseₛ A E₁ E₂ =
   ⟨ 𝒞 ⟨ A , ⟨ (λ X → proj₁ (E₁ X)) , ⟨ (λ X → proj₁ (E₂ X)) , ptt ⟩ ⟩ ⟩
-  , (λ y → 𝒞 ⟨ A , ⟨ (λ X → proj₂ (E₁ X) y) , ⟨ (λ X → proj₂ (E₂ X) y) , ptt ⟩ ⟩ ⟩) ⟩
+  , (λ y → 𝒞 ⟨ A , ⟨ (λ X → E₁ X ↓ y) , ⟨ (λ X → E₂ X ↓ y) , ptt ⟩ ⟩ ⟩) ⟩
 
 {- E given the value D, strict like let: ⋆ ⟨ Λ … , D ⟩, for the value and
    for each slot of the store -}
 letₛ : 𝒫 Value → (𝒫 Value → 𝒫 Value × Store) → 𝒫 Value × Store
 letₛ D E =
   ⟨ ⋆ ⟨ Λ ⟨ (λ X → proj₁ (E X)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
-  , (λ y → ⋆ ⟨ Λ ⟨ (λ X → proj₂ (E X) y) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) ⟩
+  , (λ y → ⋆ ⟨ Λ ⟨ (λ X → E X ↓ y) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) ⟩
 
 {- e in a frame of n slots -}
 ⟦_⟧[_] : Exp → Table → ℕ → Store → 𝒫 Value × Store

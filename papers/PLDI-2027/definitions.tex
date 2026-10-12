@@ -142,7 +142,7 @@ instead of de Bruijn indices.
   \item the semantics: the clauses all languages share, then each language's own
     clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$;
   \item the semantics of Imp: stores, $\mathit{read}_n$, $\mathit{checked}_n$,
-    $\key{let}_s$, $\key{case}_s$, $\key{frame}$, $\key{code}$, and $\key{table}$;
+    ${\downarrow}$, $\key{let}_s$, $\key{case}_s$, $\key{frame}$, $\key{code}$, and $\key{table}$;
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, the let equation, the element-wise relation $\sqsubseteq$
@@ -151,7 +151,7 @@ instead of de Bruijn indices.
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item for rco, the let laws, strict operators, the let chain, and the
     rco equation;
-  \item for lift locals, $\mathit{Agree}$ and $\mathit{Pres}$;
+  \item for lift locals, $\mathit{Agree}$ and $\mathit{Scope}$;
   \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
     and $\pass{compile\text{-}imp}$.
   \end{itemize}
@@ -216,7 +216,7 @@ Using names instead of de Bruijn indices changes a few definitions:
   In the Agda, at depth $d$ (the length of the environment $\rho$ in the
   operational proofs) variable $x$ is slot $d - (x + 1)$, so the frame
   is $\rho$ reversed followed by the slots above it ($\rho \mathbin{{}^{r}{+}\!\!{+}} \tau$),
-  and $\mathit{Agree}$ asks $\rho(x) \simeq \{\omega\}$ for $x \geq d$.
+  and $\mathit{Scope}$ asks $\rho(x) \simeq \{\omega\}$ for $x \geq d$.
 \item \begin{sloppypar}\textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty},
@@ -757,12 +757,17 @@ the store as it leaves.
   \mathcal{A}_\sigma(s) = \mathit{read}_n(\sigma, s), \quad
   \mathcal{A}_\sigma(c) &= \mathcal{B}(c), \quad
   \mathcal{A}_\sigma(\funref{k}) = T(k) \\[1ex]
+  r{\downarrow}t &=
+    \begin{cases} \pi_2(r)(t) & \pi_1(r) \NE \\ \emptyset & \text{otherwise} \end{cases} \\
   \key{let}_s(D, E) &= (\Lambda(\lambda X.\, \pi_1(E(X))) \app D,\;
-    \lambda t.\, \Lambda(\lambda X.\, \pi_2(E(X))(t)) \app D) \\
+    \lambda t.\, \Lambda(\lambda X.\, E(X){\downarrow}t) \app D) \\
   \key{case}_s(A, E_1, E_2) &= (\mathcal{C}(A,\; \lambda X.\, \pi_1(E_1(X)),\; \lambda X.\, \pi_1(E_2(X))), \\
-    &\qquad \lambda t.\, \mathcal{C}(A,\; \lambda X.\, \pi_2(E_1(X))(t),\; \lambda X.\, \pi_2(E_2(X))(t)))
+    &\qquad \lambda t.\, \mathcal{C}(A,\; \lambda X.\, E_1(X){\downarrow}t,\; \lambda X.\, E_2(X){\downarrow}t))
 \end{align*}
-where $\pi_1$ and $\pi_2$ take the value and the store of a pair.
+where $\pi_1$ and $\pi_2$ take the value and the store of a pair. The
+slot $t$ of the store a let or case leaves collects slot $t$ of the runs
+of its body that have a value ($r{\downarrow}t$): a run that goes wrong
+or diverges leaves no store.
 With $T$ and $n$ fixed, writing $\SEM{e}\sigma$ for $\SEM{e}^{\mathrm{Imp}}_{T,n}\sigma$:
 \begin{align*}
   \SEM{a}\sigma &= (\mathcal{A}_\sigma(a), \sigma) \\
@@ -1009,28 +1014,29 @@ order in which operands are evaluated is invisible.
 
 \subsection{Lift Locals}
 
-At depth $d$ in a frame of $n$ slots, the store agrees with the
-environment on the slots that $\varphi$ gives the variables in scope,
-and the variables out of scope mean $\{\omega\}$, as slot $n$, beyond
-the frame, does. The slots below $d$ are kept, the second inclusion only
-when there is a value:
+The store agrees with the environment on the slots that $\varphi$ gives
+the variables in scope, and the variables out of scope mean
+$\{\omega\}$, as slot $n$, beyond the frame, does:
 \begin{align*}
-  \mathit{Agree}_{n,\varphi}(\sigma, \rho) &\iff
-    (\forall x \in \mathrm{dom}(\varphi).\; \mathit{read}_n(\sigma, \varphi(x)) \simeq \rho(x))
-    \land (\forall x \notin \mathrm{dom}(\varphi).\; \rho(x) \simeq \{\omega\}) \\
-  \mathit{Pres}_d(\sigma, (D, \sigma')) &\iff
-    (\forall s < d.\; \sigma'(s) \subseteq \sigma(s))
-    \land (D \NE \implies \forall s < d.\; \sigma(s) \subseteq \sigma'(s))
+  \mathit{Agree}_{\varphi}(\sigma, \rho) &\iff
+    \forall x \in \mathrm{dom}(\varphi).\; \sigma(\varphi(x)) \simeq \rho(x) \\
+  \mathit{Scope}_{\varphi}(\rho) &\iff
+    \forall x \notin \mathrm{dom}(\varphi).\; \rho(x) \simeq \{\omega\}
 \end{align*}
+The store that lift leaves agrees with the same environment, when there
+is a value. As in the operational proofs, this is relative to $\rho$,
+not to the store $\sigma$, so after a binder, whose slot is in
+$\varphi[x \mapsto d]$ but not in $\varphi$, only the slot is forgotten.
 
 \begin{lemma}[Correctness of Lift]\label{lem:lift-sem}
 Let $T(k) \simeq T'(k)$ for every $k$, and $M$ be a monadic Clos5 term.
 If $d + \mathit{height}(M) \leq n$, $\varphi(x) < d$ for every
-$x \in \mathrm{dom}(\varphi)$, and $\mathit{Agree}_{n,\varphi}(\sigma, \rho)$, then
+$x \in \mathrm{dom}(\varphi)$, $\mathit{Scope}_{\varphi}(\rho)$, and
+$\mathit{Agree}_{\varphi}(\sigma, \rho)$, then
 \[
   D \simeq \SEM{M}^{\mathrm{5}}_{T'}\rho
   \quad\text{and}\quad
-  \mathit{Pres}_d(\sigma, (D, \sigma')),
+  (D \NE \implies \mathit{Agree}_{\varphi}(\sigma', \rho)),
   \qquad\text{where } (D, \sigma') = \SEM{\pass{lift}_{n,\varphi,d}(M)}^{\mathrm{Imp}}_{T,n}\sigma .
 \]
 \end{lemma}
