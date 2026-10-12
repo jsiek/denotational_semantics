@@ -130,8 +130,12 @@ GROUPS = [
     ('adeq', 'Clos5',
      [O + 'Adequacy/Clos5Common.agda', O + 'Adequacy/Clos5Soundness.agda', O + 'Adequacy/Clos5LogRel.agda',
       O + 'Adequacy/Clos5.agda', O + 'Adequacy/Values.agda']),
+    ('adeq', 'X86',
+     [O + 'Adequacy/X86Common.agda', O + 'Adequacy/X86Soundness.agda', O + 'Adequacy/X86LogRel.agda',
+      O + 'Adequacy/X86.agda']),
     ('adeq', 'well-formedness of compiled programs',
-     [O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda']),
+     [O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda', O + 'Adequacy/X86WF.agda',
+      O + 'Adequacy/X86CompileWF.agda']),
     ('adeq', 'end to end', [O + 'Adequacy/EndToEnd.agda']),
 
     ('examples', 'examples',

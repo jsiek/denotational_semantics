@@ -180,6 +180,12 @@ import Compiler.Operational.Adequacy.Values
 import Compiler.Operational.Adequacy.Clos5Soundness
 import Compiler.Operational.Adequacy.Clos5LogRel
 import Compiler.Operational.Adequacy.Clos5
+import Compiler.Operational.Adequacy.X86WF
+import Compiler.Operational.Adequacy.X86Common
+import Compiler.Operational.Adequacy.X86Soundness
+import Compiler.Operational.Adequacy.X86LogRel
+import Compiler.Operational.Adequacy.X86CompileWF
+import Compiler.Operational.Adequacy.X86
 import Compiler.Operational.Adequacy.EndToEnd
 
 {- experiment: a direct backward simulation for delay, without determinism,

@@ -12,6 +12,13 @@
                    ⇔  Clos5 machine      (Adequacy/Clos5.agda)
 
   with the precondition of Clos5 adequacy discharged by compile-wf.
+  Likewise for the whole compiler, compile-x86, into X86:
+
+    ISWIM machine  ⇔  ⟦ M ⟧ ρ₀          (Adequacy/ISWIM.agda)
+                   ⇔  ⟦ compile-x86 M ⟧ₚ (SelectCorrect.agda)
+                   ⇔  X86 machine        (Adequacy/X86.agda)
+
+  with the precondition of X86 adequacy discharged by compile-x86-wf.
 
   What this cannot say: going wrong (o-wrong) and diverging both denote
   the empty set, so the graph model cannot tell them apart, and neither
@@ -29,7 +36,7 @@ module Compiler.Operational.Adequacy.EndToEnd where
 
 open import Primitives using (Base; base-rep)
 open import Compiler.Lang.ISWIM using (AST)
-open import Compiler.Compile.Pipeline using (compile)
+open import Compiler.Compile.Pipeline using (compile; compile-x86)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Terminates)
 import Compiler.Operational.Machine.ISWIM as I
@@ -37,6 +44,9 @@ import Compiler.Operational.Machine.Clos5 as C5
 open import Compiler.Compile.EncloseScope using (Closed)
 import Compiler.Operational.Adequacy.ISWIM as AI
 import Compiler.Operational.Adequacy.Clos5 as A5
+import Compiler.Operational.Machine.X86 as X
+import Compiler.Operational.Adequacy.X86 as AX
+open import Compiler.Model.Graph.Correctness.SelectCorrect using (compile-x86-correct-const; compile-x86-correct-nonempty)
 
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
@@ -53,3 +63,19 @@ end-to-end-converges M c =
   ⟨ (λ t → A5.adequacy-converges (compile M) wf (proj₁ (AI.compile-correct-machine-converges M c) t))
   , (λ t → proj₂ (AI.compile-correct-machine-converges M c) (A5.sound-nonempty (compile M) wf t)) ⟩
   where wf = A5.compile-wf M c
+
+{- The whole compiler, into X86 -------------------------------------------------}
+
+end-to-end-x86-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
+  → Terminates (I.sem M) (o-const B k) ⇔ Terminates (X.sem (compile-x86 M)) (o-const B k)
+end-to-end-x86-const M c k =
+  ⟨ (λ t → AX.adequacy-const (compile-x86 M) wf (proj₁ (compile-x86-correct-const M k) (AI.sound-const M t)))
+  , (λ t → AI.adequacy-const M c (proj₂ (compile-x86-correct-const M k) (AX.sound-const (compile-x86 M) wf t))) ⟩
+  where wf = AX.compile-x86-wf M c
+
+end-to-end-x86-converges : ∀ M → Closed M
+  → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (X.sem (compile-x86 M)))
+end-to-end-x86-converges M c =
+  ⟨ (λ t → AX.adequacy-converges (compile-x86 M) wf (proj₁ (compile-x86-correct-nonempty M) (AI.sound-nonempty M t)))
+  , (λ t → AI.adequacy-converges M c (proj₂ (compile-x86-correct-nonempty M) (AX.sound-nonempty (compile-x86 M) wf t))) ⟩
+  where wf = AX.compile-x86-wf M c
