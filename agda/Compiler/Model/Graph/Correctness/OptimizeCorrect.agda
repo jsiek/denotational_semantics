@@ -131,12 +131,12 @@ opt-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) r ρ ρ' NE rel = ⟨ G , H ⟩
 
   G : ⟦ clos-op n ⦅ ! clear a ,, fvs ⦆ ⟧ ρ ⊆ ⟦ optimize r (clos-op n ⦅ ! clear a ,, fvs ⦆) ⟧ ρ'
   G ν ⟨ ne , tt ⟩ = ⟨ PruneOK.ne→ ok ne , tt ⟩
-  G (U ↦ x) ⟨ ne , ⟨ x∈ , neU ⟩ ⟩ = ⟨ PruneOK.ne→ ok ne , ⟨ proj₁ (body≃ U neU ne) x x∈ , neU ⟩ ⟩
+  G (U ↦ x) ⟨ ne , ⟨ x∈ , neU ⟩ ⟩ = ⟨ PruneOK.ne→ ok ne , ⟨ proj₁ (body≃ U (proj₁ neU) ne) x x∈ , neU ⟩ ⟩
 
   H : ⟦ optimize r (clos-op n ⦅ ! clear a ,, fvs ⦆) ⟧ ρ' ⊆ ⟦ clos-op n ⦅ ! clear a ,, fvs ⦆ ⟧ ρ
   H ν ⟨ ne' , tt ⟩ = ⟨ PruneOK.ne← ok ne' , tt ⟩
   H (U ↦ x) ⟨ ne' , ⟨ x∈ , neU ⟩ ⟩ =
-    ⟨ PruneOK.ne← ok ne' , ⟨ proj₂ (body≃ U neU (PruneOK.ne← ok ne')) x x∈ , neU ⟩ ⟩
+    ⟨ PruneOK.ne← ok ne' , ⟨ proj₂ (body≃ U (proj₁ neU) (PruneOK.ne← ok ne')) x x∈ , neU ⟩ ⟩
 opt-correct (app ⦅ L ,, M ,, Nil ⦆) r ρ ρ' NE rel =
   ⋆-≃ (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
       (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₂ (inj₁ u))))
@@ -152,8 +152,8 @@ opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) M ⟧ (X • ρ')}
       {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) N ⟧ (X • ρ')}
       (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-      (λ v V → opt-correct M (ext-var r) _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
-      (λ v V → opt-correct N (ext-var r) _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
+      (λ v V _ → opt-correct M (ext-var r) _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
+      (λ v V _ → opt-correct N (ext-var r) _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
   where
   NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ)
   NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩

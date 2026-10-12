@@ -15,6 +15,7 @@ open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Lang.ISWIM
 
 open import Level renaming (zero to lzero; suc to lsuc)
+open import NewEnv using (_~ₑ[_]_)
 
 𝕆-ISWIM : DOpSig (𝒫 Value) sig
 𝕆-ISWIM lam = Λ
@@ -38,6 +39,17 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-ISWIM-mono case-op = 𝒞-mono
 𝕆-ISWIM-mono (prim p) = primD-mono p
 
+𝕆-ISWIM-consis : 𝕆-consistent _~_ sig 𝕆-ISWIM
+𝕆-ISWIM-consis lam = Λ-consis
+𝕆-ISWIM-consis app = ⋆-consis
+𝕆-ISWIM-consis (lit B k) = ℬ-consis B k
+𝕆-ISWIM-consis (tuple x) = 𝒯-consis x
+𝕆-ISWIM-consis (get x) = proj-consis x
+𝕆-ISWIM-consis inl-op = inl-consis
+𝕆-ISWIM-consis inr-op = inr-consis
+𝕆-ISWIM-consis case-op = 𝒞-consis
+𝕆-ISWIM-consis (prim p) = primD-consis p
+
 open import NewSemantics Op sig public
 
 instance
@@ -46,3 +58,7 @@ instance
                              mono-op = 𝕆-ISWIM-mono ;
                              error = ω }
 open Semantics {{...}} public
+
+{- consistent environments give consistent denotations -}
+ISWIM-con-env : ∀ M {ρ ρ'} → ρ ~ₑ[ Every _~_ ] ρ' → Every _~_ (⟦ M ⟧ ρ) (⟦ M ⟧ ρ')
+ISWIM-con-env M = ⟦⟧-pres (Every _~_) 𝕆-ISWIM-consis (Con-⌈⌉ ω) M

@@ -7,8 +7,8 @@
     v ⊑ D'   "the target set D' exhibits the source value v"
 
   A source function entry U ↦ w is exhibited by D' when D', applied to
-  its own environment and to any E' that exhibits the arguments U,
-  exhibits the result w. The other clauses follow the projections of
+  its own environment and to any consistent E' that exhibits the
+  arguments U, exhibits the result w. The other clauses follow the projections of
   the target operators, so that the cases for get, inl and inr are
   immediate. No fuel or finite lists of observations are needed, unlike
   the backward direction (DelayReflectFinite): there the observed side is
@@ -29,11 +29,11 @@ open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as L4
 open import Compiler.Model.Graph.Sem.Clos3Iswim as S3
 import Compiler.Model.Graph.Sem.Clos4Iswim as S4
-open S4 using () renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
+open S4 using (Clos4-con) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Compile.Delay using (delay; del-map-args)
 open import NewEnv using (nonempty-env)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
-  using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat;
+  using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat; Untag-con; leftT; rightT;
          Data; flat-data; out-data)
 open import Compiler.Model.Graph.Correctness.DelayApp using (let-app-≃)
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous as C4
@@ -60,7 +60,7 @@ infix 4 _⊑_ _⊑*_
 _⊑_ : Value → 𝒫 Value → Set₁
 _⊑*_ : List Value → 𝒫 Value → Set₁
 ν ⊑ D' = Lift (lsuc lzero) (nonempty D')
-(U ↦ w) ⊑ D' = Lift (lsuc lzero) (nonempty D') × (∀ E' → U ⊑* E' → w ⊑ D' ⊙ E')
+(U ↦ w) ⊑ D' = Lift (lsuc lzero) (nonempty D') × (∀ E' → Con E' → U ⊑* E' → w ⊑ D' ⊙ E')
 (tup[ i ] d) ⊑ D' = d ⊑ Nth i D'
 left d ⊑ D' = d ⊑ Lefts D'
 right d ⊑ D' = d ⊑ Rights D'
@@ -74,7 +74,7 @@ _⊑ₑ_ : Env → Env → Set₁
 ⊑-mono : ∀ v {D₁ D₂} → D₁ ⊆ D₂ → v ⊑ D₁ → v ⊑ D₂
 ⊑-mono ν D⊆ (lift ⟨ d , d∈ ⟩) = lift ⟨ d , D⊆ d d∈ ⟩
 ⊑-mono (U ↦ w) D⊆ ⟨ lift ⟨ d , d∈ ⟩ , f ⟩ =
-  ⟨ lift ⟨ d , D⊆ d d∈ ⟩ , (λ E' U⊑ → ⊑-mono w (⊙-mono-l D⊆) (f E' U⊑)) ⟩
+  ⟨ lift ⟨ d , D⊆ d d∈ ⟩ , (λ E' cE U⊑ → ⊑-mono w (⊙-mono-l D⊆) (f E' cE U⊑)) ⟩
 ⊑-mono (tup[ i ] d) D⊆ = ⊑-mono d (λ d → D⊆ (tup[ i ] d))
 ⊑-mono (left d) D⊆ = ⊑-mono d (λ d → D⊆ (left d))
 ⊑-mono (right d) D⊆ = ⊑-mono d (λ d → D⊆ (right d))
@@ -113,18 +113,19 @@ data-⊑ ⟨⟩ _ v∈ = lift v∈
 
 {- applied to its own environment T' and to E', a target closure behaves
    like its body (using the continuity of the body) -}
-clos-β : ∀ (N' : L4.AST) {T' E'} → nonempty T' → nonempty E'
+clos-β : ∀ (N' : L4.AST) {T' E'} → nonempty T' → nonempty E' → Con T' → Con E'
   → ⟦ N' ⟧' (E' • T' • (λ _ → Init))
     ⊆ (pair ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • (λ _ → Init))) , ptt ⟩) , ptt ⟩
            , ⟨ T' , ptt ⟩ ⟩ ⊙ E')
-clos-β N' {T'}{E'} NE-T' NE-E' y y∈ with C4.term-continuous N' _ NE y y∈
+clos-β N' {T'}{E'} NE-T' NE-E' cT cE y y∈ with C4.term-continuous N' _ NE y y∈
   where NE : nonempty-env (E' • T' • (λ _ → Init))
         NE zero = NE-E'
         NE (suc zero) = NE-T'
         NE (suc (suc x)) = ⟨ ω , refl ⟩
 ... | ⟨ Vs , ⟨ ok , y∈fin ⟩ ⟩ with ne-mem (proj₁ (ok 1)) (proj₂ (ok 1))
 ... | ⟨ t' , t'∈ ⟩ =
-  ⟨ Vs 0 , ⟨ ⟨ Vs 1 , ⟨ ⟨ t' , ⟨ ⟨ ⟨ y∈' , proj₁ (ok 0) ⟩ , proj₁ (ok 1) ⟩ , t'∈ ⟩ ⟩
+  ⟨ Vs 0 , ⟨ ⟨ Vs 1 , ⟨ ⟨ t' , ⟨ ⟨ ⟨ y∈' , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) cE (proj₂ (ok 0)) ⟩ ⟩
+                                     , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) cT (proj₂ (ok 1)) ⟩ ⟩ , t'∈ ⟩ ⟩
                      , ⟨ (λ d d∈ → ⟨ ν , ⟨ tt , proj₂ (ok 1) d d∈ ⟩ ⟩) , proj₁ (ok 1) ⟩ ⟩ ⟩
            , ⟨ proj₂ (ok 0) , proj₁ (ok 0) ⟩ ⟩ ⟩
   where
@@ -135,9 +136,9 @@ clos-β N' {T'}{E'} NE-T' NE-E' y y∈ with C4.term-continuous N' _ NE y y∈
   y∈' = S4.⟦⟧-monotone {ρ = λ z → mem (Vs z)} N' env⊆ y y∈fin
 
 {- a target case contains its left branch, and its right branch -}
-case-l : ∀ (M' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Lefts L')
+case-l : ∀ (M' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Lefts L') → Con L'
   → ⟦ M' ⟧' (Lefts L' • ρ') ⊆ 𝒞 ⟨ L' , ⟨ (λ X → ⟦ M' ⟧' (X • ρ')) , ⟨ F , ptt ⟩ ⟩ ⟩
-case-r : ∀ (N' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Rights L')
+case-r : ∀ (N' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Rights L') → Con L'
   → ⟦ N' ⟧' (Rights L' • ρ') ⊆ 𝒞 ⟨ L' , ⟨ F , ⟨ (λ X → ⟦ N' ⟧' (X • ρ')) , ptt ⟩ ⟩ ⟩
 
 {- one finite part of the bound variable suffices -}
@@ -155,65 +156,68 @@ cont-0 M' {X}{ρ'} NE NE-X y y∈ with C4.term-continuous M' (X • ρ') NE' y y
 ... | [] | ne | _ | _ = ⊥-elim (ne refl)
 ... | u ∷ U | _ | U⊆ | y∈' = ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩
 
-case-l M' NE ne y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 M' NE ne y y∈
-                       in inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩
-case-r N' NE ne y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 N' NE ne y y∈
-                       in inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩
+case-l M' NE ne cL y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 M' NE ne y y∈
+  in inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ y∈' , Con⇒≈ (u ∷ U) (Untag-con leftT (λ c → c) cL) U⊆ ⟩ ⟩ ⟩ ⟩
+case-r N' NE ne cL y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 N' NE ne y y∈
+  in inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ y∈' , Con⇒≈ (u ∷ U) (Untag-con rightT (λ c → c) cL) U⊆ ⟩ ⟩ ⟩ ⟩
 
 {- The fundamental lemma ------------------------------------------------------}
 
-preserve : ∀ (M : AST) {ρ ρ'} → nonempty-env ρ' → ρ ⊑ₑ ρ'
+preserve : ∀ (M : AST) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
   → ∀ v → v ∈ ⟦ M ⟧ ρ → v ⊑ ⟦ delay M ⟧' ρ'
-preserve-nth : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → ρ ⊑ₑ ρ'
+preserve-nth : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
   → ∀ i v → v ∈ nthD (⟦ args ⟧₊ ρ) i → v ⊑ nthD (⟦ del-map-args args ⟧₊' ρ') i
-preserve-𝒯 : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → ρ ⊑ₑ ρ'
+preserve-𝒯 : ∀ {n} (args : Args (replicate n ■)) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
   → ∀ v → v ∈ 𝒯 n (⟦ args ⟧₊ ρ) → v ⊑ 𝒯 n (⟦ del-map-args args ⟧₊' ρ')
 
-preserve (` x) NE ρ⊑ = ρ⊑ x
-preserve (app ⦅ L ,, N ,, Nil ⦆) {ρ}{ρ'} NE ρ⊑ v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
-  ⊑-mono v (proj₂ (let-app-≃ (delay L) (delay N) ρ'))
-    (proj₂ (preserve L NE ρ⊑ (U ↦ v) U↦v∈) _ (⊑*-intro U U⊆ (preserve N NE ρ⊑)))
-preserve (lit B k ⦅ Nil ⦆) NE ρ⊑ v v∈ = data-⊑ v (flat-data (ℬ-flat v v∈)) v∈
-preserve (prim p ⦅ L ,, M ,, Nil ⦆) {ρ' = ρ'} NE ρ⊑ _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
+preserve (` x) NE C' ρ⊑ = ρ⊑ x
+preserve (app ⦅ L ,, N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v ⟨ U , ⟨ U↦v∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ =
+  ⊑-mono v (proj₂ (let-app-≃ (delay L) (delay N) ρ' (Clos4-con (delay L) C')))
+    (proj₂ (preserve L NE C' ρ⊑ (U ↦ v) U↦v∈) _ (Clos4-con (delay N) C') (⊑*-intro U U⊆ (preserve N NE C' ρ⊑)))
+preserve (lit B k ⦅ Nil ⦆) NE C' ρ⊑ v v∈ = data-⊑ v (flat-data (ℬ-flat v v∈)) v∈
+preserve (prim p ⦅ L ,, M ,, Nil ⦆) {ρ' = ρ'} NE C' ρ⊑ _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ =
   data-⊑ (out (δ p n m)) {⟦ delay (prim p ⦅ L ,, M ,, Nil ⦆) ⟧' ρ'} (out-data (δ p n m))
-    ⟨ n , ⟨ m , ⟨ lower (preserve L NE ρ⊑ _ n∈) , ⟨ lower (preserve M NE ρ⊑ _ m∈) , refl ⟩ ⟩ ⟩ ⟩
+    ⟨ n , ⟨ m , ⟨ lower (preserve L NE C' ρ⊑ _ n∈) , ⟨ lower (preserve M NE C' ρ⊑ _ m∈) , refl ⟩ ⟩ ⟩ ⟩
 preserve (tuple n ⦅ args ⦆) = preserve-𝒯 args
-preserve (get i ⦅ M ,, Nil ⦆) NE ρ⊑ v v∈ = preserve M NE ρ⊑ (tup[ i ] v) v∈
-preserve (inl-op ⦅ M ,, Nil ⦆) NE ρ⊑ (left v) v∈ = preserve M NE ρ⊑ v v∈
-preserve (inr-op ⦅ M ,, Nil ⦆) NE ρ⊑ (right v) v∈ = preserve M NE ρ⊑ v v∈
-preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE ρ⊑ v
-    (inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , v∈ ⟩ ⟩ ⟩) =
-  ⊑-mono v (case-l (delay M) {L' = ⟦ delay L ⟧' ρ'} {F = λ X → ⟦ delay N ⟧' (X • ρ')} NE (⊑-ne u (u⊑ u (here refl))))
-    (preserve M NE' ρ⊑' v v∈)
+preserve (get i ⦅ M ,, Nil ⦆) NE C' ρ⊑ v v∈ = preserve M NE C' ρ⊑ (tup[ i ] v) v∈
+preserve (inl-op ⦅ M ,, Nil ⦆) NE C' ρ⊑ (left v) v∈ = preserve M NE C' ρ⊑ v v∈
+preserve (inr-op ⦅ M ,, Nil ⦆) NE C' ρ⊑ (right v) v∈ = preserve M NE C' ρ⊑ v v∈
+preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
+    (inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
+  ⊑-mono v (case-l (delay M) {L' = ⟦ delay L ⟧' ρ'} {F = λ X → ⟦ delay N ⟧' (X • ρ')} NE (⊑-ne u (u⊑ u (here refl))) (Clos4-con (delay L) C'))
+    (preserve M NE' (Con-• cS C') ρ⊑' v v∈)
   where
+  cS = Untag-con leftT (λ c → c) (Clos4-con (delay L) C')
   u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Lefts (⟦ delay L ⟧' ρ')
-  u⊑ d d∈ = preserve L NE ρ⊑ (left d) (U⊆ d d∈)
+  u⊑ d d∈ = preserve L NE C' ρ⊑ (left d) (U⊆ d d∈)
   NE' : nonempty-env (Lefts (⟦ delay L ⟧' ρ') • ρ')
   NE' zero = ⊑-ne u (u⊑ u (here refl))
   NE' (suc x) = NE x
   ρ⊑' : (mem (u ∷ U) • ρ) ⊑ₑ (Lefts (⟦ delay L ⟧' ρ') • ρ')
   ρ⊑' zero = u⊑
   ρ⊑' (suc x) = ρ⊑ x
-preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE ρ⊑ v
-    (inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , v∈ ⟩ ⟩ ⟩) =
-  ⊑-mono v (case-r (delay N) {L' = ⟦ delay L ⟧' ρ'} {F = λ X → ⟦ delay M ⟧' (X • ρ')} NE (⊑-ne u (u⊑ u (here refl))))
-    (preserve N NE' ρ⊑' v v∈)
+preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
+    (inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
+  ⊑-mono v (case-r (delay N) {L' = ⟦ delay L ⟧' ρ'} {F = λ X → ⟦ delay M ⟧' (X • ρ')} NE (⊑-ne u (u⊑ u (here refl))) (Clos4-con (delay L) C'))
+    (preserve N NE' (Con-• cS C') ρ⊑' v v∈)
   where
+  cS = Untag-con rightT (λ c → c) (Clos4-con (delay L) C')
   u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Rights (⟦ delay L ⟧' ρ')
-  u⊑ d d∈ = preserve L NE ρ⊑ (right d) (U⊆ d d∈)
+  u⊑ d d∈ = preserve L NE C' ρ⊑ (right d) (U⊆ d d∈)
   NE' : nonempty-env (Rights (⟦ delay L ⟧' ρ') • ρ')
   NE' zero = ⊑-ne u (u⊑ u (here refl))
   NE' (suc x) = NE x
   ρ⊑' : (mem (u ∷ U) • ρ) ⊑ₑ (Rights (⟦ delay L ⟧' ρ') • ρ')
   ρ⊑' zero = u⊑
   ρ⊑' (suc x) = ρ⊑ x
-preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE ρ⊑ v
+preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE C' ρ⊑ v
     ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨ FV⊆ , neFV ⟩ ⟩ ⟩ = G v v∈
   where
   T' = 𝒯 n (⟦ del-map-args fvs ⟧₊' ρ')
+  cT' = Clos4-con (L4.tuple n L4.⦅ del-map-args fvs ⦆) C'
   P' = ⟦ delay (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) ⟧' ρ'
   fv⊑ : ∀ fv → fv ∈ mem FV → fv ⊑ T'
-  fv⊑ fv fv∈ = preserve-𝒯 fvs NE ρ⊑ fv (FV⊆ fv fv∈)
+  fv⊑ fv fv∈ = preserve-𝒯 fvs NE C' ρ⊑ fv (FV⊆ fv fv∈)
   NE-T' : nonempty T'
   NE-T' = let ⟨ fv , fv∈ ⟩ = ne-mem neFV (λ d d∈ → d∈) in ⊑-ne fv (fv⊑ fv fv∈)
   NE-P' : nonempty P'
@@ -222,11 +226,11 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE �
   G : ∀ v → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → Init))) , ptt ⟩
     → v ⊑ P'
   G ν _ = lift NE-P'
-  G (U ↦ w) ⟨ w∈ , neU ⟩ = ⟨ lift NE-P' , call ⟩
+  G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift NE-P' , call ⟩
     where
-    call : ∀ E' → U ⊑* E' → w ⊑ P' ⊙ E'
-    call E' U⊑ = ⊑-mono w (clos-β (delay N) NE-T' NE-E')
-                  (preserve N NE-ρt ρs⊑ρt w w∈)
+    call : ∀ E' → Con E' → U ⊑* E' → w ⊑ P' ⊙ E'
+    call E' cE' U⊑ = ⊑-mono w (clos-β (delay N) NE-T' NE-E' cT' cE')
+                  (preserve N NE-ρt (Con-• cE' (Con-• cT' (λ _ → Con-⌈⌉ ω))) ρs⊑ρt w w∈)
       where
       NE-E' : nonempty E'
       NE-E' = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (⊑*-elim U⊑ u u∈)
@@ -239,14 +243,14 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE �
       ρs⊑ρt (suc zero) = fv⊑
       ρs⊑ρt (suc (suc x)) .ω refl = lift refl
 
-preserve-nth (M ,, args) NE ρ⊑ zero = preserve M NE ρ⊑
-preserve-nth (M ,, args) NE ρ⊑ (suc i) = preserve-nth args NE ρ⊑ i
+preserve-nth (M ,, args) NE C' ρ⊑ zero = preserve M NE C' ρ⊑
+preserve-nth (M ,, args) NE C' ρ⊑ (suc i) = preserve-nth args NE C' ρ⊑ i
 
-preserve-𝒯 {zero} args NE ρ⊑ ⟨⟩ tt = lift tt
-preserve-𝒯 {suc n} args NE ρ⊑ (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
-  ⊑-mono d (λ d' d'∈ → ⟨ refl , ⟨ d'∈ , ne' ⟩ ⟩) (preserve-nth args NE ρ⊑ i d d∈)
+preserve-𝒯 {zero} args NE C' ρ⊑ ⟨⟩ tt = lift tt
+preserve-𝒯 {suc n} args NE C' ρ⊑ (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
+  ⊑-mono d (λ d' d'∈ → ⟨ refl , ⟨ d'∈ , ne' ⟩ ⟩) (preserve-nth args NE C' ρ⊑ i d d∈)
   where
-  ne' = λ j → ⊑-ne (proj₁ (ne j)) (preserve-nth args NE ρ⊑ j _ (proj₂ (ne j)))
+  ne' = λ j → ⊑-ne (proj₁ (ne j)) (preserve-nth args NE C' ρ⊑ j _ (proj₂ (ne j)))
 
 {- The end theorem ------------------------------------------------------------}
 
@@ -255,10 +259,10 @@ preserve-𝒯 {suc n} args NE ρ⊑ (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ �
 
 preserve-const : ∀ (M : AST) {B} (c : base-rep B)
   → const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ delay M ⟧' ρ₀
-preserve-const M c c∈ = lower (preserve M (λ _ → ⟨ ω , refl ⟩) ρ₀⊑ρ₀ (const c) c∈)
+preserve-const M c c∈ = lower (preserve M (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) ρ₀⊑ρ₀ (const c) c∈)
 
 preserve-nonempty : ∀ (M : AST) → nonempty (⟦ M ⟧ ρ₀) → nonempty (⟦ delay M ⟧' ρ₀)
-preserve-nonempty M ⟨ v , v∈ ⟩ = ⊑-ne v (preserve M (λ _ → ⟨ ω , refl ⟩) ρ₀⊑ρ₀ v v∈)
+preserve-nonempty M ⟨ v , v∈ ⟩ = ⊑-ne v (preserve M (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) ρ₀⊑ρ₀ v v∈)
 
 {- For a closed program, the delay pass preserves and reflects the constants
    it produces and whether it produces anything at all. -}

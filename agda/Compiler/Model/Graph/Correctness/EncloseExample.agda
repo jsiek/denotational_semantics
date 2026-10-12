@@ -54,7 +54,7 @@ prog-is-7 : const {Nat} 7 ∈ ⟦ prog ⟧ ρ₀
 prog-is-7 =
   ⟨ const 5 ∷ []
   , ⟨ ⟨ const 7 ∷ []
-      , ⟨ ⟨ ⟨ here refl , (λ ()) ⟩ , (λ ()) ⟩
+      , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
         , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
     , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
 

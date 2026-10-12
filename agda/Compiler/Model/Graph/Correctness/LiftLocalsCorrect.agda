@@ -140,12 +140,12 @@ Out d ρ r = nonempty (proj₁ r) → Agree d (proj₂ r) ρ
 out-case : ∀ {d ρ A E₁ E₂} → (∀ X → Out d ρ (E₁ X)) → (∀ X → Out d ρ (E₂ X))
   → Out d ρ (caseₛ A E₁ E₂)
 out-case R₁ R₂ ne = agree λ x x<d → ⟨
-    (λ { u (inj₁ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ u∈ , ne' ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₁ _ ne') x x<d) u u∈
-          ; u (inj₂ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ u∈ , ne' ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₂ _ ne') x x<d) u u∈ })
-  , (case ne of λ { ⟨ w , inj₁ ⟨ v , ⟨ V , ⟨ l∈ , w∈ ⟩ ⟩ ⟩ ⟩ u u∈ →
-            inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ proj₂ (at (R₁ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ ⟩ ⟩ ⟩
-          ; ⟨ w , inj₂ ⟨ v , ⟨ V , ⟨ r∈ , w∈ ⟩ ⟩ ⟩ ⟩ u u∈ →
-            inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ proj₂ (at (R₂ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ }) ⟩
+    (λ { u (inj₁ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₁ _ ne') x x<d) u u∈
+          ; u (inj₂ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ⟨ u∈ , ne' ⟩ , _ ⟩ ⟩ ⟩ ⟩) → proj₁ (at (R₂ _ ne') x x<d) u u∈ })
+  , (case ne of λ { ⟨ w , inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩ u u∈ →
+            inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ ⟨ proj₂ (at (R₁ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩
+          ; ⟨ w , inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩ ⟩ u u∈ →
+            inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ ⟨ proj₂ (at (R₂ _ ⟨ w , w∈ ⟩) x x<d) u u∈ , ⟨ w , w∈ ⟩ ⟩ , c ⟩ ⟩ ⟩ ⟩ }) ⟩
 
 out-let : ∀ {d ρ D E} → (nonempty D → ∀ X → Out d ρ (E X)) → Out d ρ (letₛ D E)
 out-let R ⟨ w , ⟨ V , ⟨ ⟨ w∈ , V≢ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ = agree λ x x<d →
@@ -203,7 +203,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   ... | no d≮n = ⊥-elim (d≮n (fits-< _ (fits {d} _ H)))
   ... | yes d<n =
     ⟨ 𝒞-≃ {F = B m₁} {λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)} {B m₂} {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
-          (atom-≃ a H O A) (λ v V → proj₁ (IH₁ (mem (v ∷ V)))) (λ v V → proj₁ (IH₂ (mem (v ∷ V))))
+          (atom-≃ a H O A) (λ v V _ → proj₁ (IH₁ (mem (v ∷ V)))) (λ v V _ → proj₁ (IH₂ (mem (v ∷ V))))
     , out-case {A = 𝒜 T n σ (lift-atom n d a)}
                (λ X ne → weak (proj₂ (IH₁ X) ne)) (λ X ne → weak (proj₂ (IH₂ X) ne)) ⟩
     where
@@ -216,7 +216,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   ... | yes d<n =
     ⟨ strict-≃ (⋆-strict {Λ ⟨ F , ptt ⟩} (λ _ w∈ → w∈))
                (⋆-strict {Λ ⟨ F' , ptt ⟩} (proj₂ (proj₁ IH₁)))
-        (λ ne → ⋆-≃ (Λ-≃ {F} {F'} λ V _ → proj₁ (IH₂ ne (mem V))) (proj₁ IH₁))
+        (λ ne → ⋆-≃ (Λ-≃ {F} {F'} λ V _ _ → proj₁ (IH₂ ne (mem V))) (proj₁ IH₁))
     , out-let (λ ne X ne' → weak (proj₂ (IH₂ ne X) ne')) ⟩
     where
     IH₁ = lift-sem m₁ (⊔ˡ {d} (height m₁) _ H) O A

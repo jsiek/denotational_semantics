@@ -10,7 +10,8 @@ module Compiler.Model.Graph.Sem.Imp where
  seen by what runs after them, also after the expression that contains
  them. Reading a slot beyond the frame gives init, the error value, as an
  out-of-scope variable does in Clos5; assigning one, by assign or case,
- goes wrong too: the construct means init.
+ goes wrong, so the construct means ∅, as a stuck program does (and
+ nothing after it runs).
 
  x := e₁; e₂ is strict in e₁, like let in Clos5: its value and each slot
  of the store it leaves are ⋆ ⟨ Λ F , D₁ ⟩, where D₁ is the value of e₁
@@ -57,11 +58,11 @@ _[_↦_] : Store → ℕ → 𝒫 Value → Store
 ... | yes _ = D
 ... | no _ = σ y
 
-{- assigning slot x of a frame of n slots, otherwise r -}
+{- r, if slot x is within a frame of n slots -}
 checked : ℕ → ℕ → Store → 𝒫 Value × Store → 𝒫 Value × Store
 checked n x σ r with x <? n
 ... | yes _ = r
-... | no _ = ⟨ init , σ ⟩
+... | no _ = ⟨ ∅ , σ ⟩
 
 𝒜 : Table → ℕ → Store → Atm → 𝒫 Value
 𝒜 T n σ (var x) = read n σ x
@@ -90,19 +91,23 @@ letₛ D E =
   ⟨ ⋆ ⟨ Λ ⟨ (λ X → proj₁ (E X)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
   , (λ y → ⋆ ⟨ Λ ⟨ (λ X → E X ↓ y) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) ⟩
 
+{- the value of a simple expression in a frame of n slots; it leaves the
+   store as it was -}
+𝒮 : Table → ℕ → Store → Simple → 𝒫 Value
+𝒮 T n σ (atm a) = 𝒜 T n σ a
+𝒮 T n σ (app f e a) = ⋆ ⟨ ⋆ ⟨ 𝒜 T n σ f , ⟨ 𝒜 T n σ e , ptt ⟩ ⟩ , ⟨ 𝒜 T n σ a , ptt ⟩ ⟩
+𝒮 T n σ (pair′ a b) = pair ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
+𝒮 T n σ (fst a) = car ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (snd a) = cdr ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (tuple as) = 𝒯 (length as) (𝒜s T n σ as)
+𝒮 T n σ (get i a) = proj i ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (inl′ a) = inl ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (inr′ a) = inr ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (prim p a b) = primD p ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
+
 {- e in a frame of n slots -}
 ⟦_⟧[_] : Exp → Table → ℕ → Store → 𝒫 Value × Store
-⟦ atm a ⟧[ T ] n σ = ⟨ 𝒜 T n σ a , σ ⟩
-⟦ app f e a ⟧[ T ] n σ =
-  ⟨ ⋆ ⟨ ⋆ ⟨ 𝒜 T n σ f , ⟨ 𝒜 T n σ e , ptt ⟩ ⟩ , ⟨ 𝒜 T n σ a , ptt ⟩ ⟩ , σ ⟩
-⟦ pair′ a b ⟧[ T ] n σ = ⟨ pair ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩ , σ ⟩
-⟦ fst a ⟧[ T ] n σ = ⟨ car ⟨ 𝒜 T n σ a , ptt ⟩ , σ ⟩
-⟦ snd a ⟧[ T ] n σ = ⟨ cdr ⟨ 𝒜 T n σ a , ptt ⟩ , σ ⟩
-⟦ tuple as ⟧[ T ] n σ = ⟨ 𝒯 (length as) (𝒜s T n σ as) , σ ⟩
-⟦ get i a ⟧[ T ] n σ = ⟨ proj i ⟨ 𝒜 T n σ a , ptt ⟩ , σ ⟩
-⟦ inl′ a ⟧[ T ] n σ = ⟨ inl ⟨ 𝒜 T n σ a , ptt ⟩ , σ ⟩
-⟦ inr′ a ⟧[ T ] n σ = ⟨ inr ⟨ 𝒜 T n σ a , ptt ⟩ , σ ⟩
-⟦ prim p a b ⟧[ T ] n σ = ⟨ primD p ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩ , σ ⟩
+⟦ simple s ⟧[ T ] n σ = ⟨ 𝒮 T n σ s , σ ⟩
 ⟦ case a x e₁ e₂ ⟧[ T ] n σ = checked n x σ
   (caseₛ (𝒜 T n σ a) (λ X → ⟦ e₁ ⟧[ T ] n (σ [ x ↦ X ])) (λ X → ⟦ e₂ ⟧[ T ] n (σ [ x ↦ X ])))
 ⟦ assign x e₁ e₂ ⟧[ T ] n σ = checked n x σ

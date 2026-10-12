@@ -291,7 +291,7 @@ adequate (inr-op ⦅ M ,, Nil ⦆) {d = left d} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⟨⟩} 𝕋T w G ()
 
 adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , ⟨ wM , ⟨ wN , _ ⟩ ⟩ ⟩ G
-    (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩)
+    (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L 𝕋T wL G (allL u (here refl))
 ... | ⟨ inl a , ⟨ eL , _ ⟩ ⟩
     with adequate M 𝕋T wM (𝔾-ext (u ∷ U) a G
@@ -300,7 +300,7 @@ adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , �
 ... | ⟨ v , ⟨ eM , r ⟩ ⟩ =
   ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eM κ) , r ⟩ ⟩
 adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , ⟨ wM , ⟨ wN , _ ⟩ ⟩ ⟩ G
-    (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩)
+    (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L 𝕋T wL G (allR u (here refl))
 ... | ⟨ inr a , ⟨ eL , _ ⟩ ⟩
     with adequate N 𝕋T wN (𝔾-ext (u ∷ U) a G
