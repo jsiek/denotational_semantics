@@ -369,7 +369,7 @@ Like Clos4, but the code is hoisted into a program's list of global definitions 
   &&& \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
     \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N}
     \mid \Let x = M \In N \\[1ex]
-  & d &::=& e\,y.\,N \qquad\qquad (\FV(e\,y.\,N) = \emptyset) \\
+  & d &::=& \key{fun}\; e\,y.\,N \qquad\qquad (\FV(\key{fun}\; e\,y.\,N) = \emptyset) \\
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
@@ -383,7 +383,7 @@ The sublanguage of Clos5 in monadic normal form: the operands of every construct
   &&& \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
     \mid \inl a \mid \inr a \mid \Case{a}{x}{M}{y}{N}
     \mid \Let x = M \In N \\[1ex]
-  & d &::=& e\,y.\,N \\
+  & d &::=& \key{fun}\; e\,y.\,N \\
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
@@ -505,7 +505,7 @@ Globalize hoists all code into a table of global definitions and replaces each p
 \]
 \begin{align*}
   \pass{glob}(x, \vec{d}) &= (x, \vec{d}) \\
-  \pass{glob}(\fun{e\,y.\,N}, \vec{d}) &= (\funref{|\vec{d}_1|},\; \vec{d}_1, (e\,y.\,N'))
+  \pass{glob}(\fun{e\,y.\,N}, \vec{d}) &= (\funref{|\vec{d}_1|},\; \vec{d}_1, (\key{fun}\; e\,y.\,N'))
      \quad\text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d}) \\
   \pass{glob}(\mathit{op}(\bar{x}_1.A_1, \ldots, \bar{x}_n.A_n), \vec{d}_0)
      &= (\mathit{op}(\bar{x}_1.A'_1, \ldots, \bar{x}_n.A'_n), \vec{d}_n)
@@ -541,7 +541,7 @@ Remove complex operands binds each complex operand to a fresh variable with a $\
   \pass{rco}(\Case{L}{x}{M}{y}{N}) &= \pass{lets}(\vec{b}, \Case{a}{x}{M'}{y}{N'}) \\
   &\qquad \text{where } (\vec{b}; a) = \pass{atomize}(\pass{rco}(L)),\ M' = \pass{rco}(M),\ N' = \pass{rco}(N) \\
   \pass{rco}((d_0, \ldots, d_{m-1};\; M)) &= (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M)) \\
-  \pass{rco}(e\,y.\,N) &= e\,y.\,\pass{rco}(N)
+  \pass{rco}(\key{fun}\; e\,y.\,N) &= \key{fun}\; e\,y.\,\pass{rco}(N)
 \end{align*}
 An atom left in place is evaluated after the complex operands that follow
 it. This preserves going wrong in the machines and interpreters, which
@@ -554,8 +554,8 @@ assume well-scoped programs.
 \paragraph{Well-scoped programs.}
 \begin{align*}
   \mathit{Scoped}_5((d_0, \ldots, d_{m-1};\; M)) &\iff \FV(M) = \emptyset \land
-    \forall k < m.\; \FV(d_k) = \emptyset
-  \qquad (\FV(e\,y.\,N) = \FV(N) \setminus \{e, y\})
+    \forall k < m.\; \FV(d_k) = \emptyset \\
+  \FV(\key{fun}\; e\,y.\,N) &= \FV(N) \setminus \{e, y\}
 \end{align*}
 
 \begin{lemma}[The Compiler Produces Well-Scoped Programs]\label{lem:compile-scoped}
@@ -587,7 +587,7 @@ of the variables in scope, and $n$ is the size of the frame.
   \mathit{height}(\Let x = M \In N) &= \max(\mathit{height}(M),\, 1 + \mathit{height}(N)) \\
   \mathit{height}(\Case{a}{x}{M}{y}{N}) &= 1 + \max(\mathit{height}(M), \mathit{height}(N)) \\
   \mathit{height}(M) &= 0 \qquad \text{otherwise} \\[1ex]
-  \pass{lift}(e\,y.\,N) &= (n;\; \pass{lift}_{n,\{e \mapsto 0,\, y \mapsto 1\},2}(N))
+  \pass{lift}(\key{fun}\; e\,y.\,N) &= (n;\; \pass{lift}_{n,\{e \mapsto 0,\, y \mapsto 1\},2}(N))
     \quad\text{where } n = 2 + \mathit{height}(N) \\
   \pass{lift}((d_0, \ldots, d_{m-1};\; M)) &=
     (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; b) \\
@@ -784,7 +784,7 @@ defined by the common clauses below together with the clauses for $\ell$.
 together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SEM{-}^{\ell}$.
 
 \begin{align*}
-  \key{code}_T(e\,y.\,N) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{5}}_T\rho_0(e{:=}X, y{:=}Y))) \\[1ex]
+  \key{code}_T(\key{fun}\; e\,y.\,N) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{5}}_T\rho_0(e{:=}X, y{:=}Y))) \\[1ex]
   \key{table}(d_0,\ldots,d_{m-1})(k) &=
     \begin{cases}
       \key{code}_{\key{table}(d_0,\ldots,d_{k-1})}(d_k) & k < m \\
@@ -1355,7 +1355,7 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\[1ex]
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
-    & f = \codeV{k},\; k < m,\; d_k = e\,y.\,N \\
+    & f = \codeV{k},\; k < m,\; d_k = \key{fun}\; e\,y.\,N \\
   & \stp \wrong & \text{otherwise}
 \end{array}
 \]
@@ -1734,7 +1734,7 @@ The relations are those for the table $D$ that globalize makes for the whole pro
     \pass{glob}(M, \vec{d}) = (M', \vec{d}') \land \mathit{Extends}(\vec{d}', D) \\[1ex]
   \funV{e\, y.\, N} \approx \codeV{k} &\iff \exists \vec{d}\, \vec{d}'\, N'.\;
     \pass{glob}(N, \vec{d}) = (N', \vec{d}') \land
-    \mathit{Extends}((\vec{d}', e\,y.\,N'), D) \land k = |\vec{d}'| \\
+    \mathit{Extends}((\vec{d}', \key{fun}\; e\,y.\,N'), D) \land k = |\vec{d}'| \\
   \pairV{v}{w} \approx \pairV{v'}{w'} &\iff v \approx v' \land w \approx w' \\
   \rho_1 \approx \rho_2 &\iff \mathrm{dom}(\rho_1) = \mathrm{dom}(\rho_2) \land
     \rho_1 \approx_{\mathrm{dom}(\rho_1)} \rho_2
@@ -2216,7 +2216,7 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
     \begin{cases}
       \wrong & j \geq m \\
       \tmo & j < m,\; k = 0 \\
-      \EV{\vec{d}}{k'}\,\{e {\mapsto} u, y {\mapsto} w\}\,N & j < m,\; k = k' + 1,\; d_j = e\,y.\,N
+      \EV{\vec{d}}{k'}\,\{e {\mapsto} u, y {\mapsto} w\}\,N & j < m,\; k = k' + 1,\; d_j = \key{fun}\; e\,y.\,N
     \end{cases}
 \end{align*}
 
