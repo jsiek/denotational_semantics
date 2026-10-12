@@ -74,6 +74,7 @@ import Compiler.Model.Graph.Sem.Clos4IswimContinuous
 import Compiler.Model.Graph.Sem.Clos5Iswim
 import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.Imp
+import Compiler.Model.Graph.Sem.CFG
 import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
@@ -101,6 +102,7 @@ import Compiler.Model.Graph.Correctness.CompilerExample
 import Compiler.Compile.Examples.RCOExample
 import Compiler.Compile.Examples.LiftLocalsExample
 import Compiler.Compile.Examples.ExplicateExample
+import Compiler.Model.Graph.Correctness.ExplicateCounterExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph

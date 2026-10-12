@@ -45,7 +45,7 @@ GROUPS = [
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
       G + 'Sem/Clos5IswimContinuous.agda', G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda',
-      G + 'Sem/Imp.agda']),
+      G + 'Sem/Imp.agda', G + 'Sem/CFG.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
     ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
