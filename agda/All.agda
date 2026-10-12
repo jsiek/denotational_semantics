@@ -144,6 +144,7 @@ import Compiler.Operational.Machine.Clos4
 import Compiler.Operational.Machine.Clos5
 import Compiler.Operational.Machine.Imp
 import Compiler.Operational.Machine.CFG
+import Compiler.Operational.Machine.X86
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
@@ -160,6 +161,7 @@ import Compiler.Operational.Correctness.RCOSim
 import Compiler.Operational.Correctness.LiftLocalsSim
 {- explicate control (Imp → CFG), and the compiler into CFG -}
 import Compiler.Operational.Correctness.ExplicateSim
+import Compiler.Operational.Correctness.SelectSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
