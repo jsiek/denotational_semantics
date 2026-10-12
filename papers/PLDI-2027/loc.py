@@ -57,6 +57,7 @@ GROUPS = [
     # each rco module also proves compile-mon (compile then rco) end to end
     ('den', 'rco', [G + 'Correctness/RCOCorrect.agda']),
     ('den', 'lift locals', [G + 'Correctness/LiftLocalsCorrect.agda']),
+    ('den', 'explicate control', [G + 'Correctness/ExplicateCorrect.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     ('op', 'generic infrastructure',
@@ -201,7 +202,7 @@ def main():
 
     rows = ['generic infrastructure', 'domain, operators, continuity',
             'semantics of the languages', 'enclose', 'optimize', 'concretize',
-            'delay', 'globalize', 'rco', 'lift locals', 'composition']
+            'delay', 'globalize', 'rco', 'lift locals', 'explicate control', 'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
     print('|---|---:|---:|---:|')
