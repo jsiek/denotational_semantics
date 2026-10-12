@@ -88,6 +88,7 @@ import Compiler.Model.Graph.Sem.Clos5Iswim
 import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.Imp
 import Compiler.Model.Graph.Sem.CFG
+import Compiler.Model.Graph.Sem.X86
 import Compiler.Model.Graph.Sem.ImpK
 import Compiler.Model.Graph.Sem.ImpDirect
 
@@ -106,6 +107,7 @@ import Compiler.Model.Graph.Correctness.LiftLocalsCommon
 import Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
 import Compiler.Model.Graph.Correctness.ExplicateCommon
 import Compiler.Model.Graph.Correctness.ExplicateCorrectK
+import Compiler.Model.Graph.Correctness.SelectCorrect
 {- the same two passes against the direct semantics of Imp -}
 import Compiler.Model.Graph.Correctness.LiftLocalsCorrect
 import Compiler.Model.Graph.Correctness.ExplicateCorrect

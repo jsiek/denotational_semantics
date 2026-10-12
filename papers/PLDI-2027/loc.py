@@ -76,7 +76,7 @@ GROUPS = [
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
       G + 'Sem/Clos5IswimContinuous.agda',
-      G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda']),
+      G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda', G + 'Sem/X86.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
     ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
@@ -93,6 +93,7 @@ GROUPS = [
      [G + 'Correctness/LiftLocalsCommon.agda', G + 'Correctness/LiftLocalsCorrectK.agda']),
     ('den', 'explicate control',
      [G + 'Correctness/ExplicateCommon.agda', G + 'Correctness/ExplicateCorrectK.agda']),
+    ('den', 'select instructions', [G + 'Correctness/SelectCorrect.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     # with the framework at this compiler's observations (Smallstep.agda,
@@ -260,6 +261,7 @@ def main():
 
     rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
+            'select instructions',
             'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
