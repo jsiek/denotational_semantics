@@ -79,6 +79,10 @@
 \newcommand{\inrV}{\key{inr}\;}
 \newcommand{\Kf}[2]{\key{#1}(#2)}
 \newcommand{\halt}{\key{halt}}
+\newcommand{\assign}[3]{#1 \mathrel{:=} #2;\; #3}
+\newcommand{\Casei}[4]{\key{case}\;#1\;\key{of}_{#2}\;\key{inl} \Rightarrow #3 \mid \key{inr} \Rightarrow #4}
+\newcommand{\evi}[3]{\key{eval}\;#1\;#2\;#3}
+\newcommand{\rti}[3]{\key{ret}\;#1\;#2\;#3}
 \newcommand{\tnext}{\mathit{tuple\text{-}next}}
 \newcommand{\cnext}{\mathit{clos\text{-}next}}
 \newcommand{\lto}{\longrightarrow}
@@ -124,7 +128,9 @@ instead of de Bruijn indices.
     and the primitives $\key{sub}$ and $\key{eq}$;
   \item enclose, optimize, concretize, delay (with the let), and globalize;
   \item remove complex operands (rco) into monadic Clos5, $\pass{compile\text{-}mon}$,
-    and well-scoped Clos5 programs ($\mathit{Scoped}_5$).
+    and well-scoped Clos5 programs ($\mathit{Scoped}_5$);
+  \item the imperative language Imp, lift locals into it, and
+    $\pass{compile\text{-}imp}$.
   \end{itemize}
 \item \textbf{Denotational proof:}
   \begin{itemize}
@@ -135,6 +141,8 @@ instead of de Bruijn indices.
   \item consistency ($\sim$, $\consis$) and continuity;
   \item the semantics: the clauses all languages share, then each language's own
     clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$;
+  \item the semantics of Imp: stores, $\mathit{read}_n$, $\mathit{checked}_n$,
+    ${\downarrow}$, $\key{let}_s$, $\key{case}_s$, $\key{frame}$, $\key{code}$, and $\key{table}$;
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, the let equation, the element-wise relation $\sqsubseteq$
@@ -143,13 +151,15 @@ instead of de Bruijn indices.
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item for rco, the let laws, strict operators, the let chain, and the
     rco equation;
-  \item the end-to-end theorems, for $\pass{compile}$ and $\pass{compile\text{-}mon}$.
+  \item for lift locals, $\mathit{Agree}$ and $\mathit{Scope}$;
+  \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
+    and $\pass{compile\text{-}imp}$.
   \end{itemize}
 \item \textbf{CompCert-style proof:}
   \begin{itemize}
   \item observations, machines as step functions, termination, divergence,
     and determinism;
-  \item the machines of ISWIM and Clos2--Clos5: values, continuation frames,
+  \item the machines of ISWIM, Clos2--Clos5, and Imp: values, continuation frames,
     and transitions;
   \item forward simulations, $\mathit{Equivalent}$, and the theorem that a
     forward simulation gives $\mathit{Equivalent}$;
@@ -157,7 +167,10 @@ instead of de Bruijn indices.
     values, continuations, and states, and its correctness theorem;
   \item for rco, $\preceq$ on environments, the pending let chain
     $\mathit{Pend}$, and its frames;
-  \item the end-to-end theorems, for $\pass{compile}$ and $\pass{compile\text{-}mon}$;
+  \item for lift locals, frames related to environments ($\approx^n_\varphi$), and
+    continuations given such a frame (head, weakened, and calls);
+  \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
+    and $\pass{compile\text{-}imp}$;
   \item backward simulations, and the direct backward simulation for delay.
   \end{itemize}
 \item \textbf{CakeML-style proof:}
@@ -165,10 +178,12 @@ instead of de Bruijn indices.
   \item results, clocked programs, termination, divergence, and $\mathit{Equivalent}$;
   \item $\mathit{RelResult}$, and the theorem that related results for every
     clock give $\mathit{Equivalent}$;
-  \item the clocked interpreters of ISWIM and Clos2--Clos5;
+  \item the clocked interpreters of ISWIM, Clos2--Clos5, and Imp;
   \item for each pass, the lemma relating the interpreters clock for clock,
     and its correctness theorem; for rco, with equal results, and the let chain;
-  \item the end-to-end theorems, for $\pass{compile}$ and $\pass{compile\text{-}mon}$.
+    for lift locals, with $\mathit{Out}$;
+  \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
+    and $\pass{compile\text{-}imp}$.
   \end{itemize}
 \end{enumerate}
 
@@ -192,9 +207,22 @@ Using names instead of de Bruijn indices changes a few definitions:
   \texttt{Scoped} (\texttt{Compile/PipelineScope.agda}).
 \item \textbf{Fresh variables} of rco are de Bruijn indices in the Agda:
   each let shifts the operands after it, and the atoms under the chain.
-\item \textbf{Compiler correctness} is stated with $\obseq$.
+\item \textbf{Lift locals} has no map $\varphi$ in the Agda: variable $x$
+  at depth $d$ is slot $d - (x + 1)$, its de Bruijn level, and slot $n$ when
+  $x \geq d$. The Agda defines the pass on derivations that its input is
+  in monadic normal form (\texttt{Mon}).
+\item \textbf{Lift locals}' relations ($\mathit{Agree}$, $\approx^n_\varphi$,
+  $\mathit{Out}$) relate the frame to the environment through $\varphi$.
+  In the Agda, at depth $d$ (the length of the environment $\rho$ in the
+  operational proofs) variable $x$ is slot $d - (x + 1)$, so the frame
+  is $\rho$ reversed followed by the slots above it ($\rho \mathbin{{}^{r}{+}\!\!{+}} \tau$),
+  and $\mathit{Scope}$ asks $\rho(x) \simeq \{\omega\}$ for $x \geq d$.
+\item \begin{sloppypar}\textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
-  \texttt{compile-correct-const} and \texttt{compile-correct-nonempty}.
+  \texttt{compile-correct-const} and \texttt{compile-correct-nonempty},
+  and likewise for $\pass{compile\text{-}imp}$:
+  \texttt{compile-imp-correct-const} and
+  \texttt{compile-imp-correct-nonempty}.\end{sloppypar}
 \end{itemize}
 In the CompCert-style proof:
 \begin{itemize}
@@ -232,6 +260,12 @@ In the CompCert-style proof:
   \texttt{r} with $\rho_2(r(x)) = \rho_1(x)$. The Agda's frames are indexed
   by the kind of construct (\texttt{Frame}, \texttt{Kind}), and its
   $\mathit{Pend}$ takes the values and operands as lists.
+\item \textbf{Lift locals}' relations assume that the variables bound in a
+  body are distinct from each other and from its parameters, so extending
+  $\rho$ never shadows. The Agda's frame $\rho \mathbin{{}^{r}{+}\!\!{+}} \tau$ keeps a
+  shadowed value in its slot, so it needs no such assumption.
+  $\vdash_n$ and $\vdash^{\mathsf{h}}_n$ are \texttt{Kont} and \texttt{KontH},
+  and $\approx^n_\varphi$ is \texttt{Fr}.
 \end{itemize}
 In the CakeML-style proof:
 \begin{itemize}
@@ -252,6 +286,8 @@ In the CakeML-style proof:
   Agda, which looks up definition $j$ in its reverse (\texttt{global}).
 \item \textbf{Clocked programs} are the Agda's \texttt{Semantics}, and
   $\outc$ is \texttt{outcome}, which returns a \texttt{Maybe Obs}.
+\item \textbf{The Imp interpreter} collects the values of the atoms of a
+  tuple onto an accumulator, last first, as Clos5's does.
 \end{itemize}
 
 \paragraph{Building.} \texttt{latexmk -pdf definitions.tex}
@@ -345,6 +381,29 @@ The sublanguage of Clos5 in monadic normal form: the operands of every construct
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
+\subsection{Imp}
+
+An imperative language with structured control flow and no binders. A
+body $(n; e)$ runs $e$ in a frame of $n$ local slots $s \in \{0, \ldots,
+n-1\}$, and an atom names a slot of the current frame. The assignment
+$\assign{s}{e_1}{e_2}$ runs $e_1$, stores its value in slot $s$, and runs
+$e_2$; $\Casei{a}{s}{e_1}{e_2}$ stores the payload of the injection in slot
+$s$ before running a branch. Assignments are seen by everything that
+runs after them in the same frame. A call $a_1(a_2, a_3)$ runs the body
+of the definition $a_1$ refers to in a fresh frame with $a_2$ (the free
+variables) in slot $0$ and $a_3$ (the argument) in slot $1$; reading or
+assigning a slot beyond the frame goes wrong.
+\begin{syntax}
+  & a &::=& s \mid \funref{k} \mid c \\
+  & e &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
+    \mid \prim{p}{a_1}{a_2} \\
+  &&& \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
+    \mid \inl a \mid \inr a \mid \Casei{a}{s}{e_1}{e_2}
+    \mid \assign{s}{e_1}{e_2} \\[1ex]
+  & b &::=& (n;\; e) \\
+  & P &::=& (b_0, \ldots, b_{m-1};\; b)
+\end{syntax}
+
 %===============================================================================
 \section{Compilation}
 
@@ -355,6 +414,8 @@ The sublanguage of Clos5 in monadic normal form: the operands of every construct
 
 \[
   \pass{compile\text{-}mon} = \pass{rco} \circ \pass{compile}
+  \qquad
+  \pass{compile\text{-}imp} = \pass{lift} \circ \pass{compile\text{-}mon}
 \]
 
 In each pass, the clauses not shown are homomorphic.
@@ -476,6 +537,37 @@ For every ISWIM term $M$,
   \FV(M) = \emptyset \implies \mathit{Scoped}_5(\pass{compile}(M)) .
 \]
 \end{lemma}
+
+\subsection{Lift Locals (Monadic Clos5 $\to$ Imp)}
+
+Lift locals gives every variable of a body a slot of the body's frame,
+declared up front, and turns $\key{let}$ into assignment. A variable gets
+the slot numbered by its binding depth: a $\key{let}$ or $\key{case}$ at
+depth $d$ assigns slot $d$, and the code under it is at depth $d+1$.
+A slot at depth $d$ is assigned only by code at depth $d$ or more, where
+no variable in scope names it, so no assignment clobbers a variable in
+scope. The map $\varphi : \X \rightharpoonup \mathbb{N}$ gives the slots
+of the variables in scope, and $n$ is the size of the frame.
+\begin{align*}
+  \pass{lift}_{n,\varphi,d}(x) &= \varphi(x)
+    \qquad (n \text{ if } x \notin \mathrm{dom}(\varphi)) \\
+  \pass{lift}_{n,\varphi,d}(\Let x = M \In N) &=
+    \assign{d}{\pass{lift}_{n,\varphi,d}(M)}{\pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(N)} \\
+  \pass{lift}_{n,\varphi,d}(\Case{a}{x}{M}{y}{N}) &=
+    \key{case}\;\pass{lift}_{n,\varphi,d}(a)\;\key{of}_{d} \\
+  &\qquad \key{inl} \Rightarrow \pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(M)
+    \mid \key{inr} \Rightarrow \pass{lift}_{n,\ext{\varphi}{y}{d},d+1}(N) \\[1ex]
+  \mathit{height}(\Let x = M \In N) &= \max(\mathit{height}(M),\, 1 + \mathit{height}(N)) \\
+  \mathit{height}(\Case{a}{x}{M}{y}{N}) &= 1 + \max(\mathit{height}(M), \mathit{height}(N)) \\
+  \mathit{height}(M) &= 0 \qquad \text{otherwise} \\[1ex]
+  \pass{lift}(e\,y.\,N) &= (n;\; \pass{lift}_{n,\{e \mapsto 0,\, y \mapsto 1\},2}(N))
+    \quad\text{where } n = 2 + \mathit{height}(N) \\
+  \pass{lift}((d_0, \ldots, d_{m-1};\; M)) &=
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; b) \\
+  &\qquad\text{where } b = (n;\; \pass{lift}_{n,\emptyset,0}(M)),\ n = \mathit{height}(M)
+\end{align*}
+A variable out of scope gets the slot $n$, beyond the frame, so that it
+goes wrong, as an unbound variable does in Clos5.
 
 %===============================================================================
 \part{Denotational Proof}
@@ -644,6 +736,68 @@ together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SE
       \emptyset & \text{otherwise}
     \end{cases} \\[1ex]
   \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\mathrm{5}} &= \SEM{M}^{\mathrm{5}}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
+\end{align*}
+
+\subsection{Imp}
+
+A store $\sigma$ gives each slot a meaning. An expression runs in a frame
+of $n$ slots: given the store as it enters, it means a set of values and
+the store as it leaves.
+\begin{align*}
+  \sigma &: \mathbb{N} \to \SET{\V} \\
+  \SEM{-}^{\mathrm{Imp}}_{T,n} &: \mathit{Exp} \to (\mathbb{N} \to \SET{\V}) \to \SET{\V} \times (\mathbb{N} \to \SET{\V})
+    \qquad (T : \mathbb{N} \to \SET{\V}) \\
+  \SEM{-}^{\mathrm{Imp}} &: \mathit{Program} \to \SET{\V}
+\end{align*}
+\begin{align*}
+  \mathit{read}_n(\sigma, s) &=
+    \begin{cases} \sigma(s) & s < n \\ \{\omega\} & \text{otherwise} \end{cases} \\
+  \mathit{checked}_n(s, \sigma, r) &=
+    \begin{cases} r & s < n \\ (\{\omega\}, \sigma) & \text{otherwise} \end{cases} \\[1ex]
+  \mathcal{A}_\sigma(s) = \mathit{read}_n(\sigma, s), \quad
+  \mathcal{A}_\sigma(c) &= \mathcal{B}(c), \quad
+  \mathcal{A}_\sigma(\funref{k}) = T(k) \\[1ex]
+  r{\downarrow}t &=
+    \begin{cases} \pi_2(r)(t) & \pi_1(r) \NE \\ \emptyset & \text{otherwise} \end{cases} \\
+  \key{let}_s(D, E) &= (\Lambda(\lambda X.\, \pi_1(E(X))) \app D,\;
+    \lambda t.\, \Lambda(\lambda X.\, E(X){\downarrow}t) \app D) \\
+  \key{case}_s(A, E_1, E_2) &= (\mathcal{C}(A,\; \lambda X.\, \pi_1(E_1(X)),\; \lambda X.\, \pi_1(E_2(X))), \\
+    &\qquad \lambda t.\, \mathcal{C}(A,\; \lambda X.\, E_1(X){\downarrow}t,\; \lambda X.\, E_2(X){\downarrow}t))
+\end{align*}
+where $\pi_1$ and $\pi_2$ take the value and the store of a pair. The
+slot $t$ of the store a let or case leaves collects slot $t$ of the runs
+of its body that have a value ($r{\downarrow}t$): a run that goes wrong
+or diverges leaves no store.
+With $T$ and $n$ fixed, writing $\SEM{e}\sigma$ for $\SEM{e}^{\mathrm{Imp}}_{T,n}\sigma$:
+\begin{align*}
+  \SEM{a}\sigma &= (\mathcal{A}_\sigma(a), \sigma) \\
+  \SEM{a_1(a_2, a_3)}\sigma &= ((\mathcal{A}_\sigma(a_1) \app \mathcal{A}_\sigma(a_2)) \app \mathcal{A}_\sigma(a_3), \sigma) \\
+  \SEM{\pair{a_1}{a_2}}\sigma &= (\key{pair}(\mathcal{A}_\sigma(a_1), \mathcal{A}_\sigma(a_2)), \sigma) \\
+  \SEM{\FST a}\sigma &= (\key{car}(\mathcal{A}_\sigma(a)), \sigma) \qquad
+  \SEM{\SND a}\sigma = (\key{cdr}(\mathcal{A}_\sigma(a)), \sigma) \\
+  \SEM{\tuple{a_1, \ldots, a_l}}\sigma &= (\mathcal{T}(\mathcal{A}_\sigma(a_1), \ldots, \mathcal{A}_\sigma(a_l)), \sigma) \qquad
+  \SEM{\prj{i} a}\sigma = (\key{proj}_i(\mathcal{A}_\sigma(a)), \sigma) \\
+  \SEM{\inl a}\sigma &= (\key{inl}(\mathcal{A}_\sigma(a)), \sigma) \qquad
+  \SEM{\inr a}\sigma = (\key{inr}(\mathcal{A}_\sigma(a)), \sigma) \\
+  \SEM{\prim{p}{a_1}{a_2}}\sigma &= (\key{prim}_p(\mathcal{A}_\sigma(a_1), \mathcal{A}_\sigma(a_2)), \sigma) \\
+  \SEM{\Casei{a}{s}{e_1}{e_2}}\sigma &= \mathit{checked}_n(s, \sigma,
+    \key{case}_s(\mathcal{A}_\sigma(a),\; \lambda X.\, \SEM{e_1}\ext{\sigma}{s}{X},\; \lambda X.\, \SEM{e_2}\ext{\sigma}{s}{X})) \\
+  \SEM{\assign{s}{e_1}{e_2}}\sigma &= \mathit{checked}_n(s, \sigma,
+    \key{let}_s(D_1,\; \lambda X.\, \SEM{e_2}\ext{\sigma_1}{s}{X}))
+    \quad\text{where } (D_1, \sigma_1) = \SEM{e_1}\sigma
+\end{align*}
+\begin{align*}
+  \key{zeros}(t) &= \{0\} \\
+  \key{frame}(X, Y)(0) = X, \quad \key{frame}(X, Y)(1) &= Y, \quad
+  \key{frame}(X, Y)(t) = \{0\} \quad (t \geq 2) \\[1ex]
+  \key{code}_T((n;\; e)) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \pi_1(\SEM{e}^{\mathrm{Imp}}_{T,n}\key{frame}(X, Y)))) \\[1ex]
+  \key{table}(b_0,\ldots,b_{m-1})(k) &=
+    \begin{cases}
+      \key{code}_{\key{table}(b_0,\ldots,b_{k-1})}(b_k) & k < m \\
+      \emptyset & \text{otherwise}
+    \end{cases} \\[1ex]
+  \SEM{(b_0, \ldots, b_{m-1};\; (n;\; e))}^{\mathrm{Imp}} &=
+    \pi_1(\SEM{e}^{\mathrm{Imp}}_{\key{table}(b_0,\ldots,b_{m-1}),n}\,\key{zeros})
 \end{align*}
 
 %===============================================================================
@@ -858,6 +1012,47 @@ The theorem needs no scoping: going wrong and divergence both mean
 $\emptyset$, an unbound variable means $\rho_0(x) = \{\omega\}$, and the
 order in which operands are evaluated is invisible.
 
+\subsection{Lift Locals}
+
+The store agrees with the environment on the slots that $\varphi$ gives
+the variables in scope, and the variables out of scope mean
+$\{\omega\}$, as slot $n$, beyond the frame, does:
+\begin{align*}
+  \mathit{Agree}_{\varphi}(\sigma, \rho) &\iff
+    \forall x \in \mathrm{dom}(\varphi).\; \sigma(\varphi(x)) \simeq \rho(x) \\
+  \mathit{Scope}_{\varphi}(\rho) &\iff
+    \forall x \notin \mathrm{dom}(\varphi).\; \rho(x) \simeq \{\omega\}
+\end{align*}
+The store that lift leaves agrees with the same environment, when there
+is a value. As in the operational proofs, this is relative to $\rho$,
+not to the store $\sigma$, so after a binder, whose slot is in
+$\varphi[x \mapsto d]$ but not in $\varphi$, only the slot is forgotten.
+
+\begin{lemma}[Correctness of Lift]\label{lem:lift-sem}
+Let $T(k) \simeq T'(k)$ for every $k$, and $M$ be a monadic Clos5 term.
+If $d + \mathit{height}(M) \leq n$, $\varphi(x) < d$ for every
+$x \in \mathrm{dom}(\varphi)$, $\mathit{Scope}_{\varphi}(\rho)$, and
+$\mathit{Agree}_{\varphi}(\sigma, \rho)$, then
+\[
+  D \simeq \SEM{M}^{\mathrm{5}}_{T'}\rho
+  \quad\text{and}\quad
+  (D \NE \implies \mathit{Agree}_{\varphi}(\sigma', \rho)),
+  \qquad\text{where } (D, \sigma') = \SEM{\pass{lift}_{n,\varphi,d}(M)}^{\mathrm{Imp}}_{T,n}\sigma .
+\]
+\end{lemma}
+
+\begin{lemma}[Lifted Tables]\label{lem:lift-table}
+For every $k$,
+$\key{table}(\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1}))(k) \simeq \key{table}(d_0, \ldots, d_{m-1})(k)$.
+\end{lemma}
+
+\begin{theorem}[Correctness of Lift Locals]\label{thm:lift}
+For every monadic Clos5 program $P$,
+\[
+  \SEM{\pass{lift}(P)}^{\mathrm{Imp}} \simeq \SEM{P}^{\mathrm{5}} .
+\]
+\end{theorem}
+
 \subsection{End to End}
 
 \begin{align*}
@@ -875,6 +1070,13 @@ For every ISWIM program $M$,
 For every ISWIM program $M$,
 \[
   \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile\text{-}mon}(M)}^{\mathrm{5}} .
+\]
+\end{theorem}
+
+\begin{theorem}[Correctness of Compile-Imp]\label{thm:compile-imp}
+For every ISWIM program $M$,
+\[
+  \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile\text{-}imp}(M)}^{\mathrm{Imp}} .
 \]
 \end{theorem}
 
@@ -1102,6 +1304,80 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
   & \stp \wrong & \text{otherwise}
 \end{array}
 \]
+
+\subsection{Imp}
+
+Both kinds of state carry the frame $\sigma$ of the running body, a list
+of values, so an assignment is seen by everything after it. The values
+are those of Clos5, and the continuation frames hold no environment.
+\[
+\begin{array}{rcl}
+  \mathit{State}^{\mathrm{Imp}} &::=& \evi{e}{\sigma}{\kappa} \mid \rti{v}{\sigma}{\kappa} \qquad
+  \sigma = v_0 \ldots v_{n-1} \\
+  \kappa &::=& \halt \mid \Kf{appF}{a_2, a_3, \kappa} \mid \Kf{appE}{f, a_3, \kappa} \mid \Kf{appA}{f, u, \kappa}
+    \mid \Kf{pairL}{a, \kappa} \mid \Kf{pairR}{v, \kappa} \\
+  &\mid& \Kf{fstK}{\kappa} \mid \Kf{sndK}{\kappa}
+    \mid \Kf{tupK}{\bar{v}, \bar{a}, \kappa} \mid \Kf{getK_i}{\kappa} \mid \Kf{inlK}{\kappa} \mid \Kf{inrK}{\kappa}
+    \mid \Kf{caseK}{s, e_1, e_2, \kappa} \\
+  &\mid& \Kf{primL_p}{a, \kappa} \mid \Kf{primR_p}{v, \kappa}
+    \mid \Kf{assignK}{s, e, \kappa} \mid \Kf{callK}{\sigma, \kappa}
+\end{array}
+\]
+\begin{align*}
+  \sigma(s) &= \begin{cases} v_s & s < n \\ \bot & \text{otherwise} \end{cases}
+  \qquad \sigma(c) = c \qquad \sigma(\funref{k}) = \codeV{k} \\
+  \sigma[s := v] &= \begin{cases} v_0 \ldots v_{s-1}\, v\, v_{s+1} \ldots v_{n-1} & s < n \\ \bot & \text{otherwise} \end{cases} \\[1ex]
+  \retq(v, \sigma, \kappa) &= \nxt \rti{v}{\sigma}{\kappa}, \quad \retq(\bot, \sigma, \kappa) = \stp \wrong \\
+  \key{goto}(\sigma, e, \kappa) &= \nxt \evi{e}{\sigma}{\kappa}, \quad \key{goto}(\bot, e, \kappa) = \stp \wrong \\[1ex]
+  \tnext(\bar{v};\, \epsilon;\, \sigma;\, \kappa) &= \rti{\tupV{\bar{v}}}{\sigma}{\kappa} \\
+  \tnext(\bar{v};\, a\,\bar{a};\, \sigma;\, \kappa) &= \evi{a}{\sigma}{\Kf{tupK}{\bar{v}, \bar{a}, \kappa}} \\[1ex]
+  \Mach{\mathrm{Imp}}(b_0, \ldots, b_{m-1};\; (n;\; e)) &= (\mathit{State}^{\mathrm{Imp}},\; \step{\mathrm{Imp}}_{b_0 \ldots b_{m-1}},\; \evi{e}{0^n}{\halt})
+\end{align*}
+As in Clos5, a call checks that its operator is code after evaluating its
+three operands. It runs the body $(n;\; e)$ in a fresh frame of
+$\max(2, n)$ slots, and $\key{callK}$ returns to the caller's frame.
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \evi{a}{\sigma}{\kappa} & \retq(\sigma(a), \sigma, \kappa) \\
+  \evi{a_1(a_2, a_3)}{\sigma}{\kappa} & \nxt \evi{a_1}{\sigma}{\Kf{appF}{a_2, a_3, \kappa}} \\
+  \evi{\pair{a_1}{a_2}}{\sigma}{\kappa} & \nxt \evi{a_1}{\sigma}{\Kf{pairL}{a_2, \kappa}} \\
+  \evi{(\FST a)}{\sigma}{\kappa} & \nxt \evi{a}{\sigma}{\Kf{fstK}{\kappa}} \\
+  \evi{(\SND a)}{\sigma}{\kappa} & \nxt \evi{a}{\sigma}{\Kf{sndK}{\kappa}} \\
+  \evi{\tuple{a_1, \ldots, a_l}}{\sigma}{\kappa} & \nxt \tnext(\epsilon;\, a_1 \ldots a_l;\, \sigma;\, \kappa) \\
+  \evi{(\prj{i} a)}{\sigma}{\kappa} & \nxt \evi{a}{\sigma}{\Kf{getK_i}{\kappa}} \\
+  \evi{(\inl a)}{\sigma}{\kappa} & \nxt \evi{a}{\sigma}{\Kf{inlK}{\kappa}} \\
+  \evi{(\inr a)}{\sigma}{\kappa} & \nxt \evi{a}{\sigma}{\Kf{inrK}{\kappa}} \\
+  \evi{\prim{p}{a_1}{a_2}}{\sigma}{\kappa} & \nxt \evi{a_1}{\sigma}{\Kf{primL_p}{a_2, \kappa}} \\
+  \evi{(\Casei{a}{s}{e_1}{e_2})}{\sigma}{\kappa} & \nxt \evi{a}{\sigma}{\Kf{caseK}{s, e_1, e_2, \kappa}} \\
+  \evi{(\assign{s}{e_1}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{\sigma}{\Kf{assignK}{s, e_2, \kappa}} \\[1ex]
+  \rti{v}{\sigma}{\halt} & \stp \obs(v) \\
+  \rti{f}{\sigma}{\Kf{appF}{a_2, a_3, \kappa}} & \nxt \evi{a_2}{\sigma}{\Kf{appE}{f, a_3, \kappa}} \\
+  \rti{u}{\sigma}{\Kf{appE}{f, a_3, \kappa}} & \nxt \evi{a_3}{\sigma}{\Kf{appA}{f, u, \kappa}} \\
+  \rti{w}{\sigma}{\Kf{appA}{f, u, \kappa}} & \nxt \evi{e}{(u\, w\, 0^{n-2})}{\Kf{callK}{\sigma, \kappa}}
+    & f = \codeV{k},\; k < m,\; b_k = (n;\; e) \\
+  & \stp \wrong & \text{otherwise} \\
+  \rti{v}{\sigma}{\Kf{pairL}{a, \kappa}} & \nxt \evi{a}{\sigma}{\Kf{pairR}{v, \kappa}} \\
+  \rti{w}{\sigma}{\Kf{pairR}{v, \kappa}} & \nxt \rti{\pairV{v}{w}}{\sigma}{\kappa} \\
+  \rti{v}{\sigma}{\Kf{fstK}{\kappa}} & \nxt \rti{v_1}{\sigma}{\kappa} & v = \pairV{v_1}{v_2} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rti{v}{\sigma}{\Kf{sndK}{\kappa}} & \nxt \rti{v_2}{\sigma}{\kappa} & v = \pairV{v_1}{v_2} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rti{v}{\sigma}{\Kf{tupK}{\bar{v}, \bar{a}, \kappa}} & \nxt \tnext(\bar{v}\,v;\, \bar{a};\, \sigma;\, \kappa) \\
+  \rti{v}{\sigma}{\Kf{getK_i}{\kappa}} & \retq(\key{proj}^n_i(\bar{v}), \sigma, \kappa) & v = \tupV{\bar{v}} \\
+  & \stp \wrong & \text{otherwise} \\
+  \rti{v}{\sigma}{\Kf{inlK}{\kappa}} & \nxt \rti{(\inlV v)}{\sigma}{\kappa} \\
+  \rti{v}{\sigma}{\Kf{inrK}{\kappa}} & \nxt \rti{(\inrV v)}{\sigma}{\kappa} \\
+  \rti{v}{\sigma}{\Kf{caseK}{s, e_1, e_2, \kappa}} & \key{goto}(\sigma[s := u], e_1, \kappa) & v = \inlV u \\
+  & \key{goto}(\sigma[s := u], e_2, \kappa) & v = \inrV u \\
+  & \stp \wrong & \text{otherwise} \\
+  \rti{v}{\sigma}{\Kf{primL_p}{a, \kappa}} & \nxt \evi{a}{\sigma}{\Kf{primR_p}{v, \kappa}} \\
+  \rti{w}{\sigma}{\Kf{primR_p}{v, \kappa}} & \nxt \rti{\res{\delta(p, n, m)}}{\sigma}{\kappa} & v = n,\; w = m \\
+  & \stp \wrong & \text{otherwise} \\
+  \rti{v}{\sigma}{\Kf{assignK}{s, e, \kappa}} & \key{goto}(\sigma[s := v], e, \kappa) \\
+  \rti{v}{\sigma}{\Kf{callK}{\sigma', \kappa}} & \nxt \rti{v}{\sigma'}{\kappa}
+\end{array}
+\]
+where $0^{n-2}$ is $n - 2$ zeros, none when $n < 2$.
 
 %-------------------------------------------------------------------------------
 \section{Simulations}\label{sec:sims}
@@ -1511,6 +1787,78 @@ For every Clos5 program $P$,
 \]
 \end{theorem}
 
+\subsection{Lift Locals}\label{sec:sim-lift}
+
+The machines run in lock step and compute the same values, so values are
+related by equality ($\codeV{k}$ names $D_k$ in the source and
+$\pass{lift}(D_k)$ in the target). A frame $\sigma$ of $n$ slots is
+related to an environment $\rho$ when $\varphi$ gives the variables of
+$\rho$ the slots below $|\rho|$, which hold their values:
+\begin{align*}
+  \rho \approx^n_\varphi \sigma &\iff |\sigma| = n \land
+    \varphi \text{ maps } \mathrm{dom}(\rho) \text{ one to one onto } \{0, \ldots, |\rho| - 1\}
+    \land \forall x \in \mathrm{dom}(\rho).\; \sigma(\varphi(x)) = \rho(x)
+\end{align*}
+A target continuation continues as a source one given any related frame,
+$(\rho, \varphi) \vdash_n \kappa_1 \approx \kappa_2$, when its head frame
+is related, it was made before a binder (weak), or it returns from a call:
+\begin{align*}
+  (\rho, \varphi) \vdash_n \kappa_1 \approx \kappa_2
+    &\Leftarrow (\rho, \varphi) \vdash^{\mathsf{h}}_n \kappa_1 \approx \kappa_2 \\
+  (\ext{\rho}{x}{v}, \ext{\varphi}{x}{|\rho|}) \vdash_n \kappa_1 \approx \kappa_2
+    &\Leftarrow (\rho, \varphi) \vdash_n \kappa_1 \approx \kappa_2 \\
+  (\rho, \varphi) \vdash_n \kappa_1 \approx \Kf{callK}{\sigma', \kappa_2}
+    &\Leftarrow (\rho', \varphi') \vdash_{n'} \kappa_1 \approx \kappa_2
+      \land \rho' \approx^{n'}_{\varphi'} \sigma'
+\end{align*}
+With $d = |\rho|$, $a' = \pass{lift}_{n,\varphi,d}(a)$, and
+$(\rho, \varphi) \vdash_n \kappa_1 \approx \kappa_2$ for the rest of
+each frame, the head frames:
+\begin{align*}
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n {}& \halt \approx \halt \\
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n {}& \Kf{letK}{x.N, \rho, \kappa_1} \approx
+    \Kf{assignK}{d, \pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(N), \kappa_2}
+    \quad\text{if } d + 1 + \mathit{height}(N) \leq n \\
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n {}& \Kf{caseK}{x.M, y.N, \rho, \kappa_1} \approx
+    \Kf{caseK}{d, \pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(M), \pass{lift}_{n,\ext{\varphi}{y}{d},d+1}(N), \kappa_2} \\
+    &\qquad \text{if } d + 1 + \max(\mathit{height}(M), \mathit{height}(N)) \leq n \\
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n {}& \Kf{appF}{a_2, a_3, \rho, \kappa_1} \approx \Kf{appF}{a_2', a_3', \kappa_2} \qquad
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n \Kf{appE}{f, a_3, \rho, \kappa_1} \approx \Kf{appE}{f, a_3', \kappa_2} \\
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n {}& \Kf{pairL}{a, \rho, \kappa_1} \approx \Kf{pairL}{a', \kappa_2} \qquad
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n \Kf{primL_p}{a, \rho, \kappa_1} \approx \Kf{primL_p}{a', \kappa_2} \\
+  (\rho, \varphi) \vdash^{\mathsf{h}}_n {}& \Kf{tupK}{\bar{v}, \bar{a}, \rho, \kappa_1} \approx \Kf{tupK}{\bar{v}, \bar{a}', \kappa_2}
+\end{align*}
+and the frames that hold no term ($\key{appA}$, $\key{pairR}$, $\key{fstK}$,
+$\key{sndK}$, $\key{getK}_i$, $\key{inlK}$, $\key{inrK}$, $\key{primR}_p$)
+are related to the same frame with the same values. The states, for some
+$n$ and $\varphi$:
+\begin{align*}
+  \ev{M}{\rho}{\kappa_1} \sim {}& \evi{\pass{lift}_{n,\varphi,|\rho|}(M)}{\sigma}{\kappa_2}
+    \iff |\rho| + \mathit{height}(M) \leq n \land \rho \approx^n_\varphi \sigma
+      \land (\rho, \varphi) \vdash_n \kappa_1 \approx \kappa_2 \\
+  \rt{v}{\kappa_1} \sim {}& \rti{v}{\sigma}{\kappa_2}
+    \iff \rho \approx^n_\varphi \sigma \land (\rho, \varphi) \vdash^{\mathsf{h}}_n \kappa_1 \approx \kappa_2
+    \quad \text{for some } \rho
+\end{align*}
+The target's only extra steps are the returns from calls: when the source
+returns a value, the target pops its $\key{callK}$ frames.
+
+\begin{lemma}[Lift Simulation]\label{lem:lift-fsim}
+For every monadic Clos5 program $P$,
+\[
+  \mathit{PlusSim}(\Mach{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Lift Locals, CompCert Style]\label{thm:lift-sim}
+For every monadic Clos5 program $P$,
+\[
+  \Equiv(\Mach{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P))) .
+\]
+\end{theorem}
+There is no precondition: a variable out of scope goes wrong in both
+machines, as its slot $n$ is beyond the frame.
+
 \subsection{End to End}
 
 \begin{theorem}[Compiler Correctness, CompCert Style]\label{thm:compiler-sim}
@@ -1527,6 +1875,14 @@ For every ISWIM term $M$,
 \]
 by Theorems~\ref{thm:compiler-sim} and~\ref{thm:rco-sim}, Lemma~\ref{lem:compile-scoped},
 and Lemma~\ref{lem:equiv-trans}.
+\end{theorem}
+
+\begin{theorem}[Correctness of Compile-Imp, CompCert Style]\label{thm:compile-imp-sim}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{Imp}}(\pass{compile\text{-}imp}(M))) ,
+\]
+by Theorems~\ref{thm:compile-mon-sim} and~\ref{thm:lift-sim} and Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
 %-------------------------------------------------------------------------------
@@ -1809,6 +2165,56 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
     \end{cases}
 \end{align*}
 
+\subsection{Imp}
+
+The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1}$.
+An expression runs in a frame $\sigma$, with $\sigma(a)$ and $\sigma[s := v]$ as in
+the machine, and returns a value and the frame as it left it. As in Clos5,
+the operator of a call is checked after the operands, and only calls tick.
+\begin{align*}
+  \EV{\vec{b}}{k} &: \mathit{Frame} \to \mathit{Exp} \to \mathit{Result}(\mathit{Val} \times \mathit{Frame}) \\
+  \Interp{\mathrm{Imp}}(\vec{b};\; (n;\; e)) &= (\obs,\; \lambda k.\, \EV{\vec{b}}{k}\,0^n\,e \bind \lambda (v, \sigma).\, \Ret v)
+\end{align*}
+\begin{align*}
+  \EV{\vec{b}}{k}\,\sigma\,a &= \lift{\sigma(a)} \bind \key{here}_\sigma \\
+  \EV{\vec{b}}{k}\,\sigma\,a_1(a_2, a_3) &=
+    \lift{\sigma(a_1)} \bind \lambda f.\, \lift{\sigma(a_2)} \bind \lambda u.\, \lift{\sigma(a_3)} \bind \lambda w.\\
+    &\qquad \CALL{\vec{b}}{k}\,f\,u\,w \bind \key{here}_\sigma \\
+  \EV{\vec{b}}{k}\,\sigma\,\pair{a_1}{a_2} &=
+    \lift{\sigma(a_1)} \bind \lambda v.\, \lift{\sigma(a_2)} \bind \lambda w.\, \Ret (\pairV{v}{w}, \sigma) \\
+  \EV{\vec{b}}{k}\,\sigma\,(\FST a) &= \lift{\sigma(a)} \bind \key{first} \bind \key{here}_\sigma \\
+  \EV{\vec{b}}{k}\,\sigma\,(\SND a) &= \lift{\sigma(a)} \bind \key{second} \bind \key{here}_\sigma \\
+  \EV{\vec{b}}{k}\,\sigma\,\tuple{a_1, \ldots, a_l} &=
+    \lift{\sigma(a_1)} \bind \lambda v_1.\, \cdots\, \lift{\sigma(a_l)} \bind \lambda v_l.\\
+    &\qquad \Ret (\tupV{v_1, \ldots, v_l}, \sigma) \\
+  \EV{\vec{b}}{k}\,\sigma\,(\prj{i} a) &= \lift{\sigma(a)} \bind \key{get}^n_i \bind \key{here}_\sigma \\
+  \EV{\vec{b}}{k}\,\sigma\,(\inl a) &= \lift{\sigma(a)} \bind \lambda v.\, \Ret (\inlV v, \sigma) \\
+  \EV{\vec{b}}{k}\,\sigma\,(\inr a) &= \lift{\sigma(a)} \bind \lambda v.\, \Ret (\inrV v, \sigma) \\
+  \EV{\vec{b}}{k}\,\sigma\,\prim{p}{a_1}{a_2} &=
+    \lift{\sigma(a_1)} \bind \lambda v.\, \lift{\sigma(a_2)} \bind \lambda w.\, \key{prim}_p(v, w) \bind \key{here}_\sigma \\
+  \EV{\vec{b}}{k}\,\sigma\,e &= \lift{\sigma(a)} \bind \BR{\vec{b}}{k}\,\sigma\,s\,e_1\,e_2
+    \qquad (e = \Casei{a}{s}{e_1}{e_2}) \\
+  \EV{\vec{b}}{k}\,\sigma\,(\assign{s}{e_1}{e_2}) &=
+    \EV{\vec{b}}{k}\,\sigma\,e_1 \bind \lambda (v, \sigma_1).\, \key{put}^k_{\vec{b}}\,\sigma_1\,s\,v\,e_2 \\[1ex]
+  \key{here}_\sigma(v) &= \Ret (v, \sigma) \\
+  \key{put}^k_{\vec{b}}\,\sigma\,s\,v\,e &=
+    \begin{cases} \EV{\vec{b}}{k}\,\sigma'\,e & \sigma[s := v] = \sigma' \\ \wrong & \text{otherwise} \end{cases} \\
+  \BR{\vec{b}}{k}\,\sigma\,s\,e_1\,e_2\,v &=
+    \begin{cases}
+      \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_1 & v = \inlV u \\
+      \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_2 & v = \inrV u \\
+      \wrong & \text{otherwise}
+    \end{cases} \\
+  \CALL{\vec{b}}{k}\,f\,u\,w &=
+    \begin{cases}
+      \tmo & f = \codeV{j},\; j < m,\; k = 0 \\
+      \EV{\vec{b}}{k'}\,(u\, w\, 0^{n-2})\,e \bind \lambda (v, \sigma').\, \Ret v
+        & f = \codeV{j},\; j < m,\; k = k' + 1, \\
+        & \quad b_j = (n;\; e) \\
+      \wrong & \text{otherwise}
+    \end{cases}
+\end{align*}
+
 %-------------------------------------------------------------------------------
 \section{Relations}
 
@@ -1952,6 +2358,32 @@ For every Clos5 program $P$,
 \]
 \end{theorem}
 
+\subsection{Lift Locals}
+
+Values are related by equality, as in Section~\ref{sec:sim-lift}, and frames
+to environments by $\approx^n_\varphi$. A result of the target, a value and
+the frame it left, is related to a value of the source by
+\begin{align*}
+  \mathit{Out}^n_{\rho,\varphi}(v, (v', \sigma')) &\iff v = v' \land \rho \approx^n_\varphi \sigma' .
+\end{align*}
+The pass maps each call to one call, so the interpreters tick in lock step.
+
+\begin{lemma}[Lift, Clock for Clock]\label{lem:lift-clk}
+Let $M$ be a monadic Clos5 term and $\vec{d}$ monadic Clos5 definitions.
+If $|\rho| + \mathit{height}(M) \leq n$ and $\rho \approx^n_\varphi \sigma$, then for every clock $k$,
+\[
+  \RelRes{\mathit{Out}^n_{\rho,\varphi}}(\EV{\vec{d}}{k}\,\rho\,M,\;
+    \EV{\pass{lift}(\vec{d})}{k}\,\sigma\,\pass{lift}_{n,\varphi,|\rho|}(M)) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Lift Locals, CakeML Style]\label{thm:lift-clk}
+For every monadic Clos5 program $P$,
+\[
+  \Equiv(\Interp{5}(P), \Interp{\mathrm{Imp}}(\pass{lift}(P))) .
+\]
+\end{theorem}
+
 \subsection{End to End}
 
 \begin{theorem}[Compiler Correctness, CakeML Style]\label{thm:compiler-clk}
@@ -1968,6 +2400,14 @@ For every ISWIM term $M$,
 \]
 by Theorems~\ref{thm:compiler-clk} and~\ref{thm:rco-clk}, Lemma~\ref{lem:compile-scoped},
 and Lemma~\ref{lem:equiv-trans-clk}.
+\end{theorem}
+
+\begin{theorem}[Correctness of Compile-Imp, CakeML Style]\label{thm:compile-imp-clk}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{Imp}}(\pass{compile\text{-}imp}(M))) ,
+\]
+by Theorems~\ref{thm:compile-mon-clk} and~\ref{thm:lift-clk} and Lemma~\ref{lem:equiv-trans-clk}.
 \end{theorem}
 
 \end{document}

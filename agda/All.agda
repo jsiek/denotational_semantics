@@ -35,6 +35,7 @@ import Compiler.Lang.Scope
 import Compiler.Lang.ScopeRename
 import Compiler.Lang.ListUtil
 import Compiler.Lang.Mon
+import Compiler.Lang.Imp
 
 {- the passes -}
 import Compiler.Compile.Enclose
@@ -43,6 +44,7 @@ import Compiler.Compile.Concretize
 import Compiler.Compile.Delay
 import Compiler.Compile.Globalize
 import Compiler.Compile.RCO
+import Compiler.Compile.LiftLocals
 import Compiler.Compile.Pipeline
 
 {- syntactic facts about the passes, used by both operational styles -}
@@ -69,6 +71,7 @@ import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
 import Compiler.Model.Graph.Sem.Clos5Iswim
 import Compiler.Model.Graph.Sem.Clos5IswimContinuous
+import Compiler.Model.Graph.Sem.Imp
 import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
@@ -82,6 +85,7 @@ import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserve
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect
 import Compiler.Model.Graph.Correctness.RCOCorrect
+import Compiler.Model.Graph.Correctness.LiftLocalsCorrect
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
@@ -93,6 +97,7 @@ import Compiler.Model.Graph.Correctness.EncloseExample
 import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.CompilerExample
 import Compiler.Compile.Examples.RCOExample
+import Compiler.Compile.Examples.LiftLocalsExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph
@@ -109,6 +114,7 @@ import Compiler.Operational.Machine.Clos2
 import Compiler.Operational.Machine.Clos3
 import Compiler.Operational.Machine.Clos4
 import Compiler.Operational.Machine.Clos5
+import Compiler.Operational.Machine.Imp
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
@@ -121,6 +127,8 @@ import Compiler.Operational.Correctness.CompilerSim
 {- remove complex operands (Clos5 → Clos5), and the compiler into monadic
    normal form -}
 import Compiler.Operational.Correctness.RCOSim
+{- lift locals (monadic Clos5 → Imp), and the compiler into Imp -}
+import Compiler.Operational.Correctness.LiftLocalsSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
@@ -161,6 +169,7 @@ import Compiler.Functional.Interp.Clos2
 import Compiler.Functional.Interp.Clos3
 import Compiler.Functional.Interp.Clos4
 import Compiler.Functional.Interp.Clos5
+import Compiler.Functional.Interp.Imp
 
 {- correctness of each pass -}
 import Compiler.Functional.Correctness.EncloseFuel
@@ -169,6 +178,7 @@ import Compiler.Functional.Correctness.ConcretizeFuel
 import Compiler.Functional.Correctness.DelayFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
 import Compiler.Functional.Correctness.RCOFuel
+import Compiler.Functional.Correctness.LiftLocalsFuel
 
 {- correctness of the whole compiler -}
 import Compiler.Functional.Correctness.CompilerFuel

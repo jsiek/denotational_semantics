@@ -44,7 +44,8 @@ GROUPS = [
      [G + 'Sem/ISWIM.agda', G + 'Sem/Clos2Iswim.agda', G + 'Sem/Clos3Iswim.agda',
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
-      G + 'Sem/Clos5IswimContinuous.agda', G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda']),
+      G + 'Sem/Clos5IswimContinuous.agda', G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda',
+      G + 'Sem/Imp.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
     ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
@@ -55,6 +56,7 @@ GROUPS = [
     ('den', 'globalize', [G + 'Correctness/GlobalizeCorrect.agda']),
     # each rco module also proves compile-mon (compile then rco) end to end
     ('den', 'rco', [G + 'Correctness/RCOCorrect.agda']),
+    ('den', 'lift locals', [G + 'Correctness/LiftLocalsCorrect.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     ('op', 'generic infrastructure',
@@ -66,6 +68,7 @@ GROUPS = [
     ('op', 'delay', [O + 'Correctness/DelaySim.agda']),
     ('op', 'globalize', [O + 'Correctness/GlobalizeSim.agda']),
     ('op', 'rco', [O + 'Correctness/RCOSim.agda']),
+    ('op', 'lift locals', [O + 'Correctness/LiftLocalsSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
 
     ('ck', 'generic infrastructure', [F + 'Clock.agda']),
@@ -76,6 +79,7 @@ GROUPS = [
     ('ck', 'delay', [F + 'Correctness/DelayFuel.agda']),
     ('ck', 'globalize', [F + 'Correctness/GlobalizeFuel.agda']),
     ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
+    ('ck', 'lift locals', [F + 'Correctness/LiftLocalsFuel.agda']),
     ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
@@ -197,7 +201,7 @@ def main():
 
     rows = ['generic infrastructure', 'domain, operators, continuity',
             'semantics of the languages', 'enclose', 'optimize', 'concretize',
-            'delay', 'globalize', 'rco', 'composition']
+            'delay', 'globalize', 'rco', 'lift locals', 'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
     print('|---|---:|---:|---:|')

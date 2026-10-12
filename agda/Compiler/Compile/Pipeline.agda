@@ -9,7 +9,8 @@
   CompilerFuel) are about this compile.
 
   compile-mon continues with remove complex operands (Clos5 → Clos5),
-  into monadic normal form.
+  into monadic normal form, and compile-imp then with lift locals
+  (monadic Clos5 → Imp).
 
 -}
 
@@ -21,7 +22,9 @@ open import Compiler.Compile.Optimize using (optimize-program)
 open import Compiler.Compile.Concretize using (concretize-program)
 open import Compiler.Compile.Delay using (delay)
 open import Compiler.Compile.Globalize using (globalize)
-open import Compiler.Compile.RCO using (rco-program)
+open import Compiler.Compile.RCO using (rco-program; rco-program-mon)
+open import Compiler.Compile.LiftLocals using (lift-program)
+import Compiler.Lang.Imp as Imp
 
 module Compiler.Compile.Pipeline where
 
@@ -33,3 +36,6 @@ compile M = globalize (compile₄ M)
 
 compile-mon : AST → L5.Program
 compile-mon M = rco-program (compile M)
+
+compile-imp : AST → Imp.Program
+compile-imp M = lift-program (compile-mon M) (rco-program-mon (compile M))
