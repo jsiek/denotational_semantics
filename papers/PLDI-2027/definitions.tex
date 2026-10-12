@@ -386,8 +386,8 @@ In the CakeML-style proof:
   structurally recursive on the clock, then the list of blocks, then the
   tail: a jump walks the list, newest first, to its block.
 \item \textbf{The X86 interpreter}'s registers are a record
-  (\texttt{Regs}) with $\rax$ a value and \texttt{Maybe}s for $\rdi$,
-  $\rsi$, and the flag; its $\key{cmpq}$ applies \texttt{bool?} to
+  (\texttt{Regs}) of \texttt{Maybe}s for $\rax$, $\rdi$, $\rsi$, and the
+  flag; its $\key{cmpq}$ applies \texttt{bool?} to
   $\delta^?(\key{eq}, \obs(v), \obs(w))$, which is $\key{cmp}(v, w)$.
   It is structurally recursive on the clock, the list of blocks, and the
   instructions of a block.
@@ -538,10 +538,12 @@ an immediate, or the label of a global definition. A flag is set by
 $\key{cmpq}$ and $\key{testinl}$ and read by $\key{sete}$ and $\key{je}$.
 The heap is abstract: $\key{alloc}$ builds a pair, tuple or injection
 from its operands, and $\key{load}$ takes a field of one. $\key{callq}\;o$
-runs the body of the definition $o$ refers to, with $\%\key{rdi}$ and
-$\%\key{rsi}$ as they are, in a fresh frame, and continues with the
-result in $\%\key{rax}$; it clobbers $\%\key{rdi}$, $\%\key{rsi}$ and the
-flag. Frames, blocks and jumps are as in CFG.
+reads $\%\key{rdi}$ and $\%\key{rsi}$ and runs the body of the definition
+$o$ refers to, with them as they are, $\%\key{rax}$ unset and no flag, in
+a fresh frame, and continues with the result in $\%\key{rax}$; it
+clobbers $\%\key{rdi}$, $\%\key{rsi}$ and the flag. $\key{retq}$ reads
+$\%\key{rax}$. Reading an unset register or flag goes wrong. Frames,
+blocks and jumps are as in CFG.
 \begin{syntax}
   & d &::=& s \mid \%\key{rax} \mid \%\key{rdi} \mid \%\key{rsi} \\
   & o &::=& d \mid c \mid \funref{k} \\
@@ -2128,23 +2130,22 @@ frame. With $\sigma$ and $\rho$ those of the state:
 \end{align*}
 and $\key{build}$, $\key{field}$, $\key{prim}^?$ and $\key{cmp}$ are
 $\bot$ on any other arguments, or on an operand that is $\bot$.
-$\key{callq}\; o$, with $o$ the code of definition $k$, pushes the
-caller's remaining instructions, jump, blocks and frame, and runs the
-start of $b_k$ in a fresh frame of $\max(2, n)$ zeros, with the registers
-and flag as they are. $\key{retq}$ to $\halt$ stops with the observation
-of $\rax$; otherwise it pops the caller, whose $\rdi$, $\rsi$ and flag
-are then unset. $\key{block}$ is that of CFG. For a program with bodies
+$\key{callq}\; o$, with $o$ the code of definition $k$ and $\rdi$ and
+$\rsi$ set, pushes the caller's remaining instructions, jump, blocks and
+frame, and runs the start of $b_k$ in a fresh frame of $\max(2, n)$
+zeros, with $\rdi$ and $\rsi$ as they are, $\rax$ unset and no flag.
+$\key{retq}$ reads $\rax$: to $\halt$ it stops with its observation;
+otherwise it pops the caller, which continues with $\rax$ and with
+$\rdi$, $\rsi$ and the flag unset. $\key{block}$ is that of CFG. For a program with bodies
 $b_0, \ldots, b_{m-1}$:
 \begin{align*}
   \key{goto}((\vec{\imath};\, j;\, \vec{\beta}), \Sigma, f, \sigma, \rho) &= \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho, \quad
   \key{goto}(\bot, \Sigma, f, \sigma, \rho) = \stp \wrong \\
-  \mathit{callq}(v^?, \Sigma, f, \rho) &=
-    \begin{cases}
-      \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f\;0^{\max(2,n)}\;\rho
-        & v^? = \codeV{k},\; k < m,\; b_k = (n;\; \vec{\beta};\; \vec{\imath};\, j) \\
-      \stp \wrong & \text{otherwise}
-    \end{cases} \\[1ex]
-  \rho_0(\rax) &= 0, \quad \rho_0(\rdi) = \rho_0(\rsi) = \bot \\
+  \mathit{callq}(\codeV{k}, \Sigma, \rho) &=
+    \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;\bot\;0^{\max(2,n)}\;(\bot, \rho(\rdi), \rho(\rsi)) \\
+    &\qquad (k < m,\; b_k = (n;\; \vec{\beta};\; \vec{\imath};\, j),\; \rho(\rdi) \neq \bot \neq \rho(\rsi)) \\
+  \mathit{callq}(v^?, \Sigma, \rho) &= \stp \wrong \quad \text{otherwise} \\[1ex]
+  \rho_0 &= (0, \bot, \bot) \quad \text{(the values of $\rax$, $\rdi$, $\rsi$)} \\
   \Mach{\mathrm{X86}}(b_0, \ldots, b_{m-1};\; (n;\; \vec{\beta};\; \vec{\imath};\, j)) &=
     (\mathit{State}^{\mathrm{X86}},\; \step{\mathrm{X86}}_{b_0 \ldots b_{m-1}},\; \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\halt\;\bot\;0^n\;\rho_0)
 \end{align*}
@@ -2166,11 +2167,12 @@ and $\langle \vec{\imath} \rangle_{f'}$ for it with the flag $f'$:
   \langle \key{load}\; \mathit{fl}\; o, d;\; \vec{\imath} \rangle &
     \key{put}(d, \key{field}_{\mathit{fl}}(\mathit{arg}(o)), \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f) \\
   \langle \key{callq}\; o;\; \vec{\imath} \rangle &
-    \mathit{callq}(\mathit{arg}(o), \key{retK}(\vec{\imath}, j, \vec{\beta}, \sigma, \Sigma), f, \rho) \\[1ex]
+    \mathit{callq}(\mathit{arg}(o), \key{retK}(\vec{\imath}, j, \vec{\beta}, \sigma, \Sigma), \rho) \\[1ex]
   \xrun\;\epsilon\;\key{retq}\;\vec{\beta}\;\halt\;f\;\sigma\;\rho & \stp \obs(\rho(\rax)) & \rho(\rax) \neq \bot \\
   & \stp \wrong & \rho(\rax) = \bot \\
   \xrun\;\epsilon\;\key{retq}\;\vec{\beta}\;\key{retK}(\vec{\imath}, j, \vec{\beta}', \sigma', \Sigma)\;f\;\sigma\;\rho &
-    \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}'\;\Sigma\;\bot\;\sigma'\;\rho[\rdi, \rsi := \bot] \\
+    \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}'\;\Sigma\;\bot\;\sigma'\;(\rho(\rax), \bot, \bot) & \rho(\rax) \neq \bot \\
+  & \stp \wrong & \rho(\rax) = \bot \\
   \xrun\;\epsilon\;(\key{jmp}\; l)\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho & \key{goto}(\key{block}(\vec{\beta}, l), \Sigma, f, \sigma, \rho) \\
   \xrun\;\epsilon\;(\key{je}\; l_1, l_2)\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho & \key{goto}(\key{block}(\vec{\beta}, l_1), \Sigma, f, \sigma, \rho) & f = \mathsf{true} \\
   & \key{goto}(\key{block}(\vec{\beta}, l_2), \Sigma, f, \sigma, \rho) & f = \mathsf{false} \\
@@ -3233,26 +3235,25 @@ the blocks older than it.
 \subsection{X86}
 
 The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1}$.
-The state is a frame $\sigma$ and registers $\rho$: $\rax$ holds a value,
-and $\rdi$, $\rsi$ and the flag each hold one or are unset ($\bot$);
-reading an unset one goes wrong. The frames and $\key{set}$ are those
+The state is a frame $\sigma$ and registers $\rho$: $\rax$, $\rdi$, $\rsi$
+and the flag each hold a value or are unset ($\bot$); reading an unset
+one goes wrong. The frames and $\key{set}$ are those
 of Imp, and $\key{prim}^?$, $\key{cmp}$, $\key{isinl}$, $\key{build}$, and
 $\key{field}$ those of the X86 machine. A block runs its instructions,
 each passing the state to the rest, then its jump. Only $\key{callq}$
-ticks; it runs the start of the callee in a fresh frame with the
-caller's registers, and the caller continues in its own frame with the
+ticks; it reads $\rdi$ and $\rsi$ and runs the start of the callee in a
+fresh frame with them, $\rax$ unset and no flag, and the caller continues in its own frame with the
 result in $\rax$ and $\rdi$, $\rsi$ and the flag unset.
 \begin{align*}
-  \rho &= (\rax{:}\; v,\; \rdi{:}\; v^?,\; \rsi{:}\; v^?,\; \key{flag}{:}\; b^?) \\
+  \rho &= (\rax{:}\; v^?,\; \rdi{:}\; v^?,\; \rsi{:}\; v^?,\; \key{flag}{:}\; b^?) \\
   \key{run}^k_{\vec{b}} &: \mathit{Blocks} \to \mathit{Frame} \times \mathit{Regs} \to \mathit{Instr}^* \to \mathit{Jump} \to \mathit{Result}(\mathit{Val}) \\
   \Interp{\mathrm{X86}}(\vec{b};\; (n;\; \vec{\beta};\; \vec{\imath};\, j)) &=
     (\obs,\; \lambda k.\, \key{run}^k_{\vec{b}}\,\vec{\beta}\,(0^n, (0, \bot, \bot, \bot))\,\vec{\imath}\,j)
 \end{align*}
 With $\sigma$ and $\rho$ those of the state $(\sigma, \rho)$:
 \begin{align*}
-  \mathit{arg}(s) = \lift{\sigma(s)}, \quad
-  \mathit{arg}(\rax) &= \Ret \rho.\rax, \quad
-  \mathit{arg}(\%g) = \lift{\rho.\%g} \;\; (\%g \neq \rax), \\
+  \mathit{arg}(s) &= \lift{\sigma(s)}, \quad
+  \mathit{arg}(\%g) = \lift{\rho.\%g}, \\
   \mathit{arg}(c) &= \Ret c, \quad
   \mathit{arg}(\funref{k}) = \Ret \codeV{k} \\
   \key{write}(s, v, K) &= \key{set}(\sigma, s, v, \lambda \sigma'.\, K(\sigma', \rho)) \\
@@ -3274,12 +3275,13 @@ With $\sigma$ and $\rho$ those of the state $(\sigma, \rho)$:
 Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
 \begin{align*}
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,(\key{callq}\; o;\; \vec{\imath})\,j &=
-    \Do f \leftarrow \mathit{arg}(o);\; v \leftarrow \CALL{}{k}(f, \rho);\;
-    \key{run}^k\,\vec{\beta}\,(\sigma, (v, \bot, \bot, \bot))\,\vec{\imath}\,j \\
+    \Do f \leftarrow \mathit{arg}(o);\; e \leftarrow \lift{\rho.\rdi};\; w \leftarrow \lift{\rho.\rsi};\;
+    v \leftarrow \CALL{}{k}(f, e, w); \\
+    &\qquad \key{run}^k\,\vec{\beta}\,(\sigma, (v, \bot, \bot, \bot))\,\vec{\imath}\,j \\
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,(i;\; \vec{\imath})\,j &=
     \key{step}(i, \lambda (\sigma', \rho').\, \key{run}^k\,\vec{\beta}\,(\sigma', \rho')\,\vec{\imath}\,j)
     \quad (i \neq \key{callq}\; o) \\
-  \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,\key{retq} &= \Ret \rho.\rax \\
+  \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,\key{retq} &= \lift{\rho.\rax} \\
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,(\key{jmp}\; l) &= \key{jump}^k\,\vec{\beta}\,(\sigma, \rho)\,l \\
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,(\key{je}\; l_1, l_2) &=
     \Do b \leftarrow \lift{\rho.\key{flag}};\; \key{jump}^k\,\vec{\beta}\,(\sigma, \rho)\,(\text{$l_1$ if $b$, else $l_2$}) \\[1ex]
@@ -3288,11 +3290,12 @@ Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
       \key{run}^k\,(\beta_0, \ldots, \beta_{l-1})\,(\sigma, \rho)\,\vec{\imath}\,j & l < q,\; \beta_l = \vec{\imath};\, j \\
       \wrong & \text{otherwise}
     \end{cases} \\
-  \CALL{}{k}(f, \rho) &=
+  \CALL{}{k}(f, e, w) &=
     \begin{cases}
       \tmo & f = \codeV{j},\; j < m,\; k = 0 \\
-      \key{run}^{k'}\,\vec{\beta}\,(0^{\max(2,n)}, \rho)\,\vec{\imath}\,j'
-        & f = \codeV{j},\; j < m,\; k = k' + 1,\; b_j = (n;\; \vec{\beta};\; \vec{\imath};\, j') \\
+      \key{run}^{k'}\,\vec{\beta}\,(0^{\max(2,n)}, (\bot, e, w, \bot))\,\vec{\imath}\,j'
+        & f = \codeV{j},\; j < m,\; k = k' + 1, \\
+        & b_j = (n;\; \vec{\beta};\; \vec{\imath};\, j') \\
       \wrong & \text{otherwise}
     \end{cases}
 \end{align*}
@@ -3525,8 +3528,8 @@ The pass keeps every call, so the interpreters tick in lock step and
 return equal results. The X86 frame is the CFG frame, and the
 registers are arbitrary. Fix the bodies $\vec{b}$ and a clock $k$ at
 which calls agree:
-$\CALL{\vec{b}}{k}(f, u, w) = \CALL{\pass{select}(\vec{b})}{k}(f, (x, u, w, b^?))$
-for all $f$, $u$, $w$, $x$, and $b^?$. Write $\key{tail}^k$ and
+$\CALL{\vec{b}}{k}(f, u, w) = \CALL{\pass{select}(\vec{b})}{k}(f, u, w)$
+for all $f$, $u$, and $w$. Write $\key{tail}^k$ and
 $\key{jump}^k$ for those of $\vec{b}$, and $\key{run}^k_{\mathrm{X}}$ and
 $\key{jump}^k_{\mathrm{X}}$ for those of $\pass{select}(\vec{b})$, and
 $\pass{sel}(t) = \mathit{ins}(t);\, \mathit{end}(t)$ as in

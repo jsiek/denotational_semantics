@@ -32,14 +32,16 @@ module Compiler.Lang.X86 where
    load f a, d        d := field f of a: fst or snd of a pair, the i-th
                       component of a tuple of n, the payload of an
                       injection
-   callq a            a must be a code pointer, to definition k: run the
-                      body of definition k with %rdi and %rsi as they
-                      are, and continue with %rax as it returns; the
-                      caller's frame is untouched; the call clobbers
-                      %rdi, %rsi and the flag: reading them before they
-                      are set again goes wrong
- A block ends with retq (return %rax), jmp l, or je l₁ l₂ (jump to l₁ if
- the flag is set and to l₂ if not; no flag goes wrong). Reading or
+   callq a            a must be a code pointer, to definition k, and
+                      %rdi and %rsi must be set: run the body of
+                      definition k with %rdi and %rsi as they are, %rax
+                      unset and no flag, and continue with %rax as it
+                      returns; the caller's frame is untouched; the
+                      call clobbers %rdi, %rsi and the flag: reading
+                      them before they are set again goes wrong
+ A block ends with retq (return %rax, which must be set), jmp l, or
+ je l₁ l₂ (jump to l₁ if the flag is set and to l₂ if not; no flag goes
+ wrong). Reading or
  assigning a slot beyond the frame goes wrong. Jumps are as in CFG:
  blocks are listed newest first, block l may jump only to older blocks,
  and the start of a body to any block. As in CFG, the body of a global

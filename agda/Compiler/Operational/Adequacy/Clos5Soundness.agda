@@ -33,8 +33,7 @@ open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
 open import GraphModel.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono;
-         pair-consis; ℬ-consis; inl-consis; inr-consis)
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
   renaming (proj to dproj; pair to dpair)
 open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Lang.Clos5
@@ -49,14 +48,14 @@ open import ListUtil
 open import Compiler.Operational.Machine.Clos5 hiding (inl; inr)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑)
-open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→length; δ?-inv)
+open import Compiler.Operational.Adequacy.Common using (ShapeOf)
 open import Compiler.Operational.Adequacy.Soundness
-  using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆; AllCon; 𝒯L-con)
+  using (At; AllNE; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
 open import Compiler.Operational.Adequacy.Clos5WF using (WF; DefsWF)
 open import Compiler.Model.Graph.Sem.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous; table-con)
 import Compiler.Operational.Adequacy.Clos5Common as Common
+open import Compiler.Operational.Adequacy.Values using (module Den)
 
-open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length; replicate; reverse)
@@ -95,20 +94,21 @@ module _ (ds : List AST) (wf : DefsWF ds) where
 
   {- Denotations of values, environments, continuations and states ------------}
 
-  𝒱 : Val → 𝒫 Value
-  𝒱s : List Val → List (𝒫 Value)
+  {- every entry of T⁺ holds ν and is consistent -}
+  table-ν∈ : ∀ Ns k {x} → x ∈ table Ns k → ν ∈ table Ns k
+  table-ν∈ (N ∷ Ns) k x∈ with k ≟ length Ns
+  ... | yes _ = tt
+  ... | no _ = table-ν∈ Ns k x∈
+
+  T⁺-con : ∀ k → Con (T⁺ k)
+  T⁺-con k a b (inj₁ a∈) (inj₁ b∈) = table-con ds k a b a∈ b∈
+  T⁺-con k a b (inj₁ a∈) (inj₂ refl) = table-con ds k a ν a∈ (table-ν∈ ds k a∈)
+  T⁺-con k a b (inj₂ refl) (inj₁ b∈) = table-con ds k ν b (table-ν∈ ds k b∈) b∈
+  T⁺-con k a b (inj₂ refl) (inj₂ refl) = tt
+
+  open Den T⁺ (λ k → inj₂ refl) T⁺-con
+
   𝓔 : Env → VEnv
-
-  𝒱 (code k) = T⁺ k
-  𝒱 (pair v w) = dpair ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
-  𝒱 (const B k) = ℬ B k ptt
-  𝒱 (tup vs) = 𝒯L (𝒱s vs)
-  𝒱 (T.inl v) = inl ⟨ 𝒱 v , ptt ⟩
-  𝒱 (T.inr v) = inr ⟨ 𝒱 v , ptt ⟩
-
-  𝒱s [] = []
-  𝒱s (v ∷ vs) = 𝒱 v ∷ 𝒱s vs
-
   𝓔 [] x = init
   𝓔 (v ∷ γ) zero = 𝒱 v
   𝓔 (v ∷ γ) (suc x) = 𝓔 γ x
@@ -197,30 +197,6 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦-mono (primR p v κ) D⊆ =
     𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
 
-  {- every value denotes a nonempty set -}
-  𝒱-nonempty : ∀ v → nonempty (𝒱 v)
-  𝒱s-nonempty : ∀ vs → AllNE (𝒱s vs)
-
-  length-𝒱s : ∀ vs → length (𝒱s vs) ≡ length vs
-  length-𝒱s [] = refl
-  length-𝒱s (v ∷ vs) = cong suc (length-𝒱s vs)
-
-  𝒱-nonempty (code k) = ⟨ ν , inj₂ refl ⟩
-  𝒱-nonempty (pair v w) with 𝒱-nonempty v | 𝒱-nonempty w
-  ... | ⟨ d , d∈ ⟩ | ⟨ e , e∈ ⟩ = ⟨ ⦅ d , e ⦆ , ⟨ d∈ , e∈ ⟩ ⟩
-  𝒱-nonempty (const B k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
-  𝒱-nonempty (tup []) = ⟨ ⟨⟩ , tt ⟩
-  𝒱-nonempty (tup (v ∷ vs)) with 𝒱-nonempty v
-  ... | ⟨ d , d∈ ⟩ =
-    ⟨ tup[_]_ {suc (length vs)} zero d , ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱s-nonempty vs ⟩ ⟩ ⟩
-  𝒱-nonempty (T.inl v) with 𝒱-nonempty v
-  ... | ⟨ d , d∈ ⟩ = ⟨ left d , d∈ ⟩
-  𝒱-nonempty (T.inr v) with 𝒱-nonempty v
-  ... | ⟨ d , d∈ ⟩ = ⟨ right d , d∈ ⟩
-
-  𝒱s-nonempty [] = tt
-  𝒱s-nonempty (v ∷ vs) = ⟨ 𝒱-nonempty v , 𝒱s-nonempty vs ⟩
-
   𝓔-nonempty : ∀ γ → NewEnv.nonempty-env (𝓔 γ)
   𝓔-nonempty [] x = ⟨ ω , refl ⟩
   𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
@@ -229,29 +205,6 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
   𝓔-lookup (v ∷ γ) zero refl d d∈ = d∈
   𝓔-lookup (v ∷ γ) (suc x) eq = 𝓔-lookup γ x eq
-
-  {- every value denotes a consistent set -}
-  table-ν∈ : ∀ Ns k {x} → x ∈ table Ns k → ν ∈ table Ns k
-  table-ν∈ (N ∷ Ns) k x∈ with k ≟ length Ns
-  ... | yes _ = tt
-  ... | no _ = table-ν∈ Ns k x∈
-
-  T⁺-con : ∀ k → Con (T⁺ k)
-  T⁺-con k a b (inj₁ a∈) (inj₁ b∈) = table-con ds k a b a∈ b∈
-  T⁺-con k a b (inj₁ a∈) (inj₂ refl) = table-con ds k a ν a∈ (table-ν∈ ds k a∈)
-  T⁺-con k a b (inj₂ refl) (inj₁ b∈) = table-con ds k ν b (table-ν∈ ds k b∈) b∈
-  T⁺-con k a b (inj₂ refl) (inj₂ refl) = tt
-
-  𝒱-con : ∀ v → Con (𝒱 v)
-  𝒱s-con : ∀ vs → AllCon (𝒱s vs)
-  𝒱-con (code k) = T⁺-con k
-  𝒱-con (pair v w) = lower (pair-consis _ _ ⟨ lift (𝒱-con v) , ⟨ lift (𝒱-con w) , ptt ⟩ ⟩)
-  𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
-  𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)
-  𝒱-con (T.inl v) = lower (inl-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
-  𝒱-con (T.inr v) = lower (inr-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
-  𝒱s-con [] = tt
-  𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
 
   {- β for one parameter (case, let) -}
   body-in : ∀ N γ v d → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
@@ -327,32 +280,6 @@ module _ (ds : List AST) (wf : DefsWF ds) where
       with At-length i _ d a
   ... | len with subst (λ k → k ≡ m) (length-args args ρ) len
   ... | refl = ⟨ refl , ⟨ At-args args ρ i d a , AllNE-args args ρ ne ⟩ ⟩
-
-  proj-𝒱s : ∀ {n} (i : Fin n) vs {v} → proj i vs ≡ just v → ∀ d → d ∈ 𝒱 v → At i (𝒱s vs) d
-  proj-𝒱s {suc n} zero (v ∷ vs) eq d d∈ with has-length n vs in h
-  proj-𝒱s {suc n} zero (v ∷ vs) refl d d∈ | true =
-    ⟨ subst (λ m → length (𝒱s vs) ≡ m) (has-length→length n vs h) (length-𝒱s vs) , d∈ ⟩
-  proj-𝒱s {suc n} zero (v ∷ vs) () d d∈ | false
-  proj-𝒱s (suc i) (v ∷ vs) eq d d∈ = proj-𝒱s i vs eq d d∈
-
-  {- Primitives -----------------------------------------------------------------}
-
-  int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ 𝒱 v
-  int-in (const B k) refl = ⟨ refl , refl ⟩
-
-  𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
-  𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
-  𝒱-out (bool true) (left ⟨⟩) tt = refl
-  𝒱-out (bool false) (right ⟨⟩) tt = refl
-  𝒱-out (bool true) (left (tup[ zero ] d)) ⟨ () , _ ⟩
-  𝒱-out (bool true) (left (tup[ suc i ] d)) ⟨ () , _ ⟩
-  𝒱-out (bool false) (right (tup[ zero ] d)) ⟨ () , _ ⟩
-  𝒱-out (bool false) (right (tup[ suc i ] d)) ⟨ () , _ ⟩
-
-  prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primD p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
-  prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
-  ... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ =
-    ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩
 
   {- Steps shrink the denotation of the state --------------------------------}
 
@@ -442,22 +369,6 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
 
   {- Final states ----------------------------------------------------------------}
-
-  {- the denotation of a value has an element of the shape of its observation -}
-  𝒱-shape : ∀ v → Σ[ d ∈ Value ] d ∈ 𝒱 v × ShapeOf (obs v) d
-  𝒱-shape (code k) = ⟨ ν , ⟨ inj₂ refl , tt ⟩ ⟩
-  𝒱-shape (pair v w) with 𝒱-nonempty v | 𝒱-nonempty w
-  ... | ⟨ d , d∈ ⟩ | ⟨ e , e∈ ⟩ = ⟨ ⦅ d , e ⦆ , ⟨ ⟨ d∈ , e∈ ⟩ , tt ⟩ ⟩
-  𝒱-shape (const B k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , refl ⟩ ⟩
-  𝒱-shape (tup []) = ⟨ ⟨⟩ , ⟨ tt , refl ⟩ ⟩
-  𝒱-shape (tup (v ∷ vs)) with 𝒱-shape v
-  ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
-    ⟨ tup[_]_ {suc (length vs)} zero d
-    , ⟨ ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , 𝒱s-nonempty (v ∷ vs) ⟩ , ⟨ length-obs-list vs , sh ⟩ ⟩ ⟩
-  𝒱-shape (T.inl v) with 𝒱-shape v
-  ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ d∈ , sh ⟩ ⟩
-  𝒱-shape (T.inr v) with 𝒱-shape v
-  ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ d∈ , sh ⟩ ⟩
 
   private
     wrong : ∀ {o} → stop {State} o-wrong ≡ stop o → Answer o → ⊥

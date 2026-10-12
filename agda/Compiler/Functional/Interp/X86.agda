@@ -2,9 +2,9 @@
 
   A clocked interpreter for X86 (Lang/X86.agda), the output of select
   instructions. The machine state is a frame (the slots, as in Imp and
-  CFG) and a register file: %rax holds a value, %rdi and %rsi hold a
-  value or are unset, and the flag is set (true or false) or unset;
-  reading an unset register or flag goes wrong. The values and the
+  CFG) and a register file: %rax, %rdi and %rsi each hold a value or
+  are unset, and the flag is set (true or false) or unset; reading an
+  unset register or flag goes wrong. The values and the
   operations on them are those of Clos5 (Interp/Clos5.agda): subq is
   prim? sub, cmpq compares integers as prim? eq does, and alloc and load
   build and take apart pairs, tuples and injections.
@@ -12,11 +12,12 @@
   A block runs its instructions in order, each passing the state on to
   the rest (continuation-passing, so the instructions of a block nest),
   then its jump: retq returns %rax, jmp l and je l₁ l₂ jump. callq a
-  checks that a is a code pointer (after it is read, as in CFG) and runs
-  the start of the callee's body in a fresh frame (max(2, locals) slots
-  of 0) with the caller's registers; the caller continues in its own
-  frame with %rax the result and %rdi, %rsi and the flag unset. main
-  runs in a frame of locals zeros, with %rax 0 and the rest unset.
+  reads a, %rdi and %rsi, checks that a is a code pointer (as in CFG),
+  and runs the start of the callee's body in a fresh frame
+  (max(2, locals) slots of 0) with %rdi and %rsi as they are, %rax unset
+  and no flag; the caller continues in its own frame with %rax the
+  result and %rdi, %rsi and the flag unset. main runs in a frame of
+  locals zeros, with %rax 0 and the rest unset.
 
   As in CFG (Interp/CFG.agda), only calls tick the clock (see the design
   note in Clock.agda), and a jump to l walks the list of blocks it may
@@ -47,8 +48,7 @@ open import Relation.Nullary using (yes; no)
 record Regs : Set where
   constructor regs
   field
-    %rax : Val
-    %rdi %rsi : Maybe Val
+    %rax %rdi %rsi : Maybe Val
     flag : Maybe Bool
 open Regs public
 
@@ -58,7 +58,7 @@ State = Frame × Regs
 {- the value at a location -}
 read : State → Loc → Result Val
 read (φ , ρ) (var x) = from-maybe (φ ‼ x)
-read (φ , ρ) (reg rax) = ret (%rax ρ)
+read (φ , ρ) (reg rax) = from-maybe (%rax ρ)
 read (φ , ρ) (reg rdi) = from-maybe (%rdi ρ)
 read (φ , ρ) (reg rsi) = from-maybe (%rsi ρ)
 
@@ -76,7 +76,7 @@ args s vs (a ∷ as) k = do v ← arg s a; args s (v ∷ vs) as k
 {- d := v, then k -}
 write : ∀ {A : Set} → State → Loc → Val → (State → Result A) → Result A
 write (φ , ρ) (var x) v k = do φ' ← from-maybe (φ [ x ]≔ v); k (φ' , ρ)
-write (φ , ρ) (reg rax) v k = k (φ , record ρ { %rax = v })
+write (φ , ρ) (reg rax) v k = k (φ , record ρ { %rax = just v })
 write (φ , ρ) (reg rdi) v k = k (φ , record ρ { %rdi = just v })
 write (φ , ρ) (reg rsi) v k = k (φ , record ρ { %rsi = just v })
 
@@ -134,12 +134,13 @@ module _ (ds : List Body) where
   run : ℕ → List Block → State → List Instr → Jump → Result Val
   {- jmp l, among the blocks bs -}
   jump : ℕ → List Block → State → ℕ → Result Val
-  call : ℕ → Maybe Body → Regs → Result Val
+  call : ℕ → Maybe Body → Val → Val → Result Val
 
   run ck bs (φ , ρ) (callq a ∷ is) j =
-    do f ← arg (φ , ρ) a; v ← call ck (code? f) ρ; run ck bs (φ , regs v nothing nothing nothing) is j
+    do f ← arg (φ , ρ) a; e ← from-maybe (%rdi ρ); w ← from-maybe (%rsi ρ); v ← call ck (code? f) e w
+       run ck bs (φ , regs (just v) nothing nothing nothing) is j
   run ck bs s (i ∷ is) j = step s i λ s' → run ck bs s' is j
-  run ck bs (φ , ρ) [] retq = ret (%rax ρ)
+  run ck bs (φ , ρ) [] retq = from-maybe (%rax ρ)
   run ck bs s [] (jmp l) = jump ck bs s l
   run ck bs s [] (je l₁ l₂) = do b ← from-maybe (flag (proj₂ s)); jump ck bs s (if b then l₁ else l₂)
 
@@ -148,12 +149,12 @@ module _ (ds : List Body) where
   ... | yes _ = run ck bs s is j
   ... | no _ = jump ck bs s l
 
-  call ck nothing ρ = wrong
-  call zero (just b) ρ = timeout
-  call (suc ck) (just (body n bs (block is j))) ρ =
-    run ck bs (zero-val ∷ zero-val ∷ replicate (n ∸ 2) zero-val , ρ) is j
+  call ck nothing e w = wrong
+  call zero (just b) e w = timeout
+  call (suc ck) (just (body n bs (block is j))) e w =
+    run ck bs (zero-val ∷ zero-val ∷ replicate (n ∸ 2) zero-val , regs nothing (just e) (just w) nothing) is j
 
 {- a program starts with main, in a frame of zeros -}
 sem : Program → Semantics
 sem (program ds (body n bs (block is j))) =
-  semantics Val obs (λ ck → run ds ck bs (replicate n zero-val , regs zero-val nothing nothing nothing) is j)
+  semantics Val obs (λ ck → run ds ck bs (replicate n zero-val , regs (just zero-val) nothing nothing nothing) is j)

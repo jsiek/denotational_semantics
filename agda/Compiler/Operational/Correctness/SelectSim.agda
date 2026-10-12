@@ -250,15 +250,15 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   glob k = trans (cong (_‼ k) (sym (reverse-map (select-body prologue) ds))) (‼-map (select-body prologue) (reverse ds) k)
 
   callB : ∀ {ve va} mb → Dest D d is j bs₂ σ → G.step ds s₁ ≡ G.call mb ve va φ D
-    → X.step xds s₂ ≡ X.call (mmap (select-body prologue) mb) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ) f
-                              (ρ [ rdi ↦ just ve ] [ rsi ↦ just va ]) → Fate 0 s₁ s₂
+    → X.step xds s₂ ≡ X.call (mmap (select-body prologue) mb) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ)
+                              (just ve) (just va) → Fate 0 s₁ s₂
   callB nothing dst g h = stop g h
   callB (just (C.body n bs t)) dst g h = go g (plus h (refl ◅ refl ◅ ε)) (exec~ (callK dst))
 
 
   {- the call, after its operands -}
   callF : ∀ {ve va} vf → Dest D d is j bs₂ σ
-    → X.step xds s₂ ≡ X.callq? xds (just vf) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ) f
+    → X.step xds s₂ ≡ X.callq? xds (just vf) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ)
                                    (ρ [ rdi ↦ just ve ] [ rsi ↦ just va ])
     → Fate 0 (G.ret va φ (G.frm (M.appA vf ve) D)) s₂
   callF (code k) dst h = callB (G.global ds k) dst refl (trans h (cong (λ m → X.call m _ _ _) (glob k)))
@@ -277,7 +277,7 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
     xe = λ {m} (ee : G.atom φ e ≡ m) →
       cong (λ m → X.put (reg rdi) m φ ρ (X.run (movq (select-atm a) (reg rsi) ∷ is₁) j bs₂ σ f)) (trans (sel-ok {ρ = ρ} e) ee)
     xa = λ {m ρ} (ea : G.atom φ a ≡ m) → cong (λ m → X.put (reg rsi) m φ ρ (X.run is₁ j bs₂ σ f)) (trans (sel-ok {ρ = ρ} a) ea)
-    xf = λ {m ρ} (ef : G.atom φ fn ≡ m) → cong (λ m → X.callq? xds m k f ρ) (trans (sel-ok {ρ = ρ} fn) ef)
+    xf = λ {m ρ} (ef : G.atom φ fn ≡ m) → cong (λ m → X.callq? xds m k ρ) (trans (sel-ok {ρ = ρ} fn) ef)
     sc : ∀ mf me ma → G.atom φ fn ≡ mf → G.atom φ e ≡ me → G.atom φ a ≡ ma
       → F s₁ (X.run (select-simple (app fn e a) d ++ is) j bs₂ σ f φ ρ)
     sc nothing nothing _ ef ee ea = 1 , lag g (stop (evs fn ef) (xe ee))
@@ -346,8 +346,8 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   fate : Match s₁ s₂ → F s₁ s₂
   fate (now fa) = _ , fa
   fate (ret~ halt e) = 0 , stop refl (cong X.halt? e)
-  fate (ret~ (callK dst) e) with to-dest dst e
-  ... | _ , τ , m = 0 , go refl (plus refl τ) m
+  fate (ret~ {v = v} (callK dst) e) with to-dest {ρ = X.regs (just v) nothing nothing} dst refl
+  ... | _ , τ , m = 0 , go refl (plus (cong (λ m → X.back m _ _ _ _ _) e) τ) m
   fate (exec~ {t = return s} k) =
     subst (λ is → F (G.exec (return s) _ _ _) (X.run is retq _ _ _ _ _)) (++-identityʳ _) (simple s (retD k) refl)
   fate (exec~ {t = seq x s t} k) = simple s (seqD k) refl

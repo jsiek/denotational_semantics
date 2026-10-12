@@ -37,7 +37,7 @@ open import Compiler.Functional.Interp.Clos5 using (Val; code; pair; const; tup;
 open import Compiler.Functional.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
 import Compiler.Functional.Interp.CFG as G
 import Compiler.Functional.Interp.X86 as X
-open X using (regs; flag; %rax; arg; args; write; bool?)
+open X using (regs; arg; args; write; bool?)
 import Compiler.Functional.Interp.ISWIM as ISWIM
 open import Compiler.Functional.Correctness.RCOFuel using (bind-cong; bind≡; ≡→rel; ‼-pw)
 open import Compiler.Functional.Correctness.ExplicateFuel using (compile-cfg-correct)
@@ -105,8 +105,7 @@ module _ (ds : List CFG.Body) where
   private ds' = map (select-body prologue) ds
 
   {- at clock ck, where calls agree -}
-  module _ (ck : ℕ) (calls : ∀ f x e w fl
-             → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) (regs x (just e) (just w) fl)) where
+  module _ (ck : ℕ) (calls : ∀ f e w → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) e w) where
 
     {- r, computed into d, then the rest of a block -}
     simple-ok : ∀ r d φ ρ {bs is j} {k : Val → Result Val}
@@ -118,12 +117,12 @@ module _ (ds : List CFG.Body) where
     simple-ok (Imp.atm (lit B k)) d φ ρ h = h _ ρ
     simple-ok (Imp.atm (fun-ref k)) d φ ρ h = h _ ρ
     simple-ok (Imp.app (var y) e a) d φ ρ h with φ ‼ y
-    ... | just f = atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls f (%rax ρ) e w (flag ρ)) λ v → h v (regs v nothing nothing nothing)
+    ... | just f = atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls f e w) λ v → h v (regs (just v) nothing nothing nothing)
     ... | nothing = sym (wrong-ok e φ ρ λ _ → wrong-ok a φ _ λ _ → refl)
     simple-ok (Imp.app (lit B k) e a) d φ ρ h =
-      atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (const B k) (%rax ρ) e w (flag ρ)) λ v → h v (regs v nothing nothing nothing)
+      atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (const B k) e w) λ v → h v (regs (just v) nothing nothing nothing)
     simple-ok (Imp.app (fun-ref k) e a) d φ ρ h =
-      atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (code k) (%rax ρ) e w (flag ρ)) λ v → h v (regs v nothing nothing nothing)
+      atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (code k) e w) λ v → h v (regs (just v) nothing nothing nothing)
     simple-ok (Imp.pair a b) d φ ρ h = atm-ok a φ ρ λ v → atm-ok b φ ρ λ w → h (pair v w) ρ
     simple-ok (Imp.fst a) d φ ρ h = atm-ok a φ ρ λ v → bind-cong (first v) λ w → h w ρ
     simple-ok (Imp.snd a) d φ ρ h = atm-ok a φ ρ λ v → bind-cong (second v) λ w → h w ρ
@@ -178,15 +177,14 @@ module _ (ds : List CFG.Body) where
   code-pw (inl _) = M.nothing
   code-pw (inr _) = M.nothing
 
-  calls≡ : ∀ ck f x e w fl → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) (regs x (just e) (just w) fl)
-  call-pw : ∀ ck {mb mb'} → M.Pointwise Def mb mb' → ∀ x e w fl
-    → G.call ds ck mb e w ≡ X.call ds' ck mb' (regs x (just e) (just w) fl)
+  calls≡ : ∀ ck f e w → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) e w
+  call-pw : ∀ ck {mb mb'} → M.Pointwise Def mb mb' → ∀ e w → G.call ds ck mb e w ≡ X.call ds' ck mb' e w
 
   calls≡ ck f = call-pw ck (code-pw f)
 
-  call-pw ck M.nothing x e w fl = refl
-  call-pw zero (M.just _) x e w fl = refl
-  call-pw (suc ck) (M.just {CFG.body n bs t} refl) x e w fl = tail-ok ck (calls≡ ck) t bs _ _
+  call-pw ck M.nothing e w = refl
+  call-pw zero (M.just _) e w = refl
+  call-pw (suc ck) (M.just {CFG.body n bs t} refl) e w = tail-ok ck (calls≡ ck) t bs _ _
 
 {- The end theorem -----------------------------------------------------------------}
 

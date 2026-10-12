@@ -41,10 +41,8 @@ open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import GraphModel.Ops using (nthD)
-open import Compiler.Model.Graph.Prim using () renaming (out to dout)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import Primitives using (Int)
-open import Data.Bool using (true; false)
 open import Compiler.Lang.Clos5 hiding (AST)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
@@ -53,9 +51,9 @@ open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import ListUtil
 open import Compiler.Operational.Machine.Clos5
 open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
-open import Compiler.Operational.Adequacy.Common using (ShapeOf; ShapeAt; length→has-length)
 open import Compiler.Operational.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
 open import Compiler.Operational.Adequacy.Clos5Common ds
+open import Compiler.Operational.Adequacy.Values using (module Rel)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
@@ -84,63 +82,12 @@ _⊢_⇓_ : Env → AST → Val → Set
 ⇓-det {v₁ = v₁} {v₂} e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
 ... | refl = refl
 
-{- The logical relation ----------------------------------------------------------}
+{- The logical relation (Values.agda): code k runs definition k -------------------}
 
-𝕍 : Value → Val → Set
-𝕍code : List Value → Value → ℕ → Set
-𝕍s : List Value → Val → Set
-𝕍At : ∀ {n} → Fin n → Value → List Val → Set
+Run : ℕ → Val → Val → (Val → Set) → Set
+Run k e v P = Σ[ N ∈ AST ] global ds k ≡ just N × Σ[ v' ∈ Val ] (v ∷ e ∷ []) ⊢ N ⇓ v' × P v'
 
-𝕍 (dconst {B} k) v = v ≡ const B k
-𝕍 ν (code k) = ⊤
-𝕍 (X ↦ w) (code k) = 𝕍code X w k
-𝕍 ⦅ u₁ , u₂ ⦆ (pair v w) = 𝕍 u₁ v × 𝕍 u₂ w
-𝕍 ⟨⟩ (tup vs) = vs ≡ []
-𝕍 (tup[ i ] d) (tup vs) = 𝕍At i d vs
-𝕍 (left d) (inl v) = 𝕍 d v
-𝕍 (right d) (inr v) = 𝕍 d v
-𝕍 _ _ = ⊥
-
-{- the entries of code, Λ X. Λ Y. N -}
-𝕍code X ν k = ⊤
-𝕍code X (Y ↦ w) k =
-  ∀ e → 𝕍s X e → ∀ v → 𝕍s Y v
-  → Σ[ N ∈ AST ] global ds k ≡ just N × Σ[ v' ∈ Val ] (v ∷ e ∷ []) ⊢ N ⇓ v' × 𝕍 w v'
-𝕍code X _ k = ⊥
-
-𝕍s [] v = ⊤
-𝕍s (d ∷ V) v = 𝕍 d v × 𝕍s V v
-
-𝕍At {suc n} zero d (v ∷ vs) = length vs ≡ n × 𝕍 d v
-𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
-𝕍At _ d [] = ⊥
-
-𝕍s-∈ : ∀ V {v d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
-𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
-𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
-
-𝕍At-proj : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → Σ[ v ∈ Val ] proj i vs ≡ just v × 𝕍 d v
-𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
-𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
-
-𝕍-out : ∀ r → 𝕍 (dout r) (out r)
-𝕍-out (int k) = refl
-𝕍-out (bool true) = refl
-𝕍-out (bool false) = refl
-
-{- related values are observed in the shape of the denotational value -}
-𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
-𝕍At-shape : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → ShapeAt i (obs-list vs) d
-𝕍-shape (dconst k) (const B k) refl = refl
-𝕍-shape ν (code k) r = tt
-𝕍-shape (X ↦ w) (code k) r = tt
-𝕍-shape ⦅ u₁ , u₂ ⦆ (pair v w) r = tt
-𝕍-shape ⟨⟩ (tup []) refl = refl
-𝕍-shape (tup[ i ] d) (tup vs) r = 𝕍At-shape i d vs r
-𝕍-shape (left d) (inl v) r = 𝕍-shape d v r
-𝕍-shape (right d) (inr v) r = 𝕍-shape d v r
-𝕍At-shape {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ = ⟨ trans (length-obs-list vs) len , 𝕍-shape d v r ⟩
-𝕍At-shape (suc i) d (v ∷ vs) r = 𝕍At-shape i d vs r
+open Rel Run public
 
 {- Related environments and tables -----------------------------------------------}
 
@@ -164,10 +111,6 @@ collect : ∀ {γ M v} (P : Value → Val → Set) V
 collect P V all e d d∈ with all d d∈
 ... | ⟨ v' , ⟨ e' , r ⟩ ⟩ with ⇓-det e e'
 ... | refl = r
-
-all→𝕍s : ∀ V {v} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
-all→𝕍s [] all = tt
-all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
 
 Evals : Env → List AST → List Val → Set
 Evals γ = Pointwise (λ M v → γ ⊢ M ⇓ v)

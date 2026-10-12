@@ -10,13 +10,14 @@ module ListUtil where
 
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; _∷ʳ_; _++_; length; replicate)
+open import Data.List using (List; []; _∷_; _∷ʳ_; _++_; [_]; length; replicate; reverse)
+open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; s≤s)
-open import Data.Product using (Σ-syntax; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
+open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; s≤s; z≤n)
+open import Data.Product using (Σ-syntax; _×_; _,_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
 open import abt.Sig using (■)
 open import abt.AbstractBindingTree using (ABT; Args)
 open import NewSyntaxUtil using (_,,_)
@@ -49,6 +50,42 @@ _‼_ : List A → ℕ → Maybe A
 ‼-++ : ∀ (ws : List A) {a zs} → (ws ++ a ∷ zs) ‼ length ws ≡ just a
 ‼-++ [] = refl
 ‼-++ (w ∷ ws) = ‼-++ ws
+
+‼-just : ∀ (vs : List A) x {v} → vs ‼ x ≡ just v → x < length vs
+‼-just (u ∷ vs) zero _ = s≤s z≤n
+‼-just (u ∷ vs) (suc x) e = s≤s (‼-just vs x e)
+
+replicate-‼ : ∀ n {a : A} x → x < n → replicate n a ‼ x ≡ just a
+replicate-‼ (suc n) zero _ = refl
+replicate-‼ (suc n) (suc x) (s≤s x<) = replicate-‼ n x x<
+
+replicate-‼-just : ∀ n {a b : A} x → replicate n a ‼ x ≡ just b → b ≡ a
+replicate-‼-just (suc n) zero refl = refl
+replicate-‼-just (suc n) (suc x) e = replicate-‼-just n x e
+
+‼-split : ∀ (vs : List A) k {b} → vs ‼ k ≡ just b → Σ[ xs ∈ List A ] Σ[ ys ∈ List A ] vs ≡ xs ++ b ∷ ys × length xs ≡ k
+‼-split (x ∷ vs) zero refl = [] , vs , refl , refl
+‼-split (x ∷ vs) (suc k) e with ‼-split vs k e
+... | xs , ys , refl , refl = x ∷ xs , ys , refl , refl
+
+{- element k of the reverse of a list, counting from its end -}
+reverse-‼-split : ∀ (vs : List A) k {b} → reverse vs ‼ k ≡ just b
+  → Σ[ xs ∈ List A ] Σ[ ys ∈ List A ] vs ≡ xs ++ b ∷ ys × length ys ≡ k
+reverse-‼-split vs k {b} e with ‼-split (reverse vs) k e
+... | xs , ys , e' , refl =
+  reverse ys , reverse xs
+  , trans (sym (reverse-involutive vs))
+      (trans (cong reverse e')
+        (trans (reverse-++ xs (b ∷ ys))
+          (trans (cong (_++ reverse xs) (unfold-reverse b ys)) (++-assoc (reverse ys) [ b ] (reverse xs)))))
+  , length-reverse xs
+
+reverse-‼-suffix : ∀ (xs : List A) b ys → reverse (xs ++ b ∷ ys) ‼ length ys ≡ just b
+reverse-‼-suffix xs b ys =
+  trans (cong (_‼ length ys)
+          (trans (reverse-++ xs (b ∷ ys))
+            (trans (cong (_++ reverse xs) (unfold-reverse b ys)) (++-assoc (reverse ys) [ b ] (reverse xs)))))
+        (trans (cong (λ m → (reverse ys ++ b ∷ reverse xs) ‼ m) (sym (length-reverse ys))) (‼-++ (reverse ys)))
 
 length-snoc : ∀ (vs : List A) v → length (vs ∷ʳ v) ≡ suc (length vs)
 length-snoc [] v = refl
