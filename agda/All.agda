@@ -150,6 +150,7 @@ import proof.Compiler.Operational.Correctness.RCOSim
 import proof.Compiler.Operational.Correctness.LiftLocalsSim
 import proof.Compiler.Operational.Correctness.ExplicateSim
 import proof.Compiler.Operational.Correctness.SelectSim
+import proof.Compiler.Operational.Correctness.CompilerX86Sim
 
 {- experiment: a direct backward simulation for delay, without
    determinism, for comparison (see papers/PLDI-2027/loc.md) -}
@@ -221,3 +222,5 @@ import proof.Compiler.Reduction.Correctness.DelayRed
 import proof.Compiler.Reduction.Correctness.GlobalizeRed
 import proof.Compiler.Reduction.Correctness.CompilerRed
 import proof.Compiler.Reduction.Correctness.RCORed
+import proof.Compiler.Reduction.Correctness.LiftLocalsRed
+import proof.Compiler.Reduction.Correctness.CompilerX86Red

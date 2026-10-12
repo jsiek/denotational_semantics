@@ -75,6 +75,7 @@ import proof.Compiler.Operational.Correctness.LiftLocalsSim as LiftLocalsSim
 import proof.Compiler.Operational.Correctness.ExplicateSim as ExplicateSim
 import proof.Compiler.Operational.Correctness.SelectSim as SelectSim
 import proof.Compiler.Operational.Correctness.CompilerSim as CompilerSim
+import proof.Compiler.Operational.Correctness.CompilerX86Sim as CompilerX86Sim
 
 {- Each pass ------------------------------------------------------------------}
 
@@ -131,11 +132,11 @@ compile-imp-correct = LiftLocalsSim.compile-imp-correct
 
 compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMₘ.sem M) (CFGₘ.sem (compile-cfg M))
-compile-cfg-correct = ExplicateSim.compile-cfg-correct
+compile-cfg-correct = CompilerX86Sim.compile-cfg-correct
 
 compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMₘ.sem M) (X86ₘ.sem (compile-x86 M))
-compile-x86-correct = SelectSim.compile-x86-correct
+compile-x86-correct = CompilerX86Sim.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original

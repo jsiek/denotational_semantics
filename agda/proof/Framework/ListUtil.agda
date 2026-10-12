@@ -116,3 +116,8 @@ proj-map f (suc i) (v ∷ vs) = proj-map f i vs
 proj-map f {suc n} zero (v ∷ vs) rewrite has-length-map f n vs with has-length n vs
 ... | true = refl
 ... | false = refl
+
+‼-map : ∀ (f : A → B) (xs : List A) k → Data.List.map f xs ‼ k ≡ Data.Maybe.map f (xs ‼ k)
+‼-map f [] k = refl
+‼-map f (x ∷ xs) zero = refl
+‼-map f (x ∷ xs) (suc k) = ‼-map f xs k

@@ -24,7 +24,9 @@
   where the blocks of bs keep their labels (block-≼): explicate only
   adds blocks (grows).
 
-  There is no precondition.
+  There is no precondition. This proof, between the machines of Imp and
+  CFG, is shared by the CEK machine + simulation and the reduction
+  semantics + simulation developments.
 
 -}
 
@@ -33,17 +35,14 @@ module proof.Compiler.Operational.Correctness.ExplicateSim where
 open import Compiler.Lang.Imp as Imp using (Atm; Exp; simple; atm; case; assign; body; program)
 open import Compiler.Lang.CFG using (Tail; goto; block)
 open import Compiler.Compile.Explicate
-open import Compiler.Compile.Pipeline using (compile-imp; compile-cfg)
-open import proof.Compiler.Compile.EncloseScope using (Closed)
+
 open import proof.Framework.ListUtil using (_‼_)
 open import proof.Compiler.Operational.Smallstep using (Machine; next; plus; Star; ε; _◅_)
 open import proof.Compiler.Operational.Simulation
   using (Answers≺; stops; steps; stutters; FSim; Equivalent; equivalent; equiv-trans)
 import Compiler.Operational.Machine.Imp as I
 import Compiler.Operational.Machine.CFG as G
-import Compiler.Operational.Machine.ISWIM as S
-open import proof.Compiler.Operational.Correctness.RCOSim using (‼-map)
-open import proof.Compiler.Operational.Correctness.LiftLocalsSim using (compile-imp-correct)
+open import proof.Framework.ListUtil using (‼-map)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; map; reverse)
@@ -223,8 +222,3 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
 
 explicate-correct : ∀ P → Equivalent (I.sem P) (G.sem (explicate P))
 explicate-correct (program ds (body n e)) = equivalent (Sim.fsim ds n e)
-
-{- The whole compiler, into CFG -------------------------------------------------}
-
-compile-cfg-correct : ∀ M → Closed M → Equivalent (S.sem M) (G.sem (compile-cfg M))
-compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))

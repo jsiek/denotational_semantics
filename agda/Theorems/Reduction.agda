@@ -24,8 +24,9 @@
   To read them: the languages (Compiler/Lang/), the passes
   (Compiler/Compile/), the semantics, the observations, and the
   preconditions: Closed (Compiler/Compile/EncloseScope.agda), WS
-  (Framework/Syntax/Scope.agda) and Scoped
-  (Compiler/Compile/PipelineScope.agda).
+  (Framework/Syntax/Scope.agda), Scoped
+  (Compiler/Compile/PipelineScope.agda) and MonProgram
+  (Compiler/Lang/Mon.agda).
 
 -}
 
@@ -39,6 +40,9 @@ import Compiler.Lang.Clos2 as Clos2
 import Compiler.Lang.Clos3 as Clos3
 import Compiler.Lang.Clos4 as Clos4
 import Compiler.Lang.Clos5 as Clos5
+open import Compiler.Lang.Mon using (MonProgram)
+import Compiler.Lang.Imp as Imp
+import Compiler.Lang.CFG as CFG
 
 open import Compiler.Compile.Enclose using (enclose)
 open import Compiler.Compile.Optimize using (optimize-program)
@@ -46,7 +50,10 @@ open import Compiler.Compile.Concretize using (concretize-program)
 open import Compiler.Compile.Delay using (delay)
 open import Compiler.Compile.Globalize using (globalize)
 open import Compiler.Compile.RCO using (rco-program)
-open import Compiler.Compile.Pipeline using (compile; compile-mon)
+open import Compiler.Compile.LiftLocals using (lift-program)
+open import Compiler.Compile.Explicate using (explicate)
+open import Compiler.Compile.Select using (select)
+open import Compiler.Compile.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
@@ -57,6 +64,9 @@ import Compiler.Reduction.Clos2 as Clos2ᵣ
 import Compiler.Reduction.Clos3 as Clos3ᵣ
 import Compiler.Reduction.Clos4 as Clos4ᵣ
 import Compiler.Reduction.Clos5 as Clos5ᵣ
+import Compiler.Operational.Machine.Imp as Impₘ
+import Compiler.Operational.Machine.CFG as CFGₘ
+import Compiler.Operational.Machine.X86 as X86ₘ
 
 import proof.Compiler.Reduction.Correctness.EncloseRed as EncloseRed
 import proof.Compiler.Reduction.Correctness.OptimizeRed as OptimizeRed
@@ -65,6 +75,10 @@ import proof.Compiler.Reduction.Correctness.DelayRed as DelayRed
 import proof.Compiler.Reduction.Correctness.GlobalizeRed as GlobalizeRed
 import proof.Compiler.Reduction.Correctness.CompilerRed as CompilerRed
 import proof.Compiler.Reduction.Correctness.RCORed as RCORed
+import proof.Compiler.Reduction.Correctness.LiftLocalsRed as LiftLocalsRed
+import proof.Compiler.Operational.Correctness.ExplicateSim as ExplicateSim
+import proof.Compiler.Operational.Correctness.SelectSim as SelectSim
+import proof.Compiler.Reduction.Correctness.CompilerX86Red as CompilerX86Red
 
 {- Each pass ------------------------------------------------------------------}
 
@@ -95,6 +109,19 @@ rco-correct : ∀ (P : Clos5.Program) → Scoped P
   → Equivalent (Clos5ᵣ.sem P) (Clos5ᵣ.sem (rco-program P))
 rco-correct = RCORed.rco-correct
 
+{- lift locals, for programs in monadic normal form (which rco produces) -}
+lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P)
+  → Equivalent (Clos5ᵣ.sem P) (Impₘ.sem (lift-program P mp))
+lift-locals-correct = LiftLocalsRed.lift-correct
+
+{- explicate control and select instructions, between the machines of Imp,
+   CFG and X86 (the proofs of the CEK machine + simulation development) -}
+explicate-correct : ∀ (P : Imp.Program) → Equivalent (Impₘ.sem P) (CFGₘ.sem (explicate P))
+explicate-correct = ExplicateSim.explicate-correct
+
+select-correct : ∀ (P : CFG.Program) → Equivalent (CFGₘ.sem P) (X86ₘ.sem (select P))
+select-correct = SelectSim.select-correct
+
 {- The whole compiler, for closed programs ----------------------------------}
 
 compile-correct : ∀ (M : ISWIM.AST) → Closed M
@@ -104,6 +131,18 @@ compile-correct = CompilerRed.compile-correct
 compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile-mon M))
 compile-mon-correct = RCORed.compile-mon-correct
+
+compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵣ.sem M) (Impₘ.sem (compile-imp M))
+compile-imp-correct = LiftLocalsRed.compile-imp-correct
+
+compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵣ.sem M) (CFGₘ.sem (compile-cfg M))
+compile-cfg-correct = CompilerX86Red.compile-cfg-correct
+
+compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵣ.sem M) (X86ₘ.sem (compile-x86 M))
+compile-x86-correct = CompilerX86Red.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original

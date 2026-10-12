@@ -156,9 +156,11 @@ GROUPS = [
     ('op', 'globalize', [OP + 'Correctness/GlobalizeSim.agda']),
     ('op', 'rco', [OP + 'Correctness/RCOSim.agda']),
     ('op', 'lift locals', [OP + 'Correctness/LiftLocalsSim.agda']),
-    ('op', 'explicate control', [OP + 'Correctness/ExplicateSim.agda']),
-    ('op', 'select instructions', [OP + 'Correctness/SelectSim.agda']),
-    ('op', 'composition', [OP + 'Correctness/CompilerSim.agda']),
+    # explicate control and select instructions are between the machines of
+    # first-order languages, and are shared with the reduction proof
+    ('op+red', 'explicate control', [OP + 'Correctness/ExplicateSim.agda']),
+    ('op+red', 'select instructions', [OP + 'Correctness/SelectSim.agda']),
+    ('op', 'composition', [OP + 'Correctness/CompilerSim.agda', OP + 'Correctness/CompilerX86Sim.agda']),
 
     # reduction semantics (substitution) for the languages with binders,
     # and the framework at this compiler's observations (Smallstep.agda)
@@ -170,7 +172,7 @@ GROUPS = [
     ('red', 'globalize', [RP + 'Correctness/GlobalizeRed.agda']),
     ('red', 'rco', [RP + 'Correctness/RCORed.agda']),
     ('red', 'lift locals', [RP + 'Correctness/LiftLocalsRed.agda']),
-    ('red', 'composition', [RP + 'Correctness/CompilerRed.agda']),
+    ('red', 'composition', [RP + 'Correctness/CompilerRed.agda', RP + 'Correctness/CompilerX86Red.agda']),
 
     # with the framework at this compiler's observations (Clock.agda)
     ('ck', 'semantics of the languages', [F + 'Interp/*.agda', F + 'Clock.agda', FP + 'Clock.agda']),
