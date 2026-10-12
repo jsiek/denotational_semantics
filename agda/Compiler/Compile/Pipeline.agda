@@ -11,7 +11,8 @@
   compile-mon continues with remove complex operands (Clos5 → Clos5),
   into monadic normal form, compile-imp then with lift locals
   (monadic Clos5 → Imp), and compile-cfg then with explicate control
-  (Imp → CFG).
+  (Imp → CFG), and compile-x86 then with select instructions
+  (CFG → X86).
 
 -}
 
@@ -28,6 +29,8 @@ open import Compiler.Compile.LiftLocals using (lift-program)
 import Compiler.Lang.Imp as Imp
 import Compiler.Lang.CFG as CFG
 open import Compiler.Compile.Explicate using (explicate)
+import Compiler.Lang.X86 as X86
+open import Compiler.Compile.Select using (select)
 
 module Compiler.Compile.Pipeline where
 
@@ -45,3 +48,6 @@ compile-imp M = lift-program (compile-mon M) (rco-program-mon (compile M))
 
 compile-cfg : AST → CFG.Program
 compile-cfg M = explicate (compile-imp M)
+
+compile-x86 : AST → X86.Program
+compile-x86 M = select (compile-cfg M)
