@@ -3179,7 +3179,7 @@ where $\key{simple}$ is the Agda's $\key{eval\text{-}simple}$.
 \begin{align*}
   \EV{\vec{b}}{k}\,\sigma\,r &= \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \bind \key{here}_\sigma \\
   \EV{\vec{b}}{k}\,\sigma\,e &=
-    \lift{\sigma(a)} \bind \key{inj?} \bind [\lambda u.\, \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_1,\;
+    \Do v \leftarrow \lift{\sigma(a)};; \key{inj?}(v) \bind [\lambda u.\, \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_1,\;
       \lambda u.\, \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_2] \\
     &\qquad (e = \Casei{a}{s}{e_1}{e_2}) \\
   \EV{\vec{b}}{k}\,\sigma\,(\assign{s}{e_1}{e_2}) &=
@@ -3214,7 +3214,7 @@ the blocks older than it.
     \key{set}(\sigma, s, v, \lambda \sigma'.\, \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma'\,t) \\
   \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{goto}\; l) &= \key{jump}^k_{\vec{b}}\,\vec{t}\,\sigma\,l \\
   \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &=
-    \lift{\sigma(a)} \bind \key{inj?} \bind [G_{l_1}, G_{l_2}] \\
+    \Do v \leftarrow \lift{\sigma(a)};; \key{inj?}(v) \bind [G_{l_1}, G_{l_2}] \\
   &\qquad\text{where } G_l(u) = \key{set}(\sigma, s, u, \lambda \sigma'.\, \key{jump}^k_{\vec{b}}\,\vec{t}\,\sigma'\,l) \\[1ex]
   \key{jump}^k_{\vec{b}}\,(t_0, \ldots, t_{j-1})\,\sigma\,l &=
     \begin{cases}
