@@ -35,16 +35,19 @@ module Compiler.Lang.X86 where
    callq a            a must be a code pointer, to definition k: run the
                       body of definition k with %rdi and %rsi as they
                       are, and continue with %rax as it returns; the
-                      caller's frame is untouched (the registers and the
-                      flag are not saved)
+                      caller's frame is untouched; the call clobbers
+                      %rdi, %rsi and the flag: reading them before they
+                      are set again goes wrong
  A block ends with retq (return %rax), jmp l, or je l₁ l₂ (jump to l₁ if
  the flag is set and to l₂ if not; no flag goes wrong). Reading or
  assigning a slot beyond the frame goes wrong. Jumps are as in CFG:
  blocks are listed newest first, block l may jump only to older blocks,
- and the start of a body to any block. A body runs in a fresh frame of
- max(2, locals) slots holding 0 (the start of a global definition first
- moves %rdi and %rsi, its free variables and argument, to slots 0 and
- 1); main runs with the registers holding 0 and no flag.
+ and the start of a body to any block. As in CFG, the body of a global
+ definition runs in a fresh frame of max(2, locals) slots holding 0
+ (its start first moves %rdi and %rsi, its free variables and
+ argument, to slots 0 and 1), and main runs in a fresh frame of locals
+ slots holding 0, with %rax holding 0, %rdi and %rsi unset (reading
+ them goes wrong) and no flag.
 
 -}
 
