@@ -200,8 +200,8 @@ GROUPS = [
     ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
 ]
 
-THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/CompCert.agda',
-            'ck': 'agda/Theorems/CakeML.agda', 'adeq': 'agda/Theorems/Adequacy.agda'}
+THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simulation.agda',
+            'ck': 'agda/Theorems/Interpreter.agda', 'adeq': 'agda/Theorems/Adequacy.agda'}
 
 
 def strip_comments(s):
@@ -282,7 +282,7 @@ def modname(u):
 SIDES = ('den', 'op', 'ck')
 # column labels, and the short names used in lists and messages
 LABELS = {'den': 'denotational: graph model', 'op': 'CEK machine + simulation',
-          'ck': 'interpreter + value relations', 'adeq': 'adequacy'}
+          'ck': 'clocked interpreter + value relations', 'adeq': 'adequacy'}
 NAMES = {'den': 'graph model', 'op': 'simulation', 'ck': 'interpreter',
          'adeq': 'adequacy'}
 EXTRA = 'shared modules not used by all three proofs'

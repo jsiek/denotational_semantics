@@ -8,7 +8,7 @@
   that it can be read without opening proof/.
 
   To read them: those of Theorems/Denotational.agda (the graph-model
-  semantics, and ρ₀) and of Theorems/CompCert.agda (the machines, the
+  semantics, and ρ₀) and of Theorems/Simulation.agda (the machines, the
   observations, Closed). Converges T is terminating with some answer
   (an observation other than o-wrong), and A ⇔ B is (A → B) × (B → A)
   (Compiler/Observation.agda).
@@ -121,7 +121,7 @@ x86-nonempty-iff M c = AdequacyX86.adequacy-converges _ wf , AdequacyX86.sound-n
    running the compiled program terminate with the same constants, and
    one terminates with an answer exactly when the other does. (Going
    wrong and diverging both denote the empty set, so this cannot tell
-   them apart; Theorems/CompCert.agda can.) -}
+   them apart; Theorems/Simulation.agda can.) -}
 
 end-to-end-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
   → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (Clos5ₘ.sem (compile M)) (o-const B k)

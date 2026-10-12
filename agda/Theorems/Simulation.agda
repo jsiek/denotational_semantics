@@ -1,6 +1,7 @@
 {-
 
-  The correctness of the compiler, CompCert style: the public statements.
+  The correctness of the compiler, by CEK machines and simulations: the
+  public statements.
   The proofs (forward simulations) are in
   proof/Compiler/Operational/Correctness/; each theorem here is one of
   them, with its type written out, so that it can be read without opening
@@ -26,7 +27,7 @@
 
 -}
 
-module Theorems.CompCert where
+module Theorems.Simulation where
 
 open import Compiler.Observation using (o-const; o-wrong; Converges; _⇔_)
 open import Compiler.Operational.Smallstep using (Terminates; Diverges; Equivalent)

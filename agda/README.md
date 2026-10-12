@@ -7,9 +7,10 @@ A compiler from ISWIM to X86,
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
-proved correct three ways: in a denotational graph model, CompCert style
-(small-step machines and forward simulations), and CakeML style (clocked
-interpreters); and the graph model proved sound and adequate for the
+proved correct three ways: denotational: graph model; CEK machine +
+simulation (small-step machines and forward simulations, in the style of
+CompCert); and clocked interpreter + value relations (in the style of
+CakeML); and the graph model proved sound and adequate for the
 machines.
 
 Check everything, from the root of the repository, with
@@ -38,11 +39,11 @@ that every module outside `proof/` is used by a theorem statement).
     any), and the whole compiler, into Clos5, monadic Clos5, Imp, CFG and X86,
     preserves the constants a program produces and whether it produces
     anything.
-  * `Theorems/CompCert.agda`: each pass, and the compiler into each of
+  * `Theorems/Simulation.agda`: each pass, and the compiler into each of
     Clos5, monadic Clos5, Imp, CFG and X86, produces an equivalent
     machine (the same observations on termination, including going
     wrong, and divergence exactly when the source diverges).
-  * `Theorems/CakeML.agda`: the same, for the clocked interpreters.
+  * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
   * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
     the ISWIM machine, and for the Clos5 and X86 machines running
     compiled programs; so the compiler, observed through the machines
@@ -65,15 +66,15 @@ that every module outside `proof/` is used by a theorem statement).
     and `Sem/`, the semantics of each language) and
     `Framework/GraphModel/` (sets as predicates, environments, the
     values and their consistency, and the operators);
-  * CompCert style: `Compiler/Operational/Machine/` (a small-step
+  * CEK machine + simulation: `Compiler/Operational/Machine/` (a small-step
     machine per language), `Compiler/Operational/Smallstep.agda` and
     `Framework/Smallstep.agda` (machines, termination, divergence,
     `Equivalent`), `Compiler/Observation.agda`;
-  * CakeML style: `Compiler/Functional/Interp/` (a clocked interpreter
+  * clocked interpreter + value relations: `Compiler/Functional/Interp/` (a clocked interpreter
     per language), `Compiler/Functional/Clock.agda` and
     `Framework/Clocked.agda` (results, termination, divergence,
     `Equivalent`), `Compiler/Observation.agda`;
-  * adequacy: those of the denotational and CompCert-style theorems.
+  * adequacy: those of the denotational and simulation theorems.
 
 ## `proof/`
 

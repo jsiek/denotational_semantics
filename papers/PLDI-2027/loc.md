@@ -6,7 +6,7 @@ Each also proves four more passes, after Essentials of Compilation, and the comp
 
 * **Denotational: graph model** ("graph model" in short): a graph-model semantics for each language and one correctness proof per pass, in `agda/Compiler/Model/Graph/` (the proofs under `agda/proof/Compiler/Model/Graph/`), over the graph model in `agda/Framework/GraphModel/`. The theorem is `CompilerCorrect`: the source and compiled program produce the same constants, and one denotation is nonempty exactly when the other is.
 * **CEK machine + simulation** ("simulation" in short; the style of CompCert): a small-step CEK machine for each language (for X86, a machine with a call stack, registers and a flag) and one forward simulation per pass, in `agda/Compiler/Operational/` (the proofs under `agda/proof/Compiler/Operational/`). The theorem is `CompilerSim`: the two programs terminate with the same observation, including going wrong, and one diverges exactly when the other does.
-* **Interpreter + value relations** ("interpreter" in short; the style of CakeML): a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, relating the results of the two interpreters by a relation on values (equality for rco, lift locals, explicate control and select instructions), in `agda/Compiler/Functional/` (the proofs under `agda/proof/Compiler/Functional/`). The theorem is `CompilerFuel`. It has the same shape as the simulation one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock. The interpreters are written in Agda's do-notation, which desugars to the same binds `_>>=_` of the result monad.
+* **Clocked interpreter + value relations** ("interpreter" in short; the style of CakeML): a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, relating the results of the two interpreters by a relation on values (equality for rco, lift locals, explicate control and select instructions), in `agda/Compiler/Functional/` (the proofs under `agda/proof/Compiler/Functional/`). The theorem is `CompilerFuel`. It has the same shape as the simulation one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock. The interpreters are written in Agda's do-notation, which desugars to the same binds `_>>=_` of the result monad.
 
 Counts are code lines: lines that are neither blank, nor comments, nor part of an import statement (`import` or `open import`, with its continuation lines). Imports are left out because their number depends on how finely a development is split into modules, not on what it proves; they were counted until PR #35 (see [History](#history)). The tables are regenerated with
 `python3 papers/PLDI-2027/loc.py` from the repository root. The script fails if any Agda module is not assigned to a group, if one proof imports another proof's modules, adequacy's or an experiment's, if a module of the language-independent infrastructure imports anything that is not infrastructure, if a module of the audit surface imports one of `agda/proof/` (the theorem files excepted), or if a module outside `agda/proof/` is not used by a theorem statement (see [Audit surface](#audit-surface)). A module split into definitions (`agda/X.agda`) and lemmas (`agda/proof/X.agda`) counts as one module, in one group.
@@ -17,7 +17,7 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 As of PR #35 (on master at 4f37d03):
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | semantics of the languages | 690 | 656 | 463 |
 | enclose | 75 | 193 | 137 |
@@ -37,7 +37,7 @@ The denotational lift-locals and explicate-control rows are the proofs against t
 
 Language-independent infrastructure, not in any total (see [Language-independent infrastructure](#language-independent-infrastructure)); each proof column is the part of a group that the proof reaches:
 
-| language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by interpreter + value relations |
+| language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations |
 |---|---:|---:|---:|---:|
 | abstract binding trees | 190 | 190 | 190 | 190 |
 | syntax lemmas (renaming, scoping, uses), list lookups | 226 | 185 | 226 | 226 |
@@ -76,7 +76,7 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 
 The lines a reader must audit to trust each style's theorems (see [Audit surface](#audit-surface)), not in the totals: the shared part (languages, passes, syntax, base types, observations), counted once in the first column, the semantics of each style, and its theorem statements.
 
-| audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for interpreter + value relations | read for adequacy |
+| audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for adequacy |
 |---|---:|---:|---:|---:|---:|
 | languages, compiler passes, syntax, base types (shared) | 916 | 880 | 916 | 916 | 901 |
 | graph model: domain, operators, semantics of each language | 408 | 408 | — | — | 408 |
@@ -204,7 +204,7 @@ Shared by all three proofs, and not counted: 20 modules, 708 lines. Counted in b
 
 The development is split, as in jsiek/AI-for-pl, into what must be read to trust the results and what Agda has checked (see `agda/README.md`):
 
-* **the theorem statements**, `agda/Theorems/{Denotational,CompCert,CakeML,Adequacy}.agda`: each public theorem with its full type, defined as the theorem of `agda/proof/` (`enclose-correct = EncloseCorrect.enclose-correct-closed`), so Agda checks that the statement is the type of the proof;
+* **the theorem statements**, `agda/Theorems/{Denotational,Simulation,Interpreter,Adequacy}.agda`: each public theorem with its full type, defined as the theorem of `agda/proof/` (`enclose-correct = EncloseCorrect.enclose-correct-closed`), so Agda checks that the statement is the type of the proof;
 * **the definitions they use**, everything else outside `agda/proof/`: the languages and passes (`agda/Compiler/{Lang,Compile}/`), the semantics of each style (`agda/Compiler/Model/Graph/`, `agda/Compiler/Operational/Machine/`, `agda/Compiler/Functional/Interp/`, `agda/Compiler/Observation.agda`), and the language-independent definitions in `agda/Framework/` (the abt extract, syntax, the graph model's sets, values and operators, the small-step and clocked frameworks);
 * **`agda/proof/`**, mirroring the paths of the surface: all proofs, and the lemmas of every module that mixed definitions and lemmas (`agda/X.agda` keeps the definitions, `agda/proof/X.agda` re-exports them with the lemmas).
 
@@ -219,7 +219,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 
 ## History
 
-| date | change | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| date | change | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---|---:|---:|---:|
 | 2026-10-11 | first complete versions (PR #14) | 4251 | 2134 | — |
 | 2026-10-11 | leaner delay proof (PR #15) | 3725 | 2134 | — |
@@ -256,7 +256,7 @@ PR #16 also changed the grouping: the shared counts now include `Primitives`, `N
 
 **Adding a feature: arithmetic (PR #25).** Every language got one operator `prim p ⦅ L , M ⦆`, for p ∈ {sub, eq} on integers, which evaluates both operands left to right and goes wrong unless both are integers. `eq` returns `inl ⟨⟩` for true and `inr ⟨⟩` for false, so `case` serves as `if`. Every pass maps over it. The code shared by all three proofs grew by 34 lines (the languages 15, the passes 6, and `Lang/Prim`, 13). The proofs grew as follows:
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | domain, operators, continuity | +31 | — | — |
 | semantics of the languages | +16 | +65 | +54 |
@@ -294,7 +294,7 @@ PR #16 also changed the grouping: the shared counts now include `Primitives`, `N
 
 **Remove complex operands (PR #26).** The new rows, and what moved:
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | semantics of the languages | +117 | 0 | 0 |
 | rco | +237 | +449 | +298 |
@@ -305,7 +305,7 @@ The +117 is `Clos5IswimContinuous`, moved from adequacy; the +278 are `PipelineS
 
 **Explicate control and consistent binders (PR #28).** The first of the three rows of PR #28, by row (old method):
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | generic infrastructure | +4 | 0 | 0 |
 | domain, operators, continuity | +29 | — | — |
@@ -337,7 +337,7 @@ The sizes in this section are as of PR #26 (now 243, 449 and 298).
 
 The pass (`Compile/LiftLocals.agda`, shared, 44 lines) takes a monadic Clos5 term to Imp (`Lang/Imp.agda`, shared, 35 lines). Imp has no binders: each body declares a frame of slots, a variable names a slot, `let` becomes the assignment `x := e₁; e₂`, and `case` assigns the payload to a slot. The frame is threaded: an assignment is seen by everything that runs after it in the same frame, also after the expression that contains it. A call runs the callee in a fresh frame (free variables in slot 0, argument in slot 1) and leaves the caller's frame as it was; reading or assigning a slot beyond the frame goes wrong. Slots are de Bruijn levels: the variable x at depth d is slot d ∸ (x + 1), and a `let` or `case` at depth d assigns slot d, so code at depth d assigns only slots that no variable in scope names. The frame has d₀ + height slots (height = deepest nesting of binders), and a variable out of scope becomes slot n, beyond the frame. No proof needs a precondition, and the semantics of Imp in each style is new. As of PR #27 (since then, the denotational proof is against a continuation-passing semantics of Imp, and what follows describes the direct one, now an experiment; see [Explicate control](#explicate-control)):
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | semantics of Imp | +76 | +96 | +61 |
 | lift locals | +186 | +218 | +143 |
@@ -355,7 +355,7 @@ Unlike rco, the denotational proof is not the smallest here: the store is the ne
 
 The pass (`Compile/Explicate.agda`, shared, 37 lines) takes Imp to CFG (`Lang/CFG.agda`, shared, 28 lines), a C-like language after Essentials of Compilation. Imp's expressions without control flow became `Simple` (`Lang/Imp.agda`), shared by the two languages. A CFG body has a frame size, a list of blocks and a start. A block is a tail: assignments `x := s` of simple expressions, ending in `return s`, `goto l`, or `case a x l₁ l₂`, which assigns the payload of a to slot x and jumps to l₁ or l₂. Blocks are listed newest first, as Clos5's global definitions are, and a block jumps only to older blocks, so control flow within a body is acyclic: no semantics needs a fixed point over the blocks, and the clocked interpreter does not tick at a goto (it recurses on the list of older blocks). The pass is in continuation-passing style (Danvy): `explicate-assign e x k` translates `x := e` followed by the tail k; a nested assignment `y := e₁; e₂` becomes `y := e₁` followed by `x := e₂` followed by k, and a case gets a join block that holds k, which its branches reach by `goto`, so k is not duplicated. `explicate-tail` translates an expression in tail position. The pass threads the list of blocks, only adding to it, so a tail refers only to blocks made before it.
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | semantics of CFG | 37 | 50 | 32 |
 | explicate control | 210 (106 + 104) | 152 | 145 |
@@ -383,7 +383,7 @@ The direct semantics makes lift locals smaller (213 against 275) and explicate c
 
 The pass (`Compile/Select.agda`, shared, 39 lines) takes CFG to X86 (`Lang/X86.agda`, shared, 49 lines): x86 with variables over **abstract values**, Clos5's, not over a heap. `alloc` and `load` build and take apart objects (tuples, pairs, sums, closures) with no addresses; a concrete heap would be a later pass (expose allocation). The locations are the slots of the frame and the registers `%rax`, `%rdi` and `%rsi`; there is one flag. The instructions are `movq`, `subq`, `cmpq`, `sete`, `testinl`, `alloc`, `load` and `callq`; a block ends in `retq`, `jmp` or `je`, and keeps CFG's label. A call passes the free variables in `%rdi` and the argument in `%rsi` and returns in `%rax`; each definition's prologue moves `%rdi` and `%rsi` to slots 0 and 1, and a call clobbers `%rdi`, `%rsi` and the flag. The callee starts with `%rdi` and `%rsi` as they are and with `%rax` and the flag unset; `callq` reads `%rdi` and `%rsi`, and `retq` reads `%rax`, so each goes wrong on an unset register, in all three semantics (as of PR #33; before it, the machine and the interpreter passed the caller's `%rax` and flag to the callee and did not check the registers of a call or a return, which the X86 semantics, strict in them, does). Subtraction goes through `%rax` (two-address `subq`), `eq` is `cmpq; sete`, and `case` is `testinl`, a `load` of the payload and `je`. `compile-x86` is select ∘ `compile-cfg`. Main's frame has `locals` slots, as in CFG: with max(2, locals), as first specified, the end-to-end theorem would be false for open terms whose main reads slot 0 or 1.
 
-| component | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | semantics of X86 | 102 | 121 | 97 |
 | select instructions | 322 | 272 | 140 |
@@ -424,7 +424,7 @@ Code that other languages and compilers would use unchanged is reported in its o
 
 The script checks that no infrastructure module imports a module that is not infrastructure.
 
-| language-independent infrastructure | lines | used by denotational: graph model | used by CEK machine + simulation | used by interpreter + value relations |
+| language-independent infrastructure | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations |
 |---|---:|---:|---:|---:|
 | abstract binding trees | 220 | 220 | 220 | 220 |
 | syntax lemmas (renaming, scoping, uses), list lookups | 273 | 212 | 273 | 273 |
@@ -501,7 +501,7 @@ The cost is not in the compositional, per-construct reasoning. It is in the back
 
 As of PR #33. For each pass, this records the relations each style defines between source and target: on values, on terms, or on whole states.
 
-| pass | denotational: graph model | CEK machine + simulation | interpreter + value relations |
+| pass | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---|---|---|
 | enclose | equation | value relation | value relation |
 | optimize | equation | value relation | value relation |

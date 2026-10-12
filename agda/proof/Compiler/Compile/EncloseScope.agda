@@ -3,7 +3,7 @@
   enclose produces well-scoped Clos2 programs (WS 0,
   Framework/Syntax/Scope.agda) from closed ISWIM programs (Closed,
   Compiler/Compile/EncloseScope.agda). The
-  CompCert-style and CakeML-style proofs of optimize need well-scoped
+  simulation and interpreter proofs of optimize need well-scoped
   programs; the adequacy proof for Clos5 also uses this.
 
 -}

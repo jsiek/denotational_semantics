@@ -1,6 +1,7 @@
 {-
 
-  Correctness of the whole closure-conversion compiler, CakeML style:
+  Correctness of the whole closure-conversion compiler, by clocked
+  interpreters:
 
     ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
@@ -12,7 +13,7 @@
 
   The compiler is Compiler.Compile.Pipeline.compile, the one of the
   denotational end-to-end theorem (CompilerCorrect) and of the
-  CompCert-style one (CompilerSim), and it is definitionally the
+  simulation one (CompilerSim), and it is definitionally the
   composition of the passes as the per-pass theorems state them. The
   only precondition is that of enclose: the ISWIM program is closed.
 

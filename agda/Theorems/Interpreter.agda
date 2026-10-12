@@ -1,6 +1,7 @@
 {-
 
-  The correctness of the compiler, CakeML style: the public statements.
+  The correctness of the compiler, by clocked interpreters and value
+  relations: the public statements.
   The proofs (clock for clock) are in
   proof/Compiler/Functional/Correctness/; each theorem here is one of
   them, with its type written out, so that it can be read without opening
@@ -27,7 +28,7 @@
 
 -}
 
-module Theorems.CakeML where
+module Theorems.Interpreter where
 
 open import Compiler.Observation using (o-const; o-wrong; Converges; _⇔_)
 open import Compiler.Functional.Clock using (Terminates; Diverges; Equivalent)
