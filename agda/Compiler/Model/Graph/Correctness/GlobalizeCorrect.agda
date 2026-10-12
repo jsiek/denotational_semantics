@@ -96,7 +96,7 @@ case-≃ : ∀ {D F G D' F' G'}
   → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
   → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
 case-≃ {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
-  𝒞-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ v V → lower (F≃ _ _ ≃-refl)) (λ v V → lower (G≃ _ _ ≃-refl))
+  𝒞-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ v V _ → lower (F≃ _ _ ≃-refl)) (λ v V _ → lower (G≃ _ _ ≃-refl))
 
 {- let x = D in F x, which means (λx. F x) D -}
 let-≃ : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩

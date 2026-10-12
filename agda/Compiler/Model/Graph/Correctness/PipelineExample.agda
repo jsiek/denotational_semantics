@@ -66,7 +66,7 @@ prog-is-7 =
   ⟨ const 1 ∷ []
   , ⟨ ⟨ const 3 ∷ []
       , ⟨ ⟨ const 7 ∷ []
-          , ⟨ ⟨ ⟨ ⟨ here refl , (λ ()) ⟩ , (λ ()) ⟩ , (λ ()) ⟩
+          , ⟨ ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
             , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
         , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
     , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩

@@ -37,8 +37,8 @@ let-app L' N' =
   let-op ⦅ L' ,, ⟩ (app ⦅ (fst-op ⦅ (` 0) ,, Nil ⦆) ,, (snd-op ⦅ (` 0) ,, Nil ⦆) ,,
                           shift N' ,, Nil ⦆) ,, Nil ⦆
 
-let-app-≃ : ∀ (L' N' : AST) (ρ : Env) → ⟦ let-app L' N' ⟧ ρ ≃ (⟦ L' ⟧ ρ ⊙ ⟦ N' ⟧ ρ)
-let-app-≃ L' N' ρ = ⟨ G , H ⟩
+let-app-≃ : ∀ (L' N' : AST) (ρ : Env) → Con (⟦ L' ⟧ ρ) → ⟦ let-app L' N' ⟧ ρ ≃ (⟦ L' ⟧ ρ ⊙ ⟦ N' ⟧ ρ)
+let-app-≃ L' N' ρ cL = ⟨ G , H ⟩
   where
   L = ⟦ L' ⟧ ρ
   N = ⟦ N' ⟧ ρ
@@ -55,7 +55,7 @@ let-app-≃ L' N' ρ = ⟨ G , H ⟩
   ... | ⟨ P , ⟨ P⊆L , FV⊆P ⟩ ⟩ =
     ⟨ V , ⟨ ⟨ ⟨ U₀ , ⟨ ⟨ FV , ⟨ ⟨ t , here refl ⟩ , ⟨ cdrV , neFV ⟩ ⟩ ⟩
                     , ⟨ (λ d d∈ → proj₂ (shift-≃ N' (mem V) ρ) d (U₀⊆ d d∈)) , neU₀ ⟩ ⟩ ⟩
-            , (λ ()) ⟩
+            , ⟨ (λ ()) , Con⇒≈ V cL V⊆L ⟩ ⟩
           , ⟨ V⊆L , (λ ()) ⟩ ⟩ ⟩
     where
     V = ⦅ FV ↦ (U₀ ↦ w) , t ⦆ ∷ P

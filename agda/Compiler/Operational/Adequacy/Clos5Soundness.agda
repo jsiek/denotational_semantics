@@ -30,10 +30,11 @@ open import Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono; primD)
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono; primD;
+         pair-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (proj to dproj; pair to dpair; out to dout)
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim
@@ -49,9 +50,9 @@ import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; has-length→length; δ?-inv)
 open import Compiler.Operational.Adequacy.Soundness
-  using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆)
+  using (At; AllNE; Null; 𝒯L; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length; inl-⊆; inr-⊆; AllCon; 𝒯L-con)
 open import Compiler.Operational.Adequacy.Clos5WF using (WF; DefsWF)
-open import Compiler.Model.Graph.Sem.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous)
+open import Compiler.Model.Graph.Sem.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous; table-con)
 import Compiler.Operational.Adequacy.Clos5Common as Common
 
 open import Data.Bool using (true; false)
@@ -61,7 +62,8 @@ open import Data.List using (List; []; _∷_; length; replicate; reverse)
 open import Data.List.Base using (reverseAcc)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; zero; suc; _<_)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≟_)
+open import Relation.Nullary using (yes; no)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
@@ -227,6 +229,29 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝓔-lookup (v ∷ γ) zero refl d d∈ = d∈
   𝓔-lookup (v ∷ γ) (suc x) eq = 𝓔-lookup γ x eq
 
+  {- every value denotes a consistent set -}
+  table-ν∈ : ∀ Ns k {x} → x ∈ table Ns k → ν ∈ table Ns k
+  table-ν∈ (N ∷ Ns) k x∈ with k ≟ length Ns
+  ... | yes _ = tt
+  ... | no _ = table-ν∈ Ns k x∈
+
+  T⁺-con : ∀ k → Con (T⁺ k)
+  T⁺-con k a b (inj₁ a∈) (inj₁ b∈) = table-con ds k a b a∈ b∈
+  T⁺-con k a b (inj₁ a∈) (inj₂ refl) = table-con ds k a ν a∈ (table-ν∈ ds k a∈)
+  T⁺-con k a b (inj₂ refl) (inj₁ b∈) = table-con ds k ν b (table-ν∈ ds k b∈) b∈
+  T⁺-con k a b (inj₂ refl) (inj₂ refl) = tt
+
+  𝒱-con : ∀ v → Con (𝒱 v)
+  𝒱s-con : ∀ vs → AllCon (𝒱s vs)
+  𝒱-con (code k) = T⁺-con k
+  𝒱-con (pair v w) = lower (pair-consis _ _ ⟨ lift (𝒱-con v) , ⟨ lift (𝒱-con w) , ptt ⟩ ⟩)
+  𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
+  𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)
+  𝒱-con (T.inl v) = lower (inl-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
+  𝒱-con (T.inr v) = lower (inr-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
+  𝒱s-con [] = tt
+  𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
+
   {- β for one parameter (case, let) -}
   body-in : ∀ N γ v d → d ∈ ⟦ N ⟧⁺ (𝓔 (v ∷ γ))
     → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧⁺ (mem V • 𝓔 γ)
@@ -265,7 +290,8 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     G (suc zero) d d∈ = d∈
     G (suc (suc x)) = proj₂ (ok (suc (suc x)))
     in-code : (Vs 1 ↦ (Vs 0 ↦ d)) ∈ codeD (table Ns) B
-    in-code = ⟨ ⟨ ⟦⟧[]-monotone (table Ns) B G d d∈′ , proj₁ (ok 0) ⟩ , proj₁ (ok 1) ⟩
+    in-code = ⟨ ⟨ ⟦⟧[]-monotone (table Ns) B G d d∈′ , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) (𝒱-con w) (proj₂ (ok 0)) ⟩ ⟩
+              , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) (𝒱-con e) (proj₂ (ok 1)) ⟩ ⟩
 
   {- Tuples --------------------------------------------------------------------}
 
@@ -388,13 +414,13 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     β : ⟦ M ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in M γ v d d∈
     ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩
+    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
   step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
     where
     β : ⟦ N ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in N γ v d d∈
     ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩
+    ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
   step-⊆ (ret (code k) (caseK M N γ κ)) ()
   step-⊆ (ret (pair v w) (caseK M N γ κ)) ()
   step-⊆ (ret (const B k) (caseK M N γ κ)) ()
@@ -403,7 +429,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
     where
     β : ⟦ N ⟧⁺ (𝓔 (v ∷ γ)) ⊆ _
     β d d∈ with body-in N γ v d d∈
-    ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ne ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+    ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con v) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
   step-⊆ (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
   step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
   step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e

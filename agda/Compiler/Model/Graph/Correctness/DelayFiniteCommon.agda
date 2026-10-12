@@ -35,9 +35,6 @@ module Compiler.Model.Graph.Correctness.DelayFiniteCommon where
 Env : Set₁
 Env = NewEnv.Env Value
 
-consis : 𝒫 Value → Set
-consis D = ∀ u v → u ∈ D → v ∈ D → u ~ v
-
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩
 
@@ -72,6 +69,10 @@ Lefts = Untag leftT
 
 Rights : 𝒫 Value → 𝒫 Value
 Rights = Untag rightT
+
+{- the untagged part of a consistent set is consistent -}
+Untag-con : ∀ s {D} → (∀ {a b} → tag s a ~ tag s b → a ~ b) → Con D → Con (Untag s D)
+Untag-con s s~ cD a b a∈ b∈ = s~ (cD _ _ a∈ b∈)
 
 Init : 𝒫 Value
 Init = ⌈ ω ⌉
@@ -190,9 +191,6 @@ out-data (bool false) = flat-⟨⟩
 
 Init-flat : ∀ {v} → v ∈ Init → Flat v
 Init-flat refl = flat-ω
-
-Init-consis : consis Init
-Init-consis .ω .ω refl refl = tt
 
 ℬ-flat : ∀ {B} {c : base-rep B} v → v ∈ ℬ B c ptt → Flat v
 ℬ-flat (const k) _ = flat-const

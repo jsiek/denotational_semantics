@@ -247,7 +247,7 @@ adequate (inr-op ⦅ M ,, Nil ⦆) {d = tup[ i ] d} G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = left d} G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⟨⟩} G ()
 
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩)
+adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L GL (allL u (here refl))
   where GL = λ x p → G x (inj₁ p)
 ... | ⟨ inl w , ⟨ eL , _ ⟩ ⟩
@@ -256,7 +256,7 @@ adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₁ ⟨ u 
               (λ d d∈ → adequate L (λ x p → G x (inj₁ p)) (allL d d∈)) eL))) w∈
 ... | ⟨ v , ⟨ eM , r ⟩ ⟩ =
   ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eM κ) , r ⟩ ⟩
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩)
+adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L GL (allR u (here refl))
   where GL = λ x p → G x (inj₁ p)
 ... | ⟨ inr w , ⟨ eL , _ ⟩ ⟩

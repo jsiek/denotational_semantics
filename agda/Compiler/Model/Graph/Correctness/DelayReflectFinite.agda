@@ -9,8 +9,8 @@
   so junk entries and mixed closures never produce a target-only result.
 
   The proof uses two properties of the semantics:
-  - target denotations are consistent (⟦⟧'-consis), which follows from the
-    consistency of the target operators (𝕆-Clos4-consis);
+  - denotations are consistent (Clos3-con, Clos4-con), which follows from
+    the consistency of the operators;
   - source denotations are continuous (C3.term-continuous).
 -}
 
@@ -55,26 +55,6 @@ module Compiler.Model.Graph.Correctness.DelayReflectFinite where
 
 {- Properties of the semantics ------------------------------------------------}
 
-{- target denotations are consistent, by induction on the term -}
-⟦⟧'-consis-env : ∀ (M' : AST') {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
-  → Every _~_ (⟦ M' ⟧' ρ₁) (⟦ M' ⟧' ρ₂)
-⟦⟧'-consis-arg : ∀ {b} (arg : Arg' b) {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
-  → result-rel-pres (Every _~_) b (⟦ arg ⟧ₐ' ρ₁) (⟦ arg ⟧ₐ' ρ₂)
-⟦⟧'-consis-args : ∀ {bs} (args : Args' bs) {ρ₁ ρ₂ : Env} → (∀ x → Every _~_ (ρ₁ x) (ρ₂ x))
-  → results-rel-pres (Every _~_) bs (⟦ args ⟧₊' ρ₁) (⟦ args ⟧₊' ρ₂)
-
-⟦⟧'-consis-env (# x) ρ~ = ρ~ x
-⟦⟧'-consis-env (op ⦅ args ⦆') {ρ₁}{ρ₂} ρ~ =
-  lower (𝕆-Clos4-consis op (⟦ args ⟧₊' ρ₁) (⟦ args ⟧₊' ρ₂) (⟦⟧'-consis-args args ρ~))
-⟦⟧'-consis-arg (ast' M') ρ~ = lift (⟦⟧'-consis-env M' ρ~)
-⟦⟧'-consis-arg (bind' arg) ρ~ = λ X Y X~Y → ⟦⟧'-consis-arg arg (•-~ (Every _~_) ρ~ X~Y)
-⟦⟧'-consis-arg (clear' arg) ρ~ = ⟦⟧'-consis-arg arg (λ x → Init-consis)
-⟦⟧'-consis-args nil ρ~ = ptt
-⟦⟧'-consis-args (cons arg args) ρ~ = ⟨ ⟦⟧'-consis-arg arg ρ~ , ⟦⟧'-consis-args args ρ~ ⟩
-
-⟦⟧'-consis : ∀ (M' : AST') (ρ' : Env) → (∀ x → consis (ρ' x)) → consis (⟦ M' ⟧' ρ')
-⟦⟧'-consis M' ρ' ρ'~ = ⟦⟧'-consis-env M' ρ'~
-
 {- one finite part of the bound variable suffices -}
 cont-0 : ∀ (M : AST) {X ρ} → nonempty-env ρ → nonempty X → ∀ y → y ∈ ⟦ M ⟧ (X • ρ)
   → Σ[ u ∈ Value ] Σ[ U ∈ List Value ] mem (u ∷ U) ⊆ X × y ∈ ⟦ M ⟧ (mem (u ∷ U) • ρ)
@@ -92,17 +72,18 @@ cont-0 M {X}{ρ} NE NE-X y y∈ with C3.term-continuous M (X • ρ) NE' y y∈
 
 {- the beta rule for source closures: applied to E, a closure with
    environment T behaves like its body (using continuity) -}
-clos-β : ∀ (N : AST) {T E} → nonempty T → nonempty E
+clos-β : ∀ (N : AST) {T E} → nonempty T → nonempty E → Con T → Con E
   → ⟦ N ⟧ (E • T • (λ _ → Init))
     ⊆ (⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • (λ _ → Init))) , ptt ⟩) , ptt ⟩
          , ⟨ T , ptt ⟩ ⟩ ● E)
-clos-β N {T}{E} NE-T NE-E x x∈ with C3.term-continuous N _ NE x x∈
+clos-β N {T}{E} NE-T NE-E cT cE x x∈ with C3.term-continuous N _ NE x x∈
   where NE : nonempty-env (E • T • (λ _ → Init))
         NE zero = NE-E
         NE (suc zero) = NE-T
         NE (suc (suc y)) = ⟨ ω , refl ⟩
 ... | ⟨ Vs , ⟨ ok , x∈fin ⟩ ⟩ =
-  ⟨ Vs 0 , ⟨ ⟨ Vs 1 , ⟨ ⟨ ⟨ x∈' , proj₁ (ok 0) ⟩ , proj₁ (ok 1) ⟩
+  ⟨ Vs 0 , ⟨ ⟨ Vs 1 , ⟨ ⟨ ⟨ x∈' , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) cE (proj₂ (ok 0)) ⟩ ⟩
+                          , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) cT (proj₂ (ok 1)) ⟩ ⟩
                       , ⟨ proj₂ (ok 1) , proj₁ (ok 1) ⟩ ⟩ ⟩
            , ⟨ proj₂ (ok 0) , proj₁ (ok 0) ⟩ ⟩ ⟩
   where
@@ -168,7 +149,8 @@ record Envs (ρ' ρ : Env) : Set₁ where
   constructor envs
   field
     NE : nonempty-env ρ
-    ρ'~ : ∀ x → consis (ρ' x)
+    ρ~ : Con-env ρ
+    ρ'~ : Con-env ρ'
     ρ⊳ : ρ' ⊳ₑ ρ
 
 delay-reflect : ∀ (M : AST) {ρ' ρ} → Envs ρ' ρ
@@ -203,16 +185,14 @@ reflect-branch : ∀ (s : Tag) (L B : AST) {ρ' ρ C} → Envs ρ' ρ
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
   → ∀ V' → mem V' ⊆ ⟦ delay B ⟧' (Untag s (⟦ delay L ⟧' ρ') • ρ') → R V' C
 reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' V'⊆ =
-  R-mono (B⊆ NE-s) (delay-reflect B (envs NE' ρ'~' ρ⊳') V' V'⊆)
+  R-mono (B⊆ NE-s) (delay-reflect B (envs NE' (Con-• (Untag-con s s~ (Clos3-con L ρ~)) ρ~) ρ'~' ρ⊳') V' V'⊆)
   where
   open Envs E
   NE-s = Obs.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
   NE' : nonempty-env (Untag s (⟦ L ⟧ ρ) • ρ)
   NE' zero = NE-s
   NE' (suc x) = NE x
-  ρ'~' : ∀ x → consis ((Untag s (⟦ delay L ⟧' ρ') • ρ') x)
-  ρ'~' zero a b a∈ b∈ = s~ (⟦⟧'-consis (delay L) ρ' ρ'~ _ _ a∈ b∈)
-  ρ'~' (suc x) = ρ'~ x
+  ρ'~' = Con-• (Untag-con s s~ (Clos4-con (delay L) ρ'~)) ρ'~
   ρ⊳' : (Untag s (⟦ delay L ⟧' ρ') • ρ') ⊳ₑ (Untag s (⟦ L ⟧ ρ) • ρ)
   ρ⊳' zero = tag-reflect L E s
   ρ⊳' (suc x) = ρ⊳ x
@@ -235,12 +215,10 @@ delay-reflect (` x) E = Envs.ρ⊳ E x
 
 delay-reflect (app ⦅ L ,, N ,, Nil ⦆) {ρ'} E V' V'⊆
     with collect (⟦ delay L ⟧' ρ') (⟦ delay N ⟧' ρ') V'
-           (λ d d∈ → proj₁ (let-app-≃ (delay L) (delay N) ρ') d (V'⊆ d d∈))
+           (λ d d∈ → proj₁ (let-app-≃ (delay L) (delay N) ρ' (Clos4-con (delay L) (Envs.ρ'~ E))) d (V'⊆ d d∈))
 ... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
-  Obs.app-obs (unfold (delay-reflect L E W W⊆L')) cs _ U~ (delay-reflect N E U U⊆N')
-  where
-  U~ : consis (mem U)
-  U~ a b a∈ b∈ = ⟦⟧'-consis (delay N) ρ' (Envs.ρ'~ E) a b (U⊆N' a a∈) (U⊆N' b b∈)
+  Obs.app-obs (unfold (delay-reflect L E W W⊆L')) cs _ (Clos3-con N (Envs.ρ~ E))
+    (Con-⊆ (Clos4-con (delay N) (Envs.ρ'~ E)) U⊆N') (delay-reflect N E U U⊆N')
 
 delay-reflect (lit B c ⦅ Nil ⦆) E V' V'⊆ = R-flat V'⊆ (λ v v∈ → ℬ-flat v (V'⊆ v v∈))
 
@@ -264,7 +242,7 @@ delay-reflect (inl-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
                               ⟨ m , m∈ ⟩ = ne-reflect M E (inl-ne v v∈) in ⟨ left m , m∈ ⟩
-  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
+  ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { leftT W W⊆ →
                     delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
@@ -275,7 +253,7 @@ delay-reflect (inr-op ⦅ M ,, Nil ⦆) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆
                               ⟨ m , m∈ ⟩ = ne-reflect M E (inr-ne v v∈) in ⟨ right m , m∈ ⟩
-  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
+  ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { rightT W W⊆ →
                     delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
@@ -291,32 +269,32 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   lv = allL v (here refl)
   M⊆ : nonempty (Lefts (⟦ L ⟧ ρ)) → ⟦ M ⟧ (Lefts (⟦ L ⟧ ρ) • ρ) ⊆ _
   M⊆ ne x x∈ = let ⟨ u , ⟨ U , ⟨ s , x∈' ⟩ ⟩ ⟩ = cont-0 M (Envs.NE E) ne x x∈
-               in inj₁ ⟨ u , ⟨ U , ⟨ s , x∈' ⟩ ⟩ ⟩
+               in inj₁ ⟨ u , ⟨ U , ⟨ s , ⟨ x∈' , Con⇒≈ (u ∷ U) (Untag-con leftT (λ c → c) (Clos3-con L (Envs.ρ~ E))) s ⟩ ⟩ ⟩ ⟩
   V'⊆F : mem (w ∷ V') ⊆ ⟦ delay M ⟧' (Lefts (⟦ delay L ⟧' ρ') • ρ')
   V'⊆F x x∈ with V'⊆ x x∈
-  ... | inj₁ ⟨ u , ⟨ U , ⟨ allL' , x∈F ⟩ ⟩ ⟩ =
+  ... | inj₁ ⟨ u , ⟨ U , ⟨ allL' , ⟨ x∈F , _ ⟩ ⟩ ⟩ ⟩ =
     S4.⟦⟧-monotone (delay M) (λ { zero → allL' ; (suc y) → λ d z → z }) x x∈F
   ... | inj₂ ⟨ u , ⟨ U , ⟨ allR , _ ⟩ ⟩ ⟩ =
-    ⊥-elim (⟦⟧'-consis (delay L) ρ' (Envs.ρ'~ E) _ _ lv (allR u (here refl)))
+    ⊥-elim (Clos4-con (delay L) (Envs.ρ'~ E) _ _ lv (allR u (here refl)))
 ... | inj₂ ⟨ v , ⟨ _ , ⟨ allR , _ ⟩ ⟩ ⟩ =
   reflect-branch rightT L N E v rv (λ a~b → a~b) N⊆ (w ∷ V') V'⊆G
   where
   rv = allR v (here refl)
   N⊆ : nonempty (Rights (⟦ L ⟧ ρ)) → ⟦ N ⟧ (Rights (⟦ L ⟧ ρ) • ρ) ⊆ _
   N⊆ ne x x∈ = let ⟨ u , ⟨ U , ⟨ s , x∈' ⟩ ⟩ ⟩ = cont-0 N (Envs.NE E) ne x x∈
-               in inj₂ ⟨ u , ⟨ U , ⟨ s , x∈' ⟩ ⟩ ⟩
+               in inj₂ ⟨ u , ⟨ U , ⟨ s , ⟨ x∈' , Con⇒≈ (u ∷ U) (Untag-con rightT (λ c → c) (Clos3-con L (Envs.ρ~ E))) s ⟩ ⟩ ⟩ ⟩
   V'⊆G : mem (w ∷ V') ⊆ ⟦ delay N ⟧' (Rights (⟦ delay L ⟧' ρ') • ρ')
   V'⊆G x x∈ with V'⊆ x x∈
-  ... | inj₂ ⟨ u , ⟨ U , ⟨ allR' , x∈G ⟩ ⟩ ⟩ =
+  ... | inj₂ ⟨ u , ⟨ U , ⟨ allR' , ⟨ x∈G , _ ⟩ ⟩ ⟩ ⟩ =
     S4.⟦⟧-monotone (delay N) (λ { zero → allR' ; (suc y) → λ d z → z }) x x∈G
   ... | inj₁ ⟨ u , ⟨ U , ⟨ allL , _ ⟩ ⟩ ⟩ =
-    ⊥-elim (⟦⟧'-consis (delay L) ρ' (Envs.ρ'~ E) _ _ rv (allL u (here refl)))
+    ⊥-elim (Clos4-con (delay L) (Envs.ρ'~ E) _ _ rv (allL u (here refl)))
 
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ} E V' V'⊆ =
   fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ t , t∈ ⟩ = T-ne (let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆ in pair-ne v v∈)
-                          in ⟨ ν , ⟨ t ∷ [] , ⟨ ⟨ tt , (λ ()) ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩ ⟩
+                          in ⟨ ν , ⟨ t ∷ [] , ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩ ⟩
   ; app-obs = clos-app
   ; tag-obs = λ t W W⊆ → R-∅ (λ d d∈ → pair-tag t (V'⊆ _ (W⊆ d d∈)))
   }
@@ -333,10 +311,11 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
   Cdrs⊆T' : Cdrs V' ⊆ T'
   Cdrs⊆T' fv ⟨ _ , e∈ ⟩ = proj₂ (V'⊆ _ e∈)
 
-  clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → consis (mem U') → R U' E → R W' (D ● E)
-  clos-app {W' = []} _ E U'~ rU = R-∅ (λ _ ())
-  clos-app {U'} {w ∷ W'} cs Es U'~ rU =
-    R-mono (clos-β N NE-T NE-E) (delay-reflect N (envs NE-ρs ρ''~ ρ''⊳ρs) (w ∷ W') W⊆B)
+  clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → Con E → Con (mem U') → R U' E → R W' (D ● E)
+  clos-app {W' = []} _ E _ U'~ rU = R-∅ (λ _ ())
+  clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
+    R-mono (clos-β N NE-T NE-E cT cE)
+      (delay-reflect N (envs NE-ρs (Con-• cE (Con-• cT (λ _ → Con-⌈⌉ ω))) ρ''~ ρ''⊳ρs) (w ∷ W') W⊆B)
     where
     wit = Calls.results cs w (here refl)
     ent = proj₁ (proj₂ wit)
@@ -353,11 +332,10 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
       S4.⟦⟧-monotone (delay N) (λ { zero → U₀⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z })
         x x∈B
 
-    ρ''~ : ∀ y → consis (ρ'' y)
-    ρ''~ zero = U'~
-    ρ''~ (suc zero) a b a∈ b∈ =
-      ⟦⟧'-consis (tuple n ⦅ del-map-args fvs ⦆') ρ' ρ'~ a b (Cdrs⊆T' a a∈) (Cdrs⊆T' b b∈)
-    ρ''~ (suc (suc y)) = Init-consis
+    cT = Clos3-con (tuple n ⦅ fvs ⦆) ρ~
+    ρ''~ : Con-env ρ''
+    ρ''~ = Con-• U'~ (Con-• (Con-⊆ (Clos4-con (tuple n ⦅ del-map-args fvs ⦆') ρ'~) Cdrs⊆T')
+                            (λ _ → Con-⌈⌉ ω))
 
     NE-ρs : nonempty-env (Es • T • (λ _ → Init))
     NE-ρs zero = NE-E
@@ -377,7 +355,7 @@ reflect-𝒯 {zero} args E V' V'⊆ =
 reflect-𝒯 {suc n} args {ρ'}{ρ} E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → tup-ne (ne-mem ne V'⊆)
-  ; app-obs = λ cs _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
+  ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { (tupT i) W W⊆ → nth-case i W W⊆
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) }
@@ -409,7 +387,7 @@ reflect-𝒯 {suc n} args {ρ'}{ρ} E V' V'⊆ = fold record
 {- The end theorem (backward half) --------------------------------------------}
 
 Envs₀ : Envs ρ₀ ρ₀
-Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Init-consis) Init⊳Init
+Envs₀ = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ → Con-⌈⌉ ω) Init⊳Init
 
 reflect-const : ∀ (M : AST) {B} (c : base-rep B)
   → const c ∈ ⟦ delay M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀

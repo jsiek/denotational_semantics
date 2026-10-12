@@ -96,11 +96,11 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel = ⟨ G , H ⟩
 
   G : ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ ρ₁ ⊆ ⟦ enclose (lam ⦅ ⟩ N ,, Nil ⦆) ⟧₂ ρ₂
   G ν tt = ⟨ ne , tt ⟩
-  G (U ↦ x) ⟨ x∈ , neU ⟩ = ⟨ ne , ⟨ proj₁ (body≃ U neU) x x∈ , neU ⟩ ⟩
+  G (U ↦ x) ⟨ x∈ , neU ⟩ = ⟨ ne , ⟨ proj₁ (body≃ U (proj₁ neU)) x x∈ , neU ⟩ ⟩
 
   H : ⟦ enclose (lam ⦅ ⟩ N ,, Nil ⦆) ⟧₂ ρ₂ ⊆ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ ρ₁
   H ν ⟨ _ , tt ⟩ = tt
-  H (U ↦ x) ⟨ _ , ⟨ x∈ , neU ⟩ ⟩ = ⟨ proj₂ (body≃ U neU) x x∈ , neU ⟩
+  H (U ↦ x) ⟨ _ , ⟨ x∈ , neU ⟩ ⟩ = ⟨ proj₂ (body≃ U (proj₁ neU)) x x∈ , neU ⟩
 enc-correct (app ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   ⋆-≃ (enc-correct L ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
       (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₂ (inj₁ u))))
@@ -116,8 +116,8 @@ enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₁)} {λ X → ⟦ enclose M ⟧₂ (X • ρ₂)}
       {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ enclose N ⟧₂ (X • ρ₂)}
       (enc-correct L ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
-      (λ v V → enc-correct M _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
-      (λ v V → enc-correct N _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
+      (λ v V _ → enc-correct M _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
+      (λ v V _ → enc-correct N _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
   where
   NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ₂)
   NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩

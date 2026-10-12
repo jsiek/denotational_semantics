@@ -102,7 +102,6 @@ import Compiler.Model.Graph.Correctness.CompilerExample
 import Compiler.Compile.Examples.RCOExample
 import Compiler.Compile.Examples.LiftLocalsExample
 import Compiler.Compile.Examples.ExplicateExample
-import Compiler.Model.Graph.Correctness.ExplicateCounterExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph
