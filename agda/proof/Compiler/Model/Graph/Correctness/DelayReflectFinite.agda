@@ -15,21 +15,21 @@
 -}
 
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos3 as L3
 open import Compiler.Lang.Clos4 as L4
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
-open import Compiler.Model.Graph.Sem.Clos3Iswim as S3
-open import Compiler.Model.Graph.Sem.Clos4Iswim as S4 renaming
+open import proof.Compiler.Model.Graph.Sem.Clos3Iswim as S3
+open import proof.Compiler.Model.Graph.Sem.Clos4Iswim as S4 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Compile.Delay using (delay; del-map-args)
-open import Framework.GraphModel.Env using (nonempty-env; •-~)
+open import proof.Framework.GraphModel.Env using (nonempty-env; •-~)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteRel

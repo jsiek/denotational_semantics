@@ -36,19 +36,19 @@ open import Compiler.Lang.Clos5 using (AST)
 
 module proof.Compiler.Operational.Adequacy.Clos5LogRel (ds : List AST) where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Framework.GraphModel.Ops using (nthD)
+open import proof.Framework.GraphModel.Ops using (nthD)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import Framework.Primitives using (Int)
 open import Compiler.Lang.Clos5 hiding (AST)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
-import Framework.GraphModel.Env
+import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 open import Compiler.Operational.Machine.Clos5
 open import proof.Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
 open import proof.Compiler.Operational.Adequacy.Clos5WF using (WS; WS-args; DefsWF)
@@ -70,7 +70,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; con
 open import Relation.Nullary using (yes; no)
 
 VEnv : Set₁
-VEnv = Framework.GraphModel.Env.Env Value
+VEnv = proof.Framework.GraphModel.Env.Env Value
 
 {- Evaluation -------------------------------------------------------------------}
 

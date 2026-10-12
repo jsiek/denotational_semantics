@@ -21,18 +21,18 @@
 -}
 
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as L4
-open import Compiler.Model.Graph.Sem.Clos3Iswim as S3
-import Compiler.Model.Graph.Sem.Clos4Iswim as S4
+open import proof.Compiler.Model.Graph.Sem.Clos3Iswim as S3
+import proof.Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open S4 using (Clos4-con) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Compile.Delay using (delay; del-map-args)
-open import Framework.GraphModel.Env using (nonempty-env)
+open import proof.Framework.GraphModel.Env using (nonempty-env)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon
   using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat; Untag-con; leftT; rightT;
          Data; flat-data; out-data)

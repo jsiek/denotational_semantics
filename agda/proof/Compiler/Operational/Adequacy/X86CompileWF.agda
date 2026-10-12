@@ -22,8 +22,8 @@
 
 module proof.Compiler.Operational.Adequacy.X86CompileWF where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using (Con-⊆)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (Con-⊆)
 open import Compiler.Lang.Clos5 as C5
   using (AST; Arg; Args; `_; _⦅_⦆; ast; bind; clear; nil; cons; fun-ref; app; lit; pair-op; fst-op; snd-op; tuple; get; inl-op; inr-op; case-op; prim; let-op)
 open import Compiler.Lang.Mon as Mo using (Mon; Atom; Atoms; []; _∷_)
@@ -36,7 +36,7 @@ open import Compiler.Compile.LiftLocals renaming (lift to liftL)
 open import Compiler.Compile.Explicate
 open import Compiler.Compile.Select
 open import Compiler.Compile.Pipeline using (compile; compile-x86)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect using (RB; RB-arg; RB-args)
 open import proof.Compiler.Model.Graph.Sem.Clos5IswimContinuous using (table-con)
 open import proof.Compiler.Model.Graph.Correctness.RCOCorrect using (table-rco)
@@ -46,7 +46,7 @@ import proof.Compiler.Model.Graph.Correctness.SelectCorrect as SC
 import proof.Compiler.Operational.Adequacy.Clos5WF as F
 open import proof.Compiler.Operational.Adequacy.CompileWF using (compile-wf)
 open import proof.Compiler.Operational.Adequacy.X86WF
-open import Framework.Syntax.Rename C5.Op C5.sig using (rename; rename-arg; rename-args; ext)
+open import proof.Framework.Syntax.Rename C5.Op C5.sig using (rename; rename-arg; rename-args; ext)
 open import proof.Framework.Syntax.ScopeRename C5.Op C5.sig using (WS; WS-args; Fits; fits-ext; ws-rename; ws-rename-args)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Framework.abt.Sig using (■)

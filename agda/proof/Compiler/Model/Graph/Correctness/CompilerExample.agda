@@ -13,8 +13,8 @@
 -}
 
 open import Framework.Primitives
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
 import Compiler.Lang.Clos4 as L4
 import Compiler.Lang.Clos5 as L5
 open import Compiler.Compile.Globalize using (globalize)

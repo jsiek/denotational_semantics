@@ -7,15 +7,15 @@ open import Level renaming (zero to lzero; suc to lsuc; _⊔_ to _l⊔_)
 open import Relation.Binary.PropositionalEquality
     using (_≡_; _≢_; refl; sym; subst)
 
-open import Framework.abt.ScopedTuple hiding (𝒫)
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.abt.ScopedTuple hiding (𝒫)
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.abt.Sig
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.DenotProperties
-open import Framework.GraphModel.Env
+open import proof.Framework.GraphModel.Env
 
-module Framework.GraphModel.Semantics (Op : Set) (sig : Op → List Sig) where
+module proof.Framework.GraphModel.Semantics (Op : Set) (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig
 open import Framework.abt.Fold2 Op sig

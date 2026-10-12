@@ -16,19 +16,19 @@
 
 open import Framework.Syntax.SigUtil
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos2
-open import Compiler.Model.Graph.Sem.Clos2Iswim
+open import proof.Compiler.Model.Graph.Sem.Clos2Iswim
 open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀)
 open import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect
   using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
-open import Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
+open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ)

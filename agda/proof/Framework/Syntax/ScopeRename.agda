@@ -12,8 +12,8 @@ module proof.Framework.Syntax.ScopeRename (Op : Set) (sig : Op → List Sig) whe
 
 open import Framework.abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
   renaming (ABT to AST; Arg to Arg; Args to Args)
-open import Framework.Syntax.Rename Op sig using (ext; rename; rename-arg; rename-args; shift)
-open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args) public
+open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-arg; rename-args; shift)
+open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args) public
 
 {- Renaming ----------------------------------------------------------------------}
 

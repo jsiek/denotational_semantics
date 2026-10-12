@@ -24,9 +24,9 @@ module proof.Compiler.Operational.Correctness.CompilerSim where
 
 open import Compiler.Compile.Pipeline using (compile)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Simulation
-open import Compiler.Compile.EncloseScope using (Closed; enclose-closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed; enclose-closed)
 open import proof.Compiler.Operational.Correctness.EncloseSim using (enclose-correct)
 open import proof.Compiler.Operational.Correctness.OptimizeSim using (optimize-correct)
 open import proof.Compiler.Operational.Correctness.ConcretizeSim using (concretize-correct)

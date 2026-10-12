@@ -29,10 +29,10 @@ open import Compiler.Lang.CFG as CFG using (return; seq; goto; case)
 open import Compiler.Lang.X86 using (Block; Body; var; reg; rax; retq)
 open import Compiler.Compile.Select
 open import Compiler.Compile.Pipeline using (compile-cfg; compile-x86)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Observation using (o-const; δ?)
-open import Framework.ListUtil using (_‼_)
-open import Compiler.Functional.Clock
+open import proof.Framework.ListUtil using (_‼_)
+open import proof.Compiler.Functional.Clock
 open import Compiler.Functional.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; out; first; second; project; prim?)
 open import Compiler.Functional.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
 import Compiler.Functional.Interp.CFG as G

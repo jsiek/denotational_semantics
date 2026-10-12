@@ -16,9 +16,9 @@ module proof.Compiler.Operational.Adequacy.CompileWF where
 open import Compiler.Lang.Clos4
 import Compiler.Lang.Clos5 as C5
 import proof.Compiler.Operational.Adequacy.Clos5WF as F
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Compile.Globalize
-open import Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
+open import proof.Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
 open import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect using (RB; glob-shape)
 open import Compiler.Compile.Pipeline using (compile; compile₄)
 

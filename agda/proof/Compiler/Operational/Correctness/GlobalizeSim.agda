@@ -1,7 +1,7 @@
 {-
 
   Correctness of the globalize pass (Clos4 → Clos5) by a forward simulation
-  between their machines (see the design note in Smallstep.agda).
+  between their machines (see the design note in Compiler/Operational/Smallstep.agda).
 
   The machines run in lock step. The Clos5 machine runs with the table of
   global definitions D that the pass produced for the whole program, and
@@ -32,9 +32,9 @@ import Compiler.Lang.Clos5 as C
 open import Compiler.Compile.Globalize
 open import proof.Compiler.Compile.GlobalizeTable
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Simulation
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 import Compiler.Operational.Machine.Clos4 as S
 import Compiler.Operational.Machine.Clos5 as T
 

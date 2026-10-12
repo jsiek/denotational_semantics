@@ -18,9 +18,9 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig using (Results)
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig using (Results)
+open import proof.Framework.GraphModel.Domain
 open import Compiler.Lang.Clos5 using (Args)
 open import Compiler.Lang.Mon
 import Compiler.Lang.Imp as I
@@ -33,9 +33,9 @@ open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ�
 open import proof.Compiler.Model.Graph.Correctness.CompilerCorrect using (Same; Same-trans; ≃→Same)
 open import Compiler.Compile.Pipeline using (compile; compile-imp)
 open import Compiler.Compile.RCO using (rco-program-mon)
-open import Compiler.Model.Graph.Sem.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+open import proof.Compiler.Model.Graph.Sem.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Compiler.Lang.ISWIM as ISWIM
-open import Framework.GraphModel.Env using (Env)
+open import proof.Framework.GraphModel.Env using (Env)
 open import Framework.Primitives using (base-rep)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _<_; _≤_; _≟_; _<?_; s≤s)

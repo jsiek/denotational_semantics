@@ -2,7 +2,7 @@
 
   Correctness of the select-instructions pass (CFG → X86,
   Compile/Select.agda) by a forward simulation of the CFG machine by the
-  X86 machine (see the design note in Smallstep.agda).
+  X86 machine (see the design note in Compiler/Operational/Smallstep.agda).
 
   The frames are the same; the registers matter only where a value is in
   flight (%rax after a simple expression or a return, %rdi and %rsi at a
@@ -35,10 +35,10 @@ open import Compiler.Lang.X86
   using (Instr; Block; Loc; Jump; var; reg; rax; rdi; rsi; loc; movq; sete; callq; retq; je; payload)
 open import Compiler.Compile.Select
 open import Compiler.Compile.Pipeline using (compile-cfg; compile-x86)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Observation
 open import Framework.Primitives using (Int)
-open import Compiler.Operational.Smallstep using (next; stop; Plus; plus; Star; ε; _◅_)
+open import proof.Compiler.Operational.Smallstep using (next; stop; Plus; plus; Star; ε; _◅_)
 open import proof.Compiler.Operational.Simulation
   using (Answers≺; stops; steps; stutters; FSim; Equivalent; equivalent; equiv-trans)
 import Compiler.Lang.X86 as L
@@ -49,7 +49,7 @@ open X using (code; pair; const; tup; inl; inr; obs; _[_↦_]; _[_]≔_)
 import Compiler.Operational.Machine.ISWIM as S
 open import proof.Compiler.Operational.Correctness.RCOSim using (‼-map)
 open import proof.Compiler.Operational.Correctness.ExplicateSim using (compile-cfg-correct)
-open import Framework.ListUtil using (_‼_)
+open import proof.Framework.ListUtil using (_‼_)
 
 open import Data.Bool using (Bool)
 open import Data.Empty using (⊥-elim)

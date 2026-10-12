@@ -1,6 +1,6 @@
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
 
 module proof.Framework.GraphModel.DenotProperties where
 

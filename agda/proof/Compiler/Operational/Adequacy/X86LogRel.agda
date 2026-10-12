@@ -28,11 +28,11 @@ module proof.Compiler.Operational.Adequacy.X86LogRel (ds : List Body) where
 
 open import Framework.Primitives using (Int)
 open import Compiler.Lang.Prim using (δ; sub; eq)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
-open import Framework.GraphModel.Ops using (⋆; ℬ; nthD; inl; inr; Λ) renaming (pair to dpair)
-open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
+open import proof.Framework.GraphModel.Ops using (⋆; ℬ; nthD; inl; inr; Λ) renaming (pair to dpair)
+open import proof.Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Lang.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
   hiding (Body)
@@ -40,8 +40,8 @@ open import Compiler.Model.Graph.Sem.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (next)
-open import Framework.ListUtil using (_‼_)
+open import proof.Compiler.Operational.Smallstep using (next)
+open import proof.Framework.ListUtil using (_‼_)
 open import Compiler.Operational.Machine.X86
   using (Val; code; pair; const; tup; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; get-field; build; is-inl; cmp; bit; zeros; arg; args; halt?; regs; upd; goto; callq?; back; test)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])

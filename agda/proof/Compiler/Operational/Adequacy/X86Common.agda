@@ -12,16 +12,16 @@ open import Compiler.Lang.X86 using (Body)
 
 module proof.Compiler.Operational.Adequacy.X86Common (ds : List Body) where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using (ν)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (ν)
 open import Compiler.Lang.X86 hiding (Body)
 open import Compiler.Model.Graph.Sem.X86 using (table; blocks; ⟦_⟧ᵇ)
   renaming (Regs to SRegs; code to codeD)
 open import Compiler.Operational.Machine.X86
 open import proof.Compiler.Operational.Adequacy.Common using (module Runs)
 open import proof.Compiler.Operational.Adequacy.X86WF using (DefsWF)
-open import Framework.ListUtil using (_‼_)
-open import Framework.ListUtil using (‼-just; replicate-‼; reverse-‼-split; reverse-‼-suffix) public
+open import proof.Framework.ListUtil using (_‼_)
+open import proof.Framework.ListUtil using (‼-just; replicate-‼; reverse-‼-split; reverse-‼-suffix) public
 
 open import Data.Integer using ()
 open import Data.List.Properties using (length-replicate)

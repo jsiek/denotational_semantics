@@ -16,14 +16,14 @@
 -}
 
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.ISWIM
-open import Framework.Syntax.Uses Op sig
-open import Compiler.Model.Graph.Sem.ISWIM
-open import Compiler.Model.Graph.Sem.Clos2Iswim as S2 renaming
+open import proof.Framework.Syntax.Uses Op sig
+open import proof.Compiler.Model.Graph.Sem.ISWIM
+open import proof.Compiler.Model.Graph.Sem.Clos2Iswim as S2 renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
@@ -31,7 +31,7 @@ open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env;
 open import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect
   using (init₀; push; apply-push; push-plus; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 open import proof.Compiler.Model.Graph.Correctness.OptimizeCorrect using (unbind-bind; push-ne)
-open import Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
+open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _<?_; _∸_)
 open import Data.Nat.Properties

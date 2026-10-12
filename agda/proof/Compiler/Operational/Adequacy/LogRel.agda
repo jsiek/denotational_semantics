@@ -22,21 +22,21 @@
 module proof.Compiler.Operational.Adequacy.LogRel where
 
 open import Framework.Primitives using (Base; base-rep; Int)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Framework.GraphModel.Ops using (nthD)
-open import Compiler.Model.Graph.Prim using () renaming (out to dout)
+open import proof.Framework.GraphModel.Ops using (nthD)
+open import proof.Compiler.Model.Graph.Prim using () renaming (out to dout)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import Compiler.Lang.ISWIM
-open import Framework.Syntax.Uses Op sig
-open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊)
-import Framework.GraphModel.Env
+open import proof.Framework.Syntax.Uses Op sig
+open import proof.Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊)
+import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 open import Compiler.Operational.Machine.ISWIM
-open import Compiler.Operational.Smallstep using (next; stop)
+open import proof.Compiler.Operational.Smallstep using (next; stop)
 open import proof.Compiler.Operational.Adequacy.Common
 
 open import Data.Bool using (true; false)
@@ -55,7 +55,7 @@ open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 
 VEnv : Set₁
-VEnv = Framework.GraphModel.Env.Env Value
+VEnv = proof.Framework.GraphModel.Env.Env Value
 
 {- Evaluation -------------------------------------------------------------------}
 

@@ -41,9 +41,9 @@ open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as C4
 open import Compiler.Compile.Delay
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Backward
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 import Compiler.Operational.Machine.Clos3 as S
 import Compiler.Operational.Machine.Clos4 as T
 open import proof.Compiler.Operational.Correctness.DelaySim
@@ -51,7 +51,7 @@ open import proof.Compiler.Operational.Correctness.DelaySim
          _≈k_; halt; appL; appR; tupK; closK; getK; inlK; inrK; caseK;
          primL; primR; obs≈; prim≈; look; env-ext; env-skip; env-body; del-args)
 
-open import Framework.Syntax.Rename C4.Op C4.sig
+open import proof.Framework.Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 {- The target states between two source steps ----------------------------------}

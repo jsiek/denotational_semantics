@@ -23,11 +23,11 @@ module proof.Compiler.Functional.Correctness.CompilerFuel where
 open import Compiler.Compile.Pipeline using (compile)
 open import Compiler.Observation
 open import Compiler.Compile.Enclose using (enclose)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Compile.Optimize using (optimize-program)
 open import Compiler.Compile.Concretize using (concretize-program)
 open import Compiler.Compile.Delay using (delay)
-open import Compiler.Functional.Clock
+open import proof.Compiler.Functional.Clock
 open import proof.Compiler.Functional.Correctness.OptimizeFuel using (enclose-optimize-correct)
 open import proof.Compiler.Functional.Correctness.ConcretizeFuel using (concretize-correct)
 open import proof.Compiler.Functional.Correctness.DelayFuel using (delay-correct)

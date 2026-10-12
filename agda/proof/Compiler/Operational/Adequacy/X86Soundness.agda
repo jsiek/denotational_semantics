@@ -31,23 +31,23 @@ module proof.Compiler.Operational.Adequacy.X86Soundness where
 
 open import Framework.Primitives using (Int)
 open import Compiler.Lang.Prim using (bool; δ; sub; eq)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig using (results-rel-pres)
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con⇒≈; ≈-single)
   renaming (const to dconst)
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Ops
   using (⋆; 𝒯; nthD; inl; inr; Λ; ⋆-mono; pair-mono; car-mono; cdr-mono; 𝒯-mono; proj-mono; 𝒞-mono; ■)
   renaming (proj to dproj; pair to dpair)
-open import Compiler.Model.Graph.Prim using (primD; primD-mono) renaming (out to dout)
+open import proof.Compiler.Model.Graph.Prim using (primD; primD-mono) renaming (out to dout)
 open import Compiler.Lang.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
 open import Compiler.Model.Graph.Sem.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Terminates; next; stop)
-open import Framework.ListUtil using (replicate-‼-just; _‼_; proj)
+open import proof.Compiler.Operational.Smallstep using (Terminates; next; stop)
+open import proof.Framework.ListUtil using (replicate-‼-just; _‼_; proj)
 open import Compiler.Operational.Machine.X86
   using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; sem; get-field; build; is-inl; cmp; truth; bit; _[_]≔_; zeros; arg; args; test; goto; callq?; regs)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])

@@ -1,7 +1,7 @@
 {-
 
   Correctness of the delay pass (Clos3 → Clos4) by a forward simulation
-  between their machines (see the design note in Smallstep.agda).
+  between their machines (see the design note in Compiler/Operational/Smallstep.agda).
 
   delay turns a closure value into a pair of code and environment, and an
   application app L M into
@@ -55,13 +55,13 @@ open import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4 as C4
 open import Compiler.Compile.Delay
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Simulation
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 import Compiler.Operational.Machine.Clos3 as S
 import Compiler.Operational.Machine.Clos4 as T
 
-open import Framework.Syntax.Rename C4.Op C4.sig
+open import proof.Framework.Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
 {- The simulation relation -----------------------------------------------------}

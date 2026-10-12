@@ -28,23 +28,23 @@ module proof.Compiler.Operational.Adequacy.Clos5Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (int; bool; δ)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; pair-mono)
   renaming (proj to dproj; pair to dpair)
-open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
+open import proof.Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; table; init) renaming (code to codeD)
 open import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect using (stab; Agree)
-import Framework.GraphModel.Env
+import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Framework.ListUtil
+open import proof.Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
+open import proof.Framework.ListUtil
 open import Compiler.Operational.Machine.Clos5 hiding (inl; inr)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import proof.Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑)
@@ -72,7 +72,7 @@ open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; subst)
 
 VEnv : Set₁
-VEnv = Framework.GraphModel.Env.Env Value
+VEnv = proof.Framework.GraphModel.Env.Env Value
 
 ≡→⊆ : ∀ {D E : 𝒫 Value} → D ≡ E → D ⊆ E
 ≡→⊆ refl d d∈ = d∈
@@ -197,7 +197,7 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   𝒦-mono (primR p v κ) D⊆ =
     𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
 
-  𝓔-nonempty : ∀ γ → Framework.GraphModel.Env.nonempty-env (𝓔 γ)
+  𝓔-nonempty : ∀ γ → proof.Framework.GraphModel.Env.nonempty-env (𝓔 γ)
   𝓔-nonempty [] x = ⟨ ω , refl ⟩
   𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
   𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x

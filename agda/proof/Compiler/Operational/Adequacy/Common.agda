@@ -18,12 +18,12 @@ module proof.Compiler.Operational.Adequacy.Common where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Prim; Out; δ)
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Domain
   using (Value; const; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
   using (Star; ε; _◅_; Next; next; stop; machine)
-open import Framework.ListUtil using (has-length)
+open import proof.Framework.ListUtil using (has-length)
 open import Compiler.Operational.Machine.ISWIM
 
 open import Data.Bool using (true; false)

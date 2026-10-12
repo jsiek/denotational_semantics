@@ -1,7 +1,7 @@
 {-
 
   Correctness of the enclose pass (ISWIM → Clos2) by a forward simulation
-  between their machines (see the design note in Smallstep.agda).
+  between their machines (see the design note in Compiler/Operational/Smallstep.agda).
 
   The machines run in lock step, except that evaluating a function
   (one ISWIM step, building a closure of the whole environment) takes
@@ -26,14 +26,14 @@ module proof.Compiler.Operational.Correctness.EncloseSim where
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.ISWIM
 import Compiler.Lang.Clos2 as C
-open import Framework.Syntax.Uses Op sig
+open import proof.Framework.Syntax.Uses Op sig
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Simulation
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 import Compiler.Operational.Machine.ISWIM as S
 import Compiler.Operational.Machine.Clos2 as T
 

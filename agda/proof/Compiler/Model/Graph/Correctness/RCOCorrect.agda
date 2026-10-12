@@ -12,7 +12,7 @@
     right-hand side for the variable (let-strict, let-β; let-β uses
     continuity, hence a nonempty environment, and binds a finite part
     of the right-hand side, hence a consistent one);
-  - renaming (RenameSem.agda), for the atoms and the operands that
+  - renaming (proof/Framework/GraphModel/RenameSem.agda), for the atoms and the operands that
     the lets put under more binders;
   - every operator of a construct whose operands rco names is strict
     (a Strict operator below), so binding an operand first by a strict
@@ -23,13 +23,13 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
-open import Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
+open import proof.Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
 open import Compiler.Compile.RCO
   using (rco; rco-args; rco-program; atom?; lift; case-on)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
@@ -45,9 +45,9 @@ open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ�
 open import proof.Compiler.Model.Graph.Correctness.CompilerCorrect
   using (Same; Same-trans; ≃→Same; compile-same)
 open import Compiler.Compile.Pipeline using (compile; compile-mon)
-open import Compiler.Model.Graph.Sem.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+open import proof.Compiler.Model.Graph.Sem.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Compiler.Lang.ISWIM as ISWIM
-open import Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 open import Framework.Primitives using (base-rep)
 

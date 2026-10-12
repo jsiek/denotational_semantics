@@ -28,8 +28,8 @@ open import Compiler.Lang.Mon
 open import Compiler.Lang.Imp using (Body)
 import Compiler.Lang.Imp as Imp
 open import Compiler.Compile.LiftLocals
-open import Framework.ListUtil using (_‼_; ‼-++; ‼-≥)
-open import Compiler.Functional.Clock
+open import proof.Framework.ListUtil using (_‼_; ‼-++; ‼-≥)
+open import proof.Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos5 as C
 import Compiler.Functional.Interp.Imp as I
 open import Compiler.Functional.Interp.Imp using (Frame; zero-val; _[_]≔_; here)
@@ -38,7 +38,7 @@ import Compiler.Functional.Interp.ISWIM as ISWIM
 open import proof.Compiler.Functional.Correctness.RCOFuel using (bind≡; ≡→rel; ‼-pw; compile-mon-correct)
 open import Compiler.Compile.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.Compile.RCO using (rco-program-mon)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; _ʳ++_; _++_; length; reverse; replicate)

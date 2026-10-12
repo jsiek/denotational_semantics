@@ -26,12 +26,12 @@
 module proof.Compiler.Operational.Adequacy.X86 where
 
 open import Framework.Primitives using (base-rep)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using () renaming (const to dconst)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
 open import Compiler.Lang.X86 using (program; body)
 open import Compiler.Model.Graph.Sem.X86 using (⟦_⟧ₚ)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Terminates)
+open import proof.Compiler.Operational.Smallstep using (Terminates)
 open import Compiler.Operational.Machine.X86 using (sem; obs; halt?; halt)
 open import proof.Compiler.Operational.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import proof.Compiler.Operational.Adequacy.X86WF using (WF) public

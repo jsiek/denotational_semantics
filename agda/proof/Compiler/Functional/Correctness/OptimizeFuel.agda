@@ -18,7 +18,7 @@
   collected so far agree through the renumbering b of positions that
   prune computes from the free variables already seen (Collected).
 
-  The precondition is well-scopedness (WS 0, Syntax.Scope), which
+  The precondition is well-scopedness (WS 0, Framework.Syntax.Scope), which
   enclose establishes for closed ISWIM programs (enclose-closed).
 
 -}
@@ -31,13 +31,13 @@ open import Compiler.Lang.Clos2
 open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
 open import Compiler.Compile.Enclose using (enclose)
-open import Framework.Syntax.Scope Op sig using (WS; WS-arg; ws-uses)
-open import Compiler.Compile.EncloseScope using (Closed; enclose-closed)
+open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; ws-uses)
+open import proof.Compiler.Compile.EncloseScope using (Closed; enclose-closed)
 open import Compiler.Observation
 open import Compiler.Lang.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Framework.ListUtil using (_‼_; proj-pw)
-open import Compiler.Functional.Clock
+open import proof.Framework.ListUtil using (_‼_; proj-pw)
+open import proof.Compiler.Functional.Clock
 import Compiler.Functional.Interp.ISWIM as S
 import Compiler.Functional.Interp.Clos2 as T
 import proof.Compiler.Functional.Correctness.EncloseFuel as EF

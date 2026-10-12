@@ -1,21 +1,21 @@
 {-
 
   The Clos4 semantics is continuous: a ContinuousSemantics instance built
-  from the per-operator lemmas in GraphModel.Continuity, and the
-  resulting continuity of every term (from Framework.GraphModel.Semantics.⟦⟧-continuous).
+  from the per-operator lemmas in proof.Framework.GraphModel.Continuity, and the
+  resulting continuity of every term (from proof.Framework.GraphModel.Semantics.⟦⟧-continuous).
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Continuity
-open import Compiler.Model.Graph.Prim
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos4
 open import proof.Framework.GraphModel.SemanticsUtil Op sig using (args-nth-mono; args-nth-cont)
 import proof.Framework.GraphModel.SemanticsUtil Op sig as G
-open import Compiler.Model.Graph.Sem.Clos4Iswim
-open import Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_)
+open import proof.Compiler.Model.Graph.Sem.Clos4Iswim
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_)
 
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )

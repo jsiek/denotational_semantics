@@ -2,7 +2,7 @@
 
   Correctness of the concretize pass (Clos2 → Clos3) by a forward
   simulation between their machines (see the design note in
-  Smallstep.agda).
+  Compiler/Operational/Smallstep.agda).
 
   The pass needs no precondition: it is correct for every Clos2 program.
   A Clos2 variable that a closure's code reads past its free variables is
@@ -46,9 +46,9 @@ open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case
 import Compiler.Lang.Clos3 as C3
 open import Compiler.Compile.Concretize
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Simulation
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 import Compiler.Operational.Machine.Clos2 as S
 import Compiler.Operational.Machine.Clos3 as T
 

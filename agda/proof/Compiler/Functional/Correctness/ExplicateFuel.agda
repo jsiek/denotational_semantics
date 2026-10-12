@@ -26,8 +26,8 @@ open import Compiler.Lang.Imp as Imp using (simple; assign)
 open import Compiler.Lang.CFG using (Body; Tail; goto; case)
 open import Compiler.Compile.Explicate
 open import Compiler.Compile.Pipeline using (compile-imp; compile-cfg)
-open import Compiler.Compile.EncloseScope using (Closed)
-open import Compiler.Functional.Clock
+open import proof.Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Functional.Clock
 import Compiler.Functional.Interp.Imp as I
 import Compiler.Functional.Interp.CFG as G
 open import Compiler.Functional.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)

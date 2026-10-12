@@ -14,12 +14,12 @@
 -}
 
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Domain
 open import Compiler.Lang.Clos2
-open import Compiler.Model.Graph.Sem.Clos2Iswim
-import Compiler.Model.Graph.Sem.Clos4Iswim as S4
+open import proof.Compiler.Model.Graph.Sem.Clos2Iswim
+import proof.Compiler.Model.Graph.Sem.Clos4Iswim as S4
 open import Compiler.Compile.Concretize using (concretize-program)
 open import Compiler.Compile.Delay using (delay)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)

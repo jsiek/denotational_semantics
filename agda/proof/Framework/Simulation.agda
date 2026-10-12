@@ -2,15 +2,16 @@
 
   Forward simulations, in the spirit of CompCert's Smallstep library, and
   the end theorem that a forward simulation between deterministic, total
-  transition systems makes them equivalent; equivalence composes.
-  See the design note in Smallstep.agda.
+  transition systems makes them equivalent (Equivalent, in
+  Framework/Smallstep.agda); equivalence composes. See the design note in
+  Compiler/Operational/Smallstep.agda.
 
 -}
 
 module proof.Framework.Simulation (Obs : Set) where
 
-open import Framework.Iff using (_⇔_)
 open import Framework.Smallstep Obs
+open import proof.Framework.Smallstep Obs
 
 open import Data.Empty using (⊥-elim)
 open import Data.Nat using (ℕ; suc; _+_; _<_; s≤s; z≤n)
@@ -51,11 +52,6 @@ plus-simulation {L₂ = L₂} R m₀ sim = record
   lift (steps π m) = steps {j = 0} π m
 
 {- The end theorem ------------------------------------------------------------}
-
-record Equivalent (L₁ L₂ : Machine) : Set where
-  field
-    terminates : ∀ o → Terminates L₁ o ⇔ Terminates L₂ o
-    diverges : Diverges L₁ ⇔ Diverges L₂
 
 module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   open FSim F

@@ -1,8 +1,9 @@
 {-
 
   Transition systems and their behaviors, in the spirit of CompCert's
-  Smallstep library (../../Smallstep.agda), instantiated at this
-  compiler's observations. (Forward simulations are in Simulation.agda.)
+  Smallstep library (Framework/Smallstep.agda), instantiated at this
+  compiler's observations. (Forward simulations are in
+  proof/Compiler/Operational/Simulation.agda.)
 
   Design note, for the machines of each language and the simulation proof
   of each pass:
@@ -44,11 +45,14 @@
     the forward simulation is given directly: a match indexed by a
     natural number, which such a step must decrease.
 
-  * Layout: ../Observation.agda (shared with the clocked interpreters);
-    the framework, language independent, in ../../Smallstep.agda and
-    ../../Simulation.agda, instantiated at these observations here and in
-    Simulation.agda; Machine/*.agda (one per language);
-    Correctness/*Sim.agda (one per pass).
+  * Layout: Compiler/Observation.agda (shared with the clocked
+    interpreters); the framework, language independent, in
+    Framework/Smallstep.agda (machines, behaviors, Equivalent) and
+    proof/Framework/{Smallstep,Simulation}.agda (lemmas, forward
+    simulations), instantiated at these observations here and in
+    proof/Compiler/Operational/{Smallstep,Simulation}.agda;
+    Machine/*.agda (one per language);
+    proof/Compiler/Operational/Correctness/*Sim.agda (one per pass).
 
 -}
 

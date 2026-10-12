@@ -28,10 +28,10 @@ open import Compiler.Compile.Globalize
 open import Compiler.Observation
 open import Compiler.Lang.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Framework.ListUtil using (_‼_; proj-pw)
+open import proof.Framework.ListUtil using (_‼_; proj-pw)
 open import proof.Compiler.Compile.GlobalizeTable
   using (_⊑_; ⊑-refl; ⊑-trans; ∷-⊑; glob-grows; glob-grows-args; global-⊑)
-open import Compiler.Functional.Clock
+open import proof.Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos4 as S
 import Compiler.Functional.Interp.Clos5 as T
 

@@ -2,7 +2,7 @@
 
   Correctness of the remove-complex-operands pass (Clos5 → Clos5,
   Compile/RCO.agda) by a forward simulation of the Clos5 machine by
-  itself (see the design note in Smallstep.agda).
+  itself (see the design note in Compiler/Operational/Smallstep.agda).
 
   Values contain no code (a code pointer is a number), so the two
   machines compute the same values; the source runs with the table ds
@@ -46,22 +46,22 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos5
 open import Compiler.Lang.Mon using (Atom; var; lit; ref; atom-rename)
 open import Compiler.Compile.RCO
-open import Framework.Syntax.Rename Op sig
+open import proof.Framework.Syntax.Rename Op sig
   using (ext; rename; rename-args; rename-fuse; rename-fuse-args; rename-id; rename-id-args)
-open import Framework.Syntax.Scope Op sig using (WS; WS-args)
+open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import Compiler.Lang.Prim using (Prim)
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
   using (Next; next; stop; Step; Plus; plus; Star; ε; _◅_; plus-star; plus→star)
 open import proof.Compiler.Operational.Simulation
   using (FSim; Answers≺; stops; steps; stutters; Equivalent; equivalent; equiv-trans)
 import Compiler.Operational.Machine.Clos5 as T
 import Compiler.Operational.Machine.ISWIM as S
 open import Compiler.Compile.Pipeline using (compile; compile-mon)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import proof.Compiler.Operational.Correctness.CompilerSim using (compile-correct)
-open import Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
+open import proof.Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)

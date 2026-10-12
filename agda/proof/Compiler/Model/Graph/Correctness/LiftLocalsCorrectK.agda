@@ -28,10 +28,10 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Lang.Mon
 open import Compiler.Compile.LiftLocals using (lift; height; lift-defs; lift-program)

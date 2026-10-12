@@ -29,11 +29,11 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig using (Results; results-rel-pres)
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim using (primD; primD-mono)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig using (Results; results-rel-pres)
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim using (primD; primD-mono)
 open import Compiler.Lang.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
 import Compiler.Lang.Prim as P
 import Compiler.Lang.CFG as C
@@ -53,7 +53,7 @@ open import proof.Compiler.Model.Graph.Correctness.ExplicateCommon using (module
 open import proof.Compiler.Model.Graph.Correctness.ExplicateCorrectK using (compile-cfg-same)
 open import proof.Compiler.Model.Graph.Correctness.CompilerCorrect using (Same; Same-trans; ≃→Same)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
-open import Compiler.Model.Graph.Sem.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
+open import proof.Compiler.Model.Graph.Sem.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Compiler.Lang.ISWIM as ISWIM
 open import Framework.Primitives using (base-rep)
 

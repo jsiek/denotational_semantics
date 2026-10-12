@@ -7,11 +7,11 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops using (nthD)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops using (nthD)
 open import proof.Framework.GraphModel.Continuity using (Mono; Cont)
-open import Framework.GraphModel.Env using (Env; nonempty-env)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env)
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; replicate)
@@ -21,7 +21,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_)
 module proof.Framework.GraphModel.SemanticsUtil (Op : Set) (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig
-open import Framework.GraphModel.Semantics Op sig
+open import proof.Framework.GraphModel.Semantics Op sig
 
 module _ {{S : Semantics {Value}}} where
   open Semantics S

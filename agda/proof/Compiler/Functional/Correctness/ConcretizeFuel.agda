@@ -36,9 +36,9 @@ open import Compiler.Compile.Concretize
 open import Compiler.Observation
 open import Compiler.Lang.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
   using (_‼_; proj; has-length; proj-pw; ‼-snoc-<; ‼-snoc-length; ‼-≥; length-snoc)
-open import Compiler.Functional.Clock
+open import proof.Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos2 as S
 import Compiler.Functional.Interp.Clos3 as T
 

@@ -3,7 +3,7 @@
   The Clos5 semantics, for a fixed table T of global definitions, is
   monotone and continuous in the environment: a Semantics and a
   ContinuousSemantics instance built from the per-operator lemmas in
-  GraphModel.Continuity, as for Clos4 (Sem/Clos4IswimContinuous.agda);
+  proof.Framework.GraphModel.Continuity, as for Clos4 (Sem/Clos4IswimContinuous.agda);
   a reference to a global definition is a constant.
 
   Used by the correctness of remove complex operands
@@ -15,16 +15,16 @@
 
 module proof.Compiler.Model.Graph.Sem.Clos5IswimContinuous where
 
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DenotProperties
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Continuity
-open import Compiler.Model.Graph.Prim
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (Table; 𝕆-Clos5; ⟦_⟧[_]; ⟦_⟧₊[_]; table)
-open import Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _~ₑ[_]_; •-~)
-open import Framework.GraphModel.Semantics Op sig
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _~ₑ[_]_; •-~)
+open import proof.Framework.GraphModel.Semantics Op sig
   using (Semantics; ContinuousSemantics; continuous-args; ⟦⟧-monotone; ⟦⟧-continuous; ⟦⟧-pres)
 
 open import Data.Nat using (suc; _≟_)

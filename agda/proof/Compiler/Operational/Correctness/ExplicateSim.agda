@@ -2,7 +2,7 @@
 
   Correctness of the explicate-control pass (Imp → CFG,
   Compile/Explicate.agda) by a forward simulation of the Imp machine by
-  the CFG machine (see the design note in Smallstep.agda).
+  the CFG machine (see the design note in Compiler/Operational/Smallstep.agda).
 
   The machines share the frame and the evaluation of simple expressions,
   and run in lock step except for the control flow that the pass makes
@@ -34,9 +34,9 @@ open import Compiler.Lang.Imp as Imp using (Atm; Exp; simple; atm; case; assign;
 open import Compiler.Lang.CFG using (Tail; goto; block)
 open import Compiler.Compile.Explicate
 open import Compiler.Compile.Pipeline using (compile-imp; compile-cfg)
-open import Compiler.Compile.EncloseScope using (Closed)
-open import Framework.ListUtil using (_‼_)
-open import Compiler.Operational.Smallstep using (Machine; next; plus; Star; ε; _◅_)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
+open import proof.Framework.ListUtil using (_‼_)
+open import proof.Compiler.Operational.Smallstep using (Machine; next; plus; Star; ε; _◅_)
 open import proof.Compiler.Operational.Simulation
   using (Answers≺; stops; steps; stutters; FSim; Equivalent; equivalent; equiv-trans)
 import Compiler.Operational.Machine.Imp as I

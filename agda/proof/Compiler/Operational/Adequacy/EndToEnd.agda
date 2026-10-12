@@ -38,10 +38,10 @@ open import Framework.Primitives using (Base; base-rep)
 open import Compiler.Lang.ISWIM using (AST)
 open import Compiler.Compile.Pipeline using (compile; compile-x86)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Terminates)
+open import proof.Compiler.Operational.Smallstep using (Terminates)
 import Compiler.Operational.Machine.ISWIM as I
 import Compiler.Operational.Machine.Clos5 as C5
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 import proof.Compiler.Operational.Adequacy.ISWIM as AI
 import proof.Compiler.Operational.Adequacy.Clos5 as A5
 import Compiler.Operational.Machine.X86 as X

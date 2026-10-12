@@ -2,7 +2,7 @@
 
   Correctness of the lift-locals pass (monadic Clos5 → Imp,
   Compile/LiftLocals.agda) by a forward simulation of the Clos5 machine
-  by the Imp machine (see the design note in Smallstep.agda).
+  by the Imp machine (see the design note in Compiler/Operational/Smallstep.agda).
 
   The machines run in lock step, both evaluating the operands of a
   construct through continuation frames, and compute the same values
@@ -36,9 +36,9 @@ import Compiler.Lang.Clos5 as L5
 import Compiler.Lang.Imp as Imp
 open import Compiler.Lang.Mon
 open import Compiler.Compile.LiftLocals
-open import Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj)
+open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
   using (Machine; next; plus; Star; ε; _◅_; Answers; stops; steps)
 open import proof.Compiler.Operational.Simulation
   using (Equivalent; equivalent; plus-simulation; equiv-trans)
@@ -47,7 +47,7 @@ import Compiler.Operational.Machine.Imp as I
 import Compiler.Operational.Machine.ISWIM as S
 open import Compiler.Compile.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.Compile.RCO using (rco-program-mon)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import proof.Compiler.Operational.Correctness.RCOSim using (compile-mon-correct)
 
 open import Data.Empty using (⊥-elim)

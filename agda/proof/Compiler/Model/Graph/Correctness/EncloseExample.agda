@@ -12,13 +12,13 @@
 
 open import Framework.Syntax.SigUtil
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
 open import Compiler.Lang.ISWIM
-open import Compiler.Model.Graph.Sem.ISWIM
-import Compiler.Model.Graph.Sem.Clos2Iswim as S2
+open import proof.Compiler.Model.Graph.Sem.ISWIM
+import proof.Compiler.Model.Graph.Sem.Clos2Iswim as S2
 import Compiler.Lang.Clos2 as L2
 open import Compiler.Compile.Enclose using (enclose)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)

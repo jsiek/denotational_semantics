@@ -7,12 +7,12 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
-import Framework.GraphModel.Env
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
+import proof.Framework.GraphModel.Env
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; _⊔_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; m≤m⊔n; m≤n⊔m)
@@ -34,7 +34,7 @@ module proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon where
 {- Shorthands ----------------------------------------------------------------}
 
 Env : Set₁
-Env = Framework.GraphModel.Env.Env Value
+Env = proof.Framework.GraphModel.Env.Env Value
 
 _●_ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 D ● E = ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩

@@ -1,7 +1,9 @@
 {-
 
   Functional big-step semantics with a clock, in the style of CakeML
-  (../../Clocked.agda, language independent), instantiated at this
+  (Framework/Clocked.agda, language independent; its lemmas are in
+  proof/Framework/Clocked.agda, instantiated in
+  proof/Compiler/Functional/Clock.agda), instantiated at this
   compiler's observations.
 
   Design note, for the interpreters of each language and the proof of

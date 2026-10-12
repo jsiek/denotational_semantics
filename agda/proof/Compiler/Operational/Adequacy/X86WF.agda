@@ -22,8 +22,8 @@
 
 module proof.Compiler.Operational.Adequacy.X86WF where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using (Con)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (Con)
 open import Compiler.Lang.X86
 open import Compiler.Model.Graph.Sem.X86 using (table)
 

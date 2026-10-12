@@ -20,23 +20,23 @@
 
 open import Framework.Syntax.SigUtil
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos2 as L2
 open import Compiler.Lang.Clos3 as L3
   renaming (AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
             _⦅_⦆ to _⦅_⦆'; ast to ast'; bind to bind'; clear to clear')
-open import Compiler.Model.Graph.Sem.Clos2Iswim as S2
-open import Compiler.Model.Graph.Sem.Clos3Iswim as S3 renaming
+open import proof.Compiler.Model.Graph.Sem.Clos2Iswim as S2
+open import proof.Compiler.Model.Graph.Sem.Clos3Iswim as S3 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 import proof.Compiler.Model.Graph.Sem.Clos3IswimContinuous as C3
 open import Compiler.Compile.Concretize
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
-open import Framework.GraphModel.Env using (nonempty-env)
+open import proof.Framework.GraphModel.Env using (nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; ≤-antisym; ≤-pred; ≮⇒≥; m+[n∸m]≡n)

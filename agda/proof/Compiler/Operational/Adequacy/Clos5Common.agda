@@ -15,11 +15,11 @@ open import Compiler.Lang.Clos5 using (AST; global)
 
 module proof.Compiler.Operational.Adequacy.Clos5Common (ds : List AST) where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using (ν)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (ν)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (table) renaming (code to codeD)
 open import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect using (table-ext; table-top)
-open import Framework.ListUtil using (reverse-‼-split)
+open import proof.Framework.ListUtil using (reverse-‼-split)
 open import Compiler.Operational.Machine.Clos5
 open import proof.Compiler.Compile.GlobalizeTable using (_⊑_)
 open import proof.Compiler.Operational.Adequacy.Clos5WF using (DefsWF)

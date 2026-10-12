@@ -19,27 +19,27 @@ module proof.Compiler.Operational.Adequacy.Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Out; int; bool; δ)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; Λ-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (proj to dproj)
-open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
+open import proof.Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (yes; no)
 open import Level using (lift; lower)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀; Init)
 open import Compiler.Lang.ISWIM
-open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIM-con-env)
+open import proof.Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIM-con-env)
 open import proof.Compiler.Model.Graph.Sem.ISWIMContinuous using (body-continuous)
-import Framework.GraphModel.Env
+import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Framework.ListUtil
+open import proof.Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
+open import proof.Framework.ListUtil
 open import Compiler.Operational.Machine.ISWIM hiding (inl; inr)
 import Compiler.Operational.Machine.ISWIM as T using (inl; inr)
 open import proof.Compiler.Operational.Adequacy.Common
@@ -59,7 +59,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 
 VEnv : Set₁
-VEnv = Framework.GraphModel.Env.Env Value
+VEnv = proof.Framework.GraphModel.Env.Env Value
 
 {- Tuples of sets ------------------------------------------------------------}
 
@@ -226,7 +226,7 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
 𝒱s-nonempty [] = tt
 𝒱s-nonempty (v ∷ vs) = ⟨ 𝒱-nonempty v , 𝒱s-nonempty vs ⟩
 
-𝓔-nonempty : ∀ γ → Framework.GraphModel.Env.nonempty-env (𝓔 γ)
+𝓔-nonempty : ∀ γ → proof.Framework.GraphModel.Env.nonempty-env (𝓔 γ)
 𝓔-nonempty [] x = ⟨ ω , refl ⟩
 𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
 𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
@@ -338,7 +338,7 @@ At-[] (suc i) ()
 𝒱-con : ∀ v → Con (𝒱 v)
 𝒱s-con : ∀ vs → AllCon (𝒱s vs)
 𝓔-con : ∀ γ → Con-env (𝓔 γ)
-𝒱-con (clo N γ) = lower (Λ-consis _ _ ⟨ (λ X X' X~ → lift (ISWIM-con-env N (Framework.GraphModel.Env.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
+𝒱-con (clo N γ) = lower (Λ-consis _ _ ⟨ (λ X X' X~ → lift (ISWIM-con-env N (proof.Framework.GraphModel.Env.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
 𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
 𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)
 𝒱-con (T.inl v) = lower (inl-consis ⟨ 𝒱 v , ptt ⟩ ⟨ 𝒱 v , ptt ⟩ ⟨ lift (𝒱-con v) , ptt ⟩)

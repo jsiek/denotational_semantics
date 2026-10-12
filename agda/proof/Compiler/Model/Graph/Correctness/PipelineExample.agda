@@ -12,11 +12,11 @@
 -}
 
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Domain
 open import Compiler.Lang.ISWIM
-open import Compiler.Model.Graph.Sem.ISWIM
+open import proof.Compiler.Model.Graph.Sem.ISWIM
 open import Compiler.Compile.Enclose using (enclose)
 open import Compiler.Compile.Optimize using (optimize-program)
 import Compiler.Lang.Clos2 as L2

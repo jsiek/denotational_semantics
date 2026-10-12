@@ -25,9 +25,9 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.SetsAsPredicates
 open import Framework.Primitives
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Domain
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)

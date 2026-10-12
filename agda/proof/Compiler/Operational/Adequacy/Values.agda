@@ -22,16 +22,16 @@ module proof.Compiler.Operational.Adequacy.Values where
 
 open import Framework.Primitives using (Int)
 open import Compiler.Lang.Prim using (int; bool; δ)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; Con)
   renaming (const to dconst)
-open import Framework.GraphModel.Ops using (ℬ; inl; inr; pair-consis; ℬ-consis; inl-consis; inr-consis)
+open import proof.Framework.GraphModel.Ops using (ℬ; inl; inr; pair-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (pair to dpair)
-open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
+open import proof.Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (Table)
 open import Compiler.Observation
-open import Framework.ListUtil using (proj; has-length)
+open import proof.Framework.ListUtil using (proj; has-length)
 open import Compiler.Operational.Machine.Clos5 using (Val; code; pair; const; tup; obs; obs-list; out)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import proof.Compiler.Operational.Adequacy.Common

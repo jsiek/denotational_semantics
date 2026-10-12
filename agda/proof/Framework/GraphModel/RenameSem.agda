@@ -3,9 +3,9 @@ open import Data.List using (List; []; _∷_)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (tt)
 open import Level using (lift; lower)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Env using (Env)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.Env using (Env)
 
 {-
   Renaming the variables of a term commutes with any monotone semantics:
@@ -15,8 +15,8 @@ open import Framework.GraphModel.Env using (Env)
 module proof.Framework.GraphModel.RenameSem (Op : Set) (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig renaming (ABT to AST)
-open import Framework.Syntax.Rename Op sig
-open import Framework.GraphModel.Semantics Op sig
+open import proof.Framework.Syntax.Rename Op sig
+open import proof.Framework.GraphModel.Semantics Op sig
 open Semantics {{...}}
 
 rename-⊆ : ∀ {A} {{_ : Semantics {A}}} (M : AST) r (ρ ρ' : Env A)

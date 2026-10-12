@@ -26,9 +26,9 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
 open import Compiler.Lang.Imp as I
   using (simple; case; assign; body; program)
 import Compiler.Lang.CFG as C

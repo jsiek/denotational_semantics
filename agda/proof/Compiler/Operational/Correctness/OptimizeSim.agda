@@ -1,7 +1,7 @@
 {-
 
   Correctness of the optimize pass (Clos2 → Clos2) by a forward simulation
-  of the Clos2 machine by itself (see the design note in Smallstep.agda).
+  of the Clos2 machine by itself (see the design note in Compiler/Operational/Smallstep.agda).
 
   The machines run in lock step, except while building a closure: the
   source also evaluates the free variables that the optimized closure
@@ -37,12 +37,12 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
-open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
+open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
 import proof.Compiler.Operational.Correctness.EncloseSim as E
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 open import proof.Compiler.Operational.Simulation
-open import Framework.ListUtil
+open import proof.Framework.ListUtil
 import Compiler.Operational.Machine.Clos2 as T
 
 open import Data.Empty using (⊥-elim)
@@ -62,7 +62,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-{- Well-scoped terms (Syntax.Scope) ------------------------------------}
+{- Well-scoped terms (Framework.Syntax.Scope) ------------------------------------}
 
 {- the code of a closure with n free variables -}
 ws-body : ∀ n k (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (T.body n a)

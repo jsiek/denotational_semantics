@@ -40,20 +40,20 @@
 module proof.Compiler.Operational.Adequacy.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀)
 open import Compiler.Lang.ISWIM
-open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧)
+open import proof.Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import proof.Compiler.Model.Graph.Correctness.CompilerCorrect
   using (compile; compile-correct-const; compile-correct-nonempty)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; next; stop)
 open import Compiler.Operational.Machine.ISWIM
-open import Compiler.Compile.EncloseScope using (Closed)
-open import Framework.Syntax.Uses Op sig using (uses-bound)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
+open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
 open import proof.Compiler.Operational.Adequacy.Common
 open import proof.Compiler.Operational.Adequacy.Soundness using (soundness) public
 open import proof.Compiler.Operational.Adequacy.LogRel

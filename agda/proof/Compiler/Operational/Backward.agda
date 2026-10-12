@@ -1,7 +1,7 @@
 {-
 
   Backward simulations, in the spirit of CompCert's Smallstep library, for
-  comparison with the forward simulations of Simulation.agda.
+  comparison with the forward simulations of proof/Framework/Simulation.agda.
 
   The passes are proved correct by forward simulations, and the backward
   direction comes from determinism of the machines (proof.Framework.Simulation.equivalent).
@@ -32,7 +32,7 @@
 module proof.Compiler.Operational.Backward where
 
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
 
 open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Data.Nat.Induction using (<-wellFounded)

@@ -10,11 +10,11 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -29,7 +29,7 @@ open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module proof.Framework.GraphModel.Continuity where
 
-open import Framework.GraphModel.Env using () renaming (monotone-env to Mono; continuous-env to Cont) public
+open import proof.Framework.GraphModel.Env using () renaming (monotone-env to Mono; continuous-env to Cont) public
 
 VEnv : Set₁
 VEnv = Env Value

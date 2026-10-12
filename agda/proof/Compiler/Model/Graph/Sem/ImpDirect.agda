@@ -22,9 +22,9 @@ module proof.Compiler.Model.Graph.Sem.ImpDirect where
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Sem.Imp
   using (Table; init; Store; read; _[_↦_]; 𝒜; 𝒜s; 𝒮; zeros; frame; tables) public
 open import Compiler.Lang.Imp

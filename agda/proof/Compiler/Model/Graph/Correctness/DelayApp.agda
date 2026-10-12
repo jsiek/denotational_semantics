@@ -16,11 +16,11 @@
 -}
 
 open import Framework.Syntax.SyntaxUtil
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
 open import Compiler.Lang.Clos4
-open import Framework.Syntax.Rename Op sig using (shift)
-open import Compiler.Model.Graph.Sem.Clos4Iswim
+open import proof.Framework.Syntax.Rename Op sig using (shift)
+open import proof.Compiler.Model.Graph.Sem.Clos4Iswim
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; _●_; Car; Cdr; _⊙_; Cdr-mono; cdr-witness)
 

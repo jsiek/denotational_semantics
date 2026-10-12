@@ -39,19 +39,19 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos5
 import Compiler.Lang.Mon as Mon
 open import Compiler.Compile.RCO
-open import Framework.Syntax.Rename Op sig using (ext; rename; rename-args)
-open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc)
-open import Compiler.Functional.Clock
+open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args)
+open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
+open import proof.Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc)
+open import proof.Compiler.Functional.Clock
 open import Compiler.Functional.Interp.Clos5
   using (Val; Env; code; pair; const; tup; inl; inr; obs; eval; eval-args; call; code?; branch;
          first; second; project; prim?)
 import Compiler.Functional.Interp.Clos5 as T
 import Compiler.Functional.Interp.ISWIM as ISWIM
 open import Compiler.Compile.Pipeline using (compile; compile-mon)
-open import Compiler.Compile.EncloseScope using (Closed)
+open import proof.Compiler.Compile.EncloseScope using (Closed)
 open import proof.Compiler.Functional.Correctness.CompilerFuel using (compile-correct)
-open import Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
+open import proof.Compiler.Compile.PipelineScope using (Scoped; compile-scoped)
 
 open import Data.List using (List; []; _∷_; _++_; _∷ʳ_; [_]; length; replicate; reverse; map)
 open import Data.List.Properties using (++-assoc)

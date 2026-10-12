@@ -31,12 +31,12 @@
 module proof.Compiler.Operational.Adequacy.Clos5 where
 
 open import Framework.Primitives using (base-rep)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
 open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (⟦_⟧ₚ)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep
+open import proof.Compiler.Operational.Smallstep
   using (Terminates; Diverges; diverges-not-terminates)
 open import Compiler.Operational.Machine.Clos5
 open import proof.Compiler.Compile.GlobalizeTable using (⊑-refl)

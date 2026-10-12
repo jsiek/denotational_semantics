@@ -29,10 +29,10 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops
-open import Compiler.Model.Graph.Prim
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5 using (program)
 open import Compiler.Lang.Mon
 open import Compiler.Compile.LiftLocals using (lift-atom; lift; height; lift-defs; lift-program)
@@ -46,7 +46,7 @@ open import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect
   using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
 open import proof.Compiler.Model.Graph.Correctness.RCOCorrect using (strict-≃; Λ-≃; ne-mem)
 open import proof.Compiler.Model.Graph.Correctness.LiftLocalsCommon
-open import Framework.GraphModel.Env using (Env)
+open import proof.Framework.GraphModel.Env using (Env)
 
 open import Data.Nat using (ℕ; suc; _+_; _⊔_; _≤_; _≟_; _<?_)
 open import Data.Nat.Properties using (≤-refl)
