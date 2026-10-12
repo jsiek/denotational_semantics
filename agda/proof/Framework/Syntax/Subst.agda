@@ -145,3 +145,7 @@ extend-sub τ {suc n} (cons (ast M) Ms) σ σ' k k< with m≤n⇒m<n∨m≡n (�
                (extend-skip (sub-args τ Ms) (sub τ M • σ') 0))
         (cong (sub τ) (sym (subst (λ y → extend Ms (M • σ) y ≡ M) (+-identityʳ n)
                                   (extend-skip Ms (M • σ) 0))))
+
+{- substituting under a binder into a shifted term -}
+exts-shift : ∀ σ M → sub (exts σ) (rename suc M) ≡ rename suc (sub σ M)
+exts-shift σ M = trans (ren-sub (exts σ) suc M) (sym (sub-ren suc σ M))

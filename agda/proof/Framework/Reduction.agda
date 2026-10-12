@@ -92,6 +92,18 @@ module _ {T U : Set} {redT : T → Red T} {redU : U → Red U} {g : T → U}
   wrong-in : ∀ {X} → redT X ≡ wrong → redU (g X) ≡ wrong
   wrong-in e = trans (eq _) (cong (λ r → step-in g r (κ _)) e)
 
+{- a frame in a frame -}
+step-in-∘ : ∀ {A B C : Set} {f : B → C} {h : A → B} r {k k'}
+  → step-in f (step-in h r k) k' ≡ step-in (λ x → f (h x)) r (step-in f k k')
+step-in-∘ val = refl
+step-in-∘ wrong = refl
+step-in-∘ (to _) = refl
+
+frame-∘ : ∀ {T U V : Set} {redT : T → Red T} {redU : U → Red U} {redV : V → Red V}
+  {h : T → U} {f : U → V} → Frame redT redU h → Frame redU redV f → Frame redT redV (λ x → f (h x))
+frame-∘ {redT = redT} {h = h} {f = f} (frame κh eqh) (frame κf eqf) =
+  frame _ (λ X → trans (eqf _) (trans (cong (λ r → step-in f r (κf (h X))) (eqh X)) (step-in-∘ {f = f} {h = h} (redT X))))
+
 {- Answers ---------------------------------------------------------------------}
 
 {- how a target term M' answers the reduction r of a source term M, for a
@@ -112,6 +124,10 @@ module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set}
 
   ans-step : ∀ {M r X Y} → red X ≡ to Y → Ans red Val R M r Y → Ans red Val R M r X
   ans-step s = ans-star (s ◅ ε)
+
+  {- a source subterm that is a value -}
+  ans-skip : ∀ {A} {f : A → S} {r k M X} → r ≡ val → Ans red Val R M k X → Ans red Val R M (step-in f r k) X
+  ans-skip refl a = a
 
 {- congruence: the reduction of the subterm X of f X, in the frame g -}
 ans-in : ∀ {S S' T U : Set} {redT : T → Red T} {redU : U → Red U} {ValT : T → Set} {ValU : U → Set}

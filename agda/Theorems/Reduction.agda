@@ -32,15 +32,20 @@ module Theorems.Reduction where
 open import Compiler.Reduction.Smallstep using (Equivalent)
 
 import Compiler.Lang.ISWIM as ISWIM
+import Compiler.Lang.Clos3 as Clos3
 
 open import Compiler.Compile.Enclose using (enclose)
+open import Compiler.Compile.Delay using (delay)
 
 open import Compiler.Compile.EncloseScope using (Closed)
 
 import Compiler.Reduction.ISWIM as ISWIMᵣ
 import Compiler.Reduction.Clos2 as Clos2ᵣ
+import Compiler.Reduction.Clos3 as Clos3ᵣ
+import Compiler.Reduction.Clos4 as Clos4ᵣ
 
 import proof.Compiler.Reduction.Correctness.EncloseRed as EncloseRed
+import proof.Compiler.Reduction.Correctness.DelayRed as DelayRed
 
 {- Each pass ------------------------------------------------------------------}
 
@@ -48,3 +53,6 @@ import proof.Compiler.Reduction.Correctness.EncloseRed as EncloseRed
 enclose-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos2ᵣ.sem (enclose M))
 enclose-correct = EncloseRed.enclose-correct
+
+delay-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵣ.sem M) (Clos4ᵣ.sem (delay M))
+delay-correct = DelayRed.delay-correct

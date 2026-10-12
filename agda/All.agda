@@ -208,6 +208,9 @@ import proof.Compiler.Functional.Correctness.CompilerFuel
 
 {- the values of each reduction semantics -}
 import proof.Compiler.Reduction.Clos2
+import proof.Compiler.Reduction.Clos3
+import proof.Compiler.Reduction.Clos4
 
 {- correctness of each pass, and of the compiler into each language -}
 import proof.Compiler.Reduction.Correctness.EncloseRed
+import proof.Compiler.Reduction.Correctness.DelayRed
