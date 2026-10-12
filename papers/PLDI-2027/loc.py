@@ -9,13 +9,31 @@ All.agda) must belong to exactly one group; the script fails otherwise,
 so new modules cannot go uncounted.  A group of the CakeML-style side may
 have no files yet (a pass not yet proved); it is shown as —.
 
+Language-independent infrastructure (side 'infra') is reported in a
+separate table and is not in any total.  The test is whether the code
+would be used, unchanged, by other languages and compilers: abstract
+binding trees and lemmas about the syntax of any signature, list lookups,
+base types, the denotational framework (sets as predicates, environments,
+the semantics of any signature, DOp signatures), the graph model (values,
+consistency, operators and their continuity: the semantic algebra), the
+small-step framework (transition systems, forward simulations) and the
+clocked one, both over any type of observations.  The meaning of this
+compiler's primitives (Compiler/Model/Graph/Prim.agda, as the machines'
+and interpreters' prim?) and its observations (Observation.agda) are not
+infrastructure.  The operational values are not either: each language's
+Val is its own datatype (closures over that language's terms, code
+pointers into its tables), observed through this compiler's
+observations.  For each infrastructure group, the separate table shows
+the lines of its modules that each proof reaches.  The script fails if an
+infrastructure module imports a module that is not infrastructure.
+
 Totals come from the import graph (`import`/`open import` lines, with or
 without `as`, `using`, module arguments or `public`).  A proof's total is
 its own modules plus the shared modules it reaches transitively that are
 not reached by all three proofs; shared modules reached by all three are
-not counted anywhere.  Adequacy, an add-on to the denotational proof, also
-counts the shared modules it reaches that the denotational total does not
-already count.  The script also fails if one proof reaches another proof's
+not counted anywhere, and infrastructure is never counted.  Adequacy, an
+add-on to the denotational proof, also counts the shared modules it
+reaches that the denotational total does not already count.  The script also fails if one proof reaches another proof's
 modules, adequacy's or an experiment's.
 """
 import glob, os, re, sys
@@ -26,25 +44,38 @@ F = 'agda/Compiler/Functional/'
 
 # (side, group, glob patterns)
 GROUPS = [
-    # also the machine-independent lemmas both operational styles use:
-    # Lang/{ListUtil,Scope,ScopeRename,Rename},
-    # Compile/{EncloseScope,GlobalizeTable,PipelineScope},
-    # and the observations (Observation.agda).  Those not used by all three
-    # proofs are counted in each proof that uses them (see main).
+    # also the lemmas both operational styles use about the compiler's
+    # output, Compile/{EncloseScope,GlobalizeTable,PipelineScope}, and the
+    # observations (Observation.agda).  Those not used by all three proofs
+    # are counted in each proof that uses them (see main).
     ('shared', 'syntax, languages, compiler passes',
-     ['agda/abt/*.agda', 'agda/Compiler/Lang/*.agda', 'agda/Compiler/Compile/*.agda',
-      'agda/Compiler/Observation.agda',
-      'agda/Primitives.agda', 'agda/NewSigUtil.agda', 'agda/NewSyntaxUtil.agda']),
+     ['agda/Compiler/Lang/*.agda', 'agda/Compiler/Compile/*.agda',
+      'agda/Compiler/Observation.agda']),
 
-    ('den', 'generic infrastructure',
+    # language-independent infrastructure: not in the totals (see main)
+    ('infra', 'abstract binding trees',
+     ['agda/abt/AbstractBindingTree.agda', 'agda/abt/GSubst.agda', 'agda/abt/ScopedTuple.agda',
+      'agda/abt/Sig.agda', 'agda/abt/Var.agda', 'agda/NewSigUtil.agda', 'agda/NewSyntaxUtil.agda']),
+    ('infra', 'syntax lemmas (renaming, scoping, uses), list lookups',
+     ['agda/Syntax/*.agda', 'agda/ListUtil.agda']),
+    ('infra', 'base types, logical equivalence', ['agda/Primitives.agda', 'agda/Iff.agda']),
+    ('infra', 'denotational framework',
      ['agda/SetsAsPredicates.agda', 'agda/NewSemantics.agda', 'agda/NewDOpSig.agda',
-      'agda/NewEnv.agda', 'agda/NewDenotProperties.agda']),
-    ('den', 'domain, operators, continuity', [G + 'Domain/ISWIM/*.agda']),
+      'agda/NewEnv.agda', 'agda/NewDenotProperties.agda', 'agda/abt/Fold2.agda',
+      'agda/RenameSem.agda']),
+    ('infra', 'graph model: values, operators, continuity', ['agda/GraphModel/*.agda']),
+    ('infra', 'small-step framework: transition systems, simulations',
+     ['agda/Smallstep.agda', 'agda/Simulation.agda']),
+    ('infra', 'clocked big-step framework', ['agda/Clocked.agda']),
+
+    # the meaning of the primitives (Prim.agda) is here, as prim? is in
+    # each machine and interpreter
     ('den', 'semantics of the languages',
-     [G + 'Sem/ISWIM.agda', G + 'Sem/Clos2Iswim.agda', G + 'Sem/Clos3Iswim.agda',
+     [G + 'Prim.agda',
+      G + 'Sem/ISWIM.agda', G + 'Sem/Clos2Iswim.agda', G + 'Sem/Clos3Iswim.agda',
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
-      G + 'Sem/Clos5IswimContinuous.agda', G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda',
+      G + 'Sem/Clos5IswimContinuous.agda',
       G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
@@ -64,9 +95,10 @@ GROUPS = [
      [G + 'Correctness/ExplicateCommon.agda', G + 'Correctness/ExplicateCorrectK.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
-    ('op', 'generic infrastructure',
-     [O + 'Smallstep.agda', O + 'Simulation.agda']),
-    ('op', 'semantics of the languages', [O + 'Machine/*.agda']),
+    # with the framework at this compiler's observations (Smallstep.agda,
+    # Simulation.agda)
+    ('op', 'semantics of the languages',
+     [O + 'Machine/*.agda', O + 'Smallstep.agda', O + 'Simulation.agda']),
     ('op', 'enclose', [O + 'Correctness/EncloseSim.agda']),
     ('op', 'optimize', [O + 'Correctness/OptimizeSim.agda']),
     ('op', 'concretize', [O + 'Correctness/ConcretizeSim.agda']),
@@ -77,8 +109,8 @@ GROUPS = [
     ('op', 'explicate control', [O + 'Correctness/ExplicateSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
 
-    ('ck', 'generic infrastructure', [F + 'Clock.agda']),
-    ('ck', 'semantics of the languages', [F + 'Interp/*.agda']),
+    # with the framework at this compiler's observations (Clock.agda)
+    ('ck', 'semantics of the languages', [F + 'Interp/*.agda', F + 'Clock.agda']),
     ('ck', 'enclose', [F + 'Correctness/EncloseFuel.agda']),
     ('ck', 'optimize', [F + 'Correctness/OptimizeFuel.agda']),
     ('ck', 'concretize', [F + 'Correctness/ConcretizeFuel.agda']),
@@ -197,7 +229,14 @@ def main():
     own = {s: {f for f, (side, _) in seen.items() if side == s}
            for s in SIDES + ('adeq',)}
     exp = {f for f, (side, _) in seen.items() if side == 'exp'}
+    infra = {f for f, (side, _) in seen.items() if side == 'infra'}
     reach = {s: reachable(own[s], graph) for s in own}
+
+    # Infrastructure is language independent: it imports only infrastructure.
+    bad = sorted(f for f in reachable(infra, graph) - infra)
+    if bad:
+        sys.exit('infrastructure imports modules that are not infrastructure:\n  '
+                 + '\n  '.join(bad))
 
     # The proofs must be independent: no proof reaches another proof's modules
     # nor adequacy's, nor an experiment (adequacy, examples and the
@@ -219,8 +258,7 @@ def main():
     extra['adeq'] = sorted((shared & reach['adeq']) - by_all - set(extra['den']))
     unused = sorted(shared - set().union(*(reach[s] for s in own)))
 
-    rows = ['generic infrastructure', 'domain, operators, continuity',
-            'semantics of the languages', 'enclose', 'optimize', 'concretize',
+    rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
             'composition']
     total = {side: 0 for side in SIDES}
@@ -240,6 +278,27 @@ def main():
         cells.append(str(n) if extra[side] else '—')
     print(f'| {EXTRA} | ' + ' | '.join(cells) + ' |')
     print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in SIDES) + ' |')
+    print()
+    def lines(fs):
+        return sum(code_lines(f) for f in fs)
+    print('| language-independent infrastructure (not in the totals) | lines | '
+          + ' | '.join(f'used by {NAMES[s]}' for s in SIDES) + ' |')
+    print('|---|---:|' + '---:|' * len(SIDES))
+    itotal = {s: 0 for s in SIDES}
+    for side, name, _ in GROUPS:
+        if side == 'infra':
+            fs = files_of[(side, name)]
+            cells = []
+            for s in SIDES:
+                n = lines(f for f in fs if f in reach[s])
+                itotal[s] += n
+                cells.append(str(n) if n else '—')
+            print(f'| {name} | {counts[(side, name)]} | ' + ' | '.join(cells) + ' |')
+    print(f'| **total** | **{lines(infra)}** | '
+          + ' | '.join(f'**{itotal[s]}**' for s in SIDES) + ' |')
+    print()
+    print(f"Adequacy uses {lines(infra & reach['adeq'])} lines of the infrastructure, "
+          f"{lines(infra & reach['adeq'] - reach['den'])} of them not used by the denotational proof.")
     print()
     print('| adequacy (denotational side only) | lines |')
     print('|---|---:|')
@@ -271,6 +330,13 @@ def main():
         print(f'| `{f[len("agda/"):-len(".agda")].replace("/", ".")}` | {code_lines(f)} | {tag} |')
     print()
     nall = sum(code_lines(f) for f in by_all)
+    print('| infrastructure module | lines | used by |')
+    print('|---|---:|---|')
+    for f in sorted(infra):
+        users = [NAMES[s] for s in SIDES + ('adeq',) if f in reach[s]]
+        print(f'| `{f[len("agda/"):-len(".agda")].replace("/", ".")}` | {code_lines(f)} | '
+              f'{", ".join(users) or "no proof"} |')
+    print()
     print(f'Shared by all three proofs, not counted: {len(by_all)} modules, {nall} lines.')
     for s in SIDES + ('adeq',):
         print(f'Counted in {NAMES[s]}: {mods(extra[s])}.')
