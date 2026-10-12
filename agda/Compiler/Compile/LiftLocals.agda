@@ -55,17 +55,17 @@ height _ = 0
 
 {- a monadic term at depth d, in a frame of n slots -}
 lift : ℕ → ℕ → ∀ {M} → Mon M → Exp
-lift n d (atom a) = atm (lift-atom n d a)
-lift n d (app (a ∷ b ∷ c ∷ [])) = app (lift-atom n d a) (lift-atom n d b) (lift-atom n d c)
-lift n d (pair (a ∷ b ∷ [])) = pair (lift-atom n d a) (lift-atom n d b)
-lift n d (fst (a ∷ [])) = fst (lift-atom n d a)
-lift n d (snd (a ∷ [])) = snd (lift-atom n d a)
-lift n d (tuple as) = tuple (lift-atoms n d as)
-lift n d (get {i = i} (a ∷ [])) = get i (lift-atom n d a)
-lift n d (inl (a ∷ [])) = inl (lift-atom n d a)
-lift n d (inr (a ∷ [])) = inr (lift-atom n d a)
+lift n d (atom a) = simple (atm (lift-atom n d a))
+lift n d (app (a ∷ b ∷ c ∷ [])) = simple (app (lift-atom n d a) (lift-atom n d b) (lift-atom n d c))
+lift n d (pair (a ∷ b ∷ [])) = simple (pair (lift-atom n d a) (lift-atom n d b))
+lift n d (fst (a ∷ [])) = simple (fst (lift-atom n d a))
+lift n d (snd (a ∷ [])) = simple (snd (lift-atom n d a))
+lift n d (tuple as) = simple (tuple (lift-atoms n d as))
+lift n d (get {i = i} (a ∷ [])) = simple (get i (lift-atom n d a))
+lift n d (inl (a ∷ [])) = simple (inl (lift-atom n d a))
+lift n d (inr (a ∷ [])) = simple (inr (lift-atom n d a))
 lift n d (case a m₁ m₂) = case (lift-atom n d a) d (lift n (suc d) m₁) (lift n (suc d) m₂)
-lift n d (prim {p} (a ∷ b ∷ [])) = prim p (lift-atom n d a) (lift-atom n d b)
+lift n d (prim {p} (a ∷ b ∷ [])) = simple (prim p (lift-atom n d a) (lift-atom n d b))
 lift n d (let′ m₁ m₂) = assign d (lift n d m₁) (lift n (suc d) m₂)
 
 {- a body whose variables 0 … d₀ - 1 are its parameters -}

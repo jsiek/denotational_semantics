@@ -38,15 +38,20 @@ data Atm : Set where
   lit : (B : Base) → base-rep B → Atm
   fun-ref : ℕ → Atm
 
+{- the expressions without control flow or assignment, shared with CFG
+   (Lang/CFG.agda) -}
+data Simple : Set where
+  atm : Atm → Simple
+  app : Atm → Atm → Atm → Simple           {- code, free variables, argument -}
+  pair : Atm → Atm → Simple
+  fst snd : Atm → Simple
+  tuple : List Atm → Simple
+  get : ∀ {n} → Fin n → Atm → Simple
+  inl inr : Atm → Simple
+  prim : Prim → Atm → Atm → Simple
+
 data Exp : Set where
-  atm : Atm → Exp
-  app : Atm → Atm → Atm → Exp              {- code, free variables, argument -}
-  pair : Atm → Atm → Exp
-  fst snd : Atm → Exp
-  tuple : List Atm → Exp
-  get : ∀ {n} → Fin n → Atm → Exp
-  inl inr : Atm → Exp
-  prim : Prim → Atm → Atm → Exp
+  simple : Simple → Exp
   case : Atm → ℕ → Exp → Exp → Exp        {- case a: x := the payload; a branch -}
   assign : ℕ → Exp → Exp → Exp            {- x := e₁; e₂ -}
 
