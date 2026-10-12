@@ -14,7 +14,7 @@ module Compiler.Model.Graph.Sem.CFG where
  where D is the value of s and F X is the value of t with X in slot x.
  case a x l₁ l₂ is 𝒞, its branches running block l₁ or l₂ with the
  payload in slot x. Assigning a slot beyond the frame goes wrong: the
- construct means init, as in Imp. goto l runs block l in the store as it
+ construct means ∅, as in Imp. goto l runs block l in the store as it
  is.
 
  The blocks of a body are given meaning as the global definitions are
@@ -50,7 +50,7 @@ Blocks = ℕ → Store → 𝒫 Value
 checked : ℕ → ℕ → 𝒫 Value → 𝒫 Value
 checked n x D with x <? n
 ... | yes _ = D
-... | no _ = init
+... | no _ = ∅
 
 {- t in a frame of n slots, with the blocks B -}
 ⟦_⟧[_] : Tail → Table → ℕ → Blocks → Store → 𝒫 Value

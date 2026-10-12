@@ -10,7 +10,8 @@ module Compiler.Model.Graph.Sem.Imp where
  seen by what runs after them, also after the expression that contains
  them. Reading a slot beyond the frame gives init, the error value, as an
  out-of-scope variable does in Clos5; assigning one, by assign or case,
- goes wrong too: the construct means init.
+ goes wrong, so the construct means ∅, as a stuck program does (and
+ nothing after it runs).
 
  x := e₁; e₂ is strict in e₁, like let in Clos5: its value and each slot
  of the store it leaves are ⋆ ⟨ Λ F , D₁ ⟩, where D₁ is the value of e₁
@@ -57,11 +58,11 @@ _[_↦_] : Store → ℕ → 𝒫 Value → Store
 ... | yes _ = D
 ... | no _ = σ y
 
-{- assigning slot x of a frame of n slots, otherwise r -}
+{- r, if slot x is within a frame of n slots -}
 checked : ℕ → ℕ → Store → 𝒫 Value × Store → 𝒫 Value × Store
 checked n x σ r with x <? n
 ... | yes _ = r
-... | no _ = ⟨ init , σ ⟩
+... | no _ = ⟨ ∅ , σ ⟩
 
 𝒜 : Table → ℕ → Store → Atm → 𝒫 Value
 𝒜 T n σ (var x) = read n σ x
