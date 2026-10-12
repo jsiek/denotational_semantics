@@ -102,6 +102,14 @@ GROUPS = [
      [O + 'Backward.agda']),
     ('exp', 'CompCert-style: direct backward simulation for delay — delay',
      [O + 'Correctness/DelayBackSim.agda']),
+    # not in the totals: a continuation-passing semantics of Imp, an
+    # alternative to the direct one (Sem/Imp.agda), and lift locals and
+    # explicate control proved against it
+    ('exp', 'denotational: continuation-passing Imp — semantics', [G + 'Sem/ImpK.agda']),
+    ('exp', 'denotational: continuation-passing Imp — lift locals',
+     [G + 'Correctness/LiftLocalsCorrectK.agda']),
+    ('exp', 'denotational: continuation-passing Imp — explicate control',
+     [G + 'Correctness/ExplicateCorrectK.agda']),
 ]
 
 
