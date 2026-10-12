@@ -94,6 +94,7 @@
 \newcommand{\tmo}{\key{timeout}}
 \newcommand{\Ret}{\key{ret}\;}
 \newcommand{\bind}{\mathbin{>\!\!>\!\!=}}
+\newcommand{\Do}{\key{do}\;}
 \newcommand{\lift}[1]{\lfloor #1 \rfloor}
 \newcommand{\run}{\mathit{run}}
 \newcommand{\outc}{\mathit{out}}
@@ -3011,6 +3012,8 @@ If $\Equiv(P_1, P_2)$ and $\Equiv(P_2, P_3)$, then
 Each interpreter uses the values and environments of its language's machine
 (Section~\ref{sec:machines}). The clock $k$ decreases only when a function is
 called; every other construct evaluates its subterms with the same clock.
+The do-notation is sugar for $\bind$, as in the Agda:
+$\Do x \leftarrow e;\; e'$ means $e \bind \lambda x.\, e'$.
 \begin{align*}
   \EV{\ell}{k} &: \mathit{Env} \to \mathit{Term} \to \mathit{Result}
     \qquad (\ell \in \{\mathrm{ISWIM}, 2, 3, 4\}) \\
@@ -3026,17 +3029,17 @@ called; every other construct evaluates its subterms with the same clock.
   \EV{\ell}{k}\,\rho\,x &= \lift{\rho(x)} \\
   \EV{\ell}{k}\,\rho\,c &= \Ret c \\
   \EV{\ell}{k}\,\rho\,\tuple{M_1, \ldots, M_n} &=
-    \EVS{\ell}{k}\,\rho\,(M_1 \ldots M_n) \bind \lambda \bar{v}.\, \Ret \tupV{\bar{v}} \\
+    \Do \bar{v} \leftarrow \EVS{\ell}{k}\,\rho\,(M_1 \ldots M_n);\; \Ret \tupV{\bar{v}} \\
   \EV{\ell}{k}\,\rho\,(\prj{i} M) &= \EV{\ell}{k}\,\rho\,M \bind \key{get}^n_i \\
-  \EV{\ell}{k}\,\rho\,(\inl M) &= \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \Ret (\inlV v) \\
-  \EV{\ell}{k}\,\rho\,(\inr M) &= \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \Ret (\inrV v) \\
+  \EV{\ell}{k}\,\rho\,(\inl M) &= \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret (\inlV v) \\
+  \EV{\ell}{k}\,\rho\,(\inr M) &= \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret (\inrV v) \\
   \EV{\ell}{k}\,\rho\,(\Case{L}{x}{M}{y}{N}) &=
     \EV{\ell}{k}\,\rho\,L \bind \BR{\ell}{k}\,\rho\,(x.M)\,(y.N) \\
   \EV{\ell}{k}\,\rho\,\prim{p}{L}{M} &=
-    \EV{\ell}{k}\,\rho\,L \bind \lambda v.\, \EV{\ell}{k}\,\rho\,M \bind \lambda w.\, \key{prim}_p(v, w) \\[1ex]
+    \Do v \leftarrow \EV{\ell}{k}\,\rho\,L;\; w \leftarrow \EV{\ell}{k}\,\rho\,M;\; \key{prim}_p(v, w) \\[1ex]
   \EVS{\ell}{k}\,\rho\,\epsilon &= \Ret \epsilon \\
   \EVS{\ell}{k}\,\rho\,(M\,\bar{M}) &=
-    \EV{\ell}{k}\,\rho\,M \bind \lambda v.\, \EVS{\ell}{k}\,\rho\,\bar{M} \bind \lambda \bar{v}.\, \Ret (v\,\bar{v}) \\[1ex]
+    \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \bar{v} \leftarrow \EVS{\ell}{k}\,\rho\,\bar{M};\; \Ret (v\,\bar{v}) \\[1ex]
   \key{get}^n_i(v) &=
     \begin{cases} \lift{\key{proj}^n_i(\bar{v})} & v = \tupV{\bar{v}} \\ \wrong & \text{otherwise} \end{cases} \\
   \key{prim}_p(v, w) &=
@@ -3059,7 +3062,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
   \EV{\mathrm{ISWIM}}{k}\,\rho\,(L\;M) &= \EV{\mathrm{ISWIM}}{k}\,\rho\,L \bind \APP{\mathrm{ISWIM}}{k}\,\rho\,M \\[1ex]
   \APP{\mathrm{ISWIM}}{k}\,\rho\,M\,f &=
     \begin{cases}
-      \EV{\mathrm{ISWIM}}{k}\,\rho\,M \bind \lambda w.\, \CALL{\mathrm{ISWIM}}{k}\,N\,\ext{\rho'}{x}{w}
+      \Do w \leftarrow \EV{\mathrm{ISWIM}}{k}\,\rho\,M;\; \CALL{\mathrm{ISWIM}}{k}\,N\,\ext{\rho'}{x}{w}
         & f = \cloV{\lam{x} N}{\rho'} \\
       \wrong & \text{otherwise}
     \end{cases}
@@ -3069,11 +3072,11 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
 
 \begin{align*}
   \EV{2}{k}\,\rho\,(\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N) &=
-    \EVS{2}{k}\,\rho\,(z_1 \ldots z_n) \bind \lambda \bar{v}.\, \Ret \closV{x_1 \ldots x_n\, y.\, N}{\bar{v}} \\
+    \Do \bar{v} \leftarrow \EVS{2}{k}\,\rho\,(z_1 \ldots z_n);\; \Ret \closV{x_1 \ldots x_n\, y.\, N}{\bar{v}} \\
   \EV{2}{k}\,\rho\,(L\;M) &= \EV{2}{k}\,\rho\,L \bind \APP{2}{k}\,\rho\,M \\[1ex]
   \APP{2}{k}\,\rho\,M\,f &=
     \begin{cases}
-      \EV{2}{k}\,\rho\,M \bind \lambda w.\, \CALL{2}{k}\,N\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}
+      \Do w \leftarrow \EV{2}{k}\,\rho\,M;\; \CALL{2}{k}\,N\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}
         & f = \closV{\bar{x}\, y.\, N}{\bar{v}} \\
       \wrong & \text{otherwise}
     \end{cases}
@@ -3083,11 +3086,11 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
 
 \begin{align*}
   \EV{3}{k}\,\rho\,(\clos{r_1 \ldots r_n}{e\, y} N) &=
-    \EVS{3}{k}\,\rho\,(r_1 \ldots r_n) \bind \lambda \bar{v}.\, \Ret \closV{e\, y.\, N}{\tupV{\bar{v}}} \\
+    \Do \bar{v} \leftarrow \EVS{3}{k}\,\rho\,(r_1 \ldots r_n);\; \Ret \closV{e\, y.\, N}{\tupV{\bar{v}}} \\
   \EV{3}{k}\,\rho\,(L\;M) &= \EV{3}{k}\,\rho\,L \bind \APP{3}{k}\,\rho\,M \\[1ex]
   \APP{3}{k}\,\rho\,M\,f &=
     \begin{cases}
-      \EV{3}{k}\,\rho\,M \bind \lambda w.\, \CALL{3}{k}\,N\,\{e {\mapsto} u, y {\mapsto} w\}
+      \Do w \leftarrow \EV{3}{k}\,\rho\,M;\; \CALL{3}{k}\,N\,\{e {\mapsto} u, y {\mapsto} w\}
         & f = \closV{e\, y.\, N}{u} \\
       \wrong & \text{otherwise}
     \end{cases}
@@ -3100,13 +3103,13 @@ As in the machine, the operator is checked after all three operands.
   \EV{4}{k}\,\rho\,\fun{e\,y.\,N} &= \Ret \funV{e\, y.\, N} \\
   \EV{4}{k}\,\rho\,L(M, N) &= \EV{4}{k}\,\rho\,L \bind \APP{4}{k}\,\rho\,M\,N \\
   \EV{4}{k}\,\rho\,\pair{M}{N} &=
-    \EV{4}{k}\,\rho\,M \bind \lambda v.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\, \Ret \pairV{v}{w} \\
+    \Do v \leftarrow \EV{4}{k}\,\rho\,M;\; w \leftarrow \EV{4}{k}\,\rho\,N;\; \Ret \pairV{v}{w} \\
   \EV{4}{k}\,\rho\,(\FST M) &= \EV{4}{k}\,\rho\,M \bind \key{first} \\
   \EV{4}{k}\,\rho\,(\SND M) &= \EV{4}{k}\,\rho\,M \bind \key{second} \\
   \EV{4}{k}\,\rho\,(\Let x = M \In N) &=
-    \EV{4}{k}\,\rho\,M \bind \lambda v.\, \EV{4}{k}\,\ext{\rho}{x}{v}\,N \\[1ex]
+    \Do v \leftarrow \EV{4}{k}\,\rho\,M;\; \EV{4}{k}\,\ext{\rho}{x}{v}\,N \\[1ex]
   \APP{4}{k}\,\rho\,M\,N\,f &=
-    \EV{4}{k}\,\rho\,M \bind \lambda u.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\,
+    \Do u \leftarrow \EV{4}{k}\,\rho\,M;\; w \leftarrow \EV{4}{k}\,\rho\,N;\;
     \begin{cases}
       \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\} & f = \funV{e\, y.\, B} \\
       \wrong & \text{otherwise}
@@ -3124,7 +3127,7 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
 \begin{align*}
   \EV{\vec{d}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\[1ex]
   \APP{\vec{d}}{k}\,\rho\,M\,N\,f &=
-    \EV{\vec{d}}{k}\,\rho\,M \bind \lambda u.\, \EV{\vec{d}}{k}\,\rho\,N \bind \lambda w.\,
+    \Do u \leftarrow \EV{\vec{d}}{k}\,\rho\,M;\; w \leftarrow \EV{\vec{d}}{k}\,\rho\,N;\;
     \begin{cases}
       \CALL{\vec{d}}{k}\,j\,u\,w & f = \codeV{j} \\
       \wrong & \text{otherwise}
@@ -3147,23 +3150,23 @@ injection test, and assignment are shared with CFG. As in Clos5, the
 operator of a call is checked after the operands, and only calls tick.
 \begin{align*}
   \EV{\vec{b}}{k} &: \mathit{Frame} \to \mathit{Exp} \to \mathit{Result}(\mathit{Val} \times \mathit{Frame}) \\
-  \Interp{\mathrm{Imp}}(\vec{b};\; (n;\; e)) &= (\obs,\; \lambda k.\, \EV{\vec{b}}{k}\,0^n\,e \bind \lambda (v, \sigma).\, \Ret v)
+  \Interp{\mathrm{Imp}}(\vec{b};\; (n;\; e)) &= (\obs,\; \lambda k.\, \Do (v, \sigma) \leftarrow \EV{\vec{b}}{k}\,0^n\,e;\; \Ret v)
 \end{align*}
 \begin{align*}
   \key{simple}_C(\sigma, a) &= \lift{\sigma(a)} \\
   \key{simple}_C(\sigma, a_1(a_2, a_3)) &=
-    \lift{\sigma(a_1)} \bind \lambda f.\, \lift{\sigma(a_2)} \bind \lambda u.\, \lift{\sigma(a_3)} \bind \lambda w.\, C(f, u, w) \\
+    \Do f \leftarrow \lift{\sigma(a_1)};\; u \leftarrow \lift{\sigma(a_2)};\; w \leftarrow \lift{\sigma(a_3)};\; C(f, u, w) \\
   \key{simple}_C(\sigma, \pair{a_1}{a_2}) &=
-    \lift{\sigma(a_1)} \bind \lambda v.\, \lift{\sigma(a_2)} \bind \lambda w.\, \Ret \pairV{v}{w} \\
+    \Do v \leftarrow \lift{\sigma(a_1)};\; w \leftarrow \lift{\sigma(a_2)};\; \Ret \pairV{v}{w} \\
   \key{simple}_C(\sigma, \FST a) &= \lift{\sigma(a)} \bind \key{first} \qquad
   \key{simple}_C(\sigma, \SND a) = \lift{\sigma(a)} \bind \key{second} \\
   \key{simple}_C(\sigma, \tuple{a_1, \ldots, a_l}) &=
-    \lift{\sigma(a_1)} \bind \lambda v_1.\, \cdots\, \lift{\sigma(a_l)} \bind \lambda v_l.\, \Ret \tupV{v_1, \ldots, v_l} \\
+    \Do v_1 \leftarrow \lift{\sigma(a_1)};\; \ldots;\; v_l \leftarrow \lift{\sigma(a_l)};\; \Ret \tupV{v_1, \ldots, v_l} \\
   \key{simple}_C(\sigma, \prj{i} a) &= \lift{\sigma(a)} \bind \key{get}^n_i \\
-  \key{simple}_C(\sigma, \inl a) &= \lift{\sigma(a)} \bind \lambda v.\, \Ret (\inlV v) \qquad
-  \key{simple}_C(\sigma, \inr a) = \lift{\sigma(a)} \bind \lambda v.\, \Ret (\inrV v) \\
+  \key{simple}_C(\sigma, \inl a) &= \Do v \leftarrow \lift{\sigma(a)};\; \Ret (\inlV v) \qquad
+  \key{simple}_C(\sigma, \inr a) = \Do v \leftarrow \lift{\sigma(a)};\; \Ret (\inrV v) \\
   \key{simple}_C(\sigma, \prim{p}{a_1}{a_2}) &=
-    \lift{\sigma(a_1)} \bind \lambda v.\, \lift{\sigma(a_2)} \bind \lambda w.\, \key{prim}_p(v, w) \\[1ex]
+    \Do v \leftarrow \lift{\sigma(a_1)};\; w \leftarrow \lift{\sigma(a_2)};\; \key{prim}_p(v, w) \\[1ex]
   \key{inj?}(v) &= \begin{cases}
       \Ret \iota_1(u) & v = \inlV u \\
       \Ret \iota_2(u) & v = \inrV u \\
@@ -3176,17 +3179,17 @@ where $\key{simple}$ is the Agda's $\key{eval\text{-}simple}$.
 \begin{align*}
   \EV{\vec{b}}{k}\,\sigma\,r &= \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \bind \key{here}_\sigma \\
   \EV{\vec{b}}{k}\,\sigma\,e &=
-    \lift{\sigma(a)} \bind \key{inj?} \bind [\lambda u.\, \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_1,\;
+    \Do v \leftarrow \lift{\sigma(a)};\; \key{inj?}(v) \bind [\lambda u.\, \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_1,\;
       \lambda u.\, \key{put}^k_{\vec{b}}\,\sigma\,s\,u\,e_2] \\
     &\qquad (e = \Casei{a}{s}{e_1}{e_2}) \\
   \EV{\vec{b}}{k}\,\sigma\,(\assign{s}{e_1}{e_2}) &=
-    \EV{\vec{b}}{k}\,\sigma\,e_1 \bind \lambda (v, \sigma_1).\, \key{put}^k_{\vec{b}}\,\sigma_1\,s\,v\,e_2 \\[1ex]
+    \Do (v, \sigma_1) \leftarrow \EV{\vec{b}}{k}\,\sigma\,e_1;\; \key{put}^k_{\vec{b}}\,\sigma_1\,s\,v\,e_2 \\[1ex]
   \key{here}_\sigma(v) &= \Ret (v, \sigma) \\
   \key{put}^k_{\vec{b}}\,\sigma\,s\,v\,e &= \key{set}(\sigma, s, v, \lambda \sigma'.\, \EV{\vec{b}}{k}\,\sigma'\,e) \\
   \CALL{\vec{b}}{k}(f, u, w) &=
     \begin{cases}
       \tmo & f = \codeV{j},\; j < m,\; k = 0 \\
-      \EV{\vec{b}}{k'}\,(u\, w\, 0^{n-2})\,e \bind \lambda (v, \sigma').\, \Ret v
+      \Do (v, \sigma') \leftarrow \EV{\vec{b}}{k'}\,(u\, w\, 0^{n-2})\,e;\; \Ret v
         & f = \codeV{j},\; j < m,\; k = k' + 1, \\
         & \quad b_j = (n;\; e) \\
       \wrong & \text{otherwise}
@@ -3207,11 +3210,11 @@ the blocks older than it.
 \begin{align*}
   \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{return}\; r) &= \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \\
   \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\assign{s}{r}{t}) &=
-    \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \bind \lambda v.\,
+    \Do v \leftarrow \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r);\;
     \key{set}(\sigma, s, v, \lambda \sigma'.\, \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma'\,t) \\
   \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{goto}\; l) &= \key{jump}^k_{\vec{b}}\,\vec{t}\,\sigma\,l \\
   \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &=
-    \lift{\sigma(a)} \bind \key{inj?} \bind [G_{l_1}, G_{l_2}] \\
+    \Do v \leftarrow \lift{\sigma(a)};\; \key{inj?}(v) \bind [G_{l_1}, G_{l_2}] \\
   &\qquad\text{where } G_l(u) = \key{set}(\sigma, s, u, \lambda \sigma'.\, \key{jump}^k_{\vec{b}}\,\vec{t}\,\sigma'\,l) \\[1ex]
   \key{jump}^k_{\vec{b}}\,(t_0, \ldots, t_{j-1})\,\sigma\,l &=
     \begin{cases}
@@ -3254,24 +3257,24 @@ With $\sigma$ and $\rho$ those of the state $(\sigma, \rho)$:
   \mathit{arg}(\funref{k}) = \Ret \codeV{k} \\
   \key{write}(s, v, K) &= \key{set}(\sigma, s, v, \lambda \sigma'.\, K(\sigma', \rho)) \\
   \key{write}(\%g, v, K) &= K(\sigma, \rho[\%g := v]) \\[1ex]
-  \key{step}(\key{movq}\; o, d, K) &= \mathit{arg}(o) \bind \lambda v.\, \key{write}(d, v, K) \\
-  \key{step}(\key{subq}\; o, d, K) &= \mathit{arg}(o) \bind \lambda w.\, \mathit{arg}(d) \bind \lambda v.\,
-    \lift{\key{prim}^?_{\key{sub}}(v, w)} \bind \lambda u.\, \key{write}(d, u, K) \\
-  \key{step}(\key{cmpq}\; o_2, o_1, K) &= \mathit{arg}(o_1) \bind \lambda v.\, \mathit{arg}(o_2) \bind \lambda w.\,
-    \lift{\key{cmp}(v, w)} \bind \lambda b.\, K(\sigma, \rho[\key{flag} := b]) \\
-  \key{step}(\key{sete}\; d, K) &= \lift{\rho.\key{flag}} \bind \lambda b.\, \key{write}(d, \res{b}, K) \\
-  \key{step}(\key{testinl}\; o, K) &= \mathit{arg}(o) \bind \lambda v.\, \lift{\key{isinl}(v)} \bind \lambda b.\,
+  \key{step}(\key{movq}\; o, d, K) &= \Do v \leftarrow \mathit{arg}(o);\; \key{write}(d, v, K) \\
+  \key{step}(\key{subq}\; o, d, K) &= \Do w \leftarrow \mathit{arg}(o);\; v \leftarrow \mathit{arg}(d);\;
+    u \leftarrow \lift{\key{prim}^?_{\key{sub}}(v, w)};\; \key{write}(d, u, K) \\
+  \key{step}(\key{cmpq}\; o_2, o_1, K) &= \Do v \leftarrow \mathit{arg}(o_1);\; w \leftarrow \mathit{arg}(o_2);\;
+    b \leftarrow \lift{\key{cmp}(v, w)};\; K(\sigma, \rho[\key{flag} := b]) \\
+  \key{step}(\key{sete}\; d, K) &= \Do b \leftarrow \lift{\rho.\key{flag}};\; \key{write}(d, \res{b}, K) \\
+  \key{step}(\key{testinl}\; o, K) &= \Do v \leftarrow \mathit{arg}(o);\; b \leftarrow \lift{\key{isinl}(v)};\;
     K(\sigma, \rho[\key{flag} := b]) \\
   \key{step}(\key{alloc}\; \mathit{sh}\; o_1, \ldots, o_p, d, K) &=
-    \mathit{arg}(o_1) \bind \lambda v_1.\, \cdots\, \mathit{arg}(o_p) \bind \lambda v_p. \\
-    &\qquad \lift{\key{build}_{\mathit{sh}}(v_1, \ldots, v_p)} \bind \lambda v.\, \key{write}(d, v, K) \\
-  \key{step}(\key{load}\; \mathit{fl}\; o, d, K) &= \mathit{arg}(o) \bind \lambda v.\,
-    \lift{\key{field}_{\mathit{fl}}(v)} \bind \lambda w.\, \key{write}(d, w, K)
+    \Do v_1 \leftarrow \mathit{arg}(o_1);\; \ldots;\; v_p \leftarrow \mathit{arg}(o_p);\; \\
+    &\qquad v \leftarrow \lift{\key{build}_{\mathit{sh}}(v_1, \ldots, v_p)};\; \key{write}(d, v, K) \\
+  \key{step}(\key{load}\; \mathit{fl}\; o, d, K) &= \Do v \leftarrow \mathit{arg}(o);\;
+    w \leftarrow \lift{\key{field}_{\mathit{fl}}(v)};\; \key{write}(d, w, K)
 \end{align*}
 Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
 \begin{align*}
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,(\key{callq}\; o;\; \vec{\imath})\,j &=
-    \mathit{arg}(o) \bind \lambda f.\, \CALL{}{k}(f, \rho) \bind \lambda v.\,
+    \Do f \leftarrow \mathit{arg}(o);\; v \leftarrow \CALL{}{k}(f, \rho);\;
     \key{run}^k\,\vec{\beta}\,(\sigma, (v, \bot, \bot, \bot))\,\vec{\imath}\,j \\
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,(i;\; \vec{\imath})\,j &=
     \key{step}(i, \lambda (\sigma', \rho').\, \key{run}^k\,\vec{\beta}\,(\sigma', \rho')\,\vec{\imath}\,j)
@@ -3279,7 +3282,7 @@ Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,\key{retq} &= \Ret \rho.\rax \\
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,(\key{jmp}\; l) &= \key{jump}^k\,\vec{\beta}\,(\sigma, \rho)\,l \\
   \key{run}^k\,\vec{\beta}\,(\sigma, \rho)\,\epsilon\,(\key{je}\; l_1, l_2) &=
-    \lift{\rho.\key{flag}} \bind \lambda b.\, \key{jump}^k\,\vec{\beta}\,(\sigma, \rho)\,(\text{$l_1$ if $b$, else $l_2$}) \\[1ex]
+    \Do b \leftarrow \lift{\rho.\key{flag}};\; \key{jump}^k\,\vec{\beta}\,(\sigma, \rho)\,(\text{$l_1$ if $b$, else $l_2$}) \\[1ex]
   \key{jump}^k\,(\beta_0, \ldots, \beta_{q-1})\,(\sigma, \rho)\,l &=
     \begin{cases}
       \key{run}^k\,(\beta_0, \ldots, \beta_{l-1})\,(\sigma, \rho)\,\vec{\imath}\,j & l < q,\; \beta_l = \vec{\imath};\, j \\
@@ -3494,7 +3497,7 @@ $K(\sigma)$ with any newer blocks, and so does the output of the pass:
 If $\mathit{Means}_{\vec{t}}(t', K)$, then
 \[
   \mathit{Ok}_{\vec{t}}(\pass{assign}(e, s, t', \vec{t}),\;
-    \lambda \sigma.\, \EV{}{k}\,\sigma\,e \bind \lambda (v, \sigma_1).\, \key{set}(\sigma_1, s, v, K)) .
+    \lambda \sigma.\, \Do (v, \sigma_1) \leftarrow \EV{}{k}\,\sigma\,e;\; \key{set}(\sigma_1, s, v, K)) .
 \]
 \end{lemma}
 
@@ -3502,7 +3505,7 @@ If $\mathit{Means}_{\vec{t}}(t', K)$, then
 For every Imp expression $e$ and blocks $\vec{t}$,
 \[
   \mathit{Ok}_{\vec{t}}(\pass{tail}(e, \vec{t}),\;
-    \lambda \sigma.\, \EV{}{k}\,\sigma\,e \bind \lambda (v, \sigma').\, \Ret v) .
+    \lambda \sigma.\, \Do (v, \sigma') \leftarrow \EV{}{k}\,\sigma\,e;\; \Ret v) .
 \]
 \end{lemma}
 Calls agree at every clock, by induction on the clock and
