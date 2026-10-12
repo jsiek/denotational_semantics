@@ -67,10 +67,12 @@ C = 'agda/Compiler/Compile/'
 G = 'agda/Compiler/Model/Graph/'
 O = 'agda/Compiler/Operational/'
 F = 'agda/Compiler/Functional/'
+RD = 'agda/Compiler/Reduction/'
 PC = 'agda/proof/Compiler/'
 GP = PC + 'Model/Graph/'
 OP = PC + 'Operational/'
 FP = PC + 'Functional/'
+RP = PC + 'Reduction/'
 W = 'agda/Framework/'
 WP = 'agda/proof/Framework/'
 
@@ -89,7 +91,7 @@ GROUPS = [
       WP + 'abt/ScopedTuple.agda', W + 'abt/Sig.agda', W + 'abt/Var.agda',
       W + 'Syntax/SigUtil.agda', W + 'Syntax/SyntaxUtil.agda']),
     ('infra', 'syntax lemmas (renaming, scoping, uses), list lookups',
-     [W + 'Syntax/Uses.agda', W + 'Syntax/Scope.agda', W + 'Syntax/Rename.agda',
+     [W + 'Syntax/Uses.agda', W + 'Syntax/Scope.agda', W + 'Syntax/Rename.agda', W + 'Syntax/Subst.agda',
       WP + 'Syntax/*.agda', W + 'ListUtil.agda', WP + 'ListUtil.agda']),
     ('infra', 'base types, logical equivalence', [W + 'Primitives.agda', W + 'Iff.agda']),
     ('infra', 'denotational framework',
@@ -104,6 +106,8 @@ GROUPS = [
       WP + 'GraphModel/Continuity.agda', WP + 'GraphModel/SemanticsUtil.agda']),
     ('infra', 'small-step framework: transition systems, simulations',
      [W + 'Smallstep.agda', WP + 'Smallstep.agda', WP + 'Simulation.agda']),
+    ('infra', 'reduction framework: reduction semantics, simulations between them',
+     [W + 'Reduction.agda', WP + 'Reduction.agda']),
     ('infra', 'clocked big-step framework', [W + 'Clocked.agda', WP + 'Clocked.agda']),
 
     # the meaning of the primitives (Prim.agda) is here, as prim? is in
@@ -136,9 +140,15 @@ GROUPS = [
     ('den', 'composition', [GP + 'Correctness/CompilerCorrect.agda']),
 
     # with the framework at this compiler's observations (Smallstep.agda,
-    # Simulation.agda)
+    # Simulation.agda).  The machines of the first-order languages Imp, CFG
+    # and X86, and the framework instances, are shared with the reduction
+    # proof ('op+red': counted in both columns)
     ('op', 'semantics of the languages',
-     [O + 'Machine/*.agda', O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+     [O + 'Machine/ISWIM.agda', O + 'Machine/Clos2.agda', O + 'Machine/Clos3.agda',
+      O + 'Machine/Clos4.agda', O + 'Machine/Clos5.agda']),
+    ('op+red', 'semantics of the languages',
+     [O + 'Machine/Values.agda', O + 'Machine/Imp.agda', O + 'Machine/CFG.agda', O + 'Machine/X86.agda',
+      O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
     ('op', 'enclose', [OP + 'Correctness/EncloseSim.agda']),
     ('op', 'optimize', [OP + 'Correctness/OptimizeSim.agda']),
     ('op', 'concretize', [OP + 'Correctness/ConcretizeSim.agda']),
@@ -149,6 +159,18 @@ GROUPS = [
     ('op', 'explicate control', [OP + 'Correctness/ExplicateSim.agda']),
     ('op', 'select instructions', [OP + 'Correctness/SelectSim.agda']),
     ('op', 'composition', [OP + 'Correctness/CompilerSim.agda']),
+
+    # reduction semantics (substitution) for the languages with binders,
+    # and the framework at this compiler's observations (Smallstep.agda)
+    ('red', 'semantics of the languages', [RD + '*.agda', RP + '*.agda']),
+    ('red', 'enclose', [RP + 'Correctness/EncloseRed.agda']),
+    ('red', 'optimize', [RP + 'Correctness/OptimizeRed.agda']),
+    ('red', 'concretize', [RP + 'Correctness/ConcretizeRed.agda']),
+    ('red', 'delay', [RP + 'Correctness/DelayRed.agda']),
+    ('red', 'globalize', [RP + 'Correctness/GlobalizeRed.agda']),
+    ('red', 'rco', [RP + 'Correctness/RCORed.agda']),
+    ('red', 'lift locals', [RP + 'Correctness/LiftLocalsRed.agda']),
+    ('red', 'composition', [RP + 'Correctness/CompilerRed.agda']),
 
     # with the framework at this compiler's observations (Clock.agda)
     ('ck', 'semantics of the languages', [F + 'Interp/*.agda', F + 'Clock.agda', FP + 'Clock.agda']),
@@ -201,7 +223,8 @@ GROUPS = [
 ]
 
 THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simulation.agda',
-            'ck': 'agda/Theorems/Interpreter.agda', 'adeq': 'agda/Theorems/Adequacy.agda'}
+            'ck': 'agda/Theorems/Interpreter.agda', 'red': 'agda/Theorems/Reduction.agda',
+            'adeq': 'agda/Theorems/Adequacy.agda'}
 
 
 def strip_comments(s):
@@ -279,13 +302,19 @@ def modname(u):
     return u[len("agda/"):-len(".agda")].replace("/", ".")
 
 
-SIDES = ('den', 'op', 'ck')
+SIDES = ('den', 'op', 'ck', 'red')
 # column labels, and the short names used in lists and messages
 LABELS = {'den': 'denotational: graph model', 'op': 'CEK machine + simulation',
-          'ck': 'clocked interpreter + value relations', 'adeq': 'adequacy'}
+          'ck': 'clocked interpreter + value relations',
+          'red': 'reduction semantics + simulation', 'adeq': 'adequacy'}
 NAMES = {'den': 'graph model', 'op': 'simulation', 'ck': 'interpreter',
-         'adeq': 'adequacy'}
-EXTRA = 'shared modules not used by all three proofs'
+         'red': 'reduction', 'adeq': 'adequacy'}
+EXTRA = 'shared modules not used by all four proofs'
+
+
+def sides_of(side):
+    """The proofs a group belongs to: 'op+red' is counted in both."""
+    return side.split('+')
 
 
 def main():
@@ -293,7 +322,7 @@ def main():
     for side, name, pats in GROUPS:
         files = sorted({f for p in pats for f in glob.glob(p)})
         if not files:
-            if side == 'ck':
+            if side in ('ck', 'red'):
                 continue
             sys.exit(f'no files for group {side}/{name}')
         for f in files:
@@ -301,7 +330,8 @@ def main():
                 sys.exit(f'{f} is in two groups')
             seen[f] = (side, name)
         files_of[(side, name)] = files
-        counts[(side, name)] = sum(code_lines(f) for f in files)
+        for s in sides_of(side):
+            counts[(s, name)] = counts.get((s, name), 0) + sum(code_lines(f) for f in files)
     every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
              if not f.startswith('agda/old/') and f != 'agda/All.agda'}
     missing = sorted(every - set(seen))
@@ -324,7 +354,7 @@ def main():
         return sum(code_lines(f) for f in files_of_unit[u])
 
     graph = {u: {unit(g) for f in files_of_unit[u] for g in imports(f)} - {u} for u in units}
-    own = {s: {u for u, (side, _) in group_of.items() if side == s}
+    own = {s: {u for u, (side, _) in group_of.items() if s in sides_of(side)}
            for s in SIDES + ('adeq',)}
     exp = {u for u, (side, _) in group_of.items() if side == 'exp'}
     infra = {u for u, (side, _) in group_of.items() if side == 'infra'}
@@ -341,7 +371,7 @@ def main():
     # experiments may use anything).
     for s in SIDES:
         for t in SIDES + ('adeq',):
-            bad = sorted(reach[s] & own[t]) if s != t else []
+            bad = sorted(reach[s] & (own[t] - own[s])) if s != t else []
             if bad:
                 sys.exit(f'{NAMES[s]} imports {NAMES[t]} modules:\n  ' + '\n  '.join(bad))
         bad = sorted(reach[s] & exp)
@@ -367,7 +397,7 @@ def main():
                  + '\n  '.join(unreached))
 
     shared = {u for u, (side, _) in group_of.items() if side == 'shared'}
-    by_all = shared & reach['den'] & reach['op'] & reach['ck']
+    by_all = shared & reach['den'] & reach['op'] & reach['ck'] & reach['red']
     extra = {s: sorted((shared & reach[s]) - by_all) for s in SIDES}
     # Adequacy is an add-on to the denotational proof, so shared modules that
     # the denotational proof already counts are not counted again.
@@ -380,7 +410,7 @@ def main():
             'composition']
     total = {side: 0 for side in SIDES}
     print('| component | ' + ' | '.join(LABELS[s] for s in SIDES) + ' |')
-    print('|---|---:|---:|---:|')
+    print('|---|' + '---:|' * len(SIDES))
     for r in rows:
         cells = []
         for side in SIDES:
@@ -449,7 +479,7 @@ def main():
             return 'shared'
         return 'semantics'
     sreach = {s: reachable({THEOREMS[s]}, sgraph) for s in THEOREMS}
-    ALL = ('den', 'op', 'ck', 'adeq')
+    ALL = ('den', 'op', 'ck', 'red', 'adeq')
     def flines(fs):
         return sum(code_lines(f) for f in fs)
     sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in ALL}
@@ -461,7 +491,8 @@ def main():
           + ' | '.join(str(flines(sh[s])) for s in ALL) + ' |')
     SEMS = {'den': 'domain, operators, semantics of each language',
             'op': 'small-step machines, transition systems',
-            'ck': 'clocked interpreters, results'}
+            'ck': 'clocked interpreters, results',
+            'red': 'reduction semantics, machines of Imp, CFG and X86, transition systems'}
     sem_files = {s: {f for f in sreach[s] if kind(f) == 'semantics'} for s in ALL}
     for s in SIDES:
         fs = sem_files[s]
@@ -487,7 +518,7 @@ def main():
     print('|---|---:|---|')
     for u in sorted(shared):
         users = [NAMES[s] for s in SIDES + ('adeq',) if u in reach[s]]
-        tag = 'all three proofs' if u in by_all else (', '.join(users) or 'no proof')
+        tag = 'all four proofs' if u in by_all else (', '.join(users) or 'no proof')
         name = ('proof.' if not os.path.exists(u) else '') + modname(u)
         print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | {tag} |')
     print()
@@ -500,7 +531,7 @@ def main():
         print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | '
               f'{", ".join(users) or "no proof"} |')
     print()
-    print(f'Shared by all three proofs, not counted: {len(by_all)} modules, {nall} lines.')
+    print(f'Shared by all four proofs, not counted: {len(by_all)} modules, {nall} lines.')
     for s in SIDES + ('adeq',):
         print(f'Counted in {NAMES[s]}: {mods(extra[s])}.')
     if unused:

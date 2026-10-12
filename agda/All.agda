@@ -31,6 +31,7 @@ import Theorems.Denotational
 import Theorems.Simulation
 import Theorems.Interpreter
 import Theorems.Adequacy
+import Theorems.Reduction
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
@@ -46,6 +47,8 @@ import proof.Framework.Syntax.Uses
 import proof.Framework.Syntax.Rename
 import proof.Framework.Syntax.Scope
 import proof.Framework.Syntax.ScopeRename
+import proof.Framework.Syntax.Subst
+import proof.Framework.Syntax.ScopeSubst
 import proof.Framework.GraphModel.SetsAsPredicates
 import proof.Framework.GraphModel.DOpSig
 import proof.Framework.GraphModel.DenotProperties
@@ -59,6 +62,7 @@ import proof.Framework.GraphModel.SemanticsUtil
 import proof.Framework.Smallstep
 import proof.Framework.Simulation
 import proof.Framework.Clocked
+import proof.Framework.Reduction
 
 {- ---------------------------------------------------------------------------
    proof/: syntactic facts about the passes, used by both operational
@@ -195,3 +199,15 @@ import proof.Compiler.Functional.Correctness.LiftLocalsFuel
 import proof.Compiler.Functional.Correctness.ExplicateFuel
 import proof.Compiler.Functional.Correctness.SelectFuel
 import proof.Compiler.Functional.Correctness.CompilerFuel
+
+{- ---------------------------------------------------------------------------
+   proof/: the reduction semantics + simulation development: forward
+   simulations between reduction semantics by substitution (and the
+   machines of Imp, CFG and X86, shared with the CEK development)
+   --------------------------------------------------------------------------- -}
+
+{- the values of each reduction semantics -}
+import proof.Compiler.Reduction.Clos2
+
+{- correctness of each pass, and of the compiler into each language -}
+import proof.Compiler.Reduction.Correctness.EncloseRed

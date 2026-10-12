@@ -36,7 +36,7 @@ open import Compiler.Lang.X86
 open import Compiler.Lang.Prim using (sub; eq; Out; bool)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
-open import Compiler.Operational.Machine.Clos5
+open import Compiler.Operational.Machine.Values
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?) public
 open import Compiler.Operational.Machine.Imp using (Frame; _[_]≔_; zeros) public
 open import Framework.ListUtil using (_‼_; proj)

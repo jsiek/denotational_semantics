@@ -28,12 +28,14 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 {- How a target state answers one step of a source machine when a match
    has index i: by stopping with the same observation, by taking one or
    more steps to a matching state, or by taking none (stuttering), when
-   the index decreases -}
+   the index decreases; or, when the source stops, by running to a final
+   state with the same observation (runs) -}
 data Answers≺ {S₁ : Set} (L₂ : Machine) (R : ℕ → S₁ → State L₂ → Set) (i : ℕ)
   : Next S₁ → State L₂ → Set where
   stops : ∀ {o s₂} → Final L₂ s₂ o → Answers≺ L₂ R i (stop o) s₂
   steps : ∀ {j s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R j s₁' s₂' → Answers≺ L₂ R i (next s₁') s₂
   stutters : ∀ {j s₁' s₂} → j < i → R j s₁' s₂ → Answers≺ L₂ R i (next s₁') s₂
+  runs : ∀ {o s₂ t} → Plus L₂ s₂ t → Final L₂ t o → Answers≺ L₂ R i (stop o) s₂
 
 record FSim (L₁ L₂ : Machine) : Set₁ where
   field
@@ -65,9 +67,11 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
   sim-step m refl | next _ | steps π m' = _ , inj₁ (_ , π , m')
   sim-step m refl | next _ | stutters lt m' = _ , inj₂ (lt , m')
 
-  sim-final : ∀ {i s₁ s₂ o} → match i s₁ s₂ → step s₁ ≡ stop o → Final L₂ s₂ o
+  sim-final : ∀ {i s₁ s₂ o} → match i s₁ s₂ → step s₁ ≡ stop o
+    → Σ[ t ∈ State L₂ ] Star L₂ s₂ t × Final L₂ t o
   sim-final {s₁ = s₁} m eq with step s₁ | sim m
-  sim-final m refl | stop o | stops fin = fin
+  sim-final m refl | stop o | stops fin = _ , ε , fin
+  sim-final m refl | stop o | runs π fin = _ , plus→star π , fin
 
   sim-star : ∀ {i s₁ s₂ s₁'} → match i s₁ s₂ → Star L₁ s₁ s₁'
     → Σ[ j ∈ ℕ ] Σ[ s₂' ∈ State L₂ ] Star L₂ s₂ s₂' × match j s₁' s₂'
@@ -79,7 +83,8 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
 
   forward-terminates : ∀ {o} → Terminates L₁ o → Terminates L₂ o
   forward-terminates (s , σ , fin) with sim-star (proj₂ init) σ
-  ... | _ , t , τ , m = t , τ , sim-final m fin
+  ... | _ , t , τ , m with sim-final m fin
+  ...   | t' , τ' , fin' = t' , τ ◅◅ τ' , fin'
 
   {- a target run to a final state is matched by a source run: by induction
      on the length of the target run and, for stuttering steps, the index -}
@@ -94,9 +99,9 @@ module _ {L₁ L₂ : Machine} (F : FSim L₁ L₂) where
     → ∀ n i → Acc _⋖_ (n , i) → ∀ {s₁ s₂} → match i s₁ s₂
     → Steps L₂ n s₂ t → Σ[ s ∈ State L₁ ] Star L₁ s₁ s × Final L₁ s o
   back fin n i (acc rec) {s₁} m τ with step s₁ in eq
-  back fin _ i (acc rec) {s₁} m zero | stop o' with final-det {L = L₂} (sim-final m eq) fin
-  ... | refl = s₁ , ε , eq
-  back fin _ i (acc rec) m (suc st _) | stop o' = ⊥-elim (final-nostep {L = L₂} (sim-final m eq) st)
+  back fin _ i (acc rec) {s₁} m τ | stop o' with sim-final m eq
+  ... | _ , σ' , fin' with final-unique σ' fin' τ fin
+  ...   | refl = s₁ , ε , eq
   back fin n i (acc rec) {s₁} m τ | next s₁' with sim-step m eq
   ... | j , inj₂ (lt , m') with back fin n j (rec (inj₂ (refl , lt))) m' τ
   ...   | s , σ , fin₁ = s , eq ◅ σ , fin₁
