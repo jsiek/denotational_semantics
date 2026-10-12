@@ -23,8 +23,9 @@
 
   To read them: the languages (Compiler/Lang/), the passes
   (Compiler/Compile/), the semantics, the observations, and the
-  preconditions: Closed (Compiler/Compile/EncloseScope.agda) and WS
-  (Framework/Syntax/Scope.agda).
+  preconditions: Closed (Compiler/Compile/EncloseScope.agda), WS
+  (Framework/Syntax/Scope.agda) and Scoped
+  (Compiler/Compile/PipelineScope.agda).
 
 -}
 
@@ -37,16 +38,19 @@ import Compiler.Lang.ISWIM as ISWIM
 import Compiler.Lang.Clos2 as Clos2
 import Compiler.Lang.Clos3 as Clos3
 import Compiler.Lang.Clos4 as Clos4
+import Compiler.Lang.Clos5 as Clos5
 
 open import Compiler.Compile.Enclose using (enclose)
 open import Compiler.Compile.Optimize using (optimize-program)
 open import Compiler.Compile.Concretize using (concretize-program)
 open import Compiler.Compile.Delay using (delay)
 open import Compiler.Compile.Globalize using (globalize)
-open import Compiler.Compile.Pipeline using (compile)
+open import Compiler.Compile.RCO using (rco-program)
+open import Compiler.Compile.Pipeline using (compile; compile-mon)
 
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
+open import Compiler.Compile.PipelineScope using (Scoped)
 
 import Compiler.Reduction.ISWIM as ISWIMᵣ
 import Compiler.Reduction.Clos2 as Clos2ᵣ
@@ -60,6 +64,7 @@ import proof.Compiler.Reduction.Correctness.ConcretizeRed as ConcretizeRed
 import proof.Compiler.Reduction.Correctness.DelayRed as DelayRed
 import proof.Compiler.Reduction.Correctness.GlobalizeRed as GlobalizeRed
 import proof.Compiler.Reduction.Correctness.CompilerRed as CompilerRed
+import proof.Compiler.Reduction.Correctness.RCORed as RCORed
 
 {- Each pass ------------------------------------------------------------------}
 
@@ -84,11 +89,21 @@ delay-correct = DelayRed.delay-correct
 globalize-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵣ.sem M) (Clos5ᵣ.sem (globalize M))
 globalize-correct = GlobalizeRed.globalize-correct
 
+{- remove complex operands, for well-scoped programs (which the compiler
+   produces) -}
+rco-correct : ∀ (P : Clos5.Program) → Scoped P
+  → Equivalent (Clos5ᵣ.sem P) (Clos5ᵣ.sem (rco-program P))
+rco-correct = RCORed.rco-correct
+
 {- The whole compiler, for closed programs ----------------------------------}
 
 compile-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile M))
 compile-correct = CompilerRed.compile-correct
+
+compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵣ.sem M) (Clos5ᵣ.sem (compile-mon M))
+compile-mon-correct = RCORed.compile-mon-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original

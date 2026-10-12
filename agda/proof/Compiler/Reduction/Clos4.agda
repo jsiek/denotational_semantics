@@ -17,6 +17,7 @@ open import Data.List using (replicate)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 data Value : AST → Set
+infixr 5 _∷_
 data Values : ∀ {n} → Args (replicate n ■) → Set
 
 data Value where
