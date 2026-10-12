@@ -39,4 +39,4 @@
 module Compiler.Functional.Clock where
 
 open import Compiler.Observation using (Obs; o-wrong)
-open import Clocked Obs o-wrong public
+open import Framework.Clocked Obs o-wrong public

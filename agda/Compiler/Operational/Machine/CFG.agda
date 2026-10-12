@@ -32,7 +32,7 @@ open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; mac
 open import Compiler.Operational.Machine.Imp
   using (Val; inl; inr; obs; Frame; Frm; atom; _[_]≔_; zeros; Res; operand; value; apply; first; resume)
   public
-open import ListUtil using (_‼_)
+open import Framework.ListUtil using (_‼_)
 
 open import Data.List using (List; _∷_; reverse)
 open import Data.Maybe using (Maybe; just; nothing)

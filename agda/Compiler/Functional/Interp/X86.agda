@@ -32,7 +32,7 @@ module Compiler.Functional.Interp.X86 where
 open import Compiler.Lang.X86
 open import Compiler.Lang.Prim using (sub; eq; Out; int; bool)
 open import Compiler.Observation using (δ?)
-open import ListUtil using (_‼_)
+open import Framework.ListUtil using (_‼_)
 open import Compiler.Functional.Clock
 open import Compiler.Functional.Interp.Clos5
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?; project; first; second)

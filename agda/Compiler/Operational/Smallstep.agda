@@ -55,4 +55,4 @@
 module Compiler.Operational.Smallstep where
 
 open import Compiler.Observation using (Obs)
-open import Smallstep Obs public
+open import Framework.Smallstep Obs public

@@ -8,11 +8,11 @@ module Compiler.Model.Graph.Sem.Clos3Iswim where
 
 -}
 
-open import NewDOpSig
-open import SetsAsPredicates
-open import NewDenotProperties
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DenotProperties
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos3
 
@@ -70,7 +70,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos3-consis case-op = 𝒞-consis
 𝕆-Clos3-consis (prim p) = primD-consis p
 
-open import NewSemantics Op sig public
+open import Framework.GraphModel.Semantics Op sig public
 
 instance
   Clos3-Semantics : Semantics

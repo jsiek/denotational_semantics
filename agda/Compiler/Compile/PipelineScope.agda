@@ -25,14 +25,14 @@
 
 module Compiler.Compile.PipelineScope where
 
-open import NewSigUtil using (ν-n)
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
+open import Framework.Syntax.SigUtil using (ν-n)
+open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
 import Compiler.Lang.Clos2 as C2
 import Compiler.Lang.Clos3 as C3
 import Compiler.Lang.Clos4 as C4
 import Compiler.Lang.Clos5 as C5
-import Syntax.Scope
-import Syntax.ScopeRename
+import Framework.Syntax.Scope
+import proof.Framework.Syntax.ScopeRename
 import Compiler.Compile.EncloseScope as ES
 open ES using (Closed)
 open import Compiler.Compile.Enclose using (enclose)
@@ -51,12 +51,12 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (Dec; yes; no)
-open import abt.Var using (Var)
+open import Framework.abt.Var using (Var)
 
-module W2 = Syntax.Scope C2.Op C2.sig
-module W3 = Syntax.ScopeRename C3.Op C3.sig
-module W4 = Syntax.ScopeRename C4.Op C4.sig
-module W5 = Syntax.Scope C5.Op C5.sig
+module W2 = Framework.Syntax.Scope C2.Op C2.sig
+module W3 = proof.Framework.Syntax.ScopeRename C3.Op C3.sig
+module W4 = proof.Framework.Syntax.ScopeRename C4.Op C4.sig
+module W5 = Framework.Syntax.Scope C5.Op C5.sig
 
 {- Well-scoped Clos5 programs: main in the empty environment, each definition
    in its two parameters -}

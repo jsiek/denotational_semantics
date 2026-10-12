@@ -9,12 +9,12 @@
 
 module Compiler.Model.Graph.Prim where
 
-open import Primitives using (Int)
-open import SetsAsPredicates
-open import NewDOpSig
-open import NewDenotProperties
-open import GraphModel.Domain
-open import GraphModel.Continuity using (Mono; Cont; one; done; approx-join; join-l; join-r)
+open import Framework.Primitives using (Int)
+open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.DOpSig
+open import proof.Framework.GraphModel.DenotProperties
+open import Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Continuity using (Mono; Cont; one; done; approx-join; join-l; join-r)
 open import Compiler.Lang.Prim using (Prim; Out; int; bool; δ)
 
 open import Data.Bool using (true; false)

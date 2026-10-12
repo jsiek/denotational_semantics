@@ -28,14 +28,14 @@ module Compiler.Model.Graph.Sem.Imp where
 
 -}
 
-open import SetsAsPredicates
-open import NewDOpSig using (Results)
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.DOpSig using (Results)
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (Table; init) public
 open import Compiler.Lang.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
-open import Primitives using (Int)
+open import Framework.Primitives using (Int)
 
 open import Data.Integer using (+_)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<?_)

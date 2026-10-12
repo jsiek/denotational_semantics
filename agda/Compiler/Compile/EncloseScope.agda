@@ -9,11 +9,11 @@
 
 module Compiler.Compile.EncloseScope where
 
-open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
+open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos2 using (AST; Op; sig; ■)
 import Compiler.Lang.ISWIM as I
-open import Syntax.Uses I.Op I.sig using (bound; bound-args)
-open import Syntax.Scope Op sig using (WS; WS-arg; WS-args)
+open import Framework.Syntax.Uses I.Op I.sig using (bound; bound-args)
+open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose using (enclose; enc-args; fv-vars)
 

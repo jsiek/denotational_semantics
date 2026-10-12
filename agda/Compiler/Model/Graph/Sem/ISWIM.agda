@@ -7,16 +7,16 @@ module Compiler.Model.Graph.Sem.ISWIM where
 
 -}
 
-open import NewDOpSig
-open import SetsAsPredicates
-open import NewDenotProperties
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DenotProperties
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.ISWIM
 
 open import Level renaming (zero to lzero; suc to lsuc)
-open import NewEnv using (_~ₑ[_]_)
+open import Framework.GraphModel.Env using (_~ₑ[_]_)
 
 𝕆-ISWIM : DOpSig (𝒫 Value) sig
 𝕆-ISWIM lam = Λ
@@ -51,7 +51,7 @@ open import NewEnv using (_~ₑ[_]_)
 𝕆-ISWIM-consis case-op = 𝒞-consis
 𝕆-ISWIM-consis (prim p) = primD-consis p
 
-open import NewSemantics Op sig public
+open import Framework.GraphModel.Semantics Op sig public
 
 instance
   ISWIM-Semantics : Semantics

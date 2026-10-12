@@ -10,12 +10,12 @@
 
 module Compiler.Functional.Interp.Clos3 where
 
-open import Primitives using (Base; base-rep; Int)
+open import Framework.Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Prim; Out; int; bool)
-open import NewSyntaxUtil using (_,,_; ⟩_,,_)
+open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos3
 open import Compiler.Observation
-open import ListUtil using (_‼_; proj)
+open import Framework.ListUtil using (_‼_; proj)
 open import Compiler.Functional.Clock
 
 open import Data.Bool using (true; false)

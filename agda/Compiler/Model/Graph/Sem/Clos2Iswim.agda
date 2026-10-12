@@ -11,12 +11,12 @@ module Compiler.Model.Graph.Sem.Clos2Iswim where
 
 -}
 
-open import NewSigUtil
-open import NewDOpSig
-open import SetsAsPredicates
-open import NewDenotProperties
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.Syntax.SigUtil
+open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DenotProperties
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos2
 
@@ -68,7 +68,7 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2-mono case-op = 𝒞-mono
 𝕆-Clos2-mono (prim p) = primD-mono p
 
-open import NewSemantics Op sig public
+open import Framework.GraphModel.Semantics Op sig public
 
 instance
   Clos2-Semantics : Semantics

@@ -31,7 +31,7 @@
 
 module Compiler.Operational.Machine.X86 where
 
-open import Primitives using (Int)
+open import Framework.Primitives using (Int)
 open import Compiler.Lang.X86
 open import Compiler.Lang.Prim using (sub; eq; Out; bool)
 open import Compiler.Observation
@@ -39,7 +39,7 @@ open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; mac
 open import Compiler.Operational.Machine.Clos5
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?) public
 open import Compiler.Operational.Machine.Imp using (Frame; _[_]≔_; zeros) public
-open import ListUtil using (_‼_; proj)
+open import Framework.ListUtil using (_‼_; proj)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Integer using (0ℤ)

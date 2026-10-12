@@ -14,14 +14,14 @@
 
 module Compiler.Observation where
 
-open import Primitives using (Base; base-rep; Int)
+open import Framework.Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Prim; Out; δ)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.List using (List)
 open import Data.Product using (_×_; Σ-syntax)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_)
-open import Iff using (_⇔_) public
+open import Framework.Iff using (_⇔_) public
 
 data Obs : Set where
   o-const : (B : Base) → base-rep B → Obs

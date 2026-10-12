@@ -2,8 +2,8 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; replicate)
 open import Relation.Nullary using (Dec; yes; no)
 
-open import NewSyntaxUtil
-open import NewSigUtil
+open import Framework.Syntax.SyntaxUtil
+open import Framework.Syntax.SigUtil
 
 module Compiler.Compile.Optimize where
   {-
@@ -20,7 +20,7 @@ module Compiler.Compile.Optimize where
    renumbers these, so the pass carries a renaming of variables.
   -}
   open import Compiler.Lang.Clos2
-  open import Syntax.Uses Op sig public
+  open import Framework.Syntax.Uses Op sig public
   open import Compiler.Compile.Concretize using (unbind-n)
 
   {- the renaming for the body of a binder -}

@@ -3,8 +3,8 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; replicate)
 open import Relation.Nullary using (yes; no)
 
-open import NewSyntaxUtil
-open import NewSigUtil
+open import Framework.Syntax.SyntaxUtil
+open import Framework.Syntax.SigUtil
 
 module Compiler.Compile.Concretize where
   {-

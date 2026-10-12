@@ -8,11 +8,11 @@ module Compiler.Model.Graph.Sem.Clos4Iswim where
 
 -}
 
-open import NewDOpSig
-open import SetsAsPredicates
-open import NewDenotProperties
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.DenotProperties
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos4
 
@@ -88,7 +88,7 @@ open import Level renaming (zero to lzero; suc to lsuc)
   ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
            ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
-open import NewSemantics Op sig public
+open import Framework.GraphModel.Semantics Op sig public
 
 instance
   Clos4-Semantics : Semantics
