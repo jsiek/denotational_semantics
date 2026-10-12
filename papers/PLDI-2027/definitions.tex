@@ -117,10 +117,14 @@
 \author{}
 \date{}
 
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,bookmarksnumbered=true]{hyperref}
+
 \begin{document}
 \maketitle
+\tableofcontents
 
 \section*{About this document}
+\addcontentsline{toc}{section}{About this document}
 
 This is a summary, for review, of the definitions in the Agda development
 of the closure-conversion compiler in \texttt{agda/Compiler}.
@@ -571,7 +575,7 @@ flag. Frames, blocks and jumps are as in CFG.
 
 In each pass, the clauses not shown are homomorphic.
 
-\subsection{Enclose (ISWIM $\to$ Clos2)}
+\subsection{Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos2)}
 
 Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
 \begin{align*}
@@ -579,7 +583,7 @@ Enclose decides which variables each closure captures (its free variables) and c
     \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
 \end{align*}
 
-\subsection{Optimize (Clos2 $\to$ Clos2)}
+\subsection{Optimize (Clos2 \texorpdfstring{$\to$}{->} Clos2)}
 
 Optimize removes the captured variables that the body does not use.
 \begin{align*}
@@ -588,7 +592,7 @@ Optimize removes the captured variables that the body does not use.
   \text{where } \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \}
 \end{align*}
 
-\subsection{Concretize (Clos2 $\to$ Clos3)}
+\subsection{Concretize (Clos2 \texorpdfstring{$\to$}{->} Clos3)}
 
 Concretize stores each closure's captured values in a single tuple and turns their uses in the body into projections from that tuple.
 \[
@@ -608,7 +612,7 @@ Concretize stores each closure's captured values in a single tuple and turns the
      \mid \key{inr}\,y \Rightarrow \pass{concretize}_{\ext{\varphi}{y}{y}}(N)
 \end{align*}
 
-\subsection{Delay (Clos3 $\to$ Clos4)}
+\subsection{Delay (Clos3 \texorpdfstring{$\to$}{->} Clos4)}
 
 Delay represents each closure as an explicit pair of closed code and its environment tuple, and makes application pass the environment to the code.
 \begin{align*}
@@ -619,7 +623,7 @@ Delay represents each closure as an explicit pair of closed code and its environ
     \qquad f \text{ fresh}
 \end{align*}
 
-\subsection{Globalize (Clos4 $\to$ Clos5)}
+\subsection{Globalize (Clos4 \texorpdfstring{$\to$}{->} Clos5)}
 
 Globalize hoists all code into a table of global definitions and replaces each piece of code by a reference to its entry.
 \[
@@ -637,7 +641,7 @@ Globalize hoists all code into a table of global definitions and replaces each p
   \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
 \end{align*}
 
-\subsection{Remove Complex Operands (Clos5 $\to$ Monadic Clos5)}
+\subsection{Remove Complex Operands (Clos5 \texorpdfstring{$\to$}{->} Monadic Clos5)}
 
 Remove complex operands binds each complex operand to a fresh variable with a $\key{let}$, from left to right, so that every operand becomes an atom.
 \[
@@ -689,7 +693,7 @@ For every ISWIM term $M$,
 \]
 \end{lemma}
 
-\subsection{Lift Locals (Monadic Clos5 $\to$ Imp)}
+\subsection{Lift Locals (Monadic Clos5 \texorpdfstring{$\to$}{->} Imp)}
 
 Lift locals gives every variable of a body a slot of the body's frame,
 declared up front, and turns $\key{let}$ into assignment. A variable gets
@@ -720,7 +724,7 @@ of the variables in scope, and $n$ is the size of the frame.
 A variable out of scope gets the slot $n$, beyond the frame, so that it
 goes wrong, as an unbound variable does in Clos5.
 
-\subsection{Explicate Control (Imp $\to$ CFG)}
+\subsection{Explicate Control (Imp \texorpdfstring{$\to$}{->} CFG)}
 
 Explicate control flattens the nested assignments and cases of a body
 into blocks, in continuation-passing style. $\pass{tail}(e)$ translates
@@ -748,7 +752,7 @@ to, so $k$ is not duplicated.
 and $\pass{explicate}$ maps over the definitions and main of a program.
 Every block is added after the blocks it jumps to.
 
-\subsection{Select Instructions (CFG $\to$ X86)}
+\subsection{Select Instructions (CFG \texorpdfstring{$\to$}{->} X86)}
 
 Select instructions turns each statement into a few instructions; the
 blocks keep their labels. $\pass{sel}(r, d)$ computes $r$ into the
