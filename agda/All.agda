@@ -164,6 +164,7 @@ import Compiler.Functional.Interp.Clos2
 import Compiler.Functional.Interp.Clos3
 import Compiler.Functional.Interp.Clos4
 import Compiler.Functional.Interp.Clos5
+import Compiler.Functional.Interp.Imp
 
 {- correctness of each pass -}
 import Compiler.Functional.Correctness.EncloseFuel
@@ -172,6 +173,7 @@ import Compiler.Functional.Correctness.ConcretizeFuel
 import Compiler.Functional.Correctness.DelayFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
 import Compiler.Functional.Correctness.RCOFuel
+import Compiler.Functional.Correctness.LiftLocalsFuel
 
 {- correctness of the whole compiler -}
 import Compiler.Functional.Correctness.CompilerFuel

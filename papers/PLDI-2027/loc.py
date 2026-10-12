@@ -76,6 +76,7 @@ GROUPS = [
     ('ck', 'delay', [F + 'Correctness/DelayFuel.agda']),
     ('ck', 'globalize', [F + 'Correctness/GlobalizeFuel.agda']),
     ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
+    ('ck', 'lift locals', [F + 'Correctness/LiftLocalsFuel.agda']),
     ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
@@ -197,7 +198,7 @@ def main():
 
     rows = ['generic infrastructure', 'domain, operators, continuity',
             'semantics of the languages', 'enclose', 'optimize', 'concretize',
-            'delay', 'globalize', 'rco', 'composition']
+            'delay', 'globalize', 'rco', 'lift locals', 'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
     print('|---|---:|---:|---:|')
