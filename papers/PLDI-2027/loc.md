@@ -2,7 +2,7 @@
 
 All three proofs establish end-to-end correctness for the same compiler, `compile`, which runs
 ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5.
-Each also proves three more passes, after Essentials of Compilation, and the compilers that extend `compile` with them, end to end: remove complex operands (rco, Clos5 --rco--> Clos5, into monadic normal form; `compile-mon`, see [Remove complex operands](#remove-complex-operands)), lift locals (monadic Clos5 --lift--> Imp, an imperative language with frames of mutable slots; `compile-imp`, see [Lift locals](#lift-locals)) and explicate control (Imp --explicate--> CFG, a C-like language of blocks; `compile-cfg`, see [Explicate control](#explicate-control)).
+Each also proves four more passes, after Essentials of Compilation, and the compilers that extend `compile` with them, end to end: remove complex operands (rco, Clos5 --rco--> Clos5, into monadic normal form; `compile-mon`, see [Remove complex operands](#remove-complex-operands)), lift locals (monadic Clos5 --lift--> Imp, an imperative language with frames of mutable slots; `compile-imp`, see [Lift locals](#lift-locals)) and explicate control (Imp --explicate--> CFG, a C-like language of blocks; `compile-cfg`, see [Explicate control](#explicate-control)) and select instructions (CFG --select--> X86, x86 with variables over abstract values; `compile-x86` = select ∘ `compile-cfg`, see [Select instructions](#select-instructions)).
 
 * **Denotational:** a graph-model semantics for each language and one correctness proof per pass, in `agda/Compiler/Model/Graph/`, over the graph model in `agda/GraphModel/`. The theorem is `CompilerCorrect`: the source and compiled program produce the same constants, and one denotation is nonempty exactly when the other is.
 * **CompCert-style:** a small-step CEK machine for each language and one forward simulation per pass, in `agda/Compiler/Operational/`. The theorem is `CompilerSim`: the two programs terminate with the same observation, including going wrong, and one diverges exactly when the other does.
@@ -19,7 +19,7 @@ As of this PR:
 
 | component | denotational | CompCert-style | CakeML-style |
 |---|---:|---:|---:|
-| semantics of the languages | 743 | 635 | 464 |
+| semantics of the languages | 845 | 753 | 561 |
 | enclose | 102 | 222 | 162 |
 | optimize | 156 | 273 | 194 |
 | concretize | 246 | 218 | 152 |
@@ -28,9 +28,10 @@ As of this PR:
 | rco | 243 | 449 | 298 |
 | lift locals | 275 | 218 | 143 |
 | explicate control | 210 | 152 | 145 |
+| select instructions | 322 | 272 | 142 |
 | composition | 49 | 32 | 37 |
 | shared modules not used by all three proofs | — | 379 | 379 |
-| **total** | **3113** | **2935** | **2224** |
+| **total** | **3537** | **3325** | **2463** |
 
 The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)).
 
@@ -83,9 +84,10 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 | `Compiler.Compile.GlobalizeTable` | 52 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.LiftLocals` | 44 | all three proofs |
 | `Compiler.Compile.Optimize` | 62 | all three proofs |
-| `Compiler.Compile.Pipeline` | 24 | all three proofs |
+| `Compiler.Compile.Pipeline` | 28 | all three proofs |
 | `Compiler.Compile.PipelineScope` | 249 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.RCO` | 120 | all three proofs |
+| `Compiler.Compile.Select` | 39 | all three proofs |
 | `Compiler.Lang.CFG` | 28 | all three proofs |
 | `Compiler.Lang.Clos2` | 39 | all three proofs |
 | `Compiler.Lang.Clos3` | 39 | all three proofs |
@@ -95,9 +97,10 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 | `Compiler.Lang.Imp` | 37 | all three proofs |
 | `Compiler.Lang.Mon` | 52 | all three proofs |
 | `Compiler.Lang.Prim` | 13 | all three proofs |
+| `Compiler.Lang.X86` | 49 | all three proofs |
 | `Compiler.Observation` | 23 | CompCert-style, CakeML-style, adequacy |
 
-Shared by all three proofs, and not counted: 18 modules, 823 lines. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Compile.PipelineScope` (249) and `Observation` (23), 379 lines. The denotational total counts no shared module. Examples, not counted: 259 lines.
+Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Compile.PipelineScope` (249) and `Observation` (23), 379 lines. The denotational total counts no shared module. Examples, not counted: 282 lines.
 
 ### Infrastructure modules
 
@@ -134,10 +137,10 @@ Shared by all three proofs, and not counted: 18 modules, 823 lines. Counted in b
 
 ## What the groups contain
 
-* **shared (counted only in the proofs that use it when not all three do, see above):** the languages (Imp's expressions without control flow are `Simple`, in `Lang/Imp.agda`, shared with `Lang/CFG.agda`), the compiler passes and their compositions `compile`, `compile-mon`, `compile-imp` and `compile-cfg` (`Compile/Pipeline.agda`), which all three proofs use; the observations and the end-theorem shape (`Compiler/Observation.agda`); and the lemmas about the compiler's output that both operational styles use:
+* **shared (counted only in the proofs that use it when not all three do, see above):** the languages (Imp's expressions without control flow are `Simple`, in `Lang/Imp.agda`, shared with `Lang/CFG.agda`), the compiler passes and their compositions `compile`, `compile-mon`, `compile-imp`, `compile-cfg` and `compile-x86` (`Compile/Pipeline.agda`), which all three proofs use; the observations and the end-theorem shape (`Compiler/Observation.agda`); and the lemmas about the compiler's output that both operational styles use:
   * `Compile/EncloseScope.agda`: closed ISWIM programs and `enclose-closed` (from `EncloseSim` and `OptimizeSim`);
   * `Compile/GlobalizeTable.agda`: growing tables `_⊑_`, `glob-grows` and `global-⊑` (from `GlobalizeSim`); the table lookup `global` itself moved to `Lang/Clos5.agda`, so the machine and the interpreter use the same one;
-  * `Compile/PipelineScope.agda`: well-scoped Clos5 programs (`Scoped`, the precondition of both operational rco proofs) and `compile-scoped`, that `compile` produces them from closed ISWIM programs, one lemma per pass (formerly the well-scopedness half of adequacy's `CompileWF`). Only the end-to-end `compile-mon` theorems of the operational proofs use it (and, through them, those of `compile-imp` and `compile-cfg`).
+  * `Compile/PipelineScope.agda`: well-scoped Clos5 programs (`Scoped`, the precondition of both operational rco proofs) and `compile-scoped`, that `compile` produces them from closed ISWIM programs, one lemma per pass (formerly the well-scopedness half of adequacy's `CompileWF`). Only the end-to-end `compile-mon` theorems of the operational proofs use it (and, through them, those of `compile-imp`, `compile-cfg` and `compile-x86`).
 * **language-independent infrastructure (not counted):** see [Language-independent infrastructure](#language-independent-infrastructure).
   * the abt library, `NewSigUtil`, `NewSyntaxUtil`;
   * `Syntax/`: the lemmas about the syntax of any signature, `Rename.agda` (`rename-cong`, `rename-fuse`, `rename-id`, from `DelaySim`), `Scope.agda` (well-scoped terms and `ws-uses`, from `OptimizeSim`), `ScopeRename.agda` (renaming preserves well-scopedness, formerly adequacy's `Scope`), `Uses.agda`; and `ListUtil.agda`, lookup in an environment, projection from a tuple, and lemmas about lookups (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`);
@@ -146,10 +149,10 @@ Shared by all three proofs, and not counted: 18 modules, 823 lines. Counted in b
   * the graph model, `GraphModel/`: values and consistency (`Domain`), the semantic operators with their monotonicity and consistency (`Ops`), their continuity (`Continuity`), and continuity of semantics in the environment (`SemanticsUtil`, formerly `Sem/Continuous`);
   * the small-step framework (`Smallstep.agda`, `Simulation.agda`: transition systems, forward simulation, backward from forward plus determinism, the iff end theorem) and the clocked one (`Clocked.agda`: results with timeout, the clocked end theorem, `clocked`), both parameterized over the type of observations.
 * **semantics of the languages:**
-  * denotational: the meaning of this compiler's primitives (`Model/Graph/Prim.agda`: `out`, `primD` and its lemmas), the semantics of ISWIM, Clos2 through Clos5, Imp and CFG, plus the continuity instances the proofs use (for Clos5, `Sem/Clos5IswimContinuous.agda`, used by rco, lift locals and adequacy). For Imp: `Sem/Imp.agda` (stores, slots, the frame check, atoms, simple expressions, frames and tables, also used by CFG and by the direct semantics) and the continuation-passing semantics `Sem/ImpK.agda`; the direct one, `Sem/ImpDirect.agda`, is an experiment;
-  * CompCert-style: the seven machines (ISWIM, Clos2–Clos5, Imp and CFG), and the small-step framework at this compiler's observations (`Operational/Smallstep.agda`, `Operational/Simulation.agda`, which keep the design notes);
-  * CakeML-style: the seven clocked interpreters (Clos5's, Imp's and CFG's take the table of global definitions), and the clocked framework at this compiler's observations (`Functional/Clock.agda`).
-* **one row per pass:** that pass's correctness proof. The rco row also contains the end-to-end theorem for `compile-mon`, a corollary of the composition and the rco theorem (11 lines in the denotational proof, 2 in each operational one), in all three styles; likewise the lift-locals row contains the end-to-end theorem for `compile-imp`, and the explicate-control row the one for `compile-cfg`. The denotational lift-locals and explicate-control rows include the modules both semantics of Imp use (`LiftLocalsCommon`, `ExplicateCommon`).
+  * denotational: the meaning of this compiler's primitives (`Model/Graph/Prim.agda`: `out`, `primD` and its lemmas), the semantics of ISWIM, Clos2 through Clos5, Imp, CFG and X86, plus the continuity instances the proofs use (for Clos5, `Sem/Clos5IswimContinuous.agda`, used by rco, lift locals and adequacy). For Imp: `Sem/Imp.agda` (stores, slots, the frame check, atoms, simple expressions, frames and tables, also used by CFG and by the direct semantics) and the continuation-passing semantics `Sem/ImpK.agda`; the direct one, `Sem/ImpDirect.agda`, is an experiment;
+  * CompCert-style: the eight machines (ISWIM, Clos2–Clos5, Imp, CFG and X86), and the small-step framework at this compiler's observations (`Operational/Smallstep.agda`, `Operational/Simulation.agda`, which keep the design notes);
+  * CakeML-style: the eight clocked interpreters (Clos5's, Imp's, CFG's and X86's take the table of global definitions), and the clocked framework at this compiler's observations (`Functional/Clock.agda`).
+* **one row per pass:** that pass's correctness proof. The rco row also contains the end-to-end theorem for `compile-mon`, a corollary of the composition and the rco theorem (11 lines in the denotational proof, 2 in each operational one), in all three styles; likewise the lift-locals row contains the end-to-end theorem for `compile-imp`, the explicate-control row the one for `compile-cfg`, and the select-instructions row the one for `compile-x86`. The denotational lift-locals and explicate-control rows include the modules both semantics of Imp use (`LiftLocalsCommon`, `ExplicateCommon`).
 * **composition:** the end-to-end theorem built from the per-pass results. The compiler `compile` itself is shared (`Compile/Pipeline.agda`), so neither operational proof imports the denotational one.
 * **shared modules not used by all three proofs:** see [Shared modules](#shared-modules).
 
@@ -175,7 +178,8 @@ Shared by all three proofs, and not counted: 18 modules, 823 lines. Counted in b
 * **Clos5 continuity is denotational.** The continuity of the Clos5 semantics in the environment (117 lines then, 157 now), formerly adequacy's `Clos5Continuous`, is now `Model/Graph/Sem/Clos5IswimContinuous.agda`, in the denotational row "semantics of the languages", because the rco proof uses it (for the let laws), as does lift locals. Adequacy reuses it from there and does not count it again; adequacy's Clos5 row shrank by the same 117 lines.
 * **The rco preconditions differ.** The denotational rco theorem is an equation with no precondition on programs; both operational ones need `Scoped`, and their end-to-end `compile-mon` theorems therefore pay for `compile-scoped` (249 lines, in the shared row, plus `Syntax/ScopeRename`, now infrastructure). See [Remove complex operands](#remove-complex-operands).
 * **Lift locals and explicate control need no precondition in any style.** A variable out of scope becomes a slot beyond the frame, which goes wrong (operationally) or reads as `init` (denotationally) exactly where the Clos5 variable does. Assigning a slot beyond the frame goes wrong in all three styles (∅ denotationally, since explicate control; see [Explicate control](#explicate-control)). See [Lift locals](#lift-locals).
-* **Adequacy stops at Clos5.** The end-to-end denotational theorems for `compile-mon`, `compile-imp` and `compile-cfg` speak about the denotations of Clos5, Imp and CFG; adequacy (and so a statement about running code) exists only for ISWIM and Clos5. Adequacy for the final target language, now CFG, is still to do.
+* **Select instructions: a precondition only in the denotational proof.** The denotational theorem assumes every global definition has at least 2 locals (`select-correct`), discharged for compiled programs; neither operational one has a precondition. See [Select instructions](#select-instructions).
+* **Adequacy stops at Clos5.** The end-to-end denotational theorems for `compile-mon`, `compile-imp`, `compile-cfg` and `compile-x86` speak about the denotations of Clos5, Imp, CFG and X86; adequacy (and so a statement about running code) exists only for ISWIM and Clos5. Adequacy for the final target language, now X86, is still to do.
 
 ## History
 
@@ -195,11 +199,12 @@ Shared by all three proofs, and not counted: 18 modules, 823 lines. Counted in b
 | 2026-10-11 | late code check in Clos4/Clos5 (PR #26) | 2935 | 1926 | 1404 |
 | 2026-10-11 | remove complex operands, all three proofs; Clos5 continuity to the denotational side, scoping of `compile` to the shared code (PR #26) | 3289 (+354) | 2653 (+727) | 1980 (+576) |
 | 2026-10-12 | lift locals into Imp, all three proofs (PR #27) | 3551 (+262) | 2967 (+314) | 2184 (+204) |
-| 2026-10-12 | explicate control into CFG, all three proofs, the denotational one against the direct semantics of Imp; binders bind only consistent sets (this PR) | 4323 (+772) | 3181 (+214) | 2365 (+181) |
-| 2026-10-12 | continuation-passing semantics of Imp for the denotational lift locals and explicate control, the direct one an experiment; what both have in common factored out (this PR) | 3989 (−334) | 3181 | 2365 |
-| 2026-10-12 | the same code, new method: language-independent infrastructure in a separate table, not counted (this PR) | 3113 | 2935 | 2224 |
+| 2026-10-12 | explicate control into CFG, all three proofs, the denotational one against the direct semantics of Imp; binders bind only consistent sets (PR #28) | 4323 (+772) | 3181 (+214) | 2365 (+181) |
+| 2026-10-12 | continuation-passing semantics of Imp for the denotational lift locals and explicate control, the direct one an experiment; what both have in common factored out (PR #28) | 3989 (−334) | 3181 | 2365 |
+| 2026-10-12 | the same code, new method: language-independent infrastructure in a separate table, not counted (PR #28) | 3113 | 2935 | 2224 |
+| 2026-10-12 | select instructions, all three proofs (this PR) | 3537 (+424) | 3325 (+390) | 2463 (+239) |
 
-The last two rows are, apart from moving modules, the same code counted two ways. The infrastructure was split from the compiler (the graph model's values, consistency and operators from `Compiler/Model/Graph/Domain/ISWIM/` to `GraphModel/`, leaving only the meaning of the primitives, `Compiler/Model/Graph/Prim.agda`; `Sem/Continuous` to `GraphModel/SemanticsUtil`, `Sem/RenameSem` to `RenameSem`; the syntax lemmas from `Compiler/Lang` to `Syntax/`; the small-step and clocked frameworks parameterized over the type of observations, with instances at this compiler's observations left in `Compiler/`), and the infrastructure left the totals. The rows "generic infrastructure" (307, 188, 80) and "domain, operators, continuity" (511, denotational only) are gone, and so are the shared modules that became infrastructure (`abt.Fold2`, 28, from the denotational total; `Syntax.Scope` and `Syntax.ScopeRename`, 61, from both operational totals); `Observation` shrank from 26 to 23 lines (`_⇔_` to `Iff`, `SameObs` unfolded in the frameworks). The semantics rows went from 782, 629, 461 to 743, 635, 464 (the denotational one gaining `Prim.agda`, the operational ones the instances of their frameworks), and the denotational pass rows changed by 1 to 3 lines each (imports). In all −876, −246 and −141. What each proof relies on now appears in the infrastructure table (1331, 676 and 569 lines). Adequacy went from 2172 to 2246 with the consistent binders (ISWIM 798 → 850, Clos5 847 → 869), and from 2246 to 2187 with the new method (ISWIM 853, Clos5 871, shared 443 → 379).
+The last two PR #28 rows are, apart from moving modules, the same code counted two ways. The infrastructure was split from the compiler (the graph model's values, consistency and operators from `Compiler/Model/Graph/Domain/ISWIM/` to `GraphModel/`, leaving only the meaning of the primitives, `Compiler/Model/Graph/Prim.agda`; `Sem/Continuous` to `GraphModel/SemanticsUtil`, `Sem/RenameSem` to `RenameSem`; the syntax lemmas from `Compiler/Lang` to `Syntax/`; the small-step and clocked frameworks parameterized over the type of observations, with instances at this compiler's observations left in `Compiler/`), and the infrastructure left the totals. The rows "generic infrastructure" (307, 188, 80) and "domain, operators, continuity" (511, denotational only) are gone, and so are the shared modules that became infrastructure (`abt.Fold2`, 28, from the denotational total; `Syntax.Scope` and `Syntax.ScopeRename`, 61, from both operational totals); `Observation` shrank from 26 to 23 lines (`_⇔_` to `Iff`, `SameObs` unfolded in the frameworks). The semantics rows went from 782, 629, 461 to 743, 635, 464 (the denotational one gaining `Prim.agda`, the operational ones the instances of their frameworks), and the denotational pass rows changed by 1 to 3 lines each (imports). In all −876, −246 and −141. What each proof relies on now appears in the infrastructure table (1331, 676 and 569 lines). Adequacy went from 2172 to 2246 with the consistent binders (ISWIM 798 → 850, Clos5 847 → 869), and from 2246 to 2187 with the new method (ISWIM 853, Clos5 871, shared 443 → 379).
 
 The two PR #24 rows are the same code counted two ways. Before, every shared module was left out of all totals, although four of them (157 lines) are used only by the two operational proofs and adequacy, and one (`abt.Fold2`, 28 lines) only by the denotational proof and adequacy; now these count in each proof that uses them (+28, +157, +157), and adequacy grows from 1981 to 2138. Moving `compile` took 7 lines from the denotational composition (the definitions and their imports); the shared code went from 1071 to 1069 lines (+13 for `Pipeline`, −15 for the dead imports).
 
@@ -254,7 +259,7 @@ PR #16 also changed the grouping: the shared counts now include `Primitives`, `N
 
 The +117 is `Clos5IswimContinuous`, moved from adequacy; the +278 are `PipelineScope` and `ScopeRename`, the scoping of `compile`'s output, moved from adequacy's well-formedness and split from its RB half. Adequacy went from 2238 to 2172 lines: Clos5 −117, well-formedness 287 → 60, shared +278 (the split costs 51 lines: `CompileWF` now proves only that each definition refers to older ones, `glob-rb`, and pairs it with `compile-scoped`).
 
-**Explicate control and consistent binders (this PR).** The first of the three rows of this PR, by row (old method):
+**Explicate control and consistent binders (PR #28).** The first of the three rows of PR #28, by row (old method):
 
 | component | denotational | CompCert-style | CakeML-style |
 |---|---:|---:|---:|
@@ -329,6 +334,22 @@ The CFG machine and interpreter reuse the evaluation of simple expressions facto
 | CakeML-style | 65 | 32 | 143 | 145 | 385 |
 
 The direct semantics makes lift locals smaller (213 against 275) and explicate control much larger (665 against 210): the store merging, directed continuity over stores, and the monotonicity and consistency of Imp are all in explicate control. With the continuation-passing semantics the denotational chain is 606 lines, against 528 (CompCert-style) and 385 (CakeML-style); with the direct one it is 1011, about twice the CompCert-style chain. The commuting conversion is where the graph model's junk entries broke the equation, and it is where the choice of the semantics of Imp matters most: done against Clos5's binders it costs two small laws, done against stores it costs the bulk of the direct proof.
+
+## Select instructions
+
+The pass (`Compile/Select.agda`, shared, 39 lines) takes CFG to X86 (`Lang/X86.agda`, shared, 49 lines): x86 with variables over **abstract values**, Clos5's, not over a heap. `alloc` and `load` build and take apart objects (tuples, pairs, sums, closures) with no addresses; a concrete heap would be a later pass (expose allocation). The locations are the slots of the frame and the registers `%rax`, `%rdi` and `%rsi`; there is one flag. The instructions are `movq`, `subq`, `cmpq`, `sete`, `testinl`, `alloc`, `load` and `callq`; a block ends in `retq`, `jmp` or `je`, and keeps CFG's label. A call passes the free variables in `%rdi` and the argument in `%rsi` and returns in `%rax`; each definition's prologue moves `%rdi` and `%rsi` to slots 0 and 1, and a call clobbers `%rdi`, `%rsi` and the flag. Subtraction goes through `%rax` (two-address `subq`), `eq` is `cmpq; sete`, and `case` is `testinl`, a `load` of the payload and `je`. `compile-x86` is select ∘ `compile-cfg`. Main's frame has `locals` slots, as in CFG: with max(2, locals), as first specified, the end-to-end theorem would be false for open terms whose main reads slot 0 or 1.
+
+| component | denotational | CompCert-style | CakeML-style |
+|---|---:|---:|---:|
+| semantics of X86 | 102 | 118 | 97 |
+| select instructions | 322 | 272 | 142 |
+| **total** | **424** | **390** | **239** |
+
+* **CakeML-style (97 + 142): clock for clock, with equal results** (`SelectFuel`), no precondition. Only `callq` ticks, and jumps recurse on the list of older blocks, as in the CFG interpreter. The interpreter runs a block's instructions in continuation-passing style, so the instructions select emits for a CFG statement unfold definitionally to that statement's step.
+* **CompCert-style (118 + 272): a forward simulation** (`SelectSim`), no precondition. The X86 machine takes one instruction per step. The simulation runs from synchronisation points, each with a script (`Fate`) of how the two machines reach the next one: both stop (`stop`), the CFG steps while X86 waits (`lag`, measured by the length of the rest of the script), or the CFG steps and X86 takes one or more steps (`go`). Most of the cost is the timing of errors: each X86 instruction must go wrong at the same CFG step that checks the same thing, and the operands of a call are read in a different order (X86 reads f last).
+* **Denotational (102 + 322)** (`Sem/X86.agda`, `SelectCorrect`): a continuation-passing semantics, as for Imp. Slot writes are strict, as CFG's `seq`; registers and the flag are written under a nonemptiness guard, so a failing or diverging instruction stops everything after it. (A first version let a register hold a failed value that a later write could forget; the guard cost +6 lines of semantics and +41 of proof. A guard rather than binding with ⋆⟨Λ…⟩ avoids a consistency lemma for the whole semantics.) `select-correct` needs every global definition to have at least 2 locals, because the denotational CFG semantics reads slots with bound `locals` while the X86 prologue writes slots 0 and 1; compiled programs satisfy it, so the `compile-x86` theorems have no extra precondition. The main costs are `case`, which needs the invariant that no slot holds both an `inl` and an `inr` (from the consistent binders), and about 85 lines of monotonicity of CFG tails in the store for the prologue's strict moves (`Mono`, `frame-≃`).
+
+Adequacy is unchanged: it still stops at Clos5.
 
 ## Language-independent infrastructure
 

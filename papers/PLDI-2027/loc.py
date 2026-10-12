@@ -76,7 +76,7 @@ GROUPS = [
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
       G + 'Sem/Clos5IswimContinuous.agda',
-      G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda']),
+      G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda', G + 'Sem/X86.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
     ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
@@ -93,6 +93,7 @@ GROUPS = [
      [G + 'Correctness/LiftLocalsCommon.agda', G + 'Correctness/LiftLocalsCorrectK.agda']),
     ('den', 'explicate control',
      [G + 'Correctness/ExplicateCommon.agda', G + 'Correctness/ExplicateCorrectK.agda']),
+    ('den', 'select instructions', [G + 'Correctness/SelectCorrect.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     # with the framework at this compiler's observations (Smallstep.agda,
@@ -107,6 +108,7 @@ GROUPS = [
     ('op', 'rco', [O + 'Correctness/RCOSim.agda']),
     ('op', 'lift locals', [O + 'Correctness/LiftLocalsSim.agda']),
     ('op', 'explicate control', [O + 'Correctness/ExplicateSim.agda']),
+    ('op', 'select instructions', [O + 'Correctness/SelectSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
 
     # with the framework at this compiler's observations (Clock.agda)
@@ -119,6 +121,7 @@ GROUPS = [
     ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
     ('ck', 'lift locals', [F + 'Correctness/LiftLocalsFuel.agda']),
     ('ck', 'explicate control', [F + 'Correctness/ExplicateFuel.agda']),
+    ('ck', 'select instructions', [F + 'Correctness/SelectFuel.agda']),
     ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
@@ -260,6 +263,7 @@ def main():
 
     rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
+            'select instructions',
             'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')

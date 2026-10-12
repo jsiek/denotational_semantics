@@ -50,6 +50,7 @@ import Compiler.Lang.Clos5
 import Compiler.Lang.Mon
 import Compiler.Lang.Imp
 import Compiler.Lang.CFG
+import Compiler.Lang.X86
 
 {- the passes -}
 import Compiler.Compile.Enclose
@@ -60,6 +61,7 @@ import Compiler.Compile.Globalize
 import Compiler.Compile.RCO
 import Compiler.Compile.LiftLocals
 import Compiler.Compile.Explicate
+import Compiler.Compile.Select
 import Compiler.Compile.Pipeline
 
 {- syntactic facts about the passes, used by both operational styles -}
@@ -86,6 +88,7 @@ import Compiler.Model.Graph.Sem.Clos5Iswim
 import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.Imp
 import Compiler.Model.Graph.Sem.CFG
+import Compiler.Model.Graph.Sem.X86
 import Compiler.Model.Graph.Sem.ImpK
 import Compiler.Model.Graph.Sem.ImpDirect
 
@@ -104,6 +107,7 @@ import Compiler.Model.Graph.Correctness.LiftLocalsCommon
 import Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
 import Compiler.Model.Graph.Correctness.ExplicateCommon
 import Compiler.Model.Graph.Correctness.ExplicateCorrectK
+import Compiler.Model.Graph.Correctness.SelectCorrect
 {- the same two passes against the direct semantics of Imp -}
 import Compiler.Model.Graph.Correctness.LiftLocalsCorrect
 import Compiler.Model.Graph.Correctness.ExplicateCorrect
@@ -120,6 +124,7 @@ import Compiler.Model.Graph.Correctness.CompilerExample
 import Compiler.Compile.Examples.RCOExample
 import Compiler.Compile.Examples.LiftLocalsExample
 import Compiler.Compile.Examples.ExplicateExample
+import Compiler.Compile.Examples.SelectExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph
@@ -139,6 +144,7 @@ import Compiler.Operational.Machine.Clos4
 import Compiler.Operational.Machine.Clos5
 import Compiler.Operational.Machine.Imp
 import Compiler.Operational.Machine.CFG
+import Compiler.Operational.Machine.X86
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
@@ -155,6 +161,7 @@ import Compiler.Operational.Correctness.RCOSim
 import Compiler.Operational.Correctness.LiftLocalsSim
 {- explicate control (Imp → CFG), and the compiler into CFG -}
 import Compiler.Operational.Correctness.ExplicateSim
+import Compiler.Operational.Correctness.SelectSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
@@ -198,6 +205,7 @@ import Compiler.Functional.Interp.Clos4
 import Compiler.Functional.Interp.Clos5
 import Compiler.Functional.Interp.Imp
 import Compiler.Functional.Interp.CFG
+import Compiler.Functional.Interp.X86
 
 {- correctness of each pass -}
 import Compiler.Functional.Correctness.EncloseFuel
@@ -208,6 +216,7 @@ import Compiler.Functional.Correctness.GlobalizeFuel
 import Compiler.Functional.Correctness.RCOFuel
 import Compiler.Functional.Correctness.LiftLocalsFuel
 import Compiler.Functional.Correctness.ExplicateFuel
+import Compiler.Functional.Correctness.SelectFuel
 
 {- correctness of the whole compiler -}
 import Compiler.Functional.Correctness.CompilerFuel
