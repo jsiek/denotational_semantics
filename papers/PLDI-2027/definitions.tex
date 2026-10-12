@@ -130,7 +130,9 @@ instead of de Bruijn indices.
   \item remove complex operands (rco) into monadic Clos5, $\pass{compile\text{-}mon}$,
     and well-scoped Clos5 programs ($\mathit{Scoped}_5$);
   \item the imperative language Imp, lift locals into it, and
-    $\pass{compile\text{-}imp}$.
+    $\pass{compile\text{-}imp}$;
+  \item the control-flow-graph language CFG, explicate control into it, and
+    $\pass{compile\text{-}cfg}$.
   \end{itemize}
 \item \textbf{Denotational proof:}
   \begin{itemize}
@@ -217,6 +219,10 @@ Using names instead of de Bruijn indices changes a few definitions:
   operational proofs) variable $x$ is slot $d - (x + 1)$, so the frame
   is $\rho$ reversed followed by the slots above it ($\rho \mathbin{{}^{r}{+}\!\!{+}} \tau$),
   and $\mathit{Scope}$ asks $\rho(x) \simeq \{\omega\}$ for $x \geq d$.
+\item \textbf{Explicate control} threads the list of blocks explicitly
+  in the Agda, newest first: block $t_l$ is the one with $l$ blocks after
+  it in the list, and is looked up with the blocks older than it
+  (\texttt{block}).
 \item \begin{sloppypar}\textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty},
@@ -395,12 +401,31 @@ variables) in slot $0$ and $a_3$ (the argument) in slot $1$; reading or
 assigning a slot beyond the frame goes wrong.
 \begin{syntax}
   & a &::=& s \mid \funref{k} \mid c \\
-  & e &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
-    \mid \prim{p}{a_1}{a_2} \\
-  &&& \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
-    \mid \inl a \mid \inr a \mid \Casei{a}{s}{e_1}{e_2}
+  & r &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
+    \mid \prim{p}{a_1}{a_2}
+    \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
+    \mid \inl a \mid \inr a \\
+  & e &::=& r \mid \Casei{a}{s}{e_1}{e_2}
     \mid \assign{s}{e_1}{e_2} \\[1ex]
   & b &::=& (n;\; e) \\
+  & P &::=& (b_0, \ldots, b_{m-1};\; b)
+\end{syntax}
+The simple expressions $r$ are shared with CFG.
+
+\subsection{CFG}
+
+A C-like language: each body is a control-flow graph of blocks, tails
+$t$ that end in $\key{return}$, a $\key{goto}$, or a $\key{case}$ that
+assigns the payload to slot $s$ and jumps to block $l_1$ or $l_2$. Frames,
+slots and calls are as in Imp, and a call runs the start $t$ of the
+callee's body. The blocks $t_0, \ldots, t_{j-1}$ of a body are numbered
+in order of creation; block $t_l$ may jump only to blocks $l' < l$, and
+the start to any block, so control flow within a body is acyclic. A
+jump to any other label goes wrong.
+\begin{syntax}
+  & t &::=& \key{return}\; r \mid \assign{s}{r}{t} \mid \key{goto}\; l
+    \mid \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\[1ex]
+  & b &::=& (n;\; t_0, \ldots, t_{j-1};\; t) \\
   & P &::=& (b_0, \ldots, b_{m-1};\; b)
 \end{syntax}
 
@@ -416,6 +441,8 @@ assigning a slot beyond the frame goes wrong.
   \pass{compile\text{-}mon} = \pass{rco} \circ \pass{compile}
   \qquad
   \pass{compile\text{-}imp} = \pass{lift} \circ \pass{compile\text{-}mon}
+  \qquad
+  \pass{compile\text{-}cfg} = \pass{explicate} \circ \pass{compile\text{-}imp}
 \]
 
 In each pass, the clauses not shown are homomorphic.
@@ -568,6 +595,34 @@ of the variables in scope, and $n$ is the size of the frame.
 \end{align*}
 A variable out of scope gets the slot $n$, beyond the frame, so that it
 goes wrong, as an unbound variable does in Clos5.
+
+\subsection{Explicate Control (Imp $\to$ CFG)}
+
+Explicate control flattens the nested assignments and cases of a body
+into blocks, in continuation-passing style. $\pass{tail}(e)$ translates
+$e$ in tail position, and $\pass{assign}(e, s, k)$ translates the
+assignment of $e$ to slot $s$ followed by the tail $k$. Both add blocks
+to the body's list; $\pass{add}(t)$ adds the block $t$ and returns its
+label, the number of blocks before it. A case on the right of an
+assignment adds $k$ as a block, the join point, which its branches jump
+to, so $k$ is not duplicated.
+\begin{align*}
+  \pass{tail}(r) &= \key{return}\; r \\
+  \pass{tail}(\assign{s}{e_1}{e_2}) &= \pass{assign}(e_1, s, \pass{tail}(e_2)) \\
+  \pass{tail}(\Casei{a}{s}{e_1}{e_2}) &=
+    \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\
+  &\qquad \text{where } l_1 = \pass{add}(\pass{tail}(e_1)),\ l_2 = \pass{add}(\pass{tail}(e_2)) \\[1ex]
+  \pass{assign}(r, s, k) &= \assign{s}{r}{k} \\
+  \pass{assign}(\assign{s'}{e_1}{e_2}, s, k) &= \pass{assign}(e_1, s', \pass{assign}(e_2, s, k)) \\
+  \pass{assign}(\Casei{a}{s'}{e_1}{e_2}, s, k) &=
+    \key{case}\;a\;\key{of}_{s'}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\
+  &\qquad \text{where } l = \pass{add}(k),\
+    l_i = \pass{add}(\pass{assign}(e_i, s, \key{goto}\;l)) \\[1ex]
+  \pass{explicate}((n;\; e)) &= (n;\; \vec{t};\; t)
+    \quad\text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
+\end{align*}
+and $\pass{explicate}$ maps over the definitions and main of a program.
+Every block is added after the blocks it jumps to.
 
 %===============================================================================
 \part{Denotational Proof}
