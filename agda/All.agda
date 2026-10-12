@@ -75,6 +75,7 @@ import Compiler.Model.Graph.Sem.Clos5Iswim
 import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.Imp
 import Compiler.Model.Graph.Sem.CFG
+import Compiler.Model.Graph.Sem.ImpK
 import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
@@ -90,6 +91,8 @@ import Compiler.Model.Graph.Correctness.GlobalizeCorrect
 import Compiler.Model.Graph.Correctness.RCOCorrect
 import Compiler.Model.Graph.Correctness.LiftLocalsCorrect
 import Compiler.Model.Graph.Correctness.ExplicateCorrect
+import Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
+import Compiler.Model.Graph.Correctness.ExplicateCorrectK
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
