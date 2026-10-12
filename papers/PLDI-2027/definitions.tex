@@ -131,13 +131,18 @@ This is a summary, for review, of the definitions in the Agda development
 of the closure-conversion compiler in \texttt{agda/Compiler}.
 It uses the notation of \texttt{talks/ITRS-2020} and named variables
 instead of de Bruijn indices.
-The language-independent infrastructure is outside \texttt{agda/Compiler}:
-the graph model's values, operators, and continuity in
-\texttt{agda/GraphModel}, the generic denotational lemmas in
-\texttt{agda/NewSemantics.agda}, the syntax lemmas in \texttt{agda/Syntax},
+The public theorem statements are in \texttt{agda/Theorems}; they and the
+definitions they use (everything outside \texttt{agda/proof}) are the
+audit surface, and the proofs are in \texttt{agda/proof}, which mirrors
+the paths of the surface (\texttt{agda/README.md}).
+The language-independent infrastructure is in \texttt{agda/Framework}:
+the graph model's values and operators in \texttt{Framework/GraphModel},
+the syntax in \texttt{Framework/abt} and \texttt{Framework/Syntax},
 and the small-step and clocked frameworks, parameterized over the
-observations, in \texttt{agda/Smallstep.agda}, \texttt{agda/Simulation.agda},
-and \texttt{agda/Clocked.agda}. The meaning of the primitives is in
+observations, in \texttt{Framework/Smallstep.agda} and
+\texttt{Framework/Clocked.agda}; their lemmas (continuity, the generic
+denotational lemmas, the syntax lemmas, forward simulations) are under
+\texttt{agda/proof/Framework}. The meaning of the primitives is in
 \texttt{Compiler/Model/Graph/Prim.agda}.
 
 \paragraph{Contents.}
@@ -280,8 +285,9 @@ Using names instead of de Bruijn indices changes a few definitions:
   of an environment or a store, $\consis(\rho)$, is \texttt{Con-env}; and
   $D \approx E$ on sets is \texttt{Every \_\char`~\_ D E}.
 \item \begin{sloppypar}\textbf{The direct and continuation-passing semantics of Imp} are
-  \texttt{Sem/ImpDirect.agda} and \texttt{Sem/ImpK.agda}; what they share
-  with CFG is in \texttt{Sem/Imp.agda}.\end{sloppypar}
+  \texttt{Sem/ImpDirect.agda} (under \texttt{proof/Compiler/Model/Graph}, an
+  experiment) and \texttt{Sem/ImpK.agda} (under \texttt{Compiler/Model/Graph});
+  what they share with CFG is in \texttt{Sem/Imp.agda}.\end{sloppypar}
 \item \begin{sloppypar}\textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty},
@@ -298,7 +304,7 @@ Using names instead of de Bruijn indices changes a few definitions:
   that $\pass{compile\text{-}cfg}$ meets it is \texttt{defs-2}; the
   lemmas are \texttt{sel}, \texttt{case-core}, \texttt{tail},
   \texttt{blocks-}$\simeq$, \texttt{Mono.tail-mono}, \texttt{frame-}$\simeq$,
-  and \texttt{start-}$\simeq$ (\texttt{Correctness/SelectCorrect.agda}).
+  and \texttt{start-}$\simeq$ (\texttt{proof/Compiler/Model/Graph/Correctness/SelectCorrect.agda}).
   $B \mathrel{\mathit{BR}} B'$ is \texttt{BR B B'}.\end{sloppypar}
 \end{itemize}
 In the CompCert-style proof:
@@ -349,7 +355,7 @@ In the CompCert-style proof:
 \item \textbf{Explicate}'s Imp states $\evi{a}{\sigma}{\kappa}$, for an
   atom $a$, are the Agda's \texttt{eval (simple (atm a)) $\varphi$ $\kappa$}.
   The machines and the simulation are in \texttt{Machine/CFG.agda} and
-  \texttt{Correctness/ExplicateSim.agda}.
+  \texttt{proof/Compiler/Operational/Correctness/ExplicateSim.agda}.
 \item \textbf{The X86 machine}'s state $\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho$
   is the Agda's \texttt{run is j bs} $\sigma$ \texttt{f} $\varphi$ $\rho$, where
   $\sigma$ is the call stack and $\varphi$ the frame.
@@ -357,7 +363,7 @@ In the CompCert-style proof:
   \texttt{K \char`\~{}} $\sigma$, $s_1 \sim s_2$ is \texttt{Match} (with
   \texttt{exec\char`\~}, \texttt{ret\char`\~}, and \texttt{now}), and the
   scripts' cases are \texttt{stop}, \texttt{lag}, and \texttt{go}
-  (\texttt{Correctness/SelectSim.agda}). Lemmas~\ref{lem:to-dest},
+  (\texttt{proof/Compiler/Operational/Correctness/SelectSim.agda}). Lemmas~\ref{lem:to-dest},
   \ref{lem:sel-simple-sim}, and~\ref{lem:fate} are \texttt{to-dest},
   \texttt{simple}, and \texttt{fate}.
 \end{itemize}
@@ -394,7 +400,7 @@ In the CakeML-style proof:
 \item \textbf{Select instructions}' lemmas are \texttt{simple-ok},
   \texttt{tail-ok}, and \texttt{jump-ok}, and calls agree by
   \texttt{calls}$\equiv$ and \texttt{call-pw}
-  (\texttt{Correctness/SelectFuel.agda}).
+  (\texttt{proof/Compiler/Functional/Correctness/SelectFuel.agda}).
 \end{itemize}
 
 \paragraph{Building.} \texttt{latexmk -pdf definitions.tex}

@@ -4,22 +4,22 @@ All three proofs establish end-to-end correctness for the same compiler, `compil
 ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3 --delay--> Clos4 --globalize--> Clos5.
 Each also proves four more passes, after Essentials of Compilation, and the compilers that extend `compile` with them, end to end: remove complex operands (rco, Clos5 --rco--> Clos5, into monadic normal form; `compile-mon`, see [Remove complex operands](#remove-complex-operands)), lift locals (monadic Clos5 --lift--> Imp, an imperative language with frames of mutable slots; `compile-imp`, see [Lift locals](#lift-locals)) and explicate control (Imp --explicate--> CFG, a C-like language of blocks; `compile-cfg`, see [Explicate control](#explicate-control)) and select instructions (CFG --select--> X86, x86 with variables over abstract values; `compile-x86` = select ∘ `compile-cfg`, see [Select instructions](#select-instructions)).
 
-* **Denotational:** a graph-model semantics for each language and one correctness proof per pass, in `agda/Compiler/Model/Graph/`, over the graph model in `agda/GraphModel/`. The theorem is `CompilerCorrect`: the source and compiled program produce the same constants, and one denotation is nonempty exactly when the other is.
-* **CompCert-style:** a small-step CEK machine for each language and one forward simulation per pass, in `agda/Compiler/Operational/`. The theorem is `CompilerSim`: the two programs terminate with the same observation, including going wrong, and one diverges exactly when the other does.
-* **CakeML-style:** a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, in `agda/Compiler/Functional/`. The theorem is `CompilerFuel`. It has the same shape as the CompCert-style one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock. The interpreters are written in Agda's do-notation, which desugars to the same binds `_>>=_` of the result monad.
+* **Denotational:** a graph-model semantics for each language and one correctness proof per pass, in `agda/Compiler/Model/Graph/` (the proofs under `agda/proof/Compiler/Model/Graph/`), over the graph model in `agda/Framework/GraphModel/`. The theorem is `CompilerCorrect`: the source and compiled program produce the same constants, and one denotation is nonempty exactly when the other is.
+* **CompCert-style:** a small-step CEK machine for each language and one forward simulation per pass, in `agda/Compiler/Operational/` (the proofs under `agda/proof/Compiler/Operational/`). The theorem is `CompilerSim`: the two programs terminate with the same observation, including going wrong, and one diverges exactly when the other does.
+* **CakeML-style:** a functional big-step semantics with a clock for each language (a total interpreter that ticks the clock at each function call and times out when it runs out) and one clock-for-clock proof per pass, in `agda/Compiler/Functional/` (the proofs under `agda/proof/Compiler/Functional/`). The theorem is `CompilerFuel`. It has the same shape as the CompCert-style one, over the same observations: a program terminates with o if it does so for some clock, and diverges if it times out for every clock. The interpreters are written in Agda's do-notation, which desugars to the same binds `_>>=_` of the result monad.
 
 Counts are code lines: lines that are neither blank nor comments. The tables are regenerated with
-`python3 papers/PLDI-2027/loc.py` from the repository root. The script fails if any Agda module is not assigned to a group, if one proof imports another proof's modules, adequacy's or an experiment's, or if a module of the language-independent infrastructure imports anything that is not infrastructure.
+`python3 papers/PLDI-2027/loc.py` from the repository root. The script fails if any Agda module is not assigned to a group, if one proof imports another proof's modules, adequacy's or an experiment's, if a module of the language-independent infrastructure imports anything that is not infrastructure, if a module of the audit surface imports one of `agda/proof/` (the theorem files excepted), or if a module outside `agda/proof/` is not used by a theorem statement (see [Audit surface](#audit-surface)). A module split into definitions (`agda/X.agda`) and lemmas (`agda/proof/X.agda`) counts as one module, in one group.
 
 **How totals are computed.** Each module belongs to one group: one of the three proofs, adequacy, shared, language-independent infrastructure, examples, or an experiment. A proof's total is its own modules plus every shared module that it imports, directly or transitively, *unless all three proofs import it*. So each column is the standalone size of that proof, apart from two things. What is common to all three proofs: the languages, the compiler passes and `compile` (`Compiler/Compile/Pipeline.agda`). And the language-independent infrastructure, code that other languages and compilers would reuse unchanged (the abt library and syntax lemmas, the denotational framework and the graph model, the small-step and clocked frameworks; see [Language-independent infrastructure](#language-independent-infrastructure)). Neither is counted in any column; the infrastructure has its own table, which shows what each proof relies on. A shared module that only some proofs use is counted in each of them; it is the row "shared modules not used by all three proofs", listed [below](#shared-modules). Examples are not counted. Adequacy is reported separately (see below). The import graph is read from the `import` and `open import` lines.
 
 ## Current counts
 
-As of this PR:
+As of this PR (on master at 4f37d03):
 
 | component | denotational | CompCert-style | CakeML-style |
 |---|---:|---:|---:|
-| semantics of the languages | 845 | 756 | 561 |
+| semantics of the languages | 925 | 761 | 565 |
 | enclose | 102 | 222 | 162 |
 | optimize | 156 | 273 | 194 |
 | concretize | 246 | 218 | 152 |
@@ -30,8 +30,8 @@ As of this PR:
 | explicate control | 210 | 152 | 145 |
 | select instructions | 322 | 272 | 140 |
 | composition | 49 | 32 | 37 |
-| shared modules not used by all three proofs | — | 379 | 379 |
-| **total** | **3537** | **3328** | **2461** |
+| shared modules not used by all three proofs | — | 391 | 391 |
+| **total** | **3617** | **3345** | **2477** |
 
 The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)).
 
@@ -39,18 +39,18 @@ Language-independent infrastructure, not in any total (see [Language-independent
 
 | language-independent infrastructure (not in the totals) | lines | used by denotational | used by CompCert-style | used by CakeML-style |
 |---|---:|---:|---:|---:|
-| abstract binding trees | 220 | 220 | 220 | 220 |
-| syntax lemmas (renaming, scoping, uses), list lookups | 273 | 212 | 273 | 273 |
+| abstract binding trees | 227 | 227 | 227 | 227 |
+| syntax lemmas (renaming, scoping, uses), list lookups | 307 | 238 | 307 | 307 |
 | base types, logical equivalence | 26 | 22 | 26 | 26 |
-| denotational framework | 395 | 395 | — | — |
-| graph model: values, operators, continuity | 512 | 512 | — | — |
-| small-step framework: transition systems, simulations | 187 | — | 187 | — |
-| clocked big-step framework | 80 | — | — | 80 |
-| **total** | **1693** | **1361** | **706** | **599** |
+| denotational framework | 409 | 409 | — | — |
+| graph model: values, operators, continuity | 536 | 536 | — | — |
+| small-step framework: transition systems, simulations | 194 | — | 194 | — |
+| clocked big-step framework | 89 | — | — | 89 |
+| **total** | **1788** | **1432** | **754** | **649** |
 
-Adequacy uses 1519 lines of the infrastructure, 158 of them not used by the denotational proof.
+Adequacy uses 1609 lines of the infrastructure, 177 of them not used by the denotational proof.
 
-Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86` (`SelectCorrect`), into statements about running programs (`Adequacy/EndToEnd.agda`; see [Adequacy for X86](#adequacy-for-x86)). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output and growing tables, 379 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM, Clos5, Imp and X86 machines (418 lines, plus the 3-line instance of the small-step framework; X86's frames are Imp's), which adequacy reuses from the CompCert-style proof and which are not counted again.
+Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86` (`SelectCorrect`), into statements about running programs (`proof/Compiler/Operational/Adequacy/EndToEnd.agda`; see [Adequacy for X86](#adequacy-for-x86)). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output and growing tables, 391 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM, Clos5, Imp and X86 machines (418 lines, plus the 3-line instance of the small-step framework; X86's frames are Imp's), which adequacy reuses from the CompCert-style proof and which are not counted again.
 
 | adequacy (denotational side only) | lines |
 |---|---:|
@@ -59,8 +59,8 @@ Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their mac
 | X86 | 1243 |
 | well-formedness of compiled programs | 328 |
 | end to end | 39 |
-| shared modules not used by all three proofs, nor by the denotational one | 379 |
-| **total** | **3707** |
+| shared modules not used by all three proofs, nor by the denotational one | 391 |
+| **total** | **3719** |
 
 Two experiments, not in the totals: a direct backward simulation for delay, described [below](#experiment-a-direct-backward-simulation-for-delay), and the direct denotational semantics of Imp with lift locals and explicate control proved against it, described in [Explicate control](#explicate-control). The direct proofs also use `Sem/Imp.agda`, `LiftLocalsCommon` and `ExplicateCommon`, which are counted in the main rows.
 
@@ -72,6 +72,24 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 | denotational: direct Imp — lift locals | 108 |
 | denotational: direct Imp — explicate control | 559 |
 
+### Audit-surface counts
+
+The lines a reader must audit to trust each style's theorems (see [Audit surface](#audit-surface)), not in the totals: the shared part (languages, passes, syntax, base types, observations), counted once in the first column, the semantics of each style, and its theorem statements.
+
+| audit surface (not in the totals) | lines | read for denotational | read for CompCert-style | read for CakeML-style | read for adequacy |
+|---|---:|---:|---:|---:|---:|
+| languages, compiler passes, syntax, base types (shared) | 1203 | 1144 | 1203 | 1203 | 1177 |
+| denotational: graph model: domain, operators, semantics of each language | 578 | 578 | — | — | 578 |
+| CompCert-style: small-step machines, transition systems | 789 | — | 789 | — | 457 |
+| CakeML-style: clocked interpreters, results | 602 | — | — | 602 | — |
+| denotational: theorem statements | 112 | 112 | — | — | — |
+| CompCert-style: theorem statements | 92 | — | 92 | — | — |
+| CakeML-style: theorem statements | 92 | — | — | 92 | — |
+| adequacy: theorem statements | 72 | — | — | — | 72 |
+| **total** | **3540** | **1834** | **2084** | **1897** | **2284** |
+
+The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Denotational.agda`, 2 lines), not counted in their column.
+
 ### Shared modules
 
 | shared module | lines | used by |
@@ -79,14 +97,14 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 | `Compiler.Compile.Concretize` | 57 | all three proofs |
 | `Compiler.Compile.Delay` | 32 | all three proofs |
 | `Compiler.Compile.Enclose` | 33 | all three proofs |
-| `Compiler.Compile.EncloseScope` | 55 | CompCert-style, CakeML-style, adequacy |
+| `Compiler.Compile.EncloseScope` (+ proof/) | 60 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.Explicate` | 37 | all three proofs |
 | `Compiler.Compile.Globalize` | 52 | all three proofs |
-| `Compiler.Compile.GlobalizeTable` | 52 | CompCert-style, CakeML-style, adequacy |
+| `proof.Compiler.Compile.GlobalizeTable` | 52 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.LiftLocals` | 44 | all three proofs |
 | `Compiler.Compile.Optimize` | 62 | all three proofs |
 | `Compiler.Compile.Pipeline` | 28 | all three proofs |
-| `Compiler.Compile.PipelineScope` | 249 | CompCert-style, CakeML-style, adequacy |
+| `Compiler.Compile.PipelineScope` (+ proof/) | 256 | CompCert-style, CakeML-style, adequacy |
 | `Compiler.Compile.RCO` | 120 | all three proofs |
 | `Compiler.Compile.Select` | 39 | all three proofs |
 | `Compiler.Lang.CFG` | 28 | all three proofs |
@@ -101,58 +119,58 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 | `Compiler.Lang.X86` | 49 | all three proofs |
 | `Compiler.Observation` | 23 | CompCert-style, CakeML-style, adequacy |
 
-Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (55), `Compile.GlobalizeTable` (52), `Compile.PipelineScope` (249) and `Observation` (23), 379 lines. The denotational total counts no shared module. Examples, not counted: 282 lines.
+Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in both operational totals and in adequacy: `Compile.EncloseScope` (60), `Compile.GlobalizeTable` (52), `Compile.PipelineScope` (256) and `Observation` (23), 391 lines. A module marked (+ proof/) is split: its definitions are on the audit surface and its lemmas in `agda/proof/`; the lines are those of both halves. The denotational total counts no shared module. Examples, not counted: 282 lines.
 
 ### Infrastructure modules
 
 | infrastructure module | lines | used by |
 |---|---:|---|
-| `Clocked` | 80 | CakeML-style |
-| `GraphModel.Continuity` | 166 | denotational, adequacy |
-| `GraphModel.Domain` | 84 | denotational, adequacy |
-| `GraphModel.Ops` | 230 | denotational, adequacy |
-| `GraphModel.SemanticsUtil` | 32 | denotational, adequacy |
-| `Iff` | 4 | CompCert-style, CakeML-style, adequacy |
-| `ListUtil` | 92 | denotational, CompCert-style, CakeML-style, adequacy |
-| `NewDOpSig` | 35 | denotational, adequacy |
-| `NewDenotProperties` | 16 | denotational, adequacy |
-| `NewEnv` | 99 | denotational, adequacy |
-| `NewSemantics` | 99 | denotational, adequacy |
-| `NewSigUtil` | 6 | denotational, CompCert-style, CakeML-style, adequacy |
-| `NewSyntaxUtil` | 9 | denotational, CompCert-style, CakeML-style, adequacy |
-| `Primitives` | 22 | denotational, CompCert-style, CakeML-style, adequacy |
-| `RenameSem` | 60 | denotational, adequacy |
-| `SetsAsPredicates` | 58 | denotational, adequacy |
-| `Simulation` | 94 | CompCert-style |
-| `Smallstep` | 93 | CompCert-style, adequacy |
-| `Syntax.Rename` | 65 | denotational, CompCert-style, CakeML-style, adequacy |
-| `Syntax.Scope` | 32 | CompCert-style, CakeML-style, adequacy |
-| `Syntax.ScopeRename` | 29 | CompCert-style, CakeML-style, adequacy |
-| `Syntax.Uses` | 55 | denotational, CompCert-style, CakeML-style, adequacy |
-| `abt.AbstractBindingTree` | 18 | denotational, CompCert-style, CakeML-style, adequacy |
-| `abt.Fold2` | 28 | denotational, adequacy |
-| `abt.GSubst` | 9 | denotational, CompCert-style, CakeML-style, adequacy |
-| `abt.ScopedTuple` | 137 | denotational, CompCert-style, CakeML-style, adequacy |
-| `abt.Sig` | 18 | denotational, CompCert-style, CakeML-style, adequacy |
-| `abt.Var` | 23 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.Clocked` (+ proof/) | 89 | CakeML-style |
+| `proof.Framework.GraphModel.Continuity` | 166 | denotational, adequacy |
+| `Framework.GraphModel.DOpSig` (+ proof/) | 39 | denotational, adequacy |
+| `proof.Framework.GraphModel.DenotProperties` | 16 | denotational, adequacy |
+| `Framework.GraphModel.Domain` (+ proof/) | 93 | denotational, adequacy |
+| `Framework.GraphModel.Env` (+ proof/) | 103 | denotational, adequacy |
+| `Framework.GraphModel.Ops` (+ proof/) | 245 | denotational, adequacy |
+| `proof.Framework.GraphModel.RenameSem` | 60 | denotational, adequacy |
+| `proof.Framework.GraphModel.Semantics` | 99 | denotational, adequacy |
+| `proof.Framework.GraphModel.SemanticsUtil` | 32 | denotational, adequacy |
+| `Framework.GraphModel.SetsAsPredicates` (+ proof/) | 64 | denotational, adequacy |
+| `Framework.Iff` | 4 | CompCert-style, CakeML-style, adequacy |
+| `Framework.ListUtil` (+ proof/) | 101 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.Primitives` | 22 | denotational, CompCert-style, CakeML-style, adequacy |
+| `proof.Framework.Simulation` | 90 | CompCert-style |
+| `Framework.Smallstep` (+ proof/) | 104 | CompCert-style, adequacy |
+| `Framework.Syntax.Rename` (+ proof/) | 73 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.Syntax.Scope` (+ proof/) | 40 | CompCert-style, CakeML-style, adequacy |
+| `proof.Framework.Syntax.ScopeRename` | 29 | CompCert-style, CakeML-style, adequacy |
+| `Framework.Syntax.SigUtil` | 6 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.Syntax.SyntaxUtil` | 9 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.Syntax.Uses` (+ proof/) | 64 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.abt.AbstractBindingTree` | 18 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.abt.Fold2` | 28 | denotational, adequacy |
+| `Framework.abt.GSubst` | 9 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.abt.ScopedTuple` (+ proof/) | 144 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.abt.Sig` | 18 | denotational, CompCert-style, CakeML-style, adequacy |
+| `Framework.abt.Var` | 23 | denotational, CompCert-style, CakeML-style, adequacy |
 
 ## What the groups contain
 
 * **shared (counted only in the proofs that use it when not all three do, see above):** the languages (Imp's expressions without control flow are `Simple`, in `Lang/Imp.agda`, shared with `Lang/CFG.agda`), the compiler passes and their compositions `compile`, `compile-mon`, `compile-imp`, `compile-cfg` and `compile-x86` (`Compile/Pipeline.agda`), which all three proofs use; the observations and the end-theorem shape (`Compiler/Observation.agda`); and the lemmas about the compiler's output that both operational styles use:
-  * `Compile/EncloseScope.agda`: closed ISWIM programs and `enclose-closed` (from `EncloseSim` and `OptimizeSim`);
-  * `Compile/GlobalizeTable.agda`: growing tables `_⊑_`, `glob-grows` and `global-⊑` (from `GlobalizeSim`); the table lookup `global` itself moved to `Lang/Clos5.agda`, so the machine and the interpreter use the same one;
-  * `Compile/PipelineScope.agda`: well-scoped Clos5 programs (`Scoped`, the precondition of both operational rco proofs) and `compile-scoped`, that `compile` produces them from closed ISWIM programs, one lemma per pass (formerly the well-scopedness half of adequacy's `CompileWF`). Only the end-to-end `compile-mon` theorems of the operational proofs use it (and, through them, those of `compile-imp`, `compile-cfg` and `compile-x86`).
+  * `Compile/EncloseScope.agda`: closed ISWIM programs, and in its proof/ half `enclose-closed` (from `EncloseSim` and `OptimizeSim`);
+  * `proof/Compiler/Compile/GlobalizeTable.agda`: growing tables `_⊑_`, `glob-grows` and `global-⊑` (from `GlobalizeSim`); the table lookup `global` itself moved to `Lang/Clos5.agda`, so the machine and the interpreter use the same one;
+  * `Compile/PipelineScope.agda`: well-scoped Clos5 programs (`Scoped`, the precondition of both operational rco proofs), and in its proof/ half `compile-scoped`, that `compile` produces them from closed ISWIM programs, one lemma per pass (formerly the well-scopedness half of adequacy's `CompileWF`). Only the end-to-end `compile-mon` theorems of the operational proofs use it (and, through them, those of `compile-imp`, `compile-cfg` and `compile-x86`).
 * **language-independent infrastructure (not counted):** see [Language-independent infrastructure](#language-independent-infrastructure).
-  * the abt library, `NewSigUtil`, `NewSyntaxUtil`;
-  * `Syntax/`: the lemmas about the syntax of any signature, `Rename.agda` (`rename-cong`, `rename-fuse`, `rename-id`, from `DelaySim`), `Scope.agda` (well-scoped terms and `ws-uses`, from `OptimizeSim`), `ScopeRename.agda` (renaming preserves well-scopedness, formerly adequacy's `Scope`), `Uses.agda`; and `ListUtil.agda`, lookup in an environment, projection from a tuple, and lemmas about lookups, also in reversed and replicated lists (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`, and from adequacy);
-  * `Primitives.agda` (base types) and `Iff.agda` (`_⇔_`);
-  * the denotational framework: sets as predicates, environments, the semantics of any signature and its monotonicity (`NewSemantics`, which also gives consistency), DOp signatures, `abt.Fold2`, `RenameSem`;
-  * the graph model, `GraphModel/`: values and consistency (`Domain`), the semantic operators with their monotonicity and consistency (`Ops`), their continuity (`Continuity`), and continuity of semantics in the environment (`SemanticsUtil`, formerly `Sem/Continuous`);
-  * the small-step framework (`Smallstep.agda`, `Simulation.agda`: transition systems, forward simulation, backward from forward plus determinism, the iff end theorem) and the clocked one (`Clocked.agda`: results with timeout, the clocked end theorem, `clocked`), both parameterized over the type of observations.
+  * the abt library (`Framework/abt/`), `Framework/Syntax/SigUtil`, `Framework/Syntax/SyntaxUtil`;
+  * `Framework/Syntax/` (lemmas in `proof/Framework/Syntax/`): the syntax of any signature and the lemmas about it, `Rename.agda` (`rename-cong`, `rename-fuse`, `rename-id`, from `DelaySim`), `Scope.agda` (well-scoped terms and `ws-uses`, from `OptimizeSim`), `ScopeRename.agda` (renaming preserves well-scopedness, formerly adequacy's `Scope`), `Uses.agda`; and `ListUtil.agda`, lookup in an environment, projection from a tuple, and lemmas about lookups, also in reversed and replicated lists (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`, and from adequacy);
+  * `Framework/Primitives.agda` (base types) and `Framework/Iff.agda` (`_⇔_`);
+  * the denotational framework: sets as predicates, environments, DOp signatures, `abt.Fold2` (`Framework/GraphModel/`, `Framework/abt/`), and in `proof/Framework/GraphModel/` the semantics of any signature and its monotonicity (`Semantics`, formerly `NewSemantics`, which also gives consistency), monotonicity and consistency of operators (`DenotProperties`), `RenameSem`;
+  * the graph model, `Framework/GraphModel/`: values and consistency (`Domain`), the semantic operators (`Ops`), and in `proof/Framework/GraphModel/` their monotonicity and consistency (the proof halves of `Domain` and `Ops`), their continuity (`Continuity`), and continuity of semantics in the environment (`SemanticsUtil`, formerly `Sem/Continuous`);
+  * the small-step framework (`Framework/Smallstep.agda`: transition systems and the iff end theorem; `proof/Framework/{Smallstep,Simulation}.agda`: lemmas about runs, forward simulation, backward from forward plus determinism) and the clocked one (`Framework/Clocked.agda`: results with timeout, the clocked end theorem; `proof/Framework/Clocked.agda`: `clocked`), both parameterized over the type of observations.
 * **semantics of the languages:**
-  * denotational: the meaning of this compiler's primitives (`Model/Graph/Prim.agda`: `out`, `primD` and its lemmas), the semantics of ISWIM, Clos2 through Clos5, Imp, CFG and X86, plus the continuity instances the proofs use (for Clos5, `Sem/Clos5IswimContinuous.agda`, used by rco, lift locals and adequacy). For Imp: `Sem/Imp.agda` (stores, slots, the frame check, atoms, simple expressions, frames and tables, also used by CFG and by the direct semantics) and the continuation-passing semantics `Sem/ImpK.agda`; the direct one, `Sem/ImpDirect.agda`, is an experiment;
-  * CompCert-style: the eight machines (ISWIM, Clos2–Clos5, Imp, CFG and X86), and the small-step framework at this compiler's observations (`Operational/Smallstep.agda`, `Operational/Simulation.agda`, which keep the design notes);
-  * CakeML-style: the eight clocked interpreters (Clos5's, Imp's, CFG's and X86's take the table of global definitions), and the clocked framework at this compiler's observations (`Functional/Clock.agda`).
+  * denotational: the meaning of this compiler's primitives (`Model/Graph/Prim.agda`: `out`, `primD` and its lemmas), the semantics of ISWIM, Clos2 through Clos5, Imp, CFG and X86, plus their monotonicity and consistency and the continuity instances the proofs use (in `proof/Compiler/Model/Graph/Sem/`; for Clos5, `Sem/Clos5IswimContinuous.agda`, used by rco, lift locals and adequacy). For Imp: `Sem/Imp.agda` (stores, slots, the frame check, atoms, simple expressions, frames and tables, also used by CFG and by the direct semantics) and the continuation-passing semantics `Sem/ImpK.agda`; the direct one, `Sem/ImpDirect.agda`, is an experiment;
+  * CompCert-style: the eight machines (ISWIM, Clos2–Clos5, Imp, CFG and X86), and the small-step framework at this compiler's observations (`Operational/Smallstep.agda`, which keeps the design note, with its proof/ half, and `proof/Compiler/Operational/Simulation.agda`);
+  * CakeML-style: the eight clocked interpreters (Clos5's, Imp's, CFG's and X86's take the table of global definitions), and the clocked framework at this compiler's observations (`Functional/Clock.agda`, with its proof/ half).
 * **one row per pass:** that pass's correctness proof. The rco row also contains the end-to-end theorem for `compile-mon`, a corollary of the composition and the rco theorem (11 lines in the denotational proof, 2 in each operational one), in all three styles; likewise the lift-locals row contains the end-to-end theorem for `compile-imp`, the explicate-control row the one for `compile-cfg`, and the select-instructions row the one for `compile-x86`. The denotational lift-locals and explicate-control rows include the modules both semantics of Imp use (`LiftLocalsCommon`, `ExplicateCommon`).
 * **composition:** the end-to-end theorem built from the per-pass results. The compiler `compile` itself is shared (`Compile/Pipeline.agda`), so neither operational proof imports the denotational one.
 * **shared modules not used by all three proofs:** see [Shared modules](#shared-modules).
@@ -182,6 +200,23 @@ Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in b
 * **Select instructions: a precondition only in the denotational proof.** The denotational theorem assumes every global definition has at least 2 locals (`select-correct`), discharged for compiled programs; neither operational one has a precondition. See [Select instructions](#select-instructions).
 * **Adequacy reaches X86, the final target, but not the intermediate languages.** Adequacy, and so a statement about running code, exists for ISWIM, Clos5 and X86: the end-to-end theorem for `compile-x86` relates the ISWIM machine to the X86 machine (`end-to-end-x86-const`, `end-to-end-x86-converges`). The end-to-end denotational theorems for `compile-mon`, `compile-imp` and `compile-cfg` still speak only about the denotations of Clos5, Imp and CFG. X86 adequacy has preconditions that compiled programs satisfy, discharged by `compile-x86-wf` (see [Adequacy for X86](#adequacy-for-x86)); like Clos5's, it cannot tell going wrong from diverging.
 
+## Audit surface
+
+The development is split, as in jsiek/AI-for-pl, into what must be read to trust the results and what Agda has checked (see `agda/README.md`):
+
+* **the theorem statements**, `agda/Theorems/{Denotational,CompCert,CakeML,Adequacy}.agda`: each public theorem with its full type, defined as the theorem of `agda/proof/` (`enclose-correct = EncloseCorrect.enclose-correct-closed`), so Agda checks that the statement is the type of the proof;
+* **the definitions they use**, everything else outside `agda/proof/`: the languages and passes (`agda/Compiler/{Lang,Compile}/`), the semantics of each style (`agda/Compiler/Model/Graph/`, `agda/Compiler/Operational/Machine/`, `agda/Compiler/Functional/Interp/`, `agda/Compiler/Observation.agda`), and the language-independent definitions in `agda/Framework/` (the abt extract, syntax, the graph model's sets, values and operators, the small-step and clocked frameworks);
+* **`agda/proof/`**, mirroring the paths of the surface: all proofs, and the lemmas of every module that mixed definitions and lemmas (`agda/X.agda` keeps the definitions, `agda/proof/X.agda` re-exports them with the lemmas).
+
+`loc.py` checks that no module of the surface imports one of `agda/proof/` (the theorem files excepted) and that every module outside `agda/proof/` is reached from the theorem files, so the surface is exactly the closure of the statements, at the granularity of modules. Two choices keep it small:
+
+* **Restricted statements.** Adequacy for the Clos5 and X86 machines is proved for any well-formed program, but the well-formedness conditions (references only to older definitions, slots within the frame, a consistent table: `Clos5WF`, `X86WF` and `RB` of `GlobalizeCorrect`, about 60 lines) are proof-internal, so `Theorems/Adequacy.agda` states it for the programs the compiler produces (`compile M`, `compile-x86 M` for a closed `M`), discharging well-formedness with `compile-wf` and `compile-x86-wf`. Soundness and adequacy are stated as their characterizations (`const-iff`, `nonempty-iff`, `wrong-empty`, `diverges-empty`), so `ShapeOf` stays in `agda/proof/`. The denotational `select-correct` states its precondition inline (`All (λ b → 2 ≤ Body.locals b) (defs P)`), and `ρ₀` is defined in `Theorems/Denotational.agda` (the proofs use a definitionally equal one).
+* **Semantics without their monotonicity.** The generic `Semantics` record of the graph model carries a monotonicity proof, so a semantics built with it would put the monotonicity of every operator on the surface. Instead the surface defines the meaning of ISWIM and Clos2–Clos4 directly as the fold of their operators (as Clos5's already was); `agda/proof/` builds the `Semantics` instance, whose `⟦_⟧` is that fold by definition, and the proofs are unchanged.
+
+**What it changed in the totals.** The totals count the two halves of a split module as one module, so only the module headers and imports of the new proof halves, and the direct definitions of the semantics, add lines: the denotational total +80 (semantics row: `Prim` +12, `Sem/ISWIM` +14, `Sem/Clos2Iswim` +20, `Sem/Clos3Iswim` +17, `Sem/Clos4Iswim` +17), the CompCert-style one +17 (semantics row +5 for the proof halves of `Operational/{Smallstep,Simulation}`; shared row +12, for `EncloseScope` +5 and `PipelineScope` +7), the CakeML-style one +16 (semantics row +4 for `Functional/Clock`; shared row +12), and adequacy +12 (shared row). No per-pass row changed. The infrastructure table changed likewise (1693 → 1788, the proof halves of the framework modules, and `Equivalent` moved from `Simulation` to `Smallstep`). The theorem files (368 lines) are new boilerplate and are not in the totals; they are in the audit-surface table.
+
+**Legacy top-level files.** `NewDenotProperties`, `NewDOpSig`, `NewEnv`, `NewSemantics`, `NewSigUtil`, `NewSyntaxUtil`, `Primitives`, `SetsAsPredicates` and `RenameSem` were not dead: the compiler's closure uses all of them. `agda/old/` has its own copies of all but `RenameSem` (it is checked from `agda/old/`, with the external abt library), so it does not depend on them. They moved, with the abt extract, `GraphModel/`, `Syntax/`, `ListUtil`, `Iff` and the small-step and clocked frameworks, under `agda/Framework/` (definitions) and `agda/proof/Framework/` (lemmas), renamed without the `New` prefix (`SigUtil`, `SyntaxUtil`, `GraphModel/{DOpSig,Env,Semantics,DenotProperties}`).
+
 ## History
 
 | date | change | denotational | CompCert-style | CakeML-style |
@@ -205,9 +240,10 @@ Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in b
 | 2026-10-12 | the same code, new method: language-independent infrastructure in a separate table, not counted (PR #28) | 3113 | 2935 | 2224 |
 | 2026-10-12 | select instructions, all three proofs (PR #29) | 3537 (+424) | 3325 (+390) | 2463 (+239) |
 | 2026-10-12 | CakeML-style interpreters in do-notation (cosmetic; PR #30) | 3537 | 3325 | 2463 |
-| 2026-10-12 | X86 machine and interpreter aligned with the X86 semantics at calls; adequacy for X86, end to end for `compile-x86` (this PR) | 3537 | 3328 (+3) | 2461 (−2) |
+| 2026-10-12 | X86 machine and interpreter aligned with the X86 semantics at calls; adequacy for X86, end to end for `compile-x86` (PR #33) | 3537 | 3328 (+3) | 2461 (−2) |
+| 2026-10-12 | audit surface split: the theorem statements in `agda/Theorems/`, the definitions they use outside `agda/proof/`, the proofs and the lemmas of split modules in `agda/proof/` (this PR) | 3617 (+80) | 3345 (+17) | 2477 (+16) |
 
-**Adequacy for X86 (this PR).** The X86 machine and interpreter now do what the X86 semantics says at calls (see [Select instructions](#select-instructions)): the callee starts with `%rax` unset and no flag, `callq` goes wrong if `%rdi` or `%rsi` is unset, and `retq` goes wrong if `%rax` is unset, also when it returns to a caller. This cost the CompCert-style semantics 3 lines (the machine) and saved the CakeML-style select proof 2 (its hypothesis on calls lost the registers); `SelectSim` and `SelectFuel` still need no precondition. Adequacy went from 2187 to 3707 lines: X86 +1243, well-formedness 60 → 328, end to end 24 → 39, ISWIM +2 and Clos5 −8 (the runs of any machine are now shared, `Common.Runs`, and the Clos5 machine's values, which X86 shares, are in `Values.agda`, used by both); the list lemmas it needed went to `ListUtil` (infrastructure, 62 → 92 lines, also used by Clos5 adequacy).
+**Adequacy for X86 (PR #33).** The X86 machine and interpreter now do what the X86 semantics says at calls (see [Select instructions](#select-instructions)): the callee starts with `%rax` unset and no flag, `callq` goes wrong if `%rdi` or `%rsi` is unset, and `retq` goes wrong if `%rax` is unset, also when it returns to a caller. This cost the CompCert-style semantics 3 lines (the machine) and saved the CakeML-style select proof 2 (its hypothesis on calls lost the registers); `SelectSim` and `SelectFuel` still need no precondition. Adequacy went from 2187 to 3707 lines: X86 +1243, well-formedness 60 → 328, end to end 24 → 39, ISWIM +2 and Clos5 −8 (the runs of any machine are now shared, `Common.Runs`, and the Clos5 machine's values, which X86 shares, are in `Values.agda`, used by both); the list lemmas it needed went to `ListUtil` (infrastructure, 62 → 92 lines, also used by Clos5 adequacy).
 
 The last two PR #28 rows are, apart from moving modules, the same code counted two ways. The infrastructure was split from the compiler (the graph model's values, consistency and operators from `Compiler/Model/Graph/Domain/ISWIM/` to `GraphModel/`, leaving only the meaning of the primitives, `Compiler/Model/Graph/Prim.agda`; `Sem/Continuous` to `GraphModel/SemanticsUtil`, `Sem/RenameSem` to `RenameSem`; the syntax lemmas from `Compiler/Lang` to `Syntax/`; the small-step and clocked frameworks parameterized over the type of observations, with instances at this compiler's observations left in `Compiler/`), and the infrastructure left the totals. The rows "generic infrastructure" (307, 188, 80) and "domain, operators, continuity" (511, denotational only) are gone, and so are the shared modules that became infrastructure (`abt.Fold2`, 28, from the denotational total; `Syntax.Scope` and `Syntax.ScopeRename`, 61, from both operational totals); `Observation` shrank from 26 to 23 lines (`_⇔_` to `Iff`, `SameObs` unfolded in the frameworks). The semantics rows went from 782, 629, 461 to 743, 635, 464 (the denotational one gaining `Prim.agda`, the operational ones the instances of their frameworks), and the denotational pass rows changed by 1 to 3 lines each (imports). In all −876, −246 and −141. What each proof relies on now appears in the infrastructure table (1331, 676 and 569 lines). Adequacy went from 2172 to 2246 with the consistent binders (ISWIM 798 → 850, Clos5 847 → 869), and from 2246 to 2187 with the new method (ISWIM 853, Clos5 871, shared 443 → 379).
 

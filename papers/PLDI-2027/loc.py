@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Count code lines of the three compiler-correctness proofs.
+"""Count code lines of the three compiler-correctness proofs, and of the
+audit surface.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
 
@@ -8,6 +9,16 @@ A code line is a line that is not blank and not a comment ({- -} blocks,
 All.agda) must belong to exactly one group; the script fails otherwise,
 so new modules cannot go uncounted.  A group of the CakeML-style side may
 have no files yet (a pass not yet proved); it is shown as —.
+
+The code is split into an audit surface (agda/Theorems/, the public
+theorem statements, and the definitions they use, everywhere outside
+agda/proof/) and agda/proof/, which need not be read to trust the
+results.  A module that mixes definitions and lemmas is split in two: the
+definitions at agda/X.agda, the lemmas at agda/proof/X.agda.  For the
+counts below the two halves are one unit (as they were one module before
+the split): they belong to the same group, and a proof reaches the unit
+when it reaches either half.  So the totals do not depend on the split,
+except for the module headers and imports of the proof halves.
 
 Language-independent infrastructure (side 'infra') is reported in a
 separate table and is not in any total.  The test is whether the code
@@ -33,14 +44,33 @@ its own modules plus the shared modules it reaches transitively that are
 not reached by all three proofs; shared modules reached by all three are
 not counted anywhere, and infrastructure is never counted.  Adequacy, an
 add-on to the denotational proof, also counts the shared modules it
-reaches that the denotational total does not already count.  The script also fails if one proof reaches another proof's
-modules, adequacy's or an experiment's.
+reaches that the denotational total does not already count.  The script
+also fails if one proof reaches another proof's modules, adequacy's or an
+experiment's.
+
+The public theorem statements (agda/Theorems/) are new boilerplate (each
+restates a theorem of the proofs with its type), so they are not in the
+totals; they are in the audit-surface table, which gives, for each style,
+the lines of the audit surface that its statements reach: the shared
+part (languages, passes, syntax), counted once, the semantics of that
+style, and the statements.  The script fails if a module of the audit
+surface imports a module of agda/proof/ (the theorem files do, by
+design), or if a module outside agda/proof/ is not reached from the
+theorem files.
 """
 import glob, os, re, sys
 
+L = 'agda/Compiler/Lang/'
+C = 'agda/Compiler/Compile/'
 G = 'agda/Compiler/Model/Graph/'
 O = 'agda/Compiler/Operational/'
 F = 'agda/Compiler/Functional/'
+PC = 'agda/proof/Compiler/'
+GP = PC + 'Model/Graph/'
+OP = PC + 'Operational/'
+FP = PC + 'Functional/'
+W = 'agda/Framework/'
+WP = 'agda/proof/Framework/'
 
 # (side, group, glob patterns)
 GROUPS = [
@@ -49,113 +79,127 @@ GROUPS = [
     # observations (Observation.agda).  Those not used by all three proofs
     # are counted in each proof that uses them (see main).
     ('shared', 'syntax, languages, compiler passes',
-     ['agda/Compiler/Lang/*.agda', 'agda/Compiler/Compile/*.agda',
-      'agda/Compiler/Observation.agda']),
+     [L + '*.agda', C + '*.agda', PC + 'Compile/*.agda', 'agda/Compiler/Observation.agda']),
 
     # language-independent infrastructure: not in the totals (see main)
     ('infra', 'abstract binding trees',
-     ['agda/abt/AbstractBindingTree.agda', 'agda/abt/GSubst.agda', 'agda/abt/ScopedTuple.agda',
-      'agda/abt/Sig.agda', 'agda/abt/Var.agda', 'agda/NewSigUtil.agda', 'agda/NewSyntaxUtil.agda']),
+     [W + 'abt/AbstractBindingTree.agda', W + 'abt/GSubst.agda', W + 'abt/ScopedTuple.agda',
+      WP + 'abt/ScopedTuple.agda', W + 'abt/Sig.agda', W + 'abt/Var.agda',
+      W + 'Syntax/SigUtil.agda', W + 'Syntax/SyntaxUtil.agda']),
     ('infra', 'syntax lemmas (renaming, scoping, uses), list lookups',
-     ['agda/Syntax/*.agda', 'agda/ListUtil.agda']),
-    ('infra', 'base types, logical equivalence', ['agda/Primitives.agda', 'agda/Iff.agda']),
+     [W + 'Syntax/Uses.agda', W + 'Syntax/Scope.agda', W + 'Syntax/Rename.agda',
+      WP + 'Syntax/*.agda', W + 'ListUtil.agda', WP + 'ListUtil.agda']),
+    ('infra', 'base types, logical equivalence', [W + 'Primitives.agda', W + 'Iff.agda']),
     ('infra', 'denotational framework',
-     ['agda/SetsAsPredicates.agda', 'agda/NewSemantics.agda', 'agda/NewDOpSig.agda',
-      'agda/NewEnv.agda', 'agda/NewDenotProperties.agda', 'agda/abt/Fold2.agda',
-      'agda/RenameSem.agda']),
-    ('infra', 'graph model: values, operators, continuity', ['agda/GraphModel/*.agda']),
+     [W + 'GraphModel/SetsAsPredicates.agda', WP + 'GraphModel/SetsAsPredicates.agda',
+      W + 'GraphModel/DOpSig.agda', WP + 'GraphModel/DOpSig.agda',
+      W + 'GraphModel/Env.agda', WP + 'GraphModel/Env.agda',
+      WP + 'GraphModel/Semantics.agda', WP + 'GraphModel/DenotProperties.agda',
+      W + 'abt/Fold2.agda', WP + 'GraphModel/RenameSem.agda']),
+    ('infra', 'graph model: values, operators, continuity',
+     [W + 'GraphModel/Domain.agda', WP + 'GraphModel/Domain.agda',
+      W + 'GraphModel/Ops.agda', WP + 'GraphModel/Ops.agda',
+      WP + 'GraphModel/Continuity.agda', WP + 'GraphModel/SemanticsUtil.agda']),
     ('infra', 'small-step framework: transition systems, simulations',
-     ['agda/Smallstep.agda', 'agda/Simulation.agda']),
-    ('infra', 'clocked big-step framework', ['agda/Clocked.agda']),
+     [W + 'Smallstep.agda', WP + 'Smallstep.agda', WP + 'Simulation.agda']),
+    ('infra', 'clocked big-step framework', [W + 'Clocked.agda', WP + 'Clocked.agda']),
 
     # the meaning of the primitives (Prim.agda) is here, as prim? is in
     # each machine and interpreter
     ('den', 'semantics of the languages',
-     [G + 'Prim.agda',
-      G + 'Sem/ISWIM.agda', G + 'Sem/Clos2Iswim.agda', G + 'Sem/Clos3Iswim.agda',
-      G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
-      G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
-      G + 'Sem/Clos5IswimContinuous.agda',
+     [G + 'Prim.agda', GP + 'Prim.agda',
+      G + 'Sem/ISWIM.agda', GP + 'Sem/ISWIM.agda',
+      G + 'Sem/Clos2Iswim.agda', GP + 'Sem/Clos2Iswim.agda',
+      G + 'Sem/Clos3Iswim.agda', GP + 'Sem/Clos3Iswim.agda', GP + 'Sem/Clos3IswimContinuous.agda',
+      G + 'Sem/Clos4Iswim.agda', GP + 'Sem/Clos4Iswim.agda', GP + 'Sem/Clos4IswimContinuous.agda',
+      G + 'Sem/Clos5Iswim.agda', GP + 'Sem/Clos5IswimContinuous.agda',
       G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda', G + 'Sem/X86.agda']),
-    ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
-    ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
-    ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
+    ('den', 'enclose', [GP + 'Correctness/EncloseCorrect.agda']),
+    ('den', 'optimize', [GP + 'Correctness/OptimizeCorrect.agda']),
+    ('den', 'concretize', [GP + 'Correctness/ConcretizeCorrect.agda']),
     ('den', 'delay',
-     [G + 'Correctness/DelayFiniteCommon.agda', G + 'Correctness/DelayFiniteRel.agda',
-      G + 'Correctness/DelayApp.agda', G + 'Correctness/DelayPreserve.agda',
-      G + 'Correctness/DelayReflectFinite.agda']),
-    ('den', 'globalize', [G + 'Correctness/GlobalizeCorrect.agda']),
+     [GP + 'Correctness/DelayFiniteCommon.agda', GP + 'Correctness/DelayFiniteRel.agda',
+      GP + 'Correctness/DelayApp.agda', GP + 'Correctness/DelayPreserve.agda',
+      GP + 'Correctness/DelayReflectFinite.agda']),
+    ('den', 'globalize', [GP + 'Correctness/GlobalizeCorrect.agda']),
     # each rco module also proves compile-mon (compile then rco) end to end
-    ('den', 'rco', [G + 'Correctness/RCOCorrect.agda']),
+    ('den', 'rco', [GP + 'Correctness/RCOCorrect.agda']),
     # lift locals and explicate control against the continuation-passing
     # semantics of Imp (Sem/ImpK.agda); against the direct one, see 'exp'
     ('den', 'lift locals',
-     [G + 'Correctness/LiftLocalsCommon.agda', G + 'Correctness/LiftLocalsCorrectK.agda']),
+     [GP + 'Correctness/LiftLocalsCommon.agda', GP + 'Correctness/LiftLocalsCorrectK.agda']),
     ('den', 'explicate control',
-     [G + 'Correctness/ExplicateCommon.agda', G + 'Correctness/ExplicateCorrectK.agda']),
-    ('den', 'select instructions', [G + 'Correctness/SelectCorrect.agda']),
-    ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
+     [GP + 'Correctness/ExplicateCommon.agda', GP + 'Correctness/ExplicateCorrectK.agda']),
+    ('den', 'select instructions', [GP + 'Correctness/SelectCorrect.agda']),
+    ('den', 'composition', [GP + 'Correctness/CompilerCorrect.agda']),
 
     # with the framework at this compiler's observations (Smallstep.agda,
     # Simulation.agda)
     ('op', 'semantics of the languages',
-     [O + 'Machine/*.agda', O + 'Smallstep.agda', O + 'Simulation.agda']),
-    ('op', 'enclose', [O + 'Correctness/EncloseSim.agda']),
-    ('op', 'optimize', [O + 'Correctness/OptimizeSim.agda']),
-    ('op', 'concretize', [O + 'Correctness/ConcretizeSim.agda']),
-    ('op', 'delay', [O + 'Correctness/DelaySim.agda']),
-    ('op', 'globalize', [O + 'Correctness/GlobalizeSim.agda']),
-    ('op', 'rco', [O + 'Correctness/RCOSim.agda']),
-    ('op', 'lift locals', [O + 'Correctness/LiftLocalsSim.agda']),
-    ('op', 'explicate control', [O + 'Correctness/ExplicateSim.agda']),
-    ('op', 'select instructions', [O + 'Correctness/SelectSim.agda']),
-    ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
+     [O + 'Machine/*.agda', O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+    ('op', 'enclose', [OP + 'Correctness/EncloseSim.agda']),
+    ('op', 'optimize', [OP + 'Correctness/OptimizeSim.agda']),
+    ('op', 'concretize', [OP + 'Correctness/ConcretizeSim.agda']),
+    ('op', 'delay', [OP + 'Correctness/DelaySim.agda']),
+    ('op', 'globalize', [OP + 'Correctness/GlobalizeSim.agda']),
+    ('op', 'rco', [OP + 'Correctness/RCOSim.agda']),
+    ('op', 'lift locals', [OP + 'Correctness/LiftLocalsSim.agda']),
+    ('op', 'explicate control', [OP + 'Correctness/ExplicateSim.agda']),
+    ('op', 'select instructions', [OP + 'Correctness/SelectSim.agda']),
+    ('op', 'composition', [OP + 'Correctness/CompilerSim.agda']),
 
     # with the framework at this compiler's observations (Clock.agda)
-    ('ck', 'semantics of the languages', [F + 'Interp/*.agda', F + 'Clock.agda']),
-    ('ck', 'enclose', [F + 'Correctness/EncloseFuel.agda']),
-    ('ck', 'optimize', [F + 'Correctness/OptimizeFuel.agda']),
-    ('ck', 'concretize', [F + 'Correctness/ConcretizeFuel.agda']),
-    ('ck', 'delay', [F + 'Correctness/DelayFuel.agda']),
-    ('ck', 'globalize', [F + 'Correctness/GlobalizeFuel.agda']),
-    ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
-    ('ck', 'lift locals', [F + 'Correctness/LiftLocalsFuel.agda']),
-    ('ck', 'explicate control', [F + 'Correctness/ExplicateFuel.agda']),
-    ('ck', 'select instructions', [F + 'Correctness/SelectFuel.agda']),
-    ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
+    ('ck', 'semantics of the languages', [F + 'Interp/*.agda', F + 'Clock.agda', FP + 'Clock.agda']),
+    ('ck', 'enclose', [FP + 'Correctness/EncloseFuel.agda']),
+    ('ck', 'optimize', [FP + 'Correctness/OptimizeFuel.agda']),
+    ('ck', 'concretize', [FP + 'Correctness/ConcretizeFuel.agda']),
+    ('ck', 'delay', [FP + 'Correctness/DelayFuel.agda']),
+    ('ck', 'globalize', [FP + 'Correctness/GlobalizeFuel.agda']),
+    ('ck', 'rco', [FP + 'Correctness/RCOFuel.agda']),
+    ('ck', 'lift locals', [FP + 'Correctness/LiftLocalsFuel.agda']),
+    ('ck', 'explicate control', [FP + 'Correctness/ExplicateFuel.agda']),
+    ('ck', 'select instructions', [FP + 'Correctness/SelectFuel.agda']),
+    ('ck', 'composition', [FP + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
-     [O + 'Adequacy/Common.agda', O + 'Adequacy/Soundness.agda', O + 'Adequacy/LogRel.agda',
-      O + 'Adequacy/ISWIM.agda', G + 'Sem/ISWIMContinuous.agda']),
+     [OP + 'Adequacy/Common.agda', OP + 'Adequacy/Soundness.agda', OP + 'Adequacy/LogRel.agda',
+      OP + 'Adequacy/ISWIM.agda', GP + 'Sem/ISWIMContinuous.agda']),
     ('adeq', 'Clos5',
-     [O + 'Adequacy/Clos5Common.agda', O + 'Adequacy/Clos5Soundness.agda', O + 'Adequacy/Clos5LogRel.agda',
-      O + 'Adequacy/Clos5.agda', O + 'Adequacy/Values.agda']),
+     [OP + 'Adequacy/Clos5Common.agda', OP + 'Adequacy/Clos5Soundness.agda', OP + 'Adequacy/Clos5LogRel.agda',
+      OP + 'Adequacy/Clos5.agda', OP + 'Adequacy/Values.agda']),
     ('adeq', 'X86',
-     [O + 'Adequacy/X86Common.agda', O + 'Adequacy/X86Soundness.agda', O + 'Adequacy/X86LogRel.agda',
-      O + 'Adequacy/X86.agda']),
+     [OP + 'Adequacy/X86Common.agda', OP + 'Adequacy/X86Soundness.agda', OP + 'Adequacy/X86LogRel.agda',
+      OP + 'Adequacy/X86.agda']),
     ('adeq', 'well-formedness of compiled programs',
-     [O + 'Adequacy/Clos5WF.agda', O + 'Adequacy/CompileWF.agda', O + 'Adequacy/X86WF.agda',
-      O + 'Adequacy/X86CompileWF.agda']),
-    ('adeq', 'end to end', [O + 'Adequacy/EndToEnd.agda']),
+     [OP + 'Adequacy/Clos5WF.agda', OP + 'Adequacy/CompileWF.agda', OP + 'Adequacy/X86WF.agda',
+      OP + 'Adequacy/X86CompileWF.agda']),
+    ('adeq', 'end to end', [OP + 'Adequacy/EndToEnd.agda']),
 
     ('examples', 'examples',
-     [G + 'Correctness/*Example.agda', 'agda/Compiler/Compile/Examples/*.agda']),
+     [GP + 'Correctness/*Example.agda', PC + 'Compile/Examples/*.agda']),
 
     # not in the totals: a direct backward simulation for delay, without
     # determinism, for comparison (see loc.md)
     ('exp', 'CompCert-style: direct backward simulation for delay — framework',
-     [O + 'Backward.agda']),
+     [OP + 'Backward.agda']),
     ('exp', 'CompCert-style: direct backward simulation for delay — delay',
-     [O + 'Correctness/DelayBackSim.agda']),
+     [OP + 'Correctness/DelayBackSim.agda']),
     # not in the totals: the direct semantics of Imp (Sem/ImpDirect.agda),
     # an alternative to the continuation-passing one, and lift locals and
     # explicate control proved against it.  They also use Sem/Imp.agda,
     # LiftLocalsCommon and ExplicateCommon, counted in the main rows.
-    ('exp', 'denotational: direct Imp — semantics', [G + 'Sem/ImpDirect.agda']),
-    ('exp', 'denotational: direct Imp — lift locals', [G + 'Correctness/LiftLocalsCorrect.agda']),
+    ('exp', 'denotational: direct Imp — semantics', [GP + 'Sem/ImpDirect.agda']),
+    ('exp', 'denotational: direct Imp — lift locals', [GP + 'Correctness/LiftLocalsCorrect.agda']),
     ('exp', 'denotational: direct Imp — explicate control',
-     [G + 'Correctness/ExplicateCorrect.agda']),
+     [GP + 'Correctness/ExplicateCorrect.agda']),
+
+    # not in the totals: the public theorem statements (see the audit-surface
+    # table)
+    ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
 ]
+
+THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/CompCert.agda',
+            'ck': 'agda/Theorems/CakeML.agda', 'adeq': 'agda/Theorems/Adequacy.agda'}
 
 
 def strip_comments(s):
@@ -196,6 +240,12 @@ def imports(path):
     return out
 
 
+def unit(f):
+    """The unit of a file: agda/X.agda for both agda/X.agda and its proof half
+    agda/proof/X.agda."""
+    return 'agda/' + f[len('agda/proof/'):] if f.startswith('agda/proof/') else f
+
+
 def reachable(roots, graph):
     seen, todo = set(), list(roots)
     while todo:
@@ -204,6 +254,10 @@ def reachable(roots, graph):
             seen.add(f)
             todo.extend(graph[f])
     return seen
+
+
+def modname(u):
+    return u[len("agda/"):-len(".agda")].replace("/", ".")
 
 
 SIDES = ('den', 'op', 'ck')
@@ -232,15 +286,30 @@ def main():
     if missing:
         sys.exit('not in any group:\n  ' + '\n  '.join(missing))
 
-    graph = {f: imports(f) for f in every}
-    own = {s: {f for f, (side, _) in seen.items() if side == s}
+    # units: the two halves of a split module count as one module
+    files_of_unit = {}
+    for f in every:
+        files_of_unit.setdefault(unit(f), []).append(f)
+    group_of = {}
+    for u, fs in files_of_unit.items():
+        gs = {seen[f] for f in fs}
+        if len(gs) > 1:
+            sys.exit(f'the halves of {u} are in different groups: {sorted(gs)}')
+        group_of[u] = gs.pop()
+    units = set(files_of_unit)
+
+    def ulines(u):
+        return sum(code_lines(f) for f in files_of_unit[u])
+
+    graph = {u: {unit(g) for f in files_of_unit[u] for g in imports(f)} - {u} for u in units}
+    own = {s: {u for u, (side, _) in group_of.items() if side == s}
            for s in SIDES + ('adeq',)}
-    exp = {f for f, (side, _) in seen.items() if side == 'exp'}
-    infra = {f for f, (side, _) in seen.items() if side == 'infra'}
+    exp = {u for u, (side, _) in group_of.items() if side == 'exp'}
+    infra = {u for u, (side, _) in group_of.items() if side == 'infra'}
     reach = {s: reachable(own[s], graph) for s in own}
 
     # Infrastructure is language independent: it imports only infrastructure.
-    bad = sorted(f for f in reachable(infra, graph) - infra)
+    bad = sorted(u for u in reachable(infra, graph) - infra)
     if bad:
         sys.exit('infrastructure imports modules that are not infrastructure:\n  '
                  + '\n  '.join(bad))
@@ -257,7 +326,25 @@ def main():
         if bad:
             sys.exit(f'{NAMES[s]} imports experiment modules:\n  ' + '\n  '.join(bad))
 
-    shared = {f for f, (side, _) in seen.items() if side == 'shared'}
+    # The audit surface: every module outside agda/proof/, reached from the
+    # theorem files through modules outside agda/proof/, and importing none
+    # of agda/proof/ (but the theorem files, which cite the proofs).
+    fgraph = {f: imports(f) for f in every}
+    thm = set(THEOREMS.values())
+    if thm != {f for f, (side, _) in seen.items() if side == 'thm'}:
+        sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
+    surface = {f for f in every if not f.startswith('agda/proof/')}
+    sgraph = {f: {g for g in fgraph[f] if g in surface} for f in surface}
+    for f in sorted(surface - thm):
+        bad = sorted(g for g in fgraph[f] if g.startswith('agda/proof/'))
+        if bad:
+            sys.exit(f'{f}, on the audit surface, imports proof modules:\n  ' + '\n  '.join(bad))
+    unreached = sorted(surface - reachable(thm, sgraph))
+    if unreached:
+        sys.exit('outside agda/proof/ but not reached from the theorem files:\n  '
+                 + '\n  '.join(unreached))
+
+    shared = {u for u, (side, _) in group_of.items() if side == 'shared'}
     by_all = shared & reach['den'] & reach['op'] & reach['ck']
     extra = {s: sorted((shared & reach[s]) - by_all) for s in SIDES}
     # Adequacy is an add-on to the denotational proof, so shared modules that
@@ -281,24 +368,25 @@ def main():
         print(f'| {r} | ' + ' | '.join(cells) + ' |')
     cells = []
     for side in SIDES:
-        n = sum(code_lines(f) for f in extra[side])
+        n = sum(ulines(u) for u in extra[side])
         total[side] += n
         cells.append(str(n) if extra[side] else '—')
     print(f'| {EXTRA} | ' + ' | '.join(cells) + ' |')
     print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in SIDES) + ' |')
     print()
-    def lines(fs):
-        return sum(code_lines(f) for f in fs)
+
+    def lines(us):
+        return sum(ulines(u) for u in us)
     print('| language-independent infrastructure (not in the totals) | lines | '
           + ' | '.join(f'used by {NAMES[s]}' for s in SIDES) + ' |')
     print('|---|---:|' + '---:|' * len(SIDES))
     itotal = {s: 0 for s in SIDES}
     for side, name, _ in GROUPS:
         if side == 'infra':
-            fs = files_of[(side, name)]
+            us = {unit(f) for f in files_of[(side, name)]}
             cells = []
             for s in SIDES:
-                n = lines(f for f in fs if f in reach[s])
+                n = lines(u for u in us if u in reach[s])
                 itotal[s] += n
                 cells.append(str(n) if n else '—')
             print(f'| {name} | {counts[(side, name)]} | ' + ' | '.join(cells) + ' |')
@@ -315,7 +403,7 @@ def main():
         if side == 'adeq':
             adeq += counts[(side, name)]
             print(f'| {name} | {counts[(side, name)]} |')
-    n = sum(code_lines(f) for f in extra['adeq'])
+    n = sum(ulines(u) for u in extra['adeq'])
     adeq += n
     print(f'| {EXTRA}, nor by the denotational one | {n if extra["adeq"] else "—"} |')
     print(f'| **total** | **{adeq}** |')
@@ -327,22 +415,67 @@ def main():
             print(f'| {name} | {counts[(side, name)]} |')
     print()
 
-    def mods(fs):
-        return ', '.join(f'`{f[len("agda/"):-len(".agda")].replace("/", ".")}` ({code_lines(f)})'
-                         for f in fs) or 'none'
+    # The audit surface of each style: the modules outside agda/proof/ that
+    # its theorem file reaches, by kind.
+    def kind(f):
+        side, name = seen[f]
+        if side == 'thm':
+            return 'statements'
+        if side == 'shared' or (side == 'infra' and name in (
+                'abstract binding trees', 'syntax lemmas (renaming, scoping, uses), list lookups',
+                'base types, logical equivalence')):
+            return 'shared'
+        return 'semantics'
+    sreach = {s: reachable({THEOREMS[s]}, sgraph) for s in THEOREMS}
+    ALL = ('den', 'op', 'ck', 'adeq')
+    def flines(fs):
+        return sum(code_lines(f) for f in fs)
+    sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in ALL}
+    shared_all = set().union(*sh.values())
+    print('| audit surface (not in the totals) | lines | '
+          + ' | '.join(f'read for {NAMES[s]}' for s in ALL) + ' |')
+    print('|---|---:|' + '---:|' * len(ALL))
+    print(f'| languages, compiler passes, syntax, base types (shared) | {flines(shared_all)} | '
+          + ' | '.join(str(flines(sh[s])) for s in ALL) + ' |')
+    SEMS = {'den': 'graph model: domain, operators, semantics of each language',
+            'op': 'small-step machines, transition systems',
+            'ck': 'clocked interpreters, results'}
+    sem_files = {s: {f for f in sreach[s] if kind(f) == 'semantics'} for s in ALL}
+    for s in SIDES:
+        fs = sem_files[s]
+        print(f'| {NAMES[s]}: {SEMS[s]} | {flines(fs)} | '
+              + ' | '.join(str(flines(sem_files[t] & fs)) if sem_files[t] & fs else '—' for t in ALL) + ' |')
+    for s in ALL:
+        print(f'| {NAMES[s]}: theorem statements | {code_lines(THEOREMS[s])} | '
+              + ' | '.join(str(code_lines(THEOREMS[s])) if t == s else '—' for t in ALL) + ' |')
+    tot = {s: flines(sreach[s] - (thm - {THEOREMS[s]})) for s in ALL}
+    alls = surface
+    print(f'| **total** | **{flines(alls)}** | ' + ' | '.join(f'**{tot[s]}**' for s in ALL) + ' |')
+    print()
+    print(f'The adequacy statements also use ρ₀ from the denotational ones '
+          f'(Theorems/Denotational.agda), not counted in its column.')
+    print()
+
+    def mods(us):
+        return ', '.join(f'`{modname(u)}` ({ulines(u)})' for u in us) or 'none'
+
+    def split_mark(u):
+        return ' (+ proof/)' if len(files_of_unit[u]) > 1 or not os.path.exists(u) else ''
     print('| shared module | lines | used by |')
     print('|---|---:|---|')
-    for f in sorted(shared):
-        users = [NAMES[s] for s in SIDES + ('adeq',) if f in reach[s]]
-        tag = 'all three proofs' if f in by_all else (', '.join(users) or 'no proof')
-        print(f'| `{f[len("agda/"):-len(".agda")].replace("/", ".")}` | {code_lines(f)} | {tag} |')
+    for u in sorted(shared):
+        users = [NAMES[s] for s in SIDES + ('adeq',) if u in reach[s]]
+        tag = 'all three proofs' if u in by_all else (', '.join(users) or 'no proof')
+        name = ('proof.' if not os.path.exists(u) else '') + modname(u)
+        print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | {tag} |')
     print()
-    nall = sum(code_lines(f) for f in by_all)
+    nall = sum(ulines(u) for u in by_all)
     print('| infrastructure module | lines | used by |')
     print('|---|---:|---|')
-    for f in sorted(infra):
-        users = [NAMES[s] for s in SIDES + ('adeq',) if f in reach[s]]
-        print(f'| `{f[len("agda/"):-len(".agda")].replace("/", ".")}` | {code_lines(f)} | '
+    for u in sorted(infra):
+        users = [NAMES[s] for s in SIDES + ('adeq',) if u in reach[s]]
+        name = ('proof.' if not os.path.exists(u) else '') + modname(u)
+        print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | '
               f'{", ".join(users) or "no proof"} |')
     print()
     print(f'Shared by all three proofs, not counted: {len(by_all)} modules, {nall} lines.')
@@ -351,6 +484,8 @@ def main():
     if unused:
         print(f'Shared but used by no proof: {mods(unused)}.')
     print(f"Examples, not counted: {counts[('examples', 'examples')]} lines.")
+    print(f"Module (+ proof/): the definitions are on the audit surface, the lemmas "
+          f"in its proof/ half; the lines are those of both.")
 
 
 if __name__ == '__main__':
