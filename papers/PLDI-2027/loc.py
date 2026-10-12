@@ -119,6 +119,7 @@ GROUPS = [
     ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
     ('ck', 'lift locals', [F + 'Correctness/LiftLocalsFuel.agda']),
     ('ck', 'explicate control', [F + 'Correctness/ExplicateFuel.agda']),
+    ('ck', 'select instructions', [F + 'Correctness/SelectFuel.agda']),
     ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
@@ -260,7 +261,7 @@ def main():
 
     rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
-            'composition']
+            'select instructions', 'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
     print('|---|---:|---:|---:|')
