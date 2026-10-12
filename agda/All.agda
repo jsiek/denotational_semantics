@@ -35,6 +35,7 @@ import Compiler.Lang.Scope
 import Compiler.Lang.ScopeRename
 import Compiler.Lang.ListUtil
 import Compiler.Lang.Mon
+import Compiler.Lang.Imp
 
 {- the passes -}
 import Compiler.Compile.Enclose
@@ -43,6 +44,7 @@ import Compiler.Compile.Concretize
 import Compiler.Compile.Delay
 import Compiler.Compile.Globalize
 import Compiler.Compile.RCO
+import Compiler.Compile.LiftLocals
 import Compiler.Compile.Pipeline
 
 {- syntactic facts about the passes, used by both operational styles -}
@@ -93,6 +95,7 @@ import Compiler.Model.Graph.Correctness.EncloseExample
 import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.CompilerExample
 import Compiler.Compile.Examples.RCOExample
+import Compiler.Compile.Examples.LiftLocalsExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph
