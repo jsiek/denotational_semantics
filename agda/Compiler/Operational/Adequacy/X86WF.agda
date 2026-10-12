@@ -23,7 +23,7 @@
 module Compiler.Operational.Adequacy.X86WF where
 
 open import SetsAsPredicates
-open import GraphModel.Domain using (Value; Con)
+open import GraphModel.Domain using (Con)
 open import Compiler.Lang.X86
 open import Compiler.Model.Graph.Sem.X86 using (table)
 

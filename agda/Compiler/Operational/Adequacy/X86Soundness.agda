@@ -30,15 +30,14 @@
 module Compiler.Operational.Adequacy.X86Soundness where
 
 open import Primitives using (Int)
-open import Compiler.Lang.Prim using (int; bool; δ; sub; eq)
+open import Compiler.Lang.Prim using (bool; δ; sub; eq)
 open import SetsAsPredicates
-open import NewDOpSig using (Results; results-rel-pres)
+open import NewDOpSig using (results-rel-pres)
 open import GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con⇒≈; ≈-single)
+  using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con⇒≈; ≈-single)
   renaming (const to dconst)
 open import GraphModel.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr; ⋆-mono; pair-mono; car-mono; cdr-mono; 𝒯-mono;
-         proj-mono; 𝒞-mono; ■)
+  using (⋆; 𝒯; nthD; inl; inr; Λ; ⋆-mono; pair-mono; car-mono; cdr-mono; 𝒯-mono; proj-mono; 𝒞-mono; ■)
   renaming (proj to dproj; pair to dpair)
 open import Compiler.Model.Graph.Prim using (primD; primD-mono) renaming (out to dout)
 open import Compiler.Lang.X86
@@ -47,12 +46,10 @@ open import Compiler.Model.Graph.Sem.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Terminates; Next; next; stop)
-open import ListUtil using (_‼_; proj)
+open import Compiler.Operational.Smallstep using (Terminates; next; stop)
+open import ListUtil using (replicate-‼-just; _‼_; proj)
 open import Compiler.Operational.Machine.X86
-  using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step;
-         block-at; global; sem; get-field; build; is-inl; cmp; truth; bit; _[_]≔_; zeros; arg; args;
-         test; upd; goto; callq?; back; halt?; regs)
+  using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; sem; get-field; build; is-inl; cmp; truth; bit; _[_]≔_; zeros; arg; args; test; goto; callq?; regs)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
 import Compiler.Operational.Machine.X86 as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; δ?-inv)
@@ -64,23 +61,52 @@ import Compiler.Operational.Adequacy.X86Common as Common
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.Integer using (0ℤ)
+open import Data.Integer using ()
 open import Data.List using (List; []; _∷_; _++_; [_]; length; map; reverse; replicate)
 open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻; ∈-map⁺; ∈-map⁻)
-open import Data.List.Properties using (++-assoc; length-map)
+open import Data.List.Properties using (++-assoc; length-map; length-replicate)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; Pointwise-length)
 open import Data.Maybe using (Maybe; just; nothing; _>>=_) renaming (map to mmap)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_; _<?_; _⊔_; _∸_; _+_; z≤n; s≤s)
-open import Data.Nat.Properties using (≤-refl)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; _<?_; _⊔_; _∸_; _+_)
+open import Data.Nat.Properties using ()
+open import Data.Product using (Σ-syntax; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (Dec; yes; no)
+
+{- Registers ---------------------------------------------------------------------}
+
+_≟R_ : (g g' : Reg) → Dec (g ≡ g')
+rax ≟R rax = yes refl
+rax ≟R rdi = no λ ()
+rax ≟R rsi = no λ ()
+rdi ≟R rax = no λ ()
+rdi ≟R rdi = yes refl
+rdi ≟R rsi = no λ ()
+rsi ≟R rax = no λ ()
+rsi ≟R rdi = no λ ()
+rsi ≟R rsi = yes refl
+
+≔-here : ∀ (ρ : SRegs) g D → (ρ [ g ≔ D ]) g ≡ D
+≔-here ρ rax D = refl
+≔-here ρ rdi D = refl
+≔-here ρ rsi D = refl
+
+≔-other : ∀ (ρ : SRegs) g D g' → g' ≢ g → (ρ [ g ≔ D ]) g' ≡ ρ g'
+≔-other ρ rax D rax ne = ⊥-elim (ne refl)
+≔-other ρ rax D rdi ne = refl
+≔-other ρ rax D rsi ne = refl
+≔-other ρ rdi D rax ne = refl
+≔-other ρ rdi D rdi ne = ⊥-elim (ne refl)
+≔-other ρ rdi D rsi ne = refl
+≔-other ρ rsi D rax ne = refl
+≔-other ρ rsi D rdi ne = refl
+≔-other ρ rsi D rsi ne = ⊥-elim (ne refl)
 
 {- Monotonicity of the semantics ------------------------------------------------------}
 
@@ -136,15 +162,9 @@ module Mono {T T' : Table} {L : ℕ → Set} (TT : ∀ k → L k → T k ⊆ T' 
   ... | no _ = s y
 
   ≔-le : ∀ {ρ ρ' : SRegs} {D D'} g → D ⊆ D' → (∀ g → ρ g ⊆ ρ' g) → ∀ g' → (ρ [ g ≔ D ]) g' ⊆ (ρ' [ g ≔ D' ]) g'
-  ≔-le rax D⊆ r rax = D⊆
-  ≔-le rax D⊆ r rdi = r rdi
-  ≔-le rax D⊆ r rsi = r rsi
-  ≔-le rdi D⊆ r rax = r rax
-  ≔-le rdi D⊆ r rdi = D⊆
-  ≔-le rdi D⊆ r rsi = r rsi
-  ≔-le rsi D⊆ r rax = r rax
-  ≔-le rsi D⊆ r rdi = r rdi
-  ≔-le rsi D⊆ r rsi = D⊆
+  ≔-le {ρ} {ρ'} {D} {D'} g D⊆ r g' with g' ≟R g
+  ... | yes refl rewrite ≔-here ρ g D | ≔-here ρ' g D' = D⊆
+  ... | no ne rewrite ≔-other ρ g D g' ne | ≔-other ρ' g D' g' ne = r g'
 
   checked-mono : ∀ x {D D'} → D ⊆ D' → checked n x D ⊆ checked n x D'
   checked-mono x D⊆ with x <? n
@@ -325,17 +345,6 @@ tup-split (D ∷ Ds) V ⟨ ⟨ w , w∈ ⟩ , ne ⟩ V⊆
 
 {- Locations ---------------------------------------------------------------------}
 
-_≟R_ : (g g' : Reg) → Dec (g ≡ g')
-rax ≟R rax = yes refl
-rax ≟R rdi = no λ ()
-rax ≟R rsi = no λ ()
-rdi ≟R rax = no λ ()
-rdi ≟R rdi = yes refl
-rdi ≟R rsi = no λ ()
-rsi ≟R rax = no λ ()
-rsi ≟R rdi = no λ ()
-rsi ≟R rsi = yes refl
-
 _≟L_ : (l l' : Loc) → Dec (l ≡ l')
 var x ≟L var y with x ≟ y
 ... | yes refl = yes refl
@@ -362,22 +371,6 @@ reg g ≟L var x = no λ ()
 ↦ₘ-here ρ rax m = refl
 ↦ₘ-here ρ rdi m = refl
 ↦ₘ-here ρ rsi m = refl
-
-≔-here : ∀ (ρ : SRegs) g D → (ρ [ g ≔ D ]) g ≡ D
-≔-here ρ rax D = refl
-≔-here ρ rdi D = refl
-≔-here ρ rsi D = refl
-
-≔-other : ∀ (ρ : SRegs) g D g' → g' ≢ g → (ρ [ g ≔ D ]) g' ≡ ρ g'
-≔-other ρ rax D rax ne = ⊥-elim (ne refl)
-≔-other ρ rax D rdi ne = refl
-≔-other ρ rax D rsi ne = refl
-≔-other ρ rdi D rax ne = refl
-≔-other ρ rdi D rdi ne = ⊥-elim (ne refl)
-≔-other ρ rdi D rsi ne = refl
-≔-other ρ rsi D rax ne = refl
-≔-other ρ rsi D rdi ne = refl
-≔-other ρ rsi D rsi ne = ⊥-elim (ne refl)
 
 {- what a write of v to d does in the machine -}
 record Put (d : Loc) (v : Val) (φ : Frame) (ρ : MRegs) (φ' : Frame) (ρ' : MRegs) : Set where
@@ -705,38 +698,24 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
   build-ok inrₛ (u ∷ []) refl V V⊆ with inr-split V V⊆
   ... | ⟨ P⊆ , V⊆' ⟩ = ⟨ pick rgt V ∷ [] , ⟨ P⊆ ∷ [] , (λ { (a ∷ []) (pa ∷ []) x x∈ → inr-⊆ pa x (V⊆' x x∈) }) ⟩ ⟩
 
+  {- V, each element wrapped by f, is in Y -}
+  wrap : ∀ (f : Value → Value) V {X Y : 𝒫 Value} → (∀ x → x ∈ X → f x ∈ Y) → mem V ⊆ X → mem (map f V) ⊆ Y
+  wrap f V {Y = Y} h V⊆ y y∈ = G (∈-map⁻ f y∈)
+    where
+    G : ∀ {y} → Σ[ x ∈ Value ] x ∈ mem V × y ≡ f x → y ∈ Y
+    G ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = h x (V⊆ x x∈)
+
   {- the operand of load fl, approximated by G, takes enough of the field -}
   field-ok : ∀ fl u {v} → get-field fl u ≡ just v → ∀ V → mem V ⊆ 𝒱 v
     → Σ[ G ∈ List Value ] mem G ⊆ 𝒱 u × mem V ⊆ field′ fl (mem G)
   field-ok fstₛ (pair v w) refl V V⊆ =
-    ⟨ map (λ p → ⦅ p , e₀ ⦆) V
-    , ⟨ (λ x x∈ → G x (∈-map⁻ _ x∈)) , (λ p p∈ → ⟨ e₀ , ∈-map⁺ (λ p → ⦅ p , e₀ ⦆) p∈ ⟩) ⟩ ⟩
-    where
-    e₀ = proj₁ (𝒱-nonempty w)
-    G : ∀ x → Σ[ p ∈ Value ] p ∈ mem V × x ≡ ⦅ p , e₀ ⦆ → x ∈ 𝒱 (pair v w)
-    G x ⟨ p , ⟨ p∈ , refl ⟩ ⟩ = ⟨ V⊆ p p∈ , proj₂ (𝒱-nonempty w) ⟩
+    ⟨ _ , ⟨ wrap (λ p → ⦅ p , proj₁ (𝒱-nonempty w) ⦆) V (λ p p∈ → ⟨ p∈ , proj₂ (𝒱-nonempty w) ⟩) V⊆ , (λ p p∈ → ⟨ _ , ∈-map⁺ _ p∈ ⟩) ⟩ ⟩
   field-ok sndₛ (pair v w) refl V V⊆ =
-    ⟨ map (λ q → ⦅ e₀ , q ⦆) V
-    , ⟨ (λ x x∈ → G x (∈-map⁻ _ x∈)) , (λ q q∈ → ⟨ e₀ , ∈-map⁺ (λ q → ⦅ e₀ , q ⦆) q∈ ⟩) ⟩ ⟩
-    where
-    e₀ = proj₁ (𝒱-nonempty v)
-    G : ∀ x → Σ[ q ∈ Value ] q ∈ mem V × x ≡ ⦅ e₀ , q ⦆ → x ∈ 𝒱 (pair v w)
-    G x ⟨ q , ⟨ q∈ , refl ⟩ ⟩ = ⟨ proj₂ (𝒱-nonempty v) , V⊆ q q∈ ⟩
+    ⟨ _ , ⟨ wrap (λ q → ⦅ proj₁ (𝒱-nonempty v) , q ⦆) V (λ q q∈ → ⟨ proj₂ (𝒱-nonempty v) , q∈ ⟩) V⊆ , (λ q q∈ → ⟨ _ , ∈-map⁺ _ q∈ ⟩) ⟩ ⟩
   field-ok (getₛ i) (tup us) e V V⊆ =
-    ⟨ map (tup[ i ]_) V , ⟨ (λ x x∈ → G x (∈-map⁻ _ x∈)) , (λ d d∈ → ∈-map⁺ (tup[ i ]_) d∈) ⟩ ⟩
-    where
-    G : ∀ x → Σ[ d ∈ Value ] d ∈ mem V × x ≡ tup[ i ] d → x ∈ 𝒱 (tup us)
-    G x ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = ⟨ proj-𝒱s i us e d (V⊆ d d∈) , 𝒱s-nonempty us ⟩
-  field-ok payload (T.inl v) refl V V⊆ =
-    ⟨ map left V , ⟨ (λ x x∈ → G x (∈-map⁻ _ x∈)) , (λ d d∈ → inj₁ (∈-map⁺ left d∈)) ⟩ ⟩
-    where
-    G : ∀ x → Σ[ d ∈ Value ] d ∈ mem V × x ≡ left d → x ∈ 𝒱 (T.inl v)
-    G x ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = V⊆ d d∈
-  field-ok payload (T.inr v) refl V V⊆ =
-    ⟨ map right V , ⟨ (λ x x∈ → G x (∈-map⁻ _ x∈)) , (λ d d∈ → inj₂ (∈-map⁺ right d∈)) ⟩ ⟩
-    where
-    G : ∀ x → Σ[ d ∈ Value ] d ∈ mem V × x ≡ right d → x ∈ 𝒱 (T.inr v)
-    G x ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = V⊆ d d∈
+    ⟨ _ , ⟨ wrap (tup[ i ]_) V (λ d d∈ → ⟨ proj-𝒱s i us e d d∈ , 𝒱s-nonempty us ⟩) V⊆ , (λ d d∈ → ∈-map⁺ _ d∈) ⟩ ⟩
+  field-ok payload (T.inl v) refl V V⊆ = ⟨ _ , ⟨ wrap left V (λ _ z → z) V⊆ , (λ d d∈ → inj₁ (∈-map⁺ left d∈)) ⟩ ⟩
+  field-ok payload (T.inr v) refl V V⊆ = ⟨ _ , ⟨ wrap right V (λ _ z → z) V⊆ , (λ d d∈ → inj₂ (∈-map⁺ right d∈)) ⟩ ⟩
 
   mmap-inv : ∀ {A B : Set} (f : A → B) (m : Maybe A) {y} → mmap f m ≡ just y → Σ[ x ∈ A ] m ≡ just x × y ≡ f x
   mmap-inv f (just x) refl = ⟨ x , ⟨ refl , refl ⟩ ⟩
@@ -760,13 +739,9 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
     , ⟨ (λ j j< → trans (cong (λ L → table L j) (trans e (sym (++-assoc xs [ b ] Ns)))) (table-agree (xs ++ [ b ]) Ns j j<))
     , proj₁ (DefsWF-suffix xs (subst DefsWF e wfd)) ⟩ ⟩ ⟩
 
-  zeros-val : ∀ m x {w} → zeros m ‼ x ≡ just w → w ≡ const Int 0ℤ
-  zeros-val (suc m) zero refl = refl
-  zeros-val (suc m) (suc x) e = zeros-val m x e
-
   ap-zeros : ∀ A m x → Ap A (zeros m ‼ x) → mem A ⊆ zerosD x
   ap-zeros A m x ap with zeros m ‼ x in e
-  ... | just w with zeros-val m x e
+  ... | just w with replicate-‼-just m x e
   ...   | refl = ap
   ap-zeros A m x refl | nothing = λ _ ()
 
@@ -879,10 +854,6 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
     ...   | ⟨ B , ⟨ alB , ⟨ E , l⊆ ⟩ ⟩ ⟩ = ⟨ B , ⟨ alB , ⟨ E , (λ { x refl → inj₁ ⟨ _ , ⟨ l⊆ _ (here refl) , refl ⟩ ⟩ }) ⟩ ⟩ ⟩
     h A₀ em al | ⟨ T.inr u , ⟨ ea , refl ⟩ ⟩ with grow a A₀ (right (proj₁ (𝒱-nonempty u)) ∷ []) al ea (λ { _ (here refl) → proj₂ (𝒱-nonempty u) })
     ...   | ⟨ B , ⟨ alB , ⟨ E , r⊆ ⟩ ⟩ ⟩ = ⟨ B , ⟨ alB , ⟨ E , (λ { x refl → inj₂ ⟨ _ , ⟨ r⊆ _ (here refl) , refl ⟩ ⟩ }) ⟩ ⟩ ⟩
-    h A₀ em al | ⟨ code _ , ⟨ ea , () ⟩ ⟩
-    h A₀ em al | ⟨ pair _ _ , ⟨ ea , () ⟩ ⟩
-    h A₀ em al | ⟨ const _ _ , ⟨ ea , () ⟩ ⟩
-    h A₀ em al | ⟨ tup _ , ⟨ ea , () ⟩ ⟩
   step-⊆ (run (alloc sh as d ∷ is) j bs stk f φ ρ) e = put-step d Df {m = args φ ρ [] as (build sh)} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} {f = f} e h
     where
     Df = λ σ ρ' → object T⁺ (length φ) σ ρ' sh as
@@ -1015,7 +986,7 @@ soundness (program ds (body n bs b)) ⟨ wfd , ⟨ cs , con ⟩ ⟩ ⟨ s , ⟨ 
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ with ↠-⊆ ds wfd con (Common.star→↠ ds σ) d d∈
 ... | ⟨ A , ⟨ al , d∈₀ ⟩ ⟩ =
   ⟨ d , ⟨ Mono.body-mono TT n n bs b cs ⟨ (λ x → ap-zeros ds wfd con (A (var x)) n x (al (var x))) , ⟨ r , (λ _ z → z) ⟩ ⟩ d
-            (subst (λ m → d ∈ K ds wfd con (Block.instrs b) (Block.jump b) bs m _ _ ∅) (Common.length-zeros ds n) d∈₀)
+            (subst (λ m → d ∈ K ds wfd con (Block.instrs b) (Block.jump b) bs m _ _ ∅) (length-replicate n) d∈₀)
         , sh ⟩ ⟩
   where
   TT : ∀ k → k < length ds → T⁺ ds wfd con k ⊆ table ds k

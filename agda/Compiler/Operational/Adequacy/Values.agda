@@ -20,18 +20,18 @@
 
 module Compiler.Operational.Adequacy.Values where
 
-open import Primitives using (Base; base-rep; Int)
+open import Primitives using (Int)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import SetsAsPredicates
 open import GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; Con)
+  using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; Con)
   renaming (const to dconst)
 open import GraphModel.Ops using (ℬ; inl; inr; pair-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (pair to dpair)
 open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (Table)
 open import Compiler.Observation
-open import ListUtil using (_‼_; proj; has-length)
+open import ListUtil using (proj; has-length)
 open import Compiler.Operational.Machine.Clos5 using (Val; code; pair; const; tup; obs; obs-list; out)
 import Compiler.Operational.Machine.Clos5 as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Common
@@ -45,7 +45,7 @@ open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (just)
 open import Data.Nat using (ℕ; suc)
-open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)

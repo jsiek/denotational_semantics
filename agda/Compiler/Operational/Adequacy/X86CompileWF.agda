@@ -25,12 +25,11 @@ module Compiler.Operational.Adequacy.X86CompileWF where
 open import SetsAsPredicates
 open import GraphModel.Domain using (Con-⊆)
 open import Compiler.Lang.Clos5 as C5
-  using (AST; Arg; Args; `_; _⦅_⦆; ast; bind; clear; nil; cons; fun-ref; app; lit; pair-op; fst-op; snd-op;
-         tuple; get; inl-op; inr-op; case-op; prim; let-op)
+  using (AST; Arg; Args; `_; _⦅_⦆; ast; bind; clear; nil; cons; fun-ref; app; lit; pair-op; fst-op; snd-op; tuple; get; inl-op; inr-op; case-op; prim; let-op)
 open import Compiler.Lang.Mon as Mo using (Mon; Atom; Atoms; []; _∷_)
-open import Compiler.Lang.Imp as I using (Exp; Simple; simple; assign; case; atm)
+open import Compiler.Lang.Imp as I using (Exp; Simple; simple; assign; case)
 import Compiler.Lang.CFG as G
-open import Compiler.Lang.X86 using (Instr; Block; body; program; movq; loc; reg; rdi; rsi; var)
+open import Compiler.Lang.X86 using (Block; body; program; reg; var)
 import Compiler.Lang.Prim as P
 open import Compiler.Compile.RCO
 open import Compiler.Compile.LiftLocals renaming (lift to liftL)
@@ -55,7 +54,7 @@ open import abt.Sig using (■)
 open import Data.List using (List; []; _∷_; _++_; length; map; replicate)
 open import Data.List.Properties using (length-map)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _+_; _∸_; _⊔_; _<?_; s≤s; z≤n)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _+_; _⊔_; _<?_; s≤s; z≤n)
 open import Data.Nat.Properties
   using (+-suc; +-comm; +-identityʳ; m≤m+n; m≤n+m; ≤-trans; <-≤-trans; +-monoʳ-≤; +-monoˡ-<; m≤m⊔n; m≤n⊔m; ∸-monoʳ-<)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)

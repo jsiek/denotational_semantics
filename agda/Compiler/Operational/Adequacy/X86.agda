@@ -27,7 +27,7 @@ module Compiler.Operational.Adequacy.X86 where
 
 open import Primitives using (base-rep)
 open import SetsAsPredicates
-open import GraphModel.Domain using (Value) renaming (const to dconst)
+open import GraphModel.Domain using () renaming (const to dconst)
 open import Compiler.Lang.X86 using (program; body)
 open import Compiler.Model.Graph.Sem.X86 using (⟦_⟧ₚ)
 open import Compiler.Observation
@@ -40,8 +40,8 @@ open import Compiler.Operational.Adequacy.X86CompileWF using (compile-x86-wf) pu
 import Compiler.Operational.Adequacy.X86Common as C
 import Compiler.Operational.Adequacy.X86LogRel as LR
 
-open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; subst)
+open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (refl; cong; subst)
 
 sound-const : ∀ P → WF P → ∀ {B} {k : base-rep B} → Terminates (sem P) (o-const B k) → dconst k ∈ ⟦ P ⟧ₚ
 sound-const P wf t with soundness P wf t (λ ())

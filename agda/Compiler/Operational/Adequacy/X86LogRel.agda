@@ -27,11 +27,11 @@ open import Compiler.Lang.X86 using (Body)
 module Compiler.Operational.Adequacy.X86LogRel (ds : List Body) where
 
 open import Primitives using (Int)
-open import Compiler.Lang.Prim using (int; bool; δ; sub; eq)
+open import Compiler.Lang.Prim using (δ; sub; eq)
 open import SetsAsPredicates
 open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
-open import GraphModel.Ops using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; car; cdr) renaming (pair to dpair)
+open import GraphModel.Ops using (⋆; ℬ; nthD; inl; inr; Λ) renaming (pair to dpair)
 open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
 open import Compiler.Lang.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
@@ -40,11 +40,10 @@ open import Compiler.Model.Graph.Sem.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Compiler.Observation
-open import Compiler.Operational.Smallstep using (Terminates; next; stop)
-open import ListUtil using (_‼_; proj)
+open import Compiler.Operational.Smallstep using (next)
+open import ListUtil using (_‼_)
 open import Compiler.Operational.Machine.X86
-  using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step;
-         block-at; global; get-field; build; is-inl; cmp; bit; _[_]≔_; zeros; arg; args; halt?; regs; upd; goto; callq?; back; test)
+  using (Val; code; pair; const; tup; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; get-field; build; is-inl; cmp; bit; zeros; arg; args; halt?; regs; upd; goto; callq?; back; test)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
 import Compiler.Operational.Machine.X86 as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Values using (module Rel)
@@ -53,16 +52,17 @@ open import Compiler.Operational.Adequacy.X86Common ds
 open import Compiler.Operational.Adequacy.X86Soundness using (_≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other)
 
 open import Data.Bool using (Bool; true; false)
-open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Integer using (0ℤ)
+open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List.Properties using (++-assoc; ++-identityʳ; unfold-reverse)
+open import Data.List.Properties using (++-assoc; ++-identityʳ; unfold-reverse; length-replicate)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (Maybe; just; nothing; _>>=_)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; _<?_; _⊔_; _∸_; _+_)
-open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; _<?_; _∸_; _+_)
+open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (⊤; tt)
+open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (yes; no)
@@ -385,7 +385,7 @@ module _ {T : Table} (𝕋T : 𝕋 T) where
 
 {- a fresh frame of n slots -}
 zeros-𝔽 : ∀ m → 𝔽 zerosD (zeros m)
-zeros-𝔽 m x x< rewrite zeros-in m x (subst (x <_) (length-zeros m) x<) = ℬ-𝕄 Int _
+zeros-𝔽 m x x< rewrite replicate-‼ m {const Int 0ℤ} x (subst (x <_) (length-replicate m) x<) = ℬ-𝕄 Int _
 
 tab : ∀ Ns xs → ds ≡ xs ++ Ns → DefsWF Ns → 𝕋 (table Ns)
 tab (b ∷ Ns) xs e ⟨ ok , wf ⟩ k d d∈ with k ≟ length Ns
@@ -403,7 +403,7 @@ tab (body m bbs bst ∷ Ns) xs e ⟨ c ∷ cs , wf ⟩ .(length Ns) (X ↦ (Y �
     G rdi d d∈ = ⟨ e₁ , ⟨ refl , 𝕍s-∈ X X𝕍 d∈ ⟩ ⟩
     G rsi d d∈ = ⟨ e₂ , ⟨ refl , 𝕍s-∈ Y Y𝕍 d∈ ⟩ ⟩
   ... | ⟨ v , ⟨ r , rv ⟩ ⟩ =
-    ⟨ m , ⟨ bbs , ⟨ bst , ⟨ trans (cong (λ L → global L (length Ns)) e) (global-suffix xs _ Ns) , ⟨ v , ⟨ r , rv ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+    ⟨ m , ⟨ bbs , ⟨ bst , ⟨ trans (cong (λ L → global L (length Ns)) e) (reverse-‼-suffix xs _ Ns) , ⟨ v , ⟨ r , rv ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
 
 {- Adequacy -----------------------------------------------------------------------}
 
@@ -411,7 +411,7 @@ adequate-main : ∀ {n bs b w} → DefsWF ds → BodyOK (length ds) n (body n bs
   → w ∈ ⟦ program ds (body n bs b) ⟧ₚ
   → Σ[ v ∈ Val ] R (Block.instrs b) (Block.jump b) bs nothing (zeros n) (regs (just (const Int _)) nothing nothing) v × 𝕍 w v
 adequate-main {n} {bs} {b} wf (c ∷ cs) w∈ =
-  adequate (tab ds [] refl wf) (Block.instrs b) (Block.jump b) bs c (blocks-adeq (tab ds [] refl wf) bs cs) (length-zeros n) (zeros-𝔽 n) G (λ _ ()) w∈
+  adequate (tab ds [] refl wf) (Block.instrs b) (Block.jump b) bs c (blocks-adeq (tab ds [] refl wf) bs cs) (length-replicate n) (zeros-𝔽 n) G (λ _ ()) w∈
   where
   G : ℝ (called (zerosD 0)) (regs (just (const Int _)) nothing nothing)
   G rax = ℬ-𝕄 Int _

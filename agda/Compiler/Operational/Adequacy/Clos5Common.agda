@@ -10,7 +10,7 @@
 
 -}
 
-open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse)
+open import Data.List using (List; []; _∷_; _++_; length)
 open import Compiler.Lang.Clos5 using (AST; global)
 
 module Compiler.Operational.Adequacy.Clos5Common (ds : List AST) where
@@ -19,21 +19,21 @@ open import SetsAsPredicates
 open import GraphModel.Domain using (ν)
 open import Compiler.Model.Graph.Sem.Clos5Iswim using (table) renaming (code to codeD)
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (table-ext; table-top)
-open import ListUtil using (_‼_)
+open import ListUtil using (reverse-‼-split)
 open import Compiler.Operational.Machine.Clos5
 open import Compiler.Compile.GlobalizeTable using (_⊑_)
 open import Compiler.Operational.Adequacy.Clos5WF using (DefsWF)
 open import Compiler.Operational.Adequacy.Common using (module Runs)
 
 open import Data.List.Properties
-  using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
+  using ()
 open import Data.Maybe using (just)
-open import Data.Nat using (zero; suc; _<_; _≟_)
+open import Data.Nat using (_<_; _≟_)
 open import Data.Nat.Properties using (n<1+n; ≤-pred; m≤n⇒m<n∨m≡n)
-open import Data.Product using (_×_; Σ-syntax; _,_; proj₂)
+open import Data.Product using (Σ-syntax; _×_; _,_; proj₂)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans)
 open import Relation.Nullary using (yes; no)
 open import Data.Empty using (⊥-elim)
 
@@ -43,25 +43,11 @@ open Runs (step ds) public
 
 {- The table of global definitions ------------------------------------------------}
 
-private
-  ‼-split : ∀ {A : Set} (L : List A) k {B} → L ‼ k ≡ just B
-    → Σ[ a ∈ List A ] Σ[ b ∈ List A ] L ≡ a ++ B ∷ b × length a ≡ k
-  ‼-split (x ∷ L) zero refl = [] , L , refl , refl
-  ‼-split (x ∷ L) (suc k) eq with ‼-split L k eq
-  ... | a , b , refl , refl = x ∷ a , b , refl , refl
-
 {- the definition that the machine finds at k sits on top of the k
    definitions older than it -}
 global-split : ∀ k {B} → global ds k ≡ just B → Σ[ Ns ∈ List AST ] (B ∷ Ns ⊑ ds) × length Ns ≡ k
-global-split k {B} eq with ‼-split (reverse ds) k eq
-... | a , b , e , refl =
-  reverse a , (reverse b
-  , trans (sym (reverse-involutive ds))
-      (trans (cong reverse e)
-        (trans (reverse-++ a (B ∷ b))
-          (trans (cong (_++ reverse a) (unfold-reverse B b))
-                 (++-assoc (reverse b) [ B ] (reverse a))))))
-  , length-reverse a
+global-split k eq with reverse-‼-split ds k eq
+... | xs , Ns , e , len = Ns , (xs , e) , len
 
 DefsWF-⊑ : ∀ {Ns} → Ns ⊑ ds → DefsWF ds → DefsWF Ns
 DefsWF-⊑ (xs , refl) = go xs

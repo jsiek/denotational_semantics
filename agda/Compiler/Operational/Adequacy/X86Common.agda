@@ -7,40 +7,37 @@
 
 -}
 
-open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse; replicate)
+open import Data.List using (List; []; _∷_; _++_; [_]; length)
 open import Compiler.Lang.X86 using (Body)
 
 module Compiler.Operational.Adequacy.X86Common (ds : List Body) where
 
 open import SetsAsPredicates
-open import GraphModel.Domain using (Value; ν)
+open import GraphModel.Domain using (ν)
 open import Compiler.Lang.X86 hiding (Body)
-open import Compiler.Model.Graph.Sem.X86 using (Table; Store; Kont; table; blocks; ⟦_⟧ᵇ)
+open import Compiler.Model.Graph.Sem.X86 using (table; blocks; ⟦_⟧ᵇ)
   renaming (Regs to SRegs; code to codeD)
 open import Compiler.Operational.Machine.X86
 open import Compiler.Operational.Adequacy.Common using (module Runs)
 open import Compiler.Operational.Adequacy.X86WF using (DefsWF)
-open import ListUtil using (_‼_; ‼-≥; ‼-++)
+open import ListUtil using (_‼_)
+open import ListUtil using (‼-just; replicate-‼; reverse-‼-split; reverse-‼-suffix) public
 
-open import Data.Integer using (0ℤ)
-open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Integer using ()
+open import Data.List.Properties using (length-replicate)
+open import Data.Maybe using (Maybe; just)
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_; _∸_; _⊔_; _+_; s≤s; z≤n)
 open import Data.Nat.Properties using (n<1+n; ≤-pred; m≤n⇒m<n∨m≡n; <⇒≢; <-≤-trans; ≤-trans; n≤1+n)
-open import Data.Product using (_×_; Σ-syntax; _,_; proj₂)
+open import Data.Product using (Σ-syntax; _×_; _,_; proj₂)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (tt)
 open import Data.Empty using (⊥-elim)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; trans; cong)
 open import Relation.Nullary using (yes; no)
 
 open Runs (step ds) public
 
 {- Frames ---------------------------------------------------------------------------}
-
-‼-just : ∀ (φ : Frame) x {v} → φ ‼ x ≡ just v → x < length φ
-‼-just (u ∷ φ) zero _ = s≤s z≤n
-‼-just (u ∷ φ) (suc x) e = s≤s (‼-just φ x e)
 
 {- what an assignment to slot x does -}
 record Assigned (φ : Frame) (x : ℕ) (v : Val) (φ' : Frame) : Set where
@@ -70,26 +67,11 @@ record Assigned (φ : Frame) (x : ℕ) (v : Val) (φ' : Frame) : Set where
 ≔-ok (u ∷ φ) (suc x) v (s≤s x<) with ≔-ok φ x v x<
 ... | φ' , e rewrite e = u ∷ φ' , refl
 
-zeros-in : ∀ m x → x < m → zeros m ‼ x ≡ just (const _ 0ℤ)
-zeros-in (suc m) zero _ = refl
-zeros-in (suc m) (suc x) (s≤s x<) = zeros-in m x x<
-
-zeros-out : ∀ m x → m ≤ x → zeros m ‼ x ≡ nothing
-zeros-out m x le = ‼-≥ (zeros m) x (≤-trans (≤-reflexive′ m) le)
-  where
-  ≤-reflexive′ : ∀ m → length (zeros m) ≤ m
-  ≤-reflexive′ zero = z≤n
-  ≤-reflexive′ (suc m) = s≤s (≤-reflexive′ m)
-
-length-zeros : ∀ m → length (zeros m) ≡ m
-length-zeros zero = refl
-length-zeros (suc m) = cong suc (length-zeros m)
-
 {- the frame of a definition -}
 frame-size : ∀ n → length (zeros (2 + (n ∸ 2))) ≡ 2 ⊔ n
 frame-size zero = refl
 frame-size (suc zero) = refl
-frame-size (suc (suc n)) = cong (λ m → suc (suc m)) (length-zeros n)
+frame-size (suc (suc n)) = cong (λ m → suc (suc m)) (length-replicate n)
 
 {- Blocks --------------------------------------------------------------------------}
 
@@ -106,33 +88,11 @@ blocks-inv (c ∷ bs) l d∈ with l ≟ length bs
 
 {- The table of global definitions --------------------------------------------------}
 
-global-suffix : ∀ xs b Ns → global (xs ++ b ∷ Ns) (length Ns) ≡ just b
-global-suffix xs b Ns =
-  trans (cong (_‼ length Ns)
-          (trans (reverse-++ xs (b ∷ Ns))
-            (trans (cong (_++ reverse xs) (unfold-reverse b Ns))
-                   (++-assoc (reverse Ns) [ b ] (reverse xs)))))
-        (trans (cong (λ m → (reverse Ns ++ b ∷ reverse xs) ‼ m) (sym (length-reverse Ns))) (‼-++ (reverse Ns)))
-
-private
-  ‼-split : ∀ {A : Set} (L : List A) k {B} → L ‼ k ≡ just B
-    → Σ[ a ∈ List A ] Σ[ c ∈ List A ] L ≡ a ++ B ∷ c × length a ≡ k
-  ‼-split (x ∷ L) zero refl = [] , L , refl , refl
-  ‼-split (x ∷ L) (suc k) eq with ‼-split L k eq
-  ... | a , c , refl , refl = x ∷ a , c , refl , refl
-
 {- the definition that the machine finds at k sits on top of the k
    definitions older than it -}
 global-split : ∀ k {b} → global ds k ≡ just b → Σ[ xs ∈ List Body ] Σ[ Ns ∈ List Body ] ds ≡ xs ++ b ∷ Ns × length Ns ≡ k
-global-split k {b} eq with ‼-split (reverse ds) k eq
-... | a , c , e , refl =
-  reverse c , reverse a
-  , trans (sym (reverse-involutive ds))
-      (trans (cong reverse e)
-        (trans (reverse-++ a (b ∷ c))
-          (trans (cong (_++ reverse a) (unfold-reverse b c))
-                 (++-assoc (reverse c) [ b ] (reverse a)))))
-  , length-reverse a
+global-split = reverse-‼-split ds
+
 
 table-agree : ∀ xs Ns j → j < length Ns → table (xs ++ Ns) j ≡ table Ns j
 table-agree [] Ns j j< = refl
