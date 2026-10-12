@@ -554,8 +554,9 @@ of the variables in scope, and $n$ is the size of the frame.
   \pass{lift}_{n,\varphi,d}(\Let x = M \In N) &=
     \assign{d}{\pass{lift}_{n,\varphi,d}(M)}{\pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(N)} \\
   \pass{lift}_{n,\varphi,d}(\Case{a}{x}{M}{y}{N}) &=
-    \Casei{\pass{lift}_{n,\varphi,d}(a)}{d}
-      {\pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(M)}{\pass{lift}_{n,\ext{\varphi}{y}{d},d+1}(N)} \\[1ex]
+    \key{case}\;\pass{lift}_{n,\varphi,d}(a)\;\key{of}_{d} \\
+  &\qquad \key{inl} \Rightarrow \pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(M)
+    \mid \key{inr} \Rightarrow \pass{lift}_{n,\ext{\varphi}{y}{d},d+1}(N) \\[1ex]
   \mathit{height}(\Let x = M \In N) &= \max(\mathit{height}(M),\, 1 + \mathit{height}(N)) \\
   \mathit{height}(\Case{a}{x}{M}{y}{N}) &= 1 + \max(\mathit{height}(M), \mathit{height}(N)) \\
   \mathit{height}(M) &= 0 \qquad \text{otherwise} \\[1ex]
