@@ -486,8 +486,8 @@ The heap is abstract: $\key{alloc}$ builds a pair, tuple or injection
 from its operands, and $\key{load}$ takes a field of one. $\key{callq}\;o$
 runs the body of the definition $o$ refers to, with $\%\key{rdi}$ and
 $\%\key{rsi}$ as they are, in a fresh frame, and continues with the
-result in $\%\key{rax}$; registers and the flag are not saved. Blocks
-and jumps are as in CFG.
+result in $\%\key{rax}$; it clobbers $\%\key{rdi}$, $\%\key{rsi}$ and the
+flag. Frames, blocks and jumps are as in CFG.
 \begin{syntax}
   & d &::=& s \mid \%\key{rax} \mid \%\key{rdi} \mid \%\key{rsi} \\
   & o &::=& d \mid c \mid \funref{k} \\
