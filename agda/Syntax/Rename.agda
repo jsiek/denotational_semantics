@@ -8,7 +8,7 @@ open import abt.Var using (Var)
   Renaming the variables of a term. A cleared argument (∁) cannot see the
   variables around it, so renaming leaves it unchanged.
 -}
-module Compiler.Lang.Rename (Op : Set) (sig : Op → List Sig) where
+module Syntax.Rename (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig
   renaming (ABT to AST)

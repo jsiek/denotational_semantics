@@ -14,7 +14,7 @@
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
 open import Compiler.Compile.Enclose using (enclose)
@@ -66,7 +66,7 @@ prog-is-7 =
   ⟨ const 1 ∷ []
   , ⟨ ⟨ const 3 ∷ []
       , ⟨ ⟨ const 7 ∷ []
-          , ⟨ ⟨ ⟨ ⟨ here refl , (λ ()) ⟩ , (λ ()) ⟩ , (λ ()) ⟩
+          , ⟨ ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
             , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
         , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
     , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩

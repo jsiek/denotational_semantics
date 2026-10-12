@@ -46,11 +46,11 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos5
 open import Compiler.Lang.Mon using (Atom; var; lit; ref; atom-rename)
 open import Compiler.Compile.RCO
-open import Compiler.Lang.Rename Op sig
+open import Syntax.Rename Op sig
   using (ext; rename; rename-args; rename-fuse; rename-fuse-args; rename-id; rename-id-args)
-open import Compiler.Lang.Scope Op sig using (WS; WS-args)
+open import Syntax.Scope Op sig using (WS; WS-args)
 open import Compiler.Lang.Prim using (Prim)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
   using (Next; next; stop; Step; Plus; plus; Star; ε; _◅_; plus-star; plus→star)

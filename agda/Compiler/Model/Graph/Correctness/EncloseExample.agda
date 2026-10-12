@@ -14,8 +14,8 @@ open import NewSigUtil
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import Compiler.Lang.ISWIM
 open import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim as S2
@@ -54,7 +54,7 @@ prog-is-7 : const {Nat} 7 ∈ ⟦ prog ⟧ ρ₀
 prog-is-7 =
   ⟨ const 5 ∷ []
   , ⟨ ⟨ const 7 ∷ []
-      , ⟨ ⟨ ⟨ here refl , (λ ()) ⟩ , (λ ()) ⟩
+      , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
         , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
     , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
 

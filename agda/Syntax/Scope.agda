@@ -13,11 +13,11 @@ open import abt.Sig using (Sig)
   in a context of its own binders only. A variable that a well-scoped
   term uses is in its context (ws-uses).
 -}
-module Compiler.Lang.Scope (Op : Set) (sig : Op → List Sig) where
+module Syntax.Scope (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
   renaming (ABT to AST; Arg to Arg; Args to Args)
-open import Compiler.Lang.Uses Op sig using (Uses; UsesArg; UsesArgs)
+open import Syntax.Uses Op sig using (Uses; UsesArg; UsesArgs)
 
 WS : ℕ → AST → Set
 WS-arg : ∀ {b} → ℕ → Arg b → Set

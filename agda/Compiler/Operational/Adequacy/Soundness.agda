@@ -20,20 +20,26 @@ module Compiler.Operational.Adequacy.Soundness where
 open import Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Out; int; bool; δ)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
+open import GraphModel.Domain
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
-  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; primD) renaming (proj to dproj; out to dout)
+open import GraphModel.Ops
+  using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; Λ-consis; ℬ-consis; inl-consis; inr-consis)
+  renaming (proj to dproj)
+open import Compiler.Model.Graph.Prim using (primD) renaming (out to dout)
+open import NewDenotProperties using (Every)
+open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
+open import Relation.Nullary using (yes; no)
+open import Level using (lift; lower)
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon using (ρ₀; Init)
 open import Compiler.Lang.ISWIM
-open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone)
+open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIM-con-env)
 open import Compiler.Model.Graph.Sem.ISWIMContinuous using (body-continuous)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Star; Terminates; next; stop)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Operational.Machine.ISWIM hiding (inl; inr)
 import Compiler.Operational.Machine.ISWIM as T using (inl; inr)
 open import Compiler.Operational.Adequacy.Common
@@ -50,7 +56,7 @@ open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 
 VEnv : Set₁
 VEnv = NewEnv.Env Value
@@ -290,6 +296,59 @@ proj-𝒱s {suc n} zero (v ∷ vs) refl d d∈ | true =
 proj-𝒱s {suc n} zero (v ∷ vs) () d d∈ | false
 proj-𝒱s (suc i) (v ∷ vs) eq d d∈ = proj-𝒱s i vs eq d d∈
 
+{- every value denotes a consistent set, so every environment is consistent -}
+AllCon : List (𝒫 Value) → Set
+AllCon [] = ⊤
+AllCon (D ∷ Ds) = Con D × AllCon Ds
+
+At-con : ∀ {n} (i : Fin n) Ds {d d'} → AllCon Ds → At i Ds d → At i Ds d' → d ~ d'
+At-con {suc n} zero (D ∷ Ds) ⟨ c , _ ⟩ ⟨ _ , d∈ ⟩ ⟨ _ , d'∈ ⟩ = c _ _ d∈ d'∈
+At-con (suc i) (D ∷ Ds) ⟨ _ , cs ⟩ a a' = At-con i Ds cs a a'
+
+At-[] : ∀ {n} (i : Fin n) {d} → At i [] d → ⊥
+At-[] zero ()
+At-[] (suc i) ()
+
+𝒯L-con : ∀ Ds → AllCon Ds → Con (𝒯L Ds)
+𝒯L-con Ds cs ⟨⟩ ⟨⟩ _ _ = tt
+𝒯L-con Ds cs (tup[ i ] d) (tup[ j ] d') ⟨ a , _ ⟩ ⟨ a' , _ ⟩
+    with trans (sym (At-length i Ds d a)) (At-length j Ds d' a')
+... | refl with i fin≟ j
+... | yes refl = ⟨ refl , inj₂ ⟨ refl , At-con i Ds cs a a' ⟩ ⟩
+... | no neq = ⟨ refl , inj₁ neq ⟩
+𝒯L-con [] cs ⟨⟩ (tup[ i ] d) _ ⟨ a , _ ⟩ = ⊥-elim (At-[] i a)
+𝒯L-con [] cs (tup[ i ] d) ⟨⟩ ⟨ a , _ ⟩ _ = ⊥-elim (At-[] i a)
+𝒯L-con (D ∷ Ds) cs ⟨⟩ _ () _
+𝒯L-con (D ∷ Ds) cs (tup[ i ] d) ⟨⟩ _ ()
+𝒯L-con Ds cs (dconst k) v () _
+𝒯L-con Ds cs (V ↦ w) v () _
+𝒯L-con Ds cs ν v () _
+𝒯L-con Ds cs ω v () _
+𝒯L-con Ds cs ⦅ _ , _ ⦆ v () _
+𝒯L-con Ds cs (left _) v () _
+𝒯L-con Ds cs (right _) v () _
+𝒯L-con Ds cs u (dconst k) _ ()
+𝒯L-con Ds cs u (V ↦ w) _ ()
+𝒯L-con Ds cs u ν _ ()
+𝒯L-con Ds cs u ω _ ()
+𝒯L-con Ds cs u ⦅ _ , _ ⦆ _ ()
+𝒯L-con Ds cs u (left _) _ ()
+𝒯L-con Ds cs u (right _) _ ()
+
+𝒱-con : ∀ v → Con (𝒱 v)
+𝒱s-con : ∀ vs → AllCon (𝒱s vs)
+𝓔-con : ∀ γ → Con-env (𝓔 γ)
+𝒱-con (clo N γ) = lower (Λ-consis _ _ ⟨ (λ X X' X~ → lift (ISWIM-con-env N (NewEnv.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
+𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
+𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs)
+𝒱-con (T.inl v) = lower (inl-consis ⟨ 𝒱 v , ptt ⟩ ⟨ 𝒱 v , ptt ⟩ ⟨ lift (𝒱-con v) , ptt ⟩)
+𝒱-con (T.inr v) = lower (inr-consis ⟨ 𝒱 v , ptt ⟩ ⟨ 𝒱 v , ptt ⟩ ⟨ lift (𝒱-con v) , ptt ⟩)
+𝒱s-con [] = tt
+𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
+𝓔-con [] x = Con-⌈⌉ ω
+𝓔-con (v ∷ γ) zero = 𝒱-con v
+𝓔-con (v ∷ γ) (suc x) = 𝓔-con γ x
+
 {- Primitives -------------------------------------------------------------------}
 
 int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ 𝒱 v
@@ -333,7 +392,7 @@ step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ β
   where
   β : ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
   β d d∈ with body-in N γ w d d∈
-  ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ne ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+  ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 step-⊆ (ret w (appR (const B k) κ)) ()
 step-⊆ (ret w (appR (tup vs) κ)) ()
 step-⊆ (ret w (appR (T.inl v) κ)) ()
@@ -354,13 +413,13 @@ step-⊆ (ret (T.inl v) (caseK M N γ κ)) refl = 𝒦-mono κ β
   β : ⟦ M ⟧ (𝓔 (v ∷ γ)) ⊆ _
   β d d∈ with body-in M γ v d d∈
   ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩
+  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₁ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
 step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ β
   where
   β : ⟦ N ⟧ (𝓔 (v ∷ γ)) ⊆ _
   β d d∈ with body-in N γ v d d∈
   ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩
+  ... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = inj₂ ⟨ u , ⟨ U , ⟨ V⊆ , ⟨ d∈′ , Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ ⟩ ⟩ ⟩ ⟩
 step-⊆ (ret (clo N' γ') (caseK M N γ κ)) ()
 step-⊆ (ret (const B k) (caseK M N γ κ)) ()
 step-⊆ (ret (tup vs) (caseK M N γ κ)) ()

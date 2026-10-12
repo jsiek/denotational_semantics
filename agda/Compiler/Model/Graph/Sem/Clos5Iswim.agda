@@ -12,8 +12,9 @@ module Compiler.Model.Graph.Sem.Clos5Iswim where
 
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
 open import abt.Fold2 Op sig using (fold; fold-arg; fold-args)
 open import abt.ScopedTuple using (Tuple)

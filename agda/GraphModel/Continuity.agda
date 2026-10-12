@@ -1,6 +1,6 @@
 {-
 
-  Continuity of the ISWIM graph-model operators.
+  Continuity of the graph-model operators.
 
   Each lemma says that an operator preserves continuity: if the
   denotations of its operands are monotone and continuous at ρ (every
@@ -12,8 +12,8 @@
 
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
 open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
 
 open import Data.Nat using (zero; suc)
@@ -27,7 +27,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
-module Compiler.Model.Graph.Domain.ISWIM.Continuity where
+module GraphModel.Continuity where
 
 open import NewEnv using () renaming (monotone-env to Mono; continuous-env to Cont) public
 
@@ -103,7 +103,7 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
   → (∀ V → V ≢ [] → Cont B (mem V • ρ))
   → Cont (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) ρ
 Λ-cont {B} NE m c ν tt = done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) (approx-init NE) ν tt
-Λ-cont {B} NE m c (V ↦ w) ⟨ w∈ , neV ⟩ with c V neV w w∈
+Λ-cont {B} NE m c (V ↦ w) ⟨ w∈ , neV ⟩ with c V (proj₁ neV) w w∈
 ... | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
   done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) t (V ↦ w) ⟨ m env⊆ w w∈₂ , neV ⟩
   where
@@ -135,14 +135,6 @@ pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩
 ... | ⟨ a , u∈′ ⟩ | ⟨ b , v∈′ ⟩ =
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ u , v ⦆
     ⟨ m₁ (join-l a b) u u∈′ , m₂ (join-r a b) v v∈′ ⟩
-
-primD-cont : ∀ p {E₁ E₂ ρ} → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
-  → Cont (λ ρ → primD p ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-primD-cont p {E₁}{E₂} m₁ m₂ c₁ c₂ v ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩
-    with one E₁ c₁ n∈ | one E₂ c₂ m∈
-... | ⟨ a , n∈′ ⟩ | ⟨ b , m∈′ ⟩ =
-  done (λ ρ → primD p ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) v
-    ⟨ n , ⟨ m , ⟨ m₁ (join-l a b) _ n∈′ , ⟨ m₂ (join-r a b) _ m∈′ , eq ⟩ ⟩ ⟩ ⟩
 
 car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
 car-cont {E} c u ⟨ v , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
@@ -210,23 +202,23 @@ map-right⊆ all d d∈ with ∈-map⁻ right d∈
   → Mono B₁ → (∀ V → V ≢ [] → Cont B₁ (mem V • ρ))
   → Mono B₂ → (∀ V → V ≢ [] → Cont B₂ (mem V • ρ))
   → Cont (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) ρ
-𝒞-cont {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩)
+𝒞-cont {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
     with many L NE mL cL (lmap left (u ∷ U)) (map-left⊆ allL) | c₁ (u ∷ U) (λ ()) w w∈
 ... | ⟨ a , Ls⊆′ ⟩ | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
   done (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) (approx-join a t) w
     (inj₁ ⟨ u , ⟨ U , ⟨ (λ d d∈ → mL (join-l a t) (left d) (Ls⊆′ (left d) (∈-map⁺ left d∈)))
-                     , m₁ env⊆ w w∈₂ ⟩ ⟩ ⟩)
+                     , ⟨ m₁ env⊆ w w∈₂ , c ⟩ ⟩ ⟩ ⟩)
   where
   t = approx-tail (approx ρ₂ f₂ s₂)
   env⊆ : ∀ x → ρ₂ x ⊆ (mem (u ∷ U) • env (approx-join a t)) x
   env⊆ zero = s₂ zero
   env⊆ (suc x) = join-r a t x
-𝒞-cont {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩)
+𝒞-cont {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
     with many L NE mL cL (lmap right (u ∷ U)) (map-right⊆ allR) | c₂ (u ∷ U) (λ ()) w w∈
 ... | ⟨ a , Rs⊆′ ⟩ | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
   done (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) (approx-join a t) w
     (inj₂ ⟨ u , ⟨ U , ⟨ (λ d d∈ → mL (join-l a t) (right d) (Rs⊆′ (right d) (∈-map⁺ right d∈)))
-                     , m₂ env⊆ w w∈₂ ⟩ ⟩ ⟩)
+                     , ⟨ m₂ env⊆ w w∈₂ , c ⟩ ⟩ ⟩ ⟩)
   where
   t = approx-tail (approx ρ₂ f₂ s₂)
   env⊆ : ∀ x → ρ₂ x ⊆ (mem (u ∷ U) • env (approx-join a t)) x

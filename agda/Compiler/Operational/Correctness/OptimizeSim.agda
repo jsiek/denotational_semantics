@@ -37,12 +37,12 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
-open import Compiler.Lang.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
+open import Syntax.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
 import Compiler.Operational.Correctness.EncloseSim as E
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Lang.ListUtil
+open import ListUtil
 import Compiler.Operational.Machine.Clos2 as T
 
 open import Data.Empty using (⊥-elim)
@@ -62,7 +62,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 
-{- Well-scoped terms (Compiler.Lang.Scope) ------------------------------------}
+{- Well-scoped terms (Syntax.Scope) ------------------------------------}
 
 {- the code of a closure with n free variables -}
 ws-body : ∀ n k (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (T.body n a)

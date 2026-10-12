@@ -12,10 +12,10 @@ open import NewEnv using (Env)
   the renamed term, in an environment ρ, means what the original term
   means in the environment that maps x to ρ (r x).
 -}
-module Compiler.Model.Graph.Sem.RenameSem (Op : Set) (sig : Op → List Sig) where
+module RenameSem (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig renaming (ABT to AST)
-open import Compiler.Lang.Rename Op sig
+open import Syntax.Rename Op sig
 open import NewSemantics Op sig
 open Semantics {{...}}
 

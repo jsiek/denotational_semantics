@@ -23,19 +23,33 @@ import abt.GSubst
 import abt.AbstractBindingTree
 import abt.Fold2
 
+{- language-independent infrastructure: lemmas about the syntax of any
+   signature, list lookups, the graph model (values, operators,
+   continuity), and the frameworks of the small-step and clocked styles -}
+import Syntax.Uses
+import Syntax.Rename
+import Syntax.Scope
+import Syntax.ScopeRename
+import ListUtil
+import RenameSem
+import GraphModel.Domain
+import GraphModel.Ops
+import GraphModel.Continuity
+import GraphModel.SemanticsUtil
+import Iff
+import Smallstep
+import Simulation
+import Clocked
+
 {- the languages -}
 import Compiler.Lang.ISWIM
 import Compiler.Lang.Clos2
 import Compiler.Lang.Clos3
 import Compiler.Lang.Clos4
 import Compiler.Lang.Clos5
-import Compiler.Lang.Uses
-import Compiler.Lang.Rename
-import Compiler.Lang.Scope
-import Compiler.Lang.ScopeRename
-import Compiler.Lang.ListUtil
 import Compiler.Lang.Mon
 import Compiler.Lang.Imp
+import Compiler.Lang.CFG
 
 {- the passes -}
 import Compiler.Compile.Enclose
@@ -45,6 +59,7 @@ import Compiler.Compile.Delay
 import Compiler.Compile.Globalize
 import Compiler.Compile.RCO
 import Compiler.Compile.LiftLocals
+import Compiler.Compile.Explicate
 import Compiler.Compile.Pipeline
 
 {- syntactic facts about the passes, used by both operational styles -}
@@ -57,14 +72,12 @@ import Compiler.Compile.PipelineScope
 {- observations and the end-theorem shape, shared by both operational styles -}
 import Compiler.Observation
 
-{- the graph model and the semantics of each language -}
-import Compiler.Model.Graph.Domain.ISWIM.Domain
-import Compiler.Model.Graph.Domain.ISWIM.Ops
-import Compiler.Model.Graph.Domain.ISWIM.Continuity
+{- the graph-model meaning of the primitives, and the semantics of each
+   language -}
+import Compiler.Model.Graph.Prim
 import Compiler.Model.Graph.Sem.ISWIM
 import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos3Iswim
-import Compiler.Model.Graph.Sem.Continuous
 import Compiler.Model.Graph.Sem.ISWIMContinuous
 import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
@@ -72,7 +85,9 @@ import Compiler.Model.Graph.Sem.Clos4IswimContinuous
 import Compiler.Model.Graph.Sem.Clos5Iswim
 import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.Imp
-import Compiler.Model.Graph.Sem.RenameSem
+import Compiler.Model.Graph.Sem.CFG
+import Compiler.Model.Graph.Sem.ImpK
+import Compiler.Model.Graph.Sem.ImpDirect
 
 {- correctness of each pass -}
 import Compiler.Model.Graph.Correctness.EncloseCorrect
@@ -85,7 +100,13 @@ import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserve
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect
 import Compiler.Model.Graph.Correctness.RCOCorrect
+import Compiler.Model.Graph.Correctness.LiftLocalsCommon
+import Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
+import Compiler.Model.Graph.Correctness.ExplicateCommon
+import Compiler.Model.Graph.Correctness.ExplicateCorrectK
+{- the same two passes against the direct semantics of Imp -}
 import Compiler.Model.Graph.Correctness.LiftLocalsCorrect
+import Compiler.Model.Graph.Correctness.ExplicateCorrect
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
@@ -98,13 +119,15 @@ import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.CompilerExample
 import Compiler.Compile.Examples.RCOExample
 import Compiler.Compile.Examples.LiftLocalsExample
+import Compiler.Compile.Examples.ExplicateExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph
    model above: small-step machines and forward simulations.
    --------------------------------------------------------------------------- -}
 
-{- the generic framework: transition systems, forward simulations -}
+{- the framework (transition systems, forward simulations), at this
+   compiler's observations -}
 import Compiler.Operational.Smallstep
 import Compiler.Operational.Simulation
 
@@ -115,6 +138,7 @@ import Compiler.Operational.Machine.Clos3
 import Compiler.Operational.Machine.Clos4
 import Compiler.Operational.Machine.Clos5
 import Compiler.Operational.Machine.Imp
+import Compiler.Operational.Machine.CFG
 
 {- correctness of each pass -}
 import Compiler.Operational.Correctness.EncloseSim
@@ -129,6 +153,8 @@ import Compiler.Operational.Correctness.CompilerSim
 import Compiler.Operational.Correctness.RCOSim
 {- lift locals (monadic Clos5 → Imp), and the compiler into Imp -}
 import Compiler.Operational.Correctness.LiftLocalsSim
+{- explicate control (Imp → CFG), and the compiler into CFG -}
+import Compiler.Operational.Correctness.ExplicateSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
@@ -160,7 +186,8 @@ import Compiler.Operational.Correctness.DelayBackSim
    above (observations, list lookups, scoping, renaming and table lemmas).
    --------------------------------------------------------------------------- -}
 
-{- results, clocks, the end-theorem shape, clock-for-clock correctness -}
+{- results, clocks, the end-theorem shape, clock-for-clock correctness,
+   at this compiler's observations -}
 import Compiler.Functional.Clock
 
 {- the interpreters -}
@@ -170,6 +197,7 @@ import Compiler.Functional.Interp.Clos3
 import Compiler.Functional.Interp.Clos4
 import Compiler.Functional.Interp.Clos5
 import Compiler.Functional.Interp.Imp
+import Compiler.Functional.Interp.CFG
 
 {- correctness of each pass -}
 import Compiler.Functional.Correctness.EncloseFuel
@@ -179,6 +207,7 @@ import Compiler.Functional.Correctness.DelayFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
 import Compiler.Functional.Correctness.RCOFuel
 import Compiler.Functional.Correctness.LiftLocalsFuel
+import Compiler.Functional.Correctness.ExplicateFuel
 
 {- correctness of the whole compiler -}
 import Compiler.Functional.Correctness.CompilerFuel

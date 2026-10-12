@@ -27,7 +27,7 @@
 
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Model.Graph.Correctness.DelayFiniteCommon
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
@@ -100,7 +100,7 @@ record Obs (Q : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     nonempty-obs : V ≢ [] → nonempty D
-    app-obs : ∀ {U W} → Calls V U W → ∀ E → consis (mem U) → Q U E → Q W (D ● E)
+    app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q U E → Q W (D ● E)
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q W (Untag t D)
 
 {- converting the clauses between relations that agree on lists of bounded depth -}
@@ -111,8 +111,8 @@ Obs-map : ∀ {k j Q₁ Q₂ V D} → Bnd (suc k) V → Bnd (suc j) V
 Obs-map bk bj to from o = record
   { const-obs = const-obs
   ; nonempty-obs = nonempty-obs
-  ; app-obs = λ cs E gU rU → to (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
-      (app-obs cs E gU (from (Bnd-Calls-args bj cs) (Bnd-Calls-args bk cs) rU))
+  ; app-obs = λ cs E cE gU rU → to (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
+      (app-obs cs E cE gU (from (Bnd-Calls-args bj cs) (Bnd-Calls-args bk cs) rU))
   ; tag-obs = λ t W W⊆ → to (Bnd-Untag t bk W⊆) (Bnd-Untag t bj W⊆) (tag-obs t W W⊆)
   }
   where open Obs o
@@ -136,7 +136,7 @@ private
   R′-∅ (suc k) {V} V⊆∅ = record
     { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
     ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V⊆∅))
-    ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u v uv∈ → V⊆∅ _ uv∈) cs)
+    ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → V⊆∅ _ uv∈) cs)
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
@@ -145,7 +145,7 @@ private
   R′-data (suc k) {V} V⊆ fl = record
     { const-obs = λ c c∈ → V⊆ _ c∈
     ; nonempty-obs = λ ne → ne-mem ne V⊆
-    ; app-obs = λ cs E _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
+    ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
     ; tag-obs = λ t W W⊆ →
         R′-data k (λ d d∈ → V⊆ _ (W⊆ d d∈)) (λ d d∈ → data-untag t (fl _ (W⊆ d d∈)))
     }
@@ -157,7 +157,7 @@ private
   R′-mono (suc k) D⊆ r = record
     { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
     ; nonempty-obs = λ ne → ⟨ proj₁ (nonempty-obs ne) , D⊆ _ (proj₂ (nonempty-obs ne)) ⟩
-    ; app-obs = λ cs E gU rU → R′-mono k (●-mono-l D⊆) (app-obs cs E gU rU)
+    ; app-obs = λ cs E cE gU rU → R′-mono k (●-mono-l D⊆) (app-obs cs E cE gU rU)
     ; tag-obs = λ t W W⊆ → R′-mono k (λ d → D⊆ (tag t d)) (tag-obs t W W⊆)
     }
     where open Obs r

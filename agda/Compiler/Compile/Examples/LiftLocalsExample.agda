@@ -8,7 +8,7 @@
 open import Primitives using (Int)
 open import Compiler.Lang.Prim using (eq)
 open import Compiler.Lang.Clos5
-open import Compiler.Lang.Imp as Imp using (body; assign; case; atm; var; lit)
+open import Compiler.Lang.Imp as Imp using (body; assign; case; simple; atm; var; lit)
 open import Compiler.Compile.RCO using (rco; rco-mon)
 open import Compiler.Compile.LiftLocals using (lift-body)
 open import Compiler.Compile.Examples.RCOExample using (one; test)
@@ -27,7 +27,7 @@ main = let-op ⦅ one ,, ⟩ test ,, Nil ⦆
    x, t and z get the slots 0, 1 and 2 of a frame of three:
      x := 1; t := (x = 1); case t: z := the payload; inl ⇒ x | inr ⇒ z -}
 main-lift : lift-body 0 (rco-mon main)
-  ≡ body 3 (assign 0 (atm (lit Int (+ 1)))
-             (assign 1 (Imp.prim eq (var 0) (lit Int (+ 1)))
-               (case (var 1) 2 (atm (var 0)) (atm (var 2)))))
+  ≡ body 3 (assign 0 (simple (atm (lit Int (+ 1))))
+             (assign 1 (simple (Imp.prim eq (var 0) (lit Int (+ 1))))
+               (case (var 1) 2 (simple (atm (var 0))) (simple (atm (var 2))))))
 main-lift = refl

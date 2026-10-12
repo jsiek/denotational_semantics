@@ -11,8 +11,9 @@ module Compiler.Model.Graph.Sem.Clos3Iswim where
 open import NewDOpSig
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos3
 
 open import Data.Product
@@ -53,6 +54,21 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos3-mono case-op = 𝒞-mono
 𝕆-Clos3-mono (prim p) = primD-mono p
 
+𝕆-Clos3-consis : 𝕆-consistent _~_ sig 𝕆-Clos3
+𝕆-Clos3-consis (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
+    ⋆-consis ⟨ Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 x Ds , ptt ⟩ ⟩
+            ⟨ Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 x Ds' , ptt ⟩ ⟩
+            ⟨ Λ-consis ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩
+                ⟨ (λ D D' D~ → Λ-consis ⟨ F D , ptt ⟩ ⟨ F' D' , ptt ⟩ ⟨ F~ D D' D~ , ptt ⟩) , ptt ⟩
+            , ⟨ 𝒯-consis x Ds Ds' Ds~ , ptt ⟩ ⟩
+𝕆-Clos3-consis app = ⋆-consis
+𝕆-Clos3-consis (lit B k) = ℬ-consis B k
+𝕆-Clos3-consis (tuple x) = 𝒯-consis x
+𝕆-Clos3-consis (get x) = proj-consis x
+𝕆-Clos3-consis inl-op = inl-consis
+𝕆-Clos3-consis inr-op = inr-consis
+𝕆-Clos3-consis case-op = 𝒞-consis
+𝕆-Clos3-consis (prim p) = primD-consis p
 
 open import NewSemantics Op sig public
 
@@ -62,3 +78,7 @@ instance
                              mono-op = 𝕆-Clos3-mono ;
                              error = ω }
 open Semantics {{...}} public
+
+{- a consistent environment gives a consistent denotation -}
+Clos3-con : ∀ M {ρ} → Con-env ρ → Con (⟦ M ⟧ ρ)
+Clos3-con M = ⟦⟧-pres (Every _~_) 𝕆-Clos3-consis (Con-⌈⌉ ω) M

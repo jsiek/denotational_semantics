@@ -28,7 +28,7 @@ open import Compiler.Lang.Mon
 open import Compiler.Lang.Imp using (Body)
 import Compiler.Lang.Imp as Imp
 open import Compiler.Compile.LiftLocals
-open import Compiler.Lang.ListUtil using (_‼_; ‼-++; ‼-≥)
+open import ListUtil using (_‼_; ‼-++; ‼-≥)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.Clos5 as C
 import Compiler.Functional.Interp.Imp as I
@@ -150,20 +150,20 @@ module _ (ds : List AST) (ms : All Mon ds) where
 
   sim ck n ρ φ (atom a) h ok = here-rel ok (≡→rel (atom≈ a ok))
   sim ck n ρ φ (app (a ∷ b ∷ c ∷ [])) h ok =
-    rel (atom≈ a ok) λ f → rel (atom≈ b ok) λ e → rel (atom≈ c ok) λ w → here-rel ok (call≈ ck f e w)
-  sim ck n ρ φ (pair (a ∷ b ∷ [])) h ok = rel (atom≈ a ok) λ v → rel (atom≈ b ok) λ w → ret (refl , ok)
-  sim ck n ρ φ (fst (a ∷ [])) h ok = rel (atom≈ a ok) λ v → here-rel ok (≡→rel refl)
-  sim ck n ρ φ (snd (a ∷ [])) h ok = rel (atom≈ a ok) λ v → here-rel ok (≡→rel refl)
-  sim ck n ρ φ (tuple as) h ok = rel (atoms≈ as [] ok) λ vs → ret (refl , ok)
-  sim ck n ρ φ (get (a ∷ [])) h ok = rel (atom≈ a ok) λ v → here-rel ok (≡→rel refl)
-  sim ck n ρ φ (inl (a ∷ [])) h ok = rel (atom≈ a ok) λ v → ret (refl , ok)
-  sim ck n ρ φ (inr (a ∷ [])) h ok = rel (atom≈ a ok) λ v → ret (refl , ok)
+    here-rel ok (rel (atom≈ a ok) λ f → rel (atom≈ b ok) λ e → rel (atom≈ c ok) λ w → call≈ ck f e w)
+  sim ck n ρ φ (pair (a ∷ b ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → rel (atom≈ b ok) λ w → ret refl)
+  sim ck n ρ φ (fst (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ≡→rel refl)
+  sim ck n ρ φ (snd (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ≡→rel refl)
+  sim ck n ρ φ (tuple as) h ok = here-rel ok (rel (atoms≈ as [] ok) λ vs → ret refl)
+  sim ck n ρ φ (get (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ≡→rel refl)
+  sim ck n ρ φ (inl (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ret refl)
+  sim ck n ρ φ (inr (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ret refl)
   sim ck n ρ φ (prim (a ∷ b ∷ [])) h ok =
-    rel (atom≈ a ok) λ v → rel (atom≈ b ok) λ w → here-rel ok (≡→rel refl)
+    here-rel ok (rel (atom≈ a ok) λ v → rel (atom≈ b ok) λ w → ≡→rel refl)
   sim ck n ρ φ (case a m₁ m₂) h ok = rel (atom≈ a ok) br
     where
     d = length ρ
-    br : ∀ v → RelResult (Out n ρ) (C.branch ds ck ρ _ _ v) (I.branch ds' ck φ d _ _ v)
+    br : ∀ v → RelResult (Out n ρ) (C.branch ds ck ρ _ _ v) (I.inj? v >>= _)
     br (inl v) = under ck n ρ φ v m₁ (up d (sub d (s≤s (m≤m⊔n _ _)) h)) ok
     br (inr v) = under ck n ρ φ v m₂ (up d (sub d (s≤s (m≤n⊔m _ _)) h)) ok
     br (code k) = wrong

@@ -34,7 +34,7 @@ open import Compiler.Compile.GlobalizeTable
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
 open import Compiler.Operational.Simulation
-open import Compiler.Lang.ListUtil
+open import ListUtil
 import Compiler.Operational.Machine.Clos4 as S
 import Compiler.Operational.Machine.Clos5 as T
 

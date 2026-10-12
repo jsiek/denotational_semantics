@@ -18,12 +18,12 @@ module Compiler.Operational.Adequacy.Common where
 
 open import Primitives using (Base; base-rep; Int)
 open import Compiler.Lang.Prim using (Prim; Out; δ)
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
   using (Value; const; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep
   using (Star; ε; _◅_; next; stop; machine)
-open import Compiler.Lang.ListUtil using (has-length)
+open import ListUtil using (has-length)
 open import Compiler.Operational.Machine.ISWIM
 
 open import Data.Bool using (true; false)

@@ -37,10 +37,11 @@ open import Compiler.Lang.Clos5 using (AST)
 module Compiler.Operational.Adequacy.Clos5LogRel (ds : List AST) where
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD) renaming (out to dout)
+open import GraphModel.Ops using (nthD)
+open import Compiler.Model.Graph.Prim using () renaming (out to dout)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import Primitives using (Int)
 open import Data.Bool using (true; false)
@@ -49,7 +50,7 @@ open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Operational.Machine.Clos5
 open import Compiler.Compile.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
 open import Compiler.Operational.Adequacy.Common using (ShapeOf; ShapeAt; length→has-length)
@@ -291,7 +292,7 @@ adequate (inr-op ⦅ M ,, Nil ⦆) {d = left d} 𝕋T w G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⟨⟩} 𝕋T w G ()
 
 adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , ⟨ wM , ⟨ wN , _ ⟩ ⟩ ⟩ G
-    (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩)
+    (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L 𝕋T wL G (allL u (here refl))
 ... | ⟨ inl a , ⟨ eL , _ ⟩ ⟩
     with adequate M 𝕋T wM (𝔾-ext (u ∷ U) a G
@@ -300,7 +301,7 @@ adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , �
 ... | ⟨ v , ⟨ eM , r ⟩ ⟩ =
   ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eM κ) , r ⟩ ⟩
 adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ wL , ⟨ wM , ⟨ wN , _ ⟩ ⟩ ⟩ G
-    (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩)
+    (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L 𝕋T wL G (allR u (here refl))
 ... | ⟨ inr a , ⟨ eL , _ ⟩ ⟩
     with adequate N 𝕋T wN (𝔾-ext (u ∷ U) a G

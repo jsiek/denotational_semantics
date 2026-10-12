@@ -21,14 +21,14 @@ module Compiler.Functional.Correctness.EncloseFuel where
 
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.ISWIM
-open import Compiler.Lang.Uses Op sig
+open import Syntax.Uses Op sig
 open import Compiler.Compile.Optimize using (bind-n-ast)
 open import Compiler.Compile.Enclose
 open import Compiler.Compile.EncloseScope using (Closed)
 open import Compiler.Observation
 open import Compiler.Lang.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Compiler.Lang.ListUtil using (_‼_; ‼-<; proj-pw)
+open import ListUtil using (_‼_; ‼-<; proj-pw)
 open import Compiler.Functional.Clock
 import Compiler.Functional.Interp.ISWIM as S
 import Compiler.Functional.Interp.Clos2 as T

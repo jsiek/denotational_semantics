@@ -1,4 +1,4 @@
-module Compiler.Model.Graph.Domain.ISWIM.Ops where
+module GraphModel.Ops where
 
 open import Primitives
 open import SetsAsPredicates
@@ -8,7 +8,7 @@ open import abt.GSubst using (_•_) public
 open import NewSigUtil
 open import NewDOpSig
 open import NewDenotProperties
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -26,9 +26,6 @@ open import Relation.Binary.PropositionalEquality
 open import Level using (Level; Lift; lift; lower)
     renaming (zero to lzero; suc to lsuc)
 open import Relation.Nullary using (¬_; Dec; yes; no)
-open import Data.Bool using (true; false)
-open import Data.Integer using (ℤ)
-open import Compiler.Lang.Prim using (Prim; Out; int; bool; δ)
 
 
 {- Denotational Operators -----------------------------------------------------}
@@ -75,24 +72,16 @@ inr : DOp (𝒫 Value) (■ ∷ [])
 inr ⟨ D , _ ⟩ (right v) = v ∈ D
 inr ⟨ D , _ ⟩ _ = False
 
+{- the binders, 𝒞 and Λ, bind only finite, nonempty, consistent sets
+   (V ≈ V), so that no denotation under a consistent environment holds
+   inconsistent elements -}
 𝒞 : DOp (𝒫 Value) (■ ∷ ν ■ ∷ ν ■ ∷ [])
-𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w = Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) 
-          ⊎ (Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)))
-
-{- the value of the result of a primitive: eq returns left ⟨⟩ for true
-   and right ⟨⟩ for false -}
-out : Out → Value
-out (int n) = const {Int} n
-out (bool true) = left ⟨⟩
-out (bool false) = right ⟨⟩
-
-{- a primitive applies to the integers in its operands -}
-primD : Prim → DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-primD p ⟨ D , ⟨ E , _ ⟩ ⟩ v =
-  Σ[ n ∈ ℤ ] Σ[ m ∈ ℤ ] const {Int} n ∈ D × const {Int} m ∈ E × v ≡ out (δ p n m)
+𝒞 ⟨ D , ⟨ E , ⟨ F , _ ⟩ ⟩ ⟩ w =
+    Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → left d ∈ D) × w ∈ E (mem (v ∷ V)) × (v ∷ V) ≈ (v ∷ V)
+  ⊎ Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → right d ∈ D) × w ∈ F (mem (v ∷ V)) × (v ∷ V) ≈ (v ∷ V)
 
 Λ : DOp (𝒫 Value) (ν ■ ∷ [])
-Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (mem V) × V ≢ []
+Λ ⟨ f , _ ⟩ (V ↦ w) = w ∈ f (mem V) × V ≢ [] × V ≈ V
 Λ ⟨ f , _ ⟩ ν = True
 Λ ⟨ f , _ ⟩ d = False
 
@@ -119,10 +108,6 @@ pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , 
   where
   G : pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
   G ⦅ u , v ⦆ ⟨ u∈D , v∈E ⟩ = ⟨ D⊆ u u∈D , E⊆ v v∈E ⟩
-
-primD-mono : ∀ p → monotone (■ ∷ ■ ∷ []) ■ (primD p)
-primD-mono p ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ =
-  lift (λ { v ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , ⟨ E⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ })
 
 car-mono : monotone (■ ∷ []) ■ car
 car-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
@@ -153,12 +138,12 @@ inr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
        ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
+  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ d∈ , c ⟩ ⟩ ⟩ ⟩) = 
     inj₁ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (left d) (V⊆ d z)) 
-         , lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
-  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , d∈ ⟩ ⟩ ⟩) = 
+         , ⟨ lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ , c ⟩ ⟩ ⟩ ⟩
+  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ d∈ , c ⟩ ⟩ ⟩ ⟩) = 
     inj₂ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (right d) (V⊆ d z)) 
-         , lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ ⟩ ⟩ ⟩
+         , ⟨ lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ , c ⟩ ⟩ ⟩ ⟩
 
 nthD-mono : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
   → results-rel-pres _⊆_ (replicate n ■) Ds Es → (i : Fin n) → nthD Ds i ⊆ nthD Es i
@@ -218,19 +203,6 @@ pair-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , 
   G : Every _~_ (pair ⟨ D , ⟨ E , ptt ⟩ ⟩) (pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
   G ⦅ u , v ⦆ ⦅ u' , v' ⦆ ⟨ u∈ , v∈ ⟩ ⟨ u'∈ , v'∈ ⟩ = ⟨ D~ u u' u∈ u'∈ , E~ v v' v∈ v'∈ ⟩
 
-out-~ : ∀ o → out o ~ out o
-out-~ (int n) = ⟨ refl , refl ⟩
-out-~ (bool true) = tt
-out-~ (bool false) = tt
-
-primD-consis : ∀ p → consistent _~_ (■ ∷ ■ ∷ []) ■ (primD p)
-primD-consis p ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩ = lift G
-  where
-  G : Every _~_ (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) (primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
-  G _ _ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ ⟨ n' , ⟨ m' , ⟨ n'∈ , ⟨ m'∈ , refl ⟩ ⟩ ⟩ ⟩
-      with D~ _ _ n∈ n'∈ | E~ _ _ m∈ m'∈
-  ... | ⟨ refl , refl ⟩ | ⟨ refl , refl ⟩ = out-~ (δ p n m)
-
 car-consis : consistent _~_ (■ ∷ []) ■ car
 car-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
@@ -264,16 +236,16 @@ inr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
        ⟨ lift D~ , ⟨ FL~ , ⟨ FR~ , _ ⟩ ⟩ ⟩ = lift G
   where 
   G : Every _~_ (𝒞 ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
-  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ ) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩)
+  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩ ) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     = lower (FL~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (left d) (left d') (V⊆ d d∈) (V⊆' d' d'∈)
-  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩) = 
+  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = 
     ⊥-elim (D~ (left v) (right v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
-  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩) = 
+  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = 
     ⊥-elim (D~ (right v) (left v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
-  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , w∈ ⟩ ⟩ ⟩)
+  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     = lower (FR~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'

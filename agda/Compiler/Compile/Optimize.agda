@@ -20,7 +20,7 @@ module Compiler.Compile.Optimize where
    renumbers these, so the pass carries a renaming of variables.
   -}
   open import Compiler.Lang.Clos2
-  open import Compiler.Lang.Uses Op sig public
+  open import Syntax.Uses Op sig public
   open import Compiler.Compile.Concretize using (unbind-n)
 
   {- the renaming for the body of a binder -}

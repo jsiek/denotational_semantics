@@ -1,17 +1,18 @@
 {-
 
   The ISWIM semantics is continuous: a ContinuousSemantics instance built
-  from the per-operator lemmas in Domain.ISWIM.Continuity (as for Clos3 in
+  from the per-operator lemmas in GraphModel.Continuity (as for Clos3 in
   Clos3IswimContinuous), and its consequence for a function body: an
   element of ⟦ N ⟧ (X • ρ) needs only finitely many elements of X.
 
 -}
 
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Continuity
+open import GraphModel.Domain
+open import GraphModel.Continuity
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.ISWIM
-open import Compiler.Model.Graph.Sem.Continuous Op sig using (args-nth-mono; args-nth-cont)
+open import GraphModel.SemanticsUtil Op sig using (args-nth-mono; args-nth-cont)
 open import Compiler.Model.Graph.Sem.ISWIM
 open import NewEnv using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; extend-nonempty-env)
 

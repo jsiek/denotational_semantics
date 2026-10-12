@@ -24,7 +24,7 @@ module Compiler.Compile.Enclose where
   open import Compiler.Compile.Optimize using (bind-n-ast)
 
   {- one more than the largest variable a term uses, or 0 if it uses none -}
-  open import Compiler.Lang.Uses Source.Op Source.sig using (bound; bound-arg; bound-args)
+  open import Syntax.Uses Source.Op Source.sig using (bound; bound-arg; bound-args)
 
   {- the free variables of a closure: ` (n - 1) , ... , ` 0 -}
   fv-vars : ∀ n → Args' (replicate n ■)

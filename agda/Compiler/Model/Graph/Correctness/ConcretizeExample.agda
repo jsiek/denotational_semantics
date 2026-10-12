@@ -16,7 +16,7 @@
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.Clos2
 open import Compiler.Model.Graph.Sem.Clos2Iswim
 import Compiler.Model.Graph.Sem.Clos4Iswim as S4
@@ -50,11 +50,11 @@ prog = case-op ⦅ inl-op ⦅ lit-nat 7 ,, Nil ⦆
               ,, Nil ⦆
 
 prog-is-7 : const {Nat} 7 ∈ ⟦ prog ⟧ ρ₀
-prog-is-7 = inj₁ ⟨ const 7 , ⟨ [] , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , app∋ ⟩ ⟩ ⟩
+prog-is-7 = inj₁ ⟨ const 7 , ⟨ [] , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , ⟨ app∋ , ≈-single ⟩ ⟩ ⟩ ⟩
   where
   app∋ : const {Nat} 7 ∈ ⟦ app ⦅ const-x ,, lit-nat 5 ,, Nil ⦆ ⟧ (mem (const {Nat} 7 ∷ []) • ρ₀)
   {- the closure applies because its free variable x has a value, 7 -}
-  app∋ = ⟨ const 5 ∷ [] , ⟨ ⟨ (λ { zero → ⟨ const 7 , here refl ⟩ }) , ⟨ here refl , (λ ()) ⟩ ⟩
+  app∋ = ⟨ const 5 ∷ [] , ⟨ ⟨ (λ { zero → ⟨ const 7 , here refl ⟩ }) , ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ ⟩
                           , ⟨ (λ { _ (here refl) → ⟨ refl , refl ⟩ }) , (λ ()) ⟩ ⟩ ⟩
 
 {- after concretize and delay, the program still produces 7 -}

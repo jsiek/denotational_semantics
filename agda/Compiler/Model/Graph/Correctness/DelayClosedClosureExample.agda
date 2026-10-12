@@ -13,7 +13,7 @@
 open import NewSyntaxUtil
 open import SetsAsPredicates
 open import Primitives
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
 open import Compiler.Lang.Clos3
 open import Compiler.Model.Graph.Sem.Clos3Iswim
 import Compiler.Model.Graph.Sem.Clos4Iswim as S4
@@ -44,7 +44,7 @@ id-five-is-5 = ⟨ const 5 ∷ [] , ⟨ clos∋ , ⟨ five⊆ , (λ ()) ⟩ ⟩ 
   where
   {- apply the code to the empty tuple ⟨⟩ of free variables, then to 5 -}
   clos∋ : (const 5 ∷ []) ↦ const 5 ∈ ⟦ id-clos ⟧ ρ₀
-  clos∋ = ⟨ ⟨⟩ ∷ [] , ⟨ ⟨ ⟨ here refl , (λ ()) ⟩ , (λ ()) ⟩
+  clos∋ = ⟨ ⟨⟩ ∷ [] , ⟨ ⟨ ⟨ here refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
                      , ⟨ (λ { _ (here refl) → tt }) , (λ ()) ⟩ ⟩ ⟩
 
   five⊆ : mem (const {Nat} 5 ∷ []) ⊆ ⟦ five ⟧ ρ₀

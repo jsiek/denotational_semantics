@@ -11,8 +11,9 @@ module Compiler.Model.Graph.Sem.Clos4Iswim where
 open import NewDOpSig
 open import SetsAsPredicates
 open import NewDenotProperties
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos4
 
 open import Data.Product
@@ -95,3 +96,7 @@ instance
                                   mono-op = 𝕆-Clos4-mono ;
                                   error = ω }
 open Semantics {{...}} public
+
+{- a consistent environment gives a consistent denotation -}
+Clos4-con : ∀ M {ρ} → Con-env ρ → Con (⟦ M ⟧ ρ)
+Clos4-con M = ⟦⟧-pres (Every _~_) 𝕆-Clos4-consis (Con-⌈⌉ ω) M

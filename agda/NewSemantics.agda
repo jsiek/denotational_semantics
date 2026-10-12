@@ -73,27 +73,33 @@ record ContinuousSemantics {A : Set} : Set₁ where
 open ContinuousSemantics {{...}}
 
 
+{- Preservation of a relation, e.g. ⊆ or consistency ---------------------------}
+
+module _ {A} {{_ : Semantics {A}}} (R : 𝒫 A → 𝒫 A → Set)
+    (R-op : opsig-rel-pres R sig interp-op interp-op) (R-init : R init init) where
+  ⟦⟧-pres : ∀ {ρ ρ′} (M : ABT) → ρ ~ₑ[ R ] ρ′ → R (⟦ M ⟧ ρ) (⟦ M ⟧ ρ′)
+  ⟦⟧-pres-arg : ∀ {b}{ρ ρ′} (arg : Arg b)
+    → ρ ~ₑ[ R ] ρ′ → result-rel-pres R b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
+  ⟦⟧-pres-args : ∀ {bs}{ρ ρ′} (args : Args bs)
+    → ρ ~ₑ[ R ] ρ′ → results-rel-pres R bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
+
+  ⟦⟧-pres (` x) ρR = ρR x
+  ⟦⟧-pres {ρ}{ρ′} (op ⦅ args ⦆) ρR = lower (R-op op (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′) (⟦⟧-pres-args args ρR))
+  ⟦⟧-pres-arg (ast M) ρR = lift (⟦⟧-pres M ρR)
+  ⟦⟧-pres-arg (bind arg) ρR X D XR = ⟦⟧-pres-arg arg (•-~ R ρR XR)
+  ⟦⟧-pres-arg (clear arg) ρR = ⟦⟧-pres-arg arg (λ x → R-init)
+  ⟦⟧-pres-args nil ρR = lift tt
+  ⟦⟧-pres-args (cons arg args) ρR = ⟨ ⟦⟧-pres-arg arg ρR , ⟦⟧-pres-args args ρR ⟩
+
 {- Monotone -------------------------------------------------------------------}
 
 ⟦⟧-monotone : ∀{A} {{_ : Semantics {A}}} {ρ ρ′} (M : ABT)
   →  ρ ⊆ₑ ρ′ →  ⟦ M ⟧ ρ ⊆ ⟦ M ⟧ ρ′
+⟦⟧-monotone = ⟦⟧-pres _⊆_ mono-op (λ d z → z)
+
 ⟦⟧-monotone-arg : ∀{A} {{_ : Semantics {A}}} {b}{ρ ρ′} (arg : Arg b)
   →  ρ ⊆ₑ ρ′ →  result-rel-pres _⊆_ b (⟦ arg ⟧ₐ ρ) (⟦ arg ⟧ₐ ρ′)
-⟦⟧-monotone-args : ∀{A} {{_ : Semantics {A}}} {bs}{ρ ρ′} (args : Args bs)
-  →  ρ ⊆ₑ ρ′ → results-rel-pres _⊆_ bs (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′)
-  
-⟦⟧-monotone {A}{ρ}{ρ′} (` x) ρ<ρ′ = ρ<ρ′ x
-⟦⟧-monotone {A}{ρ}{ρ′} (op ⦅ args ⦆) ρ<ρ′ = lower (mono-op op (⟦ args ⟧₊ ρ) (⟦ args ⟧₊ ρ′) (⟦⟧-monotone-args  args ρ<ρ′))
-
-⟦⟧-monotone-arg {A} {■} (ast M) ρ<ρ′ = lift (⟦⟧-monotone M ρ<ρ′)
-⟦⟧-monotone-arg {A} {ν b}{ρ}{ρ′} (bind arg) ρ<ρ′ X D X⊆D =
-   ⟦⟧-monotone-arg {A}{b}{X • ρ}{D • ρ′} arg (•-~ _⊆_ ρ<ρ′ X⊆D)
-⟦⟧-monotone-arg {A} {∁ b} (clear arg) ρ<ρ′ =
-    ⟦⟧-monotone-arg {A}{b}{λ x → init}{λ x → init} arg λ x d z → z
-
-⟦⟧-monotone-args {A} {bs = []} nil ρ<ρ′ = lift tt
-⟦⟧-monotone-args {A} {bs = b ∷ bs} (cons arg args) ρ<ρ′ =
-  ⟨ ⟦⟧-monotone-arg arg ρ<ρ′ , ⟦⟧-monotone-args args ρ<ρ′ ⟩
+⟦⟧-monotone-arg = ⟦⟧-pres-arg _⊆_ mono-op (λ d z → z)
 
 {- Continuous -----------------------------------------------------------------}
 

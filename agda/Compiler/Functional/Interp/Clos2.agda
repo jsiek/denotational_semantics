@@ -17,7 +17,7 @@ open import NewSigUtil using (ν-n)
 open import NewSyntaxUtil using (_,,_; ⟩_,,_)
 open import Compiler.Lang.Clos2
 open import Compiler.Observation
-open import Compiler.Lang.ListUtil using (_‼_; proj)
+open import ListUtil using (_‼_; proj)
 open import Compiler.Functional.Clock
 
 open import Data.Bool using (true; false)

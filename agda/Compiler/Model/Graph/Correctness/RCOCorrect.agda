@@ -3,15 +3,16 @@
   Correctness of remove complex operands (Clos5 → Clos5,
   Compile/RCO.agda): the pass preserves denotations exactly.
 
-    rco-correct : ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ    (ρ nonempty)
+    rco-correct : ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ    (ρ nonempty, T and ρ consistent)
     rco-program-correct : ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ
 
   The laws behind it:
 
   - let is strict, and otherwise substitutes the meaning of the
     right-hand side for the variable (let-strict, let-β; let-β uses
-    continuity, hence a nonempty environment);
-  - renaming (Sem/RenameSem.agda), for the atoms and the operands that
+    continuity, hence a nonempty environment, and binds a finite part
+    of the right-hand side, hence a consistent one);
+  - renaming (RenameSem.agda), for the atoms and the operands that
     the lets put under more binders;
   - every operator of a construct whose operands rco names is strict
     (a Strict operator below), so binding an operand first by a strict
@@ -24,17 +25,18 @@
 
 open import SetsAsPredicates
 open import NewDOpSig
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
-open import Compiler.Model.Graph.Domain.ISWIM.Ops
+open import GraphModel.Domain
+open import GraphModel.Ops
+open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
-open import Compiler.Lang.Rename Op sig using (rename; rename-args; ext)
+open import Syntax.Rename Op sig using (rename; rename-args; ext)
 open import Compiler.Compile.RCO
   using (rco; rco-args; rco-program; atom?; lift; case-on)
 open import Compiler.Model.Graph.Sem.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ; init)
 open import Compiler.Model.Graph.Sem.Clos5IswimContinuous
-  using (Clos5-Semantics; ⟦⟧[]-monotone; term-continuous)
-import Compiler.Model.Graph.Sem.RenameSem Op sig as RenameSem
+  using (Clos5-Semantics; ⟦⟧[]-monotone; term-continuous; Clos5-con; table-con)
+import RenameSem Op sig as RenameSem
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect
   using (RRs; nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect
@@ -97,9 +99,9 @@ LET M N = let-op ⦅ M ,, ⟩ N ,, Nil ⦆
 let-strict : ∀ T M N ρ w → w ∈ ⟦ LET M N ⟧[ T ] ρ → nonempty (⟦ M ⟧[ T ] ρ)
 let-strict T M N ρ w ⟨ V , ⟨ _ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ = ne-mem V≢[] V⊆
 
-let-β : ∀ T M N ρ → nonempty-env ρ → nonempty (⟦ M ⟧[ T ] ρ)
+let-β : ∀ T M N ρ → nonempty-env ρ → nonempty (⟦ M ⟧[ T ] ρ) → Con (⟦ M ⟧[ T ] ρ)
   → ⟦ LET M N ⟧[ T ] ρ ≃ ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ)
-let-β T M N ρ NE neD = ⟨ G , H ⟩
+let-β T M N ρ NE neD cD = ⟨ G , H ⟩
   where
   G : ⟦ LET M N ⟧[ T ] ρ ⊆ ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ)
   G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧[]-monotone T N ⊆ₑ w w∈
@@ -109,18 +111,19 @@ let-β T M N ρ NE neD = ⟨ G , H ⟩
   H : ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ) ⊆ ⟦ LET M N ⟧[ T ] ρ
   H w w∈ with term-continuous T N _ (extend-nonempty-env NE neD) w w∈
   ... | ⟨ Vs , ⟨ fin , w∈' ⟩ ⟩ =
-    ⟨ Vs 0 , ⟨ ⟨ ⟦⟧[]-monotone T N ⊆ₑ w w∈' , proj₁ (fin 0) ⟩ , ⟨ proj₂ (fin 0) , proj₁ (fin 0) ⟩ ⟩ ⟩
+    ⟨ Vs 0 , ⟨ ⟨ ⟦⟧[]-monotone T N ⊆ₑ w w∈' , ⟨ proj₁ (fin 0) , Con⇒≈ (Vs 0) cD (proj₂ (fin 0)) ⟩ ⟩
+             , ⟨ proj₂ (fin 0) , proj₁ (fin 0) ⟩ ⟩ ⟩
     where ⊆ₑ : ∀ x → mem (Vs x) ⊆ (mem (Vs 0) • ρ) x
           ⊆ₑ zero d d∈ = d∈
           ⊆ₑ (suc x) = proj₂ (fin (suc x))
 
-Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
-Λ-≃ {F} {F'} eq = ⟨ G (λ V ne → proj₁ (eq V ne)) , G (λ V ne → proj₂ (eq V ne)) ⟩
+Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
+Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
   where
-  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → A (mem V) ⊆ B (mem V))
+  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
     → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
   G A⊆ ν tt = tt
-  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V ne w w∈ , ne ⟩
+  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
 
 {- Strict operators ----------------------------------------------------------------}
 
@@ -158,19 +161,20 @@ Denotes T f O ρ = ∀ k ρ' As → Ext k ρ' ρ → ⟦ f k As ⟧[ T ] ρ' ≃
 
 {- The let chain: binding the complex operands first does not change the
    meaning of a strict operator on them -}
-lift-≃ : ∀ T {n} f (Ms : Args (replicate n ■)) (O : Strict n) ρ → nonempty-env ρ
-  → Denotes T f O ρ → ⟦ lift f Ms ⟧[ T ] ρ ≃ op O (⟦ Ms ⟧₊[ T ] ρ)
-lift-≃ T {zero} f Nil O ρ NE den = den 0 ρ Nil (λ x → ≃-refl)
-lift-≃ T {suc n} f (M ,, Ms) O ρ NE den with atom? M
-... | yes _ = lift-≃ T (λ k As → f k (rename (k +_) M ,, As)) Ms (⟦ M ⟧[ T ] ρ ▷ O) ρ NE
+lift-≃ : ∀ T (TC : ∀ k → Con (T k)) {n} f (Ms : Args (replicate n ■)) (O : Strict n) ρ → nonempty-env ρ
+  → Con-env ρ → Denotes T f O ρ → ⟦ lift f Ms ⟧[ T ] ρ ≃ op O (⟦ Ms ⟧₊[ T ] ρ)
+lift-≃ T TC {zero} f Nil O ρ NE C den = den 0 ρ Nil (λ x → ≃-refl)
+lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C den with atom? M
+... | yes _ = lift-≃ T TC (λ k As → f k (rename (k +_) M ,, As)) Ms (⟦ M ⟧[ T ] ρ ▷ O) ρ NE C
   λ k ρ' As e → ≃-trans (den k ρ' _ e) (cong O ⟨ up (rename-≃ T M (k +_) ρ' ρ e) , RRs-refl _ ⟩)
 ... | no _ = strict-≃ (let-strict T M B ρ) (λ w w∈ → proj₁ (strict O _ w w∈)) λ neD →
-  ≃-trans (let-β T M B ρ NE neD)
-  (≃-trans (lift-≃ T f' Ms' (D ▷ O) (D • ρ) (extend-nonempty-env NE neD)
+  ≃-trans (let-β T M B ρ NE neD cD)
+  (≃-trans (lift-≃ T TC f' Ms' (D ▷ O) (D • ρ) (extend-nonempty-env NE neD) (Con-• cD C)
               λ k ρ' As e → ≃-trans (den (suc k) ρ' _ (ext-suc {k} {ρ'} {ρ} {D} e))
                                     (cong O ⟨ up (ext-top {k} {ρ'} {ρ} {D} e) , RRs-refl _ ⟩))
            (cong O ⟨ up ≃-refl , rename-args-≃ T Ms suc (D • ρ) ρ (λ x → ≃-refl) ⟩))
   where D = ⟦ M ⟧[ T ] ρ
+        cD = Clos5-con T TC M C
         f' = λ k As → f (suc k) (` k ,, As)
         Ms' = rename-args suc Ms
         B = lift f' Ms'
@@ -225,86 +229,89 @@ prim-op p = record { op = primD p ; cong = prim-≃ p
 {- case on D, with the branches E and F -}
 case-op′ : (E F : 𝒫 Value → 𝒫 Value) → Strict 1
 case-op′ E F = record { op = λ { ⟨ D , _ ⟩ → 𝒞 ⟨ D , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ }
-  ; cong = λ eq → 𝒞-≃ {F = E} {E} {F} {F} (lower (proj₁ eq)) (λ _ _ → ≃-refl) (λ _ _ → ≃-refl)
+  ; cong = λ eq → 𝒞-≃ {F = E} {E} {F} {F} (lower (proj₁ eq)) (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl)
   ; strict = λ { _ w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , l∈ v (here refl) ⟩ , tt ⟩
                ; _ w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , r∈ v (here refl) ⟩ , tt ⟩ } }
 
 {- The pass preserves denotations ---------------------------------------------}
 
 {- a construct c whose operator is O: its operands, under their lets -}
-rco-op : ∀ T T' {n} (c : Args (replicate n ■) → AST) (O : Strict n) (Ms : Args (replicate n ■)) ρ
-  → nonempty-env ρ → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ op O (⟦ As ⟧₊[ T ] ρ))
+rco-op : ∀ T T' (TC : ∀ k → Con (T k)) {n} (c : Args (replicate n ■) → AST) (O : Strict n)
+  (Ms : Args (replicate n ■)) ρ → nonempty-env ρ → Con-env ρ → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ op O (⟦ As ⟧₊[ T ] ρ))
   → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
   → ⟦ lift (λ _ → c) (rco-args Ms) ⟧[ T ] ρ ≃ ⟦ c Ms ⟧[ T' ] ρ
-rco-op T T' c O Ms ρ NE den IH =
-  ≃-trans (lift-≃ T (λ _ → c) (rco-args Ms) O ρ NE (λ k ρ' As _ → den T ρ' As))
+rco-op T T' TC c O Ms ρ NE C den IH =
+  ≃-trans (lift-≃ T TC (λ _ → c) (rco-args Ms) O ρ NE C (λ k ρ' As _ → den T ρ' As))
           (≃-trans (cong O IH) (≃-sym (den T' ρ Ms)))
 
 {- with the same meanings in the tables T and T' -}
-rco-sem : ∀ T T' → (∀ k → T k ≃ T' k) → ∀ M ρ → nonempty-env ρ
+rco-sem : ∀ T T' → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ M ρ → nonempty-env ρ → Con-env ρ
   → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
-rco-args-sem : ∀ T T' → (∀ k → T k ≃ T' k) → ∀ {n} (Ms : Args (replicate n ■)) ρ → nonempty-env ρ
-  → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
+rco-args-sem : ∀ T T' → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ {n} (Ms : Args (replicate n ■)) ρ
+  → nonempty-env ρ → Con-env ρ → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
 
-rco-sem T T' TT (` x) ρ NE = ≃-refl
-rco-sem T T' TT (fun-ref k ⦅ Nil ⦆) ρ NE = TT k
-rco-sem T T' TT (app ⦅ Ms ⦆) ρ NE = rco-op T T' (app ⦅_⦆) app-op Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (lit B k ⦅ Nil ⦆) ρ NE = ≃-refl
-rco-sem T T' TT (pair-op ⦅ Ms ⦆) ρ NE = rco-op T T' (pair-op ⦅_⦆) pair-op′ Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (fst-op ⦅ Ms ⦆) ρ NE = rco-op T T' (fst-op ⦅_⦆) car-op Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (snd-op ⦅ Ms ⦆) ρ NE = rco-op T T' (snd-op ⦅_⦆) cdr-op Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (tuple n ⦅ Ms ⦆) ρ NE = rco-op T T' (tuple n ⦅_⦆) (tuple-op n) Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (get i ⦅ Ms ⦆) ρ NE = rco-op T T' (get i ⦅_⦆) (get-op i) Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (inl-op ⦅ Ms ⦆) ρ NE = rco-op T T' (inl-op ⦅_⦆) inl-op′ Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (inr-op ⦅ Ms ⦆) ρ NE = rco-op T T' (inr-op ⦅_⦆) inr-op′ Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (prim p ⦅ Ms ⦆) ρ NE = rco-op T T' (prim p ⦅_⦆) (prim-op p) Ms ρ NE (λ _ _ _ → ≃-refl) (rco-args-sem T T' TT Ms ρ NE)
-rco-sem T T' TT (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ NE =
-  ≃-trans (lift-≃ T (case-on (rco M) (rco N)) (rco L ,, Nil) O ρ NE den)
-          (cong O ⟨ up (rco-sem T T' TT L ρ NE) , ptt ⟩)
+rco-sem T T' TC TT (` x) ρ NE C = ≃-refl
+rco-sem T T' TC TT (fun-ref k ⦅ Nil ⦆) ρ NE C = TT k
+rco-sem T T' TC TT (app ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (app ⦅_⦆) app-op Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (lit B k ⦅ Nil ⦆) ρ NE C = ≃-refl
+rco-sem T T' TC TT (pair-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (pair-op ⦅_⦆) pair-op′ Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (fst-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (fst-op ⦅_⦆) car-op Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (snd-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (snd-op ⦅_⦆) cdr-op Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (tuple n ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (tuple n ⦅_⦆) (tuple-op n) Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (get i ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (get i ⦅_⦆) (get-op i) Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (inl-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (inl-op ⦅_⦆) inl-op′ Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (inr-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (inr-op ⦅_⦆) inr-op′ Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (prim p ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (prim p ⦅_⦆) (prim-op p) Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
+rco-sem T T' TC TT (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ NE C =
+  ≃-trans (lift-≃ T TC (case-on (rco M) (rco N)) (rco L ,, Nil) O ρ NE C den)
+          (cong O ⟨ up (rco-sem T T' TC TT L ρ NE C) , ptt ⟩)
   where
   O = case-op′ (λ X → ⟦ M ⟧[ T' ] (X • ρ)) (λ X → ⟦ N ⟧[ T' ] (X • ρ))
-  branch : ∀ k ρ' → Ext k ρ' ρ → ∀ B v V
+  branch : ∀ k ρ' → Ext k ρ' ρ → ∀ B v V → (v ∷ V) ≈ (v ∷ V)
     → ⟦ rename (ext (k +_)) (rco B) ⟧[ T ] (mem (v ∷ V) • ρ') ≃ ⟦ B ⟧[ T' ] (mem (v ∷ V) • ρ)
-  branch k ρ' e B v V =
+  branch k ρ' e B v V c =
     ≃-trans (rename-≃ T (rco B) (ext (k +_)) (mem (v ∷ V) • ρ') (mem (v ∷ V) • ρ)
                λ { zero → ≃-refl ; (suc x) → e x })
-            (rco-sem T T' TT B (mem (v ∷ V) • ρ) (extend-nonempty-env NE ⟨ v , here refl ⟩))
+            (rco-sem T T' TC TT B (mem (v ∷ V) • ρ) (extend-nonempty-env NE ⟨ v , here refl ⟩) (Con-• (≈⇒Con c) C))
   den : Denotes T (case-on (rco M) (rco N)) O ρ
   den k ρ' (A ,, Nil) e =
     𝒞-≃ {⟦ A ⟧[ T ] ρ'} {⟦ A ⟧[ T ] ρ'} {λ X → ⟦ rename (ext (k +_)) (rco M) ⟧[ T ] (X • ρ')} {λ X → ⟦ M ⟧[ T' ] (X • ρ)}
         {λ X → ⟦ rename (ext (k +_)) (rco N) ⟧[ T ] (X • ρ')} {λ X → ⟦ N ⟧[ T' ] (X • ρ)}
         ≃-refl (branch k ρ' e M) (branch k ρ' e N)
-rco-sem T T' TT (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ NE =
-  ⋆-≃ (Λ-≃ {λ X → ⟦ rco N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} λ V ne →
-         rco-sem T T' TT N (mem V • ρ) (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne)))
-      (rco-sem T T' TT M ρ NE)
+rco-sem T T' TC TT (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ NE C =
+  ⋆-≃ (Λ-≃ {λ X → ⟦ rco N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} λ V ne c →
+         rco-sem T T' TC TT N (mem V • ρ) (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne)) (Con-• (≈⇒Con c) C))
+      (rco-sem T T' TC TT M ρ NE C)
 
-rco-args-sem T T' TT {zero} Nil ρ NE = ptt
-rco-args-sem T T' TT {suc n} (M ,, Ms) ρ NE =
-  ⟨ up (rco-sem T T' TT M ρ NE) , rco-args-sem T T' TT Ms ρ NE ⟩
+rco-args-sem T T' TC TT {zero} Nil ρ NE C = ptt
+rco-args-sem T T' TC TT {suc n} (M ,, Ms) ρ NE C =
+  ⟨ up (rco-sem T T' TC TT M ρ NE C) , rco-args-sem T T' TC TT Ms ρ NE C ⟩
 
-rco-correct : ∀ T M ρ → nonempty-env ρ → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ
-rco-correct T = rco-sem T T (λ k → ≃-refl)
+rco-correct : ∀ T → (∀ k → Con (T k)) → ∀ M ρ → nonempty-env ρ → Con-env ρ
+  → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ
+rco-correct T TC = rco-sem T T TC (λ k → ≃-refl)
 
 {- Programs ---------------------------------------------------------------------}
 
-code-≃ : ∀ {T T'} → (∀ k → T k ≃ T' k) → ∀ N → code T (rco N) ≃ code T' N
-code-≃ {T} {T'} TT N =
-  Λ-≃ λ V neV → Λ-≃ λ U neU → rco-sem T T' TT N _
+code-≃ : ∀ {T T'} → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ N → code T (rco N) ≃ code T' N
+code-≃ {T} {T'} TC TT N =
+  Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → rco-sem T T' TC TT N _
     (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV))
                          (E≢[]⇒nonempty-mem neU))
+    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
 
 table-rco : ∀ ds k → table (map rco ds) k ≃ table ds k
 table-rco [] k = ≃-refl
 table-rco (N ∷ Ns) k with k ≟ length (map rco Ns) | k ≟ length Ns
-... | yes _ | yes _ = code-≃ (table-rco Ns) N
+... | yes _ | yes _ = code-≃ (table-con (map rco Ns)) (table-rco Ns) N
 ... | no _ | no _ = table-rco Ns k
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-map rco Ns)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-map rco Ns))))
 
 rco-program-correct : ∀ P → ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ
 rco-program-correct (program ds M) =
-  rco-sem (table (map rco ds)) (table ds) (table-rco ds) M (λ _ → init) (λ _ → ⟨ ω , refl ⟩)
+  rco-sem (table (map rco ds)) (table ds) (table-con (map rco ds)) (table-rco ds) M (λ _ → init)
+    (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω)
 
 {- The whole compiler, into monadic normal form --------------------------------
 

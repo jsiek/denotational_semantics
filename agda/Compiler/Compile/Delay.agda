@@ -11,7 +11,7 @@ module Compiler.Compile.Delay where
     renaming (clear to clear'; bind to bind'; ast to ast';
               AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
               _⦅_⦆ to _⦅_⦆')
-  open import Compiler.Lang.Rename Target.Op Target.sig using (shift)
+  open import Syntax.Rename Target.Op Target.sig using (shift)
               
 
   delay : (M : Source.AST) → Target.AST

@@ -23,17 +23,18 @@ module Compiler.Operational.Adequacy.LogRel where
 
 open import Primitives using (Base; base-rep; Int)
 open import SetsAsPredicates
-open import Compiler.Model.Graph.Domain.ISWIM.Domain
+open import GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
-open import Compiler.Model.Graph.Domain.ISWIM.Ops using (nthD) renaming (out to dout)
+open import GraphModel.Ops using (nthD)
+open import Compiler.Model.Graph.Prim using () renaming (out to dout)
 open import Compiler.Lang.Prim using (int; bool; δ)
 open import Compiler.Lang.ISWIM
-open import Compiler.Lang.Uses Op sig
+open import Syntax.Uses Op sig
 open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧; ⟦_⟧₊)
 import NewEnv
 open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Compiler.Lang.ListUtil
+open import ListUtil
 open import Compiler.Operational.Machine.ISWIM
 open import Compiler.Operational.Smallstep using (next; stop)
 open import Compiler.Operational.Adequacy.Common
@@ -247,7 +248,7 @@ adequate (inr-op ⦅ M ,, Nil ⦆) {d = tup[ i ] d} G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = left d} G ()
 adequate (inr-op ⦅ M ,, Nil ⦆) {d = ⟨⟩} G ()
 
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₁ ⟨ u , ⟨ U , ⟨ allL , w∈ ⟩ ⟩ ⟩)
+adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L GL (allL u (here refl))
   where GL = λ x p → G x (inj₁ p)
 ... | ⟨ inl w , ⟨ eL , _ ⟩ ⟩
@@ -256,7 +257,7 @@ adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₁ ⟨ u 
               (λ d d∈ → adequate L (λ x p → G x (inj₁ p)) (allL d d∈)) eL))) w∈
 ... | ⟨ v , ⟨ eM , r ⟩ ⟩ =
   ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eM κ) , r ⟩ ⟩
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₂ ⟨ u , ⟨ U , ⟨ allR , w∈ ⟩ ⟩ ⟩)
+adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     with adequate L GL (allR u (here refl))
   where GL = λ x p → G x (inj₁ p)
 ... | ⟨ inr w , ⟨ eL , _ ⟩ ⟩

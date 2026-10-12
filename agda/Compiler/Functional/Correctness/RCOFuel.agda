@@ -39,9 +39,9 @@ open import NewSyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos5
 import Compiler.Lang.Mon as Mon
 open import Compiler.Compile.RCO
-open import Compiler.Lang.Rename Op sig using (ext; rename; rename-args)
-open import Compiler.Lang.Scope Op sig using (WS; WS-args)
-open import Compiler.Lang.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc)
+open import Syntax.Rename Op sig using (ext; rename; rename-args)
+open import Syntax.Scope Op sig using (WS; WS-args)
+open import ListUtil using (_‼_; ‼-<; ‼-++; length-snoc)
 open import Compiler.Functional.Clock
 open import Compiler.Functional.Interp.Clos5
   using (Val; Env; code; pair; const; tup; inl; inr; obs; eval; eval-args; call; code?; branch;
