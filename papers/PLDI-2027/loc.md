@@ -19,7 +19,7 @@ As of this PR:
 
 | component | denotational | CompCert-style | CakeML-style |
 |---|---:|---:|---:|
-| semantics of the languages | 845 | 753 | 561 |
+| semantics of the languages | 845 | 756 | 561 |
 | enclose | 102 | 222 | 162 |
 | optimize | 156 | 273 | 194 |
 | concretize | 246 | 218 | 152 |
@@ -28,10 +28,10 @@ As of this PR:
 | rco | 243 | 449 | 298 |
 | lift locals | 275 | 218 | 143 |
 | explicate control | 210 | 152 | 145 |
-| select instructions | 322 | 272 | 142 |
+| select instructions | 322 | 272 | 140 |
 | composition | 49 | 32 | 37 |
 | shared modules not used by all three proofs | — | 379 | 379 |
-| **total** | **3537** | **3325** | **2463** |
+| **total** | **3537** | **3328** | **2461** |
 
 The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)).
 
@@ -40,26 +40,27 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | language-independent infrastructure (not in the totals) | lines | used by denotational | used by CompCert-style | used by CakeML-style |
 |---|---:|---:|---:|---:|
 | abstract binding trees | 220 | 220 | 220 | 220 |
-| syntax lemmas (renaming, scoping, uses), list lookups | 243 | 182 | 243 | 243 |
+| syntax lemmas (renaming, scoping, uses), list lookups | 273 | 212 | 273 | 273 |
 | base types, logical equivalence | 26 | 22 | 26 | 26 |
 | denotational framework | 395 | 395 | — | — |
 | graph model: values, operators, continuity | 512 | 512 | — | — |
 | small-step framework: transition systems, simulations | 187 | — | 187 | — |
 | clocked big-step framework | 80 | — | — | 80 |
-| **total** | **1663** | **1331** | **676** | **569** |
+| **total** | **1693** | **1361** | **706** | **599** |
 
-Adequacy uses 1489 lines of the infrastructure, 158 of them not used by the denotational proof.
+Adequacy uses 1519 lines of the infrastructure, 158 of them not used by the denotational proof.
 
-Adequacy relates the denotational semantics of ISWIM and Clos5 to their machines. It turns `CompilerCorrect` into a statement about running programs (`Adequacy/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output and growing tables, 379 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM and Clos5 machines (189 lines, plus the 3-line instance of the small-step framework), which adequacy reuses from the CompCert-style proof and which are not counted again.
+Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86` (`SelectCorrect`), into statements about running programs (`Adequacy/EndToEnd.agda`; see [Adequacy for X86](#adequacy-for-x86)). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output and growing tables, 379 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM, Clos5, Imp and X86 machines (418 lines, plus the 3-line instance of the small-step framework; X86's frames are Imp's), which adequacy reuses from the CompCert-style proof and which are not counted again.
 
 | adequacy (denotational side only) | lines |
 |---|---:|
-| ISWIM | 853 |
-| Clos5 | 871 |
-| well-formedness of compiled programs | 60 |
-| end to end | 24 |
+| ISWIM | 855 |
+| Clos5 | 863 |
+| X86 | 1243 |
+| well-formedness of compiled programs | 328 |
+| end to end | 39 |
 | shared modules not used by all three proofs, nor by the denotational one | 379 |
-| **total** | **2187** |
+| **total** | **3707** |
 
 Two experiments, not in the totals: a direct backward simulation for delay, described [below](#experiment-a-direct-backward-simulation-for-delay), and the direct denotational semantics of Imp with lift locals and explicate control proved against it, described in [Explicate control](#explicate-control). The direct proofs also use `Sem/Imp.agda`, `LiftLocalsCommon` and `ExplicateCommon`, which are counted in the main rows.
 
@@ -112,7 +113,7 @@ Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in b
 | `GraphModel.Ops` | 230 | denotational, adequacy |
 | `GraphModel.SemanticsUtil` | 32 | denotational, adequacy |
 | `Iff` | 4 | CompCert-style, CakeML-style, adequacy |
-| `ListUtil` | 62 | denotational, CompCert-style, CakeML-style, adequacy |
+| `ListUtil` | 92 | denotational, CompCert-style, CakeML-style, adequacy |
 | `NewDOpSig` | 35 | denotational, adequacy |
 | `NewDenotProperties` | 16 | denotational, adequacy |
 | `NewEnv` | 99 | denotational, adequacy |
@@ -143,7 +144,7 @@ Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in b
   * `Compile/PipelineScope.agda`: well-scoped Clos5 programs (`Scoped`, the precondition of both operational rco proofs) and `compile-scoped`, that `compile` produces them from closed ISWIM programs, one lemma per pass (formerly the well-scopedness half of adequacy's `CompileWF`). Only the end-to-end `compile-mon` theorems of the operational proofs use it (and, through them, those of `compile-imp`, `compile-cfg` and `compile-x86`).
 * **language-independent infrastructure (not counted):** see [Language-independent infrastructure](#language-independent-infrastructure).
   * the abt library, `NewSigUtil`, `NewSyntaxUtil`;
-  * `Syntax/`: the lemmas about the syntax of any signature, `Rename.agda` (`rename-cong`, `rename-fuse`, `rename-id`, from `DelaySim`), `Scope.agda` (well-scoped terms and `ws-uses`, from `OptimizeSim`), `ScopeRename.agda` (renaming preserves well-scopedness, formerly adequacy's `Scope`), `Uses.agda`; and `ListUtil.agda`, lookup in an environment, projection from a tuple, and lemmas about lookups (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`);
+  * `Syntax/`: the lemmas about the syntax of any signature, `Rename.agda` (`rename-cong`, `rename-fuse`, `rename-id`, from `DelaySim`), `Scope.agda` (well-scoped terms and `ws-uses`, from `OptimizeSim`), `ScopeRename.agda` (renaming preserves well-scopedness, formerly adequacy's `Scope`), `Uses.agda`; and `ListUtil.agda`, lookup in an environment, projection from a tuple, and lemmas about lookups, also in reversed and replicated lists (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`, and from adequacy);
   * `Primitives.agda` (base types) and `Iff.agda` (`_⇔_`);
   * the denotational framework: sets as predicates, environments, the semantics of any signature and its monotonicity (`NewSemantics`, which also gives consistency), DOp signatures, `abt.Fold2`, `RenameSem`;
   * the graph model, `GraphModel/`: values and consistency (`Domain`), the semantic operators with their monotonicity and consistency (`Ops`), their continuity (`Continuity`), and continuity of semantics in the environment (`SemanticsUtil`, formerly `Sem/Continuous`);
@@ -179,7 +180,7 @@ Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in b
 * **The rco preconditions differ.** The denotational rco theorem is an equation with no precondition on programs; both operational ones need `Scoped`, and their end-to-end `compile-mon` theorems therefore pay for `compile-scoped` (249 lines, in the shared row, plus `Syntax/ScopeRename`, now infrastructure). See [Remove complex operands](#remove-complex-operands).
 * **Lift locals and explicate control need no precondition in any style.** A variable out of scope becomes a slot beyond the frame, which goes wrong (operationally) or reads as `init` (denotationally) exactly where the Clos5 variable does. Assigning a slot beyond the frame goes wrong in all three styles (∅ denotationally, since explicate control; see [Explicate control](#explicate-control)). See [Lift locals](#lift-locals).
 * **Select instructions: a precondition only in the denotational proof.** The denotational theorem assumes every global definition has at least 2 locals (`select-correct`), discharged for compiled programs; neither operational one has a precondition. See [Select instructions](#select-instructions).
-* **Adequacy stops at Clos5.** The end-to-end denotational theorems for `compile-mon`, `compile-imp`, `compile-cfg` and `compile-x86` speak about the denotations of Clos5, Imp, CFG and X86; adequacy (and so a statement about running code) exists only for ISWIM and Clos5. Adequacy for the final target language, now X86, is still to do.
+* **Adequacy reaches X86, the final target, but not the intermediate languages.** Adequacy, and so a statement about running code, exists for ISWIM, Clos5 and X86: the end-to-end theorem for `compile-x86` relates the ISWIM machine to the X86 machine (`end-to-end-x86-const`, `end-to-end-x86-converges`). The end-to-end denotational theorems for `compile-mon`, `compile-imp` and `compile-cfg` still speak only about the denotations of Clos5, Imp and CFG. X86 adequacy has preconditions that compiled programs satisfy, discharged by `compile-x86-wf` (see [Adequacy for X86](#adequacy-for-x86)); like Clos5's, it cannot tell going wrong from diverging.
 
 ## History
 
@@ -203,7 +204,10 @@ Shared by all three proofs, and not counted: 20 modules, 915 lines. Counted in b
 | 2026-10-12 | continuation-passing semantics of Imp for the denotational lift locals and explicate control, the direct one an experiment; what both have in common factored out (PR #28) | 3989 (−334) | 3181 | 2365 |
 | 2026-10-12 | the same code, new method: language-independent infrastructure in a separate table, not counted (PR #28) | 3113 | 2935 | 2224 |
 | 2026-10-12 | select instructions, all three proofs (PR #29) | 3537 (+424) | 3325 (+390) | 2463 (+239) |
-| 2026-10-12 | CakeML-style interpreters in do-notation (cosmetic; this PR) | 3537 | 3325 | 2463 |
+| 2026-10-12 | CakeML-style interpreters in do-notation (cosmetic; PR #30) | 3537 | 3325 | 2463 |
+| 2026-10-12 | X86 machine and interpreter aligned with the X86 semantics at calls; adequacy for X86, end to end for `compile-x86` (this PR) | 3537 | 3328 (+3) | 2461 (−2) |
+
+**Adequacy for X86 (this PR).** The X86 machine and interpreter now do what the X86 semantics says at calls (see [Select instructions](#select-instructions)): the callee starts with `%rax` unset and no flag, `callq` goes wrong if `%rdi` or `%rsi` is unset, and `retq` goes wrong if `%rax` is unset, also when it returns to a caller. This cost the CompCert-style semantics 3 lines (the machine) and saved the CakeML-style select proof 2 (its hypothesis on calls lost the registers); `SelectSim` and `SelectFuel` still need no precondition. Adequacy went from 2187 to 3707 lines: X86 +1243, well-formedness 60 → 328, end to end 24 → 39, ISWIM +2 and Clos5 −8 (the runs of any machine are now shared, `Common.Runs`, and the Clos5 machine's values, which X86 shares, are in `Values.agda`, used by both); the list lemmas it needed went to `ListUtil` (infrastructure, 62 → 92 lines, also used by Clos5 adequacy).
 
 The last two PR #28 rows are, apart from moving modules, the same code counted two ways. The infrastructure was split from the compiler (the graph model's values, consistency and operators from `Compiler/Model/Graph/Domain/ISWIM/` to `GraphModel/`, leaving only the meaning of the primitives, `Compiler/Model/Graph/Prim.agda`; `Sem/Continuous` to `GraphModel/SemanticsUtil`, `Sem/RenameSem` to `RenameSem`; the syntax lemmas from `Compiler/Lang` to `Syntax/`; the small-step and clocked frameworks parameterized over the type of observations, with instances at this compiler's observations left in `Compiler/`), and the infrastructure left the totals. The rows "generic infrastructure" (307, 188, 80) and "domain, operators, continuity" (511, denotational only) are gone, and so are the shared modules that became infrastructure (`abt.Fold2`, 28, from the denotational total; `Syntax.Scope` and `Syntax.ScopeRename`, 61, from both operational totals); `Observation` shrank from 26 to 23 lines (`_⇔_` to `Iff`, `SameObs` unfolded in the frameworks). The semantics rows went from 782, 629, 461 to 743, 635, 464 (the denotational one gaining `Prim.agda`, the operational ones the instances of their frameworks), and the denotational pass rows changed by 1 to 3 lines each (imports). In all −876, −246 and −141. What each proof relies on now appears in the infrastructure table (1331, 676 and 569 lines). Adequacy went from 2172 to 2246 with the consistent binders (ISWIM 798 → 850, Clos5 847 → 869), and from 2246 to 2187 with the new method (ISWIM 853, Clos5 871, shared 443 → 379).
 
@@ -338,19 +342,38 @@ The direct semantics makes lift locals smaller (213 against 275) and explicate c
 
 ## Select instructions
 
-The pass (`Compile/Select.agda`, shared, 39 lines) takes CFG to X86 (`Lang/X86.agda`, shared, 49 lines): x86 with variables over **abstract values**, Clos5's, not over a heap. `alloc` and `load` build and take apart objects (tuples, pairs, sums, closures) with no addresses; a concrete heap would be a later pass (expose allocation). The locations are the slots of the frame and the registers `%rax`, `%rdi` and `%rsi`; there is one flag. The instructions are `movq`, `subq`, `cmpq`, `sete`, `testinl`, `alloc`, `load` and `callq`; a block ends in `retq`, `jmp` or `je`, and keeps CFG's label. A call passes the free variables in `%rdi` and the argument in `%rsi` and returns in `%rax`; each definition's prologue moves `%rdi` and `%rsi` to slots 0 and 1, and a call clobbers `%rdi`, `%rsi` and the flag. Subtraction goes through `%rax` (two-address `subq`), `eq` is `cmpq; sete`, and `case` is `testinl`, a `load` of the payload and `je`. `compile-x86` is select ∘ `compile-cfg`. Main's frame has `locals` slots, as in CFG: with max(2, locals), as first specified, the end-to-end theorem would be false for open terms whose main reads slot 0 or 1.
+The pass (`Compile/Select.agda`, shared, 39 lines) takes CFG to X86 (`Lang/X86.agda`, shared, 49 lines): x86 with variables over **abstract values**, Clos5's, not over a heap. `alloc` and `load` build and take apart objects (tuples, pairs, sums, closures) with no addresses; a concrete heap would be a later pass (expose allocation). The locations are the slots of the frame and the registers `%rax`, `%rdi` and `%rsi`; there is one flag. The instructions are `movq`, `subq`, `cmpq`, `sete`, `testinl`, `alloc`, `load` and `callq`; a block ends in `retq`, `jmp` or `je`, and keeps CFG's label. A call passes the free variables in `%rdi` and the argument in `%rsi` and returns in `%rax`; each definition's prologue moves `%rdi` and `%rsi` to slots 0 and 1, and a call clobbers `%rdi`, `%rsi` and the flag. The callee starts with `%rdi` and `%rsi` as they are and with `%rax` and the flag unset; `callq` reads `%rdi` and `%rsi`, and `retq` reads `%rax`, so each goes wrong on an unset register, in all three semantics (as of this PR; before it, the machine and the interpreter passed the caller's `%rax` and flag to the callee and did not check the registers of a call or a return, which the X86 semantics, strict in them, does). Subtraction goes through `%rax` (two-address `subq`), `eq` is `cmpq; sete`, and `case` is `testinl`, a `load` of the payload and `je`. `compile-x86` is select ∘ `compile-cfg`. Main's frame has `locals` slots, as in CFG: with max(2, locals), as first specified, the end-to-end theorem would be false for open terms whose main reads slot 0 or 1.
 
 | component | denotational | CompCert-style | CakeML-style |
 |---|---:|---:|---:|
-| semantics of X86 | 102 | 118 | 97 |
-| select instructions | 322 | 272 | 142 |
-| **total** | **424** | **390** | **239** |
+| semantics of X86 | 102 | 121 | 97 |
+| select instructions | 322 | 272 | 140 |
+| **total** | **424** | **393** | **237** |
 
-* **CakeML-style (97 + 142): clock for clock, with equal results** (`SelectFuel`), no precondition. Only `callq` ticks, and jumps recurse on the list of older blocks, as in the CFG interpreter. The interpreter runs a block's instructions in continuation-passing style, so the instructions select emits for a CFG statement unfold definitionally to that statement's step.
-* **CompCert-style (118 + 272): a forward simulation** (`SelectSim`), no precondition. The X86 machine takes one instruction per step. The simulation runs from synchronisation points, each with a script (`Fate`) of how the two machines reach the next one: both stop (`stop`), the CFG steps while X86 waits (`lag`, measured by the length of the rest of the script), or the CFG steps and X86 takes one or more steps (`go`). Most of the cost is the timing of errors: each X86 instruction must go wrong at the same CFG step that checks the same thing, and the operands of a call are read in a different order (X86 reads f last).
+* **CakeML-style (97 + 140): clock for clock, with equal results** (`SelectFuel`), no precondition. Only `callq` ticks, and jumps recurse on the list of older blocks, as in the CFG interpreter. The interpreter runs a block's instructions in continuation-passing style, so the instructions select emits for a CFG statement unfold definitionally to that statement's step.
+* **CompCert-style (121 + 272): a forward simulation** (`SelectSim`), no precondition. The X86 machine takes one instruction per step. The simulation runs from synchronisation points, each with a script (`Fate`) of how the two machines reach the next one: both stop (`stop`), the CFG steps while X86 waits (`lag`, measured by the length of the rest of the script), or the CFG steps and X86 takes one or more steps (`go`). Most of the cost is the timing of errors: each X86 instruction must go wrong at the same CFG step that checks the same thing, and the operands of a call are read in a different order (X86 reads f last).
 * **Denotational (102 + 322)** (`Sem/X86.agda`, `SelectCorrect`): a continuation-passing semantics, as for Imp. Slot writes are strict, as CFG's `seq`; registers and the flag are written under a nonemptiness guard, so a failing or diverging instruction stops everything after it. (A first version let a register hold a failed value that a later write could forget; the guard cost +6 lines of semantics and +41 of proof. A guard rather than binding with ⋆⟨Λ…⟩ avoids a consistency lemma for the whole semantics.) `select-correct` needs every global definition to have at least 2 locals, because the denotational CFG semantics reads slots with bound `locals` while the X86 prologue writes slots 0 and 1; compiled programs satisfy it, so the `compile-x86` theorems have no extra precondition. The main costs are `case`, which needs the invariant that no slot holds both an `inl` and an `inr` (from the consistent binders), and about 85 lines of monotonicity of CFG tails in the store for the prologue's strict moves (`Mono`, `frame-≃`).
 
-Adequacy is unchanged: it still stops at Clos5.
+## Adequacy for X86
+
+Soundness and adequacy of the X86 semantics for the X86 machine (`Adequacy/X86.agda`), and with them the end-to-end theorem for `compile-x86` (`EndToEnd.agda`): for a closed ISWIM term M, the ISWIM machine terminates with a constant c exactly when the X86 machine running `compile-x86 M` does, and one terminates with an answer exactly when the other does. As for Clos5, the proof goes through the denotations: ISWIM adequacy, the denotational `compile-x86-correct-const` and `-nonempty`, and X86 adequacy.
+
+| module | lines |
+|---|---:|
+| `X86Common` (runs, frames, blocks, where a definition sits in the table) | 89 |
+| `X86Soundness` | 792 |
+| `X86LogRel` | 328 |
+| `X86` (the theorems) | 34 |
+| `X86WF` (well-formed programs) | 34 |
+| `X86CompileWF` (compiled programs are well formed) | 234 |
+| end to end, the `compile-x86` theorems | 15 |
+
+What it needed:
+
+* **The machine to agree with the semantics at calls.** The X86 semantics gives the code of a definition as Λ X. Λ Y. (the body, with X in `%rdi`, Y in `%rsi`, `%rax` unset and no flag); a call applies it to finite parts of `%rdi` and `%rsi`, and continues with the result in `%rax`, all strictly. The machine passed the caller's `%rax` and flag to the callee and ran calls and returns with unset registers, so soundness was false for programs that read them (for example, a callee whose body is just `retq`); the machine, the interpreter and the informal semantics were changed to match (see above).
+* **Soundness by finite approximations.** As for Clos5, a state denotes a set (`𝒮`) that every step only shrinks; the call stack is the continuation of the continuation-passing semantics. But the semantics binds a slot to a finite part of the value written, and a call to finite parts of `%rdi` and `%rsi`, and the X86 semantics has no continuity lemma. So a state denotes the meaning of its code for some finite, consistent approximation of each location (`Ap`); a step that writes v is matched by approximating the operands it reads by enough to compute the part of v the destination holds afterwards (`grow`, `write`, with the parts of pairs, tuples and injections picked out of the approximation), and by the monotonicity of the semantics (`Mono`, with the trivial conditions it needs inside a body, 115 lines). A call builds, from the callee's approximation, the entries X ↦ (Y ↦ w) of its code that the caller applies.
+* **A logical relation as for Clos5** (`Values.Rel`, shared): code is related by runs of the machine, on any stack, to a return of a related value (`Ret`); the fundamental lemma is by induction on the instructions of a block, given that the blocks it may jump to are adequate. A call returns the same value for every element of its denotation, by determinism.
+* **Well-formedness** (`X86WF`), which `compile-x86` produces (`X86CompileWF`): each label refers to an older definition (the semantics gives each definition the table of the older ones; soundness), each slot read is within the frame (a slot beyond it reads as `init`; adequacy), and the table is consistent (approximations must be consistent to be bound; soundness). The first two go through every pass after globalize: remove complex operands keeps scoping and references (`ws-rco`, `rb-rco`, 98 lines), lift locals gives the variables in scope at depth d slots below d in a frame of at least d slots, and explicate control and select instructions keep the atoms. Consistency is not proved for the X86 semantics; for compiled programs it comes from the table lemmas of the denotational proofs (select, explicate control, lift locals, rco) and the consistency of the Clos5 table, in a few lines.
 
 ## Language-independent infrastructure
 
@@ -365,15 +388,15 @@ The script checks that no infrastructure module imports a module that is not inf
 | language-independent infrastructure | lines | used by denotational | used by CompCert-style | used by CakeML-style |
 |---|---:|---:|---:|---:|
 | abstract binding trees | 220 | 220 | 220 | 220 |
-| syntax lemmas (renaming, scoping, uses), list lookups | 243 | 182 | 243 | 243 |
+| syntax lemmas (renaming, scoping, uses), list lookups | 273 | 212 | 273 | 273 |
 | base types, logical equivalence | 26 | 22 | 26 | 26 |
 | denotational framework | 395 | 395 | — | — |
 | graph model: values, operators, continuity | 512 | 512 | — | — |
 | small-step framework: transition systems, simulations | 187 | — | 187 | — |
 | clocked big-step framework | 80 | — | — | 80 |
-| **total** | **1663** | **1331** | **676** | **569** |
+| **total** | **1693** | **1361** | **706** | **599** |
 
-The denotational proof relies on twice as much infrastructure as the CompCert-style one: the graph model and the denotational framework (907 lines) against the small-step framework (187). Adequacy uses 1489 lines of it, 158 of them (`Smallstep`, `Iff`, `Syntax.Scope`, `Syntax.ScopeRename`) not used by the denotational proof.
+The denotational proof relies on twice as much infrastructure as the CompCert-style one: the graph model and the denotational framework (907 lines) against the small-step framework (187). Adequacy uses 1519 lines of it, 158 of them (`Smallstep`, `Iff`, `Syntax.Scope`, `Syntax.ScopeRename`) not used by the denotational proof.
 
 ## The CakeML-style proof
 
