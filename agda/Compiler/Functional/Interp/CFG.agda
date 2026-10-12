@@ -49,10 +49,10 @@ module _ (ds : List Body) where
   call : ℕ → Maybe Body → Val → Val → Result Val
 
   tail ck bs φ (return s) = eval-simple (λ f → call ck (code? f)) φ s
-  tail ck bs φ (seq x s t) = eval-simple (λ f → call ck (code? f)) φ s >>= λ v → set φ x v λ φ' → tail ck bs φ' t
+  tail ck bs φ (seq x s t) = do v ← eval-simple (λ f → call ck (code? f)) φ s; set φ x v λ φ' → tail ck bs φ' t
   tail ck bs φ (goto l) = jump ck bs φ l
   tail ck bs φ (case a x l₁ l₂) =
-    atom φ a >>= λ v → inj? v >>= [ (λ w → set φ x w λ φ' → jump ck bs φ' l₁) , (λ w → set φ x w λ φ' → jump ck bs φ' l₂) ]
+    do v ← atom φ a; inj? v >>= [ (λ w → set φ x w λ φ' → jump ck bs φ' l₁) , (λ w → set φ x w λ φ' → jump ck bs φ' l₂) ]
 
   jump ck [] φ l = wrong
   jump ck (t ∷ bs) φ l with l ≟ length bs

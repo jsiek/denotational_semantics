@@ -83,22 +83,22 @@ module _ (ds : List AST) where
   eval ck ρ (app ⦅ L ,, M ,, N ,, Nil ⦆) = eval ck ρ L >>= apply ck ρ M N
   eval ck ρ (lit B k ⦅ Nil ⦆) = ret (const B k)
   eval ck ρ (pair-op ⦅ L ,, M ,, Nil ⦆) =
-    eval ck ρ L >>= λ v → eval ck ρ M >>= λ w → ret (pair v w)
+    do v ← eval ck ρ L; w ← eval ck ρ M; ret (pair v w)
   eval ck ρ (fst-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= first
   eval ck ρ (snd-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= second
-  eval ck ρ (tuple n ⦅ args ⦆) = eval-args ck ρ [] args >>= λ vs → ret (tup (reverse vs))
+  eval ck ρ (tuple n ⦅ args ⦆) = do vs ← eval-args ck ρ [] args; ret (tup (reverse vs))
   eval ck ρ (get i ⦅ M ,, Nil ⦆) = eval ck ρ M >>= project i
-  eval ck ρ (inl-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= λ v → ret (inl v)
-  eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = eval ck ρ M >>= λ v → ret (inr v)
+  eval ck ρ (inl-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inl v)
+  eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inr v)
   eval ck ρ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ L >>= branch ck ρ M N
   eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
-    eval ck ρ L >>= λ v → eval ck ρ M >>= λ w → from-maybe (prim? p v w)
-  eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ M >>= λ v → eval ck (v ∷ ρ) N
+    do v ← eval ck ρ L; w ← eval ck ρ M; from-maybe (prim? p v w)
+  eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 
   eval-args {zero} ck ρ vs Nil = ret vs
-  eval-args {suc n} ck ρ vs (M ,, args) = eval ck ρ M >>= λ v → eval-args ck ρ (v ∷ vs) args
+  eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
-  apply ck ρ M N f = eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck (code? f) (w ∷ e ∷ [])
+  apply ck ρ M N f = do e ← eval ck ρ M; w ← eval ck ρ N; call ck (code? f) (w ∷ e ∷ [])
 
   {- the definition a code pointer refers to -}
   code? (code k) = global ds k
