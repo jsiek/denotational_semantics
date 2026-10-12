@@ -15,14 +15,19 @@ module Compiler.Model.Graph.Sem.X86 where
  instructions followed by its jump: retq produces %rax, jmp l runs block
  l in the state as it is, and je l₁ l₂ is 𝒞 on the flag.
 
- Locations: the slots of the frame are the variables of the body and are
- bound strictly, as in CFG: d := D, for a slot d, runs the rest with a
- finite, nonempty, consistent part of D in d (⋆ ⟨ Λ F , D ⟩), so it goes
- wrong if D is empty. A register just holds a set of values, empty where
- a computation went wrong or the register is unset; a use of it then
- goes wrong (the operators are strict), as does a return of it. Reading
- a slot beyond the frame gives init and assigning one means ∅ (checked),
- as in CFG.
+ Every write is strict, so that an instruction whose computation goes
+ wrong or diverges (its value is ∅) stops the body: nothing after it
+ runs. A slot of the frame is a variable of the body and is bound as in
+ CFG: d := D runs the rest with a finite, nonempty, consistent part of D
+ in d (⋆ ⟨ Λ F , D ⟩). A register or the flag holds D itself, provided D
+ is nonempty (strict D E: E, if D is nonempty). Reading an unset
+ register or a clobbered flag gives ∅. Reading a slot beyond the frame
+ gives init and assigning one means ∅ (checked), as in CFG.
+
+ (A register is not bound like a slot: a call would then apply the
+ callee to finite parts of %rdi and %rsi, which is the same as applying
+ it to the whole sets only when they are consistent, and the set of a
+ code pointer is not known to be.)
 
  The values the instructions compute are those of Imp's simple
  expressions: subq and cmpq are primD, sete d puts the flag in d, testinl
@@ -95,10 +100,14 @@ Kont = Store → Regs → 𝒫 Value → 𝒫 Value
 𝒪s T n σ ρ [] = ptt
 𝒪s T n σ ρ (a ∷ as) = ⟨ 𝒪 T n σ ρ a , 𝒪s T n σ ρ as ⟩
 
+{- E, provided that D is nonempty -}
+strict : 𝒫 Value → 𝒫 Value → 𝒫 Value
+strict D E w = nonempty D × w ∈ E
+
 {- d := D, then κ -}
 put : ℕ → Loc → 𝒫 Value → Kont → Kont
 put n (var x) D κ σ ρ φ = checked n x (⋆ ⟨ Λ ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
-put n (reg g) D κ σ ρ φ = κ σ (ρ [ g ≔ D ]) φ
+put n (reg g) D κ σ ρ φ = strict D (κ σ (ρ [ g ≔ D ]) φ)
 
 {- the flag that testinl sets -}
 isinl : 𝒫 Value → 𝒫 Value
@@ -123,17 +132,25 @@ field′ snd D = cdr ⟨ D , ptt ⟩
 field′ (get i) D = proj i ⟨ D , ptt ⟩
 field′ payload D = payloadD D
 
+{- flag := F, then κ -}
+flag : 𝒫 Value → Kont → Store → Regs → 𝒫 Value
+flag F κ σ ρ = strict F (κ σ ρ F)
+
+{- %rax := R after a call, then κ -}
+call : 𝒫 Value → Kont → Store → 𝒫 Value
+call R κ σ = strict R (κ σ (called R) ∅)
+
 {- an instruction in a frame of n slots, then κ -}
 ⟦_⟧ⁱ : Instr → Table → ℕ → Kont → Kont
 ⟦ movq a d ⟧ⁱ T n κ σ ρ φ = put n d (𝒪 T n σ ρ a) κ σ ρ φ
 ⟦ subq a d ⟧ⁱ T n κ σ ρ φ = put n d (primD sub ⟨ 𝒪 T n σ ρ (loc d) , ⟨ 𝒪 T n σ ρ a , ptt ⟩ ⟩) κ σ ρ φ
-⟦ cmpq a₂ a₁ ⟧ⁱ T n κ σ ρ φ = κ σ ρ (primD eq ⟨ 𝒪 T n σ ρ a₁ , ⟨ 𝒪 T n σ ρ a₂ , ptt ⟩ ⟩)
+⟦ cmpq a₂ a₁ ⟧ⁱ T n κ σ ρ φ = flag (primD eq ⟨ 𝒪 T n σ ρ a₁ , ⟨ 𝒪 T n σ ρ a₂ , ptt ⟩ ⟩) κ σ ρ
 ⟦ sete d ⟧ⁱ T n κ σ ρ φ = put n d φ κ σ ρ φ
-⟦ testinl a ⟧ⁱ T n κ σ ρ φ = κ σ ρ (isinl (𝒪 T n σ ρ a))
+⟦ testinl a ⟧ⁱ T n κ σ ρ φ = flag (isinl (𝒪 T n σ ρ a)) κ σ ρ
 ⟦ alloc s as d ⟧ⁱ T n κ σ ρ φ = put n d (object T n σ ρ s as) κ σ ρ φ
 ⟦ load f a d ⟧ⁱ T n κ σ ρ φ = put n d (field′ f (𝒪 T n σ ρ a)) κ σ ρ φ
 ⟦ callq a ⟧ⁱ T n κ σ ρ φ =
-  κ σ (called (⋆ ⟨ ⋆ ⟨ 𝒪 T n σ ρ a , ⟨ ρ rdi , ptt ⟩ ⟩ , ⟨ ρ rsi , ptt ⟩ ⟩)) ∅
+  call (⋆ ⟨ ⋆ ⟨ 𝒪 T n σ ρ a , ⟨ ρ rdi , ptt ⟩ ⟩ , ⟨ ρ rsi , ptt ⟩ ⟩) κ σ
 
 ⟦_⟧ˢ : List Instr → Table → ℕ → Kont → Kont
 ⟦ [] ⟧ˢ T n κ = κ

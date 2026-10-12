@@ -12,8 +12,10 @@
   instructions of x := r, then κ, mean x := r; K in CFG when κ means K
   with any registers and flag (sel, Fits); those of return r leave the
   value of r in %rax. Each case is a congruence: the instructions compute
-  r through registers, held directly, and only the final move to x binds
-  strictly, as CFG does. The blocks map one to one (tail, blocks-≃).
+  r through registers, and only the final move to x binds, as CFG does.
+  The writes to registers and the flag before it are strict, but the
+  value of r is nonempty only when theirs are, so they change nothing
+  (strict-≃). The blocks map one to one (tail, blocks-≃).
 
   case a x l₁ l₂ tests the tag of a, binds the payload and branches on
   the flag; this is 𝒞 on a when a slot never holds both an inl and an
@@ -46,7 +48,7 @@ open import Compiler.Model.Graph.Sem.CFG
 open import Compiler.Model.Graph.Sem.X86
 open import Compiler.Model.Graph.Correctness.GlobalizeCorrect using (pair-≃; car-≃; cdr-≃; prim-≃)
 open import Compiler.Model.Graph.Correctness.ConcretizeCorrect using (⋆-≃; proj-≃; inl-≃; inr-≃)
-open import Compiler.Model.Graph.Correctness.RCOCorrect using (Λ-≃)
+open import Compiler.Model.Graph.Correctness.RCOCorrect using (Λ-≃; ne-mem)
 open import Compiler.Model.Graph.Correctness.ExplicateCommon using (module Agreeing; checked-≃)
 open import Compiler.Model.Graph.Correctness.ExplicateCorrectK using (compile-cfg-same)
 open import Compiler.Model.Graph.Correctness.CompilerCorrect using (Same; Same-trans; ≃→Same)
@@ -193,6 +195,31 @@ case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
                 , ⟨ (λ ()) , c ⟩ ⟩
               , ⟨ (λ d d∈ → inj₂ (A⊇ _ (r∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
 
+{- Strictness ---------------------------------------------------------------------------}
+
+{- strict D X is X when each element of X needs D to be nonempty -}
+strict-≃ : ∀ {D X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D) → strict D X ≃ X'
+strict-≃ ⟨ X⊆ , X⊇ ⟩ ne = ⟨ (λ w p → X⊆ w (proj₂ p)) , (λ w p → ⟨ ne w (X⊇ w p) , X⊇ w p ⟩) ⟩
+
+strict-≃₂ : ∀ {D₁ D₂ X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D₂) → (nonempty D₂ → nonempty D₁)
+  → strict D₁ (strict D₂ X) ≃ X'
+strict-≃₂ X≃ ne f = strict-≃ (strict-≃ X≃ ne) (λ w w∈ → f (proj₁ w∈))
+
+strict-≃₃ : ∀ {D₁ D₂ D₃ X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D₃) → (nonempty D₃ → nonempty D₂)
+  → (nonempty D₃ → nonempty D₁) → strict D₁ (strict D₂ (strict D₃ X)) ≃ X'
+strict-≃₃ X≃ ne f₂ f₁ = strict-≃ (strict-≃₂ X≃ ne f₂) (λ w w∈ → f₁ (proj₁ (proj₂ w∈)))
+
+⋆-ne : ∀ {D E} → nonempty (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D × nonempty E
+⋆-ne ⟨ w , ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ = ⟨ ⟨ _ , e∈ ⟩ , ne-mem ne V⊆ ⟩
+
+prim-ne : ∀ p {D E} → nonempty (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D
+prim-ne p ⟨ w , ⟨ k , ⟨ m , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ _ , k∈ ⟩
+
+checked-⊆ : ∀ n x {D} → checked n x D ⊆ D
+checked-⊆ n x with x <? n
+... | yes _ = λ _ z → z
+... | no _ = λ _ ()
+
 {- The pass preserves meanings ---------------------------------------------------------}
 
 {- for tables T (of X86) and T' (of CFG) that agree -}
@@ -240,14 +267,39 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   put-≃ (var x) {κ} {K} {σ = σ} {ρ} {φ} fits i D≃ =
     checked-≃ n {x} (⋆-≃ (Λ-≃ {λ X → κ (σ [ x ↦ X ]) ρ φ} {λ X → K (σ [ x ↦ X ])}
                             λ V _ c → fits _ (inv-↦ i (tagged-≈ c)) ρ φ) D≃)
-  put-≃ (reg g) {D = D} {σ = σ} {ρ} {φ} fits i D≃ =
-    ≃-trans (fits σ (ρ [ g ≔ D ]) φ) (≃-trans (≃-reflexive (≔-same g)) D≃)
+  put-≃ (reg g) {D = D} {σ = σ} {ρ} {φ} fits i D≃ = strict-≃ (≃-trans e D≃) (λ w w∈ → ⟨ w , proj₁ e w w∈ ⟩)
+    where e = ≃-trans (fits σ (ρ [ g ≔ D ]) φ) (≃-reflexive (≔-same g))
+
+  put-ne : ∀ d {D κ σ ρ φ} w → w ∈ put n d D κ σ ρ φ → nonempty D
+  put-ne (var x) w w∈ with checked-⊆ n x w w∈
+  ... | ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne V⊆
+  put-ne (reg g) w w∈ = proj₁ w∈
+
+  case-ne : ∀ x {I P : 𝒫 Value} {F₁ F₂ : 𝒫 Value → 𝒫 Value} w
+    → w ∈ checked n x (⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ I , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ P , ptt ⟩ ⟩)
+    → nonempty I
+  case-ne x w w∈ with checked-⊆ n x w w∈
+  ... | ⟨ V , ⟨ ⟨ inj₁ ⟨ v , ⟨ _ , ⟨ l , _ ⟩ ⟩ ⟩ , _ ⟩ , _ ⟩ ⟩ = ⟨ _ , l v (here refl) ⟩
+  ... | ⟨ V , ⟨ ⟨ inj₂ ⟨ v , ⟨ _ , ⟨ r , _ ⟩ ⟩ ⟩ , _ ⟩ , _ ⟩ ⟩ = ⟨ _ , r v (here refl) ⟩
+
+  case-≃ : ∀ x {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
+    → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
+    → strict (isinl A) (checked n x (⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩
+                                      , ⟨ payloadD A , ptt ⟩ ⟩))
+      ≃ checked n x (𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩)
+  case-≃ x {A} {A'} {F₁} {F₂} {G₁} {G₂} A≃ tg F₁≃ F₂≃ =
+    strict-≃ (checked-≃ n {x} (case-core {A} {A'} {F₁} {F₂} {G₁} {G₂} A≃ tg F₁≃ F₂≃)) (case-ne x {F₁ = F₁} {F₂})
 
   {- the instructions of r into d, then is -}
   sel : ∀ r d is {κ K} → Fits d (⟦ is ⟧ˢ T n κ) K → ∀ σ → Inv σ → ∀ ρ φ
     → ⟦ select-simple r d ++ is ⟧ˢ T n κ σ ρ φ ≃ after d K σ (𝒮 T' n σ r)
   sel (atm a) d is f σ i ρ φ = put-≃ d f i (atm-≃ a)
-  sel (app g e a) d is f σ i ρ φ = put-≃ d f i (⋆-≃ (⋆-≃ (atm-≃ g) (atm-≃ e)) (atm-≃ a))
+  sel (app g e a) d is f σ i ρ φ =
+    strict-≃₃ {D₃ = ⋆ ⟨ ⋆ ⟨ G , ⟨ E , ptt ⟩ ⟩ , ⟨ A , ptt ⟩ ⟩} (put-≃ d f i (⋆-≃ (⋆-≃ (atm-≃ g) (atm-≃ e)) (atm-≃ a)))
+      (put-ne d) (λ r → proj₂ (⋆-ne {⋆ ⟨ G , ⟨ E , ptt ⟩ ⟩} r)) (λ r → proj₂ (⋆-ne {G} (proj₁ (⋆-ne r))))
+    where E = 𝒪 T n σ ρ (select-atm e)
+          A = 𝒪 T n σ (ρ [ rdi ≔ E ]) (select-atm a)
+          G = 𝒪 T n σ (ρ [ rdi ≔ E ] [ rsi ≔ A ]) (select-atm g)
   sel (I.pair a b) d is f σ i ρ φ = put-≃ d f i (pair-≃ ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)
   sel (fst a) d is f σ i ρ φ = put-≃ d f i (car-≃ ⟨ lift (atm-≃ a) , ptt ⟩)
   sel (snd a) d is f σ i ρ φ = put-≃ d f i (cdr-≃ ⟨ lift (atm-≃ a) , ptt ⟩)
@@ -256,8 +308,11 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   sel (get j a) d is f σ i ρ φ = put-≃ d f i (proj-≃ j (atm-≃ a))
   sel (I.inl a) d is f σ i ρ φ = put-≃ d f i (inl-≃ (atm-≃ a))
   sel (I.inr a) d is f σ i ρ φ = put-≃ d f i (inr-≃ (atm-≃ a))
-  sel (prim P.sub a b) d is f σ i ρ φ = put-≃ d f i (prim-≃ P.sub ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)
-  sel (prim P.eq a b) d is f σ i ρ φ = put-≃ d f i (prim-≃ P.eq ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)
+  sel (prim P.sub a b) d is f σ i ρ φ =
+    strict-≃₂ (put-≃ d f i (prim-≃ P.sub ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)) (put-ne d)
+      (prim-ne P.sub {E = 𝒪 T n σ (ρ [ rax ≔ 𝒪 T n σ ρ (select-atm a) ]) (select-atm b)})
+  sel (prim P.eq a b) d is f σ i ρ φ =
+    strict-≃ (put-≃ d f i (prim-≃ P.eq ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)) (put-ne d)
 
   {- the blocks B (of X86) and B' (of CFG) agree -}
   BR : Blocks → Blocksₜ → Set₁
@@ -270,10 +325,10 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
   tail (C.seq x r t) br σ i ρ φ = sel r (var x) _ (λ σ' i' ρ' φ' → tail t br σ' i' ρ' φ') σ i ρ φ
   tail (C.goto l) br σ i ρ φ = br l σ i ρ φ
   tail (C.case a x l₁ l₂) {B} {B'} br σ i ρ φ =
-    checked-≃ n {x} (case-core {F₁ = λ X → B l₁ (σ [ x ↦ X ]) ρ (isinl A)} {λ X → B l₂ (σ [ x ↦ X ]) ρ (isinl A)}
+    case-≃ x {F₁ = λ X → B l₁ (σ [ x ↦ X ]) ρ (isinl A)} {λ X → B l₂ (σ [ x ↦ X ]) ρ (isinl A)}
                                {λ X → B' l₁ (σ [ x ↦ X ])} {λ X → B' l₂ (σ [ x ↦ X ])}
       (atm-≃ a) (tagged-atm a i)
-      (λ V c → br l₁ _ (inv-↦ i (tagged-≈ c)) ρ _) (λ V c → br l₂ _ (inv-↦ i (tagged-≈ c)) ρ _))
+      (λ V c → br l₁ _ (inv-↦ i (tagged-≈ c)) ρ _) (λ V c → br l₂ _ (inv-↦ i (tagged-≈ c)) ρ _)
     where A = 𝒪 T n σ ρ (select-atm a)
 
   blocks-≃ : ∀ bs → BR (blocks T n (map select-tail bs)) (blocksₜ T' n bs)
