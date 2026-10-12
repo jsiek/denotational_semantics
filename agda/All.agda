@@ -204,8 +204,10 @@ import proof.Compiler.Functional.Correctness.CompilerFuel
 
 {- ---------------------------------------------------------------------------
    proof/: the reduction semantics + simulation development: forward
-   simulations between reduction semantics by substitution (and the
-   machines of Imp, CFG and X86, shared with the CEK development)
+   simulations between reduction semantics by substitution, and from the
+   Clos5 one to the machine of Imp (explicate control and select
+   instructions, between the machines of Imp, CFG and X86, are the CEK
+   development's, shared)
    --------------------------------------------------------------------------- -}
 
 {- the values of each reduction semantics -}

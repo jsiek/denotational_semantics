@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Count code lines of the three compiler-correctness proofs, and of the
+"""Count code lines of the four compiler-correctness proofs, and of the
 audit surface.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
@@ -40,10 +40,14 @@ observations.  For each infrastructure group, the separate table shows
 the lines of its modules that each proof reaches.  The script fails if an
 infrastructure module imports a module that is not infrastructure.
 
+A group may belong to two proofs ('op+red': the machines of Imp, CFG and
+X86 and the proofs of explicate control and select instructions, shared by
+the CEK and reduction proofs); it is counted in full in that row of both.
+
 Totals come from the import graph (`import`/`open import` lines, with or
 without `as`, `using`, module arguments or `public`).  A proof's total is
 its own modules plus the shared modules it reaches transitively that are
-not reached by all three proofs; shared modules reached by all three are
+not reached by all four proofs; shared modules reached by all four are
 not counted anywhere, and infrastructure is never counted.  Adequacy, an
 add-on to the denotational proof, also counts the shared modules it
 reaches that the denotational total does not already count.  The script
@@ -78,9 +82,9 @@ WP = 'agda/proof/Framework/'
 
 # (side, group, glob patterns)
 GROUPS = [
-    # also the lemmas both operational styles use about the compiler's
+    # also the lemmas the operational styles use about the compiler's
     # output, Compile/{EncloseScope,GlobalizeTable,PipelineScope}, and the
-    # observations (Observation.agda).  Those not used by all three proofs
+    # observations (Observation.agda).  Those not used by all four proofs
     # are counted in each proof that uses them (see main).
     ('shared', 'syntax, languages, compiler passes',
      [L + '*.agda', C + '*.agda', PC + 'Compile/*.agda', 'agda/Compiler/Observation.agda']),

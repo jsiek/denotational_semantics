@@ -7,11 +7,12 @@ A compiler from ISWIM to X86,
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
-proved correct three ways: denotational: graph model; CEK machine +
+proved correct four ways: denotational: graph model; CEK machine +
 simulation (small-step machines and forward simulations, in the style of
-CompCert); and clocked interpreter + value relations (in the style of
-CakeML); and the graph model proved sound and adequate for the
-machines.
+CompCert); clocked interpreter + value relations (in the style of
+CakeML); and reduction semantics + simulation (small-step reduction by
+substitution, and forward simulations); and the graph model proved sound
+and adequate for the machines.
 
 Check everything, from the root of the repository, with
 
@@ -44,12 +45,14 @@ that every module outside `proof/` is used by a theorem statement).
     machine (the same observations on termination, including going
     wrong, and divergence exactly when the source diverges).
   * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
+  * `Theorems/Reduction.agda`: the same, for the reduction semantics of
+    ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86.
   * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
     the ISWIM machine, and for the Clos5 and X86 machines running
     compiled programs; so the compiler, observed through the machines
     only, preserves the constants a closed program computes and whether
     it terminates with an answer.
-* The compiler, shared by all three styles:
+* The compiler, shared by all four styles:
   * `Compiler/Lang/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
   * `Compiler/Compile/`: the passes and their composition
@@ -59,8 +62,8 @@ that every module outside `proof/` is used by a theorem statement).
     (`PipelineScope.agda`).
   * `Framework/abt/`, `Framework/Syntax/`, `Framework/Primitives.agda`,
     `Framework/ListUtil.agda`: abstract binding trees, renaming,
-    scoping (`WS`), the variables a term uses (`Uses`, `bound`), base
-    types, and list lookups.
+    substitution, scoping (`WS`), the variables a term uses (`Uses`,
+    `bound`), base types, and list lookups.
 * The semantics, per style:
   * denotational: `Compiler/Model/Graph/` (the meaning of the primitives
     and `Sem/`, the semantics of each language) and
@@ -74,6 +77,12 @@ that every module outside `proof/` is used by a theorem statement).
     per language), `Compiler/Functional/Clock.agda` and
     `Framework/Clocked.agda` (results, termination, divergence,
     `Equivalent`), `Compiler/Observation.agda`;
+  * reduction semantics + simulation: `Compiler/Reduction/` (a reduction
+    semantics by substitution for ISWIM and Clos2–Clos5, and
+    `Reduction/Smallstep.agda`), `Framework/Reduction.agda` (reductions as
+    machines) and `Framework/Smallstep.agda`, and the machines of Imp, CFG
+    and X86 (`Compiler/Operational/Machine/{Values,Imp,CFG,X86}.agda`),
+    shared with the CEK machine + simulation style;
   * adequacy: those of the denotational and simulation theorems.
 
 ## `proof/`
@@ -93,12 +102,18 @@ the proofs are next to what they are about:
   consistency and continuity of the semantics;
 * `proof/Compiler/Operational/Correctness/`: the forward simulations;
 * `proof/Compiler/Functional/Correctness/`: the clock-for-clock proofs;
+* `proof/Compiler/Reduction/Correctness/`: the forward simulations between
+  reduction semantics (explicate control and select instructions are the
+  CEK proofs, `proof/Compiler/Operational/Correctness/{Explicate,Select}Sim.agda`,
+  shared), and `proof/Compiler/Reduction/`: the values of each reduction
+  semantics;
 * `proof/Compiler/Operational/Adequacy/`: soundness, adequacy, and the
   well-formedness of compiled programs;
 * `proof/Framework/`: the language-independent lemmas (continuity of the
   operators, the generic denotational semantics and its monotonicity and
-  continuity, renaming, forward simulations, clock-for-clock
-  correctness);
+  continuity, renaming, substitution and relations closed under it,
+  forward simulations, simulations between reduction semantics,
+  clock-for-clock correctness);
 * `proof/Compiler/Compile/`: syntactic facts about the passes, and
   examples;
 * experiments, not part of the main results: a direct semantics of Imp

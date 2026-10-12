@@ -243,6 +243,20 @@ denotational lemmas, the syntax lemmas, forward simulations) are under
   \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
     $\pass{compile\text{-}imp}$, $\pass{compile\text{-}cfg}$, and $\pass{compile\text{-}x86}$.
   \end{itemize}
+\item \textbf{Reduction semantics + simulation:}
+  \begin{itemize}
+  \item reductions as machines ($\mathit{Red}$, $\mathit{toNext}$), and the
+    reduction semantics of ISWIM and Clos2--Clos5 by substitution, with
+    evaluation contexts; Imp, CFG, and X86 keep their machines;
+  \item simulations between reductions: answering a stop by a run to a final
+    state, $\mathit{Ans}$, congruence, the theorem that a simulation gives
+    $\mathit{Equivalent}$, and closure under substitution;
+  \item for each pass, the relation on terms, its fundamental lemma, and its
+    correctness theorem; for rco, the let chain related for every value; for
+    lift locals, terms in a context of lets related to Imp states;
+  \item the end-to-end theorems, for $\pass{compile}$, $\pass{compile\text{-}mon}$,
+    $\pass{compile\text{-}imp}$, $\pass{compile\text{-}cfg}$, and $\pass{compile\text{-}x86}$.
+  \end{itemize}
 \end{enumerate}
 
 \paragraph{Where it doesn't match the Agda literally.}
@@ -401,6 +415,27 @@ In the interpreter proof:
   \texttt{tail-ok}, and \texttt{jump-ok}, and calls agree by
   \texttt{calls}$\equiv$ and \texttt{call-pw}
   (\texttt{proof/Compiler/Functional/Correctness/SelectFuel.agda}).
+\end{itemize}
+
+In the reduction proof:
+\begin{itemize}
+\item \textbf{Substitution} is on de Bruijn terms in the Agda
+  (\texttt{Framework/Syntax/Subst.agda}), and leaves the cleared code of a
+  closure untouched. The reduction semantics are in
+  \texttt{Compiler/Reduction}, written as functions with congruence rules
+  (\texttt{step-in}) rather than with evaluation contexts.
+\item \textbf{Values} are a predicate on terms (\texttt{Value}), and a
+  simulation answers with a target value (\texttt{Ans}, \texttt{val}).
+\item \textbf{Enclose}'s closure clause relates the variables that the
+  body uses (\texttt{Uses}) and keeps the target closed (\texttt{WS 0}).
+\item \textbf{The preconditions} $\FV(M) = \emptyset$ of optimize and
+  concretize are the Agda's \texttt{WS 0 M}.
+\item \textbf{RCO}'s contexts $h$ are frames of the Clos5 reduction
+  (\texttt{Frame}), and the operands of a construct are reduced left to right
+  (\texttt{LR}); the let chains are those of \texttt{lift}.
+\item \textbf{Lift locals}' frame is $\rho$ reversed followed by the slots
+  above it, as in the CEK proof (\texttt{Fr}), with $\sigma$ related to
+  $\rho$ (\texttt{Ag}) and the context to the continuation (\texttt{Kont}).
 \end{itemize}
 
 \paragraph{Building.} \texttt{latexmk -pdf definitions.tex}
@@ -3614,6 +3649,330 @@ For every ISWIM term $M$,
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
 \]
 by Theorems~\ref{thm:compile-cfg-clk} and~\ref{thm:select-clk} and Lemma~\ref{lem:equiv-trans-clk}.
+\end{theorem}
+
+%===============================================================================
+\part{Reduction Semantics + Simulation}
+
+\section{Reduction Semantics}\label{sec:red}
+
+The languages with binders (ISWIM, Clos2--Clos5) get a reduction semantics
+by substitution: a state is a term, and a step reduces a redex in an
+evaluation context, substituting values for bound variables. A variable
+is never looked up: one that is reached is unbound, and the term is stuck.
+Imp, CFG, and X86 have no binders, so they keep their machines
+(Section~\ref{sec:machines}), whose proofs of explicate control and select
+instructions are shared with the CEK machine + simulation development.
+
+\subsection{Reductions as machines}
+
+A reduction says of a term whether it is a value, is stuck, or reduces.
+\begin{align*}
+  \mathit{Red}(T) &::= \key{val} \mid \wrong \mid \key{to}\; M \qquad (M \in T) \\
+  \mathit{toNext}(o, \key{val}) &= \stp o \qquad
+  \mathit{toNext}(o, \wrong) = \stp \wrong \qquad
+  \mathit{toNext}(o, \key{to}\; M) = \nxt M \\
+  \mathcal{R}^{\ell}(M) &= (\mathit{Term}^{\ell},\; N \mapsto \mathit{toNext}(\obs(N), \mathit{red}^{\ell}(N)),\; M)
+\end{align*}
+so termination, divergence, and $\Equiv$ are those of Section~\ref{sec:sims}.
+On paper we give $\mathit{red}^{\ell}$ with evaluation contexts $E$: $M = E[r]$
+for a unique context and redex or value $r$, and
+\begin{align*}
+  \mathit{red}(V) &= \key{val} \\
+  \mathit{red}(E[r]) &= \key{to}\; E[r'] \quad \text{if } r \to r' \\
+  \mathit{red}(E[r]) &= \wrong \quad \text{otherwise (a variable, or a redex of the wrong shape)}
+\end{align*}
+The Agda writes $\mathit{red}$ as one function with congruence rules:
+$\key{step\text{-}in}(f, \mathit{red}(X), k)$ reduces inside the context $f$ if
+the subterm $X$ reduces, is stuck if $X$ is, and continues with $k$ if $X$ is
+a value. This needs no decomposition into a context and a redex, no plugging,
+and no unique-decomposition lemma, and is deterministic and total by
+construction, as the machines are; a run of a subterm lifts through a
+context by one generic lemma (frames, below).
+Values are observed as in Section~\ref{sec:obs}: $\obs(\lam{x} N) = \key{fun}$,
+and so on.
+
+\subsection{ISWIM}
+
+\[
+\begin{array}{rcl}
+  V, W &::=& \lam{x} N \mid c \mid \tuple{V_1, \ldots, V_n} \mid \inl V \mid \inr V \\
+  E &::=& \square \mid E\;M \mid (\lam{x} N)\;E \mid \tuple{V_1, \ldots, V_{i-1}, E, M_{i+1}, \ldots, M_n}
+    \mid \prj{i} E \mid \inl E \mid \inr E \\
+  &\mid& \Case{E}{x}{M}{y}{N} \mid \prim{p}{E}{M} \mid \prim{p}{V}{E}
+\end{array}
+\]
+\[
+\begin{array}{@{}r@{\;\to\;}l@{\quad}l@{}}
+  (\lam{x} N)\;V & N[x := V] \\
+  \prj{i} \tuple{V_1, \ldots, V_m} & V_i & m = n,\; \prj{i} \text{ of arity } n \\
+  \Case{\inl V}{x}{M}{y}{N} & M[x := V] \\
+  \Case{\inr V}{x}{M}{y}{N} & N[y := V] \\
+  \prim{p}{n}{m} & \res{\delta(p, n, m)}
+\end{array}
+\]
+The context $(\lam{x} N)\;E$ checks that the operator is a function before
+the argument is evaluated, as the ISWIM machine does: $V\;M$ with $V$ not a
+function is stuck.
+
+\subsection{Clos2 and Clos3}
+
+A closure is a value once its free variables are values.
+\[
+\begin{array}{rcl}
+  V &::=& \clos{V_1\ldots V_n}{x_1\ldots x_n\, y} N \mid c \mid \tuple{\bar{V}} \mid \inl V \mid \inr V \\
+  E &::=& \clos{V_1 \ldots V_{i-1}\, E\, M_{i+1} \ldots M_n}{x_1\ldots x_n\, y} N \mid E\;M \mid V_\lambda\;E \mid \cdots
+\end{array}
+\]
+where $V_\lambda$ is a closure value, and in Clos2
+\[
+  (\clos{V_1\ldots V_n}{x_1\ldots x_n\, y} N)\;W \to N[x_1 := V_1, \ldots, x_n := V_n, y := W]
+\]
+and in Clos3, with the tuple of the free variables for $e$,
+\[
+  (\clos{V_1\ldots V_n}{e\, y} N)\;W \to N[e := \tuple{V_1, \ldots, V_n}, y := W] .
+\]
+The other contexts and redexes are those of ISWIM.
+
+\subsection{Clos4 and Clos5}
+
+The operator of an application is checked to be code only at the call,
+after its three operands.
+\[
+\begin{array}{rcl}
+  V &::=& \fun{e\,y.\,N} \mid \pair{V}{W} \mid c \mid \tuple{\bar{V}} \mid \inl V \mid \inr V \\
+  E &::=& E(M, N) \mid V(E, N) \mid V(W, E) \mid \pair{E}{N} \mid \pair{V}{E} \mid \FST E \mid \SND E
+    \mid \Let x = E \In N \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}r@{\;\to\;}l@{}}
+  (\fun{e\,y.\,N})(U, W) & N[e := U, y := W] \\
+  \FST \pair{V}{W} & V \qquad \SND \pair{V}{W} \to W \\
+  \Let x = V \In N & N[x := V]
+\end{array}
+\]
+In Clos5, $\funref{k}$ is a value, and a program $(d_0, \ldots, d_{m-1};\; M)$
+reduces $M$ with the definitions:
+$\funref{k}(U, W) \to N[e := U, y := W]$ when $k < m$ and $d_k = \key{fun}\; e\,y.\,N$.
+
+%-------------------------------------------------------------------------------
+\section{Simulations Between Reductions}\label{sec:red-sims}
+
+The forward simulations of Section~\ref{sec:sims} answer a source that stops
+by a target that has stopped. Here the target may first take administrative
+steps (an extra projection, a let, the evaluation of an atom), so a stop
+is answered by a run to a final state:
+\[
+  \mathit{Answers}_i(\stp o, s_2) \iff \exists t.\; s_2 \lto_{L_2}^* t \land \Final_{L_2}(t, o) .
+\]
+Theorem~\ref{thm:equivalent} still holds, by determinism.
+
+Between two reductions, a relation $\approx$ on terms gives a simulation when
+every source term's reduction is answered by every related target term:
+\begin{align*}
+  \mathit{Ans}(M, \key{val}, M') &\iff \exists V'.\; M' \lto^* V' \land V' \text{ is a value} \land M \approx V' \\
+  \mathit{Ans}(M, \wrong, M') &\iff \exists W'.\; M' \lto^* W' \land \mathit{red}(W') = \wrong \\
+  \mathit{Ans}(M, \key{to}\; M_1, M') &\iff \exists M_1'.\; M' \lto^+ M_1' \land M_1 \approx M_1'
+\end{align*}
+
+\begin{lemma}[Congruence]\label{lem:ans-in}
+If $g$ is a frame of the target ($\mathit{red}(g(X)) = \key{step\text{-}in}(g, \mathit{red}(X), \kappa(X))$),
+$Y \approx Y' \implies f(Y) \approx g(Y')$, $\mathit{Ans}(X, r, X')$, and
+$\mathit{Ans}(f(X), k, g(V'))$ for every value $V'$ with $X \approx V'$, then
+$\mathit{Ans}(f(X), \key{step\text{-}in}(f, r, k), g(X'))$.
+\end{lemma}
+
+\begin{theorem}[Reduction Simulation Gives Equivalence]\label{thm:red-equivalent}
+If $M_0 \approx M_0'$, $\mathit{Ans}(M, \mathit{red}^1(M), M')$ whenever $M \approx M'$, and
+$\obs(V) = \obs(V')$ whenever $V \approx V'$ are values, then
+$\Equiv(\mathcal{R}^1(M_0), \mathcal{R}^2(M_0'))$.
+\end{theorem}
+
+\begin{lemma}[Closure Under Substitution]\label{lem:red-subst}
+For each relation $\approx$ below that is closed under substitution, if
+$M \approx M'$ and $\sigma(x) \approx \sigma'(x)$ for every $x$, then
+$M[\sigma] \approx M'[\sigma']$. It is proved once for renamings, then for
+every substitution, from one proof for any relation between substitutions
+that is preserved under binders.
+\end{lemma}
+
+%-------------------------------------------------------------------------------
+\section{Relations}\label{sec:red-relations}
+
+Each relation is a congruence: $x \approx x$, $c \approx c$, and each
+construct is related to the same construct with related subterms; we show
+only the other clauses. Where a pass compiles code that no substitution
+enters (the body of a Clos2--Clos4 closure, a global definition), the
+relation on that code is the compilation function, and applying related
+closures substitutes related values into it, which a fundamental lemma
+relates.
+
+\subsection{Enclose}
+
+The bodies of ISWIM functions are substituted into, so a function is related
+to the closure of the compiled body, through a substitution $\sigma$ of the
+body's free variables by terms related to what the closure captures:
+\[
+  \lam{y} N[\sigma] \approx \clos{F_1\ldots F_n}{x_1\ldots x_n\, y} \pass{enclose}(N)
+  \iff \forall i.\; x_i \in \FV(N) \implies \sigma(x_i) \approx F_i ,
+\]
+where each $F_i$ is a variable or a value.
+
+\begin{lemma}[Fundamental Lemma, Enclose]
+If $\sigma(x) \approx \sigma'(x)$ for every $x \in \FV(M)$, and each
+$\sigma'(x)$ is a variable or a value, then $M[\sigma] \approx \pass{enclose}(M)[\sigma']$.
+\end{lemma}
+
+The target is closed, so a closure that is reduced has captured values,
+and is a value as the ISWIM function is.
+
+\begin{theorem}[Correctness of Enclose, Reduction]\label{thm:enclose-red}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \mathcal{R}^{2}(\pass{enclose}(M))) .
+\]
+\end{theorem}
+
+\subsection{Optimize}
+
+A closure is related to its optimization when the code is the compiled code
+and the free variables are related as $\pass{prune}$ makes them: the ones the
+code uses are kept and related, the others may be dropped if they are
+variables or values ($\mathit{Pr}$). In a closed program a dropped free
+variable that is reduced has become a value, so the two reductions run in
+lock step.
+\begin{lemma}[Fundamental Lemma, Optimize]
+If $\sigma(x) \approx \sigma'(r(x))$ for every $x \in \FV(M)$, and each
+$\sigma(x)$ is a variable or a value, then $M[\sigma] \approx \pass{optimize}_r(M)[\sigma']$.
+\end{lemma}
+
+\begin{theorem}[Correctness of Optimize, Reduction]\label{thm:optimize-red}
+For every Clos2 term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\mathcal{R}^{2}(M), \mathcal{R}^{2}(\pass{optimize}(M))) .
+\]
+\end{theorem}
+
+\subsection{Concretize}
+
+Applying a Clos3 closure substitutes the tuple of its free variables, so where
+the source has a value, the target has a projection from that tuple, which
+takes a step:
+\[
+  V \approx \prj{i} \tuple{V_1', \ldots, V_n'} \iff V \approx V_i' \land V_1', \ldots, V_n' \text{ are values} ,
+\]
+and closures are related by their free variables and by their code, the
+target's being $\pass{concretize}$ of the source's.
+\begin{lemma}[Fundamental Lemma, Concretize]
+If $\sigma(x) \approx r_\varphi(x)[\sigma']$ for every $x \in \FV(M)$, then
+$M[\sigma] \approx \pass{concretize}_\varphi(M)[\sigma']$, where $r_\varphi(x)$
+is the term of $\varphi(x)$ (a variable or a projection).
+\end{lemma}
+
+\begin{theorem}[Correctness of Concretize, Reduction]\label{thm:concretize-red}
+For every Clos2 term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\mathcal{R}^{2}(M), \mathcal{R}^{3}(\pass{concretize}_{\mathit{id}}(M))) .
+\]
+\end{theorem}
+The precondition is new: a variable of a closure's code beyond its
+parameters becomes, in the two languages, two different variables, and
+substitution moves both differently; the machines look both up in the
+closure's environment, where both fail.
+
+\subsection{Delay}
+
+\begin{align*}
+  \clos{\bar{F}}{e\, y} N \approx \pair{\fun{e\,y.\,N'}}{\tuple{\bar{F}'}} &\iff N \approx N' \land \bar{F} \approx \bar{F}' \\
+  L\;M \approx \Let f = L' \In (\FST f)(\SND f, M') &\iff L \approx L' \land M \approx M' \\
+  (\clos{\bar{V}}{e\, y} N)\;M \approx \fun{e\,y.\,N'}(\tuple{\bar{V}'}, M') &\iff
+    N \approx N' \land \bar{V} \approx \bar{V}' \land M \approx M'
+\end{align*}
+The last clause relates the source, which waits for the argument, to the
+target after its let, $\FST$, and $\SND$. Code is related by the relation
+itself, so $M \approx \pass{delay}(M)$ for every $M$, and $\approx$ is closed
+under substitution.
+\begin{theorem}[Correctness of Delay, Reduction]\label{thm:delay-red}
+For every Clos3 term $M$,
+\[
+  \Equiv(\mathcal{R}^{3}(M), \mathcal{R}^{4}(\pass{delay}(M))) .
+\]
+\end{theorem}
+
+\subsection{Globalize}
+
+For the table $D$ of the whole program,
+\[
+  \fun{e\,y.\,N} \approx_D \funref{k} \iff d_k = \key{fun}\; e\,y.\,N' \text{ in } D \land N \approx_D N' ,
+\]
+and a term is related to its globalization when the table it makes grows
+into $D$, as in the other proofs.
+\begin{theorem}[Correctness of Globalize, Reduction]\label{thm:globalize-red}
+For every Clos4 term $M$,
+\[
+  \Equiv(\mathcal{R}^{4}(M), \mathcal{R}^{5}(\pass{globalize}(M))) .
+\]
+\end{theorem}
+
+\subsection{Remove Complex Operands}
+
+The values of Clos5 contain no code, so source and target compute the same
+values, and the relation is not closed under substitution but built from the
+code under a substitution $\sigma$ of values. A complex operand $M$ in the
+context $h$ of its construct is related to its let in the target:
+\[
+  h[M] \approx \Let x = M' \In B \iff M \approx M' \land \forall V.\; h[V] \approx B[x := V] ,
+\]
+for every value $V$ (the same on both sides, so this is not a logical
+relation). Values are related to themselves, and so are the constructs whose
+operands are values, $\key{case}$ and $\key{let}$ with the code of their
+branches and body compiled under $\sigma$.
+\begin{lemma}[Fundamental Lemma, RCO]
+If $\sigma$ maps the variables of $M$ to values, then $M[\sigma] \approx \pass{rco}(M)[\sigma]$.
+\end{lemma}
+\begin{theorem}[Correctness of RCO, Reduction]\label{thm:rco-red}
+For every Clos5 program $P$,
+\[
+  \mathit{Scoped}_5(P) \implies \Equiv(\mathcal{R}^{5}(P), \mathcal{R}^{5}(\pass{rco}(P))) .
+\]
+\end{theorem}
+
+\subsection{Lift Locals}
+
+The source substitutes values for the variables; the target keeps them in its
+frame. A source term $C[M[\sigma]]$, for code $M$ of the program in an
+evaluation context $C$ of lets, is related to the Imp state that runs
+$\pass{lift}(M)$ in a frame holding the values of $\sigma$, with a continuation
+that does what $C$ does (assigning the let's slot and running its body,
+and returning from calls), and a value term to the machine value with the
+same data.
+\begin{theorem}[Correctness of Lift Locals, Reduction]\label{thm:lift-red}
+For every monadic Clos5 program $P$,
+\[
+  \Equiv(\mathcal{R}^{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P))) .
+\]
+\end{theorem}
+
+\subsection{Explicate Control and Select Instructions}
+
+Theorems~\ref{thm:explicate-sim} and~\ref{thm:select-sim}, between the
+machines of Imp, CFG, and X86.
+
+\subsection{End to End}
+
+\begin{theorem}[Compiler Correctness, Reduction]\label{thm:compiler-red}
+For every ISWIM term $M$, if $\FV(M) = \emptyset$, then
+\begin{align*}
+  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \mathcal{R}^{5}(\pass{compile}(M))) \\
+  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \mathcal{R}^{5}(\pass{compile\text{-}mon}(M))) \\
+  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\mathrm{Imp}}(\pass{compile\text{-}imp}(M))) \\
+  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\mathrm{CFG}}(\pass{compile\text{-}cfg}(M))) \\
+  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
+\end{align*}
+by the theorems for each pass, Lemma~\ref{lem:compile-scoped}, and
+Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
 \end{document}

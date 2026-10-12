@@ -1,7 +1,7 @@
 {-
 
   The values of the Clos5 reduction semantics (Compiler/Reduction/Clos5.agda):
-  they reduce to val, and substitution keeps them values.
+  they reduce to val.
 
 -}
 
@@ -11,7 +11,6 @@ open import Compiler.Reduction.Clos5 public
 open import Compiler.Lang.Clos5
 open import Compiler.Reduction.Smallstep using (val)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil)
-open import Framework.Syntax.Subst Op sig using (sub; sub-args)
 
 open import Data.List using (replicate)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
@@ -42,14 +41,3 @@ value-red {ds} (inl v) rewrite value-red {ds} v = refl
 value-red {ds} (inr v) rewrite value-red {ds} v = refl
 values-red [] = refl
 values-red {ds} (v ∷ vs) rewrite value-red {ds} v | values-red {ds} vs = refl
-
-value-sub : ∀ σ {V} → Value V → Value (sub σ V)
-values-sub : ∀ σ {n} {as : Args (replicate n ■)} → Values as → Values (sub-args σ as)
-value-sub σ fun = fun
-value-sub σ (pair v w) = pair (value-sub σ v) (value-sub σ w)
-value-sub σ lit = lit
-value-sub σ (tuple vs) = tuple (values-sub σ vs)
-value-sub σ (inl v) = inl (value-sub σ v)
-value-sub σ (inr v) = inr (value-sub σ v)
-values-sub σ [] = []
-values-sub σ (v ∷ vs) = value-sub σ v ∷ values-sub σ vs
