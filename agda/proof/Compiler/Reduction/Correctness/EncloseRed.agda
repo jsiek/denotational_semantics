@@ -43,6 +43,7 @@ open import proof.Framework.Syntax.Uses Op sig using (Uses; UsesArg; UsesArgs; b
 import proof.Framework.Syntax.Subst Op sig as IS
 import Framework.Syntax.Rename Op sig as IR
 import Framework.Syntax.Rename C.Op C.sig as CR
+import proof.Framework.Syntax.SubstRel Op sig C.Op C.sig as SubstRel
 import proof.Framework.Syntax.Subst C.Op C.sig as CS
 open IS using (exts; sub; sub-args; ids; _[_])
 open import proof.Framework.Syntax.ScopeSubst C.Op C.sig using (ws-sub; SFits; sfits-extend)
@@ -132,42 +133,18 @@ module Kit (P : IS.Subst → CS.Subst → Set)
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
-≈-rename : ∀ r {M M'} → M ≈ M' → IR.rename r M ≈ CR.rename r M'
-≈-rename r {M} {M'} m =
-  subst₂ _≈_ (sym (IS.rename-sub r M)) (sym (CS.rename-sub r M')) (Kit.≈-sub RenP p≈ pvv pexts (λ x → r x , refl , refl) m)
-  where
-  RenP : IS.Subst → CS.Subst → Set
-  RenP σ σ' = ∀ x → Σ[ y ∈ ℕ ] σ x ≡ ` y × σ' x ≡ C.` y
-  p≈ : ∀ {σ σ'} → RenP σ σ' → ∀ x → σ x ≈ σ' x
-  p≈ p x with p x
-  ... | y , e , e' rewrite e | e' = var≈
-  pvv : ∀ {σ σ'} → RenP σ σ' → ∀ x → VV (σ' x)
-  pvv p x with p x
-  ... | y , e , e' rewrite e' = vv-var y
-  pexts : ∀ {σ σ'} → RenP σ σ' → RenP (exts σ) (CS.exts σ')
-  pexts p zero = zero , refl , refl
-  pexts p (suc x) with p x
-  ... | y , e , e' = suc y , cong (IR.rename suc) e , cong (CR.rename suc) e'
-
-{- related substitutions: related terms, and the target's are variables or values -}
-SubP : IS.Subst → CS.Subst → Set
-SubP σ σ' = ∀ x → σ x ≈ σ' x × VV (σ' x)
-
 vv-exts : ∀ {σ'} → (∀ x → VV (σ' x)) → ∀ x → VV (CS.exts σ' x)
 vv-exts h zero = vv-var 0
 vv-exts {σ'} h (suc x) = subst VV (sym (CS.rename-sub suc (σ' x))) (vv-sub (λ y → vv-var (suc y)) (h x))
 
-sub-exts : ∀ {σ σ'} → SubP σ σ' → SubP (exts σ) (CS.exts σ')
-sub-exts p zero = var≈ , vv-var 0
-sub-exts p (suc x) = ≈-rename suc (proj₁ (p x)) , vv-exts (λ y → proj₂ (p y)) (suc x)
-
-≈-subst : ∀ {σ σ' M M'} → SubP σ σ' → M ≈ M' → sub σ M ≈ CS.sub σ' M'
-≈-subst = Kit.≈-sub SubP (λ p x → proj₁ (p x)) (λ p x → proj₂ (p x)) sub-exts
+{- related substitutions: related terms, and the target's are variables or values -}
+open SubstRel.Closure _≈_ var≈ (λ _ σ' → ∀ x → VV (σ' x))
+  (λ h x → subst VV (sym (proj₂ (proj₂ (h x)))) (vv-var _)) vv-exts Kit.≈-sub
+  using (≈-rename; ≈-subst; SubP)
 
 {- one related value for the bound variable -}
 sub-one : ∀ {V V'} → V ≈ V' → Value V' → SubP (V • ids) (V' • CS.ids)
-sub-one r v zero = r , vv-val v
-sub-one r v (suc x) = var≈ , vv-var x
+sub-one r v = (λ { zero → r ; (suc x) → var≈ }) , (λ { zero → vv-val v ; (suc x) → vv-var x })
 
 {- The fundamental lemma --------------------------------------------------------}
 

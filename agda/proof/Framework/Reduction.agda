@@ -99,6 +99,14 @@ step-in-∘ val = refl
 step-in-∘ wrong = refl
 step-in-∘ (to _) = refl
 
+{- the empty context -}
+frame-id : ∀ {T : Set} {red : T → Red T} → Frame red red (λ x → x)
+frame-id {red = red} = frame (λ _ → val) (λ X → lemma (red X))
+  where lemma : ∀ {T} (r : Red T) → r ≡ step-in (λ x → x) r val
+        lemma val = refl
+        lemma wrong = refl
+        lemma (to _) = refl
+
 frame-∘ : ∀ {T U V : Set} {redT : T → Red T} {redU : U → Red U} {redV : V → Red V}
   {h : T → U} {f : U → V} → Frame redT redU h → Frame redU redV f → Frame redT redV (λ x → f (h x))
 frame-∘ {redT = redT} {h = h} {f = f} (frame κh eqh) (frame κf eqf) =

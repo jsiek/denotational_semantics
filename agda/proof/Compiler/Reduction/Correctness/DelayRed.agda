@@ -41,6 +41,7 @@ import proof.Framework.Syntax.Subst Op sig as SS
 import proof.Framework.Syntax.Subst C.Op C.sig as TS
 import Framework.Syntax.Rename Op sig as SR
 import Framework.Syntax.Rename C.Op C.sig as TR
+import proof.Framework.Syntax.SubstRel Op sig C.Op C.sig as SubstRel
 open SS using (sub; sub-args; exts; ids)
 open import proof.Framework.ListUtil using (proj-pw)
 
@@ -50,6 +51,7 @@ import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Maybe using (just; nothing; map)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (Σ-syntax; _×_; _,_)
+open import Data.Unit using (⊤; tt)
 open import Compiler.Lang.Prim using (int; bool)
 open import Data.Bool using (true; false)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst; subst₂)
@@ -125,25 +127,8 @@ module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
-≈-rename : ∀ r {M M'} → M ≈ M' → SR.rename r M ≈ TR.rename r M'
-≈-rename r {M} {M'} m =
-  subst₂ _≈_ (sym (SS.rename-sub r M)) (sym (TS.rename-sub r M')) (Kit.≈-sub RenP p≈ pexts (λ x → r x , refl , refl) m)
-  where
-  RenP : SS.Subst → TS.Subst → Set
-  RenP σ σ' = ∀ x → Σ[ y ∈ ℕ ] σ x ≡ ` y × σ' x ≡ C.` y
-  p≈ : ∀ {σ σ'} → RenP σ σ' → ∀ x → σ x ≈ σ' x
-  p≈ p x with p x
-  ... | y , e , e' rewrite e | e' = var≈
-  pexts : ∀ {σ σ'} → RenP σ σ' → RenP (exts σ) (TS.exts σ')
-  pexts p zero = zero , refl , refl
-  pexts p (suc x) with p x
-  ... | y , e , e' = suc y , cong (SR.rename suc) e , cong (TR.rename suc) e'
-
-SubP : SS.Subst → TS.Subst → Set
-SubP σ σ' = ∀ x → σ x ≈ σ' x
-
-≈-subst : ∀ {σ σ' M M'} → SubP σ σ' → M ≈ M' → sub σ M ≈ TS.sub σ' M'
-≈-subst = Kit.≈-sub SubP (λ p → p) λ { p zero → var≈ ; p (suc x) → ≈-rename suc (p x) }
+open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) (λ P p≈ _ → Kit.≈-sub P p≈)
+  using (≈-rename; ≈-subst)
 
 {- The simulation -----------------------------------------------------------------}
 
@@ -217,7 +202,7 @@ call-ans r rs vs s =
   ans-in (frame {g = λ X → C.app C.⦅ _ ,, _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red (T.tuple vs))))
          (call≈ r rs (≈-values vs rs) vs) (sim s)
     λ w s' → to (one (trans (val-in (T.value-red (T.tuple vs))) (val-in (T.value-red w))))
-                (≈-subst (λ { zero → s' ; (suc zero) → tuple≈ rs ; (suc (suc x)) → var≈ }) r)
+                (≈-subst ((λ { zero → s' ; (suc zero) → tuple≈ rs ; (suc (suc x)) → var≈ }) , tt) r)
 
 sim var≈ = wrong ε refl
 sim (clos≈ {n} {N' = N'} r rs) =
@@ -256,9 +241,9 @@ sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ
   case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
   case-sim v@(T.inl _) (inl≈ r') =
-    to (one (val-in (T.value-red v))) (≈-subst (λ { zero → r' ; (suc x) → var≈ }) s)
+    to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
   case-sim v@(T.inr _) (inr≈ r') =
-    to (one (val-in (T.value-red v))) (≈-subst (λ { zero → r' ; (suc x) → var≈ }) t)
+    to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) t)
   case-sim T.fun ()
   case-sim v@(T.pair _ _) (clos≈ _ _) = wrong ε (val-in (T.value-red v))
   case-sim T.lit lit≈ = wrong ε refl

@@ -49,6 +49,7 @@ import proof.Framework.Syntax.Scope
 import proof.Framework.Syntax.ScopeRename
 import proof.Framework.Syntax.Subst
 import proof.Framework.Syntax.ScopeSubst
+import proof.Framework.Syntax.SubstRel
 import proof.Framework.GraphModel.SetsAsPredicates
 import proof.Framework.GraphModel.DOpSig
 import proof.Framework.GraphModel.DenotProperties
@@ -210,7 +211,12 @@ import proof.Compiler.Functional.Correctness.CompilerFuel
 import proof.Compiler.Reduction.Clos2
 import proof.Compiler.Reduction.Clos3
 import proof.Compiler.Reduction.Clos4
+import proof.Compiler.Reduction.Clos5
 
 {- correctness of each pass, and of the compiler into each language -}
 import proof.Compiler.Reduction.Correctness.EncloseRed
+import proof.Compiler.Reduction.Correctness.OptimizeRed
+import proof.Compiler.Reduction.Correctness.ConcretizeRed
 import proof.Compiler.Reduction.Correctness.DelayRed
+import proof.Compiler.Reduction.Correctness.GlobalizeRed
+import proof.Compiler.Reduction.Correctness.CompilerRed

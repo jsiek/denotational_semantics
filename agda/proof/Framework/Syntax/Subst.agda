@@ -1,6 +1,8 @@
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; ≤-pred; m≤n⇒m<n∨m≡n)
-open import Data.List using (List; replicate)
+open import Data.List using (List; replicate; _∷_)
+import Data.List
+open import Framework.ListUtil using (args→list)
 open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong; cong₂; subst)
 open import Framework.abt.Sig using (Sig; ■)
@@ -149,3 +151,8 @@ extend-sub τ {suc n} (cons (ast M) Ms) σ σ' k k< with m≤n⇒m<n∨m≡n (�
 {- substituting under a binder into a shifted term -}
 exts-shift : ∀ σ M → sub (exts σ) (rename suc M) ≡ rename suc (sub σ M)
 exts-shift σ M = trans (ren-sub (exts σ) suc M) (sym (sub-ren suc σ M))
+
+{- the operands of a tuple, substituted -}
+sub-args-list : ∀ σ {n} (as : Args (replicate n ■)) → args→list (sub-args σ as) ≡ Data.List.map (sub σ) (args→list as)
+sub-args-list σ {zero} nil = refl
+sub-args-list σ {suc n} (cons (ast M) as) = cong (sub σ M ∷_) (sub-args-list σ as)
