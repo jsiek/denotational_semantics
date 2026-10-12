@@ -32,6 +32,7 @@ open import Data.List using (List; []; _∷_; reverse; replicate)
 open import Data.Maybe using (Maybe; just; nothing; map)
 open import Data.Nat using (ℕ; zero; suc; _∸_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
 
 Frame : Set
 Frame = List Val
@@ -65,43 +66,51 @@ atoms : Frame → List Val → List Atm → Result (List Val)
 atoms φ vs [] = ret vs
 atoms φ vs (a ∷ as) = atom φ a >>= λ v → atoms φ (v ∷ vs) as
 
+{- the value of a simple expression, which leaves the frame as it is;
+   call f e w calls the operator f, shared with CFG (Interp/CFG.agda) -}
+eval-simple : (Val → Val → Val → Result Val) → Frame → Simple → Result Val
+eval-simple call φ (atm a) = atom φ a
+eval-simple call φ (app f e a) = atom φ f >>= λ f → atom φ e >>= λ e → atom φ a >>= λ w → call f e w
+eval-simple call φ (pair a b) = atom φ a >>= λ v → atom φ b >>= λ w → ret (pair v w)
+eval-simple call φ (fst a) = atom φ a >>= first
+eval-simple call φ (snd a) = atom φ a >>= second
+eval-simple call φ (tuple as) = atoms φ [] as >>= λ vs → ret (tup (reverse vs))
+eval-simple call φ (get i a) = atom φ a >>= project i
+eval-simple call φ (inl a) = atom φ a >>= λ v → ret (inl v)
+eval-simple call φ (inr a) = atom φ a >>= λ v → ret (inr v)
+eval-simple call φ (prim p a b) = atom φ a >>= λ v → atom φ b >>= λ w → from-maybe (prim? p v w)
+
+{- the payload of an injection, on the left for inl -}
+inj? : Val → Result (Val ⊎ Val)
+inj? (inl v) = ret (inj₁ v)
+inj? (inr v) = ret (inj₂ v)
+inj? _ = wrong
+
+{- x := v, then k -}
+set : ∀ {A : Set} → Frame → ℕ → Val → (Frame → Result A) → Result A
+set φ x v k = from-maybe (φ [ x ]≔ v) >>= k
+
 {- the interpreter for a program with global definitions ds -}
 module _ (ds : List Body) where
 
-  eval : ℕ → Frame → Exp → Result (Val × Frame)
-  code? : Val → Maybe Body
-  call : ℕ → Maybe Body → Val → Val → Result Val
-  branch : ℕ → Frame → ℕ → Exp → Exp → Val → Result (Val × Frame)
-  put : ℕ → Frame → ℕ → Val → Exp → Result (Val × Frame)
-
-  eval ck φ (atm a) = here φ (atom φ a)
-  eval ck φ (app f e a) =
-    atom φ f >>= λ f → atom φ e >>= λ e → atom φ a >>= λ w → here φ (call ck (code? f) e w)
-  eval ck φ (pair a b) = atom φ a >>= λ v → atom φ b >>= λ w → ret (pair v w , φ)
-  eval ck φ (fst a) = atom φ a >>= λ v → here φ (first v)
-  eval ck φ (snd a) = atom φ a >>= λ v → here φ (second v)
-  eval ck φ (tuple as) = atoms φ [] as >>= λ vs → ret (tup (reverse vs) , φ)
-  eval ck φ (get i a) = atom φ a >>= λ v → here φ (project i v)
-  eval ck φ (inl a) = atom φ a >>= λ v → ret (inl v , φ)
-  eval ck φ (inr a) = atom φ a >>= λ v → ret (inr v , φ)
-  eval ck φ (prim p a b) = atom φ a >>= λ v → atom φ b >>= λ w → here φ (from-maybe (prim? p v w))
-  eval ck φ (case a x e₁ e₂) = atom φ a >>= branch ck φ x e₁ e₂
-  eval ck φ (assign x e₁ e₂) = eval ck φ e₁ >>= λ p → put ck (proj₂ p) x (proj₁ p) e₂
-
   {- the definition a code pointer refers to -}
+  code? : Val → Maybe Body
   code? (code k) = global ds k
   code? _ = nothing
+
+  eval : ℕ → Frame → Exp → Result (Val × Frame)
+  call : ℕ → Maybe Body → Val → Val → Result Val
+  put : ℕ → Frame → ℕ → Val → Exp → Result (Val × Frame)
+
+  eval ck φ (simple s) = here φ (eval-simple (λ f → call ck (code? f)) φ s)
+  eval ck φ (case a x e₁ e₂) = atom φ a >>= λ v → inj? v >>= [ (λ w → put ck φ x w e₁) , (λ w → put ck φ x w e₂) ]
+  eval ck φ (assign x e₁ e₂) = eval ck φ e₁ >>= λ p → put ck (proj₂ p) x (proj₁ p) e₂
 
   call ck nothing e w = wrong
   call zero (just b) e w = timeout
   call (suc ck) (just (body n x)) e w = value (eval ck (e ∷ w ∷ replicate (n ∸ 2) zero-val) x)
 
-  branch ck φ x e₁ e₂ (inl v) = put ck φ x v e₁
-  branch ck φ x e₁ e₂ (inr v) = put ck φ x v e₂
-  branch ck φ x e₁ e₂ _ = wrong
-
-  {- x := v, then e -}
-  put ck φ x v e = from-maybe (φ [ x ]≔ v) >>= λ φ' → eval ck φ' e
+  put ck φ x v e = set φ x v λ φ' → eval ck φ' e
 
 {- a program starts with main, in a frame of zeros -}
 sem : Program → Semantics
