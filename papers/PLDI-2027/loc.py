@@ -79,6 +79,7 @@ GROUPS = [
     ('ck', 'delay', [F + 'Correctness/DelayFuel.agda']),
     ('ck', 'globalize', [F + 'Correctness/GlobalizeFuel.agda']),
     ('ck', 'rco', [F + 'Correctness/RCOFuel.agda']),
+    ('ck', 'lift locals', [F + 'Correctness/LiftLocalsFuel.agda']),
     ('ck', 'composition', [F + 'Correctness/CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
