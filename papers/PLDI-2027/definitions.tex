@@ -79,6 +79,8 @@
 \newcommand{\inrV}{\key{inr}\;}
 \newcommand{\Kf}[2]{\key{#1}(#2)}
 \newcommand{\halt}{\key{halt}}
+\newcommand{\assign}[3]{#1 \mathrel{:=} #2;\; #3}
+\newcommand{\Casei}[4]{\key{case}\;#1\;\key{of}_{#2}\;\key{inl} \Rightarrow #3 \mid \key{inr} \Rightarrow #4}
 \newcommand{\tnext}{\mathit{tuple\text{-}next}}
 \newcommand{\cnext}{\mathit{clos\text{-}next}}
 \newcommand{\lto}{\longrightarrow}
@@ -124,7 +126,9 @@ instead of de Bruijn indices.
     and the primitives $\key{sub}$ and $\key{eq}$;
   \item enclose, optimize, concretize, delay (with the let), and globalize;
   \item remove complex operands (rco) into monadic Clos5, $\pass{compile\text{-}mon}$,
-    and well-scoped Clos5 programs ($\mathit{Scoped}_5$).
+    and well-scoped Clos5 programs ($\mathit{Scoped}_5$);
+  \item the imperative language Imp, lift locals into it, and
+    $\pass{compile\text{-}imp}$.
   \end{itemize}
 \item \textbf{Denotational proof:}
   \begin{itemize}
@@ -192,6 +196,10 @@ Using names instead of de Bruijn indices changes a few definitions:
   \texttt{Scoped} (\texttt{Compile/PipelineScope.agda}).
 \item \textbf{Fresh variables} of rco are de Bruijn indices in the Agda:
   each let shifts the operands after it, and the atoms under the chain.
+\item \textbf{Lift locals} has no map $\varphi$ in the Agda: variable $x$
+  at depth $d$ is slot $d - (x + 1)$, its de Bruijn level, and slot $n$ when
+  $x \geq d$. The Agda defines the pass on derivations that its input is
+  in monadic normal form (\texttt{Mon}).
 \item \textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty}.
@@ -345,6 +353,29 @@ The sublanguage of Clos5 in monadic normal form: the operands of every construct
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
+\subsection{Imp}
+
+An imperative language with structured control flow and no binders. A
+body $(n; e)$ runs $e$ in a frame of $n$ local slots $s \in \{0, \ldots,
+n-1\}$, and an atom names a slot of the current frame. The assignment
+$\assign{s}{e_1}{e_2}$ runs $e_1$, stores its value in slot $s$, and runs
+$e_2$; $\Casei{a}{s}{e_1}{e_2}$ stores the payload of the injection in slot
+$s$ before running a branch. Assignments are seen by everything that
+runs after them in the same frame. A call $a_1(a_2, a_3)$ runs the body
+of the definition $a_1$ refers to in a fresh frame with $a_2$ (the free
+variables) in slot $0$ and $a_3$ (the argument) in slot $1$; reading or
+assigning a slot beyond the frame goes wrong.
+\begin{syntax}
+  & a &::=& s \mid \funref{k} \mid c \\
+  & e &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
+    \mid \prim{p}{a_1}{a_2} \\
+  &&& \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
+    \mid \inl a \mid \inr a \mid \Casei{a}{s}{e_1}{e_2}
+    \mid \assign{s}{e_1}{e_2} \\[1ex]
+  & b &::=& (n;\; e) \\
+  & P &::=& (b_0, \ldots, b_{m-1};\; b)
+\end{syntax}
+
 %===============================================================================
 \section{Compilation}
 
@@ -355,6 +386,8 @@ The sublanguage of Clos5 in monadic normal form: the operands of every construct
 
 \[
   \pass{compile\text{-}mon} = \pass{rco} \circ \pass{compile}
+  \qquad
+  \pass{compile\text{-}imp} = \pass{lift} \circ \pass{compile\text{-}mon}
 \]
 
 In each pass, the clauses not shown are homomorphic.
@@ -476,6 +509,36 @@ For every ISWIM term $M$,
   \FV(M) = \emptyset \implies \mathit{Scoped}_5(\pass{compile}(M)) .
 \]
 \end{lemma}
+
+\subsection{Lift Locals (Monadic Clos5 $\to$ Imp)}
+
+Lift locals gives every variable of a body a slot of the body's frame,
+declared up front, and turns $\key{let}$ into assignment. A variable gets
+the slot numbered by its binding depth: a $\key{let}$ or $\key{case}$ at
+depth $d$ assigns slot $d$, and the code under it is at depth $d+1$.
+A slot at depth $d$ is assigned only by code at depth $d$ or more, where
+no variable in scope names it, so no assignment clobbers a variable in
+scope. The map $\varphi : \X \rightharpoonup \mathbb{N}$ gives the slots
+of the variables in scope, and $n$ is the size of the frame.
+\begin{align*}
+  \pass{lift}_{n,\varphi,d}(x) &= \varphi(x)
+    \qquad (n \text{ if } x \notin \mathrm{dom}(\varphi)) \\
+  \pass{lift}_{n,\varphi,d}(\Let x = M \In N) &=
+    \assign{d}{\pass{lift}_{n,\varphi,d}(M)}{\pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(N)} \\
+  \pass{lift}_{n,\varphi,d}(\Case{a}{x}{M}{y}{N}) &=
+    \Casei{\pass{lift}_{n,\varphi,d}(a)}{d}
+      {\pass{lift}_{n,\ext{\varphi}{x}{d},d+1}(M)}{\pass{lift}_{n,\ext{\varphi}{y}{d},d+1}(N)} \\[1ex]
+  \mathit{height}(\Let x = M \In N) &= \max(\mathit{height}(M),\, 1 + \mathit{height}(N)) \\
+  \mathit{height}(\Case{a}{x}{M}{y}{N}) &= 1 + \max(\mathit{height}(M), \mathit{height}(N)) \\
+  \mathit{height}(M) &= 0 \qquad \text{otherwise} \\[1ex]
+  \pass{lift}(e\,y.\,N) &= (n;\; \pass{lift}_{n,\{e \mapsto 0,\, y \mapsto 1\},2}(N))
+    \quad\text{where } n = 2 + \mathit{height}(N) \\
+  \pass{lift}((d_0, \ldots, d_{m-1};\; M)) &=
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; (n;\; \pass{lift}_{n,\emptyset,0}(M)))
+    \quad\text{where } n = \mathit{height}(M)
+\end{align*}
+A variable out of scope gets the slot $n$, beyond the frame, so that it
+goes wrong, as an unbound variable does in Clos5.
 
 %===============================================================================
 \part{Denotational Proof}
