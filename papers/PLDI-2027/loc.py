@@ -4,8 +4,10 @@ audit surface.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
 
-A code line is a line that is not blank and not a comment ({- -} blocks,
--- line comments).  Every .agda file under agda/ (except agda/old/ and
+A code line is a line that is not blank, not a comment ({- -} blocks,
+-- line comments) and not part of an import statement (`import` or
+`open import`, with its continuation lines): imports depend on how
+finely a development is split into modules, not on its content.  Every .agda file under agda/ (except agda/old/ and
 All.agda) must belong to exactly one group; the script fails otherwise,
 so new modules cannot go uncounted.  A group of the CakeML-style side may
 have no files yet (a pass not yet proved); it is shown as —.
@@ -18,7 +20,7 @@ definitions at agda/X.agda, the lemmas at agda/proof/X.agda.  For the
 counts below the two halves are one unit (as they were one module before
 the split): they belong to the same group, and a proof reaches the unit
 when it reaches either half.  So the totals do not depend on the split,
-except for the module headers and imports of the proof halves.
+except for the module lines and re-exports of the proof halves.
 
 Language-independent infrastructure (side 'infra') is reported in a
 separate table and is not in any total.  The test is whether the code
@@ -219,9 +221,26 @@ def strip_comments(s):
                      for line in ''.join(out).split('\n'))
 
 
+IMPORT_START = re.compile(r'(\s*)(?:open\s+)?import\b')
+
+
 def code_lines(path):
+    """The code lines of path, not counting import statements: a line that
+    starts with `import` or `open import`, and the lines after it that are
+    indented more deeply (its continuation)."""
     text = strip_comments(open(path, encoding='utf-8').read())
-    return sum(1 for line in text.split('\n') if line.strip())
+    n, indent = 0, None
+    for line in text.split('\n'):
+        if not line.strip():
+            continue
+        col = len(line) - len(line.lstrip())
+        if indent is not None and col > indent:
+            continue
+        m = IMPORT_START.match(line)
+        indent = len(m.group(1)) if m else None
+        if not m:
+            n += 1
+    return n
 
 
 # `import M`, `open import M`, `import M as X`, `open import M args using (…)`,
