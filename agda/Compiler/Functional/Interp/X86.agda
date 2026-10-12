@@ -71,11 +71,11 @@ arg s (label k) = ret (code k)
 {- the values of the operands, onto vs in reverse, then k -}
 args : ∀ {A : Set} → State → List Val → List Arg → (List Val → Result A) → Result A
 args s vs [] k = k vs
-args s vs (a ∷ as) k = arg s a >>= λ v → args s (v ∷ vs) as k
+args s vs (a ∷ as) k = do v ← arg s a; args s (v ∷ vs) as k
 
 {- d := v, then k -}
 write : ∀ {A : Set} → State → Loc → Val → (State → Result A) → Result A
-write (φ , ρ) (var x) v k = from-maybe (φ [ x ]≔ v) >>= λ φ' → k (φ' , ρ)
+write (φ , ρ) (var x) v k = do φ' ← from-maybe (φ [ x ]≔ v); k (φ' , ρ)
 write (φ , ρ) (reg rax) v k = k (φ , record ρ { %rax = v })
 write (φ , ρ) (reg rdi) v k = k (φ , record ρ { %rdi = just v })
 write (φ , ρ) (reg rsi) v k = k (φ , record ρ { %rsi = just v })
@@ -112,14 +112,14 @@ load? payload _ = wrong
 
 {- an instruction other than callq, then k -}
 step : ∀ {A : Set} → State → Instr → (State → Result A) → Result A
-step s (movq a d) k = arg s a >>= λ v → write s d v k
-step s (subq a d) k = arg s a >>= λ w → read s d >>= λ v → from-maybe (prim? sub v w) >>= λ u → write s d u k
+step s (movq a d) k = do v ← arg s a; write s d v k
+step s (subq a d) k = do w ← arg s a; v ← read s d; u ← from-maybe (prim? sub v w); write s d u k
 step s (cmpq a₂ a₁) k =
-  arg s a₁ >>= λ v → arg s a₂ >>= λ w → from-maybe (δ? eq (obs v) (obs w)) >>= λ o → bool? o >>= λ b → set-flag s b k
-step s (sete d) k = from-maybe (flag (proj₂ s)) >>= λ b → write s d (out (bool b)) k
-step s (testinl a) k = arg s a >>= λ v → tag? v >>= λ b → set-flag s b k
-step s (alloc sh as d) k = args s [] as λ vs → alloc? sh (reverse vs) >>= λ v → write s d v k
-step s (load f a d) k = arg s a >>= λ v → load? f v >>= λ w → write s d w k
+  do v ← arg s a₁; w ← arg s a₂; o ← from-maybe (δ? eq (obs v) (obs w)); b ← bool? o; set-flag s b k
+step s (sete d) k = do b ← from-maybe (flag (proj₂ s)); write s d (out (bool b)) k
+step s (testinl a) k = do v ← arg s a; b ← tag? v; set-flag s b k
+step s (alloc sh as d) k = args s [] as λ vs → do v ← alloc? sh (reverse vs); write s d v k
+step s (load f a d) k = do v ← arg s a; w ← load? f v; write s d w k
 step s (callq a) k = wrong                   {- run handles callq -}
 
 {- the interpreter for a program with global definitions ds -}
@@ -137,11 +137,11 @@ module _ (ds : List Body) where
   call : ℕ → Maybe Body → Regs → Result Val
 
   run ck bs (φ , ρ) (callq a ∷ is) j =
-    arg (φ , ρ) a >>= λ f → call ck (code? f) ρ >>= λ v → run ck bs (φ , regs v nothing nothing nothing) is j
+    do f ← arg (φ , ρ) a; v ← call ck (code? f) ρ; run ck bs (φ , regs v nothing nothing nothing) is j
   run ck bs s (i ∷ is) j = step s i λ s' → run ck bs s' is j
   run ck bs (φ , ρ) [] retq = ret (%rax ρ)
   run ck bs s [] (jmp l) = jump ck bs s l
-  run ck bs s [] (je l₁ l₂) = from-maybe (flag (proj₂ s)) >>= λ b → jump ck bs s (if b then l₁ else l₂)
+  run ck bs s [] (je l₁ l₂) = do b ← from-maybe (flag (proj₂ s)); jump ck bs s (if b then l₁ else l₂)
 
   jump ck [] s l = wrong
   jump ck (block is j ∷ bs) s l with l ≟ length bs

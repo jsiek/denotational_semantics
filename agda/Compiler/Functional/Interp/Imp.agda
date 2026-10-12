@@ -49,11 +49,11 @@ _[_]≔_ : Frame → ℕ → Val → Maybe Frame
 
 {- a value, in the frame φ -}
 here : Frame → Result Val → Result (Val × Frame)
-here φ r = r >>= λ v → ret (v , φ)
+here φ r = do v ← r; ret (v , φ)
 
 {- the value, without its frame -}
 value : Result (Val × Frame) → Result Val
-value r = r >>= λ p → ret (proj₁ p)
+value r = do p ← r; ret (proj₁ p)
 
 {- the value of an atom -}
 atom : Frame → Atm → Result Val
@@ -64,21 +64,21 @@ atom φ (fun-ref k) = ret (code k)
 {- the values of the atoms, onto vs in reverse, as Clos5's eval-args -}
 atoms : Frame → List Val → List Atm → Result (List Val)
 atoms φ vs [] = ret vs
-atoms φ vs (a ∷ as) = atom φ a >>= λ v → atoms φ (v ∷ vs) as
+atoms φ vs (a ∷ as) = do v ← atom φ a; atoms φ (v ∷ vs) as
 
 {- the value of a simple expression, which leaves the frame as it is;
    call f e w calls the operator f, shared with CFG (Interp/CFG.agda) -}
 eval-simple : (Val → Val → Val → Result Val) → Frame → Simple → Result Val
 eval-simple call φ (atm a) = atom φ a
-eval-simple call φ (app f e a) = atom φ f >>= λ f → atom φ e >>= λ e → atom φ a >>= λ w → call f e w
-eval-simple call φ (pair a b) = atom φ a >>= λ v → atom φ b >>= λ w → ret (pair v w)
+eval-simple call φ (app f e a) = do f ← atom φ f; e ← atom φ e; w ← atom φ a; call f e w
+eval-simple call φ (pair a b) = do v ← atom φ a; w ← atom φ b; ret (pair v w)
 eval-simple call φ (fst a) = atom φ a >>= first
 eval-simple call φ (snd a) = atom φ a >>= second
-eval-simple call φ (tuple as) = atoms φ [] as >>= λ vs → ret (tup (reverse vs))
+eval-simple call φ (tuple as) = do vs ← atoms φ [] as; ret (tup (reverse vs))
 eval-simple call φ (get i a) = atom φ a >>= project i
-eval-simple call φ (inl a) = atom φ a >>= λ v → ret (inl v)
-eval-simple call φ (inr a) = atom φ a >>= λ v → ret (inr v)
-eval-simple call φ (prim p a b) = atom φ a >>= λ v → atom φ b >>= λ w → from-maybe (prim? p v w)
+eval-simple call φ (inl a) = do v ← atom φ a; ret (inl v)
+eval-simple call φ (inr a) = do v ← atom φ a; ret (inr v)
+eval-simple call φ (prim p a b) = do v ← atom φ a; w ← atom φ b; from-maybe (prim? p v w)
 
 {- the payload of an injection, on the left for inl -}
 inj? : Val → Result (Val ⊎ Val)
@@ -103,8 +103,8 @@ module _ (ds : List Body) where
   put : ℕ → Frame → ℕ → Val → Exp → Result (Val × Frame)
 
   eval ck φ (simple s) = here φ (eval-simple (λ f → call ck (code? f)) φ s)
-  eval ck φ (case a x e₁ e₂) = atom φ a >>= λ v → inj? v >>= [ (λ w → put ck φ x w e₁) , (λ w → put ck φ x w e₂) ]
-  eval ck φ (assign x e₁ e₂) = eval ck φ e₁ >>= λ p → put ck (proj₂ p) x (proj₁ p) e₂
+  eval ck φ (case a x e₁ e₂) = do v ← atom φ a; inj? v >>= [ (λ w → put ck φ x w e₁) , (λ w → put ck φ x w e₂) ]
+  eval ck φ (assign x e₁ e₂) = do p ← eval ck φ e₁; put ck (proj₂ p) x (proj₁ p) e₂
 
   call ck nothing e w = wrong
   call zero (just b) e w = timeout
