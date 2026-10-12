@@ -47,10 +47,10 @@ module Compiler.Model.Graph.Sem.X86 where
 
 -}
 
-open import SetsAsPredicates
-open import NewDOpSig using (Results)
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.DOpSig using (Results)
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim using (primD)
 open import Compiler.Model.Graph.Sem.Imp
   using (Table; Store; read; _[_↦_]; checked; zeros) public

@@ -10,16 +10,16 @@ module Compiler.Model.Graph.Sem.Clos5Iswim where
 
 -}
 
-open import SetsAsPredicates
-open import NewDOpSig
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos5
-open import abt.Fold2 Op sig using (fold; fold-arg; fold-args)
-open import abt.ScopedTuple using (Tuple)
-open import abt.Sig using (Result)
-open import NewEnv using (Env)
+open import Framework.abt.Fold2 Op sig using (fold; fold-arg; fold-args)
+open import Framework.abt.ScopedTuple using (Tuple)
+open import Framework.abt.Sig using (Result)
+open import Framework.GraphModel.Env using (Env)
 
 open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.List using (List; []; _∷_; length)

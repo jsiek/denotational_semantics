@@ -2,8 +2,8 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
-open import NewSyntaxUtil
-open import NewSigUtil
+open import Framework.Syntax.SyntaxUtil
+open import Framework.Syntax.SigUtil
 
 module Compiler.Compile.Globalize where
   {-

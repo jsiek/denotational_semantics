@@ -11,34 +11,27 @@ module Compiler.Model.Graph.Sem.Clos2Iswim where
 
 -}
 
-open import NewSigUtil
-open import NewDOpSig
-open import SetsAsPredicates
-open import NewDenotProperties
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.Syntax.SigUtil
+open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos2
+open import Framework.GraphModel.Env using (Env)
+open import Framework.abt.Fold2 Op sig using (fold)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product
    using (_×_; Σ; Σ-syntax; ∃; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
-open import Level renaming (zero to lzero; suc to lsuc)
 
 {- apply a curried function of n sets to the denotations of the free variables -}
 apply-n : ∀ n {b} → Result (𝒫 Value) (ν-n n b) → Results (𝒫 Value) (replicate n ■)
   → Result (𝒫 Value) b
 apply-n zero F _ = F
 apply-n (suc n) F ⟨ D , Ds ⟩ = apply-n n (F D) Ds
-
-apply-n-mono : ∀ n {b} (F F' : Result (𝒫 Value) (ν-n n b)) Ds Ds'
-  → result-rel-pres _⊆_ (ν-n n b) F F' → results-rel-pres _⊆_ (replicate n ■) Ds Ds'
-  → result-rel-pres _⊆_ b (apply-n n F Ds) (apply-n n F' Ds')
-apply-n-mono zero F F' _ _ F~ _ = F~
-apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~ ⟩ =
-  apply-n-mono n (F D) (F' D') Ds Ds' (F~ D D' D⊆) Ds~
 
 𝕆-Clos2 : DOpSig (𝒫 Value) sig
 𝕆-Clos2 (clos-op n) ⟨ F , Ds ⟩ = guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩)
@@ -51,28 +44,11 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
 𝕆-Clos2 case-op = 𝒞
 𝕆-Clos2 (prim p) = primD p
 
-𝕆-Clos2-mono : 𝕆-monotone sig 𝕆-Clos2
-𝕆-Clos2-mono (clos-op n) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ = lift G
-  where
-  Λ⊆ = lower (Λ-mono ⟨ apply-n n F Ds , ptt ⟩ ⟨ apply-n n F' Ds' , ptt ⟩
-                     ⟨ apply-n-mono n F F' Ds Ds' F~ Ds~ , ptt ⟩)
-  G : guard-n n Ds (Λ ⟨ apply-n n F Ds , ptt ⟩) ⊆ guard-n n Ds' (Λ ⟨ apply-n n F' Ds' , ptt ⟩)
-  G w ⟨ ne , w∈ ⟩ =
-    ⟨ (λ i → ⟨ proj₁ (ne i) , nthD-mono Ds Ds' Ds~ i _ (proj₂ (ne i)) ⟩) , Λ⊆ w w∈ ⟩
-𝕆-Clos2-mono app = ⋆-mono
-𝕆-Clos2-mono (lit B k) _ _ _ = lift (λ d z → z)
-𝕆-Clos2-mono (tuple x) = 𝒯-mono x
-𝕆-Clos2-mono (get x) = proj-mono x
-𝕆-Clos2-mono inl-op = inl-mono
-𝕆-Clos2-mono inr-op = inr-mono
-𝕆-Clos2-mono case-op = 𝒞-mono
-𝕆-Clos2-mono (prim p) = primD-mono p
+{- the meaning of a term in an environment: the operators, folded over the
+   term; a variable means what the environment gives it, and a variable
+   not in scope (under a clear) means {ω} -}
+init : 𝒫 Value
+init = ⌈ ω ⌉
 
-open import NewSemantics Op sig public
-
-instance
-  Clos2-Semantics : Semantics
-  Clos2-Semantics = record { interp-op = 𝕆-Clos2 ;
-                             mono-op = 𝕆-Clos2-mono ;
-                             error = ω }
-open Semantics {{...}} public
+⟦_⟧ : AST → Env Value → 𝒫 Value
+⟦ M ⟧ ρ = fold 𝕆-Clos2 init ρ M

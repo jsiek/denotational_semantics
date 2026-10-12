@@ -53,7 +53,7 @@ module Compiler.Lang.X86 where
 
 -}
 
-open import Primitives using (Base; base-rep)
+open import Framework.Primitives using (Base; base-rep)
 
 open import Data.Fin using (Fin)
 open import Data.List using (List)

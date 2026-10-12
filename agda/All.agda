@@ -3,227 +3,195 @@
   The closure-conversion compiler and its correctness proofs.
 
     ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5
+          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
+          --lift locals--> Imp --explicate control--> CFG
+          --select instructions--> X86
 
   Check everything with
 
     agda --safe agda/All.agda
 
-  (or make check, from the root of the repository).
+  (or make check, from the root of the repository, which also greps for
+  postulates and pragmas). See README.md for the layout: the theorem
+  statements (Theorems/) and the definitions they use (everything outside
+  proof/) are the audit surface; proof/ holds the proofs.
+
+  This file imports the theorem files, which reach the whole audit
+  surface, and every module of proof/.
 
 -}
 
 module All where
 
-{- the parts of the abt library that we use -}
-import abt.Sig
-import abt.Var
-import abt.ScopedTuple
-import abt.GSubst
-import abt.AbstractBindingTree
-import abt.Fold2
+{- ---------------------------------------------------------------------------
+   The public theorem statements
+   --------------------------------------------------------------------------- -}
 
-{- language-independent infrastructure: lemmas about the syntax of any
-   signature, list lookups, the graph model (values, operators,
-   continuity), and the frameworks of the small-step and clocked styles -}
-import Syntax.Uses
-import Syntax.Rename
-import Syntax.Scope
-import Syntax.ScopeRename
-import ListUtil
-import RenameSem
-import GraphModel.Domain
-import GraphModel.Ops
-import GraphModel.Continuity
-import GraphModel.SemanticsUtil
-import Iff
-import Smallstep
-import Simulation
-import Clocked
+import Theorems.Denotational
+import Theorems.CompCert
+import Theorems.CakeML
+import Theorems.Adequacy
 
-{- the languages -}
-import Compiler.Lang.ISWIM
-import Compiler.Lang.Clos2
-import Compiler.Lang.Clos3
-import Compiler.Lang.Clos4
-import Compiler.Lang.Clos5
-import Compiler.Lang.Mon
-import Compiler.Lang.Imp
-import Compiler.Lang.CFG
-import Compiler.Lang.X86
+{- ---------------------------------------------------------------------------
+   proof/: language-independent lemmas: about tuples of the abt extract,
+   lists, the syntax of any signature (renaming, scoping, uses), sets and
+   environments, the graph model (values, operators, continuity), the
+   generic denotational semantics, and the small-step (forward
+   simulations) and clocked (clock-for-clock correctness) frameworks
+   --------------------------------------------------------------------------- -}
 
-{- the passes -}
-import Compiler.Compile.Enclose
-import Compiler.Compile.Optimize
-import Compiler.Compile.Concretize
-import Compiler.Compile.Delay
-import Compiler.Compile.Globalize
-import Compiler.Compile.RCO
-import Compiler.Compile.LiftLocals
-import Compiler.Compile.Explicate
-import Compiler.Compile.Select
-import Compiler.Compile.Pipeline
+import proof.Framework.abt.ScopedTuple
+import proof.Framework.ListUtil
+import proof.Framework.Syntax.Uses
+import proof.Framework.Syntax.Rename
+import proof.Framework.Syntax.Scope
+import proof.Framework.Syntax.ScopeRename
+import proof.Framework.GraphModel.SetsAsPredicates
+import proof.Framework.GraphModel.DOpSig
+import proof.Framework.GraphModel.DenotProperties
+import proof.Framework.GraphModel.Env
+import proof.Framework.GraphModel.Semantics
+import proof.Framework.GraphModel.RenameSem
+import proof.Framework.GraphModel.Domain
+import proof.Framework.GraphModel.Ops
+import proof.Framework.GraphModel.Continuity
+import proof.Framework.GraphModel.SemanticsUtil
+import proof.Framework.Smallstep
+import proof.Framework.Simulation
+import proof.Framework.Clocked
 
-{- syntactic facts about the passes, used by both operational styles -}
-import Compiler.Compile.EncloseScope
-import Compiler.Compile.GlobalizeTable
-{- the compiler produces well-scoped Clos5 programs (Scoped), the
-   precondition of both operational proofs of remove complex operands -}
-import Compiler.Compile.PipelineScope
+{- ---------------------------------------------------------------------------
+   proof/: syntactic facts about the passes, used by both operational
+   styles: enclose produces well-scoped programs from closed ones, the
+   table of globalize, and the compiler produces well-scoped Clos5
+   programs (Scoped), the precondition of both operational proofs of
+   remove complex operands
+   --------------------------------------------------------------------------- -}
 
-{- observations and the end-theorem shape, shared by both operational styles -}
-import Compiler.Observation
+import proof.Compiler.Compile.EncloseScope
+import proof.Compiler.Compile.GlobalizeTable
+import proof.Compiler.Compile.PipelineScope
 
-{- the graph-model meaning of the primitives, and the semantics of each
-   language -}
-import Compiler.Model.Graph.Prim
-import Compiler.Model.Graph.Sem.ISWIM
-import Compiler.Model.Graph.Sem.Clos2Iswim
-import Compiler.Model.Graph.Sem.Clos3Iswim
-import Compiler.Model.Graph.Sem.ISWIMContinuous
-import Compiler.Model.Graph.Sem.Clos3IswimContinuous
-import Compiler.Model.Graph.Sem.Clos4Iswim
-import Compiler.Model.Graph.Sem.Clos4IswimContinuous
-import Compiler.Model.Graph.Sem.Clos5Iswim
-import Compiler.Model.Graph.Sem.Clos5IswimContinuous
-import Compiler.Model.Graph.Sem.Imp
-import Compiler.Model.Graph.Sem.CFG
-import Compiler.Model.Graph.Sem.X86
-import Compiler.Model.Graph.Sem.ImpK
-import Compiler.Model.Graph.Sem.ImpDirect
+{- ---------------------------------------------------------------------------
+   proof/: the denotational (graph-model) development
+   --------------------------------------------------------------------------- -}
+
+{- the monotonicity, consistency and continuity of the primitives and of
+   the semantics of each language -}
+import proof.Compiler.Model.Graph.Prim
+import proof.Compiler.Model.Graph.Sem.ISWIM
+import proof.Compiler.Model.Graph.Sem.Clos2Iswim
+import proof.Compiler.Model.Graph.Sem.Clos3Iswim
+import proof.Compiler.Model.Graph.Sem.Clos3IswimContinuous
+import proof.Compiler.Model.Graph.Sem.Clos4Iswim
+import proof.Compiler.Model.Graph.Sem.Clos4IswimContinuous
+import proof.Compiler.Model.Graph.Sem.Clos5IswimContinuous
 
 {- correctness of each pass -}
-import Compiler.Model.Graph.Correctness.EncloseCorrect
-import Compiler.Model.Graph.Correctness.OptimizeCorrect
-import Compiler.Model.Graph.Correctness.ConcretizeCorrect
-import Compiler.Model.Graph.Correctness.DelayFiniteCommon
-import Compiler.Model.Graph.Correctness.DelayFiniteRel
-import Compiler.Model.Graph.Correctness.DelayApp
-import Compiler.Model.Graph.Correctness.DelayReflectFinite
-import Compiler.Model.Graph.Correctness.DelayPreserve
-import Compiler.Model.Graph.Correctness.GlobalizeCorrect
-import Compiler.Model.Graph.Correctness.RCOCorrect
-import Compiler.Model.Graph.Correctness.LiftLocalsCommon
-import Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
-import Compiler.Model.Graph.Correctness.ExplicateCommon
-import Compiler.Model.Graph.Correctness.ExplicateCorrectK
-import Compiler.Model.Graph.Correctness.SelectCorrect
-{- the same two passes against the direct semantics of Imp -}
-import Compiler.Model.Graph.Correctness.LiftLocalsCorrect
-import Compiler.Model.Graph.Correctness.ExplicateCorrect
+import proof.Compiler.Model.Graph.Correctness.EncloseCorrect
+import proof.Compiler.Model.Graph.Correctness.OptimizeCorrect
+import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect
+import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon
+import proof.Compiler.Model.Graph.Correctness.DelayFiniteRel
+import proof.Compiler.Model.Graph.Correctness.DelayApp
+import proof.Compiler.Model.Graph.Correctness.DelayReflectFinite
+import proof.Compiler.Model.Graph.Correctness.DelayPreserve
+import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect
+import proof.Compiler.Model.Graph.Correctness.RCOCorrect
+import proof.Compiler.Model.Graph.Correctness.LiftLocalsCommon
+import proof.Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
+import proof.Compiler.Model.Graph.Correctness.ExplicateCommon
+import proof.Compiler.Model.Graph.Correctness.ExplicateCorrectK
+import proof.Compiler.Model.Graph.Correctness.SelectCorrect
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
-import Compiler.Model.Graph.Correctness.CompilerCorrect
+import proof.Compiler.Model.Graph.Correctness.CompilerCorrect
+
+{- experiment: a direct semantics of Imp, and lift locals and explicate
+   control against it (see papers/PLDI-2027/loc.md) -}
+import proof.Compiler.Model.Graph.Sem.ImpDirect
+import proof.Compiler.Model.Graph.Correctness.LiftLocalsCorrect
+import proof.Compiler.Model.Graph.Correctness.ExplicateCorrect
 
 {- examples -}
-import Compiler.Model.Graph.Correctness.DelayClosedClosureExample
-import Compiler.Model.Graph.Correctness.ConcretizeExample
-import Compiler.Model.Graph.Correctness.EncloseExample
-import Compiler.Model.Graph.Correctness.PipelineExample
-import Compiler.Model.Graph.Correctness.CompilerExample
-import Compiler.Compile.Examples.RCOExample
-import Compiler.Compile.Examples.LiftLocalsExample
-import Compiler.Compile.Examples.ExplicateExample
-import Compiler.Compile.Examples.SelectExample
+import proof.Compiler.Model.Graph.Correctness.DelayClosedClosureExample
+import proof.Compiler.Model.Graph.Correctness.ConcretizeExample
+import proof.Compiler.Model.Graph.Correctness.EncloseExample
+import proof.Compiler.Model.Graph.Correctness.PipelineExample
+import proof.Compiler.Model.Graph.Correctness.CompilerExample
+import proof.Compiler.Compile.Examples.RCOExample
+import proof.Compiler.Compile.Examples.LiftLocalsExample
+import proof.Compiler.Compile.Examples.ExplicateExample
+import proof.Compiler.Compile.Examples.SelectExample
 
 {- ---------------------------------------------------------------------------
-   The operational (CompCert-style) development, independent of the graph
-   model above: small-step machines and forward simulations.
+   proof/: the operational (CompCert-style) development, independent of
+   the graph model: forward simulations between small-step machines
    --------------------------------------------------------------------------- -}
 
-{- the framework (transition systems, forward simulations), at this
-   compiler's observations -}
-import Compiler.Operational.Smallstep
-import Compiler.Operational.Simulation
+{- the lemmas about runs and the forward simulations, at this compiler's
+   observations -}
+import proof.Compiler.Operational.Smallstep
+import proof.Compiler.Operational.Simulation
 
-{- the machines -}
-import Compiler.Operational.Machine.ISWIM
-import Compiler.Operational.Machine.Clos2
-import Compiler.Operational.Machine.Clos3
-import Compiler.Operational.Machine.Clos4
-import Compiler.Operational.Machine.Clos5
-import Compiler.Operational.Machine.Imp
-import Compiler.Operational.Machine.CFG
-import Compiler.Operational.Machine.X86
+{- correctness of each pass, and of the compiler into each language -}
+import proof.Compiler.Operational.Correctness.EncloseSim
+import proof.Compiler.Operational.Correctness.OptimizeSim
+import proof.Compiler.Operational.Correctness.ConcretizeSim
+import proof.Compiler.Operational.Correctness.DelaySim
+import proof.Compiler.Operational.Correctness.GlobalizeSim
+import proof.Compiler.Operational.Correctness.CompilerSim
+import proof.Compiler.Operational.Correctness.RCOSim
+import proof.Compiler.Operational.Correctness.LiftLocalsSim
+import proof.Compiler.Operational.Correctness.ExplicateSim
+import proof.Compiler.Operational.Correctness.SelectSim
 
-{- correctness of each pass -}
-import Compiler.Operational.Correctness.EncloseSim
-import Compiler.Operational.Correctness.OptimizeSim
-import Compiler.Operational.Correctness.ConcretizeSim
-import Compiler.Operational.Correctness.DelaySim
-import Compiler.Operational.Correctness.GlobalizeSim
-{- the whole compiler, by composing the simulations of the passes -}
-import Compiler.Operational.Correctness.CompilerSim
-{- remove complex operands (Clos5 → Clos5), and the compiler into monadic
-   normal form -}
-import Compiler.Operational.Correctness.RCOSim
-{- lift locals (monadic Clos5 → Imp), and the compiler into Imp -}
-import Compiler.Operational.Correctness.LiftLocalsSim
-{- explicate control (Imp → CFG), and the compiler into CFG -}
-import Compiler.Operational.Correctness.ExplicateSim
-import Compiler.Operational.Correctness.SelectSim
-
-{- soundness and adequacy of the graph model for the ISWIM machine, which
-   connect the two developments -}
-import Compiler.Operational.Adequacy.Common
-import Compiler.Operational.Adequacy.Soundness
-import Compiler.Operational.Adequacy.LogRel
-import Compiler.Operational.Adequacy.ISWIM
-
-{- the same for the Clos5 machine, for well-formed programs (which the
-   compiler produces), and the compiler's correctness in the graph model
-   observed through the ISWIM and Clos5 machines -}
-import Compiler.Operational.Adequacy.Clos5WF
-import Compiler.Operational.Adequacy.CompileWF
-import Compiler.Operational.Adequacy.Clos5Common
-import Compiler.Operational.Adequacy.Values
-import Compiler.Operational.Adequacy.Clos5Soundness
-import Compiler.Operational.Adequacy.Clos5LogRel
-import Compiler.Operational.Adequacy.Clos5
-import Compiler.Operational.Adequacy.X86WF
-import Compiler.Operational.Adequacy.X86Common
-import Compiler.Operational.Adequacy.X86Soundness
-import Compiler.Operational.Adequacy.X86LogRel
-import Compiler.Operational.Adequacy.X86CompileWF
-import Compiler.Operational.Adequacy.X86
-import Compiler.Operational.Adequacy.EndToEnd
-
-{- experiment: a direct backward simulation for delay, without determinism,
-   for comparison (see papers/PLDI-2027/loc.md) -}
-import Compiler.Operational.Backward
-import Compiler.Operational.Correctness.DelayBackSim
+{- experiment: a direct backward simulation for delay, without
+   determinism, for comparison (see papers/PLDI-2027/loc.md) -}
+import proof.Compiler.Operational.Backward
+import proof.Compiler.Operational.Correctness.DelayBackSim
 
 {- ---------------------------------------------------------------------------
-   The CakeML-style (functional big-step, clocked) development: a clocked
-   interpreter per language and clock-for-clock proofs of the passes.
-   It shares with the CompCert-style development only the neutral modules
-   above (observations, list lookups, scoping, renaming and table lemmas).
+   proof/: soundness and adequacy of the graph model for the ISWIM, Clos5
+   and X86 machines, which connect the two developments
    --------------------------------------------------------------------------- -}
 
-{- results, clocks, the end-theorem shape, clock-for-clock correctness,
-   at this compiler's observations -}
-import Compiler.Functional.Clock
+import proof.Compiler.Operational.Adequacy.Common
+import proof.Compiler.Model.Graph.Sem.ISWIMContinuous
+import proof.Compiler.Operational.Adequacy.Soundness
+import proof.Compiler.Operational.Adequacy.LogRel
+import proof.Compiler.Operational.Adequacy.ISWIM
+import proof.Compiler.Operational.Adequacy.Clos5WF
+import proof.Compiler.Operational.Adequacy.CompileWF
+import proof.Compiler.Operational.Adequacy.Clos5Common
+import proof.Compiler.Operational.Adequacy.Values
+import proof.Compiler.Operational.Adequacy.Clos5Soundness
+import proof.Compiler.Operational.Adequacy.Clos5LogRel
+import proof.Compiler.Operational.Adequacy.Clos5
+import proof.Compiler.Operational.Adequacy.X86WF
+import proof.Compiler.Operational.Adequacy.X86Common
+import proof.Compiler.Operational.Adequacy.X86Soundness
+import proof.Compiler.Operational.Adequacy.X86LogRel
+import proof.Compiler.Operational.Adequacy.X86CompileWF
+import proof.Compiler.Operational.Adequacy.X86
+import proof.Compiler.Operational.Adequacy.EndToEnd
 
-{- the interpreters -}
-import Compiler.Functional.Interp.ISWIM
-import Compiler.Functional.Interp.Clos2
-import Compiler.Functional.Interp.Clos3
-import Compiler.Functional.Interp.Clos4
-import Compiler.Functional.Interp.Clos5
-import Compiler.Functional.Interp.Imp
-import Compiler.Functional.Interp.CFG
-import Compiler.Functional.Interp.X86
+{- ---------------------------------------------------------------------------
+   proof/: the CakeML-style (functional big-step, clocked) development:
+   clock-for-clock proofs between clocked interpreters
+   --------------------------------------------------------------------------- -}
 
-{- correctness of each pass -}
-import Compiler.Functional.Correctness.EncloseFuel
-import Compiler.Functional.Correctness.OptimizeFuel
-import Compiler.Functional.Correctness.ConcretizeFuel
-import Compiler.Functional.Correctness.DelayFuel
-import Compiler.Functional.Correctness.GlobalizeFuel
-import Compiler.Functional.Correctness.RCOFuel
-import Compiler.Functional.Correctness.LiftLocalsFuel
-import Compiler.Functional.Correctness.ExplicateFuel
-import Compiler.Functional.Correctness.SelectFuel
+{- clock-for-clock correctness, at this compiler's observations -}
+import proof.Compiler.Functional.Clock
 
-{- correctness of the whole compiler -}
-import Compiler.Functional.Correctness.CompilerFuel
+{- correctness of each pass, and of the compiler into each language -}
+import proof.Compiler.Functional.Correctness.EncloseFuel
+import proof.Compiler.Functional.Correctness.OptimizeFuel
+import proof.Compiler.Functional.Correctness.ConcretizeFuel
+import proof.Compiler.Functional.Correctness.DelayFuel
+import proof.Compiler.Functional.Correctness.GlobalizeFuel
+import proof.Compiler.Functional.Correctness.RCOFuel
+import proof.Compiler.Functional.Correctness.LiftLocalsFuel
+import proof.Compiler.Functional.Correctness.ExplicateFuel
+import proof.Compiler.Functional.Correctness.SelectFuel
+import proof.Compiler.Functional.Correctness.CompilerFuel

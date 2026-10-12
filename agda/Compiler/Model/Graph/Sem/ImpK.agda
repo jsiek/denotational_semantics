@@ -26,9 +26,9 @@ module Compiler.Model.Graph.Sem.ImpK where
 
 -}
 
-open import SetsAsPredicates
-open import GraphModel.Domain
-open import GraphModel.Ops
+open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Ops
 open import Compiler.Model.Graph.Sem.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒮; zeros; frame; tables) public
 open import Compiler.Lang.Imp
 

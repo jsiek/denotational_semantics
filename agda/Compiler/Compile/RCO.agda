@@ -25,8 +25,8 @@ module Compiler.Compile.RCO where
 
 open import Compiler.Lang.Clos5
 open import Compiler.Lang.Mon
-open import Syntax.Rename Op sig using (rename; rename-args; ext)
-open import NewSyntaxUtil using (_,,_; ⟩_,,_; Nil)
+open import Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
+open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 
 open import Data.List using (List; []; _∷_; length; replicate; map)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)

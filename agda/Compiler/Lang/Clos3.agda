@@ -8,13 +8,13 @@ module Compiler.Lang.Clos3 where
    and before the 'delay' pass.
 -}
 
-open import Primitives
+open import Framework.Primitives
 open import Compiler.Lang.Prim using (Prim)
-open import abt.ScopedTuple hiding (𝒫)
-open import NewSigUtil
-open import abt.Sig using (Sig; ∁; ν; ■) public
-open import abt.Var using (Var) public
-open import abt.GSubst using (_•_) public
+open import Framework.abt.ScopedTuple hiding (𝒫)
+open import Framework.Syntax.SigUtil
+open import Framework.abt.Sig using (Sig; ∁; ν; ■) public
+open import Framework.abt.Var using (Var) public
+open import Framework.abt.GSubst using (_•_) public
 
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
@@ -49,7 +49,7 @@ sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
 sig (prim p) = ■ ∷ ■ ∷ []
 
-import abt.AbstractBindingTree
-module ASTMod = abt.AbstractBindingTree Op sig
+import Framework.abt.AbstractBindingTree
+module ASTMod = Framework.abt.AbstractBindingTree Op sig
 open ASTMod using (`_; _⦅_⦆; clear; bind; ast; cons; nil; Arg; Args)
             renaming (ABT to AST) public

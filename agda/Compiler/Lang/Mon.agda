@@ -13,8 +13,8 @@ module Compiler.Lang.Mon where
 -}
 
 open import Compiler.Lang.Clos5
-open import Syntax.Rename Op sig using (rename; rename-args; ext)
-open import NewSyntaxUtil using (_,,_; ⟩_,,_; Nil)
+open import Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
+open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 
 open import Data.Fin using (Fin)
 open import Data.Nat using (zero)

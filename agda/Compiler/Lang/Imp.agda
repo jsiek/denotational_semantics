@@ -24,9 +24,9 @@ module Compiler.Lang.Imp where
 
 -}
 
-open import Primitives using (Base; base-rep)
+open import Framework.Primitives using (Base; base-rep)
 open import Compiler.Lang.Prim using (Prim)
-open import ListUtil using (_‼_)
+open import Framework.ListUtil using (_‼_)
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; reverse)
