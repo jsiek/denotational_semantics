@@ -107,6 +107,7 @@ GROUPS = [
     ('op', 'rco', [O + 'Correctness/RCOSim.agda']),
     ('op', 'lift locals', [O + 'Correctness/LiftLocalsSim.agda']),
     ('op', 'explicate control', [O + 'Correctness/ExplicateSim.agda']),
+    ('op', 'select instructions', [O + 'Correctness/SelectSim.agda']),
     ('op', 'composition', [O + 'Correctness/CompilerSim.agda']),
 
     # with the framework at this compiler's observations (Clock.agda)
@@ -260,6 +261,7 @@ def main():
 
     rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
+            'select instructions',
             'composition']
     total = {side: 0 for side in SIDES}
     print('| component | denotational | CompCert-style | CakeML-style |')
