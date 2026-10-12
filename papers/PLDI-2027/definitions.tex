@@ -562,8 +562,8 @@ of the variables in scope, and $n$ is the size of the frame.
   \pass{lift}(e\,y.\,N) &= (n;\; \pass{lift}_{n,\{e \mapsto 0,\, y \mapsto 1\},2}(N))
     \quad\text{where } n = 2 + \mathit{height}(N) \\
   \pass{lift}((d_0, \ldots, d_{m-1};\; M)) &=
-    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; (n;\; \pass{lift}_{n,\emptyset,0}(M))) \\
-  &\qquad\text{where } n = \mathit{height}(M)
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; b) \\
+  &\qquad\text{where } b = (n;\; \pass{lift}_{n,\emptyset,0}(M)),\ n = \mathit{height}(M)
 \end{align*}
 A variable out of scope gets the slot $n$, beyond the frame, so that it
 goes wrong, as an unbound variable does in Clos5.
