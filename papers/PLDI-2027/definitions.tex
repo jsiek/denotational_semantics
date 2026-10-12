@@ -141,7 +141,9 @@ and \texttt{agda/Clocked.agda}. The meaning of the primitives is in
   \item the imperative language Imp, lift locals into it, and
     $\pass{compile\text{-}imp}$;
   \item the control-flow-graph language CFG, explicate control into it, and
-    $\pass{compile\text{-}cfg}$.
+    $\pass{compile\text{-}cfg}$;
+  \item x86 with variables over abstract values (X86), select
+    instructions into it, and $\pass{compile\text{-}x86}$.
   \end{itemize}
 \item \textbf{Denotational proof:}
   \begin{itemize}
@@ -474,6 +476,33 @@ jump to any other label goes wrong.
   & P &::=& (b_0, \ldots, b_{m-1};\; b)
 \end{syntax}
 
+\subsection{X86}
+
+x86 with variables over the same values as before. The locations $d$ are
+the slots of the frame and the registers; an operand $o$ is a location,
+an immediate, or the label of a global definition. A flag is set by
+$\key{cmpq}$ and $\key{testinl}$ and read by $\key{sete}$ and $\key{je}$.
+The heap is abstract: $\key{alloc}$ builds a pair, tuple or injection
+from its operands, and $\key{load}$ takes a field of one. $\key{callq}\;o$
+runs the body of the definition $o$ refers to, with $\%\key{rdi}$ and
+$\%\key{rsi}$ as they are, in a fresh frame, and continues with the
+result in $\%\key{rax}$; registers and the flag are not saved. Blocks
+and jumps are as in CFG.
+\begin{syntax}
+  & d &::=& s \mid \%\key{rax} \mid \%\key{rdi} \mid \%\key{rsi} \\
+  & o &::=& d \mid c \mid \funref{k} \\
+  & i &::=& \key{movq}\; o, d \mid \key{subq}\; o, d \mid \key{cmpq}\; o_2, o_1
+    \mid \key{sete}\; d \mid \key{testinl}\; o \\
+  &&& \mid \key{alloc}\; \mathit{sh}\; \vec{o}, d \mid \key{load}\; f\; o, d
+    \mid \key{callq}\; o \\
+  & \mathit{sh} &::=& \key{pair} \mid \key{tuple} \mid \key{inl} \mid \key{inr}
+  \qquad f \;::=\; \key{fst} \mid \key{snd} \mid \pi_i \mid \key{payload} \\
+  & j &::=& \key{retq} \mid \key{jmp}\; l \mid \key{je}\; l_1, l_2 \\
+  & \beta &::=& i_1; \ldots; i_p;\; j \\
+  & b &::=& (n;\; \beta_0, \ldots, \beta_{q-1};\; \beta) \\
+  & P &::=& (b_0, \ldots, b_{m-1};\; b)
+\end{syntax}
+
 %===============================================================================
 \section{Compilation}
 
@@ -482,13 +511,14 @@ jump to any other label goes wrong.
      \circ \pass{optimize} \circ \pass{enclose}
 \]
 
-\[
-  \pass{compile\text{-}mon} = \pass{rco} \circ \pass{compile}
-  \qquad
-  \pass{compile\text{-}imp} = \pass{lift} \circ \pass{compile\text{-}mon}
-  \qquad
-  \pass{compile\text{-}cfg} = \pass{explicate} \circ \pass{compile\text{-}imp}
-\]
+\begin{align*}
+  \pass{compile\text{-}mon} &= \pass{rco} \circ \pass{compile}
+  &
+  \pass{compile\text{-}imp} &= \pass{lift} \circ \pass{compile\text{-}mon} \\
+  \pass{compile\text{-}cfg} &= \pass{explicate} \circ \pass{compile\text{-}imp}
+  &
+  \pass{compile\text{-}x86} &= \pass{select} \circ \pass{compile\text{-}cfg}
+\end{align*}
 
 In each pass, the clauses not shown are homomorphic.
 
@@ -668,6 +698,34 @@ to, so $k$ is not duplicated.
 \end{align*}
 and $\pass{explicate}$ maps over the definitions and main of a program.
 Every block is added after the blocks it jumps to.
+
+\subsection{Select Instructions (CFG $\to$ X86)}
+
+Select instructions turns each statement into a few instructions; the
+blocks keep their labels. $\pass{sel}(r, d)$ computes $r$ into the
+location $d$, with $\bar{a}$ the operand for the atom $a$.
+\begin{align*}
+  \pass{sel}(a, d) &= \key{movq}\; \bar{a}, d \\
+  \pass{sel}(a_1(a_2, a_3), d) &= \key{movq}\; \bar{a}_2, \%\key{rdi};\
+    \key{movq}\; \bar{a}_3, \%\key{rsi};\ \key{callq}\; \bar{a}_1;\
+    \key{movq}\; \%\key{rax}, d \\
+  \pass{sel}(\key{sub}(a_1, a_2), d) &= \key{movq}\; \bar{a}_1, \%\key{rax};\
+    \key{subq}\; \bar{a}_2, \%\key{rax};\ \key{movq}\; \%\key{rax}, d \\
+  \pass{sel}(\key{eq}(a_1, a_2), d) &= \key{cmpq}\; \bar{a}_2, \bar{a}_1;\ \key{sete}\; d \\
+  \pass{sel}(\pair{a_1}{a_2}, d) &= \key{alloc}\; \key{pair}\; \bar{a}_1, \bar{a}_2, d
+    \qquad\text{and likewise for tuples and injections} \\
+  \pass{sel}(\FST a, d) &= \key{load}\; \key{fst}\; \bar{a}, d
+    \qquad\text{and likewise for } \SND,\ \prj{i} \\[1ex]
+  \pass{sel}(\key{return}\; r) &= \pass{sel}(r, \%\key{rax});\ \key{retq} \\
+  \pass{sel}(\assign{s}{r}{t}) &= \pass{sel}(r, s);\ \pass{sel}(t) \\
+  \pass{sel}(\key{goto}\; l) &= \key{jmp}\; l \\
+  \pass{sel}(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &=
+    \key{testinl}\; \bar{a};\ \key{load}\; \key{payload}\; \bar{a}, s;\ \key{je}\; l_1, l_2
+\end{align*}
+Subtraction goes through $\%\key{rax}$, so it is right also when $s$ is
+$a_2$. The start of each global definition begins with the prologue
+$\key{movq}\; \%\key{rdi}, 0;\ \key{movq}\; \%\key{rsi}, 1$, which moves its
+free variables and argument to the slots where its body expects them.
 
 %===============================================================================
 \part{Denotational Proof}
