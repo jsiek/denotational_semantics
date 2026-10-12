@@ -159,23 +159,23 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
         → Kont n ρ κ₁ κ₂ → KontH n ρ (C.caseK B D ρ κ₁)
             (I.caseK (length ρ) (lift n (suc (length ρ)) m₁) (lift n (suc (length ρ)) m₂) κ₂)
       appF : (b : Atom B) (c : Atom D) → Kont n ρ κ₁ κ₂
-        → KontH n ρ (C.appF B D ρ κ₁) (I.appF (lift-atom n (length ρ) b) (lift-atom n (length ρ) c) κ₂)
+        → KontH n ρ (C.appF B D ρ κ₁) (I.frm (I.appF (lift-atom n (length ρ) b) (lift-atom n (length ρ) c)) κ₂)
       appE : (c : Atom D) → Kont n ρ κ₁ κ₂
-        → KontH n ρ (C.appE v D ρ κ₁) (I.appE v (lift-atom n (length ρ) c) κ₂)
-      appA : Kont n ρ κ₁ κ₂ → KontH n ρ (C.appA v w κ₁) (I.appA v w κ₂)
+        → KontH n ρ (C.appE v D ρ κ₁) (I.frm (I.appE v (lift-atom n (length ρ) c)) κ₂)
+      appA : Kont n ρ κ₁ κ₂ → KontH n ρ (C.appA v w κ₁) (I.frm (I.appA v w) κ₂)
       pairL : (b : Atom B) → Kont n ρ κ₁ κ₂
-        → KontH n ρ (C.pairL B ρ κ₁) (I.pairL (lift-atom n (length ρ) b) κ₂)
-      pairR : Kont n ρ κ₁ κ₂ → KontH n ρ (C.pairR v κ₁) (I.pairR v κ₂)
-      fstK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.fstK κ₁) (I.fstK κ₂)
-      sndK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.sndK κ₁) (I.sndK κ₂)
+        → KontH n ρ (C.pairL B ρ κ₁) (I.frm (I.pairL (lift-atom n (length ρ) b)) κ₂)
+      pairR : Kont n ρ κ₁ κ₂ → KontH n ρ (C.pairR v κ₁) (I.frm (I.pairR v) κ₂)
+      fstK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.fstK κ₁) (I.frm I.fstK κ₂)
+      sndK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.sndK κ₁) (I.frm I.sndK κ₂)
       tupK : ∀ {k vs} {As : Args (replicate k ■)} (as : Atoms As) → Kont n ρ κ₁ κ₂
-        → KontH n ρ (C.tupK vs (args→list As) ρ κ₁) (I.tupK vs (lift-atoms n (length ρ) as) κ₂)
-      getK : ∀ {k} {i : Fin k} → Kont n ρ κ₁ κ₂ → KontH n ρ (C.getK i κ₁) (I.getK i κ₂)
-      inlK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.inlK κ₁) (I.inlK κ₂)
-      inrK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.inrK κ₁) (I.inrK κ₂)
+        → KontH n ρ (C.tupK vs (args→list As) ρ κ₁) (I.frm (I.tupK vs (lift-atoms n (length ρ) as)) κ₂)
+      getK : ∀ {k} {i : Fin k} → Kont n ρ κ₁ κ₂ → KontH n ρ (C.getK i κ₁) (I.frm (I.getK i) κ₂)
+      inlK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.inlK κ₁) (I.frm I.inlK κ₂)
+      inrK : Kont n ρ κ₁ κ₂ → KontH n ρ (C.inrK κ₁) (I.frm I.inrK κ₂)
       primL : ∀ {p} (b : Atom B) → Kont n ρ κ₁ κ₂
-        → KontH n ρ (C.primL p B ρ κ₁) (I.primL p (lift-atom n (length ρ) b) κ₂)
-      primR : ∀ {p} → Kont n ρ κ₁ κ₂ → KontH n ρ (C.primR p v κ₁) (I.primR p v κ₂)
+        → KontH n ρ (C.primL p B ρ κ₁) (I.frm (I.primL p (lift-atom n (length ρ) b)) κ₂)
+      primR : ∀ {p} → Kont n ρ κ₁ κ₂ → KontH n ρ (C.primR p v κ₁) (I.frm (I.primR p v) κ₂)
 
   infix 4 _~_
   data _~_ : C.State → I.State → Set where
@@ -210,7 +210,7 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
   call-ans M.nothing st k fr = stops st
 
   tup-ans : ∀ {s₂ k vs} {As : Args (replicate k ■)} (as : Atoms As)
-    → I.step ds₂ s₂ ≡ next (I.tuple-next vs (lift-atoms n (length ρ) as) φ κ₂)
+    → I.step ds₂ s₂ ≡ I.res ds₂ (I.tuple-next vs (lift-atoms n (length ρ) as)) φ κ₂
     → Kont n ρ κ₁ κ₂ → Fr n ρ φ → Answers L₂ _~_ (next (C.tuple-next vs (args→list As) ρ κ₁)) s₂
   tup-ans [] st k fr = ret-ans st k fr
   tup-ans (a ∷ as) st k fr = go st (eval~ (atom a) (fr-≤ fr) fr (head (tupK as k)))
