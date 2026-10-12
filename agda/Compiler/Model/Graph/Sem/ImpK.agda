@@ -1,52 +1,45 @@
 module Compiler.Model.Graph.Sem.ImpK where
 {-
 
- A continuation-passing semantics of Imp (Lang/Imp.agda), an
- alternative to the direct one (Sem/Imp.agda).
+ The continuation-passing semantics of Imp (Lang/Imp.agda), the one the
+ main proof uses; Sem/ImpDirect.agda is a direct alternative. Stores,
+ slots, atoms and simple expressions are in Sem/Imp.agda.
 
- Stores, slots, atoms and simple expressions are as in Sem/Imp.agda. An
- expression runs in a frame of n slots, given the store σ as it enters
- and a continuation κ, the meaning of what runs after it: κ D σ' is the
- meaning of the rest of the body, given the value D of the expression
- and the store σ' it leaves. So an expression means a set of values,
- the result of the whole body, and the store need not be collected over
- the runs of an expression, as it is in Sem/Imp.agda: each run passes
- its own store to κ.
+ An expression runs in a frame of n slots, given the store σ as it
+ enters and a continuation κ, the meaning of what runs after it: κ D σ'
+ is the meaning of the rest of the body, given the value D of the
+ expression and the store σ' it leaves. So an expression means a set of
+ values, the result of the whole body, and the store need not be
+ collected over the runs of an expression, as it is in
+ Sem/ImpDirect.agda: each run passes its own store to κ.
 
  x := e₁; e₂ runs e₁ with the continuation that, given its value D and
  store σ', is strict in D like let in Clos5, ⋆ ⟨ Λ F , D ⟩, where F X
  runs e₂ in σ' with X in slot x and then κ. case is 𝒞, each branch
- running with κ. Reading a slot beyond the frame gives init; assigning
- one, by assign or case, means ∅, as in Sem/Imp.agda.
+ running with κ. Assigning a slot beyond the frame, by assign or case,
+ means ∅ (checked).
 
- A call app f e a is a simple expression, as in Sem/Imp.agda, and leaves
- the caller's store as it was: the code of a definition runs its body in
- a fresh frame with the continuation halt, which returns the value. main
- runs in a frame whose slots hold 0, also with halt.
+ A call app f e a is a simple expression and leaves the caller's store
+ as it was: the code of a definition runs its body in a fresh frame with
+ the continuation halt, which returns the value. main runs in a frame
+ whose slots hold 0, also with halt.
 
 -}
 
 open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
-open import Compiler.Model.Graph.Sem.Imp using (Table; Store; _[_↦_]; 𝒜; 𝒮; zeros; frame) public
+open import Compiler.Model.Graph.Sem.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒮; zeros; frame; tables) public
 open import Compiler.Lang.Imp
 
-open import Data.Nat using (ℕ; _≟_; _<?_)
-open import Data.List using (List; []; _∷_; length)
+open import Data.Nat using (ℕ)
+open import Data.List using (List)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Relation.Nullary using (yes; no)
 
 {- what runs after an expression, given its value and the store it leaves -}
 Kont : Set₁
 Kont = 𝒫 Value → Store → 𝒫 Value
-
-{- D, if slot x is within a frame of n slots -}
-checked : ℕ → ℕ → 𝒫 Value → 𝒫 Value
-checked n x D with x <? n
-... | yes _ = D
-... | no _ = ∅
 
 {- e in a frame of n slots, then κ -}
 ⟦_⟧ᴷ[_] : Exp → Table → ℕ → Store → Kont → 𝒫 Value
@@ -68,10 +61,7 @@ code T (body n e) = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ e ⟧ᴷ[ T ] n (frame
 
 {- the table of a list of definitions, newest first -}
 table : List Body → Table
-table [] k = ∅
-table (b ∷ bs) k with k ≟ length bs
-... | yes _ = code (table bs) b
-... | no _ = table bs k
+table = tables code
 
 {- the meaning of a whole program: the value of main -}
 ⟦_⟧ᴷₚ : Program → 𝒫 Value

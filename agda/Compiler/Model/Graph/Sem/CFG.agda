@@ -14,11 +14,11 @@ module Compiler.Model.Graph.Sem.CFG where
  where D is the value of s and F X is the value of t with X in slot x.
  case a x l₁ l₂ is 𝒞, its branches running block l₁ or l₂ with the
  payload in slot x. Assigning a slot beyond the frame goes wrong: the
- construct means ∅, as in Imp. goto l runs block l in the store as it
- is.
+ construct means ∅ (checked), as in Imp. goto l runs block l in the store
+ as it is.
 
  The blocks of a body are given meaning as the global definitions are
- (table in Sem/Imp.agda): newest first, each with the meanings of the
+ (tables in Sem/Imp.agda): newest first, each with the meanings of the
  blocks older than it, which are all it can jump to, so no fixed point is
  needed. A jump to a label that is not among the visible blocks means ∅,
  as a reference to a missing global definition does.
@@ -33,10 +33,10 @@ open import SetsAsPredicates
 open import Compiler.Model.Graph.Domain.ISWIM.Domain
 open import Compiler.Model.Graph.Domain.ISWIM.Ops
 open import Compiler.Model.Graph.Sem.Imp
-  using (Table; init; Store; _[_↦_]; 𝒜; 𝒮; zeros; frame) public
+  using (Table; init; Store; _[_↦_]; checked; 𝒜; 𝒮; zeros; frame) public
 open import Compiler.Lang.CFG
 
-open import Data.Nat using (ℕ; _≟_; _<?_)
+open import Data.Nat using (ℕ; _≟_)
 open import Data.List using (List; []; _∷_; length)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
@@ -45,12 +45,6 @@ open import Relation.Nullary using (yes; no)
 {- the meanings of the visible blocks, by label -}
 Blocks : Set₁
 Blocks = ℕ → Store → 𝒫 Value
-
-{- D, if slot x is within a frame of n slots -}
-checked : ℕ → ℕ → 𝒫 Value → 𝒫 Value
-checked n x D with x <? n
-... | yes _ = D
-... | no _ = ∅
 
 {- t in a frame of n slots, with the blocks B -}
 ⟦_⟧[_] : Tail → Table → ℕ → Blocks → Store → 𝒫 Value

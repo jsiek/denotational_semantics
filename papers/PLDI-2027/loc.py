@@ -16,7 +16,7 @@ not reached by all three proofs; shared modules reached by all three are
 not counted anywhere.  Adequacy, an add-on to the denotational proof, also
 counts the shared modules it reaches that the denotational total does not
 already count.  The script also fails if one proof reaches another proof's
-modules, or adequacy's.
+modules, adequacy's or an experiment's.
 """
 import glob, os, re, sys
 
@@ -45,7 +45,7 @@ GROUPS = [
       G + 'Sem/Clos3IswimContinuous.agda', G + 'Sem/Clos4Iswim.agda',
       G + 'Sem/Clos4IswimContinuous.agda', G + 'Sem/Clos5Iswim.agda',
       G + 'Sem/Clos5IswimContinuous.agda', G + 'Sem/Continuous.agda', G + 'Sem/RenameSem.agda',
-      G + 'Sem/Imp.agda', G + 'Sem/CFG.agda']),
+      G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda']),
     ('den', 'enclose', [G + 'Correctness/EncloseCorrect.agda']),
     ('den', 'optimize', [G + 'Correctness/OptimizeCorrect.agda']),
     ('den', 'concretize', [G + 'Correctness/ConcretizeCorrect.agda']),
@@ -56,8 +56,12 @@ GROUPS = [
     ('den', 'globalize', [G + 'Correctness/GlobalizeCorrect.agda']),
     # each rco module also proves compile-mon (compile then rco) end to end
     ('den', 'rco', [G + 'Correctness/RCOCorrect.agda']),
-    ('den', 'lift locals', [G + 'Correctness/LiftLocalsCorrect.agda']),
-    ('den', 'explicate control', [G + 'Correctness/ExplicateCorrect.agda']),
+    # lift locals and explicate control against the continuation-passing
+    # semantics of Imp (Sem/ImpK.agda); against the direct one, see 'exp'
+    ('den', 'lift locals',
+     [G + 'Correctness/LiftLocalsCommon.agda', G + 'Correctness/LiftLocalsCorrectK.agda']),
+    ('den', 'explicate control',
+     [G + 'Correctness/ExplicateCommon.agda', G + 'Correctness/ExplicateCorrectK.agda']),
     ('den', 'composition', [G + 'Correctness/CompilerCorrect.agda']),
 
     ('op', 'generic infrastructure',
@@ -104,14 +108,14 @@ GROUPS = [
      [O + 'Backward.agda']),
     ('exp', 'CompCert-style: direct backward simulation for delay — delay',
      [O + 'Correctness/DelayBackSim.agda']),
-    # not in the totals: a continuation-passing semantics of Imp, an
-    # alternative to the direct one (Sem/Imp.agda), and lift locals and
-    # explicate control proved against it
-    ('exp', 'denotational: continuation-passing Imp — semantics', [G + 'Sem/ImpK.agda']),
-    ('exp', 'denotational: continuation-passing Imp — lift locals',
-     [G + 'Correctness/LiftLocalsCorrectK.agda']),
-    ('exp', 'denotational: continuation-passing Imp — explicate control',
-     [G + 'Correctness/ExplicateCorrectK.agda']),
+    # not in the totals: the direct semantics of Imp (Sem/ImpDirect.agda),
+    # an alternative to the continuation-passing one, and lift locals and
+    # explicate control proved against it.  They also use Sem/Imp.agda,
+    # LiftLocalsCommon and ExplicateCommon, counted in the main rows.
+    ('exp', 'denotational: direct Imp — semantics', [G + 'Sem/ImpDirect.agda']),
+    ('exp', 'denotational: direct Imp — lift locals', [G + 'Correctness/LiftLocalsCorrect.agda']),
+    ('exp', 'denotational: direct Imp — explicate control',
+     [G + 'Correctness/ExplicateCorrect.agda']),
 ]
 
 
@@ -192,15 +196,20 @@ def main():
     graph = {f: imports(f) for f in every}
     own = {s: {f for f, (side, _) in seen.items() if side == s}
            for s in SIDES + ('adeq',)}
+    exp = {f for f, (side, _) in seen.items() if side == 'exp'}
     reach = {s: reachable(own[s], graph) for s in own}
 
     # The proofs must be independent: no proof reaches another proof's modules
-    # nor adequacy's (adequacy, examples and the experiments may use anything).
+    # nor adequacy's, nor an experiment (adequacy, examples and the
+    # experiments may use anything).
     for s in SIDES:
         for t in SIDES + ('adeq',):
             bad = sorted(reach[s] & own[t]) if s != t else []
             if bad:
                 sys.exit(f'{NAMES[s]} imports {NAMES[t]} modules:\n  ' + '\n  '.join(bad))
+        bad = sorted(reach[s] & exp)
+        if bad:
+            sys.exit(f'{NAMES[s]} imports experiment modules:\n  ' + '\n  '.join(bad))
 
     shared = {f for f, (side, _) in seen.items() if side == 'shared'}
     by_all = shared & reach['den'] & reach['op'] & reach['ck']
