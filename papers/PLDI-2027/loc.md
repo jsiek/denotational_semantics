@@ -497,6 +497,68 @@ Its renaming lemmas, generic over any syntax (43 lines), are now language-indepe
 
 The cost is not in the compositional, per-construct reasoning. It is in the backward direction forced by the change of representation (item 1), and in the side conditions β needs in the graph model (item 3). The CompCert-style proof pays for the backward direction once, through determinism. The denotational proof pays for it in each pass that is not an equation, and delay is the only such pass.
 
+## Which relations each proof needs
+
+As of PR #33. For each pass, this records the relations each style defines between source and target: on values, on terms, or on whole states.
+
+| pass | denotational | CompCert-style | CakeML-style |
+|---|---|---|---|
+| enclose | equation | value relation | value relation |
+| optimize | equation | value relation | value relation |
+| concretize | equation | value relation | value relation |
+| delay | **logical relations** (both directions) | value relation | value relation |
+| globalize | equation | value relation (table-indexed) | value relation (table-indexed) |
+| rco | equation | equal values | equal values |
+| lift locals | equation | equal values | equal values |
+| explicate | equation | equal values | equal values |
+| select | equation | equal values | equal values |
+
+**Denotational.**
+* Every pass but delay is proved as an equation, `⟦ pass M ⟧ ≃ ⟦ M ⟧`, which gives both directions at once. The proofs go by induction on the term.
+* The only invariants are pointwise ones on environments or stores, for example:
+  * enclose: environments agree on the variables the term uses;
+  * optimize: environments agree through the renaming;
+  * lift locals: the store agrees with the environment slot by slot;
+  * select: no slot holds both an `inl` and an `inr`.
+* Delay is the exception because it changes the representation of functions in the domain: a closure becomes a pair of code and environment. The two denotations are then not equal sets, so delay needs two relations:
+  * forward, `v ⊑ D'`, by structural recursion on the source value;
+  * backward, indexed by finite lists of target values and encoded with fuel.
+
+  Domain values contain functions, so a function entry is related by quantifying over related arguments. These are true logical relations.
+
+**CompCert-style.**
+* Every pass needs a state relation, since a forward simulation is stated through one.
+* Five passes also need a relation on values: the closure-conversion passes. Machine values contain syntax, a closure being code plus an environment, and those passes rewrite that syntax.
+* The four Essentials of Compilation passes compute identical values. Their relations are about environments, frames, continuations and step timing.
+* None of the value relations is a logical relation. Each is an inductive type defined by structural recursion on first-order values. A closure is related by naming its code (`enclose N`, `delay N`, a table entry) and relating its captured values, with no quantification over arguments. That is why the CompCert-style delay proof is cheap.
+
+**CakeML-style.**
+* The same five passes define a value relation `_≈_`, nearly identical to the CompCert-style one; for globalize it matches constructor for constructor. The other four use equality.
+* None are logical relations, for the same reason as in the CompCert style.
+
+**Relations on terms.**
+* No proof in any style defines an inductive relation on terms.
+* *CompCert-style.* Wherever a state holds code, the target code is the pass applied to the source subterm, sometimes up to a renaming:
+  * enclose's `eval~` relates `S.eval M ρ₁ κ₁` to `T.eval (enclose M) ρ₂ κ₂`;
+  * globalize's `_↝_` only bundles "M' is `proj₁ (glob M ds)`, and the table grows into D".
+* *CakeML-style.* The theorems quantify over the source term and evaluate the compiled term directly. There are two near-exceptions:
+  * the table relations `Def` (rco, lift locals) are the graph of the compiler on definitions;
+  * explicate's `Means bs t K` relates a CFG tail to a semantic continuation, playing the role of the continuation semantics on the denotational side.
+* *Denotational.* The compilation function is effectively the whole relation.
+
+**The role of the CEK machines.**
+* The machines never substitute into code. The code in a state is always a subterm of the program, or the body of a closure, which is also a subterm.
+* So the code part of the relation can be "target code = pass (source code)", and everything dynamic sits in the relations on values, environments and continuations.
+
+**With a reduction semantics (substitution) instead.** This has not been tried. I expect the code part to stop being the compilation function for the closure-conversion passes:
+* After a β-step the source term is `N[V/x]`. In general `pass(N[V/x]) ≠ pass(N)[V'/x]`, because optimize, concretize and enclose compute capture lists and layouts from free variables, which substitution changes.
+* Intermediate terms also contain runtime values and administrative redexes that the pass never produced, such as rco's half-reduced let chains.
+* Those passes would then need an inductive relation on terms, closed under substitution of related values, as in Plotkin's colon translation for CPS.
+* Lift locals, explicate and select would be unaffected: Imp, CFG and X86 use frames and stores, not substitution.
+* The denotational proofs would be unaffected too, since they never mention machine states.
+
+**Summary.** The denotational side needs a value relation in one pass instead of five. But that one is a pair of logical relations, one of them over finite observations, and it costs most of the denotational delay proof (see [above](#why-delay-costs-more-on-the-denotational-side)).
+
 ## Experiment: a direct backward simulation for delay
 
 The numbers in this section are as of PR #24, before arithmetic, which added 3 lines to `DelayBackSim` (149) and 17 to `DelaySim` (168); see [History](#history).
