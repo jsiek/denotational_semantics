@@ -102,7 +102,7 @@ apply≈ : ∀ ck r {ρ₁ ρ₂ f g} M → EnvRel r ρ₁ ρ₂ → f ≈ g
 run-id : ∀ ck {ρ₁ ρ₂} M → EnvRel (λ x → x) ρ₁ ρ₂
   → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (delay M))
 call≈ : ∀ ck {ρ₁ ρ₂} N → EnvRel (λ x → x) ρ₁ ρ₂
-  → RelResult _≈_ (S.call ck N ρ₁) (T.call ck (delay N) ρ₂)
+  → RelResult _≈_ (S.call ck N ρ₁) (T.call (T.fun (delay N)) ck ρ₂)
 branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N → EnvRel r ρ₁ ρ₂ → v ≈ w
   → RelResult _≈_ (S.branch ck ρ₁ M N v)
       (T.branch ck ρ₂ (rename (ext r) (delay M)) (rename (ext r) (delay N)) w)

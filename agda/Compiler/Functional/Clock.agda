@@ -18,7 +18,8 @@
   * An interpreter goes wrong (wrong) exactly when the corresponding
     machine is stuck, and evaluates in the same order: left to right, and
     the operator of an application is checked to be a function before its
-    argument is evaluated.
+    argument is evaluated (in Clos4 and Clos5: when it is called, after
+    its operands).
 
   * A program terminates with o if, for some clock, it returns a value
     observed as o, or goes wrong and o is o-wrong; it diverges if it times

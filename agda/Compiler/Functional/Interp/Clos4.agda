@@ -3,10 +3,10 @@
   A clocked interpreter for Clos4 (call by value, left to right), which
   follows the CEK machine (Operational/Machine/Clos4.agda). The code of a
   function, fun-op ⦅ ∁ (x. y. N) ⦆, is closed, so its value is just N
-  (fun N). app ⦅ L , M , N ⦆ evaluates the code L, checks that it is
-  code, evaluates the environment M and the argument N, then runs the
-  code in the environment y, x. As in the machine, a pair, like bare
-  code, is observed as a function. See the design note in Clock.agda.
+  (fun N). app ⦅ L , M , N ⦆ evaluates the code L, the environment M
+  and the argument N, then checks that L's value is code and runs it in
+  the environment y, x. As in the machine, a pair, like bare code, is
+  observed as a function. See the design note in Clock.agda.
 
 -}
 
@@ -71,7 +71,8 @@ eval : ℕ → Env → AST → Result Val
 eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
 {- apply code to the environment M and the argument N -}
 apply : ℕ → Env → AST → AST → Val → Result Val
-call : ℕ → AST → Env → Result Val
+{- call code f, going wrong (before the clock is consulted) if f is not code -}
+call : Val → ℕ → Env → Result Val
 branch : ℕ → Env → AST → AST → Val → Result Val
 
 eval ck ρ (` x) = from-maybe (ρ ‼ x)
@@ -94,11 +95,11 @@ eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ M >>= λ v → eval c
 eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = eval ck ρ M >>= λ v → eval-args ck ρ (v ∷ vs) args
 
-apply ck ρ M N (fun B) = eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call ck B (w ∷ e ∷ [])
-apply ck ρ M N _ = wrong
+apply ck ρ M N f = eval ck ρ M >>= λ e → eval ck ρ N >>= λ w → call f ck (w ∷ e ∷ [])
 
-call zero N ρ = timeout
-call (suc ck) N ρ = eval ck ρ N
+call (fun N) zero ρ = timeout
+call (fun N) (suc ck) ρ = eval ck ρ N
+call _ ck ρ = wrong
 
 branch ck ρ M N (inl v) = eval ck (v ∷ ρ) M
 branch ck ρ M N (inr v) = eval ck (v ∷ ρ) N

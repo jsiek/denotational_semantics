@@ -8,7 +8,7 @@ open import abt.Var using (Var)
 {-
   Renaming preserves well-scopedness (WS, Compiler.Lang.Scope).
 -}
-module Compiler.Operational.Adequacy.Scope (Op : Set) (sig : Op → List Sig) where
+module Compiler.Lang.ScopeRename (Op : Set) (sig : Op → List Sig) where
 
 open import abt.AbstractBindingTree Op sig using (`_; _⦅_⦆; ast; bind; clear; nil; cons)
   renaming (ABT to AST; Arg to Arg; Args to Args)

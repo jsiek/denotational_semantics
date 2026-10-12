@@ -90,7 +90,11 @@ step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (ret v halt) = stop (obs v)
 {- the operator is checked before the argument is evaluated, so that
-   delay, which takes the operator apart first, preserves going wrong -}
+   delay, which takes the operator apart first, preserves going wrong
+   (as in Clos2 and Clos3). Clos4 and Clos5 check that the operator is
+   code only at the call, after all three operands, like an indirect call
+   instruction: delay's fst of the closure has already gone wrong on a
+   non-closure, so on its output that late check always passes -}
 step (ret v@(clo _ _) (appL M ρ κ)) = next (eval M ρ (appR v κ))
 step (ret _ (appL M ρ κ)) = stop o-wrong
 step (ret w (appR (clo N ρ) κ)) = next (eval N (w ∷ ρ) κ)

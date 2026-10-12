@@ -122,7 +122,9 @@ instead of de Bruijn indices.
   \begin{itemize}
   \item the syntax of ISWIM and Clos2--Clos5, including Clos5 programs,
     and the primitives $\key{sub}$ and $\key{eq}$;
-  \item enclose, optimize, concretize, delay (with the let), and globalize.
+  \item enclose, optimize, concretize, delay (with the let), and globalize;
+  \item remove complex operands (rco) into monadic Clos5, $\pass{compile\text{-}mon}$,
+    and well-scoped Clos5 programs ($\mathit{Scoped}_5$).
   \end{itemize}
 \item \textbf{Denotational proof:}
   \begin{itemize}
@@ -139,7 +141,9 @@ instead of de Bruijn indices.
     for preservation, and $\mathit{depth}$, $\mathcal{R}$, and $\rhd$
     for reflection;
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
-  \item the end-to-end theorem.
+  \item for rco, the let laws, strict operators, the let chain, and the
+    rco equation;
+  \item the end-to-end theorems, for $\pass{compile}$ and $\pass{compile\text{-}mon}$.
   \end{itemize}
 \item \textbf{CompCert-style proof:}
   \begin{itemize}
@@ -151,7 +155,9 @@ instead of de Bruijn indices.
     forward simulation gives $\mathit{Equivalent}$;
   \item for each pass, the relations $\approx$, $\approx_k$, and $\sim$ on
     values, continuations, and states, and its correctness theorem;
-  \item the end-to-end theorem;
+  \item for rco, $\preceq$ on environments, the pending let chain
+    $\mathit{Pend}$, and its frames;
+  \item the end-to-end theorems, for $\pass{compile}$ and $\pass{compile\text{-}mon}$;
   \item backward simulations, and the direct backward simulation for delay.
   \end{itemize}
 \item \textbf{CakeML-style proof:}
@@ -161,8 +167,8 @@ instead of de Bruijn indices.
     clock give $\mathit{Equivalent}$;
   \item the clocked interpreters of ISWIM and Clos2--Clos5;
   \item for each pass, the lemma relating the interpreters clock for clock,
-    and its correctness theorem;
-  \item the end-to-end theorem.
+    and its correctness theorem; for rco, with equal results, and the let chain;
+  \item the end-to-end theorems, for $\pass{compile}$ and $\pass{compile\text{-}mon}$.
   \end{itemize}
 \end{enumerate}
 
@@ -181,6 +187,11 @@ Using names instead of de Bruijn indices changes a few definitions:
   variables. Closed code can't refer to them.
 \item \textbf{Tuple indices} run from $1$ to $n$.
 \item \textbf{Global definitions} are listed oldest first, so $\funref{k}$ names $d_k$.
+\item \textbf{Clos5 definitions} are closed by the grammar. The Agda's
+  syntax allows any definition; $\mathit{Scoped}_5$ is the Agda's
+  \texttt{Scoped} (\texttt{Compile/PipelineScope.agda}).
+\item \textbf{Fresh variables} of rco are de Bruijn indices in the Agda:
+  each let shifts the operands after it, and the atoms under the chain.
 \item \textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty}.
@@ -216,6 +227,11 @@ In the CompCert-style proof:
   let-bound variables.
 \item \textbf{Global definitions} in the Agda's Clos5 machine and globalize
   relation are listed newest first.
+\item \textbf{RCO}'s $\rho_1 \preceq \rho_2$ is the Agda's \texttt{Ren}: the
+  source term $M$ is related to \texttt{rename r (rco M)} for a renaming
+  \texttt{r} with $\rho_2(r(x)) = \rho_1(x)$. The Agda's frames are indexed
+  by the kind of construct (\texttt{Frame}, \texttt{Kind}), and its
+  $\mathit{Pend}$ takes the values and operands as lists.
 \end{itemize}
 In the CakeML-style proof:
 \begin{itemize}
@@ -315,12 +331,30 @@ Like Clos4, but the code is hoisted into a program's list of global definitions 
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
+\subsection{Monadic Clos5}
+
+The sublanguage of Clos5 in monadic normal form: the operands of every construct but $\key{let}$ are atoms $a$, while the right-hand side and body of $\key{let}$ and the branches of $\key{case}$ may be complex.
+\begin{syntax}
+  & a &::=& x \mid \funref{k} \mid c \\
+  & M, N &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
+    \mid \prim{p}{a_1}{a_2} \\
+  &&& \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a
+    \mid \inl a \mid \inr a \mid \Case{a}{x}{M}{y}{N}
+    \mid \Let x = M \In N \\[1ex]
+  & d &::=& e\,y.\,N \\
+  & P &::=& (d_0, \ldots, d_{m-1};\; M)
+\end{syntax}
+
 %===============================================================================
 \section{Compilation}
 
 \[
   \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
      \circ \pass{optimize} \circ \pass{enclose}
+\]
+
+\[
+  \pass{compile\text{-}mon} = \pass{rco} \circ \pass{compile}
 \]
 
 In each pass, the clauses not shown are homomorphic.
@@ -390,6 +424,58 @@ Globalize hoists all code into a table of global definitions and replaces each p
      \quad\text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1}) \\[1ex]
   \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
 \end{align*}
+
+\subsection{Remove Complex Operands (Clos5 $\to$ Monadic Clos5)}
+
+Remove complex operands binds each complex operand to a fresh variable with a $\key{let}$, from left to right, so that every operand becomes an atom.
+\[
+  \vec{b} = x_1{=}M_1, \ldots, x_k{=}M_k
+  \qquad
+  \pass{atomize}(M_1, \ldots, M_n) = (\vec{b};\; a_1, \ldots, a_n)
+\]
+\begin{align*}
+  \pass{atomize}(\epsilon) &= (\epsilon;\; \epsilon) \\
+  \pass{atomize}(a, \vec{M}) &= (\vec{b};\; a, \vec{a})
+     \quad\text{where } (\vec{b}; \vec{a}) = \pass{atomize}(\vec{M}) \\
+  \pass{atomize}(M, \vec{M}) &= (x{=}M, \vec{b};\; x, \vec{a})
+     \quad\text{where } (\vec{b}; \vec{a}) = \pass{atomize}(\vec{M}),\
+     M \text{ not an atom},\ x \text{ fresh} \\[1ex]
+  \pass{lets}(\epsilon, N) &= N \\
+  \pass{lets}((x{=}M, \vec{b}), N) &= \Let x = M \In \pass{lets}(\vec{b}, N)
+\end{align*}
+\[
+  \mathit{op}(M_1, \ldots, M_n) \in \{\, L(M, N),\ \pair{M}{N},\ \FST M,\ \SND M,\ \prim{p}{M}{N},\
+     \tuple{M_1, \ldots, M_n},\ \prj{i} M,\ \inl M,\ \inr M \,\}
+\]
+\begin{align*}
+  \pass{rco}(\mathit{op}(M_1, \ldots, M_n)) &= \pass{lets}(\vec{b}, \mathit{op}(a_1, \ldots, a_n)) \\
+  &\qquad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(\pass{rco}(M_1), \ldots, \pass{rco}(M_n)) \\
+  \pass{rco}(\Case{L}{x}{M}{y}{N}) &= \pass{lets}(\vec{b}, \Case{a}{x}{M'}{y}{N'}) \\
+  &\qquad \text{where } (\vec{b}; a) = \pass{atomize}(\pass{rco}(L)),\ M' = \pass{rco}(M),\ N' = \pass{rco}(N) \\
+  \pass{rco}((d_0, \ldots, d_{m-1};\; M)) &= (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M)) \\
+  \pass{rco}(e\,y.\,N) &= e\,y.\,\pass{rco}(N)
+\end{align*}
+An atom left in place is evaluated after the complex operands that follow
+it. This preserves going wrong in the machines and interpreters, which
+check that the operator of $L(M, N)$ is code only at the call, but an
+unbound variable would go wrong later: $\pair{x}{L}$, with $L$ a loop,
+goes wrong in the empty environment, while
+$\Let y = L \In \pair{x}{y}$ diverges. So the operational proofs of rco
+assume well-scoped programs.
+
+\paragraph{Well-scoped programs.}
+\begin{align*}
+  \mathit{Scoped}_5((d_0, \ldots, d_{m-1};\; M)) &\iff \FV(M) = \emptyset \land
+    \forall k < m.\; \FV(d_k) = \emptyset
+  \qquad (\FV(e\,y.\,N) = \FV(N) \setminus \{e, y\})
+\end{align*}
+
+\begin{lemma}[The Compiler Produces Well-Scoped Programs]\label{lem:compile-scoped}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \mathit{Scoped}_5(\pass{compile}(M)) .
+\]
+\end{lemma}
 
 %===============================================================================
 \part{Denotational Proof}
@@ -707,6 +793,71 @@ $\SEM{M}^{\mathrm{4}}\rho \simeq \SEM{M'}^{\mathrm{5}}_{\key{table}(\vec{d}')}\r
 $\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\mathrm{5}}$.
 \end{lemma}
 
+\subsection{Remove Complex Operands}
+
+\begin{lemma}[Continuity of Clos5]\label{lem:continuity5}
+For every table $T$, $\SEM{M}^{\mathrm{5}}_T$ is monotone and continuous.
+\end{lemma}
+
+\begin{lemma}[Let Is Strict]\label{lem:let-strict}
+If $\SEM{\Let x = M \In N}^{\mathrm{5}}_T\rho \NE$, then $\SEM{M}^{\mathrm{5}}_T\rho \NE$.
+\end{lemma}
+
+\begin{lemma}[Let]\label{lem:let-beta}
+If $\rho(x) \NE$ for every $x$ and $\SEM{M}^{\mathrm{5}}_T\rho \NE$, then
+\[
+  \SEM{\Let x = M \In N}^{\mathrm{5}}_T\rho \simeq
+  \SEM{N}^{\mathrm{5}}_T\ext{\rho}{x}{\SEM{M}^{\mathrm{5}}_T\rho} .
+\]
+\end{lemma}
+
+\paragraph{Strict operators.}
+An operator $O$ on $n$ sets is strict when
+\begin{align*}
+  \mathit{Strict}(O) &\iff
+    (\forall \bar{D}\, \bar{E}.\; \bar{D} \simeq \bar{E} \implies O(\bar{D}) \simeq O(\bar{E}))
+    \land (\forall \bar{D}.\; O(D_1, \ldots, D_n) \NE \implies \forall i.\; D_i \NE) .
+\end{align*}
+Each construct whose operands rco names means a strict operator on the
+meanings of its operands:
+\begin{align*}
+  O_{L(M, N)}(D, E, F) &= (D \app E) \app F &
+  O_{\pair{M}{N}}(D, E) &= \key{pair}(D, E) &
+  O_{\FST M}(D) &= \key{car}(D) \\
+  O_{\SND M}(D) &= \key{cdr}(D) &
+  O_{\tuple{M_1, \ldots, M_n}}(\bar{D}) &= \mathcal{T}(\bar{D}) &
+  O_{\prj{i} M}(D) &= \key{proj}_i(D) \\
+  O_{\inl M}(D) &= \key{inl}(D) &
+  O_{\inr M}(D) &= \key{inr}(D) &
+  O_{\prim{p}{L}{M}}(D, E) &= \key{prim}_p(D, E)
+\end{align*}
+and $O(D) = \mathcal{C}(D,\; \lambda X.\, \SEM{M}^{\mathrm{5}}_T\ext{\rho}{x}{X},\;
+\lambda Y.\, \SEM{N}^{\mathrm{5}}_T\ext{\rho}{y}{Y})$ for
+$\Case{L}{x}{M}{y}{N}$.
+
+\begin{lemma}[Let Chain]\label{lem:let-chain}
+Let $O$ be strict, $(\vec{b};\; a_1, \ldots, a_n) = \pass{atomize}(M_1, \ldots, M_n)$,
+and $\rho(x) \NE$ for every $x$. If, for every $\rho'$ that extends
+$\rho$ with the variables of $\vec{b}$,
+$\SEM{X}^{\mathrm{5}}_T\rho' \simeq O(\SEM{a_1}^{\mathrm{5}}_T\rho', \ldots, \SEM{a_n}^{\mathrm{5}}_T\rho')$, then
+\[
+  \SEM{\pass{lets}(\vec{b}, X)}^{\mathrm{5}}_T\rho \simeq
+  O(\SEM{M_1}^{\mathrm{5}}_T\rho, \ldots, \SEM{M_n}^{\mathrm{5}}_T\rho) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of RCO]\label{thm:rco}
+If $\rho(x) \NE$ for every $x$, then
+$\SEM{\pass{rco}(M)}^{\mathrm{5}}_T\rho \simeq \SEM{M}^{\mathrm{5}}_T\rho$.
+For every Clos5 program $P$,
+\[
+  \SEM{\pass{rco}(P)}^{\mathrm{5}} \simeq \SEM{P}^{\mathrm{5}} .
+\]
+\end{theorem}
+The theorem needs no scoping: going wrong and divergence both mean
+$\emptyset$, an unbound variable means $\rho_0(x) = \{\omega\}$, and the
+order in which operands are evaluated is invisible.
+
 \subsection{End to End}
 
 \begin{align*}
@@ -717,6 +868,13 @@ $\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\mathrm{5}}$.
 For every ISWIM program $M$,
 \[
   \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile}(M)}^{\mathrm{5}} .
+\]
+\end{theorem}
+
+\begin{theorem}[Correctness of Compile-Mon]\label{thm:compile-mon}
+For every ISWIM program $M$,
+\[
+  \SEM{M}^{\mathrm{ISWIM}}\rho_0 \obseq \SEM{\pass{compile\text{-}mon}(M)}^{\mathrm{5}} .
 \]
 \end{theorem}
 
@@ -894,6 +1052,8 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 
 \subsection{Clos4}
 
+An application checks that its operator is code when it calls it, after
+evaluating all three operands.
 \[
 \begin{array}{rcl}
   v, f, u &::=& \funV{e\, y.\, N} \mid \pairV{v}{w} \mid \cdots \\
@@ -910,8 +1070,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \ev{(\FST M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{fstK}{\kappa}} \\
   \ev{(\SND M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{sndK}{\kappa}} \\
   \ev{(\Let x = M \In N)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{letK}{x.N, \rho, \kappa}} \\[1ex]
-  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} & f = \funV{\ldots} \\
-  & \stp \wrong & \text{otherwise} \\
+  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} \\
   \rt{u}{\Kf{appE}{f, N, \rho, \kappa}} & \nxt \ev{N}{\rho}{\Kf{appA}{f, u, \kappa}} \\
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa} & f = \funV{e\, y.\, N} \\
   & \stp \wrong & \text{otherwise} \\
@@ -938,8 +1097,6 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\[1ex]
-  \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} & f = \codeV{k} \\
-  & \stp \wrong & \text{otherwise} \\
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
     & f = \codeV{k},\; k < m,\; d_k = e\,y.\,N \\
   & \stp \wrong & \text{otherwise}
@@ -1280,6 +1437,80 @@ For every Clos4 term $M$,
 \]
 \end{theorem}
 
+\subsection{Remove Complex Operands}\label{sec:sim-rco}
+
+The source runs with the definitions $D$ and the target with
+$\pass{rco}(D)$, so values are related by equality ($\codeV{k}$ names
+$D_k$ in the source and $\pass{rco}(D_k)$ in the target). The target
+environment has the values of the lets as well:
+\begin{align*}
+  \rho_1 \preceq \rho_2 &\iff \forall x \in \mathrm{dom}(\rho_1).\; \rho_2(x) = \rho_1(x)
+\end{align*}
+Let $c$ be a construct with operands $M_1, \ldots, M_n$ (an application,
+pair, projection, tuple, injection, primitive, or the scrutinee of a
+case). We write $F^c(v_1 \ldots v_{j-1};\, M_j \ldots M_n;\, \rho;\, \kappa)$
+for the frame in which the machine waits for the value of $M_j$ after the values
+$v_1, \ldots, v_{j-1}$ (for $L(M, N)$: $\Kf{appF}{M, N, \rho, \kappa}$,
+$\Kf{appE}{v_1, N, \rho, \kappa}$, $\Kf{appA}{v_1, v_2, \kappa}$), and
+$F^c(v_1 \ldots v_{n-1};\, \epsilon;\, \rho;\, \kappa)$ for the frame
+that waits for the last one. The target's code $Q$ that finishes $c$ is
+pending, $\mathit{Pend}^c_{\rho_1, \kappa_1, \kappa_2}(\bar{v};\, \bar{M};\, Q, \rho_2)$,
+by one rule per operand:
+\begin{align*}
+  \mathit{Pend}(\bar{v};\, M\,\bar{M};\, \Let x = \pass{rco}(M) \In Q, \rho_2)
+    &\Leftarrow M \text{ complex} \land \rho_1 \preceq \rho_2 \land \FV(M) \subseteq \mathrm{dom}(\rho_1) \\
+    &\qquad \land \forall w.\; \mathit{Pend}(\bar{v}\, w;\, \bar{M};\, Q, \ext{\rho_2}{x}{w}) \\
+  \mathit{Pend}(\bar{v};\, a\,\bar{M};\, Q, \rho_2)
+    &\Leftarrow a \text{ an atom} \land \rho_1(a) = u \land \mathit{Pend}(\bar{v}\, u;\, \bar{M};\, Q, \rho_2) \\
+  \mathit{Pend}(\bar{v}\, v;\, \epsilon;\, Q, \rho_2)
+    &\Leftarrow \ev{Q}{\rho_2}{\kappa_2} \lto^+ \rt{v}{F^c(\bar{v};\, \epsilon;\, \rho_2';\, \kappa_2)}
+    \land \kappa_1 \approxk \kappa_2
+\end{align*}
+where $\rho_1(a)$ is the value of an atom ($\rho_1(x)$, $c$, or $\codeV{k}$).
+The continuations:
+\begin{align*}
+  \Kf{letK}{x.N, \rho_1, \kappa_1} \approxk {}& \Kf{letK}{x.\pass{rco}(N), \rho_2, \kappa_2} \\
+    &\iff (\forall v.\; \ext{\rho_1}{x}{v} \preceq \ext{\rho_2}{x}{v}) \land
+      \FV(N) \subseteq \mathrm{dom}(\rho_1) \cup \{x\} \land \kappa_1 \approxk \kappa_2 \\
+  F^c(\bar{v};\, \bar{M};\, \rho_1;\, \kappa_1) \approxk {}& \Kf{letK}{x.Q, \rho_2, \kappa_2} \\
+    &\iff \forall w.\; \mathit{Pend}^c_{\rho_1, \kappa_1, \kappa_2}(\bar{v}\, w;\, \bar{M};\, Q, \ext{\rho_2}{x}{w}) \\
+  F^c(\bar{v};\, \epsilon;\, \rho_1;\, \kappa_1) \approxk {}& F^c(\bar{v};\, \epsilon;\, \rho_2;\, \kappa_2)
+    \iff \kappa_1 \approxk \kappa_2
+\end{align*}
+(for a case, the branches $x.M$ and $x.\pass{rco}(M)$ under the lets, and
+$\rho_1 \preceq \rho_2$). In the states, the source evaluates an atom
+operand while the target waits, so the relation is indexed by a bound
+$|M|$ on the source steps before the target moves:
+\begin{align*}
+  \ev{M}{\rho_1}{\kappa_1} \sim_{|M|} {}& \ev{\pass{rco}(M)}{\rho_2}{\kappa_2}
+    \iff \rho_1 \preceq \rho_2 \land \FV(M) \subseteq \mathrm{dom}(\rho_1) \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim_0 {}& \key{retT}(v, \kappa_2) \iff \kappa_1 \approxk \kappa_2 \\
+  \ev{a}{\rho_1}{F^c(\bar{v};\, \bar{M};\, \rho_1;\, \kappa_1)} \sim_{2 + |\bar{M}|} {}& \ev{Q}{\rho_2}{\kappa_2}
+    \iff \rho_1(a) = u \land \mathit{Pend}(\bar{v}\, u;\, \bar{M};\, Q, \rho_2) \\
+  \rt{u}{F^c(\bar{v};\, M\,\bar{M};\, \rho_1;\, \kappa_1)} \sim_{1 + |M\,\bar{M}|} {}& \ev{Q}{\rho_2}{\kappa_2}
+    \iff \mathit{Pend}(\bar{v}\, u;\, M\,\bar{M};\, Q, \rho_2)
+\end{align*}
+where $\key{retT}(v, \kappa_2)$ is the target state related to returning
+$v$: when $\kappa_2 = \Kf{letK}{x.Q, \rho_2, \kappa}$ waits for the last
+complex operand of a construct, the state that $\mathit{Pend}$ runs ahead
+to, $\rt{v}{F^c(\bar{v};\, \epsilon;\, \rho_2';\, \kappa)}$, and otherwise
+$\rt{v}{\kappa_2}$. So both machines take the construct's own step (a call,
+a projection, \ldots) together, and go wrong together.
+
+\begin{lemma}[RCO Simulation]\label{lem:rco-fsim}
+For every Clos5 program $P$,
+\[
+  \mathit{Scoped}_5(P) \implies \FSim(\Mach{5}(P), \Mach{5}(\pass{rco}(P)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of RCO, CompCert Style]\label{thm:rco-sim}
+For every Clos5 program $P$,
+\[
+  \mathit{Scoped}_5(P) \implies \Equiv(\Mach{5}(P), \Mach{5}(\pass{rco}(P))) .
+\]
+\end{theorem}
+
 \subsection{End to End}
 
 \begin{theorem}[Compiler Correctness, CompCert Style]\label{thm:compiler-sim}
@@ -1287,6 +1518,15 @@ For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile}(M))) .
 \]
+\end{theorem}
+
+\begin{theorem}[Correctness of Compile-Mon, CompCert Style]\label{thm:compile-mon-sim}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile\text{-}mon}(M))) ,
+\]
+by Theorems~\ref{thm:compiler-sim} and~\ref{thm:rco-sim}, Lemma~\ref{lem:compile-scoped},
+and Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
 %-------------------------------------------------------------------------------
@@ -1527,6 +1767,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
 
 \subsection{Clos4}
 
+As in the machine, the operator is checked after all three operands.
 \begin{align*}
   \EV{4}{k}\,\rho\,\fun{e\,y.\,N} &= \Ret \funV{e\, y.\, N} \\
   \EV{4}{k}\,\rho\,L(M, N) &= \EV{4}{k}\,\rho\,L \bind \APP{4}{k}\,\rho\,M\,N \\
@@ -1537,10 +1778,9 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
   \EV{4}{k}\,\rho\,(\Let x = M \In N) &=
     \EV{4}{k}\,\rho\,M \bind \lambda v.\, \EV{4}{k}\,\ext{\rho}{x}{v}\,N \\[1ex]
   \APP{4}{k}\,\rho\,M\,N\,f &=
+    \EV{4}{k}\,\rho\,M \bind \lambda u.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\,
     \begin{cases}
-      \EV{4}{k}\,\rho\,M \bind \lambda u.\, \EV{4}{k}\,\rho\,N \bind \lambda w.\,
-        \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\}
-        & f = \funV{e\, y.\, B} \\
+      \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\} & f = \funV{e\, y.\, B} \\
       \wrong & \text{otherwise}
     \end{cases} \\
   \key{first}(v) &=
@@ -1556,10 +1796,9 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
 \begin{align*}
   \EV{\vec{d}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\[1ex]
   \APP{\vec{d}}{k}\,\rho\,M\,N\,f &=
+    \EV{\vec{d}}{k}\,\rho\,M \bind \lambda u.\, \EV{\vec{d}}{k}\,\rho\,N \bind \lambda w.\,
     \begin{cases}
-      \EV{\vec{d}}{k}\,\rho\,M \bind \lambda u.\, \EV{\vec{d}}{k}\,\rho\,N \bind \lambda w.\,
-        \CALL{\vec{d}}{k}\,j\,u\,w
-        & f = \codeV{j} \\
+      \CALL{\vec{d}}{k}\,j\,u\,w & f = \codeV{j} \\
       \wrong & \text{otherwise}
     \end{cases} \\
   \CALL{\vec{d}}{k}\,j\,u\,w &=
@@ -1681,6 +1920,38 @@ For every Clos4 term $M$,
 \]
 \end{theorem}
 
+\subsection{Remove Complex Operands}
+
+Values are related by equality, as in Section~\ref{sec:sim-rco}, and
+both programs run in the same environment: the fresh variables of rco
+are not in $\rho$. The pass adds only lets, which do not tick, and atoms,
+which call nothing.
+
+\begin{lemma}[Let Chain, Clock for Clock]\label{lem:let-chain-clk}
+Let $(\vec{b};\; a_1, \ldots, a_n) = \pass{atomize}(M_1, \ldots, M_n)$, and
+let every operand $M_i$ that is a variable be in $\mathrm{dom}(\rho)$. If,
+for every $\rho'$ that extends $\rho$ with the variables of $\vec{b}$,
+$\EVS{\vec{d}}{k}\,\rho'\,(a_1 \ldots a_n) \bind K = \EV{\vec{d}}{k}\,\rho'\,X$, then
+\[
+  \EVS{\vec{d}}{k}\,\rho\,(M_1 \ldots M_n) \bind K = \EV{\vec{d}}{k}\,\rho\,\pass{lets}(\vec{b}, X) .
+\]
+\end{lemma}
+
+\begin{lemma}[RCO, Clock for Clock]\label{lem:rco-clk}
+If $\FV(d_j) = \emptyset$ for every $j$ and $\FV(M) \subseteq \mathrm{dom}(\rho)$,
+then for every clock $k$,
+\[
+  \EV{\vec{d}}{k}\,\rho\,M = \EV{\pass{rco}(\vec{d})}{k}\,\rho\,\pass{rco}(M) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of RCO, CakeML Style]\label{thm:rco-clk}
+For every Clos5 program $P$,
+\[
+  \mathit{Scoped}_5(P) \implies \Equiv(\Interp{5}(P), \Interp{5}(\pass{rco}(P))) .
+\]
+\end{theorem}
+
 \subsection{End to End}
 
 \begin{theorem}[Compiler Correctness, CakeML Style]\label{thm:compiler-clk}
@@ -1688,6 +1959,15 @@ For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile}(M))) .
 \]
+\end{theorem}
+
+\begin{theorem}[Correctness of Compile-Mon, CakeML Style]\label{thm:compile-mon-clk}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile\text{-}mon}(M))) ,
+\]
+by Theorems~\ref{thm:compiler-clk} and~\ref{thm:rco-clk}, Lemma~\ref{lem:compile-scoped},
+and Lemma~\ref{lem:equiv-trans-clk}.
 \end{theorem}
 
 \end{document}

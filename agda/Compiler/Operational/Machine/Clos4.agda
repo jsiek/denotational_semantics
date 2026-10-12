@@ -6,7 +6,10 @@
   variables, taken apart by fst and snd, and app ⦅ L , M , N ⦆ evaluates
   the code L, the environment M and the argument N, then runs the code in
   the environment y, x: the argument is variable 0 and the environment
-  variable 1. See the design note in Smallstep.agda.
+  variable 1. Only then does it check that L's value is code, like an
+  indirect call instruction (the source languages check the operator
+  before the operand; see Machine/ISWIM.agda). See the design note in
+  Smallstep.agda.
 
   Observations: Obs has no pairs, and Clos4 uses a pair only to represent
   a closure (delay makes one only from a Clos3 closure), so a pair, like
@@ -107,8 +110,7 @@ step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)
-step (ret f@(fun _) (appF M N ρ κ)) = next (eval M ρ (appE f N ρ κ))
-step (ret _ (appF M N ρ κ)) = stop o-wrong
+step (ret f (appF M N ρ κ)) = next (eval M ρ (appE f N ρ κ))
 step (ret e (appE f N ρ κ)) = next (eval N ρ (appA f e κ))
 step (ret w (appA (fun N) e κ)) = next (eval N (w ∷ e ∷ []) κ)
 step (ret w (appA _ e κ)) = stop o-wrong

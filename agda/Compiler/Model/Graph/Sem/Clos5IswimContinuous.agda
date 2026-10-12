@@ -6,12 +6,14 @@
   Domain.ISWIM.Continuity, as for Clos4 (Sem/Clos4IswimContinuous.agda);
   a reference to a global definition is a constant.
 
-  Used by the soundness of the Clos5 machine (Adequacy/Clos5Soundness.agda)
-  for the steps that pass values to code (calls, case, let).
+  Used by the correctness of remove complex operands
+  (Correctness/RCOCorrect.agda), for the let laws, and by the soundness
+  of the Clos5 machine (Operational/Adequacy/Clos5Soundness.agda), for
+  the steps that pass values to code (calls, case, let).
 
 -}
 
-module Compiler.Operational.Adequacy.Clos5Continuous where
+module Compiler.Model.Graph.Sem.Clos5IswimContinuous where
 
 open import SetsAsPredicates
 open import NewDenotProperties

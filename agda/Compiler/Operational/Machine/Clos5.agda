@@ -4,7 +4,8 @@
   as for Clos4 except for code: a program runs with its table of global
   definitions, a reference fun-ref k evaluates to a code pointer (code k),
   and applying code k looks up definition k in the table, going wrong if
-  there is none. See the design note in Smallstep.agda.
+  there is none. As in Clos4, the operator is checked to be code only at
+  the call, after all three operands. See the design note in Smallstep.agda.
 
   Observations: as in Clos4, code pointers and pairs (closures) are
   observed as functions (o-fun).
@@ -111,8 +112,7 @@ step ds (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L
 step ds (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step ds (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step ds (ret v halt) = stop (obs v)
-step ds (ret f@(code _) (appF M N ρ κ)) = next (eval M ρ (appE f N ρ κ))
-step ds (ret _ (appF M N ρ κ)) = stop o-wrong
+step ds (ret f (appF M N ρ κ)) = next (eval M ρ (appE f N ρ κ))
 step ds (ret e (appE f N ρ κ)) = next (eval N ρ (appA f e κ))
 step ds (ret w (appA (code k) e κ)) = call (global ds k) w e κ
 step ds (ret w (appA _ e κ)) = stop o-wrong

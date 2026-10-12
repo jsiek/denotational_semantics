@@ -193,12 +193,7 @@ module _ (D : Defs) (M₀ : C.AST) where
   sim (eval~ {M = prim q ⦅ L ,, M ,, Nil ⦆} (glob↝ p) ρ κ) =
     steps (one refl) (eval~ (sub↝ (glob-grows M _) p) ρ (primL (glob↝ p) ρ κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r@(fun≈ _) (appF gM gN ρ κ)) = steps (one refl) (eval~ gM ρ (appE r gN ρ κ))
-  sim (ret~ (pair≈ _ _) (appF gM gN ρ κ)) = stops refl
-  sim (ret~ const≈ (appF gM gN ρ κ)) = stops refl
-  sim (ret~ (tup≈ _) (appF gM gN ρ κ)) = stops refl
-  sim (ret~ (inl≈ _) (appF gM gN ρ κ)) = stops refl
-  sim (ret~ (inr≈ _) (appF gM gN ρ κ)) = stops refl
+  sim (ret~ r (appF gM gN ρ κ)) = steps (one refl) (eval~ gM ρ (appE r gN ρ κ))
   sim (ret~ r (appE f gN ρ κ)) = steps (one refl) (eval~ gN ρ (appA f r κ))
   sim (ret~ {w = w} r (appA {e' = e'} {κ₂ = κ₂} (fun≈ p) e κ)) =
     steps (one (cong (λ m → T.call m w e' κ₂) (global-⊑ p)))

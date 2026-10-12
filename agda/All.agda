@@ -32,7 +32,9 @@ import Compiler.Lang.Clos5
 import Compiler.Lang.Uses
 import Compiler.Lang.Rename
 import Compiler.Lang.Scope
+import Compiler.Lang.ScopeRename
 import Compiler.Lang.ListUtil
+import Compiler.Lang.Mon
 
 {- the passes -}
 import Compiler.Compile.Enclose
@@ -40,11 +42,15 @@ import Compiler.Compile.Optimize
 import Compiler.Compile.Concretize
 import Compiler.Compile.Delay
 import Compiler.Compile.Globalize
+import Compiler.Compile.RCO
 import Compiler.Compile.Pipeline
 
 {- syntactic facts about the passes, used by both operational styles -}
 import Compiler.Compile.EncloseScope
 import Compiler.Compile.GlobalizeTable
+{- the compiler produces well-scoped Clos5 programs (Scoped), the
+   precondition of both operational proofs of remove complex operands -}
+import Compiler.Compile.PipelineScope
 
 {- observations and the end-theorem shape, shared by both operational styles -}
 import Compiler.Observation
@@ -62,6 +68,7 @@ import Compiler.Model.Graph.Sem.Clos3IswimContinuous
 import Compiler.Model.Graph.Sem.Clos4Iswim
 import Compiler.Model.Graph.Sem.Clos4IswimContinuous
 import Compiler.Model.Graph.Sem.Clos5Iswim
+import Compiler.Model.Graph.Sem.Clos5IswimContinuous
 import Compiler.Model.Graph.Sem.RenameSem
 
 {- correctness of each pass -}
@@ -74,6 +81,7 @@ import Compiler.Model.Graph.Correctness.DelayApp
 import Compiler.Model.Graph.Correctness.DelayReflectFinite
 import Compiler.Model.Graph.Correctness.DelayPreserve
 import Compiler.Model.Graph.Correctness.GlobalizeCorrect
+import Compiler.Model.Graph.Correctness.RCOCorrect
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
 import Compiler.Model.Graph.Correctness.CompilerCorrect
@@ -84,6 +92,7 @@ import Compiler.Model.Graph.Correctness.ConcretizeExample
 import Compiler.Model.Graph.Correctness.EncloseExample
 import Compiler.Model.Graph.Correctness.PipelineExample
 import Compiler.Model.Graph.Correctness.CompilerExample
+import Compiler.Compile.Examples.RCOExample
 
 {- ---------------------------------------------------------------------------
    The operational (CompCert-style) development, independent of the graph
@@ -109,6 +118,9 @@ import Compiler.Operational.Correctness.DelaySim
 import Compiler.Operational.Correctness.GlobalizeSim
 {- the whole compiler, by composing the simulations of the passes -}
 import Compiler.Operational.Correctness.CompilerSim
+{- remove complex operands (Clos5 → Clos5), and the compiler into monadic
+   normal form -}
+import Compiler.Operational.Correctness.RCOSim
 
 {- soundness and adequacy of the graph model for the ISWIM machine, which
    connect the two developments -}
@@ -120,11 +132,9 @@ import Compiler.Operational.Adequacy.ISWIM
 {- the same for the Clos5 machine, for well-formed programs (which the
    compiler produces), and the compiler's correctness in the graph model
    observed through the ISWIM and Clos5 machines -}
-import Compiler.Operational.Adequacy.Scope
 import Compiler.Operational.Adequacy.Clos5WF
 import Compiler.Operational.Adequacy.CompileWF
 import Compiler.Operational.Adequacy.Clos5Common
-import Compiler.Operational.Adequacy.Clos5Continuous
 import Compiler.Operational.Adequacy.Clos5Soundness
 import Compiler.Operational.Adequacy.Clos5LogRel
 import Compiler.Operational.Adequacy.Clos5
@@ -158,6 +168,7 @@ import Compiler.Functional.Correctness.OptimizeFuel
 import Compiler.Functional.Correctness.ConcretizeFuel
 import Compiler.Functional.Correctness.DelayFuel
 import Compiler.Functional.Correctness.GlobalizeFuel
+import Compiler.Functional.Correctness.RCOFuel
 
 {- correctness of the whole compiler -}
 import Compiler.Functional.Correctness.CompilerFuel
