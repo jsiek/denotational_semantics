@@ -30,6 +30,14 @@ version 2.4 of the standard library.
 
 The parts of the abt library that it uses are in `agda/Framework/abt/`.
 
+A pilot of a fifth style, denotational: Scott domains (`agda/AllScott.agda`,
+`agda/Theorems/Scott.agda`), also needs TypeTopology; check it with
+
+    make check-scott
+
+which clones TypeTopology at a pinned commit into `_deps/` (not tracked),
+patches it, and checks the pilot against it and the standard library.
+
 ## Other developments
 
 * `agda/old/` holds the earlier developments. They use the abt library

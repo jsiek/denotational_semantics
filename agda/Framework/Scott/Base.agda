@@ -3,12 +3,18 @@
   Scott domains: the basics, on top of Tom de Jong's domain theory in
   TypeTopology (DomainTheory.*): the dcpos of this development (DCPO₁:
   carrier and order in 𝓤₁, directed families indexed by types in 𝓤₀),
-  applying a continuous map, the identity and composition, continuity
-  into an exponential (pointwise), the one-point dcpo, and powers Aᴵ of a
-  dcpo (pointwise order; used for tuples and environments).
+  applying a continuous map, the identity and composition, exponentials
+  and products with evaluation, currying, pairing and composition, the
+  one-point dcpo, and powers Aᴵ of a dcpo (pointwise order; used for
+  tuples and environments).
 
   Everything is parameterised by propositional truncation (pt) and
   function extensionality (fe), which TypeTopology takes as assumptions.
+
+  Much here is shaped by the speed of Agda's conversion checking on
+  TypeTopology's dcpos, which are records carrying their proofs: levels
+  are fixed at 𝓤₁, exponentials and products are defined here with named
+  proofs, and the proofs of continuity of composite maps are opaque.
 
 -}
 
@@ -43,9 +49,7 @@ f · x = pr₁ f x
 idᶜ : (A : DCPO {𝓤} {𝓣}) → DCPO[ A , A ]
 idᶜ A = id , id-is-continuous A
 
-{- identity and composition (g ∘ f) at DCPO₁, with their universe levels
-   fixed: Agda compares two applications of DCPO-∘ whose levels are
-   written differently by unfolding them, which can take very long -}
+{- identity and composition (g ∘ f) at DCPO₁ -}
 id₁ : (A : DCPO₁) → DCPO[ A , A ]
 id₁ A = idᶜ A
 
