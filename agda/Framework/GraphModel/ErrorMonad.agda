@@ -41,7 +41,7 @@ open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.DOpSig
 open import Framework.abt.Sig using (∁)
 open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops using (⋆; Λ; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr)
+open import Framework.GraphModel.Ops using (⋆; Λ; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; payloadD)
 
 open import Data.List using (List; _∷_; []; replicate)
 open import Data.Nat using (ℕ; zero; suc)
@@ -174,3 +174,25 @@ cdrᵐ ⟨ D , _ ⟩ = D ≫= λ X → checked prod X (cdr ⟨ X , ptt ⟩)
    left to right, and only then is the code checked (the late check) -}
 callᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
 callᵐ Ds = binds 3 Ds λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) }
+
+{- Code and machine state (Clos5, Imp, CFG, X86) -----------------------------------}
+
+{- the code of a reference to no definition: a function whose call errs,
+   after its operands, as the machines' late check does -}
+errcode : 𝒫 Value
+errcode = ΛΛᵐ ⟨ (λ X Y → ⌈ ω ⌉) , ptt ⟩
+
+{- E once D has a value; ω if D holds ω: a strict write of D, before E -}
+strictᵐ : 𝒫 Value → 𝒫 Value → 𝒫 Value
+strictᵐ D E = D ≫= λ _ → E
+
+{- the payload of an injection; an error on a value that is not one -}
+payloadᵐ : 𝒫 Value → 𝒫 Value
+payloadᵐ D = D ≫= λ X → checked inj X (payloadD (X ⇂ ValPayload))
+
+{- the flag that testinl sets, by the tag of an injection -}
+isinlD : 𝒫 Value → 𝒫 Value
+isinlD D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
+
+isinlᵐ : 𝒫 Value → 𝒫 Value
+isinlᵐ D = D ≫= λ X → checked inj X (isinlD X)

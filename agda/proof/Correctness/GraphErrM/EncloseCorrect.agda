@@ -88,9 +88,6 @@ vals-ext : ∀ B {ρ₂ : Env Value} {X} → Val X → (∀ x → x < bound B �
 vals-ext B VX V zero _ = VX
 vals-ext B VX V (suc x) x< = V x (<-∸1 x<)
 
-noerr-vals : ∀ V → V ≢ [] → NoErr V → Val (mem V)
-noerr-vals V ne n = ⟨ (λ { .ω ω∈ refl → n ω∈ }) , E≢[]⇒nonempty-mem ne ⟩
-
 {- The main lemma -------------------------------------------------------------}
 
 enc-correct : ∀ (M : AST) ρ₁ ρ₂ → (∀ x → x < bound M → Val (ρ₂ x)) → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
@@ -116,7 +113,7 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel = G
     enc-correct N (mem U • ρ₁) (mem U • push Ds init₀) V' rel'
     where
     V' : ∀ x → x < bound N → Val ((mem U • push Ds init₀) x)
-    V' zero _ = noerr-vals U neU nU
+    V' zero _ = noerr-val U neU nU
     V' (suc k) k< = subst Val (sym (push-vars m ρ₂ init₀ k (<-∸1 k<))) (Vm k (<-∸1 k<))
     rel' : ∀ x → Uses x N → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
     rel' zero _ = ≃-refl
@@ -142,10 +139,10 @@ enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel =
        {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ enclose N ⟧₂ (X • ρ₂)}
        (enc-correct L ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
        (λ W ne _ n → enc-correct M _ _
-          (vals-ext M (noerr-vals W ne n) (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ _ x<))))
+          (vals-ext M (noerr-val W ne n) (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ _ x<))))
           (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
        (λ W ne _ n → enc-correct N _ _
-          (vals-ext N (noerr-vals W ne n)
+          (vals-ext N (noerr-val W ne n)
              (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ʳ (bound M ∸ 1) (<-⊔ˡ 0 x<)))))
           (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
 enc-correct (prim p ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ V rel =
@@ -154,7 +151,7 @@ enc-correct (prim p ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ V rel =
 enc-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel =
   letᵐ-≃ (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
          (λ W ne _ n → enc-correct N _ _
-            (vals-ext N (noerr-vals W ne n) (λ x x< → V x (<-⊔ʳ (bound M) (<-⊔ˡ 0 x<))))
+            (vals-ext N (noerr-val W ne n) (λ x x< → V x (<-⊔ʳ (bound M) (<-⊔ˡ 0 x<))))
             (rel-ext N (λ x u → rel x (inj₂ (inj₁ u)))))
 
 enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ V rel zero =

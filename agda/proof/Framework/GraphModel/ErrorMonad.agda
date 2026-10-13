@@ -249,16 +249,22 @@ checked-ok ok = ⟨ (λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩
 
 {- a bind is continuous when its operand is, and its continuation is,
    on the values of the operand -}
-≫=-cont : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ} → Mono E → Cont E ρ
-  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y) → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ
+{- (its continuation need only be continuous when the operand has a value) -}
+≫=-cont′ : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ} → Mono E → Cont E ρ
+  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y) → (Conv (E ρ) → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ)
   → Cont (λ ρ → E ρ ≫= G ρ) ρ
-≫=-cont {E} {G} mE cE mG cG w (inj₁ ⟨ refl , ω∈ ⟩) with one E cE ω∈
+≫=-cont′ {E} {G} mE cE mG cG w (inj₁ ⟨ refl , ω∈ ⟩) with one E cE ω∈
 ... | ⟨ a , ω∈′ ⟩ = done (λ ρ → E ρ ≫= G ρ) a ω (inj₁ ⟨ refl , ω∈′ ⟩)
-≫=-cont {E} {G} mE cE mG cG w (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩)
-    with one (λ ρ → ⌊ E ρ ⌋) (⌊⌋-cont cE) d∈ | one (λ ρ → G ρ ⌊ E ρ ⌋) cG w∈
+≫=-cont′ {E} {G} mE cE mG cG w (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩)
+    with one (λ ρ → ⌊ E ρ ⌋) (⌊⌋-cont cE) d∈ | one (λ ρ → G ρ ⌊ E ρ ⌋) (cG ⟨ d , d∈ ⟩) w∈
 ... | ⟨ a , d∈′ ⟩ | ⟨ b , w∈′ ⟩ =
   done (λ ρ → E ρ ≫= G ρ) (approx-join a b) w
     (inj₂ ⟨ ⟨ d , ⌊⌋-mono (mE (join-l a b)) d d∈′ ⟩ , mG (join-r a b) (⌊⌋-mono (mE (join-r a b))) w w∈′ ⟩)
+
+≫=-cont : ∀ {E : VEnv → 𝒫 Value} {G : VEnv → 𝒫 Value → 𝒫 Value} {ρ} → Mono E → Cont E ρ
+  → (∀ {ρ₁ ρ₂ X Y} → ρ₁ ⊆ₑ ρ₂ → X ⊆ Y → G ρ₁ X ⊆ G ρ₂ Y) → Cont (λ ρ → G ρ ⌊ E ρ ⌋) ρ
+  → Cont (λ ρ → E ρ ≫= G ρ) ρ
+≫=-cont mE cE mG cG = ≫=-cont′ mE cE mG (λ _ → cG)
 
 checked-cont : ∀ {k} {X A : VEnv → 𝒫 Value} {ρ} → Cont X ρ → Cont A ρ → Cont (λ ρ → checked k (X ρ) (A ρ)) ρ
 checked-cont {k} {X} {A} cX cA w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with one X cX e∈
@@ -347,16 +353,25 @@ binds-consis : ∀ n {Ds Ds' K K'} → results-rel-pres (Every _~_) (replicate n
 binds-consis zero _ cK = cK ptt
 binds-consis (suc n) ⟨ lift D~ , Ds~ ⟩ cK = ≫=-consis D~ (λ X~ → binds-consis n Ds~ (λ Xs~ → cK ⟨ lift X~ , Xs~ ⟩))
 
+{- (its continuation need only be continuous when the operands have values) -}
+binds-cont′ : ∀ n (Es : Bodies (replicate n ■)) {K : VEnv → Results (𝒫 Value) (replicate n ■) → 𝒫 Value} {ρ}
+  → nonempty-env ρ → OK (replicate n ■) Es ρ
+  → (∀ {ρ₁ ρ₂ Xs Ys} → ρ₁ ⊆ₑ ρ₂ → results-rel-pres _⊆_ (replicate n ■) Xs Ys → K ρ₁ Xs ⊆ K ρ₂ Ys)
+  → (∀ Ms → OK (replicate n ■) Ms ρ → (∀ i → nonempty (nthD (⟪ replicate n ■ ⟫₊ Ms ρ) i))
+       → Cont (λ ρ → K ρ (⟪ replicate n ■ ⟫₊ Ms ρ)) ρ)
+  → Cont (λ ρ → binds n (⟪ replicate n ■ ⟫₊ Es ρ) (K ρ)) ρ
+binds-cont′ zero Es NE ok mK cK = cK ptt ptt (λ ())
+binds-cont′ (suc n) ⟨ E , Es ⟩ NE ⟨ ok₁@(⟨ m , c ⟩) , ok ⟩ mK cK =
+  ≫=-cont′ m c (λ ρ⊆ X⊆ → binds-mono n (⟪⟫₊-mono (replicate n ■) Es ok ρ⊆) (λ Xs⊆ → mK ρ⊆ ⟨ lift X⊆ , Xs⊆ ⟩))
+    (λ cv → binds-cont′ n Es NE ok (λ ρ⊆ Xs⊆ → mK ρ⊆ ⟨ lift (⌊⌋-mono (m ρ⊆)) , Xs⊆ ⟩)
+       (λ Ms okM ne → cK ⟨ (λ ρ → ⌊ E ρ ⌋) , Ms ⟩ ⟨ ⌊⌋-ok ok₁ , okM ⟩ (λ { zero → cv ; (suc i) → ne i })))
+
 binds-cont : ∀ n (Es : Bodies (replicate n ■)) {K : VEnv → Results (𝒫 Value) (replicate n ■) → 𝒫 Value} {ρ}
   → nonempty-env ρ → OK (replicate n ■) Es ρ
   → (∀ {ρ₁ ρ₂ Xs Ys} → ρ₁ ⊆ₑ ρ₂ → results-rel-pres _⊆_ (replicate n ■) Xs Ys → K ρ₁ Xs ⊆ K ρ₂ Ys)
   → (∀ Ms → OK (replicate n ■) Ms ρ → Cont (λ ρ → K ρ (⟪ replicate n ■ ⟫₊ Ms ρ)) ρ)
   → Cont (λ ρ → binds n (⟪ replicate n ■ ⟫₊ Es ρ) (K ρ)) ρ
-binds-cont zero Es NE ok mK cK = cK ptt ptt
-binds-cont (suc n) ⟨ E , Es ⟩ NE ⟨ ok₁@(⟨ m , c ⟩) , ok ⟩ mK cK =
-  ≫=-cont m c (λ ρ⊆ X⊆ → binds-mono n (⟪⟫₊-mono (replicate n ■) Es ok ρ⊆) (λ Xs⊆ → mK ρ⊆ ⟨ lift X⊆ , Xs⊆ ⟩))
-    (binds-cont n Es NE ok (λ ρ⊆ Xs⊆ → mK ρ⊆ ⟨ lift (⌊⌋-mono (m ρ⊆)) , Xs⊆ ⟩)
-       (λ Ms okM → cK ⟨ (λ ρ → ⌊ E ρ ⌋) , Ms ⟩ ⟨ ⌊⌋-ok ok₁ , okM ⟩))
+binds-cont n Es NE ok mK cK = binds-cont′ n Es NE ok mK (λ Ms okM _ → cK Ms okM)
 
 {- left unit, for n operands that have values and no errors -}
 binds-β : ∀ n {Ds K} → Rel⊆ n K K → AllVal n Ds → binds n Ds K ≃ K Ds
@@ -364,6 +379,20 @@ binds-β zero mK _ = ≃-refl
 binds-β (suc n) {⟨ D , Ds ⟩} mK cn =
   ≃-trans (≫=-β (λ X⊆ → binds-mono n (⊆s-refl n Ds) (λ Xs⊆ → mK ⟨ lift X⊆ , Xs⊆ ⟩)) (proj₁ (cn zero)) (proj₂ (cn zero)))
           (binds-β n (λ Xs⊆ → mK ⟨ lift (λ d z → z) , Xs⊆ ⟩) (λ i → cn (suc i)))
+
+{- equal operands, and continuations equal on their values -}
+≫=-≃ : ∀ {D D' F F'} → D ≃ D' → (Conv D → Conv D' → F ⌊ D ⌋ ≃ F' ⌊ D' ⌋) → (D ≫= F) ≃ (D' ≫= F')
+≫=-≃ ⟨ D⊆ , D⊇ ⟩ eq =
+  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → inj₁ ⟨ refl , D⊆ ω ω∈ ⟩
+       ; w (inj₂ ⟨ c , w∈ ⟩) → inj₂ ⟨ Conv-mono D⊆ c , proj₁ (eq c (Conv-mono D⊆ c)) w w∈ ⟩ })
+  , (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → inj₁ ⟨ refl , D⊇ ω ω∈ ⟩
+       ; w (inj₂ ⟨ c' , w∈ ⟩) → inj₂ ⟨ Conv-mono D⊇ c' , proj₂ (eq (Conv-mono D⊇ c') c') w w∈ ⟩ }) ⟩
+
+{- the left unit on a set of values, at its values: no monotonicity needed -}
+≫=-val-β : ∀ {D F} → Val D → (D ≫= F) ≃ F ⌊ D ⌋
+≫=-val-β ⟨ cl , ⟨ d , d∈ ⟩ ⟩ =
+  ⟨ (λ { w (inj₁ ⟨ refl , ω∈ ⟩) → ⊥-elim (cl ω ω∈ refl) ; w (inj₂ ⟨ _ , w∈ ⟩) → w∈ })
+  , (λ w w∈ → inj₂ ⟨ ⟨ d , ⟨ d∈ , cl d d∈ ⟩ ⟩ , w∈ ⟩) ⟩
 
 ≫=-cong : ∀ {D F F'} → (Conv D → F ⌊ D ⌋ ≃ F' ⌊ D ⌋) → (D ≫= F) ≃ (D ≫= F')
 ≫=-cong eq = ⟨ (λ { w (inj₁ e) → inj₁ e ; w (inj₂ ⟨ c , w∈ ⟩) → inj₂ ⟨ c , proj₁ (eq c) w w∈ ⟩ })
@@ -645,6 +674,10 @@ Val⇒Conv ⟨ cl , ⟨ d , d∈ ⟩ ⟩ = ⟨ d , ⟨ d∈ , cl d d∈ ⟩ ⟩
 con-val : ∀ {D} → Con D → Conv D → Val D
 con-val cD c@(⟨ d , ⟨ d∈ , _ ⟩ ⟩) = ⟨ con-clean cD c , ⟨ d , d∈ ⟩ ⟩
 
+{- a finite set without ω that a binder binds is a set of values -}
+noerr-val : ∀ V → V ≢ [] → NoErr V → Val (mem V)
+noerr-val V ne n = ⟨ (λ { .ω ω∈ refl → n ω∈ }) , E≢[]⇒nonempty-mem ne ⟩
+
 Val-≃ : ∀ {D E} → D ≃ E → Val D → Val E
 Val-≃ ⟨ D⊆ , E⊆ ⟩ ⟨ cl , ⟨ d , d∈ ⟩ ⟩ = ⟨ (λ e e∈ → cl e (E⊆ e e∈)) , ⟨ d , D⊆ d d∈ ⟩ ⟩
 
@@ -719,3 +752,14 @@ pair-call-β {F} {T} {E} cT cE ⟨ clT , ⟨ t , t∈ ⟩ ⟩ ⟨ clE , neE ⟩ 
   c∈ = ⟨ inj₂ ⟨ cP , inj₂ ⟨ t , ⟨ ⟨ e∈ᵐ , t∈ ⟩ , (λ ()) ⟩ ⟩ ⟩ , (λ ()) ⟩
   d∈ : ∀ v → v ∈ T → v ∈ ⌊ cdrᵐ ⟨ P , ptt ⟩ ⌋
   d∈ v v∈ = ⟨ inj₂ ⟨ cP , inj₂ ⟨ ν , ⟨ ⟨ ⟨ tt , tt ⟩ , v∈ ⟩ , (λ ()) ⟩ ⟩ ⟩ , clT v v∈ ⟩
+
+{- Code and machine state (Clos5, Imp, CFG, X86) ------------------------------------}
+
+{- a function of two arguments, consistent in both, is consistent -}
+ΛΛᵐ-con : ∀ {F : 𝒫 Value → 𝒫 Value → 𝒫 Value}
+  → (∀ X X' Y Y' → Every _~_ X X' → Every _~_ Y Y' → Every _~_ (F X Y) (F X' Y'))
+  → Con (ΛΛᵐ ⟨ F , ptt ⟩)
+ΛΛᵐ-con F~ = Con-⊆ (ΛΛ-con F~) (λ d d∈ → proj₁ d∈)
+
+errcode-con : Con errcode
+errcode-con = ΛΛᵐ-con (λ _ _ _ _ _ _ → Con-⌈⌉ ω)

@@ -73,9 +73,6 @@ wf-• : ∀ {D γ} → Wf γ → Con D → Val D → Wf (D • γ)
 wf-• ⟨ ne , ⟨ c , cl ⟩ ⟩ cD ⟨ clD , neD ⟩ =
   ⟨ extend-nonempty-env ne neD , ⟨ Con-• cD c , (λ { zero → clD ; (suc x) → cl x }) ⟩ ⟩
 
-NoErr-val : ∀ V → V ≢ [] → NoErr V → Val (mem V)
-NoErr-val V ne n = ⟨ (λ { .ω ω∈ refl → n ω∈ }) , E≢[]⇒nonempty-mem ne ⟩
-
 record Desc (I : Info) (γ' : Env Value) (D : 𝒫 Value) : Set₁
 data KDesc : Known → Env Value → 𝒫 Value → Set₁
 
@@ -217,7 +214,7 @@ case-ok : ∀ fl L M N {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Des
 under-ok : ∀ fl N {E γ γ'} → Wf γ → Wf γ' → Ok E γ γ' → ∀ V → V ≢ [] → V ≈ V → NoErr V
   → ⟦ term (simp fl (under E) N) ⟧ (mem V • γ') ≃ ⟦ N ⟧ (mem V • γ)
 under-ok fl N wf wf' ok V ne c n =
-  tm (simp-ok fl N (wf-• wf (≈⇒Con c) (NoErr-val V ne n)) (wf-• wf' (≈⇒Con c) (NoErr-val V ne n))
+  tm (simp-ok fl N (wf-• wf (≈⇒Con c) (noerr-val V ne n)) (wf-• wf' (≈⇒Con c) (noerr-val V ne n))
                  (ok-under (mem V) ok))
 
 simp-ok fl (` x) wf wf' ok = ok x

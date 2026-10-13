@@ -305,8 +305,13 @@ import proof.Semantics.GraphErrM.ISWIM
 import proof.Semantics.GraphErrM.Clos2
 import proof.Semantics.GraphErrM.Clos3
 import proof.Semantics.GraphErrM.Clos4
+import proof.Semantics.GraphErrM.Clos5
+import Semantics.GraphErrM.ImpK
+import Semantics.GraphErrM.CFG
+import Semantics.GraphErrM.X86
 import proof.Correctness.GraphErrM.SimplifyCorrect
 import proof.Correctness.GraphErrM.EncloseCorrect
+import proof.Correctness.GraphErrM.OptimizeCorrect
 import proof.Correctness.GraphErrM.ConcretizeCorrect
 import proof.Correctness.GraphErrM.DelayRel
 import proof.Correctness.GraphErrM.DelayApp
