@@ -817,7 +817,7 @@ BodyEq₂ F F' = ∀ V U → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U
 {- an operator on n operands that binds them, left to right, and applies a
    monotone kernel to their values -}
 record Kernel (n : ℕ) : Set₁ where
-  constructor kernel
+  constructor mkK
   field
     kern : Results (𝒫 Value) (replicate n ■) → 𝒫 Value
     kmono : Rel⊆ n kern kern
@@ -831,7 +831,7 @@ bindsₖ-≃ {n} O = binds-≃ n (kmono O)
 
 {- the kernel with its first operand fixed to D -}
 _▷_ : ∀ {n} → 𝒫 Value → Kernel (suc n) → Kernel n
-D ▷ O = kernel (λ Xs → kern O ⟨ D , Xs ⟩) (λ s → kmono O ⟨ lift (λ d d∈ → d∈) , s ⟩)
+D ▷ O = mkK (λ Xs → kern O ⟨ D , Xs ⟩) (λ s → kmono O ⟨ lift (λ d d∈ → d∈) , s ⟩)
 
 ▷-clean : ∀ {n} (O : Kernel (suc n)) {X} Ds → Clean X → bindsₖ (⌊ X ⌋ ▷ O) Ds ≃ bindsₖ (X ▷ O) Ds
 ▷-clean {n} O Ds cl = ⟨ binds-mono n (⊆s-refl n Ds) (λ s → kmono O ⟨ lift ⌊⌋-⊆ , s ⟩)
@@ -839,26 +839,26 @@ D ▷ O = kernel (λ Xs → kern O ⟨ D , Xs ⟩) (λ s → kmono O ⟨ lift (�
 
 {- the operators, as binds of these kernels (by definition) -}
 call-k : Kernel 3
-call-k = kernel (λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) })
+call-k = mkK (λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) })
   (λ s → checked-mono (lower (proj₁ s)) (lower (⋆₂-mono _ _ s)))
 
 pair-k : Kernel 2
-pair-k = kernel pair (λ s → lower (pair-mono _ _ s))
+pair-k = mkK pair (λ s → lower (pair-mono _ _ s))
 
 car-k cdr-k inl-k inr-k : Kernel 1
-car-k = kernel (λ { ⟨ X , _ ⟩ → checked prod X (car ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (car-mono _ _ s)))
-cdr-k = kernel (λ { ⟨ X , _ ⟩ → checked prod X (cdr ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (cdr-mono _ _ s)))
-inl-k = kernel (λ { ⟨ X , _ ⟩ → inl ⟨ X , ptt ⟩ }) (λ s → lower (inl-mono _ _ s))
-inr-k = kernel (λ { ⟨ X , _ ⟩ → inr ⟨ X , ptt ⟩ }) (λ s → lower (inr-mono _ _ s))
+car-k = mkK (λ { ⟨ X , _ ⟩ → checked prod X (car ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (car-mono _ _ s)))
+cdr-k = mkK (λ { ⟨ X , _ ⟩ → checked prod X (cdr ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (cdr-mono _ _ s)))
+inl-k = mkK (λ { ⟨ X , _ ⟩ → inl ⟨ X , ptt ⟩ }) (λ s → lower (inl-mono _ _ s))
+inr-k = mkK (λ { ⟨ X , _ ⟩ → inr ⟨ X , ptt ⟩ }) (λ s → lower (inr-mono _ _ s))
 
 tuple-k : ∀ n → Kernel n
-tuple-k n = kernel (𝒯 n) (λ s → lower (𝒯-mono n _ _ s))
+tuple-k n = mkK (𝒯 n) (λ s → lower (𝒯-mono n _ _ s))
 
 get-k : ∀ {n} (i : Fin n) → Kernel 1
-get-k {n} i = kernel (λ { ⟨ X , _ ⟩ → checked (tup n) X (proj i ⟨ X , ptt ⟩) })
+get-k {n} i = mkK (λ { ⟨ X , _ ⟩ → checked (tup n) X (proj i ⟨ X , ptt ⟩) })
   (λ s → checked-mono (lower (proj₁ s)) (lower (proj-mono i _ _ s)))
 
 {- case on its first operand, with the branches E and F -}
 case-k : (E F : 𝒫 Value → 𝒫 Value) → Kernel 1
-case-k E F = kernel (λ { ⟨ X , _ ⟩ → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩) })
+case-k E F = mkK (λ { ⟨ X , _ ⟩ → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩) })
   (λ s → checked-mono (lower (proj₁ s)) (𝒞⇂-⊆ {A = E} {E} {F} {F} (lower (proj₁ s)) (λ _ _ _ _ w w∈ → w∈) (λ _ _ _ _ w w∈ → w∈)))

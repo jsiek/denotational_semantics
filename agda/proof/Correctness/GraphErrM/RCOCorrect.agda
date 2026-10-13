@@ -71,7 +71,7 @@ module proof.Correctness.GraphErrM.RCOCorrect where
 
 {- the primitives, as a kernel under binds -}
 prim-k : ∀ p → Kernel 2
-prim-k p = kernel (λ { ⟨ X , ⟨ Y , _ ⟩ ⟩ → checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩)) })
+prim-k p = mkK (λ { ⟨ X , ⟨ Y , _ ⟩ ⟩ → checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩)) })
   (λ s → checked-mono (lower (proj₁ s)) (checked-mono (lower (proj₁ (proj₂ s))) (lower (primD-mono p _ _ s))))
 
 {- Laws of the semantics of Clos5 ----------------------------------}
