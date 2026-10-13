@@ -63,13 +63,17 @@ that every module outside `proof/` is used by a theorem statement).
     compiled programs; so the compiler, observed through the machines
     only, preserves the constants a closed program computes and whether
     it terminates with an answer.
-  * `Theorems/GraphErrors.agda` (a pilot): in the graph model with
-    errors, where an error denotes a set holding ω and divergence ∅,
-    simplify and enclose preserve the meaning of closed programs,
-    concretize that of every program, delay preserves and reflects
-    errors, constants and values, and
-    the model is adequate for the ISWIM machine on all three outcomes
-    (an error, an answer, divergence).
+  * `Theorems/GraphErrors.agda`: in the graph model with errors, where
+    an error denotes a set holding ω and divergence ∅, every pass but
+    delay preserves the meaning of a program (closed, or well scoped,
+    for simplify, enclose, optimize and rco), delay preserves and
+    reflects errors, constants and values, and so does the whole
+    compiler; the model is adequate for the ISWIM, Clos5 and X86
+    machines on all three outcomes (an error, an answer, divergence);
+    so the ISWIM machine on a closed program and the Clos5 and X86
+    machines on its compilation stop with an error together, stop with
+    the same constants, stop with an answer together, and diverge
+    together.
 * The compiler, shared by all four styles:
   * `Language/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
@@ -83,9 +87,9 @@ that every module outside `proof/` is used by a theorem statement).
     substitution, scoping (`WS`), the variables a term uses (`Uses`,
     `bound`), base types, and list lookups.
 * The semantics, per style:
-  * graph model with errors (a pilot): `Semantics/GraphErr/` (ISWIM and
-    Clos2–Clos4) and `Framework/GraphModel/ErrorOps.agda` (the
-    error-propagating operators);
+  * graph model with errors: `Semantics/GraphErr/` (every language)
+    and `Framework/GraphModel/ErrorOps.agda` (the error-propagating
+    operators);
   * denotational: `Semantics/Graph/` (the meaning of the primitives,
     `Prim.agda`, and the semantics of each language) and
     `Framework/GraphModel/` (sets as predicates, environments, the
@@ -155,9 +159,9 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   `proof/Correctness/Graph/ExplicateCorrect.agda`), and a direct
   backward simulation for delay (`proof/Semantics/CEK/Backward.agda`,
   `proof/Correctness/CEK/DelayBackSim.agda`).
-* a pilot, not part of the main results: the graph model with errors
-  (`proof/Semantics/GraphErr/`, `proof/Correctness/GraphErr/`,
-  `proof/Adequacy/GraphErr/`).
+* the graph model with errors, reported next to the four styles but
+  not in their comparison (`proof/Semantics/GraphErr/`,
+  `proof/Correctness/GraphErr/`, `proof/Adequacy/GraphErr/`).
 
 The semantics of ISWIM and Clos2–Clos4 is defined on the surface
 directly, as the fold of its operators over a term; `proof/` packages the
