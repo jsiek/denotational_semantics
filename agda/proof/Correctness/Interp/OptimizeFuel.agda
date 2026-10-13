@@ -3,7 +3,7 @@
   Correctness of the optimize pass (Clos2 → Clos2), clock for clock (see
   the design note in Clock.agda). Optimize only drops free variables of
   closures that are variables, whose evaluation makes no call and, in a
-  well-scoped program, cannot go wrong; the big-step interpreter does not
+  well-scoped program, cannot error; the big-step interpreter does not
   see those evaluations, so the source and the target call functions in
   lock step.
 
@@ -215,10 +215,10 @@ run≈ ck (get i ⦅ M ,, Nil ⦆) ag = bind-rel (run≈ ck M (agree-sub proj₁
   where
   get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (T.project i v) (T.project i w)
   get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-  get≈ (clo≈ _) = wrong
-  get≈ const≈ = wrong
-  get≈ (inl≈ _) = wrong
-  get≈ (inr≈ _) = wrong
+  get≈ (clo≈ _) = error
+  get≈ const≈ = error
+  get≈ (inl≈ _) = error
+  get≈ (inr≈ _) = error
 run≈ ck (inl-op ⦅ M ,, Nil ⦆) ag =
   bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) (λ vw → ret (inl≈ vw))
 run≈ ck (inr-op ⦅ M ,, Nil ⦆) ag =
@@ -248,19 +248,19 @@ prune≈ ck (suc m) dec ((op ⦅ args ⦆) ,, fvs) ag col =
   bind-rel (run≈ ck (op ⦅ args ⦆) (agree-hd ag)) (λ vw → prune≈ ck m dec fvs (agree-tl ag) (keep-col vw col))
 
 apply≈ ck M ag (clo≈ {N} agN) = bind-rel (run≈ ck M ag) (λ vw → call≈ ck N (agree-ext vw agN))
-apply≈ ck M ag const≈ = wrong
-apply≈ ck M ag (tup≈ _) = wrong
-apply≈ ck M ag (inl≈ _) = wrong
-apply≈ ck M ag (inr≈ _) = wrong
+apply≈ ck M ag const≈ = error
+apply≈ ck M ag (tup≈ _) = error
+apply≈ ck M ag (inl≈ _) = error
+apply≈ ck M ag (inr≈ _) = error
 
 call≈ zero N ag = timeout
 call≈ (suc ck) N ag = run≈ ck N ag
 
 branch≈ ck M N agM agN (inl≈ vw) = run≈ ck M (agree-ext vw agM)
 branch≈ ck M N agM agN (inr≈ vw) = run≈ ck N (agree-ext vw agN)
-branch≈ ck M N agM agN (clo≈ _) = wrong
-branch≈ ck M N agM agN const≈ = wrong
-branch≈ ck M N agM agN (tup≈ _) = wrong
+branch≈ ck M N agM agN (clo≈ _) = error
+branch≈ ck M N agM agN const≈ = error
+branch≈ ck M N agM agN (tup≈ _) = error
 
 {- The end theorem -------------------------------------------------------------}
 

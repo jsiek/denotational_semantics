@@ -11,15 +11,15 @@
   The operands of a simple expression are atoms, evaluated left to right
   in a step each (eval (simple (atm a)) φ κ), collecting their values in
   continuation frames (Frm) as in Clos5. A variable reads its slot of
-  the frame, and goes wrong beyond the frame. What a simple expression
+  the frame, and errors beyond the frame. What a simple expression
   does at its start (first) and when an operand's value comes back
   (resume) does not depend on the language, and the CFG machine
   (Semantics/CEK/CFG.agda) shares it: evaluate another operand, return a value
-  (or go wrong), or call a definition.
+  (or error), or call a definition.
 
   x := e₁; e₂ evaluates e₁ under assignK x e₂, which assigns the value to
   slot x and runs e₂; case assigns the payload to slot x and runs a
-  branch. Assigning a slot beyond the frame goes wrong.
+  branch. Assigning a slot beyond the frame errors.
 
   A call app f e a checks, after its three operands, that f is code k,
   and runs the body of definition k in a fresh frame of max(2, locals)
@@ -92,7 +92,7 @@ zeros n = replicate n (const Int 0ℤ)
 {- what a simple expression does next -}
 data Res : Set where
   operand : Atm → Frm → Res        {- evaluate an operand, under a frame -}
-  value : Maybe Val → Res         {- return a value, or go wrong -}
+  value : Maybe Val → Res         {- return a value, or error -}
   apply : ℕ → Val → Val → Res     {- call definition k with e and a -}
 
 tuple-next : List Val → List Atm → Res
@@ -133,18 +133,18 @@ resume v (primL p b) = operand b (primR p v)
 resume w (primR p v) = value (prim? p v w)
 
 ret? : Maybe Val → Frame → Cont → Next State
-ret? mv φ κ = next? o-wrong (λ v → ret v φ κ) mv
+ret? mv φ κ = next? o-error (λ v → ret v φ κ) mv
 
 {- run e in the frame, if there is one -}
 goto : Maybe Frame → Exp → Cont → Next State
 goto (just φ) e κ = next (eval e φ κ)
-goto nothing e κ = stop o-wrong
+goto nothing e κ = stop o-error
 
 {- run a body, if there is one, in a fresh frame with e and a; the caller's
    frame is φ -}
 call : Maybe Body → Val → Val → Frame → Cont → Next State
 call (just (body n b)) e a φ κ = next (eval b (e ∷ a ∷ zeros (n ∸ 2)) (callK φ κ))
-call nothing e a φ κ = stop o-wrong
+call nothing e a φ κ = stop o-error
 
 {- the machine for a program with global definitions ds -}
 res : List Body → Res → Frame → Cont → Next State
@@ -160,7 +160,7 @@ step ds (ret v φ halt) = stop (obs v)
 step ds (ret v φ (frm f κ)) = res ds (resume v f) φ κ
 step ds (ret (inl v) φ (caseK x e₁ e₂ κ)) = goto (φ [ x ]≔ v) e₁ κ
 step ds (ret (inr v) φ (caseK x e₁ e₂ κ)) = goto (φ [ x ]≔ v) e₂ κ
-step ds (ret _ φ (caseK x e₁ e₂ κ)) = stop o-wrong
+step ds (ret _ φ (caseK x e₁ e₂ κ)) = stop o-error
 step ds (ret v φ (assignK x e κ)) = goto (φ [ x ]≔ v) e κ
 step ds (ret v φ (callK φ' κ)) = next (ret v φ' κ)
 

@@ -59,19 +59,19 @@ prim? p v w = map out (δ? p (obs v) (obs w))
 
 project : ∀ {n} → Fin n → Val → Result Val
 project i (tup vs) = from-maybe (proj i vs)
-project i _ = wrong
+project i _ = error
 
 first second : Val → Result Val
 first (pair v w) = ret v
-first _ = wrong
+first _ = error
 second (pair v w) = ret w
-second _ = wrong
+second _ = error
 
 eval : ℕ → Env → AST → Result Val
 eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
 {- apply code to the environment M and the argument N -}
 apply : ℕ → Env → AST → AST → Val → Result Val
-{- call code f, going wrong (before the clock is consulted) if f is not code -}
+{- call code f, stopping with an error (before the clock is consulted) if f is not code -}
 call : Val → ℕ → Env → Result Val
 branch : ℕ → Env → AST → AST → Val → Result Val
 
@@ -99,11 +99,11 @@ apply ck ρ M N f = do e ← eval ck ρ M; w ← eval ck ρ N; call f ck (w ∷ 
 
 call (fun N) zero ρ = timeout
 call (fun N) (suc ck) ρ = eval ck ρ N
-call _ ck ρ = wrong
+call _ ck ρ = error
 
 branch ck ρ M N (inl v) = eval ck (v ∷ ρ) M
 branch ck ρ M N (inr v) = eval ck (v ∷ ρ) N
-branch ck ρ M N _ = wrong
+branch ck ρ M N _ = error
 
 sem : AST → Semantics
 sem M = semantics Val obs (λ ck → eval ck [] M)

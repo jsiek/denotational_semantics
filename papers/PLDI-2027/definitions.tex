@@ -57,7 +57,7 @@
 \newcommand{\rt}[2]{\key{ret}\;#1\;#2}
 \newcommand{\nxt}{\key{next}\;}
 \newcommand{\stp}{\key{stop}\;}
-\newcommand{\wrong}{\key{wrong}}
+\newcommand{\error}{\key{error}}
 \newcommand{\retq}{\key{ret?}}
 \newcommand{\Mach}[1]{\mathcal{M}^{#1}}
 \newcommand{\step}[1]{\mathit{step}^{#1}}
@@ -548,7 +548,7 @@ $s$ before running a branch. Assignments are seen by everything that
 runs after them in the same frame. A call $a_1(a_2, a_3)$ runs the body
 of the definition $a_1$ refers to in a fresh frame with $a_2$ (the free
 variables) in slot $0$ and $a_3$ (the argument) in slot $1$; reading or
-assigning a slot beyond the frame goes wrong.
+assigning a slot beyond the frame errors.
 \begin{syntax}
   & a &::=& s \mid \funref{k} \mid c \\
   & r &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
@@ -571,7 +571,7 @@ slots and calls are as in Imp, and a call runs the start $t$ of the
 callee's body. The blocks $t_0, \ldots, t_{j-1}$ of a body are numbered
 in order of creation; block $t_l$ may jump only to blocks $l' < l$, and
 the start to any block, so control flow within a body is acyclic. A
-jump to any other label goes wrong.
+jump to any other label errors.
 \begin{syntax}
   & t &::=& \key{return}\; r \mid \assign{s}{r}{t} \mid \key{goto}\; l
     \mid \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\[1ex]
@@ -591,7 +591,7 @@ reads $\%\key{rdi}$ and $\%\key{rsi}$ and runs the body of the definition
 $o$ refers to, with them as they are, $\%\key{rax}$ unset and no flag, in
 a fresh frame, and continues with the result in $\%\key{rax}$; it
 clobbers $\%\key{rdi}$, $\%\key{rsi}$ and the flag. $\key{retq}$ reads
-$\%\key{rax}$. Reading an unset register or flag goes wrong. Frames,
+$\%\key{rax}$. Reading an unset register or flag errors. Frames,
 blocks and jumps are as in CFG.
 \begin{syntax}
   & d &::=& s \mid \%\key{rax} \mid \%\key{rdi} \mid \%\key{rsi} \\
@@ -784,10 +784,10 @@ Remove complex operands binds each complex operand to a fresh variable with a $\
   \pass{rco}(\key{fun}\; e\,y.\,N) &= \key{fun}\; e\,y.\,\pass{rco}(N)
 \end{align*}
 An atom left in place is evaluated after the complex operands that follow
-it. This preserves going wrong in the machines and interpreters, which
+it. This preserves errors in the machines and interpreters, which
 check that the operator of $L(M, N)$ is code only at the call, but an
-unbound variable would go wrong later: $\pair{x}{L}$, with $L$ a loop,
-goes wrong in the empty environment, while
+unbound variable would error later: $\pair{x}{L}$, with $L$ a loop,
+errors in the empty environment, while
 $\Let y = L \In \pair{x}{y}$ diverges. So the operational proofs of rco
 assume well-scoped programs.
 
@@ -834,7 +834,7 @@ of the variables in scope, and $n$ is the size of the frame.
   &\qquad\text{where } b = (n;\; \pass{lift}_{n,\emptyset,0}(M)),\ n = \mathit{height}(M)
 \end{align*}
 A variable out of scope gets the slot $n$, beyond the frame, so that it
-goes wrong, as an unbound variable does in Clos5.
+errors, as an unbound variable does in Clos5.
 
 \subsection{Explicate Control (Imp \texorpdfstring{$\to$}{->} CFG)}
 
@@ -1092,7 +1092,7 @@ together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SE
 
 A store $\sigma$ gives each slot a meaning. An expression or tail runs in
 a frame of $n$ slots. Reading a slot beyond the frame gives $\{\omega\}$,
-as an unbound variable does in Clos5; assigning one goes wrong, so the
+as an unbound variable does in Clos5; assigning one errors, so the
 construct means $\emptyset$ ($\mathit{checked}_n$). A simple expression
 leaves the store as it was. With the table $T$ and $n$ fixed:
 \begin{align*}
@@ -1180,7 +1180,7 @@ expression means a set of values and the store as it leaves.
 \end{align*}
 where $\pi_1$ and $\pi_2$ take the value and the store of a pair. The
 slot $t$ of the store a let or case leaves collects slot $t$ of the runs
-of its body that have a value ($r{\downarrow}t$): a run that goes wrong
+of its body that have a value ($r{\downarrow}t$): a run that errors
 or diverges leaves no store.
 With $T$ and $n$ fixed, writing $\SEM{e}\sigma$ for $\SEM{e}^{\mathrm{ImpD}}_{T,n}\sigma$:
 \begin{align*}
@@ -1552,7 +1552,7 @@ For every Clos5 program $P$,
   \SEM{\pass{rco}(P)}^{\mathrm{5}} \simeq \SEM{P}^{\mathrm{5}} .
 \]
 \end{theorem}
-The theorem needs no scoping: going wrong and divergence both mean
+The theorem needs no scoping: an error and divergence both mean
 $\emptyset$, an unbound variable means $\rho_0(x) = \{\omega\}$, and the
 order in which operands are evaluated is invisible.
 
@@ -1861,7 +1861,7 @@ by Theorems~\ref{thm:compile-cfg} and~\ref{thm:select}.
 \subsection{Observations}\label{sec:obs}
 
 \[
-  o ::= c \mid \key{fun} \mid \key{tuple}(o_1, \ldots, o_n) \mid \inl o \mid \inr o \mid \wrong
+  o ::= c \mid \key{fun} \mid \key{tuple}(o_1, \ldots, o_n) \mid \inl o \mid \inr o \mid \error
 \]
 
 \subsection{Machines}
@@ -1904,7 +1904,7 @@ If $\Final_L(s, o)$ for no $o$ and no $s$ with $\start{L} \lto_L^* s$, then $\Di
 \]
 \begin{align*}
   \retq(v, \kappa) &= \nxt \rt{v}{\kappa} \\
-  \retq(\bot, \kappa) &= \stp \wrong \\[1ex]
+  \retq(\bot, \kappa) &= \stp \error \\[1ex]
   \key{proj}^n_i(v_1, \ldots, v_m) &=
     \begin{cases} v_i & m = n \\ \bot & \text{otherwise} \end{cases}
     \qquad (\prj{i} \text{ of arity } n) \\[1ex]
@@ -1943,15 +1943,15 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \rt{v}{\halt} & \stp \obs(v) \\
   \rt{v}{\Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa}} & \nxt \tnext(\bar{v}\,v;\, \bar{M};\, \rho;\, \kappa) \\
   \rt{v}{\Kf{getK_i}{\kappa}} & \retq(\key{proj}^n_i(\bar{v}), \kappa) & v = \tupV{\bar{v}} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{v}{\Kf{inlK}{\kappa}} & \nxt \rt{(\inlV v)}{\kappa} \\
   \rt{v}{\Kf{inrK}{\kappa}} & \nxt \rt{(\inrV v)}{\kappa} \\
   \rt{v}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{M}{\ext{\rho}{x}{u}}{\kappa} & v = \inlV u \\
   & \nxt \ev{N}{\ext{\rho}{y}{u}}{\kappa} & v = \inrV u \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{v}{\Kf{primL_p}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{primR_p}{v, \kappa}} \\
   \rt{w}{\Kf{primR_p}{v, \kappa}} & \nxt \rt{\res{\delta(p, n, m)}}{\kappa} & v = n,\; w = m \\
-  & \stp \wrong & \text{otherwise}
+  & \stp \error & \text{otherwise}
 \end{array}
 \]
 
@@ -1968,9 +1968,9 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \ev{(\lam{x} N)}{\rho}{\kappa} & \nxt \rt{\cloV{\lam{x} N}{\rho}}{\kappa} \\
   \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
   \rt{v}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{v, \kappa}} & v = \cloV{\lam{x} N}{\rho'} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{w}{\Kf{appR}{v, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{w}}{\kappa} & v = \cloV{\lam{x} N}{\rho} \\
-  & \stp \wrong & \text{otherwise}
+  & \stp \error & \text{otherwise}
 \end{array}
 \]
 
@@ -1996,10 +1996,10 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \rt{v}{\Kf{closK}{\bar{x}\, y.\, N, \bar{v}, \bar{M}, \rho, \kappa}} &
     \nxt \cnext(\bar{x}\, y.\, N;\, \bar{v}\,v;\, \bar{M};\, \rho;\, \kappa) \\
   \rt{v}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{v, \kappa}} & v = \closV{\ldots}{\ldots} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{w}{\Kf{appR}{v, \kappa}} & \nxt \ev{N}{\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}}{\kappa}
     & v = \closV{\bar{x}\, y.\, N}{\bar{v}} \\
-  & \stp \wrong & \text{otherwise}
+  & \stp \error & \text{otherwise}
 \end{array}
 \]
 
@@ -2018,10 +2018,10 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
   \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
   \rt{v}{\Kf{closK}{e\, y.\, N, \kappa}} & \nxt \rt{\closV{e\, y.\, N}{v}}{\kappa} \\
   \rt{v}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{v, \kappa}} & v = \closV{\ldots}{\ldots} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{w}{\Kf{appR}{v, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
     & v = \closV{e\, y.\, N}{u} \\
-  & \stp \wrong & \text{otherwise}
+  & \stp \error & \text{otherwise}
 \end{array}
 \]
 
@@ -2048,13 +2048,13 @@ evaluating all three operands.
   \rt{f}{\Kf{appF}{M, N, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appE}{f, N, \rho, \kappa}} \\
   \rt{u}{\Kf{appE}{f, N, \rho, \kappa}} & \nxt \ev{N}{\rho}{\Kf{appA}{f, u, \kappa}} \\
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa} & f = \funV{e\, y.\, N} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{v}{\Kf{pairL}{N, \rho, \kappa}} & \nxt \ev{N}{\rho}{\Kf{pairR}{v, \kappa}} \\
   \rt{w}{\Kf{pairR}{v, \kappa}} & \nxt \rt{\pairV{v}{w}}{\kappa} \\
   \rt{v}{\Kf{fstK}{\kappa}} & \nxt \rt{v_1}{\kappa} & v = \pairV{v_1}{v_2} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{v}{\Kf{sndK}{\kappa}} & \nxt \rt{v_2}{\kappa} & v = \pairV{v_1}{v_2} \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rt{v}{\Kf{letK}{x.N, \rho, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{v}}{\kappa}
 \end{array}
 \]
@@ -2074,7 +2074,7 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
   \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\[1ex]
   \rt{w}{\Kf{appA}{f, u, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
     & f = \codeV{k},\; k < m,\; d_k = \key{fun}\; e\,y.\,N \\
-  & \stp \wrong & \text{otherwise}
+  & \stp \error & \text{otherwise}
 \end{array}
 \]
 
@@ -2087,7 +2087,7 @@ The operands of a simple expression are atoms, evaluated left to right
 in a step each, collecting their values in frames $F$ as in Clos5. What
 a simple expression does at its start ($\mathit{first}$) and when the
 value of an operand comes back ($\mathit{resume}$) is shared with the CFG
-machine: evaluate another operand, return a value (or go wrong), or call
+machine: evaluate another operand, return a value (or stop with an error), or call
 definition $k$.
 \[
 \begin{array}{rcl}
@@ -2150,12 +2150,12 @@ three operands. It runs the body $(n;\; e)$ in a fresh frame of
 $\max(2, n)$ slots, and $\key{callK}$ returns to the caller's frame.
 For a program with bodies $b_0, \ldots, b_{m-1}$:
 \begin{align*}
-  \retq(v, \sigma, \kappa) &= \nxt \rti{v}{\sigma}{\kappa}, \quad \retq(\bot, \sigma, \kappa) = \stp \wrong \\
-  \key{goto}(\sigma, e, \kappa) &= \nxt \evi{e}{\sigma}{\kappa}, \quad \key{goto}(\bot, e, \kappa) = \stp \wrong \\
+  \retq(v, \sigma, \kappa) &= \nxt \rti{v}{\sigma}{\kappa}, \quad \retq(\bot, \sigma, \kappa) = \stp \error \\
+  \key{goto}(\sigma, e, \kappa) &= \nxt \evi{e}{\sigma}{\kappa}, \quad \key{goto}(\bot, e, \kappa) = \stp \error \\
   \mathit{call}(k, u, w, \sigma, \kappa) &=
     \begin{cases}
       \nxt \evi{e}{(u\, w\, 0^{n-2})}{\Kf{callK}{\sigma, \kappa}} & k < m,\; b_k = (n;\; e) \\
-      \stp \wrong & \text{otherwise}
+      \stp \error & \text{otherwise}
     \end{cases} \\[1ex]
   \mathit{res}(\key{operand}(a, F), \sigma, \kappa) &= \nxt \evi{a}{\sigma}{F \cdot \kappa} \\
   \mathit{res}(\key{value}(v^?), \sigma, \kappa) &= \retq(v^?, \sigma, \kappa) \\
@@ -2172,7 +2172,7 @@ where $0^{n-2}$ is $n - 2$ zeros, none when $n < 2$.
   \rti{v}{\sigma}{F \cdot \kappa} & \mathit{res}(\mathit{resume}(v, F), \sigma, \kappa) \\
   \rti{v}{\sigma}{\Kf{caseK}{s, e_1, e_2, \kappa}} & \key{goto}(\sigma[s := u], e_1, \kappa) & v = \inlV u \\
   & \key{goto}(\sigma[s := u], e_2, \kappa) & v = \inrV u \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rti{v}{\sigma}{\Kf{assignK}{s, e, \kappa}} & \key{goto}(\sigma[s := v], e, \kappa) \\
   \rti{v}{\sigma}{\Kf{callK}{\sigma', \kappa}} & \nxt \rti{v}{\sigma'}{\kappa}
 \end{array}
@@ -2199,11 +2199,11 @@ of Imp with $\mathit{call}$ running the start of the callee's body with its bloc
   \key{block}(t_0 \ldots t_{j-1}, l) &=
     \begin{cases} (t_l;\; t_0 \ldots t_{l-1}) & l < j \\ \bot & \text{otherwise} \end{cases} \\
   \key{jump}(\sigma, (t;\, \vec{t}), \kappa) &= \nxt \exc{t}{\sigma}{\vec{t}}{\kappa},
-    \quad \key{jump}(\sigma^?, p^?, \kappa) = \stp \wrong \text{ if } \sigma^? = \bot \text{ or } p^? = \bot \\
+    \quad \key{jump}(\sigma^?, p^?, \kappa) = \stp \error \text{ if } \sigma^? = \bot \text{ or } p^? = \bot \\
   \mathit{call}(k, u, w, \sigma, \kappa) &=
     \begin{cases}
       \nxt \exc{t}{(u\, w\, 0^{n-2})}{\vec{t}}{\Kf{callK}{\sigma, \kappa}} & k < m,\; b_k = (n;\; \vec{t};\; t) \\
-      \stp \wrong & \text{otherwise}
+      \stp \error & \text{otherwise}
     \end{cases} \\[1ex]
   \Mach{\mathrm{CFG}}(b_0, \ldots, b_{m-1};\; (n;\; \vec{t};\; t)) &=
     (\mathit{State}^{\mathrm{CFG}},\; \step{\mathrm{CFG}}_{b_0 \ldots b_{m-1}},\; \exc{t}{0^n}{\vec{t}}{\halt})
@@ -2222,7 +2222,7 @@ of Imp with $\mathit{call}$ running the start of the callee's body with its bloc
   \rti{v}{\sigma}{\Kf{seqK}{s, t, \vec{t}, \kappa}} & \key{jump}(\sigma[s := v], (t;\, \vec{t}), \kappa) \\
   \rti{v}{\sigma}{\Kf{caseK}{s, l_1, l_2, \vec{t}, \kappa}} & \key{jump}(\sigma[s := u], \key{block}(\vec{t}, l_1), \kappa) & v = \inlV u \\
   & \key{jump}(\sigma[s := u], \key{block}(\vec{t}, l_2), \kappa) & v = \inrV u \\
-  & \stp \wrong & \text{otherwise} \\
+  & \stp \error & \text{otherwise} \\
   \rti{v}{\sigma}{\Kf{callK}{\sigma', \kappa}} & \nxt \rti{v}{\sigma'}{\kappa}
 \end{array}
 \]
@@ -2242,7 +2242,7 @@ $\sigma$, and the registers $\rho$, each holding a value or unset ($\bot$).
   \rho : \{\rax, \rdi, \rsi\} \to \mathit{Val}^{?}
 \end{array}
 \]
-An instruction goes wrong on an operand that is unset or beyond the
+An instruction errors on an operand that is unset or beyond the
 frame, on a value of the wrong kind, or on a destination beyond the
 frame. With $\sigma$ and $\rho$ those of the state:
 \begin{align*}
@@ -2250,8 +2250,8 @@ frame. With $\sigma$ and $\rho$ those of the state:
   \mathit{arg}(c) = c, \quad \mathit{arg}(\funref{k}) = \codeV{k} \\[1ex]
   \key{put}(s, v, K) &= \nxt K(\sigma[s := v], \rho) \quad (\sigma[s := v] \neq \bot) \\
   \key{put}(\%g, v, K) &= \nxt K(\sigma, \ext{\rho}{\%g}{v}) \\
-  \key{put}(d, v^?, K) &= \stp \wrong \quad \text{otherwise} \\
-  \key{test}(b, K) &= \nxt K(b), \quad \key{test}(\bot, K) = \stp \wrong \\[1ex]
+  \key{put}(d, v^?, K) &= \stp \error \quad \text{otherwise} \\
+  \key{test}(b, K) &= \nxt K(b), \quad \key{test}(\bot, K) = \stp \error \\[1ex]
   \key{prim}^?_p(v, w) &= \begin{cases} \res{\delta(p, n, m)} & v = n,\; w = m \\ \bot & \text{otherwise} \end{cases} \qquad
   \key{cmp}(v, w) = \begin{cases} n = m & v = n,\; w = m \\ \bot & \text{otherwise} \end{cases} \\
   \key{isinl}(v) &= \begin{cases} \mathsf{true} & v = \inlV u \\ \mathsf{false} & v = \inrV u \\ \bot & \text{otherwise} \end{cases} \\
@@ -2277,11 +2277,11 @@ $\rdi$, $\rsi$ and the flag unset. $\key{block}$ is that of CFG. For a program w
 $b_0, \ldots, b_{m-1}$:
 \begin{align*}
   \key{goto}((\vec{\imath};\, j;\, \vec{\beta}), \Sigma, f, \sigma, \rho) &= \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho, \quad
-  \key{goto}(\bot, \Sigma, f, \sigma, \rho) = \stp \wrong \\
+  \key{goto}(\bot, \Sigma, f, \sigma, \rho) = \stp \error \\
   \mathit{callq}(\codeV{k}, \Sigma, \rho) &=
     \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;\bot\;0^{\max(2,n)}\;(\bot, \rho(\rdi), \rho(\rsi)) \\
     &\qquad (k < m,\; b_k = (n;\; \vec{\beta};\; \vec{\imath};\, j),\; \rho(\rdi) \neq \bot \neq \rho(\rsi)) \\
-  \mathit{callq}(v^?, \Sigma, \rho) &= \stp \wrong \quad \text{otherwise} \\[1ex]
+  \mathit{callq}(v^?, \Sigma, \rho) &= \stp \error \quad \text{otherwise} \\[1ex]
   \rho_0 &= (0, \bot, \bot) \quad \text{(the values of $\rax$, $\rdi$, $\rsi$)} \\
   \Mach{\mathrm{X86}}(b_0, \ldots, b_{m-1};\; (n;\; \vec{\beta};\; \vec{\imath};\, j)) &=
     (\mathit{State}^{\mathrm{X86}},\; \step{\mathrm{X86}}_{b_0 \ldots b_{m-1}},\; \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\halt\;\bot\;0^n\;\rho_0)
@@ -2296,7 +2296,7 @@ and $\langle \vec{\imath} \rangle_{f'}$ for it with the flag $f'$:
   \langle \key{cmpq}\; o_2, o_1;\; \vec{\imath} \rangle &
     \key{test}(\key{cmp}(\mathit{arg}(o_1), \mathit{arg}(o_2)), \lambda f'.\, \langle \vec{\imath} \rangle_{f'}) \\
   \langle \key{sete}\; d;\; \vec{\imath} \rangle & \key{put}(d, \res{f}, \xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f) & f \neq \bot \\
-  & \stp \wrong & f = \bot \\
+  & \stp \error & f = \bot \\
   \langle \key{testinl}\; o;\; \vec{\imath} \rangle &
     \key{test}(\key{isinl}(\mathit{arg}(o)), \lambda f'.\, \langle \vec{\imath} \rangle_{f'}) \\
   \langle \key{alloc}\; \mathit{sh}\; o_1, \ldots, o_p, d;\; \vec{\imath} \rangle &
@@ -2306,14 +2306,14 @@ and $\langle \vec{\imath} \rangle_{f'}$ for it with the flag $f'$:
   \langle \key{callq}\; o;\; \vec{\imath} \rangle &
     \mathit{callq}(\mathit{arg}(o), \key{retK}(\vec{\imath}, j, \vec{\beta}, \sigma, \Sigma), \rho) \\[1ex]
   \xrun\;\epsilon\;\key{retq}\;\vec{\beta}\;\halt\;f\;\sigma\;\rho & \stp \obs(\rho(\rax)) & \rho(\rax) \neq \bot \\
-  & \stp \wrong & \rho(\rax) = \bot \\
+  & \stp \error & \rho(\rax) = \bot \\
   \xrun\;\epsilon\;\key{retq}\;\vec{\beta}\;\key{retK}(\vec{\imath}, j, \vec{\beta}', \sigma', \Sigma)\;f\;\sigma\;\rho &
     \nxt \xrun\;\vec{\imath}\;j\;\vec{\beta}'\;\Sigma\;\bot\;\sigma'\;(\rho(\rax), \bot, \bot) & \rho(\rax) \neq \bot \\
-  & \stp \wrong & \rho(\rax) = \bot \\
+  & \stp \error & \rho(\rax) = \bot \\
   \xrun\;\epsilon\;(\key{jmp}\; l)\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho & \key{goto}(\key{block}(\vec{\beta}, l), \Sigma, f, \sigma, \rho) \\
   \xrun\;\epsilon\;(\key{je}\; l_1, l_2)\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho & \key{goto}(\key{block}(\vec{\beta}, l_1), \Sigma, f, \sigma, \rho) & f = \mathsf{true} \\
   & \key{goto}(\key{block}(\vec{\beta}, l_2), \Sigma, f, \sigma, \rho) & f = \mathsf{false} \\
-  & \stp \wrong & f = \bot
+  & \stp \error & f = \bot
 \end{array}
 \]
 where $\res{f}$ is $\inlV \tupV{}$ or $\inrV \tupV{}$, as $\key{eq}$ produces.
@@ -2752,7 +2752,7 @@ $v$: when $\kappa_2 = \Kf{letK}{x.Q, \rho_2, \kappa}$ waits for the last
 complex operand of a construct, the state that $\mathit{Pend}$ runs ahead
 to, $\rt{v}{F^c(\bar{v};\, \epsilon;\, \rho_2';\, \kappa)}$, and otherwise
 $\rt{v}{\kappa_2}$. So both machines take the construct's own step (a call,
-a projection, \ldots) together, and go wrong together.
+a projection, \ldots) together, and error together.
 
 \begin{lemma}[RCO Simulation]\label{lem:rco-fsim}
 For every Clos5 program $P$,
@@ -2837,7 +2837,7 @@ For every monadic Clos5 program $P$,
   \Equiv(\Mach{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P))) .
 \]
 \end{theorem}
-There is no precondition: a variable out of scope goes wrong in both
+There is no precondition: a variable out of scope errors in both
 machines, as its slot $n$ is beyond the frame.
 
 \subsection{Explicate Control}\label{sec:sim-explicate}
@@ -2941,7 +2941,7 @@ continue as $D$:
   \mathit{Dest}(\kappa, \rax, \epsilon, \key{retq}, \vec{\beta}, \Sigma) &\Leftarrow \kappa \approx \Sigma
 \end{align*}
 A CFG statement takes a step per operand, its instructions a few steps,
-which must go wrong exactly when the CFG does. So from each
+which must error exactly when the CFG does. So from each
 synchronisation point, the start of a tail or a return ($s_1 \sim s_2$),
 a script $\mathit{Fate}_i(s_1, s_2)$ says how the machines reach the
 next one: both stop, the CFG steps while X86 waits (the index $i$ is the
@@ -3134,12 +3134,12 @@ For every Clos3 term $M$,
 \subsection{Results}
 
 \begin{align*}
-  r &::= \tmo \mid \wrong \mid \Ret v \\[1ex]
+  r &::= \tmo \mid \error \mid \Ret v \\[1ex]
   \tmo \bind f &= \tmo \\
-  \wrong \bind f &= \wrong \\
+  \error \bind f &= \error \\
   \Ret v \bind f &= f(v) \\[1ex]
   \lift{v} &= \Ret v \\
-  \lift{\bot} &= \wrong
+  \lift{\bot} &= \error
 \end{align*}
 
 \subsection{Programs}
@@ -3148,7 +3148,7 @@ A clocked program gives a result for every clock.
 \begin{align*}
   P &= (\obs_P,\; \run_P : \mathbb{N} \to \mathit{Result}) \\[1ex]
   \outc_P(\tmo) &= \bot \\
-  \outc_P(\wrong) &= \wrong \\
+  \outc_P(\error) &= \error \\
   \outc_P(\Ret v) &= \obs_P(v) \\[1ex]
   \Term_P(o) &\iff \exists k.\; \outc_P(\run_P(k)) = o \\
   \Div_P &\iff \forall k.\; \run_P(k) = \tmo \\
@@ -3161,7 +3161,7 @@ shape of the simulation one (Section~\ref{sec:sims}).
 \subsection{Clock for Clock}
 
 \begin{align*}
-  \RelRes{R}(\tmo, \tmo), \quad \RelRes{R}(\wrong, \wrong) &\iff \mathsf{true} \\
+  \RelRes{R}(\tmo, \tmo), \quad \RelRes{R}(\error, \error) &\iff \mathsf{true} \\
   \RelRes{R}(\Ret v, \Ret w) &\iff v \mathrel{R} w \\
   \RelRes{R}(r_1, r_2) &\iff \mathsf{false} \quad \text{otherwise}
 \end{align*}
@@ -3245,14 +3245,14 @@ $\Do x \leftarrow e;\; e'$ means $e \bind \lambda x.\, e'$.
   \EVS{\ell}{k}\,\rho\,(M\,\bar{M}) &=
     \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \bar{v} \leftarrow \EVS{\ell}{k}\,\rho\,\bar{M};\; \Ret (v\,\bar{v}) \\[1ex]
   \key{get}^n_i(v) &=
-    \begin{cases} \lift{\key{proj}^n_i(\bar{v})} & v = \tupV{\bar{v}} \\ \wrong & \text{otherwise} \end{cases} \\
+    \begin{cases} \lift{\key{proj}^n_i(\bar{v})} & v = \tupV{\bar{v}} \\ \error & \text{otherwise} \end{cases} \\
   \key{prim}_p(v, w) &=
-    \begin{cases} \Ret \res{\delta(p, n, m)} & v = n,\; w = m \\ \wrong & \text{otherwise} \end{cases} \\
+    \begin{cases} \Ret \res{\delta(p, n, m)} & v = n,\; w = m \\ \error & \text{otherwise} \end{cases} \\
   \BR{\ell}{k}\,\rho\,(x.M)\,(y.N)\,v &=
     \begin{cases}
       \EV{\ell}{k}\,\ext{\rho}{x}{u}\,M & v = \inlV u \\
       \EV{\ell}{k}\,\ext{\rho}{y}{u}\,N & v = \inrV u \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases} \\[1ex]
   \CALL{\ell}{0}\,N\,\rho &= \tmo \\
   \CALL{\ell}{k+1}\,N\,\rho &= \EV{\ell}{k}\,\rho\,N
@@ -3268,7 +3268,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \begin{cases}
       \Do w \leftarrow \EV{\mathrm{ISWIM}}{k}\,\rho\,M;\; \CALL{\mathrm{ISWIM}}{k}\,N\,\ext{\rho'}{x}{w}
         & f = \cloV{\lam{x} N}{\rho'} \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases}
 \end{align*}
 
@@ -3282,7 +3282,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \begin{cases}
       \Do w \leftarrow \EV{2}{k}\,\rho\,M;\; \CALL{2}{k}\,N\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}
         & f = \closV{\bar{x}\, y.\, N}{\bar{v}} \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases}
 \end{align*}
 
@@ -3296,7 +3296,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \begin{cases}
       \Do w \leftarrow \EV{3}{k}\,\rho\,M;\; \CALL{3}{k}\,N\,\{e {\mapsto} u, y {\mapsto} w\}
         & f = \closV{e\, y.\, N}{u} \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases}
 \end{align*}
 
@@ -3316,12 +3316,12 @@ As in the machine, the operator is checked after all three operands.
     \Do u \leftarrow \EV{4}{k}\,\rho\,M;\; w \leftarrow \EV{4}{k}\,\rho\,N;\;
     \begin{cases}
       \CALL{4}{k}\,B\,\{e {\mapsto} u, y {\mapsto} w\} & f = \funV{e\, y.\, B} \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases} \\
   \key{first}(v) &=
-    \begin{cases} \Ret v_1 & v = \pairV{v_1}{v_2} \\ \wrong & \text{otherwise} \end{cases} \\
+    \begin{cases} \Ret v_1 & v = \pairV{v_1}{v_2} \\ \error & \text{otherwise} \end{cases} \\
   \key{second}(v) &=
-    \begin{cases} \Ret v_2 & v = \pairV{v_1}{v_2} \\ \wrong & \text{otherwise} \end{cases}
+    \begin{cases} \Ret v_2 & v = \pairV{v_1}{v_2} \\ \error & \text{otherwise} \end{cases}
 \end{align*}
 
 \subsection{Clos5}
@@ -3334,11 +3334,11 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
     \Do u \leftarrow \EV{\vec{d}}{k}\,\rho\,M;\; w \leftarrow \EV{\vec{d}}{k}\,\rho\,N;\;
     \begin{cases}
       \CALL{\vec{d}}{k}\,j\,u\,w & f = \codeV{j} \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases} \\
   \CALL{\vec{d}}{k}\,j\,u\,w &=
     \begin{cases}
-      \wrong & j \geq m \\
+      \error & j \geq m \\
       \tmo & j < m,\; k = 0 \\
       \EV{\vec{d}}{k'}\,\{e {\mapsto} u, y {\mapsto} w\}\,N & j < m,\; k = k' + 1,\; d_j = \key{fun}\; e\,y.\,N
     \end{cases}
@@ -3374,7 +3374,7 @@ operator of a call is checked after the operands, and only calls tick.
   \key{inj?}(v) &= \begin{cases}
       \Ret \iota_1(u) & v = \inlV u \\
       \Ret \iota_2(u) & v = \inrV u \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases} \qquad
   [G_1, G_2](\iota_i(u)) = G_i(u) \\
   \key{set}(\sigma, s, v, K) &= \lift{\sigma[s := v]} \bind K
@@ -3396,7 +3396,7 @@ where $\key{simple}$ is the Agda's $\key{eval\text{-}simple}$.
       \Do (v, \sigma') \leftarrow \EV{\vec{b}}{k'}\,(u\, w\, 0^{n-2})\,e;\; \Ret v
         & f = \codeV{j},\; j < m,\; k = k' + 1, \\
         & \quad b_j = (n;\; e) \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases}
 \end{align*}
 
@@ -3423,14 +3423,14 @@ the blocks older than it.
   \key{jump}^k_{\vec{b}}\,(t_0, \ldots, t_{j-1})\,\sigma\,l &=
     \begin{cases}
       \key{tail}^k_{\vec{b}}\,(t_0, \ldots, t_{l-1})\,\sigma\,t_l & l < j \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases} \\
   \CALL{\vec{b}}{k}(f, u, w) &=
     \begin{cases}
       \tmo & f = \codeV{j},\; j < m,\; k = 0 \\
       \key{tail}^{k'}_{\vec{b}}\,\vec{t}\,(u\, w\, 0^{n-2})\,t
         & f = \codeV{j},\; j < m,\; k = k' + 1,\; b_j = (n;\; \vec{t};\; t) \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases}
 \end{align*}
 
@@ -3439,7 +3439,7 @@ the blocks older than it.
 The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1}$.
 The state is a frame $\sigma$ and registers $\rho$: $\rax$, $\rdi$, $\rsi$
 and the flag each hold a value or are unset ($\bot$); reading an unset
-one goes wrong. The frames and $\key{set}$ are those
+one errors. The frames and $\key{set}$ are those
 of Imp, and $\key{prim}^?$, $\key{cmp}$, $\key{isinl}$, $\key{build}$, and
 $\key{field}$ those of the X86 machine. A block runs its instructions,
 each passing the state to the rest, then its jump. Only $\key{callq}$
@@ -3490,7 +3490,7 @@ Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
   \key{jump}^k\,(\beta_0, \ldots, \beta_{q-1})\,(\sigma, \rho)\,l &=
     \begin{cases}
       \key{run}^k\,(\beta_0, \ldots, \beta_{l-1})\,(\sigma, \rho)\,\vec{\imath}\,j & l < q,\; \beta_l = \vec{\imath};\, j \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases} \\
   \CALL{}{k}(f, e, w) &=
     \begin{cases}
@@ -3498,7 +3498,7 @@ Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
       \key{run}^{k'}\,\vec{\beta}\,(0^{\max(2,n)}, (\bot, e, w, \bot))\,\vec{\imath}\,j'
         & f = \codeV{j},\; j < m,\; k = k' + 1, \\
         & b_j = (n;\; \vec{\beta};\; \vec{\imath};\, j') \\
-      \wrong & \text{otherwise}
+      \error & \text{otherwise}
     \end{cases}
 \end{align*}
 
@@ -3770,7 +3770,7 @@ Section~\ref{sec:sim-select}. The
 instructions of $\pass{sel}(r, d)$ nest around the rest of the block;
 they compute the value of $r$ and write it to $d$, with any registers
 after. A call reads its operator after its operands, which matters only
-when reading it goes wrong.
+when reading it errors.
 
 \begin{lemma}[Simple Expression, Clock for Clock]\label{lem:simple-ok}
 If $K(v) = \key{write}((\sigma, \rho'), d, v, \lambda s.\, \key{run}^k_{\mathrm{X}}\,\vec{\beta}\,s\,\vec{\imath}\,j)$
@@ -3861,9 +3861,9 @@ instructions are shared with the CEK machine + simulation development.
 
 A reduction says of a term whether it is a value, is stuck, or reduces.
 \begin{align*}
-  \mathit{Red}(T) &::= \key{val} \mid \wrong \mid \key{to}\; M \qquad (M \in T) \\
+  \mathit{Red}(T) &::= \key{val} \mid \error \mid \key{to}\; M \qquad (M \in T) \\
   \mathit{toNext}(o, \key{val}) &= \stp o \qquad
-  \mathit{toNext}(o, \wrong) = \stp \wrong \qquad
+  \mathit{toNext}(o, \error) = \stp \error \qquad
   \mathit{toNext}(o, \key{to}\; M) = \nxt M \\
   \mathcal{R}^{\ell}(M) &= (\mathit{Term}^{\ell},\; N \mapsto \mathit{toNext}(\obs(N), \mathit{red}^{\ell}(N)),\; M)
 \end{align*}
@@ -3873,7 +3873,7 @@ for a unique context and redex or value $r$, and
 \begin{align*}
   \mathit{red}(V) &= \key{val} \\
   \mathit{red}(E[r]) &= \key{to}\; E[r'] \quad \text{if } r \to r' \\
-  \mathit{red}(E[r]) &= \wrong \quad \text{otherwise (a variable, or a redex of the wrong shape)}
+  \mathit{red}(E[r]) &= \error \quad \text{otherwise (a variable, or a redex of the wrong shape)}
 \end{align*}
 The Agda writes $\mathit{red}$ as one function with congruence rules:
 $\key{step\text{-}in}(f, \mathit{red}(X), k)$ reduces inside the context $f$ if
@@ -3965,7 +3965,7 @@ Between two reductions, a relation $\approx$ on terms gives a simulation when
 every source term's reduction is answered by every related target term:
 \begin{align*}
   \mathit{Ans}(M, \key{val}, M') &\iff \exists V'.\; M' \lto^* V' \land V' \text{ is a value} \land M \approx V' \\
-  \mathit{Ans}(M, \wrong, M') &\iff \exists W'.\; M' \lto^* W' \land \mathit{red}(W') = \wrong \\
+  \mathit{Ans}(M, \error, M') &\iff \exists W'.\; M' \lto^* W' \land \mathit{red}(W') = \error \\
   \mathit{Ans}(M, \key{to}\; M_1, M') &\iff \exists M_1'.\; M' \lto^+ M_1' \land M_1 \approx M_1'
 \end{align*}
 

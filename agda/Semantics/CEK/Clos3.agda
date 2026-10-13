@@ -6,7 +6,7 @@
   and then builds a closure value of N and that tuple (closK). Applying
   it runs N in the environment y, x: the argument is variable 0 and the
   tuple is variable 1, so a free variable is read by get i ⦅ ` 1 ⦆, which
-  goes wrong unless the tuple has exactly n components. See the design
+  errors unless the tuple has exactly n components. See the design
   note in Smallstep.agda.
 
 -}
@@ -79,7 +79,7 @@ prim? : Prim → Val → Val → Maybe Val
 prim? p v w = map out (δ? p (obs v) (obs w))
 
 ret? : Maybe Val → Cont → Next State
-ret? mv κ = next? o-wrong (λ v → ret v κ) mv
+ret? mv κ = next? o-error (λ v → ret v κ) mv
 
 step : State → Next State
 step (eval (` x) ρ κ) = ret? (ρ ‼ x) κ
@@ -96,18 +96,18 @@ step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ
 step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)
 step (ret v@(clos _ _) (appL M ρ κ)) = next (eval M ρ (appR v κ))
-step (ret _ (appL M ρ κ)) = stop o-wrong
+step (ret _ (appL M ρ κ)) = stop o-error
 step (ret w (appR (clos N v) κ)) = next (eval N (w ∷ v ∷ []) κ)
-step (ret w (appR _ κ)) = stop o-wrong
+step (ret w (appR _ κ)) = stop o-error
 step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
 step (ret v (closK N κ)) = next (ret (clos N v) κ)
 step (ret (tup vs) (getK i κ)) = ret? (proj i vs) κ
-step (ret _ (getK i κ)) = stop o-wrong
+step (ret _ (getK i κ)) = stop o-error
 step (ret v (inlK κ)) = next (ret (inl v) κ)
 step (ret v (inrK κ)) = next (ret (inr v) κ)
 step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
-step (ret _ (caseK M N ρ κ)) = stop o-wrong
+step (ret _ (caseK M N ρ κ)) = stop o-error
 step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p v κ))
 step (ret w (primR p v κ)) = ret? (prim? p v w) κ
 step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)

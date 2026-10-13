@@ -22,7 +22,7 @@
   substitution enters, is related by the relation itself: the
   compilation function is the relation on code (del: M ≈ delay M).
 
-  No precondition is needed: a free variable goes wrong in both.
+  No precondition is needed: a free variable errors in both.
 
 -}
 
@@ -33,7 +33,7 @@ open import Language.Clos3
 import Language.Clos4 as C
 open import Compiler.Delay using (delay; del-map-args)
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong
+open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import proof.Semantics.Reduction.Clos3 as S
 import proof.Semantics.Reduction.Clos4 as T
@@ -185,10 +185,10 @@ let-fst-snd {n} {N'} {as} {M'} vs = s₁ ◅ s₂ ◅ s₃ ◅ ε
        ≡ to (C.app C.⦅ fun N' ,, C.tuple n C.⦅ as ⦆ ,, Z ,, Nil ⦆)
   s₃ rewrite T.values-red vs = refl
 
-{- fst of a value that is not a pair goes wrong -}
-fst-wrong : ∀ {V' Y Z} → T.Value V' → T.fst? V' ≡ wrong
-  → T.red (C.app C.⦅ C.fst-op C.⦅ V' ,, Nil ⦆ ,, Y ,, Z ,, Nil ⦆) ≡ wrong
-fst-wrong v e rewrite T.value-red v | e = refl
+{- fst of a value that is not a pair errors -}
+fst-error : ∀ {V' Y Z} → T.Value V' → T.fst? V' ≡ error
+  → T.red (C.app C.⦅ C.fst-op C.⦅ V' ,, Nil ⦆ ,, Y ,, Z ,, Nil ⦆) ≡ error
+fst-error v e rewrite T.value-red v | e = refl
 
 sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
 sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
@@ -204,7 +204,7 @@ call-ans r rs vs s =
     λ w s' → to (one (trans (val-in (T.value-red (T.tuple vs))) (val-in (T.value-red w))))
                 (≈-subst ((λ { zero → s' ; (suc zero) → tuple≈ rs ; (suc (suc x)) → var≈ }) , tt) r)
 
-sim var≈ = wrong ε refl
+sim var≈ = error ε refl
 sim (clos≈ {n} {N' = N'} r rs) =
   ans-in (frame-∘ (frame {redT = T.red-args} {redU = T.red} {g = λ Xs → C.tuple n C.⦅ Xs ⦆} _ (λ _ → refl))
                   (frame {g = λ X → C.pair-op C.⦅ fun N' ,, X ,, Nil ⦆} _ (λ _ → refl)))
@@ -212,15 +212,15 @@ sim (clos≈ {n} {N' = N'} r rs) =
 sim (app≈ {M = M} {M' = M'} r s) =
   ans-in (frame _ (λ _ → refl)) (λ r' → app≈ r' s) (sim r) app-sim
   where
-  {- the let, then fst and snd of a closure: anything else goes wrong at fst -}
+  {- the let, then fst and snd of a closure: anything else errors at fst -}
   app-sim : ∀ {L V'} → T.Value V' → L ≈ V' → Ans′ (app ⦅ L ,, M ,, Nil ⦆) (S.app? L (S.red M) M) (C.let-op C.⦅ V' ,, ⟩ app-body M' ,, Nil ⦆)
   app-sim v@(T.pair T.fun (T.tuple vs)) (clos≈ r' rs) =
     ans-star (let-fst-snd vs) (subst (λ Z → Ans′ _ _ (C.app C.⦅ _ ,, _ ,, Z ,, Nil ⦆))
                                      (sym (trans (TS.sub-shift _ TS.ids M') (TS.sub-id M'))) (call-ans r' rs vs s))
-  app-sim T.lit lit≈ = wrong (refl ◅ ε) refl
-  app-sim v@(T.tuple _) (tuple≈ _) = wrong (val-in (T.value-red v) ◅ ε) (fst-wrong v refl)
-  app-sim v@(T.inl _) (inl≈ _) = wrong (val-in (T.value-red v) ◅ ε) (fst-wrong v refl)
-  app-sim v@(T.inr _) (inr≈ _) = wrong (val-in (T.value-red v) ◅ ε) (fst-wrong v refl)
+  app-sim T.lit lit≈ = error (refl ◅ ε) refl
+  app-sim v@(T.tuple _) (tuple≈ _) = error (val-in (T.value-red v) ◅ ε) (fst-error v refl)
+  app-sim v@(T.inl _) (inl≈ _) = error (val-in (T.value-red v) ◅ ε) (fst-error v refl)
+  app-sim v@(T.inr _) (inr≈ _) = error (val-in (T.value-red v) ◅ ε) (fst-error v refl)
 sim (call≈ r rs svs vs s) =
   ans-skip (S.value-red (S.clos svs)) (call-ans r rs vs s)
 sim lit≈ = val ε T.lit lit≈
@@ -230,10 +230,10 @@ sim (get≈ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≈ (sim r) get-sim
   get-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
   get-sim v@(T.tuple _) (tuple≈ rs) = ret?-ans (proj-pw {R = _≈_} i (pw-list rs)) (val-in (T.value-red v))
   get-sim T.fun ()
-  get-sim v@(T.pair _ _) (clos≈ _ _) = wrong ε (val-in (T.value-red v))
-  get-sim T.lit lit≈ = wrong ε refl
-  get-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (T.value-red v))
-  get-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (T.value-red v))
+  get-sim v@(T.pair _ _) (clos≈ _ _) = error ε (val-in (T.value-red v))
+  get-sim T.lit lit≈ = error ε refl
+  get-sim v@(T.inl _) (inl≈ _) = error ε (val-in (T.value-red v))
+  get-sim v@(T.inr _) (inr≈ _) = error ε (val-in (T.value-red v))
 sim (inl≈ r) = ans-in (frame _ (λ _ → refl)) inl≈ (sim r) (λ v r' → val ε (T.inl v) (inl≈ r'))
 sim (inr≈ r) = ans-in (frame _ (λ _ → refl)) inr≈ (sim r) (λ v r' → val ε (T.inr v) (inr≈ r'))
 sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≈ r' s t) (sim r) case-sim
@@ -245,9 +245,9 @@ sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ
   case-sim v@(T.inr _) (inr≈ r') =
     to (one (val-in (T.value-red v))) (≈-[] tt r' t)
   case-sim T.fun ()
-  case-sim v@(T.pair _ _) (clos≈ _ _) = wrong ε (val-in (T.value-red v))
-  case-sim T.lit lit≈ = wrong ε refl
-  case-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (T.value-red v))
+  case-sim v@(T.pair _ _) (clos≈ _ _) = error ε (val-in (T.value-red v))
+  case-sim T.lit lit≈ = error ε refl
+  case-sim v@(T.tuple _) (tuple≈ _) = error ε (val-in (T.value-red v))
 sim (prim≈ {p} r s) =
   ans-in (frame _ (λ _ → refl)) (λ r' → prim≈ r' s) (sim r)
     λ v r' → ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (T.value-red v))) (prim≈ r') (sim s)

@@ -59,20 +59,20 @@ ShapeAt (suc i) (o ∷ os) d = ShapeAt i os d
 ShapeAt _ [] d = ⊥
 
 shape-answer : ∀ {o d} → ShapeOf o d → Answer o
-shape-answer {o-wrong} {const k} () refl
+shape-answer {o-error} {const k} () refl
 shape-answer {o-const B k} s ()
 shape-answer {o-fun} s ()
 shape-answer {o-tuple os} s ()
 shape-answer {o-inl o} s ()
 shape-answer {o-inr o} s ()
-shape-answer {o-wrong} {V ↦ w} () refl
-shape-answer {o-wrong} {ν} () refl
-shape-answer {o-wrong} {ω} () refl
-shape-answer {o-wrong} {⦅ u , v ⦆} () refl
-shape-answer {o-wrong} {tup[ i ] d} () refl
-shape-answer {o-wrong} {left d} () refl
-shape-answer {o-wrong} {right d} () refl
-shape-answer {o-wrong} {⟨⟩} () refl
+shape-answer {o-error} {V ↦ w} () refl
+shape-answer {o-error} {ν} () refl
+shape-answer {o-error} {ω} () refl
+shape-answer {o-error} {⦅ u , v ⦆} () refl
+shape-answer {o-error} {tup[ i ] d} () refl
+shape-answer {o-error} {left d} () refl
+shape-answer {o-error} {right d} () refl
+shape-answer {o-error} {⟨⟩} () refl
 
 {- the only observation of the shape of a constant is that constant -}
 shape-const : ∀ {o B} {k : base-rep B} → ShapeOf o (const k) → o ≡ o-const B k
@@ -81,7 +81,7 @@ shape-const {o-fun} ()
 shape-const {o-tuple os} ()
 shape-const {o-inl o} ()
 shape-const {o-inr o} ()
-shape-const {o-wrong} ()
+shape-const {o-error} ()
 
 {- a primitive is defined only on two integers -}
 δ?-inv : ∀ p o₁ o₂ {r : Out} → δ? p o₁ o₂ ≡ just r

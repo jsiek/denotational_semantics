@@ -22,12 +22,12 @@
 
 -}
 
-module proof.Framework.Reduction (Obs : Set) (o-wrong : Obs) where
+module proof.Framework.Reduction (Obs : Set) (o-error : Obs) where
 
 open import Framework.Smallstep Obs
 open import proof.Framework.Smallstep Obs using (Plus; plus)
 open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; stutters; runs; equivalent)
-open import Framework.Reduction Obs o-wrong public
+open import Framework.Reduction Obs o-error public
 
 open import Framework.abt.Sig using (Sig; ■)
 open import Framework.abt.AbstractBindingTree using (ABT; Args; nil; cons; ast; `_)
@@ -104,14 +104,14 @@ module _ {T U : Set} {redT : T → Red T} {redU : U → Red U} {g : T → U}
   plus-in : ∀ {X Y} → Plus* redT X Y → Plus* redU (g X) (g Y)
   plus-in (plus s σ) = plus (step-in-to s) (star-in σ)
 
-  wrong-in : ∀ {X} → redT X ≡ wrong → redU (g X) ≡ wrong
-  wrong-in e = trans (eq _) (cong (λ r → step-in g r (κ _)) e)
+  error-in : ∀ {X} → redT X ≡ error → redU (g X) ≡ error
+  error-in e = trans (eq _) (cong (λ r → step-in g r (κ _)) e)
 
 {- a frame in a frame -}
 step-in-∘ : ∀ {A B C : Set} {f : B → C} {h : A → B} r {k k'}
   → step-in f (step-in h r k) k' ≡ step-in (λ x → f (h x)) r (step-in f k k')
 step-in-∘ val = refl
-step-in-∘ wrong = refl
+step-in-∘ error = refl
 step-in-∘ (to _) = refl
 
 {- the empty context -}
@@ -119,7 +119,7 @@ frame-id : ∀ {T : Set} {red : T → Red T} → Frame red red (λ x → x)
 frame-id {red = red} = frame (λ _ → val) (λ X → lemma (red X))
   where lemma : ∀ {T} (r : Red T) → r ≡ step-in (λ x → x) r val
         lemma val = refl
-        lemma wrong = refl
+        lemma error = refl
         lemma (to _) = refl
 
 frame-∘ : ∀ {T U V : Set} {redT : T → Red T} {redU : U → Red U} {redV : V → Red V}
@@ -135,14 +135,14 @@ frame-∘ {redT = redT} {h = h} {f = f} (frame κh eqh) (frame κf eqf) =
 data Ans {S T : Set} (red : T → Red T) (Val : T → Set) (R : S → T → Set) (M : S)
   : Red S → T → Set where
   val : ∀ {M' V'} → Star* red M' V' → Val V' → R M V' → Ans red Val R M val M'
-  wrong : ∀ {M' W'} → Star* red M' W' → red W' ≡ wrong → Ans red Val R M wrong M'
+  error : ∀ {M' W'} → Star* red M' W' → red W' ≡ error → Ans red Val R M error M'
   to : ∀ {M₁ M' M₁'} → Plus* red M' M₁' → R M₁ M₁' → Ans red Val R M (to M₁) M'
 
 module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set} where
 
   ans-star : ∀ {M r X Y} → Star* red X Y → Ans red Val R M r Y → Ans red Val R M r X
   ans-star σ (val τ v m) = val (σ ◅◅ τ) v m
-  ans-star σ (wrong τ w) = wrong (σ ◅◅ τ) w
+  ans-star σ (error τ w) = error (σ ◅◅ τ) w
   ans-star σ (to π m) = to (star-plus σ π) m
 
   ans-step : ∀ {M r X Y} → red X ≡ to Y → Ans red Val R M r Y → Ans red Val R M r X
@@ -160,14 +160,14 @@ ans-in : ∀ {S S' T U : Set} {redT : T → Red T} {redU : U → Red U} {ValT : 
   → (∀ {V'} → ValT V' → R X V' → Ans redU ValU R' (f X) k (g V'))
   → Ans redU ValU R' (f X) (step-in f r k) (g X')
 ans-in G c (to π m) k = to (plus-in G π) (c m)
-ans-in G c (wrong σ w) k = wrong (star-in G σ) (wrong-in G w)
+ans-in G c (error σ w) k = error (star-in G σ) (error-in G w)
 ans-in G c (val σ v m) k = ans-star (star-in G σ) (k v m)
 
 {- a result that may be missing, related pointwise -}
 ret?-ans : ∀ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set} {M mv mw X}
   → M.Pointwise R mv mw → red X ≡ ret? mw → Ans red Val R M (ret? mv) X
 ret?-ans (M.just r) e = to (one e) r
-ret?-ans M.nothing e = wrong ε e
+ret?-ans M.nothing e = error ε e
 
 {- The operands of tuples ------------------------------------------------------}
 
@@ -354,7 +354,7 @@ module _ {A B : Set} {obs₁ : A → Obs} {red₁ : A → Red A} {obs₂ : B →
       answer : ∀ {i M M' r} → red₁ M ≡ r → Ans red₂ Val R M r M'
         → Answers≺ L₂ (λ _ → R) i (toNext (obs₁ M) r) M'
       answer e (val σ v m) rewrite obs-R m e v = finish σ (cong (toNext (obs₂ _)) (val-red v))
-      answer e (wrong σ w) = finish σ (cong (toNext (obs₂ _)) w)
+      answer e (error σ w) = finish σ (cong (toNext (obs₂ _)) w)
       answer e (to (plus s σ) m) = steps {j = 0} (plus (cong (toNext (obs₂ _)) s) (star σ)) m
 
   red-fsim : ∀ {M M'} → R M M' → FSim (reduction obs₁ red₁ M) (reduction obs₂ red₂ M')

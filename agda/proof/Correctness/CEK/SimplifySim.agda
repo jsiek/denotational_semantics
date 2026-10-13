@@ -31,7 +31,7 @@
   (let-term, let-known, let-sim), from the source's run to the operand:
   for an inlined call, the source first runs the operator to the known
   function's closure. The end theorem is for closed programs: an
-  unbound variable makes the source go wrong where the target may have
+  unbound variable makes the source error where the target may have
   dropped it.
 
 -}

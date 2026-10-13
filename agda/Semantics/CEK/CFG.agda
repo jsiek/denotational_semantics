@@ -11,10 +11,10 @@
   x := s; t evaluates s under seqK x t bs, which assigns the value to slot
   x and runs t; return s evaluates s under the continuation of the body.
   goto l runs block l of bs, with the blocks older than it (block); a
-  jump to a label that is not one of them goes wrong. case a x l₁ l₂
+  jump to a label that is not one of them errors. case a x l₁ l₂
   evaluates a under caseK x l₁ l₂ bs, which assigns the payload to slot
   x and jumps to l₁ or l₂. Reading or assigning a slot beyond the frame
-  goes wrong.
+  errors.
 
   A call app f e a checks, after its three operands, that f is code k,
   and runs the start of the body of definition k, with its blocks, in a
@@ -58,19 +58,19 @@ global ds k = reverse ds ‼ k
 {- run a tail, with its blocks, in the frame, if there are both -}
 jump : Maybe Frame → Maybe (Tail × List Tail) → Cont → Next State
 jump (just φ) (just (t , bs)) κ = next (exec t φ bs κ)
-jump _ _ κ = stop o-wrong
+jump _ _ κ = stop o-error
 
 {- run the start of a body, if there is one, in a fresh frame with e and a;
    the caller's frame is φ -}
 call : Maybe Body → Val → Val → Frame → Cont → Next State
 call (just (body n bs t)) e a φ κ = next (exec t (e ∷ a ∷ zeros (n ∸ 2)) bs (callK φ κ))
-call nothing e a φ κ = stop o-wrong
+call nothing e a φ κ = stop o-error
 
 {- the machine for a program with global definitions ds -}
 res : List Body → Res → Frame → Cont → Next State
 res ds (operand a f) φ κ = next (eval a φ (frm f κ))
 res ds (value (just v)) φ κ = next (ret v φ κ)
-res ds (value nothing) φ κ = stop o-wrong
+res ds (value nothing) φ κ = stop o-error
 res ds (apply k e a) φ κ = call (global ds k) e a φ κ
 
 step : List Body → State → Next State
@@ -84,7 +84,7 @@ step ds (ret v φ (frm f κ)) = res ds (resume v f) φ κ
 step ds (ret v φ (seqK x t bs κ)) = jump (φ [ x ]≔ v) (just (t , bs)) κ
 step ds (ret (inl v) φ (caseK x l₁ l₂ bs κ)) = jump (φ [ x ]≔ v) (block bs l₁) κ
 step ds (ret (inr v) φ (caseK x l₁ l₂ bs κ)) = jump (φ [ x ]≔ v) (block bs l₂) κ
-step ds (ret _ φ (caseK x l₁ l₂ bs κ)) = stop o-wrong
+step ds (ret _ φ (caseK x l₁ l₂ bs κ)) = stop o-error
 step ds (ret v φ (callK φ' κ)) = next (ret v φ' κ)
 
 {- a program starts with the start of its main body, in a frame of zeros -}

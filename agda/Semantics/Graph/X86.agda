@@ -8,15 +8,15 @@ module Semantics.Graph.X86 where
  The state of a body is its frame σ (a store, as in Semantics/Graph/Imp.agda), its
  registers ρ (a set of values for each), and the flag φ, a set of values
  left ⟨⟩ (set) and right ⟨⟩ (not set); ∅ is no flag, so that sete and je
- then go wrong. What runs from a point of a body on (Kont) means, given
+ then error. What runs from a point of a body on (Kont) means, given
  the state, a set of values, the result of the body. An instruction
  transforms the state and passes it on to its continuation; a sequence
  of instructions runs one after the other, and a block is its
  instructions followed by its jump: retq produces %rax, jmp l runs block
  l in the state as it is, and je l₁ l₂ is 𝒞 on the flag.
 
- Every write is strict, so that an instruction whose computation goes
- wrong or diverges (its value is ∅) stops the body: nothing after it
+ Every write is strict, so that an instruction whose computation
+ errors or diverges (its value is ∅) stops the body: nothing after it
  runs. A slot of the frame is a variable of the body and is bound as in
  CFG: d := D runs the rest with a finite, nonempty, consistent part of D
  in d (⋆ ⟨ Λ F , D ⟩). A register or the flag holds D itself, provided D
@@ -117,7 +117,7 @@ isinl D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈
 payloadD : 𝒫 Value → 𝒫 Value
 payloadD D v = left v ∈ D ⊎ right v ∈ D
 
-{- the object that alloc builds; a wrong number of fields goes wrong -}
+{- the object that alloc builds; a wrong number of fields errors -}
 object : Table → ℕ → Store → Regs → Shape → List Arg → 𝒫 Value
 object T n σ ρ pairₛ (a ∷ b ∷ []) = pair ⟨ 𝒪 T n σ ρ a , ⟨ 𝒪 T n σ ρ b , ptt ⟩ ⟩
 object T n σ ρ tuple as = 𝒯 (length as) (𝒪s T n σ ρ as)

@@ -20,7 +20,7 @@
   let in a step of its own; these are matched with the next source step.
   As in the CEK proof, the frame φ is ρ reversed and then the free slots
   (Fr n ρ φ), and a variable out of scope is a variable in the source and
-  a slot beyond the frame in the target, which go wrong alike.
+  a slot beyond the frame in the target, which error alike.
 
   There is no precondition.
 
@@ -40,7 +40,7 @@ open import Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.RCO using (rco-program-mon)
 open import proof.Compiler.EncloseScope using (Closed)
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong using (Red; val; wrong; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in; ret?; pre; pre⋆; any-i)
+open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in; ret?; pre; pre⋆; any-i)
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Star; ε; _◅_; Step)
 open import proof.Framework.Smallstep Obs using (Plus; plus)
 open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; runs; stutters; equivalent; equiv-trans)
@@ -235,7 +235,7 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
   {- an operand of the source, in a context f with continuation k -}
   lk-step : ∀ {B : Set} {X mv} → Lk X mv → Red B → Red B
   lk-step (ok _ _) k = k
-  lk-step (unb _ _) k = wrong
+  lk-step (unb _ _) k = error
 
   opd : ∀ {B : Set} {f : AST → B} {k X mv} (l : Lk X mv) → step-in f (red X) k ≡ lk-step l k
   opd (ok r _) = val-in (S.value-red (≈v-value r))
@@ -245,8 +245,8 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
   tgt : ∀ {mv φ κ v} → mv ≡ just v → I.ret? mv φ κ ≡ next (I.ret v φ κ)
   tgt refl = refl
 
-  tgt-wrong : ∀ {mv φ κ} → mv ≡ nothing → I.ret? mv φ κ ≡ stop o-wrong
-  tgt-wrong refl = refl
+  tgt-error : ∀ {mv φ κ} → mv ≡ nothing → I.ret? mv φ κ ≡ stop o-error
+  tgt-error refl = refl
 
   {- the target returns a value to κ, as the source's context C does -}
   ret-ans : ∀ {n ρ φ C κ V v} → V ≈v v → Fr n ρ φ → (k : Kont n ρ C κ)
@@ -277,11 +277,11 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
   rev-∷ v acc vs = trans (cong (_++ vs) (unfold-reverse v acc)) (++-assoc (reverse acc) (v ∷ []) vs)
 
   {- either all are values, which the target collects after acc, or one is
-     unbound, and both go wrong -}
+     unbound, and both error -}
   tup-run : ∀ {φ κ m} {Xs : Args (replicate m ■)} {as} → Ops φ Xs as → ∀ acc {s}
     → I.step ds₂ s ≡ I.res ds₂ (I.tuple-next acc as) φ κ
     → (Σ[ vs ∈ List I.Val ] Xs ≈vs vs × S.red-args ds Xs ≡ val × Plus L₂ s (I.ret (I.tup (reverse acc ++ vs)) φ κ))
-      ⊎ (S.red-args ds Xs ≡ wrong × Σ[ t ∈ I.State ] Star L₂ s t × I.step ds₂ t ≡ stop o-wrong)
+      ⊎ (S.red-args ds Xs ≡ error × Σ[ t ∈ I.State ] Star L₂ s t × I.step ds₂ t ≡ stop o-error)
   tup-run [] acc st =
     inj₁ ([] , [] , refl , plus (trans st (cong (λ vs → next (I.ret (I.tup vs) _ _)) (sym (++-identityʳ _)))) ε)
   tup-run {φ} {κ} (_∷_ {as = as} l@(ok {v} r e) os) acc st
@@ -290,7 +290,7 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     inj₁ (_ , r ∷ rs , trans (opd l) (cong (λ x → step-in _ x val) ev)
          , plus st (tgt e ◅ subst (λ z → Star L₂ _ (I.ret (I.tup z) φ κ)) (rev-∷ v acc vs) (s ◅ σ)))
   ... | inj₂ (ev , t , σ , fin) = inj₂ (trans (opd l) (cong (λ x → step-in _ x val) ev) , t , st ◅ tgt e ◅ σ , fin)
-  tup-run (l@(unb _ e) ∷ os) acc st = inj₂ (opd l , _ , st ◅ ε , tgt-wrong e)
+  tup-run (l@(unb _ e) ∷ os) acc st = inj₂ (opd l , _ , st ◅ ε , tgt-error e)
 
   {- a projection or a primitive, once its operands are values -}
   ret?-ans : ∀ {n ρ φ C κ T mv mw s} {κT : Red AST} → M.Pointwise _≈v_ mv mw → Fr n ρ φ → Kont n ρ C κ
@@ -357,43 +357,43 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     → Ans (toNext (S.obs (C (sub σ M))) (red (C (sub σ M)))) (I.eval (lift n (length ρ) m) φ κ)
   sim-eval (atom a) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (lk-red l) (pre (tgt e) (ret-ans r fr k))
-  ... | l@(unb _ e) = in-ctx k (lk-red l) (stops (tgt-wrong e))
+  ... | l@(unb _ e) = in-ctx k (lk-red l) (stops (tgt-error e))
   sim-eval (app (a ∷ c ∷ d ∷ [])) b fr ag k with atm-lk ag fr a | atm-lk ag fr c | atm-lk ag fr d
   ... | l₁@(ok r₁ e₁) | l₂@(ok r₂ e₂) | l₃@(ok r₃ e₃) =
     in-ctx k (trans (opd l₁) (trans (opd l₂) (opd l₃)))
       (pre refl (pre (tgt e₁) (pre refl (pre (tgt e₂) (pre refl (pre (tgt e₃) (call-ans r₁ r₂ r₃ fr k)))))))
   ... | l₁@(ok r₁ e₁) | l₂@(ok r₂ e₂) | l₃@(unb _ e₃) =
     in-ctx k (trans (opd l₁) (trans (opd l₂) (opd l₃)))
-      (pre refl (pre (tgt e₁) (pre refl (pre (tgt e₂) (pre refl (stops (tgt-wrong e₃)))))))
+      (pre refl (pre (tgt e₁) (pre refl (pre (tgt e₂) (pre refl (stops (tgt-error e₃)))))))
   ... | l₁@(ok r₁ e₁) | l₂@(unb _ e₂) | _ =
-    in-ctx k (trans (opd l₁) (opd l₂)) (pre refl (pre (tgt e₁) (pre refl (stops (tgt-wrong e₂)))))
-  ... | l₁@(unb _ e₁) | _ | _ = in-ctx k (opd l₁) (pre refl (stops (tgt-wrong e₁)))
+    in-ctx k (trans (opd l₁) (opd l₂)) (pre refl (pre (tgt e₁) (pre refl (stops (tgt-error e₂)))))
+  ... | l₁@(unb _ e₁) | _ | _ = in-ctx k (opd l₁) (pre refl (stops (tgt-error e₁)))
   sim-eval (pair (a ∷ c ∷ [])) b fr ag k with atm-lk ag fr a | atm-lk ag fr c
   ... | l₁@(ok r₁ e₁) | l₂@(ok r₂ e₂) =
     in-ctx k (trans (opd l₁) (opd l₂))
       (pre refl (pre (tgt e₁) (pre refl (pre (tgt e₂) (pre refl (ret-ans (pair r₁ r₂) fr k))))))
   ... | l₁@(ok r₁ e₁) | l₂@(unb _ e₂) =
-    in-ctx k (trans (opd l₁) (opd l₂)) (pre refl (pre (tgt e₁) (pre refl (stops (tgt-wrong e₂)))))
-  ... | l₁@(unb _ e₁) | _ = in-ctx k (opd l₁) (pre refl (stops (tgt-wrong e₁)))
+    in-ctx k (trans (opd l₁) (opd l₂)) (pre refl (pre (tgt e₁) (pre refl (stops (tgt-error e₂)))))
+  ... | l₁@(unb _ e₁) | _ = in-ctx k (opd l₁) (pre refl (stops (tgt-error e₁)))
   sim-eval (fst (a ∷ [])) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (opd l) (pre refl (pre (tgt e) (fst-ans r fr k)))
-  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-wrong e)))
+  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-error e)))
   sim-eval (snd (a ∷ [])) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (opd l) (pre refl (pre (tgt e) (snd-ans r fr k)))
-  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-wrong e)))
+  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-error e)))
   sim-eval (tuple as) b fr ag k with tup-run (ops ag fr as) [] refl
   ... | inj₁ (vs , rs , ev , plus s σ) =
     in-ctx k (cong (λ x → step-in _ x val) ev) (pre s (pre⋆ σ (ret-ans (tuple rs) fr k)))
   ... | inj₂ (ev , t , σ , fin) = in-ctx k (cong (λ x → step-in _ x val) ev) (pre⋆ σ (stops fin))
   sim-eval (get (a ∷ [])) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (opd l) (pre refl (pre (tgt e) (get-ans r fr k)))
-  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-wrong e)))
+  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-error e)))
   sim-eval (inl (a ∷ [])) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (opd l) (pre refl (pre (tgt e) (pre refl (ret-ans (inl r) fr k))))
-  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-wrong e)))
+  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-error e)))
   sim-eval (inr (a ∷ [])) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (opd l) (pre refl (pre (tgt e) (pre refl (ret-ans (inr r) fr k))))
-  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-wrong e)))
+  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-error e)))
   sim-eval {n = n} {ρ} {φ} {σ} {C} {κ} (case {M = M₁} {N = M₂} a m₁ m₂) b fr ag k with atm-lk ag fr a
   ... | l@(ok r e) = in-ctx k (opd l) (pre refl (pre (tgt e) (case-ans r)))
     where
@@ -415,14 +415,14 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     case-ans (pair _ _) = stops refl
     case-ans lit = stops refl
     case-ans (tuple _) = stops refl
-  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-wrong e)))
+  ... | l@(unb _ e) = in-ctx k (opd l) (pre refl (stops (tgt-error e)))
   sim-eval (prim {p} (a ∷ c ∷ [])) b fr ag k with atm-lk ag fr a | atm-lk ag fr c
   ... | l₁@(ok {v₁} r₁ e₁) | l₂@(ok {v₂} r₂ e₂) =
     in-ctx k (trans (opd l₁) (opd l₂))
       (pre refl (pre (tgt e₁) (pre refl (pre (tgt e₂) (prim-ans r₁ r₂ fr k)))))
   ... | l₁@(ok r₁ e₁) | l₂@(unb _ e₂) =
-    in-ctx k (trans (opd l₁) (opd l₂)) (pre refl (pre (tgt e₁) (pre refl (stops (tgt-wrong e₂)))))
-  ... | l₁@(unb _ e₁) | _ = in-ctx k (opd l₁) (pre refl (stops (tgt-wrong e₁)))
+    in-ctx k (trans (opd l₁) (opd l₂)) (pre refl (pre (tgt e₁) (pre refl (stops (tgt-error e₂)))))
+  ... | l₁@(unb _ e₁) | _ = in-ctx k (opd l₁) (pre refl (stops (tgt-error e₁)))
   sim-eval {ρ = ρ} (let′ m₁ m₂) b fr ag k =
     pre refl (sim-eval m₁ (bnd (length ρ) (m≤m⊔n (height m₁) (suc (height m₂))) b) fr ag
                 (letK m₂ (sbnd (length ρ) (height m₂) (bnd (length ρ) (m≤n⊔m (height m₁) _) b)) ag k))

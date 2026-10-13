@@ -8,8 +8,8 @@
 
   Each pass is proved clock for clock, which gives its end theorem
   (Equivalent). These end theorems compose (equiv-trans): the compiled
-  program terminates with the same observation as the original, goes
-  wrong exactly when it does, and diverges exactly when it does.
+  program terminates with the same observation as the original,
+  errors exactly when it does, and diverges exactly when it does.
 
   The compiler is Compiler.Pipeline.compile, the one of the
   denotational end-to-end theorem (CompilerCorrect) and of the
@@ -64,9 +64,9 @@ compile-converges M c =
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
   where E = compile-correct M c
 
-compile-wrong : ∀ M → Closed M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (compile M)) o-wrong
-compile-wrong M c = Equivalent.terminates (compile-correct M c) o-wrong
+compile-error : ∀ M → Closed M
+  → Terminates (S.sem M) o-error ⇔ Terminates (T.sem (compile M)) o-error
+compile-error M c = Equivalent.terminates (compile-correct M c) o-error
 
 compile-diverges : ∀ M → Closed M → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
 compile-diverges M c = Equivalent.diverges (compile-correct M c)

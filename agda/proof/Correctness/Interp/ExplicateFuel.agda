@@ -56,7 +56,7 @@ assoc-set r x h = trans (bind-assoc r) (bind-cong r λ p → bind-assoc (from-ma
 
 value-here : ∀ {φ} (r : Result Val) → value (here φ r) ≡ r
 value-here timeout = refl
-value-here wrong = refl
+value-here error = refl
 value-here (ret v) = refl
 
 {- Block lists ---------------------------------------------------------------------}

@@ -19,7 +19,7 @@
   frame of slots, registers and a flag, and the call stack of the
   machine. The machine and the semantics agree on what a call does:
   the callee starts with %rdi and %rsi set and %rax and the flag unset,
-  and a call or a return goes wrong on an unset argument or result.
+  and a call or a return errors on an unset argument or result.
 
 -}
 

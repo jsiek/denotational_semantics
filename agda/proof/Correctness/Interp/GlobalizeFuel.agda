@@ -2,7 +2,7 @@
 
   Correctness of the globalize pass (Clos4 → Clos5), clock for clock (see
   the design note in Clock.agda): for every clock, a term and its
-  globalization, in related environments, both time out, both go wrong,
+  globalization, in related environments, both time out, both error,
   or return related values. Globalize maps each application to one
   application, so the two interpreters call functions in lock step.
 
@@ -84,19 +84,19 @@ module Rel (D : Defs) where
   {- the destructors, on related values -}
   first≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.first v) (T.first w)
   first≈ (pair≈ r _) = ret r
-  first≈ (fun≈ _) = wrong
-  first≈ const≈ = wrong
-  first≈ (tup≈ _) = wrong
-  first≈ (inl≈ _) = wrong
-  first≈ (inr≈ _) = wrong
+  first≈ (fun≈ _) = error
+  first≈ const≈ = error
+  first≈ (tup≈ _) = error
+  first≈ (inl≈ _) = error
+  first≈ (inr≈ _) = error
 
   second≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.second v) (T.second w)
   second≈ (pair≈ _ r) = ret r
-  second≈ (fun≈ _) = wrong
-  second≈ const≈ = wrong
-  second≈ (tup≈ _) = wrong
-  second≈ (inl≈ _) = wrong
-  second≈ (inr≈ _) = wrong
+  second≈ (fun≈ _) = error
+  second≈ const≈ = error
+  second≈ (tup≈ _) = error
+  second≈ (inl≈ _) = error
+  second≈ (inr≈ _) = error
 
   {- Clock for clock -------------------------------------------------------------}
 
@@ -132,11 +132,11 @@ module Rel (D : Defs) where
     where
     get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
     get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-    get≈ (fun≈ _) = wrong
-    get≈ (pair≈ _ _) = wrong
-    get≈ const≈ = wrong
-    get≈ (inl≈ _) = wrong
-    get≈ (inr≈ _) = wrong
+    get≈ (fun≈ _) = error
+    get≈ (pair≈ _ _) = error
+    get≈ const≈ = error
+    get≈ (inl≈ _) = error
+    get≈ (inr≈ _) = error
   run≈ ck (inl-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) (λ r → ret (inl≈ r))
   run≈ ck (inr-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) (λ r → ret (inr≈ r))
   run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
@@ -160,18 +160,18 @@ module Rel (D : Defs) where
   {- calling code k finds the globalized body in D -}
   call≈ zero (fun≈ q) ρ rewrite global-⊑ q = timeout
   call≈ (suc ck) (fun≈ {N} {ds} q) ρ rewrite global-⊑ q = run≈ ck N ds (∷-⊑ q) ρ
-  call≈ ck (pair≈ _ _) ρ = wrong
-  call≈ ck const≈ ρ = wrong
-  call≈ ck (tup≈ _) ρ = wrong
-  call≈ ck (inl≈ _) ρ = wrong
-  call≈ ck (inr≈ _) ρ = wrong
+  call≈ ck (pair≈ _ _) ρ = error
+  call≈ ck const≈ ρ = error
+  call≈ ck (tup≈ _) ρ = error
+  call≈ ck (inl≈ _) ρ = error
+  call≈ ck (inr≈ _) ρ = error
 
   branch≈ ck M N ds p ρ (inl≈ r) = run≈ ck M ds (⊑-trans (glob-grows N _) p) (r ∷ ρ)
   branch≈ ck M N ds p ρ (inr≈ r) = run≈ ck N _ p (r ∷ ρ)
-  branch≈ ck M N ds p ρ (fun≈ _) = wrong
-  branch≈ ck M N ds p ρ (pair≈ _ _) = wrong
-  branch≈ ck M N ds p ρ const≈ = wrong
-  branch≈ ck M N ds p ρ (tup≈ _) = wrong
+  branch≈ ck M N ds p ρ (fun≈ _) = error
+  branch≈ ck M N ds p ρ (pair≈ _ _) = error
+  branch≈ ck M N ds p ρ const≈ = error
+  branch≈ ck M N ds p ρ (tup≈ _) = error
 
 {- The end theorem, for any program, with no precondition ----------------------------}
 

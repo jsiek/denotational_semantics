@@ -11,7 +11,7 @@
   where D wants the result (Dest), then continue as D.
 
   A CFG statement takes several steps (one per operand), the X86 one a
-  few instructions, which must go wrong exactly when the CFG does. So
+  few instructions, which must error exactly when the CFG does. So
   from each synchronisation point (Match: the start of a tail, or a
   return) the proof gives a script (F) of how the two machines move
   to the next one: the CFG steps while X86 waits (Lag, measured by the
@@ -169,10 +169,10 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
     F s₁ s₂ = Σ[ i ∈ ℕ ] Lag L₁ Sync i s₁ s₂
 
   {- the CFG evaluates, in the frame φ, an expression whose value r goes
-     to κ, or goes wrong -}
+     to κ, or errors -}
   data Run (φ : X.Frame) (κ : G.Cont) : G.State → Maybe X.Val → Set where
     last : G.step ds s ≡ G.res ds (M.value r) φ κ → Run φ κ s r
-    fail : G.step ds s ≡ stop o-wrong → Run φ κ s nothing
+    fail : G.step ds s ≡ stop o-error → Run φ κ s nothing
     step : G.step ds s ≡ next s' → Run φ κ s' r → Run φ κ s r
 
   ev : ∀ {ρ} a {k : X.Val → Maybe X.Val} → G.step ds s ≡ G.res ds (M.value (G.atom φ a)) φ κ'
@@ -207,8 +207,8 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   to-dest {φ = φ} {ρ} (seqD k) e = _ , ε , now (write (cong (λ m → X.put (var _) m φ ρ _) e) k)
   to-dest {φ = φ} {ρ} (retD k) e = _ , cong (λ m → X.put (reg rax) m φ ρ _) e ◅ ε , ret~ k refl
 
-  {- the CFG goes wrong, and the X86 has -}
-  doom : Run φ κ s₁ nothing → X.step xds s₂ ≡ stop o-wrong → F s₁ s₂
+  {- the CFG errors, and the X86 has -}
+  doom : Run φ κ s₁ nothing → X.step xds s₂ ≡ stop o-error → F s₁ s₂
   doom (last g) h = lag-now (stop g h)
   doom (fail g) h = lag-now (stop g h)
   doom (step g r) h = lag-step g (doom r h)

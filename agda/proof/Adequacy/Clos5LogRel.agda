@@ -27,7 +27,7 @@
 
   * Environments are related on the variables in scope (𝔾 k, for a term
     with WS k): the code of a definition is run with exactly two values,
-    and an unbound variable denotes {ω}, while the machine goes wrong.
+    and an unbound variable denotes {ω}, while the machine errors.
 
 -}
 

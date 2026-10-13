@@ -16,7 +16,7 @@ module Language.CFG where
  The blocks of a body are listed newest first, as the global definitions
  are in Clos5: block l is the one with l blocks before it, and it may
  jump only to older blocks (labels below l); the start of a body may
- jump to any block. A jump to any other label goes wrong. So control
+ jump to any block. A jump to any other label errors. So control
  flow within a body is acyclic, as is the code that explicate control
  produces (the language has no loops; recursion goes through calls).
 
@@ -24,8 +24,8 @@ module Language.CFG where
  x := s; t evaluates s, assigns its value to slot x and runs t; return s
  produces the value of s; goto l runs block l; case a x l₁ l₂ assigns the
  payload of a to slot x and runs block l₁ if a is inl, l₂ if it is inr,
- and goes wrong otherwise. Reading or assigning a slot beyond the frame
- goes wrong. A call runs the start of the callee's body in a fresh frame,
+ and errors otherwise. Reading or assigning a slot beyond the frame
+ errors. A call runs the start of the callee's body in a fresh frame,
  as in Imp.
 
 -}

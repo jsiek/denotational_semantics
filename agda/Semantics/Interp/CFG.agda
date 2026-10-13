@@ -15,8 +15,8 @@
   with l older blocks and runs it with those older blocks, so the list
   shrinks at each jump and the interpreter is structurally recursive on
   the clock, then the list of blocks, then the tail. A jump to a label
-  not in the list, in particular from block l to a label ≥ l, goes
-  wrong, as CFG prescribes.
+  not in the list, in particular from block l to a label ≥ l,
+  errors, as CFG prescribes.
 
 -}
 
@@ -54,12 +54,12 @@ module _ (ds : List Body) where
   tail ck bs φ (case a x l₁ l₂) =
     do v ← atom φ a; inj? v >>= [ (λ w → set φ x w λ φ' → jump ck bs φ' l₁) , (λ w → set φ x w λ φ' → jump ck bs φ' l₂) ]
 
-  jump ck [] φ l = wrong
+  jump ck [] φ l = error
   jump ck (t ∷ bs) φ l with l ≟ length bs
   ... | yes _ = tail ck bs φ t
   ... | no _ = jump ck bs φ l
 
-  call ck nothing e w = wrong
+  call ck nothing e w = error
   call zero (just b) e w = timeout
   call (suc ck) (just (body n bs t)) e w = tail ck bs (e ∷ w ∷ replicate (n ∸ 2) zero-val) t
 

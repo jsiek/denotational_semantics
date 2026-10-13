@@ -4,7 +4,7 @@
   instructions. The machine state is a frame (the slots, as in Imp and
   CFG) and a register file: %rax, %rdi and %rsi each hold a value or
   are unset, and the flag is set (true or false) or unset; reading an
-  unset register or flag goes wrong. The values and the
+  unset register or flag errors. The values and the
   operations on them are those of Clos5 (Semantics/Interp/Clos5.agda): subq is
   prim? sub, cmpq compares integers as prim? eq does, and alloc and load
   build and take apart pairs, tuples and injections.
@@ -87,20 +87,20 @@ set-flag (φ , ρ) b k = k (φ , record ρ { flag = just b })
 {- the truth value of an equality -}
 bool? : Out → Result Bool
 bool? (bool b) = ret b
-bool? (int n) = wrong
+bool? (int n) = error
 
 {- whether an injection is an inl -}
 tag? : Val → Result Bool
 tag? (inl v) = ret true
 tag? (inr v) = ret false
-tag? _ = wrong
+tag? _ = error
 
 alloc? : Shape → List Val → Result Val
 alloc? pair (v ∷ w ∷ []) = ret (pair v w)
 alloc? tuple vs = ret (tup vs)
 alloc? inl (v ∷ []) = ret (inl v)
 alloc? inr (v ∷ []) = ret (inr v)
-alloc? _ _ = wrong
+alloc? _ _ = error
 
 load? : Field → Val → Result Val
 load? fst v = first v
@@ -108,7 +108,7 @@ load? snd v = second v
 load? (get i) v = project i v
 load? payload (inl v) = ret v
 load? payload (inr v) = ret v
-load? payload _ = wrong
+load? payload _ = error
 
 {- an instruction other than callq, then k -}
 step : ∀ {A : Set} → State → Instr → (State → Result A) → Result A
@@ -120,7 +120,7 @@ step s (sete d) k = do b ← from-maybe (flag (proj₂ s)); write s d (out (bool
 step s (testinl a) k = do v ← arg s a; b ← tag? v; set-flag s b k
 step s (alloc sh as d) k = args s [] as λ vs → do v ← alloc? sh (reverse vs); write s d v k
 step s (load f a d) k = do v ← arg s a; w ← load? f v; write s d w k
-step s (callq a) k = wrong                   {- run handles callq -}
+step s (callq a) k = error                   {- run handles callq -}
 
 {- the interpreter for a program with global definitions ds -}
 module _ (ds : List Body) where
@@ -144,12 +144,12 @@ module _ (ds : List Body) where
   run ck bs s [] (jmp l) = jump ck bs s l
   run ck bs s [] (je l₁ l₂) = do b ← from-maybe (flag (proj₂ s)); jump ck bs s (if b then l₁ else l₂)
 
-  jump ck [] s l = wrong
+  jump ck [] s l = error
   jump ck (block is j ∷ bs) s l with l ≟ length bs
   ... | yes _ = run ck bs s is j
   ... | no _ = jump ck bs s l
 
-  call ck nothing e w = wrong
+  call ck nothing e w = error
   call zero (just b) e w = timeout
   call (suc ck) (just (body n bs (block is j))) e w =
     run ck bs (zero-val ∷ zero-val ∷ replicate (n ∸ 2) zero-val , regs nothing (just e) (just w) nothing) is j

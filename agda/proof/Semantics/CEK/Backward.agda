@@ -18,7 +18,7 @@
     decreases a well-founded measure (the source waits while the target
     takes administrative steps).
 
-  All our machines are total (stuck means stopping with o-wrong), so,
+  All our machines are total (stuck means stopping with o-error), so,
   unlike CompCert, no safety premise on the source is needed.
 
   Divergence of a target is here an infinite run (Forever): for a

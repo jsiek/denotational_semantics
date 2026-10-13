@@ -18,7 +18,7 @@
   (glob≈, with the lemmas about growing tables shared with the CEK
   proof, proof/Compiler/GlobalizeTable.agda).
 
-  No precondition is needed: a free variable goes wrong in both.
+  No precondition is needed: a free variable errors in both.
 
 -}
 
@@ -30,7 +30,7 @@ import Language.Clos5 as C
 open import Compiler.Globalize
 open import proof.Compiler.GlobalizeTable
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong
+open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import proof.Semantics.Reduction.Clos4 as S
 import proof.Semantics.Reduction.Clos5 as T
@@ -175,7 +175,7 @@ module _ (D : Defs) where
 
   sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
   sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans (T.red-args D) T.Values (Pw _≈_) as (S.red-args as) as'
-  sim var≈ = wrong ε refl
+  sim var≈ = error ε refl
   sim (fun≈ e r) = val ε T.fun (fun≈ e r)
   sim (app≈ {L} {L'} {M} {M'} {N} {N'} r s t) =
     ans-in (frame _ (λ _ → refl)) (λ r' → app≈ r' s t) (sim r)
@@ -190,11 +190,11 @@ module _ (D : Defs) where
     call-sim v v' (fun≈ e r) s' w t' =
       to (one (call-step v v' w (cong (λ x → T.call? x _ _) e)))
          (≈-subst ((λ { zero → t' ; (suc zero) → s' ; (suc (suc x)) → var≈ }) , tt) r)
-    call-sim v@(T.pair _ _) v' (pair≈ _ _) s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@T.lit v' lit≈ s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@(T.tuple _) v' (tuple≈ _) s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@(T.inl _) v' (inl≈ _) s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@(T.inr _) v' (inr≈ _) s' w t' = wrong ε (call-step v v' w refl)
+    call-sim v@(T.pair _ _) v' (pair≈ _ _) s' w t' = error ε (call-step v v' w refl)
+    call-sim v@T.lit v' lit≈ s' w t' = error ε (call-step v v' w refl)
+    call-sim v@(T.tuple _) v' (tuple≈ _) s' w t' = error ε (call-step v v' w refl)
+    call-sim v@(T.inl _) v' (inl≈ _) s' w t' = error ε (call-step v v' w refl)
+    call-sim v@(T.inr _) v' (inr≈ _) s' w t' = error ε (call-step v v' w refl)
   sim lit≈ = val ε T.lit lit≈
   sim (pair≈ r s) =
     ans-in (frame _ (λ _ → refl)) (λ r' → pair≈ r' s) (sim r)
@@ -204,30 +204,30 @@ module _ (D : Defs) where
     where
     fst-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (fst-op ⦅ M ,, Nil ⦆) (S.fst? M) (C.fst-op C.⦅ V' ,, Nil ⦆)
     fst-sim v@(T.pair _ _) (pair≈ r s) = to (one (val-in (vr v))) r
-    fst-sim T.fun (fun≈ _ _) = wrong ε refl
-    fst-sim T.lit lit≈ = wrong ε refl
-    fst-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (vr v))
-    fst-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (vr v))
-    fst-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (vr v))
+    fst-sim T.fun (fun≈ _ _) = error ε refl
+    fst-sim T.lit lit≈ = error ε refl
+    fst-sim v@(T.tuple _) (tuple≈ _) = error ε (val-in (vr v))
+    fst-sim v@(T.inl _) (inl≈ _) = error ε (val-in (vr v))
+    fst-sim v@(T.inr _) (inr≈ _) = error ε (val-in (vr v))
   sim (snd≈ r) = ans-in (frame _ (λ _ → refl)) snd≈ (sim r) snd-sim
     where
     snd-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (snd-op ⦅ M ,, Nil ⦆) (S.snd? M) (C.snd-op C.⦅ V' ,, Nil ⦆)
     snd-sim v@(T.pair _ _) (pair≈ r s) = to (one (val-in (vr v))) s
-    snd-sim T.fun (fun≈ _ _) = wrong ε refl
-    snd-sim T.lit lit≈ = wrong ε refl
-    snd-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (vr v))
-    snd-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (vr v))
-    snd-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (vr v))
+    snd-sim T.fun (fun≈ _ _) = error ε refl
+    snd-sim T.lit lit≈ = error ε refl
+    snd-sim v@(T.tuple _) (tuple≈ _) = error ε (val-in (vr v))
+    snd-sim v@(T.inl _) (inl≈ _) = error ε (val-in (vr v))
+    snd-sim v@(T.inr _) (inr≈ _) = error ε (val-in (vr v))
   sim (tuple≈ rs) = ans-in (frame _ (λ _ → refl)) tuple≈ (sims rs) (λ vs rs' → val ε (T.tuple vs) (tuple≈ rs'))
   sim (get≈ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≈ (sim r) get-sim
     where
     get-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
     get-sim v@(T.tuple _) (tuple≈ rs) = ret?-ans (proj-pw {R = _≈_} i (pw-list rs)) (val-in (vr v))
-    get-sim T.fun (fun≈ _ _) = wrong ε refl
-    get-sim v@(T.pair _ _) (pair≈ _ _) = wrong ε (val-in (vr v))
-    get-sim T.lit lit≈ = wrong ε refl
-    get-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (vr v))
-    get-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (vr v))
+    get-sim T.fun (fun≈ _ _) = error ε refl
+    get-sim v@(T.pair _ _) (pair≈ _ _) = error ε (val-in (vr v))
+    get-sim T.lit lit≈ = error ε refl
+    get-sim v@(T.inl _) (inl≈ _) = error ε (val-in (vr v))
+    get-sim v@(T.inr _) (inr≈ _) = error ε (val-in (vr v))
   sim (inl≈ r) = ans-in (frame _ (λ _ → refl)) inl≈ (sim r) (λ v r' → val ε (T.inl v) (inl≈ r'))
   sim (inr≈ r) = ans-in (frame _ (λ _ → refl)) inr≈ (sim r) (λ v r' → val ε (T.inr v) (inr≈ r'))
   sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≈ r' s t) (sim r) case-sim
@@ -236,10 +236,10 @@ module _ (D : Defs) where
       → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
     case-sim v@(T.inl v₁) (inl≈ r') = to (one (val-in (vr v))) (≈-[] tt r' s)
     case-sim v@(T.inr v₁) (inr≈ r') = to (one (val-in (vr v))) (≈-[] tt r' t)
-    case-sim T.fun (fun≈ _ _) = wrong ε refl
-    case-sim v@(T.pair _ _) (pair≈ _ _) = wrong ε (val-in (vr v))
-    case-sim T.lit lit≈ = wrong ε refl
-    case-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (vr v))
+    case-sim T.fun (fun≈ _ _) = error ε refl
+    case-sim v@(T.pair _ _) (pair≈ _ _) = error ε (val-in (vr v))
+    case-sim T.lit lit≈ = error ε refl
+    case-sim v@(T.tuple _) (tuple≈ _) = error ε (val-in (vr v))
   sim (prim≈ {p} r s) =
     ans-in (frame _ (λ _ → refl)) (λ r' → prim≈ r' s) (sim r)
       λ v r' → ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (vr v))) (prim≈ r') (sim s)

@@ -62,7 +62,7 @@ body (suc n) (bind a) = body n a
 
 project : ∀ {n} → Fin n → Val → Result Val
 project i (tup vs) = from-maybe (proj i vs)
-project i _ = wrong
+project i _ = error
 
 eval : ℕ → Env → AST → Result Val
 eval-args : ∀ {n} → ℕ → Env → List Val → Args (replicate n ■) → Result (List Val)
@@ -88,14 +88,14 @@ eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
 
 apply ck ρ M (clos N vs) = do w ← eval ck ρ M; call ck N (w ∷ vs)
-apply ck ρ M _ = wrong
+apply ck ρ M _ = error
 
 call zero N ρ = timeout
 call (suc ck) N ρ = eval ck ρ N
 
 branch ck ρ M N (inl v) = eval ck (v ∷ ρ) M
 branch ck ρ M N (inr v) = eval ck (v ∷ ρ) N
-branch ck ρ M N _ = wrong
+branch ck ρ M N _ = error
 
 sem : AST → Semantics
 sem M = semantics Val obs (λ ck → eval ck [] M)

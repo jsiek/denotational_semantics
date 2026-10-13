@@ -1,8 +1,8 @@
 {-
 
   Functional big-step semantics with a clock, in the style of CakeML, for
-  any type Obs of observations with an observation o-wrong of going
-  wrong: results of clocked interpreters and the end theorem
+  any type Obs of observations with an observation o-error of stopping
+  with an error: results of clocked interpreters and the end theorem
   (Equivalent). (Clock-for-clock correctness, clocked, and the other
   lemmas are in proof/Framework/Clocked.agda.)
 
@@ -12,7 +12,7 @@
 
 -}
 
-module Framework.Clocked (Obs : Set) (o-wrong : Obs) where
+module Framework.Clocked (Obs : Set) (o-error : Obs) where
 
 open import Framework.Iff using (_⇔_)
 
@@ -26,19 +26,19 @@ private variable
 
 data Result (A : Set) : Set where
   timeout : Result A
-  wrong : Result A
+  error : Result A
   ret : A → Result A
 
 infixl 1 _>>=_
 _>>=_ : Result A → (A → Result B) → Result B
 timeout >>= f = timeout
-wrong >>= f = wrong
+error >>= f = error
 ret v >>= f = f v
 
-{- a lookup or projection, which goes wrong if there is nothing -}
+{- a lookup or projection, which errors if there is nothing -}
 from-maybe : Maybe A → Result A
 from-maybe (just v) = ret v
-from-maybe nothing = wrong
+from-maybe nothing = error
 
 {- The end theorem -------------------------------------------------------------}
 
@@ -53,7 +53,7 @@ open Semantics using (Val; run)
 
 outcome : (A → Obs) → Result A → Maybe Obs
 outcome obs timeout = nothing
-outcome obs wrong = just o-wrong
+outcome obs error = just o-error
 outcome obs (ret v) = just (obs v)
 
 module _ (P : Semantics) where

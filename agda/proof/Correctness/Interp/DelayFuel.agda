@@ -15,7 +15,7 @@
   renaming r maps each variable of ρ₁ to a related one of ρ₂ (EnvRel).
 
   No precondition is needed: the end theorem holds for every Clos3
-  program, closed or not (a free variable goes wrong in both).
+  program, closed or not (a free variable errors in both).
 
 -}
 
@@ -117,10 +117,10 @@ run≈ ck r (get i ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) get≈
   where
   get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
   get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-  get≈ (clos≈ _) = wrong
-  get≈ const≈ = wrong
-  get≈ (inl≈ _) = wrong
-  get≈ (inr≈ _) = wrong
+  get≈ (clos≈ _) = error
+  get≈ const≈ = error
+  get≈ (inl≈ _) = error
+  get≈ (inr≈ _) = error
 run≈ ck r (inl-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inl≈ v))
 run≈ ck r (inr-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inr≈ v))
 run≈ ck r (prim p ⦅ L ,, M ,, Nil ⦆) ρ =
@@ -139,10 +139,10 @@ apply≈ ck r M ρ (clos≈ {N} v) =
         (sym (rename-fuse (ext r) suc (delay M)))
     (bind-rel (run≈ ck (λ x → suc (r x)) M ρ)
       (λ w → call≈ ck N λ { zero → M.just w ; (suc zero) → M.just v ; (suc (suc x)) → M.nothing }))
-apply≈ ck r M ρ const≈ = wrong
-apply≈ ck r M ρ (tup≈ _) = wrong
-apply≈ ck r M ρ (inl≈ _) = wrong
-apply≈ ck r M ρ (inr≈ _) = wrong
+apply≈ ck r M ρ const≈ = error
+apply≈ ck r M ρ (tup≈ _) = error
+apply≈ ck r M ρ (inl≈ _) = error
+apply≈ ck r M ρ (inr≈ _) = error
 
 call≈ zero N ρ = timeout
 call≈ (suc ck) N ρ = run-id ck N ρ
@@ -152,9 +152,9 @@ run-id ck {ρ₁} M ρ =
 
 branch≈ ck r M N ρ (inl≈ v) = run≈ ck (ext r) M (env-ext v ρ)
 branch≈ ck r M N ρ (inr≈ v) = run≈ ck (ext r) N (env-ext v ρ)
-branch≈ ck r M N ρ (clos≈ _) = wrong
-branch≈ ck r M N ρ const≈ = wrong
-branch≈ ck r M N ρ (tup≈ _) = wrong
+branch≈ ck r M N ρ (clos≈ _) = error
+branch≈ ck r M N ρ const≈ = error
+branch≈ ck r M N ρ (tup≈ _) = error
 
 {- The end theorem: for every Clos3 program -----------------------------------}
 

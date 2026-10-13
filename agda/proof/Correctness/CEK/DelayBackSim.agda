@@ -17,7 +17,7 @@
     evaluating its free variables) when the target does.
   * calling a closure, when its value w was returned to the let frame
     (let-…~): the let body, fst, the variable 0, then the check that w is
-    a pair, at which point both machines go wrong on a non-function;
+    a pair, at which point both machines error on a non-function;
   * and for a pair (call-…~): the code returned to appF, snd, the variable
     0, the environment returned to appE; the source moves (to evaluating
     the operand) when the target does.

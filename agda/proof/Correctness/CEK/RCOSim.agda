@@ -28,13 +28,13 @@
 
   When the last operand returns its value, the target runs ahead to that
   final frame (retT, as in DelaySim), so that both machines take the
-  construct's own step (a call, a projection, ...) together and go wrong
+  construct's own step (a call, a projection, ...) together and error
   together.
 
   Precondition: the program is well scoped (Scoped: main is closed and each
-  definition uses only its two parameters). An unbound atom goes wrong in
+  definition uses only its two parameters). An unbound atom errors in
   the source before a later complex operand runs, but in the target only
-  after it; e.g. app (x, M, 0) with x unbound goes wrong, while
+  after it; e.g. app (x, M, 0) with x unbound errors, while
   let y = M in app (x, y, 0) diverges when M does. The compiler produces
   well-scoped programs (compile-scoped, Compiler/PipelineScope.agda).
 

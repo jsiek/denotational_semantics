@@ -15,7 +15,7 @@ module Compiler.LiftLocals where
  above it are out of scope, so no assignment clobbers a variable in
  scope. The frame has d₀ + height slots, the height being the deepest
  nesting of binders. A variable out of scope (x ≥ d) becomes a slot
- beyond the frame, so that it goes wrong, as in Clos5.
+ beyond the frame, so that it errors, as in Clos5.
 
  The pass is defined on monadic terms (Mon M), the output of remove
  complex operands.

@@ -28,13 +28,13 @@
   returning a value to appL is related to that later target state
   (retT), which the target reaches by four administrative steps
   (ret-reach) taken as part of the step that returned the value. Then
-  both machines go wrong at the same time on a non-function. (Clos4's own
+  both machines error at the same time on a non-function. (Clos4's own
   check, that the operator is code, comes at the call and always passes
   on delay's output.)
 
   No precondition is needed: unlike enclose, delay does not depend on
   which variables a term uses, so the end theorem holds for every Clos3
-  program, closed or not (a free variable goes wrong in both).
+  program, closed or not (a free variable errors in both).
 
 -}
 

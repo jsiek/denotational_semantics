@@ -10,7 +10,7 @@
   To read them: those of Theorems/Denotational.agda (the graph-model
   semantics, and ρ₀) and of Theorems/Simulation.agda (the machines, the
   observations, Closed). Converges T is terminating with some answer
-  (an observation other than o-wrong), and A ⇔ B is (A → B) × (B → A)
+  (an observation other than o-error), and A ⇔ B is (A → B) × (B → A)
   (Semantics/Observation.agda).
 
   The adequacy theorems for the Clos5 and X86 machines are proved for
@@ -27,7 +27,7 @@ module Theorems.Adequacy where
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (Value; const)
-open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 
 import Language.ISWIM as ISWIM
@@ -65,10 +65,10 @@ iswim-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
   → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (ISWIMₘ.sem M))
 iswim-nonempty-iff = AdequacyISWIM.nonempty-iff
 
-{- a program that goes wrong, or diverges, denotes the empty set -}
-iswim-wrong-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (ISWIMₘ.sem M) o-wrong
+{- a program that errors, or diverges, denotes the empty set -}
+iswim-error-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (ISWIMₘ.sem M) o-error
   → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
-iswim-wrong-empty = AdequacyISWIM.wrong-empty
+iswim-error-empty = AdequacyISWIM.error-empty
 
 iswim-diverges-empty : ∀ (M : ISWIM.AST) → Closed M → Diverges (ISWIMₘ.sem M)
   → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
@@ -95,9 +95,9 @@ clos5-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
   → nonempty ⟦ compile M ⟧₅ ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
 clos5-nonempty-iff M c = AdequacyClos5.nonempty-iff (compile M) (AdequacyClos5.compile-wf M c)
 
-clos5-wrong-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (Clos5ₘ.sem (compile M)) o-wrong
+clos5-error-empty : ∀ (M : ISWIM.AST) → Closed M → Terminates (Clos5ₘ.sem (compile M)) o-error
   → ∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅)
-clos5-wrong-empty M c = AdequacyClos5.wrong-empty (compile M) (AdequacyClos5.compile-wf M c)
+clos5-error-empty M c = AdequacyClos5.error-empty (compile M) (AdequacyClos5.compile-wf M c)
 
 clos5-diverges-empty : ∀ (M : ISWIM.AST) → Closed M → Diverges (Clos5ₘ.sem (compile M))
   → ∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅)
@@ -119,8 +119,8 @@ x86-nonempty-iff M c = AdequacyX86.adequacy-converges _ wf , AdequacyX86.sound-n
 
 {- for a closed ISWIM program M, the ISWIM machine and the machine
    running the compiled program terminate with the same constants, and
-   one terminates with an answer exactly when the other does. (Going
-   wrong and diverging both denote the empty set, so this cannot tell
+   one terminates with an answer exactly when the other does. (An
+   error and divergence both denote the empty set, so this cannot tell
    them apart; Theorems/Simulation.agda can.) -}
 
 end-to-end-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
