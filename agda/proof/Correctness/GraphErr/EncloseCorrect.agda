@@ -27,7 +27,7 @@ open import proof.Semantics.GraphErr.Prim
 open import Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
 open import proof.Semantics.GraphErr.ISWIM
-open import proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; push) renaming
+open import proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; push; apply-push; push-plus) renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)
 import Language.Clos2 as L2
 open import Compiler.Optimize using (bind-n-ast)
@@ -57,15 +57,6 @@ Vals D = val∈ D × Clean D
 
 init₀ : Env Value
 init₀ = λ _ → ⌈ ω ⌉
-
-apply-push : ∀ k (a : L2.Arg (ν-n k (ν ■))) (ρ : Env Value) Ds (Y : 𝒫 Value)
-  → apply-n k (⟦ a ⟧ₐ₂ ρ) Ds Y ≡ ⟦ L2.unbind-n k a ⟧₂ (Y • push Ds ρ)
-apply-push zero (L2.bind (L2.ast N)) ρ _ Y = refl
-apply-push (suc k) (L2.bind a) ρ ⟨ D , Ds ⟩ Y = apply-push k a (D • ρ) Ds Y
-
-push-plus : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ j → push Ds ρ (n + j) ≡ ρ j
-push-plus zero _ ρ j = refl
-push-plus (suc n) ⟨ D , Ds ⟩ ρ j rewrite sym (+-suc n j) = push-plus n Ds (D • ρ) (suc j)
 
 unbind-bind : ∀ m (N : L2.AST) → L2.unbind-n m (bind-n-ast m N) ≡ N
 unbind-bind zero N = refl

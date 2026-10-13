@@ -11,7 +11,9 @@ open import proof.Semantics.GraphErr.Prim
 open import Language.Clos2
 open import Semantics.GraphErr.Clos2 public hiding (⟦_⟧; init)
 
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _+_)
+open import Data.Nat.Properties using (+-suc)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
@@ -73,6 +75,16 @@ open Semantics {{...}} public
 push : ∀ {n} → Results (𝒫 Value) (replicate n ■) → Env Value → Env Value
 push {zero} _ ρ = ρ
 push {suc n} ⟨ D , Ds ⟩ ρ = push Ds (D • ρ)
+
+{- a closure's body, applied to its free variables and argument -}
+apply-push : ∀ k (a : Arg (ν-n k (ν ■))) (ρ : Env Value) Ds (Y : 𝒫 Value)
+  → apply-n k (⟦ a ⟧ₐ ρ) Ds Y ≡ ⟦ unbind-n k a ⟧ (Y • push Ds ρ)
+apply-push zero (bind (ast N)) ρ _ Y = refl
+apply-push (suc k) (bind a) ρ ⟨ D , Ds ⟩ Y = apply-push k a (D • ρ) Ds Y
+
+push-plus : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ j → push Ds ρ (n + j) ≡ ρ j
+push-plus zero _ ρ j = refl
+push-plus (suc n) ⟨ D , Ds ⟩ ρ j rewrite sym (+-suc n j) = push-plus n Ds (D • ρ) (suc j)
 
 {- consistent environments give consistent denotations -}
 Clos2ᵉ-con-env : ∀ M {ρ ρ'} → ρ ~ₑ[ Every _~_ ] ρ' → Every _~_ (⟦ M ⟧ ρ) (⟦ M ⟧ ρ')
