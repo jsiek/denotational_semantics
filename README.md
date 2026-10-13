@@ -9,10 +9,14 @@ model; CEK machine + simulation, after CompCert; clocked interpreter +
 value relations, after CakeML; reduction semantics + simulation, by
 substitution), with the adequacy of the graph model for the machines:
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
+
+The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
+simplified version of Chez Scheme's cp0: constant folding, case of a
+known injection, projection from a known tuple, and β on values.
 
 The public theorem statements are in `agda/Theorems/`; with the
 definitions they use (everything outside `agda/proof/`) they are what

@@ -2,7 +2,7 @@
 
   The closure-conversion compiler and its correctness proofs.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -73,6 +73,7 @@ import proof.Framework.Reduction
    remove complex operands
    --------------------------------------------------------------------------- -}
 
+import proof.Compiler.SimplifyFacts
 import proof.Compiler.EncloseScope
 import proof.Compiler.GlobalizeTable
 import proof.Compiler.PipelineScope
@@ -93,6 +94,7 @@ import proof.Semantics.Graph.Clos4IswimContinuous
 import proof.Semantics.Graph.Clos5IswimContinuous
 
 {- correctness of each pass -}
+import proof.Correctness.Graph.SimplifyCorrect
 import proof.Correctness.Graph.EncloseCorrect
 import proof.Correctness.Graph.OptimizeCorrect
 import proof.Correctness.Graph.ConcretizeCorrect
@@ -124,6 +126,7 @@ import proof.Correctness.Graph.ConcretizeExample
 import proof.Correctness.Graph.EncloseExample
 import proof.Correctness.Graph.PipelineExample
 import proof.Correctness.Graph.CompilerExample
+import proof.Compiler.Examples.SimplifyExample
 import proof.Compiler.Examples.RCOExample
 import proof.Compiler.Examples.LiftLocalsExample
 import proof.Compiler.Examples.ExplicateExample
@@ -140,6 +143,7 @@ import proof.Semantics.CEK.Smallstep
 import proof.Semantics.CEK.Simulation
 
 {- correctness of each pass, and of the compiler into each language -}
+import proof.Correctness.CEK.SimplifySim
 import proof.Correctness.CEK.EncloseSim
 import proof.Correctness.CEK.OptimizeSim
 import proof.Correctness.CEK.ConcretizeSim
@@ -191,6 +195,7 @@ import proof.Adequacy.EndToEnd
 import proof.Semantics.Interp.Clock
 
 {- correctness of each pass, and of the compiler into each language -}
+import proof.Correctness.Interp.SimplifyFuel
 import proof.Correctness.Interp.EncloseFuel
 import proof.Correctness.Interp.OptimizeFuel
 import proof.Correctness.Interp.ConcretizeFuel
@@ -217,6 +222,7 @@ import proof.Semantics.Reduction.Clos4
 import proof.Semantics.Reduction.Clos5
 
 {- correctness of each pass, and of the compiler into each language -}
+import proof.Correctness.Reduction.SimplifyRed
 import proof.Correctness.Reduction.EncloseRed
 import proof.Correctness.Reduction.OptimizeRed
 import proof.Correctness.Reduction.ConcretizeRed

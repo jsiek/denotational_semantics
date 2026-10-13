@@ -2,7 +2,7 @@
 
   Correctness of the whole closure-conversion compiler:
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   For a closed ISWIM program, the compiled Clos5 program produces the same
@@ -24,6 +24,8 @@ open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
 open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
+open import Compiler.Simplify using (simplify)
 open import proof.Correctness.Graph.EncloseCorrect using (enclose-correct-closed)
 open import proof.Correctness.Graph.OptimizeCorrect using (optimize-correct-closed)
 open import proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct-closed)
@@ -57,12 +59,13 @@ Same-trans ⟨ c₁ , n₁ ⟩ ⟨ c₂ , n₂ ⟩ = ⟨ (λ c → ⇔-trans (c�
 
 compile-same : ∀ (M : AST) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧ₚ
 compile-same M =
-  Same-trans (≃→Same (≃-trans (enclose-correct-closed M)
-                     (≃-trans (optimize-correct-closed M₂) (concretize-correct-closed M₂'))))
+  Same-trans (≃→Same (≃-trans (simplify-correct M) (≃-trans (enclose-correct-closed M₁)
+                     (≃-trans (optimize-correct-closed M₂) (concretize-correct-closed M₂')))))
   (Same-trans ⟨ delay-correct-const M₃ , delay-correct-nonempty M₃ ⟩
               (≃→Same (globalize-correct (compile₄ M))))
   where
-  M₂ = enclose M
+  M₁ = simplify M
+  M₂ = enclose M₁
   M₂' = optimize-program M₂
   M₃ = concretize-program M₂'
 

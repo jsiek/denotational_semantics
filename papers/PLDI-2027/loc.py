@@ -124,12 +124,16 @@ GROUPS = [
     # each machine and interpreter
     ('den', 'semantics of the languages',
      [G + 'Prim.agda', GP + 'Prim.agda',
-      G + 'ISWIM.agda', GP + 'ISWIM.agda',
+      G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda',
       G + 'Clos2Iswim.agda', GP + 'Clos2Iswim.agda',
       G + 'Clos3Iswim.agda', GP + 'Clos3Iswim.agda', GP + 'Clos3IswimContinuous.agda',
       G + 'Clos4Iswim.agda', GP + 'Clos4Iswim.agda', GP + 'Clos4IswimContinuous.agda',
       G + 'Clos5Iswim.agda', GP + 'Clos5IswimContinuous.agda',
       G + 'Imp.agda', G + 'ImpK.agda', G + 'CFG.agda', G + 'X86.agda']),
+    # simplify's syntactic lemmas (SimplifyFacts) are used by all four of its
+    # proofs, so they are counted in the simplify row of each column
+    ('den+op+ck+red', 'simplify', [PC + 'SimplifyFacts.agda']),
+    ('den', 'simplify', [GC + 'SimplifyCorrect.agda']),
     ('den', 'enclose', [GC + 'EncloseCorrect.agda']),
     ('den', 'optimize', [GC + 'OptimizeCorrect.agda']),
     ('den', 'concretize', [GC + 'ConcretizeCorrect.agda']),
@@ -160,6 +164,7 @@ GROUPS = [
     ('op+red', 'semantics of the languages',
      [O + 'Values.agda', O + 'Imp.agda', O + 'CFG.agda', O + 'X86.agda',
       O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+    ('op', 'simplify', [OC + 'SimplifySim.agda']),
     ('op', 'enclose', [OC + 'EncloseSim.agda']),
     ('op', 'optimize', [OC + 'OptimizeSim.agda']),
     ('op', 'concretize', [OC + 'ConcretizeSim.agda']),
@@ -176,6 +181,7 @@ GROUPS = [
     # reduction semantics (substitution) for the languages with binders,
     # and the framework at this compiler's observations (Smallstep.agda)
     ('red', 'semantics of the languages', [RD + '*.agda', RP + '*.agda']),
+    ('red', 'simplify', [RC + 'SimplifyRed.agda']),
     ('red', 'enclose', [RC + 'EncloseRed.agda']),
     ('red', 'optimize', [RC + 'OptimizeRed.agda']),
     ('red', 'concretize', [RC + 'ConcretizeRed.agda']),
@@ -187,6 +193,7 @@ GROUPS = [
 
     # with the framework at this compiler's observations (Clock.agda)
     ('ck', 'semantics of the languages', [F + '*.agda', FP + 'Clock.agda']),
+    ('ck', 'simplify', [FC + 'SimplifyFuel.agda']),
     ('ck', 'enclose', [FC + 'EncloseFuel.agda']),
     ('ck', 'optimize', [FC + 'OptimizeFuel.agda']),
     ('ck', 'concretize', [FC + 'ConcretizeFuel.agda']),
@@ -200,7 +207,7 @@ GROUPS = [
 
     ('adeq', 'ISWIM',
      [AP + 'Common.agda', AP + 'Soundness.agda', AP + 'LogRel.agda',
-      AP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda']),
+      AP + 'ISWIM.agda']),
     ('adeq', 'Clos5',
      [AP + 'Clos5Common.agda', AP + 'Clos5Soundness.agda', AP + 'Clos5LogRel.agda',
       AP + 'Clos5.agda', AP + 'Values.agda']),
@@ -332,8 +339,11 @@ def sides_of(side):
 
 def main():
     seen, counts, files_of = {}, {}, {}
+    # a file named explicitly by a group is not matched by another's wildcard
+    explicit = {p for _, _, pats in GROUPS for p in pats if '*' not in p}
     for side, name, pats in GROUPS:
-        files = sorted({f for p in pats for f in glob.glob(p)})
+        files = sorted({f for p in pats for f in glob.glob(p)
+                        if '*' not in p or f not in explicit})
         if not files:
             if side in ('ck', 'red'):
                 continue
@@ -417,7 +427,7 @@ def main():
     extra['adeq'] = sorted((shared & reach['adeq']) - by_all - set(extra['den']))
     unused = sorted(shared - set().union(*(reach[s] for s in own)))
 
-    rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
+    rows = ['semantics of the languages', 'simplify', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
             'select instructions',
             'composition']

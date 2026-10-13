@@ -136,3 +136,10 @@ equiv-trans E F = record
              , (λ d → proj₂ E.diverges (proj₂ F.diverges d)) }
   where module E = Equivalent E
         module F = Equivalent F
+
+{- equivalence is symmetric -}
+equiv-sym : ∀ {L₁ L₂} → Equivalent L₁ L₂ → Equivalent L₂ L₁
+equiv-sym E = record
+  { terminates = λ o → proj₂ (E.terminates o) , proj₁ (E.terminates o)
+  ; diverges = proj₂ E.diverges , proj₁ E.diverges }
+  where module E = Equivalent E

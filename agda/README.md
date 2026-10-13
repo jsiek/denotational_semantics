@@ -2,7 +2,7 @@
 
 A compiler from ISWIM to X86,
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -13,6 +13,12 @@ CompCert); clocked interpreter + value relations (in the style of
 CakeML); and reduction semantics + simulation (small-step reduction by
 substitution, and forward simulations); and the graph model proved sound
 and adequate for the machines.
+
+The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
+simplified version of Chez Scheme's cp0: constant folding, case of a
+known injection, projection from a known tuple, and β on values.
+Simplify removes function calls, so its interpreter proof is not clock
+for clock: the simplified program needs no more clock than the original.
 
 Check everything, from the root of the repository, with
 
@@ -35,8 +41,8 @@ that every module outside `proof/` is used by a theorem statement).
 
 * Theorem statements (`Theorems/`), each with its type written out and
   defined as the corresponding theorem of `proof/`:
-  * `Theorems/Denotational.agda`: each pass preserves the meaning of a
-    program in the graph model (delay: its constants and whether it has
+  * `Theorems/Denotational.agda`: each pass preserves the
+    meaning of a program in the graph model (delay: its constants and whether it has
     any), and the whole compiler, into Clos5, monadic Clos5, Imp, CFG and X86,
     preserves the constants a program produces and whether it produces
     anything.
@@ -101,13 +107,18 @@ directory per style, and adequacy is in `proof/Adequacy/`:
 * `proof/Correctness/Graph/`: the denotational proofs of
   the passes, and `proof/Semantics/Graph/`: the monotonicity,
   consistency and continuity of the semantics;
-* `proof/Correctness/CEK/`: the forward simulations, and
+* `proof/Correctness/CEK/`: the forward simulations (for simplify,
+  `SimplifySim.agda`, of the target by the source, which may stutter),
+  and
   `proof/Semantics/CEK/`: the lemmas about runs of the machines;
-* `proof/Correctness/Interp/`: the clock-for-clock proofs, and
+* `proof/Correctness/Interp/`: the clock-for-clock proofs (for
+  simplify, `SimplifyFuel.agda`, clock-monotone instead: `clocked-le`,
+  `proof/Framework/Clocked.agda`), and
   `proof/Semantics/Interp/Clock.agda`: clock-for-clock correctness at
   this compiler's observations;
 * `proof/Correctness/Reduction/`: the forward simulations between
-  reduction semantics (explicate control and select instructions are the
+  reduction semantics (for simplify, `SimplifyRed.agda`, of the target by
+  the source) (explicate control and select instructions are the
   CEK proofs, `proof/Correctness/CEK/{Explicate,Select}Sim.agda`,
   shared), and `proof/Semantics/Reduction/`: the values of each reduction
   semantics;
@@ -118,8 +129,10 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   continuity, renaming, substitution and relations closed under it,
   forward simulations, simulations between reduction semantics,
   clock-for-clock correctness);
-* `proof/Compiler/`: syntactic facts about the passes, and
-  examples;
+* `proof/Compiler/`: syntactic facts about the passes (for simplify, the
+  values and known values it inspects, `SimplifyFacts.agda`, used by its
+  four proofs, and that it keeps programs closed, `SimplifyScope.agda`),
+  and examples;
 * experiments, not part of the main results: a direct semantics of Imp
   (`proof/Semantics/Graph/ImpDirect.agda`) with lift locals and
   explicate control proved against it

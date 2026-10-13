@@ -7,7 +7,7 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -41,6 +41,7 @@ open import Language.Mon using (MonProgram)
 import Language.Imp as Imp
 import Language.CFG as CFG
 
+open import Compiler.Simplify using (simplify)
 open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
@@ -65,6 +66,7 @@ import Semantics.CEK.Imp as Impₘ
 import Semantics.CEK.CFG as CFGₘ
 import Semantics.CEK.X86 as X86ₘ
 
+import proof.Correctness.CEK.SimplifySim as SimplifySim
 import proof.Correctness.CEK.EncloseSim as EncloseSim
 import proof.Correctness.CEK.OptimizeSim as OptimizeSim
 import proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
@@ -78,6 +80,11 @@ import proof.Correctness.CEK.CompilerSim as CompilerSim
 import proof.Correctness.CEK.CompilerX86Sim as CompilerX86Sim
 
 {- Each pass ------------------------------------------------------------------}
+
+{- simplify, for closed programs -}
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMₘ.sem M) (ISWIMₘ.sem (simplify M))
+simplify-correct = SimplifySim.simplify-correct
 
 {- enclose, for closed programs -}
 enclose-correct : ∀ (M : ISWIM.AST) → Closed M

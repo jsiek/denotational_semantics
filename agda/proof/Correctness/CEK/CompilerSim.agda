@@ -3,7 +3,7 @@
   Correctness of the whole closure-conversion compiler, by CEK machines and
   forward simulations:
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   Each pass is proved by a forward simulation, which, since all the
@@ -28,6 +28,9 @@ open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import proof.Compiler.EncloseScope using (Closed; enclose-closed)
+open import proof.Compiler.SimplifyScope using (simplify-closed)
+open import Compiler.Simplify using (simplify)
+open import proof.Correctness.CEK.SimplifySim using (simplify-correct)
 open import proof.Correctness.CEK.EncloseSim using (enclose-correct)
 open import proof.Correctness.CEK.OptimizeSim using (optimize-correct)
 open import proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
@@ -42,8 +45,10 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equiv-trans (enclose-correct M c) (equiv-trans (optimize-correct _ (enclose-closed M c))
-    (equiv-trans (concretize-correct _) (equiv-trans (delay-correct _) (globalize-correct _))))
+  equiv-trans (simplify-correct M c)
+    (equiv-trans (enclose-correct _ c') (equiv-trans (optimize-correct _ (enclose-closed (simplify M) c'))
+      (equiv-trans (concretize-correct _) (equiv-trans (delay-correct _) (globalize-correct _)))))
+  where c' = simplify-closed M c
 
 {- in particular -}
 

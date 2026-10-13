@@ -7,7 +7,7 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -42,6 +42,7 @@ open import Language.Mon using (MonProgram)
 import Language.Imp as Imp
 import Language.CFG as CFG
 
+open import Compiler.Simplify using (simplify)
 open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
@@ -66,6 +67,7 @@ import Semantics.Interp.Imp as Impᵢ
 import Semantics.Interp.CFG as CFGᵢ
 import Semantics.Interp.X86 as X86ᵢ
 
+import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
 import proof.Correctness.Interp.EncloseFuel as EncloseFuel
 import proof.Correctness.Interp.OptimizeFuel as OptimizeFuel
 import proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
@@ -78,6 +80,14 @@ import proof.Correctness.Interp.SelectFuel as SelectFuel
 import proof.Correctness.Interp.CompilerFuel as CompilerFuel
 
 {- Each pass ------------------------------------------------------------------}
+
+{- simplify, for closed programs. Not clock for clock: simplify removes
+   calls, so the simplified program needs no more clock than the original,
+   which may need more (the proof relates the two at the same clock in one
+   direction, and at some larger clock in the other) -}
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (ISWIMᵢ.sem (simplify M))
+simplify-correct = SimplifyFuel.simplify-correct
 
 {- enclose, for closed programs -}
 enclose-correct : ∀ (M : ISWIM.AST) → Closed M
