@@ -65,7 +65,9 @@ that every module outside `proof/` is used by a theorem statement).
     it terminates with an answer.
   * `Theorems/GraphErrors.agda` (a pilot): in the graph model with
     errors, where an error denotes a set holding ω and divergence ∅,
-    simplify and enclose preserve the meaning of closed programs, and
+    simplify and enclose preserve the meaning of closed programs,
+    concretize that of every program, delay preserves and reflects
+    errors, constants and values, and
     the model is adequate for the ISWIM machine on all three outcomes
     (an error, an answer, divergence).
 * The compiler, shared by all four styles:
@@ -82,7 +84,7 @@ that every module outside `proof/` is used by a theorem statement).
     `bound`), base types, and list lookups.
 * The semantics, per style:
   * graph model with errors (a pilot): `Semantics/GraphErr/` (ISWIM and
-    Clos2) and `Framework/GraphModel/ErrorOps.agda` (the
+    Clos2–Clos4) and `Framework/GraphModel/ErrorOps.agda` (the
     error-propagating operators);
   * denotational: `Semantics/Graph/` (the meaning of the primitives,
     `Prim.agda`, and the semantics of each language) and

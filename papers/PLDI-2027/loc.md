@@ -38,7 +38,7 @@ As of PR #50 (after the infrastructure audit, PRs #42 and #44–#47, and the gra
 
 The denotational semantics row includes the monotonicity, consistency and continuity of each language; since PR #47 they are assembled from a table of each language's operators, whose properties are proved once in the infrastructure (`Good` in `proof/Framework/GraphModel/Ops`), so the continuity of ISWIM that simplify's proof uses for β is a one-line re-export (`proof/Semantics/Graph/ISWIMContinuous.agda`). The simplify row of each column includes the syntactic lemmas about the pass that all four proofs use (`proof/Compiler/SimplifyFacts.agda`, 110 lines); that simplify keeps programs closed (`proof/Compiler/SimplifyScope.agda`, 125 lines), which only the operational compositions need, is in the shared row. The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)). The reduction column's semantics row is its reduction semantics of ISWIM and Clos2–Clos5 with their values (378 lines: 274 for the reductions, 104 for their values) and the machines of Imp, CFG and X86 that it shares with the CEK column (266); its explicate-control and select-instructions rows are the CEK proofs, shared (see [Reduction semantics + simulation](#reduction-semantics--simulation)).
 
-Language-independent infrastructure, not in any total (see [Language-independent infrastructure](#language-independent-infrastructure)); each proof column is the part of a group that the proof reaches. The graph model is three groups since PR #50: what any graph-model semantics uses (values, consistency, and the machinery for any operators: continuity, `Good`, the properties of whole terms, with constants and tuple components), the graph model's operators, and the error-propagating operators of the pilot, so that each model is charged only for the operators it uses (see [Graph model with errors (pilot)](#graph-model-with-errors-pilot)); the last column is the pilot's (semantics, simplify, enclose and its adequacy):
+Language-independent infrastructure, not in any total (see [Language-independent infrastructure](#language-independent-infrastructure)); each proof column is the part of a group that the proof reaches. The graph model is three groups since PR #50: what any graph-model semantics uses (values, consistency, and the machinery for any operators: continuity, `Good`, the properties of whole terms, with constants and tuple components), the graph model's operators, and the error-propagating operators of the pilot, so that each model is charged only for the operators it uses (see [Graph model with errors (pilot)](#graph-model-with-errors-pilot)); the last column is the pilot's (semantics, simplify, enclose, concretize, delay and its adequacy):
 
 | language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation | used by graph model with errors (pilot) |
 |---|---:|---:|---:|---:|---:|---:|
@@ -46,16 +46,16 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | syntax lemmas (renaming, scoping, uses), list lookups | 499 | 356 | 422 | 407 | 484 | 407 |
 | base types, logical equivalence | 20 | 17 | 20 | 20 | 20 | 20 |
 | denotational framework | 372 | 350 | — | — | — | 372 |
-| graph model: values, consistency, machinery for any operators | 293 | 293 | — | — | — | 293 |
-| graph model: its operators | 555 | 555 | — | — | — | — |
-| graph model with errors: error-propagating operators | 685 | — | — | — | — | 685 |
+| graph model: values, consistency, machinery for any operators | 364 | 364 | — | — | — | 364 |
+| graph model: its operators | 485 | 485 | — | — | — | — |
+| graph model with errors: error-propagating operators | 951 | — | — | — | — | 951 |
 | small-step framework: transition systems, simulations | 243 | — | 243 | — | 243 | 127 |
 | reduction framework: reduction semantics, simulations between them | 235 | — | — | — | 235 | — |
 | clocked big-step framework | 243 | — | — | 243 | — | — |
 | runs of a step function from any state | 29 | — | — | — | — | 29 |
-| **total** | **3364** | **1761** | **875** | **860** | **1172** | **2123** |
+| **total** | **3631** | **1762** | **875** | **860** | **1172** | **2460** |
 
-Adequacy uses 1971 lines of the infrastructure, 210 of them not used by the denotational proof.
+Adequacy uses 1972 lines of the infrastructure, 210 of them not used by the denotational proof.
 
 Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86` (`SelectCorrect`), into statements about running programs (`proof/Adequacy/EndToEnd.agda`; see [Adequacy for X86](#adequacy-for-x86)). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output, that simplify keeps programs closed, and growing tables, 456 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM, Clos5, Imp and X86 machines (367 lines, plus the 1-line instance of the small-step framework; X86's frames are Imp's), which adequacy reuses from the simulation proof and which are not counted again.
 
@@ -85,19 +85,19 @@ The lines a reader must audit to trust each style's theorems (see [Audit surface
 
 | audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for reduction semantics + simulation | read for adequacy | read for graph model with errors (pilot) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| languages, compiler passes, syntax, base types (shared) | 1081 | 1022 | 1058 | 1058 | 1081 | 1043 | 468 |
+| languages, compiler passes, syntax, base types (shared) | 1081 | 1022 | 1058 | 1058 | 1081 | 1043 | 594 |
 | graph model: domain, operators, semantics of each language | 412 | 412 | — | — | — | 412 | 96 |
 | simulation: small-step machines, transition systems | 693 | — | 693 | — | 299 | 404 | 110 |
 | interpreter: clocked interpreters, results | 501 | — | — | 501 | — | — | — |
 | reduction: reduction semantics, machines of Imp, CFG and X86, transition systems | 594 | — | 299 | — | 594 | 260 | 36 |
-| graph model with errors: domain, error-propagating operators, semantics of ISWIM and Clos2 | 310 | 96 | 110 | — | 36 | 206 | 310 |
+| graph model with errors: domain, error-propagating operators, semantics of ISWIM and Clos2 | 365 | 96 | 110 | — | 36 | 206 | 365 |
 | graph model: theorem statements | 70 | 70 | — | — | — | — | — |
 | simulation: theorem statements | 54 | — | 54 | — | — | — | — |
 | interpreter: theorem statements | 54 | — | — | 54 | — | — | — |
 | reduction: theorem statements | 54 | — | — | — | 54 | — | — |
 | adequacy: theorem statements | 51 | — | — | — | — | 51 | — |
-| graph model with errors: theorem statements | 31 | — | — | — | — | — | 31 |
-| **total** | **3400** | **1504** | **1805** | **1613** | **1729** | **1910** | **809** |
+| graph model with errors: theorem statements | 43 | — | — | — | — | — | 43 |
+| **total** | **3467** | **1504** | **1805** | **1613** | **1729** | **1910** | **1002** |
 
 The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Denotational.agda`, 2 lines), not counted in their column.
 
@@ -144,10 +144,11 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
 | `Framework.GraphModel.DOpSig` (+ proof/) | 46 | graph model, adequacy, graph model with errors |
 | `proof.Framework.GraphModel.DenotProperties` | 14 | graph model, adequacy, graph model with errors |
 | `Framework.GraphModel.Domain` (+ proof/) | 70 | graph model, adequacy, graph model with errors |
-| `proof.Framework.GraphModel.DomainUtil` | 85 | graph model, adequacy |
+| `proof.Framework.GraphModel.DomainUtil` | 15 | graph model, adequacy |
+| `proof.Framework.GraphModel.DomainUtilBase` | 71 | graph model, adequacy, graph model with errors |
 | `Framework.GraphModel.Env` (+ proof/) | 84 | graph model, adequacy, graph model with errors |
-| `proof.Framework.GraphModel.ErrorContinuity` | 157 | graph model with errors |
-| `Framework.GraphModel.ErrorOps` (+ proof/) | 528 | graph model with errors |
+| `proof.Framework.GraphModel.ErrorContinuity` | 221 | graph model with errors |
+| `Framework.GraphModel.ErrorOps` (+ proof/) | 730 | graph model with errors |
 | `Framework.GraphModel.Ops` (+ proof/) | 320 | graph model, adequacy |
 | `Framework.GraphModel.OpsBase` (+ proof/) | 36 | graph model, adequacy, graph model with errors |
 | `proof.Framework.GraphModel.RenameSem` | 49 | graph model, adequacy, graph model with errors |
@@ -191,7 +192,7 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
   * `Framework/Syntax/` (lemmas in `proof/Framework/Syntax/`): the syntax of any signature and the lemmas about it, `Rename.agda` (`rename-cong`, `rename-fuse`, `rename-id`, from `DelaySim`), `Scope.agda` (well-scoped terms and `ws-uses`, from `OptimizeSim`), `ScopeRename.agda` (renaming preserves well-scopedness, formerly adequacy's `Scope`), `Uses.agda`; and `ListUtil.agda`, lookup in an environment, projection from a tuple, and lemmas about lookups, also in reversed and replicated lists (formerly `Operational/Machine/Common.agda`, plus list lemmas from `ConcretizeSim` and `GlobalizeSim`, and from adequacy);
   * `Framework/Primitives.agda` (base types) and `Framework/Iff.agda` (`_⇔_`);
   * the denotational framework: sets as predicates, environments, DOp signatures, `abt.Fold2` (`Framework/GraphModel/`, `Framework/abt/`), and in `proof/Framework/GraphModel/` the semantics of any signature and its monotonicity (`Semantics`, formerly `NewSemantics`, which also gives consistency), monotonicity and consistency of operators (`DenotProperties`), `RenameSem`;
-  * the graph model, `Framework/GraphModel/`, in three groups (since PR #50): (a) values and consistency (`Domain`), the operators the two models share unchanged (`OpsBase`: constants and the components of a tuple of results), the machinery for any operators (`ContinuityBase`: finite approximations, `Continuous`, `Good`) and the properties of whole terms of any graph-model semantics (`SemanticsCore`: term continuity, `GoodSemantics`); (b) the graph model's operators (`Ops`), their continuity (`Continuity`), their β laws on terms (`SemanticsUtil`) and `DomainUtil`; (c) the error-propagating operators of the graph model with errors (`ErrorOps`, `ErrorContinuity`), used only by the pilot;
+  * the graph model, `Framework/GraphModel/`, in three groups (since PR #50): (a) values and consistency (`Domain`), the operators the two models share unchanged (`OpsBase`: constants and the components of a tuple of results), the machinery for any operators (`ContinuityBase`: finite approximations, `Continuous`, `Good`) the properties of whole terms of any graph-model semantics (`SemanticsCore`: term continuity, `GoodSemantics`) and facts about values (`DomainUtilBase`: tags, depth, flat values); (b) the graph model's operators (`Ops`), their continuity (`Continuity`), their β laws on terms (`SemanticsUtil`) and facts about them (`DomainUtil`); (c) the error-propagating operators of the graph model with errors (`ErrorOps`, `ErrorContinuity`), used only by the pilot;
   * the small-step framework (`Framework/Smallstep.agda`: transition systems and the iff end theorem; `proof/Framework/{Smallstep,Simulation}.agda`: lemmas about runs, forward simulation, backward from forward plus determinism) and the clocked one (`Framework/Clocked.agda`: results with timeout, the clocked end theorem; `proof/Framework/Clocked.agda`: `clocked`), both parameterized over the type of observations;
   * the reduction framework (`Framework/Reduction.agda`: a reduction as a step function with congruence rules, `step-in`, and its machine; `proof/Framework/Reduction.agda`: frames, how a target term answers a source term's reduction, congruence, and the end theorem), and the substitution library (`Framework/Syntax/Subst.agda`: substitution for any signature; `proof/Framework/Syntax/{Subst,ScopeSubst,SubstRel}.agda`: the σ-calculus fusion lemmas, scoping, and the closure of a relation on terms under renaming and then substitution). They are used only by the reduction proof.
 * **semantics of the languages:**
@@ -207,7 +208,7 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
 ## Caveats
 
 * **The theorems differ.** The simulation, interpreter and reduction theorems have the same shape. They are stronger than the denotational one: they separate errors from divergence. In the graph model, both denote ∅.
-* **Terminology: "error".** An error (the observation `o-error`, the `error` result of an interpreter or of `red`) is a *trapped* error in the sense of Cardelli ("Type Systems"): the program stops and the semantics reports it. Every operational semantics here is a total step or eval function, so no program can get stuck, which would be an *untrapped* error; a term that `red` cannot reduce is reported as an error. (Before this, the code said "wrong", after Milner, which in Cardelli's terms usually means an untrapped error.) The graph model does not distinguish errors from divergence: both denote ∅. The graph model with errors, using ω, does; it is a pilot for ISWIM and Clos2, see [Graph model with errors (pilot)](#graph-model-with-errors-pilot).
+* **Terminology: "error".** An error (the observation `o-error`, the `error` result of an interpreter or of `red`) is a *trapped* error in the sense of Cardelli ("Type Systems"): the program stops and the semantics reports it. Every operational semantics here is a total step or eval function, so no program can get stuck, which would be an *untrapped* error; a term that `red` cannot reduce is reported as an error. (Before this, the code said "wrong", after Milner, which in Cardelli's terms usually means an untrapped error.) The graph model does not distinguish errors from divergence: both denote ∅. The graph model with errors, using ω, does; it is a pilot for ISWIM and Clos2–Clos4, see [Graph model with errors (pilot)](#graph-model-with-errors-pilot).
 * **Determinism.** The simulation and reduction proofs rely on every machine and reduction being deterministic and total. The backward direction of each pass comes from forward simulation plus determinism, and the framework proves that once. The interpreter proof needs no determinism argument: an interpreter is a function, and every pass but simplify is proved clock for clock (see below); simplify's clock-monotone proof uses the interpreter's monotonicity in the clock instead.
 * **Why "backward = forward + determinism" has no denotational counterpart.** Consistency of denotations plays the role of determinism. Take c ∈ ⟦pass M⟧ and suppose ⟦M⟧ has an element.
   * If it is a constant c′, the forward direction puts c′ in ⟦pass M⟧, and consistency forces c = c′.
@@ -287,7 +288,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-13 | infrastructure audit, reduction track: `ret?`, operand lists (`Each`, `ans-cons`), `ret?-ans`, let chains and the one-value substitution `≈-[]` in the reduction framework (130 → 235) and the substitution lemmas (PR #46) | 3393 | 3526 | 2794 | 3689 (−208) |
 | 2026-10-13 | infrastructure audit, graph-model track: each operator's monotonicity, consistency and continuity proved once (`Good`), and each language's semantics built from a table of operators (semantics row 744 → 447); congruences from monotonicity (`mono⇒≃`); β laws for any continuous semantics (`Λ-β`, `let-β`, `clos-β`); domain facts in `DomainUtil`; graph model values, operators, continuity 454 → 836 (PR #47) | 2744 (−649) | 3526 | 2794 | 3689 |
 | 2026-10-13 | closure-conversion passes labelled "CC: " in the tables; no count changes (PR #48) | 2744 | 3526 | 2794 | 3689 |
-| 2026-10-13 | graph model with errors, a pilot (ISWIM, Clos2; simplify, enclose, adequacy for ISWIM), not in the totals; the graph model's infrastructure split into what any graph-model semantics uses and its operators (+12 module lines, 1749 → 1761; adequacy's 1959 → 1971) (PR #50) | 2744 | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors, a pilot (ISWIM, Clos2–Clos4; simplify, enclose, concretize, delay, adequacy for ISWIM; optimize owed), not in the totals: delay 1037 lines against 594; the graph model's infrastructure split into what any graph-model semantics uses and its operators (+13 module lines, 1749 → 1762; adequacy's 1959 → 1972) (PR #50) | 2744 | 3526 | 2794 | 3689 |
 
 **Infrastructure audit, step 1 (PR #42).** The last row moves language-independent reasoning that the proofs had repeated, or had written locally, into the infrastructure, under the policy of [Language-independent infrastructure](#language-independent-infrastructure). No theorem statement, pass or semantics changed. What moved:
 
@@ -764,44 +765,143 @@ The 71 lines are the parts of the forward framework that exist only to get the b
 
 ## Graph model with errors (pilot)
 
-As of PR #50. A pilot, not in the totals: a new semantics, the **graph model with errors**, for ISWIM and Clos2, with simplify and enclose proved correct in it, and its adequacy for the ISWIM machine. It leaves the graph model, its semantics and its proofs unchanged.
+As of PR #50. A pilot, not in the totals: a new semantics, the **graph model with errors**, for ISWIM and Clos2–Clos4, with simplify, enclose, concretize and delay proved correct in it, and its adequacy for the ISWIM machine. Optimize (Clos2 → Clos2, between enclose and concretize) is owed. It leaves the graph model, its semantics and its proofs unchanged.
 
 **Why.** Every operational semantics here is a total function, so every error is *trapped* (Cardelli): the program stops with `o-error`. The operational theorems (`Equivalent`) tell the three outcomes of a run apart: an answer, an error, divergence. The graph model does not: an error and divergence both denote ∅, so the denotational end-to-end theorem plus adequacy can only say "the same constants, and an answer exactly when the other has one" (`Theorems/Adequacy.agda`). The graph model with errors is meant to close that gap.
 
 **The design** (`Framework/GraphModel/ErrorOps.agda`, `Semantics/GraphErr/`):
 
-1. **An error denotes ω.** The error is the existing `ω` of the domain (`Framework/GraphModel/Domain.agda`), already documented as an error value; `ω ~ ω` is its only consistency, and every `ρ₀` already maps an unbound variable to `{ω}`, as a free variable is an error in the machines. No second error value. A program that stops with an error denotes a set that holds ω; one that diverges, ∅. The operators yield ω on a value of the wrong kind: applying a non-function (`IsFun`: `ν` or `V ↦ w`), a case on a non-injection, a projection from a value that is not a tuple of n components (including a tuple of another size: the machine's `proj` checks the length), a primitive on two values that are not both integers.
-2. **ω propagates in evaluation order.** `errs D₁ … Dₙ`: some operand holds ω and every operand before it has a value (an element other than ω). An operand that diverges (∅) before one that errs gives no error. Application checks its operator first, as the machines do (the early check of the 2026-10-11 delay decision): `⋆ᵉ` yields ω when its operator holds ω, or a value that is not a function (whatever the argument does), or a function while the argument holds ω. Tuples, a Clos2 closure's free variables, and a primitive's two operands go left to right. `let` is `(λx. N) M`, so it is strict in M.
-3. **Binders never bind ω.** `Λᵉ` and `𝒞ᵉ` bind only finite, nonempty, consistent sets *without ω*, as call by value binds only values (`NoErr`); `⋆ᵉ` uses only such entries. Without it, consistency fails: `(λx. 0) M` with M an error would hold both ω and 0.
-4. **The operators are infrastructure, in their own group** ("graph model with errors: error-propagating operators": `ErrorOps`, its proof half, `ErrorContinuity`): `⋆ᵉ`, `Λᵉ`, `𝒯ᵉ`, `projᵉ`, `inlᵉ`, `inrᵉ`, `𝒞ᵉ`, `letᵉ`, `guardᵉ-n`, with their monotonicity, consistency, continuity, congruences, β laws, and `Good` entries, so each language's semantics is a table of operators, as since PR #47. Only the primitives (`primᵉ`, built from the graph model's `primD`), the tables and the language-specific lemmas are counted.
+1. **An error denotes ω.** The error is the existing `ω` of the domain (`Framework/GraphModel/Domain.agda`), already documented as an error value. There is no second error value.
+   * `ω ~ ω` is its only consistency.
+   * Every `ρ₀` already maps an unbound variable to `{ω}`, as a free variable is an error in the machines.
+   * A program that stops with an error denotes a set that holds ω; one that diverges, ∅.
+   * The operators yield ω on a value of the wrong kind:
+     * applying a non-function (`IsFun`: `ν` or `V ↦ w`);
+     * a case on a non-injection;
+     * a projection from a value that is not a tuple of n components (including a tuple of another size: the machine's `proj` checks the length);
+     * `fst`/`snd` on a non-pair (Clos4);
+     * a Clos4 call whose code is not code;
+     * a primitive on two values that are not both integers.
+2. **ω propagates in evaluation order.** `errs D₁ … Dₙ` holds when some operand holds ω and every operand before it has a value (an element other than ω). An operand that diverges (∅) before one that errs gives no error.
+   * **Early check.** ISWIM, Clos2 and Clos3 check the operator first, as their machines do (the 2026-10-11 delay decision). `⋆ᵉ` yields ω when its operator holds ω, or holds a value that is not a function (whatever the argument does), or holds a function while the argument holds ω.
+   * **Late check.** Clos4's call evaluates code, environment and argument left to right and only then checks the code (`callᵉ`), exactly as the Clos4 machine does.
+   * Tuples, closures' free variables, pairs and a primitive's two operands go left to right.
+   * `let` is `(λx. N) M`, so it is strict in M.
+3. **Binders never bind ω.** `Λᵉ` and `𝒞ᵉ` bind only finite, nonempty, consistent sets *without ω*, as call by value binds only values (`NoErr`). `⋆ᵉ` and `callᵉ` use only such entries. Without this, consistency fails: `(λx. 0) M` with M an error would hold both ω and 0.
+4. **The operators are infrastructure, in their own group** ("graph model with errors: error-propagating operators": `ErrorOps`, its proof half, `ErrorContinuity`).
+   * The operators are `⋆ᵉ`, `Λᵉ`, `𝒯ᵉ`, `projᵉ`, `inlᵉ`, `inrᵉ`, `𝒞ᵉ`, `letᵉ`, `guardᵉ-n`, `ΛΛᵉ`, `closᵉ`, `pairᵉ`, `carᵉ`, `cdrᵉ` and `callᵉ`.
+   * Each comes with its monotonicity, consistency, continuity, congruences, β laws and `Good` entry, so each language's semantics is a table of operators, as since PR #47.
+   * Only the primitives (`primᵉ`, built from the graph model's `primD`), the tables and the language-specific lemmas are counted.
 
-Each operator is monotone, consistent and continuous: an error is witnessed by finitely many elements (ω in an operand, a value of the wrong kind, the values before it), so a finite part of the environment produces it, as it does values. **Nothing was fundamentally blocked.** Consistency rests on ω being consistent only with itself: a consistent set that holds ω holds nothing else, so an operand cannot both err and have a value, and because binders bind no ω, an application cannot both pass on its argument's error and run its body.
+Each operator is monotone, consistent and continuous. An error is witnessed by finitely many elements (ω in an operand, a value of the wrong kind, the values before it), so a finite part of the environment produces it, as it does values. **Nothing was fundamentally blocked.** Consistency rests on ω being consistent only with itself:
+* a consistent set that holds ω holds nothing else, so an operand cannot both err and have a value;
+* because binders bind no ω, an application cannot both pass on its argument's error and run its body.
 
 **Counts** (from `loc.py`; code lines):
 
 | | graph model with errors | graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|---:|
-| semantics of ISWIM and Clos2 | 317 | 123 | 157 | 114 | 124 |
+| semantics of ISWIM and Clos2–Clos4 | 404 | 208 | 324 | 236 | 292 |
 | – of which the continuity of Clos2 (the graph model proves none) | 135 | — | | | |
 | simplify (with `SimplifyFacts`, 110) | 380 | 343 | 572 | 644 | 710 |
-| CC: enclose | 116 | 81 | 188 | 140 | 186 |
+| CC: enclose | 109 | 81 | 188 | 140 | 186 |
+| CC: optimize | owed | 134 | 224 | 170 | 222 |
+| CC: concretize | 151 | 141 | 182 | 127 | 157 |
+| CC: delay | **1037** | 594 | 134 | 90 | 183 |
 | adequacy for ISWIM (with `Adequacy.Common`, 52) | 967 | 663 | — | — | — |
 | simplify through the ISWIM machine (errors, constants, answers, divergence) | 30 | — | — | — | — |
 
-The semantics row for each style is that of ISWIM and Clos2 only: for the graph models, the semantics, the primitives and their lemmas; for the operational styles, the two machines, interpreters, or reduction semantics (with Clos2's values). The pilot also reaches the graph model's meaning of the primitives (`Semantics/Graph/Prim.agda`, 34 lines, counted in the graph model's semantics row), since `primᵉ` adds errors to `primD`.
+How to read the table:
+* **Semantics row.** For each style it covers ISWIM and Clos2–Clos4 only. For the graph models: the semantics, the primitives and their lemmas. For the operational styles: the four machines, interpreters, or reduction semantics (with their values).
+* **Primitives.** The pilot also reaches the graph model's meaning of the primitives (`Semantics/Graph/Prim.agda`, 34 lines, counted in the graph model's semantics row), since `primᵉ` adds errors to `primD`.
+* **Totals.** For the four passes and the semantics together, the graph model with errors is 2081 lines against the graph model's 1367 (+52%). The infrastructure grows too (below).
 
-* **Semantics.** The table of ISWIM's operators is the same size (23 lines against 22), but the primitive's lemmas grow from 26 to 69 lines (three ways to err), and Clos2 now has consistency and continuity. Clos2's continuity is not a table entry: a closure runs its body on the denotations of its free variables, which need not be finite, and the framework's operators assume the bodies continuous only at finite environments (`BodyCont`). So it is proved by induction on the term, at every nonempty environment (`proof/Semantics/GraphErr/Clos2Continuous.agda`, 135 lines). The graph model proves no continuity for Clos2 (no proof needs it); without it, the row is 182 lines against 123.
-* **Simplify** (+37, +11% over the graph model's 343, the smallest growth): the proof is the graph model's with one more invariant on the environments, that they hold no ω (`Wf`), and a value denotes a set with a value and no ω (`sv-val`, `sv-clean`, replacing `sv-ne`). simplify never drops an operand that is not a value (its cp0-style `let` residuals), and the β laws need their operand to be a set of values: `letᵉ-β`, `𝒞ᵉ-inl-β` and `projᵉ-𝒯ᵉ` (infrastructure) need it consistent, nonempty and without ω. **Constant folding** needs `primᵉ` on two known integer literals to be their result: no error case fires (`primᵉ-fold`). **Inlining** is unchanged: the operator is a known function, so the early check passes, and the operand stays bound, so its error is kept. **The precondition is a closed program**, as in the operational proofs: a variable stands for a value, and in ρ₀ a free variable is an error, so `let y = x in 0`, which simplify turns into `0`, errs in the source and not in the target. A closed program means the same in every environment (`SemanticsUses`, 22 lines, generic, in the denotational framework group), so the proof runs at `ρ₁ = λ _ → {ν}`, an environment of values.
-* **Enclose** (+35, +43%): a Clos2 closure first evaluates its free variables and is an error if one of them is, so the variables it captures, all those below the bound of the function, must have values and no errors in the target environment (`Vals`); this holds under the binders, which bind no ω, and vacuously for a closed program. The hypothesis is threaded through every case (bounds of subterms, 20 lines), and the push lemmas (`push`, `push-plus`, `apply-push`, `unbind-bind`, 15 lines) are copied, where the graph model's proof imports them from the concretize and optimize proofs, which count them.
-* **Adequacy for ISWIM** (+304, +46%): the graph model's soundness and logical relation, extended. Soundness needs a case for every way the machine stops with an error, each showing ω in the denotation of the final state: a value of the wrong kind in a machine value's denotation (for `get`, a tuple of another length: `proj {n} i vs ≡ nothing` gives `length vs ≢ n`); and a continuation passes ω on (`𝒦-ω`), because the operands before the hole are machine values, which have values and no ω. The logical relation relates ω to a run that stops with an error (`ℝ`), a function entry to a body that may err, and has 3–5 cases per operator instead of 1, each following the machine's order (`notfun-stop`: the argument is never run; `tuple-err`: the components before the one that errs run to values). A run cannot both err and reach a value (`⇓-⇓err`, determinism), which replaces `collect` in every success case. Primitives cost about 40 lines of case analysis on observations. **The divergence direction was easy**: ∅ denotes divergence by `never-final-diverges` and soundness at every observation, including `o-error`. **The payoff**, in `Theorems/GraphErrors.agda`: for a closed ISWIM program,
-  * `ω ∈ ⟦ M ⟧ ρ₀ ⇔ Terminates (sem M) o-error`,
-  * `const k ∈ ⟦ M ⟧ ρ₀ ⇔ Terminates (sem M) (o-const B k)`,
-  * an element other than ω ⇔ `Converges`, and
-  * `Diverges (sem M) ⇔ ⟦ M ⟧ ρ₀ = ∅`.
+* **Semantics.**
+  * ISWIM: the table of operators is the same size (23 lines against 22), but the primitive's lemmas grow from 26 to 69 lines (three ways to err).
+  * Clos2 now has consistency and continuity. Its continuity is not a table entry:
+    * a closure runs its body on the denotations of its free variables, which need not be finite;
+    * the framework's operators assume the bodies continuous only at finite environments (`BodyCont`);
+    * so it is proved by induction on the term, at every nonempty environment (`proof/Semantics/GraphErr/Clos2Continuous.agda`, 135 lines).
 
-  With simplify's correctness, a program and its simplification err together, terminate with the same constants, and diverge together, observed through the machine (`simplify-machine-*`, 30 lines): the three outcomes of `Equivalent`, which the graph model cannot give.
+    The graph model proves no continuity for Clos2, since no proof needs it.
+  * Clos3 and Clos4 are tables of Good operators, each about as large as the graph model's.
+* **Simplify** (+37, +11% over the graph model's 343, the smallest growth). The proof is the graph model's with one more invariant on the environments: they hold no ω (`Wf`).
+  * A value denotes a set with a value and no ω (`sv-val`, `sv-clean`, replacing `sv-ne`).
+  * Simplify never drops an operand that is not a value (its cp0-style `let` residuals). The β laws need their operand to be a set of values: `letᵉ-β`, `𝒞ᵉ-inl-β` and `projᵉ-𝒯ᵉ` (infrastructure) need it consistent, nonempty and without ω.
+  * **Constant folding** needs `primᵉ` on two known integer literals to be their result. No error case fires (`primᵉ-fold`).
+  * **Inlining** is unchanged. The operator is a known function, so the early check passes, and the operand stays bound, so its error is kept.
+  * **The precondition is a closed program**, as in the operational proofs. A variable stands for a value, and in ρ₀ a free variable is an error, so `let y = x in 0`, which simplify turns into `0`, errs in the source and not in the target.
+  * A closed program means the same in every environment (`SemanticsUses`, 22 lines, generic, in the denotational framework group), so the proof runs at `ρ₁ = λ _ → {ν}`, an environment of values.
+* **Enclose** (+28, +35%). A Clos2 closure first evaluates its free variables and is an error if one of them is.
+  * So the variables it captures, all those below the bound of the function, must have values and no errors in the target environment (`Vals`).
+  * This holds under the binders, which bind no ω, and vacuously for a closed program.
+  * The hypothesis is threaded through every case (bounds of subterms, about 20 lines).
+* **Concretize** (+10, +7%). It is for every program, as in the graph model.
+  * A Clos2 closure is an error exactly when its tuple of free variables is in Clos3: the same `errs`.
+  * Otherwise, by consistency, the tuple holds no ω, so the Clos3 code's binders can bind a finite part of it, and projecting from it gives back each free variable (`projᵉ-𝒯ᵉ`).
+* **Delay** (+443, +75%; see below).
+* **Adequacy for ISWIM** (+304, +46%): the graph model's soundness and logical relation, extended.
+  * **Soundness** needs a case for every way the machine stops with an error, each showing ω in the denotation of the final state:
+    * a value of the wrong kind in a machine value's denotation (for `get`, a tuple of another length: `proj {n} i vs ≡ nothing` gives `length vs ≢ n`);
+    * and a continuation passes ω on (`𝒦-ω`), because the operands before the hole are machine values, which have values and no ω.
+  * **The logical relation** relates ω to a run that stops with an error (`ℝ`), and a function entry to a body that may err. It has 3–5 cases per operator instead of 1, each following the machine's order:
+    * `notfun-stop`: the argument is never run;
+    * `tuple-err`: the components before the one that errs run to values.
+  * A run cannot both err and reach a value (`⇓-⇓err`, determinism).
+  * The divergence direction was easy.
+  * **The payoff**, in `Theorems/GraphErrors.agda`: for a closed ISWIM program,
+    * `ω ∈ ⟦ M ⟧ ρ₀ ⇔ Terminates (sem M) o-error`;
+    * `const k ∈ ⟦ M ⟧ ρ₀ ⇔ Terminates (sem M) (o-const B k)`;
+    * an element other than ω ⇔ `Converges`;
+    * `Diverges (sem M) ⇔ ⟦ M ⟧ ρ₀ = ∅`.
 
-**Infrastructure.** The graph model is now three groups, so that each semantic algebra is charged only for what it uses. (a) The values, their consistency, and the machinery for any operators, used by both: `Domain`, `OpsBase` (constants `ℬ` and the components of a tuple of results `nthD`, which the error model uses unchanged), `ContinuityBase` (finite approximations, `Continuous`, `Good`) and `SemanticsCore` (term continuity and `GoodSemantics`), split in this PR out of `Ops`, `Continuity` and `SemanticsUtil`. (b) The graph model's operators: `Ops`, `Continuity`, `SemanticsUtil` (now only `let-β` and `clos-β`), `DomainUtil`. (c) The error-propagating operators. The split moved code only; the graph model's counts are unchanged except for the module headers and re-exports of the three new modules (+12: its infrastructure 1749 → 1761, adequacy's 1959 → 1971); no proof total changed. The graph model's primitives now import `ContinuityBase`, which is all they use.
+    With simplify's correctness, a program and its simplification err together, terminate with the same constants, and diverge together, observed through the machine (`simplify-machine-*`, 30 lines).
+
+**Delay with errors: the outcome.** The forecast was 850–1000 lines (+45–70%). **The measured size is 1037 lines (+75%), just past the top of the forecast and past the ~1000-line threshold.**
+
+*The proof* (`proof/Correctness/GraphErr/Delay*.agda`) proves preserve and reflect of an error (`ω ∈ ⟦ M ⟧ ρ₀ ⇔ ω ∈ ⟦ delay M ⟧ ρ₀`), of the constants, and of having a value (an element other than ω), for every Clos3 program. It is fully checked; nothing was weakened.
+
+| part | graph model | graph model with errors |
+|---|---:|---:|
+| relation of the backward direction (`DelayFiniteRel` / `DelayRel`, with shorthands) | 148 | 237 |
+| the `let`/`fst`/`snd` application equation (`DelayApp`) | 30 | 46 |
+| backward direction, fundamental lemma (`DelayReflectFinite` / `DelayReflect`) | 257 | 477 |
+| forward direction, relation and fundamental lemma (`DelayPreserve`) | 159 | 277 |
+| **total** | **594** | **1037** |
+
+The new infrastructure for delay is about 45 lines (`ΛΛᵉ-β`, `letᵉ-collect`, `𝒞ᵉ-left`/`𝒞ᵉ-right`, `con-val-clean`; the graph model's `ΛΛ-β`, `letD-collect` and `𝒞-left` are infrastructure too). The new operators for Clos3 and Clos4 are 266 lines.
+
+*Where the 443 lines come from:*
+
+* **Errors mix with successes in the target sets (backward, about 150).**
+  * A target application's results are calls, as before, plus ω from an error of the call. `collect` now splits them, and every target error is traced to a source error, case by case:
+    * the closure errs or is not a pair, so `fst` fails: the source operator errs or is not a function (the early check);
+    * the closure is a pair and the argument errs: the source operator is a function and its argument errs;
+    * the late code check fails: impossible, since the car of a target closure is a function (`pair-obs`).
+  * Let, case and closures: their results are all from the operator's success or all ω, by consistency (`R-ω`).
+  * Projection drops the ω of its results (`dropω`) to use the tagged parts.
+* **A new kind of observation (backward, about 90).**
+  * The relation's clauses for constants and nonemptiness become one clause, `shape-obs`. It says that a target value other than ω corresponds to a source value of the same kind (`Corr`), so a target value of the wrong kind gives a source value of the wrong kind.
+  * `err-obs` relates ω to ω.
+  * `pair-obs` says that a target closure's code is a function and its environment not ω.
+  * `R-sub` generalizes `R-⊆` to drop ω.
+* **Values, not just nonempty sets (forward, about 120).**
+  * A source function must be exhibited by a target *pair of values* (`PairV`), not by a nonempty set. When the source errs on the argument of a function, the target's `fst` and `snd` must succeed before its argument errs.
+  * A source value of the wrong kind is exhibited by a target value of the wrong kind (`⊑-wit`, `wrong-⊑`).
+  * Every error case of every source operator gets a target error case.
+* **Side conditions of β (both directions, about 80).**
+  * Every β law (`letᵉ-β`, `ΛΛᵉ-β`, `𝒞ᵉ-left`) needs its operand set to hold no ω.
+  * That comes from consistency plus a value (`con-val-clean`), which each case must establish from the relation.
+  * The application equation decides whether a finite set holds ω (`ω-in?`) to choose between the let's success and its error.
+
+The per-construct cases are not where it went: as in the graph model, each construct's case is short once these facts are available.
+
+**Infrastructure.** The graph model is now three groups, so that each semantic algebra is charged only for what it uses:
+* **(a) Used by both:** the values, their consistency, and the machinery for any operators. These are `Domain`, `OpsBase` (constants `ℬ` and the components of a tuple of results `nthD`, which the error model uses unchanged), `ContinuityBase` (finite approximations, `Continuous`, `Good`), `SemanticsCore` (term continuity and `GoodSemantics`) and `DomainUtilBase` (tags, depth, flat values). They were split in this PR out of `Ops`, `Continuity`, `SemanticsUtil` and `DomainUtil`.
+* **(b) The graph model's operators:** `Ops`, `Continuity`, `SemanticsUtil` (now only `let-β` and `clos-β`), `DomainUtil` (now only `cdr-witness` and the empty tuple).
+* **(c) The error-propagating operators.**
+
+The split moved code only. The graph model's counts are unchanged except for the headers and re-exports of the four new modules (+13: its infrastructure 1749 → 1762, adequacy's 1959 → 1972). No proof total changed. The graph model's primitives now import `ContinuityBase`, which is all they use.
 
 | infrastructure group | lines | graph model | graph model with errors | both | adequacy adds: graph model (ISWIM, Clos5, X86) | adequacy adds: graph model with errors (ISWIM) |
 |---|---:|---:|---:|---:|---:|---:|
@@ -809,28 +909,61 @@ The semantics row for each style is that of ISWIM and Clos2 only: for the graph 
 | syntax lemmas (renaming, scoping, uses), list lookups | 499 | 356 | 407 | 356 | 51 | — |
 | base types, logical equivalence | 20 | 17 | 17 | 17 | 3 | 3 |
 | denotational framework | 372 | 350 | 372 | 350 | — | — |
-| graph model: values, consistency, machinery for any operators | 293 | 293 | 293 | 293 | — | — |
-| graph model: its operators | 555 | 555 | — | — | — | — |
-| graph model with errors: error-propagating operators | 685 | — | 685 | — | — | — |
+| graph model: values, consistency, machinery for any operators | 364 | 364 | 364 | 364 | — | — |
+| graph model: its operators | 485 | 485 | — | — | — | — |
+| graph model with errors: error-propagating operators | 951 | — | 951 | — | — | — |
 | small-step framework: transition systems, simulations | 243 | — | — | — | 127 | 127 |
 | runs of a step function from any state | 29 | — | — | — | 29 | 29 |
-| **total** | **2886** | **1761** | **1964** | **1206** | **210** | **159** |
+| **total** | **3153** | **1762** | **2301** | **1277** | **210** | **159** |
 
-The "graph model" and "graph model with errors" columns are what each reaches for its semantics and pass proofs (for the errors model, ISWIM and Clos2 only); the last two, what adequacy adds. They share 1206 lines; the graph model alone reaches its 555 lines of operators, the errors model its 685 lines of error-propagating operators, the closedness lemma (22) and the syntax lemmas behind the closedness of programs (51, through `SimplifyScope` and `EncloseScope`). `loc.py` checks the reachability: the errors model reaches none of the modules of the graph model's operators. The error-propagating operators are larger than the graph model's (685 against 555, for fewer operators: there is no pair, `car`, `cdr` or closure composite yet), because each has two or three error cases in each of its lemmas.
+How to read this table:
+* **Columns.** The "graph model" and "graph model with errors" columns are what each reaches for its semantics and pass proofs. For the graph model that is all its passes; for the errors model, ISWIM to Clos4. The last two columns are what adequacy adds.
+* **Shared.** The two models share 1277 lines.
+* **Graph model only:** its 485 lines of operators.
+* **Errors model only:**
+  * its 951 lines of error-propagating operators (685 for ISWIM and Clos2, 266 more for Clos3 and Clos4: closures, pairs, `fst`, `snd` and the late-check call);
+  * the closedness lemma (22);
+  * the syntax lemmas behind the closedness of programs (51, through `SimplifyScope` and `EncloseScope`).
+* **Reachability check.** `loc.py` checks that the errors model reaches none of the modules of the graph model's operators.
+* **Why the error operators are larger.** Each has two or three error cases in each of its lemmas.
 
 **What got harder.**
 
-* **Evaluation order now matters.** In the graph model an operator is a function of its operands' denotations, in no order; with errors, which operand errs first decides the result, so each operator states the machine's order (`errs`), and every proof about it has a case per error, in order. In the pilot that cost little in the pass proofs that are equations (simplify, enclose: congruence and β), and most in the semantic algebra (+130 lines over the graph model's operators, for fewer operators) and in adequacy (+46%), where every error of every operator must be matched with a run.
-* **The early operator check.** `⋆ᵉ` must err on a non-function whatever its argument does, so it inspects its operator's kind before its argument, and adequacy's application case runs the operator and stops without running the argument. It is what the machines do since the delay decision, and the pilot follows it exactly; a late check would be a different `⋆ᵉ`.
-* **Binders must not bind ω**, or consistency fails; so `Λᵉ` is not `Λ`, and `letᵉ` not `letD`: nothing of the graph model's operators is reused but constants and `nthD`.
-* **Closed programs.** The graph model's simplify and enclose theorems hold for every term; with errors they hold for closed ones, as the operational ones do, because a free variable is an error.
-* **Clos2's continuity** needed its own induction (the closure binds infinite sets), as above.
-* **Kinds of values are per language.** "A function" is `ν` or `V ↦ w` in ISWIM, Clos2 and Clos3 (whose closures still denote functions); in Clos4 a closure is a pair of code and environment, `fst` and `snd` check for a pair and the call checks for code, so Clos4 needs its own kind predicates and operators.
+* **Evaluation order now matters.**
+  * In the graph model an operator is a function of its operands' denotations, in no order.
+  * With errors, which operand errs first decides the result. So each operator states the machine's order (`errs`), and every proof about it has a case per error, in order.
+  * This cost little in the pass proofs that are equations (simplify +11%, enclose +35%, concretize +7%). It cost most in three places:
+    * the semantic algebra;
+    * adequacy (+46%), where every error of every operator must be matched with a run;
+    * delay (+75%), whose relations must trace every error.
+* **The early and the late operator check.**
+  * `⋆ᵉ` must err on a non-function whatever its argument does, so it inspects its operator's kind before its argument. `callᵉ` (Clos4) checks the code only after all three operands.
+  * The pilot follows each machine exactly; they are two different operators.
+  * Delay relies on the early check: its target errs in `fst` exactly where the source's early check fails. It never needs the late check to fail, which costs one clause of its relation (`pair-obs`).
+* **Binders must not bind ω**, or consistency fails. So `Λᵉ` is not `Λ`, and `letᵉ` is not `letD`. Nothing of the graph model's operators is reused but constants and `nthD`.
+* **Closed programs.** The graph model's simplify and enclose theorems hold for every term. With errors they hold for closed ones, as the operational ones do, because a free variable is an error. Concretize and delay still hold for every program.
+* **Clos2's continuity** needed its own induction, because the closure binds infinite sets.
+* **Kinds of values are per language.**
+  * A function is `ν` or `V ↦ w` in ISWIM, Clos2 and Clos3; in Clos4 a closure is a pair.
+  * Delay relates the two by a correspondence of kinds (`Corr`): a pair to a function, everything else to itself.
 
-**Forecast for delay (Clos3 → Clos4).** Delay is where the graph model is weakest (594 lines against 134, 90 and 183; see [Why delay costs more on the denotational side](#why-delay-costs-more-on-the-denotational-side)), because it is the one pass that is not an equation: preserve and reflect are separate, reflect over finite lists of target observations. With errors:
+**Go / no-go (revised, with the measured delay).**
 
-* *New operators* (infrastructure): Clos3's closures are `⋆ᵉ` of a closed curried function (`ΛΛ`) to the tuple of their free variables, and its application is `⋆ᵉ`, so it needs only the closed two-argument function. Clos4 needs error-propagating `pair` (left to right), `car`/`fst` and `cdr`/`snd` (an error on a non-pair), and its three-operand call (code, environment, argument, evaluated left to right, then the late code check). After `⋆ᵉ` (about 90 lines with its continuity), about 250–300 lines.
-* *Semantics* of Clos3 and Clos4: their tables, and the consistency and continuity of their closures, about +100 over the graph model's.
-* *The delay proof.* Both directions must now also carry ω, each with the machines' order. Delay turns `app M N` into `let x = M' in (fst x) (snd x) N'`; the target errs where the source does in the same order: an error in M' (the let), a non-closure (`fst` on a non-pair, which matches Clos3's early check; the reason the machines check early), an error in N'. Preserve gets the error cases per construct (as simplify and enclose did, +10–40%). Reflect must trace a target ω to a source ω through the finite-observation relation: ω becomes one more kind of target observation in the relation and its batches, the late code check of Clos4 must be shown never to fail on delay's output, and an application has 3–5 error outcomes instead of one result. That is adequacy's shape (a relation with a case per outcome per operator), which grew by 46%; the finite observations add to it. **Forecast: delay 594 → 850–1000 lines (+45–70%)**, against 134, 90 and 183 unchanged (the operational proofs already handle errors), so the graph model's ratio on delay would go from about 4.4× the CEK proof to about 6.5–7.5×, plus 250–300 lines of new operators in the infrastructure.
+The pilot shows four things:
+* The graph model with errors is sound, consistent and continuous, with nothing blocked.
+* The equational passes pay little for errors (+7% to +35%).
+* Adequacy then matches the operational theorems on all three outcomes.
+* Delay costs 1037 lines, against 134, 90 and 183 for the operational proofs, which handle errors already.
 
-**Go / no-go.** The pilot shows the graph model with errors is sound, consistent and continuous with nothing blocked, that the equational passes pay little for errors (+11%, +43%), and that adequacy then matches the operational theorems on all three outcomes (the payoff). The costs are concentrated where the graph model already pays most: the semantic algebra (685 lines of error operators against 555), adequacy (+46%), and, by the forecast, delay (+250–400 lines). **Recommendation: go, gated on delay**: extend the pilot to concretize and delay (Clos3, Clos4) next, timeboxed, before converting the remaining passes; if delay with errors exceeds about 1000 lines, keep the graph model with errors as a reported variant for the passes before delay and keep the graph model as the main denotational column.
+The stopping rule was about 1000 lines for delay, and the measured 1037 is just past it:
+* The graph model's delay goes from 4.4× to 7.7× the CEK proof.
+* The four passes and the semantics so far go from 1367 to 2081 lines (+52%).
+* The infrastructure goes from 1762 to 2301 lines reached.
+
+**Recommendation: no-go for making the graph model with errors the main denotational column.** Keep it as a reported variant through delay. Report the finding: making the graph model's theorem as strong as the operational ones (errors apart from divergence) costs about half again in the passes proved so far, and three quarters again on delay, the pass where it is already weakest.
+
+What would be needed to go further:
+* **Optimize** is owed. It drops free variables that a closure does not use, so with errors it needs the closedness of its input, as enclose does.
+* **The passes after delay** need Clos5, Imp, CFG and X86 semantics with errors.
+
+Neither would change the conclusion on delay.

@@ -4209,9 +4209,9 @@ diverges both denote $\emptyset$. The graph model with errors tells them
 apart: a trapped error denotes a set that holds the error value $\omega$
 (the value that $\rho_0$ already gives to a variable not in scope, and
 which is consistent only with itself), and divergence still denotes
-$\emptyset$. It is defined for ISWIM and Clos2, the languages of
-simplify and enclose (\texttt{agda/Semantics/GraphErr/}); the operators
-are \texttt{agda/Framework/GraphModel/ErrorOps.agda}.
+$\emptyset$. It is defined for ISWIM and Clos2--Clos4, the languages of
+simplify, enclose, concretize and delay (\texttt{agda/Semantics/GraphErr/});
+the operators are \texttt{agda/Framework/GraphModel/ErrorOps.agda}.
 
 \subsection{Operators}
 
@@ -4244,8 +4244,20 @@ diverges ($\emptyset$) before one that errs gives no error.
     \{ \omega \mid \mathit{errs}(D, E) \lor (\mathit{wrong}_{\mathit{int}}(D) \land \mathit{val}(E))
        \lor (\mathit{val}(D) \land \mathit{wrong}_{\mathit{int}}(E)) \} \\
   \key{guard}^{\omega}(D_1,\ldots,D_n; E) &= \{ \omega \mid \mathit{errs}(D_1,\ldots,D_n) \}
-     \cup \{ w \mid (\forall i.\; \mathit{val}(D_i)),\; w \in E \}
+     \cup \{ w \mid (\forall i.\; \mathit{val}(D_i)),\; w \in E \} \\
+  \key{pair}^{\omega}(D, E) &= \{ \pairv{u}{v} \mid u \in D,\; v \in E,\; u, v \neq \omega \}
+     \cup \{ \omega \mid \mathit{errs}(D, E) \} \\
+  \key{car}^{\omega}(D) &= \{ u \mid \exists v.\; \pairv{u}{v} \in D \}
+     \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{pair}}(D) \}
+     \qquad (\key{cdr}^{\omega} \text{ likewise}) \\
+  \key{call}^{\omega}(L, M, N) &= \{ w \mid \exists V, U \NE.\; \omega \notin V \cup U,\;
+       (V \mapsto (U \mapsto w)) \in L,\; V \subseteq M,\; U \subseteq N \} \\
+    &\cup\; \{ \omega \mid \mathit{errs}(L, M, N) \lor
+       (\mathit{wrong}_{\mathit{fun}}(L) \land \mathit{val}(M) \land \mathit{val}(N)) \}
 \end{align*}
+$\key{call}^{\omega}$ is the Clos4 call: code, environment and argument are
+evaluated left to right, and only then is the code checked (the late
+check of the Clos4 machine).
 and $\mathcal{T}^{\omega}() = \{ \emptytup \}$, $\key{inr}^{\omega}$ as
 $\key{inl}^{\omega}$. Application checks its operator before its
 argument, as the machines do (Section~\ref{sec:machines}): applying a
@@ -4274,12 +4286,24 @@ operator replaced by its error-propagating counterpart:
 and tuples, projections, injections, case and primitives likewise with
 $\mathcal{T}^{\omega}$, $\key{proj}^{\omega}_i$, $\key{inl}^{\omega}$,
 $\key{inr}^{\omega}$, $\mathcal{C}^{\omega}$ and $\key{prim}^{\omega}_p$.
-Both semantics are monotone and consistent, and continuous; for Clos2,
+For Clos3 and Clos4,
+\begin{align*}
+  \SEM{\clos{r_1\ldots r_n}{e\, y} N}^{3,\omega}\rho &=
+    \Lambda^{\omega}(\lambda X.\, \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{3,\omega}\rho_0(e{:=}X, y{:=}Y)))
+    \app^{\omega} \mathcal{T}^{\omega}(\SEM{r_1}^{3,\omega}\rho, \ldots, \SEM{r_n}^{3,\omega}\rho) \\
+  \SEM{\fun{e\,y.\,N}}^{4,\omega}\rho &= \Lambda^{\omega}(\lambda X.\, \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{4,\omega}\rho_0(e{:=}X, y{:=}Y))) \\
+  \SEM{L(M, N)}^{4,\omega}\rho &= \key{call}^{\omega}(\SEM{L}^{4,\omega}\rho, \SEM{M}^{4,\omega}\rho, \SEM{N}^{4,\omega}\rho) \\
+  \SEM{\pair{M}{N}}^{4,\omega}\rho &= \key{pair}^{\omega}(\SEM{M}^{4,\omega}\rho, \SEM{N}^{4,\omega}\rho) \qquad
+  \SEM{\FST M}^{4,\omega}\rho = \key{car}^{\omega}(\SEM{M}^{4,\omega}\rho)
+\end{align*}
+and $\key{snd}$ by $\key{cdr}^{\omega}$; Clos3's application is
+$\app^{\omega}$, with the early check. All four semantics are monotone and
+consistent, and continuous; for Clos2,
 whose closures run their bodies on the (possibly infinite) denotations of
 their free variables, continuity is proved by induction on the term
 (\texttt{agda/proof/Semantics/GraphErr/Clos2Continuous.agda}).
 
-\subsection{Correctness of Simplify and Enclose}
+\subsection{Correctness of the Passes}
 
 \begin{theorem}[Simplify and Enclose, with Errors]
 For every ISWIM term $M$ with $\FV(M) = \emptyset$,
@@ -4296,6 +4320,27 @@ becomes $0$, though $x$ errs in $\rho_0$); a closed term means the same in
 every environment. A Clos2 closure is an error when one of its free
 variables is, so enclose needs the variables a closure captures (those
 below the bound of the function) to have values and no errors.
+
+\begin{theorem}[Concretize and Delay, with Errors]
+For every Clos2 term $M$,
+$\SEM{M}^{2,\omega}\rho_0 \simeq \SEM{\pass{concretize}(M)}^{3,\omega}\rho_0$.
+For every Clos3 term $M$, writing $D = \SEM{M}^{3,\omega}\rho_0$ and
+$D' = \SEM{\pass{delay}(M)}^{4,\omega}\rho_0$,
+\[
+  \omega \in D \iff \omega \in D', \qquad
+  c \in D \iff c \in D', \qquad
+  (\exists d \in D.\; d \neq \omega) \iff (\exists d \in D'.\; d \neq \omega) .
+\]
+\end{theorem}
+Delay changes the representation of closures, so, as in the graph model,
+it is proved in two directions: forward, by a relation between source
+values and target sets in which a source function is exhibited by a
+target pair of values; backward, by a relation indexed by finite lists of
+target observations, in which $\omega$ is an observation and every other
+target value corresponds to a source value of the same kind (a pair to a
+function), so that every target error is traced to a source error. The
+car of a target closure is a function, so the late check of the call
+never fails on delay's output. (Optimize is not yet proved in this model.)
 
 \subsection{Adequacy for ISWIM}
 
