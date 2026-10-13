@@ -269,6 +269,8 @@ import proof.Adequacy.GraphErr.Simplify
 import proof.Semantics.GraphErr.Clos5
 import proof.Framework.GraphModel.ErrorStrict
 import proof.Framework.GraphModel.ErrorLaws
+import proof.Framework.GraphModel.Strict
+import proof.Framework.GraphModel.Laws
 import proof.Correctness.GraphErr.OptimizeCorrect
 import proof.Correctness.GraphErr.GlobalizeCorrect
 import proof.Correctness.GraphErr.RCOCorrect

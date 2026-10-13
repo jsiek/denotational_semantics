@@ -75,3 +75,13 @@ inr ⟨ D , _ ⟩ _ = False
 {- D, provided that each of the n sets in Ds is nonempty (for strict closures) -}
 guard-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
 guard-n n Ds D w = (∀ i → nonempty (nthD Ds i)) × w ∈ D
+
+{- for the writes of X86 and its load of a payload -}
+
+{- E, provided that D is nonempty -}
+strict : 𝒫 Value → 𝒫 Value → 𝒫 Value
+strict D E w = nonempty D × w ∈ E
+
+{- the payload of an injection -}
+payloadD : 𝒫 Value → 𝒫 Value
+payloadD D v = left v ∈ D ⊎ right v ∈ D

@@ -186,10 +186,7 @@ case-law (just G) {A} {F₁} {F₂} cA m₁ m₂ = ⟨ L , R ⟩
     let-err (inj₂ (inj₁ ⟨ v , ⟨ V' , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩))
   R w (inj₂ (inj₂ ⟨ refl , e ⟩)) = let-err (inj₂ (inj₂ ⟨ refl , e ⟩))
 
-{- The pass preserves meanings ----------------------------------------------------}
-
-{- strict writes, calls and lets: errors and values -}
-{- Errors and values ------------------------------------------------------------------}
+{- Strict writes, calls and lets: errors and values ----------------------------------}
 
 is-ω : ∀ w → w ≡ ω ⊎ w ≢ ω
 is-ω (const k) = inj₂ (λ ())

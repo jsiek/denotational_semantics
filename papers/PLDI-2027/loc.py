@@ -145,7 +145,7 @@ GROUPS = [
     ('infra', 'graph model: its operators',
      [W + 'GraphModel/Ops.agda', WP + 'GraphModel/Ops.agda',
       WP + 'GraphModel/Continuity.agda', WP + 'GraphModel/SemanticsUtil.agda',
-      WP + 'GraphModel/DomainUtil.agda']),
+      WP + 'GraphModel/DomainUtil.agda', WP + 'GraphModel/Strict.agda', WP + 'GraphModel/Laws.agda']),
     ('infra', 'graph model with errors: error-propagating operators',
      [W + 'GraphModel/ErrorOps.agda', WP + 'GraphModel/ErrorOps.agda',
       WP + 'GraphModel/ErrorContinuity.agda', WP + 'GraphModel/ErrorStrict.agda',

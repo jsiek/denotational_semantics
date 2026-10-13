@@ -71,6 +71,8 @@ open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.Graph.SelectCorrect where
 
+open import proof.Framework.GraphModel.Laws using (strict-≃; strict-≃₂; strict-≃₃; ⋆-ne)
+
 {- No slot holds both an inl and an inr ------------------------------------------------}
 
 Tagged : 𝒫 Value → Set
@@ -191,23 +193,6 @@ case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
                                       , ⟨ proj₂ (F₂≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
                 , ⟨ (λ ()) , c ⟩ ⟩
               , ⟨ (λ d d∈ → inj₂ (A⊇ _ (r∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
-
-{- Strictness ---------------------------------------------------------------------------}
-
-{- strict D X is X when each element of X needs D to be nonempty -}
-strict-≃ : ∀ {D X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D) → strict D X ≃ X'
-strict-≃ ⟨ X⊆ , X⊇ ⟩ ne = ⟨ (λ w p → X⊆ w (proj₂ p)) , (λ w p → ⟨ ne w (X⊇ w p) , X⊇ w p ⟩) ⟩
-
-strict-≃₂ : ∀ {D₁ D₂ X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D₂) → (nonempty D₂ → nonempty D₁)
-  → strict D₁ (strict D₂ X) ≃ X'
-strict-≃₂ X≃ ne f = strict-≃ (strict-≃ X≃ ne) (λ w w∈ → f (proj₁ w∈))
-
-strict-≃₃ : ∀ {D₁ D₂ D₃ X X'} → X ≃ X' → (∀ w → w ∈ X → nonempty D₃) → (nonempty D₃ → nonempty D₂)
-  → (nonempty D₃ → nonempty D₁) → strict D₁ (strict D₂ (strict D₃ X)) ≃ X'
-strict-≃₃ X≃ ne f₂ f₁ = strict-≃ (strict-≃₂ X≃ ne f₂) (λ w w∈ → f₁ (proj₁ (proj₂ w∈)))
-
-⋆-ne : ∀ {D E} → nonempty (⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D × nonempty E
-⋆-ne ⟨ w , ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ ⟩ = ⟨ ⟨ _ , e∈ ⟩ , ne-mem ne V⊆ ⟩
 
 prim-ne : ∀ p {D E} → nonempty (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D
 prim-ne p ⟨ w , ⟨ k , ⟨ m , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ _ , k∈ ⟩

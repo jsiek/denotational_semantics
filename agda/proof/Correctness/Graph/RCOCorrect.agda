@@ -63,6 +63,8 @@ open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.Graph.RCOCorrect where
 
+open import proof.Framework.GraphModel.Strict
+
 {- Laws of the semantics -------------------------------------------------------}
 
 rename-≃ : ∀ T M r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
@@ -80,26 +82,6 @@ LET M N = let-op ⦅ M ,, ⟩ N ,, Nil ⦆
 
 let-strict : ∀ T M N ρ w → w ∈ ⟦ LET M N ⟧[ T ] ρ → nonempty (⟦ M ⟧[ T ] ρ)
 let-strict T M N ρ w ⟨ V , ⟨ _ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ = ne-mem V≢[] V⊆
-
-{- Strict operators ----------------------------------------------------------------}
-
-NEs : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
-NEs zero _ = ⊤
-NEs (suc n) ⟨ D , Ds ⟩ = nonempty D × NEs n Ds
-
-{- an operator on n operands, a congruence, empty if one operand is -}
-record Strict (n : ℕ) : Set₁ where
-  field
-    op : Results (𝒫 Value) (replicate n ■) → 𝒫 Value
-    cong : ∀ {Ds Es} → RRs (replicate n ■) Ds Es → op Ds ≃ op Es
-    strict : ∀ Ds w → w ∈ op Ds → NEs n Ds
-open Strict
-
-{- the operator with its first operand fixed to D -}
-_▷_ : ∀ {n} → 𝒫 Value → Strict (suc n) → Strict n
-D ▷ O = record { op = λ Ds → op O ⟨ D , Ds ⟩
-               ; cong = λ eq → cong O ⟨ up ≃-refl , eq ⟩
-               ; strict = λ Ds w w∈ → proj₂ (strict O _ w w∈) }
 
 {- ρ' is ρ under k more bound variables -}
 Ext : ℕ → Env Value → Env Value → Set
@@ -123,7 +105,7 @@ lift-≃ T TC {zero} f Nil O ρ NE C den = den 0 ρ Nil (λ x → ≃-refl)
 lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C den with atom? M
 ... | yes _ = lift-≃ T TC (λ k As → f k (rename (k +_) M ,, As)) Ms (⟦ M ⟧[ T ] ρ ▷ O) ρ NE C
   λ k ρ' As e → ≃-trans (den k ρ' _ e) (cong O ⟨ up (rename-≃ T M (k +_) ρ' ρ e) , RRs-refl _ ⟩)
-... | no _ = ≃-when (let-strict T M B ρ) (λ w w∈ → proj₁ (strict O _ w w∈)) λ neD →
+... | no _ = ≃-when (let-strict T M B ρ) (λ w w∈ → proj₁ (ne-of O _ w w∈)) λ neD →
   ≃-trans (let-β T B ρ D NE neD cD)
   (≃-trans (lift-≃ T TC f' Ms' (D ▷ O) (D • ρ) (extend-nonempty-env NE neD) (Con-• cD C)
               λ k ρ' As e → ≃-trans (den (suc k) ρ' _ (ext-suc {k} {ρ'} {ρ} {D} e))
@@ -135,58 +117,9 @@ lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C den with atom? M
         Ms' = rename-args suc Ms
         B = lift f' Ms'
 
-{- The operators -----------------------------------------------------------------}
-
-app-op : Strict 3
-app-op = record { op = ⋆₂ ; cong = mono-≃ ⋆₂-mono
-  ; strict = λ { _ w ⟨ V , ⟨ ⟨ U , ⟨ f∈ , ⟨ U⊆ , U≢[] ⟩ ⟩ ⟩ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ →
-      ⟨ ⟨ _ , f∈ ⟩ , ⟨ ne-mem U≢[] U⊆ , ⟨ ne-mem V≢[] V⊆ , tt ⟩ ⟩ ⟩ } }
-
-pair-op′ : Strict 2
-pair-op′ = record { op = pair ; cong = mono-≃ pair-mono ; strict = S }
-  where S : ∀ Ds w → w ∈ pair Ds → NEs 2 Ds
-        S _ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩ = ⟨ ⟨ u , u∈ ⟩ , ⟨ ⟨ v , v∈ ⟩ , tt ⟩ ⟩
-
-car-op : Strict 1
-car-op = record { op = car ; cong = mono-≃ car-mono ; strict = λ { _ u ⟨ v , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
-
-cdr-op : Strict 1
-cdr-op = record { op = cdr ; cong = mono-≃ cdr-mono ; strict = λ { _ v ⟨ u , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
-
-tuple-op : ∀ n → Strict n
-tuple-op n = record { op = 𝒯 n ; cong = mono-≃ (𝒯-mono n) ; strict = S n }
-  where
-  all : ∀ n Ds → (∀ j → nonempty (nthD Ds j)) → NEs n Ds
-  all zero Ds ne = tt
-  all (suc n) ⟨ D , Ds ⟩ ne = ⟨ ne zero , all n Ds (λ j → ne (suc j)) ⟩
-  S : ∀ n Ds w → w ∈ 𝒯 n Ds → NEs n Ds
-  S zero Ds w _ = tt
-  S (suc n) Ds (tup[ i ] d) ⟨ refl , ⟨ _ , ne ⟩ ⟩ = all (suc n) Ds ne
-
-get-op : ∀ {n} (i : Fin n) → Strict 1
-get-op i = record { op = proj i ; cong = mono-≃ (proj-mono i)
-                  ; strict = λ _ d ∈ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ }
-
-inl-op′ : Strict 1
-inl-op′ = record { op = inl ; cong = mono-≃ inl-mono ; strict = S }
-  where S : ∀ Ds w → w ∈ inl Ds → NEs 1 Ds
-        S _ (left v) ∈ = ⟨ ⟨ v , ∈ ⟩ , tt ⟩
-
-inr-op′ : Strict 1
-inr-op′ = record { op = inr ; cong = mono-≃ inr-mono ; strict = S }
-  where S : ∀ Ds w → w ∈ inr Ds → NEs 1 Ds
-        S _ (right v) ∈ = ⟨ ⟨ v , ∈ ⟩ , tt ⟩
-
 prim-op : ∀ p → Strict 2
 prim-op p = record { op = primD p ; cong = mono-≃ (primD-mono p)
-  ; strict = λ { _ w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → ⟨ ⟨ _ , n∈ ⟩ , ⟨ ⟨ _ , m∈ ⟩ , tt ⟩ ⟩ } }
-
-{- case on D, with the branches E and F -}
-case-op′ : (E F : 𝒫 Value → 𝒫 Value) → Strict 1
-case-op′ E F = record { op = λ { ⟨ D , _ ⟩ → 𝒞 ⟨ D , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ }
-  ; cong = λ eq → 𝒞-≃ {F = E} {E} {F} {F} (lower (proj₁ eq)) (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl)
-  ; strict = λ { _ w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , l∈ v (here refl) ⟩ , tt ⟩
-               ; _ w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , r∈ v (here refl) ⟩ , tt ⟩ } }
+  ; ne-of = λ { _ w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → ⟨ ⟨ _ , n∈ ⟩ , ⟨ ⟨ _ , m∈ ⟩ , tt ⟩ ⟩ } }
 
 {- The pass preserves denotations ---------------------------------------------}
 
