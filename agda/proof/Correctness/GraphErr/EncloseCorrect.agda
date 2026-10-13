@@ -27,7 +27,7 @@ open import proof.Semantics.GraphErr.Prim
 open import Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
 open import proof.Semantics.GraphErr.ISWIM
-open import proof.Semantics.GraphErr.Clos2 as S2 using (apply-n) renaming
+open import proof.Semantics.GraphErr.Clos2 as S2 using (apply-n; push) renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂)
 import Language.Clos2 as L2
 open import Compiler.Optimize using (bind-n-ast)
@@ -57,11 +57,6 @@ Vals D = val∈ D × Clean D
 
 init₀ : Env Value
 init₀ = λ _ → ⌈ ω ⌉
-
-{- bind the free variables one at a time, the last one ending up first -}
-push : ∀ {n} → Results (𝒫 Value) (replicate n ■) → Env Value → Env Value
-push {zero} _ ρ = ρ
-push {suc n} ⟨ D , Ds ⟩ ρ = push Ds (D • ρ)
 
 apply-push : ∀ k (a : L2.Arg (ν-n k (ν ■))) (ρ : Env Value) Ds (Y : 𝒫 Value)
   → apply-n k (⟦ a ⟧ₐ₂ ρ) Ds Y ≡ ⟦ L2.unbind-n k a ⟧₂ (Y • push Ds ρ)

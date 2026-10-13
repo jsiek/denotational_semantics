@@ -16,7 +16,7 @@ open import Data.List using (List; []; _∷_; replicate)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import proof.Framework.GraphModel.Env using (_~ₑ[_]_)
+open import proof.Framework.GraphModel.Env using (Env; _~ₑ[_]_)
 
 {- The semantics of Semantics/GraphErr/Clos2.agda as an instance of the
    generic Semantics record (proof/Framework/GraphModel/Semantics.agda),
@@ -68,6 +68,11 @@ instance
   Clos2ᵉ-Semantics : Semantics
   Clos2ᵉ-Semantics = record { interp-op = 𝕆-Clos2ᵉ ; mono-op = 𝕆-Clos2ᵉ-mono ; error = ω }
 open Semantics {{...}} public
+
+{- bind the free variables one at a time, the last one ending up first -}
+push : ∀ {n} → Results (𝒫 Value) (replicate n ■) → Env Value → Env Value
+push {zero} _ ρ = ρ
+push {suc n} ⟨ D , Ds ⟩ ρ = push Ds (D • ρ)
 
 {- consistent environments give consistent denotations -}
 Clos2ᵉ-con-env : ∀ M {ρ ρ'} → ρ ~ₑ[ Every _~_ ] ρ' → Every _~_ (⟦ M ⟧ ρ) (⟦ M ⟧ ρ')
