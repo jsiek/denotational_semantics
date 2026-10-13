@@ -28,14 +28,14 @@ open import Language.Mon
 open import Language.Imp using (Body)
 import Language.Imp as Imp
 open import Compiler.LiftLocals
-open import proof.Framework.ListUtil using (_‼_; ‼-++; ‼-≥)
+open import proof.Framework.ListUtil using (_‼_; ‼-++; ‼-≥; ‼-pw)
 open import proof.Semantics.Interp.Clock
 import Semantics.Interp.Clos5 as C
 import Semantics.Interp.Imp as I
 open import Semantics.Interp.Imp using (Frame; zero-val; _[_]≔_; here)
 open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs)
 import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.RCOFuel using (bind≡; ≡→rel; ‼-pw; compile-mon-correct)
+open import proof.Correctness.Interp.RCOFuel using (bind≡; ≡→rel; compile-mon-correct)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.RCO using (rco-program-mon)
 open import proof.Compiler.EncloseScope using (Closed)

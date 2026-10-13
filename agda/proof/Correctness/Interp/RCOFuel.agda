@@ -41,7 +41,7 @@ import Language.Mon as Mon
 open import Compiler.RCO
 open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import proof.Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc)
+open import proof.Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc; ‼-pw)
 open import proof.Semantics.Interp.Clock
 open import Semantics.Interp.Clos5
   using (Val; Env; code; pair; const; tup; inl; inr; obs; eval; eval-args; call; code?; branch;
@@ -300,11 +300,6 @@ module Gen (ds : List AST) where
 {- definition k of map rco ds is rco of definition k of ds -}
 Def : AST → AST → Set
 Def N N' = N' ≡ rco N × WS 2 N
-
-‼-pw : ∀ {R : A → B → Set} {xs ys} → Pointwise R xs ys → ∀ k → M.Pointwise R (xs ‼ k) (ys ‼ k)
-‼-pw [] k = M.nothing
-‼-pw (r ∷ rs) zero = M.just r
-‼-pw (r ∷ rs) (suc k) = ‼-pw rs k
 
 glob-pw : ∀ {ds} → All (WS 2) ds → ∀ k → M.Pointwise Def (global ds k) (global (map rco ds) k)
 glob-pw w = ‼-pw (reverse⁺ (defs-pw w))

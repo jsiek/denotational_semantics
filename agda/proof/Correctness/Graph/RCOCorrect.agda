@@ -41,13 +41,12 @@ open import proof.Correctness.Graph.GlobalizeCorrect
   using (RRs; nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃)
 open import proof.Correctness.Graph.ConcretizeCorrect
   using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
-open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
 open import proof.Correctness.Graph.CompilerCorrect
   using (Same; Same-trans; ≃→Same; compile-same)
 open import Compiler.Pipeline using (compile; compile-mon)
 open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Language.ISWIM as ISWIM
-open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 open import Framework.Primitives using (base-rep)
 
@@ -84,10 +83,6 @@ RRs-refl : ∀ {n} Ds → RRs (replicate n ■) Ds Ds
 RRs-refl {zero} Ds = ptt
 RRs-refl {suc n} ⟨ D , Ds ⟩ = ⟨ up ≃-refl , RRs-refl Ds ⟩
 
-ne-mem : ∀ {V : List Value} {D} → V ≢ [] → mem V ⊆ D → nonempty D
-ne-mem V≢[] V⊆ with E≢[]⇒nonempty-mem V≢[]
-... | ⟨ v , v∈ ⟩ = ⟨ v , V⊆ v v∈ ⟩
-
 {- A ≃ B when they are equal under P and an element of either gives P -}
 strict-≃ : ∀ {P : Set} {A B : 𝒫 Value} → (∀ w → w ∈ A → P) → (∀ w → w ∈ B → P)
   → (P → A ≃ B) → A ≃ B
@@ -104,10 +99,7 @@ let-β : ∀ T M N ρ → nonempty-env ρ → nonempty (⟦ M ⟧[ T ] ρ) → C
 let-β T M N ρ NE neD cD = ⟨ G , H ⟩
   where
   G : ⟦ LET M N ⟧[ T ] ρ ⊆ ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ)
-  G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧[]-monotone T N ⊆ₑ w w∈
-    where ⊆ₑ : ∀ x → (mem V • ρ) x ⊆ (⟦ M ⟧[ T ] ρ • ρ) x
-          ⊆ₑ zero = V⊆
-          ⊆ₑ (suc x) d d∈ = d∈
+  G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧[]-monotone T N (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆) w w∈
   H : ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ) ⊆ ⟦ LET M N ⟧[ T ] ρ
   H w w∈ with term-continuous T N _ (extend-nonempty-env NE neD) w w∈
   ... | ⟨ Vs , ⟨ fin , w∈' ⟩ ⟩ =
@@ -116,14 +108,6 @@ let-β T M N ρ NE neD cD = ⟨ G , H ⟩
     where ⊆ₑ : ∀ x → mem (Vs x) ⊆ (mem (Vs 0) • ρ) x
           ⊆ₑ zero d d∈ = d∈
           ⊆ₑ (suc x) = proj₂ (fin (suc x))
-
-Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
-Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
-  where
-  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
-    → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
-  G A⊆ ν tt = tt
-  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
 
 {- Strict operators ----------------------------------------------------------------}
 

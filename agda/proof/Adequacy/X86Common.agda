@@ -18,7 +18,7 @@ open import Language.X86 hiding (Body)
 open import Semantics.Graph.X86 using (table; blocks; ⟦_⟧ᵇ)
   renaming (Regs to SRegs; code to codeD)
 open import Semantics.CEK.X86
-open import proof.Adequacy.Common using (module Runs)
+open import proof.Framework.Runs using (module Runs)
 open import proof.Adequacy.X86WF using (DefsWF)
 open import proof.Framework.ListUtil using (_‼_)
 open import proof.Framework.ListUtil using (‼-just; replicate-‼; reverse-‼-split; reverse-‼-suffix) public

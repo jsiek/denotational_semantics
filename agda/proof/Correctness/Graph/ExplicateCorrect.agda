@@ -61,10 +61,8 @@ open import Semantics.Graph.CFG
 open import proof.Semantics.Graph.Clos5IswimContinuous using (ΛΛ-con)
 open import proof.Correctness.Graph.ConcretizeCorrect
   using (⋆-≃; 𝒞-≃)
-open import proof.Correctness.Graph.RCOCorrect using (Λ-≃)
 open import proof.Correctness.Graph.LiftLocalsCorrect using (compile-imp-same)
 open import proof.Correctness.Graph.ExplicateCommon
-open import proof.Correctness.Graph.DelayFiniteCommon using (ne-mem)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)

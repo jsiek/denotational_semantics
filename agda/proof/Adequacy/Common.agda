@@ -3,8 +3,8 @@
   Definitions shared by the soundness and adequacy proofs for ISWIM
   (see Adequacy/ISWIM.agda for the overview):
 
-  * s ↠ t, runs of a machine (here the ISWIM machine) from any state,
-    and their determinism;
+  * s ↠ t, runs of the ISWIM machine from any state (the generic Runs
+    of proof/Framework/Runs.agda);
   * ShapeOf o d, when a denotational value d has the shape of an
     observation o: the constant itself, a function entry, an entry of
     the right component of a tuple of the right size, a left or right
@@ -21,8 +21,7 @@ open import Language.Prim using (Prim; Out; δ)
 open import proof.Framework.GraphModel.Domain
   using (Value; const; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
 open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep
-  using (Star; ε; _◅_; Next; next; stop; machine)
+open import proof.Framework.Runs using (module Runs)
 open import proof.Framework.ListUtil using (has-length)
 open import Semantics.CEK.ISWIM
 
@@ -36,45 +35,6 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; _,_)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
-
-{- Runs of a machine given by its step function, from any state -------------}
-
-module Runs {S : Set} (step : S → Next S) where
-
-  infixr 5 _∷↠_
-  infix 4 _↠_
-  data _↠_ : S → S → Set where
-    done : ∀ {s} → s ↠ s
-    _∷↠_ : ∀ {s s' s''} → step s ≡ next s' → s' ↠ s'' → s ↠ s''
-
-  infixr 5 _++↠_
-  _++↠_ : ∀ {s s' s''} → s ↠ s' → s' ↠ s'' → s ↠ s''
-  done ++↠ τ = τ
-  (st ∷↠ σ) ++↠ τ = st ∷↠ (σ ++↠ τ)
-
-  {- a run in the machine with any start -}
-  ↠→star : ∀ {s₀ s t} → s ↠ t → Star (machine S step s₀) s t
-  ↠→star done = ε
-  ↠→star (st ∷↠ σ) = st ◅ ↠→star σ
-
-  star→↠ : ∀ {s₀ s t} → Star (machine S step s₀) s t → s ↠ t
-  star→↠ ε = done
-  star→↠ (st ◅ σ) = st ∷↠ star→↠ σ
-
-  private
-    next-inj : ∀ {a b : S} → next a ≡ next b → a ≡ b
-    next-inj refl = refl
-
-  {- two runs to final states end in the same state -}
-  ↠-final-det : ∀ {s t₁ t₂ o₁ o₂} → s ↠ t₁ → s ↠ t₂
-    → step t₁ ≡ stop o₁ → step t₂ ≡ stop o₂ → t₁ ≡ t₂
-  ↠-final-det done done f₁ f₂ = refl
-  ↠-final-det done (st ∷↠ σ) f₁ f₂ with trans (sym f₁) st
-  ... | ()
-  ↠-final-det (st ∷↠ σ) done f₁ f₂ with trans (sym f₂) st
-  ... | ()
-  ↠-final-det (st₁ ∷↠ σ₁) (st₂ ∷↠ σ₂) f₁ f₂ with next-inj (trans (sym st₁) st₂)
-  ... | refl = ↠-final-det σ₁ σ₂ f₁ f₂
 
 {- the runs of the ISWIM machine -}
 open Runs step public

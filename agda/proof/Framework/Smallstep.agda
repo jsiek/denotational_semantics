@@ -3,7 +3,8 @@
   Lemmas about the runs of the machines of Framework/Smallstep.agda:
   runs of one or more steps (Plus), composing runs, determinism,
   divergence, and how a target state answers a source step (Answers,
-  for plus simulations; see Simulation.agda).
+  for plus simulations; see Simulation.agda). The runs of a step
+  function from any state are in Runs.agda.
 
 -}
 
@@ -76,6 +77,10 @@ module _ {L : Machine} where
   final-unique σ fin' τ fin with steps-det-skip (proj₂ (star→steps σ)) τ fin
   ... | zero , _ , zero = final-det fin' fin
   ... | suc _ , _ , suc st _ = ⊥-elim (final-nostep fin' st)
+
+  {- a machine terminates with at most one observation -}
+  terminates-det : ∀ {o₁ o₂} → Terminates L o₁ → Terminates L o₂ → o₁ ≡ o₂
+  terminates-det (_ , σ₁ , f₁) (_ , σ₂ , f₂) = final-unique σ₁ f₁ (proj₂ (star→steps σ₂)) f₂
 
   {- Divergence is never reaching a final state -}
   diverges-not-terminates : ∀ {o} → Diverges L → ¬ Terminates L o

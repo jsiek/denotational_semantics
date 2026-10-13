@@ -219,11 +219,6 @@ drop-building {N} {U} {m} {b} {vs} {ws} {v} nu (building sc us col) = building s
   col' (suc k) u = col k (subst U (+-suc m k) u)
 
 {- the source and target code of a closure -}
-opt-list : ∀ {n} r (args : Args (replicate n ■))
-  → args→list (opt-args r args) ≡ map (optimize r) (args→list args)
-opt-list {zero} r Nil = refl
-opt-list {suc n} r (M ,, args) = cong (optimize r M ∷_) (opt-list r args)
-
 opt-body-body : ∀ r k (a : Arg (ν-n k (ν ■))) → opt-body r k a ≡ optimize r (T.body k a)
 opt-body-body r zero (bind (ast N)) = refl
 opt-body-body r (suc k) (bind a) = opt-body-body r k a
@@ -311,7 +306,7 @@ module _ (P : AST) where
   sim (eval~ {M = tuple n ⦅ args ⦆} {r} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree w look) κ) =
     steps (one refl)
           (subst (λ Ns → Match 0 (T.tuple-next [] (args→list args) ρ₁ κ₁) (T.tuple-next [] Ns ρ₂ κ₂))
-                 (sym (opt-list r args))
+                 (sym (args→list-hom (optimize r) (opt-args r) (λ _ _ → refl) args))
                  (tuple-next~ [] (agree-all args w look) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =
     steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (getK κ))

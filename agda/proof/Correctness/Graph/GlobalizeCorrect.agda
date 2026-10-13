@@ -29,6 +29,7 @@ open import Semantics.Graph.Clos5Iswim
   using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
 open import Compiler.Globalize
 open import proof.Correctness.Graph.DelayFiniteCommon using (Env; ρ₀)
+open import proof.Framework.GraphModel.Env using (•-~)
 open import proof.Correctness.Graph.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_)
@@ -51,10 +52,6 @@ module proof.Correctness.Graph.GlobalizeCorrect where
 
 EnvRel : Env → Env → Set
 EnvRel ρ ρ' = ∀ x → ρ x ≃ ρ' x
-
-rel-ext : ∀ {ρ ρ' X X'} → EnvRel ρ ρ' → X ≃ X' → EnvRel (X • ρ) (X' • ρ')
-rel-ext rel X≃ zero = X≃
-rel-ext rel X≃ (suc x) = rel x
 
 RR : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁
 RR = result-rel-pres _≃_
@@ -228,7 +225,7 @@ stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = prim-≃ p (stab-args 
 
 stab-arg n T T' (L5.ast M) ρ ρ' ag r rel = lift (stab n T T' M ρ ρ' ag r rel)
 stab-arg n T T' (L5.bind a) ρ ρ' ag r rel =
-  λ X X' X≃ → stab-arg n T T' a (X • ρ) (X' • ρ') ag r (rel-ext rel X≃)
+  λ X X' X≃ → stab-arg n T T' a (X • ρ) (X' • ρ') ag r (•-~ _≃_ rel X≃)
 stab-arg n T T' (L5.clear a) ρ ρ' ag r rel =
   stab-arg n T T' a (λ _ → init₅) (λ _ → init₅) ag r (λ x → ≃-refl)
 
@@ -305,7 +302,7 @@ glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = prim-≃ p (glob-sem-args args ds
 
 glob-sem-arg (ast M) ds ρ ρ' rel = lift (glob-sem M ds ρ ρ' rel)
 glob-sem-arg (bind a) ds ρ ρ' rel =
-  λ X X' X≃ → glob-sem-arg a ds (X • ρ) (X' • ρ') (rel-ext rel X≃)
+  λ X X' X≃ → glob-sem-arg a ds (X • ρ) (X' • ρ') (•-~ _≃_ rel X≃)
 glob-sem-arg (clear a) ds ρ ρ' rel = glob-sem-arg a ds (λ _ → init₅) (λ _ → init₅) (λ x → ≃-refl)
 
 glob-sem-args nil ds ρ ρ' rel = ptt

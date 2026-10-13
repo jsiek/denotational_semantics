@@ -75,11 +75,6 @@ conc-body≡ : ∀ n k (a : C2.Arg (ν-n k (ν ■))) → conc-body n k a ≡ co
 conc-body≡ n zero (bind (ast N)) = refl
 conc-body≡ n (suc k) (bind a) = conc-body≡ n k a
 
-conc-list : ∀ {n} φ (args : C2.Args (replicate n ■))
-  → args→list (conc-args φ args) ≡ map (concretize φ) (args→list args)
-conc-list {zero} φ Nil = refl
-conc-list {suc n} φ (M ,, args) = cong (concretize φ M ∷_) (conc-list φ args)
-
 args-length : ∀ {n} (args : C2.Args (replicate n ■)) → length (args→list args) ≡ n
 args-length {zero} Nil = refl
 args-length {suc n} (M ,, args) = cong suc (args-length args)
@@ -265,14 +260,14 @@ module _ (P : C3.AST) where
     after (one refl)
       (subst₂ (λ Ns B → Reach (S.clos-next (S.body n a) [] (args→list fvs) ρ₂ κ₂)
                               (T.tuple-next [] Ns ρ₃ (T.closK B κ₃)))
-              (sym (conc-list φ fvs)) (sym (conc-body≡ n n a))
+              (sym (args→list-hom (concretize φ) (conc-args φ) (λ _ _ → refl) fvs)) (sym (conc-body≡ n n a))
               (clos-next~ [] er (trans (+-identityʳ _) (args-length fvs)) κ))
   sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} _ er κ) = after (one refl) (enter L er (appL er κ))
   sim (eval~ {M = lit B k ⦅ Nil ⦆} _ er κ) = steps (one refl) (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
     after (one refl)
       (subst (λ Ns → Reach (S.tuple-next [] (args→list args) ρ₂ κ₂) (T.tuple-next [] Ns ρ₃ κ₃))
-             (sym (conc-list φ args)) (tuple-next~ [] er κ))
+             (sym (args→list-hom (concretize φ) (conc-args φ) (λ _ _ → refl) args)) (tuple-next~ [] er κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (getK κ))
   sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (inlK κ))
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (inrK κ))

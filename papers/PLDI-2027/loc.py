@@ -29,8 +29,8 @@ binding trees and lemmas about the syntax of any signature, list lookups,
 base types, the denotational framework (sets as predicates, environments,
 the semantics of any signature, DOp signatures), the graph model (values,
 consistency, operators and their continuity: the semantic algebra), the
-small-step framework (transition systems, forward simulations) and the
-clocked one, both over any type of observations.  The meaning of this
+small-step framework (transition systems, forward simulations, runs from
+any state) and the clocked one, both over any type of observations.  The meaning of this
 compiler's primitives (Semantics/Graph/Prim.agda, as the machines'
 and interpreters' prim?) and its observations
 (Semantics/Observation.agda) are not
@@ -119,6 +119,9 @@ GROUPS = [
     ('infra', 'reduction framework: reduction semantics, simulations between them',
      [W + 'Reduction.agda', WP + 'Reduction.agda']),
     ('infra', 'clocked big-step framework', [W + 'Clocked.agda', WP + 'Clocked.agda']),
+    # runs of a step function from any state, for the logical relations of
+    # adequacy
+    ('infra', 'runs of a step function from any state', [WP + 'Runs.agda']),
 
     # the meaning of the primitives (Prim.agda) is here, as prim? is in
     # each machine and interpreter

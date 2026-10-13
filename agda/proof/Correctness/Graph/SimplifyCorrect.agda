@@ -38,7 +38,7 @@ open import proof.Compiler.SimplifyFacts as P
          simp; simp-args; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-rename; prim-term-sv; int-of-just; component-just)
-open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; _⊆ₑ_)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
 open import proof.Correctness.Graph.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 open import Framework.ListUtil using (args→list; has-length) renaming (proj to proj-list)
@@ -58,14 +58,6 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
-
-Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
-Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
-  where
-  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
-    → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
-  G A⊆ ν tt = tt
-  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
 
 {- What simp knows, and what it means ----------------------------------------}
 
@@ -153,16 +145,12 @@ body : ∀ N γ D → nonempty-env γ → nonempty D → Con D → ∀ w → w �
 body N γ D ne neD cD w w∈ with body-continuous N γ ne D neD w w∈
 ... | ⟨ V , ⟨ V≢ , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ = ⟨ V , ⟨ V≢ , ⟨ Con⇒≈ V cD V⊆ , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ ⟩
 
-part : ∀ {V : List Value} {D : 𝒫 Value} {γ : Env Value} → mem V ⊆ D → (mem V • γ) ⊆ₑ (D • γ)
-part V⊆ zero = V⊆
-part V⊆ (suc x) d d∈ = d∈
-
 beta : ∀ N γ D → nonempty-env γ → nonempty D → Con D
   → ⋆ ⟨ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ , ⟨ D , ptt ⟩ ⟩ ≃ ⟦ N ⟧ (D • γ)
 beta N γ D ne neM cM = ⟨ G , H ⟩
   where
   G : _
-  G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧-monotone {ρ = mem V • γ} {ρ′ = D • γ} N (part V⊆) w w∈
+  G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧-monotone {ρ = mem V • γ} {ρ′ = D • γ} N (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆) w w∈
   H : _
   H w w∈ with body N γ _ ne neM cM w w∈
   ... | ⟨ V , ⟨ V≢ , ⟨ c , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ w∈' , ⟨ V≢ , c ⟩ ⟩ , ⟨ V⊆ , V≢ ⟩ ⟩ ⟩
@@ -172,7 +160,7 @@ case-inl : ∀ L M N γ D → ⟦ L ⟧ γ ≃ inl ⟨ D , ptt ⟩ → nonempty-
 case-inl L M N γ D L≃ ne neD cD = ⟨ G , H ⟩
   where
   G : _
-  G w (inj₁ ⟨ v , ⟨ V , ⟨ ls , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟦⟧-monotone {ρ = mem (v ∷ V) • γ} {ρ′ = D • γ} M (part (λ d d∈ → proj₁ L≃ (left d) (ls d d∈))) w w∈
+  G w (inj₁ ⟨ v , ⟨ V , ⟨ ls , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟦⟧-monotone {ρ = mem (v ∷ V) • γ} {ρ′ = D • γ} M (•-~ _⊆_ (λ _ _ d∈ → d∈) (λ d d∈ → proj₁ L≃ (left d) (ls d d∈))) w w∈
   G w (inj₂ ⟨ v , ⟨ V , ⟨ rs , _ ⟩ ⟩ ⟩) = ⊥-elim (proj₁ L≃ (right v) (rs v (here refl)))
   H : _
   H w w∈ with body M γ D ne neD cD w w∈
@@ -186,7 +174,7 @@ case-inr L M N γ D L≃ ne neD cD = ⟨ G , H ⟩
   where
   G : _
   G w (inj₁ ⟨ v , ⟨ V , ⟨ ls , _ ⟩ ⟩ ⟩) = ⊥-elim (proj₁ L≃ (left v) (ls v (here refl)))
-  G w (inj₂ ⟨ v , ⟨ V , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟦⟧-monotone {ρ = mem (v ∷ V) • γ} {ρ′ = D • γ} N (part (λ d d∈ → proj₁ L≃ (right d) (rs d d∈))) w w∈
+  G w (inj₂ ⟨ v , ⟨ V , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟦⟧-monotone {ρ = mem (v ∷ V) • γ} {ρ′ = D • γ} N (•-~ _⊆_ (λ _ _ d∈ → d∈) (λ d d∈ → proj₁ L≃ (right d) (rs d d∈))) w w∈
   H : _
   H w w∈ with body N γ D ne neD cD w w∈
   ... | ⟨ [] , ⟨ V≢ , _ ⟩ ⟩ = ⊥-elim (V≢ refl)
@@ -381,9 +369,6 @@ case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d with branch (known I) in e
 
 {- The end theorem: every program, in the environment where every variable
    means {ω} -}
-ρ₀ : Env Value
-ρ₀ = λ _ → ⌈ ω ⌉
-
 simplify-correct : ∀ M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct M = ≃-sym (tm (simp-ok inline-fuel M wf₀ wf₀ (λ x → desc-self (P.var x) ≃-refl)))
   where wf₀ = ⟨ (λ _ → ⟨ ω , refl ⟩) , (λ _ → Con-⌈⌉ ω) ⟩

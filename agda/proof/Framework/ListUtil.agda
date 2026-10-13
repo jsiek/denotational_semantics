@@ -13,13 +13,17 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _∷ʳ_; _++_; [_]; length; replicate; reverse)
 import Data.List
 import Data.Maybe
-open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
+open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse; reverse-map)
+open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; s≤s; z≤n)
 open import Data.Product using (Σ-syntax; _×_; _,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
+open import Framework.abt.Sig using (■)
+open import Framework.abt.AbstractBindingTree using (ABT; Args)
+open import Framework.Syntax.SyntaxUtil using (_,,_; Nil)
 
 private variable
   A B : Set
@@ -92,6 +96,11 @@ module _ {R : A → B → Set} where
   has-length-pw (suc n) [] = refl
   has-length-pw (suc n) (_ ∷ rs) = has-length-pw n rs
 
+  ‼-pw : ∀ {xs ys} → Pointwise R xs ys → ∀ k → M.Pointwise R (xs ‼ k) (ys ‼ k)
+  ‼-pw [] k = M.nothing
+  ‼-pw (r ∷ rs) zero = M.just r
+  ‼-pw (r ∷ rs) (suc k) = ‼-pw rs k
+
   proj-pw : ∀ {n} (i : Fin n) {vs ws} → Pointwise R vs ws → M.Pointwise R (proj i vs) (proj i ws)
   proj-pw zero [] = M.nothing
   proj-pw (suc i) [] = M.nothing
@@ -121,3 +130,21 @@ proj-map f {suc n} zero (v ∷ vs) rewrite has-length-map f n vs with has-length
 ‼-map f [] k = refl
 ‼-map f (x ∷ xs) zero = refl
 ‼-map f (x ∷ xs) (suc k) = ‼-map f xs k
+
+{- element k of the reverse of a mapped list (a table of definitions) -}
+reverse-map-‼ : ∀ (f : A → B) (xs : List A) k
+  → reverse (Data.List.map f xs) ‼ k ≡ Data.Maybe.map f (reverse xs ‼ k)
+reverse-map-‼ f xs k = trans (cong (_‼ k) (sym (reverse-map f xs))) (‼-map f (reverse xs) k)
+
+‼-any : ∀ (xs : List A) k {x} → xs ‼ k ≡ just x → Any (x ≡_) xs
+‼-any (y ∷ xs) zero refl = here refl
+‼-any (y ∷ xs) (suc k) eq = there (‼-any xs k eq)
+
+{- listing the result of a map over the subterms of a tuple, given the
+   defining equation of the map -}
+args→list-hom : ∀ {Op sig Op' sig'} (f : ABT Op sig → ABT Op' sig')
+  (g : ∀ {n} → Args Op sig (replicate n ■) → Args Op' sig' (replicate n ■))
+  → (∀ {n} M (as : Args Op sig (replicate n ■)) → g (M ,, as) ≡ f M ,, g as)
+  → ∀ {n} (as : Args Op sig (replicate n ■)) → args→list (g as) ≡ Data.List.map f (args→list as)
+args→list-hom f g cons {zero} Nil = refl
+args→list-hom f g cons {suc n} (M ,, as) rewrite cons M as = cong (f M ∷_) (args→list-hom f g cons as)

@@ -44,7 +44,7 @@ open import proof.Correctness.Graph.GlobalizeCorrect
   using (nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃; ΛΛ-≃)
 open import proof.Correctness.Graph.ConcretizeCorrect
   using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
-open import proof.Correctness.Graph.RCOCorrect using (strict-≃; Λ-≃; ne-mem)
+open import proof.Correctness.Graph.RCOCorrect using (strict-≃)
 open import proof.Correctness.Graph.LiftLocalsCommon
 open import proof.Framework.GraphModel.Env using (Env)
 

@@ -148,11 +148,6 @@ agree-args {suc n} (M ,, args) look b =
   agree (λ x u → look x (inj₁ u)) (≤-trans (m≤m⊔n _ _) b)
   ∷ agree-args args (λ x u → look x (inj₂ u)) (≤-trans (m≤n⊔m (bound M) _) b)
 
-enc-list : ∀ {n} (args : Args (replicate n ■))
-  → args→list (enc-args args) ≡ map enclose (args→list args)
-enc-list {zero} Nil = refl
-enc-list {suc n} (M ,, args) = cong (enclose M ∷_) (enc-list args)
-
 body-bind : ∀ m N → T.body m (bind-n-ast m N) ≡ N
 body-bind zero N = refl
 body-bind (suc m) N = body-bind m N
@@ -229,7 +224,7 @@ module _ (P : C.AST) where
   sim (eval~ {M = tuple n ⦅ args ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ) =
     steps (one refl)
           (subst (λ Ns → S.tuple-next [] (args→list args) ρ₁ κ₁ ~ T.tuple-next [] Ns ρ₂ κ₂)
-                 (sym (enc-list args))
+                 (sym (args→list-hom enclose enc-args (λ _ _ → refl) args))
                  (tuple-next~ [] (agree-args args look b) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =
     steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (getK κ))

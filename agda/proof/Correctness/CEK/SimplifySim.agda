@@ -275,10 +275,6 @@ ok-under ok r = ok-cons (ok-weak ok) (_ , refl , r) (λ { refl → _ , refl , r 
 ok-let : ∀ {E ρ' ρ I w v} → Ok E ρ' ρ → w ≈ v → Kn I ρ' v → Ok (known-as I E) (w ∷ ρ') (v ∷ ρ)
 ok-let {I = I} ok r k = ok-cons (ok-weak ok) (_ , refl , r) (kn-shift I k) refl
 
-simps-list : ∀ fl E {n} (as : Args (replicate n ■)) → args→list (simp-args fl E as) ≡ simps fl E (args→list as)
-simps-list fl E {zero} Nil = refl
-simps-list fl E {suc n} (M ,, as) = cong (term (simp fl E M) ∷_) (simps-list fl E as)
-
 ws-list : ∀ {k n} (as : Args (replicate n ■)) → WS-args k as → All (WS k) (args→list as)
 ws-list {n = zero} Nil _ = []
 ws-list {n = suc n} (M ,, as) (w , ws) = w ∷ ws-list as ws
@@ -579,7 +575,7 @@ module _ (P' P : AST) where
   ... | other = call-sim fl (simp fl E L) L M (eval~ ok wL) (run-known fl L ok wL) ok wM k
   structural fl (tuple n ⦅ as ⦆) {E} {ρ' = ρ'} {ρ} {κ'} {κ} ok w k isv =
     lock refl refl (subst (λ Ms → S.tuple-next [] Ms ρ' κ' ~ S.tuple-next [] (args→list as) ρ κ)
-                          (sym (simps-list fl E as)) (tuple-next~ [] ok (ws-list as w) k))
+                          (sym (args→list-hom _ (simp-args fl E) (λ _ _ → refl) as)) (tuple-next~ [] ok (ws-list as w) k))
   structural fl (get i ⦅ L ,, Nil ⦆) {E} ok (w , _) k isv with component i (known (simp fl E L)) in c
   ... | nothing = lock refl refl (eval~ ok w (getK k))
   ... | just K with small K in s

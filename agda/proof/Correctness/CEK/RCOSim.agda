@@ -66,10 +66,8 @@ open import proof.Compiler.PipelineScope using (Scoped; compile-scoped)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length; map; reverse; replicate)
-open import Data.List.Properties using (reverse-map)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 import Data.List.Relation.Unary.All as All
-open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.List.Relation.Unary.Any.Properties using (reverse⁻)
 open import Data.Maybe using (Maybe; just; nothing) renaming (map to mmap)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_; s≤s; z≤n)
@@ -260,11 +258,7 @@ dl-ixs {suc n} (A ,, As) = cong (λ z → suc (suc z)) (dl-ixs As)
 {- The table ----------------------------------------------------------------------}
 
 global-map : ∀ ds k → global (map rco ds) k ≡ mmap rco (global ds k)
-global-map ds k = trans (cong (_‼ k) (sym (reverse-map rco ds))) (‼-map rco (reverse ds) k)
-
-‼-any : ∀ {A : Set} (xs : List A) k {x} → xs ‼ k ≡ just x → Any (x ≡_) xs
-‼-any (y ∷ xs) zero refl = here refl
-‼-any (y ∷ xs) (suc k) eq = there (‼-any xs k eq)
+global-map ds = reverse-map-‼ rco ds
 
 global-all : ∀ {P : AST → Set} {ds} → All P ds → ∀ k {N} → global ds k ≡ just N → P N
 global-all {ds = ds} ps k eq = All.lookup ps (reverse⁻ (‼-any (reverse ds) k eq))
