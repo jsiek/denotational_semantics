@@ -3,7 +3,7 @@
   Soundness and adequacy of the graph model with respect to the
   small-step machines, and the correctness of the compiler in the graph
   model observed through the machines: the public statements. The proofs
-  are in proof/Compiler/Operational/Adequacy/; each theorem here is one of
+  are in proof/Adequacy/; each theorem here is one of
   them (or a one-line instance of one), with its type written out, so
   that it can be read without opening proof/.
 
@@ -11,11 +11,11 @@
   semantics, and ρ₀) and of Theorems/Simulation.agda (the machines, the
   observations, Closed). Converges T is terminating with some answer
   (an observation other than o-wrong), and A ⇔ B is (A → B) × (B → A)
-  (Compiler/Observation.agda).
+  (Semantics/Observation.agda).
 
   The adequacy theorems for the Clos5 and X86 machines are proved for
   any well-formed program (a precondition, in
-  proof/Compiler/Operational/Adequacy/{Clos5WF,X86WF}.agda, that the
+  proof/Adequacy/{Clos5WF,X86WF}.agda, that the
   compiler establishes); they are stated here for the programs the
   compiler produces, so that the well-formedness conditions need not be
   audited.
@@ -27,26 +27,26 @@ module Theorems.Adequacy where
 open import Framework.Primitives using (base-rep)
 open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty)
 open import Framework.GraphModel.Domain using (Value; const)
-open import Compiler.Observation using (o-const; o-wrong; Converges; _⇔_)
-open import Compiler.Operational.Smallstep using (Terminates; Diverges)
+open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 
-import Compiler.Lang.ISWIM as ISWIM
-open import Compiler.Compile.Pipeline using (compile; compile-x86)
-open import Compiler.Compile.EncloseScope using (Closed)
+import Language.ISWIM as ISWIM
+open import Compiler.Pipeline using (compile; compile-x86)
+open import Compiler.EncloseScope using (Closed)
 
 open import Theorems.Denotational using (ρ₀)
-open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧)
-open import Compiler.Model.Graph.Sem.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Compiler.Model.Graph.Sem.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Semantics.Graph.ISWIM using (⟦_⟧)
+open import Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
-import Compiler.Operational.Machine.ISWIM as ISWIMₘ
-import Compiler.Operational.Machine.Clos5 as Clos5ₘ
-import Compiler.Operational.Machine.X86 as X86ₘ
+import Semantics.CEK.ISWIM as ISWIMₘ
+import Semantics.CEK.Clos5 as Clos5ₘ
+import Semantics.CEK.X86 as X86ₘ
 
-import proof.Compiler.Operational.Adequacy.ISWIM as AdequacyISWIM
-import proof.Compiler.Operational.Adequacy.Clos5 as AdequacyClos5
-import proof.Compiler.Operational.Adequacy.X86 as AdequacyX86
-import proof.Compiler.Operational.Adequacy.EndToEnd as EndToEnd
+import proof.Adequacy.ISWIM as AdequacyISWIM
+import proof.Adequacy.Clos5 as AdequacyClos5
+import proof.Adequacy.X86 as AdequacyX86
+import proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Product using (_,_)
 open import Relation.Nullary using (¬_)

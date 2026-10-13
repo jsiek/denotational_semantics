@@ -3,7 +3,7 @@
   The correctness of the compiler, by clocked interpreters and value
   relations: the public statements.
   The proofs (clock for clock) are in
-  proof/Compiler/Functional/Correctness/; each theorem here is one of
+  proof/Correctness/Interp/; each theorem here is one of
   them, with its type written out, so that it can be read without opening
   proof/.
 
@@ -13,69 +13,69 @@
           --select instructions--> X86
 
   Each language has an interpreter with a clock
-  (Compiler/Functional/Interp/, here Lᵢ.sem for language L): a program
-  terminates with an observation (Compiler/Observation.agda) when, for
+  (Semantics/Interp/, here Lᵢ.sem for language L): a program
+  terminates with an observation (Semantics/Observation.agda) when, for
   some clock, it returns a value observed as o or goes wrong (o-wrong),
   and diverges when it times out for every clock. Two programs are
   Equivalent (Framework/Clocked.agda) when each terminates with o exactly
   when the other does, and one diverges exactly when the other does.
 
-  To read them: the languages (Compiler/Lang/), the passes
-  (Compiler/Compile/), the interpreters, the observations, and the
-  preconditions: Closed (Compiler/Compile/EncloseScope.agda), WS
-  (Framework/Syntax/Scope.agda), Scoped (Compiler/Compile/PipelineScope.agda)
-  and MonProgram (Compiler/Lang/Mon.agda).
+  To read them: the languages (Language/), the passes
+  (Compiler/), the interpreters, the observations, and the
+  preconditions: Closed (Compiler/EncloseScope.agda), WS
+  (Framework/Syntax/Scope.agda), Scoped (Compiler/PipelineScope.agda)
+  and MonProgram (Language/Mon.agda).
 
 -}
 
 module Theorems.Interpreter where
 
-open import Compiler.Observation using (o-const; o-wrong; Converges; _⇔_)
-open import Compiler.Functional.Clock using (Terminates; Diverges; Equivalent)
+open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.Interp.Clock using (Terminates; Diverges; Equivalent)
 
-import Compiler.Lang.ISWIM as ISWIM
-import Compiler.Lang.Clos2 as Clos2
-import Compiler.Lang.Clos3 as Clos3
-import Compiler.Lang.Clos4 as Clos4
-import Compiler.Lang.Clos5 as Clos5
-open import Compiler.Lang.Mon using (MonProgram)
-import Compiler.Lang.Imp as Imp
-import Compiler.Lang.CFG as CFG
+import Language.ISWIM as ISWIM
+import Language.Clos2 as Clos2
+import Language.Clos3 as Clos3
+import Language.Clos4 as Clos4
+import Language.Clos5 as Clos5
+open import Language.Mon using (MonProgram)
+import Language.Imp as Imp
+import Language.CFG as CFG
 
-open import Compiler.Compile.Enclose using (enclose)
-open import Compiler.Compile.Optimize using (optimize-program)
-open import Compiler.Compile.Concretize using (concretize-program)
-open import Compiler.Compile.Delay using (delay)
-open import Compiler.Compile.Globalize using (globalize)
-open import Compiler.Compile.RCO using (rco-program)
-open import Compiler.Compile.LiftLocals using (lift-program)
-open import Compiler.Compile.Explicate using (explicate)
-open import Compiler.Compile.Select using (select)
-open import Compiler.Compile.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Compiler.Enclose using (enclose)
+open import Compiler.Optimize using (optimize-program)
+open import Compiler.Concretize using (concretize-program)
+open import Compiler.Delay using (delay)
+open import Compiler.Globalize using (globalize)
+open import Compiler.RCO using (rco-program)
+open import Compiler.LiftLocals using (lift-program)
+open import Compiler.Explicate using (explicate)
+open import Compiler.Select using (select)
+open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.Compile.EncloseScope using (Closed)
+open import Compiler.EncloseScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Compiler.Compile.PipelineScope using (Scoped)
+open import Compiler.PipelineScope using (Scoped)
 
-import Compiler.Functional.Interp.ISWIM as ISWIMᵢ
-import Compiler.Functional.Interp.Clos2 as Clos2ᵢ
-import Compiler.Functional.Interp.Clos3 as Clos3ᵢ
-import Compiler.Functional.Interp.Clos4 as Clos4ᵢ
-import Compiler.Functional.Interp.Clos5 as Clos5ᵢ
-import Compiler.Functional.Interp.Imp as Impᵢ
-import Compiler.Functional.Interp.CFG as CFGᵢ
-import Compiler.Functional.Interp.X86 as X86ᵢ
+import Semantics.Interp.ISWIM as ISWIMᵢ
+import Semantics.Interp.Clos2 as Clos2ᵢ
+import Semantics.Interp.Clos3 as Clos3ᵢ
+import Semantics.Interp.Clos4 as Clos4ᵢ
+import Semantics.Interp.Clos5 as Clos5ᵢ
+import Semantics.Interp.Imp as Impᵢ
+import Semantics.Interp.CFG as CFGᵢ
+import Semantics.Interp.X86 as X86ᵢ
 
-import proof.Compiler.Functional.Correctness.EncloseFuel as EncloseFuel
-import proof.Compiler.Functional.Correctness.OptimizeFuel as OptimizeFuel
-import proof.Compiler.Functional.Correctness.ConcretizeFuel as ConcretizeFuel
-import proof.Compiler.Functional.Correctness.DelayFuel as DelayFuel
-import proof.Compiler.Functional.Correctness.GlobalizeFuel as GlobalizeFuel
-import proof.Compiler.Functional.Correctness.RCOFuel as RCOFuel
-import proof.Compiler.Functional.Correctness.LiftLocalsFuel as LiftLocalsFuel
-import proof.Compiler.Functional.Correctness.ExplicateFuel as ExplicateFuel
-import proof.Compiler.Functional.Correctness.SelectFuel as SelectFuel
-import proof.Compiler.Functional.Correctness.CompilerFuel as CompilerFuel
+import proof.Correctness.Interp.EncloseFuel as EncloseFuel
+import proof.Correctness.Interp.OptimizeFuel as OptimizeFuel
+import proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
+import proof.Correctness.Interp.DelayFuel as DelayFuel
+import proof.Correctness.Interp.GlobalizeFuel as GlobalizeFuel
+import proof.Correctness.Interp.RCOFuel as RCOFuel
+import proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
+import proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
+import proof.Correctness.Interp.SelectFuel as SelectFuel
+import proof.Correctness.Interp.CompilerFuel as CompilerFuel
 
 {- Each pass ------------------------------------------------------------------}
 

@@ -31,8 +31,9 @@ the semantics of any signature, DOp signatures), the graph model (values,
 consistency, operators and their continuity: the semantic algebra), the
 small-step framework (transition systems, forward simulations) and the
 clocked one, both over any type of observations.  The meaning of this
-compiler's primitives (Compiler/Model/Graph/Prim.agda, as the machines'
-and interpreters' prim?) and its observations (Observation.agda) are not
+compiler's primitives (Semantics/Graph/Prim.agda, as the machines'
+and interpreters' prim?) and its observations
+(Semantics/Observation.agda) are not
 infrastructure.  The operational values are not either: each language's
 Val is its own datatype (closures over that language's terms, code
 pointers into its tables), observed through this compiler's
@@ -66,28 +67,33 @@ theorem files.
 """
 import glob, os, re, sys
 
-L = 'agda/Compiler/Lang/'
-C = 'agda/Compiler/Compile/'
-G = 'agda/Compiler/Model/Graph/'
-O = 'agda/Compiler/Operational/'
-F = 'agda/Compiler/Functional/'
-RD = 'agda/Compiler/Reduction/'
+L = 'agda/Language/'
+C = 'agda/Compiler/'
+G = 'agda/Semantics/Graph/'
+O = 'agda/Semantics/CEK/'
+F = 'agda/Semantics/Interp/'
+RD = 'agda/Semantics/Reduction/'
 PC = 'agda/proof/Compiler/'
-GP = PC + 'Model/Graph/'
-OP = PC + 'Operational/'
-FP = PC + 'Functional/'
-RP = PC + 'Reduction/'
+GP = 'agda/proof/Semantics/Graph/'
+OP = 'agda/proof/Semantics/CEK/'
+FP = 'agda/proof/Semantics/Interp/'
+RP = 'agda/proof/Semantics/Reduction/'
+GC = 'agda/proof/Correctness/Graph/'
+OC = 'agda/proof/Correctness/CEK/'
+FC = 'agda/proof/Correctness/Interp/'
+RC = 'agda/proof/Correctness/Reduction/'
+AP = 'agda/proof/Adequacy/'
 W = 'agda/Framework/'
 WP = 'agda/proof/Framework/'
 
 # (side, group, glob patterns)
 GROUPS = [
     # also the lemmas the operational styles use about the compiler's
-    # output, Compile/{EncloseScope,GlobalizeTable,PipelineScope}, and the
+    # output, Compiler/{EncloseScope,GlobalizeTable,PipelineScope}, and the
     # observations (Observation.agda).  Those not used by all four proofs
     # are counted in each proof that uses them (see main).
     ('shared', 'syntax, languages, compiler passes',
-     [L + '*.agda', C + '*.agda', PC + 'Compile/*.agda', 'agda/Compiler/Observation.agda']),
+     [L + '*.agda', C + '*.agda', PC + '*.agda', 'agda/Semantics/Observation.agda']),
 
     # language-independent infrastructure: not in the totals (see main)
     ('infra', 'abstract binding trees',
@@ -118,110 +124,111 @@ GROUPS = [
     # each machine and interpreter
     ('den', 'semantics of the languages',
      [G + 'Prim.agda', GP + 'Prim.agda',
-      G + 'Sem/ISWIM.agda', GP + 'Sem/ISWIM.agda',
-      G + 'Sem/Clos2Iswim.agda', GP + 'Sem/Clos2Iswim.agda',
-      G + 'Sem/Clos3Iswim.agda', GP + 'Sem/Clos3Iswim.agda', GP + 'Sem/Clos3IswimContinuous.agda',
-      G + 'Sem/Clos4Iswim.agda', GP + 'Sem/Clos4Iswim.agda', GP + 'Sem/Clos4IswimContinuous.agda',
-      G + 'Sem/Clos5Iswim.agda', GP + 'Sem/Clos5IswimContinuous.agda',
-      G + 'Sem/Imp.agda', G + 'Sem/ImpK.agda', G + 'Sem/CFG.agda', G + 'Sem/X86.agda']),
-    ('den', 'enclose', [GP + 'Correctness/EncloseCorrect.agda']),
-    ('den', 'optimize', [GP + 'Correctness/OptimizeCorrect.agda']),
-    ('den', 'concretize', [GP + 'Correctness/ConcretizeCorrect.agda']),
+      G + 'ISWIM.agda', GP + 'ISWIM.agda',
+      G + 'Clos2Iswim.agda', GP + 'Clos2Iswim.agda',
+      G + 'Clos3Iswim.agda', GP + 'Clos3Iswim.agda', GP + 'Clos3IswimContinuous.agda',
+      G + 'Clos4Iswim.agda', GP + 'Clos4Iswim.agda', GP + 'Clos4IswimContinuous.agda',
+      G + 'Clos5Iswim.agda', GP + 'Clos5IswimContinuous.agda',
+      G + 'Imp.agda', G + 'ImpK.agda', G + 'CFG.agda', G + 'X86.agda']),
+    ('den', 'enclose', [GC + 'EncloseCorrect.agda']),
+    ('den', 'optimize', [GC + 'OptimizeCorrect.agda']),
+    ('den', 'concretize', [GC + 'ConcretizeCorrect.agda']),
     ('den', 'delay',
-     [GP + 'Correctness/DelayFiniteCommon.agda', GP + 'Correctness/DelayFiniteRel.agda',
-      GP + 'Correctness/DelayApp.agda', GP + 'Correctness/DelayPreserve.agda',
-      GP + 'Correctness/DelayReflectFinite.agda']),
-    ('den', 'globalize', [GP + 'Correctness/GlobalizeCorrect.agda']),
+     [GC + 'DelayFiniteCommon.agda', GC + 'DelayFiniteRel.agda',
+      GC + 'DelayApp.agda', GC + 'DelayPreserve.agda',
+      GC + 'DelayReflectFinite.agda']),
+    ('den', 'globalize', [GC + 'GlobalizeCorrect.agda']),
     # each rco module also proves compile-mon (compile then rco) end to end
-    ('den', 'rco', [GP + 'Correctness/RCOCorrect.agda']),
+    ('den', 'rco', [GC + 'RCOCorrect.agda']),
     # lift locals and explicate control against the continuation-passing
-    # semantics of Imp (Sem/ImpK.agda); against the direct one, see 'exp'
+    # semantics of Imp (Semantics/Graph/ImpK.agda); against the direct one,
+    # see 'exp'
     ('den', 'lift locals',
-     [GP + 'Correctness/LiftLocalsCommon.agda', GP + 'Correctness/LiftLocalsCorrectK.agda']),
+     [GC + 'LiftLocalsCommon.agda', GC + 'LiftLocalsCorrectK.agda']),
     ('den', 'explicate control',
-     [GP + 'Correctness/ExplicateCommon.agda', GP + 'Correctness/ExplicateCorrectK.agda']),
-    ('den', 'select instructions', [GP + 'Correctness/SelectCorrect.agda']),
-    ('den', 'composition', [GP + 'Correctness/CompilerCorrect.agda']),
+     [GC + 'ExplicateCommon.agda', GC + 'ExplicateCorrectK.agda']),
+    ('den', 'select instructions', [GC + 'SelectCorrect.agda']),
+    ('den', 'composition', [GC + 'CompilerCorrect.agda']),
 
     # with the framework at this compiler's observations (Smallstep.agda,
     # Simulation.agda).  The machines of the first-order languages Imp, CFG
     # and X86, and the framework instances, are shared with the reduction
     # proof ('op+red': counted in both columns)
     ('op', 'semantics of the languages',
-     [O + 'Machine/ISWIM.agda', O + 'Machine/Clos2.agda', O + 'Machine/Clos3.agda',
-      O + 'Machine/Clos4.agda', O + 'Machine/Clos5.agda']),
+     [O + 'ISWIM.agda', O + 'Clos2.agda', O + 'Clos3.agda',
+      O + 'Clos4.agda', O + 'Clos5.agda']),
     ('op+red', 'semantics of the languages',
-     [O + 'Machine/Values.agda', O + 'Machine/Imp.agda', O + 'Machine/CFG.agda', O + 'Machine/X86.agda',
+     [O + 'Values.agda', O + 'Imp.agda', O + 'CFG.agda', O + 'X86.agda',
       O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
-    ('op', 'enclose', [OP + 'Correctness/EncloseSim.agda']),
-    ('op', 'optimize', [OP + 'Correctness/OptimizeSim.agda']),
-    ('op', 'concretize', [OP + 'Correctness/ConcretizeSim.agda']),
-    ('op', 'delay', [OP + 'Correctness/DelaySim.agda']),
-    ('op', 'globalize', [OP + 'Correctness/GlobalizeSim.agda']),
-    ('op', 'rco', [OP + 'Correctness/RCOSim.agda']),
-    ('op', 'lift locals', [OP + 'Correctness/LiftLocalsSim.agda']),
+    ('op', 'enclose', [OC + 'EncloseSim.agda']),
+    ('op', 'optimize', [OC + 'OptimizeSim.agda']),
+    ('op', 'concretize', [OC + 'ConcretizeSim.agda']),
+    ('op', 'delay', [OC + 'DelaySim.agda']),
+    ('op', 'globalize', [OC + 'GlobalizeSim.agda']),
+    ('op', 'rco', [OC + 'RCOSim.agda']),
+    ('op', 'lift locals', [OC + 'LiftLocalsSim.agda']),
     # explicate control and select instructions are between the machines of
     # first-order languages, and are shared with the reduction proof
-    ('op+red', 'explicate control', [OP + 'Correctness/ExplicateSim.agda']),
-    ('op+red', 'select instructions', [OP + 'Correctness/SelectSim.agda']),
-    ('op', 'composition', [OP + 'Correctness/CompilerSim.agda', OP + 'Correctness/CompilerX86Sim.agda']),
+    ('op+red', 'explicate control', [OC + 'ExplicateSim.agda']),
+    ('op+red', 'select instructions', [OC + 'SelectSim.agda']),
+    ('op', 'composition', [OC + 'CompilerSim.agda', OC + 'CompilerX86Sim.agda']),
 
     # reduction semantics (substitution) for the languages with binders,
     # and the framework at this compiler's observations (Smallstep.agda)
     ('red', 'semantics of the languages', [RD + '*.agda', RP + '*.agda']),
-    ('red', 'enclose', [RP + 'Correctness/EncloseRed.agda']),
-    ('red', 'optimize', [RP + 'Correctness/OptimizeRed.agda']),
-    ('red', 'concretize', [RP + 'Correctness/ConcretizeRed.agda']),
-    ('red', 'delay', [RP + 'Correctness/DelayRed.agda']),
-    ('red', 'globalize', [RP + 'Correctness/GlobalizeRed.agda']),
-    ('red', 'rco', [RP + 'Correctness/RCORed.agda']),
-    ('red', 'lift locals', [RP + 'Correctness/LiftLocalsRed.agda']),
-    ('red', 'composition', [RP + 'Correctness/CompilerRed.agda', RP + 'Correctness/CompilerX86Red.agda']),
+    ('red', 'enclose', [RC + 'EncloseRed.agda']),
+    ('red', 'optimize', [RC + 'OptimizeRed.agda']),
+    ('red', 'concretize', [RC + 'ConcretizeRed.agda']),
+    ('red', 'delay', [RC + 'DelayRed.agda']),
+    ('red', 'globalize', [RC + 'GlobalizeRed.agda']),
+    ('red', 'rco', [RC + 'RCORed.agda']),
+    ('red', 'lift locals', [RC + 'LiftLocalsRed.agda']),
+    ('red', 'composition', [RC + 'CompilerRed.agda', RC + 'CompilerX86Red.agda']),
 
     # with the framework at this compiler's observations (Clock.agda)
-    ('ck', 'semantics of the languages', [F + 'Interp/*.agda', F + 'Clock.agda', FP + 'Clock.agda']),
-    ('ck', 'enclose', [FP + 'Correctness/EncloseFuel.agda']),
-    ('ck', 'optimize', [FP + 'Correctness/OptimizeFuel.agda']),
-    ('ck', 'concretize', [FP + 'Correctness/ConcretizeFuel.agda']),
-    ('ck', 'delay', [FP + 'Correctness/DelayFuel.agda']),
-    ('ck', 'globalize', [FP + 'Correctness/GlobalizeFuel.agda']),
-    ('ck', 'rco', [FP + 'Correctness/RCOFuel.agda']),
-    ('ck', 'lift locals', [FP + 'Correctness/LiftLocalsFuel.agda']),
-    ('ck', 'explicate control', [FP + 'Correctness/ExplicateFuel.agda']),
-    ('ck', 'select instructions', [FP + 'Correctness/SelectFuel.agda']),
-    ('ck', 'composition', [FP + 'Correctness/CompilerFuel.agda']),
+    ('ck', 'semantics of the languages', [F + '*.agda', FP + 'Clock.agda']),
+    ('ck', 'enclose', [FC + 'EncloseFuel.agda']),
+    ('ck', 'optimize', [FC + 'OptimizeFuel.agda']),
+    ('ck', 'concretize', [FC + 'ConcretizeFuel.agda']),
+    ('ck', 'delay', [FC + 'DelayFuel.agda']),
+    ('ck', 'globalize', [FC + 'GlobalizeFuel.agda']),
+    ('ck', 'rco', [FC + 'RCOFuel.agda']),
+    ('ck', 'lift locals', [FC + 'LiftLocalsFuel.agda']),
+    ('ck', 'explicate control', [FC + 'ExplicateFuel.agda']),
+    ('ck', 'select instructions', [FC + 'SelectFuel.agda']),
+    ('ck', 'composition', [FC + 'CompilerFuel.agda']),
 
     ('adeq', 'ISWIM',
-     [OP + 'Adequacy/Common.agda', OP + 'Adequacy/Soundness.agda', OP + 'Adequacy/LogRel.agda',
-      OP + 'Adequacy/ISWIM.agda', GP + 'Sem/ISWIMContinuous.agda']),
+     [AP + 'Common.agda', AP + 'Soundness.agda', AP + 'LogRel.agda',
+      AP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda']),
     ('adeq', 'Clos5',
-     [OP + 'Adequacy/Clos5Common.agda', OP + 'Adequacy/Clos5Soundness.agda', OP + 'Adequacy/Clos5LogRel.agda',
-      OP + 'Adequacy/Clos5.agda', OP + 'Adequacy/Values.agda']),
+     [AP + 'Clos5Common.agda', AP + 'Clos5Soundness.agda', AP + 'Clos5LogRel.agda',
+      AP + 'Clos5.agda', AP + 'Values.agda']),
     ('adeq', 'X86',
-     [OP + 'Adequacy/X86Common.agda', OP + 'Adequacy/X86Soundness.agda', OP + 'Adequacy/X86LogRel.agda',
-      OP + 'Adequacy/X86.agda']),
+     [AP + 'X86Common.agda', AP + 'X86Soundness.agda', AP + 'X86LogRel.agda',
+      AP + 'X86.agda']),
     ('adeq', 'well-formedness of compiled programs',
-     [OP + 'Adequacy/Clos5WF.agda', OP + 'Adequacy/CompileWF.agda', OP + 'Adequacy/X86WF.agda',
-      OP + 'Adequacy/X86CompileWF.agda']),
-    ('adeq', 'end to end', [OP + 'Adequacy/EndToEnd.agda']),
+     [AP + 'Clos5WF.agda', AP + 'CompileWF.agda', AP + 'X86WF.agda',
+      AP + 'X86CompileWF.agda']),
+    ('adeq', 'end to end', [AP + 'EndToEnd.agda']),
 
     ('examples', 'examples',
-     [GP + 'Correctness/*Example.agda', PC + 'Compile/Examples/*.agda']),
+     [GC + '*Example.agda', PC + 'Examples/*.agda']),
 
     # not in the totals: a direct backward simulation for delay, without
     # determinism, for comparison (see loc.md)
     ('exp', 'simulation: direct backward simulation for delay — framework',
      [OP + 'Backward.agda']),
     ('exp', 'simulation: direct backward simulation for delay — delay',
-     [OP + 'Correctness/DelayBackSim.agda']),
-    # not in the totals: the direct semantics of Imp (Sem/ImpDirect.agda),
+     [OC + 'DelayBackSim.agda']),
+    # not in the totals: the direct semantics of Imp (ImpDirect.agda),
     # an alternative to the continuation-passing one, and lift locals and
-    # explicate control proved against it.  They also use Sem/Imp.agda,
-    # LiftLocalsCommon and ExplicateCommon, counted in the main rows.
-    ('exp', 'graph model: direct Imp — semantics', [GP + 'Sem/ImpDirect.agda']),
-    ('exp', 'graph model: direct Imp — lift locals', [GP + 'Correctness/LiftLocalsCorrect.agda']),
+    # explicate control proved against it.  They also use
+    # Semantics/Graph/Imp.agda, LiftLocalsCommon and ExplicateCommon, counted in the main rows.
+    ('exp', 'graph model: direct Imp — semantics', [GP + 'ImpDirect.agda']),
+    ('exp', 'graph model: direct Imp — lift locals', [GC + 'LiftLocalsCorrect.agda']),
     ('exp', 'graph model: direct Imp — explicate control',
-     [GP + 'Correctness/ExplicateCorrect.agda']),
+     [GC + 'ExplicateCorrect.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)

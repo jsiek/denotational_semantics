@@ -1,7 +1,7 @@
 {-
 
   The correctness of the compiler in the graph model: the public
-  statements. The proofs are in proof/Compiler/Model/Graph/Correctness/;
+  statements. The proofs are in proof/Correctness/Graph/;
   each theorem here is one of them, with its type written out, so that it
   can be read without opening proof/.
 
@@ -10,9 +10,9 @@
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
-  To read them: the languages (Compiler/Lang/), the passes
-  (Compiler/Compile/), the semantics of each language
-  (Compiler/Model/Graph/Sem/) and the domain and operators they are built
+  To read them: the languages (Language/), the passes
+  (Compiler/), the semantics of each language
+  (Semantics/Graph/) and the domain and operators they are built
   from (Framework/GraphModel/).
 
 -}
@@ -24,46 +24,46 @@ open import Framework.GraphModel.SetsAsPredicates using (𝒫; ⌈_⌉; _∈_; n
 open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.Domain using (Value; const; ω)
 
-import Compiler.Lang.ISWIM as ISWIM
-import Compiler.Lang.Clos2 as Clos2
-import Compiler.Lang.Clos3 as Clos3
-import Compiler.Lang.Clos4 as Clos4
-import Compiler.Lang.Clos5 as Clos5
-open import Compiler.Lang.Mon using (MonProgram)
-import Compiler.Lang.Imp as Imp
-import Compiler.Lang.CFG as CFG
-import Compiler.Lang.X86 as X86
+import Language.ISWIM as ISWIM
+import Language.Clos2 as Clos2
+import Language.Clos3 as Clos3
+import Language.Clos4 as Clos4
+import Language.Clos5 as Clos5
+open import Language.Mon using (MonProgram)
+import Language.Imp as Imp
+import Language.CFG as CFG
+import Language.X86 as X86
 
-open import Compiler.Compile.Enclose using (enclose)
-open import Compiler.Compile.Optimize using (optimize-program)
-open import Compiler.Compile.Concretize using (concretize-program)
-open import Compiler.Compile.Delay using (delay)
-open import Compiler.Compile.Globalize using (globalize)
-open import Compiler.Compile.RCO using (rco-program)
-open import Compiler.Compile.LiftLocals using (lift-program)
-open import Compiler.Compile.Explicate using (explicate)
-open import Compiler.Compile.Select using (select)
-open import Compiler.Compile.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Compiler.Enclose using (enclose)
+open import Compiler.Optimize using (optimize-program)
+open import Compiler.Concretize using (concretize-program)
+open import Compiler.Delay using (delay)
+open import Compiler.Globalize using (globalize)
+open import Compiler.RCO using (rco-program)
+open import Compiler.LiftLocals using (lift-program)
+open import Compiler.Explicate using (explicate)
+open import Compiler.Select using (select)
+open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.Model.Graph.Sem.ISWIM using (⟦_⟧)
-open import Compiler.Model.Graph.Sem.Clos2Iswim using () renaming (⟦_⟧ to ⟦_⟧₂)
-open import Compiler.Model.Graph.Sem.Clos3Iswim using () renaming (⟦_⟧ to ⟦_⟧₃)
-open import Compiler.Model.Graph.Sem.Clos4Iswim using () renaming (⟦_⟧ to ⟦_⟧₄)
-open import Compiler.Model.Graph.Sem.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Compiler.Model.Graph.Sem.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
-open import Compiler.Model.Graph.Sem.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Compiler.Model.Graph.Sem.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Semantics.Graph.ISWIM using (⟦_⟧)
+open import Semantics.Graph.Clos2Iswim using () renaming (⟦_⟧ to ⟦_⟧₂)
+open import Semantics.Graph.Clos3Iswim using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import Semantics.Graph.Clos4Iswim using () renaming (⟦_⟧ to ⟦_⟧₄)
+open import Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
+open import Semantics.Graph.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
+open import Semantics.Graph.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
-import proof.Compiler.Model.Graph.Correctness.EncloseCorrect as EncloseCorrect
-import proof.Compiler.Model.Graph.Correctness.OptimizeCorrect as OptimizeCorrect
-import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect as ConcretizeCorrect
-import proof.Compiler.Model.Graph.Correctness.DelayPreserve as DelayCorrect
-import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect as GlobalizeCorrect
-import proof.Compiler.Model.Graph.Correctness.RCOCorrect as RCOCorrect
-import proof.Compiler.Model.Graph.Correctness.LiftLocalsCorrectK as LiftLocalsCorrect
-import proof.Compiler.Model.Graph.Correctness.ExplicateCorrectK as ExplicateCorrect
-import proof.Compiler.Model.Graph.Correctness.SelectCorrect as SelectCorrect
-import proof.Compiler.Model.Graph.Correctness.CompilerCorrect as CompilerCorrect
+import proof.Correctness.Graph.EncloseCorrect as EncloseCorrect
+import proof.Correctness.Graph.OptimizeCorrect as OptimizeCorrect
+import proof.Correctness.Graph.ConcretizeCorrect as ConcretizeCorrect
+import proof.Correctness.Graph.DelayPreserve as DelayCorrect
+import proof.Correctness.Graph.GlobalizeCorrect as GlobalizeCorrect
+import proof.Correctness.Graph.RCOCorrect as RCOCorrect
+import proof.Correctness.Graph.LiftLocalsCorrectK as LiftLocalsCorrect
+import proof.Correctness.Graph.ExplicateCorrectK as ExplicateCorrect
+import proof.Correctness.Graph.SelectCorrect as SelectCorrect
+import proof.Correctness.Graph.CompilerCorrect as CompilerCorrect
 
 open import Data.List.Relation.Unary.All using (All)
 open import Data.Nat using (_≤_)

@@ -73,9 +73,9 @@ import proof.Framework.Reduction
    remove complex operands
    --------------------------------------------------------------------------- -}
 
-import proof.Compiler.Compile.EncloseScope
-import proof.Compiler.Compile.GlobalizeTable
-import proof.Compiler.Compile.PipelineScope
+import proof.Compiler.EncloseScope
+import proof.Compiler.GlobalizeTable
+import proof.Compiler.PipelineScope
 
 {- ---------------------------------------------------------------------------
    proof/: the denotational (graph-model) development
@@ -83,51 +83,51 @@ import proof.Compiler.Compile.PipelineScope
 
 {- the monotonicity, consistency and continuity of the primitives and of
    the semantics of each language -}
-import proof.Compiler.Model.Graph.Prim
-import proof.Compiler.Model.Graph.Sem.ISWIM
-import proof.Compiler.Model.Graph.Sem.Clos2Iswim
-import proof.Compiler.Model.Graph.Sem.Clos3Iswim
-import proof.Compiler.Model.Graph.Sem.Clos3IswimContinuous
-import proof.Compiler.Model.Graph.Sem.Clos4Iswim
-import proof.Compiler.Model.Graph.Sem.Clos4IswimContinuous
-import proof.Compiler.Model.Graph.Sem.Clos5IswimContinuous
+import proof.Semantics.Graph.Prim
+import proof.Semantics.Graph.ISWIM
+import proof.Semantics.Graph.Clos2Iswim
+import proof.Semantics.Graph.Clos3Iswim
+import proof.Semantics.Graph.Clos3IswimContinuous
+import proof.Semantics.Graph.Clos4Iswim
+import proof.Semantics.Graph.Clos4IswimContinuous
+import proof.Semantics.Graph.Clos5IswimContinuous
 
 {- correctness of each pass -}
-import proof.Compiler.Model.Graph.Correctness.EncloseCorrect
-import proof.Compiler.Model.Graph.Correctness.OptimizeCorrect
-import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect
-import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon
-import proof.Compiler.Model.Graph.Correctness.DelayFiniteRel
-import proof.Compiler.Model.Graph.Correctness.DelayApp
-import proof.Compiler.Model.Graph.Correctness.DelayReflectFinite
-import proof.Compiler.Model.Graph.Correctness.DelayPreserve
-import proof.Compiler.Model.Graph.Correctness.GlobalizeCorrect
-import proof.Compiler.Model.Graph.Correctness.RCOCorrect
-import proof.Compiler.Model.Graph.Correctness.LiftLocalsCommon
-import proof.Compiler.Model.Graph.Correctness.LiftLocalsCorrectK
-import proof.Compiler.Model.Graph.Correctness.ExplicateCommon
-import proof.Compiler.Model.Graph.Correctness.ExplicateCorrectK
-import proof.Compiler.Model.Graph.Correctness.SelectCorrect
+import proof.Correctness.Graph.EncloseCorrect
+import proof.Correctness.Graph.OptimizeCorrect
+import proof.Correctness.Graph.ConcretizeCorrect
+import proof.Correctness.Graph.DelayFiniteCommon
+import proof.Correctness.Graph.DelayFiniteRel
+import proof.Correctness.Graph.DelayApp
+import proof.Correctness.Graph.DelayReflectFinite
+import proof.Correctness.Graph.DelayPreserve
+import proof.Correctness.Graph.GlobalizeCorrect
+import proof.Correctness.Graph.RCOCorrect
+import proof.Correctness.Graph.LiftLocalsCommon
+import proof.Correctness.Graph.LiftLocalsCorrectK
+import proof.Correctness.Graph.ExplicateCommon
+import proof.Correctness.Graph.ExplicateCorrectK
+import proof.Correctness.Graph.SelectCorrect
 
 {- the end-to-end theorems (ISWIM → Clos5) -}
-import proof.Compiler.Model.Graph.Correctness.CompilerCorrect
+import proof.Correctness.Graph.CompilerCorrect
 
 {- experiment: a direct semantics of Imp, and lift locals and explicate
    control against it (see papers/PLDI-2027/loc.md) -}
-import proof.Compiler.Model.Graph.Sem.ImpDirect
-import proof.Compiler.Model.Graph.Correctness.LiftLocalsCorrect
-import proof.Compiler.Model.Graph.Correctness.ExplicateCorrect
+import proof.Semantics.Graph.ImpDirect
+import proof.Correctness.Graph.LiftLocalsCorrect
+import proof.Correctness.Graph.ExplicateCorrect
 
 {- examples -}
-import proof.Compiler.Model.Graph.Correctness.DelayClosedClosureExample
-import proof.Compiler.Model.Graph.Correctness.ConcretizeExample
-import proof.Compiler.Model.Graph.Correctness.EncloseExample
-import proof.Compiler.Model.Graph.Correctness.PipelineExample
-import proof.Compiler.Model.Graph.Correctness.CompilerExample
-import proof.Compiler.Compile.Examples.RCOExample
-import proof.Compiler.Compile.Examples.LiftLocalsExample
-import proof.Compiler.Compile.Examples.ExplicateExample
-import proof.Compiler.Compile.Examples.SelectExample
+import proof.Correctness.Graph.DelayClosedClosureExample
+import proof.Correctness.Graph.ConcretizeExample
+import proof.Correctness.Graph.EncloseExample
+import proof.Correctness.Graph.PipelineExample
+import proof.Correctness.Graph.CompilerExample
+import proof.Compiler.Examples.RCOExample
+import proof.Compiler.Examples.LiftLocalsExample
+import proof.Compiler.Examples.ExplicateExample
+import proof.Compiler.Examples.SelectExample
 
 {- ---------------------------------------------------------------------------
    proof/: the CEK machine + simulation development, independent of
@@ -136,51 +136,51 @@ import proof.Compiler.Compile.Examples.SelectExample
 
 {- the lemmas about runs and the forward simulations, at this compiler's
    observations -}
-import proof.Compiler.Operational.Smallstep
-import proof.Compiler.Operational.Simulation
+import proof.Semantics.CEK.Smallstep
+import proof.Semantics.CEK.Simulation
 
 {- correctness of each pass, and of the compiler into each language -}
-import proof.Compiler.Operational.Correctness.EncloseSim
-import proof.Compiler.Operational.Correctness.OptimizeSim
-import proof.Compiler.Operational.Correctness.ConcretizeSim
-import proof.Compiler.Operational.Correctness.DelaySim
-import proof.Compiler.Operational.Correctness.GlobalizeSim
-import proof.Compiler.Operational.Correctness.CompilerSim
-import proof.Compiler.Operational.Correctness.RCOSim
-import proof.Compiler.Operational.Correctness.LiftLocalsSim
-import proof.Compiler.Operational.Correctness.ExplicateSim
-import proof.Compiler.Operational.Correctness.SelectSim
-import proof.Compiler.Operational.Correctness.CompilerX86Sim
+import proof.Correctness.CEK.EncloseSim
+import proof.Correctness.CEK.OptimizeSim
+import proof.Correctness.CEK.ConcretizeSim
+import proof.Correctness.CEK.DelaySim
+import proof.Correctness.CEK.GlobalizeSim
+import proof.Correctness.CEK.CompilerSim
+import proof.Correctness.CEK.RCOSim
+import proof.Correctness.CEK.LiftLocalsSim
+import proof.Correctness.CEK.ExplicateSim
+import proof.Correctness.CEK.SelectSim
+import proof.Correctness.CEK.CompilerX86Sim
 
 {- experiment: a direct backward simulation for delay, without
    determinism, for comparison (see papers/PLDI-2027/loc.md) -}
-import proof.Compiler.Operational.Backward
-import proof.Compiler.Operational.Correctness.DelayBackSim
+import proof.Semantics.CEK.Backward
+import proof.Correctness.CEK.DelayBackSim
 
 {- ---------------------------------------------------------------------------
    proof/: soundness and adequacy of the graph model for the ISWIM, Clos5
    and X86 machines, which connect the two developments
    --------------------------------------------------------------------------- -}
 
-import proof.Compiler.Operational.Adequacy.Common
-import proof.Compiler.Model.Graph.Sem.ISWIMContinuous
-import proof.Compiler.Operational.Adequacy.Soundness
-import proof.Compiler.Operational.Adequacy.LogRel
-import proof.Compiler.Operational.Adequacy.ISWIM
-import proof.Compiler.Operational.Adequacy.Clos5WF
-import proof.Compiler.Operational.Adequacy.CompileWF
-import proof.Compiler.Operational.Adequacy.Clos5Common
-import proof.Compiler.Operational.Adequacy.Values
-import proof.Compiler.Operational.Adequacy.Clos5Soundness
-import proof.Compiler.Operational.Adequacy.Clos5LogRel
-import proof.Compiler.Operational.Adequacy.Clos5
-import proof.Compiler.Operational.Adequacy.X86WF
-import proof.Compiler.Operational.Adequacy.X86Common
-import proof.Compiler.Operational.Adequacy.X86Soundness
-import proof.Compiler.Operational.Adequacy.X86LogRel
-import proof.Compiler.Operational.Adequacy.X86CompileWF
-import proof.Compiler.Operational.Adequacy.X86
-import proof.Compiler.Operational.Adequacy.EndToEnd
+import proof.Adequacy.Common
+import proof.Semantics.Graph.ISWIMContinuous
+import proof.Adequacy.Soundness
+import proof.Adequacy.LogRel
+import proof.Adequacy.ISWIM
+import proof.Adequacy.Clos5WF
+import proof.Adequacy.CompileWF
+import proof.Adequacy.Clos5Common
+import proof.Adequacy.Values
+import proof.Adequacy.Clos5Soundness
+import proof.Adequacy.Clos5LogRel
+import proof.Adequacy.Clos5
+import proof.Adequacy.X86WF
+import proof.Adequacy.X86Common
+import proof.Adequacy.X86Soundness
+import proof.Adequacy.X86LogRel
+import proof.Adequacy.X86CompileWF
+import proof.Adequacy.X86
+import proof.Adequacy.EndToEnd
 
 {- ---------------------------------------------------------------------------
    proof/: the clocked interpreter + value relations development:
@@ -188,19 +188,19 @@ import proof.Compiler.Operational.Adequacy.EndToEnd
    --------------------------------------------------------------------------- -}
 
 {- clock-for-clock correctness, at this compiler's observations -}
-import proof.Compiler.Functional.Clock
+import proof.Semantics.Interp.Clock
 
 {- correctness of each pass, and of the compiler into each language -}
-import proof.Compiler.Functional.Correctness.EncloseFuel
-import proof.Compiler.Functional.Correctness.OptimizeFuel
-import proof.Compiler.Functional.Correctness.ConcretizeFuel
-import proof.Compiler.Functional.Correctness.DelayFuel
-import proof.Compiler.Functional.Correctness.GlobalizeFuel
-import proof.Compiler.Functional.Correctness.RCOFuel
-import proof.Compiler.Functional.Correctness.LiftLocalsFuel
-import proof.Compiler.Functional.Correctness.ExplicateFuel
-import proof.Compiler.Functional.Correctness.SelectFuel
-import proof.Compiler.Functional.Correctness.CompilerFuel
+import proof.Correctness.Interp.EncloseFuel
+import proof.Correctness.Interp.OptimizeFuel
+import proof.Correctness.Interp.ConcretizeFuel
+import proof.Correctness.Interp.DelayFuel
+import proof.Correctness.Interp.GlobalizeFuel
+import proof.Correctness.Interp.RCOFuel
+import proof.Correctness.Interp.LiftLocalsFuel
+import proof.Correctness.Interp.ExplicateFuel
+import proof.Correctness.Interp.SelectFuel
+import proof.Correctness.Interp.CompilerFuel
 
 {- ---------------------------------------------------------------------------
    proof/: the reduction semantics + simulation development: forward
@@ -211,18 +211,18 @@ import proof.Compiler.Functional.Correctness.CompilerFuel
    --------------------------------------------------------------------------- -}
 
 {- the values of each reduction semantics -}
-import proof.Compiler.Reduction.Clos2
-import proof.Compiler.Reduction.Clos3
-import proof.Compiler.Reduction.Clos4
-import proof.Compiler.Reduction.Clos5
+import proof.Semantics.Reduction.Clos2
+import proof.Semantics.Reduction.Clos3
+import proof.Semantics.Reduction.Clos4
+import proof.Semantics.Reduction.Clos5
 
 {- correctness of each pass, and of the compiler into each language -}
-import proof.Compiler.Reduction.Correctness.EncloseRed
-import proof.Compiler.Reduction.Correctness.OptimizeRed
-import proof.Compiler.Reduction.Correctness.ConcretizeRed
-import proof.Compiler.Reduction.Correctness.DelayRed
-import proof.Compiler.Reduction.Correctness.GlobalizeRed
-import proof.Compiler.Reduction.Correctness.CompilerRed
-import proof.Compiler.Reduction.Correctness.RCORed
-import proof.Compiler.Reduction.Correctness.LiftLocalsRed
-import proof.Compiler.Reduction.Correctness.CompilerX86Red
+import proof.Correctness.Reduction.EncloseRed
+import proof.Correctness.Reduction.OptimizeRed
+import proof.Correctness.Reduction.ConcretizeRed
+import proof.Correctness.Reduction.DelayRed
+import proof.Correctness.Reduction.GlobalizeRed
+import proof.Correctness.Reduction.CompilerRed
+import proof.Correctness.Reduction.RCORed
+import proof.Correctness.Reduction.LiftLocalsRed
+import proof.Correctness.Reduction.CompilerX86Red

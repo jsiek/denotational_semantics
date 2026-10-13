@@ -10,7 +10,7 @@
   proof/Framework/Simulation.agda.)
 
   Language independent: instantiated at a compiler's observations (for
-  this compiler, Compiler/Operational/Smallstep.agda, which has the design
+  this compiler, Semantics/CEK/Smallstep.agda, which has the design
   note for its machines and simulation proofs).
 
 -}

@@ -3,7 +3,7 @@
   The correctness of the compiler, by CEK machines and simulations: the
   public statements.
   The proofs (forward simulations) are in
-  proof/Compiler/Operational/Correctness/; each theorem here is one of
+  proof/Correctness/CEK/; each theorem here is one of
   them, with its type written out, so that it can be read without opening
   proof/.
 
@@ -12,70 +12,70 @@
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
-  Each language has a small-step machine (Compiler/Operational/Machine/,
+  Each language has a small-step machine (Semantics/CEK/,
   here Lₘ.sem for language L), which terminates with an observation
-  (Compiler/Observation.agda) or diverges. Two machines are Equivalent
+  (Semantics/Observation.agda) or diverges. Two machines are Equivalent
   (Framework/Smallstep.agda) when each terminates with o exactly when the
   other does (o-wrong, going wrong, included), and one diverges exactly
   when the other does.
 
-  To read them: the languages (Compiler/Lang/), the passes
-  (Compiler/Compile/), the machines, the observations, and the
-  preconditions: Closed (Compiler/Compile/EncloseScope.agda), WS
-  (Framework/Syntax/Scope.agda), Scoped (Compiler/Compile/PipelineScope.agda)
-  and MonProgram (Compiler/Lang/Mon.agda).
+  To read them: the languages (Language/), the passes
+  (Compiler/), the machines, the observations, and the
+  preconditions: Closed (Compiler/EncloseScope.agda), WS
+  (Framework/Syntax/Scope.agda), Scoped (Compiler/PipelineScope.agda)
+  and MonProgram (Language/Mon.agda).
 
 -}
 
 module Theorems.Simulation where
 
-open import Compiler.Observation using (o-const; o-wrong; Converges; _⇔_)
-open import Compiler.Operational.Smallstep using (Terminates; Diverges; Equivalent)
+open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.CEK.Smallstep using (Terminates; Diverges; Equivalent)
 
-import Compiler.Lang.ISWIM as ISWIM
-import Compiler.Lang.Clos2 as Clos2
-import Compiler.Lang.Clos3 as Clos3
-import Compiler.Lang.Clos4 as Clos4
-import Compiler.Lang.Clos5 as Clos5
-open import Compiler.Lang.Mon using (MonProgram)
-import Compiler.Lang.Imp as Imp
-import Compiler.Lang.CFG as CFG
+import Language.ISWIM as ISWIM
+import Language.Clos2 as Clos2
+import Language.Clos3 as Clos3
+import Language.Clos4 as Clos4
+import Language.Clos5 as Clos5
+open import Language.Mon using (MonProgram)
+import Language.Imp as Imp
+import Language.CFG as CFG
 
-open import Compiler.Compile.Enclose using (enclose)
-open import Compiler.Compile.Optimize using (optimize-program)
-open import Compiler.Compile.Concretize using (concretize-program)
-open import Compiler.Compile.Delay using (delay)
-open import Compiler.Compile.Globalize using (globalize)
-open import Compiler.Compile.RCO using (rco-program)
-open import Compiler.Compile.LiftLocals using (lift-program)
-open import Compiler.Compile.Explicate using (explicate)
-open import Compiler.Compile.Select using (select)
-open import Compiler.Compile.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Compiler.Enclose using (enclose)
+open import Compiler.Optimize using (optimize-program)
+open import Compiler.Concretize using (concretize-program)
+open import Compiler.Delay using (delay)
+open import Compiler.Globalize using (globalize)
+open import Compiler.RCO using (rco-program)
+open import Compiler.LiftLocals using (lift-program)
+open import Compiler.Explicate using (explicate)
+open import Compiler.Select using (select)
+open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 
-open import Compiler.Compile.EncloseScope using (Closed)
+open import Compiler.EncloseScope using (Closed)
 open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Compiler.Compile.PipelineScope using (Scoped)
+open import Compiler.PipelineScope using (Scoped)
 
-import Compiler.Operational.Machine.ISWIM as ISWIMₘ
-import Compiler.Operational.Machine.Clos2 as Clos2ₘ
-import Compiler.Operational.Machine.Clos3 as Clos3ₘ
-import Compiler.Operational.Machine.Clos4 as Clos4ₘ
-import Compiler.Operational.Machine.Clos5 as Clos5ₘ
-import Compiler.Operational.Machine.Imp as Impₘ
-import Compiler.Operational.Machine.CFG as CFGₘ
-import Compiler.Operational.Machine.X86 as X86ₘ
+import Semantics.CEK.ISWIM as ISWIMₘ
+import Semantics.CEK.Clos2 as Clos2ₘ
+import Semantics.CEK.Clos3 as Clos3ₘ
+import Semantics.CEK.Clos4 as Clos4ₘ
+import Semantics.CEK.Clos5 as Clos5ₘ
+import Semantics.CEK.Imp as Impₘ
+import Semantics.CEK.CFG as CFGₘ
+import Semantics.CEK.X86 as X86ₘ
 
-import proof.Compiler.Operational.Correctness.EncloseSim as EncloseSim
-import proof.Compiler.Operational.Correctness.OptimizeSim as OptimizeSim
-import proof.Compiler.Operational.Correctness.ConcretizeSim as ConcretizeSim
-import proof.Compiler.Operational.Correctness.DelaySim as DelaySim
-import proof.Compiler.Operational.Correctness.GlobalizeSim as GlobalizeSim
-import proof.Compiler.Operational.Correctness.RCOSim as RCOSim
-import proof.Compiler.Operational.Correctness.LiftLocalsSim as LiftLocalsSim
-import proof.Compiler.Operational.Correctness.ExplicateSim as ExplicateSim
-import proof.Compiler.Operational.Correctness.SelectSim as SelectSim
-import proof.Compiler.Operational.Correctness.CompilerSim as CompilerSim
-import proof.Compiler.Operational.Correctness.CompilerX86Sim as CompilerX86Sim
+import proof.Correctness.CEK.EncloseSim as EncloseSim
+import proof.Correctness.CEK.OptimizeSim as OptimizeSim
+import proof.Correctness.CEK.ConcretizeSim as ConcretizeSim
+import proof.Correctness.CEK.DelaySim as DelaySim
+import proof.Correctness.CEK.GlobalizeSim as GlobalizeSim
+import proof.Correctness.CEK.RCOSim as RCOSim
+import proof.Correctness.CEK.LiftLocalsSim as LiftLocalsSim
+import proof.Correctness.CEK.ExplicateSim as ExplicateSim
+import proof.Correctness.CEK.SelectSim as SelectSim
+import proof.Correctness.CEK.CompilerSim as CompilerSim
+import proof.Correctness.CEK.CompilerX86Sim as CompilerX86Sim
 
 {- Each pass ------------------------------------------------------------------}
 

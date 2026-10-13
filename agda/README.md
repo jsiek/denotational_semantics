@@ -53,9 +53,9 @@ that every module outside `proof/` is used by a theorem statement).
     only, preserves the constants a closed program computes and whether
     it terminates with an answer.
 * The compiler, shared by all four styles:
-  * `Compiler/Lang/`: the languages (ISWIM, Clos2–Clos5, monadic normal
+  * `Language/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
-  * `Compiler/Compile/`: the passes and their composition
+  * `Compiler/`: the passes and their composition
     (`Pipeline.agda`: `compile`, `compile-mon`, `compile-imp`,
     `compile-cfg`, `compile-x86`), and the preconditions of the
     operational theorems: `Closed` (`EncloseScope.agda`) and `Scoped`
@@ -65,23 +65,23 @@ that every module outside `proof/` is used by a theorem statement).
     substitution, scoping (`WS`), the variables a term uses (`Uses`,
     `bound`), base types, and list lookups.
 * The semantics, per style:
-  * denotational: `Compiler/Model/Graph/` (the meaning of the primitives
-    and `Sem/`, the semantics of each language) and
+  * denotational: `Semantics/Graph/` (the meaning of the primitives,
+    `Prim.agda`, and the semantics of each language) and
     `Framework/GraphModel/` (sets as predicates, environments, the
     values and their consistency, and the operators);
-  * CEK machine + simulation: `Compiler/Operational/Machine/` (a small-step
-    machine per language), `Compiler/Operational/Smallstep.agda` and
+  * CEK machine + simulation: `Semantics/CEK/` (a small-step
+    machine per language), `Semantics/CEK/Smallstep.agda` and
     `Framework/Smallstep.agda` (machines, termination, divergence,
-    `Equivalent`), `Compiler/Observation.agda`;
-  * clocked interpreter + value relations: `Compiler/Functional/Interp/` (a clocked interpreter
-    per language), `Compiler/Functional/Clock.agda` and
+    `Equivalent`), `Semantics/Observation.agda`;
+  * clocked interpreter + value relations: `Semantics/Interp/` (a
+    clocked interpreter per language), `Semantics/Interp/Clock.agda` and
     `Framework/Clocked.agda` (results, termination, divergence,
-    `Equivalent`), `Compiler/Observation.agda`;
-  * reduction semantics + simulation: `Compiler/Reduction/` (a reduction
+    `Equivalent`), `Semantics/Observation.agda`;
+  * reduction semantics + simulation: `Semantics/Reduction/` (a reduction
     semantics by substitution for ISWIM and Clos2–Clos5, and
-    `Reduction/Smallstep.agda`), `Framework/Reduction.agda` (reductions as
-    machines) and `Framework/Smallstep.agda`, and the machines of Imp, CFG
-    and X86 (`Compiler/Operational/Machine/{Values,Imp,CFG,X86}.agda`),
+    `Semantics/Reduction/Smallstep.agda`), `Framework/Reduction.agda`
+    (reductions as machines) and `Framework/Smallstep.agda`, and the machines of Imp, CFG
+    and X86 (`Semantics/CEK/{Values,Imp,CFG,X86}.agda`),
     shared with the CEK machine + simulation style;
   * adequacy: those of the denotational and simulation theorems.
 
@@ -94,34 +94,39 @@ postulated or unsafe). You may of course want to read them to learn the
 proof techniques.
 
 `proof/` mirrors the paths of the surface: the lemmas about a module
-`X` of the surface are in `proof/X.agda` (which re-exports `X`), and
-the proofs are next to what they are about:
+`X` of the surface are in `proof/X.agda` (which re-exports `X`); the
+correctness proofs of the passes are in `proof/Correctness/`, one
+directory per style, and adequacy is in `proof/Adequacy/`:
 
-* `proof/Compiler/Model/Graph/Correctness/`: the denotational proofs of
-  the passes, and `proof/Compiler/Model/Graph/Sem/`: the monotonicity,
+* `proof/Correctness/Graph/`: the denotational proofs of
+  the passes, and `proof/Semantics/Graph/`: the monotonicity,
   consistency and continuity of the semantics;
-* `proof/Compiler/Operational/Correctness/`: the forward simulations;
-* `proof/Compiler/Functional/Correctness/`: the clock-for-clock proofs;
-* `proof/Compiler/Reduction/Correctness/`: the forward simulations between
+* `proof/Correctness/CEK/`: the forward simulations, and
+  `proof/Semantics/CEK/`: the lemmas about runs of the machines;
+* `proof/Correctness/Interp/`: the clock-for-clock proofs, and
+  `proof/Semantics/Interp/Clock.agda`: clock-for-clock correctness at
+  this compiler's observations;
+* `proof/Correctness/Reduction/`: the forward simulations between
   reduction semantics (explicate control and select instructions are the
-  CEK proofs, `proof/Compiler/Operational/Correctness/{Explicate,Select}Sim.agda`,
-  shared), and `proof/Compiler/Reduction/`: the values of each reduction
+  CEK proofs, `proof/Correctness/CEK/{Explicate,Select}Sim.agda`,
+  shared), and `proof/Semantics/Reduction/`: the values of each reduction
   semantics;
-* `proof/Compiler/Operational/Adequacy/`: soundness, adequacy, and the
+* `proof/Adequacy/`: soundness, adequacy, and the
   well-formedness of compiled programs;
 * `proof/Framework/`: the language-independent lemmas (continuity of the
   operators, the generic denotational semantics and its monotonicity and
   continuity, renaming, substitution and relations closed under it,
   forward simulations, simulations between reduction semantics,
   clock-for-clock correctness);
-* `proof/Compiler/Compile/`: syntactic facts about the passes, and
+* `proof/Compiler/`: syntactic facts about the passes, and
   examples;
 * experiments, not part of the main results: a direct semantics of Imp
-  (`Sem/ImpDirect.agda`) with lift locals and explicate control proved
-  against it (`Correctness/LiftLocalsCorrect.agda`,
-  `Correctness/ExplicateCorrect.agda`), and a direct backward simulation
-  for delay (`proof/Compiler/Operational/Backward.agda`,
-  `Correctness/DelayBackSim.agda`).
+  (`proof/Semantics/Graph/ImpDirect.agda`) with lift locals and
+  explicate control proved against it
+  (`proof/Correctness/Graph/LiftLocalsCorrect.agda`,
+  `proof/Correctness/Graph/ExplicateCorrect.agda`), and a direct
+  backward simulation for delay (`proof/Semantics/CEK/Backward.agda`,
+  `proof/Correctness/CEK/DelayBackSim.agda`).
 
 The semantics of ISWIM and Clos2–Clos4 is defined on the surface
 directly, as the fold of its operators over a term; `proof/` packages the
