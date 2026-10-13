@@ -30,9 +30,7 @@
 
   * The late check of Clos4 and Clos5 (code, environment and argument
     first, then the check of the code) is the same kernel, checked
-    under all three binds:
-
-      callᵐ L M N = L ≫= λ F → M ≫= λ E → N ≫= λ X → checked fun F (⋆₂ F E X)
+    under all three binds (callᵐ).
 
 -}
 
@@ -41,8 +39,9 @@ module Framework.GraphModel.ErrorMonad where
 open import Framework.Primitives using (Base)
 open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.DOpSig
+open import Framework.abt.Sig using (∁)
 open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops using (⋆; Λ; 𝒯; proj; inl; inr; 𝒞)
+open import Framework.GraphModel.Ops using (⋆; Λ; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr)
 
 open import Data.List using (List; _∷_; []; replicate)
 open import Data.Nat using (ℕ; zero; suc)
@@ -82,7 +81,7 @@ binds (suc n) ⟨ D , Ds ⟩ K = D ≫= λ X → binds n Ds (λ Xs → K ⟨ X ,
 {- Kinds of values, and the check of a kernel ----------------------------------}
 
 data Kind : Set where
-  fun inj pair error : Kind
+  fun inj prod error : Kind
   tup : ℕ → Kind
   base : Base → Kind
 
@@ -91,7 +90,7 @@ kind (const {B} k) = base B
 kind (V ↦ w) = fun
 kind ν = fun
 kind ω = error
-kind ⦅ u , v ⦆ = pair
+kind ⦅ u , v ⦆ = prod
 kind (tup[_]_ {n} i d) = tup n
 kind (left d) = inj
 kind (right d) = inj
@@ -147,3 +146,32 @@ inrᵐ ⟨ D , _ ⟩ = D ≫= λ X → inr ⟨ X , ptt ⟩
 {- let x = D in F x, which means (λx. F x) D -}
 letᵐ : DOp (𝒫 Value) (■ ∷ ν ■ ∷ [])
 letᵐ ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ᵐ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
+
+{- Closures and pairs (Clos3, Clos4) -----------------------------------------------}
+
+{- a closed function of two arguments on values: the code of a closure -}
+ValEntry₂ : Value → Set
+ValEntry₂ (V ↦ w) = NoErr V × ValEntry w
+ValEntry₂ _ = ⊤
+
+ΛΛᵐ : DOp (𝒫 Value) (∁ (ν (ν ■)) ∷ [])
+ΛΛᵐ ⟨ F , _ ⟩ = Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ ⇂ ValEntry₂
+
+{- a Clos3 closure: its code applied to the tuple of its free variables -}
+closᵐ : ∀ n → DOp (𝒫 Value) (∁ (ν (ν ■)) ∷ replicate n ■)
+closᵐ n ⟨ F , Ds ⟩ = ⋆ᵐ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ 𝒯ᵐ n Ds , ptt ⟩ ⟩
+
+pairᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
+pairᵐ ⟨ D , ⟨ E , _ ⟩ ⟩ = D ≫= λ X → E ≫= λ Y → pair ⟨ X , ⟨ Y , ptt ⟩ ⟩
+
+carᵐ : DOp (𝒫 Value) (■ ∷ [])
+carᵐ ⟨ D , _ ⟩ = D ≫= λ X → checked prod X (car ⟨ X , ptt ⟩)
+
+cdrᵐ : DOp (𝒫 Value) (■ ∷ [])
+cdrᵐ ⟨ D , _ ⟩ = D ≫= λ X → checked prod X (cdr ⟨ X , ptt ⟩)
+
+{- the call of Clos4 and Clos5: code, environment and argument are bound
+   left to right, and only then is the code checked (the late check) -}
+callᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
+callᵐ ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ =
+  L ≫= λ F → M ≫= λ E → N ≫= λ X → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩)
