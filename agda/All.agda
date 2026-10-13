@@ -32,6 +32,7 @@ import Theorems.Simulation
 import Theorems.Interpreter
 import Theorems.Adequacy
 import Theorems.Reduction
+import Theorems.GraphErrors
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
@@ -58,9 +59,15 @@ import proof.Framework.GraphModel.Env
 import proof.Framework.GraphModel.Semantics
 import proof.Framework.GraphModel.RenameSem
 import proof.Framework.GraphModel.Domain
+import proof.Framework.GraphModel.OpsBase
+import proof.Framework.GraphModel.ContinuityBase
+import proof.Framework.GraphModel.SemanticsCore
+import proof.Framework.GraphModel.SemanticsUses
 import proof.Framework.GraphModel.Ops
 import proof.Framework.GraphModel.Continuity
 import proof.Framework.GraphModel.SemanticsUtil
+import proof.Framework.GraphModel.ErrorOps
+import proof.Framework.GraphModel.ErrorContinuity
 import proof.Framework.GraphModel.DomainUtil
 import proof.Framework.Smallstep
 import proof.Framework.Runs
@@ -233,3 +240,17 @@ import proof.Correctness.Reduction.CompilerRed
 import proof.Correctness.Reduction.RCORed
 import proof.Correctness.Reduction.LiftLocalsRed
 import proof.Correctness.Reduction.CompilerX86Red
+
+{- ---------------------------------------------------------------------------
+   proof/: a pilot, the graph model with errors: a graph-model semantics
+   of ISWIM and Clos2 in which an error denotes ω, with simplify and
+   enclose proved correct in it and its adequacy for the ISWIM machine
+   (see papers/PLDI-2027/loc.md)
+   --------------------------------------------------------------------------- -}
+
+import proof.Semantics.GraphErr.Prim
+import proof.Semantics.GraphErr.ISWIM
+import proof.Semantics.GraphErr.Clos2
+import proof.Semantics.GraphErr.Clos2Continuous
+import proof.Correctness.GraphErr.SimplifyCorrect
+import proof.Correctness.GraphErr.EncloseCorrect

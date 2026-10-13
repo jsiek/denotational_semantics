@@ -7,7 +7,7 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.DenotProperties
 open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Continuity using (Continuous; Good; mk-good; one; done; approx-join; join-l; join-r)
+open import proof.Framework.GraphModel.ContinuityBase using (Continuous; Good; mk-good; one; done; approx-join; join-l; join-r)
 open import Language.Prim using (Prim; Out; int; bool; δ)
 
 open import Data.Bool using (true; false)
