@@ -33,6 +33,7 @@ import Theorems.Interpreter
 import Theorems.Adequacy
 import Theorems.Reduction
 import Theorems.GraphErrors
+import Theorems.GraphErrorsMonad
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
@@ -68,6 +69,7 @@ import proof.Framework.GraphModel.Continuity
 import proof.Framework.GraphModel.SemanticsUtil
 import proof.Framework.GraphModel.ErrorOps
 import proof.Framework.GraphModel.ErrorContinuity
+import proof.Framework.GraphModel.ErrorMonad
 import proof.Framework.GraphModel.DomainUtilBase
 import proof.Framework.GraphModel.DomainUtil
 import proof.Framework.Smallstep
@@ -290,3 +292,20 @@ import proof.Adequacy.GraphErr.X86Soundness
 import proof.Adequacy.GraphErr.X86LogRel
 import proof.Adequacy.GraphErr.X86
 import proof.Adequacy.GraphErr.EndToEnd
+
+{- ---------------------------------------------------------------------------
+   proof/: a pilot, the graph model with errors built from an error monad
+   on 𝒫 Value (Framework/GraphModel/ErrorMonad.agda): the semantics of
+   ISWIM and Clos2, simplify and enclose, and adequacy for the ISWIM
+   machine (see papers/PLDI-2027/loc.md)
+   --------------------------------------------------------------------------- -}
+
+import proof.Semantics.GraphErrM.Prim
+import proof.Semantics.GraphErrM.ISWIM
+import proof.Semantics.GraphErrM.Clos2
+import proof.Correctness.GraphErrM.SimplifyCorrect
+import proof.Correctness.GraphErrM.EncloseCorrect
+import proof.Adequacy.GraphErrM.Soundness
+import proof.Adequacy.GraphErrM.LogRel
+import proof.Adequacy.GraphErrM.ISWIM
+import proof.Adequacy.GraphErrM.Simplify
