@@ -47,6 +47,11 @@ that every module outside `proof/` is used by a theorem statement).
   * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
   * `Theorems/Reduction.agda`: the same, for the reduction semantics of
     ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86.
+  * `Theorems/Scott.agda` (a pilot, checked by `make check-scott`, not
+    `make check`; see below): the domain of values of the Scott-domain
+    semantics solves its equation, and enclose preserves the meaning of
+    a program in it, assuming propositional truncations, function
+    extensionality and propositional extensionality.
   * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
     the ISWIM machine, and for the Clos5 and X86 machines running
     compiled programs; so the compiler, observed through the machines
@@ -83,7 +88,14 @@ that every module outside `proof/` is used by a theorem statement).
     (reductions as machines) and `Framework/Smallstep.agda`, and the machines of Imp, CFG
     and X86 (`Semantics/CEK/{Values,Imp,CFG,X86}.agda`),
     shared with the CEK machine + simulation style;
-  * adequacy: those of the denotational and simulation theorems.
+  * adequacy: those of the denotational and simulation theorems;
+  * denotational: Scott domains (pilot): `Semantics/Scott/` (the meaning
+    of the primitives and the semantics of ISWIM and Clos2) and
+    `Framework/Scott/` (on Tom de Jong's domain theory in TypeTopology:
+    sums, lifting, powers, exponentials and products of dcpos, locally
+    continuous functors, the solution of a domain equation as a
+    sequential bilimit, the domain of values, its operators, and the
+    semantics of any signature).
 
 ## `proof/`
 
@@ -137,7 +149,14 @@ that the two agree, as Agda accepts each statement only if its type is
 definitionally that of the proof it cites.
 
 `All.agda` imports the theorem files and every module of `proof/`, so
-that `make check` checks everything. `old/` holds earlier developments,
+that `make check` checks everything but the Scott-domain pilot, which
+needs TypeTopology: `AllScott.agda` imports its theorem file and proofs,
+and `make check-scott` fetches TypeTopology at a pinned commit into
+`_deps/` (not tracked; `scott/fetch-typetopology.sh`, which applies
+`scott/typetopology-builtin-alias.patch` so that TypeTopology and the
+standard library share ℕ, Bool and List), and checks it
+(`scott/check.sh`, with the libraries file `_deps/libraries`: the
+default one plus TypeTopology). `make check-all` does both. `old/` holds earlier developments,
 not checked by `make check` (see the top-level README).
 
 Line counts of the proofs, and of the audit surface, are in
