@@ -56,3 +56,32 @@ known-tuple = refl
 effect : simplify (app ⦅ lam ⦅ ⟩ n 5 ,, Nil ⦆ ,, app ⦅ id ,, id ,, Nil ⦆ ,, Nil ⦆)
   ≡ app ⦅ lam ⦅ ⟩ n 5 ,, Nil ⦆ ,, app ⦅ id ,, id ,, Nil ⦆ ,, Nil ⦆
 effect = refl
+
+{- inlining: a known function, let-bound, is inlined at its call, and
+   the result folded:  (λ f. f 3) (λ x. x - 1)  is  (λ f. 2) (λ x. x - 1) -}
+dec : AST
+dec = lam ⦅ ⟩ prim sub ⦅ ` 0 ,, n 1 ,, Nil ⦆ ,, Nil ⦆
+
+inline : simplify (app ⦅ lam ⦅ ⟩ app ⦅ ` 0 ,, n 3 ,, Nil ⦆ ,, Nil ⦆ ,, dec ,, Nil ⦆)
+  ≡ app ⦅ lam ⦅ ⟩ n 2 ,, Nil ⦆ ,, dec ,, Nil ⦆
+inline = refl
+
+{- a function passed to a known function is known in the inlined body:
+     let dec = λ x. x - 1 in let twice = λ f. λ x. f (f x) in twice dec 5
+   is 3 (the let-bound functions stay) -}
+twice : AST
+twice = lam ⦅ ⟩ lam ⦅ ⟩ app ⦅ ` 1 ,, app ⦅ ` 1 ,, ` 0 ,, Nil ⦆ ,, Nil ⦆ ,, Nil ⦆ ,, Nil ⦆
+
+let-in : AST → AST → AST
+let-in M N = app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, M ,, Nil ⦆
+
+higher-order : simplify (let-in dec (let-in twice (app ⦅ app ⦅ ` 0 ,, ` 1 ,, Nil ⦆ ,, n 5 ,, Nil ⦆)))
+  ≡ let-in dec (let-in twice (n 3))
+higher-order = refl
+
+{- an operand that is not a value stays bound, and is evaluated before
+   the inlined body:  λ g. (λ f. f (g 3)) (λ x. x - 1)  is
+   λ g. (λ f. (λ x. x - 1) (g 3)) (λ x. x - 1) -}
+inline-let : simplify (lam ⦅ ⟩ let-in dec (app ⦅ ` 0 ,, app ⦅ ` 1 ,, n 3 ,, Nil ⦆ ,, Nil ⦆) ,, Nil ⦆)
+  ≡ lam ⦅ ⟩ let-in dec (let-in (app ⦅ ` 1 ,, n 3 ,, Nil ⦆) (prim sub ⦅ ` 0 ,, n 1 ,, Nil ⦆)) ,, Nil ⦆
+inline-let = refl

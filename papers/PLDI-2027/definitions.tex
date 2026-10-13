@@ -629,19 +629,28 @@ In each pass, the clauses not shown are homomorphic.
 Simplify, a simplified version of the source optimizer cp0 of Chez Scheme,
 is the first pass of $\pass{compile}$. It carries what
 it knows of each variable, $E(x) = (T, K)$: the term $T$ that replaces $x$ (a
-variable or a small value), and a value $K$ that $x$ is known to be, or
-$\bot$. On a term it returns the same, $\pass{simp}_E(M) = (M', K)$; we write
-$\pass{simp}_E(M)$ for $M'$ and $\mathcal{K}_E(M)$ for $K$. A value is
+variable or a small value), and what $x$ is known to be, $K$: a value, a
+function $\langle \lam{y} N, E_f \rangle$ (its body before simplification, with
+what was known where it was defined), or $\bot$. On a term it returns the
+same, $\pass{simp}_E(M) = (M', K)$; we write $\pass{simp}_E(M)$ for $M'$ and
+$\mathcal{K}_E(M)$ for $K$. A value is
 \emph{small} when it is a variable, a constant, $\emptytup$, or $\inl a$ or
 $\inr a$ of one of those; only small values are duplicated. Values are known
-to be themselves; under a binder that stays, its variable is itself, known
-only as itself.
+to be themselves, and $\mathcal{K}_E(\lam{y} N) = \langle \lam{y} N, E \rangle$;
+under a binder that stays, its variable is itself, known only as itself
+($E'$ below). A function body $N$ bound to an operand, $\pass{let}_E(x.N, M)$,
+is shared by $\beta$ and inlining:
 \begin{align*}
-  \pass{simp}_E(x) &= E(x) \\
-  \pass{simp}_E((\lam{x} N)\;M) &= \pass{simp}_{\ext{E}{x}{(V, V)}}(N)
+  \pass{let}_E(x.N, M) &= \pass{simp}_{\ext{E}{x}{(V, \mathcal{K}_E(M))}}(N)
     && \text{if } V = \pass{simp}_E(M) \text{ is small} \\
-  &= (\lam{x} \pass{simp}_{\ext{E}{x}{(x, V)}}(N))\;V
+  &= (\lam{x} \pass{simp}_{\ext{E}{x}{(x, \mathcal{K}_E(M))}}(N))\;V
     && \text{if } V = \pass{simp}_E(M) \text{ is another value} \\
+  &= (\lam{x} \pass{simp}_{E'}(N))\;\pass{simp}_E(M)
+    && \text{otherwise} \\[1ex]
+  \pass{simp}_E(x) &= E(x) \\
+  \pass{simp}_E((\lam{x} N)\;M) &= \pass{let}_E(x.N, M) \\
+  \pass{simp}_E(L\;M) &= \pass{let}_{E_f}(x.N, M)
+    && \text{if } \mathcal{K}_E(L) = \langle \lam{x} N, E_f \rangle \text{ and the result is small enough} \\
   \pass{simp}_E(\prim{p}{L}{M}) &= \res{\delta(p, n, m)}
     && \text{if } \mathcal{K}_E(L) = n,\; \mathcal{K}_E(M) = m \\
   \pass{simp}_E(\Case{L}{x}{M}{y}{N}) &= \pass{simp}_{\ext{E}{x}{(K, K)}}(M)
@@ -653,10 +662,16 @@ only as itself.
   \pass{simplify}(M) &= \pass{simp}_{x \mapsto (x, x)}(M)
 \end{align*}
 and likewise for $\inr$. Here $\res{o}$ is the term of a primitive's result
-(a constant, or $\inl \emptytup$ or $\inr \emptytup$ for $\key{eq}$). It
-drops only evaluations whose value is known, which have no effect, and
-otherwise keeps the order of evaluation; functions are recorded as known
-values, for inlining (not yet done).
+(a constant, or $\inl \emptytup$ or $\inr \emptytup$ for $\key{eq}$). The third
+clause of $\pass{simp}$ is inlining: the known function's body is simplified
+again, at the call, from the source, under $E_f$ and what is known of the
+operand, and replaces the call if it has at most $24$ nodes; $\pass{simp}$
+carries fuel ($4$ in $\pass{simplify}$), which inlining decreases, so that it
+is structurally recursive. It drops only evaluations whose value is known,
+which have no effect (the operator of an inlined call), and otherwise keeps
+the order of evaluation: as in cp0, an operand that is not a value is never
+substituted, but stays bound, and is evaluated before the body even if the
+body does not use it.
 
 \begin{lemma}[Simplify Keeps Programs Closed]\label{lem:simplify-closed}
 For every ISWIM term $M$,
@@ -1302,9 +1317,9 @@ where $\key{table}^{\mathrm{X86}}$ is $\key{table}$ with $\key{code}^{\mathrm{X8
 \subsection{Simplify}
 
 \begin{lemma}[$\beta$ for a Value]\label{lem:beta-value}
-If $\rho(x) \NE$ for every $x$, and $\SEM{M}\rho$ is nonempty and consistent, then
+If $\rho(x) \NE$ for every $x$, and $D$ is nonempty and consistent, then
 \[
-  \SEM{(\lam{x} N)\;M}^{\mathrm{ISWIM}}\rho \simeq \SEM{N}^{\mathrm{ISWIM}}\ext{\rho}{x}{\SEM{M}\rho} ,
+  \SEM{\lam{x} N}^{\mathrm{ISWIM}}\rho \star D \simeq \SEM{N}^{\mathrm{ISWIM}}\ext{\rho}{x}{D} ,
 \]
 and likewise for $\key{case}$ on an $\inl$ or $\inr$ of a nonempty, consistent set. By
 continuity an element of the right needs only a finite part of $\SEM{M}\rho$,
@@ -1313,11 +1328,14 @@ which is consistent and nonempty, as $\Lambda$ requires.
 
 \begin{lemma}[Correctness of Simplify]\label{lem:simplify}
 Let $\rho$ and $\rho'$ be nonempty and consistent, and for every $x$ with $E(x) = (T, K)$, let
-$\SEM{T}\rho' \simeq \rho(x)$ and, if $K \neq \bot$, $\SEM{K}\rho' \simeq \rho(x)$. Then
+$\SEM{T}\rho' \simeq \rho(x)$ and $K$ describe $\rho(x)$: if $K$ is a value,
+$\SEM{K}\rho' \simeq \rho(x)$, and if $K = \langle \lam{y} N, E_f \rangle$, then
+$\SEM{\lam{y} N}\rho_f \simeq \rho(x)$ for some nonempty, consistent $\rho_f$ of
+which the same holds for $E_f$. Then
 \[
   \SEM{\pass{simp}_E(M)}^{\mathrm{ISWIM}}\rho' \simeq \SEM{M}^{\mathrm{ISWIM}}\rho ,
 \]
-and so does the known value $\mathcal{K}_E(M)$, if any. In particular
+and $\mathcal{K}_E(M)$ describes $\SEM{M}\rho$. In particular
 $\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$.
 \end{lemma}
 
@@ -2372,8 +2390,10 @@ In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
 A target closure is the simplified body of a source closure, under facts
 $E$ that are true of the two environments ($\rho' \models_E \rho$): for each
 $x$ with $E(x) = (T, K)$, the value term $T$ denotes in $\rho'$ a value related
-to $\rho(x)$, and, if $K \neq \bot$, $K$ describes $\rho(x)$ (the same up to
-functions). States are related frame by frame, the code by $\pass{simp}$:
+to $\rho(x)$, and, if $K \neq \bot$, $K$ describes $\rho(x)$: a value the same
+up to functions, and a known function $\langle \lam{y} N, E_f \rangle$ the source
+closure $\cloV{\lam{y} N}{\rho_f}$ for some $\rho_f$ with $\rho' \models_{E_f} \rho_f$.
+States are related frame by frame, the code by $\pass{simp}$:
 \begin{align*}
   \cloV{\lam{y} \pass{simp}_{E'}(N)}{\rho'} \approx \cloV{\lam{y} N}{\rho}
     &\iff \rho' \models_E \rho \qquad (E' = E \text{ under } y,\; y \text{ unknown}) \\
@@ -2383,7 +2403,9 @@ functions). States are related frame by frame, the code by $\pass{simp}$:
 \end{align*}
 with the target on the left. Where simplify reduced, the source runs ahead:
 if $\pass{simp}_E(M)$ is a value, or $M$ has a known value, then
-$\ev{M}{\rho}{\kappa} \lto^* \rt{v}{\kappa}$ for a $v$ it describes. Where the
+$\ev{M}{\rho}{\kappa} \lto^* \rt{v}{\kappa}$ for a $v$ it describes; at an
+inlined call, the source runs the operator to the known function's closure,
+then continues as for $\beta$. Where the
 target does more (it evaluates a duplicated small value, or the value of a
 let that simplify kept), it stutters: a match $s' \sim_i s$ says that the
 target is $i$ steps from a state related to $s$.
@@ -3482,7 +3504,7 @@ By Lemma~\ref{lem:obs}, if $v \approx w$, then $\obs(v) = \obs(w)$.
 
 The relations $\approx$ and $\models_E$ are those of
 Section~\ref{sec:sim-simplify}. Simplify removes calls ($\beta$ of a small
-value), so the proof is clock monotone (Theorem~\ref{thm:clocked-le}), from
+value, inlining), so the proof is clock monotone (Theorem~\ref{thm:clocked-le}), from
 the monotonicity of the ISWIM interpreter in the clock and two lemmas.
 
 \begin{lemma}[Simplify, Forward at the Same Clock]
@@ -3986,8 +4008,11 @@ related only after $\beta$. The relation is closed under substitution by values.
 \begin{lemma}[Fundamental Lemma, Simplify]
 If $\sigma$ and $\sigma'$ map variables to values, and for every $x$ with
 $E(x) = (T, K)$, $\sigma(x) \approx T[\sigma']$ and, if $K \neq \bot$,
-$\sigma(x) \approx K[\sigma']$, then $M[\sigma] \approx \pass{simp}_E(M)[\sigma']$,
-and $M[\sigma] \approx \mathcal{K}_E(M)[\sigma']$ if it is known.
+$\sigma(x) \approx K[\sigma']$ for a known value $K$, and
+$\sigma(x) \to^* (\lam{y} N)[\sigma_f]$ with $\sigma_f$, $E_f$ satisfying the same
+for a known function $K = \langle \lam{y} N, E_f \rangle$, then
+$M[\sigma] \approx \pass{simp}_E(M)[\sigma']$, and $\mathcal{K}_E(M)$ is true of
+$M[\sigma]$ in the same way.
 \end{lemma}
 A known value is reached: if $M \approx V'$ for a value $V'$, then $M \to^* W$
 for a value $W \approx V'$.

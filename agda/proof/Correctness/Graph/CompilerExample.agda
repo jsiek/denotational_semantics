@@ -42,13 +42,10 @@ nested-globalized : globalize nested
                (L5.fun-ref 1 L5.⦅ Nil ⦆)
 nested-globalized = refl
 
-{- each function's code becomes exactly one global definition: delay binds
-   the operator of an application with a let instead of copying it. Only
-   one function is left: simplify reduces (λx. λy. x) 7 to λy. 7 (but not
-   the application of that to 5, whose operator is not a λ in the
-   source) -}
-one-definition : length (L5.Program.defs (compile prog)) ≡ 1
-one-definition = refl
+{- no function is left: simplify reduces (λx. λy. x) 7 to λy. 7, a known
+   function, and inlines its call on 5 -}
+no-definitions : length (L5.Program.defs (compile prog)) ≡ 0
+no-definitions = refl
 
 compiled-is-7 : const {Nat} 7 ∈ ⟦ compile prog ⟧ₚ
 compiled-is-7 = proj₁ (compile-correct-const prog 7) prog-is-7
