@@ -143,6 +143,7 @@ import proof.Semantics.CEK.Smallstep
 import proof.Semantics.CEK.Simulation
 
 {- correctness of each pass, and of the compiler into each language -}
+import proof.Correctness.CEK.SimplifySim
 import proof.Correctness.CEK.EncloseSim
 import proof.Correctness.CEK.OptimizeSim
 import proof.Correctness.CEK.ConcretizeSim
