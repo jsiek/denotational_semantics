@@ -314,6 +314,8 @@ import proof.Correctness.GraphErrM.EncloseCorrect
 import proof.Correctness.GraphErrM.OptimizeCorrect
 import proof.Correctness.GraphErrM.GlobalizeCorrect
 import proof.Correctness.GraphErrM.RCOCorrect
+import proof.Correctness.GraphErrM.LiftLocalsCorrect
+import proof.Correctness.GraphErrM.ExplicateCorrect
 import proof.Correctness.GraphErrM.ConcretizeCorrect
 import proof.Correctness.GraphErrM.DelayRel
 import proof.Correctness.GraphErrM.DelayApp

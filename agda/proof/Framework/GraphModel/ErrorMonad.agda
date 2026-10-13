@@ -29,15 +29,18 @@ open import proof.Framework.GraphModel.Continuity
 open import Framework.abt.Sig using (Result; ∁)
 
 open import Data.Empty using (⊥; ⊥-elim)
-open import Data.List using (List; []; _∷_; replicate)
-open import Data.List.Relation.Unary.Any using (here)
+open import Data.List using (List; []; _∷_; replicate; _++_)
+open import Data.List.Properties using (++-conicalˡ)
+open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
+open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_]′)
 open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Level using (lift; lower)
+open import Data.Maybe using (Maybe; nothing; just)
+open import Level using (Lift; lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans)
 
 {- ω, kinds and consistency -------------------------------------------------------}
@@ -862,3 +865,172 @@ get-k {n} i = mkK (λ { ⟨ X , _ ⟩ → checked (tup n) X (proj i ⟨ X , ptt 
 case-k : (E F : 𝒫 Value → 𝒫 Value) → Kernel 1
 case-k E F = mkK (λ { ⟨ X , _ ⟩ → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩) })
   (λ s → checked-mono (lower (proj₁ s)) (𝒞⇂-⊆ {A = E} {E} {F} {F} (lower (proj₁ s)) (λ _ _ _ _ w w∈ → w∈) (λ _ _ _ _ w w∈ → w∈)))
+
+{- Finitary continuations: a bind and a case commute with a bind ---------------------}
+
+{- G uses only a finite, nonempty part of any nonempty set -}
+FinOn : (𝒫 Value → 𝒫 Value) → Set₁
+FinOn G = ∀ Y → nonempty Y → Finitary G Y
+
+{- finitely many elements, each in F of a finite part of X, are all in F
+   of one finite part of X -}
+many-runs : ∀ {F : 𝒫 Value → 𝒫 Value} {X} → Mono₁ F → ∀ U → U ≢ []
+  → (∀ u → u ∈ mem U → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ X × u ∈ F (mem V))
+  → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ X × mem U ⊆ F (mem V)
+many-runs mF [] ne _ = ⊥-elim (ne refl)
+many-runs mF (u ∷ []) _ runs with runs u (here refl)
+... | ⟨ V , ⟨ neV , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ = ⟨ V , ⟨ neV , ⟨ V⊆ , (λ { _ (here refl) → u∈ }) ⟩ ⟩ ⟩
+many-runs mF (u ∷ u' ∷ U) _ runs with runs u (here refl) | many-runs mF (u' ∷ U) (λ ()) (λ d d∈ → runs d (there d∈))
+... | ⟨ V , ⟨ neV , ⟨ V⊆ , u∈ ⟩ ⟩ ⟩ | ⟨ V' , ⟨ _ , ⟨ V'⊆ , U⊆ ⟩ ⟩ ⟩ =
+  ⟨ V ++ V' , ⟨ (λ eq → neV (++-conicalˡ V V' eq)) , ⟨ (λ d d∈ → [ V⊆ d , V'⊆ d ]′ (∈-++⁻ V d∈))
+  , (λ { _ (here refl) → mF (λ _ → ∈-++⁺ˡ) _ u∈ ; d (there d∈) → mF (λ _ → ∈-++⁺ʳ V) d (U⊆ d d∈) }) ⟩ ⟩ ⟩
+
+{- a bind of a finitary operand into a finitary continuation is finitary -}
+≫=-fin : ∀ {F G X} → Mono₁ F → Finitary F X → Mono₁ G → FinOn G → Finitary (λ Y → F Y ≫= G) X
+≫=-fin mF fin mG fG w (inj₁ ⟨ refl , ω∈ ⟩) with fin ω ω∈
+... | ⟨ V , ⟨ ne , ⟨ V⊆ , ω∈' ⟩ ⟩ ⟩ = ⟨ V , ⟨ ne , ⟨ V⊆ , inj₁ ⟨ refl , ω∈' ⟩ ⟩ ⟩ ⟩
+≫=-fin {F} {G} {X} mF fin mG fG w (inj₂ ⟨ c , w∈ ⟩) with fG ⌊ F X ⌋ c w w∈
+... | ⟨ U , ⟨ neU , ⟨ U⊆ , w∈' ⟩ ⟩ ⟩ with many-runs mF U neU (λ u u∈ → fin u (proj₁ (U⊆ u u∈)))
+... | ⟨ V , ⟨ neV , ⟨ V⊆ , U⊆' ⟩ ⟩ ⟩ =
+  ⟨ V , ⟨ neV , ⟨ V⊆ , inj₂ ⟨ c' , mG (λ u u∈ → ⟨ U⊆' u u∈ , proj₂ (U⊆ u u∈) ⟩) w w∈' ⟩ ⟩ ⟩ ⟩
+  where c' = let ⟨ u , u∈ ⟩ = E≢[]⇒nonempty-mem neU in ⟨ u , ⟨ U⊆' u u∈ , proj₂ (U⊆ u u∈) ⟩ ⟩
+
+{- a check commutes with a bind -}
+checked-≫= : ∀ {k X A G} → Mono₁ G → (checked k X A ≫= G) ≃ checked k X (A ≫= G)
+checked-≫= {k} {X} {A} {G} mG = ⟨ L , R ⟩
+  where
+  L : (checked k X A ≫= G) ⊆ checked k X (A ≫= G)
+  L w (inj₁ ⟨ refl , inj₁ ⟨ _ , b ⟩ ⟩) = inj₁ ⟨ refl , b ⟩
+  L w (inj₁ ⟨ refl , inj₂ ω∈ ⟩) = inj₂ (inj₁ ⟨ refl , ω∈ ⟩)
+  L w (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩) = inj₂ (inj₂ ⟨ ⟨ d , ⟨ ⌊checked⌋ {k} {X} {A} d d∈ , proj₂ d∈ ⟩ ⟩ , mG (λ e e∈ → ⟨ ⌊checked⌋ {k} {X} {A} e e∈ , proj₂ e∈ ⟩) w w∈ ⟩)
+  R : checked k X (A ≫= G) ⊆ (checked k X A ≫= G)
+  R w (inj₁ ⟨ refl , b ⟩) = inj₁ ⟨ refl , inj₁ ⟨ refl , b ⟩ ⟩
+  R w (inj₂ (inj₁ ⟨ refl , ω∈ ⟩)) = inj₁ ⟨ refl , inj₂ ω∈ ⟩
+  R w (inj₂ (inj₂ ⟨ ⟨ d , d∈ ⟩ , w∈ ⟩)) = inj₂ ⟨ ⟨ d , ⟨ inj₂ (proj₁ d∈) , proj₂ d∈ ⟩ ⟩ , mG (λ e e∈ → ⟨ inj₂ (proj₁ e∈) , proj₂ e∈ ⟩) w w∈ ⟩
+
+{- the values of one branch of a case, from finitely many payload sets,
+   come from the branch on their union -}
+gather-runs : ∀ {Q : 𝒫 Value} {E G : 𝒫 Value → 𝒫 Value} {w} → Con Q → Mono₁ E → Mono₁ G
+  → ∀ U → U ≢ [] → (∀ u → u ∈ mem U → Σ[ W ∈ List Value ] W ≢ [] × mem W ⊆ Q × u ∈ E (mem W))
+  → (∀ u → u ∈ mem U → u ≢ ω) → w ∈ G (mem U)
+  → Σ[ v ∈ Value ] Σ[ V ∈ List Value ] (∀ d → d ∈ mem (v ∷ V) → Q d) × w ∈ (E (mem (v ∷ V)) ≫= G) × (v ∷ V) ≈ (v ∷ V)
+gather-runs cQ mE mG U neU runs nω w∈ with many-runs mE U neU runs
+... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
+... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , U⊆ ⟩ ⟩ ⟩ =
+  ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ inj₂ ⟨ conv , mG (λ u u∈ → ⟨ U⊆ u u∈ , nω u u∈ ⟩) _ w∈ ⟩ , Con⇒≈ (v ∷ V) cQ V⊆ ⟩ ⟩ ⟩ ⟩
+  where conv = let ⟨ u , u∈ ⟩ = E≢[]⇒nonempty-mem neU in ⟨ u , ⟨ U⊆ u u∈ , nω u u∈ ⟩ ⟩
+
+{- a case commutes with a finitary bind -}
+𝒞-≫= : ∀ {P E F G} → Con P → Mono₁ E → Mono₁ F → Mono₁ G → FinOn G
+  → (𝒞 ⟨ P , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ ≫= G) ≃ 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩
+𝒞-≫= {P} {E} {F} {G} cP mE mF mG fG = ⟨ L , R ⟩
+  where
+  C = 𝒞 ⟨ P , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩
+  L : (C ≫= G) ⊆ 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩
+  L w (inj₁ ⟨ refl , inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) = inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩
+  L w (inj₁ ⟨ refl , inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩) = inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩
+  L w (inj₂ ⟨ cv , w∈ ⟩) with fG ⌊ C ⌋ cv w w∈
+  ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
+  ... | ⟨ u₀ ∷ U , ⟨ _ , ⟨ U⊆ , w∈' ⟩ ⟩ ⟩ with proj₁ (U⊆ u₀ (here refl))
+  ...   | inj₁ ⟨ v₀ , ⟨ V₀ , ⟨ all₀ , _ ⟩ ⟩ ⟩ =
+    inj₁ (gather-runs (λ d d' d∈ d'∈ → cP _ _ d∈ d'∈) mE mG (u₀ ∷ U) (λ ()) runs (λ u u∈ → proj₂ (U⊆ u u∈)) w∈')
+    where
+    runs : ∀ u → u ∈ mem (u₀ ∷ U) → Σ[ W ∈ List Value ] W ≢ [] × mem W ⊆ (λ d → left d ∈ P) × u ∈ E (mem W)
+    runs u u∈ with proj₁ (U⊆ u u∈)
+    ... | inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈' , _ ⟩ ⟩ ⟩ ⟩ = ⟨ v ∷ V , ⟨ (λ ()) , ⟨ all , u∈' ⟩ ⟩ ⟩
+    ... | inj₂ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ = ⊥-elim (cP _ _ (all₀ v₀ (here refl)) (all v (here refl)))
+  ...   | inj₂ ⟨ v₀ , ⟨ V₀ , ⟨ all₀ , _ ⟩ ⟩ ⟩ =
+    inj₂ (gather-runs (λ d d' d∈ d'∈ → cP _ _ d∈ d'∈) mF mG (u₀ ∷ U) (λ ()) runs (λ u u∈ → proj₂ (U⊆ u u∈)) w∈')
+    where
+    runs : ∀ u → u ∈ mem (u₀ ∷ U) → Σ[ W ∈ List Value ] W ≢ [] × mem W ⊆ (λ d → right d ∈ P) × u ∈ F (mem W)
+    runs u u∈ with proj₁ (U⊆ u u∈)
+    ... | inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ u∈' , _ ⟩ ⟩ ⟩ ⟩ = ⟨ v ∷ V , ⟨ (λ ()) , ⟨ all , u∈' ⟩ ⟩ ⟩
+    ... | inj₁ ⟨ v , ⟨ V , ⟨ all , _ ⟩ ⟩ ⟩ = ⊥-elim (cP _ _ (all₀ v₀ (here refl)) (all v (here refl)))
+  R : 𝒞 ⟨ P , ⟨ (λ Y → E Y ≫= G) , ⟨ (λ Y → F Y ≫= G) , ptt ⟩ ⟩ ⟩ ⊆ (C ≫= G)
+  R w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) = inj₁ ⟨ refl , inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩
+  R w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₂ ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) =
+    inj₂ ⟨ ⟨ u , ⟨ inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ u∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ u∈ ⟩ ⟩
+         , mG (λ e e∈ → ⟨ inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ e∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ e∈ ⟩) w w∈ ⟩
+  R w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₁ ⟨ refl , ω∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) = inj₁ ⟨ refl , inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ ω∈ , c ⟩ ⟩ ⟩ ⟩ ⟩
+  R w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ inj₂ ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ , c ⟩ ⟩ ⟩ ⟩) =
+    inj₂ ⟨ ⟨ u , ⟨ inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ u∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ u∈ ⟩ ⟩
+         , mG (λ e e∈ → ⟨ inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ proj₁ e∈ , c ⟩ ⟩ ⟩ ⟩ , proj₂ e∈ ⟩) w w∈ ⟩
+
+{- so the case of the monad commutes with a finitary bind -}
+𝒞ᵐ-≫= : ∀ {A F₁ F₂ G} → Con A → Mono₁ F₁ → Mono₁ F₂ → Mono₁ G → FinOn G
+  → (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩ ≫= G) ≃ 𝒞ᵐ ⟨ A , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩
+𝒞ᵐ-≫= {A} {F₁} {F₂} {G} cA m₁ m₂ mG fG =
+  ≃-trans (≫=-assoc {A} {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)} mG)
+    (≫=-cong {A} {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) ≫= G}
+               {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ Y → F₁ Y ≫= G) , ⟨ (λ Y → F₂ Y ≫= G) , ptt ⟩ ⟩ ⟩)} λ _ → ≃-trans (checked-≫= mG)
+       (⟨ checked-mono (λ d z → z) (proj₁ eq) , checked-mono (λ d z → z) (proj₂ eq) ⟩))
+  where
+  eq = 𝒞-≫= {⌊ A ⌋ ⇂ ValPayload} {F₁} {F₂} {G} (Con-⊆ cA (λ d d∈ → proj₁ (proj₁ d∈))) m₁ m₂ mG fG
+
+{- An optional continuation: a bind into a finitary continuation (lift locals) ------}
+
+K⟨_⟩ : Maybe (𝒫 Value → 𝒫 Value) → 𝒫 Value → 𝒫 Value
+K⟨ nothing ⟩ D = D
+K⟨ just G ⟩ D = D ≫= G
+
+KOK : Maybe (𝒫 Value → 𝒫 Value) → Set₁
+KOK nothing = Lift _ ⊤
+KOK (just G) = Mono₁ G × FinOn G
+
+K-mono : ∀ k → KOK k → Mono₁ K⟨ k ⟩
+K-mono nothing _ X⊆ = X⊆
+K-mono (just G) ⟨ mG , _ ⟩ X⊆ = ≫=-mono X⊆ mG
+
+K-≃ : ∀ k → KOK k → ∀ {D D'} → D ≃ D' → K⟨ k ⟩ D ≃ K⟨ k ⟩ D'
+K-≃ k ok ⟨ D⊆ , D⊇ ⟩ = ⟨ K-mono k ok D⊆ , K-mono k ok D⊇ ⟩
+
+K-fin : ∀ k → KOK k → ∀ {F X} → Mono₁ F → Finitary F X → Finitary (λ Y → K⟨ k ⟩ (F Y)) X
+K-fin nothing _ mF fin = fin
+K-fin (just G) ⟨ mG , fG ⟩ mF fin = ≫=-fin mF fin mG fG
+
+{- K after a monotone, finitary body is again a finitary continuation -}
+K-ok : ∀ k → KOK k → ∀ {F} → Mono₁ F → FinOn F → KOK (just (λ X → K⟨ k ⟩ (F X)))
+K-ok k ok mF fF = ⟨ (λ X⊆ → K-mono k ok (mF X⊆)) , (λ Y neY → K-fin k ok mF (fF Y neY)) ⟩
+
+{- K commutes with a bind and with a case -}
+let-law : ∀ k → KOK k → ∀ {D F} → K⟨ k ⟩ (D ≫= F) ≃ (D ≫= λ X → K⟨ k ⟩ (F X))
+let-law nothing _ = ≃-refl
+let-law (just G) ⟨ mG , _ ⟩ {D} {F} = ≫=-assoc {D} {F} mG
+
+case-law : ∀ k → KOK k → ∀ {A F₁ F₂} → Con A → Mono₁ F₁ → Mono₁ F₂
+  → K⟨ k ⟩ (𝒞ᵐ ⟨ A , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩) ≃ 𝒞ᵐ ⟨ A , ⟨ (λ X → K⟨ k ⟩ (F₁ X)) , ⟨ (λ X → K⟨ k ⟩ (F₂ X)) , ptt ⟩ ⟩ ⟩
+case-law nothing _ cA m₁ m₂ = ≃-refl
+case-law (just G) ⟨ mG , fG ⟩ cA m₁ m₂ = 𝒞ᵐ-≫= cA m₁ m₂ mG fG
+
+{- Congruences of the operators of pairs and calls -}
+
+callᵐ-≃ : ∀ {L L' M M' N N'} → L ≃ L' → M ≃ M' → N ≃ N'
+  → callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ≃ callᵐ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
+callᵐ-≃ L≃ M≃ N≃ = mono-≃ (mono (callᵐ-good {⊤})) ⟨ lift L≃ , ⟨ lift M≃ , ⟨ lift N≃ , ptt ⟩ ⟩ ⟩
+
+pairᵐ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pairᵐ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pairᵐ-≃ D≃ E≃ = mono-≃ (mono (pairᵐ-good {⊤})) ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩
+
+carᵐ-≃ : ∀ {D D'} → D ≃ D' → carᵐ ⟨ D , ptt ⟩ ≃ carᵐ ⟨ D' , ptt ⟩
+carᵐ-≃ D≃ = mono-≃ (mono (carᵐ-good {⊤})) ⟨ lift D≃ , ptt ⟩
+
+cdrᵐ-≃ : ∀ {D D'} → D ≃ D' → cdrᵐ ⟨ D , ptt ⟩ ≃ cdrᵐ ⟨ D' , ptt ⟩
+cdrᵐ-≃ D≃ = mono-≃ (mono (cdrᵐ-good {⊤})) ⟨ lift D≃ , ptt ⟩
+
+{- Congruences of the operators of machine state -}
+
+payloadᵐ-≃ : ∀ {D D'} → D ≃ D' → payloadᵐ D ≃ payloadᵐ D'
+payloadᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ ≫=-mono D⊆ P , ≫=-mono D⊇ P ⟩
+  where
+  P : ∀ {X X'} → X ⊆ X' → checked inj X (payloadD (X ⇂ ValPayload)) ⊆ checked inj X' (payloadD (X' ⇂ ValPayload))
+  P X⊆ = checked-mono X⊆ (λ { v (inj₁ l) → inj₁ (⇂-mono {P = ValPayload} X⊆ _ l) ; v (inj₂ r) → inj₂ (⇂-mono {P = ValPayload} X⊆ _ r) })
+
+strictᵐ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → strictᵐ D E ≃ strictᵐ D' E'
+strictᵐ-≃ ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ = ⟨ ≫=-mono D⊆ (λ _ → E⊆) , ≫=-mono D⊇ (λ _ → E⊇) ⟩
+
+isinlᵐ-≃ : ∀ {D D'} → D ≃ D' → isinlᵐ D ≃ isinlᵐ D'
+isinlᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ ≫=-mono D⊆ P , ≫=-mono D⊇ P ⟩
+  where
+  P : ∀ {X X'} → X ⊆ X' → checked inj X (isinlD X) ⊆ checked inj X' (isinlD X')
+  P X⊆ = checked-mono X⊆ (λ { w (inj₁ ⟨ u , ⟨ l , eq ⟩ ⟩) → inj₁ ⟨ u , ⟨ X⊆ _ l , eq ⟩ ⟩
+                             ; w (inj₂ ⟨ u , ⟨ r , eq ⟩ ⟩) → inj₂ ⟨ u , ⟨ X⊆ _ r , eq ⟩ ⟩ })
