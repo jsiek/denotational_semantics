@@ -24,7 +24,8 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
-open import Data.List using (List ; _∷_ ; []; replicate)
+open import Data.List using (List ; _∷_ ; []; replicate; _++_)
+open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -752,3 +753,58 @@ cdrᵉ-≃ D≃ = mono-≃ cdrᵉ-mono ⟨ lift D≃ , ptt ⟩
 callᵉ-≃ : ∀ {L L' M M' N N'} → L ≃ L' → M ≃ M' → N ≃ N'
   → callᵉ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ≃ callᵉ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
 callᵉ-≃ L≃ M≃ N≃ = mono-≃ callᵉ-mono ⟨ lift L≃ , ⟨ lift M≃ , ⟨ lift N≃ , ptt ⟩ ⟩ ⟩
+
+{- More β laws, for the passes that change the representation of closures ---------}
+
+{- a consistent set with a value holds no ω -}
+con-val-clean : ∀ {D} → Con D → val∈ D → Clean D
+con-val-clean cD ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ .ω ω∈ refl = d≢ (~ω d (cD d ω d∈ ω∈))
+
+{- a closed function of two arguments, applied to T and to E, contains its
+   body on T and E, when that body needs only finite, nonempty parts of
+   them, and T and E are consistent and hold no ω -}
+ΛΛᵉ-β : ∀ {F T E} → Con T → Con E → Clean T → Clean E
+  → (∀ w → w ∈ F T E → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
+       V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
+  → F T E ⊆ ⋆ᵉ ⟨ ⋆ᵉ ⟨ ΛΛᵉ ⟨ F , ptt ⟩ , ⟨ T , ptt ⟩ ⟩ , ⟨ E , ptt ⟩ ⟩
+ΛΛᵉ-β cT cE clT clE fin w w∈ with fin w w∈
+... | ⟨ V , ⟨ U , ⟨ neV , ⟨ neU , ⟨ V⊆ , ⟨ U⊆ , w∈′ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+  inj₁ ⟨ U , ⟨ inj₁ ⟨ V , ⟨ ⟨ ⟨ w∈′ , ⟨ neU , ⟨ Con⇒≈ U cE U⊆ , nU ⟩ ⟩ ⟩ , ⟨ neV , ⟨ Con⇒≈ V cT V⊆ , nV ⟩ ⟩ ⟩
+                          , ⟨ V⊆ , ⟨ neV , nV ⟩ ⟩ ⟩ ⟩
+             , ⟨ U⊆ , ⟨ neU , nU ⟩ ⟩ ⟩ ⟩
+  where
+  nV = Clean-NoErr V clT V⊆
+  nU = Clean-NoErr U clE U⊆
+
+{- a let whose operand holds no ω: finitely many of its elements come from
+   one finite part of its operand -}
+letᵉ-collect : ∀ {D F} → Mono₁ F → Clean D → ∀ V → mem V ⊆ letᵉ ⟨ D , ⟨ F , ptt ⟩ ⟩
+  → Σ[ U ∈ List Value ] mem U ⊆ D × mem V ⊆ F (mem U)
+letᵉ-collect m cl [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
+letᵉ-collect {D} m cl (w ∷ V) V⊆ with V⊆ w (here refl) | letᵉ-collect m cl V (λ d d∈ → V⊆ d (there d∈))
+... | inj₂ ⟨ refl , inj₁ () ⟩ | _
+... | inj₂ ⟨ refl , inj₂ (inj₁ ⟨ d , ⟨ d∈ , ⟨ _ , nf ⟩ ⟩ ⟩) ⟩ | _ = ⊥-elim (nf (Λᵉ-fun d d∈))
+... | inj₂ ⟨ refl , inj₂ (inj₂ ⟨ _ , ω∈ ⟩) ⟩ | _ = ⊥-elim (cl ω ω∈ refl)
+... | inj₁ ⟨ U₀ , ⟨ ⟨ w∈ , _ ⟩ , ⟨ U₀⊆ , _ ⟩ ⟩ ⟩ | ⟨ U , ⟨ U⊆ , V⊆F ⟩ ⟩ =
+  ⟨ U₀ ++ U , ⟨ ++⊆ , (λ { _ (here refl) → m (λ d → ∈-++⁺ˡ) _ w∈ ; d (there d∈) → m (λ d → ∈-++⁺ʳ U₀) d (V⊆F d d∈) }) ⟩ ⟩
+  where
+  ++⊆ : mem (U₀ ++ U) ⊆ D
+  ++⊆ d d∈ with ∈-++⁻ U₀ d∈
+  ... | inj₁ i = U₀⊆ d i
+  ... | inj₂ i = U⊆ d i
+
+{- a case contains its left branch on the left payloads of the scrutinee,
+   when they hold no ω (likewise right) -}
+𝒞ᵉ-left : ∀ {D F G} → Finitary F (λ d → left d ∈ D) → Con (λ d → left d ∈ D) → Clean (λ d → left d ∈ D)
+  → F (λ d → left d ∈ D) ⊆ 𝒞ᵉ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+𝒞ᵉ-left fin c cl w w∈ with fin w w∈
+... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
+... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , w∈′ ⟩ ⟩ ⟩ =
+  inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ w∈′ , ⟨ Con⇒≈ (v ∷ V) c V⊆ , Clean-NoErr (v ∷ V) cl V⊆ ⟩ ⟩ ⟩ ⟩ ⟩
+
+𝒞ᵉ-right : ∀ {D F G} → Finitary G (λ d → right d ∈ D) → Con (λ d → right d ∈ D) → Clean (λ d → right d ∈ D)
+  → G (λ d → right d ∈ D) ⊆ 𝒞ᵉ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+𝒞ᵉ-right fin c cl w w∈ with fin w w∈
+... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
+... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , w∈′ ⟩ ⟩ ⟩ =
+  inj₂ (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ w∈′ , ⟨ Con⇒≈ (v ∷ V) c V⊆ , Clean-NoErr (v ∷ V) cl V⊆ ⟩ ⟩ ⟩ ⟩ ⟩)

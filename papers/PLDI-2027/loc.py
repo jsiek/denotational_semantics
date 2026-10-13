@@ -131,7 +131,8 @@ GROUPS = [
     ('infra', 'graph model: values, consistency, machinery for any operators',
      [W + 'GraphModel/Domain.agda', WP + 'GraphModel/Domain.agda',
       W + 'GraphModel/OpsBase.agda', WP + 'GraphModel/OpsBase.agda',
-      WP + 'GraphModel/ContinuityBase.agda', WP + 'GraphModel/SemanticsCore.agda']),
+      WP + 'GraphModel/ContinuityBase.agda', WP + 'GraphModel/SemanticsCore.agda',
+      WP + 'GraphModel/DomainUtilBase.agda']),
     ('infra', 'graph model: its operators',
      [W + 'GraphModel/Ops.agda', WP + 'GraphModel/Ops.agda',
       WP + 'GraphModel/Continuity.agda', WP + 'GraphModel/SemanticsUtil.agda',
@@ -272,6 +273,10 @@ GROUPS = [
      ['agda/Semantics/GraphErr/*.agda', 'agda/proof/Semantics/GraphErr/*.agda']),
     ('gerr', 'simplify', ['agda/proof/Correctness/GraphErr/SimplifyCorrect.agda']),
     ('gerr', 'CC: enclose', ['agda/proof/Correctness/GraphErr/EncloseCorrect.agda']),
+    ('gerr', 'CC: concretize', ['agda/proof/Correctness/GraphErr/ConcretizeCorrect.agda']),
+    ('gerr', 'CC: delay',
+     ['agda/proof/Correctness/GraphErr/DelayRel.agda', 'agda/proof/Correctness/GraphErr/DelayApp.agda',
+      'agda/proof/Correctness/GraphErr/DelayReflect.agda', 'agda/proof/Correctness/GraphErr/DelayPreserve.agda']),
     ('gerr', 'adequacy (ISWIM)', ['agda/proof/Adequacy/GraphErr/*.agda']),
     ('gerr', 'simplify through the ISWIM machine', ['agda/proof/Adequacy/GraphErr/Simplify.agda']),
 
@@ -613,15 +618,16 @@ def pilot(counts, files_of, reach, own, infra, shared, by_all, group_of, ulines,
     reaches."""
     def flines(fs):
         return sum(code_lines(f) for f in fs if os.path.exists(f))
-    # the semantics of ISWIM and Clos2 only, in each style (with the
-    # framework instance of the operational styles, and the meaning of the
-    # primitives of the denotational one)
+    # the semantics of ISWIM and Clos2–Clos4 only, in each style (with the
+    # meaning of the primitives of the denotational one)
     sem = {
         'den': [G + 'Prim.agda', GP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda',
-                GP + 'ISWIMContinuous.agda', G + 'Clos2Iswim.agda', GP + 'Clos2Iswim.agda'],
-        'op': [O + 'ISWIM.agda', O + 'Clos2.agda'],
-        'ck': [F + 'ISWIM.agda', F + 'Clos2.agda'],
-        'red': [RD + 'ISWIM.agda', RD + 'Clos2.agda', RP + 'Clos2.agda'],
+                GP + 'ISWIMContinuous.agda', G + 'Clos2Iswim.agda', GP + 'Clos2Iswim.agda',
+                G + 'Clos3Iswim.agda', GP + 'Clos3Iswim.agda', G + 'Clos4Iswim.agda', GP + 'Clos4Iswim.agda'],
+        'op': [O + 'ISWIM.agda', O + 'Clos2.agda', O + 'Clos3.agda', O + 'Clos4.agda'],
+        'ck': [F + 'ISWIM.agda', F + 'Clos2.agda', F + 'Clos3.agda', F + 'Clos4.agda'],
+        'red': [RD + 'ISWIM.agda', RD + 'Clos2.agda', RP + 'Clos2.agda', RD + 'Clos3.agda', RP + 'Clos3.agda',
+                RD + 'Clos4.agda', RP + 'Clos4.agda'],
     }
     gerr_sem = sorted(files_of[('gerr', 'semantics of the languages')])
     # what the pilot reaches outside itself and the infrastructure (the
@@ -632,13 +638,18 @@ def pilot(counts, files_of, reach, own, infra, shared, by_all, group_of, ulines,
           '| denotational: graph model | CEK machine + simulation '
           '| clocked interpreter + value relations | reduction semantics + simulation |')
     print('|---|---:|---:|---:|---:|---:|')
-    print(f'| semantics of ISWIM and Clos2 | {flines(gerr_sem)} | '
+    print(f'| semantics of ISWIM and Clos2–Clos4 | {flines(gerr_sem)} | '
           + ' | '.join(str(flines(sem[s])) for s in SIDES) + ' |')
     facts = code_lines(PC + 'SimplifyFacts.agda')
     print(f"| simplify (with SimplifyFacts, {facts}) | {counts[('gerr', 'simplify')] + facts} | "
           + ' | '.join(str(counts[(s, 'simplify')]) for s in SIDES) + ' |')
     print(f"| CC: enclose | {counts[('gerr', 'CC: enclose')]} | "
           + ' | '.join(str(counts[(s, 'CC: enclose')]) for s in SIDES) + ' |')
+    print("| CC: optimize | not yet proved | "
+          + ' | '.join(str(counts[(s, 'CC: optimize')]) for s in SIDES) + ' |')
+    for r in ('CC: concretize', 'CC: delay'):
+        print(f"| {r} | {counts[('gerr', r)]} | "
+              + ' | '.join(str(counts[(s, r)]) for s in SIDES) + ' |')
     common = code_lines(AP + 'Common.agda')
     print(f"| adequacy for ISWIM (with the graph model's `Adequacy.Common`, {common}) | "
           f"{counts[('gerr', 'adequacy (ISWIM)')] + common} | "

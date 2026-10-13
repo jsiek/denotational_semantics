@@ -68,6 +68,7 @@ import proof.Framework.GraphModel.Continuity
 import proof.Framework.GraphModel.SemanticsUtil
 import proof.Framework.GraphModel.ErrorOps
 import proof.Framework.GraphModel.ErrorContinuity
+import proof.Framework.GraphModel.DomainUtilBase
 import proof.Framework.GraphModel.DomainUtil
 import proof.Framework.Smallstep
 import proof.Framework.Runs
@@ -252,8 +253,15 @@ import proof.Semantics.GraphErr.Prim
 import proof.Semantics.GraphErr.ISWIM
 import proof.Semantics.GraphErr.Clos2
 import proof.Semantics.GraphErr.Clos2Continuous
+import proof.Semantics.GraphErr.Clos3
+import proof.Semantics.GraphErr.Clos4
 import proof.Correctness.GraphErr.SimplifyCorrect
 import proof.Correctness.GraphErr.EncloseCorrect
+import proof.Correctness.GraphErr.ConcretizeCorrect
+import proof.Correctness.GraphErr.DelayRel
+import proof.Correctness.GraphErr.DelayApp
+import proof.Correctness.GraphErr.DelayReflect
+import proof.Correctness.GraphErr.DelayPreserve
 import proof.Adequacy.GraphErr.Soundness
 import proof.Adequacy.GraphErr.LogRel
 import proof.Adequacy.GraphErr.ISWIM
