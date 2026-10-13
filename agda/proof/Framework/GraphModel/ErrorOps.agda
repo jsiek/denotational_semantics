@@ -836,3 +836,12 @@ strictᵉ-consis D~ E~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) =
 strictᵉ-consis D~ E~ u w (inj₁ ⟨ refl , ω∈ ⟩) (inj₂ ⟨ v , _ ⟩) = ⊥-elim (ω-val D~ ω∈ v)
 strictᵉ-consis D~ E~ u w (inj₂ ⟨ v , _ ⟩) (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (val-ω D~ v ω∈)
 strictᵉ-consis D~ E~ u w (inj₂ ⟨ _ , u∈ ⟩) (inj₂ ⟨ _ , w∈ ⟩) = E~ u w u∈ w∈
+
+payloadᵉ-mono : ∀ {D E} → D ⊆ E → payloadᵉ D ⊆ payloadᵉ E
+payloadᵉ-mono D⊆ v (inj₁ ⟨ l∈ , v≢ ⟩) = inj₁ ⟨ D⊆ _ l∈ , v≢ ⟩
+payloadᵉ-mono D⊆ v (inj₂ (inj₁ ⟨ r∈ , v≢ ⟩)) = inj₂ (inj₁ ⟨ D⊆ _ r∈ , v≢ ⟩)
+payloadᵉ-mono D⊆ v (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) = inj₂ (inj₂ ⟨ refl , inj₁ (D⊆ ω ω∈) ⟩)
+payloadᵉ-mono D⊆ v (inj₂ (inj₂ ⟨ refl , inj₂ wr ⟩)) = inj₂ (inj₂ ⟨ refl , inj₂ (wrong-mono D⊆ wr) ⟩)
+
+payloadᵉ-≃ : ∀ {D E} → D ≃ E → payloadᵉ D ≃ payloadᵉ E
+payloadᵉ-≃ D≃ = ⟨ payloadᵉ-mono (proj₁ D≃) , payloadᵉ-mono (proj₂ D≃) ⟩

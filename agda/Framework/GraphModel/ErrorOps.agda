@@ -194,3 +194,7 @@ errcode = ΛΛᵉ ⟨ (λ X Y → ⌈ ω ⌉) , ptt ⟩
 {- E once D has a value; ω if D holds ω: a strict write of D, before E -}
 strictᵉ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 strictᵉ D E w = (w ≡ ω × ω ∈ D) ⊎ (val∈ D × w ∈ E)
+
+{- the payload of an injection; an error on ω or a non-injection -}
+payloadᵉ : 𝒫 Value → 𝒫 Value
+payloadᵉ D v = (left v ∈ D × v ≢ ω) ⊎ (right v ∈ D × v ≢ ω) ⊎ (v ≡ ω × (ω ∈ D ⊎ wrong IsInj D))

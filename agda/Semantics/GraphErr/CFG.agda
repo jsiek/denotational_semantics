@@ -32,7 +32,7 @@ Blocks = ℕ → Store → 𝒫 Value
 ⟦ seq x s t ⟧[ T ] n B σ = checkedᵉ n x (𝒮 T n σ s)
   (letᵉ ⟨ 𝒮 T n σ s , ⟨ (λ X → ⟦ t ⟧[ T ] n B (σ [ x ↦ X ])) , ptt ⟩ ⟩)
 ⟦ goto l ⟧[ T ] n B σ = B l σ
-⟦ case a x l₁ l₂ ⟧[ T ] n B σ = checkedᵉ n x (𝒜 T n σ a)
+⟦ case a x l₁ l₂ ⟧[ T ] n B σ = checkedᵉ n x (payloadᵉ (𝒜 T n σ a))
   (𝒞ᵉ ⟨ 𝒜 T n σ a , ⟨ (λ X → B l₁ (σ [ x ↦ X ])) , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
 
 {- the blocks bs (newest first), each with the meanings of the older ones;

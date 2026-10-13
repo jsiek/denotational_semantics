@@ -80,10 +80,6 @@ isinlᵉ : 𝒫 Value → 𝒫 Value
 isinlᵉ D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
   ⊎ (w ≡ ω × (ω ∈ D ⊎ wrong IsInj D))
 
-{- the payload of an injection; an error on a non-injection -}
-payloadᵉ : 𝒫 Value → 𝒫 Value
-payloadᵉ D v = left v ∈ D ⊎ right v ∈ D ⊎ (v ≡ ω × (ω ∈ D ⊎ wrong IsInj D))
-
 {- the object that alloc builds; a wrong number of fields errs -}
 object : Table → ℕ → Store → Regs → Shape → List Arg → 𝒫 Value
 object T n σ ρ pairₛ (a ∷ b ∷ []) = pairᵉ ⟨ 𝒪 T n σ ρ a , ⟨ 𝒪 T n σ ρ b , ptt ⟩ ⟩
