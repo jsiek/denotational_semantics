@@ -9,6 +9,7 @@ open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.DOpSig public using (RR; RRs; RRs-refl; rr-trans; mono⇒≃; mono-≃)
 open import proof.Framework.GraphModel.DenotProperties
 open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.OpsBase public
 
 open import Data.Empty using (⊥-elim) renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; _++_; length; replicate)
@@ -40,9 +41,9 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 
 Λ-mono : monotone (ν ■ ∷ []) ■ Λ
 Λ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ = lift G
-  where 
+  where
   G : Λ ⟨ F , ptt ⟩  ⊆ Λ ⟨ F' , ptt ⟩
-  G (V ↦ w) ⟨ w∈F₁X , neV ⟩ = 
+  G (V ↦ w) ⟨ w∈F₁X , neV ⟩ =
     ⟨ lower (F⊆ (mem V) (mem V) (λ d z → z)) w w∈F₁X , neV ⟩
   G ν v∈ = tt
 
@@ -86,21 +87,16 @@ inr-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D⊆) , _ ⟩ = lift G
   G (right v) v∈ = D⊆ v v∈
 
 𝒞-mono : monotone (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞
-𝒞-mono ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+𝒞-mono ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
        ⟨ lift D⊆ , ⟨ FL⊆ , ⟨ FR⊆ , _ ⟩ ⟩ ⟩ = lift G
-  where 
+  where
   G : 𝒞 ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
-  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ d∈ , c ⟩ ⟩ ⟩ ⟩) = 
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (left d) (V⊆ d z)) 
+  G d (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ d∈ , c ⟩ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (left d) (V⊆ d z))
          , ⟨ lower (FL⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ , c ⟩ ⟩ ⟩ ⟩
-  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ d∈ , c ⟩ ⟩ ⟩ ⟩) = 
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (right d) (V⊆ d z)) 
+  G d (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ d∈ , c ⟩ ⟩ ⟩ ⟩) =
+    inj₂ ⟨ v , ⟨ V , ⟨ (λ d z → D⊆ (right d) (V⊆ d z))
          , ⟨ lower (FR⊆ (mem (v ∷ V)) (mem (v ∷ V)) (λ d z → z)) d d∈ , c ⟩ ⟩ ⟩ ⟩
-
-nthD-mono : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
-  → results-rel-pres _⊆_ (replicate n ■) Ds Es → (i : Fin n) → nthD Ds i ⊆ nthD Es i
-nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D⊆ , _ ⟩ zero = D⊆
-nthD-mono {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds⊆ ⟩ (suc i) = nthD-mono Ds Es Ds⊆ i
 
 𝒯-mono : ∀ n → monotone (replicate n ■) ■ (𝒯 n)
 𝒯-mono zero Ds Es Ds⊆ = lift G
@@ -141,7 +137,7 @@ proj-mono i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift (λ d → 
   G ν (V ↦ w) tt _ = tt
   G ν ν tt _ = tt
   G (V ↦ w) ν w∈F₁X tt = tt
-  G (V ↦ w) (V' ↦ w') 
+  G (V ↦ w) (V' ↦ w')
     ⟨ w∈F₁X , neV ⟩ ⟨ w∈F₁X' , neV' ⟩ = λ V≈V' →
     lower (F~ (mem V) (mem V') (≈⇒Every V V' V≈V')) w w' w∈F₁X w∈F₁X'
 
@@ -167,43 +163,37 @@ inl-consis : consistent _~_ (■ ∷ []) ■ inl
 inl-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (inl ⟨ D , ptt ⟩) (inl ⟨ D' , ptt ⟩)
-  G (left u) (left v) U∈ V∈ 
+  G (left u) (left v) U∈ V∈
     = D~ u v U∈ V∈
 
 inr-consis : consistent _~_ (■ ∷ []) ■ inr
 inr-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ (lift D~) , _ ⟩ = lift G
   where
   G : Every _~_ (inr ⟨ D , ptt ⟩) (inr ⟨ D' , ptt ⟩)
-  G (right u) (right v) U∈ V∈ 
+  G (right u) (right v) U∈ V∈
     = D~ u v U∈ V∈
 
 
 
 𝒞-consis : consistent _~_ (■ ∷ ν ■ ∷ ν ■ ∷ []) ■ 𝒞
-𝒞-consis ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩ 
+𝒞-consis ⟨ D , ⟨ FL , ⟨ FR , _ ⟩ ⟩ ⟩ ⟨ D' , ⟨ FL' , ⟨ FR' , _ ⟩ ⟩ ⟩
        ⟨ lift D~ , ⟨ FL~ , ⟨ FR~ , _ ⟩ ⟩ ⟩ = lift G
-  where 
+  where
   G : Every _~_ (𝒞 ⟨ D , ⟨ FL , ⟨ FR , ptt ⟩ ⟩ ⟩) (𝒞 ⟨ D' , ⟨ FL' , ⟨ FR' , ptt ⟩ ⟩ ⟩)
   G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩ ) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     = lower (FL~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (left d) (left d') (V⊆ d d∈) (V⊆' d' d'∈)
-  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = 
+  G u w (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
     ⊥-elim (D~ (left v) (right v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
-  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = 
+  G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₁ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
     ⊥-elim (D~ (right v) (left v') (V⊆ v (here refl)) (V⊆' v' (here refl)))
   G u w (inj₂ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ u∈ , _ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ v' , ⟨ V' , ⟨ V⊆' , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
     = lower (FR~ (mem (v ∷ V)) (mem (v' ∷ V')) V≈V') u w u∈ w∈
     where
     V≈V' : ∀ d d' → d ∈ mem (v ∷ V) → d' ∈ mem (v' ∷ V') → d ~ d'
     V≈V' d d' d∈ d'∈ = D~ (right d) (right d') (V⊆ d d∈) (V⊆' d' d'∈)
-
-nthD-consis : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■))
-  → results-rel-pres (Every _~_) (replicate n ■) Ds Es
-  → (i : Fin n) → Every _~_ (nthD Ds i) (nthD Es i)
-nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ lift D~ , _ ⟩ zero = D~
-nthD-consis {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds~ ⟩ (suc i) = nthD-consis Ds Es Ds~ i
 
 𝒯-consis : ∀ n → consistent _~_ (replicate n ■) ■ (𝒯 n)
 𝒯-consis zero Ds Es Ds~ = lift G
@@ -225,12 +215,6 @@ proj-consis i ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D~ , _ ⟩ = lift G
   ... | ⟨ refl , inj₁ neq ⟩ = ⊥-elim (neq refl)
   ... | ⟨ refl , inj₂ ⟨ _ , d~ ⟩ ⟩ = d~
 
-ℬ-consis : ∀ B k → consistent _~_ [] ■ (ℬ B k)
-ℬ-consis B k _ _ _ = lift G
-  where 
-  G : Every _~_ (ℬ B k ptt) (ℬ B k ptt)
-  G (const {B'} k) (const {B''} k') ⟨ refl , d∈ ⟩  ⟨ refl , d'∈ ⟩ = ⟨ refl , trans (sym d∈) d'∈ ⟩
-
 {- Composite operators ---------------------------------------------------------}
 
 {- let x = D in F x, which means (λx. F x) D -}
@@ -248,9 +232,6 @@ letD ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ �
 {- a closure: its code applied to the tuple of its free variables -}
 closD : ∀ n → DOp (𝒫 Value) (∁ (ν (ν ■)) ∷ replicate n ■)
 closD n ⟨ F , Ds ⟩ = ⋆ ⟨ ΛΛ ⟨ F , ptt ⟩ , ⟨ 𝒯 n Ds , ptt ⟩ ⟩
-
-ℬ-mono : ∀ B k → monotone [] ■ (ℬ B k)
-ℬ-mono B k _ _ _ = lift (λ d d∈ → d∈)
 
 letD-mono : monotone (■ ∷ ν ■ ∷ []) ■ letD
 letD-mono ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D⊆ , ⟨ F⊆ , _ ⟩ ⟩ =
@@ -301,16 +282,6 @@ closD-consis n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
     ⟨ ΛΛ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ 𝒯-consis n Ds Ds' Ds~ , ptt ⟩ ⟩
 
 {- Congruences ------------------------------------------------------------------}
-
-nthD-≃ : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■)) → RRs (replicate n ■) Ds Es
-  → ∀ i → nthD Ds i ≃ nthD Es i
-nthD-≃ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D≃ , _ ⟩ zero = lower D≃
-nthD-≃ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds≃ ⟩ (suc i) = nthD-≃ Ds Es Ds≃ i
-
-nthD⇒RRs : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■)) → (∀ i → nthD Ds i ≃ nthD Es i)
-  → RRs (replicate n ■) Ds Es
-nthD⇒RRs {zero} _ _ _ = ptt
-nthD⇒RRs {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ eq = ⟨ lift (eq zero) , nthD⇒RRs Ds Es (λ i → eq (suc i)) ⟩
 
 𝒯-≃ : ∀ n {Ds Es} → (∀ i → nthD Ds i ≃ nthD Es i) → 𝒯 n Ds ≃ 𝒯 n Es
 𝒯-≃ n {Ds} {Es} eq = mono-≃ (𝒯-mono n) (nthD⇒RRs Ds Es eq)
@@ -363,13 +334,6 @@ letD-RR : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt �
 letD-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letD-≃ {F = F} {F'} (lower D≃) (λ _ _ _ → lower (F≃ _ _ ≃-refl))
 
 {- β laws --------------------------------------------------------------------------}
-
-Mono₁ : (𝒫 Value → 𝒫 Value) → Set₁
-Mono₁ F = ∀ {X Y} → X ⊆ Y → F X ⊆ F Y
-
-{- each element of F X needs only a finite, nonempty part of X -}
-Finitary : (𝒫 Value → 𝒫 Value) → 𝒫 Value → Set
-Finitary F X = ∀ w → w ∈ F X → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ X × w ∈ F (mem V)
 
 {- (λx. F x) D means F D, for D consistent -}
 Λ-β : ∀ {F D} → Mono₁ F → Finitary F D → Con D → letD ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ F D

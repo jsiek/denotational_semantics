@@ -41,6 +41,16 @@ observations.  For each infrastructure group, the separate table shows
 the lines of its modules that each proof reaches.  The script fails if an
 infrastructure module imports a module that is not infrastructure.
 
+The graph model's infrastructure is three groups, so that each semantic
+algebra is charged only for the operators it uses: what any graph-model
+semantics uses (values, consistency, the machinery for any operators,
+and the operators both models share unchanged), the graph model's
+operators, and the error-propagating operators of the graph model with
+errors.  The graph model with errors (side 'gerr') is a pilot, not in
+the totals: its rows are printed next to the same rows of the four
+styles, with the infrastructure each graph model reaches; the script
+checks that it reaches none of the graph model's operator modules.
+
 A group may belong to two proofs ('op+red': the machines of Imp, CFG and
 X86 and the proofs of explicate control and select instructions, shared by
 the CEK and reduction proofs); it is counted in full in that row of both.
@@ -109,12 +119,27 @@ GROUPS = [
       W + 'GraphModel/DOpSig.agda', WP + 'GraphModel/DOpSig.agda',
       W + 'GraphModel/Env.agda', WP + 'GraphModel/Env.agda',
       WP + 'GraphModel/Semantics.agda', WP + 'GraphModel/DenotProperties.agda',
-      W + 'abt/Fold2.agda', WP + 'GraphModel/RenameSem.agda']),
-    ('infra', 'graph model: values, operators, continuity',
+      W + 'abt/Fold2.agda', WP + 'GraphModel/RenameSem.agda',
+      WP + 'GraphModel/SemanticsUses.agda']),
+    # the graph model is three groups, so that each semantic algebra is
+    # charged only for the operators it uses: the values, their consistency
+    # and the machinery for any operators (continuity, Good, the properties
+    # of whole terms), with the operators both algebras share unchanged
+    # (constants, components of a tuple of results); the operators of the
+    # graph model; and the error-propagating operators of the graph model
+    # with errors (the pilot, see loc.md)
+    ('infra', 'graph model: values, consistency, machinery for any operators',
      [W + 'GraphModel/Domain.agda', WP + 'GraphModel/Domain.agda',
-      W + 'GraphModel/Ops.agda', WP + 'GraphModel/Ops.agda',
+      W + 'GraphModel/OpsBase.agda', WP + 'GraphModel/OpsBase.agda',
+      WP + 'GraphModel/ContinuityBase.agda', WP + 'GraphModel/SemanticsCore.agda',
+      WP + 'GraphModel/DomainUtilBase.agda']),
+    ('infra', 'graph model: its operators',
+     [W + 'GraphModel/Ops.agda', WP + 'GraphModel/Ops.agda',
       WP + 'GraphModel/Continuity.agda', WP + 'GraphModel/SemanticsUtil.agda',
       WP + 'GraphModel/DomainUtil.agda']),
+    ('infra', 'graph model with errors: error-propagating operators',
+     [W + 'GraphModel/ErrorOps.agda', WP + 'GraphModel/ErrorOps.agda',
+      WP + 'GraphModel/ErrorContinuity.agda']),
     ('infra', 'small-step framework: transition systems, simulations',
      [W + 'Smallstep.agda', WP + 'Smallstep.agda', WP + 'Simulation.agda']),
     ('infra', 'reduction framework: reduction semantics, simulations between them',
@@ -241,6 +266,20 @@ GROUPS = [
     ('exp', 'graph model: direct Imp — explicate control',
      [GC + 'ExplicateCorrect.agda']),
 
+    # not in the totals: the pilot of a new semantics, the graph model with
+    # errors (ω), for ISWIM and Clos2, with simplify, enclose and adequacy
+    # for ISWIM (see loc.md)
+    ('gerr', 'semantics of the languages',
+     ['agda/Semantics/GraphErr/*.agda', 'agda/proof/Semantics/GraphErr/*.agda']),
+    ('gerr', 'simplify', ['agda/proof/Correctness/GraphErr/SimplifyCorrect.agda']),
+    ('gerr', 'CC: enclose', ['agda/proof/Correctness/GraphErr/EncloseCorrect.agda']),
+    ('gerr', 'CC: concretize', ['agda/proof/Correctness/GraphErr/ConcretizeCorrect.agda']),
+    ('gerr', 'CC: delay',
+     ['agda/proof/Correctness/GraphErr/DelayRel.agda', 'agda/proof/Correctness/GraphErr/DelayApp.agda',
+      'agda/proof/Correctness/GraphErr/DelayReflect.agda', 'agda/proof/Correctness/GraphErr/DelayPreserve.agda']),
+    ('gerr', 'adequacy (ISWIM)', ['agda/proof/Adequacy/GraphErr/*.agda']),
+    ('gerr', 'simplify through the ISWIM machine', ['agda/proof/Adequacy/GraphErr/Simplify.agda']),
+
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
     ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
@@ -248,7 +287,7 @@ GROUPS = [
 
 THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simulation.agda',
             'ck': 'agda/Theorems/Interpreter.agda', 'red': 'agda/Theorems/Reduction.agda',
-            'adeq': 'agda/Theorems/Adequacy.agda'}
+            'adeq': 'agda/Theorems/Adequacy.agda', 'gerr': 'agda/Theorems/GraphErrors.agda'}
 
 
 def strip_comments(s):
@@ -330,9 +369,10 @@ SIDES = ('den', 'op', 'ck', 'red')
 # column labels, and the short names used in lists and messages
 LABELS = {'den': 'denotational: graph model', 'op': 'CEK machine + simulation',
           'ck': 'clocked interpreter + value relations',
-          'red': 'reduction semantics + simulation', 'adeq': 'adequacy'}
+          'red': 'reduction semantics + simulation', 'adeq': 'adequacy',
+          'gerr': 'graph model with errors (pilot)'}
 NAMES = {'den': 'graph model', 'op': 'simulation', 'ck': 'interpreter',
-         'red': 'reduction', 'adeq': 'adequacy'}
+         'red': 'reduction', 'adeq': 'adequacy', 'gerr': 'graph model with errors'}
 EXTRA = 'shared modules not used by all four proofs'
 
 
@@ -382,8 +422,8 @@ def main():
 
     graph = {u: {unit(g) for f in files_of_unit[u] for g in imports(f)} - {u} for u in units}
     own = {s: {u for u, (side, _) in group_of.items() if s in sides_of(side)}
-           for s in SIDES + ('adeq',)}
-    exp = {u for u, (side, _) in group_of.items() if side == 'exp'}
+           for s in SIDES + ('adeq', 'gerr')}
+    exp = {u for u, (side, _) in group_of.items() if side in ('exp', 'gerr')}
     infra = {u for u, (side, _) in group_of.items() if side == 'infra'}
     reach = {s: reachable(own[s], graph) for s in own}
 
@@ -394,8 +434,8 @@ def main():
                  + '\n  '.join(bad))
 
     # The proofs must be independent: no proof reaches another proof's modules
-    # nor adequacy's, nor an experiment (adequacy, examples and the
-    # experiments may use anything).
+    # nor adequacy's, nor an experiment or the pilot (adequacy, examples, the
+    # experiments and the pilot may use anything).
     for s in SIDES:
         for t in SIDES + ('adeq',):
             bad = sorted(reach[s] & (own[t] - own[s])) if s != t else []
@@ -456,21 +496,22 @@ def main():
 
     def lines(us):
         return sum(ulines(u) for u in us)
+    ICOLS = SIDES + ('gerr',)
     print('| language-independent infrastructure (not in the totals) | lines | '
-          + ' | '.join(f'used by {LABELS[s]}' for s in SIDES) + ' |')
-    print('|---|---:|' + '---:|' * len(SIDES))
-    itotal = {s: 0 for s in SIDES}
+          + ' | '.join(f'used by {LABELS[s]}' for s in ICOLS) + ' |')
+    print('|---|---:|' + '---:|' * len(ICOLS))
+    itotal = {s: 0 for s in ICOLS}
     for side, name, _ in GROUPS:
         if side == 'infra':
             us = {unit(f) for f in files_of[(side, name)]}
             cells = []
-            for s in SIDES:
+            for s in ICOLS:
                 n = lines(u for u in us if u in reach[s])
                 itotal[s] += n
                 cells.append(str(n) if n else '—')
             print(f'| {name} | {counts[(side, name)]} | ' + ' | '.join(cells) + ' |')
     print(f'| **total** | **{lines(infra)}** | '
-          + ' | '.join(f'**{itotal[s]}**' for s in SIDES) + ' |')
+          + ' | '.join(f'**{itotal[s]}**' for s in ICOLS) + ' |')
     print()
     print(f"Adequacy uses {lines(infra & reach['adeq'])} lines of the infrastructure, "
           f"{lines(infra & reach['adeq'] - reach['den'])} of them not used by the denotational proof.")
@@ -506,7 +547,7 @@ def main():
             return 'shared'
         return 'semantics'
     sreach = {s: reachable({THEOREMS[s]}, sgraph) for s in THEOREMS}
-    ALL = ('den', 'op', 'ck', 'red', 'adeq')
+    ALL = ('den', 'op', 'ck', 'red', 'adeq', 'gerr')
     def flines(fs):
         return sum(code_lines(f) for f in fs)
     sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in ALL}
@@ -519,9 +560,10 @@ def main():
     SEMS = {'den': 'domain, operators, semantics of each language',
             'op': 'small-step machines, transition systems',
             'ck': 'clocked interpreters, results',
-            'red': 'reduction semantics, machines of Imp, CFG and X86, transition systems'}
+            'red': 'reduction semantics, machines of Imp, CFG and X86, transition systems',
+            'gerr': 'domain, error-propagating operators, semantics of ISWIM and Clos2'}
     sem_files = {s: {f for f in sreach[s] if kind(f) == 'semantics'} for s in ALL}
-    for s in SIDES:
+    for s in SIDES + ('gerr',):
         fs = sem_files[s]
         print(f'| {NAMES[s]}: {SEMS[s]} | {flines(fs)} | '
               + ' | '.join(str(flines(sem_files[t] & fs)) if sem_files[t] & fs else '—' for t in ALL) + ' |')
@@ -544,7 +586,7 @@ def main():
     print('| shared module | lines | used by |')
     print('|---|---:|---|')
     for u in sorted(shared):
-        users = [NAMES[s] for s in SIDES + ('adeq',) if u in reach[s]]
+        users = [NAMES[s] for s in SIDES + ('adeq', 'gerr') if u in reach[s]]
         tag = 'all four proofs' if u in by_all else (', '.join(users) or 'no proof')
         name = ('proof.' if not os.path.exists(u) else '') + modname(u)
         print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | {tag} |')
@@ -553,7 +595,7 @@ def main():
     print('| infrastructure module | lines | used by |')
     print('|---|---:|---|')
     for u in sorted(infra):
-        users = [NAMES[s] for s in SIDES + ('adeq',) if u in reach[s]]
+        users = [NAMES[s] for s in SIDES + ('adeq', 'gerr') if u in reach[s]]
         name = ('proof.' if not os.path.exists(u) else '') + modname(u)
         print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | '
               f'{", ".join(users) or "no proof"} |')
@@ -564,8 +606,91 @@ def main():
     if unused:
         print(f'Shared but used by no proof: {mods(unused)}.')
     print(f"Examples, not counted: {counts[('examples', 'examples')]} lines.")
+    print()
+    pilot(counts, files_of, reach, own, infra, shared, by_all, group_of, ulines, files_of_unit, graph)
     print(f"Module (+ proof/): the definitions are on the audit surface, the lemmas "
           f"in its proof/ half; the lines are those of both.")
+
+
+def pilot(counts, files_of, reach, own, infra, shared, by_all, group_of, ulines, files_of_unit, graph):
+    """The pilot of the graph model with errors: its rows, next to the same
+    rows of the four styles, and the infrastructure each graph model
+    reaches."""
+    def flines(fs):
+        return sum(code_lines(f) for f in fs if os.path.exists(f))
+    # the semantics of ISWIM and Clos2–Clos4 only, in each style (with the
+    # meaning of the primitives of the denotational one)
+    sem = {
+        'den': [G + 'Prim.agda', GP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda',
+                GP + 'ISWIMContinuous.agda', G + 'Clos2Iswim.agda', GP + 'Clos2Iswim.agda',
+                G + 'Clos3Iswim.agda', GP + 'Clos3Iswim.agda', G + 'Clos4Iswim.agda', GP + 'Clos4Iswim.agda'],
+        'op': [O + 'ISWIM.agda', O + 'Clos2.agda', O + 'Clos3.agda', O + 'Clos4.agda'],
+        'ck': [F + 'ISWIM.agda', F + 'Clos2.agda', F + 'Clos3.agda', F + 'Clos4.agda'],
+        'red': [RD + 'ISWIM.agda', RD + 'Clos2.agda', RP + 'Clos2.agda', RD + 'Clos3.agda', RP + 'Clos3.agda',
+                RD + 'Clos4.agda', RP + 'Clos4.agda'],
+    }
+    gerr_sem = sorted(files_of[('gerr', 'semantics of the languages')])
+    # what the pilot reaches outside itself and the infrastructure (the
+    # graph model's meaning of the primitives, which primᵉ extends, and
+    # simplify's syntactic lemmas, counted in each style's simplify row)
+    others = sorted(u for u in reach['gerr'] - own['gerr'] - infra - by_all)
+    print('| graph model with errors (pilot), not in the totals | graph model with errors '
+          '| denotational: graph model | CEK machine + simulation '
+          '| clocked interpreter + value relations | reduction semantics + simulation |')
+    print('|---|---:|---:|---:|---:|---:|')
+    print(f'| semantics of ISWIM and Clos2–Clos4 | {flines(gerr_sem)} | '
+          + ' | '.join(str(flines(sem[s])) for s in SIDES) + ' |')
+    facts = code_lines(PC + 'SimplifyFacts.agda')
+    print(f"| simplify (with SimplifyFacts, {facts}) | {counts[('gerr', 'simplify')] + facts} | "
+          + ' | '.join(str(counts[(s, 'simplify')]) for s in SIDES) + ' |')
+    print(f"| CC: enclose | {counts[('gerr', 'CC: enclose')]} | "
+          + ' | '.join(str(counts[(s, 'CC: enclose')]) for s in SIDES) + ' |')
+    print("| CC: optimize | not yet proved | "
+          + ' | '.join(str(counts[(s, 'CC: optimize')]) for s in SIDES) + ' |')
+    for r in ('CC: concretize', 'CC: delay'):
+        print(f"| {r} | {counts[('gerr', r)]} | "
+              + ' | '.join(str(counts[(s, r)]) for s in SIDES) + ' |')
+    common = code_lines(AP + 'Common.agda')
+    print(f"| adequacy for ISWIM (with the graph model's `Adequacy.Common`, {common}) | "
+          f"{counts[('gerr', 'adequacy (ISWIM)')] + common} | "
+          + f"{counts[('adeq', 'ISWIM')]} | — | — | — |")
+    print(f"| simplify through the ISWIM machine (errors, constants, answers, divergence) | "
+          f"{counts[('gerr', 'simplify through the ISWIM machine')]} | — | — | — | — |")
+    print()
+    print('The pilot also reaches, outside itself and the infrastructure: '
+          + ', '.join(f'`{modname(u)}` ({ulines(u)})' for u in others) + '.')
+    print()
+    # the infrastructure each graph model reaches, by group, and what they
+    # share: the semantics and the correctness proofs (without adequacy),
+    # and then what adequacy adds, in each model
+    core = {u for u in own['gerr']
+            if group_of[u][1] not in ('adequacy (ISWIM)', 'simplify through the ISWIM machine')}
+    rc = reachable(core, graph)
+    ra = reach['gerr'] - rc
+    rd = reach['adeq'] - reach['den']
+    print('| infrastructure group | lines | graph model | graph model with errors | both '
+          '| adequacy adds: graph model (ISWIM, Clos5, X86) | adequacy adds: graph model with errors (ISWIM) |')
+    print('|---|---:|---:|---:|---:|---:|---:|')
+    tot = [0] * 6
+    for side, name, _ in GROUPS:
+        if side == 'infra':
+            us = {unit(f) for f in files_of[(side, name)]}
+            row = [sum(ulines(u) for u in us),
+                   sum(ulines(u) for u in us if u in reach['den']),
+                   sum(ulines(u) for u in us if u in rc),
+                   sum(ulines(u) for u in us if u in reach['den'] and u in rc),
+                   sum(ulines(u) for u in us if u in rd),
+                   sum(ulines(u) for u in us if u in ra)]
+            if any(row[1:]):
+                tot = [t + r for t, r in zip(tot, row)]
+                print(f'| {name} | {row[0]} | ' + ' | '.join(str(r) if r else '—' for r in row[1:]) + ' |')
+    print('| **total** | ' + ' | '.join(f'**{t}**' for t in tot) + ' |')
+    ops = {unit(f) for f in files_of[('infra', 'graph model: its operators')]}
+    bad = sorted(ops & reach['gerr'])
+    print()
+    print('The graph model with errors reaches none of the modules of the graph model\'s '
+          'operators.' if not bad else 'The graph model with errors reaches modules of the '
+          'graph model\'s operators: ' + ', '.join(modname(u) for u in bad) + '.')
 
 
 if __name__ == '__main__':

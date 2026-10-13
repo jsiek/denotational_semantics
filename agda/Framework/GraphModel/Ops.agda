@@ -8,6 +8,7 @@ open import Framework.abt.GSubst using (_•_) public
 open import Framework.abt.Sig using (Result)
 open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
+open import Framework.GraphModel.OpsBase public
 
 open import Data.Empty renaming (⊥ to False)
 open import Data.List using (List ; _∷_ ; []; replicate)
@@ -21,15 +22,14 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; subst)
 
 {- Denotational Operators -----------------------------------------------------}
 
+{- (constants, ℬ, and the components of a tuple of results, nthD, are in
+   OpsBase.agda, shared with the graph model with errors) -}
+
 {- \st -}
 ⋆ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 ⋆ ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ w = 
     Σ[ V ∈ List Value ] 
       (V ↦ w ∈ D₁) × (mem V ⊆ D₂) × V ≢ []
-
-ℬ : (B : Base) → base-rep B → DOp (𝒫 Value) []
-ℬ B k _ (const {B′} k′) = Σ[ B≡ ∈ B ≡ B′ ] (subst base-rep B≡ k) ≡ k′
-ℬ B k _ _ = False
 
 pair : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
 pair ⟨ D₁ , ⟨ D₂ , _ ⟩ ⟩ ⦅ u , v ⦆ = u ∈ D₁ × v ∈ D₂
@@ -40,10 +40,6 @@ car ⟨ D , _ ⟩ u = Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D
 
 cdr : DOp (𝒫 Value) (■ ∷ [])
 cdr ⟨ D , _ ⟩ v = Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D
-
-nthD : ∀ {n}{ℓ}{A : Set ℓ} → Results A (replicate n ■) → (i : Fin n) → Result A ■
-nthD {.(suc _)} ⟨ D , Ds ⟩ zero = D
-nthD {.(suc _)} ⟨ D , Ds ⟩ (suc i) = nthD Ds i
 
 𝒯 : ∀ (n : ℕ) → DOp (𝒫 Value) (replicate n ■)
 𝒯 zero Ds ⟨⟩ = True
