@@ -685,7 +685,7 @@ For every ISWIM term $M$,
 \]
 \end{lemma}
 
-\subsection{Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos2)}
+\subsection{CC: Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos2)}
 
 Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
 \begin{align*}
@@ -693,7 +693,7 @@ Enclose decides which variables each closure captures (its free variables) and c
     \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
 \end{align*}
 
-\subsection{Optimize (Clos2 \texorpdfstring{$\to$}{->} Clos2)}
+\subsection{CC: Optimize (Clos2 \texorpdfstring{$\to$}{->} Clos2)}
 
 Optimize removes the captured variables that the body does not use.
 \begin{align*}
@@ -702,7 +702,7 @@ Optimize removes the captured variables that the body does not use.
   \text{where } \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \}
 \end{align*}
 
-\subsection{Concretize (Clos2 \texorpdfstring{$\to$}{->} Clos3)}
+\subsection{CC: Concretize (Clos2 \texorpdfstring{$\to$}{->} Clos3)}
 
 Concretize stores each closure's captured values in a single tuple and turns their uses in the body into projections from that tuple.
 \[
@@ -724,7 +724,7 @@ Concretize stores each closure's captured values in a single tuple and turns the
     \Let x = \pass{concretize}_\varphi(M) \In \pass{concretize}_{\ext{\varphi}{x}{x}}(N)
 \end{align*}
 
-\subsection{Delay (Clos3 \texorpdfstring{$\to$}{->} Clos4)}
+\subsection{CC: Delay (Clos3 \texorpdfstring{$\to$}{->} Clos4)}
 
 Delay represents each closure as an explicit pair of closed code and its environment tuple, and makes application pass the environment to the code.
 \begin{align*}
@@ -735,7 +735,7 @@ Delay represents each closure as an explicit pair of closed code and its environ
     \qquad f \text{ fresh}
 \end{align*}
 
-\subsection{Globalize (Clos4 \texorpdfstring{$\to$}{->} Clos5)}
+\subsection{CC: Globalize (Clos4 \texorpdfstring{$\to$}{->} Clos5)}
 
 Globalize hoists all code into a table of global definitions and replaces each piece of code by a reference to its entry.
 \[
@@ -1345,7 +1345,7 @@ and $\mathcal{K}_E(M)$ describes $\SEM{M}\rho$. In particular
 $\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$.
 \end{lemma}
 
-\subsection{Enclose}
+\subsection{CC: Enclose}
 
 \begin{lemma}[Correctness of Enclose]\label{lem:enclose}
 If $\rho_1(x) \simeq \rho_2(x)$ for every $x \in \FV(M)$
@@ -1355,7 +1355,7 @@ and $\rho_2(x) \NE$ for every $x$, then
 \]
 \end{lemma}
 
-\subsection{Optimize}
+\subsection{CC: Optimize}
 
 \begin{lemma}[Correctness of Optimize]\label{lem:optimize}
 If $\rho(x) \simeq \rho'(x)$ for every $x \in \FV(M)$
@@ -1365,7 +1365,7 @@ and $\rho(x) \NE$ for every $x$, then
 \]
 \end{lemma}
 
-\subsection{Concretize}
+\subsection{CC: Concretize}
 
 \begin{align*}
   \SEM{x}_r\rho &= \rho(x) \\
@@ -1379,7 +1379,7 @@ If $\consis(\rho_3)$ and $\rho_2 \sim_\varphi \rho_3$, then
 \]
 \end{lemma}
 
-\subsection{Delay}
+\subsection{CC: Delay}
 
 \begin{lemma}[Continuity]\label{lem:continuity}
 $\SEM{M}^{\mathrm{3}}$ and $\SEM{M}^{\mathrm{4}}$ are continuous.
@@ -1463,7 +1463,7 @@ For $\key{let}$, both directions use $\beta$ for a $\key{let}$ by continuity
 consistent part of $D$); reflection first gathers the finite parts of the
 operand that the elements of $V'$ use into one.
 
-\subsection{Globalize}
+\subsection{CC: Globalize}
 
 \begin{align*}
   \mathit{Extends}(\vec{d}, \vec{d}') &\iff \vec{d} \text{ is a prefix of } \vec{d}' \\
@@ -2437,7 +2437,7 @@ For every ISWIM term $M$,
 by Lemma~\ref{lem:simplify-fsim} and the symmetry of $\Equiv$.
 \end{theorem}
 
-\subsection{Enclose}\label{sec:sim-enclose}
+\subsection{CC: Enclose}\label{sec:sim-enclose}
 
 \begin{align*}
   \cloV{\lam{y} N}{\rho_1} \approx \closV{x_1 \ldots x_n\, y.\, \pass{enclose}(N)}{v_1 \ldots v_n}
@@ -2472,7 +2472,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{Optimize}\label{sec:sim-optimize}
+\subsection{CC: Optimize}\label{sec:sim-optimize}
 
 For a closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$, let
 $\{ i_1 < \cdots < i_k \} = \{ i \mid x_i \in \FV(N) \}$, as in optimize, and
@@ -2550,7 +2550,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Concretize}\label{sec:sim-concretize}
+\subsection{CC: Concretize}\label{sec:sim-concretize}
 
 \begin{align*}
   \rho_2 \approx_\varphi \rho_3 &\iff \forall x \in \mathrm{dom}(\varphi).\;
@@ -2604,7 +2604,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Delay}\label{sec:sim-delay}
+\subsection{CC: Delay}\label{sec:sim-delay}
 
 \begin{align*}
   \rho_1 \approxq \rho_2 &\iff \forall x.\; x \text{ is not a fresh variable } f \text{ of delay}
@@ -2652,7 +2652,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{Globalize}\label{sec:sim-globalize}
+\subsection{CC: Globalize}\label{sec:sim-globalize}
 
 The relations are those for the table $D$ that globalize makes for the whole program.
 \begin{align*}
@@ -3541,7 +3541,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{Enclose}
+\subsection{CC: Enclose}
 
 The relations $\approx$ and $\approx_X$ are those of Section~\ref{sec:sim-enclose}.
 
@@ -3560,7 +3560,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{Optimize}
+\subsection{CC: Optimize}
 
 The relations $\approx$, $\approx_X$, $\mathit{Scoped}$, $\mathit{WS}$, and
 $\mathit{Built}^j_N$ are those of Section~\ref{sec:sim-optimize}.
@@ -3589,7 +3589,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Concretize}
+\subsection{CC: Concretize}
 
 The relations $\approx$ and $\approx_\varphi$ are those of Section~\ref{sec:sim-concretize}.
 
@@ -3607,7 +3607,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Delay}
+\subsection{CC: Delay}
 
 The relations $\approx$ and $\approxq$ are those of Section~\ref{sec:sim-delay}.
 
@@ -3625,7 +3625,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{Globalize}
+\subsection{CC: Globalize}
 
 The relations $\leadsto$ and $\approx$, for the table $D$ that globalize makes
 for the whole program, are those of Section~\ref{sec:sim-globalize}.
@@ -4034,7 +4034,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{Enclose}
+\subsection{CC: Enclose}
 
 The bodies of ISWIM functions are substituted into, so a function is related
 to the closure of the compiled body, through a substitution $\sigma$ of the
@@ -4061,7 +4061,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{Optimize}
+\subsection{CC: Optimize}
 
 A closure is related to its optimization when the code is the compiled code
 and the free variables are related as $\pass{prune}$ makes them: the ones the
@@ -4081,7 +4081,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{Concretize}
+\subsection{CC: Concretize}
 
 Applying a Clos3 closure substitutes the tuple of its free variables, so where
 the source has a value, the target has a projection from that tuple, which
@@ -4108,7 +4108,7 @@ parameters becomes, in the two languages, two different variables, and
 substitution moves both differently; the machines look both up in the
 closure's environment, where both fail.
 
-\subsection{Delay}
+\subsection{CC: Delay}
 
 \begin{align*}
   \clos{\bar{F}}{e\, y} N \approx \pair{\fun{e\,y.\,N'}}{\tuple{\bar{F}'}} &\iff N \approx N' \land \bar{F} \approx \bar{F}' \\
@@ -4127,7 +4127,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{Globalize}
+\subsection{CC: Globalize}
 
 For the table $D$ of the whole program,
 \[

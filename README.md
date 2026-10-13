@@ -9,10 +9,12 @@ model; CEK machine + simulation, after CompCert; clocked interpreter +
 value relations, after CakeML; reduction semantics + simulation, by
 substitution), with the adequacy of the graph model for the machines:
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
-          --lift locals--> Imp --explicate control--> CFG
+    ISWIM --simplify--> ISWIM --CC: enclose--> Clos2 --CC: optimize--> Clos2
+          --CC: concretize--> Clos3 --CC: delay--> Clos4 --CC: globalize--> Clos5
+          --rco--> Clos5 --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
+
+(The passes marked "CC:" are the closure-conversion passes.)
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
