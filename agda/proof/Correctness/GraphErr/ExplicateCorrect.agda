@@ -53,10 +53,7 @@ open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.GraphErr.ExplicateCorrect where
 
-{- GENERIC: closed functions of two arguments that agree everywhere -}
-ΛΛᵉ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
-  → ΛΛᵉ ⟨ F , ptt ⟩ ≃ ΛΛᵉ ⟨ F' , ptt ⟩
-ΛΛᵉ-≃ eq = Λᵉ-≃ (λ V _ _ _ → Λᵉ-≃ (λ U _ _ _ → eq (mem V) (mem U)))
+open import proof.Framework.GraphModel.ErrorLaws using (ΛΛᵉ-≃)
 
 {- Blocks -----------------------------------------------------------------------------}
 

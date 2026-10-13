@@ -46,21 +46,7 @@ open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.GraphErr.GlobalizeCorrect where
 
-{- GENERIC: congruences of the binders of the error-propagating operators,
-   from equal operands (as 𝒞-RR, letD-RR and ΛΛ-≃ of the graph model) -}
-
-𝒞ᵉ-RR : ∀ {D F G D' F' G'} → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-  → 𝒞ᵉ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞ᵉ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-𝒞ᵉ-RR {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
-  𝒞ᵉ-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl)) (λ _ _ _ _ → lower (G≃ _ _ ≃-refl))
-
-letᵉ-RR : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
-  → letᵉ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letᵉ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
-letᵉ-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letᵉ-≃ {F = F} {F'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl))
-
-ΛΛᵉ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
-  → ΛΛᵉ ⟨ F , ptt ⟩ ≃ ΛΛᵉ ⟨ F' , ptt ⟩
-ΛΛᵉ-≃ eq = Λᵉ-≃ (λ V _ _ _ → Λᵉ-≃ (λ U _ _ _ → eq (mem V) (mem U)))
+open import proof.Framework.GraphModel.ErrorLaws using (𝒞ᵉ-RR; letᵉ-RR; ΛΛᵉ-≃)
 
 {- Environments and results that agree ----------------------------------------}
 
