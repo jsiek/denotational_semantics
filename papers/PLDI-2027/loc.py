@@ -392,7 +392,7 @@ SIDES = ('den', 'op', 'ck', 'red')
 LABELS = {'den': 'denotational: graph model', 'op': 'CEK machine + simulation',
           'ck': 'clocked interpreter + value relations',
           'red': 'reduction semantics + simulation', 'adeq': 'adequacy',
-          'gerr': 'graph model with errors (not in the comparison)', 'gadeq': 'adequacy with errors'}
+          'gerr': 'graph model with errors', 'gadeq': 'adequacy with errors'}
 NAMES = {'den': 'graph model', 'op': 'simulation', 'ck': 'interpreter',
          'red': 'reduction', 'adeq': 'adequacy', 'gerr': 'graph model with errors',
          'gadeq': 'adequacy with errors'}
