@@ -73,6 +73,7 @@ import proof.Framework.Reduction
    remove complex operands
    --------------------------------------------------------------------------- -}
 
+import proof.Compiler.Simplify
 import proof.Compiler.EncloseScope
 import proof.Compiler.GlobalizeTable
 import proof.Compiler.PipelineScope
@@ -93,6 +94,7 @@ import proof.Semantics.Graph.Clos4IswimContinuous
 import proof.Semantics.Graph.Clos5IswimContinuous
 
 {- correctness of each pass -}
+import proof.Correctness.Graph.SimplifyCorrect
 import proof.Correctness.Graph.EncloseCorrect
 import proof.Correctness.Graph.OptimizeCorrect
 import proof.Correctness.Graph.ConcretizeCorrect
@@ -124,6 +126,7 @@ import proof.Correctness.Graph.ConcretizeExample
 import proof.Correctness.Graph.EncloseExample
 import proof.Correctness.Graph.PipelineExample
 import proof.Correctness.Graph.CompilerExample
+import proof.Compiler.Examples.SimplifyExample
 import proof.Compiler.Examples.RCOExample
 import proof.Compiler.Examples.LiftLocalsExample
 import proof.Compiler.Examples.ExplicateExample
@@ -211,12 +214,14 @@ import proof.Correctness.Interp.CompilerFuel
    --------------------------------------------------------------------------- -}
 
 {- the values of each reduction semantics -}
+import proof.Semantics.Reduction.ISWIM
 import proof.Semantics.Reduction.Clos2
 import proof.Semantics.Reduction.Clos3
 import proof.Semantics.Reduction.Clos4
 import proof.Semantics.Reduction.Clos5
 
 {- correctness of each pass, and of the compiler into each language -}
+import proof.Correctness.Reduction.SimplifyRed
 import proof.Correctness.Reduction.EncloseRed
 import proof.Correctness.Reduction.OptimizeRed
 import proof.Correctness.Reduction.ConcretizeRed

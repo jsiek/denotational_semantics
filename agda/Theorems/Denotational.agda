@@ -34,6 +34,7 @@ import Language.Imp as Imp
 import Language.CFG as CFG
 import Language.X86 as X86
 
+open import Compiler.Simplify using (simplify)
 open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
@@ -54,6 +55,7 @@ open import Semantics.Graph.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
 open import Semantics.Graph.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
+import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Graph.EncloseCorrect as EncloseCorrect
 import proof.Correctness.Graph.OptimizeCorrect as OptimizeCorrect
 import proof.Correctness.Graph.ConcretizeCorrect as ConcretizeCorrect
@@ -78,6 +80,10 @@ open import Data.Product using (_×_)
 {- Each pass ------------------------------------------------------------------}
 
 {- every pass but delay preserves the meaning of a program exactly (≃) -}
+
+{- simplify (ISWIM → ISWIM, run before enclose; not yet part of compile) -}
+simplify-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
+simplify-correct = SimplifyCorrect.simplify-correct
 
 enclose-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ enclose M ⟧₂ ρ₀
 enclose-correct = EncloseCorrect.enclose-correct-closed

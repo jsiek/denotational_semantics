@@ -44,6 +44,7 @@ open import Language.Mon using (MonProgram)
 import Language.Imp as Imp
 import Language.CFG as CFG
 
+open import Compiler.Simplify using (simplify)
 open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
@@ -68,6 +69,7 @@ import Semantics.CEK.Imp as Impₘ
 import Semantics.CEK.CFG as CFGₘ
 import Semantics.CEK.X86 as X86ₘ
 
+import proof.Correctness.Reduction.SimplifyRed as SimplifyRed
 import proof.Correctness.Reduction.EncloseRed as EncloseRed
 import proof.Correctness.Reduction.OptimizeRed as OptimizeRed
 import proof.Correctness.Reduction.ConcretizeRed as ConcretizeRed
@@ -81,6 +83,12 @@ import proof.Correctness.CEK.SelectSim as SelectSim
 import proof.Correctness.Reduction.CompilerX86Red as CompilerX86Red
 
 {- Each pass ------------------------------------------------------------------}
+
+{- simplify (ISWIM → ISWIM, run before enclose; not yet part of compile),
+   for closed programs -}
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵣ.sem M) (ISWIMᵣ.sem (simplify M))
+simplify-correct = SimplifyRed.simplify-correct
 
 {- enclose, for closed programs -}
 enclose-correct : ∀ (M : ISWIM.AST) → Closed M
