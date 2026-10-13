@@ -44,6 +44,15 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
     ⟨ lower (F⊆ (mem V) (mem V) (λ d z → z)) w w∈F₁X , neV ⟩
   G ν v∈ = tt
 
+{- Λ F ≃ Λ F' when F and F' agree on the finite, nonempty, consistent sets -}
+Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
+Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
+  where
+  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
+    → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
+  G A⊆ ν tt = tt
+  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
+
 pair-mono : monotone (■ ∷ ■ ∷ []) ■ pair
 pair-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
   where

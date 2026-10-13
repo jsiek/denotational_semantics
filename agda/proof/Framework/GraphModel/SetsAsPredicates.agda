@@ -50,3 +50,7 @@ E≢[]⇒nonempty-mem : ∀{T}{E : List T}
   → E ≢ [] → nonempty (mem E)
 E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
 E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
+
+ne-mem : ∀ {T} {V : List T} {D : 𝒫 T} → V ≢ [] → mem V ⊆ D → nonempty D
+ne-mem {V = []} ne _ = ⊥-elim (ne refl)
+ne-mem {V = v ∷ V} _ V⊆ = ⟨ v , V⊆ v (here refl) ⟩

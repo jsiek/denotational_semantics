@@ -61,6 +61,7 @@ import proof.Framework.GraphModel.Ops
 import proof.Framework.GraphModel.Continuity
 import proof.Framework.GraphModel.SemanticsUtil
 import proof.Framework.Smallstep
+import proof.Framework.Runs
 import proof.Framework.Simulation
 import proof.Framework.Clocked
 import proof.Framework.Reduction

@@ -148,11 +148,6 @@ module _ (D : Defs) (M₀ : C.AST) where
   ret?-answers (M.just r) κ eq = steps (one eq) (ret~ r κ)
   ret?-answers M.nothing κ eq = stops eq
 
-  lookup-pw : ∀ x {ρ₁ ρ₂} → ρ₁ ≈ρ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
-  lookup-pw x [] = M.nothing
-  lookup-pw zero (r ∷ rs) = M.just r
-  lookup-pw (suc x) (r ∷ rs) = lookup-pw x rs
-
   tuple-next~ : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
     → Pointwise _↝_ Ms Ms' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → S.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws Ms' ρ₂ κ₂
@@ -160,7 +155,7 @@ module _ (D : Defs) (M₀ : C.AST) where
   tuple-next~ rs (g ∷ gs) ρ κ = eval~ g ρ (tupK rs gs ρ κ)
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} (glob↝ p) ρ κ) = ret?-answers (lookup-pw x ρ) κ refl
+  sim (eval~ {M = ` x} (glob↝ p) ρ κ) = ret?-answers (‼-pw ρ x) κ refl
   sim (eval~ {M = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆} (glob↝ p) ρ κ) =
     steps (one refl) (ret~ (fun≈ p) κ)
   sim (eval~ {M = app ⦅ L ,, M ,, N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =

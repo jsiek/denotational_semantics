@@ -78,9 +78,7 @@ Untag-con s s~ cD a b a∈ b∈ = s~ (cD _ _ a∈ b∈)
 Init : 𝒫 Value
 Init = ⌈ ω ⌉
 
-{- the environment of a closed program -}
-ρ₀ : Env
-ρ₀ = λ _ → Init
+open proof.Framework.GraphModel.Domain using (ρ₀) public
 
 {- Depth ----------------------------------------------------------------------}
 
@@ -119,9 +117,7 @@ Bnd-Untag rightT bV W⊆ d d∈ = <-shrink ≤-refl (bV _ (W⊆ d d∈))
 
 {- List helpers ---------------------------------------------------------------}
 
-ne-mem : ∀ {V : List Value}{D : 𝒫 Value} → V ≢ [] → mem V ⊆ D → nonempty D
-ne-mem {[]} ne _ = ⊥-elim (ne refl)
-ne-mem {v ∷ V} _ V⊆ = ⟨ v , V⊆ v (here refl) ⟩
+open proof.Framework.GraphModel.SetsAsPredicates using (ne-mem) public
 
 ne-⊆ : ∀ {V₁ V₂ : List Value} → mem V₁ ⊆ mem V₂ → V₁ ≢ [] → V₂ ≢ []
 ne-⊆ {[]} _ ne = ⊥-elim (ne refl)

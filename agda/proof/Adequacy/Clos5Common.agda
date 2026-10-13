@@ -23,7 +23,7 @@ open import proof.Framework.ListUtil using (reverse-‼-split)
 open import Semantics.CEK.Clos5
 open import proof.Compiler.GlobalizeTable using (_⊑_)
 open import proof.Adequacy.Clos5WF using (DefsWF)
-open import proof.Adequacy.Common using (module Runs)
+open import proof.Framework.Runs using (module Runs)
 
 open import Data.List.Properties
   using ()

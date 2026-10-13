@@ -33,7 +33,8 @@ import Semantics.Interp.CFG as G
 open import Semantics.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)
 open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs)
 import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.RCOFuel using (bind-cong; bind≡; ≡→rel; ‼-pw)
+open import proof.Correctness.Interp.RCOFuel using (bind-cong; bind≡; ≡→rel)
+open import proof.Framework.ListUtil using (‼-pw)
 open import proof.Correctness.Interp.LiftLocalsFuel using (compile-imp-correct)
 
 open import Data.Empty using (⊥-elim)

@@ -31,7 +31,7 @@ open import Compiler.Select
 open import Compiler.Pipeline using (compile-cfg; compile-x86)
 open import proof.Compiler.EncloseScope using (Closed)
 open import Semantics.Observation using (o-const; δ?)
-open import proof.Framework.ListUtil using (_‼_)
+open import proof.Framework.ListUtil using (_‼_; ‼-pw)
 open import proof.Semantics.Interp.Clock
 open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; out; first; second; project; prim?)
 open import Semantics.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
@@ -39,7 +39,7 @@ import Semantics.Interp.CFG as G
 import Semantics.Interp.X86 as X
 open X using (regs; arg; args; write; bool?)
 import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.RCOFuel using (bind-cong; bind≡; ≡→rel; ‼-pw)
+open import proof.Correctness.Interp.RCOFuel using (bind-cong; bind≡; ≡→rel)
 open import proof.Correctness.Interp.ExplicateFuel using (compile-cfg-correct)
 
 open import Data.Bool using (true; false)

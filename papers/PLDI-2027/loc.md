@@ -17,24 +17,24 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 ## Current counts
 
-As of PR #41 (inlining in simplify, the first pass of `compile`, in all four styles):
+As of PR #42 (language-independent lemmas moved to the infrastructure, step 1 of an audit; on master 9a96905, after PR #41):
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|
-| semantics of the languages | 734 | 657 | 463 | 678 |
-| simplify | 373 | 577 | 716 | 687 |
-| enclose | 75 | 193 | 137 | 221 |
-| optimize | 129 | 245 | 167 | 248 |
-| concretize | 214 | 191 | 126 | 167 |
-| delay | 736 | 146 | 96 | 183 |
-| globalize | 216 | 168 | 115 | 201 |
-| rco | 202 | 410 | 269 | 278 |
-| lift locals | 214 | 186 | 113 | 323 |
+| semantics of the languages | 716 | 657 | 463 | 678 |
+| simplify | 361 | 574 | 716 | 687 |
+| enclose | 75 | 189 | 137 | 221 |
+| optimize | 129 | 241 | 167 | 248 |
+| concretize | 214 | 187 | 126 | 167 |
+| delay | 721 | 146 | 96 | 183 |
+| globalize | 213 | 164 | 111 | 201 |
+| rco | 189 | 407 | 265 | 271 |
+| lift locals | 214 | 182 | 113 | 319 |
 | explicate control | 154 | 127 | 122 | 127 |
 | select instructions | 281 | 238 | 111 | 238 |
 | composition | 32 | 26 | 22 | 27 |
 | shared modules not used by all four proofs | — | 443 | 443 | 443 |
-| **total** | **3360** | **3607** | **2900** | **3821** |
+| **total** | **3299** | **3581** | **2892** | **3810** |
 
 The denotational semantics row includes the continuity of ISWIM (`proof/Semantics/Graph/ISWIMContinuous.agda`, 44 lines), formerly counted in adequacy only, which simplify's proof uses for β. The simplify row of each column includes the syntactic lemmas about the pass that all four proofs use (`proof/Compiler/SimplifyFacts.agda`, 107 lines); that simplify keeps programs closed (`proof/Compiler/SimplifyScope.agda`, 122 lines), which only the operational compositions need, is in the shared row. The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)). The reduction column's semantics row is its reduction semantics of ISWIM and Clos2–Clos5 with their values (411 lines: 291 for the reductions, 120 for their values) and the machines of Imp, CFG and X86 that it shares with the CEK column (267); its explicate-control and select-instructions rows are the CEK proofs, shared (see [Reduction semantics + simulation](#reduction-semantics--simulation)).
 
@@ -43,28 +43,29 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation |
 |---|---:|---:|---:|---:|---:|
 | abstract binding trees | 190 | 190 | 190 | 190 | 190 |
-| syntax lemmas (renaming, scoping, uses), list lookups | 441 | 336 | 387 | 387 | 441 |
+| syntax lemmas (renaming, scoping, uses), list lookups | 457 | 352 | 403 | 403 | 457 |
 | base types, logical equivalence | 20 | 17 | 20 | 20 | 20 |
-| denotational framework | 322 | 322 | — | — | — |
-| graph model: values, operators, continuity | 445 | 445 | — | — | — |
-| small-step framework: transition systems, simulations | 186 | — | 186 | — | 186 |
+| denotational framework | 325 | 325 | — | — | — |
+| graph model: values, operators, continuity | 454 | 454 | — | — | — |
+| small-step framework: transition systems, simulations | 188 | — | 188 | — | 188 |
 | reduction framework: reduction semantics, simulations between them | 130 | — | — | — | 130 |
 | clocked big-step framework | 132 | — | — | 132 | — |
-| **total** | **1866** | **1310** | **783** | **729** | **967** |
+| runs of a step function from any state | 29 | — | — | — | — |
+| **total** | **1925** | **1338** | **801** | **745** | **985** |
 
-Adequacy uses 1462 lines of the infrastructure, 152 of them not used by the denotational proof.
+Adequacy uses 1521 lines of the infrastructure, 183 of them not used by the denotational proof.
 
 Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86` (`SelectCorrect`), into statements about running programs (`proof/Adequacy/EndToEnd.agda`; see [Adequacy for X86](#adequacy-for-x86)). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output, that simplify keeps programs closed, and growing tables, 443 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM, Clos5, Imp and X86 machines (367 lines, plus the 1-line instance of the small-step framework; X86's frames are Imp's), which adequacy reuses from the simulation proof and which are not counted again.
 
 | adequacy (denotational side only) | lines |
 |---|---:|
-| ISWIM | 684 |
-| Clos5 | 717 |
+| ISWIM | 651 |
+| Clos5 | 712 |
 | X86 | 1115 |
 | well-formedness of compiled programs | 262 |
 | end to end | 25 |
 | shared modules not used by all four proofs, nor by the denotational one | 443 |
-| **total** | **3246** |
+| **total** | **3208** |
 
 Two experiments, not in the totals: a direct backward simulation for delay, described [below](#experiment-a-direct-backward-simulation-for-delay), and the direct denotational semantics of Imp with lift locals and explicate control proved against it, described in [Explicate control](#explicate-control). The direct proofs also use `Semantics/Graph/Imp.agda`, `LiftLocalsCommon` and `ExplicateCommon`, which are counted in the main rows.
 
@@ -137,19 +138,20 @@ Shared by all four proofs, and not counted: 21 modules, 839 lines. Counted in th
 | `proof.Framework.GraphModel.Continuity` | 150 | graph model, adequacy |
 | `Framework.GraphModel.DOpSig` (+ proof/) | 24 | graph model, adequacy |
 | `proof.Framework.GraphModel.DenotProperties` | 14 | graph model, adequacy |
-| `Framework.GraphModel.Domain` (+ proof/) | 68 | graph model, adequacy |
+| `Framework.GraphModel.Domain` (+ proof/) | 70 | graph model, adequacy |
 | `Framework.GraphModel.Env` (+ proof/) | 84 | graph model, adequacy |
-| `Framework.GraphModel.Ops` (+ proof/) | 206 | graph model, adequacy |
+| `Framework.GraphModel.Ops` (+ proof/) | 213 | graph model, adequacy |
 | `proof.Framework.GraphModel.RenameSem` | 49 | graph model, adequacy |
 | `proof.Framework.GraphModel.Semantics` | 82 | graph model, adequacy |
 | `proof.Framework.GraphModel.SemanticsUtil` | 21 | graph model, adequacy |
-| `Framework.GraphModel.SetsAsPredicates` (+ proof/) | 50 | graph model, adequacy |
+| `Framework.GraphModel.SetsAsPredicates` (+ proof/) | 53 | graph model, adequacy |
 | `Framework.Iff` | 3 | simulation, interpreter, reduction, adequacy |
-| `Framework.ListUtil` (+ proof/) | 98 | graph model, simulation, interpreter, reduction, adequacy |
+| `Framework.ListUtil` (+ proof/) | 114 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Primitives` | 17 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Reduction` (+ proof/) | 130 | reduction |
+| `proof.Framework.Runs` | 29 | adequacy |
 | `proof.Framework.Simulation` | 88 | simulation, reduction |
-| `Framework.Smallstep` (+ proof/) | 98 | simulation, reduction, adequacy |
+| `Framework.Smallstep` (+ proof/) | 100 | simulation, reduction, adequacy |
 | `Framework.Syntax.Rename` (+ proof/) | 59 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Syntax.Scope` (+ proof/) | 32 | simulation, interpreter, reduction, adequacy |
 | `proof.Framework.Syntax.ScopeRename` | 19 | simulation, interpreter, reduction, adequacy |
@@ -209,7 +211,7 @@ Shared by all four proofs, and not counted: 21 modules, 839 lines. Counted in th
 
 * **Binders bind only consistent sets.** In the graph model, Λ and 𝒞 bind only finite sets that are consistent, so a denotation under a consistent environment has no inconsistent elements. This was needed for explicate control: with binders that admit any finite set, ⟦explicate P⟧ ≃ ⟦P⟧ is false (see [Explicate control](#explicate-control)). It cost 96 denotational lines and 74 adequacy lines when it was made, and saved 16 in delay, whose own consistency induction gave way to a generic one: the monotonicity proof of the denotational framework now works for any relation the operators preserve, so the consistency of each semantics comes from its operator lemmas. Where a proof picks a finite part of a set for a binder (concretize, delay in both directions, rco's let-β), it needs that set consistent, so those proofs take a consistent environment.
 * **Two denotational semantics of Imp.** The main rows use a continuation-passing semantics of Imp (`Semantics/Graph/ImpK.agda`); a direct one (`proof/Semantics/Graph/ImpDirect.agda`), with lift locals and explicate control proved against it, is kept as an experiment. Choosing the semantics is part of the proof effort, as choosing the machines or interpreters is for the operational styles; the CPS one is the better effort for this pass sequence. See [Explicate control](#explicate-control).
-* **Clos5 continuity is denotational.** The continuity of the Clos5 semantics in the environment (117 lines then, 157 now), formerly adequacy's `Clos5Continuous`, is now `proof/Semantics/Graph/Clos5IswimContinuous.agda`, in the denotational row "semantics of the languages", because the rco proof uses it (for the let laws), as does lift locals. Adequacy reuses it from there and does not count it again; adequacy's Clos5 row shrank by the same 117 lines.
+* **Clos5 continuity is denotational.** The continuity of the Clos5 semantics in the environment (117 lines then, 118 now), formerly adequacy's `Clos5Continuous`, is now `proof/Semantics/Graph/Clos5IswimContinuous.agda`, in the denotational row "semantics of the languages", because the rco proof uses it (for the let laws), as does lift locals. Adequacy reuses it from there and does not count it again; adequacy's Clos5 row shrank by the same 117 lines.
 * **The rco preconditions differ.** The denotational rco theorem is an equation with no precondition on programs; the three operational ones (CEK, interpreter, reduction) need `Scoped`, and their end-to-end `compile-mon` theorems therefore pay for `compile-scoped` (249 lines, in the shared row, plus `Syntax/ScopeRename`, now infrastructure). See [Remove complex operands](#remove-complex-operands).
 * **The reduction proof's concretize needs a well-scoped program** (`WS 0`), which the CEK and interpreter proofs do not: a variable of a closure's code beyond its parameters becomes, in Clos2 and in Clos3, two different variables, which substitution then moves differently, while the machines look both up in the closure's environment, where both fail. The compiler's composition discharges it with `optimize-closed` (shared, `Compiler/PipelineScope`). See [Reduction semantics + simulation](#reduction-semantics--simulation).
 * **The small-step framework answers a stop by a run.** A forward simulation now may answer a source that stops with a target run to a final state (`runs`, not only `stops`): a reduction target often has administrative steps left (a projection, a let, the evaluation of an atom) when the source goes wrong or reaches a value. The end theorem still follows by determinism (`final-unique`, +9 lines of infrastructure); the CEK proofs do not use it.
@@ -227,7 +229,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 
 `loc.py` checks that no module of the surface imports one of `agda/proof/` (the theorem files excepted) and that every module outside `agda/proof/` is reached from the theorem files, so the surface is exactly the closure of the statements, at the granularity of modules. Two choices keep it small:
 
-* **Restricted statements.** Adequacy for the Clos5 and X86 machines is proved for any well-formed program, but the well-formedness conditions (references only to older definitions, slots within the frame, a consistent table: `Clos5WF`, `X86WF` and `RB` of `GlobalizeCorrect`, about 60 lines) are proof-internal, so `Theorems/Adequacy.agda` states it for the programs the compiler produces (`compile M`, `compile-x86 M` for a closed `M`), discharging well-formedness with `compile-wf` and `compile-x86-wf`. Soundness and adequacy are stated as their characterizations (`const-iff`, `nonempty-iff`, `wrong-empty`, `diverges-empty`), so `ShapeOf` stays in `agda/proof/`. The denotational `select-correct` states its precondition inline (`All (λ b → 2 ≤ Body.locals b) (defs P)`), and `ρ₀` is defined in `Theorems/Denotational.agda` (the proofs use a definitionally equal one).
+* **Restricted statements.** Adequacy for the Clos5 and X86 machines is proved for any well-formed program, but the well-formedness conditions (references only to older definitions, slots within the frame, a consistent table: `Clos5WF`, `X86WF` and `RB` of `GlobalizeCorrect`, about 60 lines) are proof-internal, so `Theorems/Adequacy.agda` states it for the programs the compiler produces (`compile M`, `compile-x86 M` for a closed `M`), discharging well-formedness with `compile-wf` and `compile-x86-wf`. Soundness and adequacy are stated as their characterizations (`const-iff`, `nonempty-iff`, `wrong-empty`, `diverges-empty`), so `ShapeOf` stays in `agda/proof/`. The denotational `select-correct` states its precondition inline (`All (λ b → 2 ≤ Body.locals b) (defs P)`), and `ρ₀` is defined in `Theorems/Denotational.agda` (the proofs use a definitionally equal one, in the graph model's `Domain`).
 * **Semantics without their monotonicity.** The generic `Semantics` record of the graph model carries a monotonicity proof, so a semantics built with it would put the monotonicity of every operator on the surface. Instead the surface defines the meaning of ISWIM and Clos2–Clos4 directly as the fold of their operators (as Clos5's already was); `agda/proof/` builds the `Semantics` instance, whose `⟦_⟧` is that fold by definition, and the proofs are unchanged.
 
 **What it changed in the totals.** Without import statements, which are no longer counted (see below), the split costs the denotational total 21 lines (2921 → 2942), the simulation one 4 (2904 → 2908), the interpreter one 4 (2058 → 2062) and adequacy 3 (3165 → 3168): the direct definitions of the semantics on the surface, the module lines of the new proof halves, and their `open … public` re-exports. Counting imports, as when the split was made, the totals count the two halves of a split module as one module, so only the module headers and imports of the new proof halves, and the direct definitions of the semantics, add lines: the denotational total +80 (semantics row: `Prim` +12, `Sem/ISWIM` +14, `Sem/Clos2Iswim` +20, `Sem/Clos3Iswim` +17, `Sem/Clos4Iswim` +17), the simulation one +17 (semantics row +5 for the proof halves of `Operational/{Smallstep,Simulation}`; shared row +12, for `EncloseScope` +5 and `PipelineScope` +7), the interpreter one +16 (semantics row +4 for `Functional/Clock`; shared row +12), and adequacy +12 (shared row). No per-pass row changed. The infrastructure table changed likewise (1693 → 1788, the proof halves of the framework modules, and `Equivalent` moved from `Simulation` to `Smallstep`). The theorem files (368 lines with imports, 221 without) are new boilerplate and are not in the totals; they are in the audit-surface table.
@@ -265,6 +267,15 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-13 | simplify (ISWIM → ISWIM), a cp0-style source optimizer, as the first pass of `compile`, all four proofs; that simplify keeps programs closed for the operational compositions (`SimplifyScope`, shared, 110); the continuity of ISWIM from adequacy to the denotational semantics row (44); in the infrastructure `equiv-sym` (+5), `clocked-le` (+54) and `ws-bound` (+10) (PR #40) | 3349 (+407) | 3578 (+672) | 2863 (+801) | 3734 (+723) |
 | 2026-10-13 | simplify's CEK and interpreter proofs trimmed: one description of values for terms and known values (`Desc`, strong for terms, up to functions for known values), the shift of a small value from that of a description, one lemma for a variable bound in both environments (`ok-bind`), shared helpers in the interpreter's backward direction (PR #40) | 3349 | 3558 (−20) | 2840 (−23) | 3734 |
 | 2026-10-13 | inlining in simplify (transformation 5): a known function is kept as its source body with its `Facts`, and a call of it is replaced by its body simplified at the call, the operand bound as in β (a let when it is not a value), when the result is small enough, under fuel; copy propagation keeps what is known of a copied variable; β and inlining share one lemma per proof (PR #41) | 3360 (+11) | 3607 (+49) | 2900 (+60) | 3821 (+87) |
+| 2026-10-13 | infrastructure audit, step 1: language-independent lemmas that the proofs repeated defined once in the infrastructure (list lookups, the graph model's `ρ₀`, `ne-mem` and `Λ-≃`, the continuity of Clos5 from `SemanticsUtil`, the environment lemmas `•-~` and `extend-nonempty-env` for local copies, adequacy's runs from any state and `terminates-det`); the infrastructure +59 (1866 → 1925), of which each proof reaches +28, +18, +16 and +18; adequacy 3246 → 3208 (PR #42) | 3299 (−61) | 3581 (−26) | 2892 (−8) | 3810 (−11) |
+
+**Infrastructure audit, step 1 (PR #42).** The last row moves language-independent reasoning that the proofs had repeated, or had written locally, into the infrastructure, under the policy of [Language-independent infrastructure](#language-independent-infrastructure). No theorem statement, pass or semantics changed. What moved:
+
+* **List lookups** (`proof/Framework/ListUtil.agda`, 98 → 114): `‼-pw`, lookup in pointwise-related lists (it was in `RCOFuel`, `LiftLocalsSim` and `LiftLocalsRed`, and as `lookup-pw` in `GlobalizeSim` and `GlobalizeFuel`); `reverse-map-‼`, lookup in the reverse of a mapped list (the tables of rco, explicate control and select instructions in the CEK and reduction proofs); `‼-any` (`RCOSim`, `RCORed`); and `args→list-hom`, listing the subterms of a tuple after a map over them, given its defining equation, which replaces `enc-list`, `opt-list`, `conc-list` and `simps-list` in the CEK proofs (`del-args` is a pointwise relation, not a map, and is kept).
+* **Graph model:** `ρ₀`, the environment of a closed program (`Domain`; it was in `DelayFiniteCommon` and `SimplifyCorrect`), `ne-mem` (`SetsAsPredicates`; `DelayFiniteCommon`, `RCOCorrect`) and `Λ-≃` (`Ops`; word for word in `SimplifyCorrect` and `RCOCorrect`). `Clos5IswimContinuous` instantiates `SemanticsUtil` for `args-nth-mono`, `args-nth-cont` and `term-continuous` instead of repeating them (the semantics row, 734 → 716). Local copies of the environment lemmas `•-~` (`part` in `SimplifyCorrect`, `rel-ext` in `GlobalizeCorrect`, an extension in `RCOCorrect`) and `extend-nonempty-env` (five in `DelayPreserve` and `DelayReflectFinite`) were replaced by them.
+* **Adequacy:** the runs of a step function from any state (`_↠_`, `_++↠_`, `↠-final-det`, formerly `Common.Runs`) are `proof/Framework/Runs.agda` (29 lines, used only by adequacy), and `terminates-det`, that a machine terminates with at most one observation, is proved once in `proof/Framework/Smallstep.agda` from `final-unique` (2 lines) instead of in the ISWIM and Clos5 adequacy proofs (ISWIM 684 → 651, Clos5 717 → 712).
+
+The totals went down by 61, 26, 8 and 11 lines (graph model: semantics −18, simplify −12, delay −15, globalize −3, rco −13; CEK: 3 or 4 in each of seven rows; interpreter: globalize and rco −4 each; reduction: rco −7, lift locals −4), and adequacy by 38. The infrastructure grew by 59 lines (1866 → 1925): list lookups +16, the denotational framework +3, the graph model +9, the small-step framework +2, runs +29. Since the counts are by module, each proof is shown reaching all of a module it imports: the graph model reaches +28 lines of infrastructure (1310 → 1338), the CEK proof +18 (783 → 801), the interpreter +16 (729 → 745), the reduction proof +18 (967 → 985), and adequacy +59 (1462 → 1521).
 
 **A fourth column (PR #37).** The last two rows. The first is the CEK code regrouped so that the reduction column can share the machines of Imp, CFG and X86 and the proofs of explicate control and select instructions: the values of the Clos5 machine, which the Imp and X86 machines use, moved to their own module (+1 line, the module line, in the semantics row: 656 → 657), the list lemma `‼-map` from `RCOSim` to `ListUtil` (rco 414 → 410), and the end-to-end theorems for `compile-cfg` and `compile-x86` from `ExplicateSim` and `SelectSim` to `CompilerX86Sim` (explicate control 129 → 127, select instructions 240 → 238, composition 19 → 24); in all 2908 → 2906. The infrastructure grew by 344 lines: the substitution library (189 with `ScopeSubst` and `SubstRel`) and the reduction framework (130), used only by the reduction column, and in the shared infrastructure the `runs` answer of the small-step framework (+9) and three list lemmas (+16). See [Reduction semantics + simulation](#reduction-semantics--simulation).
 
@@ -446,6 +457,8 @@ Code that other languages and compilers would use unchanged is reported in its o
 * **Infrastructure:** the abt library and the lemmas about the syntax of any signature (`Syntax/`: renaming, scoping, uses), list lookups (`ListUtil`), base types and `_⇔_` (`Primitives`, `Iff`); the denotational framework (sets as predicates, environments, the semantics of any signature and its monotonicity and consistency, `RenameSem`); the graph model, `GraphModel/` (formerly `Compiler/Model/Graph/Domain/ISWIM/`: values and consistency, the operators with their monotonicity, consistency and continuity, continuity of a semantics in its environment, formerly `Sem/Continuous`); the small-step framework (`Smallstep`, `Simulation`) and the clocked one (`Clocked`), both now parameterized over the type of observations (and, for `Clocked`, the observation of going wrong); since PR #37, substitution for any signature and its σ-calculus lemmas (`Syntax/Subst`, `Syntax/ScopeSubst`), the closure of a relation on terms under renaming and substitution (`Syntax/SubstRel`), and the reduction framework (`Reduction`: reductions as step functions with congruence rules, frames, answers, and the end theorem), which only the reduction column uses.
 * **Not infrastructure:** the meaning of this compiler's primitives (`Semantics/Graph/Prim.agda`: `out`, `primD` and its lemmas), which stays in the denotational semantics row, as `prim?` stays in each machine and interpreter; this compiler's observations (`Semantics/Observation.agda`) and the instances of the operational frameworks at them (`Semantics/CEK/Smallstep.agda`, `proof/Semantics/CEK/Simulation.agda`, `Semantics/Interp/Clock.agda`, `Semantics/Reduction/Smallstep.agda`). The operational values are not infrastructure either: each language's `Val` is its own small datatype, closures over that language's terms or code pointers into its tables, observed through this compiler's observations, so no other language would reuse it as it is.
 * **What it changed in the totals:** the rows "generic infrastructure" and "domain, operators, continuity" are gone, and so are the shared modules that became infrastructure; see [History](#history).
+
+**Policy (since PR #42).** Language-independent reasoning is moved into the infrastructure on a best-effort basis, in all four styles alike. Language independent means reusable, unchanged, by other languages and compilers. The domain building blocks of the denotational semantics, such as products, sums and functions (pairs, tuples, injections and Λ with their operators and lemmas), are generic and count as infrastructure: they are the domain constructions of any language with those features. The operational values are not: each language's `Val` is tied to that language's syntax (closures over its terms, code pointers into its tables), and so is anything that names this compiler's `obs`, `prim?` or `Val`; they stay counted. That the denotational domains are independent of the syntax of the language, while operational value forms are not, is an advantage of the denotational approach, and the totals reflect it. The infrastructure sizes are always reported, per style, in the tables above, so the comparison can also be read with them included.
 
 The script checks that no infrastructure module imports a module that is not infrastructure.
 

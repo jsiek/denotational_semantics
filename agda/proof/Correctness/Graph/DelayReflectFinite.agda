@@ -29,7 +29,7 @@ open import proof.Semantics.Graph.Clos3Iswim as S3
 open import proof.Semantics.Graph.Clos4Iswim as S4 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Delay using (delay; del-map-args)
-open import proof.Framework.GraphModel.Env using (nonempty-env; •-~)
+open import proof.Framework.GraphModel.Env using (nonempty-env; •-~; extend-nonempty-env)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Correctness.Graph.DelayFiniteCommon
 open import proof.Correctness.Graph.DelayFiniteRel
@@ -59,10 +59,7 @@ module proof.Correctness.Graph.DelayReflectFinite where
 {- one finite part of the bound variable suffices -}
 cont-0 : ∀ (M : AST) {X ρ} → nonempty-env ρ → nonempty X → ∀ y → y ∈ ⟦ M ⟧ (X • ρ)
   → Σ[ u ∈ Value ] Σ[ U ∈ List Value ] mem (u ∷ U) ⊆ X × y ∈ ⟦ M ⟧ (mem (u ∷ U) • ρ)
-cont-0 M {X}{ρ} NE NE-X y y∈ with C3.term-continuous M (X • ρ) NE' y y∈
-  where NE' : nonempty-env (X • ρ)
-        NE' zero = NE-X
-        NE' (suc x) = NE x
+cont-0 M {X}{ρ} NE NE-X y y∈ with C3.term-continuous M (X • ρ) (extend-nonempty-env NE NE-X) y y∈
 ... | ⟨ Vs , ⟨ ok , y∈fin ⟩ ⟩ with Vs 0 | proj₁ (ok 0) | proj₂ (ok 0)
      | S3.⟦⟧-monotone {ρ = λ z → mem (Vs z)} {ρ′ = mem (Vs 0) • ρ} M env⊆ y y∈fin
   where env⊆ : ∀ z → mem (Vs z) ⊆ (mem (Vs 0) • ρ) z
@@ -190,9 +187,7 @@ reflect-branch s L B {ρ'}{ρ} E v sv s~ B⊆ V' V'⊆ =
   where
   open Envs E
   NE-s = Obs.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
-  NE' : nonempty-env (Untag s (⟦ L ⟧ ρ) • ρ)
-  NE' zero = NE-s
-  NE' (suc x) = NE x
+  NE' = extend-nonempty-env NE NE-s
   ρ'~' = Con-• (Untag-con s s~ (Clos4-con (delay L) ρ'~)) ρ'~
   ρ⊳' : (Untag s (⟦ delay L ⟧' ρ') • ρ') ⊳ₑ (Untag s (⟦ L ⟧ ρ) • ρ)
   ρ⊳' zero = tag-reflect L E s

@@ -37,7 +37,7 @@ open import Language.Clos5 using (program)
 open import Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
-  using (Terminates; Diverges; diverges-not-terminates)
+  using (Terminates; Diverges; diverges-not-terminates; terminates-det)
 open import Semantics.CEK.Clos5
 open import proof.Compiler.GlobalizeTable using (⊑-refl)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
@@ -81,14 +81,6 @@ adequacy-converges : ∀ P → WF P → nonempty ⟦ P ⟧ₚ → Converges (Ter
 adequacy-converges P wf ⟨ d , d∈ ⟩ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
-{- The machine terminates with at most one observation ----------------------}
-
-terminates-det : ∀ P {o₁ o₂} → Terminates (sem P) o₁ → Terminates (sem P) o₂ → o₁ ≡ o₂
-terminates-det (program ds M) ⟨ t₁ , ⟨ σ₁ , f₁ ⟩ ⟩ ⟨ t₂ , ⟨ σ₂ , f₂ ⟩ ⟩
-    with C.↠-final-det ds (C.star→↠ ds σ₁) (C.star→↠ ds σ₂) f₁ f₂
-... | refl with trans (sym f₁) f₂
-... | refl = refl
-
 {- Characterizations ------------------------------------------------------------}
 
 const-iff : ∀ P → WF P → ∀ {B} {k : base-rep B}
@@ -101,7 +93,7 @@ nonempty-iff P wf = ⟨ adequacy-converges P wf , sound-nonempty P wf ⟩
 {- a program that goes wrong, or diverges, denotes the empty set -}
 wrong-empty : ∀ P → WF P → Terminates (sem P) o-wrong → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
 wrong-empty P wf w d d∈ with adequacy P wf d∈
-... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det P t w)
+... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
 diverges-empty : ∀ P → WF P → Diverges (sem P) → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
 diverges-empty P wf div d d∈ with adequacy P wf d∈

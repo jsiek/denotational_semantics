@@ -32,7 +32,7 @@ open import proof.Semantics.Graph.Clos3Iswim as S3
 import proof.Semantics.Graph.Clos4Iswim as S4
 open S4 using (Clos4-con) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧₊ to ⟦_⟧₊')
 open import Compiler.Delay using (delay; del-map-args)
-open import proof.Framework.GraphModel.Env using (nonempty-env)
+open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 open import proof.Correctness.Graph.DelayFiniteCommon
   using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat; Untag-con; leftT; rightT;
          Data; flat-data; out-data)
@@ -145,10 +145,7 @@ case-r : ∀ (N' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Rights 
 {- one finite part of the bound variable suffices -}
 cont-0 : ∀ (M' : L4.AST) {X ρ'} → nonempty-env ρ' → nonempty X → ∀ y → y ∈ ⟦ M' ⟧' (X • ρ')
   → Σ[ u ∈ Value ] Σ[ U ∈ List Value ] mem (u ∷ U) ⊆ X × y ∈ ⟦ M' ⟧' (mem (u ∷ U) • ρ')
-cont-0 M' {X}{ρ'} NE NE-X y y∈ with C4.term-continuous M' (X • ρ') NE' y y∈
-  where NE' : nonempty-env (X • ρ')
-        NE' zero = NE-X
-        NE' (suc x) = NE x
+cont-0 M' {X}{ρ'} NE NE-X y y∈ with C4.term-continuous M' (X • ρ') (extend-nonempty-env NE NE-X) y y∈
 ... | ⟨ Vs , ⟨ ok , y∈fin ⟩ ⟩ with Vs 0 | proj₁ (ok 0) | proj₂ (ok 0)
      | S4.⟦⟧-monotone {ρ = λ z → mem (Vs z)} {ρ′ = mem (Vs 0) • ρ'} M' env⊆ y y∈fin
   where env⊆ : ∀ z → mem (Vs z) ⊆ (mem (Vs 0) • ρ') z
@@ -191,9 +188,7 @@ preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
   cS = Untag-con leftT (λ c → c) (Clos4-con (delay L) C')
   u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Lefts (⟦ delay L ⟧' ρ')
   u⊑ d d∈ = preserve L NE C' ρ⊑ (left d) (U⊆ d d∈)
-  NE' : nonempty-env (Lefts (⟦ delay L ⟧' ρ') • ρ')
-  NE' zero = ⊑-ne u (u⊑ u (here refl))
-  NE' (suc x) = NE x
+  NE' = extend-nonempty-env NE (⊑-ne u (u⊑ u (here refl)))
   ρ⊑' : (mem (u ∷ U) • ρ) ⊑ₑ (Lefts (⟦ delay L ⟧' ρ') • ρ')
   ρ⊑' zero = u⊑
   ρ⊑' (suc x) = ρ⊑ x
@@ -205,9 +200,7 @@ preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
   cS = Untag-con rightT (λ c → c) (Clos4-con (delay L) C')
   u⊑ : ∀ d → d ∈ mem (u ∷ U) → d ⊑ Rights (⟦ delay L ⟧' ρ')
   u⊑ d d∈ = preserve L NE C' ρ⊑ (right d) (U⊆ d d∈)
-  NE' : nonempty-env (Rights (⟦ delay L ⟧' ρ') • ρ')
-  NE' zero = ⊑-ne u (u⊑ u (here refl))
-  NE' (suc x) = NE x
+  NE' = extend-nonempty-env NE (⊑-ne u (u⊑ u (here refl)))
   ρ⊑' : (mem (u ∷ U) • ρ) ⊑ₑ (Rights (⟦ delay L ⟧' ρ') • ρ')
   ρ⊑' zero = u⊑
   ρ⊑' (suc x) = ρ⊑ x

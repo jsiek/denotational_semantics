@@ -50,7 +50,7 @@ open import proof.Correctness.Graph.CompilerCorrect
   using (compile; compile-correct-const; compile-correct-nonempty)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
-  using (Terminates; Diverges; diverges-not-terminates; next; stop)
+  using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
 open import Semantics.CEK.ISWIM
 open import proof.Compiler.EncloseScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
@@ -97,14 +97,6 @@ adequacy-converges : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) → Conve
 adequacy-converges M c ⟨ d , d∈ ⟩ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
-{- The machine terminates with at most one observation ----------------------}
-
-terminates-det : ∀ M {o₁ o₂} → Terminates (sem M) o₁ → Terminates (sem M) o₂ → o₁ ≡ o₂
-terminates-det M ⟨ t₁ , ⟨ σ₁ , f₁ ⟩ ⟩ ⟨ t₂ , ⟨ σ₂ , f₂ ⟩ ⟩
-    with ↠-final-det (star→↠ σ₁) (star→↠ σ₂) f₁ f₂
-... | refl with trans (sym f₁) f₂
-... | refl = refl
-
 {- Characterizations ------------------------------------------------------------}
 
 const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
@@ -117,7 +109,7 @@ nonempty-iff M c = ⟨ adequacy-converges M c , sound-nonempty M ⟩
 {- a program that goes wrong, or diverges, denotes the empty set -}
 wrong-empty : ∀ M → Closed M → Terminates (sem M) o-wrong → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 wrong-empty M c w d d∈ with adequacy M c d∈
-... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det M t w)
+... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
 diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M c div d d∈ with adequacy M c d∈

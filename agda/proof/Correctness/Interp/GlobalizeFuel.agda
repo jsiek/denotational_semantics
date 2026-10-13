@@ -28,7 +28,7 @@ open import Compiler.Globalize
 open import Semantics.Observation
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import proof.Framework.ListUtil using (_‼_; proj-pw)
+open import proof.Framework.ListUtil using (_‼_; proj-pw; ‼-pw)
 open import proof.Compiler.GlobalizeTable
   using (_⊑_; ⊑-refl; ⊑-trans; ∷-⊑; glob-grows; glob-grows-args; global-⊑)
 open import proof.Semantics.Interp.Clock
@@ -81,11 +81,6 @@ module Rel (D : Defs) where
   ... | just (bool true) = M.just (inl≈ (tup≈ []))
   ... | just (bool false) = M.just (inr≈ (tup≈ []))
 
-  lookup-pw : ∀ x {ρ₁ ρ₂} → ρ₁ ≈ρ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
-  lookup-pw x [] = M.nothing
-  lookup-pw zero (r ∷ rs) = M.just r
-  lookup-pw (suc x) (r ∷ rs) = lookup-pw x rs
-
   {- the destructors, on related values -}
   first≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.first v) (T.first w)
   first≈ (pair≈ r _) = ret r
@@ -121,7 +116,7 @@ module Rel (D : Defs) where
     → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
                 (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
 
-  run≈ ck (` x) ds p ρ = from-maybe-rel (lookup-pw x ρ)
+  run≈ ck (` x) ds p ρ = from-maybe-rel (‼-pw ρ x)
   run≈ ck (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p ρ = ret (fun≈ p)
   run≈ ck (app ⦅ L ,, M ,, N ,, Nil ⦆) ds p ρ =
     bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)

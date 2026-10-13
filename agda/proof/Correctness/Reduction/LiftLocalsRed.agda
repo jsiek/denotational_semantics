@@ -51,7 +51,7 @@ import Semantics.CEK.Imp as I
 import Semantics.CEK.Values as Vl
 open import proof.Correctness.Reduction.RCORed using (compile-mon-correct)
 open import proof.Framework.Syntax.Subst L5.Op L5.sig using (Subst; sub; sub-args; exts; ids; _•_; _[_]; sub-id; exts-[])
-open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj; proj-pw)
+open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj; proj-pw; ‼-pw)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin)
@@ -192,10 +192,6 @@ glob ms k = ‼-pw (reverse⁺ (lifted ms)) k
   lifted : ∀ {ds} (ms : All Mon ds) → Pointwise Lifted ds (lift-defs ms)
   lifted [] = []
   lifted (m ∷ ms) = (m , refl) ∷ lifted ms
-  ‼-pw : ∀ {xs ys} → Pointwise Lifted xs ys → ∀ k → M.Pointwise Lifted (xs ‼ k) (ys ‼ k)
-  ‼-pw [] k = M.nothing
-  ‼-pw (r ∷ rs) zero = M.just r
-  ‼-pw (r ∷ rs) (suc k) = ‼-pw rs k
 
 {- The simulation, for a program with table ds and main body n₀, e₀ ----------------}
 

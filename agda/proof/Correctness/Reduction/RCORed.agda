@@ -47,7 +47,7 @@ open import proof.Framework.Syntax.Subst Op sig
   using (Subst; sub; sub-args; exts; ids; extend; _[_]; sub-id; sub-cong; ren-sub; exts-[]; extend-skip)
 open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args; rename-fuse-args; rename-id-args)
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import proof.Framework.ListUtil using (_‼_; proj; args→list; has-length)
+open import proof.Framework.ListUtil using (_‼_; proj; args→list; has-length; reverse-map-‼; ‼-any)
 open import Data.List.Relation.Unary.Any.Properties using (reverse⁻)
 open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
@@ -55,10 +55,8 @@ open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length; replicate; map; reverse)
-open import Data.List.Properties using (reverse-map)
 open import Data.List.Membership.Propositional using (_∈_)
 open import Data.List.Relation.Unary.All using (All; lookup)
-open import Data.List.Relation.Unary.Any using (Any; here; there)
 open import Data.List.Membership.Propositional.Properties using (∈-map⁺)
 open import Data.Maybe using (Maybe; just; nothing) renaming (map to mmap)
 open import Data.Nat using (ℕ; zero; suc; _+_; _<_; s≤s; z≤n)
@@ -113,17 +111,10 @@ atom-rco (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) g ()
 
 {- the definitions of the target table are rco of the source's -}
 global-map : ∀ ds k → global (map rco ds) k ≡ mmap rco (global ds k)
-global-map ds k = trans (cong (_‼ k) (sym (reverse-map rco ds))) (‼-map (reverse ds) k)
-  where ‼-map : ∀ (xs : List AST) k → map rco xs ‼ k ≡ mmap rco (xs ‼ k)
-        ‼-map [] k = refl
-        ‼-map (x ∷ xs) zero = refl
-        ‼-map (x ∷ xs) (suc k) = ‼-map xs k
+global-map ds = reverse-map-‼ rco ds
 
 global-all : ∀ {P : AST → Set} {ds} → All P ds → ∀ k {N} → global ds k ≡ just N → P N
 global-all {ds = ds} ps k eq = lookup ps (reverse⁻ (‼-any (reverse ds) k eq))
-  where ‼-any : ∀ (xs : List AST) k {x} → xs ‼ k ≡ just x → Any (x ≡_) xs
-        ‼-any (y ∷ xs) zero refl = here refl
-        ‼-any (y ∷ xs) (suc k) eq = there (‼-any xs k eq)
 
 {- the values of a tuple, and of a primitive -}
 proj-value : ∀ {n} (i : Fin n) {m} {Vs : Args (replicate m ■)} {V} → Values Vs

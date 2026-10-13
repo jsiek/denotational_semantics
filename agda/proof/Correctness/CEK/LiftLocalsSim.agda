@@ -36,7 +36,7 @@ import Language.Clos5 as L5
 import Language.Imp as Imp
 open import Language.Mon
 open import Compiler.LiftLocals
-open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj)
+open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj; ‼-pw)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Machine; next; plus; Star; ε; _◅_; Answers; stops; steps)
@@ -119,11 +119,6 @@ Lifted N b = Σ[ m ∈ Mon N ] b ≡ lift-body 2 m
 lifted : ∀ {ds} (ms : All Mon ds) → Pointwise Lifted ds (lift-defs ms)
 lifted [] = []
 lifted (m ∷ ms) = (m , refl) ∷ lifted ms
-
-‼-pw : ∀ {xs ys} → Pointwise Lifted xs ys → ∀ k → M.Pointwise Lifted (xs ‼ k) (ys ‼ k)
-‼-pw [] k = M.nothing
-‼-pw (r ∷ rs) zero = M.just r
-‼-pw (r ∷ rs) (suc k) = ‼-pw rs k
 
 glob : ∀ {ds} (ms : All Mon ds) k → M.Pointwise Lifted (L5.global ds k) (Imp.global (lift-defs ms) k)
 glob ms k = ‼-pw (reverse⁺ (lifted ms)) k

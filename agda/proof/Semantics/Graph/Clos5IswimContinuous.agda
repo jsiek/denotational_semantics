@@ -25,18 +25,18 @@ open import Language.Clos5
 open import Semantics.Graph.Clos5Iswim using (Table; 𝕆-Clos5; ⟦_⟧[_]; ⟦_⟧₊[_]; table)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _~ₑ[_]_; •-~)
 open import proof.Framework.GraphModel.Semantics Op sig
-  using (Semantics; ContinuousSemantics; continuous-args; ⟦⟧-monotone; ⟦⟧-continuous; ⟦⟧-pres)
+  using (Semantics; ContinuousSemantics; continuous-args; ⟦⟧-monotone; ⟦⟧-pres)
+open import proof.Framework.GraphModel.SemanticsUtil Op sig using (args-nth-mono; args-nth-cont)
+import proof.Framework.GraphModel.SemanticsUtil Op sig as G
 
 open import Data.Nat using (suc; _≟_)
 open import Relation.Nullary using (yes; no)
 open import Data.List using (_∷_; length)
-open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; replicate)
 open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≢_)
 
 𝕆-Clos5-mono : ∀ T → 𝕆-monotone sig (𝕆-Clos5 T)
 𝕆-Clos5-mono T (fun-ref k) _ _ _ = lift (λ d d∈ → d∈)
@@ -96,18 +96,6 @@ module _ (T : Table) where
   term-mono : ∀ (M : AST) → Mono (λ ρ → ⟦ M ⟧[ T ] ρ)
   term-mono M ρ⊆ = ⟦⟧-monotone M ρ⊆
 
-  args-nth-mono : ∀ {n} (args : Args (replicate n ■)) (i : Fin n)
-    → Mono (λ ρ → nthD (⟦ args ⟧₊[ T ] ρ) i)
-  args-nth-mono {suc n} (cons (ast M) args) zero ρ⊆ = ⟦⟧-monotone M ρ⊆
-  args-nth-mono {suc n} (cons (ast M) args) (suc i) ρ⊆ = args-nth-mono args i ρ⊆
-
-  args-nth-cont : ∀ {n} (args : Args (replicate n ■)) {ρ : Env Value} {NE : nonempty-env ρ}
-    → continuous-args ρ NE (replicate n ■) args
-    → (i : Fin n) → Cont (λ ρ → nthD (⟦ args ⟧₊[ T ] ρ) i) ρ
-  args-nth-cont {suc n} (cons (ast M) args) ⟨ cM , cs ⟩ zero = cM
-  args-nth-cont {suc n} (cons (ast M) args) {ρ} {NE} ⟨ cM , cs ⟩ (suc i) =
-    args-nth-cont args {ρ} {NE} cs i
-
   Clos5-continuous-op : ∀ {op} {ρ : Env Value} {NE : nonempty-env ρ} {v} {args}
     → v ∈ ⟦ op ⦅ args ⦆ ⟧[ T ] ρ → continuous-args ρ NE (sig op) args
     → Σ[ ρ′ ∈ Env Value ] finiteNE-env ρ′ × ρ′ ⊆ₑ ρ × v ∈ ⟦ op ⦅ args ⦆ ⟧[ T ] ρ′
@@ -160,18 +148,8 @@ module _ (T : Table) where
   ⟦⟧[]-monotone : ∀ (M : AST) {ρ ρ′} → ρ ⊆ₑ ρ′ → ⟦ M ⟧[ T ] ρ ⊆ ⟦ M ⟧[ T ] ρ′
   ⟦⟧[]-monotone M ρ⊆ = ⟦⟧-monotone M ρ⊆
 
-  {- every element of a term's denotation is produced by finite, nonempty
-     parts of the environment -}
-  term-continuous : ∀ (M : AST) (ρ : Env Value) → nonempty-env ρ → ∀ v → v ∈ ⟦ M ⟧[ T ] ρ
-    → Σ[ Vs ∈ (Var → List Value) ] (∀ x → Vs x ≢ [] × mem (Vs x) ⊆ ρ x)
-                                   × v ∈ ⟦ M ⟧[ T ] (λ x → mem (Vs x))
-  term-continuous M ρ NE v v∈
-      with ⟦⟧-continuous {{Clos5-Continuous}} {ρ} {NE} M v v∈
-  ... | ⟨ ρ′ , ⟨ fin , ⟨ ρ′⊆ , v∈′ ⟩ ⟩ ⟩ =
-    ⟨ (λ x → proj₁ (fin x))
-    , ⟨ (λ x → ⟨ proj₂ (proj₂ (fin x))
-               , (λ d d∈ → ρ′⊆ x d (proj₂ (proj₁ (proj₂ (fin x))) d d∈)) ⟩)
-      , ⟦⟧-monotone M (λ x d d∈ → proj₁ (proj₁ (proj₂ (fin x))) d d∈) v v∈′ ⟩ ⟩
+  term-continuous : _
+  term-continuous = G.term-continuous {{Clos5-Continuous}}
 
 {- with a consistent table and environments, denotations are consistent -}
 Clos5-con-env : ∀ T → (∀ k → Con (T k)) → ∀ M {ρ ρ'} → ρ ~ₑ[ Every _~_ ] ρ'

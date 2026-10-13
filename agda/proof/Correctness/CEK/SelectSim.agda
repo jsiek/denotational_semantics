@@ -47,14 +47,13 @@ import Semantics.CEK.Imp as M
 import Semantics.CEK.CFG as G
 import Semantics.CEK.X86 as X
 open X using (code; pair; const; tup; inl; inr; obs; _[_↦_]; _[_]≔_)
-open import proof.Framework.ListUtil using (‼-map)
-open import proof.Framework.ListUtil using (_‼_)
+open import proof.Framework.ListUtil using (_‼_; reverse-map-‼)
 
 open import Data.Bool using (Bool)
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length; map; reverse; _++_)
-open import Data.List.Properties using (reverse-map; length-map; ++-identityʳ)
+open import Data.List.Properties using (length-map; ++-identityʳ)
 open import Data.Maybe using (Maybe; just; nothing; _>>=_) renaming (map to mmap)
 open import Data.Nat using (ℕ; suc; _≟_)
 open import Data.Nat.Properties using (≤-refl)
@@ -246,7 +245,7 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
   tup-run vs (a ∷ as) g = step g (ev a refl λ v → tup-run (v ∷ vs) as refl)
 
   glob : ∀ k → X.global xds k ≡ mmap (select-body prologue) (G.global ds k)
-  glob k = trans (cong (_‼ k) (sym (reverse-map (select-body prologue) ds))) (‼-map (select-body prologue) (reverse ds) k)
+  glob = reverse-map-‼ (select-body prologue) ds
 
   callB : ∀ {ve va} mb → Dest D d is j bs₂ σ → G.step ds s₁ ≡ G.call mb ve va φ D
     → X.step xds s₂ ≡ X.call (mmap (select-body prologue) mb) (X.retK (movq (loc (reg rax)) d ∷ is) j bs₂ φ σ)

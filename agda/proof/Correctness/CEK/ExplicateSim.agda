@@ -36,17 +36,15 @@ open import Language.Imp as Imp using (Atm; Exp; simple; atm; case; assign; body
 open import Language.CFG using (Tail; goto; block)
 open import Compiler.Explicate
 
-open import proof.Framework.ListUtil using (_‼_)
+open import proof.Framework.ListUtil using (_‼_; reverse-map-‼)
 open import proof.Semantics.CEK.Smallstep using (Machine; next; plus; Star; ε; _◅_)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; stutters; FSim; Equivalent; equivalent; equiv-trans)
 import Semantics.CEK.Imp as I
 import Semantics.CEK.CFG as G
-open import proof.Framework.ListUtil using (‼-map)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; map; reverse)
-open import Data.List.Properties using (reverse-map)
 open import Data.Maybe using (just; nothing) renaming (map to mmap)
 open import Data.Nat using (ℕ; suc; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; m≤n⇒m≤1+n; <-irrefl)
@@ -179,7 +177,7 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
   branch-br (br c eq) st = branch (trans st (cong (λ b → G.jump _ b _) eq)) λ φ → _ , ε , exec~ c here
 
   glob : ∀ n → G.global ds₂ n ≡ mmap explicate-body (Imp.global ds n)
-  glob n = trans (cong (_‼ n) (sym (reverse-map explicate-body ds))) (‼-map explicate-body (reverse ds) n)
+  glob = reverse-map-‼ explicate-body ds
 
   call-ans : ∀ mb {u w} → κ₁ ≈ κ₂ → G.step ds₂ s₂ ≡ G.call (mmap explicate-body mb) u w φ κ₂
     → Ans i (I.call mb u w φ κ₁) s₂
