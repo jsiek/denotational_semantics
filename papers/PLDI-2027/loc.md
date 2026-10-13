@@ -46,7 +46,7 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | abstract binding trees | 190 | 190 | 190 | 190 | 190 | 190 |
 | syntax lemmas (renaming, scoping, uses), list lookups | 499 | 356 | 422 | 407 | 484 | 407 |
 | base types, logical equivalence | 20 | 17 | 20 | 20 | 20 | 20 |
-| denotational framework | 372 | 350 | — | — | — | 372 |
+| denotational framework | 375 | 350 | — | — | — | 375 |
 | graph model: values, consistency, machinery for any operators | 364 | 364 | — | — | — | 364 |
 | graph model: its operators | 623 | 623 | — | — | — | — |
 | graph model with errors: error-propagating operators | 1317 | — | — | — | — | 1317 |
@@ -54,7 +54,7 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | reduction framework: reduction semantics, simulations between them | 235 | — | — | — | 235 | — |
 | clocked big-step framework | 243 | — | — | 243 | — | — |
 | runs of a step function from any state | 29 | — | — | — | — | — |
-| **total** | **4135** | **1900** | **875** | **860** | **1172** | **2670** |
+| **total** | **4138** | **1900** | **875** | **860** | **1172** | **2673** |
 
 Adequacy uses 2110 lines of the infrastructure, 210 of them not used by the denotational proof.
 
@@ -160,7 +160,7 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
 | `proof.Framework.GraphModel.RenameSem` | 49 | graph model, adequacy, graph model with errors, adequacy with errors |
 | `proof.Framework.GraphModel.Semantics` | 82 | graph model, adequacy, graph model with errors, adequacy with errors |
 | `proof.Framework.GraphModel.SemanticsCore` | 88 | graph model, adequacy, graph model with errors, adequacy with errors |
-| `proof.Framework.GraphModel.SemanticsUses` | 22 | graph model with errors, adequacy with errors |
+| `proof.Framework.GraphModel.SemanticsUses` | 25 | graph model with errors, adequacy with errors |
 | `proof.Framework.GraphModel.SemanticsUtil` | 15 | graph model, adequacy |
 | `Framework.GraphModel.SetsAsPredicates` (+ proof/) | 56 | graph model, adequacy, graph model with errors, adequacy with errors |
 | `proof.Framework.GraphModel.Strict` | 51 | graph model, adequacy |
@@ -299,6 +299,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-13 | graph model with errors for the whole compiler: semantics of Clos5, Imp, CFG and X86 that err where their machines do; optimize, globalize, rco, lift locals, explicate control, select and the composition; adequacy for the Clos5 and X86 machines and the end-to-end theorems on errors, constants, answers and divergence. A fifth column, not in the comparison: 3953 lines (adequacy 4760, infrastructure reached 2670); none of the four totals changes (PR #51) | 2744 | 3526 | 2794 | 3689 |
 | 2026-10-13 | one infrastructure rule for both graph models: laws over the operators are infrastructure. The graph model's strict operators (from rco), let/case and strict-write laws (from lift locals and select) move to `Strict` and `Laws`, and `strict`, `payloadD` to `Ops`: rco 168 → 118, lift locals 214 → 142, select 281 → 271, semantics 447 → 443; its infrastructure 1762 → 1900 (adequacy's 1972 → 2110). The errors model is unchanged (PR #51) | 2608 | 3526 | 2794 | 3689 |
 | 2026-10-13 | graph model with errors, monadic (pilot): the error-propagating operators of ISWIM and Clos2 rebuilt from an error monad on 𝒫 Value, with the graph model's operators as kernels; simplify, enclose and ISWIM adequacy on it. Not in the totals: semantics of ISWIM and Clos2, simplify and enclose 827 lines against 881 in the errors model, ISWIM adequacy 795 against 915, error-specific infrastructure 409 against 685 for the same operators; none of the totals changes (PR #53) | 2608 | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors, monadic (pilot), step 1: Clos3 and Clos4 on the monad (pairs, the late-checked call), concretize and delay; a cleanup of the step-0 proofs (one `Val` predicate, β laws stated with it, `binds-good`, `clos-β`, `⟦⟧-closed₀`). Not in the totals: delay 901 lines against 1037 in the errors model (594 in the graph model), concretize 134 against 151, simplify 351 (was 385) against 380, enclose 92 (was 108) against 109, ISWIM adequacy 790 against 915, error-specific infrastructure 564 against 997 for the same four languages; the denotational framework row grows by 3 (`⟦⟧-closed₀`); none of the totals changes (PR #53) | 2608 | 3526 | 2794 | 3689 |
 
 **Infrastructure audit, step 1 (PR #42).** The last row moves language-independent reasoning that the proofs had repeated, or had written locally, into the infrastructure, under the policy of [Language-independent infrastructure](#language-independent-infrastructure). No theorem statement, pass or semantics changed. What moved:
 
@@ -888,13 +889,13 @@ How to read the table:
 | abstract binding trees | 190 | 190 | 190 | 190 | — | — |
 | syntax lemmas (renaming, scoping, uses), list lookups | 499 | 356 | 407 | 356 | 51 | — |
 | base types, logical equivalence | 20 | 17 | 20 | 17 | 3 | — |
-| denotational framework | 372 | 350 | 372 | 350 | — | — |
+| denotational framework | 375 | 350 | 375 | 350 | — | — |
 | graph model: values, consistency, machinery for any operators | 364 | 364 | 364 | 364 | — | — |
 | graph model: its operators | 623 | 623 | — | — | — | — |
 | graph model with errors: error-propagating operators | 1317 | — | 1317 | — | — | — |
 | small-step framework: transition systems, simulations | 243 | — | — | — | 127 | 127 |
 | runs of a step function from any state | 29 | — | — | — | 29 | 29 |
-| **total** | **3657** | **1900** | **2670** | **1277** | **210** | **156** |
+| **total** | **3660** | **1900** | **2673** | **1277** | **210** | **156** |
 
 * The two models share 1277 lines: values, consistency, the machinery for any operators, the denotational framework, syntax.
 * The graph model alone uses its 623 lines of operators. These are 485 at PR #50, plus `strict` and `payloadD` (moved from its X86 semantics), `Strict` (51) and `Laws` (83).
@@ -966,7 +967,14 @@ Delay (1037, +75%) and X86 adequacy (+93%) are where errors cost most. The equat
 
 ## Graph model with errors, monadic (pilot)
 
-As of PR #53. A pilot, in no total: does building the error-propagating operators from an error monad on 𝒫 Value make the graph model with errors cheaper? It rebuilds, as new modules beside the existing ones (so both can be measured side by side), the operators that ISWIM and Clos2 use; the semantics of ISWIM and Clos2 on them (`Semantics/GraphErrM/`); simplify and enclose (`⟦ M ⟧ ρ₀ ≃ ⟦ pass M ⟧ ρ₀`, closed M, as in the errors model); and adequacy for the ISWIM machine on all three outcomes (`Theorems/GraphErrorsMonad.agda`). The existing graph model with errors is unchanged.
+As of PR #53, step 1. A pilot, in no total: does building the error-propagating operators from an error monad on 𝒫 Value make the graph model with errors cheaper? It rebuilds, as new modules beside the existing ones (so both can be measured side by side):
+* the operators that ISWIM, Clos2, Clos3 and Clos4 use;
+* the semantics of those four languages on them (`Semantics/GraphErrM/`);
+* simplify, enclose and concretize (`⟦ M ⟧ ρ₀ ≃ ⟦ pass M ⟧ ρ₀`, as in the errors model);
+* delay, which preserves and reflects an error, the constants and having a value;
+* adequacy for the ISWIM machine on all three outcomes.
+
+The statements are in `Theorems/GraphErrorsMonad.agda`. The existing graph model with errors is unchanged. Delay does not depend on optimize: delay is Clos3 → Clos4 and optimize is Clos2 → Clos2, so the pilot skips optimize (and the continuity of Clos2 that only it needs).
 
 **The design** (`Framework/GraphModel/ErrorMonad.agda`, lemmas in its `proof/` half).
 
@@ -974,6 +982,7 @@ As of PR #53. A pilot, in no total: does building the error-propagating operator
    * `D ≫= F` holds ω when D does, and `F ⌊ D ⌋` when D has a value (`Conv D`).
    * The continuation gets the whole set of values, not a finite part of it: the kernels (the graph model's operators) already take finite parts where they need them, so bind needs no lists, and its continuity is that of its continuation on `⌊ E ρ ⌋`.
    * `binds n` binds n operands left to right. `_⇂_` filters a set by a property of its elements; `⌊ D ⌋` is `D ⇂ (_≢ ω)`.
+   * A set of values is `Val D` (no ω, nonempty). It is the one side condition of the left unit, and of every β law built on it.
 2. **Operators are kernels under binds.** A kernel is the graph model's operator (`Framework/GraphModel/Ops.agda`). Left to right is the nesting order. A kernel that inspects the kind of a value adds one error, `checked k X A`: A, and ω when X has a value whose `kind` is not k.
 
    | operator | definition |
@@ -987,49 +996,76 @@ As of PR #53. A pilot, in no total: does building the error-propagating operator
    | `letᵐ D F` | `⋆ᵐ (Λᵐ F) D` |
    | `primᵐ p D E` (counted) | `D ≫= λ X → E ≫= λ Y → checked int X (checked int Y (primD p X Y))` |
    | a Clos2 closure | `binds n Ds (λ Xs → Λᵐ (apply-n n F Xs))` |
+   | `ΛΛᵐ F` (code) | `ΛΛ F ⇂ ValEntry₂` |
+   | a Clos3 closure | `⋆ᵐ (ΛΛᵐ F) (𝒯ᵐ n Ds)` |
+   | `pairᵐ D E` | `binds 2 (D, E) pair` |
+   | `carᵐ D`, `cdrᵐ D` | `D ≫= λ X → checked prod X (car X)` |
+   | `callᵐ L M N` | `binds 3 (L, M, N) (λ F E X → checked fun F (⋆₂ F E X))` |
 
    * **The early check** of ISWIM, Clos2 and Clos3 is the nesting of `⋆ᵐ`: the check of the operator is outside the bind of the argument, so applying a non-function errs even when the argument diverges.
-   * **The late check** of Clos4 and Clos5 is the same kernel checked under all three binds: `callᵐ L M N = L ≫= λ F → M ≫= λ E → N ≫= λ X → checked fun F (⋆₂ F E X)`. It is not needed by the pilot; `⋆₂` would move from `proof/` to `Ops`.
-   * **Binders.** "Binders never bind ω" holds by construction for operands: a kernel sees only `⌊ D ⌋`. Two filters remain. Λ's entries are restricted to arguments without ω (`ValEntry`), and 𝒞's payloads to values (`ValPayload`). The reason is not consistency, which bind already gives (an application cannot both pass on its argument's error and run its body). It is that the passes are equations. With plain Λ, ISWIM's `λx. λy. x` has the entry `[ω] ↦ ν`, while the Clos2 closure of the inner function binds x and so has `[ω] ↦ ω`; enclose would not be `≃`. The same holds for a case on `{left ω}`. (The section above gives consistency as the reason for `NoErr`; with the monad, consistency does not need it.)
+   * **The late check** of Clos4 and Clos5 is `callᵐ`: the same kernel, checked under all three binds. Clos4's application of a closure P to N is `callᵐ (carᵐ P) (cdrᵐ P) N`, as in its machine.
+   * **Binders.** "Binders never bind ω" holds by construction for operands: a kernel sees only `⌊ D ⌋`. Two filters remain. Λ's entries are restricted to arguments without ω (`ValEntry`), and 𝒞's payloads to values (`ValPayload`). The reason is not consistency, which bind already gives (an application cannot both pass on its argument's error and run its body). It is that the passes are equations. With plain Λ, ISWIM's `λx. λy. x` has the entry `[ω] ↦ ν`, while the Clos2 closure of the inner function binds x and so has `[ω] ↦ ω`; enclose would not be `≃`. The same holds for a case on `{left ω}`.
 3. **Proved once** (in `proof/Framework/GraphModel/ErrorMonad.agda`):
-   * the monad laws: left unit (`≫=-β`, on a set of values), right unit (`≫=-η`) and associativity (`≫=-assoc`);
+   * the monad laws: left unit (`≫=-β`, on a set of values), right unit (`≫=-η`) and associativity (`≫=-assoc`, `binds-assoc`), and congruence (`≫=-cong`, `binds-cong`);
    * monotonicity, consistency, continuity (`≫=-cont`) and cleanliness of bind and `binds`;
    * the check: monotone, continuous, and consistent when its kernel needs a value of its kind (`Needs`);
    * one lemma, `~-kind` (consistent values have the same kind), replaces the ten per-kind consistency lemmas (`fun~`, `~fun`, `inl~`, …). Agda infers its 70 absurd cases.
-   * Combinators derive an operator's `Good` record from its kernel's: `strict` (bind the first operand), `strict₂` (via `swap`), `checkₒ`, `⇂-good` and `in⇂-good` (filters). `⋆ᵐ-good` is `strict-good (checkₒ-good (strict₂-good ⋆-good) …)`. Each operator's `Good` is one line, and so is `primᵐ-good`, from `primD-good`.
-   * the β laws the passes and soundness use (`letᵐ-β`, `𝒞ᵐ-inl-β`, `projᵐ-𝒯ᵐ`, `binds-β`), each a left unit followed by the plain β law of the kernel (`Λ-β`, `𝒞-inl-β`).
-4. **Lifting relations.** `D ⊑[ R ] D'`: ω goes to ω, and each value of D has an R-related value of D'. `≫=-⊑` says bind preserves lifted relations: its continuations need only be related on related sets of values. The pilot's passes are equations, and their congruences come from monotonicity, so `≫=-⊑` has no consumer in the pilot; its consumer would be delay. Adequacy uses the same idea against the machine (`ℂ-bind`, in `proof/Adequacy/GraphErrM/LogRel.agda`):
-   * `ℂ d c` relates ω to a computation (a state for any continuation) that stops with an error, and any other element to one that returns a related value.
-   * An element of `D ≫= F` is either ω because D errs, so the computation of D errs in any frame, or it is in F on the values of D. All those values are related to the one value that computation returns, since the machine is deterministic.
-   * So each operator's case handles only its kernel: the check of the kind (`bad-kind`, `needs-ω`) and its success. The errors of its operands, in order, are handled by `ℂ-bind`.
+   * Combinators derive an operator's `Good` record from its kernel's: `strict` (bind the first operand), `strict₂` (via `swap`), `binds-good` (bind n operands), `checkₒ`, `⇂-good` and `in⇂-good` (filters). `⋆ᵐ-good` is `strict-good (checkₒ-good (strict₂-good ⋆-good) …)`; `callᵐ-good` is `binds-good 3 (checkₒ-good ⋆₂-good …)`. Each operator's `Good` is one line.
+   * the β laws the passes and soundness use, each a left unit followed by the plain β law of the kernel, stated with `Val`: `letᵐ-β`, `𝒞ᵐ-inl-β`, `projᵐ-𝒯ᵐ`, `binds-β`, `strict-β`, Clos2's `clos-β`, `ΛΛᵐ-β`, and `pair-call-β` (the call of a pair of code and environment runs the body).
+   * `Val` is compositional: `≫=-val`, `binds-val`, `𝒯ᵐ-val`, `inlᵐ-val`. A value's denotation in a pass or in soundness is `Val` in one line per construct.
+4. **Lifting relations.** `Lifted S D D'` lifts a relation S between source values and target sets: ω goes to ω, and each value of D is S-related to D'. `≫=-lift` and `binds-lift` say bind preserves it: the continuations need only be related on related sets of values. Delay's forward direction uses it for every construct. Adequacy uses the same idea against the machine (`ℂ-bind`, in `proof/Adequacy/GraphErrM/LogRel.agda`): an element of `D ≫= F` is either ω because D errs, so the computation of D errs in any frame, or it is in F on the values of D; so each operator's case handles only its kernel.
 
-**Counts** (from `loc.py`; code lines). Each column counts what the same rows reach: the semantics of ISWIM and Clos2, the proofs of simplify (with `SimplifyFacts`) and enclose, and the shared modules they reach that the four proofs do not all use.
+**Counts** (from `loc.py`; code lines). Each column counts what the same rows reach: the semantics of ISWIM, Clos2, Clos3 and Clos4, the proofs of simplify (with `SimplifyFacts`), enclose, concretize and delay, and the shared modules they reach that the four proofs do not all use.
 
 | pilot rows | monadic (pilot) | graph model with errors | graph model |
 |---|---:|---:|---:|
-| semantics of ISWIM and Clos2 | 131 | 189 | 163 |
-| simplify | 385 | 380 | 343 |
-| CC: enclose | 108 | 109 | 81 |
+| semantics of ISWIM, Clos2, Clos3 and Clos4 | 215 | 269 | 207 |
+| simplify | 351 | 380 | 343 |
+| CC: enclose | 92 | 109 | 81 |
+| CC: concretize | 134 | 151 | 141 |
+| CC: delay — backward relation | 244 | 237 | 148 |
+| CC: delay — application equation | 15 | 46 | 30 |
+| CC: delay — backward fundamental lemma | 376 | 477 | 257 |
+| CC: delay — forward direction | 266 | 277 | 159 |
 | shared modules not used by all four proofs | 169 | 169 | — |
 | the graph model's meaning of the primitives | 34 | 34 | — |
-| **total** | **827** | **881** | **587** |
+| **total** | **1896** | **2149** | **1366** |
 
 | adequacy for the ISWIM machine | monadic (pilot) | graph model with errors | graph model |
 |---|---:|---:|---:|
-| ISWIM | 795 | 915 | 663 |
+| ISWIM | 790 | 915 | 663 |
 | simplify through the ISWIM machine | 30 | 30 | — |
 | shared modules not used by all four proofs, nor by the proof of its model | 15 | 15 | 59 |
 | the graph model's adequacy modules it uses | 52 | 52 | — |
-| **total** | **892** | **1012** | **722** |
+| **total** | **887** | **1012** | **722** |
 
-* **Semantics** (131 against 189, −31%). The primitives are 23 lines against 78: `primᵐ` is `primD` under two binds and two checks, and its `Good` record is derived. The errors model's semantics row also has Clos2's continuity (`Clos2Continuous`, 135), which optimize needs, not these rows. The pilot has none: a closure still runs its body on its free variables' values, which need not be finite, so the monad does not remove that proof.
-* **Passes** (simplify +5, enclose −1). Both are equations, and in both models the congruences of the operators come from their monotonicity. The side conditions stay the same: the environments hold values without ω (`Wf`, `Vals`), because the β laws are left units, which need a set of values. The monad does not make equational passes cheaper; they were already cheap.
-* **ISWIM adequacy** (795 against 915, −13%). Soundness: 453 against 537. Logical relation: 293 against 329.
-  * A continuation passes on ω in one line per frame (`𝒦-ω`), whatever the value before it: the bind already says that a later operand errs once the earlier ones have values.
-  * A machine check that fails is one lemma, `𝒱-bad`: the elements of a value's denotation are of its kind (`𝒱-kind`, `vkind`). It replaces the per-kind `nonclo-wrong`, `nontup-wrong`, `noninj-wrong`, `notint-wrong` and `tup-wrong`.
-  * The application, let and case β steps are the monad's β laws (`letᵐ-β`, `𝒞ᵐ-inl-β`).
-  * Tuples are one bind lemma over the machine's operand list (`tuple-ℂ`), instead of `adequate-args`, `tuple-err` and `tuple-run`.
-  * Still per construct: the machine's own checks (which value stops which frame), and the list representation of tuples in soundness (`bindL`, `𝒯P`, about 70 lines).
+**Delay: 901 lines**, against 1037 in the errors model (−13%) and 594 in the graph model (+52%). The forecast was 800–900.
+
+| delay | monadic (pilot) | graph model with errors | graph model |
+|---|---:|---:|---:|
+| backward relation | 244 | 237 | 148 |
+| application equation | 15 | 46 | 30 |
+| backward fundamental lemma (reflect) | 376 | 477 | 257 |
+| forward direction (preserve) | 266 | 277 | 159 |
+| **total** | **901** | **1037** | **594** |
+
+* **Backward relation** (+7). It is the errors model's relation: what a target set reveals of a source set (an error, a constant, the kind of a value, the parts of a pair, a call), on finite batches of values. It also has one lemma per monad operation: `R-bind` and `R-bindₗ` (a related bind, by its operand and its continuation) and `R-check` and `R-checkₗ` (a related check). They cost what the per-kind lemmas they replace cost. The kind map `tgt` (a function becomes a pair) replaces four kind lemmas.
+* **Application equation** (−31). Clos4's `let-app` is `⟦ L' ⟧ ≫= λ X → callᵐ (carᵐ X) (cdrᵐ X) N'`: the left unit, a congruence and Λ's β law, 15 lines.
+* **Reflect** (−101). Each construct is `R-bind` over its operands, `R-check` and a kernel; only the kernels split cases. The application is the long one: the source checks early (`⋆ᵐ`), the target late (`callᵐ` on `carᵐ` and `cdrᵐ`), so the case chains three binds and a late check (`R-bindₗ`, `R-checkₗ`) against one bind and an early check.
+* **Preserve** (−11). Each construct is `≫=-lift` (or `binds-lift`) over its operands, `⊑-check` and its kernel. The relation `v ⊑ D'` and its lemmas are the errors model's; the closure case is `pair-call-β`.
+* **Where the gap to the graph model stays.** Delay still costs 307 lines over the graph model: +96 in the backward relation, +119 in reflect, +107 in preserve, −15 in the application equation. Those are in the relations, not in the error bookkeeping: the backward relation must observe errors and kinds, the forward direction needs values (not just nonempty sets), and the application, with its early and late checks, is the longest case in both directions. The monad removed the per-construct error clauses (136 lines); it does not change what must be related.
+* **Concretize** (134 against 151, −11%; graph model 141). A closure's case is the left unit of `binds` and associativity (`binds-cong`, `binds-assoc`, `⋆ᵐ-val`); the rest is congruence by monotonicity, as in the graph model.
+
+**The cleanup** (a review of how the pilot uses the monad, separate from delay): one `Val` predicate everywhere (it replaces the combinations of `Conv`, `Clean` and `nonempty` in the side conditions); β laws stated with `Val`; `clos-β` for Clos2 in the semantics; `binds-good`, with `pairᵐ` and `callᵐ` as `binds`; `⟦⟧-closed₀` (a closed term means the same in every environment) in `SemanticsUses`, for any language; `letᵐ-unfold` in the logical relation. Effect on the step-0 rows:
+
+| row | before | after |
+|---|---:|---:|
+| simplify | 385 | 351 |
+| CC: enclose | 108 | 92 |
+| semantics of ISWIM and Clos2 | 131 | 135 |
+| ISWIM adequacy | 795 | 790 |
+
+(Semantics +4: `clos-β`, moved from enclose. The denotational framework row of every table grows by 3, `⟦⟧-closed₀`.) With the cleanup, simplify is below the errors model's (−29); before it was 5 above.
 
 **Infrastructure** reached by the same rows:
 
@@ -1038,49 +1074,47 @@ As of PR #53. A pilot, in no total: does building the error-propagating operator
 | abstract binding trees | 190 | 190 | 190 | 190 |
 | syntax lemmas (renaming, scoping, uses), list lookups | 499 | 407 | 407 | 356 |
 | base types, logical equivalence | 20 | 17 | 17 | 17 |
-| denotational framework | 372 | 372 | 372 | 350 |
-| graph model: values, consistency, machinery for any operators | 364 | 293 | 293 | 364 |
-| graph model: its operators | 623 | 459 | — | 489 |
+| denotational framework | 375 | 375 | 375 | 350 |
+| graph model: values, consistency, machinery for any operators | 364 | 364 | 364 | 364 |
+| graph model: its operators | 623 | 474 | — | 489 |
 | graph model with errors: error-propagating operators | 1317 | — | 997 | — |
-| graph model with errors, monadic (pilot): error monad, operators | 409 | 409 | — | — |
-| **total** | | **2147** | **2276** | **1766** |
+| graph model with errors, monadic (pilot): error monad, operators | 564 | 564 | — | — |
+| **total** | | **2391** | **2350** | **1766** |
 
 Adequacy adds the same 159 lines to both errors models (small-step framework, runs).
 
-* **The error-specific infrastructure** is 409 lines, against 685 for the same operators in the errors model. Those are the ISWIM and Clos2 parts of `ErrorOps`, its proof half and `ErrorContinuity`: 59 + 469 + 157. loc.py charges 997 because those modules also define the operators of Clos3–X86, a further 312 lines (26 + 222 + 64). The whole errors group is 1317, with `ErrorStrict` and `ErrorLaws`.
-* **Sharing.** The pilot uses the graph model's operators (459 lines: `Ops`, its proof half, `Continuity`) as kernels, with all their lemmas: monotonicity, consistency, continuity, β laws. The errors model reaches none of them. So the two models would share the graph model's operator group, not just the 1277 lines of values, consistency, framework and syntax.
-* Of the 409 lines, about 250 are generic and independent of the set of operators: the monad and its laws, bind's monotonicity, consistency and continuity, `binds`, the check, kinds, filters, the `Good` combinators and the lifting. Each operator costs one to three lines of `Good` and one of congruence. Its β law, if a pass needs one, costs 5–15.
+* **The error-specific infrastructure** is 564 lines (from 409 in step 0), against 997 that the errors model reaches for the same four languages. Of the 155 new lines, 64 are the operators of Clos3 and Clos4 (`ΛΛᵐ`, closures, pairs, `callᵐ`, their `Good` and β laws, `pair-call-β`), and about 90 are generic: `Val` and its compositional lemmas, the lifting through `binds`, `binds-good`, congruence and associativity of `binds`, `strict-β`, `letᵐ-unfold`.
+* **Sharing.** The pilot uses the graph model's operators (474 lines) as kernels, with all their lemmas. The errors model reaches none of them.
 
-**Agreement with the errors model.** The pilot does not prove that its ISWIM semantics is `≃` to the errors model's. That was the optional part of the pilot, and it would hold only on consistent environments: on an inconsistent set such as `{ω, 0}` the two disagree. Both models are adequate for the ISWIM machine on errors, constants, answers and divergence. So on a closed program they have the same observations.
+**Agreement with the errors model.** The pilot does not prove that its semantics is `≃` to the errors model's. That would hold only on consistent environments: on an inconsistent set such as `{ω, 0}` the two disagree. Both models are adequate for the ISWIM machine on errors, constants, answers and divergence, so on a closed program they have the same observations.
 
-**Forecast for the rest of the column** under the monad:
+**Revised forecast for the rest of the column**, from what the pilot measured: the monad saves 8–16% on each proof it touched (simplify −8%, enclose −16%, concretize −11%, delay −13%, ISWIM adequacy −14%), and nothing on the semantics of Clos3 and Clos4 (each operator's table entry is the same size).
 
-* **Delay** (1037; graph model 594): forecast **800–900 lines**. Of the 443 lines delay gains from errors (see [Graph model with errors](#graph-model-with-errors)):
-  * About 240 trace errors. Target errors are traced back to source errors (backward, about 150), and errors are observed by the kind of a value (`shape-obs`, `Corr`, about 90). This is what `≫=-⊑` and `kind` are for: each construct's error case becomes one bind. Delay relates `⋆ᵐ` on a Clos3 closure to the Clos4 call on its fst and snd, which are differently nested binds; the associativity law rearranges them.
-  * About 200 stay. The forward direction needs values, not just nonempty sets (about 120). The β laws need operand sets without ω (about 80): the monad's left unit needs them too.
+| rest of the column | graph model with errors | forecast, monadic |
+|---|---:|---:|
+| CC: optimize (+ the continuity of Clos2, 135, in the semantics) | 186 + 135 | 280–310 |
+| CC: globalize | 157 | 140–150 |
+| rco | 206 | 150–180 |
+| lift locals | 129 | 110–125 |
+| explicate control | 145 | 130–145 |
+| select instructions | 349 | 290–320 |
+| composition | 33 | 33 |
+| semantics of Clos5, Imp, CFG, X86 | 235 | 200–225 |
+| Clos5 adequacy | 1153 | 980–1030 |
+| X86 adequacy | 2149 | 1800–1950 |
+| well-formedness, end to end | 403 | about 403 |
 
-  This is the least certain forecast. The pilot's passes were all equations, so `≫=-⊑` has no consumer yet, and delay is its first real test.
-* **X86 adequacy** (2149; graph model 1115): forecast **1750–1950 lines** (−10–20%, still +55–75% over the graph model), in proportion to the pilot's −13% on ISWIM.
-  * The bind and kind arguments apply to every machine: one line per frame for `𝒦-ω`, one lemma for a failed check (`𝒱-bad`).
-  * The consistency of the tables (`X86Consistent`, 165) mostly becomes the generic `≫=-consis` and `checked-consis`.
-  * Most of `final-err` stays: its 300 lines are one case per way the X86 machine stops with an error (an unset register, a slot beyond the frame, a missing block), and the machine fixes those. So do well-formedness (364) and the stack relation.
-* **The other passes.**
-  * Rco's strict lets are `binds` and associativity; `ErrorStrict` (136) becomes a few lemmas over `binds`.
-  * The let and case laws of lift locals (`ErrorLaws`, 184) are associativity and naturality of bind.
-  * Select's strict writes are binds (`strictᵉ D E = D ≫= λ _ → E`).
-  * Expected: rco and lift locals each −30 to −60 with their laws; optimize, globalize, explicate control and select about unchanged, since they are equations.
-* **Whole column**, forecast:
-  * passes and semantics: about 3600–3750 lines (now 3953; graph model 2608);
-  * adequacy: about 4350–4550 (now 4760);
-  * error-specific infrastructure: about 500–600, against 1317, plus the graph model's 623 lines of operators, now shared.
+* Rco is where the monad helps most outside delay: its strict lets are `binds` and associativity, and `ErrorStrict` (136) becomes a few lemmas over `binds`.
+* Optimize needs the continuity of Clos2's semantics (135 in the errors model), which the monad does not remove: a closure runs its body on its free variables' values, which need not be finite.
+* Adequacy: the pilot's −14% on ISWIM for Clos5; less on X86 (−9 to −16%), where most of `final-err` and the stack relation are fixed by the machine.
+* **Whole column**, forecast: passes and semantics about 3450–3600 (now 3953; graph model 2608), adequacy about 4100–4300 (now 4760), error-specific infrastructure about 650–750 against 1317, plus the graph model's 623 lines of operators, then shared.
 
-**Go / no-go: go**, in this order:
-1. Port the infrastructure and the semantics first. They are mechanical: each operator is a definition and a one-line `Good`. Measure delay next: it decides most of the remaining savings, and it is where `≫=-⊑` is tested.
-2. Then the rest of the column.
+**Go / no-go for the full port: go, narrowly.** Delay came in at 901: at the top of the forecast and below the 950 stop line. The decision rule says go.
 
 Why go:
-* The error-specific infrastructure falls by 40% for the same operators, and the errors model then shares all of the graph model's operators. The errors model becomes "the graph model plus an error monad", a modular layer rather than a second semantic algebra. That is the better story for the comparison: errors are one monad, as in the interpreter's `Result`.
-* The semantics shrink by about a third, and adequacy by 10–15%.
-* The equational passes do not change: what the errors model costs in them is in their side conditions, and those stay.
+* The saving is uniform: every proof the pilot ported is 8–16% shorter, and none is longer. The column would save about 350–500 lines of passes and semantics, 450–650 of adequacy and 550–650 of error-specific infrastructure.
+* The errors model becomes "the graph model plus an error monad": it shares all of the graph model's operators, and its error handling is a layer (bind, the check, the lifting) rather than a second semantic algebra. That is the better story for the comparison: errors are one monad, as in the interpreter's `Result`.
 
-The case against: the port rewrites the whole errors column, about 10,000 code lines (3953 + 4760 + 1317), for a forecast saving of 200–350 lines of passes and semantics, 200–400 of adequacy and 700–800 of infrastructure. Most of it is in delay and adequacy, where the forecast is least certain.
+The case against:
+* The saving is modest where it matters most. Delay stays 52% over the graph model: what remains is in the relations (errors and kinds observed backward, values forward, the early and late checks), and the monad does not touch it.
+* The port rewrites the whole errors column, about 10,000 code lines, for a saving of about 1,350–1,800 of them, a third of which is in adequacy, where the forecast is extrapolated from ISWIM alone.

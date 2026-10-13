@@ -57,8 +57,9 @@ operator modules, and prints the infrastructure each graph model
 reaches.
 
 The monadic graph model with errors (sides 'gm' and 'gmadeq', its
-infrastructure 'pinfra') is a pilot: the semantics of ISWIM and Clos2,
-simplify, enclose and adequacy for the ISWIM machine, with the operators
+infrastructure 'pinfra') is a pilot: the semantics of ISWIM, Clos2, Clos3
+and Clos4, simplify, enclose, concretize, delay and adequacy for the
+ISWIM machine, with the operators
 built from an error monad on 𝒫 Value (Framework/GraphModel/ErrorMonad).
 It is in no total; it is printed in its own tables, next to the same
 rows of the graph model with errors and of the graph model, each counted
@@ -326,6 +327,9 @@ GROUPS = [
     ('gm', 'semantics of the languages', [GM + '*.agda', GMP + '*.agda']),
     ('gm', 'simplify', [GMC + 'SimplifyCorrect.agda']),
     ('gm', 'CC: enclose', [GMC + 'EncloseCorrect.agda']),
+    ('gm', 'CC: concretize', [GMC + 'ConcretizeCorrect.agda']),
+    ('gm', 'CC: delay',
+     [GMC + 'DelayRel.agda', GMC + 'DelayApp.agda', GMC + 'DelayReflect.agda', GMC + 'DelayPreserve.agda']),
     ('gmadeq', 'ISWIM', [GMA + 'Soundness.agda', GMA + 'LogRel.agda', GMA + 'ISWIM.agda']),
     ('gmadeq', 'simplify through the ISWIM machine', [GMA + 'Simplify.agda']),
 
@@ -683,7 +687,7 @@ def main():
     print(f"The statements of the monadic pilot read {flines(gms)} lines of the audit surface: "
           f"{flines(gsh)} shared, {flines(gms - gsh - set([gthm]))} of semantics "
           f"(of which {flines(gown)} its own: the monad, its operators, the semantics of "
-          f"ISWIM and Clos2), {code_lines(gthm)} of statements.")
+          f"ISWIM, Clos2, Clos3 and Clos4), {code_lines(gthm)} of statements.")
     print()
 
     def mods(us):
@@ -760,17 +764,17 @@ def errors_infra(files_of, reach, ulines):
 
 def pilot_tables(files_of, group_of, graph, own, reach, counts, shared, by_all, ulines):
     """The monadic pilot next to the same rows of the graph model with errors
-    and of the graph model: semantics of ISWIM and Clos2, simplify,
-    enclose, adequacy for the ISWIM machine, each counted from the modules
+    and of the graph model: semantics of ISWIM, Clos2, Clos3 and Clos4,
+    simplify, enclose, concretize, delay, adequacy for the ISWIM machine,
+    each counted from the modules
     those rows reach; and the infrastructure each reaches."""
     def units(fs):
         return {unit(f) for f in fs}
-    # what each model needs for these rows: the proofs of simplify and
-    # enclose (and so the semantics of ISWIM and Clos2), and adequacy for
-    # the ISWIM machine
-    roots = {'gm': own['gm'],
-             'gerr': units([GEC + 'SimplifyCorrect.agda', GEC + 'EncloseCorrect.agda']),
-             'den': units([GC + 'SimplifyCorrect.agda', GC + 'EncloseCorrect.agda'])}
+    # what each model needs for these rows: the proofs of simplify,
+    # enclose, concretize and delay (and so the semantics of ISWIM, Clos2,
+    # Clos3 and Clos4), and adequacy for the ISWIM machine
+    roots = {s: units(sum((files_of.get((s, g), []) for g in ('simplify', 'CC: enclose', 'CC: concretize', 'CC: delay')), []))
+             for s in ('gm', 'gerr', 'den')}
     aroots = {'gm': own['gmadeq'], 'gerr': units([GEA + 'ISWIM.agda', GEA + 'Simplify.agda']),
               'den': units([AP + 'ISWIM.agda'])}
     R = {s: reachable(roots[s], graph) for s in roots}
@@ -791,9 +795,17 @@ def pilot_tables(files_of, group_of, graph, own, reach, counts, shared, by_all, 
             tot[s] += n or 0
             cells.append(str(n) if n else '—')
         print(f'| {name} | ' + ' | '.join(cells) + ' |')
-    row('semantics of ISWIM and Clos2', lambda s: L(R[s] & grp(s, 'semantics of the languages')))
+    row('semantics of ISWIM, Clos2, Clos3 and Clos4', lambda s: L(R[s] & grp(s, 'semantics of the languages')))
     row('simplify', lambda s: L(R[s] & (grp(s, 'simplify') | units([PC + 'SimplifyFacts.agda']))))
-    row('CC: enclose', lambda s: L(R[s] & grp(s, 'CC: enclose')))
+    for g in ('CC: enclose', 'CC: concretize'):
+        row(g, lambda s, g=g: L(R[s] & grp(s, g)))
+    names = {'gm': ['DelayRel', 'DelayApp', 'DelayReflect', 'DelayPreserve'],
+             'gerr': ['DelayRel', 'DelayApp', 'DelayReflect', 'DelayPreserve'],
+             'den': ['DelayFiniteCommon+DelayFiniteRel', 'DelayApp', 'DelayReflectFinite', 'DelayPreserve']}
+    part = ('backward relation', 'application equation', 'backward fundamental lemma', 'forward direction')
+    dirs = {'gm': GMC, 'gerr': GEC, 'den': GC}
+    for k, pn in enumerate(part):
+        row(f'CC: delay — {pn}', lambda s, k=k: L(R[s] & units([dirs[s] + f + '.agda' for f in names[s][k].split('+')])))
     row(EXTRA, lambda s: L((shared & R[s]) - by_all - units([PC + 'SimplifyFacts.agda'])))
     row("the graph model's meaning of the primitives",
         lambda s: L(R[s] & own['den'] - own[s]) if s != 'den' else 0)
