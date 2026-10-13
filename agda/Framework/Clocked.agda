@@ -7,7 +7,7 @@
   lemmas are in proof/Framework/Clocked.agda.)
 
   Language independent: instantiated at a compiler's observations (for
-  this compiler, Compiler/Functional/Clock.agda, which has the design note
+  this compiler, Semantics/Interp/Clock.agda, which has the design note
   for its interpreters and proofs).
 
 -}

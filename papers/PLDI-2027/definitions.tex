@@ -128,13 +128,17 @@
 \addcontentsline{toc}{section}{About this document}
 
 This is a summary, for review, of the definitions in the Agda development
-of the closure-conversion compiler in \texttt{agda/Compiler}.
+of the closure-conversion compiler in \texttt{agda}: the languages in
+\texttt{agda/Language}, the passes in \texttt{agda/Compiler}, and the
+semantics of each style in \texttt{agda/Semantics}.
 It uses the notation of \texttt{talks/ITRS-2020} and named variables
 instead of de Bruijn indices.
 The public theorem statements are in \texttt{agda/Theorems}; they and the
 definitions they use (everything outside \texttt{agda/proof}) are the
 audit surface, and the proofs are in \texttt{agda/proof}, which mirrors
-the paths of the surface (\texttt{agda/README.md}).
+the paths of the surface, with the correctness proofs of the passes in
+\texttt{agda/proof/Correctness} and adequacy in
+\texttt{agda/proof/Adequacy} (\texttt{agda/README.md}).
 The language-independent infrastructure is in \texttt{agda/Framework}:
 the graph model's values and operators in \texttt{Framework/GraphModel},
 the syntax in \texttt{Framework/abt} and \texttt{Framework/Syntax},
@@ -143,7 +147,7 @@ observations, in \texttt{Framework/Smallstep.agda} and
 \texttt{Framework/Clocked.agda}; their lemmas (continuity, the generic
 denotational lemmas, the syntax lemmas, forward simulations) are under
 \texttt{agda/proof/Framework}. The meaning of the primitives is in
-\texttt{Compiler/Model/Graph/Prim.agda}.
+\texttt{Semantics/Graph/Prim.agda}.
 
 \paragraph{Contents.}
 \begin{enumerate}
@@ -276,7 +280,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 \item \textbf{Global definitions} are listed oldest first, so $\funref{k}$ names $d_k$.
 \item \textbf{Clos5 definitions} are closed by the grammar. The Agda's
   syntax allows any definition; $\mathit{Scoped}_5$ is the Agda's
-  \texttt{Scoped} (\texttt{Compile/PipelineScope.agda}).
+  \texttt{Scoped} (\texttt{Compiler/PipelineScope.agda}).
 \item \textbf{Fresh variables} of rco are de Bruijn indices in the Agda:
   each let shifts the operands after it, and the atoms under the chain.
 \item \textbf{Lift locals} has no map $\varphi$ in the Agda: variable $x$
@@ -299,9 +303,10 @@ Using names instead of de Bruijn indices changes a few definitions:
   of an environment or a store, $\consis(\rho)$, is \texttt{Con-env}; and
   $D \approx E$ on sets is \texttt{Every \_\char`~\_ D E}.
 \item \begin{sloppypar}\textbf{The direct and continuation-passing semantics of Imp} are
-  \texttt{Sem/ImpDirect.agda} (under \texttt{proof/Compiler/Model/Graph}, an
-  experiment) and \texttt{Sem/ImpK.agda} (under \texttt{Compiler/Model/Graph});
-  what they share with CFG is in \texttt{Sem/Imp.agda}.\end{sloppypar}
+  \texttt{ImpDirect.agda} (an experiment, under
+  \texttt{proof/Semantics/Graph}) and \texttt{ImpK.agda} (under
+  \texttt{Semantics/Graph}); what they share with CFG is in
+  \texttt{Imp.agda}.\end{sloppypar}
 \item \begin{sloppypar}\textbf{Compiler correctness} is stated with $\obseq$.
   The Agda proves its two halves as separate theorems,
   \texttt{compile-correct-const} and \texttt{compile-correct-nonempty},
@@ -318,7 +323,7 @@ Using names instead of de Bruijn indices changes a few definitions:
   that $\pass{compile\text{-}cfg}$ meets it is \texttt{defs-2}; the
   lemmas are \texttt{sel}, \texttt{case-core}, \texttt{tail},
   \texttt{blocks-}$\simeq$, \texttt{Mono.tail-mono}, \texttt{frame-}$\simeq$,
-  and \texttt{start-}$\simeq$ (\texttt{proof/Compiler/Model/Graph/Correctness/SelectCorrect.agda}).
+  and \texttt{start-}$\simeq$ (\texttt{proof/Correctness/Graph/SelectCorrect.agda}).
   $B \mathrel{\mathit{BR}} B'$ is \texttt{BR B B'}.\end{sloppypar}
 \end{itemize}
 In the simulation proof:
@@ -368,8 +373,8 @@ In the simulation proof:
   \texttt{frm F $\kappa$}.
 \item \begin{sloppypar}\textbf{Explicate}'s Imp states $\evi{a}{\sigma}{\kappa}$, for an
   atom $a$, are the Agda's \texttt{eval (simple (atm a)) $\varphi$ $\kappa$}.
-  The machines and the simulation are in \texttt{Machine/CFG.agda} and
-  \texttt{proof/Compiler/Operational/Correctness/ExplicateSim.agda}.\end{sloppypar}
+  The machines and the simulation are in \texttt{Semantics/CEK/CFG.agda} and
+  \texttt{proof/Correctness/CEK/ExplicateSim.agda}.\end{sloppypar}
 \item \textbf{The X86 machine}'s state $\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Sigma\;f\;\sigma\;\rho$
   is the Agda's \texttt{run is j bs} $\sigma$ \texttt{f} $\varphi$ $\rho$, where
   $\sigma$ is the call stack and $\varphi$ the frame.
@@ -377,7 +382,7 @@ In the simulation proof:
   \texttt{K \char`\~{}} $\sigma$, $s_1 \sim s_2$ is \texttt{Match} (with
   \texttt{exec\char`\~}, \texttt{ret\char`\~}, and \texttt{now}), and the
   scripts' cases are \texttt{stop}, \texttt{lag}, and \texttt{go}
-  (\texttt{proof/Compiler/Operational/Correctness/SelectSim.agda}). Lemmas~\ref{lem:to-dest},
+  (\texttt{proof/Correctness/CEK/SelectSim.agda}). Lemmas~\ref{lem:to-dest},
   \ref{lem:sel-simple-sim}, and~\ref{lem:fate} are \texttt{to-dest},
   \texttt{simple}, and \texttt{fate}.
 \end{itemize}
@@ -414,7 +419,7 @@ In the interpreter proof:
 \item \textbf{Select instructions}' lemmas are \texttt{simple-ok},
   \texttt{tail-ok}, and \texttt{jump-ok}, and calls agree by
   \texttt{calls}$\equiv$ and \texttt{call-pw}
-  (\texttt{proof/Compiler/Functional/Correctness/SelectFuel.agda}).
+  (\texttt{proof/Correctness/Interp/SelectFuel.agda}).
 \end{itemize}
 
 In the reduction proof:
@@ -422,7 +427,7 @@ In the reduction proof:
 \item \textbf{Substitution} is on de Bruijn terms in the Agda
   (\texttt{Framework/Syntax/Subst.agda}), and leaves the cleared code of a
   closure untouched. The reduction semantics are in
-  \texttt{Compiler/Reduction}, written as functions with congruence rules
+  \texttt{Semantics/Reduction}, written as functions with congruence rules
   (\texttt{step-in}) rather than with evaluation contexts.
 \item \textbf{Values} are a predicate on terms (\texttt{Value}), and a
   simulation answers with a target value (\texttt{Ans}, \texttt{val}).

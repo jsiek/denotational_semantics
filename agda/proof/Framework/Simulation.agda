@@ -4,7 +4,7 @@
   the end theorem that a forward simulation between deterministic, total
   transition systems makes them equivalent (Equivalent, in
   Framework/Smallstep.agda); equivalence composes. See the design note in
-  Compiler/Operational/Smallstep.agda.
+  Semantics/CEK/Smallstep.agda.
 
 -}
 
