@@ -36,7 +36,7 @@ import Semantics.Interp.Clos4 as T
 open import proof.Framework.Syntax.Rename C4.Op C4.sig
   using (ext; rename; rename-args; shift; rename-fuse; rename-id)
 
-open import Data.List using (List; []; _∷_; replicate; reverse)
+open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
 open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
@@ -109,15 +109,7 @@ branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N → EnvRel r ρ₁ ρ₂ → v ≈ w
 
 run≈ ck r (` x) ρ = from-maybe-rel (ρ x)
 run≈ ck r (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ =
-  clos-rel (args≈ ck r fvs ρ [])
-  where
-  {- the target builds the tuple, then the pair -}
-  clos-rel : ∀ {r₁ r₂} → RelResult (Pointwise _≈_) r₁ r₂
-    → RelResult _≈_ (r₁ >>= λ vs → ret (S.clos N (S.tup (reverse vs))))
-        ((r₂ >>= λ ws → ret (T.tup (reverse ws))) >>= λ e → ret (T.pair (T.fun (delay N)) e))
-  clos-rel timeout = timeout
-  clos-rel wrong = wrong
-  clos-rel (ret rs) = ret (clos≈ (tup≈ (reverse⁺ rs)))
+  bind-rel (rel-map (λ rs → tup≈ (reverse⁺ rs)) (args≈ ck r fvs ρ [])) λ e → ret (clos≈ e)
 run≈ ck r (app ⦅ L ,, M ,, Nil ⦆) ρ = bind-rel (run≈ ck r L ρ) (apply≈ ck r M ρ)
 run≈ ck r (lit B k ⦅ Nil ⦆) ρ = ret const≈
 run≈ ck r (tuple n ⦅ args ⦆) ρ = bind-rel (args≈ ck r args ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
