@@ -68,6 +68,10 @@ _⇂_ : 𝒫 Value → (Value → Set) → 𝒫 Value
 Conv : 𝒫 Value → Set
 Conv D = nonempty ⌊ D ⌋
 
+{- the same, spelled out, for the statements -}
+val∈ : 𝒫 Value → Set
+val∈ D = Σ[ d ∈ Value ] d ∈ D × d ≢ ω
+
 infixl 5 _≫=_
 _≫=_ : 𝒫 Value → (𝒫 Value → 𝒫 Value) → 𝒫 Value
 (D ≫= F) w = (w ≡ ω × ω ∈ D) ⊎ (Conv D × w ∈ F ⌊ D ⌋)

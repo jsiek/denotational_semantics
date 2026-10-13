@@ -1019,11 +1019,14 @@ cdrᵐ-≃ D≃ = mono-≃ (mono (cdrᵐ-good {⊤})) ⟨ lift D≃ , ptt ⟩
 
 {- Congruences of the operators of machine state -}
 
-payloadᵐ-≃ : ∀ {D D'} → D ≃ D' → payloadᵐ D ≃ payloadᵐ D'
-payloadᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ ≫=-mono D⊆ P , ≫=-mono D⊇ P ⟩
+payloadᵐ-mono : ∀ {D D'} → D ⊆ D' → payloadᵐ D ⊆ payloadᵐ D'
+payloadᵐ-mono D⊆ = ≫=-mono D⊆ P
   where
   P : ∀ {X X'} → X ⊆ X' → checked inj X (payloadD (X ⇂ ValPayload)) ⊆ checked inj X' (payloadD (X' ⇂ ValPayload))
   P X⊆ = checked-mono X⊆ (λ { v (inj₁ l) → inj₁ (⇂-mono {P = ValPayload} X⊆ _ l) ; v (inj₂ r) → inj₂ (⇂-mono {P = ValPayload} X⊆ _ r) })
+
+payloadᵐ-≃ : ∀ {D D'} → D ≃ D' → payloadᵐ D ≃ payloadᵐ D'
+payloadᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ payloadᵐ-mono D⊆ , payloadᵐ-mono D⊇ ⟩
 
 strictᵐ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → strictᵐ D E ≃ strictᵐ D' E'
 strictᵐ-≃ ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ = ⟨ ≫=-mono D⊆ (λ _ → E⊆) , ≫=-mono D⊇ (λ _ → E⊇) ⟩
@@ -1034,3 +1037,79 @@ isinlᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ ≫=-mono D⊆ P , ≫=-mono D⊇ P ⟩
   P : ∀ {X X'} → X ⊆ X' → checked inj X (isinlD X) ⊆ checked inj X' (isinlD X')
   P X⊆ = checked-mono X⊆ (λ { w (inj₁ ⟨ u , ⟨ l , eq ⟩ ⟩) → inj₁ ⟨ u , ⟨ X⊆ _ l , eq ⟩ ⟩
                              ; w (inj₂ ⟨ u , ⟨ r , eq ⟩ ⟩) → inj₂ ⟨ u , ⟨ X⊆ _ r , eq ⟩ ⟩ })
+
+{- What a bind needs of its operand: an error, or a value ---------------------------}
+
+{- D holds an error or has a value -}
+Has : 𝒫 Value → Set
+Has D = ω ∈ D ⊎ Conv D
+
+ne-has : ∀ {D} → nonempty D → Has D
+ne-has ⟨ d , d∈ ⟩ with ω? d
+... | inj₁ refl = inj₁ d∈
+... | inj₂ d≢ = inj₂ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩
+
+≫=-ω₁ : ∀ {D F} → ω ∈ D → ω ∈ (D ≫= F)
+≫=-ω₁ ω∈ = inj₁ ⟨ refl , ω∈ ⟩
+
+≫=-ω₂ : ∀ {D F} → Conv D → ω ∈ F ⌊ D ⌋ → ω ∈ (D ≫= F)
+≫=-ω₂ c ω∈ = inj₂ ⟨ c , ω∈ ⟩
+
+{- an element of a bind: the operand holds an error or has a value; a
+   value of the bind is one of the continuation on the values -}
+≫=-has : ∀ {D F w} → w ∈ (D ≫= F) → Has D
+≫=-has (inj₁ ⟨ _ , ω∈ ⟩) = inj₁ ω∈
+≫=-has (inj₂ ⟨ c , _ ⟩) = inj₂ c
+
+≫=-conv : ∀ {D F w} → w ∈ (D ≫= F) → w ≢ ω → Conv D × w ∈ F ⌊ D ⌋
+≫=-conv (inj₁ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
+≫=-conv (inj₂ p) _ = p
+
+{- a strict write of D before X is X, when an error in D is one of X, and
+   each element of X needs D to hold an error or a value, a value for a value -}
+strictᵐ-skip : ∀ {D X} → (∀ w → w ∈ X → Has D) → (ω ∈ D → ω ∈ X) → (∀ w → w ∈ X → w ≢ ω → Conv D)
+  → strictᵐ D X ≃ X
+strictᵐ-skip {D} {X} has ωX val = ⟨ G , H ⟩
+  where
+  G : strictᵐ D X ⊆ X
+  G w (inj₁ ⟨ refl , ω∈ ⟩) = ωX ω∈
+  G w (inj₂ ⟨ _ , w∈ ⟩) = w∈
+  H : X ⊆ strictᵐ D X
+  H w w∈ with ω? w
+  ... | inj₂ w≢ = inj₂ ⟨ val w w∈ w≢ , w∈ ⟩
+  ... | inj₁ refl with has ω w∈
+  ...   | inj₁ ω∈ = inj₁ ⟨ refl , ω∈ ⟩
+  ...   | inj₂ c = inj₂ ⟨ c , w∈ ⟩
+
+strictᵐ-≃′ : ∀ {D X X'} → X ≃ X' → (∀ w → w ∈ X → Has D) → (ω ∈ D → ω ∈ X) → (∀ w → w ∈ X → w ≢ ω → Conv D)
+  → strictᵐ D X ≃ X'
+strictᵐ-≃′ X≃ has ωX val = ≃-trans (strictᵐ-skip has ωX val) X≃
+
+{- a write of D that is followed by D -}
+strictᵐ-self : ∀ {D Z} → Z ≃ D → strictᵐ D Z ≃ D
+strictᵐ-self Z≃ = ≃-trans (strictᵐ-skip (λ w w∈ → ne-has ⟨ w , proj₁ Z≃ w w∈ ⟩) (λ ω∈ → proj₂ Z≃ ω ω∈)
+  (λ w w∈ w≢ → ⟨ w , ⟨ proj₁ Z≃ w w∈ , w≢ ⟩ ⟩)) Z≃
+
+{- a call errs on an error in its operands, left to right; a value of it
+   needs values of its operands -}
+callᵐ-ω : ∀ {L M N} → Has L → ω ∈ M ⊎ (Conv M × ω ∈ N) → ω ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
+callᵐ-ω (inj₁ ωL) _ = inj₁ ⟨ refl , ωL ⟩
+callᵐ-ω (inj₂ cL) (inj₁ ωM) = inj₂ ⟨ cL , inj₁ ⟨ refl , ωM ⟩ ⟩
+callᵐ-ω (inj₂ cL) (inj₂ ⟨ cM , ωN ⟩) = inj₂ ⟨ cL , inj₂ ⟨ cM , inj₁ ⟨ refl , ωN ⟩ ⟩ ⟩
+
+callᵐ-conv : ∀ {L M N w} → w ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ → w ≢ ω → Conv M × Conv N
+callᵐ-conv (inj₁ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
+callᵐ-conv (inj₂ ⟨ _ , inj₁ ⟨ refl , _ ⟩ ⟩) w≢ = ⊥-elim (w≢ refl)
+callᵐ-conv (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ⟨ refl , _ ⟩ ⟩ ⟩) w≢ = ⊥-elim (w≢ refl)
+callᵐ-conv (inj₂ ⟨ _ , inj₂ ⟨ cM , inj₂ ⟨ cN , _ ⟩ ⟩ ⟩) _ = ⟨ cM , cN ⟩
+
+{- the elements of a let of a set of values: its body on finite parts of it -}
+LetEntry : 𝒫 Value → (𝒫 Value → 𝒫 Value) → 𝒫 Value
+LetEntry D H w = Σ[ V ∈ List Value ] V ≢ [] × V ≈ V × NoErr V × mem V ⊆ D × w ∈ H (mem V)
+
+letᵐ-entries : ∀ {D H} → Val D → letᵐ ⟨ D , ⟨ H , ptt ⟩ ⟩ ≃ LetEntry D H
+letᵐ-entries {D} {H} vD =
+  ≃-trans (letᵐ-unfold {D} {H}) (≃-trans (≫=-val-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ H , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} vD)
+    ⟨ (λ { w ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ → ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ (λ d d∈ → proj₁ (V⊆ d d∈)) , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ })
+    , (λ { w ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ V⊆ , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ →
+             ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩) , ne ⟩ ⟩ ⟩ }) ⟩)
