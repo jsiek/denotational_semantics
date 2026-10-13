@@ -763,3 +763,102 @@ pair-call-β {F} {T} {E} cT cE ⟨ clT , ⟨ t , t∈ ⟩ ⟩ ⟨ clE , neE ⟩ 
 
 errcode-con : Con errcode
 errcode-con = ΛΛᵐ-con (λ _ _ _ _ _ _ → Con-⌈⌉ ω)
+
+{- Congruences of the binders, from equal operands ----------------------------------}
+
+𝒞ᵐ-RR : ∀ {D F G D' F' G'} → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
+  → 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞ᵐ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
+𝒞ᵐ-RR {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
+  𝒞ᵐ-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl)) (λ _ _ _ _ → lower (G≃ _ _ ≃-refl))
+
+letᵐ-RR : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
+  → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ letᵐ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
+letᵐ-RR {F = F} {F' = F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = letᵐ-≃ {F = F} {F'} (lower D≃) (λ _ _ _ _ → lower (F≃ _ _ ≃-refl))
+
+ΛΛᵐ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
+  → ΛΛᵐ ⟨ F , ptt ⟩ ≃ ΛΛᵐ ⟨ F' , ptt ⟩
+ΛΛᵐ-≃ eq = ⟨ ⇂-mono (proj₁ (ΛΛ-≃ eq)) , ⇂-mono (proj₂ (ΛΛ-≃ eq)) ⟩
+
+{- Binds and lets -------------------------------------------------------------------}
+
+{- a let is the bind of its body, when the body is monotone and finitary
+   on the values of the operand -}
+letᵐ-≫= : ∀ {D G} → Mono₁ G → Con D → (Conv D → Finitary G ⌊ D ⌋) → letᵐ ⟨ D , ⟨ G , ptt ⟩ ⟩ ≃ (D ≫= G)
+letᵐ-≫= {D} {G} mG cD fin =
+  ≃-trans (letᵐ-unfold {D} {G})
+    (≫=-cong {D} {λ X → ⋆ ⟨ Λᵐ ⟨ G , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} {G}
+       (λ c → Λᵐ-β mG (fin c) (Con-⊆ cD ⌊⌋-⊆) (λ d d∈ → proj₂ d∈)))
+
+{- n binds of equal operands -}
+binds-≃ : ∀ n {Ds Es K} → Rel⊆ n K K → RRs (replicate n ■) Ds Es → binds n Ds K ≃ binds n Es K
+binds-≃ n mK eq = ⟨ binds-mono n (proj₁ (RRs⇒⊆ eq)) mK , binds-mono n (proj₂ (RRs⇒⊆ eq)) mK ⟩
+
+{- code is a set of values -}
+ΛΛᵐ-val : ∀ {F} → Val (ΛΛᵐ ⟨ F , ptt ⟩)
+ΛΛᵐ-val = ⟨ (λ { .ω ⟨ () , _ ⟩ refl }) , ⟨ ν , ⟨ tt , tt ⟩ ⟩ ⟩
+
+{- code is equal when its bodies are, on finite sets of values -}
+BodyEq₂ : (𝒫 Value → 𝒫 Value → 𝒫 Value) → (𝒫 Value → 𝒫 Value → 𝒫 Value) → Set
+BodyEq₂ F F' = ∀ V U → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U ≈ U → NoErr U → F (mem V) (mem U) ≃ F' (mem V) (mem U)
+
+ΛΛᵐ-≃′ : ∀ {F F'} → BodyEq₂ F F' → ΛΛᵐ ⟨ F , ptt ⟩ ≃ ΛΛᵐ ⟨ F' , ptt ⟩
+ΛΛᵐ-≃′ {F} {F'} eq = ⟨ G (λ V U a b c d e f → proj₁ (eq V U a b c d e f)) , G (λ V U a b c d e f → proj₂ (eq V U a b c d e f)) ⟩
+  where
+  G : ∀ {A B : 𝒫 Value → 𝒫 Value → 𝒫 Value}
+    → (∀ V U → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U ≈ U → NoErr U → A (mem V) (mem U) ⊆ B (mem V) (mem U))
+    → ΛΛᵐ ⟨ A , ptt ⟩ ⊆ ΛΛᵐ ⟨ B , ptt ⟩
+  G h ν r = r
+  G h (V ↦ ν) r = r
+  G h (V ↦ (U ↦ w)) ⟨ ⟨ ⟨ w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩ =
+    ⟨ ⟨ ⟨ h V U neV cV nV neU cU nU w w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩
+
+{- Operators as binds of kernels ---------------------------------------------------}
+
+{- an operator on n operands that binds them, left to right, and applies a
+   monotone kernel to their values -}
+record Kernel (n : ℕ) : Set₁ where
+  constructor kernel
+  field
+    kern : Results (𝒫 Value) (replicate n ■) → 𝒫 Value
+    kmono : Rel⊆ n kern kern
+open Kernel public
+
+bindsₖ : ∀ {n} → Kernel n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value
+bindsₖ {n} O Ds = binds n Ds (kern O)
+
+bindsₖ-≃ : ∀ {n} (O : Kernel n) {Ds Es} → RRs (replicate n ■) Ds Es → bindsₖ O Ds ≃ bindsₖ O Es
+bindsₖ-≃ {n} O = binds-≃ n (kmono O)
+
+{- the kernel with its first operand fixed to D -}
+_▷_ : ∀ {n} → 𝒫 Value → Kernel (suc n) → Kernel n
+D ▷ O = kernel (λ Xs → kern O ⟨ D , Xs ⟩) (λ s → kmono O ⟨ lift (λ d d∈ → d∈) , s ⟩)
+
+▷-clean : ∀ {n} (O : Kernel (suc n)) {X} Ds → Clean X → bindsₖ (⌊ X ⌋ ▷ O) Ds ≃ bindsₖ (X ▷ O) Ds
+▷-clean {n} O Ds cl = ⟨ binds-mono n (⊆s-refl n Ds) (λ s → kmono O ⟨ lift ⌊⌋-⊆ , s ⟩)
+                      , binds-mono n (⊆s-refl n Ds) (λ s → kmono O ⟨ lift (⌊⌋-clean cl) , s ⟩) ⟩
+
+{- the operators, as binds of these kernels (by definition) -}
+call-k : Kernel 3
+call-k = kernel (λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) })
+  (λ s → checked-mono (lower (proj₁ s)) (lower (⋆₂-mono _ _ s)))
+
+pair-k : Kernel 2
+pair-k = kernel pair (λ s → lower (pair-mono _ _ s))
+
+car-k cdr-k inl-k inr-k : Kernel 1
+car-k = kernel (λ { ⟨ X , _ ⟩ → checked prod X (car ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (car-mono _ _ s)))
+cdr-k = kernel (λ { ⟨ X , _ ⟩ → checked prod X (cdr ⟨ X , ptt ⟩) }) (λ s → checked-mono (lower (proj₁ s)) (lower (cdr-mono _ _ s)))
+inl-k = kernel (λ { ⟨ X , _ ⟩ → inl ⟨ X , ptt ⟩ }) (λ s → lower (inl-mono _ _ s))
+inr-k = kernel (λ { ⟨ X , _ ⟩ → inr ⟨ X , ptt ⟩ }) (λ s → lower (inr-mono _ _ s))
+
+tuple-k : ∀ n → Kernel n
+tuple-k n = kernel (𝒯 n) (λ s → lower (𝒯-mono n _ _ s))
+
+get-k : ∀ {n} (i : Fin n) → Kernel 1
+get-k {n} i = kernel (λ { ⟨ X , _ ⟩ → checked (tup n) X (proj i ⟨ X , ptt ⟩) })
+  (λ s → checked-mono (lower (proj₁ s)) (lower (proj-mono i _ _ s)))
+
+{- case on its first operand, with the branches E and F -}
+case-k : (E F : 𝒫 Value → 𝒫 Value) → Kernel 1
+case-k E F = kernel (λ { ⟨ X , _ ⟩ → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩) })
+  (λ s → checked-mono (lower (proj₁ s)) (𝒞⇂-⊆ {A = E} {E} {F} {F} (lower (proj₁ s)) (λ _ _ _ _ w w∈ → w∈) (λ _ _ _ _ w w∈ → w∈)))

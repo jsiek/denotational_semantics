@@ -312,6 +312,8 @@ import Semantics.GraphErrM.X86
 import proof.Correctness.GraphErrM.SimplifyCorrect
 import proof.Correctness.GraphErrM.EncloseCorrect
 import proof.Correctness.GraphErrM.OptimizeCorrect
+import proof.Correctness.GraphErrM.GlobalizeCorrect
+import proof.Correctness.GraphErrM.RCOCorrect
 import proof.Correctness.GraphErrM.ConcretizeCorrect
 import proof.Correctness.GraphErrM.DelayRel
 import proof.Correctness.GraphErrM.DelayApp
