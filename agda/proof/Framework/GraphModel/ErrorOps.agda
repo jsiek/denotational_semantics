@@ -845,3 +845,19 @@ payloadᵉ-mono D⊆ v (inj₂ (inj₂ ⟨ refl , inj₂ wr ⟩)) = inj₂ (inj�
 
 payloadᵉ-≃ : ∀ {D E} → D ≃ E → payloadᵉ D ≃ payloadᵉ E
 payloadᵉ-≃ D≃ = ⟨ payloadᵉ-mono (proj₁ D≃) , payloadᵉ-mono (proj₂ D≃) ⟩
+
+{- payloadᵉ preserves consistency -}
+payload~ : ∀ {D D'} → Every _~_ D D' → Every _~_ (payloadᵉ D) (payloadᵉ D')
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₁ ⟨ v∈ , _ ⟩) = D~ _ _ u∈ v∈
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = ⊥-elim (D~ _ _ u∈ v∈)
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) = ⊥-elim (D~ _ _ u∈ ω∈)
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) = ⊥-elim (ni (inl~ e (D~ _ _ u∈ e∈)))
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₁ ⟨ v∈ , _ ⟩) = ⊥-elim (D~ _ _ u∈ v∈)
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = D~ _ _ u∈ v∈
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) = ⊥-elim (D~ _ _ u∈ ω∈)
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) = ⊥-elim (ni (inr~ e (D~ _ _ u∈ e∈)))
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) (inj₁ ⟨ v∈ , _ ⟩) = ⊥-elim (D~ _ _ ω∈ v∈)
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) (inj₁ ⟨ v∈ , _ ⟩) = ⊥-elim (ni (~inl e (D~ _ _ e∈ v∈)))
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = ⊥-elim (D~ _ _ ω∈ v∈)
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = ⊥-elim (ni (~inr e (D~ _ _ e∈ v∈)))
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , _ ⟩)) (inj₂ (inj₂ ⟨ refl , _ ⟩)) = tt
