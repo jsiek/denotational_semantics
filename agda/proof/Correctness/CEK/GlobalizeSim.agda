@@ -139,15 +139,6 @@ module _ (D : Defs) (M₀ : C.AST) where
 
   L₂ = T.sem (C.program D M₀)
 
-  one : ∀ {s s'} → T.step D s ≡ next s' → Plus L₂ s s'
-  one eq = plus eq ε
-
-  {- answering a lookup or a projection -}
-  ret?-answers : ∀ {mv mw κ₁ κ₂ s₂} → M.Pointwise _≈_ mv mw → κ₁ ≈k κ₂
-    → T.step D s₂ ≡ T.ret? mw κ₂ → Answers L₂ _~_ (S.ret? mv κ₁) s₂
-  ret?-answers (M.just r) κ eq = steps (one eq) (ret~ r κ)
-  ret?-answers M.nothing κ eq = stops eq
-
   tuple-next~ : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
     → Pointwise _↝_ Ms Ms' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → S.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws Ms' ρ₂ κ₂
@@ -155,81 +146,80 @@ module _ (D : Defs) (M₀ : C.AST) where
   tuple-next~ rs (g ∷ gs) ρ κ = eval~ g ρ (tupK rs gs ρ κ)
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} (glob↝ p) ρ κ) = ret?-answers (‼-pw ρ x) κ refl
+  sim (eval~ {M = ` x} (glob↝ p) ρ κ) = next?-answers (‼-pw ρ x) (λ r → ret~ r κ) refl
   sim (eval~ {M = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (ret~ (fun≈ p) κ)
+    steps₁ refl (ret~ (fun≈ p) κ)
   sim (eval~ {M = app ⦅ L ,, M ,, N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =
-    steps (one refl)
+    steps₁ refl
       (eval~ (sub↝ (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
              ρ (appF (sub↝ (glob-grows N _) p) (glob↝ p) ρ κ))
     where d₁ = proj₂ (glob L ds)
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} (glob↝ p) ρ κ) = steps (one refl) (ret~ const≈ κ)
+  sim (eval~ {M = lit B k ⦅ Nil ⦆} (glob↝ p) ρ κ) = steps₁ refl (ret~ const≈ κ)
   sim (eval~ {M = pair-op ⦅ L ,, M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (sub↝ (glob-grows M _) p) ρ (pairL (glob↝ p) ρ κ))
+    steps₁ refl (eval~ (sub↝ (glob-grows M _) p) ρ (pairL (glob↝ p) ρ κ))
   sim (eval~ {M = fst-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (glob↝ p) ρ (fstK κ))
+    steps₁ refl (eval~ (glob↝ p) ρ (fstK κ))
   sim (eval~ {M = snd-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (glob↝ p) ρ (sndK κ))
+    steps₁ refl (eval~ (glob↝ p) ρ (sndK κ))
   sim (eval~ {M = tuple n ⦅ args ⦆} (glob↝ {ds = ds} p) ρ κ) =
-    steps (one refl) (tuple-next~ [] (glob-list args ds p) ρ κ)
+    steps₁ refl (tuple-next~ [] (glob-list args ds p) ρ κ)
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (glob↝ p) ρ (getK κ))
+    steps₁ refl (eval~ (glob↝ p) ρ (getK κ))
   sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (glob↝ p) ρ (inlK κ))
+    steps₁ refl (eval~ (glob↝ p) ρ (inlK κ))
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (glob↝ p) ρ (inrK κ))
+    steps₁ refl (eval~ (glob↝ p) ρ (inrK κ))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =
-    steps (one refl)
+    steps₁ refl
       (eval~ (sub↝ (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
              ρ (caseK (sub↝ (glob-grows N _) p) (glob↝ p) ρ κ))
     where d₁ = proj₂ (glob L ds)
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (sub↝ (glob-grows N _) p) ρ (letK (glob↝ p) ρ κ))
+    steps₁ refl (eval~ (sub↝ (glob-grows N _) p) ρ (letK (glob↝ p) ρ κ))
   sim (eval~ {M = prim q ⦅ L ,, M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps (one refl) (eval~ (sub↝ (glob-grows M _) p) ρ (primL (glob↝ p) ρ κ))
+    steps₁ refl (eval~ (sub↝ (glob-grows M _) p) ρ (primL (glob↝ p) ρ κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r (appF gM gN ρ κ)) = steps (one refl) (eval~ gM ρ (appE r gN ρ κ))
-  sim (ret~ r (appE f gN ρ κ)) = steps (one refl) (eval~ gN ρ (appA f r κ))
+  sim (ret~ r (appF gM gN ρ κ)) = steps₁ refl (eval~ gM ρ (appE r gN ρ κ))
+  sim (ret~ r (appE f gN ρ κ)) = steps₁ refl (eval~ gN ρ (appA f r κ))
   sim (ret~ {w = w} r (appA {e' = e'} {κ₂ = κ₂} (fun≈ p) e κ)) =
-    steps (one (cong (λ m → T.call m w e' κ₂) (global-⊑ p)))
-          (eval~ (glob↝ (∷-⊑ p)) (r ∷ e ∷ []) κ)
+    steps₁ (cong (λ m → T.call m w e' κ₂) (global-⊑ p)) (eval~ (glob↝ (∷-⊑ p)) (r ∷ e ∷ []) κ)
   sim (ret~ r (appA (pair≈ _ _) e κ)) = stops refl
   sim (ret~ r (appA const≈ e κ)) = stops refl
   sim (ret~ r (appA (tup≈ _) e κ)) = stops refl
   sim (ret~ r (appA (inl≈ _) e κ)) = stops refl
   sim (ret~ r (appA (inr≈ _) e κ)) = stops refl
-  sim (ret~ r (pairL gM ρ κ)) = steps (one refl) (eval~ gM ρ (pairR r κ))
-  sim (ret~ r (pairR r' κ)) = steps (one refl) (ret~ (pair≈ r' r) κ)
-  sim (ret~ (pair≈ r _) (fstK κ)) = steps (one refl) (ret~ r κ)
+  sim (ret~ r (pairL gM ρ κ)) = steps₁ refl (eval~ gM ρ (pairR r κ))
+  sim (ret~ r (pairR r' κ)) = steps₁ refl (ret~ (pair≈ r' r) κ)
+  sim (ret~ (pair≈ r _) (fstK κ)) = steps₁ refl (ret~ r κ)
   sim (ret~ (fun≈ _) (fstK κ)) = stops refl
   sim (ret~ const≈ (fstK κ)) = stops refl
   sim (ret~ (tup≈ _) (fstK κ)) = stops refl
   sim (ret~ (inl≈ _) (fstK κ)) = stops refl
   sim (ret~ (inr≈ _) (fstK κ)) = stops refl
-  sim (ret~ (pair≈ _ r) (sndK κ)) = steps (one refl) (ret~ r κ)
+  sim (ret~ (pair≈ _ r) (sndK κ)) = steps₁ refl (ret~ r κ)
   sim (ret~ (fun≈ _) (sndK κ)) = stops refl
   sim (ret~ const≈ (sndK κ)) = stops refl
   sim (ret~ (tup≈ _) (sndK κ)) = stops refl
   sim (ret~ (inl≈ _) (sndK κ)) = stops refl
   sim (ret~ (inr≈ _) (sndK κ)) = stops refl
-  sim (ret~ r (tupK rs gs ρ κ)) = steps (one refl) (tuple-next~ (r ∷ rs) gs ρ κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = ret?-answers (proj-pw i rs) κ refl
+  sim (ret~ r (tupK rs gs ρ κ)) = steps₁ refl (tuple-next~ (r ∷ rs) gs ρ κ)
+  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
   sim (ret~ (fun≈ _) (getK κ)) = stops refl
   sim (ret~ (pair≈ _ _) (getK κ)) = stops refl
   sim (ret~ const≈ (getK κ)) = stops refl
   sim (ret~ (inl≈ _) (getK κ)) = stops refl
   sim (ret~ (inr≈ _) (getK κ)) = stops refl
-  sim (ret~ r (inlK κ)) = steps (one refl) (ret~ (inl≈ r) κ)
-  sim (ret~ r (inrK κ)) = steps (one refl) (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK gM gN ρ κ)) = steps (one refl) (eval~ gM (r ∷ ρ) κ)
-  sim (ret~ (inr≈ r) (caseK gM gN ρ κ)) = steps (one refl) (eval~ gN (r ∷ ρ) κ)
+  sim (ret~ r (inlK κ)) = steps₁ refl (ret~ (inl≈ r) κ)
+  sim (ret~ r (inrK κ)) = steps₁ refl (ret~ (inr≈ r) κ)
+  sim (ret~ (inl≈ r) (caseK gM gN ρ κ)) = steps₁ refl (eval~ gM (r ∷ ρ) κ)
+  sim (ret~ (inr≈ r) (caseK gM gN ρ κ)) = steps₁ refl (eval~ gN (r ∷ ρ) κ)
   sim (ret~ (fun≈ _) (caseK _ _ _ κ)) = stops refl
   sim (ret~ (pair≈ _ _) (caseK _ _ _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ _ κ)) = stops refl
-  sim (ret~ r (letK gN ρ κ)) = steps (one refl) (eval~ gN (r ∷ ρ) κ)
-  sim (ret~ r (primL gM ρ κ)) = steps (one refl) (eval~ gM ρ (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
+  sim (ret~ r (letK gN ρ κ)) = steps₁ refl (eval~ gN (r ∷ ρ) κ)
+  sim (ret~ r (primL gM ρ κ)) = steps₁ refl (eval~ gM ρ (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
 
 {- The end theorem -------------------------------------------------------------}
 

@@ -19,6 +19,7 @@ module Framework.Smallstep (Obs : Set) where
 
 open import Framework.Iff using (_⇔_)
 
+open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax)
 open import Relation.Binary.PropositionalEquality using (_≡_)
@@ -28,6 +29,11 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 data Next (S : Set) : Set where
   next : S → Next S
   stop : Obs → Next S
+
+{- continue with f a, or stop with o when there is no a -}
+next? : ∀ {A S : Set} → Obs → (A → S) → Maybe A → Next S
+next? o f (just a) = next (f a)
+next? o f nothing = stop o
 
 record Machine : Set₁ where
   constructor machine

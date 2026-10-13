@@ -21,7 +21,7 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import Language.Clos5
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil
 open import Semantics.CEK.Values public
 
@@ -61,8 +61,7 @@ tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ
 tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
 ret? : Maybe Val → Cont → Next State
-ret? (just v) κ = next (ret v κ)
-ret? nothing κ = stop o-wrong
+ret? mv κ = next? o-wrong (λ v → ret v κ) mv
 
 {- run code, if there is any, in the environment y, x -}
 call : Maybe AST → Val → Val → Cont → Next State

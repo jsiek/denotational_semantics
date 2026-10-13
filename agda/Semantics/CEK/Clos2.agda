@@ -18,7 +18,7 @@ open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import Language.Clos2
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil
 
 open import Data.Fin using (Fin)
@@ -90,8 +90,7 @@ prim? : Prim → Val → Val → Maybe Val
 prim? p v w = map out (δ? p (obs v) (obs w))
 
 ret? : Maybe Val → Cont → Next State
-ret? (just v) κ = next (ret v κ)
-ret? nothing κ = stop o-wrong
+ret? mv κ = next? o-wrong (λ v → ret v κ) mv
 
 step : State → Next State
 step (eval (` x) ρ κ) = ret? (ρ ‼ x) κ

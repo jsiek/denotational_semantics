@@ -39,7 +39,7 @@ open import Compiler.LiftLocals
 open import proof.Framework.ListUtil using (_‼_; ‼-≥; ‼-++; args→list; proj; ‼-pw)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
-  using (Machine; next; plus; Star; ε; _◅_; Answers; stops; steps)
+  using (Machine; next; plus; Star; ε; _◅_; Answers; stops; steps; Reach; steps₁; after; next?-same)
 open import proof.Semantics.CEK.Simulation
   using (Equivalent; equivalent; plus-simulation; equiv-trans)
 import Semantics.CEK.Clos5 as C
@@ -179,102 +179,89 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     ret~ : KontH n ρ κ₁ κ₂ → Fr n ρ φ → C.ret v κ₁ ~ I.ret v φ κ₂
 
   {- the target returns from calls -}
-  pop : Kont n ρ κ₁ κ₂ → Fr n ρ φ → Σ[ s₂ ∈ I.State ] Star L₂ (I.ret v φ κ₂) s₂ × C.ret v κ₁ ~ s₂
+  pop : Kont n ρ κ₁ κ₂ → Fr n ρ φ → Reach L₂ _~_ (C.ret v κ₁) (I.ret v φ κ₂)
   pop (head h) fr = _ , ε , ret~ h fr
   pop (weak {v = u} k) (frame σ len) = pop k (frame (u ∷ σ) len)
   pop (call k fr') fr with pop k fr'
   ... | s , σ , m = s , refl ◅ σ , m
 
-  go : ∀ {s₁ s₂ s₂'} → I.step ds₂ s₂ ≡ next s₂' → s₁ ~ s₂' → Answers L₂ _~_ (next s₁) s₂
-  go st m = steps (plus st ε) m
-
-  ret-ans : ∀ {s₂} → I.step ds₂ s₂ ≡ next (I.ret v φ κ₂) → Kont n ρ κ₁ κ₂ → Fr n ρ φ
-    → Answers L₂ _~_ (next (C.ret v κ₁)) s₂
-  ret-ans st k fr with pop k fr
-  ... | _ , σ , m = steps (plus st σ) m
-
-  ret?-ans : ∀ {s₂} mv → I.step ds₂ s₂ ≡ I.ret? mv φ κ₂ → Kont n ρ κ₁ κ₂ → Fr n ρ φ
-    → Answers L₂ _~_ (C.ret? mv κ₁) s₂
-  ret?-ans (just v) st k fr = ret-ans st k fr
-  ret?-ans nothing st k fr = stops st
-
   call-ans : ∀ {s₂ mN mb} → M.Pointwise Lifted mN mb → I.step ds₂ s₂ ≡ I.call mb v w φ κ₂
     → Kont n ρ κ₁ κ₂ → Fr n ρ φ → Answers L₂ _~_ (C.call mN w v κ₁) s₂
-  call-ans (M.just (m , refl)) st k fr = go st
+  call-ans (M.just (m , refl)) st k fr = steps₁ st
     (eval~ m ≤-refl (frame (I.zeros (height m)) (cong (2 +_) (length-replicate (height m)))) (call k fr))
   call-ans M.nothing st k fr = stops st
 
   tup-ans : ∀ {s₂ k vs} {As : Args (replicate k ■)} (as : Atoms As)
     → I.step ds₂ s₂ ≡ I.res ds₂ (I.tuple-next vs (lift-atoms n (length ρ) as)) φ κ₂
     → Kont n ρ κ₁ κ₂ → Fr n ρ φ → Answers L₂ _~_ (next (C.tuple-next vs (args→list As) ρ κ₁)) s₂
-  tup-ans [] st k fr = ret-ans st k fr
-  tup-ans (a ∷ as) st k fr = go st (eval~ (atom a) (fr-≤ fr) fr (head (tupK as k)))
+  tup-ans [] st k fr = after st (pop k fr)
+  tup-ans (a ∷ as) st k fr = steps₁ st (eval~ (atom a) (fr-≤ fr) fr (head (tupK as k)))
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (C.step ds s₁) s₂
   sim (eval~ {ρ = ρ} {φ = φ} {κ₂ = κ₂} (atom (var x)) b fr k) =
-    ret?-ans (ρ ‼ x) (cong (λ mv → I.ret? mv φ κ₂) (look fr x)) k fr
-  sim (eval~ (atom (lit B j)) b fr k) = ret-ans refl k fr
-  sim (eval~ (atom (ref j)) b fr k) = ret-ans refl k fr
-  sim (eval~ (app (a ∷ c ∷ e ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (appF c e k)))
-  sim (eval~ (pair (a ∷ c ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (pairL c k)))
-  sim (eval~ (fst (a ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (fstK k)))
-  sim (eval~ (snd (a ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (sndK k)))
+    next?-same (λ _ → pop k fr) (cong (λ mv → I.ret? mv φ κ₂) (look fr x))
+  sim (eval~ (atom (lit B j)) b fr k) = after refl (pop k fr)
+  sim (eval~ (atom (ref j)) b fr k) = after refl (pop k fr)
+  sim (eval~ (app (a ∷ c ∷ e ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (appF c e k)))
+  sim (eval~ (pair (a ∷ c ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (pairL c k)))
+  sim (eval~ (fst (a ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (fstK k)))
+  sim (eval~ (snd (a ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (sndK k)))
   sim (eval~ (tuple as) b fr k) = tup-ans as refl k fr
-  sim (eval~ (get (a ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (getK k)))
-  sim (eval~ (inl (a ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (inlK k)))
-  sim (eval~ (inr (a ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (inrK k)))
-  sim (eval~ (prim (a ∷ c ∷ [])) b fr k) = go refl (eval~ (atom a) b fr (head (primL c k)))
+  sim (eval~ (get (a ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (getK k)))
+  sim (eval~ (inl (a ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (inlK k)))
+  sim (eval~ (inr (a ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (inrK k)))
+  sim (eval~ (prim (a ∷ c ∷ [])) b fr k) = steps₁ refl (eval~ (atom a) b fr (head (primL c k)))
   sim (eval~ {ρ = ρ} (case a m₁ m₂) b fr k) =
-    go refl (eval~ (atom a) (bnd (length ρ) z≤n b) fr (head (caseK m₁ m₂ (sbnd (length ρ) _ b) k)))
+    steps₁ refl (eval~ (atom a) (bnd (length ρ) z≤n b) fr (head (caseK m₁ m₂ (sbnd (length ρ) _ b) k)))
   sim (eval~ {ρ = ρ} (let′ m₁ m₂) b fr k) =
-    go refl (eval~ m₁ (bnd (length ρ) (m≤m⊔n (height m₁) (suc (height m₂))) b) fr
+    steps₁ refl (eval~ m₁ (bnd (length ρ) (m≤m⊔n (height m₁) (suc (height m₂))) b) fr
       (head (letK m₂ (sbnd (length ρ) (height m₂) (bnd (length ρ) (m≤n⊔m (height m₁) _) b)) k)))
   sim (ret~ halt fr) = stops refl
   sim (ret~ {ρ = ρ} {v = v} (letK m b k) fr) with assign v fr (room (length ρ) (height m) b)
-  ... | _ , eq , fr' = go (cong (λ x → I.goto x _ _) eq) (eval~ m b fr' (weak k))
+  ... | _ , eq , fr' = steps₁ (cong (λ x → I.goto x _ _) eq) (eval~ m b fr' (weak k))
   sim (ret~ {ρ = ρ} {v = C.inl v} (caseK m₁ m₂ b k) fr) with assign v fr (room (length ρ) _ b)
-  ... | _ , eq , fr' = go (cong (λ x → I.goto x _ _) eq)
+  ... | _ , eq , fr' = steps₁ (cong (λ x → I.goto x _ _) eq)
     (eval~ m₁ (bnd (suc (length ρ)) (m≤m⊔n (height m₁) (height m₂)) b) fr' (weak k))
   sim (ret~ {ρ = ρ} {v = C.inr v} (caseK m₁ m₂ b k) fr) with assign v fr (room (length ρ) _ b)
-  ... | _ , eq , fr' = go (cong (λ x → I.goto x _ _) eq)
+  ... | _ , eq , fr' = steps₁ (cong (λ x → I.goto x _ _) eq)
     (eval~ m₂ (bnd (suc (length ρ)) (m≤n⊔m (height m₁) (height m₂)) b) fr' (weak k))
   sim (ret~ {v = C.code _} (caseK _ _ _ _) _) = stops refl
   sim (ret~ {v = C.pair _ _} (caseK _ _ _ _) _) = stops refl
   sim (ret~ {v = C.const _ _} (caseK _ _ _ _) _) = stops refl
   sim (ret~ {v = C.tup _} (caseK _ _ _ _) _) = stops refl
-  sim (ret~ (appF c e k) fr) = go refl (eval~ (atom c) (fr-≤ fr) fr (head (appE e k)))
-  sim (ret~ (appE e k) fr) = go refl (eval~ (atom e) (fr-≤ fr) fr (head (appA k)))
+  sim (ret~ (appF c e k) fr) = steps₁ refl (eval~ (atom c) (fr-≤ fr) fr (head (appE e k)))
+  sim (ret~ (appE e k) fr) = steps₁ refl (eval~ (atom e) (fr-≤ fr) fr (head (appA k)))
   sim (ret~ (appA {v = C.code j} k) fr) = call-ans (glob ms j) refl k fr
   sim (ret~ (appA {v = C.pair _ _} k) fr) = stops refl
   sim (ret~ (appA {v = C.const _ _} k) fr) = stops refl
   sim (ret~ (appA {v = C.tup _} k) fr) = stops refl
   sim (ret~ (appA {v = C.inl _} k) fr) = stops refl
   sim (ret~ (appA {v = C.inr _} k) fr) = stops refl
-  sim (ret~ (pairL c k) fr) = go refl (eval~ (atom c) (fr-≤ fr) fr (head (pairR k)))
-  sim (ret~ (pairR k) fr) = ret-ans refl k fr
-  sim (ret~ {v = C.pair _ _} (fstK k) fr) = ret-ans refl k fr
+  sim (ret~ (pairL c k) fr) = steps₁ refl (eval~ (atom c) (fr-≤ fr) fr (head (pairR k)))
+  sim (ret~ (pairR k) fr) = after refl (pop k fr)
+  sim (ret~ {v = C.pair _ _} (fstK k) fr) = after refl (pop k fr)
   sim (ret~ {v = C.code _} (fstK k) fr) = stops refl
   sim (ret~ {v = C.const _ _} (fstK k) fr) = stops refl
   sim (ret~ {v = C.tup _} (fstK k) fr) = stops refl
   sim (ret~ {v = C.inl _} (fstK k) fr) = stops refl
   sim (ret~ {v = C.inr _} (fstK k) fr) = stops refl
-  sim (ret~ {v = C.pair _ _} (sndK k) fr) = ret-ans refl k fr
+  sim (ret~ {v = C.pair _ _} (sndK k) fr) = after refl (pop k fr)
   sim (ret~ {v = C.code _} (sndK k) fr) = stops refl
   sim (ret~ {v = C.const _ _} (sndK k) fr) = stops refl
   sim (ret~ {v = C.tup _} (sndK k) fr) = stops refl
   sim (ret~ {v = C.inl _} (sndK k) fr) = stops refl
   sim (ret~ {v = C.inr _} (sndK k) fr) = stops refl
   sim (ret~ (tupK as k) fr) = tup-ans as refl k fr
-  sim (ret~ {v = C.tup vs} (getK {i = i} k) fr) = ret?-ans (proj i vs) refl k fr
+  sim (ret~ {v = C.tup vs} (getK {i = i} k) fr) = next?-same (λ _ → pop k fr) refl
   sim (ret~ {v = C.code _} (getK k) fr) = stops refl
   sim (ret~ {v = C.pair _ _} (getK k) fr) = stops refl
   sim (ret~ {v = C.const _ _} (getK k) fr) = stops refl
   sim (ret~ {v = C.inl _} (getK k) fr) = stops refl
   sim (ret~ {v = C.inr _} (getK k) fr) = stops refl
-  sim (ret~ (inlK k) fr) = ret-ans refl k fr
-  sim (ret~ (inrK k) fr) = ret-ans refl k fr
-  sim (ret~ (primL c k) fr) = go refl (eval~ (atom c) (fr-≤ fr) fr (head (primR k)))
-  sim (ret~ {v = w} (primR {v = u} {p = p} k) fr) = ret?-ans (C.prim? p u w) refl k fr
+  sim (ret~ (inlK k) fr) = after refl (pop k fr)
+  sim (ret~ (inrK k) fr) = after refl (pop k fr)
+  sim (ret~ (primL c k) fr) = steps₁ refl (eval~ (atom c) (fr-≤ fr) fr (head (primR k)))
+  sim (ret~ {v = w} (primR {v = u} {p = p} k) fr) = next?-same (λ _ → pop k fr) refl
 
 {- The end theorem ---------------------------------------------------------------}
 

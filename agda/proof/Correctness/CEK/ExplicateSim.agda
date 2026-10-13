@@ -37,9 +37,9 @@ open import Language.CFG using (Tail; goto; block)
 open import Compiler.Explicate
 
 open import proof.Framework.ListUtil using (_‼_; reverse-map-‼)
-open import proof.Semantics.CEK.Smallstep using (Machine; next; plus; Star; ε; _◅_)
+open import proof.Semantics.CEK.Smallstep using (Machine; next; plus; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
-  using (Answers≺; stops; steps; stutters; FSim; Equivalent; equivalent; equiv-trans)
+  using (Answers≺; stops; steps; stutters; steps₁≺; after≺; FSim; Equivalent; equivalent; equiv-trans)
 import Semantics.CEK.Imp as I
 import Semantics.CEK.CFG as G
 
@@ -152,25 +152,21 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
 
   Ans = Answers≺ L₂ Match
 
-  go : ∀ {j s₁ s₂'} → G.step ds₂ s₂ ≡ next s₂' → Match j s₁ s₂' → Ans i (next s₁) s₂
-  go st m = steps (plus st ε) m
-
   {- the tail k, run after the assignment to x, runs the rest of the
      assignment, after the jumps to join points -}
   join : Ctl bs κ₁ (asgM x k) κ₂ → bs ≼ bs'
     → Σ[ e ∈ Exp ] Σ[ κ ∈ I.Cont ] κ₁ ≡ I.assignK x e κ
-       × (∀ φ → Σ[ s₂ ∈ G.State ] Star L₂ (G.exec k φ bs' κ₂) s₂ × Match (depth e) (I.eval e φ κ) s₂)
+       × (∀ φ → Reach L₂ (Match (depth e)) (I.eval e φ κ) (G.exec k φ bs' κ₂))
   join (asg c p) q = _ , _ , refl , λ φ → _ , ε , exec~ c (≼-trans p q)
   join (jmp c p) q with join c here
   ... | e , κ , refl , j = e , κ , refl , λ φ → let (s₂ , σ , m) = j φ in
     s₂ , cong (λ b → G.jump (just φ) b _) (block-≼ (≼-trans p q)) ◅ σ , m
 
   branch : ∀ {mφ bs} → G.step ds₂ s₂ ≡ G.jump mφ (just (k , bs)) κ₂
-    → (∀ φ → Σ[ s₂' ∈ G.State ] Star L₂ (G.exec k φ bs κ₂) s₂' × Match (depth e) (I.eval e φ κ₁) s₂')
+    → (∀ φ → Reach L₂ (Match (depth e)) (I.eval e φ κ₁) (G.exec k φ bs κ₂))
     → Ans i (I.goto mφ e κ₁) s₂
   branch {mφ = nothing} st j = stops st
-  branch {mφ = just φ} st j with j φ
-  ... | _ , σ , m = steps (plus st σ) m
+  branch {mφ = just φ} st j = after≺ st (j φ)
 
   branch-br : ∀ {mφ l} → Br κ₁ e κ₂ bs l → G.step ds₂ s₂ ≡ G.jump mφ (block bs l) κ₂
     → Ans i (I.goto mφ e κ₁) s₂
@@ -182,11 +178,11 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
   call-ans : ∀ mb {u w} → κ₁ ≈ κ₂ → G.step ds₂ s₂ ≡ G.call (mmap explicate-body mb) u w φ κ₂
     → Ans i (I.call mb u w φ κ₁) s₂
   call-ans nothing r st = stops st
-  call-ans (just (body n e)) r st = go st (exec~ {m = tailM} (tl (callK r)) here)
+  call-ans (just (body n e)) r st = steps₁≺ st (exec~ {m = tailM} (tl (callK r)) here)
 
   res-ans : κ₁ ≈ κ₂ → ∀ r → G.step ds₂ s₂ ≡ G.res ds₂ r φ κ₂ → Ans i (I.res ds r φ κ₁) s₂
-  res-ans r (I.operand a f) st = go st (eval~ (frm f r))
-  res-ans r (I.value (just v)) st = go st (ret~ r)
+  res-ans r (I.operand a f) st = steps₁≺ st (eval~ (frm f r))
+  res-ans r (I.value (just v)) st = steps₁≺ st (ret~ r)
   res-ans r (I.value nothing) st = stops st
   res-ans r (I.apply n u w) st = call-ans (Imp.global ds n) r (trans st (cong (λ mb → G.call mb u w _ _) (glob n)))
 
@@ -195,15 +191,15 @@ module Sim (ds : List Imp.Body) (n₀ : ℕ) (e₀ : Exp) where
   sim (exec~ {m = asgM x k} {e = simple s} c p) = res-ans (seqK c p) (I.first _ s) refl
   sim (exec~ {m = tailM} {e = assign y e₁ e₂} c p) = stutters ≤-refl (exec~ (asg c here) p)
   sim (exec~ {m = asgM x k} {e = assign y e₁ e₂} c p) = stutters ≤-refl (exec~ (asg c here) p)
-  sim (exec~ {e = case a y e₁ e₂} (tl r) p) = go refl (eval~ (caseK
+  sim (exec~ {e = case a y e₁ e₂} (tl r) p) = steps₁≺ refl (eval~ (caseK
     (br (tl r) (block-≼ (≼-trans (there (grows e₂ tailM _)) p))) (br (tl r) (block-≼ p))))
-  sim (exec~ {m = asgM x k} {e = case a y e₁ e₂} c p) = go refl (eval~ (caseK
+  sim (exec~ {m = asgM x k} {e = case a y e₁ e₂} c p) = steps₁≺ refl (eval~ (caseK
     (br (jmp c here) (block-≼ (≼-trans (there (grows e₂ (asgM x _) _)) p)))
     (br (jmp c (there (grows e₁ (asgM x _) _))) (block-≼ p))))
   sim (eval~ {a = a} r) = res-ans r (I.value (I.atom _ a)) refl
   sim (ret~ halt) = stops refl
   sim (ret~ {v = v} (frm f r)) = res-ans r (I.resume v f) refl
-  sim (ret~ (callK r)) = go refl (ret~ r)
+  sim (ret~ (callK r)) = steps₁≺ refl (ret~ r)
   sim (ret~ (seqK c p)) with join c p
   ... | _ , _ , refl , j = branch refl j
   sim (ret~ {v = I.inl v} (caseK b₁ b₂)) = branch-br b₁ refl

@@ -159,15 +159,6 @@ module _ (P : C.AST) where
 
   L₂ = T.sem P
 
-  one : ∀ {s s'} → T.step s ≡ next s' → Plus L₂ s s'
-  one eq = plus eq ε
-
-  {- answering a lookup or a projection -}
-  ret?-answers : ∀ {mv mw κ₁ κ₂ s₂} → M.Pointwise _≈_ mv mw → κ₁ ≈k κ₂
-    → T.step s₂ ≡ T.ret? mw κ₂ → Answers L₂ _~_ (S.ret? mv κ₁) s₂
-  ret?-answers (M.just r) κ eq = steps (one eq) (ret~ r κ)
-  ret?-answers M.nothing κ eq = stops eq
-
   lookup-pw : ∀ x ρ₁ ρ₂ → Lookup x ρ₁ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
   lookup-pw x ρ₁ ρ₂ (v , w , e₁ , e₂ , r) rewrite e₁ | e₂ = M.just r
 
@@ -200,7 +191,7 @@ module _ (P : C.AST) where
     suf' x = trans (cong (vs' ‼_) (sym (+-suc j x))) (suf (suc x))
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} {ρ₁} {ρ₂} ag κ) = ret?-answers (lookup-pw x ρ₁ ρ₂ (lookup ag x refl)) κ refl
+  sim (eval~ {M = ` x} {ρ₁} {ρ₂} ag κ) = next?-answers (lookup-pw x ρ₁ ρ₂ (lookup ag x refl)) (λ r → ret~ r κ) refl
   sim (eval~ {M = lam ⦅ ⟩ N ,, Nil ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ)
     with capture (bound N ∸ 1) {T.body m (bind-n-ast m (enclose N))} {[]} {ρ₂} {κ₂}
                  (≤-trans (m≤m⊔n m 0) b)
@@ -219,22 +210,22 @@ module _ (P : C.AST) where
     b' : bound N ≤ 1 + length vs'
     b' rewrite len | +-identityʳ (bound N ∸ 1) = m≤n+m∸n (bound N) 1
   sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
+    steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
                             (appL (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag) κ))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = steps (one refl) (ret~ const≈ κ)
+  sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = steps₁ refl (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree look b) κ) =
-    steps (one refl)
+    steps₁ refl
           (subst (λ Ns → S.tuple-next [] (args→list args) ρ₁ κ₁ ~ T.tuple-next [] Ns ρ₂ κ₂)
                  (sym (args→list-hom enclose enc-args (λ _ _ → refl) args))
                  (tuple-next~ [] (agree-args args look b) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (getK κ))
+    steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (getK κ))
   sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (inlK κ))
+    steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (inlK κ))
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (inrK κ))
+    steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag) (inrK κ))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} ag κ) =
-    steps (one refl)
+    steps₁ refl
       (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
         (caseK (agree-sub (λ x u → inj₂ (inj₁ u))
                           (≤-trans (m≤n+m∸n (bound M) 1) (s≤s (⊔-right {bound L}))) ag)
@@ -244,38 +235,38 @@ module _ (P : C.AST) where
                               (≤-trans (m≤n⊔m (bound M ∸ 1) _) (m≤n⊔m (bound L) _))))) ag)
                κ))
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
+    steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
                             (primL (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag) κ))
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
+    steps₁ refl (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
       (letK (agree-sub (λ x u → inj₂ (inj₁ u)) (≤-trans (m≤n+m∸n (bound N) 1) (s≤s (⊔-right {bound M}))) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
+  sim (ret~ r@(clo≈ _) (appL ag κ)) = steps₁ refl (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
   sim (ret~ (tup≈ _) (appL ag κ)) = stops refl
   sim (ret~ (inl≈ _) (appL ag κ)) = stops refl
   sim (ret~ (inr≈ _) (appL ag κ)) = stops refl
-  sim (ret~ r (appR (clo≈ ag) κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
+  sim (ret~ r (appR (clo≈ ag) κ)) = steps₁ refl (eval~ (agree-ext r ag) κ)
   sim (ret~ r (appR const≈ κ)) = stops refl
   sim (ret~ r (appR (tup≈ _) κ)) = stops refl
   sim (ret~ r (appR (inl≈ _) κ)) = stops refl
   sim (ret~ r (appR (inr≈ _) κ)) = stops refl
-  sim (ret~ r (tupK rs ags κ)) = steps (one refl) (tuple-next~ (r ∷ rs) ags κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = ret?-answers (proj-pw i rs) κ refl
+  sim (ret~ r (tupK rs ags κ)) = steps₁ refl (tuple-next~ (r ∷ rs) ags κ)
+  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
   sim (ret~ (clo≈ _) (getK κ)) = stops refl
   sim (ret~ const≈ (getK κ)) = stops refl
   sim (ret~ (inl≈ _) (getK κ)) = stops refl
   sim (ret~ (inr≈ _) (getK κ)) = stops refl
-  sim (ret~ r (inlK κ)) = steps (one refl) (ret~ (inl≈ r) κ)
-  sim (ret~ r (inrK κ)) = steps (one refl) (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK agM agN κ)) = steps (one refl) (eval~ (agree-ext r agM) κ)
-  sim (ret~ (inr≈ r) (caseK agM agN κ)) = steps (one refl) (eval~ (agree-ext r agN) κ)
+  sim (ret~ r (inlK κ)) = steps₁ refl (ret~ (inl≈ r) κ)
+  sim (ret~ r (inrK κ)) = steps₁ refl (ret~ (inr≈ r) κ)
+  sim (ret~ (inl≈ r) (caseK agM agN κ)) = steps₁ refl (eval~ (agree-ext r agM) κ)
+  sim (ret~ (inr≈ r) (caseK agM agN κ)) = steps₁ refl (eval~ (agree-ext r agN) κ)
   sim (ret~ (clo≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
-  sim (ret~ r (primL ag κ)) = steps (one refl) (eval~ ag (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
-  sim (ret~ r (letK ag κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
+  sim (ret~ r (primL ag κ)) = steps₁ refl (eval~ ag (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
+  sim (ret~ r (letK ag κ)) = steps₁ refl (eval~ (agree-ext r ag) κ)
 
 {- The end theorem -------------------------------------------------------------}
 

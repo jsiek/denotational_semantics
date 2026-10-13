@@ -50,6 +50,7 @@ import proof.Framework.Syntax.ScopeRename
 import proof.Framework.Syntax.Subst
 import proof.Framework.Syntax.ScopeSubst
 import proof.Framework.Syntax.SubstRel
+import proof.Framework.Syntax.EnvRel
 import proof.Framework.GraphModel.SetsAsPredicates
 import proof.Framework.GraphModel.DOpSig
 import proof.Framework.GraphModel.DenotProperties

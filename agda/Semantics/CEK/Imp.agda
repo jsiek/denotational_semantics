@@ -36,7 +36,7 @@ open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim)
 open import Language.Imp
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Semantics.CEK.Values using (Val; code; pair; const; tup; inl; inr; obs; prim?) public
 open import Framework.ListUtil using (_‼_; proj)
 
@@ -133,8 +133,7 @@ resume v (primL p b) = operand b (primR p v)
 resume w (primR p v) = value (prim? p v w)
 
 ret? : Maybe Val → Frame → Cont → Next State
-ret? (just v) φ κ = next (ret v φ κ)
-ret? nothing φ κ = stop o-wrong
+ret? mv φ κ = next? o-wrong (λ v → ret v φ κ) mv
 
 {- run e in the frame, if there is one -}
 goto : Maybe Frame → Exp → Cont → Next State

@@ -216,26 +216,13 @@ module _ (P : C3.AST) where
 
   L₃ = T.sem P
 
-  one : ∀ {s s'} → T.step s ≡ next s' → Plus L₃ s s'
-  one eq = plus eq ε
-
   {- a Clos3 state from which a matching state can be reached -}
-  Reach : S.State → T.State → Set
-  Reach s₂ s₃ = Σ[ s₃' ∈ T.State ] Star L₃ s₃ s₃' × s₂ ~ s₃'
-
-  after : ∀ {s₂ s₃ s₃'} → Plus L₃ s₃ s₃' → Reach s₂ s₃' → Answers L₃ _~_ (next s₂) s₃
-  after π (_ , σ , m) = steps (plus-star π σ) m
-
-  {- answering a lookup or a projection -}
-  ret?-answers : ∀ {mv mw κ₂ κ₃ s₃} → M.Pointwise _≈_ mv mw → κ₂ ≈k κ₃
-    → T.step s₃ ≡ T.ret? mw κ₃ → Answers L₃ _~_ (S.ret? mv κ₂) s₃
-  ret?-answers (M.just r) κ eq = steps (one eq) (ret~ r κ)
-  ret?-answers M.nothing κ eq = stops eq
+  Reach~ = Reach L₃ _~_
 
   {- entering a term: a free variable of a closure's code reaches the
      tuple first -}
   enter : ∀ M {φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → Reach (S.eval M ρ₂ κ₂) (T.eval (concretize φ M) ρ₃ κ₃)
+    → Reach~ (S.eval M ρ₂ κ₂) (T.eval (concretize φ M) ρ₃ κ₃)
   enter (` x) {φ} {κ₃ = κ₃} er κ with φ x | er x
   ... | var y | p = _ , ε , var~ p κ refl
   ... | prj i y | ts , eq , p =
@@ -243,68 +230,68 @@ module _ (P : C3.AST) where
   enter (op ⦅ args ⦆) er κ = _ , ε , eval~ tt er κ
 
   tuple-next~ : ∀ {vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → Reach (S.tuple-next vs Ms ρ₂ κ₂) (T.tuple-next ws (map (concretize φ) Ms) ρ₃ κ₃)
+    → Reach~ (S.tuple-next vs Ms ρ₂ κ₂) (T.tuple-next ws (map (concretize φ) Ms) ρ₃ κ₃)
   tuple-next~ {Ms = []} rs er κ = _ , ε , ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ {Ms = M ∷ Ms} rs er κ = enter M er (tupK rs er κ)
 
   clos-next~ : ∀ {n N vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃
     → length Ms + length vs ≡ n → κ₂ ≈k κ₃
-    → Reach (S.clos-next N vs Ms ρ₂ κ₂)
+    → Reach~ (S.clos-next N vs Ms ρ₂ κ₂)
             (T.tuple-next ws (map (concretize φ) Ms) ρ₃ (T.closK (concretize (fv-ref n) N) κ₃))
   clos-next~ {Ms = []} rs er refl κ = _ , refl ◅ ε , ret~ (clo≈ (pw→FV rs)) κ
   clos-next~ {vs = vs} {Ms = M ∷ Ms} rs er len κ =
     enter M er (closK rs er (trans (+-suc (length Ms) (length vs)) len) κ)
 
   sim : ∀ {s₂ s₃} → s₂ ~ s₃ → Answers L₃ _~_ (S.step s₂) s₃
-  sim (var~ p κ eq) = ret?-answers p κ eq
+  sim (var~ p κ eq) = next?-answers p (λ r → ret~ r κ) eq
   sim (eval~ {M = ` x} () _ _)
   sim (eval~ {M = clos-op n ⦅ cons (clear a) fvs ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
-    after (one refl)
-      (subst₂ (λ Ns B → Reach (S.clos-next (S.body n a) [] (args→list fvs) ρ₂ κ₂)
+    after refl
+      (subst₂ (λ Ns B → Reach~ (S.clos-next (S.body n a) [] (args→list fvs) ρ₂ κ₂)
                               (T.tuple-next [] Ns ρ₃ (T.closK B κ₃)))
               (sym (args→list-hom (concretize φ) (conc-args φ) (λ _ _ → refl) fvs)) (sym (conc-body≡ n n a))
               (clos-next~ [] er (trans (+-identityʳ _) (args-length fvs)) κ))
-  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} _ er κ) = after (one refl) (enter L er (appL er κ))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} _ er κ) = steps (one refl) (ret~ const≈ κ)
+  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} _ er κ) = after refl (enter L er (appL er κ))
+  sim (eval~ {M = lit B k ⦅ Nil ⦆} _ er κ) = steps₁ refl (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
-    after (one refl)
-      (subst (λ Ns → Reach (S.tuple-next [] (args→list args) ρ₂ κ₂) (T.tuple-next [] Ns ρ₃ κ₃))
+    after refl
+      (subst (λ Ns → Reach~ (S.tuple-next [] (args→list args) ρ₂ κ₂) (T.tuple-next [] Ns ρ₃ κ₃))
              (sym (args→list-hom (concretize φ) (conc-args φ) (λ _ _ → refl) args)) (tuple-next~ [] er κ))
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (getK κ))
-  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (inlK κ))
-  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (inrK κ))
+  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} _ er κ) = after refl (enter M er (getK κ))
+  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} _ er κ) = after refl (enter M er (inlK κ))
+  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} _ er κ) = after refl (enter M er (inrK κ))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} _ er κ) =
-    after (one refl) (enter L er (caseK er κ))
-  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} _ er κ) = after (one refl) (enter L er (primL er κ))
-  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (letK er κ))
+    after refl (enter L er (caseK er κ))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} _ er κ) = after refl (enter L er (primL er κ))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} _ er κ) = after refl (enter M er (letK er κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r@(clo≈ _) (appL {M = M} er κ)) = after (one refl) (enter M er (appR r κ))
+  sim (ret~ r@(clo≈ _) (appL {M = M} er κ)) = after refl (enter M er (appR r κ))
   sim (ret~ const≈ (appL er κ)) = stops refl
   sim (ret~ (tup≈ _) (appL er κ)) = stops refl
   sim (ret~ (inl≈ _) (appL er κ)) = stops refl
   sim (ret~ (inr≈ _) (appL er κ)) = stops refl
-  sim (ret~ r (appR (clo≈ {N = N} f) κ)) = after (one refl) (enter N (env-clos r f) κ)
+  sim (ret~ r (appR (clo≈ {N = N} f) κ)) = after refl (enter N (env-clos r f) κ)
   sim (ret~ r (appR const≈ κ)) = stops refl
   sim (ret~ r (appR (tup≈ _) κ)) = stops refl
   sim (ret~ r (appR (inl≈ _) κ)) = stops refl
   sim (ret~ r (appR (inr≈ _) κ)) = stops refl
-  sim (ret~ r (tupK rs er κ)) = after (one refl) (tuple-next~ (r ∷ rs) er κ)
-  sim (ret~ r (closK rs er len κ)) = after (one refl) (clos-next~ (r ∷ rs) er len κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = ret?-answers (proj-pw i rs) κ refl
+  sim (ret~ r (tupK rs er κ)) = after refl (tuple-next~ (r ∷ rs) er κ)
+  sim (ret~ r (closK rs er len κ)) = after refl (clos-next~ (r ∷ rs) er len κ)
+  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
   sim (ret~ (clo≈ _) (getK κ)) = stops refl
   sim (ret~ const≈ (getK κ)) = stops refl
   sim (ret~ (inl≈ _) (getK κ)) = stops refl
   sim (ret~ (inr≈ _) (getK κ)) = stops refl
-  sim (ret~ r (inlK κ)) = steps (one refl) (ret~ (inl≈ r) κ)
-  sim (ret~ r (inrK κ)) = steps (one refl) (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK {M = M} er κ)) = after (one refl) (enter M (env-ext r er) κ)
-  sim (ret~ (inr≈ r) (caseK {N = N} er κ)) = after (one refl) (enter N (env-ext r er) κ)
+  sim (ret~ r (inlK κ)) = steps₁ refl (ret~ (inl≈ r) κ)
+  sim (ret~ r (inrK κ)) = steps₁ refl (ret~ (inr≈ r) κ)
+  sim (ret~ (inl≈ r) (caseK {M = M} er κ)) = after refl (enter M (env-ext r er) κ)
+  sim (ret~ (inr≈ r) (caseK {N = N} er κ)) = after refl (enter N (env-ext r er) κ)
   sim (ret~ (clo≈ _) (caseK _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ κ)) = stops refl
-  sim (ret~ r (primL {M = M} er κ)) = after (one refl) (enter M er (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
-  sim (ret~ r (letK {N = N} er κ)) = after (one refl) (enter N (env-ext r er) κ)
+  sim (ret~ r (primL {M = M} er κ)) = after refl (enter M er (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
+  sim (ret~ r (letK {N = N} er κ)) = after refl (enter N (env-ext r er) κ)
 
 {- The end theorem: for every Clos2 program ------------------------------------}
 
