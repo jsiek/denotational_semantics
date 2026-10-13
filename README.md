@@ -14,6 +14,12 @@ substitution), with the adequacy of the graph model for the machines:
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
 
+A source optimizer, simplify (ISWIM → ISWIM, a simplified version of
+Chez Scheme's cp0: constant folding, case of a known injection,
+projection from a known tuple, β on values), is proved correct in the
+graph model and with the reduction semantics, but is not yet part of
+the compiler (`compile`), until its CEK and interpreter proofs exist.
+
 The public theorem statements are in `agda/Theorems/`; with the
 definitions they use (everything outside `agda/proof/`) they are what
 must be read to trust the results, and `agda/proof/` holds the proofs.

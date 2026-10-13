@@ -14,6 +14,12 @@ CakeML); and reduction semantics + simulation (small-step reduction by
 substitution, and forward simulations); and the graph model proved sound
 and adequate for the machines.
 
+A source optimizer, simplify (ISWIM → ISWIM, a simplified version of
+Chez Scheme's cp0: constant folding, case of a known injection,
+projection from a known tuple, β on values), runs before enclose but is
+not yet part of the compiler; it is proved correct in two styles so far,
+the graph model and the reduction semantics.
+
 Check everything, from the root of the repository, with
 
     make check
@@ -35,8 +41,8 @@ that every module outside `proof/` is used by a theorem statement).
 
 * Theorem statements (`Theorems/`), each with its type written out and
   defined as the corresponding theorem of `proof/`:
-  * `Theorems/Denotational.agda`: each pass preserves the meaning of a
-    program in the graph model (delay: its constants and whether it has
+  * `Theorems/Denotational.agda`: each pass (and simplify) preserves the
+    meaning of a program in the graph model (delay: its constants and whether it has
     any), and the whole compiler, into Clos5, monadic Clos5, Imp, CFG and X86,
     preserves the constants a program produces and whether it produces
     anything.
@@ -46,7 +52,8 @@ that every module outside `proof/` is used by a theorem statement).
     wrong, and divergence exactly when the source diverges).
   * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
   * `Theorems/Reduction.agda`: the same, for the reduction semantics of
-    ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86.
+    ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86, and for
+    simplify (closed programs).
   * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
     the ISWIM machine, and for the Clos5 and X86 machines running
     compiled programs; so the compiler, observed through the machines
@@ -55,7 +62,8 @@ that every module outside `proof/` is used by a theorem statement).
 * The compiler, shared by all four styles:
   * `Language/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
-  * `Compiler/`: the passes and their composition
+  * `Compiler/`: the passes (and simplify, `Simplify.agda`, not yet
+    composed) and their composition
     (`Pipeline.agda`: `compile`, `compile-mon`, `compile-imp`,
     `compile-cfg`, `compile-x86`), and the preconditions of the
     operational theorems: `Closed` (`EncloseScope.agda`) and `Scoped`
@@ -107,7 +115,8 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   `proof/Semantics/Interp/Clock.agda`: clock-for-clock correctness at
   this compiler's observations;
 * `proof/Correctness/Reduction/`: the forward simulations between
-  reduction semantics (explicate control and select instructions are the
+  reduction semantics (for simplify, `SimplifyRed.agda`, of the target by
+  the source) (explicate control and select instructions are the
   CEK proofs, `proof/Correctness/CEK/{Explicate,Select}Sim.agda`,
   shared), and `proof/Semantics/Reduction/`: the values of each reduction
   semantics;
@@ -118,8 +127,8 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   continuity, renaming, substitution and relations closed under it,
   forward simulations, simulations between reduction semantics,
   clock-for-clock correctness);
-* `proof/Compiler/`: syntactic facts about the passes, and
-  examples;
+* `proof/Compiler/`: syntactic facts about the passes (for simplify, its
+  values, `Simplify.agda`), and examples;
 * experiments, not part of the main results: a direct semantics of Imp
   (`proof/Semantics/Graph/ImpDirect.agda`) with lift locals and
   explicate control proved against it

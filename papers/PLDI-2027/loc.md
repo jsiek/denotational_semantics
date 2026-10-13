@@ -16,7 +16,7 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 ## Current counts
 
-As of PR #37 (the reduction semantics + simulation column):
+As of PR #40 (simplify, in two styles, not in the totals; the totals are those of PR #37):
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|
@@ -36,6 +36,14 @@ As of PR #37 (the reduction semantics + simulation column):
 
 The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)). The reduction column's semantics row is its reduction semantics of ISWIM and Clos2–Clos5 with their values (411 lines: 291 for the reductions, 120 for their values) and the machines of Imp, CFG and X86 that it shares with the CEK column (267); its explicate-control and select-instructions rows are the CEK proofs, shared (see [Reduction semantics + simulation](#reduction-semantics--simulation)).
 
+A pass outside `compile`, proved in two styles so far, and so kept out of the totals until the CEK and interpreter proofs exist (see [Simplify](#simplify)):
+
+| pass not yet in `compile` (not in the totals) | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
+|---|---:|---:|---:|---:|
+| simplify | 328 (248 + 80) | — | — | 626 (546 + 80) |
+
+Each simplify cell is its proof plus the syntactic lemmas about the pass that both proofs use (`proof/Compiler/Simplify.agda`, 80 lines). The pass itself (`Compiler/Simplify.agda`) is 94 lines, not counted, as no pass is.
+
 Language-independent infrastructure, not in any total (see [Language-independent infrastructure](#language-independent-infrastructure)); each proof column is the part of a group that the proof reaches:
 
 | language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation |
@@ -45,10 +53,10 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | base types, logical equivalence | 20 | 17 | 20 | 20 | 20 |
 | denotational framework | 322 | 322 | — | — | — |
 | graph model: values, operators, continuity | 445 | 445 | — | — | — |
-| small-step framework: transition systems, simulations | 181 | — | 181 | — | 181 |
+| small-step framework: transition systems, simulations | 186 | — | 186 | — | 186 |
 | reduction framework: reduction semantics, simulations between them | 130 | — | — | — | 130 |
 | clocked big-step framework | 78 | — | — | 78 | — |
-| **total** | **1797** | **1175** | **633** | **530** | **952** |
+| **total** | **1802** | **1175** | **638** | **530** | **957** |
 
 Adequacy uses 1317 lines of the infrastructure, 142 of them not used by the denotational proof.
 
@@ -80,17 +88,17 @@ The lines a reader must audit to trust each style's theorems (see [Audit surface
 
 | audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for reduction semantics + simulation | read for adequacy |
 |---|---:|---:|---:|---:|---:|---:|
-| languages, compiler passes, syntax, base types (shared) | 939 | 880 | 916 | 916 | 939 | 901 |
+| languages, compiler passes, syntax, base types (shared) | 1033 | 974 | 916 | 916 | 1033 | 995 |
 | graph model: domain, operators, semantics of each language | 408 | 408 | — | — | — | 408 |
 | simulation: small-step machines, transition systems | 687 | — | 687 | — | 297 | 401 |
 | interpreter: clocked interpreters, results | 498 | — | — | 498 | — | — |
 | reduction: reduction semantics, machines of Imp, CFG and X86, transition systems | 603 | — | 297 | — | 603 | 258 |
-| graph model: theorem statements | 68 | 68 | — | — | — | — |
+| graph model: theorem statements | 70 | 70 | — | — | — | — |
 | simulation: theorem statements | 51 | — | 51 | — | — | — |
 | interpreter: theorem statements | 51 | — | — | 51 | — | — |
-| reduction: theorem statements | 51 | — | — | — | 51 | — |
+| reduction: theorem statements | 54 | — | — | — | 54 | — |
 | adequacy: theorem statements | 51 | — | — | — | — | 51 |
-| **total** | **3110** | **1356** | **1654** | **1465** | **1593** | **1761** |
+| **total** | **3209** | **1452** | **1654** | **1465** | **1690** | **1855** |
 
 The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Denotational.agda`, 2 lines), not counted in their column.
 
@@ -123,7 +131,7 @@ The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Den
 | `Language.X86` | 45 | all four proofs |
 | `Semantics.Observation` | 15 | simulation, interpreter, reduction, adequacy |
 
-Shared by all four proofs, and not counted: 20 modules, 708 lines. Counted in the CEK, interpreter and reduction totals and in adequacy: `Compiler.EncloseScope` (42), `proof.Compiler.GlobalizeTable` (43), `Compiler.PipelineScope` (221) and `Semantics.Observation` (15), 321 lines. A module marked (+ proof/) is split: its definitions are on the audit surface and its lemmas in `agda/proof/`; the lines are those of both halves. The denotational total counts no shared module. Examples, not counted: 166 lines.
+Shared by all four proofs, and not counted: 20 modules, 708 lines. Counted in the CEK, interpreter and reduction totals and in adequacy: `Compiler.EncloseScope` (42), `proof.Compiler.GlobalizeTable` (43), `Compiler.PipelineScope` (221) and `Semantics.Observation` (15), 321 lines. A module marked (+ proof/) is split: its definitions are on the audit surface and its lemmas in `agda/proof/`; the lines are those of both halves. The denotational total counts no shared module. Examples, not counted: 189 lines.
 
 ### Infrastructure modules
 
@@ -144,7 +152,7 @@ Shared by all four proofs, and not counted: 20 modules, 708 lines. Counted in th
 | `Framework.ListUtil` (+ proof/) | 98 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Primitives` | 17 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Reduction` (+ proof/) | 130 | reduction |
-| `proof.Framework.Simulation` | 83 | simulation, reduction |
+| `proof.Framework.Simulation` | 88 | simulation, reduction |
 | `Framework.Smallstep` (+ proof/) | 98 | simulation, reduction, adequacy |
 | `Framework.Syntax.Rename` (+ proof/) | 59 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Syntax.Scope` (+ proof/) | 22 | simulation, interpreter, reduction, adequacy |
@@ -184,6 +192,7 @@ Shared by all four proofs, and not counted: 20 modules, 708 lines. Counted in th
 * **one row per pass:** that pass's correctness proof. The rco row also contains the end-to-end theorem for `compile-mon`, a corollary of the composition and the rco theorem (11 lines in the denotational proof, 2 in each operational one), in all four styles; likewise the lift-locals row contains the end-to-end theorem for `compile-imp`, and, in the denotational and interpreter proofs, the explicate-control row the one for `compile-cfg` and the select-instructions row the one for `compile-x86` (in the CEK and reduction proofs, which share those two passes, these two are in the composition row: `CompilerX86Sim`, `CompilerX86Red`). The denotational lift-locals and explicate-control rows include the modules both semantics of Imp use (`LiftLocalsCommon`, `ExplicateCommon`).
 * **composition:** the end-to-end theorem built from the per-pass results. The compiler `compile` itself is shared (`Compiler/Pipeline.agda`), so neither operational proof imports the denotational one.
 * **shared modules not used by all four proofs:** see [Shared modules](#shared-modules).
+* **simplify (not in the totals):** the pass (`Compiler/Simplify.agda`) and its syntactic lemmas (`proof/Compiler/Simplify.agda`, counted in both of its proofs), and its proofs `proof/Correctness/Graph/SimplifyCorrect.agda` and `proof/Correctness/Reduction/SimplifyRed.agda`, are groups of their own, printed after the totals; see [Simplify](#simplify). The pass is on the audit surface, in the shared row of the audit-surface table.
 
 ## Caveats
 
@@ -257,6 +266,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-12 | the same code, new method: import statements not counted (PR #35) | 2942 | 2908 | 2062 | — |
 | 2026-10-12 | the same code, regrouped for a fourth column: the values of the Clos5 machine to `Semantics/CEK/Values.agda`, `‼-map` to `ListUtil` (infrastructure), the compositions into CFG and X86 out of `ExplicateSim` and `SelectSim` (`CompilerX86Sim`), shared modules counted unless all four proofs use them (PR #37) | 2942 | 2906 | 2062 | — |
 | 2026-10-12 | reduction semantics + simulation, every pass; explicate control and select instructions shared with the CEK column (PR #37) | 2942 | 2906 | 2062 | 3011 |
+| 2026-10-12 | simplify (ISWIM → ISWIM), graph model and reduction proofs, not in the totals (328 and 626 lines); `equiv-sym` in the small-step framework (+5 infrastructure) (PR #40) | 2942 | 2906 | 2062 | 3011 |
 
 **A fourth column (PR #37).** The last two rows. The first is the CEK code regrouped so that the reduction column can share the machines of Imp, CFG and X86 and the proofs of explicate control and select instructions: the values of the Clos5 machine, which the Imp and X86 machines use, moved to their own module (+1 line, the module line, in the semantics row: 656 → 657), the list lemma `‼-map` from `RCOSim` to `ListUtil` (rco 414 → 410), and the end-to-end theorems for `compile-cfg` and `compile-x86` from `ExplicateSim` and `SelectSim` to `CompilerX86Sim` (explicate control 129 → 127, select instructions 240 → 238, composition 19 → 24); in all 2908 → 2906. The infrastructure grew by 344 lines: the substitution library (189 with `ScopeSubst` and `SubstRel`) and the reduction framework (130), used only by the reduction column, and in the shared infrastructure the `runs` answer of the small-step framework (+9) and three list lemmas (+16). See [Reduction semantics + simulation](#reduction-semantics--simulation).
 
@@ -553,6 +563,42 @@ Pass by pass (reduction against CEK):
 
 **The prediction** of [Which relations each proof needs](#which-relations-each-proof-needs) was that with substitution the closure-conversion passes would need relations on terms closed under substitution rather than the compilation function, that rco would too, and that lift locals, explicate control and select instructions would be unaffected. It held for the closure-conversion passes, with a refinement: the relation must be closed under substitution, but on the code of closures, which substitution never enters, the compilation function is still the relation (through a fundamental lemma quantifying over substitutions). It did not hold for rco, which needs no closure under substitution because its values are equal, and is smaller than the CEK proof. Lift locals is affected after all, as the pass from substitution to frames; explicate control and select instructions are indeed unaffected, and shared.
 
+## Simplify
+
+As of PR #40. A pilot of a source optimizer, in two styles only: the graph model and the reduction semantics. It is not part of `compile`, and not in the totals, until the CEK and interpreter proofs exist; the end-to-end theorems are unchanged.
+
+**The pass** (`Compiler/Simplify.agda`, 94 lines; ISWIM → ISWIM, before enclose) is a simplified version of Chez Scheme's cp0. One recursive pass carries what it knows of each variable (`Facts`): the term that replaces it, and a value it is known to be, if any (`Info`); on a term it returns the same. It does
+
+1. constant folding: a primitive whose operands are known integers becomes its result (`eq` gives `inl ⟨⟩` or `inr ⟨⟩`, the term of the semantics' `out`);
+2. case of a known injection: `case L of x. M | y. N`, with L known to be `inl V`, becomes M simplified with x ↦ V (likewise `inr`);
+3. projection from a known tuple: `get i L`, with L known to be a tuple of values, becomes its component i, or stays and is known to be it;
+4. β on a value: `app (lam N) M`, where M simplifies to a value V, becomes N simplified with x ↦ V; this gives copy propagation and the elimination of dead bindings.
+
+*Size policy.* Only small values are duplicated: variables, literals, `⟨⟩`, and `inl`/`inr` of one of those. Any other value (a function, a tuple, a nested injection) keeps its binding, as the let `app (lam N') V'`, and the bound variable is known to be V', so that a projection from it, or a case on it, can still be folded (example: `(λ p. get 1 p) ⟨λ y. y, 3⟩` becomes `(λ p. 3) ⟨λ y. y, 3⟩`). An operand that is not a value keeps its binding and its evaluation.
+
+*Semantic constraints.* The pass drops only the evaluation of a term whose value is known (the known value of a term is reached by evaluating it, without effect), and duplicates only small values; otherwise it keeps the order of evaluation. The operator of `app (lam N) M` is a function, so ISWIM's check that the operator is a function before the argument is evaluated is kept. Folding needs both operands to be known integer literals.
+
+*Inlining* (not yet done) is prepared for: functions are known values (`lam`), so a call `app f M` can look up f. The plan is to re-simplify the body under fuel and inline when the result is small enough. One caveat for the reduction proof: `Info` records known values as target terms, and re-simplifying a target term would need transitivity of the relation on terms, which it does not have (its rules let only the source step). Recording a known function as its source body with its `Facts` (cp0's operands) avoids that, and is what the inlining step should add.
+
+**The proofs.**
+
+| | graph model | reduction |
+|---|---:|---:|
+| the proof | 248 | 546 |
+| syntactic lemmas, shared by both (`proof/Compiler/Simplify.agda`: the values `SV`, which `value` and `small` recognize, substitution keeps them, the known values inspected) | 80 | 80 |
+| precondition | none | closed program (`Closed`) |
+| relation | equation | relation on terms, closed under substitution, with a step and a let rule |
+| new infrastructure | — | `equiv-sym` (5 lines, small-step framework) |
+
+* **Graph model** (`proof/Correctness/Graph/SimplifyCorrect.agda`): an equation, `⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀`, from a main lemma: if what `simp` knows of each variable is true of the source's environment ρ in the target's ρ' (the term that replaces x, and its known value, denote ρ x in ρ'), then what it says of M is true. The transformations rest on β for a value: `⟦ (λ x. N) M ⟧ ρ ≃ ⟦ N ⟧ (⟦ M ⟧ ρ • ρ)` when `⟦ M ⟧ ρ` is nonempty and consistent, and the same for `case` on a known injection. **β for a value was not a problem** under the consistent-set binders: Λ and 𝒞 bind only finite, nonempty, consistent sets, and an element of `⟦ N ⟧ (D • ρ)` needs only a finite part of D (continuity, `body-continuous`), which is consistent when D is. D is consistent because consistent environments give consistent denotations (`ISWIM-con-env`, already there), and nonempty because a value denotes a nonempty set (`sv-ne`, 15 lines) and D is equal to the denotation of the value it simplified to. So the main lemma carries one more invariant than enclose's, that both environments are nonempty and consistent (`Wf`), and the semantics needed no change. β for a value and for `case` on a known injection are 40 lines.
+* **Reduction** (`proof/Correctness/Reduction/SimplifyRed.agda`): the target takes fewer steps than the source, since simplify did some of the source's reductions ahead of time, under binders. So the simulation goes **from the target to the source**: each target step is answered by one or more source steps (the source catches up with the reductions simplify did, then takes the same step), with the existing framework (`red-equivalent`), and `Equivalent` is symmetric (`equiv-sym`). No stuttering measure is needed. The relation (target on the left) is a congruence closed under substitution (`SubstRel`, as for the closure-conversion passes) with two more rules: *step*, the source reduces first; and *let*, a let of a value that simplify kept bound and known, whose bodies are related only after β (`N'[V'] ≼ N[W]`). Since simplify reduces under binders, the source's catching up happens on open terms, where a variable stands for a value: a reduction `⟶` of open terms (14 rules), closed under substitution, which in a closed term is a step of the reduction semantics (`closed-red`) and keeps it closed; 130 lines in all. The main lemma takes two substitutions, the source's τ and the target's υ (the let rule substitutes a different value on each side), and a known value of a term is reached by the source (`eval-sv`: a term related to a value steps to a related value). The proof also has the values of the ISWIM reduction and the fact that closed programs are well scoped (55 lines; only simplify needs them, so they are here rather than in the semantics row). Its simulation (105 lines) is the shape of the other reduction proofs.
+* **Why the reduction proof is twice the graph one.** The graph model has no notion of a step: the reductions simplify does under binders are equations between denotations, and β for a value is one lemma. The reduction proof must replay them as steps, on open terms, which needs its own reduction relation and its agreement with the semantics, and it needs a simulation (105 lines) where the graph proof has none; the main lemmas are about the same size (130 and 135 lines). This is the first pass with a 1-to-many step correspondence in the other direction (the target is the faster one), and the first optimization that reduces under binders; both favour the equational style.
+
+**Forecast for the CEK and interpreter proofs.**
+* *CEK machine + simulation*: code in a machine state is always a subterm of the program, and simplify's output is not a subterm of its input; so, as for enclose, the code of a target closure would be related by the compilation function (`simp` under the Facts of its definition site), and values by an inductive value relation with environments related through the Facts (the replacing term of each variable, a variable or a small value, evaluated in the target's environment, is related to the source's value). The simulation would again go from the target to the source. Expect about 350–450 lines, more than the reduction proof's simulation but without the open-term reduction.
+* *Clocked interpreter + value relations*: the target makes fewer calls (β of a small value eliminates one), so it needs fewer clock ticks; the theorem would be clock-monotone rather than clock for clock (the source's result at clock k is the target's at k; a target timeout at k is a source timeout at k), with the same value relation as the CEK proof. Expect about 250–350 lines.
+* *Inlining* (transformation 5): in the graph model, about +80–120 lines (β for a value again, at a call through a known function, and induction on fuel for the re-simplified body). In the reduction proof, more, about +150–250: a call through a variable known to be a function is related to the inlined body after β on the source side, which needs the source to reach that function (as `eval-sv` does), and the re-simplified body needs the source closure (see the caveat above) or a transitivity lemma for the relation.
+
 ## Which relations each proof needs
 
 As of PR #37 (PR #33 for the first three columns). For each pass, this records the relations each style defines between source and target: on values, on terms, or on whole states.
@@ -568,6 +614,7 @@ As of PR #37 (PR #33 for the first three columns). For each pass, this records t
 | lift locals | equation | equal values | equal values | value relation (term values and machine values); terms in context and machine states |
 | explicate | equation | equal values | equal values | equal values (shared with the CEK proof) |
 | select | equation | equal values | equal values | equal values (shared with the CEK proof) |
+| simplify (PR #40, not in the totals) | equation (β for a value) | (pending) | (pending) | **term relation closed under substitution**, with source steps on open terms and a let rule; target simulated by the source |
 
 **Denotational.**
 * Every pass but delay is proved as an equation, `⟦ pass M ⟧ ≃ ⟦ M ⟧`, which gives both directions at once. The proofs go by induction on the term.

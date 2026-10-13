@@ -212,6 +212,14 @@ GROUPS = [
       AP + 'X86CompileWF.agda']),
     ('adeq', 'end to end', [AP + 'EndToEnd.agda']),
 
+    # not in the totals yet: simplify (ISWIM → ISWIM, before enclose), proved
+    # in two styles only, and not yet part of compile.  The pass and its
+    # syntactic lemmas (SV, …), used by both proofs, are 'simp'; each proof
+    # is 'simp-den' or 'simp-red'.  Printed after the totals.
+    ('simp', 'simplify: the pass', [C + 'Simplify.agda', PC + 'Simplify.agda']),
+    ('simp-den', 'simplify', [GC + 'SimplifyCorrect.agda']),
+    ('simp-red', 'simplify', [RC + 'SimplifyRed.agda']),
+
     ('examples', 'examples',
      [GC + '*Example.agda', PC + 'Examples/*.agda']),
 
@@ -332,8 +340,11 @@ def sides_of(side):
 
 def main():
     seen, counts, files_of = {}, {}, {}
+    # a file named explicitly by a group is not matched by another's wildcard
+    explicit = {p for _, _, pats in GROUPS for p in pats if '*' not in p}
     for side, name, pats in GROUPS:
-        files = sorted({f for p in pats for f in glob.glob(p)})
+        files = sorted({f for p in pats for f in glob.glob(p)
+                        if '*' not in p or f not in explicit})
         if not files:
             if side in ('ck', 'red'):
                 continue
@@ -440,6 +451,22 @@ def main():
     print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in SIDES) + ' |')
     print()
 
+    # simplify: not in the totals until all four proofs have it
+    simp_lemmas = code_lines(PC + 'Simplify.agda')
+    simp_pass = code_lines(C + 'Simplify.agda')
+    cells = []
+    for side in SIDES:
+        n = counts.get(('simp-' + side, 'simplify'))
+        cells.append(f'{n + simp_lemmas} ({n} + {simp_lemmas})' if n is not None else '—')
+    print('| pass not yet in `compile` (not in the totals) | ' + ' | '.join(LABELS[s] for s in SIDES) + ' |')
+    print('|---|' + '---:|' * len(SIDES))
+    print('| simplify | ' + ' | '.join(cells) + ' |')
+    print()
+    print(f'Each simplify cell is its proof plus the syntactic lemmas about the pass that both '
+          f'proofs use (`proof/Compiler/Simplify.agda`, {simp_lemmas} lines). The pass itself '
+          f'(`Compiler/Simplify.agda`) is {simp_pass} lines, not counted, as no pass is.')
+    print()
+
     def lines(us):
         return sum(ulines(u) for u in us)
     print('| language-independent infrastructure (not in the totals) | lines | '
@@ -486,7 +513,7 @@ def main():
         side, name = seen[f]
         if side == 'thm':
             return 'statements'
-        if side == 'shared' or (side == 'infra' and name in (
+        if side in ('shared', 'simp') or (side == 'infra' and name in (
                 'abstract binding trees', 'syntax lemmas (renaming, scoping, uses), list lookups',
                 'base types, logical equivalence')):
             return 'shared'

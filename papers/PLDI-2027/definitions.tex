@@ -624,6 +624,41 @@ blocks and jumps are as in CFG.
 
 In each pass, the clauses not shown are homomorphic.
 
+\subsection{Simplify (ISWIM \texorpdfstring{$\to$}{->} ISWIM)}
+
+Simplify, a simplified version of the source optimizer cp0 of Chez Scheme,
+runs before enclose; it is not yet part of $\pass{compile}$ (its proofs exist
+in two styles only, Parts~\ref{part:den} and~\ref{part:red}). It carries what
+it knows of each variable, $E(x) = (T, K)$: the term $T$ that replaces $x$ (a
+variable or a small value), and a value $K$ that $x$ is known to be, or
+$\bot$. On a term it returns the same, $\pass{simp}_E(M) = (M', K)$; we write
+$\pass{simp}_E(M)$ for $M'$ and $\mathcal{K}_E(M)$ for $K$. A value is
+\emph{small} when it is a variable, a constant, $\emptytup$, or $\inl a$ or
+$\inr a$ of one of those; only small values are duplicated. Values are known
+to be themselves; under a binder that stays, its variable is itself, known
+only as itself.
+\begin{align*}
+  \pass{simp}_E(x) &= E(x) \\
+  \pass{simp}_E((\lam{x} N)\;M) &= \pass{simp}_{\ext{E}{x}{(V, V)}}(N)
+    && \text{if } V = \pass{simp}_E(M) \text{ is small} \\
+  &= (\lam{x} \pass{simp}_{\ext{E}{x}{(x, V)}}(N))\;V
+    && \text{if } V = \pass{simp}_E(M) \text{ is another value} \\
+  \pass{simp}_E(\prim{p}{L}{M}) &= \res{\delta(p, n, m)}
+    && \text{if } \mathcal{K}_E(L) = n,\; \mathcal{K}_E(M) = m \\
+  \pass{simp}_E(\Case{L}{x}{M}{y}{N}) &= \pass{simp}_{\ext{E}{x}{(K, K)}}(M)
+    && \text{if } \mathcal{K}_E(L) = \inl K,\; K \text{ small} \\
+  \pass{simp}_E(\prj{i} L) &= K_i
+    && \text{if } \mathcal{K}_E(L) = \tuple{K_1, \ldots, K_n},\; K_i \text{ small} \\
+  \mathcal{K}_E(\prj{i} L) &= K_i
+    && \text{if } \mathcal{K}_E(L) = \tuple{K_1, \ldots, K_n} \\[1ex]
+  \pass{simplify}(M) &= \pass{simp}_{x \mapsto (x, x)}(M)
+\end{align*}
+and likewise for $\inr$. Here $\res{o}$ is the term of a primitive's result
+(a constant, or $\inl \emptytup$ or $\inr \emptytup$ for $\key{eq}$). It
+drops only evaluations whose value is known, which have no effect, and
+otherwise keeps the order of evaluation; functions are recorded as known
+values, for inlining (not yet done).
+
 \subsection{Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos2)}
 
 Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
@@ -830,7 +865,7 @@ $\key{movq}\; \%\key{rdi}, 0;\ \key{movq}\; \%\key{rsi}, 1$, which moves its
 free variables and argument to the slots where its body expects them.
 
 %===============================================================================
-\part{Denotational: Graph Model}
+\part{Denotational: Graph Model}\label{part:den}
 
 \section{Values and Operators}
 
@@ -1257,6 +1292,28 @@ where $\key{table}^{\mathrm{X86}}$ is $\key{table}$ with $\key{code}^{\mathrm{X8
 
 %===============================================================================
 \section{Relations}
+
+\subsection{Simplify}
+
+\begin{lemma}[$\beta$ for a Value]\label{lem:beta-value}
+If $\rho(x) \NE$ for every $x$, and $\SEM{M}\rho$ is nonempty and consistent, then
+\[
+  \SEM{(\lam{x} N)\;M}^{\mathrm{ISWIM}}\rho \simeq \SEM{N}^{\mathrm{ISWIM}}\ext{\rho}{x}{\SEM{M}\rho} ,
+\]
+and likewise for $\key{case}$ on an $\inl$ or $\inr$ of a nonempty, consistent set. By
+continuity an element of the right needs only a finite part of $\SEM{M}\rho$,
+which is consistent and nonempty, as $\Lambda$ requires.
+\end{lemma}
+
+\begin{lemma}[Correctness of Simplify]\label{lem:simplify}
+Let $\rho$ and $\rho'$ be nonempty and consistent, and for every $x$ with $E(x) = (T, K)$, let
+$\SEM{T}\rho' \simeq \rho(x)$ and, if $K \neq \bot$, $\SEM{K}\rho' \simeq \rho(x)$. Then
+\[
+  \SEM{\pass{simp}_E(M)}^{\mathrm{ISWIM}}\rho' \simeq \SEM{M}^{\mathrm{ISWIM}}\rho ,
+\]
+and so does the known value $\mathcal{K}_E(M)$, if any. In particular
+$\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$.
+\end{lemma}
 
 \subsection{Enclose}
 
@@ -3657,7 +3714,7 @@ by Theorems~\ref{thm:compile-cfg-clk} and~\ref{thm:select-clk} and Lemma~\ref{le
 \end{theorem}
 
 %===============================================================================
-\part{Reduction Semantics + Simulation}
+\part{Reduction Semantics + Simulation}\label{part:red}
 
 \section{Reduction Semantics}\label{sec:red}
 
@@ -3812,6 +3869,36 @@ enters (the body of a Clos2--Clos4 closure, a global definition), the
 relation on that code is the compilation function, and applying related
 closures substitutes related values into it, which a fundamental lemma
 relates.
+
+\subsection{Simplify}
+
+The target, simplified, takes fewer steps than the source, so the simulation
+goes from the target to the source: each target step is answered by one or
+more source steps, and $\Equiv$ is symmetric. Simplify reduces under binders,
+so the source catches up by steps $\to$ on open terms, in which a variable
+stands for a value (in a closed term they are steps of $\mathit{red}$). Writing
+the source on the left, besides the congruence,
+\begin{align*}
+  M \approx M' &\iff M \to M_1 \land M_1 \approx M' \\
+  (\lam{x} N)\;W \approx (\lam{x} N')\;V' &\iff W \text{ is a value} \land W \approx V' \land N[x := W] \approx N'[x := V'] ,
+\end{align*}
+the second for a value that simplify kept bound and known, whose bodies are
+related only after $\beta$. The relation is closed under substitution by values.
+\begin{lemma}[Fundamental Lemma, Simplify]
+If $\sigma$ and $\sigma'$ map variables to values, and for every $x$ with
+$E(x) = (T, K)$, $\sigma(x) \approx T[\sigma']$ and, if $K \neq \bot$,
+$\sigma(x) \approx K[\sigma']$, then $M[\sigma] \approx \pass{simp}_E(M)[\sigma']$,
+and $M[\sigma] \approx \mathcal{K}_E(M)[\sigma']$ if it is known.
+\end{lemma}
+A known value is reached: if $M \approx V'$ for a value $V'$, then $M \to^* W$
+for a value $W \approx V'$.
+\begin{theorem}[Correctness of Simplify, Reduction]\label{thm:simplify-red}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \mathcal{R}^{\mathrm{ISWIM}}(\pass{simplify}(M))) .
+\]
+\end{theorem}
 
 \subsection{Enclose}
 

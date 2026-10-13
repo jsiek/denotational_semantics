@@ -214,7 +214,6 @@ import proof.Correctness.Interp.CompilerFuel
    --------------------------------------------------------------------------- -}
 
 {- the values of each reduction semantics -}
-import proof.Semantics.Reduction.ISWIM
 import proof.Semantics.Reduction.Clos2
 import proof.Semantics.Reduction.Clos3
 import proof.Semantics.Reduction.Clos4
