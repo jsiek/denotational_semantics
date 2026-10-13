@@ -8,7 +8,9 @@
   the call, after all three operands. See the design note in Smallstep.agda.
 
   Observations: as in Clos4, code pointers and pairs (closures) are
-  observed as functions (o-fun).
+  observed as functions (o-fun). The values, their observations and the
+  primitives are in Machine/Values.agda, shared with the machines of Imp,
+  CFG and X86.
 
 -}
 
@@ -21,20 +23,13 @@ open import Compiler.Lang.Clos5
 open import Compiler.Observation
 open import Compiler.Operational.Smallstep using (Machine; Next; next; stop; machine)
 open import Framework.ListUtil
+open import Compiler.Operational.Machine.Values public
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse)
 open import Data.Bool using (true; false)
 open import Data.Maybe using (Maybe; just; nothing; map)
 open import Data.Nat using (ℕ)
-
-data Val : Set where
-  code : ℕ → Val                        {- a reference to a global definition -}
-  pair : Val → Val → Val
-  const : (B : Base) → base-rep B → Val
-  tup : List Val → Val
-  inl : Val → Val
-  inr : Val → Val
 
 Env : Set
 Env = List Val
@@ -61,30 +56,9 @@ data State : Set where
   eval : AST → Env → Cont → State
   ret : Val → Cont → State
 
-obs : Val → Obs
-obs-list : List Val → List Obs
-obs (code k) = o-fun
-obs (pair v w) = o-fun
-obs (const B k) = o-const B k
-obs (tup vs) = o-tuple (obs-list vs)
-obs (inl v) = o-inl (obs v)
-obs (inr v) = o-inr (obs v)
-obs-list [] = []
-obs-list (v ∷ vs) = obs v ∷ obs-list vs
-
 tuple-next : List Val → List AST → Env → Cont → State
 tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ
 tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
-
-{- the value of a primitive's result -}
-out : Out → Val
-out (int n) = const Int n
-out (bool true) = inl (tup [])
-out (bool false) = inr (tup [])
-
-{- a primitive on two values, if they are integers -}
-prim? : Prim → Val → Val → Maybe Val
-prim? p v w = map out (δ? p (obs v) (obs w))
 
 ret? : Maybe Val → Cont → Next State
 ret? (just v) κ = next (ret v κ)

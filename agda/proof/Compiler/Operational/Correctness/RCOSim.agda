@@ -259,11 +259,6 @@ dl-ixs {suc n} (A ,, As) = cong (λ z → suc (suc z)) (dl-ixs As)
 
 {- The table ----------------------------------------------------------------------}
 
-‼-map : ∀ {A B : Set} (f : A → B) (xs : List A) k → map f xs ‼ k ≡ mmap f (xs ‼ k)
-‼-map f [] k = refl
-‼-map f (x ∷ xs) zero = refl
-‼-map f (x ∷ xs) (suc k) = ‼-map f xs k
-
 global-map : ∀ ds k → global (map rco ds) k ≡ mmap rco (global ds k)
 global-map ds k = trans (cong (_‼ k) (sym (reverse-map rco ds))) (‼-map rco (reverse ds) k)
 

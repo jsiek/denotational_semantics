@@ -28,7 +28,6 @@ module proof.Compiler.Functional.Correctness.OptimizeFuel where
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos2
-open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
 open import Compiler.Compile.Enclose using (enclose)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; ws-uses)

@@ -22,7 +22,9 @@
   The calls read their operands in another order (%rdi and %rsi before
   the code), so their moves are taken at the start of the statement.
 
-  There is no precondition.
+  There is no precondition. This proof, between the machines of CFG and
+  X86, is shared by the CEK machine + simulation and the reduction
+  semantics + simulation developments.
 
 -}
 
@@ -34,8 +36,7 @@ open import Compiler.Lang.CFG as C using (Tail; return; seq; goto; case; block)
 open import Compiler.Lang.X86
   using (Instr; Block; Loc; Jump; var; reg; rax; rdi; rsi; loc; movq; sete; callq; retq; je; payload)
 open import Compiler.Compile.Select
-open import Compiler.Compile.Pipeline using (compile-cfg; compile-x86)
-open import proof.Compiler.Compile.EncloseScope using (Closed)
+
 open import Compiler.Observation
 open import Framework.Primitives using (Int)
 open import proof.Compiler.Operational.Smallstep using (next; stop; Plus; plus; Star; ε; _◅_)
@@ -46,9 +47,7 @@ import Compiler.Operational.Machine.Imp as M
 import Compiler.Operational.Machine.CFG as G
 import Compiler.Operational.Machine.X86 as X
 open X using (code; pair; const; tup; inl; inr; obs; _[_↦_]; _[_]≔_)
-import Compiler.Operational.Machine.ISWIM as S
-open import proof.Compiler.Operational.Correctness.RCOSim using (‼-map)
-open import proof.Compiler.Operational.Correctness.ExplicateSim using (compile-cfg-correct)
+open import proof.Framework.ListUtil using (‼-map)
 open import proof.Framework.ListUtil using (_‼_)
 
 open import Data.Bool using (Bool)
@@ -366,8 +365,3 @@ module Sim (ds : List C.Body) (n₀ : ℕ) (bs₀ : List Tail) (t₀ : Tail) whe
 
 select-correct : ∀ P → Equivalent (G.sem P) (X.sem (select P))
 select-correct (C.program ds (C.body n bs t)) = equivalent (Sim.fsim ds n bs t)
-
-{- The whole compiler, into X86 -------------------------------------------------}
-
-compile-x86-correct : ∀ M → Closed M → Equivalent (S.sem M) (X.sem (compile-x86 M))
-compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))

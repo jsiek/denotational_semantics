@@ -54,3 +54,7 @@ import Framework.abt.AbstractBindingTree
 module ASTMod = Framework.abt.AbstractBindingTree Op sig
 open ASTMod using (`_; _⦅_⦆; clear; bind; ast; cons; nil; Arg; Args)
             renaming (ABT to AST) public
+{- the body of a closure's code, under its n + 1 binders -}
+unbind-n : ∀ k → Arg (ν-n k (ν ■)) → AST
+unbind-n zero (bind (ast N)) = N
+unbind-n (suc k) (bind a) = unbind-n k a

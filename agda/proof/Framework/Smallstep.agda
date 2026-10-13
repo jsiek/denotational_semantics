@@ -14,7 +14,7 @@ open import Framework.Smallstep Obs
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Nat.Properties using (+-identityʳ; +-suc)
-open import Data.Product using (_×_; Σ-syntax; _,_)
+open import Data.Product using (_×_; Σ-syntax; _,_; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong)
 open import Relation.Nullary using (¬_)
 
@@ -69,6 +69,13 @@ module _ {L : Machine} where
   steps-det-skip (suc st σ) (suc st' τ) fin with step-det st st'
   ... | refl with steps-det-skip σ τ fin
   ...   | n' , eq , τ' = n' , trans (+-suc n' _) (cong suc eq) , τ'
+
+  {- two runs from one state to final states have the same observation -}
+  final-unique : ∀ {s t' o' n t o} → Star L s t' → Final L t' o' → Steps L n s t → Final L t o
+    → o' ≡ o
+  final-unique σ fin' τ fin with steps-det-skip (proj₂ (star→steps σ)) τ fin
+  ... | zero , _ , zero = final-det fin' fin
+  ... | suc _ , _ , suc st _ = ⊥-elim (final-nostep fin' st)
 
   {- Divergence is never reaching a final state -}
   diverges-not-terminates : ∀ {o} → Diverges L → ¬ Terminates L o

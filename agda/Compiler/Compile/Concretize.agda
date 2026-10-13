@@ -58,11 +58,6 @@ module Compiler.Compile.Concretize where
   ... | yes k<n = prj (fv-index n k k<n) 1
   ... | no _ = var 2
 
-  {- the body of a closure's code, under its n + 1 binders -}
-  unbind-n : ∀ k → Arg (ν-n k (ν ■)) → AST
-  unbind-n zero (bind (ast N)) = N
-  unbind-n (suc k) (bind a) = unbind-n k a
-
   concretize : (Var → Ref) → AST → AST'
   conc-body : ℕ → ∀ k → Arg (ν-n k (ν ■)) → AST'
   conc-args : ∀ {n} → (Var → Ref) → Args (replicate n ■) → Args' (replicate n ■)

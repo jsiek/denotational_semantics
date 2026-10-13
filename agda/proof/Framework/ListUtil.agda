@@ -11,6 +11,8 @@ open import Framework.ListUtil public
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; _∷ʳ_; _++_; [_]; length; replicate; reverse)
+import Data.List
+import Data.Maybe
 open import Data.List.Properties using (++-assoc; reverse-++; unfold-reverse; reverse-involutive; length-reverse)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
@@ -99,3 +101,23 @@ module _ {R : A → B → Set} where
   ... | true = M.just r
   ... | false = M.nothing
 
+
+{- projecting from a mapped list -}
+has-length-map : ∀ (f : A → B) n (vs : List A) → has-length n (Data.List.map f vs) ≡ has-length n vs
+has-length-map f zero [] = refl
+has-length-map f zero (_ ∷ _) = refl
+has-length-map f (suc n) [] = refl
+has-length-map f (suc n) (v ∷ vs) = has-length-map f n vs
+
+proj-map : ∀ (f : A → B) {n} (i : Fin n) (vs : List A) → proj i (Data.List.map f vs) ≡ Data.Maybe.map f (proj i vs)
+proj-map f zero [] = refl
+proj-map f (suc i) [] = refl
+proj-map f (suc i) (v ∷ vs) = proj-map f i vs
+proj-map f {suc n} zero (v ∷ vs) rewrite has-length-map f n vs with has-length n vs
+... | true = refl
+... | false = refl
+
+‼-map : ∀ (f : A → B) (xs : List A) k → Data.List.map f xs ‼ k ≡ Data.Maybe.map f (xs ‼ k)
+‼-map f [] k = refl
+‼-map f (x ∷ xs) zero = refl
+‼-map f (x ∷ xs) (suc k) = ‼-map f xs k
