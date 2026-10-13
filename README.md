@@ -16,8 +16,10 @@ substitution), with the adequacy of the graph model for the machines:
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
-known injection, projection from a known tuple, β on values, and
-inlining of known functions (under fuel, when the result is small).
+known injection, projection from a known tuple, β on values (and on
+`let`), and inlining of known functions (under fuel, when the result is
+small); an operand that is not a value stays bound by a `let`, which
+ISWIM, Clos2 and Clos3 have, so enclose allocates no closure for it.
 
 The public theorem statements are in `agda/Theorems/`; with the
 definitions they use (everything outside `agda/proof/`) they are what

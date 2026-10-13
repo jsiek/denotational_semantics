@@ -81,6 +81,7 @@ data _≈_ : AST → C.AST → Set where
   case≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
     → case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ≈ C.case-op C.⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆
   prim≈ : ∀ {p L L' M M'} → L ≈ L' → M ≈ M' → prim p ⦅ L ,, M ,, Nil ⦆ ≈ C.prim p C.⦅ L' ,, M' ,, Nil ⦆
+  let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ C.let-op C.⦅ M' ,, ⟩ N' ,, Nil ⦆
 
 {- Closure under substitution -------------------------------------------------}
 
@@ -105,6 +106,7 @@ module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   ≈-sub p (inr≈ r) = inr≈ (≈-sub p r)
   ≈-sub p (case≈ r s t) = case≈ (≈-sub p r) (≈-sub (pexts p) s) (≈-sub (pexts p) t)
   ≈-sub p (prim≈ r s) = prim≈ (≈-sub p r) (≈-sub p s)
+  ≈-sub p (let≈ r s) = let≈ (≈-sub p r) (≈-sub (pexts p) s)
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
@@ -115,6 +117,12 @@ open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) 
 ref-shift : ∀ r → ref-ast (shift-ref r) ≡ TR.rename suc (ref-ast r)
 ref-shift (var x) = refl
 ref-shift (prj i x) = refl
+
+{- under a binder -}
+under : ∀ {k τ τ'} φ → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
+  → ∀ x → x < suc k → exts τ x ≈ TS.sub (TS.exts τ') (ref-ast (ext-ref φ x))
+under φ h zero _ = var≈
+under {τ' = τ'} φ h (suc x) (s≤s x<) rewrite ref-shift (φ x) | TS.exts-shift τ' (ref-ast (φ x)) = ≈-rename suc (h x x<)
 
 conc : ∀ {k τ τ'} φ M → WS k M → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x)))
   → sub τ M ≈ TS.sub τ' (concretize φ M)
@@ -132,13 +140,10 @@ conc φ (tuple n ⦅ as ⦆) w h = tuple≈ (concs φ as w h)
 conc φ (get i ⦅ M ,, Nil ⦆) (w , _) h = get≈ (conc φ M w h)
 conc φ (inl-op ⦅ M ,, Nil ⦆) (w , _) h = inl≈ (conc φ M w h)
 conc φ (inr-op ⦅ M ,, Nil ⦆) (w , _) h = inr≈ (conc φ M w h)
-conc {τ' = τ'} φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) h =
-  case≈ (conc φ L wL h) (conc (ext-ref φ) M wM under) (conc (ext-ref φ) N wN under)
-  where
-  under : ∀ x → x < suc _ → exts _ x ≈ TS.sub (TS.exts τ') (ref-ast (ext-ref φ x))
-  under zero _ = var≈
-  under (suc x) (s≤s x<) rewrite ref-shift (φ x) | TS.exts-shift τ' (ref-ast (φ x)) = ≈-rename suc (h x x<)
+conc φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) h =
+  case≈ (conc φ L wL h) (conc (ext-ref φ) M wM (under φ h)) (conc (ext-ref φ) N wN (under φ h))
 conc φ (prim p ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h = prim≈ (conc φ L wL h) (conc φ M wM h)
+conc φ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) h = let≈ (conc φ M wM h) (conc (ext-ref φ) N wN (under φ h))
 concs {n = zero} φ Nil w h = []
 concs {n = suc n} φ (M ,, as) (w , ws) h = conc φ M w h ∷ concs φ as ws h
 
@@ -240,6 +245,8 @@ sim (prim≈ {p} r s) =
   ... | just (int n) = M.just lit≈
   ... | just (bool true) = M.just (inl≈ (tuple≈ []))
   ... | just (bool false) = M.just (inr≈ (tuple≈ []))
+sim (let≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim r)
+  λ v r' → to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
 sims [] = val ε T.[] []
 sims (r ∷ rs) =
   ans-in (frame _ (λ _ → refl)) (λ r' → r' ∷ rs) (sim r)

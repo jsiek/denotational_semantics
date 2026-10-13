@@ -186,6 +186,9 @@ run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ag =
                  (≤-trans (m≤n+m∸n (bound N) 1)
                    (s≤s (≤-trans (m≤m⊔n (bound N ∸ 1) 0)
                      (≤-trans (m≤n⊔m (bound M ∸ 1) _) (m≤n⊔m (bound L) _))))) ag))
+run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ag =
+  bind-rel (run≈ ck M (agree-sub (λ x → inj₁) ⊔-left ag)) λ r → run≈ ck N (agree-ext r
+    (agree-sub (λ x u → inj₂ (inj₁ u)) (≤-trans (m≤n+m∸n (bound N) 1) (s≤s (⊔-right {bound M}))) ag))
 
 args≈ ck {zero} Nil ag rs = ret rs
 args≈ ck {suc n} (M ,, args) ag rs =

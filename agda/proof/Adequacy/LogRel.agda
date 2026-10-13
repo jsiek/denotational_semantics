@@ -274,6 +274,14 @@ adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} G ⟨ n , ⟨ m , ⟨ n∈ , �
   , ⟨ (λ κ → refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ eM (primR p (const Int n) κ) ++↠ refl ∷↠ done)
     , 𝕍-out (δ p n m) ⟩ ⟩
 
+adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) G ⟨ [] , ⟨ _ , ⟨ _ , ne ⟩ ⟩ ⟩ = ⊥-elim (ne refl)
+adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G ⟨ u ∷ U , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
+    with adequate M (λ x p → G x (inj₁ p)) (V⊆ u (here refl))
+... | ⟨ vM , ⟨ eM , _ ⟩ ⟩
+    with adequate N (𝔾-ext (u ∷ U) vM (λ x p → G x (inj₂ (inj₁ p)))
+           (all→𝕍s (u ∷ U) (collect 𝕍 (u ∷ U) (λ d d∈ → adequate M (λ x p → G x (inj₁ p)) (V⊆ d d∈)) eM))) w∈
+... | ⟨ v , ⟨ eN , r ⟩ ⟩ = ⟨ v , ⟨ (λ κ → refl ∷↠ eM (letK N γ κ) ++↠ refl ∷↠ eN κ) , r ⟩ ⟩
+
 adequate-args {zero} Nil G ne = ⟨ [] , ⟨ [] , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
 adequate-args {suc n} (M ,, args) G ne
     with adequate M (λ x p → G x (inj₁ p)) (proj₂ (ne zero))

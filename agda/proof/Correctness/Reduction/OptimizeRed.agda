@@ -96,6 +96,7 @@ data _≈_ where
   case≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
     → case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ≈ case-op ⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆
   prim≈ : ∀ {p L L' M M'} → L ≈ L' → M ≈ M' → prim p ⦅ L ,, M ,, Nil ⦆ ≈ prim p ⦅ L' ,, M' ,, Nil ⦆
+  let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ let-op ⦅ M' ,, ⟩ N' ,, Nil ⦆
 
 {- a used free variable is related to the kept one that idx renumbers it to -}
 pr-lookup : ∀ {U n m b Fs Gs idx ρ ρ'} → Pr U {n} {m} b Fs Gs idx
@@ -136,6 +137,7 @@ module Kit (P : SS.Subst → SS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   ≈-sub p (inr≈ r) = inr≈ (≈-sub p r)
   ≈-sub p (case≈ r s t) = case≈ (≈-sub p r) (≈-sub (pexts p) s) (≈-sub (pexts p) t)
   ≈-sub p (prim≈ r s) = prim≈ (≈-sub p r) (≈-sub p s)
+  ≈-sub p (let≈ r s) = let≈ (≈-sub p r) (≈-sub (pexts p) s)
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
   pr-sub p nil = nil
@@ -150,6 +152,11 @@ open SubstRel.Closure _≈_ var≈ Ok (λ h x → subst VV (sym (proj₁ (proj�
   using (≈-rename; ≈-subst)
 
 {- The fundamental lemma --------------------------------------------------------}
+
+{- under a binder -}
+under : ∀ {τ τ' r M} → (∀ x → Uses (suc x) M → τ x ≈ τ' (r x)) → ∀ x → Uses x M → exts τ x ≈ exts τ' (ext-var r x)
+under h zero u = var≈
+under h (suc x) u = ≈-rename suc (h x u)
 
 opt : ∀ {τ τ'} r M → (∀ x → Uses x M → τ x ≈ τ' (r x)) → (∀ x → VV (τ x))
   → sub τ M ≈ sub τ' (optimize r M)
@@ -171,11 +178,9 @@ opt r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) h vv =
   case≈ (opt r L (λ x u → h x (inj₁ u)) vv)
         (opt (ext-var r) M (under {M = M} (λ x u → h x (inj₂ (inj₁ u)))) (vv-exts vv))
         (opt (ext-var r) N (under {M = N} (λ x u → h x (inj₂ (inj₂ (inj₁ u))))) (vv-exts vv))
-  where
-  under : ∀ {τ τ' M} → (∀ x → Uses (suc x) M → τ x ≈ τ' (r x)) → ∀ x → Uses x M → exts τ x ≈ exts τ' (ext-var r x)
-  under h zero u = var≈
-  under h (suc x) u = ≈-rename suc (h x u)
 opt r (prim p ⦅ L ,, M ,, Nil ⦆) h vv = prim≈ (opt r L (λ x u → h x (inj₁ u)) vv) (opt r M (λ x u → h x (inj₂ (inj₁ u))) vv)
+opt r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) h vv =
+  let≈ (opt r M (λ x u → h x (inj₁ u)) vv) (opt (ext-var r) N (under {M = N} (λ x u → h x (inj₂ (inj₁ u)))) (vv-exts vv))
 opts {n = zero} r Nil h vv = []
 opts {n = suc n} r (M ,, as) h vv = opt r M (λ x u → h x (inj₁ u)) vv ∷ opts r as (λ x u → h x (inj₂ u)) vv
 pr-opt r dec zero Nil b h vv = nil
@@ -329,6 +334,11 @@ sim (prim≈ {p} r s) (wL , wM , _) =
   ... | just (int n) = M.just (lit≈ , tt)
   ... | just (bool true) = M.just (inl≈ (tuple≈ []) , tt , tt)
   ... | just (bool false) = M.just (inr≈ (tuple≈ []) , tt , tt)
+sim (let≈ {N = N} r s) (wM , wN , _) =
+  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → let≈ r' s , w' , wN , tt) (sim r wM)
+    λ v (r' , w') → to (one (val-in (value-red v)))
+       (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , (λ { zero → vv-val (≈-value v r' w') ; (suc x) → vv-var x })) s
+       , ws-sub _ N (λ { zero _ → w' ; (suc x) (s≤s ()) }) wN)
 sims [] _ = val ε T.[] []
 sims (r ∷ rs) (w , ws) =
   ans-in (frame _ (λ _ → refl)) (λ m → m ∷ zipR rs ws) (sim r w)

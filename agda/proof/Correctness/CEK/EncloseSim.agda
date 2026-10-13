@@ -91,6 +91,7 @@ data _≈k_ : S.Cont → T.Cont → Set where
   primL : ∀ {p M ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 ρ₁ ρ₂ → κ₁ ≈k κ₂
     → S.primL p M ρ₁ κ₁ ≈k T.primL p (enclose M) ρ₂ κ₂
   primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
+  letK : ∀ {N ρ₁ ρ₂ κ₁ κ₂} → Agree N 1 ρ₁ ρ₂ → κ₁ ≈k κ₂ → S.letK N ρ₁ κ₁ ≈k T.letK (enclose N) ρ₂ κ₂
 
 data _~_ : S.State → T.State → Set where
   eval~ : ∀ {M ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 ρ₁ ρ₂ → κ₁ ≈k κ₂
@@ -245,6 +246,9 @@ module _ (P : C.AST) where
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
     steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
                             (primL (agree-sub (λ x u → inj₂ (inj₁ u)) (⊔-right {bound L}) ag) κ))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} ag κ) =
+    steps (one refl) (eval~ (agree-sub (λ x → inj₁) ⊔-left ag)
+      (letK (agree-sub (λ x u → inj₂ (inj₁ u)) (≤-trans (m≤n+m∸n (bound N) 1) (s≤s (⊔-right {bound M}))) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
@@ -271,6 +275,7 @@ module _ (P : C.AST) where
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ r (primL ag κ)) = steps (one refl) (eval~ ag (primR r κ))
   sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
+  sim (ret~ r (letK ag κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
 
 {- The end theorem -------------------------------------------------------------}
 

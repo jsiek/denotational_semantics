@@ -173,6 +173,7 @@ inr-⊆ D⊆ ⟨⟩ ()
 
 𝒦 (primL p M γ κ) D = 𝒦 κ (primD p ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
 𝒦 (primR p v κ) D = 𝒦 κ (primD p ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
+𝒦 (letK N γ κ) D = 𝒦 κ (⋆ ⟨ 𝒱 (clo N γ) , ⟨ D , ptt ⟩ ⟩)
 
 𝒮 : State → 𝒫 Value
 𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧ (𝓔 γ))
@@ -184,11 +185,13 @@ rev𝒱-mono : ∀ vs Ds Es → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
 rev𝒱-mono [] Ds Es s = s
 rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ (λ d z → z) , s ⟩
 
+⋆-⊆ : ∀ {F D E} → D ⊆ E → ⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩ ⊆ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩
+⋆-⊆ D⊆ w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
+
 𝒦-mono : ∀ κ {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
 𝒦-mono halt D⊆ = D⊆
 𝒦-mono (appL M γ κ) D⊆ = 𝒦-mono κ λ { w ⟨ V , ⟨ f∈ , rest ⟩ ⟩ → ⟨ V , ⟨ D⊆ _ f∈ , rest ⟩ ⟩ }
-𝒦-mono (appR v κ) D⊆ =
-  𝒦-mono κ λ { w ⟨ V , ⟨ f∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ → ⟨ V , ⟨ f∈ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ }
+𝒦-mono (appR v κ) D⊆ = 𝒦-mono κ (⋆-⊆ {𝒱 v} D⊆)
 𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ =
   𝒦-mono κ (𝒯L-mono _ _ (rev𝒱-mono vs (D ∷ _) (E ∷ _) ⟨ D⊆ , ⊆L-refl _ ⟩))
 𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ λ d d∈ → D⊆ _ d∈
@@ -203,6 +206,7 @@ rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es
   𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , rest ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ D⊆ _ n∈ , rest ⟩ ⟩ ⟩ }
 𝒦-mono (primR p v κ) D⊆ =
   𝒦-mono κ λ { w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩ → ⟨ n , ⟨ m , ⟨ n∈ , ⟨ D⊆ _ m∈ , eq ⟩ ⟩ ⟩ ⟩ }
+𝒦-mono (letK N γ κ) D⊆ = 𝒦-mono κ (⋆-⊆ {𝒱 (clo N γ)} D⊆)
 
 {- every value denotes a nonempty set, so every environment is nonempty -}
 𝒱-nonempty : ∀ v → nonempty (𝒱 v)
@@ -369,6 +373,11 @@ prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
 
 {- Steps shrink the denotation of the state --------------------------------}
 
+{- β: a body, run on a value, is in the application of its closure -}
+app-β : ∀ N γ w → ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
+app-β N γ w d d∈ with body-in N γ w d d∈
+... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+
 step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
 step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
 step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
@@ -388,11 +397,7 @@ step-⊆ (ret (const B k) (appL M γ' κ)) ()
 step-⊆ (ret (tup vs) (appL M γ' κ)) ()
 step-⊆ (ret (T.inl v) (appL M γ' κ)) ()
 step-⊆ (ret (T.inr v) (appL M γ' κ)) ()
-step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ β
-  where
-  β : ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
-  β d d∈ with body-in N γ w d d∈
-  ... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , Con⇒≈ V (𝒱-con w) V⊆ ⟩ ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ (app-β N γ w)
 step-⊆ (ret w (appR (const B k) κ)) ()
 step-⊆ (ret w (appR (tup vs) κ)) ()
 step-⊆ (ret w (appR (T.inl v) κ)) ()
@@ -428,6 +433,8 @@ step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
 step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
 step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
 step-⊆ (ret w (primR p v κ)) () | nothing
+step-⊆ (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (ret w (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ w)
 
 ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
 ↠-⊆ done d d∈ = d∈
@@ -467,6 +474,7 @@ final-shape (eval (inl-op ⦅ M ,, Nil ⦆) γ κ) () ans
 final-shape (eval (inr-op ⦅ M ,, Nil ⦆) γ κ) () ans
 final-shape (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) () ans
 final-shape (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) () ans
+final-shape (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) () ans
 final-shape (ret v halt) refl ans = 𝒱-shape v
 final-shape (ret (const B k) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)
 final-shape (ret (tup vs) (appL M γ' κ)) refl ans = ⊥-elim (ans refl)

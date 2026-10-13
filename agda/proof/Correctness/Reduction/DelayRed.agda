@@ -82,6 +82,7 @@ data _≈_ : AST → C.AST → Set where
   case≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
     → case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ≈ C.case-op C.⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆
   prim≈ : ∀ {p L L' M M'} → L ≈ L' → M ≈ M' → prim p ⦅ L ,, M ,, Nil ⦆ ≈ C.prim p C.⦅ L' ,, M' ,, Nil ⦆
+  let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ C.let-op C.⦅ M' ,, ⟩ N' ,, Nil ⦆
 
 {- delay is related: the compilation function is the relation on code -}
 del : ∀ M → M ≈ delay M
@@ -96,6 +97,7 @@ del (inl-op ⦅ M ,, Nil ⦆) = inl≈ (del M)
 del (inr-op ⦅ M ,, Nil ⦆) = inr≈ (del M)
 del (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = case≈ (del L) (del M) (del N)
 del (prim p ⦅ L ,, M ,, Nil ⦆) = prim≈ (del L) (del M)
+del (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let≈ (del M) (del N)
 dels {zero} Nil = []
 dels {suc n} (M ,, as) = del M ∷ dels as
 
@@ -124,6 +126,7 @@ module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   ≈-sub p (inr≈ r) = inr≈ (≈-sub p r)
   ≈-sub p (case≈ r s t) = case≈ (≈-sub p r) (≈-sub (pexts p) s) (≈-sub (pexts p) t)
   ≈-sub p (prim≈ r s) = prim≈ (≈-sub p r) (≈-sub p s)
+  ≈-sub p (let≈ r s) = let≈ (≈-sub p r) (≈-sub (pexts p) s)
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
@@ -159,6 +162,7 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈ (case≈ _ _ _) = refl
 obs≈ (prim≈ _ _) = refl
+obs≈ (let≈ _ _) = refl
 obs≈s [] = refl
 obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
 
@@ -260,6 +264,8 @@ sim (prim≈ {p} r s) =
   ... | just (int n) = M.just lit≈
   ... | just (bool true) = M.just (inl≈ (tuple≈ []))
   ... | just (bool false) = M.just (inr≈ (tuple≈ []))
+sim (let≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim r)
+  λ v r' → to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
 sims [] = val ε T.[] []
 sims (r ∷ rs) =
   ans-in (frame _ (λ _ → refl)) (λ r' → r' ∷ rs) (sim r)

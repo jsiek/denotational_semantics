@@ -82,6 +82,7 @@ eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inr v)
 eval ck ρ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ L >>= branch ck ρ M N
 eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
   do v ← eval ck ρ L; w ← eval ck ρ M; from-maybe (prim? p v w)
+eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 
 eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args

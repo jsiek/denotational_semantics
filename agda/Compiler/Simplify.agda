@@ -16,9 +16,9 @@
      be inl V, becomes M with V for x (likewise inr);
   3. projection from a known tuple: get i L, where L is known to be a
      tuple of values, becomes its component i;
-  4. β on a value: app (lam N) M, where M becomes a value V, becomes N
-     with V for its variable, which gives copy propagation and the
-     elimination of dead bindings;
+  4. β on a value: app (lam N) M, and likewise let x = M in N, where M
+     becomes a value V, becomes N with V for its variable, which gives
+     copy propagation and the elimination of dead bindings;
   5. inlining: app L M, where L is known to be a function λ N, becomes
      N's body, simplified at the call with its variable bound to M as in
      4 (simp-let), if the result is small enough (inline-size). The body
@@ -31,7 +31,7 @@
   a known value comes from evaluating a term that has no effect, so
   replacing that term by the value drops only that evaluation. In
   inlining, the operator L, known, is dropped, and the operand M stays
-  bound, as cp0 does: a call f M becomes the let app (lam N') M', which
+  bound, as cp0 does: a call f M becomes let x = M' in N', which
   evaluates M' once, before the body, and keeps it even if N' does not
   use it, unless M' is a value (4).
 
@@ -39,8 +39,8 @@
   literals, ⟨⟩, and an injection of one of them (small). A small value
   substituted for a variable keeps what is known of it (a copy of a
   known function is known). Any other value (a function, a tuple, a
-  nested injection) keeps its binding: the redex stays, as the let
-  app (lam N') V', and the bound variable is known as V' is, so that a
+  nested injection) keeps its binding, as let x = V' in N', and the
+  bound variable is known as V' is, so that a
   projection from it, or a case on it, can still be folded, and a call
   of it inlined.
 
@@ -216,6 +216,7 @@ simp f E (inl-op ⦅ M ,, Nil ⦆) = info (inl-op ⦅ term (simp f E M) ,, Nil �
 simp f E (inr-op ⦅ M ,, Nil ⦆) = info (inr-op ⦅ term (simp f E M) ,, Nil ⦆)
 simp f E (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = simp-case f E (simp f E L) M N
 simp f E (prim p ⦅ L ,, M ,, Nil ⦆) = simp-prim p (simp f E L) (simp f E M)
+simp f E (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = simp-let f E N (simp f E M)
 
 simp-args {zero} f E Nil = Nil
 simp-args {suc n} f E (M ,, as) = term (simp f E M) ,, simp-args f E as
@@ -233,13 +234,13 @@ simp-call (suc f) (T ∣ just (fun N E)) I with size (term (simp-let f E N I)) �
 ... | false = app ⦅ T ,, term I ,, Nil ⦆ ∣ nothing
 simp-call f J I = app ⦅ term J ,, term I ,, Nil ⦆ ∣ nothing
 
-{- the body N of a function, applied to the operand I (a let): a small
-   value is substituted, and known as I is; another value stays bound, and
-   known; anything else stays bound -}
+{- the body N of a function, applied to the operand I, or of a let that
+   binds I: a small value is substituted, and known as I is; another value
+   stays bound by a let, and known; anything else stays bound by a let -}
 simp-let f E N I with small (term I) | value (term I)
 ... | true | _ = simp f (I • E) N
-... | false | true = app ⦅ lam ⦅ ⟩ term (simp f (known-as I E) N) ,, Nil ⦆ ,, term I ,, Nil ⦆ ∣ nothing
-... | false | false = app ⦅ lam ⦅ ⟩ term (simp f (under E) N) ,, Nil ⦆ ,, term I ,, Nil ⦆ ∣ nothing
+... | false | true = let-op ⦅ term I ,, ⟩ term (simp f (known-as I E) N) ,, Nil ⦆ ∣ nothing
+... | false | false = let-op ⦅ term I ,, ⟩ term (simp f (under E) N) ,, Nil ⦆ ∣ nothing
 
 {- a projection from a known tuple: the component, if it is small, and
    otherwise the projection, known to be the component -}

@@ -38,6 +38,7 @@ data Op : Set where
   inr-op : Op
   case-op : Op
   prim : Prim → Op      {- a primitive operation on integers (Language/Prim) -}
+  let-op : Op           {- let x = M in N, call by value -}
 
 sig : Op → List Sig
 sig lam = ν ■ ∷ []
@@ -49,6 +50,7 @@ sig inl-op = ■ ∷ []
 sig inr-op = ■ ∷ []
 sig case-op = ■ ∷ ν ■ ∷ ν ■ ∷ []
 sig (prim p) = ■ ∷ ■ ∷ []
+sig let-op = ■ ∷ ν ■ ∷ []
 
 import Framework.abt.AbstractBindingTree
 module ASTMod = Framework.abt.AbstractBindingTree Op sig

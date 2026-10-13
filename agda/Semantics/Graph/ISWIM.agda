@@ -16,6 +16,9 @@ open import Language.ISWIM
 open import Framework.GraphModel.Env using (Env)
 open import Framework.abt.Fold2 Op sig using (fold)
 
+open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+
 
 𝕆-ISWIM : DOpSig (𝒫 Value) sig
 𝕆-ISWIM lam = Λ
@@ -27,6 +30,8 @@ open import Framework.abt.Fold2 Op sig using (fold)
 𝕆-ISWIM inr-op = inr
 𝕆-ISWIM case-op = 𝒞
 𝕆-ISWIM (prim p) = primD p
+{- let x = M in N means (λx. N) M -}
+𝕆-ISWIM let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
 {- the meaning of a term in an environment: the operators, folded over the
    term; a variable means what the environment gives it, and a variable

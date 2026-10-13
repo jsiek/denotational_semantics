@@ -72,6 +72,10 @@ shift-ok (prj i x) X ρ = refl
 EnvRel : (Var → Ref) → Env → Env → Set
 EnvRel φ ρ₂ ρ₃ = ∀ x → ρ₂ x ≃ ⟦ φ x ⟧ᵣ ρ₃
 
+rel-ext : ∀ {φ ρ₂ ρ₃} → EnvRel φ ρ₂ ρ₃ → ∀ X → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
+rel-ext rel X zero = ≃-refl
+rel-ext {φ} {ρ₃ = ρ₃} rel X (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
+
 {- The environment of a Clos2 closure's body ----------------------------------}
 
 init₀ : Env
@@ -300,14 +304,13 @@ concretize-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ c
   𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) M ⟧' (X • ρ₃)}
       {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)}
       (concretize-correct L φ ρ₂ ρ₃ c rel)
-      (λ v V cV → concretize-correct M (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext (mem (v ∷ V))))
-      (λ v V cV → concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext (mem (v ∷ V))))
-  where
-  rel-ext : ∀ X → EnvRel (ext-ref φ) (X • ρ₂) (X • ρ₃)
-  rel-ext X zero = ≃-refl
-  rel-ext X (suc x) = ≃-trans (rel x) (≃-reflexive (sym (shift-ok (φ x) X ρ₃)))
+      (λ v V cV → concretize-correct M (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext rel (mem (v ∷ V))))
+      (λ v V cV → concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext rel (mem (v ∷ V))))
 concretize-correct (prim p ⦅ L ,, M ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
   primD-≃ p (concretize-correct L φ ρ₂ ρ₃ c rel) (concretize-correct M φ ρ₂ ρ₃ c rel)
+concretize-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
+  ⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧' (X • ρ₃)} (λ V _ cV → concretize-correct N (ext-ref φ) _ _ (Con-• (≈⇒Con cV) c) (rel-ext rel (mem V))))
+      (concretize-correct M φ ρ₂ ρ₃ c rel)
 
 body-correct n zero (bind (ast N)) ρ₂ ρ₃ rel = concretize-correct N (fv-ref n) ρ₂ ρ₃ rel
 body-correct n (suc k) (bind a) = body-correct n k a

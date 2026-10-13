@@ -91,7 +91,31 @@ clos-β N {T}{E} NE-T NE-E cT cE x x∈ with C3.term-continuous N _ NE x x∈
   env⊆ (suc (suc y)) = proj₂ (ok (suc (suc y)))
   x∈' = S3.⟦⟧-monotone {ρ = λ y → mem (Vs y)} N env⊆ x x∈fin
 
+{- β for a let: its body on X needs a finite part of X -}
+let-β : ∀ (N : AST) {X ρ} → nonempty-env ρ → nonempty X → Con X
+  → ⟦ N ⟧ (X • ρ) ⊆ ⋆ ⟨ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • ρ)) , ptt ⟩ , ⟨ X , ptt ⟩ ⟩
+let-β N NE neX cX x x∈ with cont-0 N NE neX x x∈
+... | ⟨ u , ⟨ U , ⟨ U⊆ , x∈' ⟩ ⟩ ⟩ =
+  ⟨ u ∷ U , ⟨ ⟨ x∈' , ⟨ (λ ()) , Con⇒≈ (u ∷ U) cX U⊆ ⟩ ⟩ , ⟨ U⊆ , (λ ()) ⟩ ⟩ ⟩
+
 {- Collecting the finite witnesses of a target application -------------------}
+
+{- the results of a target let come from one finite part U of its operand -}
+let-collect : ∀ (N' : AST') ρ' D' V'
+  → mem V' ⊆ ⋆ ⟨ Λ ⟨ (λ X → ⟦ N' ⟧' (X • ρ')) , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+  → Σ[ U ∈ List Value ] mem U ⊆ D' × mem V' ⊆ ⟦ N' ⟧' (mem U • ρ')
+let-collect N' ρ' D' [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
+let-collect N' ρ' D' (w ∷ V') V'⊆
+    with V'⊆ w (here refl) | let-collect N' ρ' D' V' (λ d d∈ → V'⊆ d (there d∈))
+... | ⟨ U₀ , ⟨ ⟨ w∈ , _ ⟩ , ⟨ U₀⊆ , _ ⟩ ⟩ ⟩ | ⟨ U , ⟨ U⊆ , V'⊆N ⟩ ⟩ =
+  ⟨ U₀ ++ U , ⟨ ++⊆ , (λ { _ (here refl) → mono ∈-++⁺ˡ _ w∈ ; d (there d∈) → mono (∈-++⁺ʳ U₀) d (V'⊆N d d∈) }) ⟩ ⟩
+  where
+  ++⊆ : mem (U₀ ++ U) ⊆ D'
+  ++⊆ d d∈ with ∈-++⁻ U₀ d∈
+  ... | inj₁ i = U₀⊆ d i
+  ... | inj₂ i = U⊆ d i
+  mono : ∀ {U₁} → (∀ {d} → d ⋵ U₁ → d ⋵ (U₀ ++ U)) → ⟦ N' ⟧' (mem U₁ • ρ') ⊆ ⟦ N' ⟧' (mem (U₀ ++ U) • ρ')
+  mono f = S4.⟦⟧-monotone N' (λ { zero d → f ; (suc y) → λ d z → z })
 
 {- a target application V' ⊆ (car L' ● cdr L') ● N' is a batch of calls of
    a finite W ⊆ L' on a finite U ⊆ N' -}
@@ -285,6 +309,20 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
     S4.⟦⟧-monotone (delay N) (λ { zero → allR' ; (suc y) → λ d z → z }) x x∈G
   ... | inj₁ ⟨ u , ⟨ U , ⟨ allL , _ ⟩ ⟩ ⟩ =
     ⊥-elim (Clos4-con (delay L) (Envs.ρ'~ E) _ _ rv (allL u (here refl)))
+
+delay-reflect (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) E [] V'⊆ = R-∅ (λ _ ())
+delay-reflect (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V') V'⊆ with let-collect (delay N) ρ' _ (w ∷ V') V'⊆
+... | ⟨ U , ⟨ U⊆ , V'⊆N ⟩ ⟩ =
+  R-mono (let-β N NE NE-M (Clos3-con M ρ~))
+    (delay-reflect N (envs NE' (Con-• (Clos3-con M ρ~) ρ~) (Con-• (Con-⊆ (Clos4-con (delay M) ρ'~) U⊆) ρ'~) ρ⊳')
+       (w ∷ V') V'⊆N)
+  where
+  open Envs E
+  NE-M = let ⟨ _ , ⟨ _ , ⟨ U₀⊆ , ne ⟩ ⟩ ⟩ = V'⊆ w (here refl) in ne-reflect M E (ne-mem ne U₀⊆)
+  NE' = extend-nonempty-env NE NE-M
+  ρ⊳' : (mem U • ρ') ⊳ₑ (⟦ M ⟧ ρ • ρ)
+  ρ⊳' zero Y' Y'⊆ = delay-reflect M E Y' (λ d d∈ → U⊆ d (Y'⊆ d d∈))
+  ρ⊳' (suc x) = ρ⊳ x
 
 delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ} E V' V'⊆ =
   fold record

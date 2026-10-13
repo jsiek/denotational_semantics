@@ -34,6 +34,8 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to pTrue)
 𝕆-Clos3 inr-op = inr
 𝕆-Clos3 case-op = 𝒞
 𝕆-Clos3 (prim p) = primD p
+{- let x = M in N means (λx. N) M -}
+𝕆-Clos3 let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
 {- the meaning of a term in an environment: the operators, folded over the
    term; a variable means what the environment gives it, and a variable

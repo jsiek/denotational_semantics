@@ -452,13 +452,14 @@ In the reduction proof:
 
 \subsection{ISWIM}
 
-The source language: a call-by-value $\lambda$-calculus with constants, tuples, sums, and primitive operations $p$ on integers $n, m$.
+The source language: a call-by-value $\lambda$-calculus with constants, tuples, sums, primitive operations $p$ on integers $n, m$, and $\key{let}$, which evaluates $M$ and then $N$ with $x$ bound to its value.
 There are no booleans: $\key{eq}$ returns $\inl\tuple{}$ for true and $\inr\tuple{}$ for false, so $\key{case}$ serves as $\key{if}$.
 \begin{syntax}
   & p &::=& \key{sub} \mid \key{eq} \\
   & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
+    \mid \Let x = M \In N
 \end{syntax}
 \[
   \FV(\lam{y} N) = \FV(N) \setminus \{y\}
@@ -475,6 +476,7 @@ Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its fr
   & L, M, N &::=& x \mid \clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
+    \mid \Let x = M \In N
 \end{syntax}
 \[
   \FV(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) = \{z_1, \ldots, z_n\}
@@ -488,6 +490,7 @@ Each closure now packs references $r_1\ldots r_n$ to its free variables into one
   & L, M, N &::=& x \mid \clos{r_1\ldots r_n}{e\, y} N \mid L\;M \mid c
     \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \\
   &&& \mid \inl M \mid \inr M \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
+    \mid \Let x = M \In N
 \end{syntax}
 \[
   \FV(\clos{r_1\ldots r_n}{e\, y} N) = \FV(r_1) \cup \cdots \cup \FV(r_n)
@@ -495,7 +498,7 @@ Each closure now packs references $r_1\ldots r_n$ to its free variables into one
 
 \subsection{Clos4}
 
-Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$ is used by the delayed application.
+Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$, from the source, is also used by the delayed application.
 \begin{syntax}
   & L, M, N &::=& x \mid \fun{e\,y.\,N} \mid L(M, N) \mid c
     \mid \pair{M}{N} \mid \FST M \mid \SND M \mid \prim{p}{L}{M} \\
@@ -639,15 +642,16 @@ $\inr a$ of one of those; only small values are duplicated. Values are known
 to be themselves, and $\mathcal{K}_E(\lam{y} N) = \langle \lam{y} N, E \rangle$;
 under a binder that stays, its variable is itself, known only as itself
 ($E'$ below). A function body $N$ bound to an operand, $\pass{let}_E(x.N, M)$,
-is shared by $\beta$ and inlining:
+is shared by $\key{let}$, $\beta$ and inlining:
 \begin{align*}
   \pass{let}_E(x.N, M) &= \pass{simp}_{\ext{E}{x}{(V, \mathcal{K}_E(M))}}(N)
     && \text{if } V = \pass{simp}_E(M) \text{ is small} \\
-  &= (\lam{x} \pass{simp}_{\ext{E}{x}{(x, \mathcal{K}_E(M))}}(N))\;V
+  &= \Let x = V \In \pass{simp}_{\ext{E}{x}{(x, \mathcal{K}_E(M))}}(N)
     && \text{if } V = \pass{simp}_E(M) \text{ is another value} \\
-  &= (\lam{x} \pass{simp}_{E'}(N))\;\pass{simp}_E(M)
+  &= \Let x = \pass{simp}_E(M) \In \pass{simp}_{E'}(N)
     && \text{otherwise} \\[1ex]
   \pass{simp}_E(x) &= E(x) \\
+  \pass{simp}_E(\Let x = M \In N) &= \pass{let}_E(x.N, M) \\
   \pass{simp}_E((\lam{x} N)\;M) &= \pass{let}_E(x.N, M) \\
   \pass{simp}_E(L\;M) &= \pass{let}_{E_f}(x.N, M)
     && \text{if } \mathcal{K}_E(L) = \langle \lam{x} N, E_f \rangle \text{ and the result is small enough} \\
@@ -670,8 +674,9 @@ carries fuel ($4$ in $\pass{simplify}$), which inlining decreases, so that it
 is structurally recursive. It drops only evaluations whose value is known,
 which have no effect (the operator of an inlined call), and otherwise keeps
 the order of evaluation: as in cp0, an operand that is not a value is never
-substituted, but stays bound, and is evaluated before the body even if the
-body does not use it.
+substituted, but stays bound by a $\key{let}$, and is evaluated before the
+body even if the body does not use it. Enclose keeps that $\key{let}$, so a
+residual binding allocates no closure.
 
 \begin{lemma}[Simplify Keeps Programs Closed]\label{lem:simplify-closed}
 For every ISWIM term $M$,
@@ -714,7 +719,9 @@ Concretize stores each closure's captured values in a single tuple and turns the
   \pass{concretize}_\varphi(\Case{L}{x}{M}{y}{N}) &=
     \key{case}\;\pass{concretize}_\varphi(L)\;\key{of} \\
     &\qquad \key{inl}\,x \Rightarrow \pass{concretize}_{\ext{\varphi}{x}{x}}(M)
-     \mid \key{inr}\,y \Rightarrow \pass{concretize}_{\ext{\varphi}{y}{y}}(N)
+     \mid \key{inr}\,y \Rightarrow \pass{concretize}_{\ext{\varphi}{y}{y}}(N) \\
+  \pass{concretize}_\varphi(\Let x = M \In N) &=
+    \Let x = \pass{concretize}_\varphi(M) \In \pass{concretize}_{\ext{\varphi}{x}{x}}(N)
 \end{align*}
 
 \subsection{Delay (Clos3 \texorpdfstring{$\to$}{->} Clos4)}
@@ -1020,7 +1027,8 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{\inr M}^{\ell}\rho &= \key{inr}(\SEM{M}^{\ell}\rho) \\
   \SEM{\Case{L}{x}{M}{y}{N}}^{\ell}\rho &=
      \mathcal{C}(\SEM{L}^{\ell}\rho,\; \lambda X.\, \SEM{M}^{\ell}\ext{\rho}{x}{X},\; \lambda Y.\, \SEM{N}^{\ell}\ext{\rho}{y}{Y}) \\
-  \SEM{\prim{p}{L}{M}}^{\ell}\rho &= \key{prim}_p(\SEM{L}^{\ell}\rho, \SEM{M}^{\ell}\rho)
+  \SEM{\prim{p}{L}{M}}^{\ell}\rho &= \key{prim}_p(\SEM{L}^{\ell}\rho, \SEM{M}^{\ell}\rho) \\
+  \SEM{\Let x = M \In N}^{\ell}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\ell}\ext{\rho}{x}{X}) \app \SEM{M}^{\ell}\rho
 \end{align*}
 
 \subsection{ISWIM}
@@ -1056,8 +1064,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L(M, N)}^{\mathrm{4}}\rho &= (\SEM{L}^{\mathrm{4}}\rho \app \SEM{M}^{\mathrm{4}}\rho) \app \SEM{N}^{\mathrm{4}}\rho \\
   \SEM{\pair{M}{N}}^{\mathrm{4}}\rho &= \key{pair}(\SEM{M}^{\mathrm{4}}\rho, \SEM{N}^{\mathrm{4}}\rho) \\
   \SEM{\FST M}^{\mathrm{4}}\rho &= \key{car}(\SEM{M}^{\mathrm{4}}\rho) \\
-  \SEM{\SND M}^{\mathrm{4}}\rho &= \key{cdr}(\SEM{M}^{\mathrm{4}}\rho) \\
-  \SEM{\Let x = M \In N}^{\mathrm{4}}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{4}}\ext{\rho}{x}{X}) \app \SEM{M}^{\mathrm{4}}\rho
+  \SEM{\SND M}^{\mathrm{4}}\rho &= \key{cdr}(\SEM{M}^{\mathrm{4}}\rho)
 \end{align*}
 
 \subsection{Clos5}
@@ -1067,8 +1074,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L(M, N)}^{\mathrm{5}}_T\rho &= (\SEM{L}^{\mathrm{5}}_T\rho \app \SEM{M}^{\mathrm{5}}_T\rho) \app \SEM{N}^{\mathrm{5}}_T\rho \\
   \SEM{\pair{M}{N}}^{\mathrm{5}}_T\rho &= \key{pair}(\SEM{M}^{\mathrm{5}}_T\rho, \SEM{N}^{\mathrm{5}}_T\rho) \\
   \SEM{\FST M}^{\mathrm{5}}_T\rho &= \key{car}(\SEM{M}^{\mathrm{5}}_T\rho) \\
-  \SEM{\SND M}^{\mathrm{5}}_T\rho &= \key{cdr}(\SEM{M}^{\mathrm{5}}_T\rho) \\
-  \SEM{\Let x = M \In N}^{\mathrm{5}}_T\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{5}}_T\ext{\rho}{x}{X}) \app \SEM{M}^{\mathrm{5}}_T\rho
+  \SEM{\SND M}^{\mathrm{5}}_T\rho &= \key{cdr}(\SEM{M}^{\mathrm{5}}_T\rho)
 \end{align*}
 together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SEM{-}^{\ell}$.
 
@@ -1452,6 +1458,10 @@ then for every finite $V'$,
   V' \subseteq \SEM{\pass{delay}(M)}^{\mathrm{4}}\rho' \implies \Rel{V'}{\SEM{M}^{\mathrm{3}}\rho} .
 \]
 \end{lemma}
+For $\key{let}$, both directions use $\beta$ for a $\key{let}$ by continuity
+(an element of $\SEM{N}\ext{\rho}{x}{D}$ needs only a finite, nonempty,
+consistent part of $D$); reflection first gathers the finite parts of the
+operand that the elements of $V'$ use into one.
 
 \subsection{Globalize}
 

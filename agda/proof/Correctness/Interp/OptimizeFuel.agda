@@ -231,6 +231,9 @@ run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ag =
   bind-rel (run≈ ck L (agree-sub proj₁ (λ x → inj₁) ag))
     (branch≈ ck M N (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag)
                     (agree-sub (λ w → proj₁ (proj₂ (proj₂ w))) (λ x u → inj₂ (inj₂ (inj₁ u))) ag))
+run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ag =
+  bind-rel (run≈ ck M (agree-sub proj₁ (λ x → inj₁) ag)) λ vw →
+  run≈ ck N (agree-ext vw (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag))
 
 args≈ ck {zero} Nil ag rs = ret rs
 args≈ ck {suc n} (M ,, args) ag rs =

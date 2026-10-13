@@ -10,6 +10,8 @@ open import Language.ISWIM
 open import Semantics.Graph.ISWIM public hiding (⟦_⟧; init)
 
 open import Level renaming (zero to lzero; suc to lsuc)
+open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import proof.Framework.GraphModel.Env using (_~ₑ[_]_)
 
 {- The semantics of Semantics/Graph/ISWIM.agda as an instance of
@@ -27,6 +29,9 @@ open import proof.Framework.GraphModel.Env using (_~ₑ[_]_)
 𝕆-ISWIM-mono inr-op = inr-mono
 𝕆-ISWIM-mono case-op = 𝒞-mono
 𝕆-ISWIM-mono (prim p) = primD-mono p
+𝕆-ISWIM-mono let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
+  ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+         ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
 𝕆-ISWIM-consis : 𝕆-consistent _~_ sig 𝕆-ISWIM
 𝕆-ISWIM-consis lam = Λ-consis
@@ -38,6 +43,9 @@ open import proof.Framework.GraphModel.Env using (_~ₑ[_]_)
 𝕆-ISWIM-consis inr-op = inr-consis
 𝕆-ISWIM-consis case-op = 𝒞-consis
 𝕆-ISWIM-consis (prim p) = primD-consis p
+𝕆-ISWIM-consis let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
+  ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+           ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
 open import proof.Framework.GraphModel.Semantics Op sig public
 

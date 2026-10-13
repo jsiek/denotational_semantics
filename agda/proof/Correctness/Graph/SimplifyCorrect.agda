@@ -282,6 +282,9 @@ simp-ok fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} {γ = γ} {γ'} wf wf' ok =
         (≃-sym (≃-trans (primD-≃ p (≃-sym (int-ok (known I) e₁ (kn dI))) (≃-sym (int-ok (known J) e₂ (kn dJ))))
                         (prim-fold p n m γ'))))
 
+simp-ok fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) wf wf' ok =
+  let-ok fl N wf wf' ok (simp-ok fl M wf wf' ok) (ISWIM-con-env M (proj₂ wf))
+
 simp-args-ok fl {suc n} (M ,, as) wf wf' ok zero = tm (simp-ok fl M wf wf' ok)
 simp-args-ok fl {suc n} (M ,, as) wf wf' ok (suc i) = simp-args-ok fl as wf wf' ok i
 

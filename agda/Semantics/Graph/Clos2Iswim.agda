@@ -43,6 +43,8 @@ apply-n (suc n) F ⟨ D , Ds ⟩ = apply-n n (F D) Ds
 𝕆-Clos2 inr-op = inr
 𝕆-Clos2 case-op = 𝒞
 𝕆-Clos2 (prim p) = primD p
+{- let x = M in N means (λx. N) M -}
+𝕆-Clos2 let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
 
 {- the meaning of a term in an environment: the operators, folded over the
    term; a variable means what the environment gives it, and a variable

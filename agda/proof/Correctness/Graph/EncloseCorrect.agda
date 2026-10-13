@@ -64,6 +64,12 @@ push-vars (suc n) ρ σ k k<sn with k <? n
   k≡n : k ≡ n
   k≡n = ≤-antisym (≤-pred k<sn) (≮⇒≥ ¬k<n)
 
+{- under a binder -}
+rel-ext : ∀ B {ρ₁ ρ₂ : Env} {X} → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x)
+  → ∀ x → Uses x B → (X • ρ₁) x ≃ (X • ρ₂) x
+rel-ext B r zero _ = ≃-refl
+rel-ext B r (suc x) u = r x u
+
 {- The main lemma -------------------------------------------------------------}
 
 enc-correct : ∀ (M : AST) ρ₁ ρ₂ → nonempty-env ρ₂ → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
@@ -122,12 +128,14 @@ enc-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   where
   NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ₂)
   NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩
-  rel-ext : ∀ B {X} → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x) → ∀ x → Uses x B → (X • ρ₁) x ≃ (X • ρ₂) x
-  rel-ext B r zero _ = ≃-refl
-  rel-ext B r (suc x) u = r x u
 enc-correct (prim p ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ NE rel =
   primD-≃ p (enc-correct L ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
             (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₂ (inj₁ u))))
+enc-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ₁ ρ₂ NE rel =
+  ⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • ρ₁)} {λ X → ⟦ enclose N ⟧₂ (X • ρ₂)}
+         (λ V ne _ → enc-correct N _ _ (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne))
+                       (rel-ext N (λ x u → rel x (inj₂ (inj₁ u))))))
+      (enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u)))
 
 enc-args-correct {suc n} (M ,, args) ρ₁ ρ₂ NE rel zero =
   enc-correct M ρ₁ ρ₂ NE (λ x u → rel x (inj₁ u))
