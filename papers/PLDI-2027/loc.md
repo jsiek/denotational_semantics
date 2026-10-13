@@ -19,7 +19,7 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 As of PR #51 (after the infrastructure audit, PRs #42 and #44–#47, the graph model with errors, PRs #50 and #51, and one infrastructure rule for both graph models, which moves the graph model's laws over its operators into its infrastructure (PR #51: its total 2744 → 2608); see [History](#history) and [Graph model with errors](#graph-model-with-errors)). The last column is the graph model with errors, counted as the four are (plus the graph model's meaning of the primitives, which it extends) but not in their comparison: the shared modules not counted are still those all four use. The closure-conversion passes (enclose, optimize, concretize, delay, globalize) are labelled "CC: " in the tables, since `simplify`, rco and the later passes are not part of closure conversion:
 
-| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation | graph model with errors (not in the comparison) |
+| component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation | graph model with errors |
 |---|---:|---:|---:|---:|---:|
 | semantics of the languages | 443 | 660 | 466 | 644 | 639 |
 | simplify | 343 | 572 | 644 | 710 | 380 |
@@ -41,7 +41,7 @@ The denotational semantics row includes the monotonicity, consistency and contin
 
 Language-independent infrastructure, not in any total (see [Language-independent infrastructure](#language-independent-infrastructure)); each proof column is the part of a group that the proof reaches. The graph model is three groups since PR #50: what any graph-model semantics uses (values, consistency, and the machinery for any operators: continuity, `Good`, the properties of whole terms, with constants and tuple components), the graph model's operators, and the error-propagating operators of the graph model with errors, so that each model is charged only for the operators it uses (see [Graph model with errors](#graph-model-with-errors)); the last column is that model's (semantics and pass proofs, without its adequacy):
 
-| language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation | used by graph model with errors (not in the comparison) |
+| language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation | used by graph model with errors |
 |---|---:|---:|---:|---:|---:|---:|
 | abstract binding trees | 190 | 190 | 190 | 190 | 190 | 190 |
 | syntax lemmas (renaming, scoping, uses), list lookups | 499 | 356 | 422 | 407 | 484 | 407 |
@@ -86,7 +86,7 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 
 The lines a reader must audit to trust each style's theorems (see [Audit surface](#audit-surface)), not in the totals: the shared part (languages, passes, syntax, base types, observations), counted once in the first column, the semantics of each style, and its theorem statements. The machines of Imp, CFG and X86 are read for both the CEK and the reduction statements, so they appear in both semantics rows. The statements of the graph model with errors include its adequacy and end-to-end theorems, so they also read the ISWIM, Clos5 and X86 machines.
 
-| audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for reduction semantics + simulation | read for adequacy | read for graph model with errors (not in the comparison) |
+| audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for reduction semantics + simulation | read for adequacy | read for graph model with errors |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | languages, compiler passes, syntax, base types (shared) | 1081 | 1022 | 1058 | 1058 | 1081 | 1043 | 1058 |
 | graph model: domain, operators, semantics of each language | 412 | 412 | — | — | — | 412 | 96 |
