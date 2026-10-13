@@ -40,7 +40,7 @@ open import Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.RCO using (rco-program-mon)
 open import proof.Compiler.EncloseScope using (Closed)
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong using (Red; val; wrong; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in)
+open import proof.Framework.Reduction Obs o-wrong using (Red; val; wrong; to; step-in; toNext; Frame; frame; frame-id; frame-∘; val-in; ret?; pre; pre⋆; any-i)
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Star; ε; _◅_; Step)
 open import proof.Framework.Smallstep Obs using (Plus; plus)
 open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; runs; stutters; equivalent; equiv-trans)
@@ -232,18 +232,6 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
     → Ans (toNext (S.obs (C X)) (step-in C r (Frame.κ (kframe k) X))) s → Ans (toNext (S.obs (C X)) (red (C X))) s
   in-ctx {X = X} k refl a = subst (λ z → Ans (toNext _ z) _) (sym (Frame.eq (kframe k) X)) a
 
-  pre : ∀ {a s s'} → I.step ds₂ s ≡ next s' → Ans a s' → Ans a s
-  pre st (stops fin) = runs (plus st ε) fin
-  pre st (steps (plus s σ) m) = steps {j = 0} (plus st (s ◅ σ)) m
-  pre st (runs (plus s σ) fin) = runs (plus st (s ◅ σ)) fin
-  pre st (stutters () m)
-
-  any-i : ∀ {i a s} → Ans a s → Answers≺ L₂ (λ _ → _~_) i a s
-  any-i (stops fin) = stops fin
-  any-i (steps π m) = steps {j = 0} π m
-  any-i (runs π fin) = runs π fin
-  any-i (stutters () m)
-
   {- an operand of the source, in a context f with continuation k -}
   lk-step : ∀ {B : Set} {X mv} → Lk X mv → Red B → Red B
   lk-step (ok _ _) k = k
@@ -274,10 +262,6 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
   lk-red : ∀ {X mv} (l : Lk X mv) → red X ≡ lk-step l val
   lk-red (ok r _) = S.value-red (≈v-value r)
   lk-red (unb refl _) = refl
-
-  pre⋆ : ∀ {a s t} → Star L₂ s t → Ans a t → Ans a s
-  pre⋆ ε a = a
-  pre⋆ (st ◅ σ) a = pre st (pre⋆ σ a)
 
   {- the operands of a tuple, in the source and the target -}
   data Ops (φ : I.Frame) : ∀ {m} → Args (replicate m ■) → List Imp.Atm → Set where
@@ -310,7 +294,7 @@ module Sim {ds : List AST} (ms : All Mon ds) (n₀ : ℕ) (e₀ : Imp.Exp) where
 
   {- a projection or a primitive, once its operands are values -}
   ret?-ans : ∀ {n ρ φ C κ T mv mw s} {κT : Red AST} → M.Pointwise _≈v_ mv mw → Fr n ρ φ → Kont n ρ C κ
-    → I.step ds₂ s ≡ I.ret? mw φ κ → Ans (toNext (S.obs (C T)) (step-in C (S.ret? mv) κT)) s
+    → I.step ds₂ s ≡ I.ret? mw φ κ → Ans (toNext (S.obs (C T)) (step-in C (ret? mv) κT)) s
   ret?-ans (M.just r) fr k st = steps {j = 0} (plus st ε) (ret~ r fr k)
   ret?-ans M.nothing fr k st = stops st
 

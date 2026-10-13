@@ -2,7 +2,9 @@ open import Data.Nat using (ℕ; zero; suc; _+_; _<_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; ≤-pred; m≤n⇒m<n∨m≡n)
 open import Data.List using (List; replicate; _∷_)
 import Data.List
-open import Framework.ListUtil using (args→list)
+open import proof.Framework.ListUtil using (args→list; proj; proj-map)
+open import Data.Fin using (Fin)
+open import Data.Maybe using (just)
 open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong; cong₂; subst)
 open import Framework.abt.Sig using (Sig; ■)
@@ -138,15 +140,15 @@ extend-skip {zero} nil σ x = refl
 extend-skip {suc n} (cons (ast M) Ms) σ x =
   trans (cong (extend Ms (M • σ)) (sym (+-suc n x))) (extend-skip Ms (M • σ) (suc x))
 
+{- the operand bound before the operands Ms -}
+extend-top : ∀ {n} (Ms : Args (replicate n ■)) M σ → extend Ms (M • σ) n ≡ M
+extend-top {n} Ms M σ = subst (λ y → extend Ms (M • σ) y ≡ M) (+-identityʳ n) (extend-skip Ms (M • σ) 0)
+
 extend-sub : ∀ τ {n} (Ms : Args (replicate n ■)) σ σ' k → k < n
   → extend (sub-args τ Ms) σ' k ≡ sub τ (extend Ms σ k)
 extend-sub τ {suc n} (cons (ast M) Ms) σ σ' k k< with m≤n⇒m<n∨m≡n (≤-pred k<)
 ... | inj₁ k<n = extend-sub τ Ms (M • σ) (sub τ M • σ') k k<n
-... | inj₂ refl =
-  trans (subst (λ y → extend (sub-args τ Ms) (sub τ M • σ') y ≡ sub τ M) (+-identityʳ n)
-               (extend-skip (sub-args τ Ms) (sub τ M • σ') 0))
-        (cong (sub τ) (sym (subst (λ y → extend Ms (M • σ) y ≡ M) (+-identityʳ n)
-                                  (extend-skip Ms (M • σ) 0))))
+... | inj₂ refl = trans (extend-top (sub-args τ Ms) _ σ') (cong (sub τ) (sym (extend-top Ms M σ)))
 
 {- substituting under a binder into a shifted term -}
 exts-shift : ∀ σ M → sub (exts σ) (rename suc M) ≡ rename suc (sub σ M)
@@ -156,3 +158,13 @@ exts-shift σ M = trans (ren-sub (exts σ) suc M) (sym (sub-ren suc σ M))
 sub-args-list : ∀ σ {n} (as : Args (replicate n ■)) → args→list (sub-args σ as) ≡ Data.List.map (sub σ) (args→list as)
 sub-args-list σ {zero} nil = refl
 sub-args-list σ {suc n} (cons (ast M) as) = cong (sub σ M ∷_) (sub-args-list σ as)
+
+{- substituting a component of a tuple -}
+sub-proj : ∀ σ {n m} (i : Fin n) {as : Args (replicate m ■)} {V}
+  → proj i (args→list as) ≡ just V → proj i (args→list (sub-args σ as)) ≡ just (sub σ V)
+sub-proj σ i {as} e rewrite sub-args-list σ as | proj-map (sub σ) i (args→list as) | e = refl
+
+{- substituting into the body of a binder, after β -}
+sub-[] : ∀ τ N V → sub τ (N [ V ]) ≡ sub (exts τ) N [ sub τ V ]
+sub-[] τ N V = trans (sub-sub τ (V • ids) N)
+  (trans (sub-cong (λ { zero → refl ; (suc x) → refl }) N) (sym (exts-[] (sub τ V) τ N)))

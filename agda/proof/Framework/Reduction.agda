@@ -5,10 +5,17 @@
 
   * runs of a reduction (Star*, Plus*), on terms or on the operands of a
     tuple, and a run of a subterm as a run in a context that reduces that
-    subterm first (a frame: star-in, plus-in);
+    subterm first (a frame: star-in, plus-in), and the frames of the
+    operands of a context (LR);
   * how a target term answers the reduction of a source term (Ans): by a
     run to a related value, by a run to a stuck term, or by one or more
-    steps to a term related to the reduct; and congruence (ans-in);
+    steps to a term related to the reduct; congruence (ans-in), the
+    operands of a tuple (ans-cons), and a missing result (ret?-ans);
+  * the operands of a tuple, each with a property (Each), or related
+    pointwise (Pw), and what a substitution may map a variable to: a
+    variable or a value (VarOrValue);
+  * the answers of a machine that ignore the index, with target steps
+    first (pre, pre⋆);
   * the end theorem: if the reduction of every source term is answered
     by every related target term, and related values are observed alike,
     the two machines are equivalent (red-equivalent).
@@ -19,17 +26,25 @@ module proof.Framework.Reduction (Obs : Set) (o-wrong : Obs) where
 
 open import Framework.Smallstep Obs
 open import proof.Framework.Smallstep Obs using (Plus; plus)
-open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; runs; equivalent)
+open import proof.Framework.Simulation Obs using (FSim; Answers≺; stops; steps; stutters; runs; equivalent)
 open import Framework.Reduction Obs o-wrong public
 
 open import Framework.abt.Sig using (Sig; ■)
-open import Framework.abt.AbstractBindingTree using (ABT; Args; nil; cons; ast)
-open import Framework.ListUtil using (args→list)
+open import Framework.abt.AbstractBindingTree using (ABT; Args; nil; cons; ast; `_)
+open import Framework.ListUtil using (args→list; proj; has-length)
+import Framework.Syntax.Scope as Sc
+import proof.Framework.Syntax.Subst as Sb
 
+open import Data.Bool using (true; false)
+open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
-open import Data.Product using (_×_; Σ-syntax; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong)
+open import Data.Maybe using (just; nothing)
+import Data.Maybe.Relation.Binary.Pointwise as M
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
+open import Data.Unit using (⊤; tt)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 
 toNext-to : ∀ {A o} {r : Red A} {M} → toNext o r ≡ next M → r ≡ to M
 toNext-to {r = to _} refl = refl
@@ -148,6 +163,12 @@ ans-in G c (to π m) k = to (plus-in G π) (c m)
 ans-in G c (wrong σ w) k = wrong (star-in G σ) (wrong-in G w)
 ans-in G c (val σ v m) k = ans-star (star-in G σ) (k v m)
 
+{- a result that may be missing, related pointwise -}
+ret?-ans : ∀ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set} {M mv mw X}
+  → M.Pointwise R mv mw → red X ≡ ret? mw → Ans red Val R M (ret? mv) X
+ret?-ans (M.just r) e = to (one e) r
+ret?-ans M.nothing e = wrong ε e
+
 {- The operands of tuples ------------------------------------------------------}
 
 {- the operands of two tuples, related pointwise -}
@@ -168,6 +189,148 @@ module _ {Op₁ Op₂ : Set} {sig₁ : Op₁ → List Sig} {sig₂ : Op₂ → L
   pw-list : ∀ {n as as'} → Pw R {n} as as' → Pointwise R (args→list as) (args→list as')
   pw-list [] = []
   pw-list (r ∷ rs) = r ∷ pw-list rs
+
+  {- with the operands on the right, or on the left, well scoped -}
+  zipʳ : ∀ {k n as as'} → Pw R {n} as as' → Sc.WS-args Op₂ sig₂ k as' → Pw (λ M M' → R M M' × Sc.WS Op₂ sig₂ k M') as as'
+  zipʳ [] _ = []
+  zipʳ (r ∷ rs) (w , ws) = (r , w) ∷ zipʳ rs ws
+
+  unzipʳ : ∀ {k n as as'} → Pw (λ M M' → R M M' × Sc.WS Op₂ sig₂ k M') {n} as as' → Pw R as as' × Sc.WS-args Op₂ sig₂ k as'
+  unzipʳ [] = [] , tt
+  unzipʳ ((r , w) ∷ rs) = (r ∷ proj₁ (unzipʳ rs)) , w , proj₂ (unzipʳ rs)
+
+  zipˡ : ∀ {k n as as'} → Pw R {n} as as' → Sc.WS-args Op₁ sig₁ k as → Pw (λ M M' → R M M' × Sc.WS Op₁ sig₁ k M) as as'
+  zipˡ [] _ = []
+  zipˡ (r ∷ rs) (w , ws) = (r , w) ∷ zipˡ rs ws
+
+  unzipˡ : ∀ {k n as as'} → Pw (λ M M' → R M M' × Sc.WS Op₁ sig₁ k M) {n} as as' → Pw R as as' × Sc.WS-args Op₁ sig₁ k as
+  unzipˡ [] = [] , tt
+  unzipˡ ((r , w) ∷ rs) = (r ∷ proj₁ (unzipˡ rs)) , w , proj₂ (unzipˡ rs)
+
+{- the operands of a tuple, each with the property P -}
+infixr 5 _∷_
+data Each {Op : Set} {sig : Op → List Sig} (P : ABT Op sig → Set) : ∀ {n} → Args Op sig (replicate n ■) → Set where
+  [] : Each P nil
+  _∷_ : ∀ {n M} {as : Args Op sig (replicate n ■)} → P M → Each P as → Each P (cons (ast M) as)
+
+module _ {Op : Set} {sig : Op → List Sig} where
+
+  {- a tuple has as many components as its operands -}
+  has-length-args : ∀ {n} (as : Args Op sig (replicate n ■)) → has-length n (args→list as) ≡ true
+  has-length-args {zero} nil = refl
+  has-length-args {suc n} (cons (ast M) as) = has-length-args as
+
+  {- a component of a tuple -}
+  each-proj : ∀ {P : ABT Op sig → Set} {n m} (i : Fin n) {as : Args Op sig (replicate m ■)} {V}
+    → Each P as → proj i (args→list as) ≡ just V → P V
+  each-proj zero [] ()
+  each-proj (suc i) [] ()
+  each-proj {n = suc n} zero {cons (ast M) as} (p ∷ ps) e with has-length n (args→list as)
+  each-proj zero (p ∷ ps) refl | true = p
+  each-proj zero (p ∷ ps) () | false
+  each-proj (suc i) (p ∷ ps) e = each-proj i ps e
+
+{- the operands of tuples, the first and then the rest, when each language's
+   red-args is red-cons (cons-eq: by refl) and the target's values reduce
+   to val -}
+module _ {Op₁ Op₂ : Set} {sig₁ : Op₁ → List Sig} {sig₂ : Op₂ → List Sig}
+  {redT : ABT Op₂ sig₂ → Red (ABT Op₂ sig₂)} {Val : ABT Op₂ sig₂ → Set} {R : ABT Op₁ sig₁ → ABT Op₂ sig₂ → Set}
+  (redT* : ∀ {n} → Args Op₂ sig₂ (replicate n ■) → Red (Args Op₂ sig₂ (replicate n ■)))
+  (cons-eq : ∀ {n} X (as : Args Op₂ sig₂ (replicate n ■)) → redT* (cons (ast X) as) ≡ red-cons X as (redT X) (redT* as))
+  (val-red : ∀ {V} → Val V → redT V ≡ val) where
+
+  ans-cons : ∀ {n M M' r r'} {as : Args Op₁ sig₁ (replicate n ■)} {as'} → Pw R as as'
+    → Ans redT Val R M r M' → Ans redT* (Each Val) (Pw R) as r' as'
+    → Ans redT* (Each Val) (Pw R) (cons (ast M) as) (red-cons M as r r') (cons (ast M') as')
+  ans-cons rs a as = ans-in (frame _ (λ X → cons-eq X _)) (_∷ rs) a
+    λ v m → ans-in (frame {g = λ Xs → cons (ast _) Xs} _ (λ Xs → trans (cons-eq _ Xs) (val-in (val-red v)))) (m ∷_) as
+      λ vs ms → val ε (v ∷ vs) (m ∷ ms)
+
+{- the operands of a context h are reduced left to right: in a frame,
+   once those before them are values -}
+module _ {Op : Set} {sig : Op → List Sig} (red : ABT Op sig → Red (ABT Op sig)) (Val : ABT Op sig → Set) where
+
+  LR : ∀ {n} → (Args Op sig (replicate n ■) → ABT Op sig) → Set
+  LR {zero} h = ⊤
+  LR {suc n} h = (∀ Ms → Frame red red (λ X → h (cons (ast X) Ms))) × (∀ {V} → Val V → LR (λ Ms → h (cons (ast V) Ms)))
+
+
+{- a context of one operand -}
+lr1 : ∀ {Op sig} {red : ABT Op sig → Red (ABT Op sig)} {Val} (h : Args Op sig (replicate 1 ■) → ABT Op sig) (κ : ABT Op sig → Red (ABT Op sig))
+  → (∀ X → red (h (cons (ast X) nil)) ≡ step-in (λ Y → h (cons (ast Y) nil)) (red X) (κ X)) → LR red Val h
+lr1 h κ e = (λ { nil → frame κ e }) , λ _ → tt
+
+{- the context of all the operands -}
+lr-args : ∀ {Op sig} {red : ABT Op sig → Red (ABT Op sig)} {Val}
+  (red* : ∀ {n} → Args Op sig (replicate n ■) → Red (Args Op sig (replicate n ■)))
+  → (∀ {n} X (as : Args Op sig (replicate n ■)) → red* (cons (ast X) as) ≡ red-cons X as (red X) (red* as))
+  → (∀ {V} → Val V → red V ≡ val) → ∀ {n} {G : Args Op sig (replicate n ■) → ABT Op sig} → Frame red* red G → LR red Val G
+lr-args red* ce vr {zero} F = tt
+lr-args red* ce vr {suc n} F =
+  (λ Ms → frame-∘ (frame _ (λ X → ce X Ms)) F) , λ v → lr-args red* ce vr (frame-∘ (frame _ (λ Xs → trans (ce _ Xs) (val-in (vr v)))) F)
+
+{- what a substitution may map a variable to: a variable, or a value, for
+   a property Value of terms that substitution keeps -}
+module VarOrValue {Op : Set} {sig : Op → List Sig} (Value : ABT Op sig → Set)
+  (value-sub : ∀ σ {V} → Value V → Value (Sb.sub Op sig σ V)) where
+  open Sb Op sig using (sub; sub-args; exts; extend; ids; _•_; rename-sub)
+  open Sc Op sig using (WS; WS-args)
+
+  data VV : ABT Op sig → Set where
+    vv-val : ∀ {V} → Value V → VV V
+    vv-var : ∀ x → VV (` x)
+
+  vv-sub : ∀ {σ F} → (∀ x → VV (σ x)) → VV F → VV (sub σ F)
+  vv-sub h (vv-val v) = vv-val (value-sub _ v)
+  vv-sub h (vv-var x) = h x
+
+  vvs-sub : ∀ {σ n} {Fs : Args Op sig (replicate n ■)} → (∀ x → VV (σ x)) → Each VV Fs → Each VV (sub-args σ Fs)
+  vvs-sub h [] = []
+  vvs-sub h (v ∷ vs) = vv-sub h v ∷ vvs-sub h vs
+
+  vv-exts : ∀ {σ} → (∀ x → VV (σ x)) → ∀ x → VV (exts σ x)
+  vv-exts h zero = vv-var 0
+  vv-exts {σ} h (suc x) = subst VV (sym (rename-sub suc (σ x))) (vv-sub (λ y → vv-var (suc y)) (h x))
+
+  {- one value, for variable 0 -}
+  vv-one : ∀ {V} → Value V → ∀ x → VV ((V • ids) x)
+  vv-one v zero = vv-val v
+  vv-one v (suc x) = vv-var x
+
+  {- the substitution of a closure's body: values, and then ρ -}
+  vv-extend : ∀ {n} {Fs : Args Op sig (replicate n ■)} {ρ} → Each Value Fs → (∀ x → VV (ρ x)) → ∀ x → VV (extend Fs ρ x)
+  vv-extend [] h = h
+  vv-extend (v ∷ vs) h = vv-extend vs λ { zero → vv-val v ; (suc x) → h x }
+
+  {- closed, a value -}
+  vv-value : ∀ {F} → VV F → WS 0 F → Value F
+  vv-value (vv-val v) _ = v
+  vv-value (vv-var x) ()
+
+  vvs-values : ∀ {n} {Fs : Args Op sig (replicate n ■)} → Each VV Fs → WS-args 0 Fs → Each Value Fs
+  vvs-values [] _ = []
+  vvs-values (v ∷ vs) (w , ws) = vv-value v w ∷ vvs-values vs ws
+
+{- Answers of a machine that ignore the index ------------------------------------}
+
+module _ {S₁ : Set} {L : Machine} {R : S₁ → State L → Set} where
+
+  {- target steps first -}
+  pre : ∀ {a s s'} → Step L s s' → Answers≺ L (λ _ → R) 0 a s' → Answers≺ L (λ _ → R) 0 a s
+  pre st (stops fin) = runs (plus st ε) fin
+  pre st (steps (plus s σ) m) = steps {j = 0} (plus st (s ◅ σ)) m
+  pre st (runs (plus s σ) fin) = runs (plus st (s ◅ σ)) fin
+  pre st (stutters () m)
+
+  pre⋆ : ∀ {a s t} → Star L s t → Answers≺ L (λ _ → R) 0 a t → Answers≺ L (λ _ → R) 0 a s
+  pre⋆ ε a = a
+  pre⋆ (st ◅ σ) a = pre st (pre⋆ σ a)
+
+  any-i : ∀ {i a s} → Answers≺ L (λ _ → R) 0 a s → Answers≺ L (λ _ → R) i a s
+  any-i (stops fin) = stops fin
+  any-i (steps π m) = steps {j = 0} π m
+  any-i (runs π fin) = runs π fin
+  any-i (stutters () m)
 
 {- The end theorem -------------------------------------------------------------}
 

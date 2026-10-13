@@ -131,7 +131,7 @@ module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
 open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) (λ P p≈ _ → Kit.≈-sub P p≈)
-  using (≈-rename; ≈-subst)
+  using (≈-rename; ≈-subst; ≈-[])
 
 {- The simulation -----------------------------------------------------------------}
 
@@ -165,10 +165,6 @@ obs≈ (prim≈ _ _) = refl
 obs≈ (let≈ _ _) = refl
 obs≈s [] = refl
 obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
-
-ret?-ans : ∀ {M mv mw X} → M.Pointwise _≈_ mv mw → T.red X ≡ T.ret? mw → Ans′ M (S.ret? mv) X
-ret?-ans (M.just r) e = to (one e) r
-ret?-ans M.nothing e = wrong ε e
 
 {- the let, fst and snd that take a closure apart -}
 let-fst-snd : ∀ {n N' as M'} → T.Values {n} as
@@ -245,9 +241,9 @@ sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ
   case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
   case-sim v@(T.inl _) (inl≈ r') =
-    to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
+    to (one (val-in (T.value-red v))) (≈-[] tt r' s)
   case-sim v@(T.inr _) (inr≈ r') =
-    to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) t)
+    to (one (val-in (T.value-red v))) (≈-[] tt r' t)
   case-sim T.fun ()
   case-sim v@(T.pair _ _) (clos≈ _ _) = wrong ε (val-in (T.value-red v))
   case-sim T.lit lit≈ = wrong ε refl
@@ -265,12 +261,9 @@ sim (prim≈ {p} r s) =
   ... | just (bool true) = M.just (inl≈ (tuple≈ []))
   ... | just (bool false) = M.just (inr≈ (tuple≈ []))
 sim (let≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim r)
-  λ v r' → to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
+  λ v r' → to (one (val-in (T.value-red v))) (≈-[] tt r' s)
 sims [] = val ε T.[] []
-sims (r ∷ rs) =
-  ans-in (frame _ (λ _ → refl)) (λ r' → r' ∷ rs) (sim r)
-    λ v r' → ans-in (frame {g = λ Xs → _ ,, Xs} _ (λ X → val-in (T.value-red v))) (r' ∷_) (sims rs)
-      λ vs rs' → val ε (v T.∷ vs) (r' ∷ rs')
+sims (r ∷ rs) = ans-cons T.red-args (λ _ _ → refl) T.value-red rs (sim r) (sims rs)
 
 {- The end theorem: for every Clos3 program ----------------------------------}
 

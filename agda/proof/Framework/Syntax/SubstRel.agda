@@ -59,3 +59,12 @@ module Closure (_≈_ : AST₁ → AST₂ → Set) (var≈ : ∀ {x} → (`₁ x
 
   ≈-subst : ∀ {σ σ' M M'} → SubP σ σ' → M ≈ M' → S₁.sub σ M ≈ S₂.sub σ' M'
   ≈-subst = sub≈ SubP proj₁ proj₂ sub-exts
+
+  {- substituting one related term, for variable 0 -}
+  ≈-[] : ∀ {V V' N N'} → Ok (V S₁.• S₁.ids) (V' S₂.• S₂.ids) → V ≈ V' → N ≈ N' → (N S₁.[ V ]) ≈ (N' S₂.[ V' ])
+  ≈-[] ok r = ≈-subst ((λ { zero → r ; (suc x) → var≈ }) , ok)
+
+  {- under a binder, for the variables with a property P -}
+  ≈-exts-on : ∀ {P : ℕ → Set} {σ σ'} → (∀ x → P (suc x) → σ x ≈ σ' x) → ∀ x → P x → S₁.exts σ x ≈ S₂.exts σ' x
+  ≈-exts-on h zero _ = var≈
+  ≈-exts-on h (suc x) p = ≈-rename suc (h x p)

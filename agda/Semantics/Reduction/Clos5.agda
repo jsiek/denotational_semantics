@@ -20,7 +20,7 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.Clos5
 open import Semantics.Observation
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; wrong; to; step-in; reduction)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; wrong; to; step-in; reduction; ret?; red-cons)
 open import Framework.Syntax.Subst Op sig using (_[_]; sub; ids)
 open import Framework.ListUtil using (proj; args→list)
 
@@ -41,10 +41,6 @@ obs (inr-op ⦅ M ,, Nil ⦆) = o-inr (obs M)
 obs _ = o-wrong
 obs-args {zero} Nil = []
 obs-args {suc n} (M ,, as) = obs M ∷ obs-args as
-
-ret? : Maybe AST → Red AST
-ret? (just M) = to M
-ret? nothing = wrong
 
 {- the term of a primitive's result -}
 out : Out → AST
@@ -109,8 +105,7 @@ red ds (prim p ⦅ L ,, M ,, Nil ⦆) =
 red ds (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = step-in (λ M' → let-op ⦅ M' ,, ⟩ N ,, Nil ⦆) (red ds M) (to (N [ M ]))
 
 red-args ds {zero} Nil = val
-red-args ds {suc n} (M ,, as) =
-  step-in (λ M' → M' ,, as) (red ds M) (step-in (λ as' → M ,, as') (red-args ds as) val)
+red-args ds {suc n} (M ,, as) = red-cons M as (red ds M) (red-args ds as)
 
 {- a program starts with its main expression -}
 sem : Program → Machine
