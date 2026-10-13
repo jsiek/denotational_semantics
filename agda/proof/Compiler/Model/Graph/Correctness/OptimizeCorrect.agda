@@ -23,7 +23,6 @@ open import proof.Framework.GraphModel.Ops
 open import proof.Compiler.Model.Graph.Prim
 open import Compiler.Lang.Clos2
 open import proof.Compiler.Model.Graph.Sem.Clos2Iswim
-open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize
 open import proof.Compiler.Model.Graph.Correctness.DelayFiniteCommon using (Env; Init; ρ₀)
 open import proof.Compiler.Model.Graph.Correctness.ConcretizeCorrect

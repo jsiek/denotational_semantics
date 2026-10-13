@@ -35,7 +35,6 @@ module proof.Compiler.Operational.Correctness.OptimizeSim where
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_; !_,,_)
 open import Compiler.Lang.Clos2
-open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args; ws-uses)
 import proof.Compiler.Operational.Correctness.EncloseSim as E

@@ -33,7 +33,6 @@ module proof.Compiler.Reduction.Correctness.OptimizeRed where
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.Clos2
-open import Compiler.Compile.Concretize using (unbind-n)
 open import Compiler.Compile.Optimize hiding (bound; bound-arg; bound-args)
 open import Compiler.Observation
 open import proof.Framework.Reduction Obs o-wrong

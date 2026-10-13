@@ -30,7 +30,7 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Compiler.Lang.ISWIM
 import Compiler.Lang.Clos2 as C
 open import Compiler.Compile.Optimize using (bind-n-ast)
-open import Compiler.Compile.Concretize using (unbind-n)
+open import Compiler.Lang.Clos2 using (unbind-n)
 open import Compiler.Compile.Enclose using (enclose; enc-args; fv-vars)
 open import proof.Compiler.Compile.EncloseScope using (Closed; enclose-closed; module Enclosed)
 open import Compiler.Observation

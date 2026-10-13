@@ -19,7 +19,6 @@ open import Compiler.Observation
 open import Compiler.Reduction.Smallstep using (Machine; Red; val; wrong; to; step-in; reduction)
 open import Framework.Syntax.Subst Op sig using (_[_]; sub; ids; extend)
 open import Framework.ListUtil using (proj; args→list)
-open import Compiler.Compile.Concretize using (unbind-n)
 
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)

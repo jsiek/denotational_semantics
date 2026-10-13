@@ -98,7 +98,7 @@ The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Den
 
 | shared module | lines | used by |
 |---|---:|---|
-| `Compiler.Compile.Concretize` | 46 | all four proofs |
+| `Compiler.Compile.Concretize` | 43 | all four proofs |
 | `Compiler.Compile.Delay` | 21 | all four proofs |
 | `Compiler.Compile.Enclose` | 22 | all four proofs |
 | `Compiler.Compile.EncloseScope` (+ proof/) | 42 | simulation, interpreter, reduction, adequacy |
@@ -112,7 +112,7 @@ The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Den
 | `Compiler.Compile.RCO` | 110 | all four proofs |
 | `Compiler.Compile.Select` | 34 | all four proofs |
 | `Compiler.Lang.CFG` | 22 | all four proofs |
-| `Compiler.Lang.Clos2` | 24 | all four proofs |
+| `Compiler.Lang.Clos2` | 27 | all four proofs |
 | `Compiler.Lang.Clos3` | 24 | all four proofs |
 | `Compiler.Lang.Clos4` | 34 | all four proofs |
 | `Compiler.Lang.Clos5` | 41 | all four proofs |
@@ -544,6 +544,12 @@ Pass by pass (reduction against CEK):
 * **What substitution costs, and saves.** Enclose (+28), delay (+37) and globalize (+33) cost more than the CEK proofs: the relation on terms and its closure under substitution replace the relations on environments and continuations, and the congruence cases are about as many as the CEK proofs' frames. Enclose also tracks that the target stays closed, so that a closure whose captured variables were substituted is a value. Optimize is even: the reduction has no stuttering (a dropped free variable is a value after substitution, and takes no step, where the CEK machine evaluates it), but needs `Pr` for the closure's free variables and the closedness of the source. Concretize is smaller (−24): its run-ahead states (a variable becomes three Clos3 steps) become one clause, a value is related to a projection from the tuple of free variables, which takes one step. Concretize needs a new precondition, a well-scoped program (see [Caveats](#caveats)).
 * **rco needs no closure under substitution** (−132 against the CEK proof). Its values are equal on both sides (they contain no code), so a complex operand M in the context h of its construct is related to its let in the target, `h[M] ≈ let x = M' in B`, when M ≈ M' and `h[V] ≈ B[x := V]` for every value V. The quantification is over a term, the same on both sides, so the relation is strictly positive and not a logical relation, and the simulation recurses into it. Every substitution is that of a β, a case or a let into code, related by `rco≈` (sub σ M ≈ sub σ (rco M) for σ mapping to values), which builds the let chains of rco by recursion on the operands (`chain`, 101 lines with the left-to-right frames of the constructs). The CEK proof needs renamings of environments and the pending chains (`Pend`) instead.
 * **Lift locals costs most** (+137): it is the boundary between substitution and frames. The source is a term in a context of lets, the target an Imp state with a frame and a continuation, so the relation pairs the source's context with the target's continuation (`Kont`, as in the CEK proof), and values are related as data (term values with machine values). The source takes no step to evaluate an atom, which is already a value, while the target takes two, so each construct matches one source step with the target's evaluation of all its operands, case by case (the operands bound or not, and the shape of the values).
+
+**Reading this column against the others.**
+* **"Reduction semantics" here is substitution-based structural operational semantics**, a step function with congruence rules, not Felleisen–Hieb evaluation contexts (see *The semantics* above). A version with evaluation contexts would add decomposition, plugging and unique decomposition; it was not built, so its cost is not measured.
+* **Substitution is infrastructure, so it is outside the total**, by the same rule that keeps the graph model out of the denotational total. The substitution library (189 lines, with `ScopeSubst` and `SubstRel`) and the reduction framework (130) are used only by this column; they are its counterpart of the graph model and denotational framework (767 lines), and like them they would be reused unchanged by another language. Both are in the infrastructure table.
+* **About a fifth of the total is the CEK column's code.** The machines of Imp, CFG and X86 (267 lines) and the proofs of explicate control and select instructions (127 + 238) are the same files in both columns, 632 of the 3011 lines. The comparison of the two semantics is in the rows from enclose to lift locals, and the semantics row's reduction part (411 lines against the machines' 390).
+* **The per-pass theorems differ in one place:** concretize is stated for well-scoped programs (`WS 0 M`), which the CEK theorem does not require (see [Caveats](#caveats)). The end-to-end theorems are the same as the CEK ones.
 
 **The prediction** of [Which relations each proof needs](#which-relations-each-proof-needs) was that with substitution the closure-conversion passes would need relations on terms closed under substitution rather than the compilation function, that rco would too, and that lift locals, explicate control and select instructions would be unaffected. It held for the closure-conversion passes, with a refinement: the relation must be closed under substitution, but on the code of closures, which substitution never enters, the compilation function is still the relation (through a fundamental lemma quantifying over substitutions). It did not hold for rco, which needs no closure under substitution because its values are equal, and is smaller than the CEK proof. Lift locals is affected after all, as the pass from substitution to frames; explicate control and select instructions are indeed unaffected, and shared.
 

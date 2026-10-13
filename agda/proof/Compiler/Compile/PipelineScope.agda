@@ -67,7 +67,6 @@ split< (s≤s le) = m≤n⇒m<n∨m≡n le
 module Opt where
   open C2
   open import Compiler.Compile.Optimize
-  open import Compiler.Compile.Concretize using (unbind-n)
   open W2 using (WS; WS-arg; WS-args; ws-uses)
 
   module _ (r : Var → Var) {U : ℕ → Set} (dec : ∀ j → Dec (U j)) where

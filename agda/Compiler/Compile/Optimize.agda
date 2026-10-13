@@ -21,7 +21,6 @@ module Compiler.Compile.Optimize where
   -}
   open import Compiler.Lang.Clos2
   open import Framework.Syntax.Uses Op sig public
-  open import Compiler.Compile.Concretize using (unbind-n)
 
   {- the renaming for the body of a binder -}
   ext-var : (Var → Var) → Var → Var
