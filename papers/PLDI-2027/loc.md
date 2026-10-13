@@ -17,43 +17,43 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 ## Current counts
 
-As of PR #43 (`let` in ISWIM, Clos2 and Clos3, in all four styles; see [Adding let to ISWIM, Clos2 and Clos3](#adding-let-to-iswim-clos2-and-clos3)):
+As of PR #48 (after the infrastructure audit, PRs #42 and #44–#47; see [History](#history)). The closure-conversion passes (enclose, optimize, concretize, delay, globalize) are labelled "CC: " in the tables, since `simplify`, rco and the later passes are not part of closure conversion:
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|
-| semantics of the languages | 744 | 666 | 466 | 681 |
-| simplify | 366 | 590 | 733 | 738 |
-| enclose | 81 | 194 | 140 | 229 |
-| optimize | 134 | 247 | 170 | 256 |
-| concretize | 216 | 191 | 127 | 172 |
-| delay | 769 | 151 | 97 | 189 |
-| globalize | 213 | 164 | 111 | 201 |
-| rco | 189 | 407 | 265 | 271 |
-| lift locals | 214 | 182 | 113 | 319 |
-| explicate control | 154 | 127 | 122 | 127 |
-| select instructions | 281 | 238 | 111 | 238 |
+| semantics of the languages | 447 | 660 | 466 | 644 |
+| simplify | 343 | 572 | 644 | 710 |
+| CC: enclose | 81 | 188 | 140 | 186 |
+| CC: optimize | 134 | 224 | 170 | 222 |
+| CC: concretize | 141 | 182 | 127 | 157 |
+| CC: delay | 594 | 134 | 90 | 183 |
+| CC: globalize | 155 | 157 | 111 | 192 |
+| rco | 168 | 396 | 245 | 247 |
+| lift locals | 214 | 172 | 98 | 306 |
+| explicate control | 154 | 124 | 118 | 124 |
+| select instructions | 281 | 235 | 107 | 235 |
 | composition | 32 | 26 | 22 | 27 |
 | shared modules not used by all four proofs | — | 456 | 456 | 456 |
-| **total** | **3393** | **3639** | **2933** | **3904** |
+| **total** | **2744** | **3526** | **2794** | **3689** |
 
-The denotational semantics row includes the continuity of ISWIM (`proof/Semantics/Graph/ISWIMContinuous.agda`, 49 lines), formerly counted in adequacy only, which simplify's proof uses for β. The simplify row of each column includes the syntactic lemmas about the pass that all four proofs use (`proof/Compiler/SimplifyFacts.agda`, 110 lines); that simplify keeps programs closed (`proof/Compiler/SimplifyScope.agda`, 125 lines), which only the operational compositions need, is in the shared row. The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)). The reduction column's semantics row is its reduction semantics of ISWIM and Clos2–Clos5 with their values (414 lines: 294 for the reductions, 120 for their values) and the machines of Imp, CFG and X86 that it shares with the CEK column (267); its explicate-control and select-instructions rows are the CEK proofs, shared (see [Reduction semantics + simulation](#reduction-semantics--simulation)).
+The denotational semantics row includes the monotonicity, consistency and continuity of each language; since PR #47 they are assembled from a table of each language's operators, whose properties are proved once in the infrastructure (`Good` in `proof/Framework/GraphModel/Ops`), so the continuity of ISWIM that simplify's proof uses for β is a one-line re-export (`proof/Semantics/Graph/ISWIMContinuous.agda`). The simplify row of each column includes the syntactic lemmas about the pass that all four proofs use (`proof/Compiler/SimplifyFacts.agda`, 110 lines); that simplify keeps programs closed (`proof/Compiler/SimplifyScope.agda`, 125 lines), which only the operational compositions need, is in the shared row. The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)). The reduction column's semantics row is its reduction semantics of ISWIM and Clos2–Clos5 with their values (378 lines: 274 for the reductions, 104 for their values) and the machines of Imp, CFG and X86 that it shares with the CEK column (266); its explicate-control and select-instructions rows are the CEK proofs, shared (see [Reduction semantics + simulation](#reduction-semantics--simulation)).
 
 Language-independent infrastructure, not in any total (see [Language-independent infrastructure](#language-independent-infrastructure)); each proof column is the part of a group that the proof reaches:
 
 | language-independent infrastructure (not in the totals) | lines | used by denotational: graph model | used by CEK machine + simulation | used by clocked interpreter + value relations | used by reduction semantics + simulation |
 |---|---:|---:|---:|---:|---:|
 | abstract binding trees | 190 | 190 | 190 | 190 | 190 |
-| syntax lemmas (renaming, scoping, uses), list lookups | 457 | 352 | 403 | 403 | 457 |
+| syntax lemmas (renaming, scoping, uses), list lookups | 499 | 356 | 422 | 407 | 484 |
 | base types, logical equivalence | 20 | 17 | 20 | 20 | 20 |
-| denotational framework | 325 | 325 | — | — | — |
-| graph model: values, operators, continuity | 454 | 454 | — | — | — |
-| small-step framework: transition systems, simulations | 188 | — | 188 | — | 188 |
-| reduction framework: reduction semantics, simulations between them | 130 | — | — | — | 130 |
-| clocked big-step framework | 132 | — | — | 132 | — |
+| denotational framework | 350 | 350 | — | — | — |
+| graph model: values, operators, continuity | 836 | 836 | — | — | — |
+| small-step framework: transition systems, simulations | 243 | — | 243 | — | 243 |
+| reduction framework: reduction semantics, simulations between them | 235 | — | — | — | 235 |
+| clocked big-step framework | 243 | — | — | 243 | — |
 | runs of a step function from any state | 29 | — | — | — | — |
-| **total** | **1925** | **1338** | **801** | **745** | **985** |
+| **total** | **2645** | **1749** | **875** | **860** | **1172** |
 
-Adequacy uses 1521 lines of the infrastructure, 183 of them not used by the denotational proof.
+Adequacy uses 1959 lines of the infrastructure, 210 of them not used by the denotational proof.
 
 Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86` (`SelectCorrect`), into statements about running programs (`proof/Adequacy/EndToEnd.agda`; see [Adequacy for X86](#adequacy-for-x86)). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations, closedness, the scoping of `compile`'s output, that simplify keeps programs closed, and growing tables, 456 lines); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the ISWIM, Clos5, Imp and X86 machines (367 lines, plus the 1-line instance of the small-step framework; X86's frames are Imp's), which adequacy reuses from the simulation proof and which are not counted again.
 
@@ -72,7 +72,7 @@ Two experiments, not in the totals: a direct backward simulation for delay, desc
 | experiment (not in the totals) | lines |
 |---|---:|
 | simulation: direct backward simulation for delay — framework | 86 |
-| simulation: direct backward simulation for delay — delay | 128 |
+| simulation: direct backward simulation for delay — delay | 126 |
 | graph model: direct Imp — semantics | 27 |
 | graph model: direct Imp — lift locals | 78 |
 | graph model: direct Imp — explicate control | 522 |
@@ -85,15 +85,15 @@ The lines a reader must audit to trust each style's theorems (see [Audit surface
 |---|---:|---:|---:|---:|---:|---:|
 | languages, compiler passes, syntax, base types (shared) | 1081 | 1022 | 1058 | 1058 | 1081 | 1043 |
 | graph model: domain, operators, semantics of each language | 411 | 411 | — | — | — | 411 |
-| simulation: small-step machines, transition systems | 696 | — | 696 | — | 297 | 404 |
+| simulation: small-step machines, transition systems | 693 | — | 693 | — | 299 | 404 |
 | interpreter: clocked interpreters, results | 501 | — | — | 501 | — | — |
-| reduction: reduction semantics, machines of Imp, CFG and X86, transition systems | 606 | — | 297 | — | 606 | 258 |
+| reduction: reduction semantics, machines of Imp, CFG and X86, transition systems | 594 | — | 299 | — | 594 | 260 |
 | graph model: theorem statements | 70 | 70 | — | — | — | — |
 | simulation: theorem statements | 54 | — | 54 | — | — | — |
 | interpreter: theorem statements | 54 | — | — | 54 | — | — |
 | reduction: theorem statements | 54 | — | — | — | 54 | — |
 | adequacy: theorem statements | 51 | — | — | — | — | 51 |
-| **total** | **3281** | **1503** | **1808** | **1613** | **1741** | **1909** |
+| **total** | **3264** | **1503** | **1805** | **1613** | **1729** | **1909** |
 
 The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Denotational.agda`, 2 lines), not counted in their column.
 
@@ -134,31 +134,33 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
 
 | infrastructure module | lines | used by |
 |---|---:|---|
-| `Framework.Clocked` (+ proof/) | 132 | interpreter |
-| `proof.Framework.GraphModel.Continuity` | 150 | graph model, adequacy |
-| `Framework.GraphModel.DOpSig` (+ proof/) | 24 | graph model, adequacy |
+| `Framework.Clocked` (+ proof/) | 243 | interpreter |
+| `proof.Framework.GraphModel.Continuity` | 233 | graph model, adequacy |
+| `Framework.GraphModel.DOpSig` (+ proof/) | 46 | graph model, adequacy |
 | `proof.Framework.GraphModel.DenotProperties` | 14 | graph model, adequacy |
 | `Framework.GraphModel.Domain` (+ proof/) | 70 | graph model, adequacy |
+| `proof.Framework.GraphModel.DomainUtil` | 85 | graph model, adequacy |
 | `Framework.GraphModel.Env` (+ proof/) | 84 | graph model, adequacy |
-| `Framework.GraphModel.Ops` (+ proof/) | 213 | graph model, adequacy |
+| `Framework.GraphModel.Ops` (+ proof/) | 354 | graph model, adequacy |
 | `proof.Framework.GraphModel.RenameSem` | 49 | graph model, adequacy |
 | `proof.Framework.GraphModel.Semantics` | 82 | graph model, adequacy |
-| `proof.Framework.GraphModel.SemanticsUtil` | 21 | graph model, adequacy |
-| `Framework.GraphModel.SetsAsPredicates` (+ proof/) | 53 | graph model, adequacy |
+| `proof.Framework.GraphModel.SemanticsUtil` | 94 | graph model, adequacy |
+| `Framework.GraphModel.SetsAsPredicates` (+ proof/) | 56 | graph model, adequacy |
 | `Framework.Iff` | 3 | simulation, interpreter, reduction, adequacy |
 | `Framework.ListUtil` (+ proof/) | 114 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Primitives` | 17 | graph model, simulation, interpreter, reduction, adequacy |
-| `Framework.Reduction` (+ proof/) | 130 | reduction |
+| `Framework.Reduction` (+ proof/) | 235 | reduction |
 | `proof.Framework.Runs` | 29 | adequacy |
-| `proof.Framework.Simulation` | 88 | simulation, reduction |
-| `Framework.Smallstep` (+ proof/) | 100 | simulation, reduction, adequacy |
+| `proof.Framework.Simulation` | 116 | simulation, reduction |
+| `Framework.Smallstep` (+ proof/) | 127 | simulation, reduction, adequacy |
+| `proof.Framework.Syntax.EnvRel` | 15 | simulation |
 | `Framework.Syntax.Rename` (+ proof/) | 59 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Syntax.Scope` (+ proof/) | 32 | simulation, interpreter, reduction, adequacy |
 | `proof.Framework.Syntax.ScopeRename` | 19 | simulation, interpreter, reduction, adequacy |
-| `proof.Framework.Syntax.ScopeSubst` | 24 | reduction |
+| `proof.Framework.Syntax.ScopeSubst` | 42 | reduction |
 | `Framework.Syntax.SigUtil` | 4 | graph model, simulation, interpreter, reduction, adequacy |
-| `Framework.Syntax.Subst` (+ proof/) | 135 | graph model, simulation, interpreter, reduction, adequacy |
-| `proof.Framework.Syntax.SubstRel` | 30 | reduction |
+| `Framework.Syntax.Subst` (+ proof/) | 139 | graph model, simulation, interpreter, reduction, adequacy |
+| `proof.Framework.Syntax.SubstRel` | 35 | reduction |
 | `Framework.Syntax.SyntaxUtil` | 6 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.Syntax.Uses` (+ proof/) | 44 | graph model, simulation, interpreter, reduction, adequacy |
 | `Framework.abt.AbstractBindingTree` | 14 | graph model, simulation, interpreter, reduction, adequacy |
@@ -269,6 +271,11 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-13 | inlining in simplify (transformation 5): a known function is kept as its source body with its `Facts`, and a call of it is replaced by its body simplified at the call, the operand bound as in β (a let when it is not a value), when the result is small enough, under fuel; copy propagation keeps what is known of a copied variable; β and inlining share one lemma per proof (PR #41) | 3360 (+11) | 3607 (+49) | 2900 (+60) | 3821 (+87) |
 | 2026-10-13 | infrastructure audit, step 1: language-independent lemmas that the proofs repeated defined once in the infrastructure (list lookups, the graph model's `ρ₀`, `ne-mem` and `Λ-≃`, the continuity of Clos5 from `SemanticsUtil`, the environment lemmas `•-~` and `extend-nonempty-env` for local copies, adequacy's runs from any state and `terminates-det`); the infrastructure +59 (1866 → 1925), of which each proof reaches +28, +18, +16 and +18; adequacy 3246 → 3208 (PR #42) | 3299 (−61) | 3581 (−26) | 2892 (−8) | 3810 (−11) |
 | 2026-10-13 | `let` in ISWIM, Clos2 and Clos3 (semantics in every style, every pass, every proof); simplify emits `let x = M' in N'` where it left the redex `(λ x. N') M'`, and simplifies a source `let` like β (PR #43; see [Adding let](#adding-let-to-iswim-clos2-and-clos3)) | 3393 (+94) | 3639 (+58) | 2933 (+41) | 3904 (+94) |
+| 2026-10-13 | infrastructure audit, interpreter track: the `Result` monad laws, clock monotonicity (`⊑-bind`, `Stable`, `Back`, `clocked-back`) and `clocked-≡` move into `Framework.Clocked` (132 → 243) (PR #44) | 3393 | 3639 | 2794 (−139) | 3904 |
+| 2026-10-13 | infrastructure audit, CEK track: `step⁺`, `Reach`/`after`, `Lag`, `answers-at` and `next?` in the small-step framework (188 → 243), renamed environments in `Syntax.EnvRel` (15); the reduction column shares the Imp machine and the explicate and select proofs (PR #45) | 3393 | 3526 (−113) | 2794 | 3897 (−7) |
+| 2026-10-13 | infrastructure audit, reduction track: `ret?`, operand lists (`Each`, `ans-cons`), `ret?-ans`, let chains and the one-value substitution `≈-[]` in the reduction framework (130 → 235) and the substitution lemmas (PR #46) | 3393 | 3526 | 2794 | 3689 (−208) |
+| 2026-10-13 | infrastructure audit, graph-model track: each operator's monotonicity, consistency and continuity proved once (`Good`), and each language's semantics built from a table of operators (semantics row 744 → 447); congruences from monotonicity (`mono⇒≃`); β laws for any continuous semantics (`Λ-β`, `let-β`, `clos-β`); domain facts in `DomainUtil`; graph model values, operators, continuity 454 → 836 (PR #47) | 2744 (−649) | 3526 | 2794 | 3689 |
+| 2026-10-13 | closure-conversion passes labelled "CC: " in the tables; no count changes (PR #48) | 2744 | 3526 | 2794 | 3689 |
 
 **Infrastructure audit, step 1 (PR #42).** The last row moves language-independent reasoning that the proofs had repeated, or had written locally, into the infrastructure, under the policy of [Language-independent infrastructure](#language-independent-infrastructure). No theorem statement, pass or semantics changed. What moved:
 

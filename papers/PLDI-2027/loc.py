@@ -138,14 +138,14 @@ GROUPS = [
     # proofs, so they are counted in the simplify row of each column
     ('den+op+ck+red', 'simplify', [PC + 'SimplifyFacts.agda']),
     ('den', 'simplify', [GC + 'SimplifyCorrect.agda']),
-    ('den', 'enclose', [GC + 'EncloseCorrect.agda']),
-    ('den', 'optimize', [GC + 'OptimizeCorrect.agda']),
-    ('den', 'concretize', [GC + 'ConcretizeCorrect.agda']),
-    ('den', 'delay',
+    ('den', 'CC: enclose', [GC + 'EncloseCorrect.agda']),
+    ('den', 'CC: optimize', [GC + 'OptimizeCorrect.agda']),
+    ('den', 'CC: concretize', [GC + 'ConcretizeCorrect.agda']),
+    ('den', 'CC: delay',
      [GC + 'DelayFiniteCommon.agda', GC + 'DelayFiniteRel.agda',
       GC + 'DelayApp.agda', GC + 'DelayPreserve.agda',
       GC + 'DelayReflectFinite.agda']),
-    ('den', 'globalize', [GC + 'GlobalizeCorrect.agda']),
+    ('den', 'CC: globalize', [GC + 'GlobalizeCorrect.agda']),
     # each rco module also proves compile-mon (compile then rco) end to end
     ('den', 'rco', [GC + 'RCOCorrect.agda']),
     # lift locals and explicate control against the continuation-passing
@@ -169,11 +169,11 @@ GROUPS = [
      [O + 'Values.agda', O + 'Imp.agda', O + 'CFG.agda', O + 'X86.agda',
       O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
     ('op', 'simplify', [OC + 'SimplifySim.agda']),
-    ('op', 'enclose', [OC + 'EncloseSim.agda']),
-    ('op', 'optimize', [OC + 'OptimizeSim.agda']),
-    ('op', 'concretize', [OC + 'ConcretizeSim.agda']),
-    ('op', 'delay', [OC + 'DelaySim.agda']),
-    ('op', 'globalize', [OC + 'GlobalizeSim.agda']),
+    ('op', 'CC: enclose', [OC + 'EncloseSim.agda']),
+    ('op', 'CC: optimize', [OC + 'OptimizeSim.agda']),
+    ('op', 'CC: concretize', [OC + 'ConcretizeSim.agda']),
+    ('op', 'CC: delay', [OC + 'DelaySim.agda']),
+    ('op', 'CC: globalize', [OC + 'GlobalizeSim.agda']),
     ('op', 'rco', [OC + 'RCOSim.agda']),
     ('op', 'lift locals', [OC + 'LiftLocalsSim.agda']),
     # explicate control and select instructions are between the machines of
@@ -186,11 +186,11 @@ GROUPS = [
     # and the framework at this compiler's observations (Smallstep.agda)
     ('red', 'semantics of the languages', [RD + '*.agda', RP + '*.agda']),
     ('red', 'simplify', [RC + 'SimplifyRed.agda']),
-    ('red', 'enclose', [RC + 'EncloseRed.agda']),
-    ('red', 'optimize', [RC + 'OptimizeRed.agda']),
-    ('red', 'concretize', [RC + 'ConcretizeRed.agda']),
-    ('red', 'delay', [RC + 'DelayRed.agda']),
-    ('red', 'globalize', [RC + 'GlobalizeRed.agda']),
+    ('red', 'CC: enclose', [RC + 'EncloseRed.agda']),
+    ('red', 'CC: optimize', [RC + 'OptimizeRed.agda']),
+    ('red', 'CC: concretize', [RC + 'ConcretizeRed.agda']),
+    ('red', 'CC: delay', [RC + 'DelayRed.agda']),
+    ('red', 'CC: globalize', [RC + 'GlobalizeRed.agda']),
     ('red', 'rco', [RC + 'RCORed.agda']),
     ('red', 'lift locals', [RC + 'LiftLocalsRed.agda']),
     ('red', 'composition', [RC + 'CompilerRed.agda', RC + 'CompilerX86Red.agda']),
@@ -198,11 +198,11 @@ GROUPS = [
     # with the framework at this compiler's observations (Clock.agda)
     ('ck', 'semantics of the languages', [F + '*.agda', FP + 'Clock.agda']),
     ('ck', 'simplify', [FC + 'SimplifyFuel.agda']),
-    ('ck', 'enclose', [FC + 'EncloseFuel.agda']),
-    ('ck', 'optimize', [FC + 'OptimizeFuel.agda']),
-    ('ck', 'concretize', [FC + 'ConcretizeFuel.agda']),
-    ('ck', 'delay', [FC + 'DelayFuel.agda']),
-    ('ck', 'globalize', [FC + 'GlobalizeFuel.agda']),
+    ('ck', 'CC: enclose', [FC + 'EncloseFuel.agda']),
+    ('ck', 'CC: optimize', [FC + 'OptimizeFuel.agda']),
+    ('ck', 'CC: concretize', [FC + 'ConcretizeFuel.agda']),
+    ('ck', 'CC: delay', [FC + 'DelayFuel.agda']),
+    ('ck', 'CC: globalize', [FC + 'GlobalizeFuel.agda']),
     ('ck', 'rco', [FC + 'RCOFuel.agda']),
     ('ck', 'lift locals', [FC + 'LiftLocalsFuel.agda']),
     ('ck', 'explicate control', [FC + 'ExplicateFuel.agda']),
@@ -431,8 +431,8 @@ def main():
     extra['adeq'] = sorted((shared & reach['adeq']) - by_all - set(extra['den']))
     unused = sorted(shared - set().union(*(reach[s] for s in own)))
 
-    rows = ['semantics of the languages', 'simplify', 'enclose', 'optimize', 'concretize',
-            'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
+    rows = ['semantics of the languages', 'simplify', 'CC: enclose', 'CC: optimize', 'CC: concretize',
+            'CC: delay', 'CC: globalize', 'rco', 'lift locals', 'explicate control',
             'select instructions',
             'composition']
     total = {side: 0 for side in SIDES}
