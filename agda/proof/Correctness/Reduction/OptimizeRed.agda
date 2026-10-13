@@ -44,7 +44,7 @@ import Framework.Syntax.Rename Op sig as R
 import proof.Framework.Syntax.SubstRel Op sig Op sig as SubstRel
 open SS using (sub; sub-args; exts; ids; extend)
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
-open import proof.Framework.Syntax.ScopeSubst Op sig using (ws-sub; sfits-extend)
+open import proof.Framework.Syntax.ScopeSubst Op sig using (ws-sub; sfits-•; sfits-extend₀; module Unbind)
 open import proof.Framework.ListUtil using (proj-pw)
 
 open import Data.Empty using (⊥-elim)
@@ -65,9 +65,7 @@ open import Relation.Nullary using (¬_; Dec; yes; no)
 {- The relation on terms -------------------------------------------------------}
 
 {- what a closure may drop: a variable or a value -}
-data VV : AST → Set where
-  vv-val : ∀ {V} → Value V → VV V
-  vv-var : ∀ x → VV (` x)
+open VarOrValue Value value-sub
 
 infix 4 _≈_
 data _≈_ : AST → AST → Set
@@ -116,10 +114,6 @@ pr-lookup {U} {suc n} {b = b} {F ,, Fs} {ρ = ρ} {ρ'} (drop≈ nu _ pr) h = pr
 Ok : SS.Subst → SS.Subst → Set
 Ok σ σ' = ∀ x → VV (σ x)
 
-vv-sub : ∀ {σ F} → (∀ x → VV (σ x)) → VV F → VV (sub σ F)
-vv-sub h (vv-val v) = vv-val (value-sub _ v)
-vv-sub h (vv-var x) = h x
-
 module Kit (P : SS.Subst → SS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
   (pok : ∀ {σ σ'} → P σ σ' → Ok σ σ') (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (exts σ')) where
 
@@ -144,12 +138,8 @@ module Kit (P : SS.Subst → SS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   pr-sub p (keep≈ r pr) = keep≈ (≈-sub p r) (pr-sub p pr)
   pr-sub p (drop≈ nu vv pr) = drop≈ nu (vv-sub (pok p) vv) (pr-sub p pr)
 
-vv-exts : ∀ {σ} → (∀ x → VV (σ x)) → ∀ x → VV (exts σ x)
-vv-exts h zero = vv-var 0
-vv-exts {σ} h (suc x) = subst VV (sym (SS.rename-sub suc (σ x))) (vv-sub (λ y → vv-var (suc y)) (h x))
-
 open SubstRel.Closure _≈_ var≈ Ok (λ h x → subst VV (sym (proj₁ (proj₂ (h x)))) (vv-var _)) vv-exts Kit.≈-sub
-  using (≈-rename; ≈-subst)
+  using (≈-rename; ≈-subst; ≈-[])
 
 {- The fundamental lemma --------------------------------------------------------}
 
@@ -190,17 +180,11 @@ pr-opt r dec (suc n) ((` y) ,, Fs) b h vv with dec n
 pr-opt r dec (suc n) ((op ⦅ as ⦆) ,, Fs) b h vv =
   keep≈ (opt r (op ⦅ as ⦆) (λ x u → h x (inj₁ u)) vv) (pr-opt r dec n Fs (keep-base b) (λ x u → h x (inj₂ u)) vv)
 
-unbind-bind : ∀ m N → unbind-n m (bind-n-ast m N) ≡ N
-unbind-bind zero N = refl
-unbind-bind (suc m) N = unbind-bind m N
-
 opt-body-eq : ∀ r k (a : Arg (ν-n k (ν ■))) → opt-body r k a ≡ optimize r (unbind-n k a)
 opt-body-eq r zero (bind (ast N)) = refl
 opt-body-eq r (suc k) (bind a) = opt-body-eq r k a
 
-ws-unbind : ∀ n {k} (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (unbind-n n a)
-ws-unbind zero (bind (ast N)) w = w
-ws-unbind (suc n) {k} (bind a) w = subst (λ x → WS (suc x) (unbind-n n a)) (+-suc n k) (ws-unbind n a w)
+open Unbind unbind-n (λ _ → refl) (λ _ _ → refl)
 
 {- The simulation -----------------------------------------------------------------}
 
@@ -209,11 +193,6 @@ Rel : AST → AST → Set
 Rel M M' = M ≈ M' × WS 0 M
 
 Ans′ = Ans T.red Value Rel
-
-{- a closed variable or value is a value -}
-vv-value : ∀ {F} → VV F → WS 0 F → Value F
-vv-value (vv-val v) _ = v
-vv-value (vv-var x) ()
 
 {- a closed source term related to a target value is a value -}
 ≈-value : ∀ {V V'} → Value V' → V ≈ V' → WS 0 V → Value V
@@ -230,10 +209,6 @@ pr-values T.[] nil _ = T.[]
 pr-values (v T.∷ vs) (keep≈ r pr) (w , ws) = ≈-value v r w T.∷ pr-values vs pr ws
 pr-values vs (drop≈ _ vv pr) (w , ws) = vv-value vv w T.∷ pr-values vs pr ws
 
-vv-extend : ∀ {n} {Fs : Args (replicate n ■)} {ρ} → Values Fs → (∀ x → VV (ρ x)) → ∀ x → VV (extend Fs ρ x)
-vv-extend T.[] h = h
-vv-extend (v T.∷ vs) h = vv-extend vs λ { zero → vv-val v ; (suc x) → h x }
-
 obs≈ : ∀ {M M'} → Value M' → M ≈ M' → T.obs M ≡ T.obs M'
 obs≈s : ∀ {n as as'} → Values as' → Pw _≈_ {n} as as' → T.obs-args as ≡ T.obs-args as'
 obs≈ (T.clos _) (clos≈ _) = refl
@@ -243,18 +218,6 @@ obs≈ (T.inl v) (inl≈ r) = cong o-inl (obs≈ v r)
 obs≈ (T.inr v) (inr≈ r) = cong o-inr (obs≈ v r)
 obs≈s T.[] [] = refl
 obs≈s (v T.∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≈ v r) (obs≈s vs rs)
-
-zipR : ∀ {n as as'} → Pw _≈_ {n} as as' → WS-args 0 as → Pw Rel as as'
-zipR [] _ = []
-zipR (r ∷ rs) (w , ws) = (r , w) ∷ zipR rs ws
-
-unzipR : ∀ {n as as'} → Pw Rel {n} as as' → Pw _≈_ as as' × WS-args 0 as
-unzipR [] = [] , tt
-unzipR ((r , w) ∷ rs) = (r ∷ proj₁ (unzipR rs)) , w , proj₂ (unzipR rs)
-
-ret?-ans : ∀ {M mv mw X} → M.Pointwise Rel mv mw → T.red X ≡ T.ret? mw → Ans′ M (T.ret? mv) X
-ret?-ans (M.just r) e = to (one e) r
-ret?-ans M.nothing e = wrong ε e
 
 sim : ∀ {M M'} → M ≈ M' → WS 0 M → Ans′ M (T.red M) M'
 sims : ∀ {n as as'} → Pw _≈_ {n} as as' → WS-args 0 as → Ans T.red-args Values (Pw Rel) as (T.red-args as) as'
@@ -278,25 +241,25 @@ sim (app≈ r s) (wL , wM , _) =
       → Rel (sub (M • extend Fs ids) (unbind-n n a)) (sub (W' • extend Gs ids) (unbind-n m (bind-n-ast m (opt-body (ext-var idx) n a))))
     β {M} {W'} v' s' w' =
       subst (λ B → sub (M • extend Fs ids) (unbind-n n a) ≈ sub (W' • extend Gs ids) B)
-            (sym (trans (unbind-bind m _) (opt-body-eq (ext-var idx) n a)))
+            (sym (trans (unbind-bind bind-n-ast (λ _ → refl) (λ _ _ → refl) m _) (opt-body-eq (ext-var idx) n a)))
             (opt (ext-var idx) (unbind-n n a)
                  (λ { zero u → s' ; (suc j) u → pr-lookup pr (λ k _ → var≈) j u })
                  (λ { zero → vv-val (≈-value v' s' w') ; (suc x) → vv-extend (pr-values vs pr wFs) vv-var x }))
       , ws-sub _ (unbind-n n a)
-          (λ { zero _ → w' ; (suc x) (s≤s x<) → sfits-extend Fs wFs (λ _ ()) x (subst (x <_) (sym (+-identityʳ n)) x<) })
-          (subst (λ y → WS (suc y) (unbind-n n a)) (+-identityʳ n) (ws-unbind n a wa))
+          (sfits-• w' (sfits-extend₀ Fs wFs))
+          (ws-unbind₀ n a wa)
   app-sim T.lit (lit≈ , _) s wM = wrong ε refl
   app-sim v@(T.tuple _) (tuple≈ _ , _) s wM = wrong ε (val-in (value-red v))
   app-sim v@(T.inl _) (inl≈ _ , _) s wM = wrong ε (val-in (value-red v))
   app-sim v@(T.inr _) (inr≈ _ , _) s wM = wrong ε (val-in (value-red v))
 sim lit≈ w = val ε T.lit (lit≈ , w)
 sim (tuple≈ rs) ws =
-  ans-in (frame _ (λ _ → refl)) (λ ms → tuple≈ (proj₁ (unzipR ms)) , proj₂ (unzipR ms)) (sims rs ws)
-         (λ vs ms → val ε (T.tuple vs) (tuple≈ (proj₁ (unzipR ms)) , proj₂ (unzipR ms)))
+  ans-in (frame _ (λ _ → refl)) (λ ms → tuple≈ (proj₁ (unzipˡ ms)) , proj₂ (unzipˡ ms)) (sims rs ws)
+         (λ vs ms → val ε (T.tuple vs) (tuple≈ (proj₁ (unzipˡ ms)) , proj₂ (unzipˡ ms)))
 sim (get≈ {i = i} r) (w , _) = ans-in (frame _ (λ _ → refl)) (λ (r' , w') → get≈ r' , w' , tt) (sim r w) get-sim
   where
   get-sim : ∀ {M V'} → Value V' → Rel M V' → Ans′ (get i ⦅ M ,, Nil ⦆) (T.get? i M) (get i ⦅ V' ,, Nil ⦆)
-  get-sim v@(T.tuple _) (tuple≈ rs , ws) = ret?-ans (proj-pw {R = Rel} i (pw-list (zipR rs ws))) (val-in (value-red v))
+  get-sim v@(T.tuple _) (tuple≈ rs , ws) = ret?-ans (proj-pw {R = Rel} i (pw-list (zipˡ rs ws))) (val-in (value-red v))
   get-sim v@(T.clos _) (clos≈ _ , _) = wrong ε (val-in (value-red v))
   get-sim T.lit (lit≈ , _) = wrong ε refl
   get-sim v@(T.inl _) (inl≈ _ , _) = wrong ε (val-in (value-red v))
@@ -312,12 +275,10 @@ sim (case≈ {M = M} {M'} {N} {N'} r s t) (wL , wM , wN , _) =
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (T.case? L M N) (case-op ⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
   case-sim v@(T.inl v₁) (inl≈ r' , w' , _) =
     to (one (val-in (value-red v)))
-       (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , (λ { zero → vv-val (≈-value v₁ r' w') ; (suc x) → vv-var x })) s
-       , ws-sub _ M (λ { zero _ → w' ; (suc x) (s≤s ()) }) wM)
+       (≈-[] (vv-one (≈-value v₁ r' w')) r' s , ws-sub _ M (sfits-• w' (λ _ ())) wM)
   case-sim v@(T.inr v₁) (inr≈ r' , w' , _) =
     to (one (val-in (value-red v)))
-       (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , (λ { zero → vv-val (≈-value v₁ r' w') ; (suc x) → vv-var x })) t
-       , ws-sub _ N (λ { zero _ → w' ; (suc x) (s≤s ()) }) wN)
+       (≈-[] (vv-one (≈-value v₁ r' w')) r' t , ws-sub _ N (sfits-• w' (λ _ ())) wN)
   case-sim v@(T.clos _) (clos≈ _ , _) = wrong ε (val-in (value-red v))
   case-sim T.lit (lit≈ , _) = wrong ε refl
   case-sim v@(T.tuple _) (tuple≈ _ , _) = wrong ε (val-in (value-red v))
@@ -337,13 +298,9 @@ sim (prim≈ {p} r s) (wL , wM , _) =
 sim (let≈ {N = N} r s) (wM , wN , _) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → let≈ r' s , w' , wN , tt) (sim r wM)
     λ v (r' , w') → to (one (val-in (value-red v)))
-       (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , (λ { zero → vv-val (≈-value v r' w') ; (suc x) → vv-var x })) s
-       , ws-sub _ N (λ { zero _ → w' ; (suc x) (s≤s ()) }) wN)
+       (≈-[] (vv-one (≈-value v r' w')) r' s , ws-sub _ N (sfits-• w' (λ _ ())) wN)
 sims [] _ = val ε T.[] []
-sims (r ∷ rs) (w , ws) =
-  ans-in (frame _ (λ _ → refl)) (λ m → m ∷ zipR rs ws) (sim r w)
-    λ v m → ans-in (frame {g = λ Xs → _ ,, Xs} _ (λ X → val-in (value-red v))) (m ∷_) (sims rs ws)
-      λ vs ms → val ε (v T.∷ vs) (m ∷ ms)
+sims (r ∷ rs) (w , ws) = ans-cons T.red-args (λ _ _ → refl) value-red (zipˡ rs ws) (sim r w) (sims rs ws)
 prs nil _ = val ε T.[] (nil , tt)
 prs (keep≈ r pr) (w , ws) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → keep≈ r' pr , w' , ws) (sim r w)

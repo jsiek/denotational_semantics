@@ -55,11 +55,11 @@ open import proof.Framework.Simulation Obs using (equiv-sym)
 import Semantics.Reduction.ISWIM as S
 open import Framework.Syntax.Uses Op sig using (bound; bound-args)
 import proof.Framework.Syntax.Subst Op sig as SS
-open SS using (Subst; sub; sub-args; exts; ids; _[_])
+open SS using (Subst; sub; sub-args; exts; ids; _[_]; sub-[])
 import proof.Framework.Syntax.SubstRel Op sig Op sig as SubstRel
 open import Framework.Syntax.Rename Op sig using (rename; shift)
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
-open import proof.Framework.Syntax.ScopeSubst Op sig using (ws-sub)
+open import proof.Framework.Syntax.ScopeSubst Op sig using (ws-sub; sfits-•)
 open import proof.Framework.ListUtil using (proj; args→list; has-length; proj-pw; proj-map)
 import Relation.Binary.Construct.Closure.ReflexiveTransitive as RT
 open RT using (Star; gmap)
@@ -81,20 +81,15 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 {- The values of the ISWIM reduction semantics; closed programs ----------------}
 
 module V where
-  data Value : AST → Set
-  infixr 5 _∷_
-  data Values : ∀ {n} → Args (replicate n ■) → Set
-
-  data Value where
+  data Value : AST → Set where
     lam : ∀ {N} → Value (lam ⦅ ⟩ N ,, Nil ⦆)
     lit : ∀ {B k} → Value (lit B k ⦅ Nil ⦆)
-    tuple : ∀ {n as} → Values as → Value (tuple n ⦅ as ⦆)
+    tuple : ∀ {n as} → Each Value as → Value (tuple n ⦅ as ⦆)
     inl : ∀ {V} → Value V → Value (inl-op ⦅ V ,, Nil ⦆)
     inr : ∀ {V} → Value V → Value (inr-op ⦅ V ,, Nil ⦆)
 
-  data Values where
-    [] : Values Nil
-    _∷_ : ∀ {n V} {as : Args (replicate n ■)} → Value V → Values as → Values (V ,, as)
+  Values : ∀ {n} → Args (replicate n ■) → Set
+  Values = Each Value
 
   value-red : ∀ {V} → Value V → S.red V ≡ val
   values-red : ∀ {n} {as : Args (replicate n ■)} → Values as → S.red-args as ≡ val
@@ -208,8 +203,8 @@ val-sv V.lit = P.lit
 val-sv (V.tuple vs) = P.tuple (vals-sv vs)
 val-sv (V.inl v) = P.inl (val-sv v)
 val-sv (V.inr v) = P.inr (val-sv v)
-vals-sv V.[] = P.[]
-vals-sv (v V.∷ vs) = val-sv v P.∷ vals-sv vs
+vals-sv [] = P.[]
+vals-sv (v ∷ vs) = val-sv v P.∷ vals-sv vs
 
 {- a closed value is a value of the reduction semantics -}
 sv-value : ∀ {V} → SV V → WS 0 V → Value V
@@ -219,8 +214,8 @@ sv-value P.lit _ = V.lit
 sv-value (P.tuple vs) w = V.tuple (svs-value vs w)
 sv-value (P.inl v) (w , _) = V.inl (sv-value v w)
 sv-value (P.inr v) (w , _) = V.inr (sv-value v w)
-svs-value P.[] _ = V.[]
-svs-value (v P.∷ vs) (w , ws) = sv-value v w V.∷ svs-value vs ws
+svs-value P.[] _ = []
+svs-value (v P.∷ vs) (w , ws) = sv-value v w ∷ svs-value vs ws
 
 prim-term-out : ∀ o → S.out o ≡ prim-term o
 prim-term-out (int n) = refl
@@ -228,19 +223,10 @@ prim-term-out (bool true) = refl
 prim-term-out (bool false) = refl
 
 {- substitution -}
-sub-[] : ∀ τ N V → sub τ (N [ V ]) ≡ sub (exts τ) N [ sub τ V ]
-sub-[] τ N V =
-  trans (SS.sub-sub τ (V SS.• ids) N)
-    (trans (SS.sub-cong (λ { zero → refl ; (suc x) → refl }) N) (sym (SS.exts-[] (sub τ V) τ N)))
-
 sub-prim-term : ∀ τ o → sub τ (prim-term o) ≡ prim-term o
 sub-prim-term τ (int n) = refl
 sub-prim-term τ (bool true) = refl
 sub-prim-term τ (bool false) = refl
-
-sub-proj : ∀ τ {n m} (i : Fin n) (as : Args (replicate m ■)) {V} → proj i (args→list as) ≡ just V
-  → proj i (args→list (sub-args τ as)) ≡ just (sub τ V)
-sub-proj τ i as e rewrite SS.sub-args-list τ as | proj-map (sub τ) i (args→list as) | e = refl
 
 sub-⟶ : ∀ {τ M M'} → (∀ x → SV (τ x)) → M ⟶ M' → sub τ M ⟶ sub τ M'
 sub-⟶s : ∀ {τ n} {as as' : Args (replicate n ■)} → (∀ x → SV (τ x)) → as ⟶s as' → sub-args τ as ⟶s sub-args τ as'
@@ -248,7 +234,7 @@ sub-⟶ {τ} h (β {N} {V} v) rewrite sub-[] τ N V = β (sv-sub h v)
 sub-⟶ h (app₁ s) = app₁ (sub-⟶ h s)
 sub-⟶ h (app₂ s) = app₂ (sub-⟶ h s)
 sub-⟶ h (tuple s) = tuple (sub-⟶s h s)
-sub-⟶ {τ} h (get {i = i} {as} vs e) = get (svs-sub h vs) (sub-proj τ i as e)
+sub-⟶ {τ} h (get {i = i} {as} vs e) = get (svs-sub h vs) (SS.sub-proj τ i e)
 sub-⟶ h (get₁ s) = get₁ (sub-⟶ h s)
 sub-⟶ h (inl₁ s) = inl₁ (sub-⟶ h s)
 sub-⟶ h (inr₁ s) = inr₁ (sub-⟶ h s)
@@ -286,13 +272,9 @@ closed-reds (w , _) (here s) rewrite closed-red w s = refl
 closed-reds (wV , ws) (there v s) rewrite value-red (sv-value v wV) | closed-reds ws s = refl
 
 {- and the term stays closed -}
-ws-one : ∀ {V} → WS 0 V → ∀ x → x < 1 → WS 0 ((V SS.• ids) x)
-ws-one w zero _ = w
-ws-one w (suc x) (s≤s ())
-
 ws-⟶ : ∀ {M M'} → WS 0 M → M ⟶ M' → WS 0 M'
 ws-⟶s : ∀ {n} {as as' : Args (replicate n ■)} → WS-args 0 as → as ⟶s as' → WS-args 0 as'
-ws-⟶ {app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, V ,, Nil ⦆} ((wN , _) , wV , _) (β v) = ws-sub _ N (ws-one wV) wN
+ws-⟶ {app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, V ,, Nil ⦆} ((wN , _) , wV , _) (β v) = ws-sub _ N (sfits-• wV (λ _ ())) wN
 ws-⟶ (wL , wM , _) (app₁ s) = ws-⟶ wL s , wM , tt
 ws-⟶ (wL , wM , _) (app₂ s) = wL , ws-⟶ wM s , tt
 ws-⟶ w (tuple s) = ws-⟶s w s
@@ -300,13 +282,13 @@ ws-⟶ {get i ⦅ tuple m ⦅ as ⦆ ,, Nil ⦆} (w , _) (get vs e) = ws-proj i 
 ws-⟶ (w , _) (get₁ s) = ws-⟶ w s , tt
 ws-⟶ (w , _) (inl₁ s) = ws-⟶ w s , tt
 ws-⟶ (w , _) (inr₁ s) = ws-⟶ w s , tt
-ws-⟶ {case-op ⦅ _ ,, ⟩ M ,, ⟩ N ,, Nil ⦆} ((w , _) , wM , _) (case-l v) = ws-sub _ M (ws-one w) wM
-ws-⟶ {case-op ⦅ _ ,, ⟩ M ,, ⟩ N ,, Nil ⦆} ((w , _) , _ , wN , _) (case-r v) = ws-sub _ N (ws-one w) wN
+ws-⟶ {case-op ⦅ _ ,, ⟩ M ,, ⟩ N ,, Nil ⦆} ((w , _) , wM , _) (case-l v) = ws-sub _ M (sfits-• w (λ _ ())) wM
+ws-⟶ {case-op ⦅ _ ,, ⟩ M ,, ⟩ N ,, Nil ⦆} ((w , _) , _ , wN , _) (case-r v) = ws-sub _ N (sfits-• w (λ _ ())) wN
 ws-⟶ (wL , wM , wN , _) (case₁ s) = ws-⟶ wL s , wM , wN , tt
 ws-⟶ _ (prim {p} {n} {m}) = ws-prim-term (δ p n m)
 ws-⟶ (wL , wM , _) (prim₁ s) = ws-⟶ wL s , wM , tt
 ws-⟶ (wL , wM , _) (prim₂ v s) = wL , ws-⟶ wM s , tt
-ws-⟶ {let-op ⦅ _ ,, ⟩ N ,, Nil ⦆} (w , wN , _) (letβ v) = ws-sub _ N (ws-one w) wN
+ws-⟶ {let-op ⦅ _ ,, ⟩ N ,, Nil ⦆} (w , wN , _) (letβ v) = ws-sub _ N (sfits-• w (λ _ ())) wN
 ws-⟶ (wM , wN , _) (let₁ s) = ws-⟶ wM s , wN , tt
 ws-⟶s (w , ws) (here s) = ws-⟶ w s , ws
 ws-⟶s (w , ws) (there v s) = w , ws-⟶s ws s
@@ -379,11 +361,7 @@ sv-exts h (suc x) = sv-rename suc (h x)
 
 open SubstRel.Closure _≼_ var≼ Ok (λ h x → subst SV (sym (proj₂ (proj₂ (h x)))) (P.var (proj₁ (h x))))
   (λ {υ} {τ} → sv-exts {τ}) Kit.≼-sub
-  using () renaming (≈-rename to ≼-rename; ≈-subst to ≼-subst)
-
-{- substituting one value -}
-one-sub : ∀ {V' W} → V' ≼ W → SV W → (∀ x → (V' SS.• ids) x ≼ (W SS.• ids) x) × Ok (V' SS.• ids) (W SS.• ids)
-one-sub r w = (λ { zero → r ; (suc x) → var≼ }) , (λ { zero → w ; (suc x) → P.var x })
+  using () renaming (≈-rename to ≼-rename; ≈-[] to ≼-[])
 
 {- Values: the source reaches the values that the target has -------------------}
 
@@ -570,7 +548,7 @@ simp-ok fl (get i ⦅ L ,, Nil ⦆) {E} {τ} {υ} ok = get-ok (simp fl E L) (sim
   ...   | W , σ , w , r' with tuple-inv w r'
   ...     | Ws , refl , ws , rs
             with pw-just (subst (λ m → M.Pointwise _≼_ m (proj i (args→list Ws)))
-                                (sub-proj υ i Ks e) (proj-pw i (pw-list rs)))
+                                (SS.sub-proj υ i e) (proj-pw i (pw-list rs)))
   ...       | Wi , e' , r'' =
     component-just i vs e , steps (gmap (λ X → get i ⦅ X ,, Nil ⦆) get₁ σ RT.◅◅ (get ws e' RT.◅ RT.ε)) r''
   get-ok : ∀ I → Desc I υ (sub τ L) → Desc (simp-get i I) υ (sub τ (get i ⦅ L ,, Nil ⦆))
@@ -711,8 +689,8 @@ Ans′ = Ans S.red Value R
 ≼-value (V.inl v) (inl≼ r) = V.inl (≼-value v r)
 ≼-value (V.inr v) (inr≼ r) = V.inr (≼-value v r)
 ≼-value v (step s _) = ⊥-elim (sv-nostep (val-sv v) s)
-≼-values V.[] [] = V.[]
-≼-values (v V.∷ vs) (r ∷ rs) = ≼-value v r V.∷ ≼-values vs rs
+≼-values [] [] = []
+≼-values (v ∷ vs) (r ∷ rs) = ≼-value v r ∷ ≼-values vs rs
 
 obs≼ : ∀ {V' W} → Value W → V' ≼ W → S.obs V' ≡ S.obs W
 obs≼s : ∀ {n} {as' as : Args (replicate n ■)} → Values as → Pw _≼_ as' as → S.obs-args as' ≡ S.obs-args as
@@ -722,24 +700,12 @@ obs≼ (V.tuple vs) (tuple≼ rs) = cong o-tuple (obs≼s vs rs)
 obs≼ (V.inl v) (inl≼ r) = cong o-inl (obs≼ v r)
 obs≼ (V.inr v) (inr≼ r) = cong o-inr (obs≼ v r)
 obs≼ v (step s _) = ⊥-elim (sv-nostep (val-sv v) s)
-obs≼s V.[] [] = refl
-obs≼s (v V.∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≼ v r) (obs≼s vs rs)
-
-zipR : ∀ {n as' as} → Pw _≼_ {n} as' as → WS-args 0 as → Pw R as' as
-zipR [] _ = []
-zipR (r ∷ rs) (w , ws) = (r , w) ∷ zipR rs ws
-
-unzipR : ∀ {n as' as} → Pw R {n} as' as → Pw _≼_ as' as × WS-args 0 as
-unzipR [] = [] , tt
-unzipR ((r , w) ∷ rs) = (r ∷ proj₁ (unzipR rs)) , w , proj₂ (unzipR rs)
-
-ret?-ans : ∀ {M mv mw X} → M.Pointwise R mv mw → S.red X ≡ S.ret? mw → Ans′ M (S.ret? mv) X
-ret?-ans (M.just r) e = to (one e) r
-ret?-ans M.nothing e = wrong ε e
+obs≼s [] [] = refl
+obs≼s (v ∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≼ v r) (obs≼s vs rs)
 
 {- the body N' of a function, after β, is related to the source's -}
 β≼ : ∀ {N' N V' W} → N' ≼ N → V' ≼ W → Value W → WS 1 N → WS 0 W → R (N' [ V' ]) (N [ W ])
-β≼ {N = N} r s v wN wW = ≼-subst (one-sub s (val-sv v)) r , ws-sub _ N (ws-one wW) wN
+β≼ {N = N} r s v wN wW = ≼-[] (λ { zero → val-sv v ; (suc x) → P.var x }) s r , ws-sub _ N (sfits-• wW (λ _ ())) wN
 
 {- a target let of a value takes its step -}
 let-val : ∀ {N' V' W M} → Value W → V' ≼ W → Ans′ (let-op ⦅ V' ,, ⟩ N' ,, Nil ⦆) (to (N' [ V' ])) M
@@ -767,12 +733,12 @@ sim (app≼ r s) (wL , wM , _) =
   app-sim v (step st _ , _) s wM = ⊥-elim (sv-nostep (val-sv v) st)
 sim lit≼ w = val ε V.lit (lit≼ , w)
 sim (tuple≼ rs) ws =
-  ans-in (frame _ (λ _ → refl)) (λ ms → tuple≼ (proj₁ (unzipR ms)) , proj₂ (unzipR ms)) (sims rs ws)
-         (λ vs ms → val ε (V.tuple vs) (tuple≼ (proj₁ (unzipR ms)) , proj₂ (unzipR ms)))
+  ans-in (frame _ (λ _ → refl)) (λ ms → tuple≼ (proj₁ (unzipʳ ms)) , proj₂ (unzipʳ ms)) (sims rs ws)
+         (λ vs ms → val ε (V.tuple vs) (tuple≼ (proj₁ (unzipʳ ms)) , proj₂ (unzipʳ ms)))
 sim (get≼ {i = i} r) (w , _) = ans-in (frame _ (λ _ → refl)) (λ (r' , w') → get≼ r' , w' , tt) (sim r w) get-sim
   where
   get-sim : ∀ {M' W} → Value W → R M' W → Ans′ (get i ⦅ M' ,, Nil ⦆) (S.get? i M') (get i ⦅ W ,, Nil ⦆)
-  get-sim v@(V.tuple _) (tuple≼ rs , ws) = ret?-ans (proj-pw {R = R} i (pw-list (zipR rs ws))) (val-in (value-red v))
+  get-sim v@(V.tuple _) (tuple≼ rs , ws) = ret?-ans (proj-pw {R = R} i (pw-list (zipʳ rs ws))) (val-in (value-red v))
   get-sim V.lam (lam≼ _ , _) = wrong ε refl
   get-sim V.lit (lit≼ , _) = wrong ε refl
   get-sim v@(V.inl _) (inl≼ _ , _) = wrong ε (val-in (value-red v))
@@ -815,14 +781,11 @@ sim (letλ≼ {N = N} r s) (wL@(wN , _) , wM , _) =
          (λ (r' , w') → letλ≼ r' s , wL , w' , tt) (sim r wM)
     λ v (r' , w') → to (one (val-in (value-red v))) (β≼ s r' v wN w')
 sim (letλv≼ {N = N} wv r₁ r₂) ((wN , _) , wW , _) = let-val (sv-value wv wW) r₁
-  (to (one (val-in (value-red (sv-value wv wW)))) (r₂ , ws-sub _ N (ws-one wW) wN))
+  (to (one (val-in (value-red (sv-value wv wW)))) (r₂ , ws-sub _ N (sfits-• wW (λ _ ())) wN))
 sim (letv≼ {N = N} wv r₁ r₂) (wW , wN , _) = let-val (sv-value wv wW) r₁
-  (to (one (val-in (value-red (sv-value wv wW)))) (r₂ , ws-sub _ N (ws-one wW) wN))
-sims [] _ = val ε V.[] []
-sims (r ∷ rs) (w , ws) =
-  ans-in (frame _ (λ _ → refl)) (λ m → m ∷ zipR rs ws) (sim r w)
-    λ v m → ans-in (frame {g = λ Xs → _ ,, Xs} _ (λ X → val-in (value-red v))) (m ∷_) (sims rs ws)
-      λ vs ms → val ε (v V.∷ vs) (m ∷ ms)
+  (to (one (val-in (value-red (sv-value wv wW)))) (r₂ , ws-sub _ N (sfits-• wW (λ _ ())) wN))
+sims [] _ = val ε [] []
+sims (r ∷ rs) (w , ws) = ans-cons S.red-args (λ _ _ → refl) value-red (zipʳ rs ws) (sim r w) (sims rs ws)
 
 {- The end theorem: for closed programs ------------------------------------------}
 

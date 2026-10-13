@@ -18,6 +18,12 @@
 module Framework.Reduction (Obs : Set) (o-wrong : Obs) where
 
 open import Framework.Smallstep Obs using (Machine; machine; Next; next; stop)
+open import Framework.abt.Sig using (Sig; ■)
+open import Framework.abt.AbstractBindingTree using (ABT; Args; cons; ast)
+
+open import Data.List using (List; replicate)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (suc)
 
 data Red (A : Set) : Set where
   val : Red A              {- a value -}
@@ -29,6 +35,20 @@ step-in : ∀ {A B : Set} → (A → B) → Red A → Red B → Red B
 step-in f (to M) k = to (f M)
 step-in f wrong k = wrong
 step-in f val k = k
+
+{- a result that may be missing: stuck if it is -}
+ret? : ∀ {A : Set} → Maybe A → Red A
+ret? (just M) = to M
+ret? nothing = wrong
+
+{- the operands of a tuple, left to right: M, and then the rest as, given
+   their reductions. Each language defines its reduction of operands
+   red-args, with red, by red-args (M ,, as) = red-cons M as (red M) (red-args as)
+   (a generic red-args, given red, would hide red's recursive calls from
+   the termination checker) -}
+red-cons : ∀ {Op : Set} {sig : Op → List Sig} {n} M (as : Args Op sig (replicate n ■))
+  → Red (ABT Op sig) → Red (Args Op sig (replicate n ■)) → Red (Args Op sig (replicate (suc n) ■))
+red-cons M as r rs = step-in (λ M' → cons (ast M') as) r (step-in (λ as' → cons (ast M) as') rs val)
 
 toNext : ∀ {A : Set} → Obs → Red A → Next A
 toNext o val = stop o

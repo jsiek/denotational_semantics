@@ -45,6 +45,7 @@ import Framework.Syntax.Rename C.Op C.sig as TR
 import proof.Framework.Syntax.SubstRel Op sig C.Op C.sig as SubstRel
 open SS using (sub; sub-args; exts; ids; extend)
 open import Framework.Syntax.Scope Op sig using (WS; WS-arg; WS-args)
+open import proof.Framework.Syntax.ScopeSubst Op sig using (module Unbind)
 open import proof.Framework.ListUtil using (proj; has-length; args→list; proj-pw; proj-map)
 
 open import Data.Bool using (true; false)
@@ -85,18 +86,13 @@ data _≈_ : AST → C.AST → Set where
 
 {- Closure under substitution -------------------------------------------------}
 
-proj-sub : ∀ σ {n} (i : Fin n) {Vs : C.Args (replicate n ■)} {V}
-  → proj i (args→list Vs) ≡ just V → proj i (args→list (TS.sub-args σ Vs)) ≡ just (TS.sub σ V)
-proj-sub σ i {Vs} e =
-  trans (cong (proj i) (TS.sub-args-list σ Vs)) (trans (proj-map (TS.sub σ) i _) (cong (map (TS.sub σ)) e))
-
 module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
   (pok : ∀ {σ σ'} → P σ σ' → ⊤) (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (TS.exts σ')) where
 
   ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ TS.sub σ' M'
   ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
   ≈-sub p var≈ = p≈ p _
-  ≈-sub {σ' = σ'} p (prj≈ {i = i} r e vs) = prj≈ (≈-sub p r) (proj-sub σ' i e) (T.values-sub σ' vs)
+  ≈-sub {σ' = σ'} p (prj≈ {i = i} r e vs) = prj≈ (≈-sub p r) (TS.sub-proj σ' i e) (T.values-sub σ' vs)
   ≈-sub p (clos≈ w rs) = clos≈ w (≈-subs p rs)
   ≈-sub p (app≈ r s) = app≈ (≈-sub p r) (≈-sub p s)
   ≈-sub p lit≈ = lit≈
@@ -110,7 +106,7 @@ module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ'
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
-open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) Kit.≈-sub using (≈-rename; ≈-subst)
+open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) Kit.≈-sub using (≈-rename; ≈-[])
 
 {- The fundamental lemma --------------------------------------------------------}
 
@@ -130,10 +126,8 @@ concs : ∀ {k τ τ' n} φ (as : Args (replicate n ■)) → WS-args k as
   → (∀ x → x < k → τ x ≈ TS.sub τ' (ref-ast (φ x))) → Pw _≈_ (sub-args τ as) (TS.sub-args τ' (conc-args φ as))
 conc φ (` x) w h = h x w
 conc φ (clos-op n ⦅ cons (clear a) Fs ⦆) (wa , ws) h =
-  clos≈ (subst (λ x → WS (suc x) (unbind-n n a)) (+-identityʳ n) (ws-unbind n a wa)) (concs φ Fs ws h)
-  where ws-unbind : ∀ n {k} (a : Arg (ν-n n (ν ■))) → WS-arg k a → WS (suc (n + k)) (unbind-n n a)
-        ws-unbind zero (bind (ast N)) w = w
-        ws-unbind (suc n) {k} (bind a) w = subst (λ x → WS (suc x) (unbind-n n a)) (+-suc n k) (ws-unbind n a w)
+  clos≈ (ws-unbind₀ n a wa) (concs φ Fs ws h)
+  where open Unbind unbind-n (λ _ → refl) (λ _ _ → refl)
 conc φ (app ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) h = app≈ (conc φ L wL h) (conc φ M wM h)
 conc φ (lit B k ⦅ Nil ⦆) w h = lit≈
 conc φ (tuple n ⦅ as ⦆) w h = tuple≈ (concs φ as w h)
@@ -152,10 +146,6 @@ conc-body-eq n zero (bind (ast N)) = refl
 conc-body-eq n (suc k) (bind a) = conc-body-eq n k a
 
 {- free variable k of the body is component fv-index n k of the tuple -}
-has-length-args : ∀ {n} (Vs : C.Args (replicate n ■)) → has-length n (args→list Vs) ≡ true
-has-length-args {zero} Nil = refl
-has-length-args {suc n} (V ,, Vs) = has-length-args Vs
-
 fv-proj : ∀ {n Fs Fs'} → Pw _≈_ {n} Fs Fs' → ∀ ρ k (k< : k < n)
   → Σ[ V' ∈ C.AST ] proj (fv-index n k k<) (args→list Fs') ≡ just V' × extend Fs ρ k ≈ V'
 fv-proj {suc n} {F ,, Fs} {F' ,, Fs'} (r ∷ rs) ρ k k< with k <? n
@@ -164,7 +154,7 @@ fv-proj {suc n} {F ,, Fs} {F' ,, Fs'} (r ∷ rs) ρ k k< with k <? n
   where skip : k < suc n → extend Fs (F • ρ) k ≡ F
         skip (s≤s k≤n) with m≤n⇒m<n∨m≡n k≤n
         ... | inj₁ k<n = ⊥-elim (k≮n k<n)
-        ... | inj₂ refl = subst (λ y → extend Fs (F • ρ) y ≡ F) (+-identityʳ n) (SS.extend-skip Fs (F • ρ) 0)
+        ... | inj₂ refl = SS.extend-top Fs F ρ
 
 {- The simulation -----------------------------------------------------------------}
 
@@ -180,14 +170,10 @@ obs≈ (T.inr v) (inr≈ r) = cong o-inr (obs≈ v r)
 obs≈s T.[] [] = refl
 obs≈s (v T.∷ vs) (r ∷ rs) = cong₂ _∷_ (obs≈ v r) (obs≈s vs rs)
 
-ret?-ans : ∀ {M mv mw X} → M.Pointwise _≈_ mv mw → T.red X ≡ T.ret? mw → Ans′ M (S.ret? mv) X
-ret?-ans (M.just r) e = to (one e) r
-ret?-ans M.nothing e = wrong ε e
-
 sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
 sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans T.red-args T.Values (Pw _≈_) as (S.red-args as) as'
 sim var≈ = wrong ε refl
-sim (prj≈ r e vs) = ans-step (trans (val-in (T.value-red (T.tuple vs))) (cong T.ret? e)) (sim r)
+sim (prj≈ r e vs) = ans-step (trans (val-in (T.value-red (T.tuple vs))) (cong ret? e)) (sim r)
 sim (clos≈ w rs) = ans-in (frame _ (λ _ → refl)) (clos≈ w) (sims rs) (λ vs rs' → val ε (T.clos vs) (clos≈ w rs'))
 sim (app≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → app≈ r' s) (sim r) (λ v r' → app-sim v r' s)
   where
@@ -228,8 +214,8 @@ sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ
   where
   case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
     → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
-  case-sim v@(T.inl _) (inl≈ r') = to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
-  case-sim v@(T.inr _) (inr≈ r') = to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) t)
+  case-sim v@(T.inl _) (inl≈ r') = to (one (val-in (T.value-red v))) (≈-[] tt r' s)
+  case-sim v@(T.inr _) (inr≈ r') = to (one (val-in (T.value-red v))) (≈-[] tt r' t)
   case-sim v@(T.clos _) (clos≈ _ _) = wrong ε (val-in (T.value-red v))
   case-sim T.lit lit≈ = wrong ε refl
   case-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (T.value-red v))
@@ -246,12 +232,9 @@ sim (prim≈ {p} r s) =
   ... | just (bool true) = M.just (inl≈ (tuple≈ []))
   ... | just (bool false) = M.just (inr≈ (tuple≈ []))
 sim (let≈ r s) = ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim r)
-  λ v r' → to (one (val-in (T.value-red v))) (≈-subst ((λ { zero → r' ; (suc x) → var≈ }) , tt) s)
+  λ v r' → to (one (val-in (T.value-red v))) (≈-[] tt r' s)
 sims [] = val ε T.[] []
-sims (r ∷ rs) =
-  ans-in (frame _ (λ _ → refl)) (λ r' → r' ∷ rs) (sim r)
-    λ v r' → ans-in (frame {g = λ Xs → _ ,, Xs} _ (λ X → val-in (T.value-red v))) (r' ∷_) (sims rs)
-      λ vs rs' → val ε (v T.∷ vs) (r' ∷ rs')
+sims (r ∷ rs) = ans-cons T.red-args (λ _ _ → refl) T.value-red rs (sim r) (sims rs)
 
 {- The end theorem: for well-scoped programs ------------------------------------}
 

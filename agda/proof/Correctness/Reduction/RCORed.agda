@@ -44,9 +44,10 @@ open T using (Value; Values; value-red; values-red)
 import Semantics.Reduction.ISWIM as S
 open import proof.Correctness.Reduction.CompilerRed using (compile-correct)
 open import proof.Framework.Syntax.Subst Op sig
-  using (Subst; sub; sub-args; exts; ids; extend; _[_]; sub-id; sub-cong; ren-sub; exts-[]; extend-skip)
+  using (Subst; sub; sub-args; exts; ids; extend; _[_]; sub-id; sub-cong; ren-sub; exts-[]; extend-skip; extend-top)
 open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args; rename-fuse-args; rename-id-args)
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
+open import proof.Framework.Syntax.ScopeSubst Op sig using (Below; below-•)
 open import proof.Framework.ListUtil using (_‼_; proj; args→list; has-length; reverse-map-‼; ‼-any)
 open import Data.List.Relation.Unary.Any.Properties using (reverse⁻)
 open import Language.Prim using (int; bool)
@@ -116,16 +117,7 @@ global-map ds = reverse-map-‼ rco ds
 global-all : ∀ {P : AST → Set} {ds} → All P ds → ∀ k {N} → global ds k ≡ just N → P N
 global-all {ds = ds} ps k eq = lookup ps (reverse⁻ (‼-any (reverse ds) k eq))
 
-{- the values of a tuple, and of a primitive -}
-proj-value : ∀ {n} (i : Fin n) {m} {Vs : Args (replicate m ■)} {V} → Values Vs
-  → proj i (args→list Vs) ≡ just V → Value V
-proj-value zero T.[] ()
-proj-value (suc i) T.[] ()
-proj-value {suc n} zero {Vs = V' ,, Vs'} (v T.∷ vs) e with has-length n (args→list Vs')
-proj-value {suc n} zero (v T.∷ vs) refl | true = v
-proj-value {suc n} zero (v T.∷ vs) () | false
-proj-value (suc i) (v T.∷ vs) e = proj-value i vs e
-
+{- the values of a primitive -}
 out-value : ∀ o → Value (T.out o)
 out-value (int n) = T.lit
 out-value (bool true) = T.inl (T.tuple T.[])
@@ -140,7 +132,7 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
 
   {- σ maps the variables below k to values -}
   Vals : ℕ → Subst → Set
-  Vals k σ = ∀ x → x < k → Value (σ x)
+  Vals = Below Value
 
   {- The relation on terms -----------------------------------------------------}
 
@@ -166,20 +158,6 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   ≈-val : ∀ {M V} → Value V → M ≈ V → M ≡ V
   ≈-val v (val≈ _) = refl
 
-  {- The source reduces the operands of h left to right -}
-  LR : ∀ {n} → (Args (replicate n ■) → AST) → Set
-  LR {zero} h = ⊤
-  LR {suc n} h = (∀ Ms → Frame red₁ red₁ (λ X → h (X ,, Ms))) × (∀ {V} → Value V → LR (λ Ms → h (V ,, Ms)))
-
-  lr-args : ∀ {n} {G : Args (replicate n ■) → AST} → Frame (T.red-args ds) red₁ G → LR G
-  lr-args {zero} F = tt
-  lr-args {suc n} F =
-    (λ Ms → frame-∘ (frame _ (λ _ → refl)) F) , λ v → lr-args (frame-∘ (frame _ (λ _ → val-in (value-red v))) F)
-
-  lr1 : (h : Args (replicate 1 ■) → AST) (κ : AST → Red AST)
-    → (∀ X → red₁ (h (X ,, Nil)) ≡ step-in (λ Y → h (Y ,, Nil)) (red₁ X) (κ X)) → LR h
-  lr1 h κ e = (λ { Nil → frame κ e }) , λ _ → tt
-
   {- The fundamental lemma: code under a substitution of values -----------------}
 
   rco≈ : ∀ {k} σ M → Vals k σ → WS k M → sub σ M ≈ sub σ (rco M)
@@ -191,7 +169,7 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
      on the atoms at the end -}
   chain : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
     → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → ∀ r ρ (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST)
-    → (∀ x → ρ (r x) ≡ σ x) → LR h
+    → (∀ x → ρ (r x) ≡ σ x) → LR red₁ Value h
     → (∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws ρ) As)
          → h (sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j As))
     → h (sub-args σ Ms) ≈ sub ρ (lift g (rename-args r (rco-args Ms)))
@@ -217,16 +195,13 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
           (subst (λ X → sub σ M ≈ X) (sym (trans (ren-sub ρ r (rco M)) (sub-cong eq (rco M)))) f)
           λ W v → subst (λ X → h (W ,, sub-args σ Ms) ≈ X) (sym (exts-[] W ρ (lift (λ j As → g (suc j) (` j ,, As)) (rename-args (λ x → suc (r x)) (rco-args Ms)))))
                         (chain σ Ms vs ws fs (λ x → suc (r x)) (W • ρ) (λ As → h (W ,, As)) (λ j As → g (suc j) (` j ,, As)) eq (proj₂ lr v)
-                               (λ j Ws As vs' → subst (λ X → h (X ,, sub-args (extend Ws (W • ρ)) As) ≈ sub (extend Ws (W • ρ)) (g (suc j) (` j ,, As))) (skip j Ws W)
+                               (λ j Ws As vs' → subst (λ X → h (X ,, sub-args (extend Ws (W • ρ)) As) ≈ sub (extend Ws (W • ρ)) (g (suc j) (` j ,, As))) (extend-top Ws W ρ)
                                                       (fin (suc j) (W ,, Ws) (` j ,, As)
-                                                           (subst Value (sym (skip j Ws W)) v T.∷ vs'))))
-    where
-    skip : ∀ j (Ws : Args (replicate j ■)) W → extend Ws (W • ρ) j ≡ W
-    skip j Ws W = subst (λ y → extend Ws (W • ρ) y ≡ W) (+-identityʳ j) (extend-skip Ws (W • ρ) 0)
+                                                           (subst Value (sym (extend-top Ws W ρ)) v T.∷ vs'))))
 
   {- the chain of a construct -}
   chain₀ : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST) → LR h
+    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST) → LR red₁ Value h
     → (∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws σ) As)
          → h (sub-args (extend Ws σ) As) ≈ sub (extend Ws σ) (g j As))
     → h (sub-args σ Ms) ≈ sub σ (lift g (rco-args Ms))
@@ -240,14 +215,14 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   rco≈ σ (app ⦅ Ms@(M₁ ,, M₂ ,, M₃ ,, Nil) ⦆) vs ws =
     chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (app ⦅_⦆) (λ _ → app ⦅_⦆) lr
       λ { j Ws (A ,, B ,, C ,, Nil) (a T.∷ b T.∷ c T.∷ T.[]) → call≈ a b c }
-    where lr : LR (app ⦅_⦆)
+    where lr : LR red₁ Value (app ⦅_⦆)
           lr = (λ { (Y ,, Z ,, Nil) → frame _ (λ _ → refl) })
              , λ v → (λ { (Z ,, Nil) → frame _ (λ _ → val-in (value-red v)) })
              , λ w → (λ { Nil → frame _ (λ _ → trans (val-in (value-red v)) (val-in (value-red w))) }) , λ _ → tt
   rco≈ σ (pair-op ⦅ Ms@(M₁ ,, M₂ ,, Nil) ⦆) vs ws =
     chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (pair-op ⦅_⦆) (λ _ → pair-op ⦅_⦆) lr
       λ { j Ws (A ,, B ,, Nil) (a T.∷ b T.∷ T.[]) → val≈ (T.pair a b) }
-    where lr : LR (pair-op ⦅_⦆)
+    where lr : LR red₁ Value (pair-op ⦅_⦆)
           lr = (λ { (Y ,, Nil) → frame _ (λ _ → refl) })
              , λ v → (λ { Nil → frame _ (λ _ → val-in (value-red v)) }) , λ _ → tt
   rco≈ σ (fst-op ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
@@ -257,7 +232,7 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
     chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (snd-op ⦅_⦆) (λ _ → snd-op ⦅_⦆) (lr1 (snd-op ⦅_⦆) _ (λ _ → refl))
       λ { j Ws (A ,, Nil) (a T.∷ T.[]) → snd≈ a }
   rco≈ σ (tuple n ⦅ Ms ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (tuple n ⦅_⦆) (λ _ → tuple n ⦅_⦆) (lr-args (frame _ (λ _ → refl)))
+    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (tuple n ⦅_⦆) (λ _ → tuple n ⦅_⦆) (lr-args (T.red-args ds) (λ _ _ → refl) value-red (frame _ (λ _ → refl)))
       λ j Ws As as → val≈ (T.tuple as)
   rco≈ σ (get i ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
     chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (get i ⦅_⦆) (λ _ → get i ⦅_⦆) (lr1 (get i ⦅_⦆) _ (λ _ → refl))
@@ -281,17 +256,12 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   rco≈ σ (prim p ⦅ Ms@(M₁ ,, M₂ ,, Nil) ⦆) vs ws =
     chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (prim p ⦅_⦆) (λ _ → prim p ⦅_⦆) lr
       λ { j Ws (A ,, B ,, Nil) (a T.∷ b T.∷ T.[]) → prim≈ a b }
-    where lr : LR (prim p ⦅_⦆)
+    where lr : LR red₁ Value (prim p ⦅_⦆)
           lr = (λ { (Y ,, Nil) → frame _ (λ _ → refl) })
              , λ v → (λ { Nil → frame _ (λ _ → val-in (value-red v)) }) , λ _ → tt
   rco≈ σ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) vs (wM , wN , _) = let≈ {N = N} vs wN (rco≈ σ M vs wM)
   rco≈s {zero} σ Nil vs ws = []
   rco≈s {suc n} σ (M ,, Ms) vs (w , ws) = rco≈ σ M vs w ∷ rco≈s σ Ms vs ws
-
-  {- one more value for a bound variable -}
-  vals-• : ∀ {k σ W} → Value W → Vals k σ → Vals (suc k) (W • σ)
-  vals-• w vs zero _ = w
-  vals-• w vs (suc x) (s≤s x<) = vs x x<
 
   {- The simulation -----------------------------------------------------------------}
 
@@ -306,7 +276,7 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   call-sim {fun-ref k ⦅ Nil ⦆} {E} {W} f e w with global ds k in eq
   ... | nothing = wrong ε (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq))))
   ... | just N = to (one (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq)))))
-                    (rco≈ (W • E • ids) N (vals-• w (vals-• e λ _ ())) (global-all wds k eq))
+                    (rco≈ (W • E • ids) N (below-• {P = Value} w (below-• {P = Value} e λ _ ())) (global-all wds k eq))
   call-sim f@(T.pair _ _) e w = wrong ε (call-step f e w refl)
   call-sim T.lit e w = wrong ε (call-step T.lit e w refl)
   call-sim f@(T.tuple _) e w = wrong ε (call-step f e w refl)
@@ -343,8 +313,8 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   sim (get≈ {i = i} v) = ans-skip (value-red v) (get-sim v)
     where get-sim : ∀ {V} → Value V → Ans′ (get i ⦅ V ,, Nil ⦆) (T.get? i V) (get i ⦅ V ,, Nil ⦆)
           get-sim v@(T.tuple {as = as} vs) with proj i (args→list as) in eq
-          ... | nothing = wrong ε (trans (val-in (value-red v)) (cong T.ret? eq))
-          ... | just V = to (one (trans (val-in (value-red v)) (cong T.ret? eq))) (val≈ (proj-value i vs eq))
+          ... | nothing = wrong ε (trans (val-in (value-red v)) (cong ret? eq))
+          ... | just V = to (one (trans (val-in (value-red v)) (cong ret? eq))) (val≈ (each-proj i vs eq))
           get-sim T.fun = wrong ε refl
           get-sim v@(T.pair _ _) = wrong ε (val-in (value-red v))
           get-sim T.lit = wrong ε refl
@@ -353,8 +323,8 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   sim (prim≈ {p} {V} {W} v w) = ans-skip (value-red v) (ans-skip (value-red w) prim-sim)
     where prim-sim : Ans′ (prim p ⦅ V ,, W ,, Nil ⦆) (T.prim? p V W) (prim p ⦅ V ,, W ,, Nil ⦆)
           prim-sim with δ? p (T.obs V) (T.obs W) in eq
-          ... | nothing = wrong ε (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → T.ret? (mmap T.out m)) eq)))
-          ... | just o = to (one (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → T.ret? (mmap T.out m)) eq))))
+          ... | nothing = wrong ε (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → ret? (mmap T.out m)) eq)))
+          ... | just o = to (one (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → ret? (mmap T.out m)) eq))))
                             (val≈ (out-value o))
   sim (case≈ {σ = σ} {M = M} {N} vs wM wN v) = ans-skip (value-red v) (case-sim v)
     where case-sim : ∀ {V} → Value V
@@ -362,9 +332,9 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
                    (T.case? V (sub (exts σ) M) (sub (exts σ) N))
                    (case-op ⦅ V ,, ⟩ sub (exts σ) (rco M) ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆)
           case-sim v@(T.inl a) = to (one (val-in (value-red v)))
-            (subst₂ _≈_ (sym (exts-[] _ σ M)) (sym (exts-[] _ σ (rco M))) (rco≈ _ M (vals-• a vs) wM))
+            (subst₂ _≈_ (sym (exts-[] _ σ M)) (sym (exts-[] _ σ (rco M))) (rco≈ _ M (below-• {P = Value} a vs) wM))
           case-sim v@(T.inr a) = to (one (val-in (value-red v)))
-            (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (vals-• a vs) wN))
+            (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (below-• {P = Value} a vs) wN))
           case-sim T.fun = wrong ε refl
           case-sim v@(T.pair _ _) = wrong ε (val-in (value-red v))
           case-sim T.lit = wrong ε refl
@@ -376,7 +346,7 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
             → Ans′ (let-op ⦅ M ,, ⟩ sub (exts σ) N ,, Nil ⦆) (to (sub (exts σ) N [ M ])) (let-op ⦅ V' ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆)
           let-sim v r' with ≈-val v r'
           ... | refl = to (one (val-in (value-red v)))
-                          (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (vals-• v vs) wN))
+                          (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (below-• {P = Value} v vs) wN))
 
 {- The end theorem: for well-scoped programs ---------------------------------}
 

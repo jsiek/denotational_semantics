@@ -140,7 +140,7 @@ module _ (D : Defs) where
     ≈-subs p [] = []
     ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
-  open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) Kit.≈-sub using (≈-subst)
+  open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) Kit.≈-sub using (≈-subst; ≈-[])
 
   {- The simulation -----------------------------------------------------------------}
 
@@ -168,18 +168,10 @@ module _ (D : Defs) where
   obs≈s [] = refl
   obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
 
-  ret?-ans : ∀ {M mv mw X} → M.Pointwise _≈_ mv mw → T.red D X ≡ T.ret? mw → Ans′ M (S.ret? mv) X
-  ret?-ans (M.just r) e = to (one e) r
-  ret?-ans M.nothing e = wrong ε e
-
   {- a call, once its operands are values -}
   call-step : ∀ {F E W r} → T.Value F → T.Value E → T.Value W → T.call D F E W ≡ r
     → T.red D (C.app C.⦅ F ,, E ,, W ,, Nil ⦆) ≡ r
   call-step v v' w e rewrite vr v | vr v' | vr w = e
-
-  one≈ : ∀ {V V'} → V ≈ V' → T.Value V' → ∀ x → (V • ids) x ≈ (V' TS.• TS.ids) x
-  one≈ r v zero = r
-  one≈ r v (suc x) = var≈
 
   sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
   sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans (T.red-args D) T.Values (Pw _≈_) as (S.red-args as) as'
@@ -242,8 +234,8 @@ module _ (D : Defs) where
     where
     case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
       → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
-    case-sim v@(T.inl v₁) (inl≈ r') = to (one (val-in (vr v))) (≈-subst (one≈ r' v₁ , tt) s)
-    case-sim v@(T.inr v₁) (inr≈ r') = to (one (val-in (vr v))) (≈-subst (one≈ r' v₁ , tt) t)
+    case-sim v@(T.inl v₁) (inl≈ r') = to (one (val-in (vr v))) (≈-[] tt r' s)
+    case-sim v@(T.inr v₁) (inr≈ r') = to (one (val-in (vr v))) (≈-[] tt r' t)
     case-sim T.fun (fun≈ _ _) = wrong ε refl
     case-sim v@(T.pair _ _) (pair≈ _ _) = wrong ε (val-in (vr v))
     case-sim T.lit lit≈ = wrong ε refl
@@ -262,12 +254,9 @@ module _ (D : Defs) where
     ... | just (bool false) = M.just (inr≈ (tuple≈ []))
   sim (let≈ r s) =
     ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim r)
-      λ v r' → to (one (val-in (vr v))) (≈-subst (one≈ r' v , tt) s)
+      λ v r' → to (one (val-in (vr v))) (≈-[] tt r' s)
   sims [] = val ε T.[] []
-  sims (r ∷ rs) =
-    ans-in (frame _ (λ _ → refl)) (λ r' → r' ∷ rs) (sim r)
-      λ v r' → ans-in (frame {g = λ Xs → _ ,, Xs} _ (λ X → val-in (vr v))) (r' ∷_) (sims rs)
-        λ vs rs' → val ε (v T.∷ vs) (r' ∷ rs')
+  sims (r ∷ rs) = ans-cons (T.red-args D) (λ _ _ → refl) vr rs (sim r) (sims rs)
 
 {- The end theorem: for every Clos4 program ----------------------------------}
 

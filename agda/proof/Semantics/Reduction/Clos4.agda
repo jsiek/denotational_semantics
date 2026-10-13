@@ -9,28 +9,25 @@ module proof.Semantics.Reduction.Clos4 where
 
 open import Semantics.Reduction.Clos4 public
 open import Language.Clos4
-open import Semantics.Reduction.Smallstep using (val)
+open import Semantics.Observation using (Obs; o-wrong)
+open import proof.Framework.Reduction Obs o-wrong using (val)
+open import proof.Framework.Reduction Obs o-wrong using (Each; []; _∷_) public
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil)
 open import Framework.Syntax.Subst Op sig using (sub; sub-args)
 
 open import Data.List using (replicate)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-data Value : AST → Set
-infixr 5 _∷_
-data Values : ∀ {n} → Args (replicate n ■) → Set
-
-data Value where
+data Value : AST → Set where
   fun : ∀ {a} → Value (fun-op ⦅ a ⦆)
   pair : ∀ {V W} → Value V → Value W → Value (pair-op ⦅ V ,, W ,, Nil ⦆)
   lit : ∀ {B k} → Value (lit B k ⦅ Nil ⦆)
-  tuple : ∀ {n as} → Values as → Value (tuple n ⦅ as ⦆)
+  tuple : ∀ {n as} → Each Value as → Value (tuple n ⦅ as ⦆)
   inl : ∀ {V} → Value V → Value (inl-op ⦅ V ,, Nil ⦆)
   inr : ∀ {V} → Value V → Value (inr-op ⦅ V ,, Nil ⦆)
 
-data Values where
-  [] : Values Nil
-  _∷_ : ∀ {n V} {as : Args (replicate n ■)} → Value V → Values as → Values (V ,, as)
+Values : ∀ {n} → Args (replicate n ■) → Set
+Values = Each Value
 
 value-red : ∀ {V} → Value V → red V ≡ val
 values-red : ∀ {n} {as : Args (replicate n ■)} → Values as → red-args as ≡ val
