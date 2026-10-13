@@ -13,7 +13,7 @@
   then projecting from the tuple gives back each free variable.
 
   The direction from Clos2 to Clos3 uses the continuity of the Clos3
-  semantics (Sem.Clos3IswimContinuous), to pick a finite part of the
+  semantics (body2-continuous), to pick a finite part of the
   tuple of free variables.
 
 -}
@@ -33,10 +33,9 @@ open import Language.Clos3 as L3
 open import proof.Semantics.Graph.Clos2Iswim as S2
 open import proof.Semantics.Graph.Clos3Iswim as S3 renaming
   (⟦_⟧ to ⟦_⟧'; ⟦_⟧ₐ to ⟦_⟧ₐ'; ⟦_⟧₊ to ⟦_⟧₊')
-import proof.Semantics.Graph.Clos3IswimContinuous as C3
 open import Compiler.Concretize
 open import proof.Correctness.Graph.DelayFiniteCommon using (Env; Init; ρ₀; single⊆; ne-mem)
-open import proof.Framework.GraphModel.Env using (nonempty-env)
+open import proof.Framework.GraphModel.Env using (nonempty-env; •-~)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _<_; _<?_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; ≤-antisym; ≤-pred; ≮⇒≥; m+[n∸m]≡n)
@@ -154,11 +153,6 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cT body = ⟨ G , H ⟩
   where
   T = 𝒯 n Ds₃
 
-  NE₃ : ∀ U → U ≢ [] → nonempty T → nonempty-env (mem U • T • init₀)
-  NE₃ U neU neT zero = E≢[]⇒nonempty-mem neU
-  NE₃ U neU neT (suc zero) = neT
-  NE₃ U neU neT (suc (suc y)) = ⟨ ω , refl ⟩
-
   {- applying the closure to U runs the body on the same free variables -}
   body≃ : ∀ U → U ≈ U → (∀ i → nonempty (nthD Ds₂ i))
     → apply-n n (⟦ a ⟧ₐ init₀) Ds₂ (mem U) ≃ ⟦ N' ⟧' (mem U • T • init₀)
@@ -173,19 +167,11 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cT body = ⟨ G , H ⟩
     ⟨ proj₁ neT ∷ [] , ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ single⊆ (proj₂ neT) , (λ ()) ⟩ ⟩ ⟩
     where neT = T-ne n Ds₃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂)
   G (U ↦ x) ⟨ ne₂ , ⟨ x∈ , ⟨ neU , cU ⟩ ⟩ ⟩
-      with C3.term-continuous N' (mem U • T • init₀)
-             (NE₃ U neU (T-ne n Ds₃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂)))
-             x (proj₁ (body≃ U cU ne₂) x x∈)
-  ... | ⟨ Vs , ⟨ ok , x∈fin ⟩ ⟩ =
-    ⟨ Vs 1 , ⟨ ⟨ ⟨ x∈′ , ⟨ neU , cU ⟩ ⟩ , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) cT (proj₂ (ok 1)) ⟩ ⟩
-             , ⟨ proj₂ (ok 1) , proj₁ (ok 1) ⟩ ⟩ ⟩
-    where
-    env⊆ : ∀ y → mem (Vs y) ⊆ (mem U • mem (Vs 1) • init₀) y
-    env⊆ zero = proj₂ (ok 0)
-    env⊆ (suc zero) = λ d d∈ → d∈
-    env⊆ (suc (suc y)) = proj₂ (ok (suc (suc y)))
-    x∈′ = S3.⟦⟧-monotone {ρ = λ y → mem (Vs y)} {ρ′ = mem U • mem (Vs 1) • init₀}
-                         N' env⊆ x x∈fin
+      with S3.body2-continuous N' init₀ (λ _ → ⟨ ω , refl ⟩) (T-ne n Ds₃ (ne-≃ (λ i → proj₁ (Ds≃ i)) ne₂))
+             (E≢[]⇒nonempty-mem neU) x (proj₁ (body≃ U cU ne₂) x x∈)
+  ... | ⟨ V , ⟨ U' , ⟨ neV , ⟨ _ , ⟨ V⊆ , ⟨ U'⊆ , x∈′ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ V , ⟨ ⟨ ⟨ S3.⟦⟧-monotone N' (•-~ _⊆_ (λ _ _ d∈ → d∈) U'⊆) x x∈′ , ⟨ neU , cU ⟩ ⟩
+            , ⟨ neV , Con⇒≈ V cT V⊆ ⟩ ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩
 
   H : ⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • init₀)) , ptt ⟩) , ptt ⟩ , ⟨ T , ptt ⟩ ⟩
       ⊆ guard-n n Ds₂ (Λ ⟨ apply-n n (⟦ a ⟧ₐ init₀) Ds₂ , ptt ⟩)
@@ -193,83 +179,10 @@ clos-correct n a Ds₂ Ds₃ N' Ds≃ cT body = ⟨ G , H ⟩
     ⟨ ne-≃ (λ i → proj₂ (Ds≃ i)) (T-ne⁻ n Ds₃ (ne-mem neV V⊆T)) , tt ⟩
   H (U ↦ x) ⟨ V , ⟨ ⟨ ⟨ x∈ , neU ⟩ , _ ⟩ , ⟨ V⊆T , neV ⟩ ⟩ ⟩ =
     ⟨ ne₂ , ⟨ proj₂ (body≃ U (proj₂ neU) ne₂) x
-                (S3.⟦⟧-monotone {ρ = mem U • mem V • init₀} {ρ′ = mem U • T • init₀}
-                                N' env⊆ x x∈)
+                (S3.⟦⟧-monotone N' (•-~ _⊆_ (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆T) (λ _ d∈ → d∈)) x x∈)
             , neU ⟩ ⟩
     where
     ne₂ = ne-≃ (λ i → proj₂ (Ds≃ i)) (T-ne⁻ n Ds₃ (ne-mem neV V⊆T))
-    env⊆ : ∀ y → (mem U • mem V • init₀) y ⊆ (mem U • T • init₀) y
-    env⊆ zero = λ d d∈ → d∈
-    env⊆ (suc zero) = V⊆T
-    env⊆ (suc (suc y)) = λ d d∈ → d∈
-
-{- Congruences ---------------------------------------------------------------}
-
-⋆-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → ⋆ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ ⋆ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-⋆-≃ ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ =
-  ⟨ (λ w → λ { ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ →
-               ⟨ V , ⟨ D⊆ _ e∈ , ⟨ (λ d d∈ → E⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ })
-  , (λ w → λ { ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ →
-               ⟨ V , ⟨ D⊇ _ e∈ , ⟨ (λ d d∈ → E⊇ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ }) ⟩
-
-primD-≃ : ∀ p {D D' E E'} → D ≃ D' → E ≃ E'
-  → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-primD-≃ p ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ =
-  ⟨ lower (primD-mono p _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
-  , lower (primD-mono p _ _ ⟨ lift D⊇ , ⟨ lift E⊇ , ptt ⟩ ⟩) ⟩
-
-𝒯-≃ : ∀ n {Ds Es : Results (𝒫 Value) (replicate n ■)}
-  → (∀ i → nthD Ds i ≃ nthD Es i) → 𝒯 n Ds ≃ 𝒯 n Es
-𝒯-≃ zero {Ds} {Es} _ = ⟨ G , H ⟩
-  where
-  G : 𝒯 zero Ds ⊆ 𝒯 zero Es
-  G ⟨⟩ tt = tt
-  H : 𝒯 zero Es ⊆ 𝒯 zero Ds
-  H ⟨⟩ tt = tt
-𝒯-≃ (suc n) {Ds} {Es} eq = ⟨ G , H ⟩
-  where
-  G : 𝒯 (suc n) Ds ⊆ 𝒯 (suc n) Es
-  G (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
-    ⟨ refl , ⟨ proj₁ (eq i) d d∈ , ne-≃ (λ j → proj₁ (eq j)) ne ⟩ ⟩
-  H : 𝒯 (suc n) Es ⊆ 𝒯 (suc n) Ds
-  H (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
-    ⟨ refl , ⟨ proj₂ (eq i) d d∈ , ne-≃ (λ j → proj₂ (eq j)) ne ⟩ ⟩
-
-proj-≃ : ∀ {n} (i : Fin n) {D E} → D ≃ E → proj i ⟨ D , ptt ⟩ ≃ proj i ⟨ E , ptt ⟩
-proj-≃ i ⟨ D⊆ , D⊇ ⟩ = ⟨ (λ d → D⊆ (tup[ i ] d)) , (λ d → D⊇ (tup[ i ] d)) ⟩
-
-inl-≃ : ∀ {D E} → D ≃ E → inl ⟨ D , ptt ⟩ ≃ inl ⟨ E , ptt ⟩
-inl-≃ {D} {E} ⟨ D⊆ , D⊇ ⟩ = ⟨ G , H ⟩
-  where
-  G : inl ⟨ D , ptt ⟩ ⊆ inl ⟨ E , ptt ⟩
-  G (left d) d∈ = D⊆ d d∈
-  H : inl ⟨ E , ptt ⟩ ⊆ inl ⟨ D , ptt ⟩
-  H (left d) d∈ = D⊇ d d∈
-
-inr-≃ : ∀ {D E} → D ≃ E → inr ⟨ D , ptt ⟩ ≃ inr ⟨ E , ptt ⟩
-inr-≃ {D} {E} ⟨ D⊆ , D⊇ ⟩ = ⟨ G , H ⟩
-  where
-  G : inr ⟨ D , ptt ⟩ ⊆ inr ⟨ E , ptt ⟩
-  G (right d) d∈ = D⊆ d d∈
-  H : inr ⟨ E , ptt ⟩ ⊆ inr ⟨ D , ptt ⟩
-  H (right d) d∈ = D⊇ d d∈
-
-{- case analysis, whose branches are compared on nonempty finite sets -}
-𝒞-≃ : ∀ {D D' F F' G G'} → D ≃ D'
-  → (∀ v V → (v ∷ V) ≈ (v ∷ V) → F (mem (v ∷ V)) ≃ F' (mem (v ∷ V)))
-  → (∀ v V → (v ∷ V) ≈ (v ∷ V) → G (mem (v ∷ V)) ≃ G' (mem (v ∷ V)))
-  → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-𝒞-≃ {F = F} {F'} {G} {G'} D≃ F≃ G≃ =
-  ⟨ H {B = F} {F'} {G} {G'} (proj₁ D≃) (λ v V c → proj₁ (F≃ v V c)) (λ v V c → proj₁ (G≃ v V c))
-  , H {B = F'} {F} {G'} {G} (proj₂ D≃) (λ v V c → proj₂ (F≃ v V c)) (λ v V c → proj₂ (G≃ v V c)) ⟩
-  where
-  H : ∀ {A A' B B' C C'} → A ⊆ A' → (∀ v V → (v ∷ V) ≈ (v ∷ V) → B (mem (v ∷ V)) ⊆ B' (mem (v ∷ V)))
-    → (∀ v V → (v ∷ V) ≈ (v ∷ V) → C (mem (v ∷ V)) ⊆ C' (mem (v ∷ V)))
-    → 𝒞 ⟨ A , ⟨ B , ⟨ C , ptt ⟩ ⟩ ⟩ ⊆ 𝒞 ⟨ A' , ⟨ B' , ⟨ C' , ptt ⟩ ⟩ ⟩
-  H A⊆ B⊆ C⊆ w (inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ (left d) (all d d∈)) , ⟨ B⊆ v V c w w∈ , c ⟩ ⟩ ⟩ ⟩
-  H A⊆ B⊆ C⊆ w (inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ (right d) (all d d∈)) , ⟨ C⊆ v V c w w∈ , c ⟩ ⟩ ⟩ ⟩
 
 {- The main lemma -------------------------------------------------------------}
 
@@ -281,19 +194,19 @@ body-correct : ∀ n k (a : Arg (ν-n k (ν ■)))
   → ⟦ unbind-n k a ⟧ ρ₂ ≃ ⟦ conc-body n k a ⟧' ρ₃
 
 args-correct : ∀ {n} (args : Args (replicate n ■)) φ ρ₂ ρ₃ → Con-env ρ₃ → EnvRel φ ρ₂ ρ₃
-  → ∀ i → nthD (⟦ args ⟧₊ ρ₂) i ≃ nthD (⟦ conc-args φ args ⟧₊' ρ₃) i
+  → RRs (replicate n ■) (⟦ args ⟧₊ ρ₂) (⟦ conc-args φ args ⟧₊' ρ₃)
 
 concretize-correct (` x) φ ρ₂ ρ₃ c rel =
   ≃-trans (rel x) (≃-reflexive (sym (ref-ok (φ x) ρ₃)))
 concretize-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) φ ρ₂ ρ₃ c rel =
   clos-correct n a (⟦ fvs ⟧₊ ρ₂) (⟦ conc-args φ fvs ⟧₊' ρ₃) (conc-body n n a)
-    (args-correct fvs φ ρ₂ ρ₃ c rel) (Clos3-con (tuple n ⦅ conc-args φ fvs ⦆') c)
+    (nthD-≃ _ _ (args-correct fvs φ ρ₂ ρ₃ c rel)) (Clos3-con (tuple n ⦅ conc-args φ fvs ⦆') c)
     (body-correct n n a)
 concretize-correct (app ⦅ L ,, M ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
   ⋆-≃ (concretize-correct L φ ρ₂ ρ₃ c rel) (concretize-correct M φ ρ₂ ρ₃ c rel)
 concretize-correct (lit B k ⦅ Nil ⦆) φ ρ₂ ρ₃ c rel = ≃-refl
 concretize-correct (tuple n ⦅ args ⦆) φ ρ₂ ρ₃ c rel =
-  𝒯-≃ n (args-correct args φ ρ₂ ρ₃ c rel)
+  mono-≃ (𝒯-mono n) (args-correct args φ ρ₂ ρ₃ c rel)
 concretize-correct (get i ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
   proj-≃ i (concretize-correct M φ ρ₂ ρ₃ c rel)
 concretize-correct (inl-op ⦅ M ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
@@ -315,8 +228,8 @@ concretize-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) φ ρ₂ ρ₃ c rel =
 body-correct n zero (bind (ast N)) ρ₂ ρ₃ rel = concretize-correct N (fv-ref n) ρ₂ ρ₃ rel
 body-correct n (suc k) (bind a) = body-correct n k a
 
-args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ c rel zero = concretize-correct M φ ρ₂ ρ₃ c rel
-args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ c rel (suc i) = args-correct args φ ρ₂ ρ₃ c rel i
+args-correct {zero} Nil φ ρ₂ ρ₃ c rel = ptt
+args-correct {suc n} (M ,, args) φ ρ₂ ρ₃ c rel = ⟨ lift (concretize-correct M φ ρ₂ ρ₃ c rel) , args-correct args φ ρ₂ ρ₃ c rel ⟩
 
 {- The end theorem ------------------------------------------------------------}
 

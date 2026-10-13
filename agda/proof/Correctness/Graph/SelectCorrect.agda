@@ -33,7 +33,7 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (Results; results-rel-pres)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
-open import proof.Semantics.Graph.Prim using (primD; primD-mono)
+open import proof.Semantics.Graph.Prim using (primD; primD-mono; primD-≃)
 open import Language.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
 import Language.Prim as P
 import Language.CFG as C
@@ -46,9 +46,6 @@ open import Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 𝒜; �
 open import Semantics.Graph.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
 open import Semantics.Graph.X86
-open import proof.Correctness.Graph.GlobalizeCorrect using (pair-≃; car-≃; cdr-≃; prim-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect using (⋆-≃; proj-≃; inl-≃; inr-≃)
-open import proof.Correctness.Graph.RCOCorrect using (Λ-≃; ne-mem)
 open import proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
 open import proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
 open import proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
@@ -300,19 +297,19 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T 
     where E = 𝒪 T n σ ρ (select-atm e)
           A = 𝒪 T n σ (ρ [ rdi ≔ E ]) (select-atm a)
           G = 𝒪 T n σ (ρ [ rdi ≔ E ] [ rsi ≔ A ]) (select-atm g)
-  sel (I.pair a b) d is f σ i ρ φ = put-≃ d f i (pair-≃ ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)
-  sel (fst a) d is f σ i ρ φ = put-≃ d f i (car-≃ ⟨ lift (atm-≃ a) , ptt ⟩)
-  sel (snd a) d is f σ i ρ φ = put-≃ d f i (cdr-≃ ⟨ lift (atm-≃ a) , ptt ⟩)
+  sel (I.pair a b) d is f σ i ρ φ = put-≃ d f i (mono-≃ pair-mono ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)
+  sel (fst a) d is f σ i ρ φ = put-≃ d f i (mono-≃ car-mono ⟨ lift (atm-≃ a) , ptt ⟩)
+  sel (snd a) d is f σ i ρ φ = put-≃ d f i (mono-≃ cdr-mono ⟨ lift (atm-≃ a) , ptt ⟩)
   sel (tuple as) d is f σ i ρ φ =
     put-≃ d f i (≃-trans (≃-reflexive (cong (λ p → 𝒯 (proj₁ p) (proj₂ p)) (𝒪s-≡ as))) (𝒮-≃ (tuple as) σ))
   sel (get j a) d is f σ i ρ φ = put-≃ d f i (proj-≃ j (atm-≃ a))
   sel (I.inl a) d is f σ i ρ φ = put-≃ d f i (inl-≃ (atm-≃ a))
   sel (I.inr a) d is f σ i ρ φ = put-≃ d f i (inr-≃ (atm-≃ a))
   sel (prim P.sub a b) d is f σ i ρ φ =
-    strict-≃₂ (put-≃ d f i (prim-≃ P.sub ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)) (put-ne d)
+    strict-≃₂ (put-≃ d f i (primD-≃ P.sub (atm-≃ a) (atm-≃ b))) (put-ne d)
       (prim-ne P.sub {E = 𝒪 T n σ (ρ [ rax ≔ 𝒪 T n σ ρ (select-atm a) ]) (select-atm b)})
   sel (prim P.eq a b) d is f σ i ρ φ =
-    strict-≃ (put-≃ d f i (prim-≃ P.eq ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)) (put-ne d)
+    strict-≃ (put-≃ d f i (primD-≃ P.eq (atm-≃ a) (atm-≃ b))) (put-ne d)
 
   {- the blocks B (of X86) and B' (of CFG) agree -}
   BR : Blocks → Blocksₜ → Set₁

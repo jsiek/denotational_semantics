@@ -40,11 +40,6 @@ open import Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; 
 open import proof.Semantics.Graph.ImpDirect
   using (Store; _[_↦_]; 𝒜; caseₛ; letₛ)
   renaming (⟦_⟧[_] to ℐ⟦_⟧[_]; table to tableᵢ; ⟦_⟧ₚ to ℐ⟦_⟧ₚ)
-open import proof.Correctness.Graph.GlobalizeCorrect
-  using (nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃; ΛΛ-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
-open import proof.Correctness.Graph.RCOCorrect using (strict-≃)
 open import proof.Correctness.Graph.LiftLocalsCommon
 open import proof.Framework.GraphModel.Env using (Env)
 
@@ -101,11 +96,11 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     → proj₁ (ℐ⟦ lift n d m ⟧[ T ] n σ) ≃ ⟦ M ⟧[ T' ] ρ × Out d ρ (ℐ⟦ lift n d m ⟧[ T ] n σ)
   lift-sem (atom a) H O A = ⟨ atom-≃ a H O A , (λ _ → A) ⟩
   lift-sem (app (a ∷ b ∷ c ∷ [])) H O A =
-    ⟨ app-≃ ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩ , (λ _ → A) ⟩
+    ⟨ mono-≃ ⋆₂-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩ , (λ _ → A) ⟩
   lift-sem (pair (a ∷ b ∷ [])) H O A =
-    ⟨ pair-≃ ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
-  lift-sem (fst (a ∷ [])) H O A = ⟨ car-≃ ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
-  lift-sem (snd (a ∷ [])) H O A = ⟨ cdr-≃ ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
+    ⟨ mono-≃ pair-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
+  lift-sem (fst (a ∷ [])) H O A = ⟨ mono-≃ car-mono ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
+  lift-sem (snd (a ∷ [])) H O A = ⟨ mono-≃ cdr-mono ⟨ up (atom-≃ a H O A) , ptt ⟩ , (λ _ → A) ⟩
   lift-sem (tuple {k} {Ms} as) {ρ = ρ} H O A =
     ⟨ atoms-≃ as H O A (λ m Ds → 𝒯 m Ds ≃ 𝒯 k (⟦ Ms ⟧₊[ T' ] ρ))
                  (λ {m} eq q → ≃-trans (𝒯-≃ m (nthD-≃ _ _ eq)) q) ≃-refl
@@ -114,7 +109,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   lift-sem (inl (a ∷ [])) H O A = ⟨ inl-≃ (atom-≃ a H O A) , (λ _ → A) ⟩
   lift-sem (inr (a ∷ [])) H O A = ⟨ inr-≃ (atom-≃ a H O A) , (λ _ → A) ⟩
   lift-sem (prim {p} (a ∷ b ∷ [])) H O A =
-    ⟨ prim-≃ p ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
+    ⟨ mono-≃ (primD-mono p) ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩ , (λ _ → A) ⟩
   lift-sem (case {M = M₁} {M₂} a m₁ m₂) {n} {d} {σ} {ρ} H O A with d <? n
   ... | no d≮n = ⊥-elim (d≮n (fits-< _ (fits {d} _ H)))
   ... | yes d<n =
@@ -130,7 +125,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
   lift-sem (let′ {M₁} {M₂} m₁ m₂) {n} {d} {σ} {ρ} H O A with d <? n
   ... | no d≮n = ⊥-elim (d≮n (fits-< _ (fits {d} (height m₂) (⊔ʳ (height m₁) _ H))))
   ... | yes d<n =
-    ⟨ strict-≃ (⋆-strict {Λ ⟨ F , ptt ⟩} (λ _ w∈ → w∈))
+    ⟨ ≃-when (⋆-strict {Λ ⟨ F , ptt ⟩} (λ _ w∈ → w∈))
                (⋆-strict {Λ ⟨ F' , ptt ⟩} (proj₂ (proj₁ IH₁)))
         (λ ne → ⋆-≃ (Λ-≃ {F} {F'} λ V _ _ → proj₁ (IH₂ ne (mem V))) (proj₁ IH₁))
     , out-let (λ ne X ne' → weak (proj₂ (IH₂ ne X) ne')) ⟩

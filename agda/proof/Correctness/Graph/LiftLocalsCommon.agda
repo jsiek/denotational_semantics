@@ -19,7 +19,7 @@
 -}
 
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig using (Results)
+open import proof.Framework.GraphModel.DOpSig using (Results; RRs; RRs-refl)
 open import proof.Framework.GraphModel.Domain
 open import Language.Clos5 using (Args)
 open import Language.Mon
@@ -27,8 +27,7 @@ import Language.Imp as I
 open import Compiler.LiftLocals using (lift-atom; lift-atoms; lift-defs; lift-program)
 open import Semantics.Graph.Clos5Iswim using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; ⟦_⟧ₚ; init)
 open import Semantics.Graph.Imp using (Store; read; _[_↦_]; 𝒜; 𝒜s; frame)
-open import proof.Correctness.Graph.GlobalizeCorrect using (RRs)
-open import proof.Correctness.Graph.RCOCorrect using (RRs-refl; compile-mon-same)
+open import proof.Correctness.Graph.RCOCorrect using (compile-mon-same)
 open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
 open import proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
 open import Compiler.Pipeline using (compile; compile-imp)

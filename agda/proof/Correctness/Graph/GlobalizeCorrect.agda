@@ -30,7 +30,7 @@ open import Semantics.Graph.Clos5Iswim
 open import Compiler.Globalize
 open import proof.Correctness.Graph.DelayFiniteCommon using (Env; ρ₀)
 open import proof.Framework.GraphModel.Env using (•-~)
-open import proof.Correctness.Graph.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
+
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_)
 open import Data.Nat.Properties using (≤-refl; ≤-trans; <-≤-trans; <-irrefl; n<1+n; m≤n+m; n≤1+n)
@@ -52,76 +52,6 @@ module proof.Correctness.Graph.GlobalizeCorrect where
 
 EnvRel : Env → Env → Set
 EnvRel ρ ρ' = ∀ x → ρ x ≃ ρ' x
-
-RR : ∀ b → Result (𝒫 Value) b → Result (𝒫 Value) b → Set₁
-RR = result-rel-pres _≃_
-
-RRs : ∀ bs → Results (𝒫 Value) bs → Results (𝒫 Value) bs → Set₁
-RRs = results-rel-pres _≃_
-
-rr-trans : ∀ b (f g h : Result (𝒫 Value) b) → RR b f g → RR b g h → RR b f h
-rr-trans ■ f g h p q = lift (≃-trans (lower p) (lower q))
-rr-trans (ν b) f g h p q = λ a₁ a₂ r → rr-trans b (f a₁) (g a₂) (h a₂) (p a₁ a₂ r) (q a₂ a₂ ≃-refl)
-rr-trans (∁ b) f g h p q = rr-trans b f g h p q
-
-nthD-≃ : ∀ {n} (Ds Es : Results (𝒫 Value) (replicate n ■)) → RRs (replicate n ■) Ds Es
-  → ∀ i → nthD Ds i ≃ nthD Es i
-nthD-≃ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ D≃ , _ ⟩ zero = lower D≃
-nthD-≃ {suc n} ⟨ D , Ds ⟩ ⟨ E , Es ⟩ ⟨ _ , Ds≃ ⟩ (suc i) = nthD-≃ Ds Es Ds≃ i
-
-{- Congruence of the operators that Clos4 and Clos5 share ----------------------}
-
-app-≃ : ∀ {L M N L' M' N'} → RRs (■ ∷ ■ ∷ ■ ∷ []) ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
-  → ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩ ≃ ⋆ ⟨ ⋆ ⟨ L' , ⟨ M' , ptt ⟩ ⟩ , ⟨ N' , ptt ⟩ ⟩
-app-≃ ⟨ L≃ , ⟨ M≃ , ⟨ N≃ , _ ⟩ ⟩ ⟩ = ⋆-≃ (⋆-≃ (lower L≃) (lower M≃)) (lower N≃)
-
-pair-≃ : ∀ {D E D' E'} → RRs (■ ∷ ■ ∷ []) ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  → pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-pair-≃ {D} {E} {D'} {E'} ⟨ lift ⟨ D⊆ , D⊇ ⟩ , ⟨ lift ⟨ E⊆ , E⊇ ⟩ , _ ⟩ ⟩ = ⟨ G D⊆ E⊆ , G D⊇ E⊇ ⟩
-  where
-  G : ∀ {A B A' B'} → A ⊆ A' → B ⊆ B' → pair ⟨ A , ⟨ B , ptt ⟩ ⟩ ⊆ pair ⟨ A' , ⟨ B' , ptt ⟩ ⟩
-  G A⊆ B⊆ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩ = ⟨ A⊆ u u∈ , B⊆ v v∈ ⟩
-
-car-≃ : ∀ {D D'} → RRs (■ ∷ []) ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ → car ⟨ D , ptt ⟩ ≃ car ⟨ D' , ptt ⟩
-car-≃ ⟨ lift ⟨ D⊆ , D⊇ ⟩ , _ ⟩ =
-  ⟨ (λ { u ⟨ v , i ⟩ → ⟨ v , D⊆ _ i ⟩ }) , (λ { u ⟨ v , i ⟩ → ⟨ v , D⊇ _ i ⟩ }) ⟩
-
-cdr-≃ : ∀ {D D'} → RRs (■ ∷ []) ⟨ D , ptt ⟩ ⟨ D' , ptt ⟩ → cdr ⟨ D , ptt ⟩ ≃ cdr ⟨ D' , ptt ⟩
-cdr-≃ ⟨ lift ⟨ D⊆ , D⊇ ⟩ , _ ⟩ =
-  ⟨ (λ { v ⟨ u , i ⟩ → ⟨ u , D⊆ _ i ⟩ }) , (λ { v ⟨ u , i ⟩ → ⟨ u , D⊇ _ i ⟩ }) ⟩
-
-case-≃ : ∀ {D F G D' F' G'}
-  → RRs (■ ∷ ν ■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-  → 𝒞 ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ 𝒞 ⟨ D' , ⟨ F' , ⟨ G' , ptt ⟩ ⟩ ⟩
-case-≃ {F = F} {G} {F' = F'} {G'} ⟨ D≃ , ⟨ F≃ , ⟨ G≃ , _ ⟩ ⟩ ⟩ =
-  𝒞-≃ {F = F} {F'} {G} {G'} (lower D≃) (λ v V _ → lower (F≃ _ _ ≃-refl)) (λ v V _ → lower (G≃ _ _ ≃-refl))
-
-{- let x = D in F x, which means (λx. F x) D -}
-let-≃ : ∀ {D F D' F'} → RRs (■ ∷ ν ■ ∷ []) ⟨ D , ⟨ F , ptt ⟩ ⟩ ⟨ D' , ⟨ F' , ptt ⟩ ⟩
-  → ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ≃ ⋆ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
-let-≃ {D} {F} {D'} {F'} ⟨ D≃ , ⟨ F≃ , _ ⟩ ⟩ = ⋆-≃ ⟨ G₁ , G₂ ⟩ (lower D≃)
-  where
-  G₁ : Λ ⟨ F , ptt ⟩ ⊆ Λ ⟨ F' , ptt ⟩
-  G₁ ν tt = tt
-  G₁ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ proj₁ (lower (F≃ (mem V) (mem V) ≃-refl)) w w∈ , ne ⟩
-  G₂ : Λ ⟨ F' , ptt ⟩ ⊆ Λ ⟨ F , ptt ⟩
-  G₂ ν tt = tt
-  G₂ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ proj₂ (lower (F≃ (mem V) (mem V) ≃-refl)) w w∈ , ne ⟩
-
-prim-≃ : ∀ p {D E D' E'} → RRs (■ ∷ ■ ∷ []) ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-prim-≃ p ⟨ D≃ , ⟨ E≃ , _ ⟩ ⟩ = primD-≃ p (lower D≃) (lower E≃)
-
-{- the code of a function: Λ X. Λ Y. F X Y -}
-ΛΛ-≃ : ∀ {F F' : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → F X Y ≃ F' X Y)
-  → Λ ⟨ (λ X → Λ ⟨ F X , ptt ⟩) , ptt ⟩ ≃ Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩
-ΛΛ-≃ {F} {F'} eq = ⟨ G (λ X Y → proj₁ (eq X Y)) , G (λ X Y → proj₂ (eq X Y)) ⟩
-  where
-  G : ∀ {A B : 𝒫 Value → 𝒫 Value → 𝒫 Value} → (∀ X Y → A X Y ⊆ B X Y)
-    → Λ ⟨ (λ X → Λ ⟨ A X , ptt ⟩) , ptt ⟩ ⊆ Λ ⟨ (λ X → Λ ⟨ B X , ptt ⟩) , ptt ⟩
-  G A⊆ ν tt = tt
-  G A⊆ (V ↦ ν) ⟨ tt , neV ⟩ = ⟨ tt , neV ⟩
-  G A⊆ (V ↦ (U ↦ x)) ⟨ ⟨ x∈ , neU ⟩ , neV ⟩ = ⟨ ⟨ A⊆ (mem V) (mem U) x x∈ , neU ⟩ , neV ⟩
 
 {- References to older definitions ----------------------------------------------}
 
@@ -206,22 +136,18 @@ stab-args : ∀ n T T' {bs} (args : L5.Args bs) ρ ρ' → Agree n T T' → RB-a
 
 stab n T T' (L5.` x) ρ ρ' ag r rel = rel x
 stab n T T' (L5.fun-ref k L5.⦅ args ⦆) ρ ρ' ag k<n rel = ag k k<n
-stab n T T' (L5.app L5.⦅ args ⦆) ρ ρ' ag r rel = app-≃ (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.app L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ ⋆₂-mono (stab-args n T T' args ρ ρ' ag r rel)
 stab n T T' (L5.lit B k L5.⦅ args ⦆) ρ ρ' ag r rel = ≃-refl
-stab n T T' (L5.pair-op L5.⦅ args ⦆) ρ ρ' ag r rel = pair-≃ (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.fst-op L5.⦅ args ⦆) ρ ρ' ag r rel = car-≃ (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.snd-op L5.⦅ args ⦆) ρ ρ' ag r rel = cdr-≃ (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.tuple x L5.⦅ args ⦆) ρ ρ' ag r rel =
-  𝒯-≃ x (nthD-≃ _ _ (stab-args n T T' args ρ ρ' ag r rel))
-stab n T T' (L5.get i L5.⦅ args ⦆) ρ ρ' ag r rel =
-  proj-≃ i (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
-stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel =
-  inl-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
-stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel =
-  inr-≃ (lower (proj₁ (stab-args n T T' args ρ ρ' ag r rel)))
-stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = case-≃ (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = let-≃ (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = prim-≃ p (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.pair-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ pair-mono (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.fst-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ car-mono (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.snd-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ cdr-mono (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.tuple x L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (𝒯-mono x) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.get i L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (proj-mono i) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ inl-mono (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ inr-mono (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = 𝒞-RR (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = letD-RR (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (primD-mono p) (stab-args n T T' args ρ ρ' ag r rel)
 
 stab-arg n T T' (L5.ast M) ρ ρ' ag r rel = lift (stab n T T' M ρ ρ' ag r rel)
 stab-arg n T T' (L5.bind a) ρ ρ' ag r rel =
@@ -287,18 +213,18 @@ glob-sem (` x) ds ρ ρ' rel = rel x
 glob-sem (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds ρ ρ' rel
   rewrite table-top (proj₁ (glob N ds)) (proj₂ (glob N ds)) =
   ΛΛ-≃ (λ X Y → glob-sem N ds (Y • X • (λ _ → init₅)) (Y • X • (λ _ → init₅)) (λ x → ≃-refl))
-glob-sem (app ⦅ args ⦆) ds ρ ρ' rel = app-≃ (glob-sem-args args ds ρ ρ' rel)
+glob-sem (app ⦅ args ⦆) ds ρ ρ' rel = mono-≃ ⋆₂-mono (glob-sem-args args ds ρ ρ' rel)
 glob-sem (lit B k ⦅ args ⦆) ds ρ ρ' rel = ≃-refl
-glob-sem (pair-op ⦅ args ⦆) ds ρ ρ' rel = pair-≃ (glob-sem-args args ds ρ ρ' rel)
-glob-sem (fst-op ⦅ args ⦆) ds ρ ρ' rel = car-≃ (glob-sem-args args ds ρ ρ' rel)
-glob-sem (snd-op ⦅ args ⦆) ds ρ ρ' rel = cdr-≃ (glob-sem-args args ds ρ ρ' rel)
-glob-sem (tuple n ⦅ args ⦆) ds ρ ρ' rel = 𝒯-≃ n (nthD-≃ _ _ (glob-sem-args args ds ρ ρ' rel))
-glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = proj-≃ i (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
-glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = inl-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
-glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = inr-≃ (lower (proj₁ (glob-sem-args args ds ρ ρ' rel)))
-glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = case-≃ (glob-sem-args args ds ρ ρ' rel)
-glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = let-≃ (glob-sem-args args ds ρ ρ' rel)
-glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = prim-≃ p (glob-sem-args args ds ρ ρ' rel)
+glob-sem (pair-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ pair-mono (glob-sem-args args ds ρ ρ' rel)
+glob-sem (fst-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ car-mono (glob-sem-args args ds ρ ρ' rel)
+glob-sem (snd-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ cdr-mono (glob-sem-args args ds ρ ρ' rel)
+glob-sem (tuple n ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (𝒯-mono n) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (proj-mono i) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ inl-mono (glob-sem-args args ds ρ ρ' rel)
+glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ inr-mono (glob-sem-args args ds ρ ρ' rel)
+glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = 𝒞-RR (glob-sem-args args ds ρ ρ' rel)
+glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = letD-RR (glob-sem-args args ds ρ ρ' rel)
+glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (primD-mono p) (glob-sem-args args ds ρ ρ' rel)
 
 glob-sem-arg (ast M) ds ρ ρ' rel = lift (glob-sem M ds ρ ρ' rel)
 glob-sem-arg (bind a) ds ρ ρ' rel =

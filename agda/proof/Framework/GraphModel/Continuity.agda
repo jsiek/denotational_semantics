@@ -2,11 +2,12 @@
 
   Continuity of the graph-model operators.
 
-  Each lemma says that an operator preserves continuity: if the
-  denotations of its operands are monotone and continuous at ρ (every
-  element is already produced by a finite, nonempty sub-environment of ρ),
-  then so is the result. These are the per-operator facts needed for a
-  ContinuousSemantics instance (see NewSemantics).
+  Each lemma says that an operator preserves continuity (Continuous): if
+  the bodies of its operands are monotone and continuous wherever the
+  operands put them (every element is already produced by a finite,
+  nonempty sub-environment), then so is the result. With monotonicity and
+  consistency, this is what a language needs of each of its operators
+  (Good); the properties of whole terms follow once, in SemanticsUtil.
 
 -}
 
@@ -14,7 +15,10 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
-open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; finiteNE-env; _⊆ₑ_; _⊔ₑ_; join-finiteNE-env; •-~)
+open import proof.Framework.GraphModel.DenotProperties
+open import Framework.abt.ScopedTuple using (Tuple)
+open import Framework.abt.Sig using (Sig; Result; ∁)
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -24,7 +28,9 @@ open import Data.List.Membership.Propositional.Properties using (∈-map⁺; ∈
 open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
   renaming (_,_ to ⟨_,_⟩ )
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+open import Data.Unit.Polymorphic using (⊤) renaming (tt to ptt)
+open import Level using (lift; lower)
+open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 
 module proof.Framework.GraphModel.Continuity where
@@ -81,29 +87,68 @@ many E NE m c (v ∷ V) V⊆ with one E c (V⊆ v (here refl)) | many E NE m c V
   G _ (here refl) = m (join-l a b) v v∈
   G d (there d∈) = m (join-r a b) d (V⊆′ d d∈)
 
-{- Operators that do not depend on the environment ---------------------------}
+{- The operands of an operator, as functions of the environment ---------------}
 
-const-mono : ∀ {D : 𝒫 Value} → Mono (λ _ → D)
-const-mono _ d d∈ = d∈
+{- the operand of sort b whose body means E: a binder extends the
+   environment, and a clear replaces it by the one of a closed term -}
+⟪_⟫ : ∀ b → (VEnv → 𝒫 Value) → VEnv → Result (𝒫 Value) b
+⟪ ■ ⟫ E ρ = E ρ
+⟪ ν b ⟫ E ρ X = ⟪ b ⟫ E (X • ρ)
+⟪ ∁ b ⟫ E ρ = ⟪ b ⟫ E (λ _ → ⌈ ω ⌉)
+
+Bodies : List Sig → Set₁
+Bodies bs = Tuple bs (λ _ → VEnv → 𝒫 Value)
+
+⟪_⟫₊ : ∀ bs → Bodies bs → VEnv → Results (𝒫 Value) bs
+⟪ [] ⟫₊ _ _ = ptt
+⟪ b ∷ bs ⟫₊ ⟨ E , Es ⟩ ρ = ⟨ ⟪ b ⟫ E ρ , ⟪ bs ⟫₊ Es ρ ⟩
+
+{- the body E is continuous wherever the operand puts it -}
+BodyCont : Sig → (VEnv → 𝒫 Value) → VEnv → Set₁
+BodyCont ■ E ρ = Cont E ρ
+BodyCont (ν b) E ρ = ∀ V → V ≢ [] → BodyCont b E (mem V • ρ)
+BodyCont (∁ b) E ρ = BodyCont b E (λ _ → ⌈ ω ⌉)
+
+OK : ∀ bs → Bodies bs → VEnv → Set₁
+OK [] _ _ = ⊤
+OK (b ∷ bs) ⟨ E , Es ⟩ ρ = (Mono E × BodyCont b E ρ) × OK bs Es ρ
+
+Continuous : ∀ bs → DOp (𝒫 Value) bs → Set₁
+Continuous bs f = ∀ Es {ρ} → nonempty-env ρ → OK bs Es ρ → Cont (λ ρ → f (⟪ bs ⟫₊ Es ρ)) ρ
+
+⟪⟫-mono : ∀ b {E} → Mono E → ∀ {ρ ρ′ : VEnv} → ρ ⊆ₑ ρ′
+  → result-rel-pres _⊆_ b (⟪ b ⟫ E ρ) (⟪ b ⟫ E ρ′)
+⟪⟫-mono ■ m ρ⊆ = lift (m ρ⊆)
+⟪⟫-mono (ν b) m ρ⊆ X Y X⊆ = ⟪⟫-mono b m (•-~ _⊆_ ρ⊆ X⊆)
+⟪⟫-mono (∁ b) m ρ⊆ = ⟪⟫-mono b m (λ _ _ d∈ → d∈)
+
+{- a monotone operator on monotone bodies is monotone in the environment -}
+mono-env : ∀ bs {f : DOp (𝒫 Value) bs} → monotone bs ■ f → ∀ Es {ρ₁} → OK bs Es ρ₁
+  → Mono (λ ρ → f (⟪ bs ⟫₊ Es ρ))
+mono-env bs {f} m Es ok {ρ} {ρ′} ρ⊆ = lower (m (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′) (ms bs Es ok))
+  where
+  ms : ∀ bs Es {ρ₁} → OK bs Es ρ₁ → results-rel-pres _⊆_ bs (⟪ bs ⟫₊ Es ρ) (⟪ bs ⟫₊ Es ρ′)
+  ms [] _ _ = ptt
+  ms (b ∷ bs) ⟨ E , Es ⟩ ⟨ ⟨ m , _ ⟩ , ok ⟩ = ⟨ ⟪⟫-mono b m ρ⊆ , ms bs Es ok ⟩
+
+{- Operators that do not depend on the environment ---------------------------}
 
 const-cont : ∀ {D : 𝒫 Value}{ρ} → nonempty-env ρ → Cont (λ _ → D) ρ
 const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
+ℬ-cont : ∀ B k → Continuous [] (ℬ B k)
+ℬ-cont B k _ NE _ = const-cont NE
+
+{- the code of a closure is closed -}
+ΛΛ-cont : Continuous (∁ (ν (ν ■)) ∷ []) ΛΛ
+ΛΛ-cont _ NE _ = const-cont NE
+
 {- Functions, whose body B binds one variable -----------------------------------}
 
-Λ-mono-env : ∀ {B : VEnv → 𝒫 Value} → Mono B → Mono (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩)
-Λ-mono-env m ρ⊆ ν tt = tt
-Λ-mono-env m ρ⊆ (V ↦ w) ⟨ w∈ , neV ⟩ = ⟨ m (env⊆ ρ⊆) w w∈ , neV ⟩
-  where
-  env⊆ : ∀ {ρ ρ′ : VEnv} → (∀ x → ρ x ⊆ ρ′ x) → ∀ x → (mem V • ρ) x ⊆ (mem V • ρ′) x
-  env⊆ ρ⊆ zero = λ d d∈ → d∈
-  env⊆ ρ⊆ (suc x) = ρ⊆ x
-
-Λ-cont : ∀ {B : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Mono B
-  → (∀ V → V ≢ [] → Cont B (mem V • ρ))
-  → Cont (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) ρ
-Λ-cont {B} NE m c ν tt = done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) (approx-init NE) ν tt
-Λ-cont {B} NE m c (V ↦ w) ⟨ w∈ , neV ⟩ with c V (proj₁ neV) w w∈
+Λ-cont′ : ∀ {B : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Mono B
+  → (∀ V → V ≢ [] → Cont B (mem V • ρ)) → Cont (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) ρ
+Λ-cont′ {B} NE m c ν tt = done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) (approx-init NE) ν tt
+Λ-cont′ {B} NE m c (V ↦ w) ⟨ w∈ , neV ⟩ with c V (proj₁ neV) w w∈
 ... | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
   done (λ ρ → Λ ⟨ (λ X → B (X • ρ)) , ptt ⟩) t (V ↦ w) ⟨ m env⊆ w w∈₂ , neV ⟩
   where
@@ -112,15 +157,13 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
   env⊆ zero = s₂ zero
   env⊆ (suc x) = λ d d∈ → d∈
 
+Λ-cont : Continuous (ν ■ ∷ []) Λ
+Λ-cont ⟨ B , _ ⟩ NE ⟨ ⟨ m , c ⟩ , _ ⟩ = Λ-cont′ {B} NE m c
+
 {- Application ----------------------------------------------------------------}
 
-⋆-mono-env : ∀ {E₁ E₂} → Mono E₁ → Mono E₂ → Mono (λ ρ → ⋆ ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩)
-⋆-mono-env m₁ m₂ ρ⊆ w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ =
-  ⟨ V , ⟨ m₁ ρ⊆ _ e∈ , ⟨ (λ d d∈ → m₂ ρ⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩
-
-⋆-cont : ∀ {E₁ E₂ ρ} → nonempty-env ρ → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
-  → Cont (λ ρ → ⋆ ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-⋆-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
+⋆-cont : Continuous (■ ∷ ■ ∷ []) ⋆
+⋆-cont ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , _ ⟩ ⟩ w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
     with one E₁ c₁ e∈ | many E₂ NE m₂ c₂ V V⊆
 ... | ⟨ a , e∈′ ⟩ | ⟨ b , V⊆′ ⟩ =
   done (λ ρ → ⋆ ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) w
@@ -128,29 +171,28 @@ const-cont {D} NE v v∈ = done (λ _ → D) (approx-init NE) v v∈
 
 {- Pairs ----------------------------------------------------------------------}
 
-pair-cont : ∀ {E₁ E₂ ρ} → nonempty-env ρ → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
-  → Cont (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-pair-cont {E₁}{E₂} NE m₁ m₂ c₁ c₂ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩
+pair-cont : Continuous (■ ∷ ■ ∷ []) pair
+pair-cont ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , _ ⟩ ⟩ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩
     with one E₁ c₁ u∈ | one E₂ c₂ v∈
 ... | ⟨ a , u∈′ ⟩ | ⟨ b , v∈′ ⟩ =
   done (λ ρ → pair ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ u , v ⦆
     ⟨ m₁ (join-l a b) u u∈′ , m₂ (join-r a b) v v∈′ ⟩
 
-car-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
-car-cont {E} c u ⟨ v , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
+car-cont′ : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → car ⟨ E ρ , ptt ⟩) ρ
+car-cont′ {E} c u ⟨ v , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ v , uv∈′ ⟩ ⟩ ⟩ ⟩
 
-cdr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
-cdr-cont {E} c v ⟨ u , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
+cdr-cont′ : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → cdr ⟨ E ρ , ptt ⟩) ρ
+cdr-cont′ {E} c v ⟨ u , uv∈ ⟩ with c ⦅ u , v ⦆ uv∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , ⟨ u , uv∈′ ⟩ ⟩ ⟩ ⟩
 
-{- Tuples ---------------------------------------------------------------------}
+car-cont : Continuous (■ ∷ []) car
+car-cont ⟨ E , _ ⟩ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ = car-cont′ {E} c
 
-𝒯-mono-env : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)}
-  → (∀ i → Mono (λ ρ → nthD (Ds ρ) i)) → Mono (λ ρ → 𝒯 n (Ds ρ))
-𝒯-mono-env {zero} m ρ⊆ ⟨⟩ tt = tt
-𝒯-mono-env {suc n} m ρ⊆ (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ =
-  ⟨ refl , ⟨ m i ρ⊆ d d∈ , (λ j → ⟨ proj₁ (ne j) , m j ρ⊆ _ (proj₂ (ne j)) ⟩) ⟩ ⟩
+cdr-cont : Continuous (■ ∷ []) cdr
+cdr-cont ⟨ E , _ ⟩ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ = cdr-cont′ {E} c
+
+{- Tuples ---------------------------------------------------------------------}
 
 {- one finite approximation in which each of finitely many sets is nonempty -}
 cover : ∀ {m} (Es : Fin m → VEnv → 𝒫 Value) {ρ} → nonempty-env ρ
@@ -166,27 +208,32 @@ cover {suc m} Es NE ms cs nes
   G zero = ⟨ _ , ms zero (join-l a b) _ e∈ ⟩
   G (suc j) = ⟨ proj₁ (f j) , ms (suc j) (join-r a b) _ (proj₂ (f j)) ⟩
 
-𝒯-cont : ∀ {n} {Ds : VEnv → Results (𝒫 Value) (replicate n ■)} {ρ} → nonempty-env ρ
-  → (∀ i → Mono (λ ρ → nthD (Ds ρ) i))
-  → (∀ i → Cont (λ ρ → nthD (Ds ρ) i) ρ) → Cont (λ ρ → 𝒯 n (Ds ρ)) ρ
-𝒯-cont {zero} {Ds} NE m c ⟨⟩ tt = done (λ ρ → 𝒯 zero (Ds ρ)) (approx-init NE) ⟨⟩ tt
-𝒯-cont {suc n} {Ds} NE m c (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩
-    with one (λ ρ → nthD (Ds ρ) i) (c i) d∈ | cover (λ j ρ → nthD (Ds ρ) j) NE m c ne
-... | ⟨ a , d∈′ ⟩ | ⟨ b , ne′ ⟩ =
-  done (λ ρ → 𝒯 (suc n) (Ds ρ)) (approx-join a b) (tup[ i ] d)
-    ⟨ refl , ⟨ m i (join-l a b) d d∈′
-             , (λ j → ⟨ proj₁ (ne′ j) , m j (join-r a b) _ (proj₂ (ne′ j)) ⟩) ⟩ ⟩
+nth-ok : ∀ {n} Es {ρ} → OK (replicate n ■) Es ρ → ∀ i
+  → Mono (λ ρ → nthD (⟪ replicate n ■ ⟫₊ Es ρ) i) × Cont (λ ρ → nthD (⟪ replicate n ■ ⟫₊ Es ρ) i) ρ
+nth-ok {suc n} ⟨ E , Es ⟩ ⟨ ok , _ ⟩ zero = ok
+nth-ok {suc n} ⟨ E , Es ⟩ ⟨ _ , oks ⟩ (suc i) = nth-ok Es oks i
 
-proj-cont : ∀ {n} (i : Fin n) {E ρ} → Cont E ρ → Cont (λ ρ → proj i ⟨ E ρ , ptt ⟩) ρ
-proj-cont i c d d∈ = c (tup[ i ] d) d∈
+𝒯-cont : ∀ n → Continuous (replicate n ■) (𝒯 n)
+𝒯-cont zero Es NE _ ⟨⟩ tt = done (λ ρ → 𝒯 zero (⟪ [] ⟫₊ Es ρ)) (approx-init NE) ⟨⟩ tt
+𝒯-cont (suc n) Es NE ok (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩
+    with one (λ ρ → nthD (⟪ replicate (suc n) ■ ⟫₊ Es ρ) i) (proj₂ (nth-ok Es ok i)) d∈
+       | cover (λ j ρ → nthD (⟪ replicate (suc n) ■ ⟫₊ Es ρ) j) NE
+           (λ j → proj₁ (nth-ok Es ok j)) (λ j → proj₂ (nth-ok Es ok j)) ne
+... | ⟨ a , d∈′ ⟩ | ⟨ b , ne′ ⟩ =
+  done (λ ρ → 𝒯 (suc n) (⟪ replicate (suc n) ■ ⟫₊ Es ρ)) (approx-join a b) (tup[ i ] d)
+    ⟨ refl , ⟨ proj₁ (nth-ok Es ok i) (join-l a b) d d∈′
+             , (λ j → ⟨ proj₁ (ne′ j) , proj₁ (nth-ok Es ok j) (join-r a b) _ (proj₂ (ne′ j)) ⟩) ⟩ ⟩
+
+proj-cont : ∀ {n} (i : Fin n) → Continuous (■ ∷ []) (proj i)
+proj-cont i _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ d d∈ = c (tup[ i ] d) d∈
 
 {- Sums -----------------------------------------------------------------------}
 
-inl-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → inl ⟨ E ρ , ptt ⟩) ρ
-inl-cont c (left d) d∈ = c d d∈
+inl-cont : Continuous (■ ∷ []) inl
+inl-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ (left d) d∈ = c d d∈
 
-inr-cont : ∀ {E ρ} → Cont E ρ → Cont (λ ρ → inr ⟨ E ρ , ptt ⟩) ρ
-inr-cont c (right d) d∈ = c d d∈
+inr-cont : Continuous (■ ∷ []) inr
+inr-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ (right d) d∈ = c d d∈
 
 {- Case analysis, whose branches B₁ and B₂ bind one variable -}
 map-left⊆ : ∀ {D : 𝒫 Value} {U} → (∀ d → d ∈ mem U → left d ∈ D) → mem (lmap left U) ⊆ D
@@ -197,12 +244,12 @@ map-right⊆ : ∀ {D : 𝒫 Value} {U} → (∀ d → d ∈ mem U → right d �
 map-right⊆ all d d∈ with ∈-map⁻ right d∈
 ... | ⟨ y , ⟨ y∈ , refl ⟩ ⟩ = all y y∈
 
-𝒞-cont : ∀ {L B₁ B₂ : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ
+𝒞-cont′ : ∀ {L B₁ B₂ : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ
   → Mono L → Cont L ρ
   → Mono B₁ → (∀ V → V ≢ [] → Cont B₁ (mem V • ρ))
   → Mono B₂ → (∀ V → V ≢ [] → Cont B₂ (mem V • ρ))
   → Cont (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) ρ
-𝒞-cont {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
+𝒞-cont′ {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
     with many L NE mL cL (lmap left (u ∷ U)) (map-left⊆ allL) | c₁ (u ∷ U) (λ ()) w w∈
 ... | ⟨ a , Ls⊆′ ⟩ | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
   done (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) (approx-join a t) w
@@ -213,7 +260,7 @@ map-right⊆ all d d∈ with ∈-map⁻ right d∈
   env⊆ : ∀ x → ρ₂ x ⊆ (mem (u ∷ U) • env (approx-join a t)) x
   env⊆ zero = s₂ zero
   env⊆ (suc x) = join-r a t x
-𝒞-cont {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
+𝒞-cont′ {L}{B₁}{B₂} NE mL cL m₁ c₁ m₂ c₂ w (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩)
     with many L NE mL cL (lmap right (u ∷ U)) (map-right⊆ allR) | c₂ (u ∷ U) (λ ()) w w∈
 ... | ⟨ a , Rs⊆′ ⟩ | ⟨ ρ₂ , ⟨ f₂ , ⟨ s₂ , w∈₂ ⟩ ⟩ ⟩ =
   done (λ ρ → 𝒞 ⟨ L ρ , ⟨ (λ X → B₁ (X • ρ)) , ⟨ (λ X → B₂ (X • ρ)) , ptt ⟩ ⟩ ⟩) (approx-join a t) w
@@ -224,3 +271,89 @@ map-right⊆ all d d∈ with ∈-map⁻ right d∈
   env⊆ : ∀ x → ρ₂ x ⊆ (mem (u ∷ U) • env (approx-join a t)) x
   env⊆ zero = s₂ zero
   env⊆ (suc x) = join-r a t x
+
+𝒞-cont : Continuous (■ ∷ ν ■ ∷ ν ■ ∷ []) 𝒞
+𝒞-cont ⟨ L , ⟨ B₁ , ⟨ B₂ , _ ⟩ ⟩ ⟩ NE ⟨ ⟨ mL , cL ⟩ , ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , _ ⟩ ⟩ ⟩ =
+  𝒞-cont′ {L} {B₁} {B₂} NE mL cL m₁ c₁ m₂ c₂
+
+{- Composites -------------------------------------------------------------------}
+
+letD-cont : Continuous (■ ∷ ν ■ ∷ []) letD
+letD-cont ⟨ M , ⟨ N , _ ⟩ ⟩ NE ⟨ okM , ⟨ okN , _ ⟩ ⟩ =
+  ⋆-cont ⟨ (λ ρ → Λ ⟨ (λ X → N (X • ρ)) , ptt ⟩) , ⟨ M , ptt ⟩ ⟩ NE
+    ⟨ ⟨ mono-env (ν ■ ∷ []) Λ-mono ⟨ N , ptt ⟩ ⟨ okN , ptt ⟩ , Λ-cont ⟨ N , ptt ⟩ NE ⟨ okN , ptt ⟩ ⟩
+    , ⟨ okM , ptt ⟩ ⟩
+
+⋆₂-cont : Continuous (■ ∷ ■ ∷ ■ ∷ []) ⋆₂
+⋆₂-cont ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ NE ⟨ okL , ⟨ okM , ⟨ okN , _ ⟩ ⟩ ⟩ =
+  ⋆-cont ⟨ (λ ρ → ⋆ ⟨ L ρ , ⟨ M ρ , ptt ⟩ ⟩) , ⟨ N , ptt ⟩ ⟩ NE
+    ⟨ ⟨ mono-env (■ ∷ ■ ∷ []) ⋆-mono ⟨ L , ⟨ M , ptt ⟩ ⟩ okLM , ⋆-cont ⟨ L , ⟨ M , ptt ⟩ ⟩ NE okLM ⟩
+    , ⟨ okN , ptt ⟩ ⟩
+  where okLM = ⟨ okL , ⟨ okM , ptt ⟩ ⟩
+
+closD-cont : ∀ n → Continuous (∁ (ν (ν ■)) ∷ replicate n ■) (closD n)
+closD-cont n ⟨ B , Es ⟩ NE ⟨ okB , oks ⟩ =
+  ⋆-cont ⟨ (λ ρ → ΛΛ (⟪ ∁ (ν (ν ■)) ∷ [] ⟫₊ ⟨ B , ptt ⟩ ρ))
+         , ⟨ (λ ρ → 𝒯 n (⟪ replicate n ■ ⟫₊ Es ρ)) , ptt ⟩ ⟩ NE
+    ⟨ ⟨ (λ _ d d∈ → d∈) , ΛΛ-cont ⟨ B , ptt ⟩ NE ⟨ okB , ptt ⟩ ⟩
+    , ⟨ ⟨ mono-env (replicate n ■) (𝒯-mono n) Es oks , 𝒯-cont n Es NE oks ⟩ , ptt ⟩ ⟩
+
+{- What a language needs of each of its operators ---------------------------------}
+
+{- monotone, continuous, and consistent under the language's assumption P
+   (on the meanings of the global definitions, for Clos5) -}
+record Good (P : Set) bs (f : DOp (𝒫 Value) bs) : Set₁ where
+  field
+    mono : monotone bs ■ f
+    consis : P → consistent _~_ bs ■ f
+    cont : Continuous bs f
+open Good public
+
+mk-good : ∀ {P bs} {f : DOp (𝒫 Value) bs} → monotone bs ■ f → consistent _~_ bs ■ f
+  → Continuous bs f → Good P bs f
+mk-good m c k = record { mono = m ; consis = λ _ → c ; cont = k }
+
+ℬ-good : ∀ {P} B k → Good P [] (ℬ B k)
+ℬ-good B k = mk-good (ℬ-mono B k) (ℬ-consis B k) (ℬ-cont B k)
+
+Λ-good : ∀ {P} → Good P (ν ■ ∷ []) Λ
+Λ-good = mk-good Λ-mono Λ-consis Λ-cont
+
+⋆-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) ⋆
+⋆-good = mk-good ⋆-mono ⋆-consis ⋆-cont
+
+pair-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) pair
+pair-good = mk-good pair-mono pair-consis pair-cont
+
+car-good : ∀ {P} → Good P (■ ∷ []) car
+car-good = mk-good car-mono car-consis car-cont
+
+cdr-good : ∀ {P} → Good P (■ ∷ []) cdr
+cdr-good = mk-good cdr-mono cdr-consis cdr-cont
+
+𝒯-good : ∀ {P} n → Good P (replicate n ■) (𝒯 n)
+𝒯-good n = mk-good (𝒯-mono n) (𝒯-consis n) (𝒯-cont n)
+
+proj-good : ∀ {P n} (i : Fin n) → Good P (■ ∷ []) (proj i)
+proj-good i = mk-good (proj-mono i) (proj-consis i) (proj-cont i)
+
+inl-good : ∀ {P} → Good P (■ ∷ []) inl
+inl-good = mk-good inl-mono inl-consis inl-cont
+
+inr-good : ∀ {P} → Good P (■ ∷ []) inr
+inr-good = mk-good inr-mono inr-consis inr-cont
+
+𝒞-good : ∀ {P} → Good P (■ ∷ ν ■ ∷ ν ■ ∷ []) 𝒞
+𝒞-good = mk-good 𝒞-mono 𝒞-consis 𝒞-cont
+
+letD-good : ∀ {P} → Good P (■ ∷ ν ■ ∷ []) letD
+letD-good = mk-good letD-mono letD-consis letD-cont
+
+⋆₂-good : ∀ {P} → Good P (■ ∷ ■ ∷ ■ ∷ []) ⋆₂
+⋆₂-good = mk-good ⋆₂-mono ⋆₂-consis ⋆₂-cont
+
+ΛΛ-good : ∀ {P} → Good P (∁ (ν (ν ■)) ∷ []) ΛΛ
+ΛΛ-good = mk-good ΛΛ-mono ΛΛ-consis ΛΛ-cont
+
+closD-good : ∀ {P} n → Good P (∁ (ν (ν ■)) ∷ replicate n ■) (closD n)
+closD-good n = mk-good (closD-mono n) (closD-consis n) (closD-cont n)

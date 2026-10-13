@@ -58,9 +58,6 @@ open import proof.Semantics.Graph.ImpDirect
 open import Semantics.Graph.CFG
   using (blocks; checked; ⟦_⟧ₚ)
   renaming (⟦_⟧[_] to ⟪_⟫[_]; table to tableₜ; code to codeₜ)
-open import proof.Semantics.Graph.Clos5IswimContinuous using (ΛΛ-con)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (⋆-≃; 𝒞-≃)
 open import proof.Correctness.Graph.LiftLocalsCorrect using (compile-imp-same)
 open import proof.Correctness.Graph.ExplicateCommon
 

@@ -32,7 +32,6 @@ open import proof.Semantics.Graph.Prim
 open import Language.ISWIM
 open import Language.Prim using (Prim; Out; int; bool; δ)
 open import proof.Semantics.Graph.ISWIM
-open import proof.Semantics.Graph.ISWIMContinuous using (body-continuous)
 open import proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
          simp; simp-args; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
@@ -40,7 +39,6 @@ open import proof.Compiler.SimplifyFacts as P
          SV; SVs; value-sv; small-sv; sv-rename; prim-term-sv; int-of-just; component-just)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
 open import Framework.ListUtil using (args→list; has-length) renaming (proj to proj-list)
 open import Framework.Syntax.Rename Op sig using (shift)
 
@@ -139,47 +137,21 @@ svs-ne (v P.∷ vs) ne (suc i) = svs-ne vs ne i
 
 {- β for a value ----------------------------------------------------------------}
 
-{- an element of a body on D needs a finite, nonempty, consistent part of D -}
-body : ∀ N γ D → nonempty-env γ → nonempty D → Con D → ∀ w → w ∈ ⟦ N ⟧ (D • γ)
-  → Σ[ V ∈ List Value ] V ≢ [] × V ≈ V × mem V ⊆ D × w ∈ ⟦ N ⟧ (mem V • γ)
-body N γ D ne neD cD w w∈ with body-continuous N γ ne D neD w w∈
-... | ⟨ V , ⟨ V≢ , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ = ⟨ V , ⟨ V≢ , ⟨ Con⇒≈ V cD V⊆ , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ ⟩
-
-beta : ∀ N γ D → nonempty-env γ → nonempty D → Con D
-  → ⋆ ⟨ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ , ⟨ D , ptt ⟩ ⟩ ≃ ⟦ N ⟧ (D • γ)
-beta N γ D ne neM cM = ⟨ G , H ⟩
-  where
-  G : _
-  G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧-monotone {ρ = mem V • γ} {ρ′ = D • γ} N (•-~ _⊆_ (λ _ _ d∈ → d∈) V⊆) w w∈
-  H : _
-  H w w∈ with body N γ _ ne neM cM w w∈
-  ... | ⟨ V , ⟨ V≢ , ⟨ c , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ w∈' , ⟨ V≢ , c ⟩ ⟩ , ⟨ V⊆ , V≢ ⟩ ⟩ ⟩
-
 case-inl : ∀ L M N γ D → ⟦ L ⟧ γ ≃ inl ⟨ D , ptt ⟩ → nonempty-env γ → nonempty D → Con D
   → ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ ≃ ⟦ M ⟧ (D • γ)
-case-inl L M N γ D L≃ ne neD cD = ⟨ G , H ⟩
-  where
-  G : _
-  G w (inj₁ ⟨ v , ⟨ V , ⟨ ls , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟦⟧-monotone {ρ = mem (v ∷ V) • γ} {ρ′ = D • γ} M (•-~ _⊆_ (λ _ _ d∈ → d∈) (λ d d∈ → proj₁ L≃ (left d) (ls d d∈))) w w∈
-  G w (inj₂ ⟨ v , ⟨ V , ⟨ rs , _ ⟩ ⟩ ⟩) = ⊥-elim (proj₁ L≃ (right v) (rs v (here refl)))
-  H : _
-  H w w∈ with body M γ D ne neD cD w w∈
-  ... | ⟨ [] , ⟨ V≢ , _ ⟩ ⟩ = ⊥-elim (V≢ refl)
-  ... | ⟨ v ∷ V , ⟨ _ , ⟨ c , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ ⟩ =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₂ L≃ (left d) (V⊆ d d∈)) , ⟨ w∈' , c ⟩ ⟩ ⟩ ⟩
+case-inl L M N γ D L≃ ne neD cD =
+  ≃-trans (𝒞-≃ {F = F} {F} {G} {G} L≃ (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))
+          (𝒞-inl-β {D} {F} {G} (body-mono M γ) (body-continuous M γ ne D neD) cD)
+  where F = λ X → ⟦ M ⟧ (X • γ)
+        G = λ X → ⟦ N ⟧ (X • γ)
 
 case-inr : ∀ L M N γ D → ⟦ L ⟧ γ ≃ inr ⟨ D , ptt ⟩ → nonempty-env γ → nonempty D → Con D
   → ⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ ≃ ⟦ N ⟧ (D • γ)
-case-inr L M N γ D L≃ ne neD cD = ⟨ G , H ⟩
-  where
-  G : _
-  G w (inj₁ ⟨ v , ⟨ V , ⟨ ls , _ ⟩ ⟩ ⟩) = ⊥-elim (proj₁ L≃ (left v) (ls v (here refl)))
-  G w (inj₂ ⟨ v , ⟨ V , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) = ⟦⟧-monotone {ρ = mem (v ∷ V) • γ} {ρ′ = D • γ} N (•-~ _⊆_ (λ _ _ d∈ → d∈) (λ d d∈ → proj₁ L≃ (right d) (rs d d∈))) w w∈
-  H : _
-  H w w∈ with body N γ D ne neD cD w w∈
-  ... | ⟨ [] , ⟨ V≢ , _ ⟩ ⟩ = ⊥-elim (V≢ refl)
-  ... | ⟨ v ∷ V , ⟨ _ , ⟨ c , ⟨ V⊆ , w∈' ⟩ ⟩ ⟩ ⟩ =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → proj₂ L≃ (right d) (V⊆ d d∈)) , ⟨ w∈' , c ⟩ ⟩ ⟩ ⟩
+case-inr L M N γ D L≃ ne neD cD =
+  ≃-trans (𝒞-≃ {F = F} {F} {G} {G} L≃ (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))
+          (𝒞-inr-β {D} {F} {G} (body-mono N γ) (body-continuous N γ ne D neD) cD)
+  where F = λ X → ⟦ M ⟧ (X • γ)
+        G = λ X → ⟦ N ⟧ (X • γ)
 
 {- Known tuples and integers ------------------------------------------------------}
 
@@ -305,15 +277,15 @@ call-ok (suc fl) (T ∣ just (val K)) I wf' dJ dI cD = desc (⋆-≃ (tm dJ) (tm
    substituted, another value stays bound and known, anything else stays
    bound -}
 let-ok fl N {E} {γ} {γ'} {I} {D} wf wf' ok d cD with small (term I) in s | value (term I) in v
-... | true | _ = desc-≃ (simp-ok fl N (wf-• wf neD cD) wf' ok') (≃-sym (beta N γ D (proj₁ wf) neD cD))
+... | true | _ = desc-≃ (simp-ok fl N (wf-• wf neD cD) wf' ok') (≃-sym (let-β N γ D (proj₁ wf) neD cD))
   where
   neD = ⟨ _ , proj₁ (tm d) _ (proj₂ (sv-ne (small-sv (term I) s) (proj₁ wf'))) ⟩
   ok' : Ok (I • E) (D • γ) γ'
   ok' zero = d
   ok' (suc x) = ok x
 ... | false | true =
-  desc (≃-trans (beta N' γ' _ (proj₁ wf') neV cV)
-          (≃-trans (tm (simp-ok fl N (wf-• wf neD cD) (wf-• wf' neV cV) ok')) (≃-sym (beta N γ D (proj₁ wf) neD cD))))
+  desc (≃-trans (let-β N' γ' _ (proj₁ wf') neV cV)
+          (≃-trans (tm (simp-ok fl N (wf-• wf neD cD) (wf-• wf' neV cV) ok')) (≃-sym (let-β N γ D (proj₁ wf) neD cD))))
        (λ ())
   where
   N' = term (simp fl (known-as I E) N)

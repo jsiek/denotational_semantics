@@ -39,11 +39,6 @@ open import Semantics.Graph.ImpK
 open import Semantics.Graph.CFG
   using (⟦_⟧ₚ)
   renaming (⟦_⟧[_] to ⟪_⟫[_]; table to tableₜ)
-open import proof.Correctness.Graph.GlobalizeCorrect
-  using (ΛΛ-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (⋆-≃; 𝒞-≃)
-open import proof.Correctness.Graph.RCOCorrect using (Λ-≃)
 open import proof.Correctness.Graph.LiftLocalsCorrectK using (compile-imp-same)
 open import proof.Correctness.Graph.ExplicateCommon
 

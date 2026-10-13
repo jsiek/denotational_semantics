@@ -19,6 +19,7 @@
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops using (RRs; mono-≃; pair-mono; car-mono; cdr-mono; nthD-≃; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃)
 open import Language.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign)
 import Language.CFG as C
@@ -26,15 +27,12 @@ open import Compiler.Explicate
 open import Compiler.Pipeline using (compile-imp; compile-cfg)
 open import Semantics.Graph.Imp using (Store; checked; 𝒜; 𝒜s; 𝒮; Table)
 open import Semantics.Graph.CFG using (Blocks; blocks; ⟦_⟧ₚ) renaming (⟦_⟧[_] to ⟪_⟫[_])
-open import proof.Correctness.Graph.GlobalizeCorrect
-  using (RRs; nthD-≃; pair-≃; car-≃; cdr-≃; prim-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃)
 open import proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
 open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
 open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
 import Language.ISWIM as ISWIM
 open import Framework.Primitives using (base-rep)
+open import proof.Semantics.Graph.Prim using (primD-≃)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; _++_; length; replicate)
@@ -125,14 +123,14 @@ module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
   𝒮-≃ : ∀ s σ → 𝒮 T n σ s ≃ 𝒮 T' n σ s
   𝒮-≃ (atm a) σ = 𝒜-≃ a σ
   𝒮-≃ (app f e a) σ = ⋆-≃ (⋆-≃ (𝒜-≃ f σ) (𝒜-≃ e σ)) (𝒜-≃ a σ)
-  𝒮-≃ (I.pair a b) σ = pair-≃ ⟨ lift (𝒜-≃ a σ) , ⟨ lift (𝒜-≃ b σ) , ptt ⟩ ⟩
-  𝒮-≃ (fst a) σ = car-≃ ⟨ lift (𝒜-≃ a σ) , ptt ⟩
-  𝒮-≃ (snd a) σ = cdr-≃ ⟨ lift (𝒜-≃ a σ) , ptt ⟩
+  𝒮-≃ (I.pair a b) σ = mono-≃ pair-mono ⟨ lift (𝒜-≃ a σ) , ⟨ lift (𝒜-≃ b σ) , ptt ⟩ ⟩
+  𝒮-≃ (fst a) σ = mono-≃ car-mono ⟨ lift (𝒜-≃ a σ) , ptt ⟩
+  𝒮-≃ (snd a) σ = mono-≃ cdr-mono ⟨ lift (𝒜-≃ a σ) , ptt ⟩
   𝒮-≃ (tuple as) σ = 𝒯-≃ (length as) (nthD-≃ _ _ (𝒜s-≃ as σ))
   𝒮-≃ (get i a) σ = proj-≃ i (𝒜-≃ a σ)
   𝒮-≃ (I.inl a) σ = inl-≃ (𝒜-≃ a σ)
   𝒮-≃ (I.inr a) σ = inr-≃ (𝒜-≃ a σ)
-  𝒮-≃ (prim p a b) σ = prim-≃ p ⟨ lift (𝒜-≃ a σ) , ⟨ lift (𝒜-≃ b σ) , ptt ⟩ ⟩
+  𝒮-≃ (prim p a b) σ = primD-≃ p (𝒜-≃ a σ) (𝒜-≃ b σ)
 
   {- a jump to the block that holds k means the same with newer blocks -}
   goto-≃ : ∀ {k bs bs₁ bs''} → k ∷ bs ≼ bs₁ → bs₁ ≼ bs'' → ∀ σ

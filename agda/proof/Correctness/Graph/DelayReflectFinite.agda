@@ -11,7 +11,7 @@
   The proof uses two properties of the semantics:
   - denotations are consistent (Clos3-con, Clos4-con), which follows from
     the consistency of the operators;
-  - source denotations are continuous (C3.term-continuous).
+  - source denotations are continuous (body-continuous, let-β, clos-β).
 -}
 
 open import Framework.Syntax.SyntaxUtil
@@ -34,7 +34,6 @@ open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Correctness.Graph.DelayFiniteCommon
 open import proof.Correctness.Graph.DelayFiniteRel
 open import proof.Correctness.Graph.DelayApp using (let-app-≃)
-import proof.Semantics.Graph.Clos3IswimContinuous as C3
 
 open import Data.Nat using (zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -54,68 +53,7 @@ open import Language.Prim using (δ)
 
 module proof.Correctness.Graph.DelayReflectFinite where
 
-{- Properties of the semantics ------------------------------------------------}
-
-{- one finite part of the bound variable suffices -}
-cont-0 : ∀ (M : AST) {X ρ} → nonempty-env ρ → nonempty X → ∀ y → y ∈ ⟦ M ⟧ (X • ρ)
-  → Σ[ u ∈ Value ] Σ[ U ∈ List Value ] mem (u ∷ U) ⊆ X × y ∈ ⟦ M ⟧ (mem (u ∷ U) • ρ)
-cont-0 M {X}{ρ} NE NE-X y y∈ with C3.term-continuous M (X • ρ) (extend-nonempty-env NE NE-X) y y∈
-... | ⟨ Vs , ⟨ ok , y∈fin ⟩ ⟩ with Vs 0 | proj₁ (ok 0) | proj₂ (ok 0)
-     | S3.⟦⟧-monotone {ρ = λ z → mem (Vs z)} {ρ′ = mem (Vs 0) • ρ} M env⊆ y y∈fin
-  where env⊆ : ∀ z → mem (Vs z) ⊆ (mem (Vs 0) • ρ) z
-        env⊆ zero = λ d d∈ → d∈
-        env⊆ (suc z) = proj₂ (ok (suc z))
-... | [] | ne | _ | _ = ⊥-elim (ne refl)
-... | u ∷ U | _ | U⊆ | y∈' = ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩
-
-{- the beta rule for source closures: applied to E, a closure with
-   environment T behaves like its body (using continuity) -}
-clos-β : ∀ (N : AST) {T E} → nonempty T → nonempty E → Con T → Con E
-  → ⟦ N ⟧ (E • T • (λ _ → Init))
-    ⊆ (⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • (λ _ → Init))) , ptt ⟩) , ptt ⟩
-         , ⟨ T , ptt ⟩ ⟩ ● E)
-clos-β N {T}{E} NE-T NE-E cT cE x x∈ with C3.term-continuous N _ NE x x∈
-  where NE : nonempty-env (E • T • (λ _ → Init))
-        NE zero = NE-E
-        NE (suc zero) = NE-T
-        NE (suc (suc y)) = ⟨ ω , refl ⟩
-... | ⟨ Vs , ⟨ ok , x∈fin ⟩ ⟩ =
-  ⟨ Vs 0 , ⟨ ⟨ Vs 1 , ⟨ ⟨ ⟨ x∈' , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) cE (proj₂ (ok 0)) ⟩ ⟩
-                          , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) cT (proj₂ (ok 1)) ⟩ ⟩
-                      , ⟨ proj₂ (ok 1) , proj₁ (ok 1) ⟩ ⟩ ⟩
-           , ⟨ proj₂ (ok 0) , proj₁ (ok 0) ⟩ ⟩ ⟩
-  where
-  env⊆ : ∀ y → mem (Vs y) ⊆ (mem (Vs 0) • mem (Vs 1) • (λ _ → Init)) y
-  env⊆ zero = λ d z → z
-  env⊆ (suc zero) = λ d z → z
-  env⊆ (suc (suc y)) = proj₂ (ok (suc (suc y)))
-  x∈' = S3.⟦⟧-monotone {ρ = λ y → mem (Vs y)} N env⊆ x x∈fin
-
-{- β for a let: its body on X needs a finite part of X -}
-let-β : ∀ (N : AST) {X ρ} → nonempty-env ρ → nonempty X → Con X
-  → ⟦ N ⟧ (X • ρ) ⊆ ⋆ ⟨ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • ρ)) , ptt ⟩ , ⟨ X , ptt ⟩ ⟩
-let-β N NE neX cX x x∈ with cont-0 N NE neX x x∈
-... | ⟨ u , ⟨ U , ⟨ U⊆ , x∈' ⟩ ⟩ ⟩ =
-  ⟨ u ∷ U , ⟨ ⟨ x∈' , ⟨ (λ ()) , Con⇒≈ (u ∷ U) cX U⊆ ⟩ ⟩ , ⟨ U⊆ , (λ ()) ⟩ ⟩ ⟩
-
 {- Collecting the finite witnesses of a target application -------------------}
-
-{- the results of a target let come from one finite part U of its operand -}
-let-collect : ∀ (N' : AST') ρ' D' V'
-  → mem V' ⊆ ⋆ ⟨ Λ ⟨ (λ X → ⟦ N' ⟧' (X • ρ')) , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
-  → Σ[ U ∈ List Value ] mem U ⊆ D' × mem V' ⊆ ⟦ N' ⟧' (mem U • ρ')
-let-collect N' ρ' D' [] _ = ⟨ [] , ⟨ (λ _ ()) , (λ _ ()) ⟩ ⟩
-let-collect N' ρ' D' (w ∷ V') V'⊆
-    with V'⊆ w (here refl) | let-collect N' ρ' D' V' (λ d d∈ → V'⊆ d (there d∈))
-... | ⟨ U₀ , ⟨ ⟨ w∈ , _ ⟩ , ⟨ U₀⊆ , _ ⟩ ⟩ ⟩ | ⟨ U , ⟨ U⊆ , V'⊆N ⟩ ⟩ =
-  ⟨ U₀ ++ U , ⟨ ++⊆ , (λ { _ (here refl) → mono ∈-++⁺ˡ _ w∈ ; d (there d∈) → mono (∈-++⁺ʳ U₀) d (V'⊆N d d∈) }) ⟩ ⟩
-  where
-  ++⊆ : mem (U₀ ++ U) ⊆ D'
-  ++⊆ d d∈ with ∈-++⁻ U₀ d∈
-  ... | inj₁ i = U₀⊆ d i
-  ... | inj₂ i = U⊆ d i
-  mono : ∀ {U₁} → (∀ {d} → d ⋵ U₁ → d ⋵ (U₀ ++ U)) → ⟦ N' ⟧' (mem U₁ • ρ') ⊆ ⟦ N' ⟧' (mem (U₀ ++ U) • ρ')
-  mono f = S4.⟦⟧-monotone N' (λ { zero d → f ; (suc y) → λ d z → z })
 
 {- a target application V' ⊆ (car L' ● cdr L') ● N' is a batch of calls of
    a finite W ⊆ L' on a finite U ⊆ N' -}
@@ -288,8 +226,8 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   where
   lv = allL v (here refl)
   M⊆ : nonempty (Lefts (⟦ L ⟧ ρ)) → ⟦ M ⟧ (Lefts (⟦ L ⟧ ρ) • ρ) ⊆ _
-  M⊆ ne x x∈ = let ⟨ u , ⟨ U , ⟨ s , x∈' ⟩ ⟩ ⟩ = cont-0 M (Envs.NE E) ne x x∈
-               in inj₁ ⟨ u , ⟨ U , ⟨ s , ⟨ x∈' , Con⇒≈ (u ∷ U) (Untag-con leftT (λ c → c) (Clos3-con L (Envs.ρ~ E))) s ⟩ ⟩ ⟩ ⟩
+  M⊆ ne = 𝒞-left {⟦ L ⟧ ρ} {λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ N ⟧ (X • ρ)} (S3.body-continuous M ρ (Envs.NE E) _ ne)
+                  (Untag-con leftT (λ c → c) (Clos3-con L (Envs.ρ~ E)))
   V'⊆F : mem (w ∷ V') ⊆ ⟦ delay M ⟧' (Lefts (⟦ delay L ⟧' ρ') • ρ')
   V'⊆F x x∈ with V'⊆ x x∈
   ... | inj₁ ⟨ u , ⟨ U , ⟨ allL' , ⟨ x∈F , _ ⟩ ⟩ ⟩ ⟩ =
@@ -301,8 +239,8 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
   where
   rv = allR v (here refl)
   N⊆ : nonempty (Rights (⟦ L ⟧ ρ)) → ⟦ N ⟧ (Rights (⟦ L ⟧ ρ) • ρ) ⊆ _
-  N⊆ ne x x∈ = let ⟨ u , ⟨ U , ⟨ s , x∈' ⟩ ⟩ ⟩ = cont-0 N (Envs.NE E) ne x x∈
-               in inj₂ ⟨ u , ⟨ U , ⟨ s , ⟨ x∈' , Con⇒≈ (u ∷ U) (Untag-con rightT (λ c → c) (Clos3-con L (Envs.ρ~ E))) s ⟩ ⟩ ⟩ ⟩
+  N⊆ ne = 𝒞-right {⟦ L ⟧ ρ} {λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ N ⟧ (X • ρ)} (S3.body-continuous N ρ (Envs.NE E) _ ne)
+                   (Untag-con rightT (λ c → c) (Clos3-con L (Envs.ρ~ E)))
   V'⊆G : mem (w ∷ V') ⊆ ⟦ delay N ⟧' (Rights (⟦ delay L ⟧' ρ') • ρ')
   V'⊆G x x∈ with V'⊆ x x∈
   ... | inj₂ ⟨ u , ⟨ U , ⟨ allR' , ⟨ x∈G , _ ⟩ ⟩ ⟩ ⟩ =
@@ -311,9 +249,9 @@ delay-reflect (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V'
     ⊥-elim (Clos4-con (delay L) (Envs.ρ'~ E) _ _ rv (allL u (here refl)))
 
 delay-reflect (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) E [] V'⊆ = R-∅ (λ _ ())
-delay-reflect (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V') V'⊆ with let-collect (delay N) ρ' _ (w ∷ V') V'⊆
+delay-reflect (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ'}{ρ} E (w ∷ V') V'⊆ with letD-collect (S4.body-mono (delay N) ρ') (w ∷ V') V'⊆
 ... | ⟨ U , ⟨ U⊆ , V'⊆N ⟩ ⟩ =
-  R-mono (let-β N NE NE-M (Clos3-con M ρ~))
+  R-mono (proj₂ (S3.let-β N ρ _ NE NE-M (Clos3-con M ρ~)))
     (delay-reflect N (envs NE' (Con-• (Clos3-con M ρ~) ρ~) (Con-• (Con-⊆ (Clos4-con (delay M) ρ'~) U⊆) ρ'~) ρ⊳')
        (w ∷ V') V'⊆N)
   where
@@ -348,7 +286,7 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
   clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → Con E → Con (mem U') → R U' E → R W' (D ● E)
   clos-app {W' = []} _ E _ U'~ rU = R-∅ (λ _ ())
   clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
-    R-mono (clos-β N NE-T NE-E cT cE)
+    R-mono (S3.clos-β N (λ _ → ⟨ ω , refl ⟩) NE-T NE-E cT cE)
       (delay-reflect N (envs NE-ρs (Con-• cE (Con-• cT (λ _ → Con-⌈⌉ ω))) ρ''~ ρ''⊳ρs) (w ∷ W') W⊆B)
     where
     wit = Calls.results cs w (here refl)
@@ -371,10 +309,7 @@ delay-reflect (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ'}{ρ}
     ρ''~ = Con-• U'~ (Con-• (Con-⊆ (Clos4-con (tuple n ⦅ del-map-args fvs ⦆') ρ'~) Cdrs⊆T')
                             (λ _ → Con-⌈⌉ ω))
 
-    NE-ρs : nonempty-env (Es • T • (λ _ → Init))
-    NE-ρs zero = NE-E
-    NE-ρs (suc zero) = NE-T
-    NE-ρs (suc (suc y)) = ⟨ ω , refl ⟩
+    NE-ρs = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) NE-T) NE-E
 
     ρ''⊳ρs : ρ'' ⊳ₑ (Es • T • (λ _ → Init))
     ρ''⊳ρs zero Y' Y'⊆ = R-⊆ Y'⊆ rU
