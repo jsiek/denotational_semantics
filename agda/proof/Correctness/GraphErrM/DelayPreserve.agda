@@ -288,7 +288,7 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ} {ρ'} NE 
   ⊑-mono v (proj₂ (strict-β (strict₂-good (pair-good {⊤})) ⟨ lift (λ d z → z) , ptt ⟩ ⟨ (λ { .ω ⟨ () , _ ⟩ refl }) , ⟨ ν , ⟨ tt , tt ⟩ ⟩ ⟩))
     (≫=-lift {F = λ Y → ⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ Y , ptt ⟩ ⟩} {F' = λ Y → pair ⟨ ΛΛᵐ ⟨ F' , ptt ⟩ , ⟨ Y , ptt ⟩ ⟩}
        ⊑-lift cT' (preserve-𝒯 fvs NE C' ρ⊑) kernel v
-       (proj₁ (⋆ᵐ-val {ΛΛᵐ ⟨ F , ptt ⟩} {T} (λ { .ω ⟨ () , _ ⟩ refl }) ⟨ ν , ⟨ tt , tt ⟩ ⟩ ΛΛ-fun) v v∈))
+       (proj₁ (⋆ᵐ-val {ΛΛᵐ ⟨ F , ptt ⟩} {T} (λ { .ω ⟨ () , _ ⟩ refl }) ⟨ ν , ⟨ tt , tt ⟩ ⟩ ΛΛᵐ-fun) v v∈))
   where
   open import proof.Framework.GraphModel.Continuity using (pair-good)
   F = λ X Y → ⟦ N ⟧ (Y • X • (λ _ → ⌈ ω ⌉))
@@ -296,9 +296,6 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ} {ρ'} NE 
   T = 𝒯ᵐ n (⟦ fvs ⟧₊ ρ)
   T' = 𝒯ᵐ n (⟦ del-map-args fvs ⟧₊' ρ')
   cT' = Clos4ᵐ-con (L4.tuple n L4.⦅ del-map-args fvs ⦆) C'
-  ΛΛ-fun : ∀ {G} d → d ∈ ΛΛᵐ ⟨ G , ptt ⟩ → kind d ≡ fun
-  ΛΛ-fun (V ↦ w) _ = refl
-  ΛΛ-fun ν _ = refl
   kernel : Conv T → Conv T' → Lifted _⊑_ ⌊ T ⌋ ⌊ T' ⌋
     → Lifted _⊑_ (⋆ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ ⌊ T ⌋ , ptt ⟩ ⟩) (pair ⟨ ΛΛᵐ ⟨ F' , ptt ⟩ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩)
   kernel _ ⟨ t' , t'∈ ⟩ hT = G

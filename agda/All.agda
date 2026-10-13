@@ -327,3 +327,5 @@ import proof.Adequacy.GraphErrM.Soundness
 import proof.Adequacy.GraphErrM.LogRel
 import proof.Adequacy.GraphErrM.ISWIM
 import proof.Adequacy.GraphErrM.Simplify
+import proof.Adequacy.GraphErrM.Clos5
+import proof.Adequacy.GraphErrM.X86

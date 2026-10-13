@@ -41,7 +41,7 @@ open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Level using (Lift; lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
 
 {- ω, kinds and consistency -------------------------------------------------------}
 
@@ -87,7 +87,7 @@ Val D = Clean D × nonempty D
 AllVal : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
 AllVal n Ds = ∀ i → Val (nthD Ds i)
 
-{- a set consistent with one that errs has no value, and the other way -}
+{- a set consistent with one that Errs has no value, and the other way -}
 ω-Conv : ∀ {D E} → Every _~_ D E → ω ∈ D → Conv E → ⊥
 ω-Conv D~ ω∈ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = d≢ (ω~ (D~ ω d ω∈ d∈))
 
@@ -1031,12 +1031,6 @@ payloadᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ payloadᵐ-mono D⊆ , payloadᵐ-mono 
 strictᵐ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → strictᵐ D E ≃ strictᵐ D' E'
 strictᵐ-≃ ⟨ D⊆ , D⊇ ⟩ ⟨ E⊆ , E⊇ ⟩ = ⟨ ≫=-mono D⊆ (λ _ → E⊆) , ≫=-mono D⊇ (λ _ → E⊇) ⟩
 
-isinlᵐ-≃ : ∀ {D D'} → D ≃ D' → isinlᵐ D ≃ isinlᵐ D'
-isinlᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ ≫=-mono D⊆ P , ≫=-mono D⊇ P ⟩
-  where
-  P : ∀ {X X'} → X ⊆ X' → checked inj X (isinlD X) ⊆ checked inj X' (isinlD X')
-  P X⊆ = checked-mono X⊆ (λ { w (inj₁ ⟨ u , ⟨ l , eq ⟩ ⟩) → inj₁ ⟨ u , ⟨ X⊆ _ l , eq ⟩ ⟩
-                             ; w (inj₂ ⟨ u , ⟨ r , eq ⟩ ⟩) → inj₂ ⟨ u , ⟨ X⊆ _ r , eq ⟩ ⟩ })
 
 {- What a bind needs of its operand: an error, or a value ---------------------------}
 
@@ -1090,7 +1084,7 @@ strictᵐ-self : ∀ {D Z} → Z ≃ D → strictᵐ D Z ≃ D
 strictᵐ-self Z≃ = ≃-trans (strictᵐ-skip (λ w w∈ → ne-has ⟨ w , proj₁ Z≃ w w∈ ⟩) (λ ω∈ → proj₂ Z≃ ω ω∈)
   (λ w w∈ w≢ → ⟨ w , ⟨ proj₁ Z≃ w w∈ , w≢ ⟩ ⟩)) Z≃
 
-{- a call errs on an error in its operands, left to right; a value of it
+{- a call Errs on an error in its operands, left to right; a value of it
    needs values of its operands -}
 callᵐ-ω : ∀ {L M N} → Has L → ω ∈ M ⊎ (Conv M × ω ∈ N) → ω ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
 callᵐ-ω (inj₁ ωL) _ = inj₁ ⟨ refl , ωL ⟩
@@ -1113,3 +1107,124 @@ letᵐ-entries {D} {H} vD =
     ⟨ (λ { w ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ → ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ (λ d d∈ → proj₁ (V⊆ d d∈)) , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ })
     , (λ { w ⟨ V , ⟨ ne , ⟨ c , ⟨ n , ⟨ V⊆ , w∈ ⟩ ⟩ ⟩ ⟩ ⟩ →
              ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩) , ne ⟩ ⟩ ⟩ }) ⟩)
+
+{- Laws used by adequacy for Clos5 and X86 --------------------------------------------}
+
+{- the call of code, on an environment and an argument that are sets of
+   values, runs its body on them -}
+callᵐ-β : ∀ {F T E} → Con T → Con E → Val T → Val E
+  → (∀ w → w ∈ F T E → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ]
+       V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ E × w ∈ F (mem V) (mem U))
+  → F T E ⊆ callᵐ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ T , ⟨ E , ptt ⟩ ⟩ ⟩
+callᵐ-β {F} cT cE vT@(⟨ clT , _ ⟩) vE@(⟨ clE , _ ⟩) fin w w∈ with ΛΛ-β {F} cT cE fin w w∈
+... | ⟨ U , ⟨ ⟨ V , ⟨ e∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
+  inj₂ ⟨ ⟨ ν , ⟨ ⟨ tt , tt ⟩ , (λ ()) ⟩ ⟩ , inj₂ ⟨ Val⇒Conv vT , inj₂ ⟨ Val⇒Conv vE , inj₂
+    ⟨ U , ⟨ ⟨ V , ⟨ ⟨ ⟨ e∈ , ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl) , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩ , (λ ()) ⟩
+                , ⟨ (λ v v∈ → ⟨ V⊆ v v∈ , clT v (V⊆ v v∈) ⟩) , neV ⟩ ⟩ ⟩
+          , ⟨ (λ u u∈ → ⟨ U⊆ u u∈ , clE u (U⊆ u u∈) ⟩) , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+
+pairᵐ-val : ∀ {D E} → Val D → Val E → Val (pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩)
+pairᵐ-val {D} {E} vD vE = ≫=-val {F = λ X → E ≫= λ Y → pair ⟨ X , ⟨ Y , ptt ⟩ ⟩} vD λ vX →
+  ≫=-val {F = λ Y → pair ⟨ _ , ⟨ Y , ptt ⟩ ⟩} vE λ { vY → ⟨ (λ { .ω () refl }) , ⟨ ⦅ proj₁ (proj₂ vX) , proj₁ (proj₂ vY) ⦆
+                                                         , ⟨ proj₂ (proj₂ vX) , proj₂ (proj₂ vY) ⟩ ⟩ ⟩ }
+
+{- the components of a pair of sets of values -}
+carᵐ-pair : ∀ {D E} → Val D → Val E → D ⊆ carᵐ ⟨ pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩ , ptt ⟩
+carᵐ-pair vD@(⟨ clD , _ ⟩) vE@(⟨ _ , ⟨ b , b∈ ⟩ ⟩) d d∈ =
+  inj₂ ⟨ Val⇒Conv (pairᵐ-val vD vE) , inj₂ ⟨ b , ⟨ inj₂ ⟨ Val⇒Conv vD , inj₂ ⟨ Val⇒Conv vE , ⟨ ⟨ d∈ , clD d d∈ ⟩ , ⟨ b∈ , proj₁ vE b b∈ ⟩ ⟩ ⟩ ⟩ , (λ ()) ⟩ ⟩ ⟩
+
+cdrᵐ-pair : ∀ {D E} → Val D → Val E → E ⊆ cdrᵐ ⟨ pairᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩ , ptt ⟩
+cdrᵐ-pair vD@(⟨ _ , ⟨ a , a∈ ⟩ ⟩) vE@(⟨ clE , _ ⟩) d d∈ =
+  inj₂ ⟨ Val⇒Conv (pairᵐ-val vD vE) , inj₂ ⟨ a , ⟨ inj₂ ⟨ Val⇒Conv vD , inj₂ ⟨ Val⇒Conv vE , ⟨ ⟨ a∈ , proj₁ vD a a∈ ⟩ , ⟨ d∈ , clE d d∈ ⟩ ⟩ ⟩ ⟩ , (λ ()) ⟩ ⟩ ⟩
+
+isinlᵐ-mono : ∀ {D D'} → D ⊆ D' → isinlᵐ D ⊆ isinlᵐ D'
+isinlᵐ-mono D⊆ = ≫=-mono D⊆ P
+  where
+  P : ∀ {X X'} → X ⊆ X' → checked inj X (isinlD X) ⊆ checked inj X' (isinlD X')
+  P X⊆ = checked-mono X⊆ (λ { w (inj₁ ⟨ u , ⟨ l , e ⟩ ⟩) → inj₁ ⟨ u , ⟨ X⊆ _ l , e ⟩ ⟩
+                             ; w (inj₂ ⟨ u , ⟨ r , e ⟩ ⟩) → inj₂ ⟨ u , ⟨ X⊆ _ r , e ⟩ ⟩ })
+
+{- a let of finitely many values of its operand: its body on them -}
+letᵐ-intro : ∀ {D F V w} → V ≢ [] → V ≈ V → NoErr V → mem V ⊆ D → w ∈ F (mem V) → w ∈ letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩
+letᵐ-intro {D} {F} {V} ne c n V⊆ w∈ = proj₂ (letᵐ-unfold {D} {F}) _
+  (inj₂ ⟨ ⟨ proj₁ v , ⟨ V⊆ _ (proj₂ v) , (λ e → n (subst (λ x → x ∈ mem V) e (proj₂ v))) ⟩ ⟩
+        , ⟨ V , ⟨ ⟨ ⟨ w∈ , ⟨ ne , c ⟩ ⟩ , n ⟩ , ⟨ (λ d d∈ → ⟨ V⊆ d d∈ , (λ { refl → n d∈ }) ⟩) , ne ⟩ ⟩ ⟩ ⟩)
+  where v = E≢[]⇒nonempty-mem ne
+
+letᵐ-ω : ∀ {D F} → ω ∈ D → ω ∈ letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩
+letᵐ-ω {D} {F} ω∈ = proj₂ (letᵐ-unfold {D} {F}) ω (inj₁ ⟨ refl , ω∈ ⟩)
+
+{- an entry of code, and its call on parts of the environment and argument -}
+ΛΛᵐ-entry : ∀ {F V U w} → w ∈ F (mem V) (mem U) → V ≢ [] → V ≈ V → NoErr V → U ≢ [] → U ≈ U → NoErr U
+  → (V ↦ (U ↦ w)) ∈ ΛΛᵐ ⟨ F , ptt ⟩
+ΛΛᵐ-entry w∈ neV cV nV neU cU nU = ⟨ ⟨ ⟨ w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩
+
+callᵐ-intro : ∀ {L M N V U w} → (V ↦ (U ↦ w)) ∈ L → V ≢ [] → U ≢ [] → mem V ⊆ ⌊ M ⌋ → mem U ⊆ ⌊ N ⌋
+  → w ∈ callᵐ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
+callᵐ-intro {V = V} {U} e∈ neV neU V⊆ U⊆ =
+  inj₂ ⟨ ⟨ _ , ⟨ e∈ , (λ ()) ⟩ ⟩ , inj₂ ⟨ ⟨ proj₁ v , V⊆ _ (proj₂ v) ⟩ , inj₂ ⟨ ⟨ proj₁ u , U⊆ _ (proj₂ u) ⟩
+       , inj₂ ⟨ U , ⟨ ⟨ V , ⟨ ⟨ e∈ , (λ ()) ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+  where v = E≢[]⇒nonempty-mem neV
+        u = E≢[]⇒nonempty-mem neU
+
+{- n binds: their operands' values, and an error in them, left to right -}
+⌊_⌋s : ∀ {n} → Results (𝒫 Value) (replicate n ■) → Results (𝒫 Value) (replicate n ■)
+⌊_⌋s {zero} _ = ptt
+⌊_⌋s {suc n} ⟨ D , Ds ⟩ = ⟨ ⌊ D ⌋ , ⌊ Ds ⌋s ⟩
+
+binds-intro : ∀ n {Ds : Results (𝒫 Value) (replicate n ■)} {K w} → (∀ i → Conv (nthD Ds i)) → w ∈ K ⌊ Ds ⌋s → w ∈ binds n Ds K
+binds-intro zero c w∈ = w∈
+binds-intro (suc n) {⟨ D , Ds ⟩} c w∈ = inj₂ ⟨ c zero , binds-intro n (λ i → c (suc i)) w∈ ⟩
+
+conv-⌊⌋s : ∀ n {Ds : Results (𝒫 Value) (replicate n ■)} → (∀ i → Conv (nthD Ds i)) → ∀ i → nonempty (nthD ⌊ Ds ⌋s i)
+conv-⌊⌋s (suc n) c zero = c zero
+conv-⌊⌋s (suc n) c (suc i) = conv-⌊⌋s n (λ j → c (suc j)) i
+
+Errs : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
+Errs zero _ = ⊥
+Errs (suc n) ⟨ D , Ds ⟩ = ω ∈ D ⊎ (Conv D × Errs n Ds)
+
+errs-ω : ∀ n {Ds K} → Errs n Ds → ω ∈ binds n Ds K
+errs-ω (suc n) (inj₁ ω∈) = inj₁ ⟨ refl , ω∈ ⟩
+errs-ω (suc n) {⟨ D , Ds ⟩} (inj₂ ⟨ c , e ⟩) = inj₂ ⟨ c , errs-ω n e ⟩
+
+errs-mono : ∀ n {Ds Es} → results-rel-pres _⊆_ (replicate n ■) Ds Es → Errs n Ds → Errs n Es
+errs-mono (suc n) ⟨ lift D⊆ , _ ⟩ (inj₁ ω∈) = inj₁ (D⊆ ω ω∈)
+errs-mono (suc n) ⟨ lift D⊆ , s ⟩ (inj₂ ⟨ c , e ⟩) = inj₂ ⟨ Conv-mono D⊆ c , errs-mono n s e ⟩
+
+{- the check of a single value of the wrong kind Errs -}
+bad-one : ∀ {k} u {F : 𝒫 Value → 𝒫 Value} → u ≢ ω → kind u ≢ k → ω ∈ (mem (u ∷ []) ≫= λ X → checked k X (F X))
+bad-one u u≢ k≢ = inj₂ ⟨ ⟨ u , ⟨ here refl , u≢ ⟩ ⟩ , inj₁ ⟨ refl , ⟨ u , ⟨ ⟨ here refl , u≢ ⟩ , k≢ ⟩ ⟩ ⟩ ⟩
+
+isinlᵐ-consis : ∀ {D D'} → Every _~_ D D' → Every _~_ (isinlᵐ D) (isinlᵐ D')
+isinlᵐ-consis D~ = ≫=-consis D~ λ X~ → checked-consis X~ (K~ X~) needs needs
+  where
+  K~ : ∀ {X X'} → Every _~_ X X' → Every _~_ (isinlD X) (isinlD X')
+  K~ X~ _ _ (inj₁ ⟨ _ , ⟨ _ , refl ⟩ ⟩) (inj₁ ⟨ _ , ⟨ _ , refl ⟩ ⟩) = tt
+  K~ X~ _ _ (inj₁ ⟨ _ , ⟨ u∈ , refl ⟩ ⟩) (inj₂ ⟨ _ , ⟨ v∈ , refl ⟩ ⟩) = ⊥-elim (X~ _ _ u∈ v∈)
+  K~ X~ _ _ (inj₂ ⟨ _ , ⟨ u∈ , refl ⟩ ⟩) (inj₁ ⟨ _ , ⟨ v∈ , refl ⟩ ⟩) = ⊥-elim (X~ _ _ u∈ v∈)
+  K~ X~ _ _ (inj₂ ⟨ _ , ⟨ _ , refl ⟩ ⟩) (inj₂ ⟨ _ , ⟨ _ , refl ⟩ ⟩) = tt
+  needs : ∀ {X} → Needs inj X (isinlD X)
+  needs _ (inj₁ ⟨ u , ⟨ u∈ , refl ⟩ ⟩) = inj₂ ⟨ left u , ⟨ u∈ , refl ⟩ ⟩
+  needs _ (inj₂ ⟨ u , ⟨ u∈ , refl ⟩ ⟩) = inj₂ ⟨ right u , ⟨ u∈ , refl ⟩ ⟩
+
+payloadᵐ-consis : ∀ {D D'} → Every _~_ D D' → Every _~_ (payloadᵐ D) (payloadᵐ D')
+payloadᵐ-consis D~ = ≫=-consis D~ λ X~ → checked-consis X~ (K~ X~) needs needs
+  where
+  K~ : ∀ {X X'} → Every _~_ X X' → Every _~_ (payloadD (X ⇂ ValPayload)) (payloadD (X' ⇂ ValPayload))
+  K~ X~ _ _ (inj₁ u∈) (inj₁ v∈) = X~ _ _ (proj₁ u∈) (proj₁ v∈)
+  K~ X~ _ _ (inj₁ u∈) (inj₂ v∈) = ⊥-elim (X~ _ _ (proj₁ u∈) (proj₁ v∈))
+  K~ X~ _ _ (inj₂ u∈) (inj₁ v∈) = ⊥-elim (X~ _ _ (proj₁ u∈) (proj₁ v∈))
+  K~ X~ _ _ (inj₂ u∈) (inj₂ v∈) = X~ _ _ (proj₁ u∈) (proj₁ v∈)
+  needs : ∀ {X} → Needs inj X (payloadD (X ⇂ ValPayload))
+  needs v (inj₁ l) = inj₂ ⟨ left v , ⟨ proj₁ l , refl ⟩ ⟩
+  needs v (inj₂ r) = inj₂ ⟨ right v , ⟨ proj₁ r , refl ⟩ ⟩
+
+{- every entry is code, a function -}
+ΛΛᵐ-fun : ∀ {F} d → d ∈ ΛΛᵐ ⟨ F , ptt ⟩ → kind d ≡ fun
+ΛΛᵐ-fun ν _ = refl
+ΛΛᵐ-fun (V ↦ w) _ = refl
+
+
+isinlᵐ-≃ : ∀ {D D'} → D ≃ D' → isinlᵐ D ≃ isinlᵐ D'
+isinlᵐ-≃ ⟨ D⊆ , D⊇ ⟩ = ⟨ isinlᵐ-mono D⊆ , isinlᵐ-mono D⊇ ⟩
