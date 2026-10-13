@@ -3,7 +3,7 @@
   Correctness of the whole closure-conversion compiler, by clocked
   interpreters:
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5
 
   Each pass is proved clock for clock, which gives its end theorem
@@ -29,6 +29,9 @@ open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Delay using (delay)
 open import proof.Semantics.Interp.Clock
+open import Compiler.Simplify using (simplify)
+open import proof.Compiler.SimplifyScope using (simplify-closed)
+open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
 open import proof.Correctness.Interp.OptimizeFuel using (enclose-optimize-correct)
 open import proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
 open import proof.Correctness.Interp.DelayFuel using (delay-correct)
@@ -42,9 +45,9 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 compile-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile M))
 compile-correct M c =
-  equiv-trans (enclose-optimize-correct M c)
-    (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct M₃) (globalize-correct M₄)))
-  where M₂ = optimize-program (enclose M)
+  equiv-trans (simplify-correct M c) (equiv-trans (enclose-optimize-correct (simplify M) (simplify-closed M c))
+    (equiv-trans (concretize-correct M₂) (equiv-trans (delay-correct M₃) (globalize-correct M₄))))
+  where M₂ = optimize-program (enclose (simplify M))
         M₃ = concretize-program M₂
         M₄ = delay M₃
 

@@ -1,8 +1,8 @@
 {-
 
   The simplify pass (ISWIM → ISWIM), a simplified version of the source
-  optimizer cp0 of Chez Scheme. It runs before enclose (but is not yet
-  part of compile, Compiler/Pipeline.agda).
+  optimizer cp0 of Chez Scheme, the first pass of compile
+  (Compiler/Pipeline.agda).
 
   In one recursive pass, simp carries what it knows about each variable
   (Facts): the term that replaces it, and a value that it is known to be,

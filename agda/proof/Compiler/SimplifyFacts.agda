@@ -1,13 +1,13 @@
 {-
 
-  Syntactic facts about simplify (Compiler/Simplify.agda), used by both
-  of its proofs: the values (SV, where a variable stands for a value),
+  Syntactic facts about simplify (Compiler/Simplify.agda), used by its
+  four proofs: the values (SV, where a variable stands for a value),
   which value and small recognize and substitution keeps, and what the
   known values that simplify inspects are.
 
 -}
 
-module proof.Compiler.Simplify where
+module proof.Compiler.SimplifyFacts where
 
 open import Compiler.Simplify public
 

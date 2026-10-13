@@ -30,7 +30,7 @@ open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.ISWIM
 open import Language.Prim using (int; bool; δ)
-open import proof.Compiler.Simplify as P
+open import proof.Compiler.SimplifyFacts as P
   using (closed-ws; Info; _∣_; term; known; Facts; self; info; under; shift-info; simp; simp-args;
          simp-app; simp-let; simp-get; simp-case; simp-prim; simplify; small; atom; value; values;
          component; branch; int-of; prim-term; value-sv; small-sv; comp-inv; int-inv; branch-inl; branch-inr)

@@ -35,11 +35,12 @@ open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.ISWIM
 open import Language.Prim using (Out; int; bool; δ)
-open import proof.Compiler.Simplify as P
+open import proof.Compiler.SimplifyFacts as P
   using (closed-ws; Info; _∣_; term; known; Facts; self; info; under; shift-info; simp; simp-args; simp-app; simp-let;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-sub; svs-sub; sv-rename; prim-term-sv; int-of-just; component-just)
 open import Compiler.EncloseScope using (Closed)
+open import proof.Compiler.SimplifyScope using (ws-proj; ws-prim-term)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-wrong
 open import Semantics.Reduction.Smallstep using (Equivalent)
@@ -220,19 +221,6 @@ closed-reds (wV , ws) (there v s) rewrite value-red (sv-value v wV) | closed-red
 ws-one : ∀ {V} → WS 0 V → ∀ x → x < 1 → WS 0 ((V SS.• ids) x)
 ws-one w zero _ = w
 ws-one w (suc x) (s≤s ())
-
-ws-proj : ∀ {n m} (i : Fin n) (as : Args (replicate m ■)) {V} → WS-args 0 as → proj i (args→list as) ≡ just V → WS 0 V
-ws-proj {suc n} {suc m} fzero (K ,, as) (w , _) e with has-length n (args→list as)
-ws-proj {suc n} {suc m} fzero (K ,, as) (w , _) refl | true = w
-ws-proj {suc n} {suc m} fzero (K ,, as) (w , _) () | false
-ws-proj {m = suc m} (fsuc i) (K ,, as) (_ , ws) e = ws-proj i as ws e
-ws-proj {m = zero} fzero Nil _ ()
-ws-proj {m = zero} (fsuc i) Nil _ ()
-
-ws-prim-term : ∀ o → WS 0 (prim-term o)
-ws-prim-term (int n) = tt
-ws-prim-term (bool true) = tt , tt
-ws-prim-term (bool false) = tt , tt
 
 ws-⟶ : ∀ {M M'} → WS 0 M → M ⟶ M' → WS 0 M'
 ws-⟶s : ∀ {n} {as as' : Args (replicate n ■)} → WS-args 0 as → as ⟶s as' → WS-args 0 as'

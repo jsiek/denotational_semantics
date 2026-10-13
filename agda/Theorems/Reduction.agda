@@ -7,7 +7,7 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -84,8 +84,7 @@ import proof.Correctness.Reduction.CompilerX86Red as CompilerX86Red
 
 {- Each pass ------------------------------------------------------------------}
 
-{- simplify (ISWIM → ISWIM, run before enclose; not yet part of compile),
-   for closed programs -}
+{- simplify (ISWIM → ISWIM, the first pass), for closed programs -}
 simplify-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵣ.sem M) (ISWIMᵣ.sem (simplify M))
 simplify-correct = SimplifyRed.simplify-correct

@@ -7,7 +7,7 @@
   them, with its type written out, so that it can be read without opening
   proof/.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86

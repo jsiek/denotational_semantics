@@ -2,7 +2,7 @@
 
   The closure-conversion compiler and its correctness proofs.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -73,7 +73,7 @@ import proof.Framework.Reduction
    remove complex operands
    --------------------------------------------------------------------------- -}
 
-import proof.Compiler.Simplify
+import proof.Compiler.SimplifyFacts
 import proof.Compiler.EncloseScope
 import proof.Compiler.GlobalizeTable
 import proof.Compiler.PipelineScope

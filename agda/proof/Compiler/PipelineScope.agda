@@ -37,6 +37,8 @@ import proof.Framework.Syntax.ScopeRename
 import proof.Compiler.EncloseScope as ES
 open ES using (Closed)
 open import Compiler.Enclose using (enclose)
+open import Compiler.Simplify using (simplify)
+open import proof.Compiler.SimplifyScope using (simplify-closed)
 import Compiler.Optimize
 import Compiler.Concretize
 open import Compiler.Pipeline using (compile; compile₄)
@@ -317,9 +319,9 @@ module Glob where
 {- the Clos4 program before globalize is closed -}
 compile₄-closed : ∀ M → Closed M → W4.WS 0 (compile₄ M)
 compile₄-closed M c =
-  Del.delay-ws M₃ (Conc.concretize-closed M₂' (Opt.optimize-closed M₂ (ES.enclose-closed M c)))
+  Del.delay-ws M₃ (Conc.concretize-closed M₂' (Opt.optimize-closed M₂ (ES.enclose-closed (simplify M) (simplify-closed M c))))
   where
-  M₂ = enclose M
+  M₂ = enclose (simplify M)
   M₂' = Compiler.Optimize.optimize-program M₂
   M₃ = Compiler.Concretize.concretize-program M₂'
 

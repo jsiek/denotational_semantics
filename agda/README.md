@@ -2,7 +2,7 @@
 
 A compiler from ISWIM to X86,
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -14,11 +14,11 @@ CakeML); and reduction semantics + simulation (small-step reduction by
 substitution, and forward simulations); and the graph model proved sound
 and adequate for the machines.
 
-A source optimizer, simplify (ISWIM → ISWIM, a simplified version of
-Chez Scheme's cp0: constant folding, case of a known injection,
-projection from a known tuple, β on values), runs before enclose but is
-not yet part of the compiler; it is proved correct in two styles so far,
-the graph model and the reduction semantics.
+The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
+simplified version of Chez Scheme's cp0: constant folding, case of a
+known injection, projection from a known tuple, and β on values.
+Simplify removes function calls, so its interpreter proof is not clock
+for clock: the simplified program needs no more clock than the original.
 
 Check everything, from the root of the repository, with
 
@@ -62,8 +62,7 @@ that every module outside `proof/` is used by a theorem statement).
 * The compiler, shared by all four styles:
   * `Language/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
-  * `Compiler/`: the passes (and simplify, `Simplify.agda`, not yet
-    composed) and their composition
+  * `Compiler/`: the passes and their composition
     (`Pipeline.agda`: `compile`, `compile-mon`, `compile-imp`,
     `compile-cfg`, `compile-x86`), and the preconditions of the
     operational theorems: `Closed` (`EncloseScope.agda`) and `Scoped`
@@ -127,8 +126,10 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   continuity, renaming, substitution and relations closed under it,
   forward simulations, simulations between reduction semantics,
   clock-for-clock correctness);
-* `proof/Compiler/`: syntactic facts about the passes (for simplify, its
-  values, `Simplify.agda`), and examples;
+* `proof/Compiler/`: syntactic facts about the passes (for simplify, the
+  values and known values it inspects, `SimplifyFacts.agda`, used by its
+  four proofs, and that it keeps programs closed, `SimplifyScope.agda`),
+  and examples;
 * experiments, not part of the main results: a direct semantics of Imp
   (`proof/Semantics/Graph/ImpDirect.agda`) with lift locals and
   explicate control proved against it

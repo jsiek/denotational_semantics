@@ -31,14 +31,13 @@ open import Language.ISWIM
 open import Language.Prim using (Prim; Out; int; bool; δ)
 open import proof.Semantics.Graph.ISWIM
 open import proof.Semantics.Graph.ISWIMContinuous using (body-continuous)
-open import proof.Compiler.Simplify as P
+open import proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Facts; self; info; under; shift-info; simp; simp-args; simp-app; simp-let;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-rename; prim-term-sv; int-of-just; component-just)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; _⊆ₑ_)
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
 open import proof.Correctness.Graph.ConcretizeCorrect using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
-open import proof.Correctness.Graph.RCOCorrect using (Λ-≃)
 open import Framework.ListUtil using (args→list; has-length) renaming (proj to proj-list)
 open import Framework.Syntax.Rename Op sig using (shift)
 
@@ -56,6 +55,14 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+
+Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
+Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
+  where
+  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
+    → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
+  G A⊆ ν tt = tt
+  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
 
 {- What simp knows, and what it means ----------------------------------------}
 

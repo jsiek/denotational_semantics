@@ -5,7 +5,7 @@
   each theorem here is one of them, with its type written out, so that it
   can be read without opening proof/.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
+    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
           --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
           --lift locals--> Imp --explicate control--> CFG
           --select instructions--> X86
@@ -81,7 +81,7 @@ open import Data.Product using (_×_)
 
 {- every pass but delay preserves the meaning of a program exactly (≃) -}
 
-{- simplify (ISWIM → ISWIM, run before enclose; not yet part of compile) -}
+{- simplify (ISWIM → ISWIM, the first pass) -}
 simplify-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct = SimplifyCorrect.simplify-correct
 
