@@ -20,6 +20,7 @@ open import proof.Framework.GraphModel.DenotProperties
 open import proof.Framework.GraphModel.ContinuityBase
 
 open import Data.Nat using (ℕ; zero; suc)
+open import Framework.abt.Sig using (∁)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate) renaming (map to lmap)
 open import Data.List.Relation.Unary.Any using (here; there)
@@ -231,3 +232,82 @@ inrᵉ-good = mk-good inrᵉ-mono inrᵉ-consis inrᵉ-cont
 
 letᵉ-good : ∀ {P} → Good P (■ ∷ ν ■ ∷ []) letᵉ
 letᵉ-good = mk-good letᵉ-mono letᵉ-consis letᵉ-cont
+
+{- Closures and pairs (Clos3, Clos4) --------------------------------------------------}
+
+{- the code of a closure is closed -}
+ΛΛᵉ-cont : Continuous (∁ (ν (ν ■)) ∷ []) ΛΛᵉ
+ΛΛᵉ-cont _ NE _ = const-cont NE
+
+closᵉ-cont : ∀ n → Continuous (∁ (ν (ν ■)) ∷ replicate n ■) (closᵉ n)
+closᵉ-cont n ⟨ B , Es ⟩ NE ⟨ okB , oks ⟩ =
+  ⋆ᵉ-cont ⟨ (λ ρ → ΛΛᵉ (⟪ ∁ (ν (ν ■)) ∷ [] ⟫₊ ⟨ B , ptt ⟩ ρ))
+          , ⟨ (λ ρ → 𝒯ᵉ n (⟪ replicate n ■ ⟫₊ Es ρ)) , ptt ⟩ ⟩ NE
+    ⟨ ⟨ (λ _ d d∈ → d∈) , ΛΛᵉ-cont ⟨ B , ptt ⟩ NE ⟨ okB , ptt ⟩ ⟩
+    , ⟨ ⟨ mono-env (replicate n ■) (𝒯ᵉ-mono n) Es oks , 𝒯ᵉ-cont n Es NE oks ⟩ , ptt ⟩ ⟩
+
+pairᵉ-cont : Continuous (■ ∷ ■ ∷ []) pairᵉ
+pairᵉ-cont ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , _ ⟩ ⟩ ⦅ u , v ⦆ ⟨ u∈ , ⟨ v∈ , r ⟩ ⟩
+    with one E₁ c₁ u∈ | one E₂ c₂ v∈
+... | ⟨ a , u∈′ ⟩ | ⟨ b , v∈′ ⟩ =
+  done (λ ρ → pairᵉ ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) ⦅ u , v ⦆
+    ⟨ m₁ (join-l a b) u u∈′ , ⟨ m₂ (join-r a b) v v∈′ , r ⟩ ⟩
+pairᵉ-cont ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE oks ω e with errs-cont 2 ⟨ E₁ , ⟨ E₂ , ptt ⟩ ⟩ NE oks e
+... | ⟨ a , e′ ⟩ = done (λ ρ → pairᵉ ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) a ω e′
+
+carᵉ-cont : Continuous (■ ∷ []) carᵉ
+carᵉ-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ u (inj₁ ⟨ v , uv∈ ⟩) with c _ uv∈
+... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₁ ⟨ v , uv∈′ ⟩ ⟩ ⟩ ⟩
+carᵉ-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ u (inj₂ ⟨ refl , inj₁ ω∈ ⟩) with c ω ω∈
+... | ⟨ ρ′ , ⟨ f , ⟨ s , ω∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₂ ⟨ refl , inj₁ ω∈′ ⟩ ⟩ ⟩ ⟩
+carᵉ-cont ⟨ E , _ ⟩ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ u (inj₂ ⟨ refl , inj₂ wr ⟩) with oneP E c wr
+... | ⟨ a , wr′ ⟩ = done (λ ρ → carᵉ ⟨ E ρ , ptt ⟩) a ω (inj₂ ⟨ refl , inj₂ wr′ ⟩)
+
+cdrᵉ-cont : Continuous (■ ∷ []) cdrᵉ
+cdrᵉ-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ v (inj₁ ⟨ u , uv∈ ⟩) with c _ uv∈
+... | ⟨ ρ′ , ⟨ f , ⟨ s , uv∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₁ ⟨ u , uv∈′ ⟩ ⟩ ⟩ ⟩
+cdrᵉ-cont _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ v (inj₂ ⟨ refl , inj₁ ω∈ ⟩) with c ω ω∈
+... | ⟨ ρ′ , ⟨ f , ⟨ s , ω∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₂ ⟨ refl , inj₁ ω∈′ ⟩ ⟩ ⟩ ⟩
+cdrᵉ-cont ⟨ E , _ ⟩ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ v (inj₂ ⟨ refl , inj₂ wr ⟩) with oneP E c wr
+... | ⟨ a , wr′ ⟩ = done (λ ρ → cdrᵉ ⟨ E ρ , ptt ⟩) a ω (inj₂ ⟨ refl , inj₂ wr′ ⟩)
+
+callᵉ-cont : Continuous (■ ∷ ■ ∷ ■ ∷ []) callᵉ
+callᵉ-cont ⟨ E₁ , ⟨ E₂ , ⟨ E₃ , _ ⟩ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , ⟨ ⟨ m₃ , c₃ ⟩ , _ ⟩ ⟩ ⟩ w
+    (inj₁ ⟨ V , ⟨ U , ⟨ e∈ , ⟨ V⊆ , ⟨ U⊆ , r ⟩ ⟩ ⟩ ⟩ ⟩)
+    with one E₁ c₁ e∈ | many E₂ NE m₂ c₂ V V⊆ | many E₃ NE m₃ c₃ U U⊆
+... | ⟨ a , e∈′ ⟩ | ⟨ b , V⊆′ ⟩ | ⟨ c , U⊆′ ⟩ =
+  done (λ ρ → callᵉ ⟨ E₁ ρ , ⟨ E₂ ρ , ⟨ E₃ ρ , ptt ⟩ ⟩ ⟩) (approx-join a (approx-join b c)) w
+    (inj₁ ⟨ V , ⟨ U , ⟨ m₁ (join-l a bc) _ e∈′
+          , ⟨ (λ d d∈ → m₂ (λ x d′ d′∈ → join-r a bc x d′ (join-l b c x d′ d′∈)) d (V⊆′ d d∈))
+          , ⟨ (λ d d∈ → m₃ (λ x d′ d′∈ → join-r a bc x d′ (join-r b c x d′ d′∈)) d (U⊆′ d d∈)) , r ⟩ ⟩ ⟩ ⟩ ⟩)
+  where bc = approx-join b c
+callᵉ-cont ⟨ E₁ , ⟨ E₂ , ⟨ E₃ , _ ⟩ ⟩ ⟩ NE oks w (inj₂ ⟨ refl , inj₁ e ⟩)
+    with errs-cont 3 ⟨ E₁ , ⟨ E₂ , ⟨ E₃ , ptt ⟩ ⟩ ⟩ NE oks e
+... | ⟨ a , e′ ⟩ = done (λ ρ → callᵉ ⟨ E₁ ρ , ⟨ E₂ ρ , ⟨ E₃ ρ , ptt ⟩ ⟩ ⟩) a ω (inj₂ ⟨ refl , inj₁ e′ ⟩)
+callᵉ-cont ⟨ E₁ , ⟨ E₂ , ⟨ E₃ , _ ⟩ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , ⟨ ⟨ m₃ , c₃ ⟩ , _ ⟩ ⟩ ⟩ w
+    (inj₂ ⟨ refl , inj₂ ⟨ wr , ⟨ vm , vn ⟩ ⟩ ⟩)
+    with oneP E₁ c₁ wr | oneP E₂ c₂ vm | oneP E₃ c₃ vn
+... | ⟨ a , ⟨ d , ⟨ d∈ , r ⟩ ⟩ ⟩ | ⟨ b , ⟨ e , ⟨ e∈ , r' ⟩ ⟩ ⟩ | ⟨ c , ⟨ f , ⟨ f∈ , r'' ⟩ ⟩ ⟩ =
+  done (λ ρ → callᵉ ⟨ E₁ ρ , ⟨ E₂ ρ , ⟨ E₃ ρ , ptt ⟩ ⟩ ⟩) (approx-join a bc) ω
+    (inj₂ ⟨ refl , inj₂ ⟨ ⟨ d , ⟨ m₁ (join-l a bc) d d∈ , r ⟩ ⟩
+                       , ⟨ ⟨ e , ⟨ m₂ (λ x d′ d′∈ → join-r a bc x d′ (join-l b c x d′ d′∈)) e e∈ , r' ⟩ ⟩
+                         , ⟨ f , ⟨ m₃ (λ x d′ d′∈ → join-r a bc x d′ (join-r b c x d′ d′∈)) f f∈ , r'' ⟩ ⟩ ⟩ ⟩ ⟩)
+  where bc = approx-join b c
+
+ΛΛᵉ-good : ∀ {P} → Good P (∁ (ν (ν ■)) ∷ []) ΛΛᵉ
+ΛΛᵉ-good = mk-good ΛΛᵉ-mono ΛΛᵉ-consis ΛΛᵉ-cont
+
+closᵉ-good : ∀ {P} n → Good P (∁ (ν (ν ■)) ∷ replicate n ■) (closᵉ n)
+closᵉ-good n = mk-good (closᵉ-mono n) (closᵉ-consis n) (closᵉ-cont n)
+
+pairᵉ-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) pairᵉ
+pairᵉ-good = mk-good pairᵉ-mono pairᵉ-consis pairᵉ-cont
+
+carᵉ-good : ∀ {P} → Good P (■ ∷ []) carᵉ
+carᵉ-good = mk-good carᵉ-mono carᵉ-consis carᵉ-cont
+
+cdrᵉ-good : ∀ {P} → Good P (■ ∷ []) cdrᵉ
+cdrᵉ-good = mk-good cdrᵉ-mono cdrᵉ-consis cdrᵉ-cont
+
+callᵉ-good : ∀ {P} → Good P (■ ∷ ■ ∷ ■ ∷ []) callᵉ
+callᵉ-good = mk-good callᵉ-mono callᵉ-consis callᵉ-cont

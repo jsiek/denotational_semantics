@@ -589,3 +589,166 @@ projᵉ-𝒯ᵉ (suc n) Ds vs cs i = ⟨ G , (λ d d∈ → inj₁ ⟨ refl , �
   ... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (e≢ refl)
   ... | inj₂ (inj₁ ⟨ _ , ⟨ _ , ⟨ refl , _ ⟩ ⟩ ⟩) = ⊥-elim (nt refl)
   ... | inj₂ (inj₂ ⟨ () , _ ⟩)
+
+{- Closures and pairs (Clos3, Clos4) ------------------------------------------------}
+
+ΛΛᵉ-mono : monotone (∁ (ν (ν ■)) ∷ []) ■ ΛΛᵉ
+ΛΛᵉ-mono ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F⊆ , _ ⟩ =
+  Λᵉ-mono ⟨ (λ X → Λᵉ ⟨ F X , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λᵉ ⟨ F' X , ptt ⟩) , ptt ⟩
+    ⟨ (λ X X' X⊆ → Λᵉ-mono ⟨ F X , ptt ⟩ ⟨ F' X' , ptt ⟩ ⟨ F⊆ X X' X⊆ , ptt ⟩) , ptt ⟩
+
+ΛΛᵉ-consis : consistent _~_ (∁ (ν (ν ■)) ∷ []) ■ ΛΛᵉ
+ΛΛᵉ-consis ⟨ F , _ ⟩ ⟨ F' , _ ⟩ ⟨ F~ , _ ⟩ =
+  Λᵉ-consis ⟨ (λ X → Λᵉ ⟨ F X , ptt ⟩) , ptt ⟩ ⟨ (λ X → Λᵉ ⟨ F' X , ptt ⟩) , ptt ⟩
+    ⟨ (λ X X' X~ → Λᵉ-consis ⟨ F X , ptt ⟩ ⟨ F' X' , ptt ⟩ ⟨ F~ X X' X~ , ptt ⟩) , ptt ⟩
+
+closᵉ-mono : ∀ n → monotone (∁ (ν (ν ■)) ∷ replicate n ■) ■ (closᵉ n)
+closᵉ-mono n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F⊆ , Ds⊆ ⟩ =
+  ⋆ᵉ-mono ⟨ ΛΛᵉ ⟨ F , ptt ⟩ , ⟨ 𝒯ᵉ n Ds , ptt ⟩ ⟩ ⟨ ΛΛᵉ ⟨ F' , ptt ⟩ , ⟨ 𝒯ᵉ n Ds' , ptt ⟩ ⟩
+    ⟨ ΛΛᵉ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F⊆ , ptt ⟩ , ⟨ 𝒯ᵉ-mono n Ds Ds' Ds⊆ , ptt ⟩ ⟩
+
+closᵉ-consis : ∀ n → consistent _~_ (∁ (ν (ν ■)) ∷ replicate n ■) ■ (closᵉ n)
+closᵉ-consis n ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
+  ⋆ᵉ-consis ⟨ ΛΛᵉ ⟨ F , ptt ⟩ , ⟨ 𝒯ᵉ n Ds , ptt ⟩ ⟩ ⟨ ΛΛᵉ ⟨ F' , ptt ⟩ , ⟨ 𝒯ᵉ n Ds' , ptt ⟩ ⟩
+    ⟨ ΛΛᵉ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ 𝒯ᵉ-consis n Ds Ds' Ds~ , ptt ⟩ ⟩
+
+pairᵉ-inv : ∀ {D E} d → d ∈ pairᵉ ⟨ D , ⟨ E , ptt ⟩ ⟩
+  → (Σ[ u ∈ Value ] Σ[ v ∈ Value ] d ≡ ⦅ u , v ⦆ × u ∈ D × v ∈ E × u ≢ ω × v ≢ ω)
+  ⊎ (d ≡ ω × errs 2 ⟨ D , ⟨ E , ptt ⟩ ⟩)
+pairᵉ-inv ⦅ u , v ⦆ ⟨ u∈ , ⟨ v∈ , r ⟩ ⟩ = inj₁ ⟨ u , ⟨ v , ⟨ refl , ⟨ u∈ , ⟨ v∈ , r ⟩ ⟩ ⟩ ⟩ ⟩
+pairᵉ-inv ω e = inj₂ ⟨ refl , e ⟩
+
+pair~ : ∀ {u v} e → ⦅ u , v ⦆ ~ e → IsPair e
+pair~ ⦅ u , v ⦆ _ = tt
+pair~ ω ()
+pair~ (const k) ()
+pair~ (V ↦ w) ()
+pair~ ν ()
+pair~ (tup[ i ] d) ()
+pair~ (left d) ()
+pair~ (right d) ()
+pair~ ⟨⟩ ()
+
+~pair : ∀ {u v} e → e ~ ⦅ u , v ⦆ → IsPair e
+~pair ⦅ u , v ⦆ _ = tt
+~pair ω ()
+~pair (const k) ()
+~pair (V ↦ w) ()
+~pair ν ()
+~pair (tup[ i ] d) ()
+~pair (left d) ()
+~pair (right d) ()
+~pair ⟨⟩ ()
+
+pairᵉ-mono : monotone (■ ∷ ■ ∷ []) ■ pairᵉ
+pairᵉ-mono ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , _ ⟩ ⟩ = lift G
+  where
+  G : pairᵉ ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ pairᵉ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+  G d d∈ with pairᵉ-inv d d∈
+  ... | inj₁ ⟨ u , ⟨ v , ⟨ refl , ⟨ u∈ , ⟨ v∈ , r ⟩ ⟩ ⟩ ⟩ ⟩ = ⟨ D⊆ u u∈ , ⟨ E⊆ v v∈ , r ⟩ ⟩
+  ... | inj₂ ⟨ refl , e ⟩ =
+    errs-mono 2 ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩ e
+
+pairᵉ-consis : consistent _~_ (■ ∷ ■ ∷ []) ■ pairᵉ
+pairᵉ-consis ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ DE~@(⟨ lift D~ , ⟨ lift E~ , _ ⟩ ⟩) = lift G
+  where
+  G : Every _~_ (pairᵉ ⟨ D , ⟨ E , ptt ⟩ ⟩) (pairᵉ ⟨ D' , ⟨ E' , ptt ⟩ ⟩)
+  G a b a∈ b∈ with pairᵉ-inv a a∈ | pairᵉ-inv b b∈
+  ... | inj₁ ⟨ u , ⟨ v , ⟨ refl , ⟨ u∈ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩ ⟩ | inj₁ ⟨ u' , ⟨ v' , ⟨ refl , ⟨ u'∈ , ⟨ v'∈ , _ ⟩ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ D~ u u' u∈ u'∈ , E~ v v' v∈ v'∈ ⟩
+  ... | inj₁ ⟨ u , ⟨ v , ⟨ refl , ⟨ u∈ , ⟨ v∈ , ⟨ u≢ , v≢ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ | inj₂ ⟨ refl , e ⟩ =
+    ⊥-elim (vals-errs 2 ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ DE~
+              (λ { zero → ⟨ u , ⟨ u∈ , u≢ ⟩ ⟩ ; (suc zero) → ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ }) e)
+  ... | inj₂ ⟨ refl , e ⟩ | inj₁ ⟨ u , ⟨ v , ⟨ refl , ⟨ u∈ , ⟨ v∈ , ⟨ u≢ , v≢ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
+    ⊥-elim (errs-vals 2 ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E' , ptt ⟩ ⟩ DE~ e
+              (λ { zero → ⟨ u , ⟨ u∈ , u≢ ⟩ ⟩ ; (suc zero) → ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ }))
+  ... | inj₂ ⟨ refl , _ ⟩ | inj₂ ⟨ refl , _ ⟩ = tt
+
+carᵉ-mono : monotone (■ ∷ []) ■ carᵉ
+carᵉ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift G
+  where
+  G : carᵉ ⟨ D , ptt ⟩ ⊆ carᵉ ⟨ D' , ptt ⟩
+  G u (inj₁ ⟨ v , uv∈ ⟩) = inj₁ ⟨ v , D⊆ _ uv∈ ⟩
+  G u (inj₂ ⟨ refl , inj₁ ω∈ ⟩) = inj₂ ⟨ refl , inj₁ (D⊆ ω ω∈) ⟩
+  G u (inj₂ ⟨ refl , inj₂ wr ⟩) = inj₂ ⟨ refl , inj₂ (wrong-mono D⊆ wr) ⟩
+
+cdrᵉ-mono : monotone (■ ∷ []) ■ cdrᵉ
+cdrᵉ-mono ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D⊆ , _ ⟩ = lift G
+  where
+  G : cdrᵉ ⟨ D , ptt ⟩ ⊆ cdrᵉ ⟨ D' , ptt ⟩
+  G v (inj₁ ⟨ u , uv∈ ⟩) = inj₁ ⟨ u , D⊆ _ uv∈ ⟩
+  G v (inj₂ ⟨ refl , inj₁ ω∈ ⟩) = inj₂ ⟨ refl , inj₁ (D⊆ ω ω∈) ⟩
+  G v (inj₂ ⟨ refl , inj₂ wr ⟩) = inj₂ ⟨ refl , inj₂ (wrong-mono D⊆ wr) ⟩
+
+carᵉ-consis : consistent _~_ (■ ∷ []) ■ carᵉ
+carᵉ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D~ , _ ⟩ = lift G
+  where
+  G : Every _~_ (carᵉ ⟨ D , ptt ⟩) (carᵉ ⟨ D' , ptt ⟩)
+  G u u' (inj₁ ⟨ v , uv∈ ⟩) (inj₁ ⟨ v' , uv'∈ ⟩) = proj₁ (D~ _ _ uv∈ uv'∈)
+  G u u' (inj₁ ⟨ v , uv∈ ⟩) (inj₂ ⟨ refl , inj₁ ω∈ ⟩) with D~ _ _ uv∈ ω∈
+  ... | ()
+  G u u' (inj₁ ⟨ v , uv∈ ⟩) (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , np ⟩ ⟩ ⟩ ⟩) = ⊥-elim (np (pair~ e (D~ _ _ uv∈ e∈)))
+  G u u' (inj₂ ⟨ refl , inj₁ ω∈ ⟩) (inj₁ ⟨ v , uv∈ ⟩) with D~ _ _ ω∈ uv∈
+  ... | ()
+  G u u' (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , np ⟩ ⟩ ⟩ ⟩) (inj₁ ⟨ v , uv∈ ⟩) = ⊥-elim (np (~pair e (D~ _ _ e∈ uv∈)))
+  G u u' (inj₂ ⟨ refl , _ ⟩) (inj₂ ⟨ refl , _ ⟩) = tt
+
+cdrᵉ-consis : consistent _~_ (■ ∷ []) ■ cdrᵉ
+cdrᵉ-consis ⟨ D , _ ⟩ ⟨ D' , _ ⟩ ⟨ lift D~ , _ ⟩ = lift G
+  where
+  G : Every _~_ (cdrᵉ ⟨ D , ptt ⟩) (cdrᵉ ⟨ D' , ptt ⟩)
+  G v v' (inj₁ ⟨ u , uv∈ ⟩) (inj₁ ⟨ u' , uv'∈ ⟩) = proj₂ (D~ _ _ uv∈ uv'∈)
+  G v v' (inj₁ ⟨ u , uv∈ ⟩) (inj₂ ⟨ refl , inj₁ ω∈ ⟩) with D~ _ _ uv∈ ω∈
+  ... | ()
+  G v v' (inj₁ ⟨ u , uv∈ ⟩) (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , np ⟩ ⟩ ⟩ ⟩) = ⊥-elim (np (pair~ e (D~ _ _ uv∈ e∈)))
+  G v v' (inj₂ ⟨ refl , inj₁ ω∈ ⟩) (inj₁ ⟨ u , uv∈ ⟩) with D~ _ _ ω∈ uv∈
+  ... | ()
+  G v v' (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , np ⟩ ⟩ ⟩ ⟩) (inj₁ ⟨ u , uv∈ ⟩) = ⊥-elim (np (~pair e (D~ _ _ e∈ uv∈)))
+  G v v' (inj₂ ⟨ refl , _ ⟩) (inj₂ ⟨ refl , _ ⟩) = tt
+
+callᵉ-mono : monotone (■ ∷ ■ ∷ ■ ∷ []) ■ callᵉ
+callᵉ-mono ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ ⟨ L' , ⟨ M' , ⟨ N' , _ ⟩ ⟩ ⟩ LMN⊆@(⟨ lift L⊆ , ⟨ lift M⊆ , ⟨ lift N⊆ , _ ⟩ ⟩ ⟩) = lift G
+  where
+  G : callᵉ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ⊆ callᵉ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
+  G w (inj₁ ⟨ V , ⟨ U , ⟨ e∈ , ⟨ V⊆ , ⟨ U⊆ , r ⟩ ⟩ ⟩ ⟩ ⟩) =
+    inj₁ ⟨ V , ⟨ U , ⟨ L⊆ _ e∈ , ⟨ (λ d d∈ → M⊆ d (V⊆ d d∈)) , ⟨ (λ d d∈ → N⊆ d (U⊆ d d∈)) , r ⟩ ⟩ ⟩ ⟩ ⟩
+  G w (inj₂ ⟨ refl , inj₁ e ⟩) = inj₂ ⟨ refl , inj₁ (errs-mono 3 _ _ LMN⊆ e) ⟩
+  G w (inj₂ ⟨ refl , inj₂ ⟨ wr , ⟨ vm , vn ⟩ ⟩ ⟩) =
+    inj₂ ⟨ refl , inj₂ ⟨ wrong-mono L⊆ wr , ⟨ val∈-mono M⊆ vm , val∈-mono N⊆ vn ⟩ ⟩ ⟩
+
+callᵉ-consis : consistent _~_ (■ ∷ ■ ∷ ■ ∷ []) ■ callᵉ
+callᵉ-consis ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ ⟨ L' , ⟨ M' , ⟨ N' , _ ⟩ ⟩ ⟩ ⟨ lift L~ , ⟨ lift M~ , ⟨ lift N~ , _ ⟩ ⟩ ⟩ = lift G
+  where
+  G : Every _~_ (callᵉ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩) (callᵉ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩)
+  G w w' (inj₁ ⟨ V , ⟨ U , ⟨ e∈ , ⟨ V⊆ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ ⟩ ⟩) (inj₁ ⟨ V' , ⟨ U' , ⟨ e'∈ , ⟨ V'⊆ , ⟨ U'⊆ , _ ⟩ ⟩ ⟩ ⟩ ⟩) =
+    L~ _ _ e∈ e'∈ (Every⇒≈ V V' (Every-⊆ M~ V⊆ V'⊆)) (Every⇒≈ U U' (Every-⊆ N~ U⊆ U'⊆))
+  G w w' (inj₁ ⟨ V , ⟨ U , ⟨ e∈ , ⟨ V⊆ , ⟨ U⊆ , ⟨ neV , ⟨ neU , ⟨ nV , nU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) (inj₂ ⟨ refl , e ⟩) = ⊥-elim (H e)
+    where
+    H : _ → False
+    H (inj₁ (inj₁ ω∈)) with L~ _ _ e∈ ω∈
+    ... | ()
+    H (inj₁ (inj₂ ⟨ _ , inj₁ ω∈ ⟩)) = noerr-ω M~ V V⊆ neV nV ω∈
+    H (inj₁ (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ω∈ ⟩ ⟩)) = noerr-ω N~ U U⊆ neU nU ω∈
+    H (inj₂ ⟨ ⟨ d , ⟨ d∈ , ⟨ _ , nf ⟩ ⟩ ⟩ , _ ⟩) = nf (fun~ d (L~ _ _ e∈ d∈))
+  G w w' (inj₂ ⟨ refl , e ⟩) (inj₁ ⟨ V , ⟨ U , ⟨ e∈ , ⟨ V⊆ , ⟨ U⊆ , ⟨ neV , ⟨ neU , ⟨ nV , nU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) = ⊥-elim (H e)
+    where
+    H : _ → False
+    H (inj₁ (inj₁ ω∈)) with L~ _ _ ω∈ e∈
+    ... | ()
+    H (inj₁ (inj₂ ⟨ _ , inj₁ ω∈ ⟩)) = ω-noerr M~ V V⊆ neV nV ω∈
+    H (inj₁ (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ω∈ ⟩ ⟩)) = ω-noerr N~ U U⊆ neU nU ω∈
+    H (inj₂ ⟨ ⟨ d , ⟨ d∈ , ⟨ _ , nf ⟩ ⟩ ⟩ , _ ⟩) = nf (~fun d (L~ _ _ d∈ e∈))
+  G w w' (inj₂ ⟨ refl , _ ⟩) (inj₂ ⟨ refl , _ ⟩) = tt
+
+pairᵉ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → pairᵉ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pairᵉ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pairᵉ-≃ D≃ E≃ = mono-≃ pairᵉ-mono ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩
+
+carᵉ-≃ : ∀ {D E} → D ≃ E → carᵉ ⟨ D , ptt ⟩ ≃ carᵉ ⟨ E , ptt ⟩
+carᵉ-≃ D≃ = mono-≃ carᵉ-mono ⟨ lift D≃ , ptt ⟩
+
+cdrᵉ-≃ : ∀ {D E} → D ≃ E → cdrᵉ ⟨ D , ptt ⟩ ≃ cdrᵉ ⟨ E , ptt ⟩
+cdrᵉ-≃ D≃ = mono-≃ cdrᵉ-mono ⟨ lift D≃ , ptt ⟩
+
+callᵉ-≃ : ∀ {L L' M M' N N'} → L ≃ L' → M ≃ M' → N ≃ N'
+  → callᵉ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ≃ callᵉ ⟨ L' , ⟨ M' , ⟨ N' , ptt ⟩ ⟩ ⟩
+callᵉ-≃ L≃ M≃ N≃ = mono-≃ callᵉ-mono ⟨ lift L≃ , ⟨ lift M≃ , ⟨ lift N≃ , ptt ⟩ ⟩ ⟩

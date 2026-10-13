@@ -42,6 +42,7 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_)
 open import Data.Unit renaming (⊤ to True)
+open import Framework.abt.Sig using (∁)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; subst)
 open import Relation.Nullary using (¬_)
@@ -145,3 +146,40 @@ letᵉ ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ᵉ ⟨ Λᵉ ⟨ F , ptt ⟩ , ⟨ D , pt
    error in them, left to right -}
 guardᵉ-n : ∀ n → Results (𝒫 Value) (replicate n ■) → 𝒫 Value → 𝒫 Value
 guardᵉ-n n Ds D w = (w ≡ ω × errs n Ds) ⊎ (vals n Ds × w ∈ D)
+
+{- Closures and pairs (Clos3, Clos4) ---------------------------------------------}
+
+{- a closed function of two arguments: the code of a closure -}
+ΛΛᵉ : DOp (𝒫 Value) (∁ (ν (ν ■)) ∷ [])
+ΛΛᵉ ⟨ F , _ ⟩ = Λᵉ ⟨ (λ X → Λᵉ ⟨ F X , ptt ⟩) , ptt ⟩
+
+{- a Clos3 closure: its code applied to the tuple of its free variables,
+   which are evaluated left to right -}
+closᵉ : ∀ n → DOp (𝒫 Value) (∁ (ν (ν ■)) ∷ replicate n ■)
+closᵉ n ⟨ F , Ds ⟩ = ⋆ᵉ ⟨ ΛΛᵉ ⟨ F , ptt ⟩ , ⟨ 𝒯ᵉ n Ds , ptt ⟩ ⟩
+
+IsPair : Value → Set
+IsPair ⦅ u , v ⦆ = True
+IsPair _ = False
+
+{- a pair, left to right -}
+pairᵉ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
+pairᵉ ⟨ D , ⟨ E , _ ⟩ ⟩ ⦅ u , v ⦆ = u ∈ D × v ∈ E × u ≢ ω × v ≢ ω
+pairᵉ ⟨ D , ⟨ E , _ ⟩ ⟩ ω = errs 2 ⟨ D , ⟨ E , ptt ⟩ ⟩
+pairᵉ ⟨ D , ⟨ E , _ ⟩ ⟩ _ = False
+
+{- the components of a pair: an error on ω or on a value that is not a pair -}
+carᵉ : DOp (𝒫 Value) (■ ∷ [])
+carᵉ ⟨ D , _ ⟩ u = (Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ D) ⊎ (u ≡ ω × (ω ∈ D ⊎ wrong IsPair D))
+
+cdrᵉ : DOp (𝒫 Value) (■ ∷ [])
+cdrᵉ ⟨ D , _ ⟩ v = (Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ D) ⊎ (v ≡ ω × (ω ∈ D ⊎ wrong IsPair D))
+
+{- the call of Clos4 (and Clos5): the code L, the environment M and the
+   argument N are evaluated left to right, and only then is L checked to
+   be code (the late check) -}
+callᵉ : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
+callᵉ ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ w =
+    (Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] (V ↦ (U ↦ w)) ∈ L × mem V ⊆ M × mem U ⊆ N
+       × V ≢ [] × U ≢ [] × NoErr V × NoErr U)
+  ⊎ (w ≡ ω × (errs 3 ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ⊎ (wrong IsFun L × val∈ M × val∈ N)))
