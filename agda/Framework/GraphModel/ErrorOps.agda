@@ -183,3 +183,18 @@ callᵉ ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ w =
     (Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] (V ↦ (U ↦ w)) ∈ L × mem V ⊆ M × mem U ⊆ N
        × V ≢ [] × U ≢ [] × NoErr V × NoErr U)
   ⊎ (w ≡ ω × (errs 3 ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ ⊎ (wrong IsFun L × val∈ M × val∈ N)))
+
+{- Code and machine state (Clos5, Imp, CFG, X86) -----------------------------}
+
+{- the code of a reference to no definition: a function whose call errs,
+   after its operands, as the machines' late check does -}
+errcode : 𝒫 Value
+errcode = ΛΛᵉ ⟨ (λ X Y → ⌈ ω ⌉) , ptt ⟩
+
+{- E once D has a value; ω if D holds ω: a strict write of D, before E -}
+strictᵉ : 𝒫 Value → 𝒫 Value → 𝒫 Value
+strictᵉ D E w = (w ≡ ω × ω ∈ D) ⊎ (val∈ D × w ∈ E)
+
+{- the payload of an injection; an error on ω or a non-injection -}
+payloadᵉ : 𝒫 Value → 𝒫 Value
+payloadᵉ D v = (left v ∈ D × v ≢ ω) ⊎ (right v ∈ D × v ≢ ω) ⊎ (v ≡ ω × (ω ∈ D ⊎ wrong IsInj D))

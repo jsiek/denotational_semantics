@@ -808,3 +808,56 @@ letᵉ-collect {D} m cl (w ∷ V) V⊆ with V⊆ w (here refl) | letᵉ-collect 
 ... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
 ... | ⟨ v ∷ V , ⟨ _ , ⟨ V⊆ , w∈′ ⟩ ⟩ ⟩ =
   inj₂ (inj₁ ⟨ v , ⟨ V , ⟨ V⊆ , ⟨ w∈′ , ⟨ Con⇒≈ (v ∷ V) c V⊆ , Clean-NoErr (v ∷ V) cl V⊆ ⟩ ⟩ ⟩ ⟩ ⟩)
+
+{- Code and machine state ------------------------------------------------------}
+
+{- a closed function of two arguments, consistent in both, is consistent -}
+ΛΛᵉ-con : ∀ {F : 𝒫 Value → 𝒫 Value → 𝒫 Value}
+  → (∀ X X' Y Y' → Every _~_ X X' → Every _~_ Y Y' → Every _~_ (F X Y) (F X' Y'))
+  → Con (ΛΛᵉ ⟨ F , ptt ⟩)
+ΛΛᵉ-con {F} F~ =
+  lower (ΛΛᵉ-consis ⟨ F , ptt ⟩ ⟨ F , ptt ⟩ ⟨ (λ X X' X~ Y Y' Y~ → lift (F~ X X' Y Y' X~ Y~)) , ptt ⟩)
+
+errcode-con : Con errcode
+errcode-con = ΛΛᵉ-con (λ _ _ _ _ _ _ → Con-⌈⌉ ω)
+
+errcode-fun : ν ∈ errcode
+errcode-fun = tt
+
+strictᵉ-mono : ∀ {D D' E E'} → D ⊆ D' → E ⊆ E' → strictᵉ D E ⊆ strictᵉ D' E'
+strictᵉ-mono D⊆ E⊆ w (inj₁ ⟨ refl , ω∈ ⟩) = inj₁ ⟨ refl , D⊆ ω ω∈ ⟩
+strictᵉ-mono D⊆ E⊆ w (inj₂ ⟨ v , w∈ ⟩) = inj₂ ⟨ val∈-mono D⊆ v , E⊆ w w∈ ⟩
+
+strictᵉ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → strictᵉ D E ≃ strictᵉ D' E'
+strictᵉ-≃ D≃ E≃ = ⟨ strictᵉ-mono (proj₁ D≃) (proj₁ E≃) , strictᵉ-mono (proj₂ D≃) (proj₂ E≃) ⟩
+
+strictᵉ-consis : ∀ {D D' E E'} → Every _~_ D D' → Every _~_ E E' → Every _~_ (strictᵉ D E) (strictᵉ D' E')
+strictᵉ-consis D~ E~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
+strictᵉ-consis D~ E~ u w (inj₁ ⟨ refl , ω∈ ⟩) (inj₂ ⟨ v , _ ⟩) = ⊥-elim (ω-val D~ ω∈ v)
+strictᵉ-consis D~ E~ u w (inj₂ ⟨ v , _ ⟩) (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (val-ω D~ v ω∈)
+strictᵉ-consis D~ E~ u w (inj₂ ⟨ _ , u∈ ⟩) (inj₂ ⟨ _ , w∈ ⟩) = E~ u w u∈ w∈
+
+payloadᵉ-mono : ∀ {D E} → D ⊆ E → payloadᵉ D ⊆ payloadᵉ E
+payloadᵉ-mono D⊆ v (inj₁ ⟨ l∈ , v≢ ⟩) = inj₁ ⟨ D⊆ _ l∈ , v≢ ⟩
+payloadᵉ-mono D⊆ v (inj₂ (inj₁ ⟨ r∈ , v≢ ⟩)) = inj₂ (inj₁ ⟨ D⊆ _ r∈ , v≢ ⟩)
+payloadᵉ-mono D⊆ v (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) = inj₂ (inj₂ ⟨ refl , inj₁ (D⊆ ω ω∈) ⟩)
+payloadᵉ-mono D⊆ v (inj₂ (inj₂ ⟨ refl , inj₂ wr ⟩)) = inj₂ (inj₂ ⟨ refl , inj₂ (wrong-mono D⊆ wr) ⟩)
+
+payloadᵉ-≃ : ∀ {D E} → D ≃ E → payloadᵉ D ≃ payloadᵉ E
+payloadᵉ-≃ D≃ = ⟨ payloadᵉ-mono (proj₁ D≃) , payloadᵉ-mono (proj₂ D≃) ⟩
+
+{- payloadᵉ preserves consistency -}
+payload~ : ∀ {D D'} → Every _~_ D D' → Every _~_ (payloadᵉ D) (payloadᵉ D')
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₁ ⟨ v∈ , _ ⟩) = D~ _ _ u∈ v∈
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = ⊥-elim (D~ _ _ u∈ v∈)
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) = ⊥-elim (D~ _ _ u∈ ω∈)
+payload~ D~ u v (inj₁ ⟨ u∈ , _ ⟩) (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) = ⊥-elim (ni (inl~ e (D~ _ _ u∈ e∈)))
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₁ ⟨ v∈ , _ ⟩) = ⊥-elim (D~ _ _ u∈ v∈)
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = D~ _ _ u∈ v∈
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) = ⊥-elim (D~ _ _ u∈ ω∈)
+payload~ D~ u v (inj₂ (inj₁ ⟨ u∈ , _ ⟩)) (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) = ⊥-elim (ni (inr~ e (D~ _ _ u∈ e∈)))
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) (inj₁ ⟨ v∈ , _ ⟩) = ⊥-elim (D~ _ _ ω∈ v∈)
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) (inj₁ ⟨ v∈ , _ ⟩) = ⊥-elim (ni (~inl e (D~ _ _ e∈ v∈)))
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = ⊥-elim (D~ _ _ ω∈ v∈)
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ _ , ni ⟩ ⟩ ⟩ ⟩)) (inj₂ (inj₁ ⟨ v∈ , _ ⟩)) = ⊥-elim (ni (~inr e (D~ _ _ e∈ v∈)))
+payload~ D~ u v (inj₂ (inj₂ ⟨ refl , _ ⟩)) (inj₂ (inj₂ ⟨ refl , _ ⟩)) = tt

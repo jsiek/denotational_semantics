@@ -100,10 +100,6 @@ Kont = Store → Regs → 𝒫 Value → 𝒫 Value
 𝒪s T n σ ρ [] = ptt
 𝒪s T n σ ρ (a ∷ as) = ⟨ 𝒪 T n σ ρ a , 𝒪s T n σ ρ as ⟩
 
-{- E, provided that D is nonempty -}
-strict : 𝒫 Value → 𝒫 Value → 𝒫 Value
-strict D E w = nonempty D × w ∈ E
-
 {- d := D, then κ -}
 put : ℕ → Loc → 𝒫 Value → Kont → Kont
 put n (var x) D κ σ ρ φ = checked n x (⋆ ⟨ Λ ⟨ (λ X → κ (σ [ x ↦ X ]) ρ φ) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
@@ -112,10 +108,6 @@ put n (reg g) D κ σ ρ φ = strict D (κ σ (ρ [ g ≔ D ]) φ)
 {- the flag that testinl sets -}
 isinl : 𝒫 Value → 𝒫 Value
 isinl D w = (Σ[ u ∈ Value ] left u ∈ D × w ≡ left ⟨⟩) ⊎ (Σ[ u ∈ Value ] right u ∈ D × w ≡ right ⟨⟩)
-
-{- the payload of an injection -}
-payloadD : 𝒫 Value → 𝒫 Value
-payloadD D v = left v ∈ D ⊎ right v ∈ D
 
 {- the object that alloc builds; a wrong number of fields errors -}
 object : Table → ℕ → Store → Regs → Shape → List Arg → 𝒫 Value

@@ -4202,16 +4202,17 @@ Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
 %===============================================================================
-\section{The Graph Model with Errors (Pilot)}\label{sec:graph-errors}
+\section{The Graph Model with Errors}\label{sec:graph-errors}
 
 In the graph model, a program that stops with an error and one that
 diverges both denote $\emptyset$. The graph model with errors tells them
 apart: a trapped error denotes a set that holds the error value $\omega$
 (the value that $\rho_0$ already gives to a variable not in scope, and
 which is consistent only with itself), and divergence still denotes
-$\emptyset$. It is defined for ISWIM and Clos2--Clos4, the languages of
-simplify, enclose, concretize and delay (\texttt{agda/Semantics/GraphErr/});
-the operators are \texttt{agda/Framework/GraphModel/ErrorOps.agda}.
+$\emptyset$. It is defined for every language of the compiler
+(\texttt{agda/Semantics/GraphErr/}); the operators are
+\texttt{agda/Framework/GraphModel/ErrorOps.agda}. Each semantics errs
+exactly where its machine does (Section~\ref{sec:machines}).
 
 \subsection{Operators}
 
@@ -4255,17 +4256,29 @@ diverges ($\emptyset$) before one that errs gives no error.
     &\cup\; \{ \omega \mid \mathit{errs}(L, M, N) \lor
        (\mathit{wrong}_{\mathit{fun}}(L) \land \mathit{val}(M) \land \mathit{val}(N)) \}
 \end{align*}
-$\key{call}^{\omega}$ is the Clos4 call: code, environment and argument are
-evaluated left to right, and only then is the code checked (the late
-check of the Clos4 machine).
 and $\mathcal{T}^{\omega}() = \{ \emptytup \}$, $\key{inr}^{\omega}$ as
 $\key{inl}^{\omega}$. Application checks its operator before its
-argument, as the machines do (Section~\ref{sec:machines}): applying a
-non-function is an error even when the argument diverges. The binders
+argument, as the ISWIM, Clos2 and Clos3 machines do: applying a
+non-function is an error even when the argument diverges.
+$\key{call}^{\omega}$ is the call of Clos4 and the later languages: code,
+environment and argument are evaluated left to right, and only then is
+the code checked (the late check of their machines). The binders
 $\Lambda^{\omega}$ and $\mathcal{C}^{\omega}$ bind no $\omega$, as call by
 value binds only values; otherwise $(\lam{x} 0)\;M$ would hold both $0$
-and $\omega$ when $M$ errs. Every operator is monotone, consistent and
-continuous (\texttt{agda/proof/Framework/GraphModel/\{ErrorOps,ErrorContinuity\}.agda}).
+and $\omega$ when $M$ errs. For the global definitions and the
+first-order languages there are also
+\begin{align*}
+  \Lambda\Lambda^{\omega}(F) &= \Lambda^{\omega}(\lambda X.\, \Lambda^{\omega}(\lambda Y.\, F(X, Y))) \qquad
+  \key{errcode} = \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \{\omega\}) \\
+  \key{strict}^{\omega}(D, E) &= \{ \omega \mid \omega \in D \} \cup \{ w \mid \mathit{val}(D),\; w \in E \} \\
+  \key{payload}^{\omega}(D) &= \{ v \mid (\Left{v} \in D \lor \Right{v} \in D),\; v \neq \omega \}
+    \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{inj}}(D) \}
+\end{align*}
+$\key{errcode}$ is the meaning of a reference to a definition that is
+not there: code whose call errs, as the machines err at the call.
+$\key{strict}^{\omega}(D, E)$ is a write of $D$ to a register or the flag
+followed by $E$. Every operator is monotone, consistent and continuous
+(\texttt{agda/proof/Framework/GraphModel/\{ErrorOps,ErrorContinuity\}.agda}).
 
 \subsection{Semantics}
 
@@ -4289,75 +4302,172 @@ $\key{inr}^{\omega}$, $\mathcal{C}^{\omega}$ and $\key{prim}^{\omega}_p$.
 For Clos3 and Clos4,
 \begin{align*}
   \SEM{\clos{r_1\ldots r_n}{e\, y} N}^{3,\omega}\rho &=
-    \Lambda^{\omega}(\lambda X.\, \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{3,\omega}\rho_0(e{:=}X, y{:=}Y)))
+    \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{3,\omega}\rho_0(e{:=}X, y{:=}Y))
     \app^{\omega} \mathcal{T}^{\omega}(\SEM{r_1}^{3,\omega}\rho, \ldots, \SEM{r_n}^{3,\omega}\rho) \\
-  \SEM{\fun{e\,y.\,N}}^{4,\omega}\rho &= \Lambda^{\omega}(\lambda X.\, \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{4,\omega}\rho_0(e{:=}X, y{:=}Y))) \\
+  \SEM{\fun{e\,y.\,N}}^{4,\omega}\rho &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{4,\omega}\rho_0(e{:=}X, y{:=}Y)) \\
   \SEM{L(M, N)}^{4,\omega}\rho &= \key{call}^{\omega}(\SEM{L}^{4,\omega}\rho, \SEM{M}^{4,\omega}\rho, \SEM{N}^{4,\omega}\rho) \\
   \SEM{\pair{M}{N}}^{4,\omega}\rho &= \key{pair}^{\omega}(\SEM{M}^{4,\omega}\rho, \SEM{N}^{4,\omega}\rho) \qquad
   \SEM{\FST M}^{4,\omega}\rho = \key{car}^{\omega}(\SEM{M}^{4,\omega}\rho)
 \end{align*}
 and $\key{snd}$ by $\key{cdr}^{\omega}$; Clos3's application is
-$\app^{\omega}$, with the early check. All four semantics are monotone and
-consistent, and continuous; for Clos2,
-whose closures run their bodies on the (possibly infinite) denotations of
-their free variables, continuity is proved by induction on the term
+$\app^{\omega}$, with the early check. All of these semantics are
+monotone, consistent and continuous; for Clos2, whose closures run their
+bodies on the (possibly infinite) denotations of their free variables,
+continuity is proved by induction on the term
 (\texttt{agda/proof/Semantics/GraphErr/Clos2Continuous.agda}).
+
+\paragraph{Clos5.} As Clos4, with the global definitions of the graph
+model's Clos5, except that a
+reference to a definition that is not there is $\key{errcode}$, not
+$\emptyset$:
+\begin{align*}
+  \SEM{\funref{k}}^{5,\omega}_T\rho &= T(k) \qquad
+  \key{code}^{\omega}_T(\key{fun}\; e\,y.\,N) = \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{5,\omega}_T\rho_0(e{:=}X, y{:=}Y)) \\
+  \key{table}^{\omega}(d_0,\ldots,d_{m-1})(k) &=
+    \begin{cases}
+      \key{code}^{\omega}_{\key{table}^{\omega}(d_0,\ldots,d_{k-1})}(d_k) & k < m \\
+      \key{errcode} & \text{otherwise}
+    \end{cases}
+\end{align*}
+
+\paragraph{Imp and CFG.} The atoms and simple expressions are those of
+the graph model with the
+error-propagating operators ($\mathcal{S}_\sigma(a_1(a_2, a_3)) =
+\key{call}^{\omega}(\mathcal{A}_\sigma(a_1), \mathcal{A}_\sigma(a_2),
+\mathcal{A}_\sigma(a_3))$), and the table gives $\key{errcode}$ for a
+missing definition. Reading a slot beyond the frame gives $\{\omega\}$,
+as before. Assigning one errs once the value assigned is computed:
+\[
+  \mathit{checked}^{\omega}_n(s, D, E) =
+    \begin{cases} E & s < n \\ \{ \omega \mid D \NE \} & \text{otherwise.} \end{cases}
+\]
+A body runs in a fresh frame of $\max(2, n)$ slots when called (and of
+$n$ for main), as in the machines. Writing $\SEM{e}\sigma\,\kappa$ for
+Imp's continuation-passing semantics and $\SEM{t}\sigma$ for CFG's:
+\begin{align*}
+  \SEM{\Casei{a}{s}{e_1}{e_2}}\sigma\,\kappa &= \mathit{checked}^{\omega}_n(s,
+    \key{payload}^{\omega}(\mathcal{A}_\sigma(a)),\;
+    \mathcal{C}^{\omega}(\mathcal{A}_\sigma(a),\; \lambda X.\, \SEM{e_1}\ext{\sigma}{s}{X}\,\kappa,\;
+      \lambda X.\, \SEM{e_2}\ext{\sigma}{s}{X}\,\kappa)) \\
+  \SEM{\assign{s}{e_1}{e_2}}\sigma\,\kappa &= \SEM{e_1}\sigma\,(\lambda D\, \sigma'.\,
+    \mathit{checked}^{\omega}_n(s, D, \Lambda^{\omega}(\lambda X.\, \SEM{e_2}\ext{\sigma'}{s}{X}\,\kappa) \app^{\omega} D)) \\
+  \SEM{\assign{s}{r}{t}}\sigma &= \mathit{checked}^{\omega}_n(s, \mathcal{S}_\sigma(r),
+    \Lambda^{\omega}(\lambda X.\, \SEM{t}\ext{\sigma}{s}{X}) \app^{\omega} \mathcal{S}_\sigma(r)) \\
+  \SEM{\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2}\sigma &=
+    \mathit{checked}^{\omega}_n(s, \key{payload}^{\omega}(\mathcal{A}_\sigma(a)),\; \mathcal{C}^{\omega}(\mathcal{A}_\sigma(a),\;
+      \lambda X.\, B(l_1)(\ext{\sigma}{s}{X}),\; \lambda X.\, B(l_2)(\ext{\sigma}{s}{X})))
+\end{align*}
+and a jump to a block that is not there is $\{\omega\}$. A case checks
+the tag first and then writes the slot, so a slot beyond the frame errs
+once the payload is computed.
+
+\paragraph{X86.} As in the graph model, with these differences. An unset
+register and the absent flag hold $\{\omega\}$, so that reading them
+errs: $\rdi$ and $\rsi$ in main, $\rax$ at the start of a definition,
+$\rdi$, $\rsi$ and the flag after a call. A write to a slot is
+$\mathit{checked}^{\omega}$ and $\Lambda^{\omega}$, as in CFG; a write to a
+register or the flag is $\key{strict}^{\omega}$:
+\begin{align*}
+  \key{put}_{\%g}(D, \kappa)(\sigma, \rho, \varphi) &= \key{strict}^{\omega}(D,\; \kappa(\sigma, \ext{\rho}{\%g}{D}, \varphi)) \qquad
+  \key{flag}(F, \kappa)(\sigma, \rho) = \key{strict}^{\omega}(F,\; \kappa(\sigma, \rho, F)) \\
+  \SEM{\key{callq}\; o}\kappa\,\sigma\,\rho\,\varphi &= \key{strict}^{\omega}(R,\; \kappa(\sigma, \key{called}(R), \{\omega\}))
+    \quad\text{where } R = \key{call}^{\omega}(\mathcal{O}(o), \rho(\rdi), \rho(\rsi)) \\
+  \key{isinl}^{\omega}(D) &= \key{isinl}(D) \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{inj}}(D) \} \qquad
+  \key{field}_{\key{payload}} = \key{payload}^{\omega}
+\end{align*}
+with $\key{called}(R)(\%g) = \{\omega\}$ and $\key{args}(X, Y)(\rax) =
+\{\omega\}$; $\key{alloc}$ of the wrong number of fields is $\{\omega\}$;
+$\key{cmpq}$ is $\key{prim}^{\omega}_{\key{eq}}$; $\key{je}$ is
+$\mathcal{C}^{\omega}$ on the flag; a missing block is $\{\omega\}$; and
+main runs with the flag $\{\omega\}$.
 
 \subsection{Correctness of the Passes}
 
-\begin{theorem}[Simplify and Enclose, with Errors]
-For every ISWIM term $M$ with $\FV(M) = \emptyset$,
-\[
-  \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{simplify}(M)}^{\mathrm{ISWIM},\omega}\rho_0
-  \qquad\text{and}\qquad
-  \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{enclose}(M)}^{2,\omega}\rho_0 .
-\]
-\end{theorem}
-The proofs are those of the graph model with environments that hold values and no $\omega$: simplify
-duplicates and drops only values, and a variable stands for a value, so
-the theorem is for closed terms (for an open one, $\Let y = x \In 0$
-becomes $0$, though $x$ errs in $\rho_0$); a closed term means the same in
-every environment. A Clos2 closure is an error when one of its free
-variables is, so enclose needs the variables a closure captures (those
-below the bound of the function) to have values and no errors.
-
-\begin{theorem}[Concretize and Delay, with Errors]
-For every Clos2 term $M$,
-$\SEM{M}^{2,\omega}\rho_0 \simeq \SEM{\pass{concretize}(M)}^{3,\omega}\rho_0$.
-For every Clos3 term $M$, writing $D = \SEM{M}^{3,\omega}\rho_0$ and
+\begin{theorem}[Each Pass, with Errors]
+For every closed ISWIM term $M$ (and, for optimize and rco, every
+well-scoped program, which the compiler produces),
+\begin{align*}
+  \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 &\simeq \SEM{\pass{simplify}(M)}^{\mathrm{ISWIM},\omega}\rho_0
+  \qquad
+  \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{enclose}(M)}^{2,\omega}\rho_0 \\
+  \SEM{M}^{2,\omega}\rho_0 &\simeq \SEM{\pass{optimize}(M)}^{2,\omega}\rho_0 \qquad
+  \SEM{M}^{2,\omega}\rho_0 \simeq \SEM{\pass{concretize}(M)}^{3,\omega}\rho_0 \\
+  \SEM{M}^{4,\omega}\rho_0 &\simeq \SEM{\pass{globalize}(M)}^{5,\omega} \qquad
+  \SEM{\pass{rco}(P)}^{5,\omega} \simeq \SEM{P}^{5,\omega} \qquad
+  \SEM{\pass{lift}(P)}^{\mathrm{ImpK},\omega} \simeq \SEM{P}^{5,\omega} \\
+  \SEM{\pass{explicate}(P)}^{\mathrm{CFG},\omega} &\simeq \SEM{P}^{\mathrm{ImpK},\omega} \qquad
+  \SEM{\pass{select}(P)}^{\mathrm{X86},\omega} \simeq \SEM{P}^{\mathrm{CFG},\omega}
+\end{align*}
+(lift locals for a program in monadic normal form). For every Clos3
+term $M$, writing $D = \SEM{M}^{3,\omega}\rho_0$ and
 $D' = \SEM{\pass{delay}(M)}^{4,\omega}\rho_0$,
 \[
   \omega \in D \iff \omega \in D', \qquad
   c \in D \iff c \in D', \qquad
-  (\exists d \in D.\; d \neq \omega) \iff (\exists d \in D'.\; d \neq \omega) .
+  \mathit{val}(D) \iff \mathit{val}(D') .
 \]
 \end{theorem}
-Delay changes the representation of closures, so, as in the graph model,
-it is proved in two directions: forward, by a relation between source
-values and target sets in which a source function is exhibited by a
-target pair of values; backward, by a relation indexed by finite lists of
-target observations, in which $\omega$ is an observation and every other
-target value corresponds to a source value of the same kind (a pair to a
-function), so that every target error is traced to a source error. The
-car of a target closure is a function, so the late check of the call
-never fails on delay's output. (Optimize is not yet proved in this model.)
+The proofs are those of the graph model with environments that hold
+values and no $\omega$. Simplify duplicates and drops only values, and a
+variable stands for a value, so the theorem is for closed terms (for an
+open one, $\Let y = x \In 0$ becomes $0$, though $x$ errs in $\rho_0$).
+A Clos2 closure is an error when one of its free variables is, so
+enclose needs the variables a closure captures to have values and no
+errors, and optimize, which drops the free variables a closure does not
+use, needs its input well scoped. Rco binds every operand by a
+$\key{let}$, so it needs that the variables of a well-scoped program
+hold values. Delay changes the representation of closures, so, as in the
+graph model, it is proved in two directions, with every target error
+traced to a source error. Select needs no precondition: both CFG and
+X86 run a called body in a frame of $\max(2, n)$ slots.
 
-\subsection{Adequacy for ISWIM}
+\begin{theorem}[The Compiler, with Errors]
+For every closed ISWIM term $M$, writing $D = \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0$
+and $D'$ for the meaning of $\pass{compile}(M)$ (Clos5),
+$\pass{compile\text{-}mon}(M)$, $\pass{compile\text{-}imp}(M)$,
+$\pass{compile\text{-}cfg}(M)$ or $\pass{compile\text{-}x86}(M)$,
+\[
+  \omega \in D \iff \omega \in D', \qquad
+  c \in D \iff c \in D', \qquad
+  \mathit{val}(D) \iff \mathit{val}(D') .
+\]
+\end{theorem}
+
+\subsection{Adequacy}
 
 \begin{theorem}[Adequacy, with Errors]
-For every ISWIM term $M$ with $\FV(M) = \emptyset$, writing
-$D = \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0$ and $L = \Mach{\mathrm{ISWIM}}(M)$,
+For every closed ISWIM term $M$, writing $D$ for
+$\SEM{M}^{\mathrm{ISWIM},\omega}\rho_0$ and $L$ for $\Mach{\mathrm{ISWIM}}(M)$
+(or $D$ for $\SEM{\pass{compile}(M)}^{5,\omega}$ and $L$ for
+$\Mach{\mathrm{Clos5}}(\pass{compile}(M))$, or $D$ for
+$\SEM{\pass{compile\text{-}x86}(M)}^{\mathrm{X86},\omega}$ and $L$ for
+$\Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))$),
 \begin{align*}
   \omega \in D &\iff \Term_L(\error) \\
   c \in D &\iff \Term_L(c) \\
-  (\exists d \in D.\; d \neq \omega) &\iff \exists o \neq \error.\; \Term_L(o) \\
+  \mathit{val}(D) &\iff \exists o \neq \error.\; \Term_L(o) \\
   D = \emptyset &\iff \Div_L .
 \end{align*}
 \end{theorem}
-So the graph model with errors tells all three outcomes of a run apart,
-as the operational theorems ($\Equiv$) do. Soundness (a run shrinks the
-denotation of the machine's state) and adequacy (a logical relation
-between values of the domain and of the machine, which relates $\omega$
-to a run that stops with an error) are as for the graph model.
+Soundness (a run shrinks the denotation of the machine's state) and
+adequacy (a logical relation between values of the domain and of the
+machine, which relates $\omega$ to a run that stops with an error) are as
+for the graph model.
+
+\begin{theorem}[End to End, with Errors]
+For every closed ISWIM term $M$, with $L = \Mach{\mathrm{ISWIM}}(M)$ and
+$L' = \Mach{\mathrm{Clos5}}(\pass{compile}(M))$ or
+$L' = \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))$,
+\[
+  \Term_L(\error) \iff \Term_{L'}(\error), \quad
+  \Term_L(c) \iff \Term_{L'}(c), \quad
+  (\exists o \neq \error.\; \Term_L(o)) \iff (\exists o \neq \error.\; \Term_{L'}(o)), \quad
+  \Div_L \iff \Div_{L'} .
+\]
+\end{theorem}
+This is $\Equiv$ for the observations of errors and constants, and for
+divergence; an answer that is not a constant (a function, a tuple, an
+injection) is observed only as an answer, since delay and the later
+passes change the representation of closures.
 
 \end{document}
