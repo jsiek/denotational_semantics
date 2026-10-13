@@ -41,7 +41,7 @@ that every module outside `proof/` is used by a theorem statement).
 
 * Theorem statements (`Theorems/`), each with its type written out and
   defined as the corresponding theorem of `proof/`:
-  * `Theorems/Denotational.agda`: each pass (and simplify) preserves the
+  * `Theorems/Denotational.agda`: each pass preserves the
     meaning of a program in the graph model (delay: its constants and whether it has
     any), and the whole compiler, into Clos5, monadic Clos5, Imp, CFG and X86,
     preserves the constants a program produces and whether it produces
@@ -52,8 +52,7 @@ that every module outside `proof/` is used by a theorem statement).
     wrong, and divergence exactly when the source diverges).
   * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
   * `Theorems/Reduction.agda`: the same, for the reduction semantics of
-    ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86, and for
-    simplify (closed programs).
+    ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86.
   * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
     the ISWIM machine, and for the Clos5 and X86 machines running
     compiled programs; so the compiler, observed through the machines
@@ -108,9 +107,13 @@ directory per style, and adequacy is in `proof/Adequacy/`:
 * `proof/Correctness/Graph/`: the denotational proofs of
   the passes, and `proof/Semantics/Graph/`: the monotonicity,
   consistency and continuity of the semantics;
-* `proof/Correctness/CEK/`: the forward simulations, and
+* `proof/Correctness/CEK/`: the forward simulations (for simplify,
+  `SimplifySim.agda`, of the target by the source, which may stutter),
+  and
   `proof/Semantics/CEK/`: the lemmas about runs of the machines;
-* `proof/Correctness/Interp/`: the clock-for-clock proofs, and
+* `proof/Correctness/Interp/`: the clock-for-clock proofs (for
+  simplify, `SimplifyFuel.agda`, clock-monotone instead: `clocked-le`,
+  `proof/Framework/Clocked.agda`), and
   `proof/Semantics/Interp/Clock.agda`: clock-for-clock correctness at
   this compiler's observations;
 * `proof/Correctness/Reduction/`: the forward simulations between

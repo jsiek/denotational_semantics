@@ -36,11 +36,11 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.ISWIM
 open import Language.Prim using (Out; int; bool; δ)
 open import proof.Compiler.SimplifyFacts as P
-  using (closed-ws; Info; _∣_; term; known; Facts; self; info; under; shift-info; simp; simp-args; simp-app; simp-let;
+  using (Info; _∣_; term; known; Facts; self; info; under; shift-info; simp; simp-args; simp-app; simp-let;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-sub; svs-sub; sv-rename; prim-term-sv; int-of-just; component-just)
 open import Compiler.EncloseScope using (Closed)
-open import proof.Compiler.SimplifyScope using (ws-proj; ws-prim-term)
+open import proof.Compiler.SimplifyScope using (closed-ws; ws-proj; ws-prim-term)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-wrong
 open import Semantics.Reduction.Smallstep using (Equivalent)

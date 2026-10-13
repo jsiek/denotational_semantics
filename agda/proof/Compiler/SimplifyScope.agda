@@ -14,7 +14,10 @@ import Language.Prim
 open import Language.Prim using (int; bool)
 open import Compiler.Simplify
 open import Compiler.EncloseScope using (Closed)
-open import proof.Compiler.SimplifyFacts using (closed-ws; comp-inv; branch-inl; branch-inr)
+open import proof.Compiler.SimplifyFacts using (comp-inv; branch-inl; branch-inr)
+open import Framework.Syntax.Uses Op sig using (bound; bound-args)
+open import Data.Nat using (_≤_; _⊔_; _∸_)
+open import Data.Nat.Properties using (m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o; ≤-trans; m≤n+m∸n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args; ws-bound)
 open import proof.Framework.Syntax.ScopeRename Op sig using (ws-shift)
@@ -29,7 +32,43 @@ open import Data.Nat using (ℕ; zero; suc; _<_; s≤s; z≤n)
 open import Data.Nat.Properties using (n≤0⇒n≡0)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Unit using (tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
+
+{- Closed programs ---------------------------------------------------------------}
+
+{- a closed program is well scoped -}
+private
+  l : ∀ m n {o} → m ⊔ n ≤ o → m ≤ o
+  l m n = m⊔n≤o⇒m≤o m n
+  r : ∀ m n {o} → m ⊔ n ≤ o → n ≤ o
+  r m n = m⊔n≤o⇒n≤o m n
+  bind≤ : ∀ m {k} → m ∸ 1 ≤ k → m ≤ suc k
+  bind≤ m le = ≤-trans (m≤n+m∸n m 1) (s≤s le)
+
+bound-ws : ∀ {k} M → bound M ≤ k → WS k M
+bound-ws-args : ∀ {k n} (as : Args (replicate n ■)) → bound-args as ≤ k → WS-args k as
+bound-ws (` x) le = le
+bound-ws (lam ⦅ ⟩ N ,, Nil ⦆) le = bound-ws N (bind≤ (bound N) (l (bound N ∸ 1) 0 le)) , tt
+bound-ws (app ⦅ L ,, M ,, Nil ⦆) le =
+  bound-ws L (l (bound L) _ le) , bound-ws M (l (bound M) 0 (r (bound L) (bound M ⊔ 0) le)) , tt
+bound-ws (lit B k ⦅ Nil ⦆) le = tt
+bound-ws (tuple n ⦅ as ⦆) le = bound-ws-args as le
+bound-ws (get i ⦅ M ,, Nil ⦆) le = bound-ws M (l (bound M) 0 le) , tt
+bound-ws (inl-op ⦅ M ,, Nil ⦆) le = bound-ws M (l (bound M) 0 le) , tt
+bound-ws (inr-op ⦅ M ,, Nil ⦆) le = bound-ws M (l (bound M) 0 le) , tt
+bound-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) le =
+  bound-ws L (l (bound L) _ le)
+  , bound-ws M (bind≤ (bound M) (l (bound M ∸ 1) _ le₁))
+  , bound-ws N (bind≤ (bound N) (l (bound N ∸ 1) 0 (r (bound M ∸ 1) _ le₁)))
+  , tt
+  where le₁ = r (bound L) ((bound M ∸ 1) ⊔ ((bound N ∸ 1) ⊔ 0)) le
+bound-ws (prim p ⦅ L ,, M ,, Nil ⦆) le =
+  bound-ws L (l (bound L) _ le) , bound-ws M (l (bound M) 0 (r (bound L) (bound M ⊔ 0) le)) , tt
+bound-ws-args {n = zero} Nil le = tt
+bound-ws-args {n = suc n} (M ,, as) le = bound-ws M (l (bound M) (bound-args as) le) , bound-ws-args as (r (bound M) (bound-args as) le)
+
+closed-ws : ∀ {M} → Closed M → WS 0 M
+closed-ws {M} c = bound-ws M (subst (_≤ 0) (sym c) z≤n)
 
 {- an Info is well scoped: its term, and its known value -}
 record WSI (j : ℕ) (I : Info) : Set where

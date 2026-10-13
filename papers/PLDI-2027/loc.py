@@ -124,12 +124,16 @@ GROUPS = [
     # each machine and interpreter
     ('den', 'semantics of the languages',
      [G + 'Prim.agda', GP + 'Prim.agda',
-      G + 'ISWIM.agda', GP + 'ISWIM.agda',
+      G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda',
       G + 'Clos2Iswim.agda', GP + 'Clos2Iswim.agda',
       G + 'Clos3Iswim.agda', GP + 'Clos3Iswim.agda', GP + 'Clos3IswimContinuous.agda',
       G + 'Clos4Iswim.agda', GP + 'Clos4Iswim.agda', GP + 'Clos4IswimContinuous.agda',
       G + 'Clos5Iswim.agda', GP + 'Clos5IswimContinuous.agda',
       G + 'Imp.agda', G + 'ImpK.agda', G + 'CFG.agda', G + 'X86.agda']),
+    # simplify's syntactic lemmas (SimplifyFacts) are used by all four of its
+    # proofs, so they are counted in the simplify row of each column
+    ('den+op+ck+red', 'simplify', [PC + 'SimplifyFacts.agda']),
+    ('den', 'simplify', [GC + 'SimplifyCorrect.agda']),
     ('den', 'enclose', [GC + 'EncloseCorrect.agda']),
     ('den', 'optimize', [GC + 'OptimizeCorrect.agda']),
     ('den', 'concretize', [GC + 'ConcretizeCorrect.agda']),
@@ -160,6 +164,7 @@ GROUPS = [
     ('op+red', 'semantics of the languages',
      [O + 'Values.agda', O + 'Imp.agda', O + 'CFG.agda', O + 'X86.agda',
       O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+    ('op', 'simplify', [OC + 'SimplifySim.agda']),
     ('op', 'enclose', [OC + 'EncloseSim.agda']),
     ('op', 'optimize', [OC + 'OptimizeSim.agda']),
     ('op', 'concretize', [OC + 'ConcretizeSim.agda']),
@@ -176,6 +181,7 @@ GROUPS = [
     # reduction semantics (substitution) for the languages with binders,
     # and the framework at this compiler's observations (Smallstep.agda)
     ('red', 'semantics of the languages', [RD + '*.agda', RP + '*.agda']),
+    ('red', 'simplify', [RC + 'SimplifyRed.agda']),
     ('red', 'enclose', [RC + 'EncloseRed.agda']),
     ('red', 'optimize', [RC + 'OptimizeRed.agda']),
     ('red', 'concretize', [RC + 'ConcretizeRed.agda']),
@@ -187,6 +193,7 @@ GROUPS = [
 
     # with the framework at this compiler's observations (Clock.agda)
     ('ck', 'semantics of the languages', [F + '*.agda', FP + 'Clock.agda']),
+    ('ck', 'simplify', [FC + 'SimplifyFuel.agda']),
     ('ck', 'enclose', [FC + 'EncloseFuel.agda']),
     ('ck', 'optimize', [FC + 'OptimizeFuel.agda']),
     ('ck', 'concretize', [FC + 'ConcretizeFuel.agda']),
@@ -200,7 +207,7 @@ GROUPS = [
 
     ('adeq', 'ISWIM',
      [AP + 'Common.agda', AP + 'Soundness.agda', AP + 'LogRel.agda',
-      AP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda']),
+      AP + 'ISWIM.agda']),
     ('adeq', 'Clos5',
      [AP + 'Clos5Common.agda', AP + 'Clos5Soundness.agda', AP + 'Clos5LogRel.agda',
       AP + 'Clos5.agda', AP + 'Values.agda']),
@@ -211,14 +218,6 @@ GROUPS = [
      [AP + 'Clos5WF.agda', AP + 'CompileWF.agda', AP + 'X86WF.agda',
       AP + 'X86CompileWF.agda']),
     ('adeq', 'end to end', [AP + 'EndToEnd.agda']),
-
-    # not in the totals yet: simplify (ISWIM → ISWIM, before enclose), proved
-    # in two styles only, and not yet part of compile.  The pass and its
-    # syntactic lemmas (SV, …), used by both proofs, are 'simp'; each proof
-    # is 'simp-den' or 'simp-red'.  Printed after the totals.
-    ('simp', 'simplify: the pass', [C + 'Simplify.agda', PC + 'Simplify.agda']),
-    ('simp-den', 'simplify', [GC + 'SimplifyCorrect.agda']),
-    ('simp-red', 'simplify', [RC + 'SimplifyRed.agda']),
 
     ('examples', 'examples',
      [GC + '*Example.agda', PC + 'Examples/*.agda']),
@@ -428,7 +427,7 @@ def main():
     extra['adeq'] = sorted((shared & reach['adeq']) - by_all - set(extra['den']))
     unused = sorted(shared - set().union(*(reach[s] for s in own)))
 
-    rows = ['semantics of the languages', 'enclose', 'optimize', 'concretize',
+    rows = ['semantics of the languages', 'simplify', 'enclose', 'optimize', 'concretize',
             'delay', 'globalize', 'rco', 'lift locals', 'explicate control',
             'select instructions',
             'composition']
@@ -449,22 +448,6 @@ def main():
         cells.append(str(n) if extra[side] else '—')
     print(f'| {EXTRA} | ' + ' | '.join(cells) + ' |')
     print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in SIDES) + ' |')
-    print()
-
-    # simplify: not in the totals until all four proofs have it
-    simp_lemmas = code_lines(PC + 'Simplify.agda')
-    simp_pass = code_lines(C + 'Simplify.agda')
-    cells = []
-    for side in SIDES:
-        n = counts.get(('simp-' + side, 'simplify'))
-        cells.append(f'{n + simp_lemmas} ({n} + {simp_lemmas})' if n is not None else '—')
-    print('| pass not yet in `compile` (not in the totals) | ' + ' | '.join(LABELS[s] for s in SIDES) + ' |')
-    print('|---|' + '---:|' * len(SIDES))
-    print('| simplify | ' + ' | '.join(cells) + ' |')
-    print()
-    print(f'Each simplify cell is its proof plus the syntactic lemmas about the pass that both '
-          f'proofs use (`proof/Compiler/Simplify.agda`, {simp_lemmas} lines). The pass itself '
-          f'(`Compiler/Simplify.agda`) is {simp_pass} lines, not counted, as no pass is.')
     print()
 
     def lines(us):
@@ -513,7 +496,7 @@ def main():
         side, name = seen[f]
         if side == 'thm':
             return 'statements'
-        if side in ('shared', 'simp') or (side == 'infra' and name in (
+        if side == 'shared' or (side == 'infra' and name in (
                 'abstract binding trees', 'syntax lemmas (renaming, scoping, uses), list lookups',
                 'base types, logical equivalence')):
             return 'shared'
