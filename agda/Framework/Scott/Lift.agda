@@ -82,23 +82,23 @@ module _ (A B : DCPO₁) where
  𝓛mapᵈ : DCPO[ A , B ] → DCPO[ 𝓛ᵈ A , 𝓛ᵈ B ]
  𝓛mapᵈ m = 𝓛map m , 𝓛map-is-continuous m
 
- 𝓛map-is-continuous-in-map : (l : ⟨ 𝓛ᵈ A ⟩) → is-continuous (A ⟹ᵈᶜᵖᵒ B) (𝓛ᵈ B) (λ m → 𝓛map m l)
+ 𝓛map-is-continuous-in-map : (l : ⟨ 𝓛ᵈ A ⟩) → is-continuous (A ⟹₁ B) (𝓛ᵈ B) (λ m → 𝓛map m l)
  𝓛map-is-continuous-in-map (P , φ , i) I α δ = ub , lub
   where
-   ε : (p : P) → is-Directed B (pointwise-family A B α (φ p))
-   ε p = pointwise-family-is-directed A B α δ (φ p)
-   ub : (j : I) → 𝓛map (α j) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ 𝓛map (∐ (A ⟹ᵈᶜᵖᵒ B) {I} {α} δ) (P , φ , i)
+   ε : (p : P) → is-Directed B (λ j → α j · φ p)
+   ε p = pointwise-directed A B α δ (φ p)
+   ub : (j : I) → 𝓛map (α j) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ 𝓛map (∐ (A ⟹₁ B) {I} {α} δ) (P , φ , i)
    ub j = id , (λ p → ∐-is-upperbound B (ε p) j)
    lub : (l : ⟨ 𝓛ᵈ B ⟩) → ((j : I) → 𝓛map (α j) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l)
-       → 𝓛map (∐ (A ⟹ᵈᶜᵖᵒ B) {I} {α} δ) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l
+       → 𝓛map (∐ (A ⟹₁ B) {I} {α} δ) (P , φ , i) ⊑⟨ 𝓛ᵈ B ⟩ l
    lub l u = g , r
     where
      g : P → is-defined l
-     g p = ∥∥-rec (being-defined-is-prop l) (λ j → pr₁ (u j) p) (inhabited-if-Directed (A ⟹ᵈᶜᵖᵒ B) α δ)
+     g p = ∥∥-rec (being-defined-is-prop l) (λ j → pr₁ (u j) p) (inhabited-if-Directed (A ⟹₁ B) α δ)
      r : (p : P) → ∐ B (ε p) ⊑⟨ B ⟩ value l (g p)
      r p = ∐-is-lowerbound-of-upperbounds B (ε p) (value l (g p))
             (λ j → transitivity B _ _ _ (pr₂ (u j) p)
                      (＝-to-⊑ B (value-is-constant l (pr₁ (u j) p) (g p))))
 
- 𝓛mapᶜ : DCPO[ A ⟹ᵈᶜᵖᵒ B , 𝓛ᵈ A ⟹ᵈᶜᵖᵒ 𝓛ᵈ B ]
- 𝓛mapᶜ = 𝓛mapᵈ , to-exp-continuous (A ⟹ᵈᶜᵖᵒ B) (𝓛ᵈ A) (𝓛ᵈ B) 𝓛mapᵈ 𝓛map-is-continuous-in-map
+ 𝓛mapᶜ : DCPO[ A ⟹₁ B , 𝓛ᵈ A ⟹₁ 𝓛ᵈ B ]
+ 𝓛mapᶜ = to-exp₁ (A ⟹₁ B) (𝓛ᵈ A) (𝓛ᵈ B) 𝓛mapᵈ 𝓛map-is-continuous-in-map

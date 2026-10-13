@@ -33,7 +33,7 @@ open import Framework.Scott.Lift pt fe pe
 {- the argument of the action of a functor on maps: a pair of maps in
    opposite directions -}
 Maps : DCPO₁ → DCPO₁ → DCPO₁
-Maps A B = (A ⟹ᵈᶜᵖᵒ B) ×ᵈᶜᵖᵒ (B ⟹ᵈᶜᵖᵒ A)
+Maps A B = (A ⟹₁ B) ×₁ (B ⟹₁ A)
 
 record Functor : 𝓤₂ ̇ where
  field
@@ -59,14 +59,11 @@ act-at : (F : Functor) (A B : DCPO₁) (x : ⟨ obj F A ⟩) → DCPO[ Maps A B 
 act-at F A B x = (λ p → fmap F A B (pr₁ p) (pr₂ p) x) , fmap-is-locally-continuous F A B x
 
 {- the action, jointly continuous in the pair and the point -}
-act-joint : (F : Functor) (A B : DCPO₁) → DCPO[ Maps A B ×ᵈᶜᵖᵒ obj F A , obj F B ]
-act-joint F A B = j ,
-  continuous-in-arguments→continuous (Maps A B) (obj F A) (obj F B) j
+act-joint : (F : Functor) (A B : DCPO₁) → DCPO[ Maps A B ×₁ obj F A , obj F B ]
+act-joint F A B = (λ q → fmap F A B (pr₁ (pr₁ q)) (pr₂ (pr₁ q)) (pr₂ q)) ,
+  uncurried-continuous (Maps A B) (obj F A) {obj F B} (λ p x → fmap F A B (pr₁ p) (pr₂ p) x)
     (λ x → fmap-is-locally-continuous F A B x)
     (λ p → fmap-is-continuous F A B (pr₁ p) (pr₂ p))
- where
-  j : ⟨ Maps A B ×ᵈᶜᵖᵒ obj F A ⟩ → ⟨ obj F B ⟩
-  j (p , x) = fmap F A B (pr₁ p) (pr₂ p) x
 
 {- The identity -------------------------------------------------------------}
 
@@ -75,8 +72,7 @@ Idᶠ = record { obj = λ A → A
              ; fmap = λ A B f g x → f · x
              ; fmap-is-continuous = λ A B f g → pr₂ f
              ; fmap-is-locally-continuous = λ A B x →
-                 pr₂ (DCPO-∘ (Maps A B) (A ⟹ᵈᶜᵖᵒ B) B (pr₁-is-continuous (A ⟹ᵈᶜᵖᵒ B) (B ⟹ᵈᶜᵖᵒ A))
-                        (at-point A B x))
+                 pr₂ (∘₁ (Maps A B) (A ⟹₁ B) B (fst₁ (A ⟹₁ B) (B ⟹₁ A)) (at-point₁ A B x))
              ; fmap-id = λ A x → refl
              ; fmap-∘ = λ A B C f g f' g' x → refl }
 
@@ -98,7 +94,7 @@ Powᶠ I G =
         ; fmap = λ A B f g x i → fmap G A B f g (x i)
         ; fmap-is-continuous = λ A B f g →
             to-Pow-continuous I (obj G B) (Pow I (obj G A)) (λ x i → fmap G A B f g (x i))
-              (λ i → pr₂ (DCPO-∘ (Pow I (obj G A)) (obj G A) (obj G B) (at I (obj G A) i) (act G f g)))
+              (λ i → pr₂ (∘₁ (Pow I (obj G A)) (obj G A) (obj G B) (at I (obj G A) i) (act G f g)))
         ; fmap-is-locally-continuous = λ A B x →
             to-Pow-continuous I (obj G B) (Maps A B) (λ p i → fmap G A B (pr₁ p) (pr₂ p) (x i)) (λ i → pr₂ (act-at G A B (x i)))
         ; fmap-id = λ A x → dfunext fe (λ i → fmap-id G A (x i))
@@ -108,13 +104,15 @@ Powᶠ I G =
 
 Expᶠ : Functor → Functor → Functor
 Expᶠ G H =
- record { obj = λ A → obj G A ⟹ᵈᶜᵖᵒ obj H A
+ record { obj = λ A → obj G A ⟹₁ obj H A
         ; fmap = k
         ; fmap-is-continuous = λ A B f g →
-            DCPO-∘₃-is-continuous₂ (obj G B) (obj G A) (obj H A) (obj H B) (act G g f) (act H f g)
+            pr₂ (∘₁ (obj G A ⟹₁ obj H A) (obj G A ⟹₁ obj H B) (obj G B ⟹₁ obj H B)
+                   (post₁ (obj G A) (obj H A) (obj H B) (act H f g))
+                   (pre₁ (obj G B) (obj G A) (obj H B) (act G g f)))
         ; fmap-is-locally-continuous = λ A B h →
-            to-exp-continuous (Maps A B) (obj G B) (obj H B) (λ p → k A B (pr₁ p) (pr₂ p) h)
-              (λ y → pr₂ (c A B h y))
+            pr₂ (to-exp₁ (Maps A B) (obj G B) (obj H B) (λ p → k A B (pr₁ p) (pr₂ p) h)
+                   (λ y → pr₂ (c A B h y)))
         ; fmap-id = λ A h → to-continuous-function-＝ (obj G A) (obj H A)
                               (λ y → fmap-id H A _ ∙ ap (pr₁ h) (fmap-id G A y))
         ; fmap-∘ = λ A B C f g f' g' h → to-continuous-function-＝ (obj G C) (obj H C)
@@ -124,17 +122,15 @@ Expᶠ G H =
  where
   k : (A B : DCPO₁) → DCPO[ A , B ] → DCPO[ B , A ]
     → DCPO[ obj G A , obj H A ] → DCPO[ obj G B , obj H B ]
-  k A B f g h = DCPO-∘₃ (obj G B) (obj G A) (obj H A) (obj H B) (act G g f) h (act H f g)
+  k A B f g h = ∘₁ (obj G B) (obj G A) (obj H B) (act G g f) (∘₁ (obj G A) (obj H A) (obj H B) h (act H f g))
   swap : (A B : DCPO₁) → DCPO[ Maps A B , Maps B A ]
-  swap A B = pairᶜ (Maps A B) (B ⟹ᵈᶜᵖᵒ A) (A ⟹ᵈᶜᵖᵒ B)
-               (pr₂-is-continuous (A ⟹ᵈᶜᵖᵒ B) (B ⟹ᵈᶜᵖᵒ A))
-               (pr₁-is-continuous (A ⟹ᵈᶜᵖᵒ B) (B ⟹ᵈᶜᵖᵒ A))
+  swap A B = pair₁ (Maps A B) (B ⟹₁ A) (A ⟹₁ B) (snd₁ (A ⟹₁ B) (B ⟹₁ A)) (fst₁ (A ⟹₁ B) (B ⟹₁ A))
   {- p ↦ H(p) (h (G(swap p) y)) -}
   c : (A B : DCPO₁) (h : DCPO[ obj G A , obj H A ]) (y : ⟨ obj G B ⟩) → DCPO[ Maps A B , obj H B ]
-  c A B h y = DCPO-∘ (Maps A B) (Maps A B ×ᵈᶜᵖᵒ obj H A) (obj H B)
-                (pairᶜ (Maps A B) (Maps A B) (obj H A) (idᶜ (Maps A B))
-                   (DCPO-∘ (Maps A B) (obj G A) (obj H A)
-                      (DCPO-∘ (Maps A B) (Maps B A) (obj G A) (swap A B) (act-at G B A y)) h))
+  c A B h y = ∘₁ (Maps A B) (Maps A B ×₁ obj H A) (obj H B)
+                (pair₁ (Maps A B) (Maps A B) (obj H A) (id₁ (Maps A B))
+                   (∘₁ (Maps A B) (obj G A) (obj H A)
+                      (∘₁ (Maps A B) (Maps B A) (obj G A) (swap A B) (act-at G B A y)) h))
                 (act-joint H A B)
 
 {- Sums ------------------------------------------------------------------------}
@@ -145,9 +141,9 @@ Expᶠ G H =
         ; fmap = λ A B f g (t , x) → t , fmap (G t) A B f g x
         ; fmap-is-continuous = λ A B f g →
             pr₂ (copair T T-is-set (λ t → obj (G t) A) (O B)
-                  (λ t → DCPO-∘ (obj (G t) A) (obj (G t) B) (O B) (act (G t) f g) (ι' B t)))
+                  (λ t → ∘₁ (obj (G t) A) (obj (G t) B) (O B) (act (G t) f g) (ι' B t)))
         ; fmap-is-locally-continuous = λ A B (t , x) →
-            pr₂ (DCPO-∘ (Maps A B) (obj (G t) B) (O B) (act-at (G t) A B x) (ι' B t))
+            pr₂ (∘₁ (Maps A B) (obj (G t) B) (O B) (act-at (G t) A B x) (ι' B t))
         ; fmap-id = λ A (t , x) → ap (t ,_) (fmap-id (G t) A x)
         ; fmap-∘ = λ A B C f g f' g' (t , x) → ap (t ,_) (fmap-∘ (G t) A B C f g f' g' x) }
  where
@@ -164,9 +160,8 @@ Liftᶠ G =
         ; fmap = λ A B f g → 𝓛map (obj G A) (obj G B) (act G f g)
         ; fmap-is-continuous = λ A B f g → 𝓛map-is-continuous (obj G A) (obj G B) (act G f g)
         ; fmap-is-locally-continuous = λ A B l →
-            pr₂ (DCPO-∘ (Maps A B) (obj G A ⟹ᵈᶜᵖᵒ obj G B) (𝓛ᵈ (obj G B))
-                   ((λ p → act G (pr₁ p) (pr₂ p)) ,
-                    to-exp-continuous (Maps A B) (obj G A) (obj G B) (λ p → act G (pr₁ p) (pr₂ p)) (λ x → pr₂ (act-at G A B x)))
+            pr₂ (∘₁ (Maps A B) (obj G A ⟹₁ obj G B) (𝓛ᵈ (obj G B))
+                   (to-exp₁ (Maps A B) (obj G A) (obj G B) (λ p → act G (pr₁ p) (pr₂ p)) (λ x → pr₂ (act-at G A B x)))
                    ((λ m → 𝓛map (obj G A) (obj G B) m l) ,
                     𝓛map-is-continuous-in-map (obj G A) (obj G B) l))
         ; fmap-id = λ A (P , φ , i) → ap (λ - → P , - , i) (dfunext fe (λ p → fmap-id G A (φ p)))

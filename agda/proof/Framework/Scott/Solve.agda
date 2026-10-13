@@ -50,7 +50,7 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   E = obj F D∞
 
   fmap-mono : (A B : DCPO₁) (x : ⟨ obj F A ⟩) (f f' : DCPO[ A , B ]) (g g' : DCPO[ B , A ])
-    → f ⊑⟨ A ⟹ᵈᶜᵖᵒ B ⟩ f' → g ⊑⟨ B ⟹ᵈᶜᵖᵒ A ⟩ g'
+    → f ⊑⟨ A ⟹₁ B ⟩ f' → g ⊑⟨ B ⟹₁ A ⟩ g'
     → fmap F A B f g x ⊑⟨ obj F B ⟩ fmap F A B f' g' x
   fmap-mono A B x f f' g g' u v =
    monotone-if-continuous (Maps A B) (obj F B) (act-at F A B x) (f , g) (f' , g') (u , v)
@@ -59,7 +59,7 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
   e : ℕ → DCPO[ D∞ , D∞ ]
   e n = ∘₁ D∞ (𝓓 n) D∞ (π∞₁ n) (ε∞₁ n)
 
-  e-mono : (m n : ℕ) → m ≤ n → e m ⊑⟨ D∞ ⟹ᵈᶜᵖᵒ D∞ ⟩ e n
+  e-mono : (m n : ℕ) → m ≤ n → e m ⊑⟨ D∞ ⟹₁ D∞ ⟩ e n
   e-mono m n l σ = ε∞π∞-mono σ m n l
 
   πε-id : (n : ℕ) → ∘₁ (𝓓 n) D∞ (𝓓 n) (ε∞₁ n) (π∞₁ n) ＝ id₁ (𝓓 n)
@@ -133,23 +133,23 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
  {- unfold (fold φ) = φ ----------------------------------------------------}
 
  private
-  ∐e-is-id : (δ : is-Directed (D∞ ⟹ᵈᶜᵖᵒ D∞) e) → ∐ (D∞ ⟹ᵈᶜᵖᵒ D∞) {ℕ} {e} δ ＝ id₁ D∞
-  ∐e-is-id δ = to-continuous-function-＝ D∞ D∞ {∐ (D∞ ⟹ᵈᶜᵖᵒ D∞) {ℕ} {e} δ} {id₁ D∞}
-               (λ σ → antisymmetry D∞ (∐ D∞ (pointwise-family-is-directed D∞ D∞ e δ σ)) σ
-                        (∐-is-lowerbound-of-upperbounds D∞ (pointwise-family-is-directed D∞ D∞ e δ σ) σ
+  ∐e-is-id : (δ : is-Directed (D∞ ⟹₁ D∞) e) → ∐ (D∞ ⟹₁ D∞) {ℕ} {e} δ ＝ id₁ D∞
+  ∐e-is-id δ = to-continuous-function-＝ D∞ D∞ {∐ (D∞ ⟹₁ D∞) {ℕ} {e} δ} {id₁ D∞}
+               (λ σ → antisymmetry D∞ (∐ D∞ (pointwise-directed D∞ D∞ e δ σ)) σ
+                        (∐-is-lowerbound-of-upperbounds D∞ (pointwise-directed D∞ D∞ e δ σ) σ
                            (λ n → ε∞π∞-below n σ))
                         (sup-is-lowerbound-of-upperbounds (underlying-order D∞) (ε∞π∞-sup σ)
-                           (∐ D∞ (pointwise-family-is-directed D∞ D∞ e δ σ))
-                           (∐-is-upperbound D∞ (pointwise-family-is-directed D∞ D∞ e δ σ))))
+                           (∐ D∞ (pointwise-directed D∞ D∞ e δ σ))
+                           (∐-is-upperbound D∞ (pointwise-directed D∞ D∞ e δ σ))))
 
-  e-directed : is-Directed (D∞ ⟹ᵈᶜᵖᵒ D∞) e
+  e-directed : is-Directed (D∞ ⟹₁ D∞) e
   e-directed = ∣ 0 ∣ , (λ m n → ∣ m +' n , e-mono m (m +' n) (≤-+ m n) , e-mono n (m +' n) (≤-+' m n) ∣)
 
   {- f ↦ F(f , f) φ, continuously -}
-  diag : (φ : ⟨ E ⟩) → DCPO[ D∞ ⟹ᵈᶜᵖᵒ D∞ , E ]
-  diag φ = DCPO-∘ (D∞ ⟹ᵈᶜᵖᵒ D∞) (Maps D∞ D∞) E
-             (pairᶜ (D∞ ⟹ᵈᶜᵖᵒ D∞) (D∞ ⟹ᵈᶜᵖᵒ D∞) (D∞ ⟹ᵈᶜᵖᵒ D∞)
-                (idᶜ (D∞ ⟹ᵈᶜᵖᵒ D∞)) (idᶜ (D∞ ⟹ᵈᶜᵖᵒ D∞)))
+  diag : (φ : ⟨ E ⟩) → DCPO[ D∞ ⟹₁ D∞ , E ]
+  diag φ = ∘₁ (D∞ ⟹₁ D∞) (Maps D∞ D∞) E
+             (pair₁ (D∞ ⟹₁ D∞) (D∞ ⟹₁ D∞) (D∞ ⟹₁ D∞)
+                (id₁ (D∞ ⟹₁ D∞)) (id₁ (D∞ ⟹₁ D∞)))
              (act-at F D∞ D∞ φ)
 
  unfold-fold : (φ : ⟨ E ⟩) → unfold · (fold · φ) ＝ φ
@@ -179,13 +179,13 @@ module SolutionIso (F : Functor) (F⊥ : (A : DCPO₁) → has-bottom (obj F A))
 
    b : φ ⊑⟨ E ⟩ unfold · (fold · φ)
    b = transport₂ (λ - -' → - ⊑⟨ E ⟩ -') p ((unfold-is-sup (fold · φ)) ⁻¹)
-        (transitivity E (diag φ · ∐ (D∞ ⟹ᵈᶜᵖᵒ D∞) {ℕ} {e} e-directed)
-           (∐ E (image-is-directed' (D∞ ⟹ᵈᶜᵖᵒ D∞) E (diag φ) {ℕ} {e} e-directed)) (∐ E δf)
-           (continuous-∐-⊑ (D∞ ⟹ᵈᶜᵖᵒ D∞) E (diag φ) {ℕ} {e} e-directed)
+        (transitivity E (diag φ · ∐ (D∞ ⟹₁ D∞) {ℕ} {e} e-directed)
+           (∐ E (image-is-directed' (D∞ ⟹₁ D∞) E (diag φ) {ℕ} {e} e-directed)) (∐ E δf)
+           (continuous-∐-⊑ (D∞ ⟹₁ D∞) E (diag φ) {ℕ} {e} e-directed)
            (∐-is-lowerbound-of-upperbounds E
-             (image-is-directed' (D∞ ⟹ᵈᶜᵖᵒ D∞) E (diag φ) {ℕ} {e} e-directed) (∐ E δf)
+             (image-is-directed' (D∞ ⟹₁ D∞) E (diag φ) {ℕ} {e} e-directed) (∐ E δf)
              (λ n → transport (λ - → - ⊑⟨ E ⟩ ∐ E δf) (cf-succ n)
                       (∐-is-upperbound E δf (succ n)))))
     where
-     p : diag φ · ∐ (D∞ ⟹ᵈᶜᵖᵒ D∞) {ℕ} {e} e-directed ＝ φ
+     p : diag φ · ∐ (D∞ ⟹₁ D∞) {ℕ} {e} e-directed ＝ φ
      p = ap (λ f → fmap F D∞ D∞ f f φ) (∐e-is-id e-directed) ∙ fmap-id F D∞ φ

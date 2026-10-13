@@ -132,7 +132,10 @@ module _ (T : 𝓤₀ ̇ ) (T-is-set : is-set T) (G : T → DCPO₁) where
  Σᵈ : DCPO₁
  Σᵈ = Σ C , _⊑Σ_
     , (Σ-is-set T-is-set (λ t → sethood (G t)) , ⊑Σ-prop , ⊑Σ-refl , ⊑Σ-trans , ⊑Σ-antisym)
-    , (λ I α δ → ∐Σ α δ , ∐Σ-is-sup α δ)
+    , Σ-dc
+  where
+   Σ-dc : (I : 𝓤₀ ̇ ) (α : I → Σ C) → is-directed _⊑Σ_ α → has-sup _⊑Σ_ α
+   Σ-dc I α δ = ∐Σ α δ , ∐Σ-is-sup α δ
 
  {- the injections -}
  ι : (t : T) → DCPO[ G t , Σᵈ ]
