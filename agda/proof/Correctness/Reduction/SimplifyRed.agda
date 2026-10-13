@@ -25,7 +25,12 @@
   what simp E M says of M is true of sub τ M (Desc): its term, after υ,
   is related to sub τ M, and so is its known value. A known value of a
   term, a value K with sub υ K ≼ sub τ M, is reached by the source:
-  sub τ M steps to a value related to sub υ K (eval-sv).
+  sub τ M steps to a value related to sub υ K (eval-sv). A known function
+  λ N is reached by the source too, as λ N closed by a substitution of
+  whose variables N's Facts are true (KDesc), so a call that simplify
+  inlined is the source reaching the function, then β. A value bound by
+  copy propagation keeps what is known of it: by determinism (det), the
+  source reaches the same value either way (desc-to).
 
 -}
 
@@ -36,7 +41,8 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.ISWIM
 open import Language.Prim using (Out; int; bool; δ)
 open import proof.Compiler.SimplifyFacts as P
-  using (Info; _∣_; term; known; Facts; self; info; under; shift-info; simp; simp-args; simp-app; simp-let;
+  using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
+         simp; simp-args; simp-app; lam?; is-lam; other; simp-call; simp-let; size; inline-size; inline-fuel;
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-sub; svs-sub; sv-rename; prim-term-sv; int-of-just; component-just)
 open import Compiler.EncloseScope using (Closed)
@@ -64,7 +70,8 @@ open import Data.List using (replicate; _∷_)
 import Data.Maybe
 import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Maybe using (just; nothing; map)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _⊔_; _∸_; s≤s; z≤n)
+open import Data.Maybe.Properties using (just-injective)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _⊔_; _∸_; s≤s; z≤n; _≤ᵇ_)
 open import Data.Nat.Properties using (m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o; ≤-trans; m≤n+m∸n)
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
 open import Data.Unit using (⊤; tt)
@@ -109,6 +116,7 @@ data _⟶s_ : ∀ {n} → Args (replicate n ■) → Args (replicate n ■) → 
 
 data _⟶_ where
   β : ∀ {N V} → SV V → app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, V ,, Nil ⦆ ⟶ N [ V ]
+  app₁ : ∀ {L L' M} → L ⟶ L' → app ⦅ L ,, M ,, Nil ⦆ ⟶ app ⦅ L' ,, M ,, Nil ⦆
   app₂ : ∀ {N M M'} → M ⟶ M' → app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, M ,, Nil ⦆ ⟶ app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, M' ,, Nil ⦆
   tuple : ∀ {n as as'} → as ⟶s as' → tuple n ⦅ as ⦆ ⟶ tuple n ⦅ as' ⦆
   get : ∀ {n m} {i : Fin n} {as : Args (replicate m ■)} {V}
@@ -138,6 +146,53 @@ sv-nostep (P.inl v) (inl₁ s) = sv-nostep v s
 sv-nostep (P.inr v) (inr₁ s) = sv-nostep v s
 svs-nostep (v P.∷ vs) (here s) = sv-nostep v s
 svs-nostep (v P.∷ vs) (there _ s) = svs-nostep vs s
+
+{- reduction is deterministic -}
+det : ∀ {M M₁ M₂} → M ⟶ M₁ → M ⟶ M₂ → M₁ ≡ M₂
+dets : ∀ {n} {as as₁ as₂ : Args (replicate n ■)} → as ⟶s as₁ → as ⟶s as₂ → as₁ ≡ as₂
+det (β v) (β _) = refl
+det (β v) (app₂ s) = ⊥-elim (sv-nostep v s)
+det (app₂ s) (β v) = ⊥-elim (sv-nostep v s)
+det (app₂ s) (app₂ s') = cong (λ X → app ⦅ _ ,, X ,, Nil ⦆) (det s s')
+det (app₁ s) (app₁ s') = cong (λ X → app ⦅ X ,, _ ,, Nil ⦆) (det s s')
+det (app₁ s) (β _) = ⊥-elim (sv-nostep P.lam s)
+det (app₁ s) (app₂ _) = ⊥-elim (sv-nostep P.lam s)
+det (β _) (app₁ s) = ⊥-elim (sv-nostep P.lam s)
+det (app₂ _) (app₁ s) = ⊥-elim (sv-nostep P.lam s)
+det (tuple s) (tuple s') = cong (λ X → tuple _ ⦅ X ⦆) (dets s s')
+det (get vs e) (get _ e') = just-injective (trans (sym e) e')
+det (get vs e) (get₁ s) = ⊥-elim (sv-nostep (P.tuple vs) s)
+det (get₁ s) (get vs e) = ⊥-elim (sv-nostep (P.tuple vs) s)
+det (get₁ s) (get₁ s') = cong (λ X → get _ ⦅ X ,, Nil ⦆) (det s s')
+det (inl₁ s) (inl₁ s') = cong (λ X → inl-op ⦅ X ,, Nil ⦆) (det s s')
+det (inr₁ s) (inr₁ s') = cong (λ X → inr-op ⦅ X ,, Nil ⦆) (det s s')
+det (case-l v) (case-l _) = refl
+det (case-l v) (case₁ s) = ⊥-elim (sv-nostep (P.inl v) s)
+det (case-r v) (case-r _) = refl
+det (case-r v) (case₁ s) = ⊥-elim (sv-nostep (P.inr v) s)
+det (case₁ s) (case-l v) = ⊥-elim (sv-nostep (P.inl v) s)
+det (case₁ s) (case-r v) = ⊥-elim (sv-nostep (P.inr v) s)
+det (case₁ s) (case₁ s') = cong (λ X → case-op ⦅ X ,, ⟩ _ ,, ⟩ _ ,, Nil ⦆) (det s s')
+det prim prim = refl
+det prim (prim₁ s) = ⊥-elim (sv-nostep P.lit s)
+det prim (prim₂ _ s) = ⊥-elim (sv-nostep P.lit s)
+det (prim₁ s) prim = ⊥-elim (sv-nostep P.lit s)
+det (prim₁ s) (prim₁ s') = cong (λ X → prim _ ⦅ X ,, _ ,, Nil ⦆) (det s s')
+det (prim₁ s) (prim₂ v _) = ⊥-elim (sv-nostep v s)
+det (prim₂ _ s) prim = ⊥-elim (sv-nostep P.lit s)
+det (prim₂ v _) (prim₁ s) = ⊥-elim (sv-nostep v s)
+det (prim₂ _ s) (prim₂ _ s') = cong (λ X → prim _ ⦅ _ ,, X ,, Nil ⦆) (det s s')
+dets (here s) (here s') = cong (λ X → X ,, _) (det s s')
+dets (here s) (there v _) = ⊥-elim (sv-nostep v s)
+dets (there v _) (here s) = ⊥-elim (sv-nostep v s)
+dets (there _ s) (there _ s') = cong (λ Xs → _ ,, Xs) (dets s s')
+
+star-det : ∀ {X W W'} → X ⟶* W → X ⟶* W' → SV W → SV W' → W ≡ W'
+star-det RT.ε RT.ε _ _ = refl
+star-det RT.ε (s RT.◅ _) w _ = ⊥-elim (sv-nostep w s)
+star-det (s RT.◅ _) RT.ε _ w = ⊥-elim (sv-nostep w s)
+star-det (s RT.◅ σ) (s' RT.◅ σ') w w' with det s s'
+... | refl = star-det σ σ' w w'
 
 val-sv : ∀ {V} → Value V → SV V
 vals-sv : ∀ {n} {as : Args (replicate n ■)} → Values as → SVs as
@@ -183,6 +238,7 @@ sub-proj τ i as e rewrite SS.sub-args-list τ as | proj-map (sub τ) i (args→
 sub-⟶ : ∀ {τ M M'} → (∀ x → SV (τ x)) → M ⟶ M' → sub τ M ⟶ sub τ M'
 sub-⟶s : ∀ {τ n} {as as' : Args (replicate n ■)} → (∀ x → SV (τ x)) → as ⟶s as' → sub-args τ as ⟶s sub-args τ as'
 sub-⟶ {τ} h (β {N} {V} v) rewrite sub-[] τ N V = β (sv-sub h v)
+sub-⟶ h (app₁ s) = app₁ (sub-⟶ h s)
 sub-⟶ h (app₂ s) = app₂ (sub-⟶ h s)
 sub-⟶ h (tuple s) = tuple (sub-⟶s h s)
 sub-⟶ {τ} h (get {i = i} {as} vs e) = get (svs-sub h vs) (sub-proj τ i as e)
@@ -202,6 +258,7 @@ sub-⟶s h (there v s) = there (sv-sub h v) (sub-⟶s h s)
 closed-red : ∀ {M M'} → WS 0 M → M ⟶ M' → S.red M ≡ to M'
 closed-reds : ∀ {n} {as as' : Args (replicate n ■)} → WS-args 0 as → as ⟶s as' → S.red-args as ≡ to as'
 closed-red (_ , wV , _) (β v) rewrite value-red (sv-value v wV) = refl
+closed-red (wL , _) (app₁ s) rewrite closed-red wL s = refl
 closed-red (_ , wM , _) (app₂ s) rewrite closed-red wM s = refl
 closed-red w (tuple s) rewrite closed-reds w s = refl
 closed-red (w , _) (get vs e) rewrite values-red (svs-value vs w) | e = refl
@@ -225,6 +282,7 @@ ws-one w (suc x) (s≤s ())
 ws-⟶ : ∀ {M M'} → WS 0 M → M ⟶ M' → WS 0 M'
 ws-⟶s : ∀ {n} {as as' : Args (replicate n ■)} → WS-args 0 as → as ⟶s as' → WS-args 0 as'
 ws-⟶ {app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, V ,, Nil ⦆} ((wN , _) , wV , _) (β v) = ws-sub _ N (ws-one wV) wN
+ws-⟶ (wL , wM , _) (app₁ s) = ws-⟶ wL s , wM , tt
 ws-⟶ (wL , wM , _) (app₂ s) = wL , ws-⟶ wM s , tt
 ws-⟶ w (tuple s) = ws-⟶s w s
 ws-⟶ {get i ⦅ tuple m ⦅ as ⦆ ,, Nil ⦆} (w , _) (get vs e) = ws-proj i as w e
@@ -353,24 +411,38 @@ pw-just (M.just r) = _ , refl , r
 
 {- What simp knows, and what it means -------------------------------------------}
 
-{- I is true of the source term X after υ: its term, and its known value,
-   are related to X -}
-record Desc (I : Info) (υ : Subst) (X : AST) : Set where
+{- I is true of the source term X after υ: its term, and what it is known
+   to be, are related to X: a value, or a function λ N closed by a source
+   substitution τ of whose variables its Facts are true, which X reaches -}
+record Desc (I : Info) (υ : Subst) (X : AST) : Set
+record Inv (E : Facts) (τ υ : Subst) : Set
+KDesc : Known → Subst → AST → Set
+
+record Desc I υ X where
+  inductive
   constructor desc
   field
     tm : sub υ (term I) ≼ X
-    kn : ∀ {K} → known I ≡ just K → SV K × sub υ K ≼ X
+    kn : ∀ {K} → known I ≡ just K → KDesc K υ X
 open Desc
 
-record Inv (E : Facts) (τ υ : Subst) : Set where
+record Inv E τ υ where
+  inductive
   field
     at : ∀ x → Desc (E x) υ (τ x)
     svτ : ∀ x → SV (τ x)
     svυ : ∀ x → SV (υ x)
 open Inv
 
+KDesc (val K) υ X = SV K × sub υ K ≼ X
+KDesc (fun N E) υ X = Σ[ τ ∈ Subst ] Inv E τ υ × X ⟶* sub τ (lam ⦅ ⟩ N ,, Nil ⦆)
+
 desc-steps : ∀ {I υ X X₁} → X ⟶* X₁ → Desc I υ X₁ → Desc I υ X
-desc-steps σ (desc t k) = desc (steps σ t) (λ e → proj₁ (k e) , steps σ (proj₂ (k e)))
+desc-steps {υ = υ} {X} {X₁} σ d = desc (steps σ (tm d)) (λ e → G _ (kn d e))
+  where
+  G : ∀ K → KDesc K υ X₁ → KDesc K υ X
+  G (val K) (v , r) = v , steps σ r
+  G (fun N E) (τ , ok , σ') = τ , ok , σ RT.◅◅ σ'
 
 desc-self : ∀ {V υ X} → SV V → sub υ V ≼ X → Desc (self V) υ X
 desc-self v r = desc r (λ { refl → v , r })
@@ -380,50 +452,73 @@ desc-info {M} r with value M in e
 ... | true = desc r (λ { refl → value-sv M e , r })
 ... | false = desc r (λ ())
 
-{- under one more binder, in the source and the target -}
-desc-ext : ∀ {I υ X} → Desc I υ X → Desc (shift-info I) (exts υ) (shift X)
-desc-ext {T ∣ k} {υ} (desc t kn) = desc (subst (_≼ _) (sym (SS.exts-shift υ T)) (≼-rename suc t)) (G k kn)
+{- what I says of X it says of the value W that X reaches -}
+desc-to : ∀ {I υ X W} → (∀ x → SV (υ x)) → Desc I υ X → X ⟶* W → SV W → sub υ (term I) ≼ W → Desc I υ W
+desc-to {I} {υ} {X} {W} h d σ w r = desc r (λ e → G _ (kn d e))
   where
-  G : ∀ k → (∀ {K} → k ≡ just K → SV K × sub υ K ≼ _)
-    → ∀ {K} → map shift k ≡ just K → SV K × sub (exts υ) K ≼ _
-  G (just K) h refl = sv-rename suc (proj₁ (h refl)) , subst (_≼ _) (sym (SS.exts-shift υ K)) (≼-rename suc (proj₂ (h refl)))
+  G : ∀ K → KDesc K υ X → KDesc K υ W
+  G (val K) (k , r') with eval-sv (sv-sub h k) r'
+  ... | W' , σ' , w' , r'' = k , subst (sub υ K ≼_) (sym (star-det σ σ' w w')) r''
+  G (fun N E) (τ , ok , σ') = τ , ok , subst (_⟶* _) (sym (star-det σ σ' w P.lam)) RT.ε
+
+{- under one more binder, in the source and the target -}
+ren-⟶* : ∀ {X Y} → X ⟶* Y → shift X ⟶* shift Y
+ren-⟶* = gmap shift (λ {X} {Y} s → subst₂ _⟶_ (sym (SS.rename-sub suc X)) (sym (SS.rename-sub suc Y)) (sub-⟶ (λ x → P.var (suc x)) s))
+
+tm-ext : ∀ T υ {X} → sub υ T ≼ X → sub (exts υ) (shift T) ≼ shift X
+tm-ext T υ r = subst (_≼ _) (sym (SS.exts-shift υ T)) (≼-rename suc r)
+
+desc-ext : ∀ I {υ X} → Desc I υ X → Desc (shift-info I) (exts υ) (shift X)
+kdesc-ext : ∀ K {υ X} → KDesc K υ X → KDesc (shift-known K) (exts υ) (shift X)
+desc-ext (T ∣ nothing) {υ} d = desc (tm-ext T υ (tm d)) (λ ())
+desc-ext (T ∣ just K) {υ} d = desc (tm-ext T υ (tm d)) (λ { refl → kdesc-ext K (kn d refl) })
+kdesc-ext (val K) {υ} (v , r) = sv-rename suc v , tm-ext K υ r
+kdesc-ext (fun N E) {X = X} (τ , ok , σ) =
+  (λ x → shift (τ x))
+  , record { at = λ x → desc-ext (E x) (at ok x) ; svτ = λ x → sv-rename suc (svτ ok x) ; svυ = sv-exts (svυ ok) }
+  , subst (shift X ⟶*_) (SS.sub-ren suc τ (lam ⦅ ⟩ N ,, Nil ⦆)) (ren-⟶* σ)
 
 {- under one more binder, in the target only, bound to V -}
-desc-cons : ∀ {I υ X} V → Desc I υ X → Desc (shift-info I) (V SS.• υ) X
-desc-cons {T ∣ k} {υ} V (desc t kn) = desc (subst (_≼ _) (sym (SS.sub-shift V υ T)) t) (G k kn)
-  where
-  G : ∀ k → (∀ {K} → k ≡ just K → SV K × sub υ K ≼ _)
-    → ∀ {K} → map shift k ≡ just K → SV K × sub (V SS.• υ) K ≼ _
-  G (just K) h refl = sv-rename suc (proj₁ (h refl)) , subst (_≼ _) (sym (SS.sub-shift V υ K)) (proj₂ (h refl))
+tm-cons : ∀ T υ {X} V → sub υ T ≼ X → sub (V SS.• υ) (shift T) ≼ X
+tm-cons T υ V r = subst (_≼ _) (sym (SS.sub-shift V υ T)) r
+
+desc-cons : ∀ I {υ X} V → SV V → Desc I υ X → Desc (shift-info I) (V SS.• υ) X
+kdesc-cons : ∀ K {υ X} V → SV V → KDesc K υ X → KDesc (shift-known K) (V SS.• υ) X
+desc-cons (T ∣ nothing) {υ} V v d = desc (tm-cons T υ V (tm d)) (λ ())
+desc-cons (T ∣ just K) {υ} V v d = desc (tm-cons T υ V (tm d)) (λ { refl → kdesc-cons K V v (kn d refl) })
+kdesc-cons (val K) {υ} V v (k , r) = sv-rename suc k , tm-cons K υ V r
+kdesc-cons (fun N E) V v (τ , ok , σ) =
+  τ , record { at = λ x → desc-cons (E x) V v (at ok x) ; svτ = svτ ok ; svυ = λ { zero → v ; (suc x) → svυ ok x } } , σ
 
 inv-under : ∀ {E τ υ} → Inv E τ υ → Inv (under E) (exts τ) (exts υ)
-inv-under ok = record
-  { at = λ { zero → desc-self (P.var 0) var≼ ; (suc x) → desc-ext (at ok x) }
+inv-under {E} ok = record
+  { at = λ { zero → desc-self (P.var 0) var≼ ; (suc x) → desc-ext (E x) (at ok x) }
   ; svτ = sv-exts (svτ ok) ; svυ = sv-exts (svυ ok) }
 
 {- The main lemma -------------------------------------------------------------------}
 
-simp-ok : ∀ M {E τ υ} → Inv E τ υ → Desc (simp E M) υ (sub τ M)
-simp-args-ok : ∀ {n} (as : Args (replicate n ■)) {E τ υ} → Inv E τ υ
-  → Pw _≼_ (sub-args υ (simp-args E as)) (sub-args τ as)
-app-ok : ∀ L M {E τ υ I} → Inv E τ υ → Desc I υ (sub τ M)
-  → Desc (simp-app E L I) υ (sub τ (app ⦅ L ,, M ,, Nil ⦆))
-let-ok : ∀ N M {E τ υ I} → Inv E τ υ → Desc I υ (sub τ M)
-  → Desc (simp-let E N I) υ (sub τ (app ⦅ lam ⦅ ⟩ N ,, Nil ⦆ ,, M ,, Nil ⦆))
-case-ok : ∀ L M N {E τ υ I} → Inv E τ υ → Desc I υ (sub τ L)
-  → Desc (simp-case E I M N) υ (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆))
+simp-ok : ∀ fl M {E τ υ} → Inv E τ υ → Desc (simp fl E M) υ (sub τ M)
+simp-args-ok : ∀ fl {n} (as : Args (replicate n ■)) {E τ υ} → Inv E τ υ
+  → Pw _≼_ (sub-args υ (simp-args fl E as)) (sub-args τ as)
+app-ok : ∀ fl L M {E τ υ I} → Inv E τ υ → Desc I υ (sub τ M)
+  → Desc (simp-app fl E L I) υ (sub τ (app ⦅ L ,, M ,, Nil ⦆))
+let-ok : ∀ fl N {E τ υ I X} → Inv E τ υ → Desc I υ X
+  → Desc (simp-let fl E N I) υ (app ⦅ sub τ (lam ⦅ ⟩ N ,, Nil ⦆) ,, X ,, Nil ⦆)
+call-ok : ∀ fl J I {υ L M} → Desc J υ L → Desc I υ M → Desc (simp-call fl J I) υ (app ⦅ L ,, M ,, Nil ⦆)
+case-ok : ∀ fl L M N {E τ υ I} → Inv E τ υ → Desc I υ (sub τ L)
+  → Desc (simp-case fl E I M N) υ (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆))
 
-simp-ok (` x) ok = at ok x
-simp-ok (lam ⦅ ⟩ N ,, Nil ⦆) ok = desc-self P.lam (lam≼ (tm (simp-ok N (inv-under ok))))
-simp-ok (app ⦅ L ,, M ,, Nil ⦆) ok = app-ok L M ok (simp-ok M ok)
-simp-ok (lit B k ⦅ Nil ⦆) ok = desc-self P.lit lit≼
-simp-ok (tuple n ⦅ as ⦆) ok = desc-info (tuple≼ (simp-args-ok as ok))
-simp-ok (get i ⦅ L ,, Nil ⦆) {E} {τ} {υ} ok = get-ok (simp E L) (simp-ok L ok)
+simp-ok fl (` x) ok = at ok x
+simp-ok fl (lam ⦅ ⟩ N ,, Nil ⦆) {τ = τ} ok = desc (lam≼ (tm (simp-ok fl N (inv-under ok)))) (λ { refl → τ , ok , RT.ε })
+simp-ok fl (app ⦅ L ,, M ,, Nil ⦆) ok = app-ok fl L M ok (simp-ok fl M ok)
+simp-ok fl (lit B k ⦅ Nil ⦆) ok = desc-self P.lit lit≼
+simp-ok fl (tuple n ⦅ as ⦆) ok = desc-info (tuple≼ (simp-args-ok fl as ok))
+simp-ok fl (get i ⦅ L ,, Nil ⦆) {E} {τ} {υ} ok = get-ok (simp fl E L) (simp-ok fl L ok)
   where
   {- the component of a known tuple, which the source reaches -}
-  comp : ∀ k {K} → component i k ≡ just K → (∀ {Kt} → k ≡ just Kt → SV Kt × sub υ Kt ≼ sub τ L)
+  comp : ∀ k {K} → component i k ≡ just K → (∀ {Kt} → k ≡ just Kt → KDesc Kt υ (sub τ L))
     → SV K × sub υ K ≼ sub τ (get i ⦅ L ,, Nil ⦆)
-  comp (just Kt) e h with h refl
+  comp (just (val Kt)) e h with h refl
   ... | P.tuple {m} {Ks} vs , r with eval-sv (sv-sub (svυ ok) (P.tuple vs)) r
   ...   | W , σ , w , r' with tuple-inv w r'
   ...     | Ws , refl , ws , rs
@@ -437,14 +532,14 @@ simp-ok (get i ⦅ L ,, Nil ⦆) {E} {τ} {υ} ok = get-ok (simp E L) (simp-ok L
   ... | just K with comp (known I) e (kn d) | small K
   ...   | v , r | true = desc-self v r
   ...   | v , r | false = desc (get≼ (tm d)) (λ { refl → v , r })
-simp-ok (inl-op ⦅ M ,, Nil ⦆) ok = desc-info (inl≼ (tm (simp-ok M ok)))
-simp-ok (inr-op ⦅ M ,, Nil ⦆) ok = desc-info (inr≼ (tm (simp-ok M ok)))
-simp-ok (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ok = case-ok L M N ok (simp-ok L ok)
-simp-ok (prim p ⦅ L ,, M ,, Nil ⦆) {E} {τ} {υ} ok = prim-ok (simp E L) (simp E M) (simp-ok L ok) (simp-ok M ok)
+simp-ok fl (inl-op ⦅ M ,, Nil ⦆) ok = desc-info (inl≼ (tm (simp-ok fl M ok)))
+simp-ok fl (inr-op ⦅ M ,, Nil ⦆) ok = desc-info (inr≼ (tm (simp-ok fl M ok)))
+simp-ok fl (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ok = case-ok fl L M N ok (simp-ok fl L ok)
+simp-ok fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} {τ} {υ} ok = prim-ok (simp fl E L) (simp fl E M) (simp-ok fl L ok) (simp-ok fl M ok)
   where
   {- a known integer, which the source reaches -}
-  int-eval : ∀ k {n X} → int-of k ≡ just n → (∀ {K} → k ≡ just K → SV K × sub υ K ≼ X) → X ⟶* lit Int n ⦅ Nil ⦆
-  int-eval (just K) e h with h refl
+  int-eval : ∀ k {n X} → int-of k ≡ just n → (∀ {K} → k ≡ just K → KDesc K υ X) → X ⟶* lit Int n ⦅ Nil ⦆
+  int-eval (just (val K)) e h with h refl
   ... | v , r with int-of-just v e
   ...   | refl with eval-sv P.lit r
   ...     | W , σ , w , r' with lit-inv w r'
@@ -460,93 +555,93 @@ simp-ok (prim p ⦅ L ,, M ,, Nil ⦆) {E} {τ} {υ} ok = prim-ok (simp E L) (si
                 RT.◅◅ (prim RT.◅ RT.ε))
       (desc-self (prim-term-sv (δ p n m)) (subst (_≼ _) (sym (sub-prim-term υ (δ p n m))) (≼-prim-term (δ p n m))))
 
-simp-args-ok {zero} Nil ok = []
-simp-args-ok {suc n} (M ,, as) ok = tm (simp-ok M ok) ∷ simp-args-ok as ok
+simp-args-ok fl {zero} Nil ok = []
+simp-args-ok fl {suc n} (M ,, as) ok = tm (simp-ok fl M ok) ∷ simp-args-ok fl as ok
 
-{- an application whose operator is not a function stays -}
-app-ok (lam ⦅ ⟩ N ,, Nil ⦆) M ok d = let-ok N M ok d
-app-ok L@(` x) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(app ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(lit B k ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(tuple n ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(get i ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(inl-op ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(inr-op ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(case-op ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
-app-ok L@(prim p ⦅ _ ⦆) M ok d = desc (app≼ (tm (simp-ok L ok)) (tm d)) (λ ())
+{- an application: β if the operator is a function, and otherwise a call -}
+app-ok fl L M ok d with lam? L
+... | is-lam N = let-ok fl N ok d
+... | other = call-ok fl _ _ (simp-ok fl L ok) d
+
+{- a call of a known function: the source reaches the function, then β -}
+call-ok (suc fl) (T ∣ just (fun N E)) I {M = M} dJ dI with size (term (simp-let fl E N I)) ≤ᵇ inline-size | kn dJ refl
+... | true | τ , ok , σ = desc-steps (gmap (λ X → app ⦅ X ,, M ,, Nil ⦆) app₁ σ) (let-ok fl N ok dI)
+... | false | _ = desc (app≼ (tm dJ) (tm dI)) (λ ())
+call-ok zero J I dJ dI = desc (app≼ (tm dJ) (tm dI)) (λ ())
+call-ok (suc fl) (T ∣ nothing) I dJ dI = desc (app≼ (tm dJ) (tm dI)) (λ ())
+call-ok (suc fl) (T ∣ just (val K)) I dJ dI = desc (app≼ (tm dJ) (tm dI)) (λ ())
 
 {- β: the source evaluates the operand to a value W -}
-let-ok N M {E} {τ} {υ} {I} ok d with small (term I) in s | value (term I) in v
+let-ok fl N {E} {τ} {υ} {I} ok d with small (term I) in s | value (term I) in v
 ... | true | _ with eval-sv (sv-sub (svυ ok) (small-sv (term I) s)) (tm d)
 ...   | W , σ , w , r =
   desc-steps (gmap (λ X → app ⦅ lam ⦅ ⟩ sub (exts τ) N ,, Nil ⦆ ,, X ,, Nil ⦆) app₂ σ RT.◅◅ (β w RT.◅ RT.ε))
-    (subst (Desc _ υ) (sym (SS.exts-[] W τ N)) (simp-ok N ok'))
+    (subst (Desc _ υ) (sym (SS.exts-[] W τ N)) (simp-ok fl N ok'))
   where
-  ok' : Inv (self (term I) • E) (W SS.• τ) υ
-  ok' = record { at = λ { zero → desc-self (small-sv (term I) s) r ; (suc x) → at ok x }
+  ok' : Inv (I • E) (W SS.• τ) υ
+  ok' = record { at = λ { zero → desc-to (svυ ok) d σ w r ; (suc x) → at ok x }
                ; svτ = λ { zero → w ; (suc x) → svτ ok x } ; svυ = svυ ok }
-let-ok N M {E} {τ} {υ} {I} ok d | false | true with eval-sv (sv-sub (svυ ok) (value-sv (term I) v)) (tm d)
+let-ok fl N {E} {τ} {υ} {I} ok d | false | true with eval-sv (sv-sub (svυ ok) (value-sv (term I) v)) (tm d)
 ...   | W , σ , w , r =
   desc (steps (gmap (λ X → app ⦅ lam ⦅ ⟩ sub (exts τ) N ,, Nil ⦆ ,, X ,, Nil ⦆) app₂ σ)
-          (let≼ w r (subst₂ _≼_ (sym (SS.exts-[] (sub υ (term I)) υ N')) (sym (SS.exts-[] W τ N)) (tm (simp-ok N ok')))))
+          (let≼ w r (subst₂ _≼_ (sym (SS.exts-[] V υ N')) (sym (SS.exts-[] W τ N)) (tm (simp-ok fl N ok')))))
        (λ ())
   where
-  E' = ((` 0) ∣ just (shift (term I))) • (λ x → shift-info (E x))
-  N' = term (simp E' N)
-  ok' : Inv E' (W SS.• τ) (sub υ (term I) SS.• υ)
+  V = sub υ (term I)
+  N' = term (simp fl (known-as I E) N)
+  ok' : Inv (known-as I E) (W SS.• τ) (V SS.• υ)
   ok' = record
-    { at = λ { zero → desc r (λ { refl → sv-rename suc (value-sv (term I) v)
-                                        , subst (_≼ _) (sym (SS.sub-shift (sub υ (term I)) υ (term I))) r })
-             ; (suc x) → desc-cons (sub υ (term I)) (at ok x) }
+    { at = λ { zero → desc r (kn (desc-cons I V (sv-sub (svυ ok) (value-sv (term I) v)) (desc-to (svυ ok) d σ w r)))
+             ; (suc x) → desc-cons (E x) V (sv-sub (svυ ok) (value-sv (term I) v)) (at ok x) }
     ; svτ = λ { zero → w ; (suc x) → svτ ok x }
     ; svυ = λ { zero → sv-sub (svυ ok) (value-sv (term I) v) ; (suc x) → svυ ok x } }
-let-ok N M ok d | false | false = desc (app≼ (lam≼ (tm (simp-ok N (inv-under ok)))) (tm d)) (λ ())
+let-ok fl N ok d | false | false = desc (app≼ (lam≼ (tm (simp-ok fl N (inv-under ok)))) (tm d)) (λ ())
 
 {- a case on a known injection: the source evaluates the scrutinee to it -}
-case-ok L M N {E} {τ} {υ} {I} ok d with branch (known I) in e
-... | nothing = desc (case≼ (tm d) (tm (simp-ok M (inv-under ok))) (tm (simp-ok N (inv-under ok)))) (λ ())
+case-ok fl L M N {E} {τ} {υ} {I} ok d with branch (known I) in e
+... | nothing = desc (case≼ (tm d) (tm (simp-ok fl M (inv-under ok))) (tm (simp-ok fl N (inv-under ok)))) (λ ())
 ... | just (true , K) = taken (known I) e (kn d)
   where
-  taken : ∀ k → branch k ≡ just (true , K) → (∀ {Kt} → k ≡ just Kt → SV Kt × sub υ Kt ≼ sub τ L)
-    → Desc (simp (self K • E) M) υ (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆))
-  taken (just Kt) e h with h refl
-  taken (just Kt) e h | P.inl {K₀} v , r with small K₀ | e
-  taken (just Kt) e h | P.inl {K₀} v , r | true | refl with eval-sv (sv-sub (svυ ok) (P.inl v)) r
+  taken : ∀ k → branch k ≡ just (true , K) → (∀ {Kt} → k ≡ just Kt → KDesc Kt υ (sub τ L))
+    → Desc (simp fl (self K • E) M) υ (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆))
+  taken (just (val Kt)) e h with h refl
+  taken (just (val Kt)) e h | P.inl {K₀} v , r with small K₀ | e
+  taken (just (val Kt)) e h | P.inl {K₀} v , r | true | refl with eval-sv (sv-sub (svυ ok) (P.inl v)) r
   ... | W , σ , w , r' with inl-inv w r'
   ...   | W₀ , refl , w₀ , r₀ =
     desc-steps (gmap (λ X → case-op ⦅ X ,, ⟩ sub (exts τ) M ,, ⟩ sub (exts τ) N ,, Nil ⦆) case₁ σ RT.◅◅ (case-l w₀ RT.◅ RT.ε))
-      (subst (Desc _ υ) (sym (SS.exts-[] W₀ τ M)) (simp-ok M ok'))
+      (subst (Desc _ υ) (sym (SS.exts-[] W₀ τ M)) (simp-ok fl M ok'))
     where
     ok' : Inv (self K • E) (W₀ SS.• τ) υ
     ok' = record { at = λ { zero → desc-self v r₀ ; (suc x) → at ok x }
                  ; svτ = λ { zero → w₀ ; (suc x) → svτ ok x } ; svυ = svυ ok }
-  taken (just Kt) e h | P.inl {K₀} v , r | false | ()
-  taken (just Kt) e h | P.inr {K₀} v , r with small K₀ | e
-  taken (just Kt) e h | P.inr {K₀} v , r | true | ()
-  taken (just Kt) e h | P.inr {K₀} v , r | false | ()
+  taken (just (val Kt)) e h | P.inl {K₀} v , r | false | ()
+  taken (just (val Kt)) e h | P.inr {K₀} v , r with small K₀ | e
+  taken (just (val Kt)) e h | P.inr {K₀} v , r | true | ()
+  taken (just (val Kt)) e h | P.inr {K₀} v , r | false | ()
 ... | just (false , K) = taken (known I) e (kn d)
   where
-  taken : ∀ k → branch k ≡ just (false , K) → (∀ {Kt} → k ≡ just Kt → SV Kt × sub υ Kt ≼ sub τ L)
-    → Desc (simp (self K • E) N) υ (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆))
-  taken (just Kt) e h with h refl
-  taken (just Kt) e h | P.inr {K₀} v , r with small K₀ | e
-  taken (just Kt) e h | P.inr {K₀} v , r | true | refl with eval-sv (sv-sub (svυ ok) (P.inr v)) r
+  taken : ∀ k → branch k ≡ just (false , K) → (∀ {Kt} → k ≡ just Kt → KDesc Kt υ (sub τ L))
+    → Desc (simp fl (self K • E) N) υ (sub τ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆))
+  taken (just (val Kt)) e h with h refl
+  taken (just (val Kt)) e h | P.inr {K₀} v , r with small K₀ | e
+  taken (just (val Kt)) e h | P.inr {K₀} v , r | true | refl with eval-sv (sv-sub (svυ ok) (P.inr v)) r
   ... | W , σ , w , r' with inr-inv w r'
   ...   | W₀ , refl , w₀ , r₀ =
     desc-steps (gmap (λ X → case-op ⦅ X ,, ⟩ sub (exts τ) M ,, ⟩ sub (exts τ) N ,, Nil ⦆) case₁ σ RT.◅◅ (case-r w₀ RT.◅ RT.ε))
-      (subst (Desc _ υ) (sym (SS.exts-[] W₀ τ N)) (simp-ok N ok'))
+      (subst (Desc _ υ) (sym (SS.exts-[] W₀ τ N)) (simp-ok fl N ok'))
     where
     ok' : Inv (self K • E) (W₀ SS.• τ) υ
     ok' = record { at = λ { zero → desc-self v r₀ ; (suc x) → at ok x }
                  ; svτ = λ { zero → w₀ ; (suc x) → svτ ok x } ; svυ = svυ ok }
-  taken (just Kt) e h | P.inr {K₀} v , r | false | ()
-  taken (just Kt) e h | P.inl {K₀} v , r with small K₀ | e
-  taken (just Kt) e h | P.inl {K₀} v , r | true | ()
-  taken (just Kt) e h | P.inl {K₀} v , r | false | ()
+  taken (just (val Kt)) e h | P.inr {K₀} v , r | false | ()
+  taken (just (val Kt)) e h | P.inl {K₀} v , r with small K₀ | e
+  taken (just (val Kt)) e h | P.inl {K₀} v , r | true | ()
+  taken (just (val Kt)) e h | P.inl {K₀} v , r | false | ()
 
 {- the program, simplified, is related to itself -}
 simplify-≼ : ∀ M → simplify M ≼ M
-simplify-≼ M = subst₂ _≼_ (SS.sub-id _) (SS.sub-id M) (tm (simp-ok M ok₀))
+simplify-≼ M = subst₂ _≼_ (SS.sub-id _) (SS.sub-id M) (tm (simp-ok inline-fuel M ok₀))
   where ok₀ : Inv (λ x → self (` x)) ids ids
         ok₀ = record { at = λ x → desc-self (P.var x) var≼ ; svτ = P.var ; svυ = P.var }
 

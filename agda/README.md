@@ -16,7 +16,8 @@ and adequate for the machines.
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
-known injection, projection from a known tuple, and β on values.
+known injection, projection from a known tuple, β on values, and
+inlining of known functions (under fuel, when the result is small).
 Simplify removes function calls, so its interpreter proof is not clock
 for clock: the simplified program needs no more clock than the original.
 

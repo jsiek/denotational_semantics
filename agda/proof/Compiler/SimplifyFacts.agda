@@ -115,7 +115,7 @@ sv-rename r {V} v = subst SV (sym (SS.rename-sub r V)) (sv-sub (λ x → var (r 
 {- Known values -----------------------------------------------------------------}
 
 {- a known integer is a literal -}
-int-of-just : ∀ {K n} → SV K → int-of (just K) ≡ just n → K ≡ lit Int n ⦅ Nil ⦆
+int-of-just : ∀ {K n} → SV K → int-of (just (val K)) ≡ just n → K ≡ lit Int n ⦅ Nil ⦆
 int-of-just (lit {Int}) refl = refl
 
 {- a component of a known tuple of values -}
@@ -130,22 +130,22 @@ component-just {suc n} zero {_ ,, Ks} (v ∷ vs) () | false
 
 {- what simplify's tests on known values found -}
 comp-inv : ∀ {n} (i : Fin n) k {K} → component i k ≡ just K
-  → Σ[ m ∈ ℕ ] Σ[ Ks ∈ Args (replicate m ■) ] k ≡ just (tuple m ⦅ Ks ⦆) × proj i (args→list Ks) ≡ just K
-comp-inv i (just (tuple m ⦅ Ks ⦆)) e = m , Ks , refl , e
+  → Σ[ m ∈ ℕ ] Σ[ Ks ∈ Args (replicate m ■) ] k ≡ just (val (tuple m ⦅ Ks ⦆)) × proj i (args→list Ks) ≡ just K
+comp-inv i (just (val (tuple m ⦅ Ks ⦆))) e = m , Ks , refl , e
 
-int-inv : ∀ k {n} → int-of k ≡ just n → k ≡ just (lit Int n ⦅ Nil ⦆)
-int-inv (just (lit Int n ⦅ Nil ⦆)) refl = refl
+int-inv : ∀ k {n} → int-of k ≡ just n → k ≡ just (val (lit Int n ⦅ Nil ⦆))
+int-inv (just (val (lit Int n ⦅ Nil ⦆))) refl = refl
 
-branch-inl : ∀ k {K} → branch k ≡ just (true , K) → k ≡ just (inl-op ⦅ K ,, Nil ⦆) × small K ≡ true
-branch-inl (just (inl-op ⦅ K ,, Nil ⦆)) e with small K in s | e
+branch-inl : ∀ k {K} → branch k ≡ just (true , K) → k ≡ just (val (inl-op ⦅ K ,, Nil ⦆)) × small K ≡ true
+branch-inl (just (val (inl-op ⦅ K ,, Nil ⦆))) e with small K in s | e
 ... | true | refl = refl , s
-branch-inl (just (inr-op ⦅ K ,, Nil ⦆)) e with small K | e
+branch-inl (just (val (inr-op ⦅ K ,, Nil ⦆))) e with small K | e
 ... | true | ()
 
-branch-inr : ∀ k {K} → branch k ≡ just (false , K) → k ≡ just (inr-op ⦅ K ,, Nil ⦆) × small K ≡ true
-branch-inr (just (inr-op ⦅ K ,, Nil ⦆)) e with small K in s | e
+branch-inr : ∀ k {K} → branch k ≡ just (false , K) → k ≡ just (val (inr-op ⦅ K ,, Nil ⦆)) × small K ≡ true
+branch-inr (just (val (inr-op ⦅ K ,, Nil ⦆))) e with small K in s | e
 ... | true | refl = refl , s
-branch-inr (just (inl-op ⦅ K ,, Nil ⦆)) e with small K | e
+branch-inr (just (val (inl-op ⦅ K ,, Nil ⦆))) e with small K | e
 ... | true | ()
 
 
