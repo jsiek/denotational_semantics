@@ -14,7 +14,7 @@
   target, at depth d = length ρ: variable x is in slot d - 1 - x, so
   φ = ρ ʳ++ σ (ρ reversed, then the slots σ above it), and φ has the n
   slots of its body (Fr n ρ φ). So a variable in scope reads its value,
-  and one out of scope reads slot n, beyond the frame, and goes wrong as
+  and one out of scope reads slot n, beyond the frame, and errors as
   in the source. A term at depth d with h nested binders has d + h ≤ n,
   so the let or case at depth d finds slot d in σ and assigns it, which
   gives the frame (v ∷ ρ) ʳ++ σ' of the depth d + 1.

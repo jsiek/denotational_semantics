@@ -371,14 +371,14 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   {- Final states ----------------------------------------------------------------}
 
   private
-    wrong : ∀ {o} → stop {State} o-wrong ≡ stop o → Answer o → ⊥
-    wrong refl ans = ans refl
+    error : ∀ {o} → stop {State} o-error ≡ stop o → Answer o → ⊥
+    error refl ans = ans refl
 
   {- a state that stops with an answer returns a value to halt -}
   halts : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ v ∈ Val ] s ≡ ret v halt × o ≡ obs v
   halts (eval (` x) γ κ) eq ans with γ ‼ x
   halts (eval (` x) γ κ) () ans | just v
-  halts (eval (` x) γ κ) eq ans | nothing = ⊥-elim (wrong eq ans)
+  halts (eval (` x) γ κ) eq ans | nothing = ⊥-elim (error eq ans)
   halts (eval (fun-ref k ⦅ Nil ⦆) γ κ) () ans
   halts (eval (app ⦅ L ,, M ,, N ,, Nil ⦆) γ κ) () ans
   halts (eval (lit B k ⦅ Nil ⦆) γ κ) () ans
@@ -396,49 +396,49 @@ module _ (ds : List AST) (wf : DefsWF ds) where
   halts (ret e (appE f N γ κ)) () ans
   halts (ret w (appA (code k) e κ)) eq ans with global ds k
   halts (ret w (appA (code k) e κ)) () ans | just B
-  halts (ret w (appA (code k) e κ)) eq ans | nothing = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (pair _ _) e κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (const B k) e κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (tup vs) e κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (T.inl v) e κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret w (appA (T.inr v) e κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret w (appA (code k) e κ)) eq ans | nothing = ⊥-elim (error eq ans)
+  halts (ret w (appA (pair _ _) e κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret w (appA (const B k) e κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret w (appA (tup vs) e κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret w (appA (T.inl v) e κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret w (appA (T.inr v) e κ)) eq ans = ⊥-elim (error eq ans)
   halts (ret v (pairL M γ κ)) () ans
   halts (ret w (pairR v κ)) () ans
   halts (ret (pair v w) (fstK κ)) () ans
-  halts (ret (code k) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (const B k) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (tup vs) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inl v) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inr v) (fstK κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (code k) (fstK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (const B k) (fstK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (tup vs) (fstK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (T.inl v) (fstK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (T.inr v) (fstK κ)) eq ans = ⊥-elim (error eq ans)
   halts (ret (pair v w) (sndK κ)) () ans
-  halts (ret (code k) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (const B k) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (tup vs) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inl v) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inr v) (sndK κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (code k) (sndK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (const B k) (sndK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (tup vs) (sndK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (T.inl v) (sndK κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (T.inr v) (sndK κ)) eq ans = ⊥-elim (error eq ans)
   halts (ret v (tupK vs Ms γ κ)) () ans
   halts (ret (tup vs) (getK i κ)) eq ans with proj i vs
   halts (ret (tup vs) (getK i κ)) () ans | just v
-  halts (ret (tup vs) (getK i κ)) eq ans | nothing = ⊥-elim (wrong eq ans)
-  halts (ret (code k) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (pair v w) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (const B k) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inl v) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (T.inr v) (getK i κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (tup vs) (getK i κ)) eq ans | nothing = ⊥-elim (error eq ans)
+  halts (ret (code k) (getK i κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (pair v w) (getK i κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (const B k) (getK i κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (T.inl v) (getK i κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (T.inr v) (getK i κ)) eq ans = ⊥-elim (error eq ans)
   halts (ret v (inlK κ)) () ans
   halts (ret v (inrK κ)) () ans
   halts (ret (T.inl v) (caseK M N γ κ)) () ans
   halts (ret (T.inr v) (caseK M N γ κ)) () ans
-  halts (ret (code k) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (pair v w) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (const B k) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
-  halts (ret (tup vs) (caseK M N γ κ)) eq ans = ⊥-elim (wrong eq ans)
+  halts (ret (code k) (caseK M N γ κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (pair v w) (caseK M N γ κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (const B k) (caseK M N γ κ)) eq ans = ⊥-elim (error eq ans)
+  halts (ret (tup vs) (caseK M N γ κ)) eq ans = ⊥-elim (error eq ans)
   halts (ret v (letK N γ κ)) () ans
   halts (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) () ans
   halts (ret v (primL p M γ κ)) () ans
   halts (ret w (primR p v κ)) eq ans with δ? p (obs v) (obs w)
   halts (ret w (primR p v κ)) () ans | just r
-  halts (ret w (primR p v κ)) eq ans | nothing = ⊥-elim (wrong eq ans)
+  halts (ret w (primR p v κ)) eq ans | nothing = ⊥-elim (error eq ans)
 
   final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
   final-shape s fin ans with halts s fin ans

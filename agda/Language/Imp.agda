@@ -14,7 +14,7 @@ module Language.Imp where
  Informally, the semantics: an expression runs in a frame and produces a
  value and the frame as it left it, so assignments are seen by what runs
  after them (also after the expression that contains them); reading or
- assigning a slot beyond the frame goes wrong. A call app f e a, with f
+ assigning a slot beyond the frame errors. A call app f e a, with f
  a reference to global definition k, runs the body of definition k in a
  fresh frame of the size it declares (at least two), with the tuple of
  free variables e in slot 0 and the argument a in slot 1 and the other

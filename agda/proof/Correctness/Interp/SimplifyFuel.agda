@@ -534,15 +534,15 @@ branch≈ : ∀ ck fl M N {E ρ' ρ v v'} → Ok E ρ' ρ → WS (suc (length ρ
   → LeResult _≽_ (S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
 branch≈ ck fl M N ok wM wN (inl≈ r) = run≈ ck fl M (ok-under ok r) wM
 branch≈ ck fl M N ok wM wN (inr≈ r) = run≈ ck fl N (ok-under ok r) wN
-branch≈ ck fl M N ok wM wN (clo≈ _ _) = wrong
-branch≈ ck fl M N ok wM wN const≈ = wrong
-branch≈ ck fl M N ok wM wN (tup≈ _) = wrong
+branch≈ ck fl M N ok wM wN (clo≈ _ _) = error
+branch≈ ck fl M N ok wM wN const≈ = error
+branch≈ ck fl M N ok wM wN (tup≈ _) = error
 project≈ : ∀ {n} (i : Fin n) {v v'} → v' ≈ v → LeResult _≽_ (S.project i v) (S.project i v')
 project≈ i (tup≈ rs) = from-maybe-le (proj-pw i (symmetric (λ r → r) rs))
-project≈ i (clo≈ _ _) = wrong
-project≈ i const≈ = wrong
-project≈ i (inl≈ _) = wrong
-project≈ i (inr≈ _) = wrong
+project≈ i (clo≈ _ _) = error
+project≈ i const≈ = error
+project≈ i (inl≈ _) = error
+project≈ i (inr≈ _) = error
 {- a let or a call, as in run-let and run-call -}
 body-le : ∀ t ck fl N {E ρ' ρ} → Ok E ρ' ρ → WS (length ρ) N → LeResult _≽_ (Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
 let≈ : ∀ t ck fl N {Ef ρ' ρf I M ρ} → Ok Ef ρ' ρf → WS (suc (length ρf)) N → Opd I M ρ' ρ
@@ -553,10 +553,10 @@ call-le : ∀ ck fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → Σ[
   → LeResult _≽_ (S.eval ck ρ (app ⦅ L ,, M ,, Nil ⦆)) (S.eval ck ρ' (term (simp-call fl J I)))
 
 apply≈ ck hM (clo≈ {fl} {N = N} ok₁ w₁) = bind-le hM (λ _ r → call≈ ck fl N (ok-under ok₁ r) w₁)
-apply≈ ck hM const≈ = wrong
-apply≈ ck hM (tup≈ _) = wrong
-apply≈ ck hM (inl≈ _) = wrong
-apply≈ ck hM (inr≈ _) = wrong
+apply≈ ck hM const≈ = error
+apply≈ ck hM (tup≈ _) = error
+apply≈ ck hM (inl≈ _) = error
+apply≈ ck hM (inr≈ _) = error
 
 args≈ ck fl {zero} Nil ok _ rs = ret rs
 args≈ ck fl {suc n} (M ,, as) ok (w , ws) rs = bind-le (run≈ ck fl M ok w) (λ _ r → args≈ ck fl as ok ws (r ∷ rs))
@@ -633,15 +633,15 @@ back-branch : ∀ ck fl M N {E ρ' ρ v v'} → Ok E ρ' ρ → WS (suc (length 
   → Back _≽_ (λ ck → S.branch ck ρ M N v) (S.branch ck ρ' (term (simp fl (under E) M)) (term (simp fl (under E) N)) v')
 back-branch ck fl M N ok wM wN (inl≈ r) = back ck fl M (ok-under ok r) wM
 back-branch ck fl M N ok wM wN (inr≈ r) = back ck fl N (ok-under ok r) wN
-back-branch ck fl M N ok wM wN (clo≈ _ _) = back-wrong (λ _ → refl)
-back-branch ck fl M N ok wM wN const≈ = back-wrong (λ _ → refl)
-back-branch ck fl M N ok wM wN (tup≈ _) = back-wrong (λ _ → refl)
+back-branch ck fl M N ok wM wN (clo≈ _ _) = back-error (λ _ → refl)
+back-branch ck fl M N ok wM wN const≈ = back-error (λ _ → refl)
+back-branch ck fl M N ok wM wN (tup≈ _) = back-error (λ _ → refl)
 back-project : ∀ {n} (i : Fin n) {v v'} → v' ≈ v → Back _≽_ (λ _ → S.project i v) (S.project i v')
 back-project i (tup≈ rs) = back-maybe (proj-pw i (symmetric (λ r → r) rs))
-back-project i (clo≈ _ _) = back-wrong (λ _ → refl)
-back-project i const≈ = back-wrong (λ _ → refl)
-back-project i (inl≈ _) = back-wrong (λ _ → refl)
-back-project i (inr≈ _) = back-wrong (λ _ → refl)
+back-project i (clo≈ _ _) = back-error (λ _ → refl)
+back-project i const≈ = back-error (λ _ → refl)
+back-project i (inl≈ _) = back-error (λ _ → refl)
+back-project i (inr≈ _) = back-error (λ _ → refl)
 {- a let or a call, as in run-let and run-call -}
 body-back : ∀ t ck fl N {E ρ' ρ} → Ok E ρ' ρ → WS (length ρ) N → Back _≽_ (λ ck → Body t ck N ρ) (S.eval ck ρ' (term (simp fl E N)))
 back-let : ∀ t ck fl N {Ef ρ' ρf I M ρ} → Ok Ef ρ' ρf → WS (suc (length ρf)) N → Opd I M ρ' ρ
@@ -652,10 +652,10 @@ back-call' : ∀ ck fl J I {L M ρ' ρ} → (∀ {K} → known J ≡ just K → 
   → Back _≽_ (λ ck → S.eval ck ρ (app ⦅ L ,, M ,, Nil ⦆)) (S.eval ck ρ' (term (simp-call fl J I)))
 
 back-apply ck hM (clo≈ {fl} {N = N} ok₁ w₁) = back-bind hM (λ _ r → back-call ck fl N refl (ok-under ok₁ r) w₁)
-back-apply ck hM const≈ = back-wrong (λ _ → refl)
-back-apply ck hM (tup≈ _) = back-wrong (λ _ → refl)
-back-apply ck hM (inl≈ _) = back-wrong (λ _ → refl)
-back-apply ck hM (inr≈ _) = back-wrong (λ _ → refl)
+back-apply ck hM const≈ = back-error (λ _ → refl)
+back-apply ck hM (tup≈ _) = back-error (λ _ → refl)
+back-apply ck hM (inl≈ _) = back-error (λ _ → refl)
+back-apply ck hM (inr≈ _) = back-error (λ _ → refl)
 
 back-args ck fl {zero} Nil ok _ rs _ = _ , st-now (λ _ → refl) , ret rs
 back-args ck fl {suc n} (M ,, as) ok (w , ws) rs = back-bind (back ck fl M ok w) (λ _ r → back-args ck fl as ok ws (r ∷ rs))

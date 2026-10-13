@@ -15,7 +15,7 @@
   Each language has an interpreter with a clock
   (Semantics/Interp/, here Lᵢ.sem for language L): a program
   terminates with an observation (Semantics/Observation.agda) when, for
-  some clock, it returns a value observed as o or goes wrong (o-wrong),
+  some clock, it returns a value observed as o or errors (o-error),
   and diverges when it times out for every clock. Two programs are
   Equivalent (Framework/Clocked.agda) when each terminates with o exactly
   when the other does, and one diverges exactly when the other does.
@@ -30,7 +30,7 @@
 
 module Theorems.Interpreter where
 
-open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges; Equivalent)
 
 import Language.ISWIM as ISWIM
@@ -150,7 +150,7 @@ compile-x86-correct = SelectFuel.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original
-   does, goes wrong exactly when it does, and diverges exactly when it
+   does, errors exactly when it does, and diverges exactly when it
    does -}
 
 compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
@@ -161,9 +161,9 @@ compile-converges : ∀ (M : ISWIM.AST) → Closed M
   → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵢ.sem (compile M)))
 compile-converges = CompilerFuel.compile-converges
 
-compile-wrong : ∀ (M : ISWIM.AST) → Closed M
-  → Terminates (ISWIMᵢ.sem M) o-wrong ⇔ Terminates (Clos5ᵢ.sem (compile M)) o-wrong
-compile-wrong = CompilerFuel.compile-wrong
+compile-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMᵢ.sem M) o-error ⇔ Terminates (Clos5ᵢ.sem (compile M)) o-error
+compile-error = CompilerFuel.compile-error
 
 compile-diverges : ∀ (M : ISWIM.AST) → Closed M
   → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵢ.sem (compile M))

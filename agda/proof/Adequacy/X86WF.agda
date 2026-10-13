@@ -9,7 +9,7 @@
     ones only, while the machine looks labels up in the whole table.
 
   * Each slot read is within the frame (S): a slot beyond the frame
-    reads as init = {ω}, while the machine goes wrong.
+    reads as init = {ω}, while the machine errors.
 
   * The table of the program is consistent: soundness approximates the
     value of a location by a finite part of its denotation, which a

@@ -22,8 +22,8 @@
   with evaluation (ren).
 
   Precondition. An atom is evaluated after the complex operands that
-  follow it, so an unbound variable, which goes wrong, would go wrong
-  later: pair (` 0) L, with L a loop, goes wrong in the empty
+  follow it, so an unbound variable, which errors, would error
+  later: pair (` 0) L, with L a loop, errors in the empty
   environment, but its rco, let x = L in pair (` 1) (` 0), diverges. So
   the variables must be in scope (Scoped): main in the empty
   environment, and each definition in its two parameters. The only fact

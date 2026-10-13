@@ -16,7 +16,7 @@ module Semantics.Graph.Imp where
  A store σ gives each slot of the frame a meaning, a set of values. An
  expression runs in a frame of n slots. Reading a slot beyond the frame
  gives init, the error value, as an out-of-scope variable does in Clos5;
- assigning one goes wrong, so the construct means ∅ (checked), as a
+ assigning one errors, so the construct means ∅ (checked), as a
  stuck program does.
 
  As in Clos5, the meaning depends on a table T of the global definitions.

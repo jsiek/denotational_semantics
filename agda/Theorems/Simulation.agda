@@ -16,7 +16,7 @@
   here Lₘ.sem for language L), which terminates with an observation
   (Semantics/Observation.agda) or diverges. Two machines are Equivalent
   (Framework/Smallstep.agda) when each terminates with o exactly when the
-  other does (o-wrong, going wrong, included), and one diverges exactly
+  other does (o-error, an error, included), and one diverges exactly
   when the other does.
 
   To read them: the languages (Language/), the passes
@@ -29,7 +29,7 @@
 
 module Theorems.Simulation where
 
-open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges; Equivalent)
 
 import Language.ISWIM as ISWIM
@@ -147,7 +147,7 @@ compile-x86-correct = CompilerX86Sim.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original
-   does, goes wrong exactly when it does, and diverges exactly when it
+   does, errors exactly when it does, and diverges exactly when it
    does -}
 
 compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
@@ -158,9 +158,9 @@ compile-converges : ∀ (M : ISWIM.AST) → Closed M
   → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (Clos5ₘ.sem (compile M)))
 compile-converges = CompilerSim.compile-converges
 
-compile-wrong : ∀ (M : ISWIM.AST) → Closed M
-  → Terminates (ISWIMₘ.sem M) o-wrong ⇔ Terminates (Clos5ₘ.sem (compile M)) o-wrong
-compile-wrong = CompilerSim.compile-wrong
+compile-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (Clos5ₘ.sem (compile M)) o-error
+compile-error = CompilerSim.compile-error
 
 compile-diverges : ∀ (M : ISWIM.AST) → Closed M
   → Diverges (ISWIMₘ.sem M) ⇔ Diverges (Clos5ₘ.sem (compile M))

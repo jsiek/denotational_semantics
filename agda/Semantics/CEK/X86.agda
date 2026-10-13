@@ -9,7 +9,7 @@
   of the body's at its start), the call stack σ, the flag f (if set),
   the frame φ and the registers ρ (each holds a value or is unset).
 
-  The instructions are as in the header of Language/X86.agda; each goes wrong
+  The instructions are as in the header of Language/X86.agda; each errors
   on an operand that is unset or beyond the frame, on a value of the
   wrong kind, or on a destination beyond the frame. The primitives (subq,
   cmpq) are those of the earlier machines (prim?, δ?). alloc reads its
@@ -24,7 +24,7 @@
   pops the caller, which continues with %rax as it is and %rdi, %rsi
   and the flag unset (clobbered by the call). jmp l and je l₁ l₂ run block l of bs,
   with the blocks older than it; a missing block, or je with no flag,
-  goes wrong. main runs in a frame of locals zeros, with %rax holding 0,
+  errors. main runs in a frame of locals zeros, with %rax holding 0,
   %rdi and %rsi unset and no flag.
 
 -}
@@ -115,18 +115,18 @@ bit b = out (bool b)
 {- continue in the frame, if there is one -}
 upd : Maybe Frame → Regs → (Frame → Regs → State) → Next State
 upd (just φ) ρ k = next (k φ ρ)
-upd nothing ρ k = stop o-wrong
+upd nothing ρ k = stop o-error
 
 {- d := v, then continue -}
 put : Loc → Maybe Val → Frame → Regs → (Frame → Regs → State) → Next State
-put d nothing φ ρ k = stop o-wrong
+put d nothing φ ρ k = stop o-error
 put (var x) (just v) φ ρ k = upd (φ [ x ]≔ v) ρ k
 put (reg r) (just v) φ ρ k = next (k φ (ρ [ r ↦ just v ]))
 
 {- set the flag, then continue -}
 test : Maybe Bool → (Maybe Bool → State) → Next State
 test (just b) k = next (k (just b))
-test nothing k = stop o-wrong
+test nothing k = stop o-error
 
 {- definition k, counting from the oldest -}
 global : List Body → ℕ → Maybe Body
@@ -141,7 +141,7 @@ block-at (b ∷ bs) l with l ≟ length bs
 
 goto : Maybe (Block × List Block) → Stack → Maybe Bool → Frame → Regs → Next State
 goto (just (b , bs)) σ f φ ρ = next (run (Block.instrs b) (Block.jump b) bs σ f φ ρ)
-goto nothing σ f φ ρ = stop o-wrong
+goto nothing σ f φ ρ = stop o-error
 
 {- the registers %rax, %rdi and %rsi -}
 regs : Maybe Val → Maybe Val → Maybe Val → Regs
@@ -154,20 +154,20 @@ regs a d s rsi = s
 call : Maybe Body → Stack → Maybe Val → Maybe Val → Next State
 call (just (body n bs b)) σ (just e) (just w) =
   next (run (Block.instrs b) (Block.jump b) bs σ nothing (zeros (2 + (n ∸ 2))) (regs nothing (just e) (just w)))
-call _ σ _ _ = stop o-wrong
+call _ σ _ _ = stop o-error
 
 callq? : List Body → Maybe Val → Stack → Regs → Next State
 callq? ds (just (code k)) σ ρ = call (global ds k) σ (ρ rdi) (ρ rsi)
-callq? ds _ σ ρ = stop o-wrong
+callq? ds _ σ ρ = stop o-error
 
 {- return %rax to the caller -}
 back : Maybe Val → List Instr → Jump → List Block → Frame → Stack → Next State
 back (just v) is j bs φ σ = next (run is j bs σ nothing φ (regs (just v) nothing nothing))
-back nothing is j bs φ σ = stop o-wrong
+back nothing is j bs φ σ = stop o-error
 
 halt? : Maybe Val → Next State
 halt? (just v) = stop (obs v)
-halt? nothing = stop o-wrong
+halt? nothing = stop o-error
 
 {- the machine for a program with global definitions ds -}
 step : List Body → State → Next State
@@ -177,7 +177,7 @@ step ds (run (subq a d ∷ is) j bs σ f φ ρ) =
 step ds (run (cmpq a₂ a₁ ∷ is) j bs σ f φ ρ) =
   test (arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w) λ f' → run is j bs σ f' φ ρ
 step ds (run (sete d ∷ is) j bs σ (just b) φ ρ) = put d (just (bit b)) φ ρ (run is j bs σ (just b))
-step ds (run (sete d ∷ is) j bs σ nothing φ ρ) = stop o-wrong
+step ds (run (sete d ∷ is) j bs σ nothing φ ρ) = stop o-error
 step ds (run (testinl a ∷ is) j bs σ f φ ρ) = test (arg φ ρ a >>= is-inl) λ f' → run is j bs σ f' φ ρ
 step ds (run (alloc s as d ∷ is) j bs σ f φ ρ) = put d (args φ ρ [] as (build s)) φ ρ (run is j bs σ f)
 step ds (run (load fl a d ∷ is) j bs σ f φ ρ) = put d (arg φ ρ a >>= get-field fl) φ ρ (run is j bs σ f)
@@ -187,7 +187,7 @@ step ds (run [] retq bs (retK is j bs' φ' σ) f φ ρ) = back (ρ rax) is j bs'
 step ds (run [] (jmp l) bs σ f φ ρ) = goto (block-at bs l) σ f φ ρ
 step ds (run [] (je l₁ l₂) bs σ (just true) φ ρ) = goto (block-at bs l₁) σ (just true) φ ρ
 step ds (run [] (je l₁ l₂) bs σ (just false) φ ρ) = goto (block-at bs l₂) σ (just false) φ ρ
-step ds (run [] (je l₁ l₂) bs σ nothing φ ρ) = stop o-wrong
+step ds (run [] (je l₁ l₂) bs σ nothing φ ρ) = stop o-error
 
 
 {- a program starts with the start of its main body -}

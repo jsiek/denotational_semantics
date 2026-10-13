@@ -13,7 +13,7 @@ module Semantics.Graph.CFG where
  x := s; t is strict in s, like an assignment in Imp: ⋆ ⟨ Λ F , D ⟩,
  where D is the value of s and F X is the value of t with X in slot x.
  case a x l₁ l₂ is 𝒞, its branches running block l₁ or l₂ with the
- payload in slot x. Assigning a slot beyond the frame goes wrong: the
+ payload in slot x. Assigning a slot beyond the frame errors: the
  construct means ∅ (checked), as in Imp. goto l runs block l in the store
  as it is.
 

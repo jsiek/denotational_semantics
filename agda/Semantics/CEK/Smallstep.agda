@@ -19,7 +19,7 @@
   * A machine is a step function, step : State → Next State, which either
     moves to the next state or stops with an observation (see
     Observation.agda): the observation of the value returned to the empty
-    continuation, or o-wrong when the machine is stuck (an unbound
+    continuation, or o-error when the machine is stuck (an unbound
     variable, applying a non-function, projecting from a non-tuple, ...).
     So every state either steps or is final, and machines are
     deterministic, by construction.
@@ -33,7 +33,7 @@
     target step when a natural-number index of the match decreases. Since
     both machines are deterministic and total, this gives the end theorem
     (Equivalent): the program and its compilation terminate with the same
-    observations (including o-wrong), and one diverges iff the other does.
+    observations (including o-error), and one diverges iff the other does.
     We never need "terminates or diverges", which is not constructive.
     When no source step is matched by zero target steps (as for enclose),
     plus-simulation builds the forward simulation from one lemma,

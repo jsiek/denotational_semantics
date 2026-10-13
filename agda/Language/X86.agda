@@ -19,12 +19,12 @@ module Language.X86 where
  field of one; there are no addresses.
 
  Informally, the semantics of the instructions, which run in a frame and
- a register file and go wrong where stated:
+ a register file and error where stated:
    movq a, d          d := a
    subq a, d          d := d - a; both integers
    cmpq a₂, a₁        flag := (a₁ = a₂); both integers
    sete d             d := inl ⟨⟩ if the flag is set, inr ⟨⟩ if not;
-                      no flag goes wrong
+                      no flag errors
    testinl a          flag := whether a is an inl; a an injection
    alloc s as, d      d := the object of shape s with fields as
                       (a pair of two, a tuple of any number, an
@@ -38,18 +38,18 @@ module Language.X86 where
                       unset and no flag, and continue with %rax as it
                       returns; the caller's frame is untouched; the
                       call clobbers %rdi, %rsi and the flag: reading
-                      them before they are set again goes wrong
+                      them before they are set again errors
  A block ends with retq (return %rax, which must be set), jmp l, or
- je l₁ l₂ (jump to l₁ if the flag is set and to l₂ if not; no flag goes
- wrong). Reading or
- assigning a slot beyond the frame goes wrong. Jumps are as in CFG:
+ je l₁ l₂ (jump to l₁ if the flag is set and to l₂ if not; no flag
+ errors). Reading or
+ assigning a slot beyond the frame errors. Jumps are as in CFG:
  blocks are listed newest first, block l may jump only to older blocks,
  and the start of a body to any block. As in CFG, the body of a global
  definition runs in a fresh frame of max(2, locals) slots holding 0
  (its start first moves %rdi and %rsi, its free variables and
  argument, to slots 0 and 1), and main runs in a fresh frame of locals
  slots holding 0, with %rax holding 0, %rdi and %rsi unset (reading
- them goes wrong) and no flag.
+ them errors) and no flag.
 
 -}
 

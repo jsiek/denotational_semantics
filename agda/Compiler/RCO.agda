@@ -12,7 +12,7 @@ module Compiler.RCO where
  if it is an atom. Atoms evaluate without effect, so evaluating the
  chain and then the construct on A₁ … Aₙ evaluates the complex operands
  in the same order as the construct on M₁ … Mₙ; let does not tick the
- clock of the interpreters. Going wrong is preserved too: app checks
+ clock of the interpreters. Errors are preserved too: app checks
  that its operator is code only at the call, after all its operands.
 
  Shifts. Each let puts what comes after it under one more binder, so

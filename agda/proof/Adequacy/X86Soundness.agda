@@ -912,19 +912,19 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
   {- Final states ----------------------------------------------------------------}
 
   private
-    put-stop : ∀ d m {φ ρ K o} → putM d m φ ρ K ≡ stop o → o ≡ o-wrong
+    put-stop : ∀ d m {φ ρ K o} → putM d m φ ρ K ≡ stop o → o ≡ o-error
     put-stop d nothing refl = refl
     put-stop (var x) (just v) {φ} e with φ [ x ]≔ v
     put-stop (var x) (just v) refl | nothing = refl
     put-stop (var x) (just v) () | just _
 
-    test-stop : ∀ m {K : Maybe Bool → State} {o} → test m K ≡ stop o → o ≡ o-wrong
+    test-stop : ∀ m {K : Maybe Bool → State} {o} → test m K ≡ stop o → o ≡ o-error
     test-stop nothing refl = refl
 
-    goto-stop : ∀ mb {σ f φ ρ o} → goto mb σ f φ ρ ≡ stop o → o ≡ o-wrong
+    goto-stop : ∀ mb {σ f φ ρ o} → goto mb σ f φ ρ ≡ stop o → o ≡ o-error
     goto-stop nothing refl = refl
 
-    callq-stop : ∀ m {stk ρ o} → callq? ds m stk ρ ≡ stop o → o ≡ o-wrong
+    callq-stop : ∀ m {stk ρ o} → callq? ds m stk ρ ≡ stop o → o ≡ o-error
     callq-stop (just (code k)) {ρ = ρ} e with global ds k | ρ rdi | ρ rsi
     callq-stop (just (code k)) () | just (body _ _ _) | just _ | just _
     callq-stop (just (code k)) refl | just _ | just _ | nothing = refl
@@ -937,26 +937,26 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
     callq-stop (just (T.inr _)) refl = refl
     callq-stop nothing refl = refl
 
-    wrong : ∀ {o} → o ≡ o-wrong → Answer o → ⊥
-    wrong refl ans = ans refl
+    error : ∀ {o} → o ≡ o-error → Answer o → ⊥
+    error refl ans = ans refl
 
   {- a state that stops with an answer has an element of its shape -}
   final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
-  final-shape (run (movq a d ∷ is) j bs stk f φ ρ) e ans = ⊥-elim (wrong (put-stop d (arg φ ρ a) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
+  final-shape (run (movq a d ∷ is) j bs stk f φ ρ) e ans = ⊥-elim (error (put-stop d (arg φ ρ a) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
   final-shape (run (subq a d ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (arg φ ρ a >>= λ w → readM φ ρ d >>= λ u → prim? sub u w) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
+    ⊥-elim (error (put-stop d (arg φ ρ a >>= λ w → readM φ ρ d >>= λ u → prim? sub u w) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
   final-shape (run (cmpq a₂ a₁ ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (test-stop (arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w) {K = λ f' → run is j bs stk f' φ ρ} e) ans)
+    ⊥-elim (error (test-stop (arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w) {K = λ f' → run is j bs stk f' φ ρ} e) ans)
   final-shape (run (sete d ∷ is) j bs stk (just b) φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (just (bit b)) {φ = φ} {ρ = ρ} {K = run is j bs stk (just b)} e) ans)
+    ⊥-elim (error (put-stop d (just (bit b)) {φ = φ} {ρ = ρ} {K = run is j bs stk (just b)} e) ans)
   final-shape (run (sete d ∷ is) j bs stk nothing φ ρ) refl ans = ⊥-elim (ans refl)
   final-shape (run (testinl a ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (test-stop (arg φ ρ a >>= is-inl) {K = λ f' → run is j bs stk f' φ ρ} e) ans)
+    ⊥-elim (error (test-stop (arg φ ρ a >>= is-inl) {K = λ f' → run is j bs stk f' φ ρ} e) ans)
   final-shape (run (alloc sh as d ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (args φ ρ [] as (build sh)) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
+    ⊥-elim (error (put-stop d (args φ ρ [] as (build sh)) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
   final-shape (run (load fl a d ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (arg φ ρ a >>= get-field fl) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
-  final-shape (run (callq a ∷ is) j bs stk f φ ρ) e ans = ⊥-elim (wrong (callq-stop (arg φ ρ a) {retK is j bs φ stk} {ρ} e) ans)
+    ⊥-elim (error (put-stop d (arg φ ρ a >>= get-field fl) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
+  final-shape (run (callq a ∷ is) j bs stk f φ ρ) e ans = ⊥-elim (error (callq-stop (arg φ ρ a) {retK is j bs φ stk} {ρ} e) ans)
   final-shape (run [] retq bs halt f φ ρ) e ans with ρ rax in er
   final-shape (run [] retq bs halt f φ ρ) refl ans | just v with 𝒱-shape v
   ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ d , ⟨ ⟨ rax-only (d ∷ []) , ⟨ al , here refl ⟩ ⟩ , sh ⟩ ⟩
@@ -970,9 +970,9 @@ module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) w
   final-shape (run [] retq bs (retK is j bs' φ' stk) f φ ρ) e ans with ρ rax
   final-shape (run [] retq bs (retK is j bs' φ' stk) f φ ρ) () ans | just v
   final-shape (run [] retq bs (retK is j bs' φ' stk) f φ ρ) refl ans | nothing = ⊥-elim (ans refl)
-  final-shape (run [] (jmp l) bs stk f φ ρ) e ans = ⊥-elim (wrong (goto-stop (block-at bs l) {stk} {f} {φ} {ρ} e) ans)
-  final-shape (run [] (je l₁ l₂) bs stk (just true) φ ρ) e ans = ⊥-elim (wrong (goto-stop (block-at bs l₁) {stk} {just true} {φ} {ρ} e) ans)
-  final-shape (run [] (je l₁ l₂) bs stk (just false) φ ρ) e ans = ⊥-elim (wrong (goto-stop (block-at bs l₂) {stk} {just false} {φ} {ρ} e) ans)
+  final-shape (run [] (jmp l) bs stk f φ ρ) e ans = ⊥-elim (error (goto-stop (block-at bs l) {stk} {f} {φ} {ρ} e) ans)
+  final-shape (run [] (je l₁ l₂) bs stk (just true) φ ρ) e ans = ⊥-elim (error (goto-stop (block-at bs l₁) {stk} {just true} {φ} {ρ} e) ans)
+  final-shape (run [] (je l₁ l₂) bs stk (just false) φ ρ) e ans = ⊥-elim (error (goto-stop (block-at bs l₂) {stk} {just false} {φ} {ρ} e) ans)
   final-shape (run [] (je l₁ l₂) bs stk nothing φ ρ) refl ans = ⊥-elim (ans refl)
 
 {- Soundness ------------------------------------------------------------------}

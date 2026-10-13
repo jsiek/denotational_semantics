@@ -91,7 +91,7 @@ prim? : Prim → Val → Val → Maybe Val
 prim? p v w = map out (δ? p (obs v) (obs w))
 
 ret? : Maybe Val → Cont → Next State
-ret? mv κ = next? o-wrong (λ v → ret v κ) mv
+ret? mv κ = next? o-error (λ v → ret v κ) mv
 
 step : State → Next State
 step (eval (` x) ρ κ) = ret? (ρ ‼ x) κ
@@ -112,21 +112,21 @@ step (ret v halt) = stop (obs v)
 step (ret f (appF M N ρ κ)) = next (eval M ρ (appE f N ρ κ))
 step (ret e (appE f N ρ κ)) = next (eval N ρ (appA f e κ))
 step (ret w (appA (fun N) e κ)) = next (eval N (w ∷ e ∷ []) κ)
-step (ret w (appA _ e κ)) = stop o-wrong
+step (ret w (appA _ e κ)) = stop o-error
 step (ret v (pairL M ρ κ)) = next (eval M ρ (pairR v κ))
 step (ret w (pairR v κ)) = next (ret (pair v w) κ)
 step (ret (pair v w) (fstK κ)) = next (ret v κ)
-step (ret _ (fstK κ)) = stop o-wrong
+step (ret _ (fstK κ)) = stop o-error
 step (ret (pair v w) (sndK κ)) = next (ret w κ)
-step (ret _ (sndK κ)) = stop o-wrong
+step (ret _ (sndK κ)) = stop o-error
 step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
 step (ret (tup vs) (getK i κ)) = ret? (proj i vs) κ
-step (ret _ (getK i κ)) = stop o-wrong
+step (ret _ (getK i κ)) = stop o-error
 step (ret v (inlK κ)) = next (ret (inl v) κ)
 step (ret v (inrK κ)) = next (ret (inr v) κ)
 step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
-step (ret _ (caseK M N ρ κ)) = stop o-wrong
+step (ret _ (caseK M N ρ κ)) = stop o-error
 step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p v κ))
 step (ret w (primR p v κ)) = ret? (prim? p v w) κ
 step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)

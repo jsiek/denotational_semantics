@@ -61,9 +61,9 @@ compile-converges M c =
   , (λ { (o , a , t) → o , a , proj₂ (Equivalent.terminates E o) t })
   where E = compile-correct M c
 
-compile-wrong : ∀ M → Closed M
-  → Terminates (S.sem M) o-wrong ⇔ Terminates (T.sem (compile M)) o-wrong
-compile-wrong M c = Equivalent.terminates (compile-correct M c) o-wrong
+compile-error : ∀ M → Closed M
+  → Terminates (S.sem M) o-error ⇔ Terminates (T.sem (compile M)) o-error
+compile-error M c = Equivalent.terminates (compile-correct M c) o-error
 
 compile-diverges : ∀ M → Closed M → Diverges (S.sem M) ⇔ Diverges (T.sem (compile M))
 compile-diverges M c = Equivalent.diverges (compile-correct M c)

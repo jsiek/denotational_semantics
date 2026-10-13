@@ -5,7 +5,7 @@
   (Semantics/CEK/) and the clocked interpreters (Semantics/Interp/).
 
   A finished run is observed through its final value, forgetting the code
-  and environment inside closures, or as going wrong.
+  and environment inside closures, or as an error.
 
   The shape of an end theorem: two programs have the same observations
   when each terminates with o exactly when the other does.
@@ -29,7 +29,7 @@ data Obs : Set where
   o-tuple : List Obs → Obs
   o-inl : Obs → Obs
   o-inr : Obs → Obs
-  o-wrong : Obs
+  o-error : Obs
 
 {- a primitive operation looks at its operands only through their
    observations: it applies to two integers, and is undefined otherwise -}
@@ -37,9 +37,9 @@ data Obs : Set where
 δ? p (o-const Int n) (o-const Int m) = just (δ p n m)
 δ? p _ _ = nothing
 
-{- a successful result: anything but going wrong -}
+{- a successful result: anything but an error -}
 Answer : Obs → Set
-Answer o = ¬ (o ≡ o-wrong)
+Answer o = ¬ (o ≡ o-error)
 
 {- terminating with some answer -}
 Converges : (Obs → Set) → Set

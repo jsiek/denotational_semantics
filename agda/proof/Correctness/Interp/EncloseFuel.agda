@@ -2,7 +2,7 @@
 
   Correctness of the enclose pass (ISWIM → Clos2), clock for clock (see
   the design note in Clock.agda): for every clock, a term and its
-  enclosure, in related environments, both time out, both go wrong, or
+  enclosure, in related environments, both time out, both error, or
   return related values. Enclose maps each application to one
   application, so the two interpreters call functions in lock step.
 
@@ -165,10 +165,10 @@ run≈ ck (get i ⦅ M ,, Nil ⦆) ag = bind-rel (run≈ ck M (agree-sub (λ x �
   where
   get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
   get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-  get≈ (clo≈ _) = wrong
-  get≈ const≈ = wrong
-  get≈ (inl≈ _) = wrong
-  get≈ (inr≈ _) = wrong
+  get≈ (clo≈ _) = error
+  get≈ const≈ = error
+  get≈ (inl≈ _) = error
+  get≈ (inr≈ _) = error
 run≈ ck (inl-op ⦅ M ,, Nil ⦆) ag =
   bind-rel (run≈ ck M (agree-sub (λ x → inj₁) ⊔-left ag)) (λ r → ret (inl≈ r))
 run≈ ck (inr-op ⦅ M ,, Nil ⦆) ag =
@@ -196,19 +196,19 @@ args≈ ck {suc n} (M ,, args) ag rs =
            (λ r → args≈ ck args (agree-sub (λ x → inj₂) (m≤n⊔m (bound M) _) ag) (r ∷ rs))
 
 apply≈ ck M ag (clo≈ {N} agN) = bind-rel (run≈ ck M ag) (λ r → call≈ ck N (agree-ext r agN))
-apply≈ ck M ag const≈ = wrong
-apply≈ ck M ag (tup≈ _) = wrong
-apply≈ ck M ag (inl≈ _) = wrong
-apply≈ ck M ag (inr≈ _) = wrong
+apply≈ ck M ag const≈ = error
+apply≈ ck M ag (tup≈ _) = error
+apply≈ ck M ag (inl≈ _) = error
+apply≈ ck M ag (inr≈ _) = error
 
 call≈ zero N ag = timeout
 call≈ (suc ck) N ag = run≈ ck N ag
 
 branch≈ ck M N agM agN (inl≈ r) = run≈ ck M (agree-ext r agM)
 branch≈ ck M N agM agN (inr≈ r) = run≈ ck N (agree-ext r agN)
-branch≈ ck M N agM agN (clo≈ _) = wrong
-branch≈ ck M N agM agN const≈ = wrong
-branch≈ ck M N agM agN (tup≈ _) = wrong
+branch≈ ck M N agM agN (clo≈ _) = error
+branch≈ ck M N agM agN const≈ = error
+branch≈ ck M N agM agN (tup≈ _) = error
 
 {- The end theorem -------------------------------------------------------------}
 

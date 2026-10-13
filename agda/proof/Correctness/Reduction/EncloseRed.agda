@@ -34,7 +34,7 @@ open import Language.Clos2 using (unbind-n)
 open import Compiler.Enclose using (enclose; enc-args; fv-vars)
 open import proof.Compiler.EncloseScope using (Closed; enclose-closed; module Enclosed)
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong
+open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Semantics.Reduction.ISWIM as S
 import proof.Semantics.Reduction.Clos2 as T
@@ -189,7 +189,7 @@ obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
 
 sim : ∀ {M M'} → M ≈ M' → WS 0 M' → Ans′ M (S.red M) M'
 sims : ∀ {n as as'} → Pw _≈_ {n} as as' → WS-args 0 as' → Ans T.red-args Values (Pw R) as (S.red-args as) as'
-sim var≈ w = wrong ε refl
+sim var≈ w = error ε refl
 sim (lam≈ b c vs) w = val ε (T.clos (vvs-values vs (proj₂ w))) (lam≈ b c vs , w)
 sim (app≈ r s) (wL , wM , _) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → app≈ r' s , w' , wM , tt) (sim r wL) (λ v m → app-sim v m s wM)
@@ -209,10 +209,10 @@ sim (app≈ r s) (wL , wM , _) =
       subst (_≈ _) (sym (IS.exts-[] _ σ N))
             (enc N (λ { zero u → s' ; (suc k) u → c k u }) (λ { zero → vv-val v ; (suc k) → vv-extend vs vv-var k }))
       , ws-sub _ (enclose N) (sfits-• w' (sfits-extend₀ Fs (proj₂ w))) (Enclosed.enclose-ws N b)
-  app-sim T.lit (lit≈ , _) s wM = wrong ε refl
-  app-sim v@(T.tuple _) (tuple≈ _ , _) s wM = wrong ε (val-in (value-red v))
-  app-sim v@(T.inl _) (inl≈ _ , _) s wM = wrong ε (val-in (value-red v))
-  app-sim v@(T.inr _) (inr≈ _ , _) s wM = wrong ε (val-in (value-red v))
+  app-sim T.lit (lit≈ , _) s wM = error ε refl
+  app-sim v@(T.tuple _) (tuple≈ _ , _) s wM = error ε (val-in (value-red v))
+  app-sim v@(T.inl _) (inl≈ _ , _) s wM = error ε (val-in (value-red v))
+  app-sim v@(T.inr _) (inr≈ _ , _) s wM = error ε (val-in (value-red v))
 sim lit≈ w = val ε T.lit (lit≈ , w)
 sim (tuple≈ rs) w =
   ans-in (frame _ (λ _ → refl)) (λ ms → tuple≈ (proj₁ (unzipʳ ms)) , proj₂ (unzipʳ ms)) (sims rs w)
@@ -223,10 +223,10 @@ sim (get≈ {i = i} r) (w , _) =
   get-sim : ∀ {M V'} → Value V' → R M V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
   get-sim (T.tuple vs) (tuple≈ rs , w) =
     ret?-ans (proj-pw {R = R} i (pw-list (zipʳ rs w))) (val-in (value-red (T.tuple vs)))
-  get-sim v@(T.clos _) (lam≈ _ _ _ , _) = wrong ε (val-in (value-red v))
-  get-sim T.lit (lit≈ , _) = wrong ε refl
-  get-sim v@(T.inl _) (inl≈ _ , _) = wrong ε (val-in (value-red v))
-  get-sim v@(T.inr _) (inr≈ _ , _) = wrong ε (val-in (value-red v))
+  get-sim v@(T.clos _) (lam≈ _ _ _ , _) = error ε (val-in (value-red v))
+  get-sim T.lit (lit≈ , _) = error ε refl
+  get-sim v@(T.inl _) (inl≈ _ , _) = error ε (val-in (value-red v))
+  get-sim v@(T.inr _) (inr≈ _ , _) = error ε (val-in (value-red v))
 sim (inl≈ r) (w , _) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → inl≈ r' , w' , tt) (sim r w) (λ v (r' , w') → val ε (T.inl v) (inl≈ r' , w' , tt))
 sim (inr≈ r) (w , _) =
@@ -242,9 +242,9 @@ sim (case≈ {M = M} {M'} {N} {N'} r s t) (wL , wM , wN , _) =
   case-sim (T.inr v) (inr≈ r' , w') =
     to (one (val-in (value-red (T.inr v))))
        (≈-[] (vv-one v) r' t , ws-sub _ N' (sfits-• (proj₁ w') (λ _ ())) wN)
-  case-sim v@(T.clos _) (lam≈ _ _ _ , _) = wrong ε (val-in (value-red v))
-  case-sim T.lit (lit≈ , _) = wrong ε refl
-  case-sim v@(T.tuple _) (tuple≈ _ , _) = wrong ε (val-in (value-red v))
+  case-sim v@(T.clos _) (lam≈ _ _ _ , _) = error ε (val-in (value-red v))
+  case-sim T.lit (lit≈ , _) = error ε refl
+  case-sim v@(T.tuple _) (tuple≈ _ , _) = error ε (val-in (value-red v))
 sim (prim≈ {p} r s) (wL , wM , _) =
   ans-in (frame _ (λ _ → refl)) (λ (r' , w') → prim≈ r' s , w' , wM , tt) (sim r wL)
     λ v (r' , w') →

@@ -7,7 +7,7 @@
   * The main expression is closed (WS 0), and the code of each global
     definition uses only its two parameters (WS 2): the machine runs code
     in an environment of exactly two values, and an unbound variable,
-    which goes wrong in the machine, denotes init = {ω}.
+    which errors in the machine, denotes init = {ω}.
 
   * Each reference refers to an existing definition, and the code of a
     definition only to older ones (RB, from GlobalizeCorrect.agda): the

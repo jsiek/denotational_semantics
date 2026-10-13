@@ -20,7 +20,7 @@
   fundamental lemma rco≈: sub σ M is related to sub σ (rco M)).
 
   Precondition: the program is well scoped (Scoped). An unbound atom
-  would go wrong in the source before a later complex operand runs, but
+  would error in the source before a later complex operand runs, but
   in the target only after it (see RCOSim).
 
 -}
@@ -36,7 +36,7 @@ open import Compiler.PipelineScope using (Scoped)
 open import proof.Compiler.PipelineScope using (compile-scoped)
 open import proof.Compiler.EncloseScope using (Closed)
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong
+open import proof.Framework.Reduction Obs o-error
 open import proof.Framework.Simulation Obs using (equiv-trans)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import proof.Semantics.Reduction.Clos5 as T
@@ -274,14 +274,14 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
 
   call-sim : ∀ {F E W} → Value F → Value E → Value W → Ans′ (app ⦅ F ,, E ,, W ,, Nil ⦆) (T.call ds F E W) (app ⦅ F ,, E ,, W ,, Nil ⦆)
   call-sim {fun-ref k ⦅ Nil ⦆} {E} {W} f e w with global ds k in eq
-  ... | nothing = wrong ε (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq))))
+  ... | nothing = error ε (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq))))
   ... | just N = to (one (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq)))))
                     (rco≈ (W • E • ids) N (below-• {P = Value} w (below-• {P = Value} e λ _ ())) (global-all wds k eq))
-  call-sim f@(T.pair _ _) e w = wrong ε (call-step f e w refl)
-  call-sim T.lit e w = wrong ε (call-step T.lit e w refl)
-  call-sim f@(T.tuple _) e w = wrong ε (call-step f e w refl)
-  call-sim f@(T.inl _) e w = wrong ε (call-step f e w refl)
-  call-sim f@(T.inr _) e w = wrong ε (call-step f e w refl)
+  call-sim f@(T.pair _ _) e w = error ε (call-step f e w refl)
+  call-sim T.lit e w = error ε (call-step T.lit e w refl)
+  call-sim f@(T.tuple _) e w = error ε (call-step f e w refl)
+  call-sim f@(T.inl _) e w = error ε (call-step f e w refl)
+  call-sim f@(T.inr _) e w = error ε (call-step f e w refl)
 
   sim : ∀ {M M'} → M ≈ M' → Ans′ M (red₁ M) M'
   sim (val≈ v) = subst (λ x → Ans′ _ x _) (sym (value-red v)) (val ε v (val≈ v))
@@ -297,33 +297,33 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
   sim (fst≈ v) = ans-skip (value-red v) (fst-sim v)
     where fst-sim : ∀ {V} → Value V → Ans′ (fst-op ⦅ V ,, Nil ⦆) (T.fst? V) (fst-op ⦅ V ,, Nil ⦆)
           fst-sim (T.pair a b) = to (one (val-in (value-red (T.pair a b)))) (val≈ a)
-          fst-sim T.fun = wrong ε refl
-          fst-sim T.lit = wrong ε refl
-          fst-sim v@(T.tuple _) = wrong ε (val-in (value-red v))
-          fst-sim v@(T.inl _) = wrong ε (val-in (value-red v))
-          fst-sim v@(T.inr _) = wrong ε (val-in (value-red v))
+          fst-sim T.fun = error ε refl
+          fst-sim T.lit = error ε refl
+          fst-sim v@(T.tuple _) = error ε (val-in (value-red v))
+          fst-sim v@(T.inl _) = error ε (val-in (value-red v))
+          fst-sim v@(T.inr _) = error ε (val-in (value-red v))
   sim (snd≈ v) = ans-skip (value-red v) (snd-sim v)
     where snd-sim : ∀ {V} → Value V → Ans′ (snd-op ⦅ V ,, Nil ⦆) (T.snd? V) (snd-op ⦅ V ,, Nil ⦆)
           snd-sim (T.pair a b) = to (one (val-in (value-red (T.pair a b)))) (val≈ b)
-          snd-sim T.fun = wrong ε refl
-          snd-sim T.lit = wrong ε refl
-          snd-sim v@(T.tuple _) = wrong ε (val-in (value-red v))
-          snd-sim v@(T.inl _) = wrong ε (val-in (value-red v))
-          snd-sim v@(T.inr _) = wrong ε (val-in (value-red v))
+          snd-sim T.fun = error ε refl
+          snd-sim T.lit = error ε refl
+          snd-sim v@(T.tuple _) = error ε (val-in (value-red v))
+          snd-sim v@(T.inl _) = error ε (val-in (value-red v))
+          snd-sim v@(T.inr _) = error ε (val-in (value-red v))
   sim (get≈ {i = i} v) = ans-skip (value-red v) (get-sim v)
     where get-sim : ∀ {V} → Value V → Ans′ (get i ⦅ V ,, Nil ⦆) (T.get? i V) (get i ⦅ V ,, Nil ⦆)
           get-sim v@(T.tuple {as = as} vs) with proj i (args→list as) in eq
-          ... | nothing = wrong ε (trans (val-in (value-red v)) (cong ret? eq))
+          ... | nothing = error ε (trans (val-in (value-red v)) (cong ret? eq))
           ... | just V = to (one (trans (val-in (value-red v)) (cong ret? eq))) (val≈ (each-proj i vs eq))
-          get-sim T.fun = wrong ε refl
-          get-sim v@(T.pair _ _) = wrong ε (val-in (value-red v))
-          get-sim T.lit = wrong ε refl
-          get-sim v@(T.inl _) = wrong ε (val-in (value-red v))
-          get-sim v@(T.inr _) = wrong ε (val-in (value-red v))
+          get-sim T.fun = error ε refl
+          get-sim v@(T.pair _ _) = error ε (val-in (value-red v))
+          get-sim T.lit = error ε refl
+          get-sim v@(T.inl _) = error ε (val-in (value-red v))
+          get-sim v@(T.inr _) = error ε (val-in (value-red v))
   sim (prim≈ {p} {V} {W} v w) = ans-skip (value-red v) (ans-skip (value-red w) prim-sim)
     where prim-sim : Ans′ (prim p ⦅ V ,, W ,, Nil ⦆) (T.prim? p V W) (prim p ⦅ V ,, W ,, Nil ⦆)
           prim-sim with δ? p (T.obs V) (T.obs W) in eq
-          ... | nothing = wrong ε (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → ret? (mmap T.out m)) eq)))
+          ... | nothing = error ε (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → ret? (mmap T.out m)) eq)))
           ... | just o = to (one (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → ret? (mmap T.out m)) eq))))
                             (val≈ (out-value o))
   sim (case≈ {σ = σ} {M = M} {N} vs wM wN v) = ans-skip (value-red v) (case-sim v)
@@ -335,10 +335,10 @@ module Sim (ds : List AST) (wds : All (WS 2) ds) where
             (subst₂ _≈_ (sym (exts-[] _ σ M)) (sym (exts-[] _ σ (rco M))) (rco≈ _ M (below-• {P = Value} a vs) wM))
           case-sim v@(T.inr a) = to (one (val-in (value-red v)))
             (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (below-• {P = Value} a vs) wN))
-          case-sim T.fun = wrong ε refl
-          case-sim v@(T.pair _ _) = wrong ε (val-in (value-red v))
-          case-sim T.lit = wrong ε refl
-          case-sim v@(T.tuple _) = wrong ε (val-in (value-red v))
+          case-sim T.fun = error ε refl
+          case-sim v@(T.pair _ _) = error ε (val-in (value-red v))
+          case-sim T.lit = error ε refl
+          case-sim v@(T.tuple _) = error ε (val-in (value-red v))
   sim (let≈ {σ = σ} {N = N} vs wN r) =
     ans-in (frame _ (λ _ → refl)) (let≈ {N = N} vs wN) (sim r)
       λ v r' → let-sim v r'

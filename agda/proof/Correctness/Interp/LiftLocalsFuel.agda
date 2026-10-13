@@ -14,7 +14,7 @@
   case at that depth assigns is the head of τ (set-ʳ++); the frame of
   the body, (v ∷ ρ) ʳ++ τ, is ρ ʳ++ (v ∷ τ), so the frame it returns is
   still related to ρ. The frame has the slot, since n ≥ length ρ +
-  height m. A variable out of scope (x ≥ length ρ) goes wrong on both
+  height m. A variable out of scope (x ≥ length ρ) errors on both
   sides: it is beyond ρ, and its slot n is beyond the frame. So there
   is no precondition.
 
@@ -148,10 +148,10 @@ module _ (ds : List AST) (ms : All Mon ds) where
     br : ∀ v → RelResult (Out n ρ) (C.branch ds ck ρ _ _ v) (I.inj? v >>= _)
     br (inl v) = under ck n ρ φ v m₁ (up d (sub d (s≤s (m≤m⊔n _ _)) h)) ok
     br (inr v) = under ck n ρ φ v m₂ (up d (sub d (s≤s (m≤n⊔m _ _)) h)) ok
-    br (code k) = wrong
-    br (pair v w) = wrong
-    br (const B k) = wrong
-    br (tup vs) = wrong
+    br (code k) = error
+    br (pair v w) = error
+    br (const B k) = error
+    br (tup vs) = error
   sim ck n ρ φ (let′ m₁ m₂) h ok =
     bind-rel (sim ck n ρ φ m₁ (sub d (m≤m⊔n _ _) h) ok)
       λ { (refl , ok₁) → under ck n ρ _ _ m₂ (up d (sub d (m≤n⊔m _ _) h)) ok₁ }
@@ -166,13 +166,13 @@ module _ (ds : List AST) (ms : All Mon ds) where
       (sim ck n (v ∷ ρ) (ρ ʳ++ (v ∷ τ)) m h (fr τ (trans (length-ʳ++ ρ) (trans (sym (length-ʳ++ ρ)) len))))
 
   call≈ ck (code k) e w = call-pw ck (glob-pw ms k) e w
-  call≈ ck (pair _ _) e w = wrong
-  call≈ ck (const B k) e w = wrong
-  call≈ ck (tup _) e w = wrong
-  call≈ ck (inl _) e w = wrong
-  call≈ ck (inr _) e w = wrong
+  call≈ ck (pair _ _) e w = error
+  call≈ ck (const B k) e w = error
+  call≈ ck (tup _) e w = error
+  call≈ ck (inl _) e w = error
+  call≈ ck (inr _) e w = error
 
-  call-pw ck M.nothing e w = wrong
+  call-pw ck M.nothing e w = error
   call-pw zero (M.just _) e w = timeout
   call-pw (suc ck) (M.just (m , refl)) e w =
     rel-map proj₁ (sim ck (2 + height m) (w ∷ e ∷ []) _ m ≤-refl

@@ -4,7 +4,7 @@
   follows the CEK machine (Semantics/CEK/Clos5.agda): as for Clos4,
   except that a program runs with its table of global definitions, a
   reference fun-ref k evaluates to a code pointer (code k), and calling
-  code k looks up definition k in the table, going wrong if there is
+  code k looks up definition k in the table, stopping with an error if there is
   none. As in Clos4, the operator is checked to be code at the call,
   after the operands and before the clock is consulted. See the design
   note in Clock.agda.
@@ -60,13 +60,13 @@ prim? p v w = map out (δ? p (obs v) (obs w))
 
 project : ∀ {n} → Fin n → Val → Result Val
 project i (tup vs) = from-maybe (proj i vs)
-project i _ = wrong
+project i _ = error
 
 first second : Val → Result Val
 first (pair v w) = ret v
-first _ = wrong
+first _ = error
 second (pair v w) = ret w
-second _ = wrong
+second _ = error
 
 {- the interpreter for a program with global definitions ds -}
 module _ (ds : List AST) where
@@ -104,13 +104,13 @@ module _ (ds : List AST) where
   code? (code k) = global ds k
   code? _ = nothing
 
-  call ck nothing ρ = wrong
+  call ck nothing ρ = error
   call zero (just N) ρ = timeout
   call (suc ck) (just N) ρ = eval ck ρ N
 
   branch ck ρ M N (inl v) = eval ck (v ∷ ρ) M
   branch ck ρ M N (inr v) = eval ck (v ∷ ρ) N
-  branch ck ρ M N _ = wrong
+  branch ck ρ M N _ = error
 
 {- a program starts with its main expression -}
 sem : Program → Semantics

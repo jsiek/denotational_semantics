@@ -16,7 +16,7 @@
     get i ⦅ ` 1 ⦆, which takes three Clos3 steps. So a Clos2 state that
     is about to look up a variable is matched by the Clos3 state that is
     about to project from the tuple (var~), two steps ahead: then both
-    machines go wrong at the same time when the variable is unbound. On
+    machines error at the same time when the variable is unbound. On
     entering a term (enter), the Clos3 machine takes those two steps
     early.
 

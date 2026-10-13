@@ -7,14 +7,14 @@
   machine side.
 
     soundness : if the machine terminates with an answer o (anything but
-      o-wrong), then ⟦ M ⟧ ρ₀ has an element of the shape of o (ShapeOf,
+      o-error), then ⟦ M ⟧ ρ₀ has an element of the shape of o (ShapeOf,
       in Adequacy/Common.agda); for o-const B k, the constant itself.
     adequacy : if d ∈ ⟦ M ⟧ ρ₀, then the machine terminates with an
       answer o, and d has the shape of o.
 
   so that ⟦ M ⟧ ρ₀ contains const k exactly when the machine terminates
   with o-const B k, and is nonempty exactly when the machine terminates
-  with an answer (and so is empty when it goes wrong or diverges).
+  with an answer (and so is empty when it errors or diverges).
   Combined with the correctness of the compiler in the graph model
   (CompilerCorrect.agda), the constants of the compiled Clos5 program
   are exactly the constants the ISWIM machine computes.
@@ -106,9 +106,9 @@ const-iff M c = ⟨ adequacy-const M c , sound-const M ⟩
 nonempty-iff : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
 nonempty-iff M c = ⟨ adequacy-converges M c , sound-nonempty M ⟩
 
-{- a program that goes wrong, or diverges, denotes the empty set -}
-wrong-empty : ∀ M → Closed M → Terminates (sem M) o-wrong → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
-wrong-empty M c w d d∈ with adequacy M c d∈
+{- a program that errors, or diverges, denotes the empty set -}
+error-empty : ∀ M → Closed M → Terminates (sem M) o-error → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+error-empty M c w d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
 diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)

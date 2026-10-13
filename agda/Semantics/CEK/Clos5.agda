@@ -3,7 +3,7 @@
   A CEK-style abstract machine for Clos5 (call by value, left to right),
   as for Clos4 except for code: a program runs with its table of global
   definitions, a reference fun-ref k evaluates to a code pointer (code k),
-  and applying code k looks up definition k in the table, going wrong if
+  and applying code k looks up definition k in the table, stopping with an error if
   there is none. As in Clos4, the operator is checked to be code only at
   the call, after all three operands. See the design note in Smallstep.agda.
 
@@ -61,12 +61,12 @@ tuple-next vs [] ρ κ = ret (tup (reverse vs)) κ
 tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
 ret? : Maybe Val → Cont → Next State
-ret? mv κ = next? o-wrong (λ v → ret v κ) mv
+ret? mv κ = next? o-error (λ v → ret v κ) mv
 
 {- run code, if there is any, in the environment y, x -}
 call : Maybe AST → Val → Val → Cont → Next State
 call (just N) w e κ = next (eval N (w ∷ e ∷ []) κ)
-call nothing w e κ = stop o-wrong
+call nothing w e κ = stop o-error
 
 {- the machine for a program with global definitions ds -}
 step : List AST → State → Next State
@@ -88,21 +88,21 @@ step ds (ret v halt) = stop (obs v)
 step ds (ret f (appF M N ρ κ)) = next (eval M ρ (appE f N ρ κ))
 step ds (ret e (appE f N ρ κ)) = next (eval N ρ (appA f e κ))
 step ds (ret w (appA (code k) e κ)) = call (global ds k) w e κ
-step ds (ret w (appA _ e κ)) = stop o-wrong
+step ds (ret w (appA _ e κ)) = stop o-error
 step ds (ret v (pairL M ρ κ)) = next (eval M ρ (pairR v κ))
 step ds (ret w (pairR v κ)) = next (ret (pair v w) κ)
 step ds (ret (pair v w) (fstK κ)) = next (ret v κ)
-step ds (ret _ (fstK κ)) = stop o-wrong
+step ds (ret _ (fstK κ)) = stop o-error
 step ds (ret (pair v w) (sndK κ)) = next (ret w κ)
-step ds (ret _ (sndK κ)) = stop o-wrong
+step ds (ret _ (sndK κ)) = stop o-error
 step ds (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
 step ds (ret (tup vs) (getK i κ)) = ret? (proj i vs) κ
-step ds (ret _ (getK i κ)) = stop o-wrong
+step ds (ret _ (getK i κ)) = stop o-error
 step ds (ret v (inlK κ)) = next (ret (inl v) κ)
 step ds (ret v (inrK κ)) = next (ret (inr v) κ)
 step ds (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step ds (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
-step ds (ret _ (caseK M N ρ κ)) = stop o-wrong
+step ds (ret _ (caseK M N ρ κ)) = stop o-error
 step ds (ret v (primL p M ρ κ)) = next (eval M ρ (primR p v κ))
 step ds (ret w (primR p v κ)) = ret? (prim? p v w) κ
 step ds (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)

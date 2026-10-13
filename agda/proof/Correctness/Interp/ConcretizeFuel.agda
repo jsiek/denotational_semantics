@@ -2,7 +2,7 @@
 
   Correctness of the concretize pass (Clos2 → Clos3), clock for clock
   (see the design note in Clock.agda): for every clock, a term and its
-  concretization, in related environments, both time out, both go wrong,
+  concretization, in related environments, both time out, both error,
   or return related values. Concretize maps each application to one
   application, so the two interpreters call functions in lock step.
 
@@ -10,7 +10,7 @@
   A Clos2 variable that a closure's code reads past its free variables is
   unbound in Clos2 (the code runs in the argument and the n free
   variables only) and becomes ` 2, which is unbound in Clos3 (the code
-  runs in the argument and the tuple only): both go wrong.
+  runs in the argument and the tuple only): both error.
 
   Values are related (_≈_) when they agree, except that a Clos2 closure
   of N and the values vs of its free variables is related to a Clos3
@@ -178,10 +178,10 @@ branch≈ : ∀ ck {φ ρ₂ ρ₃ v w} M N → EnvRel φ ρ₂ ρ₃ → v ≈ 
 
 project≈ : ∀ {n} (i : Fin n) {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
 project≈ i (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-project≈ i (clo≈ _) = wrong
-project≈ i const≈ = wrong
-project≈ i (inl≈ _) = wrong
-project≈ i (inr≈ _) = wrong
+project≈ i (clo≈ _) = error
+project≈ i const≈ = error
+project≈ i (inl≈ _) = error
+project≈ i (inr≈ _) = error
 
 run≈ ck {φ} {ρ₂} {ρ₃} (` x) er with φ x | er x
 ... | var y | p = from-maybe-rel p
@@ -208,19 +208,19 @@ args≈ ck {suc n} {vs = vs} (M ,, args) er rs len =
   bind-rel (run≈ ck M er) (λ r → args≈ ck args er (r ∷ rs) (trans (sym (+-suc (length vs) n)) len))
 
 apply≈ ck M er (clo≈ {N = N} f) = bind-rel (run≈ ck M er) (λ r → call≈ ck N (env-clos r f))
-apply≈ ck M er const≈ = wrong
-apply≈ ck M er (tup≈ _) = wrong
-apply≈ ck M er (inl≈ _) = wrong
-apply≈ ck M er (inr≈ _) = wrong
+apply≈ ck M er const≈ = error
+apply≈ ck M er (tup≈ _) = error
+apply≈ ck M er (inl≈ _) = error
+apply≈ ck M er (inr≈ _) = error
 
 call≈ zero N er = timeout
 call≈ (suc ck) N er = run≈ ck N er
 
 branch≈ ck M N er (inl≈ r) = run≈ ck M (env-ext r er)
 branch≈ ck M N er (inr≈ r) = run≈ ck N (env-ext r er)
-branch≈ ck M N er (clo≈ _) = wrong
-branch≈ ck M N er const≈ = wrong
-branch≈ ck M N er (tup≈ _) = wrong
+branch≈ ck M N er (clo≈ _) = error
+branch≈ ck M N er const≈ = error
+branch≈ ck M N er (tup≈ _) = error
 
 {- The end theorem: for every Clos2 program ------------------------------------}
 

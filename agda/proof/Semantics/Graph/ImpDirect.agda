@@ -16,7 +16,7 @@ module proof.Semantics.Graph.ImpDirect where
  and F X is the value (or the slot) after e₂, run in the store that e₁
  leaves with X in slot x. Likewise case is 𝒞, both for its value and for
  each slot of the store it leaves. A run of e₂ (or of a branch) leaves
- its store only if it has a value: a run that goes wrong or diverges
+ its store only if it has a value: a run that errors or diverges
  leaves no store behind. So the store, like the value, collects the runs
  of an expression; in Semantics/Graph/ImpK.agda each run passes its own store on.
 

@@ -6,7 +6,7 @@
   is threaded through evaluation: x := e₁; e₂ runs e₁, assigns its value
   to slot x of the frame e₁ left, and runs e₂ in the result; case a x
   e₁ e₂ assigns the payload to slot x and runs a branch. Reading or
-  assigning a slot beyond the frame goes wrong. The values are those of
+  assigning a slot beyond the frame errors. The values are those of
   Clos5 (Semantics/Interp/Clos5.agda), as are the operations on them.
 
   A call app f e a, with f the code pointer code k, runs the body of
@@ -84,7 +84,7 @@ eval-simple call φ (prim p a b) = do v ← atom φ a; w ← atom φ b; from-may
 inj? : Val → Result (Val ⊎ Val)
 inj? (inl v) = ret (inj₁ v)
 inj? (inr v) = ret (inj₂ v)
-inj? _ = wrong
+inj? _ = error
 
 {- x := v, then k -}
 set : ∀ {A : Set} → Frame → ℕ → Val → (Frame → Result A) → Result A
@@ -106,7 +106,7 @@ module _ (ds : List Body) where
   eval ck φ (case a x e₁ e₂) = do v ← atom φ a; inj? v >>= [ (λ w → put ck φ x w e₁) , (λ w → put ck φ x w e₂) ]
   eval ck φ (assign x e₁ e₂) = do p ← eval ck φ e₁; put ck (proj₂ p) x (proj₁ p) e₂
 
-  call ck nothing e w = wrong
+  call ck nothing e w = error
   call zero (just b) e w = timeout
   call (suc ck) (just (body n x)) e w = value (eval ck (e ∷ w ∷ replicate (n ∸ 2) zero-val) x)
 

@@ -21,7 +21,7 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.Clos4
 open import Semantics.Observation
-open import Semantics.Reduction.Smallstep using (Machine; Red; val; wrong; to; step-in; reduction; ret?; red-cons)
+open import Semantics.Reduction.Smallstep using (Machine; Red; val; error; to; step-in; reduction; ret?; red-cons)
 open import Framework.Syntax.Subst Op sig using (_[_]; sub; ids)
 open import Framework.ListUtil using (proj; args→list)
 
@@ -39,7 +39,7 @@ obs (lit B k ⦅ _ ⦆) = o-const B k
 obs (tuple n ⦅ as ⦆) = o-tuple (obs-args as)
 obs (inl-op ⦅ M ,, Nil ⦆) = o-inl (obs M)
 obs (inr-op ⦅ M ,, Nil ⦆) = o-inr (obs M)
-obs _ = o-wrong
+obs _ = o-error
 obs-args {zero} Nil = []
 obs-args {suc n} (M ,, as) = obs M ∷ obs-args as
 
@@ -52,24 +52,24 @@ out (bool false) = inr-op ⦅ tuple 0 ⦅ Nil ⦆ ,, Nil ⦆
 {- the redexes, once the operands are values -}
 call : AST → AST → AST → Red AST
 call (fun-op ⦅ cons (clear (bind (bind (ast N)))) Nil ⦆) E W = to (sub (W • E • ids) N)
-call _ E W = wrong
+call _ E W = error
 
 fst? : AST → Red AST
 fst? (pair-op ⦅ V ,, W ,, Nil ⦆) = to V
-fst? _ = wrong
+fst? _ = error
 
 snd? : AST → Red AST
 snd? (pair-op ⦅ V ,, W ,, Nil ⦆) = to W
-snd? _ = wrong
+snd? _ = error
 
 get? : ∀ {n} → Fin n → AST → Red AST
 get? i (tuple n ⦅ as ⦆) = ret? (proj i (args→list as))
-get? i _ = wrong
+get? i _ = error
 
 case? : AST → AST → AST → Red AST
 case? (inl-op ⦅ V ,, Nil ⦆) M N = to (M [ V ])
 case? (inr-op ⦅ V ,, Nil ⦆) M N = to (N [ V ])
-case? _ M N = wrong
+case? _ M N = error
 
 prim? : Prim → AST → AST → Red AST
 prim? p V W = ret? (map out (δ? p (obs V) (obs W)))
@@ -77,7 +77,7 @@ prim? p V W = ret? (map out (δ? p (obs V) (obs W)))
 red : AST → Red AST
 red-args : ∀ {n} → Args (replicate n ■) → Red (Args (replicate n ■))
 
-red (` x) = wrong
+red (` x) = error
 red (fun-op ⦅ _ ⦆) = val
 red (app ⦅ L ,, M ,, N ,, Nil ⦆) =
   step-in (λ L' → app ⦅ L' ,, M ,, N ,, Nil ⦆) (red L)

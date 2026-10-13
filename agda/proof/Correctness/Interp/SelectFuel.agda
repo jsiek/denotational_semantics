@@ -14,7 +14,7 @@
   with any registers after (k v is what the rest computes from there).
   The atoms of r are read as in CFG (atm-ok, atoms-ok), except that a
   call reads its operator after its operands, which matters only when
-  reading the operator goes wrong (wrong-ok). A block keeps its label,
+  reading the operator errors (error-ok). A block keeps its label,
   so the jumps agree (jump-ok), and a call runs the prologue and then
   the selected start of the callee in the frame CFG uses (call-pw).
 
@@ -76,12 +76,12 @@ atm-ok (var x) φ ρ h with φ ‼ x
 atm-ok (lit B k) φ ρ h = h _
 atm-ok (fun-ref k) φ ρ h = h _
 
-wrong-ok : ∀ a φ ρ {g : Val → Result A} → (∀ v → g v ≡ wrong) → (arg (φ , ρ) (select-atm a) >>= g) ≡ wrong
-wrong-ok (var x) φ ρ h with φ ‼ x
+error-ok : ∀ a φ ρ {g : Val → Result A} → (∀ v → g v ≡ error) → (arg (φ , ρ) (select-atm a) >>= g) ≡ error
+error-ok (var x) φ ρ h with φ ‼ x
 ... | just v = h v
 ... | nothing = refl
-wrong-ok (lit B k) φ ρ h = h _
-wrong-ok (fun-ref k) φ ρ h = h _
+error-ok (lit B k) φ ρ h = h _
+error-ok (fun-ref k) φ ρ h = h _
 
 {- the atoms as, onto us -}
 atoms-ok : ∀ as φ ρ us {k : Val → Result A} {g} → (∀ vs → k (tup (reverse vs)) ≡ g vs)
@@ -112,7 +112,7 @@ module _ (ds : List CFG.Body) where
     simple-ok (Imp.atm (fun-ref k)) d φ ρ h = h _ ρ
     simple-ok (Imp.app (var y) e a) d φ ρ h with φ ‼ y
     ... | just f = atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls f e w) λ v → h v (regs (just v) nothing nothing nothing)
-    ... | nothing = sym (wrong-ok e φ ρ λ _ → wrong-ok a φ _ λ _ → refl)
+    ... | nothing = sym (error-ok e φ ρ λ _ → error-ok a φ _ λ _ → refl)
     simple-ok (Imp.app (lit B k) e a) d φ ρ h =
       atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (const B k) e w) λ v → h v (regs (just v) nothing nothing nothing)
     simple-ok (Imp.app (fun-ref k) e a) d φ ρ h =

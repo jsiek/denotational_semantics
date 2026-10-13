@@ -6,7 +6,7 @@
   produces from closed ISWIM programs (compile-wf, Adequacy/CompileWF.agda).
 
     soundness : if the machine terminates with an answer o (anything but
-      o-wrong), then ⟦ P ⟧ₚ has an element of the shape of o (ShapeOf,
+      o-error), then ⟦ P ⟧ₚ has an element of the shape of o (ShapeOf,
       in Adequacy/Common.agda); for o-const B k, the constant itself.
     adequacy : if d ∈ ⟦ P ⟧ₚ, then the machine terminates with an
       answer o, and d has the shape of o.
@@ -90,9 +90,9 @@ const-iff P wf = ⟨ adequacy-const P wf , sound-const P wf ⟩
 nonempty-iff : ∀ P → WF P → nonempty ⟦ P ⟧ₚ ⇔ Converges (Terminates (sem P))
 nonempty-iff P wf = ⟨ adequacy-converges P wf , sound-nonempty P wf ⟩
 
-{- a program that goes wrong, or diverges, denotes the empty set -}
-wrong-empty : ∀ P → WF P → Terminates (sem P) o-wrong → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
-wrong-empty P wf w d d∈ with adequacy P wf d∈
+{- a program that errors, or diverges, denotes the empty set -}
+error-empty : ∀ P → WF P → Terminates (sem P) o-error → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)
+error-empty P wf w d d∈ with adequacy P wf d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
 diverges-empty : ∀ P → WF P → Diverges (sem P) → ∀ d → ¬ (d ∈ ⟦ P ⟧ₚ)

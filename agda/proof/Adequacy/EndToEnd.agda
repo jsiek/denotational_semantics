@@ -20,10 +20,10 @@
 
   with the precondition of X86 adequacy discharged by compile-x86-wf.
 
-  What this cannot say: going wrong (o-wrong) and diverging both denote
+  What this cannot say: an error (o-error) and diverging both denote
   the empty set, so the graph model cannot tell them apart, and neither
-  can this theorem. It does not say that M goes wrong exactly when
-  compile M goes wrong (or diverges exactly when compile M diverges), only
+  can this theorem. It does not say that M errors exactly when
+  compile M errors (or diverges exactly when compile M diverges), only
   that each of the two does one or the other exactly when the other does
   (the negation of Converges). Nor does it say anything about the shape
   of a function or of a tuple of functions beyond that it is an answer.

@@ -16,7 +16,7 @@
     CEK machines (the operator of an application is checked to be a
     function before its argument is evaluated in ISWIM, Clos2 and Clos3,
     and only at the call in Clos4 and Clos5). Variables are never looked
-    up: a variable that is reached is unbound, and goes wrong.
+    up: a variable that is reached is unbound, and errors.
 
   * Congruence rules rather than evaluation contexts: one function, with
     no decomposition into a context and a redex, no plugging and no
@@ -40,6 +40,6 @@
 
 module Semantics.Reduction.Smallstep where
 
-open import Semantics.Observation using (Obs; o-wrong)
+open import Semantics.Observation using (Obs; o-error)
 open import Framework.Smallstep Obs public
-open import Framework.Reduction Obs o-wrong public
+open import Framework.Reduction Obs o-error public

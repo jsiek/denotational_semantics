@@ -53,8 +53,8 @@ that every module outside `proof/` is used by a theorem statement).
     anything.
   * `Theorems/Simulation.agda`: each pass, and the compiler into each of
     Clos5, monadic Clos5, Imp, CFG and X86, produces an equivalent
-    machine (the same observations on termination, including going
-    wrong, and divergence exactly when the source diverges).
+    machine (the same observations on termination, including an
+    error, and divergence exactly when the source diverges).
   * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
   * `Theorems/Reduction.agda`: the same, for the reduction semantics of
     ISWIM and Clos2–Clos5 and the machines of Imp, CFG and X86.

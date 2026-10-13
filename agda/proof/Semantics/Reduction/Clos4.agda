@@ -9,9 +9,9 @@ module proof.Semantics.Reduction.Clos4 where
 
 open import Semantics.Reduction.Clos4 public
 open import Language.Clos4
-open import Semantics.Observation using (Obs; o-wrong)
-open import proof.Framework.Reduction Obs o-wrong using (val)
-open import proof.Framework.Reduction Obs o-wrong using (Each; []; _∷_) public
+open import Semantics.Observation using (Obs; o-error)
+open import proof.Framework.Reduction Obs o-error using (val)
+open import proof.Framework.Reduction Obs o-error using (Each; []; _∷_) public
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil)
 open import Framework.Syntax.Subst Op sig using (sub; sub-args)
 
