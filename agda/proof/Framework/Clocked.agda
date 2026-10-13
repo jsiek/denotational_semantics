@@ -13,9 +13,12 @@ open Semantics using (Val; run)
 
 open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ)
-open import Data.Product using (Σ-syntax; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans)
+open import Data.Nat using (ℕ; _≤_; _⊔_)
+open import Data.Nat.Properties using (m≤m⊔n; m≤n⊔m)
+open import Data.Empty using (⊥; ⊥-elim)
+open import Relation.Nullary using (¬_)
+open import Data.Product using (Σ-syntax; _,_; proj₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
 
 private variable
   A B A' B' : Set
@@ -67,3 +70,73 @@ clocked {P₁} {P₂} R obs≈ rel = record
 
   bwd : ∀ {r₁ r₂} → RelResult R r₁ r₂ → r₂ ≡ timeout → r₁ ≡ timeout
   bwd timeout _ = refl
+
+{- Clock-monotone correctness ----------------------------------------------------}
+
+{- r₁ is related to r₂, or times out -}
+data LeResult (R : A → B → Set) : Result A → Result B → Set where
+  timeout : ∀ {r} → LeResult R timeout r
+  wrong : LeResult R wrong wrong
+  ret : ∀ {v w} → R v w → LeResult R (ret v) (ret w)
+
+{- r times out, or r' is r -}
+data _⊑ᵣ_ {A : Set} : Result A → Result A → Set where
+  timeout : ∀ {r} → timeout ⊑ᵣ r
+  same : ∀ {r} → r ⊑ᵣ r
+
+{- when P₂ needs no more clock than P₁ (at each clock, P₁'s result is P₂'s
+   or a timeout), P₂'s results grow with the clock, and P₂ returns only
+   when P₁ does for some clock, the programs are equivalent -}
+clocked-le : ∀ {P₁ P₂} (R : Val P₁ → Val P₂ → Set)
+  → (∀ {v w} → R v w → Semantics.obs P₁ v ≡ Semantics.obs P₂ w)
+  → (∀ {ck ck'} → ck ≤ ck' → run P₂ ck ⊑ᵣ run P₂ ck')
+  → (∀ ck → LeResult R (run P₁ ck) (run P₂ ck))
+  → (∀ ck → ¬ run P₂ ck ≡ timeout → Σ[ ck' ∈ ℕ ] ¬ run P₁ ck' ≡ timeout)
+  → Equivalent P₁ P₂
+clocked-le {P₁} {P₂} R obs≈ mono le def = record
+  { terminates = λ o → (λ { (ck , e) → ck , trans (sym (same-out (le ck) (λ t → nt e t))) e })
+                     , (λ { (ck , e) → back ck e })
+  ; diverges = (λ d ck → fwd-div d ck) , (λ d ck → bwd-div (le ck) (d ck)) }
+  where
+  nt : ∀ {C : Set} {obs : C → _} {r o} → outcome obs r ≡ just o → ¬ r ≡ timeout
+  nt e refl with e
+  ... | ()
+
+  same-out : ∀ {r₁ r₂} → LeResult R r₁ r₂ → ¬ r₁ ≡ timeout
+    → outcome (Semantics.obs P₁) r₁ ≡ outcome (Semantics.obs P₂) r₂
+  same-out timeout t = ⊥-elim (t refl)
+  same-out wrong t = refl
+  same-out (ret r) t rewrite obs≈ r = refl
+
+  ⊑-eq : ∀ {C : Set} {r r' : Result C} → r ⊑ᵣ r' → ¬ r ≡ timeout → r' ≡ r
+  ⊑-eq timeout t = ⊥-elim (t refl)
+  ⊑-eq same t = refl
+
+  le-nt : ∀ {r₁ r₂} → LeResult R r₁ r₂ → ¬ r₁ ≡ timeout → ¬ r₂ ≡ timeout
+  le-nt timeout t = ⊥-elim (t refl)
+  le-nt wrong t ()
+  le-nt (ret _) t ()
+
+  back : ∀ {o} ck → outcome (Semantics.obs P₂) (run P₂ ck) ≡ just o → Terminates P₁ o
+  back ck e with def ck (nt e)
+  ... | ck' , t' =
+    ck' , trans (same-out (le ck') t')
+            (trans (cong (outcome (Semantics.obs P₂))
+                     (trans (sym (⊑-eq (mono (m≤n⊔m ck ck')) (le-nt (le ck') t')))
+                            (⊑-eq (mono (m≤m⊔n ck ck')) (nt e))))
+                   e)
+
+  fwd-div : Diverges P₁ → ∀ ck → run P₂ ck ≡ timeout
+  fwd-div d ck = go (run P₂ ck) refl
+    where
+    go : ∀ r → run P₂ ck ≡ r → run P₂ ck ≡ timeout
+    go timeout e = e
+    go wrong e = ⊥-elim (proj₂ (def ck (λ t → wt (trans (sym e) t))) (d _))
+      where wt : _≡_ {A = Result (Val P₂)} wrong timeout → ⊥
+            wt ()
+    go (ret v) e = ⊥-elim (proj₂ (def ck (λ t → rt (trans (sym e) t))) (d _))
+      where rt : _≡_ {A = Result (Val P₂)} (ret v) timeout → ⊥
+            rt ()
+
+  bwd-div : ∀ {r₁ r₂} → LeResult R r₁ r₂ → r₂ ≡ timeout → r₁ ≡ timeout
+  bwd-div timeout _ = refl

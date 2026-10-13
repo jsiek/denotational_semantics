@@ -195,6 +195,7 @@ import proof.Adequacy.EndToEnd
 import proof.Semantics.Interp.Clock
 
 {- correctness of each pass, and of the compiler into each language -}
+import proof.Correctness.Interp.SimplifyFuel
 import proof.Correctness.Interp.EncloseFuel
 import proof.Correctness.Interp.OptimizeFuel
 import proof.Correctness.Interp.ConcretizeFuel
