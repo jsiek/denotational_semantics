@@ -920,7 +920,7 @@ free variables and argument to the slots where its body expects them.
 \end{array}
 \]
 
-\subsection{Operators}
+\subsection{Operators}\label{sec:den-ops}
 
 \begin{align*}
   D \app E &= \{ w \mid \exists V \NE.\; (V \mapsto w) \in D,\; V \subseteq E \} \\
@@ -4210,75 +4210,68 @@ apart: a trapped error denotes a set that holds the error value $\omega$
 (the value that $\rho_0$ already gives to a variable not in scope, and
 which is consistent only with itself), and divergence still denotes
 $\emptyset$. It is defined for every language of the compiler
-(\texttt{agda/Semantics/GraphErr/}); the operators are
-\texttt{agda/Framework/GraphModel/ErrorOps.agda}. Each semantics errs
+(\texttt{agda/Semantics/GraphErr/}); its operators are the graph model's
+(Section~\ref{sec:den-ops}), under an error monad on sets of values
+(\texttt{agda/Framework/GraphModel/ErrorMonad.agda}). Each semantics errs
 exactly where its machine does (Section~\ref{sec:machines}).
 
 \subsection{Operators}
 
-A set has a value when it has an element other than $\omega$, and has a
-value of the wrong kind $P$ when it has one that is not in $P$:
+A set $D$ is a computation: it errs when $\omega \in D$, its values are
+$\lfloor D \rfloor = \{ d \in D \mid d \neq \omega \}$, and it diverges
+when it has neither. The bind runs $F$ on the values of $D$:
 \begin{align*}
-  \mathit{val}(D) &\iff \exists d \in D.\; d \neq \omega \\
-  \mathit{wrong}_P(D) &\iff \exists d \in D.\; d \neq \omega \land d \notin P \\
-  \mathit{errs}(D_1, \ldots, D_n) &\iff \exists i.\; \omega \in D_i \land \forall j < i.\; \mathit{val}(D_j)
+  \mathit{val}(D) &\iff \lfloor D \rfloor \NE \\
+  D \bind F &= \{ \omega \mid \omega \in D \} \cup \{ w \mid \mathit{val}(D),\; w \in F(\lfloor D \rfloor) \} \\
+  \key{checked}_k(X, A) &= \{ \omega \mid \exists d \in X.\; \key{kind}(d) \neq k \} \cup A
 \end{align*}
-where the kinds are the functions ($\nu$ and $V \mapsto w$), the
-injections, the tuples of $n$ components, and the integers.
-$\mathit{errs}$ is evaluation from left to right: an operand that
-diverges ($\emptyset$) before one that errs gives no error.
+and $(D_1, \ldots, D_n) \bind K$ binds $n$ operands, left to right. So an
+operand that diverges ($\emptyset$) before one that errs gives no error,
+and $F$ never sees $\omega$. $\key{kind}(d)$ is the function ($\nu$,
+$V \mapsto w$), the pair, the injection, the tuple of $n$ components or
+the base type $B$ of a value; $\key{checked}_k$ adds the error of a value
+of another kind. Each operator is the graph model's operator (its
+\emph{kernel}) under binds of its operands, in the machines' order:
 \begin{align*}
-  D \app^{\omega} E &= \{ w \mid \exists V \NE.\; \omega \notin V,\; (V \mapsto w) \in D,\; V \subseteq E \} \\
-    &\cup\; \{ \omega \mid \omega \in D \;\lor\; \mathit{wrong}_{\mathit{fun}}(D)
-        \;\lor\; ((\exists f \in D.\; f \in \mathit{fun}) \land \omega \in E) \} \\
-  \Lambda^{\omega}(F) &= \{ V \mapsto w \mid V \NE,\; V \approx V,\; \omega \notin V,\; w \in F(V) \} \cup \{ \nu \} \\
-  \mathcal{T}^{\omega}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; \mathit{val}(D_j) \}
-     \cup \{ \omega \mid \mathit{errs}(D_1, \ldots, D_n) \} \qquad (n > 0) \\
-  \key{proj}^{\omega}_i(D) &= \{ d \mid \tup{i}{d} \in D \}
-     \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{tuple}_n}(D) \} \\
-  \key{inl}^{\omega}(D) &= \{ \Left{d} \mid d \in D,\; d \neq \omega \} \cup \{ \omega \mid \omega \in D \} \\
-  \mathcal{C}^{\omega}(D, F, G) &=
-    \{ w \mid \exists V \NE.\; V \approx V,\; \omega \notin V,\; (\forall v \in V.\; \Left{v} \in D),\; w \in F(V) \} \\
-    &\cup\; \{ w \mid \exists V \NE.\; V \approx V,\; \omega \notin V,\; (\forall v \in V.\; \Right{v} \in D),\; w \in G(V) \} \\
-    &\cup\; \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{inj}}(D) \} \\
-  \key{prim}^{\omega}_p(D, E) &= \key{prim}_p(D, E) \cup
-    \{ \omega \mid \mathit{errs}(D, E) \lor (\mathit{wrong}_{\mathit{int}}(D) \land \mathit{val}(E))
-       \lor (\mathit{val}(D) \land \mathit{wrong}_{\mathit{int}}(E)) \} \\
-  \key{guard}^{\omega}(D_1,\ldots,D_n; E) &= \{ \omega \mid \mathit{errs}(D_1,\ldots,D_n) \}
-     \cup \{ w \mid (\forall i.\; \mathit{val}(D_i)),\; w \in E \} \\
-  \key{pair}^{\omega}(D, E) &= \{ \pairv{u}{v} \mid u \in D,\; v \in E,\; u, v \neq \omega \}
-     \cup \{ \omega \mid \mathit{errs}(D, E) \} \\
-  \key{car}^{\omega}(D) &= \{ u \mid \exists v.\; \pairv{u}{v} \in D \}
-     \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{pair}}(D) \}
-     \qquad (\key{cdr}^{\omega} \text{ likewise}) \\
-  \key{call}^{\omega}(L, M, N) &= \{ w \mid \exists V, U \NE.\; \omega \notin V \cup U,\;
-       (V \mapsto (U \mapsto w)) \in L,\; V \subseteq M,\; U \subseteq N \} \\
-    &\cup\; \{ \omega \mid \mathit{errs}(L, M, N) \lor
-       (\mathit{wrong}_{\mathit{fun}}(L) \land \mathit{val}(M) \land \mathit{val}(N)) \}
+  D \app^{\omega} E &= D \bind \lambda F.\, \key{checked}_{\mathit{fun}}(F,\; E \bind \lambda X.\, F \app X) \\
+  \Lambda^{\omega}(F) &= \{ e \in \Lambda(F) \mid e = V \mapsto w \Rightarrow \omega \notin V \} \\
+  \mathcal{T}^{\omega}(D_1,\ldots,D_n) &= (D_1, \ldots, D_n) \bind \mathcal{T} \\
+  \key{proj}^{\omega}_i(D) &= D \bind \lambda X.\, \key{checked}_{\mathit{tup}_n}(X, \key{proj}_i(X)) \qquad
+  \key{inl}^{\omega}(D) = D \bind \key{inl} \\
+  \mathcal{C}^{\omega}(D, F, G) &= D \bind \lambda X.\, \key{checked}_{\mathit{inj}}(X,\; \mathcal{C}(X^{\checkmark}, F, G)) \\
+  \key{prim}^{\omega}_p(D, E) &= D \bind \lambda X.\, E \bind \lambda Y.\,
+    \key{checked}_{\mathit{int}}(X, \key{checked}_{\mathit{int}}(Y, \key{prim}_p(X, Y))) \\
+  \key{pair}^{\omega}(D, E) &= (D, E) \bind \key{pair} \qquad
+  \key{car}^{\omega}(D) = D \bind \lambda X.\, \key{checked}_{\mathit{pair}}(X, \key{car}(X)) \\
+  \key{call}^{\omega}(L, M, N) &= (L, M, N) \bind \lambda F\, E\, X.\, \key{checked}_{\mathit{fun}}(F,\; (F \app E) \app X)
 \end{align*}
-and $\mathcal{T}^{\omega}() = \{ \emptytup \}$, $\key{inr}^{\omega}$ as
-$\key{inl}^{\omega}$. Application checks its operator before its
-argument, as the ISWIM, Clos2 and Clos3 machines do: applying a
-non-function is an error even when the argument diverges.
-$\key{call}^{\omega}$ is the call of Clos4 and the later languages: code,
-environment and argument are evaluated left to right, and only then is
-the code checked (the late check of their machines). The binders
-$\Lambda^{\omega}$ and $\mathcal{C}^{\omega}$ bind no $\omega$, as call by
-value binds only values; otherwise $(\lam{x} 0)\;M$ would hold both $0$
-and $\omega$ when $M$ errs. For the global definitions and the
+where $X^{\checkmark}$ keeps the injections of $X$ whose payload is not
+$\omega$; $\key{inr}^{\omega}$ and $\key{cdr}^{\omega}$ likewise.
+Application checks its operator before it binds its argument, as the
+ISWIM, Clos2 and Clos3 machines do: applying a non-function is an error
+even when the argument diverges. $\key{call}^{\omega}$ is the call of
+Clos4 and the later languages: code, environment and argument are bound
+left to right, and only then is the code checked (the late check of
+their machines). The binders $\Lambda^{\omega}$ and $\mathcal{C}^{\omega}$
+bind no $\omega$; operands never are $\omega$ (the bind sees to that),
+but without the restriction $\lam{x}\lam{y} x$ would have the entry
+$[\omega] \mapsto \nu$ in ISWIM, where its closure in Clos2 has
+$[\omega] \mapsto \omega$. For the global definitions and the
 first-order languages there are also
 \begin{align*}
-  \Lambda\Lambda^{\omega}(F) &= \Lambda^{\omega}(\lambda X.\, \Lambda^{\omega}(\lambda Y.\, F(X, Y))) \qquad
+  \Lambda\Lambda^{\omega}(F) &= \{ e \in \Lambda\Lambda(F) \mid \text{no argument of } e \text{ holds } \omega \} \qquad
   \key{errcode} = \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \{\omega\}) \\
-  \key{strict}^{\omega}(D, E) &= \{ \omega \mid \omega \in D \} \cup \{ w \mid \mathit{val}(D),\; w \in E \} \\
-  \key{payload}^{\omega}(D) &= \{ v \mid (\Left{v} \in D \lor \Right{v} \in D),\; v \neq \omega \}
-    \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{inj}}(D) \}
+  \key{strict}^{\omega}(D, E) &= D \bind \lambda \_.\, E \qquad
+  \key{payload}^{\omega}(D) = D \bind \lambda X.\, \key{checked}_{\mathit{inj}}(X, \key{payload}(X^{\checkmark})) \\
+  \key{isinl}^{\omega}(D) &= D \bind \lambda X.\, \key{checked}_{\mathit{inj}}(X, \key{isinl}(X))
 \end{align*}
 $\key{errcode}$ is the meaning of a reference to a definition that is
 not there: code whose call errs, as the machines err at the call.
 $\key{strict}^{\omega}(D, E)$ is a write of $D$ to a register or the flag
-followed by $E$. Every operator is monotone, consistent and continuous
-(\texttt{agda/proof/Framework/GraphModel/\{ErrorOps,ErrorContinuity\}.agda}).
+followed by $E$. The monad laws, and the monotonicity, consistency and
+continuity of the bind and the check, are proved once; each operator's
+are derived from its kernel's
+(\texttt{agda/proof/Framework/GraphModel/ErrorMonad.agda}).
 
 \subsection{Semantics}
 
@@ -4292,9 +4285,8 @@ operator replaced by its error-propagating counterpart:
   \SEM{L\;M}^{\ell,\omega}\rho &= \SEM{L}^{\ell,\omega}\rho \app^{\omega} \SEM{M}^{\ell,\omega}\rho \\
   \SEM{\Let x = M \In N}^{\ell,\omega}\rho &= \Lambda^{\omega}(\lambda X.\, \SEM{N}^{\ell,\omega}\ext{\rho}{x}{X}) \app^{\omega} \SEM{M}^{\ell,\omega}\rho \\
   \SEM{\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N}^{2,\omega}\rho &=
-    \key{guard}^{\omega}(D_1, \ldots, D_n;\;
-       \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{2,\omega}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y)))
-    \\ &\qquad\text{where } D_i = \rho(z_i)
+    (\rho(z_1), \ldots, \rho(z_n)) \bind \lambda X_1 \ldots X_n.\,
+       \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{2,\omega}\rho_0(x_1{:=}X_1,\ldots,x_n{:=}X_n, y{:=}Y))
 \end{align*}
 and tuples, projections, injections, case and primitives likewise with
 $\mathcal{T}^{\omega}$, $\key{proj}^{\omega}_i$, $\key{inl}^{\omega}$,
@@ -4311,10 +4303,8 @@ For Clos3 and Clos4,
 \end{align*}
 and $\key{snd}$ by $\key{cdr}^{\omega}$; Clos3's application is
 $\app^{\omega}$, with the early check. All of these semantics are
-monotone, consistent and continuous; for Clos2, whose closures run their
-bodies on the (possibly infinite) denotations of their free variables,
-continuity is proved by induction on the term
-(\texttt{agda/proof/Semantics/GraphErr/Clos2Continuous.agda}).
+monotone and consistent, and all but Clos2's (whose continuity no proof
+needs) continuous.
 
 \paragraph{Clos5.} As Clos4, with the global definitions of the graph
 model's Clos5, except that a
@@ -4339,7 +4329,7 @@ missing definition. Reading a slot beyond the frame gives $\{\omega\}$,
 as before. Assigning one errs once the value assigned is computed:
 \[
   \mathit{checked}^{\omega}_n(s, D, E) =
-    \begin{cases} E & s < n \\ \{ \omega \mid D \NE \} & \text{otherwise.} \end{cases}
+    \begin{cases} E & s < n \\ D \bind \lambda \_.\, \{ \omega \} & \text{otherwise.} \end{cases}
 \]
 A body runs in a fresh frame of $\max(2, n)$ slots when called (and of
 $n$ for main), as in the machines. Writing $\SEM{e}\sigma\,\kappa$ for
@@ -4372,8 +4362,7 @@ register or the flag is $\key{strict}^{\omega}$:
   \key{flag}(F, \kappa)(\sigma, \rho) = \key{strict}^{\omega}(F,\; \kappa(\sigma, \rho, F)) \\
   \SEM{\key{callq}\; o}\kappa\,\sigma\,\rho\,\varphi &= \key{strict}^{\omega}(R,\; \kappa(\sigma, \key{called}(R), \{\omega\}))
     \quad\text{where } R = \key{call}^{\omega}(\mathcal{O}(o), \rho(\rdi), \rho(\rsi)) \\
-  \key{isinl}^{\omega}(D) &= \key{isinl}(D) \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{inj}}(D) \} \qquad
-  \key{field}_{\key{payload}} = \key{payload}^{\omega}
+  \key{field}_{\key{payload}} &= \key{payload}^{\omega} \qquad \text{the flag of } \key{testinl} = \key{isinl}^{\omega}
 \end{align*}
 with $\key{called}(R)(\%g) = \{\omega\}$ and $\key{args}(X, Y)(\rax) =
 \{\omega\}$; $\key{alloc}$ of the wrong number of fields is $\{\omega\}$;
@@ -4408,7 +4397,9 @@ $D' = \SEM{\pass{delay}(M)}^{4,\omega}\rho_0$,
 \]
 \end{theorem}
 The proofs are those of the graph model with environments that hold
-values and no $\omega$. Simplify duplicates and drops only values, and a
+values and no $\omega$, and with the monad's laws for the errors: an
+operand that is a set of values binds as the left unit, a let is the bind
+of its body, binds associate, and a case and a check commute with a bind. Simplify duplicates and drops only values, and a
 variable stands for a value, so the theorem is for closed terms (for an
 open one, $\Let y = x \In 0$ becomes $0$, though $x$ errs in $\rho_0$).
 A Clos2 closure is an error when one of its free variables is, so

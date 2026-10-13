@@ -74,10 +74,6 @@ that every module outside `proof/` is used by a theorem statement).
     machines on its compilation stop with an error together, stop with
     the same constants, stop with an answer together, and diverge
     together.
-  * `Theorems/GraphErrorsMonad.agda`: a pilot of the graph model with
-    errors built from an error monad on 𝒫 Value: simplify and enclose
-    preserve the meaning of a closed program, and the model is adequate
-    for the ISWIM machine on all three outcomes.
 * The compiler, shared by all four styles:
   * `Language/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
@@ -92,10 +88,8 @@ that every module outside `proof/` is used by a theorem statement).
     `bound`), base types, and list lookups.
 * The semantics, per style:
   * graph model with errors: `Semantics/GraphErr/` (every language)
-    and `Framework/GraphModel/ErrorOps.agda` (the error-propagating
-    operators); its monadic pilot: `Semantics/GraphErrM/` (ISWIM and
-    Clos2) and `Framework/GraphModel/ErrorMonad.agda` (the error monad,
-    and operators built from it over the graph model's);
+    and `Framework/GraphModel/ErrorMonad.agda` (an error monad on
+    𝒫 Value, and the operators built from it over the graph model's);
   * denotational: `Semantics/Graph/` (the meaning of the primitives,
     `Prim.agda`, and the semantics of each language) and
     `Framework/GraphModel/` (sets as predicates, environments, the
@@ -167,9 +161,7 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   `proof/Correctness/CEK/DelayBackSim.agda`).
 * the graph model with errors, reported next to the four styles but
   not in their comparison (`proof/Semantics/GraphErr/`,
-  `proof/Correctness/GraphErr/`, `proof/Adequacy/GraphErr/`), and its
-  monadic pilot, in no total (`proof/Semantics/GraphErrM/`,
-  `proof/Correctness/GraphErrM/`, `proof/Adequacy/GraphErrM/`).
+  `proof/Correctness/GraphErr/`, `proof/Adequacy/GraphErr/`).
 
 The semantics of ISWIM and Clos2–Clos4 is defined on the surface
 directly, as the fold of its operators over a term; `proof/` packages the
