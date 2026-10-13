@@ -4201,4 +4201,118 @@ by the theorems for each pass, Lemmas~\ref{lem:simplify-closed} and~\ref{lem:com
 Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
+%===============================================================================
+\section{The Graph Model with Errors (Pilot)}\label{sec:graph-errors}
+
+In the graph model, a program that stops with an error and one that
+diverges both denote $\emptyset$. The graph model with errors tells them
+apart: a trapped error denotes a set that holds the error value $\omega$
+(the value that $\rho_0$ already gives to a variable not in scope, and
+which is consistent only with itself), and divergence still denotes
+$\emptyset$. It is defined for ISWIM and Clos2, the languages of
+simplify and enclose (\texttt{agda/Semantics/GraphErr/}); the operators
+are \texttt{agda/Framework/GraphModel/ErrorOps.agda}.
+
+\subsection{Operators}
+
+A set has a value when it has an element other than $\omega$, and has a
+value of the wrong kind $P$ when it has one that is not in $P$:
+\begin{align*}
+  \mathit{val}(D) &\iff \exists d \in D.\; d \neq \omega \\
+  \mathit{wrong}_P(D) &\iff \exists d \in D.\; d \neq \omega \land d \notin P \\
+  \mathit{errs}(D_1, \ldots, D_n) &\iff \exists i.\; \omega \in D_i \land \forall j < i.\; \mathit{val}(D_j)
+\end{align*}
+where the kinds are the functions ($\nu$ and $V \mapsto w$), the
+injections, the tuples of $n$ components, and the integers.
+$\mathit{errs}$ is evaluation from left to right: an operand that
+diverges ($\emptyset$) before one that errs gives no error.
+\begin{align*}
+  D \app^{\omega} E &= \{ w \mid \exists V \NE.\; \omega \notin V,\; (V \mapsto w) \in D,\; V \subseteq E \} \\
+    &\cup\; \{ \omega \mid \omega \in D \;\lor\; \mathit{wrong}_{\mathit{fun}}(D)
+        \;\lor\; ((\exists f \in D.\; f \in \mathit{fun}) \land \omega \in E) \} \\
+  \Lambda^{\omega}(F) &= \{ V \mapsto w \mid V \NE,\; V \approx V,\; \omega \notin V,\; w \in F(V) \} \cup \{ \nu \} \\
+  \mathcal{T}^{\omega}(D_1,\ldots,D_n) &= \{ \tup{i}{d} \mid d \in D_i,\; \forall j.\; \mathit{val}(D_j) \}
+     \cup \{ \omega \mid \mathit{errs}(D_1, \ldots, D_n) \} \qquad (n > 0) \\
+  \key{proj}^{\omega}_i(D) &= \{ d \mid \tup{i}{d} \in D \}
+     \cup \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{tuple}_n}(D) \} \\
+  \key{inl}^{\omega}(D) &= \{ \Left{d} \mid d \in D,\; d \neq \omega \} \cup \{ \omega \mid \omega \in D \} \\
+  \mathcal{C}^{\omega}(D, F, G) &=
+    \{ w \mid \exists V \NE.\; V \approx V,\; \omega \notin V,\; (\forall v \in V.\; \Left{v} \in D),\; w \in F(V) \} \\
+    &\cup\; \{ w \mid \exists V \NE.\; V \approx V,\; \omega \notin V,\; (\forall v \in V.\; \Right{v} \in D),\; w \in G(V) \} \\
+    &\cup\; \{ \omega \mid \omega \in D \lor \mathit{wrong}_{\mathit{inj}}(D) \} \\
+  \key{prim}^{\omega}_p(D, E) &= \key{prim}_p(D, E) \cup
+    \{ \omega \mid \mathit{errs}(D, E) \lor (\mathit{wrong}_{\mathit{int}}(D) \land \mathit{val}(E))
+       \lor (\mathit{val}(D) \land \mathit{wrong}_{\mathit{int}}(E)) \} \\
+  \key{guard}^{\omega}(D_1,\ldots,D_n; E) &= \{ \omega \mid \mathit{errs}(D_1,\ldots,D_n) \}
+     \cup \{ w \mid (\forall i.\; \mathit{val}(D_i)),\; w \in E \}
+\end{align*}
+and $\mathcal{T}^{\omega}() = \{ \emptytup \}$, $\key{inr}^{\omega}$ as
+$\key{inl}^{\omega}$. Application checks its operator before its
+argument, as the machines do (Section~\ref{sec:machines}): applying a
+non-function is an error even when the argument diverges. The binders
+$\Lambda^{\omega}$ and $\mathcal{C}^{\omega}$ bind no $\omega$, as call by
+value binds only values; otherwise $(\lam{x} 0)\;M$ would hold both $0$
+and $\omega$ when $M$ errs. Every operator is monotone, consistent and
+continuous (\texttt{agda/proof/Framework/GraphModel/\{ErrorOps,ErrorContinuity\}.agda}).
+
+\subsection{Semantics}
+
+$\SEM{-}^{\mathrm{ISWIM},\omega}$ and $\SEM{-}^{2,\omega}$ are the
+clauses of the graph model's semantics of ISWIM and Clos2 with each
+operator replaced by its error-propagating counterpart:
+\begin{align*}
+  \SEM{x}^{\ell,\omega}\rho &= \rho(x) \qquad
+  \SEM{c}^{\ell,\omega}\rho = \mathcal{B}(c) \\
+  \SEM{\lam{x} N}^{\mathrm{ISWIM},\omega}\rho &= \Lambda^{\omega}(\lambda X.\, \SEM{N}^{\mathrm{ISWIM},\omega}\ext{\rho}{x}{X}) \\
+  \SEM{L\;M}^{\ell,\omega}\rho &= \SEM{L}^{\ell,\omega}\rho \app^{\omega} \SEM{M}^{\ell,\omega}\rho \\
+  \SEM{\Let x = M \In N}^{\ell,\omega}\rho &= \Lambda^{\omega}(\lambda X.\, \SEM{N}^{\ell,\omega}\ext{\rho}{x}{X}) \app^{\omega} \SEM{M}^{\ell,\omega}\rho \\
+  \SEM{\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N}^{2,\omega}\rho &=
+    \key{guard}^{\omega}(D_1, \ldots, D_n;\;
+       \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{2,\omega}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y)))
+    \\ &\qquad\text{where } D_i = \rho(z_i)
+\end{align*}
+and tuples, projections, injections, case and primitives likewise with
+$\mathcal{T}^{\omega}$, $\key{proj}^{\omega}_i$, $\key{inl}^{\omega}$,
+$\key{inr}^{\omega}$, $\mathcal{C}^{\omega}$ and $\key{prim}^{\omega}_p$.
+Both semantics are monotone and consistent, and continuous; for Clos2,
+whose closures run their bodies on the (possibly infinite) denotations of
+their free variables, continuity is proved by induction on the term
+(\texttt{agda/proof/Semantics/GraphErr/Clos2Continuous.agda}).
+
+\subsection{Correctness of Simplify and Enclose}
+
+\begin{theorem}[Simplify and Enclose, with Errors]
+For every ISWIM term $M$ with $\FV(M) = \emptyset$,
+\[
+  \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{simplify}(M)}^{\mathrm{ISWIM},\omega}\rho_0
+  \qquad\text{and}\qquad
+  \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{enclose}(M)}^{2,\omega}\rho_0 .
+\]
+\end{theorem}
+The proofs are those of the graph model with environments that hold values and no $\omega$: simplify
+duplicates and drops only values, and a variable stands for a value, so
+the theorem is for closed terms (for an open one, $\Let y = x \In 0$
+becomes $0$, though $x$ errs in $\rho_0$); a closed term means the same in
+every environment. A Clos2 closure is an error when one of its free
+variables is, so enclose needs the variables a closure captures (those
+below the bound of the function) to have values and no errors.
+
+\subsection{Adequacy for ISWIM}
+
+\begin{theorem}[Adequacy, with Errors]
+For every ISWIM term $M$ with $\FV(M) = \emptyset$, writing
+$D = \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0$ and $L = \Mach{\mathrm{ISWIM}}(M)$,
+\begin{align*}
+  \omega \in D &\iff \Term_L(\error) \\
+  c \in D &\iff \Term_L(c) \\
+  (\exists d \in D.\; d \neq \omega) &\iff \exists o \neq \error.\; \Term_L(o) \\
+  D = \emptyset &\iff \Div_L .
+\end{align*}
+\end{theorem}
+So the graph model with errors tells all three outcomes of a run apart,
+as the operational theorems ($\Equiv$) do. Soundness (a run shrinks the
+denotation of the machine's state) and adequacy (a logical relation
+between values of the domain and of the machine, which relates $\omega$
+to a run that stops with an error) are as for the graph model.
+
 \end{document}
