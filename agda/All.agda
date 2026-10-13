@@ -254,3 +254,7 @@ import proof.Semantics.GraphErr.Clos2
 import proof.Semantics.GraphErr.Clos2Continuous
 import proof.Correctness.GraphErr.SimplifyCorrect
 import proof.Correctness.GraphErr.EncloseCorrect
+import proof.Adequacy.GraphErr.Soundness
+import proof.Adequacy.GraphErr.LogRel
+import proof.Adequacy.GraphErr.ISWIM
+import proof.Adequacy.GraphErr.Simplify
