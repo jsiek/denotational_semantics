@@ -1,24 +1,19 @@
 {-
 
-  Soundness of the ISWIM machine with respect to the graph model with
-  errors (Semantics/GraphErr/ISWIM.agda): what the machine computes is in
-  the denotation of the program, and when it stops with an error, ω is.
+  Soundness of the ISWIM machine with respect to the graph model
+  with errors (Semantics/GraphErr/ISWIM.agda): what the machine computes
+  is in the denotation of the program, and when it stops with an error,
+  ω is. The structure is that of proof/Adequacy/GraphErr/Soundness.agda:
+  each machine state denotes a set (𝒮), each step can only shrink it.
 
-  As in proof/Adequacy/Soundness.agda, each machine state denotes a set
-  (𝒮), through denotations of values (𝒱), environments (𝓔) and
-  continuations (𝒦), now built from the error-propagating operators, and
-  each step can only shrink it (step-⊆). New here:
-
-  * every value denotes a set with a value and without ω (𝒱-val,
-    𝒱-noω), so that the binders, which bind no ω, can bind it (app-β);
-  * a continuation passes on ω (𝒦-ω): the operands before the hole are
-    values, which have values, as the error-propagating operators require
-    to pass on an error of a later operand;
-  * a state that stops with an error denotes a set that holds ω
-    (final-err): an unbound variable means {ω}, and each check of the
-    machine (a function, a tuple of the right size, an injection, two
-    integers) fails on a value whose denotation has an element of the
-    wrong kind.
+  The monad does the error bookkeeping:
+  * a continuation passes on ω (𝒦-ω): an erring operand errs in its bind,
+    whatever the operator; a later operand errs once the earlier ones,
+    values, have been bound;
+  * a check of the machine fails on a value of another kind (𝒱-bad): the
+    elements of the denotation of a value are of its kind (𝒱-kind), so
+    the kernel's check errs;
+  * β for a value is the monad's left unit (letᵐ-β, 𝒞ᵐ-inl-β).
 
 -}
 
@@ -28,20 +23,20 @@ open import Framework.Primitives using (Base; base-rep; Int; Nat; 𝔹; Unit; Vo
 open import Language.Prim using (Out; int; bool; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈; ρ₀)
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con-⊆; ρ₀)
   renaming (const to dconst)
 open import proof.Framework.GraphModel.OpsBase using (ℬ; nthD; ℬ-consis)
-open import proof.Framework.GraphModel.ErrorOps
-  using (⋆ᵉ; Λᵉ; 𝒯ᵉ; projᵉ; inlᵉ; inrᵉ; 𝒞ᵉ; letᵉ; val∈; wrong; errs; vals; IsFun; IsInj; IsTup;
-         Λᵉ-consis; inlᵉ-consis; inrᵉ-consis; Λᵉ-clean; ℬ-clean; Clean; Clean-NoErr;
-         ⋆ᵉ-mono; projᵉ-mono; inlᵉ-mono; inrᵉ-mono; 𝒞ᵉ-mono)
-open import proof.Semantics.GraphErr.Prim using (primᵉ; primᵉ-mono; IsInt) renaming (out to dout)
+open import proof.Framework.GraphModel.ErrorMonad renaming (Val to Valᴰ)
+open import proof.Framework.GraphModel.ContinuityBase using (mono; consis)
+open import proof.Semantics.GraphErr.Prim using (primᵐ; primᵐ-good) renaming (out to dout)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
+open import proof.Framework.GraphModel.DOpSig using (Results)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (yes; no; ¬_)
 open import Level using (lift; lower)
 open import Language.ISWIM
-open import proof.Semantics.GraphErr.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIMᵉ-con-env; body-continuous)
+open import proof.Semantics.GraphErr.ISWIM
+  using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIMᵐ-con-env; body-mono; body-continuous)
 import proof.Framework.GraphModel.Env
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Semantics.Observation
@@ -51,51 +46,51 @@ open import Semantics.CEK.ISWIM hiding (inl; inr)
 import Semantics.CEK.ISWIM as T using (inl; inr)
 open import proof.Adequacy.Common
 
-open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Integer using (ℤ)
-open import Data.List using (List; []; _∷_; length; replicate; reverse; map)
+open import Data.List using (List; []; _∷_; length; replicate; reverse)
 open import Data.List.Base using (reverseAcc)
-open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
+open import Data.Bool using (true; false)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 
 VEnv : Set₁
 VEnv = proof.Framework.GraphModel.Env.Env Value
 
-{- Tuples of sets ------------------------------------------------------------}
+{- Tuples of lists of sets, under binds ------------------------------------------}
 
 At : ∀ {n} → Fin n → List (𝒫 Value) → Value → Set
 At {suc n} zero (D ∷ Ds) d = length Ds ≡ n × d ∈ D
 At (suc i) (D ∷ Ds) d = At i Ds d
 At _ [] d = ⊥
 
-{- every component has a value -}
-AllV : List (𝒫 Value) → Set
-AllV [] = ⊤
-AllV (D ∷ Ds) = val∈ D × AllV Ds
-
-{- an error in the components, left to right -}
-errsL : List (𝒫 Value) → Set
-errsL [] = ⊥
-errsL (D ∷ Ds) = ω ∈ D ⊎ (val∈ D × errsL Ds)
+AllNE : List (𝒫 Value) → Set
+AllNE [] = ⊤
+AllNE (D ∷ Ds) = nonempty D × AllNE Ds
 
 Null : List (𝒫 Value) → Set
 Null [] = ⊤
 Null (D ∷ Ds) = ⊥
 
-{- the tuple of a list of sets (𝒯ᵉ, for lists) -}
+{- the graph model's tuple, of a list of sets -}
+𝒯P : List (𝒫 Value) → 𝒫 Value
+𝒯P Ds ⟨⟩ = Null Ds
+𝒯P Ds (tup[ i ] d) = At i Ds d × AllNE Ds
+𝒯P Ds _ = ⊥
+
+{- bind a list of sets, left to right -}
+bindL : List (𝒫 Value) → (List (𝒫 Value) → 𝒫 Value) → 𝒫 Value
+bindL [] K = K []
+bindL (D ∷ Ds) K = D ≫= λ X → bindL Ds (λ Xs → K (X ∷ Xs))
+
 𝒯L : List (𝒫 Value) → 𝒫 Value
-𝒯L Ds ω = errsL Ds
-𝒯L Ds ⟨⟩ = Null Ds
-𝒯L Ds (tup[ i ] d) = At i Ds d × AllV Ds
-𝒯L Ds _ = ⊥
+𝒯L Ds = bindL Ds 𝒯P
 
 infix 4 _⊆L_
 _⊆L_ : List (𝒫 Value) → List (𝒫 Value) → Set
@@ -107,30 +102,61 @@ _ ⊆L _ = ⊥
 ⊆L-refl [] = tt
 ⊆L-refl (D ∷ Ds) = ⟨ (λ d z → z) , ⊆L-refl Ds ⟩
 
-val∈-⊆ : ∀ {D E} → D ⊆ E → val∈ D → val∈ E
-val∈-⊆ D⊆ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩
+bindL-mono : ∀ Ds Es {K K'} → Ds ⊆L Es → (∀ {Xs Ys} → Xs ⊆L Ys → K Xs ⊆ K' Ys) → bindL Ds K ⊆ bindL Es K'
+bindL-mono [] [] _ mK = mK tt
+bindL-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ mK = ≫=-mono D⊆ (λ X⊆ → bindL-mono Ds Es s (λ s' → mK ⟨ X⊆ , s' ⟩))
 
 At-mono : ∀ {n} (i : Fin n) Ds Es d → Ds ⊆L Es → At i Ds d → At i Es d
-At-mono {suc n} zero (D ∷ Ds) (E ∷ Es) d ⟨ D⊆ , Ds⊆ ⟩ ⟨ len , d∈ ⟩ =
-  ⟨ len' Ds Es Ds⊆ len , D⊆ d d∈ ⟩
+At-mono {suc n} zero (D ∷ Ds) (E ∷ Es) d ⟨ D⊆ , Ds⊆ ⟩ ⟨ len , d∈ ⟩ = ⟨ len' Ds Es Ds⊆ len , D⊆ d d∈ ⟩
   where
   len' : ∀ {m} Ds Es → Ds ⊆L Es → length Ds ≡ m → length Es ≡ m
   len' [] [] _ refl = refl
   len' (D ∷ Ds) (E ∷ Es) ⟨ _ , s ⟩ refl = cong suc (len' Ds Es s refl)
 At-mono (suc i) (D ∷ Ds) (E ∷ Es) d ⟨ _ , Ds⊆ ⟩ a = At-mono i Ds Es d Ds⊆ a
 
-AllV-mono : ∀ Ds Es → Ds ⊆L Es → AllV Ds → AllV Es
-AllV-mono [] [] _ _ = tt
-AllV-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ v , vs ⟩ = ⟨ val∈-⊆ D⊆ v , AllV-mono Ds Es s vs ⟩
+AllNE-mono : ∀ Ds Es → Ds ⊆L Es → AllNE Ds → AllNE Es
+AllNE-mono [] [] _ _ = tt
+AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ = ⟨ ⟨ d , D⊆ d d∈ ⟩ , AllNE-mono Ds Es s ne ⟩
 
-errsL-mono : ∀ Ds Es → Ds ⊆L Es → errsL Ds → errsL Es
-errsL-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ (inj₁ ω∈) = inj₁ (D⊆ ω ω∈)
-errsL-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ (inj₂ ⟨ v , e ⟩) = inj₂ ⟨ val∈-⊆ D⊆ v , errsL-mono Ds Es s e ⟩
+𝒯P-mono : ∀ {Ds Es} → Ds ⊆L Es → 𝒯P Ds ⊆ 𝒯P Es
+𝒯P-mono {[]} {[]} s ⟨⟩ tt = tt
+𝒯P-mono {Ds} {Es} s (tup[ i ] d) ⟨ a , ne ⟩ = ⟨ At-mono i Ds Es d s a , AllNE-mono Ds Es s ne ⟩
 
-𝒯L-mono : ∀ Ds Es → Ds ⊆L Es → 𝒯L Ds ⊆ 𝒯L Es
-𝒯L-mono Ds Es s ω e = errsL-mono Ds Es s e
-𝒯L-mono [] [] s ⟨⟩ tt = tt
-𝒯L-mono Ds Es s (tup[ i ] d) ⟨ a , av ⟩ = ⟨ At-mono i Ds Es d s a , AllV-mono Ds Es s av ⟩
+{- every component has values and no error -}
+Vals : List (𝒫 Value) → Set
+Vals [] = ⊤
+Vals (D ∷ Ds) = Valᴰ D × Vals Ds
+
+bindL-β : ∀ Ds {K} → (∀ {Xs Ys} → Xs ⊆L Ys → K Xs ⊆ K Ys) → Vals Ds → bindL Ds K ≃ K Ds
+bindL-β [] mK _ = ≃-refl
+bindL-β (D ∷ Ds) {K} mK ⟨ ⟨ c , ne ⟩ , vs ⟩ =
+  ≃-trans (≫=-β {F = λ X → bindL Ds (λ Xs → K (X ∷ Xs))}
+                (λ X⊆ → bindL-mono Ds Ds (⊆L-refl Ds) (λ s → mK ⟨ X⊆ , s ⟩)) c ne)
+          (bindL-β Ds (λ s → mK ⟨ (λ d z → z) , s ⟩) vs)
+
+𝒯L-β : ∀ Ds → Vals Ds → 𝒯L Ds ≃ 𝒯P Ds
+𝒯L-β Ds = bindL-β Ds 𝒯P-mono
+
+{- an error in the components, left to right -}
+errsL : List (𝒫 Value) → Set
+errsL [] = ⊥
+errsL (D ∷ Ds) = ω ∈ D ⊎ (Conv D × errsL Ds)
+
+errsL-ω : ∀ Ds {K} → errsL Ds → ω ∈ bindL Ds K
+errsL-ω (D ∷ Ds) (inj₁ ω∈) = inj₁ ⟨ refl , ω∈ ⟩
+errsL-ω (D ∷ Ds) (inj₂ ⟨ c , e ⟩) = inj₂ ⟨ c , errsL-ω Ds e ⟩
+
+At-length : ∀ {m} (i : Fin m) Ds d → At i Ds d → length Ds ≡ m
+At-length {suc m} zero (D ∷ Ds) d ⟨ len , _ ⟩ = cong suc len
+At-length (suc i) (D ∷ Ds) d a = cong suc (At-length i Ds d a)
+
+At-[] : ∀ {n} (i : Fin n) {d} → At i [] d → ⊥
+At-[] zero ()
+At-[] (suc i) ()
+
+𝒯P-kind : ∀ Ds d → d ∈ 𝒯P Ds → kind d ≡ tup (length Ds)
+𝒯P-kind [] ⟨⟩ _ = refl
+𝒯P-kind Ds (tup[ i ] d) ⟨ a , _ ⟩ = cong tup (sym (At-length i Ds d a))
 
 {- Denotations of values, environments, continuations and states ------------}
 
@@ -138,11 +164,11 @@ errsL-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ (inj₂ ⟨ v , e ⟩) = inj�
 𝒱s : List Val → List (𝒫 Value)
 𝓔 : Env → VEnv
 
-𝒱 (clo N γ) = Λᵉ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
+𝒱 (clo N γ) = Λᵐ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
 𝒱 (const B k) = ℬ B k ptt
 𝒱 (tup vs) = 𝒯L (𝒱s vs)
-𝒱 (T.inl v) = inlᵉ ⟨ 𝒱 v , ptt ⟩
-𝒱 (T.inr v) = inrᵉ ⟨ 𝒱 v , ptt ⟩
+𝒱 (T.inl v) = inlᵐ ⟨ 𝒱 v , ptt ⟩
+𝒱 (T.inr v) = inrᵐ ⟨ 𝒱 v , ptt ⟩
 
 𝒱s [] = []
 𝒱s (v ∷ vs) = 𝒱 v ∷ 𝒱s vs
@@ -161,106 +187,148 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 
 𝒦 : Cont → 𝒫 Value → 𝒫 Value
 𝒦 halt D = D
-𝒦 (appL M γ κ) D = 𝒦 κ (⋆ᵉ ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
-𝒦 (appR v κ) D = 𝒦 κ (⋆ᵉ ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
+𝒦 (appL M γ κ) D = 𝒦 κ (⋆ᵐ ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
+𝒦 (appR v κ) D = 𝒦 κ (⋆ᵐ ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
 𝒦 (tupK vs Ms γ κ) D = 𝒦 κ (𝒯L (rev𝒱 vs (D ∷ ⟦ Ms ⟧* (𝓔 γ))))
-𝒦 (getK i κ) D = 𝒦 κ (projᵉ i ⟨ D , ptt ⟩)
-𝒦 (inlK κ) D = 𝒦 κ (inlᵉ ⟨ D , ptt ⟩)
-𝒦 (inrK κ) D = 𝒦 κ (inrᵉ ⟨ D , ptt ⟩)
+𝒦 (getK i κ) D = 𝒦 κ (projᵐ i ⟨ D , ptt ⟩)
+𝒦 (inlK κ) D = 𝒦 κ (inlᵐ ⟨ D , ptt ⟩)
+𝒦 (inrK κ) D = 𝒦 κ (inrᵐ ⟨ D , ptt ⟩)
 𝒦 (caseK M N γ κ) D =
-  𝒦 κ (𝒞ᵉ ⟨ D , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
-𝒦 (primL p M γ κ) D = 𝒦 κ (primᵉ p ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
-𝒦 (primR p v κ) D = 𝒦 κ (primᵉ p ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
-𝒦 (letK N γ κ) D = 𝒦 κ (⋆ᵉ ⟨ 𝒱 (clo N γ) , ⟨ D , ptt ⟩ ⟩)
+  𝒦 κ (𝒞ᵐ ⟨ D , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩)
+𝒦 (primL p M γ κ) D = 𝒦 κ (primᵐ p ⟨ D , ⟨ ⟦ M ⟧ (𝓔 γ) , ptt ⟩ ⟩)
+𝒦 (primR p v κ) D = 𝒦 κ (primᵐ p ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩)
+𝒦 (letK N γ κ) D = 𝒦 κ (⋆ᵐ ⟨ 𝒱 (clo N γ) , ⟨ D , ptt ⟩ ⟩)
 
 𝒮 : State → 𝒫 Value
 𝒮 (eval M γ κ) = 𝒦 κ (⟦ M ⟧ (𝓔 γ))
 𝒮 (ret v κ) = 𝒦 κ (𝒱 v)
 
-{- Basic properties ----------------------------------------------------------}
+{- Monotonicity of the continuations -----------------------------------------}
 
 rev𝒱-mono : ∀ vs Ds Es → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
 rev𝒱-mono [] Ds Es s = s
 rev𝒱-mono (v ∷ vs) Ds Es s = rev𝒱-mono vs (𝒱 v ∷ Ds) (𝒱 v ∷ Es) ⟨ (λ d z → z) , s ⟩
 
-{- a hole of an operator, monotone in it -}
-hole₁ : ∀ (f : 𝒫 Value → 𝒫 Value) → Set₁
-hole₁ f = ∀ {D E} → D ⊆ E → f D ⊆ f E
-
-⋆ᵉ-l : ∀ {E} → hole₁ (λ D → ⋆ᵉ ⟨ D , ⟨ E , ptt ⟩ ⟩)
-⋆ᵉ-l {E} {D} {D'} D⊆ = lower (⋆ᵉ-mono ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E , ptt ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift (λ d z → z) , ptt ⟩ ⟩)
-
-⋆ᵉ-r : ∀ {F} → hole₁ (λ D → ⋆ᵉ ⟨ F , ⟨ D , ptt ⟩ ⟩)
-⋆ᵉ-r {F} {D} {D'} D⊆ = lower (⋆ᵉ-mono ⟨ F , ⟨ D , ptt ⟩ ⟩ ⟨ F , ⟨ D' , ptt ⟩ ⟩ ⟨ lift (λ d z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩)
-
-prim-l : ∀ p {E} → hole₁ (λ D → primᵉ p ⟨ D , ⟨ E , ptt ⟩ ⟩)
-prim-l p {E} {D} {D'} D⊆ = lower (primᵉ-mono p ⟨ D , ⟨ E , ptt ⟩ ⟩ ⟨ D' , ⟨ E , ptt ⟩ ⟩ ⟨ lift D⊆ , ⟨ lift (λ d z → z) , ptt ⟩ ⟩)
-
-prim-r : ∀ p {F} → hole₁ (λ D → primᵉ p ⟨ F , ⟨ D , ptt ⟩ ⟩)
-prim-r p {F} {D} {D'} D⊆ = lower (primᵉ-mono p ⟨ F , ⟨ D , ptt ⟩ ⟩ ⟨ F , ⟨ D' , ptt ⟩ ⟩ ⟨ lift (λ d z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩)
-
 𝒦-mono : ∀ κ {D E} → D ⊆ E → 𝒦 κ D ⊆ 𝒦 κ E
 𝒦-mono halt D⊆ = D⊆
-𝒦-mono (appL M γ κ) D⊆ = 𝒦-mono κ (⋆ᵉ-l D⊆)
-𝒦-mono (appR v κ) D⊆ = 𝒦-mono κ (⋆ᵉ-r D⊆)
+𝒦-mono (appL M γ κ) D⊆ = 𝒦-mono κ (lower (mono (⋆ᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ⟨ lift (λ d z → z) , ptt ⟩ ⟩))
+𝒦-mono (appR v κ) D⊆ = 𝒦-mono κ (lower (mono (⋆ᵐ-good {⊤}) _ _ ⟨ lift (λ d z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩))
 𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ =
-  𝒦-mono κ (𝒯L-mono _ _ (rev𝒱-mono vs (D ∷ _) (E ∷ _) ⟨ D⊆ , ⊆L-refl _ ⟩))
-𝒦-mono (getK i κ) {D} {E} D⊆ = 𝒦-mono κ (lower (projᵉ-mono i ⟨ D , ptt ⟩ ⟨ E , ptt ⟩ ⟨ lift D⊆ , ptt ⟩))
-𝒦-mono (inlK κ) {D} {E} D⊆ = 𝒦-mono κ (lower (inlᵉ-mono ⟨ D , ptt ⟩ ⟨ E , ptt ⟩ ⟨ lift D⊆ , ptt ⟩))
-𝒦-mono (inrK κ) {D} {E} D⊆ = 𝒦-mono κ (lower (inrᵉ-mono ⟨ D , ptt ⟩ ⟨ E , ptt ⟩ ⟨ lift D⊆ , ptt ⟩))
-𝒦-mono (caseK M N γ κ) {D} {E} D⊆ =
-  𝒦-mono κ (lower (𝒞ᵉ-mono ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ⟨ E , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
-                          ⟨ lift D⊆ , ⟨ (λ X Y X⊆ → lift (⟦⟧-monotone M (•ext X⊆))) ,
-                                      ⟨ (λ X Y X⊆ → lift (⟦⟧-monotone N (•ext X⊆))) , ptt ⟩ ⟩ ⟩))
-  where
-  F = λ X → ⟦ M ⟧ (X • 𝓔 γ)
-  G = λ X → ⟦ N ⟧ (X • 𝓔 γ)
-  •ext : ∀ {X Y} → X ⊆ Y → ∀ x → (X • 𝓔 γ) x ⊆ (Y • 𝓔 γ) x
-  •ext X⊆ zero = X⊆
-  •ext X⊆ (suc x) = λ d z → z
-𝒦-mono (primL p M γ κ) D⊆ = 𝒦-mono κ (prim-l p D⊆)
-𝒦-mono (primR p v κ) D⊆ = 𝒦-mono κ (prim-r p D⊆)
-𝒦-mono (letK N γ κ) D⊆ = 𝒦-mono κ (⋆ᵉ-r D⊆)
+  𝒦-mono κ (bindL-mono _ _ (rev𝒱-mono vs (D ∷ _) (E ∷ _) ⟨ D⊆ , ⊆L-refl _ ⟩) 𝒯P-mono)
+𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ (lower (mono (projᵐ-good {⊤} i) _ _ ⟨ lift D⊆ , ptt ⟩))
+𝒦-mono (inlK κ) D⊆ = 𝒦-mono κ (lower (mono (inlᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ptt ⟩))
+𝒦-mono (inrK κ) D⊆ = 𝒦-mono κ (lower (mono (inrᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ptt ⟩))
+𝒦-mono (caseK M N γ κ) D⊆ =
+  𝒦-mono κ (lower (mono (𝒞ᵐ-good {⊤}) _ _ ⟨ lift D⊆ , ⟨ (λ X Y X⊆ → lift (body-mono M (𝓔 γ) X⊆)) ,
+                                                         ⟨ (λ X Y X⊆ → lift (body-mono N (𝓔 γ) X⊆)) , ptt ⟩ ⟩ ⟩))
+𝒦-mono (primL p M γ κ) D⊆ = 𝒦-mono κ (lower (mono (primᵐ-good {⊤} p) _ _ ⟨ lift D⊆ , ⟨ lift (λ d z → z) , ptt ⟩ ⟩))
+𝒦-mono (primR p v κ) D⊆ = 𝒦-mono κ (lower (mono (primᵐ-good {⊤} p) _ _ ⟨ lift (λ d z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩))
+𝒦-mono (letK N γ κ) D⊆ = 𝒦-mono κ (lower (mono (⋆ᵐ-good {⊤}) _ _ ⟨ lift (λ d z → z) , ⟨ lift D⊆ , ptt ⟩ ⟩))
 
-{- every value denotes a set that has a value and no ω -}
-𝒱-noω : ∀ v → ω ∈ 𝒱 v → ⊥
-𝒱s-noω : ∀ vs → errsL (𝒱s vs) → ⊥
-𝒱-noω (clo N γ) ()
-𝒱-noω (const B k) ()
-𝒱-noω (tup vs) e = 𝒱s-noω vs e
-𝒱-noω (T.inl v) ω∈ = 𝒱-noω v ω∈
-𝒱-noω (T.inr v) ω∈ = 𝒱-noω v ω∈
-𝒱s-noω (v ∷ vs) (inj₁ ω∈) = 𝒱-noω v ω∈
-𝒱s-noω (v ∷ vs) (inj₂ ⟨ _ , e ⟩) = 𝒱s-noω vs e
-
-𝒱-clean : ∀ v → Clean (𝒱 v)
-𝒱-clean v d d∈ refl = 𝒱-noω v d∈
+{- Values denote consistent sets of values of their kind ----------------------}
 
 length-𝒱s : ∀ vs → length (𝒱s vs) ≡ length vs
 length-𝒱s [] = refl
 length-𝒱s (v ∷ vs) = cong suc (length-𝒱s vs)
 
-𝒱-val : ∀ v → val∈ (𝒱 v)
-𝒱s-val : ∀ vs → AllV (𝒱s vs)
-𝒱-val (clo N γ) = ⟨ ν , ⟨ tt , (λ ()) ⟩ ⟩
-𝒱-val (const B k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , (λ ()) ⟩ ⟩
-𝒱-val (tup []) = ⟨ ⟨⟩ , ⟨ tt , (λ ()) ⟩ ⟩
-𝒱-val (tup (v ∷ vs)) =
-  ⟨ tup[_]_ {suc (length vs)} zero (proj₁ (𝒱-val v))
-  , ⟨ ⟨ ⟨ length-𝒱s vs , proj₁ (proj₂ (𝒱-val v)) ⟩ , ⟨ 𝒱-val v , 𝒱s-val vs ⟩ ⟩ , (λ ()) ⟩ ⟩
-𝒱-val (T.inl v) with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ left d , ⟨ ⟨ d∈ , d≢ ⟩ , (λ ()) ⟩ ⟩
-𝒱-val (T.inr v) with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ right d , ⟨ ⟨ d∈ , d≢ ⟩ , (λ ()) ⟩ ⟩
-𝒱s-val [] = tt
-𝒱s-val (v ∷ vs) = ⟨ 𝒱-val v , 𝒱s-val vs ⟩
+Vals⇒AllNE : ∀ Ds → Vals Ds → AllNE Ds
+Vals⇒AllNE [] _ = tt
+Vals⇒AllNE (D ∷ Ds) ⟨ ⟨ _ , ne ⟩ , vs ⟩ = ⟨ ne , Vals⇒AllNE Ds vs ⟩
 
-𝒱-nonempty : ∀ v → nonempty (𝒱 v)
-𝒱-nonempty v = ⟨ proj₁ (𝒱-val v) , proj₁ (proj₂ (𝒱-val v)) ⟩
+shape-ω : ∀ o → ShapeOf o ω → ⊥
+shape-ω (o-const B k) ()
+
+𝒱-val : ∀ v → Valᴰ (𝒱 v)
+𝒱-shape : ∀ v → Σ[ d ∈ Value ] d ∈ 𝒱 v × ShapeOf (obs v) d
+𝒱s-vals : ∀ vs → Vals (𝒱s vs)
+𝒱-val (clo N γ) = ⟨ Λᵐ-clean , ⟨ ν , ⟨ tt , tt ⟩ ⟩ ⟩
+𝒱-val (const B k) = ⟨ (λ { .ω () refl }) , ⟨ dconst k , ⟨ refl , refl ⟩ ⟩ ⟩
+𝒱-val (tup vs) = ⟨ (λ { d d∈ refl → shape-ω' (proj₁ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) d d∈) }) , ⟨ _ , proj₁ (proj₂ (𝒱-shape (tup vs))) ⟩ ⟩
+  where shape-ω' : ω ∈ 𝒯P (𝒱s vs) → ⊥
+        shape-ω' ()
+𝒱-val (T.inl v) = inlᵐ-val (𝒱-val v)
+𝒱-val (T.inr v) = inrᵐ-val (𝒱-val v)
+𝒱-shape (clo N γ) = ⟨ ν , ⟨ ⟨ tt , tt ⟩ , tt ⟩ ⟩
+𝒱-shape (const B k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , refl ⟩ ⟩
+𝒱-shape (tup []) = ⟨ ⟨⟩ , ⟨ tt , refl ⟩ ⟩
+𝒱-shape (tup (v ∷ vs)) =
+  ⟨ tup[_]_ {suc (length vs)} zero (proj₁ (𝒱-shape v))
+  , ⟨ proj₂ (𝒯L-β (𝒱s (v ∷ vs)) vs′) _ ⟨ ⟨ length-𝒱s vs , proj₁ (proj₂ (𝒱-shape v)) ⟩ , Vals⇒AllNE _ vs′ ⟩
+    , ⟨ length-obs-list vs , proj₂ (proj₂ (𝒱-shape v)) ⟩ ⟩ ⟩
+  where vs′ = ⟨ 𝒱-val v , 𝒱s-vals vs ⟩
+𝒱-shape (T.inl v) with 𝒱-shape v
+... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , ⟨ d∈ , d≢ ⟩ ⟩ , sh ⟩ ⟩
+  where d≢ = λ { refl → shape-ω (obs v) sh }
+𝒱-shape (T.inr v) with 𝒱-shape v
+... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , ⟨ d∈ , d≢ ⟩ ⟩ , sh ⟩ ⟩
+  where d≢ = λ { refl → shape-ω (obs v) sh }
+𝒱s-vals [] = tt
+𝒱s-vals (v ∷ vs) = ⟨ 𝒱-val v , 𝒱s-vals vs ⟩
+
+𝒱-conv : ∀ v → Conv (𝒱 v)
+𝒱-conv v = Val⇒Conv (𝒱-val v)
+
+{- the kind of a machine value -}
+vkind : Val → Kind
+vkind (clo N γ) = fun
+vkind (const B k) = base B
+vkind (tup vs) = tup (length vs)
+vkind (T.inl v) = inj
+vkind (T.inr v) = inj
+
+𝒱-kind : ∀ v d → d ∈ ⌊ 𝒱 v ⌋ → kind d ≡ vkind v
+𝒱-kind (clo N γ) d ⟨ d∈ , _ ⟩ = Λᵐ-fun d d∈
+𝒱-kind (const B k) (dconst k') ⟨ ⟨ refl , _ ⟩ , _ ⟩ = refl
+𝒱-kind (tup vs) d ⟨ d∈ , _ ⟩ =
+  trans (𝒯P-kind (𝒱s vs) d (proj₁ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) d d∈)) (cong tup (length-𝒱s vs))
+𝒱-kind (T.inl v) d ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
+𝒱-kind (T.inl v) (left d) ⟨ inj₂ _ , _ ⟩ = refl
+𝒱-kind (T.inr v) d ⟨ inj₁ ⟨ refl , _ ⟩ , d≢ ⟩ = ⊥-elim (d≢ refl)
+𝒱-kind (T.inr v) (right d) ⟨ inj₂ _ , _ ⟩ = refl
+
+{- the check of a kind fails on a value of another kind -}
+𝒱-bad : ∀ v {k} → vkind v ≢ k → Bad k ⌊ 𝒱 v ⌋
+𝒱-bad v ne with 𝒱-conv v
+... | ⟨ d , d∈ ⟩ = ⟨ d , ⟨ d∈ , (λ eq → ne (trans (sym (𝒱-kind v d d∈)) eq)) ⟩ ⟩
+
+AllCon : List (𝒫 Value) → Set
+AllCon [] = ⊤
+AllCon (D ∷ Ds) = Con D × AllCon Ds
+
+At-con : ∀ {n} (i : Fin n) Ds {d d'} → AllCon Ds → At i Ds d → At i Ds d' → d ~ d'
+At-con {suc n} zero (D ∷ Ds) ⟨ c , _ ⟩ ⟨ _ , d∈ ⟩ ⟨ _ , d'∈ ⟩ = c _ _ d∈ d'∈
+At-con (suc i) (D ∷ Ds) ⟨ _ , cs ⟩ a a' = At-con i Ds cs a a'
+
+𝒯P-con : ∀ Ds → AllCon Ds → Con (𝒯P Ds)
+𝒯P-con Ds cs ⟨⟩ ⟨⟩ _ _ = tt
+𝒯P-con Ds cs (tup[ i ] d) (tup[ j ] d') ⟨ a , _ ⟩ ⟨ a' , _ ⟩
+    with trans (sym (At-length i Ds d a)) (At-length j Ds d' a')
+... | refl with i fin≟ j
+... | yes refl = ⟨ refl , inj₂ ⟨ refl , At-con i Ds cs a a' ⟩ ⟩
+... | no neq = ⟨ refl , inj₁ neq ⟩
+𝒯P-con [] cs ⟨⟩ (tup[ i ] d) _ ⟨ a , _ ⟩ = ⊥-elim (At-[] i a)
+𝒯P-con [] cs (tup[ i ] d) ⟨⟩ ⟨ a , _ ⟩ _ = ⊥-elim (At-[] i a)
+
+𝒱-con : ∀ v → Con (𝒱 v)
+𝒱s-con : ∀ vs → AllCon (𝒱s vs)
+𝓔-con : ∀ γ → Con-env (𝓔 γ)
+𝒱-con (clo N γ) = lower (consis (Λᵐ-good {⊤}) tt _ _
+  ⟨ (λ X X' X~ → lift (ISWIMᵐ-con-env N (proof.Framework.GraphModel.Env.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
+𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
+𝒱-con (tup vs) = Con-⊆ (𝒯P-con (𝒱s vs) (𝒱s-con vs)) (proj₁ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)))
+𝒱-con (T.inl v) = lower (consis (inlᵐ-good {⊤}) tt _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
+𝒱-con (T.inr v) = lower (consis (inrᵐ-good {⊤}) tt _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
+𝒱s-con [] = tt
+𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
+𝓔-con [] x = Con-⌈⌉ ω
+𝓔-con (v ∷ γ) zero = 𝒱-con v
+𝓔-con (v ∷ γ) (suc x) = 𝓔-con γ x
+
+{- Environments -----------------------------------------------------------------}
 
 𝓔-nonempty : ∀ γ → proof.Framework.GraphModel.Env.nonempty-env (𝓔 γ)
 𝓔-nonempty [] x = ⟨ ω , refl ⟩
-𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
+𝓔-nonempty (v ∷ γ) zero = proj₂ (𝒱-val v)
 𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
 
 𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
@@ -276,14 +344,7 @@ length-𝒱s (v ∷ vs) = cong suc (length-𝒱s vs)
 𝓔-ext v γ zero d d∈ = d∈
 𝓔-ext v γ (suc x) d d∈ = d∈
 
-{- β: the body of a function, run on a value, is in the application -}
-body-in : ∀ N γ v d → d ∈ ⟦ N ⟧ (𝓔 (v ∷ γ))
-  → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ 𝒱 v × d ∈ ⟦ N ⟧ (mem V • 𝓔 γ)
-body-in N γ v d d∈ =
-  body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (𝒱-nonempty v) d
-    (⟦⟧-monotone N (𝓔-ext v γ) d d∈)
-
-{- Tuples --------------------------------------------------------------------}
+{- Tuples ------------------------------------------------------------------------}
 
 𝒱s-reverseAcc : ∀ acc vs → 𝒱s (reverseAcc acc vs) ≡ rev𝒱 vs (𝒱s acc)
 𝒱s-reverseAcc acc [] = refl
@@ -293,38 +354,35 @@ tuple-next-𝒮 : ∀ vs Ms γ κ → 𝒮 (tuple-next vs Ms γ κ) ⊆ 𝒦 κ 
 tuple-next-𝒮 vs [] γ κ d d∈ = subst (λ Ds → 𝒦 κ (𝒯L Ds) d) (𝒱s-reverseAcc [] vs) d∈
 tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 
-At-args : ∀ {n} (args : Args (replicate n ■)) ρ (i : Fin n) d
-  → At i (⟦ args→list args ⟧* ρ) d → d ∈ nthD (⟦ args ⟧₊ ρ) i
-At-args {suc n} (M ,, args) ρ zero d ⟨ _ , d∈ ⟩ = d∈
-At-args {suc n} (M ,, args) ρ (suc i) d a = At-args args ρ i d a
-
-AllV-args : ∀ {n} (args : Args (replicate n ■)) ρ
-  → AllV (⟦ args→list args ⟧* ρ) → vals n (⟦ args ⟧₊ ρ)
-AllV-args {suc n} (M ,, args) ρ ⟨ v , _ ⟩ zero = v
-AllV-args {suc n} (M ,, args) ρ ⟨ _ , vs ⟩ (suc i) = AllV-args args ρ vs i
-
-errsL-args : ∀ {n} (args : Args (replicate n ■)) ρ → errsL (⟦ args→list args ⟧* ρ) → errs n (⟦ args ⟧₊ ρ)
-errsL-args {suc n} (M ,, args) ρ (inj₁ ω∈) = inj₁ ω∈
-errsL-args {suc n} (M ,, args) ρ (inj₂ ⟨ v , e ⟩) = inj₂ ⟨ v , errsL-args args ρ e ⟩
-
-At-length : ∀ {m} (i : Fin m) Ds d → At i Ds d → length Ds ≡ m
-At-length {suc m} zero (D ∷ Ds) d ⟨ len , _ ⟩ = cong suc len
-At-length (suc i) (D ∷ Ds) d a = cong suc (At-length i Ds d a)
-
-length-args : ∀ {n} (args : Args (replicate n ■)) ρ → length (⟦ args→list args ⟧* ρ) ≡ n
-length-args {zero} Nil ρ = refl
-length-args {suc n} (M ,, args) ρ = cong suc (length-args args ρ)
-
-𝒯L-args : ∀ {n} (args : Args (replicate n ■)) ρ → 𝒯L (⟦ args→list args ⟧* ρ) ⊆ 𝒯ᵉ n (⟦ args ⟧₊ ρ)
-𝒯L-args args ρ ω e = errsL-args args ρ e
-𝒯L-args {zero} Nil ρ ⟨⟩ tt = tt
-𝒯L-args {zero} Nil ρ (tup[ zero ] d) ⟨ () , _ ⟩
-𝒯L-args {zero} Nil ρ (tup[ suc i ] d) ⟨ () , _ ⟩
-𝒯L-args {suc n} (M ,, args) ρ ⟨⟩ ()
-𝒯L-args {suc n} args ρ (tup[_]_ {m} i d) ⟨ a , av ⟩
-    with At-length i _ d a
-... | len with subst (λ k → k ≡ m) (length-args args ρ) len
-... | refl = ⟨ refl , ⟨ At-args args ρ i d a , AllV-args args ρ av ⟩ ⟩
+{- the tuple of a list of operands is the tuple of the operands -}
+𝒯L-args : ∀ {n} (args : Args (replicate n ■)) ρ → 𝒯L (⟦ args→list args ⟧* ρ) ⊆ 𝒯ᵐ n (⟦ args ⟧₊ ρ)
+𝒯L-args {n} args ρ = go args (tup⊆ n)
+  where
+  open import proof.Framework.GraphModel.Ops using (𝒯)
+  {- the bound operands, as a list and as a tuple -}
+  Rel : ∀ m → List (𝒫 Value) → Results (𝒫 Value) (replicate m ■) → Set
+  Rel zero [] _ = ⊤
+  Rel (suc m) (X ∷ Xs) ⟨ Y , Ys ⟩ = X ⊆ Y × Rel m Xs Ys
+  Rel _ _ _ = ⊥
+  Rel-len : ∀ {m Xs Ys} → Rel m Xs Ys → length Xs ≡ m
+  Rel-len {zero} {[]} _ = refl
+  Rel-len {suc m} {X ∷ Xs} ⟨ _ , r ⟩ = cong suc (Rel-len r)
+  Rel-At : ∀ {m Xs Ys} (i : Fin m) {d} → Rel m Xs Ys → At i Xs d → d ∈ nthD Ys i
+  Rel-At {suc m} {X ∷ Xs} zero ⟨ X⊆ , _ ⟩ ⟨ _ , d∈ ⟩ = X⊆ _ d∈
+  Rel-At {suc m} {X ∷ Xs} (suc i) ⟨ _ , r ⟩ a = Rel-At i r a
+  Rel-ne : ∀ {m Xs Ys} → Rel m Xs Ys → AllNE Xs → ∀ j → nonempty (nthD Ys j)
+  Rel-ne {suc m} {X ∷ Xs} ⟨ X⊆ , _ ⟩ ⟨ ⟨ d , d∈ ⟩ , _ ⟩ zero = ⟨ d , X⊆ d d∈ ⟩
+  Rel-ne {suc m} {X ∷ Xs} ⟨ _ , r ⟩ ⟨ _ , ne ⟩ (suc j) = Rel-ne r ne j
+  tup⊆ : ∀ m {Xs Ys} → Rel m Xs Ys → 𝒯P Xs ⊆ 𝒯 m Ys
+  tup⊆ zero {[]} _ ⟨⟩ _ = tt
+  tup⊆ zero {[]} _ (tup[ i ] d) ⟨ a , _ ⟩ = ⊥-elim (At-[] i a)
+  tup⊆ (suc m) {X ∷ Xs} _ ⟨⟩ ()
+  tup⊆ (suc m) {Xs} r (tup[ i ] d) ⟨ a , ne ⟩ with trans (sym (At-length i Xs d a)) (Rel-len r)
+  ... | refl = ⟨ refl , ⟨ Rel-At i r a , Rel-ne r ne ⟩ ⟩
+  go : ∀ {m} (as : Args (replicate m ■)) {K K'} → (∀ {Xs Ys} → Rel m Xs Ys → K Xs ⊆ K' Ys)
+    → bindL (⟦ args→list as ⟧* ρ) K ⊆ binds m (⟦ as ⟧₊ ρ) K'
+  go {zero} Nil h = h tt
+  go {suc m} (M ,, as) h = ≫=-mono (λ d z → z) (λ X⊆ → go as (λ r → h ⟨ X⊆ , r ⟩))
 
 proj-𝒱s : ∀ {n} (i : Fin n) vs {v} → proj i vs ≡ just v → ∀ d → d ∈ 𝒱 v → At i (𝒱s vs) d
 proj-𝒱s {suc n} zero (v ∷ vs) eq d d∈ with has-length n vs in h
@@ -338,249 +396,33 @@ proj-length : ∀ {n} (i : Fin n) vs → length vs ≡ n → Σ[ v ∈ Val ] pro
 proj-length {suc n} zero (v ∷ vs) refl rewrite length→has-length n vs refl = ⟨ v , refl ⟩
 proj-length {suc n} (suc i) (v ∷ vs) refl = proj-length i vs refl
 
-{- Consistency ------------------------------------------------------------------}
-
-AllCon : List (𝒫 Value) → Set
-AllCon [] = ⊤
-AllCon (D ∷ Ds) = Con D × AllCon Ds
-
-At-con : ∀ {n} (i : Fin n) Ds {d d'} → AllCon Ds → At i Ds d → At i Ds d' → d ~ d'
-At-con {suc n} zero (D ∷ Ds) ⟨ c , _ ⟩ ⟨ _ , d∈ ⟩ ⟨ _ , d'∈ ⟩ = c _ _ d∈ d'∈
-At-con (suc i) (D ∷ Ds) ⟨ _ , cs ⟩ a a' = At-con i Ds cs a a'
-
-At-[] : ∀ {n} (i : Fin n) {d} → At i [] d → ⊥
-At-[] zero ()
-At-[] (suc i) ()
-
-𝒯L-con : ∀ Ds → AllCon Ds → (errsL Ds → ⊥) → Con (𝒯L Ds)
-𝒯L-con Ds cs ne ω _ e _ = ⊥-elim (ne e)
-𝒯L-con Ds cs ne _ ω _ e = ⊥-elim (ne e)
-𝒯L-con Ds cs ne ⟨⟩ ⟨⟩ _ _ = tt
-𝒯L-con Ds cs ne (tup[ i ] d) (tup[ j ] d') ⟨ a , _ ⟩ ⟨ a' , _ ⟩
-    with trans (sym (At-length i Ds d a)) (At-length j Ds d' a')
-... | refl with i fin≟ j
-... | yes refl = ⟨ refl , inj₂ ⟨ refl , At-con i Ds cs a a' ⟩ ⟩
-... | no neq = ⟨ refl , inj₁ neq ⟩
-𝒯L-con [] cs ne ⟨⟩ (tup[ i ] d) _ ⟨ a , _ ⟩ = ⊥-elim (At-[] i a)
-𝒯L-con [] cs ne (tup[ i ] d) ⟨⟩ ⟨ a , _ ⟩ _ = ⊥-elim (At-[] i a)
-
-𝒱-con : ∀ v → Con (𝒱 v)
-𝒱s-con : ∀ vs → AllCon (𝒱s vs)
-𝓔-con : ∀ γ → Con-env (𝓔 γ)
-𝒱-con (clo N γ) = lower (Λᵉ-consis _ _ ⟨ (λ X X' X~ → lift (ISWIMᵉ-con-env N (proof.Framework.GraphModel.Env.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
-𝒱-con (const B k) = lower (ℬ-consis B k ptt ptt ptt)
-𝒱-con (tup vs) = 𝒯L-con (𝒱s vs) (𝒱s-con vs) (𝒱s-noω vs)
-𝒱-con (T.inl v) = lower (inlᵉ-consis ⟨ 𝒱 v , ptt ⟩ ⟨ 𝒱 v , ptt ⟩ ⟨ lift (𝒱-con v) , ptt ⟩)
-𝒱-con (T.inr v) = lower (inrᵉ-consis ⟨ 𝒱 v , ptt ⟩ ⟨ 𝒱 v , ptt ⟩ ⟨ lift (𝒱-con v) , ptt ⟩)
-𝒱s-con [] = tt
-𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
-𝓔-con [] x = Con-⌈⌉ ω
-𝓔-con (v ∷ γ) zero = 𝒱-con v
-𝓔-con (v ∷ γ) (suc x) = 𝓔-con γ x
-
-{- Primitives -------------------------------------------------------------------}
-
-int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ 𝒱 v
-int-in (const B k) refl = ⟨ refl , refl ⟩
-
-𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
-𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
-𝒱-out (bool true) (left ⟨⟩) _ = refl
-𝒱-out (bool false) (right ⟨⟩) _ = refl
-𝒱-out (bool true) (left (tup[ zero ] d)) ⟨ ⟨ () , _ ⟩ , _ ⟩
-𝒱-out (bool true) (left (tup[ suc i ] d)) ⟨ ⟨ () , _ ⟩ , _ ⟩
-𝒱-out (bool false) (right (tup[ zero ] d)) ⟨ ⟨ () , _ ⟩ , _ ⟩
-𝒱-out (bool false) (right (tup[ suc i ] d)) ⟨ ⟨ () , _ ⟩ , _ ⟩
-
-prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primᵉ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
-prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
-... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ =
-  inj₁ ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩
-
-{- Steps shrink the denotation of the state --------------------------------}
-
-app-β : ∀ N γ w → ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ᵉ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
-app-β N γ w d d∈ with body-in N γ w d d∈
-... | ⟨ V , ⟨ ne , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
-  inj₁ ⟨ V , ⟨ ⟨ d∈′ , ⟨ ne , ⟨ Con⇒≈ V (𝒱-con w) V⊆ , noe ⟩ ⟩ ⟩ , ⟨ V⊆ , ⟨ ne , noe ⟩ ⟩ ⟩ ⟩
-  where noe = Clean-NoErr V (𝒱-clean w) V⊆
-
-case-inl-β : ∀ M N γ v → ⟦ M ⟧ (𝓔 (v ∷ γ))
-  ⊆ 𝒞ᵉ ⟨ inlᵉ ⟨ 𝒱 v , ptt ⟩ , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩
-case-inl-β M N γ v d d∈ with body-in M γ v d d∈
-... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
-  inj₁ ⟨ u , ⟨ U , ⟨ (λ e e∈ → ⟨ V⊆ e e∈ , 𝒱-clean v e (V⊆ e e∈) ⟩)
-       , ⟨ d∈′ , ⟨ Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ , Clean-NoErr (u ∷ U) (𝒱-clean v) V⊆ ⟩ ⟩ ⟩ ⟩ ⟩
-
-case-inr-β : ∀ M N γ v → ⟦ N ⟧ (𝓔 (v ∷ γ))
-  ⊆ 𝒞ᵉ ⟨ inrᵉ ⟨ 𝒱 v , ptt ⟩ , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩
-case-inr-β M N γ v d d∈ with body-in N γ v d d∈
-... | ⟨ [] , ⟨ ne , _ ⟩ ⟩ = ⊥-elim (ne refl)
-... | ⟨ u ∷ U , ⟨ _ , ⟨ V⊆ , d∈′ ⟩ ⟩ ⟩ =
-  inj₂ (inj₁ ⟨ u , ⟨ U , ⟨ (λ e e∈ → ⟨ V⊆ e e∈ , 𝒱-clean v e (V⊆ e e∈) ⟩)
-       , ⟨ d∈′ , ⟨ Con⇒≈ (u ∷ U) (𝒱-con v) V⊆ , Clean-NoErr (u ∷ U) (𝒱-clean v) V⊆ ⟩ ⟩ ⟩ ⟩ ⟩)
-
-step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
-step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
-step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
-step-⊆ (eval (` x) γ κ) () | nothing
-step-⊆ (eval (lam ⦅ ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (app ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (lit B k ⦅ Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (tuple n ⦅ args ⦆) γ κ) refl d d∈ =
-  𝒦-mono κ (𝒯L-args args (𝓔 γ)) d (tuple-next-𝒮 [] (args→list args) γ κ d d∈)
-step-⊆ (eval (get i ⦅ M ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (inl-op ⦅ M ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (inr-op ⦅ M ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
-step-⊆ (ret v halt) ()
-step-⊆ (ret (clo N γ) (appL M γ' κ)) refl d d∈ = d∈
-step-⊆ (ret (const B k) (appL M γ' κ)) ()
-step-⊆ (ret (tup vs) (appL M γ' κ)) ()
-step-⊆ (ret (T.inl v) (appL M γ' κ)) ()
-step-⊆ (ret (T.inr v) (appL M γ' κ)) ()
-step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ (app-β N γ w)
-step-⊆ (ret w (appR (const B k) κ)) ()
-step-⊆ (ret w (appR (tup vs) κ)) ()
-step-⊆ (ret w (appR (T.inl v) κ)) ()
-step-⊆ (ret w (appR (T.inr v) κ)) ()
-step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
-step-⊆ (ret (tup vs) (getK i κ)) eq with proj i vs in p
-step-⊆ (ret (tup vs) (getK i κ)) refl | just v =
-  𝒦-mono κ λ d d∈ → inj₁ ⟨ proj-𝒱s i vs p d d∈ , 𝒱s-val vs ⟩
-step-⊆ (ret (tup vs) (getK i κ)) () | nothing
-step-⊆ (ret (clo N γ) (getK i κ)) ()
-step-⊆ (ret (const B k) (getK i κ)) ()
-step-⊆ (ret (T.inl v) (getK i κ)) ()
-step-⊆ (ret (T.inr v) (getK i κ)) ()
-step-⊆ (ret v (inlK κ)) refl d d∈ = d∈
-step-⊆ (ret v (inrK κ)) refl d d∈ = d∈
-step-⊆ (ret (T.inl v) (caseK M N γ κ)) refl = 𝒦-mono κ (case-inl-β M N γ v)
-step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ (case-inr-β M N γ v)
-step-⊆ (ret (clo N' γ') (caseK M N γ κ)) ()
-step-⊆ (ret (const B k) (caseK M N γ κ)) ()
-step-⊆ (ret (tup vs) (caseK M N γ κ)) ()
-step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
-step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
-step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
-step-⊆ (ret w (primR p v κ)) () | nothing
-step-⊆ (ret w (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ w)
-
-↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
-↠-⊆ done d d∈ = d∈
-↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
-
-{- Errors: a continuation passes on ω -----------------------------------------}
-
-{- a value that is not a closure has a value that is not a function -}
-nonclo-wrong : ∀ v → (∀ N γ → v ≢ clo N γ) → wrong IsFun (𝒱 v)
-nonclo-wrong (clo N γ) nc = ⊥-elim (nc N γ refl)
-nonclo-wrong (const B k) nc = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nonclo-wrong (tup []) nc = ⟨ ⟨⟩ , ⟨ tt , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nonclo-wrong (tup (v ∷ vs)) nc = ⟨ tup[_]_ {suc (length vs)} zero (proj₁ (𝒱-val v)) , ⟨ proj₁ (proj₂ (𝒱-val (tup (v ∷ vs)))) , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nonclo-wrong (T.inl v) nc with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ left d , ⟨ ⟨ d∈ , d≢ ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nonclo-wrong (T.inr v) nc with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ right d , ⟨ ⟨ d∈ , d≢ ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-
-{- an application of a value to ω is ω -}
-app-ω : ∀ v {D} → ω ∈ D → ω ∈ ⋆ᵉ ⟨ 𝒱 v , ⟨ D , ptt ⟩ ⟩
-app-ω (clo N γ) ω∈ = inj₂ ⟨ refl , inj₂ (inj₂ ⟨ ⟨ ν , ⟨ tt , tt ⟩ ⟩ , ω∈ ⟩) ⟩
-app-ω (const B k) ω∈ = inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (const B k) (λ _ _ ()))) ⟩
-app-ω (tup vs) ω∈ = inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (tup vs) (λ _ _ ()))) ⟩
-app-ω (T.inl v) ω∈ = inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (T.inl v) (λ _ _ ()))) ⟩
-app-ω (T.inr v) ω∈ = inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (T.inr v) (λ _ _ ()))) ⟩
-
-errsL-rev : ∀ vs Ds → errsL Ds → errsL (rev𝒱 vs Ds)
-errsL-rev [] Ds e = e
-errsL-rev (v ∷ vs) Ds e = errsL-rev vs (𝒱 v ∷ Ds) (inj₂ ⟨ 𝒱-val v , e ⟩)
-
-𝒦-ω : ∀ κ {D} → ω ∈ D → ω ∈ 𝒦 κ D
-𝒦-ω halt ω∈ = ω∈
-𝒦-ω (appL M γ κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)
-𝒦-ω (appR v κ) ω∈ = 𝒦-ω κ (app-ω v ω∈)
-𝒦-ω (tupK vs Ms γ κ) {D} ω∈ = 𝒦-ω κ (errsL-rev vs (D ∷ _) (inj₁ ω∈))
-𝒦-ω (getK i κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)
-𝒦-ω (inlK κ) ω∈ = 𝒦-ω κ ω∈
-𝒦-ω (inrK κ) ω∈ = 𝒦-ω κ ω∈
-𝒦-ω (caseK M N γ κ) ω∈ = 𝒦-ω κ (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩))
-𝒦-ω (primL p M γ κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ refl , inj₁ (inj₁ ω∈) ⟩)
-𝒦-ω (primR p v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ refl , inj₁ (inj₂ ⟨ 𝒱-val v , inj₁ ω∈ ⟩) ⟩)
-𝒦-ω (letK N γ κ) ω∈ = 𝒦-ω κ (app-ω (clo N γ) ω∈)
-
-{- a projection fails only on a tuple of another size -}
 proj-nothing : ∀ {n} (i : Fin n) vs → proj i vs ≡ nothing → length vs ≢ n
 proj-nothing i vs eq len with proj-length i vs len
 ... | ⟨ v , eq' ⟩ with trans (sym eq) eq'
 ... | ()
 
-Fin-pos : ∀ {n} → Fin n → n ≢ 0
-Fin-pos zero ()
-Fin-pos (suc i) ()
+{- Primitives -------------------------------------------------------------------}
 
-tup-wrong : ∀ {n} (i : Fin n) vs → proj i vs ≡ nothing → wrong (IsTup n) (𝒱 (tup vs))
-tup-wrong i [] eq = ⟨ ⟨⟩ , ⟨ tt , ⟨ (λ ()) , (λ z → Fin-pos i z) ⟩ ⟩ ⟩
-tup-wrong {n} i (v ∷ vs) eq with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ =
-  ⟨ tup[_]_ {suc (length vs)} zero d
-  , ⟨ ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , 𝒱s-val (v ∷ vs) ⟩ , ⟨ (λ ()) , (λ len → proj-nothing i (v ∷ vs) eq len) ⟩ ⟩ ⟩
+int-in : ∀ v {n} → obs v ≡ o-const Int n → dconst {Int} n ∈ ⌊ 𝒱 v ⌋
+int-in (const B k) refl = ⟨ ⟨ refl , refl ⟩ , (λ ()) ⟩
 
-{- a value that is not a tuple has a value that is not a tuple -}
-nontup-wrong : ∀ {n} v → (∀ vs → v ≢ tup vs) → wrong (IsTup n) (𝒱 v)
-nontup-wrong (clo N γ) nt = ⟨ ν , ⟨ tt , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nontup-wrong (const B k) nt = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nontup-wrong (tup vs) nt = ⊥-elim (nt vs refl)
-nontup-wrong (T.inl v) nt with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ left d , ⟨ ⟨ d∈ , d≢ ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-nontup-wrong (T.inr v) nt with 𝒱-val v
-... | ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⟨ right d , ⟨ ⟨ d∈ , d≢ ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
+𝒱-out : ∀ r d → d ∈ 𝒱 (out r) → d ≡ dout r
+𝒱-out (int k) (dconst k') ⟨ refl , refl ⟩ = refl
+𝒱-out (bool true) d (inj₁ ⟨ refl , () ⟩)
+𝒱-out (bool true) (left ⟨⟩) (inj₂ _) = refl
+𝒱-out (bool true) (left (tup[ i ] d)) (inj₂ ⟨ _ , ⟨ ⟨ a , _ ⟩ , _ ⟩ ⟩) = ⊥-elim (At-[] i a)
+𝒱-out (bool false) d (inj₁ ⟨ refl , () ⟩)
+𝒱-out (bool false) (right ⟨⟩) (inj₂ _) = refl
+𝒱-out (bool false) (right (tup[ i ] d)) (inj₂ ⟨ _ , ⟨ ⟨ a , _ ⟩ , _ ⟩ ⟩) = ⊥-elim (At-[] i a)
 
-{- a value that is not an injection has a value that is not an injection -}
-noninj-wrong : ∀ v → (∀ w → v ≢ T.inl w) → (∀ w → v ≢ T.inr w) → wrong IsInj (𝒱 v)
-noninj-wrong (clo N γ) _ _ = ⟨ ν , ⟨ tt , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-noninj-wrong (const B k) _ _ = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-noninj-wrong (tup []) _ _ = ⟨ ⟨⟩ , ⟨ tt , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-noninj-wrong (tup (v ∷ vs)) _ _ = ⟨ tup[_]_ {suc (length vs)} zero (proj₁ (𝒱-val v)) , ⟨ proj₁ (proj₂ (𝒱-val (tup (v ∷ vs)))) , ⟨ (λ ()) , (λ ()) ⟩ ⟩ ⟩
-noninj-wrong (T.inl v) nl _ = ⊥-elim (nl v refl)
-noninj-wrong (T.inr v) _ nr = ⊥-elim (nr v refl)
+prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
+... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ =
+  inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₂ (inj₂ ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩) ⟩ ⟩
 
-{- a value whose observation is not an integer has a value that is not one -}
-shape-ω : ∀ o → ShapeOf o ω → ⊥
-shape-ω (o-const B k) ()
-shape-ω o-fun ()
-shape-ω (o-tuple os) ()
-shape-ω (o-inl o) ()
-shape-ω (o-inr o) ()
-shape-ω o-error ()
-
-
-{- the denotation of a value has an element of the shape of its observation -}
-𝒱-shape : ∀ v → Σ[ d ∈ Value ] d ∈ 𝒱 v × ShapeOf (obs v) d
-𝒱-shape (clo N γ) = ⟨ ν , ⟨ tt , tt ⟩ ⟩
-𝒱-shape (const B k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , refl ⟩ ⟩
-𝒱-shape (tup []) = ⟨ ⟨⟩ , ⟨ tt , refl ⟩ ⟩
-𝒱-shape (tup (v ∷ vs)) with 𝒱-shape v
-... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
-  ⟨ tup[_]_ {suc (length vs)} zero d
-  , ⟨ ⟨ ⟨ length-𝒱s vs , d∈ ⟩ , 𝒱s-val (v ∷ vs) ⟩ , ⟨ length-obs-list vs , sh ⟩ ⟩ ⟩
-𝒱-shape (T.inl v) with 𝒱-shape v
-... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ ⟨ d∈ , (λ { refl → shape-ω (obs v) sh }) ⟩ , sh ⟩ ⟩
-𝒱-shape (T.inr v) with 𝒱-shape v
-... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ ⟨ d∈ , (λ { refl → shape-ω (obs v) sh }) ⟩ , sh ⟩ ⟩
-
-IsInt-inv : ∀ d → IsInt d → Σ[ n ∈ ℤ ] d ≡ dconst {Int} n
-IsInt-inv (dconst {Int} n) _ = ⟨ n , refl ⟩
-
-notint-wrong : ∀ v → (∀ n → obs v ≢ o-const Int n) → wrong IsInt (𝒱 v)
-notint-wrong v ni with 𝒱-shape v
-... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
-  ⟨ d , ⟨ d∈ , ⟨ (λ { refl → shape-ω (obs v) sh }) , (λ isi → G (IsInt-inv d isi)) ⟩ ⟩ ⟩
-  where
-  G : (Σ[ n ∈ ℤ ] d ≡ dconst {Int} n) → ⊥
-  G ⟨ n , refl ⟩ = ni n (shape-const sh)
+{- a value whose observation is not an integer is not of the kind of one -}
+notint-kind : ∀ v → (∀ n → obs v ≢ o-const Int n) → vkind v ≢ base Int
+notint-kind (const .Int k) f refl = f k refl
 
 {- a primitive is undefined when one operand is not an integer -}
 δ?-none : ∀ p o₁ o₂ → δ? p o₁ o₂ ≡ nothing
@@ -601,10 +443,88 @@ notint-wrong v ni with 𝒱-shape v
 δ?-none p (o-inr o) o₂ eq = inj₁ (λ n ())
 δ?-none p o-error o₂ eq = inj₁ (λ n ())
 
-prim-ω : ∀ p v w → δ? p (obs v) (obs w) ≡ nothing → ω ∈ primᵉ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
+prim-ω : ∀ p v w → δ? p (obs v) (obs w) ≡ nothing → ω ∈ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
 prim-ω p v w e with δ?-none p (obs v) (obs w) e
-... | inj₁ ni = inj₂ ⟨ refl , inj₂ (inj₁ ⟨ notint-wrong v ni , 𝒱-val w ⟩) ⟩
-... | inj₂ ni = inj₂ ⟨ refl , inj₂ (inj₂ ⟨ 𝒱-val v , notint-wrong w ni ⟩) ⟩
+... | inj₁ ni = inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₁ ⟨ refl , 𝒱-bad v (notint-kind v ni) ⟩ ⟩ ⟩
+... | inj₂ ni = inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₂ (inj₁ ⟨ refl , 𝒱-bad w (notint-kind w ni) ⟩) ⟩ ⟩
+
+{- Steps shrink the denotation of the state --------------------------------}
+
+{- β: the body of a function, run on a value -}
+app-β : ∀ N γ w → ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ᵐ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
+app-β N γ w d d∈ =
+  proj₂ (letᵐ-β (body-mono N (𝓔 γ)) (body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 w) (proj₂ (𝒱-val w)))
+                (𝒱-con w) (𝒱-val w)) d (⟦⟧-monotone N (𝓔-ext w γ) d d∈)
+
+case-inl-β : ∀ M N γ v → ⟦ M ⟧ (𝓔 (v ∷ γ))
+  ⊆ 𝒞ᵐ ⟨ inlᵐ ⟨ 𝒱 v , ptt ⟩ , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩
+case-inl-β M N γ v d d∈ =
+  proj₂ (𝒞ᵐ-inl-β {G = λ X → ⟦ N ⟧ (X • 𝓔 γ)} (body-mono M (𝓔 γ))
+           (body-continuous M (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (proj₂ (𝒱-val v))) (𝒱-con v) (𝒱-val v))
+        d (⟦⟧-monotone M (𝓔-ext v γ) d d∈)
+
+case-inr-β : ∀ M N γ v → ⟦ N ⟧ (𝓔 (v ∷ γ))
+  ⊆ 𝒞ᵐ ⟨ inrᵐ ⟨ 𝒱 v , ptt ⟩ , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩
+case-inr-β M N γ v d d∈ =
+  proj₂ (𝒞ᵐ-inr-β {F = λ X → ⟦ M ⟧ (X • 𝓔 γ)} (body-mono N (𝓔 γ))
+           (body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (proj₂ (𝒱-val v))) (𝒱-con v) (𝒱-val v))
+        d (⟦⟧-monotone N (𝓔-ext v γ) d d∈)
+
+step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
+step-⊆ (eval (` x) γ κ) eq with γ ‼ x in look
+step-⊆ (eval (` x) γ κ) refl | just v = 𝒦-mono κ (𝓔-lookup γ x look)
+step-⊆ (eval (` x) γ κ) () | nothing
+step-⊆ (eval (lam ⦅ ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (app ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (lit B k ⦅ Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (tuple n ⦅ args ⦆) γ κ) refl d d∈ =
+  𝒦-mono κ (𝒯L-args args (𝓔 γ)) d (tuple-next-𝒮 [] (args→list args) γ κ d d∈)
+step-⊆ (eval (get i ⦅ M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (inl-op ⦅ M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (inr-op ⦅ M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) refl d d∈ = d∈
+step-⊆ (ret (clo N γ) (appL M γ' κ)) refl d d∈ = d∈
+step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ (app-β N γ w)
+step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
+step-⊆ (ret (tup vs) (getK i κ)) eq with proj i vs in p
+step-⊆ (ret (tup vs) (getK i κ)) refl | just v =
+  𝒦-mono κ λ d d∈ → inj₂ ⟨ 𝒱-conv (tup vs) , inj₂ ⟨ proj₂ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) _
+                      ⟨ proj-𝒱s i vs p d d∈ , Vals⇒AllNE _ (𝒱s-vals vs) ⟩ , (λ ()) ⟩ ⟩
+step-⊆ (ret (tup vs) (getK i κ)) () | nothing
+step-⊆ (ret v (inlK κ)) refl d d∈ = d∈
+step-⊆ (ret v (inrK κ)) refl d d∈ = d∈
+step-⊆ (ret (T.inl v) (caseK M N γ κ)) refl = 𝒦-mono κ (case-inl-β M N γ v)
+step-⊆ (ret (T.inr v) (caseK M N γ κ)) refl = 𝒦-mono κ (case-inr-β M N γ v)
+step-⊆ (ret v (primL p M γ κ)) refl d d∈ = d∈
+step-⊆ (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
+step-⊆ (ret w (primR p v κ)) refl | just r = 𝒦-mono κ (prim-⊆ p v w r e)
+step-⊆ (ret w (primR p v κ)) () | nothing
+step-⊆ (ret w (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ w)
+
+↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
+↠-⊆ done d d∈ = d∈
+↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
+
+{- Errors: a continuation passes on ω -----------------------------------------}
+
+errsL-rev : ∀ vs Ds → errsL Ds → errsL (rev𝒱 vs Ds)
+errsL-rev [] Ds e = e
+errsL-rev (v ∷ vs) Ds e = errsL-rev vs (𝒱 v ∷ Ds) (inj₂ ⟨ 𝒱-conv v , e ⟩)
+
+𝒦-ω : ∀ κ {D} → ω ∈ D → ω ∈ 𝒦 κ D
+𝒦-ω halt ω∈ = ω∈
+𝒦-ω (appL M γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
+𝒦-ω (appR v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv v , inj₂ (inj₁ ⟨ refl , ω∈ ⟩) ⟩)
+𝒦-ω (tupK vs Ms γ κ) {D} ω∈ = 𝒦-ω κ (errsL-ω _ (errsL-rev vs (D ∷ _) (inj₁ ω∈)))
+𝒦-ω (getK i κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
+𝒦-ω (inlK κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
+𝒦-ω (inrK κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
+𝒦-ω (caseK M N γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
+𝒦-ω (primL p M γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
+𝒦-ω (primR p v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv v , inj₁ ⟨ refl , ω∈ ⟩ ⟩)
+𝒦-ω (letK N γ κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (clo N γ) , inj₂ (inj₁ ⟨ refl , ω∈ ⟩) ⟩)
 
 {- Final states ----------------------------------------------------------------}
 
@@ -623,52 +543,27 @@ final-err (eval (inr-op ⦅ M ,, Nil ⦆) γ κ) ()
 final-err (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) ()
 final-err (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) ()
 final-err (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) ()
-final-err (ret (clo N γ) halt) ()
-final-err (ret (const B k) halt) ()
-final-err (ret (tup vs) halt) ()
-final-err (ret (T.inl v) halt) ()
-final-err (ret (T.inr v) halt) ()
-final-err (ret (clo N γ) (appL M γ' κ)) ()
-final-err (ret (const B k) (appL M γ' κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (const B k) (λ _ _ ()))) ⟩)
-final-err (ret (tup vs) (appL M γ' κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (tup vs) (λ _ _ ()))) ⟩)
-final-err (ret (T.inl v) (appL M γ' κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (T.inl v) (λ _ _ ()))) ⟩)
-final-err (ret (T.inr v) (appL M γ' κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (T.inr v) (λ _ _ ()))) ⟩)
-final-err (ret w (appR (clo N γ) κ)) ()
-final-err (ret w (appR (const B k) κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (const B k) (λ _ _ ()))) ⟩)
-final-err (ret w (appR (tup vs) κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (tup vs) (λ _ _ ()))) ⟩)
-final-err (ret w (appR (T.inl v) κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (T.inl v) (λ _ _ ()))) ⟩)
-final-err (ret w (appR (T.inr v) κ)) refl =
-  𝒦-ω κ (inj₂ ⟨ refl , inj₂ (inj₁ (nonclo-wrong (T.inr v) (λ _ _ ()))) ⟩)
-final-err (ret v (tupK vs Ms γ κ)) ()
+final-err (ret (const B k) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret (tup vs) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
+final-err (ret (T.inl v) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
+final-err (ret (T.inr v) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (const B k) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (tup vs) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (T.inl v) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (T.inr v) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
 final-err (ret (tup vs) (getK i κ)) eq with proj i vs in p
 final-err (ret (tup vs) (getK i κ)) () | just v
-final-err (ret (tup vs) (getK i κ)) refl | nothing = 𝒦-ω κ (inj₂ ⟨ refl , inj₂ (tup-wrong i vs p) ⟩)
-final-err (ret (clo N γ) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ refl , inj₂ (nontup-wrong (clo N γ) (λ _ ())) ⟩)
-final-err (ret (const B k) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ refl , inj₂ (nontup-wrong (const B k) (λ _ ())) ⟩)
-final-err (ret (T.inl v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ refl , inj₂ (nontup-wrong (T.inl v) (λ _ ())) ⟩)
-final-err (ret (T.inr v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ refl , inj₂ (nontup-wrong (T.inr v) (λ _ ())) ⟩)
-final-err (ret v (inlK κ)) ()
-final-err (ret v (inrK κ)) ()
-final-err (ret (T.inl v) (caseK M N γ κ)) ()
-final-err (ret (T.inr v) (caseK M N γ κ)) ()
-final-err (ret (clo N' γ') (caseK M N γ κ)) refl =
-  𝒦-ω κ (inj₂ (inj₂ ⟨ refl , inj₂ (noninj-wrong (clo N' γ') (λ _ ()) (λ _ ())) ⟩))
-final-err (ret (const B k) (caseK M N γ κ)) refl =
-  𝒦-ω κ (inj₂ (inj₂ ⟨ refl , inj₂ (noninj-wrong (const B k) (λ _ ()) (λ _ ())) ⟩))
-final-err (ret (tup vs) (caseK M N γ κ)) refl =
-  𝒦-ω κ (inj₂ (inj₂ ⟨ refl , inj₂ (noninj-wrong (tup vs) (λ _ ()) (λ _ ())) ⟩))
-final-err (ret v (primL p M γ κ)) ()
+final-err (ret (tup vs) (getK i κ)) refl | nothing = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ { refl → proj-nothing i vs p refl }) ⟩ ⟩)
+final-err (ret (clo N γ) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (clo N γ) , inj₁ ⟨ refl , 𝒱-bad (clo N γ) (λ ()) ⟩ ⟩)
+final-err (ret (const B k) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret (T.inl v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
+final-err (ret (T.inr v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
+final-err (ret (clo N' γ') (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (clo N' γ') , inj₁ ⟨ refl , 𝒱-bad (clo N' γ') (λ ()) ⟩ ⟩)
+final-err (ret (const B k) (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret (tup vs) (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
 final-err (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
 final-err (ret w (primR p v κ)) () | just r
 final-err (ret w (primR p v κ)) refl | nothing = 𝒦-ω κ (prim-ω p v w e)
-final-err (ret v (letK N γ κ)) ()
 
 {- a state that stops with an answer has an element of that shape -}
 final-shape : ∀ s {o} → step s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
@@ -710,8 +605,6 @@ final-shape (ret w (primR p v κ)) refl ans | nothing = ⊥-elim (ans refl)
 
 {- Soundness ------------------------------------------------------------------}
 
-{- a program that terminates with an answer o has an element of the shape
-   of o in its denotation -}
 soundness : ∀ M {o} → Terminates (sem M) o → Answer o
   → Σ[ d ∈ Value ] d ∈ ⟦ M ⟧ ρ₀ × ShapeOf o d
 soundness M (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
@@ -719,7 +612,6 @@ soundness M (⟨ s , ⟨ σ , fin ⟩ ⟩) ans
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ =
   ⟨ d , ⟨ ⟦⟧-monotone M (λ x d z → z) d (↠-⊆ (star→↠ σ) d d∈) , sh ⟩ ⟩
 
-{- a program that stops with an error has ω in its denotation -}
 sound-error : ∀ M → Terminates (sem M) o-error → ω ∈ ⟦ M ⟧ ρ₀
 sound-error M ⟨ s , ⟨ σ , fin ⟩ ⟩ =
   ⟦⟧-monotone M (λ x d z → z) ω (↠-⊆ (star→↠ σ) ω (final-err s fin))

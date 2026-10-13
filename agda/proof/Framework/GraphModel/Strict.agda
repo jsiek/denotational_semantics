@@ -3,7 +3,7 @@
   Operators strict in a list of operands, left to right: each is a
   congruence and is empty when one of its operands is, so binding an
   operand first by a let changes nothing (rco). The counterpart, with
-  errors, is ErrorStrict.
+  errors, is in ErrorMonad.
 
 -}
 

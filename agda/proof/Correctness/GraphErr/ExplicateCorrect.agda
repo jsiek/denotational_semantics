@@ -13,7 +13,7 @@
   e run with the continuation that assigns x and runs k (cps), and
   explicate-tail e means e run with halt (tail); each case is a
   congruence. With errors, the frame checks of an assignment and of a
-  case are the same on both sides (checkedᵉ: an error once the value is
+  case are the same on both sides (frameᵐ: an error once the value is
   computed), as are the frames of called bodies (max(2, n) slots), so the
   congruences carry over; a jump to a missing block, {ω}, never happens
   on explicate's output, whose jumps go to blocks it made.
@@ -24,8 +24,8 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (RRs; mono-≃)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase using (nthD-≃)
-open import proof.Framework.GraphModel.ErrorOps
-open import proof.Semantics.GraphErr.Prim using (primᵉ-≃)
+open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Semantics.GraphErr.Prim using (primᵐ-≃)
 open import Language.Imp as I
   using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim; simple; case; assign; body; program)
 import Language.CFG as C
@@ -34,7 +34,7 @@ open import Compiler.Explicate
 open import Compiler.Pipeline using (compile-imp; compile-cfg)
 open import Compiler.EncloseScope using (Closed)
 open import Semantics.GraphErr.ImpK
-  using (Store; _[_↦_]; checkedᵉ; Table; 𝒜; 𝒜s; 𝒮; zeros; frame; tables; Kont; halt; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
+  using (Store; _[_↦_]; frameᵐ; Table; 𝒜; 𝒜s; 𝒮; zeros; frame; tables; Kont; halt; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (code to codeᴷ)
 open import Semantics.GraphErr.CFG
   using (Blocks; blocks; ⟦_⟧ₚ)
@@ -53,7 +53,7 @@ open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.GraphErr.ExplicateCorrect where
 
-open import proof.Framework.GraphModel.ErrorLaws using (ΛΛᵉ-≃)
+open import proof.Framework.GraphModel.ErrorMonad using (ΛΛᵐ-≃)
 
 {- Blocks -----------------------------------------------------------------------------}
 
@@ -106,11 +106,10 @@ at-σ : ∀ {F G : Store → 𝒫 Value} → F ≡ G → ∀ σ → F σ ≃ G �
 at-σ eq σ = ≃-reflexive (cong (λ f → f σ) eq)
 
 {- CFG and Imp check the slots alike -}
-checkedᵉ-≃ : ∀ n {x D D' E E'} → D ≃ D' → E ≃ E' → checkedᵉ n x D E ≃ checkedᵉ n x D' E'
-checkedᵉ-≃ n {x} D≃ E≃ with x <? n
+frameᵐ-≃ : ∀ n {x D D' E E'} → D ≃ D' → E ≃ E' → frameᵐ n x D E ≃ frameᵐ n x D' E'
+frameᵐ-≃ n {x} D≃ E≃ with x <? n
 ... | yes _ = E≃
-... | no _ = ⟨ (λ { w ⟨ refl , ⟨ d , d∈ ⟩ ⟩ → ⟨ refl , ⟨ d , proj₁ D≃ d d∈ ⟩ ⟩ })
-             , (λ { w ⟨ refl , ⟨ d , d∈ ⟩ ⟩ → ⟨ refl , ⟨ d , proj₂ D≃ d d∈ ⟩ ⟩ }) ⟩
+... | no _ = ⟨ ≫=-mono (proj₁ D≃) (λ _ w z → z) , ≫=-mono (proj₂ D≃) (λ _ w z → z) ⟩
 
 {- Tables that agree ------------------------------------------------------------------}
 
@@ -130,15 +129,15 @@ module Agreeing {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
 
   𝒮-≃ : ∀ s σ → 𝒮 T n σ s ≃ 𝒮 T' n σ s
   𝒮-≃ (atm a) σ = 𝒜-≃ a σ
-  𝒮-≃ (app f e a) σ = callᵉ-≃ (𝒜-≃ f σ) (𝒜-≃ e σ) (𝒜-≃ a σ)
-  𝒮-≃ (I.pair a b) σ = pairᵉ-≃ (𝒜-≃ a σ) (𝒜-≃ b σ)
-  𝒮-≃ (fst a) σ = carᵉ-≃ (𝒜-≃ a σ)
-  𝒮-≃ (snd a) σ = cdrᵉ-≃ (𝒜-≃ a σ)
-  𝒮-≃ (tuple as) σ = 𝒯ᵉ-≃ (length as) (nthD-≃ _ _ (𝒜s-≃ as σ))
-  𝒮-≃ (get i a) σ = projᵉ-≃ i (𝒜-≃ a σ)
-  𝒮-≃ (I.inl a) σ = inlᵉ-≃ (𝒜-≃ a σ)
-  𝒮-≃ (I.inr a) σ = inrᵉ-≃ (𝒜-≃ a σ)
-  𝒮-≃ (prim p a b) σ = primᵉ-≃ p (𝒜-≃ a σ) (𝒜-≃ b σ)
+  𝒮-≃ (app f e a) σ = callᵐ-≃ (𝒜-≃ f σ) (𝒜-≃ e σ) (𝒜-≃ a σ)
+  𝒮-≃ (I.pair a b) σ = pairᵐ-≃ (𝒜-≃ a σ) (𝒜-≃ b σ)
+  𝒮-≃ (fst a) σ = carᵐ-≃ (𝒜-≃ a σ)
+  𝒮-≃ (snd a) σ = cdrᵐ-≃ (𝒜-≃ a σ)
+  𝒮-≃ (tuple as) σ = 𝒯ᵐ-≃ (length as) (nthD-≃ _ _ (𝒜s-≃ as σ))
+  𝒮-≃ (get i a) σ = projᵐ-≃ i (𝒜-≃ a σ)
+  𝒮-≃ (I.inl a) σ = inlᵐ-≃ (𝒜-≃ a σ)
+  𝒮-≃ (I.inr a) σ = inrᵐ-≃ (𝒜-≃ a σ)
+  𝒮-≃ (prim p a b) σ = primᵐ-≃ p (𝒜-≃ a σ) (𝒜-≃ b σ)
 
   {- a jump to the block that holds k means the same with newer blocks -}
   goto-≃ : ∀ {k bs bs₁ bs''} → k ∷ bs ≼ bs₁ → bs₁ ≼ bs'' → ∀ σ
@@ -151,12 +150,12 @@ module _ (n : ℕ) where
 
   {- assign x the value, then K, as x := s; K does in CFG -}
   assignK : ℕ → (Store → 𝒫 Value) → Kont
-  assignK x K D σ = checkedᵉ n x D (letᵉ ⟨ D , ⟨ (λ X → K (σ [ x ↦ X ])) , ptt ⟩ ⟩)
+  assignK x K D σ = frameᵐ n x D (letᵐ ⟨ D , ⟨ (λ X → K (σ [ x ↦ X ])) , ptt ⟩ ⟩)
 
   assignK-≃ : ∀ {x} {K K' : Store → 𝒫 Value} {D D' σ} → (∀ σ' → K σ' ≃ K' σ') → D ≃ D'
     → assignK x K D σ ≃ assignK x K' D' σ
   assignK-≃ {x} {K} {K'} {σ = σ} K≃ D≃ =
-    checkedᵉ-≃ n {x} D≃ (letᵉ-≃ {F = λ X → K (σ [ x ↦ X ])} {λ X → K' (σ [ x ↦ X ])} D≃ (λ V _ _ _ → K≃ _))
+    frameᵐ-≃ n {x} D≃ (letᵐ-≃ {F = λ X → K (σ [ x ↦ X ])} {λ X → K' (σ [ x ↦ X ])} D≃ (λ V _ _ _ → K≃ _))
 
 {- The pass preserves meanings ----------------------------------------------------------}
 
@@ -185,8 +184,8 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
     st' : Stable bs₁ t'
     st' bs₂ e σ' = ≃-trans (cps e₂ x k bs st bs₂ e σ' κ≃) (≃-sym (cps e₂ x k bs st bs₁ ≼-refl σ' κ≃))
   cps (case a y e₁ e₂) x k bs st bs'' ext σ {κ} κ≃ =
-    checkedᵉ-≃ n {y} (payloadᵉ-≃ (𝒜-≃ a σ))
-     (𝒞ᵉ-≃ {F = λ Y → B bs'' (length bs₂) (σ [ y ↦ Y ])} {λ Y → ⟦ e₁ ⟧ᴷ[ T' ] n (σ [ y ↦ Y ]) κ}
+    frameᵐ-≃ n {y} (payloadᵐ-≃ (𝒜-≃ a σ))
+     (𝒞ᵐ-≃ {F = λ Y → B bs'' (length bs₂) (σ [ y ↦ Y ])} {λ Y → ⟦ e₁ ⟧ᴷ[ T' ] n (σ [ y ↦ Y ]) κ}
            {λ Y → B bs'' (length bs₄) (σ [ y ↦ Y ])} {λ Y → ⟦ e₂ ⟧ᴷ[ T' ] n (σ [ y ↦ Y ]) κ}
       (𝒜-≃ a σ)
       (λ v V _ _ → ≃-trans (at-σ (blocks-at T n (≼-trans (grows-assign e₂ x (C.goto l) bs₃) (≼-trans ≼-∷ ext))) _)
@@ -218,8 +217,8 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
     st : Stable bs₁ t₂
     st bs₂ e σ' = ≃-trans (tail e₂ bs bs₂ e σ') (≃-sym (tail e₂ bs bs₁ ≼-refl σ'))
   tail (case a x e₁ e₂) bs bs'' ext σ =
-    checkedᵉ-≃ n {x} (payloadᵉ-≃ (𝒜-≃ a σ))
-     (𝒞ᵉ-≃ {F = λ Y → B bs'' (length bs₁) (σ [ x ↦ Y ])} {λ Y → ⟦ e₁ ⟧ᴷ[ T' ] n (σ [ x ↦ Y ]) halt}
+    frameᵐ-≃ n {x} (payloadᵐ-≃ (𝒜-≃ a σ))
+     (𝒞ᵐ-≃ {F = λ Y → B bs'' (length bs₁) (σ [ x ↦ Y ])} {λ Y → ⟦ e₁ ⟧ᴷ[ T' ] n (σ [ x ↦ Y ]) halt}
            {λ Y → B bs'' (length bs₃) (σ [ x ↦ Y ])} {λ Y → ⟦ e₂ ⟧ᴷ[ T' ] n (σ [ x ↦ Y ]) halt}
       (𝒜-≃ a σ)
       (λ v V _ _ → ≃-trans (at-σ (blocks-at T n (≼-trans (grows-tail e₂ bs₂) (≼-trans ≼-∷ ext))) _)
@@ -236,7 +235,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (n : ℕ) where
 table-≃ : ∀ ds k → tables codeₜ (map explicate-body ds) k ≃ tables codeᴷ ds k
 table-≃ [] k = ≃-refl
 table-≃ (body n e ∷ bs) k with k ≟ length (map explicate-body bs) | k ≟ length bs
-... | yes _ | yes _ = ΛΛᵉ-≃ λ X Y → tail (table-≃ bs) (2 ⊔ n) e [] _ ≼-refl (frame X Y)
+... | yes _ | yes _ = ΛΛᵐ-≃ λ X Y → tail (table-≃ bs) (2 ⊔ n) e [] _ ≼-refl (frame X Y)
 ... | no _ | no _ = table-≃ bs k
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-map explicate-body bs)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-map explicate-body bs))))

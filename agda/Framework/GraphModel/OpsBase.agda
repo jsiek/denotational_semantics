@@ -1,7 +1,7 @@
 {-
 
   The graph-model operators that the graph model (Ops.agda) and the graph
-  model with errors (ErrorOps.agda) share unchanged: constants, and the
+  model with errors (ErrorMonad.agda) share unchanged: constants, and the
   components of a tuple of results.
 
 -}

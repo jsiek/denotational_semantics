@@ -1,7 +1,7 @@
 module proof.Semantics.GraphErr.Clos4 where
 
 open import proof.Framework.GraphModel.ContinuityBase using (Good; ℬ-good)
-open import proof.Framework.GraphModel.ErrorContinuity
+open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Semantics.GraphErr.Prim
 open import Language.Clos4
 open import Semantics.GraphErr.Clos4 public hiding (⟦_⟧; init)
@@ -14,31 +14,31 @@ open import Data.Unit using (⊤; tt)
    its operators are Good (monotone, consistent and continuous). -}
 
 private
-  good : ∀ op → Good ⊤ (sig op) (𝕆-Clos4ᵉ op)
-  good fun-op = ΛΛᵉ-good
-  good app = callᵉ-good
+  good : ∀ op → Good ⊤ (sig op) (𝕆-Clos4ᵐ op)
+  good fun-op = ΛΛᵐ-good
+  good app = callᵐ-good
   good (lit B k) = ℬ-good B k
-  good pair-op = pairᵉ-good
-  good fst-op = carᵉ-good
-  good snd-op = cdrᵉ-good
-  good (tuple n) = 𝒯ᵉ-good n
-  good (get i) = projᵉ-good i
-  good inl-op = inlᵉ-good
-  good inr-op = inrᵉ-good
-  good case-op = 𝒞ᵉ-good
-  good (prim p) = primᵉ-good p
-  good let-op = letᵉ-good
+  good pair-op = pairᵐ-good
+  good fst-op = carᵐ-good
+  good snd-op = cdrᵐ-good
+  good (tuple n) = 𝒯ᵐ-good n
+  good (get i) = projᵐ-good i
+  good inl-op = inlᵐ-good
+  good inr-op = inrᵐ-good
+  good case-op = 𝒞ᵐ-good
+  good (prim p) = primᵐ-good p
+  good let-op = letᵐ-good
 
-  module G = GoodSemantics ⊤ 𝕆-Clos4ᵉ good
+  module G = GoodSemantics ⊤ 𝕆-Clos4ᵐ good
 
 open import proof.Framework.GraphModel.Semantics Op sig public
 
 instance
-  Clos4ᵉ-Semantics : Semantics
-  Clos4ᵉ-Semantics = G.Sem
+  Clos4ᵐ-Semantics : Semantics
+  Clos4ᵐ-Semantics = G.Sem
 open Semantics {{...}} public
 
 open G public using (term-continuous; body-mono; body-continuous; body2-continuous)
 
-Clos4ᵉ-con-env = G.con-env tt
-Clos4ᵉ-con = G.con tt
+Clos4ᵐ-con-env = G.con-env tt
+Clos4ᵐ-con = G.con tt

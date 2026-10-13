@@ -13,14 +13,12 @@
   continuation that means K, given a store that agrees, means K of the
   meaning of m (lift-sem). What changes with errors:
 
-  * K is a strict let (letᵉ), and it commutes with letᵉ and 𝒞ᵉ
-    (let-law, case-law) also on errors: an error of the right-hand side
-    of a let, or of the scrutinee of a case, is passed on by both sides,
-    and an error of a body or branch is a result of both. The finite
-    parts that a let or case binds hold no ω, and their join holds none
-    (gather).
+  * K is a bind (K⟨_⟩), and it commutes with a let, which is a bind
+    (letᵐ-≫=), by associativity, and with a case (𝒞ᵐ-≫=). Both need the
+    continuation to use only a finite part of its argument (KOK), which
+    the bodies of Clos5 do (body-continuous) and binds keep (≫=-fin).
   * Every assignment that lift makes is within the frame, so the frame
-    checks (checkedᵉ) never err; a variable out of scope is a slot beyond
+    checks (frameᵐ) never err; a variable out of scope is a slot beyond
     the frame, which errs (init), as it does in Clos5.
   * Code bodies run in frames of max(2, 2 + height) slots, which is
     2 + height.
@@ -30,11 +28,12 @@
 -}
 
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig using (Results; RRs; RRs-refl)
+open import proof.Framework.GraphModel.DOpSig using (Results; RRs; RRs-refl; mono-≃)
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase using (nthD-≃)
-open import proof.Framework.GraphModel.ErrorOps
-open import proof.Semantics.GraphErr.Prim using (primᵉ-≃)
+open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ContinuityBase using (mono)
+open import proof.Semantics.GraphErr.Prim using (primᵐ-≃)
 open import Language.Clos5 using (program; Args)
 import Language.Clos5 as C5
 open import Language.Mon
@@ -45,12 +44,13 @@ open import Compiler.EncloseScope using (Closed)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.RCO using (rco-program-mon)
 open import proof.Semantics.GraphErr.Clos5
-  using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ; ⟦⟧[]-monotone; Clos5ᵉ-con; table-con)
+  using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; ⟦_⟧ₚ; ⟦⟧[]-monotone; Clos5ᵐ-con; table-con; body-mono; body-continuous)
   renaming (init to init₅)
 open import Semantics.GraphErr.ImpK
-  using (Store; read; _[_↦_]; checkedᵉ; 𝒜; 𝒜s; frame; Kont; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ; init)
+  using (Store; read; _[_↦_]; frameᵐ; 𝒜; 𝒜s; frame; Kont; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ; init)
   renaming (table to tableᴷ)
-open import proof.Framework.GraphModel.Env using (Env)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
+open import proof.Framework.GraphModel.OpsBase using (Mono₁; Finitary)
 
 open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _⊔_; _<_; _≤_; _≟_; _<?_; s≤s)
 open import Data.Nat.Properties
@@ -63,15 +63,13 @@ open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
-open import Data.Unit using (tt)
+open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Level using () renaming (lift to up)
+open import Level using (Lift) renaming (lift to up)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
 open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.GraphErr.LiftLocalsCorrect where
-
-open import proof.Framework.GraphModel.ErrorLaws
 
 {- Slots and stores ----------------------------------------------------------------}
 
@@ -98,7 +96,7 @@ upd-< {σ} {X} {y} {d} y<d with y ≟ d
 slot-< : ∀ {x d} → x < d → d ∸ suc x < d
 slot-< {x} {suc d} _ = s≤s (m∸n≤m d x)
 
-checked-at : ∀ {n x D E} → x < n → checkedᵉ n x D E ≃ E
+checked-at : ∀ {n x D E} → x < n → frameᵐ n x D E ≃ E
 checked-at {n} {x} x<n with x <? n
 ... | yes _ = ≃-refl
 ... | no x≮n = ⊥-elim (x≮n x<n)
@@ -167,57 +165,67 @@ module AtomsSame {T T' : Table} (TT : ∀ k → T k ≃ T' k) where
     atoms-≃ as H O A (λ m Ds → Q (suc m) ⟨ _ , Ds ⟩) (λ eq → resp ⟨ up ≃-refl , eq ⟩)
       (resp ⟨ up (atom-≃ a H O A) , RRs-refl _ ⟩ q)
 
-{- Commuting with let and case --------------------------------------------------------}
+{- The main lemma -----------------------------------------------------------------------}
 
 module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)) where
 
   open AtomsSame TT
 
-  mono-• : ∀ {ρ} M → MonoF (λ X → ⟦ M ⟧[ T' ] (X • ρ))
-  mono-• M X⊆ = ⟦⟧[]-monotone T' M λ { zero → X⊆ ; (suc x) → λ _ w∈ → w∈ }
+  Ret : ℕ → Store → Env Value → Maybe (𝒫 Value → 𝒫 Value) → Kont → Set₁
+  Ret d σ ρ k κ = ∀ D σ' → Con D → Agree d σ' ρ → κ D σ' ≃ K⟨ k ⟩ D
 
-  lift-sem : ∀ {M} (m : Mon M) {n d σ ρ} k {κ : Kont} → d + height m ≤ n → Scope d ρ → Agree d σ ρ → Con-env ρ
-    → (∀ D σ' → Agree d σ' ρ → κ D σ' ≃ K⟨ k ⟩ D)
+  {- a result D that means M -}
+  ret : ∀ {d σ ρ k κ} M {D} → KOK k → Con-env ρ → Ret d σ ρ k κ → Agree d σ ρ → D ≃ ⟦ M ⟧[ T' ] ρ
+    → κ D σ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
+  ret {k = k} M ok cρ κ≃ A eq = ≃-trans (κ≃ _ _ (Con-⊆ (Clos5ᵐ-con T' TC M cρ) (proj₁ eq)) A) (K-≃ k ok eq)
+
+  lift-sem : ∀ {M} (m : Mon M) {n d σ ρ} k {κ : Kont} → KOK k → d + height m ≤ n → Scope d ρ → Agree d σ ρ
+    → nonempty-env ρ → Con-env ρ → Ret d σ ρ k κ
     → ⟦ lift n d m ⟧ᴷ[ T ] n σ κ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
-  lift-sem (atom a) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (atom-≃ a H O A))
-  lift-sem (app (a ∷ b ∷ c ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (callᵉ-≃ (atom-≃ a H O A) (atom-≃ b H O A) (atom-≃ c H O A)))
-  lift-sem (pair (a ∷ b ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (pairᵉ-≃ (atom-≃ a H O A) (atom-≃ b H O A)))
-  lift-sem (fst (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (carᵉ-≃ (atom-≃ a H O A)))
-  lift-sem (snd (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (cdrᵉ-≃ (atom-≃ a H O A)))
-  lift-sem (tuple {k'} {Ms} as) {ρ = ρ} k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (atoms-≃ as H O A (λ m Ds → 𝒯ᵉ m Ds ≃ 𝒯ᵉ k' (⟦ Ms ⟧₊[ T' ] ρ))
-                 (λ {m} eq q → ≃-trans (𝒯ᵉ-≃ m (nthD-≃ _ _ eq)) q) ≃-refl))
-  lift-sem (get {i = i} (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (projᵉ-≃ i (atom-≃ a H O A)))
-  lift-sem (inl (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (inlᵉ-≃ (atom-≃ a H O A)))
-  lift-sem (inr (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (inrᵉ-≃ (atom-≃ a H O A)))
-  lift-sem (prim {p} (a ∷ b ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (primᵉ-≃ p (atom-≃ a H O A) (atom-≃ b H O A)))
-  lift-sem (case {L} {M₁} {M₂} a m₁ m₂) {n} {d} {σ} {ρ} k {κ} H O A cρ κ≃ =
+  lift-sem (atom {M} a) k ok H O A NE cρ κ≃ = ret M ok cρ κ≃ A (atom-≃ a H O A)
+  lift-sem (app {As} (a ∷ b ∷ c ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.app C5.⦅ As ⦆) ok cρ κ≃ A
+    (callᵐ-≃ (atom-≃ a H O A) (atom-≃ b H O A) (atom-≃ c H O A))
+  lift-sem (pair {As} (a ∷ b ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.pair-op C5.⦅ As ⦆) ok cρ κ≃ A
+    (pairᵐ-≃ (atom-≃ a H O A) (atom-≃ b H O A))
+  lift-sem (fst {As} (a ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.fst-op C5.⦅ As ⦆) ok cρ κ≃ A (carᵐ-≃ (atom-≃ a H O A))
+  lift-sem (snd {As} (a ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.snd-op C5.⦅ As ⦆) ok cρ κ≃ A (cdrᵐ-≃ (atom-≃ a H O A))
+  lift-sem (tuple {k'} {Ms} as) {ρ = ρ} k ok H O A NE cρ κ≃ = ret (C5.tuple k' C5.⦅ Ms ⦆) ok cρ κ≃ A
+    (atoms-≃ as H O A (λ m Ds → 𝒯ᵐ m Ds ≃ 𝒯ᵐ k' (⟦ Ms ⟧₊[ T' ] ρ))
+                 (λ {m} eq q → ≃-trans (𝒯ᵐ-≃ m (nthD-≃ _ _ eq)) q) ≃-refl)
+  lift-sem (get {i = i} {As} (a ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.get i C5.⦅ As ⦆) ok cρ κ≃ A (projᵐ-≃ i (atom-≃ a H O A))
+  lift-sem (inl {As} (a ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.inl-op C5.⦅ As ⦆) ok cρ κ≃ A (inlᵐ-≃ (atom-≃ a H O A))
+  lift-sem (inr {As} (a ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.inr-op C5.⦅ As ⦆) ok cρ κ≃ A (inrᵐ-≃ (atom-≃ a H O A))
+  lift-sem (prim {p} {As} (a ∷ b ∷ [])) k ok H O A NE cρ κ≃ = ret (C5.prim p C5.⦅ As ⦆) ok cρ κ≃ A
+    (primᵐ-≃ p (atom-≃ a H O A) (atom-≃ b H O A))
+  lift-sem (case {L} {M₁} {M₂} a m₁ m₂) {n} {d} {σ} {ρ} k {κ} ok H O A NE cρ κ≃ =
     ≃-trans (checked-at (fits-< _ (fits {d} _ H)))
-    (≃-trans (𝒞ᵉ-≃ {F = λ X → ⟦ lift n (suc d) m₁ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ} {λ X → K⟨ k ⟩ (⟦ M₁ ⟧[ T' ] (X • ρ))}
+    (≃-trans (𝒞ᵐ-≃ {F = λ X → ⟦ lift n (suc d) m₁ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ} {λ X → K⟨ k ⟩ (⟦ M₁ ⟧[ T' ] (X • ρ))}
                    {λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ} {λ X → K⟨ k ⟩ (⟦ M₂ ⟧[ T' ] (X • ρ))}
                    (atom-≃ a H O A)
-                   (λ v V cV _ → lift-sem m₁ k (⊔ˡ (height m₁) _ H') (scope-ext O) (agree-ext A)
-                                 (Con-• (≈⇒Con cV) cρ) (λ D σ' A' → κ≃ D σ' (weak A')))
-                   (λ v V cV _ → lift-sem m₂ k (⊔ʳ _ (height m₂) H') (scope-ext O) (agree-ext A)
-                                 (Con-• (≈⇒Con cV) cρ) (λ D σ' A' → κ≃ D σ' (weak A'))))
-             (≃-sym (case-law k {F₁ = λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)} {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
-                       (Clos5ᵉ-con T' TC L cρ) (mono-• M₁) (mono-• M₂))))
+                   (λ V ne cV _ → lift-sem m₁ k ok (⊔ˡ (height m₁) _ H') (scope-ext O) (agree-ext A)
+                                 (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne)) (Con-• (≈⇒Con cV) cρ)
+                                 (λ D σ' cD A' → κ≃ D σ' cD (weak A')))
+                   (λ V ne cV _ → lift-sem m₂ k ok (⊔ʳ _ (height m₂) H') (scope-ext O) (agree-ext A)
+                                 (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne)) (Con-• (≈⇒Con cV) cρ)
+                                 (λ D σ' cD A' → κ≃ D σ' cD (weak A'))))
+             (≃-sym (case-law k ok {F₁ = λ X → ⟦ M₁ ⟧[ T' ] (X • ρ)} {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)}
+                       (Clos5ᵐ-con T' TC L cρ) (body-mono T' M₁ ρ) (body-mono T' M₂ ρ))))
     where H' = fits {d} (height m₁ ⊔ height m₂) H
-  lift-sem (let′ {M₁} {M₂} m₁ m₂) {n} {d} {σ} {ρ} k {κ} H O A cρ κ≃ =
-    ≃-trans (lift-sem m₁ (just G) (⊔ˡ {d} (height m₁) _ H) O A cρ κ₁≃)
-            (≃-sym (let-law k {F = λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)} (Clos5ᵉ-con T' TC M₁ cρ) (mono-• M₂)))
+  lift-sem (let′ {M₁} {M₂} m₁ m₂) {n} {d} {σ} {ρ} k {κ} ok H O A NE cρ κ≃ =
+    ≃-trans (lift-sem m₁ (just G) okG (⊔ˡ {d} (height m₁) _ H) O A NE cρ κ₁≃)
+            (≃-sym (≃-trans (K-≃ k ok (letᵐ-≫= (body-mono T' M₂ ρ) cM₁ (λ c → body-continuous T' M₂ ρ NE _ c)))
+                            (let-law k ok {⟦ M₁ ⟧[ T' ] ρ} {λ X → ⟦ M₂ ⟧[ T' ] (X • ρ)})))
     where
+    cM₁ = Clos5ᵐ-con T' TC M₁ cρ
     H₂ = fits {d} _ (⊔ʳ (height m₁) _ H)
     G = λ X → K⟨ k ⟩ (⟦ M₂ ⟧[ T' ] (X • ρ))
-    κ₁≃ : ∀ D σ' → Agree d σ' ρ
-      → checkedᵉ n d D (letᵉ ⟨ D , ⟨ (λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ) , ptt ⟩ ⟩)
-        ≃ K⟨ just G ⟩ D
-    κ₁≃ D σ' A' = ≃-trans (checked-at (fits-< _ H₂))
-      (letᵉ-≃ ≃-refl λ V _ cV _ → lift-sem m₂ k H₂ (scope-ext O) (agree-ext A') (Con-• (≈⇒Con cV) cρ)
-                              (λ D' σ'' A'' → κ≃ D' σ'' (weak A'')))
+    okG = K-ok k ok (body-mono T' M₂ ρ) (body-continuous T' M₂ ρ NE)
+    κ₁≃ : Ret d σ ρ (just G) (λ D σ' → frameᵐ n d D (letᵐ ⟨ D , ⟨ (λ X → ⟦ lift n (suc d) m₂ ⟧ᴷ[ T ] n (σ' [ d ↦ X ]) κ) , ptt ⟩ ⟩))
+    κ₁≃ D σ' cD A' = ≃-trans (checked-at (fits-< _ H₂))
+      (≃-trans (letᵐ-≃ ≃-refl λ V ne cV _ → lift-sem m₂ k ok H₂ (scope-ext O) (agree-ext A')
+                              (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne)) (Con-• (≈⇒Con cV) cρ)
+                              (λ D' σ'' cD' A'' → κ≃ D' σ'' cD' (weak A'')))
+               (letᵐ-≫= (proj₁ okG) cD (λ c → proj₂ okG _ c)))
 
 {- Programs ---------------------------------------------------------------------}
 
@@ -225,17 +233,18 @@ table-lift : ∀ {ds} (ms : All Mon ds) k → tableᴷ (lift-defs ms) k ≃ tabl
 table-lift [] k = ≃-refl
 table-lift {N ∷ Ns} (m ∷ ms) k with k ≟ length (lift-defs ms) | k ≟ length Ns
 ... | yes _ | yes _ =
-  Λᵉ-≃ λ X _ cX _ → Λᵉ-≃ λ Y _ cY _ → lift-sem (table-lift ms) (table-con Ns) m nothing ≤-refl
+  ΛΛᵐ-≃′ λ X Y neX cX _ neY cY _ → lift-sem (table-lift ms) (table-con Ns) m nothing (up tt) ≤-refl
     (scope-frame (mem X) (mem Y)) (agree-frame (mem X) (mem Y))
-    (Con-• (≈⇒Con cY) (Con-• (≈⇒Con cX) (λ _ → Con-⌈⌉ ω))) (λ _ _ _ → ≃-refl)
+    (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neX)) (E≢[]⇒nonempty-mem neY))
+    (Con-• (≈⇒Con cY) (Con-• (≈⇒Con cX) (λ _ → Con-⌈⌉ ω))) (λ _ _ _ _ → ≃-refl)
 ... | no _ | no _ = table-lift ms k
 ... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-lift-defs ms)))
 ... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-lift-defs ms))))
 
 lift-locals-correct : ∀ (P : C5.Program) (mp : MonProgram P) → ⟦ lift-program P mp ⟧ᴷₚ ≃ ⟦ P ⟧ₚ
 lift-locals-correct (program ds M) ⟨ ms , m ⟩ =
-  lift-sem (table-lift ms) (table-con ds) m nothing ≤-refl (λ x _ → ≃-refl) (agree λ x ())
-    (λ _ → Con-⌈⌉ ω) (λ _ _ _ → ≃-refl)
+  lift-sem (table-lift ms) (table-con ds) m nothing (up tt) ≤-refl (λ x _ → ≃-refl) (agree λ x ())
+    (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ _ _ _ → ≃-refl)
 
 {- the compiler's programs -}
 lift-correct-compile : ∀ (M : ISWIM.AST) → Closed M → ⟦ compile-imp M ⟧ᴷₚ ≃ ⟦ compile-mon M ⟧ₚ

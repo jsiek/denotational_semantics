@@ -13,7 +13,7 @@ module Semantics.GraphErr.CFG where
 
 open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.Domain
-open import Framework.GraphModel.ErrorOps
+open import Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Imp public
 open import Language.CFG
 
@@ -29,11 +29,11 @@ Blocks = ℕ → Store → 𝒫 Value
 
 ⟦_⟧[_] : Tail → Table → ℕ → Blocks → Store → 𝒫 Value
 ⟦ return s ⟧[ T ] n B σ = 𝒮 T n σ s
-⟦ seq x s t ⟧[ T ] n B σ = checkedᵉ n x (𝒮 T n σ s)
-  (letᵉ ⟨ 𝒮 T n σ s , ⟨ (λ X → ⟦ t ⟧[ T ] n B (σ [ x ↦ X ])) , ptt ⟩ ⟩)
+⟦ seq x s t ⟧[ T ] n B σ = frameᵐ n x (𝒮 T n σ s)
+  (letᵐ ⟨ 𝒮 T n σ s , ⟨ (λ X → ⟦ t ⟧[ T ] n B (σ [ x ↦ X ])) , ptt ⟩ ⟩)
 ⟦ goto l ⟧[ T ] n B σ = B l σ
-⟦ case a x l₁ l₂ ⟧[ T ] n B σ = checkedᵉ n x (payloadᵉ (𝒜 T n σ a))
-  (𝒞ᵉ ⟨ 𝒜 T n σ a , ⟨ (λ X → B l₁ (σ [ x ↦ X ])) , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
+⟦ case a x l₁ l₂ ⟧[ T ] n B σ = frameᵐ n x (payloadᵐ (𝒜 T n σ a))
+  (𝒞ᵐ ⟨ 𝒜 T n σ a , ⟨ (λ X → B l₁ (σ [ x ↦ X ])) , ⟨ (λ X → B l₂ (σ [ x ↦ X ])) , ptt ⟩ ⟩ ⟩)
 
 {- the blocks bs (newest first), each with the meanings of the older ones;
    a missing block errs -}
@@ -48,7 +48,7 @@ run : Table → ℕ → Body → Store → 𝒫 Value
 run T m (body n bs t) = ⟦ t ⟧[ T ] m (blocks T m bs)
 
 code : Table → Body → 𝒫 Value
-code T b = ΛΛᵉ ⟨ (λ X Y → run T (2 ⊔ Body.locals b) b (frame X Y)) , ptt ⟩
+code T b = ΛΛᵐ ⟨ (λ X Y → run T (2 ⊔ Body.locals b) b (frame X Y)) , ptt ⟩
 
 table : List Body → Table
 table = tables code

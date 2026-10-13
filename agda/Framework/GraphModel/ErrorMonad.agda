@@ -1,8 +1,8 @@
 {-
 
   An error monad on 𝒫 Value (Moggi), and the error-propagating operators
-  built from it: the semantic algebra of the monadic graph model with
-  errors (Semantics/GraphErrM/, a pilot). (Its laws, and the
+  built from it: the semantic algebra of the graph model with
+  errors (Semantics/GraphErr/). (Its laws, and the
   monotonicity, consistency and continuity of the operators, are in
   proof/Framework/GraphModel/ErrorMonad.agda.)
 
