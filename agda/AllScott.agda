@@ -16,4 +16,14 @@
 
 module AllScott where
 
+{- the theorem statements -}
+import Theorems.Scott
+
+{- the language-independent lemmas: the solution of the domain equation,
+   and the domain of values and its operators -}
 import proof.Framework.Scott.Solve
+import proof.Framework.Scott.Domain
+import proof.Framework.Scott.Ops
+
+{- correctness of enclose -}
+import proof.Correctness.Scott.EncloseCorrect

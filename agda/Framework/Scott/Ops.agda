@@ -30,6 +30,7 @@ module Framework.Scott.Ops
 
 open import Framework.Scott.Base pt fe
 open import Framework.Scott.Functor pt fe pe
+open import Framework.Scott.Lift pt fe pe
 open import Framework.Scott.Domain pt fe pe
 
 ⊥𝔻 : ⟨ 𝔻 ⟩
@@ -50,9 +51,29 @@ const B k = inj (con B k) · ⋆
 ω : ⟨ 𝔻 ⟩
 ω = inj wrong · ⋆
 
-{- seq d e = e if d is defined, and ⊥ otherwise -}
+{- seq d e = e if d is defined, and ⊥ otherwise: the sup of the family e,
+   indexed by the proposition that d is defined -}
+guarded : ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩
+guarded d e = ∐ˢˢ 𝔻⊥ {defined d} (λ _ → e) (being-defined-is-prop (unroll · d))
+
+private
+ guarded-c₂ : (d : ⟨ 𝔻 ⟩) → is-continuous 𝔻 𝔻 (guarded d)
+ guarded-c₂ d I α δ = ub , lub
+  where
+   ρ = being-defined-is-prop (unroll · d)
+   ub : (i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ guarded d (∐ 𝔻 δ)
+   ub i = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → α i) ρ (guarded d (∐ 𝔻 δ))
+            (λ p → transitivity 𝔻 _ _ _ (∐-is-upperbound 𝔻 δ i) (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ p))
+   lub : (u : ⟨ 𝔻 ⟩) → ((i : I) → guarded d (α i) ⊑⟨ 𝔻 ⟩ u) → guarded d (∐ 𝔻 δ) ⊑⟨ 𝔻 ⟩ u
+   lub u h = ∐ˢˢ-is-lowerbound-of-upperbounds 𝔻⊥ (λ _ → ∐ 𝔻 δ) ρ u
+               (λ p → ∐-is-lowerbound-of-upperbounds 𝔻 δ u
+                        (λ i → transitivity 𝔻 _ _ _ (∐ˢˢ-is-upperbound 𝔻⊥ (λ _ → α i) ρ p) (h i)))
+
+ guarded-c₁ : (e : ⟨ 𝔻 ⟩) → is-continuous 𝔻 𝔻 (λ d → guarded d e)
+ guarded-c₁ e = pr₂ (∘₁ 𝔻 (𝓛ᵈ (obj Val 𝔻)) 𝔻 unroll (extend (obj Val 𝔻) 𝔻⊥ (const₁ (obj Val 𝔻) 𝔻 e)))
+
 seq : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]
-seq = case (𝔻 ⟹𝔻) (λ t → const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (id₁ 𝔻))
+seq = to-exp₁ 𝔻 𝔻 𝔻 (λ d → guarded d , guarded-c₂ d) guarded-c₁
 
 {- the strict function that agrees with g on defined values -}
 strict : DCPO[ 𝔻 ⟹₁ 𝔻 , 𝔻 ⟹₁ 𝔻 ]

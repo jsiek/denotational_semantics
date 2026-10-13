@@ -53,8 +53,16 @@ id₁ A = idᶜ A
 K-is-set : {X : 𝓤 ̇ } → is-set X
 K-is-set refl refl = refl
 
+{- The proofs of continuity of the maps built here are opaque: Agda
+   compares two continuous maps whose functions are equal only up to
+   unfolding by comparing their proofs too, which can take very long;
+   opaque, the proofs are compared by their arguments. -}
+opaque
+ ∘₁-c : (A B C : DCPO₁) (f : DCPO[ A , B ]) (g : DCPO[ B , C ]) → is-continuous A C (λ x → g · (f · x))
+ ∘₁-c A B C f g = ∘-is-continuous A B C (pr₁ f) (pr₁ g) (pr₂ f) (pr₂ g)
+
 ∘₁ : (A B C : DCPO₁) → DCPO[ A , B ] → DCPO[ B , C ] → DCPO[ A , C ]
-∘₁ A B C f g = DCPO-∘ A B C f g
+∘₁ A B C f g = (λ x → g · (f · x)) , ∘₁-c A B C f g
 
 {- Exponentials and products at DCPO₁, defined here rather than taken
    from TypeTopology (_⟹ᵈᶜᵖᵒ_, _×ᵈᶜᵖᵒ_): their proofs are named functions
@@ -194,27 +202,39 @@ module _ (A B : DCPO₁) where
                  (λ (k , (u₁ , _) , (_ , v₂)) → transitivity C _ _ c (mono _ _ _ _ u₁ v₂) (u k))
                  (semidirected-if-Directed (A ×₁ B) α δ i j)))
 
+opaque
+ pair₁-c : (P X Y : DCPO₁) (f : DCPO[ P , X ]) (g : DCPO[ P , Y ]) → is-continuous P (X ×₁ Y) (λ p → f · p , g · p)
+ pair₁-c P X Y f g I α δ =
+  (λ i → sup-is-upperbound (underlying-order X) (pr₂ f I α δ) i ,
+         sup-is-upperbound (underlying-order Y) (pr₂ g I α δ) i) ,
+  (λ (x , y) u → sup-is-lowerbound-of-upperbounds (underlying-order X) (pr₂ f I α δ) x (λ i → pr₁ (u i)) ,
+                 sup-is-lowerbound-of-upperbounds (underlying-order Y) (pr₂ g I α δ) y (λ i → pr₂ (u i)))
+
+ to-exp₁-c : (A B C : DCPO₁) (f : ⟨ A ⟩ → DCPO[ B , C ])
+   → ((b : ⟨ B ⟩) → is-continuous A C (λ a → f a · b)) → is-continuous A (B ⟹₁ C) f
+ to-exp₁-c A B C f c I α δ =
+  (λ i b → sup-is-upperbound (underlying-order C) (c b I α δ) i) ,
+  (λ g u b → sup-is-lowerbound-of-upperbounds (underlying-order C) (c b I α δ) (g · b) (λ i → u i b))
+
+ eval₁-c : (A B : DCPO₁) → is-continuous ((A ⟹₁ B) ×₁ A) B (λ p → pr₁ p · pr₂ p)
+ eval₁-c A B = uncurried-continuous (A ⟹₁ B) A {B} (λ f a → f · a) (λ a → pr₂ (at-point₁ A B a)) (λ f → pr₂ f)
+
+ comp₁-c : (A B C : DCPO₁) → is-continuous ((A ⟹₁ B) ×₁ (B ⟹₁ C)) (A ⟹₁ C) (λ p → ∘₁ A B C (pr₁ p) (pr₂ p))
+ comp₁-c A B C = to-exp₁-c ((A ⟹₁ B) ×₁ (B ⟹₁ C)) A C (λ p → ∘₁ A B C (pr₁ p) (pr₂ p))
+           (λ x → uncurried-continuous (A ⟹₁ B) (B ⟹₁ C) {C} (λ f g → g · (f · x))
+                    (λ g → pr₂ (∘₁ (A ⟹₁ B) B C (at-point₁ A B x) g))
+                    (λ f → pr₂ (at-point₁ B C (f · x))))
+
 pair₁ : (P X Y : DCPO₁) → DCPO[ P , X ] → DCPO[ P , Y ] → DCPO[ P , X ×₁ Y ]
-pair₁ P X Y f g = (λ p → f · p , g · p) , c
- where
-  c : is-continuous P (X ×₁ Y) (λ p → f · p , g · p)
-  c I α δ = (λ i → sup-is-upperbound (underlying-order X) (pr₂ f I α δ) i ,
-                   sup-is-upperbound (underlying-order Y) (pr₂ g I α δ) i) ,
-            (λ (x , y) u → sup-is-lowerbound-of-upperbounds (underlying-order X) (pr₂ f I α δ) x (λ i → pr₁ (u i)) ,
-                           sup-is-lowerbound-of-upperbounds (underlying-order Y) (pr₂ g I α δ) y (λ i → pr₂ (u i)))
+pair₁ P X Y f g = (λ p → f · p , g · p) , pair₁-c P X Y f g
 
 {- a map into an exponential, from its pointwise continuity -}
 to-exp₁ : (A B C : DCPO₁) (f : ⟨ A ⟩ → DCPO[ B , C ])
   → ((b : ⟨ B ⟩) → is-continuous A C (λ a → f a · b)) → DCPO[ A , B ⟹₁ C ]
-to-exp₁ A B C f c = f , cont
- where
-  cont : is-continuous A (B ⟹₁ C) f
-  cont I α δ = (λ i b → sup-is-upperbound (underlying-order C) (c b I α δ) i) ,
-               (λ g u b → sup-is-lowerbound-of-upperbounds (underlying-order C) (c b I α δ) (g · b) (λ i → u i b))
+to-exp₁ A B C f c = f , to-exp₁-c A B C f c
 
 eval₁ : (A B : DCPO₁) → DCPO[ (A ⟹₁ B) ×₁ A , B ]
-eval₁ A B = (λ p → pr₁ p · pr₂ p) ,
-  uncurried-continuous (A ⟹₁ B) A {B} (λ f a → f · a) (λ a → pr₂ (at-point₁ A B a)) (λ f → pr₂ f)
+eval₁ A B = (λ p → pr₁ p · pr₂ p) , eval₁-c A B
 
 curry₁ : (A B C : DCPO₁) → DCPO[ A ×₁ B , C ] → DCPO[ A , B ⟹₁ C ]
 curry₁ A B C h = to-exp₁ A B C k c
@@ -234,13 +254,7 @@ pre₁ A B C f = to-exp₁ (B ⟹₁ C) A C (λ g → ∘₁ A B C f g) (λ x �
 
 {- (f , g) ↦ g ∘ f -}
 comp₁ : (A B C : DCPO₁) → DCPO[ (A ⟹₁ B) ×₁ (B ⟹₁ C) , A ⟹₁ C ]
-comp₁ A B C = (λ p → ∘₁ A B C (pr₁ p) (pr₂ p)) , cont
- where
-  cont : is-continuous ((A ⟹₁ B) ×₁ (B ⟹₁ C)) (A ⟹₁ C) (λ p → ∘₁ A B C (pr₁ p) (pr₂ p))
-  cont = pr₂ (to-exp₁ ((A ⟹₁ B) ×₁ (B ⟹₁ C)) A C (λ p → ∘₁ A B C (pr₁ p) (pr₂ p))
-           (λ x → uncurried-continuous (A ⟹₁ B) (B ⟹₁ C) {C} (λ f g → g · (f · x))
-                    (λ g → pr₂ (∘₁ (A ⟹₁ B) B C (at-point₁ A B x) g))
-                    (λ f → pr₂ (at-point₁ B C (f · x)))))
+comp₁ A B C = (λ p → ∘₁ A B C (pr₁ p) (pr₂ p)) , comp₁-c A B C
 
 {- (The proofs inside the dcpos and maps below are named functions, not
    λs: Agda compares two such dcpos whose arguments differ only up to
