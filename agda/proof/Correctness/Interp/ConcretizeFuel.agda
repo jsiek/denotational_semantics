@@ -30,7 +30,7 @@ module proof.Correctness.Interp.ConcretizeFuel where
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 import Language.Clos2 as C2
-open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim;
+open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op;
                cons; clear; bind; ast; ν; ■; Var; Args)
 open import Compiler.Concretize
 open import Semantics.Observation
@@ -201,6 +201,7 @@ run≈ ck (inr-op ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → ret
 run≈ ck (prim p ⦅ L ,, M ,, Nil ⦆) er =
   bind-rel (run≈ ck L er) λ r → bind-rel (run≈ ck M er) λ s → from-maybe-rel (prim≈ p r s)
 run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) er = bind-rel (run≈ ck L er) (branch≈ ck M N er)
+run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → run≈ ck N (env-ext r er))
 
 args≈ ck {zero} {vs = vs} Nil er rs len = ret (rs , trans (sym (+-identityʳ (length vs))) len)
 args≈ ck {suc n} {vs = vs} (M ,, args) er rs len =

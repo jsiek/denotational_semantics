@@ -37,6 +37,9 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos3-mono inr-op = inr-mono
 𝕆-Clos3-mono case-op = 𝒞-mono
 𝕆-Clos3-mono (prim p) = primD-mono p
+𝕆-Clos3-mono let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
+  ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+         ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
 𝕆-Clos3-consis : 𝕆-consistent _~_ sig 𝕆-Clos3
 𝕆-Clos3-consis (clos-op x) ⟨ F , Ds ⟩ ⟨ F' , Ds' ⟩ ⟨ F~ , Ds~ ⟩ =
@@ -53,6 +56,9 @@ open import Level renaming (zero to lzero; suc to lsuc)
 𝕆-Clos3-consis inr-op = inr-consis
 𝕆-Clos3-consis case-op = 𝒞-consis
 𝕆-Clos3-consis (prim p) = primD-consis p
+𝕆-Clos3-consis let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
+  ⋆-consis ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
+           ⟨ Λ-consis ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
 
 open import proof.Framework.GraphModel.Semantics Op sig public
 

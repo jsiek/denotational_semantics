@@ -108,6 +108,8 @@ data _≈k_ : S.Cont → T.Cont → Set where
   primL : ∀ {p r M ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → S.primL p M ρ₁ κ₁ ≈k T.primL p (rename r (delay M)) ρ₂ κ₂
   primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
+  letK : ∀ {r N ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → S.letK N ρ₁ κ₁ ≈k T.letK (rename (ext r) (delay N)) ρ₂ κ₂
 
 {- the target state related to returning w to κ₁: for appL, the target has
    already run the let body up to taking the first component of w -}
@@ -183,6 +185,7 @@ module _ (P : C4.AST) where
   ret-reach (caseK _ _) = ε
   ret-reach (primL _ _) = ε
   ret-reach (primR _ _) = ε
+  ret-reach (letK _ _) = ε
 
   {- answering a step that returns a value -}
   ret-answers : ∀ {s₂ v w κ₁ κ₂} → Plus L₂ s₂ (T.ret w κ₂) → v ≈ w → (k : κ₁ ≈k κ₂)
@@ -217,6 +220,7 @@ module _ (P : C4.AST) where
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
     steps (one refl) (eval~ refl ρ (caseK ρ k))
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (primL ρ k))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (letK ρ k))
   sim (ret~ halt r) = stops (cong stop (sym (obs≈ r)))
   {- calling a closure: fst, then snd, then evaluate the operand -}
   sim (ret~ (appL {r} {M} ρ k) (clos≈ r')) =
@@ -245,6 +249,7 @@ module _ (P : C4.AST) where
   sim (ret~ (caseK ρ k) (tup≈ _)) = stops refl
   sim (ret~ (primL ρ k) r) = steps (one refl) (eval~ refl ρ (primR r k))
   sim (ret~ (primR {p} r k) s) = ret?-answers (prim≈ p r s) k refl
+  sim (ret~ (letK ρ k) r) = steps (one refl) (eval~ refl (env-ext r ρ) k)
 
 {- The end theorem: for every Clos3 program -----------------------------------}
 

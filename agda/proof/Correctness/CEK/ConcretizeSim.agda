@@ -41,7 +41,7 @@ module proof.Correctness.CEK.ConcretizeSim where
 open import Framework.Syntax.SigUtil using (ν-n)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 import Language.Clos2 as C2
-open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim;
+open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op;
                cons; clear; bind; ast; ν; ■; Var)
 import Language.Clos3 as C3
 open import Compiler.Concretize
@@ -127,6 +127,8 @@ data _≈k_ : S.Cont → T.Cont → Set where
   primL : ∀ {p M φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
     → S.primL p M ρ₂ κ₂ ≈k T.primL p (concretize φ M) ρ₃ κ₃
   primR : ∀ {p v w κ₂ κ₃} → v ≈ w → κ₂ ≈k κ₃ → S.primR p v κ₂ ≈k T.primR p w κ₃
+  letK : ∀ {N φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
+    → S.letK N ρ₂ κ₂ ≈k T.letK (concretize (ext-ref φ) N) ρ₃ κ₃
 
 NotVar : C2.AST → Set
 NotVar (` x) = ⊥
@@ -274,6 +276,7 @@ module _ (P : C3.AST) where
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} _ er κ) =
     after (one refl) (enter L er (caseK er κ))
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} _ er κ) = after (one refl) (enter L er (primL er κ))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} _ er κ) = after (one refl) (enter M er (letK er κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL {M = M} er κ)) = after (one refl) (enter M er (appR r κ))
   sim (ret~ const≈ (appL er κ)) = stops refl
@@ -301,6 +304,7 @@ module _ (P : C3.AST) where
   sim (ret~ (tup≈ _) (caseK _ κ)) = stops refl
   sim (ret~ r (primL {M = M} er κ)) = after (one refl) (enter M er (primR r κ))
   sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
+  sim (ret~ r (letK {N = N} er κ)) = after (one refl) (enter N (env-ext r er) κ)
 
 {- The end theorem: for every Clos2 program ------------------------------------}
 

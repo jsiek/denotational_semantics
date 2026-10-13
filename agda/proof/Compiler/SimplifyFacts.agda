@@ -63,6 +63,7 @@ value-sv (app ⦅ _ ⦆) ()
 value-sv (get i ⦅ _ ⦆) ()
 value-sv (case-op ⦅ _ ⦆) ()
 value-sv (prim p ⦅ _ ⦆) ()
+value-sv (let-op ⦅ _ ⦆) ()
 values-sv {zero} Nil _ = []
 values-sv {suc n} (M ,, as) e with ∧-true {value M} e
 ... | e₁ , e₂ = value-sv M e₁ ∷ values-sv as e₂
@@ -79,6 +80,7 @@ atom-sv (inl-op ⦅ _ ⦆) ()
 atom-sv (inr-op ⦅ _ ⦆) ()
 atom-sv (case-op ⦅ _ ⦆) ()
 atom-sv (prim p ⦅ _ ⦆) ()
+atom-sv (let-op ⦅ _ ⦆) ()
 
 small-sv : ∀ M → small M ≡ true → SV M
 small-sv (inl-op ⦅ M ,, Nil ⦆) e = inl (atom-sv M e)
@@ -91,6 +93,7 @@ small-sv (tuple n ⦅ as ⦆) e = atom-sv (tuple n ⦅ as ⦆) e
 small-sv (get i ⦅ as ⦆) e = atom-sv (get i ⦅ as ⦆) e
 small-sv (case-op ⦅ as ⦆) e = atom-sv (case-op ⦅ as ⦆) e
 small-sv (prim p ⦅ as ⦆) e = atom-sv (prim p ⦅ as ⦆) e
+small-sv (let-op ⦅ as ⦆) e = atom-sv (let-op ⦅ as ⦆) e
 
 prim-term-sv : ∀ o → SV (prim-term o)
 prim-term-sv (int n) = lit

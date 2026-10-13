@@ -42,6 +42,7 @@ data Cont : Set where
   caseK : AST → AST → Env → Cont → Cont
   primL : Prim → AST → Env → Cont → Cont   {- evaluating the first operand -}
   primR : Prim → Val → Cont → Cont         {- evaluating the second operand -}
+  letK : AST → Env → Cont → Cont           {- evaluating the bound term; next the body -}
 
 data State : Set where
   eval : AST → Env → Cont → State
@@ -88,6 +89,7 @@ step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
 step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
+step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)
 {- the operator is checked before the argument is evaluated, so that
    delay, which takes the operator apart first, preserves going wrong
@@ -109,6 +111,7 @@ step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret _ (caseK M N ρ κ)) = stop o-wrong
 step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p v κ))
 step (ret w (primR p v κ)) = ret? (prim? p v w) κ
+step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)
 
 {- a program starts in the empty environment with the empty continuation -}
 sem : AST → Machine

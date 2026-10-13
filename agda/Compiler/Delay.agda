@@ -34,6 +34,7 @@ module Compiler.Delay where
   delay (inr-op ⦅ M ,, Nil ⦆) = inr-op ABT.⦅ delay M ,, Nil ⦆
   delay (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = case-op ABT.⦅ delay L ,, ⟩ delay M ,, ⟩ delay N ,, Nil ⦆
   delay (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ABT.⦅ delay L ,, delay M ,, Nil ⦆
+  delay (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ABT.⦅ delay M ,, ⟩ delay N ,, Nil ⦆
 
   del-map-args {zero} Nil = Nil
   del-map-args {suc n} (M ,, args) = delay M ,, del-map-args args

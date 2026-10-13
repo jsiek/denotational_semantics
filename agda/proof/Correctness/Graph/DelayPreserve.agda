@@ -159,6 +159,12 @@ case-l M' NE ne cL y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = c
 case-r N' NE ne cL y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 N' NE ne y y∈
   in inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ y∈' , Con⇒≈ (u ∷ U) (Untag-con rightT (λ c → c) cL) U⊆ ⟩ ⟩ ⟩ ⟩
 
+{- a target let contains its body on the operand -}
+let-β : ∀ (N' : L4.AST) {X ρ'} → nonempty-env ρ' → nonempty X → Con X
+  → ⟦ N' ⟧' (X • ρ') ⊆ ⋆ ⟨ Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • ρ')) , ptt ⟩ , ⟨ X , ptt ⟩ ⟩
+let-β N' NE ne cX y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 N' NE ne y y∈
+  in ⟨ u ∷ U , ⟨ ⟨ y∈' , ⟨ (λ ()) , Con⇒≈ (u ∷ U) cX U⊆ ⟩ ⟩ , ⟨ U⊆ , (λ ()) ⟩ ⟩ ⟩
+
 {- The fundamental lemma ------------------------------------------------------}
 
 preserve : ∀ (M : AST) {ρ ρ'} → nonempty-env ρ' → Con-env ρ' → ρ ⊑ₑ ρ'
@@ -202,6 +208,17 @@ preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
   u⊑ d d∈ = preserve L NE C' ρ⊑ (right d) (U⊆ d d∈)
   NE' = extend-nonempty-env NE (⊑-ne u (u⊑ u (here refl)))
   ρ⊑' : (mem (u ∷ U) • ρ) ⊑ₑ (Rights (⟦ delay L ⟧' ρ') • ρ')
+  ρ⊑' zero = u⊑
+  ρ⊑' (suc x) = ρ⊑ x
+preserve (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v ⟨ U , ⟨ ⟨ v∈ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
+  ⊑-mono v (let-β (delay N) NE NE-M cM) (preserve N NE' (Con-• cM C') ρ⊑' v v∈)
+  where
+  cM = Clos4-con (delay M) C'
+  u⊑ : ∀ d → d ∈ mem U → d ⊑ ⟦ delay M ⟧' ρ'
+  u⊑ d d∈ = preserve M NE C' ρ⊑ d (U⊆ d d∈)
+  NE-M = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (u⊑ u u∈)
+  NE' = extend-nonempty-env NE NE-M
+  ρ⊑' : (mem U • ρ) ⊑ₑ (⟦ delay M ⟧' ρ' • ρ')
   ρ⊑' zero = u⊑
   ρ⊑' (suc x) = ρ⊑ x
 preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE C' ρ⊑ v

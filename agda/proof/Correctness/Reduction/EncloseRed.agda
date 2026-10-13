@@ -90,6 +90,7 @@ data _≈_ : AST → C.AST → Set where
   case≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
     → case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ≈ C.case-op C.⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆
   prim≈ : ∀ {p L L' M M'} → L ≈ L' → M ≈ M' → prim p ⦅ L ,, M ,, Nil ⦆ ≈ C.prim p C.⦅ L' ,, M' ,, Nil ⦆
+  let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ C.let-op C.⦅ M' ,, ⟩ N' ,, Nil ⦆
 
 {- Closure under substitution -------------------------------------------------}
 
@@ -130,6 +131,7 @@ module Kit (P : IS.Subst → CS.Subst → Set)
   ≈-sub p (inr≈ r) = inr≈ (≈-sub p r)
   ≈-sub p (case≈ r s t) = case≈ (≈-sub p r) (≈-sub (pexts p) s) (≈-sub (pexts p) t)
   ≈-sub p (prim≈ r s) = prim≈ (≈-sub p r) (≈-sub p s)
+  ≈-sub p (let≈ r s) = let≈ (≈-sub p r) (≈-sub (pexts p) s)
   ≈-subs p [] = []
   ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
 
@@ -163,6 +165,11 @@ fv-vvs : ∀ {τ'} m → (∀ x → VV (τ' x)) → VVs (CS.sub-args τ' (fv-var
 fv-vvs zero vv = []
 fv-vvs (suc m) vv = vv m ∷ fv-vvs m vv
 
+{- under a binder -}
+under : ∀ {τ τ' M} → (∀ x → Uses (suc x) M → τ x ≈ τ' x) → ∀ x → Uses x M → exts τ x ≈ CS.exts τ' x
+under h zero u = var≈
+under h (suc x) u = ≈-rename suc (h x u)
+
 enc : ∀ {τ τ'} M → (∀ x → Uses x M → τ x ≈ τ' x) → (∀ x → VV (τ' x))
   → sub τ M ≈ CS.sub τ' (enclose M)
 encs : ∀ {τ τ' n} (as : Args (replicate n ■)) → (∀ x → UsesArgs x as → τ x ≈ τ' x)
@@ -182,11 +189,9 @@ enc (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) h vv =
   case≈ (enc L (λ x u → h x (inj₁ u)) vv)
         (enc M (under {M = M} (λ x u → h x (inj₂ (inj₁ u)))) (vv-exts vv))
         (enc N (under {M = N} (λ x u → h x (inj₂ (inj₂ (inj₁ u))))) (vv-exts vv))
-  where
-  under : ∀ {τ τ' M} → (∀ x → Uses (suc x) M → τ x ≈ τ' x) → ∀ x → Uses x M → exts τ x ≈ CS.exts τ' x
-  under h zero u = var≈
-  under h (suc x) u = ≈-rename suc (h x u)
 enc (prim p ⦅ L ,, M ,, Nil ⦆) h vv = prim≈ (enc L (λ x u → h x (inj₁ u)) vv) (enc M (λ x u → h x (inj₂ (inj₁ u))) vv)
+enc (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) h vv =
+  let≈ (enc M (λ x u → h x (inj₁ u)) vv) (enc N (under {M = N} (λ x u → h x (inj₂ (inj₁ u)))) (vv-exts vv))
 encs {n = zero} Nil h vv = []
 encs {n = suc n} (M ,, as) h vv = enc M (λ x u → h x (inj₁ u)) vv ∷ encs as (λ x u → h x (inj₂ u)) vv
 
@@ -228,6 +233,7 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈ (case≈ _ _ _) = refl
 obs≈ (prim≈ _ _) = refl
+obs≈ (let≈ _ _) = refl
 obs≈s [] = refl
 obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
 
@@ -308,6 +314,10 @@ sim (prim≈ {p} r s) (wL , wM , _) =
   ... | just (int n) = M.just (lit≈ , tt)
   ... | just (bool true) = M.just (inl≈ (tuple≈ []) , (tt , tt))
   ... | just (bool false) = M.just (inr≈ (tuple≈ []) , (tt , tt))
+sim (let≈ {N' = N'} r s) (wM , wN , _) =
+  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → let≈ r' s , w' , wN , tt) (sim r wM)
+    λ v (r' , w') → to (one (val-in (value-red v)))
+      (≈-subst (sub-one r' v) s , ws-sub _ N' (λ { zero _ → w' ; (suc x) (s≤s ()) }) wN)
 sims [] _ = val ε T.[] []
 sims (r ∷ rs) (w , ws) =
   ans-in (frame _ (λ _ → refl)) (λ m → m ∷ zipR rs ws) (sim r w)

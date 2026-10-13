@@ -77,6 +77,7 @@ red (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
 red (prim p ⦅ L ,, M ,, Nil ⦆) =
   step-in (λ L' → prim p ⦅ L' ,, M ,, Nil ⦆) (red L)
     (step-in (λ M' → prim p ⦅ L ,, M' ,, Nil ⦆) (red M) (prim? p L M))
+red (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = step-in (λ M' → let-op ⦅ M' ,, ⟩ N ,, Nil ⦆) (red M) (to (N [ M ]))
 
 red-args {zero} Nil = val
 red-args {suc n} (M ,, as) =

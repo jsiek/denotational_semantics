@@ -86,6 +86,12 @@ keep-ok {n} {U} {M} {M'} {fvs} {P} {b} {ρ} {ρ'} M≃ ok = record
   bse' ρ₁ ρ₂ bse zero _ = M≃
   bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
 
+{- under a binder -}
+rel-ext : ∀ B {r} {ρ ρ' : Env} {X} → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
+  → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
+rel-ext B rx zero _ = ≃-refl
+rel-ext B rx (suc x) u = rx x u
+
 {- The main lemma -------------------------------------------------------------}
 
 opt-correct : ∀ (M : AST) r ρ ρ' → nonempty-env ρ → (∀ x → Uses x M → ρ x ≃ ρ' (r x))
@@ -157,13 +163,14 @@ opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
   where
   NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ)
   NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩
-  rel-ext : ∀ B {X} → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
-    → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
-  rel-ext B rx zero _ = ≃-refl
-  rel-ext B rx (suc x) u = rx x u
 opt-correct (prim p ⦅ L ,, M ,, Nil ⦆) r ρ ρ' NE rel =
   primD-≃ p (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
             (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₂ (inj₁ u))))
+opt-correct (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
+  ⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) N ⟧ (X • ρ')}
+         (λ V ne _ → opt-correct N (ext-var r) _ _ (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne))
+                       (rel-ext N (λ x u → rel x (inj₂ (inj₁ u))))))
+      (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
 
 opt-body-correct r zero (bind (ast N)) ρ ρ' NE rel = opt-correct N r ρ ρ' NE rel
 opt-body-correct r (suc k) (bind a) = opt-body-correct r k a

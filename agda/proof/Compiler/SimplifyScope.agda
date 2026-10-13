@@ -64,6 +64,8 @@ bound-ws (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) le =
   where le₁ = r (bound L) ((bound M ∸ 1) ⊔ ((bound N ∸ 1) ⊔ 0)) le
 bound-ws (prim p ⦅ L ,, M ,, Nil ⦆) le =
   bound-ws L (l (bound L) _ le) , bound-ws M (l (bound M) 0 (r (bound L) (bound M ⊔ 0) le)) , tt
+bound-ws (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) le =
+  bound-ws M (l (bound M) _ le) , bound-ws N (bind≤ (bound N) (l (bound N ∸ 1) 0 (r (bound M) _ le))) , tt
 bound-ws-args {n = zero} Nil le = tt
 bound-ws-args {n = suc n} (M ,, as) le = bound-ws M (l (bound M) (bound-args as) le) , bound-ws-args as (r (bound M) (bound-args as) le)
 
@@ -160,6 +162,8 @@ simp-ws fl (prim p ⦅ L ,, M ,, Nil ⦆) {E = E} (wL , wM , _) f with int-of (k
 ...   | nothing = wsi (tm (simp-ws fl L wL f) , tm (simp-ws fl M wM f) , tt) λ ()
 ...   | just m = wsi-self (ws-prim-term (Language.Prim.δ p n m))
 
+simp-ws fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) (wM , wN , _) f = let-ws fl N wN (simp-ws fl M wM f) f
+
 simp-ws-args {zero} fl Nil w f = tt
 simp-ws-args {suc n} fl (M ,, as) (w , ws) f = tm (simp-ws fl M w f) , simp-ws-args fl as ws f
 
@@ -169,8 +173,8 @@ app-ws fl L M wL sI f with lam? L
 
 let-ws fl N {E = E} {I} wN sI f with small (term I) | value (term I)
 ... | true | _ = simp-ws fl N wN (fits-• f sI)
-... | false | true = wsi ((tm (simp-ws fl N wN (fits-known-as f sI)) , tt) , tm sI , tt) λ ()
-... | false | false = wsi ((tm (simp-ws fl N wN (fits-under f)) , tt) , tm sI , tt) λ ()
+... | false | true = wsi (tm sI , tm (simp-ws fl N wN (fits-known-as f sI)) , tt) λ ()
+... | false | false = wsi (tm sI , tm (simp-ws fl N wN (fits-under f)) , tt) λ ()
 
 call-ws (suc fl) (T ∣ just (fun N E)) I (wsi wT kn) sI with size (term (simp-let fl E N I)) ≤ᵇ inline-size
 ... | true = let-ws fl N (proj₁ (proj₂ (kn refl))) sI (proj₂ (proj₂ (kn refl)))

@@ -137,6 +137,8 @@ data _≈k_ : T.Cont → T.Cont → Set where
   primL : ∀ {p M r ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → T.primL p M ρ₁ κ₁ ≈k T.primL p (optimize r M) ρ₂ κ₂
   primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → T.primR p v κ₁ ≈k T.primR p w κ₂
+  letK : ∀ {N r ρ₁ ρ₂ κ₁ κ₂} → Agree N 1 r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → T.letK N ρ₁ κ₁ ≈k T.letK (optimize (ext-var r) N) ρ₂ κ₂
 
 {- Match i s₁ s₂, with index i. While the source evaluates a dropped free
    variable (drop-eval~, drop-ret~), the target waits at the state that
@@ -323,6 +325,9 @@ module _ (P : AST) where
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
     steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
                             (primL (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag) κ))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} ag κ) =
+    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
+                            (letK (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
@@ -351,6 +356,7 @@ module _ (P : AST) where
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ r (primL ag κ)) = steps (one refl) (eval~ ag (primR r κ))
   sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
+  sim (ret~ r (letK ag κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
   {- the stuttering steps: the target does not move -}
   sim (drop-eval~ N₀ bld nu e ag κ) rewrite e = stutters (n<1+n _) (drop-ret~ N₀ bld nu ag κ)
   sim (drop-ret~ {v = v} {fvs = fvs} N₀ bld nu ag κ)

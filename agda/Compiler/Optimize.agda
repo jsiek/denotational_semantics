@@ -78,6 +78,7 @@ module Compiler.Optimize where
   optimize r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
     case-op ⦅ optimize r L ,, ⟩ optimize (ext-var r) M ,, ⟩ optimize (ext-var r) N ,, Nil ⦆
   optimize r (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ optimize r L ,, optimize r M ,, Nil ⦆
+  optimize r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ optimize r M ,, ⟩ optimize (ext-var r) N ,, Nil ⦆
 
   opt-args {zero} r Nil = Nil
   opt-args {suc n} r (M ,, args) = optimize r M ,, opt-args r args

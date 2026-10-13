@@ -135,6 +135,7 @@ run≈ ck r (prim p ⦅ L ,, M ,, Nil ⦆) ρ =
   bind-rel (run≈ ck r L ρ) λ v → bind-rel (run≈ ck r M ρ) λ w → from-maybe-rel (prim≈ p v w)
 run≈ ck r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ =
   bind-rel (run≈ ck r L ρ) (branch≈ ck r M N ρ)
+run≈ ck r (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → run≈ ck (ext r) N (env-ext v ρ))
 
 args≈ ck r {zero} Nil ρ rs = ret rs
 args≈ ck r {suc n} (M ,, args) ρ rs =
