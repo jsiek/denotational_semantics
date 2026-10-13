@@ -37,7 +37,6 @@ open import proof.Correctness.Graph.DelayFiniteCommon
   using (Env; _⊙_; Nth; Lefts; Rights; Init; ρ₀; ⊙-mono-l; ne-mem; ℬ-flat; Untag-con; leftT; rightT;
          Data; flat-data; out-data)
 open import proof.Correctness.Graph.DelayApp using (let-app-≃)
-import proof.Semantics.Graph.Clos4IswimContinuous as C4
 import proof.Correctness.Graph.DelayReflectFinite as Reflect
 
 open import Data.Nat using (zero; suc)
@@ -114,56 +113,12 @@ data-⊑ ⟨⟩ _ v∈ = lift v∈
 
 {- applied to its own environment T' and to E', a target closure behaves
    like its body (using the continuity of the body) -}
-clos-β : ∀ (N' : L4.AST) {T' E'} → nonempty T' → nonempty E' → Con T' → Con E'
+clos-β⊙ : ∀ (N' : L4.AST) {T' E'} → nonempty T' → nonempty E' → Con T' → Con E'
   → ⟦ N' ⟧' (E' • T' • (λ _ → Init))
-    ⊆ (pair ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • X • (λ _ → Init))) , ptt ⟩) , ptt ⟩
-           , ⟨ T' , ptt ⟩ ⟩ ⊙ E')
-clos-β N' {T'}{E'} NE-T' NE-E' cT cE y y∈ with C4.term-continuous N' _ NE y y∈
-  where NE : nonempty-env (E' • T' • (λ _ → Init))
-        NE zero = NE-E'
-        NE (suc zero) = NE-T'
-        NE (suc (suc x)) = ⟨ ω , refl ⟩
-... | ⟨ Vs , ⟨ ok , y∈fin ⟩ ⟩ with ne-mem (proj₁ (ok 1)) (proj₂ (ok 1))
-... | ⟨ t' , t'∈ ⟩ =
-  ⟨ Vs 0 , ⟨ ⟨ Vs 1 , ⟨ ⟨ t' , ⟨ ⟨ ⟨ y∈' , ⟨ proj₁ (ok 0) , Con⇒≈ (Vs 0) cE (proj₂ (ok 0)) ⟩ ⟩
-                                     , ⟨ proj₁ (ok 1) , Con⇒≈ (Vs 1) cT (proj₂ (ok 1)) ⟩ ⟩ , t'∈ ⟩ ⟩
-                     , ⟨ (λ d d∈ → ⟨ ν , ⟨ tt , proj₂ (ok 1) d d∈ ⟩ ⟩) , proj₁ (ok 1) ⟩ ⟩ ⟩
-           , ⟨ proj₂ (ok 0) , proj₁ (ok 0) ⟩ ⟩ ⟩
-  where
-  env⊆ : ∀ z → mem (Vs z) ⊆ (mem (Vs 0) • mem (Vs 1) • (λ _ → Init)) z
-  env⊆ zero = λ d d∈ → d∈
-  env⊆ (suc zero) = λ d d∈ → d∈
-  env⊆ (suc (suc z)) = proj₂ (ok (suc (suc z)))
-  y∈' = S4.⟦⟧-monotone {ρ = λ z → mem (Vs z)} N' env⊆ y y∈fin
-
-{- a target case contains its left branch, and its right branch -}
-case-l : ∀ (M' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Lefts L') → Con L'
-  → ⟦ M' ⟧' (Lefts L' • ρ') ⊆ 𝒞 ⟨ L' , ⟨ (λ X → ⟦ M' ⟧' (X • ρ')) , ⟨ F , ptt ⟩ ⟩ ⟩
-case-r : ∀ (N' : L4.AST) {L' ρ' F} → nonempty-env ρ' → nonempty (Rights L') → Con L'
-  → ⟦ N' ⟧' (Rights L' • ρ') ⊆ 𝒞 ⟨ L' , ⟨ F , ⟨ (λ X → ⟦ N' ⟧' (X • ρ')) , ptt ⟩ ⟩ ⟩
-
-{- one finite part of the bound variable suffices -}
-cont-0 : ∀ (M' : L4.AST) {X ρ'} → nonempty-env ρ' → nonempty X → ∀ y → y ∈ ⟦ M' ⟧' (X • ρ')
-  → Σ[ u ∈ Value ] Σ[ U ∈ List Value ] mem (u ∷ U) ⊆ X × y ∈ ⟦ M' ⟧' (mem (u ∷ U) • ρ')
-cont-0 M' {X}{ρ'} NE NE-X y y∈ with C4.term-continuous M' (X • ρ') (extend-nonempty-env NE NE-X) y y∈
-... | ⟨ Vs , ⟨ ok , y∈fin ⟩ ⟩ with Vs 0 | proj₁ (ok 0) | proj₂ (ok 0)
-     | S4.⟦⟧-monotone {ρ = λ z → mem (Vs z)} {ρ′ = mem (Vs 0) • ρ'} M' env⊆ y y∈fin
-  where env⊆ : ∀ z → mem (Vs z) ⊆ (mem (Vs 0) • ρ') z
-        env⊆ zero = λ d d∈ → d∈
-        env⊆ (suc z) = proj₂ (ok (suc z))
-... | [] | ne | _ | _ = ⊥-elim (ne refl)
-... | u ∷ U | _ | U⊆ | y∈' = ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩
-
-case-l M' NE ne cL y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 M' NE ne y y∈
-  in inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ y∈' , Con⇒≈ (u ∷ U) (Untag-con leftT (λ c → c) cL) U⊆ ⟩ ⟩ ⟩ ⟩
-case-r N' NE ne cL y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 N' NE ne y y∈
-  in inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ y∈' , Con⇒≈ (u ∷ U) (Untag-con rightT (λ c → c) cL) U⊆ ⟩ ⟩ ⟩ ⟩
-
-{- a target let contains its body on the operand -}
-let-β : ∀ (N' : L4.AST) {X ρ'} → nonempty-env ρ' → nonempty X → Con X
-  → ⟦ N' ⟧' (X • ρ') ⊆ ⋆ ⟨ Λ ⟨ (λ Y → ⟦ N' ⟧' (Y • ρ')) , ptt ⟩ , ⟨ X , ptt ⟩ ⟩
-let-β N' NE ne cX y y∈ = let ⟨ u , ⟨ U , ⟨ U⊆ , y∈' ⟩ ⟩ ⟩ = cont-0 N' NE ne y y∈
-  in ⟨ u ∷ U , ⟨ ⟨ y∈' , ⟨ (λ ()) , Con⇒≈ (u ∷ U) cX U⊆ ⟩ ⟩ , ⟨ U⊆ , (λ ()) ⟩ ⟩ ⟩
+    ⊆ (pair ⟨ ΛΛ ⟨ (λ X Y → ⟦ N' ⟧' (Y • X • (λ _ → Init))) , ptt ⟩ , ⟨ T' , ptt ⟩ ⟩ ⊙ E')
+clos-β⊙ N' NE-T' NE-E' cT cE y y∈ with S4.clos-β N' (λ _ → ⟨ ω , refl ⟩) NE-T' NE-E' cT cE y y∈
+... | ⟨ U , ⟨ ⟨ V , ⟨ f∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , U⊆ ⟩ ⟩ =
+  ⟨ U , ⟨ ⟨ V , ⟨ ⟨ proj₁ NE-T' , ⟨ f∈ , proj₂ NE-T' ⟩ ⟩ , ⟨ (λ d d∈ → ⟨ ν , ⟨ tt , V⊆ d d∈ ⟩ ⟩) , neV ⟩ ⟩ ⟩ , U⊆ ⟩ ⟩
 
 {- The fundamental lemma ------------------------------------------------------}
 
@@ -188,7 +143,8 @@ preserve (inl-op ⦅ M ,, Nil ⦆) NE C' ρ⊑ (left v) v∈ = preserve M NE C' 
 preserve (inr-op ⦅ M ,, Nil ⦆) NE C' ρ⊑ (right v) v∈ = preserve M NE C' ρ⊑ v v∈
 preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
     (inj₁ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-  ⊑-mono v (case-l (delay M) {L' = ⟦ delay L ⟧' ρ'} {F = λ X → ⟦ delay N ⟧' (X • ρ')} NE (⊑-ne u (u⊑ u (here refl))) (Clos4-con (delay L) C'))
+  ⊑-mono v (𝒞-left {⟦ delay L ⟧' ρ'} {λ X → ⟦ delay M ⟧' (X • ρ')} {λ X → ⟦ delay N ⟧' (X • ρ')}
+              (S4.body-continuous (delay M) ρ' NE _ (⊑-ne u (u⊑ u (here refl)))) cS)
     (preserve M NE' (Con-• cS C') ρ⊑' v v∈)
   where
   cS = Untag-con leftT (λ c → c) (Clos4-con (delay L) C')
@@ -200,7 +156,8 @@ preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
   ρ⊑' (suc x) = ρ⊑ x
 preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
     (inj₂ ⟨ u , ⟨ U , ⟨ U⊆ , ⟨ v∈ , _ ⟩ ⟩ ⟩ ⟩) =
-  ⊑-mono v (case-r (delay N) {L' = ⟦ delay L ⟧' ρ'} {F = λ X → ⟦ delay M ⟧' (X • ρ')} NE (⊑-ne u (u⊑ u (here refl))) (Clos4-con (delay L) C'))
+  ⊑-mono v (𝒞-right {⟦ delay L ⟧' ρ'} {λ X → ⟦ delay M ⟧' (X • ρ')} {λ X → ⟦ delay N ⟧' (X • ρ')}
+              (S4.body-continuous (delay N) ρ' NE _ (⊑-ne u (u⊑ u (here refl)))) cS)
     (preserve N NE' (Con-• cS C') ρ⊑' v v∈)
   where
   cS = Untag-con rightT (λ c → c) (Clos4-con (delay L) C')
@@ -211,7 +168,7 @@ preserve (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v
   ρ⊑' zero = u⊑
   ρ⊑' (suc x) = ρ⊑ x
 preserve (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ}{ρ'} NE C' ρ⊑ v ⟨ U , ⟨ ⟨ v∈ , _ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
-  ⊑-mono v (let-β (delay N) NE NE-M cM) (preserve N NE' (Con-• cM C') ρ⊑' v v∈)
+  ⊑-mono v (proj₂ (S4.let-β (delay N) ρ' _ NE NE-M cM)) (preserve N NE' (Con-• cM C') ρ⊑' v v∈)
   where
   cM = Clos4-con (delay M) C'
   u⊑ : ∀ d → d ∈ mem U → d ⊑ ⟦ delay M ⟧' ρ'
@@ -240,15 +197,12 @@ preserve (clos-op n ⦅ ! clear (bind (bind (ast N))) ,, fvs ⦆) {ρ}{ρ'} NE C
   G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift NE-P' , call ⟩
     where
     call : ∀ E' → Con E' → U ⊑* E' → w ⊑ P' ⊙ E'
-    call E' cE' U⊑ = ⊑-mono w (clos-β (delay N) NE-T' NE-E' cT' cE')
+    call E' cE' U⊑ = ⊑-mono w (clos-β⊙ (delay N) NE-T' NE-E' cT' cE')
                   (preserve N NE-ρt (Con-• cE' (Con-• cT' (λ _ → Con-⌈⌉ ω))) ρs⊑ρt w w∈)
       where
       NE-E' : nonempty E'
       NE-E' = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (⊑*-elim U⊑ u u∈)
-      NE-ρt : nonempty-env (E' • T' • (λ _ → Init))
-      NE-ρt zero = NE-E'
-      NE-ρt (suc zero) = NE-T'
-      NE-ρt (suc (suc x)) = ⟨ ω , refl ⟩
+      NE-ρt = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) NE-T') NE-E'
       ρs⊑ρt : (mem U • mem FV • (λ _ → Init)) ⊑ₑ (E' • T' • (λ _ → Init))
       ρs⊑ρt zero = ⊑*-elim U⊑
       ρs⊑ρt (suc zero) = fv⊑

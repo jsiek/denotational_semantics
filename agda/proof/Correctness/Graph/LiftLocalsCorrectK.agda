@@ -40,11 +40,6 @@ open import proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone;
 open import Semantics.Graph.ImpK
   using (_[_↦_]; checked; Kont; ⟦_⟧ᴷ[_]; ⟦_⟧ᴷₚ)
   renaming (table to tableᴷ)
-open import proof.Correctness.Graph.GlobalizeCorrect
-  using (nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
-open import proof.Correctness.Graph.RCOCorrect using (Λ-≃)
 open import proof.Correctness.Graph.LiftLocalsCommon
 
 open import Data.Nat using (zero; suc; _+_; _⊔_; _<_; _≤_; _≟_; _<?_; s≤s)
@@ -174,11 +169,11 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
     → ⟦ lift n d m ⟧ᴷ[ T ] n σ κ ≃ K⟨ k ⟩ (⟦ M ⟧[ T' ] ρ)
   lift-sem (atom a) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (atom-≃ a H O A))
   lift-sem (app (a ∷ b ∷ c ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (app-≃ ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩))
+    (mono-≃ ⋆₂-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ⟨ up (atom-≃ c H O A) , ptt ⟩ ⟩ ⟩))
   lift-sem (pair (a ∷ b ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (pair-≃ ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
-  lift-sem (fst (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (car-≃ ⟨ up (atom-≃ a H O A) , ptt ⟩))
-  lift-sem (snd (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (cdr-≃ ⟨ up (atom-≃ a H O A) , ptt ⟩))
+    (mono-≃ pair-mono ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
+  lift-sem (fst (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (mono-≃ car-mono ⟨ up (atom-≃ a H O A) , ptt ⟩))
+  lift-sem (snd (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (mono-≃ cdr-mono ⟨ up (atom-≃ a H O A) , ptt ⟩))
   lift-sem (tuple {k'} {Ms} as) {ρ = ρ} k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
     (atoms-≃ as H O A (λ m Ds → 𝒯 m Ds ≃ 𝒯 k' (⟦ Ms ⟧₊[ T' ] ρ))
                  (λ {m} eq q → ≃-trans (𝒯-≃ m (nthD-≃ _ _ eq)) q) ≃-refl))
@@ -186,7 +181,7 @@ module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TC : ∀ k → Con (T' k)
   lift-sem (inl (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (inl-≃ (atom-≃ a H O A)))
   lift-sem (inr (a ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k (inr-≃ (atom-≃ a H O A)))
   lift-sem (prim {p} (a ∷ b ∷ [])) k H O A cρ κ≃ = ≃-trans (κ≃ _ _ A) (K-≃ k
-    (prim-≃ p ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
+    (mono-≃ (primD-mono p) ⟨ up (atom-≃ a H O A) , ⟨ up (atom-≃ b H O A) , ptt ⟩ ⟩))
   lift-sem (case {L} {M₁} {M₂} a m₁ m₂) {n} {d} {σ} {ρ} k {κ} H O A cρ κ≃ =
     ≃-trans (checked-at (fits-< _ (fits {d} _ H)))
     (≃-trans (𝒞-≃ {F = λ X → ⟦ lift n (suc d) m₁ ⟧ᴷ[ T ] n (σ [ d ↦ X ]) κ} {λ X → K⟨ k ⟩ (⟦ M₁ ⟧[ T' ] (X • ρ))}

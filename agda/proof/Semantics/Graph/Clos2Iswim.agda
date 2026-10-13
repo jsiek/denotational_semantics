@@ -38,16 +38,14 @@ apply-n-mono (suc n) F F' ⟨ D , Ds ⟩ ⟨ D' , Ds' ⟩ F~ ⟨ lift D⊆ , Ds~
   G w ⟨ ne , w∈ ⟩ =
     ⟨ (λ i → ⟨ proj₁ (ne i) , nthD-mono Ds Ds' Ds~ i _ (proj₂ (ne i)) ⟩) , Λ⊆ w w∈ ⟩
 𝕆-Clos2-mono app = ⋆-mono
-𝕆-Clos2-mono (lit B k) _ _ _ = lift (λ d z → z)
+𝕆-Clos2-mono (lit B k) = ℬ-mono B k
 𝕆-Clos2-mono (tuple x) = 𝒯-mono x
 𝕆-Clos2-mono (get x) = proj-mono x
 𝕆-Clos2-mono inl-op = inl-mono
 𝕆-Clos2-mono inr-op = inr-mono
 𝕆-Clos2-mono case-op = 𝒞-mono
 𝕆-Clos2-mono (prim p) = primD-mono p
-𝕆-Clos2-mono let-op ⟨ D , ⟨ F , _ ⟩ ⟩ ⟨ D' , ⟨ F' , _ ⟩ ⟩ ⟨ D~ , ⟨ F~ , _ ⟩ ⟩ =
-  ⋆-mono ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩ ⟨ Λ ⟨ F' , ptt ⟩ , ⟨ D' , ptt ⟩ ⟩
-         ⟨ Λ-mono ⟨ F , ptt ⟩ ⟨ F' , ptt ⟩ ⟨ F~ , ptt ⟩ , ⟨ D~ , ptt ⟩ ⟩
+𝕆-Clos2-mono let-op = letD-mono
 
 open import proof.Framework.GraphModel.Semantics Op sig public
 

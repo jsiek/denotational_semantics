@@ -61,6 +61,7 @@ import proof.Framework.GraphModel.Domain
 import proof.Framework.GraphModel.Ops
 import proof.Framework.GraphModel.Continuity
 import proof.Framework.GraphModel.SemanticsUtil
+import proof.Framework.GraphModel.DomainUtil
 import proof.Framework.Smallstep
 import proof.Framework.Runs
 import proof.Framework.Simulation
@@ -90,9 +91,7 @@ import proof.Semantics.Graph.Prim
 import proof.Semantics.Graph.ISWIM
 import proof.Semantics.Graph.Clos2Iswim
 import proof.Semantics.Graph.Clos3Iswim
-import proof.Semantics.Graph.Clos3IswimContinuous
 import proof.Semantics.Graph.Clos4Iswim
-import proof.Semantics.Graph.Clos4IswimContinuous
 import proof.Semantics.Graph.Clos5IswimContinuous
 
 {- correctness of each pass -}

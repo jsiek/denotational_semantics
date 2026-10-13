@@ -7,7 +7,7 @@ open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.DenotProperties
 open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Continuity using (Mono; Cont; one; done; approx-join; join-l; join-r)
+open import proof.Framework.GraphModel.Continuity using (Continuous; Good; mk-good; one; done; approx-join; join-l; join-r)
 open import Language.Prim using (Prim; Out; int; bool; δ)
 
 open import Data.Bool using (true; false)
@@ -38,10 +38,16 @@ primD-consis p ⟨ D , ⟨ E , _ ⟩ ⟩ ⟨ D' , ⟨ E' , _ ⟩ ⟩ ⟨ lift D~
       with D~ _ _ n∈ n'∈ | E~ _ _ m∈ m'∈
   ... | ⟨ refl , refl ⟩ | ⟨ refl , refl ⟩ = out-~ (δ p n m)
 
-primD-cont : ∀ p {E₁ E₂ ρ} → Mono E₁ → Mono E₂ → Cont E₁ ρ → Cont E₂ ρ
-  → Cont (λ ρ → primD p ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) ρ
-primD-cont p {E₁}{E₂} m₁ m₂ c₁ c₂ v ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩
+primD-cont : ∀ p → Continuous (■ ∷ ■ ∷ []) (primD p)
+primD-cont p ⟨ E₁ , ⟨ E₂ , _ ⟩ ⟩ NE ⟨ ⟨ m₁ , c₁ ⟩ , ⟨ ⟨ m₂ , c₂ ⟩ , _ ⟩ ⟩ v ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eq ⟩ ⟩ ⟩ ⟩
     with one E₁ c₁ n∈ | one E₂ c₂ m∈
 ... | ⟨ a , n∈′ ⟩ | ⟨ b , m∈′ ⟩ =
   done (λ ρ → primD p ⟨ E₁ ρ , ⟨ E₂ ρ , ptt ⟩ ⟩) (approx-join a b) v
     ⟨ n , ⟨ m , ⟨ m₁ (join-l a b) _ n∈′ , ⟨ m₂ (join-r a b) _ m∈′ , eq ⟩ ⟩ ⟩ ⟩
+
+primD-good : ∀ {P} p → Good P (■ ∷ ■ ∷ []) (primD p)
+primD-good p = mk-good (primD-mono p) (primD-consis p) (primD-cont p)
+
+primD-≃ : ∀ p {D D' E E'} → D ≃ D' → E ≃ E'
+  → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+primD-≃ p D≃ E≃ = mono-≃ (primD-mono p) ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩

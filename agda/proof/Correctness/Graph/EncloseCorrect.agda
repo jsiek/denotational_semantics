@@ -29,7 +29,7 @@ open import Compiler.Optimize using (bind-n-ast)
 open import Compiler.Enclose
 open import proof.Correctness.Graph.DelayFiniteCommon using (Env; ρ₀)
 open import proof.Correctness.Graph.ConcretizeCorrect
-  using (init₀; push; apply-push; push-plus; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
+  using (init₀; push; apply-push; push-plus)
 open import proof.Correctness.Graph.OptimizeCorrect using (unbind-bind; push-ne)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 

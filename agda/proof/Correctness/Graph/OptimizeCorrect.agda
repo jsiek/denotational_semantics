@@ -26,7 +26,7 @@ open import proof.Semantics.Graph.Clos2Iswim
 open import Compiler.Optimize
 open import proof.Correctness.Graph.DelayFiniteCommon using (Env; Init; ρ₀)
 open import proof.Correctness.Graph.ConcretizeCorrect
-  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
+  using (init₀; push; apply-push)
 open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
 
 open import Data.Nat using (ℕ; zero; suc; _+_)
