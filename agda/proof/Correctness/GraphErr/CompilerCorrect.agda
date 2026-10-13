@@ -22,7 +22,7 @@ open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
 open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-open import Semantics.Observation using (_⇔_)
+open import Framework.Iff using (_⇔_)
 
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 import Semantics.GraphErr.Clos4 as S4
