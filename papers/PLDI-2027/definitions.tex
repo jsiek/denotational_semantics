@@ -610,7 +610,7 @@ blocks and jumps are as in CFG.
 
 \[
   \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
-     \circ \pass{optimize} \circ \pass{enclose}
+     \circ \pass{optimize} \circ \pass{enclose} \circ \pass{simplify}
 \]
 
 \begin{align*}
@@ -627,8 +627,7 @@ In each pass, the clauses not shown are homomorphic.
 \subsection{Simplify (ISWIM \texorpdfstring{$\to$}{->} ISWIM)}
 
 Simplify, a simplified version of the source optimizer cp0 of Chez Scheme,
-runs before enclose; it is not yet part of $\pass{compile}$ (its proofs exist
-in two styles only, Parts~\ref{part:den} and~\ref{part:red}). It carries what
+is the first pass of $\pass{compile}$. It carries what
 it knows of each variable, $E(x) = (T, K)$: the term $T$ that replaces $x$ (a
 variable or a small value), and a value $K$ that $x$ is known to be, or
 $\bot$. On a term it returns the same, $\pass{simp}_E(M) = (M', K)$; we write
@@ -658,6 +657,13 @@ and likewise for $\inr$. Here $\res{o}$ is the term of a primitive's result
 drops only evaluations whose value is known, which have no effect, and
 otherwise keeps the order of evaluation; functions are recorded as known
 values, for inlining (not yet done).
+
+\begin{lemma}[Simplify Keeps Programs Closed]\label{lem:simplify-closed}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \FV(\pass{simplify}(M)) = \emptyset .
+\]
+\end{lemma}
 
 \subsection{Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos2)}
 
@@ -2361,6 +2367,44 @@ $\kappa_1 \approxk \kappa_2$, \ldots).
 In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
 \end{lemma}
 
+\subsection{Simplify}\label{sec:sim-simplify}
+
+A target closure is the simplified body of a source closure, under facts
+$E$ that are true of the two environments ($\rho' \models_E \rho$): for each
+$x$ with $E(x) = (T, K)$, the value term $T$ denotes in $\rho'$ a value related
+to $\rho(x)$, and, if $K \neq \bot$, $K$ describes $\rho(x)$ (the same up to
+functions). States are related frame by frame, the code by $\pass{simp}$:
+\begin{align*}
+  \cloV{\lam{y} \pass{simp}_{E'}(N)}{\rho'} \approx \cloV{\lam{y} N}{\rho}
+    &\iff \rho' \models_E \rho \qquad (E' = E \text{ under } y,\; y \text{ unknown}) \\
+  \ev{\pass{simp}_E(M)}{\rho'}{\kappa'} \sim \ev{M}{\rho}{\kappa}
+    &\iff \rho' \models_E \rho \land \kappa' \approxk \kappa \\
+  \rt{v'}{\kappa'} \sim \rt{v}{\kappa} &\iff v' \approx v \land \kappa' \approxk \kappa
+\end{align*}
+with the target on the left. Where simplify reduced, the source runs ahead:
+if $\pass{simp}_E(M)$ is a value, or $M$ has a known value, then
+$\ev{M}{\rho}{\kappa} \lto^* \rt{v}{\kappa}$ for a $v$ it describes. Where the
+target does more (it evaluates a duplicated small value, or the value of a
+let that simplify kept), it stutters: a match $s' \sim_i s$ says that the
+target is $i$ steps from a state related to $s$.
+
+\begin{lemma}[Simplify Simulation]\label{lem:simplify-fsim}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \FSim(\Mach{\mathrm{ISWIM}}(\pass{simplify}(M)), \Mach{\mathrm{ISWIM}}(M), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Simplify]\label{thm:simplify-correct}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{ISWIM}}(\pass{simplify}(M))) ,
+\]
+by Lemma~\ref{lem:simplify-fsim} and the symmetry of $\Equiv$.
+\end{theorem}
+
 \subsection{Enclose}\label{sec:sim-enclose}
 
 \begin{align*}
@@ -2926,8 +2970,9 @@ There is no precondition.
 \begin{theorem}[Compiler Correctness, Simulation]\label{thm:compiler-sim}
 For every ISWIM term $M$,
 \[
-  \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile}(M))) .
+  \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{5}(\pass{compile}(M))) ,
 \]
+by the theorems for each pass, Lemma~\ref{lem:simplify-closed}, and Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
 \begin{theorem}[Correctness of Compile-Mon, Simulation]\label{thm:compile-mon-sim}
@@ -3099,6 +3144,28 @@ If $\RelRes{R}(r_1, r_2)$ and $\RelRes{R'}(f(v), g(w))$ for every $v \mathrel{R}
 \begin{theorem}[Clock for Clock Gives Equivalence]\label{thm:clocked}
 If $\obs_{P_1}(v) = \obs_{P_2}(w)$ for every $v \mathrel{R} w$ and
 $\RelRes{R}(\run_{P_1}(k), \run_{P_2}(k))$ for every clock $k$, then
+\[
+  \Equiv(P_1, P_2) .
+\]
+\end{theorem}
+
+\subsection{Clock Monotone}
+
+A pass that removes calls is not clock for clock: its output needs no more
+clock than its input, which may need more.
+\begin{align*}
+  \mathit{Le}_R(\tmo, r) &\iff \mathsf{true} \\
+  \mathit{Le}_R(r_1, r_2) &\iff \RelRes{R}(r_1, r_2) \quad \text{for } r_1 \neq \tmo
+\end{align*}
+
+\begin{theorem}[Clock Monotone Gives Equivalence]\label{thm:clocked-le}
+If $\obs_{P_1}(v) = \obs_{P_2}(w)$ for every $v \mathrel{R} w$, and for every clock $k$
+\begin{align*}
+  &\mathit{Le}_R(\run_{P_1}(k), \run_{P_2}(k)) , \\
+  &\run_{P_2}(k) \neq \tmo \implies \forall k' \geq k.\; \run_{P_2}(k') = \run_{P_2}(k) , \\
+  &\run_{P_2}(k) \neq \tmo \implies \exists k'.\; \run_{P_1}(k') \neq \tmo ,
+\end{align*}
+then
 \[
   \Equiv(P_1, P_2) .
 \]
@@ -3411,6 +3478,37 @@ forward simulation (Section~\ref{sec:sim-relations}), and environments by the
 relation used there for the states $\ev{M}{\rho_1}{\kappa_1} \sim \ev{M'}{\rho_2}{\kappa_2}$.
 By Lemma~\ref{lem:obs}, if $v \approx w$, then $\obs(v) = \obs(w)$.
 
+\subsection{Simplify}
+
+The relations $\approx$ and $\models_E$ are those of
+Section~\ref{sec:sim-simplify}. Simplify removes calls ($\beta$ of a small
+value), so the proof is clock monotone (Theorem~\ref{thm:clocked-le}), from
+the monotonicity of the ISWIM interpreter in the clock and two lemmas.
+
+\begin{lemma}[Simplify, Forward at the Same Clock]
+If $\rho' \models_E \rho$, then for every clock $k$,
+\[
+  \mathit{Le}_{\succeq}(\EV{\mathrm{ISWIM}}{k}\,\rho\,M,\; \EV{\mathrm{ISWIM}}{k}\,\rho'\,\pass{simp}_E(M)) ,
+\]
+where $v \succeq v'$ is $v' \approx v$.
+\end{lemma}
+
+\begin{lemma}[Simplify, Backward]
+If $\rho' \models_E \rho$ and $r' = \EV{\mathrm{ISWIM}}{k}\,\rho'\,\pass{simp}_E(M) \neq \tmo$, then there are
+$r$ and $k_0$ with
+\[
+  \RelRes{\succeq}(r, r') \land \forall k' \geq k_0.\; \EV{\mathrm{ISWIM}}{k'}\,\rho\,M = r .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Simplify, Interpreter]\label{thm:simplify-clk}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{ISWIM}}(\pass{simplify}(M))) .
+\]
+\end{theorem}
+
 \subsection{Enclose}
 
 The relations $\approx$ and $\approx_X$ are those of Section~\ref{sec:sim-enclose}.
@@ -3676,8 +3774,9 @@ There is no precondition.
 \begin{theorem}[Compiler Correctness, Interpreter]\label{thm:compiler-clk}
 For every ISWIM term $M$,
 \[
-  \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile}(M))) .
+  \FV(M) = \emptyset \implies \Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{5}(\pass{compile}(M))) ,
 \]
+by the theorems for each pass, Lemma~\ref{lem:simplify-closed}, and Lemma~\ref{lem:equiv-trans-clk}.
 \end{theorem}
 
 \begin{theorem}[Correctness of Compile-Mon, Interpreter]\label{thm:compile-mon-clk}
@@ -4063,7 +4162,7 @@ For every ISWIM term $M$, if $\FV(M) = \emptyset$, then
   &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\mathrm{CFG}}(\pass{compile\text{-}cfg}(M))) \\
   &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
 \end{align*}
-by the theorems for each pass, Lemma~\ref{lem:compile-scoped}, and
+by the theorems for each pass, Lemmas~\ref{lem:simplify-closed} and~\ref{lem:compile-scoped}, and
 Lemma~\ref{lem:equiv-trans}.
 \end{theorem}
 
