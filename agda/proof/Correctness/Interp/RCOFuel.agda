@@ -44,7 +44,7 @@ open import proof.Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import proof.Framework.ListUtil using (_‼_; ‼-<; ‼-++; length-snoc; ‼-pw)
 open import proof.Semantics.Interp.Clock
 open import Semantics.Interp.Clos5
-  using (Val; Env; code; pair; const; tup; inl; inr; obs; eval; eval-args; call; code?; branch;
+  using (Val; Env; code; pair; const; tup; inl; inr; eval; eval-args; call; code?; branch;
          first; second; project; prim?)
 import Semantics.Interp.Clos5 as T
 import Semantics.Interp.ISWIM as ISWIM
@@ -65,30 +65,6 @@ open import Data.Unit using (⊤; tt)
 open import Data.Vec using (Vec; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
-
-private variable A B C : Set
-
-{- Results ----------------------------------------------------------------------}
-
-bind-cong : ∀ (r : Result A) {f g : A → Result B} → (∀ v → f v ≡ g v) → (r >>= f) ≡ (r >>= g)
-bind-cong timeout h = refl
-bind-cong wrong h = refl
-bind-cong (ret v) h = h v
-
-bind≡ : ∀ {r₁ r₂ : Result A} {f g : A → Result B} → r₁ ≡ r₂ → (∀ v → f v ≡ g v)
-  → (r₁ >>= f) ≡ (r₂ >>= g)
-bind≡ {r₁ = r} refl h = bind-cong r h
-
-bind-assoc : ∀ (r : Result A) (f : A → Result B) (k : B → Result C)
-  → ((r >>= f) >>= k) ≡ (r >>= λ v → f v >>= k)
-bind-assoc timeout f k = refl
-bind-assoc wrong f k = refl
-bind-assoc (ret v) f k = refl
-
-≡→rel : ∀ {r₁ r₂ : Result A} → r₁ ≡ r₂ → RelResult _≡_ r₁ r₂
-≡→rel {r₁ = timeout} refl = timeout
-≡→rel {r₁ = wrong} refl = wrong
-≡→rel {r₁ = ret v} refl = ret refl
 
 {- Scoping: a variable operand is bound -----------------------------------------}
 
@@ -185,7 +161,7 @@ module Gen (ds : List AST) where
     → (eval-args ds ck ρ acc As >>= k) ≡ evals ck ρ As (λ vs → k (revapp vs acc))
   args-evals ck ρ acc {zero} Nil k = refl
   args-evals ck ρ acc {suc n} (M ,, As) k =
-    trans (bind-assoc (eval ds ck ρ M) _ k)
+    trans (bind-assoc (eval ds ck ρ M))
       (bind-cong (eval ds ck ρ M) λ v → args-evals ck ρ (v ∷ acc) As k)
 
   c-tuple : ∀ ck ρ {n} (As : Args (replicate n ■)) → eval ds ck ρ (tuple n ⦅ As ⦆) ≡ evals ck ρ As K-tup
@@ -392,15 +368,10 @@ module _ (ds : List AST) (wds : All (WS 2) ds) where
   call-pw zero (M.just _) w e = refl
   call-pw (suc ck) {just N} (M.just (refl , wN)) w e = run≈ ck (w ∷ e ∷ []) N wN
 
-{- for every clock, the same result -}
-rco-run : ∀ ds → All (WS 2) ds → ∀ ck ρ M → WS (length ρ) M
-  → RelResult _≡_ (eval ds ck ρ M) (eval (map rco ds) ck ρ (rco M))
-rco-run ds wds ck ρ M w = ≡→rel (run≈ ds wds ck ρ M w)
-
 {- The end theorem: for every scoped Clos5 program --------------------------------}
 
 rco-correct : ∀ P → Scoped P → Equivalent (T.sem P) (T.sem (rco-program P))
-rco-correct (program ds M) (wds , w) = clocked _≡_ (cong obs) λ ck → rco-run ds wds ck [] M w
+rco-correct (program ds M) (wds , w) = clocked-≡ λ ck → run≈ ds wds ck [] M w
 
 {- The whole compiler, into monadic normal form ------------------------------------}
 

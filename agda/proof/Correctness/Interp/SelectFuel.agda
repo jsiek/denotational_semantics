@@ -39,7 +39,6 @@ import Semantics.Interp.CFG as G
 import Semantics.Interp.X86 as X
 open X using (regs; arg; args; write; bool?)
 import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.RCOFuel using (bind-cong; bind≡; ≡→rel)
 open import proof.Correctness.Interp.ExplicateFuel using (compile-cfg-correct)
 
 open import Data.Bool using (true; false)
@@ -55,11 +54,6 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym
 open import Relation.Nullary using (yes; no)
 
 private variable A : Set
-
-bind-ret : ∀ (r : Result A) → (r >>= ret) ≡ r
-bind-ret timeout = refl
-bind-ret wrong = refl
-bind-ret (ret v) = refl
 
 {- equality gives a truth value -}
 eq-bool : ∀ o₁ o₂ {n} → δ? eq o₁ o₂ ≢ just (int n)
@@ -189,8 +183,8 @@ module _ (ds : List CFG.Body) where
 {- The end theorem -----------------------------------------------------------------}
 
 select-correct : ∀ P → Equivalent (G.sem P) (X.sem (select P))
-select-correct (CFG.program ds (CFG.body n bs t)) = clocked _≡_ (cong obs) λ ck →
-  ≡→rel (tail-ok ds ck (calls≡ ds ck) t bs _ _)
+select-correct (CFG.program ds (CFG.body n bs t)) = clocked-≡ λ ck →
+  tail-ok ds ck (calls≡ ds ck) t bs _ _
 
 {- The whole compiler, into X86 ---------------------------------------------------}
 

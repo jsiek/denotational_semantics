@@ -31,9 +31,8 @@ open import proof.Semantics.Interp.Clock
 import Semantics.Interp.Imp as I
 import Semantics.Interp.CFG as G
 open import Semantics.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)
-open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs)
+open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr)
 import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.RCOFuel using (bind-cong; bind≡; ≡→rel)
 open import proof.Framework.ListUtil using (‼-pw)
 open import proof.Correctness.Interp.LiftLocalsFuel using (compile-imp-correct)
 
@@ -48,17 +47,12 @@ open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
 open import Relation.Nullary using (yes; no)
 
-private variable A B C : Set
-
-assoc : ∀ (r : Result A) {f : A → Result B} {g : B → Result C} → ((r >>= f) >>= g) ≡ (r >>= λ v → f v >>= g)
-assoc timeout = refl
-assoc wrong = refl
-assoc (ret v) = refl
+private variable A B : Set
 
 {- x := the value of r, then h, then g -}
 assoc-set : ∀ (r : Result (Val × Frame)) x (h : Frame → Result A) {g : A → Result B}
   → ((r >>= λ p → set (proj₂ p) x (proj₁ p) h) >>= g) ≡ (r >>= λ p → set (proj₂ p) x (proj₁ p) λ φ → h φ >>= g)
-assoc-set r x h = trans (assoc r) (bind-cong r λ p → assoc (from-maybe (proj₂ p [ x ]≔ proj₁ p)))
+assoc-set r x h = trans (bind-assoc r) (bind-cong r λ p → bind-assoc (from-maybe (proj₂ p [ x ]≔ proj₁ p)))
 
 value-here : ∀ {φ} (r : Result Val) → value (here φ r) ≡ r
 value-here timeout = refl
@@ -124,16 +118,16 @@ module _ (ds : List Imp.Body) where
       → G.tail ds' ck cs φ (case a y l₁ l₂) ≡ (I.eval ds ck φ (Imp.case a y e₁ e₂) >>= g)
     case-ok a y e₁ e₂ cs {φ = φ} h₁ h₂ =
       trans (bind-cong (I.atom φ a) λ v → bind-cong (I.inj? v) λ
-               { (inj₁ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₁) (sym (assoc (from-maybe (φ [ y ]≔ w))))
-               ; (inj₂ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₂) (sym (assoc (from-maybe (φ [ y ]≔ w)))) })
-            (sym (trans (assoc (I.atom φ a)) (bind-cong (I.atom φ a) λ v → assoc (I.inj? v))))
+               { (inj₁ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₁) (sym (bind-assoc (from-maybe (φ [ y ]≔ w))))
+               ; (inj₂ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₂) (sym (bind-assoc (from-maybe (φ [ y ]≔ w)))) })
+            (sym (trans (bind-assoc (I.atom φ a)) (bind-cong (I.atom φ a) λ v → bind-assoc (I.inj? v))))
 
     {- the CPS lemma: x := e, then k -}
     assign-ok : ∀ e x k bs {K} → Means bs k K
       → Ok bs (explicate-assign e x k bs) (λ φ → I.eval ds ck φ e >>= λ p → set (proj₂ p) x (proj₁ p) K)
     assign-ok (simple s) x k bs M =
       ⊑-refl , λ p φ → trans (bind≡ (sym (simple≡ φ s)) λ v → bind-cong (from-maybe (φ [ x ]≔ v)) λ φ' → M p φ')
-                             (sym (assoc (eval-simple _ φ s)))
+                             (sym (bind-assoc (eval-simple _ φ s)))
     assign-ok (assign y e₁ e₂) x k bs M =
       ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ → trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) y _))
       where
@@ -201,8 +195,8 @@ module _ (ds : List Imp.Body) where
 {- The end theorem -----------------------------------------------------------------}
 
 explicate-correct : ∀ P → Equivalent (I.sem P) (G.sem (explicate P))
-explicate-correct (Imp.program ds (Imp.body n e)) = clocked _≡_ (cong obs) λ ck →
-  ≡→rel (sym (proj₂ (tail-ok ds ck (calls≡ ds ck) e []) ⊑-refl _))
+explicate-correct (Imp.program ds (Imp.body n e)) = clocked-≡ λ ck →
+  sym (proj₂ (tail-ok ds ck (calls≡ ds ck) e []) ⊑-refl _)
 
 {- The whole compiler, into CFG ---------------------------------------------------}
 

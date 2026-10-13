@@ -6,7 +6,8 @@
   Not clock for clock: the clock ticks at each call, and simplify removes
   calls (β of a small value, inlining), so the target needs no more clock
   than the source, and the source may need more than the target. The theorem has
-  the shape of the others (Equivalent), from two lemmas (clocked-le):
+  the shape of the others (Equivalent), from two lemmas (clocked-back,
+  proof/Framework/Clocked.agda):
 
   * forward, at the same clock (run≈): the source's result, if it does
     not time out, is the target's, related (LeResult);
@@ -51,15 +52,13 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length; map; replicate; reverse; reverseAcc)
 open import Data.List.Properties using (reverse-involutive)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just; nothing)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺; symmetric)
+open import Data.Maybe using (just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _⊔_; s≤s; z≤n; _≤ᵇ_)
-open import Data.Nat.Properties using (m≤m⊔n; m≤n⊔m; ≤-trans; ≤-refl; n≤1+n)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; s≤s; _≤ᵇ_)
+open import Data.Nat.Properties using (n≤1+n)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
-open import Relation.Nullary using (¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 
 {- The relation ------------------------------------------------------------------}
@@ -252,13 +251,6 @@ ok-self {T = T} ok s d = ok-cons ok s d (λ { refl → strong-den T d })
 
 {- The interpreter is monotone in the clock --------------------------------------}
 
-⊑-bind : ∀ {A B : Set} {r₁ r₂ : Result A} {f g : A → Result B}
-  → r₁ ⊑ᵣ r₂ → (∀ v → f v ⊑ᵣ g v) → (r₁ >>= f) ⊑ᵣ (r₂ >>= g)
-⊑-bind timeout k = timeout
-⊑-bind {r₁ = timeout} same k = timeout
-⊑-bind {r₁ = wrong} same k = same
-⊑-bind {r₁ = ret v} same k = k v
-
 mono : ∀ {ck ck'} → ck ≤ ck' → ∀ ρ M → S.eval ck ρ M ⊑ᵣ S.eval ck' ρ M
 mono-args : ∀ {ck ck' n} → ck ≤ ck' → ∀ ρ vs (as : Args (replicate n ■)) → S.eval-args ck ρ vs as ⊑ᵣ S.eval-args ck' ρ vs as
 mono-apply : ∀ {ck ck'} → ck ≤ ck' → ∀ ρ M v → S.apply ck ρ M v ⊑ᵣ S.apply ck' ρ M v
@@ -290,35 +282,13 @@ mono-branch le ρ M N (S.clo _ _) = same
 mono-branch le ρ M N (S.const B k) = same
 mono-branch le ρ M N (S.tup vs) = same
 
-⊑-eq : ∀ {A : Set} {r r' : Result A} → r ⊑ᵣ r' → ¬ r ≡ timeout → r' ≡ r
-⊑-eq timeout t = ⊥-elim (t refl)
-⊑-eq same t = refl
+mono-at : ∀ ρ M → Mono (λ ck → S.eval ck ρ M)
+mono-at ρ M le = mono le ρ M
 
-{- Results that are the same from some clock on ---------------------------------}
-
-Stable : ∀ {A : Set} → (ℕ → Result A) → Result A → Set
-Stable f r = Σ[ c ∈ ℕ ] (∀ ck → c ≤ ck → f ck ≡ r)
-
-st-now : ∀ {A : Set} {f : ℕ → Result A} {r} → (∀ ck → f ck ≡ r) → Stable f r
-st-now e = 0 , λ ck _ → e ck
-
-st-bind : ∀ {A B : Set} {f : ℕ → Result A} {g : ℕ → A → Result B} {v r}
-  → Stable f (ret v) → Stable (λ ck → g ck v) r → Stable (λ ck → f ck >>= g ck) r
-st-bind {g = g} (c₁ , e₁) (c₂ , e₂) =
-  c₁ ⊔ c₂ , λ ck le → trans (cong (λ r → r >>= g ck) (e₁ ck (≤-trans (m≤m⊔n c₁ c₂) le))) (e₂ ck (≤-trans (m≤n⊔m c₁ c₂) le))
-
-st-wrong : ∀ {A B : Set} {f : ℕ → Result A} {g : ℕ → A → Result B}
-  → Stable f wrong → Stable (λ ck → f ck >>= g ck) wrong
-st-wrong {g = g} (c , e) = c , λ ck le → cong (λ r → r >>= g ck) (e ck le)
+{- Stable results of the source ------------------------------------------------}
 
 st-call : ∀ {N ρ r} → Stable (λ ck → S.eval ck ρ N) r → Stable (λ ck → S.call ck N ρ) r
 st-call (c , e) = suc c , λ { (suc ck) (s≤s le) → e ck le }
-
-{- a result that is stable from some clock on is the result at every clock
-   at which there is one -}
-stable-now : ∀ {ρ M r ck} → Stable (λ ck → S.eval ck ρ M) r → ¬ S.eval ck ρ M ≡ timeout → S.eval ck ρ M ≡ r
-stable-now {ρ} {M} {ck = ck} (c , e) t =
-  trans (sym (⊑-eq (mono (m≤m⊔n ck c) ρ M) t)) (e (ck ⊔ c) (m≤n⊔m ck c))
 
 Run : AST → S.Env → S.Val → Set
 Run M ρ v = Stable (λ ck → S.eval ck ρ M) (ret v)
@@ -368,9 +338,6 @@ tevals {suc n} (M ,, as) {ρ'} (v , vs , refl , d , ds) with teval M d | tevals 
         ev ck acc rewrite e ck = es ck (w ∷ acc)
 
 {- The source runs ahead: run-term and run-known --------------------------------}
-
-stable-unique : ∀ {A : Set} {f : ℕ → Result A} {r r'} → Stable f r → Stable f r' → r ≡ r'
-stable-unique (c , e) (c' , e') = trans (sym (e (c ⊔ c') (m≤m⊔n c c'))) (e' (c ⊔ c') (m≤n⊔m c c'))
 
 {- what the source does with the operand M of a call, whose simplification
    is I: it runs M to the value that I's value term, or its known value,
@@ -541,10 +508,6 @@ known-call zero J I hJ o ()
 known-call (suc fl) (T ∣ nothing) I hJ o ()
 known-call (suc fl) (T ∣ just (val K)) I hJ o ()
 
-flipM : ∀ {a b} → M.Pointwise _≈_ a b → M.Pointwise (λ v w → w ≈ v) b a
-flipM (M.just r) = M.just r
-flipM M.nothing = M.nothing
-
 {- Forward, at the same clock ------------------------------------------------------}
 
 {- the source's value on the left -}
@@ -554,52 +517,10 @@ v ≽ w = w ≈ v
 _≽s_ : List S.Val → List S.Val → Set
 vs ≽s ws = Pointwise _≈_ ws vs
 
-pw-flip : ∀ {ws vs} → Pointwise _≈_ ws vs → Pointwise _≽_ vs ws
-pw-flip [] = []
-pw-flip (r ∷ rs) = r ∷ pw-flip rs
-
-bind-le : ∀ {A B C D : Set} {R : A → B → Set} {R' : C → D → Set} {r₁ r₂} {f : A → Result C} {g : B → Result D}
-  → LeResult R r₁ r₂ → (∀ {v w} → r₁ ≡ ret v → R v w → LeResult R' (f v) (g w)) → LeResult R' (r₁ >>= f) (r₂ >>= g)
-bind-le timeout k = timeout
-bind-le wrong k = wrong
-bind-le (ret r) k = k refl r
-
-le-⊑ : ∀ {A B : Set} {R : A → B → Set} {r₁ r₂ r₂'} → LeResult R r₁ r₂ → r₂ ⊑ᵣ r₂' → LeResult R r₁ r₂'
-le-⊑ timeout _ = timeout
-le-⊑ r same = r
-
-from-maybe-le : ∀ {A B : Set} {R : A → B → Set} {mv mw} → M.Pointwise R mv mw → LeResult R (from-maybe mv) (from-maybe mw)
-from-maybe-le (M.just r) = ret r
-from-maybe-le M.nothing = wrong
-
-wrong≢ : ¬ _≡_ {A = Result S.Val} wrong timeout
-wrong≢ ()
-
-ret≢ : ∀ {v} → ¬ _≡_ {A = Result S.Val} (ret v) timeout
-ret≢ ()
-
-{- at each clock, the source times out or returns the value it runs to -}
-run-at : ∀ M ρ {v} → Run M ρ v → ∀ ck → S.eval ck ρ M ≡ timeout ⊎ S.eval ck ρ M ≡ ret v
-run-at M ρ σ ck with S.eval ck ρ M in e
-... | timeout = inj₁ refl
-... | wrong = ⊥-elim (wr (trans (sym e) (stable-now {ρ} {M} {_} {ck} σ (λ t → wrong≢ (trans (sym e) t)))))
-  where wr : ∀ {v} → ¬ _≡_ {A = Result S.Val} wrong (ret v)
-        wr ()
-... | ret v' = inj₂ (trans (sym e) (stable-now {ρ} {M} {_} {ck} σ (λ t → ret≢ (trans (sym e) t))))
-
 {- the source runs M to a value that the target's value term T describes -}
 known-le : ∀ ck M ρ {v T ρ'} → Run M ρ v → Strong T ρ' v → LeResult _≽_ (S.eval ck ρ M) (S.eval ck ρ' T)
 known-le ck M ρ σ d with teval _ d
-... | w , et , r rewrite et ck with run-at M ρ σ ck
-...   | inj₁ e = subst (λ x → LeResult _≽_ x _) (sym e) timeout
-...   | inj₂ e = subst (λ x → LeResult _≽_ x _) (sym e) (ret r)
-
-{- the source's operand has a known value -}
-src-known : ∀ {ck} M ρ {v r₂} {g : S.Val → Result S.Val} → Run M ρ v → LeResult _≽_ (g v) r₂
-  → LeResult _≽_ (S.eval ck ρ M >>= g) r₂
-src-known {ck} M ρ {g = g} σ k with run-at M ρ σ ck
-... | inj₁ e = subst (λ x → LeResult _≽_ (x >>= g) _) (sym e) timeout
-... | inj₂ e = subst (λ x → LeResult _≽_ (x >>= g) _) (sym e) k
+... | w , et , r rewrite et ck = subst (λ x → LeResult _≽_ x _) (bind-ret (S.eval ck ρ M)) (le-stable ck (mono-at ρ M) σ (ret r))
 
 run≈ : ∀ ck fl M {E ρ' ρ} → Ok E ρ' ρ → WS (length ρ) M → LeResult _≽_ (S.eval ck ρ M) (S.eval ck ρ' (term (simp fl E M)))
 args≈ : ∀ ck fl {n} (as : Args (replicate n ■)) {E ρ' ρ acc acc'} → Ok E ρ' ρ → WS-args (length ρ) as → acc ≽s acc'
@@ -617,7 +538,7 @@ branch≈ ck fl M N ok wM wN (clo≈ _ _) = wrong
 branch≈ ck fl M N ok wM wN const≈ = wrong
 branch≈ ck fl M N ok wM wN (tup≈ _) = wrong
 project≈ : ∀ {n} (i : Fin n) {v v'} → v' ≈ v → LeResult _≽_ (S.project i v) (S.project i v')
-project≈ i (tup≈ rs) = from-maybe-le (proj-pw i (pw-flip rs))
+project≈ i (tup≈ rs) = from-maybe-le (proj-pw i (symmetric (λ r → r) rs))
 project≈ i (clo≈ _ _) = wrong
 project≈ i const≈ = wrong
 project≈ i (inl≈ _) = wrong
@@ -646,20 +567,17 @@ body-le false ck fl N ok w = run≈ ck fl N ok w
 
 let≈ t ck fl N {I = I} {M} {ρ} okf wN o hM with small (term I) in s | value (term I) in isv
 ... | true | _ with opd-val o (P.small-value (term I) s)
-...   | v , σ , d , h = src-known M ρ σ (body-le t ck fl N (ok-cons okf s d h) wN)
+...   | v , σ , d , h = le-stable ck (mono-at ρ M) σ (body-le t ck fl N (ok-cons okf s d h) wN)
 let≈ t ck fl N {Ef} {ρ'} {ρf} {I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
-... | v₀ , σ , d , h = bind-le hM λ e r → G (stable-eq e) r
+... | v₀ , σ , d , h = bind-le hM λ e r → G (stable-ret (mono-at ρ M) σ e) r
   where
-  stable-eq : ∀ {v} → S.eval ck ρ M ≡ ret v → v ≡ v₀
-  stable-eq {v} e with trans (sym e) (stable-now {ρ} {M} {_} {ck} σ (λ t → ret≢ (trans (sym e) t)))
-  ... | refl = refl
   G : ∀ {v w} → v ≡ v₀ → w ≈ v → LeResult _≽_ (Body t ck N (v ∷ ρf)) (S.eval ck (w ∷ ρ') (term (simp fl (known-as I Ef) N)))
   G refl r = body-le t ck fl N (ok-let {I = I} okf r h) wN
 let≈ t ck fl N okf wN o hM | false | false = bind-le hM λ _ r → body-le t ck fl N (ok-under okf r) wN
 
 call-le ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
 ... | true with hJ refl
-...   | _ , σL , (ρf , refl , okf , wN) = src-known L _ σL (let≈ true ck fl N okf wN o hM)
+...   | _ , σL , (ρf , refl , okf , wN) = le-stable ck (mono-at _ L) σL (let≈ true ck fl N okf wN o hM)
 call-le ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM | false = bind-le hL (λ _ r → apply≈ ck hM r)
 call-le ck zero J I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
 call-le ck (suc fl) (T ∣ nothing) I hJ hL o hM = bind-le hL (λ _ r → apply≈ ck hM r)
@@ -684,44 +602,17 @@ run≈ ck fl (inr-op ⦅ M ,, Nil ⦆) ok (w , _) = bind-le (run≈ ck fl M ok w
 run≈ ck fl (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {E} ok (wL , (wM , wN , _)) with branch (known (simp fl E L)) in b
 ... | nothing = bind-le (run≈ ck fl L ok wL) (λ _ r → branch≈ ck fl M N ok wM wN r)
 ... | just (true , K) with run-inl fl L ok wL b
-...   | v , σ , d = src-known L _ σ (run≈ ck fl M (ok-self ok (proj₂ (branch-inl (known (simp fl E L)) b)) d) wM)
+...   | v , σ , d = le-stable ck (mono-at _ L) σ (run≈ ck fl M (ok-self ok (proj₂ (branch-inl (known (simp fl E L)) b)) d) wM)
 run≈ ck fl (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {E} ok (wL , (wM , wN , _)) | just (false , K) with run-inr fl L ok wL b
-...   | v , σ , d = src-known L _ σ (run≈ ck fl N (ok-self ok (proj₂ (branch-inr (known (simp fl E L)) b)) d) wN)
+...   | v , σ , d = le-stable ck (mono-at _ L) σ (run≈ ck fl N (ok-self ok (proj₂ (branch-inr (known (simp fl E L)) b)) d) wN)
 run≈ ck fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} ok (wL , wM , _) with int-of (known (simp fl E L)) in e₁
-... | nothing = bind-le (run≈ ck fl L ok wL) (λ _ r → bind-le (run≈ ck fl M ok wM) (λ _ s → from-maybe-le (flipM (prim≈ p r s))))
+... | nothing = bind-le (run≈ ck fl L ok wL) (λ _ r → bind-le (run≈ ck fl M ok wM) (λ _ s → from-maybe-le (M.sym (λ r → r) (prim≈ p r s))))
 ... | just n with int-of (known (simp fl E M)) in e₂
-...   | nothing = bind-le (run≈ ck fl L ok wL) (λ _ r → bind-le (run≈ ck fl M ok wM) (λ _ s → from-maybe-le (flipM (prim≈ p r s))))
+...   | nothing = bind-le (run≈ ck fl L ok wL) (λ _ r → bind-le (run≈ ck fl M ok wM) (λ _ s → from-maybe-le (M.sym (λ r → r) (prim≈ p r s))))
 ...   | just m = known-le ck (prim p ⦅ L ,, M ,, Nil ⦆) _ (run-prim fl p L M ok wL wM e₁ e₂) (prim-strong (δ p n m))
 run≈ ck fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ok (wM , wN , _) = let≈ false ck fl N ok wN (run-opd fl M ok wM) (run≈ ck fl M ok wM)
 
 {- Backward: the source catches up -------------------------------------------------}
-
-Back : ∀ {A B : Set} → (A → B → Set) → (ℕ → Result A) → Result B → Set
-Back R f r₂ = ¬ r₂ ≡ timeout → Σ[ r₁ ∈ _ ] Stable f r₁ × RelResult R r₁ r₂
-
-back-bind : ∀ {A B C D : Set} {R : A → B → Set} {R' : C → D → Set} {f : ℕ → Result A} {h : ℕ → A → Result C}
-  {r₂ : Result B} {g : B → Result D}
-  → Back R f r₂ → (∀ {v w} → Stable f (ret v) → R v w → Back R' (λ ck → h ck v) (g w))
-  → Back R' (λ ck → f ck >>= h ck) (r₂ >>= g)
-back-bind {r₂ = timeout} k₁ k₂ nt = ⊥-elim (nt refl)
-back-bind {r₂ = wrong} k₁ k₂ nt with k₁ (λ ())
-... | .wrong , st , wrong = wrong , st-wrong st , wrong
-back-bind {r₂ = ret w} k₁ k₂ nt with k₁ (λ ())
-... | .(ret _) , st , ret r with k₂ st r nt
-...   | r' , st' , rr = r' , st-bind st st' , rr
-
-back-wrong : ∀ {A B : Set} {R : A → B → Set} {f : ℕ → Result A} → (∀ ck → f ck ≡ wrong) → Back R f wrong
-back-wrong e _ = wrong , st-now e , wrong
-
-back-maybe : ∀ {A B : Set} {R : A → B → Set} {mv mw} → M.Pointwise R mv mw → Back R (λ _ → from-maybe mv) (from-maybe mw)
-back-maybe (M.just r) _ = _ , st-now (λ _ → refl) , ret r
-back-maybe M.nothing _ = wrong , st-now (λ _ → refl) , wrong
-
-{- the source's operand has a known value -}
-back-run : ∀ {L ρ v r₂} {g : ℕ → S.Val → Result S.Val} → Run L ρ v → Back _≽_ (λ ck → g ck v) r₂
-  → Back _≽_ (λ ck → S.eval ck ρ L >>= g ck) r₂
-back-run σ k nt with k nt
-... | r , st , rr = r , st-bind σ st , rr
 
 {- the source runs M to a value that the target's value term T describes -}
 known-back : ∀ ck M ρ {v T ρ'} → Run M ρ v → Strong T ρ' v → Back _≽_ (λ ck → S.eval ck ρ M) (S.eval ck ρ' T)
@@ -746,7 +637,7 @@ back-branch ck fl M N ok wM wN (clo≈ _ _) = back-wrong (λ _ → refl)
 back-branch ck fl M N ok wM wN const≈ = back-wrong (λ _ → refl)
 back-branch ck fl M N ok wM wN (tup≈ _) = back-wrong (λ _ → refl)
 back-project : ∀ {n} (i : Fin n) {v v'} → v' ≈ v → Back _≽_ (λ _ → S.project i v) (S.project i v')
-back-project i (tup≈ rs) = back-maybe (proj-pw i (pw-flip rs))
+back-project i (tup≈ rs) = back-maybe (proj-pw i (symmetric (λ r → r) rs))
 back-project i (clo≈ _ _) = back-wrong (λ _ → refl)
 back-project i const≈ = back-wrong (λ _ → refl)
 back-project i (inl≈ _) = back-wrong (λ _ → refl)
@@ -775,7 +666,7 @@ body-back false ck fl N ok w = back ck fl N ok w
 
 back-let t ck fl N {ρf = ρf} {I} {M} okf wN o hM with small (term I) in s | value (term I) in isv
 ... | true | _ with opd-val o (P.small-value (term I) s)
-...   | v , σ , d , h = back-run {M} {g = λ c v → Body t c N (v ∷ ρf)} σ (body-back t ck fl N (ok-cons okf s d h) wN)
+...   | v , σ , d , h = back-run {g = λ c v → Body t c N (v ∷ ρf)} σ (body-back t ck fl N (ok-cons okf s d h) wN)
 back-let t ck fl N {ρ' = ρ'} {I = I} {M} {ρ} okf wN o hM | false | true with opd-val o isv
 ... | v₀ , σ , d , h = back-bind hM λ st r → body-back t ck fl N (ok-let {I = I} okf r (h' st)) wN
   where h' : ∀ {v} → Stable (λ ck → S.eval ck ρ M) (ret v) → ∀ {K} → known I ≡ just K → KDen K ρ' v
@@ -785,7 +676,7 @@ back-let t ck fl N okf wN o hM | false | false = back-bind hM λ _ r → body-ba
 
 back-call' ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
 ... | true with hJ refl
-...   | _ , σL , (ρf , refl , okf , wN) = back-run {L} σL (back-let true ck fl N okf wN o hM)
+...   | _ , σL , (ρf , refl , okf , wN) = back-run σL (back-let true ck fl N okf wN o hM)
 back-call' ck (suc fl) (T ∣ just (fun N Ef)) I {L} hJ hL o hM | false = back-bind hL (λ _ r → back-apply ck hM r)
 back-call' ck zero J I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
 back-call' ck (suc fl) (T ∣ nothing) I hJ hL o hM = back-bind hL (λ _ r → back-apply ck hM r)
@@ -811,13 +702,13 @@ back ck fl (inr-op ⦅ M ,, Nil ⦆) ok (w , _) = back-bind (back ck fl M ok w) 
 back ck fl (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {E} ok (wL , (wM , wN , _)) with branch (known (simp fl E L)) in b
 ... | nothing = back-bind (back ck fl L ok wL) (λ _ r → back-branch ck fl M N ok wM wN r)
 ... | just (true , K) with run-inl fl L ok wL b
-...   | v , σ , d = back-run {L} {g = λ c → S.branch c _ M N} σ (back ck fl M (ok-self ok (proj₂ (branch-inl (known (simp fl E L)) b)) d) wM)
+...   | v , σ , d = back-run {g = λ c → S.branch c _ M N} σ (back ck fl M (ok-self ok (proj₂ (branch-inl (known (simp fl E L)) b)) d) wM)
 back ck fl (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {E} ok (wL , (wM , wN , _)) | just (false , K) with run-inr fl L ok wL b
-...   | v , σ , d = back-run {L} {g = λ c → S.branch c _ M N} σ (back ck fl N (ok-self ok (proj₂ (branch-inr (known (simp fl E L)) b)) d) wN)
+...   | v , σ , d = back-run {g = λ c → S.branch c _ M N} σ (back ck fl N (ok-self ok (proj₂ (branch-inr (known (simp fl E L)) b)) d) wN)
 back ck fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} ok (wL , wM , _) with int-of (known (simp fl E L)) in e₁
-... | nothing = back-bind (back ck fl L ok wL) (λ _ r → back-bind (back ck fl M ok wM) (λ _ s → back-maybe (flipM (prim≈ p r s))))
+... | nothing = back-bind (back ck fl L ok wL) (λ _ r → back-bind (back ck fl M ok wM) (λ _ s → back-maybe (M.sym (λ r → r) (prim≈ p r s))))
 ... | just n with int-of (known (simp fl E M)) in e₂
-...   | nothing = back-bind (back ck fl L ok wL) (λ _ r → back-bind (back ck fl M ok wM) (λ _ s → back-maybe (flipM (prim≈ p r s))))
+...   | nothing = back-bind (back ck fl L ok wL) (λ _ r → back-bind (back ck fl M ok wM) (λ _ s → back-maybe (M.sym (λ r → r) (prim≈ p r s))))
 ...   | just m = known-back ck (prim p ⦅ L ,, M ,, Nil ⦆) _ (run-prim fl p L M ok wL wM e₁ e₂) (prim-strong (δ p n m))
 back ck fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ok (wM , wN , _) = back-let false ck fl N ok wN (run-opd fl M ok wM) (back ck fl M ok wM)
 
@@ -828,12 +719,5 @@ ok₀ = mk-ok (λ x ()) (λ x ()) (λ x → refl)
 
 simplify-correct : ∀ M → Closed M → Equivalent (S.sem M) (S.sem (simplify M))
 simplify-correct M c =
-  clocked-le _≽_ (λ r → sym (obs≈ r)) (λ le → mono le [] (simplify M))
-    (λ ck → run≈ ck inline-fuel M ok₀ (closed-ws {M} c))
-    (λ ck nt → nt-src nt (back ck inline-fuel M ok₀ (closed-ws {M} c) nt))
-  where
-  nt-src : ∀ {r₂} → ¬ r₂ ≡ timeout → Σ[ r₁ ∈ Result S.Val ] Stable (λ ck → S.eval ck [] M) r₁ × RelResult _≽_ r₁ r₂
-    → Σ[ ck' ∈ ℕ ] ¬ S.eval ck' [] M ≡ timeout
-  nt-src nt (_ , _ , timeout) = ⊥-elim (nt refl)
-  nt-src nt (.wrong , (c , e) , wrong) = c , λ t → wrong≢ (trans (sym (e c ≤-refl)) t)
-  nt-src nt (.(ret _) , (c , e) , ret _) = c , λ t → ret≢ (trans (sym (e c ≤-refl)) t)
+  clocked-back _≽_ (λ r → sym (obs≈ r)) (mono-at [] (simplify M))
+    (λ ck → run≈ ck inline-fuel M ok₀ (closed-ws {M} c)) (λ ck → back ck inline-fuel M ok₀ (closed-ws {M} c))

@@ -35,7 +35,7 @@ import Semantics.Interp.Imp as I
 open import Semantics.Interp.Imp using (Frame; zero-val; _[_]≔_; here)
 open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs)
 import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.RCOFuel using (bind≡; ≡→rel; compile-mon-correct)
+open import proof.Correctness.Interp.RCOFuel using (compile-mon-correct)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp)
 open import Compiler.RCO using (rco-program-mon)
 open import proof.Compiler.EncloseScope using (Closed)
@@ -53,24 +53,6 @@ open import Data.Nat.Properties
 open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
-
-private variable A B C : Set
-
-{- Results -------------------------------------------------------------------------}
-
-{- equal results, then related continuations -}
-rel : ∀ {r r' : Result A} {f : A → Result B} {g : A → Result C} {S}
-  → r ≡ r' → (∀ v → RelResult S (f v) (g v)) → RelResult S (r >>= f) (r' >>= g)
-rel {r = timeout} refl k = timeout
-rel {r = wrong} refl k = wrong
-rel {r = ret v} refl k = k v
-
-{- related results, mapped -}
-ret-rel : ∀ {R S} {r : Result A} {r' : Result B} {g : B → C}
-  → (∀ {v w} → R v w → S v (g w)) → RelResult R r r' → RelResult S r (r' >>= λ w → ret (g w))
-ret-rel h timeout = timeout
-ret-rel h wrong = wrong
-ret-rel h (ret r) = ret (h r)
 
 {- Frames ---------------------------------------------------------------------------}
 
@@ -113,7 +95,7 @@ atoms≈ [] vs ok = refl
 atoms≈ (a ∷ as) vs ok = bind≡ (atom≈ a ok) λ v → atoms≈ as (v ∷ vs) ok
 
 here-rel : ∀ {n ρ φ r r'} → Fr n ρ φ → RelResult _≡_ r r' → RelResult (Out n ρ) r (here φ r')
-here-rel ok = ret-rel λ e → e , ok
+here-rel ok = rel-map λ e → e , ok
 
 {- the heights of the subterms -}
 sub : ∀ d {a b n} → a ≤ b → d + b ≤ n → d + a ≤ n
@@ -150,17 +132,17 @@ module _ (ds : List AST) (ms : All Mon ds) where
 
   sim ck n ρ φ (atom a) h ok = here-rel ok (≡→rel (atom≈ a ok))
   sim ck n ρ φ (app (a ∷ b ∷ c ∷ [])) h ok =
-    here-rel ok (rel (atom≈ a ok) λ f → rel (atom≈ b ok) λ e → rel (atom≈ c ok) λ w → call≈ ck f e w)
-  sim ck n ρ φ (pair (a ∷ b ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → rel (atom≈ b ok) λ w → ret refl)
-  sim ck n ρ φ (fst (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ≡→rel refl)
-  sim ck n ρ φ (snd (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ≡→rel refl)
-  sim ck n ρ φ (tuple as) h ok = here-rel ok (rel (atoms≈ as [] ok) λ vs → ret refl)
-  sim ck n ρ φ (get (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ≡→rel refl)
-  sim ck n ρ φ (inl (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ret refl)
-  sim ck n ρ φ (inr (a ∷ [])) h ok = here-rel ok (rel (atom≈ a ok) λ v → ret refl)
+    here-rel ok (bind-rel≡ (atom≈ a ok) λ f → bind-rel≡ (atom≈ b ok) λ e → bind-rel≡ (atom≈ c ok) λ w → call≈ ck f e w)
+  sim ck n ρ φ (pair (a ∷ b ∷ [])) h ok = here-rel ok (bind-rel≡ (atom≈ a ok) λ v → bind-rel≡ (atom≈ b ok) λ w → ret refl)
+  sim ck n ρ φ (fst (a ∷ [])) h ok = here-rel ok (bind-rel≡ (atom≈ a ok) λ v → ≡→rel refl)
+  sim ck n ρ φ (snd (a ∷ [])) h ok = here-rel ok (bind-rel≡ (atom≈ a ok) λ v → ≡→rel refl)
+  sim ck n ρ φ (tuple as) h ok = here-rel ok (bind-rel≡ (atoms≈ as [] ok) λ vs → ret refl)
+  sim ck n ρ φ (get (a ∷ [])) h ok = here-rel ok (bind-rel≡ (atom≈ a ok) λ v → ≡→rel refl)
+  sim ck n ρ φ (inl (a ∷ [])) h ok = here-rel ok (bind-rel≡ (atom≈ a ok) λ v → ret refl)
+  sim ck n ρ φ (inr (a ∷ [])) h ok = here-rel ok (bind-rel≡ (atom≈ a ok) λ v → ret refl)
   sim ck n ρ φ (prim (a ∷ b ∷ [])) h ok =
-    here-rel ok (rel (atom≈ a ok) λ v → rel (atom≈ b ok) λ w → ≡→rel refl)
-  sim ck n ρ φ (case a m₁ m₂) h ok = rel (atom≈ a ok) br
+    here-rel ok (bind-rel≡ (atom≈ a ok) λ v → bind-rel≡ (atom≈ b ok) λ w → ≡→rel refl)
+  sim ck n ρ φ (case a m₁ m₂) h ok = bind-rel≡ (atom≈ a ok) br
     where
     d = length ρ
     br : ∀ v → RelResult (Out n ρ) (C.branch ds ck ρ _ _ v) (I.inj? v >>= _)
@@ -180,12 +162,8 @@ module _ (ds : List AST) (ms : All Mon ds) where
                                     (m+n≤o⇒m≤o (suc d) h)))
     where d = length ρ
   under ck n ρ _ v m h (fr (t ∷ τ) len) rewrite set-ʳ++ ρ {t} {τ} {v} =
-    weaken (sim ck n (v ∷ ρ) (ρ ʳ++ (v ∷ τ)) m h (fr τ (trans (length-ʳ++ ρ) (trans (sym (length-ʳ++ ρ)) len))))
-    where
-    weaken : ∀ {r r'} → RelResult (Out n (v ∷ ρ)) r r' → RelResult (Out n ρ) r r'
-    weaken timeout = timeout
-    weaken wrong = wrong
-    weaken (ret (e , fr τ' len')) = ret (e , fr (v ∷ τ') len')
+    rel-weaken (λ { (e , fr τ' len') → e , fr (v ∷ τ') len' })
+      (sim ck n (v ∷ ρ) (ρ ʳ++ (v ∷ τ)) m h (fr τ (trans (length-ʳ++ ρ) (trans (sym (length-ʳ++ ρ)) len))))
 
   call≈ ck (code k) e w = call-pw ck (glob-pw ms k) e w
   call≈ ck (pair _ _) e w = wrong
@@ -197,14 +175,14 @@ module _ (ds : List AST) (ms : All Mon ds) where
   call-pw ck M.nothing e w = wrong
   call-pw zero (M.just _) e w = timeout
   call-pw (suc ck) (M.just (m , refl)) e w =
-    ret-rel proj₁ (sim ck (2 + height m) (w ∷ e ∷ []) _ m ≤-refl
+    rel-map proj₁ (sim ck (2 + height m) (w ∷ e ∷ []) _ m ≤-refl
                      (fr (replicate (height m) zero-val) (cong (λ k → suc (suc k)) (length-replicate _))))
 
 {- The end theorem: for every monadic Clos5 program ------------------------------------}
 
 lift-correct : ∀ P (mp : MonProgram P) → Equivalent (C.sem P) (I.sem (lift-program P mp))
 lift-correct (program ds M) (ms , m) = clocked _≡_ (cong obs) λ ck →
-  ret-rel proj₁ (sim ds ms ck (height m) [] _ m ≤-refl (fr (replicate (height m) zero-val) (length-replicate _)))
+  rel-map proj₁ (sim ds ms ck (height m) [] _ m ≤-refl (fr (replicate (height m) zero-val) (length-replicate _)))
 
 {- The whole compiler, into Imp --------------------------------------------------------}
 
