@@ -6,10 +6,11 @@
   The machines run in lock step, except while building a closure: the
   source also evaluates the free variables that the optimized closure
   drops (two source steps each, eval and ret, and no target step). These
-  stuttering steps are matched by zero target steps, with a decreasing
-  index (measure-simulation): the index of a match is 0, except in the
-  middle of dropping a free variable, where it bounds the number of
-  source steps left until the next free variable that the target keeps.
+  stuttering steps are matched by zero target steps: a match is a
+  synchronisation point (_~_) that the source reaches in i steps (Lag),
+  where i is 0, except in the middle of dropping free variables, where it
+  is the number of source steps left until the next free variable that
+  the target keeps (or the closure).
 
   Optimize renames variables, so environments agree through a renaming r:
   Agree M k r ρ₁ ρ₂ says that M, under k binders, finds related values
@@ -140,24 +141,14 @@ data _≈k_ : T.Cont → T.Cont → Set where
   letK : ∀ {N r ρ₁ ρ₂ κ₁ κ₂} → Agree N 1 r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → T.letK N ρ₁ κ₁ ≈k T.letK (optimize (ext-var r) N) ρ₂ κ₂
 
-{- Match i s₁ s₂, with index i. While the source evaluates a dropped free
-   variable (drop-eval~, drop-ret~), the target waits at the state that
-   continues the closure with the free variables left. -}
-data Match : ℕ → T.State → T.State → Set where
+{- the synchronisation points; while the source evaluates a dropped free
+   variable (two steps each), it lags behind them (Lag, in the simulation),
+   and the target waits at the state that continues the closure with the
+   free variables left -}
+data _~_ : T.State → T.State → Set where
   eval~ : ∀ {M r ρ₁ ρ₂ κ₁ κ₂} → Agree M 0 r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match 0 (T.eval M ρ₁ κ₁) (T.eval (optimize r M) ρ₂ κ₂)
-  ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Match 0 (T.ret v κ₁) (T.ret w κ₂)
-  drop-eval~ : ∀ {N m b vs ws y v r ρ₁ ρ₂ κ₁ κ₂} {fvs : Args (replicate m ■)} (N₀ : AST)
-    → Building N (Used N₀) (suc m) b vs ws → ¬ Used N₀ m → ρ₁ ‼ y ≡ just v
-    → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match (suc (suc (m * 2))) (T.eval (` y) ρ₁ (T.closK N vs (args→list fvs) ρ₁ κ₁))
-        (T.clos-next (optimize (ext-var (index (prune m r (used? N₀) fvs (drop-base b)))) N) ws
-                     (args→list (kept (prune m r (used? N₀) fvs (drop-base b)))) ρ₂ κ₂)
-  drop-ret~ : ∀ {N m b vs ws v r ρ₁ ρ₂ κ₁ κ₂} {fvs : Args (replicate m ■)} (N₀ : AST)
-    → Building N (Used N₀) (suc m) b vs ws → ¬ Used N₀ m → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Match (suc (m * 2)) (T.ret v (T.closK N vs (args→list fvs) ρ₁ κ₁))
-        (T.clos-next (optimize (ext-var (index (prune m r (used? N₀) fvs (drop-base b)))) N) ws
-                     (args→list (kept (prune m r (used? N₀) fvs (drop-base b)))) ρ₂ κ₂)
+    → T.eval M ρ₁ κ₁ ~ T.eval (optimize r M) ρ₂ κ₂
+  ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → T.ret v κ₁ ~ T.ret w κ₂
 
 {- Related values are observed alike -}
 obs≈ : ∀ {v w} → v ≈ w → T.obs v ≡ T.obs w
@@ -229,53 +220,46 @@ unbind-body : ∀ k (a : Arg (ν-n k (ν ■))) → unbind-n k a ≡ T.body k a
 unbind-body zero (bind (ast N)) = refl
 unbind-body (suc k) (bind a) = unbind-body k a
 
-{- The simulation, for any Clos2 program P -------------------------------------}
+{- The simulation, for any Clos2 program M₀ -------------------------------------}
 
-module _ (P : AST) where
+module _ (M₀ : AST) where
 
-  L₂ = T.sem P
+  L₁ = T.sem M₀
+  L₂ = T.sem (optimize-program M₀)
+  Match = Lag L₁ _~_
 
-  one : ∀ {s s'} → T.step s ≡ next s' → Plus L₂ s s'
-  one eq = plus eq ε
-
-  {- answering a lookup or a projection -}
-  ret?-answers : ∀ {mv mw κ₁ κ₂ s₂} → M.Pointwise _≈_ mv mw → κ₁ ≈k κ₂
-    → T.step s₂ ≡ T.ret? mw κ₂ → Answers≺ L₂ Match 0 (T.ret? mv κ₁) s₂
-  ret?-answers (M.just r) κ eq = steps (one eq) (ret~ r κ)
-  ret?-answers M.nothing κ eq = stops eq
+  step~ : ∀ {i s t' t} → T.step s ≡ next t → t' ~ t → Answers≺ L₂ Match i (next t') s
+  step~ e m = steps₁≺ e (lag₀ m)
 
   tuple-next~ : ∀ {vs ws Ms r ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
     → All (λ M → Agree M 0 r ρ₁ ρ₂) Ms → κ₁ ≈k κ₂
-    → Match 0 (T.tuple-next vs Ms ρ₁ κ₁) (T.tuple-next ws (map (optimize r) Ms) ρ₂ κ₂)
+    → T.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws (map (optimize r) Ms) ρ₂ κ₂
   tuple-next~ rs [] κ = ret~ (tup≈ (reverse⁺ rs)) κ
   tuple-next~ rs (ag ∷ ags) κ = eval~ ag (tupK rs ags κ)
 
-  {- the next free variable of a closure: kept (eval~), dropped
-     (drop-eval~), or none left (ret~ of the closure) -}
+  {- the next free variable of a closure: kept (eval~), dropped (the
+     source evaluates it, and lags), or none left (ret~ of the closure) -}
   clos-next~ : ∀ {N m b vs ws r ρ₁ ρ₂ κ₁ κ₂} (N₀ : AST) (fvs : Args (replicate m ■))
     → Building N (Used N₀) m b vs ws → AgreeArgs fvs r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Σ[ i ∈ ℕ ] i ≤ m * 2 × Match i (T.clos-next N vs (args→list fvs) ρ₁ κ₁)
+    → Σ[ i ∈ ℕ ] Match i (T.clos-next N vs (args→list fvs) ρ₁ κ₁)
         (T.clos-next (optimize (ext-var (index (prune m r (used? N₀) fvs b))) N) ws
                      (args→list (kept (prune m r (used? N₀) fvs b))) ρ₂ κ₂)
   clos-next~ {m = zero} N₀ Nil (building (_ , sc) us col) _ κ =
-    0 , z≤n , ret~ (clo≈ (agree sc (λ x u → col x (us x u)))) κ
+    lag-now (ret~ (clo≈ (agree sc (λ x u → col x (us x u)))) κ)
   clos-next~ {m = suc m} N₀ ((` y) ,, fvs) bld (agree-args (w , ws) look) κ
     with uses? (suc m) N₀
-  ... | yes _ =
-    0 , z≤n , eval~ (agree w (λ x u → look x (inj₁ u)))
-                    (closK N₀ bld (agree-args ws (λ x u → look x (inj₂ u))) κ)
+  ... | yes _ = lag-now (eval~ (agree w (λ x u → look x (inj₁ u)))
+                               (closK N₀ bld (agree-args ws (λ x u → look x (inj₂ u))) κ))
   ... | no nu with look y (inj₁ refl)
-  ...   | _ , _ , e , _ =
-    suc (suc (m * 2)) , ≤-refl ,
-    drop-eval~ N₀ bld nu e (agree-args ws (λ x u → look x (inj₂ u))) κ
+  ...   | v , _ , e , _ = lag-step (cong (λ mv → T.ret? mv _) e) (lag-step refl
+    (clos-next~ N₀ fvs (drop-building {v = v} nu bld) (agree-args ws (λ x u → look x (inj₂ u))) κ))
   clos-next~ {m = suc m} N₀ ((op ⦅ args ⦆) ,, fvs) bld (agree-args (w , ws) look) κ =
-    0 , z≤n , eval~ (agree w (λ x u → look x (inj₁ u)))
-                    (closK N₀ bld (agree-args ws (λ x u → look x (inj₂ u))) κ)
+    lag-now (eval~ (agree w (λ x u → look x (inj₁ u))) (closK N₀ bld (agree-args ws (λ x u → look x (inj₂ u))) κ))
 
   {- evaluating a closure: start building it -}
-  closure~ : ∀ {n r ρ₁ ρ₂ κ₁ κ₂} (a : Arg (ν-n n (ν ■))) (fvs : Args (replicate n ■))
+  closure~ : ∀ {n r ρ₁ ρ₂ κ₁ κ₂ i} (a : Arg (ν-n n (ν ■))) (fvs : Args (replicate n ■))
     → Agree (clos-op n ⦅ ! clear a ,, fvs ⦆) 0 r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Answers≺ L₂ Match 0 (T.step (T.eval (clos-op n ⦅ ! clear a ,, fvs ⦆) ρ₁ κ₁))
+    → Answers≺ L₂ Match i (T.step (T.eval (clos-op n ⦅ ! clear a ,, fvs ⦆) ρ₁ κ₁))
         (T.eval (optimize r (clos-op n ⦅ ! clear a ,, fvs ⦆)) ρ₂ κ₂)
   closure~ {n} {r} {ρ₁} {ρ₂} {κ₁} {κ₂} a fvs (agree (wa , wfvs) look) κ
     with clos-next~ (unbind-n n a) fvs bld (agree-args wfvs (λ x u → look x (inj₂ u))) κ
@@ -288,8 +272,8 @@ module _ (P : AST) where
       (λ k u → ⊥-elim (<-irrefl refl (<-≤-trans
          (≤-pred (ws-uses (T.body n a) sc (subst (Uses (suc (n + k))) (unbind-body n a) u)))
          (+-monoʳ-≤ n z≤n))))
-  ... | i , _ , m =
-    steps (one refl) (subst (λ B → Match i _ (T.clos-next B [] (args→list (kept Q)) ρ₂ κ₂))
+  ... | j , m =
+    steps₁≺ refl (subst (λ B → Match j _ (T.clos-next B [] (args→list (kept Q)) ρ₂ κ₂))
                             (sym eq) m)
     where
     Q = prune n r (λ j → uses? (suc j) (unbind-n n a)) fvs (λ k → k)
@@ -297,79 +281,71 @@ module _ (P : AST) where
     eq : T.body (count Q) (bind-n-ast (count Q) N') ≡ optimize (ext-var (index Q)) (T.body n a)
     eq = trans (E.body-bind (count Q) N') (opt-body-body (ext-var (index Q)) n a)
 
-  sim : ∀ {i s₁ s₂} → Match i s₁ s₂ → Answers≺ L₂ Match i (T.step s₁) s₂
+  sim : ∀ {i s₁ s₂} → s₁ ~ s₂ → Answers≺ L₂ Match i (T.step s₁) s₂
   sim (eval~ {M = ` x} {r} {ρ₁} {ρ₂} (agree _ look) κ) =
-    ret?-answers (lookup-pw ρ₁ x ρ₂ (r x) (look x refl)) κ refl
+    answers≺ (next?-answers (lookup-pw ρ₁ x ρ₂ (r x) (look x refl)) (λ r → lag₀ (ret~ r κ)) refl)
   sim (eval~ {M = clos-op n ⦅ cons (clear a) fvs ⦆} ag κ) = closure~ a fvs ag κ
   sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
+    step~ refl (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
                             (appL (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag) κ))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = steps (one refl) (ret~ const≈ κ)
+  sim (eval~ {M = lit B k ⦅ Nil ⦆} ag κ) = step~ refl (ret~ const≈ κ)
   sim (eval~ {M = tuple n ⦅ args ⦆} {r} {ρ₁} {ρ₂} {κ₁} {κ₂} (agree w look) κ) =
-    steps (one refl)
-          (subst (λ Ns → Match 0 (T.tuple-next [] (args→list args) ρ₁ κ₁) (T.tuple-next [] Ns ρ₂ κ₂))
+    step~ refl
+          (subst (λ Ns → T.tuple-next [] (args→list args) ρ₁ κ₁ ~ T.tuple-next [] Ns ρ₂ κ₂)
                  (sym (args→list-hom (optimize r) (opt-args r) (λ _ _ → refl) args))
                  (tuple-next~ [] (agree-all args w look) κ))
   sim (eval~ {M = get i ⦅ M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (getK κ))
+    step~ refl (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (getK κ))
   sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (inlK κ))
+    step~ refl (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (inlK κ))
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (inrK κ))
+    step~ refl (eval~ (agree-sub proj₁ (λ x → inj₁) ag) (inrK κ))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} ag κ) =
-    steps (one refl)
+    step~ refl
       (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
         (caseK (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag)
                (agree-sub (λ w → proj₁ (proj₂ (proj₂ w))) (λ x u → inj₂ (inj₂ (inj₁ u))) ag)
                κ))
   sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
+    step~ refl (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
                             (primL (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag) κ))
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} ag κ) =
-    steps (one refl) (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
+    step~ refl (eval~ (agree-sub proj₁ (λ x → inj₁) ag)
                             (letK (agree-sub (λ w → proj₁ (proj₂ w)) (λ x u → inj₂ (inj₁ u)) ag) κ))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r@(clo≈ _) (appL ag κ)) = steps (one refl) (eval~ ag (appR r κ))
+  sim (ret~ r@(clo≈ _) (appL ag κ)) = step~ refl (eval~ ag (appR r κ))
   sim (ret~ const≈ (appL ag κ)) = stops refl
   sim (ret~ (tup≈ _) (appL ag κ)) = stops refl
   sim (ret~ (inl≈ _) (appL ag κ)) = stops refl
   sim (ret~ (inr≈ _) (appL ag κ)) = stops refl
-  sim (ret~ r (appR (clo≈ ag) κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
+  sim (ret~ r (appR (clo≈ ag) κ)) = step~ refl (eval~ (agree-ext r ag) κ)
   sim (ret~ r (appR const≈ κ)) = stops refl
   sim (ret~ r (appR (tup≈ _) κ)) = stops refl
   sim (ret~ r (appR (inl≈ _) κ)) = stops refl
   sim (ret~ r (appR (inr≈ _) κ)) = stops refl
-  sim (ret~ r (tupK rs ags κ)) = steps (one refl) (tuple-next~ (r ∷ rs) ags κ)
-  sim (ret~ r (closK {fvs = fvs} N₀ bld ag κ)) with clos-next~ N₀ fvs (keep-building r bld) ag κ
-  ... | _ , _ , m = steps (one refl) m
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = ret?-answers (proj-pw i rs) κ refl
+  sim (ret~ r (tupK rs ags κ)) = step~ refl (tuple-next~ (r ∷ rs) ags κ)
+  sim (ret~ r (closK {fvs = fvs} N₀ bld ag κ)) = steps₁≺ refl (proj₂ (clos-next~ N₀ fvs (keep-building r bld) ag κ))
+  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = answers≺ (next?-answers (proj-pw i rs) (λ r → lag₀ (ret~ r κ)) refl)
   sim (ret~ (clo≈ _) (getK κ)) = stops refl
   sim (ret~ const≈ (getK κ)) = stops refl
   sim (ret~ (inl≈ _) (getK κ)) = stops refl
   sim (ret~ (inr≈ _) (getK κ)) = stops refl
-  sim (ret~ r (inlK κ)) = steps (one refl) (ret~ (inl≈ r) κ)
-  sim (ret~ r (inrK κ)) = steps (one refl) (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK agM agN κ)) = steps (one refl) (eval~ (agree-ext r agM) κ)
-  sim (ret~ (inr≈ r) (caseK agM agN κ)) = steps (one refl) (eval~ (agree-ext r agN) κ)
+  sim (ret~ r (inlK κ)) = step~ refl (ret~ (inl≈ r) κ)
+  sim (ret~ r (inrK κ)) = step~ refl (ret~ (inr≈ r) κ)
+  sim (ret~ (inl≈ r) (caseK agM agN κ)) = step~ refl (eval~ (agree-ext r agM) κ)
+  sim (ret~ (inr≈ r) (caseK agM agN κ)) = step~ refl (eval~ (agree-ext r agN) κ)
   sim (ret~ (clo≈ _) (caseK _ _ κ)) = stops refl
   sim (ret~ const≈ (caseK _ _ κ)) = stops refl
   sim (ret~ (tup≈ _) (caseK _ _ κ)) = stops refl
-  sim (ret~ r (primL ag κ)) = steps (one refl) (eval~ ag (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = ret?-answers (prim≈ p r s) κ refl
-  sim (ret~ r (letK ag κ)) = steps (one refl) (eval~ (agree-ext r ag) κ)
-  {- the stuttering steps: the target does not move -}
-  sim (drop-eval~ N₀ bld nu e ag κ) rewrite e = stutters (n<1+n _) (drop-ret~ N₀ bld nu ag κ)
-  sim (drop-ret~ {v = v} {fvs = fvs} N₀ bld nu ag κ)
-    with clos-next~ N₀ fvs (drop-building {v = v} nu bld) ag κ
-  ... | _ , i≤ , m = stutters (s≤s i≤) m
+  sim (ret~ r (primL ag κ)) = step~ refl (eval~ ag (primR r κ))
+  sim (ret~ s (primR {p} r κ)) = answers≺ (next?-answers (prim≈ p r s) (λ r → lag₀ (ret~ r κ)) refl)
+  sim (ret~ r (letK ag κ)) = step~ refl (eval~ (agree-ext r ag) κ)
 
 {- The end theorem -------------------------------------------------------------}
 
 optimize-fsim : ∀ M → WS 0 M → FSim (T.sem M) (T.sem (optimize-program M))
 optimize-fsim M c =
-  record { match = Match
-         ; init = 0 , eval~ {r = λ x → x} (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))) halt
-         ; sim = sim (optimize-program M) }
+  lag-fsim (lag-now (eval~ {r = λ x → x} (agree c (λ x u → ⊥-elim (n≮0 (ws-uses M c u)))) halt)) (sim M)
 
 optimize-correct : ∀ M → WS 0 M → Equivalent (T.sem M) (T.sem (optimize-program M))
 optimize-correct M c = equivalent (optimize-fsim M c)

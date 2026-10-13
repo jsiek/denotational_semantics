@@ -77,8 +77,8 @@ data _≈_ : S.Val → T.Val → Set where
 
 {- the renaming r takes each variable of ρ₁ to a related one of ρ₂ (and an
    unbound one to an unbound one) -}
-data EnvRel (r : ℕ → ℕ) (ρ₁ : S.Env) (ρ₂ : T.Env) : Set where
-  env : (∀ x → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)) → EnvRel r ρ₁ ρ₂
+open import proof.Framework.Syntax.EnvRel C4.Op C4.sig using (module Rel)
+open Rel _≈_ public
 
 {- the target code of M, under the renaming r -}
 Del : (ℕ → ℕ) → AST → C4.AST → Set
@@ -144,16 +144,6 @@ prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p
 
 {- Related environments ------------------------------------------------------}
 
-look : ∀ {r ρ₁ ρ₂} → EnvRel r ρ₁ ρ₂ → ∀ x → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)
-look (env l) = l
-
-env-ext : ∀ {r ρ₁ ρ₂ v w} → v ≈ w → EnvRel r ρ₁ ρ₂ → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
-env-ext r (env l) = env λ { zero → M.just r ; (suc x) → l x }
-
-{- the let-bound closure, which the source does not see -}
-env-skip : ∀ {r ρ₁ ρ₂ w} → EnvRel r ρ₁ ρ₂ → EnvRel (λ x → suc (r x)) ρ₁ (w ∷ ρ₂)
-env-skip (env l) = env l
-
 {- the environment of a function body: the argument, then the closure's tuple -}
 env-body : ∀ {v w u e} → v ≈ w → u ≈ e → EnvRel (λ x → x) (v ∷ u ∷ []) (w ∷ e ∷ [])
 env-body r r' = env λ { zero → M.just r ; (suc zero) → M.just r' ; (suc (suc x)) → M.nothing }
@@ -168,9 +158,6 @@ del-args {suc n} r (M ,, as) = refl ∷ del-args r as
 module _ (P : C4.AST) where
 
   L₂ = T.sem P
-
-  one : ∀ {s s'} → T.step s ≡ next s' → Plus L₂ s s'
-  one eq = plus eq ε
 
   {- the administrative steps of the let body, before checking for a pair -}
   ret-reach : ∀ {w κ₁ κ₂} (k : κ₁ ≈k κ₂) → Star L₂ (T.ret w κ₂) (retT w k)
@@ -187,40 +174,31 @@ module _ (P : C4.AST) where
   ret-reach (primR _ _) = ε
   ret-reach (letK _ _) = ε
 
-  {- answering a step that returns a value -}
-  ret-answers : ∀ {s₂ v w κ₁ κ₂} → Plus L₂ s₂ (T.ret w κ₂) → v ≈ w → (k : κ₁ ≈k κ₂)
-    → Answers L₂ _~_ (next (S.ret v κ₁)) s₂
-  ret-answers π r k = steps (plus-star π (ret-reach k)) (ret~ k r)
-
-  {- answering a lookup or a projection -}
-  ret?-answers : ∀ {mv mw κ₁ κ₂ s₂} → M.Pointwise _≈_ mv mw → κ₁ ≈k κ₂
-    → T.step s₂ ≡ T.ret? mw κ₂ → Answers L₂ _~_ (S.ret? mv κ₁) s₂
-  ret?-answers (M.just r) k eq = ret-answers (one eq) r k
-  ret?-answers M.nothing k eq = stops eq
+  {- returning a value: the target runs on to retT (ret-reach) -}
+  ret~' : ∀ {v w κ₁ κ₂} → v ≈ w → (k : κ₁ ≈k κ₂) → Reach L₂ _~_ (S.ret v κ₁) (T.ret w κ₂)
+  ret~' r k = _ , ret-reach k , ret~ k r
 
   tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
     → Pointwise (Del r) Ms Ms' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Σ[ s₂ ∈ T.State ] Star L₂ (T.tuple-next ws Ms' ρ₂ κ₂) s₂
-        × S.tuple-next vs Ms ρ₁ κ₁ ~ s₂
-  tuple-next~ rs [] ρ k = _ , ret-reach k , ret~ k (tup≈ (reverse⁺ rs))
+    → Reach L₂ _~_ (S.tuple-next vs Ms ρ₁ κ₁) (T.tuple-next ws Ms' ρ₂ κ₂)
+  tuple-next~ rs [] ρ k = ret~' (tup≈ (reverse⁺ rs)) k
   tuple-next~ rs (d ∷ ds) ρ k = _ , ε , eval~ d ρ (tupK rs ds ρ k)
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} refl ρ k) = ret?-answers (look ρ x) k refl
+  sim (eval~ {M = ` x} refl ρ k) = next?-reach (look ρ x) (λ r → ret~' r k) refl
   sim (eval~ {r} {M = clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆} refl ρ k)
     with tuple-next~ [] (del-args r fvs) ρ (closK {N} k)
-  ... | s₂ , σ , m = steps (plus refl (refl ◅ refl ◅ refl ◅ σ)) m
-  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (appL ρ k))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} refl ρ κ) = ret-answers (one refl) const≈ κ
-  sim (eval~ {r} {M = tuple n ⦅ as ⦆} refl ρ k) with tuple-next~ [] (del-args r as) ρ k
-  ... | s₂ , σ , m = steps (plus refl σ) m
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (getK k))
-  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (inlK k))
-  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (inrK k))
+  ... | s₂ , σ , m = after refl (s₂ , refl ◅ refl ◅ refl ◅ σ , m)
+  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (appL ρ k))
+  sim (eval~ {M = lit B k ⦅ Nil ⦆} refl ρ κ) = after refl (ret~' const≈ κ)
+  sim (eval~ {r} {M = tuple n ⦅ as ⦆} refl ρ k) = after refl (tuple-next~ [] (del-args r as) ρ k)
+  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (getK k))
+  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (inlK k))
+  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (inrK k))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
-    steps (one refl) (eval~ refl ρ (caseK ρ k))
-  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (primL ρ k))
-  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl ρ k) = steps (one refl) (eval~ refl ρ (letK ρ k))
+    steps₁ refl (eval~ refl ρ (caseK ρ k))
+  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (primL ρ k))
+  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (letK ρ k))
   sim (ret~ halt r) = stops (cong stop (sym (obs≈ r)))
   {- calling a closure: fst, then snd, then evaluate the operand -}
   sim (ret~ (appL {r} {M} ρ k) (clos≈ r')) =
@@ -231,25 +209,24 @@ module _ (P : C4.AST) where
   sim (ret~ (appL ρ k) (inl≈ _)) = stops refl
   sim (ret~ (appL ρ k) (inr≈ _)) = stops refl
   sim (ret~ (appR {N} r' k) r) =
-    steps (one refl) (eval~ (sym (rename-id (delay N))) (env-body r r') k)
-  sim (ret~ (tupK rs ds ρ k) r) with tuple-next~ (r ∷ rs) ds ρ k
-  ... | s₂ , σ , m = steps (plus refl σ) m
-  sim (ret~ (closK k) r) = ret-answers (one refl) (clos≈ r) k
-  sim (ret~ (getK {i = i} k) (tup≈ rs)) = ret?-answers (proj-pw i rs) k refl
+    steps₁ refl (eval~ (sym (rename-id (delay N))) (env-body r r') k)
+  sim (ret~ (tupK rs ds ρ k) r) = after refl (tuple-next~ (r ∷ rs) ds ρ k)
+  sim (ret~ (closK k) r) = after refl (ret~' (clos≈ r) k)
+  sim (ret~ (getK {i = i} k) (tup≈ rs)) = next?-reach (proj-pw i rs) (λ r → ret~' r k) refl
   sim (ret~ (getK k) (clos≈ _)) = stops refl
   sim (ret~ (getK k) const≈) = stops refl
   sim (ret~ (getK k) (inl≈ _)) = stops refl
   sim (ret~ (getK k) (inr≈ _)) = stops refl
-  sim (ret~ (inlK k) r) = ret-answers (one refl) (inl≈ r) k
-  sim (ret~ (inrK k) r) = ret-answers (one refl) (inr≈ r) k
-  sim (ret~ (caseK ρ k) (inl≈ r)) = steps (one refl) (eval~ refl (env-ext r ρ) k)
-  sim (ret~ (caseK ρ k) (inr≈ r)) = steps (one refl) (eval~ refl (env-ext r ρ) k)
+  sim (ret~ (inlK k) r) = after refl (ret~' (inl≈ r) k)
+  sim (ret~ (inrK k) r) = after refl (ret~' (inr≈ r) k)
+  sim (ret~ (caseK ρ k) (inl≈ r)) = steps₁ refl (eval~ refl (env-ext r ρ) k)
+  sim (ret~ (caseK ρ k) (inr≈ r)) = steps₁ refl (eval~ refl (env-ext r ρ) k)
   sim (ret~ (caseK ρ k) (clos≈ _)) = stops refl
   sim (ret~ (caseK ρ k) const≈) = stops refl
   sim (ret~ (caseK ρ k) (tup≈ _)) = stops refl
-  sim (ret~ (primL ρ k) r) = steps (one refl) (eval~ refl ρ (primR r k))
-  sim (ret~ (primR {p} r k) s) = ret?-answers (prim≈ p r s) k refl
-  sim (ret~ (letK ρ k) r) = steps (one refl) (eval~ refl (env-ext r ρ) k)
+  sim (ret~ (primL ρ k) r) = steps₁ refl (eval~ refl ρ (primR r k))
+  sim (ret~ (primR {p} r k) s) = next?-reach (prim≈ p r s) (λ r → ret~' r k) refl
+  sim (ret~ (letK ρ k) r) = steps₁ refl (eval~ refl (env-ext r ρ) k)
 
 {- The end theorem: for every Clos3 program -----------------------------------}
 

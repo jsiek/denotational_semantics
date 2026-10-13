@@ -53,9 +53,9 @@ open import Language.Prim using (Prim)
 open import proof.Framework.ListUtil
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
-  using (Next; next; stop; Step; Plus; plus; Star; ε; _◅_; plus-star; plus→star)
+  using (Next; next; stop; Step; Plus; plus; Star; ε; _◅_; plus-star; plus→star; step⁺; next?-same)
 open import proof.Semantics.CEK.Simulation
-  using (FSim; Answers≺; stops; steps; stutters; Equivalent; equivalent; equiv-trans)
+  using (FSim; Answers≺; stops; steps; stutters; answers≺; answers-at; steps₁≺; Equivalent; equivalent; equiv-trans)
 import Semantics.CEK.Clos5 as T
 import Semantics.CEK.ISWIM as S
 open import Compiler.Pipeline using (compile; compile-mon)
@@ -80,12 +80,7 @@ open import Relation.Nullary using (yes; no)
 {- Environments and atoms -------------------------------------------------------}
 
 {- the renaming r takes each variable of ρ₁ to one of ρ₂ with the same value -}
-Ren : (ℕ → ℕ) → T.Env → T.Env → Set
-Ren r ρ₁ ρ₂ = ∀ x → ρ₂ ‼ r x ≡ ρ₁ ‼ x
-
-ren-ext : ∀ {r ρ₁ ρ₂} v → Ren r ρ₁ ρ₂ → Ren (ext r) (v ∷ ρ₁) (v ∷ ρ₂)
-ren-ext v rn zero = refl
-ren-ext v rn (suc x) = rn x
+open import proof.Framework.Syntax.EnvRel Op sig using (Ren; ren-ext)
 
 {- the atom A evaluates to a in ρ, in one step, with any table -}
 record Ev (A : AST) (ρ : T.Env) (a : T.Val) : Set where
@@ -318,9 +313,6 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
       → Pend K ρ₁ κ₁ κ₂ (a ∷ vs) (M ∷ Ms) Q ρ₂
       → Match (suc (dl (M ∷ Ms))) (T.ret a κ₁') (T.eval Q ρ₂ κ₂)
 
-  one : ∀ {s s'} → T.step (map rco ds) s ≡ next s' → Plus L₂ s s'
-  one eq = plus eq ε
-
   reach-p : ∀ {n} {K : Kind n} {ρ₁ κ₁ κ₂ v vs Ms Q ρ₂} (p : Pend K ρ₁ κ₁ κ₂ (v ∷ vs) Ms Q (v ∷ ρ₂))
     → Star L₂ (T.ret v (T.letK Q ρ₂ κ₂)) (retP (T.ret v (T.letK Q ρ₂ κ₂)) p)
   reach-p (p-done π _ _ _) = refl ◅ plus→star π
@@ -333,34 +325,29 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
   ret-reach (letK _ _ _) v = ε
   ret-reach (fin _ _ _ _) v = ε
 
-  ans-eq : ∀ {i a s₂} s₁ → T.step ds s₁ ≡ a → Answers≺ L₂ Match i a s₂
-    → Answers≺ L₂ Match i (T.step ds s₁) s₂
-  ans-eq s₁ refl x = x
-
   ret?-ans : ∀ mv {i κ₁ κ₂ s₂} (k : κ₁ ≈k κ₂) → T.step (map rco ds) s₂ ≡ T.ret? mv κ₂
     → Answers≺ L₂ Match i (T.ret? mv κ₁) s₂
-  ret?-ans (just v) k eq = steps (plus-star (plus eq ε) (ret-reach k v)) (ret~ k)
-  ret?-ans nothing k eq = stops eq
+  ret?-ans mv k eq = answers≺ (next?-same (λ v → _ , ret-reach k v , ret~ k) eq)
 
   {- the source goes on to the operand M; the target is at Q, or has just
      stepped to Q (step-go) -}
   wait-go : ∀ {n} {K : Kind n} {vs M Ms ρ₁ κ₁ κ₁' Q ρ₂ κ₂ i} → Frame K vs Ms ρ₁ κ₁ κ₁'
     → Pend K ρ₁ κ₁ κ₂ vs (M ∷ Ms) Q ρ₂ → suc (suc (dl Ms)) < i
     → Answers≺ L₂ Match i (next (T.eval M ρ₁ κ₁')) (T.eval Q ρ₂ κ₂)
-  wait-go sf (p-let refl rn w f) lt = steps (one refl) (eval~ refl rn w (pend sf f))
+  wait-go sf (p-let refl rn w f) lt = steps₁≺ refl (eval~ refl rn w (pend sf f))
   wait-go sf (p-atom ev p) lt = stutters lt (wait-eval sf ev p)
 
   step-go : ∀ {n} {K : Kind n} {vs M Ms ρ₁ κ₁ κ₁' Q ρ₂ κ₂ i s₂} → Step L₂ s₂ (T.eval Q ρ₂ κ₂)
     → Frame K vs Ms ρ₁ κ₁ κ₁' → Pend K ρ₁ κ₁ κ₂ vs (M ∷ Ms) Q ρ₂
     → Answers≺ L₂ Match i (next (T.eval M ρ₁ κ₁')) s₂
   step-go st sf (p-let refl rn w f) = steps (plus st (refl ◅ ε)) (eval~ refl rn w (pend sf f))
-  step-go st sf (p-atom ev p) = steps (plus st ε) (wait-eval sf ev p)
+  step-go st sf (p-atom ev p) = steps₁≺ st (wait-eval sf ev p)
 
   {- a call -}
   call-ans : ∀ m mN {w e κ₁ κ₂ i} → global ds m ≡ mN → κ₁ ≈k κ₂
     → Answers≺ L₂ Match i (T.call mN w e κ₁) (T.ret w (T.appA (T.code m) e κ₂))
   call-ans m (just N) {w} {e} {κ₂ = κ₂} eq k =
-    steps (one (cong (λ x → T.call x w e κ₂) (trans (global-map ds m) (cong (mmap rco) eq))))
+    steps₁≺ (cong (λ x → T.call x w e κ₂) (trans (global-map ds m) (cong (mmap rco) eq)))
           (eval~ (sym (rename-id (rco N))) (λ x → refl) (global-all wds m eq) k)
   call-ans m nothing {w} {e} {κ₂ = κ₂} eq k =
     stops (cong (λ x → T.call x w e κ₂) (trans (global-map ds m) (cong (mmap rco) eq)))
@@ -399,8 +386,8 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
   fin-sim (plain _) fTup fTup k v = ret?-ans (just _) k refl
   fin-sim (plain _) (fPrimR {p} {u}) fPrimR k v = ret?-ans (T.prim? p u v) k refl
   fin-sim (plain p) fCase fCase k v = ⊥-elim p
-  fin-sim (case eM eN hr wM wN) fCase fCase k (T.inl u) = steps (one refl) (eval~ eM (hr u) wM k)
-  fin-sim (case eM eN hr wM wN) fCase fCase k (T.inr u) = steps (one refl) (eval~ eN (hr u) wN k)
+  fin-sim (case eM eN hr wM wN) fCase fCase k (T.inl u) = steps₁≺ refl (eval~ eM (hr u) wM k)
+  fin-sim (case eM eN hr wM wN) fCase fCase k (T.inr u) = steps₁≺ refl (eval~ eN (hr u) wN k)
   fin-sim (case _ _ _ _ _) fCase fCase k (T.code _) = stops refl
   fin-sim (case _ _ _ _ _) fCase fCase k (T.pair _ _) = stops refl
   fin-sim (case _ _ _ _ _) fCase fCase k (T.const _ _) = stops refl
@@ -411,7 +398,7 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
     → Frame K vs (args→list As) ρ κ κ' → Ev A ρ a → AtomsEv ρ As (a ∷ vs) vs'
     → Σ[ v ∈ T.Val ] Σ[ vs₀ ∈ List T.Val ] Σ[ κ'' ∈ T.Cont ]
         vs' ≡ v ∷ vs₀ × Frame K vs₀ [] ρ κ κ'' × Plus L₂ (T.eval A ρ κ') (T.ret v κ'')
-  run-atoms {a = a} {κ' = κ'} sf e [] = a , _ , κ' , refl , sf , one (ev e _ κ')
+  run-atoms {a = a} {κ' = κ'} sf e [] = a , _ , κ' , refl , sf , step⁺ (ev e _ κ')
   run-atoms {a = a} {κ' = κ'} sf e (evB ∷ at) with step-frame (map rco ds) sf a
   ... | _ , sf' , eq with run-atoms sf' evB at
   ...   | v , vs₀ , κ'' , e' , sf'' , π = v , vs₀ , κ'' , e' , sf'' , plus (ev e _ κ') (eq ◅ plus→star π)
@@ -511,7 +498,7 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
     → Answers≺ L₂ Match i (T.step ds (T.eval (build K (A ,, As)) ρ₁ κ₁))
         (T.eval (rename r (lift (tb K) (rco-args (A ,, As)))) ρ₂ κ₂)
   lifted~ K A As {r} {ρ₁} {ρ₂} {κ₁} {κ₂} rn ws i lt with start ds K A As ρ₁ κ₁
-  ... | _ , sf , eq = ans-eq (T.eval (build K (A ,, As)) ρ₁ κ₁) eq (wait-go sf p₀ lt)
+  ... | _ , sf , eq = answers-at eq (wait-go sf p₀ lt)
     where
     p₀ = subst (λ X → Pend K ρ₁ κ₁ κ₂ [] (A ∷ args→list As) (rename r (lift (tb K) X)) ρ₂)
                (rename-id-args {f = λ x → x} (λ _ → refl) (rco-args (A ,, As)))
@@ -523,9 +510,9 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
     → Answers≺ L₂ Match 0 (T.step ds (T.ret v κ₁')) (retP (T.ret v (T.letK Q ρ₂ κ₂)) p)
   pend-ans {v = v} sf (p-done π sf₂ kr k) = fin-sim kr sf sf₂ k v
   pend-ans {v = v} {κ₁' = κ₁'} sf p@(p-let _ _ _ _) with step-frame ds sf v
-  ... | _ , sf' , eq = ans-eq (T.ret v κ₁') eq (step-go refl sf' p)
+  ... | _ , sf' , eq = answers-at eq (step-go refl sf' p)
   pend-ans {v = v} {κ₁' = κ₁'} sf p@(p-atom _ _) with step-frame ds sf v
-  ... | _ , sf' , eq = ans-eq (T.ret v κ₁') eq (step-go refl sf' p)
+  ... | _ , sf' , eq = answers-at eq (step-go refl sf' p)
 
   {- the source has evaluated an atom operand -}
   wait-ans : ∀ {n} {K : Kind n} {vs a Ms ρ₁ κ₁ κ₁' Q ρ₂ κ₂} → Frame K vs Ms ρ₁ κ₁ κ₁'
@@ -559,14 +546,14 @@ module Sim (ds : List AST) (M₀ : AST) (wds : All (WS 2) ds) where
   sim (eval~ {M = prim p ⦅ A ,, M ,, Nil ⦆} refl rn w k) =
     lifted~ (kprim p) A (M ,, Nil) rn w (inv-plain (kprim p) tt k) (n<1+n _)
   sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl rn (wM , wN , _) k) =
-    steps (one refl) (eval~ refl rn wM (letK (λ v → ren-ext v rn) wN k))
+    steps₁≺ refl (eval~ refl rn wM (letK (λ v → ren-ext v rn) wN k))
   sim (ret~ halt) = stops refl
-  sim (ret~ (letK hr w k)) = steps (one refl) (eval~ refl (hr _) w k)
+  sim (ret~ (letK hr w k)) = steps₁≺ refl (eval~ refl (hr _) w k)
   sim (ret~ {v = v} (pend sf f)) = pend-ans sf (f v)
   sim (ret~ {v = v} (fin sf₁ sf₂ kr k)) = fin-sim kr sf₁ sf₂ k v
-  sim (wait-eval {A = A} {ρ₁ = ρ₁} {κ₁' = κ₁'} sf e p) = ans-eq (T.eval A ρ₁ κ₁') (ev e ds κ₁') (wait-ans sf p)
+  sim (wait-eval {A = A} {ρ₁ = ρ₁} {κ₁' = κ₁'} sf e p) = answers-at (ev e ds κ₁') (wait-ans sf p)
   sim (wait-ret {a = a} {κ₁' = κ₁'} sf p) with step-frame ds sf a
-  ... | _ , sf' , eq = ans-eq (T.ret a κ₁') eq (wait-go sf' p (n<1+n _))
+  ... | _ , sf' , eq = answers-at eq (wait-go sf' p (n<1+n _))
 
 {- The end theorem -----------------------------------------------------------------}
 

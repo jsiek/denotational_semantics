@@ -3,8 +3,10 @@
   Forward simulations, in the spirit of CompCert's Smallstep library, and
   the end theorem that a forward simulation between deterministic, total
   transition systems makes them equivalent (Equivalent, in
-  Framework/Smallstep.agda); equivalence composes. See the design note in
-  Semantics/CEK/Smallstep.agda.
+  Framework/Smallstep.agda); equivalence composes. Two common shapes of
+  simulation are built here: plus simulations (plus-simulation), and
+  those whose source lags behind a state related to the target's (Lag,
+  lag-fsim). See the design note in Semantics/CEK/Smallstep.agda.
 
 -}
 
@@ -15,7 +17,7 @@ open import proof.Framework.Smallstep Obs
 
 open import Data.Empty using (⊥-elim)
 open import Data.Nat using (ℕ; suc; _+_; _<_; s≤s; z≤n)
-open import Data.Nat.Properties using (m<m+n)
+open import Data.Nat.Properties using (m<m+n; ≤-refl)
 open import Data.Nat.Induction using (<-wellFounded)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
 open import Data.Product.Relation.Binary.Lex.Strict using (×-Lex; ×-wellFounded)
@@ -37,6 +39,23 @@ data Answers≺ {S₁ : Set} (L₂ : Machine) (R : ℕ → S₁ → State L₂ �
   stutters : ∀ {j s₁' s₂} → j < i → R j s₁' s₂ → Answers≺ L₂ R i (next s₁') s₂
   runs : ∀ {o s₂ t} → Plus L₂ s₂ t → Final L₂ t o → Answers≺ L₂ R i (stop o) s₂
 
+module _ {S₁ : Set} {L₂ : Machine} {R : ℕ → S₁ → State L₂ → Set} where
+
+  {- an answer with the match at index j -}
+  answers≺ : ∀ {i j a s₂} → Answers L₂ (R j) a s₂ → Answers≺ L₂ R i a s₂
+  answers≺ (stops fin) = stops fin
+  answers≺ (steps π m) = steps π m
+
+  steps₁≺ : ∀ {i j s₁ s₂ s₂'} → Step L₂ s₂ s₂' → R j s₁ s₂' → Answers≺ L₂ R i (next s₁) s₂
+  steps₁≺ st m = steps (step⁺ st) m
+
+  after≺ : ∀ {i j s₁ s₂ s₂'} → Step L₂ s₂ s₂' → Reach L₂ (R j) s₁ s₂' → Answers≺ L₂ R i (next s₁) s₂
+  after≺ st r = answers≺ (after st r)
+
+  {- an answer to a ≡ a' -}
+  answers-at : ∀ {i a a' s₂} → a ≡ a' → Answers≺ L₂ R i a' s₂ → Answers≺ L₂ R i a s₂
+  answers-at refl x = x
+
 record FSim (L₁ L₂ : Machine) : Set₁ where
   field
     match : ℕ → State L₁ → State L₂ → Set
@@ -46,12 +65,41 @@ record FSim (L₁ L₂ : Machine) : Set₁ where
 {- simulations in which every step is matched by a target plus -}
 plus-simulation : ∀ {L₁ L₂ : Machine} (R : State L₁ → State L₂ → Set) → R (start L₁) (start L₂)
   → (∀ {s₁ s₂} → R s₁ s₂ → Answers L₂ R (Machine.step L₁ s₁) s₂) → FSim L₁ L₂
-plus-simulation {L₂ = L₂} R m₀ sim = record
-  { match = λ _ → R ; init = 0 , m₀ ; sim = λ m → lift (sim m) }
+plus-simulation R m₀ sim = record { match = λ _ → R ; init = 0 , m₀ ; sim = λ m → answers≺ {j = 0} (sim m) }
+
+{- simulations whose source lags i steps behind a state related (R) to the
+   target's: the source's steps until then are matched by none (stutter),
+   and a related state's are answered by sim -}
+record Lag (L₁ : Machine) {S₂ : Set} (R : State L₁ → S₂ → Set) (i : ℕ) (s₁ : State L₁) (s₂ : S₂) : Set where
+  constructor lag
+  field
+    {t} : State L₁
+    run : Steps L₁ i s₁ t
+    rel : R t s₂
+
+module _ {L₁ : Machine} {S₂ : Set} {R : State L₁ → S₂ → Set} where
+
+  lag₀ : ∀ {s₁ s₂} → R s₁ s₂ → Lag L₁ R 0 s₁ s₂
+  lag₀ = lag zero
+
+  lag-now : ∀ {s₁ s₂} → R s₁ s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
+  lag-now m = 0 , lag₀ m
+
+  {- a source run to a related state, or one source step before a lag -}
+  lag-star : ∀ {s₁ t s₂} → Star L₁ s₁ t → R t s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
+  lag-star σ m with star→steps σ
+  ... | n , τ = n , lag τ m
+
+  lag-step : ∀ {s₁ s₁' s₂} → Step L₁ s₁ s₁' → Σ[ i ∈ ℕ ] Lag L₁ R i s₁' s₂ → Σ[ i ∈ ℕ ] Lag L₁ R i s₁ s₂
+  lag-step st (i , lag τ m) = suc i , lag (suc st τ) m
+
+lag-fsim : ∀ {L₁ L₂ : Machine} {R : State L₁ → State L₂ → Set} → Σ[ i ∈ ℕ ] Lag L₁ R i (start L₁) (start L₂)
+  → (∀ {i s₁ s₂} → R s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂) → FSim L₁ L₂
+lag-fsim {L₁} {L₂} {R} m₀ sim = record { match = Lag L₁ R ; init = m₀ ; sim = go }
   where
-  lift : ∀ {i a s₂} → Answers L₂ R a s₂ → Answers≺ L₂ (λ _ → R) i a s₂
-  lift (stops fin) = stops fin
-  lift (steps π m) = steps {j = 0} π m
+  go : ∀ {i s₁ s₂} → Lag L₁ R i s₁ s₂ → Answers≺ L₂ (Lag L₁ R) i (Machine.step L₁ s₁) s₂
+  go (lag zero m) = sim m
+  go (lag (suc st τ) m) = answers-at st (stutters ≤-refl (lag τ m))
 
 {- The end theorem ------------------------------------------------------------}
 

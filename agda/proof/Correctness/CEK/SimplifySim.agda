@@ -5,7 +5,7 @@
   Semantics/CEK/Smallstep.agda); Equivalent is symmetric.
 
   The target does less work than the source: the reductions simplify did
-  ahead of time (β of a small value, an inlined call, a case on a known
+  lag-star of time (β of a small value, an inlined call, a case on a known
   injection, a projection from a known tuple, a primitive on known
   integers) are
   steps of the source only, which it takes when the target takes the
@@ -25,7 +25,7 @@
   as a source closure of N, under Facts true of its environment. States
   and continuations are related frame by frame, the code by simp.
 
-  The source's run-ahead is by run-term and run-known: if the term that
+  The source's run-lag-star is by run-term and run-known: if the term that
   simp E M returns is a value, or M has a known value, the source runs M
   to a value it describes. β and an inlined call share one lemma each
   (let-term, let-known, let-sim), from the source's run to the operand:
@@ -300,24 +300,11 @@ module _ (P' P : AST) where
   L₂ = S.sem P
 
   {- the target is i steps from a state related to the source's -}
-  match : ℕ → S.State → S.State → Set
-  match i s' s = Σ[ t' ∈ S.State ] Steps L₁ i s' t' × t' ~ s
-
-  base : ∀ {s' s} → s' ~ s → match 0 s' s
-  base r = _ , zero , r
-
-  one : ∀ {s s'} → S.step s ≡ next s' → Plus L₂ s s'
-  one eq = plus eq ε
+  match = Lag L₁ _~_
 
   {- a run of the source from an evaluation to a return has a step -}
   run-plus : ∀ {M ρ κ v} → Star L₂ (S.eval M ρ κ) (S.ret v κ) → Plus L₂ (S.eval M ρ κ) (S.ret v κ)
   run-plus (st ◅ σ) = plus st σ
-
-  {- the target's run of a value term, from its first step: the target
-     then stutters -}
-  ahead : ∀ {s' s t'} → Star L₁ s' t' → t' ~ s → Σ[ i ∈ ℕ ] match i s' s
-  ahead σ r with star→steps σ
-  ... | n , τ = n , _ , τ , r
 
   Run : AST → S.Env → S.Val → Set
   Run M ρ v = ∀ κ → Star L₂ (S.eval M ρ κ) (S.ret v κ)
@@ -366,7 +353,7 @@ module _ (P' P : AST) where
   value-ans : ∀ T {M ρ' ρ v κ' κ} → Strong T ρ' v → Run M ρ v → κ' ≈k κ → Step-ans (S.eval T ρ' κ') (S.eval M ρ κ)
   value-ans T d σ k with trun T d
   ... | w , τ , r with τ _
-  ...   | st ◅ τ' with ahead τ' (ret~ r k)
+  ...   | st ◅ τ' with lag-star τ' (ret~ r k)
   ...     | j , m = ans st (run-plus (σ _)) m
 
   {- the source runs to one value -}
@@ -562,7 +549,7 @@ module _ (P' P : AST) where
 
   {- the target and the source take one step each -}
   lock : ∀ {s' s t t'} → S.step s' ≡ next t' → S.step s ≡ next t → t' ~ t → Step-ans s' s
-  lock e e' r = ans e (one e') (base r)
+  lock e e' r = ans e (step⁺ e') (lag₀ r)
 
   absurd : ∀ {A : Set} → true ≡ false → A
   absurd ()
@@ -621,10 +608,10 @@ module _ (P' P : AST) where
   ...   | v , σ , d , kn = prefix (plus→star P ◅◅ (σ _ ◅◅ (bind-step bd ◅ ε))) (eval-sim fl N (ok-cons okf d kn s) wN k)
   let-sim fl N fl₀ M {E'} {E} {ρ'} {κ' = κ'} okf wN ok wM bd k P | false | true with arg-run fl₀ M ok wM isv
   ...   | v , σ , d , kn with trun (term (simp fl₀ E M)) d
-  ...     | w' , τ , r with ahead (τ (S.letK N' ρ' κ') ◅◅ (refl ◅ ε)) (eval~ (ok-let {I = simp fl₀ E M} okf r kn) wN k)
+  ...     | w' , τ , r with lag-star (τ (S.letK N' ρ' κ') ◅◅ (refl ◅ ε)) (eval~ (ok-let {I = simp fl₀ E M} okf r kn) wN k)
     where N' = term (simp fl (known-as (simp fl₀ E M) E') N)
   ...       | j , m = ans refl (plus-star P (σ _ ◅◅ (bind-step bd ◅ ε))) m
-  let-sim fl N fl₀ M okf wN ok wM bd k P | false | false = ans refl P (base (eval~ ok wM (letK bd okf wN k)))
+  let-sim fl N fl₀ M okf wN ok wM bd k P | false | false = ans refl P (lag₀ (eval~ ok wM (letK bd okf wN k)))
 
   call-sim (suc fl) (T ∣ just (P.fun N E')) L M {E} jt jk ok wM k
     with size (term (simp-let fl E' N (simp (suc fl) E M))) ≤ᵇ inline-size | jk refl
@@ -636,13 +623,8 @@ module _ (P' P : AST) where
 
   {- The simulation ------------------------------------------------------------}
 
-  ret?-answers : ∀ {i mv mw κ' κ s} → M.Pointwise _≈_ mv mw → κ' ≈k κ → S.step s ≡ S.ret? mw κ
-    → Answers≺ L₂ match i (S.ret? mv κ') s
-  ret?-answers (M.just r) k eq = steps (one eq) (base (ret~ r k))
-  ret?-answers M.nothing k eq = stops eq
-
   next~ : ∀ {i s t' t} → S.step s ≡ next t → t' ~ t → Answers≺ L₂ match i (next t') s
-  next~ e r = steps (one e) (base r)
+  next~ e r = steps₁≺ e (lag₀ r)
 
   base-sim : ∀ {i s' s} → s' ~ s → Answers≺ L₂ match i (S.step s') s
   base-sim (eval~ {fl = fl} {M = M} ok w k) with eval-sim fl M ok w k
@@ -659,7 +641,7 @@ module _ (P' P : AST) where
   base-sim (ret~ r (appR (inl≈ _) k)) = stops refl
   base-sim (ret~ r (appR (inr≈ _) k)) = stops refl
   base-sim (ret~ r (tupK rs ok ws k)) = next~ refl (tuple-next~ (r ∷ rs) ok ws k)
-  base-sim (ret~ (tup≈ rs) (getK {i = i} k)) = ret?-answers (proj-pw i rs) k refl
+  base-sim (ret~ (tup≈ rs) (getK {i = i} k)) = answers≺ (next?-answers (proj-pw i rs) (λ r → lag₀ (ret~ r k)) refl)
   base-sim (ret~ (clo≈ _ _) (getK k)) = stops refl
   base-sim (ret~ const≈ (getK k)) = stops refl
   base-sim (ret~ (inl≈ _) (getK k)) = stops refl
@@ -672,13 +654,9 @@ module _ (P' P : AST) where
   base-sim (ret~ const≈ (caseK _ _ _ k)) = stops refl
   base-sim (ret~ (tup≈ _) (caseK _ _ _ k)) = stops refl
   base-sim (ret~ r (primL ok w k)) = next~ refl (eval~ ok w (primR r k))
-  base-sim (ret~ s (primR {p} r k)) = ret?-answers (prim≈ p r s) k refl
+  base-sim (ret~ s (primR {p} r k)) = answers≺ (next?-answers (prim≈ p r s) (λ r → lag₀ (ret~ r k)) refl)
   base-sim (ret~ r (letK bd ok w k)) = next~ (bind-step bd) (eval~ (ok-under ok r) w k)
 
-  sim : ∀ {i s' s} → match i s' s → Answers≺ L₂ match i (S.step s') s
-  sim (t , zero , r) = base-sim r
-  sim {suc i} {s'} {s} (t , suc {s' = s''} st σ , r) =
-    subst (λ a → Answers≺ L₂ match (suc i) a s) (sym st) (stutters (n<1+n i) (t , σ , r))
 
 {- The end theorem: for closed programs ------------------------------------------}
 
@@ -686,7 +664,5 @@ ok₀ : Ok (λ x → self (` x)) [] []
 ok₀ = mk-ok (λ x ()) (λ x ()) (λ x → refl)
 
 simplify-correct : ∀ M → Closed M → Equivalent (S.sem M) (S.sem (simplify M))
-simplify-correct M c = equiv-sym (equivalent (record
-  { match = match (simplify M) M
-  ; init = 0 , base (simplify M) M (eval~ {fl = inline-fuel} ok₀ (closed-ws {M} c) halt)
-  ; sim = sim (simplify M) M }))
+simplify-correct M c = equiv-sym (equivalent
+  (lag-fsim (lag-now (eval~ {fl = inline-fuel} ok₀ (closed-ws {M} c) halt)) (base-sim (simplify M) M)))
