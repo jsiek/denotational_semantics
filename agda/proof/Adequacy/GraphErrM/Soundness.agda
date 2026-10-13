@@ -26,7 +26,7 @@ open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con-⊆; ρ₀)
   renaming (const to dconst)
 open import proof.Framework.GraphModel.OpsBase using (ℬ; nthD; ℬ-consis)
-open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ErrorMonad renaming (Val to Valᴰ)
 open import proof.Framework.GraphModel.ContinuityBase using (mono; consis)
 open import proof.Semantics.GraphErrM.Prim using (primᵐ; primᵐ-good) renaming (out to dout)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
@@ -125,7 +125,7 @@ AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ 
 {- every component has values and no error -}
 Vals : List (𝒫 Value) → Set
 Vals [] = ⊤
-Vals (D ∷ Ds) = (Clean D × nonempty D) × Vals Ds
+Vals (D ∷ Ds) = Valᴰ D × Vals Ds
 
 bindL-β : ∀ Ds {K} → (∀ {Xs Ys} → Xs ⊆L Ys → K Xs ⊆ K Ys) → Vals Ds → bindL Ds K ≃ K Ds
 bindL-β [] mK _ = ≃-refl
@@ -238,17 +238,16 @@ Vals⇒AllNE (D ∷ Ds) ⟨ ⟨ _ , ne ⟩ , vs ⟩ = ⟨ ne , Vals⇒AllNE Ds v
 shape-ω : ∀ o → ShapeOf o ω → ⊥
 shape-ω (o-const B k) ()
 
-𝒱-clean : ∀ v → Clean (𝒱 v)
+𝒱-val : ∀ v → Valᴰ (𝒱 v)
 𝒱-shape : ∀ v → Σ[ d ∈ Value ] d ∈ 𝒱 v × ShapeOf (obs v) d
 𝒱s-vals : ∀ vs → Vals (𝒱s vs)
-𝒱-clean (clo N γ) = Λᵐ-clean
-𝒱-clean (const B k) = λ { .ω () refl }
-𝒱-clean (tup vs) d d∈ refl with proj₁ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) d d∈
-... | ()
-𝒱-clean (T.inl v) = ≫=-clean {F = λ X → inl ⟨ X , ptt ⟩} (𝒱-clean v) (λ { .ω () refl })
-  where open import proof.Framework.GraphModel.Ops using (inl)
-𝒱-clean (T.inr v) = ≫=-clean {F = λ X → inr ⟨ X , ptt ⟩} (𝒱-clean v) (λ { .ω () refl })
-  where open import proof.Framework.GraphModel.Ops using (inr)
+𝒱-val (clo N γ) = ⟨ Λᵐ-clean , ⟨ ν , ⟨ tt , tt ⟩ ⟩ ⟩
+𝒱-val (const B k) = ⟨ (λ { .ω () refl }) , ⟨ dconst k , ⟨ refl , refl ⟩ ⟩ ⟩
+𝒱-val (tup vs) = ⟨ (λ { d d∈ refl → shape-ω' (proj₁ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) d d∈) }) , ⟨ _ , proj₁ (proj₂ (𝒱-shape (tup vs))) ⟩ ⟩
+  where shape-ω' : ω ∈ 𝒯P (𝒱s vs) → ⊥
+        shape-ω' ()
+𝒱-val (T.inl v) = inlᵐ-val (𝒱-val v)
+𝒱-val (T.inr v) = inrᵐ-val (𝒱-val v)
 𝒱-shape (clo N γ) = ⟨ ν , ⟨ ⟨ tt , tt ⟩ , tt ⟩ ⟩
 𝒱-shape (const B k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , refl ⟩ ⟩
 𝒱-shape (tup []) = ⟨ ⟨⟩ , ⟨ tt , refl ⟩ ⟩
@@ -256,7 +255,7 @@ shape-ω (o-const B k) ()
   ⟨ tup[_]_ {suc (length vs)} zero (proj₁ (𝒱-shape v))
   , ⟨ proj₂ (𝒯L-β (𝒱s (v ∷ vs)) vs′) _ ⟨ ⟨ length-𝒱s vs , proj₁ (proj₂ (𝒱-shape v)) ⟩ , Vals⇒AllNE _ vs′ ⟩
     , ⟨ length-obs-list vs , proj₂ (proj₂ (𝒱-shape v)) ⟩ ⟩ ⟩
-  where vs′ = ⟨ ⟨ 𝒱-clean v , ⟨ _ , proj₁ (proj₂ (𝒱-shape v)) ⟩ ⟩ , 𝒱s-vals vs ⟩
+  where vs′ = ⟨ 𝒱-val v , 𝒱s-vals vs ⟩
 𝒱-shape (T.inl v) with 𝒱-shape v
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ left d , ⟨ inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , ⟨ d∈ , d≢ ⟩ ⟩ , sh ⟩ ⟩
   where d≢ = λ { refl → shape-ω (obs v) sh }
@@ -264,14 +263,10 @@ shape-ω (o-const B k) ()
 ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ right d , ⟨ inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , ⟨ d∈ , d≢ ⟩ ⟩ , sh ⟩ ⟩
   where d≢ = λ { refl → shape-ω (obs v) sh }
 𝒱s-vals [] = tt
-𝒱s-vals (v ∷ vs) = ⟨ ⟨ 𝒱-clean v , ⟨ _ , proj₁ (proj₂ (𝒱-shape v)) ⟩ ⟩ , 𝒱s-vals vs ⟩
+𝒱s-vals (v ∷ vs) = ⟨ 𝒱-val v , 𝒱s-vals vs ⟩
 
-𝒱-val : ∀ v → Conv (𝒱 v)
-𝒱-val v with 𝒱-shape v
-... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , ⟨ d∈ , 𝒱-clean v d d∈ ⟩ ⟩
-
-𝒱-nonempty : ∀ v → nonempty (𝒱 v)
-𝒱-nonempty v = ⟨ proj₁ (𝒱-val v) , proj₁ (proj₂ (𝒱-val v)) ⟩
+𝒱-conv : ∀ v → Conv (𝒱 v)
+𝒱-conv v = Val⇒Conv (𝒱-val v)
 
 {- the kind of a machine value -}
 vkind : Val → Kind
@@ -293,7 +288,7 @@ vkind (T.inr v) = inj
 
 {- the check of a kind fails on a value of another kind -}
 𝒱-bad : ∀ v {k} → vkind v ≢ k → Bad k ⌊ 𝒱 v ⌋
-𝒱-bad v ne with 𝒱-val v
+𝒱-bad v ne with 𝒱-conv v
 ... | ⟨ d , d∈ ⟩ = ⟨ d , ⟨ d∈ , (λ eq → ne (trans (sym (𝒱-kind v d d∈)) eq)) ⟩ ⟩
 
 AllCon : List (𝒫 Value) → Set
@@ -333,7 +328,7 @@ At-con (suc i) (D ∷ Ds) ⟨ _ , cs ⟩ a a' = At-con i Ds cs a a'
 
 𝓔-nonempty : ∀ γ → proof.Framework.GraphModel.Env.nonempty-env (𝓔 γ)
 𝓔-nonempty [] x = ⟨ ω , refl ⟩
-𝓔-nonempty (v ∷ γ) zero = 𝒱-nonempty v
+𝓔-nonempty (v ∷ γ) zero = proj₂ (𝒱-val v)
 𝓔-nonempty (v ∷ γ) (suc x) = 𝓔-nonempty γ x
 
 𝓔-lookup : ∀ γ x {v} → γ ‼ x ≡ just v → 𝒱 v ⊆ 𝓔 γ x
@@ -423,7 +418,7 @@ int-in (const B k) refl = ⟨ ⟨ refl , refl ⟩ , (λ ()) ⟩
 prim-⊆ : ∀ p v w r → δ? p (obs v) (obs w) ≡ just r → 𝒱 (out r) ⊆ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
 prim-⊆ p v w r e d d∈ with δ?-inv p (obs v) (obs w) e
 ... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ =
-  inj₂ ⟨ 𝒱-val v , inj₂ ⟨ 𝒱-val w , inj₂ (inj₂ ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩) ⟩ ⟩
+  inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₂ (inj₂ ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , 𝒱-out (δ p n m) d d∈ ⟩ ⟩ ⟩ ⟩) ⟩ ⟩
 
 {- a value whose observation is not an integer is not of the kind of one -}
 notint-kind : ∀ v → (∀ n → obs v ≢ o-const Int n) → vkind v ≢ base Int
@@ -450,29 +445,29 @@ notint-kind (const .Int k) f refl = f k refl
 
 prim-ω : ∀ p v w → δ? p (obs v) (obs w) ≡ nothing → ω ∈ primᵐ p ⟨ 𝒱 v , ⟨ 𝒱 w , ptt ⟩ ⟩
 prim-ω p v w e with δ?-none p (obs v) (obs w) e
-... | inj₁ ni = inj₂ ⟨ 𝒱-val v , inj₂ ⟨ 𝒱-val w , inj₁ ⟨ refl , 𝒱-bad v (notint-kind v ni) ⟩ ⟩ ⟩
-... | inj₂ ni = inj₂ ⟨ 𝒱-val v , inj₂ ⟨ 𝒱-val w , inj₂ (inj₁ ⟨ refl , 𝒱-bad w (notint-kind w ni) ⟩) ⟩ ⟩
+... | inj₁ ni = inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₁ ⟨ refl , 𝒱-bad v (notint-kind v ni) ⟩ ⟩ ⟩
+... | inj₂ ni = inj₂ ⟨ 𝒱-conv v , inj₂ ⟨ 𝒱-conv w , inj₂ (inj₁ ⟨ refl , 𝒱-bad w (notint-kind w ni) ⟩) ⟩ ⟩
 
 {- Steps shrink the denotation of the state --------------------------------}
 
 {- β: the body of a function, run on a value -}
 app-β : ∀ N γ w → ⟦ N ⟧ (𝓔 (w ∷ γ)) ⊆ ⋆ᵐ ⟨ 𝒱 (clo N γ) , ⟨ 𝒱 w , ptt ⟩ ⟩
 app-β N γ w d d∈ =
-  proj₂ (letᵐ-β (body-mono N (𝓔 γ)) (body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 w) (𝒱-nonempty w))
-                (𝒱-con w) (𝒱-clean w) (𝒱-nonempty w)) d (⟦⟧-monotone N (𝓔-ext w γ) d d∈)
+  proj₂ (letᵐ-β (body-mono N (𝓔 γ)) (body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 w) (proj₂ (𝒱-val w)))
+                (𝒱-con w) (𝒱-val w)) d (⟦⟧-monotone N (𝓔-ext w γ) d d∈)
 
 case-inl-β : ∀ M N γ v → ⟦ M ⟧ (𝓔 (v ∷ γ))
   ⊆ 𝒞ᵐ ⟨ inlᵐ ⟨ 𝒱 v , ptt ⟩ , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩
 case-inl-β M N γ v d d∈ =
   proj₂ (𝒞ᵐ-inl-β {G = λ X → ⟦ N ⟧ (X • 𝓔 γ)} (body-mono M (𝓔 γ))
-           (body-continuous M (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (𝒱-nonempty v)) (𝒱-con v) (𝒱-clean v) (𝒱-nonempty v))
+           (body-continuous M (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (proj₂ (𝒱-val v))) (𝒱-con v) (𝒱-val v))
         d (⟦⟧-monotone M (𝓔-ext v γ) d d∈)
 
 case-inr-β : ∀ M N γ v → ⟦ N ⟧ (𝓔 (v ∷ γ))
   ⊆ 𝒞ᵐ ⟨ inrᵐ ⟨ 𝒱 v , ptt ⟩ , ⟨ (λ X → ⟦ M ⟧ (X • 𝓔 γ)) , ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩ ⟩ ⟩
 case-inr-β M N γ v d d∈ =
   proj₂ (𝒞ᵐ-inr-β {F = λ X → ⟦ M ⟧ (X • 𝓔 γ)} (body-mono N (𝓔 γ))
-           (body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (𝒱-nonempty v)) (𝒱-con v) (𝒱-clean v) (𝒱-nonempty v))
+           (body-continuous N (𝓔 γ) (𝓔-nonempty γ) (𝒱 v) (proj₂ (𝒱-val v))) (𝒱-con v) (𝒱-val v))
         d (⟦⟧-monotone N (𝓔-ext v γ) d d∈)
 
 step-⊆ : ∀ s {s'} → step s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
@@ -495,7 +490,7 @@ step-⊆ (ret w (appR (clo N γ) κ)) refl = 𝒦-mono κ (app-β N γ w)
 step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
 step-⊆ (ret (tup vs) (getK i κ)) eq with proj i vs in p
 step-⊆ (ret (tup vs) (getK i κ)) refl | just v =
-  𝒦-mono κ λ d d∈ → inj₂ ⟨ 𝒱-val (tup vs) , inj₂ ⟨ proj₂ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) _
+  𝒦-mono κ λ d d∈ → inj₂ ⟨ 𝒱-conv (tup vs) , inj₂ ⟨ proj₂ (𝒯L-β (𝒱s vs) (𝒱s-vals vs)) _
                       ⟨ proj-𝒱s i vs p d d∈ , Vals⇒AllNE _ (𝒱s-vals vs) ⟩ , (λ ()) ⟩ ⟩
 step-⊆ (ret (tup vs) (getK i κ)) () | nothing
 step-⊆ (ret v (inlK κ)) refl d d∈ = d∈
@@ -516,20 +511,20 @@ step-⊆ (ret w (letK N γ κ)) refl = 𝒦-mono κ (app-β N γ w)
 
 errsL-rev : ∀ vs Ds → errsL Ds → errsL (rev𝒱 vs Ds)
 errsL-rev [] Ds e = e
-errsL-rev (v ∷ vs) Ds e = errsL-rev vs (𝒱 v ∷ Ds) (inj₂ ⟨ 𝒱-val v , e ⟩)
+errsL-rev (v ∷ vs) Ds e = errsL-rev vs (𝒱 v ∷ Ds) (inj₂ ⟨ 𝒱-conv v , e ⟩)
 
 𝒦-ω : ∀ κ {D} → ω ∈ D → ω ∈ 𝒦 κ D
 𝒦-ω halt ω∈ = ω∈
 𝒦-ω (appL M γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
-𝒦-ω (appR v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-val v , inj₂ (inj₁ ⟨ refl , ω∈ ⟩) ⟩)
+𝒦-ω (appR v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv v , inj₂ (inj₁ ⟨ refl , ω∈ ⟩) ⟩)
 𝒦-ω (tupK vs Ms γ κ) {D} ω∈ = 𝒦-ω κ (errsL-ω _ (errsL-rev vs (D ∷ _) (inj₁ ω∈)))
 𝒦-ω (getK i κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
 𝒦-ω (inlK κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
 𝒦-ω (inrK κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
 𝒦-ω (caseK M N γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
 𝒦-ω (primL p M γ κ) ω∈ = 𝒦-ω κ (inj₁ ⟨ refl , ω∈ ⟩)
-𝒦-ω (primR p v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-val v , inj₁ ⟨ refl , ω∈ ⟩ ⟩)
-𝒦-ω (letK N γ κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (clo N γ) , inj₂ (inj₁ ⟨ refl , ω∈ ⟩) ⟩)
+𝒦-ω (primR p v κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv v , inj₁ ⟨ refl , ω∈ ⟩ ⟩)
+𝒦-ω (letK N γ κ) ω∈ = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (clo N γ) , inj₂ (inj₁ ⟨ refl , ω∈ ⟩) ⟩)
 
 {- Final states ----------------------------------------------------------------}
 
@@ -548,24 +543,24 @@ final-err (eval (inr-op ⦅ M ,, Nil ⦆) γ κ) ()
 final-err (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) γ κ) ()
 final-err (eval (prim p ⦅ L ,, M ,, Nil ⦆) γ κ) ()
 final-err (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) γ κ) ()
-final-err (ret (const B k) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
-final-err (ret (tup vs) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
-final-err (ret (T.inl v) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
-final-err (ret (T.inr v) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
-final-err (ret w (appR (const B k) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
-final-err (ret w (appR (tup vs) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
-final-err (ret w (appR (T.inl v) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
-final-err (ret w (appR (T.inr v) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
+final-err (ret (const B k) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret (tup vs) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
+final-err (ret (T.inl v) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
+final-err (ret (T.inr v) (appL M γ' κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (const B k) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (tup vs) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (T.inl v) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
+final-err (ret w (appR (T.inr v) κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
 final-err (ret (tup vs) (getK i κ)) eq with proj i vs in p
 final-err (ret (tup vs) (getK i κ)) () | just v
-final-err (ret (tup vs) (getK i κ)) refl | nothing = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ { refl → proj-nothing i vs p refl }) ⟩ ⟩)
-final-err (ret (clo N γ) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (clo N γ) , inj₁ ⟨ refl , 𝒱-bad (clo N γ) (λ ()) ⟩ ⟩)
-final-err (ret (const B k) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
-final-err (ret (T.inl v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
-final-err (ret (T.inr v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
-final-err (ret (clo N' γ') (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (clo N' γ') , inj₁ ⟨ refl , 𝒱-bad (clo N' γ') (λ ()) ⟩ ⟩)
-final-err (ret (const B k) (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
-final-err (ret (tup vs) (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-val (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
+final-err (ret (tup vs) (getK i κ)) refl | nothing = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ { refl → proj-nothing i vs p refl }) ⟩ ⟩)
+final-err (ret (clo N γ) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (clo N γ) , inj₁ ⟨ refl , 𝒱-bad (clo N γ) (λ ()) ⟩ ⟩)
+final-err (ret (const B k) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret (T.inl v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inl v) , inj₁ ⟨ refl , 𝒱-bad (T.inl v) (λ ()) ⟩ ⟩)
+final-err (ret (T.inr v) (getK i κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (T.inr v) , inj₁ ⟨ refl , 𝒱-bad (T.inr v) (λ ()) ⟩ ⟩)
+final-err (ret (clo N' γ') (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (clo N' γ') , inj₁ ⟨ refl , 𝒱-bad (clo N' γ') (λ ()) ⟩ ⟩)
+final-err (ret (const B k) (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (const B k) , inj₁ ⟨ refl , 𝒱-bad (const B k) (λ ()) ⟩ ⟩)
+final-err (ret (tup vs) (caseK M N γ κ)) refl = 𝒦-ω κ (inj₂ ⟨ 𝒱-conv (tup vs) , inj₁ ⟨ refl , 𝒱-bad (tup vs) (λ ()) ⟩ ⟩)
 final-err (ret w (primR p v κ)) eq with δ? p (obs v) (obs w) in e
 final-err (ret w (primR p v κ)) () | just r
 final-err (ret w (primR p v κ)) refl | nothing = 𝒦-ω κ (prim-ω p v w e)

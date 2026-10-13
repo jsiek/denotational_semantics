@@ -85,3 +85,9 @@ push-plus (suc n) ⟨ D , Ds ⟩ ρ j rewrite sym (+-suc n j) = push-plus n Ds (
 
 Clos2ᵐ-con-env : ∀ M {ρ ρ'} → ρ ~ₑ[ Every _~_ ] ρ' → Every _~_ (⟦ M ⟧ ρ) (⟦ M ⟧ ρ')
 Clos2ᵐ-con-env M = ⟦⟧-pres (Every _~_) 𝕆-Clos2ᵐ-consis (Con-⌈⌉ ω) M
+
+{- a closure over n values is the function of its body on them -}
+clos-β : ∀ m (a : Arg (ν-n m (ν ■))) ρ {Ds} → AllVal m Ds
+  → 𝕆-Clos2ᵐ (clos-op m) ⟨ ⟦ a ⟧ₐ ρ , Ds ⟩ ≃ Λᵐ ⟨ apply-n m (⟦ a ⟧ₐ ρ) Ds , ptt ⟩
+clos-β m a ρ = binds-β m (λ {Xs} {Ys} Xs⊆ → lower (mono (Λᵐ-good {⊤}) _ _
+  ⟨ apply-n-pres _⊆_ m (⟦ a ⟧ₐ ρ) (⟦ a ⟧ₐ ρ) Xs Ys (⟦⟧-monotone-arg a (λ _ _ z → z)) Xs⊆ , ptt ⟩))

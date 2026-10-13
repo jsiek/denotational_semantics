@@ -28,7 +28,7 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase using (nthD)
 open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; 𝒞) renaming (proj to projD; inl to inlD; inr to inrD)
 open import proof.Framework.GraphModel.DOpSig using (Results)
-open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ErrorMonad hiding (Val)
 open import proof.Semantics.GraphErrM.Prim using (primD) renaming (out to dout)
 open import Language.Prim using (int; bool; δ)
 open import Language.ISWIM
@@ -430,10 +430,9 @@ adequate (prim p ⦅ L ,, M ,, Nil ⦆) {ρ} {γ} G w∈ =
   PRIM v allL u allM w (inj₂ (inj₂ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩)) with allL _ n∈ | allM _ m∈
   ... | refl | refl = inj₂ ⟨ out (δ p n m) , ⟨ (λ κ → refl ∷↠ done) , 𝕍-out (δ p n m) ⟩ ⟩
 
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) G (inj₁ ⟨ refl , ⟨ () , _ ⟩ ⟩)
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) G (inj₂ ⟨ _ , inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩ ⟩) =
-  ⊥-elim (ek (Λᵐ-fun e (proj₁ e∈)))
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G (inj₂ ⟨ _ , inj₂ w∈ ⟩) =
-  step₁ (λ κ → refl) (ℂ-bind {F = λ X → ⋆ ⟨ ⌊ Λᵐ ⟨ (λ Y → ⟦ N ⟧ (Y • ρ)) , ptt ⟩ ⌋ , ⟨ X , ptt ⟩ ⟩} (letK N γ) (λ d → adequate M (λ x p → G x (inj₁ p))) w∈
-    λ { v all w ⟨ V , ⟨ ⟨ ⟨ ⟨ w∈′ , _ ⟩ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ →
+adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {ρ} {γ} G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} (letK N γ) (λ d → adequate M (λ x p → G x (inj₁ p)))
+    (proj₁ (letᵐ-unfold {⟦ M ⟧ ρ} {F}) _ w∈)
+    λ { v all w ⟨ V , ⟨ ⟨ ⟨ w∈′ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ →
         step₁ (λ κ → refl) (adequate N (𝔾-ext V v (λ x p → G x (inj₂ (inj₁ p))) (all→𝕍s V (λ d d∈ → all d (V⊆ d d∈)))) w∈′) })
+  where F = λ Y → ⟦ N ⟧ (Y • ρ)

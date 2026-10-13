@@ -77,6 +77,13 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym
 Clean : 𝒫 Value → Set
 Clean D = ∀ d → d ∈ D → d ≢ ω
 
+{- a set of values: nonempty, without ω -}
+Val : 𝒫 Value → Set
+Val D = Clean D × nonempty D
+
+AllVal : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
+AllVal n Ds = ∀ i → Val (nthD Ds i)
+
 {- a set consistent with one that errs has no value, and the other way -}
 ω-Conv : ∀ {D E} → Every _~_ D E → ω ∈ D → Conv E → ⊥
 ω-Conv D~ ω∈ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = d≢ (ω~ (D~ ω d ω∈ d∈))
@@ -352,7 +359,7 @@ binds-cont (suc n) ⟨ E , Es ⟩ NE ⟨ ok₁@(⟨ m , c ⟩) , ok ⟩ mK cK =
        (λ Ms okM → cK ⟨ (λ ρ → ⌊ E ρ ⌋) , Ms ⟩ ⟨ ⌊⌋-ok ok₁ , okM ⟩))
 
 {- left unit, for n operands that have values and no errors -}
-binds-β : ∀ n {Ds K} → Rel⊆ n K K → (∀ i → Clean (nthD Ds i) × nonempty (nthD Ds i)) → binds n Ds K ≃ K Ds
+binds-β : ∀ n {Ds K} → Rel⊆ n K K → AllVal n Ds → binds n Ds K ≃ K Ds
 binds-β zero mK _ = ≃-refl
 binds-β (suc n) {⟨ D , Ds ⟩} mK cn =
   ≃-trans (≫=-β (λ X⊆ → binds-mono n (⊆s-refl n Ds) (λ Xs⊆ → mK ⟨ lift X⊆ , Xs⊆ ⟩)) (proj₁ (cn zero)) (proj₂ (cn zero)))
@@ -387,11 +394,16 @@ binds-assoc (suc n) {⟨ D , Ds ⟩} {K} {G} m =
 ⋆ᵐ-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) ⋆ᵐ
 ⋆ᵐ-good = strict-good (checkₒ-good (strict₂-good ⋆-good) (λ {X} {Ds} → ≫=-needs {D = proj₁ Ds} (λ {Y} → ⋆-needs {X} {Y})))
 
+{- n binds of the operands of a Good kernel -}
+binds-good : ∀ {P} n {g : DOp (𝒫 Value) (replicate n ■)} → Good P (replicate n ■) g
+  → Good P (replicate n ■) (λ Ds → binds n Ds g)
+binds-good n G = record
+  { mono = λ _ _ Ds⊆ → lift (binds-mono n Ds⊆ (λ Xs⊆ → lower (mono G _ _ Xs⊆)))
+  ; consis = λ p _ _ Ds~ → lift (binds-consis n Ds~ (λ Xs~ → lower (consis G p _ _ Xs~)))
+  ; cont = λ Es NE ok → binds-cont n Es NE ok (λ _ Xs⊆ → lower (mono G _ _ Xs⊆)) (λ Ms okM → cont G Ms NE okM) }
+
 𝒯ᵐ-good : ∀ {P} n → Good P (replicate n ■) (𝒯ᵐ n)
-𝒯ᵐ-good n = record
-  { mono = λ _ _ Ds⊆ → lift (binds-mono n Ds⊆ (λ Xs⊆ → lower (𝒯-mono n _ _ Xs⊆)))
-  ; consis = λ _ _ _ Ds~ → lift (binds-consis n Ds~ (λ Xs~ → lower (𝒯-consis n _ _ Xs~)))
-  ; cont = λ Es NE ok → binds-cont n Es NE ok (λ _ Xs⊆ → lower (𝒯-mono n _ _ Xs⊆)) (λ Ms okM → 𝒯-cont n Ms NE okM) }
+𝒯ᵐ-good n = binds-good n (𝒯-good n)
 
 projᵐ-good : ∀ {P n} (i : Fin n) → Good P (■ ∷ []) (projᵐ i)
 projᵐ-good i = strict-good (checkₒ-good (proj-good i) (λ d d∈ → inj₂ ⟨ _ , ⟨ d∈ , refl ⟩ ⟩))
@@ -499,8 +511,8 @@ BodyIn F F' = ∀ V → V ≢ [] → V ≈ V → NoErr V → F (mem V) ⊆ F' (m
   B w ⟨ V , ⟨ e∈ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ⟨ V , ⟨ ⟨ e∈ , (λ ω∈ → clD ω (V⊆ ω ω∈) refl) ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩
 
 {- let x = D in F x means F D, for D a consistent set of values -}
-letᵐ-β : ∀ {F D} → Mono₁ F → Finitary F D → Con D → Clean D → nonempty D → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ F D
-letᵐ-β {F} {D} m fin cD clD neD =
+letᵐ-β : ∀ {F D} → Mono₁ F → Finitary F D → Con D → Val D → letᵐ ⟨ D , ⟨ F , ptt ⟩ ⟩ ≃ F D
+letᵐ-β {F} {D} m fin cD ⟨ clD , neD ⟩ =
   ≃-trans (⋆ᵐ-val {Λᵐ ⟨ F , ptt ⟩} {D} Λᵐ-clean ⟨ ν , ⟨ tt , tt ⟩ ⟩ Λᵐ-fun)
   (≃-trans (≫=-β {F = λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} (⋆-r {Λᵐ ⟨ F , ptt ⟩}) clD neD) (Λᵐ-β m fin cD clD))
 
@@ -519,16 +531,16 @@ private
     (≃-trans (checked-ok (λ e e∈ → proj₁ (k e e∈)))
        (𝒞-≃ {F = F} {F} {G} {G} ⟨ ⇂-⊆ , ⇂-all (λ e e∈ → proj₂ (k e e∈)) ⟩ (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))))
 
-𝒞ᵐ-inl-β : ∀ {D F G} → Mono₁ F → Finitary F D → Con D → Clean D → nonempty D
+𝒞ᵐ-inl-β : ∀ {D F G} → Mono₁ F → Finitary F D → Con D → Val D
   → 𝒞ᵐ ⟨ inlᵐ ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ F D
-𝒞ᵐ-inl-β {F = F} {G} m fin cD clD neD =
+𝒞ᵐ-inl-β {F = F} {G} m fin cD ⟨ clD , neD ⟩ =
   ≃-trans (𝒞ᵐ-inj {F = F} {G} left inl (λ X⊆ → lower (inl-mono _ _ ⟨ lift X⊆ , ptt ⟩)) (λ { c ω () refl })
              (λ { (left v) v∈ → ⟨ refl , clD v v∈ ⟩ }) (λ e e∈ → e∈) clD neD)
           (𝒞-inl-β {G = G} m fin cD)
 
-𝒞ᵐ-inr-β : ∀ {D F G} → Mono₁ G → Finitary G D → Con D → Clean D → nonempty D
+𝒞ᵐ-inr-β : ∀ {D F G} → Mono₁ G → Finitary G D → Con D → Val D
   → 𝒞ᵐ ⟨ inrᵐ ⟨ D , ptt ⟩ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ ≃ G D
-𝒞ᵐ-inr-β {F = F} {G} m fin cD clD neD =
+𝒞ᵐ-inr-β {F = F} {G} m fin cD ⟨ clD , neD ⟩ =
   ≃-trans (𝒞ᵐ-inj {F = F} {G} right inr (λ X⊆ → lower (inr-mono _ _ ⟨ lift X⊆ , ptt ⟩)) (λ { c ω () refl })
              (λ { (right v) v∈ → ⟨ refl , clD v v∈ ⟩ }) (λ e e∈ → e∈) clD neD)
           (𝒞-inr-β {F = F} m fin cD)
@@ -552,30 +564,12 @@ projᵐ-𝒯 (suc n) Xs ne i =
      ⟨ (λ { d ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ → d∈ }) , (λ d d∈ → ⟨ refl , ⟨ d∈ , ne ⟩ ⟩) ⟩)
 
 {- a projection from a tuple of sets of values -}
-projᵐ-𝒯ᵐ : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) → (∀ j → Clean (nthD Ds j) × nonempty (nthD Ds j))
+projᵐ-𝒯ᵐ : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) → AllVal n Ds
   → (i : Fin n) → projᵐ i ⟨ 𝒯ᵐ n Ds , ptt ⟩ ≃ nthD Ds i
 projᵐ-𝒯ᵐ n Ds cn i =
   ≃-trans (projᵐ-≃ i (binds-β n (λ Xs⊆ → lower (𝒯-mono n _ _ Xs⊆)) cn)) (projᵐ-𝒯 n Ds (λ j → proj₂ (cn j)) i)
 
 {- Closures and pairs (Clos3, Clos4) --------------------------------------------------}
-
-swap₂₃ : ∀ {bs} → DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ bs) → DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ bs)
-swap₂₃ g ⟨ D , ⟨ E , ⟨ F , Ds ⟩ ⟩ ⟩ = g ⟨ D , ⟨ F , ⟨ E , Ds ⟩ ⟩ ⟩
-
-swap₂₃-good : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ bs)} → Good P (■ ∷ ■ ∷ ■ ∷ bs) g
-  → Good P (■ ∷ ■ ∷ ■ ∷ bs) (swap₂₃ g)
-swap₂₃-good G = record
-  { mono = λ { ⟨ D , ⟨ E , ⟨ F , Ds ⟩ ⟩ ⟩ ⟨ D' , ⟨ E' , ⟨ F' , Ds' ⟩ ⟩ ⟩ ⟨ q , ⟨ r , ⟨ s , t ⟩ ⟩ ⟩ →
-      mono G ⟨ D , ⟨ F , ⟨ E , Ds ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ E' , Ds' ⟩ ⟩ ⟩ ⟨ q , ⟨ s , ⟨ r , t ⟩ ⟩ ⟩ }
-  ; consis = λ p → λ { ⟨ D , ⟨ E , ⟨ F , Ds ⟩ ⟩ ⟩ ⟨ D' , ⟨ E' , ⟨ F' , Ds' ⟩ ⟩ ⟩ ⟨ q , ⟨ r , ⟨ s , t ⟩ ⟩ ⟩ →
-      consis G p ⟨ D , ⟨ F , ⟨ E , Ds ⟩ ⟩ ⟩ ⟨ D' , ⟨ F' , ⟨ E' , Ds' ⟩ ⟩ ⟩ ⟨ q , ⟨ s , ⟨ r , t ⟩ ⟩ ⟩ }
-  ; cont = λ { ⟨ E₁ , ⟨ E₂ , ⟨ E₃ , Es ⟩ ⟩ ⟩ NE ⟨ o₁ , ⟨ o₂ , ⟨ o₃ , os ⟩ ⟩ ⟩ →
-      cont G ⟨ E₁ , ⟨ E₃ , ⟨ E₂ , Es ⟩ ⟩ ⟩ NE ⟨ o₁ , ⟨ o₃ , ⟨ o₂ , os ⟩ ⟩ ⟩ } }
-
-{- strict in the third operand -}
-strict₃-good : ∀ {P bs} {g : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ bs)} → Good P (■ ∷ ■ ∷ ■ ∷ bs) g
-  → Good P (■ ∷ ■ ∷ ■ ∷ bs) (swap₂₃ {bs} (strict₂ {■ ∷ bs} (swap₂₃ {bs} g)))
-strict₃-good G = swap₂₃-good (strict₂-good (swap₂₃-good G))
 
 ΛΛᵐ-good : ∀ {P} → Good P (∁ (ν (ν ■)) ∷ []) ΛΛᵐ
 ΛΛᵐ-good = ⇂-good ΛΛ-good
@@ -595,7 +589,7 @@ closᵐ-good {P} n = record
         , ⟨ ⟨ mono-env (replicate n ■) (mono (𝒯ᵐ-good {P} n)) Es oks , cont (𝒯ᵐ-good {P} n) Es NE oks ⟩ , ptt ⟩ ⟩ } }
 
 pairᵐ-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) pairᵐ
-pairᵐ-good = strict-good (strict₂-good pair-good)
+pairᵐ-good = binds-good 2 pair-good
 
 carᵐ-good : ∀ {P} → Good P (■ ∷ []) carᵐ
 carᵐ-good = strict-good (checkₒ-good car-good (λ { w ⟨ v , p∈ ⟩ → inj₂ ⟨ _ , ⟨ p∈ , refl ⟩ ⟩ }))
@@ -604,8 +598,7 @@ cdrᵐ-good : ∀ {P} → Good P (■ ∷ []) cdrᵐ
 cdrᵐ-good = strict-good (checkₒ-good cdr-good (λ { w ⟨ u , p∈ ⟩ → inj₂ ⟨ _ , ⟨ p∈ , refl ⟩ ⟩ }))
 
 callᵐ-good : ∀ {P} → Good P (■ ∷ ■ ∷ ■ ∷ []) callᵐ
-callᵐ-good = strict-good (strict₂-good (strict₃-good {g = checkₒ {■ ∷ ■ ∷ []} fun ⋆₂} (checkₒ-good ⋆₂-good
-  (λ { w ⟨ U , ⟨ ⟨ V , ⟨ f∈ , _ ⟩ ⟩ , _ ⟩ ⟩ → inj₂ ⟨ _ , ⟨ f∈ , refl ⟩ ⟩ }))))
+callᵐ-good = binds-good 3 (checkₒ-good ⋆₂-good (λ { w ⟨ U , ⟨ ⟨ V , ⟨ f∈ , _ ⟩ ⟩ , _ ⟩ ⟩ → inj₂ ⟨ _ , ⟨ f∈ , refl ⟩ ⟩ }))
 
 {- the values of a bind are values of its continuation, on the values of
    its operand; the values of a check are values of its kernel -}
@@ -642,10 +635,6 @@ callᵐ-good = strict-good (strict₂-good (strict₃-good {g = checkₒ {■ �
 
 {- Sets of values ----------------------------------------------------------------------}
 
-{- a set of values: nonempty, without ω -}
-Val : 𝒫 Value → Set
-Val D = Clean D × nonempty D
-
 Val⇒Conv : ∀ {D} → Val D → Conv D
 Val⇒Conv ⟨ cl , ⟨ d , d∈ ⟩ ⟩ = ⟨ d , ⟨ d∈ , cl d d∈ ⟩ ⟩
 
@@ -663,9 +652,6 @@ Val-≃ ⟨ D⊆ , E⊆ ⟩ ⟨ cl , ⟨ d , d∈ ⟩ ⟩ = ⟨ (λ e e∈ → c
 ≫=-val : ∀ {D F} → Val D → (∀ {X} → Val X → Val (F X)) → Val (D ≫= F)
 ≫=-val {D} {F} vD hF with hF (⌊⌋-val (Val⇒Conv vD))
 ... | ⟨ clF , ⟨ w , w∈ ⟩ ⟩ = ⟨ ≫=-clean {F = F} (proj₁ vD) clF , ⟨ w , inj₂ ⟨ Val⇒Conv vD , w∈ ⟩ ⟩ ⟩
-
-AllVal : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
-AllVal n Ds = ∀ i → Val (nthD Ds i)
 
 binds-val : ∀ n {Ds K} → AllVal n Ds → (∀ {Xs} → AllVal n Xs → Val (K Xs)) → Val (binds n Ds K)
 binds-val zero _ hK = hK (λ ())

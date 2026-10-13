@@ -8,7 +8,7 @@
   variables M uses. What changes is the closure: a Clos2 closure first
   evaluates its free variables, and is an error if one of them is. So
   the captured variables, ` (m - 1) , ... , ` 0, all those below the
-  bound of the function, must have values and no errors in ρ₂ (Vals),
+  bound of the function, must have values and no errors in ρ₂ (Val),
   which holds under the binders (they bind no ω) and, for a closed
   program, vacuously: no variable is below its bound, 0.
 
@@ -28,7 +28,7 @@ open import proof.Semantics.GraphErrM.Prim
 open import Language.ISWIM
 open import proof.Framework.Syntax.Uses Op sig
 open import proof.Semantics.GraphErrM.ISWIM
-open import proof.Semantics.GraphErrM.Clos2 as S2 using (apply-n; apply-n-pres; push; apply-push; push-plus) renaming
+open import proof.Semantics.GraphErrM.Clos2 as S2 using (apply-n; push; apply-push; push-plus; clos-β) renaming
   (⟦_⟧ to ⟦_⟧₂; ⟦_⟧ₐ to ⟦_⟧ₐ₂; ⟦_⟧₊ to ⟦_⟧₊₂; ⟦⟧-monotone-arg to ⟦⟧-monotone-arg₂)
 import Language.Clos2 as L2
 open import Compiler.Optimize using (bind-n-ast)
@@ -38,7 +38,8 @@ open import proof.Framework.GraphModel.Env using (Env)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; _<?_; _∸_; _+_; _⊔_)
 open import Data.Nat.Properties
-  using (+-identityʳ; +-suc; ≤-antisym; ≤-pred; ≮⇒≥; m≤m⊔n; m≤n⊔m; <-≤-trans; <-trans; n≮0; n<1+n)
+  using (+-identityʳ; +-suc; ≤-antisym; ≤-pred; ≮⇒≥; <-trans; n≮0; n<1+n)
+  renaming (m<n⇒m<n⊔o to <-⊔ˡ; m<n⇒m<o⊔n to <-⊔ʳ)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.List.Relation.Unary.Any using (here)
@@ -50,10 +51,6 @@ open import Data.Unit using (tt; ⊤)
 open import Level using (lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
-
-{- a set of values without errors -}
-Vals : 𝒫 Value → Set
-Vals D = Conv D × Clean D
 
 {- Binding the free variables one at a time ------------------------------------}
 
@@ -76,20 +73,9 @@ push-vars (suc n) ρ σ k k<sn with k <? n
   k≡n = ≤-antisym (≤-pred k<sn) (≮⇒≥ ¬k<n)
 
 {- the captured free variables have values, and no errors -}
-fv-vars-vals : ∀ m (ρ : Env Value) → (∀ k → k < m → Vals (ρ k)) → ∀ i → Conv (nthD (⟦ fv-vars m ⟧₊₂ ρ) i)
-fv-vars-vals (suc m) ρ V zero = proj₁ (V m (n<1+n m))
+fv-vars-vals : ∀ m (ρ : Env Value) → (∀ k → k < m → Val (ρ k)) → AllVal m (⟦ fv-vars m ⟧₊₂ ρ)
+fv-vars-vals (suc m) ρ V zero = V m (n<1+n m)
 fv-vars-vals (suc m) ρ V (suc i) = fv-vars-vals m ρ (λ k k< → V k (<-trans k< (n<1+n m))) i
-
-fv-vars-clean : ∀ m (ρ : Env Value) → (∀ k → k < m → Vals (ρ k)) → ∀ i → Clean (nthD (⟦ fv-vars m ⟧₊₂ ρ) i)
-fv-vars-clean (suc m) ρ V zero = proj₂ (V m (n<1+n m))
-fv-vars-clean (suc m) ρ V (suc i) = fv-vars-clean m ρ (λ k k< → V k (<-trans k< (n<1+n m))) i
-
-{- bounds of subterms -}
-<-⊔ˡ : ∀ {x a} b → x < a → x < a ⊔ b
-<-⊔ˡ {a = a} b x< = <-≤-trans x< (m≤m⊔n a b)
-
-<-⊔ʳ : ∀ {x} a {b} → x < b → x < a ⊔ b
-<-⊔ʳ a {b} x< = <-≤-trans x< (m≤n⊔m a b)
 
 {- under a binder -}
 rel-ext : ∀ B {ρ₁ ρ₂ : Env Value} {X} → (∀ x → Uses (suc x) B → ρ₁ x ≃ ρ₂ x)
@@ -97,23 +83,21 @@ rel-ext : ∀ B {ρ₁ ρ₂ : Env Value} {X} → (∀ x → Uses (suc x) B → 
 rel-ext B r zero _ = ≃-refl
 rel-ext B r (suc x) u = r x u
 
-vals-ext : ∀ B {ρ₂ : Env Value} {X} → Vals X → (∀ x → x < bound B ∸ 1 → Vals (ρ₂ x))
-  → ∀ x → x < bound B → Vals ((X • ρ₂) x)
+vals-ext : ∀ B {ρ₂ : Env Value} {X} → Val X → (∀ x → x < bound B ∸ 1 → Val (ρ₂ x))
+  → ∀ x → x < bound B → Val ((X • ρ₂) x)
 vals-ext B VX V zero _ = VX
 vals-ext B VX V (suc x) x< = V x (<-∸1 x<)
 
-noerr-vals : ∀ V → V ≢ [] → NoErr V → Vals (mem V)
-noerr-vals [] ne n = ⊥-elim (ne refl)
-noerr-vals (v ∷ V) ne n =
-  ⟨ ⟨ v , ⟨ here refl , (λ { refl → n (here refl) }) ⟩ ⟩ , (λ { .ω ω∈ refl → n ω∈ }) ⟩
+noerr-vals : ∀ V → V ≢ [] → NoErr V → Val (mem V)
+noerr-vals V ne n = ⟨ (λ { .ω ω∈ refl → n ω∈ }) , E≢[]⇒nonempty-mem ne ⟩
 
 {- The main lemma -------------------------------------------------------------}
 
-enc-correct : ∀ (M : AST) ρ₁ ρ₂ → (∀ x → x < bound M → Vals (ρ₂ x)) → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
+enc-correct : ∀ (M : AST) ρ₁ ρ₂ → (∀ x → x < bound M → Val (ρ₂ x)) → (∀ x → Uses x M → ρ₁ x ≃ ρ₂ x)
   → ⟦ M ⟧ ρ₁ ≃ ⟦ enclose M ⟧₂ ρ₂
 
 enc-args-correct : ∀ {n} (args : Args (replicate n ■)) ρ₁ ρ₂
-  → (∀ x → x < bound-args args → Vals (ρ₂ x)) → (∀ x → UsesArgs x args → ρ₁ x ≃ ρ₂ x)
+  → (∀ x → x < bound-args args → Val (ρ₂ x)) → (∀ x → UsesArgs x args → ρ₁ x ≃ ρ₂ x)
   → ∀ i → nthD (⟦ args ⟧₊ ρ₁) i ≃ nthD (⟦ enc-args args ⟧₊₂ ρ₂) i
 
 enc-correct (` x) ρ₁ ρ₂ V rel = rel x refl
@@ -121,7 +105,7 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel = G
   where
   m = bound N ∸ 1
   Ds = ⟦ fv-vars m ⟧₊₂ ρ₂
-  Vm : ∀ k → k < m → Vals (ρ₂ k)
+  Vm : ∀ k → k < m → Val (ρ₂ k)
   Vm k k< = V k (<-⊔ˡ 0 k<)
 
   {- the body finds its free variables where it found them before -}
@@ -131,22 +115,17 @@ enc-correct (lam ⦅ ⟩ N ,, Nil ⦆) ρ₁ ρ₂ V rel = G
                       | unbind-bind m (enclose N) =
     enc-correct N (mem U • ρ₁) (mem U • push Ds init₀) V' rel'
     where
-    V' : ∀ x → x < bound N → Vals ((mem U • push Ds init₀) x)
+    V' : ∀ x → x < bound N → Val ((mem U • push Ds init₀) x)
     V' zero _ = noerr-vals U neU nU
-    V' (suc k) k< = subst Vals (sym (push-vars m ρ₂ init₀ k (<-∸1 k<))) (Vm k (<-∸1 k<))
+    V' (suc k) k< = subst Val (sym (push-vars m ρ₂ init₀ k (<-∸1 k<))) (Vm k (<-∸1 k<))
     rel' : ∀ x → Uses x N → (mem U • ρ₁) x ≃ (mem U • push Ds init₀) x
     rel' zero _ = ≃-refl
     rel' (suc k) u =
       ≃-trans (rel k (inj₁ u))
               (≃-reflexive (sym (push-vars m ρ₂ init₀ k (<-∸1 (uses-bound (suc k) N u)))))
 
-  F = ⟦ bind-n-ast m (enclose N) ⟧ₐ₂ init₀
-  K = λ Xs → Λᵐ ⟨ apply-n m F Xs , ptt ⟩
-  mK : Rel⊆ m K K
-  mK {Xs} {Ys} Xs⊆ = lower (mono (Λᵐ-good {⊤}) ⟨ apply-n m F Xs , ptt ⟩ ⟨ apply-n m F Ys , ptt ⟩
-    ⟨ apply-n-pres _⊆_ m F F Xs Ys (⟦⟧-monotone-arg₂ {{S2.Clos2ᵐ-Semantics}} (bind-n-ast m (enclose N)) (λ _ _ z → z)) Xs⊆ , ptt ⟩)
   G = ≃-trans (Λᵐ-≃ (λ U ne _ n → body≃ U ne n))
-        (≃-sym (binds-β m mK (λ i → ⟨ fv-vars-clean m ρ₂ Vm i , (let ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = fv-vars-vals m ρ₂ Vm i in ⟨ d , d∈ ⟩) ⟩)))
+        (≃-sym (clos-β m (bind-n-ast m (enclose N)) init₀ (fv-vars-vals m ρ₂ Vm)))
 enc-correct (app ⦅ L ,, M ,, Nil ⦆) ρ₁ ρ₂ V rel =
   ⋆ᵐ-≃ (enc-correct L ρ₁ ρ₂ (λ x x< → V x (<-⊔ˡ _ x<)) (λ x u → rel x (inj₁ u)))
        (enc-correct M ρ₁ ρ₂ (λ x x< → V x (<-⊔ʳ (bound L) (<-⊔ˡ 0 x<))) (λ x u → rel x (inj₂ (inj₁ u))))

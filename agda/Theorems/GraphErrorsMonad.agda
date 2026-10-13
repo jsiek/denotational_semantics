@@ -5,6 +5,7 @@
   proof/Correctness/GraphErrM/ and proof/Adequacy/GraphErrM/.
 
     ISWIM --simplify--> ISWIM --enclose--> Clos2
+    Clos2 --concretize--> Clos3 --delay--> Clos4
 
   The semantics (Semantics/GraphErrM/) is that of the graph model with
   errors (Theorems/GraphErrors.agda), with its operators built from an
@@ -32,14 +33,22 @@ open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 import Semantics.CEK.ISWIM as ISWIMₘ
 import Language.ISWIM as ISWIM
+import Language.Clos2 as Clos2
+import Language.Clos3 as Clos3
 open import Compiler.Simplify using (simplify)
 open import Compiler.Enclose using (enclose)
 open import Compiler.EncloseScope using (Closed)
+open import Compiler.Concretize using (concretize-program)
+open import Compiler.Delay using (delay)
 
 open import Semantics.GraphErrM.ISWIM using (⟦_⟧)
 open import Semantics.GraphErrM.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)
+open import Semantics.GraphErrM.Clos3 using () renaming (⟦_⟧ to ⟦_⟧₃)
+open import Semantics.GraphErrM.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄)
 import proof.Correctness.GraphErrM.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.GraphErrM.EncloseCorrect as EncloseCorrect
+import proof.Correctness.GraphErrM.ConcretizeCorrect as ConcretizeCorrect
+import proof.Correctness.GraphErrM.DelayPreserve as DelayCorrect
 import proof.Adequacy.GraphErrM.ISWIM as Adequacy
 import proof.Adequacy.GraphErrM.Simplify as SimplifyMachine
 
@@ -56,6 +65,28 @@ simplify-correct = SimplifyCorrect.simplify-correct
 
 enclose-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ enclose M ⟧₂ ρ₀
 enclose-correct = EncloseCorrect.enclose-correct
+
+concretize-correct : ∀ (M : Clos2.AST) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
+concretize-correct = ConcretizeCorrect.concretize-correct-closed
+
+{- D has a value -}
+val∈ : 𝒫 Value → Set
+val∈ D = Σ[ d ∈ Value ] d ∈ D × d ≢ ω
+
+{- delay changes how closures are represented, so it is not an equation:
+   it preserves and reflects an error, the constants, and having a value -}
+delay-correct-error : ∀ (M : Clos3.AST)
+  → (ω ∈ ⟦ M ⟧₃ ρ₀ → ω ∈ ⟦ delay M ⟧₄ ρ₀) × (ω ∈ ⟦ delay M ⟧₄ ρ₀ → ω ∈ ⟦ M ⟧₃ ρ₀)
+delay-correct-error = DelayCorrect.delay-correct-error
+
+delay-correct-const : ∀ (M : Clos3.AST) {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧₃ ρ₀ → const c ∈ ⟦ delay M ⟧₄ ρ₀)
+  × (const c ∈ ⟦ delay M ⟧₄ ρ₀ → const c ∈ ⟦ M ⟧₃ ρ₀)
+delay-correct-const = DelayCorrect.delay-correct-const
+
+delay-correct-val : ∀ (M : Clos3.AST)
+  → (val∈ (⟦ M ⟧₃ ρ₀) → val∈ (⟦ delay M ⟧₄ ρ₀)) × (val∈ (⟦ delay M ⟧₄ ρ₀) → val∈ (⟦ M ⟧₃ ρ₀))
+delay-correct-val = DelayCorrect.delay-correct-val
 
 {- adequacy for the ISWIM machine, on all three outcomes -}
 iswim-error-iff : ∀ (M : ISWIM.AST) → Closed M

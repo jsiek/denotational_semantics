@@ -303,8 +303,15 @@ import proof.Adequacy.GraphErr.EndToEnd
 import proof.Semantics.GraphErrM.Prim
 import proof.Semantics.GraphErrM.ISWIM
 import proof.Semantics.GraphErrM.Clos2
+import proof.Semantics.GraphErrM.Clos3
+import proof.Semantics.GraphErrM.Clos4
 import proof.Correctness.GraphErrM.SimplifyCorrect
 import proof.Correctness.GraphErrM.EncloseCorrect
+import proof.Correctness.GraphErrM.ConcretizeCorrect
+import proof.Correctness.GraphErrM.DelayRel
+import proof.Correctness.GraphErrM.DelayApp
+import proof.Correctness.GraphErrM.DelayReflect
+import proof.Correctness.GraphErrM.DelayPreserve
 import proof.Adequacy.GraphErrM.Soundness
 import proof.Adequacy.GraphErrM.LogRel
 import proof.Adequacy.GraphErrM.ISWIM

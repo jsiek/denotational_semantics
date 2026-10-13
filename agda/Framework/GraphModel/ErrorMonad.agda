@@ -162,7 +162,7 @@ closᵐ : ∀ n → DOp (𝒫 Value) (∁ (ν (ν ■)) ∷ replicate n ■)
 closᵐ n ⟨ F , Ds ⟩ = ⋆ᵐ ⟨ ΛΛᵐ ⟨ F , ptt ⟩ , ⟨ 𝒯ᵐ n Ds , ptt ⟩ ⟩
 
 pairᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-pairᵐ ⟨ D , ⟨ E , _ ⟩ ⟩ = D ≫= λ X → E ≫= λ Y → pair ⟨ X , ⟨ Y , ptt ⟩ ⟩
+pairᵐ Ds = binds 2 Ds pair
 
 carᵐ : DOp (𝒫 Value) (■ ∷ [])
 carᵐ ⟨ D , _ ⟩ = D ≫= λ X → checked prod X (car ⟨ X , ptt ⟩)
@@ -173,5 +173,4 @@ cdrᵐ ⟨ D , _ ⟩ = D ≫= λ X → checked prod X (cdr ⟨ X , ptt ⟩)
 {- the call of Clos4 and Clos5: code, environment and argument are bound
    left to right, and only then is the code checked (the late check) -}
 callᵐ : DOp (𝒫 Value) (■ ∷ ■ ∷ ■ ∷ [])
-callᵐ ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ =
-  L ≫= λ F → M ≫= λ E → N ≫= λ X → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩)
+callᵐ Ds = binds 3 Ds λ { ⟨ F , ⟨ E , ⟨ X , _ ⟩ ⟩ ⟩ → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩) }
