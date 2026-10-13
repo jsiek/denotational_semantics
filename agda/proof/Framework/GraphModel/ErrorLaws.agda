@@ -20,8 +20,8 @@ open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; �
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Empty using (⊥-elim)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lower) renaming (lift to up)
@@ -188,3 +188,71 @@ case-law (just G) {A} {F₁} {F₂} cA m₁ m₂ = ⟨ L , R ⟩
 
 {- The pass preserves meanings ----------------------------------------------------}
 
+{- strict writes, calls and lets: errors and values -}
+{- Errors and values ------------------------------------------------------------------}
+
+is-ω : ∀ w → w ≡ ω ⊎ w ≢ ω
+is-ω (const k) = inj₂ (λ ())
+is-ω (V ↦ w) = inj₂ (λ ())
+is-ω ν = inj₂ (λ ())
+is-ω ω = inj₁ refl
+is-ω ⦅ u , v ⦆ = inj₂ (λ ())
+is-ω (tup[ i ] d) = inj₂ (λ ())
+is-ω (left d) = inj₂ (λ ())
+is-ω (right d) = inj₂ (λ ())
+is-ω ⟨⟩ = inj₂ (λ ())
+
+{- D holds an error or a value -}
+Has : 𝒫 Value → Set
+Has D = ω ∈ D ⊎ val∈ D
+
+ne-has : ∀ {D} → nonempty D → Has D
+ne-has ⟨ d , d∈ ⟩ with is-ω d
+... | inj₁ refl = inj₁ d∈
+... | inj₂ d≢ = inj₂ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩
+
+noerr-≢ : ∀ {V d} → NoErr V → d ∈ mem V → d ≢ ω
+noerr-≢ nV d∈ refl = nV d∈
+
+noerr-val : ∀ {D} V → V ≢ [] → NoErr V → mem V ⊆ D → val∈ D
+noerr-val [] ne _ _ = ⊥-elim (ne refl)
+noerr-val (v ∷ V) _ nV V⊆ = ⟨ v , ⟨ V⊆ v (here refl) , noerr-≢ nV (here refl) ⟩ ⟩
+
+{- strictᵉ D X is X when an error in D is one of X, and each element of
+   X needs D to hold an error or a value, a value for a value -}
+strict-≃ : ∀ {D X X'} → X ≃ X' → (∀ w → w ∈ X → Has D) → (ω ∈ D → ω ∈ X)
+  → (∀ w → w ∈ X → w ≢ ω → val∈ D) → strictᵉ D X ≃ X'
+strict-≃ {D} {X} {X'} ⟨ X⊆ , X⊇ ⟩ has ωX val = ⟨ G , H ⟩
+  where
+  G : strictᵉ D X ⊆ X'
+  G w (inj₁ ⟨ refl , ω∈ ⟩) = X⊆ ω (ωX ω∈)
+  G w (inj₂ ⟨ _ , w∈ ⟩) = X⊆ w w∈
+  H : X' ⊆ strictᵉ D X
+  H w w∈′ with X⊇ w w∈′ | is-ω w
+  ... | w∈ | inj₂ w≢ = inj₂ ⟨ val w w∈ w≢ , w∈ ⟩
+  ... | w∈ | inj₁ refl with has ω w∈
+  ...   | inj₁ ω∈ = inj₁ ⟨ refl , ω∈ ⟩
+  ...   | inj₂ v = inj₂ ⟨ v , w∈ ⟩
+
+{- a write of D that is followed by D -}
+strict-self : ∀ {D Z} → Z ≃ D → strictᵉ D Z ≃ D
+strict-self Z≃ = strict-≃ Z≃ (λ w w∈ → ne-has ⟨ w , proj₁ Z≃ w w∈ ⟩) (λ ω∈ → proj₂ Z≃ ω ω∈)
+  (λ w w∈ w≢ → ⟨ w , ⟨ proj₁ Z≃ w w∈ , w≢ ⟩ ⟩)
+
+callᵉ-ω : ∀ {L M N} → Has L → ω ∈ M ⊎ (val∈ M × ω ∈ N) → ω ∈ callᵉ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩
+callᵉ-ω (inj₁ ωL) _ = inj₂ ⟨ refl , inj₁ (inj₁ ωL) ⟩
+callᵉ-ω (inj₂ vL) (inj₁ ωM) = inj₂ ⟨ refl , inj₁ (inj₂ ⟨ vL , inj₁ ωM ⟩) ⟩
+callᵉ-ω (inj₂ vL) (inj₂ ⟨ vM , ωN ⟩) = inj₂ ⟨ refl , inj₁ (inj₂ ⟨ vL , inj₂ ⟨ vM , inj₁ ωN ⟩ ⟩) ⟩
+
+callᵉ-val : ∀ {L M N w} → w ∈ callᵉ ⟨ L , ⟨ M , ⟨ N , ptt ⟩ ⟩ ⟩ → w ≢ ω → val∈ M × val∈ N
+callᵉ-val (inj₁ ⟨ V , ⟨ U , ⟨ _ , ⟨ V⊆ , ⟨ U⊆ , ⟨ neV , ⟨ neU , ⟨ nV , nU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) _ =
+  ⟨ noerr-val V neV nV V⊆ , noerr-val U neU nU U⊆ ⟩
+callᵉ-val (inj₂ ⟨ refl , _ ⟩) w≢ = ⊥-elim (w≢ refl)
+
+{- a let of a set without ω has no error of its own -}
+let-noerr : ∀ {F V} → NoErr V
+  → ω ∈ Λᵉ ⟨ F , ptt ⟩ ⊎ wrong IsFun (Λᵉ ⟨ F , ptt ⟩) ⊎ ((Σ[ f ∈ Value ] f ∈ Λᵉ ⟨ F , ptt ⟩ × IsFun f) × ω ∈ mem V)
+  → ⊥
+let-noerr nV (inj₁ ())
+let-noerr nV (inj₂ (inj₁ ⟨ d , ⟨ d∈ , ⟨ _ , nf ⟩ ⟩ ⟩)) = nf (Λᵉ-fun d d∈)
+let-noerr nV (inj₂ (inj₂ ⟨ _ , ω∈ ⟩)) = nV ω∈
