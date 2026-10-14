@@ -376,7 +376,7 @@ sim (get i ⦅ M ,, Nil ⦆) (get≈ {n} r) =
   ...   | V , e , r' rewrite e =
     to (plus (proj-in-to v F (project-ok (ttup n i) (I.tuple Ms'))) (val-in (value-red (T.tuple vs)) ◅ ε)) r'
   get-sim v@(T.inject (T.tuple vs)) (tuple≈ {m} {Ms} {Ms'} rs) | no ne rewrite proj-no i Ms ne =
-    error ε (proj-in-err v F (project-bad (I.tuple Ms') λ { refl → ne refl }))
+    error ε (proj-in-err {t = ttup n i} v F (project-bad {t = ttup n i} (I.tuple Ms') λ { refl → ne refl }))
   get-sim v@(T.inject T.lam) (lam≈ _) = error ε (proj-in {t = ttup n i} v F)
   get-sim v@(T.inject T.lit) lit≈ = error ε (proj-in {t = ttup n i} v F)
   get-sim v@(T.inject (T.inl _)) (inl≈ _) = error ε (proj-in {t = ttup n i} v F)
