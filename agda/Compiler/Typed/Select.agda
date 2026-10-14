@@ -102,10 +102,11 @@ select-body pre (CFG.body bs t) =
 prologue : List Instr
 prologue = movq (loc (reg rdi)) (var 0) ∷ movq (loc (reg rsi)) (var 1) ∷ []
 
+{- the definitions -}
+select-defs : ∀ {Σ ns} → All (λ n → CFG.Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns → List Body
+select-defs [] = []
+select-defs (d ∷ ds) = select-body prologue d ∷ select-defs ds
+
 {- the pass, for a whole program -}
 select : CFG.Program → Program
-select (CFG.program ds b) = program (defs ds) (select-body [] b)
-  where
-  defs : ∀ {Σ ns} → All (λ n → CFG.Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns → List Body
-  defs [] = []
-  defs (d ∷ ds) = select-body prologue d ∷ defs ds
+select (CFG.program ds b) = program (select-defs ds) (select-body [] b)

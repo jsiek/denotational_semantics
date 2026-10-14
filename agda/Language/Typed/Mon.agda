@@ -22,7 +22,7 @@ import Language.Typed.Clos5 as C
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_)
 
@@ -83,8 +83,4 @@ ren r (ref f) = ref f
 ⌜ project t a ⌝ = C.project t ⌜ a ⌝ᵃ
 
 ⌜_⌝ₚ : Program → C.Program
-⌜ program ds M ⌝ₚ = C.program (defs ds) ⌜ M ⌝
-  where
-  defs : ∀ {Σ ns} → All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) ns → All (C.Code Σ) ns
-  defs [] = []
-  defs (D ∷ ds) = ⌜ D ⌝ ∷ defs ds
+⌜ program ds M ⌝ₚ = C.program (All-map ⌜_⌝ ds) ⌜ M ⌝

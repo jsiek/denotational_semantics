@@ -21,7 +21,7 @@ import Language.Typed.Imp as I
 open import Language.Typed.CFG
 
 open import Data.List using (List; []; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 open import Data.Nat using (ℕ)
 
 {- a tail over the blocks made so far, and more blocks -}
@@ -62,9 +62,4 @@ explicate-body e with explicate-tail e []
 
 {- the pass, for a whole program -}
 explicate : I.Program → Program
-explicate (I.program ds e) = program (defs ds) (explicate-body e)
-  where
-  defs : ∀ {Σ ns} → All (λ n → I.Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) ns
-    → All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns
-  defs [] = []
-  defs (d ∷ ds) = explicate-body d ∷ defs ds
+explicate (I.program ds e) = program (All-map explicate-body ds) (explicate-body e)
