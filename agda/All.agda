@@ -322,3 +322,10 @@ import proof.Spec.Typed.Interpreter
 import proof.Spec.Typed.Reduction
 import proof.Spec.Typed.GraphErrors
 import proof.Spec.Typed.Adequacy
+
+{- the typed pipeline, phase 2, CEK machines + simulations: the machines
+   of Clos5ᵀ, Impᵀ and CFGᵀ (also used by the reduction column and
+   adequacy) -}
+import Semantics.CEK.Typed.Clos5
+import Semantics.CEK.Typed.Imp
+import Semantics.CEK.Typed.CFG

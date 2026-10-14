@@ -56,3 +56,16 @@ record Program : Set where
     {table} : List ℕ
     defs : All (λ n → Body table (Any ∷ ⟪ tup n ⟫ ∷ [])) table
     main : Body table []
+
+{- block l of the blocks, with the blocks older than it (those it may
+   jump to) -}
+record Blk (Σ : List ℕ) (Δ : Ctx) : Set where
+  constructor blk
+  field
+    {older} : List Ctx
+    blocks : Blocks Σ older
+    tail : Tail Σ older Δ
+
+block : ∀ {Σ Bs Δ} → Blocks Σ Bs → Bs ∋ Δ → Blk Σ Δ
+block (bs ▷ t) Z = blk bs t
+block (bs ▷ t) (S l) = block bs l
