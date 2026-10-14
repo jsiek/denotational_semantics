@@ -112,6 +112,14 @@
 \newcommand{\rsi}{\%\key{rsi}}
 \newcommand{\xrun}{\key{run}}
 
+% the typed pipeline
+\newcommand{\Tl}[1]{\textrm{#1}^{\mathsf{T}}}  % a typed language: \Tl{Clos2}
+\newcommand{\TAny}{\key{Any}}
+\newcommand{\Tflat}[1]{\langle\!\langle #1 \rangle\!\rangle}  % the flat type G as a type
+\newcommand{\Tcode}[1]{\key{code}\;#1}
+\newcommand{\Tinject}[1]{\key{inject}_{#1}\,}
+\newcommand{\Tproject}[1]{\key{project}_{#1}\,}
+
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
 
 \title{Closure Conversion: Definitions}
@@ -129,8 +137,16 @@
 
 This is a summary, for review, of the definitions in the Agda development
 of the closure-conversion compiler in \texttt{agda}: the languages in
-\texttt{agda/Language}, the passes in \texttt{agda/Compiler}, and the
-semantics of each style in \texttt{agda/Semantics}.
+\texttt{agda/Language} (the typed ones in \texttt{agda/Language/Typed}), the
+passes in \texttt{agda/Compiler}, and the semantics of each style in
+\texttt{agda/Semantics} (of the typed languages in its \texttt{Typed}
+subdirectories). Part~\ref{part:typed} presents the typed pipeline, the main
+one: the types, the typed languages, cast insertion and the typed passes, the
+semantics of the typed languages in each style, and the theorems.
+Part~\ref{part:untyped} presents the untyped pipeline that preceded it,
+preserved in \texttt{agda/Untyped}, with the definitions both share (ISWIM,
+simplify, X86, and their semantics); the contents list below is that of
+Part~\ref{part:untyped}.
 It uses the notation of \texttt{talks/ITRS-2020} and named variables
 instead of de Bruijn indices.
 The public theorem statements are in \texttt{agda/Theorems}; they and the
@@ -447,6 +463,1744 @@ In the reduction proof:
 
 %===============================================================================
 \part{The Compiler}
+
+\part{The Typed Pipeline}\label{part:typed}
+
+The compiler of the main development:
+\[
+\begin{array}{l}
+\mathrm{ISWIM} \xrightarrow{\pass{simplify}} \mathrm{ISWIM} \xrightarrow{\pass{cast}} \Tl{ISWIM}
+  \xrightarrow{\pass{enclose}} \Tl{Clos2} \xrightarrow{\pass{optimize}} \Tl{Clos2}
+  \xrightarrow{\pass{concretize}} \Tl{Clos3} \xrightarrow{\pass{delay}} \Tl{Clos4} \\
+\qquad \xrightarrow{\pass{globalize}} \Tl{Clos5} \xrightarrow{\pass{rco}} \Tl{Mon}
+  \xrightarrow{\pass{lift}} \Tl{Imp} \xrightarrow{\pass{explicate}} \Tl{CFG}
+  \xrightarrow{\pass{select}} \mathrm{X86}
+\end{array}
+\]
+The source ISWIM, simplify, the target X86 and the semantics of ISWIM and X86 in each style are
+those of Part~\ref{part:untyped}, which both pipelines share.
+
+% Part I: the typed pipeline -- languages and passes
+% (agda/Language/Typed/*.agda, agda/Compiler/*.agda)
+\providecommand{\Tfun}{\key{fun}}
+\providecommand{\Tsum}{\key{sum}}
+\providecommand{\Ttup}[1]{\key{tup}\;#1}
+\providecommand{\Tint}{\key{int}}
+\providecommand{\Tttup}[2]{\key{tup}_{#1,#2}}
+\providecommand{\Tflatof}[1]{\mathit{flat}(#1)}
+\providecommand{\Tout}[1]{\mathit{out}(#1)}
+\providecommand{\Tcodetm}[3]{\key{code}(#1\,#2.\,#3)}
+\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}
+\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}
+\providecommand{\Tcheck}[1]{\pass{check}_{#1}}
+
+%===============================================================================
+\section{Types and Typed Languages}\label{sec:t-langs}
+
+The typed pipeline makes the dynamically typed source statically typed by
+cast insertion, after \emph{Essentials of Compilation}, ch.~9, and keeps
+every intermediate language intrinsically typed, so that a term that
+misuses a value (applies a tuple, reads a slot not yet assigned, jumps to
+a missing block) cannot be written. ISWIM itself, X86, and simplify are
+those of the untyped pipeline (Part~II); the typed languages are in
+\texttt{agda/Language/Typed}. In each language, a term is indexed by its
+type; a variable, slot, definition, or label is a typed index, so every
+term is well scoped by construction.
+
+\subsection{Types}
+
+A value of type $\TAny$ is a value of some flat type $G$, tagged with it.
+The flat types mirror the values of the untyped languages: a constant of a
+base type $B$, a tuple of $n$ values of type $\TAny$, a sum ($\key{inl}$ or
+$\key{inr}$ of a value of type $\TAny$), and a function from $\TAny$ to
+$\TAny$ (a closure in $\Tl{Clos2}$ and $\Tl{Clos3}$, a packed pair of code and
+environment from $\Tl{Clos4}$ on). The type $\Tcode{n}$, from $\Tl{Clos4}$ on, is
+that of closed code that takes an environment, a tuple of $n$ values, and
+an argument. $\Tinject{G}$ turns a value of type $\Tflat{G}$ into one of
+type $\TAny$, and $\Tproject{t}$ turns it back; $\key{project}$ is the only
+operation that can fail: it stops with a trapped error ($\omega$) when the
+tag is not $\Tflatof{t}$. The tags $t$ are the flat types that
+$\key{project}$ can test, those that cast insertion projects to; each is
+tested by an existing X86 instruction that errs on any other value
+(Section~\ref{sec:t-passes}). The flat type of a primitive's result is
+$\Tout{p}$.
+\begin{syntax}
+  & B &::=& \key{Nat} \mid \key{Int} \mid \key{Bool} \mid \key{Unit}
+    \mid \key{Void} \mid \key{Blame} \\
+  & G, H &::=& B \mid \Ttup{n} \mid \Tsum \mid \Tfun \\
+  & A &::=& \TAny \mid \Tflat{G} \mid \Tcode{n} \\
+  & t &::=& \Tfun \mid \Tsum \mid \Tint \mid \Tttup{n}{i}
+    \qquad (1 \leq i \leq n) \\
+  & \Gamma &::=& x_1{:}A_1, \ldots, x_k{:}A_k
+\end{syntax}
+\[
+  \Tflatof{\Tfun} = \Tfun \quad
+  \Tflatof{\Tsum} = \Tsum \quad
+  \Tflatof{\Tint} = \key{Int} \quad
+  \Tflatof{\Tttup{n}{i}} = \Ttup{n}
+\]
+\[
+  \Tout{\key{sub}} = \key{Int} \quad
+  \Tout{\key{eq}} = \Tsum
+\]
+A tuple tag $\Tttup{n}{i}$ names the component $i$ that the projection
+reads, which is where X86 tests the tuple. Flat types have decidable
+equality.
+
+\subsection{\texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T}}
+
+ISWIM with explicit casts, the output of cast insertion. Every variable has
+type $\TAny$ (functions, $\key{let}$ and $\key{case}$ bind values of type
+$\TAny$); the operations take operands of the flat type they need, and
+$\key{inject}$ is the only way into $\TAny$.
+\begin{syntax}
+  & L, M, N &::=& x \mid \lam{x} N \mid L\;M \mid c
+    \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M
+    \mid \inl M \mid \inr M \\
+  &&& \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
+    \mid \Let x = M \In N
+    \mid \Tinject{G} M \mid \Tproject{t} M
+\end{syntax}
+\[
+\begin{array}{r@{\;:\;}l@{\qquad}l}
+  x & \TAny & \\
+  \lam{x} N & \Tflat{\Tfun} & N : \TAny \\
+  L\;M & \TAny & L : \Tflat{\Tfun},\ M : \TAny \\
+  c & \Tflat{B} & c \text{ a constant of base type } B \\
+  \tuple{M_1,\ldots,M_n} & \Tflat{\Ttup{n}} & M_1, \ldots, M_n : \TAny \\
+  \prj{i} M & \TAny & M : \Tflat{\Ttup{n}},\ 1 \leq i \leq n \\
+  \inl M,\ \inr M & \Tflat{\Tsum} & M : \TAny \\
+  \Case{L}{x}{M}{y}{N} & \TAny & L : \Tflat{\Tsum},\ M, N : \TAny \\
+  \prim{p}{L}{M} & \Tflat{\Tout{p}} & L, M : \Tflat{\key{Int}} \\
+  \Let x = M \In N & \TAny & M, N : \TAny \\
+  \Tinject{G} M & \TAny & M : \Tflat{G} \\
+  \Tproject{t} M & \Tflat{\Tflatof{t}} & M : \TAny
+\end{array}
+\]
+
+\subsection{\texorpdfstring{$\Tl{Clos2}$}{Clos2-T}}
+
+As $\Tl{ISWIM}$, but each $\lambda$ is a closure, as in Clos2: its code $N$ is
+closed, with the parameter $y$ and the names $x_1 \ldots x_n$ bound to the
+values of $M_1 \ldots M_n$, all of type $\TAny$.
+\begin{syntax}
+  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N
+    \mid L\;M \mid c \mid \cdots \mid \Tinject{G} M \mid \Tproject{t} M
+\end{syntax}
+\[
+  \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N : \Tflat{\Tfun}
+  \qquad M_1, \ldots, M_n : \TAny,\quad
+    x_1{:}\TAny, \ldots, x_n{:}\TAny, y{:}\TAny \vdash N : \TAny
+\]
+
+\subsection{\texorpdfstring{$\Tl{Clos3}$}{Clos3-T}}
+
+Each closure stores its free variables in one tuple $e$, from which its
+code reads them with projections. So variables now have types other than
+$\TAny$, and a term is typed in a context $\Gamma$, $\Gamma \vdash M : A$.
+The closure itself has type $\Tflat{\Tfun}$: the length $n$ of its
+environment is hidden in its value.
+\begin{syntax}
+  & L, M, N &::=& x \mid \clos{M_1\ldots M_n}{e\, y} N
+    \mid L\;M \mid c \mid \cdots \mid \Tinject{G} M \mid \Tproject{t} M
+\end{syntax}
+\[
+  \frac{x{:}A \in \Gamma}{\Gamma \vdash x : A}
+  \qquad
+  \frac{\Gamma \vdash M_1, \ldots, M_n : \TAny \qquad
+        y{:}\TAny,\, e{:}\Tflat{\Ttup{n}} \vdash N : \TAny}
+       {\Gamma \vdash \clos{M_1\ldots M_n}{e\, y} N : \Tflat{\Tfun}}
+\]
+The other constructs are typed as in $\Tl{ISWIM}$; $\key{let}$ and
+$\key{case}$ still bind variables of type $\TAny$.
+
+\subsection{\texorpdfstring{$\Tl{Clos4}$}{Clos4-T}}
+
+A closure is a pair of closed code and the tuple of its free variables,
+packed so that its type $\Tflat{\Tfun}$ hides the length $n$ of the tuple:
+$\Tflat{\Tfun}$ is the existential $\exists n.\, \Tcode{n} \times
+\Tflat{\Ttup{n}}$ of typed closure conversion (Minamide, Morrisett and
+Harper). $\key{pack}$ builds a closure from code and an environment of the
+same length; $\key{callc}$ opens a closure and calls its code with its
+environment and the argument. $\key{callc}$ is the only elimination of the
+existential and is parametric in $n$, so it needs no check and compiles to
+one sequence of instructions for every length. There are no pairs,
+$\key{fst}$ or $\key{snd}$, as there are in Clos4.
+\begin{syntax}
+  & L, M, N &::=& x \mid \Tcodetm{e}{y}{N} \mid \Tpack{L}{M} \mid \Tcallc{L}{M}
+    \mid c \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \mid \inl M \mid \inr M \\
+  &&& \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
+    \mid \Let x = M \In N \mid \Tinject{G} M \mid \Tproject{t} M
+\end{syntax}
+\[
+  \frac{y{:}\TAny,\, e{:}\Tflat{\Ttup{n}} \vdash N : \TAny}
+       {\Gamma \vdash \Tcodetm{e}{y}{N} : \Tcode{n}}
+  \qquad
+  \frac{\Gamma \vdash L : \Tcode{n} \quad \Gamma \vdash M : \Tflat{\Ttup{n}}}
+       {\Gamma \vdash \Tpack{L}{M} : \Tflat{\Tfun}}
+  \qquad
+  \frac{\Gamma \vdash L : \Tflat{\Tfun} \quad \Gamma \vdash M : \TAny}
+       {\Gamma \vdash \Tcallc{L}{M} : \TAny}
+\]
+
+\subsection{\texorpdfstring{$\Tl{Clos5}$}{Clos5-T}}
+
+As $\Tl{Clos4}$, but the code of every function is a global definition. A
+program has a table $\Sigma = n_0, \ldots, n_{m-1}$, the lengths of the
+environments of its definitions $d_0, \ldots, d_{m-1}$, and a term is
+typed by the table as well as by its context, $\Sigma; \Gamma \vdash M :
+A$: $\funref{k}$ is the code of $d_k$, of type $\Tcode{n_k}$, so a reference
+to a missing definition cannot be written. Every definition is typed over
+the whole table. Unlike $\Tl{Clos4}$, $\key{let}$ binds a value of any type,
+for remove complex operands, which binds operands of any type (code,
+environments, \ldots).
+\begin{syntax}
+  & L, M, N &::=& x \mid \funref{k} \mid \Tpack{L}{M} \mid \Tcallc{L}{M}
+    \mid c \mid \tuple{M_1,\ldots,M_n} \mid \prj{i} M \mid \inl M \mid \inr M \\
+  &&& \mid \Case{L}{x}{M}{y}{N} \mid \prim{p}{L}{M}
+    \mid \Let x = M \In N \mid \Tinject{G} M \mid \Tproject{t} M \\[1ex]
+  & d &::=& \Tcodetm{e}{y}{N} \\
+  & P &::=& (d_0, \ldots, d_{m-1};\; M)
+\end{syntax}
+\[
+  \frac{k < m}{\Sigma; \Gamma \vdash \funref{k} : \Tcode{n_k}}
+  \qquad
+  \frac{\Sigma; \Gamma \vdash M : A \quad \Sigma; \Gamma, x{:}A \vdash N : B}
+       {\Sigma; \Gamma \vdash \Let x = M \In N : B}
+\]
+\[
+  \frac{\Sigma; y{:}\TAny, e{:}\Tflat{\Ttup{n_k}} \vdash N_k : \TAny \ (d_k = \Tcodetm{e}{y}{N_k})
+        \quad \Sigma; \emptyset \vdash M : \TAny}
+       {\vdash (d_0, \ldots, d_{m-1};\; M)}
+\]
+
+\subsection{\texorpdfstring{$\Tl{Mon}$}{Mon-T}}
+
+The monadic normal form of $\Tl{Clos5}$. Untyped monadic Clos5 is a predicate
+on Clos5 terms; $\Tl{Mon}$ is its own syntax, so monadic form needs no proof,
+and its meaning is that of its embedding into $\Tl{Clos5}$. An atom is a
+variable, a constant or a reference to a definition; the operands of every
+operation, and the scrutinee of $\key{case}$, are atoms, while the
+right-hand side and body of $\key{let}$ (at any type, as in $\Tl{Clos5}$) and
+the branches of $\key{case}$ are expressions. Typing is as in $\Tl{Clos5}$.
+\begin{syntax}
+  & a &::=& x \mid c \mid \funref{k} \\
+  & M, N &::=& a \mid \Tpack{a_1}{a_2} \mid \Tcallc{a_1}{a_2}
+    \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a \mid \inl a \mid \inr a
+    \mid \prim{p}{a_1}{a_2} \\
+  &&& \mid \Tinject{G} a \mid \Tproject{t} a
+    \mid \Case{a}{x}{M}{y}{N} \mid \Let x = M \In N \\[1ex]
+  & d &::=& \Tcodetm{e}{y}{N} \\
+  & P &::=& (d_0, \ldots, d_{m-1};\; M)
+\end{syntax}
+
+\subsection{\texorpdfstring{$\Tl{Imp}$}{Imp-T}}
+
+Imp, typed. A body runs in a frame of slots, and the frame is typed by a
+context $\Delta = A_0, \ldots, A_{m-1}$, the types of the slots assigned so
+far, so that slot $s < m$ holds a value of type $A_s$. A slot is a typed
+index into $\Delta$, so a slot out of the frame, or not yet assigned, cannot
+be read. Assignment and $\key{case}$ always write the next slot, $|\Delta|$,
+which the rest of the body sees. The size of a frame is not part of a body:
+it is the deepest nesting of slots, which select instructions computes. The
+simple expressions $r$ are shared with $\Tl{CFG}$; they and the atoms are those
+of $\Tl{Mon}$, over slots instead of variables.
+\begin{syntax}
+  & a &::=& s \mid c \mid \funref{k} \\
+  & r &::=& a \mid \Tpack{a_1}{a_2} \mid \Tcallc{a_1}{a_2}
+    \mid \tuple{a_1,\ldots,a_n} \mid \prj{i} a \mid \inl a \mid \inr a
+    \mid \prim{p}{a_1}{a_2} \mid \Tinject{G} a \mid \Tproject{t} a \\
+  & e &::=& r \mid \assign{s}{e_1}{e_2} \mid \Casei{a}{s}{e_1}{e_2} \\[1ex]
+  & P &::=& (e_0, \ldots, e_{m-1};\; e)
+\end{syntax}
+\[
+  \frac{\Sigma; \Delta \vdash e_1 : A \quad \Sigma; \Delta, A \vdash e_2 : B}
+       {\Sigma; \Delta \vdash \assign{|\Delta|}{e_1}{e_2} : B}
+  \qquad
+  \frac{\Sigma; \Delta \vdash a : \Tflat{\Tsum} \quad
+        \Sigma; \Delta, \TAny \vdash e_1, e_2 : \TAny}
+       {\Sigma; \Delta \vdash \Casei{a}{|\Delta|}{e_1}{e_2} : \TAny}
+\]
+\[
+  \Sigma; \Delta \vdash s : A_s
+  \qquad
+  \Sigma; \Tflat{\Ttup{n_k}}, \TAny \vdash e_k : \TAny
+  \qquad
+  \Sigma; \emptyset \vdash e : \TAny
+\]
+A definition starts with its environment in slot $0$ and its argument in
+slot $1$; $\key{main}$ with no slot.
+
+\subsection{\texorpdfstring{$\Tl{CFG}$}{CFG-T}}
+
+CFG, typed. A block is a tail typed by the frame $\Delta$ it starts in (the
+types of the slots it may read) and by the list $\vec{\Delta} = \Delta_0,
+\ldots, \Delta_{j-1}$ of the frames of the blocks it may jump to,
+$\Sigma; \vec{\Delta}; \Delta \vdash t$. A label $l$ is a typed index into
+$\vec{\Delta}$, so a jump to a missing block, or to a block that reads a
+slot not assigned, cannot be written. Block $t_l$ is typed over the blocks
+older than it, so control flow is acyclic, as in CFG; the start may jump
+to any block. An assignment, and the $\key{case}$ that assigns the payload,
+write slot $s = |\Delta'|$ for a prefix $\Delta'$ of $\Delta$: the slots
+from $s$ on are forgotten (they belong to a finished scope) and slot $s$ is
+assigned anew.
+\begin{syntax}
+  & t &::=& \key{return}\; r \mid \assign{s}{r}{t} \mid \key{goto}\; l
+    \mid \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\[1ex]
+  & b &::=& (t_0, \ldots, t_{j-1};\; t) \\
+  & P &::=& (b_0, \ldots, b_{m-1};\; b)
+\end{syntax}
+\[
+  \frac{\Sigma; \Delta \vdash r : \TAny}{\Sigma; \vec{\Delta}; \Delta \vdash \key{return}\; r}
+  \qquad
+  \frac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash r : A \quad
+        \Sigma; \vec{\Delta}; \Delta', A \vdash t}
+       {\Sigma; \vec{\Delta}; \Delta \vdash \assign{|\Delta'|}{r}{t}}
+  \qquad
+  \frac{\Delta_l = \Delta}{\Sigma; \vec{\Delta}; \Delta \vdash \key{goto}\; l}
+\]
+\[
+  \frac{\Sigma; \Delta \vdash a : \Tflat{\Tsum} \quad \Delta' \sqsubseteq \Delta \quad
+        \Delta_{l_1} = \Delta_{l_2} = \Delta', \TAny}
+       {\Sigma; \vec{\Delta}; \Delta \vdash
+        \key{case}\;a\;\key{of}_{|\Delta'|}\;\key{goto}\;l_1 \mid \key{goto}\;l_2}
+  \qquad
+  \frac{\Sigma; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
+        \Sigma; \vec{\Delta}; \Delta \vdash t}
+       {\Sigma; \Delta \vdash (t_0, \ldots, t_{j-1};\; t)}
+\]
+Here $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is a prefix of
+$\Delta$. A definition's body $b_k$ starts in the frame
+$\Tflat{\Ttup{n_k}}, \TAny$, and main's in the empty frame.
+
+%===============================================================================
+\section{Compilation}\label{sec:t-passes}
+
+The passes of the typed pipeline are in \texttt{agda/Compiler}. Most are
+the untyped passes (Part~II) on typed terms, and preserve types by
+construction; what differs is said below. In each pass, the clauses not
+shown are homomorphic.
+
+\subsection{Cast Insertion (ISWIM \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T})}
+
+Cast insertion turns every term of ISWIM into a term of type $\TAny$. A value
+is injected with its flat type. An operation projects its operand to the
+flat type it needs, at the point where the ISWIM machine checks it: the
+operator of an application before the operand is evaluated. A primitive
+checks both operands after it has evaluated them both, so they are bound
+by $\key{let}$s first.
+\begin{align*}
+  \pass{cast}(x) &= x \\
+  \pass{cast}(\lam{x} N) &= \Tinject{\Tfun}(\lam{x} \pass{cast}(N)) \\
+  \pass{cast}(L\;M) &= (\Tproject{\Tfun} \pass{cast}(L))\; \pass{cast}(M) \\
+  \pass{cast}(c) &= \Tinject{B} c \qquad c \text{ of base type } B \\
+  \pass{cast}(\tuple{M_1,\ldots,M_n}) &= \Tinject{\Ttup{n}}
+    \tuple{\pass{cast}(M_1),\ldots,\pass{cast}(M_n)} \\
+  \pass{cast}(\prj{i} M) &= \prj{i} (\Tproject{\Tttup{n}{i}} \pass{cast}(M))
+    \qquad \prj{i} \text{ of arity } n \\
+  \pass{cast}(\inl M) &= \Tinject{\Tsum} (\inl \pass{cast}(M))
+    \qquad\text{and likewise for } \key{inr} \\
+  \pass{cast}(\Case{L}{x}{M}{y}{N}) &=
+    \Case{\Tproject{\Tsum} \pass{cast}(L)}{x}{\pass{cast}(M)}{y}{\pass{cast}(N)} \\
+  \pass{cast}(\prim{p}{L}{M}) &= \Let x = \pass{cast}(L) \In \Let y = \pass{cast}(M) \In \\
+    &\qquad \Tinject{\Tout{p}} \prim{p}{\Tproject{\Tint} x}{\Tproject{\Tint} y}
+    \qquad x, y \text{ fresh} \\
+  \pass{cast}(\Let x = M \In N) &= \Let x = \pass{cast}(M) \In \pass{cast}(N)
+\end{align*}
+The pass is defined on well-scoped terms, so every variable becomes a
+typed one; a closed program becomes a closed term of type $\TAny$.
+
+\subsection{CC: Enclose (\texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Clos2}$}{Clos2-T})}
+
+Typed enclose makes each function a closure that captures every variable
+in scope, in order, so its body is unchanged. (The untyped pass captures
+only the free variables; here pruning is optimize's job.)
+\begin{align*}
+  \pass{enclose}(\lam{y} N) &= \clos{x_1\ldots x_k}{x_1\ldots x_k\, y} \pass{enclose}(N)
+    \qquad\text{where } x_1, \ldots, x_k \text{ are the variables in scope}
+\end{align*}
+
+\subsection{CC: Optimize (\texorpdfstring{$\Tl{Clos2}$}{Clos2-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Clos2}$}{Clos2-T})}
+
+Optimize removes the captured values that the code does not use. Closures
+are strict (they evaluate their free variables, which may err or diverge),
+so a captured term is dropped only when the code does not use its name and
+it is a variable, which is all enclose captures.
+\begin{align*}
+  \pass{optimize}(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
+    \clos{\pass{optimize}(M_{i_1})\ldots \pass{optimize}(M_{i_k})}{x_{i_1}\ldots x_{i_k}\, y}
+    \pass{optimize}(N) \\
+  \text{where } \{ i_1 < \cdots < i_k \} &=
+    \{ i \mid x_i \in \FV(N) \text{ or } M_i \text{ is not a variable} \}
+\end{align*}
+
+\subsection{CC: Concretize (\texorpdfstring{$\Tl{Clos2}$}{Clos2-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Clos3}$}{Clos3-T})}
+
+As the untyped pass: each closure stores its captured values in one tuple
+$e$, of type $\Tflat{\Ttup{n}}$, and inside its code the name $x_i$
+becomes $\prj{i} e$. The map $\varphi$ sends each $\Tl{Clos2}$ variable to a
+reference $r ::= x \mid \prj{i} x$ in $\Tl{Clos3}$.
+\begin{align*}
+  \pass{concretize}_\varphi(x) &= \varphi(x) \\
+  \pass{concretize}_\varphi(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
+    \clos{\pass{concretize}_\varphi(M_1)\ldots\pass{concretize}_\varphi(M_n)}{e\,y}
+       \pass{concretize}_{\varphi_n}(N) \\
+  \text{where } \varphi_n &= \{ y \mapsto y,\; x_1 \mapsto \prj{1} e,\; \ldots,\; x_n \mapsto \prj{n} e \},
+    \quad e \text{ fresh}
+\end{align*}
+and under a $\key{let}$ or $\key{case}$ the bound variable maps to itself,
+$\ext{\varphi}{x}{x}$; a program is concretized with $\varphi = \emptyset$.
+
+\subsection{CC: Delay (\texorpdfstring{$\Tl{Clos3}$}{Clos3-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Clos4}$}{Clos4-T})}
+
+A closure becomes a packed pair of its code and the tuple of its captured
+values, and an application opens the closure and calls its code. Unlike the
+untyped pass, which builds a pair and takes it apart with a $\key{let}$,
+$\key{fst}$ and $\key{snd}$, the typed pass needs no $\key{let}$: $\key{callc}$
+does it all.
+\begin{align*}
+  \pass{delay}(\clos{M_1\ldots M_n}{e\,y} N) &=
+    \Tpack{\Tcodetm{e}{y}{\pass{delay}(N)}}{\tuple{\pass{delay}(M_1),\ldots,\pass{delay}(M_n)}} \\
+  \pass{delay}(L\;M) &= \Tcallc{\pass{delay}(L)}{\pass{delay}(M)}
+\end{align*}
+
+\subsection{CC: Globalize (\texorpdfstring{$\Tl{Clos4}$}{Clos4-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Clos5}$}{Clos5-T})}
+
+As the untyped pass: the code of every function becomes a global
+definition, and the code itself a reference to it. The pass threads the
+definitions made so far, from left to right; for code, it first globalizes
+the body, so the functions nested in it become definitions first. Each
+definition is typed over the table of the definitions older than it, and
+the term made for an operand over the table made so far; both are weakened
+to the bigger table at the end, which has an entry $n$ for code of type
+$\Tcode{n}$.
+\begin{align*}
+  \pass{glob}(x, \vec{d}) &= (x, \vec{d}) \\
+  \pass{glob}(\Tcodetm{e}{y}{N}, \vec{d}) &= (\funref{|\vec{d}_1|},\; \vec{d}_1, \Tcodetm{e}{y}{N'})
+     \quad\text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d}) \\
+  \pass{glob}(\mathit{op}(\bar{x}_1.A_1, \ldots, \bar{x}_n.A_n), \vec{d}_0)
+     &= (\mathit{op}(\bar{x}_1.A'_1, \ldots, \bar{x}_n.A'_n), \vec{d}_n)
+     \quad\text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1}) \\[1ex]
+  \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
+\end{align*}
+
+\subsection{Remove Complex Operands (\texorpdfstring{$\Tl{Clos5}$}{Clos5-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Mon}$}{Mon-T})}
+
+As the untyped pass: every complex operand is bound to a fresh variable by
+a $\key{let}$, from left to right, so the operands of every operation
+become atoms. The fresh variable has the type of the operand, which may be
+any type (code, an environment, a closure, \ldots), hence $\Tl{Mon}$'s
+$\key{let}$ at any type. A $\key{case}$ or $\key{let}$ is complex: its
+branches and body are translated in place, so nothing is duplicated.
+With $\pass{atomize}$ and $\pass{lets}$ as in the untyped pass (atoms $x$,
+$c$ and $\funref{k}$ stay in place, any other operand $M$ is bound,
+$x{=}M$),
+\begin{multline*}
+  \mathit{op}(M_1, \ldots, M_n) \in \{\, \Tpack{M}{N},\ \Tcallc{M}{N},\
+     \tuple{M_1, \ldots, M_n},\ \prj{i} M,\ \inl M,\ \inr M, \\
+     \prim{p}{M}{N},\ \Tinject{G} M,\ \Tproject{t} M \,\}
+\end{multline*}
+\begin{align*}
+  \pass{rco}(\mathit{op}(M_1, \ldots, M_n)) &= \pass{lets}(\vec{b}, \mathit{op}(a_1, \ldots, a_n)) \\
+  &\qquad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(\pass{rco}(M_1), \ldots, \pass{rco}(M_n)) \\
+  \pass{rco}(\Case{L}{x}{M}{y}{N}) &= \pass{lets}(\vec{b}, \Case{a}{x}{\pass{rco}(M)}{y}{\pass{rco}(N)}) \\
+  &\qquad \text{where } (\vec{b}; a) = \pass{atomize}(\pass{rco}(L)) \\
+  \pass{rco}(\Let x = M \In N) &= \Let x = \pass{rco}(M) \In \pass{rco}(N) \\
+  \pass{rco}((d_0, \ldots, d_{m-1};\; M)) &= (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M)) \\
+  \pass{rco}(\Tcodetm{e}{y}{N}) &= \Tcodetm{e}{y}{\pass{rco}(N)}
+\end{align*}
+Typed terms are well scoped, so the untyped pass's caveat about unbound
+variables does not arise.
+
+\subsection{Lift Locals (\texorpdfstring{$\Tl{Mon}$}{Mon-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{Imp}$}{Imp-T})}
+
+A $\key{let}$ becomes an assignment to the next slot of the frame, and the
+variable a $\key{case}$ binds is the slot its payload is assigned to. The
+frame of a body is typed by its context, and a variable is the slot at its
+level, $\ell(x)$, the number of variables bound before it (in a definition
+$\Tcodetm{e}{y}{N}$, $\ell(e) = 0$ and $\ell(y) = 1$). So the variables and
+atoms stay as they are, and what the untyped pass computes (the slot of
+each variable, the size of the frame) is in the types; select instructions
+reads the slots' levels off them. With $\Gamma$ the variables in scope,
+\begin{align*}
+  \pass{lift}(x) &= \ell(x) \\
+  \pass{lift}(\Let x = M \In N) &= \assign{|\Gamma|}{\pass{lift}(M)}{\pass{lift}(N)} \\
+  \pass{lift}(\Case{a}{x}{M}{y}{N}) &=
+    \Casei{\pass{lift}(a)}{|\Gamma|}{\pass{lift}(M)}{\pass{lift}(N)} \\
+  \pass{lift}(\Tcodetm{e}{y}{N}) &= \pass{lift}(N) \\
+  \pass{lift}((d_0, \ldots, d_{m-1};\; M)) &=
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}(M))
+\end{align*}
+and every other construct is a simple expression, unchanged.
+
+\subsection{Explicate Control (\texorpdfstring{$\Tl{Imp}$}{Imp-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{CFG}$}{CFG-T})}
+
+The equations are those of the untyped pass: $\pass{tail}(e)$ translates
+$e$ in tail position, $\pass{assign}(e, s, k)$ translates ``slot $s := e$,
+then the tail $k$'' in continuation-passing style, and a $\key{case}$ on
+the right of an assignment adds $k$ as a block, the join point. Both thread
+the blocks made so far, each typed over the older ones, so a new block's
+label is the newest, and a label made earlier stays valid as more blocks are
+added. In $\pass{assign}(e, s, k)$, $k$ starts in the frame $\Delta', A$
+with $s = |\Delta'|$, $\Delta'$ a prefix of the frame $\Delta$ of $e$.
+\begin{align*}
+  \pass{tail}(r) &= \key{return}\; r \\
+  \pass{tail}(\assign{s}{e_1}{e_2}) &= \pass{assign}(e_1, s, \pass{tail}(e_2)) \\
+  \pass{tail}(\Casei{a}{s}{e_1}{e_2}) &=
+    \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\
+  &\qquad \text{where } l_1 = \pass{add}(\pass{tail}(e_1)),\ l_2 = \pass{add}(\pass{tail}(e_2)) \\[1ex]
+  \pass{assign}(r, s, k) &= \assign{s}{r}{k} \\
+  \pass{assign}(\assign{s'}{e_1}{e_2}, s, k) &= \pass{assign}(e_1, s', \pass{assign}(e_2, s, k)) \\
+  \pass{assign}(\Casei{a}{s'}{e_1}{e_2}, s, k) &=
+    \key{case}\;a\;\key{of}_{s'}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\
+  &\qquad \text{where } l = \pass{add}(k),\
+    l_i = \pass{add}(\pass{assign}(e_i, s, \key{goto}\;l)) \\[1ex]
+  \pass{explicate}(e) &= (\vec{t};\; t)
+    \quad\text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
+\end{align*}
+and $\pass{explicate}$ maps over the definitions and main of a program.
+Unlike the untyped pass, a body carries no frame size.
+
+\subsection{Select Instructions (\texorpdfstring{$\Tl{CFG}$}{CFG-T} \texorpdfstring{$\to$}{->} X86)}
+
+X86 stays untyped. A slot is the X86 variable at its level, and a reference
+to a definition and a label are their levels too, which are the numbers X86
+uses; so $\bar{s} = s$, $\bar{c} = c$, and $\overline{\funref{k}} =
+\funref{k}$. An X86 value carries its own kind, so $\key{inject}$ is a
+move; $\Tproject{t} a$ first runs $\Tcheck{t}$, an existing X86 instruction
+that errs on a value of any other kind and otherwise only clobbers
+$\rax$ or the flag. $\key{callc}$ opens the closure: its code and
+environment are the two fields of a pair. The simple expressions and tails
+not shown are as in the untyped pass.
+\begin{align*}
+  \Tcheck{\Tint}(o) &= \key{movq}\; o, \rax;\ \key{subq}\; \$0, \rax &
+  \Tcheck{\Tsum}(o) &= \key{testinl}\; o \\
+  \Tcheck{\Tfun}(o) &= \key{load}\; \key{fst}\; o, \rax &
+  \Tcheck{\Tttup{n}{i}}(o) &= \key{load}\; \pi_i\; o, \rax
+\end{align*}
+\begin{align*}
+  \pass{sel}(\Tinject{G} a, d) &= \key{movq}\; \bar{a}, d \\
+  \pass{sel}(\Tproject{t} a, d) &= \Tcheck{t}(\bar{a});\ \key{movq}\; \bar{a}, d \\
+  \pass{sel}(\Tpack{a_1}{a_2}, d) &= \key{alloc}\; \key{pair}\; \bar{a}_1, \bar{a}_2, d \\
+  \pass{sel}(\Tcallc{a_1}{a_2}, d) &= \key{load}\; \key{fst}\; \bar{a}_1, \rax;\
+    \key{load}\; \key{snd}\; \bar{a}_1, \rdi;\ \key{movq}\; \bar{a}_2, \rsi; \\
+  &\qquad \key{callq}\; \rax;\ \key{movq}\; \rax, d \\[1ex]
+  \pass{sel}(\assign{s}{r}{t}) &= \pass{sel}(r, s);\ \pass{sel}(t) \qquad s = |\Delta'| \\
+  \pass{sel}(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &=
+    \key{testinl}\; \bar{a};\ \key{load}\; \key{payload}\; \bar{a}, s;\ \key{je}\; l_1, l_2
+    \qquad s = |\Delta'|
+\end{align*}
+The frame of a body has as many slots as the deepest level its tails
+write: with $\Delta$ the frame a tail starts in,
+\begin{align*}
+  \mathit{depth}(\key{return}\; r) = \mathit{depth}(\key{goto}\; l) &= |\Delta| \\
+  \mathit{depth}(\assign{s}{r}{t}) &= \max(|\Delta|, \mathit{depth}(t)) \\
+  \mathit{depth}(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &= \max(|\Delta|, s + 1) \\
+  \pass{select}((t_0, \ldots, t_{j-1};\; t)) &=
+    (\max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}), \mathit{depth}(t));\
+     \pass{sel}(t_0), \ldots, \pass{sel}(t_{j-1});\ \pass{sel}(t))
+\end{align*}
+and the start of each definition begins with the prologue
+$\key{movq}\; \rdi, 0;\ \key{movq}\; \rsi, 1$, as in the untyped pass,
+which moves its environment and argument to slots $0$ and $1$.
+
+\subsection{The Compiler}
+
+The typed compiler goes from untyped ISWIM to X86; simplify stays on
+untyped ISWIM, before cast insertion.
+\[
+  \pass{compile}_4 = \pass{delay} \circ \pass{concretize}_{\emptyset}
+     \circ \pass{optimize} \circ \pass{enclose} \circ \pass{cast\text{-}closed} \circ \pass{simplify}
+  \qquad
+  \pass{compile} = \pass{globalize} \circ \pass{compile}_4
+\]
+\begin{align*}
+  \pass{compile\text{-}mon} &= \pass{rco} \circ \pass{compile}
+  &
+  \pass{compile\text{-}imp} &= \pass{lift} \circ \pass{compile\text{-}mon} \\
+  \pass{compile\text{-}cfg} &= \pass{explicate} \circ \pass{compile\text{-}imp}
+  &
+  \pass{compile\text{-}x86} &= \pass{select} \circ \pass{compile\text{-}cfg}
+\end{align*}
+Cast insertion needs a closed program, so the pipeline uses
+$\pass{cast\text{-}closed}$:
+\[
+  \pass{cast\text{-}closed}(M) =
+  \begin{cases}
+    \pass{cast}(M) & \text{if } \FV(M) = \emptyset \\
+    (\Tproject{\Tfun} U)\; U, \quad U = \Tinject{\Ttup{0}} \emptytup & \text{otherwise}
+  \end{cases}
+\]
+A program that is not closed, which cast insertion cannot type, becomes one
+that stops with an error at once, the application of an empty tuple. The
+theorems are for closed programs, for which $\pass{cast\text{-}closed}$ is
+$\pass{cast}$; simplify keeps programs closed
+(Lemma~\ref{lem:simplify-closed}).
+
+\paragraph{Where it doesn't match the Agda literally.}
+\begin{itemize}
+\item \textbf{Variables} are typed de Bruijn indices in the Agda
+  (\texttt{Framework/Membership.agda}): \texttt{Fin k} in $\Tl{ISWIM}$ and
+  $\Tl{Clos2}$, whose contexts are numbers $k$ (all variables have type
+  $\TAny$), and $\Gamma \ni A$ from $\Tl{Clos3}$ on.
+\item \textbf{Contexts, frames, tables and label lists} are listed newest
+  first in the Agda; here oldest first, so that slot $s$, definition $k$
+  and label $l$ are the \emph{levels} (\texttt{lvl}) of the indices,
+  which select instructions uses. In particular the frame of a definition
+  is $\TAny, \Tflat{\Ttup{n}}$ in the Agda, and $\Delta' \sqsubseteq \Delta$ (prefix) is
+  $\Delta' \mathrel{\sqsubseteq} \Delta$ on newest-first lists (suffix).
+\item \textbf{Slots} written in $\Tl{Imp}$ and $\Tl{CFG}$ are implicit in the
+  Agda: $\key{assign}$ and $\key{case}$ of $\Tl{Imp}$ write slot $|\Delta|$;
+  $\key{seq}$ and $\key{case}$ of $\Tl{CFG}$ carry a proof
+  $p : \Delta' \sqsubseteq \Delta$ and write slot $|\Delta'|$. The CFG
+  assignment $\assign{s}{r}{t}$ is the Agda's \texttt{seq}.
+\item \textbf{Tuple tags} $\Tttup{n}{i}$ are the Agda's \texttt{ttup n i}, a
+  tuple of $n + 1$ components with $i : \mathtt{Fin}\,(n+1)$; tuple
+  indices run from $1$ to $n$ here, from $0$ in the Agda. $\key{Bool}$ is
+  the Agda's blackboard-bold B.
+\item \textbf{Cast insertion} is defined on terms with a proof that they are
+  well scoped (\texttt{WS k M}), and carries a renaming of the variables,
+  for the variable the $\key{let}$ of a primitive adds around its second
+  operand. The program pass is \texttt{cast-program}; the test
+  $\FV(M) = \emptyset$ of $\pass{cast\text{-}closed}$ is \texttt{ws? 0 M}.
+\item \textbf{Optimize} carries a renaming; the kept positions are flags
+  (\texttt{keeps}), the kept terms \texttt{select}, and the code is renamed
+  by \texttt{squeeze} (\texttt{Framework/VecSelect.agda}), which sends a
+  dropped (unused) variable to the argument. $x_i \in \FV(N)$ is
+  \texttt{uses N (suc i)}.
+\item \textbf{Concretize}'s references are \texttt{Ref}
+  (\texttt{var}, \texttt{prj}); $\varphi$ for the code of a closure is
+  \texttt{fv-ref}. \textbf{Delay} carries a renaming, the identity for a
+  program.
+\item \textbf{Globalize} threads the definitions made, each over the table
+  of the older ones (\texttt{Made}), and returns with each term a proof that
+  the table grew (\texttt{Out}); terms are weakened (\texttt{wk}) to the
+  bigger table, and at the end every definition is weakened to the whole
+  table (\texttt{close}).
+\item \textbf{Remove complex operands} is in continuation-passing style:
+  \texttt{atomize M $\rho$ k} gives the atom for $M$ to the continuation $k$,
+  which takes a renaming to the context where the atom is used (the lets of
+  later operands put it under more binders); there are no lists
+  $\vec{b}$, and the fresh variables are de Bruijn indices.
+\item \textbf{Explicate control}'s results are \texttt{Out} records: a tail
+  with the blocks made and a proof that the list of blocks grew;
+  $\pass{add}$ is $\triangleright$ (\texttt{bs} $\triangleright$ \texttt{t}), and a
+  body is \texttt{body bs t}.
+\item \textbf{Select instructions}' $\mathit{depth}$ of a body is
+  \texttt{blocks-depth bs $\sqcup$ depth t}; the prologue is
+  \texttt{prologue}, added by \texttt{select-defs}.
+\item \textbf{$\Tl{Mon}$} has its own syntax (\texttt{Atm}, \texttt{Exp});
+  its meaning is the embedding $\ulcorner\cdot\urcorner$ into $\Tl{Clos5}$.
+\end{itemize}
+
+% Part I: the typed denotational semantics (graph model, and with errors)
+\providecommand{\Tguard}{\key{guard}^{\mathrm{p}}}            % the guard of a predicate
+\providecommand{\Taccepts}[1]{\mathit{accepts}_{#1}}          % the test of a tag, for a kind of function
+\providecommand{\Tfuntwo}{\mathit{fun}_2}                     % a function is an entry of a graph
+\providecommand{\Tfunfour}{\mathit{fun}_4}                    % a function is a pair
+\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}
+\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}
+\providecommand{\Tcodet}[2]{\key{code}(#1.\, #2)}             % the code term of Clos4^T
+\providecommand{\Tchecked}[1]{\key{checked}^{#1}}             % checked through a map on kinds
+\providecommand{\Tkind}{\key{kind}}
+\providecommand{\Tkindf}{\key{kind}^{\mathrm{f}}}              % the kind of a flat type
+\providecommand{\Tkindfour}{\key{kind}_4}
+\providecommand{\Tkeep}[1]{\key{keep}^{#1}}
+\providecommand{\Thit}{\key{hit}}
+\providecommand{\Tflatof}{\key{flat}}                         % the flat type of a tag
+\providecommand{\Tletv}{\key{let}^{\mathsf{T}}}               % bind to the next slot
+\providecommand{\Tembed}[1]{\ulcorner #1 \urcorner}           % Mon^T into Clos5^T
+\providecommand{\Same}{\mathit{Same}}
+
+%===============================================================================
+\section{Denotational: Graph Model}\label{sec:t-den}
+
+The typed languages (Section~\ref{sec:t-langs}) are given meaning in the
+graph model of Part~II: the same domain $\V$, the same operators
+(Section~\ref{sec:den-ops}) and consistency, and the same clauses, with
+one new clause each for $\Tinject{G}$ and $\Tproject{t}$
+(\texttt{agda/Semantics/Graph/Typed/}). A value carries its own kind, so
+the domain needs no type tags. Since the syntax is intrinsically typed,
+each semantics is defined by plain structural recursion on typed terms,
+with no ABT; the generic infrastructure
+(\texttt{agda/Framework/GraphModel/Typed*.agda},
+\texttt{agda/proof/Framework/GraphModel/Typed*.agda}) provides the
+guard and the kind check that project uses, and the facts from which a
+language proves its denotations monotone, consistent and continuous
+($\mathit{Ok}$) by induction on the term, one line per construct, with
+the laws of the binders and of a closure call. The lemmas of each language are in
+\texttt{agda/proof/Semantics/Graph/Typed/}. X86's semantics is that of
+Part~II (Section~\ref{sec:den-x86}), unchanged.
+
+We write variables by name, as in Part~II; in the Agda a variable is a
+typed de~Bruijn index, and an environment $\rho : \mathbb{N} \to \SET{\V}$
+gives position $i$ the meaning of the variable with index $i$, so an
+environment, like the domain, carries no types. A variable not in scope
+means $\{\omega\}$, as in $\rho_0$; in a typed term there is none, but the
+body of a closed code is given the environment $\rho_0$ extended with its
+parameters.
+
+\subsection{Project and the typed operators}
+
+$\Tinject{G}$ is the identity, and $\Tproject{t}$ keeps its operand when
+the operand has a value that the tag $t$ accepts, and means $\emptyset$
+otherwise: a failed project means $\emptyset$, as any error does in the
+graph model. The tags are the flat types that project can test: a
+function, a sum, an integer, and component $i$ of a tuple of $n+1$
+components, written $\key{fun}$, $\key{sum}$, $\key{int}$ and
+$\key{tup}_{n+1,i}$; each is what the X86 test of the tag reads. A
+function is an entry of a function's graph up to $\Tl{Clos3}$
+($\Tfuntwo$), and a pair of code and environment from $\Tl{Clos4}$ on,
+where a closure is such a pair ($\Tfunfour$):
+\begin{align*}
+  \Tguard(P, D) &= \{ w \in D \mid \exists d \in D.\; P(d) \} \\[1ex]
+  \Tfuntwo(d) &\iff d = V \mapsto w \text{ or } d = \nu \qquad
+  \Tfunfour(d) \iff d = \pairv{u}{v} \\
+  \Taccepts{F}(\key{fun}, d) &\iff F(d) \qquad
+  \Taccepts{F}(\key{sum}, d) \iff d = \Left{u} \text{ or } d = \Right{u} \\
+  \Taccepts{F}(\key{int}, d) &\iff d \text{ is an integer constant} \\
+  \Taccepts{F}(\key{tup}_{n+1,i}, d) &\iff d = \tup{i}{u} \text{ for some } u \text{ (a tuple of } n+1 \text{ components)} \\[1ex]
+  \key{project}^{F}_t(D) &= \Tguard(\Taccepts{F}(t, -), D)
+\end{align*}
+So $\key{project}^{F}_t(D)$ is all of $D$, not only the elements that $t$
+accepts. The semantics of a typed language $\ell$ has the clauses
+\begin{align*}
+  \SEM{\Tinject{G} M}^{\ell}\rho &= \SEM{M}^{\ell}\rho \\
+  \SEM{\Tproject{t} M}^{\ell}\rho &= \key{project}^{\Tfuntwo}_t(\SEM{M}^{\ell}\rho)
+    \qquad (\ell \in \{\Tl{ISWIM}, \Tl{2}, \Tl{3}\}) \\
+  \SEM{\Tproject{t} M}^{\ell}\rho &= \key{project}^{\Tfunfour}_t(\SEM{M}^{\ell}\rho)
+    \qquad (\ell \in \{\Tl{4}, \Tl{5}\},\ \text{and the simple expressions of } \Tl{Imp} \text{ and } \Tl{CFG})
+\end{align*}
+The guard is monotone, consistent (its result is part of its operand)
+and continuous (an element and its witness come from one finite
+approximation). All the other operators are those of
+Section~\ref{sec:den-ops}, and the operations of a typed term are
+applied only to operands of their type, but the semantics does not rely
+on it: an operator on a value of the wrong kind gives $\emptyset$, as in
+Part~II.
+
+\subsection{\texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T}, \texorpdfstring{$\Tl{Clos2}$}{Clos2-T} and \texorpdfstring{$\Tl{Clos3}$}{Clos3-T}}
+
+$\SEM{-}^{\Tl{ISWIM}}$ is $\SEM{-}^{\mathrm{ISWIM}}$: the common clauses
+of Part~II and those for $\lambda$ and application, together with the
+clauses for inject and project above. $\Tl{Clos2}$ and $\Tl{Clos3}$ are
+as Clos2 and Clos3, except that a closure captures the values of terms
+$M_1, \ldots, M_n$ (of type $\TAny$), not only variables:
+\begin{align*}
+  \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}^{\Tl{2}}\rho &=
+    \key{guard}(D_1, \ldots, D_n;\;
+       \Lambda(\lambda Y.\, \SEM{N}^{\Tl{2}}\rho_0(x_1{:=}D_1,\ldots,x_n{:=}D_n, y{:=}Y))) \\
+    &\qquad\text{where } D_i = \SEM{M_i}^{\Tl{2}}\rho \\
+  \SEM{\clos{M_1\ldots M_n}{e\, y} N}^{\Tl{3}}\rho &=
+    \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\Tl{3}}\rho_0(e{:=}X, y{:=}Y))) \\
+    &\qquad \app \mathcal{T}(\SEM{M_1}^{\Tl{3}}\rho, \ldots, \SEM{M_n}^{\Tl{3}}\rho)
+\end{align*}
+where in $\Tl{Clos3}$ the code's parameters have the types
+$e : \Tflat{\key{tup}\;n}$ and $y : \TAny$, and application is $\app$.
+
+\subsection{\texorpdfstring{$\Tl{Clos4}$}{Clos4-T} and \texorpdfstring{$\Tl{Clos5}$}{Clos5-T}}
+
+In $\Tl{Clos4}$ code (of type $\Tcode{n}$) is a closed function of two
+arguments, the environment and the argument; a closure (of type
+$\Tflat{\key{fun}}$) is the pair of code and environment, built by
+$\key{pack}$; and $\key{callc}$ applies the closure's code ($\key{car}$)
+to its environment ($\key{cdr}$) and then to the argument. There is no
+$\key{fst}$ or $\key{snd}$ in the syntax: only a call opens a closure.
+\begin{align*}
+  \SEM{\Tcodet{e\,y}{N}}^{\Tl{4}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\Tl{4}}\rho_0(e{:=}X, y{:=}Y))) \\
+  \SEM{\Tpack{L}{M}}^{\Tl{4}}\rho &= \key{pair}(\SEM{L}^{\Tl{4}}\rho, \SEM{M}^{\Tl{4}}\rho) \\
+  \SEM{\Tcallc{L}{M}}^{\Tl{4}}\rho &= (\key{car}(D) \app \key{cdr}(D)) \app \SEM{M}^{\Tl{4}}\rho
+    \quad\text{where } D = \SEM{L}^{\Tl{4}}\rho
+\end{align*}
+$\Tl{Clos5}$ is $\Tl{Clos4}$ with code replaced by a reference $\funref{f}$
+to a global definition. A reference is typed: $f : \Sigma \ni n$ picks a
+definition, of $n$ free variables, from the list $\Sigma$ of the arities of
+the program's definitions. So a table is indexed by the typed references
+into $\Sigma$, not by numbers. As in Part~II, each definition $d_k$ (the
+oldest is $d_0$; the Agda list is newest first) is given meaning with the
+table of the older ones, found by the level of the reference, and main
+with the table of all of them:
+\begin{align*}
+  \SEM{\funref{f}}^{\Tl{5}}_T\rho &= T(f) \qquad (T : \forall n.\; \Sigma \ni n \to \SET{\V}) \\
+  \key{code}_T(N) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\Tl{5}}_T\rho_0(e{:=}X, y{:=}Y))) \\
+  \key{table}(d_0,\ldots,d_{m-1})(f) &=
+    \begin{cases}
+      \key{code}_{\key{table}(d_0,\ldots,d_{k-1})}(d_k) & \text{the level of } f \text{ is } k < m \\
+      \emptyset & \text{otherwise}
+    \end{cases} \\
+  \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\Tl{5}} &= \SEM{M}^{\Tl{5}}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
+\end{align*}
+with the other clauses those of $\Tl{Clos4}$ under $T$.
+
+\paragraph{$\Tl{Mon}$.} $\Tl{Mon}$ has no semantics of its own: it is a
+syntax of its own (so that monadic form needs no proof), and a $\Tl{Mon}$
+program $P$ means its embedding $\Tembed{P}$ into $\Tl{Clos5}$, which maps
+each construct to the $\Tl{Clos5}$ construct of the same name and an atom
+to a variable, a constant or a reference:
+$\SEM{P}^{\Tl{Mon}} = \SEM{\Tembed{P}}^{\Tl{5}}$.
+
+\subsection{\texorpdfstring{$\Tl{Imp}$}{Imp-T}, continuation-passing}
+
+As Imp's continuation-passing semantics (Part~II), with these
+differences. The frame is typed: its slots are typed variables, and an
+assignment or a case binds a new slot, as a $\key{let}$ does in
+$\Tl{Clos5}$, so a frame $\sigma$ is an environment, there is no frame
+size $n$, no slot can be out of bounds, and the $\mathit{checked}_n$ of
+Part~II is gone. An expression never changes the slots it can see, so a
+continuation takes only the value of the expression, not a store. The
+atoms and simple expressions are $\Tl{Clos5}$'s operators on atoms, with
+$\mathcal{A}_\sigma(x) = \sigma(x)$, $\mathcal{A}_\sigma(c) =
+\mathcal{B}(c)$, $\mathcal{A}_\sigma(\funref{f}) = T(f)$, and
+\begin{align*}
+  \mathcal{S}_\sigma(\Tpack{a_1}{a_2}) &= \key{pair}(\mathcal{A}_\sigma(a_1), \mathcal{A}_\sigma(a_2)) \\
+  \mathcal{S}_\sigma(\Tcallc{a_1}{a_2}) &= (\key{car}(A) \app \key{cdr}(A)) \app \mathcal{A}_\sigma(a_2)
+    \quad\text{where } A = \mathcal{A}_\sigma(a_1) \\
+  \mathcal{S}_\sigma(\Tinject{G} a) &= \mathcal{A}_\sigma(a) \qquad
+  \mathcal{S}_\sigma(\Tproject{t} a) = \key{project}^{\Tfunfour}_t(\mathcal{A}_\sigma(a))
+\end{align*}
+and tuples, projections, injections and primitives as in Part~II. With $T$
+fixed, writing $\SEM{e}\sigma\,\kappa$ for $\SEM{e}^{\Tl{Imp}}_T\sigma\,\kappa$,
+with $\kappa : \SET{\V} \to \SET{\V}$:
+\begin{align*}
+  \SEM{r}\sigma\,\kappa &= \kappa(\mathcal{S}_\sigma(r)) \\
+  \SEM{\assign{x}{e_1}{e_2}}\sigma\,\kappa &= \SEM{e_1}\sigma\,(\lambda D.\,
+    \Lambda(\lambda X.\, \SEM{e_2}\ext{\sigma}{x}{X}\,\kappa) \app D) \\
+  \SEM{\Case{a}{x}{e_1}{x}{e_2}}\sigma\,\kappa &=
+    \mathcal{C}(\mathcal{A}_\sigma(a),\; \lambda X.\, \SEM{e_1}\ext{\sigma}{x}{X}\,\kappa,\;
+      \lambda X.\, \SEM{e_2}\ext{\sigma}{x}{X}\,\kappa) \\[1ex]
+  \key{code}^{\mathrm{K}}_T(b) &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\,
+    \SEM{b}^{\Tl{Imp}}_T\,\rho_0(e{:=}X, y{:=}Y)\,(\lambda D.\, D))) \\
+  \SEM{(b_0, \ldots, b_{m-1};\; e)}^{\Tl{Imp}} &=
+    \SEM{e}^{\Tl{Imp}}_{\key{table}^{\mathrm{K}}(b_0,\ldots,b_{m-1})}\,\rho_0\,(\lambda D.\, D)
+\end{align*}
+where the body $b$ of a definition has the parameters $e : \Tflat{\key{tup}\;n}$
+and $y : \TAny$ (its first two slots), and $\key{table}^{\mathrm{K}}$ is
+$\Tl{Clos5}$'s table with $\key{code}^{\mathrm{K}}$. There is no direct-style
+semantics of $\Tl{Imp}$.
+
+\subsection{\texorpdfstring{$\Tl{CFG}$}{CFG-T}}
+
+As CFG (Part~II), with typed frames as in $\Tl{Imp}$ and typed labels. A
+label $l : \mathit{Bs} \ni \Delta$ is an index into the list of the
+blocks a tail can see, and carries the context $\Delta$ of its block, so a
+jump runs the block in the frame as it is, and there is no jump to a
+missing block. An assignment $x \mathrel{:=}_{\Delta'} s;\; t$ and a
+case forget the slots of a finished scope: they continue in the frame
+cut to an older context $\Delta'$ of the current one, $\sigma|_{\Delta'}$,
+extended with the new slot. With $T$ and the meanings $B$ of the visible
+blocks fixed, writing $\SEM{t}\sigma$ for $\SEM{t}^{\Tl{CFG}}_{T,B}\sigma$:
+\begin{align*}
+  \SEM{\key{return}\; s}\sigma &= \mathcal{S}_\sigma(s) \\
+  \SEM{x \mathrel{:=}_{\Delta'} s;\; t}\sigma &=
+    \Lambda(\lambda X.\, \SEM{t}\ext{(\sigma|_{\Delta'})}{x}{X}) \app \mathcal{S}_\sigma(s) \\
+  \SEM{\key{goto}\; l}\sigma &= B(l)(\sigma) \\
+  \SEM{\key{case}\;a\;\key{of}_{\Delta'}\;\key{goto}\;l_1 \mid \key{goto}\;l_2}\sigma &=
+    \mathcal{C}(\mathcal{A}_\sigma(a),\;
+      \lambda X.\, B(l_1)(\ext{(\sigma|_{\Delta'})}{x}{X}),\; \lambda X.\, B(l_2)(\ext{(\sigma|_{\Delta'})}{x}{X}))
+\end{align*}
+where $\mathcal{A}$ and $\mathcal{S}$ are $\Tl{Imp}$'s. The blocks of a
+body are given meaning newest first, each with the meanings of the older
+ones, which are all it can jump to; a body $(\vec{t};\; t)$ runs its
+start $t$ with them ($\mathit{run}_T$); the code of a definition is
+$\Lambda(\lambda X.\, \Lambda(\lambda Y.\, \mathit{run}_T(b)(\rho_0(e{:=}X, y{:=}Y))))$,
+and main runs in $\rho_0$, with $\Tl{Clos5}$'s table.
+
+%===============================================================================
+\section{The Graph Model with Errors}\label{sec:t-gerr}
+
+The typed languages are also given meaning in the graph model with
+errors of Part~II (Section~\ref{sec:graph-errors}), over the same error
+monad: a set is a computation that errs when it holds $\omega$, and
+$\bind$ runs a function on its values
+(\texttt{agda/Semantics/GraphErr/Typed/},
+\texttt{agda/Framework/GraphModel/ErrorMonad.agda}). The difference from
+the untyped semantics is that \emph{only project checks kinds and errs}.
+Each operator is the graph model's under the binds of its operands, in
+the machines' order, with no $\key{checked}$: a typed operand has the
+kind its operator needs. An operand may still hold $\omega$, from a
+failed project, which the binds propagate.
+\begin{align*}
+  D \app^{\mathsf{T}} E &= D \bind \lambda F.\, E \bind \lambda X.\, F \app X \\
+  \key{proj}^{\mathsf{T}}_i(D) &= D \bind \lambda X.\, \key{proj}_i(X) \\
+  \mathcal{C}^{\mathsf{T}}(D, F, G) &= D \bind \lambda X.\, \mathcal{C}(X^{\checkmark}, F, G) \\
+  \key{prim}^{\mathsf{T}}_p(D, E) &= D \bind \lambda X.\, E \bind \lambda Y.\, \key{prim}_p(X, Y) \\
+  \SEM{\Let x = M \In N}^{\ell,\omega}\rho &= \SEM{M}^{\ell,\omega}\rho \bind \lambda X.\, \SEM{N}^{\ell,\omega}\ext{\rho}{x}{X}
+\end{align*}
+where $X^{\checkmark}$ keeps the injections of $X$ whose payload is not
+$\omega$, as in Part~II. A $\key{let}$ is the bind of its body.
+$\Lambda^{\omega}$, $\Lambda\Lambda^{\omega}$, $\mathcal{T}^{\omega}$,
+$\key{inl}^{\omega}$, $\key{inr}^{\omega}$ and $\key{pair}^{\omega}$,
+which check nothing, are those of Part~II. Variables and constants
+are as in Part~II; inject is the identity.
+
+\subsection{Project}
+
+The check of the error monad is generalized to see the kinds of values
+through a map $\varphi$ on kinds: with $\varphi$ the identity it is
+$\key{checked}_k$ of Part~II
+(\texttt{agda/Framework/GraphModel/TypedCheck.agda}). A project to tag $t$ binds
+its operand, adds $\omega$ when the operand has a value of another kind
+than that of the flat type $\Tflatof(t)$ of $t$, and keeps the values of
+that kind, provided that the operand passes the test of $t$:
+\begin{align*}
+  \Tchecked{\varphi}_k(X, A) &= \{ \omega \mid \exists d \in X.\; \varphi(\Tkind(d)) \neq k \} \cup A \\
+  \Tkeep{\varphi}_t(X) &= \{ d \in X \mid \Thit(t, X),\; \varphi(\Tkind(d)) = \Tkindf(\Tflatof(t)) \} \\
+  \key{project}^{\varphi}_t(D) &= D \bind \lambda X.\, \Tchecked{\varphi}_{\Tkindf(\Tflatof(t))}(X, \Tkeep{\varphi}_t(X))
+\end{align*}
+where $\Tkindf$ is the kind of the values of a flat type (an integer, a
+tuple of $n$ components, an injection, a function), and $\Thit(t, X)$
+holds always but for a tuple tag, where it needs an entry $\tup{i}{e} \in X$
+of $n+1$ components for the component $i$ that the tag (and the X86 test,
+and the $\key{proj}_i$ after it) reads: a tuple's meaning may hold entries for
+some components only. Keeping only the values of the right kind keeps a
+denotation consistent. Up to $\Tl{Clos3}$, $\varphi$ is the identity
+($\key{project}^{\mathsf{T}}_t$). From $\Tl{Clos4}$ on a closure is a pair, so
+project sees a pair as a function and code, which is not a value of
+type $\TAny$, as an error:
+\[
+  \Tkindfour(\mathit{pair}) = \mathit{fun} \qquad
+  \Tkindfour(\mathit{fun}) = \mathit{err} \qquad
+  \Tkindfour(k) = k \quad \text{otherwise}
+\]
+and $\Tl{Clos4}$, $\Tl{Clos5}$, $\Tl{Imp}$ and $\Tl{CFG}$ use
+$\key{project}^{\Tkindfour}_t$.
+
+\subsection{The languages}
+
+$\SEM{-}^{\Tl{ISWIM},\omega}$ is $\SEM{-}^{\mathrm{ISWIM},\omega}$ with the
+operators above: $\lambda$ is $\Lambda^{\omega}$, application
+$\app^{\mathsf{T}}$, which binds the operator and then the argument and
+checks nothing; tuples, projections, case and primitives are
+$\mathcal{T}^{\omega}$, $\key{proj}^{\mathsf{T}}_i$, $\mathcal{C}^{\mathsf{T}}$ and
+$\key{prim}^{\mathsf{T}}_p$; and project is $\key{project}^{\mathsf{T}}_t$. A
+closure of $\Tl{Clos2}$ binds its captured terms left to right; one of
+$\Tl{Clos3}$ binds the tuple of them, and is its code applied to it:
+\begin{align*}
+  \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}^{\Tl{2},\omega}\rho &=
+    (D_1, \ldots, D_n) \bind \lambda X_1 \ldots X_n.\, \\
+    &\qquad \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{\Tl{2},\omega}\rho_0(x_1{:=}X_1,\ldots,x_n{:=}X_n, y{:=}Y)) \\
+  \SEM{\clos{M_1\ldots M_n}{e\, y} N}^{\Tl{3},\omega}\rho &=
+    \mathcal{T}^{\omega}(D_1, \ldots, D_n) \bind \lambda E.\, \\
+    &\qquad \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{3},\omega}\rho_0(e{:=}X, y{:=}Y)) \app E
+\end{align*}
+where $D_i = \SEM{M_i}^{\ell,\omega}\rho$. In $\Tl{Clos4}$, code is
+$\Lambda\Lambda^{\omega}$, $\key{pack}$ is $\key{pair}^{\omega}$, and a call
+binds the closure and then the argument, and checks nothing (in
+particular not that the closure is a pair):
+\begin{align*}
+  \SEM{\Tcodet{e\,y}{N}}^{\Tl{4},\omega}\rho &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{4},\omega}\rho_0(e{:=}X, y{:=}Y)) \\
+  \SEM{\Tpack{L}{M}}^{\Tl{4},\omega}\rho &= \key{pair}^{\omega}(\SEM{L}^{\Tl{4},\omega}\rho, \SEM{M}^{\Tl{4},\omega}\rho) \\
+  \SEM{\Tcallc{L}{M}}^{\Tl{4},\omega}\rho &= \SEM{L}^{\Tl{4},\omega}\rho \bind \lambda P.\,
+    \SEM{M}^{\Tl{4},\omega}\rho \bind \lambda X.\, (\key{car}(P) \app \key{cdr}(P)) \app X
+\end{align*}
+
+\paragraph{$\Tl{Clos5}$ and $\Tl{Mon}$.} As $\Tl{Clos4}$, with references
+to global definitions. Unlike the graph model's, the table of the
+semantics with errors is indexed by the level of a reference, a number,
+as in Part~II, and gives $\key{errcode}$ at any other position:
+\begin{align*}
+  \SEM{\funref{f}}^{\Tl{5},\omega}_T\rho &= T(\mathit{lvl}(f)) \qquad
+  \key{code}^{\omega}_T(N) = \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{5},\omega}_T\rho_0(e{:=}X, y{:=}Y)) \\
+  \key{table}^{\omega}(d_0,\ldots,d_{m-1})(k) &=
+    \begin{cases}
+      \key{code}^{\omega}_{\key{table}^{\omega}(d_0,\ldots,d_{k-1})}(d_k) & k < m \\
+      \key{errcode} & \text{otherwise}
+    \end{cases}
+\end{align*}
+The table is generic in what the definitions are, and is also that of
+$\Tl{Imp}$ and $\Tl{CFG}$. A $\Tl{Mon}$ program means its embedding into
+$\Tl{Clos5}$, $\SEM{\Tembed{P}}^{\Tl{5},\omega}$.
+
+\paragraph{$\Tl{Imp}$ and $\Tl{CFG}$.} The frame is the environment, so,
+as in the graph model, it needs no checks: there is no
+$\mathit{checked}^{\omega}_n$. An atom and a simple expression mean what
+they mean as $\Tl{Mon}$ expressions, that is, in $\Tl{Clos5}$:
+$\mathcal{A}_\sigma(a) = \SEM{\Tembed{a}}^{\Tl{5},\omega}_T\sigma$ and
+$\mathcal{S}_\sigma(s) = \SEM{\Tembed{s}}^{\Tl{5},\omega}_T\sigma$. A slot is
+bound as the X86 machine writes it, by the application of a function:
+\begin{align*}
+  \Tletv(D, F) &= D \bind \lambda X.\, \Lambda^{\omega}(F) \app X \\
+  \SEM{\assign{x}{e_1}{e_2}}\sigma\,\kappa &= \SEM{e_1}\sigma\,(\lambda D.\,
+    \Tletv(D,\; \lambda X.\, \SEM{e_2}\ext{\sigma}{x}{X}\,\kappa)) \\
+  \SEM{\Case{a}{x}{e_1}{x}{e_2}}\sigma\,\kappa &=
+    \mathcal{C}^{\mathsf{T}}(\mathcal{A}_\sigma(a),\; \lambda X.\, \SEM{e_1}\ext{\sigma}{x}{X}\,\kappa,\;
+      \lambda X.\, \SEM{e_2}\ext{\sigma}{x}{X}\,\kappa) \\[1ex]
+  \SEM{x \mathrel{:=}_{\Delta'} s;\; t}\sigma &=
+    \Tletv(\mathcal{S}_\sigma(s),\; \lambda X.\, \SEM{t}\ext{(\sigma|_{\Delta'})}{x}{X}) \\
+  \SEM{\key{case}\;a\;\key{of}_{\Delta'}\;\key{goto}\;l_1 \mid \key{goto}\;l_2}\sigma &=
+    \mathcal{C}^{\mathsf{T}}(\mathcal{A}_\sigma(a),\;
+      \lambda X.\, B(l_1)(\ext{(\sigma|_{\Delta'})}{x}{X}),\; \lambda X.\, B(l_2)(\ext{(\sigma|_{\Delta'})}{x}{X}))
+\end{align*}
+with $\SEM{r}\sigma\,\kappa = \kappa(\mathcal{S}_\sigma(r))$,
+$\SEM{\key{return}\; s}\sigma = \mathcal{S}_\sigma(s)$ and
+$\SEM{\key{goto}\; l}\sigma = B(l)(\sigma)$; a label indexes a block that is
+there, so a jump needs no check. The code of a definition is
+$\Lambda\Lambda^{\omega}$ of its body on $\rho_0(e{:=}X, y{:=}Y)$ (with the
+continuation $\lambda D.\, D$ in $\Tl{Imp}$), the blocks are given meaning
+as in the graph model, and main runs in $\rho_0$ with
+$\key{table}^{\omega}$.
+
+\subsection{Select: X86 and checked \texorpdfstring{$\Tl{CFG}$}{CFG-T}}
+
+Every pass of the typed pipeline but delay and select preserves the
+meaning of a program exactly ($\simeq$) in the graph model with errors;
+in the graph model, select does too. Select, with errors, is the one
+pass whose correctness is not an equation, unlike in Part~II: X86's
+semantics (Section~\ref{sec:graph-errors}) checks the kind of every
+operand, so the code of a definition has error entries at inputs of the
+wrong kind, where the code of $\Tl{CFG}$, which checks nothing but
+project, has no entries at all. The two programs err together, produce
+the same constants, and produce a value together:
+\begin{align*}
+  \Same(D, E) &\iff (\omega \in D \iff \omega \in E) \land
+    (\forall c.\; c \in D \iff c \in E) \land (\mathit{val}(D) \iff \mathit{val}(E)) \\
+  &\Same(\SEM{P}^{\Tl{CFG},\omega},\; \SEM{\pass{select}(P)}^{\mathrm{X86},\omega})
+    \qquad \text{for every } \Tl{CFG} \text{ program } P,
+\end{align*}
+and so the end-to-end theorems of the typed pipeline relate the meaning
+of the source to that of each target by $\Same$. The proof
+(\texttt{agda/proof/Correctness/GraphErr/SelectCorrect.agda}) goes
+through $\Tl{CFG}$ with the checks of X86
+(\texttt{SelectCheck.agda}): the typed syntax given the untyped, checking
+operators that the selected instructions mean ($\key{call}^{\omega}$ on the
+$\key{car}^{\omega}$ and $\key{cdr}^{\omega}$ of a closure,
+$\key{proj}^{\omega}_i$, $\key{prim}^{\omega}_p$, $\mathcal{C}^{\omega}$, a slot
+bound by $\Lambda^{\omega}$ and $\app^{\omega}$), where $\Tproject{t}\,a$ runs the X86
+test of $t$ and then moves $a$, and the code of a definition binds its
+parameters to its first two slots, as the X86 prologue does. X86 means
+exactly ($\simeq$) what $\Tl{CFG}$ with checks does
+(\texttt{SelectX86.agda}), and $\Tl{CFG}$ with checks is related to
+$\Tl{CFG}$ in both directions (\texttt{SelectReflect.agda},
+\texttt{SelectPreserve.agda}) by a relation that is the identity on
+errors, constants and first-order data, and relates code by what it
+does on inputs of the kind its pair says, so that an entry at inputs of
+the wrong kind is related to anything.
+
+% Part I: the CEK machines and the clocked interpreters of the typed languages.
+\providecommand{\TdynV}[2]{\key{dyn}_{#1}(#2)}        % a value of type Any: v tagged with G
+\providecommand{\TcodeV}[1]{\key{code}(#1)}           % code, as a term and as a value
+\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}        % a closure: code and environment
+\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}      % call a closure
+\providecommand{\Tres}[1]{\lceil #1 \rceil^{\mathsf{T}}} % a primitive's result, typed
+\providecommand{\Tflatof}[1]{\mathit{flat}(#1)}       % the flat type a tag tests
+\providecommand{\Temb}[1]{\ulcorner #1 \urcorner}     % the embedding of Mon^T into Clos5^T
+
+%-------------------------------------------------------------------------------
+\section{CEK Machines}\label{sec:t-cek}
+
+The machines of the typed languages (\texttt{agda/Semantics/CEK/Typed})
+are those of Part~II (Section~\ref{sec:machines}) with typed values,
+environments and continuations. A continuation is indexed by the type
+of the value it expects, a state $\ev{M}{\rho}{\kappa}$ or
+$\rt{v}{\kappa}$ pairs a term or value of type $A$ with a continuation
+expecting $A$, and an environment is typed by the context of its term,
+so a state is well typed by construction. The machines are machines in
+the sense of Part~II: step functions that move to the next state or
+stop with an observation (Section~\ref{sec:obs}).
+
+Every transition of Part~II that stops with $\error$ on a value of the
+wrong kind (an operator that is not a closure, a $\prj{i}$ of a
+non-tuple, a $\key{case}$ of a non-injection, a primitive on a
+non-integer, an unbound variable, a missing definition or block) has no
+counterpart: those states cannot be written. Each typed machine stops
+with $\error$ in exactly one way, a $\Tproject{t}$ of a value whose tag
+is not the flat type $\Tflatof{t}$ that $t$ tests.
+
+\subsection{Values, continuations and shared transitions}\label{sec:t-cek-shared}
+
+A value of type $\TAny$ is a value of a flat type $G$ tagged with $G$,
+$\TdynV{G}{v}$; the components of tuples and injections, and the
+values in environments of variables of type $\TAny$, have type $\TAny$.
+The flat types $G$ are an integer (a base type), $\key{tup}\;n$,
+$\key{sum}$ and $\key{fun}$; a project's tag $t$ tests one of
+$\key{fun}$, $\key{sum}$, the integers, or a tuple of $n+1$ components
+($\Tflatof{t}$).
+\[
+\begin{array}{rcl}
+  v &::=& \cdots \mid c \mid \tupV{v_1, \ldots, v_n} \mid \inlV v \mid \inrV v \mid \TdynV{G}{v} \\
+  \kappa &::=& \cdots \mid \halt \mid \Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa} \mid \Kf{getK_i}{\kappa}
+    \mid \Kf{inlK}{\kappa} \mid \Kf{inrK}{\kappa} \mid \Kf{caseK}{x.M, y.N, \rho, \kappa} \\
+  &\mid& \Kf{primL_p}{M, \rho, \kappa} \mid \Kf{primR_p}{n, \kappa}
+    \mid \Kf{letK}{x.N, \rho, \kappa} \mid \Kf{injK_G}{\kappa} \mid \Kf{projK_t}{\kappa}
+\end{array}
+\]
+\begin{align*}
+  \obs(\TdynV{G}{v}) &= \obs(v), \qquad \text{otherwise $\obs$ as in Part~II (closures, code and packs give $\key{fun}$)} \\
+  \Tres{n} &= n, \quad
+  \Tres{\mathsf{true}} = \inlV \TdynV{\key{tup}\,0}{\tupV{}}, \quad
+  \Tres{\mathsf{false}} = \inrV \TdynV{\key{tup}\,0}{\tupV{}} \\
+  \Mach{\ell}(M) &= (\mathit{State}^{\ell},\; \step{\ell},\; \ev{M}{\emptyset}{\halt})
+    \qquad (\ell \in \{\Tl{ISWIM}, \Tl{Clos2}, \Tl{Clos3}, \Tl{Clos4}\})
+\end{align*}
+The primitive $\key{eq}$ gives an injection of the empty tuple tagged
+with $\key{tup}\;0$. $\tnext$ is that of
+Section~\ref{sec:machine-shared}. The transitions shared by the machines
+of $\Tl{ISWIM}$ to $\Tl{Clos5}$ are those of Part~II for variables,
+constants, tuples, $\prj{i}$, $\key{inl}$, $\key{inr}$, $\key{case}$ and
+primitives, without the cases that stop with $\error$, together with
+$\key{let}$ (now in every language) and the casts:
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{x}{\rho}{\kappa} & \nxt \rt{\rho(x)}{\kappa} \\
+  \ev{(\Let x = M \In N)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{letK}{x.N, \rho, \kappa}} \\
+  \ev{(\Tinject{G} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{injK_G}{\kappa}} \\
+  \ev{(\Tproject{t} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{projK_t}{\kappa}} \\[1ex]
+  \rt{\tupV{v_1, \ldots, v_n}}{\Kf{getK_i}{\kappa}} & \nxt \rt{v_i}{\kappa} \\
+  \rt{(\inlV u)}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{M}{\ext{\rho}{x}{u}}{\kappa} \\
+  \rt{(\inrV u)}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{N}{\ext{\rho}{y}{u}}{\kappa} \\
+  \rt{n}{\Kf{primL_p}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{primR_p}{n, \kappa}} \\
+  \rt{m}{\Kf{primR_p}{n, \kappa}} & \nxt \rt{\Tres{\delta(p, n, m)}}{\kappa} \\
+  \rt{v}{\Kf{letK}{x.N, \rho, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{v}}{\kappa} \\
+  \rt{v}{\Kf{injK_G}{\kappa}} & \nxt \rt{\TdynV{G}{v}}{\kappa} \\
+  \rt{\TdynV{H}{v}}{\Kf{projK_t}{\kappa}} & \nxt \rt{v}{\kappa} & H = \Tflatof{t} \\
+  & \stp \error & \text{otherwise}
+\end{array}
+\]
+The last line is the only $\error$ of the machines. A variable is
+always bound, $i$ is below the tuple's length, and a $\key{case}$ or
+primitive always finds an injection or an integer, by typing.
+
+\subsection{\texorpdfstring{$\Tl{ISWIM}$}{ISWIM}}\label{sec:t-cek-iswim}
+
+As in Part~II, without the $\error$ cases: an operator has type
+$\Tflat{\key{fun}}$, so its value is a closure.
+\[
+\begin{array}{rcl}
+  v &::=& \cloV{\lam{x} N}{\rho} \mid \cdots \\
+  \kappa &::=& \Kf{appL}{M, \rho, \kappa} \mid \Kf{appR}{v, \kappa} \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{(\lam{x} N)}{\rho}{\kappa} & \nxt \rt{\cloV{\lam{x} N}{\rho}}{\kappa} \\
+  \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
+  \rt{f}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{f, \kappa}} \\
+  \rt{w}{\Kf{appR}{\cloV{\lam{x} N}{\rho}, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{w}}{\kappa}
+\end{array}
+\]
+
+\subsection{\texorpdfstring{$\Tl{Clos2}$}{Clos2}}\label{sec:t-cek-clos2}
+
+A closure evaluates the terms of its free variables left to right, as a
+tuple, and its value keeps their values as the environment of its code.
+\[
+\begin{array}{rcl}
+  v &::=& \closV{x_1 \ldots x_n\, y.\, N}{v_1 \ldots v_n} \mid \cdots \\
+  \kappa &::=& \Kf{appL}{M, \rho, \kappa} \mid \Kf{appR}{v, \kappa}
+    \mid \Kf{closK}{x_1 \ldots x_n\, y.\, N, \kappa} \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{(\clos{M_1 \ldots M_n}{x_1 \ldots x_n\, y} N)}{\rho}{\kappa} &
+    \nxt \tnext(\epsilon;\, M_1 \ldots M_n;\, \rho;\, \Kf{closK}{\bar{x}\, y.\, N, \kappa}) \\
+  \ev{(L\;M)}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{appL}{M, \rho, \kappa}} \\[1ex]
+  \rt{\tupV{\bar{v}}}{\Kf{closK}{\bar{x}\, y.\, N, \kappa}} & \nxt \rt{\closV{\bar{x}\, y.\, N}{\bar{v}}}{\kappa} \\
+  \rt{f}{\Kf{appL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{appR}{f, \kappa}} \\
+  \rt{w}{\Kf{appR}{\closV{\bar{x}\, y.\, N}{\bar{v}}, \kappa}} & \nxt \ev{N}{\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}}{\kappa}
+\end{array}
+\]
+
+\subsection{\texorpdfstring{$\Tl{Clos3}$}{Clos3}}\label{sec:t-cek-clos3}
+
+As $\Tl{Clos2}$, with environments typed by contexts: the code of a
+closure is closed over its argument $y : \TAny$ and its environment
+$e : \Tflat{\key{tup}\;n}$, and runs with the tuple of the closure's values.
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{(\clos{M_1 \ldots M_n}{e\, y} N)}{\rho}{\kappa} &
+    \nxt \tnext(\epsilon;\, M_1 \ldots M_n;\, \rho;\, \Kf{closK}{e\, y.\, N, \kappa}) \\
+  \rt{\tupV{\bar{v}}}{\Kf{closK}{e\, y.\, N, \kappa}} & \nxt \rt{\closV{e\, y.\, N}{\bar{v}}}{\kappa} \\
+  \rt{w}{\Kf{appR}{\closV{e\, y.\, N}{\bar{v}}, \kappa}} & \nxt \ev{N}{\{e {\mapsto} \tupV{\bar{v}}, y {\mapsto} w\}}{\kappa}
+\end{array}
+\]
+with application ($\key{appL}$) as in $\Tl{Clos2}$.
+
+\subsection{\texorpdfstring{$\Tl{Clos4}$}{Clos4}}\label{sec:t-cek-clos4}
+
+Code is a value of type $\Tcode{n}$; a closure, of type
+$\Tflat{\key{fun}}$, packs code of type $\Tcode{n}$ with an environment
+of type $\Tflat{\key{tup}\;n}$ (the type $\Tflat{\key{fun}}$ hides $n$).
+$\Tcallc{L}{M}$ evaluates the closure and the argument and runs the
+closure's code with its environment and the argument, with no check,
+since the closure has type $\Tflat{\key{fun}}$. There are no pairs and no
+three-operand application as in the untyped Clos4.
+\[
+\begin{array}{rcl}
+  v, f, u &::=& \TcodeV{e\, y.\, N} \mid \Tpack{v}{u} \mid \cdots \\
+  \kappa &::=& \Kf{callL}{M, \rho, \kappa} \mid \Kf{callR}{f, \kappa}
+    \mid \Kf{packL}{M, \rho, \kappa} \mid \Kf{packR}{v, \kappa} \mid \cdots
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{\TcodeV{e\, y.\, N}}{\rho}{\kappa} & \nxt \rt{\TcodeV{e\, y.\, N}}{\kappa} \\
+  \ev{\Tpack{L}{M}}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{packL}{M, \rho, \kappa}} \\
+  \ev{\Tcallc{L}{M}}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{callL}{M, \rho, \kappa}} \\[1ex]
+  \rt{v}{\Kf{packL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{packR}{v, \kappa}} \\
+  \rt{u}{\Kf{packR}{v, \kappa}} & \nxt \rt{\Tpack{v}{u}}{\kappa} \\
+  \rt{f}{\Kf{callL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{callR}{f, \kappa}} \\
+  \rt{w}{\Kf{callR}{\Tpack{\TcodeV{e\, y.\, N}}{u}, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
+\end{array}
+\]
+
+\subsection{\texorpdfstring{$\Tl{Clos5}$ and $\Tl{Mon}$}{Clos5 and Mon}}\label{sec:t-cek-clos5}
+
+A program runs with its table of definitions $d_0, \ldots, d_{m-1}$; values,
+environments and continuations are indexed by the table. Code is a
+reference $\codeV{j}$ to a definition, a typed index into the table, so
+a call always finds its definition. The continuations are those of
+$\Tl{Clos4}$, and $\key{let}$ may bind a variable of any type. The
+machine takes values apart with total functions (the integer of a
+value of type $\Tflat{\key{int}}$, the components of a tuple, the
+payload of an injection), since their types say what they are; these
+and the values are shared with the machines of $\Tl{Imp}$ and $\Tl{CFG}$.
+\[
+\begin{array}{rcl}
+  v, f, u &::=& \codeV{j} \mid \Tpack{v}{u} \mid \cdots \\
+  \Mach{\Tl{Clos5}}(d_0, \ldots, d_{m-1};\; M) &=& (\mathit{State}^{\Tl{Clos5}},\; \step{\Tl{Clos5}}_{d_0 \ldots d_{m-1}},\; \ev{M}{\emptyset}{\halt})
+\end{array}
+\]
+The transitions are those of $\Tl{Clos4}$, with
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \ev{\funref{j}}{\rho}{\kappa} & \nxt \rt{\codeV{j}}{\kappa} \\
+  \rt{w}{\Kf{callR}{\Tpack{\codeV{j}}{u}, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
+    & d_j = \key{fun}\; e\,y.\,N
+\end{array}
+\]
+in place of those for code. $\Tl{Mon}$ has no machine of its own: a
+$\Tl{Mon}$ program $P$ runs as its embedding $\Temb{P}$ into $\Tl{Clos5}$,
+$\Mach{\Tl{Mon}}(P) = \Mach{\Tl{Clos5}}(\Temb{P})$, which maps an atom to
+the variable, literal or $\funref{j}$ it is and every other construct
+to the $\Tl{Clos5}$ construct of the same name.
+
+\subsection{\texorpdfstring{$\Tl{Imp}$}{Imp}}\label{sec:t-cek-imp}
+
+An expression runs in a frame $\sigma$ of slots typed by its frame
+context $\Delta$, the types of the slots assigned so far; a slot is a
+typed index into $\Delta$, so an atom always has a value. The frame
+grows: $\assign{x}{e_1}{e_2}$ and a $\key{case}$ assign the next slot,
+written $\sigma, x {\mapsto} v$, which only the expression in their
+scope sees, and a continuation keeps the frame it resumes in.
+There is therefore no $\key{ret}$ state, no frames $F$ of operands, no
+$\key{caseK}$ and no $\key{callK}$, as there are in Part~II's Imp machine.
+The values are those of $\Tl{Clos5}$.
+\[
+\begin{array}{rcl}
+  \mathit{State}^{\Tl{Imp}} &::=& \evi{e}{\sigma}{\kappa} \\
+  \kappa &::=& \halt \mid \Kf{assignK}{x.e, \sigma, \kappa} \\
+  \mathit{Res} &::=& \key{value}(v) \mid \key{fail} \mid \key{call}(f, w)
+\end{array}
+\]
+A simple expression takes one step: its operands are atoms, so it gives
+a value, fails, or calls a closure. $\mathit{run}$ is shared with $\Tl{CFG}$.
+\[
+\begin{array}{@{}l@{\;=\;}l@{\qquad}l@{\;=\;}l@{}}
+  \sigma(c) & c & \sigma(\funref{j}) & \codeV{j} \\
+  \mathit{run}(a, \sigma) & \key{value}(\sigma(a)) &
+  \mathit{run}(\Tpack{a}{b}, \sigma) & \key{value}(\Tpack{\sigma(a)}{\sigma(b)}) \\
+  \mathit{run}(\Tcallc{a}{b}, \sigma) & \key{call}(\sigma(a), \sigma(b)) &
+  \mathit{run}(\tuple{a_1, \ldots, a_l}, \sigma) & \key{value}(\tupV{\sigma(a_1), \ldots, \sigma(a_l)}) \\
+  \mathit{run}(\prj{i} a, \sigma) & \key{value}(v_i) \quad (\sigma(a) = \tupV{\bar{v}}) &
+  \mathit{run}(\inl a, \sigma) & \key{value}(\inlV \sigma(a)) \\
+  \mathit{run}(\inr a, \sigma) & \key{value}(\inrV \sigma(a)) &
+  \mathit{run}(\prim{p}{a_1}{a_2}, \sigma) & \key{value}(\Tres{\delta(p, \sigma(a_1), \sigma(a_2))}) \\
+  \mathit{run}(\Tinject{G} a, \sigma) & \key{value}(\TdynV{G}{\sigma(a)})
+\end{array}
+\]
+\[
+  \mathit{run}(\Tproject{t} a, \sigma) =
+    \begin{cases} \key{value}(v) & \sigma(a) = \TdynV{H}{v},\; H = \Tflatof{t} \\ \key{fail} & \text{otherwise} \end{cases}
+\]
+A call runs the definition in a frame of its environment (slot~0) and
+argument (slot~1), written $(u\, w)$, with the caller's continuation,
+which holds the caller's frame. For a program with definitions
+$d_0, \ldots, d_{m-1}$, each an expression over the slots $e$ and $y$:
+\begin{align*}
+  \mathit{cont}(v, \halt) &= \stp \obs(v) \\
+  \mathit{cont}(v, \Kf{assignK}{x.e, \sigma, \kappa}) &= \nxt \evi{e}{(\sigma, x {\mapsto} v)}{\kappa} \\[1ex]
+  \mathit{res}(\key{value}(v), \kappa) &= \mathit{cont}(v, \kappa) \\
+  \mathit{res}(\key{fail}, \kappa) &= \stp \error \\
+  \mathit{res}(\key{call}(\Tpack{\codeV{j}}{u}, w), \kappa) &= \nxt \evi{d_j}{(u\, w)}{\kappa} \\[1ex]
+  \Mach{\Tl{Imp}}(d_0, \ldots, d_{m-1};\; e) &= (\mathit{State}^{\Tl{Imp}},\; \step{\Tl{Imp}}_{d_0 \ldots d_{m-1}},\; \evi{e}{\emptyset}{\halt})
+\end{align*}
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \evi{r}{\sigma}{\kappa} & \mathit{res}(\mathit{run}(r, \sigma), \kappa) \\
+  \evi{(\assign{x}{e_1}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{\sigma}{\Kf{assignK}{x.e_2, \sigma, \kappa}} \\
+  \evi{(\Case{a}{x}{e_1}{x}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{(\sigma, x {\mapsto} u)}{\kappa} & \sigma(a) = \inlV u \\
+  & \nxt \evi{e_2}{(\sigma, x {\mapsto} u)}{\kappa} & \sigma(a) = \inrV u
+\end{array}
+\]
+where $r$ is a simple expression.
+
+\subsection{\texorpdfstring{$\Tl{CFG}$}{CFG}}\label{sec:t-cek-cfg}
+
+The values, frames, $\mathit{Res}$ and $\mathit{run}$ are those of
+$\Tl{Imp}$. A block is a tail typed by the frame context it starts in
+and by the frame contexts of the blocks it may jump to; a label is a
+typed index into those, so a jump always finds its block, and a block
+reads only slots that are assigned. As in Part~II, a state runs a tail
+with the blocks it may jump to, those of its body for the start of a
+body and those older than block $l$ for block $l$, and
+$\key{block}(\vec{t}, l) = (t_l;\; t_0 \ldots t_{l-1})$ is that of
+Part~II's CFG machine, now total. An assignment or $\key{case}$ with
+scope $\Delta'$ (a prefix of the frame context) forgets the slots after
+$\Delta'$, which belong to a finished scope, and assigns the next one;
+$\sigma|_{\Delta'}$ is $\sigma$ without them. A step runs one statement.
+\[
+\begin{array}{rcl}
+  \mathit{State}^{\Tl{CFG}} &::=& \exc{t}{\sigma}{\vec{t}}{\kappa} \\
+  t &::=& \key{return}\; r \mid x \mathrel{:=_{\Delta'}} r;\; t \mid \key{goto}\; l
+    \mid \key{case}_{\Delta'}\;a\;\key{of}\;\key{inl}\,x \Rightarrow \key{goto}\;l_1 \mid \key{inr}\,x \Rightarrow \key{goto}\;l_2 \\
+  \kappa &::=& \halt \mid \Kf{seqK}{\Delta', \sigma, x.t, \vec{t}, \kappa} \mid \Kf{retK}{\kappa}
+\end{array}
+\]
+We abbreviate the $\key{case}$ tail to $\key{case}_{\Delta'}\;a\;(x.l_1)\;(x.l_2)$.
+A call runs the start of the callee's body under $\key{seqK}$ (the
+caller's assignment, which assigns the result and continues) or
+$\key{retK}$ (the caller's $\key{return}$, which returns the result). For
+a program with bodies $b_0, \ldots, b_{m-1}$:
+\begin{align*}
+  \mathit{enter}(\Tpack{\codeV{j}}{u}, w, \kappa) &= \nxt \exc{t}{(u\, w)}{\vec{t}}{\kappa}
+    \qquad (b_j = (\vec{t};\; t)) \\[1ex]
+  \mathit{cont}(v, \halt) &= \stp \obs(v) \\
+  \mathit{cont}(v, \Kf{seqK}{\Delta', \sigma, x.t, \vec{t}, \kappa}) &= \nxt \exc{t}{(\sigma|_{\Delta'}, x {\mapsto} v)}{\vec{t}}{\kappa} \\
+  \mathit{cont}(v, \Kf{retK}{\kappa}) &= \mathit{cont}(v, \kappa) \\[1ex]
+  \Mach{\Tl{CFG}}(b_0, \ldots, b_{m-1};\; (\vec{t};\; t)) &=
+    (\mathit{State}^{\Tl{CFG}},\; \step{\Tl{CFG}}_{b_0 \ldots b_{m-1}},\; \exc{t}{\emptyset}{\vec{t}}{\halt})
+\end{align*}
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \exc{(\key{return}\; r)}{\sigma}{\vec{t}}{\kappa} & \mathit{cont}(v, \kappa) & \mathit{run}(r, \sigma) = \key{value}(v) \\
+  & \mathit{enter}(f, w, \Kf{retK}{\kappa}) & \mathit{run}(r, \sigma) = \key{call}(f, w) \\
+  & \stp \error & \mathit{run}(r, \sigma) = \key{fail} \\
+  \exc{(x \mathrel{:=_{\Delta'}} r;\; t)}{\sigma}{\vec{t}}{\kappa} &
+    \nxt \exc{t}{(\sigma|_{\Delta'}, x {\mapsto} v)}{\vec{t}}{\kappa} & \mathit{run}(r, \sigma) = \key{value}(v) \\
+  & \mathit{enter}(f, w, \Kf{seqK}{\Delta', \sigma, x.t, \vec{t}, \kappa}) & \mathit{run}(r, \sigma) = \key{call}(f, w) \\
+  & \stp \error & \mathit{run}(r, \sigma) = \key{fail} \\
+  \exc{(\key{goto}\; l)}{\sigma}{\vec{t}}{\kappa} & \nxt \exc{t'}{\sigma}{\vec{t}'}{\kappa} & (t';\; \vec{t}') = \key{block}(\vec{t}, l) \\
+  \exc{(\key{case}_{\Delta'}\;a\;(x.l_1)\;(x.l_2))}{\sigma}{\vec{t}}{\kappa} &
+    \nxt \exc{t'}{(\sigma|_{\Delta'}, x {\mapsto} u)}{\vec{t}'}{\kappa} & \sigma(a) = \inlV u,\; (t';\; \vec{t}') = \key{block}(\vec{t}, l_1) \\
+  & \nxt \exc{t'}{(\sigma|_{\Delta'}, x {\mapsto} u)}{\vec{t}'}{\kappa} & \sigma(a) = \inrV u,\; (t';\; \vec{t}') = \key{block}(\vec{t}, l_2)
+\end{array}
+\]
+Unlike Part~II's CFG machine, there is no state that
+evaluates an operand or returns a value: a step runs a whole statement.
+
+%-------------------------------------------------------------------------------
+\section{Clocked Interpreters}\label{sec:t-interp}
+
+The clocked interpreters of the typed languages
+(\texttt{agda/Semantics/Interp/Typed}) use the results, programs and
+clocks of Part~II (its section Results and Clocks): a clocked program $(\obs, \lambda k.\, \ldots)$, results
+$\tmo$, $\error$ and $\Ret v$, and $\bind$. As there, the clock
+decreases only when a function is called. Values and environments are
+typed, so each interpreter is a total function of typed terms that
+errs only where a project fails; the $\error$ cases of Part~II's
+interpreters (an operator that is not a closure, $\key{get}$, $\key{branch}$
+and $\key{prim}$ on values of the wrong kind, a missing definition or
+block, $\lift{\bot}$) are gone.
+
+\subsection{Values}\label{sec:t-interp-values}
+
+The values (\texttt{Values.agda}) are shared by all the interpreters and
+parameterized by what the code of a closure with an environment of
+length $n$ is in each language, $C_n$. A closure, of type
+$\Tflat{\key{fun}}$, is always code packed with the tuple of its
+environment, even in the languages before $\Tl{Clos4}$, where code is
+not a value of the language:
+\[
+\begin{array}{rcl}
+  v, f, u &::=& \TcodeV{c} \mid \Tpack{\TcodeV{c}}{u} \mid c \mid \tupV{v_1, \ldots, v_n}
+    \mid \inlV v \mid \inrV v \mid \TdynV{G}{v} \qquad (c \in C_n)
+\end{array}
+\]
+\[
+\begin{array}{l|ccccc}
+  & \Tl{ISWIM} & \Tl{Clos2} & \Tl{Clos3} & \Tl{Clos4} & \Tl{Clos5},\ \Tl{Imp},\ \Tl{CFG} \\ \hline
+  C_n & \lam{x} N & x_1 \ldots x_n\, y.\, N & e\, y.\, N & e\, y.\, N & \text{a definition } j \text{ (written } \codeV{j})
+\end{array}
+\]
+$\obs$ is that of the machines (Section~\ref{sec:t-cek-shared}), and
+\begin{align*}
+  \key{project?}_t(\TdynV{H}{v}) &= \begin{cases} \Ret v & H = \Tflatof{t} \\ \error & \text{otherwise} \end{cases}
+\end{align*}
+is the only operation that can fail; the others are total:
+$\key{nth}_i(\tupV{\bar{v}}) = v_i$, $\delta(p, n, m)$ gives
+$\Tres{\delta(p, n, m)}$, and $\key{either}$ passes the payload of an
+injection to one of two functions.
+
+\subsection{Clauses common to all interpreters}
+
+For $\ell$ one of $\Tl{ISWIM}$ to $\Tl{Clos5}$ (with $\EV{\ell}{k}$ for
+$\Tl{Clos5}$ running with the table of definitions, as in Part~II):
+\begin{align*}
+  \EV{\ell}{k} &: \mathit{Env}(\Gamma) \to \mathit{Term}(\Gamma, A) \to \mathit{Result}(\mathit{Val}(A)) \\
+  \Interp{\ell}(M) &= (\obs,\; \lambda k.\, \EV{\ell}{k}\,\emptyset\,M) \\[1ex]
+  \EV{\ell}{k}\,\rho\,x &= \Ret \rho(x) \\
+  \EV{\ell}{k}\,\rho\,c &= \Ret c \\
+  \EV{\ell}{k}\,\rho\,\tuple{M_1, \ldots, M_n} &=
+    \Do \bar{v} \leftarrow \EVS{\ell}{k}\,\rho\,(M_1 \ldots M_n);\; \Ret \tupV{\bar{v}} \\
+  \EV{\ell}{k}\,\rho\,(\prj{i} M) &= \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret \key{nth}_i(v) \\
+  \EV{\ell}{k}\,\rho\,(\inl M) &= \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret (\inlV v)
+    \qquad \text{and so for } \key{inr} \\
+  \EV{\ell}{k}\,\rho\,(\Case{L}{x}{M}{y}{N}) &=
+    \EV{\ell}{k}\,\rho\,L \bind \lambda u.\, \key{either}(u,\; \lambda v.\, \EV{\ell}{k}\,\ext{\rho}{x}{v}\,M,\\
+  &\qquad \lambda v.\, \EV{\ell}{k}\,\ext{\rho}{y}{v}\,N) \\
+  \EV{\ell}{k}\,\rho\,\prim{p}{L}{M} &=
+    \Do v \leftarrow \EV{\ell}{k}\,\rho\,L;\; w \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret \delta(p, v, w) \\
+  \EV{\ell}{k}\,\rho\,(\Let x = M \In N) &=
+    \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \EV{\ell}{k}\,\ext{\rho}{x}{v}\,N \\
+  \EV{\ell}{k}\,\rho\,(\Tinject{G} M) &= \Do v \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret \TdynV{G}{v} \\
+  \EV{\ell}{k}\,\rho\,(\Tproject{t} M) &= \EV{\ell}{k}\,\rho\,M \bind \key{project?}_t \\[1ex]
+  \CALL{\ell}{0}\,f\,w &= \tmo
+\end{align*}
+with $\EVS{\ell}{k}$ as in Part~II. An application evaluates its operator
+and its operand and then calls, $\Do f \leftarrow \EV{\ell}{k}\,\rho\,L;\;
+w \leftarrow \EV{\ell}{k}\,\rho\,M;\; \CALL{\ell}{k}\,f\,w$, for $L\;M$ in
+$\Tl{ISWIM}$ to $\Tl{Clos3}$ and for $\Tcallc{L}{M}$ in $\Tl{Clos4}$ and
+$\Tl{Clos5}$. The call never errs, since $f$ is a closure by its type.
+
+\subsection{Closures and calls}
+
+\begin{align*}
+  \EV{\Tl{ISWIM}}{k}\,\rho\,(\lam{x} N) &= \Ret \Tpack{\TcodeV{\lam{x} N}}{\tupV{\rho}} \\
+  \CALL{\Tl{ISWIM}}{k+1}\,\Tpack{\TcodeV{\lam{x} N}}{\tupV{\rho}}\,w &= \EV{\Tl{ISWIM}}{k}\,\ext{\rho}{x}{w}\,N \\[1ex]
+  \EV{\Tl{Clos2}}{k}\,\rho\,(\clos{M_1 \ldots M_n}{\bar{x}\, y} N) &=
+    \Do \bar{v} \leftarrow \EVS{\Tl{Clos2}}{k}\,\rho\,(M_1 \ldots M_n);\; \Ret \Tpack{\TcodeV{\bar{x}\, y.\, N}}{\tupV{\bar{v}}} \\
+  \CALL{\Tl{Clos2}}{k+1}\,\Tpack{\TcodeV{\bar{x}\, y.\, N}}{\tupV{\bar{v}}}\,w &=
+    \EV{\Tl{Clos2}}{k}\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}\,N \\[1ex]
+  \EV{\Tl{Clos3}}{k}\,\rho\,(\clos{M_1 \ldots M_n}{e\, y} N) &=
+    \Do \bar{v} \leftarrow \EVS{\Tl{Clos3}}{k}\,\rho\,(M_1 \ldots M_n);\; \Ret \Tpack{\TcodeV{e\, y.\, N}}{\tupV{\bar{v}}} \\
+  \CALL{\ell}{k+1}\,\Tpack{\TcodeV{e\, y.\, N}}{u}\,w &=
+    \EV{\ell}{k}\,\{e {\mapsto} u, y {\mapsto} w\}\,N \qquad (\ell \in \{\Tl{Clos3}, \Tl{Clos4}\}) \\[1ex]
+  \EV{\Tl{Clos4}}{k}\,\rho\,\TcodeV{e\, y.\, N} &= \Ret \TcodeV{e\, y.\, N} \\
+  \EV{\ell}{k}\,\rho\,\Tpack{L}{M} &=
+    \Do c \leftarrow \EV{\ell}{k}\,\rho\,L;\; u \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret \Tpack{c}{u} \\
+  &\qquad (\ell \in \{\Tl{Clos4}, \Tl{Clos5}\}) \\[1ex]
+  \EV{\Tl{Clos5}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\
+  \CALL{\Tl{Clos5}}{k+1}\,\Tpack{\codeV{j}}{u}\,w &=
+    \EV{\Tl{Clos5}}{k}\,\{e {\mapsto} u, y {\mapsto} w\}\,N
+\end{align*}
+where $d_j = \key{fun}\; e\,y.\,N$.
+A reference to a missing definition cannot be written, so the
+$\error$ case of Part~II's $\CALL{\vec{d}}{k}$ is gone. $\Tl{Mon}$ has no
+interpreter of its own: $\Interp{\Tl{Mon}}(P) = \Interp{\Tl{Clos5}}(\Temb{P})$.
+
+\subsection{\texorpdfstring{$\Tl{Imp}$}{Imp}}
+
+An expression runs in a frame $\sigma$ typed by its frame context, the
+values of the slots assigned so far, and returns a value; unlike Part~II,
+it does not return the frame, since an assignment extends the frame only
+for its scope. An atom is read from the frame and cannot fail. The value
+of a simple expression, given how to call a closure ($C$), is shared
+with $\Tl{CFG}$ (the Agda's $\key{eval\text{-}simple}$):
+\begin{align*}
+  \key{simple}_C(\sigma, a) &= \Ret \sigma(a) \qquad
+  \key{simple}_C(\sigma, \Tpack{a}{b}) = \Ret \Tpack{\sigma(a)}{\sigma(b)} \\
+  \key{simple}_C(\sigma, \Tcallc{a}{b}) &= C(\sigma(a), \sigma(b)) \\
+  \key{simple}_C(\sigma, \tuple{a_1, \ldots, a_l}) &= \Ret \tupV{\sigma(a_1), \ldots, \sigma(a_l)} \qquad
+  \key{simple}_C(\sigma, \prj{i} a) = \Ret \key{nth}_i(\sigma(a)) \\
+  \key{simple}_C(\sigma, \inl a) &= \Ret (\inlV \sigma(a)) \qquad
+  \key{simple}_C(\sigma, \inr a) = \Ret (\inrV \sigma(a)) \\
+  \key{simple}_C(\sigma, \prim{p}{a_1}{a_2}) &= \Ret \delta(p, \sigma(a_1), \sigma(a_2)) \\
+  \key{simple}_C(\sigma, \Tinject{G} a) &= \Ret \TdynV{G}{\sigma(a)} \qquad
+  \key{simple}_C(\sigma, \Tproject{t} a) = \key{project?}_t(\sigma(a))
+\end{align*}
+For a program with definitions $\vec{d} = d_0, \ldots, d_{m-1}$:
+\begin{align*}
+  \Interp{\Tl{Imp}}(\vec{d};\; e) &= (\obs,\; \lambda k.\, \EV{\vec{d}}{k}\,\emptyset\,e) \\[1ex]
+  \EV{\vec{d}}{k}\,\sigma\,r &= \key{simple}_{\CALL{\vec{d}}{k}}(\sigma, r) \\
+  \EV{\vec{d}}{k}\,\sigma\,(\assign{x}{e_1}{e_2}) &=
+    \Do v \leftarrow \EV{\vec{d}}{k}\,\sigma\,e_1;\; \EV{\vec{d}}{k}\,(\sigma, x {\mapsto} v)\,e_2 \\
+  \EV{\vec{d}}{k}\,\sigma\,(\Case{a}{x}{e_1}{x}{e_2}) &=
+    \key{either}(\sigma(a),\; \lambda v.\, \EV{\vec{d}}{k}\,(\sigma, x {\mapsto} v)\,e_1,\;
+      \lambda v.\, \EV{\vec{d}}{k}\,(\sigma, x {\mapsto} v)\,e_2) \\[1ex]
+  \CALL{\vec{d}}{0}\,f\,w &= \tmo \\
+  \CALL{\vec{d}}{k+1}\,\Tpack{\codeV{j}}{u}\,w &= \EV{\vec{d}}{k}\,(u\, w)\,d_j
+\end{align*}
+where $(u\, w)$ is the frame of the environment (slot~0) and the argument (slot~1).
+
+\subsection{\texorpdfstring{$\Tl{CFG}$}{CFG}}
+
+A tail runs in a frame with the blocks it may jump to, and returns a
+value; $\key{simple}$ is that of $\Tl{Imp}$ and $\sigma|_{\Delta'}$ that
+of the machine. Only calls tick; a jump does not, and runs its block
+with the blocks older than it, so the interpreter is structurally
+recursive on the clock, the blocks and the tail. A label always names a
+block, so $\key{jump}$ cannot fail. For a program with bodies
+$\vec{b} = b_0, \ldots, b_{m-1}$:
+\begin{align*}
+  \Interp{\Tl{CFG}}(\vec{b};\; (\vec{t};\; t)) &= (\obs,\; \lambda k.\, \key{tail}^k_{\vec{b}}\,\vec{t}\,\emptyset\,t) \\[1ex]
+  \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{return}\; r) &= \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \\
+  \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(x \mathrel{:=_{\Delta'}} r;\; t) &=
+    \Do v \leftarrow \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r);\;
+    \key{tail}^k_{\vec{b}}\,\vec{t}\,(\sigma|_{\Delta'}, x {\mapsto} v)\,t \\
+  \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{goto}\; l) &= \key{jump}^k_{\vec{b}}\,\vec{t}\,l\,\sigma \\
+  \key{tail}^k_{\vec{b}}\,\vec{t}\,\sigma\,(\key{case}_{\Delta'}\;a\;(x.l_1)\;(x.l_2)) &=
+    \key{either}(\sigma(a),\; \lambda u.\, \key{jump}^k_{\vec{b}}\,\vec{t}\,l_1\,(\sigma|_{\Delta'}, x {\mapsto} u),\;
+      \lambda u.\, \key{jump}^k_{\vec{b}}\,\vec{t}\,l_2\,(\sigma|_{\Delta'}, x {\mapsto} u)) \\[1ex]
+  \key{jump}^k_{\vec{b}}\,\vec{t}\,l\,\sigma &= \key{tail}^k_{\vec{b}}\,(t_0, \ldots, t_{l-1})\,\sigma\,t_l
+    \qquad (\vec{t} = t_0, t_1, \ldots) \\[1ex]
+  \CALL{\vec{b}}{0}\,f\,w &= \tmo \\
+  \CALL{\vec{b}}{k+1}\,\Tpack{\codeV{j}}{u}\,w &= \key{tail}^k_{\vec{b}}\,\vec{t}\,(u\, w)\,t
+    \qquad (b_j = (\vec{t};\; t))
+\end{align*}
+
+\subsection{The value relation}
+
+The proofs of the passes between typed languages
+(\texttt{agda/proof/Semantics/Interp/Typed/Rel.agda}) relate the values
+of two interpreters by $v \approx w$ when they have the same shape, given a relation on
+their codes and one on closures (for most passes, related codes with the
+same environment; for optimize, the target's environment may drop
+some of the source's values); related values are observed alike, and
+the operations above ($\delta$, $\key{nth}$, $\key{either}$,
+$\key{project?}$) give related results.
+
+% ---------------------------------------------------------------------------
+% Part I: the reduction semantics of the typed languages with binders
+% ---------------------------------------------------------------------------
+\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}
+\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}
+\providecommand{\Tcodeterm}[1]{\key{code}(#1)}
+\providecommand{\Tunit}{\Tinject{\key{tup}\,0}\emptytup}
+
+\section{Reduction Semantics}\label{sec:t-red}
+
+The typed languages with binders, $\Tl{ISWIM}$ and $\Tl{Clos2}$--$\Tl{Clos5}$
+(Section~\ref{sec:t-langs}), get a reduction semantics by substitution, as
+the untyped ones do in Part~II (Section~\ref{sec:red}): a state is a closed
+term, and a step reduces a redex in an evaluation context, substituting
+values for bound variables
+(\texttt{Semantics/\allowbreak Reduction/\allowbreak Typed/\allowbreak
+\{ISWIM,\allowbreak Clos2,\allowbreak Clos3,\allowbreak Clos4,\allowbreak Clos5\}.agda}).
+The framework is the same: a reduction says of a term whether it is a value
+($\key{val}$), is stuck ($\error$), or reduces ($\key{to}\;M$); it is one
+function $\mathit{red}$ written with the congruence
+$\key{step\text{-}in}(f, \mathit{red}(X), k)$, and a closed program $M$ runs
+as the machine $\mathcal{R}(M)$ of Section~\ref{sec:red}
+(\texttt{Framework/Reduction.agda}). The operands of a tuple, and the free
+variables of a closure, are reduced left to right by one combinator
+(\texttt{Framework/ReductionVec.agda}),
+\[
+  \mathit{red}(M_1 \ldots M_n) =
+  \key{step\text{-}in}(\square\, M_2 \ldots M_n,\; \mathit{red}(M_1),\;
+  \key{step\text{-}in}(M_1\, \square,\; \mathit{red}(M_2 \ldots M_n),\; \key{val})) .
+\]
+
+What the types change:
+\begin{itemize}
+\item $\mathit{red}$ is defined on closed terms of every type $A$, and takes a
+  term of type $A$ to one of type $A$, so every state is well typed by
+  construction; a program has type $\TAny$.
+\item There is no case for a variable (a closed term has none), and no case
+  for an operand of the wrong shape: a value of type $\Tflat{\key{fun}}$ is
+  a function, one of type $\Tflat{\key{tup}\,n}$ a tuple of $n$ values, of
+  type $\Tflat{\key{sum}}$ an $\inl$ or an $\inr$, of type
+  $\Tflat{\key{base}\,\key{Int}}$ an integer, and of type $\TAny$ an
+  injection $\Tinject{G} V$. (The Agda still has a fall-through case to
+  $\error$ in these redexes, so as not to unify types, but it is never
+  reached.)
+\item So the only error is a projection that finds a value injected from
+  another flat type: $\Tproject{t} (\Tinject{G} V)$ with $G$ not the flat
+  type that the tag $t$ tests.
+\item Observations see through injections:
+  $\obs(\Tinject{G} V) = \obs(V)$; otherwise $\obs$ is that of Part~II
+  (a function, a closure, or a pack is observed as $\key{fun}$).
+\end{itemize}
+
+\paragraph{Renaming and substitution.}
+Terms are intrinsically scoped and typed: in $\Tl{ISWIM}$ and $\Tl{Clos2}$ by
+the number of variables in scope (every variable has type $\TAny$), in
+$\Tl{Clos3}$--$\Tl{Clos5}$ by a context of types, with typed variables.
+Renaming and substitution are one traversal $\mathit{trav}_{\mathcal{K}}$,
+parameterised by a \emph{kit} $\mathcal{K}$ (McBride's type-preserving
+renaming and substitution; \texttt{Framework/Syntax/Kit.agda}): a kit says
+what a variable is mapped to, how a variable is one, how one is a term, and
+how one is moved under a binder. Renaming is the traversal with the kit of
+variables, substitution the one with the kit of terms. On paper we write
+$N[x := V]$ and $N[x_1 := V_1, \ldots, x_n := V_n]$, with named variables.
+
+\paragraph{Values.}
+The values are a predicate $\mathit{Value}$ in the proof halves
+(\texttt{proof/\allowbreak Semantics/\allowbreak Reduction/\allowbreak Typed/\allowbreak *.agda}), given below for each
+language, with the lemma that a value reduces to $\key{val}$, and (for
+$\Tl{ISWIM}$, $\Tl{Clos2}$ and $\Tl{Clos3}$) that renaming and substitution
+keep values. For $\Tl{ISWIM}$ and $\Tl{Clos5}$ the proof halves also give the
+laws of the traversal: two traversals fuse into one, substitution by
+variables is the identity, and so a substitution under a binder followed by
+one for the bound variable is one substitution.
+
+\subsection{\texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T}}
+
+\[
+\begin{array}{rcl}
+  V, W &::=& \lam{x} N \mid c \mid \tuple{V_1, \ldots, V_n} \mid \inl V \mid \inr V
+    \mid \Tinject{G} V \\
+  E &::=& \square \mid E\;M \mid V\;E \mid \tuple{V_1, \ldots, V_{i-1}, E, M_{i+1}, \ldots, M_n}
+    \mid \prj{i} E \mid \inl E \mid \inr E \\
+  &\mid& \Case{E}{x}{M}{y}{N} \mid \prim{p}{E}{M} \mid \prim{p}{V}{E}
+    \mid \Let x = E \In N \mid \Tinject{G} E \mid \Tproject{t} E
+\end{array}
+\]
+\[
+\begin{array}{@{}r@{\;\to\;}l@{\quad}l@{}}
+  (\lam{x} N)\;V & N[x := V] \\
+  \prj{i} \tuple{V_1, \ldots, V_n} & V_i \\
+  \Case{\inl V}{x}{M}{y}{N} & M[x := V] \\
+  \Case{\inr V}{x}{M}{y}{N} & N[y := V] \\
+  \Let x = V \In N & N[x := V] \\
+  \key{sub}(n, m) & n - m \\
+  \key{eq}(n, m) & \inl \Tunit & n = m \\
+  \key{eq}(n, m) & \inr \Tunit & n \neq m \\
+  \Tproject{t} (\Tinject{G} V) & V & G = \key{flat}(t) \\
+  \Tproject{t} (\Tinject{G} V) & \error & G \neq \key{flat}(t)
+\end{array}
+\]
+where $\key{flat}(t)$ is the flat type that the tag $t$ tests (a function, a
+sum, an integer, or a tuple of at least one component), and $\Tunit$ is the
+empty tuple injected at its type.
+The differences from Part~II's ISWIM: the value $\Tinject{G} V$, and the
+contexts and redexes of $\key{let}$, $\key{inject}$ and $\key{project}$; the
+operator of an application is evaluated and then the argument, with no check
+in between (the context is $V\;E$ for any value $V$, which has type
+$\Tflat{\key{fun}}$ and so is a $\lambda$); $\prj{i}$ needs no arity check,
+since $i < n$ is in its type; and the result of a primitive is a term of its
+flat type ($\key{eq}$ gives $\inl \Tunit$ for true). An injection is a value
+once its operand is, and is taken apart only by a projection.
+
+\subsection{\texorpdfstring{$\Tl{Clos2}$ and $\Tl{Clos3}$}{Clos2-T and Clos3-T}}
+
+As $\Tl{ISWIM}$, with closures in place of $\lambda$. A closure evaluates its
+free variables left to right, and is a value once they are values. Its code
+is closed, so no substitution enters it.
+\[
+\begin{array}{rcl}
+  V &::=& \clos{V_1\ldots V_n}{x_1\ldots x_n\, y} N \mid c \mid \tuple{\bar{V}} \mid \inl V \mid \inr V
+    \mid \Tinject{G} V \\
+  E &::=& \clos{V_1 \ldots V_{i-1}\, E\, M_{i+1} \ldots M_n}{x_1\ldots x_n\, y} N \mid E\;M \mid V\;E \mid \cdots
+\end{array}
+\]
+In $\Tl{Clos2}$ the code has a variable of type $\TAny$ for each free
+variable and one for the argument:
+\[
+  (\clos{V_1\ldots V_n}{x_1\ldots x_n\, y} N)\;W \to N[x_1 := V_1, \ldots, x_n := V_n, y := W] .
+\]
+In $\Tl{Clos3}$ the code has two variables, $e$ of type
+$\Tflat{\key{tup}\,n}$ for the tuple of the free variables and $y$ of type
+$\TAny$ for the argument:
+\[
+  (\clos{V_1\ldots V_n}{e\, y} N)\;W \to N[e := \tuple{V_1, \ldots, V_n}, y := W] .
+\]
+The other contexts and redexes, $\key{inject}$ and $\key{project}$ included,
+are those of $\Tl{ISWIM}$. These are the rules of Part~II's Clos2 and Clos3,
+with injections and projections added and the shape checks gone.
+
+\subsection{\texorpdfstring{$\Tl{Clos4}$ and $\Tl{Clos5}$}{Clos4-T and Clos5-T}}
+
+Here the typed languages differ most from Part~II. A closure is a pack of
+closed code, of type $\Tcode{n}$, and an environment, of type
+$\Tflat{\key{tup}\,n}$; the pack has type $\Tflat{\key{fun}}$, which hides
+$n$. Code is a value, and so is a pack of values. A call
+$\Tcallc{L}{M}$ has two operands, the closure and the argument (not the
+three of Part~II's $V(U, W)$, and there is no $\key{pair}$, $\key{fst}$ or
+$\key{snd}$): it evaluates both, left to right, and then calls the code of
+the closure with its environment and the argument.
+\[
+\begin{array}{rcl}
+  V, U, W &::=& \Tcodeterm{e\,y.\,N} \mid \Tpack{V}{W} \mid c \mid \tuple{\bar{V}} \mid \inl V \mid \inr V
+    \mid \Tinject{G} V \\
+  E &::=& \Tpack{E}{M} \mid \Tpack{V}{E} \mid \Tcallc{E}{M} \mid \Tcallc{V}{E} \mid \cdots
+\end{array}
+\]
+\[
+  \Tcallc{\Tpack{\Tcodeterm{e\,y.\,N}}{U}}{W} \to N[e := U, y := W]
+\]
+The other contexts and redexes, $\key{let}$ included, are those of
+$\Tl{ISWIM}$.
+
+In $\Tl{Clos5}$ the code is global. A program
+$(d_0, \ldots, d_{m-1};\; M)$ has a table $\Sigma$, the lengths of the
+environments of its definitions, and its terms are indexed by $\Sigma$ as
+well as by their context: a reference $\funref{f}$, for $f$ an entry of
+$\Sigma$ of length $n$, has type $\Tcode{n}$ and is a value (it replaces
+$\Tcodeterm{e\,y.\,N}$ among the values). So a reference to a missing
+definition cannot be written, where Part~II's Clos5 checks $k < m$ at the
+call. The reduction $\mathit{red}_{\bar{d}}$ of a program with the
+definitions $\bar{d}$ is that of $\Tl{Clos4}$, with
+\[
+  \Tcallc{\Tpack{\funref{f}}{U}}{W} \to N[e := U, y := W]
+  \qquad \text{where } d_f = e\,y.\,N ,
+\]
+and the program runs as $\mathcal{R}(M)$ with $\mathit{red}_{\bar{d}}$. In
+$\Tl{Clos5}$ a $\key{let}$ binds a value of any type, not only of type
+$\TAny$ (remove complex operands binds operands of any type: code,
+environments, and so on).
+
+\subsection{\texorpdfstring{$\Tl{Mon}$, $\Tl{Imp}$, $\Tl{CFG}$ and X86}{Mon-T, Imp-T, CFG-T and X86}}
+
+$\Tl{Mon}$ has no reduction semantics of its own: a $\Tl{Mon}$ program $P$
+runs as its embedding $\ulcorner P \urcorner$ into $\Tl{Clos5}$
+(\texttt{Language/Typed/Mon.agda}). So remove complex operands is proved by
+a simulation of the $\Tl{Clos5}$ reduction by itself, and lift locals by a
+simulation of the $\Tl{Clos5}$ reduction of the embedding by the $\Tl{Imp}$
+machine. $\Tl{Imp}$, $\Tl{CFG}$ and X86 have no binders, so they keep their
+machines: those of $\Tl{Imp}$ and $\Tl{CFG}$ are the typed CEK column's
+(Section~\ref{sec:t-cek}), and X86's is Part~II's
+(Section~\ref{sec:machine-x86}). The proofs of explicate control and select
+instructions are the CEK column's.
+
+\section{The Theorems}\label{sec:t-thm}
+
+The public statements are in \texttt{agda/Theorems/}; for a closed ISWIM
+program $M$ (one with no free variables), and with
+$\pass{compile\text{-}x86} = \pass{select} \circ \pass{explicate} \circ
+\pass{lift} \circ \pass{rco} \circ \pass{globalize} \circ \pass{delay}
+\circ \pass{concretize} \circ \pass{optimize} \circ \pass{enclose} \circ
+\pass{cast} \circ \pass{simplify}$:
+\begin{itemize}
+\item \textbf{Denotational: graph model} (\texttt{Theorems/Denotational.agda}).
+  Every pass but delay preserves the meaning exactly, $\SEM{M}\rho_0 \simeq
+  \SEM{\pass{pass}(M)}\rho_0$ (for $\Tl{Mon}$, the meaning of its embedding
+  into $\Tl{Clos5}$); delay preserves and reflects constants and
+  nonemptiness; so $\SEM{\pass{compile\text{-}x86}(M)}$ has the same
+  constants as $\SEM{M}\rho_0$, and is nonempty exactly when it is.
+  No pass has a precondition.
+\item \textbf{CEK machine + simulation} (\texttt{Theorems/Simulation.agda}),
+  \textbf{clocked interpreter + value relations}
+  (\texttt{Theorems/Interpreter.agda}) and \textbf{reduction semantics +
+  simulation} (\texttt{Theorems/Reduction.agda}). Each pass, and the compiler
+  into each of $\Tl{Clos5}$, $\Tl{Mon}$, $\Tl{Imp}$, $\Tl{CFG}$ and X86, gives
+  $\Equiv$ semantics: each terminates with an observation $o$ (an error
+  included) exactly when the other does, and one diverges exactly when the
+  other does.
+\item \textbf{Adequacy} (\texttt{Theorems/Adequacy.agda}). The graph model
+  is sound and adequate for the ISWIM machine, and for the $\Tl{Clos5}$ and
+  X86 machines on the programs the compiler produces; so, observed through
+  the machines, the compiler preserves the constants a program computes and
+  whether it terminates with an answer.
+\item \textbf{Graph model with errors} (\texttt{Theorems/GraphErrors.agda}).
+  Every pass but delay and select preserves the meaning exactly, errors
+  included; delay preserves and reflects an error, the constants and having
+  a value; select is $\mathit{Same}$ (an error, the same constants and a
+  value together; Section~\ref{sec:t-gerr}); and the ISWIM machine on $M$
+  and the $\Tl{Clos5}$ and X86 machines on its compilation stop with an
+  error together, stop with the same constants, stop with an answer
+  together, and diverge together. Adequacy for the $\Tl{Clos5}$ machine is
+  derived from the CEK column's simulation, not proved by a logical
+  relation of its own.
+\end{itemize}
+
+\part{The Untyped Pipeline (Preserved)}\label{part:untyped}
+
+The pipeline that preceded the typed one, preserved in \texttt{agda/Untyped/}, whose
+intermediate languages are untyped and whose semantics check the kinds of values themselves.
+Its definitions of ISWIM, simplify and X86, and the semantics of ISWIM and X86 in each style,
+are shared with the typed pipeline (Part~\ref{part:typed}); everything else here is in
+\texttt{agda/Untyped/}, whose paths mirror those of \texttt{agda/}.
 
 \section{Languages}
 
