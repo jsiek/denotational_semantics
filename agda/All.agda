@@ -180,6 +180,7 @@ import proof.Correctness.Interp.GlobalizeFuel
 import proof.Correctness.Interp.LiftLocalsFuel
 import proof.Correctness.Interp.OptimizeFuel
 import proof.Correctness.Interp.RCOFuel
+import proof.Correctness.Interp.SelectFuel
 import proof.Correctness.Interp.SimplifyFuel
 import proof.Semantics.Interp.Clock
 import proof.Semantics.Interp.Typed.Clos5
