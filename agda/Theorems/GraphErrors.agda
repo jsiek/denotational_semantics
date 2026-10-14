@@ -21,10 +21,11 @@
   Every pass but delay is an equation (≃), select instructions
   included: X86ᵀ, like CFGᵀ, checks kinds only at project (chk).
 
-  Adequacy: for X86, the untyped machine's (Adequacy/GraphErr/X86.agda)
-  on the typed compiler's programs, which are well formed; for Clos5ᵀ,
-  derived from the ISWIM machine's, Same, and the simulation of the CEK
-  column (Theorems/Simulation.agda).
+  Adequacy: for X86ᵀ, that of its semantics for its machine
+  (Adequacy/GraphErr/X86.agda), on the programs of the compiler, whose
+  definitions' code depends only on the older ones and whose table is
+  consistent; for Clos5ᵀ, derived from the ISWIM machine's, Same, and
+  the simulation of the CEK column (Theorems/Simulation.agda).
 
 -}
 
@@ -39,6 +40,7 @@ open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 import Semantics.CEK.ISWIM as ISWIMₘ
 import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
+import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 import Language.ISWIM as ISWIM
 open import Language.Typed.Type using (Any)
@@ -212,6 +214,23 @@ clos5-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
   → Diverges (Clos5ᵀₘ.sem (compile M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅))
 clos5-diverges-iff = Adequacy.clos5-diverges-iff
 
+{- the X86ᵀ machine, for the programs compile-x86 produces -}
+x86-error-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (ω ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
+x86-error-iff = Adequacy.x86-error-iff
+
+x86-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
+  → (const k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+x86-const-iff = Adequacy.x86-const-iff
+
+x86-converges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₜ × d ≢ ω) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+x86-converges-iff = Adequacy.x86-converges-iff
+
+x86-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (X86ᵀₘ.sem (compile-x86 M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₜ))
+x86-diverges-iff = Adequacy.x86-diverges-iff
+
 {- The compiler, observed through the machines ---------------------------------}
 
 end-to-end-error : ∀ (M : ISWIM.AST) → Closed M
@@ -229,6 +248,22 @@ end-to-end-converges M c = Agree.converges (Adequacy.end-to-end M c)
 end-to-end-diverges : ∀ (M : ISWIM.AST) → Closed M
   → Diverges (ISWIMₘ.sem M) ⇔ Diverges (Clos5ᵀₘ.sem (compile M))
 end-to-end-diverges M c = Agree.diverges (Adequacy.end-to-end M c)
+
+end-to-end-x86-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) o-error
+end-to-end-x86-error M c = Agree.error (Adequacy.end-to-end-x86 M c)
+
+end-to-end-x86-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
+  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ᵀₘ.sem (compile-x86 M)) (o-const B k)
+end-to-end-x86-const M c = Agree.const (Adequacy.end-to-end-x86 M c)
+
+end-to-end-x86-converges : ∀ (M : ISWIM.AST) → Closed M
+  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ᵀₘ.sem (compile-x86 M)))
+end-to-end-x86-converges M c = Agree.converges (Adequacy.end-to-end-x86 M c)
+
+end-to-end-x86-diverges : ∀ (M : ISWIM.AST) → Closed M
+  → Diverges (ISWIMₘ.sem M) ⇔ Diverges (X86ᵀₘ.sem (compile-x86 M))
+end-to-end-x86-diverges M c = Agree.diverges (Adequacy.end-to-end-x86 M c)
 
 {- simplify, observed through the ISWIM machine -}
 simplify-machine-error : ∀ (M : ISWIM.AST) → Closed M

@@ -726,3 +726,13 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   start-⊆ : ∀ {n Bs} (k : Seq Σ n Bs (entry [])) bs → 𝒮 (run k bs halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩)
     ⊆ runᴰ T⁺ (body n bs k) (λ _ → init) (λ _ → init) init
   start-⊆ k bs d ⟨ A , ⟨ _ , d∈ ⟩ ⟩ = 𝕂-mono k bs (le (λ ()) (λ { rax () ; rdi () ; rsi () }) (λ ())) d d∈
+
+  {- the element of a value observed as a constant is that constant -}
+  pt-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → o-const B k ≡ obs v → pt v ≡ dconst k
+  pt-const (dyn G v) e = pt-const v e
+  pt-const (const k) refl = refl
+  pt-const (code f) ()
+  pt-const (pack c e) ()
+  pt-const (tup ws) ()
+  pt-const (inl v) ()
+  pt-const (inr v) ()
