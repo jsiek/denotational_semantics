@@ -36,3 +36,6 @@ module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set}
 all-lookup : ∀ {A : Set} {P : A → Set} {n} {xs : Vec A n} → All P xs → ∀ i → P (lookup xs i)
 all-lookup (p ∷ ps) zero = p
 all-lookup (p ∷ ps) (suc i) = all-lookup ps i
+
+cong₃ : ∀ {A B C D : Set} (f : A → B → C → D) {x x' y y' z z'} → x ≡ x' → y ≡ y' → z ≡ z' → f x y z ≡ f x' y' z'
+cong₃ f refl refl refl = refl
