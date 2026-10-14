@@ -42,7 +42,7 @@ open import Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Bloc
 import Language.Typed.Imp as Imp
 open import Compiler.Typed.Select
 open import proof.Compiler.Typed.SelectFacts using (global-sel; block-sel; depth-≥; block-depth)
-open import proof.Framework.Membership using (lvl-<; lvl-⊑; forget-!)
+open import proof.Framework.Lookup using (lvl-<; lvl-⊑; forget-!)
 open import Semantics.Observation using (Obs; o-const; o-tuple; o-inl; o-inr; o-error)
 open import proof.Semantics.CEK.Smallstep using (Machine; Next; next; stop; Star; ε; _◅_; _◅◅_; Plus; plus; step⁺; star-plus)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)

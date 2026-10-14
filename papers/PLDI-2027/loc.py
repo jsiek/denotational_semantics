@@ -308,7 +308,7 @@ GROUPS = [
     # helpers are infrastructure.
     ('infra', 'typed pilot: decidable base types, vectors (collecting, selecting)',
      [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda',
-      W + 'Membership.agda', WP + 'Membership.agda', W + 'Syntax/ScopeDec.agda']),
+      W + 'Membership.agda', W + 'Syntax/ScopeDec.agda']),
     ('infra', 'typed pilot: semantics of intrinsically typed syntax (graph model)',
      [W + 'GraphModel/Typed*.agda', WP + 'GraphModel/Typed*.agda']),
     ('typ', 'typed: types and languages', [L + 'Typed/*.agda']),
@@ -340,19 +340,30 @@ GROUPS = [
 
     # the typed pipeline, phase 2, CEK machines + simulations (the machines
     # are in 'typed CEK: semantics' above)
-    ('infra', 'typed CEK: lookup in typed lists', [W + 'Lookup.agda']),
+    ('infra', 'typed CEK: lookup in typed lists, typed indices', [W + 'Lookup.agda', WP + 'Lookup.agda']),
+    ('infra', 'typed CEK: simulations in which both machines move', [WP + 'Both.agda']),
+    ('typ', 'typed CEK: semantics of Clos5ᵀ, Impᵀ and CFGᵀ',
+     [O + 'Typed/Clos5.agda', O + 'Typed/Imp.agda', O + 'Typed/CFG.agda']),
+    ('typ', 'typed CEK: Clos5ᵀ machine on atoms (rco, lift locals)', [TOC + 'Clos5Common.agda']),
+    ('typ', 'typed CEK: CC: globalize', [TOC + 'GlobalizeSim.agda']),
+    ('typ', 'typed CEK: rco', [TOC + 'RCOSim.agda']),
+    ('typ', 'typed CEK: lift locals', [TOC + 'LiftLocalsSim.agda']),
+    ('typ', 'typed CEK: explicate control (shared with reduction)', [TOC + 'ExplicateSim.agda']),
+    ('typ', 'typed CEK: select instructions (shared with reduction)', [TOC + 'SelectSim.agda']),
+    ('typ', 'typed CEK: composition, from untyped ISWIM to X86', [TOC + 'PipelineSim.agda']),
     ('typ', 'typed: select: definitions and labels exist, frames are large enough (shared)',
      [PC + 'Typed/SelectFacts.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
-    ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
+    ('thm', 'theorem statements', ['agda/Theorems/*.agda', 'agda/Theorems/Typed/*.agda']),
 ]
 
 THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simulation.agda',
             'ck': 'agda/Theorems/Interpreter.agda', 'red': 'agda/Theorems/Reduction.agda',
             'adeq': 'agda/Theorems/Adequacy.agda', 'gerr': 'agda/Theorems/GraphErrors.agda',
-            'typ': 'agda/Theorems/Typed.agda'}
+            'typ': 'agda/Theorems/Typed.agda',
+            'typ-op': 'agda/Theorems/Typed/Simulation.agda'}
 
 
 def strip_comments(s):
@@ -683,8 +694,8 @@ def main():
               + ' | '.join(str(code_lines(THEOREMS[s])) if t == s else '—' for t in ALL) + ' |')
     tot = {s: flines(sreach[s] - (thm - {THEOREMS[s]})) for s in ALL}
     # the typed pilot's surface is reported in its own section of loc.md
-    typ_surface = {f for f in surface if seen[f][0] == 'typ' or f == THEOREMS['typ']
-                   or seen[f][1].startswith('typed pilot')}
+    typ_surface = {f for f in surface if seen[f][0] == 'typ' or f == THEOREMS['typ'] or f.startswith('agda/Theorems/Typed/')
+                   or seen[f][1].startswith('typed')}
     alls = surface - typ_surface
     styles = [s for s in ALL if s != 'adeq']
     low = min(tot[s] for s in styles)
@@ -694,6 +705,8 @@ def main():
     print(f'The typed pilot\'s audit surface (not in this table): '
           f'{flines(reachable({THEOREMS["typ"]}, sgraph))} lines reached from Theorems/Typed.agda, '
           f'{flines(typ_surface)} of them its own.')
+    print(f'The typed pipeline, CEK machines + simulation (not in this table): '
+          f'{flines(reachable({THEOREMS["typ-op"]}, sgraph))} lines reached from Theorems/Typed/Simulation.agda.')
     print()
     print(f'The adequacy statements also use ρ₀ from the denotational ones '
           f'(Theorems/Denotational.agda), not counted in its column.')

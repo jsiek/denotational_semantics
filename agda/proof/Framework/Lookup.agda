@@ -7,7 +7,7 @@
 
 -}
 
-module proof.Framework.Membership where
+module proof.Framework.Lookup where
 
 open import Framework.Membership
 open import Framework.Lookup using (_!_; forget)

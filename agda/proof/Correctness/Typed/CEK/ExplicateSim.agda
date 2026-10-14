@@ -38,7 +38,7 @@ import Language.Typed.Imp as Imp
 open Imp using (simple; assign; case)
 open import Language.Typed.CFG
 open import Compiler.Typed.Explicate
-open import proof.Framework.Membership using (map-!)
+open import proof.Framework.Lookup using (map-!)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; stutters; steps₁≺; after≺; answers-at; FSim; Equivalent; equivalent)

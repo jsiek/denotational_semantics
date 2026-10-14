@@ -36,7 +36,7 @@ import Language.Typed.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import Compiler.Typed.RCO
 open import Framework.Lookup using (_!_)
-open import proof.Framework.Membership using (map-!)
+open import proof.Framework.Lookup using (map-!)
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (next; stop; next?; Star; ε; _◅_; Plus; plus; step⁺; star-plus)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)

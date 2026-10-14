@@ -23,7 +23,7 @@ import Language.Typed.Mon as M
 open M using (atm; pack; callc; tuple; get; inl; inr; case; prim; let′; inject; project; ⌜_⌝; ⌜_⌝ₚ)
 open import Language.Typed.Imp using (Program)
 open import Compiler.Typed.LiftLocals using (lift; lift-program)
-open import proof.Framework.Membership using (map-!)
+open import proof.Framework.Lookup using (map-!)
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; Star; ε; _◅_; Plus; plus; plus-star; star-plus; step⁺; plus→star)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-sym)

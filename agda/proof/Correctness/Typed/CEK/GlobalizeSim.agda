@@ -30,7 +30,7 @@ open import Framework.Lookup using (_!_)
 import Language.Typed.Clos4 as S
 open import Language.Typed.Clos5
 open import Compiler.Typed.Globalize
-open import proof.Framework.Membership using (⊑-irr; ⊑-∋-trans)
+open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
