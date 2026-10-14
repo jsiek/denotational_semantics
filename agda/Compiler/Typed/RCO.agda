@@ -24,7 +24,7 @@ import Language.Typed.Mon as M
 open M using (Atm; Exp; var; lit; ref; atm; ren)
 
 open import Data.List using (List; []; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_)
 
@@ -75,8 +75,4 @@ atomize₂ L N ρ k = atomize L ρ λ r a → atomize N (λ x → r (ρ x)) λ r
 
 {- the pass, for a whole program -}
 rco-program : Program → M.Program
-rco-program (program ds N) = M.program (defs ds) (rco N λ x → x)
-  where
-  defs : ∀ {Σ ns} → All (Code Σ) ns → All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) ns
-  defs [] = []
-  defs (D ∷ ds) = rco D (λ x → x) ∷ defs ds
+rco-program (program ds N) = M.program (All-map (λ D → rco D (λ x → x)) ds) (rco N λ x → x)
