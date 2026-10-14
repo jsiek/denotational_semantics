@@ -128,6 +128,12 @@ used by a theorem statement).
     machines on its compilation stop with an error together, stop with
     the same constants, stop with an answer together, and diverge
     together.
+  * `Theorems/TAL.agda` (a pilot, not part of the comparison): the
+    typed assembly language X86ᵀ (`Language/Typed/X86.agda`) as the
+    target; typed select (`Compiler/SelectTAL.agda`) is correct on the
+    machines (Equivalent) and in the graph model with errors (≃), so is
+    the compiler to X86ᵀ (`Compiler/PipelineTAL.agda`), and without the
+    types it emits the instructions of select into X86.
   * `Untyped/Theorems/`: the same six files for the untyped pipeline.
 * The definitions they use: `Language/`, `Compiler/`, `Semantics/`,
   `Framework/` (see the layout above), and those of `Untyped/` outside
