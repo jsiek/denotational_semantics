@@ -54,7 +54,7 @@ const k ⊑ D = Lift (lsuc lzero) (const k ∈ D)
 (tup[ i ] d) ⊑ D = Inner d (Nth i D)
 left d ⊑ D = Inner d (Lefts D)
 right d ⊑ D = Inner d (Rights D)
-⦅ u , v ⦆ ⊑ D = Code (kind v) u (Cars D) × Inner v (Cdrs D)
+⦅ u , v ⦆ ⊑ D = Code (kind v) u (Cars D) × Inner v (Cdrs D) × Lift (lsuc lzero) (Conv (Cars D))
 
 Inner d D = Lift (lsuc lzero) (d ≢ ω) × d ⊑ D
 
@@ -82,8 +82,9 @@ code-mono : ∀ k u {C C'} → C ⊆ C' → Code k u C → Code k u C'
 ⊑-mono (tup[ i ] d) D⊆ ⟨ n , r ⟩ = ⟨ n , ⊑-mono d (λ e → D⊆ (tup[ i ] e)) r ⟩
 ⊑-mono (left d) D⊆ ⟨ n , r ⟩ = ⟨ n , ⊑-mono d (λ e → D⊆ (left e)) r ⟩
 ⊑-mono (right d) D⊆ ⟨ n , r ⟩ = ⟨ n , ⊑-mono d (λ e → D⊆ (right e)) r ⟩
-⊑-mono ⦅ u , v ⦆ D⊆ ⟨ c , ⟨ n , r ⟩ ⟩ =
-  ⟨ code-mono (kind v) u (λ { e ⟨ x , p∈ ⟩ → ⟨ x , D⊆ _ p∈ ⟩ }) c , ⟨ n , ⊑-mono v (λ { e ⟨ x , p∈ ⟩ → ⟨ x , D⊆ _ p∈ ⟩ }) r ⟩ ⟩
+⊑-mono ⦅ u , v ⦆ D⊆ ⟨ c , ⟨ ⟨ n , r ⟩ , lift ⟨ y , ⟨ ⟨ x , p∈ ⟩ , y≢ ⟩ ⟩ ⟩ ⟩ =
+  ⟨ code-mono (kind v) u (λ { e ⟨ x , p∈ ⟩ → ⟨ x , D⊆ _ p∈ ⟩ }) c
+  , ⟨ ⟨ n , ⊑-mono v (λ { e ⟨ x , p∈ ⟩ → ⟨ x , D⊆ _ p∈ ⟩ }) r ⟩ , lift ⟨ y , ⟨ ⟨ x , D⊆ _ p∈ ⟩ , y≢ ⟩ ⟩ ⟩ ⟩
 
 ⊑*-mono [] D⊆ _ = ptt
 ⊑*-mono (v ∷ V) D⊆ ⟨ r , rs ⟩ = ⟨ ⊑-mono v D⊆ r , ⊑*-mono V D⊆ rs ⟩
@@ -125,7 +126,7 @@ code-mono k ⟨⟩ C⊆ c = c
 ⊑-wit (tup[ i ] d) ⟨ _ , r ⟩ _ = let ⟨ e , e∈ ⟩ = ⊑-ne d r in ⟨ tup[ i ] e , ⟨ e∈ , refl ⟩ ⟩
 ⊑-wit (left d) ⟨ _ , r ⟩ _ = let ⟨ e , e∈ ⟩ = ⊑-ne d r in ⟨ left e , ⟨ e∈ , refl ⟩ ⟩
 ⊑-wit (right d) ⟨ _ , r ⟩ _ = let ⟨ e , e∈ ⟩ = ⊑-ne d r in ⟨ right e , ⟨ e∈ , refl ⟩ ⟩
-⊑-wit ⦅ u , v ⦆ ⟨ _ , ⟨ _ , r ⟩ ⟩ _ = let ⟨ e , ⟨ x , p∈ ⟩ ⟩ = ⊑-ne v r in ⟨ ⦅ x , e ⦆ , ⟨ p∈ , refl ⟩ ⟩
+⊑-wit ⦅ u , v ⦆ ⟨ _ , ⟨ ⟨ _ , r ⟩ , _ ⟩ ⟩ _ = let ⟨ e , ⟨ x , p∈ ⟩ ⟩ = ⊑-ne v r in ⟨ ⦅ x , e ⦆ , ⟨ p∈ , refl ⟩ ⟩
 
 kind-ω : ∀ {d} → kind d ≡ error → d ≡ ω
 kind-ω {ω} _ = refl
@@ -156,9 +157,11 @@ kind-ω {⟨⟩} ()
 ⊑-⇂ (tup[ i ] d) h ⟨ n , r ⟩ = ⟨ n , ⊑-mono d (λ e e∈ → ⟨ e∈ , h _ e∈ refl ⟩) r ⟩
 ⊑-⇂ (left d) h ⟨ n , r ⟩ = ⟨ n , ⊑-mono d (λ e e∈ → ⟨ e∈ , h _ e∈ refl ⟩) r ⟩
 ⊑-⇂ (right d) h ⟨ n , r ⟩ = ⟨ n , ⊑-mono d (λ e e∈ → ⟨ e∈ , h _ e∈ refl ⟩) r ⟩
-⊑-⇂ ⦅ u , v ⦆ h ⟨ c , ⟨ n , r ⟩ ⟩ =
+⊑-⇂ ⦅ u , v ⦆ h ⟨ c , ⟨ ⟨ n , r ⟩ , lift ⟨ y , ⟨ ⟨ x , p∈ ⟩ , y≢ ⟩ ⟩ ⟩ ⟩ =
   ⟨ code-mono (kind v) u (λ { e ⟨ x , p∈ ⟩ → ⟨ x , ⟨ p∈ , h _ p∈ refl ⟩ ⟩ }) c
-  , ⟨ n , ⊑-mono v (λ { e ⟨ x , p∈ ⟩ → ⟨ x , ⟨ p∈ , h _ p∈ refl ⟩ ⟩ }) r ⟩ ⟩
+  , ⟨ ⟨ n , ⊑-mono v (λ { e ⟨ x , p∈ ⟩ → ⟨ x , ⟨ p∈ , h _ p∈ refl ⟩ ⟩ }) r ⟩
+    , lift ⟨ y , ⟨ ⟨ x , ⟨ p∈ , h _ p∈ refl ⟩ ⟩ , y≢ ⟩ ⟩ ⟩ ⟩
+
 
 {- of the right kind, and not ω -}
 ⊑-kind : ∀ d {D} → d ⊑ D → d ⊑ (D ⇂ₖ kind d)

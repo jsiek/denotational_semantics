@@ -367,7 +367,7 @@ callc-r {F} {A} {F'} {A'} vF cF vA vF' cF' vA' cA' rF rA w w∈ = go w∈
   C-ω : ω ∈ C → ⊥
   C-ω ω∈ = let ⟨ v , p∈ ⟩ = car-in ω∈ in car-≢ {ω} {v} {Q} (rF ⦅ ω , v ⦆ (proj₁ p∈)) refl
   D-ω : ω ∈ D → ⊥
-  D-ω ω∈ = let ⟨ u , p∈ ⟩ = cdr-in ω∈ in lower (proj₁ (proj₂ (rF ⦅ u , ω ⦆ (proj₁ p∈)))) refl
+  D-ω ω∈ = let ⟨ u , p∈ ⟩ = cdr-in ω∈ in lower (proj₁ (proj₁ (proj₂ (rF ⦅ u , ω ⦆ (proj₁ p∈))))) refl
   funs : ∀ d → d ∈ ⌊ C ⌋ → kind d ≡ fun
   funs d d∈ = let ⟨ v , p∈ ⟩ = car-in (proj₁ d∈) in code-fun (kind v) d (proj₁ (rF _ (proj₁ p∈)))
   E = ⌊ Cdrs Q ⌋
@@ -383,7 +383,8 @@ callc-r {F} {A} {F'} {A'} vF cF vA vF' cF' vA' cA' rF rA w w∈ = go w∈
     rV : V ⊑* (E ⇂ₖ kind e₀)
     rV = ⊑*-from V λ v v∈ → let ⟨ u' , q∈ ⟩ = cdr-in (proj₁ (V⊆ v v∈)) ; r = rF _ (proj₁ q∈) in
       subst (λ k → v ⊑ (E ⇂ₖ k)) (~-kind v e₀ (proj₂ (cF _ _ (proj₁ q∈) (proj₁ p∈))))
-        (⊑-kind v (⊑-⌊⌋ v (lower (proj₁ (proj₂ r))) (proj₂ (proj₂ r))))
+        (⊑-kind v (⊑-⌊⌋ v (lower (proj₁ (proj₁ (proj₂ r)))) (proj₂ (proj₁ (proj₂ r)))))
+
     rU : U ⊑* X
     rU = ⊑*-from U λ x x∈ → ⊑-⌊⌋ x (proj₂ (U⊆ x x∈)) (rA x (proj₁ (U⊆ x x∈)))
     into : ⋆ ⟨ ⋆ ⟨ Cars Q , ⟨ E ⇂ₖ kind e₀ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩ ⊆ binds 2 ⟨ F' , ⟨ A' , ptt ⟩ ⟩ callcᵈ
@@ -455,7 +456,7 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
     simS (pack {n} c e) d d∈ with pair-elim (βᵛ {F = λ Y → pair ⟨ ⌊ 𝒜 c Tᶜ ρᶜ ⌋ , ⟨ Y , ptt ⟩ ⟩} (vᶜ e) d (βᵛ {F = λ X → 𝒜 e Tᶜ ρᶜ ≫= λ Y → pair ⟨ X , ⟨ Y , ptt ⟩ ⟩} (vᶜ c) d d∈))
     ... | ⟨ u , ⟨ v , ⟨ refl , ⟨ ⟨ u∈ , _ ⟩ , ⟨ v∈ , v≢ ⟩ ⟩ ⟩ ⟩ ⟩ =
       ⟨ subst (λ k → Code k u (Cars Q)) (sym kv) (code-mono (tup n) u C⊆ (ar c u u∈))
-      , ⟨ lift v≢ , ⊑-mono v E⊆ rv ⟩ ⟩
+      , ⟨ ⟨ lift v≢ , ⊑-mono v E⊆ rv ⟩ , lift cvQ ⟩ ⟩
       where
       C' = 𝒜 c T ρ
       E' = 𝒜 e T ρ
@@ -471,6 +472,8 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
       C⊆ x x∈ = let ⟨ y , y∈ ⟩ = proj₂ (v' e) in ⟨ y , in-Q x∈ y∈ ⟩
       E⊆ : (E' ⇂ Kd (tup n)) ⊆ Cdrs Q
       E⊆ y ⟨ y∈ , _ ⟩ = let ⟨ x , x∈ ⟩ = proj₂ (v' c) in ⟨ x , in-Q x∈ y∈ ⟩
+      cvQ : Conv (Cars Q)
+      cvQ = let ⟨ x , x∈ ⟩ = proj₂ (v' c) ; ⟨ y , y∈ ⟩ = proj₂ (v' e) in ⟨ x , ⟨ ⟨ y , in-Q x∈ y∈ ⟩ , proj₁ (v' c) x x∈ ⟩ ⟩
     simS (callc f a) = callc-r (vᶜ f) (aconᶠ f) (vᶜ a) (v' f) (c' f) (v' a) (c' a) (ar f) (ar a)
     simS (tuple {n = n} as) d d∈ =
       ⊑-⇂ d (λ e e∈ _ → 𝒯ᵐ-kok n e e∈) (binds-lift n ⊑-lift cons rels (λ cl hs → 𝒯-r n cl hs) d d∈)
