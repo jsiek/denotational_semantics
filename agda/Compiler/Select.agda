@@ -4,7 +4,7 @@
   Compilation: the instructions of select into untyped X86
   (Compiler/SelectX86.agda), typed (Language/Typed/X86.agda). Without
   the types they are the same instructions
-  (proof/Compiler/SelectErase.agda, Theorems/Erasure.agda).
+  (proof/Compiler/SelectErase.agda, Theorems/X86Erasure.agda).
 
   * A slot is the typed index of CFGᵀ; the frame of a body has as many
     slots as the deepest level its tails write (depth),

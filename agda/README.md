@@ -142,7 +142,7 @@ used by a theorem statement).
     and the Clos5ᵀ and X86ᵀ machines on its compilation stop with an
     error together, stop with the same constants, stop with an answer
     together, and diverge together.
-  * `Theorems/Erasure.agda` (assurance, not part of the comparison):
+  * `Theorems/X86Erasure.agda` (assurance, not part of the comparison):
     without its types, the X86ᵀ code select emits is the X86 code of
     select into untyped X86 (`Compiler/SelectX86.agda`).
   * `Untyped/Theorems/`: the same six files for the untyped pipeline.

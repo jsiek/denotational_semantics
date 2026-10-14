@@ -5,7 +5,7 @@
   the pass of the typed pipeline before it ended at X86ᵀ (PR #58). Not a
   pass of the compiler: the reference that typed select emits the same
   instructions once the types are erased (Language/Typed/X86Erase.agda,
-  proof/Compiler/SelectErase.agda, Theorems/Erasure.agda).
+  proof/Compiler/SelectErase.agda, Theorems/X86Erasure.agda).
 
   * A slot is the X86 variable at its level (its position from the
     oldest slot, Framework/Membership.lvl); a reference to a definition,

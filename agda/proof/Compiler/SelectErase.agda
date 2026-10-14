@@ -2,7 +2,7 @@
 
   Select instructions (Compiler/Select.agda) emits the instructions of
   select into untyped X86 (Compiler/SelectX86.agda), once the types are
-  erased (Language/Typed/X86Erase.agda; Theorems/Erasure.agda): the
+  erased (Language/Typed/X86Erase.agda; Theorems/X86Erasure.agda): the
   same blocks, the same frame sizes, the same
   code for every statement, chk being the test of project and the move.
 

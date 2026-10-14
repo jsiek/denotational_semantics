@@ -33,8 +33,9 @@ the untyped pipeline's, in agda/Untyped/.
 
 Assurance (side 'assure', not in any total nor in the comparison):
 checks that the typed pipeline's X86ᵀ is faithful to untyped X86, such
-as that select, with the types erased, emits the instructions of select
-into untyped X86 (Theorems/Erasure.agda).
+as that erasing X86ᵀ to X86 keeps the meaning of every program, and that
+select, with the types erased, emits the instructions of select into
+untyped X86 (Theorems/X86Erasure.agda).
 
 The code is split into an audit surface (the theorem statements,
 agda/Theorems/ and agda/Untyped/Theorems/, and the definitions they use,
@@ -143,7 +144,7 @@ UNTYPED = dict(sides=('uden', 'uop', 'uck', 'ured'), gerr='ugerr', adeq='uadeq',
 BOTH = 'den+uden'
 
 # the statements of the assurance (side 'assure'), not in the totals
-ASSURE_THM = A + 'Theorems/Erasure.agda'
+ASSURE_THM = A + 'Theorems/X86Erasure.agda'
 
 # (side, group, glob patterns)
 GROUPS = [
@@ -164,6 +165,10 @@ GROUPS = [
     # before X86ᵀ, Compiler/SelectX86.agda)
     ('assure', 'erasure: select emits the instructions of select into untyped X86',
      [L + 'Typed/X86Erase.agda', C + 'SelectX86.agda', PC + 'SelectErase.agda']),
+    # and erasing X86ᵀ keeps the meaning of every program, in the CEK
+    # machines (a simulation of the X86ᵀ machine by the X86 machine)
+    ('assure', 'erasure keeps the meaning of every X86ᵀ program (CEK machines)',
+     [A + 'proof/Assurance/*.agda']),
 
     # language-independent infrastructure: not in the totals (see main)
     ('infra', 'abstract binding trees',
@@ -927,7 +932,7 @@ def assurance(c):
     for side, gname, _ in GROUPS:
         if side == 'assure':
             print(f'| {gname} | {c.counts[(side, gname)]} |')
-    print(f'| the statements (`Theorems/Erasure.agda`) | {code_lines(ASSURE_THM)} |')
+    print(f'| the statements (`Theorems/X86Erasure.agda`) | {code_lines(ASSURE_THM)} |')
     print()
 
 

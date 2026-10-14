@@ -3,7 +3,7 @@
   The erasure of X86ᵀ (Language/Typed/X86.agda) into X86
   (Language/X86.agda): not a pass of the compiler, which ends at X86ᵀ,
   but for the statement that select emits the instructions of select
-  into untyped X86 (Compiler/SelectX86.agda; Theorems/Erasure.agda,
+  into untyped X86 (Compiler/SelectX86.agda; Theorems/X86Erasure.agda,
   proof/Compiler/SelectErase.agda). The
   types, the proofs about registers and frame bounds and the operand
   coercion ↑ disappear; chk t x, d is X86's test of t on x and the move
@@ -23,18 +23,13 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; toList; map)
 
-eReg : Reg → L.Reg
-eReg rax = L.rax
-eReg rdi = L.rdi
-eReg rsi = L.rsi
-
 eArg : ∀ {Σ ψ τ} → Arg Σ ψ τ → L.Arg
 eArg (atom a) = select-atm a
-eArg (reg r _) = L.loc (L.reg (eReg r))
+eArg (reg r _) = L.loc (L.reg r)
 eArg (a ↑) = eArg a
 
 eDst : ∀ {n ψ τ ψ'} → Dst n ψ τ ψ' → L.Loc
-eDst (reg r) = L.reg (eReg r)
+eDst (reg r) = L.reg r
 eDst (slot {Δ' = Δ'} p _) = L.var (length Δ')
 
 slot-of : ∀ {Δ : Ctx} {A} → Δ ∋ A → L.Arg
@@ -42,7 +37,7 @@ slot-of x = L.loc (L.var (lvl x))
 
 eInstr : ∀ {Σ n ψ ψ'} → Instr Σ n ψ ψ' → List L.Instr
 eInstr (movq a d) = L.movq (eArg a) (eDst d) ∷ []
-eInstr (subq a r _) = L.subq (eArg a) (L.reg (eReg r)) ∷ []
+eInstr (subq a r _) = L.subq (eArg a) (L.reg r) ∷ []
 eInstr (cmpq a₂ a₁) = L.cmpq (eArg a₂) (eArg a₁) ∷ []
 eInstr (sete d) = L.sete (eDst d) ∷ []
 eInstr (testinl a) = L.testinl (eArg a) ∷ []
@@ -52,8 +47,8 @@ eInstr (alloc (inl a) d) = L.alloc L.inl (eArg a ∷ []) (eDst d) ∷ []
 eInstr (alloc (inr a) d) = L.alloc L.inr (eArg a ∷ []) (eDst d) ∷ []
 eInstr (load (get i) a d) = L.load (L.get i) (eArg a) (eDst d) ∷ []
 eInstr (load payload a d) = L.load L.payload (eArg a) (eDst d) ∷ []
-eInstr (loadfst x r) = L.load L.fst (slot-of x) (L.reg (eReg r)) ∷ []
-eInstr (loadsnd {x = x} r) = L.load L.snd (slot-of x) (L.reg (eReg r)) ∷ []
+eInstr (loadfst x r) = L.load L.fst (slot-of x) (L.reg r) ∷ []
+eInstr (loadsnd {x = x} r) = L.load L.snd (slot-of x) (L.reg r) ∷ []
 eInstr (callq a _ _) = L.callq (eArg a) ∷ []
 eInstr (chk t x d) = check t (slot-of x) ++ L.movq (slot-of x) (eDst d) ∷ []
 

@@ -40,9 +40,13 @@ import Theorems.Reduction
 import Theorems.GraphErrors
 import Theorems.Adequacy
 
-{- assurance (not in the comparison): without its types, the code select
-   emits is that of select into untyped X86 -}
-import Theorems.Erasure
+{- assurance (not in the totals, nor in the comparison): erasing X86ᵀ to
+   X86 keeps the meaning of every program, in the CEK machines, and the
+   code select emits is, without its types, that of select into untyped
+   X86 -}
+import Theorems.X86Erasure
+import proof.Assurance.X86Agree
+import proof.Assurance.X86Erasure
 
 {- ---------------------------------------------------------------------------
    The untyped pipeline, preserved

@@ -78,6 +78,7 @@ open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Typed.Type
 open import Framework.Membership using (_⊑_)
 open import Language.Typed.Mon using (Atm; var; lit; ref) public
+open import Language.Reg public
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Fin using (Fin)
@@ -87,9 +88,6 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; _<_)
 open import Data.Vec using (Vec)
 open import Relation.Binary.PropositionalEquality using (_≡_)
-
-data Reg : Set where
-  rax rdi rsi : Reg
 
 {- the types of registers: a type, or the code or environment of the
    open closure -}

@@ -31,7 +31,7 @@ start and end with, and its only check is `project`'s (`chk`), which
 stands for the X86 instruction that errs on a value of another kind.
 Without its types, the code is that of x86 with variables (untyped X86),
 which select emitted before (an assurance theorem,
-`agda/Theorems/Erasure.agda`).
+`agda/Theorems/X86Erasure.agda`).
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
