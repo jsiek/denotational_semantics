@@ -26,6 +26,8 @@ open import Compiler.Typed.Optimize using (optimize-program)
 open import Compiler.Typed.Concretize using (concretize-program)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 import Semantics.GraphErr.Typed.Clos3
+import Semantics.GraphErr.Typed.ISWIM
+open import proof.Compiler.SimplifyScope using (closed-ws)
 import Semantics.GraphErr.Typed.Clos4 as S4
 open import proof.Correctness.Typed.GraphErr.CastCorrect using (cast-correct)
 open import proof.Correctness.Typed.GraphErr.EncloseCorrect using (enclose-correct)
@@ -99,3 +101,7 @@ compile-imp-same M c = ≃-Same (compile-mon-same M c) (≃-sym (lift-locals-cor
 
 compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = ≃-Same (compile-imp-same M c) (≃-sym (explicate-correct (compile-imp M)))
+
+{- cast insertion on closed programs (cast-closed) -}
+cast-correct-closed : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀
+cast-correct-closed M c rewrite cast-closed-≡ M (closed-ws {M} c) = cast-correct M (closed-ws {M} c)

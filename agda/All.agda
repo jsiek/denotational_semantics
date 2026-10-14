@@ -345,11 +345,24 @@ import Theorems.Typed.Adequacy
    statements are Theorems/Typed/Reduction.agda -}
 import Theorems.Typed.Reduction
 
-{- the typed pipeline, phase 2, the graph model with errors -}
+{- the typed pipeline, phase 2, the graph model with errors: the
+   statements are Theorems/Typed/GraphErrors.agda -}
+import Semantics.GraphErr.Typed.Clos5
+import Semantics.GraphErr.Typed.Imp
+import Semantics.GraphErr.Typed.CFG
+import proof.Semantics.GraphErr.Typed.Clos5
+import proof.Semantics.GraphErr.Typed.Imp
+import proof.Semantics.GraphErr.Typed.CFG
 import proof.Correctness.Typed.GraphErr.GlobalizeCorrect
 import proof.Correctness.Typed.GraphErr.RCOCorrect
 import proof.Correctness.Typed.GraphErr.LiftLocalsCorrect
 import proof.Correctness.Typed.GraphErr.ExplicateCorrect
 import proof.Correctness.Typed.GraphErr.SelectCheck
-import proof.Semantics.GraphErr.Typed.CFG
+import proof.Correctness.Typed.GraphErr.SelectCheckOk
+import proof.Correctness.Typed.GraphErr.SelectX86
+import proof.Correctness.Typed.GraphErr.SelectRel
+import proof.Correctness.Typed.GraphErr.SelectReflect
+import proof.Correctness.Typed.GraphErr.SelectPreserve
 import proof.Correctness.Typed.GraphErr.SelectCorrect
+import proof.Adequacy.Typed.GraphErr
+import Theorems.Typed.GraphErrors

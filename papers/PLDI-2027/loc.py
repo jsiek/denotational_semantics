@@ -340,6 +340,20 @@ GROUPS = [
     ('typ', 'typed gerr: CC: concretize', [TGC + 'ConcretizeCorrect.agda']),
     ('typ', 'typed gerr: CC: delay', [TGC + 'Delay*.agda']),
     ('typ', 'typed gerr: composition', [TGC + 'CompilerCorrect.agda']),
+    # the typed pipeline, phase 2, the graph model with errors (statements:
+    # Theorems/Typed/GraphErrors.agda); its semantics are in 'typed gerr:
+    # semantics' above
+    ('typ', 'typed gerr: CC: globalize', [TGC + 'GlobalizeCorrect.agda']),
+    ('typ', 'typed gerr: rco', [TGC + 'RCOCorrect.agda']),
+    ('typ', 'typed gerr: lift locals', [TGC + 'LiftLocalsCorrect.agda']),
+    ('typ', 'typed gerr: explicate control', [TGC + 'ExplicateCorrect.agda']),
+    ('typ', 'typed gerr: select instructions (X86 is CFGᵀ with checks)',
+     [TGC + 'SelectCheck.agda', TGC + 'SelectX86.agda']),
+    ('typ', 'typed gerr: select: the typed/untyped boundary (Same)',
+     [TGC + 'SelectRel.agda', TGC + 'SelectCheckOk.agda', TGC + 'SelectReflect.agda',
+      TGC + 'SelectPreserve.agda', TGC + 'SelectCorrect.agda']),
+    ('typ', 'typed gerr adequacy: X86, Clos5ᵀ (from the simulation), end to end', [AP + 'Typed/GraphErr.agda']),
+    ('thm', 'typed gerr: theorem statements', ['agda/Theorems/Typed/GraphErrors.agda']),
 
     # the typed pipeline, phase 2, CEK machines + simulations (the machines
     # are in 'typed CEK: semantics' above)
@@ -422,7 +436,8 @@ THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simul
             'typ-op': 'agda/Theorems/Typed/Simulation.agda',
             'typ-ck': 'agda/Theorems/Typed/Interpreter.agda',
             'typ-red': 'agda/Theorems/Typed/Reduction.agda',
-            'tden': 'agda/Theorems/Typed/Denotational.agda', 'tadeq': 'agda/Theorems/Typed/Adequacy.agda'}
+            'tden': 'agda/Theorems/Typed/Denotational.agda', 'tadeq': 'agda/Theorems/Typed/Adequacy.agda',
+            'tgerr': 'agda/Theorems/Typed/GraphErrors.agda'}
 
 
 def strip_comments(s):
@@ -768,6 +783,8 @@ def main():
           f'{flines(reachable({THEOREMS["typ-op"]}, sgraph))} lines reached from Theorems/Typed/Simulation.agda.')
     print(f'The typed pipeline, reduction semantics + simulation (not in this table): '
           f'{flines(reachable({THEOREMS["typ-red"]}, sgraph))} lines reached from Theorems/Typed/Reduction.agda.')
+    print(f'The typed pipeline, graph model with errors (not in this table): '
+          f'{flines(reachable({THEOREMS["tgerr"]}, sgraph))} lines reached from Theorems/Typed/GraphErrors.agda.')
     print()
     print(f'The adequacy statements also use ρ₀ from the denotational ones '
           f'(Theorems/Denotational.agda), not counted in its column.')
