@@ -354,6 +354,23 @@ GROUPS = [
     ('typ', 'typed: select: definitions and labels exist, frames are large enough (shared)',
      [PC + 'Typed/SelectFacts.agda']),
 
+    # the typed pipeline, phase 2, clocked interpreters + value relations
+    # (statements: Theorems/Typed/Interpreter.agda); the untyped ISWIM and
+    # X86 interpreters are the column's own ('ck' above)
+    ('infra', 'typed interp: projections from tuples of a size', [WP + 'VecProj.agda']),
+    ('typ', 'typed interp: semantics', [F + 'Typed/*.agda', FP + 'Typed/*.agda']),
+    ('typ', 'typed interp: cast insertion', [FC + 'Typed/CastFuel.agda']),
+    ('typ', 'typed interp: CC: enclose', [FC + 'Typed/EncloseFuel.agda']),
+    ('typ', 'typed interp: CC: optimize', [FC + 'Typed/OptimizeFuel.agda']),
+    ('typ', 'typed interp: CC: concretize', [FC + 'Typed/ConcretizeFuel.agda']),
+    ('typ', 'typed interp: CC: delay', [FC + 'Typed/DelayFuel.agda']),
+    ('typ', 'typed interp: CC: globalize', [FC + 'Typed/GlobalizeFuel.agda']),
+    ('typ', 'typed interp: rco', [FC + 'Typed/RCOFuel.agda']),
+    ('typ', 'typed interp: lift locals', [FC + 'Typed/LiftLocalsFuel.agda']),
+    ('typ', 'typed interp: explicate control', [FC + 'Typed/ExplicateFuel.agda']),
+    ('typ', 'typed interp: select instructions', [FC + 'Typed/SelectFuel.agda']),
+    ('typ', 'typed interp: composition', [FC + 'Typed/CompilerFuel.agda']),
+
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
     ('thm', 'theorem statements', ['agda/Theorems/*.agda', 'agda/Theorems/Typed/*.agda']),
@@ -363,7 +380,8 @@ THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simul
             'ck': 'agda/Theorems/Interpreter.agda', 'red': 'agda/Theorems/Reduction.agda',
             'adeq': 'agda/Theorems/Adequacy.agda', 'gerr': 'agda/Theorems/GraphErrors.agda',
             'typ': 'agda/Theorems/Typed.agda',
-            'typ-op': 'agda/Theorems/Typed/Simulation.agda'}
+            'typ-op': 'agda/Theorems/Typed/Simulation.agda',
+            'typ-ck': 'agda/Theorems/Typed/Interpreter.agda'}
 
 
 def strip_comments(s):

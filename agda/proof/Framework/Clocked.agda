@@ -70,6 +70,14 @@ bind-rel timeout k = timeout
 bind-rel error k = error
 bind-rel (ret r) k = k r
 
+{- the same, where the second result is itself a bind -}
+bind-rel∘ : ∀ {R : A → B → Set} {R' : A' → B' → Set} {r₁ r₂ f} {g : B → Result C} {h}
+  → RelResult R r₁ r₂ → (∀ {v w} → R v w → RelResult R' (f v) (g w >>= h))
+  → RelResult R' (r₁ >>= f) ((r₂ >>= g) >>= h)
+bind-rel∘ timeout k = timeout
+bind-rel∘ error k = error
+bind-rel∘ (ret r) k = k r
+
 from-maybe-rel : ∀ {R : A → B → Set} {mv mw}
   → M.Pointwise R mv mw → RelResult R (from-maybe mv) (from-maybe mw)
 from-maybe-rel (M.just r) = ret r

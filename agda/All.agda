@@ -330,3 +330,7 @@ import Semantics.CEK.Typed.Imp
 import Semantics.CEK.Typed.CFG
 import proof.Compiler.Typed.SelectFacts
 import Theorems.Typed.Simulation
+
+{- the typed pipeline, phase 2, clocked interpreters + value relations:
+   the statements -}
+import Theorems.Typed.Interpreter
