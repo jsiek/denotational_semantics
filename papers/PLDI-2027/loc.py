@@ -320,6 +320,7 @@ GROUPS = [
                                    C + 'Typed/LiftLocals.agda', C + 'Typed/Explicate.agda',
                                    C + 'Typed/Select.agda']),
     ('typ', 'typed: cast insertion on closed programs', [PC + 'Typed/CastScope.agda']),
+    ('typ', 'typed: globalize makes only references to older definitions', [PC + 'Typed/GlobalizeOlder.agda']),
     ('typ', 'typed: specifications of the statements (phase 2)', ['agda/proof/Spec/Typed/*.agda']),
     ('typ', 'typed: the compiler', [C + 'Typed/Pipeline.agda']),
     ('typ', 'typed CEK: semantics', [O + 'Typed/*.agda']),

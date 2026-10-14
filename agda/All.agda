@@ -315,6 +315,7 @@ import proof.Correctness.Typed.GraphErr.CompilerCorrect
    the specifications of each column's statements (phase 2) -}
 import Compiler.Typed.Pipeline
 import proof.Compiler.Typed.CastScope
+import proof.Compiler.Typed.GlobalizeOlder
 import proof.Spec.Typed.Denotational
 import proof.Spec.Typed.Simulation
 import proof.Spec.Typed.Interpreter
