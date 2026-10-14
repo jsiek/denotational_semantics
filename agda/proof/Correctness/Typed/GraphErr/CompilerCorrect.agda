@@ -5,7 +5,7 @@
   program errs exactly when the source does, produces the same constants,
   and produces a value exactly when the source does (Same, as in
   proof/Correctness/GraphErr/CompilerCorrect.agda, repeated here). Cast
-  insertion, enclose and concretize preserve the meaning exactly (≃);
+  insertion, enclose, optimize and concretize preserve the meaning exactly (≃);
   delay preserves and reflects the three facts.
 
 -}
@@ -22,12 +22,14 @@ open import Framework.Syntax.Scope Op sig using (WS)
 open import Compiler.Typed.Pipeline using (compileᵀ)
 open import Compiler.Typed.Cast using (cast-program)
 open import Compiler.Typed.Enclose using (enclose)
+open import Compiler.Typed.Optimize using (optimize-program)
 open import Compiler.Typed.Concretize using (concretize-program)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 import Semantics.GraphErr.Typed.Clos3
 import Semantics.GraphErr.Typed.Clos4 as S4
 open import proof.Correctness.Typed.GraphErr.CastCorrect using (cast-correct)
 open import proof.Correctness.Typed.GraphErr.EncloseCorrect using (enclose-correct)
+open import proof.Correctness.Typed.GraphErr.OptimizeCorrect using (optimize-correct)
 open import proof.Correctness.Typed.GraphErr.ConcretizeCorrect using (concretize-correct)
 open import proof.Correctness.Typed.GraphErr.DelayCorrect
   using (delay-correct-error; delay-correct-const; delay-correct-val)
@@ -41,10 +43,11 @@ Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
 compile-same : ∀ (M : AST) (w : WS 0 M) → Same (⟦ M ⟧ ρ₀) (S4.⟦ compileᵀ M w ⟧ ρ₀)
-compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (enclose-correct M₁) (concretize-correct (enclose M₁))))
+compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂))))
   where
   M₁ = cast-program M w
-  M₃ = concretize-program (enclose M₁)
+  M₂ = optimize-program (enclose M₁)
+  M₃ = concretize-program M₂
   go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ compileᵀ M w ⟧ ρ₀)
   go ⟨ D⊆ , E⊆ ⟩ =
     ⟨ ⇔∘ ⟨ D⊆ ω , E⊆ ω ⟩ (delay-correct-error M₃)

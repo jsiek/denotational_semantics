@@ -5,7 +5,7 @@
   typed, and the closure-conversion passes are proved on them, in two
   columns:
 
-    ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
+    ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ --optimize--> Clos2ᵀ
           --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
 
   * CEK machines (Semantics/CEK/Typed/): each pass gives Equivalent
@@ -41,6 +41,7 @@ import Language.Typed.Clos2 as Clos2ᵀ
 import Language.Typed.Clos3 as Clos3ᵀ
 open import Compiler.Typed.Cast using (cast-program)
 open import Compiler.Typed.Enclose using (enclose)
+open import Compiler.Typed.Optimize using (optimize-program)
 open import Compiler.Typed.Concretize using (concretize-program)
 open import Compiler.Typed.Delay using (delay-program)
 open import Compiler.Typed.Pipeline using (compileᵀ)
@@ -58,11 +59,13 @@ open import Semantics.GraphErr.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧
 
 import proof.Correctness.Typed.CEK.CastSim as CastSim
 import proof.Correctness.Typed.CEK.EncloseSim as EncloseSim
+import proof.Correctness.Typed.CEK.OptimizeSim as OptimizeSim
 import proof.Correctness.Typed.CEK.ConcretizeSim as ConcretizeSim
 import proof.Correctness.Typed.CEK.DelaySim as DelaySim
 import proof.Correctness.Typed.CEK.CompilerSim as CompilerSim
 import proof.Correctness.Typed.GraphErr.CastCorrect as CastCorrect
 import proof.Correctness.Typed.GraphErr.EncloseCorrect as EncloseCorrect
+import proof.Correctness.Typed.GraphErr.OptimizeCorrect as OptimizeCorrect
 import proof.Correctness.Typed.GraphErr.ConcretizeCorrect as ConcretizeCorrect
 import proof.Correctness.Typed.GraphErr.DelayCorrect as DelayCorrect
 import proof.Correctness.Typed.GraphErr.CompilerCorrect as CompilerCorrect
@@ -78,6 +81,9 @@ cast-sim = CastSim.cast-correct
 
 enclose-sim : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀₘ.sem M) (Clos2ᵀₘ.sem (enclose M))
 enclose-sim = EncloseSim.enclose-correct
+
+optimize-sim : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀₘ.sem M) (Clos2ᵀₘ.sem (optimize-program M))
+optimize-sim = OptimizeSim.optimize-correct
 
 concretize-sim : ∀ (M : Clos2ᵀ.Tm 0 Any)
   → Equivalent (Clos2ᵀₘ.sem M) (Clos3ᵀₘ.sem (concretize-program M))
@@ -99,6 +105,9 @@ cast-correct = CastCorrect.cast-correct
 
 enclose-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → ⟦ M ⟧ᵀ ρ₀ ≃ ⟦ enclose M ⟧₂ ρ₀
 enclose-correct = EncloseCorrect.enclose-correct
+
+optimize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ optimize-program M ⟧₂ ρ₀
+optimize-correct = OptimizeCorrect.optimize-correct
 
 concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → ⟦ M ⟧₂ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
 concretize-correct = ConcretizeCorrect.concretize-correct

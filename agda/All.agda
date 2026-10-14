@@ -298,11 +298,13 @@ import proof.Adequacy.GraphErr.EndToEnd
    errors; the statements are Theorems/Typed.agda -}
 import proof.Correctness.Typed.CEK.CastSim
 import proof.Correctness.Typed.CEK.EncloseSim
+import proof.Correctness.Typed.CEK.OptimizeSim
 import proof.Correctness.Typed.CEK.ConcretizeSim
 import proof.Correctness.Typed.CEK.DelaySim
 import proof.Correctness.Typed.CEK.CompilerSim
 import proof.Correctness.Typed.GraphErr.CastCorrect
 import proof.Correctness.Typed.GraphErr.EncloseCorrect
+import proof.Correctness.Typed.GraphErr.OptimizeCorrect
 import proof.Correctness.Typed.GraphErr.ConcretizeCorrect
 import proof.Correctness.Typed.GraphErr.DelayCorrect
 import proof.Correctness.Typed.GraphErr.CompilerCorrect
