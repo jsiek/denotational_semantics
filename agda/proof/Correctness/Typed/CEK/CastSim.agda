@@ -85,7 +85,7 @@ data _≈k_ : S.Cont → T.Cont Any → Set where
   tupK : ∀ {k k' n j vs vs' ρ ρ' κ κ'} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) {ws : WS-args k Ms}
     {e : length vs' N.+ suc j ≡ n} → Pointwise _≈_ vs vs' → Env≈ r ρ ρ' → κ ≈k κ'
     → S.tupK vs (args→list Ms) ρ κ ≈k T.tupK vs' (casts r Ms ws) ρ' e (T.injK (tup n) κ')
-  getK : ∀ {n} {i : Fin (suc n)} {κ κ'} → κ ≈k κ' → S.getK i κ ≈k T.projK (ttup n) (T.getK i κ')
+  getK : ∀ {n} {i : Fin (suc n)} {κ κ'} → κ ≈k κ' → S.getK i κ ≈k T.projK (ttup n i) (T.getK i κ')
   inlK : ∀ {κ κ'} → κ ≈k κ' → S.inlK κ ≈k T.inlK (T.injK sum κ')
   inrK : ∀ {κ κ'} → κ ≈k κ' → S.inrK κ ≈k T.inrK (T.injK sum κ')
   caseK : ∀ {k k' M N ρ ρ' κ κ'} {r : Fin k → Fin k'} (wM : WS (suc k) M) (wN : WS (suc k) N)

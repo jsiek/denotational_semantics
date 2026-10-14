@@ -50,7 +50,7 @@ check : Tag → Arg → List Instr
 check tint a = movq a (reg rax) ∷ subq (imm Int 0ℤ) (reg rax) ∷ []
 check tsum a = testinl a ∷ []
 check tfun a = load fst a (reg rax) ∷ []
-check (ttup n) a = load (get {suc n} zero) a (reg rax) ∷ []
+check (ttup n i) a = load (get i) a (reg rax) ∷ []
 
 {- s, computed into d -}
 select-simple : ∀ {Σ Δ A} → I.Simple Σ Δ A → Loc → List Instr

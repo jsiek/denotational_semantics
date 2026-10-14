@@ -8,7 +8,7 @@
   * An operation projects its operand to the flat type it needs, at the
     point where the ISWIM machine checks it:
       (L M) ⇒ app (project tfun L') M'        (the operator, before M),
-      get i L ⇒ get i (project (ttup n) L'),  case L … ⇒ case (project tsum L') …
+      get i L ⇒ get i (project (ttup n i) L'),  case L … ⇒ case (project tsum L') …
   * A primitive checks both operands after it has evaluated them both, so
     they are let-bound first:
       prim p L M ⇒ let x = L' in let y = M' in
@@ -52,7 +52,7 @@ cast r (lam ⦅ ⟩ N ,, Nil ⦆) (w , _) = T.inject fun (T.lam (cast (ext r) N 
 cast r (app ⦅ L ,, M ,, Nil ⦆) (wL , wM , _) = T.app (T.project tfun (cast r L wL)) (cast r M wM)
 cast r (lit B k ⦅ Nil ⦆) _ = T.inject (base B) (T.lit B k)
 cast r (tuple n ⦅ Ms ⦆) w = T.inject (tup n) (T.tuple (casts r Ms w))
-cast r (get {suc n} i ⦅ M ,, Nil ⦆) (w , _) = T.get i (T.project (ttup n) (cast r M w))
+cast r (get {suc n} i ⦅ M ,, Nil ⦆) (w , _) = T.get i (T.project (ttup n i) (cast r M w))
 cast r (inl-op ⦅ M ,, Nil ⦆) (w , _) = T.inject sum (T.inl (cast r M w))
 cast r (inr-op ⦅ M ,, Nil ⦆) (w , _) = T.inject sum (T.inr (cast r M w))
 cast r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (wL , wM , wN , _) =

@@ -36,6 +36,7 @@ open import Language.Prim using (Prim; sub; eq)
 
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
+open import Data.Fin using (Fin)
 import Data.Nat as N
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 open import Relation.Nullary using (Dec; yes; no)
@@ -59,13 +60,14 @@ out-flat eq = sum
 
 data Tag : Set where
   tfun tsum tint : Tag
-  ttup : ℕ → Tag            {- a tuple of suc n components -}
+  ttup : (n : ℕ) → Fin (suc n) → Tag   {- a tuple of suc n components, tested
+                                           at the component i that get reads -}
 
 flat : Tag → Flat
 flat tfun = fun
 flat tsum = sum
 flat tint = base Int
-flat (ttup n) = tup (suc n)
+flat (ttup n i) = tup (suc n)
 
 {- Decidable equality of flat types ---------------------------------------}
 
