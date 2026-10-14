@@ -106,6 +106,7 @@ GEC = 'agda/proof/Correctness/GraphErr/'
 GEA = 'agda/proof/Adequacy/GraphErr/'
 TOC = 'agda/proof/Correctness/Typed/CEK/'
 TGC = 'agda/proof/Correctness/Typed/GraphErr/'
+TGG = 'agda/proof/Correctness/Typed/Graph/'
 
 # (side, group, glob patterns)
 GROUPS = [
@@ -355,6 +356,42 @@ GROUPS = [
     ('typ', 'typed: select: definitions and labels exist, frames are large enough (shared)',
      [PC + 'Typed/SelectFacts.agda']),
 
+    # the typed pipeline, phase 2, clocked interpreters + value relations
+    # (statements: Theorems/Typed/Interpreter.agda); the untyped ISWIM and
+    # X86 interpreters are the column's own ('ck' above)
+    ('infra', 'typed interp: projections from tuples of a size', [WP + 'VecProj.agda']),
+    ('typ', 'typed interp: semantics', [F + 'Typed/*.agda', FP + 'Typed/*.agda']),
+    ('typ', 'typed interp: cast insertion', [FC + 'Typed/CastFuel.agda']),
+    ('typ', 'typed interp: CC: enclose', [FC + 'Typed/EncloseFuel.agda']),
+    ('typ', 'typed interp: CC: optimize', [FC + 'Typed/OptimizeFuel.agda']),
+    ('typ', 'typed interp: CC: concretize', [FC + 'Typed/ConcretizeFuel.agda']),
+    ('typ', 'typed interp: CC: delay', [FC + 'Typed/DelayFuel.agda']),
+    ('typ', 'typed interp: CC: globalize', [FC + 'Typed/GlobalizeFuel.agda']),
+    ('typ', 'typed interp: rco', [FC + 'Typed/RCOFuel.agda']),
+    ('typ', 'typed interp: lift locals', [FC + 'Typed/LiftLocalsFuel.agda']),
+    ('typ', 'typed interp: explicate control', [FC + 'Typed/ExplicateFuel.agda']),
+    ('typ', 'typed interp: select instructions', [FC + 'Typed/SelectFuel.agda']),
+    ('typ', 'typed interp: composition', [FC + 'Typed/CompilerFuel.agda']),
+    # the typed pipeline, phase 2, the plain graph model ('typed graph') and
+    # its adequacy ('typed graph adequacy'); simplify's proof is today's
+    ('typ', 'typed graph: semantics of the languages', [G + 'Typed/*.agda', GP + 'Typed/*.agda']),
+    ('typ', 'typed graph: cast insertion', [TGG + 'CastCorrect.agda']),
+    ('typ', 'typed graph: CC: enclose', [TGG + 'EncloseCorrect.agda']),
+    ('typ', 'typed graph: CC: optimize', [TGG + 'OptimizeCorrect.agda']),
+    ('typ', 'typed graph: CC: concretize', [TGG + 'ConcretizeCorrect.agda']),
+    ('typ', 'typed graph: CC: delay', [TGG + 'Delay*.agda']),
+    ('typ', 'typed graph: CC: globalize', [TGG + 'GlobalizeCorrect.agda']),
+    ('typ', 'typed graph: rco', [TGG + 'RCOCorrect.agda']),
+    ('typ', 'typed graph: lift locals', [TGG + 'LiftLocalsCorrect.agda']),
+    ('typ', 'typed graph: explicate control', [TGG + 'ExplicateCorrect.agda']),
+    ('typ', 'typed graph: select instructions', [TGG + 'SelectCorrect.agda']),
+    ('typ', 'typed graph: composition', [TGG + 'CompilerCorrect.agda']),
+    ('typ', 'typed graph adequacy: Clos5', [AP + 'Typed/Clos5*.agda']),
+    ('typ', 'typed graph adequacy: X86 (well-formedness of compiled programs)', [AP + 'Typed/X86*.agda']),
+    ('typ', 'typed graph adequacy: end to end', [AP + 'Typed/EndToEnd.agda']),
+    ('thm', 'typed graph: theorem statements',
+     ['agda/Theorems/Typed/Denotational.agda', 'agda/Theorems/Typed/Adequacy.agda']),
+
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
     ('thm', 'theorem statements', ['agda/Theorems/*.agda', 'agda/Theorems/Typed/*.agda']),
@@ -364,7 +401,9 @@ THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simul
             'ck': 'agda/Theorems/Interpreter.agda', 'red': 'agda/Theorems/Reduction.agda',
             'adeq': 'agda/Theorems/Adequacy.agda', 'gerr': 'agda/Theorems/GraphErrors.agda',
             'typ': 'agda/Theorems/Typed.agda',
-            'typ-op': 'agda/Theorems/Typed/Simulation.agda'}
+            'typ-op': 'agda/Theorems/Typed/Simulation.agda',
+            'typ-ck': 'agda/Theorems/Typed/Interpreter.agda',
+            'tden': 'agda/Theorems/Typed/Denotational.agda', 'tadeq': 'agda/Theorems/Typed/Adequacy.agda'}
 
 
 def strip_comments(s):

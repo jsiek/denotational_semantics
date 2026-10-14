@@ -26,6 +26,7 @@ open import proof.Framework.GraphModel.ContinuityBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (•-~)
 open import proof.Framework.GraphModel.TypedOk using (Ok; const-ok)
+open import proof.Framework.GraphModel.TypedOkBase using (callcᵈ; callc-good) public
 
 open import Data.Fin using (zero; suc)
 open import Data.List using (List; []; _∷_)
@@ -89,18 +90,3 @@ code-ok o = const-ok (ΛΛᵐ-con λ X X' Y Y' X~ Y~ → proj₂ (proj₂ o) (�
 ... | ⟨ U , ⟨ ⟨ V , ⟨ e∈ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩ =
   ⟨ U , ⟨ ⟨ V , ⟨ ⟨ e∈ , ⟨ (λ ω∈ → clT ω (V⊆ ω ω∈) refl) , (λ ω∈ → clE ω (U⊆ ω ω∈) refl) ⟩ ⟩ , ⟨ V⊆ , neV ⟩ ⟩ ⟩ , ⟨ U⊆ , neU ⟩ ⟩ ⟩
 
-{- Callc -------------------------------------------------------------------------}
-
-{- open a closure P (a set of pairs) and call its code (car) with its
-   environment (cdr) and the argument X -}
-callcᵈ : DOp (𝒫 Value) (■ ∷ ■ ∷ [])
-callcᵈ ⟨ P , ⟨ X , _ ⟩ ⟩ = ⋆₂ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ⟨ X , ptt ⟩ ⟩ ⟩
-
-callc-good : ∀ {P} → Good P (■ ∷ ■ ∷ []) callcᵈ
-callc-good = mk-good
-  (λ { _ _ ⟨ P⊆ , ⟨ X⊆ , _ ⟩ ⟩ → ⋆₂-mono _ _ ⟨ car-mono _ _ ⟨ P⊆ , ptt ⟩ , ⟨ cdr-mono _ _ ⟨ P⊆ , ptt ⟩ , ⟨ X⊆ , ptt ⟩ ⟩ ⟩ })
-  (λ { _ _ ⟨ P~ , ⟨ X~ , _ ⟩ ⟩ → ⋆₂-consis _ _ ⟨ car-consis _ _ ⟨ P~ , ptt ⟩ , ⟨ cdr-consis _ _ ⟨ P~ , ptt ⟩ , ⟨ X~ , ptt ⟩ ⟩ ⟩ })
-  (λ { ⟨ E , ⟨ F , _ ⟩ ⟩ NE ⟨ ⟨ m , c ⟩ , ⟨ okF , _ ⟩ ⟩ →
-    ⋆₂-cont ⟨ (λ ρ → car ⟨ E ρ , ptt ⟩) , ⟨ (λ ρ → cdr ⟨ E ρ , ptt ⟩) , ⟨ F , ptt ⟩ ⟩ ⟩ NE
-      ⟨ ⟨ (λ ρ⊆ → lower (car-mono _ _ ⟨ lift (m ρ⊆) , ptt ⟩)) , car-cont′ {E} c ⟩
-      , ⟨ ⟨ (λ ρ⊆ → lower (cdr-mono _ _ ⟨ lift (m ρ⊆) , ptt ⟩)) , cdr-cont′ {E} c ⟩ , ⟨ okF , ptt ⟩ ⟩ ⟩ })
