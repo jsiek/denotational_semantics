@@ -18,7 +18,7 @@ module proof.Correctness.Typed.Reduction.GlobalizeRed where
 
 open import Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
-open import proof.Framework.Membership using (⊑-irr; ⊑-∋-trans)
+open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
 open import Framework.Lookup using (_!_)
 open import Language.Typed.Clos4
 import Language.Typed.Clos5 as C
