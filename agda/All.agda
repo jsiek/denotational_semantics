@@ -39,6 +39,10 @@ import Theorems.Reduction
 import Theorems.GraphErrors
 import Theorems.Adequacy
 
+{- a pilot: the typed assembly language X86ᵀ as the target (not in the main
+   theorems) -}
+import Theorems.TAL
+
 {- ---------------------------------------------------------------------------
    The untyped pipeline, preserved
    --------------------------------------------------------------------------- -}
