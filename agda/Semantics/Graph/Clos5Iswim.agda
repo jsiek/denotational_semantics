@@ -15,6 +15,7 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
+open import Semantics.Graph.Frames using (Table; init) public
 open import Language.Clos5
 open import Framework.abt.Fold2 Op sig using (fold; fold-arg; fold-args)
 open import Framework.abt.ScopedTuple using (Tuple)
@@ -26,10 +27,6 @@ open import Data.List using (List; []; _∷_; length)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Nullary using (yes; no)
-
-{- the meanings of the global definitions, by their references -}
-Table : Set₁
-Table = ℕ → 𝒫 Value
 
 𝕆-Clos5 : Table → DOpSig (𝒫 Value) sig
 𝕆-Clos5 T (fun-ref k) _ = T k
@@ -45,9 +42,6 @@ Table = ℕ → 𝒫 Value
 𝕆-Clos5 T case-op = 𝒞
 𝕆-Clos5 T (prim p) = primD p
 𝕆-Clos5 T let-op ⟨ D , ⟨ F , _ ⟩ ⟩ = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
-
-init : 𝒫 Value
-init = ⌈ ω ⌉
 
 ⟦_⟧[_] : AST → Table → Env Value → 𝒫 Value
 ⟦ M ⟧[ T ] ρ = fold (𝕆-Clos5 T) init ρ M

@@ -37,8 +37,8 @@ open import Language.Prim using (sub; eq; Out; bool)
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Semantics.CEK.Values
+open import Semantics.CEK.Values using (Frame; _[_]≔_; zeros) public
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?) public
-open import Semantics.CEK.Imp using (Frame; _[_]≔_; zeros) public
 open import Framework.ListUtil using (_‼_; proj)
 
 open import Data.Bool using (Bool; true; false)

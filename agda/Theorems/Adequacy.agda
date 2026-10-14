@@ -44,8 +44,10 @@ import Semantics.CEK.Clos5 as Clos5ₘ
 import Semantics.CEK.X86 as X86ₘ
 
 import proof.Adequacy.ISWIM as AdequacyISWIM
+import proof.Adequacy.ISWIMCompile as ISWIMCompile
 import proof.Adequacy.Clos5 as AdequacyClos5
 import proof.Adequacy.X86 as AdequacyX86
+open import proof.Adequacy.X86CompileWF using (compile-x86-wf)
 import proof.Adequacy.EndToEnd as EndToEnd
 
 open import Data.Product using (_,_)
@@ -79,11 +81,11 @@ iswim-diverges-empty = AdequacyISWIM.diverges-empty
    terminates with an answer -}
 compile-correct-machine-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
   → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ (const k ∈ ⟦ compile M ⟧₅)
-compile-correct-machine-const = AdequacyISWIM.compile-correct-machine-const
+compile-correct-machine-const = ISWIMCompile.compile-correct-machine-const
 
 compile-correct-machine-converges : ∀ (M : ISWIM.AST) → Closed M
   → Converges (Terminates (ISWIMₘ.sem M)) ⇔ nonempty ⟦ compile M ⟧₅
-compile-correct-machine-converges = AdequacyISWIM.compile-correct-machine-converges
+compile-correct-machine-converges = ISWIMCompile.compile-correct-machine-converges
 
 {- The Clos5 machine, for the programs compile produces ----------------------}
 
@@ -108,12 +110,12 @@ clos5-diverges-empty M c = AdequacyClos5.diverges-empty (compile M) (AdequacyClo
 x86-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
   → (const k ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
 x86-const-iff M c = AdequacyX86.adequacy-const _ wf , AdequacyX86.sound-const _ wf
-  where wf = AdequacyX86.compile-x86-wf M c
+  where wf = compile-x86-wf M c
 
 x86-nonempty-iff : ∀ (M : ISWIM.AST) → Closed M
   → nonempty ⟦ compile-x86 M ⟧ₓ ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
 x86-nonempty-iff M c = AdequacyX86.adequacy-converges _ wf , AdequacyX86.sound-nonempty _ wf
-  where wf = AdequacyX86.compile-x86-wf M c
+  where wf = compile-x86-wf M c
 
 {- End to end: the compiler, observed through the machines only -------------}
 

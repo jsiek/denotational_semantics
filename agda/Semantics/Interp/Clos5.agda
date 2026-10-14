@@ -20,53 +20,14 @@ open import Language.Clos5
 open import Semantics.Observation
 open import Framework.ListUtil using (_‼_; proj)
 open import Semantics.Interp.Clock
+open import Semantics.Interp.Values
+  using (Val; code; pair; const; tup; inl; inr; Env; obs; obs-list; out; prim?; project; first; second) public
 
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; reverse; replicate)
 open import Data.Maybe using (Maybe; just; nothing; map)
 open import Data.Nat using (ℕ; zero; suc)
-
-data Val : Set where
-  code : ℕ → Val                        {- a reference to a global definition -}
-  pair : Val → Val → Val
-  const : (B : Base) → base-rep B → Val
-  tup : List Val → Val
-  inl : Val → Val
-  inr : Val → Val
-
-Env : Set
-Env = List Val
-
-obs : Val → Obs
-obs-list : List Val → List Obs
-obs (code k) = o-fun
-obs (pair v w) = o-fun
-obs (const B k) = o-const B k
-obs (tup vs) = o-tuple (obs-list vs)
-obs (inl v) = o-inl (obs v)
-obs (inr v) = o-inr (obs v)
-obs-list [] = []
-obs-list (v ∷ vs) = obs v ∷ obs-list vs
-
-{- the value of a primitive's result; eq gives inl ⟨⟩ or inr ⟨⟩ -}
-out : Out → Val
-out (int n) = const Int n
-out (bool true) = inl (tup [])
-out (bool false) = inr (tup [])
-
-prim? : Prim → Val → Val → Maybe Val
-prim? p v w = map out (δ? p (obs v) (obs w))
-
-project : ∀ {n} → Fin n → Val → Result Val
-project i (tup vs) = from-maybe (proj i vs)
-project i _ = error
-
-first second : Val → Result Val
-first (pair v w) = ret v
-first _ = error
-second (pair v w) = ret w
-second _ = error
 
 {- the interpreter for a program with global definitions ds -}
 module _ (ds : List AST) where

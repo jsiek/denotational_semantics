@@ -36,8 +36,8 @@ import Language.X86 as L
 open L using (Block; block; Loc; var; reg; rax; rdi; rsi; retq; jmp; je; imm; label; loc; movq; subq; cmpq; sete; testinl; alloc; load; callq)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Clos5 as U
-open import Semantics.Interp.Imp using (_[_]≔_; zero-val)
+import Semantics.Interp.Values as U
+open import Semantics.Interp.Values using (_[_]≔_; zero-val)
 import Semantics.Interp.X86 as X
 open X using (regs)
 import Semantics.Interp.Typed.Clos5 as C

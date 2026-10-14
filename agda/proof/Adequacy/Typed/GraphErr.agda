@@ -40,14 +40,13 @@ open import Compiler.Typed.Pipeline using (compile; compile-x86)
 open import Compiler.EncloseScope using (Closed)
 open import proof.Correctness.Typed.GraphErr.CompilerCorrect using (Same; compile-same₅)
 open import proof.Correctness.Typed.GraphErr.SelectCorrect using (compile-x86-same)
-open import proof.Correctness.GraphErr.CompilerCorrect using (⇔-trans)
 open import proof.Correctness.Typed.CEK.PipelineSim using (compile-error; compile-const; compile-converges; compile-diverges)
 import proof.Adequacy.GraphErr.ISWIM as A
 import proof.Adequacy.GraphErr.X86 as Aₓ
 import proof.Adequacy.GraphErr.X86WF as E
 import proof.Adequacy.X86WF as P
 import proof.Adequacy.Typed.X86 as T
-open import proof.Adequacy.GraphErr.EndToEnd using (Agree; agree; ⇔-sym) public
+open import proof.Adequacy.GraphErr.Agree using (Agree; agree; ⇔-sym; ⇔-trans; Same-sym; empty-Same) public
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -121,17 +120,6 @@ x86-diverges-iff M c = Aₓ.diverges-iff (compile-x86 M) (compile-x86-wf M c)
 {- The Clos5ᵀ machine ------------------------------------------------------------}
 
 private
-  Same-sym : ∀ {D E} → Same D E → Same E D
-  Same-sym ⟨ e , ⟨ c , v ⟩ ⟩ = ⟨ ⇔-sym e , ⟨ (λ k → ⇔-sym (c k)) , ⇔-sym v ⟩ ⟩
-
-  {- a set is empty exactly when it has neither ω nor another element -}
-  empty-Same : ∀ {D E} → Same D E → (∀ d → ¬ (d ∈ D)) → (∀ d → ¬ (d ∈ E))
-  empty-Same ⟨ ⟨ _ , ωE→ ⟩ , ⟨ _ , ⟨ _ , vE→ ⟩ ⟩ ⟩ empty d d∈ =
-    let d≢ : d ≢ ω
-        d≢ = λ { refl → empty ω (ωE→ d∈) }
-        ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = vE→ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩
-    in empty d' d'∈
-
   S : ∀ M → Closed M → Same ⟦ compile M ⟧₅ (⟦ M ⟧ ρ₀)
   S M c = Same-sym (compile-same₅ M c)
 

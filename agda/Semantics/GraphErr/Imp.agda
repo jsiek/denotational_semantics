@@ -23,6 +23,7 @@ open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Prim
 open import Language.Imp
+open import Semantics.GraphErr.Frames public
 
 open import Data.Integer using (+_)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<?_)
@@ -31,34 +32,6 @@ open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (yes; no)
-
-{- the meanings of the global definitions, by their references -}
-Table : Set₁
-Table = ℕ → 𝒫 Value
-
-Store : Set₁
-Store = ℕ → 𝒫 Value
-
-init : 𝒫 Value
-init = ⌈ ω ⌉
-
-{- slot x of a frame of n slots -}
-read : ℕ → Store → ℕ → 𝒫 Value
-read n σ x with x <? n
-... | yes _ = σ x
-... | no _ = init
-
-_[_↦_] : Store → ℕ → 𝒫 Value → Store
-(σ [ x ↦ D ]) y with y ≟ x
-... | yes _ = D
-... | no _ = σ y
-
-{- E, if slot x is within a frame of n slots; otherwise an error, once
-   the value D to assign has been computed -}
-frameᵐ : ℕ → ℕ → 𝒫 Value → 𝒫 Value → 𝒫 Value
-frameᵐ n x D E with x <? n
-... | yes _ = E
-... | no _ = D ≫= λ _ → ⌈ ω ⌉
 
 𝒜 : Table → ℕ → Store → Atm → 𝒫 Value
 𝒜 T n σ (var x) = read n σ x
@@ -82,19 +55,7 @@ frameᵐ n x D E with x <? n
 𝒮 T n σ (inr a) = inrᵐ ⟨ 𝒜 T n σ a , ptt ⟩
 𝒮 T n σ (prim p a b) = primᵐ p ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
 
-{- the slots of a fresh frame -}
-zeros : Store
-zeros _ = ℬ Int (+ 0) ptt
-
 frame : 𝒫 Value → 𝒫 Value → Store
 frame X Y zero = X
 frame X Y (suc zero) = Y
 frame X Y (suc (suc y)) = zeros y
-
-{- the table of a list of definitions, newest first, given the code of a
-   definition -}
-tables : ∀ {B : Set} → (Table → B → 𝒫 Value) → List B → Table
-tables code [] k = errcode
-tables code (b ∷ bs) k with k ≟ length bs
-... | yes _ = code (tables code bs) b
-... | no _ = tables code bs k

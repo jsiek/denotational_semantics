@@ -34,12 +34,12 @@
 module Theorems.Typed.GraphErrors where
 
 open import Framework.Primitives using (base-rep)
-open import Framework.GraphModel.SetsAsPredicates using (_∈_; _≃_)
+open import Framework.GraphModel.SetsAsPredicates using (𝒫; ⌈_⌉; _∈_; _≃_)
+open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.Domain using (Value; ω; const)
 open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
-open import Theorems.GraphErrors using (ρ₀; Same)
 import Semantics.CEK.ISWIM as ISWIMₘ
 import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
 import Semantics.CEK.X86 as X86ₘ
@@ -57,6 +57,7 @@ import Language.Typed.Imp as Impᵀ
 import Language.Typed.CFG as CFGᵀ
 open import Compiler.EncloseScope using (Closed)
 
+open import Compiler.Simplify using (simplify)
 open import Compiler.Typed.Cast using (cast-closed)
 open import Compiler.Typed.Enclose using (enclose)
 open import Compiler.Typed.Optimize using (optimize-program)
@@ -79,6 +80,7 @@ open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
 open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
 open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
+import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Typed.GraphErr.EncloseCorrect as Enclose
 import proof.Correctness.Typed.GraphErr.OptimizeCorrect as Optimize
 import proof.Correctness.Typed.GraphErr.ConcretizeCorrect as Concretize
@@ -97,11 +99,18 @@ open import Data.Product using (Σ-syntax; _×_)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 open import Relation.Nullary using (¬_)
 
+{- The environment of a closed program: every variable denotes {ω}, an
+   error, as a free variable is in the machines -}
+ρ₀ : Env Value
+ρ₀ = λ _ → ⌈ ω ⌉
+
 {- Each pass ------------------------------------------------------------------}
 
 {- every pass but delay and select preserves the meaning of a program
-   exactly (≃), errors included; simplify's statement is unchanged
-   (Theorems/GraphErrors.agda) -}
+   exactly (≃), errors included -}
+
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
+simplify-correct = SimplifyCorrect.simplify-correct
 
 cast-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ cast-closed M ⟧ᵀ ρ₀
 cast-correct = Compiler.cast-correct-closed
@@ -141,6 +150,11 @@ lift-locals-correct = LiftLocals.lift-locals-correct
 
 explicate-correct : ∀ (P : Impᵀ.Program) → ⟦ explicate P ⟧ᶜ ≃ ⟦ P ⟧ᵢ
 explicate-correct = Explicate.explicate-correct
+
+{- two meanings err together, hold the same constants, and hold a value
+   together -}
+Same : 𝒫 Value → 𝒫 Value → Set
+Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E))) × (val∈ D ⇔ val∈ E)
 
 {- select: Same, for every CFGᵀ program -}
 select-correct : ∀ (P : CFGᵀ.Program) → Same ⟦ P ⟧ᶜ ⟦ select P ⟧ₓ

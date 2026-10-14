@@ -42,7 +42,7 @@ open import proof.Compiler.SimplifyFacts as P
          simp-get; simp-case; simp-prim; simplify; small; value; component; branch; int-of; prim-term;
          SV; SVs; value-sv; small-sv; sv-rename; prim-term-sv; int-of-just; component-just)
 open import proof.Compiler.SimplifyScope using (simplify-closed)
-open import proof.Compiler.EncloseScope using (Closed)
+open import Compiler.EncloseScope using (Closed)
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.RenameSem Op sig using (shift-≃)
 open import proof.Framework.GraphModel.SemanticsUses Op sig using (⟦⟧-closed₀)

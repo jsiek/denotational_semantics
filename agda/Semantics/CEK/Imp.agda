@@ -37,7 +37,7 @@ open import Language.Prim using (Prim)
 open import Language.Imp
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
-open import Semantics.CEK.Values using (Val; code; pair; const; tup; inl; inr; obs; prim?) public
+open import Semantics.CEK.Values using (Val; code; pair; const; tup; inl; inr; obs; prim?; Frame; _[_]≔_; zeros) public
 open import Framework.ListUtil using (_‼_; proj)
 
 open import Data.Fin using (Fin)
@@ -45,9 +45,6 @@ open import Data.Integer using (0ℤ)
 open import Data.List using (List; []; _∷_; reverse; replicate)
 open import Data.Maybe using (Maybe; just; nothing; map)
 open import Data.Nat using (ℕ; zero; suc; _∸_)
-
-Frame : Set
-Frame = List Val
 
 {- the frames of a simple expression, waiting for an operand -}
 data Frm : Set where
@@ -79,15 +76,6 @@ atom : Frame → Atm → Maybe Val
 atom φ (var x) = φ ‼ x
 atom φ (lit B k) = just (const B k)
 atom φ (fun-ref k) = just (code k)
-
-{- the frame with slot x set to v, if x is in the frame -}
-_[_]≔_ : Frame → ℕ → Val → Maybe Frame
-[] [ x ]≔ v = nothing
-(u ∷ φ) [ zero ]≔ v = just (v ∷ φ)
-(u ∷ φ) [ suc x ]≔ v = map (u ∷_) (φ [ x ]≔ v)
-
-zeros : ℕ → Frame
-zeros n = replicate n (const Int 0ℤ)
 
 {- what a simple expression does next -}
 data Res : Set where

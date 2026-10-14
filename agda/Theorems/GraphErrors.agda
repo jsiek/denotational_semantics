@@ -95,7 +95,7 @@ import proof.Correctness.GraphErr.CompilerCorrect as CompilerCorrect
 import proof.Adequacy.GraphErr.ISWIM as Adequacy
 import proof.Adequacy.GraphErr.Simplify as SimplifyMachine
 import proof.Adequacy.GraphErr.Clos5 as AdequacyClos5
-import proof.Adequacy.GraphErr.X86 as AdequacyX86
+import proof.Adequacy.GraphErr.X86CompileWF as AdequacyX86
 import proof.Adequacy.GraphErr.EndToEnd as EndToEnd
 
 open import Data.Product using (Σ-syntax; _×_; proj₁; proj₂)

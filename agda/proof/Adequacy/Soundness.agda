@@ -21,7 +21,7 @@ open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Out; int; bool; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain
-  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈)
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con-env; Con-⌈⌉; Con⇒≈; ρ₀)
   renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; inl; inr; 𝒞; Λ; Λ-consis; ℬ-consis; inl-consis; inr-consis)
@@ -31,7 +31,6 @@ open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import Data.Fin.Properties using () renaming (_≟_ to _fin≟_)
 open import Relation.Nullary using (yes; no)
 open import Level using (lift; lower)
-open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀; Init)
 open import Language.ISWIM
 open import proof.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧₊; ⟦⟧-monotone; ISWIM-con-env)
 open import proof.Semantics.Graph.ISWIMContinuous using (body-continuous)
@@ -125,7 +124,7 @@ AllNE-mono (D ∷ Ds) (E ∷ Es) ⟨ D⊆ , s ⟩ ⟨ ⟨ d , d∈ ⟩ , ne ⟩ 
 𝒱s [] = []
 𝒱s (v ∷ vs) = 𝒱 v ∷ 𝒱s vs
 
-𝓔 [] x = Init
+𝓔 [] x = ⌈ ω ⌉
 𝓔 (v ∷ γ) zero = 𝒱 v
 𝓔 (v ∷ γ) (suc x) = 𝓔 γ x
 

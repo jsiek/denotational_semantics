@@ -33,7 +33,7 @@ open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Semantics.Graph.Clos5Iswim using (Table; init) public
+open import Semantics.Graph.Frames using (Table; init; Store; read; _[_↦_]; checked; zeros) public
 open import Language.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
 open import Framework.Primitives using (Int)
 
@@ -43,26 +43,6 @@ open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Nullary using (yes; no)
-
-Store : Set₁
-Store = ℕ → 𝒫 Value
-
-{- slot x of a frame of n slots -}
-read : ℕ → Store → ℕ → 𝒫 Value
-read n σ x with x <? n
-... | yes _ = σ x
-... | no _ = init
-
-_[_↦_] : Store → ℕ → 𝒫 Value → Store
-(σ [ x ↦ D ]) y with y ≟ x
-... | yes _ = D
-... | no _ = σ y
-
-{- D, if slot x is within a frame of n slots -}
-checked : ℕ → ℕ → 𝒫 Value → 𝒫 Value
-checked n x D with x <? n
-... | yes _ = D
-... | no _ = ∅
 
 𝒜 : Table → ℕ → Store → Atm → 𝒫 Value
 𝒜 T n σ (var x) = read n σ x
@@ -86,10 +66,6 @@ checked n x D with x <? n
 𝒮 T n σ (inl′ a) = inl ⟨ 𝒜 T n σ a , ptt ⟩
 𝒮 T n σ (inr′ a) = inr ⟨ 𝒜 T n σ a , ptt ⟩
 𝒮 T n σ (prim p a b) = primD p ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
-
-{- the slots of a fresh frame -}
-zeros : Store
-zeros _ = ℬ Int (+ 0) ptt
 
 frame : 𝒫 Value → 𝒫 Value → Store
 frame X Y zero = X

@@ -36,7 +36,6 @@ open import Semantics.CEK.X86 using (sem; obs; halt?; halt)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import proof.Adequacy.X86WF using (WF) public
 open import proof.Adequacy.X86Soundness using (soundness) public
-open import proof.Adequacy.X86CompileWF using (compile-x86-wf) public
 import proof.Adequacy.X86Common as C
 import proof.Adequacy.X86LogRel as LR
 

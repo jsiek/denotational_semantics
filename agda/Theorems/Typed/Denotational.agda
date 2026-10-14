@@ -21,9 +21,9 @@
 module Theorems.Typed.Denotational where
 
 open import Framework.Primitives using (base-rep)
-open import Framework.GraphModel.SetsAsPredicates using (_∈_; nonempty; _≃_)
-open import Framework.GraphModel.Domain using (const)
-open import Theorems.Denotational using (ρ₀)
+open import Framework.GraphModel.SetsAsPredicates using (⌈_⌉; _∈_; nonempty; _≃_)
+open import Framework.GraphModel.Env using (Env)
+open import Framework.GraphModel.Domain using (Value; const; ω)
 
 import Language.ISWIM as ISWIM
 open import Language.Typed.Type using (Any)
@@ -38,6 +38,7 @@ import Language.Typed.Imp as Impᵀ
 import Language.Typed.CFG as CFGᵀ
 open import Compiler.EncloseScope using (Closed)
 
+open import Compiler.Simplify using (simplify)
 open import Compiler.Typed.Cast using (cast-closed)
 open import Compiler.Typed.Enclose using (enclose)
 open import Compiler.Typed.Optimize using (optimize-program)
@@ -60,6 +61,7 @@ open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧�
 open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
+import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Typed.Graph.CastCorrect as Cast
 import proof.Correctness.Typed.Graph.EncloseCorrect as Enclose
 import proof.Correctness.Typed.Graph.OptimizeCorrect as Optimize
@@ -75,10 +77,19 @@ import proof.Correctness.Typed.Graph.CompilerCorrect as Compiler
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂)
 
+{- The environment of a closed program: every variable denotes {ω}, the
+   default value. (It only matters for open terms, as the passes are
+   stated on whole terms.) -}
+ρ₀ : Env Value
+ρ₀ = λ _ → ⌈ ω ⌉
+
 {- Each pass ------------------------------------------------------------------}
 
-{- every pass but delay preserves the meaning of a program exactly (≃);
-   simplify's statement is unchanged (Theorems/Denotational.agda) -}
+{- every pass but delay preserves the meaning of a program exactly (≃) -}
+
+{- simplify (ISWIM → ISWIM, the first pass) -}
+simplify-correct : ∀ (M : ISWIM.AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
+simplify-correct = SimplifyCorrect.simplify-correct
 
 cast-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ cast-closed M ⟧ᵀ ρ₀
 cast-correct = Cast.cast-correct

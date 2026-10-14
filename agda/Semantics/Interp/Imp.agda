@@ -26,6 +26,7 @@ open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
 open import Semantics.Interp.Clos5
   using (Val; code; pair; const; tup; inl; inr; obs; prim?; project; first; second)
+open import Semantics.Interp.Values using (Frame; zero-val; _[_]≔_) public
 
 open import Data.Integer using (+_)
 open import Data.List using (List; []; _∷_; reverse; replicate)
@@ -33,19 +34,6 @@ open import Data.Maybe using (Maybe; just; nothing; map)
 open import Data.Nat using (ℕ; zero; suc; _∸_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
-
-Frame : Set
-Frame = List Val
-
-{- the initial value of a slot -}
-zero-val : Val
-zero-val = const Int (+ 0)
-
-{- the frame with slot x assigned v, if it has slot x -}
-_[_]≔_ : Frame → ℕ → Val → Maybe Frame
-[] [ x ]≔ v = nothing
-(u ∷ φ) [ zero ]≔ v = just (v ∷ φ)
-(u ∷ φ) [ suc x ]≔ v = map (u ∷_) (φ [ x ]≔ v)
 
 {- a value, in the frame φ -}
 here : Frame → Result Val → Result (Val × Frame)
