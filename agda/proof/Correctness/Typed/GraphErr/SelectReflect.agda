@@ -61,7 +61,7 @@ open import Data.Unit using (tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Data.Vec using (Vec; []; _∷_)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst; subst₂)
 open import Relation.Nullary using (yes; no)
 
 {- the values of a flat type, as project sees their kinds, or an error -}
@@ -406,7 +406,12 @@ callc-r {F} {A} {F'} {A'} vF cF vA vF' cF' vA' cA' rF rA w w∈ = go w∈
     with no-bad {fun} {⌊ C ⌋} {⋆ ⟨ ⋆ ⟨ ⌊ C ⌋ , ⟨ ⌊ D ⌋ , ptt ⟩ ⟩ , ⟨ ⌊ A ⌋ , ptt ⟩ ⟩} funs w k∈
   ... | ⟨ U , ⟨ ⟨ V , ⟨ u∈ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ = call u∈ V⊆ U⊆
 
+{- a slot binding contains its body on the whole set, which is continuous -}
+let-⊇ : ∀ {D F} → Con D → Conv D → Mono₁ F → Finitary F ⌊ D ⌋ → F ⌊ D ⌋ ⊆ letᵗ D F
+let-⊇ {D} {F} cD c m fin w w∈ = proj₂ (letᵗ-≫= {D} {F} m cD (λ _ → fin)) w (inj₂ ⟨ c , w∈ ⟩)
+
 {- The relation preserved ----------------------------------------------------------}
+
 
 
 
@@ -500,3 +505,177 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
     simS (inject G a) d d∈ = ⊑-mono d (λ _ → proj₁) (ar a d d∈)
     simS (project t a) = project-r t (vᶜ a) (aconᴬ a) (v' a) (ar a)
 
+
+    {- an error of the simple expression is one of CFGᵀ -}
+    sr-ω : ∀ {A} (s : Simple Σ Δ A) → ω ∈ 𝒮ᶜ s Tᶜ ρᶜ → ω ∈ 𝒮 s T ρ
+    sr-ω (atm a) ω∈ = ⊥-elim (proj₁ (vᶜ a) ω ω∈ refl)
+    sr-ω {Any} s ω∈ = lower (simS s ω ω∈)
+    sr-ω {⟪ G ⟫} s ω∈ = proj₁ (lower (simS s ω ω∈))
+
+    {- a value of the simple expression gives one of CFGᵀ -}
+    sr-conv : ∀ {A} (s : Simple Σ Δ A) → Conv (𝒮ᶜ s Tᶜ ρᶜ) → Conv (𝒮 s T ρ)
+    sr-conv (atm a) _ = Val⇒Conv (v' a)
+    sr-conv {Any} s ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = ⊑-val d d≢ (simS s d d∈)
+    sr-conv {⟪ G ⟫} s ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = let ⟨ e , ⟨ e∈ , e≢ ⟩ ⟩ = ⊑-val d d≢ (simS s d d∈) in ⟨ e , ⟨ proj₁ e∈ , e≢ ⟩ ⟩
+
+    {- the values the slot binds -}
+    sr-mem : ∀ {A} (s : Simple Σ Δ A) V → mem V ⊆ ⌊ 𝒮ᶜ s Tᶜ ρᶜ ⌋ → SR A (mem V) ⌊ 𝒮 s T ρ ⌋
+    sr-mem {code n} (atm a) V V⊆ u u∈ = code-mono (tup n) u (⌊⌋-clean (proj₁ (v' a))) (ar a u (proj₁ (V⊆ u u∈)))
+    sr-mem {Any} s V V⊆ x x∈ = ⊑-⌊⌋ x (proj₂ (V⊆ x x∈)) (simS s x (proj₁ (V⊆ x x∈)))
+    sr-mem {⟪ G ⟫} s V V⊆ x x∈ =
+      ⊑-mono x (λ e e∈ → ⟨ ⟨ proj₁ (proj₁ e∈) , proj₂ e∈ ⟩ , proj₂ (proj₁ e∈) ⟩) (⊑-⌊⌋ x (proj₂ (V⊆ x x∈)) (simS s x (proj₁ (V⊆ x x∈))))
+
+  {- the blocks are related -}
+  BR : ∀ {Bs} → BEnv Bs → BEnv Bs → Set₁
+  BR {Bs} Bᶜ B = ∀ {Δ} (l : Bs ∋ Δ) {ρᶜ ρ} → ER {Δ} ρᶜ ρ → Con-env ρ → nonempty-env ρ → Lifted _⊑_ (Bᶜ l ρᶜ) (B l ρ)
+
+  {- the environment of the rest of a tail, with a new slot -}
+  er-ext : ∀ {Δ' Δ A} (p : Δ' ≤ₗ Δ) {ρᶜ ρ Xᶜ X} → ER {Δ} ρᶜ ρ → SR A Xᶜ X → Val Xᶜ → Con Xᶜ → Clean X
+    → ER {A ∷ Δ'} (Xᶜ • drop p ρᶜ) (X • drop p ρ)
+  er-ext p {ρᶜ} {ρ} h r v c cl = record
+    { rel = λ { Z → r ; (S y) → subst₂ (SR _) (sym (drop-idx p ρᶜ y)) (sym (drop-idx p ρ y)) (rel h (⊑-∋ p y)) }
+    ; valᶜ = λ { Z → v ; (S y) → subst Val (sym (drop-idx p ρᶜ y)) (valᶜ h (⊑-∋ p y)) }
+    ; conᶜ = λ { Z → c ; (S y) → subst Con (sym (drop-idx p ρᶜ y)) (conᶜ h (⊑-∋ p y)) }
+    ; clean = λ { Z → cl ; (S y) → subst Clean (sym (drop-idx p ρ y)) (clean h (⊑-∋ p y)) } }
+
+  tail-r : ∀ {Bs Δ} (t : Tail Σ Bs Δ) {Bᶜ B : BEnv Bs} → BR Bᶜ B → (∀ {Δ'} (l : Bs ∋ Δ') → Ok (B l))
+    → ∀ {ρᶜ ρ} → ER {Δ} ρᶜ ρ → Con-env ρ → nonempty-env ρ → Lifted _⊑_ (⟦ t ⟧ᶜᵗ Tᶜ Bᶜ ρᶜ) (⟦ t ⟧ᵗ T B ρ)
+  tail-r (return s) br oB h cρ NE = simS h cρ NE s
+  tail-r (goto l) br oB h cρ NE = br l h cρ NE
+  tail-r (seq {Δ'} {A} p s t) {Bᶜ} {B} br oB {ρᶜ} {ρ} h cρ NE w w∈
+    with proj₁ (letᵐ-unfold {𝒮ᶜ s Tᶜ ρᶜ} {λ X → ⟦ t ⟧ᶜᵗ Tᶜ Bᶜ (X • drop p ρᶜ)}) w w∈
+  ... | inj₁ ⟨ refl , ω∈ ⟩ = lift (inj₁ ⟨ refl , sr-ω h cρ NE s ω∈ ⟩)
+  ... | inj₂ ⟨ _ , ⟨ V , ⟨ ⟨ ⟨ w∈′ , ⟨ neV , cV ⟩ ⟩ , nV ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ ⟩ =
+    ⊑-mono w (let-⊇ cD cv mF fin) (tail-r t br oB h′ cρ′ NE′ w w∈′)
+    where
+    D = 𝒮 s T ρ
+    F = λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)
+    cD : Con D
+    cD = con TC M.⌜ ⌞ s ⌟ ⌝ cρ
+    cv : Conv D
+    cv = sr-conv h cρ NE s (let ⟨ v , v∈ ⟩ = E≢[]⇒nonempty-mem neV in ⟨ v , V⊆ v v∈ ⟩)
+    okF = drop-ok p (tail-ok TC t oB)
+    mF : Mono₁ F
+    mF {X} {Y} X⊆ = proj₁ okF {X • ρ} {Y • ρ} (λ { zero → X⊆ ; (suc i) → λ _ z → z })
+    fin : Finitary F ⌊ D ⌋
+    fin = fin₁ okF NE cv
+    h′ = er-ext p h (sr-mem h cρ NE s V V⊆) (noerr-val V neV nV) (≈⇒Con cV) (λ _ → proj₂)
+    cρ′ = Con-• (Con-⊆ cD ⌊⌋-⊆) (drop-con p cρ)
+    NE′ = extend-nonempty-env (drop-ne p NE) cv
+  tail-r (case {Δ'} a p l₁ l₂) {Bᶜ} {B} br oB {ρᶜ} {ρ} h cρ NE w w∈
+    with no-bad {inj} {⌊ 𝒜 a Tᶜ ρᶜ ⌋}
+           {𝒞 ⟨ ⌊ 𝒜 a Tᶜ ρᶜ ⌋ ⇂ ValPayload , ⟨ (λ X → Bᶜ l₁ (X • drop p ρᶜ)) , ⟨ (λ X → Bᶜ l₂ (X • drop p ρᶜ)) , ptt ⟩ ⟩ ⟩}
+           (λ d d∈ → kind₄-inj (ar-kind h cρ NE a d d∈)) w
+           (βᵛ {𝒜 a Tᶜ ρᶜ} {λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ X → Bᶜ l₁ (X • drop p ρᶜ)) , ⟨ (λ X → Bᶜ l₂ (X • drop p ρᶜ)) , ptt ⟩ ⟩ ⟩)}
+               (vᶜ h cρ NE a) w w∈)
+  ... | inj₁ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈′ , c ⟩ ⟩ ⟩ ⟩ = ⊑-mono w (λ y y∈ → βᵛ⁻ {A'} {λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩} (v' h cρ NE a) y
+       (𝒞ˡ-⊇ {⌊ A' ⌋ ⇂ ValPayload} {F₁} {F₂} cY (fin₁ (drop-ok p (oB l₁)) NE neY) (λ d y → y) y y∈))
+      (br l₁ (er-ext p h rY (noerr-val (v ∷ V) (λ ()) (λ ω∈ → proj₂ (all ω ω∈) refl)) (≈⇒Con c) (λ _ → proj₂))
+             (Con-• cY (drop-con p cρ)) (extend-nonempty-env (drop-ne p NE) neY) w w∈′)
+    where
+    A' = 𝒜 a T ρ
+    F₁ = λ X → B l₁ (X • drop p ρ)
+    F₂ = λ X → B l₂ (X • drop p ρ)
+    Y : 𝒫 Value
+    Y d = (⌊ A' ⌋ ⇂ ValPayload) (left d)
+    cY : Con Y
+    cY = Con-⊆ (lefts-con (Con-⊆ (c' h cρ NE a) ⌊⌋-⊆)) (λ d y → proj₁ y)
+    rY : SR Any (mem (v ∷ V)) Y
+    rY x x∈ = ⊑-mono x (λ e e∈ → ⟨ ⟨ proj₁ (proj₁ e∈) , (λ ()) ⟩ , proj₂ e∈ ⟩)
+                (⊑-⇂ x (λ e e∈ ke ω≡ → proj₂ (all x x∈) (kind-ω (trans (sym ke) (cong kind ω≡))))
+                  (proj₂ (ar h cρ NE a (left x) (proj₁ (proj₁ (all x x∈))))))
+    neY : nonempty Y
+    neY = ⊑-ne v (rY v (here refl))
+  ... | inj₂ ⟨ v , ⟨ V , ⟨ all , ⟨ w∈′ , c ⟩ ⟩ ⟩ ⟩ = ⊑-mono w (λ y y∈ → βᵛ⁻ {A'} {λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩} (v' h cρ NE a) y
+       (𝒞ʳ-⊇ {⌊ A' ⌋ ⇂ ValPayload} {F₁} {F₂} cY (fin₁ (drop-ok p (oB l₂)) NE neY) (λ d y → y) y y∈))
+      (br l₂ (er-ext p h rY (noerr-val (v ∷ V) (λ ()) (λ ω∈ → proj₂ (all ω ω∈) refl)) (≈⇒Con c) (λ _ → proj₂))
+             (Con-• cY (drop-con p cρ)) (extend-nonempty-env (drop-ne p NE) neY) w w∈′)
+    where
+    A' = 𝒜 a T ρ
+    F₁ = λ X → B l₁ (X • drop p ρ)
+    F₂ = λ X → B l₂ (X • drop p ρ)
+    Y : 𝒫 Value
+    Y d = (⌊ A' ⌋ ⇂ ValPayload) (right d)
+    cY : Con Y
+    cY = Con-⊆ (rights-con (Con-⊆ (c' h cρ NE a) ⌊⌋-⊆)) (λ d y → proj₁ y)
+    rY : SR Any (mem (v ∷ V)) Y
+    rY x x∈ = ⊑-mono x (λ e e∈ → ⟨ ⟨ proj₁ (proj₁ e∈) , (λ ()) ⟩ , proj₂ e∈ ⟩)
+                (⊑-⇂ x (λ e e∈ ke ω≡ → proj₂ (all x x∈) (kind-ω (trans (sym ke) (cong kind ω≡))))
+                  (proj₂ (ar h cρ NE a (right x) (proj₁ (proj₁ (all x x∈))))))
+    neY : nonempty Y
+    neY = ⊑-ne v (rY v (here refl))
+
+
+  blocks-r : ∀ {Bs} (bs : Blocks Σ Bs) → BR (blocksᶜ bs Tᶜ) (blocks bs T)
+  blocks-r (bs ▷ t) Z = tail-r t (blocks-r bs) (blocks-ok TC bs)
+  blocks-r (bs ▷ t) (S l) = blocks-r bs l
+
+  run-r : ∀ {Δ} (b : Body Σ Δ) {ρᶜ ρ} → ER {Δ} ρᶜ ρ → Con-env ρ → nonempty-env ρ → Lifted _⊑_ (runᶜ b Tᶜ ρᶜ) (run b T ρ)
+  run-r (body bs t) = tail-r t (blocks-r bs) (blocks-ok TC bs)
+
+  {- the code of a definition, on related environments of its kind and arguments -}
+  code-r : ∀ {n} (b : Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) → SR (code n) (codeᶜʰ Tᶜ b) (codeᶜ T b)
+  code-r {n} b = code-ΛΛ λ V U w neV neU cV cU nV nU w∈ E X cE cX clE clX rV rU → bodyᵣ V U w neV neU nV nU w∈ E X cE cX clE clX rV rU
+    where
+    bodyᵣ : ∀ V U w → V ≢ [] → U ≢ [] → NoErr V → NoErr U
+      → w ∈ letᵐ ⟨ mem V , ⟨ (λ X' → letᵐ ⟨ mem U , ⟨ (λ Y' → runᶜ b Tᶜ (Y' • X' • λ _ → init)) , ptt ⟩ ⟩) , ptt ⟩ ⟩
+      → ∀ E X → Con E → Con X → Clean E → Clean X → V ⊑* (E ⇂ₖ tup n) → U ⊑* X
+      → w ⊑ ⋆ ⟨ ⋆ ⟨ codeᶜ T b , ⟨ E ⇂ₖ tup n , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
+    bodyᵣ V U w neV neU nV nU w∈ E X cE cX clE clX rV rU
+      with proj₁ (letᵐ-entries (noerr-val V neV nV)) w w∈
+    ... | ⟨ V' , ⟨ neV' , ⟨ cV' , ⟨ nV' , ⟨ V'⊆ , w∈′ ⟩ ⟩ ⟩ ⟩ ⟩
+      with proj₁ (letᵐ-entries (noerr-val U neU nU)) w w∈′
+    ... | ⟨ U' , ⟨ neU' , ⟨ cU' , ⟨ nU' , ⟨ U'⊆ , w∈″ ⟩ ⟩ ⟩ ⟩ ⟩ =
+      ⊑-mono w (ΛΛᵐ-call {λ X′ Y′ → run b T (Y′ • X′ • λ _ → init)} cE′ cX clE′ clX
+                  (fin₂ (run-ok TC b) neE neX))
+        (run-r b h′ (Con-• cX (Con-• cE′ (λ _ → Con-⌈⌉ ω))) NE′ w w∈″)
+      where
+      E′ = E ⇂ₖ tup n
+      cE′ = Con-⊆ cE (λ _ → proj₁)
+      clE′ : Clean E′
+      clE′ d d∈ = clE d (proj₁ d∈)
+      neE : nonempty E′
+      neE = let ⟨ v , v∈ ⟩ = E≢[]⇒nonempty-mem neV in ⊑-ne v (⊑*-∈ rV v∈)
+      neX : nonempty X
+      neX = let ⟨ u , u∈ ⟩ = E≢[]⇒nonempty-mem neU in ⊑-ne u (⊑*-∈ rU u∈)
+      NE′ : nonempty-env (X • E′ • λ _ → init)
+      NE′ = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) neE) neX
+      h′ : ER {Any ∷ ⟪ tup n ⟫ ∷ []} (mem U' • mem V' • λ _ → init) (X • E′ • λ _ → init)
+      h′ = record
+        { rel = λ { Z → λ x x∈ → ⊑*-∈ rU (U'⊆ x x∈)
+                  ; (S Z) → λ x x∈ → ⊑-⇂ x (λ e e∈ ke → inj₂ (cong kind₄ (proj₂ e∈))) (⊑*-∈ rV (V'⊆ x x∈)) }
+        ; valᶜ = λ { Z → noerr-val U' neU' nU' ; (S Z) → noerr-val V' neV' nV' }
+        ; conᶜ = λ { Z → ≈⇒Con cU' ; (S Z) → ≈⇒Con cV' }
+        ; clean = λ { Z → clX ; (S Z) → clE′ } }
+
+{- Tables ------------------------------------------------------------------------------}
+
+{- a reference at the position of a definition has the type of the definition -}
+lvl-type : ∀ {Σ ns : List ℕ} {m n : ℕ} (s : (m ∷ ns) ≤ₗ Σ) (f : Σ ∋ n) → lvl f ≡ length ns → n ≡ m
+lvl-type here⊑ Z e = refl
+lvl-type here⊑ (S f) e = ⊥-elim (<⇒≢ (lvl-< f) e)
+lvl-type {ns = ns} (there⊑ s) Z e = ⊥-elim (<⇒≢ (⊑-len s) (sym e))
+  where open import proof.Framework.Lookup using (⊑-len)
+lvl-type (there⊑ s) (S f) e = lvl-type s f e
+
+tbl-r : ∀ {Σ ns} (s : ns ≤ₗ Σ) (ds : All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns)
+  → ∀ {n} (f : Σ ∋ n) → SR (code n) (tbl (codeᶜʰ {Σ}) ds (lvl f)) (tbl (codeᶜ {Σ}) ds (lvl f))
+tbl-r s [] {n} f = errcode-rel (tup n)
+tbl-r {Σ} {_ ∷ ns} s (d ∷ ds) {n} f with lvl f ≟ length ns
+... | yes e = subst (λ k → SR (code k) (codeᶜʰ (tbl codeᶜʰ ds) d) (codeᶜ (tbl codeᶜ ds) d)) (sym (lvl-type s f e))
+  (Sim.code-r (tbl-r s' ds) (tbl-val (λ _ → ΛΛᵐ-val) ds) (tbl-val (λ _ → ΛΛᵐ-val) ds) (tbl-con {c = codeᶜ {Σ}} (λ TC b → codeᶜ-con TC b) ds) d)
+  where s' = Framework.Membership.⊑-trans (there⊑ here⊑) s
+        open import proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val; tbl-con)
+        open import proof.Semantics.GraphErr.Typed.CFG using (codeᶜ-con)
+        import Framework.Membership
+... | no _ = tbl-r (Framework.Membership.⊑-trans (there⊑ here⊑) s) ds f
+  where import Framework.Membership
+
+{- CFGᵀ with checks reflects into CFGᵀ -}
+reflect : ∀ (P : Program) → Lifted _⊑_ ⟦ P ⟧ᶜʰ ⟦ P ⟧ᶜ
+reflect (program {Σ} ds b) =
+  Sim.run-r (tbl-r here⊑ ds) (tbl-val (λ _ → ΛΛᵐ-val) ds) (tbl-val (λ _ → ΛΛᵐ-val) ds) (tbl-con {c = codeᶜ {Σ}} (λ TC b → codeᶜ-con TC b) ds) b
+
+    (record { rel = λ () ; valᶜ = λ () ; conᶜ = λ () ; clean = λ () }) (λ _ → Con-⌈⌉ ω) (λ _ → ⟨ ω , refl ⟩)
+  where open import proof.Semantics.GraphErr.Typed.Clos5 using (tbl-val; tbl-con)
+        open import proof.Semantics.GraphErr.Typed.CFG using (codeᶜ-con)
