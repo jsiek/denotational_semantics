@@ -8,7 +8,7 @@
   operators shared by the graph model and the graph model with errors
   (constants, the components of a tuple). The continuity of the
   operators of the graph model is in Continuity.agda, that of the
-  error-propagating ones in ErrorContinuity.agda.
+  error-propagating ones in ErrorMonad.agda.
 
 -}
 

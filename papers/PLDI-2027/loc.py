@@ -146,10 +146,8 @@ GROUPS = [
      [W + 'GraphModel/Ops.agda', WP + 'GraphModel/Ops.agda',
       WP + 'GraphModel/Continuity.agda', WP + 'GraphModel/SemanticsUtil.agda',
       WP + 'GraphModel/DomainUtil.agda', WP + 'GraphModel/Strict.agda', WP + 'GraphModel/Laws.agda']),
-    ('infra', 'graph model with errors: error-propagating operators',
-     [W + 'GraphModel/ErrorOps.agda', WP + 'GraphModel/ErrorOps.agda',
-      WP + 'GraphModel/ErrorContinuity.agda', WP + 'GraphModel/ErrorStrict.agda',
-      WP + 'GraphModel/ErrorLaws.agda']),
+    ('infra', 'graph model with errors: the error monad, its operators and laws',
+     [W + 'GraphModel/ErrorMonad.agda', WP + 'GraphModel/ErrorMonad.agda']),
     ('infra', 'small-step framework: transition systems, simulations',
      [W + 'Smallstep.agda', WP + 'Smallstep.agda', WP + 'Simulation.agda']),
     ('infra', 'reduction framework: reduction semantics, simulations between them',
@@ -696,14 +694,13 @@ def errors_infra(files_of, reach, ulines):
                 tot = [t + r for t, r in zip(tot, row)]
                 print(f'| {name} | {row[0]} | ' + ' | '.join(str(r) if r else '—' for r in row[1:]) + ' |')
     print('| **total** | ' + ' | '.join(f'**{t}**' for t in tot) + ' |')
+    # the graph model with errors builds its operators on the graph model's
+    # (its kernels): the modules of that group it reuses
     ops = {unit(f) for f in files_of[('infra', 'graph model: its operators')]}
-    bad = sorted(ops & (reach['gerr'] | reach['gadeq']))
-    if bad:
-        sys.exit('the graph model with errors reaches modules of the graph model\'s operators:\n  '
-                 + '\n  '.join(bad))
+    used = sorted(ops & (reach['gerr'] | reach['gadeq']))
     print()
-    print('The graph model with errors, and its adequacy, reach none of the modules of the '
-          'graph model\'s operators.')
+    print('The graph model with errors reuses these modules of the graph model\'s operators: '
+          + ', '.join(f'`{modname(u)}` ({ulines(u)})' for u in used) + '.')
 
 
 if __name__ == '__main__':

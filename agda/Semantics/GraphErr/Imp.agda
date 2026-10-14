@@ -7,8 +7,8 @@ module Semantics.GraphErr.Imp where
 
  As in the machines (Semantics/CEK/{Imp,CFG}.agda): reading a slot beyond
  the frame errors (init, {ω}); assigning one errs once the value assigned
- has been computed (checkedᵉ: ω if the value is anything, ∅ if it
- diverges); a call app f e a is the late-check call callᵉ, and the
+ has been computed (frameᵐ: ω if the value is anything, ∅ if it
+ diverges); a call app f e a is the late-check call callᵐ, and the
  code of a definition runs its body in a fresh frame of max(2, n) slots,
  as the machines' frames have (e ∷ a ∷ zeros (n ∸ 2)). A reference to no
  definition is code whose call errs (errcode).
@@ -20,7 +20,7 @@ open import Framework.GraphModel.SetsAsPredicates
 open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
-open import Framework.GraphModel.ErrorOps
+open import Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Prim
 open import Language.Imp
 
@@ -55,10 +55,10 @@ _[_↦_] : Store → ℕ → 𝒫 Value → Store
 
 {- E, if slot x is within a frame of n slots; otherwise an error, once
    the value D to assign has been computed -}
-checkedᵉ : ℕ → ℕ → 𝒫 Value → 𝒫 Value → 𝒫 Value
-checkedᵉ n x D E with x <? n
+frameᵐ : ℕ → ℕ → 𝒫 Value → 𝒫 Value → 𝒫 Value
+frameᵐ n x D E with x <? n
 ... | yes _ = E
-... | no _ = λ w → w ≡ ω × nonempty D
+... | no _ = D ≫= λ _ → ⌈ ω ⌉
 
 𝒜 : Table → ℕ → Store → Atm → 𝒫 Value
 𝒜 T n σ (var x) = read n σ x
@@ -72,15 +72,15 @@ checkedᵉ n x D E with x <? n
 {- the value of a simple expression in a frame of n slots -}
 𝒮 : Table → ℕ → Store → Simple → 𝒫 Value
 𝒮 T n σ (atm a) = 𝒜 T n σ a
-𝒮 T n σ (app f e a) = callᵉ ⟨ 𝒜 T n σ f , ⟨ 𝒜 T n σ e , ⟨ 𝒜 T n σ a , ptt ⟩ ⟩ ⟩
-𝒮 T n σ (pair a b) = pairᵉ ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
-𝒮 T n σ (fst a) = carᵉ ⟨ 𝒜 T n σ a , ptt ⟩
-𝒮 T n σ (snd a) = cdrᵉ ⟨ 𝒜 T n σ a , ptt ⟩
-𝒮 T n σ (tuple as) = 𝒯ᵉ (length as) (𝒜s T n σ as)
-𝒮 T n σ (get i a) = projᵉ i ⟨ 𝒜 T n σ a , ptt ⟩
-𝒮 T n σ (inl a) = inlᵉ ⟨ 𝒜 T n σ a , ptt ⟩
-𝒮 T n σ (inr a) = inrᵉ ⟨ 𝒜 T n σ a , ptt ⟩
-𝒮 T n σ (prim p a b) = primᵉ p ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
+𝒮 T n σ (app f e a) = callᵐ ⟨ 𝒜 T n σ f , ⟨ 𝒜 T n σ e , ⟨ 𝒜 T n σ a , ptt ⟩ ⟩ ⟩
+𝒮 T n σ (pair a b) = pairᵐ ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
+𝒮 T n σ (fst a) = carᵐ ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (snd a) = cdrᵐ ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (tuple as) = 𝒯ᵐ (length as) (𝒜s T n σ as)
+𝒮 T n σ (get i a) = projᵐ i ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (inl a) = inlᵐ ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (inr a) = inrᵐ ⟨ 𝒜 T n σ a , ptt ⟩
+𝒮 T n σ (prim p a b) = primᵐ p ⟨ 𝒜 T n σ a , ⟨ 𝒜 T n σ b , ptt ⟩ ⟩
 
 {- the slots of a fresh frame -}
 zeros : Store

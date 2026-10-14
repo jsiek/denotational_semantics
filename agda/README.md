@@ -88,8 +88,8 @@ that every module outside `proof/` is used by a theorem statement).
     `bound`), base types, and list lookups.
 * The semantics, per style:
   * graph model with errors: `Semantics/GraphErr/` (every language)
-    and `Framework/GraphModel/ErrorOps.agda` (the error-propagating
-    operators);
+    and `Framework/GraphModel/ErrorMonad.agda` (an error monad on
+    𝒫 Value, and the operators built from it over the graph model's);
   * denotational: `Semantics/Graph/` (the meaning of the primitives,
     `Prim.agda`, and the semantics of each language) and
     `Framework/GraphModel/` (sets as predicates, environments, the

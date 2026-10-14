@@ -1,28 +1,26 @@
 {-
 
-  Adequacy of the graph model with errors for the Clos5 machine: every
-  element of the denotation of a well-formed program is witnessed by a
-  run of the machine, for the table ds of its global definitions, and ω
-  by a run that stops with an error.
+  Adequacy of the graph model with errors for the Clos5 machine:
+  every element of the denotation of a well-formed program is witnessed
+  by a run of the machine, for the table ds of its global definitions,
+  and ω by a run that stops with an error.
 
-  As for ISWIM (Adequacy/GraphErr/LogRel.agda), a logical relation 𝕍 d v
-  relates denotational values to machine values, by recursion on d, and
-  ℝ d γ M relates ω to a term that stops with an error and any other
-  value to a term that evaluates to a related value. As for Clos5 in the
-  graph model (Adequacy/Clos5LogRel.agda), a code pointer is related to
-  the entries Λ X. Λ Y. … of code: X ↦ (Y ↦ w) is related to code k when
-  the machine finds a definition at k whose body, run on values related
-  to all of X and Y, is related to w by ℝ, so it may stop with an error.
-  The fundamental lemma (adequate) assumes that the table is related to
-  the code pointers it refers to (𝕋), and the table of the program is
-  (tab), by induction on the definitions.
+  As for ISWIM (proof/Adequacy/GraphErr/LogRel.agda), 𝕍 d v relates
+  denotational values to machine values, and ℂ d c lifts it to
+  computations: ω is related to a computation that stops with an error,
+  any other value to one that returns a related value. The lifting goes
+  through the monad once (ℂ-bind), so each operator's case handles only
+  its kernel: the check of the kind of its operand, and its success.
 
-  The fundamental lemma has a case for each error of each operator, in
-  the machine's evaluation order: a call evaluates its code, environment
-  and argument and only then checks that the code is a code pointer (the
-  late check, callᵉ); fst and snd fail on a non-pair. An unbound variable
-  denotes {ω} and errs in the machine, so environments are related on
-  all variables (𝔾), and no scoping condition is needed.
+  As for Clos5 in the graph model (proof/Adequacy/Clos5LogRel.agda), a
+  code pointer is related to the entries of code: X ↦ (Y ↦ w) is related
+  to code k when the machine finds a definition at k whose body, run on
+  values related to all of X and Y, is related to w. The fundamental
+  lemma assumes that the table is related to the code pointers it refers
+  to (𝕋), and the table of the program is (tab). A call binds its code,
+  environment and argument, and only then checks the code (the late
+  check). An unbound variable denotes {ω} and errs in the machine, so
+  environments are related on all variables (𝔾).
 
 -}
 
@@ -37,9 +35,10 @@ open import proof.Framework.GraphModel.Domain
   using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩)
   renaming (const to dconst)
 open import proof.Framework.GraphModel.OpsBase using (nthD)
-open import proof.Framework.GraphModel.ErrorOps
-  using (val∈; wrong; errs; vals; IsFun; IsInj; IsTup; IsPair; NoErr; inlᵉ-inv; inrᵉ-inv; Λᵉ-fun)
-open import proof.Semantics.GraphErr.Prim using (IsInt) renaming (out to dout)
+open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; 𝒞) renaming (proj to projD; inl to inlD; inr to inrD; pair to pairD; car to carD; cdr to cdrD)
+open import proof.Framework.GraphModel.DOpSig using (Results)
+open import proof.Framework.GraphModel.ErrorMonad hiding (Val)
+open import proof.Semantics.GraphErr.Prim using (primD) renaming (out to dout)
 open import Language.Prim using (int; bool; δ)
 open import Language.Clos5 hiding (AST)
 open import Semantics.GraphErr.Clos5 using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; table; init)
@@ -51,7 +50,8 @@ open import Semantics.CEK.Clos5
 open import proof.Semantics.CEK.Smallstep using (next; stop)
 open import proof.Compiler.GlobalizeTable using (_⊑_; ∷-⊑; global-⊑)
 open import proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length)
-open import proof.Adequacy.GraphErr.LogRel using (head≢ω; δ?-nothing₁; δ?-nothing₂)
+open import proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
+open import proof.Adequacy.GraphErr.Clos5Soundness using (vkind)
 open import proof.Adequacy.GraphErr.Clos5WF using (DefsWF; RB; RB-args)
 open import proof.Adequacy.GraphErr.Clos5Common ds
 
@@ -61,44 +61,39 @@ open import Data.Fin using (Fin; zero; suc)
 open import Data.List.Base using (reverseAcc)
 open import Data.List.Properties using (reverse-involutive)
 open import Data.List.Relation.Unary.Any using (here; there)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing; map)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; s≤s)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≟_)
 open import Data.Nat.Properties using (≤-pred; m≤n⇒m<n∨m≡n)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
+open import Relation.Nullary using (yes; no)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
-open import Relation.Nullary using (yes; no; ¬_)
 
 VEnv : Set₁
 VEnv = proof.Framework.GraphModel.Env.Env Value
 
-{- Evaluation, and errors ---------------------------------------------------------}
+{- Computations, and errors ------------------------------------------------------}
 
-infix 4 _⊢_⇓_
-_⊢_⇓_ : Env → AST → Val → Set
-γ ⊢ M ⇓ v = ∀ κ → eval M γ κ ↠ ret v κ
+{- a computation: a state, in any continuation -}
+Comp : Set
+Comp = Cont → State
+
+infix 4 _⇓_
+_⇓_ : Comp → Val → Set
+c ⇓ v = ∀ κ → c κ ↠ ret v κ
 
 {- a run from s to a state that stops with an error -}
 Err : State → Set
 Err s = Σ[ t ∈ State ] s ↠ t × step ds t ≡ stop o-error
 
-infix 4 _⊢_⇓err
-_⊢_⇓err : Env → AST → Set
-γ ⊢ M ⇓err = ∀ κ → Err (eval M γ κ)
-
-{- an error after a run -}
 _⟫_ : ∀ {s s'} → s ↠ s' → Err s' → Err s
 σ ⟫ ⟨ t , ⟨ τ , st ⟩ ⟩ = ⟨ t , ⟨ σ ++↠ τ , st ⟩ ⟩
 infixr 4 _⟫_
 
-{- a state that stops with an error right away -}
-here! : ∀ {s} → step ds s ≡ stop o-error → Err s
-here! {s} st = ⟨ s , ⟨ done , st ⟩ ⟩
-
-⇓-det : ∀ {γ M v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
-⇓-det {v₁ = v₁} {v₂} e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
+⇓-det : ∀ {c v₁ v₂} → c ⇓ v₁ → c ⇓ v₂ → v₁ ≡ v₂
+⇓-det e₁ e₂ with ↠-final-det (e₁ halt) (e₂ halt) refl refl
 ... | refl = refl
 
 obs-ok : ∀ v → stop {S = State} (obs v) ≡ stop o-error → ⊥
@@ -109,9 +104,8 @@ obs-ok (tup vs) ()
 obs-ok (inl v) ()
 obs-ok (inr v) ()
 
-{- a term does not both evaluate to a value and stop with an error -}
-⇓-⇓err : ∀ {γ M v} → γ ⊢ M ⇓ v → γ ⊢ M ⇓err → ⊥
-⇓-⇓err {v = v} e er with er halt
+⇓-err : ∀ {c v} → c ⇓ v → (∀ κ → Err (c κ)) → ⊥
+⇓-err {v = v} e er with er halt
 ... | ⟨ t , ⟨ τ , st ⟩ ⟩ with ↠-final-det (e halt) τ refl st
 ... | refl = obs-ok v st
 
@@ -121,6 +115,7 @@ obs-ok (inr v) ()
 𝕍code : List Value → Value → ℕ → Set
 𝕍s : List Value → Val → Set
 𝕍At : ∀ {n} → Fin n → Value → List Val → Set
+ℂ : Value → Comp → Set
 ℝ : Value → Env → AST → Set
 
 𝕍 (dconst {B} k) v = v ≡ const B k
@@ -133,7 +128,7 @@ obs-ok (inr v) ()
 𝕍 (right d) (inr v) = 𝕍 d v
 𝕍 _ _ = ⊥
 
-{- the entries of code, Λ X. Λ Y. N: the machine runs definition k -}
+{- the entries of code: the machine runs definition k -}
 𝕍code X ν k = ⊤
 𝕍code X (Y ↦ w) k = ∀ e → 𝕍s X e → ∀ a → 𝕍s Y a
   → Σ[ N ∈ AST ] global ds k ≡ just N × ℝ w (a ∷ e ∷ []) N
@@ -146,32 +141,119 @@ obs-ok (inr v) ()
 𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
 𝕍At _ d [] = ⊥
 
-{- ω means an error, any other value a related value -}
-ℝ d γ M = (d ≡ ω × γ ⊢ M ⇓err) ⊎ (Σ[ v ∈ Val ] γ ⊢ M ⇓ v × 𝕍 d v)
+ℂ d c = (d ≡ ω × (∀ κ → Err (c κ))) ⊎ (Σ[ v ∈ Val ] c ⇓ v × 𝕍 d v)
+
+ℝ d γ M = ℂ d (eval M γ)
 
 𝕍-ω : ∀ {v} → 𝕍 ω v → ⊥
 𝕍-ω {code k} ()
-𝕍-ω {pair v w} ()
-𝕍-ω {const B k} ()
-𝕍-ω {tup vs} ()
-𝕍-ω {inl v} ()
-𝕍-ω {inr v} ()
 
-{- a value other than ω evaluates -}
-conv : ∀ {d γ M} → ℝ d γ M → d ≢ ω → Σ[ v ∈ Val ] γ ⊢ M ⇓ v × 𝕍 d v
+conv : ∀ {d c} → ℂ d c → d ≢ ω → Σ[ v ∈ Val ] c ⇓ v × 𝕍 d v
 conv (inj₁ ⟨ refl , _ ⟩) d≢ = ⊥-elim (d≢ refl)
 conv (inj₂ r) d≢ = r
 
-{- ω is an error -}
-err : ∀ {γ M} → ℝ ω γ M → γ ⊢ M ⇓err
+err : ∀ {c} → ℂ ω c → ∀ κ → Err (c κ)
 err (inj₁ ⟨ _ , e ⟩) = e
 err (inj₂ ⟨ v , ⟨ _ , r ⟩ ⟩) = ⊥-elim (𝕍-ω {v} r)
 
-{- the value of a term that evaluates is related to every element -}
-collectℝ : ∀ {γ M v d} → γ ⊢ M ⇓ v → ℝ d γ M → 𝕍 d v
-collectℝ e (inj₁ ⟨ _ , er ⟩) = ⊥-elim (⇓-⇓err e er)
-collectℝ e (inj₂ ⟨ v' , ⟨ e' , r ⟩ ⟩) with ⇓-det e e'
+collect : ∀ {c v d} → c ⇓ v → ℂ d c → 𝕍 d v
+collect e (inj₁ ⟨ _ , er ⟩) = ⊥-elim (⇓-err e er)
+collect e (inj₂ ⟨ v' , ⟨ e' , r ⟩ ⟩) with ⇓-det e e'
 ... | refl = r
+
+prepend : ∀ {c c' w} → (∀ κ → c κ ↠ c' κ) → ℂ w c' → ℂ w c
+prepend σ (inj₁ ⟨ refl , e ⟩) = inj₁ ⟨ refl , (λ κ → σ κ ⟫ e κ) ⟩
+prepend σ (inj₂ ⟨ v , ⟨ e , r ⟩ ⟩) = inj₂ ⟨ v , ⟨ (λ κ → σ κ ++↠ e κ) , r ⟩ ⟩
+
+step₁ : ∀ {c c' w} → (∀ κ → step ds (c κ) ≡ next (c' κ)) → ℂ w c' → ℂ w c
+step₁ st = prepend (λ κ → st κ ∷↠ done)
+
+ℂ-stop : ∀ {c w} → (∀ κ → step ds (c κ) ≡ stop o-error) → w ≡ ω → ℂ w c
+ℂ-stop st refl = inj₁ ⟨ refl , (λ κ → ⟨ _ , ⟨ done , st κ ⟩ ⟩) ⟩
+
+{- bind, through the relation: the operand D is computed by c, and then
+   the frame f runs on its value -}
+ℂ-bind : ∀ {D F c w} (f : Cont → Cont) → (∀ d → d ∈ D → ℂ d c) → w ∈ (D ≫= F)
+  → (∀ v → (∀ d → d ∈ ⌊ D ⌋ → 𝕍 d v) → ∀ w → w ∈ F ⌊ D ⌋ → ℂ w (λ κ → ret v (f κ)))
+  → ℂ w (λ κ → c (f κ))
+ℂ-bind f h (inj₁ ⟨ refl , ω∈ ⟩) k = inj₁ ⟨ refl , (λ κ → err (h ω ω∈) (f κ)) ⟩
+ℂ-bind f h (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , w∈ ⟩) k with conv (h d d∈) d≢
+... | ⟨ v , ⟨ e , _ ⟩ ⟩ = prepend (λ κ → e (f κ)) (k v (λ d' d'∈ → collect e (h d' (proj₁ d'∈))) _ w∈)
+
+{- The kinds of related values ----------------------------------------------------}
+
+𝕍At-length : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
+𝕍At-length {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
+𝕍At-length (suc i) d (v ∷ vs) r = cong suc (𝕍At-length i d vs r)
+
+𝕍-kind : ∀ d v → 𝕍 d v → kind d ≡ vkind v
+𝕍-kind (dconst k) (const B k) refl = refl
+𝕍-kind ν (code k) _ = refl
+𝕍-kind (X ↦ w) (code k) _ = refl
+𝕍-kind ⦅ u₁ , u₂ ⦆ (pair v w) _ = refl
+𝕍-kind ⟨⟩ (tup vs) refl = refl
+𝕍-kind (tup[ i ] d) (tup vs) r = cong tup (sym (𝕍At-length i d vs r))
+𝕍-kind (left d) (inl v) _ = refl
+𝕍-kind (right d) (inr v) _ = refl
+
+𝕍-left : ∀ {d} v → 𝕍 (left d) v → Σ[ v' ∈ Val ] v ≡ inl v'
+𝕍-left (inl v') _ = ⟨ v' , refl ⟩
+
+𝕍-right : ∀ {d} v → 𝕍 (right d) v → Σ[ v' ∈ Val ] v ≡ inr v'
+𝕍-right (inr v') _ = ⟨ v' , refl ⟩
+
+{- a value of another kind in an operand all of whose values are related
+   to v: v is of another kind -}
+bad-kind : ∀ {k X v} → (∀ d → d ∈ X → 𝕍 d v) → Bad k X → vkind v ≢ k
+bad-kind all ⟨ e , ⟨ e∈ , ek ⟩ ⟩ eq = ek (trans (𝕍-kind e _ (all e e∈)) eq)
+
+{- The machine's checks fail on values of another kind -----------------------}
+
+notcode-stop : ∀ v → vkind v ≢ fun → ∀ a e κ → step ds (ret a (appA v e κ)) ≡ stop o-error
+notcode-stop (code k) nf a e κ = ⊥-elim (nf refl)
+notcode-stop (pair v w) nf a e κ = refl
+notcode-stop (const B k) nf a e κ = refl
+notcode-stop (tup vs) nf a e κ = refl
+notcode-stop (inl v) nf a e κ = refl
+notcode-stop (inr v) nf a e κ = refl
+
+nonpair-stop : ∀ v → vkind v ≢ prod → ∀ κ
+  → step ds (ret v (fstK κ)) ≡ stop o-error × step ds (ret v (sndK κ)) ≡ stop o-error
+nonpair-stop (pair v w) np κ = ⊥-elim (np refl)
+nonpair-stop (code k) np κ = ⟨ refl , refl ⟩
+nonpair-stop (const B k) np κ = ⟨ refl , refl ⟩
+nonpair-stop (tup vs) np κ = ⟨ refl , refl ⟩
+nonpair-stop (inl v) np κ = ⟨ refl , refl ⟩
+nonpair-stop (inr v) np κ = ⟨ refl , refl ⟩
+
+proj-just-length : ∀ {n} (i : Fin n) (vs : List Val) {v} → proj i vs ≡ just v → length vs ≡ n
+proj-just-length {suc n} zero (v ∷ vs) eq with has-length n vs in h
+proj-just-length {suc n} zero (v ∷ vs) refl | true = cong suc (has-length→length n vs h)
+proj-just-length {suc n} zero (v ∷ vs) () | false
+proj-just-length (suc i) (v ∷ vs) eq = cong suc (proj-just-length i vs eq)
+
+nottup-stop : ∀ {n} (i : Fin n) v → vkind v ≢ tup n → ∀ κ → step ds (ret v (getK i κ)) ≡ stop o-error
+nottup-stop i (tup vs) nt κ with proj i vs in p
+... | just v = ⊥-elim (nt (cong tup (proj-just-length i vs p)))
+... | nothing = refl
+nottup-stop i (code k) nt κ = refl
+nottup-stop i (pair v w) nt κ = refl
+nottup-stop i (const B k) nt κ = refl
+nottup-stop i (inl v) nt κ = refl
+nottup-stop i (inr v) nt κ = refl
+
+notinj-stop : ∀ v → vkind v ≢ inj → ∀ M N γ κ → step ds (ret v (caseK M N γ κ)) ≡ stop o-error
+notinj-stop (inl v) ni M N γ κ = ⊥-elim (ni refl)
+notinj-stop (inr v) ni M N γ κ = ⊥-elim (ni refl)
+notinj-stop (code k) ni M N γ κ = refl
+notinj-stop (pair v w) ni M N γ κ = refl
+notinj-stop (const B k) ni M N γ κ = refl
+notinj-stop (tup vs) ni M N γ κ = refl
+
+notint-obs : ∀ v → vkind v ≢ base Int → ∀ n → obs v ≢ o-const Int n
+notint-obs (const .Int k) ni n refl = ni refl
+
+{- Shapes and lists ---------------------------------------------------------------}
 
 𝕍s-∈ : ∀ V {v d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
 𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
@@ -185,16 +267,6 @@ all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ �
 𝕍At-proj {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ rewrite length→has-length n vs len = ⟨ v , ⟨ refl , r ⟩ ⟩
 𝕍At-proj (suc i) d (v ∷ vs) r = 𝕍At-proj i d vs r
 
-𝕍At-length : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
-𝕍At-length {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
-𝕍At-length (suc i) d (v ∷ vs) r = cong suc (𝕍At-length i d vs r)
-
-proj-just-length : ∀ {n} (i : Fin n) (vs : List Val) {v} → proj i vs ≡ just v → length vs ≡ n
-proj-just-length {suc n} zero (v ∷ vs) eq with has-length n vs in h
-proj-just-length {suc n} zero (v ∷ vs) refl | true = cong suc (has-length→length n vs h)
-proj-just-length {suc n} zero (v ∷ vs) () | false
-proj-just-length (suc i) (v ∷ vs) eq = cong suc (proj-just-length i vs eq)
-
 𝕍-out : ∀ r → 𝕍 (dout r) (out r)
 𝕍-out (int k) = refl
 𝕍-out (bool true) = refl
@@ -204,7 +276,6 @@ length-obs-list : ∀ vs → length (obs-list vs) ≡ length vs
 length-obs-list [] = refl
 length-obs-list (v ∷ vs) = cong suc (length-obs-list vs)
 
-{- related values are observed in the shape of the denotational value -}
 𝕍-shape : ∀ d v → 𝕍 d v → ShapeOf (obs v) d
 𝕍At-shape : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → ShapeAt i (obs-list vs) d
 𝕍-shape (dconst k) (const B k) refl = refl
@@ -217,68 +288,6 @@ length-obs-list (v ∷ vs) = cong suc (length-obs-list vs)
 𝕍-shape (right d) (inr v) r = 𝕍-shape d v r
 𝕍At-shape {suc n} zero d (v ∷ vs) ⟨ len , r ⟩ = ⟨ trans (length-obs-list vs) len , 𝕍-shape d v r ⟩
 𝕍At-shape (suc i) d (v ∷ vs) r = 𝕍At-shape i d vs r
-
-{- The machine's checks fail on related values of the wrong kind ----------------}
-
-{- calling a value related to a non-function is an error -}
-notcode-stop : ∀ d v → 𝕍 d v → ¬ IsFun d → ∀ a e κ → step ds (ret a (appA v e κ)) ≡ stop o-error
-notcode-stop ν (code k) r nf a e κ = ⊥-elim (nf tt)
-notcode-stop (X ↦ w) (code k) r nf a e κ = ⊥-elim (nf tt)
-notcode-stop (dconst k') (code k) () nf a e κ
-notcode-stop d (pair v w) r nf a e κ = refl
-notcode-stop d (const B k) r nf a e κ = refl
-notcode-stop d (tup vs) r nf a e κ = refl
-notcode-stop d (inl v) r nf a e κ = refl
-notcode-stop d (inr v) r nf a e κ = refl
-
-{- fst and snd of a value related to a non-pair are errors -}
-nonpair-stop : ∀ d v → 𝕍 d v → ¬ IsPair d → ∀ κ
-  → step ds (ret v (fstK κ)) ≡ stop o-error × step ds (ret v (sndK κ)) ≡ stop o-error
-nonpair-stop ⦅ u₁ , u₂ ⦆ (pair v w) r np κ = ⊥-elim (np tt)
-nonpair-stop (dconst k') (pair v w) () np κ
-nonpair-stop d (code k) r np κ = ⟨ refl , refl ⟩
-nonpair-stop d (const B k) r np κ = ⟨ refl , refl ⟩
-nonpair-stop d (tup vs) r np κ = ⟨ refl , refl ⟩
-nonpair-stop d (inl v) r np κ = ⟨ refl , refl ⟩
-nonpair-stop d (inr v) r np κ = ⟨ refl , refl ⟩
-
-{- a projection from a value related to a non-tuple of n components is an
-   error -}
-proj-nothing-[] : ∀ {n} (i : Fin n) → proj {A = Val} i [] ≡ nothing
-proj-nothing-[] zero = refl
-proj-nothing-[] (suc i) = refl
-
-nottup-stop : ∀ {n} (i : Fin n) d v → 𝕍 d v → ¬ IsTup n d → ∀ κ → step ds (ret v (getK i κ)) ≡ stop o-error
-nottup-stop i ⟨⟩ (tup []) refl nt κ = cong (λ m → ret? m κ) (proj-nothing-[] i)
-nottup-stop {n} i (tup[_]_ {m} j d) (tup vs) r nt κ with proj i vs in p
-... | just v = ⊥-elim (nt (trans (sym (𝕍At-length j d vs r)) (proj-just-length i vs p)))
-... | nothing = refl
-nottup-stop i (dconst k') (tup vs) () nt κ
-nottup-stop i d (code k) r nt κ = refl
-nottup-stop i d (pair v w) r nt κ = refl
-nottup-stop i d (const B k) r nt κ = refl
-nottup-stop i d (inl v) r nt κ = refl
-nottup-stop i d (inr v) r nt κ = refl
-
-{- a case on a value related to a non-injection is an error -}
-notinj-stop : ∀ d v → 𝕍 d v → ¬ IsInj d → ∀ M N γ κ → step ds (ret v (caseK M N γ κ)) ≡ stop o-error
-notinj-stop (left d) (inl v) r ni M N γ κ = ⊥-elim (ni tt)
-notinj-stop (right d) (inr v) r ni M N γ κ = ⊥-elim (ni tt)
-notinj-stop (dconst k') (inl v) () ni M N γ κ
-notinj-stop (dconst k') (inr v) () ni M N γ κ
-notinj-stop d (code k) r ni M N γ κ = refl
-notinj-stop d (pair v w) r ni M N γ κ = refl
-notinj-stop d (const B k) r ni M N γ κ = refl
-notinj-stop d (tup vs) r ni M N γ κ = refl
-
-{- a value related to a non-integer is not observed as an integer -}
-notint-obs : ∀ d v → 𝕍 d v → ¬ IsInt d → ∀ n → obs v ≢ o-const Int n
-notint-obs (dconst k) (const B k) refl ni n refl = ni tt
-notint-obs d (code k) r ni n ()
-notint-obs d (pair v w) r ni n ()
-notint-obs d (tup vs) r ni n ()
-notint-obs d (inl v) r ni n ()
-notint-obs d (inr v) r ni n ()
 
 {- Related environments and tables ------------------------------------------------}
 
@@ -295,243 +304,144 @@ notint-obs d (inr v) r ni n ()
 𝕋 : ℕ → Table → Set
 𝕋 n T = ∀ k → k < n → ∀ d → d ∈ T k → 𝕍 d (code k)
 
-Evals : Env → List AST → List Val → Set
-Evals γ = Pointwise (λ M v → γ ⊢ M ⇓ v)
-
-tuple-run : ∀ {γ κ} acc Ms vs → Evals γ Ms vs
-  → tuple-next acc Ms γ κ ↠ ret (tup (reverse (reverseAcc acc vs))) κ
-tuple-run acc [] [] [] = done
-tuple-run {γ} {κ} acc (M ∷ Ms) (v ∷ vs) (e ∷ es) =
-  e (tupK acc Ms γ κ) ++↠ (refl ∷↠ tuple-run (v ∷ acc) Ms vs es)
-
 {- The fundamental lemma ----------------------------------------------------------}
 
 adequate : ∀ M {T n ρ γ d} → 𝕋 n T → RB n M → 𝔾 ρ γ → d ∈ ⟦ M ⟧[ T ] ρ → ℝ d γ M
-adequate-args : ∀ {k} (args : Args (replicate k ■)) {T n ρ γ} → 𝕋 n T → RB-args n args
-  → 𝔾 ρ γ → vals k (⟦ args ⟧₊[ T ] ρ)
-  → Σ[ vs ∈ List Val ] Evals γ (args→list args) vs × length vs ≡ k
-      × (∀ j d → d ∈ nthD (⟦ args ⟧₊[ T ] ρ) j → 𝕍At j d vs)
-tuple-err : ∀ {k} (args : Args (replicate k ■)) {T n ρ γ} → 𝕋 n T → RB-args n args
-  → 𝔾 ρ γ → errs k (⟦ args ⟧₊[ T ] ρ)
-  → ∀ acc κ → Err (tuple-next acc (args→list args) γ κ)
+
+{- the operands of a tuple, bound left to right by the machine's tupK -}
+tuple-ℂ : ∀ {m} (as : Args (replicate m ■)) {T n ρ γ} → 𝕋 n T → RB-args n as → 𝔾 ρ γ
+  → ∀ {K w} acc → w ∈ binds m (⟦ as ⟧₊[ T ] ρ) K
+  → (∀ vs Xs → length vs ≡ m → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs) → ∀ w → w ∈ K Xs
+       → ℂ w (λ κ → ret (tup (reverse (reverseAcc acc vs))) κ))
+  → ℂ w (λ κ → tuple-next acc (args→list as) γ κ)
+tuple-ℂ {zero} Nil 𝕋T rb G acc w∈ k = k [] ptt refl (λ ()) _ w∈
+tuple-ℂ {suc m} (M ,, as) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , rs ⟩ G {K} acc w∈ k =
+  ℂ-bind {F = λ X → binds m (⟦ as ⟧₊[ T ] ρ) (λ Xs → K ⟨ X , Xs ⟩)} (tupK acc (args→list as) γ) (λ d → adequate M 𝕋T rM G) w∈
+    λ v all w w∈′ → step₁ (λ κ → refl) (tuple-ℂ as 𝕋T rs G (v ∷ acc) w∈′
+      λ vs Xs len rels w′ w∈″ → k (v ∷ vs) _ (cong suc len)
+        (λ { zero d d∈ → ⟨ len , all d d∈ ⟩ ; (suc j) d d∈ → rels j d d∈ }) w′ w∈″)
 
 adequate (` x) {γ = γ} 𝕋T rb G d∈ with G x _ d∈
-... | inj₁ ⟨ refl , look ⟩ = inj₁ ⟨ refl , (λ κ → here! (cong (λ m → ret? m κ) look)) ⟩
+... | inj₁ ⟨ refl , look ⟩ = ℂ-stop (λ κ → cong (λ m → ret? m κ) look) refl
 ... | inj₂ ⟨ v , ⟨ look , r ⟩ ⟩ = inj₂ ⟨ v , ⟨ (λ κ → cong (λ m → ret? m κ) look ∷↠ done) , r ⟩ ⟩
 
 adequate (fun-ref k ⦅ Nil ⦆) {d = d} 𝕋T k< G d∈ =
   inj₂ ⟨ code k , ⟨ (λ κ → refl ∷↠ done) , 𝕋T k k< d d∈ ⟩ ⟩
 
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) 𝕋T rb G (inj₁ ⟨ [] , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ne , _ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) =
-  ⊥-elim (ne refl)
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) 𝕋T rb G (inj₁ ⟨ _ ∷ _ , ⟨ [] , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ ne , _ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) =
-  ⊥-elim (ne refl)
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) {γ = γ} {d} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₁ ⟨ v₀ ∷ V , ⟨ u₀ ∷ U , ⟨ f∈ , ⟨ V⊆ , ⟨ U⊆ , ⟨ _ , ⟨ _ , ⟨ nV , nU ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate L 𝕋T rL G f∈) (λ ())
-       | conv (adequate M 𝕋T rM G (V⊆ v₀ (here refl))) (head≢ω nV)
-       | conv (adequate N 𝕋T rN G (U⊆ u₀ (here refl))) (head≢ω nU)
-... | ⟨ code j , ⟨ eL , relL ⟩ ⟩ | ⟨ e , ⟨ eM , _ ⟩ ⟩ | ⟨ a , ⟨ eN , _ ⟩ ⟩
-    with relL e (all→𝕍s (v₀ ∷ V) (λ d' d'∈ → collectℝ eM (adequate M 𝕋T rM G (V⊆ d' d'∈))))
-              a (all→𝕍s (u₀ ∷ U) (λ d' d'∈ → collectℝ eN (adequate N 𝕋T rN G (U⊆ d' d'∈))))
-... | ⟨ B , ⟨ g , inj₁ ⟨ refl , eB ⟩ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (appF M N γ κ) ++↠ refl ∷↠ eM (appE (code j) N γ κ)
-                         ++↠ refl ∷↠ eN (appA (code j) e κ) ++↠ cong (λ m → call m a e κ) g ∷↠ done)
-                        ⟫ eB κ) ⟩
-... | ⟨ B , ⟨ g , inj₂ ⟨ v , ⟨ eB , r ⟩ ⟩ ⟩ ⟩ =
-  inj₂ ⟨ v , ⟨ (λ κ → refl ∷↠ eL (appF M N γ κ) ++↠ refl ∷↠ eM (appE (code j) N γ κ)
-                  ++↠ refl ∷↠ eN (appA (code j) e κ) ++↠ cong (λ m → call m a e κ) g ∷↠ eB κ)
-        , r ⟩ ⟩
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₁ (inj₁ ω∈) ⟩) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate L 𝕋T rL G ω∈) (appF M N γ κ)) ⟩
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₁ (inj₂ ⟨ ⟨ f , ⟨ f∈ , f≢ ⟩ ⟩ , inj₁ ω∈ ⟩) ⟩)
-    with conv (adequate L 𝕋T rL G f∈) f≢
-... | ⟨ fv , ⟨ eL , _ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (appF M N γ κ) ++↠ refl ∷↠ done)
-                        ⟫ err (adequate M 𝕋T rM G ω∈) (appE fv N γ κ)) ⟩
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₁ (inj₂ ⟨ ⟨ f , ⟨ f∈ , f≢ ⟩ ⟩ , inj₂ ⟨ ⟨ m , ⟨ m∈ , m≢ ⟩ ⟩ , inj₁ ω∈ ⟩ ⟩) ⟩)
-    with conv (adequate L 𝕋T rL G f∈) f≢ | conv (adequate M 𝕋T rM G m∈) m≢
-... | ⟨ fv , ⟨ eL , _ ⟩ ⟩ | ⟨ e , ⟨ eM , _ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (appF M N γ κ) ++↠ refl ∷↠ eM (appE fv N γ κ) ++↠ refl ∷↠ done)
-                        ⟫ err (adequate N 𝕋T rN G ω∈) (appA fv e κ)) ⟩
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) 𝕋T rb G (inj₂ ⟨ refl , inj₁ (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , () ⟩ ⟩ ⟩) ⟩)
-adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₂ ⟨ ⟨ f , ⟨ f∈ , ⟨ f≢ , nf ⟩ ⟩ ⟩ , ⟨ ⟨ m , ⟨ m∈ , m≢ ⟩ ⟩ , ⟨ n , ⟨ n∈ , n≢ ⟩ ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate L 𝕋T rL G f∈) f≢ | conv (adequate M 𝕋T rM G m∈) m≢
-       | conv (adequate N 𝕋T rN G n∈) n≢
-... | ⟨ fv , ⟨ eL , r ⟩ ⟩ | ⟨ e , ⟨ eM , _ ⟩ ⟩ | ⟨ a , ⟨ eN , _ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (appF M N γ κ) ++↠ refl ∷↠ eM (appE fv N γ κ)
-                         ++↠ refl ∷↠ eN (appA fv e κ))
-                        ⟫ here! (notcode-stop f fv r nf a e κ)) ⟩
+adequate (app ⦅ L ,, M ,, N ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ F → Mᵀ ≫= λ E → Nᵀ ≫= λ X → K F E X} (appF M N γ) (λ d → adequate L 𝕋T rL G) w∈
+    λ f allF w w∈₁ → step₁ (λ κ → refl) (ℂ-bind {F = λ E → Nᵀ ≫= λ X → K Lᵛ E X} (appE f N γ) (λ d → adequate M 𝕋T rM G) w∈₁
+    λ e allE w w∈₂ → step₁ (λ κ → refl) (ℂ-bind {F = K Lᵛ Mᵛ} (appA f e) (λ d → adequate N 𝕋T rN G) w∈₂
+    (CALL f allF e allE))))
+  where
+  Mᵀ = ⟦ M ⟧[ T ] ρ
+  Nᵀ = ⟦ N ⟧[ T ] ρ
+  Lᵛ = ⌊ ⟦ L ⟧[ T ] ρ ⌋
+  Mᵛ = ⌊ Mᵀ ⌋
+  K = λ F E X → checked fun F (⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩)
+  CALL : ∀ f → (∀ d → d ∈ Lᵛ → 𝕍 d f) → ∀ e → (∀ d → d ∈ Mᵛ → 𝕍 d e) → ∀ a → (∀ d → d ∈ ⌊ Nᵀ ⌋ → 𝕍 d a)
+    → ∀ w → w ∈ K Lᵛ Mᵛ ⌊ Nᵀ ⌋ → ℂ w (λ κ → ret a (appA f e κ))
+  CALL f allF e allE a allN w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (notcode-stop f (bad-kind allF bad) a e) refl
+  CALL f allF e allE a allN w (inj₂ ⟨ U , ⟨ ⟨ V , ⟨ f∈ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ , ⟨ U⊆ , _ ⟩ ⟩ ⟩) with f | allF _ f∈
+  ... | code j | r with r e (all→𝕍s V (λ d d∈ → allE d (V⊆ d d∈))) a (all→𝕍s U (λ d d∈ → allN d (U⊆ d d∈)))
+  ...   | ⟨ B , ⟨ g , rB ⟩ ⟩ = prepend (λ κ → cong (λ m → call m a e κ) g ∷↠ done) rB
 
 adequate (lit B k ⦅ Nil ⦆) {d = dconst k'} 𝕋T rb G ⟨ refl , refl ⟩ =
   inj₂ ⟨ const B k , ⟨ (λ κ → refl ∷↠ done) , refl ⟩ ⟩
 
-adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {γ = γ} {d = ⦅ u₁ , u₂ ⦆} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G
-    ⟨ u₁∈ , ⟨ u₂∈ , ⟨ u₁≢ , u₂≢ ⟩ ⟩ ⟩
-    with conv (adequate L 𝕋T rL G u₁∈) u₁≢ | conv (adequate M 𝕋T rM G u₂∈) u₂≢
-... | ⟨ v₁ , ⟨ e₁ , r₁ ⟩ ⟩ | ⟨ v₂ , ⟨ e₂ , r₂ ⟩ ⟩ =
-  inj₂ ⟨ pair v₁ v₂ , ⟨ (λ κ → refl ∷↠ e₁ (pairL M γ κ) ++↠ refl ∷↠ e₂ (pairR v₁ κ) ++↠ refl ∷↠ done)
-                    , ⟨ r₁ , r₂ ⟩ ⟩ ⟩
-adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {γ = γ} {d = ω} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G (inj₁ ω∈) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate L 𝕋T rL G ω∈) (pairL M γ κ)) ⟩
-adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {γ = γ} {d = ω} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G
-    (inj₂ ⟨ ⟨ u , ⟨ u∈ , u≢ ⟩ ⟩ , inj₁ ω∈ ⟩)
-    with conv (adequate L 𝕋T rL G u∈) u≢
-... | ⟨ v₁ , ⟨ e₁ , _ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ e₁ (pairL M γ κ) ++↠ refl ∷↠ done)
-                        ⟫ err (adequate M 𝕋T rM G ω∈) (pairR v₁ κ)) ⟩
-adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {d = ω} 𝕋T rb G (inj₂ ⟨ _ , inj₂ ⟨ _ , () ⟩ ⟩)
+adequate (pair-op ⦅ L ,, M ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → ⟦ M ⟧[ T ] ρ ≫= λ Y → pairD ⟨ X , ⟨ Y , ptt ⟩ ⟩} (pairL M γ) (λ d → adequate L 𝕋T rL G) w∈
+    λ v₁ all₁ w w∈₁ → step₁ (λ κ → refl) (ℂ-bind {F = λ Y → pairD ⟨ ⌊ ⟦ L ⟧[ T ] ρ ⌋ , ⟨ Y , ptt ⟩ ⟩} (pairR v₁) (λ d → adequate M 𝕋T rM G) w∈₁
+    λ { v₂ all₂ ⦅ u₁ , u₂ ⦆ ⟨ u₁∈ , u₂∈ ⟩ → inj₂ ⟨ pair v₁ v₂ , ⟨ (λ κ → refl ∷↠ done) , ⟨ all₁ u₁ u₁∈ , all₂ u₂ u₂∈ ⟩ ⟩ ⟩ }))
 
-adequate (fst-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₁ ⟨ u₂ , d∈ ⟩)
-    with conv (adequate M 𝕋T rM G d∈) (λ ())
-... | ⟨ pair v₁ v₂ , ⟨ e , ⟨ r , _ ⟩ ⟩ ⟩ =
-  inj₂ ⟨ v₁ , ⟨ (λ κ → refl ∷↠ e (fstK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
-adequate (fst-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₁ ω∈ ⟩) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate M 𝕋T rM G ω∈) (fstK κ)) ⟩
-adequate (fst-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₂ ⟨ u , ⟨ u∈ , ⟨ u≢ , np ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate M 𝕋T rM G u∈) u≢
-... | ⟨ v , ⟨ e , r ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ e (fstK κ)) ⟫ here! (proj₁ (nonpair-stop u v r np κ))) ⟩
-
-adequate (snd-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₁ ⟨ u₁ , d∈ ⟩)
-    with conv (adequate M 𝕋T rM G d∈) (λ ())
-... | ⟨ pair v₁ v₂ , ⟨ e , ⟨ _ , r ⟩ ⟩ ⟩ =
-  inj₂ ⟨ v₂ , ⟨ (λ κ → refl ∷↠ e (sndK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
-adequate (snd-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₁ ω∈ ⟩) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate M 𝕋T rM G ω∈) (sndK κ)) ⟩
-adequate (snd-op ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₂ ⟨ u , ⟨ u∈ , ⟨ u≢ , np ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate M 𝕋T rM G u∈) u≢
-... | ⟨ v , ⟨ e , r ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ e (sndK κ)) ⟫ here! (proj₂ (nonpair-stop u v r np κ))) ⟩
-
-adequate (tuple n ⦅ args ⦆) {d = ω} 𝕋T rb G e =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ tuple-err args 𝕋T rb G e [] κ) ⟩
-adequate (tuple zero ⦅ Nil ⦆) {d = ⟨⟩} 𝕋T rb G tt = inj₂ ⟨ tup [] , ⟨ (λ κ → refl ∷↠ done) , refl ⟩ ⟩
-adequate (tuple (suc n) ⦅ args ⦆) {γ = γ} {d = tup[ i ] d} 𝕋T rb G ⟨ refl , ⟨ d∈ , vs ⟩ ⟩
-    with adequate-args args 𝕋T rb G vs
-... | ⟨ ws , ⟨ es , ⟨ len , rs ⟩ ⟩ ⟩ =
-  inj₂ ⟨ tup ws
-       , ⟨ (λ κ → refl ∷↠ subst (λ us → tuple-next [] (args→list args) γ κ ↠ ret (tup us) κ)
-                                 (reverse-involutive ws) (tuple-run [] (args→list args) ws es))
-         , rs i d d∈ ⟩ ⟩
-
-adequate (get i ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₁ t∈) with conv (adequate M 𝕋T rM G t∈) (λ ())
-... | ⟨ tup vs , ⟨ e , r ⟩ ⟩ with 𝕍At-proj i _ vs r
-... | ⟨ v , ⟨ p , r' ⟩ ⟩ =
-  inj₂ ⟨ v , ⟨ (λ κ → refl ∷↠ e (getK i κ) ++↠ cong (λ m → ret? m κ) p ∷↠ done) , r' ⟩ ⟩
-adequate (get i ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₁ ω∈ ⟩) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate M 𝕋T rM G ω∈) (getK i κ)) ⟩
-adequate (get i ⦅ M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ e≢ , nt ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate M 𝕋T rM G e∈) e≢
-... | ⟨ v , ⟨ eM , r ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eM (getK i κ)) ⟫ here! (nottup-stop i e v r nt κ)) ⟩
-
-adequate (inl-op ⦅ M ,, Nil ⦆) {γ = γ} {d} 𝕋T ⟨ rM , _ ⟩ G d∈ with inlᵉ-inv d d∈
-... | inj₁ ⟨ v' , ⟨ refl , ⟨ v'∈ , v'≢ ⟩ ⟩ ⟩ with conv (adequate M 𝕋T rM G v'∈) v'≢
-...   | ⟨ v , ⟨ e , r ⟩ ⟩ = inj₂ ⟨ inl v , ⟨ (λ κ → refl ∷↠ e (inlK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
-adequate (inl-op ⦅ M ,, Nil ⦆) {γ = γ} {d} 𝕋T ⟨ rM , _ ⟩ G d∈ | inj₂ ⟨ refl , ω∈ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate M 𝕋T rM G ω∈) (inlK κ)) ⟩
-
-adequate (inr-op ⦅ M ,, Nil ⦆) {γ = γ} {d} 𝕋T ⟨ rM , _ ⟩ G d∈ with inrᵉ-inv d d∈
-... | inj₁ ⟨ v' , ⟨ refl , ⟨ v'∈ , v'≢ ⟩ ⟩ ⟩ with conv (adequate M 𝕋T rM G v'∈) v'≢
-...   | ⟨ v , ⟨ e , r ⟩ ⟩ = inj₂ ⟨ inr v , ⟨ (λ κ → refl ∷↠ e (inrK κ) ++↠ refl ∷↠ done) , r ⟩ ⟩
-adequate (inr-op ⦅ M ,, Nil ⦆) {γ = γ} {d} 𝕋T ⟨ rM , _ ⟩ G d∈ | inj₂ ⟨ refl , ω∈ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate M 𝕋T rM G ω∈) (inrK κ)) ⟩
-
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate L 𝕋T rL G (allL u (here refl))) (λ ())
-... | ⟨ inl w , ⟨ eL , _ ⟩ ⟩
-    with adequate M 𝕋T rM (𝔾-ext (u ∷ U) w G
-           (all→𝕍s (u ∷ U) (λ d' d'∈ → collectℝ eL (adequate L 𝕋T rL G (allL d' d'∈))))) w∈
-... | inj₁ ⟨ refl , eM ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ done) ⟫ eM κ) ⟩
-... | inj₂ ⟨ v , ⟨ eM , r ⟩ ⟩ =
-  inj₂ ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eM κ) , r ⟩ ⟩
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G
-    (inj₂ (inj₁ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩))
-    with conv (adequate L 𝕋T rL G (allR u (here refl))) (λ ())
-... | ⟨ inr w , ⟨ eL , _ ⟩ ⟩
-    with adequate N 𝕋T rN (𝔾-ext (u ∷ U) w G
-           (all→𝕍s (u ∷ U) (λ d' d'∈ → collectℝ eL (adequate L 𝕋T rL G (allR d' d'∈))))) w∈
-... | inj₁ ⟨ refl , eN ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ done) ⟫ eN κ) ⟩
-... | inj₂ ⟨ v , ⟨ eN , r ⟩ ⟩ =
-  inj₂ ⟨ v , ⟨ (λ κ → refl ∷↠ eL (caseK M N γ κ) ++↠ refl ∷↠ eN κ) , r ⟩ ⟩
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , _ ⟩ G (inj₂ (inj₂ ⟨ refl , inj₁ ω∈ ⟩)) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate L 𝕋T rL G ω∈) (caseK M N γ κ)) ⟩
-adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , _ ⟩ G
-    (inj₂ (inj₂ ⟨ refl , inj₂ ⟨ e , ⟨ e∈ , ⟨ e≢ , ni ⟩ ⟩ ⟩ ⟩))
-    with conv (adequate L 𝕋T rL G e∈) e≢
-... | ⟨ v , ⟨ eL , r ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (caseK M N γ κ)) ⟫ here! (notinj-stop e v r ni M N γ κ)) ⟩
-
-adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G
-    (inj₁ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate L 𝕋T rL G n∈) (λ ()) | conv (adequate M 𝕋T rM G m∈) (λ ())
-... | ⟨ _ , ⟨ eL , refl ⟩ ⟩ | ⟨ _ , ⟨ eM , refl ⟩ ⟩ =
-  inj₂ ⟨ out (δ p n m)
-       , ⟨ (λ κ → refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ eM (primR p (const Int n) κ) ++↠ refl ∷↠ done)
-         , 𝕍-out (δ p n m) ⟩ ⟩
-adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G (inj₂ ⟨ refl , inj₁ (inj₁ ω∈) ⟩) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate L 𝕋T rL G ω∈) (primL p M γ κ)) ⟩
-adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₁ (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , inj₁ ω∈ ⟩) ⟩)
-    with conv (adequate L 𝕋T rL G d∈) d≢
-... | ⟨ v , ⟨ eL , _ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ done)
-                        ⟫ err (adequate M 𝕋T rM G ω∈) (primR p v κ)) ⟩
-adequate (prim p ⦅ L ,, M ,, Nil ⦆) 𝕋T rb G (inj₂ ⟨ refl , inj₁ (inj₂ ⟨ _ , inj₂ ⟨ _ , () ⟩ ⟩) ⟩)
-adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₂ (inj₁ ⟨ ⟨ d , ⟨ d∈ , ⟨ d≢ , ni ⟩ ⟩ ⟩ , ⟨ e , ⟨ e∈ , e≢ ⟩ ⟩ ⟩) ⟩)
-    with conv (adequate L 𝕋T rL G d∈) d≢ | conv (adequate M 𝕋T rM G e∈) e≢
-... | ⟨ v , ⟨ eL , r ⟩ ⟩ | ⟨ w , ⟨ eM , _ ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ eM (primR p v κ))
-                 ⟫ here! (cong (λ m → ret? m κ) (cong (map out) (δ?-nothing₁ p (obs v) (obs w) (notint-obs d v r ni))))) ⟩
-adequate (prim p ⦅ L ,, M ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G
-    (inj₂ ⟨ refl , inj₂ (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , ⟨ e , ⟨ e∈ , ⟨ e≢ , ni ⟩ ⟩ ⟩ ⟩) ⟩)
-    with conv (adequate L 𝕋T rL G d∈) d≢ | conv (adequate M 𝕋T rM G e∈) e≢
-... | ⟨ v , ⟨ eL , _ ⟩ ⟩ | ⟨ w , ⟨ eM , r ⟩ ⟩ =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ eL (primL p M γ κ) ++↠ refl ∷↠ eM (primR p v κ))
-                 ⟫ here! (cong (λ m → ret? m κ) (cong (map out) (δ?-nothing₂ p (obs v) (obs w) (notint-obs e w r ni))))) ⟩
-
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) 𝕋T rb G (inj₁ ⟨ [] , ⟨ _ , ⟨ _ , ⟨ ne , _ ⟩ ⟩ ⟩ ⟩) = ⊥-elim (ne refl)
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , ⟨ rN , _ ⟩ ⟩ G
-    (inj₁ ⟨ u ∷ U , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , ⟨ _ , noe ⟩ ⟩ ⟩ ⟩)
-    with conv (adequate M 𝕋T rM G (V⊆ u (here refl))) (head≢ω noe)
-... | ⟨ vM , ⟨ eM , _ ⟩ ⟩
-    with adequate N 𝕋T rN (𝔾-ext (u ∷ U) vM G
-           (all→𝕍s (u ∷ U) (λ d' d'∈ → collectℝ eM (adequate M 𝕋T rM G (V⊆ d' d'∈))))) w∈
-... | inj₁ ⟨ refl , eN ⟩ = inj₁ ⟨ refl , (λ κ → (refl ∷↠ eM (letK N γ κ) ++↠ refl ∷↠ done) ⟫ eN κ) ⟩
-... | inj₂ ⟨ v , ⟨ eN , r ⟩ ⟩ = inj₂ ⟨ v , ⟨ (λ κ → refl ∷↠ eM (letK N γ κ) ++↠ refl ∷↠ eN κ) , r ⟩ ⟩
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) 𝕋T rb G (inj₂ ⟨ refl , inj₁ () ⟩)
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) 𝕋T rb G (inj₂ ⟨ refl , inj₂ (inj₁ ⟨ d' , ⟨ d'∈ , ⟨ _ , nf ⟩ ⟩ ⟩) ⟩) =
-  ⊥-elim (nf (Λᵉ-fun d' d'∈))
-adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {γ = γ} 𝕋T ⟨ rM , _ ⟩ G (inj₂ ⟨ refl , inj₂ (inj₂ ⟨ _ , ω∈ ⟩) ⟩) =
-  inj₁ ⟨ refl , (λ κ → (refl ∷↠ done) ⟫ err (adequate M 𝕋T rM G ω∈) (letK N γ κ)) ⟩
-
-adequate-args {zero} Nil 𝕋T rb G vs = ⟨ [] , ⟨ [] , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
-adequate-args {suc k} (M ,, args) 𝕋T ⟨ rM , rs ⟩ G vs
-    with conv (adequate M 𝕋T rM G (proj₁ (proj₂ (vs zero)))) (proj₂ (proj₂ (vs zero)))
-       | adequate-args args 𝕋T rs G (λ j → vs (suc j))
-... | ⟨ v , ⟨ e , _ ⟩ ⟩ | ⟨ ws , ⟨ es , ⟨ len , rels ⟩ ⟩ ⟩ =
-  ⟨ v ∷ ws , ⟨ e ∷ es , ⟨ cong suc len , R ⟩ ⟩ ⟩
+adequate (fst-op ⦅ M ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , _ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked prod X (carD ⟨ X , ptt ⟩)} fstK (λ d → adequate M 𝕋T rM G) w∈ FST)
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ,, args ⟧₊[ _ ] _) j → 𝕍At j d (v ∷ ws)
-  R zero d d∈ = ⟨ len , collectℝ e (adequate M 𝕋T rM G d∈) ⟩
-  R (suc j) d d∈ = rels j d d∈
+  FST : ∀ v → (∀ d → d ∈ ⌊ ⟦ M ⟧[ T ] ρ ⌋ → 𝕍 d v) → ∀ w → w ∈ checked prod ⌊ ⟦ M ⟧[ T ] ρ ⌋ (carD ⟨ ⌊ ⟦ M ⟧[ T ] ρ ⌋ , ptt ⟩)
+    → ℂ w (λ κ → ret v (fstK κ))
+  FST v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (λ κ → proj₁ (nonpair-stop v (bad-kind all bad) κ)) refl
+  FST v all w (inj₂ ⟨ b , p∈ ⟩) with v | all _ p∈
+  ... | pair v₁ v₂ | ⟨ r , _ ⟩ = inj₂ ⟨ v₁ , ⟨ (λ κ → refl ∷↠ done) , r ⟩ ⟩
 
-tuple-err {suc k} (M ,, args) {γ = γ} 𝕋T ⟨ rM , rs ⟩ G (inj₁ ω∈) acc κ =
-  err (adequate M 𝕋T rM G ω∈) (tupK acc (args→list args) γ κ)
-tuple-err {suc k} (M ,, args) {γ = γ} 𝕋T ⟨ rM , rs ⟩ G (inj₂ ⟨ ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ , e ⟩) acc κ
-    with conv (adequate M 𝕋T rM G d∈) d≢
-... | ⟨ v , ⟨ eM , _ ⟩ ⟩ =
-  (eM (tupK acc (args→list args) γ κ) ++↠ (refl ∷↠ done))
-    ⟫ tuple-err args 𝕋T rs G e (v ∷ acc) κ
+adequate (snd-op ⦅ M ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , _ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked prod X (cdrD ⟨ X , ptt ⟩)} sndK (λ d → adequate M 𝕋T rM G) w∈ SND)
+  where
+  SND : ∀ v → (∀ d → d ∈ ⌊ ⟦ M ⟧[ T ] ρ ⌋ → 𝕍 d v) → ∀ w → w ∈ checked prod ⌊ ⟦ M ⟧[ T ] ρ ⌋ (cdrD ⟨ ⌊ ⟦ M ⟧[ T ] ρ ⌋ , ptt ⟩)
+    → ℂ w (λ κ → ret v (sndK κ))
+  SND v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (λ κ → proj₂ (nonpair-stop v (bad-kind all bad) κ)) refl
+  SND v all w (inj₂ ⟨ a , p∈ ⟩) with v | all _ p∈
+  ... | pair v₁ v₂ | ⟨ _ , r ⟩ = inj₂ ⟨ v₂ , ⟨ (λ κ → refl ∷↠ done) , r ⟩ ⟩
+
+adequate (tuple m ⦅ args ⦆) {γ = γ} 𝕋T rb G w∈ =
+  step₁ (λ κ → refl) (tuple-ℂ args 𝕋T rb G [] w∈ TUP)
+  where
+  TUP : ∀ vs Xs → length vs ≡ m → (∀ j d → d ∈ nthD Xs j → 𝕍At j d vs) → ∀ w → w ∈ 𝒯 m Xs
+    → ℂ w (λ κ → ret (tup (reverse (reverseAcc [] vs))) κ)
+  TUP vs Xs len rs w w∈ rewrite reverse-involutive vs = inj₂ ⟨ tup vs , ⟨ (λ κ → done) , T' Xs vs len rs w w∈ ⟩ ⟩
+    where
+    T' : ∀ {m} (Ys : Results (𝒫 Value) (replicate m ■)) vs → length vs ≡ m
+      → (∀ j d → d ∈ nthD Ys j → 𝕍At j d vs) → ∀ w → w ∈ 𝒯 m Ys → 𝕍 w (tup vs)
+    T' {zero} Ys [] refl rs ⟨⟩ _ = refl
+    T' {suc m} Ys vs len rs (tup[ i ] d) ⟨ refl , ⟨ d∈ , _ ⟩ ⟩ = rs i d d∈
+
+adequate (get {m} i ⦅ M ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , _ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked (tup m) X (projD i ⟨ X , ptt ⟩)} (getK i) (λ d → adequate M 𝕋T rM G) w∈ GET)
+  where
+  X = ⌊ ⟦ M ⟧[ T ] ρ ⌋
+  GET : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ w → w ∈ checked (tup m) X (projD i ⟨ X , ptt ⟩)
+    → ℂ w (λ κ → ret v (getK i κ))
+  GET v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (nottup-stop i v (bad-kind all bad)) refl
+  GET v all w (inj₂ t∈) with v | all _ t∈
+  ... | tup vs | r with 𝕍At-proj i _ vs r
+  ...   | ⟨ u , ⟨ p , r' ⟩ ⟩ = inj₂ ⟨ u , ⟨ (λ κ → cong (λ m → ret? m κ) p ∷↠ done) , r' ⟩ ⟩
+
+adequate (inl-op ⦅ M ,, Nil ⦆) {T} {n} {ρ} 𝕋T ⟨ rM , _ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → inlD ⟨ X , ptt ⟩} inlK (λ d → adequate M 𝕋T rM G) w∈
+    λ { v all (left d) d∈ → inj₂ ⟨ inl v , ⟨ (λ κ → refl ∷↠ done) , all d d∈ ⟩ ⟩ })
+
+adequate (inr-op ⦅ M ,, Nil ⦆) {T} {n} {ρ} 𝕋T ⟨ rM , _ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → inrD ⟨ X , ptt ⟩} inrK (λ d → adequate M 𝕋T rM G) w∈
+    λ { v all (right d) d∈ → inj₂ ⟨ inr v , ⟨ (λ κ → refl ∷↠ done) , all d d∈ ⟩ ⟩ })
+
+adequate (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rL , ⟨ rM , ⟨ rN , _ ⟩ ⟩ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)} (caseK M N γ) (λ d → adequate L 𝕋T rL G) w∈ CASE)
+  where
+  X = ⌊ ⟦ L ⟧[ T ] ρ ⌋
+  F₁ = λ Z → ⟦ M ⟧[ T ] (Z • ρ)
+  F₂ = λ Z → ⟦ N ⟧[ T ] (Z • ρ)
+  CASE : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ w → w ∈ checked inj X (𝒞 ⟨ X ⇂ ValPayload , ⟨ F₁ , ⟨ F₂ , ptt ⟩ ⟩ ⟩)
+    → ℂ w (λ κ → ret v (caseK M N γ κ))
+  CASE v all w (inj₁ ⟨ refl , bad ⟩) = ℂ-stop (notinj-stop v (bad-kind all bad) M N γ) refl
+  CASE v all w (inj₂ (inj₁ ⟨ u , ⟨ U , ⟨ allL , ⟨ w∈′ , _ ⟩ ⟩ ⟩ ⟩)) with 𝕍-left v (all _ (proj₁ (allL u (here refl))))
+  ... | ⟨ v' , refl ⟩ = step₁ (λ κ → refl) (adequate M 𝕋T rM (𝔾-ext (u ∷ U) v' G
+                          (all→𝕍s (u ∷ U) (λ d d∈ → all (left d) (proj₁ (allL d d∈))))) w∈′)
+  CASE v all w (inj₂ (inj₂ ⟨ u , ⟨ U , ⟨ allR , ⟨ w∈′ , _ ⟩ ⟩ ⟩ ⟩)) with 𝕍-right v (all _ (proj₁ (allR u (here refl))))
+  ... | ⟨ v' , refl ⟩ = step₁ (λ κ → refl) (adequate N 𝕋T rN (𝔾-ext (u ∷ U) v' G
+                          (all→𝕍s (u ∷ U) (λ d d∈ → all (right d) (proj₁ (allR d d∈))))) w∈′)
+
+adequate (prim p ⦅ L ,, M ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rL , ⟨ rM , _ ⟩ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → ⟦ M ⟧[ T ] ρ ≫= λ Y → K X Y} (primL p M γ) (λ d → adequate L 𝕋T rL G) w∈
+    λ v allL w w∈′ → step₁ (λ κ → refl) (ℂ-bind {F = K X} (primR p v) (λ d → adequate M 𝕋T rM G) w∈′
+      (PRIM v allL)))
+  where
+  K = λ X Y → checked (base Int) X (checked (base Int) Y (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩))
+  X = ⌊ ⟦ L ⟧[ T ] ρ ⌋
+  Y = ⌊ ⟦ M ⟧[ T ] ρ ⌋
+  PRIM : ∀ v → (∀ d → d ∈ X → 𝕍 d v) → ∀ u → (∀ d → d ∈ Y → 𝕍 d u) → ∀ w
+    → w ∈ K X Y → ℂ w (λ κ → ret u (primR p v κ))
+  PRIM v allL u allM w (inj₁ ⟨ refl , bad ⟩) =
+    ℂ-stop (λ κ → cong (λ m → ret? m κ) (cong (map out) (δ?-nothing₁ p (obs v) (obs u) (notint-obs v (bad-kind allL bad))))) refl
+  PRIM v allL u allM w (inj₂ (inj₁ ⟨ refl , bad ⟩)) =
+    ℂ-stop (λ κ → cong (λ m → ret? m κ) (cong (map out) (δ?-nothing₂ p (obs v) (obs u) (notint-obs u (bad-kind allM bad))))) refl
+  PRIM v allL u allM w (inj₂ (inj₂ ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩)) with allL _ n∈ | allM _ m∈
+  ... | refl | refl = inj₂ ⟨ out (δ p n m) , ⟨ (λ κ → refl ∷↠ done) , 𝕍-out (δ p n m) ⟩ ⟩
+
+adequate (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) {T} {n} {ρ} {γ} 𝕋T ⟨ rM , ⟨ rN , _ ⟩ ⟩ G w∈ =
+  step₁ (λ κ → refl) (ℂ-bind {F = λ X → ⋆ ⟨ Λᵐ ⟨ F , ptt ⟩ , ⟨ X , ptt ⟩ ⟩} (letK N γ) (λ d → adequate M 𝕋T rM G)
+    (proj₁ (letᵐ-unfold {⟦ M ⟧[ T ] ρ} {F}) _ w∈)
+    λ { v all w ⟨ V , ⟨ ⟨ ⟨ w∈′ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ →
+        step₁ (λ κ → refl) (adequate N 𝕋T rN (𝔾-ext V v G (all→𝕍s V (λ d d∈ → all d (V⊆ d d∈)))) w∈′) })
+  where F = λ Y → ⟦ N ⟧[ T ] (Y • ρ)
 
 {- The table of the program --------------------------------------------------------}
 
@@ -542,16 +452,13 @@ tab (N ∷ Ns) p wf k k< d d∈ | no k≢ with m≤n⇒m<n∨m≡n (≤-pred k<)
 ... | inj₂ eq = ⊥-elim (k≢ eq)
 tab (N ∷ Ns) p wf .(length Ns) k< ν d∈ | yes refl = tt
 tab (N ∷ Ns) p wf .(length Ns) k< (X ↦ ν) d∈ | yes refl = tt
-tab (N ∷ Ns) p wf .(length Ns) k< (X ↦ (Y ↦ w)) ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ | yes refl = rel
+tab (N ∷ Ns) p wf .(length Ns) k< (X ↦ (Y ↦ w)) ⟨ ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ , _ ⟩ | yes refl =
+  λ e Xe a Ya → ⟨ N , ⟨ global-⊑ p , adequate N (tab Ns (∷-⊑ p) (proj₂ wf)) (proj₁ wf) (G e Xe a Ya) w∈ ⟩ ⟩
   where
-  rel : 𝕍 (X ↦ (Y ↦ w)) (code (length Ns))
-  rel e Xe a Ya =
-    ⟨ N , ⟨ global-⊑ p , adequate N (tab Ns (∷-⊑ p) (proj₂ wf)) (proj₁ wf) G w∈ ⟩ ⟩
-    where
-    G : 𝔾 (mem Y • mem X • (λ _ → init)) (a ∷ e ∷ [])
-    G zero d d∈ = inj₂ ⟨ a , ⟨ refl , 𝕍s-∈ Y Ya d∈ ⟩ ⟩
-    G (suc zero) d d∈ = inj₂ ⟨ e , ⟨ refl , 𝕍s-∈ X Xe d∈ ⟩ ⟩
-    G (suc (suc x)) d refl = inj₁ ⟨ refl , refl ⟩
+  G : ∀ e → 𝕍s X e → ∀ a → 𝕍s Y a → 𝔾 (mem Y • mem X • (λ _ → init)) (a ∷ e ∷ [])
+  G e Xe a Ya zero d d∈ = inj₂ ⟨ a , ⟨ refl , 𝕍s-∈ Y Ya d∈ ⟩ ⟩
+  G e Xe a Ya (suc zero) d d∈ = inj₂ ⟨ e , ⟨ refl , 𝕍s-∈ X Xe d∈ ⟩ ⟩
+  G e Xe a Ya (suc (suc x)) d refl = inj₁ ⟨ refl , refl ⟩
 
 {- the empty environment: every variable is unbound -}
 𝔾-[] : 𝔾 (λ _ → init) []

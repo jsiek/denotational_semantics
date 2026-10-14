@@ -14,8 +14,9 @@
   The graph model with errors (Semantics/GraphErr/) is the graph model
   in which a program that stops with an error denotes a set that holds
   the error value ω (Framework/GraphModel/Domain.agda), while one that
-  diverges denotes the empty set; its operators propagate ω in the
-  machines' evaluation order (Framework/GraphModel/ErrorOps.agda), and
+  diverges denotes the empty set; its operators are the graph model's,
+  under an error monad that propagates ω in the machines' evaluation
+  order (Framework/GraphModel/ErrorMonad.agda), and
   the semantics of Clos5, Imp, CFG and X86 err where their machines do
   (a call of a missing definition, a frame slot out of range, an unset
   register, a value of the wrong kind).
@@ -29,7 +30,7 @@
 
   To read them: the languages (Language/), the passes (Compiler/), the
   semantics (Semantics/GraphErr/) and the domain and operators they are
-  built from (Framework/GraphModel/{Domain,OpsBase,ErrorOps}.agda); and,
+  built from (Framework/GraphModel/{Domain,OpsBase,Ops,ErrorMonad}.agda); and,
   for adequacy, the machines (Semantics/CEK/{ISWIM,Clos5,X86}.agda) and
   the observations (Semantics/Observation.agda).
 
@@ -69,7 +70,7 @@ open import Compiler.Select using (select)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import Compiler.PipelineScope using (Scoped)
 open import Compiler.EncloseScope using (Closed)
-open import Framework.GraphModel.ErrorOps using (val∈)
+open import Framework.GraphModel.ErrorMonad using (val∈)
 
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import Semantics.GraphErr.Clos2 using () renaming (⟦_⟧ to ⟦_⟧₂)

@@ -3,7 +3,7 @@
   Laws of the graph model's operators: how a let or a case commutes with
   a continuation (let-law, case-law), used by lift locals; and writes
   strict in their value (strict-≃), used by select. The counterpart, with
-  errors, is ErrorLaws.
+  errors, is in ErrorMonad.
 
 -}
 

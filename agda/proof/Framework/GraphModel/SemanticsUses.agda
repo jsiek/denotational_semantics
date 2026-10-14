@@ -13,7 +13,8 @@ open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
+open import Data.Nat.Properties using (n≮0)
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
@@ -23,7 +24,7 @@ open import Framework.abt.Sig
 module proof.Framework.GraphModel.SemanticsUses (Op : Set) (sig : Op → List Sig) where
 
 open import Framework.abt.AbstractBindingTree Op sig
-open import Framework.Syntax.Uses Op sig
+open import proof.Framework.Syntax.Uses Op sig
 open import proof.Framework.GraphModel.Semantics Op sig
 open Semantics {{...}}
 
@@ -53,3 +54,8 @@ module _ {A : Set} {{S : Semantics {A}}} where
   {- a term that uses no variables means the same in every environment -}
   ⟦⟧-closed : ∀ (M : ABT) → (∀ x → Uses x M → ⊥) → ∀ (ρ ρ′ : Env A) → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
   ⟦⟧-closed M none ρ ρ′ = ⟨ ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) , ⟦⟧-uses M (λ x u → ⊥-elim (none x u)) ⟩
+
+  {- so does a term with no free variables -}
+  ⟦⟧-closed₀ : ∀ (M : ABT) → bound M ≡ 0 → ∀ (ρ ρ′ : Env A) → ⟦ M ⟧ ρ ≃ ⟦ M ⟧ ρ′
+  ⟦⟧-closed₀ M c = ⟦⟧-closed M (λ x u → n≮0 (subst (x Data.Nat.<_) c (uses-bound x M u)))
+    where import Data.Nat

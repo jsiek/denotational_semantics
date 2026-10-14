@@ -14,7 +14,7 @@ module proof.Correctness.GraphErr.CompilerCorrect where
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
-open import Framework.GraphModel.ErrorOps using (val∈)
+open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Language.ISWIM using (AST)
 open import Compiler.EncloseScope using (Closed)
 open import Compiler.Simplify using (simplify)

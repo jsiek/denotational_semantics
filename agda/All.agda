@@ -66,8 +66,7 @@ import proof.Framework.GraphModel.SemanticsUses
 import proof.Framework.GraphModel.Ops
 import proof.Framework.GraphModel.Continuity
 import proof.Framework.GraphModel.SemanticsUtil
-import proof.Framework.GraphModel.ErrorOps
-import proof.Framework.GraphModel.ErrorContinuity
+import proof.Framework.GraphModel.ErrorMonad
 import proof.Framework.GraphModel.DomainUtilBase
 import proof.Framework.GraphModel.DomainUtil
 import proof.Framework.Smallstep
@@ -243,41 +242,41 @@ import proof.Correctness.Reduction.LiftLocalsRed
 import proof.Correctness.Reduction.CompilerX86Red
 
 {- ---------------------------------------------------------------------------
-   proof/: a pilot, the graph model with errors: a graph-model semantics
-   of ISWIM and Clos2 in which an error denotes ω, with simplify and
-   enclose proved correct in it and its adequacy for the ISWIM machine
-   (see papers/PLDI-2027/loc.md)
+   proof/: the graph model with errors, built from an error monad on
+   𝒫 Value (Framework/GraphModel/ErrorMonad.agda): the semantics of every
+   language in which an error denotes ω, every pass proved correct in it,
+   and its adequacy for the ISWIM, Clos5 and X86 machines
    --------------------------------------------------------------------------- -}
 
 import proof.Semantics.GraphErr.Prim
 import proof.Semantics.GraphErr.ISWIM
 import proof.Semantics.GraphErr.Clos2
-import proof.Semantics.GraphErr.Clos2Continuous
 import proof.Semantics.GraphErr.Clos3
 import proof.Semantics.GraphErr.Clos4
+import proof.Semantics.GraphErr.Clos5
+import Semantics.GraphErr.ImpK
+import Semantics.GraphErr.CFG
+import Semantics.GraphErr.X86
+import proof.Framework.GraphModel.Strict
+import proof.Framework.GraphModel.Laws
 import proof.Correctness.GraphErr.SimplifyCorrect
 import proof.Correctness.GraphErr.EncloseCorrect
+import proof.Correctness.GraphErr.OptimizeCorrect
 import proof.Correctness.GraphErr.ConcretizeCorrect
 import proof.Correctness.GraphErr.DelayRel
 import proof.Correctness.GraphErr.DelayApp
 import proof.Correctness.GraphErr.DelayReflect
 import proof.Correctness.GraphErr.DelayPreserve
-import proof.Adequacy.GraphErr.Soundness
-import proof.Adequacy.GraphErr.LogRel
-import proof.Adequacy.GraphErr.ISWIM
-import proof.Adequacy.GraphErr.Simplify
-import proof.Semantics.GraphErr.Clos5
-import proof.Framework.GraphModel.ErrorStrict
-import proof.Framework.GraphModel.ErrorLaws
-import proof.Framework.GraphModel.Strict
-import proof.Framework.GraphModel.Laws
-import proof.Correctness.GraphErr.OptimizeCorrect
 import proof.Correctness.GraphErr.GlobalizeCorrect
 import proof.Correctness.GraphErr.RCOCorrect
 import proof.Correctness.GraphErr.LiftLocalsCorrect
 import proof.Correctness.GraphErr.ExplicateCorrect
 import proof.Correctness.GraphErr.SelectCorrect
 import proof.Correctness.GraphErr.CompilerCorrect
+import proof.Adequacy.GraphErr.Soundness
+import proof.Adequacy.GraphErr.LogRel
+import proof.Adequacy.GraphErr.ISWIM
+import proof.Adequacy.GraphErr.Simplify
 import proof.Adequacy.GraphErr.Clos5WF
 import proof.Adequacy.GraphErr.Clos5Common
 import proof.Adequacy.GraphErr.Clos5Soundness

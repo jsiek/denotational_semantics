@@ -5,9 +5,9 @@
   (proof/Correctness/Graph/GlobalizeCorrect.agda): the pass only moves the
   code of each function into the table of global definitions, so it
   preserves denotations exactly, for every Clos4 program. The code of a
-  definition is ΛΛᵉ, as the closed function it replaces, and the table
+  definition is ΛΛᵐ, as the closed function it replaces, and the table
   only grows; a reference never points past the table, so errcode, the
-  meaning of a missing reference, plays no part. Calls are callᵉ (the
+  meaning of a missing reference, plays no part. Calls are callᵐ (the
   late check) in both languages.
 
 -}
@@ -16,7 +16,8 @@ open import Framework.Syntax.SigUtil
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.ErrorOps
+open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Semantics.GraphErr.Prim
 open import Language.Clos4
 import Language.Clos5 as L5
@@ -46,7 +47,6 @@ open import Relation.Nullary using (yes; no)
 
 module proof.Correctness.GraphErr.GlobalizeCorrect where
 
-open import proof.Framework.GraphModel.ErrorLaws using (𝒞ᵉ-RR; letᵉ-RR; ΛΛᵉ-≃)
 
 {- Environments and results that agree ----------------------------------------}
 
@@ -136,18 +136,18 @@ stab-args : ∀ n T T' {bs} (args : L5.Args bs) ρ ρ' → Agree n T T' → RB-a
 
 stab n T T' (L5.` x) ρ ρ' ag r rel = rel x
 stab n T T' (L5.fun-ref k L5.⦅ args ⦆) ρ ρ' ag k<n rel = ag k k<n
-stab n T T' (L5.app L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ callᵉ-mono (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.app L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (callᵐ-good {⊤})) (stab-args n T T' args ρ ρ' ag r rel)
 stab n T T' (L5.lit B k L5.⦅ args ⦆) ρ ρ' ag r rel = ≃-refl
-stab n T T' (L5.pair-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ pairᵉ-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.fst-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ carᵉ-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.snd-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ cdrᵉ-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.tuple x L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (𝒯ᵉ-mono x) (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.get i L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (projᵉ-mono i) (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ inlᵉ-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ inrᵉ-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = 𝒞ᵉ-RR (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = letᵉ-RR (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (primᵉ-mono p) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.pair-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (pairᵐ-good {⊤})) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.fst-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (carᵐ-good {⊤})) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.snd-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (cdrᵐ-good {⊤})) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.tuple x L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (𝒯ᵐ-good {⊤} x)) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.get i L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (projᵐ-good {⊤} i)) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (inlᵐ-good {⊤})) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (inrᵐ-good {⊤})) (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = 𝒞ᵐ-RR (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = letᵐ-RR (stab-args n T T' args ρ ρ' ag r rel)
+stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (mono (primᵐ-good {⊤} p)) (stab-args n T T' args ρ ρ' ag r rel)
 
 stab-arg n T T' (L5.ast M) ρ ρ' ag r rel = lift (stab n T T' M ρ ρ' ag r rel)
 stab-arg n T T' (L5.bind a) ρ ρ' ag r rel =
@@ -212,19 +212,19 @@ glob-sem-args : ∀ {bs} (args : Args bs) ds ρ ρ' → EnvRel ρ ρ'
 glob-sem (` x) ds ρ ρ' rel = rel x
 glob-sem (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds ρ ρ' rel
   rewrite table-top (proj₁ (glob N ds)) (proj₂ (glob N ds)) =
-  ΛΛᵉ-≃ (λ X Y → glob-sem N ds (Y • X • (λ _ → init₅)) (Y • X • (λ _ → init₅)) (λ x → ≃-refl))
-glob-sem (app ⦅ args ⦆) ds ρ ρ' rel = mono-≃ callᵉ-mono (glob-sem-args args ds ρ ρ' rel)
+  ΛΛᵐ-≃ (λ X Y → glob-sem N ds (Y • X • (λ _ → init₅)) (Y • X • (λ _ → init₅)) (λ x → ≃-refl))
+glob-sem (app ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (callᵐ-good {⊤})) (glob-sem-args args ds ρ ρ' rel)
 glob-sem (lit B k ⦅ args ⦆) ds ρ ρ' rel = ≃-refl
-glob-sem (pair-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ pairᵉ-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (fst-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ carᵉ-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (snd-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ cdrᵉ-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (tuple n ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (𝒯ᵉ-mono n) (glob-sem-args args ds ρ ρ' rel)
-glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (projᵉ-mono i) (glob-sem-args args ds ρ ρ' rel)
-glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ inlᵉ-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ inrᵉ-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = 𝒞ᵉ-RR (glob-sem-args args ds ρ ρ' rel)
-glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = letᵉ-RR (glob-sem-args args ds ρ ρ' rel)
-glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (primᵉ-mono p) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (pair-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (pairᵐ-good {⊤})) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (fst-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (carᵐ-good {⊤})) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (snd-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (cdrᵐ-good {⊤})) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (tuple n ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (𝒯ᵐ-good {⊤} n)) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (projᵐ-good {⊤} i)) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (inlᵐ-good {⊤})) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (inrᵐ-good {⊤})) (glob-sem-args args ds ρ ρ' rel)
+glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = 𝒞ᵐ-RR (glob-sem-args args ds ρ ρ' rel)
+glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = letᵐ-RR (glob-sem-args args ds ρ ρ' rel)
+glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (mono (primᵐ-good {⊤} p)) (glob-sem-args args ds ρ ρ' rel)
 
 glob-sem-arg (ast M) ds ρ ρ' rel = lift (glob-sem M ds ρ ρ' rel)
 glob-sem-arg (bind a) ds ρ ρ' rel =

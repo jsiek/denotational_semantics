@@ -20,11 +20,12 @@ open import Language.Clos5 using (AST; global)
 module proof.Adequacy.GraphErr.Clos5Common (ds : List AST) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ν)
-open import proof.Framework.GraphModel.ErrorOps
-  using (errcode; Clean; Λᵉ-clean; callᵉ-mono; pairᵉ-mono; carᵉ-mono; cdrᵉ-mono; 𝒯ᵉ-mono;
-         projᵉ-mono; inlᵉ-mono; inrᵉ-mono; 𝒞ᵉ-mono; letᵉ-mono)
-open import proof.Semantics.GraphErr.Prim using (primᵉ-mono)
+open import proof.Framework.GraphModel.Domain using (Value; ν; _↦_)
+open import proof.Framework.GraphModel.ErrorMonad
+  using (errcode; Clean; ΛΛᵐ-val; ΛΛᵐ-fun; ΛΛᵐ; kind; Kind; fun; callᵐ-good; pairᵐ-good; carᵐ-good; cdrᵐ-good; 𝒯ᵐ-good; projᵐ-good;
+         inlᵐ-good; inrᵐ-good; 𝒞ᵐ-good; letᵐ-good)
+open import proof.Framework.GraphModel.ContinuityBase using (mono)
+open import proof.Semantics.GraphErr.Prim using (primᵐ-good)
 open import Language.Clos5 hiding (AST; global)
 open import Semantics.GraphErr.Clos5 using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; table; code; init)
 open import proof.Framework.GraphModel.DOpSig using (result-rel-pres; results-rel-pres)
@@ -41,7 +42,7 @@ open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_; z≤n; s≤s)
 open import Data.Nat.Properties using (n<1+n; ≤-pred; m≤n⇒m<n∨m≡n; <-≤-trans; <-irrefl; ≤-trans; n≤1+n; m≤n+m)
 open import Data.Product using (Σ-syntax; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (tt)
+open import Data.Unit using (tt; ⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; subst)
@@ -109,16 +110,22 @@ global-nothing k eq =
 
 {- every entry is a function without ω -}
 table-ν : ∀ (Ns : List AST) k → ν ∈ table Ns k
-table-ν [] k = tt
+table-ν [] k = ⟨ tt , tt ⟩
 table-ν (N ∷ Ns) k with k ≟ length Ns
-... | yes _ = tt
+... | yes _ = ⟨ tt , tt ⟩
 ... | no _ = table-ν Ns k
 
 table-clean : ∀ (Ns : List AST) k → Clean (table Ns k)
-table-clean [] k = Λᵉ-clean
+table-clean [] k = proj₁ ΛΛᵐ-val
 table-clean (N ∷ Ns) k with k ≟ length Ns
-... | yes _ = Λᵉ-clean
+... | yes _ = proj₁ ΛΛᵐ-val
 ... | no _ = table-clean Ns k
+
+table-fun : ∀ (Ns : List AST) k d → d ∈ table Ns k → kind d ≡ fun
+table-fun [] k = ΛΛᵐ-fun
+table-fun (N ∷ Ns) k with k ≟ length Ns
+... | yes _ = ΛΛᵐ-fun
+... | no _ = table-fun Ns k
 
 {- Stability ----------------------------------------------------------------------}
 
@@ -134,18 +141,18 @@ stab⊆-args : ∀ n T T' {bs} (args : Args bs) {ρ ρ' : Env Value} → Agree�
 
 stab⊆ n T T' (` x) ag r rel = rel x
 stab⊆ n T T' (fun-ref k ⦅ args ⦆) ag k<n rel = ag k k<n
-stab⊆ n T T' (app ⦅ args ⦆) ag r rel = lower (callᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (app ⦅ args ⦆) ag r rel = lower (mono (callᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
 stab⊆ n T T' (lit B k ⦅ args ⦆) ag r rel d d∈ = d∈
-stab⊆ n T T' (pair-op ⦅ args ⦆) ag r rel = lower (pairᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (fst-op ⦅ args ⦆) ag r rel = lower (carᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (snd-op ⦅ args ⦆) ag r rel = lower (cdrᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (tuple m ⦅ args ⦆) ag r rel = lower (𝒯ᵉ-mono m _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (get i ⦅ args ⦆) ag r rel = lower (projᵉ-mono i _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (inl-op ⦅ args ⦆) ag r rel = lower (inlᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (inr-op ⦅ args ⦆) ag r rel = lower (inrᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (case-op ⦅ args ⦆) ag r rel = lower (𝒞ᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (let-op ⦅ args ⦆) ag r rel = lower (letᵉ-mono _ _ (stab⊆-args n T T' args ag r rel))
-stab⊆ n T T' (prim p ⦅ args ⦆) ag r rel = lower (primᵉ-mono p _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (pair-op ⦅ args ⦆) ag r rel = lower (mono (pairᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (fst-op ⦅ args ⦆) ag r rel = lower (mono (carᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (snd-op ⦅ args ⦆) ag r rel = lower (mono (cdrᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (tuple m ⦅ args ⦆) ag r rel = lower (mono (𝒯ᵐ-good {⊤} m) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (get i ⦅ args ⦆) ag r rel = lower (mono (projᵐ-good {⊤} i) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (inl-op ⦅ args ⦆) ag r rel = lower (mono (inlᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (inr-op ⦅ args ⦆) ag r rel = lower (mono (inrᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (case-op ⦅ args ⦆) ag r rel = lower (mono (𝒞ᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (let-op ⦅ args ⦆) ag r rel = lower (mono (letᵐ-good {⊤}) _ _ (stab⊆-args n T T' args ag r rel))
+stab⊆ n T T' (prim p ⦅ args ⦆) ag r rel = lower (mono (primᵐ-good {⊤} p) _ _ (stab⊆-args n T T' args ag r rel))
 
 stab⊆-arg n T T' (ast M) ag r rel = lift (stab⊆ n T T' M ag r rel)
 stab⊆-arg n T T' (bind a) ag r rel = λ X X' X⊆ → stab⊆-arg n T T' a ag r (•-~ _⊆_ rel X⊆)

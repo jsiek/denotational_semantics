@@ -17,7 +17,7 @@ module proof.Adequacy.GraphErr.EndToEnd where
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω; ρ₀) renaming (const to dconst)
-open import Framework.GraphModel.ErrorOps using (val∈)
+open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Language.ISWIM using (AST)
 open import Semantics.Observation using (Obs; o-const; o-error; Converges; _⇔_)
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)

@@ -90,7 +90,7 @@ blocks-at (c ∷ bs) l e with l ≟ length bs
 blocks-at (c ∷ bs) l refl | yes _ = refl
 ... | no _ = blocks-at bs l e
 
-{- a missing block errs -}
+{- a missing block Errs -}
 blocks-none : ∀ {T n} bs l → block-at bs l ≡ nothing → ∀ σ ρ φ → blocks T n bs l σ ρ φ ≡ init
 blocks-none [] l e σ ρ φ = refl
 blocks-none (c ∷ bs) l e with l ≟ length bs
@@ -124,9 +124,9 @@ table-at xs b Ns = trans (table-agree xs (b ∷ Ns) (length Ns) (n<1+n _)) top
 
 {- every entry of a table is a function -}
 ν-table : ∀ (Ns : List Body) k → ν ∈ table Ns k
-ν-table [] k = tt
+ν-table [] k = tt , tt
 ν-table (N ∷ Ns) k with k ≟ length Ns
-... | yes _ = tt
+... | yes _ = tt , tt
 ... | no _ = ν-table Ns k
 
 DefsWF-suffix : ∀ xs {Ns} → DefsWF (xs ++ Ns) → DefsWF Ns
