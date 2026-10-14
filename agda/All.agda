@@ -328,3 +328,4 @@ import proof.Spec.Typed.Adequacy
 import Semantics.CEK.Typed.Clos5
 import Semantics.CEK.Typed.Imp
 import Semantics.CEK.Typed.CFG
+import proof.Compiler.Typed.SelectFacts
