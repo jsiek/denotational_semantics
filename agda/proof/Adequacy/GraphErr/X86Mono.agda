@@ -1,6 +1,7 @@
 {-
 
-  Lemmas about the semantics of X86ᵀ in the graph model with errors
+  For X86ᵀ adequacy (X86Soundness.agda), lemmas about the semantics of
+  X86ᵀ in the graph model with errors
   (Semantics/GraphErr/Typed/X86.agda): the meaning of a sequence is
   monotone in the meanings of the blocks it may jump to, and in the
   slots, registers and flag that its type has (Le); it does not read the
@@ -10,7 +11,7 @@
 
 -}
 
-module proof.Semantics.GraphErr.Typed.X86 where
+module proof.Adequacy.GraphErr.X86Mono where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; _•_)

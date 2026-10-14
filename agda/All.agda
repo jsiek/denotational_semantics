@@ -239,7 +239,7 @@ import proof.Semantics.GraphErr.Typed.Clos3
 import proof.Semantics.GraphErr.Typed.Clos4
 import proof.Semantics.GraphErr.Typed.Clos5
 import proof.Semantics.GraphErr.Typed.Imp
-import proof.Semantics.GraphErr.Typed.X86
+import proof.Adequacy.GraphErr.X86Mono
 
 {- ---------------------------------------------------------------------------
    proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86ᵀ
