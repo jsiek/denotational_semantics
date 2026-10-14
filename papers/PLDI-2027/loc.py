@@ -308,21 +308,26 @@ GROUPS = [
     # helpers are infrastructure.
     ('infra', 'typed pilot: decidable base types, collecting vectors',
      [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda']),
+    ('infra', 'typed pilot: semantics of intrinsically typed syntax (graph model)',
+     [W + 'GraphModel/Typed*.agda', WP + 'GraphModel/Typed*.agda']),
     ('typ', 'typed: types and languages', [L + 'Typed/*.agda']),
     ('typ', 'typed: cast insertion pass', [C + 'Typed/Cast.agda']),
     ('typ', 'typed: CC passes', [C + 'Typed/Enclose.agda', C + 'Typed/Concretize.agda',
                                  C + 'Typed/Delay.agda']),
+    ('typ', 'typed: CC: optimize pass', [C + 'Typed/Optimize.agda']),
     ('typ', 'typed: the compiler', [C + 'Typed/Pipeline.agda']),
     ('typ', 'typed CEK: semantics', [O + 'Typed/*.agda']),
     ('typ', 'typed CEK: lemmas shared by the passes', [TOC + 'Common.agda']),
     ('typ', 'typed CEK: cast insertion', [TOC + 'CastSim*.agda']),
     ('typ', 'typed CEK: CC: enclose', [TOC + 'EncloseSim.agda']),
+    ('typ', 'typed CEK: CC: optimize', [TOC + 'OptimizeSim.agda']),
     ('typ', 'typed CEK: CC: concretize', [TOC + 'ConcretizeSim.agda']),
     ('typ', 'typed CEK: CC: delay', [TOC + 'DelaySim.agda']),
     ('typ', 'typed CEK: composition', [TOC + 'CompilerSim.agda']),
     ('typ', 'typed gerr: semantics', [GE + 'Typed/*.agda', GEP + 'Typed/*.agda']),
     ('typ', 'typed gerr: cast insertion', [TGC + 'Cast*.agda']),
     ('typ', 'typed gerr: CC: enclose', [TGC + 'EncloseCorrect.agda']),
+    ('typ', 'typed gerr: CC: optimize', [TGC + 'OptimizeCorrect.agda']),
     ('typ', 'typed gerr: CC: concretize', [TGC + 'ConcretizeCorrect.agda']),
     ('typ', 'typed gerr: CC: delay', [TGC + 'Delay*.agda']),
     ('typ', 'typed gerr: composition', [TGC + 'CompilerCorrect.agda']),
@@ -446,7 +451,7 @@ def main():
         files = sorted({f for p in pats for f in glob.glob(p)
                         if '*' not in p or f not in explicit})
         if not files:
-            if side in ('ck', 'red', 'gerr', 'gadeq', 'typ'):
+            if side in ('ck', 'red', 'gerr', 'gadeq', 'typ') or name.startswith('typed pilot'):
                 continue
             sys.exit(f'no files for group {side}/{name}')
         for f in files:
@@ -580,8 +585,10 @@ def main():
           + ' | '.join(f'used by {LABELS[s]}' for s in ICOLS) + ' |')
     print('|---|---:|' + '---:|' * len(ICOLS))
     itotal = {s: 0 for s in ICOLS}
+    pilot_infra = {unit(f) for side, name, _ in GROUPS if side == 'infra' and name.startswith('typed pilot')
+                   for f in files_of.get((side, name), [])}
     for side, name, _ in GROUPS:
-        if side == 'infra':
+        if side == 'infra' and not name.startswith('typed pilot'):
             us = {unit(f) for f in files_of[(side, name)]}
             cells = []
             for s in ICOLS:
@@ -589,7 +596,7 @@ def main():
                 itotal[s] += n
                 cells.append(str(n) if n else '—')
             print(f'| {name} | {counts[(side, name)]} | ' + ' | '.join(cells) + ' |')
-    print(f'| **total** | {lines(infra)} | '
+    print(f'| **total** | {lines(infra - pilot_infra)} | '
           + ' | '.join(str(itotal[s]) for s in ICOLS) + ' |')
     print()
     print(f"Adequacy uses {lines(infra & reach['adeq'])} lines of the infrastructure, "
@@ -711,7 +718,7 @@ def main():
         print(f'Shared but used by no proof: {mods(unused)}.')
     print(f"Examples, not counted: {counts[('examples', 'examples')]} lines.")
     print()
-    typed_pilot(counts)
+    typed_pilot(counts, files_of, group_of, graph, ulines)
     print()
     errors_infra(files_of, reach, ulines)
     print()
@@ -719,11 +726,12 @@ def main():
           f"in its proof/ half; the lines are those of both.")
 
 
-def typed_pilot(counts):
+def typed_pilot(counts, files_of, group_of, graph, ulines):
     """The typed pilot against today's rows for the same segment, ISWIM to
     Clos4, in the two columns it covers: the languages and passes (shared
     by the columns), the semantics of the four languages and the proofs.
-    In each column the lower of today and typed is bold."""
+    In each column the lower of today and typed is bold.  Then the pilot's
+    infrastructure, by actual use."""
     def fl(*pats):
         return sum(code_lines(f) for p in pats for f in glob.glob(p))
     langs = [L + n + '.agda' for n in ('ISWIM', 'Clos2', 'Clos3', 'Clos4')]
@@ -731,37 +739,46 @@ def typed_pilot(counts):
     today_gerr_sem = fl(*[d + n + '.agda' for d in (GE, GEP) for n in ('Prim', 'ISWIM', 'Clos2', 'Clos3', 'Clos4')])
     c = lambda side, row: counts.get((side, row))
     t = lambda row: counts.get(('typ', row))
-    rows = [
-        ('languages ISWIM–Clos4 (shared)', fl(*langs), t('typed: types and languages'), True),
-        ('passes (shared): cast insertion', None, t('typed: cast insertion pass'), True),
-        ('passes (shared): CC: enclose, concretize, delay',
-         fl(C + 'Enclose.agda', C + 'Concretize.agda', C + 'Delay.agda'), t('typed: CC passes'), True),
-        ('passes (shared): CC: optimize', fl(C + 'Optimize.agda'), None, True),
-    ]
-    proof_rows = ['cast insertion', 'CC: enclose', 'CC: optimize', 'CC: concretize', 'CC: delay', 'composition']
     print('| typed pilot, ISWIM → Clos4 (not in the totals) | CEK machine + simulation: today '
           '| CEK machine + simulation: typed | graph model with errors: today | graph model with errors: typed |')
     print('|---|---:|---:|---:|---:|')
-    tot = {k: [0, 0, 0, 0] for k in ('all', 'noopt')}
-    def emit(name, cells, optimize=False):
+    tot = {k: [0, 0, 0, 0] for k in ('all', 'nocast')}
+    def emit(name, cells, cast=False):
         for k in tot:
-            if k == 'noopt' and optimize:
-                continue
-            tot[k] = [a + (b or 0) for a, b in zip(tot[k], cells)]
-        out = bold_min(cells[:2]) + bold_min(cells[2:])
-        print(f'| {name} | ' + ' | '.join(out) + ' |')
-    for name, today, typed, _ in rows:
-        emit(name, [today, typed, today, typed], optimize='optimize' in name)
-    emit('passes (shared): the compiler', [None, t('typed: the compiler'), None, t('typed: the compiler')])
+            if not (k == 'nocast' and cast):
+                tot[k] = [a + (b or 0) for a, b in zip(tot[k], cells)]
+        print(f'| {name} | ' + ' | '.join(bold_min(cells[:2]) + bold_min(cells[2:])) + ' |')
+    two = lambda today, typed: [today, typed, today, typed]
+    emit('languages ISWIM–Clos4 (shared)', two(fl(*langs), t('typed: types and languages')))
+    emit('passes (shared): cast insertion', two(None, t('typed: cast insertion pass')), cast=True)
+    emit('passes (shared): CC: enclose, concretize, delay',
+         two(fl(C + 'Enclose.agda', C + 'Concretize.agda', C + 'Delay.agda'), t('typed: CC passes')))
+    emit('passes (shared): CC: optimize', two(fl(C + 'Optimize.agda'), t('typed: CC: optimize pass')))
+    emit('passes (shared): the compiler', two(None, t('typed: the compiler')))
     emit('semantics of the languages', [today_cek_sem, t('typed CEK: semantics'),
                                         today_gerr_sem, t('typed gerr: semantics')])
     emit('lemmas shared by the passes', [None, t('typed CEK: lemmas shared by the passes'), None, None])
-    for r in proof_rows:
+    for r in ['cast insertion', 'CC: enclose', 'CC: optimize', 'CC: concretize', 'CC: delay', 'composition']:
         today = r not in ('cast insertion', 'composition')
         emit(r, [c('op', r) if today else None, t('typed CEK: ' + r),
-                 c('gerr', r) if today else None, t('typed gerr: ' + r)], optimize='optimize' in r)
-    print('| **total, without optimize** | ' + ' | '.join(bold_min(tot['noopt'][:2]) + bold_min(tot['noopt'][2:])) + ' |')
+                 c('gerr', r) if today else None, t('typed gerr: ' + r)], cast=(r == 'cast insertion'))
     print('| **total** | ' + ' | '.join(bold_min(tot['all'][:2]) + bold_min(tot['all'][2:])) + ' |')
+    print('| **total without cast insertion (like for like)** | '
+          + ' | '.join(bold_min(tot['nocast'][:2]) + bold_min(tot['nocast'][2:])) + ' |')
+    print()
+    # the pilot's infrastructure, by actual use in each column
+    own = {k: {u for u, (side, name) in group_of.items() if side == 'typ' and name.startswith(k)}
+           for k in ('typed CEK', 'typed gerr')}
+    shared = {u for u, (side, name) in group_of.items() if side == 'typ' and name.startswith('typed:')}
+    reach = {k: reachable(own[k] | shared, graph) for k in own}
+    print('| typed pilot: infrastructure (not in the totals) | lines | used by typed CEK | used by typed graph model with errors |')
+    print('|---|---:|---:|---:|')
+    for side, name, _ in GROUPS:
+        if side == 'infra' and name.startswith('typed pilot'):
+            us = {unit(f) for f in files_of.get((side, name), [])}
+            cells = [sum(ulines(u) for u in us if u in reach[k]) for k in ('typed CEK', 'typed gerr')]
+            print(f'| {name[len("typed pilot: "):]} | {sum(ulines(u) for u in us)} | '
+                  + ' | '.join(str(n) if n else '—' for n in cells) + ' |')
 
 
 def errors_infra(files_of, reach, ulines):
@@ -776,7 +793,7 @@ def errors_infra(files_of, reach, ulines):
     tot = [0] * 6
     for side, name, _ in GROUPS:
         if side == 'infra':
-            us = {unit(f) for f in files_of[(side, name)]}
+            us = {unit(f) for f in files_of.get((side, name), [])}
             row = [sum(ulines(u) for u in us),
                    sum(ulines(u) for u in us if u in reach['den']),
                    sum(ulines(u) for u in us if u in reach['gerr']),
