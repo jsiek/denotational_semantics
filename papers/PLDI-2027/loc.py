@@ -106,6 +106,7 @@ GEC = 'agda/proof/Correctness/GraphErr/'
 GEA = 'agda/proof/Adequacy/GraphErr/'
 TOC = 'agda/proof/Correctness/Typed/CEK/'
 TGC = 'agda/proof/Correctness/Typed/GraphErr/'
+TGG = 'agda/proof/Correctness/Typed/Graph/'
 
 # (side, group, glob patterns)
 GROUPS = [
@@ -345,6 +346,26 @@ GROUPS = [
     ('typ', 'typed: select: definitions and labels exist, frames are large enough (shared)',
      [PC + 'Typed/SelectFacts.agda']),
 
+    # the typed pipeline, phase 2, the plain graph model ('typed graph') and
+    # its adequacy ('typed graph adequacy'); simplify's proof is today's
+    ('typ', 'typed graph: semantics of the languages', [G + 'Typed/*.agda', GP + 'Typed/*.agda']),
+    ('typ', 'typed graph: cast insertion', [TGG + 'CastCorrect.agda']),
+    ('typ', 'typed graph: CC: enclose', [TGG + 'EncloseCorrect.agda']),
+    ('typ', 'typed graph: CC: optimize', [TGG + 'OptimizeCorrect.agda']),
+    ('typ', 'typed graph: CC: concretize', [TGG + 'ConcretizeCorrect.agda']),
+    ('typ', 'typed graph: CC: delay', [TGG + 'Delay*.agda']),
+    ('typ', 'typed graph: CC: globalize', [TGG + 'GlobalizeCorrect.agda']),
+    ('typ', 'typed graph: rco', [TGG + 'RCOCorrect.agda']),
+    ('typ', 'typed graph: lift locals', [TGG + 'LiftLocalsCorrect.agda']),
+    ('typ', 'typed graph: explicate control', [TGG + 'ExplicateCorrect.agda']),
+    ('typ', 'typed graph: select instructions', [TGG + 'SelectCorrect.agda']),
+    ('typ', 'typed graph: composition', [TGG + 'CompilerCorrect.agda']),
+    ('typ', 'typed graph adequacy: Clos5', [AP + 'Typed/Clos5*.agda']),
+    ('typ', 'typed graph adequacy: X86 (well-formedness of compiled programs)', [AP + 'Typed/X86*.agda']),
+    ('typ', 'typed graph adequacy: end to end', [AP + 'Typed/EndToEnd.agda']),
+    ('thm', 'typed graph: theorem statements',
+     ['agda/Theorems/Typed/Denotational.agda', 'agda/Theorems/Typed/Adequacy.agda']),
+
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
     ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
@@ -353,7 +374,8 @@ GROUPS = [
 THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simulation.agda',
             'ck': 'agda/Theorems/Interpreter.agda', 'red': 'agda/Theorems/Reduction.agda',
             'adeq': 'agda/Theorems/Adequacy.agda', 'gerr': 'agda/Theorems/GraphErrors.agda',
-            'typ': 'agda/Theorems/Typed.agda'}
+            'typ': 'agda/Theorems/Typed.agda',
+            'tden': 'agda/Theorems/Typed/Denotational.agda', 'tadeq': 'agda/Theorems/Typed/Adequacy.agda'}
 
 
 def strip_comments(s):
@@ -684,7 +706,7 @@ def main():
               + ' | '.join(str(code_lines(THEOREMS[s])) if t == s else '—' for t in ALL) + ' |')
     tot = {s: flines(sreach[s] - (thm - {THEOREMS[s]})) for s in ALL}
     # the typed pilot's surface is reported in its own section of loc.md
-    typ_surface = {f for f in surface if seen[f][0] == 'typ' or f == THEOREMS['typ']
+    typ_surface = {f for f in surface if seen[f][0] == 'typ' or f in {THEOREMS[k] for k in ('typ', 'tden', 'tadeq')}
                    or seen[f][1].startswith('typed pilot')}
     alls = surface - typ_surface
     styles = [s for s in ALL if s != 'adeq']

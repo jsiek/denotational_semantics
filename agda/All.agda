@@ -330,3 +330,8 @@ import Semantics.CEK.Typed.Clos5
 import Semantics.CEK.Typed.Imp
 import Semantics.CEK.Typed.CFG
 import proof.Compiler.Typed.SelectFacts
+
+{- the typed pipeline, phase 2, the plain graph model and its adequacy:
+   the statements are Theorems/Typed/{Denotational,Adequacy}.agda -}
+import Theorems.Typed.Denotational
+import Theorems.Typed.Adequacy
