@@ -6,7 +6,8 @@
   proof/Compiler/GlobalizeOlder.agda).
 
   As for untyped Clos5 (Untyped/proof/Adequacy/Clos5Soundness.agda), each state
-  denotes a set of values (𝒮) that a step can only shrink (step-⊆).
+  denotes a set of values (𝒮) that a step can only shrink (step-⊆), a
+  value denoting 𝒱 v (Clos5Values.agda, shared with X86ᵀ).
   Every reference exists, so the states are interpreted with the table
   itself. A call runs definition f with the whole table, while the
   semantics gives it the table of the older ones; since it refers only
@@ -46,6 +47,7 @@ open import proof.Semantics.Graph.Typed.Clos5 using (⟦_⟧[_]; ⟦_⟧s[_]; co
 open import Semantics.CEK.Typed.Clos5
 open import Framework.Lookup using (_!_)
 open import proof.Adequacy.Clos5Common ds
+open import proof.Adequacy.Clos5Values using (module Den)
 open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
 
 open import Data.Bool using (true; false)
@@ -127,64 +129,8 @@ cT = table-con ds
 T-ν : ∀ {n} (f : Σ ∋ n) → ν ∈ T f
 T-ν f = subst (ν ∈_) (sym (table-at code′ ds f)) tt
 
-𝒱 : ∀ {A} → Val Σ A → 𝒫 Value
-𝒱v : ∀ {n} → Vec (Val Σ Any) n → List (𝒫 Value)
-𝒱 (code f) = T f
-𝒱 (pack c e) = dpair ⟨ 𝒱 c , ⟨ 𝒱 e , ptt ⟩ ⟩
-𝒱 (const {B} k) = ℬ B k ptt
-𝒱 (tup ws) = 𝒯L (𝒱v ws)
-𝒱 (inl v) = inlD ⟨ 𝒱 v , ptt ⟩
-𝒱 (inr v) = inrD ⟨ 𝒱 v , ptt ⟩
-𝒱 (dyn G v) = 𝒱 v
-𝒱v [] = []
-𝒱v (w ∷ ws) = 𝒱 w ∷ 𝒱v ws
+open Den T cT T-ν public
 
-𝒱-ne : ∀ {A} (v : Val Σ A) → nonempty (𝒱 v)
-𝒱v-ne : ∀ {n} (ws : Vec (Val Σ Any) n) → AllNE (𝒱v ws)
-len𝒱v : ∀ {n} (ws : Vec (Val Σ Any) n) → length (𝒱v ws) ≡ n
-len𝒱v [] = refl
-len𝒱v (w ∷ ws) = cong suc (len𝒱v ws)
-𝒱-ne (code f) = ⟨ ν , T-ν f ⟩
-𝒱-ne (pack c e) with 𝒱-ne c | 𝒱-ne e
-... | ⟨ a , a∈ ⟩ | ⟨ b , b∈ ⟩ = ⟨ ⦅ a , b ⦆ , ⟨ a∈ , b∈ ⟩ ⟩
-𝒱-ne (const k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
-𝒱-ne (tup []) = ⟨ ⟨⟩ , tt ⟩
-𝒱-ne (tup (w ∷ ws)) with 𝒱-ne w
-... | ⟨ d , d∈ ⟩ = ⟨ tup[ zero ] d , ⟨ ⟨ len𝒱v ws , d∈ ⟩ , ⟨ ⟨ d , d∈ ⟩ , 𝒱v-ne ws ⟩ ⟩ ⟩
-𝒱-ne (inl v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ left d , d∈ ⟩
-𝒱-ne (inr v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ right d , d∈ ⟩
-𝒱-ne (dyn G v) = 𝒱-ne v
-𝒱v-ne [] = tt
-𝒱v-ne (w ∷ ws) = ⟨ 𝒱-ne w , 𝒱v-ne ws ⟩
-
-𝒱-con : ∀ {A} (v : Val Σ A) → Con (𝒱 v)
-𝒱v-con : ∀ {n} (ws : Vec (Val Σ Any) n) → AllCon (𝒱v ws)
-𝒱-con (code f) = cT f
-𝒱-con (pack c e) = lower (pair-consis _ _ ⟨ lift (𝒱-con c) , ⟨ lift (𝒱-con e) , ptt ⟩ ⟩)
-𝒱-con (const {B} k) = lower (ℬ-consis B k ptt ptt ptt)
-𝒱-con (tup ws) = 𝒯L-con (𝒱v ws) (𝒱v-con ws)
-𝒱-con (inl v) = lower (inl-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
-𝒱-con (inr v) = lower (inr-consis _ _ ⟨ lift (𝒱-con v) , ptt ⟩)
-𝒱-con (dyn G v) = 𝒱-con v
-𝒱v-con [] = tt
-𝒱v-con (w ∷ ws) = ⟨ 𝒱-con w , 𝒱v-con ws ⟩
-
-At-lookup : ∀ {n} (i : Fin n) (ws : Vec (Val Σ Any) n) {d} → d ∈ 𝒱 (lookup ws i) → At i (𝒱v ws) d
-At-lookup zero (w ∷ ws) d∈ = ⟨ len𝒱v ws , d∈ ⟩
-At-lookup (suc i) (w ∷ ws) d∈ = At-lookup i ws d∈
-
-𝓔 : ∀ {Γ} → Env Σ Γ → E.Env Value
-𝓔 [] = λ _ → init
-𝓔 (v ∷ γ) = 𝒱 v • 𝓔 γ
-
-𝓔-ne : ∀ {Γ} (γ : Env Σ Γ) → E.nonempty-env (𝓔 γ)
-𝓔-ne [] x = ⟨ ω , refl ⟩
-𝓔-ne (v ∷ γ) zero = 𝒱-ne v
-𝓔-ne (v ∷ γ) (suc x) = 𝓔-ne γ x
-
-𝓔-lookup : ∀ {Γ A} (γ : Env Σ Γ) (x : Γ ∋ A) → 𝒱 (γ ! x) ⊆ 𝓔 γ (idx x)
-𝓔-lookup (v ∷ γ) Z = ⊆r
-𝓔-lookup (v ∷ γ) (S x) = 𝓔-lookup γ x
 
 ⟦_⟧⁺ : ∀ {Γ A} → Tm Σ Γ A → E.Env Value → 𝒫 Value
 ⟦ M ⟧⁺ = ⟦ M ⟧[ T ]
@@ -321,41 +267,6 @@ tuple-next-𝒮 vs (M ∷ Ms) γ e κ d d∈ = d∈
 𝒯L-args Ms ρ (left d) ()
 𝒯L-args Ms ρ (right d) ()
 
-{- Primitives and project ------------------------------------------------------------------}
-
-𝒯L[]-inv : ∀ d → d ∈ 𝒯L [] → d ≡ ⟨⟩
-𝒯L[]-inv ⟨⟩ _ = refl
-𝒯L[]-inv (tup[ zero ] d) ⟨ () , _ ⟩
-𝒯L[]-inv (tup[ suc i ] d) ⟨ () , _ ⟩
-𝒯L[]-inv (dconst k) ()
-𝒯L[]-inv (V ↦ w) ()
-𝒯L[]-inv ν ()
-𝒯L[]-inv ω ()
-𝒯L[]-inv ⦅ u , v ⦆ ()
-𝒯L[]-inv (left d) ()
-𝒯L[]-inv (right d) ()
-
-prim-⊆ : ∀ p n m → 𝒱 (δᵀ {Σ} p n m) ⊆ primD p ⟨ ℬ Int n ptt , ⟨ ℬ Int m ptt , ptt ⟩ ⟩
-prim-⊆ p n m d d∈ = ⟨ n , ⟨ m , ⟨ ⟨ refl , refl ⟩ , ⟨ ⟨ refl , refl ⟩ , out-≡ p d d∈ ⟩ ⟩ ⟩ ⟩
-  where
-  out-≡ : ∀ p d → d ∈ 𝒱 (δᵀ {Σ} p n m) → d ≡ dout (δ p n m)
-  out-≡ sub d d∈ = ℬ-inv d d∈
-  out-≡ eq d d∈ with does (n ≟ℤ m)
-  ... | true with inl-inv d d∈
-  ...   | ⟨ u , ⟨ refl , u∈ ⟩ ⟩ = cong left (𝒯L[]-inv u u∈)
-  out-≡ eq d d∈ | false with inr-inv d d∈
-  ...   | ⟨ u , ⟨ refl , u∈ ⟩ ⟩ = cong right (𝒯L[]-inv u u∈)
-
-{- a value of a tag's type has an element that the tag accepts -}
-acc-𝒱 : ∀ t (u : Val Σ ⟪ flat t ⟫) → Σ[ d ∈ Value ] d ∈ 𝒱 u × accepts fun₄ t d
-acc-𝒱 tfun (pack c e) with 𝒱-ne c | 𝒱-ne e
-... | ⟨ a , a∈ ⟩ | ⟨ b , b∈ ⟩ = ⟨ ⦅ a , b ⦆ , ⟨ ⟨ a∈ , b∈ ⟩ , tt ⟩ ⟩
-acc-𝒱 tsum (inl v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ left d , ⟨ d∈ , inj₁ ⟨ d , refl ⟩ ⟩ ⟩
-acc-𝒱 tsum (inr v) = let ⟨ d , d∈ ⟩ = 𝒱-ne v in ⟨ right d , ⟨ d∈ , inj₂ ⟨ d , refl ⟩ ⟩ ⟩
-acc-𝒱 tint (const k) = ⟨ dconst k , ⟨ ⟨ refl , refl ⟩ , ⟨ k , refl ⟩ ⟩ ⟩
-acc-𝒱 (ttup n i) (tup ws) =
-  let ⟨ d , d∈ ⟩ = 𝒱-ne (lookup ws i) in ⟨ tup[ i ] d , ⟨ ⟨ At-lookup i ws d∈ , 𝒱v-ne ws ⟩ , ⟨ d , refl ⟩ ⟩ ⟩
-
 {- Steps shrink the denotation of the state ---------------------------------------------------}
 
 begin-⊆ : ∀ {Γ A} (M : Tm Σ Γ A) (γ : Env Σ Γ) κ → 𝒮 (begin M γ κ) ⊆ 𝒮 (eval M γ κ)
@@ -437,16 +348,6 @@ halts (ret v (primL p M γ κ)) () ans
 halts (ret v (primR p n κ)) () ans
 halts (ret v (letK N γ κ)) () ans
 halts (ret v (injK G κ)) () ans
-
-{- the denotation of a value observed as a constant holds it -}
-𝒱-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → obs v ≡ o-const B k → dconst k ∈ 𝒱 v
-𝒱-const (dyn G v) e = 𝒱-const v e
-𝒱-const (const k) refl = ⟨ refl , refl ⟩
-𝒱-const (code f) ()
-𝒱-const (pack c e) ()
-𝒱-const (tup ws) ()
-𝒱-const (inl v) ()
-𝒱-const (inr v) ()
 
 {- what the machine stops with, from main -}
 final : ∀ {M : Tm Σ [] Any} {s o} → Star (machine (State Σ) (step ds) (eval M [] halt)) (eval M [] halt) s
