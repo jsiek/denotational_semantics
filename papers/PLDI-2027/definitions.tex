@@ -154,6 +154,18 @@
 \newcommand{\TdynV}[2]{\key{dyn}_{#1}(#2)}                % a value of type Any: v tagged with G
 \newcommand{\TcodeV}[1]{\key{code}(#1)}                   % code, as a value
 \newcommand{\Tres}[1]{\lceil #1 \rceil^{\mathsf{T}}}      % a primitive's result, typed
+% the typed pipeline: X86^T
+\newcommand{\Tst}[4]{\langle #1;\, #2;\, #3;\, #4 \rangle} % a state type: registers, frame, open closure, flag
+\newcommand{\codeA}{\key{code}\,\alpha}                   % the register type of the open closure's code
+\newcommand{\tupA}{\key{tup}\,\alpha}                     % the register type of the open closure's environment
+\newcommand{\Tup}[1]{#1{\uparrow}}                        % an operand of type <<G>> as one of type Any
+\newcommand{\Tchk}[3]{\key{chk}_{#1}\; #2, #3}            % project's check, and the move
+\newcommand{\Tentry}[1]{\mathit{entry}(#1)}
+\newcommand{\Tcalled}[1]{\mathit{called}(#1)}
+\newcommand{\Treturned}[1]{\mathit{returned}(#1)}
+\newcommand{\Twipe}[1]{\mathit{wipe}(#1)}
+\newcommand{\Tset}{\key{set}}
+\newcommand{\Tunset}{\key{unset}}
 
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
 
@@ -179,11 +191,14 @@ subdirectories). Part~\ref{part:typed} presents the typed pipeline, the main
 one: the types, the typed languages, cast insertion and the typed passes, the
 semantics of the typed languages in each style with the relations of each
 style's proofs, and the theorems; it has its own notes on where it doesn't
-match the Agda literally, at the end of its sections.
+match the Agda literally, at the end of its sections. Its target is the
+typed assembly language $\Tl{X86}$ (\texttt{agda/Language/Typed/X86.agda}),
+whose erasure is X86 (Theorem~\ref{thm:t-erase}).
 Part~\ref{part:untyped} presents the untyped pipeline that preceded it,
 preserved in \texttt{agda/Untyped}, with the definitions both share (ISWIM,
-simplify, X86, and their semantics); the contents list and the notes below
-are those of Part~\ref{part:untyped}.
+simplify, and their semantics), and its own target, the untyped X86, with
+its semantics in each style and their adequacy; the contents list and the
+notes below are those of Part~\ref{part:untyped}.
 It uses the notation of \texttt{talks/ITRS-2020} and named variables
 instead of de Bruijn indices.
 The public theorem statements are in \texttt{agda/Theorems}; they and the
@@ -509,11 +524,15 @@ The compiler of the main development:
   \xrightarrow{\pass{concretize}} \Tl{Clos3} \xrightarrow{\pass{delay}} \Tl{Clos4} \\
 \qquad \xrightarrow{\pass{globalize}} \Tl{Clos5} \xrightarrow{\pass{rco}} \Tl{Mon}
   \xrightarrow{\pass{lift}} \Tl{Imp} \xrightarrow{\pass{explicate}} \Tl{CFG}
-  \xrightarrow{\pass{select}} \mathrm{X86}
+  \xrightarrow{\pass{select}} \Tl{X86}
 \end{array}
 \]
-The source ISWIM, simplify, the target X86 and the semantics of ISWIM and X86 in each style are
-those of Part~\ref{part:untyped}, which both pipelines share.
+The source ISWIM, simplify and the semantics of ISWIM in each style are
+those of Part~\ref{part:untyped}, which both pipelines share. The target is
+the typed assembly language $\Tl{X86}$ (Section~\ref{sec:t-x86}), with the
+instructions of Part~\ref{part:untyped}'s X86: without its types, the code
+that select emits is that of select into X86 (Theorem~\ref{thm:t-erase}),
+an assurance theorem, not a pass of the compiler.
 
 
 %===============================================================================
@@ -523,7 +542,8 @@ The typed pipeline makes the dynamically typed source statically typed by
 cast insertion, after \emph{Essentials of Compilation}, ch.~9, and keeps
 every intermediate language intrinsically typed, so that a term that
 misuses a value (applies a tuple, reads a slot not yet assigned, jumps to
-a missing block) cannot be written. ISWIM itself, X86, and simplify are
+a missing block) cannot be written, down to the typed assembly language
+$\Tl{X86}$. ISWIM itself and simplify are
 those of the untyped pipeline (Part~II); the typed languages are in
 \texttt{agda/Language/Typed}. In each language, a term is indexed by its
 type; a variable, slot, definition, or label is a typed index, so every
@@ -543,8 +563,8 @@ type $\TAny$, and $\Tproject{t}$ turns it back; $\key{project}$ is the only
 operation that can fail: it stops with a trapped error, $\error$, when the
 tag is not $\Tflatof{t}$. The tags $t$ are the flat types that
 $\key{project}$ can test, those that cast insertion projects to; each is
-tested by an existing X86 instruction that errs on any other value
-(Section~\ref{sec:t-passes}). The flat type of a primitive's result is
+tested by $\key{chk}$ in $\Tl{X86}$, whose erasure is an existing X86
+instruction that errs on any other value (Section~\ref{sec:t-passes}). The flat type of a primitive's result is
 $\Tout{p}$.
 \begin{syntax}
   & B &::=& \key{Nat} \mid \key{Int} \mid \key{Bool} \\
@@ -567,7 +587,7 @@ $\Tout{p}$.
 A tuple tag $\Tttup{n}{i}$ is for a tuple of $n \geq 1$ components
 (cast insertion projects to it only for a $\prj{i}$, which needs at least
 one), and names the component $i$ that the projection reads, which is
-where X86 tests the tuple. A value of type $\TAny$ carries its flat type,
+where the X86 test, the erasure of $\key{chk}$, reads the tuple. A value of type $\TAny$ carries its flat type,
 and $\key{project}$ compares it with $\Tflatof{t}$, so flat types have
 decidable equality.
 
@@ -797,6 +817,142 @@ Here $\Delta' \sqsubseteq \Delta$ says that $\Delta'$ is a prefix of
 $\Delta$. A definition's body $b_k$ starts in the frame
 $\Tflat{\Ttup{n_k}}, \TAny$, and main's in the empty frame.
 
+\subsection{\texorpdfstring{$\Tl{X86}$}{X86-T}}\label{sec:t-x86}
+
+The target: a typed assembly language, after Morrisett, Walker, Crary and
+Glew's TAL, intrinsically typed (\texttt{agda/Language/Typed/X86.agda}).
+Its instructions are those of Part~II's X86 (Section~\ref{sec:u-x86}),
+over the values of $\Tl{Clos5}$ and the later languages, with an abstract
+heap; each is typed by the type of the machine state it starts in and
+the one it leaves. A state type $\psi = \Tst{\Theta}{\Delta}{O}{F}$ gives
+\begin{itemize}
+\item the types $\Theta$ of the registers $\rax$, $\rdi$ and $\rsi$: each
+  holds a value of a type $A$, the code ($\codeA$) or the environment
+  ($\tupA$) of the open closure, or is unset; $\emptyset$ has every
+  register unset, and $\Theta[r{:}\tau]$ sets $r$;
+\item the frame $\Delta$, the types of the slots assigned so far, as in
+  $\Tl{CFG}$, in a frame of $n$ slots fixed by the body;
+\item the open closure $O$: none ($\cdot$), or a slot $x$ of type
+  $\Tflat{\Tfun}$ of $\Delta$ (below);
+\item the flag $F$: $\Tset$ or $\Tunset$.
+\end{itemize}
+\begin{syntax}
+  & \tau &::=& A \mid \codeA \mid \tupA \\
+  & \Theta &::=& \rax{:}\tau_1^?,\ \rdi{:}\tau_2^?,\ \rsi{:}\tau_3^?
+    \qquad (\tau^? \text{ a type } \tau \text{ or unset}) \\
+  & \psi &::=& \Tst{\Theta}{\Delta}{O}{F}
+    \qquad O ::= \cdot \mid x \qquad F ::= \Tset \mid \Tunset \\[1ex]
+  & r &::=& \rax \mid \rdi \mid \rsi \\
+  & a &::=& s \mid c \mid \funref{k} \mid \%r \mid \Tup{a}
+    \qquad d \;::=\; \%r \mid s \\
+  & o &::=& \key{pair}(a_1, a_2) \mid \key{tuple}(a_1, \ldots, a_m) \mid \key{inl}(a) \mid \key{inr}(a)
+    \qquad f \;::=\; \pi_i \mid \key{payload} \\
+  & i &::=& \key{movq}\; a, d \mid \key{subq}\; a, \%r \mid \key{cmpq}\; a_2, a_1
+    \mid \key{sete}\; d \mid \key{testinl}\; a \mid \key{alloc}\; o, d \mid \key{load}\; f\; a, d \\
+  &&& \mid \key{load}\; \key{fst}\; x, \%r \mid \key{load}\; \key{snd}\; x, \%r
+    \mid \key{callq}\; a \mid \Tchk{t}{x}{d} \\
+  & \beta &::=& i; \beta \mid \key{retq} \mid \key{jmp}\; l \mid \key{je}\; l_1, l_2 \\
+  & b &::=& (n;\; \beta_0, \ldots, \beta_{j-1};\; \beta) \\
+  & P &::=& (b_0, \ldots, b_{m-1};\; b)
+\end{syntax}
+An operand is an atom of $\Tl{Mon}$ over slots (a slot, an immediate, or
+the label of a definition), a register, or an operand of a flat type
+$\Tflat{G}$ used at $\TAny$ ($\Tup{a}$, as $\key{inject}$ is a move); a
+destination is a register or a slot. The typing of the atoms is
+$\Tl{Imp}$'s, in the frame $\Delta$ of the state; a destination
+$n \vdash d : \psi \Rightarrow_\tau \psi'$ is written at type $\tau$ and
+leaves the state $\psi'$; a slot write is that of $\Tl{CFG}$, in the frame
+of $n$ slots, and closes the open closure:
+\[
+  \frac{\Sigma; \Delta \vdash a : A}{\Sigma; \Tst{\Theta}{\Delta}{O}{F} \vdash a : A}
+  \qquad
+  \frac{\Theta(r) = \tau}{\Sigma; \Tst{\Theta}{\Delta}{O}{F} \vdash \%r : \tau}
+  \qquad
+  \frac{\Sigma; \psi \vdash a : \Tflat{G}}{\Sigma; \psi \vdash \Tup{a} : \TAny}
+\]
+\[
+  n \vdash \%r : \Tst{\Theta}{\Delta}{O}{F} \Rightarrow_\tau \Tst{\Theta[r{:}\tau]}{\Delta}{O}{F}
+  \qquad
+  \frac{\Delta' \sqsubseteq \Delta \quad |\Delta'| < n}
+       {n \vdash |\Delta'| : \Tst{\Theta}{\Delta}{O}{F} \Rightarrow_A \Tst{\Theta}{\Delta', A}{\cdot}{F}}
+\]
+An object $o$ of $\key{alloc}$ has type $\Tflat{\Tfun}$ for
+$\key{pair}(a_1, a_2)$ with $a_1 : \Tcode{m}$ and $a_2 : \Tflat{\Ttup{m}}$
+(a closure), $\Tflat{\Ttup{m}}$ for a tuple of $m$ operands of type
+$\TAny$, and $\Tflat{\Tsum}$ for an injection of an operand of type
+$\TAny$; a field takes $\Tflat{\Ttup{m}}$ to $\TAny$ ($\pi_i$, $i \leq m$) or
+$\Tflat{\Tsum}$ to $\TAny$ ($\key{payload}$). An instruction is typed
+$\Sigma; n \vdash i : \psi \Rightarrow \psi'$, with $\psi = \Tst{\Theta}{\Delta}{O}{F}$
+and operands typed in $\psi$:
+\[
+\begin{array}{@{}l@{\;:\;}l@{\quad}l@{}}
+  \key{movq}\; a, d & \psi \Rightarrow \psi' & a : \tau,\ d : \psi \Rightarrow_\tau \psi' \\
+  \key{subq}\; a, \%r & \psi \Rightarrow \psi & a : \Tflat{\key{Int}},\ \Theta(r) = \Tflat{\key{Int}} \\
+  \key{cmpq}\; a_2, a_1 & \psi \Rightarrow \Tst{\Theta}{\Delta}{O}{\Tset} & a_1, a_2 : \Tflat{\key{Int}} \\
+  \key{sete}\; d & \Tst{\Theta}{\Delta}{O}{\Tset} \Rightarrow \psi' & d : \Tst{\Theta}{\Delta}{O}{\Tset} \Rightarrow_{\Tflat{\Tsum}} \psi' \\
+  \key{testinl}\; a & \psi \Rightarrow \Tst{\Theta}{\Delta}{O}{\Tset} & a : \Tflat{\Tsum} \\
+  \key{alloc}\; o, d & \psi \Rightarrow \psi' & o : A,\ d : \psi \Rightarrow_A \psi' \\
+  \key{load}\; f\; a, d & \psi \Rightarrow \psi' & f : A \to B,\ a : A,\ d : \psi \Rightarrow_B \psi' \\
+  \key{load}\; \key{fst}\; x, \%r & \psi \Rightarrow \Tst{\Twipe{\Theta}[r{:}\codeA]}{\Delta}{x}{F} & x : \Tflat{\Tfun} \in \Delta \\
+  \key{load}\; \key{snd}\; x, \%r & \Tst{\Theta}{\Delta}{x}{F} \Rightarrow \Tst{\Theta[r{:}\tupA]}{\Delta}{x}{F} & \\
+  \key{callq}\; a & \psi \Rightarrow \Treturned{\Delta} & a : \codeA,\ \Theta(\rdi) = \tupA,\ \Theta(\rsi) = \TAny \\
+  \Tchk{t}{x}{d} & \psi \Rightarrow \psi' & x : \TAny \in \Delta, \\
+  \multicolumn{2}{l}{} & d : \Tst{\Theta[\rax\ \text{unset}]}{\Delta}{O}{\Tunset} \Rightarrow_{\Tflat{\Tflatof{t}}} \psi'
+\end{array}
+\]
+where $\Treturned{\Delta} = \Tst{\rax{:}\TAny}{\Delta}{\cdot}{\Tunset}$
+(the other registers unset), and $\Twipe{\Theta}$ unsets the registers of
+type $\codeA$ or $\tupA$. A sequence ends in a jump, and is typed by the
+state it starts in and the frames $\vec{\Delta}$ of the blocks it may jump
+to, $\Sigma; n; \vec{\Delta} \vdash \beta : \psi$:
+\[
+  \frac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; \vec{\Delta} \vdash \beta : \psi'}
+       {\Sigma; n; \vec{\Delta} \vdash i; \beta : \psi}
+  \qquad
+  \frac{\Theta(\rax) = \TAny}{\Sigma; n; \vec{\Delta} \vdash \key{retq} : \Tst{\Theta}{\Delta}{O}{F}}
+  \qquad
+  \frac{\Delta_l = \Delta}{\Sigma; n; \vec{\Delta} \vdash \key{jmp}\; l : \Tst{\Theta}{\Delta}{O}{F}}
+\]
+\[
+  \frac{\Delta_{l_1} = \Delta_{l_2} = \Delta}{\Sigma; n; \vec{\Delta} \vdash \key{je}\; l_1, l_2 : \Tst{\Theta}{\Delta}{O}{\Tset}}
+  \qquad
+  \frac{\Sigma; n; \Delta_0, \ldots, \Delta_{l-1} \vdash \beta_l : \Tentry{\Delta_l}\ (l < j) \quad
+        \Sigma; n; \vec{\Delta} \vdash \beta : \psi}
+       {\Sigma \vdash (n;\; \beta_0, \ldots, \beta_{j-1};\; \beta) : \psi}
+\]
+A block starts with its frame, no register and no flag,
+$\Tentry{\Delta} = \Tst{\emptyset}{\Delta}{\cdot}{\Tunset}$; so, as in $\Tl{CFG}$,
+the blocks are acyclic and a label is a typed index. A definition $b_k$
+of a closure with an environment of $n_k$ values starts in
+$\Tcalled{n_k} = \Tst{\rdi{:}\Tflat{\Ttup{n_k}},\ \rsi{:}\TAny}{\emptyset}{\cdot}{\Tunset}$,
+with its environment in $\rdi$ and its argument in $\rsi$, and main in
+$\Tentry{\emptyset}$. So a jump to a missing block, a read of an unset
+register, of a slot not assigned or of the flag when it is not set, and a
+write of a slot beyond the frame cannot be written.
+
+\paragraph{The open closure.} The type $\Tflat{\Tfun}$ of a closure hides
+the length of its environment ($\exists \alpha.\, \Tcode{\alpha} \times
+\Tflat{\Ttup{\alpha}}$, Section~\ref{sec:t-langs}), and a call needs the
+code and the environment of the \emph{same} closure. $\key{load}\;
+\key{fst}\; x, \%r$ opens the closure in slot $x$: $r$ gets the type
+$\codeA$ of its code, $\alpha$ standing for the length of its environment,
+and the state records that $x$ is open. $\key{load}\; \key{snd}\; x, \%r$,
+only of the open closure $x$, gives $r$ the type $\tupA$ of its
+environment. $\key{callq}\; a$ needs $a : \codeA$, $\rdi : \tupA$ and
+$\rsi : \TAny$, as code of type $\Tcode{\alpha}$ expects. Opening a closure
+forgets the registers of type $\codeA$ or $\tupA$ of an earlier one
+($\Twipe{\Theta}$), and a call or the write of a slot (which may overwrite
+$x$, or forget it) closes the open closure, so $\alpha$ always means the
+length of one closure's environment.
+
+\paragraph{The only check} is project's: $\Tchk{t}{x}{d}$ moves slot $x$
+of type $\TAny$ to $d$ at the flat type $\Tflat{\Tflatof{t}}$, and is the
+trapped error when $x$ holds a value of another kind. It is a
+pseudo-instruction for the X86 test of $t$ and the move, which clobber
+$\rax$ or the flag ($\Tcheck{t}$, Section~\ref{sec:t-select}); so it
+leaves $\rax$ unset and the flag unset. Every other instruction, on
+operands of the types it needs, cannot fail.
+
 %===============================================================================
 \section{Compilation}\label{sec:t-passes}
 
@@ -995,62 +1151,99 @@ Unlike the untyped pass, a body carries no frame size. A $\key{case}$
 in $\Tl{Imp}$ writes the next slot of its frame, so the $\key{case}$ tail
 it becomes writes slot $|\Delta|$ (its $\Delta'$ is all of $\Delta$).
 
-\subsection{Select Instructions (\texorpdfstring{$\Tl{CFG}$}{CFG-T} \texorpdfstring{$\to$}{->} X86)}
+\subsection{Select Instructions (\texorpdfstring{$\Tl{CFG}$}{CFG-T} \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{X86}$}{X86-T})}\label{sec:t-select}
 
-X86 stays untyped. A slot is the X86 variable at its level, and a reference
-to a definition and a label are their levels too, which are the numbers X86
-uses; so $\bar{s} = s$, $\bar{c} = c$, and $\overline{\funref{k}} =
-\funref{k}$. An X86 value carries its own kind, so $\key{inject}$ is a
-move; $\Tproject{t} a$ first runs $\Tcheck{t}$, an existing X86 instruction
-that errs on a value of any other kind and otherwise only clobbers
-$\rax$ or the flag. $\key{callc}$ opens the closure: its code and
-environment are the two fields of a pair. The other simple expressions
-and the tails are as in the untyped pass. With $d$ a location:
+The instructions are those of the untyped pass (Part~II), typed
+(\texttt{agda/Compiler/Select.agda}). A slot is the typed index of
+$\Tl{CFG}$, which is an $\Tl{X86}$ slot, and an atom is an $\Tl{X86}$
+operand; the frame of a body has as many slots as the deepest level its
+tails write ($\mathit{depth}$), and each slot write carries the proof
+that it is in the frame. The code of a simple expression $r$ is selected
+in continuation-passing style, $\pass{sel}(r, o, k)$: its value goes to
+$o$, $\rax$ ($\key{ret}$) or the next slot $s$ ($\key{to}\;s$, with
+$s = |\Delta'|$ for a prefix $\Delta'$ of the frame and $s < n$), and then
+$k$ runs, whatever the registers, the open closure and the flag are. So
+$k$ is typed in every state $\key{after}_o(\Theta, O, F)$ that $o$ leaves:
+\[
+  \key{after}_{\key{ret}}(\Theta, O, F) = \Tst{\Theta[\rax{:}A]}{\Delta}{O}{F}
+  \qquad
+  \key{after}_{\key{to}\;s}(\Theta, O, F) = \Tst{\Theta}{\Delta', A}{\cdot}{F}
+\]
+for $r$ of type $A$ in the frame $\Delta$; $\bar{o}$ is the destination,
+$\rax$ or $s$. An operand of type $\Tflat{\Tfun}$ or $\TAny$ is a slot $x$
+(no constant has those types), so $\key{callc}$ and project take a slot.
+\begin{align*}
+  \pass{sel}(a, o, k) &= \key{movq}\; a, \bar{o};\ k \\
+  \pass{sel}(\Tpack{a_1}{a_2}, o, k) &= \key{alloc}\; \key{pair}(a_1, a_2), \bar{o};\ k \\
+  \pass{sel}(\Tcallc{x}{a}, o, k) &= \key{load}\; \key{fst}\; x, \rax;\
+    \key{load}\; \key{snd}\; x, \rdi;\ \key{movq}\; a, \rsi; \\
+  &\qquad \key{callq}\; \rax;\ \key{movq}\; \rax, \bar{o};\ k \\
+  \pass{sel}(\tuple{a_1, \ldots, a_n}, o, k) &= \key{alloc}\; \key{tuple}(a_1, \ldots, a_n), \bar{o};\ k \\
+  \pass{sel}(\prj{i} a, o, k) &= \key{load}\; \pi_i\; a, \bar{o};\ k \\
+  \pass{sel}(\inl a, o, k) &= \key{alloc}\; \key{inl}(a), \bar{o};\ k
+    \qquad\text{and likewise for } \key{inr} \\
+  \pass{sel}(\key{sub}(a_1, a_2), o, k) &= \key{movq}\; a_1, \rax;\
+    \key{subq}\; a_2, \rax;\ \key{movq}\; \rax, \bar{o};\ k \\
+  \pass{sel}(\key{eq}(a_1, a_2), o, k) &= \key{cmpq}\; a_2, a_1;\ \key{sete}\; \bar{o};\ k \\
+  \pass{sel}(\Tinject{G} a, o, k) &= \key{movq}\; \Tup{a}, \bar{o};\ k \\
+  \pass{sel}(\Tproject{t} x, o, k) &= \Tchk{t}{x}{\bar{o}};\ k \\[1ex]
+  \pass{tail}(\Treturn{r}) &= \pass{sel}(r, \key{ret}, \key{retq}) \\
+  \pass{tail}(\assign{s}{r}{t}) &= \pass{sel}(r, \key{to}\;s, \pass{tail}(t)) \\
+  \pass{tail}(\Tgoto{l}) &= \key{jmp}\; l \\
+  \pass{tail}(\Tcase{x}{s}{l_1}{l_2}) &=
+    \key{testinl}\; x;\ \key{load}\; \key{payload}\; x, s;\ \key{je}\; l_1, l_2
+\end{align*}
+In $\key{callc}$, $\key{load}\;\key{fst}$ opens the closure $x$, and
+$\key{load}\;\key{snd}$ and the move of the argument give $\rdi$ and $\rsi$
+the types $\key{callq}$ needs; the call closes the closure, and the result
+is moved from $\rax$. With $\Delta$ the frame a tail starts in,
+\begin{align*}
+  \mathit{depth}(\Treturn{r}) = \mathit{depth}(\Tgoto{l}) &= |\Delta| \\
+  \mathit{depth}(\assign{s}{r}{t}) &= \max(|\Delta|, \mathit{depth}(t)) \\
+  \mathit{depth}(\Tcase{a}{s}{l_1}{l_2}) &= \max(|\Delta|, s + 1) \\[1ex]
+  \pass{select}((t_0, \ldots, t_{j-1};\; t)) &=
+    (n;\ \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\ \pass{tail}(t)) \\
+  \pass{select}^{+}((t_0, \ldots, t_{j-1};\; t)) &=
+    (n;\ \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\
+     \key{movq}\; \rdi, 0;\ \key{movq}\; \rsi, 1;\ \pass{tail}(t))
+\end{align*}
+for main and for a definition, with
+$n = \max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}), \mathit{depth}(t))$,
+and $\pass{select}((b_0, \ldots, b_{m-1};\; b)) = (\pass{select}^{+}(b_0),
+\ldots, \pass{select}^{+}(b_{m-1});\; \pass{select}(b))$. The prologue of a
+definition moves its environment and argument from $\rdi$ and $\rsi$ to
+slots $0$ and $1$, the frame its body starts in; since that frame has two
+slots, $n \geq 2$. The pass is total on typed programs: the types of the
+instructions, and the bounds of the frame, hold by construction.
+
+\paragraph{Erasure.} Without its types, an $\Tl{X86}$ program is an X86 program
+(\texttt{agda/Language/Typed/X86Erase.agda}): the erasure $\lfloor - \rfloor$
+drops the types, the proofs about registers and frame bounds and the
+coercion $\Tup{a}$, writes a slot as its level, and expands
+$\Tchk{t}{x}{d}$ to X86's test of $t$ on $x$ and the move,
+\[
+  \lfloor \Tchk{t}{x}{d} \rfloor = \Tcheck{t}(x);\ \key{movq}\; x, d ,
+\]
+where the test is an existing X86 instruction that errs on a value of any
+other kind and otherwise only clobbers $\rax$ or the flag:
 \begin{align*}
   \Tcheck{\Tint}(o) &= \key{movq}\; o, \rax;\ \key{subq}\; \$0, \rax &
   \Tcheck{\Tsum}(o) &= \key{testinl}\; o \\
   \Tcheck{\Tfun}(o) &= \key{load}\; \key{fst}\; o, \rax &
   \Tcheck{\Tttup{n}{i}}(o) &= \key{load}\; \pi_i\; o, \rax
 \end{align*}
-\begin{align*}
-  \pass{sel}(a, d) &= \key{movq}\; \bar{a}, d \\
-  \pass{sel}(\Tpack{a_1}{a_2}, d) &= \key{alloc}\; \key{pair}\; \bar{a}_1, \bar{a}_2, d \\
-  \pass{sel}(\Tcallc{a_1}{a_2}, d) &= \key{load}\; \key{fst}\; \bar{a}_1, \rax;\
-    \key{load}\; \key{snd}\; \bar{a}_1, \rdi;\ \key{movq}\; \bar{a}_2, \rsi; \\
-  &\qquad \key{callq}\; \rax;\ \key{movq}\; \rax, d \\
-  \pass{sel}(\tuple{a_1, \ldots, a_n}, d) &= \key{alloc}\; \key{tuple}\; \bar{a}_1, \ldots, \bar{a}_n, d \\
-  \pass{sel}(\prj{i} a, d) &= \key{load}\; \pi_i\; \bar{a}, d \\
-  \pass{sel}(\inl a, d) &= \key{alloc}\; \key{inl}\; \bar{a}, d
-    \qquad\text{and likewise for } \key{inr} \\
-  \pass{sel}(\key{sub}(a_1, a_2), d) &= \key{movq}\; \bar{a}_1, \rax;\
-    \key{subq}\; \bar{a}_2, \rax;\ \key{movq}\; \rax, d \\
-  \pass{sel}(\key{eq}(a_1, a_2), d) &= \key{cmpq}\; \bar{a}_2, \bar{a}_1;\ \key{sete}\; d \\
-  \pass{sel}(\Tinject{G} a, d) &= \key{movq}\; \bar{a}, d \\
-  \pass{sel}(\Tproject{t} a, d) &= \Tcheck{t}(\bar{a});\ \key{movq}\; \bar{a}, d \\[1ex]
-  \pass{sel}(\Treturn{r}) &= \pass{sel}(r, \rax);\ \key{retq} \\
-  \pass{sel}(\assign{s}{r}{t}) &= \pass{sel}(r, s);\ \pass{sel}(t) \\
-  \pass{sel}(\Tgoto{l}) &= \key{jmp}\; l \\
-  \pass{sel}(\Tcase{a}{s}{l_1}{l_2}) &=
-    \key{testinl}\; \bar{a};\ \key{load}\; \key{payload}\; \bar{a}, s;\ \key{je}\; l_1, l_2
-\end{align*}
-The frame of a body has as many slots as the deepest level its tails
-write: with $\Delta$ the frame a tail starts in,
-\begin{align*}
-  \mathit{depth}(\Treturn{r}) = \mathit{depth}(\Tgoto{l}) &= |\Delta| \\
-  \mathit{depth}(\assign{s}{r}{t}) &= \max(|\Delta|, \mathit{depth}(t)) \\
-  \mathit{depth}(\Tcase{a}{s}{l_1}{l_2}) &= \max(|\Delta|, s + 1) \\
-  \pass{select}((t_0, \ldots, t_{j-1};\; t)) &=
-    (\max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}), \mathit{depth}(t));\
-     \pass{sel}(t_0), \ldots, \pass{sel}(t_{j-1});\ \pass{sel}(t))
-\end{align*}
-and the start of each definition begins with the prologue
-$\key{movq}\; \rdi, 0;\ \key{movq}\; \rsi, 1$, as in the untyped pass,
-which moves its environment and argument to slots $0$ and $1$; main has
-no prologue.
+Select into untyped X86, $\pass{select}_{\mathrm{X86}}$
+(\texttt{agda/Compiler/SelectX86.agda}), is the pass of the typed pipeline
+before it ended at $\Tl{X86}$: the equations above, untyped and in direct
+style ($\pass{sel}(r, d)$ for a location $d$), with
+$\pass{sel}(\Tproject{t} a, d) = \Tcheck{t}(a);\ \key{movq}\; a, d$. It is
+not a pass of the compiler, but the reference of the erasure theorem
+(Theorem~\ref{thm:t-erase}): $\lfloor \pass{select}(P) \rfloor =
+\pass{select}_{\mathrm{X86}}(P)$.
 
 \subsection{The Compiler}
 
-The typed compiler goes from untyped ISWIM to X86; simplify stays on
+The typed compiler goes from untyped ISWIM to $\Tl{X86}$ (\texttt{agda/Compiler/Pipeline.agda}); simplify stays on
 untyped ISWIM, before cast insertion.
 \[
   \pass{compile}_4 = \pass{delay} \circ \pass{concretize}_{\emptyset}
@@ -1134,8 +1327,30 @@ $\pass{cast}$; simplify keeps programs closed
   with the blocks made and a proof that the list of blocks grew;
   $\pass{add}$ is $\triangleright$ (\texttt{bs} $\triangleright$ \texttt{t}), and a
   body is \texttt{body bs t}.
-\item \textbf{Select instructions}' $\mathit{depth}$ of a body is
-  \texttt{blocks-depth bs $\sqcup$ depth t}; the prologue is
+\item \textbf{$\Tl{X86}$}'s register types $\Theta$ are the Agda's \texttt{Regs}
+  (written $\Gamma$ there), a record of \texttt{Maybe RTy}, \texttt{nothing}
+  for unset, with \texttt{ty A}, \texttt{code$\alpha$} and \texttt{tup$\alpha$};
+  a state type is \texttt{st $\Theta$ $\Delta$ O F}, with the open closure
+  \texttt{O : Maybe ($\Delta \ni \Tflat{\Tfun}$)} and the flag a
+  \texttt{Bool}. The frame $\Delta$ is newest first, as in $\Tl{CFG}$; a slot
+  destination is \texttt{slot p lt} for $p : \Delta' \sqsubseteq \Delta$
+  (slot $|\Delta'|$) and the irrelevant proof \texttt{lt} of $|\Delta'| < n$;
+  the slots $x$ of $\key{load}\;\key{fst}$ and \texttt{chk} are memberships
+  $\Delta \ni A$, and $\key{load}\;\key{snd}$ takes its slot from the state
+  (\texttt{loadsnd r}). The equations about registers that \texttt{subq},
+  \texttt{callq} and \texttt{retq} carry, and \texttt{reg r e} of an operand, are
+  proofs, not operands. A sequence is \texttt{Seq}, a body \texttt{body n bs k}
+  (\texttt{locals}, \texttt{blocks}, \texttt{start}), and a program's definitions
+  are \texttt{All ($\lambda$ m $\to$ Body $\Sigma$ (called m)) $\Sigma$}.
+\item \textbf{Select instructions}' destinations are \texttt{Out} (\texttt{ret},
+  \texttt{to p lt}), $\bar{o}$ is \texttt{dst o}, and the continuation $k$ of
+  \texttt{sel s o k} is polymorphic in the registers, open closure and flag
+  (\texttt{$\forall$ \{$\Gamma$ O F\}}); $\pass{tail}$ and \texttt{blocks} take the
+  irrelevant proof that the depth is at most $n$. The $\mathit{depth}$ of a body
+  is \texttt{blocks-depth bs $\sqcup$ depth t}; $\pass{select}$ of main and
+  $\pass{select}^{+}$ are \texttt{main-body} and \texttt{def-body}.
+  The erasure is \texttt{erase} (\texttt{eInstr}, \ldots), whose $\Tcheck{t}$
+  is \texttt{check} of \texttt{Compiler/SelectX86.agda}; there the prologue is
   \texttt{prologue}, added by \texttt{select-defs}.
 \item \textbf{$\Tl{Mon}$} has its own syntax (\texttt{Atm}, \texttt{Exp});
   its meaning is the embedding $\Tembed{\cdot}$ into $\Tl{Clos5}$.
@@ -1163,6 +1378,11 @@ lemmas of each language ($\mathit{Ok}$ of $\Tl{Clos3}$, $\Tl{Clos4}$ and
 $\Tl{Clos5}$, consistency of a table, monotonicity of a $\Tl{CFG}$ tail in
 its frame) are in \texttt{agda/proof/Semantics/Graph/Typed/}. X86's
 semantics is that of Part~II (Section~\ref{sec:den-x86}), unchanged.
+% TODO-X86T: the target is now X86^T. Replace "X86's semantics is that of
+% Part II" by the graph-model semantics of X86^T
+% (agda/Semantics/Graph/Typed/X86.agda, being written), presented as a new
+% subsection after "CFG^T" below (registers, frame, flag, open closure,
+% callq, chk), as Section sec:t-gerr does for the graph model with errors.
 
 We write variables by name, as in Part~II; in the Agda a variable is a
 typed de~Bruijn index, and an environment $\rho : \mathbb{N} \to \SET{\V}$
@@ -1734,6 +1954,14 @@ For every $\Tl{Imp}$ program $P$,
 
 \subsubsection{Select Instructions}
 
+% TODO-X86T: this subsubsection (through Theorem thm:t-den-select and the
+% remark after it) is the old proof of select into untyped X86
+% (proof/Correctness/Graph/SelectCorrect.agda, deleted). Rewrite it for the
+% select CFG^T -> X86^T proof in the plain graph model
+% (agda/proof/Correctness/Graph/SelectCorrect.agda, being written): its
+% invariant, lemmas and the theorem [[select P]]^{X86^T} ~= [[P]]^{CFG^T},
+% as in Section sec:t-gerr-select. Also update this section's "Where it
+% doesn't match the Agda literally" item on select instructions.
 The X86 store $\hat{\sigma}$ holds the slots of the $\Tl{CFG}$ frame
 $\sigma$ of type $\Delta$, at their levels, which are the X86 variables:
 \begin{align*}
@@ -1855,6 +2083,10 @@ For every closed ISWIM program $M$,
 \end{align*}
 each from the one before it.
 \end{theorem}
+% TODO-X86T: the last line (compile-x86 into X86) is not in
+% Theorems/Denotational.agda any more; restate it for X86^T,
+% [[compile-x86(M)]]^{X86^T}, once compile-x86-correct-const/-nonempty are
+% back for the plain graph model's X86^T semantics.
 
 \paragraph{Where it doesn't match the Agda literally.}
 \begin{itemize}
@@ -1900,6 +2132,8 @@ each from the one before it.
 \item \textbf{Explicate control}'s results are \texttt{Out} records, and
   $\vec{t} \preceq \vec{t}'$ is \texttt{Ext}; the lemmas are \texttt{cps}
   and \texttt{tl} (\texttt{Good}), and $\key{asg}$ is \texttt{asg}.
+% TODO-X86T: the next item is about the old select into X86; rewrite it
+% for proof/Correctness/Graph/SelectCorrect.agda (X86^T).
 \item \textbf{Select instructions}: a destination $d$ is a \texttt{Loc}
   (\texttt{OkD}), the write of $d$ is \texttt{put}, the Project lemma is
   \texttt{guard-}$\simeq$ (with \texttt{strict}), and the start is
@@ -1933,7 +2167,9 @@ where $X^{\checkmark}$ keeps the injections of $X$ whose payload is not
 $\omega$, as in Part~II. $\Lambda^{\omega}$, $\Lambda\Lambda^{\omega}$,
 $\mathcal{T}^{\omega}$, $\key{inl}^{\omega}$, $\key{inr}^{\omega}$
 and $\key{pair}^{\omega}$, which check nothing, and $\key{errcode}$ are
-those of Part~II; so are the semantics of ISWIM and of X86, unchanged.
+those of Part~II; so is the semantics of ISWIM, unchanged. The target
+$\Tl{X86}$ has a semantics of its own, with the same operators
+(Section~\ref{sec:t-gerr-x86}).
 Variables and constants are as in Part~II, and a variable not in scope
 means $\{\omega\}$, as in $\rho_0$ (in a typed term there is none, but
 the body of a closed code is given $\rho_0$ extended with its
@@ -2054,7 +2290,7 @@ $\mathit{checked}^{\omega}_n$). An atom and a simple expression mean what
 they mean as $\Tl{Mon}$ expressions, that is, in $\Tl{Clos5}$:
 $\mathcal{A}_\sigma(a) = \SEM{\Tembed{a}}^{\Tl{5},\omega}_T\sigma$ and
 $\mathcal{S}_\sigma(r) = \SEM{\Tembed{r}}^{\Tl{5},\omega}_T\sigma$, for the
-table $T$ of the program. A slot is bound as the X86 machine writes it,
+table $T$ of the program. A slot is bound as the $\Tl{X86}$ machine writes it,
 by the application of a function to the value:
 \[
   \Tletv(D, F) = D \bind \lambda X.\, \Lambda^{\omega}(F) \app X .
@@ -2095,6 +2331,83 @@ with $T = \key{table}^{\omega}(b_0, \ldots, b_{m-1})$ built with
 $\key{code}^{\mathrm{C}}$. A label indexes a block that is there, so a jump
 needs no check.
 
+\subsection{\texorpdfstring{$\Tl{X86}$}{X86-T}}\label{sec:t-gerr-x86}
+
+The semantics of $\Tl{X86}$ (\texttt{agda/Semantics/GraphErr/Typed/X86.agda})
+is that of untyped X86 in Part~II (Section~\ref{sec:graph-errors}) with
+the typed operators, which check nothing. The frame is the environment,
+as in $\Tl{CFG}$: slot $s$ is the variable at level $s$, and writing slot
+$s$ forgets the slots after it. A sequence is in continuation-passing
+style: what runs next, $\kappa$, is a function of the frame $\sigma$, the
+registers $R$ (a set for each register) and the flag $F$ (a set),
+$\kappa(\sigma, R, F)$. An unset register and an unset flag hold
+$\{\omega\}$, as an unbound variable does; $R_\omega$ has every register
+$\{\omega\}$. The only check is $\key{chk}$'s, the project of $\Tl{Clos4}$
+on, $\key{project}^{\Tkindfour}_t$, a closure being a pair. Only
+$\key{chk}$ and $\key{callq}$ can fail or diverge, so only their results
+are written strictly ($\key{strict}^{\omega}$, $\key{put}^{\mathrm{s}}$);
+the other instructions, on operands of the types they need, always have
+a value, and a write of a register is a substitution. A write of a slot
+binds its value ($\Tletv$), as $\Tl{CFG}$'s assignment does. With
+$\mathcal{A}_\sigma$ of the table $T$ of the program, an operand, an
+object, a field and a write mean
+\begin{align*}
+  \mathcal{O}_{\sigma,R}(a) &= \mathcal{A}_\sigma(a) \ \ (a \text{ an atom}) \qquad
+  \mathcal{O}_{\sigma,R}(\%r) = R(r) \qquad
+  \mathcal{O}_{\sigma,R}(\Tup{a}) = \mathcal{O}_{\sigma,R}(a) \\
+  \mathcal{O}_{\sigma,R}(\key{pair}(a_1, a_2)) &= \key{pair}^{\omega}(\mathcal{O}_{\sigma,R}(a_1), \mathcal{O}_{\sigma,R}(a_2)) \qquad
+  \mathcal{O}_{\sigma,R}(\key{tuple}(\vec{a})) = \mathcal{T}^{\omega}(\mathcal{O}_{\sigma,R}(\vec{a})) \\
+  \mathcal{O}_{\sigma,R}(\key{inl}(a)) &= \key{inl}^{\omega}(\mathcal{O}_{\sigma,R}(a))
+    \qquad\text{and likewise for } \key{inr} \\
+  \pi_i(D) &= \key{proj}^{\mathsf{T}}_i(D) \qquad
+  \key{payload}(D) = D \bind \lambda X.\, \key{payload}(X^{\checkmark}) \\
+  \key{put}_{\%r}(D, \kappa)(\sigma, R, F) &= \kappa(\sigma, R[r := D], F) \qquad
+  \key{put}_{s}(D, \kappa)(\sigma, R, F) = \Tletv(D,\; \lambda X.\, \kappa((\Tcut{\sigma}{s}, X), R, F)) \\
+  \key{put}^{\mathrm{s}}_{\%r}(D, \kappa)(\sigma, R, F) &= \key{strict}^{\omega}(D,\; \kappa(\sigma, R[r := D], F)) \qquad
+  \key{put}^{\mathrm{s}}_{s} = \key{put}_{s}
+\end{align*}
+and, writing $\mathcal{O}$ for $\mathcal{O}_{\sigma,R}$, an instruction
+$i$ means a transformer of what runs next, $\SEM{i}\kappa$:
+\begin{align*}
+  \SEM{\key{movq}\; a, d}\kappa(\sigma, R, F) &= \key{put}_d(\mathcal{O}(a), \kappa)(\sigma, R, F) \\
+  \SEM{\key{subq}\; a, \%r}\kappa(\sigma, R, F) &= \kappa(\sigma, R[r := \key{prim}^{\mathsf{T}}_{\key{sub}}(R(r), \mathcal{O}(a))], F) \\
+  \SEM{\key{cmpq}\; a_2, a_1}\kappa(\sigma, R, F) &= \kappa(\sigma, R, \key{prim}^{\mathsf{T}}_{\key{eq}}(\mathcal{O}(a_1), \mathcal{O}(a_2))) \\
+  \SEM{\key{sete}\; d}\kappa(\sigma, R, F) &= \key{put}_d(F, \kappa)(\sigma, R, F) \\
+  \SEM{\key{testinl}\; a}\kappa(\sigma, R, F) &= \kappa(\sigma, R, \mathcal{O}(a) \bind \key{isinl}) \\
+  \SEM{\key{alloc}\; o, d}\kappa(\sigma, R, F) &= \key{put}_d(\mathcal{O}(o), \kappa)(\sigma, R, F) \\
+  \SEM{\key{load}\; f\; a, d}\kappa(\sigma, R, F) &= \key{put}_d(f(\mathcal{O}(a)), \kappa)(\sigma, R, F) \\
+  \SEM{\key{load}\; \key{fst}\; x, \%r}\kappa(\sigma, R, F) &= \kappa(\sigma, R[r := \key{car}(\sigma(x))], F) \\
+  \SEM{\key{load}\; \key{snd}\; x, \%r}\kappa(\sigma, R, F) &= \kappa(\sigma, R[r := \key{cdr}(\sigma(x))], F) \\
+  \SEM{\key{callq}\; a}\kappa(\sigma, R, F) &= \key{strict}^{\omega}(C,\; \kappa(\sigma, R_C, \{\omega\}))
+    \qquad C = (\mathcal{O}(a) \app R(\rdi)) \app R(\rsi) \\
+  \SEM{\Tchk{t}{x}{d}}\kappa(\sigma, R, F) &=
+    \key{put}^{\mathrm{s}}_d(\key{project}^{\Tkindfour}_t(\sigma(x)), \kappa)(\sigma, R[\rax := \{\omega\}], \{\omega\})
+\end{align*}
+where $R_C$ has $C$ in $\rax$ and $\{\omega\}$ in $\rdi$ and $\rsi$; the
+call is an application, as the typed call is, and a closure's code and
+environment are the $\key{car}$ and $\key{cdr}$ of its slot. A sequence
+runs under the meanings $B$ of the blocks it may jump to; $\key{testinl}$
+sets the flag to the tag of an injection, and $\key{je}$ is a
+$\key{case}$ on it:
+\begin{align*}
+  \SEM{i; \beta}_B &= \SEM{i}\,\SEM{\beta}_B \qquad
+  \SEM{\key{retq}}_B(\sigma, R, F) = R(\rax) \qquad
+  \SEM{\key{jmp}\; l}_B(\sigma, R, F) = B(l)(\sigma) \\
+  \SEM{\key{je}\; l_1, l_2}_B(\sigma, R, F) &=
+    \mathcal{C}^{\mathsf{T}}(F,\; \lambda \_.\, B(l_1)(\sigma),\; \lambda \_.\, B(l_2)(\sigma)) \\[1ex]
+  \key{blocks}_T(\beta_0, \ldots, \beta_{j-1})(l)(\sigma) &=
+    \SEM{\beta_l}^{\Tl{X86},\omega}_{T,\, \key{blocks}_T(\beta_0, \ldots, \beta_{l-1})}(\sigma, R_\omega, \{\omega\}) \\
+  \key{run}_T((n;\; \beta_0, \ldots, \beta_{j-1};\; \beta)) &= \SEM{\beta}^{\Tl{X86},\omega}_{T,\, \key{blocks}_T(\beta_0, \ldots, \beta_{j-1})} \\
+  \key{code}^{\mathrm{X}}_T(b) &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \key{run}_T(b)(\rho_0, R_{X,Y}, \{\omega\})) \\
+  \SEM{(b_0, \ldots, b_{m-1};\; b)}^{\Tl{X86},\omega} &= \key{run}_T(b)(\rho_0, R_\omega, \{\omega\})
+\end{align*}
+with $R_{X,Y}$ holding $\{\omega\}$, $X$ and $Y$ in $\rax$, $\rdi$ and
+$\rsi$, and $T = \key{table}^{\omega}(b_0, \ldots, b_{m-1})$ built with
+$\key{code}^{\mathrm{X}}$. A definition starts in the empty frame, its
+environment and argument in $\rdi$ and $\rsi$, and its prologue writes
+them to slots 0 and 1. The frame size $n$ of a body plays no part: it
+bounds the slots only in the types.
+
 %-------------------------------------------------------------------------------
 \subsection{Relations}\label{sec:t-gerr-rel}
 
@@ -2104,7 +2417,7 @@ statements in \texttt{agda/Theorems/GraphErrors.agda}, and the lemmas
 about the semantics (monotone, consistent and continuous, by induction on
 the term) in \texttt{agda/proof/Semantics/GraphErr/Typed/}. Write
 $\mathit{Val}(D)$ for ``$D$ is a set of values'': nonempty, and
-$\omega \notin D$. Every pass but delay and select preserves meanings
+$\omega \notin D$. Every pass but delay preserves meanings
 exactly ($\simeq$), and its proof is by induction on the term, as in the
 graph model, with environments that hold sets of values: the binds then
 are the monad's left unit, a $\key{let}$ is the bind of its body, binds
@@ -2469,238 +2782,148 @@ $\SEM{\pass{explicate}(P)}^{\Tl{CFG},\omega} \simeq \SEM{P}^{\Tl{Imp},\omega}$.
 
 \subsubsection{Select Instructions}\label{sec:t-gerr-select}
 
-Select is the one pass whose correctness is not an equation: X86's
-semantics (Section~\ref{sec:graph-errors}) checks the kind of every
-operand, so the code of a definition has error entries at inputs of the
-wrong kind, where the code of $\Tl{CFG}$, which checks nothing but
-project, has no entries at all. The proof
-(\texttt{SelectCorrect.agda}) goes through \emph{$\Tl{CFG}$ with checks}:
-X86 means exactly ($\simeq$) what $\Tl{CFG}$ with checks does
-(\texttt{SelectX86.agda}), and $\Tl{CFG}$ with checks is related to
-$\Tl{CFG}$ in both directions (\texttt{SelectPreserve.agda},
-\texttt{SelectReflect.agda}) by a relation (\texttt{SelectRel.agda}) that
-is the identity on errors, constants and first-order data, and so gives
-$\Same$.
-
-\paragraph{$\Tl{CFG}$ with checks} (\texttt{SelectCheck.agda}) is a
-semantics $\SEM{-}^{\mathrm{chk}}$ of the $\Tl{CFG}$ syntax whose operators
-are the checking ones of Part~II, those the selected instructions mean.
-The atoms mean what they mean in $\Tl{CFG}$, $\mathcal{A}_\sigma(a)$. With
-$\key{let}^{\omega}(D, F) = \Lambda^{\omega}(F) \app^{\omega} D$ (the write of a
-slot) and $\key{strict}^{\omega}(D, E) = D \bind \lambda \_.\, E$ (a write of
-a register or the flag), project runs the X86 test of its tag
-($\Tcheck{t}$) and then moves its operand, and a call loads the code and
-the environment of its closure:
-\begin{align*}
-  \key{test}_{\Tint}(A) &= \key{prim}^{\omega}_{\key{sub}}(A, \{0\}) &
-  \key{test}_{\Tsum}(A) &= \key{isinl}^{\omega}(A) &
-  \key{test}_{\Tfun}(A) &= \key{car}^{\omega}(A) &
-  \key{test}_{\Tttup{n}{i}}(A) &= \key{proj}^{\omega}_i(A)
-\end{align*}
-\begin{align*}
-  \mathcal{S}^{\mathrm{chk}}_\sigma(\Tproject{t} a) &= \key{strict}^{\omega}(\key{test}_t(A), A)
-    \qquad \mathcal{S}^{\mathrm{chk}}_\sigma(\Tinject{G} a) = A
-    \qquad \text{where } A = \mathcal{A}_\sigma(a) \\
-  \mathcal{S}^{\mathrm{chk}}_\sigma(\Tcallc{a_1}{a_2}) &=
-    \key{strict}^{\omega}(C, \key{strict}^{\omega}(E, \key{strict}^{\omega}(A_2,
-      \key{call}^{\omega}(C, E, A_2)))) \\
-  &\qquad \text{where } C = \key{car}^{\omega}(\mathcal{A}_\sigma(a_1)),\
-    E = \key{cdr}^{\omega}(\mathcal{A}_\sigma(a_1)),\ A_2 = \mathcal{A}_\sigma(a_2) \\
-  \mathcal{S}^{\mathrm{chk}}_\sigma(\Tpack{a_1}{a_2}) &= \key{pair}^{\omega}(\mathcal{A}_\sigma(a_1), \mathcal{A}_\sigma(a_2))
-\end{align*}
-and atoms, tuples, projections, injections and primitives by
-$\mathcal{A}_\sigma$, $\mathcal{T}^{\omega}$, $\key{proj}^{\omega}_i$,
-$\key{inl}^{\omega}$, $\key{inr}^{\omega}$ and $\key{prim}^{\omega}_p$. The
-tails are those of $\Tl{CFG}$ with $\key{let}^{\omega}$ and $\mathcal{C}^{\omega}$:
-\begin{align*}
-  \SEM{\assign{s}{r}{t}}^{\mathrm{chk}}\sigma &= \key{let}^{\omega}(\mathcal{S}^{\mathrm{chk}}_\sigma(r),\;
-    \lambda X.\, \SEM{t}^{\mathrm{chk}}(\Tcut{\sigma}{s}, X)) \\
-  \SEM{\Tcase{a}{s}{l_1}{l_2}}^{\mathrm{chk}}\sigma &=
-    \mathcal{C}^{\omega}(\mathcal{A}_\sigma(a),\;
-      \lambda X.\, B(l_1)(\Tcut{\sigma}{s}, X),\; \lambda X.\, B(l_2)(\Tcut{\sigma}{s}, X))
-\end{align*}
-with $\Treturn{r}$ and $\Tgoto{l}$ as in $\Tl{CFG}$, and the code of a
-definition binds its parameters to its first two slots, as the X86
-prologue does:
-\[
-  \key{code}^{\mathrm{chk}}_T(b) = \Lambda\Lambda^{\omega}(\lambda X\, Y.\,
-    \key{let}^{\omega}(X,\; \lambda X'.\, \key{let}^{\omega}(Y,\; \lambda Y'.\, \key{run}^{\mathrm{chk}}_T(b)(X', Y')))) .
-\]
-$\Tl{CFG}$ with checks is monotone, continuous and consistent under a
-consistent table (\texttt{SelectCheckOk.agda}).
-
-\paragraph{X86 and $\Tl{CFG}$ with checks.} As in the graph model
-(Section~\ref{sec:den-select}), with the errors. The X86 store $s$ holds
-the slots of the frame $\sigma$ at their levels, every slot is a set of
-values that never holds both an $\key{inl}$ and an $\key{inr}$, and the
-X86 $\kappa$ that runs after $d$ is written fits the $K$ of the checked
-semantics:
+Select is an equation too (\texttt{SelectCorrect.agda}): $\Tl{X86}$, like
+$\Tl{CFG}$, checks kinds only at project ($\key{chk}$), and the $\Tl{X86}$
+frame is the $\Tl{CFG}$ environment, so the code selected for a statement
+means the statement. Most instructions mean, definitionally, the operator
+of the simple expression they compute. Three things are left: a call,
+which reads the code and the environment of a closure from its slot where
+$\Tl{CFG}$ binds the closure and the argument first; a case, which
+$\key{testinl}$, the load of the payload and $\key{je}$ take apart; and the
+start of a definition, which binds its parameters to slots 0 and 1 where
+$\Tl{CFG}$ has them in its frame. A slot holds a set of values that never
+holds both an $\key{inl}$ and an $\key{inr}$:
 \begin{align*}
   \mathit{Tagged}(D) &\iff \neg\exists u\, v.\; \Left{u} \in D \land \Right{v} \in D \qquad
   \mathit{Atom}(D) \iff \mathit{Tagged}(D) \land \mathit{Val}(D) \\
-  \mathit{Inv}(s) &\iff \forall i.\; \mathit{Atom}(s(i)) \qquad
-  \mathit{Rel}_\Delta(s, \sigma) \iff \forall i < |\Delta|.\; s(i) \simeq \sigma(i) \\
-  \mathit{Fits}_i(\kappa, K, s) &\iff \forall X.\; \mathit{Atom}(X) \implies
-    \forall \rho\, \varphi.\; \kappa(s[i \mapsto X], \rho, \varphi) \simeq K(X) \\
-  \mathit{Fits}_{\%g}(\kappa, K, s) &\iff \forall s'\, \rho\, \varphi.\; \kappa(s', \rho, \varphi) \simeq \rho(\%g) \\
-  \key{after}_i(K)(D) &= \key{let}^{\omega}(D, K) \qquad
-  \key{after}_{\%g}(K)(D) = D
+  \mathit{Inv}_\Delta(\sigma) &\iff \forall x : A \in \Delta.\; \mathit{Atom}(\sigma(x))
 \end{align*}
-Fix tables $T$ (of X86) and $T'$ (of $\Tl{CFG}$ with checks) with
-$T(k) \simeq T'(k)$ and $\mathit{Atom}(T(k))$ for every $k$, and the frame
-size $n$.
+Every slot is written by $\Tletv$, which binds a finite, consistent set of
+values, so $\mathit{Inv}$ holds of every frame a block or a definition
+runs in. Fix tables $T$ (of $\Tl{X86}$) and $T'$ (of $\Tl{CFG}$) with
+$T(k) \simeq T'(k)$ for every $k$, and the blocks $B$ that a sequence may
+jump to. What runs after the value of $r$ is in $o$ means $K$ of it:
+\begin{align*}
+  \key{then}_{\key{ret}}(K, D) &= D \qquad
+  \key{then}_{\key{to}\;s}(K, D) = \Tletv(D, K) \\
+  \mathit{Fits}_{\key{ret}}(k, K, \sigma) &\iff \forall \sigma'\, R\, F.\;
+    \SEM{k}_B(\sigma', R, F) \simeq R(\rax) \\
+  \mathit{Fits}_{\key{to}\;s}(k, K, \sigma) &\iff \forall X.\; \mathit{Atom}(X) \implies
+    \forall R\, F.\; \SEM{k}_B((\Tcut{\sigma}{s}, X), R, F) \simeq K(X)
+\end{align*}
+for $k$ at any registers, open closure and flag.
+
+\begin{lemma}[Call]\label{lem:t-gerr-callc}
+If $\mathit{Val}(P)$ and $\mathit{Val}(A)$, then
+$P \bind \lambda P'.\, A \bind \lambda X.\, H(P', X) \simeq H(P, A)$, where
+$H(P, X) = (\key{car}(P) \app \key{cdr}(P)) \app X$.
+\end{lemma}
+The left is $\mathcal{S}_\sigma(\Tcallc{x}{y})$ of $\Tl{CFG}$ (the operands
+of a call are slots), the right what $\key{load}\;\key{fst}$,
+$\key{load}\;\key{snd}$, the move to $\rsi$ and $\key{callq}$ compute; a bind
+of a set of values is its left unit. $\key{callq}$ and $\key{chk}$ write
+their results strictly, and a strict write before $\key{then}_o$ changes
+nothing: $\key{strict}^{\omega}(C, \key{then}_o(K, C)) \simeq \key{then}_o(K, C)$,
+since $\Tletv$ is itself a bind of $C$.
+
 \begin{lemma}[Select a Simple Expression]\label{lem:t-gerr-sel}
-If $d$ is a register or a slot $i < n$, $\mathit{Fits}_d(\kappa, K, s)$,
-$|\Delta| \leq n$, $\mathit{Rel}_\Delta(s, \sigma)$ and $\mathit{Inv}(s)$, then
+If $\mathit{Fits}_o(k, K, \sigma)$ and $\mathit{Inv}_\Delta(\sigma)$, then for
+every $R$ and $F$
 \[
-  \SEM{\pass{sel}(r, d)}^{\mathrm{X86}}_{T,n}\kappa\,s\,\rho\,\varphi
-  \simeq \key{after}_d(K)(\mathcal{S}^{\mathrm{chk}}_\sigma(r)) .
+  \SEM{\pass{sel}(r, o, k)}_{T,B}(\sigma, R, F) \simeq \key{then}_o(K, \mathcal{S}_\sigma(r)) ,
 \]
-The writes of registers before the last write are
-$\key{strict}^{\omega}$, as in $\mathcal{S}^{\mathrm{chk}}$; one of an atom,
-a set of values, changes nothing.
+with $\mathcal{S}$ that of $T$; and $\mathcal{S}_\sigma(r)$ of $T$ is
+$\mathcal{S}_\sigma(r)$ of $T'$.
 \end{lemma}
+
 \begin{lemma}[Case]\label{lem:t-gerr-case-core}
-If $\mathit{Tagged}(A)$, then
+If $\mathit{Atom}(A)$, then
 \[
-  \key{strict}^{\omega}(I,\; \key{let}^{\omega}(\key{payload}^{\omega}(A),\;
-    \lambda X.\, \mathcal{C}^{\omega}(I,\; \lambda \_.\, F_1(X),\; \lambda \_.\, F_2(X))))
-  \simeq \mathcal{C}^{\omega}(A, F_1, F_2)
-  \qquad\text{where } I = \key{isinl}^{\omega}(A) .
+  \Tletv(A \bind \lambda X.\, \key{payload}(X^{\checkmark}),\;
+    \lambda X.\, \mathcal{C}^{\mathsf{T}}(A \bind \key{isinl},\; \lambda \_.\, F_1(X),\; \lambda \_.\, F_2(X)))
+  \simeq \mathcal{C}^{\mathsf{T}}(A, F_1, F_2) .
 \]
 \end{lemma}
-The blocks $B$ of X86 and $B'$ of $\Tl{CFG}$ with checks agree,
-$B \mathrel{\mathit{BR}} B'$, when $B(l)(s, \rho, \varphi) \simeq B'(l)(\sigma)$
-whenever $\mathit{Rel}_{\Delta_l}(s, \sigma)$ and $\mathit{Inv}(s)$.
-\begin{lemma}[Tail, Blocks and Code]\label{lem:t-gerr-sel-tail}
-If $B \mathrel{\mathit{BR}} B'$, $\mathit{depth}(t) \leq n$,
-$\mathit{Rel}_\Delta(s, \sigma)$ and $\mathit{Inv}(s)$, then
+A $\Tl{CFG}$ case binds the payload of the $\key{inl}$s or of the
+$\key{inr}$s of $A$; $\Tl{X86}$ binds the payloads of both and then
+branches on the flag, which agree when $A$ is $\mathit{Tagged}$. The atom
+of a case, of type $\Tflat{\Tsum}$, is a slot, so the tables need not be
+$\mathit{Tagged}$.
+
+The blocks $B$ of $\Tl{X86}$ and $B'$ of $\Tl{CFG}$ agree,
 \[
-  \SEM{\pass{sel}(t)}^{\mathrm{X86}}_{T,n,B}\,s\,\rho\,\varphi \simeq \SEM{t}^{\mathrm{chk}}_{T',B'}\,\sigma ;
+  B \mathrel{\mathit{BR}} B' \iff \forall l\, \sigma.\;
+    \mathit{Inv}_{\Delta_l}(\sigma) \implies B(l)(\sigma) \simeq B'(l)(\sigma) .
 \]
-the blocks agree,
-$\key{blocks}^{\mathrm{X86}}_{T,n}(\pass{sel}(\vec{t})) \mathrel{\mathit{BR}} \key{blocks}^{\mathrm{chk}}_{T'}(\vec{t})$;
-and the code of a definition, whose prologue moves $\rdi$ and $\rsi$ to
-slots 0 and 1, is that of $\Tl{CFG}$ with checks:
-$\key{code}^{\mathrm{X86}}_T(\pass{select}^{+}(b)) \simeq \key{code}^{\mathrm{chk}}_{T'}(b)$,
-where $\pass{select}^{+}(b)$ is $b$ selected with the prologue.
+\begin{lemma}[Tail and Blocks]\label{lem:t-gerr-sel-tail}
+If $B \mathrel{\mathit{BR}} B'$, $\mathit{depth}(t) \leq n$ and
+$\mathit{Inv}_\Delta(\sigma)$, then for every $R$ and $F$
+\[
+  \SEM{\pass{tail}(t)}^{\Tl{X86},\omega}_{T,B}(\sigma, R, F) \simeq \SEM{t}^{\Tl{CFG},\omega}_{T',B'}\,\sigma ;
+\]
+and $\key{blocks}^{\Tl{X86}}_{T}(\pass{tail}(\vec{t})) \mathrel{\mathit{BR}} \key{blocks}^{\Tl{CFG}}_{T'}(\vec{t})$.
 \end{lemma}
-\begin{lemma}[X86 Is $\Tl{CFG}$ with Checks]\label{lem:t-gerr-select-check}
-For every $\Tl{CFG}$ program $P$,
-$\SEM{\pass{select}(P)}^{\mathrm{X86},\omega} \simeq \SEM{P}^{\mathrm{chk}}$.
+The prologue of a definition binds finite parts $V$ and $W$ of its
+parameters (the inputs of an entry of $\Lambda\Lambda^{\omega}$), where
+$\Tl{CFG}$ runs the body in the frame $(V, W)$ at once; a let of a finite,
+consistent set of values without $\omega$ is $\beta$,
+$\Tletv(V, G) \simeq G(V)$ for $G$ monotone, and the semantics of
+$\Tl{CFG}$ is monotone in its frame.
+\begin{lemma}[Start]\label{lem:t-gerr-sel-start}
+If $T'(k)$ is consistent for every $k$, then for the body $b$ of every
+definition,
+\[
+  \key{code}^{\mathrm{X}}_T(\pass{select}^{+}(b)) \simeq \key{code}^{\mathrm{C}}_{T'}(b) ;
+\]
+so the tables of $\pass{select}(P)$ and of $P$ agree at every $k$.
 \end{lemma}
-
-\paragraph{The boundary: $\Tl{CFG}$ with and without checks.}
-The two differ only where a check of X86 fires, on a value of the wrong
-kind, and so only in the entries of code at inputs of the wrong kind.
-The relation $d \trianglelefteq D$ between a value and a set of values is
-used in both directions, from $\Tl{CFG}$ to $\Tl{CFG}$ with checks and back.
-It is the identity on first-order data, it never relates an error inside
-a value ($\mathit{Inner}$), and a pair, a closure, is related by its
-environment and by what its code does on related inputs whose
-environment has the kind of the pair's environment ($\mathit{Code}_k$):
-an entry at inputs of the wrong kind is related to anything, since no
-inputs relate to them. With $E{\restriction}k = \{ e \in E \mid \Tkind(e) = k \}$,
-\begin{align*}
-  v \trianglelefteq D &\iff v \in D \qquad (v = \omega,\ c,\ \emptytup,\ \nu \text{ or } V \mapsto w) \\
-  \tup{i}{d} \trianglelefteq D &\iff \mathit{Inner}(d, \{ e \mid \tup{i}{e} \in D \}) \qquad
-  \Left{d} \trianglelefteq D \iff \mathit{Inner}(d, \{ e \mid \Left{e} \in D \}) \\
-  \Right{d} \trianglelefteq D &\iff \mathit{Inner}(d, \{ e \mid \Right{e} \in D \}) \\
-  \pairv{u}{v} \trianglelefteq D &\iff \mathit{Code}_{\Tkind(v)}(u, \key{car}(D))
-    \land \mathit{Inner}(v, \key{cdr}(D)) \land \mathit{val}(\key{car}(D)) \\
-  \mathit{Inner}(d, D) &\iff d \neq \omega \land d \trianglelefteq D \\[1ex]
-  \mathit{Code}_k(V \mapsto (U \mapsto w), C) &\iff
-    \begin{array}[t]{l}
-      \forall E\, X.\; \consis(E),\ \consis(X),\ \omega \notin E,\ \omega \notin X, \\
-      \quad V \trianglelefteq E{\restriction}k \land U \trianglelefteq X \implies
-      w \trianglelefteq (C \app E{\restriction}k) \app X
-    \end{array} \\
-  \mathit{Code}_k(u, C) &\iff \text{true} \qquad (u = \nu \text{ or } u = V \mapsto w,\ w \text{ not of the form } U \mapsto w') \\
-  \mathit{Code}_k(u, C) &\iff \text{false} \qquad \text{otherwise}
-\end{align*}
-where $V \trianglelefteq E$ is $v \trianglelefteq E$ for every $v \in V$. So
-$\omega \trianglelefteq D \iff \omega \in D$, $c \trianglelefteq D \iff c \in D$,
-and a $d \neq \omega$ with $d \trianglelefteq D$ is witnessed by an element of
-$D$ of its kind, so $\mathit{val}(D)$. Write $D \trianglelefteq D'$ for
-$\forall d \in D.\; d \trianglelefteq D'$. A slot of a flat type holds, in
-$\Tl{CFG}$, only values of its kind, and one of code type is related by
-what its code does; the relation of a slot of type $A$ is
-\begin{align*}
-  \mathit{SR}_{\TAny}(D, D') &\iff D \trianglelefteq D' \qquad
-  \mathit{SR}_{\Tflat{G}}(D, D') \iff D \trianglelefteq \{ e \in D' \mid e = \omega \lor \Tkindfour(\Tkind(e)) = \Tkindf(G) \} \\
-  \mathit{SR}_{\Tcode{n}}(C, C') &\iff \forall u \in C.\; \mathit{Code}_{\mathit{tup}_n}(u, C') \\[1ex]
-  \mathit{ER}_\Delta(\sigma, \sigma') &\iff \forall x : A \in \Delta.\;
-    \mathit{SR}_A(\sigma(x), \sigma'(x)) \land \mathit{Val}(\sigma(x)) \land \consis(\sigma(x)) \land \omega \notin \sigma'(x)
-\end{align*}
-The tables are related the same way: $\mathit{SR}_{\Tcode{n}}(T(k), T'(k))$
-for every reference $k$ to a definition of $n$ free variables, the
-entries of $T$ and $T'$ are sets of values, and those of $T'$ are
-consistent. The code of a missing definition, $\key{errcode}$, is related
-to itself: its call errs on any nonempty related inputs.
-\begin{lemma}[Reflect]\label{lem:t-gerr-sel-reflect}
-Let the tables be related, from $\Tl{CFG}$ with checks ($T$) to $\Tl{CFG}$
-($T'$). If $\mathit{ER}_\Delta(\sigma, \sigma')$ and $\sigma'$ is nonempty and
-consistent, then
-$\SEM{t}^{\mathrm{chk}}_{T}\sigma \trianglelefteq \SEM{t}^{\Tl{CFG},\omega}_{T'}\sigma'$,
-for blocks related likewise. So $\SEM{P}^{\mathrm{chk}} \trianglelefteq \SEM{P}^{\Tl{CFG},\omega}$.
-\end{lemma}
-The checks of $\Tl{CFG}$ with checks never fire on related values, and
-its operators are those of $\Tl{CFG}$ on them; a call opens a closure
-whose code is related on environments of the kind its pairs say.
-$\Tl{CFG}$ binds the whole set where $\Tl{CFG}$ with checks binds finite
-parts of it, and contains them, since $\Tl{CFG}$ is continuous.
-\begin{lemma}[Preserve]\label{lem:t-gerr-sel-preserve}
-Likewise in the other direction, with the sides swapped: from $\Tl{CFG}$
-($T$, $\sigma$) to $\Tl{CFG}$ with checks ($T'$, $\sigma'$),
-$\SEM{t}^{\Tl{CFG},\omega}_{T}\sigma \trianglelefteq \SEM{t}^{\mathrm{chk}}_{T'}\sigma'$,
-and $\SEM{P}^{\Tl{CFG},\omega} \trianglelefteq \SEM{P}^{\mathrm{chk}}$.
-\end{lemma}
-The checks only add an error to what is computed, and the tests (of a
-project, and the loads of a call) have values when their operand has a
-value of the right kind, which a related value of $\Tl{CFG}$ gives.
-
 \begin{theorem}[Correctness of Select Instructions]\label{lem:t-gerr-select}
 For every $\Tl{CFG}$ program $P$,
 \[
-  \Same(\SEM{P}^{\Tl{CFG},\omega},\; \SEM{\pass{select}(P)}^{\mathrm{X86},\omega}) ,
+  \SEM{\pass{select}(P)}^{\Tl{X86},\omega} \simeq \SEM{P}^{\Tl{CFG},\omega} .
 \]
-where
+\end{theorem}
+Main starts in the empty frame $\rho_0$, for which $\mathit{Inv}_\emptyset$
+holds vacuously. There is no precondition: the frames are typed, and a
+definition's frame has its two parameters by its type.
+
+Before $\Tl{X86}$, the typed pipeline ended at untyped X86, whose
+semantics checks the kind of every operand; there select was not an
+equation but $\Same$ (below), through a semantics of $\Tl{CFG}$ with the
+checks of X86. Typing the target removed that boundary.
+
+\subsubsection{End to End}
+
+Write $\Same(D, E)$ when $D$ and $E$ err together, have the same
+constants and have a value together:
 \[
   \Same(D, E) \iff (\omega \in D \iff \omega \in E) \land
     (\forall c.\; c \in D \iff c \in E) \land (\mathit{val}(D) \iff \mathit{val}(E)) .
 \]
-\end{theorem}
-Related both ways, $D \trianglelefteq E$ and $E \trianglelefteq D$, two sets are
-$\Same$ (by the facts about $\omega$, $c$ and $d \neq \omega$ above); so
-$\Same(\SEM{P}^{\Tl{CFG},\omega}, \SEM{P}^{\mathrm{chk}})$ by
-Lemmas~\ref{lem:t-gerr-sel-preserve} and~\ref{lem:t-gerr-sel-reflect}, and
-$\SEM{P}^{\mathrm{chk}} \simeq \SEM{\pass{select}(P)}^{\mathrm{X86},\omega}$ by
-Lemma~\ref{lem:t-gerr-select-check}. Select needs no precondition: both
-$\Tl{CFG}$ with checks and X86 bind the parameters to slots 0 and 1, and X86
-runs a called body in a frame of $\max(2, n)$ slots.
-
-\subsubsection{End to End}
-
 $\Same$ is an equivalence, and $\Same(D, E)$ and $E \simeq E'$ give
 $\Same(D, E')$. Delay's theorem is $\Same$ for closed terms, and every
-other pass but select is $\simeq$.
+other pass is $\simeq$.
 \begin{theorem}[The Compiler, with Errors]\label{lem:t-gerr-compiler}
 If $\mathit{Closed}(M)$, then $\Same(\SEM{M}^{\mathrm{ISWIM},\omega}\rho_0, D')$ for
 $D'$ each of $\SEM{\pass{compile}(M)}^{\Tl{5},\omega}$,
 $\SEM{\Tembed{\pass{compile\text{-}mon}(M)}}^{\Tl{5},\omega}$,
 $\SEM{\pass{compile\text{-}imp}(M)}^{\Tl{Imp},\omega}$,
 $\SEM{\pass{compile\text{-}cfg}(M)}^{\Tl{CFG},\omega}$ and
-$\SEM{\pass{compile\text{-}x86}(M)}^{\mathrm{X86},\omega}$.
+$\SEM{\pass{compile\text{-}x86}(M)}^{\Tl{X86},\omega}$.
 \end{theorem}
 By Theorem~\ref{lem:t-gerr-simplify} and
 Lemmas~\ref{lem:t-gerr-cast}, \ref{lem:t-gerr-enclose},
 \ref{lem:t-gerr-optimize} and~\ref{lem:t-gerr-concretize} ($\simeq$ up to
 $\Tl{Clos3}$), Theorem~\ref{lem:t-gerr-delay} ($\Same$), and
 Theorems~\ref{lem:t-gerr-globalize}, \ref{lem:t-gerr-rco-prog},
-\ref{lem:t-gerr-lift-prog}, \ref{lem:t-gerr-explicate} ($\simeq$) and
-\ref{lem:t-gerr-select} ($\Same$). Adequacy (Part~II and
+\ref{lem:t-gerr-lift-prog}, \ref{lem:t-gerr-explicate} and
+\ref{lem:t-gerr-select} ($\simeq$). Adequacy (Part~II and
 \texttt{Theorems/GraphErrors.agda}) turns these into statements about the
-ISWIM, $\Tl{Clos5}$ and X86 machines.
+ISWIM and $\Tl{Clos5}$ machines.
+% TODO-X86T: adequacy of the graph model with errors for the X86^T machine
+% (being written, replacing the untyped X86 adequacy that moved to
+% agda/Untyped/) should be added here: "... about the ISWIM, Clos5^T and
+% X86^T machines", with the x86-*-iff and end-to-end-x86-* statements.
 
 \paragraph{Where it doesn't match the Agda literally.}
 The Agda names below have superscripts and subscripts, written here as
@@ -2713,8 +2936,7 @@ in math ($\texttt{app}^{\mathsf{t}}$ is \texttt{app} with a superscript t).
   $\texttt{get}^{\mathsf{t}}$, $\texttt{case}^{\mathsf{t}}$,
   $\texttt{prim}^{\mathsf{t}}$ and $\texttt{project}^{\varphi}$
   (\texttt{Semantics/GraphErr/Typed/Ops.agda}); $\Tchecked{\varphi}$ is
-  $\texttt{checked}^{\varphi}$; $\Tletv$ is $\texttt{let}^{\mathsf{t}}$;
-  $\key{let}^{\omega}$ is $\texttt{let}^{\mathsf{m}}$; the kind
+  $\texttt{checked}^{\varphi}$; $\Tletv$ is $\texttt{let}^{\mathsf{t}}$; the kind
   $\mathit{pair}$ is \texttt{prod} and $\mathit{err}$ is \texttt{error}.
   $\mathit{val}(D)$ is \texttt{Conv} (in the statements, its unfolding);
   $\mathit{Val}(D)$ is \texttt{Val}, and ``$\omega \notin D$'' is
@@ -2722,7 +2944,7 @@ in math ($\texttt{app}^{\mathsf{t}}$ is \texttt{app} with a superscript t).
   \texttt{ValPayload}. The table of $\Tl{Clos5}$, $\Tl{Imp}$ and $\Tl{CFG}$
   is \texttt{tbl}, and the codes are $\texttt{code}_5$,
   $\texttt{code}_{\mathsf{i}}$, $\texttt{code}^{\mathsf{c}}$ and
-  $\texttt{code}^{\mathsf{ch}}$ (with checks).
+  $\texttt{code}_{\mathsf{t}}$ ($\key{code}^{\mathrm{X}}$ of $\Tl{X86}$).
 \item \textbf{Variables and frames} are typed de~Bruijn indices: an
   environment gives position $i$ the meaning of the variable of index
   $i$, so $\ext{\rho}{x}{X}$ and $(\sigma, X)$ are $X$ consed onto the
@@ -2760,27 +2982,29 @@ in math ($\texttt{app}^{\mathsf{t}}$ is \texttt{app} with a superscript t).
   (\texttt{CPS}) and \texttt{tail} (\texttt{TAIL}); $\vec{t} \preceq \vec{t}'$ is
   \texttt{Ext}, and a label made earlier finding the same block is
   \texttt{blocks-ext}.
-\item \textbf{Select instructions}: $\SEM{-}^{\mathrm{chk}}$ is the
-  semantics of \texttt{SelectCheck.agda} (superscript ch), and
-  $\key{test}_t$ is \texttt{test}. The relation $d \trianglelefteq D$ is
-  $\sqsubseteq$ of \texttt{SelectRel.agda} (not delay's),
-  $\mathit{Code}_k$ and $\mathit{Inner}$ are \texttt{Code} and
-  \texttt{Inner}, and $E{\restriction}k$ is $E$ restricted to kind $k$;
-  $\mathit{SR}$ and $\mathit{ER}$ are \texttt{SR} and \texttt{ER} (with the
-  \texttt{Kd} of a flat type), defined in \texttt{SelectReflect.agda}
-  with $\Tl{CFG}$ with checks on the left and reused with the sides swapped
-  by \texttt{SelectPreserve.agda}. In \texttt{SelectX86.agda},
-  $\mathit{Rel}_\Delta$, $\mathit{Inv}$, $\mathit{Atom}$, $\mathit{Tagged}$,
-  $\mathit{Fits}$, $\key{after}$ and $\mathit{BR}$ are \texttt{Rel},
-  \texttt{Inv}, \texttt{Atom}, \texttt{Tagged}, \texttt{Fits},
-  \texttt{after} and \texttt{BR}; Lemma~\ref{lem:t-gerr-case-core} is
-  \texttt{case-core}, Lemma~\ref{lem:t-gerr-sel-tail} is \texttt{tail},
-  \texttt{blocks-}$\simeq$ and \texttt{code-}$\simeq$, and
-  Lemma~\ref{lem:t-gerr-select-check} is \texttt{select-check}. Main's
-  X86 frame has $\mathit{depth}$ slots, a called body's $\max(2, \mathit{depth})$.
+\item \textbf{$\Tl{X86}$}'s semantics: $\mathcal{O}$ is $\mathcal{O}$ (and
+  \texttt{object}, \texttt{field$'$}), what runs next is a \texttt{Kont}, the
+  registers a \texttt{RegsD}, $R_C$ is \texttt{called-regs C} and $R_{X,Y}$
+  \texttt{args X Y}; $\key{put}^{\mathrm{s}}$ is \texttt{put$^{\mathsf{s}}$}; an
+  unset register or flag, and $\rho_0$, are \texttt{init} $= \{\omega\}$;
+  $\key{isinl}$ is \texttt{isinlD}; and $\SEM{i}$, $\SEM{\beta}$ are
+  $\SEM{i}^{\mathsf{i}}$, $\SEM{\beta}^{\mathsf{s}}$.
+\item \textbf{Select instructions} (\texttt{SelectCorrect.agda}):
+  $\mathit{Tagged}$, $\mathit{Atom}$, $\mathit{Inv}$, $\mathit{Fits}$ and
+  $\mathit{BR}$ are \texttt{Tagged}, \texttt{Atom}, \texttt{Inv},
+  \texttt{Fits} and \texttt{BR}, and $\key{then}$ is \texttt{then}.
+  Lemma~\ref{lem:t-gerr-callc} is \texttt{callc-}$\simeq$ (with $H$ as
+  \texttt{H}), and the strict write before $\key{then}$ is
+  \texttt{strict-then}; Lemma~\ref{lem:t-gerr-sel} is \texttt{sel-}$\simeq$
+  (with \texttt{put-}$\simeq$ and \texttt{put$^{\mathsf{s}}$-}$\simeq$),
+  Lemma~\ref{lem:t-gerr-case-core} \texttt{case-core}$^{\mathsf{t}}$,
+  Lemma~\ref{lem:t-gerr-sel-tail} \texttt{tail-}$\simeq$ and
+  \texttt{blocks-}$\simeq$, and Lemma~\ref{lem:t-gerr-sel-start}
+  \texttt{code-}$\simeq$ (with $\beta$ as \texttt{let-fin-}$\beta$) and
+  \texttt{table-}$\simeq$. That every slot written is $\mathit{Atom}$ is
+  \texttt{inv-}$\bullet$ with \texttt{atom-}$\approx$.
 \item \textbf{End to end}: $\Same$ composes by \texttt{Same-trans} and
-  $\simeq$\texttt{-Same} (\texttt{CompilerCorrect.agda},
-  \texttt{SelectCorrect.agda}); the theorems are $\texttt{compile-same}_5$,
+  $\simeq$\texttt{-Same} (\texttt{CompilerCorrect.agda}); the theorems are $\texttt{compile-same}_5$,
   \texttt{compile-mon-same}, \texttt{compile-imp-same},
   \texttt{compile-cfg-same} and \texttt{compile-x86-same}.
 \end{itemize}
@@ -2796,8 +3020,9 @@ $\rt{v}{\kappa}$ pairs a term or value of type $A$ with a continuation
 expecting $A$, and an environment is typed by the context of its term,
 so a state is well typed by construction. The machines are machines in
 the sense of Part~II: step functions that move to the next state or
-stop with an observation (Section~\ref{sec:obs}). The source ISWIM and
-the target X86 run on Part~II's machines.
+stop with an observation (Section~\ref{sec:obs}). The source ISWIM runs
+on Part~II's machine; the target $\Tl{X86}$ has a typed machine of its own
+(Section~\ref{sec:t-cek-x86}).
 
 Every transition of Part~II that stops with $\error$ on a value of the
 wrong kind (an operator that is not a closure, a $\prj{i}$ of a
@@ -2805,7 +3030,8 @@ non-tuple or of a tuple of another length, a $\key{case}$ of a
 non-injection, a primitive on a non-integer, an unbound variable, a
 missing definition or block) has no counterpart: those states cannot be
 written. Each typed machine stops with $\error$ in exactly one way, a
-$\Tproject{t}$ of a value whose flat type is not $\Tflatof{t}$.
+$\Tproject{t}$ of a value whose flat type is not $\Tflatof{t}$ (in
+$\Tl{X86}$, a $\key{chk}$).
 
 \subsection{Values, continuations and shared transitions}\label{sec:t-cek-shared}
 
@@ -3109,6 +3335,97 @@ For a program with bodies $b_0, \ldots, b_{m-1}$:
 \]
 Unlike Part~II's CFG machine, there is no state that
 evaluates an operand or returns a value: a step runs a whole statement.
+
+\subsection{\texorpdfstring{$\Tl{X86}$}{X86}}\label{sec:t-cek-x86}
+
+The machine of untyped X86 (Section~\ref{sec:machine-x86}) on typed states,
+with the values of $\Tl{Clos5}$
+(\texttt{agda/\allowbreak Semantics/\allowbreak CEK/\allowbreak Typed/\allowbreak X86.agda}),
+one instruction or jump per step. A state
+$\xrun\;\beta\;\vec{\beta}\;\Pi\;\eta\;m$ runs the sequence $\beta$ with the
+blocks $\vec{\beta}$ it may jump to, the call stack $\Pi$, and the machine
+$m = \langle R, \sigma, O, f \rangle$ of the type of $\beta$'s start: the
+registers $R$, the frame $\sigma$ (the slots assigned so far, as in the
+$\Tl{CFG}$ machine), the code and environment $O$ of the open closure, and
+the flag $f$, a boolean. An unset register, an unset flag and $O$ when no
+closure is open hold nothing ($\cdot$). $\eta$ is $\alpha$, the length of
+the open closure's environment, so a register of type $\codeA$ holds code
+of type $\Tcode{\eta}$ and one of type $\tupA$ a tuple of $\eta$ values.
+The stack holds, for each call, the rest of the caller's sequence (typed
+from $\Treturned{\Delta}$), its blocks and its frame:
+\[
+\begin{array}{rcl}
+  \mathit{State}^{\Tl{X86}} &::=& \xrun\;\beta\;\vec{\beta}\;\Pi\;\eta\;\langle R, \sigma, O, f \rangle \\
+  \Pi &::=& \halt \mid \key{retK}(\beta, \vec{\beta}, \sigma, \Pi)
+\end{array}
+\]
+An operand has a value of its type; a write of a register sets it, and a
+write of slot $s$ forgets the slots from $s$ on, as in the $\Tl{CFG}$
+machine, and closes the open closure:
+\begin{align*}
+  m(a) &= \sigma(a) \ \ (a \text{ an atom}) \qquad
+  m(\%r) = R(r) \qquad
+  m(\Tup{a}) = \TdynV{G}{m(a)} \ \ (a : \Tflat{G}) \\
+  \key{put}(\%r, v, m) &= \langle R[r := v], \sigma, O, f \rangle \qquad
+  \key{put}(s, v, m) = \langle R, (\Tcut{\sigma}{s}, v), \cdot, f \rangle
+\end{align*}
+$\key{alloc}$ builds a closure ($\Tpack{v}{u}$), a tuple or an injection
+of the values of its operands, and $\key{load}$ takes component $i$ of a
+tuple or the payload of an injection, with the total functions of the
+$\Tl{Clos5}$ machine. A closure $\Tpack{\codeV{k}}{u}$ has an environment
+of some length $|u|$, and code of that type. For a program with bodies
+$b_0, \ldots, b_{m-1}$, a call starts the body of its code, and a jump the
+block of its label:
+\begin{align*}
+  \mathit{enter}(\codeV{k}, u, w, \Pi) &=
+    \nxt \xrun\;\beta\;\vec{\beta}\;\Pi\;|u|\;\langle (\rdi{:}u,\ \rsi{:}w), \emptyset, \cdot, \cdot \rangle
+    \qquad (b_k = (n;\; \vec{\beta};\; \beta)) \\
+  \key{go}((\beta;\; \vec{\beta}), \Pi, \eta, \sigma) &=
+    \xrun\;\beta\;\vec{\beta}\;\Pi\;\eta\;\langle \emptyset, \sigma, \cdot, \cdot \rangle \\
+  \Mach{\Tl{X86}}(b_0, \ldots, b_{m-1};\; (n;\; \vec{\beta};\; \beta)) &=
+    (\mathit{State}^{\Tl{X86}},\; \step{\Tl{X86}}_{b_0 \ldots b_{m-1}},\;
+     \xrun\;\beta\;\vec{\beta}\;\halt\;0\;\langle \emptyset, \emptyset, \cdot, \cdot \rangle)
+\end{align*}
+where $\key{block}$ is that of $\Tl{CFG}$. Writing
+$\langle i;\, \beta \rangle$ for $\xrun\;(i;\, \beta)\;\vec{\beta}\;\Pi\;\eta\;m$,
+$m = \langle R, \sigma, O, f \rangle$, and $\langle \beta \rangle_{\eta', m'}$ for
+$\xrun\;\beta\;\vec{\beta}\;\Pi\;\eta'\;m'$:
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \langle \key{movq}\; a, d;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \key{put}(d, m(a), m)} \\
+  \langle \key{subq}\; a, \%r;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \key{put}(\%r, \delta(\key{sub}, R(r), m(a)), m)} \\
+  \langle \key{cmpq}\; a_2, a_1;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \langle R, \sigma, O, (m(a_1) = m(a_2)) \rangle} \\
+  \langle \key{sete}\; d;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \key{put}(d, \Tres{f}, m)} \\
+  \langle \key{testinl}\; a;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \langle R, \sigma, O, \key{isinl}(m(a)) \rangle} \\
+  \langle \key{alloc}\; o, d;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \key{put}(d, m(o), m)} \\
+  \langle \key{load}\; \mathit{fl}\; a, d;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \key{put}(d, \key{field}_{\mathit{fl}}(m(a)), m)} \\
+  \langle \key{load}\; \key{fst}\; x, \%r;\, \beta \rangle & \nxt \langle \beta \rangle_{|u|, \langle \Twipe{R}[r := \codeV{k}], \sigma, (\codeV{k}, u), f \rangle}
+    & \sigma(x) = \Tpack{\codeV{k}}{u} \\
+  \langle \key{load}\; \key{snd}\; x, \%r;\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \langle R[r := u], \sigma, O, f \rangle}
+    & O = (\codeV{k}, u) \\
+  \langle \key{callq}\; a;\, \beta \rangle & \mathit{enter}(m(a), R(\rdi), R(\rsi), \key{retK}(\beta, \vec{\beta}, \sigma, \Pi)) \\
+  \langle \Tchk{t}{x}{d};\, \beta \rangle & \nxt \langle \beta \rangle_{\eta, \key{put}(d, v, \langle R[\rax := \cdot], \sigma, O, \cdot \rangle)}
+    & \sigma(x) = \TdynV{H}{v},\ H = \Tflatof{t} \\
+  & \stp \error & \text{otherwise}
+\end{array}
+\]
+\[
+\begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
+  \xrun\;\key{retq}\;\vec{\beta}\;\halt\;\eta\;m & \stp \obs(R(\rax)) \\
+  \xrun\;\key{retq}\;\vec{\beta}\;\key{retK}(\beta', \vec{\beta}', \sigma', \Pi)\;\eta\;m &
+    \nxt \xrun\;\beta'\;\vec{\beta}'\;\Pi\;\eta\;\langle (\rax{:}R(\rax)), \sigma', \cdot, \cdot \rangle \\
+  \xrun\;(\key{jmp}\; l)\;\vec{\beta}\;\Pi\;\eta\;m & \nxt \key{go}(\key{block}(\vec{\beta}, l), \Pi, \eta, \sigma) \\
+  \xrun\;(\key{je}\; l_1, l_2)\;\vec{\beta}\;\Pi\;\eta\;m & \nxt \key{go}(\key{block}(\vec{\beta}, l_1), \Pi, \eta, \sigma) & f = \mathsf{true} \\
+  & \nxt \key{go}(\key{block}(\vec{\beta}, l_2), \Pi, \eta, \sigma) & f = \mathsf{false}
+\end{array}
+\]
+where $\Twipe{R}$ unsets the registers of type $\codeA$ or $\tupA$, and
+$\key{isinl}$ and $\key{field}$ are those of Part~II, total on values of
+the types the instructions take. The $\key{chk}$ line that stops is the
+only $\error$ of the machine: there is no unset register or flag, no
+slot out of the frame, no value of the wrong kind, and no missing block
+or definition to err on. The frame is not of a fixed size: the size $n$
+of a body bounds its slots only in the types.
 
 %-------------------------------------------------------------------------------
 \subsection{Relations}\label{sec:t-cek-rel}
@@ -3688,88 +4005,78 @@ For every $\Tl{Imp}$ program $P$,
 
 \subsubsection{Select Instructions}
 
-X86 is unchanged and keeps its own trapped errors; the proof shows that
-select's code reaches none of them except at a project's test. We write
-an X86 state (Section~\ref{sec:machine-x86}) as
-$\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Pi\;f\;\tau\;\rho$, with $\Pi$ the
-call stack and $\tau$ the frame (Part~II's $\Sigma$ and $\sigma$). An X86
-value is the erasure of a typed value:
-\[
-  \lfloor \codeV{k} \rfloor = \codeV{k} \qquad
-  \lfloor \Tpack{v}{u} \rfloor = \pairV{\lfloor v \rfloor}{\lfloor u \rfloor} \qquad
-  \lfloor \TdynV{G}{v} \rfloor = \lfloor v \rfloor \qquad
-  \lfloor c \rfloor = c
-\]
-and homomorphically on tuples and injections. The X86 frame holds the
-erasure of each slot at its level, and is large enough for the tail and
-its blocks:
-\begin{align*}
-  \mathit{Agree}(\sigma, \tau) &\iff \forall s < |\sigma|.\; \tau(s) = \lfloor \sigma(s) \rfloor \\
-  \mathit{Fits}(t, \vec{t}, \tau) &\iff \mathit{depth}(t) \leq |\tau| \land
-    \forall t' \in \vec{t}.\; \mathit{depth}(t') \leq |\tau|
-\end{align*}
-Write $\pass{sel}(t) = \mathit{ins}(t);\, \mathit{end}(t)$ for the
-instructions and jump of the block of $t$. The call stack holds, for each
-return frame of the $\Tl{CFG}$ continuation, the caller's frame and the
-instructions that move $\rax$ to where the caller wants the result:
+Both machines hold the same values, and the $\Tl{X86}$ frame is the
+$\Tl{CFG}$ frame (\texttt{SelectSim.agda}). So a state of $\Tl{CFG}$ is
+matched by the code selected for its tail, in the same frame, with any
+registers, open closure and flag; and the $\Tl{X86}$ call stack holds, for
+each return frame of the $\Tl{CFG}$ continuation, the caller's frame and
+the move of $\rax$ to where the caller wants the result:
 \begin{align*}
   \halt &\sim \halt \\
   \Kf{seqK}{s, \sigma, t, \vec{t}, \kappa} &\sim
-    \key{retK}((\key{movq}\; \rax, s;\; \mathit{ins}(t)), \mathit{end}(t), \pass{sel}(\vec{t}), \tau, \Pi)
-    \Leftarrow \mathit{Agree}(\sigma, \tau) \land \mathit{Fits}(t, \vec{t}, \tau) \land \kappa \sim \Pi \\
-  \Kf{retK}{\kappa} &\sim \key{retK}((\key{movq}\; \rax, \rax), \key{retq}, \vec{\beta}, \tau, \Pi)
+    \key{retK}((\key{movq}\; \rax, s;\; \pass{tail}(t)), \pass{tail}(\vec{t}), \sigma, \Pi)
+    \Leftarrow \kappa \sim \Pi \\
+  \Kf{retK}{\kappa} &\sim \key{retK}((\key{movq}\; \rax, \rax;\; \key{retq}), \vec{\beta}, \sigma, \Pi)
     \Leftarrow \kappa \sim \Pi \\[1ex]
   \exc{t}{\sigma}{\vec{t}}{\kappa} &\sim
-    \xrun\;\mathit{ins}(t)\;\mathit{end}(t)\;\pass{sel}(\vec{t})\;\Pi\;f\;\tau\;\rho
-    \Leftarrow \mathit{Agree}(\sigma, \tau) \land \mathit{Fits}(t, \vec{t}, \tau) \land \kappa \sim \Pi
+    \xrun\;\pass{tail}(t)\;\pass{tail}(\vec{t})\;\Pi\;\eta\;\langle R, \sigma, O, f \rangle
+    \Leftarrow \kappa \sim \Pi
 \end{align*}
-One $\Tl{CFG}$ step (a statement) is matched by the few X86 instructions
-selected for it, which compute its value into its destination, or err
-exactly where the $\Tl{CFG}$ machine does, or call:
+for any $\eta$, $R$, $O$, $f$, and (in $\key{retK}$) any blocks
+$\vec{\beta}$ and frame $\sigma$; the frame size, at least the depth of the
+tail and of its blocks, is in the types. One $\Tl{CFG}$ step (a statement)
+is matched by the instructions selected for it: they write its value to
+its destination, fail at $\key{chk}$ where the project fails, or call.
+There is nothing else to rule out, since $\Tl{X86}$ has no other error.
 
 \begin{lemma}[Selected Simple Expressions]\label{lem:t-cek-sel}
-If $\mathit{Agree}(\sigma, \tau)$, then from
-$s_2 = \xrun\;(\pass{sel}(r, d);\, \vec{\imath})\;j\;\vec{\beta}\;\Pi\;f\;\tau\;\rho$:
+From $s_2 = \xrun\;\pass{sel}(r, o, k)\;\vec{\beta}\;\Pi\;\eta\;\langle R, \sigma, O, f \rangle$:
 \begin{itemize}
-\item if $\mathit{run}(r, \sigma) = \key{value}(v)$, X86 runs to a state
-  whose next step puts $\lfloor v \rfloor$ in $d$ and continues with
-  the rest, $\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Pi\;f'\;\tau\;\rho'$
-  for some $f'$ and $\rho'$;
-\item if $\mathit{run}(r, \sigma) = \key{fail}$, X86 runs to a state that
-  stops with $\error$ (the test $\Tcheck{t}$ of the project errs exactly
-  when the flat type is not $\Tflatof{t}$);
+\item if $\mathit{run}(r, \sigma) = \key{value}(v)$, then
+  $s_2 \lto^+_{\Tl{X86}} \xrun\;k\;\vec{\beta}\;\Pi\;\eta'\;\key{put}(\bar{o}, v, m')$
+  for some $\eta'$ and $m'$ with the frame $\sigma$;
+\item if $\mathit{run}(r, \sigma) = \key{fail}$, then $s_2$ runs to a state
+  that stops with $\error$ (the $\key{chk}$ of the project);
 \item if $\mathit{run}(r, \sigma) = \key{call}(\Tpack{\codeV{k}}{u}, w)$
-  and $b_k = (\vec{t};\, t)$, then
-  \begin{align*}
-    s_2 \lto^+_{\mathrm{X86}} {}&
-    \xrun\;\mathit{ins}(t)\;\mathit{end}(t)\;\pass{sel}(\vec{t}) \\
-    &\quad \key{retK}((\key{movq}\;\rax, d;\, \vec{\imath}), j, \vec{\beta}, \tau, \Pi)\;\bot\;\tau_0\;\rho_0
-  \end{align*}
-  with $\mathit{Agree}((u, w), \tau_0)$ and $\mathit{Fits}(t, \vec{t}, \tau_0)$.
+  and $\pass{select}^{+}(b_k) = (n;\; \vec{\beta}_k;\; \beta_k)$, then
+  \[
+    s_2 \lto^+_{\Tl{X86}}
+    \xrun\;\beta_k\;\vec{\beta}_k\;\key{retK}((\key{movq}\;\rax, \bar{o};\, k), \vec{\beta}, \sigma, \Pi)\;\eta'\;
+      \langle (\rdi{:}u,\ \rsi{:}w), \emptyset, \cdot, \cdot \rangle
+  \]
+  for some $\eta'$: the callee's start, its prologue first.
 \end{itemize}
 \end{lemma}
+A call takes the four steps of $\key{load}\;\key{fst}$, $\key{load}\;
+\key{snd}$, the move to $\rsi$ and $\key{callq}$, whose operands are the
+closure's code and environment by the opening; after it, the prologue
+takes two more steps to the callee's tail in the frame $(u, w)$, as the
+$\Tl{CFG}$ machine enters it.
 
 \begin{lemma}[Return]\label{lem:t-cek-back}
-If $\kappa \sim \Pi$, $\rho(\rax) = \lfloor v \rfloor$,
-$s_1 \mapsto \mathit{cont}(v, \kappa)$ and
-$s_2 \lto^*_{\mathrm{X86}} \xrun\;\epsilon\;\key{retq}\;\vec{\beta}\;\Pi\;f\;\tau\;\rho$,
-then $\mathit{Both}_\sim(s_1, s_2)$: X86 pops its stack as the $\Tl{CFG}$
-continuation says.
+If $\kappa \sim \Pi$, $s_1 \mapsto \mathit{cont}(v, \kappa)$ and
+$s_2 \lto^*_{\Tl{X86}} \xrun\;\key{retq}\;\vec{\beta}\;\Pi\;\eta\;\langle R[\rax := v], \sigma, O, f \rangle$,
+then $\mathit{Both}_\sim(s_1, s_2)$: $\Tl{X86}$ pops its stack as the
+$\Tl{CFG}$ continuation says.
 \end{lemma}
+A $\key{case}$ is matched by $\key{testinl}$, the load of the payload into
+slot $s$ and $\key{je}$, and then the jump to the block that the
+$\Tl{CFG}$ machine runs: label $l$ of the selected blocks is the selected
+block $l$, $\key{block}(\pass{tail}(\vec{t}), l) = \pass{tail}(\key{block}(\vec{t}, l))$.
 
 \begin{lemma}[Select Simulation]\label{lem:t-cek-select-fsim}
 For every $\Tl{CFG}$ program $P$, if $s_1 \sim s_2$ then
 $\mathit{Both}_\sim(s_1, s_2)$; so
 \[
-  \FSim(\Mach{\Tl{CFG}}(P), \Mach{\mathrm{X86}}(\pass{select}(P)), \sim') ,
+  \FSim(\Mach{\Tl{CFG}}(P), \Mach{\Tl{X86}}(\pass{select}(P)), \sim') ,
 \]
-by Lemma~\ref{lem:t-cek-both}.
+by Lemma~\ref{lem:t-cek-both}, since the starts are related.
 \end{lemma}
 
 \begin{theorem}[Correctness of Select Instructions, Simulation]\label{thm:t-cek-select}
 For every $\Tl{CFG}$ program $P$,
 \[
-  \Equiv(\Mach{\Tl{CFG}}(P), \Mach{\mathrm{X86}}(\pass{select}(P))) .
+  \Equiv(\Mach{\Tl{CFG}}(P), \Mach{\Tl{X86}}(\pass{select}(P))) .
 \]
 \end{theorem}
 
@@ -3795,7 +4102,7 @@ For every ISWIM term $M$ with $\FV(M) = \emptyset$,
   &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{Mon}}(\pass{compile\text{-}mon}(M))) \\
   &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{Imp}}(\pass{compile\text{-}imp}(M))) \\
   &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{CFG}}(\pass{compile\text{-}cfg}(M))) \\
-  &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
+  &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{X86}}(\pass{compile\text{-}x86}(M))) ,
 \end{align*}
 by Theorem~\ref{thm:t-cek-compile}, Theorems~\ref{thm:t-cek-rco},
 \ref{thm:t-cek-lift}, \ref{thm:t-cek-explicate} and~\ref{thm:t-cek-select}
@@ -3865,12 +4172,28 @@ in turn, and Lemma~\ref{lem:equiv-trans}.
   the two clauses of $\sim$ are \texttt{tail$\sim$} and
   \texttt{asg$\sim$}, those of $\mathit{Ctl}$ \texttt{asgT}, \texttt{asgA}
   and \texttt{jmp}; Lemma~\ref{lem:t-cek-join} is \texttt{ctl}.
-\item \textbf{Select}: the erasure is \texttt{$\lfloor\_\rfloor$}, the
-  outcomes of Lemma~\ref{lem:t-cek-sel} are \texttt{XOut}
-  (\texttt{xval}, \texttt{xfail}, \texttt{xcall}), and
-  Lemma~\ref{lem:t-cek-back} is \texttt{back}. The callee's frame
-  $\tau_0$ is $\lfloor u \rfloor\, \lfloor w \rfloor\, 0^{N-2}$ with $N$
-  the depth of its body.
+\item \textbf{$\Tl{X86}$}: a state is \texttt{run k bs $\sigma$ $\eta$ m}
+  with the call stack $\sigma$ (here $\Pi$) and \texttt{m} a record
+  \texttt{Mach} $\langle$\texttt{regs}, \texttt{frame}, \texttt{opened},
+  \texttt{flag}$\rangle$, whose fields' types follow the state type: an
+  unset register, an unset flag and a closed $O$ hold \texttt{tt} of
+  $\top$, a set flag a \texttt{Bool}. $m(a)$ is \texttt{arg a m},
+  $\Twipe{R}$ is \texttt{wipe$_r$}, $\key{field}$ is \texttt{field$'$}
+  (\texttt{elems}, \texttt{choose}), $\Tres{f}$ is \texttt{bit f}, and
+  $|u|$, the code and the environment of a closure are \texttt{size},
+  \texttt{code-of} and \texttt{env-of}. $\mathit{enter}$ and
+  $\key{go}$ are \texttt{enter} and \texttt{go}; $\key{chk}$'s check is
+  \texttt{proj?} and \texttt{checked}. After $\key{retq}$ the caller
+  keeps the callee's $\eta$, which no register refers to.
+\item \textbf{Select} (\texttt{SelectSim.agda}): $\kappa \sim \Pi$ is
+  \texttt{\_\char`\~\_} and $s_1 \sim s_2$ is \texttt{Match} (\texttt{exec\char`\~}),
+  over the simulation \texttt{Both} of \texttt{proof/Framework/Both.agda};
+  the outcomes of Lemma~\ref{lem:t-cek-sel} are \texttt{XOut}
+  (\texttt{xval}, \texttt{xfail}, \texttt{xcall}), proved by \texttt{sel\char`\~}
+  with \texttt{call\char`\~} and \texttt{proj\char`\~};
+  Lemma~\ref{lem:t-cek-back} is \texttt{back}, and the cases of a
+  statement are \texttt{retn\char`\~}, \texttt{assign\char`\~} and
+  \texttt{case\char`\~}; the selected block $l$ is \texttt{block-sel}.
 \end{itemize}
 
 \section{Clocked Interpreters}\label{sec:t-interp}
@@ -3890,6 +4213,10 @@ closure, $\key{get}$, $\key{branch}$ and $\key{prim}$ on values of the
 wrong kind, a missing definition or block, $\lift{\bot}$) are gone. The
 interpreters of untyped ISWIM (for cast insertion and simplify) and of
 X86 (for select instructions) are Part~II's.
+% TODO-X86T: the target is now X86^T; the interpreter of untyped X86 moved
+% to agda/Untyped/. Replace "and of X86 (for select instructions)" by a
+% subsection on the clocked interpreter of X86^T
+% (agda/Semantics/Interp/Typed/X86.agda, being written), after "CFG^T".
 
 \subsection{Values}\label{sec:t-interp-values}
 
@@ -4516,6 +4843,12 @@ with equal results for every clock.
 
 \subsubsection{Select Instructions}
 
+% TODO-X86T: this subsubsection (through Theorem thm:t-interp-select and the
+% remark after it) is the old proof of select into untyped X86
+% (proof/Correctness/Interp/SelectFuel.agda, deleted). Rewrite it for select
+% CFG^T -> X86^T on the clocked interpreters
+% (agda/proof/Correctness/Interp/SelectFuel.agda, being written), and the
+% matching "Where it doesn't match the Agda literally" item below.
 X86 is untyped (Part~II's interpreter), and a typed value is related to
 its erasure, the untyped value of the same shape
 (\texttt{SelectFuel.agda}):
@@ -4611,6 +4944,9 @@ For every ISWIM term $M$ with $\FV(M) = \emptyset$,
   &\Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\Tl{CFG}}(\pass{compile\text{-}cfg}(M))) , &
   &\Equiv(\Interp{\mathrm{ISWIM}}(M), \Interp{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
 \end{align*}
+% TODO-X86T: the compile-x86 line is not in Theorems/Interpreter.agda any
+% more; restate it with the X86^T interpreter, \Interp{\Tl{X86}}, once
+% compile-x86-correct is back.
 by the theorems for each pass, Theorem~\ref{thm:simplify-clk},
 Lemma~\ref{lem:simplify-closed} (simplify keeps $M$ closed, so
 $\pass{cast\text{-}closed}$ is $\pass{cast}$) and
@@ -4656,6 +4992,8 @@ diverges exactly when $M$ does.
   with fields \texttt{exts} ($\vec{t} \sqsubseteq \vec{t}'$, i.e.\
   \texttt{Ext}) and \texttt{means}; $\Tcut{\sigma}{s}$ is \texttt{forget p
   $\sigma$}, for $p : \Delta' \sqsubseteq \Delta$ with $s = |\Delta'|$.
+% TODO-X86T: the next item is about the old select into X86; rewrite it
+% for the X86^T interpreter proof.
 \item \textbf{Select instructions}' erasure $\mathit{er}(v)$ is
   \texttt{er}; $\sigma \models \sigma'$ is the record \texttt{Rep}, slot
   $x$ at its level \texttt{lvl x}; the hypotheses on frame sizes are
@@ -4850,7 +5188,7 @@ $\Tl{Clos5}$ a $\key{let}$ binds a value of any type, not only of type
 $\TAny$ (remove complex operands binds operands of any type: code,
 environments, and so on); $\key{case}$ still binds values of type $\TAny$.
 
-\subsection{\texorpdfstring{$\Tl{Mon}$, $\Tl{Imp}$, $\Tl{CFG}$ and X86}{Mon-T, Imp-T, CFG-T and X86}}
+\subsection{\texorpdfstring{$\Tl{Mon}$, $\Tl{Imp}$, $\Tl{CFG}$ and $\Tl{X86}$}{Mon-T, Imp-T, CFG-T and X86-T}}
 
 $\Tl{Mon}$ has no reduction semantics of its own: a $\Tl{Mon}$ program $P$
 runs as its embedding $\Tembed{P}$ into $\Tl{Clos5}$
@@ -4859,11 +5197,11 @@ constant or $\funref{k}$ it is and every other construct to the
 $\Tl{Clos5}$ construct of the same name. So remove complex operands is
 proved by a simulation of the $\Tl{Clos5}$ reduction by itself, and lift
 locals by a simulation of the $\Tl{Clos5}$ reduction of the embedding by
-the $\Tl{Imp}$ machine. $\Tl{Imp}$, $\Tl{CFG}$ and X86 have no binders, so
-they keep their machines: those of $\Tl{Imp}$ and $\Tl{CFG}$ are the typed
-CEK column's (Sections~\ref{sec:t-cek-imp} and~\ref{sec:t-cek-cfg}), and
-X86's is Part~II's (Section~\ref{sec:machine-x86}). The proofs of explicate
-control and select instructions are the CEK column's.
+the $\Tl{Imp}$ machine. $\Tl{Imp}$, $\Tl{CFG}$ and $\Tl{X86}$ have no
+binders, so they keep their machines, the typed CEK column's
+(Sections~\ref{sec:t-cek-imp}, \ref{sec:t-cek-cfg} and~\ref{sec:t-cek-x86}).
+The proofs of explicate control and select instructions are the CEK
+column's.
 
 %-------------------------------------------------------------------------------
 \subsection{Relations}\label{sec:t-red-rel}
@@ -5257,10 +5595,13 @@ $\Equiv(\Mach{\Tl{Imp}}(P), \Mach{\Tl{CFG}}(\pass{explicate}(P)))$.
 
 \subsubsection{Select Instructions}
 
-Likewise between the machines of $\Tl{CFG}$ and X86, by the CEK column's
-proof (\texttt{SelectSim.agda};
-Section~\ref{sec:t-cek-rel}). For every $\Tl{CFG}$ program $P$,
-$\Equiv(\Mach{\Tl{CFG}}(P), \Mach{\mathrm{X86}}(\pass{select}(P)))$.
+Likewise between the machines of $\Tl{CFG}$ and $\Tl{X86}$, by the CEK
+column's proof (\texttt{SelectSim.agda}, with $\mathit{Match}$, the stack relation
+$\sim$ and $\mathit{Both}$; Section~\ref{sec:t-cek-rel}). For every
+$\Tl{CFG}$ program $P$,
+\[
+  \Equiv(\Mach{\Tl{CFG}}(P), \Mach{\Tl{X86}}(\pass{select}(P))) .
+\]
 
 \subsubsection{End to End}
 
@@ -5271,7 +5612,7 @@ For every ISWIM term $M$, if $\FV(M) = \emptyset$, then
   &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \mathcal{R}^{\Tl{Clos5}}(\Tembed{\pass{compile\text{-}mon}(M)})) \\
   &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\Tl{Imp}}(\pass{compile\text{-}imp}(M))) \\
   &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\Tl{CFG}}(\pass{compile\text{-}cfg}(M))) \\
-  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
+  &\Equiv(\mathcal{R}^{\mathrm{ISWIM}}(M), \Mach{\Tl{X86}}(\pass{compile\text{-}x86}(M))) ,
 \end{align*}
 by the theorems for each pass, Lemma~\ref{lem:simplify-closed} (simplify
 keeps a program closed, for cast insertion), and
@@ -5325,13 +5666,13 @@ and
   \pass{compile\text{-}x86} = \pass{select} \circ \pass{explicate} \circ
   \pass{lift} \circ \pass{rco} \circ \pass{globalize} \circ \pass{delay}
   \circ \pass{concretize}_\emptyset \circ \pass{optimize} \circ \pass{enclose} \circ
-  \pass{cast\text{-}closed} \circ \pass{simplify}
+  \pass{cast\text{-}closed} \circ \pass{simplify} ,
 \]
-(Section~\ref{sec:t-passes}). Each pass is stated for every program of its
-source language, except simplify and cast insertion, whose source is
-untyped ISWIM. A $\Tl{Mon}$ program $P$ is given meaning, and run, as its
-embedding $\Tembed{P}$ into $\Tl{Clos5}$: rco is stated as
-$P \mapsto \Tembed{\pass{rco}(P)}$ and lift locals as
+from ISWIM to $\Tl{X86}$ (Section~\ref{sec:t-passes}). Each pass is stated
+for every program of its source language, except simplify and cast
+insertion, whose source is untyped ISWIM. A $\Tl{Mon}$ program $P$ is given
+meaning, and run, as its embedding $\Tembed{P}$ into $\Tl{Clos5}$: rco is
+stated as $P \mapsto \Tembed{\pass{rco}(P)}$ and lift locals as
 $\Tembed{P} \mapsto \pass{lift}(P)$. The whole compiler is stated for
 each prefix, $\pass{compile}$ (into $\Tl{Clos5}$), $\pass{compile\text{-}mon}$
 (through the embedding), $\pass{compile\text{-}imp}$,
@@ -5343,16 +5684,19 @@ closed $M$.
   exactly: $\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$ for every
   $M$; $\SEM{M}\rho_0 \simeq \SEM{\pass{cast\text{-}closed}(M)}^{\Tl{ISWIM}}\rho_0$
   when $\mathit{Closed}(M)$; and likewise, with no precondition, for
-  enclose, optimize, concretize, globalize, rco, lift locals, explicate
-  control and select instructions (for select, for every $\Tl{CFG}$
-  program: its frames are typed, so the frames of the X86 program are
-  large enough by construction). Delay preserves and reflects the
+  enclose, optimize, concretize, globalize, rco, lift locals and explicate
+  control. Delay preserves and reflects the
   constants and nonemptiness: $c \in \SEM{M}^{\Tl{3}}\rho_0 \iff
   c \in \SEM{\pass{delay}(M)}^{\Tl{4}}\rho_0$, and likewise for
   $\NE$. So, when $\mathit{Closed}(M)$, the meaning of each prefix of the
-  compiler applied to $M$ has the same constants as $\SEM{M}\rho_0$, and is
-  nonempty exactly when $\SEM{M}\rho_0$ is (\texttt{compile-correct-const},
+  compiler up to $\pass{compile\text{-}cfg}$ applied to $M$ has the same
+  constants as $\SEM{M}\rho_0$, and is nonempty exactly when
+  $\SEM{M}\rho_0$ is (\texttt{compile-correct-const},
   \texttt{compile-correct-nonempty}, and so on).
+  % TODO-X86T: add select instructions (for every CFG^T program,
+  % [[select P]]^{X86^T} ~= [[P]]^{CFG^T}) and compile-x86 (into X86^T) to
+  % this item, once Theorems/Denotational.agda states them again for the
+  % plain graph model's X86^T semantics.
 \item \textbf{CEK machine + simulation} (\texttt{Theorems/Simulation.agda};
   Section~\ref{sec:t-cek}), \textbf{clocked interpreter + value relations}
   (\texttt{Theorems/Interpreter.agda}; Section~\ref{sec:t-interp}) and
@@ -5364,45 +5708,81 @@ closed $M$.
     (\forall o.\; \Term_{L_1}(o) \iff \Term_{L_2}(o)) \land (\Div_{L_1} \iff \Div_{L_2}),
   \]
   for simplify and cast insertion when $\mathit{Closed}(M)$, and for every
-  program for the other passes. In the reduction column, the semantics of
-  $\Tl{Imp}$, $\Tl{CFG}$ and X86 are the CEK machines. Each prefix of the
-  compiler gives $\Equiv$ semantics with ISWIM when $\mathit{Closed}(M)$;
+  program for the other passes. Select instructions is stated between the
+  machines of $\Tl{CFG}$ and $\Tl{X86}$,
+  $\Equiv(\Mach{\Tl{CFG}}(P), \Mach{\Tl{X86}}(\pass{select}(P)))$, whose
+  only trapped error is $\key{chk}$'s, project's check. In the reduction
+  column, the semantics of $\Tl{Imp}$, $\Tl{CFG}$ and $\Tl{X86}$ are the
+  CEK machines. Each prefix of the
+  compiler gives $\Equiv$ semantics with ISWIM when $\mathit{Closed}(M)$,
+  $\pass{compile\text{-}x86}$ with the $\Tl{X86}$ machine;
   and in particular, for $\pass{compile}$, the compiled program terminates
   with the same constants, terminates (with an answer) exactly when the
   original does, errs exactly when it does, and diverges exactly when it
   does (\texttt{compile-const}, \texttt{compile-converges},
   \texttt{compile-error}, \texttt{compile-diverges}).
+  % TODO-X86T: in the interpreter column, select-correct and
+  % compile-x86-correct are not in Theorems/Interpreter.agda now; once the
+  % X86^T interpreter is in, say they hold there too, with the X86^T
+  % interpreter.
 \item \textbf{Adequacy} (\texttt{Theorems/Adequacy.agda}). For closed $M$:
   the graph model is sound and adequate for the ISWIM machine on constants
   ($c \in \SEM{M}\rho_0 \iff \Term_{\mathrm{ISWIM}(M)}(c)$) and on answers
   ($\SEM{M}\rho_0 \NE$ iff the machine terminates with an answer), and a
   program that errs or diverges means $\emptyset$; the same four hold for
-  the $\Tl{Clos5}$ machine on $\pass{compile}(M)$, and the first two for
-  the X86 machine on $\pass{compile\text{-}x86}(M)$. With the denotational
-  theorems, observed through the machines, $\pass{compile}$ and
-  $\pass{compile\text{-}x86}$ preserve the constants a program terminates
-  with and whether it terminates with an answer.
+  the $\Tl{Clos5}$ machine on $\pass{compile}(M)$. With the denotational
+  theorems, observed through the machines, $\pass{compile}$ preserves the
+  constants a program terminates with and whether it terminates with an
+  answer.
+  % TODO-X86T: the X86 statements (x86-const-iff, x86-nonempty-iff,
+  % end-to-end-x86-*) were removed with the untyped X86 adequacy (now in
+  % agda/Untyped/). Add the direct adequacy of the graph model for the
+  % X86^T machine on compile-x86(M), and the end-to-end statements for
+  % compile-x86, once they are in Theorems/Adequacy.agda.
 \item \textbf{Graph model with errors} (\texttt{Theorems/GraphErrors.agda};
-  Section~\ref{sec:t-gerr}). Every pass but delay and select preserves the
+  Section~\ref{sec:t-gerr}). Every pass but delay preserves the
   meaning exactly, errors included (simplify and cast insertion when
-  $\mathit{Closed}(M)$); delay preserves and reflects an error ($\omega$),
-  the constants, and having a value (an element other than $\omega$);
-  select is $\Same$ (an error, the same constants and a value together),
-  and so is each prefix of the compiler, from $\SEM{M}\rho_0$, when
-  $\mathit{Closed}(M)$. Adequacy: for closed $M$, the meaning tells apart
-  the outcomes of the ISWIM machine on $M$, of the $\Tl{Clos5}$ machine on
-  $\pass{compile}(M)$ and of the X86 machine on $\pass{compile\text{-}x86}(M)$:
+  $\mathit{Closed}(M)$), select instructions too:
+  $\SEM{\pass{select}(P)}^{\Tl{X86},\omega} \simeq \SEM{P}^{\Tl{CFG},\omega}$
+  for every $\Tl{CFG}$ program $P$, since $\Tl{X86}$, like $\Tl{CFG}$, checks
+  kinds only at project ($\key{chk}$). Delay preserves and reflects an
+  error ($\omega$), the constants, and having a value (an element other
+  than $\omega$), $\Same$; and so does each prefix of the compiler, from
+  $\SEM{M}\rho_0$, when $\mathit{Closed}(M)$, through
+  $\SEM{\pass{compile\text{-}x86}(M)}^{\Tl{X86},\omega}$.
+  Adequacy: for closed $M$, the meaning tells apart
+  the outcomes of the ISWIM machine on $M$ and of the $\Tl{Clos5}$ machine on
+  $\pass{compile}(M)$:
   $\omega$ is in it iff the machine errs, $c$ iff it terminates with $c$,
   a value iff it terminates with an answer, and nothing iff it diverges.
-  So the ISWIM machine on $M$ and the $\Tl{Clos5}$ and X86 machines on its
+  So the ISWIM machine on $M$ and the $\Tl{Clos5}$ machine on its
   compilation stop with an error together, stop with the same constants,
   stop with an answer together, and diverge together; and likewise for
-  simplify, through the ISWIM machine. Adequacy for the X86 machine is that
-  of Part~\ref{part:untyped}'s X86 machine, on the typed compiler's
-  programs, which are well formed; for the $\Tl{Clos5}$ machine it is derived
-  from the ISWIM machine's, $\Same$, and the CEK column's simulation, not
-  proved by a logical relation of its own.
+  simplify, through the ISWIM machine. Adequacy for the $\Tl{Clos5}$
+  machine is derived from the ISWIM machine's, $\Same$, and the CEK
+  column's simulation, not proved by a logical relation of its own.
+  % TODO-X86T: the x86-*-iff and end-to-end-x86-* statements were removed
+  % with the untyped X86 adequacy (now in agda/Untyped/). Add the direct
+  % adequacy of the graph model with errors for the X86^T machine on
+  % compile-x86(M), and the end-to-end statements through it, once they
+  % are in Theorems/GraphErrors.agda.
+\item \textbf{Erasure} (\texttt{Theorems/Erasure.agda}), an assurance
+  theorem, not a pass of the compiler and not one of the comparison's
+  statements: without its types, the code that select emits is that of
+  select into untyped X86 (Section~\ref{sec:t-select}).
 \end{itemize}
+
+\begin{theorem}[Erasure]\label{thm:t-erase}
+For every $\Tl{CFG}$ program $P$,
+$\lfloor \pass{select}(P) \rfloor = \pass{select}_{\mathrm{X86}}(P)$
+(\texttt{select-erase}; the proof is in
+\texttt{proof/Compiler/SelectErase.agda}).
+\end{theorem}
+The erasure (\texttt{Language/Typed/X86Erase.agda}) drops the types, the
+proofs about registers and frame bounds and the coercion $\Tup{a}$, and
+expands $\Tchk{t}{x}{d}$ to X86's test of $t$ on $x$ and the move,
+$\Tcheck{t}(x);\ \key{movq}\; x, d$. So the compiler's code is the code of
+an X86 compiler, with the instructions of Part~\ref{part:untyped}'s X86.
 
 \part{The Untyped Pipeline (Preserved)}\label{part:untyped}
 
@@ -5423,9 +5803,16 @@ their semantics check the kinds of values themselves:
   \xrightarrow{\pass{select}} \mathrm{X86}
 \end{array}
 \]
-Its definitions of ISWIM, simplify and X86, and the semantics of ISWIM
-and X86 in each style, are shared with the typed pipeline; everything
-else here is in \texttt{agda/Untyped/}. The part has the languages
+Its definitions of ISWIM and simplify, and the semantics of ISWIM in each
+style, are shared with the typed pipeline. X86 is this pipeline's target
+alone: the typed pipeline ends at $\Tl{X86}$ (Section~\ref{sec:t-x86}),
+whose erasure is X86 (Theorem~\ref{thm:t-erase}). X86's syntax
+(\texttt{agda/\allowbreak Language/\allowbreak X86.agda}) and its machine
+(\texttt{agda/\allowbreak Semantics/\allowbreak CEK/\allowbreak X86.agda}) stay
+outside \texttt{agda/\allowbreak Untyped/};
+everything else here, the semantics of X86 in the graph
+models and the interpreter and their adequacy included, is in
+\texttt{agda/Untyped/}. The part has the languages
 (Section~\ref{sec:u-langs}) and the passes (Section~\ref{sec:u-passes}),
 and then one section per column, each with its semantics and the
 relations of its proofs: the graph model (Section~\ref{sec:u-den}), CEK
@@ -5567,7 +5954,7 @@ jump to any other label errors.
   & P &::=& (b_0, \ldots, b_{m-1};\; b)
 \end{syntax}
 
-\subsection{X86}
+\subsection{X86}\label{sec:u-x86}
 
 x86 with variables over the same values as before. The locations $d$ are
 the slots of the frame and the registers; an operand $o$ is a location,
