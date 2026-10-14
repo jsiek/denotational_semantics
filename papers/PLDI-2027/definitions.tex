@@ -1912,52 +1912,73 @@ each from the one before it.
 
 The typed languages are also given meaning in the graph model with
 errors of Part~II (Section~\ref{sec:graph-errors}), over the same error
-monad: a set is a computation that errs when it holds $\omega$, and
-$\bind$ runs a function on its values
-(\texttt{agda/Semantics/GraphErr/Typed/},
+monad: a set $D$ is a computation that errs when $\omega \in D$, has the
+values $\lfloor D \rfloor = D \setminus \{\omega\}$, and diverges when it has
+neither; $\mathit{val}(D)$ holds when $\lfloor D \rfloor \NE$, and $D \bind F$
+is $\{\omega\}$ when $\omega \in D$, together with $F(\lfloor D \rfloor)$ when
+$\mathit{val}(D)$ (\texttt{agda/Semantics/GraphErr/Typed/},
 \texttt{agda/Framework/GraphModel/ErrorMonad.agda}). The difference from
 the untyped semantics is that \emph{only project checks kinds and errs}.
-Each operator is the graph model's under the binds of its operands, in
-the machines' order, with no $\key{checked}$: a typed operand has the
-kind its operator needs. An operand may still hold $\omega$, from a
-failed project, which the binds propagate.
+Each operator is the graph model's (its kernel) under the binds of its
+operands, in the machines' order, with no $\key{checked}$: a typed
+operand has the kind its operator needs. An operand may still hold
+$\omega$, from a failed project, which the binds propagate.
 \begin{align*}
   D \app^{\mathsf{T}} E &= D \bind \lambda F.\, E \bind \lambda X.\, F \app X \\
   \key{proj}^{\mathsf{T}}_i(D) &= D \bind \lambda X.\, \key{proj}_i(X) \\
   \mathcal{C}^{\mathsf{T}}(D, F, G) &= D \bind \lambda X.\, \mathcal{C}(X^{\checkmark}, F, G) \\
-  \key{prim}^{\mathsf{T}}_p(D, E) &= D \bind \lambda X.\, E \bind \lambda Y.\, \key{prim}_p(X, Y) \\
-  \SEM{\Let x = M \In N}^{\ell,\omega}\rho &= \SEM{M}^{\ell,\omega}\rho \bind \lambda X.\, \SEM{N}^{\ell,\omega}\ext{\rho}{x}{X}
+  \key{prim}^{\mathsf{T}}_p(D, E) &= D \bind \lambda X.\, E \bind \lambda Y.\, \key{prim}_p(X, Y)
 \end{align*}
 where $X^{\checkmark}$ keeps the injections of $X$ whose payload is not
-$\omega$, as in Part~II. A $\key{let}$ is the bind of its body.
-$\Lambda^{\omega}$, $\Lambda\Lambda^{\omega}$, $\mathcal{T}^{\omega}$,
-$\key{inl}^{\omega}$, $\key{inr}^{\omega}$ and $\key{pair}^{\omega}$,
-which check nothing, are those of Part~II. Variables and constants
-are as in Part~II; inject is the identity.
+$\omega$, as in Part~II. $\Lambda^{\omega}$, $\Lambda\Lambda^{\omega}$,
+$\mathcal{T}^{\omega}$, $\key{inl}^{\omega}$, $\key{inr}^{\omega}$
+and $\key{pair}^{\omega}$, which check nothing, and $\key{errcode}$ are
+those of Part~II; so are the semantics of ISWIM and of X86, unchanged.
+Variables and constants are as in Part~II, and a variable not in scope
+means $\{\omega\}$, as in $\rho_0$ (in a typed term there is none, but
+the body of a closed code is given $\rho_0$ extended with its
+parameters). Inject is the identity, and a $\key{let}$ is the bind of its
+body:
+\begin{align*}
+  \SEM{\Tinject{G} M}^{\ell,\omega}\rho &= \SEM{M}^{\ell,\omega}\rho \qquad
+  \SEM{\Let x = M \In N}^{\ell,\omega}\rho = \SEM{M}^{\ell,\omega}\rho \bind \lambda X.\, \SEM{N}^{\ell,\omega}\ext{\rho}{x}{X} .
+\end{align*}
 
 \subsection{Project}
 
-The check of the error monad is generalized to see the kinds of values
-through a map $\varphi$ on kinds: with $\varphi$ the identity it is
+A value of type $\TAny$ is a value of the domain, tagged by its kind:
+\begin{align*}
+  \Tkind(V \mapsto w) = \Tkind(\nu) &= \mathit{fun} &
+  \Tkind(\pairv{u}{v}) &= \mathit{pair} &
+  \Tkind(\Left{d}) = \Tkind(\Right{d}) &= \mathit{inj} \\
+  \Tkind(\tup{i}{d}) &= \mathit{tup}_n &
+  \Tkind(\emptytup) &= \mathit{tup}_0 &
+  \Tkind(c) &= B
+\end{align*}
+for $\tup{i}{d}$ a component of a tuple of $n$ components and $c$ of base
+type $B$, and $\Tkind(\omega) = \mathit{err}$. The kind of the values of a flat type
+is $\Tkindf(B) = B$, $\Tkindf(\Ttup{n}) = \mathit{tup}_n$,
+$\Tkindf(\Tsum) = \mathit{inj}$ and $\Tkindf(\Tfun) = \mathit{fun}$. The
+check of the error monad is generalized to see the kinds of values
+through a map $\varphi$ on kinds; with $\varphi$ the identity it is
 $\key{checked}_k$ of Part~II
-(\texttt{agda/Framework/GraphModel/TypedCheck.agda}). A project to tag $t$ binds
-its operand, adds $\omega$ when the operand has a value of another kind
-than that of the flat type $\Tflatof{t}$ of $t$, and keeps the values of
-that kind, provided that the operand passes the test of $t$:
+(\texttt{agda/Framework/GraphModel/TypedCheck.agda}). A project to tag
+$t$ binds its operand, adds $\omega$ when the operand has a value of
+another kind than that of $\Tflatof{t}$, and keeps the values of that
+kind, provided that the operand passes the test of $t$:
 \begin{align*}
   \Tchecked{\varphi}_k(X, A) &= \{ \omega \mid \exists d \in X.\; \varphi(\Tkind(d)) \neq k \} \cup A \\
   \Tkeep{\varphi}_t(X) &= \{ d \in X \mid \Thit(t, X),\; \varphi(\Tkind(d)) = \Tkindf(\Tflatof{t}) \} \\
   \key{project}^{\varphi}_t(D) &= D \bind \lambda X.\, \Tchecked{\varphi}_{\Tkindf(\Tflatof{t})}(X, \Tkeep{\varphi}_t(X))
 \end{align*}
-where $\Tkindf$ is the kind of the values of a flat type (an integer, a
-tuple of $n$ components, an injection, a function), and $\Thit(t, X)$
-holds always but for a tuple tag, where it needs an entry $\tup{i}{e} \in X$
-of $n+1$ components for the component $i$ that the tag (and the X86 test,
-and the $\key{proj}_i$ after it) reads: a tuple's meaning may hold entries for
-some components only. Keeping only the values of the right kind keeps a
-denotation consistent. Up to $\Tl{Clos3}$, $\varphi$ is the identity
+where $\Thit(t, X)$ holds always but for a tuple tag: $\Thit(\Tttup{n}{i}, X)$
+needs an entry $\tup{i}{e} \in X$ of a tuple of $n$ components, for the
+component $i$ that the tag (and the X86 test, and the $\prj{i}$ after it)
+reads, since a tuple's meaning may hold entries for some components
+only. Keeping only the values of the right kind keeps a denotation
+consistent. Up to $\Tl{Clos3}$, $\varphi$ is the identity
 ($\key{project}^{\mathsf{T}}_t$). From $\Tl{Clos4}$ on a closure is a pair, so
-project sees a pair as a function and code, which is not a value of
+project sees a pair as a function, and code, which is not a value of
 type $\TAny$, as an error:
 \[
   \Tkindfour(\mathit{pair}) = \mathit{fun} \qquad
@@ -1965,25 +1986,36 @@ type $\TAny$, as an error:
   \Tkindfour(k) = k \quad \text{otherwise}
 \]
 and $\Tl{Clos4}$, $\Tl{Clos5}$, $\Tl{Imp}$ and $\Tl{CFG}$ use
-$\key{project}^{\Tkindfour}_t$.
+$\key{project}^{\Tkindfour}_t$:
+\begin{align*}
+  \SEM{\Tproject{t} M}^{\ell,\omega}\rho &= \key{project}^{\mathsf{T}}_t(\SEM{M}^{\ell,\omega}\rho)
+  && (\ell \in \{\Tl{ISWIM}, \Tl{2}, \Tl{3}\}) \\
+  \SEM{\Tproject{t} M}^{\ell,\omega}\rho &= \key{project}^{\Tkindfour}_t(\SEM{M}^{\ell,\omega}\rho)
+  && (\ell \in \{\Tl{4}, \Tl{5}\}) .
+\end{align*}
 
 \subsection{The languages}
 
-$\SEM{-}^{\Tl{ISWIM},\omega}$ is $\SEM{-}^{\mathrm{ISWIM},\omega}$ with the
-operators above: $\lambda$ is $\Lambda^{\omega}$, application
-$\app^{\mathsf{T}}$, which binds the operator and then the argument and
-checks nothing; tuples, projections, case and primitives are
-$\mathcal{T}^{\omega}$, $\key{proj}^{\mathsf{T}}_i$, $\mathcal{C}^{\mathsf{T}}$ and
-$\key{prim}^{\mathsf{T}}_p$; and project is $\key{project}^{\mathsf{T}}_t$. A
-closure of $\Tl{Clos2}$ binds its captured terms left to right; one of
-$\Tl{Clos3}$ binds the tuple of them, and is its code applied to it:
+$\SEM{-}^{\Tl{ISWIM},\omega}$ has the clauses above and
+\begin{align*}
+  \SEM{\lam{x} N}^{\Tl{ISWIM},\omega}\rho &= \Lambda^{\omega}(\lambda X.\, \SEM{N}^{\Tl{ISWIM},\omega}\ext{\rho}{x}{X}) \qquad
+  \SEM{L\;M}^{\ell,\omega}\rho = \SEM{L}^{\ell,\omega}\rho \app^{\mathsf{T}} \SEM{M}^{\ell,\omega}\rho
+\end{align*}
+(application binds the operator and then the argument, and checks
+nothing), and tuples, projections, injections, case and primitives by
+$\mathcal{T}^{\omega}$, $\key{proj}^{\mathsf{T}}_i$, $\key{inl}^{\omega}$,
+$\key{inr}^{\omega}$, $\mathcal{C}^{\mathsf{T}}$ (binding the payload) and
+$\key{prim}^{\mathsf{T}}_p$. $\Tl{Clos2}$ and $\Tl{Clos3}$ have the same
+clauses but for the closure. A closure of $\Tl{Clos2}$ binds its captured
+terms left to right; one of $\Tl{Clos3}$ binds the tuple of them, and is
+its code applied to it:
 \begin{align*}
   \SEM{\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N}^{\Tl{2},\omega}\rho &=
-    (D_1, \ldots, D_n) \bind \lambda X_1 \ldots X_n.\, \\
-    &\qquad \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{\Tl{2},\omega}\rho_0(x_1{:=}X_1,\ldots,x_n{:=}X_n, y{:=}Y)) \\
+    (D_1, \ldots, D_n) \bind \lambda X_1 \ldots X_n.\,
+    \Lambda^{\omega}(\lambda Y.\, \SEM{N}^{\Tl{2},\omega}\rho_0(x_1{:=}X_1,\ldots,x_n{:=}X_n, y{:=}Y)) \\
   \SEM{\clos{M_1\ldots M_n}{e\, y} N}^{\Tl{3},\omega}\rho &=
-    \mathcal{T}^{\omega}(D_1, \ldots, D_n) \bind \lambda E.\, \\
-    &\qquad \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{3},\omega}\rho_0(e{:=}X, y{:=}Y)) \app E
+    \mathcal{T}^{\omega}(D_1, \ldots, D_n) \bind \lambda E.\,
+    \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{3},\omega}\rho_0(e{:=}X, y{:=}Y)) \app E
 \end{align*}
 where $D_i = \SEM{M_i}^{\ell,\omega}\rho$. In $\Tl{Clos4}$, code is
 $\Lambda\Lambda^{\omega}$, $\key{pack}$ is $\key{pair}^{\omega}$, and a call
@@ -1993,7 +2025,8 @@ particular not that the closure is a pair):
   \SEM{\Tcodetm{e}{y}{N}}^{\Tl{4},\omega}\rho &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{4},\omega}\rho_0(e{:=}X, y{:=}Y)) \\
   \SEM{\Tpack{L}{M}}^{\Tl{4},\omega}\rho &= \key{pair}^{\omega}(\SEM{L}^{\Tl{4},\omega}\rho, \SEM{M}^{\Tl{4},\omega}\rho) \\
   \SEM{\Tcallc{L}{M}}^{\Tl{4},\omega}\rho &= \SEM{L}^{\Tl{4},\omega}\rho \bind \lambda P.\,
-    \SEM{M}^{\Tl{4},\omega}\rho \bind \lambda X.\, (\key{car}(P) \app \key{cdr}(P)) \app X
+    \SEM{M}^{\Tl{4},\omega}\rho \bind \lambda X.\, P \odot X
+  \qquad\text{where } P \odot X = (\key{car}(P) \app \key{cdr}(P)) \app X .
 \end{align*}
 
 \paragraph{$\Tl{Clos5}$ and $\Tl{Mon}$.} As $\Tl{Clos4}$, with references
@@ -2001,85 +2034,758 @@ to global definitions. Unlike the graph model's, the table of the
 semantics with errors is indexed by the level of a reference, a number,
 as in Part~II, and gives $\key{errcode}$ at any other position:
 \begin{align*}
-  \SEM{\funref{f}}^{\Tl{5},\omega}_T\rho &= T(\mathit{lvl}(f)) \qquad
-  \key{code}^{\omega}_T(N) = \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{5},\omega}_T\rho_0(e{:=}X, y{:=}Y)) \\
+  \SEM{\funref{k}}^{\Tl{5},\omega}_T\rho &= T(k) \qquad
+  \key{code}^{\omega}_T(\Tcodetm{e}{y}{N}) = \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{5},\omega}_T\rho_0(e{:=}X, y{:=}Y)) \\
   \key{table}^{\omega}(d_0,\ldots,d_{m-1})(k) &=
     \begin{cases}
       \key{code}^{\omega}_{\key{table}^{\omega}(d_0,\ldots,d_{k-1})}(d_k) & k < m \\
       \key{errcode} & \text{otherwise}
-    \end{cases}
+    \end{cases} \\
+  \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\Tl{5},\omega} &= \SEM{M}^{\Tl{5},\omega}_{\key{table}^{\omega}(d_0,\ldots,d_{m-1})}\,\rho_0
 \end{align*}
 The table is generic in what the definitions are, and is also that of
-$\Tl{Imp}$ and $\Tl{CFG}$. A $\Tl{Mon}$ program means its embedding into
-$\Tl{Clos5}$, $\SEM{\Tembed{P}}^{\Tl{5},\omega}$.
+$\Tl{Imp}$ and $\Tl{CFG}$, with their codes. A $\Tl{Mon}$ program means its
+embedding into $\Tl{Clos5}$, $\SEM{\Tembed{P}}^{\Tl{5},\omega}$.
 
-\paragraph{$\Tl{Imp}$ and $\Tl{CFG}$.} The frame is the environment, so,
-as in the graph model, it needs no checks: there is no
-$\mathit{checked}^{\omega}_n$. An atom and a simple expression mean what
+\paragraph{$\Tl{Imp}$ and $\Tl{CFG}$.} The frame is the environment: slot
+$s$ is the variable at level $s$, so a frame $\sigma$ is an environment,
+and, as in the graph model, it needs no checks (there is no
+$\mathit{checked}^{\omega}_n$). An atom and a simple expression mean what
 they mean as $\Tl{Mon}$ expressions, that is, in $\Tl{Clos5}$:
 $\mathcal{A}_\sigma(a) = \SEM{\Tembed{a}}^{\Tl{5},\omega}_T\sigma$ and
-$\mathcal{S}_\sigma(s) = \SEM{\Tembed{s}}^{\Tl{5},\omega}_T\sigma$. A slot is
-bound as the X86 machine writes it, by the application of a function:
+$\mathcal{S}_\sigma(r) = \SEM{\Tembed{r}}^{\Tl{5},\omega}_T\sigma$, for the
+table $T$ of the program. A slot is bound as the X86 machine writes it,
+by the application of a function to the value:
+\[
+  \Tletv(D, F) = D \bind \lambda X.\, \Lambda^{\omega}(F) \app X .
+\]
+$\Tl{Imp}$ is continuation-passing, with $\kappa : \SET{\V} \to \SET{\V}$;
+$\assign{s}{e_1}{e_2}$ and $\Casei{a}{s}{e_1}{e_2}$ write the next slot,
+$s = |\sigma|$, and continue in $(\sigma, X)$:
 \begin{align*}
-  \Tletv(D, F) &= D \bind \lambda X.\, \Lambda^{\omega}(F) \app X \\
-  \SEM{\assign{x}{e_1}{e_2}}\sigma\,\kappa &= \SEM{e_1}\sigma\,(\lambda D.\,
-    \Tletv(D,\; \lambda X.\, \SEM{e_2}\ext{\sigma}{x}{X}\,\kappa)) \\
-  \SEM{\Case{a}{x}{e_1}{x}{e_2}}\sigma\,\kappa &=
-    \mathcal{C}^{\mathsf{T}}(\mathcal{A}_\sigma(a),\; \lambda X.\, \SEM{e_1}\ext{\sigma}{x}{X}\,\kappa,\;
-      \lambda X.\, \SEM{e_2}\ext{\sigma}{x}{X}\,\kappa) \\[1ex]
-  \SEM{x \mathrel{:=}_{\Delta'} s;\; t}\sigma &=
-    \Tletv(\mathcal{S}_\sigma(s),\; \lambda X.\, \SEM{t}\ext{(\sigma|_{\Delta'})}{x}{X}) \\
-  \SEM{\key{case}\;a\;\key{of}_{\Delta'}\;\key{goto}\;l_1 \mid \key{goto}\;l_2}\sigma &=
-    \mathcal{C}^{\mathsf{T}}(\mathcal{A}_\sigma(a),\;
-      \lambda X.\, B(l_1)(\ext{(\sigma|_{\Delta'})}{x}{X}),\; \lambda X.\, B(l_2)(\ext{(\sigma|_{\Delta'})}{x}{X}))
+  \SEM{r}\sigma\,\kappa &= \kappa(\mathcal{S}_\sigma(r)) \\
+  \SEM{\assign{s}{e_1}{e_2}}\sigma\,\kappa &= \SEM{e_1}\sigma\,(\lambda D.\,
+    \Tletv(D,\; \lambda X.\, \SEM{e_2}(\sigma, X)\,\kappa)) \\
+  \SEM{\Casei{a}{s}{e_1}{e_2}}\sigma\,\kappa &=
+    \mathcal{C}^{\mathsf{T}}(\mathcal{A}_\sigma(a),\; \lambda X.\, \SEM{e_1}(\sigma, X)\,\kappa,\;
+      \lambda X.\, \SEM{e_2}(\sigma, X)\,\kappa) \\[1ex]
+  \key{code}^{\mathrm{K}}_T(e) &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{e}^{\Tl{Imp},\omega}_T(X, Y)\,(\lambda D.\, D)) \\
+  \SEM{(e_0, \ldots, e_{m-1};\; e)}^{\Tl{Imp},\omega} &= \SEM{e}^{\Tl{Imp},\omega}_{T}\,\rho_0\,(\lambda D.\, D)
 \end{align*}
-with $\SEM{r}\sigma\,\kappa = \kappa(\mathcal{S}_\sigma(r))$,
-$\SEM{\key{return}\; s}\sigma = \mathcal{S}_\sigma(s)$ and
-$\SEM{\key{goto}\; l}\sigma = B(l)(\sigma)$; a label indexes a block that is
-there, so a jump needs no check. The code of a definition is
-$\Lambda\Lambda^{\omega}$ of its body on $\rho_0(e{:=}X, y{:=}Y)$ (with the
-continuation $\lambda D.\, D$ in $\Tl{Imp}$), the blocks are given meaning
-as in the graph model, and main runs in $\rho_0$ with
-$\key{table}^{\omega}$.
+with $T = \key{table}^{\omega}(e_0, \ldots, e_{m-1})$ built with
+$\key{code}^{\mathrm{K}}$; a definition starts in the frame $(X, Y)$, its
+environment in slot 0 and its argument in slot 1, and main in the empty
+frame $\rho_0$. In $\Tl{CFG}$, $\assign{s}{r}{t}$ and $\Tcase{a}{s}{l_1}{l_2}$
+continue in $(\Tcut{\sigma}{s}, X)$, forgetting the slots from $s$ on, and
+a block is run by its label:
+\begin{align*}
+  \SEM{\Treturn{r}}\sigma &= \mathcal{S}_\sigma(r) \qquad
+  \SEM{\Tgoto{l}}\sigma = B(l)(\sigma) \\
+  \SEM{\assign{s}{r}{t}}\sigma &=
+    \Tletv(\mathcal{S}_\sigma(r),\; \lambda X.\, \SEM{t}(\Tcut{\sigma}{s}, X)) \\
+  \SEM{\Tcase{a}{s}{l_1}{l_2}}\sigma &=
+    \mathcal{C}^{\mathsf{T}}(\mathcal{A}_\sigma(a),\;
+      \lambda X.\, B(l_1)(\Tcut{\sigma}{s}, X),\; \lambda X.\, B(l_2)(\Tcut{\sigma}{s}, X)) \\[1ex]
+  \key{blocks}_T(t_0, \ldots, t_{j-1})(l) &= \SEM{t_l}^{\Tl{CFG},\omega}_{T,\, \key{blocks}_T(t_0, \ldots, t_{l-1})} \\
+  \key{run}_T((t_0, \ldots, t_{j-1};\; t)) &= \SEM{t}^{\Tl{CFG},\omega}_{T,\, \key{blocks}_T(t_0, \ldots, t_{j-1})} \\
+  \key{code}^{\mathrm{C}}_T(b) &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \key{run}_T(b)(X, Y)) \qquad
+  \SEM{(b_0, \ldots, b_{m-1};\; b)}^{\Tl{CFG},\omega} = \key{run}_{T}(b)(\rho_0)
+\end{align*}
+with $T = \key{table}^{\omega}(b_0, \ldots, b_{m-1})$ built with
+$\key{code}^{\mathrm{C}}$. A label indexes a block that is there, so a jump
+needs no check.
 
-\subsection{Select: X86 and checked \texorpdfstring{$\Tl{CFG}$}{CFG-T}}
+%-------------------------------------------------------------------------------
+\subsection{Relations}\label{sec:t-gerr-rel}
 
-Every pass of the typed pipeline but delay and select preserves the
-meaning of a program exactly ($\simeq$) in the graph model with errors;
-in the graph model, select does too. Select, with errors, is the one
-pass whose correctness is not an equation, unlike in Part~II: X86's
+\begin{sloppypar}
+The proofs are in \texttt{agda/proof/Correctness/GraphErr/}, with the
+statements in \texttt{agda/Theorems/GraphErrors.agda}, and the lemmas
+about the semantics (monotone, consistent and continuous, by induction on
+the term) in \texttt{agda/proof/Semantics/GraphErr/Typed/}. Write
+$\mathit{Val}(D)$ for ``$D$ is a set of values'': nonempty, and
+$\omega \notin D$. Every pass but delay and select preserves meanings
+exactly ($\simeq$), and its proof is by induction on the term, as in the
+graph model, with environments that hold sets of values: the binds then
+are the monad's left unit, a $\key{let}$ is the bind of its body, binds
+associate, and a case and a check commute with a bind. Every typed
+operator but project checks nothing, so these cases are congruences.
+\end{sloppypar}
+
+\subsubsection{Simplify}
+
+Simplify is the untyped pass on untyped ISWIM, and its proof is that of
+the graph model (Lemma~\ref{lem:simplify}) with environments that also
+hold no $\omega$ (\texttt{SimplifyCorrect.agda}; Part~II,
+Section~\ref{sec:graph-errors}): simplify duplicates and drops only
+values, and a variable stands for a value. The transformations rest on
+$\beta$ for a value, whose operand is a nonempty, consistent set of
+values without $\omega$. That holds under the binders, which bind no
+$\omega$, but not in $\rho_0$, so the theorem is for closed programs,
+which mean the same in every environment.
+
+\begin{theorem}[Simplify, with Errors]\label{lem:t-gerr-simplify}
+If $\mathit{Closed}(M)$, then
+$\SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{simplify}(M)}^{\mathrm{ISWIM},\omega}\rho_0$.
+\end{theorem}
+
+\subsubsection{Cast Insertion}
+
+The kind errors move: the untyped operators check the kind of an
+operand in their kernel, the typed ones leave it to a project of the
+operand. One law relates the two. Say that $K$ \emph{needs} kind $k$ when
+every element of $K(X)$ but $\omega$ comes with a value of $X$ of kind
+$k$.
+
+\begin{lemma}[Bind of a Project]\label{lem:t-gerr-proj-bind}
+Let $k = \Tkindf(\Tflatof{t})$, $K$ be monotone and need kind $k$, and
+$\Thit(t, X)$ whenever $K(X)$ has an element. If $\consis(D)$, then
+\[
+  \key{project}^{\mathsf{T}}_t(D) \bind K \simeq D \bind \lambda X.\, \key{checked}_k(X, K(X)) .
+\]
+On a consistent set of values the values all have kind $k$, or none
+has, and then both sides err. So, on consistent operands,
+\begin{align*}
+  (\key{project}^{\mathsf{T}}_{\Tfun} D) \app^{\mathsf{T}} E &\simeq D \app^{\omega} E &
+  \key{proj}^{\mathsf{T}}_i(\key{project}^{\mathsf{T}}_{\Tttup{n}{i}} D) &\simeq \key{proj}^{\omega}_i(D) \\
+  \mathcal{C}^{\mathsf{T}}(\key{project}^{\mathsf{T}}_{\Tsum} D, F, G) &\simeq \mathcal{C}^{\omega}(D, F, G) &
+  \key{prim}^{\mathsf{T}}_p(\key{project}^{\mathsf{T}}_{\Tint} X, \key{project}^{\mathsf{T}}_{\Tint} Y) &\simeq
+    \key{checked}_{\mathit{int}}(X, \key{checked}_{\mathit{int}}(Y, \key{prim}_p(X, Y)))
+\end{align*}
+the last for sets of values $X$ and $Y$ (the $\key{let}$-bound operands).
+\end{lemma}
+The untyped $\key{let}$, $\Lambda^{\omega}(F) \app^{\omega} D$, is the bind
+$D \bind F$ when the environment is nonempty and consistent, which holds
+under the binders.
+\begin{lemma}[Correctness of Cast Insertion]\label{lem:t-gerr-cast}
+If $\rho$ is nonempty and consistent, and each variable $x$ of $M$ means
+in $\rho$ what $\pass{cast}(x)$ means in $\sigma$,
+$\rho(x) \simeq \sigma(x)$, then
+$\SEM{M}^{\mathrm{ISWIM},\omega}\rho \simeq \SEM{\pass{cast}(M)}^{\Tl{ISWIM},\omega}\sigma$.
+In particular, if $\mathit{Closed}(M)$, then
+$\SEM{M}^{\mathrm{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{cast\text{-}closed}(M)}^{\Tl{ISWIM},\omega}\rho_0$.
+\end{lemma}
+
+\subsubsection{CC: Enclose}
+
+\begin{lemma}[Correctness of Enclose]\label{lem:t-gerr-enclose}
+If $\rho(x) \simeq \rho'(x)$ and $\mathit{Val}(\rho'(x))$ for every
+variable $x$ in scope, then
+$\SEM{M}^{\Tl{ISWIM},\omega}\rho \simeq \SEM{\pass{enclose}(M)}^{\Tl{2},\omega}\rho'$.
+So $\SEM{M}^{\Tl{ISWIM},\omega}\rho_0 \simeq \SEM{\pass{enclose}(M)}^{\Tl{2},\omega}\rho_0$
+for every closed $M$.
+\end{lemma}
+Every case but the function is a congruence. A function becomes a
+closure that binds all the variables in scope: they are sets of values,
+so the binds are their left unit, and the code's environment agrees with
+$\rho'$ on them, so the bodies are related under $\Lambda^{\omega}$.
+
+\subsubsection{CC: Optimize}
+
+\begin{lemma}[Correctness of Optimize]\label{lem:t-gerr-optimize}
+If $\mathit{Val}(\rho(x))$ for every variable $x$ in scope, and
+$\rho(x) \simeq \rho'(x)$ for every $x \in \FV(M)$, then
+$\SEM{M}^{\Tl{2},\omega}\rho \simeq \SEM{\pass{optimize}(M)}^{\Tl{2},\omega}\rho'$.
+So $\SEM{M}^{\Tl{2},\omega}\rho_0 \simeq \SEM{\pass{optimize}(M)}^{\Tl{2},\omega}\rho_0$
+for every closed $M$.
+\end{lemma}
+A closure binds its captured terms left to right: a kept one on both
+sides, and a dropped one, a variable, only in the source, where it is a
+set of values, so its bind is the left unit. The bound sets of the kept
+terms are related one to one, so the environments of the codes agree on
+the variables the code uses.
+
+\subsubsection{CC: Concretize}
+
+\begin{align*}
+  \SEM{x}_r\rho &= \rho(x) \qquad
+  \SEM{\prj{i} e}_r\rho = \key{proj}^{\mathsf{T}}_i(\rho(e)) \\[1ex]
+  \rho_2 \sim_\varphi \rho_3 &\iff \forall x.\; \rho_2(x) \simeq \SEM{\varphi(x)}_r\rho_3
+\end{align*}
+\begin{lemma}[Code on a Tuple]\label{lem:t-gerr-code-tuple}
+If $\mathit{Val}(X_i)$ for every $i$, then
+$\key{proj}^{\mathsf{T}}_i(\mathcal{T}(X_1, \ldots, X_n)) \simeq X_i$; and if
+$\consis(E)$, $\mathit{Val}(E)$, and $F$ is monotone in its first argument
+and uses only a finite part of it, then
+$\Lambda\Lambda^{\omega}(F) \app E \simeq \Lambda^{\omega}(F(E))$.
+\end{lemma}
+\begin{lemma}[Correctness of Concretize]\label{lem:t-gerr-concretize}
+If $\consis(\rho_3)$ and $\rho_2 \sim_\varphi \rho_3$, then
+\[
+  \SEM{M}^{\Tl{2},\omega}\rho_2 \simeq \SEM{\pass{concretize}_\varphi(M)}^{\Tl{3},\omega}\rho_3 .
+\]
+So $\SEM{M}^{\Tl{2},\omega}\rho_0 \simeq \SEM{\pass{concretize}_\emptyset(M)}^{\Tl{3},\omega}\rho_0$
+for every closed $M$.
+\end{lemma}
+Both closures bind their captured terms left to right (the $\Tl{Clos3}$
+one inside $\mathcal{T}^{\omega}$, by associativity); on their values, the
+$\Tl{Clos3}$ closure is its code applied to the tuple, which is the
+function of the code's body on the tuple
+(Lemma~\ref{lem:t-gerr-code-tuple}), where $x_i$ is $\prj{i} e$.
+
+\subsubsection{CC: Delay}\label{sec:t-gerr-delay}
+
+Delay changes how a closure is represented, so, as in the graph model,
+it is proved in two directions, with every target error traced to a
+source error (\texttt{DelayPreserve.agda}, \texttt{DelayReflect.agda},
+\texttt{DelayRel.agda}). The source application, once its operator $F$ is
+bound, and the target call of the closures $P$ are the kernels
+\[
+  F \bullet E = E \bind \lambda X.\, F \app X \qquad
+  P \odot E' = (\key{car}(P) \app \key{cdr}(P)) \app E' .
+\]
+The types remove checks: the source application has no check of its
+operator, and the target call no late check, so a target closure is
+related only by its calls, and kinds matter only to project, the one
+check, which sees a pair as a function ($\Tkindfour$).
+
+\paragraph{Preservation.}
+The relation $v \sqsubseteq D'$ between a $\Tl{Clos3}$ value $v$ and a set
+$D'$ of $\Tl{Clos4}$ values is defined by recursion on $v$; $D'$ has a pair
+when $\pairv{u}{t} \in D'$ for some $u$ and $t$.
+\begin{align*}
+  \nu \sqsubseteq D' &\iff D' \text{ has a pair} \\
+  (U \mapsto w) \sqsubseteq D' &\iff D' \text{ has a pair} \land
+     \forall E'.\; \consis(E') \land U \sqsubseteq E' \implies w \sqsubseteq D' \odot E' \\
+  \tup{i}{d} \sqsubseteq D' &\iff d \sqsubseteq \{ d' \mid \tup{i}{d'} \in D' \} \\
+  \Left{d} \sqsubseteq D' &\iff d \sqsubseteq \{ d' \mid \Left{d'} \in D' \} \qquad
+  \Right{d} \sqsubseteq D' \iff d \sqsubseteq \{ d' \mid \Right{d'} \in D' \} \\
+  \pairv{u}{v} \sqsubseteq D' &\iff \text{false} \\
+  v \sqsubseteq D' &\iff v \in D' \quad \text{otherwise } (c, \emptytup, \omega) \\[1ex]
+  D \sqsubseteq D' &\iff \forall v \in D.\; v \sqsubseteq D' \qquad
+  \rho \sqsubseteq \rho' \iff \forall x.\; \rho(x) \sqsubseteq \rho'(x)
+\end{align*}
+So $\omega \sqsubseteq D' \iff \omega \in D'$, $c \sqsubseteq D' \iff c \in D'$,
+and a $v \neq \omega$ with $v \sqsubseteq D'$ is witnessed by a value of
+$D'$ of kind $\Tkindfour$-equal to that of $v$; in particular
+$\mathit{val}(D')$.
+
+\begin{lemma}[Lifting through the Monad]\label{lem:t-gerr-delay-lift}
+If $\consis(D')$, $D \sqsubseteq D'$, and $F(\lfloor D \rfloor) \sqsubseteq F'(\lfloor D' \rfloor)$
+whenever $\mathit{val}(D)$, $\mathit{val}(D')$ and $\lfloor D \rfloor \sqsubseteq \lfloor D' \rfloor$, then
+$D \bind F \sqsubseteq D' \bind F'$. Likewise for the binds of $n$
+operands. For project, if $\omega \notin X$ and $X \sqsubseteq X'$, then
+$\key{checked}_k(X, \Tkeep{\mathrm{id}}_t(X)) \sqsubseteq \Tchecked{\Tkindfour}_k(X', \Tkeep{\Tkindfour}_t(X'))$,
+$k = \Tkindf(\Tflatof{t})$.
+\end{lemma}
+
+\begin{lemma}[Delay Preserves]\label{lem:t-gerr-delay-preserve}
+If $\rho'(x) \NE$ for every $x$, $\consis(\rho')$, and $\rho \sqsubseteq \rho'$, then
+$\SEM{M}^{\Tl{3},\omega}\rho \sqsubseteq \SEM{\pass{delay}(M)}^{\Tl{4},\omega}\rho'$.
+\end{lemma}
+Each construct is its kernel under the lifted binds. A source closure
+$\Lambda\Lambda^{\omega}(F) \app T$ is exhibited by the target pair of
+$\Lambda\Lambda^{\omega}(F')$ and $T'$: an entry $U \mapsto w$ comes from
+the body on a finite part of $T$, which the pair's environment $T'$
+relates, and the body's environment is related again.
+
+\paragraph{Reflection.}
+The relation $\Rel{V'}{D}$ between a finite set $V'$ of $\Tl{Clos4}$ values
+and a set $D$ of $\Tl{Clos3}$ values is defined by recursion on
+$\mathit{depth}(V')$ (as in Part~II), where $t$ ranges over the tags
+$\key{tup}_i$, $\key{left}$ and $\key{right}$, and $U$ and $W$ over finite
+sets of $\Tl{Clos4}$ values. A target closure is a set of pairs whose
+calls combine the codes and environments of several pairs:
+\begin{align*}
+  \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\; \exists d.\;
+     \pairv{F \mapsto (U_0 \mapsto w)}{d} \in V',\; F \subseteq \key{cdr}(V') \\
+  \mathit{Calls}(V', U, W) &\iff
+  \begin{array}[t]{l}
+    \forall w \in W.\; \exists U_0 \NE.\; \mathit{Entry}(V', U_0, w) \land U_0 \subseteq U \\
+    \land\; \forall u \in U.\; \exists U_0\, w.\; \mathit{Entry}(V', U_0, w) \land u \in U_0
+    \;\land\; \omega \notin U
+  \end{array} \\[1ex]
+  \Rel{V'}{D} &\iff
+  \begin{array}[t]{l}
+    (\omega \in V' \implies \omega \in D)
+    \land\; \forall c \in V'.\; c \in D \\
+    \land\; \forall d \in V'.\; d \neq \omega \implies \exists s \in \lfloor D \rfloor.\; \Tkind(s) = \Tkindfour(\Tkind(d)) \\
+    \land\; \forall U\, W\, E.\;
+       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{U}{E} \implies \Rel{W}{D \bullet E} \\
+    \land\; \forall t\, W.\; W \subseteq \{ d \mid t(d) \in V' \}
+       \implies \Rel{W}{\{ d \mid t(d) \in D \}}
+  \end{array} \\[1ex]
+  D' \rhd D &\iff \forall V'.\; V' \text{ finite},\ V' \subseteq D' \implies \Rel{V'}{D} \qquad
+  \rho' \rhd \rho \iff \forall x.\; \rho'(x) \rhd \rho(x)
+\end{align*}
+\begin{lemma}[Reflecting through the Monad]\label{lem:t-gerr-reflect-bind}
+If $\consis(D)$, $D' \rhd D$, and $F'(\lfloor D' \rfloor) \rhd F(\lfloor D \rfloor)$
+whenever $\mathit{val}(D')$, $\mathit{val}(D)$ and $\lfloor D' \rfloor \rhd \lfloor D \rfloor$,
+then $D' \bind F' \rhd D \bind F$. For project, if
+$X' \rhd X$, the target check's error is a source error (a target value
+of the wrong kind gives a source value of the wrong kind), and
+$\Tkeep{\Tkindfour}_t(X') \rhd \Tkeep{\mathrm{id}}_t(X)$.
+\end{lemma}
+
+\begin{lemma}[Delay Reflects]\label{lem:t-gerr-delay-reflect}
+If $\rho$ and $\rho'$ are nonempty and consistent, and $\rho' \rhd \rho$,
+then $\SEM{\pass{delay}(M)}^{\Tl{4},\omega}\rho' \rhd \SEM{M}^{\Tl{3},\omega}\rho$.
+\end{lemma}
+A target call $\Tcallc{L'}{M'}$ binds the closure and the argument; a
+finite part of its result is a batch of calls of finitely many pairs of
+$L'$ on finitely many values of $M'$ ($\mathit{Calls}$), which the source
+application reflects.
+
+\begin{theorem}[Correctness of Delay]\label{lem:t-gerr-delay}
+For every closed $\Tl{Clos3}$ term $M$, writing $D = \SEM{M}^{\Tl{3},\omega}\rho_0$ and
+$D' = \SEM{\pass{delay}(M)}^{\Tl{4},\omega}\rho_0$,
+\[
+  \omega \in D \iff \omega \in D', \qquad
+  c \in D \iff c \in D', \qquad
+  \mathit{val}(D) \iff \mathit{val}(D') .
+\]
+\end{theorem}
+From left to right by Lemma~\ref{lem:t-gerr-delay-preserve}; from right to
+left by Lemma~\ref{lem:t-gerr-delay-reflect} on the one-element set of
+the target value. In $\rho_0$ both environments hold only $\omega$, which
+is related both ways.
+
+\subsubsection{CC: Globalize}
+
+The definitions made so far, $\vec{d}$, have the table
+$\key{table}^{\omega}(\vec{d})$, each seeing the older ones, as the table
+of the program does.
+\begin{align*}
+  \mathit{Agree}_n(T, T') &\iff \forall k < n.\; T(k) \simeq T'(k) \\
+  \vec{d} \preceq \vec{d}' &\iff \vec{d} \text{ is a prefix of } \vec{d}'
+    \text{ (so } \mathit{Agree}_{|\vec{d}|}(\key{table}^{\omega}(\vec{d}'), \key{table}^{\omega}(\vec{d})) \text{)}
+\end{align*}
+\begin{lemma}[Weakening]\label{lem:t-gerr-glob-wk}
+A term weakened to a bigger table keeps the levels of its references,
+so it means the same: $\SEM{M}^{\Tl{5},\omega}_T\rho$ is unchanged.
+\end{lemma}
+\begin{lemma}[Correctness of Glob]\label{lem:t-gerr-glob}
+If $\pass{glob}(M, \vec{d}) = (M', \vec{d}')$, then $\vec{d} \preceq \vec{d}'$,
+and for every $T$ with $\mathit{Agree}_{|\vec{d}'|}(T, \key{table}^{\omega}(\vec{d}'))$
+and every $\rho \simeq \rho'$,
+\[
+  \SEM{M}^{\Tl{4},\omega}\rho \simeq \SEM{M'}^{\Tl{5},\omega}_T\rho' .
+\]
+\end{lemma}
+Code becomes $\funref{|\vec{d}_1|}$, which means
+$T(|\vec{d}_1|) \simeq \key{code}^{\omega}_{\key{table}^{\omega}(\vec{d}_1)}(\Tcodetm{e}{y}{N'})$,
+whose body is related by induction. An operand made earlier is
+weakened, and still agrees with the table (Lemma~\ref{lem:t-gerr-glob-wk}).
+
+\begin{theorem}[Correctness of Globalize]\label{lem:t-gerr-globalize}
+$\SEM{M}^{\Tl{4},\omega}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\Tl{5},\omega}$
+for every closed $\Tl{Clos4}$ term $M$: the table of the program, made of
+the definitions weakened to the whole table, is
+$\key{table}^{\omega}(\vec{d})$.
+\end{theorem}
+
+\subsubsection{Remove Complex Operands}
+
+Every typed operator is a kernel under binds of its operands, with no
+check. So binding a complex operand to a variable first is the bind the
+operator does anyway, and on an atom, a set of values, the operator's
+binds are their left unit. Fix tables $T$ (of the target) and $T'$ (of
+the source) with $T(k) \simeq T'(k)$ and $\mathit{Val}(T'(k))$ for every
+$k$. The environments agree up to the variables the pass adds:
+\[
+  \rho \approx \rho' \iff \forall x \text{ in scope}.\;
+     \rho(x) \simeq \rho'(x) \land \mathit{Val}(\rho'(x)) ,
+\]
+where $x$ in $\rho'$ is the variable of the target that $x$ is renamed to.
+\begin{lemma}[Atomize]\label{lem:t-gerr-atomize}
+Let $\rho \approx \rho'$ and $(\vec{b};\, a) = \pass{atomize}(N)$. If, for
+every $\rho''$ that extends $\rho'$ with the variables of $\vec{b}$ and
+every set of values $X$ with $\SEM{a}^{\Tl{5},\omega}_T\rho'' \simeq X$,
+$\SEM{Q}^{\Tl{5},\omega}_T\rho'' \simeq H(X)$, then
+\[
+  \SEM{\pass{lets}(\vec{b}, Q)}^{\Tl{5},\omega}_T\rho' \simeq \SEM{N}^{\Tl{5},\omega}_{T'}\rho \bind H .
+\]
+\end{lemma}
+\begin{lemma}[Correctness of RCO]\label{lem:t-gerr-rco}
+If $\rho \approx \rho'$, then
+$\SEM{\Tembed{\pass{rco}(M)}}^{\Tl{5},\omega}_T\rho' \simeq \SEM{M}^{\Tl{5},\omega}_{T'}\rho$.
+\end{lemma}
+\begin{theorem}[Correctness of RCO]\label{lem:t-gerr-rco-prog}
+For every $\Tl{Clos5}$ program $P$,
+$\SEM{\Tembed{\pass{rco}(P)}}^{\Tl{5},\omega} \simeq \SEM{P}^{\Tl{5},\omega}$.
+\end{theorem}
+The tables agree definition by definition, by Lemma~\ref{lem:t-gerr-rco}
+on the parameters, sets of values; code is a set of values.
+
+\subsubsection{Lift Locals}
+
+The frame is the environment, as in $\Tl{Clos5}$, so there are no slots to
+relate and no frame checks. Lifted code is run with a continuation that
+means what the enclosing assignments make of the value: nothing at the
+end of a body, and a bind into $G$ for the right-hand side of an
+assignment whose body and continuation mean $G$:
+\[
+  K_{\cdot}(D) = D \qquad K_G(D) = D \bind G \quad (G \text{ monotone and finitary}).
+\]
+\begin{lemma}[Laws]\label{lem:t-gerr-lift-laws}
+$K(D \bind F) \simeq D \bind \lambda X.\, K(F(X))$, and if $\consis(A)$ and
+$F_1$, $F_2$ are monotone,
+$K(\mathcal{C}^{\mathsf{T}}(A, F_1, F_2)) \simeq \mathcal{C}^{\mathsf{T}}(A, K \circ F_1, K \circ F_2)$.
+A slot binding is the bind of its body: if $\consis(D)$ and $G$ is
+monotone and finitary, $\Tletv(D, G) \simeq D \bind G$.
+\end{lemma}
+\begin{lemma}[Correctness of Lift]\label{lem:t-gerr-lift}
+Let $T(k) \simeq T'(k)$ and $\consis(T'(k))$ for every $k$, and $M$ be a
+$\Tl{Mon}$ expression. If $\rho$ is nonempty and consistent, and
+$\kappa(D) \simeq K(D)$ for every consistent $D$, then
+\[
+  \SEM{\pass{lift}(M)}^{\Tl{Imp},\omega}_T\rho\,\kappa \simeq K(\SEM{\Tembed{M}}^{\Tl{5},\omega}_{T'}\rho) .
+\]
+\end{lemma}
+\begin{theorem}[Correctness of Lift Locals]\label{lem:t-gerr-lift-prog}
+For every $\Tl{Mon}$ program $P$,
+$\SEM{\pass{lift}(P)}^{\Tl{Imp},\omega} \simeq \SEM{\Tembed{P}}^{\Tl{5},\omega}$.
+\end{theorem}
+
+\subsubsection{Explicate Control}
+
+As in Part~II (Section~\ref{sec:den-explicate}): the pass threads the
+blocks, $\vec{t} \preceq \vec{t}'$ when $\vec{t}$ is a prefix of $\vec{t}'$, the
+pass only adds blocks, and a label made earlier finds the same block:
+$\key{blocks}_T(\vec{t}')(l) = \key{blocks}_T(\vec{t})(l)$ for $l < |\vec{t}|$.
+Labels are typed, so a jump never misses, and there are no frame
+checks. Fix $T$ (of $\Tl{CFG}$) and $T'$ (of $\Tl{Imp}$) with
+$T(k) \simeq T'(k)$ for every $k$.
+\begin{lemma}[Continuation-Passing]\label{lem:t-gerr-cps}
+If $\pass{assign}(e, s, k, \vec{t}) = (t;\, \vec{t}')$, then $\vec{t} \preceq \vec{t}'$, and if
+\[
+  \kappa(D) \simeq \Tletv(D,\; \lambda X.\, \SEM{k}^{\Tl{CFG},\omega}_{T,\key{blocks}_T(\vec{t})}(\Tcut{\sigma}{s}, X))
+\]
+for every $D$, then
+\[
+  \SEM{t}^{\Tl{CFG},\omega}_{T,\key{blocks}_T(\vec{t}')}\sigma \simeq
+  \SEM{e}^{\Tl{Imp},\omega}_{T'}\sigma\,\kappa .
+\]
+\end{lemma}
+\begin{lemma}[Tail]\label{lem:t-gerr-tail}
+If $\pass{tail}(e, \vec{t}) = (t;\, \vec{t}')$, then $\vec{t} \preceq \vec{t}'$ and
+$\SEM{t}^{\Tl{CFG},\omega}_{T,\key{blocks}_T(\vec{t}')}\sigma \simeq
+  \SEM{e}^{\Tl{Imp},\omega}_{T'}\sigma\,(\lambda D.\, D)$.
+\end{lemma}
+\begin{theorem}[Correctness of Explicate Control]\label{lem:t-gerr-explicate}
+For every $\Tl{Imp}$ program $P$,
+$\SEM{\pass{explicate}(P)}^{\Tl{CFG},\omega} \simeq \SEM{P}^{\Tl{Imp},\omega}$.
+\end{theorem}
+
+\subsubsection{Select Instructions}\label{sec:t-gerr-select}
+
+Select is the one pass whose correctness is not an equation: X86's
 semantics (Section~\ref{sec:graph-errors}) checks the kind of every
 operand, so the code of a definition has error entries at inputs of the
 wrong kind, where the code of $\Tl{CFG}$, which checks nothing but
-project, has no entries at all. The two programs err together, produce
-the same constants, and produce a value together:
-\begin{align*}
-  \Same(D, E) &\iff (\omega \in D \iff \omega \in E) \land
-    (\forall c.\; c \in D \iff c \in E) \land (\mathit{val}(D) \iff \mathit{val}(E)) \\
-  &\Same(\SEM{P}^{\Tl{CFG},\omega},\; \SEM{\pass{select}(P)}^{\mathrm{X86},\omega})
-    \qquad \text{for every } \Tl{CFG} \text{ program } P,
-\end{align*}
-and so the end-to-end theorems of the typed pipeline relate the meaning
-of the source to that of each target by $\Same$. The proof
-(\texttt{agda/proof/Correctness/GraphErr/SelectCorrect.agda}) goes
-through $\Tl{CFG}$ with the checks of X86
-(\texttt{SelectCheck.agda}): the typed syntax given the untyped, checking
-operators that the selected instructions mean ($\key{call}^{\omega}$ on the
-$\key{car}^{\omega}$ and $\key{cdr}^{\omega}$ of a closure,
-$\key{proj}^{\omega}_i$, $\key{prim}^{\omega}_p$, $\mathcal{C}^{\omega}$, a slot
-bound by $\Lambda^{\omega}$ and $\app^{\omega}$), where $\Tproject{t}\,a$ runs the X86
-test of $t$ and then moves $a$, and the code of a definition binds its
-parameters to its first two slots, as the X86 prologue does. X86 means
-exactly ($\simeq$) what $\Tl{CFG}$ with checks does
+project, has no entries at all. The proof
+(\texttt{SelectCorrect.agda}) goes through \emph{$\Tl{CFG}$ with checks}:
+X86 means exactly ($\simeq$) what $\Tl{CFG}$ with checks does
 (\texttt{SelectX86.agda}), and $\Tl{CFG}$ with checks is related to
-$\Tl{CFG}$ in both directions (\texttt{SelectReflect.agda},
-\texttt{SelectPreserve.agda}) by a relation that is the identity on
-errors, constants and first-order data, and relates code by what it
-does on inputs of the kind its pair says, so that an entry at inputs of
-the wrong kind is related to anything.
+$\Tl{CFG}$ in both directions (\texttt{SelectPreserve.agda},
+\texttt{SelectReflect.agda}) by a relation (\texttt{SelectRel.agda}) that
+is the identity on errors, constants and first-order data, and so gives
+$\Same$.
 
+\paragraph{$\Tl{CFG}$ with checks} (\texttt{SelectCheck.agda}) is a
+semantics $\SEM{-}^{\mathrm{chk}}$ of the $\Tl{CFG}$ syntax whose operators
+are the checking ones of Part~II, those the selected instructions mean.
+The atoms mean what they mean in $\Tl{CFG}$, $\mathcal{A}_\sigma(a)$. With
+$\key{let}^{\omega}(D, F) = \Lambda^{\omega}(F) \app^{\omega} D$ (the write of a
+slot) and $\key{strict}^{\omega}(D, E) = D \bind \lambda \_.\, E$ (a write of
+a register or the flag), project runs the X86 test of its tag
+($\Tcheck{t}$) and then moves its operand, and a call loads the code and
+the environment of its closure:
+\begin{align*}
+  \key{test}_{\Tint}(A) &= \key{prim}^{\omega}_{\key{sub}}(A, \{0\}) &
+  \key{test}_{\Tsum}(A) &= \key{isinl}^{\omega}(A) &
+  \key{test}_{\Tfun}(A) &= \key{car}^{\omega}(A) &
+  \key{test}_{\Tttup{n}{i}}(A) &= \key{proj}^{\omega}_i(A)
+\end{align*}
+\begin{align*}
+  \mathcal{S}^{\mathrm{chk}}_\sigma(\Tproject{t} a) &= \key{strict}^{\omega}(\key{test}_t(A), A)
+    \qquad \mathcal{S}^{\mathrm{chk}}_\sigma(\Tinject{G} a) = A
+    \qquad \text{where } A = \mathcal{A}_\sigma(a) \\
+  \mathcal{S}^{\mathrm{chk}}_\sigma(\Tcallc{a_1}{a_2}) &=
+    \key{strict}^{\omega}(C, \key{strict}^{\omega}(E, \key{strict}^{\omega}(A_2,
+      \key{call}^{\omega}(C, E, A_2)))) \\
+  &\qquad \text{where } C = \key{car}^{\omega}(\mathcal{A}_\sigma(a_1)),\
+    E = \key{cdr}^{\omega}(\mathcal{A}_\sigma(a_1)),\ A_2 = \mathcal{A}_\sigma(a_2) \\
+  \mathcal{S}^{\mathrm{chk}}_\sigma(\Tpack{a_1}{a_2}) &= \key{pair}^{\omega}(\mathcal{A}_\sigma(a_1), \mathcal{A}_\sigma(a_2))
+\end{align*}
+and atoms, tuples, projections, injections and primitives by
+$\mathcal{A}_\sigma$, $\mathcal{T}^{\omega}$, $\key{proj}^{\omega}_i$,
+$\key{inl}^{\omega}$, $\key{inr}^{\omega}$ and $\key{prim}^{\omega}_p$. The
+tails are those of $\Tl{CFG}$ with $\key{let}^{\omega}$ and $\mathcal{C}^{\omega}$:
+\begin{align*}
+  \SEM{\assign{s}{r}{t}}^{\mathrm{chk}}\sigma &= \key{let}^{\omega}(\mathcal{S}^{\mathrm{chk}}_\sigma(r),\;
+    \lambda X.\, \SEM{t}^{\mathrm{chk}}(\Tcut{\sigma}{s}, X)) \\
+  \SEM{\Tcase{a}{s}{l_1}{l_2}}^{\mathrm{chk}}\sigma &=
+    \mathcal{C}^{\omega}(\mathcal{A}_\sigma(a),\;
+      \lambda X.\, B(l_1)(\Tcut{\sigma}{s}, X),\; \lambda X.\, B(l_2)(\Tcut{\sigma}{s}, X))
+\end{align*}
+with $\Treturn{r}$ and $\Tgoto{l}$ as in $\Tl{CFG}$, and the code of a
+definition binds its parameters to its first two slots, as the X86
+prologue does:
+\[
+  \key{code}^{\mathrm{chk}}_T(b) = \Lambda\Lambda^{\omega}(\lambda X\, Y.\,
+    \key{let}^{\omega}(X,\; \lambda X'.\, \key{let}^{\omega}(Y,\; \lambda Y'.\, \key{run}^{\mathrm{chk}}_T(b)(X', Y')))) .
+\]
+$\Tl{CFG}$ with checks is monotone, continuous and consistent under a
+consistent table (\texttt{SelectCheckOk.agda}).
 
-%-------------------------------------------------------------------------------
+\paragraph{X86 and $\Tl{CFG}$ with checks.} As in the graph model
+(Section~\ref{sec:den-select}), with the errors. The X86 store $s$ holds
+the slots of the frame $\sigma$ at their levels, every slot is a set of
+values that never holds both an $\key{inl}$ and an $\key{inr}$, and the
+X86 $\kappa$ that runs after $d$ is written fits the $K$ of the checked
+semantics:
+\begin{align*}
+  \mathit{Tagged}(D) &\iff \neg\exists u\, v.\; \Left{u} \in D \land \Right{v} \in D \qquad
+  \mathit{Atom}(D) \iff \mathit{Tagged}(D) \land \mathit{Val}(D) \\
+  \mathit{Inv}(s) &\iff \forall i.\; \mathit{Atom}(s(i)) \qquad
+  \mathit{Rel}_\Delta(s, \sigma) \iff \forall i < |\Delta|.\; s(i) \simeq \sigma(i) \\
+  \mathit{Fits}_i(\kappa, K, s) &\iff \forall X.\; \mathit{Atom}(X) \implies
+    \forall \rho\, \varphi.\; \kappa(s[i \mapsto X], \rho, \varphi) \simeq K(X) \\
+  \mathit{Fits}_{\%g}(\kappa, K, s) &\iff \forall s'\, \rho\, \varphi.\; \kappa(s', \rho, \varphi) \simeq \rho(\%g) \\
+  \key{after}_i(K)(D) &= \key{let}^{\omega}(D, K) \qquad
+  \key{after}_{\%g}(K)(D) = D
+\end{align*}
+Fix tables $T$ (of X86) and $T'$ (of $\Tl{CFG}$ with checks) with
+$T(k) \simeq T'(k)$ and $\mathit{Atom}(T(k))$ for every $k$, and the frame
+size $n$.
+\begin{lemma}[Select a Simple Expression]\label{lem:t-gerr-sel}
+If $d$ is a register or a slot $i < n$, $\mathit{Fits}_d(\kappa, K, s)$,
+$|\Delta| \leq n$, $\mathit{Rel}_\Delta(s, \sigma)$ and $\mathit{Inv}(s)$, then
+\[
+  \SEM{\pass{sel}(r, d)}^{\mathrm{X86}}_{T,n}\kappa\,s\,\rho\,\varphi
+  \simeq \key{after}_d(K)(\mathcal{S}^{\mathrm{chk}}_\sigma(r)) .
+\]
+The writes of registers before the last write are
+$\key{strict}^{\omega}$, as in $\mathcal{S}^{\mathrm{chk}}$; one of an atom,
+a set of values, changes nothing.
+\end{lemma}
+\begin{lemma}[Case]\label{lem:t-gerr-case-core}
+If $\mathit{Tagged}(A)$, then
+\[
+  \key{strict}^{\omega}(I,\; \key{let}^{\omega}(\key{payload}^{\omega}(A),\;
+    \lambda X.\, \mathcal{C}^{\omega}(I,\; \lambda \_.\, F_1(X),\; \lambda \_.\, F_2(X))))
+  \simeq \mathcal{C}^{\omega}(A, F_1, F_2)
+  \qquad\text{where } I = \key{isinl}^{\omega}(A) .
+\]
+\end{lemma}
+The blocks $B$ of X86 and $B'$ of $\Tl{CFG}$ with checks agree,
+$B \mathrel{\mathit{BR}} B'$, when $B(l)(s, \rho, \varphi) \simeq B'(l)(\sigma)$
+whenever $\mathit{Rel}_{\Delta_l}(s, \sigma)$ and $\mathit{Inv}(s)$.
+\begin{lemma}[Tail, Blocks and Code]\label{lem:t-gerr-sel-tail}
+If $B \mathrel{\mathit{BR}} B'$, $\mathit{depth}(t) \leq n$,
+$\mathit{Rel}_\Delta(s, \sigma)$ and $\mathit{Inv}(s)$, then
+\[
+  \SEM{\pass{sel}(t)}^{\mathrm{X86}}_{T,n,B}\,s\,\rho\,\varphi \simeq \SEM{t}^{\mathrm{chk}}_{T',B'}\,\sigma ;
+\]
+the blocks agree,
+$\key{blocks}^{\mathrm{X86}}_{T,n}(\pass{sel}(\vec{t})) \mathrel{\mathit{BR}} \key{blocks}^{\mathrm{chk}}_{T'}(\vec{t})$;
+and the code of a definition, whose prologue moves $\rdi$ and $\rsi$ to
+slots 0 and 1, is that of $\Tl{CFG}$ with checks:
+$\key{code}^{\mathrm{X86}}_T(\pass{select}^{+}(b)) \simeq \key{code}^{\mathrm{chk}}_{T'}(b)$,
+where $\pass{select}^{+}(b)$ is $b$ selected with the prologue.
+\end{lemma}
+\begin{lemma}[X86 Is $\Tl{CFG}$ with Checks]\label{lem:t-gerr-select-check}
+For every $\Tl{CFG}$ program $P$,
+$\SEM{\pass{select}(P)}^{\mathrm{X86},\omega} \simeq \SEM{P}^{\mathrm{chk}}$.
+\end{lemma}
+
+\paragraph{The boundary: $\Tl{CFG}$ with and without checks.}
+The two differ only where a check of X86 fires, on a value of the wrong
+kind, and so only in the entries of code at inputs of the wrong kind.
+The relation $d \trianglelefteq D$ between a value and a set of values is
+used in both directions, from $\Tl{CFG}$ to $\Tl{CFG}$ with checks and back.
+It is the identity on first-order data, it never relates an error inside
+a value ($\mathit{Inner}$), and a pair, a closure, is related by its
+environment and by what its code does on related inputs whose
+environment has the kind of the pair's environment ($\mathit{Code}_k$):
+an entry at inputs of the wrong kind is related to anything, since no
+inputs relate to them. With $E{\restriction}k = \{ e \in E \mid \Tkind(e) = k \}$,
+\begin{align*}
+  v \trianglelefteq D &\iff v \in D \qquad (v = \omega,\ c,\ \emptytup,\ \nu \text{ or } V \mapsto w) \\
+  \tup{i}{d} \trianglelefteq D &\iff \mathit{Inner}(d, \{ e \mid \tup{i}{e} \in D \}) \qquad
+  \Left{d} \trianglelefteq D \iff \mathit{Inner}(d, \{ e \mid \Left{e} \in D \}) \\
+  \Right{d} \trianglelefteq D &\iff \mathit{Inner}(d, \{ e \mid \Right{e} \in D \}) \\
+  \pairv{u}{v} \trianglelefteq D &\iff \mathit{Code}_{\Tkind(v)}(u, \key{car}(D))
+    \land \mathit{Inner}(v, \key{cdr}(D)) \land \mathit{val}(\key{car}(D)) \\
+  \mathit{Inner}(d, D) &\iff d \neq \omega \land d \trianglelefteq D \\[1ex]
+  \mathit{Code}_k(V \mapsto (U \mapsto w), C) &\iff
+    \begin{array}[t]{l}
+      \forall E\, X.\; \consis(E),\ \consis(X),\ \omega \notin E,\ \omega \notin X, \\
+      \quad V \trianglelefteq E{\restriction}k \land U \trianglelefteq X \implies
+      w \trianglelefteq (C \app E{\restriction}k) \app X
+    \end{array} \\
+  \mathit{Code}_k(u, C) &\iff \text{true} \qquad (u = \nu \text{ or } u = V \mapsto w,\ w \text{ not of the form } U \mapsto w') \\
+  \mathit{Code}_k(u, C) &\iff \text{false} \qquad \text{otherwise}
+\end{align*}
+where $V \trianglelefteq E$ is $v \trianglelefteq E$ for every $v \in V$. So
+$\omega \trianglelefteq D \iff \omega \in D$, $c \trianglelefteq D \iff c \in D$,
+and a $d \neq \omega$ with $d \trianglelefteq D$ is witnessed by an element of
+$D$ of its kind, so $\mathit{val}(D)$. Write $D \trianglelefteq D'$ for
+$\forall d \in D.\; d \trianglelefteq D'$. A slot of a flat type holds, in
+$\Tl{CFG}$, only values of its kind, and one of code type is related by
+what its code does; the relation of a slot of type $A$ is
+\begin{align*}
+  \mathit{SR}_{\TAny}(D, D') &\iff D \trianglelefteq D' \qquad
+  \mathit{SR}_{\Tflat{G}}(D, D') \iff D \trianglelefteq \{ e \in D' \mid e = \omega \lor \Tkindfour(\Tkind(e)) = \Tkindf(G) \} \\
+  \mathit{SR}_{\Tcode{n}}(C, C') &\iff \forall u \in C.\; \mathit{Code}_{\mathit{tup}_n}(u, C') \\[1ex]
+  \mathit{ER}_\Delta(\sigma, \sigma') &\iff \forall x : A \in \Delta.\;
+    \mathit{SR}_A(\sigma(x), \sigma'(x)) \land \mathit{Val}(\sigma(x)) \land \consis(\sigma(x)) \land \omega \notin \sigma'(x)
+\end{align*}
+The tables are related the same way: $\mathit{SR}_{\Tcode{n}}(T(k), T'(k))$
+for every reference $k$ to a definition of $n$ free variables, the
+entries of $T$ and $T'$ are sets of values, and those of $T'$ are
+consistent. The code of a missing definition, $\key{errcode}$, is related
+to itself: its call errs on any nonempty related inputs.
+\begin{lemma}[Reflect]\label{lem:t-gerr-sel-reflect}
+Let the tables be related, from $\Tl{CFG}$ with checks ($T$) to $\Tl{CFG}$
+($T'$). If $\mathit{ER}_\Delta(\sigma, \sigma')$ and $\sigma'$ is nonempty and
+consistent, then
+$\SEM{t}^{\mathrm{chk}}_{T}\sigma \trianglelefteq \SEM{t}^{\Tl{CFG},\omega}_{T'}\sigma'$,
+for blocks related likewise. So $\SEM{P}^{\mathrm{chk}} \trianglelefteq \SEM{P}^{\Tl{CFG},\omega}$.
+\end{lemma}
+The checks of $\Tl{CFG}$ with checks never fire on related values, and
+its operators are those of $\Tl{CFG}$ on them; a call opens a closure
+whose code is related on environments of the kind its pairs say.
+$\Tl{CFG}$ binds the whole set where $\Tl{CFG}$ with checks binds finite
+parts of it, and contains them, since $\Tl{CFG}$ is continuous.
+\begin{lemma}[Preserve]\label{lem:t-gerr-sel-preserve}
+Likewise in the other direction, with the sides swapped: from $\Tl{CFG}$
+($T$, $\sigma$) to $\Tl{CFG}$ with checks ($T'$, $\sigma'$),
+$\SEM{t}^{\Tl{CFG},\omega}_{T}\sigma \trianglelefteq \SEM{t}^{\mathrm{chk}}_{T'}\sigma'$,
+and $\SEM{P}^{\Tl{CFG},\omega} \trianglelefteq \SEM{P}^{\mathrm{chk}}$.
+\end{lemma}
+The checks only add an error to what is computed, and the tests (of a
+project, and the loads of a call) have values when their operand has a
+value of the right kind, which a related value of $\Tl{CFG}$ gives.
+
+\begin{theorem}[Correctness of Select Instructions]\label{lem:t-gerr-select}
+For every $\Tl{CFG}$ program $P$,
+\[
+  \Same(\SEM{P}^{\Tl{CFG},\omega},\; \SEM{\pass{select}(P)}^{\mathrm{X86},\omega}) ,
+\]
+where
+\[
+  \Same(D, E) \iff (\omega \in D \iff \omega \in E) \land
+    (\forall c.\; c \in D \iff c \in E) \land (\mathit{val}(D) \iff \mathit{val}(E)) .
+\]
+\end{theorem}
+Related both ways, $D \trianglelefteq E$ and $E \trianglelefteq D$, two sets are
+$\Same$ (by the facts about $\omega$, $c$ and $d \neq \omega$ above); so
+$\Same(\SEM{P}^{\Tl{CFG},\omega}, \SEM{P}^{\mathrm{chk}})$ by
+Lemmas~\ref{lem:t-gerr-sel-preserve} and~\ref{lem:t-gerr-sel-reflect}, and
+$\SEM{P}^{\mathrm{chk}} \simeq \SEM{\pass{select}(P)}^{\mathrm{X86},\omega}$ by
+Lemma~\ref{lem:t-gerr-select-check}. Select needs no precondition: both
+$\Tl{CFG}$ with checks and X86 bind the parameters to slots 0 and 1, and X86
+runs a called body in a frame of $\max(2, n)$ slots.
+
+\subsubsection{End to End}
+
+$\Same$ is an equivalence, and $\Same(D, E)$ and $E \simeq E'$ give
+$\Same(D, E')$. Delay's theorem is $\Same$ for closed terms, and every
+other pass but select is $\simeq$.
+\begin{theorem}[The Compiler, with Errors]\label{lem:t-gerr-compiler}
+If $\mathit{Closed}(M)$, then $\Same(\SEM{M}^{\mathrm{ISWIM},\omega}\rho_0, D')$ for
+$D'$ each of $\SEM{\pass{compile}(M)}^{\Tl{5},\omega}$,
+$\SEM{\Tembed{\pass{compile\text{-}mon}(M)}}^{\Tl{5},\omega}$,
+$\SEM{\pass{compile\text{-}imp}(M)}^{\Tl{Imp},\omega}$,
+$\SEM{\pass{compile\text{-}cfg}(M)}^{\Tl{CFG},\omega}$ and
+$\SEM{\pass{compile\text{-}x86}(M)}^{\mathrm{X86},\omega}$.
+\end{theorem}
+By Theorem~\ref{lem:t-gerr-simplify} and
+Lemmas~\ref{lem:t-gerr-cast}, \ref{lem:t-gerr-enclose},
+\ref{lem:t-gerr-optimize} and~\ref{lem:t-gerr-concretize} ($\simeq$ up to
+$\Tl{Clos3}$), Theorem~\ref{lem:t-gerr-delay} ($\Same$), and
+Theorems~\ref{lem:t-gerr-globalize}, \ref{lem:t-gerr-rco-prog},
+\ref{lem:t-gerr-lift-prog}, \ref{lem:t-gerr-explicate} ($\simeq$) and
+\ref{lem:t-gerr-select} ($\Same$). Adequacy (Part~II and
+\texttt{Theorems/GraphErrors.agda}) turns these into statements about the
+ISWIM, $\Tl{Clos5}$ and X86 machines.
+
+\paragraph{Where it doesn't match the Agda literally.}
+The Agda names below have superscripts and subscripts, written here as
+in math ($\texttt{app}^{\mathsf{t}}$ is \texttt{app} with a superscript t).
+{\sloppy
+\begin{itemize}
+\item \textbf{Names.} $\app^{\mathsf{T}}$, $\key{proj}^{\mathsf{T}}_i$,
+  $\mathcal{C}^{\mathsf{T}}$, $\key{prim}^{\mathsf{T}}_p$ and
+  $\key{project}^{\varphi}_t$ are $\texttt{app}^{\mathsf{t}}$,
+  $\texttt{get}^{\mathsf{t}}$, $\texttt{case}^{\mathsf{t}}$,
+  $\texttt{prim}^{\mathsf{t}}$ and $\texttt{project}^{\varphi}$
+  (\texttt{Semantics/GraphErr/Typed/Ops.agda}); $\Tchecked{\varphi}$ is
+  $\texttt{checked}^{\varphi}$; $\Tletv$ is $\texttt{let}^{\mathsf{t}}$;
+  $\key{let}^{\omega}$ is $\texttt{let}^{\mathsf{m}}$; the kind
+  $\mathit{pair}$ is \texttt{prod} and $\mathit{err}$ is \texttt{error}.
+  $\mathit{val}(D)$ is \texttt{Conv} (in the statements, its unfolding);
+  $\mathit{Val}(D)$ is \texttt{Val}, and ``$\omega \notin D$'' is
+  \texttt{Clean}; $X^{\checkmark}$ is $X$ restricted to
+  \texttt{ValPayload}. The table of $\Tl{Clos5}$, $\Tl{Imp}$ and $\Tl{CFG}$
+  is \texttt{tbl}, and the codes are $\texttt{code}_5$,
+  $\texttt{code}_{\mathsf{i}}$, $\texttt{code}^{\mathsf{c}}$ and
+  $\texttt{code}^{\mathsf{ch}}$ (with checks).
+\item \textbf{Variables and frames} are typed de~Bruijn indices: an
+  environment gives position $i$ the meaning of the variable of index
+  $i$, so $\ext{\rho}{x}{X}$ and $(\sigma, X)$ are $X$ consed onto the
+  environment, slot $s$ of a frame is the variable at level $s$ (position
+  $|\Delta| - 1 - s$), and $\Tcut{\sigma}{s}$ is \texttt{drop p} $\sigma$
+  for the proof $p$ that the frame $\Delta'$, $|\Delta'| = s$, is a prefix
+  of $\Delta$. The relations on environments carry the renamings of the
+  passes (cast, optimize, delay, rco), written here by name.
+\item \textbf{Cast insertion}'s relation is \texttt{Agree r} with
+  \texttt{Wf}; Lemma~\ref{lem:t-gerr-proj-bind} is \texttt{proj-}$\bind$,
+  and the untyped let as a bind is $\texttt{let}^{\mathsf{m}}$\texttt{-}$\bind$.
+\item \textbf{Delay}'s relations: $v \sqsubseteq D'$ is $\sqsubseteq$ of
+  \texttt{DelayPreserve.agda}, lifted to sets by \texttt{Lifted}, and
+  $\Rel{V'}{D}$ is \texttt{R}, with the fields of \texttt{Obs}
+  (\texttt{DelayRel.agda}): \texttt{err-obs}, \texttt{const-obs},
+  \texttt{kind-obs}, \texttt{app-obs} and \texttt{tag-obs}; $D' \rhd D$ is
+  \texttt{Rel D' D}, and $\bullet$ and $\odot$ are the Agda's. Of
+  Lemmas~\ref{lem:t-gerr-delay-lift} and~\ref{lem:t-gerr-reflect-bind}, the
+  binds are \texttt{binds-lift} and \texttt{R-bind}, and project is
+  \texttt{R-check}, \texttt{bad-reflect} and \texttt{R-restrict}. The
+  environments are records \texttt{Envs}.
+\item \textbf{Globalize}'s table of the definitions made is
+  \texttt{madeT}, $\mathit{Agree}$ is \texttt{Agr}, and $\vec{d} \preceq \vec{d}'$
+  is \texttt{Ext}.
+\item \textbf{Remove complex operands} is in continuation-passing style
+  (\texttt{atomize N r k}), so Lemma~\ref{lem:t-gerr-atomize}
+  (\texttt{atomize-sem}) is stated for a continuation $k$ that means $H$
+  on an atom meaning $X$, under any renaming to a bigger context
+  (\texttt{Kont}); $\rho \approx \rho'$ is \texttt{R}.
+\item \textbf{Lift locals}' $K$ is the error monad's \texttt{K} of
+  \texttt{nothing} or \texttt{just G} (with \texttt{KOK}); the laws are
+  \texttt{let-law}, $\texttt{case-law}^{\mathsf{t}}$ and
+  $\texttt{let}^{\mathsf{t}}$\texttt{-}$\bind$.
+\item \textbf{Explicate control}'s lemmas are \texttt{cps}
+  (\texttt{CPS}) and \texttt{tail} (\texttt{TAIL}); $\vec{t} \preceq \vec{t}'$ is
+  \texttt{Ext}, and a label made earlier finding the same block is
+  \texttt{blocks-ext}.
+\item \textbf{Select instructions}: $\SEM{-}^{\mathrm{chk}}$ is the
+  semantics of \texttt{SelectCheck.agda} (superscript ch), and
+  $\key{test}_t$ is \texttt{test}. The relation $d \trianglelefteq D$ is
+  $\sqsubseteq$ of \texttt{SelectRel.agda} (not delay's),
+  $\mathit{Code}_k$ and $\mathit{Inner}$ are \texttt{Code} and
+  \texttt{Inner}, and $E{\restriction}k$ is $E$ restricted to kind $k$;
+  $\mathit{SR}$ and $\mathit{ER}$ are \texttt{SR} and \texttt{ER} (with the
+  \texttt{Kd} of a flat type), defined in \texttt{SelectReflect.agda}
+  with $\Tl{CFG}$ with checks on the left and reused with the sides swapped
+  by \texttt{SelectPreserve.agda}. In \texttt{SelectX86.agda},
+  $\mathit{Rel}_\Delta$, $\mathit{Inv}$, $\mathit{Atom}$, $\mathit{Tagged}$,
+  $\mathit{Fits}$, $\key{after}$ and $\mathit{BR}$ are \texttt{Rel},
+  \texttt{Inv}, \texttt{Atom}, \texttt{Tagged}, \texttt{Fits},
+  \texttt{after} and \texttt{BR}; Lemma~\ref{lem:t-gerr-case-core} is
+  \texttt{case-core}, Lemma~\ref{lem:t-gerr-sel-tail} is \texttt{tail},
+  \texttt{blocks-}$\simeq$ and \texttt{code-}$\simeq$, and
+  Lemma~\ref{lem:t-gerr-select-check} is \texttt{select-check}. Main's
+  X86 frame has $\mathit{depth}$ slots, a called body's $\max(2, \mathit{depth})$.
+\item \textbf{End to end}: $\Same$ composes by \texttt{Same-trans} and
+  $\simeq$\texttt{-Same} (\texttt{CompilerCorrect.agda},
+  \texttt{SelectCorrect.agda}); the theorems are $\texttt{compile-same}_5$,
+  \texttt{compile-mon-same}, \texttt{compile-imp-same},
+  \texttt{compile-cfg-same} and \texttt{compile-x86-same}.
+\end{itemize}
+\par}
+
 \section{CEK Machines}\label{sec:t-cek}
 
 The machines of the typed languages (\texttt{agda/Semantics/CEK/Typed})
