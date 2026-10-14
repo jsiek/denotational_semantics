@@ -7,13 +7,13 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   To read them: the typed languages (Language/Typed/), the passes
-  (Compiler/), the semantics of each typed language
+  (Compiler/), the semantics of each typed language, X86ᵀ included
   (Semantics/Graph/Typed/; Monᵀ means its embedding into Clos5ᵀ, ⌜_⌝ₚ),
-  those of ISWIM and X86 (Semantics/Graph/), and the domain and operators
-  they are built from (Framework/GraphModel/). In the graph model a
+  that of ISWIM (Semantics/Graph/), and the domain and operators they
+  are built from (Framework/GraphModel/). In the graph model a
   failed project, like any error, means ∅.
 
 -}
@@ -59,6 +59,7 @@ open import Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
+open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
 
 import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Graph.CastCorrect as Cast
@@ -70,6 +71,7 @@ import proof.Correctness.Graph.GlobalizeCorrect as Globalize
 import proof.Correctness.Graph.RCOCorrect as RCO
 import proof.Correctness.Graph.LiftLocalsCorrect as LiftLocals
 import proof.Correctness.Graph.ExplicateCorrect as Explicate
+import proof.Correctness.Graph.SelectCorrect as Select
 import proof.Correctness.Graph.CompilerCorrect as Compiler
 
 open import Data.List using ([])
@@ -125,6 +127,11 @@ lift-locals-correct = LiftLocals.lift-locals-correct
 explicate-correct : ∀ (P : Impᵀ.Program) → ⟦ explicate P ⟧ᶜ ≃ ⟦ P ⟧ᵢ
 explicate-correct = Explicate.explicate-correct
 
+{- for every CFGᵀ program: a frame is typed, so select's frames are large
+   enough by construction -}
+select-correct : ∀ (P : CFGᵀ.Program) → ⟦ select P ⟧ₜ ≃ ⟦ P ⟧ᶜ
+select-correct = Select.select-correct
+
 {- The whole compiler, for closed programs ----------------------------------}
 
 {- the compiled program produces the same constants as the original, and
@@ -171,3 +178,13 @@ compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
   → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-cfg M ⟧ᶜ)
   × (nonempty ⟦ compile-cfg M ⟧ᶜ → nonempty (⟦ M ⟧ ρ₀))
 compile-cfg-correct-nonempty M w = proj₂ (Compiler.compile-cfg-same M w)
+
+compile-x86-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
+  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₜ)
+  × (const c ∈ ⟦ compile-x86 M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
+compile-x86-correct-const M w = proj₁ (Compiler.compile-x86-same M w)
+
+compile-x86-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
+  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₜ)
+  × (nonempty ⟦ compile-x86 M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
+compile-x86-correct-nonempty M w = proj₂ (Compiler.compile-x86-same M w)
