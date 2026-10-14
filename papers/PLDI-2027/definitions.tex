@@ -112,13 +112,48 @@
 \newcommand{\rsi}{\%\key{rsi}}
 \newcommand{\xrun}{\key{run}}
 
-% the typed pipeline
+% the typed pipeline (Part I): types, tags and casts
 \newcommand{\Tl}[1]{\textrm{#1}^{\mathsf{T}}}  % a typed language: \Tl{Clos2}
 \newcommand{\TAny}{\key{Any}}
 \newcommand{\Tflat}[1]{\langle\!\langle #1 \rangle\!\rangle}  % the flat type G as a type
-\newcommand{\Tcode}[1]{\key{code}\;#1}
+\newcommand{\Tcode}[1]{\key{code}\;#1}         % the type of code
+\newcommand{\Tfun}{\key{fun}}                  % a flat type, and a tag
+\newcommand{\Tsum}{\key{sum}}                  % a flat type, and a tag
+\newcommand{\Ttup}[1]{\key{tup}\;#1}           % the flat type of tuples of n components
+\newcommand{\Tint}{\key{int}}                  % the tag of integers
+\newcommand{\Tttup}[2]{\key{tup}_{#1,#2}}      % the tag of tuples of n components, read at i
+\newcommand{\Tflatof}[1]{\mathit{flat}(#1)}    % the flat type a tag tests
+\newcommand{\Tout}[1]{\mathit{out}(#1)}        % the flat type of a primitive's result
 \newcommand{\Tinject}[1]{\key{inject}_{#1}\,}
 \newcommand{\Tproject}[1]{\key{project}_{#1}\,}
+% the typed pipeline: terms
+\newcommand{\Tcodetm}[3]{\key{code}(#1\,#2.\,#3)}  % closed code: environment, argument, body
+\newcommand{\Tpack}[2]{\key{pack}(#1, #2)}     % a closure: code and environment
+\newcommand{\Tcallc}[2]{\key{callc}(#1, #2)}   % call a closure
+\newcommand{\Tembed}[1]{\ulcorner #1 \urcorner}  % Mon^T into Clos5^T
+\newcommand{\Tunit}{\Tinject{\Ttup{0}}\emptytup}  % the empty tuple, injected
+\newcommand{\Tcheck}[1]{\pass{check}_{#1}}     % the X86 test of a tag
+% the typed pipeline: tails of CFG^T, and frames of Imp^T and CFG^T
+\newcommand{\Treturn}[1]{\key{return}\;#1}
+\newcommand{\Tgoto}[1]{\key{goto}\;#1}
+\newcommand{\Tcase}[4]{\key{case}\;#1\;\key{of}_{#2}\;\key{goto}\;#3 \mid \key{goto}\;#4}
+\newcommand{\Tcut}[2]{#1|_{#2}}                % the first s slots of a frame
+% the typed pipeline: semantics
+\newcommand{\Tguard}{\key{guard}^{\mathrm{p}}}            % the guard of a predicate
+\newcommand{\Taccepts}[1]{\mathit{accepts}_{#1}}          % the test of a tag, for a kind of function
+\newcommand{\Tfuntwo}{\mathit{fun}_2}                     % a function is an entry of a graph
+\newcommand{\Tfunfour}{\mathit{fun}_4}                    % a function is a pair
+\newcommand{\Tchecked}[1]{\key{checked}^{#1}}             % checked through a map on kinds
+\newcommand{\Tkind}{\key{kind}}
+\newcommand{\Tkindf}{\key{kind}^{\mathrm{f}}}             % the kind of a flat type
+\newcommand{\Tkindfour}{\key{kind}_4}
+\newcommand{\Tkeep}[1]{\key{keep}^{#1}}
+\newcommand{\Thit}{\key{hit}}
+\newcommand{\Tletv}{\key{let}^{\mathsf{T}}}               % bind to the next slot
+\newcommand{\Same}{\mathit{Same}}
+\newcommand{\TdynV}[2]{\key{dyn}_{#1}(#2)}                % a value of type Any: v tagged with G
+\newcommand{\TcodeV}[1]{\key{code}(#1)}                   % code, as a value
+\newcommand{\Tres}[1]{\lceil #1 \rceil^{\mathsf{T}}}      % a primitive's result, typed
 
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
 
@@ -462,8 +497,6 @@ In the reduction proof:
 \paragraph{Building.} \texttt{latexmk -pdf definitions.tex}
 
 %===============================================================================
-\part{The Compiler}
-
 \part{The Typed Pipeline}\label{part:typed}
 
 The compiler of the main development:
@@ -480,19 +513,6 @@ The compiler of the main development:
 The source ISWIM, simplify, the target X86 and the semantics of ISWIM and X86 in each style are
 those of Part~\ref{part:untyped}, which both pipelines share.
 
-% Part I: the typed pipeline -- languages and passes
-% (agda/Language/Typed/*.agda, agda/Compiler/*.agda)
-\providecommand{\Tfun}{\key{fun}}
-\providecommand{\Tsum}{\key{sum}}
-\providecommand{\Ttup}[1]{\key{tup}\;#1}
-\providecommand{\Tint}{\key{int}}
-\providecommand{\Tttup}[2]{\key{tup}_{#1,#2}}
-\providecommand{\Tflatof}[1]{\mathit{flat}(#1)}
-\providecommand{\Tout}[1]{\mathit{out}(#1)}
-\providecommand{\Tcodetm}[3]{\key{code}(#1\,#2.\,#3)}
-\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}
-\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}
-\providecommand{\Tcheck}[1]{\pass{check}_{#1}}
 
 %===============================================================================
 \section{Types and Typed Languages}\label{sec:t-langs}
@@ -1093,24 +1113,6 @@ $\pass{cast}$; simplify keeps programs closed
   its meaning is the embedding $\ulcorner\cdot\urcorner$ into $\Tl{Clos5}$.
 \end{itemize}
 
-% Part I: the typed denotational semantics (graph model, and with errors)
-\providecommand{\Tguard}{\key{guard}^{\mathrm{p}}}            % the guard of a predicate
-\providecommand{\Taccepts}[1]{\mathit{accepts}_{#1}}          % the test of a tag, for a kind of function
-\providecommand{\Tfuntwo}{\mathit{fun}_2}                     % a function is an entry of a graph
-\providecommand{\Tfunfour}{\mathit{fun}_4}                    % a function is a pair
-\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}
-\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}
-\providecommand{\Tcodet}[2]{\key{code}(#1.\, #2)}             % the code term of Clos4^T
-\providecommand{\Tchecked}[1]{\key{checked}^{#1}}             % checked through a map on kinds
-\providecommand{\Tkind}{\key{kind}}
-\providecommand{\Tkindf}{\key{kind}^{\mathrm{f}}}              % the kind of a flat type
-\providecommand{\Tkindfour}{\key{kind}_4}
-\providecommand{\Tkeep}[1]{\key{keep}^{#1}}
-\providecommand{\Thit}{\key{hit}}
-\providecommand{\Tflatof}{\key{flat}}                         % the flat type of a tag
-\providecommand{\Tletv}{\key{let}^{\mathsf{T}}}               % bind to the next slot
-\providecommand{\Tembed}[1]{\ulcorner #1 \urcorner}           % Mon^T into Clos5^T
-\providecommand{\Same}{\mathit{Same}}
 
 %===============================================================================
 \section{Denotational: Graph Model}\label{sec:t-den}
@@ -1207,7 +1209,7 @@ $\key{pack}$; and $\key{callc}$ applies the closure's code ($\key{car}$)
 to its environment ($\key{cdr}$) and then to the argument. There is no
 $\key{fst}$ or $\key{snd}$ in the syntax: only a call opens a closure.
 \begin{align*}
-  \SEM{\Tcodet{e\,y}{N}}^{\Tl{4}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\Tl{4}}\rho_0(e{:=}X, y{:=}Y))) \\
+  \SEM{\Tcodetm{e}{y}{N}}^{\Tl{4}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\Tl{4}}\rho_0(e{:=}X, y{:=}Y))) \\
   \SEM{\Tpack{L}{M}}^{\Tl{4}}\rho &= \key{pair}(\SEM{L}^{\Tl{4}}\rho, \SEM{M}^{\Tl{4}}\rho) \\
   \SEM{\Tcallc{L}{M}}^{\Tl{4}}\rho &= (\key{car}(D) \app \key{cdr}(D)) \app \SEM{M}^{\Tl{4}}\rho
     \quad\text{where } D = \SEM{L}^{\Tl{4}}\rho
@@ -1340,12 +1342,12 @@ through a map $\varphi$ on kinds: with $\varphi$ the identity it is
 $\key{checked}_k$ of Part~II
 (\texttt{agda/Framework/GraphModel/TypedCheck.agda}). A project to tag $t$ binds
 its operand, adds $\omega$ when the operand has a value of another kind
-than that of the flat type $\Tflatof(t)$ of $t$, and keeps the values of
+than that of the flat type $\Tflatof{t}$ of $t$, and keeps the values of
 that kind, provided that the operand passes the test of $t$:
 \begin{align*}
   \Tchecked{\varphi}_k(X, A) &= \{ \omega \mid \exists d \in X.\; \varphi(\Tkind(d)) \neq k \} \cup A \\
-  \Tkeep{\varphi}_t(X) &= \{ d \in X \mid \Thit(t, X),\; \varphi(\Tkind(d)) = \Tkindf(\Tflatof(t)) \} \\
-  \key{project}^{\varphi}_t(D) &= D \bind \lambda X.\, \Tchecked{\varphi}_{\Tkindf(\Tflatof(t))}(X, \Tkeep{\varphi}_t(X))
+  \Tkeep{\varphi}_t(X) &= \{ d \in X \mid \Thit(t, X),\; \varphi(\Tkind(d)) = \Tkindf(\Tflatof{t}) \} \\
+  \key{project}^{\varphi}_t(D) &= D \bind \lambda X.\, \Tchecked{\varphi}_{\Tkindf(\Tflatof{t})}(X, \Tkeep{\varphi}_t(X))
 \end{align*}
 where $\Tkindf$ is the kind of the values of a flat type (an integer, a
 tuple of $n$ components, an injection, a function), and $\Thit(t, X)$
@@ -1388,7 +1390,7 @@ $\Lambda\Lambda^{\omega}$, $\key{pack}$ is $\key{pair}^{\omega}$, and a call
 binds the closure and then the argument, and checks nothing (in
 particular not that the closure is a pair):
 \begin{align*}
-  \SEM{\Tcodet{e\,y}{N}}^{\Tl{4},\omega}\rho &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{4},\omega}\rho_0(e{:=}X, y{:=}Y)) \\
+  \SEM{\Tcodetm{e}{y}{N}}^{\Tl{4},\omega}\rho &= \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{\Tl{4},\omega}\rho_0(e{:=}X, y{:=}Y)) \\
   \SEM{\Tpack{L}{M}}^{\Tl{4},\omega}\rho &= \key{pair}^{\omega}(\SEM{L}^{\Tl{4},\omega}\rho, \SEM{M}^{\Tl{4},\omega}\rho) \\
   \SEM{\Tcallc{L}{M}}^{\Tl{4},\omega}\rho &= \SEM{L}^{\Tl{4},\omega}\rho \bind \lambda P.\,
     \SEM{M}^{\Tl{4},\omega}\rho \bind \lambda X.\, (\key{car}(P) \app \key{cdr}(P)) \app X
@@ -1476,14 +1478,6 @@ errors, constants and first-order data, and relates code by what it
 does on inputs of the kind its pair says, so that an entry at inputs of
 the wrong kind is related to anything.
 
-% Part I: the CEK machines and the clocked interpreters of the typed languages.
-\providecommand{\TdynV}[2]{\key{dyn}_{#1}(#2)}        % a value of type Any: v tagged with G
-\providecommand{\TcodeV}[1]{\key{code}(#1)}           % code, as a term and as a value
-\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}        % a closure: code and environment
-\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}      % call a closure
-\providecommand{\Tres}[1]{\lceil #1 \rceil^{\mathsf{T}}} % a primitive's result, typed
-\providecommand{\Tflatof}[1]{\mathit{flat}(#1)}       % the flat type a tag tests
-\providecommand{\Temb}[1]{\ulcorner #1 \urcorner}     % the embedding of Mon^T into Clos5^T
 
 %-------------------------------------------------------------------------------
 \section{CEK Machines}\label{sec:t-cek}
@@ -1670,8 +1664,8 @@ The transitions are those of $\Tl{Clos4}$, with
 \end{array}
 \]
 in place of those for code. $\Tl{Mon}$ has no machine of its own: a
-$\Tl{Mon}$ program $P$ runs as its embedding $\Temb{P}$ into $\Tl{Clos5}$,
-$\Mach{\Tl{Mon}}(P) = \Mach{\Tl{Clos5}}(\Temb{P})$, which maps an atom to
+$\Tl{Mon}$ program $P$ runs as its embedding $\Tembed{P}$ into $\Tl{Clos5}$,
+$\Mach{\Tl{Mon}}(P) = \Mach{\Tl{Clos5}}(\Tembed{P})$, which maps an atom to
 the variable, literal or $\funref{j}$ it is and every other construct
 to the $\Tl{Clos5}$ construct of the same name.
 
@@ -1887,7 +1881,7 @@ $\Tl{Clos5}$. The call never errs, since $f$ is a closure by its type.
 where $d_j = \key{fun}\; e\,y.\,N$.
 A reference to a missing definition cannot be written, so the
 $\error$ case of Part~II's $\CALL{\vec{d}}{k}$ is gone. $\Tl{Mon}$ has no
-interpreter of its own: $\Interp{\Tl{Mon}}(P) = \Interp{\Tl{Clos5}}(\Temb{P})$.
+interpreter of its own: $\Interp{\Tl{Mon}}(P) = \Interp{\Tl{Clos5}}(\Tembed{P})$.
 
 \subsection{\texorpdfstring{$\Tl{Imp}$}{Imp}}
 
@@ -1960,13 +1954,6 @@ some of the source's values); related values are observed alike, and
 the operations above ($\delta$, $\key{nth}$, $\key{either}$,
 $\key{project?}$) give related results.
 
-% ---------------------------------------------------------------------------
-% Part I: the reduction semantics of the typed languages with binders
-% ---------------------------------------------------------------------------
-\providecommand{\Tpack}[2]{\key{pack}(#1, #2)}
-\providecommand{\Tcallc}[2]{\key{callc}(#1, #2)}
-\providecommand{\Tcodeterm}[1]{\key{code}(#1)}
-\providecommand{\Tunit}{\Tinject{\key{tup}\,0}\emptytup}
 
 \section{Reduction Semantics}\label{sec:t-red}
 
@@ -2111,13 +2098,13 @@ $\key{snd}$): it evaluates both, left to right, and then calls the code of
 the closure with its environment and the argument.
 \[
 \begin{array}{rcl}
-  V, U, W &::=& \Tcodeterm{e\,y.\,N} \mid \Tpack{V}{W} \mid c \mid \tuple{\bar{V}} \mid \inl V \mid \inr V
+  V, U, W &::=& \Tcodetm{e}{y}{N} \mid \Tpack{V}{W} \mid c \mid \tuple{\bar{V}} \mid \inl V \mid \inr V
     \mid \Tinject{G} V \\
   E &::=& \Tpack{E}{M} \mid \Tpack{V}{E} \mid \Tcallc{E}{M} \mid \Tcallc{V}{E} \mid \cdots
 \end{array}
 \]
 \[
-  \Tcallc{\Tpack{\Tcodeterm{e\,y.\,N}}{U}}{W} \to N[e := U, y := W]
+  \Tcallc{\Tpack{\Tcodetm{e}{y}{N}}{U}}{W} \to N[e := U, y := W]
 \]
 The other contexts and redexes, $\key{let}$ included, are those of
 $\Tl{ISWIM}$.
@@ -2127,7 +2114,7 @@ $(d_0, \ldots, d_{m-1};\; M)$ has a table $\Sigma$, the lengths of the
 environments of its definitions, and its terms are indexed by $\Sigma$ as
 well as by their context: a reference $\funref{f}$, for $f$ an entry of
 $\Sigma$ of length $n$, has type $\Tcode{n}$ and is a value (it replaces
-$\Tcodeterm{e\,y.\,N}$ among the values). So a reference to a missing
+$\Tcodetm{e}{y}{N}$ among the values). So a reference to a missing
 definition cannot be written, where Part~II's Clos5 checks $k < m$ at the
 call. The reduction $\mathit{red}_{\bar{d}}$ of a program with the
 definitions $\bar{d}$ is that of $\Tl{Clos4}$, with
@@ -2647,11 +2634,11 @@ $\key{movq}\; \%\key{rdi}, 0;\ \key{movq}\; \%\key{rsi}, 1$, which moves its
 free variables and argument to the slots where its body expects them.
 
 %===============================================================================
-\part{Denotational: Graph Model}\label{part:den}
+\section{Denotational: Graph Model}\label{sec:u-den}
 
-\section{Values and Operators}
+\subsection{Values and Operators}
 
-\subsection{Values}
+\subsubsection{Values}
 
 \[
 \begin{array}{rcl}
@@ -2674,7 +2661,7 @@ free variables and argument to the slots where its body expects them.
 \end{array}
 \]
 
-\subsection{Operators}\label{sec:den-ops}
+\subsubsection{Operators}\label{sec:den-ops}
 
 \begin{align*}
   D \app E &= \{ w \mid \exists V \NE.\; (V \mapsto w) \in D,\; V \subseteq E \} \\
@@ -2704,7 +2691,7 @@ under a consistent environment has no inconsistent elements.
   D \odot E &= (\key{car}(D) \app \key{cdr}(D)) \app E
 \end{align*}
 
-\subsection{Consistency}\label{sec:consistency}
+\subsubsection{Consistency}\label{sec:consistency}
 
 \begin{align*}
   c \sim c' &\iff c = c' \\
@@ -2746,7 +2733,7 @@ $d_0, \ldots, d_{m-1}$ and every $k$,
 \]
 \end{lemma}
 
-\subsection{Continuity}
+\subsubsection{Continuity}
 
 \begin{align*}
   \rho' \subseteq \rho &\iff \forall x.\; \rho'(x) \subseteq \rho(x) \\
@@ -2757,7 +2744,7 @@ $d_0, \ldots, d_{m-1}$ and every $k$,
 \end{align*}
 
 %===============================================================================
-\section{Semantics}
+\subsection{Semantics}
 
 \begin{align*}
   \SEM{-}^{\mathrm{ISWIM}}, \SEM{-}^{\mathrm{2}}, \ldots, \SEM{-}^{\mathrm{4}}
@@ -2770,7 +2757,7 @@ $d_0, \ldots, d_{m-1}$ and every $k$,
 For each language $\ell \in \{\mathrm{ISWIM}, 2, 3, 4\}$, $\SEM{-}^{\ell}$ is
 defined by the common clauses below together with the clauses for $\ell$.
 
-\subsection{Clauses common to all languages}
+\subsubsection{Clauses common to all languages}
 
 \begin{align*}
   \SEM{x}^{\ell}\rho &= \rho(x) \\
@@ -2785,14 +2772,14 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{\Let x = M \In N}^{\ell}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\ell}\ext{\rho}{x}{X}) \app \SEM{M}^{\ell}\rho
 \end{align*}
 
-\subsection{ISWIM}
+\subsubsection{ISWIM}
 
 \begin{align*}
   \SEM{\lam{x} N}^{\mathrm{ISWIM}}\rho &= \Lambda(\lambda X.\, \SEM{N}^{\mathrm{ISWIM}}\ext{\rho}{x}{X}) \\
   \SEM{L\;M}^{\mathrm{ISWIM}}\rho &= \SEM{L}^{\mathrm{ISWIM}}\rho \app \SEM{M}^{\mathrm{ISWIM}}\rho
 \end{align*}
 
-\subsection{Clos2}
+\subsubsection{Clos2}
 
 \begin{align*}
   \SEM{\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N}^{\mathrm{2}}\rho &=
@@ -2802,7 +2789,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L\;M}^{\mathrm{2}}\rho &= \SEM{L}^{\mathrm{2}}\rho \app \SEM{M}^{\mathrm{2}}\rho
 \end{align*}
 
-\subsection{Clos3}
+\subsubsection{Clos3}
 
 \begin{align*}
   \SEM{\clos{r_1\ldots r_n}{e\, y} N}^{\mathrm{3}}\rho &=
@@ -2811,7 +2798,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L\;M}^{\mathrm{3}}\rho &= \SEM{L}^{\mathrm{3}}\rho \app \SEM{M}^{\mathrm{3}}\rho
 \end{align*}
 
-\subsection{Clos4}
+\subsubsection{Clos4}
 
 \begin{align*}
   \SEM{\fun{e\,y.\,N}}^{\mathrm{4}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{4}}\rho_0(e{:=}X, y{:=}Y))) \\
@@ -2821,7 +2808,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{\SND M}^{\mathrm{4}}\rho &= \key{cdr}(\SEM{M}^{\mathrm{4}}\rho)
 \end{align*}
 
-\subsection{Clos5}
+\subsubsection{Clos5}
 
 \begin{align*}
   \SEM{\funref{k}}^{\mathrm{5}}_T\rho &= T(k) \\
@@ -2842,7 +2829,7 @@ together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SE
   \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\mathrm{5}} &= \SEM{M}^{\mathrm{5}}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
 \end{align*}
 
-\subsection{Imp and CFG: what they share}
+\subsubsection{Imp and CFG: what they share}
 
 A store $\sigma$ gives each slot a meaning. An expression or tail runs in
 a frame of $n$ slots. Reading a slot beyond the frame gives $\{\omega\}$,
@@ -2884,7 +2871,7 @@ of the older ones:
     \end{cases}
 \end{align*}
 
-\subsection{Imp, continuation-passing}
+\subsubsection{Imp, continuation-passing}
 
 The semantics the main proof uses. An expression runs in a frame of $n$
 slots, given the store $\sigma$ as it enters and a continuation $\kappa$,
@@ -2914,7 +2901,7 @@ With $T$ and $n$ fixed, writing $\SEM{e}\sigma\,\kappa$ for $\SEM{e}^{\mathrm{Im
 \end{align*}
 where $\key{table}^{\mathrm{K}}$ is $\key{table}$ with $\key{code}^{\mathrm{K}}$.
 
-\subsection{Imp, direct}
+\subsubsection{Imp, direct}
 
 An alternative, kept alongside: given the store as it enters, an
 expression means a set of values and the store as it leaves.
@@ -2950,7 +2937,7 @@ With $T$ and $n$ fixed, writing $\SEM{e}\sigma$ for $\SEM{e}^{\mathrm{ImpD}}_{T,
 \end{align*}
 where $\key{table}^{\mathrm{D}}$ is $\key{table}$ with $\key{code}^{\mathrm{D}}$.
 
-\subsection{CFG}
+\subsubsection{CFG}
 
 A tail runs in a frame of $n$ slots, given the meanings $B$ of the blocks
 it can see, and means a set of values. The blocks of a body are given
@@ -2983,7 +2970,7 @@ With $T$, $n$, and $B$ fixed, writing $\SEM{t}\sigma$ for $\SEM{t}^{\mathrm{CFG}
 \end{align*}
 where $\key{table}^{\mathrm{CFG}}$ is $\key{table}$ with $\key{code}^{\mathrm{CFG}}$.
 
-\subsection{X86}\label{sec:den-x86}
+\subsubsection{X86}\label{sec:den-x86}
 
 Continuation-passing, as Imp. The state of a body is its frame $\sigma$,
 a store as in CFG; its registers $\rho$; and the flag $\varphi$, a set of
@@ -3072,9 +3059,9 @@ in a frame of $n$ zeros with $\{0\}$ in $\rax$.
 where $\key{table}^{\mathrm{X86}}$ is $\key{table}$ with $\key{code}^{\mathrm{X86}}$.
 
 %===============================================================================
-\section{Relations}
+\subsection{Relations}
 
-\subsection{Simplify}
+\subsubsection{Simplify}
 
 \begin{lemma}[$\beta$ for a Value]\label{lem:beta-value}
 If $\rho(x) \NE$ for every $x$, and $D$ is nonempty and consistent, then
@@ -3099,7 +3086,7 @@ and $\mathcal{K}_E(M)$ describes $\SEM{M}\rho$. In particular
 $\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$.
 \end{lemma}
 
-\subsection{CC: Enclose}
+\subsubsection{CC: Enclose}
 
 \begin{lemma}[Correctness of Enclose]\label{lem:enclose}
 If $\rho_1(x) \simeq \rho_2(x)$ for every $x \in \FV(M)$
@@ -3109,7 +3096,7 @@ and $\rho_2(x) \NE$ for every $x$, then
 \]
 \end{lemma}
 
-\subsection{CC: Optimize}
+\subsubsection{CC: Optimize}
 
 \begin{lemma}[Correctness of Optimize]\label{lem:optimize}
 If $\rho(x) \simeq \rho'(x)$ for every $x \in \FV(M)$
@@ -3119,7 +3106,7 @@ and $\rho(x) \NE$ for every $x$, then
 \]
 \end{lemma}
 
-\subsection{CC: Concretize}
+\subsubsection{CC: Concretize}
 
 \begin{align*}
   \SEM{x}_r\rho &= \rho(x) \\
@@ -3133,7 +3120,7 @@ If $\consis(\rho_3)$ and $\rho_2 \sim_\varphi \rho_3$, then
 \]
 \end{lemma}
 
-\subsection{CC: Delay}
+\subsubsection{CC: Delay}
 
 \begin{lemma}[Continuity]\label{lem:continuity}
 $\SEM{M}^{\mathrm{3}}$ and $\SEM{M}^{\mathrm{4}}$ are continuous.
@@ -3217,7 +3204,7 @@ For $\key{let}$, both directions use $\beta$ for a $\key{let}$ by continuity
 consistent part of $D$); reflection first gathers the finite parts of the
 operand that the elements of $V'$ use into one.
 
-\subsection{CC: Globalize}
+\subsubsection{CC: Globalize}
 
 \begin{align*}
   \mathit{Extends}(\vec{d}, \vec{d}') &\iff \vec{d} \text{ is a prefix of } \vec{d}' \\
@@ -3243,7 +3230,7 @@ $\SEM{M}^{\mathrm{4}}\rho \simeq \SEM{M'}^{\mathrm{5}}_{\key{table}(\vec{d}')}\r
 $\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\mathrm{5}}$.
 \end{lemma}
 
-\subsection{Remove Complex Operands}
+\subsubsection{Remove Complex Operands}
 
 \begin{lemma}[Continuity of Clos5]\label{lem:continuity5}
 For every table $T$, $\SEM{M}^{\mathrm{5}}_T$ is monotone and continuous.
@@ -3310,7 +3297,7 @@ The theorem needs no scoping: an error and divergence both mean
 $\emptyset$, an unbound variable means $\rho_0(x) = \{\omega\}$, and the
 order in which operands are evaluated is invisible.
 
-\subsection{Lift Locals}
+\subsubsection{Lift Locals}
 
 The store agrees with the environment on the slots that $\varphi$ gives
 the variables in scope, and the variables out of scope mean
@@ -3399,7 +3386,7 @@ For every monadic Clos5 program $P$,
 \]
 \end{theorem}
 
-\subsection{Explicate Control}\label{sec:den-explicate}
+\subsubsection{Explicate Control}\label{sec:den-explicate}
 
 The pass threads the list of blocks: from the blocks $\vec{t}$,
 $\pass{tail}(e, \vec{t}) = (t;\, \vec{t}')$ and
@@ -3470,7 +3457,7 @@ For every Imp program $P$,
 \]
 \end{theorem}
 
-\subsection{Select Instructions}\label{sec:den-select}
+\subsubsection{Select Instructions}\label{sec:den-select}
 
 The X86 frame is the CFG store, with any registers and flag. Write
 $\pass{select}^{+}(b)$ for the body $b$ selected with the prologue, as
@@ -3561,7 +3548,7 @@ program $P$ has $2 \leq n_k$, then
 The global definitions of $\pass{compile\text{-}cfg}(M)$ have at least
 2 slots: lift locals gives each $2 + h$ slots.
 
-\subsection{End to End}
+\subsubsection{End to End}
 
 \begin{align*}
   D \obseq D' &\iff (\forall c.\; c \in D \iff c \in D') \land (D \NE \iff D' \NE)
@@ -3608,17 +3595,17 @@ by Theorems~\ref{thm:compile-cfg} and~\ref{thm:select}.
 \end{theorem}
 
 %===============================================================================
-\part{CEK Machine + Simulation}
+\section{CEK Machine + Simulation}
 
-\section{Observations and Machines}
+\subsection{Observations and Machines}
 
-\subsection{Observations}\label{sec:obs}
+\subsubsection{Observations}\label{sec:obs}
 
 \[
   o ::= c \mid \key{fun} \mid \key{tuple}(o_1, \ldots, o_n) \mid \inl o \mid \inr o \mid \error
 \]
 
-\subsection{Machines}
+\subsubsection{Machines}
 
 A machine is a step function, which either moves to the next state or stops with an observation.
 \begin{align*}
@@ -3645,9 +3632,9 @@ If $\Final_L(s, o)$ for no $o$ and no $s$ with $\start{L} \lto_L^* s$, then $\Di
 \end{lemma}
 
 %-------------------------------------------------------------------------------
-\section{The Machines}\label{sec:machines}
+\subsection{The Machines}\label{sec:machines}
 
-\subsection{Definitions shared by all machines}\label{sec:machine-shared}
+\subsubsection{Definitions shared by all machines}\label{sec:machine-shared}
 
 \[
 \begin{array}{rcl}
@@ -3674,7 +3661,7 @@ If $\Final_L(s, o)$ for no $o$ and no $s$ with $\start{L} \lto_L^* s$, then $\Di
 \end{align*}
 We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 
-\subsection{Rules common to all machines}
+\subsubsection{Rules common to all machines}
 
 \[
 \begin{array}{rcl}
@@ -3709,7 +3696,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsection{ISWIM}
+\subsubsection{ISWIM}
 
 \[
 \begin{array}{rcl}
@@ -3728,7 +3715,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsection{Clos2}
+\subsubsection{Clos2}
 
 \[
 \begin{array}{rcl}
@@ -3757,7 +3744,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsection{Clos3}
+\subsubsection{Clos3}
 
 \[
 \begin{array}{rcl}
@@ -3779,7 +3766,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsection{Clos4}
+\subsubsection{Clos4}
 
 An application checks that its operator is code when it calls it, after
 evaluating all three operands.
@@ -3813,7 +3800,7 @@ evaluating all three operands.
 \end{array}
 \]
 
-\subsection{Clos5}
+\subsubsection{Clos5}
 
 The machine of a program runs with its global definitions.
 \[
@@ -3832,7 +3819,7 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
 \end{array}
 \]
 
-\subsection{Imp}
+\subsubsection{Imp}
 
 Both kinds of state carry the frame $\sigma$ of the running body, a list
 of values, so an assignment is seen by everything after it. The values
@@ -3932,7 +3919,7 @@ where $0^{n-2}$ is $n - 2$ zeros, none when $n < 2$.
 \end{array}
 \]
 
-\subsection{CFG}
+\subsubsection{CFG}
 
 The values, frames, frames $F$ of simple expressions, $\mathit{first}$,
 and $\mathit{resume}$ are those of Imp. A tail runs in a frame with the
@@ -3981,7 +3968,7 @@ of Imp with $\mathit{call}$ running the start of the callee's body with its bloc
 \end{array}
 \]
 
-\subsection{X86}\label{sec:machine-x86}
+\subsubsection{X86}\label{sec:machine-x86}
 
 One instruction or jump per step. The values are those of Clos5 and
 the frames those of Imp. A state runs the instructions $\vec{\imath}$
@@ -4073,7 +4060,7 @@ and $\langle \vec{\imath} \rangle_{f'}$ for it with the flag $f'$:
 where $\res{f}$ is $\inlV \tupV{}$ or $\inrV \tupV{}$, as $\key{eq}$ produces.
 
 %-------------------------------------------------------------------------------
-\section{Simulations}\label{sec:sims}
+\subsection{Simulations}\label{sec:sims}
 
 A forward simulation from $L_1$ to $L_2$ is a family of relations
 $s_1 \sim_i s_2$ between their states, indexed by $i \in \mathbb{N}$.
@@ -4126,7 +4113,7 @@ If $\Equiv(L_1, L_2)$ and $\Equiv(L_2, L_3)$, then
 \end{lemma}
 
 %-------------------------------------------------------------------------------
-\section{Relations}\label{sec:sim-relations}
+\subsection{Relations}\label{sec:sim-relations}
 
 Each pass relates source and target values ($v \approx w$), continuations
 ($\kappa_1 \approxk \kappa_2$), and states ($s_1 \sim s_2$).
@@ -4149,7 +4136,7 @@ $\kappa_1 \approxk \kappa_2$, \ldots).
 In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
 \end{lemma}
 
-\subsection{Simplify}\label{sec:sim-simplify}
+\subsubsection{Simplify}\label{sec:sim-simplify}
 
 A target closure is the simplified body of a source closure, under facts
 $E$ that are true of the two environments ($\rho' \models_E \rho$): for each
@@ -4191,7 +4178,7 @@ For every ISWIM term $M$,
 by Lemma~\ref{lem:simplify-fsim} and the symmetry of $\Equiv$.
 \end{theorem}
 
-\subsection{CC: Enclose}\label{sec:sim-enclose}
+\subsubsection{CC: Enclose}\label{sec:sim-enclose}
 
 \begin{align*}
   \cloV{\lam{y} N}{\rho_1} \approx \closV{x_1 \ldots x_n\, y.\, \pass{enclose}(N)}{v_1 \ldots v_n}
@@ -4226,7 +4213,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Optimize}\label{sec:sim-optimize}
+\subsubsection{CC: Optimize}\label{sec:sim-optimize}
 
 For a closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$, let
 $\{ i_1 < \cdots < i_k \} = \{ i \mid x_i \in \FV(N) \}$, as in optimize, and
@@ -4304,7 +4291,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Concretize}\label{sec:sim-concretize}
+\subsubsection{CC: Concretize}\label{sec:sim-concretize}
 
 \begin{align*}
   \rho_2 \approx_\varphi \rho_3 &\iff \forall x \in \mathrm{dom}(\varphi).\;
@@ -4358,7 +4345,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Delay}\label{sec:sim-delay}
+\subsubsection{CC: Delay}\label{sec:sim-delay}
 
 \begin{align*}
   \rho_1 \approxq \rho_2 &\iff \forall x.\; x \text{ is not a fresh variable } f \text{ of delay}
@@ -4406,7 +4393,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Globalize}\label{sec:sim-globalize}
+\subsubsection{CC: Globalize}\label{sec:sim-globalize}
 
 The relations are those for the table $D$ that globalize makes for the whole program.
 \begin{align*}
@@ -4448,7 +4435,7 @@ For every Clos4 term $M$,
 \]
 \end{theorem}
 
-\subsection{Remove Complex Operands}\label{sec:sim-rco}
+\subsubsection{Remove Complex Operands}\label{sec:sim-rco}
 
 The source runs with the definitions $D$ and the target with
 $\pass{rco}(D)$, so values are related by equality ($\codeV{k}$ names
@@ -4522,7 +4509,7 @@ For every Clos5 program $P$,
 \]
 \end{theorem}
 
-\subsection{Lift Locals}\label{sec:sim-lift}
+\subsubsection{Lift Locals}\label{sec:sim-lift}
 
 The machines run in lock step and compute the same values, so values are
 related by equality ($\codeV{k}$ names $D_k$ in the source and
@@ -4594,7 +4581,7 @@ For every monadic Clos5 program $P$,
 There is no precondition: a variable out of scope errors in both
 machines, as its slot $n$ is beyond the frame.
 
-\subsection{Explicate Control}\label{sec:sim-explicate}
+\subsubsection{Explicate Control}\label{sec:sim-explicate}
 
 The machines share the frame and the evaluation of simple expressions,
 and run in lock step except for the control flow that the pass makes
@@ -4676,7 +4663,7 @@ For every Imp program $P$,
 \end{theorem}
 There is no precondition.
 
-\subsection{Select Instructions}\label{sec:sim-select}
+\subsubsection{Select Instructions}\label{sec:sim-select}
 
 The frames are the same and values are related by equality; the
 registers matter only where a value is in flight ($\rax$ after a simple
@@ -4751,7 +4738,7 @@ For every CFG program $P$,
 \end{theorem}
 There is no precondition.
 
-\subsection{End to End}
+\subsubsection{End to End}
 
 \begin{theorem}[Compiler Correctness, Simulation]\label{thm:compiler-sim}
 For every ISWIM term $M$,
@@ -4795,7 +4782,7 @@ by Theorems~\ref{thm:compile-cfg-sim} and~\ref{thm:select-sim} and Lemma~\ref{le
 \end{theorem}
 
 %-------------------------------------------------------------------------------
-\section{Backward Simulation for Delay}
+\subsection{Backward Simulation for Delay}
 
 The direct backward simulation for delay, which does not use determinism.
 \begin{align*}
@@ -4881,11 +4868,11 @@ For every Clos3 term $M$,
 \end{theorem}
 
 %===============================================================================
-\part{Clocked Interpreter + Value Relations}
+\section{Clocked Interpreter + Value Relations}
 
-\section{Results and Clocks}
+\subsection{Results and Clocks}
 
-\subsection{Results}
+\subsubsection{Results}
 
 \begin{align*}
   r &::= \tmo \mid \error \mid \Ret v \\[1ex]
@@ -4896,7 +4883,7 @@ For every Clos3 term $M$,
   \lift{\bot} &= \error
 \end{align*}
 
-\subsection{Programs}
+\subsubsection{Programs}
 
 A clocked program gives a result for every clock.
 \begin{align*}
@@ -4912,7 +4899,7 @@ A clocked program gives a result for every clock.
 The observations $o$ are those of Section~\ref{sec:obs}, and $\Equiv$ has the
 shape of the simulation one (Section~\ref{sec:sims}).
 
-\subsection{Clock for Clock}
+\subsubsection{Clock for Clock}
 
 \begin{align*}
   \RelRes{R}(\tmo, \tmo), \quad \RelRes{R}(\error, \error) &\iff \mathsf{true} \\
@@ -4935,7 +4922,7 @@ $\RelRes{R}(\run_{P_1}(k), \run_{P_2}(k))$ for every clock $k$, then
 \]
 \end{theorem}
 
-\subsection{Clock Monotone}
+\subsubsection{Clock Monotone}
 
 A pass that removes calls is not clock for clock: its output needs no more
 clock than its input, which may need more.
@@ -4965,7 +4952,7 @@ If $\Equiv(P_1, P_2)$ and $\Equiv(P_2, P_3)$, then
 \end{lemma}
 
 %-------------------------------------------------------------------------------
-\section{The Interpreters}
+\subsection{The Interpreters}
 
 Each interpreter uses the values and environments of its language's machine
 (Section~\ref{sec:machines}). The clock $k$ decreases only when a function is
@@ -4981,7 +4968,7 @@ $\Do x \leftarrow e;\; e'$ means $e \bind \lambda x.\, e'$.
   \Interp{5}(\vec{d};\; M) &= (\obs,\; \lambda k.\, \EV{\vec{d}}{k}\,\emptyset\,M)
 \end{align*}
 
-\subsection{Clauses common to all interpreters}
+\subsubsection{Clauses common to all interpreters}
 
 \begin{align*}
   \EV{\ell}{k}\,\rho\,x &= \lift{\rho(x)} \\
@@ -5013,7 +5000,7 @@ $\Do x \leftarrow e;\; e'$ means $e \bind \lambda x.\, e'$.
 \end{align*}
 Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared}.
 
-\subsection{ISWIM}
+\subsubsection{ISWIM}
 
 \begin{align*}
   \EV{\mathrm{ISWIM}}{k}\,\rho\,(\lam{x} N) &= \Ret \cloV{\lam{x} N}{\rho} \\
@@ -5026,7 +5013,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \end{cases}
 \end{align*}
 
-\subsection{Clos2}
+\subsubsection{Clos2}
 
 \begin{align*}
   \EV{2}{k}\,\rho\,(\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N) &=
@@ -5040,7 +5027,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \end{cases}
 \end{align*}
 
-\subsection{Clos3}
+\subsubsection{Clos3}
 
 \begin{align*}
   \EV{3}{k}\,\rho\,(\clos{r_1 \ldots r_n}{e\, y} N) &=
@@ -5054,7 +5041,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \end{cases}
 \end{align*}
 
-\subsection{Clos4}
+\subsubsection{Clos4}
 
 As in the machine, the operator is checked after all three operands.
 \begin{align*}
@@ -5078,7 +5065,7 @@ As in the machine, the operator is checked after all three operands.
     \begin{cases} \Ret v_2 & v = \pairV{v_1}{v_2} \\ \error & \text{otherwise} \end{cases}
 \end{align*}
 
-\subsection{Clos5}
+\subsubsection{Clos5}
 
 The interpreter of a program runs with its global definitions $\vec{d} = d_0, \ldots, d_{m-1}$.
 Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, except
@@ -5098,7 +5085,7 @@ Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, 
     \end{cases}
 \end{align*}
 
-\subsection{Imp}
+\subsubsection{Imp}
 
 The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1}$.
 An expression runs in a frame $\sigma$, with $\sigma(a)$ and $\sigma[s := v]$ as in
@@ -5154,7 +5141,7 @@ where $\key{simple}$ is the Agda's $\key{eval\text{-}simple}$.
     \end{cases}
 \end{align*}
 
-\subsection{CFG}
+\subsubsection{CFG}
 
 The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1}$.
 A tail runs in a frame with the blocks it may jump to, and returns a
@@ -5188,7 +5175,7 @@ the blocks older than it.
     \end{cases}
 \end{align*}
 
-\subsection{X86}
+\subsubsection{X86}
 
 The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1}$.
 The state is a frame $\sigma$ and registers $\rho$: $\rax$, $\rdi$, $\rsi$
@@ -5257,14 +5244,14 @@ Writing $\key{run}^k$, $\key{jump}^k$ and $\CALL{}{k}$ for those of $\vec{b}$:
 \end{align*}
 
 %-------------------------------------------------------------------------------
-\section{Relations}
+\subsection{Relations}
 
 Each pass relates source and target values by the relation $\approx$ of its
 forward simulation (Section~\ref{sec:sim-relations}), and environments by the
 relation used there for the states $\ev{M}{\rho_1}{\kappa_1} \sim \ev{M'}{\rho_2}{\kappa_2}$.
 By Lemma~\ref{lem:obs}, if $v \approx w$, then $\obs(v) = \obs(w)$.
 
-\subsection{Simplify}
+\subsubsection{Simplify}
 
 The relations $\approx$ and $\models_E$ are those of
 Section~\ref{sec:sim-simplify}. Simplify removes calls ($\beta$ of a small
@@ -5295,7 +5282,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Enclose}
+\subsubsection{CC: Enclose}
 
 The relations $\approx$ and $\approx_X$ are those of Section~\ref{sec:sim-enclose}.
 
@@ -5314,7 +5301,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Optimize}
+\subsubsection{CC: Optimize}
 
 The relations $\approx$, $\approx_X$, $\mathit{Scoped}$, $\mathit{WS}$, and
 $\mathit{Built}^j_N$ are those of Section~\ref{sec:sim-optimize}.
@@ -5343,7 +5330,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Concretize}
+\subsubsection{CC: Concretize}
 
 The relations $\approx$ and $\approx_\varphi$ are those of Section~\ref{sec:sim-concretize}.
 
@@ -5361,7 +5348,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Delay}
+\subsubsection{CC: Delay}
 
 The relations $\approx$ and $\approxq$ are those of Section~\ref{sec:sim-delay}.
 
@@ -5379,7 +5366,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Globalize}
+\subsubsection{CC: Globalize}
 
 The relations $\leadsto$ and $\approx$, for the table $D$ that globalize makes
 for the whole program, are those of Section~\ref{sec:sim-globalize}.
@@ -5398,7 +5385,7 @@ For every Clos4 term $M$,
 \]
 \end{theorem}
 
-\subsection{Remove Complex Operands}
+\subsubsection{Remove Complex Operands}
 
 Values are related by equality, as in Section~\ref{sec:sim-rco}, and
 both programs run in the same environment: the fresh variables of rco
@@ -5430,7 +5417,7 @@ For every Clos5 program $P$,
 \]
 \end{theorem}
 
-\subsection{Lift Locals}
+\subsubsection{Lift Locals}
 
 Values are related by equality, as in Section~\ref{sec:sim-lift}, and frames
 to environments by $\approx^n_\varphi$. A result of the target, a value and
@@ -5456,7 +5443,7 @@ For every monadic Clos5 program $P$,
 \]
 \end{theorem}
 
-\subsection{Explicate Control}
+\subsubsection{Explicate Control}
 
 The pass keeps every call, so the interpreters tick in lock step and
 return equal results; $\codeV{j}$ names body $b_j$ in the source and
@@ -5509,7 +5496,7 @@ For every Imp program $P$,
 \end{theorem}
 There is no precondition.
 
-\subsection{Select Instructions}
+\subsubsection{Select Instructions}
 
 The pass keeps every call, so the interpreters tick in lock step and
 return equal results. The X86 frame is the CFG frame, and the
@@ -5555,7 +5542,7 @@ with equal results for every clock.
 \end{theorem}
 There is no precondition.
 
-\subsection{End to End}
+\subsubsection{End to End}
 
 \begin{theorem}[Compiler Correctness, Interpreter]\label{thm:compiler-clk}
 For every ISWIM term $M$,
@@ -5599,9 +5586,9 @@ by Theorems~\ref{thm:compile-cfg-clk} and~\ref{thm:select-clk} and Lemma~\ref{le
 \end{theorem}
 
 %===============================================================================
-\part{Reduction Semantics + Simulation}\label{part:red}
+\section{Reduction Semantics + Simulation}\label{sec:u-red}
 
-\section{Reduction Semantics}\label{sec:red}
+\subsection{Reduction Semantics}\label{sec:red}
 
 The languages with binders (ISWIM, Clos2--Clos5) get a reduction semantics
 by substitution: a state is a term, and a step reduces a redex in an
@@ -5611,7 +5598,7 @@ Imp, CFG, and X86 have no binders, so they keep their machines
 (Section~\ref{sec:machines}), whose proofs of explicate control and select
 instructions are shared with the CEK machine + simulation development.
 
-\subsection{Reductions as machines}
+\subsubsection{Reductions as machines}
 
 A reduction says of a term whether it is a value, is stuck, or reduces.
 \begin{align*}
@@ -5639,7 +5626,7 @@ context by one generic lemma (frames, below).
 Values are observed as in Section~\ref{sec:obs}: $\obs(\lam{x} N) = \key{fun}$,
 and so on.
 
-\subsection{ISWIM}
+\subsubsection{ISWIM}
 
 \[
 \begin{array}{rcl}
@@ -5662,7 +5649,7 @@ The context $(\lam{x} N)\;E$ checks that the operator is a function before
 the argument is evaluated, as the ISWIM machine does: $V\;M$ with $V$ not a
 function is stuck.
 
-\subsection{Clos2 and Clos3}
+\subsubsection{Clos2 and Clos3}
 
 A closure is a value once its free variables are values.
 \[
@@ -5681,7 +5668,7 @@ and in Clos3, with the tuple of the free variables for $e$,
 \]
 The other contexts and redexes are those of ISWIM.
 
-\subsection{Clos4 and Clos5}
+\subsubsection{Clos4 and Clos5}
 
 The operator of an application is checked to be code only at the call,
 after its three operands.
@@ -5704,7 +5691,7 @@ reduces $M$ with the definitions:
 $\funref{k}(U, W) \to N[e := U, y := W]$ when $k < m$ and $d_k = \key{fun}\; e\,y.\,N$.
 
 %-------------------------------------------------------------------------------
-\section{Simulations Between Reductions}\label{sec:red-sims}
+\subsection{Simulations Between Reductions}\label{sec:red-sims}
 
 The forward simulations of Section~\ref{sec:sims} answer a source that stops
 by a target that has stopped. Here the target may first take administrative
@@ -5745,7 +5732,7 @@ that is preserved under binders.
 \end{lemma}
 
 %-------------------------------------------------------------------------------
-\section{Relations}\label{sec:red-relations}
+\subsection{Relations}\label{sec:red-relations}
 
 Each relation is a congruence: $x \approx x$, $c \approx c$, and each
 construct is related to the same construct with related subterms; we show
@@ -5755,7 +5742,7 @@ relation on that code is the compilation function, and applying related
 closures substitutes related values into it, which a fundamental lemma
 relates.
 
-\subsection{Simplify}
+\subsubsection{Simplify}
 
 The target, simplified, takes fewer steps than the source, so the simulation
 goes from the target to the source: each target step is answered by one or
@@ -5788,7 +5775,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Enclose}
+\subsubsection{CC: Enclose}
 
 The bodies of ISWIM functions are substituted into, so a function is related
 to the closure of the compiled body, through a substitution $\sigma$ of the
@@ -5815,7 +5802,7 @@ For every ISWIM term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Optimize}
+\subsubsection{CC: Optimize}
 
 A closure is related to its optimization when the code is the compiled code
 and the free variables are related as $\pass{prune}$ makes them: the ones the
@@ -5835,7 +5822,7 @@ For every Clos2 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Concretize}
+\subsubsection{CC: Concretize}
 
 Applying a Clos3 closure substitutes the tuple of its free variables, so where
 the source has a value, the target has a projection from that tuple, which
@@ -5862,7 +5849,7 @@ parameters becomes, in the two languages, two different variables, and
 substitution moves both differently; the machines look both up in the
 closure's environment, where both fail.
 
-\subsection{CC: Delay}
+\subsubsection{CC: Delay}
 
 \begin{align*}
   \clos{\bar{F}}{e\, y} N \approx \pair{\fun{e\,y.\,N'}}{\tuple{\bar{F}'}} &\iff N \approx N' \land \bar{F} \approx \bar{F}' \\
@@ -5881,7 +5868,7 @@ For every Clos3 term $M$,
 \]
 \end{theorem}
 
-\subsection{CC: Globalize}
+\subsubsection{CC: Globalize}
 
 For the table $D$ of the whole program,
 \[
@@ -5896,7 +5883,7 @@ For every Clos4 term $M$,
 \]
 \end{theorem}
 
-\subsection{Remove Complex Operands}
+\subsubsection{Remove Complex Operands}
 
 The values of Clos5 contain no code, so source and target compute the same
 values, and the relation is not closed under substitution but built from the
@@ -5919,7 +5906,7 @@ For every Clos5 program $P$,
 \]
 \end{theorem}
 
-\subsection{Lift Locals}
+\subsubsection{Lift Locals}
 
 The source substitutes values for the variables; the target keeps them in its
 frame. A source term $C[M[\sigma]]$, for code $M$ of the program in an
@@ -5935,12 +5922,12 @@ For every monadic Clos5 program $P$,
 \]
 \end{theorem}
 
-\subsection{Explicate Control and Select Instructions}
+\subsubsection{Explicate Control and Select Instructions}
 
 Theorems~\ref{thm:explicate-sim} and~\ref{thm:select-sim}, between the
 machines of Imp, CFG, and X86.
 
-\subsection{End to End}
+\subsubsection{End to End}
 
 \begin{theorem}[Compiler Correctness, Reduction]\label{thm:compiler-red}
 For every ISWIM term $M$, if $\FV(M) = \emptyset$, then
