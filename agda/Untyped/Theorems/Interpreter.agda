@@ -65,7 +65,7 @@ import Untyped.Semantics.Interp.Clos4 as Clos4ᵢ
 import Untyped.Semantics.Interp.Clos5 as Clos5ᵢ
 import Untyped.Semantics.Interp.Imp as Impᵢ
 import Untyped.Semantics.Interp.CFG as CFGᵢ
-import Semantics.Interp.X86 as X86ᵢ
+import Untyped.Semantics.Interp.X86 as X86ᵢ
 
 import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
 import Untyped.proof.Correctness.Interp.EncloseFuel as EncloseFuel

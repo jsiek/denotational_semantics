@@ -15,7 +15,7 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Semantics.Graph.Frames using (Table; init) public
+open import Untyped.Semantics.Graph.Frames using (Table; init) public
 open import Untyped.Language.Clos5
 open import Framework.abt.Fold2 Op sig using (fold; fold-arg; fold-args)
 open import Framework.abt.ScopedTuple using (Tuple)

@@ -5,7 +5,7 @@
   CFG) and a register file: %rax, %rdi and %rsi each hold a value or
   are unset, and the flag is set (true or false) or unset; reading an
   unset register or flag errors. The values and the
-  operations on them are in Semantics/Interp/Values.agda: subq is
+  operations on them are in Untyped/Semantics/Interp/Values.agda: subq is
   prim? sub, cmpq compares integers as prim? eq does, and alloc and load
   build and take apart pairs, tuples and injections.
 
@@ -27,14 +27,14 @@
 
 -}
 
-module Semantics.Interp.X86 where
+module Untyped.Semantics.Interp.X86 where
 
 open import Language.X86
 open import Language.Prim using (sub; eq; Out; int; bool)
 open import Semantics.Observation using (δ?)
 open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
-open import Semantics.Interp.Values
+open import Untyped.Semantics.Interp.Values
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?; project; first; second; Frame; zero-val; _[_]≔_)
 
 open import Data.Bool using (Bool; true; false; if_then_else_)

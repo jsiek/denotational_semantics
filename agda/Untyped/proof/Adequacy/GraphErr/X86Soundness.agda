@@ -1,7 +1,7 @@
 {-
 
   Soundness of the X86 machine with respect to the graph model with
-  errors (Semantics/GraphErr/X86.agda): what the machine computes is in
+  errors (Untyped/Semantics/GraphErr/X86.agda): what the machine computes is in
   the denotation of the (well-formed) program, and when the machine stops
   with an error, ω is.
 
@@ -31,7 +31,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.X86Soundness where
+module Untyped.proof.Adequacy.GraphErr.X86Soundness where
 
 open import Framework.Primitives using (Base; base-rep; Int; Nat; 𝔹; Unit; Void; Blame)
 open import Language.Prim using (Out; int; bool; δ; sub; eq)
@@ -48,7 +48,7 @@ open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import Framework.GraphModel.Ops using (𝒯; 𝒞; car; cdr; payloadD) renaming (pair to pairD; proj to projD)
 open import Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
-open import Semantics.GraphErr.X86
+open import Untyped.Semantics.GraphErr.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
@@ -60,9 +60,9 @@ open import Semantics.CEK.X86
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
 import Semantics.CEK.X86 as T using (inl; inr)
 open import proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length; δ?-inv)
-open import proof.Adequacy.GraphErr.X86WF
-open import proof.Adequacy.GraphErr.X86Consistent using (table-con)
-import proof.Adequacy.GraphErr.X86Common as Common
+open import Untyped.proof.Adequacy.GraphErr.X86WF
+open import Untyped.proof.Adequacy.GraphErr.X86Consistent using (table-con)
+import Untyped.proof.Adequacy.GraphErr.X86Common as Common
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)

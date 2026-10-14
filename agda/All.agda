@@ -143,7 +143,6 @@ import proof.Semantics.Graph.Typed.Clos3
 import proof.Semantics.Graph.Typed.Clos4
 import proof.Semantics.Graph.Typed.Clos5
 import proof.Semantics.Graph.Typed.Ops
-import proof.Semantics.Graph.X86
 
 {- ---------------------------------------------------------------------------
    proof/: the CEK machines + simulations
@@ -253,21 +252,9 @@ import proof.Adequacy.GraphErr.ISWIM
 import proof.Adequacy.GraphErr.LogRel
 import proof.Adequacy.GraphErr.Simplify
 import proof.Adequacy.GraphErr.Soundness
-import proof.Adequacy.GraphErr.X86
-import proof.Adequacy.GraphErr.X86Common
-import proof.Adequacy.GraphErr.X86Consistent
-import proof.Adequacy.GraphErr.X86LogRel
-import proof.Adequacy.GraphErr.X86Soundness
-import proof.Adequacy.GraphErr.X86WF
 import proof.Adequacy.ISWIM
 import proof.Adequacy.LogRel
 import proof.Adequacy.Soundness
-import proof.Adequacy.Values
-import proof.Adequacy.X86
-import proof.Adequacy.X86Common
-import proof.Adequacy.X86LogRel
-import proof.Adequacy.X86Soundness
-import proof.Adequacy.X86WF
 
 {- ---------------------------------------------------------------------------
    examples (smoke tests)

@@ -23,7 +23,7 @@ open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Prim
 open import Untyped.Language.Imp
-open import Semantics.GraphErr.Frames public
+open import Untyped.Semantics.GraphErr.Frames public
 
 open import Data.Integer using (+_)
 open import Data.Nat using (ℕ; zero; suc; _≟_; _<?_)

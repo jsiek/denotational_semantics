@@ -79,7 +79,7 @@ open import Untyped.Semantics.GraphErr.Clos4 using () renaming (⟦_⟧ to ⟦_�
 open import Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
 open import Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
 import Untyped.proof.Correctness.GraphErr.EncloseCorrect as EncloseCorrect

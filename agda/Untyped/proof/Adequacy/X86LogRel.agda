@@ -24,7 +24,7 @@
 open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse)
 open import Language.X86 using (Body)
 
-module proof.Adequacy.X86LogRel (ds : List Body) where
+module Untyped.proof.Adequacy.X86LogRel (ds : List Body) where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (δ; sub; eq)
@@ -36,7 +36,7 @@ open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
 open import Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
   hiding (Body)
-open import Semantics.Graph.X86
+open import Untyped.Semantics.Graph.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
@@ -46,10 +46,10 @@ open import Semantics.CEK.X86
   using (Val; code; pair; const; tup; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; get-field; build; is-inl; cmp; bit; zeros; arg; args; halt?; regs; upd; goto; callq?; back; test)
   renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
 import Semantics.CEK.X86 as T using (inl; inr)
-open import proof.Adequacy.Values using (module Rel)
-open import proof.Adequacy.X86WF
-open import proof.Adequacy.X86Common ds
-open import proof.Adequacy.X86Soundness using (_≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other)
+open import Untyped.proof.Adequacy.Values using (module Rel)
+open import Untyped.proof.Adequacy.X86WF
+open import Untyped.proof.Adequacy.X86Common ds
+open import Untyped.proof.Adequacy.X86Soundness using (_≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Integer using (0ℤ)

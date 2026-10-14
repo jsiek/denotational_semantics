@@ -26,7 +26,7 @@ open import Framework.ListUtil using (_‼_)
 open import Semantics.Interp.Clock
 open import Untyped.Semantics.Interp.Clos5
   using (Val; code; pair; const; tup; inl; inr; obs; prim?; project; first; second)
-open import Semantics.Interp.Values using (Frame; zero-val; _[_]≔_) public
+open import Untyped.Semantics.Interp.Values using (Frame; zero-val; _[_]≔_) public
 
 open import Data.Integer using (+_)
 open import Data.List using (List; []; _∷_; reverse; replicate)

@@ -20,7 +20,7 @@ open import Untyped.Language.Clos5
 open import Semantics.Observation
 open import Framework.ListUtil using (_‼_; proj)
 open import Semantics.Interp.Clock
-open import Semantics.Interp.Values
+open import Untyped.Semantics.Interp.Values
   using (Val; code; pair; const; tup; inl; inr; Env; obs; obs-list; out; prim?; project; first; second) public
 
 open import Data.Bool using (true; false)

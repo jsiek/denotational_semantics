@@ -6,7 +6,7 @@
   As for Clos5 (Untyped/proof/Adequacy/Clos5Soundness.agda), each machine state
   denotes a set of values (𝒮) that every step can only shrink (step-⊆),
   and code pointers denote the entries of the table T⁺, with ν added.
-  The state runs in continuation-passing style (Semantics/Graph/X86.agda), and the
+  The state runs in continuation-passing style (Untyped/Semantics/Graph/X86.agda), and the
   call stack is its continuation (𝒦): a return frame runs the caller's
   rest with %rax holding the callee's result.
 
@@ -27,7 +27,7 @@
 
 -}
 
-module proof.Adequacy.X86Soundness where
+module Untyped.proof.Adequacy.X86Soundness where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (bool; δ; sub; eq)
@@ -42,7 +42,7 @@ open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim using (primD; primD-mono) renaming (out to dout)
 open import Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
-open import Semantics.Graph.X86
+open import Untyped.Semantics.Graph.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
@@ -54,9 +54,9 @@ open import Semantics.CEK.X86
 import Semantics.CEK.X86 as T using (inl; inr)
 open import proof.Adequacy.Common using (ShapeOf; δ?-inv)
 open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; At-length; inl-⊆; inr-⊆; 𝒯L-mono; _⊆L_)
-open import proof.Adequacy.Values using (module Den)
-open import proof.Adequacy.X86WF
-import proof.Adequacy.X86Common as Common
+open import Untyped.proof.Adequacy.Values using (module Den)
+open import Untyped.proof.Adequacy.X86WF
+import Untyped.proof.Adequacy.X86Common as Common
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥; ⊥-elim)

@@ -1,6 +1,6 @@
 {-
 
-  Adequacy of the graph model with errors (Semantics/GraphErr/X86.agda)
+  Adequacy of the graph model with errors (Untyped/Semantics/GraphErr/X86.agda)
   for the X86 machine: every element of the denotation of a well-formed
   program is witnessed by a run of the machine of its global definitions
   ds, and ω by a run that stops with an error.
@@ -25,7 +25,7 @@
 open import Data.List using (List; []; _∷_; _++_; [_]; length; reverse; replicate)
 open import Language.X86 using (Body)
 
-module proof.Adequacy.GraphErr.X86LogRel (ds : List Body) where
+module Untyped.proof.Adequacy.GraphErr.X86LogRel (ds : List Body) where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; δ; sub; eq; int; bool)
@@ -41,7 +41,7 @@ open import proof.Semantics.GraphErr.Prim using (primᵐ; primD) renaming (out t
 open import Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
   hiding (Body)
-open import Semantics.GraphErr.X86
+open import Untyped.Semantics.GraphErr.X86
   renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
             read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
 open import Semantics.Observation
@@ -54,9 +54,9 @@ open import Semantics.CEK.X86
 import Semantics.CEK.X86 as T using (inl; inr)
 open import proof.Adequacy.Common using (ShapeOf; ShapeAt; has-length→length; length→has-length; δ?-inv)
 open import proof.Adequacy.GraphErr.LogRel using (δ?-nothing₁; δ?-nothing₂)
-open import proof.Adequacy.GraphErr.X86WF
-open import proof.Adequacy.GraphErr.X86Common ds
-open import proof.Adequacy.GraphErr.X86Soundness using ( _≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other; args-inv; length-obs-list)
+open import Untyped.proof.Adequacy.GraphErr.X86WF
+open import Untyped.proof.Adequacy.GraphErr.X86Common ds
+open import Untyped.proof.Adequacy.GraphErr.X86Soundness using ( _≟R_; ↦ₘ-here; ↦ₘ-other; ≔-here; ≔-other; args-inv; length-obs-list)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Integer using (0ℤ)

@@ -1,8 +1,8 @@
-module Semantics.GraphErr.X86 where
+module Untyped.Semantics.GraphErr.X86 where
 {-
 
  The semantics of X86 (Language/X86.agda) in the graph model with errors:
- that of Semantics/Graph/X86.agda, with the error-propagating operators
+ that of Untyped/Semantics/Graph/X86.agda, with the error-propagating operators
  and the checks of the machine (Semantics/CEK/X86.agda).
 
  An unset register and the absent flag hold init, {ω}, so that reading
@@ -24,7 +24,7 @@ open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Prim
-open import Semantics.GraphErr.Frames using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
+open import Untyped.Semantics.GraphErr.Frames using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
 open import Language.Prim using (sub; eq)
 open import Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)
 

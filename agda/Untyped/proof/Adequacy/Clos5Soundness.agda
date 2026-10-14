@@ -54,7 +54,7 @@ open import proof.Adequacy.Soundness
 open import Untyped.proof.Adequacy.Clos5WF using (WF; DefsWF)
 open import Untyped.proof.Semantics.Graph.Clos5IswimContinuous using (⟦⟧[]-monotone; term-continuous; table-con)
 import Untyped.proof.Adequacy.Clos5Common as Common
-open import proof.Adequacy.Values using (module Den)
+open import Untyped.proof.Adequacy.Values using (module Den)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)

@@ -10,16 +10,16 @@
 open import Data.List using (List; []; _∷_; _++_; [_]; length)
 open import Language.X86 using (Body)
 
-module proof.Adequacy.X86Common (ds : List Body) where
+module Untyped.proof.Adequacy.X86Common (ds : List Body) where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (ν)
 open import Language.X86 hiding (Body)
-open import Semantics.Graph.X86 using (table; blocks; ⟦_⟧ᵇ)
+open import Untyped.Semantics.Graph.X86 using (table; blocks; ⟦_⟧ᵇ)
   renaming (Regs to SRegs; code to codeD)
 open import Semantics.CEK.X86
 open import proof.Framework.Runs using (module Runs)
-open import proof.Adequacy.X86WF using (DefsWF)
+open import Untyped.proof.Adequacy.X86WF using (DefsWF)
 open import proof.Framework.ListUtil using (_‼_)
 open import proof.Framework.ListUtil using (‼-just; replicate-‼; reverse-‼-split; reverse-‼-suffix) public
 

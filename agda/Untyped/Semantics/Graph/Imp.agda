@@ -33,7 +33,7 @@ open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
-open import Semantics.Graph.Frames using (Table; init; Store; read; _[_↦_]; checked; zeros) public
+open import Untyped.Semantics.Graph.Frames using (Table; init; Store; read; _[_↦_]; checked; zeros) public
 open import Untyped.Language.Imp renaming (pair to pair′; inl to inl′; inr to inr′)
 open import Framework.Primitives using (Int)
 

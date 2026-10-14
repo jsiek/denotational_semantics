@@ -1,7 +1,7 @@
 {-
 
   Soundness and adequacy of the graph model with errors
-  (Semantics/GraphErr/X86.agda, ⟦_⟧ₚ, here ⟦_⟧ₓ) for the X86 machine
+  (Untyped/Semantics/GraphErr/X86.agda, ⟦_⟧ₚ, here ⟦_⟧ₓ) for the X86 machine
   (Semantics/CEK/X86.agda), for well-formed programs (WF,
   Adequacy/GraphErr/X86WF.agda: each label refers to an older
   definition), which the compilers produce. As for Clos5
@@ -28,14 +28,14 @@
 
 -}
 
-module proof.Adequacy.GraphErr.X86 where
+module Untyped.proof.Adequacy.GraphErr.X86 where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω) renaming (const to dconst)
 open import Language.ISWIM using (AST)
 open import Language.X86 using (Program; program; body)
-open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges)
@@ -43,11 +43,11 @@ import Semantics.CEK.X86 as X86ₘ
 open import Semantics.CEK.X86 using (halt; halt?; obs)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import proof.Adequacy.GraphErr.Soundness using (shape-ω)
-open import proof.Adequacy.GraphErr.X86WF using (WF) public
-open import proof.Adequacy.GraphErr.X86Consistent using (table-con) public
-open import proof.Adequacy.GraphErr.X86Soundness using (soundness; sound-error) public
-import proof.Adequacy.GraphErr.X86Common as C
-import proof.Adequacy.GraphErr.X86LogRel as LR
+open import Untyped.proof.Adequacy.GraphErr.X86WF using (WF) public
+open import Untyped.proof.Adequacy.GraphErr.X86Consistent using (table-con) public
+open import Untyped.proof.Adequacy.GraphErr.X86Soundness using (soundness; sound-error) public
+import Untyped.proof.Adequacy.GraphErr.X86Common as C
+import Untyped.proof.Adequacy.GraphErr.X86LogRel as LR
 
 open import Data.Empty using (⊥-elim)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)

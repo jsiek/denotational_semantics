@@ -45,7 +45,7 @@ import Untyped.proof.Correctness.Graph.ExplicateCorrectK as EK
 import Untyped.proof.Correctness.Graph.SelectCorrect as SC
 import Untyped.proof.Adequacy.Clos5WF as F
 open import Untyped.proof.Adequacy.CompileWF using (compile-wf)
-open import proof.Adequacy.X86WF
+open import Untyped.proof.Adequacy.X86WF
 open import proof.Framework.Syntax.Rename C5.Op C5.sig using (rename; rename-arg; rename-args; ext)
 open import proof.Framework.Syntax.ScopeRename C5.Op C5.sig using (WS; WS-args; Fits; fits-ext; ws-rename; ws-rename-args)
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
