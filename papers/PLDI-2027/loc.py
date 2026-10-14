@@ -331,6 +331,9 @@ GROUPS = [
     ('adeq+uadeq', 'ISWIM', [AP + 'Common.agda', AP + 'Soundness.agda', AP + 'LogRel.agda', AP + 'ISWIM.agda']),
     ('adeq', 'Clos5', [AP + 'Clos5*.agda']),
     ('adeq', 'X86ᵀ', [AP + 'X86*.agda']),
+    # that the table of compile-x86 M is consistent and holds each
+    # definition's code (as Clos5ᵀ's, from globalize-older)
+    ('adeq', 'well-formedness of compiled programs', [AP + 'X86Compiled.agda']),
     ('adeq', 'end to end', [AP + 'EndToEnd.agda']),
     # of the graph model with errors: X86ᵀ is direct; its Clos5ᵀ adequacy is
     # derived from the simulation of the CEK column, in its end to end
