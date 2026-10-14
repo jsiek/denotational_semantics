@@ -4,9 +4,9 @@
   with errors. Code is a closed function of two arguments (ΛΛᵐ); a call
   binds code, environment and argument and applies the code to both,
   with no check; a closure is a pair. unpack binds the pair and runs the
-  body with its environment (cdr) and its code (car), for every length:
-  the body for a length other than that of the environment finds no
-  component of it. A value of type ⟪ fun ⟫ is a pair, so project ⟪ fun ⟫
+  body with its environment (cdr) and its code (car), for the length n
+  of the environment (its values have kind tup n; one n for a consistent
+  closure). A value of type ⟪ fun ⟫ is a pair, so project ⟪ fun ⟫
   checks for a pair (kind₄).
 
 -}
@@ -27,7 +27,8 @@ open import Language.Typed.Clos4
 open import Data.List using (replicate)
 open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_)
-open import Data.Product using (Σ-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 {- the kind of the values of a flat type: a function is a pair -}
@@ -43,8 +44,8 @@ kind₄ G = kindᶠ G
 ⟦ call L M N ⟧ ρ =
   ⟦ L ⟧ ρ ≫= λ F → ⟦ M ⟧ ρ ≫= λ E → ⟦ N ⟧ ρ ≫= λ X → ⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 ⟦ pack L M ⟧ ρ = pairᵐ ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
-⟦ unpack L B ⟧ ρ = ⟦ L ⟧ ρ ≫= λ P w →
-  Σ[ n ∈ ℕ ] w ∈ ⟦ B n ⟧ (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ)
+⟦ unpack L B ⟧ ρ = ⟦ L ⟧ ρ ≫= λ P w → Σ[ n ∈ ℕ ]
+  (Σ[ t ∈ Value ] t ∈ cdr ⟨ P , ptt ⟩ × kind t ≡ tup n) × w ∈ ⟦ B n ⟧ (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ)
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {n = n} Ms ⟧ ρ = 𝒯ᵐ n (⟦ Ms ⟧s ρ)
 ⟦ get i M ⟧ ρ = getᵗ i (⟦ M ⟧ ρ)
