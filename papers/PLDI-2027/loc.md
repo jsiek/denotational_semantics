@@ -948,7 +948,7 @@ The pilot's proof agents found these last three points: their first versions wer
     * concretize 134 → 69;
     * delay 898 → 919.
 * **Cast insertion is new**, and it is where the kind errors are now handled: CEK 195 (147 for the simulation, plus 48 lines of list and primitive lemmas copied from adequacy so that the pilot does not import it), graph model with errors 122.
-* **The segment as a whole is not smaller.**
+* **The segment as a whole is not smaller, counting cast insertion** (but see the recommendation: the late design must insert the checks too).
   * CEK: 1083 against 1032 without optimize, or 1311 with it.
   * Graph model with errors: 1741 against 1541, or 1745 with optimize.
 * **The typed CEK machines are no shorter** (322 against 324). The kind cases are gone, but typed continuations, the length equations of tuple frames (`Framework/VecUtil.agda`, infrastructure) and inject/project frames take their place.
@@ -993,13 +993,12 @@ The pilot's proof agents found these last three points: their first versions wer
   * X86 adequacy is unchanged.
   * Cast insertion's ≃ in the graph model with errors costs no new adequacy.
 
-**Recommendation: no-go for turning the comparison typed; keep the pilot as an experiment.**
-* Typing does what was hoped in the passes: kind and scoping errors disappear, and the early/late check issue is gone. The CC passes shrink by 25–60%.
-* But cast insertion has to handle the kind errors once (195 / 122 lines), and the typed CEK machines are no shorter.
-* In the graph model with errors, delay does not shrink, and the semantic lemmas that the generic fold provides for untyped syntax have to be redone for each typed language.
-* So the segment is about 5% larger in the CEK column and about 13% larger in the graph model with errors (without optimize).
-* The later passes would likely gain more (rco, lift locals, explicate control), and X86 would gain nothing.
-* Two things could turn this around:
-  * a generic semantics framework for intrinsically typed syntax (infrastructure), which would remove the 266 lines of semantic lemmas;
-  * running the comparison from a typed source language, which would remove cast insertion.
-
+**Recommendation: go — insert the checks early.**
+* **The question is where the checks go, not whether.** Today's pipeline never makes the kind checks explicit: every semantics down to X86 checks kinds itself. A compiler to real x86 has to insert them somewhere, as tag tests on tagged words. Cast insertion is that pass, put early. It extends the compiler towards a complete one; that the later passes get simpler is a bonus.
+* **So the like-for-like comparison leaves cast insertion out of both sides.** The late design would need its own check-insertion pass (near select, as *Essentials of Compilation*'s `reveal_casts` and tag bits are), whose proof relates each implicit check to tag-test code. It is not measured, but at that level it is unlikely to be cheaper than cast insertion's 195 / 122 lines.
+* **On that basis, early wins in the passes:**
+  * CEK: the CC proofs (enclose, concretize, delay, plus 30 shared lines) are 352 against 504;
+  * graph model with errors: 1026 against 1122.
+* **The semantics are the cost.** Typed CEK machines are no shorter (322 against 324). The typed graph semantics are 368 against 215, because each typed language re-proves monotonicity, consistency and continuity (266 lines) that the generic fold gives untyped syntax. A generic fold for intrinsically typed syntax, in infrastructure, would remove most of that.
+* **The later passes should gain more** (rco, lift locals, explicate control, globalize), and select would carry the remaining invariant that X86's own trapped errors are unreachable.
+* **To do before converting:** optimize for the typed languages (pruning the captured variables), the generic typed fold, and the function kind for Clos4ᵀ closures (an estimated 30–40 lines off delay).
