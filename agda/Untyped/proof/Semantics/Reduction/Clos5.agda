@@ -1,0 +1,40 @@
+{-
+
+  The values of the Clos5 reduction semantics (Semantics/Reduction/Clos5.agda):
+  they reduce to val.
+
+-}
+
+module Untyped.proof.Semantics.Reduction.Clos5 where
+
+open import Untyped.Semantics.Reduction.Clos5 public
+open import Untyped.Language.Clos5
+open import Semantics.Observation using (Obs; o-error)
+open import proof.Framework.Reduction Obs o-error using (val)
+open import proof.Framework.Reduction Obs o-error using (Each; []; _∷_) public
+open import Framework.Syntax.SyntaxUtil using (_,,_; Nil)
+
+open import Data.List using (replicate)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+
+data Value : AST → Set where
+  fun : ∀ {k} → Value (fun-ref k ⦅ Nil ⦆)
+  pair : ∀ {V W} → Value V → Value W → Value (pair-op ⦅ V ,, W ,, Nil ⦆)
+  lit : ∀ {B k} → Value (lit B k ⦅ Nil ⦆)
+  tuple : ∀ {n as} → Each Value as → Value (tuple n ⦅ as ⦆)
+  inl : ∀ {V} → Value V → Value (inl-op ⦅ V ,, Nil ⦆)
+  inr : ∀ {V} → Value V → Value (inr-op ⦅ V ,, Nil ⦆)
+
+Values : ∀ {n} → Args (replicate n ■) → Set
+Values = Each Value
+
+value-red : ∀ {ds V} → Value V → red ds V ≡ val
+values-red : ∀ {ds n} {as : Args (replicate n ■)} → Values as → red-args ds as ≡ val
+value-red fun = refl
+value-red {ds} (pair v w) rewrite value-red {ds} v | value-red {ds} w = refl
+value-red lit = refl
+value-red {ds} (tuple vs) rewrite values-red {ds} vs = refl
+value-red {ds} (inl v) rewrite value-red {ds} v = refl
+value-red {ds} (inr v) rewrite value-red {ds} v = refl
+values-red [] = refl
+values-red {ds} (v ∷ vs) rewrite value-red {ds} v | values-red {ds} vs = refl

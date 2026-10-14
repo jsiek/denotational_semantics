@@ -1,192 +1,271 @@
 {-
 
-  Correctness of select instructions (CFG → X86, Compiler/Select.agda),
-  clock for clock (see the design note in Clock.agda): the pass keeps
+  Correctness of typed select instructions (CFGᵀ → X86), clock for clock
+  (see the design note in Semantics/Interp/Clock.agda): the pass keeps
   every call, and in both interpreters only calls tick, so for every
-  clock the two programs give the same result. There is no
-  precondition.
+  clock the X86 program gives the erasure (er) of the CFGᵀ program's
+  result. There is no precondition.
 
-  The relation is the identity on frames: the X86 frame is the CFG
-  frame, and the registers are arbitrary. A block of X86 runs its
-  instructions in continuation-passing style, so the instructions that
-  select-simple r d puts in front of the rest of a block nest around it,
-  and simple-ok says that they compute the value of r and store it in d,
-  with any registers after (k v is what the rest computes from there).
-  The atoms of r are read as in CFG (atm-ok, atoms-ok), except that a
-  call reads its operator after its operands, which matters only when
-  reading the operator errors (error-ok). A block keeps its label,
-  so the jumps agree (jump-ok), and a call runs the prologue and then
-  the selected start of the callee in the frame CFG uses (call-pw).
+  X86 is untyped: a typed value is erased to the untyped value of the
+  same shape (a reference to a definition to its level, a closure to a
+  pair, dyn G v to v). The X86 frame holds the erased typed frame, slot
+  x at its level (Rep), and has as many slots as every tail run in it
+  needs (depth). The instructions of select-simple s d run in
+  continuation-passing style (simple-ok); a project's check errs exactly
+  where the typed project fails (proj-ok). Definitions and labels exist
+  and frames are large enough by the typing (proof/Compiler/SelectFacts.agda).
 
 -}
 
 module proof.Correctness.Interp.SelectFuel where
 
-open import Framework.Primitives using (Int)
-open import Language.Imp as Imp using (var; lit; fun-ref)
-open import Language.Prim using (sub; eq; int; bool)
-open import Language.CFG as CFG using (return; seq; goto; case)
-open import Language.X86 using (Block; Body; var; reg; rax; retq)
+open import Framework.Primitives using (Base; Nat; Int; 𝔹; Unit; Void; Blame)
+open import Language.Prim using (sub; eq; bool)
+open import Language.Typed.Type hiding (_≟_)
+open import Framework.Membership using (_⊑_; ⊑-∋)
+open import Framework.Lookup using (_!_; forget)
+open import proof.Framework.Lookup using (lvl-<; lvl-⊑; forget-!)
+open import Framework.ListUtil using (_‼_; proj)
+open import proof.Framework.VecProj using (proj-pw; proj-bad)
+import Language.Typed.Imp as I
+open I using (var; lit; ref)
+open import Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Blocks; _▷_; Body; body)
 open import Compiler.Select
-open import Compiler.Pipeline using (compile-cfg; compile-x86)
-open import proof.Compiler.EncloseScope using (Closed)
-open import Semantics.Observation using (o-const; δ?)
-open import proof.Framework.ListUtil using (_‼_; ‼-pw)
+open import proof.Compiler.SelectFacts using (global-sel; len-blocks; depth-≥)
+import Language.X86 as L
+open L using (Block; block; Loc; var; reg; rax; rdi; rsi; retq; jmp; je; imm; label; loc; movq; subq; cmpq; sete; testinl; alloc; load; callq)
+open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import proof.Semantics.Interp.Clock
-open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; out; first; second; project; prim?)
-open import Semantics.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
-import Semantics.Interp.CFG as G
+import Semantics.Interp.Values as U
+open import Semantics.Interp.Values using (_[_]≔_; zero-val)
 import Semantics.Interp.X86 as X
-open X using (regs; arg; args; write; bool?)
-import Semantics.Interp.ISWIM as ISWIM
-open import proof.Correctness.Interp.ExplicateFuel using (compile-cfg-correct)
+open X using (regs)
+import Semantics.Interp.Typed.Clos5 as C
+import Semantics.Interp.Typed.CFG as G
+open import Semantics.Interp.Typed.Imp using (atom; eval-simple)
 
 open import Data.Bool using (true; false)
 open import Data.Empty using (⊥-elim)
-open import Data.List using (List; []; _∷_; _++_; length; map; reverse)
-open import Data.List.Properties using (++-identityʳ; length-map)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
+open import Data.Fin using (Fin)
+import Data.Integer as Z
+open import Data.List using (List; []; _∷_; _++_; _ʳ++_; length; reverse; replicate)
+open import Data.List.Properties using (++-identityʳ; ++-assoc; reverse-involutive; length-replicate)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Maybe using (Maybe; just; nothing)
 import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Maybe using (just; nothing)
-open import Data.Nat using (ℕ; zero; suc; _≟_)
-open import Data.Product using (_,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong)
-open import Relation.Nullary using (yes; no)
+open import Data.Nat using (ℕ; zero; suc; _≤_; _<_; _⊔_; _∸_; _+_; s≤s; _≟_)
+open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; <⇒≢; m≤n+m∸n; ≤-reflexive)
+open import Data.Product using (Σ-syntax; _×_; _,_)
+open import Data.Vec using (Vec; []; _∷_; lookup; toList; map)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+open import Relation.Nullary using (yes; no; does)
 
-private variable A : Set
+fm : ∀ {A B : Set} {m : Maybe A} {u} {f : A → Result B} → m ≡ just u → (from-maybe m >>= f) ≡ f u
+fm refl = refl
 
-{- equality gives a truth value -}
-eq-bool : ∀ o₁ o₂ {n} → δ? eq o₁ o₂ ≢ just (int n)
-eq-bool (o-const Int n) (o-const Int m) ()
+{- assigning slot k of a frame that has it -}
+set-ok : ∀ (φ : List U.Val) k v → k < length φ
+  → Σ[ φ' ∈ _ ] (φ [ k ]≔ v ≡ just φ') × length φ' ≡ length φ × φ' ‼ k ≡ just v × (∀ x → x ≢ k → φ' ‼ x ≡ φ ‼ x)
+set-ok (u ∷ φ) zero v _ = v ∷ φ , refl , refl , refl , λ { zero ne → ⊥-elim (ne refl) ; (suc x) _ → refl }
+set-ok (u ∷ φ) (suc k) v (s≤s lt) with set-ok φ k v lt
+... | φ' , e , l , h , o rewrite e = u ∷ φ' , refl , cong suc l , h , λ { zero _ → refl ; (suc x) ne → o x λ e → ne (cong suc e) }
 
-{- prim? eq, then k; cmpq, then g -}
-cmp-ok : ∀ v w {k : Val → Result A} {g} → (∀ b → k (out (bool b)) ≡ g b)
-  → (from-maybe (prim? eq v w) >>= k) ≡ (from-maybe (δ? eq (obs v) (obs w)) >>= λ o → bool? o >>= g)
-cmp-ok v w h with δ? eq (obs v) (obs w) in e
-... | nothing = refl
-... | just (bool b) = h b
-... | just (int n) = ⊥-elim (eq-bool _ _ e)
+module _ {Σ : List ℕ} (dsC : All (λ n → Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) Σ) where
+  open C.Vals Σ
+  private ds' = select-defs dsC
 
-{- atom a, then f and k in CFG, and g in X86 -}
-atm-ok : ∀ a φ ρ {f : Val → Result Val} {k : Val → Result A} {g} → (∀ v → (f v >>= k) ≡ g v)
-  → ((atom φ a >>= f) >>= k) ≡ (arg (φ , ρ) (select-atm a) >>= g)
-atm-ok (var x) φ ρ h with φ ‼ x
-... | just v = h v
-... | nothing = refl
-atm-ok (lit B k) φ ρ h = h _
-atm-ok (fun-ref k) φ ρ h = h _
+  {- Erasure -------------------------------------------------------------------}
 
-error-ok : ∀ a φ ρ {g : Val → Result A} → (∀ v → g v ≡ error) → (arg (φ , ρ) (select-atm a) >>= g) ≡ error
-error-ok (var x) φ ρ h with φ ‼ x
-... | just v = h v
-... | nothing = refl
-error-ok (lit B k) φ ρ h = h _
-error-ok (fun-ref k) φ ρ h = h _
+  er : ∀ {A} → Val A → U.Val
+  ers : ∀ {n} → Vec (Val Any) n → List U.Val
+  er (code f) = U.code (lvl f)
+  er (pack c e) = U.pair (er c) (er e)
+  er (const {B} k) = U.const B k
+  er (tup vs) = U.tup (ers vs)
+  er (inl v) = U.inl (er v)
+  er (inr v) = U.inr (er v)
+  er (dyn G v) = er v
+  ers [] = []
+  ers (v ∷ vs) = er v ∷ ers vs
 
-{- the atoms as, onto us -}
-atoms-ok : ∀ as φ ρ us {k : Val → Result A} {g} → (∀ vs → k (tup (reverse vs)) ≡ g vs)
-  → ((atoms φ us as >>= λ vs → ret (tup (reverse vs))) >>= k) ≡ args (φ , ρ) us (map select-atm as) g
-atoms-ok [] φ ρ us h = h us
-atoms-ok (var x ∷ as) φ ρ us h with φ ‼ x
-... | just v = atoms-ok as φ ρ (v ∷ us) h
-... | nothing = refl
-atoms-ok (lit B k ∷ as) φ ρ us h = atoms-ok as φ ρ _ h
-atoms-ok (fun-ref k ∷ as) φ ρ us h = atoms-ok as φ ρ _ h
+  obs-er : ∀ {A} (v : Val A) → obs v ≡ U.obs (er v)
+  obs-ers : ∀ {n} (vs : Vec (Val Any) n) → obs-vec vs ≡ U.obs-list (ers vs)
+  obs-er (code f) = refl
+  obs-er (pack c e) = refl
+  obs-er (const k) = refl
+  obs-er (tup vs) = cong o-tuple (obs-ers vs)
+  obs-er (inl v) = cong o-inl (obs-er v)
+  obs-er (inr v) = cong o-inr (obs-er v)
+  obs-er (dyn G v) = obs-er v
+  obs-ers [] = refl
+  obs-ers (v ∷ vs) = cong₂' (obs-er v) (obs-ers vs)
+    where cong₂' : ∀ {o o' : Obs} {os os'} → o ≡ o' → os ≡ os' → Data.List._∷_ o os ≡ o' ∷ os'
+          cong₂' refl refl = refl
 
-{- Clock for clock ------------------------------------------------------------------}
+  ers-pw : ∀ {n} (vs : Vec (Val Any) n) → Pointwise (λ u v → u ≡ er v) (ers vs) (toList vs)
+  ers-pw [] = []
+  ers-pw (v ∷ vs) = refl ∷ ers-pw vs
 
-module _ (ds : List CFG.Body) where
-  private ds' = map (select-body prologue) ds
+  proj-ers : ∀ {n} (i : Fin n) (vs : Vec (Val Any) n) → proj i (ers vs) ≡ just (er (lookup vs i))
+  proj-ers i vs with proj i (ers vs) | proj-pw i (ers-pw vs)
+  ... | just _ | M.just refl = refl
 
-  {- at clock ck, where calls agree -}
-  module _ (ck : ℕ) (calls : ∀ f e w → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) e w) where
+  {- the X86 frame φ' holds the erased frame φ, each slot at its level -}
+  record Rep {Δ} (φ : Env Δ) (φ' : List U.Val) : Set where
+    constructor rep
+    field slot : ∀ {A} (x : Δ ∋ A) → φ' ‼ lvl x ≡ just (er (φ ! x))
+  open Rep
 
-    {- r, computed into d, then the rest of a block -}
-    simple-ok : ∀ r d φ ρ {bs is j} {k : Val → Result Val}
-      → (∀ v ρ' → k v ≡ write (φ , ρ') d v λ s → X.run ds' ck bs s is j)
-      → (eval-simple (λ f → G.call ds ck (G.code? ds f)) φ r >>= k) ≡ X.run ds' ck bs (φ , ρ) (select-simple r d ++ is) j
-    simple-ok (Imp.atm (var x)) d φ ρ h with φ ‼ x
-    ... | just v = h v ρ
-    ... | nothing = refl
-    simple-ok (Imp.atm (lit B k)) d φ ρ h = h _ ρ
-    simple-ok (Imp.atm (fun-ref k)) d φ ρ h = h _ ρ
-    simple-ok (Imp.app (var y) e a) d φ ρ h with φ ‼ y
-    ... | just f = atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls f e w) λ v → h v (regs (just v) nothing nothing nothing)
-    ... | nothing = sym (error-ok e φ ρ λ _ → error-ok a φ _ λ _ → refl)
-    simple-ok (Imp.app (lit B k) e a) d φ ρ h =
-      atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (const B k) e w) λ v → h v (regs (just v) nothing nothing nothing)
-    simple-ok (Imp.app (fun-ref k) e a) d φ ρ h =
-      atm-ok e φ ρ λ e → atm-ok a φ _ λ w → bind≡ (calls (code k) e w) λ v → h v (regs (just v) nothing nothing nothing)
-    simple-ok (Imp.pair a b) d φ ρ h = atm-ok a φ ρ λ v → atm-ok b φ ρ λ w → h (pair v w) ρ
-    simple-ok (Imp.fst a) d φ ρ h = atm-ok a φ ρ λ v → bind-cong (first v) λ w → h w ρ
-    simple-ok (Imp.snd a) d φ ρ h = atm-ok a φ ρ λ v → bind-cong (second v) λ w → h w ρ
-    simple-ok (Imp.tuple as) d φ ρ h = atoms-ok as φ ρ [] λ vs → h _ ρ
-    simple-ok (Imp.get i a) d φ ρ h = atm-ok a φ ρ λ v → bind-cong (project i v) λ w → h w ρ
-    simple-ok (Imp.inl a) d φ ρ h = atm-ok a φ ρ λ v → h (inl v) ρ
-    simple-ok (Imp.inr a) d φ ρ h = atm-ok a φ ρ λ v → h (inr v) ρ
-    simple-ok (Imp.prim sub a b) d φ ρ h =
-      atm-ok a φ ρ λ v → atm-ok b φ _ λ w → bind-cong (from-maybe (prim? sub v w)) λ u → h u _
-    simple-ok (Imp.prim eq a b) d φ ρ h = atm-ok a φ ρ λ v → atm-ok b φ ρ λ w → cmp-ok v w λ b → h _ _
+  rep-set : ∀ {Δ Δ' A} {φ : Env Δ} {φ' φ''} (p : Δ' ⊑ Δ) (v : Val A) → Rep φ φ'
+    → φ'' ‼ length Δ' ≡ just (er v) → (∀ x → x ≢ length Δ' → φ'' ‼ x ≡ φ' ‼ x) → Rep (v ∷ forget p φ) φ''
+  rep-set {φ = φ} {φ'} p v R h o = rep λ { Z → h ; (S y) →
+    trans (o (lvl y) (<⇒≢ (lvl-< y))) (trans (cong (φ' ‼_) (sym (lvl-⊑ p y)))
+      (trans (slot R (⊑-∋ p y)) (cong (λ u → just (er u)) (sym (forget-! p φ y))))) }
 
-    {- t, and block l, with the blocks bs -}
-    tail-ok : ∀ t bs φ ρ
-      → G.tail ds ck bs φ t ≡ X.run ds' ck (map select-tail bs) (φ , ρ) (Block.instrs (select-tail t)) (Block.jump (select-tail t))
-    jump-ok : ∀ bs l φ ρ → G.jump ds ck bs φ l ≡ X.jump ds' ck (map select-tail bs) (φ , ρ) l
+  arg-ok : ∀ {Δ A} {φ : Env Δ} {φ'} ρ → Rep φ φ' → (a : I.Atm Σ Δ A) → X.arg (φ' , ρ) (select-atm a) ≡ ret (er (atom φ a))
+  arg-ok ρ R (var x) rewrite slot R x = refl
+  arg-ok ρ R (lit B c) = refl
+  arg-ok ρ R (ref f) = refl
 
-    tail-ok (return r) bs φ ρ =
-      trans (sym (bind-ret _)) (trans (simple-ok r (reg rax) φ ρ {map select-tail bs} {[]} {retq} λ v ρ' → refl)
-                                      (cong (λ is → X.run ds' ck (map select-tail bs) (φ , ρ) is retq) (++-identityʳ (select-simple r (reg rax)))))
-    tail-ok (seq x r t) bs φ ρ = simple-ok r (var x) φ ρ λ v ρ' → bind-cong (from-maybe (φ [ x ]≔ v)) λ φ' → tail-ok t bs φ' ρ'
-    tail-ok (goto l) bs φ ρ = jump-ok bs l φ ρ
-    tail-ok (case (var y) x l₁ l₂) bs φ ρ with φ ‼ y
-    ... | nothing = refl
-    ... | just (inl w) = bind-cong (from-maybe (φ [ x ]≔ w)) λ φ' → jump-ok bs l₁ φ' (record ρ { flag = just true })
-    ... | just (inr w) = bind-cong (from-maybe (φ [ x ]≔ w)) λ φ' → jump-ok bs l₂ φ' (record ρ { flag = just false })
-    ... | just (code _) = refl
-    ... | just (pair _ _) = refl
-    ... | just (const _ _) = refl
-    ... | just (tup _) = refl
-    tail-ok (case (lit B k) x l₁ l₂) bs φ ρ = refl
-    tail-ok (case (fun-ref k) x l₁ l₂) bs φ ρ = refl
+  args-ok : ∀ {Δ n B} {φ : Env Δ} {φ'} ρ → Rep φ φ' → (as : Vec (I.Atm Σ Δ Any) n) (us : List U.Val) {f : List U.Val → Result B}
+    → X.args (φ' , ρ) us (toList (map select-atm as)) f ≡ f (ers (map (atom φ) as) ʳ++ us)
+  args-ok ρ R [] us = refl
+  args-ok ρ R (a ∷ as) us rewrite arg-ok ρ R a = args-ok ρ R as _
 
-    jump-ok [] l φ ρ = refl
-    jump-ok (t ∷ bs) l φ ρ with l ≟ length bs | l ≟ length (map select-tail bs)
-    ... | yes _ | yes _ = tail-ok t bs φ ρ
-    ... | no _ | no _ = jump-ok bs l φ ρ
-    ... | yes p | no q = ⊥-elim (q (trans p (sym (length-map select-tail bs))))
-    ... | no p | yes q = ⊥-elim (p (trans q (length-map select-tail bs)))
+  sub-ok : ∀ (v w : Val ⟪ base Int ⟫) → U.prim? sub (er v) (er w) ≡ just (er (δ sub v w))
+  sub-ok (const n) (const m) = refl
 
-  {- definition k of the X86 program is definition k of the CFG program, selected -}
-  Def : CFG.Body → Body → Set
-  Def b b' = b' ≡ select-body prologue b
+  eq-ok : ∀ n m → U.out (bool (does (n Z.≟ m))) ≡ er (δ eq (const n) (const m))
+  eq-ok n m with does (n Z.≟ m)
+  ... | true = refl
+  ... | false = refl
 
-  code-pw : ∀ f → M.Pointwise Def (G.code? ds f) (X.code? ds' f)
-  code-pw (code k) = ‼-pw (reverse⁺ (pw ds)) k
-    where pw : ∀ ds → Pointwise Def ds (map (select-body prologue) ds)
-          pw [] = []
-          pw (d ∷ ds) = refl ∷ pw ds
-  code-pw (pair _ _) = M.nothing
-  code-pw (const B k) = M.nothing
-  code-pw (tup _) = M.nothing
-  code-pw (inl _) = M.nothing
-  code-pw (inr _) = M.nothing
+  {- Clock for clock -------------------------------------------------------------}
 
-  calls≡ : ∀ ck f e w → G.call ds ck (G.code? ds f) e w ≡ X.call ds' ck (X.code? ds' f) e w
-  call-pw : ∀ ck {mb mb'} → M.Pointwise Def mb mb' → ∀ e w → G.call ds ck mb e w ≡ X.call ds' ck mb' e w
+  module _ (ck : ℕ)
+    (calls : ∀ {n} (g : Σ ∋ n) e w
+      → X.call ds' ck (just (select-body prologue (dsC ! g))) (er e) (er w) ≡ (G.call dsC ck (pack (code g) e) w >>= λ v → ret (er v)))
+    where
 
-  calls≡ ck f = call-pw ck (code-pw f)
+    Run : List Block → List L.Instr → L.Jump → X.State → Result U.Val
+    Run bs' is j s = X.run ds' ck bs' s is j
 
-  call-pw ck M.nothing e w = refl
-  call-pw zero (M.just _) e w = refl
-  call-pw (suc ck) (M.just {CFG.body n bs t} refl) e w = tail-ok ck (calls≡ ck) t bs _ _
+    {- the check of project t, on a value v of flat type G at slot k -}
+    proj-ok : ∀ t {G} (v : Val ⟪ G ⟫) {φ' : List U.Val} {k} ρ {d bs' is j} {K : Val ⟪ flat t ⟫ → Result U.Val}
+      → φ' ‼ k ≡ just (er v)
+      → (∀ w ρ' → er w ≡ er v → K w ≡ Run bs' (movq (loc (var k)) d ∷ is) j (φ' , ρ'))
+      → (project? t (dyn G v) >>= K) ≡ Run bs' (check t (loc (var k)) ++ movq (loc (var k)) d ∷ is) j (φ' , ρ)
+    proj-ok tint (const {Int} c) ρ e h rewrite e = h _ _ refl
+    proj-ok tint (const {Nat} c) ρ e h rewrite e = refl
+    proj-ok tint (const {𝔹} c) ρ e h rewrite e = refl
+    proj-ok tint (const {Unit} c) ρ e h rewrite e = refl
+    proj-ok tint (const {Void} c) ρ e h rewrite e = refl
+    proj-ok tint (const {Blame} c) ρ e h rewrite e = refl
+    proj-ok tint (tup vs) ρ e h rewrite e = refl
+    proj-ok tint (inl v) ρ e h rewrite e = refl
+    proj-ok tint (inr v) ρ e h rewrite e = refl
+    proj-ok tint (pack c v) ρ e h rewrite e = refl
+    proj-ok tsum (inl v) ρ e h rewrite e = h _ _ refl
+    proj-ok tsum (inr v) ρ e h rewrite e = h _ _ refl
+    proj-ok tsum (const c) ρ e h rewrite e = refl
+    proj-ok tsum (tup vs) ρ e h rewrite e = refl
+    proj-ok tsum (pack c v) ρ e h rewrite e = refl
+    proj-ok tfun (pack c v) ρ e h rewrite e = h _ _ refl
+    proj-ok tfun (const c) ρ e h rewrite e = refl
+    proj-ok tfun (tup vs) ρ e h rewrite e = refl
+    proj-ok tfun (inl v) ρ e h rewrite e = refl
+    proj-ok tfun (inr v) ρ e h rewrite e = refl
+    proj-ok (ttup n i) (tup {m} vs) ρ e h with m ≟ suc n
+    ... | yes refl rewrite e | proj-ers i vs = h _ _ refl
+    ... | no ne rewrite e | proj-bad i ne (ers-pw vs) = refl
+    proj-ok (ttup n i) (const c) ρ e h rewrite e = refl
+    proj-ok (ttup n i) (inl v) ρ e h rewrite e = refl
+    proj-ok (ttup n i) (inr v) ρ e h rewrite e = refl
+    proj-ok (ttup n i) (pack c v) ρ e h rewrite e = refl
 
-{- The end theorem -----------------------------------------------------------------}
+    {- s, computed into d, then the rest of a block -}
+    simple-ok : ∀ {Δ A} (s : I.Simple Σ Δ A) d {φ : Env Δ} {φ'} ρ {bs' is j} {k : Val A → Result U.Val} → Rep φ φ'
+      → (∀ v ρ' → k v ≡ X.write (φ' , ρ') d (er v) (Run bs' is j))
+      → (eval-simple (G.call dsC ck) φ s >>= k) ≡ Run bs' (select-simple s d ++ is) j (φ' , ρ)
+    simple-ok (I.atm a) d ρ R h rewrite arg-ok ρ R a = h _ ρ
+    simple-ok (I.pack a b) d ρ R h rewrite arg-ok ρ R a | arg-ok ρ R b = h _ ρ
+    simple-ok (I.callc (var x) (var y)) d {φ} ρ R h with φ ! x | slot R x
+    ... | pack (code g) e | r rewrite r | slot R y | global-sel dsC g =
+      sym (trans (bind≡ (calls g e _) λ _ → refl)
+                 (trans (bind-assoc (G.call dsC ck (pack (code g) e) _))
+                        (bind-cong (G.call dsC ck (pack (code g) e) _) λ v → sym (h v _))))
+    simple-ok (I.tuple as) d {φ} {φ'} ρ {bs'} {is} {j} R h =
+      trans (h _ ρ) (sym (trans (args-ok ρ R as [])
+        (cong (λ l → X.write (φ' , ρ) d (U.tup l) (Run bs' is j)) (reverse-involutive (ers (map (atom φ) as))))))
+    simple-ok (I.get i (var x)) d {φ} ρ R h with φ ! x | slot R x
+    ... | tup vs | r rewrite r | proj-ers i vs = h _ ρ
+    simple-ok (I.inl a) d ρ R h rewrite arg-ok ρ R a = h _ ρ
+    simple-ok (I.inr a) d ρ R h rewrite arg-ok ρ R a = h _ ρ
+    simple-ok (I.prim sub a b) d {φ} ρ R h
+      rewrite arg-ok ρ R a | arg-ok (record ρ { %rax = just (er (atom φ a)) }) R b | sub-ok (atom φ a) (atom φ b) = h _ _
+    simple-ok (I.prim eq a b) d {φ} ρ R h rewrite arg-ok ρ R a | arg-ok ρ R b with atom φ a | atom φ b
+    ... | const n | const m rewrite eq-ok n m = h _ _
+    simple-ok (I.inject G a) d ρ R h rewrite arg-ok ρ R a = h _ ρ
+    simple-ok (I.project t (var x)) d {φ} {φ'} ρ {bs'} {is} {j} R h with φ ! x | slot R x
+    ... | dyn G v | r =
+      trans (proj-ok t v ρ r λ w ρ' e → trans (h w ρ') (sym (trans (fm r) (cong (λ u → X.write (φ' , ρ') d u (Run bs' is j)) (sym e)))))
+            (cong (λ l → Run bs' l j (φ' , ρ)) (sym (++-assoc (check t (loc (var (lvl x)))) _ is)))
 
-select-correct : ∀ P → Equivalent (G.sem P) (X.sem (select P))
-select-correct (CFG.program ds (CFG.body n bs t)) = clocked-≡ λ ck →
-  tail-ok ds ck (calls≡ ds ck) t bs _ _
+    {- t, and block l, with the blocks bs, in a frame large enough -}
+    tail-ok : ∀ {Bs Δ} (t : Tail Σ Bs Δ) (bs : Blocks Σ Bs) {φ : Env Δ} {φ'} ρ → Rep φ φ'
+      → depth t ≤ length φ' → blocks-depth bs ≤ length φ'
+      → Run (select-blocks bs) (Block.instrs (select-tail t)) (Block.jump (select-tail t)) (φ' , ρ)
+        ≡ (G.tail dsC ck bs φ t >>= λ v → ret (er v))
+    jump-ok : ∀ {Bs Δ} (bs : Blocks Σ Bs) (l : Bs ∋ Δ) {φ : Env Δ} {φ'} ρ → Rep φ φ' → blocks-depth bs ≤ length φ'
+      → X.jump ds' ck (select-blocks bs) (φ' , ρ) (lvl l) ≡ (G.jump dsC ck bs l φ >>= λ v → ret (er v))
 
-{- The whole compiler, into X86 ---------------------------------------------------}
+    tail-ok (return s) bs ρ R dt db =
+      trans (cong (λ is → Run (select-blocks bs) is retq _) (sym (++-identityʳ (select-simple s (reg rax)))))
+            (sym (simple-ok s (reg rax) ρ R λ v ρ' → refl))
+    tail-ok (seq {Δ'} p s t) bs {φ} {φ'} ρ R dt db =
+      sym (trans (bind-assoc (eval-simple (G.call dsC ck) φ s)) (simple-ok s (var (length Δ')) ρ R h))
+      where
+      lt : length Δ' < length φ'
+      lt = ≤-trans (depth-≥ t) (≤-trans (m≤n⊔m _ _) dt)
+      h : ∀ v ρ' → (G.tail dsC ck bs (v ∷ forget p φ) t >>= λ u → ret (er u))
+        ≡ X.write (φ' , ρ') (var (length Δ')) (er v) (Run (select-blocks bs) (Block.instrs (select-tail t)) (Block.jump (select-tail t)))
+      h v ρ' with set-ok φ' (length Δ') (er v) lt
+      ... | φ'' , e , l , hk , o rewrite e =
+        sym (tail-ok t bs {φ' = φ''} ρ' (rep-set p v R hk o) (subst (_ ≤_) (sym l) (≤-trans (m≤n⊔m _ _) dt)) (subst (_ ≤_) (sym l) db))
+    tail-ok (goto l) bs ρ R dt db = jump-ok bs l ρ R db
+    tail-ok (case {Δ'} (var x) p l₁ l₂) bs {φ} {φ'} ρ R dt db with φ ! x | slot R x
+    ... | inl v | r rewrite r with set-ok φ' (length Δ') (er v) (≤-trans (m≤n⊔m _ _) dt)
+    ...   | φ'' , e , l , hk , o rewrite e = jump-ok bs l₁ _ (rep-set p v R hk o) (subst (_ ≤_) (sym l) db)
+    tail-ok (case {Δ'} (var x) p l₁ l₂) bs {φ} {φ'} ρ R dt db | inr v | r rewrite r with set-ok φ' (length Δ') (er v) (≤-trans (m≤n⊔m _ _) dt)
+    ...   | φ'' , e , l , hk , o rewrite e = jump-ok bs l₂ _ (rep-set p v R hk o) (subst (_ ≤_) (sym l) db)
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (ISWIM.sem M) (X.sem (compile-x86 M))
-compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))
+    jump-ok {_ ∷ Bs} (bs ▷ t) Z ρ R db with length Bs ≟ length (select-blocks bs)
+    ... | yes _ = tail-ok t bs ρ R (≤-trans (m≤m⊔n _ _) db) (≤-trans (m≤n⊔m _ _) db)
+    ... | no ne = ⊥-elim (ne (sym (len-blocks bs)))
+    jump-ok (bs ▷ t) (S l) ρ R db with lvl l ≟ length (select-blocks bs)
+    ... | yes e = ⊥-elim (<⇒≢ (lvl-< l) (trans e (len-blocks bs)))
+    ... | no _ = jump-ok bs l ρ R (≤-trans (m≤n⊔m _ _) db)
+
+  {- a body runs in a frame of its depth -}
+  calls≡ : ∀ ck {n} (g : Σ ∋ n) e w
+    → X.call ds' ck (just (select-body prologue (dsC ! g))) (er e) (er w) ≡ (G.call dsC ck (pack (code g) e) w >>= λ v → ret (er v))
+  calls≡ zero g e w = refl
+  calls≡ (suc ck) g e w with dsC ! g
+  ... | body bs t =
+    tail-ok ck (calls≡ ck) t bs _ (rep λ { Z → refl ; (S Z) → refl })
+      (≤-trans (m≤n⊔m _ _) N≤) (≤-trans (m≤m⊔n _ _) N≤)
+    where N≤ : blocks-depth bs ⊔ depth t ≤ length (zero-val ∷ zero-val ∷ replicate (blocks-depth bs ⊔ depth t ∸ 2) zero-val)
+          N≤ = ≤-trans (m≤n+m∸n (blocks-depth bs ⊔ depth t) 2)
+                 (≤-reflexive (cong (λ k → suc (suc k)) (sym (length-replicate (blocks-depth bs ⊔ depth t ∸ 2)))))
+
+{- the result of the X86 program is the erased result of the CFGᵀ one -}
+erased : ∀ {A B : Set} {g : A → B} {r₁ r₂} → r₂ ≡ (r₁ >>= λ v → ret (g v)) → RelResult (λ v u → g v ≡ u) r₁ r₂
+erased {r₁ = timeout} refl = timeout
+erased {r₁ = error} refl = error
+erased {r₁ = ret v} refl = ret refl
+
+select-correct : ∀ (P : CFG.Program) → Equivalent (G.sem P) (X.sem (select P))
+select-correct (CFG.program {Σ} ds (body bs t)) = clocked (λ v u → er ds v ≡ u) (λ {v} e → trans (obs-er ds v) (cong U.obs e)) λ ck →
+  erased (tail-ok ds ck (calls≡ ds ck) t bs _ (rep λ ()) (≤-trans (m≤n⊔m _ _) N≤) (≤-trans (m≤m⊔n _ _) N≤))
+  where N≤ = ≤-reflexive (sym (length-replicate (blocks-depth bs ⊔ depth t)))

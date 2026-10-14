@@ -1,204 +1,123 @@
 {-
 
-  Correctness of explicate control (Imp → CFG, Compiler/Explicate.agda),
-  clock for clock (see the design note in Clock.agda). The pass keeps
-  every call, so the interpreters tick in lock step, and the two
-  programs return the same results: the values are those of Clos5 in
-  both, and code k names definition k of either program, the second
-  being the first explicated. There is no precondition.
+  Correctness of typed explicate control (Impᵀ → CFGᵀ), clock for clock
+  (see the design note in Semantics/Interp/Clock.agda). The pass keeps
+  every call, the values are the same, and so the two programs give the
+  same result for every clock.
 
-  The pass threads the list of blocks, newest first, and only adds
-  blocks, so the list a tail is made with is a suffix of the final one
-  (bs ⊑ cs). A tail made with bs jumps only to blocks of bs, which keep
-  their labels when newer blocks are added (jump-at), so what it means
-  does not depend on the newer blocks: Means bs t K says that t, run
-  with any cs ⊒ bs in the frame φ, returns K φ. The CPS lemma
-  (assign-ok): if k means K, explicate-assign e x k means running e,
-  assigning its value to x and then K; explicate-tail e means the value
-  of e (tail-ok). The join point k of a case gets the label length bs,
-  and the jumps to it run k with bs (jump-at).
+  The pass threads the blocks made so far and only adds blocks (Ext), so
+  a jump to a block made earlier finds it (jump-at). A tail means K when
+  it gives K φ in every frame φ (Ok); the CPS lemma (assign-ok): if k
+  means K, explicate-assign e p k means running e, assigning its value
+  to the slot after Δ' and running K; explicate-tail e means the value
+  of e (tail-ok).
 
 -}
 
 module proof.Correctness.Interp.ExplicateFuel where
 
-open import Language.Imp as Imp using (simple; assign)
-open import Language.CFG using (Body; Tail; goto; case)
+open import Language.Typed.Type
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+import Language.Typed.Imp as Imp
+open import Language.Typed.CFG
 open import Compiler.Explicate
-open import Compiler.Pipeline using (compile-imp; compile-cfg)
-open import proof.Compiler.EncloseScope using (Closed)
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Imp as I
-import Semantics.Interp.CFG as G
-open import Semantics.Interp.Imp using (Frame; _[_]≔_; set; eval-simple; value; here)
-open import Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr)
-import Semantics.Interp.ISWIM as ISWIM
-open import proof.Framework.ListUtil using (‼-pw)
-open import proof.Correctness.Interp.LiftLocalsFuel using (compile-imp-correct)
+import Semantics.Interp.Typed.Clos5 as C
+import Semantics.Interp.Typed.Imp as I
+import Semantics.Interp.Typed.CFG as G
+open import Semantics.Interp.Typed.Imp using (atom; eval-simple)
+open import Framework.Lookup using (_!_; forget)
+open import proof.Semantics.Interp.Typed.Clos5 using (def-map; either-cong)
 
-open import Data.Empty using (⊥-elim)
-open import Data.List using (List; []; _∷_; length; map)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _≤_; _≟_)
-open import Data.Nat.Properties using (≤-refl; m≤n⇒m≤1+n; <-irrefl)
+open import Data.List using (List; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
+open import Data.Nat using (ℕ; zero; suc)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
-open import Data.Sum using (inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong)
-open import Relation.Nullary using (yes; no)
 
-private variable A B : Set
+{- the blocks bs' are bs and more -}
+data Ext {Σ} : ∀ {Bs Bs'} → Blocks Σ Bs → Bs ⊑ Bs' → Blocks Σ Bs' → Set where
+  same : ∀ {Bs} {bs : Blocks Σ Bs} → Ext bs here⊑ bs
+  more : ∀ {Bs Bs' Δ} {bs : Blocks Σ Bs} {g} {bs' : Blocks Σ Bs'} {t : Tail Σ Bs' Δ} → Ext bs g bs' → Ext bs (there⊑ g) (bs' ▷ t)
 
-{- x := the value of r, then h, then g -}
-assoc-set : ∀ (r : Result (Val × Frame)) x (h : Frame → Result A) {g : A → Result B}
-  → ((r >>= λ p → set (proj₂ p) x (proj₁ p) h) >>= g) ≡ (r >>= λ p → set (proj₂ p) x (proj₁ p) λ φ → h φ >>= g)
-assoc-set r x h = trans (bind-assoc r) (bind-cong r λ p → bind-assoc (from-maybe (proj₂ p [ x ]≔ proj₁ p)))
+ext-trans : ∀ {Σ Bs₀ Bs₁ Bs₂} {bs₀ : Blocks Σ Bs₀} {bs₁ : Blocks Σ Bs₁} {bs₂ : Blocks Σ Bs₂} {g₁ g₂}
+  → Ext bs₀ g₁ bs₁ → Ext bs₁ g₂ bs₂ → Ext bs₀ (⊑-trans g₁ g₂) bs₂
+ext-trans e₁ same = e₁
+ext-trans e₁ (more e₂) = more (ext-trans e₁ e₂)
 
-value-here : ∀ {φ} (r : Result Val) → value (here φ r) ≡ r
-value-here timeout = refl
-value-here error = refl
-value-here (ret v) = refl
+module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) Σ) where
+  open C.Vals Σ
+  private ds' = All-map explicate-body ds
 
-{- Block lists ---------------------------------------------------------------------}
+  module _ (ck : ℕ) (calls : ∀ f w → I.call ds ck f w ≡ G.call ds' ck f w) where
 
-{- cs is bs with newer blocks -}
-data _⊑_ (bs : List Tail) : List Tail → Set where
-  ⊑-refl : bs ⊑ bs
-  ⊑-step : ∀ {t cs} → bs ⊑ cs → bs ⊑ (t ∷ cs)
-
-⊑-trans : ∀ {bs cs es} → bs ⊑ cs → cs ⊑ es → bs ⊑ es
-⊑-trans p ⊑-refl = p
-⊑-trans p (⊑-step q) = ⊑-step (⊑-trans p q)
-
-⊑-length : ∀ {bs cs} → bs ⊑ cs → length bs ≤ length cs
-⊑-length ⊑-refl = ≤-refl
-⊑-length (⊑-step p) = m≤n⇒m≤1+n (⊑-length p)
-
-{- Clock for clock ------------------------------------------------------------------}
-
-module _ (ds : List Imp.Body) where
-  private ds' = map explicate-body ds
-
-  {- at clock ck, where calls agree -}
-  module _ (ck : ℕ) (calls : ∀ f e w → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w) where
-
-    simple≡ : ∀ φ s → eval-simple (λ f → I.call ds ck (I.code? ds f)) φ s ≡ eval-simple (λ f → G.call ds' ck (G.code? ds' f)) φ s
+    simple≡ : ∀ {Δ A} (φ : Env Δ) (s : Simple Σ Δ A) → eval-simple (I.call ds ck) φ s ≡ eval-simple (G.call ds' ck) φ s
     simple≡ φ (Imp.atm a) = refl
-    simple≡ φ (Imp.app f e a) =
-      bind-cong (I.atom φ f) λ f → bind-cong (I.atom φ e) λ e → bind-cong (I.atom φ a) λ w → calls f e w
-    simple≡ φ (Imp.pair a b) = refl
-    simple≡ φ (Imp.fst a) = refl
-    simple≡ φ (Imp.snd a) = refl
+    simple≡ φ (Imp.pack a b) = refl
+    simple≡ φ (Imp.callc a b) = calls _ _
     simple≡ φ (Imp.tuple as) = refl
     simple≡ φ (Imp.get i a) = refl
     simple≡ φ (Imp.inl a) = refl
     simple≡ φ (Imp.inr a) = refl
     simple≡ φ (Imp.prim p a b) = refl
+    simple≡ φ (Imp.inject G a) = refl
+    simple≡ φ (Imp.project t a) = refl
 
-    {- block length bs, with the blocks older than it -}
-    jump-at : ∀ {t bs cs φ} → (t ∷ bs) ⊑ cs → G.jump ds' ck cs φ (length bs) ≡ G.tail ds' ck bs φ t
-    jump-at {bs = bs} ⊑-refl with length bs ≟ length bs
-    ... | yes _ = refl
-    ... | no ne = ⊥-elim (ne refl)
-    jump-at {bs = bs} (⊑-step {cs = cs} p) with length bs ≟ length cs
-    ... | yes e = ⊥-elim (<-irrefl e (⊑-length p))
-    ... | no _ = jump-at p
+    jump-at : ∀ {Bs Bs' Δ} {bs : Blocks Σ Bs} {g} {bs' : Blocks Σ Bs'} (l : Bs ∋ Δ) φ
+      → Ext bs g bs' → G.jump ds' ck bs' (⊑-∋ g l) φ ≡ G.jump ds' ck bs l φ
+    jump-at l φ same = refl
+    jump-at l φ (more e) = jump-at l φ e
 
-    {- t, made with the blocks bs, returns K φ -}
-    Means : List Tail → Tail → (Frame → Result Val) → Set
-    Means bs t K = ∀ {cs} → bs ⊑ cs → ∀ φ → G.tail ds' ck cs φ t ≡ K φ
+    {- the output o of the pass from bs means K -}
+    record Ok {Bs Δ} (bs : Blocks Σ Bs) (o : Out Σ Bs Δ) (K : Env Δ → Result (Val Any)) : Set where
+      constructor ok
+      field
+        exts : Ext bs (Out.grows o) (Out.made o)
+        means : ∀ φ → G.tail ds' ck (Out.made o) φ (Out.tail o) ≡ K φ
 
-    {- the output of the pass from bs means K -}
-    Ok : List Tail → Tail × List Tail → (Frame → Result Val) → Set
-    Ok bs r K = bs ⊑ proj₂ r × Means (proj₂ r) (proj₁ r) K
+    after-ok : ∀ {Bs Bs₁ Δ} {bs : Blocks Σ Bs} {bs₁ : Blocks Σ Bs₁} {g} (o : Out Σ Bs₁ Δ) {K}
+      → Ext bs g bs₁ → Ok bs₁ o K → Ok bs (after g o) K
+    after-ok (out g' bs' t) e (ok e' m) = ok (ext-trans e e') m
 
-    case-ok : ∀ a y e₁ e₂ cs {l₁ l₂ φ} {g : Val × Frame → Result Val}
-      → (∀ φ' → G.jump ds' ck cs φ' l₁ ≡ (I.eval ds ck φ' e₁ >>= g))
-      → (∀ φ' → G.jump ds' ck cs φ' l₂ ≡ (I.eval ds ck φ' e₂ >>= g))
-      → G.tail ds' ck cs φ (case a y l₁ l₂) ≡ (I.eval ds ck φ (Imp.case a y e₁ e₂) >>= g)
-    case-ok a y e₁ e₂ cs {φ = φ} h₁ h₂ =
-      trans (bind-cong (I.atom φ a) λ v → bind-cong (I.inj? v) λ
-               { (inj₁ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₁) (sym (bind-assoc (from-maybe (φ [ y ]≔ w))))
-               ; (inj₂ w) → trans (bind-cong (from-maybe (φ [ y ]≔ w)) h₂) (sym (bind-assoc (from-maybe (φ [ y ]≔ w)))) })
-            (sym (trans (bind-assoc (I.atom φ a)) (bind-cong (I.atom φ a) λ v → bind-assoc (I.inj? v))))
+    either-bind : ∀ {B} (u : Val ⟪ sum ⟫) {f g : Val Any → Result (Val B)} {h : Val B → Result (Val Any)}
+      → (either u f g >>= h) ≡ either u (λ v → f v >>= h) (λ v → g v >>= h)
+    either-bind (inl v) = refl
+    either-bind (inr v) = refl
 
-    {- the CPS lemma: x := e, then k -}
-    assign-ok : ∀ e x k bs {K} → Means bs k K
-      → Ok bs (explicate-assign e x k bs) (λ φ → I.eval ds ck φ e >>= λ p → set (proj₂ p) x (proj₁ p) K)
-    assign-ok (simple s) x k bs M =
-      ⊑-refl , λ p φ → trans (bind≡ (sym (simple≡ φ s)) λ v → bind-cong (from-maybe (φ [ x ]≔ v)) λ φ' → M p φ')
-                             (sym (bind-assoc (eval-simple _ φ s)))
-    assign-ok (assign y e₁ e₂) x k bs M =
-      ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ → trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) y _))
-      where
-      Ok₂ = assign-ok e₂ x k bs M
-      Ok₁ = assign-ok e₁ y (proj₁ (explicate-assign e₂ x k bs)) (proj₂ (explicate-assign e₂ x k bs)) (proj₂ Ok₂)
-    assign-ok (Imp.case a y e₁ e₂) x k bs {K} M =
-      ⊑-step (⊑-trans (⊑-step (⊑-trans (⊑-step ⊑-refl) p₁)) p₂) ,
-      λ {cs} p φ → case-ok a y e₁ e₂ cs (λ φ' → trans (jump-at (⊑-trans (⊑-step p₂) p)) (M₁ ⊑-refl φ'))
-                      (λ φ' → trans (jump-at p) (M₂ ⊑-refl φ'))
-      where
-      J : Means (k ∷ bs) (goto (length bs)) K
-      J p φ = trans (jump-at p) (M ⊑-refl φ)
-      r₁ = explicate-assign e₁ x (goto (length bs)) (k ∷ bs)
-      Ok₁ = assign-ok e₁ x (goto (length bs)) (k ∷ bs) J
-      Ok₂ = assign-ok e₂ x (goto (length bs)) (proj₁ r₁ ∷ proj₂ r₁) λ p → J (⊑-trans (⊑-step (proj₁ Ok₁)) p)
-      p₁ = proj₁ Ok₁
-      p₂ = proj₁ Ok₂
-      M₁ = proj₂ Ok₁
-      M₂ = proj₂ Ok₂
+    assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs) {K : Env (A ∷ Δ') → Result (Val Any)}
+      → (∀ φ → G.tail ds' ck bs φ k ≡ K φ)
+      → Ok bs (explicate-assign e p k bs) (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ forget p φ))
+    assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (sym (simple≡ φ s)) λ v → h (v ∷ forget p φ)
+    assign-ok (Imp.assign e₁ e₂) p k bs h with explicate-assign e₂ (there⊑ p) k bs | assign-ok e₂ (there⊑ p) k bs h
+    ... | out g bs₁ t | ok e m with explicate-assign e₁ here⊑ t bs₁ | assign-ok e₁ here⊑ t bs₁ m
+    ...   | o | ok e' m' = after-ok o e (ok e' λ φ → trans (m' φ) (sym (bind-assoc (I.eval ds ck φ e₁))))
+    assign-ok (Imp.case a e₁ e₂) p k bs {K} h
+      with explicate-assign e₁ (there⊑ p) (goto Z) (bs ▷ k) | assign-ok e₁ (there⊑ p) (goto Z) (bs ▷ k) h
+    ... | out g₁ bs₁ t₁ | ok e₁' m₁
+      with explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁)
+         | assign-ok e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁) (λ φ → trans (jump-at Z φ e₁') (h φ))
+    ...   | out g₂ bs₂ t₂ | ok e₂' m₂ =
+      ok (more (ext-trans (more (ext-trans (more same) e₁')) e₂'))
+      λ φ → trans (either-cong (atom φ a) (λ v → trans (jump-at Z _ e₂') (m₁ _)) (λ v → m₂ _))
+                  (sym (either-bind (atom φ a)))
 
-    {- e in tail position -}
-    tail-ok : ∀ e bs → Ok bs (explicate-tail e bs) (λ φ → value (I.eval ds ck φ e))
-    tail-ok (simple s) bs = ⊑-refl , λ p φ → trans (sym (simple≡ φ s)) (sym (value-here _))
-    tail-ok (assign x e₁ e₂) bs =
-      ⊑-trans (proj₁ Ok₂) (proj₁ Ok₁) , λ p φ → trans (proj₂ Ok₁ p φ) (sym (assoc-set (I.eval ds ck φ e₁) x _))
-      where
-      Ok₂ = tail-ok e₂ bs
-      Ok₁ = assign-ok e₁ x (proj₁ (explicate-tail e₂ bs)) (proj₂ (explicate-tail e₂ bs)) (proj₂ Ok₂)
-    tail-ok (Imp.case a x e₁ e₂) bs =
-      ⊑-step (⊑-trans (⊑-step p₁) p₂) ,
-      λ {cs} p φ → case-ok a x e₁ e₂ cs (λ φ' → trans (jump-at (⊑-trans (⊑-step p₂) p)) (M₁ ⊑-refl φ'))
-                      (λ φ' → trans (jump-at p) (M₂ ⊑-refl φ'))
-      where
-      r₁ = explicate-tail e₁ bs
-      Ok₂ = tail-ok e₂ (proj₁ r₁ ∷ proj₂ r₁)
-      p₁ = proj₁ (tail-ok e₁ bs)
-      p₂ = proj₁ Ok₂
-      M₁ = proj₂ (tail-ok e₁ bs)
-      M₂ = proj₂ Ok₂
+    tail-ok : ∀ {Bs Δ} (e : Imp.Exp Σ Δ Any) (bs : Blocks Σ Bs) → Ok bs (explicate-tail e bs) (λ φ → I.eval ds ck φ e)
+    tail-ok (Imp.simple s) bs = ok same λ φ → sym (simple≡ φ s)
+    tail-ok (Imp.assign e₁ e₂) bs with explicate-tail e₂ bs | tail-ok e₂ bs
+    ... | out g bs₁ t | ok e m = after-ok (explicate-assign e₁ here⊑ t bs₁) e (assign-ok e₁ here⊑ t bs₁ m)
+    tail-ok (Imp.case a e₁ e₂) bs with explicate-tail e₁ bs | tail-ok e₁ bs
+    ... | out g₁ bs₁ t₁ | ok e₁' m₁ with explicate-tail e₂ (bs₁ ▷ t₁) | tail-ok e₂ (bs₁ ▷ t₁)
+    ...   | out g₂ bs₂ t₂ | ok e₂' m₂ =
+      ok (more (ext-trans (more e₁') e₂'))
+      λ φ → either-cong (atom φ a) (λ v → trans (jump-at Z _ e₂') (m₁ _)) (λ v → m₂ _)
 
-  {- definition k of the CFG program is definition k of the Imp program, explicated -}
-  Def : Imp.Body → Body → Set
-  Def b b' = b' ≡ explicate-body b
+    body-ok : ∀ {Δ} (e : Imp.Exp Σ Δ Any) φ → G.run ds' ck (explicate-body e) φ ≡ I.eval ds ck φ e
+    body-ok e φ with explicate-tail e [] | tail-ok e []
+    ... | out g bs t | ok _ m = m φ
 
-  code-pw : ∀ f → M.Pointwise Def (I.code? ds f) (G.code? ds' f)
-  code-pw (code k) = ‼-pw (reverse⁺ (pw ds)) k
-    where pw : ∀ ds → Pointwise Def ds (map explicate-body ds)
-          pw [] = []
-          pw (d ∷ ds) = refl ∷ pw ds
-  code-pw (pair _ _) = M.nothing
-  code-pw (const B k) = M.nothing
-  code-pw (tup _) = M.nothing
-  code-pw (inl _) = M.nothing
-  code-pw (inr _) = M.nothing
+  calls≡ : ∀ ck f w → I.call ds ck f w ≡ G.call ds' ck f w
+  calls≡ zero f w = refl
+  calls≡ (suc ck) (pack (code f) e) w rewrite def-map explicate-body ds f = sym (body-ok ck (calls≡ ck) (ds ! f) _)
 
-  calls≡ : ∀ ck f e w → I.call ds ck (I.code? ds f) e w ≡ G.call ds' ck (G.code? ds' f) e w
-  call-pw : ∀ ck {mb mb'} → M.Pointwise Def mb mb' → ∀ e w → I.call ds ck mb e w ≡ G.call ds' ck mb' e w
-
-  calls≡ ck f = call-pw ck (code-pw f)
-
-  call-pw ck M.nothing e w = refl
-  call-pw zero (M.just _) e w = refl
-  call-pw (suc ck) (M.just {Imp.body n x} refl) e w = sym (proj₂ (tail-ok ck (calls≡ ck) x []) ⊑-refl _)
-
-{- The end theorem -----------------------------------------------------------------}
-
-explicate-correct : ∀ P → Equivalent (I.sem P) (G.sem (explicate P))
-explicate-correct (Imp.program ds (Imp.body n e)) = clocked-≡ λ ck →
-  sym (proj₂ (tail-ok ds ck (calls≡ ds ck) e []) ⊑-refl _)
-
-{- The whole compiler, into CFG ---------------------------------------------------}
-
-compile-cfg-correct : ∀ M → Closed M → Equivalent (ISWIM.sem M) (G.sem (compile-cfg M))
-compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
+explicate-correct : ∀ (P : Imp.Program) → Equivalent (I.sem P) (G.sem (explicate P))
+explicate-correct (Imp.program ds e) = clocked-≡ λ ck → sym (body-ok ds ck (calls≡ ds ck) e [])

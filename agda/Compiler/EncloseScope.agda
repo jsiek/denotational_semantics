@@ -4,7 +4,7 @@
   enclose and of the whole compiler: those whose bound is 0, that is,
   that use no variables (bound, Framework/Syntax/Uses.agda). (That
   enclose produces well-scoped Clos2 programs from them is in
-  proof/Compiler/EncloseScope.agda.)
+  Untyped/proof/Compiler/EncloseScope.agda.)
 
 -}
 

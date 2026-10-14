@@ -1,228 +1,83 @@
 {-
 
-  Correctness of the concretize pass (Clos2 → Clos3), clock for clock
-  (see the design note in Clock.agda): for every clock, a term and its
-  concretization, in related environments, both time out, both error,
-  or return related values. Concretize maps each application to one
-  application, so the two interpreters call functions in lock step.
-
-  The pass needs no precondition: it is correct for every Clos2 program.
-  A Clos2 variable that a closure's code reads past its free variables is
-  unbound in Clos2 (the code runs in the argument and the n free
-  variables only) and becomes ` 2, which is unbound in Clos3 (the code
-  runs in the argument and the tuple only): both error.
-
-  Values are related (_≈_) when they agree, except that a Clos2 closure
-  of N and the values vs of its free variables is related to a Clos3
-  closure of concretize (fv-ref n) N and a tuple ts that holds the same
-  values in the opposite order (FV n vs ts): the Clos2 interpreter
-  collects the values as an environment, the free variable bound last
-  first, and component fv-index n k of the tuple is the k-th of them.
-
-  Environments are related through the map φ : Var → Ref that concretize
-  carries (EnvRel), at every variable: a Clos2 variable x finds a related
-  value (or none) in the Clos3 variable or tuple component that φ x names.
+  Correctness of typed concretize (Clos2ᵀ → Clos3ᵀ), clock for clock
+  (see the design note in Semantics/Interp/Clock.agda). Each Clos2ᵀ
+  variable x lives in Clos3ᵀ where φ x says (a variable, or a component
+  of a tuple held in a variable), so environments are related through
+  φ (Env≈); a closure of N and vs is related to one of
+  concretize fv-ref N and related values (Rel, Same).
 
 -}
 
 module proof.Correctness.Interp.ConcretizeFuel where
 
-open import Framework.Syntax.SigUtil using (ν-n)
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-import Language.Clos2 as C2
-open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op;
-               cons; clear; bind; ast; ν; ■; Var; Args)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.List using ([]; _∷_)
+open import Language.Typed.Type
+open import Language.Typed.Clos2
+import Language.Typed.Clos3 as C3
 open import Compiler.Concretize
-open import Semantics.Observation
-open import Language.Prim using (int; bool)
-open import Data.Bool using (true; false)
-open import proof.Framework.ListUtil
-  using (_‼_; proj; has-length; proj-pw; ‼-snoc-<; ‼-snoc-length; ‼-≥; length-snoc)
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Clos2 as S
-import Semantics.Interp.Clos3 as T
+open import Framework.Lookup using (_!_)
+import Semantics.Interp.Typed.Clos2 as S
+import Semantics.Interp.Typed.Clos3 as T
+open import proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ n → C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
 
-open import Data.Bool using (true)
-open import Data.Empty using (⊥-elim)
-open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; _∷ʳ_; length; replicate; reverse)
-open import Data.List.Properties using (unfold-reverse)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just; nothing)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_)
-open import Data.Nat.Properties using (+-identityʳ; +-suc; ≤-pred; ≮⇒≥; m≤n⇒m<n∨m≡n)
-open import Data.Product using (_×_; Σ-syntax; _,_)
-open import Data.Sum using (inj₁; inj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; cong₂)
-open import Relation.Nullary using (yes; no)
+open import Data.Fin using (Fin; zero; suc)
+open import Data.List.Relation.Unary.All using ([]; _∷_)
+open import Data.Vec using (Vec; []; _∷_)
+import Data.Vec as V
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
-{- The relation -----------------------------------------------------------------}
+Code : ∀ {n} → Tm (suc n) Any → C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any → Set
+Code N N' = concretize fv-ref N ≡ N'
 
-infix 4 _≈_
+open Rel Code (Same Code)
 
-data _≈_ : S.Val → T.Val → Set
-data FV : ℕ → List S.Val → List T.Val → Set
+{- the value at a reference -}
+deref : ∀ {Γ} → Ref Γ → T.Env Γ → T.Val Any
+deref (var x) ρ = ρ ! x
+deref (prj i x) ρ = T.nth i (ρ ! x)
 
-data _≈_ where
-  clo≈ : ∀ {n N vs ts} → FV n vs ts → S.clos N vs ≈ T.clos (concretize (fv-ref n) N) (T.tup ts)
-  const≈ : ∀ {B k} → S.const B k ≈ T.const B k
-  tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → S.tup vs ≈ T.tup ws
-  inl≈ : ∀ {v w} → v ≈ w → S.inl v ≈ T.inl w
-  inr≈ : ∀ {v w} → v ≈ w → S.inr v ≈ T.inr w
+Env≈ : ∀ {k Γ} → (Fin k → Ref Γ) → S.Env k → T.Env Γ → Set
+Env≈ φ ρ₁ ρ₂ = ∀ x → V.lookup ρ₁ x ≈ deref (φ x) ρ₂
 
-{- the n values of a closure's free variables, the one bound last first,
-   and the tuple of them: the first component is the last value -}
-data FV where
-  [] : FV 0 [] []
-  fv-snoc : ∀ {n vs ts v t} → FV n vs ts → v ≈ t → FV (suc n) (vs ∷ʳ v) (t ∷ ts)
+env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v w} → v ≈ w → Env≈ φ ρ₁ ρ₂ → Env≈ (ext-ref φ) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext {φ = φ} r E zero = r
+env-ext {φ = φ} r E (suc x) with φ x | E x
+... | var y | e = e
+... | prj i y | e = e
 
-{- where a Clos2 value (or its absence) is found in a Clos3 environment -}
-RefRel : Maybe S.Val → Ref → T.Env → Set
-RefRel mv (var y) ρ₃ = M.Pointwise _≈_ mv (ρ₃ ‼ y)
-RefRel mv (prj i y) ρ₃ = Σ[ ts ∈ List T.Val ] (ρ₃ ‼ y ≡ just (T.tup ts)) × M.Pointwise _≈_ mv (proj i ts)
+ref≈ : ∀ ck {Γ v} (a : Ref Γ) {ρ} → v ≈ deref a ρ → RelResult _≈_ (ret v) (T.eval ck ρ (ref-tm a))
+ref≈ ck (var x) r = ret r
+ref≈ ck (prj i x) r = ret r
 
-EnvRel : (Var → Ref) → S.Env → T.Env → Set
-EnvRel φ ρ₂ ρ₃ = ∀ x → RefRel (ρ₂ ‼ x) (φ x) ρ₃
+run≈ : ∀ ck {k Γ A} (M : Tm k A) {φ : Fin k → Ref Γ} {ρ₁ ρ₂} → Env≈ φ ρ₁ ρ₂
+  → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (concretize φ M))
+runs≈ : ∀ ck {k Γ n} (Ms : Vec (Tm k Any) n) {φ : Fin k → Ref Γ} {ρ₁ ρ₂} → Env≈ φ ρ₁ ρ₂
+  → RelResult (Pointwise _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (concs φ Ms))
+call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
-{- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
-obs≈ (clo≈ _) = refl
-obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+run≈ ck (` x) {φ} E = ref≈ ck (φ x) (E x)
+run≈ ck (clos N Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl))
+run≈ ck (app L M) E = bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
+run≈ ck (lit B c) E = ret const≈
+run≈ ck (tuple Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (tup≈ vs)
+run≈ ck (get i M) E = bind-rel (run≈ ck M E) λ v → ret (nth≈ i v)
+run≈ ck (inl M) E = bind-rel (run≈ ck M E) λ v → ret (inl≈ v)
+run≈ ck (inr M) E = bind-rel (run≈ ck M E) λ v → ret (inr≈ v)
+run≈ ck (case L M N) E =
+  bind-rel (run≈ ck L E) λ u → either≈ u (λ v → run≈ ck M (env-ext v E)) (λ v → run≈ ck N (env-ext v E))
+run≈ ck (prim p L M) E = bind-rel (run≈ ck L E) λ v → bind-rel (run≈ ck M E) λ w → ret (δ≈ p v w)
+run≈ ck (let′ M N) E = bind-rel (run≈ ck M E) λ v → run≈ ck N (env-ext v E)
+run≈ ck (inject G M) E = bind-rel (run≈ ck M E) λ v → ret (dyn≈ v)
+run≈ ck (project t M) E = bind-rel (run≈ ck M E) (project≈ t)
 
-{- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
-... | nothing = M.nothing
-... | just (int n) = M.just const≈
-... | just (bool true) = M.just (inl≈ (tup≈ []))
-... | just (bool false) = M.just (inr≈ (tup≈ []))
+runs≈ ck [] E = ret []
+runs≈ ck (M ∷ Ms) E = bind-rel (run≈ ck M E) λ v → bind-rel (runs≈ ck Ms E) λ vs → ret (v ∷ vs)
 
-{- The free variables of a closure ---------------------------------------------}
+call≈ zero f w = timeout
+call≈ (suc ck) (pack≈ {c = N} rs (same refl)) w = run≈ ck N λ { zero → w ; (suc i) → lookup rs i }
 
-FV-length : ∀ {n vs ts} → FV n vs ts → length vs ≡ n
-FV-length [] = refl
-FV-length (fv-snoc {vs = vs} {v = v} f r) = trans (length-snoc vs v) (cong suc (FV-length f))
-
-FV-has-length : ∀ {n vs ts} → FV n vs ts → has-length n ts ≡ true
-FV-has-length [] = refl
-FV-has-length (fv-snoc f r) = FV-has-length f
-
-FV-cons : ∀ {n vs ts v w} → FV n vs ts → v ≈ w → FV (suc n) (v ∷ vs) (ts ∷ʳ w)
-FV-cons [] r = fv-snoc [] r
-FV-cons (fv-snoc f r') r = fv-snoc (FV-cons f r) r'
-
-{- the interpreters collect the values in the same order, and the tuple
-   is reversed -}
-pw→FV : ∀ {vs ws} → Pointwise _≈_ vs ws → FV (length vs) vs (reverse ws)
-pw→FV [] = []
-pw→FV {v ∷ vs} {w ∷ ws} (r ∷ rs) =
-  subst (FV (suc (length vs)) (v ∷ vs)) (sym (unfold-reverse w ws)) (FV-cons (pw→FV rs) r)
-
-FV-lookup : ∀ {n vs ts} → FV n vs ts → ∀ k (k<n : k < n)
-  → M.Pointwise _≈_ (vs ‼ k) (proj (fv-index n k k<n) ts)
-FV-lookup (fv-snoc {n} {vs} {ts} {v} {t} f r) k k<sn with k <? n
-... | yes k<n
-  rewrite ‼-snoc-< vs v k (subst (k <_) (sym (FV-length f)) k<n) = FV-lookup f k k<n
-... | no k≮n with m≤n⇒m<n∨m≡n (≤-pred k<sn)
-...   | inj₁ k<n = ⊥-elim (k≮n k<n)
-...   | inj₂ refl rewrite FV-has-length f | sym (FV-length f) | ‼-snoc-length vs v = M.just r
-
-{- The environment relation ----------------------------------------------------}
-
-env-ext : ∀ {φ ρ₂ ρ₃ v w} → v ≈ w → EnvRel φ ρ₂ ρ₃ → EnvRel (ext-ref φ) (v ∷ ρ₂) (w ∷ ρ₃)
-env-ext r er zero = M.just r
-env-ext {φ} r er (suc x) with φ x | er x
-... | var y | p = p
-... | prj i y | p = p
-
-{- the environment of a closure's code: its argument, then its free
-   variables (Clos2) or the tuple of them (Clos3) -}
-env-clos : ∀ {n vs ts v w} → v ≈ w → FV n vs ts → EnvRel (fv-ref n) (v ∷ vs) (w ∷ T.tup ts ∷ [])
-env-clos r f zero = M.just r
-env-clos {n} {vs} r f (suc k) with k <? n
-... | yes k<n = _ , refl , FV-lookup f k k<n
-... | no k≮n rewrite ‼-≥ vs k (subst (_≤ k) (sym (FV-length f)) (≮⇒≥ k≮n)) = M.nothing
-
-env-empty : EnvRel var [] []
-env-empty x = M.nothing
-
-conc-body≡ : ∀ n k (a : C2.Arg (ν-n k (ν ■))) → conc-body n k a ≡ concretize (fv-ref n) (S.body k a)
-conc-body≡ n zero (bind (ast N)) = refl
-conc-body≡ n (suc k) (bind a) = conc-body≡ n k a
-
-{- Clock for clock ---------------------------------------------------------------}
-
-{- the values of the arguments, k of them in all -}
-Args≈ : ℕ → List S.Val → List T.Val → Set
-Args≈ k vs ws = Pointwise _≈_ vs ws × length vs ≡ k
-
-run≈ : ∀ ck {φ ρ₂ ρ₃} M → EnvRel φ ρ₂ ρ₃
-  → RelResult _≈_ (S.eval ck ρ₂ M) (T.eval ck ρ₃ (concretize φ M))
-args≈ : ∀ ck {n k φ ρ₂ ρ₃ vs ws} (args : Args (replicate n ■)) → EnvRel φ ρ₂ ρ₃
-  → Pointwise _≈_ vs ws → length vs + n ≡ k
-  → RelResult (Args≈ k) (S.eval-args ck ρ₂ vs args) (T.eval-args ck ρ₃ ws (conc-args φ args))
-apply≈ : ∀ ck {φ ρ₂ ρ₃ f g} M → EnvRel φ ρ₂ ρ₃ → f ≈ g
-  → RelResult _≈_ (S.apply ck ρ₂ M f) (T.apply ck ρ₃ (concretize φ M) g)
-call≈ : ∀ ck {φ ρ₂ ρ₃} N → EnvRel φ ρ₂ ρ₃
-  → RelResult _≈_ (S.call ck N ρ₂) (T.call ck (concretize φ N) ρ₃)
-branch≈ : ∀ ck {φ ρ₂ ρ₃ v w} M N → EnvRel φ ρ₂ ρ₃ → v ≈ w
-  → RelResult _≈_ (S.branch ck ρ₂ M N v)
-                  (T.branch ck ρ₃ (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) w)
-
-project≈ : ∀ {n} (i : Fin n) {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
-project≈ i (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-project≈ i (clo≈ _) = error
-project≈ i const≈ = error
-project≈ i (inl≈ _) = error
-project≈ i (inr≈ _) = error
-
-run≈ ck {φ} {ρ₂} {ρ₃} (` x) er with φ x | er x
-... | var y | p = from-maybe-rel p
-... | prj i y | ts , eq , p rewrite eq = from-maybe-rel p
-run≈ ck {φ} (clos-op n ⦅ cons (clear a) fvs ⦆) er
-  rewrite conc-body≡ n n a = bind-rel (args≈ ck fvs er [] refl) clo
-  where
-  clo : ∀ {vs ws} → Args≈ n vs ws → RelResult _≈_ (ret (S.clos (S.body n a) vs))
-          (ret (T.clos (concretize (fv-ref n) (S.body n a)) (T.tup (reverse ws))))
-  clo (rs , refl) = ret (clo≈ (pw→FV rs))
-run≈ ck (app ⦅ L ,, M ,, Nil ⦆) er = bind-rel (run≈ ck L er) (apply≈ ck M er)
-run≈ ck (lit B k ⦅ Nil ⦆) er = ret const≈
-run≈ ck (tuple n ⦅ args ⦆) er = bind-rel (args≈ ck args er [] refl) (λ (rs , _) → ret (tup≈ (reverse⁺ rs)))
-run≈ ck (get i ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (project≈ i)
-run≈ ck (inl-op ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → ret (inl≈ r))
-run≈ ck (inr-op ⦅ M ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → ret (inr≈ r))
-run≈ ck (prim p ⦅ L ,, M ,, Nil ⦆) er =
-  bind-rel (run≈ ck L er) λ r → bind-rel (run≈ ck M er) λ s → from-maybe-rel (prim≈ p r s)
-run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) er = bind-rel (run≈ ck L er) (branch≈ ck M N er)
-run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) er = bind-rel (run≈ ck M er) (λ r → run≈ ck N (env-ext r er))
-
-args≈ ck {zero} {vs = vs} Nil er rs len = ret (rs , trans (sym (+-identityʳ (length vs))) len)
-args≈ ck {suc n} {vs = vs} (M ,, args) er rs len =
-  bind-rel (run≈ ck M er) (λ r → args≈ ck args er (r ∷ rs) (trans (sym (+-suc (length vs) n)) len))
-
-apply≈ ck M er (clo≈ {N = N} f) = bind-rel (run≈ ck M er) (λ r → call≈ ck N (env-clos r f))
-apply≈ ck M er const≈ = error
-apply≈ ck M er (tup≈ _) = error
-apply≈ ck M er (inl≈ _) = error
-apply≈ ck M er (inr≈ _) = error
-
-call≈ zero N er = timeout
-call≈ (suc ck) N er = run≈ ck N er
-
-branch≈ ck M N er (inl≈ r) = run≈ ck M (env-ext r er)
-branch≈ ck M N er (inr≈ r) = run≈ ck N (env-ext r er)
-branch≈ ck M N er (clo≈ _) = error
-branch≈ ck M N er const≈ = error
-branch≈ ck M N er (tup≈ _) = error
-
-{- The end theorem: for every Clos2 program ------------------------------------}
-
-concretize-correct : ∀ M → Equivalent (S.sem M) (T.sem (concretize-program M))
-concretize-correct M = clocked _≈_ obs≈ (λ ck → run≈ ck M env-empty)
+concretize-correct : ∀ (M : Tm 0 Any) → Equivalent (S.sem M) (T.sem (concretize-program M))
+concretize-correct M = clocked _≈_ obs≈ λ ck → run≈ ck M λ ()

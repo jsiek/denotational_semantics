@@ -1,11 +1,16 @@
 {-
 
-  The closure-conversion compiler and its correctness proofs.
+  The compiler and its correctness proofs, in five styles.
 
-    ISWIM --simplify--> ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
-          --lift locals--> Imp --explicate control--> CFG
-          --select instructions--> X86
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
+          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --explicate control--> CFGᵀ --select instructions--> X86
+
+  The intermediate languages (Language/Typed/) are intrinsically typed;
+  the source, ISWIM, and the target, X86, are untyped. The untyped
+  pipeline that preceded this one is preserved in Untyped/ (see
+  Untyped/All.agda), and checked too.
 
   Check everything with
 
@@ -17,7 +22,7 @@
   proof/) are the audit surface; proof/ holds the proofs.
 
   This file imports the theorem files, which reach the whole audit
-  surface, and every module of proof/.
+  surface, every module of proof/, and the preserved untyped pipeline.
 
 -}
 
@@ -30,262 +35,249 @@ module All where
 import Theorems.Denotational
 import Theorems.Simulation
 import Theorems.Interpreter
-import Theorems.Adequacy
 import Theorems.Reduction
 import Theorems.GraphErrors
+import Theorems.Adequacy
+
+{- ---------------------------------------------------------------------------
+   The untyped pipeline, preserved
+   --------------------------------------------------------------------------- -}
+
+import Untyped.All
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
-   lists, the syntax of any signature (renaming, scoping, uses), sets and
-   environments, the graph model (values, operators, continuity), the
-   generic denotational semantics, and the small-step (forward
-   simulations) and clocked (clock-for-clock correctness) frameworks
+   lists, the syntax of any signature (renaming, scoping, uses,
+   substitution), sets and environments, the graph model (values,
+   operators, continuity, the error monad, intrinsically typed syntax),
+   and the small-step, reduction and clocked frameworks
    --------------------------------------------------------------------------- -}
 
-import proof.Framework.abt.ScopedTuple
+import proof.Framework.Both
+import proof.Framework.Clocked
+import proof.Framework.GraphModel.Continuity
+import proof.Framework.GraphModel.ContinuityBase
+import proof.Framework.GraphModel.DOpSig
+import proof.Framework.GraphModel.DenotProperties
+import proof.Framework.GraphModel.Domain
+import proof.Framework.GraphModel.DomainUtil
+import proof.Framework.GraphModel.DomainUtilBase
+import proof.Framework.GraphModel.Env
+import proof.Framework.GraphModel.ErrorMonad
+import proof.Framework.GraphModel.Laws
+import proof.Framework.GraphModel.Ops
+import proof.Framework.GraphModel.OpsBase
+import proof.Framework.GraphModel.RenameSem
+import proof.Framework.GraphModel.Semantics
+import proof.Framework.GraphModel.SemanticsCore
+import proof.Framework.GraphModel.SemanticsUses
+import proof.Framework.GraphModel.SemanticsUtil
+import proof.Framework.GraphModel.SetsAsPredicates
+import proof.Framework.GraphModel.Strict
+import proof.Framework.GraphModel.TypedBinders
+import proof.Framework.GraphModel.TypedGraph
+import proof.Framework.GraphModel.TypedGuard
+import proof.Framework.GraphModel.TypedOk
+import proof.Framework.GraphModel.TypedOkBase
 import proof.Framework.ListUtil
-import proof.Framework.Syntax.Uses
+import proof.Framework.Lookup
+import proof.Framework.Reduction
+import proof.Framework.ReductionVec
+import proof.Framework.Runs
+import proof.Framework.Simulation
+import proof.Framework.Smallstep
+import proof.Framework.Syntax.EnvRel
 import proof.Framework.Syntax.Rename
 import proof.Framework.Syntax.Scope
 import proof.Framework.Syntax.ScopeRename
-import proof.Framework.Syntax.Subst
 import proof.Framework.Syntax.ScopeSubst
+import proof.Framework.Syntax.Subst
 import proof.Framework.Syntax.SubstRel
-import proof.Framework.Syntax.EnvRel
-import proof.Framework.GraphModel.SetsAsPredicates
-import proof.Framework.GraphModel.DOpSig
-import proof.Framework.GraphModel.DenotProperties
-import proof.Framework.GraphModel.Env
-import proof.Framework.GraphModel.Semantics
-import proof.Framework.GraphModel.RenameSem
-import proof.Framework.GraphModel.Domain
-import proof.Framework.GraphModel.OpsBase
-import proof.Framework.GraphModel.ContinuityBase
-import proof.Framework.GraphModel.SemanticsCore
-import proof.Framework.GraphModel.SemanticsUses
-import proof.Framework.GraphModel.Ops
-import proof.Framework.GraphModel.Continuity
-import proof.Framework.GraphModel.SemanticsUtil
-import proof.Framework.GraphModel.ErrorMonad
-import proof.Framework.GraphModel.DomainUtilBase
-import proof.Framework.GraphModel.DomainUtil
-import proof.Framework.Smallstep
-import proof.Framework.Runs
-import proof.Framework.Simulation
-import proof.Framework.Clocked
-import proof.Framework.Reduction
+import proof.Framework.Syntax.Uses
+import proof.Framework.VecProj
+import proof.Framework.VecSelect
+import proof.Framework.abt.ScopedTuple
 
 {- ---------------------------------------------------------------------------
-   proof/: syntactic facts about the passes, used by both operational
-   styles: enclose produces well-scoped programs from closed ones, the
-   table of globalize, and the compiler produces well-scoped Clos5
-   programs (Scoped), the precondition of both operational proofs of
-   remove complex operands
+   proof/: syntactic facts about the passes: simplify, cast insertion on
+   closed programs, globalize's references to older definitions, and the
+   definitions, labels and frames that select instructions relies on
    --------------------------------------------------------------------------- -}
 
+import proof.Compiler.CastScope
+import proof.Compiler.GlobalizeOlder
+import proof.Compiler.SelectFacts
 import proof.Compiler.SimplifyFacts
-import proof.Compiler.EncloseScope
-import proof.Compiler.GlobalizeTable
-import proof.Compiler.PipelineScope
+import proof.Compiler.SimplifyScope
 
 {- ---------------------------------------------------------------------------
-   proof/: the denotational (graph-model) development
+   proof/: the plain graph model: the lemmas about the semantics of each
+   language and the correctness of each pass
    --------------------------------------------------------------------------- -}
 
-{- the monotonicity, consistency and continuity of the primitives and of
-   the semantics of each language -}
-import proof.Semantics.Graph.Prim
-import proof.Semantics.Graph.ISWIM
-import proof.Semantics.Graph.Clos2Iswim
-import proof.Semantics.Graph.Clos3Iswim
-import proof.Semantics.Graph.Clos4Iswim
-import proof.Semantics.Graph.Clos5IswimContinuous
-
-{- correctness of each pass -}
-import proof.Correctness.Graph.SimplifyCorrect
-import proof.Correctness.Graph.EncloseCorrect
-import proof.Correctness.Graph.OptimizeCorrect
-import proof.Correctness.Graph.ConcretizeCorrect
-import proof.Correctness.Graph.DelayFiniteCommon
-import proof.Correctness.Graph.DelayFiniteRel
-import proof.Correctness.Graph.DelayApp
-import proof.Correctness.Graph.DelayReflectFinite
-import proof.Correctness.Graph.DelayPreserve
-import proof.Correctness.Graph.GlobalizeCorrect
-import proof.Correctness.Graph.RCOCorrect
-import proof.Correctness.Graph.LiftLocalsCommon
-import proof.Correctness.Graph.LiftLocalsCorrectK
-import proof.Correctness.Graph.ExplicateCommon
-import proof.Correctness.Graph.ExplicateCorrectK
-import proof.Correctness.Graph.SelectCorrect
-
-{- the end-to-end theorems (ISWIM → Clos5) -}
+import proof.Correctness.Graph.CastCorrect
 import proof.Correctness.Graph.CompilerCorrect
-
-{- experiment: a direct semantics of Imp, and lift locals and explicate
-   control against it (see papers/PLDI-2027/loc.md) -}
-import proof.Semantics.Graph.ImpDirect
-import proof.Correctness.Graph.LiftLocalsCorrect
+import proof.Correctness.Graph.ConcretizeCorrect
+import proof.Correctness.Graph.DelayCorrect
+import proof.Correctness.Graph.DelayPreserve
+import proof.Correctness.Graph.DelayReflect
+import proof.Correctness.Graph.DelayRel
+import proof.Correctness.Graph.EncloseCorrect
 import proof.Correctness.Graph.ExplicateCorrect
-
-{- examples -}
-import proof.Correctness.Graph.DelayClosedClosureExample
-import proof.Correctness.Graph.ConcretizeExample
-import proof.Correctness.Graph.EncloseExample
-import proof.Correctness.Graph.PipelineExample
-import proof.Correctness.Graph.CompilerExample
-import proof.Compiler.Examples.SimplifyExample
-import proof.Compiler.Examples.RCOExample
-import proof.Compiler.Examples.LiftLocalsExample
-import proof.Compiler.Examples.ExplicateExample
-import proof.Compiler.Examples.SelectExample
+import proof.Correctness.Graph.GlobalizeCorrect
+import proof.Correctness.Graph.LiftLocalsCorrect
+import proof.Correctness.Graph.OptimizeCorrect
+import proof.Correctness.Graph.RCOCorrect
+import proof.Correctness.Graph.SelectCorrect
+import proof.Correctness.Graph.SimplifyCorrect
+import proof.Semantics.Graph.ISWIM
+import proof.Semantics.Graph.ISWIMContinuous
+import proof.Semantics.Graph.Prim
+import proof.Semantics.Graph.Typed.CFG
+import proof.Semantics.Graph.Typed.Clos2
+import proof.Semantics.Graph.Typed.Clos3
+import proof.Semantics.Graph.Typed.Clos4
+import proof.Semantics.Graph.Typed.Clos5
+import proof.Semantics.Graph.Typed.Ops
+import proof.Semantics.Graph.X86
 
 {- ---------------------------------------------------------------------------
-   proof/: the CEK machine + simulation development, independent of
-   the graph model: forward simulations between small-step machines
+   proof/: the CEK machines + simulations
    --------------------------------------------------------------------------- -}
 
-{- the lemmas about runs and the forward simulations, at this compiler's
-   observations -}
-import proof.Semantics.CEK.Smallstep
-import proof.Semantics.CEK.Simulation
-
-{- correctness of each pass, and of the compiler into each language -}
-import proof.Correctness.CEK.SimplifySim
-import proof.Correctness.CEK.EncloseSim
-import proof.Correctness.CEK.OptimizeSim
+import proof.Correctness.CEK.CastSim
+import proof.Correctness.CEK.CastSimLemmas
+import proof.Correctness.CEK.Clos5Common
+import proof.Correctness.CEK.Common
 import proof.Correctness.CEK.ConcretizeSim
 import proof.Correctness.CEK.DelaySim
-import proof.Correctness.CEK.GlobalizeSim
-import proof.Correctness.CEK.CompilerSim
-import proof.Correctness.CEK.RCOSim
-import proof.Correctness.CEK.LiftLocalsSim
+import proof.Correctness.CEK.EncloseSim
 import proof.Correctness.CEK.ExplicateSim
+import proof.Correctness.CEK.GlobalizeSim
+import proof.Correctness.CEK.LiftLocalsSim
+import proof.Correctness.CEK.OptimizeSim
+import proof.Correctness.CEK.PipelineSim
+import proof.Correctness.CEK.RCOSim
 import proof.Correctness.CEK.SelectSim
-import proof.Correctness.CEK.CompilerX86Sim
-
-{- experiment: a direct backward simulation for delay, without
-   determinism, for comparison (see papers/PLDI-2027/loc.md) -}
-import proof.Semantics.CEK.Backward
-import proof.Correctness.CEK.DelayBackSim
+import proof.Correctness.CEK.SimplifySim
+import proof.Semantics.CEK.Simulation
+import proof.Semantics.CEK.Smallstep
 
 {- ---------------------------------------------------------------------------
-   proof/: soundness and adequacy of the graph model for the ISWIM, Clos5
-   and X86 machines, which connect the two developments
+   proof/: the clocked interpreters + value relations
    --------------------------------------------------------------------------- -}
 
-import proof.Adequacy.Common
-import proof.Semantics.Graph.ISWIMContinuous
-import proof.Adequacy.Soundness
-import proof.Adequacy.LogRel
-import proof.Adequacy.ISWIM
-import proof.Adequacy.Clos5WF
-import proof.Adequacy.CompileWF
-import proof.Adequacy.Clos5Common
-import proof.Adequacy.Values
-import proof.Adequacy.Clos5Soundness
-import proof.Adequacy.Clos5LogRel
-import proof.Adequacy.Clos5
-import proof.Adequacy.X86WF
-import proof.Adequacy.X86Common
-import proof.Adequacy.X86Soundness
-import proof.Adequacy.X86LogRel
-import proof.Adequacy.X86CompileWF
-import proof.Adequacy.X86
-import proof.Adequacy.EndToEnd
-
-{- ---------------------------------------------------------------------------
-   proof/: the clocked interpreter + value relations development:
-   clock-for-clock proofs between clocked interpreters
-   --------------------------------------------------------------------------- -}
-
-{- clock-for-clock correctness, at this compiler's observations -}
-import proof.Semantics.Interp.Clock
-
-{- correctness of each pass, and of the compiler into each language -}
-import proof.Correctness.Interp.SimplifyFuel
-import proof.Correctness.Interp.EncloseFuel
-import proof.Correctness.Interp.OptimizeFuel
+import proof.Correctness.Interp.CastFuel
+import proof.Correctness.Interp.CompilerFuel
 import proof.Correctness.Interp.ConcretizeFuel
 import proof.Correctness.Interp.DelayFuel
-import proof.Correctness.Interp.GlobalizeFuel
-import proof.Correctness.Interp.RCOFuel
-import proof.Correctness.Interp.LiftLocalsFuel
+import proof.Correctness.Interp.EncloseFuel
 import proof.Correctness.Interp.ExplicateFuel
+import proof.Correctness.Interp.GlobalizeFuel
+import proof.Correctness.Interp.LiftLocalsFuel
+import proof.Correctness.Interp.OptimizeFuel
+import proof.Correctness.Interp.RCOFuel
 import proof.Correctness.Interp.SelectFuel
-import proof.Correctness.Interp.CompilerFuel
+import proof.Correctness.Interp.SimplifyFuel
+import proof.Semantics.Interp.Clock
+import proof.Semantics.Interp.Typed.Clos5
+import proof.Semantics.Interp.Typed.Rel
 
 {- ---------------------------------------------------------------------------
-   proof/: the reduction semantics + simulation development: forward
-   simulations between reduction semantics by substitution, and from the
-   Clos5 one to the machine of Imp (explicate control and select
-   instructions, between the machines of Imp, CFG and X86, are the CEK
-   development's, shared)
+   proof/: the reduction semantics + simulations (explicate control and
+   select instructions are the CEK column's)
    --------------------------------------------------------------------------- -}
 
-{- the values of each reduction semantics -}
-import proof.Semantics.Reduction.Clos2
-import proof.Semantics.Reduction.Clos3
-import proof.Semantics.Reduction.Clos4
-import proof.Semantics.Reduction.Clos5
-
-{- correctness of each pass, and of the compiler into each language -}
-import proof.Correctness.Reduction.SimplifyRed
-import proof.Correctness.Reduction.EncloseRed
-import proof.Correctness.Reduction.OptimizeRed
+import proof.Correctness.Reduction.CastRed
 import proof.Correctness.Reduction.ConcretizeRed
 import proof.Correctness.Reduction.DelayRed
+import proof.Correctness.Reduction.EncloseRed
 import proof.Correctness.Reduction.GlobalizeRed
-import proof.Correctness.Reduction.CompilerRed
-import proof.Correctness.Reduction.RCORed
 import proof.Correctness.Reduction.LiftLocalsRed
-import proof.Correctness.Reduction.CompilerX86Red
+import proof.Correctness.Reduction.OptimizeRed
+import proof.Correctness.Reduction.PipelineRed
+import proof.Correctness.Reduction.RCORed
+import proof.Correctness.Reduction.SimplifyRed
+import proof.Semantics.Reduction.Typed.Clos2
+import proof.Semantics.Reduction.Typed.Clos3
+import proof.Semantics.Reduction.Typed.Clos4
+import proof.Semantics.Reduction.Typed.Clos5
+import proof.Semantics.Reduction.Typed.ISWIM
 
 {- ---------------------------------------------------------------------------
-   proof/: the graph model with errors, built from an error monad on
-   𝒫 Value (Framework/GraphModel/ErrorMonad.agda): the semantics of every
-   language in which an error denotes ω, every pass proved correct in it,
-   and its adequacy for the ISWIM, Clos5 and X86 machines
+   proof/: the graph model with errors
    --------------------------------------------------------------------------- -}
 
-import proof.Semantics.GraphErr.Prim
-import proof.Semantics.GraphErr.ISWIM
-import proof.Semantics.GraphErr.Clos2
-import proof.Semantics.GraphErr.Clos3
-import proof.Semantics.GraphErr.Clos4
-import proof.Semantics.GraphErr.Clos5
-import Semantics.GraphErr.ImpK
-import Semantics.GraphErr.CFG
-import Semantics.GraphErr.X86
-import proof.Framework.GraphModel.Strict
-import proof.Framework.GraphModel.Laws
-import proof.Correctness.GraphErr.SimplifyCorrect
-import proof.Correctness.GraphErr.EncloseCorrect
-import proof.Correctness.GraphErr.OptimizeCorrect
-import proof.Correctness.GraphErr.ConcretizeCorrect
-import proof.Correctness.GraphErr.DelayRel
-import proof.Correctness.GraphErr.DelayApp
-import proof.Correctness.GraphErr.DelayReflect
-import proof.Correctness.GraphErr.DelayPreserve
-import proof.Correctness.GraphErr.GlobalizeCorrect
-import proof.Correctness.GraphErr.RCOCorrect
-import proof.Correctness.GraphErr.LiftLocalsCorrect
-import proof.Correctness.GraphErr.ExplicateCorrect
-import proof.Correctness.GraphErr.SelectCorrect
+import proof.Correctness.GraphErr.CastCorrect
 import proof.Correctness.GraphErr.CompilerCorrect
-import proof.Adequacy.GraphErr.Soundness
-import proof.Adequacy.GraphErr.LogRel
+import proof.Correctness.GraphErr.ConcretizeCorrect
+import proof.Correctness.GraphErr.DelayCorrect
+import proof.Correctness.GraphErr.DelayPreserve
+import proof.Correctness.GraphErr.DelayReflect
+import proof.Correctness.GraphErr.DelayRel
+import proof.Correctness.GraphErr.EncloseCorrect
+import proof.Correctness.GraphErr.ExplicateCorrect
+import proof.Correctness.GraphErr.GlobalizeCorrect
+import proof.Correctness.GraphErr.LiftLocalsCorrect
+import proof.Correctness.GraphErr.OptimizeCorrect
+import proof.Correctness.GraphErr.RCOCorrect
+import proof.Correctness.GraphErr.SelectCheck
+import proof.Correctness.GraphErr.SelectCheckOk
+import proof.Correctness.GraphErr.SelectCorrect
+import proof.Correctness.GraphErr.SelectPreserve
+import proof.Correctness.GraphErr.SelectReflect
+import proof.Correctness.GraphErr.SelectRel
+import proof.Correctness.GraphErr.SelectX86
+import proof.Correctness.GraphErr.SimplifyCorrect
+import proof.Semantics.GraphErr.ISWIM
+import proof.Semantics.GraphErr.Prim
+import proof.Semantics.GraphErr.Typed.CFG
+import proof.Semantics.GraphErr.Typed.Clos2
+import proof.Semantics.GraphErr.Typed.Clos3
+import proof.Semantics.GraphErr.Typed.Clos4
+import proof.Semantics.GraphErr.Typed.Clos5
+import proof.Semantics.GraphErr.Typed.Imp
+
+{- ---------------------------------------------------------------------------
+   proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86
+   machines) and of the graph model with errors (ISWIM and X86 machines;
+   Clos5ᵀ derived from the CEK column's simulation)
+   --------------------------------------------------------------------------- -}
+
+import proof.Adequacy.Clos5
+import proof.Adequacy.Clos5Common
+import proof.Adequacy.Clos5LogRel
+import proof.Adequacy.Clos5Soundness
+import proof.Adequacy.Common
+import proof.Adequacy.EndToEnd
+import proof.Adequacy.GraphErr.Agree
+import proof.Adequacy.GraphErr.EndToEnd
 import proof.Adequacy.GraphErr.ISWIM
+import proof.Adequacy.GraphErr.LogRel
 import proof.Adequacy.GraphErr.Simplify
-import proof.Adequacy.GraphErr.Clos5WF
-import proof.Adequacy.GraphErr.Clos5Common
-import proof.Adequacy.GraphErr.Clos5Soundness
-import proof.Adequacy.GraphErr.Clos5LogRel
-import proof.Adequacy.GraphErr.Clos5
-import proof.Adequacy.GraphErr.X86WF
+import proof.Adequacy.GraphErr.Soundness
+import proof.Adequacy.GraphErr.X86
 import proof.Adequacy.GraphErr.X86Common
 import proof.Adequacy.GraphErr.X86Consistent
-import proof.Adequacy.GraphErr.X86Soundness
 import proof.Adequacy.GraphErr.X86LogRel
-import proof.Adequacy.GraphErr.X86
-import proof.Adequacy.GraphErr.EndToEnd
+import proof.Adequacy.GraphErr.X86Soundness
+import proof.Adequacy.GraphErr.X86WF
+import proof.Adequacy.ISWIM
+import proof.Adequacy.LogRel
+import proof.Adequacy.Soundness
+import proof.Adequacy.Values
+import proof.Adequacy.X86
+import proof.Adequacy.X86Common
+import proof.Adequacy.X86CompileWF
+import proof.Adequacy.X86LogRel
+import proof.Adequacy.X86Refs
+import proof.Adequacy.X86Soundness
+import proof.Adequacy.X86WF
+
+{- ---------------------------------------------------------------------------
+   examples (smoke tests)
+   --------------------------------------------------------------------------- -}
+
+import proof.Compiler.Examples.CastExample
+import proof.Compiler.Examples.PipelineExample
+import proof.Compiler.Examples.SimplifyExample

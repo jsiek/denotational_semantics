@@ -1,74 +1,91 @@
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.List using (List; []; _∷_; length; replicate)
-open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+{-
 
-open import Framework.Syntax.SyntaxUtil
-open import Framework.Syntax.SigUtil
+  Typed globalize (Clos4ᵀ → Clos5ᵀ): the code of every function becomes a
+  global definition, and the code itself a reference to it, as the
+  untyped pass (Untyped/Compiler/Globalize.agda) does.
+
+  The pass threads the definitions made so far, newest first, each typed
+  over the table of the older ones (Made), from left to right; for code
+  it first globalizes the body, so the functions nested in it become
+  definitions first. A term made earlier is over a smaller table than
+  the one at the end, so it is weakened (wk) to the table its context
+  has; at the end every definition is weakened to the whole table.
+
+-}
 
 module Compiler.Globalize where
-  {-
-   The globalize pass (Clos4 → Clos5): the code of every function becomes
-   a global definition, as in the hoisting step of
-   siek.blogspot.com/2012/07/essence-of-closure-conversion.html.
 
-   In Clos4 the code of a function, fun-op ⦅ ∁ (X. Y. N) ⦆, is already
-   closed (∁), so it can be moved to the top level as is. The pass threads
-   the list of definitions made so far (newest first) through the term,
-   from left to right. For fun-op it first globalizes the body N, so the
-   functions nested in N become definitions first, then adds N as a new
-   definition and replaces the code by a reference to it.
-  -}
-  open import Language.Clos4 as Source
-  open import Language.Clos5 as Target
-    renaming (clear to clear'; bind to bind'; ast to ast';
-              AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
-              _⦅_⦆ to _⦅_⦆'; nil to nil'; cons to cons')
+open import Language.Typed.Type
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+import Language.Typed.Clos4 as S
+open import Language.Typed.Clos5
 
-  {- the definitions made so far, newest first -}
-  Defs : Set
-  Defs = List AST'
+open import Data.List using (List; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Nat using (ℕ)
+open import Data.Vec using (Vec; []; _∷_)
 
-  glob : AST → Defs → AST' × Defs
-  glob-arg : ∀ {b} → Arg b → Defs → Arg' b × Defs
-  glob-args : ∀ {bs} → Args bs → Defs → Args' bs × Defs
+{- the definitions made so far, newest first, each over the older ones -}
+data Made : List ℕ → Set where
+  [] : Made []
+  _▷_ : ∀ {Σ n} → Made Σ → Code Σ n → Made (n ∷ Σ)
 
-  glob (` x) ds = ⟨ # x , ds ⟩
-  glob (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds =
-    ⟨ fun-ref (length (proj₂ (glob N ds))) ⦅ nil' ⦆'
-    , proj₁ (glob N ds) ∷ proj₂ (glob N ds) ⟩
-  glob (app ⦅ args ⦆) ds = ⟨ app ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (lit B k ⦅ args ⦆) ds =
-    ⟨ lit B k ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (pair-op ⦅ args ⦆) ds =
-    ⟨ pair-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (fst-op ⦅ args ⦆) ds =
-    ⟨ fst-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (snd-op ⦅ args ⦆) ds =
-    ⟨ snd-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (tuple n ⦅ args ⦆) ds =
-    ⟨ tuple n ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (get i ⦅ args ⦆) ds =
-    ⟨ get i ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (inl-op ⦅ args ⦆) ds =
-    ⟨ inl-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (inr-op ⦅ args ⦆) ds =
-    ⟨ inr-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (case-op ⦅ args ⦆) ds =
-    ⟨ case-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (let-op ⦅ args ⦆) ds =
-    ⟨ let-op ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
-  glob (prim p ⦅ args ⦆) ds =
-    ⟨ prim p ⦅ proj₁ (glob-args args ds) ⦆' , proj₂ (glob-args args ds) ⟩
+{- a result over the table after some more definitions -}
+record Out (Σ : List ℕ) (P : List ℕ → Set) : Set where
+  constructor out
+  field
+    {Σ'} : List ℕ
+    grows : Σ ⊑ Σ'
+    made : Made Σ'
+    res : P Σ'
 
-  glob-arg (ast M) ds = ⟨ ast' (proj₁ (glob M ds)) , proj₂ (glob M ds) ⟩
-  glob-arg (bind a) ds = ⟨ bind' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩
-  glob-arg (clear a) ds = ⟨ clear' (proj₁ (glob-arg a ds)) , proj₂ (glob-arg a ds) ⟩
+glob : ∀ {Σ Γ A} → S.Tm Γ A → Made Σ → Out Σ (λ Σ' → Tm Σ' Γ A)
+globs : ∀ {Σ Γ n} → Vec (S.Tm Γ Any) n → Made Σ → Out Σ (λ Σ' → Vec (Tm Σ' Γ Any) n)
+glob₁ : ∀ {Σ Γ Γ₁ A B} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) → S.Tm Γ₁ A → Made Σ
+  → Out Σ (λ Σ' → Tm Σ' Γ B)
+glob₂ : ∀ {Σ Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C)
+  → S.Tm Γ₁ A → S.Tm Γ₂ B → Made Σ → Out Σ (λ Σ' → Tm Σ' Γ C)
 
-  glob-args nil ds = ⟨ nil' , ds ⟩
-  glob-args (cons a args) ds =
-    ⟨ cons' (proj₁ (glob-arg a ds)) (proj₁ (glob-args args (proj₂ (glob-arg a ds))))
-    , proj₂ (glob-args args (proj₂ (glob-arg a ds))) ⟩
+glob (S.` x) D = out here⊑ D (` x)
+glob (S.code N) D with glob N D
+... | out s D' N' = out (there⊑ s) (D' ▷ N') (fun-ref Z)
+glob (S.pack L M) D = glob₂ pack L M D
+glob (S.callc L M) D = glob₂ callc L M D
+glob (S.lit B c) D = out here⊑ D (lit B c)
+glob (S.tuple Ms) D with globs Ms D
+... | out s D' Ms' = out s D' (tuple Ms')
+glob (S.get i M) D = glob₁ (get i) M D
+glob (S.inl M) D = glob₁ inl M D
+glob (S.inr M) D = glob₁ inr M D
+glob (S.case L M N) D with glob L D
+... | out s₁ D₁ L' with glob M D₁
+...   | out s₂ D₂ M' with glob N D₂
+...     | out s₃ D₃ N' =
+  out (⊑-trans s₁ (⊑-trans s₂ s₃)) D₃ (case (wk (⊑-∋ (⊑-trans s₂ s₃)) L') (wk (⊑-∋ s₃) M') N')
+glob (S.prim p L M) D = glob₂ (prim p) L M D
+glob (S.let′ M N) D = glob₂ let′ M N D
+glob (S.inject G M) D = glob₁ (inject G) M D
+glob (S.project t M) D = glob₁ (project t) M D
 
-  {- the pass, for a whole program -}
-  globalize : AST → Program
-  globalize M = program (proj₂ (glob M [])) (proj₁ (glob M []))
+globs [] D = out here⊑ D []
+globs (M ∷ Ms) D with glob M D
+... | out s₁ D₁ M' with globs Ms D₁
+...   | out s₂ D₂ Ms' = out (⊑-trans s₁ s₂) D₂ (wk (⊑-∋ s₂) M' ∷ Ms')
+
+glob₁ f M D with glob M D
+... | out s D' M' = out s D' (f M')
+
+glob₂ f L M D with glob L D
+... | out s₁ D₁ L' with glob M D₁
+...   | out s₂ D₂ M' = out (⊑-trans s₁ s₂) D₂ (f (wk (⊑-∋ s₂) L') M')
+
+{- the definitions made, each over the whole table -}
+close : ∀ {Σ Σ'} → Made Σ' → Σ' ⊑ Σ → All (Code Σ) Σ'
+close [] s = []
+close (D ▷ N) s = wk (⊑-∋ s') N ∷ close D s'
+  where s' = ⊑-trans (there⊑ here⊑) s
+
+{- the pass, for a whole program -}
+globalize : S.Tm [] Any → Program
+globalize M with glob M []
+... | out _ D M' = program (close D here⊑) M'

@@ -1,240 +1,163 @@
 {-
 
-  Correctness of the delay pass (Clos3 → Clos4) by a forward simulation
-  between their machines (see the design note in Semantics/CEK/Smallstep.agda).
+  Correctness of typed delay (Clos3ᵀ → Clos4ᵀ) by a forward simulation
+  between the typed machines (see the design note in
+  Semantics/CEK/Smallstep.agda).
 
-  delay turns a closure value into a pair of code and environment, and an
-  application app L M into
+  The machines run in lock step, except that building a closure takes
+  three more Clos4ᵀ steps (the code, then the tuple of free variables,
+  under pack). Neither machine checks the operator, so the only error,
+  a failed project, happens in both at the same time.
 
-    let x = L' in app (fst x) (snd x) (shift M')
-
-  So one source step can take several target steps: building a closure
-  (pair, fun, then the tuple of free variables), and above all calling
-  one, which in Clos4 binds the closure by a let, takes it apart by fst
-  and snd and only then evaluates the operand.
-
-  Values are related (_≈_) when they agree, except that a Clos3 closure of
-  N and v is related to the Clos4 pair of fun (delay N) and a value
-  related to v. The operand of an application is evaluated under one more
-  variable (the let-bound closure), so a source term M in environment ρ₁
-  is related to the target term rename r (delay M) in ρ₂, where the
-  renaming r maps the variables of ρ₁ to related ones in ρ₂ (EnvRel).
-
-  Continuations are related frame by frame, except for appL, the frame
-  that waits for the operator. Its target counterpart is the let frame,
-  but when a value is returned to it the target first runs the let body
-  up to the point where it checks that the value is a pair (fstK). Since
-  the source checks that the value is a closure right away, a state
-  returning a value to appL is related to that later target state
-  (retT), which the target reaches by four administrative steps
-  (ret-reach) taken as part of the step that returned the value. Then
-  both machines error at the same time on a non-function. (Clos4's own
-  check, that the operator is code, comes at the call and always passes
-  on delay's output.)
-
-  No precondition is needed: unlike enclose, delay does not depend on
-  which variables a term uses, so the end theorem holds for every Clos3
-  program, closed or not (a free variable errors in both).
+  Values are related (_≈_) when they agree, except that a Clos3ᵀ closure
+  of N and vs is related to the pack of code (delay N) and a tuple of
+  values related to vs. Environments are related through the renaming r
+  that delay carries (EnvRel): variable x of ρ₁ and variable r x of ρ₂
+  hold related values. Continuations are related frame by frame: appL
+  to callL, appR to callR, and closK to packR.
 
 -}
 
 module proof.Correctness.CEK.DelaySim where
 
-open import Data.Fin using (Fin)
-open import Data.List using ([]; _∷_; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Language.Prim using (int; bool)
-open import Data.Bool using (true; false)
-open import Data.Maybe using (just; nothing)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Product using (_×_; Σ-syntax; _,_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.Clos3
-import Language.Clos4 as C4
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Language.Typed.Clos3
+import Language.Typed.Clos4 as C4
 open import Compiler.Delay
-open import Semantics.Observation
+open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-open import proof.Framework.ListUtil
-import Semantics.CEK.Clos3 as S
-import Semantics.CEK.Clos4 as T
+open import proof.Correctness.CEK.Common using (collected≈; Lock; same-stop; same-next; lock)
+import Semantics.CEK.Typed.Clos3 as Src
+import Semantics.CEK.Typed.Clos4 as Tgt
 
-open import proof.Framework.Syntax.Rename C4.Op C4.sig
-  using (ext; rename; rename-args; shift; rename-fuse; rename-id)
+open import Data.Bool using (true; false)
+open import Data.Integer using (_≟_)
+open import Data.List using ([]; _∷_)
+import Data.List.Relation.Binary.Pointwise as L
+open import Data.List.Relation.Unary.All using ([]; _∷_)
+open import Data.Vec using (Vec; []; _∷_)
+open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
+open import Language.Prim using (sub; eq)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
+open import Relation.Nullary using (yes; no; does)
 
 {- The simulation relation -----------------------------------------------------}
 
 infix 4 _≈_ _≈k_ _~_
 
-data _≈_ : S.Val → T.Val → Set where
-  clos≈ : ∀ {N v w} → v ≈ w → S.clos N v ≈ T.pair (T.fun (delay N)) w
-  const≈ : ∀ {B k} → S.const B k ≈ T.const B k
-  tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → S.tup vs ≈ T.tup ws
-  inl≈ : ∀ {v w} → v ≈ w → S.inl v ≈ T.inl w
-  inr≈ : ∀ {v w} → v ≈ w → S.inr v ≈ T.inr w
+data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
+  clos≈ : ∀ {n N} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws
+    → Src.clos N vs ≈ Tgt.pack (Tgt.code (delay (λ x → x) N)) (Tgt.tup ws)
+  const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
+  tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
+  inl≈ : ∀ {v w} → v ≈ w → Src.inl v ≈ Tgt.inl w
+  inr≈ : ∀ {v w} → v ≈ w → Src.inr v ≈ Tgt.inr w
+  dyn≈ : ∀ {G v w} → v ≈ w → Src.dyn G v ≈ Tgt.dyn G w
 
-{- the renaming r takes each variable of ρ₁ to a related one of ρ₂ (and an
-   unbound one to an unbound one) -}
-open import proof.Framework.Syntax.EnvRel C4.Op C4.sig using (module Rel)
-open Rel _≈_ public
+EnvRel : ∀ {Γ Δ} → Ren Γ Δ → Src.Env Γ → Tgt.Env Δ → Set
+EnvRel r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ Src.! x ≈ ρ₂ Tgt.! r x
 
-{- the target code of M, under the renaming r -}
-Del : (ℕ → ℕ) → AST → C4.AST → Set
-Del r M M' = M' ≡ rename r (delay M)
+data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
+  halt : Src.halt ≈k Tgt.halt
+  appL : ∀ {Γ Δ} {r : Ren Γ Δ} {M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (delay r M) ρ₂ κ₂
+  appR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.appR v κ₁ ≈k Tgt.callR w κ₂
+  tupK : ∀ {Γ Δ} {r : Ren Γ Δ} {n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {e : _ ≡ n} {e' κ₁ κ₂}
+    → L.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tupK vs Ms ρ₁ e κ₁ ≈k Tgt.tupK ws (delays r Ms) ρ₂ e' κ₂
+  closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {n} N κ₁ ≈k Tgt.packR (Tgt.code (delay (λ x → x) N)) κ₂
+  getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
+  inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK κ₁ ≈k Tgt.inlK κ₂
+  inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK κ₁ ≈k Tgt.inrK κ₂
+  caseK : ∀ {Γ Δ} {r : Ren Γ Δ} {M N} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (delay (ext r) M) (delay (ext r) N) ρ₂ κ₂
+  primL : ∀ {Γ Δ} {r : Ren Γ Δ} {p M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (delay r M) ρ₂ κ₂
+  primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
+  letK : ∀ {Γ Δ} {r : Ren Γ Δ} {N} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (delay (ext r) N) ρ₂ κ₂
+  injK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.injK G κ₁ ≈k Tgt.injK G κ₂
+  projK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.projK G κ₁ ≈k Tgt.projK G κ₂
 
-{- what follows the let-bound closure: app (fst x) (snd x) (shift M') -}
-snd0 : C4.AST
-snd0 = C4.snd-op C4.⦅ C4.` 0 ,, Nil ⦆
+data _~_ : Src.State → Tgt.State → Set where
+  eval~ : ∀ {Γ Δ A} {r : Ren Γ Δ} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.eval M ρ₁ κ₁ ~ Tgt.eval (delay r M) ρ₂ κ₂
+  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
-app-body : AST → C4.AST
-app-body M = C4.app C4.⦅ C4.fst-op C4.⦅ C4.` 0 ,, Nil ⦆ ,, snd0 ,, shift (delay M) ,, Nil ⦆
-
-data _≈k_ : S.Cont → T.Cont → Set where
-  halt : S.halt ≈k T.halt
-  appL : ∀ {r M ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → S.appL M ρ₁ κ₁ ≈k T.letK (rename (ext r) (app-body M)) ρ₂ κ₂
-  appR : ∀ {N v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
-    → S.appR (S.clos N v) κ₁ ≈k T.appA (T.fun (delay N)) w κ₂
-  tupK : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws → Pointwise (Del r) Ms Ms'
-    → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂ → S.tupK vs Ms ρ₁ κ₁ ≈k T.tupK ws Ms' ρ₂ κ₂
-  closK : ∀ {N κ₁ κ₂} → κ₁ ≈k κ₂ → S.closK N κ₁ ≈k T.pairR (T.fun (delay N)) κ₂
-  getK : ∀ {n} {i : Fin n} {κ₁ κ₂} → κ₁ ≈k κ₂ → S.getK i κ₁ ≈k T.getK i κ₂
-  inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inlK κ₁ ≈k T.inlK κ₂
-  inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inrK κ₁ ≈k T.inrK κ₂
-  caseK : ∀ {r M N ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → S.caseK M N ρ₁ κ₁ ≈k T.caseK (rename (ext r) (delay M)) (rename (ext r) (delay N)) ρ₂ κ₂
-  primL : ∀ {p r M ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → S.primL p M ρ₁ κ₁ ≈k T.primL p (rename r (delay M)) ρ₂ κ₂
-  primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
-  letK : ∀ {r N ρ₁ ρ₂ κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → S.letK N ρ₁ κ₁ ≈k T.letK (rename (ext r) (delay N)) ρ₂ κ₂
-
-{- the target state related to returning w to κ₁: for appL, the target has
-   already run the let body up to taking the first component of w -}
-retT : ∀ {κ₁ κ₂} → T.Val → κ₁ ≈k κ₂ → T.State
-retT w (appL {r} {M} {ρ₂ = ρ₂} {κ₂ = κ₂} _ _) =
-  T.ret w (T.fstK (T.appF snd0 (rename (ext r) (shift (delay M))) (w ∷ ρ₂) κ₂))
-retT {κ₂ = κ₂} w _ = T.ret w κ₂
-
-data _~_ : S.State → T.State → Set where
-  eval~ : ∀ {r M M' ρ₁ ρ₂ κ₁ κ₂} → Del r M M' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → S.eval M ρ₁ κ₁ ~ T.eval M' ρ₂ κ₂
-  ret~ : ∀ {v w κ₁ κ₂} (k : κ₁ ≈k κ₂) → v ≈ w → S.ret v κ₁ ~ retT w k
-
-{- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
+{- Related values are observed alike, and primitives give related values -}
+obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
+obs≈* : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.obs-vec vs ≡ Tgt.obs-vec ws
 obs≈ (clos≈ _) = refl
 obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
+obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
 obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+obs≈ (dyn≈ r) = obs≈ r
+obs≈* [] = refl
+obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 
-{- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
-... | nothing = M.nothing
-... | just (int n) = M.just const≈
-... | just (bool true) = M.just (inl≈ (tup≈ []))
-... | just (bool false) = M.just (inr≈ (tup≈ []))
+δ≈ : ∀ p n m → Src.δᵀ p n m ≈ Tgt.δᵀ p n m
+δ≈ sub n m = const≈
+δ≈ eq n m with does (n ≟ m)
+... | true = inl≈ (dyn≈ (tup≈ []))
+... | false = inr≈ (dyn≈ (tup≈ []))
 
-{- Related environments ------------------------------------------------------}
+env-ext : ∀ {Γ Δ B} {r : Ren Γ Δ} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {v : Src.Val B} {w} → v ≈ w → EnvRel r ρ₁ ρ₂
+  → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext r er Z = r
+env-ext r er (S x) = er x
 
-{- the environment of a function body: the argument, then the closure's tuple -}
-env-body : ∀ {v w u e} → v ≈ w → u ≈ e → EnvRel (λ x → x) (v ∷ u ∷ []) (w ∷ e ∷ [])
-env-body r r' = env λ { zero → M.just r ; (suc zero) → M.just r' ; (suc (suc x)) → M.nothing }
+{- the only error: both machines project, and fail, at the same time -}
+proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+  → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
+proj~ {H} {G} r k with H ≟F flat G
+... | yes refl = same-next (ret~ r k)
+... | no _ = same-stop
 
-del-args : ∀ {n} r (as : Args (replicate n ■))
-  → Pointwise (Del r) (args→list as) (args→list (rename-args r (del-map-args as)))
-del-args {zero} r Nil = []
-del-args {suc n} r (M ,, as) = refl ∷ del-args r as
+{- The simulation, for any Clos4ᵀ program P ------------------------------------}
 
-{- The simulation, for any Clos4 program P -------------------------------------}
+module _ (P : C4.Tm [] Any) where
 
-module _ (P : C4.AST) where
+  L₂ = Tgt.sem P
 
-  L₂ = T.sem P
+  tuple-next~ : ∀ {Γ Δ} {r : Ren Γ Δ} {n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {e : _ ≡ n} {e' κ₁ κ₂}
+    → L.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tuple-next vs Ms ρ₁ e κ₁ ~ Tgt.tuple-next ws (delays r Ms) ρ₂ e' κ₂
+  tuple-next~ {Ms = []} {e = e} {e'} rs er k = ret~ (tup≈ (collected≈ rs e e')) k
+  tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  {- the administrative steps of the let body, before checking for a pair -}
-  ret-reach : ∀ {w κ₁ κ₂} (k : κ₁ ≈k κ₂) → Star L₂ (T.ret w κ₂) (retT w k)
-  ret-reach halt = ε
-  ret-reach (appL _ _) = refl ◅ refl ◅ refl ◅ refl ◅ ε
-  ret-reach (appR _ _) = ε
-  ret-reach (tupK _ _ _ _) = ε
-  ret-reach (closK _) = ε
-  ret-reach (getK _) = ε
-  ret-reach (inlK _) = ε
-  ret-reach (inrK _) = ε
-  ret-reach (caseK _ _) = ε
-  ret-reach (primL _ _) = ε
-  ret-reach (primR _ _) = ε
-  ret-reach (letK _ _) = ε
+  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (er x) k)
+  sim (eval~ {M = clos N Ms} er k) = steps (plus refl (refl ◅ refl ◅ refl ◅ ε)) (tuple-next~ L.[] er (closK k))
+  sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
+  sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
+  sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ L.[] er k)
+  sim (eval~ {M = get i M} er k) = steps₁ refl (eval~ er (getK k))
+  sim (eval~ {M = inl M} er k) = steps₁ refl (eval~ er (inlK k))
+  sim (eval~ {M = inr M} er k) = steps₁ refl (eval~ er (inrK k))
+  sim (eval~ {M = case L M N} er k) = steps₁ refl (eval~ er (caseK er k))
+  sim (eval~ {M = prim p L M} er k) = steps₁ refl (eval~ er (primL er k))
+  sim (eval~ {M = let′ M N} er k) = steps₁ refl (eval~ er (letK er k))
+  sim (eval~ {M = inject G M} er k) = steps₁ refl (eval~ er (injK k))
+  sim (eval~ {M = project G M} er k) = steps₁ refl (eval~ er (projK k))
+  sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
+  sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
+  sim (ret~ r (appR (clos≈ rs) k)) = steps₁ refl (eval~ (λ { Z → r ; (S Z) → tup≈ rs }) k)
+  sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r L.∷ rs) er k)
+  sim (ret~ (tup≈ rs) (closK k)) = steps₁ refl (ret~ (clos≈ rs) k)
+  sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (V.lookup rs i) k)
+  sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)
+  sim (ret~ r (inrK k)) = steps₁ refl (ret~ (inr≈ r) k)
+  sim (ret~ (inl≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
+  sim (ret~ (inr≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
+  sim (ret~ const≈ (primL er k)) = steps₁ refl (eval~ er (primR k))
+  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n m) k)
+  sim (ret~ r (letK er k)) = steps₁ refl (eval~ (env-ext r er) k)
+  sim (ret~ r (injK k)) = steps₁ refl (ret~ (dyn≈ r) k)
+  sim (ret~ (dyn≈ r) (projK k)) = lock (proj~ r k)
 
-  {- returning a value: the target runs on to retT (ret-reach) -}
-  ret~' : ∀ {v w κ₁ κ₂} → v ≈ w → (k : κ₁ ≈k κ₂) → Reach L₂ _~_ (S.ret v κ₁) (T.ret w κ₂)
-  ret~' r k = _ , ret-reach k , ret~ k r
+{- The end theorem: for every Clos3ᵀ program -----------------------------------}
 
-  tuple-next~ : ∀ {r vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → Pointwise (Del r) Ms Ms' → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Reach L₂ _~_ (S.tuple-next vs Ms ρ₁ κ₁) (T.tuple-next ws Ms' ρ₂ κ₂)
-  tuple-next~ rs [] ρ k = ret~' (tup≈ (reverse⁺ rs)) k
-  tuple-next~ rs (d ∷ ds) ρ k = _ , ε , eval~ d ρ (tupK rs ds ρ k)
-
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} refl ρ k) = next?-reach (look ρ x) (λ r → ret~' r k) refl
-  sim (eval~ {r} {M = clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆} refl ρ k)
-    with tuple-next~ [] (del-args r fvs) ρ (closK {N} k)
-  ... | s₂ , σ , m = after refl (s₂ , refl ◅ refl ◅ refl ◅ σ , m)
-  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (appL ρ k))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} refl ρ κ) = after refl (ret~' const≈ κ)
-  sim (eval~ {r} {M = tuple n ⦅ as ⦆} refl ρ k) = after refl (tuple-next~ [] (del-args r as) ρ k)
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (getK k))
-  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (inlK k))
-  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (inrK k))
-  sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} refl ρ k) =
-    steps₁ refl (eval~ refl ρ (caseK ρ k))
-  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (primL ρ k))
-  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} refl ρ k) = steps₁ refl (eval~ refl ρ (letK ρ k))
-  sim (ret~ halt r) = stops (cong stop (sym (obs≈ r)))
-  {- calling a closure: fst, then snd, then evaluate the operand -}
-  sim (ret~ (appL {r} {M} ρ k) (clos≈ r')) =
-    steps (plus refl (refl ◅ refl ◅ refl ◅ refl ◅ refl ◅ ε))
-          (eval~ (rename-fuse (ext r) suc (delay M)) (env-skip ρ) (appR r' k))
-  sim (ret~ (appL ρ k) const≈) = stops refl
-  sim (ret~ (appL ρ k) (tup≈ _)) = stops refl
-  sim (ret~ (appL ρ k) (inl≈ _)) = stops refl
-  sim (ret~ (appL ρ k) (inr≈ _)) = stops refl
-  sim (ret~ (appR {N} r' k) r) =
-    steps₁ refl (eval~ (sym (rename-id (delay N))) (env-body r r') k)
-  sim (ret~ (tupK rs ds ρ k) r) = after refl (tuple-next~ (r ∷ rs) ds ρ k)
-  sim (ret~ (closK k) r) = after refl (ret~' (clos≈ r) k)
-  sim (ret~ (getK {i = i} k) (tup≈ rs)) = next?-reach (proj-pw i rs) (λ r → ret~' r k) refl
-  sim (ret~ (getK k) (clos≈ _)) = stops refl
-  sim (ret~ (getK k) const≈) = stops refl
-  sim (ret~ (getK k) (inl≈ _)) = stops refl
-  sim (ret~ (getK k) (inr≈ _)) = stops refl
-  sim (ret~ (inlK k) r) = after refl (ret~' (inl≈ r) k)
-  sim (ret~ (inrK k) r) = after refl (ret~' (inr≈ r) k)
-  sim (ret~ (caseK ρ k) (inl≈ r)) = steps₁ refl (eval~ refl (env-ext r ρ) k)
-  sim (ret~ (caseK ρ k) (inr≈ r)) = steps₁ refl (eval~ refl (env-ext r ρ) k)
-  sim (ret~ (caseK ρ k) (clos≈ _)) = stops refl
-  sim (ret~ (caseK ρ k) const≈) = stops refl
-  sim (ret~ (caseK ρ k) (tup≈ _)) = stops refl
-  sim (ret~ (primL ρ k) r) = steps₁ refl (eval~ refl ρ (primR r k))
-  sim (ret~ (primR {p} r k) s) = next?-reach (prim≈ p r s) (λ r → ret~' r k) refl
-  sim (ret~ (letK ρ k) r) = steps₁ refl (eval~ refl (env-ext r ρ) k)
-
-{- The end theorem: for every Clos3 program -----------------------------------}
-
-delay-fsim : ∀ M → FSim (S.sem M) (T.sem (delay M))
-delay-fsim M =
-  plus-simulation _~_
-    (eval~ (sym (rename-id (delay M))) (env (λ x → M.nothing)) halt)
-    (sim (delay M))
-
-delay-correct : ∀ M → Equivalent (S.sem M) (T.sem (delay M))
-delay-correct M = equivalent (delay-fsim M)
+delay-correct : ∀ (M : Tm [] Any) → Equivalent (Src.sem M) (Tgt.sem (delay-program M))
+delay-correct M = equivalent (plus-simulation _~_ (eval~ (λ ()) halt) (sim (delay-program M)))

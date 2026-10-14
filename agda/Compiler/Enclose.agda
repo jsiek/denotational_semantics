@@ -1,56 +1,38 @@
-open import Data.Nat using (ℕ; zero; suc; _∸_)
-open import Data.List using (List; replicate)
+{-
 
-open import Framework.Syntax.SyntaxUtil
-open import Framework.Syntax.SigUtil
+  Typed enclose (ISWIMᵀ → Clos2ᵀ): each function becomes a closure that
+  captures every variable of its context, in order, so its body is
+  unchanged: variable suc x of the closure's code is the free variable
+  x. (The untyped pass captures the shortest prefix of the context that
+  covers the body's variables; pruning is optimize's job.)
+
+-}
 
 module Compiler.Enclose where
-  {-
-   The enclose pass (ISWIM → Clos2): each function becomes a closure whose
-   body is closed off (∁) and bound under its free variables, so it can no
-   longer see the surrounding environment.
 
-   The free variables are the first m surrounding variables,
-   ` (m - 1) , ... , ` 0, where m is the least number that covers every
-   surrounding variable the body uses. The body itself is unchanged: the
-   free variable bound last is variable 1 of the body, which was variable 0
-   of the surrounding environment, and so on.
-  -}
-  open import Language.ISWIM as Source
-  open import Language.Clos2 as Target
-    renaming (clear to clear'; bind to bind'; ast to ast';
-              AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
-              _⦅_⦆ to _⦅_⦆')
-  open import Compiler.Optimize using (bind-n-ast)
+open import Language.Typed.Type
+open import Language.Typed.ISWIM
+import Language.Typed.Clos2 as T
 
-  {- one more than the largest variable a term uses, or 0 if it uses none -}
-  open import Framework.Syntax.Uses Source.Op Source.sig using (bound; bound-arg; bound-args)
+open import Data.Nat using (ℕ)
+open import Data.Vec using (Vec; []; _∷_; tabulate)
 
-  {- the free variables of a closure: ` (n - 1) , ... , ` 0 -}
-  fv-vars : ∀ n → Args' (replicate n ■)
-  fv-vars zero = Nil
-  fv-vars (suc n) = (# n) ,, fv-vars n
+enclose : ∀ {k A} → Tm k A → T.Tm k A
+encs : ∀ {k n} → Vec (Tm k Any) n → Vec (T.Tm k Any) n
 
-  enclose : AST → AST'
-  enc-args : ∀ {n} → Args (replicate n ■) → Args' (replicate n ■)
+enclose (` x) = T.` x
+enclose {k} (lam N) = T.clos (enclose N) (tabulate T.`_)
+enclose (app L M) = T.app (enclose L) (enclose M)
+enclose (lit B c) = T.lit B c
+enclose (tuple Ms) = T.tuple (encs Ms)
+enclose (get i M) = T.get i (enclose M)
+enclose (inl M) = T.inl (enclose M)
+enclose (inr M) = T.inr (enclose M)
+enclose (case L M N) = T.case (enclose L) (enclose M) (enclose N)
+enclose (prim p L M) = T.prim p (enclose L) (enclose M)
+enclose (let′ M N) = T.let′ (enclose M) (enclose N)
+enclose (inject G M) = T.inject G (enclose M)
+enclose (project t M) = T.project t (enclose M)
 
-  enclose (` x) = # x
-  enclose (lam ⦅ ⟩ N ,, Nil ⦆) =
-    clos-op m ⦅ ! clear' (bind-n-ast m (enclose N)) ,, fv-vars m ⦆'
-    where
-    {- the body's variable 0 is the argument, so the surrounding variable k
-       is the body's variable suc k -}
-    m = bound N ∸ 1
-  enclose (app ⦅ L ,, M ,, Nil ⦆) = app ⦅ enclose L ,, enclose M ,, Nil ⦆'
-  enclose (lit B k ⦅ Nil ⦆) = lit B k ⦅ Nil ⦆'
-  enclose (tuple n ⦅ args ⦆) = tuple n ⦅ enc-args args ⦆'
-  enclose (get i ⦅ M ,, Nil ⦆) = get i ⦅ enclose M ,, Nil ⦆'
-  enclose (inl-op ⦅ M ,, Nil ⦆) = inl-op ⦅ enclose M ,, Nil ⦆'
-  enclose (inr-op ⦅ M ,, Nil ⦆) = inr-op ⦅ enclose M ,, Nil ⦆'
-  enclose (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
-    case-op ⦅ enclose L ,, ⟩ enclose M ,, ⟩ enclose N ,, Nil ⦆'
-  enclose (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ enclose L ,, enclose M ,, Nil ⦆'
-  enclose (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ enclose M ,, ⟩ enclose N ,, Nil ⦆'
-
-  enc-args {zero} Nil = Nil
-  enc-args {suc n} (M ,, args) = enclose M ,, enc-args args
+encs [] = []
+encs (M ∷ Ms) = enclose M ∷ encs Ms

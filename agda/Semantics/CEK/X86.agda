@@ -2,7 +2,7 @@
 
   An abstract machine for X86 (Language/X86.agda), one instruction (or
   jump) per step. Values are those of the Clos5 machine, and frames are
-  lists of slots as in Imp (Semantics/CEK/Imp.agda). A state
+  lists of slots (Semantics/CEK/Values.agda). A state
     run is j bs σ f φ ρ
   runs the instructions is and then the jump j, with the blocks bs that
   j may jump to (as in CFG: those older than the current block, or all
@@ -33,12 +33,13 @@ module Semantics.CEK.X86 where
 
 open import Framework.Primitives using (Int)
 open import Language.X86
+open import Language.X86 using (block-at) public
 open import Language.Prim using (sub; eq; Out; bool)
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 open import Semantics.CEK.Values
+open import Semantics.CEK.Values using (Frame; _[_]≔_; zeros) public
   using (Val; code; pair; const; tup; inl; inr; obs; out; prim?) public
-open import Semantics.CEK.Imp using (Frame; _[_]≔_; zeros) public
 open import Framework.ListUtil using (_‼_; proj)
 
 open import Data.Bool using (Bool; true; false)
@@ -131,13 +132,6 @@ test nothing k = stop o-error
 {- definition k, counting from the oldest -}
 global : List Body → ℕ → Maybe Body
 global ds k = reverse ds ‼ k
-
-{- block l among bs (newest first), with the blocks older than it -}
-block-at : List Block → ℕ → Maybe (Block × List Block)
-block-at [] l = nothing
-block-at (b ∷ bs) l with l ≟ length bs
-... | yes _ = just (b , bs)
-... | no _ = block-at bs l
 
 goto : Maybe (Block × List Block) → Stack → Maybe Bool → Frame → Regs → Next State
 goto (just (b , bs)) σ f φ ρ = next (run (Block.instrs b) (Block.jump b) bs σ f φ ρ)

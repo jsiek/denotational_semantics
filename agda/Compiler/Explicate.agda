@@ -1,66 +1,65 @@
-module Compiler.Explicate where
 {-
 
- The explicate-control pass (Imp → CFG), after Essentials of
- Compilation: the nested assignments and cases of an Imp body become a
- control-flow graph of blocks.
+  Typed explicate control (Impᵀ → CFGᵀ), after Essentials of Compilation,
+  as the untyped pass (Untyped/Compiler/Explicate.agda): explicate-tail e
+  translates e in tail position; explicate-assign e p k translates
+  "slot k := e, then the tail k" in continuation-passing style, so a
+  case becomes a case whose branches assign the slot and jump to a new
+  block for k, the join point.
 
- explicate-tail e translates e in tail position, where its value is the
- body's result; explicate-assign e x k translates x := e followed by
- the tail k, in continuation-passing style (Danvy): a nested assignment
- y := e₁; e₂ becomes y := e₁ followed by x := e₂ followed by k, and a
- case becomes a case whose branches assign x and jump to a new block for
- k, the join point, so that k is not duplicated. The branches of a case
- also become blocks.
-
- Both thread the list of blocks made so far (newest first); a new block
- gets the next label, its length. A tail made at a point refers only to
- the blocks made before it, so every block jumps only to older ones, as
- CFG requires.
+  Both thread the blocks made so far (newest first, each typed over the
+  older ones); a new block's label is the newest index, and a label made
+  earlier is weakened (⊑) as more blocks are added.
 
 -}
 
-open import Language.Imp as Imp using (Exp; simple; case; assign)
-open import Language.CFG
+module Compiler.Explicate where
 
-open import Data.List using (List; []; _∷_; length; map)
+open import Language.Typed.Type
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+import Language.Typed.Imp as I
+open import Language.Typed.CFG
+
+open import Data.List using (List; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 open import Data.Nat using (ℕ)
-open import Data.Product using (_×_; _,_)
 
-{- add the block t, and its label -}
-add : Tail → List Tail → ℕ × List Tail
-add t bs = length bs , t ∷ bs
+{- a tail over the blocks made so far, and more blocks -}
+record Out (Σ : List ℕ) (Bs : List Ctx) (Δ : Ctx) : Set where
+  constructor out
+  field
+    {Bs'} : List Ctx
+    grows : Bs ⊑ Bs'
+    made : Blocks Σ Bs'
+    tail : Tail Σ Bs' Δ
 
-explicate-assign : Exp → ℕ → Tail → List Tail → Tail × List Tail
-explicate-assign (simple s) x k bs = seq x s k , bs
-explicate-assign (assign y e₁ e₂) x k bs =
-  let (t , bs₁) = explicate-assign e₂ x k bs in
-  explicate-assign e₁ y t bs₁
-explicate-assign (case a y e₁ e₂) x k bs =
-  let (l , bs₁) = add k bs
-      (t₁ , bs₂) = explicate-assign e₁ x (goto l) bs₁
-      (l₁ , bs₃) = add t₁ bs₂
-      (t₂ , bs₄) = explicate-assign e₂ x (goto l) bs₃
-      (l₂ , bs₅) = add t₂ bs₄ in
-  case a y l₁ l₂ , bs₅
+after : ∀ {Σ Bs Bs₁ Δ} → Bs ⊑ Bs₁ → Out Σ Bs₁ Δ → Out Σ Bs Δ
+after g (out g' bs t) = out (⊑-trans g g') bs t
 
-explicate-tail : Exp → List Tail → Tail × List Tail
-explicate-tail (simple s) bs = return s , bs
-explicate-tail (assign x e₁ e₂) bs =
-  let (t , bs₁) = explicate-tail e₂ bs in
-  explicate-assign e₁ x t bs₁
-explicate-tail (case a x e₁ e₂) bs =
-  let (t₁ , bs₁) = explicate-tail e₁ bs
-      (l₁ , bs₂) = add t₁ bs₁
-      (t₂ , bs₃) = explicate-tail e₂ bs₂
-      (l₂ , bs₄) = add t₂ bs₃ in
-  case a x l₁ l₂ , bs₄
+explicate-assign : ∀ {Σ Bs Δ Δ' A} → I.Exp Σ Δ A → Δ' ⊑ Δ → Tail Σ Bs (A ∷ Δ') → Blocks Σ Bs
+  → Out Σ Bs Δ
+explicate-assign (I.simple s) p k bs = out here⊑ bs (seq p s k)
+explicate-assign (I.assign e₁ e₂) p k bs with explicate-assign e₂ (there⊑ p) k bs
+... | out g bs₁ t = after g (explicate-assign e₁ here⊑ t bs₁)
+explicate-assign (I.case a e₁ e₂) p k bs with explicate-assign e₁ (there⊑ p) (goto Z) (bs ▷ k)
+... | out g₁ bs₁ t₁ with explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁)
+...   | out g₂ bs₂ t₂ =
+  out (there⊑ (⊑-trans (there⊑ (⊑-trans (there⊑ here⊑) g₁)) g₂)) (bs₂ ▷ t₂)
+      (case a here⊑ (⊑-∋ (there⊑ g₂) Z) Z)
 
-explicate-body : Imp.Body → Body
-explicate-body (Imp.body n e) =
-  let (t , bs) = explicate-tail e [] in
-  body n bs t
+explicate-tail : ∀ {Σ Bs Δ} → I.Exp Σ Δ Any → Blocks Σ Bs → Out Σ Bs Δ
+explicate-tail (I.simple s) bs = out here⊑ bs (return s)
+explicate-tail (I.assign e₁ e₂) bs with explicate-tail e₂ bs
+... | out g bs₁ t = after g (explicate-assign e₁ here⊑ t bs₁)
+explicate-tail (I.case a e₁ e₂) bs with explicate-tail e₁ bs
+... | out g₁ bs₁ t₁ with explicate-tail e₂ (bs₁ ▷ t₁)
+...   | out g₂ bs₂ t₂ =
+  out (there⊑ (⊑-trans (there⊑ g₁) g₂)) (bs₂ ▷ t₂) (case a here⊑ (⊑-∋ (there⊑ g₂) Z) Z)
+
+explicate-body : ∀ {Σ Δ} → I.Exp Σ Δ Any → Body Σ Δ
+explicate-body e with explicate-tail e []
+... | out _ bs t = body bs t
 
 {- the pass, for a whole program -}
-explicate : Imp.Program → Program
-explicate (Imp.program ds b) = program (map explicate-body ds) (explicate-body b)
+explicate : I.Program → Program
+explicate (I.program ds e) = program (All-map explicate-body ds) (explicate-body e)

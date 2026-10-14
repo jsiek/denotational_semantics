@@ -1,248 +1,198 @@
 {-
 
-  Correctness of the globalize pass (Clos4 → Clos5).
+  Correctness of typed globalize (Clos4ᵀ → Clos5ᵀ) in the graph model
+  (Semantics/Graph/Typed/{Clos4,Clos5}.agda): the pass preserves
+  denotations exactly.
 
-  Clos4 and Clos5 use the same values: globalize only moves the code of
-  each function into a table of global definitions. So the pass preserves
-  denotations exactly, which gives both the forward and the backward
-  direction. The proof has three parts:
-
-  - glob-shape: the definitions only grow, and the result refers only to
-    definitions that exist when it is made (RB);
-  - stab: the meaning of a term does not change when the table grows, as
-    long as it refers only to the older definitions, because their
-    entries in the table do not change (table-ext);
-  - glob-sem: ⟦ M ⟧ ρ ≃ ⟦ M' ⟧[ table ds' ] ρ' when ρ and ρ' agree.
+  The definitions made so far (Made, each over the older ones) have
+  their own table (made). Then:
+  * wk-sem: weakening a term to a bigger table changes nothing when the
+    bigger table agrees on the references it is weakened along;
+  * glob-ok: what glob makes means what the source means, with the table
+    of the definitions it made, which extends the table it was given
+    (Ext);
+  * table-close: the table of a program, each definition weakened to the
+    whole table (close), agrees with made, by the levels of the
+    references.
 
 -}
 
-open import Framework.Syntax.SigUtil
+module proof.Correctness.Graph.GlobalizeCorrect where
+
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Ops
-open import proof.Semantics.Graph.Prim
-open import Language.Clos4
-import Language.Clos5 as L5
-open import proof.Semantics.Graph.Clos4Iswim
-open import Semantics.Graph.Clos5Iswim
-  using (Table; ⟦_⟧[_]; ⟦_⟧ₐ[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ) renaming (init to init₅)
+open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
+open import proof.Framework.GraphModel.ContinuityBase using (mono)
+open import proof.Semantics.Graph.Prim using (primD-≃)
+open import proof.Semantics.Graph.Typed.Ops
+open import Semantics.Graph.Typed.Clos5
+open import proof.Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
+open import Language.Typed.Type hiding (_≟_)
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+import Language.Typed.Clos4 as S
+open import Language.Typed.Clos5
 open import Compiler.Globalize
-open import proof.Correctness.Graph.DelayFiniteCommon using (Env; ρ₀)
-open import proof.Framework.GraphModel.Env using (•-~)
+open import proof.Framework.Lookup using (lvl-<; lvl-⊑; ⊑-∋-trans)
 
-
-open import Data.Nat using (ℕ; zero; suc; _<_; _≤_; _≟_)
-open import Data.Nat.Properties using (≤-refl; ≤-trans; <-≤-trans; <-irrefl; n<1+n; m≤n+m; n≤1+n)
-open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; _++_; length; replicate)
-open import Data.List.Properties using (length-++)
-open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Empty using (⊥-elim)
-open import Data.Unit using (⊤; tt)
+open import Data.Fin using (zero; suc)
+open import Data.List using (List; []; _∷_; length)
+open import Data.Nat using (ℕ; _≟_)
+open import Data.Nat.Properties using (<-irrefl)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Unit using (⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; refl; sym; trans; cong; subst)
+open import Data.Vec using (Vec; []; _∷_)
+open import Level using (lift)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (yes; no)
 
-module proof.Correctness.Graph.GlobalizeCorrect where
+pair-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → pair ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ pair ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+pair-≃ a b = mono-≃ pair-mono ⟨ lift a , ⟨ lift b , ptt ⟩ ⟩
 
-{- Environments and results that agree ----------------------------------------}
+callc-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → callcᵈ ⟨ D , ⟨ E , ptt ⟩ ⟩ ≃ callcᵈ ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+callc-≃ a b = mono-≃ (mono (callc-good {⊤})) ⟨ lift a , ⟨ lift b , ptt ⟩ ⟩
 
-EnvRel : Env → Env → Set
-EnvRel ρ ρ' = ∀ x → ρ x ≃ ρ' x
+{- Changing the table -----------------------------------------------------------------}
 
-{- References to older definitions ----------------------------------------------}
+module _ {Σ Σ'} (r : ∀ {n} → Σ ∋ n → Σ' ∋ n) {T : Table Σ'} {T' : Table Σ}
+         (h : ∀ {n} (f : Σ ∋ n) → T (r f) ≃ T' f) where
+  wk-sem : ∀ {Γ A} (M : Tm Σ Γ A) ρ → ⟦ wk r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
+  wks-sem : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) ρ i → nthD (⟦ wks r Ms ⟧s[ T ] ρ) i ≃ nthD (⟦ Ms ⟧s[ T' ] ρ) i
+  wk-sem (` x) ρ = ≃-refl
+  wk-sem (fun-ref f) ρ = h f
+  wk-sem (pack L M) ρ = pair-≃ (wk-sem L ρ) (wk-sem M ρ)
+  wk-sem (callc L M) ρ = callc-≃ (wk-sem L ρ) (wk-sem M ρ)
+  wk-sem (lit B c) ρ = ≃-refl
+  wk-sem (tuple Ms) ρ = 𝒯-≃ _ (wks-sem Ms ρ)
+  wk-sem (get i M) ρ = proj-≃ i (wk-sem M ρ)
+  wk-sem (inl M) ρ = inl-≃ (wk-sem M ρ)
+  wk-sem (inr M) ρ = inr-≃ (wk-sem M ρ)
+  wk-sem (case L M N) ρ = 𝒞-≃ {F = λ X → ⟦ wk r M ⟧[ T ] (X • ρ)} {λ X → ⟦ M ⟧[ T' ] (X • ρ)}
+    {λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} (wk-sem L ρ) (λ _ _ _ → wk-sem M _) (λ _ _ _ → wk-sem N _)
+  wk-sem (prim p L M) ρ = primD-≃ p (wk-sem L ρ) (wk-sem M ρ)
+  wk-sem (let′ M N) ρ = letD-≃ {F = λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} (wk-sem M ρ) (λ _ _ _ → wk-sem N _)
+  wk-sem (inject G M) ρ = wk-sem M ρ
+  wk-sem (project t M) ρ = project-≃ fun₄ t (wk-sem M ρ)
+  wks-sem (M ∷ Ms) ρ zero = wk-sem M ρ
+  wks-sem (M ∷ Ms) ρ (suc i) = wks-sem Ms ρ i
 
-RB : ℕ → L5.AST → Set
-RB-arg : ∀ {b} → ℕ → L5.Arg b → Set
-RB-args : ∀ {bs} → ℕ → L5.Args bs → Set
+{- The table of the definitions made so far ---------------------------------------------}
 
-RB n (L5.` x) = ⊤
-RB n (L5.fun-ref k L5.⦅ args ⦆) = k < n
-RB n (op L5.⦅ args ⦆) = RB-args n args
+made : ∀ {Σ} → Made Σ → Table Σ
+made (D ▷ N) Z = code′ (made D) N
+made (D ▷ N) (S f) = made D f
 
-RB-arg n (L5.ast M) = RB n M
-RB-arg n (L5.bind a) = RB-arg n a
-RB-arg n (L5.clear a) = RB-arg n a
+{- D' extends D along s -}
+record Ext {Σ Σ'} (s : Σ ⊑ Σ') (D : Made Σ) (D' : Made Σ') : Set₁ where
+  constructor ext
+  field at : ∀ {n} (f : Σ ∋ n) → made D' (⊑-∋ s f) ≡ made D f
+open Ext
 
-RB-args n L5.nil = ⊤
-RB-args n (L5.cons a args) = RB-arg n a × RB-args n args
+ext-trans : ∀ {Σ₀ Σ₁ Σ₂} {s₁ : Σ₀ ⊑ Σ₁} {s₂ : Σ₁ ⊑ Σ₂} {D₀ D₁ D₂}
+  → Ext s₁ D₀ D₁ → Ext s₂ D₁ D₂ → Ext (⊑-trans s₁ s₂) D₀ D₂
+ext-trans {s₁ = s₁} {s₂} {D₂ = D₂} e₁ e₂ = ext λ f →
+  trans (cong (made D₂) (⊑-∋-trans s₁ s₂ f)) (trans (at e₂ _) (at e₁ f))
 
-RB-mono : ∀ {n m} (M : L5.AST) → n ≤ m → RB n M → RB m M
-RB-arg-mono : ∀ {n m b} (a : L5.Arg b) → n ≤ m → RB-arg n a → RB-arg m a
-RB-args-mono : ∀ {n m bs} (args : L5.Args bs) → n ≤ m → RB-args n args → RB-args m args
+{- a term made before more definitions, weakened to them -}
+wk-made : ∀ {Σ Σ' Γ A} {s : Σ ⊑ Σ'} {D D'} → Ext s D D' → (M : Tm Σ Γ A) → ∀ ρ
+  → ⟦ wk (⊑-∋ s) M ⟧[ made D' ] ρ ≃ ⟦ M ⟧[ made D ] ρ
+wk-made e = wk-sem _ (λ f → ≃-reflexive (at e f))
 
-RB-mono (L5.` x) n≤m tt = tt
-RB-mono (L5.fun-ref k L5.⦅ args ⦆) n≤m k<n = <-≤-trans k<n n≤m
-RB-mono (L5.app L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.lit B k L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.pair-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.fst-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.snd-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.tuple x L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.get x L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.inl-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.inr-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.case-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.let-op L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
-RB-mono (L5.prim p L5.⦅ args ⦆) n≤m r = RB-args-mono args n≤m r
+{- What glob makes ----------------------------------------------------------------------}
 
-RB-arg-mono (L5.ast M) n≤m r = RB-mono M n≤m r
-RB-arg-mono (L5.bind a) n≤m r = RB-arg-mono a n≤m r
-RB-arg-mono (L5.clear a) n≤m r = RB-arg-mono a n≤m r
+OK : ∀ {Σ Γ A} → S.Tm Γ A → Made Σ → Out Σ (λ Σ' → Tm Σ' Γ A) → Set₁
+OK M D (out s D' M') = Ext s D D' × (∀ ρ → ⟦ M' ⟧[ made D' ] ρ ≃ ⟦ M ⟧₄ ρ)
 
-RB-args-mono L5.nil n≤m tt = tt
-RB-args-mono (L5.cons a args) n≤m ⟨ ra , rs ⟩ = ⟨ RB-arg-mono a n≤m ra , RB-args-mono args n≤m rs ⟩
+OKs : ∀ {Σ Γ n} → Vec (S.Tm Γ Any) n → Made Σ → Out Σ (λ Σ' → Vec (Tm Σ' Γ Any) n) → Set₁
+OKs Ms D (out s D' Ms') = Ext s D D' × (∀ ρ i → nthD (⟦ Ms' ⟧s[ made D' ] ρ) i ≃ nthD (⟦ Ms ⟧s₄ ρ) i)
 
-{- The table only grows ----------------------------------------------------------}
+{- a construct of one or two operands means the same when they do -}
+Cong₁ : ∀ {Γ Γ₁ A B} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) → S.Tm Γ₁ A → S.Tm Γ B → Set₁
+Cong₁ f M M₄ = ∀ {Σ'} {T : Table Σ'} {M'} → (∀ ρ → ⟦ M' ⟧[ T ] ρ ≃ ⟦ M ⟧₄ ρ) → ∀ ρ → ⟦ f M' ⟧[ T ] ρ ≃ ⟦ M₄ ⟧₄ ρ
 
-Extends : Defs → Defs → Set
-Extends ds ds' = Σ[ more ∈ Defs ] ds' ≡ more ++ ds
+Cong₂ : ∀ {Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) → S.Tm Γ₁ A → S.Tm Γ₂ B → S.Tm Γ C → Set₁
+Cong₂ f L M M₄ = ∀ {Σ'} {T : Table Σ'} {L' M'} → (∀ ρ → ⟦ L' ⟧[ T ] ρ ≃ ⟦ L ⟧₄ ρ) → (∀ ρ → ⟦ M' ⟧[ T ] ρ ≃ ⟦ M ⟧₄ ρ)
+  → ∀ ρ → ⟦ f L' M' ⟧[ T ] ρ ≃ ⟦ M₄ ⟧₄ ρ
 
-ext-trans : ∀ {ds₁ ds₂ ds₃} → Extends ds₁ ds₂ → Extends ds₂ ds₃ → Extends ds₁ ds₃
-ext-trans {ds₁} ⟨ m₁ , refl ⟩ ⟨ m₂ , refl ⟩ = ⟨ m₂ ++ m₁ , sym (Data.List.Properties.++-assoc m₂ m₁ ds₁) ⟩
+glob-ok : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → OK M D (glob M D)
+globs-ok : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → OKs Ms D (globs Ms D)
+glob₁-ok : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B} → Cong₁ f M M₄ → OK M₄ D (glob₁ f M D)
+glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ) {M₄ : S.Tm Γ C}
+  → Cong₂ f L M M₄ → OK M₄ D (glob₂ f L M D)
 
-ext-length : ∀ {ds ds'} → Extends ds ds' → length ds ≤ length ds'
-ext-length {ds} ⟨ more , refl ⟩ = subst (length ds ≤_) (sym (length-++ more)) (m≤n+m (length ds) (length more))
+glob-ok (S.` x) D = ⟨ ext (λ f → refl) , (λ ρ → ≃-refl) ⟩
+glob-ok (S.code N) D with glob N D | glob-ok N D
+... | out s D' N' | ⟨ e , h ⟩ = ⟨ ext (at e) , (λ ρ → ΛΛ-≃ λ X Y → h _) ⟩
+glob-ok (S.pack L M) D = glob₂-ok pack L M D {M₄ = S.pack L M} λ hL hM ρ → pair-≃ (hL ρ) (hM ρ)
+glob-ok (S.callc L M) D = glob₂-ok callc L M D {M₄ = S.callc L M} λ hL hM ρ → callc-≃ (hL ρ) (hM ρ)
+glob-ok (S.lit B c) D = ⟨ ext (λ f → refl) , (λ ρ → ≃-refl) ⟩
+glob-ok (S.tuple Ms) D with globs Ms D | globs-ok Ms D
+... | out s D' Ms' | ⟨ e , h ⟩ = ⟨ e , (λ ρ → 𝒯-≃ _ (h ρ)) ⟩
+glob-ok (S.get i M) D = glob₁-ok (get i) M D {M₄ = S.get i M} λ h ρ → proj-≃ i (h ρ)
+glob-ok (S.inl M) D = glob₁-ok inl M D {M₄ = S.inl M} λ h ρ → inl-≃ (h ρ)
+glob-ok (S.inr M) D = glob₁-ok inr M D {M₄ = S.inr M} λ h ρ → inr-≃ (h ρ)
+glob-ok (S.case L M N) D with glob L D | glob-ok L D
+... | out s₁ D₁ L' | ⟨ e₁ , h₁ ⟩ with glob M D₁ | glob-ok M D₁
+...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ with glob N D₂ | glob-ok N D₂
+...     | out s₃ D₃ N' | ⟨ e₃ , h₃ ⟩ =
+  ⟨ ext-trans e₁ (ext-trans e₂ e₃)
+  , (λ ρ → 𝒞-≃ {F = λ X → ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ] (X • ρ)} {λ X → ⟦ M ⟧₄ (X • ρ)}
+                {λ X → ⟦ N' ⟧[ made D₃ ] (X • ρ)} {λ X → ⟦ N ⟧₄ (X • ρ)} (≃-trans (wk-made (ext-trans e₂ e₃) L' ρ) (h₁ ρ))
+                (λ _ _ _ → ≃-trans (wk-made e₃ M' _) (h₂ _)) (λ _ _ _ → h₃ _)) ⟩
+glob-ok (S.prim p L M) D = glob₂-ok (prim p) L M D {M₄ = S.prim p L M} λ hL hM ρ → primD-≃ p (hL ρ) (hM ρ)
+glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N} λ {_} {T} {_} {N'} hL hM ρ →
+  letD-≃ {F = λ X → ⟦ N' ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧₄ (X • ρ)} (hL ρ) (λ _ _ _ → hM _)
+glob-ok (S.inject G M) D = glob₁-ok (inject G) M D {M₄ = S.inject G M} λ h → h
+glob-ok (S.project t M) D = glob₁-ok (project t) M D {M₄ = S.project t M} λ h ρ → project-≃ fun₄ t (h ρ)
 
-{- the entries for the older definitions do not change -}
-table-ext : ∀ (more ds : Defs) k → k < length ds → table (more ++ ds) k ≡ table ds k
-table-ext [] ds k k< = refl
-table-ext (N ∷ more) ds k k< with k ≟ length (more ++ ds)
-... | yes refl = ⊥-elim (<-irrefl refl (<-≤-trans k< (ext-length {ds} ⟨ more , refl ⟩)))
-... | no _ = table-ext more ds k k<
+globs-ok [] D = ⟨ ext (λ f → refl) , (λ ρ ()) ⟩
+globs-ok (M ∷ Ms) D with glob M D | glob-ok M D
+... | out s₁ D₁ M' | ⟨ e₁ , h₁ ⟩ with globs Ms D₁ | globs-ok Ms D₁
+...   | out s₂ D₂ Ms' | ⟨ e₂ , h₂ ⟩ =
+  ⟨ ext-trans e₁ e₂ , (λ { ρ zero → ≃-trans (wk-made e₂ M' ρ) (h₁ ρ) ; ρ (suc i) → h₂ ρ i }) ⟩
 
-table-top : ∀ (N : L5.AST) (Ns : Defs) → table (N ∷ Ns) (length Ns) ≡ code (table Ns) N
-table-top N Ns with length Ns ≟ length Ns
-... | yes _ = refl
-... | no neq = ⊥-elim (neq refl)
+glob₁-ok f M D c with glob M D | glob-ok M D
+... | out s D' M' | ⟨ e , h ⟩ = ⟨ e , c h ⟩
 
-Agree : ℕ → Table → Table → Set
-Agree n T T' = ∀ k → k < n → T k ≃ T' k
+glob₂-ok f L M D c with glob L D | glob-ok L D
+... | out s₁ D₁ L' | ⟨ e₁ , h₁ ⟩ with glob M D₁ | glob-ok M D₁
+...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ = ⟨ ext-trans e₁ e₂ , c (λ ρ → ≃-trans (wk-made e₂ L' ρ) (h₁ ρ)) h₂ ⟩
 
-agree-ext : ∀ {ds ds'} → Extends ds ds' → Agree (length ds) (table ds) (table ds')
-agree-ext {ds} ⟨ more , refl ⟩ k k< = ≃-reflexive (sym (table-ext more ds k k<))
+{- The table of the program ------------------------------------------------------------}
 
-{- Stability: growing the table does not change older meanings ------------------}
+table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {n} (f : Σ' ∋ n) → tables code′ (close D s) (⊑-∋ s f) ≃ made D f
+table-close {Σ} (_▷_ {Σ''} D N) s f with lvl (⊑-∋ s f) ≟ length Σ'' | lvl-⊑ s f
+table-close (D ▷ N) s Z | yes _ | _ =
+  ΛΛ-≃ λ X Y → wk-sem _ (table-close D (⊑-trans (there⊑ here⊑) s)) N _
+table-close (D ▷ N) s Z | no ne | eq = ⊥-elim (ne eq)
+table-close (D ▷ N) s (S f) | yes eq | eq' = ⊥-elim (<-irrefl (trans (sym eq') eq) (lvl-< f))
+table-close (D ▷ N) s (S f) | no _ | _ =
+  subst (λ g → tables code′ (close D s') g ≃ made D f) (⊑-∋-trans (there⊑ here⊑) s f) (table-close D s' f)
+  where s' = ⊑-trans (there⊑ here⊑) s
 
-stab : ∀ n T T' (M : L5.AST) ρ ρ' → Agree n T T' → RB n M → EnvRel ρ ρ'
-  → ⟦ M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ'
-stab-arg : ∀ n T T' {b} (a : L5.Arg b) ρ ρ' → Agree n T T' → RB-arg n a → EnvRel ρ ρ'
-  → RR b (⟦ a ⟧ₐ[ T ] ρ) (⟦ a ⟧ₐ[ T' ] ρ')
-stab-args : ∀ n T T' {bs} (args : L5.Args bs) ρ ρ' → Agree n T T' → RB-args n args
-  → EnvRel ρ ρ' → RRs bs (⟦ args ⟧₊[ T ] ρ) (⟦ args ⟧₊[ T' ] ρ')
+wk-id : ∀ {Σ Γ A} (M : Tm Σ Γ A) → wk (λ f → f) M ≡ M
+wks-id : ∀ {Σ Γ n} (Ms : Vec (Tm Σ Γ Any) n) → wks (λ f → f) Ms ≡ Ms
+wk-id (` x) = refl
+wk-id (fun-ref f) = refl
+wk-id (pack L M) = cong₂ pack (wk-id L) (wk-id M)
+wk-id (callc L M) = cong₂ callc (wk-id L) (wk-id M)
+wk-id (lit B c) = refl
+wk-id (tuple Ms) = cong tuple (wks-id Ms)
+wk-id (get i M) = cong (get i) (wk-id M)
+wk-id (inl M) = cong inl (wk-id M)
+wk-id (inr M) = cong inr (wk-id M)
+wk-id (case L M N) = cong₂ (λ L' (P : _ × _) → case L' (proj₁ P) (proj₂ P)) (wk-id L) (cong₂ ⟨_,_⟩ (wk-id M) (wk-id N))
+wk-id (prim p L M) = cong₂ (prim p) (wk-id L) (wk-id M)
+wk-id (let′ M N) = cong₂ let′ (wk-id M) (wk-id N)
+wk-id (inject G M) = cong (inject G) (wk-id M)
+wk-id (project t M) = cong (project t) (wk-id M)
+wks-id [] = refl
+wks-id (M ∷ Ms) = cong₂ _∷_ (wk-id M) (wks-id Ms)
 
-stab n T T' (L5.` x) ρ ρ' ag r rel = rel x
-stab n T T' (L5.fun-ref k L5.⦅ args ⦆) ρ ρ' ag k<n rel = ag k k<n
-stab n T T' (L5.app L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ ⋆₂-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.lit B k L5.⦅ args ⦆) ρ ρ' ag r rel = ≃-refl
-stab n T T' (L5.pair-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ pair-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.fst-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ car-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.snd-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ cdr-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.tuple x L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (𝒯-mono x) (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.get i L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (proj-mono i) (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.inl-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ inl-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.inr-op L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ inr-mono (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.case-op L5.⦅ args ⦆) ρ ρ' ag r rel = 𝒞-RR (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.let-op L5.⦅ args ⦆) ρ ρ' ag r rel = letD-RR (stab-args n T T' args ρ ρ' ag r rel)
-stab n T T' (L5.prim p L5.⦅ args ⦆) ρ ρ' ag r rel = mono-≃ (primD-mono p) (stab-args n T T' args ρ ρ' ag r rel)
+{- The pass preserves the meaning of a closed program -----------------------------------}
 
-stab-arg n T T' (L5.ast M) ρ ρ' ag r rel = lift (stab n T T' M ρ ρ' ag r rel)
-stab-arg n T T' (L5.bind a) ρ ρ' ag r rel =
-  λ X X' X≃ → stab-arg n T T' a (X • ρ) (X' • ρ') ag r (•-~ _≃_ rel X≃)
-stab-arg n T T' (L5.clear a) ρ ρ' ag r rel =
-  stab-arg n T T' a (λ _ → init₅) (λ _ → init₅) ag r (λ x → ≃-refl)
-
-stab-args n T T' L5.nil ρ ρ' ag tt rel = ptt
-stab-args n T T' (L5.cons a args) ρ ρ' ag ⟨ ra , rs ⟩ rel =
-  ⟨ stab-arg n T T' a ρ ρ' ag ra rel , stab-args n T T' args ρ ρ' ag rs rel ⟩
-
-{- The shape of the result ------------------------------------------------------}
-
-Shape : Defs → L5.AST × Defs → Set
-Shape ds r = Extends ds (proj₂ r) × RB (length (proj₂ r)) (proj₁ r)
-
-glob-shape : ∀ (M : AST) ds → Shape ds (glob M ds)
-glob-shape-arg : ∀ {b} (a : Arg b) ds
-  → Extends ds (proj₂ (glob-arg a ds)) × RB-arg (length (proj₂ (glob-arg a ds))) (proj₁ (glob-arg a ds))
-glob-shape-args : ∀ {bs} (args : Args bs) ds
-  → Extends ds (proj₂ (glob-args args ds))
-    × RB-args (length (proj₂ (glob-args args ds))) (proj₁ (glob-args args ds))
-
-glob-shape (` x) ds = ⟨ ⟨ [] , refl ⟩ , tt ⟩
-glob-shape (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds =
-  ⟨ ext-trans (proj₁ (glob-shape N ds)) ⟨ proj₁ (glob N ds) ∷ [] , refl ⟩
-  , n<1+n (length (proj₂ (glob N ds))) ⟩
-glob-shape (app ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (lit B k ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (pair-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (fst-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (snd-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (tuple n ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (get i ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (inl-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (inr-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (case-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (let-op ⦅ args ⦆) ds = glob-shape-args args ds
-glob-shape (prim p ⦅ args ⦆) ds = glob-shape-args args ds
-
-glob-shape-arg (ast M) ds = glob-shape M ds
-glob-shape-arg (bind a) ds = glob-shape-arg a ds
-glob-shape-arg (clear a) ds = glob-shape-arg a ds
-
-glob-shape-args nil ds = ⟨ ⟨ [] , refl ⟩ , tt ⟩
-glob-shape-args (cons a args) ds =
-  ⟨ ext-trans (proj₁ sa) (proj₁ ss)
-  , ⟨ RB-arg-mono (proj₁ (glob-arg a ds)) (ext-length (proj₁ ss)) (proj₂ sa) , proj₂ ss ⟩ ⟩
-  where
-  sa = glob-shape-arg a ds
-  ss = glob-shape-args args (proj₂ (glob-arg a ds))
-
-{- The main lemma -------------------------------------------------------------}
-
-glob-sem : ∀ (M : AST) ds ρ ρ' → EnvRel ρ ρ'
-  → ⟦ M ⟧ ρ ≃ ⟦ proj₁ (glob M ds) ⟧[ table (proj₂ (glob M ds)) ] ρ'
-glob-sem-arg : ∀ {b} (a : Arg b) ds ρ ρ' → EnvRel ρ ρ'
-  → RR b (⟦ a ⟧ₐ ρ) (⟦ proj₁ (glob-arg a ds) ⟧ₐ[ table (proj₂ (glob-arg a ds)) ] ρ')
-glob-sem-args : ∀ {bs} (args : Args bs) ds ρ ρ' → EnvRel ρ ρ'
-  → RRs bs (⟦ args ⟧₊ ρ) (⟦ proj₁ (glob-args args ds) ⟧₊[ table (proj₂ (glob-args args ds)) ] ρ')
-
-glob-sem (` x) ds ρ ρ' rel = rel x
-glob-sem (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds ρ ρ' rel
-  rewrite table-top (proj₁ (glob N ds)) (proj₂ (glob N ds)) =
-  ΛΛ-≃ (λ X Y → glob-sem N ds (Y • X • (λ _ → init₅)) (Y • X • (λ _ → init₅)) (λ x → ≃-refl))
-glob-sem (app ⦅ args ⦆) ds ρ ρ' rel = mono-≃ ⋆₂-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (lit B k ⦅ args ⦆) ds ρ ρ' rel = ≃-refl
-glob-sem (pair-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ pair-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (fst-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ car-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (snd-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ cdr-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (tuple n ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (𝒯-mono n) (glob-sem-args args ds ρ ρ' rel)
-glob-sem (get i ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (proj-mono i) (glob-sem-args args ds ρ ρ' rel)
-glob-sem (inl-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ inl-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (inr-op ⦅ args ⦆) ds ρ ρ' rel = mono-≃ inr-mono (glob-sem-args args ds ρ ρ' rel)
-glob-sem (case-op ⦅ args ⦆) ds ρ ρ' rel = 𝒞-RR (glob-sem-args args ds ρ ρ' rel)
-glob-sem (let-op ⦅ args ⦆) ds ρ ρ' rel = letD-RR (glob-sem-args args ds ρ ρ' rel)
-glob-sem (prim p ⦅ args ⦆) ds ρ ρ' rel = mono-≃ (primD-mono p) (glob-sem-args args ds ρ ρ' rel)
-
-glob-sem-arg (ast M) ds ρ ρ' rel = lift (glob-sem M ds ρ ρ' rel)
-glob-sem-arg (bind a) ds ρ ρ' rel =
-  λ X X' X≃ → glob-sem-arg a ds (X • ρ) (X' • ρ') (•-~ _≃_ rel X≃)
-glob-sem-arg (clear a) ds ρ ρ' rel = glob-sem-arg a ds (λ _ → init₅) (λ _ → init₅) (λ x → ≃-refl)
-
-glob-sem-args nil ds ρ ρ' rel = ptt
-glob-sem-args {b ∷ bs} (cons a args) ds ρ ρ' rel =
-  ⟨ rr-trans b _ _ _ (glob-sem-arg a ds ρ ρ' rel)
-      (stab-arg (length ds₁) (table ds₁) (table ds₂) a' ρ' ρ'
-         (agree-ext (proj₁ (glob-shape-args args ds₁))) (proj₂ (glob-shape-arg a ds)) (λ x → ≃-refl))
-  , glob-sem-args args ds₁ ρ ρ' rel ⟩
-  where
-  a' = proj₁ (glob-arg a ds)
-  ds₁ = proj₂ (glob-arg a ds)
-  ds₂ = proj₂ (glob-args args ds₁)
-
-{- The end theorem ------------------------------------------------------------}
-
-globalize-correct : ∀ (M : AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ globalize M ⟧ₚ
-globalize-correct M = glob-sem M [] ρ₀ ρ₀ (λ x → ≃-refl)
+globalize-correct : ∀ (M : S.Tm [] Any) → ⟦ M ⟧₄ (λ _ → init) ≃ ⟦ globalize M ⟧ₚ
+globalize-correct M with glob M [] | glob-ok M []
+... | out _ D M' | ⟨ _ , h ⟩ = ≃-sym (≃-trans (subst (λ N → ⟦ N ⟧[ table (close D here⊑) ] (λ _ → init) ≃ ⟦ M' ⟧[ made D ] (λ _ → init)) (wk-id M') (wk-sem (λ f → f) (table-close D here⊑) M' _)) (h _))

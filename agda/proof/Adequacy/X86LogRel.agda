@@ -4,7 +4,7 @@
   denotation of a well-formed program is witnessed by a run of the
   machine of its global definitions ds.
 
-  As for Clos5 (Adequacy/Clos5LogRel.agda), a logical relation 𝕍 d v
+  As for Clos5 (Untyped/proof/Adequacy/Clos5LogRel.agda), a logical relation 𝕍 d v
   (Values.agda) relates denotational values to machine values, and the
   code of a definition, Λ X. Λ Y. …, is related to code k when the
   machine runs definition k on values related to X and Y, on any stack,

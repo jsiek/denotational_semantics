@@ -1,10 +1,10 @@
 {-
 
-  The values of the Clos5 machine (Semantics/CEK/Clos5.agda), which the machines
-  of Imp, CFG and X86 share: code pointers, pairs, constants, tuples and
-  injections, their observations, and the primitives on them. As in
-  Clos4, code pointers and pairs (closures) are observed as functions
-  (o-fun).
+  The values of the X86 machine (Semantics/CEK/X86.agda), which the
+  machines of the preserved untyped Clos5, Imp and CFG (agda/Untyped/)
+  share: code pointers, pairs, constants, tuples and injections, their
+  observations, and the primitives on them, and frames of slots. Code
+  pointers and pairs (closures) are observed as functions (o-fun).
 
 -}
 
@@ -16,8 +16,10 @@ open import Semantics.Observation
 
 open import Data.List using (List; []; _∷_)
 open import Data.Bool using (true; false)
-open import Data.Maybe using (Maybe; map)
-open import Data.Nat using (ℕ)
+open import Data.Maybe using (Maybe; just; nothing; map)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Integer using (0ℤ)
+open import Data.List using (replicate)
 
 data Val : Set where
   code : ℕ → Val                        {- a reference to a global definition -}
@@ -47,3 +49,16 @@ out (bool false) = inr (tup [])
 {- a primitive on two values, if they are integers -}
 prim? : Prim → Val → Val → Maybe Val
 prim? p v w = map out (δ? p (obs v) (obs w))
+
+{- frames: lists of slots, as in Imp and X86 -}
+Frame : Set
+Frame = List Val
+
+{- the frame with slot x set to v, if x is in the frame -}
+_[_]≔_ : Frame → ℕ → Val → Maybe Frame
+[] [ x ]≔ v = nothing
+(u ∷ φ) [ zero ]≔ v = just (v ∷ φ)
+(u ∷ φ) [ suc x ]≔ v = map (u ∷_) (φ [ x ]≔ v)
+
+zeros : ℕ → Frame
+zeros n = replicate n (const Int 0ℤ)

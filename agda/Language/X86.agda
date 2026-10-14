@@ -5,7 +5,7 @@ module Language.X86 where
  (Compiler/Select.agda): x86 with variables, after Essentials of
  Compilation, over abstract values.
 
- A body is a control-flow graph of blocks, as in CFG (Language/CFG.agda),
+ A body is a control-flow graph of blocks, as in CFGᵀ (Language/Typed/CFG.agda),
  but a block is a sequence of instructions ending in a jump. The
  locations are the slots of the current frame (the variables) and the
  registers %rax, %rdi and %rsi; an operand is a location, an immediate,
@@ -56,8 +56,11 @@ module Language.X86 where
 open import Framework.Primitives using (Base; base-rep)
 
 open import Data.Fin using (Fin)
-open import Data.List using (List)
-open import Data.Nat using (ℕ)
+open import Data.List using (List; []; _∷_; length)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (ℕ; _≟_)
+open import Data.Product using (_×_; _,_)
+open import Relation.Nullary using (yes; no)
 
 data Reg : Set where
   rax rdi rsi : Reg
@@ -116,3 +119,10 @@ record Program : Set where
   field
     defs : List Body
     main : Body
+
+{- block l among bs (newest first), with the blocks older than it -}
+block-at : List Block → ℕ → Maybe (Block × List Block)
+block-at [] l = nothing
+block-at (b ∷ bs) l with l ≟ length bs
+... | yes _ = just (b , bs)
+... | no _ = block-at bs l

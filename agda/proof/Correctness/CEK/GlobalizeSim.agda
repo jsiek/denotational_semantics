@@ -1,235 +1,318 @@
 {-
 
-  Correctness of the globalize pass (Clos4 → Clos5) by a forward simulation
-  between their machines (see the design note in Semantics/CEK/Smallstep.agda).
+  Correctness of typed globalize (Clos4ᵀ → Clos5ᵀ,
+  Compiler/Globalize.agda) by a forward simulation between the
+  typed machines (see the design note in Semantics/CEK/Smallstep.agda).
 
-  The machines run in lock step. The Clos5 machine runs with the table of
-  global definitions D that the pass produced for the whole program, and
-  the relation is indexed by D.
+  The machines run in lock step. A Clos4ᵀ term is related to a Clos5ᵀ
+  term over the final table (Top ⊢ M ⇝ M') when they agree, except that
+  code N is related to fun-ref g when N is related to definition g
+  (Top g N). Values are related in the same way (code N to code g),
+  environments pointwise, continuations frame by frame.
 
-  The pass threads the table through the term, so a subterm M is compiled
-  to proj₁ (glob M ds) for the table ds made before it, and the table
-  proj₂ (glob M ds) made after it only grows into D (_⊑_: D extends it with
-  newer definitions). So a Clos4 term M is related to a Clos5 term
-  (M ↝ M') when M' = proj₁ (glob M ds) for some ds with
-  proj₂ (glob M ds) ⊑ D. Code fun N is related to a code pointer code k when
-  the table made by globalizing N, with N's own definition on top, is part
-  of D: then k is the position of that definition, and looking it up in D
-  finds the globalized N (global-⊑), however much the table grew afterwards.
-
-  States, continuations, and the other values are related frame by frame,
-  and environments pointwise. There is no precondition: the whole program
-  M is related to the main expression of globalize M with D the table it
-  makes, and an unbound variable is unbound on both sides.
+  The pass makes each term over the table made so far, and later weakens
+  it; so the relation is taken relative to an interpretation I of the
+  references of a smaller table (I ⊢ M ⇝ M'), and weakening a term
+  changes the interpretation (⊢-wk). The definitions made before a term
+  are those of the final table at the same positions, each the
+  weakening of what was made (Faithful): glob makes only more
+  definitions (glob-grows, MExt), and close weakens each to the whole
+  table (close-faithful). So the whole program is related to the main
+  term of globalize (glob-⇝).
 
 -}
 
 module proof.Correctness.CEK.GlobalizeSim where
 
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.Clos4
-import Language.Clos5 as C
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+open import Framework.Lookup using (_!_)
+import Language.Typed.Clos4 as S
+open import Language.Typed.Clos5
 open import Compiler.Globalize
-open import proof.Compiler.GlobalizeTable
-open import Semantics.Observation
+open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
+open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-open import proof.Framework.ListUtil
-import Semantics.CEK.Clos4 as S
-import Semantics.CEK.Clos5 as T
+open import proof.Correctness.CEK.Common using (collected≈; Lock; same-stop; same-next; lock)
+import Semantics.CEK.Typed.Clos4 as Sₘ
+import Semantics.CEK.Typed.Clos5 as Tₘ
 
-open import Data.Fin using (Fin)
-open import Data.List using ([]; _∷_; length; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Data.Maybe using (just; nothing)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (zero; suc)
-open import Data.Product using (_,_; proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
+open import Data.Integer using (_≟_)
+open import Data.List using (List; []; _∷_)
+import Data.List.Relation.Binary.Pointwise as L
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Nat using (ℕ)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import Data.Unit using (⊤; tt)
+open import Data.Vec using (Vec; []; _∷_)
+open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
+open import Language.Prim using (sub; eq)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Nullary using (yes; no; does)
 
-{- The simulation relation, for the final table D --------------------------------}
+{- Terms, relative to an interpretation of the references ---------------------}
 
-module Rel (D : Defs) where
+{- what the code of each definition of a table may be -}
+Interp : List ℕ → Set₁
+Interp Σ = ∀ {n} → Σ ∋ n → S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any → Set
 
-  infix 4 _↝_ _≈_ _≈k_ _~_
+infix 4 _⊢_⇝_
+data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A → Set where
+  var : ∀ {A} {x : Γ ∋ A} → I ⊢ S.` x ⇝ ` x
+  code : ∀ {n} {g : Σ ∋ n} {N} → I g N → I ⊢ S.code N ⇝ fun-ref g
+  pack : ∀ {n L L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.pack {n = n} L M ⇝ pack L' M'
+  callc : ∀ {L L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.callc L M ⇝ callc L' M'
+  lit : ∀ {B c} → I ⊢ S.lit B c ⇝ lit B c
+  tuple : ∀ {n} {Ms : Vec _ n} {Ms'} → V.Pointwise (I ⊢_⇝_) Ms Ms' → I ⊢ S.tuple Ms ⇝ tuple Ms'
+  get : ∀ {n i M M'} → I ⊢ M ⇝ M' → I ⊢ S.get {n = n} i M ⇝ get i M'
+  inl : ∀ {M M'} → I ⊢ M ⇝ M' → I ⊢ S.inl M ⇝ inl M'
+  inr : ∀ {M M'} → I ⊢ M ⇝ M' → I ⊢ S.inr M ⇝ inr M'
+  case : ∀ {L L' M M' N N'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ N ⇝ N' → I ⊢ S.case L M N ⇝ case L' M' N'
+  prim : ∀ {p L L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.prim p L M ⇝ prim p L' M'
+  let′ : ∀ {M M' N N'} → I ⊢ M ⇝ M' → I ⊢ N ⇝ N' → I ⊢ S.let′ M N ⇝ let′ M' N'
+  inject : ∀ {G M M'} → I ⊢ M ⇝ M' → I ⊢ S.inject G M ⇝ inject G M'
+  project : ∀ {t M M'} → I ⊢ M ⇝ M' → I ⊢ S.project t M ⇝ project t M'
 
-  {- M' is M globalized, with the definitions it makes in D -}
-  data _↝_ : AST → C.AST → Set where
-    glob↝ : ∀ {M ds} → proj₂ (glob M ds) ⊑ D → M ↝ proj₁ (glob M ds)
+{- weakening a term -}
+⊢-wk : ∀ {Σ₁ Σ₂} {I : Interp Σ₁} {J : Interp Σ₂} {σ : ∀ {n} → Σ₁ ∋ n → Σ₂ ∋ n}
+  → (∀ {n} {g : Σ₁ ∋ n} {N} → I g N → J (σ g) N) → ∀ {Γ A} {M : S.Tm Γ A} {M'} → I ⊢ M ⇝ M' → J ⊢ M ⇝ wk σ M'
+⊢-wks : ∀ {Σ₁ Σ₂} {I : Interp Σ₁} {J : Interp Σ₂} {σ : ∀ {n} → Σ₁ ∋ n → Σ₂ ∋ n}
+  → (∀ {n} {g : Σ₁ ∋ n} {N} → I g N → J (σ g) N) → ∀ {Γ k} {Ms : Vec (S.Tm Γ Any) k} {Ms'}
+  → V.Pointwise (I ⊢_⇝_) Ms Ms' → V.Pointwise (J ⊢_⇝_) Ms (wks σ Ms')
+⊢-wk h var = var
+⊢-wk h (code r) = code (h r)
+⊢-wk h (pack r r') = pack (⊢-wk h r) (⊢-wk h r')
+⊢-wk h (callc r r') = callc (⊢-wk h r) (⊢-wk h r')
+⊢-wk h lit = lit
+⊢-wk h (tuple rs) = tuple (⊢-wks h rs)
+⊢-wk h (get r) = get (⊢-wk h r)
+⊢-wk h (inl r) = inl (⊢-wk h r)
+⊢-wk h (inr r) = inr (⊢-wk h r)
+⊢-wk h (case r r' r'') = case (⊢-wk h r) (⊢-wk h r') (⊢-wk h r'')
+⊢-wk h (prim r r') = prim (⊢-wk h r) (⊢-wk h r')
+⊢-wk h (let′ r r') = let′ (⊢-wk h r) (⊢-wk h r')
+⊢-wk h (inject r) = inject (⊢-wk h r)
+⊢-wk h (project r) = project (⊢-wk h r)
+⊢-wks h [] = []
+⊢-wks h (r ∷ rs) = ⊢-wk h r ∷ ⊢-wks h rs
 
-  data _≈_ : S.Val → T.Val → Set where
-    fun≈ : ∀ {N ds} → proj₁ (glob N ds) ∷ proj₂ (glob N ds) ⊑ D
-      → S.fun N ≈ T.code (length (proj₂ (glob N ds)))
-    pair≈ : ∀ {v v' w w'} → v ≈ v' → w ≈ w' → S.pair v w ≈ T.pair v' w'
-    const≈ : ∀ {B k} → S.const B k ≈ T.const B k
-    tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → S.tup vs ≈ T.tup ws
-    inl≈ : ∀ {v w} → v ≈ w → S.inl v ≈ T.inl w
-    inr≈ : ∀ {v w} → v ≈ w → S.inr v ≈ T.inr w
+{- the definitions made before grow into those made after -}
+data MExt : ∀ {Σ₁ Σ₂} → Σ₁ ⊑ Σ₂ → Made Σ₁ → Made Σ₂ → Set where
+  here : ∀ {Σ} {D : Made Σ} → MExt here⊑ D D
+  there : ∀ {Σ₁ Σ₂ n g} {D : Made Σ₁} {D' : Made Σ₂} {N : Code Σ₂ n} → MExt g D D' → MExt (there⊑ g) D (D' ▷ N)
 
-  _≈ρ_ : S.Env → T.Env → Set
-  _≈ρ_ = Pointwise _≈_
+mext-trans : ∀ {Σ₁ Σ₂ Σ₃} {g : Σ₁ ⊑ Σ₂} {g' : Σ₂ ⊑ Σ₃} {D₁ D₂ D₃} → MExt g D₁ D₂ → MExt g' D₂ D₃ → MExt (⊑-trans g g') D₁ D₃
+mext-trans x here = x
+mext-trans x (there y) = there (mext-trans x y)
 
-  data _≈k_ : S.Cont → T.Cont → Set where
-    halt : S.halt ≈k T.halt
-    appF : ∀ {M M' N N' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → N ↝ N' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.appF M N ρ₁ κ₁ ≈k T.appF M' N' ρ₂ κ₂
-    appE : ∀ {f f' N N' ρ₁ ρ₂ κ₁ κ₂} → f ≈ f' → N ↝ N' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.appE f N ρ₁ κ₁ ≈k T.appE f' N' ρ₂ κ₂
-    appA : ∀ {f f' e e' κ₁ κ₂} → f ≈ f' → e ≈ e' → κ₁ ≈k κ₂
-      → S.appA f e κ₁ ≈k T.appA f' e' κ₂
-    pairL : ∀ {M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.pairL M ρ₁ κ₁ ≈k T.pairL M' ρ₂ κ₂
-    pairR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.pairR v κ₁ ≈k T.pairR w κ₂
-    fstK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.fstK κ₁ ≈k T.fstK κ₂
-    sndK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.sndK κ₁ ≈k T.sndK κ₂
-    tupK : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws → Pointwise _↝_ Ms Ms'
-      → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂ → S.tupK vs Ms ρ₁ κ₁ ≈k T.tupK ws Ms' ρ₂ κ₂
-    getK : ∀ {n} {i : Fin n} {κ₁ κ₂} → κ₁ ≈k κ₂ → S.getK i κ₁ ≈k T.getK i κ₂
-    inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inlK κ₁ ≈k T.inlK κ₂
-    inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → S.inrK κ₁ ≈k T.inrK κ₂
-    caseK : ∀ {M M' N N' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → N ↝ N' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.caseK M N ρ₁ κ₁ ≈k T.caseK M' N' ρ₂ κ₂
-    letK : ∀ {N N' ρ₁ ρ₂ κ₁ κ₂} → N ↝ N' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.letK N ρ₁ κ₁ ≈k T.letK N' ρ₂ κ₂
-    primL : ∀ {p M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.primL p M ρ₁ κ₁ ≈k T.primL p M' ρ₂ κ₂
-    primR : ∀ {p v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.primR p v κ₁ ≈k T.primR p w κ₂
+glob-grows : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → MExt (Out.grows (glob M D)) D (Out.made (glob M D))
+globs-grows : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → MExt (Out.grows (globs Ms D)) D (Out.made (globs Ms D))
+glob-grows (S.` x) D = here
+glob-grows (S.code N) D = there (glob-grows N D)
+glob-grows (S.pack L M) D = mext-trans (glob-grows L D) (glob-grows M _)
+glob-grows (S.callc L M) D = mext-trans (glob-grows L D) (glob-grows M _)
+glob-grows (S.lit B c) D = here
+glob-grows (S.tuple Ms) D = globs-grows Ms D
+glob-grows (S.get i M) D = glob-grows M D
+glob-grows (S.inl M) D = glob-grows M D
+glob-grows (S.inr M) D = glob-grows M D
+glob-grows (S.case L M N) D = mext-trans (glob-grows L D) (mext-trans (glob-grows M _) (glob-grows N _))
+glob-grows (S.prim p L M) D = mext-trans (glob-grows L D) (glob-grows M _)
+glob-grows (S.let′ M N) D = mext-trans (glob-grows M D) (glob-grows N _)
+glob-grows (S.inject G M) D = glob-grows M D
+glob-grows (S.project t M) D = glob-grows M D
+globs-grows [] D = here
+globs-grows (M ∷ Ms) D = mext-trans (glob-grows M D) (globs-grows Ms _)
 
-  data _~_ : S.State → T.State → Set where
-    eval~ : ∀ {M M' ρ₁ ρ₂ κ₁ κ₂} → M ↝ M' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-      → S.eval M ρ₁ κ₁ ~ T.eval M' ρ₂ κ₂
-    ret~ : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → S.ret v κ₁ ~ T.ret w κ₂
+{- The definitions of the final table ------------------------------------------}
 
-  {- Related values are observed alike -}
-  obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-  obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
-  obs≈ (fun≈ _) = refl
-  obs≈ (pair≈ _ _) = refl
+module Table {Σ : List ℕ} (defs : All (Code Σ) Σ) where
+
+  {- the code of definition g is related to it -}
+  data Top {n} (g : Σ ∋ n) (N : S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) : Set where
+    top : (λ {m} → Top {m}) ⊢ N ⇝ defs ! g → Top g N
+
+  {- the references of a smaller table, at their positions in Σ -}
+  I[_] : ∀ {Σ₀} → Σ₀ ⊑ Σ → Interp Σ₀
+  I[ s ] g N = Top (⊑-∋ s g) N
+
+  {- the definitions made, each related to the definition at its position -}
+  Faithful : ∀ {Σ₀} → Made Σ₀ → Σ₀ ⊑ Σ → Set
+  Faithful [] s = ⊤
+  Faithful (D ▷ N') s = (∀ N → I[ ⊑-trans (there⊑ here⊑) s ] ⊢ N ⇝ N' → Top (⊑-∋ s Z) N) × Faithful D (⊑-trans (there⊑ here⊑) s)
+
+  faithful-ext : ∀ {Σ₁ Σ₂} {t : Σ₁ ⊑ Σ₂} {s : Σ₂ ⊑ Σ} {D₁ D₂} → MExt t D₁ D₂ → Faithful D₂ s → Faithful D₁ (⊑-trans t s)
+  faithful-ext {s = s} {D₁ = D₁} here F = subst (Faithful D₁) (⊑-irr _ _) F
+  faithful-ext {t = there⊑ t} {s} {D₁ = D₁} (there x) (_ , F) = subst (Faithful D₁) (⊑-irr _ _) (faithful-ext x F)
+
+  {- weakening a term made earlier -}
+  lift : ∀ {Σ₁ Σ₂} {t : Σ₁ ⊑ Σ₂} {s : Σ₂ ⊑ Σ} {Γ A} {M : S.Tm Γ A} {M'}
+    → I[ ⊑-trans t s ] ⊢ M ⇝ M' → I[ s ] ⊢ M ⇝ wk (⊑-∋ t) M'
+  lift {t = t} {s} = ⊢-wk λ {_} {g} r → subst (λ h → Top h _) (⊑-∋-trans t s g) r
+
+  glob-⇝ : ∀ {Σ₀ Γ A} (M : S.Tm Γ A) (D : Made Σ₀) {s} → Faithful (Out.made (glob M D)) s → I[ s ] ⊢ M ⇝ Out.res (glob M D)
+  globs-⇝ : ∀ {Σ₀ Γ k} (Ms : Vec (S.Tm Γ Any) k) (D : Made Σ₀) {s} → Faithful (Out.made (globs Ms D)) s
+    → V.Pointwise (I[ s ] ⊢_⇝_) Ms (Out.res (globs Ms D))
+  two : ∀ {Σ₀ Γ₁ Γ₂ A B} (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B) (D : Made Σ₀) {s}
+    → Faithful (Out.made (glob M (Out.made (glob L D)))) s
+    → I[ s ] ⊢ L ⇝ wk (⊑-∋ (Out.grows (glob M (Out.made (glob L D))))) (Out.res (glob L D))
+      × I[ s ] ⊢ M ⇝ Out.res (glob M (Out.made (glob L D)))
+  two L M D F = lift (glob-⇝ L D (faithful-ext (glob-grows M _) F)) , glob-⇝ M _ F
+
+  glob-⇝ (S.` x) D F = var
+  glob-⇝ (S.code N) D (h , F) = code (h N (glob-⇝ N D F))
+  glob-⇝ (S.pack L M) D F = pack (proj₁ (two L M D F)) (proj₂ (two L M D F))
+  glob-⇝ (S.callc L M) D F = callc (proj₁ (two L M D F)) (proj₂ (two L M D F))
+  glob-⇝ (S.lit B c) D F = lit
+  glob-⇝ (S.tuple Ms) D F = tuple (globs-⇝ Ms D F)
+  glob-⇝ (S.get i M) D F = get (glob-⇝ M D F)
+  glob-⇝ (S.inl M) D F = inl (glob-⇝ M D F)
+  glob-⇝ (S.inr M) D F = inr (glob-⇝ M D F)
+  glob-⇝ (S.case L M N) D F =
+    case (lift (glob-⇝ L D (faithful-ext (mext-trans (glob-grows M _) (glob-grows N _)) F)))
+         (lift (glob-⇝ M _ (faithful-ext (glob-grows N _) F))) (glob-⇝ N _ F)
+  glob-⇝ (S.prim p L M) D F = prim (proj₁ (two L M D F)) (proj₂ (two L M D F))
+  glob-⇝ (S.let′ M N) D F = let′ (proj₁ (two M N D F)) (proj₂ (two M N D F))
+  glob-⇝ (S.inject G M) D F = inject (glob-⇝ M D F)
+  glob-⇝ (S.project t M) D F = project (glob-⇝ M D F)
+  globs-⇝ [] D F = []
+  globs-⇝ (M ∷ Ms) D F = proj₁ (two M (S.tuple Ms) D F) ∷ globs-⇝ Ms _ F
+
+  {- close puts the definitions made before at their positions -}
+  suffix : ∀ {Σ₀ Σ₁} {s : Σ₀ ⊑ Σ₁} {D : Made Σ₀} {D₁ : Made Σ₁} → MExt s D D₁ → ∀ (q : Σ₁ ⊑ Σ) {n} (x : Σ₀ ∋ n)
+    → close D₁ q ! ⊑-∋ s x ≡ close D (⊑-trans s q) ! x
+  suffix {D = D} here q x = cong (λ r → close D r ! x) (⊑-irr _ _)
+  suffix {D = D} (there e) q x = trans (suffix e (⊑-trans (there⊑ here⊑) q) x) (cong (λ r → close D r ! x) (⊑-irr _ _))
+
+  close-faithful : ∀ {D_f : Made Σ} → defs ≡ close D_f here⊑ → ∀ {Σ₀} {s : Σ₀ ⊑ Σ} {D : Made Σ₀} → MExt s D D_f → Faithful D s
+  close-faithful e {D = []} x = tt
+  close-faithful e {s = s} {D = D ▷ N'} x =
+    (λ N r → top (subst ((λ {m} → Top {m}) ⊢ N ⇝_) (sym (trans (cong (_! ⊑-∋ s Z) e) (suffix x here⊑ Z))) (⊢-wk (λ r → r) r)))
+    , close-faithful e (mext-trans (there here) x)
+
+  {- The simulation relation ----------------------------------------------------}
+
+  infix 4 _⇝_ _≈_ _≈k_ _~_
+  _⇝_ : ∀ {Γ A} → S.Tm Γ A → Tm Σ Γ A → Set
+  M ⇝ M' = (λ {m} → Top {m}) ⊢ M ⇝ M'
+
+  data _≈_ : ∀ {A} → Sₘ.Val A → Tₘ.Val Σ A → Set where
+    code≈ : ∀ {n N} {g : Σ ∋ n} → Top g N → Sₘ.code N ≈ Tₘ.code g
+    pack≈ : ∀ {n} {c : Sₘ.Val (code n)} {c' e e'} → c ≈ c' → e ≈ e' → Sₘ.pack c e ≈ Tₘ.pack c' e'
+    const≈ : ∀ {B c} → Sₘ.const {B} c ≈ Tₘ.const c
+    tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Sₘ.tup vs ≈ Tₘ.tup ws
+    inl≈ : ∀ {v w} → v ≈ w → Sₘ.inl v ≈ Tₘ.inl w
+    inr≈ : ∀ {v w} → v ≈ w → Sₘ.inr v ≈ Tₘ.inr w
+    dyn≈ : ∀ {G v w} → v ≈ w → Sₘ.dyn G v ≈ Tₘ.dyn G w
+
+  record EnvRel {Γ} (ρ₁ : Sₘ.Env Γ) (ρ₂ : Tₘ.Env Σ Γ) : Set where
+    constructor env
+    field at : ∀ {A} (x : Γ ∋ A) → ρ₁ Sₘ.! x ≈ ρ₂ ! x
+  open EnvRel
+
+  data _≈k_ : ∀ {A} → Sₘ.Cont A → Tₘ.Cont Σ A → Set where
+    halt : Sₘ.halt ≈k Tₘ.halt
+    callL : ∀ {Γ M M'} {ρ₁ : Sₘ.Env Γ} {ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂ → Sₘ.callL M ρ₁ κ₁ ≈k Tₘ.callL M' ρ₂ κ₂
+    callR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.callR v κ₁ ≈k Tₘ.callR w κ₂
+    packL : ∀ {Γ n} {M : S.Tm Γ ⟪ tup n ⟫} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.packL M ρ₁ κ₁ ≈k Tₘ.packL M' ρ₂ κ₂
+    packR : ∀ {n} {v : Sₘ.Val (code n)} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.packR v κ₁ ≈k Tₘ.packR w κ₂
+    tupK : ∀ {Γ n j vs ws} {Ms : Vec _ j} {Ms' : Vec (Tm Σ Γ Any) j} {ρ₁ : Sₘ.Env Γ} {ρ₂} {e : _ ≡ n} {e' κ₁ κ₂}
+      → L.Pointwise _≈_ vs ws → V.Pointwise _⇝_ Ms Ms' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.tupK vs Ms ρ₁ e κ₁ ≈k Tₘ.tupK ws Ms' ρ₂ e' κ₂
+    getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.getK {n} i κ₁ ≈k Tₘ.getK i κ₂
+    inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.inlK κ₁ ≈k Tₘ.inlK κ₂
+    inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.inrK κ₁ ≈k Tₘ.inrK κ₂
+    caseK : ∀ {Γ M M' N N'} {ρ₁ : Sₘ.Env Γ} {ρ₂ κ₁ κ₂} → M ⇝ M' → N ⇝ N' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.caseK M N ρ₁ κ₁ ≈k Tₘ.caseK M' N' ρ₂ κ₂
+    primL : ∀ {Γ p M M'} {ρ₁ : Sₘ.Env Γ} {ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.primL p M ρ₁ κ₁ ≈k Tₘ.primL p M' ρ₂ κ₂
+    primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.primR p n κ₁ ≈k Tₘ.primR p n κ₂
+    letK : ∀ {Γ N N'} {ρ₁ : Sₘ.Env Γ} {ρ₂ κ₁ κ₂} → N ⇝ N' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.letK N ρ₁ κ₁ ≈k Tₘ.letK N' ρ₂ κ₂
+    injK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.injK G κ₁ ≈k Tₘ.injK G κ₂
+    projK : ∀ {t κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.projK t κ₁ ≈k Tₘ.projK t κ₂
+
+  data _~_ : Sₘ.State → Tₘ.State Σ → Set where
+    eval~ : ∀ {Γ A} {M : S.Tm Γ A} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.eval M ρ₁ κ₁ ~ Tₘ.eval M' ρ₂ κ₂
+    ret~ : ∀ {A} {v : Sₘ.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Sₘ.ret v κ₁ ~ Tₘ.ret w κ₂
+
+  obs≈ : ∀ {A} {v : Sₘ.Val A} {w} → v ≈ w → Sₘ.obs v ≡ Tₘ.obs w
+  obs≈* : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Sₘ.obs-vec vs ≡ Tₘ.obs-vec ws
+  obs≈ (code≈ _) = refl
+  obs≈ (pack≈ _ _) = refl
   obs≈ const≈ = refl
-  obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
+  obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
   obs≈ (inl≈ r) = cong o-inl (obs≈ r)
   obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-  obs≈-list [] = refl
-  obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+  obs≈ (dyn≈ r) = obs≈ r
+  obs≈* [] = refl
+  obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 
-  {- related operands give related results of a primitive -}
-  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
-  ... | nothing = M.nothing
-  ... | just (int n) = M.just const≈
-  ... | just (bool true) = M.just (inl≈ (tup≈ []))
-  ... | just (bool false) = M.just (inr≈ (tup≈ []))
+  δ≈ : ∀ p n m → Sₘ.δᵀ p n m ≈ Tₘ.δᵀ {Σ} p n m
+  δ≈ sub n m = const≈
+  δ≈ eq n m with does (n ≟ m)
+  ... | true = inl≈ (dyn≈ (tup≈ []))
+  ... | false = inr≈ (dyn≈ (tup≈ []))
 
-  {- a subterm, whose table is extended by the rest of the term -}
-  sub↝ : ∀ {M ds ds'} → proj₂ (glob M ds) ⊑ ds' → ds' ⊑ D → M ↝ proj₁ (glob M ds)
-  sub↝ p q = glob↝ (⊑-trans p q)
+  env-ext : ∀ {Γ B} {ρ₁ : Sₘ.Env Γ} {ρ₂} {v : Sₘ.Val B} {w} → v ≈ w → EnvRel ρ₁ ρ₂ → EnvRel (v ∷ ρ₁) (w ∷ ρ₂)
+  env-ext r er = env λ { Z → r ; (S x) → at er x }
 
-  glob-list : ∀ {n} (args : Args (replicate n ■)) ds → proj₂ (glob-args args ds) ⊑ D
-    → Pointwise _↝_ (args→list args) (args→list (proj₁ (glob-args args ds)))
-  glob-list {zero} Nil ds p = []
-  glob-list {suc n} (M ,, args) ds p =
-    sub↝ (glob-grows-args args _) p ∷ glob-list args (proj₂ (glob M ds)) p
+  {- the only error: both machines project, and fail, at the same time -}
+  proj~ : ∀ {H t v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+    → Lock _~_ (Sₘ.step (Sₘ.ret (Sₘ.dyn H v) (Sₘ.projK t κ₁))) (Tₘ.step defs (Tₘ.ret (Tₘ.dyn H w) (Tₘ.projK t κ₂)))
+  proj~ {H} {t} r k with H ≟F flat t
+  ... | yes refl = same-next (ret~ r k)
+  ... | no _ = same-stop
 
-{- The simulation, for any Clos5 program with table D ---------------------------}
+  module _ (M₀ : Tm Σ [] Any) where
 
-module _ (D : Defs) (M₀ : C.AST) where
-  open Rel D
+    L₂ = Tₘ.sem (program defs M₀)
 
-  L₂ = T.sem (C.program D M₀)
+    tuple-next~ : ∀ {Γ n j vs ws} {Ms : Vec _ j} {Ms' : Vec (Tm Σ Γ Any) j} {ρ₁ : Sₘ.Env Γ} {ρ₂} {e : _ ≡ n} {e' κ₁ κ₂}
+      → L.Pointwise _≈_ vs ws → V.Pointwise _⇝_ Ms Ms' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
+      → Sₘ.tuple-next vs Ms ρ₁ e κ₁ ~ Tₘ.tuple-next ws Ms' ρ₂ e' κ₂
+    tuple-next~ {e = e} {e'} rs [] er k = ret~ (tup≈ (collected≈ rs e e')) k
+    tuple-next~ rs (m ∷ ms) er k = eval~ m er (tupK rs ms er k)
 
-  tuple-next~ : ∀ {vs ws Ms Ms' ρ₁ ρ₂ κ₁ κ₂} → Pointwise _≈_ vs ws
-    → Pointwise _↝_ Ms Ms' → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-    → S.tuple-next vs Ms ρ₁ κ₁ ~ T.tuple-next ws Ms' ρ₂ κ₂
-  tuple-next~ rs [] ρ κ = ret~ (tup≈ (reverse⁺ rs)) κ
-  tuple-next~ rs (g ∷ gs) ρ κ = eval~ g ρ (tupK rs gs ρ κ)
+    sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Sₘ.step s₁) s₂
+    sim (eval~ (var {x = x}) er k) = steps₁ refl (ret~ (at er x) k)
+    sim (eval~ (code h) er k) = steps₁ refl (ret~ (code≈ h) k)
+    sim (eval~ (pack m m') er k) = steps₁ refl (eval~ m er (packL m' er k))
+    sim (eval~ (callc m m') er k) = steps₁ refl (eval~ m er (callL m' er k))
+    sim (eval~ lit er k) = steps₁ refl (ret~ const≈ k)
+    sim (eval~ (tuple ms) er k) = steps₁ refl (tuple-next~ L.[] ms er k)
+    sim (eval~ (get m) er k) = steps₁ refl (eval~ m er (getK k))
+    sim (eval~ (inl m) er k) = steps₁ refl (eval~ m er (inlK k))
+    sim (eval~ (inr m) er k) = steps₁ refl (eval~ m er (inrK k))
+    sim (eval~ (case m m' m'') er k) = steps₁ refl (eval~ m er (caseK m' m'' er k))
+    sim (eval~ (prim m m') er k) = steps₁ refl (eval~ m er (primL m' er k))
+    sim (eval~ (let′ m m') er k) = steps₁ refl (eval~ m er (letK m' er k))
+    sim (eval~ (inject m) er k) = steps₁ refl (eval~ m er (injK k))
+    sim (eval~ (project m) er k) = steps₁ refl (eval~ m er (projK k))
+    sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
+    sim (ret~ r (callL m er k)) = steps₁ refl (eval~ m er (callR r k))
+    sim (ret~ r (callR (pack≈ (code≈ (top h)) re) k)) = steps₁ refl (eval~ h (env λ { Z → r ; (S Z) → re }) k)
+    sim (ret~ r (packL m er k)) = steps₁ refl (eval~ m er (packR r k))
+    sim (ret~ r (packR r' k)) = steps₁ refl (ret~ (pack≈ r' r) k)
+    sim (ret~ r (tupK rs ms er k)) = steps₁ refl (tuple-next~ (r L.∷ rs) ms er k)
+    sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (V.lookup rs i) k)
+    sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)
+    sim (ret~ r (inrK k)) = steps₁ refl (ret~ (inr≈ r) k)
+    sim (ret~ (inl≈ r) (caseK m m' er k)) = steps₁ refl (eval~ m (env-ext r er) k)
+    sim (ret~ (inr≈ r) (caseK m m' er k)) = steps₁ refl (eval~ m' (env-ext r er) k)
+    sim (ret~ const≈ (primL m er k)) = steps₁ refl (eval~ m er (primR k))
+    sim (ret~ (const≈ {c = c}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n c) k)
+    sim (ret~ r (letK m er k)) = steps₁ refl (eval~ m (env-ext r er) k)
+    sim (ret~ r (injK k)) = steps₁ refl (ret~ (dyn≈ r) k)
+    sim (ret~ (dyn≈ r) (projK k)) = lock (proj~ r k)
 
-  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (S.step s₁) s₂
-  sim (eval~ {M = ` x} (glob↝ p) ρ κ) = next?-answers (‼-pw ρ x) (λ r → ret~ r κ) refl
-  sim (eval~ {M = fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (ret~ (fun≈ p) κ)
-  sim (eval~ {M = app ⦅ L ,, M ,, N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =
-    steps₁ refl
-      (eval~ (sub↝ (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
-             ρ (appF (sub↝ (glob-grows N _) p) (glob↝ p) ρ κ))
-    where d₁ = proj₂ (glob L ds)
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} (glob↝ p) ρ κ) = steps₁ refl (ret~ const≈ κ)
-  sim (eval~ {M = pair-op ⦅ L ,, M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (sub↝ (glob-grows M _) p) ρ (pairL (glob↝ p) ρ κ))
-  sim (eval~ {M = fst-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (glob↝ p) ρ (fstK κ))
-  sim (eval~ {M = snd-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (glob↝ p) ρ (sndK κ))
-  sim (eval~ {M = tuple n ⦅ args ⦆} (glob↝ {ds = ds} p) ρ κ) =
-    steps₁ refl (tuple-next~ [] (glob-list args ds p) ρ κ)
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (glob↝ p) ρ (getK κ))
-  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (glob↝ p) ρ (inlK κ))
-  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (glob↝ p) ρ (inrK κ))
-  sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} (glob↝ {ds = ds} p) ρ κ) =
-    steps₁ refl
-      (eval~ (sub↝ (⊑-trans (glob-grows M d₁) (glob-grows N (proj₂ (glob M d₁)))) p)
-             ρ (caseK (sub↝ (glob-grows N _) p) (glob↝ p) ρ κ))
-    where d₁ = proj₂ (glob L ds)
-  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (sub↝ (glob-grows N _) p) ρ (letK (glob↝ p) ρ κ))
-  sim (eval~ {M = prim q ⦅ L ,, M ,, Nil ⦆} (glob↝ p) ρ κ) =
-    steps₁ refl (eval~ (sub↝ (glob-grows M _) p) ρ (primL (glob↝ p) ρ κ))
-  sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r (appF gM gN ρ κ)) = steps₁ refl (eval~ gM ρ (appE r gN ρ κ))
-  sim (ret~ r (appE f gN ρ κ)) = steps₁ refl (eval~ gN ρ (appA f r κ))
-  sim (ret~ {w = w} r (appA {e' = e'} {κ₂ = κ₂} (fun≈ p) e κ)) =
-    steps₁ (cong (λ m → T.call m w e' κ₂) (global-⊑ p)) (eval~ (glob↝ (∷-⊑ p)) (r ∷ e ∷ []) κ)
-  sim (ret~ r (appA (pair≈ _ _) e κ)) = stops refl
-  sim (ret~ r (appA const≈ e κ)) = stops refl
-  sim (ret~ r (appA (tup≈ _) e κ)) = stops refl
-  sim (ret~ r (appA (inl≈ _) e κ)) = stops refl
-  sim (ret~ r (appA (inr≈ _) e κ)) = stops refl
-  sim (ret~ r (pairL gM ρ κ)) = steps₁ refl (eval~ gM ρ (pairR r κ))
-  sim (ret~ r (pairR r' κ)) = steps₁ refl (ret~ (pair≈ r' r) κ)
-  sim (ret~ (pair≈ r _) (fstK κ)) = steps₁ refl (ret~ r κ)
-  sim (ret~ (fun≈ _) (fstK κ)) = stops refl
-  sim (ret~ const≈ (fstK κ)) = stops refl
-  sim (ret~ (tup≈ _) (fstK κ)) = stops refl
-  sim (ret~ (inl≈ _) (fstK κ)) = stops refl
-  sim (ret~ (inr≈ _) (fstK κ)) = stops refl
-  sim (ret~ (pair≈ _ r) (sndK κ)) = steps₁ refl (ret~ r κ)
-  sim (ret~ (fun≈ _) (sndK κ)) = stops refl
-  sim (ret~ const≈ (sndK κ)) = stops refl
-  sim (ret~ (tup≈ _) (sndK κ)) = stops refl
-  sim (ret~ (inl≈ _) (sndK κ)) = stops refl
-  sim (ret~ (inr≈ _) (sndK κ)) = stops refl
-  sim (ret~ r (tupK rs gs ρ κ)) = steps₁ refl (tuple-next~ (r ∷ rs) gs ρ κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
-  sim (ret~ (fun≈ _) (getK κ)) = stops refl
-  sim (ret~ (pair≈ _ _) (getK κ)) = stops refl
-  sim (ret~ const≈ (getK κ)) = stops refl
-  sim (ret~ (inl≈ _) (getK κ)) = stops refl
-  sim (ret~ (inr≈ _) (getK κ)) = stops refl
-  sim (ret~ r (inlK κ)) = steps₁ refl (ret~ (inl≈ r) κ)
-  sim (ret~ r (inrK κ)) = steps₁ refl (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK gM gN ρ κ)) = steps₁ refl (eval~ gM (r ∷ ρ) κ)
-  sim (ret~ (inr≈ r) (caseK gM gN ρ κ)) = steps₁ refl (eval~ gN (r ∷ ρ) κ)
-  sim (ret~ (fun≈ _) (caseK _ _ _ κ)) = stops refl
-  sim (ret~ (pair≈ _ _) (caseK _ _ _ κ)) = stops refl
-  sim (ret~ const≈ (caseK _ _ _ κ)) = stops refl
-  sim (ret~ (tup≈ _) (caseK _ _ _ κ)) = stops refl
-  sim (ret~ r (letK gN ρ κ)) = steps₁ refl (eval~ gN (r ∷ ρ) κ)
-  sim (ret~ r (primL gM ρ κ)) = steps₁ refl (eval~ gM ρ (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
+{- The end theorem: for every Clos4ᵀ program ----------------------------------}
 
-{- The end theorem -------------------------------------------------------------}
-
-{- for any program, with no precondition -}
-
-globalize-fsim : ∀ M → FSim (S.sem M) (T.sem (globalize M))
-globalize-fsim M =
-  plus-simulation _~_ (eval~ (glob↝ ⊑-refl) [] halt) (sim D (proj₁ (glob M [])))
-  where D = proj₂ (glob M [])
-        open Rel D
-
-globalize-correct : ∀ M → Equivalent (S.sem M) (T.sem (globalize M))
-globalize-correct M = equivalent (globalize-fsim M)
+globalize-correct : ∀ (M : S.Tm [] Any) → Equivalent (Sₘ.sem M) (Tₘ.sem (globalize M))
+globalize-correct M =
+  equivalent (plus-simulation _~_ (eval~ (glob-⇝ M [] (close-faithful refl here)) (env λ ()) halt) (sim (Out.res (glob M []))))
+  where open Table (close (Out.made (glob M [])) here⊑)

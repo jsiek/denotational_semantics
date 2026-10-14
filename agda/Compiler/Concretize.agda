@@ -1,88 +1,70 @@
-open import Data.Nat using (ℕ; zero; suc; _<_; _<?_)
-open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; replicate)
-open import Relation.Nullary using (yes; no)
+{-
 
-open import Framework.Syntax.SyntaxUtil
-open import Framework.Syntax.SigUtil
+  Typed concretize (Clos2ᵀ → Clos3ᵀ): each closure stores its free
+  variables in one tuple, and inside its code the free variable i
+  becomes get i of that tuple (variable 1 of the code).
+
+  The pass maps each Clos2ᵀ variable to where it lives in Clos3ᵀ (Ref):
+  a variable, or a component of a tuple held in a variable. Since the
+  code of a closure is closed in both languages, there is no variable
+  past the free variables to account for.
+
+-}
 
 module Compiler.Concretize where
-  {-
-   The concretize pass: each closure stores its free variables in a
-   single tuple, and inside the closure's code each free variable becomes
-   a projection from that tuple.
 
-   In Clos2 the code of a closure with n free variables binds them one at
-   a time and then binds the argument, so in the body variable 0 is the
-   argument and variable (suc k), for k < n, is the free variable that was
-   bound last but k. In Clos3 the code binds the tuple of free variables
-   (variable 1) and the argument (variable 0).
-  -}
-  open import Language.Clos2 as Source
-  open import Language.Clos3 as Target
-    renaming (clear to clear'; bind to bind'; ast to ast';
-              AST to AST'; Arg to Arg'; Args to Args'; `_ to #_;
-              _⦅_⦆ to _⦅_⦆')
+open import Language.Typed.Type
+open import Language.Typed.Clos2
+import Language.Typed.Clos3 as T
 
-  {- where a Clos2 variable lives in Clos3: in a variable, or in a
-     component of a tuple held in a variable -}
-  data Ref : Set where
-    var : Var → Ref
-    prj : ∀ {n} → Fin n → Var → Ref
+open import Data.Fin using (Fin; zero; suc)
+open import Data.List using ([]; _∷_)
+open import Data.Nat using (ℕ; suc)
+open import Data.Vec using (Vec; []; _∷_)
 
-  ref-ast : Ref → AST'
-  ref-ast (var x) = # x
-  ref-ast (prj i x) = get i ⦅ # x ,, Nil ⦆'
+data Ref (Γ : Ctx) : Set where
+  var : Γ ∋ Any → Ref Γ
+  prj : ∀ {n} → Fin n → Γ ∋ ⟪ tup n ⟫ → Ref Γ
 
-  shift-ref : Ref → Ref
-  shift-ref (var x) = var (suc x)
-  shift-ref (prj i x) = prj i (suc x)
+ref-tm : ∀ {Γ} → Ref Γ → T.Tm Γ Any
+ref-tm (var x) = T.` x
+ref-tm (prj i x) = T.get i (T.` x)
 
-  {- the map for the body of a binder -}
-  ext-ref : (Var → Ref) → Var → Ref
-  ext-ref φ zero = var zero
-  ext-ref φ (suc x) = shift-ref (φ x)
+shift-ref : ∀ {Γ A} → Ref Γ → Ref (A ∷ Γ)
+shift-ref (var x) = var (S x)
+shift-ref (prj i x) = prj i (S x)
 
-  {- the position in the tuple of the free variable bound last but k -}
-  fv-index : ∀ n k → k < n → Fin n
-  fv-index (suc n) k k<sn with k <? n
-  ... | yes k<n = suc (fv-index n k k<n)
-  ... | no _ = zero
+{- the map for the body of a binder -}
+ext-ref : ∀ {k Γ} → (Fin k → Ref Γ) → Fin (suc k) → Ref (Any ∷ Γ)
+ext-ref φ zero = var Z
+ext-ref φ (suc x) = shift-ref (φ x)
 
-  {- the map for the code of a closure with n free variables; variables
-     past the free variables refer to the initial environment, which in
-     Clos3 starts at variable 2 -}
-  fv-ref : ℕ → Var → Ref
-  fv-ref n zero = var zero
-  fv-ref n (suc k) with k <? n
-  ... | yes k<n = prj (fv-index n k k<n) 1
-  ... | no _ = var 2
+{- the map for the code of a closure with n free variables -}
+fv-ref : ∀ {n} → Fin (suc n) → Ref (Any ∷ ⟪ tup n ⟫ ∷ [])
+fv-ref zero = var Z
+fv-ref (suc i) = prj i (S Z)
 
-  concretize : (Var → Ref) → AST → AST'
-  conc-body : ℕ → ∀ k → Arg (ν-n k (ν ■)) → AST'
-  conc-args : ∀ {n} → (Var → Ref) → Args (replicate n ■) → Args' (replicate n ■)
+concretize : ∀ {k Γ A} → (Fin k → Ref Γ) → Tm k A → T.Tm Γ A
+concs : ∀ {k Γ n} → (Fin k → Ref Γ) → Vec (Tm k Any) n → Vec (T.Tm Γ Any) n
 
-  concretize φ (` x) = ref-ast (φ x)
-  concretize φ (clos-op n ⦅ ! clear a ,, fvs ⦆) =
-    clos-op n ⦅ ! clear' (bind' (bind' (ast' (conc-body n n a)))) ,, conc-args φ fvs ⦆'
-  concretize φ (app ⦅ L ,, M ,, Nil ⦆) = app ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
-  concretize φ (lit B k ⦅ Nil ⦆) = lit B k ⦅ Nil ⦆'
-  concretize φ (tuple n ⦅ args ⦆) = tuple n ⦅ conc-args φ args ⦆'
-  concretize φ (get i ⦅ M ,, Nil ⦆) = get i ⦅ concretize φ M ,, Nil ⦆'
-  concretize φ (inl-op ⦅ M ,, Nil ⦆) = inl-op ⦅ concretize φ M ,, Nil ⦆'
-  concretize φ (inr-op ⦅ M ,, Nil ⦆) = inr-op ⦅ concretize φ M ,, Nil ⦆'
-  concretize φ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) =
-    case-op ⦅ concretize φ L ,, ⟩ concretize (ext-ref φ) M ,, ⟩ concretize (ext-ref φ) N ,, Nil ⦆'
-  concretize φ (prim p ⦅ L ,, M ,, Nil ⦆) = prim p ⦅ concretize φ L ,, concretize φ M ,, Nil ⦆'
-  concretize φ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = let-op ⦅ concretize φ M ,, ⟩ concretize (ext-ref φ) N ,, Nil ⦆'
+concretize φ (` x) = ref-tm (φ x)
+concretize φ (clos N Ms) = T.clos (concretize fv-ref N) (concs φ Ms)
+concretize φ (app L M) = T.app (concretize φ L) (concretize φ M)
+concretize φ (lit B c) = T.lit B c
+concretize φ (tuple Ms) = T.tuple (concs φ Ms)
+concretize φ (get i M) = T.get i (concretize φ M)
+concretize φ (inl M) = T.inl (concretize φ M)
+concretize φ (inr M) = T.inr (concretize φ M)
+concretize φ (case L M N) =
+  T.case (concretize φ L) (concretize (ext-ref φ) M) (concretize (ext-ref φ) N)
+concretize φ (prim p L M) = T.prim p (concretize φ L) (concretize φ M)
+concretize φ (let′ M N) = T.let′ (concretize φ M) (concretize (ext-ref φ) N)
+concretize φ (inject G M) = T.inject G (concretize φ M)
+concretize φ (project t M) = T.project t (concretize φ M)
 
-  {- conc-body n k a is concretize (fv-ref n) (unbind-n k a) -}
-  conc-body n zero (bind (ast N)) = concretize (fv-ref n) N
-  conc-body n (suc k) (bind a) = conc-body n k a
+concs φ [] = []
+concs φ (M ∷ Ms) = concretize φ M ∷ concs φ Ms
 
-  conc-args {zero} φ Nil = Nil
-  conc-args {suc n} φ (M ,, args) = concretize φ M ,, conc-args φ args
-
-  {- the pass, for a whole program -}
-  concretize-program : AST → AST'
-  concretize-program = concretize var
+{- the pass, for a whole program -}
+concretize-program : ∀ {A} → Tm 0 A → T.Tm [] A
+concretize-program = concretize λ ()

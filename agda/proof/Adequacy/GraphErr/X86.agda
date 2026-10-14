@@ -4,8 +4,8 @@
   (Semantics/GraphErr/X86.agda, ⟦_⟧ₚ, here ⟦_⟧ₓ) for the X86 machine
   (Semantics/CEK/X86.agda), for well-formed programs (WF,
   Adequacy/GraphErr/X86WF.agda: each label refers to an older
-  definition), which the compiler produces (compile-x86-wf). As for Clos5
-  (Adequacy/GraphErr/Clos5.agda), the denotation tells all three outcomes
+  definition), which the compilers produce. As for Clos5
+  (Untyped/proof/Adequacy/GraphErr/Clos5.agda), the denotation tells all three outcomes
   of the machine apart:
 
     error-iff     : ω ∈ ⟦ P ⟧ₓ exactly when the machine stops with an
@@ -16,9 +16,8 @@
                     the shapes of the answers and the elements);
     diverges-iff  : ⟦ P ⟧ₓ is empty exactly when it diverges.
 
-  and x86-error-iff, x86-const-iff, x86-converges-iff and
-  x86-diverges-iff are these for the programs compile-x86 M of closed
-  ISWIM programs M.
+  (For the programs compile-x86 M of the typed compiler, see
+  Adequacy/GraphErr/EndToEnd.agda.)
 
   Soundness is in GraphErr/X86Soundness.agda (with the consistency of
   the table of every program, GraphErr/X86Consistent.agda), adequacy
@@ -42,11 +41,9 @@ open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; never-final-diverges)
 import Semantics.CEK.X86 as X86ₘ
 open import Semantics.CEK.X86 using (halt; halt?; obs)
-open import Compiler.Pipeline using (compile-x86)
-open import Compiler.EncloseScope using (Closed)
 open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
 open import proof.Adequacy.GraphErr.Soundness using (shape-ω)
-open import proof.Adequacy.GraphErr.X86WF using (WF; compile-x86-wf) public
+open import proof.Adequacy.GraphErr.X86WF using (WF) public
 open import proof.Adequacy.GraphErr.X86Consistent using (table-con) public
 open import proof.Adequacy.GraphErr.X86Soundness using (soundness; sound-error) public
 import proof.Adequacy.GraphErr.X86Common as C
@@ -133,20 +130,3 @@ diverges-iff P wf =
   ⟨ (λ div d d∈ → diverges-not-terminates div (proj₂ (adequacy-terminates P wf d∈)))
   , (λ empty → never-final-diverges (λ σ fin → let ⟨ d , d∈ ⟩ = sound-terminates P wf ⟨ _ , ⟨ σ , fin ⟩ ⟩
                                               in empty d d∈)) ⟩
-
-{- The programs of the compiler ---------------------------------------------------}
-
-x86-error-iff : ∀ M → Closed M → (ω ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
-x86-error-iff M c = error-iff (compile-x86 M) (compile-x86-wf M c)
-
-x86-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
-  → (dconst k ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
-x86-const-iff M c = const-iff (compile-x86 M) (compile-x86-wf M c)
-
-x86-converges-iff : ∀ M → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₓ × d ≢ ω) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
-x86-converges-iff M c = converges-iff (compile-x86 M) (compile-x86-wf M c)
-
-x86-diverges-iff : ∀ M → Closed M
-  → Diverges (X86ₘ.sem (compile-x86 M)) ⇔ (∀ d → ¬ (d ∈ ⟦ compile-x86 M ⟧ₓ))
-x86-diverges-iff M c = diverges-iff (compile-x86 M) (compile-x86-wf M c)

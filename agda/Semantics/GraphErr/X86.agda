@@ -24,7 +24,7 @@ open import Framework.GraphModel.Domain
 open import Framework.GraphModel.OpsBase using (ℬ)
 open import Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Prim
-open import Semantics.GraphErr.Imp using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
+open import Semantics.GraphErr.Frames using (Table; Store; init; read; _[_↦_]; frameᵐ; zeros; tables) public
 open import Language.Prim using (sub; eq)
 open import Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)
 

@@ -41,18 +41,14 @@ module proof.Adequacy.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
 open import Language.ISWIM
 open import proof.Semantics.Graph.ISWIM using (⟦_⟧)
-open import Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import proof.Correctness.Graph.CompilerCorrect
-  using (compile; compile-correct-const; compile-correct-nonempty)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
   using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
 open import Semantics.CEK.ISWIM
-open import proof.Compiler.EncloseScope using (Closed)
+open import Compiler.EncloseScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
 open import proof.Adequacy.Common
 open import proof.Adequacy.Soundness using (soundness) public
@@ -114,20 +110,3 @@ error-empty M c w d d∈ with adequacy M c d∈
 diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M c div d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t
-
-{- The compiler, observed through the ISWIM machine ---------------------------}
-
-{- the constants of the compiled program are those the ISWIM machine
-   computes, and it produces something exactly when the machine
-   terminates with an answer -}
-compile-correct-machine-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (sem M) (o-const B k) ⇔ (dconst k ∈ ⟦ compile M ⟧ₚ)
-compile-correct-machine-const M c k =
-  ⟨ (λ t → proj₁ (compile-correct-const M k) (sound-const M t))
-  , (λ k∈ → adequacy-const M c (proj₂ (compile-correct-const M k) k∈)) ⟩
-
-compile-correct-machine-converges : ∀ M → Closed M
-  → Converges (Terminates (sem M)) ⇔ nonempty ⟦ compile M ⟧ₚ
-compile-correct-machine-converges M c =
-  ⟨ (λ t → proj₁ (compile-correct-nonempty M) (sound-nonempty M t))
-  , (λ ne → adequacy-converges M c (proj₂ (compile-correct-nonempty M) ne)) ⟩

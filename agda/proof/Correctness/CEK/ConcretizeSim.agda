@@ -1,306 +1,191 @@
 {-
 
-  Correctness of the concretize pass (Clos2 → Clos3) by a forward
-  simulation between their machines (see the design note in
+  Correctness of typed concretize (Clos2ᵀ → Clos3ᵀ) by a forward
+  simulation between the typed machines (see the design note in
   Semantics/CEK/Smallstep.agda).
 
-  The pass needs no precondition: it is correct for every Clos2 program.
-  A Clos2 variable that a closure's code reads past its free variables is
-  unbound in the Clos2 machine (the code runs in the argument and the n
-  free variables only) and becomes ` 2, which is unbound in the Clos3
-  machine (the code runs in the argument and the tuple only).
+  The machines run in lock step, except that a free variable of a
+  closure's code, read in one Clos2ᵀ step, becomes get i (` 1), which
+  takes three Clos3ᵀ steps (ref-run). Since variables are always bound
+  in the typed machines, the read cannot fail, and needs no special
+  state.
 
-  The machines run in lock step, except for two places.
-
-  * A free variable of a closure's code, read in one Clos2 step, becomes
-    get i ⦅ ` 1 ⦆, which takes three Clos3 steps. So a Clos2 state that
-    is about to look up a variable is matched by the Clos3 state that is
-    about to project from the tuple (var~), two steps ahead: then both
-    machines error at the same time when the variable is unbound. On
-    entering a term (enter), the Clos3 machine takes those two steps
-    early.
-
-  * Building a closure takes one extra Clos3 step: the free variables are
-    evaluated as a tuple, which is then put in a closure (closK).
-
-  Values are related (_≈_) when they agree, except that a Clos2 closure
-  of N and the values vs of its free variables is related to a Clos3
-  closure of concretize (fv-ref n) N and a tuple ts that holds the same
-  values in the opposite order (FV n vs ts): the Clos2 machine collects
-  the values as an environment, the free variable bound last first, and
-  component fv-index n k of the tuple is the k-th of them.
-
-  Environments are related through the map φ : Var → Ref that concretize
-  carries (EnvRel), at every variable: a Clos2 variable x finds a related
-  value (or none) in the Clos3 variable or tuple component that φ x names.
+  Values are related (_≈_) when they agree, except that a Clos2ᵀ closure
+  of N and vs is related to a Clos3ᵀ closure of concretize fv-ref N and
+  values related to vs (as a tuple, in the same order). Environments are
+  related through the map φ that concretize carries (EnvRel): Clos2ᵀ
+  variable x holds a value related to the one at φ x (ref-val), a
+  variable or a component of a tuple. The only error, a failed project,
+  happens in both machines at the same time.
 
 -}
 
 module proof.Correctness.CEK.ConcretizeSim where
 
-open import Framework.Syntax.SigUtil using (ν-n)
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-import Language.Clos2 as C2
-open C2 using (`_; _⦅_⦆; clos-op; app; lit; tuple; get; inl-op; inr-op; case-op; prim; let-op;
-               cons; clear; bind; ast; ν; ■; Var)
-import Language.Clos3 as C3
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Language.Typed.Clos2
+import Language.Typed.Clos3 as C3
 open import Compiler.Concretize
-open import Semantics.Observation
+open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-open import proof.Framework.ListUtil
-import Semantics.CEK.Clos2 as S
-import Semantics.CEK.Clos3 as T
+open import proof.Correctness.CEK.Common using (collected≈; Lock; same-stop; same-next; lock)
+import Semantics.CEK.Typed.Clos2 as Src
+import Semantics.CEK.Typed.Clos3 as Tgt
 
-open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Fin using (Fin)
-open import Data.List using (List; []; _∷_; _∷ʳ_; length; map; replicate; reverse)
-open import Data.List.Properties using (unfold-reverse)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (Maybe; just; nothing)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (ℕ; zero; suc; _+_; _≤_; _<_; _<?_)
-open import Data.Nat.Properties using (+-identityʳ; +-suc; ≤-pred; ≮⇒≥; m≤n⇒m<n∨m≡n)
-open import Data.Product using (_×_; Σ-syntax; _,_)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; subst₂; cong₂)
-open import Relation.Nullary using (yes; no)
-
-{- The compiler, on the machines' views of the syntax --------------------------}
-
-conc-body≡ : ∀ n k (a : C2.Arg (ν-n k (ν ■))) → conc-body n k a ≡ concretize (fv-ref n) (S.body k a)
-conc-body≡ n zero (bind (ast N)) = refl
-conc-body≡ n (suc k) (bind a) = conc-body≡ n k a
-
-args-length : ∀ {n} (args : C2.Args (replicate n ■)) → length (args→list args) ≡ n
-args-length {zero} Nil = refl
-args-length {suc n} (M ,, args) = cong suc (args-length args)
+open import Data.Fin using (Fin; zero; suc)
+open import Data.Integer using (_≟_)
+open import Data.List using ([]; _∷_)
+import Data.List.Relation.Binary.Pointwise as L
+open import Data.List.Relation.Unary.All using ([]; _∷_)
+open import Data.Vec using (Vec; []; _∷_; lookup)
+open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
+open import Language.Prim using (sub; eq)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
+open import Relation.Nullary using (yes; no; does)
 
 {- The simulation relation -----------------------------------------------------}
 
 infix 4 _≈_ _≈k_ _~_
 
-data _≈_ : S.Val → T.Val → Set
-data FV : ℕ → List S.Val → List T.Val → Set
+data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
+  clos≈ : ∀ {n N} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws
+    → Src.clos N vs ≈ Tgt.clos (concretize fv-ref N) ws
+  const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
+  tup≈ : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
+  inl≈ : ∀ {v w} → v ≈ w → Src.inl v ≈ Tgt.inl w
+  inr≈ : ∀ {v w} → v ≈ w → Src.inr v ≈ Tgt.inr w
+  dyn≈ : ∀ {G v w} → v ≈ w → Src.dyn G v ≈ Tgt.dyn G w
 
-data _≈_ where
-  clo≈ : ∀ {n N vs ts} → FV n vs ts → S.clos N vs ≈ T.clos (concretize (fv-ref n) N) (T.tup ts)
-  const≈ : ∀ {B k} → S.const B k ≈ T.const B k
-  tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → S.tup vs ≈ T.tup ws
-  inl≈ : ∀ {v w} → v ≈ w → S.inl v ≈ T.inl w
-  inr≈ : ∀ {v w} → v ≈ w → S.inr v ≈ T.inr w
+{- the value at a Ref -}
+get-val : ∀ {n} → Fin n → Tgt.Val ⟪ tup n ⟫ → Tgt.Val Any
+get-val i (Tgt.tup vs) = lookup vs i
 
-{- the n values of a closure's free variables, the one bound last first,
-   and the tuple of them: the first component is the last value -}
-data FV where
-  [] : FV 0 [] []
-  fv-snoc : ∀ {n vs ts v t} → FV n vs ts → v ≈ t → FV (suc n) (vs ∷ʳ v) (t ∷ ts)
+ref-val : ∀ {Γ} → Ref Γ → Tgt.Env Γ → Tgt.Val Any
+ref-val (var y) ρ = ρ Tgt.! y
+ref-val (prj i y) ρ = get-val i (ρ Tgt.! y)
 
-{- where a Clos2 value (or its absence) is found in a Clos3 environment -}
-RefRel : Maybe S.Val → Ref → T.Env → Set
-RefRel mv (var y) ρ₃ = M.Pointwise _≈_ mv (ρ₃ ‼ y)
-RefRel mv (prj i y) ρ₃ = Σ[ ts ∈ List T.Val ] (ρ₃ ‼ y ≡ just (T.tup ts)) × M.Pointwise _≈_ mv (proj i ts)
+EnvRel : ∀ {k Γ} → (Fin k → Ref Γ) → Src.Env k → Tgt.Env Γ → Set
+EnvRel φ ρ₁ ρ₂ = ∀ x → lookup ρ₁ x ≈ ref-val (φ x) ρ₂
 
-EnvRel : (Var → Ref) → S.Env → T.Env → Set
-EnvRel φ ρ₂ ρ₃ = ∀ x → RefRel (ρ₂ ‼ x) (φ x) ρ₃
+data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
+  halt : Src.halt ≈k Tgt.halt
+  appL : ∀ {k Γ M} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.appL M ρ₁ κ₁ ≈k Tgt.appL (concretize φ M) ρ₂ κ₂
+  appR : ∀ {f g κ₁ κ₂} → f ≈ g → κ₁ ≈k κ₂ → Src.appR f κ₁ ≈k Tgt.appR g κ₂
+  tupK : ∀ {k Γ} {φ : Fin k → Ref Γ} {n j vs ws} {Ms : Vec _ j} {ρ₁ ρ₂} {e : _ ≡ n} {e' κ₁ κ₂}
+    → L.Pointwise _≈_ vs ws → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tupK vs Ms ρ₁ e κ₁ ≈k Tgt.tupK ws (concs φ Ms) ρ₂ e' κ₂
+  closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {n} N κ₁ ≈k Tgt.closK (concretize fv-ref N) κ₂
+  getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
+  inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK κ₁ ≈k Tgt.inlK κ₂
+  inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK κ₁ ≈k Tgt.inrK κ₂
+  caseK : ∀ {k Γ M N} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.caseK M N ρ₁ κ₁ ≈k Tgt.caseK (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) ρ₂ κ₂
+  primL : ∀ {k Γ p M} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.primL p M ρ₁ κ₁ ≈k Tgt.primL p (concretize φ M) ρ₂ κ₂
+  primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
+  letK : ∀ {k Γ N} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (concretize (ext-ref φ) N) ρ₂ κ₂
+  injK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.injK G κ₁ ≈k Tgt.injK G κ₂
+  projK : ∀ {G κ₁ κ₂} → κ₁ ≈k κ₂ → Src.projK G κ₁ ≈k Tgt.projK G κ₂
 
-data _≈k_ : S.Cont → T.Cont → Set where
-  halt : S.halt ≈k T.halt
-  appL : ∀ {M φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → S.appL M ρ₂ κ₂ ≈k T.appL (concretize φ M) ρ₃ κ₃
-  appR : ∀ {v w κ₂ κ₃} → v ≈ w → κ₂ ≈k κ₃ → S.appR v κ₂ ≈k T.appR w κ₃
-  tupK : ∀ {vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → S.tupK vs Ms ρ₂ κ₂ ≈k T.tupK ws (map (concretize φ) Ms) ρ₃ κ₃
-  {- evaluating the free variables of a closure, as a tuple in Clos3 -}
-  closK : ∀ {n N vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃
-    → length Ms + suc (length vs) ≡ n → κ₂ ≈k κ₃
-    → S.closK N vs Ms ρ₂ κ₂
-      ≈k T.tupK ws (map (concretize φ) Ms) ρ₃ (T.closK (concretize (fv-ref n) N) κ₃)
-  getK : ∀ {n} {i : Fin n} {κ₂ κ₃} → κ₂ ≈k κ₃ → S.getK i κ₂ ≈k T.getK i κ₃
-  inlK : ∀ {κ₂ κ₃} → κ₂ ≈k κ₃ → S.inlK κ₂ ≈k T.inlK κ₃
-  inrK : ∀ {κ₂ κ₃} → κ₂ ≈k κ₃ → S.inrK κ₂ ≈k T.inrK κ₃
-  caseK : ∀ {M N φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → S.caseK M N ρ₂ κ₂ ≈k T.caseK (concretize (ext-ref φ) M) (concretize (ext-ref φ) N) ρ₃ κ₃
-  primL : ∀ {p M φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → S.primL p M ρ₂ κ₂ ≈k T.primL p (concretize φ M) ρ₃ κ₃
-  primR : ∀ {p v w κ₂ κ₃} → v ≈ w → κ₂ ≈k κ₃ → S.primR p v κ₂ ≈k T.primR p w κ₃
-  letK : ∀ {N φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → S.letK N ρ₂ κ₂ ≈k T.letK (concretize (ext-ref φ) N) ρ₃ κ₃
+data _~_ : Src.State → Tgt.State → Set where
+  eval~ : ∀ {k Γ A} {φ : Fin k → Ref Γ} {M : Tm k A} {ρ₁ ρ₂ κ₁ κ₂} → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.eval M ρ₁ κ₁ ~ Tgt.eval (concretize φ M) ρ₂ κ₂
+  ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
-NotVar : C2.AST → Set
-NotVar (` x) = ⊥
-NotVar (op ⦅ args ⦆) = ⊤
-
-data _~_ : S.State → T.State → Set where
-  eval~ : ∀ {M φ ρ₂ ρ₃ κ₂ κ₃} → NotVar M → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → S.eval M ρ₂ κ₂ ~ T.eval (concretize φ M) ρ₃ κ₃
-  {- a variable, matched by a Clos3 state about to return what it finds -}
-  var~ : ∀ {x ρ₂ κ₂ mw κ₃ s₃} → M.Pointwise _≈_ (ρ₂ ‼ x) mw → κ₂ ≈k κ₃
-    → T.step s₃ ≡ T.ret? mw κ₃ → S.eval (` x) ρ₂ κ₂ ~ s₃
-  ret~ : ∀ {v w κ₂ κ₃} → v ≈ w → κ₂ ≈k κ₃ → S.ret v κ₂ ~ T.ret w κ₃
-
-{- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
-obs≈ (clo≈ _) = refl
+{- Related values are observed alike, and primitives give related values -}
+obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
+obs≈* : ∀ {n} {vs : Vec _ n} {ws} → V.Pointwise _≈_ vs ws → Src.obs-vec vs ≡ Tgt.obs-vec ws
+obs≈ (clos≈ _) = refl
 obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
+obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
 obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+obs≈ (dyn≈ r) = obs≈ r
+obs≈* [] = refl
+obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 
-{- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
-... | nothing = M.nothing
-... | just (int n) = M.just const≈
-... | just (bool true) = M.just (inl≈ (tup≈ []))
-... | just (bool false) = M.just (inr≈ (tup≈ []))
+δ≈ : ∀ p n m → Src.δᵀ p n m ≈ Tgt.δᵀ p n m
+δ≈ sub n m = const≈
+δ≈ eq n m with does (n ≟ m)
+... | true = inl≈ (dyn≈ (tup≈ []))
+... | false = inr≈ (dyn≈ (tup≈ []))
 
-{- The free variables of a closure ---------------------------------------------}
+{- the only error: both machines project, and fail, at the same time -}
+proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
+  → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
+proj~ {H} {G} r k with H ≟F flat G
+... | yes refl = same-next (ret~ r k)
+... | no _ = same-stop
 
-FV-length : ∀ {n vs ts} → FV n vs ts → length vs ≡ n
-FV-length [] = refl
-FV-length (fv-snoc {vs = vs} {v = v} f r) = trans (length-snoc vs v) (cong suc (FV-length f))
+{- Related environments --------------------------------------------------------}
 
-FV-has-length : ∀ {n vs ts} → FV n vs ts → has-length n ts ≡ true
-FV-has-length [] = refl
-FV-has-length (fv-snoc f r) = FV-has-length f
-
-FV-cons : ∀ {n vs ts v w} → FV n vs ts → v ≈ w → FV (suc n) (v ∷ vs) (ts ∷ʳ w)
-FV-cons [] r = fv-snoc [] r
-FV-cons (fv-snoc f r') r = fv-snoc (FV-cons f r) r'
-
-{- the machines collect the values in the same order, and the tuple is
-   reversed -}
-pw→FV : ∀ {vs ws} → Pointwise _≈_ vs ws → FV (length vs) vs (reverse ws)
-pw→FV [] = []
-pw→FV {v ∷ vs} {w ∷ ws} (r ∷ rs) =
-  subst (FV (suc (length vs)) (v ∷ vs)) (sym (unfold-reverse w ws)) (FV-cons (pw→FV rs) r)
-
-FV-lookup : ∀ {n vs ts} → FV n vs ts → ∀ k (k<n : k < n)
-  → M.Pointwise _≈_ (vs ‼ k) (proj (fv-index n k k<n) ts)
-FV-lookup (fv-snoc {n} {vs} {ts} {v} {t} f r) k k<sn with k <? n
-... | yes k<n
-  rewrite ‼-snoc-< vs v k (subst (k <_) (sym (FV-length f)) k<n) = FV-lookup f k k<n
-... | no k≮n with m≤n⇒m<n∨m≡n (≤-pred k<sn)
-...   | inj₁ k<n = ⊥-elim (k≮n k<n)
-...   | inj₂ refl rewrite FV-has-length f | sym (FV-length f) | ‼-snoc-length vs v = M.just r
-
-{- The environment relation ----------------------------------------------------}
-
-env-ext : ∀ {φ ρ₂ ρ₃ v w} → v ≈ w → EnvRel φ ρ₂ ρ₃ → EnvRel (ext-ref φ) (v ∷ ρ₂) (w ∷ ρ₃)
-env-ext r er zero = M.just r
-env-ext {φ} r er (suc x) with φ x | er x
+env-ext : ∀ {k Γ} {φ : Fin k → Ref Γ} {ρ₁ ρ₂ v} {w : Tgt.Val Any} → v ≈ w → EnvRel φ ρ₁ ρ₂
+  → EnvRel (ext-ref φ) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext r er zero = r
+env-ext {φ = φ} r er (suc x) with φ x | er x
 ... | var y | p = p
 ... | prj i y | p = p
 
-{- the environment of a closure's code: its argument, then its free
-   variables (Clos2) or the tuple of them (Clos3) -}
-env-clos : ∀ {n vs ts v w} → v ≈ w → FV n vs ts → EnvRel (fv-ref n) (v ∷ vs) (w ∷ T.tup ts ∷ [])
-env-clos r f zero = M.just r
-env-clos {n} {vs} r f (suc k) with k <? n
-... | yes k<n = _ , refl , FV-lookup f k k<n
-... | no k≮n rewrite ‼-≥ vs k (subst (_≤ k) (sym (FV-length f)) (≮⇒≥ k≮n)) = M.nothing
+{- the environment of a closure's code: its argument and its free variables -}
+env-clos : ∀ {n v w} {vs : Vec _ n} {ws} → v ≈ w → V.Pointwise _≈_ vs ws
+  → EnvRel fv-ref (v ∷ vs) (w ∷ Tgt.tup ws ∷ [])
+env-clos r rs zero = r
+env-clos r rs (suc i) = V.lookup rs i
 
-env-empty : EnvRel var [] []
-env-empty x = M.nothing
+{- The simulation, for any Clos3ᵀ program P ------------------------------------}
 
-{- The simulation, for any Clos3 program P -------------------------------------}
+module _ (P : C3.Tm [] Any) where
 
-module _ (P : C3.AST) where
+  L₂ = Tgt.sem P
 
-  L₃ = T.sem P
+  {- reading a Ref -}
+  ref-run : ∀ {Γ} (r : Ref Γ) ρ κ → Plus L₂ (Tgt.eval (ref-tm r) ρ κ) (Tgt.ret (ref-val r ρ) κ)
+  ref-run (var y) ρ κ = step⁺ refl
+  ref-run (prj i y) ρ κ = plus refl (refl ◅ get-step (ρ Tgt.! y) ◅ ε)
+    where get-step : ∀ t → Tgt.step (Tgt.ret t (Tgt.getK i κ)) ≡ next (Tgt.ret (get-val i t) κ)
+          get-step (Tgt.tup vs) = refl
 
-  {- a Clos3 state from which a matching state can be reached -}
-  Reach~ = Reach L₃ _~_
+  tuple-next~ : ∀ {k Γ} {φ : Fin k → Ref Γ} {n j vs ws} {Ms : Vec _ j} {ρ₁ ρ₂} {e : _ ≡ n} {e' κ₁ κ₂}
+    → L.Pointwise _≈_ vs ws → EnvRel φ ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tuple-next vs Ms ρ₁ e κ₁ ~ Tgt.tuple-next ws (concs φ Ms) ρ₂ e' κ₂
+  tuple-next~ {Ms = []} {e = e} {e'} rs er k = ret~ (tup≈ (collected≈ rs e e')) k
+  tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
-  {- entering a term: a free variable of a closure's code reaches the
-     tuple first -}
-  enter : ∀ M {φ ρ₂ ρ₃ κ₂ κ₃} → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → Reach~ (S.eval M ρ₂ κ₂) (T.eval (concretize φ M) ρ₃ κ₃)
-  enter (` x) {φ} {κ₃ = κ₃} er κ with φ x | er x
-  ... | var y | p = _ , ε , var~ p κ refl
-  ... | prj i y | ts , eq , p =
-    _ , refl ◅ cong (λ mv → T.ret? mv (T.getK i κ₃)) eq ◅ ε , var~ p κ refl
-  enter (op ⦅ args ⦆) er κ = _ , ε , eval~ tt er κ
-
-  tuple-next~ : ∀ {vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃ → κ₂ ≈k κ₃
-    → Reach~ (S.tuple-next vs Ms ρ₂ κ₂) (T.tuple-next ws (map (concretize φ) Ms) ρ₃ κ₃)
-  tuple-next~ {Ms = []} rs er κ = _ , ε , ret~ (tup≈ (reverse⁺ rs)) κ
-  tuple-next~ {Ms = M ∷ Ms} rs er κ = enter M er (tupK rs er κ)
-
-  clos-next~ : ∀ {n N vs ws Ms φ ρ₂ ρ₃ κ₂ κ₃} → Pointwise _≈_ vs ws → EnvRel φ ρ₂ ρ₃
-    → length Ms + length vs ≡ n → κ₂ ≈k κ₃
-    → Reach~ (S.clos-next N vs Ms ρ₂ κ₂)
-            (T.tuple-next ws (map (concretize φ) Ms) ρ₃ (T.closK (concretize (fv-ref n) N) κ₃))
-  clos-next~ {Ms = []} rs er refl κ = _ , refl ◅ ε , ret~ (clo≈ (pw→FV rs)) κ
-  clos-next~ {vs = vs} {Ms = M ∷ Ms} rs er len κ =
-    enter M er (closK rs er (trans (+-suc (length Ms) (length vs)) len) κ)
-
-  sim : ∀ {s₂ s₃} → s₂ ~ s₃ → Answers L₃ _~_ (S.step s₂) s₃
-  sim (var~ p κ eq) = next?-answers p (λ r → ret~ r κ) eq
-  sim (eval~ {M = ` x} () _ _)
-  sim (eval~ {M = clos-op n ⦅ cons (clear a) fvs ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
-    after refl
-      (subst₂ (λ Ns B → Reach~ (S.clos-next (S.body n a) [] (args→list fvs) ρ₂ κ₂)
-                              (T.tuple-next [] Ns ρ₃ (T.closK B κ₃)))
-              (sym (args→list-hom (concretize φ) (conc-args φ) (λ _ _ → refl) fvs)) (sym (conc-body≡ n n a))
-              (clos-next~ [] er (trans (+-identityʳ _) (args-length fvs)) κ))
-  sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} _ er κ) = after refl (enter L er (appL er κ))
-  sim (eval~ {M = lit B k ⦅ Nil ⦆} _ er κ) = steps₁ refl (ret~ const≈ κ)
-  sim (eval~ {M = tuple n ⦅ args ⦆} {φ} {ρ₂} {ρ₃} {κ₂} {κ₃} _ er κ) =
-    after refl
-      (subst (λ Ns → Reach~ (S.tuple-next [] (args→list args) ρ₂ κ₂) (T.tuple-next [] Ns ρ₃ κ₃))
-             (sym (args→list-hom (concretize φ) (conc-args φ) (λ _ _ → refl) args)) (tuple-next~ [] er κ))
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} _ er κ) = after refl (enter M er (getK κ))
-  sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} _ er κ) = after refl (enter M er (inlK κ))
-  sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} _ er κ) = after refl (enter M er (inrK κ))
-  sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} _ er κ) =
-    after refl (enter L er (caseK er κ))
-  sim (eval~ {M = prim p ⦅ L ,, M ,, Nil ⦆} _ er κ) = after refl (enter L er (primL er κ))
-  sim (eval~ {M = let-op ⦅ M ,, ⟩ N ,, Nil ⦆} _ er κ) = after refl (enter M er (letK er κ))
+  sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
+  sim (eval~ {φ = φ} {M = ` x} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) = steps (ref-run (φ x) ρ₂ κ₂) (ret~ (er x) k)
+  sim (eval~ {M = clos N Ms} er k) = steps₁ refl (tuple-next~ L.[] er (closK k))
+  sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
+  sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
+  sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ L.[] er k)
+  sim (eval~ {M = get i M} er k) = steps₁ refl (eval~ er (getK k))
+  sim (eval~ {M = inl M} er k) = steps₁ refl (eval~ er (inlK k))
+  sim (eval~ {M = inr M} er k) = steps₁ refl (eval~ er (inrK k))
+  sim (eval~ {M = case L M N} er k) = steps₁ refl (eval~ er (caseK er k))
+  sim (eval~ {M = prim p L M} er k) = steps₁ refl (eval~ er (primL er k))
+  sim (eval~ {M = let′ M N} er k) = steps₁ refl (eval~ er (letK er k))
+  sim (eval~ {M = inject G M} er k) = steps₁ refl (eval~ er (injK k))
+  sim (eval~ {M = project G M} er k) = steps₁ refl (eval~ er (projK k))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  sim (ret~ r@(clo≈ _) (appL {M = M} er κ)) = after refl (enter M er (appR r κ))
-  sim (ret~ const≈ (appL er κ)) = stops refl
-  sim (ret~ (tup≈ _) (appL er κ)) = stops refl
-  sim (ret~ (inl≈ _) (appL er κ)) = stops refl
-  sim (ret~ (inr≈ _) (appL er κ)) = stops refl
-  sim (ret~ r (appR (clo≈ {N = N} f) κ)) = after refl (enter N (env-clos r f) κ)
-  sim (ret~ r (appR const≈ κ)) = stops refl
-  sim (ret~ r (appR (tup≈ _) κ)) = stops refl
-  sim (ret~ r (appR (inl≈ _) κ)) = stops refl
-  sim (ret~ r (appR (inr≈ _) κ)) = stops refl
-  sim (ret~ r (tupK rs er κ)) = after refl (tuple-next~ (r ∷ rs) er κ)
-  sim (ret~ r (closK rs er len κ)) = after refl (clos-next~ (r ∷ rs) er len κ)
-  sim (ret~ (tup≈ rs) (getK {i = i} κ)) = next?-answers (proj-pw i rs) (λ r → ret~ r κ) refl
-  sim (ret~ (clo≈ _) (getK κ)) = stops refl
-  sim (ret~ const≈ (getK κ)) = stops refl
-  sim (ret~ (inl≈ _) (getK κ)) = stops refl
-  sim (ret~ (inr≈ _) (getK κ)) = stops refl
-  sim (ret~ r (inlK κ)) = steps₁ refl (ret~ (inl≈ r) κ)
-  sim (ret~ r (inrK κ)) = steps₁ refl (ret~ (inr≈ r) κ)
-  sim (ret~ (inl≈ r) (caseK {M = M} er κ)) = after refl (enter M (env-ext r er) κ)
-  sim (ret~ (inr≈ r) (caseK {N = N} er κ)) = after refl (enter N (env-ext r er) κ)
-  sim (ret~ (clo≈ _) (caseK _ κ)) = stops refl
-  sim (ret~ const≈ (caseK _ κ)) = stops refl
-  sim (ret~ (tup≈ _) (caseK _ κ)) = stops refl
-  sim (ret~ r (primL {M = M} er κ)) = after refl (enter M er (primR r κ))
-  sim (ret~ s (primR {p} r κ)) = next?-answers (prim≈ p r s) (λ r → ret~ r κ) refl
-  sim (ret~ r (letK {N = N} er κ)) = after refl (enter N (env-ext r er) κ)
+  sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
+  sim (ret~ r (appR (clos≈ rs) k)) = steps₁ refl (eval~ (env-clos r rs) k)
+  sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r L.∷ rs) er k)
+  sim (ret~ (tup≈ rs) (closK k)) = steps₁ refl (ret~ (clos≈ rs) k)
+  sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (V.lookup rs i) k)
+  sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)
+  sim (ret~ r (inrK k)) = steps₁ refl (ret~ (inr≈ r) k)
+  sim (ret~ (inl≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
+  sim (ret~ (inr≈ r) (caseK er k)) = steps₁ refl (eval~ (env-ext r er) k)
+  sim (ret~ const≈ (primL er k)) = steps₁ refl (eval~ er (primR k))
+  sim (ret~ (const≈ {c = m}) (primR {p} {n} k)) = steps₁ refl (ret~ (δ≈ p n m) k)
+  sim (ret~ r (letK er k)) = steps₁ refl (eval~ (env-ext r er) k)
+  sim (ret~ r (injK k)) = steps₁ refl (ret~ (dyn≈ r) k)
+  sim (ret~ (dyn≈ r) (projK k)) = lock (proj~ r k)
 
-{- The end theorem: for every Clos2 program ------------------------------------}
+{- The end theorem: for every closed Clos2ᵀ program ----------------------------}
 
-init~ : ∀ M → S.eval M [] S.halt ~ T.eval (concretize-program M) [] T.halt
-init~ (` x) = var~ M.nothing halt refl
-init~ (op ⦅ args ⦆) = eval~ tt env-empty halt
-
-concretize-fsim : ∀ M → FSim (S.sem M) (T.sem (concretize-program M))
-concretize-fsim M = plus-simulation _~_ (init~ M) (sim (concretize-program M))
-
-concretize-correct : ∀ M → Equivalent (S.sem M) (T.sem (concretize-program M))
-concretize-correct M = equivalent (concretize-fsim M)
+concretize-correct : ∀ (M : Tm 0 Any) → Equivalent (Src.sem M) (Tgt.sem (concretize-program M))
+concretize-correct M = equivalent (plus-simulation _~_ (eval~ (λ ()) halt) (sim (concretize-program M)))

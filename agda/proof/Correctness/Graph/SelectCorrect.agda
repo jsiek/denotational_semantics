@@ -1,411 +1,340 @@
 {-
 
-  Correctness of select instructions (CFG → X86, Compiler/Select.agda):
-  the meaning of the X86 program (Semantics/Graph/X86.agda) is that of the CFG
-  program (Semantics/Graph/CFG.agda), given that each global definition has at least
-  2 slots, its parameters (Defs); the programs that compile-cfg produces
-  do (defs-2).
+  Correctness of typed select instructions (CFGᵀ → X86,
+  Compiler/Select.agda) in the graph model: the X86 program
+  (Semantics/Graph/X86.agda, unchanged) means what the CFGᵀ program does
+  (Semantics/Graph/Typed/CFG.agda), for every CFGᵀ program.
 
-    select-correct : Defs ds → ⟦ select P ⟧ₚ ≃ ⟦ P ⟧ₚ
-
-  The X86 state is the CFG store, with any registers and flag. The
-  instructions of x := r, then κ, mean x := r; K in CFG when κ means K
-  with any registers and flag (sel, Fits); those of return r leave the
-  value of r in %rax. Each case is a congruence: the instructions compute
-  r through registers, and only the final move to x binds, as CFG does.
-  The writes to registers and the flag before it are strict, but the
-  value of r is nonempty only when theirs are, so they change nothing
-  (strict-≃). The blocks map one to one (tail, blocks-≃).
-
-  case a x l₁ l₂ tests the tag of a, binds the payload and branches on
-  the flag; this is 𝒞 on a when a slot never holds both an inl and an
-  inr (Tagged, Inv), which holds since the binders bind only consistent
-  sets (case-core).
-
-  The start of a global definition moves %rdi and %rsi to slots 0 and 1,
-  strictly; this binds finite parts of the parameters, where CFG runs the
-  body with them whole, so it needs that the meaning of a CFG tail is
-  monotone in the store (Mono, frame-≃).
+  The X86 store holds the slots of the CFGᵀ frame at their levels (Rel):
+  slot x is X86 variable lvl x. A tail runs within the frame, since its
+  depth is at most the frame's (depth-≥, Compiler/SelectFacts).
+  The instructions of s into d, then κ, mean d := s; K in CFGᵀ when κ
+  means K with any registers and flag (sel, Fits, after); the writes to
+  registers before the last move are strict, but the value of s is
+  nonempty only when theirs are (strict-≃). A project's test instruction
+  has a value exactly when the slot holds a value its tag accepts, and
+  then the guard keeps the whole slot (guard-≃). A case tests the tag,
+  binds the payload and branches on the flag: 𝒞 on a slot that never
+  holds both an inl and an inr (Tagged, Inv; case-core). The start of a
+  definition moves %rdi and %rsi to slots 0 and 1, which binds finite
+  parts of the arguments, so it needs that a CFGᵀ tail is monotone in its
+  frame (tail-mono). Blocks and definitions map one to one, by level.
 
 -}
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig using (Results; results-rel-pres)
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Ops
-open import proof.Semantics.Graph.Prim using (primD; primD-mono; primD-≃)
-open import Language.Imp as I using (var; lit; fun-ref; atm; app; fst; snd; tuple; get; prim)
-import Language.Prim as P
-import Language.CFG as C
-open import Language.X86 hiding (fst; snd; get)
-open import Compiler.Select
-open import Compiler.Explicate using (explicate-body)
-open import Compiler.LiftLocals using (lift-defs)
-open import Compiler.Pipeline using (compile-x86; compile-cfg)
-open import Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒜s; 𝒮; zeros; frame)
-open import Semantics.Graph.CFG
-  using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
-open import Semantics.Graph.X86
-open import proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
-open import proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
-open import proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
-open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
-open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
-import Language.ISWIM as ISWIM
-open import Framework.Primitives using (base-rep)
-
-open import Data.Empty using (⊥; ⊥-elim)
-open import Data.List using (List; []; _∷_; _++_; length; replicate; map)
-open import Data.List.Properties using (++-identityʳ; length-map)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.List.Relation.Unary.Any using (here)
-open import Data.Nat using (ℕ; suc; _≤_; _≟_; _<?_; s≤s; z≤n)
-open import Data.Nat.Properties using (m≤n⇒m⊔n≡n; m≤m+n; ≤-trans)
-open import Data.Product using (Σ; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (tt)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; cong₂)
-open import Relation.Nullary using (yes; no)
-
 module proof.Correctness.Graph.SelectCorrect where
 
-open import proof.Framework.GraphModel.Laws using (strict-≃; strict-≃₂; strict-≃₃; ⋆-ne)
+open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.Laws using (strict-≃; strict-≃₂; ⋆-ne)
+open import proof.Semantics.Graph.Prim using (primD; primD-mono; primD-≃)
+open import proof.Framework.GraphModel.Env using (Env; _⊆ₑ_)
+open import Framework.Primitives using (Int)
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
+open import proof.Framework.Lookup using (lvl-<; lvl-⊑)
+import Language.Prim as P
+open import Language.Typed.Type hiding (_≟_)
+open import Language.Typed.Imp using (Atm; var; lit; ref; atm; pack; callc; tuple; get; inl; inr; prim; inject; project)
+import Language.Typed.CFG as C
+open C using (Tail; return; seq; goto; case; Blocks; _▷_)
+import Language.X86 as L
+open L using (Loc; reg; rax; rdi; rsi; Instr; Block; block; jmp; je; retq)
+open import Compiler.Select
+open import proof.Compiler.SelectFacts using (depth-≥; len-defs; len-blocks)
+import Semantics.Graph.X86 as X
+open import proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
+open X using (Store; read; _[_↦_]; checked; zeros; _[_≔_]; isinl; called; args)
+open import proof.Semantics.Graph.Typed.Ops using (Table; tables; accepts; guardᵖ; fun₄; init)
+open import proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; Meanings; blocks; drop; 𝒜; 𝒮; tail-mono; blocks-mono)
+  renaming (code′ to codeᶜ; table to tableᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ; run to runᶜ)
+open import Semantics.Graph.Typed.Imp using (𝒜s)
+open import proof.Framework.GraphModel.DOpSig using (Results; RRs; mono-≃)
 
-{- No slot holds both an inl and an inr ------------------------------------------------}
+open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Fin using (Fin)
+open import Data.Integer using (0ℤ)
+open import Data.List using (List; []; _∷_; _++_; length; replicate)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.List.Relation.Unary.Any using (here)
+open import Data.Nat using (ℕ; suc; _≤_; _<_; _≟_; _<?_; _⊔_; s≤s; z≤n)
+open import Data.Nat.Properties using (≤-trans; <-≤-trans; m≤m⊔n; m≤n⊔m; <⇒≢; ≤-refl; n≤1+n)
+open import Data.Product using (Σ; Σ-syntax; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (inj₁; inj₂)
+open import Data.Unit using (tt; ⊤)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+open import Data.Vec using (Vec; []; _∷_; toList; map)
+open import Level using (lift; lower)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
+open import Relation.Nullary using (yes; no)
 
-Tagged : 𝒫 Value → Set
-Tagged D = ∀ {u v} → left u ∈ D → right v ∈ D → ⊥
+{- Stores ------------------------------------------------------------------------------}
 
-Inv : Store → Set
-Inv σ = ∀ y → Tagged (σ y)
+read-in : ∀ {n σ x} → x < n → read n σ x ≡ σ x
+read-in {n} {σ} {x} lt with x <? n
+... | yes _ = refl
+... | no ¬p = ⊥-elim (¬p lt)
 
-tagged-≈ : ∀ {V} → V ≈ V → Tagged (mem V)
-tagged-≈ {V} c l r = ≈⇒Every V V c _ _ l r
+checked-in : ∀ {n x D} → x < n → checked n x D ≡ D
+checked-in {n} {x} lt with x <? n
+... | yes _ = refl
+... | no ¬p = ⊥-elim (¬p lt)
 
-inv-↦ : ∀ {σ x X} → Inv σ → Tagged X → Inv (σ [ x ↦ X ])
-inv-↦ {x = x} i t y with y ≟ x
-... | yes _ = t
-... | no _ = i y
+↦-same : ∀ {σ : Store} {x D} → (σ [ x ↦ D ]) x ≡ D
+↦-same {x = x} with x ≟ x
+... | yes _ = refl
+... | no ne = ⊥-elim (ne refl)
 
-tagged-table : ∀ ds k → Tagged (table ds k)
-tagged-table [] k ()
-tagged-table (b ∷ bs) k with k ≟ length bs
-... | yes _ = λ ()
-... | no _ = tagged-table bs k
+↦-other : ∀ {σ : Store} {x y D} → y ≢ x → (σ [ x ↦ D ]) y ≡ σ y
+↦-other {x = x} {y} ne with y ≟ x
+... | yes e = ⊥-elim (ne e)
+... | no _ = refl
 
-{- The meaning of a CFG tail is monotone in the store ------------------------------------}
+≔-same : ∀ g {ρ : X.Regs} {D} → (ρ [ g ≔ D ]) g ≡ D
+≔-same rax = refl
+≔-same rdi = refl
+≔-same rsi = refl
 
-infix 4 _⊆ₛ_
-_⊆ₛ_ : Store → Store → Set
-σ ⊆ₛ σ' = ∀ y → σ y ⊆ σ' y
+drop-idx : ∀ {Δ' Δ A} (p : Δ' ⊑ Δ) (σ : Env Value) (y : Δ' ∋ A) → drop p σ (idx y) ≡ σ (idx (⊑-∋ p y))
+drop-idx here⊑ σ y = refl
+drop-idx (there⊑ p) σ y = drop-idx p (λ i → σ (suc i)) y
 
-module Mono (T : Table) (n : ℕ) where
+ˢ-++ : ∀ xs {ys T n κ} → X.⟦ xs ++ ys ⟧ˢ T n κ ≡ X.⟦ xs ⟧ˢ T n (X.⟦ ys ⟧ˢ T n κ)
+ˢ-++ [] = refl
+ˢ-++ (i ∷ xs) {T = T} {n} = cong (X.⟦ i ⟧ⁱ T n) (ˢ-++ xs)
 
-  ↦-mono : ∀ {σ σ' x X Y} → σ ⊆ₛ σ' → X ⊆ Y → σ [ x ↦ X ] ⊆ₛ σ' [ x ↦ Y ]
-  ↦-mono {x = x} s X⊆ y with y ≟ x
-  ... | yes _ = X⊆
-  ... | no _ = s y
+{- The pass preserves meanings -----------------------------------------------------------}
 
-  𝒜-mono : ∀ a {σ σ'} → σ ⊆ₛ σ' → 𝒜 T n σ a ⊆ 𝒜 T n σ' a
-  𝒜-mono (var x) s with x <? n
-  ... | yes _ = s x
-  ... | no _ = λ _ z → z
-  𝒜-mono (lit B k) s = λ _ z → z
-  𝒜-mono (fun-ref k) s = λ _ z → z
+{- for tables T (of X86, by level) and T' (of CFGᵀ) that agree, in a frame of n slots -}
+module _ {Σ} {T : X.Table} {T' : Table Σ} (TT : ∀ {m} (f : Σ ∋ m) → T (lvl f) ≃ T' f) (n : ℕ) where
 
-  𝒜s-mono : ∀ as {σ σ'} → σ ⊆ₛ σ' → results-rel-pres _⊆_ (replicate (length as) ■) (𝒜s T n σ as) (𝒜s T n σ' as)
-  𝒜s-mono [] s = ptt
-  𝒜s-mono (a ∷ as) s = ⟨ lift (𝒜-mono a s) , 𝒜s-mono as s ⟩
+  {- the X86 store holds the slots of the frame at their levels -}
+  Rel : Ctx → Store → Env Value → Set
+  Rel Δ s σ = ∀ {A} (x : Δ ∋ A) → s (lvl x) ≃ σ (idx x)
 
-  𝒮-mono : ∀ r {σ σ'} → σ ⊆ₛ σ' → 𝒮 T n σ r ⊆ 𝒮 T n σ' r
-  𝒮-mono (atm a) s = 𝒜-mono a s
-  𝒮-mono (app f e a) s = lower (⋆-mono _ _ ⟨ ⋆-mono _ _ ⟨ lift (𝒜-mono f s) , ⟨ lift (𝒜-mono e s) , ptt ⟩ ⟩
-                                           , ⟨ lift (𝒜-mono a s) , ptt ⟩ ⟩)
-  𝒮-mono (I.pair a b) s = lower (pair-mono _ _ ⟨ lift (𝒜-mono a s) , ⟨ lift (𝒜-mono b s) , ptt ⟩ ⟩)
-  𝒮-mono (fst a) s = lower (car-mono _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
-  𝒮-mono (snd a) s = lower (cdr-mono _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
-  𝒮-mono (tuple as) s = lower (𝒯-mono (length as) _ _ (𝒜s-mono as s))
-  𝒮-mono (get i a) s = lower (proj-mono i _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
-  𝒮-mono (I.inl a) s = lower (inl-mono _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
-  𝒮-mono (I.inr a) s = lower (inr-mono _ _ ⟨ lift (𝒜-mono a s) , ptt ⟩)
-  𝒮-mono (prim p a b) s = lower (primD-mono p _ _ ⟨ lift (𝒜-mono a s) , ⟨ lift (𝒜-mono b s) , ptt ⟩ ⟩)
+  rel-↦ : ∀ {Δ Δ' A s σ X} (p : Δ' ⊑ Δ) → Rel Δ s σ → Rel (A ∷ Δ') (s [ length Δ' ↦ X ]) (X • drop p σ)
+  rel-↦ {Δ' = Δ'} {s = s} p r Z = ≃-reflexive (↦-same {s} {length Δ'})
+  rel-↦ {s = s} {σ} p r (S y) =
+    ≃-trans (≃-reflexive (↦-other (<⇒≢ (lvl-< y))))
+      (≃-trans (≃-trans (≃-reflexive (cong s (sym (lvl-⊑ p y)))) (r (⊑-∋ p y))) (≃-reflexive (sym (drop-idx p σ y))))
 
-  checked-mono : ∀ x {D D'} → D ⊆ D' → checked n x D ⊆ checked n x D'
-  checked-mono x D⊆ with x <? n
-  ... | yes _ = D⊆
-  ... | no _ = λ _ z → z
+  atm-≃ : ∀ {Δ A s σ} → length Δ ≤ n → Rel Δ s σ → (a : Atm Σ Δ A) → ∀ {ρ} → X.𝒪 T n s ρ (select-atm a) ≃ 𝒜 a T' σ
+  atm-≃ le r (var x) = ≃-trans (≃-reflexive (read-in (<-≤-trans (lvl-< x) le))) (r x)
+  atm-≃ le r (lit B c) = ≃-refl
+  atm-≃ le r (ref f) = TT f
 
-  MonoB : Blocksₜ → Set₁
-  MonoB B = ∀ l {σ σ'} → σ ⊆ₛ σ' → B l σ ⊆ B l σ'
+  {- d is a slot of the frame, or a register -}
+  OkD : Loc → Set
+  OkD (L.var x) = x < n
+  OkD (reg g) = ⊤
 
-  tail-mono : ∀ t {B} → MonoB B → ∀ {σ σ'} → σ ⊆ₛ σ' → ⟪ t ⟫[ T ] n B σ ⊆ ⟪ t ⟫[ T ] n B σ'
-  tail-mono (C.return r) mB s = 𝒮-mono r s
-  tail-mono (C.seq x r t) mB s = checked-mono x (lower (⋆-mono _ _
-    ⟨ Λ-mono _ _ ⟨ (λ X Y X⊆ → lift (tail-mono t mB (↦-mono s X⊆))) , ptt ⟩ , ⟨ lift (𝒮-mono r s) , ptt ⟩ ⟩))
-  tail-mono (C.goto l) mB s = mB l s
-  tail-mono (C.case a x l₁ l₂) mB s = checked-mono x (lower (𝒞-mono _ _
-    ⟨ lift (𝒜-mono a s) , ⟨ (λ X Y X⊆ → lift (mB l₁ (↦-mono s X⊆))) , ⟨ (λ X Y X⊆ → lift (mB l₂ (↦-mono s X⊆))) , ptt ⟩ ⟩ ⟩))
+  {- κ, what runs after d is assigned, means K of its value with any
+     registers and flag; or returns d -}
+  Fits : Loc → X.Kont → (𝒫 Value → 𝒫 Value) → Store → Set₁
+  Fits (L.var x) κ K s = ∀ X → Tagged X → ∀ ρ φ → κ (s [ x ↦ X ]) ρ φ ≃ K X
+  Fits (reg g) κ K s = ∀ s' ρ φ → κ s' ρ φ ≃ ρ g
 
-  blocks-mono : ∀ bs → MonoB (blocksₜ T n bs)
-  blocks-mono [] l s = λ _ ()
-  blocks-mono (t ∷ bs) l s with l ≟ length bs
-  ... | yes _ = tail-mono t (blocks-mono bs) s
-  ... | no _ = blocks-mono bs l s
+  {- d := D, then K, in CFGᵀ -}
+  after : Loc → (𝒫 Value → 𝒫 Value) → 𝒫 Value → 𝒫 Value
+  after (L.var x) K D = ⋆ ⟨ Λ ⟨ K , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
+  after (reg g) K D = D
 
-{- case: test, bind the payload, and branch on the flag ----------------------------------}
+  after-≃ : ∀ d {K D D'} → D ≃ D' → after d K D ≃ after d K D'
+  after-≃ (L.var x) {K} D≃ = ⋆-≃ (≃-refl {D = Λ ⟨ K , ptt ⟩}) D≃
+  after-≃ (reg g) D≃ = D≃
 
-case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
-  → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
-  → ⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩
-    ≃ 𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩
-case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
+  after-ne : ∀ d {K D} w → w ∈ after d K D → nonempty D
+  after-ne (L.var x) w ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne V⊆
+  after-ne (reg g) w w∈ = ⟨ w , w∈ ⟩
+
+  put-≃ : ∀ d {κ K s D D' ρ φ} → OkD d → Fits d κ K s → D ≃ D' → X.put n d D κ s ρ φ ≃ after d K D'
+  put-≃ (L.var x) {κ} {K} {s} {ρ = ρ} {φ} lt f D≃ =
+    ≃-trans (≃-reflexive (checked-in lt)) (⋆-≃ (Λ-≃ {λ X → κ (s [ x ↦ X ]) ρ φ} {K} λ V _ c → f _ (tagged-≈ c) ρ φ) D≃)
+  put-≃ (reg g) {s = s} {D} {ρ = ρ} {φ} _ f D≃ = strict-≃ (≃-trans e D≃) (λ w w∈ → ⟨ w , proj₁ e w w∈ ⟩)
+    where e = ≃-trans (f s (ρ [ g ≔ D ]) φ) (≃-reflexive (≔-same g))
+
+  put-ne : ∀ d {κ K s D ρ φ} → OkD d → Fits d κ K s → ∀ w → w ∈ X.put n d D κ s ρ φ → nonempty D
+  put-ne d ok f w w∈ = after-ne d w (proj₁ (put-≃ d ok f ≃-refl) w w∈)
+
+  {- a project: E, the value of the test, has a value exactly when the slot A' does that P accepts -}
+  guard-≃ : ∀ d {K E X A'} {P : Value → Set} → (nonempty E → Σ[ a ∈ Value ] a ∈ A' × P a)
+    → (∀ {a} → a ∈ A' → P a → nonempty E) → X ≃ after d K A' → strict E X ≃ after d K (guardᵖ P A')
+  guard-≃ d {K} {E} {X} {A'} {P} to from X≃ = ⟨ ⊆→ , ⊇ ⟩
+    where
+    full : Σ[ a ∈ Value ] a ∈ A' × P a → guardᵖ P A' ≃ A'
+    full wt = ⟨ (λ _ → proj₂) , (λ w w∈ → ⟨ wt , w∈ ⟩) ⟩
+    ⊆→ : strict E X ⊆ after d K (guardᵖ P A')
+    ⊆→ w ⟨ ne , w∈ ⟩ = proj₂ (after-≃ d (full (to ne))) w (proj₁ X≃ w w∈)
+    ⊇ : after d K (guardᵖ P A') ⊆ strict E X
+    ⊇ w w∈ with after-ne d w w∈
+    ... | ⟨ _ , ⟨ ⟨ a , ⟨ a∈ , pa ⟩ ⟩ , _ ⟩ ⟩ =
+      ⟨ from a∈ pa , proj₂ X≃ w (proj₁ (after-≃ d (full ⟨ a , ⟨ a∈ , pa ⟩ ⟩)) w w∈) ⟩
+
+  {- the components of a tuple -}
+  𝒪v : ∀ {Δ m} → Store → X.Regs → Vec (Atm Σ Δ Any) m → Results (𝒫 Value) (replicate m ■)
+  𝒪v s ρ [] = ptt
+  𝒪v s ρ (a ∷ as) = ⟨ X.𝒪 T n s ρ (select-atm a) , 𝒪v s ρ as ⟩
+
+  𝒪v-≡ : ∀ {Δ m s ρ} (as : Vec (Atm Σ Δ Any) m) → _≡_ {A = Σ[ k ∈ ℕ ] Results (𝒫 Value) (replicate k ■)}
+    ⟨ length (toList (map select-atm as)) , X.𝒪s T n s ρ (toList (map select-atm as)) ⟩ ⟨ m , 𝒪v s ρ as ⟩
+  𝒪v-≡ [] = refl
+  𝒪v-≡ (a ∷ as) = cong (λ p → ⟨ suc (proj₁ p) , ⟨ _ , proj₂ p ⟩ ⟩) (𝒪v-≡ as)
+
+  𝒪v-≃ : ∀ {Δ m s σ ρ} → length Δ ≤ n → Rel Δ s σ → (as : Vec (Atm Σ Δ Any) m)
+    → RRs (replicate m ■) (𝒪v s ρ as) (𝒜s as T' σ)
+  𝒪v-≃ le r [] = ptt
+  𝒪v-≃ le r (a ∷ as) = ⟨ lift (atm-≃ le r a) , 𝒪v-≃ le r as ⟩
+
+  {- the instructions of s into d, then κ -}
+  sel : ∀ {Δ A} (s : C.Simple Σ Δ A) d {κ K st σ} → OkD d → Fits d κ K st → length Δ ≤ n → Rel Δ st σ
+    → ∀ ρ φ → X.⟦ select-simple s d ⟧ˢ T n κ st ρ φ ≃ after d K (𝒮 s T' σ)
+  sel (atm a) d ok f le r ρ φ = put-≃ d ok f (atm-≃ le r a)
+  sel (pack a b) d ok f le r ρ φ = put-≃ d ok f (mono-≃ pair-mono ⟨ lift (atm-≃ le r a) , ⟨ lift (atm-≃ le r b) , ptt ⟩ ⟩)
+  sel (callc g a) d {st = st} {σ} ok f le r ρ φ =
+    strict-≃ (strict-≃ (strict-≃ (strict-≃ (put-≃ d ok f R≃) (put-ne d ok f))
+      (λ w w∈ → proj₂ (⋆-ne {P₁} {A₃} (proj₁ w∈))))
+      (λ w w∈ → proj₂ (⋆-ne {C₁} {C₂} (proj₁ (⋆-ne {P₁} {A₃} (proj₁ (proj₂ w∈)))))))
+      (λ w w∈ → proj₁ (⋆-ne {C₁} {C₂} (proj₁ (⋆-ne {P₁} {A₃} (proj₁ (proj₂ (proj₂ w∈)))))))
+    where
+    G₁ = X.𝒪 T n st ρ (select-atm g)
+    G₂ = X.𝒪 T n st (ρ [ rax ≔ car ⟨ G₁ , ptt ⟩ ]) (select-atm g)
+    A₃ = X.𝒪 T n st (ρ [ rax ≔ car ⟨ G₁ , ptt ⟩ ] [ rdi ≔ cdr ⟨ G₂ , ptt ⟩ ]) (select-atm a)
+    C₁ = car ⟨ G₁ , ptt ⟩
+    C₂ = cdr ⟨ G₂ , ptt ⟩
+    P₁ = ⋆ ⟨ C₁ , ⟨ C₂ , ptt ⟩ ⟩
+    R≃ : ⋆ ⟨ ⋆ ⟨ car ⟨ G₁ , ptt ⟩ , ⟨ cdr ⟨ G₂ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ A₃ , ptt ⟩ ⟩
+       ≃ ⋆ ⟨ ⋆ ⟨ car ⟨ 𝒜 g T' σ , ptt ⟩ , ⟨ cdr ⟨ 𝒜 g T' σ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ 𝒜 a T' σ , ptt ⟩ ⟩
+    R≃ = ⋆-≃ (⋆-≃ (mono-≃ {f = car} car-mono ⟨ lift (atm-≃ le r g) , ptt ⟩) (mono-≃ {f = cdr} cdr-mono ⟨ lift (atm-≃ le r g) , ptt ⟩)) (atm-≃ le r a)
+  sel (tuple {n = m} as) d {st = st} {σ} ok f le r ρ φ =
+    put-≃ d ok f (≃-trans (≃-reflexive (cong (λ p → 𝒯 (proj₁ p) (proj₂ p)) (𝒪v-≡ as))) (mono-≃ (𝒯-mono m) (𝒪v-≃ le r as)))
+  sel (get i a) d ok f le r ρ φ = put-≃ d ok f (proj-≃ i (atm-≃ le r a))
+  sel (inl a) d ok f le r ρ φ = put-≃ d ok f (inl-≃ (atm-≃ le r a))
+  sel (inr a) d ok f le r ρ φ = put-≃ d ok f (inr-≃ (atm-≃ le r a))
+  sel (prim P.sub a b) d ok f le r ρ φ =
+    strict-≃₂ (put-≃ d ok f (primD-≃ P.sub (atm-≃ le r a) (atm-≃ le r b))) (put-ne d ok f)
+      λ { ⟨ _ , ⟨ k , ⟨ _ , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ → ⟨ _ , k∈ ⟩ }
+  sel (prim P.eq a b) d ok f le r ρ φ = strict-≃ (put-≃ d ok f (primD-≃ P.eq (atm-≃ le r a) (atm-≃ le r b))) (put-ne d ok f)
+  sel (inject G a) d ok f le r ρ φ = put-≃ d ok f (atm-≃ le r a)
+  sel (project tint a) d ok f le r ρ φ =
+    strict-≃ (guard-≃ d (λ { ⟨ _ , ⟨ k , ⟨ m , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ → ⟨ _ , ⟨ proj₁ A≃ _ k∈ , ⟨ k , refl ⟩ ⟩ ⟩ })
+                          (λ { a∈ ⟨ k , refl ⟩ → ⟨ _ , ⟨ k , ⟨ 0ℤ , ⟨ proj₂ A≃ _ a∈ , ⟨ ⟨ refl , refl ⟩ , refl ⟩ ⟩ ⟩ ⟩ ⟩ })
+                          (put-≃ d ok f A≃))
+      (λ { w ⟨ ⟨ _ , ⟨ k , ⟨ _ , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ , _ ⟩ → ⟨ _ , k∈ ⟩ })
+    where A≃ = atm-≃ le r a
+  sel (project tsum a) d ok f le r ρ φ =
+    guard-≃ d (λ { ⟨ _ , inj₁ ⟨ u , ⟨ u∈ , refl ⟩ ⟩ ⟩ → ⟨ _ , ⟨ proj₁ A≃ _ u∈ , inj₁ ⟨ u , refl ⟩ ⟩ ⟩
+                 ; ⟨ _ , inj₂ ⟨ u , ⟨ u∈ , refl ⟩ ⟩ ⟩ → ⟨ _ , ⟨ proj₁ A≃ _ u∈ , inj₂ ⟨ u , refl ⟩ ⟩ ⟩ })
+              (λ { a∈ (inj₁ ⟨ u , refl ⟩) → ⟨ _ , inj₁ ⟨ u , ⟨ proj₂ A≃ _ a∈ , refl ⟩ ⟩ ⟩
+                 ; a∈ (inj₂ ⟨ u , refl ⟩) → ⟨ _ , inj₂ ⟨ u , ⟨ proj₂ A≃ _ a∈ , refl ⟩ ⟩ ⟩ })
+              (put-≃ d ok f A≃)
+    where A≃ = atm-≃ le r a
+  sel (project tfun a) d ok f le r ρ φ =
+    guard-≃ d (λ { ⟨ _ , ⟨ v , uv∈ ⟩ ⟩ → ⟨ _ , ⟨ proj₁ A≃ _ uv∈ , tt ⟩ ⟩ })
+              (λ { {⦅ u , v ⦆} a∈ _ → ⟨ u , ⟨ v , proj₂ A≃ _ a∈ ⟩ ⟩ ; {const _} _ () ; {_ ↦ _} _ () ; {ν} _ () ; {ω} _ ()
+                 ; {tup[ _ ] _} _ () ; {left _} _ () ; {right _} _ () ; {⟨⟩} _ () })
+              (put-≃ d ok f A≃)
+    where A≃ = atm-≃ le r a
+  sel (project (ttup m i) a) d ok f le r ρ φ =
+    guard-≃ d (λ { ⟨ u , u∈ ⟩ → ⟨ _ , ⟨ proj₁ A≃ _ u∈ , ⟨ u , refl ⟩ ⟩ ⟩ })
+              (λ { a∈ ⟨ u , refl ⟩ → ⟨ u , proj₂ A≃ _ a∈ ⟩ })
+              (put-≃ d ok f A≃)
+    where A≃ = atm-≃ le r a
+
+  {- the blocks B (of X86, by level) and B' (of CFGᵀ) agree -}
+  BR : ∀ {Bs} → X.Blocks → Meanings Bs → Set₁
+  BR {Bs} B B' = ∀ {Δ} (l : Bs ∋ Δ) s σ → Rel Δ s σ → Inv s → ∀ ρ φ → B (lvl l) s ρ φ ≃ B' l σ
+
+  tail : ∀ {Bs Δ} (t : Tail Σ Bs Δ) {B : X.Blocks} {B' : Meanings Bs} → BR B B' → depth t ≤ n
+    → ∀ s σ → Rel Δ s σ → Inv s → ∀ ρ φ → X.⟦ select-tail t ⟧ᵇ T n B s ρ φ ≃ ⟦ t ⟧ᵗ T' B' σ
+  tail (return r) br le s σ rl i ρ φ = sel r (reg rax) {K = λ _ → ∅} tt (λ _ _ _ → ≃-refl) le rl ρ φ
+  tail (seq {Δ'} p r t) {B} {B'} br le s σ rl i ρ φ =
+    ≃-trans (≃-reflexive (cong (λ κ → κ s ρ φ) (ˢ-++ (select-simple r (L.var (length Δ'))))))
+      (sel r (L.var (length Δ')) {K = λ X → ⟦ t ⟧ᵗ T' B' (X • drop p σ)} (<-≤-trans (depth-≥ t) le′)
+        (λ X tX ρ' φ' → tail t br le′ (s [ length Δ' ↦ X ]) (X • drop p σ) (rel-↦ p rl) (inv-↦ i tX) ρ' φ') (≤-trans (depth-≥ (seq p r t)) le) rl ρ φ)
+    where le′ = ≤-trans (m≤n⊔m _ (depth t)) le
+  tail (goto l) br le s σ rl i ρ φ = br l s σ rl i ρ φ
+  tail (case {Δ'} a p l₁ l₂) {B} {B'} br le s σ rl i ρ φ = strict-≃ eq λ w w∈ → ne′ {λ X → B' l₁ (X • drop p σ)} {λ X → B' l₂ (X • drop p σ)} (proj₁ eq w w∈)
+    where
+    k = length Δ'
+    leΔ = ≤-trans (depth-≥ (case a p l₁ l₂)) le
+    A = X.𝒪 T n s ρ (select-atm a)
+    A≃ = atm-≃ leΔ rl a
+    tagged : (a : Atm Σ _ ⟪ sum ⟫) → Tagged (X.𝒪 T n s ρ (select-atm a))
+    tagged (var x) = subst Tagged (sym (read-in (<-≤-trans (lvl-< x) leΔ))) (i (lvl x))
+    eq = ≃-trans (≃-reflexive (checked-in (≤-trans (m≤n⊔m _ _) le)))
+      (case-core {F₁ = λ X → B (lvl l₁) (s [ k ↦ X ]) ρ (isinl A)} {λ X → B (lvl l₂) (s [ k ↦ X ]) ρ (isinl A)}
+                 {λ X → B' l₁ (X • drop p σ)} {λ X → B' l₂ (X • drop p σ)}
+        A≃ (tagged a) (λ V c → br l₁ _ _ (rel-↦ p rl) (inv-↦ i (tagged-≈ c)) ρ _)
+        (λ V c → br l₂ _ _ (rel-↦ p rl) (inv-↦ i (tagged-≈ c)) ρ _))
+    ne′ : ∀ {F G : 𝒫 Value → 𝒫 Value} {w} → w ∈ 𝒞 ⟨ 𝒜 a T' σ , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩ → nonempty (isinl A)
+    ne′ (inj₁ ⟨ v , ⟨ V , ⟨ l , _ ⟩ ⟩ ⟩) = ⟨ left ⟨⟩ , inj₁ ⟨ v , ⟨ proj₂ A≃ _ (l v (here refl)) , refl ⟩ ⟩ ⟩
+    ne′ (inj₂ ⟨ v , ⟨ V , ⟨ l , _ ⟩ ⟩ ⟩) = ⟨ right ⟨⟩ , inj₂ ⟨ v , ⟨ proj₂ A≃ _ (l v (here refl)) , refl ⟩ ⟩ ⟩
+
+  blocks-≃ : ∀ {Bs} (bs : Blocks Σ Bs) → blocks-depth bs ≤ n → BR (X.blocks T n (select-blocks bs)) (blocks bs T')
+  blocks-≃ {_ ∷ Bs} (bs ▷ t) le Z s σ rl i ρ φ with length Bs ≟ length (select-blocks bs)
+  ... | yes _ = tail t (blocks-≃ bs (≤-trans (m≤n⊔m _ _) le)) (≤-trans (m≤m⊔n _ _) le) s σ rl i ρ φ
+  ... | no ne = ⊥-elim (ne (sym (len-blocks bs)))
+  blocks-≃ (bs ▷ t) le (S l) s σ rl i ρ φ with lvl l ≟ length (select-blocks bs)
+  ... | yes e = ⊥-elim (<⇒≢ (lvl-< l) (trans e (len-blocks bs)))
+  ... | no _ = blocks-≃ bs (≤-trans (m≤n⊔m _ _) le) l s σ rl i ρ φ
+
+{- the code of a definition: its start moves its arguments to slots 0 and 1 -}
+code-≃ : ∀ {Σ} {T : X.Table} {T' : Table Σ} (TT : ∀ {m} (f : Σ ∋ m) → T (lvl f) ≃ T' f)
+  → ∀ {m} (b : C.Body Σ (Any ∷ ⟪ tup m ⟫ ∷ [])) → X.code T (select-body prologue b) ≃ codeᶜ T' b
+code-≃ {T = T} {T'} TT (C.body bs t) = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → start cV cU neV neU
   where
-  G : _
-  G w ⟨ [] , ⟨ ⟨ _ , ⟨ ne , _ ⟩ ⟩ , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ f , ⟨ _ , ⟨ fl , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-    with fl f (here refl)
-  ... | inj₁ ⟨ u , ⟨ l∈ , _ ⟩ ⟩ =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (lefts (V⊆ d d∈))) , ⟨ proj₁ (F₁≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
-    where
-    lefts : ∀ {d} → payloadD A d → left d ∈ A
-    lefts (inj₁ l) = l
-    lefts (inj₂ r) = ⊥-elim (tg l∈ r)
-  ... | inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ f , ⟨ _ , ⟨ fr , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-    with fr f (here refl)
-  ... | inj₂ ⟨ u , ⟨ r∈ , _ ⟩ ⟩ =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (rights (V⊆ d d∈))) , ⟨ proj₁ (F₂≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
-    where
-    rights : ∀ {d} → payloadD A d → right d ∈ A
-    rights (inj₁ l) = ⊥-elim (tg l r∈)
-    rights (inj₂ r) = r
-  ... | inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  H : _
-  H w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₁ ⟨ v , ⟨ A⊇ _ (l∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₁≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
-                , ⟨ (λ ()) , c ⟩ ⟩
-              , ⟨ (λ d d∈ → inj₁ (A⊇ _ (l∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
-  H w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₂ ⟨ v , ⟨ A⊇ _ (r∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₂≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
-                , ⟨ (λ ()) , c ⟩ ⟩
-              , ⟨ (λ d d∈ → inj₂ (A⊇ _ (r∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
-
-prim-ne : ∀ p {D E} → nonempty (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D
-prim-ne p ⟨ w , ⟨ k , ⟨ m , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ _ , k∈ ⟩
-
-checked-⊆ : ∀ n x {D} → checked n x D ⊆ D
-checked-⊆ n x with x <? n
-... | yes _ = λ _ z → z
-... | no _ = λ _ ()
-
-{- The pass preserves meanings ---------------------------------------------------------}
-
-{- for tables T (of X86) and T' (of CFG) that agree -}
-module _ {T T' : Table} (TT : ∀ k → T k ≃ T' k) (TL : ∀ k → Tagged (T k)) (n : ℕ) where
-
-  open Agreeing TT n using (𝒜-≃; 𝒮-≃)
-
-  atm-≡ : ∀ a {σ ρ} → 𝒪 T n σ ρ (select-atm a) ≡ 𝒜 T n σ a
-  atm-≡ (var x) = refl
-  atm-≡ (lit B k) = refl
-  atm-≡ (fun-ref k) = refl
-
-  atm-≃ : ∀ a {σ ρ} → 𝒪 T n σ ρ (select-atm a) ≃ 𝒜 T' n σ a
-  atm-≃ a {σ} = ≃-trans (≃-reflexive (atm-≡ a)) (𝒜-≃ a σ)
-
-  tagged-atm : ∀ a {σ ρ} → Inv σ → Tagged (𝒪 T n σ ρ (select-atm a))
-  tagged-atm (var x) i with x <? n
-  ... | yes _ = i x
-  ... | no _ = λ ()
-  tagged-atm (lit B k) i = λ ()
-  tagged-atm (fun-ref k) i = TL k
-
-  𝒪s-≡ : ∀ as {σ ρ} → _≡_ {A = Σ ℕ λ m → Results (𝒫 Value) (replicate m ■)}
-    ⟨ length (map select-atm as) , 𝒪s T n σ ρ (map select-atm as) ⟩ ⟨ length as , 𝒜s T n σ as ⟩
-  𝒪s-≡ [] = refl
-  𝒪s-≡ (a ∷ as) = cong₂ (λ D p → ⟨ suc (proj₁ p) , ⟨ D , proj₂ p ⟩ ⟩) (atm-≡ a) (𝒪s-≡ as)
-
-  {- κ, what runs after d is assigned, means K with any registers and flag; or
-     returns d -}
-  Fits : Loc → Kont → (Store → 𝒫 Value) → Set₁
-  Fits (var x) κ K = ∀ σ → Inv σ → ∀ ρ φ → κ σ ρ φ ≃ K σ
-  Fits (reg g) κ K = ∀ σ ρ φ → κ σ ρ φ ≃ ρ g
-
-  {- d := D; K, in CFG -}
-  after : Loc → (Store → 𝒫 Value) → Store → 𝒫 Value → 𝒫 Value
-  after (var x) K σ D = checked n x (⋆ ⟨ Λ ⟨ (λ X → K (σ [ x ↦ X ])) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩)
-  after (reg g) K σ D = D
-
-  ≔-same : ∀ g {ρ D} → (ρ [ g ≔ D ]) g ≡ D
-  ≔-same rax = refl
-  ≔-same rdi = refl
-  ≔-same rsi = refl
-
-  put-≃ : ∀ d {κ K D D' σ ρ φ} → Fits d κ K → Inv σ → D ≃ D' → put n d D κ σ ρ φ ≃ after d K σ D'
-  put-≃ (var x) {κ} {K} {σ = σ} {ρ} {φ} fits i D≃ =
-    checked-≃ n {x} (⋆-≃ (Λ-≃ {λ X → κ (σ [ x ↦ X ]) ρ φ} {λ X → K (σ [ x ↦ X ])}
-                            λ V _ c → fits _ (inv-↦ i (tagged-≈ c)) ρ φ) D≃)
-  put-≃ (reg g) {D = D} {σ = σ} {ρ} {φ} fits i D≃ = strict-≃ (≃-trans e D≃) (λ w w∈ → ⟨ w , proj₁ e w w∈ ⟩)
-    where e = ≃-trans (fits σ (ρ [ g ≔ D ]) φ) (≃-reflexive (≔-same g))
-
-  put-ne : ∀ d {D κ σ ρ φ} w → w ∈ put n d D κ σ ρ φ → nonempty D
-  put-ne (var x) w w∈ with checked-⊆ n x w w∈
-  ... | ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ = ne-mem ne V⊆
-  put-ne (reg g) w w∈ = proj₁ w∈
-
-  case-ne : ∀ x {I P : 𝒫 Value} {F₁ F₂ : 𝒫 Value → 𝒫 Value} w
-    → w ∈ checked n x (⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ I , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ P , ptt ⟩ ⟩)
-    → nonempty I
-  case-ne x w w∈ with checked-⊆ n x w w∈
-  ... | ⟨ V , ⟨ ⟨ inj₁ ⟨ v , ⟨ _ , ⟨ l , _ ⟩ ⟩ ⟩ , _ ⟩ , _ ⟩ ⟩ = ⟨ _ , l v (here refl) ⟩
-  ... | ⟨ V , ⟨ ⟨ inj₂ ⟨ v , ⟨ _ , ⟨ r , _ ⟩ ⟩ ⟩ , _ ⟩ , _ ⟩ ⟩ = ⟨ _ , r v (here refl) ⟩
-
-  case-≃ : ∀ x {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
-    → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
-    → strict (isinl A) (checked n x (⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩
-                                      , ⟨ payloadD A , ptt ⟩ ⟩))
-      ≃ checked n x (𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩)
-  case-≃ x {A} {A'} {F₁} {F₂} {G₁} {G₂} A≃ tg F₁≃ F₂≃ =
-    strict-≃ (checked-≃ n {x} (case-core {A} {A'} {F₁} {F₂} {G₁} {G₂} A≃ tg F₁≃ F₂≃)) (case-ne x {F₁ = F₁} {F₂})
-
-  {- the instructions of r into d, then is -}
-  sel : ∀ r d is {κ K} → Fits d (⟦ is ⟧ˢ T n κ) K → ∀ σ → Inv σ → ∀ ρ φ
-    → ⟦ select-simple r d ++ is ⟧ˢ T n κ σ ρ φ ≃ after d K σ (𝒮 T' n σ r)
-  sel (atm a) d is f σ i ρ φ = put-≃ d f i (atm-≃ a)
-  sel (app g e a) d is f σ i ρ φ =
-    strict-≃₃ {D₃ = ⋆ ⟨ ⋆ ⟨ G , ⟨ E , ptt ⟩ ⟩ , ⟨ A , ptt ⟩ ⟩} (put-≃ d f i (⋆-≃ (⋆-≃ (atm-≃ g) (atm-≃ e)) (atm-≃ a)))
-      (put-ne d) (λ r → proj₂ (⋆-ne {⋆ ⟨ G , ⟨ E , ptt ⟩ ⟩} r)) (λ r → proj₂ (⋆-ne {G} (proj₁ (⋆-ne r))))
-    where E = 𝒪 T n σ ρ (select-atm e)
-          A = 𝒪 T n σ (ρ [ rdi ≔ E ]) (select-atm a)
-          G = 𝒪 T n σ (ρ [ rdi ≔ E ] [ rsi ≔ A ]) (select-atm g)
-  sel (I.pair a b) d is f σ i ρ φ = put-≃ d f i (mono-≃ pair-mono ⟨ lift (atm-≃ a) , ⟨ lift (atm-≃ b) , ptt ⟩ ⟩)
-  sel (fst a) d is f σ i ρ φ = put-≃ d f i (mono-≃ car-mono ⟨ lift (atm-≃ a) , ptt ⟩)
-  sel (snd a) d is f σ i ρ φ = put-≃ d f i (mono-≃ cdr-mono ⟨ lift (atm-≃ a) , ptt ⟩)
-  sel (tuple as) d is f σ i ρ φ =
-    put-≃ d f i (≃-trans (≃-reflexive (cong (λ p → 𝒯 (proj₁ p) (proj₂ p)) (𝒪s-≡ as))) (𝒮-≃ (tuple as) σ))
-  sel (get j a) d is f σ i ρ φ = put-≃ d f i (proj-≃ j (atm-≃ a))
-  sel (I.inl a) d is f σ i ρ φ = put-≃ d f i (inl-≃ (atm-≃ a))
-  sel (I.inr a) d is f σ i ρ φ = put-≃ d f i (inr-≃ (atm-≃ a))
-  sel (prim P.sub a b) d is f σ i ρ φ =
-    strict-≃₂ (put-≃ d f i (primD-≃ P.sub (atm-≃ a) (atm-≃ b))) (put-ne d)
-      (prim-ne P.sub {E = 𝒪 T n σ (ρ [ rax ≔ 𝒪 T n σ ρ (select-atm a) ]) (select-atm b)})
-  sel (prim P.eq a b) d is f σ i ρ φ =
-    strict-≃ (put-≃ d f i (primD-≃ P.eq (atm-≃ a) (atm-≃ b))) (put-ne d)
-
-  {- the blocks B (of X86) and B' (of CFG) agree -}
-  BR : Blocks → Blocksₜ → Set₁
-  BR B B' = ∀ l σ → Inv σ → ∀ ρ φ → B l σ ρ φ ≃ B' l σ
-
-  tail : ∀ t {B B'} → BR B B' → ∀ σ → Inv σ → ∀ ρ φ → ⟦ select-tail t ⟧ᵇ T n B σ ρ φ ≃ ⟪ t ⟫[ T' ] n B' σ
-  tail (C.return r) {B} br σ i ρ φ =
-    ≃-trans (≃-reflexive (cong (λ is → ⟦ is ⟧ˢ T n (⟦ retq ⟧ʲ B) σ ρ φ) (sym (++-identityʳ (select-simple r (reg rax))))))
-            (sel r (reg rax) [] {K = λ _ → ∅} (λ σ ρ φ → ≃-refl) σ i ρ φ)
-  tail (C.seq x r t) br σ i ρ φ = sel r (var x) _ (λ σ' i' ρ' φ' → tail t br σ' i' ρ' φ') σ i ρ φ
-  tail (C.goto l) br σ i ρ φ = br l σ i ρ φ
-  tail (C.case a x l₁ l₂) {B} {B'} br σ i ρ φ =
-    case-≃ x {F₁ = λ X → B l₁ (σ [ x ↦ X ]) ρ (isinl A)} {λ X → B l₂ (σ [ x ↦ X ]) ρ (isinl A)}
-                               {λ X → B' l₁ (σ [ x ↦ X ])} {λ X → B' l₂ (σ [ x ↦ X ])}
-      (atm-≃ a) (tagged-atm a i)
-      (λ V c → br l₁ _ (inv-↦ i (tagged-≈ c)) ρ _) (λ V c → br l₂ _ (inv-↦ i (tagged-≈ c)) ρ _)
-    where A = 𝒪 T n σ ρ (select-atm a)
-
-  blocks-≃ : ∀ bs → BR (blocks T n (map select-tail bs)) (blocksₜ T' n bs)
-  blocks-≃ [] l σ i ρ φ = ≃-refl
-  blocks-≃ (t ∷ bs) l σ i ρ φ with l ≟ length (map select-tail bs) | l ≟ length bs
-  ... | yes _ | yes _ = tail t (blocks-≃ bs) σ i ρ φ
-  ... | no _ | no _ = blocks-≃ bs l σ i ρ φ
-  ... | yes l≡ | no l≢ = ⊥-elim (l≢ (trans l≡ (length-map select-tail bs)))
-  ... | no l≢ | yes l≡ = ⊥-elim (l≢ (trans l≡ (sym (length-map select-tail bs))))
-
-  {- the prologue binds parts of the parameters; F is the rest of the start -}
-  frame-≃ : ∀ {F G : Store → 𝒫 Value} → (∀ σ → Inv σ → F σ ≃ G σ) → (∀ {σ σ'} → σ ⊆ₛ σ' → G σ ⊆ G σ')
-    → 2 ≤ n → ∀ {V U} → V ≈ V → U ≈ U → V ≢ [] → U ≢ []
-    → checked n 0 (⋆ ⟨ Λ ⟨ (λ X → checked n 1 (⋆ ⟨ Λ ⟨ (λ Y → F (zeros [ 0 ↦ X ] [ 1 ↦ Y ])) , ptt ⟩ , ⟨ mem U , ptt ⟩ ⟩)) , ptt ⟩
-                         , ⟨ mem V , ptt ⟩ ⟩)
-      ≃ G (frame (mem V) (mem U))
-  frame-≃ {F} {G} FG mono le {V} {U} cV cU neV neU with 0 <? n | 1 <? n
-  ... | no ¬p | _ = ⊥-elim (¬p (≤-trans (s≤s z≤n) le))
-  ... | yes _ | no ¬p = ⊥-elim (¬p le)
+  n = 2 ⊔ (blocks-depth bs ⊔ depth t)
+  L = blocks-depth bs ⊔ depth t
+  le₁ = ≤-trans (m≤m⊔n (blocks-depth bs) (depth t)) (m≤n⊔m 2 L)
+  le₂ = ≤-trans (m≤n⊔m (blocks-depth bs) (depth t)) (m≤n⊔m 2 L)
+  start : ∀ {V U} → V ≈ V → U ≈ U → V ≢ [] → U ≢ []
+    → X.run T n (select-body prologue (C.body bs t)) zeros (args (mem V) (mem U)) ∅ ≃ runᶜ (C.body bs t) T' (mem U • mem V • λ _ → init)
+  start {V} {U} cV cU neV neU with 0 <? n | 1 <? n
+  ... | no ¬p | _ = ⊥-elim (¬p (≤-trans (s≤s z≤n) (m≤m⊔n 2 L)))
+  ... | yes _ | no ¬p = ⊥-elim (¬p (m≤m⊔n 2 L))
   ... | yes _ | yes _ = ⟨ to , from ⟩
     where
+    sim : ∀ {X Y} → X ≈ X → Y ≈ Y → ∀ ρ → X.⟦ select-tail t ⟧ᵇ T n (X.blocks T n (select-blocks bs)) (zeros [ 0 ↦ mem X ] [ 1 ↦ mem Y ]) ρ ∅
+      ≃ ⟦ t ⟧ᵗ T' (blocks bs T') (mem Y • mem X • λ _ → init)
+    sim {X} {Y} cX cY ρ = tail TT n t (blocks-≃ TT n bs le₁) le₂ _ _ (λ { Z → ≃-refl ; (S Z) → ≃-refl }) inv ρ ∅
+      where
+      inv : Inv (zeros [ 0 ↦ mem X ] [ 1 ↦ mem Y ])
+      inv 0 = tagged-≈ cX
+      inv 1 = tagged-≈ cY
+      inv (suc (suc y)) = λ ()
     to : _
     to w ⟨ V' , ⟨ ⟨ ⟨ U' , ⟨ ⟨ w∈ , ⟨ _ , cU' ⟩ ⟩ , ⟨ U'⊆ , _ ⟩ ⟩ ⟩ , ⟨ _ , cV' ⟩ ⟩ , ⟨ V'⊆ , _ ⟩ ⟩ ⟩ =
-      mono s w (proj₁ (FG _ i) w w∈)
+      tail-mono {T = T'} t (blocks-mono bs) s w (proj₁ (sim cV' cU' _) w w∈)
       where
-      s : zeros [ 0 ↦ mem V' ] [ 1 ↦ mem U' ] ⊆ₛ frame (mem V) (mem U)
-      s 0 = V'⊆
-      s 1 = U'⊆
+      s : (mem U' • mem V' • λ _ → init) ⊆ₑ (mem U • mem V • λ _ → init)
+      s 0 = U'⊆
+      s 1 = V'⊆
       s (suc (suc y)) = λ _ z → z
-      i : Inv (zeros [ 0 ↦ mem V' ] [ 1 ↦ mem U' ])
-      i 0 = tagged-≈ cV'
-      i 1 = tagged-≈ cU'
-      i (suc (suc y)) = λ ()
     from : _
-    from w w∈ = ⟨ V , ⟨ ⟨ ⟨ U , ⟨ ⟨ proj₂ (FG _ i) w (mono s w w∈) , ⟨ neU , cU ⟩ ⟩ , ⟨ (λ _ z → z) , neU ⟩ ⟩ ⟩
-                         , ⟨ neV , cV ⟩ ⟩ , ⟨ (λ _ z → z) , neV ⟩ ⟩ ⟩
-      where
-      s : frame (mem V) (mem U) ⊆ₛ zeros [ 0 ↦ mem V ] [ 1 ↦ mem U ]
-      s 0 = λ _ z → z
-      s 1 = λ _ z → z
-      s (suc (suc y)) = λ _ z → z
-      i : Inv (zeros [ 0 ↦ mem V ] [ 1 ↦ mem U ])
-      i 0 = tagged-≈ cV
-      i 1 = tagged-≈ cU
-      i (suc (suc y)) = λ ()
+    from w w∈ = ⟨ V , ⟨ ⟨ ⟨ U , ⟨ ⟨ proj₂ (sim cV cU _) w w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ (λ _ z → z) , neU ⟩ ⟩ ⟩
+                       , ⟨ neV , cV ⟩ ⟩ , ⟨ (λ _ z → z) , neV ⟩ ⟩ ⟩
 
-  {- the code of a global definition of at least 2 slots -}
-  start-≃ : ∀ {m} → m ≡ n → 2 ≤ n → ∀ bs t {V U} → V ≈ V → U ≈ U → V ≢ [] → U ≢ []
-    → run T m (select-body prologue (C.body n bs t)) zeros (args (mem V) (mem U)) ∅
-      ≃ ⟪ t ⟫[ T' ] n (blocksₜ T' n bs) (frame (mem V) (mem U))
-  start-≃ refl le bs t {V} {U} =
-    frame-≃ {λ σ → ⟦ select-tail t ⟧ᵇ T n (blocks T n (map select-tail bs)) σ (args (mem V) (mem U)) ∅}
-      {⟪ t ⟫[ T' ] n (blocksₜ T' n bs)} (λ σ i → tail t (blocks-≃ bs) σ i _ ∅)
-    (Mono.tail-mono T' n t (Mono.blocks-mono T' n bs)) le
+{- Programs ------------------------------------------------------------------------------}
 
-  code-≃ : ∀ bs t → 2 ≤ n → code T (select-body prologue (C.body n bs t)) ≃ Semantics.Graph.CFG.code T' (C.body n bs t)
-  code-≃ bs t le = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → start-≃ (m≤n⇒m⊔n≡n le) le bs t cV cU neV neU
+{- the X86 table at the level of f is the CFGᵀ table at f -}
+table-select : ∀ {Σ ns} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns) {m} (f : Σ ∋ m)
+  → X.table (select-defs ds) (lvl f) ≃ tables codeᶜ ds f
+table-select [] f = ≃-refl
+table-select {ns = _ ∷ ns} (d ∷ ds) f with lvl f ≟ length (select-defs ds) | lvl f ≟ length ns
+... | yes _ | yes _ = code-≃ (table-select ds) d
+... | no _ | no _ = table-select ds f
+... | yes e | no ne = ⊥-elim (ne (trans e (len-defs ds)))
+... | no ne | yes e = ⊥-elim (ne (trans e (sym (len-defs ds))))
 
-{- Programs -----------------------------------------------------------------------------}
+{- and empty at any number not below its length -}
+table-beyond : ∀ (bs : List L.Body) k → length bs ≤ k → X.table bs k ≡ ∅
+table-beyond [] k le = refl
+table-beyond (b ∷ bs) k le with k ≟ length bs
+... | yes refl = ⊥-elim (<⇒≢ le refl)
+... | no _ = table-beyond bs k (≤-trans (n≤1+n _) le)
 
-{- each global definition has at least 2 slots, for its parameters -}
-Defs : List C.Body → Set
-Defs = All (λ b → 2 ≤ C.Body.locals b)
-
-table-≃ : ∀ ds → Defs ds → ∀ k → table (map (select-body prologue) ds) k ≃ tableₜ ds k
-table-≃ [] _ k = ≃-refl
-table-≃ (C.body n bs t ∷ ds) (le ∷ les) k with k ≟ length (map (select-body prologue) ds) | k ≟ length ds
-... | yes _ | yes _ = code-≃ (table-≃ ds les) (tagged-table (map (select-body prologue) ds)) n bs t le
-... | no _ | no _ = table-≃ ds les k
-... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-map (select-body prologue) ds)))
-... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-map (select-body prologue) ds))))
-
-select-correct : ∀ P → Defs (C.Program.defs P) → ⟦ select P ⟧ₚ ≃ ⟪ P ⟫ₚ
-select-correct (C.program ds (C.body n bs t)) les =
-  tail TT TL n t (blocks-≃ TT TL n bs) zeros (λ _ ()) (called (zeros 0)) ∅
-  where
-  TT = table-≃ ds les
-  TL = tagged-table (map (select-body prologue) ds)
-
-{- The whole compiler, into X86 ----------------------------------------------------------}
-
-{- lift locals gives each global definition 2 + height slots -}
-defs-2 : ∀ {ds} ms → Defs (map explicate-body (lift-defs {ds} ms))
-defs-2 [] = []
-defs-2 (m ∷ ms) = m≤m+n 2 _ ∷ defs-2 ms
-
-compile-x86-same : ∀ (M : ISWIM.AST) → Same (⟦ M ⟧ᵢ ρ₀) ⟦ compile-x86 M ⟧ₚ
-compile-x86-same M = Same-trans (compile-cfg-same M) (≃→Same (≃-sym (select-correct (compile-cfg M) (defs-2 _))))
-
-compile-x86-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ᵢ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₚ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₚ → const c ∈ ⟦ M ⟧ᵢ ρ₀)
-compile-x86-correct-const M = proj₁ (compile-x86-same M)
-
-compile-x86-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ᵢ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₚ)
-  × (nonempty ⟦ compile-x86 M ⟧ₚ → nonempty (⟦ M ⟧ᵢ ρ₀))
-compile-x86-correct-nonempty M = proj₂ (compile-x86-same M)
+select-correct : ∀ (P : C.Program) → X.⟦ select P ⟧ₚ ≃ ⟦ P ⟧ᶜ
+select-correct (C.program ds (C.body bs t)) =
+  tail (table-select ds) n t (blocks-≃ (table-select ds) n bs (m≤m⊔n _ _)) (m≤n⊔m _ _) zeros (λ _ → init) (λ ()) (λ _ ())
+    (called (zeros 0)) ∅
+  where n = blocks-depth bs ⊔ depth t

@@ -1,277 +1,233 @@
 {-
 
-  Correctness of the enclose pass (ISWIM → Clos2) by a forward simulation
-  between their reduction semantics (see the design note in
-  Semantics/Reduction/Smallstep.agda).
-
-  The two reductions run in lock step: an ISWIM function and the Clos2
-  closure of a closed program are both values, since the free variables
-  that the closure captures have been replaced by values.
+  Correctness of typed enclose (ISWIMᵀ → Clos2ᵀ) by a forward simulation
+  between their reduction semantics, in lock step.
 
   The relation on terms (_≈_) is a congruence, closed under substitution
-  (≈-subst), except for functions. Substitution goes into an ISWIM
-  function, but not into the code of a Clos2 closure, only into the
-  terms it captures. So an ISWIM function lam (sub (exts σ) N), the
-  function N of the program after the substitution σ, is related to the
-  closure of enclose N that captures terms related to σ (on the variables
-  N uses). Applying them substitutes related values in N and enclose N,
-  which gives related terms (enc, the fundamental lemma: sub τ M is
-  related to sub τ' (enclose M) for related τ and τ').
-
-  A closure captures variables or values (VV). The target program is
-  closed, and stays closed (R), so a closure that is reduced captures
-  values only, and is a value.
+  (≈-trav, for both kits), except for functions. Substitution goes into
+  an ISWIMᵀ function, but not into the code of a Clos2ᵀ closure, only
+  into the terms it captures. So a function lam (sub (exts σ) N) is
+  related to a closure of code N' related to N that captures terms Fs
+  related to σ. Applying them substitutes related values in N and N'
+  (exts-[]). A closure captures variables or values (VV), so in a closed
+  term it captures values and is a value.
 
 -}
 
 module proof.Correctness.Reduction.EncloseRed where
 
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.ISWIM
-import Language.Clos2 as C
-open import Compiler.Optimize using (bind-n-ast)
-open import Language.Clos2 using (unbind-n)
-open import Compiler.Enclose using (enclose; enc-args; fv-vars)
-open import proof.Compiler.EncloseScope using (Closed; enclose-closed; module Enclosed)
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Language.Typed.ISWIM
+import Language.Typed.Clos2 as C
+open import Compiler.Enclose using (enclose; encs)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error
+open import proof.Framework.ReductionVec Obs o-error using (ans-∷; all-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import Semantics.Reduction.ISWIM as S
-import proof.Semantics.Reduction.Clos2 as T
-open T using (Value; Values; value-red; values-red; value-sub)
-open import proof.Framework.Syntax.Uses Op sig using (Uses; UsesArg; UsesArgs; bound; uses-bound; <-∸1)
-import proof.Framework.Syntax.Subst Op sig as IS
-import Framework.Syntax.Rename Op sig as IR
-import Framework.Syntax.Rename C.Op C.sig as CR
-import proof.Framework.Syntax.SubstRel Op sig C.Op C.sig as SubstRel
-import proof.Framework.Syntax.Subst C.Op C.sig as CS
-open IS using (exts; sub; sub-args; ids; _[_])
-open import proof.Framework.Syntax.ScopeSubst C.Op C.sig using (ws-sub; sfits-•; sfits-extend₀; module Unbind)
-open import Framework.Syntax.Scope C.Op C.sig using (WS; WS-args)
-open import proof.Framework.ListUtil using (proj-pw)
+import proof.Semantics.Reduction.Typed.ISWIM as S
+import proof.Semantics.Reduction.Typed.Clos2 as T
+open T using (Value; value-red)
+import Language.Prim as P
 
-open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Fin using (Fin)
-open import Data.List using (replicate; _∷_)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Maybe using (just; nothing; map)
-open import Data.Nat using (ℕ; zero; suc; _+_; _∸_; _≤_; _<_; z≤n; s≤s)
-open import Data.Nat.Properties using (m≤n+m∸n; ≤-pred; m≤n⇒m<n∨m≡n; +-identityʳ; ≤-trans)
-open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (tt)
-open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst; subst₂)
+open import Data.Fin using (Fin; zero; suc)
+import Data.Integer as Z
+open import Data.List using (_∷_)
+open import Data.Nat using (ℕ; suc)
+open import Data.Vec using (Vec; []; _∷_; lookup; tabulate)
+open import Data.Vec.Properties using (lookup∘tabulate)
+open import Data.Vec.Relation.Unary.All using (All; []; _∷_)
+import Data.Vec.Relation.Unary.All as All
+open import Data.Vec.Relation.Binary.Pointwise.Inductive using (Pointwise; []; _∷_)
+import Data.Vec.Relation.Binary.Pointwise.Inductive as PW
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Nullary using (Dec; yes; no; does)
 
-{- The relation on terms -------------------------------------------------------}
+{- The relation --------------------------------------------------------------}
 
 {- what a closure captures: a variable or a value -}
-open VarOrValue Value value-sub
+data VV {k} : C.Tm k Any → Set where
+  var : ∀ x → VV (C.` x)
+  val : ∀ {V} → Value V → VV V
 
 infix 4 _≈_
-data _≈_ : AST → C.AST → Set where
-  var≈ : ∀ {x} → ` x ≈ C.` x
-  lam≈ : ∀ {m N σ Fs} → bound N ≤ suc m
-    → (∀ k → Uses (suc k) N → σ k ≈ CS.extend Fs CS.ids k) → Each VV Fs
-    → lam ⦅ ⟩ sub (exts σ) N ,, Nil ⦆ ≈ C.clos-op m C.⦅ C.cons (C.clear (bind-n-ast m (enclose N))) Fs ⦆
-  app≈ : ∀ {L L' M M'} → L ≈ L' → M ≈ M' → app ⦅ L ,, M ,, Nil ⦆ ≈ C.app C.⦅ L' ,, M' ,, Nil ⦆
-  lit≈ : ∀ {B k} → lit B k ⦅ Nil ⦆ ≈ C.lit B k C.⦅ Nil ⦆
-  tuple≈ : ∀ {n as as'} → Pw _≈_ {n} as as' → tuple n ⦅ as ⦆ ≈ C.tuple n C.⦅ as' ⦆
-  get≈ : ∀ {n} {i : Fin n} {M M'} → M ≈ M' → get i ⦅ M ,, Nil ⦆ ≈ C.get i C.⦅ M' ,, Nil ⦆
-  inl≈ : ∀ {M M'} → M ≈ M' → inl-op ⦅ M ,, Nil ⦆ ≈ C.inl-op C.⦅ M' ,, Nil ⦆
-  inr≈ : ∀ {M M'} → M ≈ M' → inr-op ⦅ M ,, Nil ⦆ ≈ C.inr-op C.⦅ M' ,, Nil ⦆
-  case≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
-    → case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ≈ C.case-op C.⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆
-  prim≈ : ∀ {p L L' M M'} → L ≈ L' → M ≈ M' → prim p ⦅ L ,, M ,, Nil ⦆ ≈ C.prim p C.⦅ L' ,, M' ,, Nil ⦆
-  let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ C.let-op C.⦅ M' ,, ⟩ N' ,, Nil ⦆
+data _≈_ : ∀ {k A} → Tm k A → C.Tm k A → Set where
+  var≈ : ∀ {k} {x : Fin k} → ` x ≈ C.` x
+  lam≈ : ∀ {k j N N'} {σ : Fin j → Tm k Any} {Fs} → N ≈ N' → (∀ i → σ i ≈ lookup Fs i) → All VV Fs
+    → lam (S.sub (S.exts S.tmK σ) N) ≈ C.clos N' Fs
+  app≈ : ∀ {k} {L : Tm k _} {L' M M'} → L ≈ L' → M ≈ M' → app L M ≈ C.app L' M'
+  lit≈ : ∀ {k B c} → lit {k} B c ≈ C.lit B c
+  tuple≈ : ∀ {k n} {Ms : Vec (Tm k Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → tuple Ms ≈ C.tuple Ms'
+  get≈ : ∀ {k n i} {M : Tm k ⟪ tup n ⟫} {M'} → M ≈ M' → get i M ≈ C.get i M'
+  inl≈ : ∀ {k} {M : Tm k Any} {M'} → M ≈ M' → inl M ≈ C.inl M'
+  inr≈ : ∀ {k} {M : Tm k Any} {M'} → M ≈ M' → inr M ≈ C.inr M'
+  case≈ : ∀ {k} {L : Tm k _} {L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N' → case L M N ≈ C.case L' M' N'
+  prim≈ : ∀ {k p} {L : Tm k _} {L' M M'} → L ≈ L' → M ≈ M' → prim p L M ≈ C.prim p L' M'
+  let≈ : ∀ {k} {M : Tm k _} {M' N N'} → M ≈ M' → N ≈ N' → let′ M N ≈ C.let′ M' N'
+  inject≈ : ∀ {k G} {M : Tm k ⟪ G ⟫} {M'} → M ≈ M' → inject G M ≈ C.inject G M'
+  project≈ : ∀ {k t} {M : Tm k Any} {M'} → M ≈ M' → project t M ≈ C.project t M'
 
-{- Closure under substitution -------------------------------------------------}
+{- The fundamental lemma -------------------------------------------------------}
 
-{- substituting by any P-related substitutions, where P is preserved under
-   binders: first for renamings, then for all substitutions -}
-module Kit (P : IS.Subst → CS.Subst → Set)
-  (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x) (pvv : ∀ {σ σ'} → P σ σ' → ∀ x → VV (σ' x))
-  (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (CS.exts σ')) where
+vv-tab : ∀ {k n} (g : Fin n → Fin k) → All VV (tabulate (λ i → C.` g i))
+vv-tab {n = 0} g = []
+vv-tab {n = suc n} g = var _ ∷ vv-tab (λ i → g (suc i))
 
-  ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ CS.sub σ' M'
-  ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (CS.sub-args σ' as')
-  ≈-sub p var≈ = p≈ p _
-  ≈-sub {σ} {σ'} p (lam≈ {m} {N} {σ₀} {Fs} b c vs) =
-    subst (λ X → lam ⦅ ⟩ X ,, Nil ⦆ ≈ _) (sym fuse) (lam≈ b c' (vvs-sub (pvv p) vs))
-    where
-    fuse : sub (exts σ) (sub (exts σ₀) N) ≡ sub (exts (λ x → sub σ (σ₀ x))) N
-    fuse = trans (IS.sub-sub _ _ N) (IS.sub-cong (IS.exts-sub-comm σ σ₀) N)
-    c' : ∀ k → Uses (suc k) N → sub σ (σ₀ k) ≈ CS.extend (CS.sub-args σ' Fs) CS.ids k
-    c' k u = subst (_ ≈_) (sym (CS.extend-sub σ' Fs CS.ids CS.ids k
-                                  (≤-trans (<-∸1 (uses-bound (suc k) N u)) (sub≤ b))))
-                   (≈-sub p (c k u))
-      where sub≤ : ∀ {b m} → b ≤ suc m → b ∸ 1 ≤ m
-            sub≤ {zero} _ = z≤n
-            sub≤ {suc b} (s≤s le) = le
-  ≈-sub p (app≈ r s) = app≈ (≈-sub p r) (≈-sub p s)
-  ≈-sub p lit≈ = lit≈
-  ≈-sub p (tuple≈ rs) = tuple≈ (≈-subs p rs)
-  ≈-sub p (get≈ r) = get≈ (≈-sub p r)
-  ≈-sub p (inl≈ r) = inl≈ (≈-sub p r)
-  ≈-sub p (inr≈ r) = inr≈ (≈-sub p r)
-  ≈-sub p (case≈ r s t) = case≈ (≈-sub p r) (≈-sub (pexts p) s) (≈-sub (pexts p) t)
-  ≈-sub p (prim≈ r s) = prim≈ (≈-sub p r) (≈-sub p s)
-  ≈-sub p (let≈ r s) = let≈ (≈-sub p r) (≈-sub (pexts p) s)
-  ≈-subs p [] = []
-  ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
+enc : ∀ {k A} (M : Tm k A) → M ≈ enclose M
+encs≈ : ∀ {k n} (Ms : Vec (Tm k Any) n) → Pointwise _≈_ Ms (encs Ms)
+enc (` x) = var≈
+enc (lam N) = subst (λ X → lam X ≈ C.clos (enclose N) (tabulate C.`_)) (S.sub-id (λ { zero → refl ; (suc x) → refl }) N)
+  (lam≈ {σ = `_} (enc N) (λ i → subst (` i ≈_) (sym (lookup∘tabulate C.`_ i)) var≈) (vv-tab (λ i → i)))
+enc (app L M) = app≈ (enc L) (enc M)
+enc (lit B c) = lit≈
+enc (tuple Ms) = tuple≈ (encs≈ Ms)
+enc (get i M) = get≈ (enc M)
+enc (inl M) = inl≈ (enc M)
+enc (inr M) = inr≈ (enc M)
+enc (case L M N) = case≈ (enc L) (enc M) (enc N)
+enc (prim p L M) = prim≈ (enc L) (enc M)
+enc (let′ M N) = let≈ (enc M) (enc N)
+enc (inject G M) = inject≈ (enc M)
+enc (project t M) = project≈ (enc M)
+encs≈ [] = []
+encs≈ (M ∷ Ms) = enc M ∷ encs≈ Ms
 
-{- related substitutions: related terms, and the target's are variables or values -}
-open SubstRel.Closure _≈_ var≈ (λ _ σ' → ∀ x → VV (σ' x))
-  (λ h x → subst VV (sym (proj₂ (proj₂ (h x)))) (vv-var _)) vv-exts Kit.≈-sub
-  using (≈-rename; ≈-[]; ≈-exts-on)
+{- Closure under substitution ----------------------------------------------------}
 
-{- The fundamental lemma --------------------------------------------------------}
+{- a kit of each language, which agree -}
+record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
+  module K₁ = S.Kit 𝒦₁
+  module K₂ = T.Kit 𝒦₂
+  field
+    laws : S.Laws 𝒦₁
+    rel-vr : ∀ {k} (x : Fin k) → K₁.tm (K₁.vr x) ≈ K₂.tm (K₂.vr x)
+    rel-wk : ∀ {k a b} → K₁.tm {k} a ≈ K₂.tm b → K₁.tm (K₁.wk a) ≈ K₂.tm (K₂.wk b)
+    vv-vr : ∀ {k} (x : Fin k) → VV (K₂.tm (K₂.vr x))
+    vv-wk : ∀ {k b} → VV (K₂.tm {k} b) → VV (K₂.tm (K₂.wk b))
 
-{- the closure of enclose captures the variables below m -}
-fv-extend : ∀ τ' m ρ k → k < m → CS.extend (CS.sub-args τ' (fv-vars m)) ρ k ≡ τ' k
-fv-extend τ' (suc m) ρ k k< with m≤n⇒m<n∨m≡n (≤-pred k<)
-... | inj₁ k<m = fv-extend τ' m (τ' m • ρ) k k<m
-... | inj₂ refl = CS.extend-top (CS.sub-args τ' (fv-vars k)) (τ' k) ρ
+module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
+  open KR K
+  open S.Laws laws
 
-fv-vvs : ∀ {τ'} m → (∀ x → VV (τ' x)) → Each VV (CS.sub-args τ' (fv-vars m))
-fv-vvs zero vv = []
-fv-vvs (suc m) vv = vv m ∷ fv-vvs m vv
+  ≈-trav : ∀ {k j A} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {M : Tm k A} {M'} → M ≈ M'
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+  ≈-travs : ∀ {k j n} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} {Ms : Vec (Tm k Any) n} {Ms' : Vec (C.Tm k Any) n} → Pointwise _≈_ Ms Ms'
+    → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x)) → (∀ x → VV (K₂.tm (τ x))) → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+  vvs-trav : ∀ {k j n} {τ : T.Sub 𝒦₂ k j} {Fs : Vec (C.Tm k Any) n} → All VV Fs → (∀ x → VV (K₂.tm (τ x)))
+    → All VV (T.travs 𝒦₂ τ Fs)
+  ok-exts : ∀ {k j} {σ : S.Sub 𝒦₁ k j} {τ : T.Sub 𝒦₂ k j} → (∀ x → K₁.tm (σ x) ≈ K₂.tm (τ x))
+    → ∀ x → K₁.tm (S.exts 𝒦₁ σ x) ≈ K₂.tm (T.exts 𝒦₂ τ x)
+  ok-exts h zero = rel-vr zero
+  ok-exts h (suc x) = rel-wk (h x)
+  vv-exts : ∀ {k j} {τ : T.Sub 𝒦₂ k j} → (∀ x → VV (K₂.tm (τ x))) → ∀ x → VV (K₂.tm (T.exts 𝒦₂ τ x))
+  vv-exts h zero = vv-vr zero
+  vv-exts h (suc x) = vv-wk (h x)
 
-enc : ∀ {τ τ'} M → (∀ x → Uses x M → τ x ≈ τ' x) → (∀ x → VV (τ' x))
-  → sub τ M ≈ CS.sub τ' (enclose M)
-encs : ∀ {τ τ' n} (as : Args (replicate n ■)) → (∀ x → UsesArgs x as → τ x ≈ τ' x)
-  → (∀ x → VV (τ' x)) → Pw _≈_ (sub-args τ as) (CS.sub-args τ' (enc-args as))
-enc (` x) h vv = h x refl
-enc {τ' = τ'} (lam ⦅ ⟩ N ,, Nil ⦆) h vv =
-  lam≈ (m≤n+m∸n (bound N) 1)
-       (λ k u → subst (_ ≈_) (sym (fv-extend τ' _ CS.ids k (<-∸1 (uses-bound (suc k) N u)))) (h k (inj₁ u)))
-       (fv-vvs _ vv)
-enc (app ⦅ L ,, M ,, Nil ⦆) h vv = app≈ (enc L (λ x u → h x (inj₁ u)) vv) (enc M (λ x u → h x (inj₂ (inj₁ u))) vv)
-enc (lit B k ⦅ Nil ⦆) h vv = lit≈
-enc (tuple n ⦅ as ⦆) h vv = tuple≈ (encs as h vv)
-enc (get i ⦅ M ,, Nil ⦆) h vv = get≈ (enc M (λ x u → h x (inj₁ u)) vv)
-enc (inl-op ⦅ M ,, Nil ⦆) h vv = inl≈ (enc M (λ x u → h x (inj₁ u)) vv)
-enc (inr-op ⦅ M ,, Nil ⦆) h vv = inr≈ (enc M (λ x u → h x (inj₁ u)) vv)
-enc (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) h vv =
-  case≈ (enc L (λ x u → h x (inj₁ u)) vv)
-        (enc M (≈-exts-on (λ x u → h x (inj₂ (inj₁ u)))) (vv-exts vv))
-        (enc N (≈-exts-on (λ x u → h x (inj₂ (inj₂ (inj₁ u))))) (vv-exts vv))
-enc (prim p ⦅ L ,, M ,, Nil ⦆) h vv = prim≈ (enc L (λ x u → h x (inj₁ u)) vv) (enc M (λ x u → h x (inj₂ (inj₁ u))) vv)
-enc (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) h vv =
-  let≈ (enc M (λ x u → h x (inj₁ u)) vv) (enc N (≈-exts-on (λ x u → h x (inj₂ (inj₁ u)))) (vv-exts vv))
-encs {n = zero} Nil h vv = []
-encs {n = suc n} (M ,, as) h vv = enc M (λ x u → h x (inj₁ u)) vv ∷ encs as (λ x u → h x (inj₂ u)) vv
+  ≈-trav var≈ ok vk = ok _
+  ≈-trav {σ = σ} {τ} (lam≈ {N = N} {σ = ρ} {Fs} n h vv) ok vk =
+    subst (λ X → lam X ≈ C.clos _ (T.travs 𝒦₂ τ Fs))
+          (sym (S.trav-sub laws (λ { zero → tm-vr zero ; (suc y) → exts-ren σ (ρ y) }) N))
+          (lam≈ n (λ i → subst (_ ≈_) (sym (T.lookup-travs τ Fs i)) (≈-trav (h i) ok vk)) (vvs-trav vv vk))
+  ≈-trav (app≈ r s) ok vk = app≈ (≈-trav r ok vk) (≈-trav s ok vk)
+  ≈-trav lit≈ ok vk = lit≈
+  ≈-trav (tuple≈ rs) ok vk = tuple≈ (≈-travs rs ok vk)
+  ≈-trav (get≈ r) ok vk = get≈ (≈-trav r ok vk)
+  ≈-trav (inl≈ r) ok vk = inl≈ (≈-trav r ok vk)
+  ≈-trav (inr≈ r) ok vk = inr≈ (≈-trav r ok vk)
+  ≈-trav (case≈ r s t) ok vk = case≈ (≈-trav r ok vk) (≈-trav s (ok-exts ok) (vv-exts vk)) (≈-trav t (ok-exts ok) (vv-exts vk))
+  ≈-trav (prim≈ r s) ok vk = prim≈ (≈-trav r ok vk) (≈-trav s ok vk)
+  ≈-trav (let≈ r s) ok vk = let≈ (≈-trav r ok vk) (≈-trav s (ok-exts ok) (vv-exts vk))
+  ≈-trav (inject≈ r) ok vk = inject≈ (≈-trav r ok vk)
+  ≈-trav (project≈ r) ok vk = project≈ (≈-trav r ok vk)
+  ≈-travs [] ok vk = []
+  ≈-travs (r ∷ rs) ok vk = ≈-trav r ok vk ∷ ≈-travs rs ok vk
+  vvs-trav [] vk = []
+  vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
+  vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
-{- The simulation -----------------------------------------------------------------}
+varKR : KR S.varK T.varK
+varKR = record { laws = S.varL ; rel-vr = λ _ → var≈ ; rel-wk = λ { var≈ → var≈ } ; vv-vr = var ; vv-wk = λ _ → var _ }
 
-{- related terms, the target closed -}
-R : AST → C.AST → Set
-R M M' = M ≈ M' × WS 0 M'
+tmKR : KR S.tmK T.tmK
+tmKR = record { laws = S.tmL ; rel-vr = λ _ → var≈ ; rel-wk = λ r → Trav.≈-trav varKR r (λ _ → var≈) (λ _ → var _)
+              ; vv-vr = var ; vv-wk = λ { (var x) → var _ ; (val v) → val (T.value-trav v) } }
 
-Ans′ = Ans T.red Value R
+{- substituting a value for the variable of a binder -}
+≈-[] : ∀ {A} {N : Tm 1 A} {N' V V'} → N ≈ N' → V ≈ V' → Value V' → (N S.[ V ]) ≈ (N' T.[ V' ])
+≈-[] n m v = Trav.≈-trav tmKR n (λ _ → m) (λ _ → val v)
 
-obs≈ : ∀ {M M'} → M ≈ M' → S.obs M ≡ T.obs M'
-obs≈s : ∀ {n as as'} → Pw _≈_ {n} as as' → S.obs-args as ≡ T.obs-args as'
-obs≈ var≈ = refl
+{- The simulation ------------------------------------------------------------------}
+
+Ans′ : ∀ {A} → Tm 0 A → Red (Tm 0 A) → C.Tm 0 A → Set
+Ans′ = Ans T.red Value _≈_
+
+vvs-values : ∀ {n} {Fs : Vec (C.Tm 0 Any) n} → All VV Fs → All Value Fs
+vvs-values [] = []
+vvs-values (var () ∷ vv)
+vvs-values (val v ∷ vv) = v ∷ vvs-values vv
+
+obs≈ : ∀ {A} {V : Tm 0 A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
+obss≈ : ∀ {n} {Vs : Vec (Tm 0 Any) n} {Vs'} → Pointwise _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
 obs≈ (lam≈ _ _ _) = refl
 obs≈ (app≈ _ _) = refl
 obs≈ lit≈ = refl
-obs≈ (tuple≈ rs) = cong o-tuple (obs≈s rs)
+obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
 obs≈ (get≈ _) = refl
 obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈ (case≈ _ _ _) = refl
 obs≈ (prim≈ _ _) = refl
 obs≈ (let≈ _ _) = refl
-obs≈s [] = refl
-obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
+obs≈ (inject≈ r) = obs≈ r
+obs≈ (project≈ _) = refl
+obss≈ [] = refl
+obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
 
-sim : ∀ {M M'} → M ≈ M' → WS 0 M' → Ans′ M (S.red M) M'
-sims : ∀ {n as as'} → Pw _≈_ {n} as as' → WS-args 0 as' → Ans T.red-args Values (Pw R) as (S.red-args as) as'
-sim var≈ w = error ε refl
-sim (lam≈ b c vs) w = val ε (T.clos (vvs-values vs (proj₂ w))) (lam≈ b c vs , w)
-sim (app≈ r s) (wL , wM , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → app≈ r' s , w' , wM , tt) (sim r wL) (λ v m → app-sim v m s wM)
-  where
-  app-sim : ∀ {L V' M M'} → Value V' → R L V' → M ≈ M' → WS 0 M'
-    → Ans′ (app ⦅ L ,, M ,, Nil ⦆) (S.app? L (S.red M) M) (C.app C.⦅ V' ,, M' ,, Nil ⦆)
-  app-sim (T.clos vs) (lam≈ {m} {N} {σ} {Fs} b c vv , w) s wM =
-    ans-in (frame {g = λ X → C.app C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (value-red (T.clos vs))))
-           (λ (s' , w') → app≈ (lam≈ b c vv) s' , w , w' , tt) (sim s wM)
-           λ v (s' , w') → to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red v))))
-             (subst (R _) (cong (CS.sub _) (sym (unbind-bind bind-n-ast (λ _ → refl) (λ _ _ → refl) m (enclose N)))) (β v s' w'))
-    where
-    open Unbind unbind-n (λ _ → refl) (λ _ _ → refl)
-    β : ∀ {M W'} → Value W' → M ≈ W' → WS 0 W'
-      → R (sub (exts σ) N [ M ]) (CS.sub (W' CS.• CS.extend Fs CS.ids) (enclose N))
-    β v s' w' =
-      subst (_≈ _) (sym (IS.exts-[] _ σ N))
-            (enc N (λ { zero u → s' ; (suc k) u → c k u }) (λ { zero → vv-val v ; (suc k) → vv-extend vs vv-var k }))
-      , ws-sub _ (enclose N) (sfits-• w' (sfits-extend₀ Fs (proj₂ w))) (Enclosed.enclose-ws N b)
-  app-sim T.lit (lit≈ , _) s wM = error ε refl
-  app-sim v@(T.tuple _) (tuple≈ _ , _) s wM = error ε (val-in (value-red v))
-  app-sim v@(T.inl _) (inl≈ _ , _) s wM = error ε (val-in (value-red v))
-  app-sim v@(T.inr _) (inr≈ _ , _) s wM = error ε (val-in (value-red v))
-sim lit≈ w = val ε T.lit (lit≈ , w)
-sim (tuple≈ rs) w =
-  ans-in (frame _ (λ _ → refl)) (λ ms → tuple≈ (proj₁ (unzipʳ ms)) , proj₂ (unzipʳ ms)) (sims rs w)
-         (λ vs ms → val ε (T.tuple vs) (tuple≈ (proj₁ (unzipʳ ms)) , proj₂ (unzipʳ ms)))
-sim (get≈ {i = i} r) (w , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → get≈ r' , w' , tt) (sim r w) get-sim
-  where
-  get-sim : ∀ {M V'} → Value V' → R M V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
-  get-sim (T.tuple vs) (tuple≈ rs , w) =
-    ret?-ans (proj-pw {R = R} i (pw-list (zipʳ rs w))) (val-in (value-red (T.tuple vs)))
-  get-sim v@(T.clos _) (lam≈ _ _ _ , _) = error ε (val-in (value-red v))
-  get-sim T.lit (lit≈ , _) = error ε refl
-  get-sim v@(T.inl _) (inl≈ _ , _) = error ε (val-in (value-red v))
-  get-sim v@(T.inr _) (inr≈ _ , _) = error ε (val-in (value-red v))
-sim (inl≈ r) (w , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → inl≈ r' , w' , tt) (sim r w) (λ v (r' , w') → val ε (T.inl v) (inl≈ r' , w' , tt))
-sim (inr≈ r) (w , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → inr≈ r' , w' , tt) (sim r w) (λ v (r' , w') → val ε (T.inr v) (inr≈ r' , w' , tt))
-sim (case≈ {M = M} {M'} {N} {N'} r s t) (wL , wM , wN , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → case≈ r' s t , w' , wM , wN , tt) (sim r wL) case-sim
-  where
-  case-sim : ∀ {L V'} → Value V' → R L V'
-    → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
-  case-sim (T.inl v) (inl≈ r' , w') =
-    to (one (val-in (value-red (T.inl v))))
-       (≈-[] (vv-one v) r' s , ws-sub _ M' (sfits-• (proj₁ w') (λ _ ())) wM)
-  case-sim (T.inr v) (inr≈ r' , w') =
-    to (one (val-in (value-red (T.inr v))))
-       (≈-[] (vv-one v) r' t , ws-sub _ N' (sfits-• (proj₁ w') (λ _ ())) wN)
-  case-sim v@(T.clos _) (lam≈ _ _ _ , _) = error ε (val-in (value-red v))
-  case-sim T.lit (lit≈ , _) = error ε refl
-  case-sim v@(T.tuple _) (tuple≈ _ , _) = error ε (val-in (value-red v))
-sim (prim≈ {p} r s) (wL , wM , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → prim≈ r' s , w' , wM , tt) (sim r wL)
-    λ v (r' , w') →
-      ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (value-red v))) (λ (s' , w'') → prim≈ r' s' , w' , w'' , tt) (sim s wM)
-        λ v' (s' , w'') → ret?-ans (out≈ (obs≈ r') (obs≈ s')) (trans (val-in (value-red v)) (val-in (value-red v')))
-  where
-  out≈ : ∀ {o₁ o₁' o₂ o₂'} → o₁ ≡ o₁' → o₂ ≡ o₂'
-    → M.Pointwise R (map S.out (δ? p o₁ o₂)) (map T.out (δ? p o₁' o₂'))
-  out≈ {o₁} {_} {o₂} refl refl with δ? p o₁ o₂
-  ... | nothing = M.nothing
-  ... | just (int n) = M.just (lit≈ , tt)
-  ... | just (bool true) = M.just (inl≈ (tuple≈ []) , (tt , tt))
-  ... | just (bool false) = M.just (inr≈ (tuple≈ []) , (tt , tt))
-sim (let≈ {N' = N'} r s) (wM , wN , _) =
-  ans-in (frame _ (λ _ → refl)) (λ (r' , w') → let≈ r' s , w' , wN , tt) (sim r wM)
-    λ v (r' , w') → to (one (val-in (value-red v)))
-      (≈-[] (vv-one v) r' s , ws-sub _ N' (sfits-• w' (λ _ ())) wN)
-sims [] _ = val ε T.[] []
-sims (r ∷ rs) (w , ws) = ans-cons T.red-args (λ _ _ → refl) value-red (zipʳ rs ws) (sim r w) (sims rs ws)
+out≈ : ∀ p n m → S.out {0} p n m ≈ T.out p n m
+out≈ P.sub n m = lit≈
+out≈ P.eq n m with does (n Z.≟ m)
+... | true = inl≈ (inject≈ (tuple≈ []))
+... | false = inr≈ (inject≈ (tuple≈ []))
 
-{- The end theorem: for closed programs -------------------------------------------}
+sim : ∀ {A} {M : Tm 0 A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
+sims : ∀ {n} {Ms : Vec (Tm 0 Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → Ans T.reds (All Value) (Pointwise _≈_) Ms (S.reds Ms) Ms'
+sim (var≈ {x = ()})
+sim m@(lam≈ _ _ vv) = val ε (T.clos (vvs-values vv)) m
+sim (app≈ r s) =
+  ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
+    λ v m → ans-in (frame {g = C.app _} _ λ _ → val-in (value-red v)) (app≈ m) (sim s) λ w m' → β-sim v m w m'
+  where
+  β-sim : ∀ {V V' W W'} → Value V' → V ≈ V' → Value W' → W ≈ W' → Ans′ (app V W) (S.β V W) (C.app V' W')
+  β-sim (T.clos vs) (lam≈ {N = N} {σ = σ} n h vv) w m' =
+    to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
+       (subst (_≈ _) (sym (S.exts-[] σ _ N))
+              (Trav.≈-trav tmKR n (λ { zero → m' ; (suc i) → h i }) (λ { zero → val w ; (suc i) → all-lookup vv i })))
+sim lit≈ = val ε T.lit lit≈
+sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
+sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)
+  λ { (T.tuple vs) (tuple≈ ms) → to (one (val-in (value-red (T.tuple vs)))) (PW.lookup ms i) }
+sim (inl≈ r) = ans-in (frame _ λ _ → refl) inl≈ (sim r) λ v m → val ε (T.inl v) (inl≈ m)
+sim (inr≈ r) = ans-in (frame _ λ _ → refl) inr≈ (sim r) λ v m → val ε (T.inr v) (inr≈ m)
+sim (case≈ r s t) = ans-in (frame _ λ _ → refl) (λ m → case≈ m s t) (sim r)
+  λ { (T.inl v) (inl≈ m) → to (one (val-in (value-red (T.inl v)))) (≈-[] s m v)
+    ; (T.inr v) (inr≈ m) → to (one (val-in (value-red (T.inr v)))) (≈-[] t m v) }
+sim (prim≈ {p = p} r s) = ans-in (frame _ λ _ → refl) (λ m → prim≈ m s) (sim r)
+  λ { T.lit lit≈ → ans-in (frame {g = C.prim p _} _ λ _ → refl) (prim≈ lit≈) (sim s)
+    λ { T.lit lit≈ → to (one refl) (out≈ p _ _) } }
+sim (let≈ r s) = ans-in (frame _ λ _ → refl) (λ m → let≈ m s) (sim r)
+  λ v m → to (one (val-in (value-red v))) (≈-[] s m v)
+sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
+sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
+  where
+  proj-sim : ∀ {G V V'} → Value V' → V ≈ V' → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
+  proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
+    where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red X ≡ T.proj-dec d V' → Ans′ Y (S.proj-dec d V) X
+          pd (yes refl) e = to (one e) m
+          pd (no _) e = error ε e
+sims [] = val ε [] []
+sims (r ∷ rs) = ans-∷ T.reds (λ _ _ → refl) value-red rs (sim r) (sims rs)
 
-enclose-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (enclose M))
-enclose-correct M c =
-  red-equivalent value-red R (λ (m , w) → sim m w) (λ (m , _) _ _ → obs≈ m)
-    (subst₂ _≈_ (IS.sub-id M) (CS.sub-id (enclose M))
-            (enc M (λ x u → ⊥-elim (x<0 (subst (x <_) c (uses-bound x M u)))) (λ x → vv-var x))
-    , enclose-closed M c)
-  where x<0 : ∀ {x} → x < 0 → ⊥
-        x<0 ()
+{- The end theorem -------------------------------------------------------------}
+
+enclose-correct : ∀ (M : Tm 0 Any) → Equivalent (S.sem M) (T.sem (enclose M))
+enclose-correct M = red-equivalent value-red _≈_ sim (λ m _ _ → obs≈ m) (enc M)
