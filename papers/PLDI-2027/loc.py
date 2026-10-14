@@ -402,6 +402,14 @@ def sides_of(side):
     return side.split('+')
 
 
+def bold_min(ns):
+    """Cells for the numbers ns (None for a missing entry), with the lowest
+    in bold when at least two entries are present: the best result."""
+    present = [n for n in ns if n is not None]
+    low = min(present) if len(present) >= 2 else None
+    return [('—' if n is None else f'**{n}**' if n == low else str(n)) for n in ns]
+
+
 def main():
     seen, counts, files_of = {}, {}, {}
     # a file named explicitly by a group is not matched by another's wildcard
@@ -519,22 +527,22 @@ def main():
     print('| component | ' + ' | '.join(LABELS[s] for s in MCOLS) + ' |')
     print('|---|' + '---:|' * len(MCOLS))
     for r in rows:
-        cells = []
+        ns = []
         for side in MCOLS:
             n = counts.get((side, r))
             total[side] += n or 0
-            cells.append(str(n) if n is not None else '—')
-        print(f'| {r} | ' + ' | '.join(cells) + ' |')
-    cells = []
+            ns.append(n)
+        print(f'| {r} | ' + ' | '.join(bold_min(ns)) + ' |')
+    ns = []
     for side in MCOLS:
         n = sum(ulines(u) for u in extra[side])
         total[side] += n
-        cells.append(str(n) if extra[side] else '—')
-    print(f'| {EXTRA} | ' + ' | '.join(cells) + ' |')
+        ns.append(n if extra[side] else None)
+    print(f'| {EXTRA} | ' + ' | '.join(bold_min(ns)) + ' |')
     n = sum(ulines(u) for u in borrowed['gerr'])
     total['gerr'] += n
     print("| the graph model's meaning of the primitives | — | — | — | — | " + str(n) + ' |')
-    print('| **total** | ' + ' | '.join(f'**{total[side]}**' for side in MCOLS) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min([total[side] for side in MCOLS])) + ' |')
     print()
 
     def lines(us):
@@ -553,8 +561,8 @@ def main():
                 itotal[s] += n
                 cells.append(str(n) if n else '—')
             print(f'| {name} | {counts[(side, name)]} | ' + ' | '.join(cells) + ' |')
-    print(f'| **total** | **{lines(infra)}** | '
-          + ' | '.join(f'**{itotal[s]}**' for s in ICOLS) + ' |')
+    print(f'| **total** | {lines(infra)} | '
+          + ' | '.join(str(itotal[s]) for s in ICOLS) + ' |')
     print()
     print(f"Adequacy uses {lines(infra & reach['adeq'])} lines of the infrastructure, "
           f"{lines(infra & reach['adeq'] - reach['den'])} of them not used by the denotational proof.")
@@ -567,22 +575,22 @@ def main():
         if side in ('adeq', 'gadeq') and name not in anames:
             anames.append(name)
     for name in anames:
-        cells = []
+        ns = []
         for s in ('adeq', 'gadeq'):
             n = counts.get((s, name))
             adeq[s] += n or 0
-            cells.append(str(n) if n is not None else '—')
-        print(f'| {name} | ' + ' | '.join(cells) + ' |')
-    cells = []
+            ns.append(n)
+        print(f'| {name} | ' + ' | '.join(bold_min(ns)) + ' |')
+    ns = []
     for s in ('adeq', 'gadeq'):
         n = sum(ulines(u) for u in extra[s])
         adeq[s] += n
-        cells.append(str(n) if extra[s] else '—')
-    print(f'| {EXTRA}, nor by the proof of its model | ' + ' | '.join(cells) + ' |')
+        ns.append(n if extra[s] else None)
+    print(f'| {EXTRA}, nor by the proof of its model | ' + ' | '.join(bold_min(ns)) + ' |')
     n = sum(ulines(u) for u in borrowed['gadeq'])
     adeq['gadeq'] += n
     print(f"| the graph model's adequacy modules it uses | — | {n if borrowed['gadeq'] else '—'} |")
-    print(f"| **total** | **{adeq['adeq']}** | **{adeq['gadeq']}** |")
+    print('| **total** | ' + ' | '.join(bold_min([adeq['adeq'], adeq['gadeq']])) + ' |')
     print()
     print('| experiment (not in the totals) | lines |')
     print('|---|---:|')
@@ -628,7 +636,10 @@ def main():
               + ' | '.join(str(code_lines(THEOREMS[s])) if t == s else '—' for t in ALL) + ' |')
     tot = {s: flines(sreach[s] - (thm - {THEOREMS[s]})) for s in ALL}
     alls = surface
-    print(f'| **total** | **{flines(alls)}** | ' + ' | '.join(f'**{tot[s]}**' for s in ALL) + ' |')
+    styles = [s for s in ALL if s != 'adeq']
+    low = min(tot[s] for s in styles)
+    print(f'| **total** | {flines(alls)} | '
+          + ' | '.join(f'**{tot[s]}**' if s != 'adeq' and tot[s] == low else str(tot[s]) for s in ALL) + ' |')
     print()
     print(f'The adequacy statements also use ρ₀ from the denotational ones '
           f'(Theorems/Denotational.agda), not counted in its column.')
@@ -693,7 +704,7 @@ def errors_infra(files_of, reach, ulines):
             if any(row[1:]):
                 tot = [t + r for t, r in zip(tot, row)]
                 print(f'| {name} | {row[0]} | ' + ' | '.join(str(r) if r else '—' for r in row[1:]) + ' |')
-    print('| **total** | ' + ' | '.join(f'**{t}**' for t in tot) + ' |')
+    print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
     # the graph model with errors builds its operators on the graph model's
     # (its kernels): the modules of that group it reuses
     ops = {unit(f) for f in files_of[('infra', 'graph model: its operators')]}

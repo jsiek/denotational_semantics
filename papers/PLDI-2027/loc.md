@@ -17,25 +17,27 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 ## Current counts
 
+In every table that compares the proof styles, the lowest number of each row is in bold: the best result for that row. Tables of infrastructure are not marked, since relying on less of it is not in itself better.
+
 As of PR #53 (after the infrastructure audit, PRs #42 and #44–#47, the graph model with errors, PRs #50 and #51, one infrastructure rule for both graph models, which moves the graph model's laws over its operators into its infrastructure (PR #51: its total 2744 → 2608), and the graph model with errors rebuilt on an error monad (PR #53: its total 3953 → 3528); see [History](#history) and [Graph model with errors](#graph-model-with-errors)). The last column is the graph model with errors, counted as the four are (plus the graph model's meaning of the primitives, which it extends) but not in their comparison: the shared modules not counted are still those all four use. The closure-conversion passes (enclose, optimize, concretize, delay, globalize) are labelled "CC: " in the tables, since `simplify`, rco and the later passes are not part of closure conversion:
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation | graph model with errors |
 |---|---:|---:|---:|---:|---:|
-| semantics of the languages | 443 | 660 | 466 | 644 | 447 |
-| simplify | 343 | 572 | 644 | 710 | 349 |
-| CC: enclose | 81 | 188 | 140 | 186 | 90 |
-| CC: optimize | 134 | 224 | 170 | 222 | 149 |
-| CC: concretize | 141 | 182 | 127 | 157 | 134 |
-| CC: delay | 594 | 134 | 90 | 183 | 898 |
-| CC: globalize | 155 | 157 | 111 | 192 | 157 |
-| rco | 118 | 396 | 245 | 247 | 194 |
-| lift locals | 142 | 172 | 98 | 306 | 138 |
-| explicate control | 154 | 124 | 118 | 124 | 144 |
-| select instructions | 271 | 235 | 107 | 235 | 363 |
-| composition | 32 | 26 | 22 | 27 | 33 |
-| shared modules not used by all four proofs | — | 456 | 456 | 456 | 398 |
+| semantics of the languages | **443** | 660 | 466 | 644 | 447 |
+| simplify | **343** | 572 | 644 | 710 | 349 |
+| CC: enclose | **81** | 188 | 140 | 186 | 90 |
+| CC: optimize | **134** | 224 | 170 | 222 | 149 |
+| CC: concretize | 141 | 182 | **127** | 157 | 134 |
+| CC: delay | 594 | 134 | **90** | 183 | 898 |
+| CC: globalize | 155 | 157 | **111** | 192 | 157 |
+| rco | **118** | 396 | 245 | 247 | 194 |
+| lift locals | 142 | 172 | **98** | 306 | 138 |
+| explicate control | 154 | 124 | **118** | 124 | 144 |
+| select instructions | 271 | 235 | **107** | 235 | 363 |
+| composition | 32 | 26 | **22** | 27 | 33 |
+| shared modules not used by all four proofs | — | 456 | 456 | 456 | **398** |
 | the graph model's meaning of the primitives | — | — | — | — | 34 |
-| **total** | **2608** | **3526** | **2794** | **3689** | **3528** |
+| **total** | **2608** | 3526 | 2794 | 3689 | 3528 |
 
 The denotational semantics row includes the monotonicity, consistency and continuity of each language; since PR #47 they are assembled from a table of each language's operators, whose properties are proved once in the infrastructure (`Good` in `proof/Framework/GraphModel/Ops`), so the continuity of ISWIM that simplify's proof uses for β is a one-line re-export (`proof/Semantics/Graph/ISWIMContinuous.agda`). The simplify row of each column includes the syntactic lemmas about the pass that all four proofs use (`proof/Compiler/SimplifyFacts.agda`, 110 lines); that simplify keeps programs closed (`proof/Compiler/SimplifyScope.agda`, 125 lines), which only the operational compositions need, is in the shared row. The denotational lift-locals and explicate-control rows are the proofs against the continuation-passing semantics of Imp; the proofs against the direct semantics are an experiment (see [Explicate control](#explicate-control)). The reduction column's semantics row is its reduction semantics of ISWIM and Clos2–Clos5 with their values (378 lines: 274 for the reductions, 104 for their values) and the machines of Imp, CFG and X86 that it shares with the CEK column (266); its explicate-control and select-instructions rows are the CEK proofs, shared (see [Reduction semantics + simulation](#reduction-semantics--simulation)).
 
@@ -54,7 +56,7 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | reduction framework: reduction semantics, simulations between them | 235 | — | — | — | 235 | — |
 | clocked big-step framework | 243 | — | — | 243 | — | — |
 | runs of a step function from any state | 29 | — | — | — | — | — |
-| **total** | **3756** | **1900** | **875** | **860** | **1172** | **2765** |
+| **total** | 3756 | 1900 | 875 | 860 | 1172 | 2765 |
 
 Adequacy uses 2110 lines of the infrastructure, 210 of them not used by the denotational proof.
 
@@ -62,15 +64,15 @@ Adequacy relates the denotational semantics of ISWIM, Clos5 and X86 to their mac
 
 | adequacy (denotational side only) | graph model | graph model with errors |
 |---|---:|---:|
-| ISWIM | 663 | 790 |
-| Clos5 | 712 | 904 |
-| X86 | 1115 | 2096 |
-| well-formedness of compiled programs | 262 | 364 |
-| end to end | 25 | 39 |
+| ISWIM | **663** | 790 |
+| Clos5 | **712** | 904 |
+| X86 | **1115** | 2096 |
+| well-formedness of compiled programs | **262** | 364 |
+| end to end | **25** | 39 |
 | simplify through the ISWIM machine | — | 30 |
-| shared modules not used by all four proofs, nor by the proof of its model | 456 | 58 |
+| shared modules not used by all four proofs, nor by the proof of its model | 456 | **58** |
 | the graph model's adequacy modules it uses | — | 52 |
-| **total** | **3233** | **4333** |
+| **total** | **3233** | 4333 |
 
 Two experiments, not in the totals: a direct backward simulation for delay, described [below](#experiment-a-direct-backward-simulation-for-delay), and the direct denotational semantics of Imp with lift locals and explicate control proved against it, described in [Explicate control](#explicate-control). The direct proofs also use `Semantics/Graph/Imp.agda`, `LiftLocalsCommon` and `ExplicateCommon`, which are counted in the main rows.
 
@@ -100,7 +102,7 @@ The lines a reader must audit to trust each style's theorems (see [Audit surface
 | reduction: theorem statements | 54 | — | — | — | 54 | — | — |
 | adequacy: theorem statements | 51 | — | — | — | — | 51 | — |
 | graph model with errors: theorem statements | 115 | — | — | — | — | — | 115 |
-| **total** | **3739** | **1504** | **1805** | **1613** | **1729** | **1910** | **2071** |
+| **total** | 3739 | **1504** | 1805 | 1613 | 1729 | 1910 | 2071 |
 
 The adequacy statements also use ρ₀ from the denotational ones (`Theorems/Denotational.agda`, 2 lines), not counted in their column.
 
@@ -258,46 +260,46 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 
 | date | change | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---|---:|---:|---:|---:|
-| 2026-10-11 | first complete versions (PR #14) | 4251 | 2134 | — | — |
-| 2026-10-11 | leaner delay proof (PR #15) | 3725 | 2134 | — | — |
-| 2026-10-11 | dead code, consistency, shared lemmas (PR #16) | 2836 | 2134 | — | — |
-| 2026-10-11 | delay relation without visible fuel, Calls as a predicate (PR #17) | 2825 | 2134 | — | — |
-| 2026-10-11 | joined pairs ⦅ u , v ⦆ instead of the halves ⦅ u ∣ and ∣ v ⦆ (PR #18) | 2823 | 2134 | — | — |
-| 2026-10-11 | simulation proof cleanup: framework specialised to step-function machines, end theorems composed instead of simulations, no per-pass corollaries, shared `uses-bound`, pruned imports (PR #20) | 2811 | 1862 | — | — |
-| 2026-10-11 | interpreter proof pilot: clocked interpreters for all five languages, enclose clock for clock | 2811 | 1862 | 541 | — |
-| 2026-10-11 | interpreter proof complete: all five passes clock for clock, composition (`CompilerFuel`); machine-independent lemmas and observations moved to shared modules, so neither operational style imports the other (PR #21) | 2811 | 1626 | 1130 | — |
-| 2026-10-11 | `compile` moved from `CompilerCorrect` to the shared `Compiler/Pipeline.agda`, so no operational proof imports the denotational one; dead imports of the denotational infrastructure removed from the languages (PR #24; old method) | 2804 | 1626 | 1130 | — |
-| 2026-10-11 | the same code, new method: shared modules not used by all three proofs counted in each proof that uses them (PR #24) | 2832 | 1783 | 1287 | — |
-| 2026-10-11 | arithmetic: sub and eq (PR #25) | 2935 | 1933 | 1407 | — |
-| 2026-10-11 | late code check in Clos4/Clos5 (PR #26) | 2935 | 1926 | 1404 | — |
-| 2026-10-11 | remove complex operands, all three proofs; Clos5 continuity to the denotational side, scoping of `compile` to the shared code (PR #26) | 3289 (+354) | 2653 (+727) | 1980 (+576) | — |
-| 2026-10-12 | lift locals into Imp, all three proofs (PR #27) | 3551 (+262) | 2967 (+314) | 2184 (+204) | — |
-| 2026-10-12 | explicate control into CFG, all three proofs, the denotational one against the direct semantics of Imp; binders bind only consistent sets (PR #28) | 4323 (+772) | 3181 (+214) | 2365 (+181) | — |
-| 2026-10-12 | continuation-passing semantics of Imp for the denotational lift locals and explicate control, the direct one an experiment; what both have in common factored out (PR #28) | 3989 (−334) | 3181 | 2365 | — |
-| 2026-10-12 | the same code, new method: language-independent infrastructure in a separate table, not counted (PR #28) | 3113 | 2935 | 2224 | — |
-| 2026-10-12 | select instructions, all three proofs (PR #29) | 3537 (+424) | 3325 (+390) | 2463 (+239) | — |
-| 2026-10-12 | clocked interpreters in do-notation (cosmetic; PR #30) | 3537 | 3325 | 2463 | — |
-| 2026-10-12 | X86 machine and interpreter aligned with the X86 semantics at calls; adequacy for X86, end to end for `compile-x86` (PR #33) | 3537 | 3328 (+3) | 2461 (−2) | — |
-| 2026-10-12 | audit surface split: the theorem statements in `agda/Theorems/`, the definitions they use outside `agda/proof/`, the proofs and the lemmas of split modules in `agda/proof/` (PR #35) | 3617 (+80) | 3345 (+17) | 2477 (+16) | — |
-| 2026-10-12 | the same code, new method: import statements not counted (PR #35) | 2942 | 2908 | 2062 | — |
-| 2026-10-12 | the same code, regrouped for a fourth column: the values of the Clos5 machine to `Semantics/CEK/Values.agda`, `‼-map` to `ListUtil` (infrastructure), the compositions into CFG and X86 out of `ExplicateSim` and `SelectSim` (`CompilerX86Sim`), shared modules counted unless all four proofs use them (PR #37) | 2942 | 2906 | 2062 | — |
-| 2026-10-12 | reduction semantics + simulation, every pass; explicate control and select instructions shared with the CEK column (PR #37) | 2942 | 2906 | 2062 | 3011 |
-| 2026-10-13 | simplify (ISWIM → ISWIM), a cp0-style source optimizer, as the first pass of `compile`, all four proofs; that simplify keeps programs closed for the operational compositions (`SimplifyScope`, shared, 110); the continuity of ISWIM from adequacy to the denotational semantics row (44); in the infrastructure `equiv-sym` (+5), `clocked-le` (+54) and `ws-bound` (+10) (PR #40) | 3349 (+407) | 3578 (+672) | 2863 (+801) | 3734 (+723) |
-| 2026-10-13 | simplify's CEK and interpreter proofs trimmed: one description of values for terms and known values (`Desc`, strong for terms, up to functions for known values), the shift of a small value from that of a description, one lemma for a variable bound in both environments (`ok-bind`), shared helpers in the interpreter's backward direction (PR #40) | 3349 | 3558 (−20) | 2840 (−23) | 3734 |
-| 2026-10-13 | inlining in simplify (transformation 5): a known function is kept as its source body with its `Facts`, and a call of it is replaced by its body simplified at the call, the operand bound as in β (a let when it is not a value), when the result is small enough, under fuel; copy propagation keeps what is known of a copied variable; β and inlining share one lemma per proof (PR #41) | 3360 (+11) | 3607 (+49) | 2900 (+60) | 3821 (+87) |
-| 2026-10-13 | infrastructure audit, step 1: language-independent lemmas that the proofs repeated defined once in the infrastructure (list lookups, the graph model's `ρ₀`, `ne-mem` and `Λ-≃`, the continuity of Clos5 from `SemanticsUtil`, the environment lemmas `•-~` and `extend-nonempty-env` for local copies, adequacy's runs from any state and `terminates-det`); the infrastructure +59 (1866 → 1925), of which each proof reaches +28, +18, +16 and +18; adequacy 3246 → 3208 (PR #42) | 3299 (−61) | 3581 (−26) | 2892 (−8) | 3810 (−11) |
-| 2026-10-13 | `let` in ISWIM, Clos2 and Clos3 (semantics in every style, every pass, every proof); simplify emits `let x = M' in N'` where it left the redex `(λ x. N') M'`, and simplifies a source `let` like β (PR #43; see [Adding let](#adding-let-to-iswim-clos2-and-clos3)) | 3393 (+94) | 3639 (+58) | 2933 (+41) | 3904 (+94) |
-| 2026-10-13 | infrastructure audit, interpreter track: the `Result` monad laws, clock monotonicity (`⊑-bind`, `Stable`, `Back`, `clocked-back`) and `clocked-≡` move into `Framework.Clocked` (132 → 243) (PR #44) | 3393 | 3639 | 2794 (−139) | 3904 |
-| 2026-10-13 | infrastructure audit, CEK track: `step⁺`, `Reach`/`after`, `Lag`, `answers-at` and `next?` in the small-step framework (188 → 243), renamed environments in `Syntax.EnvRel` (15); the reduction column shares the Imp machine and the explicate and select proofs (PR #45) | 3393 | 3526 (−113) | 2794 | 3897 (−7) |
-| 2026-10-13 | infrastructure audit, reduction track: `ret?`, operand lists (`Each`, `ans-cons`), `ret?-ans`, let chains and the one-value substitution `≈-[]` in the reduction framework (130 → 235) and the substitution lemmas (PR #46) | 3393 | 3526 | 2794 | 3689 (−208) |
-| 2026-10-13 | infrastructure audit, graph-model track: each operator's monotonicity, consistency and continuity proved once (`Good`), and each language's semantics built from a table of operators (semantics row 744 → 447); congruences from monotonicity (`mono⇒≃`); β laws for any continuous semantics (`Λ-β`, `let-β`, `clos-β`); domain facts in `DomainUtil`; graph model values, operators, continuity 454 → 836 (PR #47) | 2744 (−649) | 3526 | 2794 | 3689 |
-| 2026-10-13 | closure-conversion passes labelled "CC: " in the tables; no count changes (PR #48) | 2744 | 3526 | 2794 | 3689 |
-| 2026-10-13 | graph model with errors, a pilot (ISWIM, Clos2–Clos4; simplify, enclose, concretize, delay, adequacy for ISWIM; optimize owed), not in the totals: delay 1037 lines against 594; the graph model's infrastructure split into what any graph-model semantics uses and its operators (+13 module lines, 1749 → 1762; adequacy's 1959 → 1972) (PR #50) | 2744 | 3526 | 2794 | 3689 |
-| 2026-10-13 | graph model with errors for the whole compiler: semantics of Clos5, Imp, CFG and X86 that err where their machines do; optimize, globalize, rco, lift locals, explicate control, select and the composition; adequacy for the Clos5 and X86 machines and the end-to-end theorems on errors, constants, answers and divergence. A fifth column, not in the comparison: 3953 lines (adequacy 4760, infrastructure reached 2670); none of the four totals changes (PR #51) | 2744 | 3526 | 2794 | 3689 |
-| 2026-10-13 | one infrastructure rule for both graph models: laws over the operators are infrastructure. The graph model's strict operators (from rco), let/case and strict-write laws (from lift locals and select) move to `Strict` and `Laws`, and `strict`, `payloadD` to `Ops`: rco 168 → 118, lift locals 214 → 142, select 281 → 271, semantics 447 → 443; its infrastructure 1762 → 1900 (adequacy's 1972 → 2110). The errors model is unchanged (PR #51) | 2608 | 3526 | 2794 | 3689 |
-| 2026-10-13 | graph model with errors, monadic (pilot): the error-propagating operators of ISWIM and Clos2 rebuilt from an error monad on 𝒫 Value, with the graph model's operators as kernels; simplify, enclose and ISWIM adequacy on it. Not in the totals: semantics of ISWIM and Clos2, simplify and enclose 827 lines against 881 in the errors model, ISWIM adequacy 795 against 915, error-specific infrastructure 409 against 685 for the same operators; none of the totals changes (PR #53) | 2608 | 3526 | 2794 | 3689 |
-| 2026-10-13 | graph model with errors, monadic (pilot), step 1: Clos3 and Clos4 on the monad (pairs, the late-checked call), concretize and delay; a cleanup of the step-0 proofs (one `Val` predicate, β laws stated with it, `binds-good`, `clos-β`, `⟦⟧-closed₀`). Not in the totals: delay 901 lines against 1037 in the errors model (594 in the graph model), concretize 134 against 151, simplify 351 (was 385) against 380, enclose 92 (was 108) against 109, ISWIM adequacy 790 against 915, error-specific infrastructure 564 against 997 for the same four languages; the denotational framework row grows by 3 (`⟦⟧-closed₀`); none of the totals changes (PR #53) | 2608 | 3526 | 2794 | 3689 |
-| 2026-10-13 | graph model with errors rebuilt on the error monad for the whole compiler, replacing the old development (PR #53, step 2): Clos5, Imp, CFG and X86 semantics on the monad; optimize, globalize, rco, lift locals, explicate control, select and the composition; adequacy for the Clos5 and X86 machines. The errors column: passes and semantics 3953 → 3528 (delay 1037 → 898, rco 206 → 194, select 349 → 363, lift locals 129 → 138; Clos2Continuous, unused, dropped), adequacy 4760 → 4333 (Clos5 1153 → 904, X86 2149 → 2096), error-specific infrastructure 1317 → 935, now sharing 474 lines of the graph model's operators; no other total changes | 2608 | 3526 | 2794 | 3689 |
+| 2026-10-11 | first complete versions (PR #14) | 4251 | **2134** | — | — |
+| 2026-10-11 | leaner delay proof (PR #15) | 3725 | **2134** | — | — |
+| 2026-10-11 | dead code, consistency, shared lemmas (PR #16) | 2836 | **2134** | — | — |
+| 2026-10-11 | delay relation without visible fuel, Calls as a predicate (PR #17) | 2825 | **2134** | — | — |
+| 2026-10-11 | joined pairs ⦅ u , v ⦆ instead of the halves ⦅ u ∣ and ∣ v ⦆ (PR #18) | 2823 | **2134** | — | — |
+| 2026-10-11 | simulation proof cleanup: framework specialised to step-function machines, end theorems composed instead of simulations, no per-pass corollaries, shared `uses-bound`, pruned imports (PR #20) | 2811 | **1862** | — | — |
+| 2026-10-11 | interpreter proof pilot: clocked interpreters for all five languages, enclose clock for clock | 2811 | 1862 | **541** | — |
+| 2026-10-11 | interpreter proof complete: all five passes clock for clock, composition (`CompilerFuel`); machine-independent lemmas and observations moved to shared modules, so neither operational style imports the other (PR #21) | 2811 | 1626 | **1130** | — |
+| 2026-10-11 | `compile` moved from `CompilerCorrect` to the shared `Compiler/Pipeline.agda`, so no operational proof imports the denotational one; dead imports of the denotational infrastructure removed from the languages (PR #24; old method) | 2804 | 1626 | **1130** | — |
+| 2026-10-11 | the same code, new method: shared modules not used by all three proofs counted in each proof that uses them (PR #24) | 2832 | 1783 | **1287** | — |
+| 2026-10-11 | arithmetic: sub and eq (PR #25) | 2935 | 1933 | **1407** | — |
+| 2026-10-11 | late code check in Clos4/Clos5 (PR #26) | 2935 | 1926 | **1404** | — |
+| 2026-10-11 | remove complex operands, all three proofs; Clos5 continuity to the denotational side, scoping of `compile` to the shared code (PR #26) | 3289 (+354) | 2653 (+727) | **1980** (+576) | — |
+| 2026-10-12 | lift locals into Imp, all three proofs (PR #27) | 3551 (+262) | 2967 (+314) | **2184** (+204) | — |
+| 2026-10-12 | explicate control into CFG, all three proofs, the denotational one against the direct semantics of Imp; binders bind only consistent sets (PR #28) | 4323 (+772) | 3181 (+214) | **2365** (+181) | — |
+| 2026-10-12 | continuation-passing semantics of Imp for the denotational lift locals and explicate control, the direct one an experiment; what both have in common factored out (PR #28) | 3989 (−334) | 3181 | **2365** | — |
+| 2026-10-12 | the same code, new method: language-independent infrastructure in a separate table, not counted (PR #28) | 3113 | 2935 | **2224** | — |
+| 2026-10-12 | select instructions, all three proofs (PR #29) | 3537 (+424) | 3325 (+390) | **2463** (+239) | — |
+| 2026-10-12 | clocked interpreters in do-notation (cosmetic; PR #30) | 3537 | 3325 | **2463** | — |
+| 2026-10-12 | X86 machine and interpreter aligned with the X86 semantics at calls; adequacy for X86, end to end for `compile-x86` (PR #33) | 3537 | 3328 (+3) | **2461** (−2) | — |
+| 2026-10-12 | audit surface split: the theorem statements in `agda/Theorems/`, the definitions they use outside `agda/proof/`, the proofs and the lemmas of split modules in `agda/proof/` (PR #35) | 3617 (+80) | 3345 (+17) | **2477** (+16) | — |
+| 2026-10-12 | the same code, new method: import statements not counted (PR #35) | 2942 | 2908 | **2062** | — |
+| 2026-10-12 | the same code, regrouped for a fourth column: the values of the Clos5 machine to `Semantics/CEK/Values.agda`, `‼-map` to `ListUtil` (infrastructure), the compositions into CFG and X86 out of `ExplicateSim` and `SelectSim` (`CompilerX86Sim`), shared modules counted unless all four proofs use them (PR #37) | 2942 | 2906 | **2062** | — |
+| 2026-10-12 | reduction semantics + simulation, every pass; explicate control and select instructions shared with the CEK column (PR #37) | 2942 | 2906 | **2062** | 3011 |
+| 2026-10-13 | simplify (ISWIM → ISWIM), a cp0-style source optimizer, as the first pass of `compile`, all four proofs; that simplify keeps programs closed for the operational compositions (`SimplifyScope`, shared, 110); the continuity of ISWIM from adequacy to the denotational semantics row (44); in the infrastructure `equiv-sym` (+5), `clocked-le` (+54) and `ws-bound` (+10) (PR #40) | 3349 (+407) | 3578 (+672) | **2863** (+801) | 3734 (+723) |
+| 2026-10-13 | simplify's CEK and interpreter proofs trimmed: one description of values for terms and known values (`Desc`, strong for terms, up to functions for known values), the shift of a small value from that of a description, one lemma for a variable bound in both environments (`ok-bind`), shared helpers in the interpreter's backward direction (PR #40) | 3349 | 3558 (−20) | **2840** (−23) | 3734 |
+| 2026-10-13 | inlining in simplify (transformation 5): a known function is kept as its source body with its `Facts`, and a call of it is replaced by its body simplified at the call, the operand bound as in β (a let when it is not a value), when the result is small enough, under fuel; copy propagation keeps what is known of a copied variable; β and inlining share one lemma per proof (PR #41) | 3360 (+11) | 3607 (+49) | **2900** (+60) | 3821 (+87) |
+| 2026-10-13 | infrastructure audit, step 1: language-independent lemmas that the proofs repeated defined once in the infrastructure (list lookups, the graph model's `ρ₀`, `ne-mem` and `Λ-≃`, the continuity of Clos5 from `SemanticsUtil`, the environment lemmas `•-~` and `extend-nonempty-env` for local copies, adequacy's runs from any state and `terminates-det`); the infrastructure +59 (1866 → 1925), of which each proof reaches +28, +18, +16 and +18; adequacy 3246 → 3208 (PR #42) | 3299 (−61) | 3581 (−26) | **2892** (−8) | 3810 (−11) |
+| 2026-10-13 | `let` in ISWIM, Clos2 and Clos3 (semantics in every style, every pass, every proof); simplify emits `let x = M' in N'` where it left the redex `(λ x. N') M'`, and simplifies a source `let` like β (PR #43; see [Adding let](#adding-let-to-iswim-clos2-and-clos3)) | 3393 (+94) | 3639 (+58) | **2933** (+41) | 3904 (+94) |
+| 2026-10-13 | infrastructure audit, interpreter track: the `Result` monad laws, clock monotonicity (`⊑-bind`, `Stable`, `Back`, `clocked-back`) and `clocked-≡` move into `Framework.Clocked` (132 → 243) (PR #44) | 3393 | 3639 | **2794** (−139) | 3904 |
+| 2026-10-13 | infrastructure audit, CEK track: `step⁺`, `Reach`/`after`, `Lag`, `answers-at` and `next?` in the small-step framework (188 → 243), renamed environments in `Syntax.EnvRel` (15); the reduction column shares the Imp machine and the explicate and select proofs (PR #45) | 3393 | 3526 (−113) | **2794** | 3897 (−7) |
+| 2026-10-13 | infrastructure audit, reduction track: `ret?`, operand lists (`Each`, `ans-cons`), `ret?-ans`, let chains and the one-value substitution `≈-[]` in the reduction framework (130 → 235) and the substitution lemmas (PR #46) | 3393 | 3526 | **2794** | 3689 (−208) |
+| 2026-10-13 | infrastructure audit, graph-model track: each operator's monotonicity, consistency and continuity proved once (`Good`), and each language's semantics built from a table of operators (semantics row 744 → 447); congruences from monotonicity (`mono⇒≃`); β laws for any continuous semantics (`Λ-β`, `let-β`, `clos-β`); domain facts in `DomainUtil`; graph model values, operators, continuity 454 → 836 (PR #47) | **2744** (−649) | 3526 | 2794 | 3689 |
+| 2026-10-13 | closure-conversion passes labelled "CC: " in the tables; no count changes (PR #48) | **2744** | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors, a pilot (ISWIM, Clos2–Clos4; simplify, enclose, concretize, delay, adequacy for ISWIM; optimize owed), not in the totals: delay 1037 lines against 594; the graph model's infrastructure split into what any graph-model semantics uses and its operators (+13 module lines, 1749 → 1762; adequacy's 1959 → 1972) (PR #50) | **2744** | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors for the whole compiler: semantics of Clos5, Imp, CFG and X86 that err where their machines do; optimize, globalize, rco, lift locals, explicate control, select and the composition; adequacy for the Clos5 and X86 machines and the end-to-end theorems on errors, constants, answers and divergence. A fifth column, not in the comparison: 3953 lines (adequacy 4760, infrastructure reached 2670); none of the four totals changes (PR #51) | **2744** | 3526 | 2794 | 3689 |
+| 2026-10-13 | one infrastructure rule for both graph models: laws over the operators are infrastructure. The graph model's strict operators (from rco), let/case and strict-write laws (from lift locals and select) move to `Strict` and `Laws`, and `strict`, `payloadD` to `Ops`: rco 168 → 118, lift locals 214 → 142, select 281 → 271, semantics 447 → 443; its infrastructure 1762 → 1900 (adequacy's 1972 → 2110). The errors model is unchanged (PR #51) | **2608** | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors, monadic (pilot): the error-propagating operators of ISWIM and Clos2 rebuilt from an error monad on 𝒫 Value, with the graph model's operators as kernels; simplify, enclose and ISWIM adequacy on it. Not in the totals: semantics of ISWIM and Clos2, simplify and enclose 827 lines against 881 in the errors model, ISWIM adequacy 795 against 915, error-specific infrastructure 409 against 685 for the same operators; none of the totals changes (PR #53) | **2608** | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors, monadic (pilot), step 1: Clos3 and Clos4 on the monad (pairs, the late-checked call), concretize and delay; a cleanup of the step-0 proofs (one `Val` predicate, β laws stated with it, `binds-good`, `clos-β`, `⟦⟧-closed₀`). Not in the totals: delay 901 lines against 1037 in the errors model (594 in the graph model), concretize 134 against 151, simplify 351 (was 385) against 380, enclose 92 (was 108) against 109, ISWIM adequacy 790 against 915, error-specific infrastructure 564 against 997 for the same four languages; the denotational framework row grows by 3 (`⟦⟧-closed₀`); none of the totals changes (PR #53) | **2608** | 3526 | 2794 | 3689 |
+| 2026-10-13 | graph model with errors rebuilt on the error monad for the whole compiler, replacing the old development (PR #53, step 2): Clos5, Imp, CFG and X86 semantics on the monad; optimize, globalize, rco, lift locals, explicate control, select and the composition; adequacy for the Clos5 and X86 machines. The errors column: passes and semantics 3953 → 3528 (delay 1037 → 898, rco 206 → 194, select 349 → 363, lift locals 129 → 138; Clos2Continuous, unused, dropped), adequacy 4760 → 4333 (Clos5 1153 → 904, X86 2149 → 2096), error-specific infrastructure 1317 → 935, now sharing 474 lines of the graph model's operators; no other total changes | **2608** | 3526 | 2794 | 3689 |
 
 **Infrastructure audit, step 1 (PR #42).** The last row moves language-independent reasoning that the proofs had repeated, or had written locally, into the infrastructure, under the policy of [Language-independent infrastructure](#language-independent-infrastructure). No theorem statement, pass or semantics changed. What moved:
 
@@ -324,15 +326,15 @@ PR #16 also changed the grouping: the shared counts now include `Primitives`, `N
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
 | domain, operators, continuity | +31 | — | — |
-| semantics of the languages | +16 | +65 | +54 |
-| enclose | +3 | +16 | +13 |
-| optimize | +3 | +16 | +13 |
-| concretize | +8 | +13 | +10 |
-| delay | +35 | +17 | +11 |
-| globalize | +7 | +15 | +11 |
-| composition | 0 | 0 | 0 |
-| shared modules not used by all three proofs | 0 | +8 | +8 |
-| **total** | **+103** | **+150** | **+120** |
+| semantics of the languages | **+16** | +65 | +54 |
+| enclose | **+3** | +16 | +13 |
+| optimize | **+3** | +16 | +13 |
+| concretize | **+8** | +13 | +10 |
+| delay | +35 | +17 | **+11** |
+| globalize | **+7** | +15 | +11 |
+| composition | **0** | **0** | **0** |
+| shared modules not used by all three proofs | **0** | +8 | +8 |
+| **total** | **+103** | +150 | +120 |
 
 * **Denotational.** One semantic operator, `primD p D E = { out (δ p n m) | const n ∈ D, const m ∈ E }`, with its monotonicity, consistency and continuity (+31), one clause per semantics, and a congruence case per pass (`primD-≃`). The exception is delay (+35). Its relations treat flat values (constants, ω, ⟨⟩) as first-order data that need no reflection, and the results `left ⟨⟩` and `right ⟨⟩` of `eq` are not flat. So `Flat` became `Data` (flat values under `left` and `right`) in both directions, and reflect recovers the operands' constants.
 * **Simulation.** Each machine gets two frames (`primL`, `primR`), three transitions and the value of a result (13 lines per machine). Each simulation relates the two frames and gets three cases and the lemma `prim≈` (related operands give related results, through `obs≈`, 6 lines).
@@ -361,10 +363,10 @@ PR #16 also changed the grouping: the shared counts now include `Primitives`, `N
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
-| semantics of the languages | +117 | 0 | 0 |
-| rco | +237 | +449 | +298 |
-| shared modules not used by all three proofs | 0 | +278 | +278 |
-| **total** | **+354** | **+727** | **+576** |
+| semantics of the languages | +117 | **0** | **0** |
+| rco | **+237** | +449 | +298 |
+| shared modules not used by all three proofs | **0** | +278 | +278 |
+| **total** | **+354** | +727 | +576 |
 
 The +117 is `Clos5IswimContinuous`, moved from adequacy; the +278 are `PipelineScope` and `ScopeRename`, the scoping of `compile`'s output, moved from adequacy's well-formedness and split from its RB half. Adequacy went from 2238 to 2172 lines: Clos5 −117, well-formedness 287 → 60, shared +278 (the split costs 51 lines: `CompileWF` now proves only that each definition refers to older ones, `glob-rb`, and pairs it with `compile-scoped`).
 
@@ -372,14 +374,14 @@ The +117 is `Clos5IswimContinuous`, moved from adequacy; the +278 are `PipelineS
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
-| generic infrastructure | +4 | 0 | 0 |
+| generic infrastructure | +4 | **0** | **0** |
 | domain, operators, continuity | +29 | — | — |
-| semantics of the languages | +113 | +62 | +36 |
-| concretize | +3 | 0 | 0 |
-| delay | −16 | 0 | 0 |
-| rco | +5 | 0 | 0 |
-| explicate control | +634 | +152 | +145 |
-| **total** | **+772** | **+214** | **+181** |
+| semantics of the languages | +113 | +62 | **+36** |
+| concretize | +3 | **0** | **0** |
+| delay | **−16** | 0 | 0 |
+| rco | +5 | **0** | **0** |
+| explicate control | +634 | +152 | **+145** |
+| **total** | +772 | +214 | **+181** |
 
 * **Explicate control.** The CFG machine (50) and interpreter (32), and the factoring of the Imp machine (+12) and interpreter (+4) that they share; the denotational semantics of CFG with the factoring of simple expressions in `Semantics/Graph/Imp.agda` (+42); the three proofs (634, 152, 145).
 * **Consistent binders** (denotational +96, adequacy +74): the rest of the denotational rows (+4, +29, +71 of the semantics, +3, −16, +5), and adequacy's ISWIM (+52) and Clos5 (+22).
@@ -405,9 +407,9 @@ The pass (`Compiler/LiftLocals.agda`, shared, 44 lines) takes a monadic Clos5 te
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
-| semantics of Imp | +76 | +96 | +61 |
-| lift locals | +186 | +218 | +143 |
-| **total** | **+262** | **+314** | **+204** |
+| semantics of Imp | +76 | +96 | **+61** |
+| lift locals | +186 | +218 | **+143** |
+| **total** | +262 | +314 | **+204** |
 
 * **Denotational (76 + 186).** A store σ : ℕ → 𝒫 Value gives each slot a set of values, and an expression means, for the store it enters with, a set of values and the store it leaves (then `Sem/Imp.agda`, now `proof/Semantics/Graph/ImpDirect.agda`). `x := e₁; e₂` is Clos5's strict let, `⋆ ⟨ Λ F , D₁ ⟩`, applied both to the value and to each slot of the store e₂ leaves (`letₛ`); `case` is `𝒞`, likewise pointwise (`caseₛ`). The slots of a let or case collect only the runs of its body that have a value (`r ↓ y`): a run that errors or diverges leaves no store. Reading or assigning beyond the frame gave `init`, as an out-of-scope variable does in Clos5 (since explicate control, assigning beyond the frame means ∅). The invariant is the operational one, stated pointwise: at depth d the store agrees with ρ, slot d ∸ (x + 1) ≃ ρ x for x < d (`Agree`), and ρ is `init` from d on (`Scope`). The proof (`lift-sem`) shows at once that the value of `lift n d M` is ≃ `⟦ M ⟧ ρ` and that the store it leaves still agrees with ρ when that value is nonempty (`Out`), given `Agree`, `Scope` and `d + height M ≤ n`. Because the conclusion is relative to ρ rather than to the store M started with, coming back from under a binder is `weak` (`Agree (suc d) σ (X • ρ) → Agree d σ ρ`, one line, since `suc d ∸ suc (suc x)` is `d ∸ suc x` by computation), the analogue of the operational `weak`. Each simple construct is one congruence line; let and case reuse rco's `strict-≃`, `⋆-≃`, `Λ-≃` and `𝒞-≃`, and their stores are `out-let` and `out-case`. The nonempty condition is inherent: a stuck case or a let whose right-hand side has no value empties every slot too. No continuity is needed.
 * **Simulation (96 + 218).** The Imp machine (`Semantics/CEK/Imp.agda`) carries the frame in its states and evaluates each atom in its own step, through the same continuation frames as the Clos5 machine, plus `assignK`, `caseK` and `callK` (which restores the caller's frame). A frame is related to the environment as `Fr n ρ (ρ ʳ++ τ)`: the environment reversed, then the free slots, n in all, so going under a binder is definitional. Continuations are related by `Kont` (one case per Clos5 frame, plus `weak`, a continuation at depth d is one at depth d + 1, which is where "code at depth d assigns only slots ≥ d" lives, and `call` for `callK`). Every source step is matched by exactly one target step, followed by any `callK` pops (`plus-simulation`, no measure); about half of the 70 lines of `sim` are one-line wrong-value cases.
@@ -423,8 +425,8 @@ The pass (`Compiler/Explicate.agda`, shared, 37 lines) takes Imp to CFG (`Langua
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
-| semantics of CFG | 37 | 50 | 32 |
-| explicate control | 210 (106 + 104) | 152 | 145 |
+| semantics of CFG | 37 | 50 | **32** |
+| explicate control | 210 (106 + 104) | 152 | **145** |
 
 The CFG machine and interpreter reuse the evaluation of simple expressions factored out of the Imp machine (+12 lines there) and interpreter (+4); the denotational CFG semantics reuses `Semantics/Graph/Imp.agda`. No proof needs a precondition.
 
@@ -451,9 +453,9 @@ The pass (`Compiler/Select.agda`, shared, 39 lines) takes CFG to X86 (`Language/
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations |
 |---|---:|---:|---:|
-| semantics of X86 | 102 | 121 | 97 |
-| select instructions | 322 | 272 | 140 |
-| **total** | **424** | **393** | **237** |
+| semantics of X86 | 102 | 121 | **97** |
+| select instructions | 322 | 272 | **140** |
+| **total** | 424 | 393 | **237** |
 
 * **Interpreter (97 + 140): clock for clock, with equal results** (`SelectFuel`), no precondition. Only `callq` ticks, and jumps recurse on the list of older blocks, as in the CFG interpreter. The interpreter runs a block's instructions in continuation-passing style, so the instructions select emits for a CFG statement unfold definitionally to that statement's step.
 * **Simulation (121 + 272): a forward simulation** (`SelectSim`), no precondition. The X86 machine takes one instruction per step. The simulation runs from synchronisation points, each with a script (`Fate`) of how the two machines reach the next one: both stop (`stop`), the CFG steps while X86 waits (`lag`, measured by the length of the rest of the script), or the CFG steps and X86 takes one or more steps (`go`). Most of the cost is the timing of errors: each X86 instruction must error at the same CFG step that checks the same thing, and the operands of a call are read in a different order (X86 reads f last).
@@ -501,7 +503,7 @@ The script checks that no infrastructure module imports a module that is not inf
 | graph model: values, operators, continuity | 512 | 512 | — | — |
 | small-step framework: transition systems, simulations | 187 | — | 187 | — |
 | clocked big-step framework | 80 | — | — | 80 |
-| **total** | **1693** | **1361** | **706** | **599** |
+| **total** | 1693 | 1361 | 706 | 599 |
 
 (As of PR #28; see [Current counts](#current-counts) for the current table.) The denotational proof relies on twice as much infrastructure as the simulation one: the graph model and the denotational framework (907 lines) against the small-step framework (187). As of PR #37 the reduction proof relies on 952 lines of it, 319 of them its own (substitution 189, the reduction framework 130). Adequacy uses 1519 lines of it, 158 of them (`Smallstep`, `Iff`, `Syntax.Scope`, `Syntax.ScopeRename`) not used by the denotational proof.
 
@@ -579,15 +581,15 @@ Pass by pass (reduction against CEK):
 
 | pass | reduction | CEK | relation on terms | closed under substitution? | code of a closure related by |
 |---|---:|---:|---|---|---|
-| enclose | 221 | 193 | congruence + function/closure | yes | the compiled body under a substitution σ of the function's free variables |
-| optimize | 248 | 245 | congruence + closure with `Pr` | yes | the compilation function (`opt-body` with prune's renaming) |
-| concretize | 167 | 191 | congruence + closure + projection | yes | the compilation function (`conc-body`) |
-| delay | 183 | 146 | congruence + closure/pair, app/let, call | yes | the relation itself (`M ≈ delay M`) |
-| globalize | 201 | 168 | congruence + code/reference, table-indexed | yes | the compilation function (`glob`), through the table |
-| rco | 278 | 410 | let chains, for every value | no | the compilation function under a substitution of values |
-| lift locals | 323 | 186 | term in a context of lets ↔ Imp state | no | (frames, as in the CEK proof) |
-| explicate control | 127 | 127 | shared with the CEK proof | — | — |
-| select instructions | 238 | 238 | shared with the CEK proof | — | — |
+| enclose | 221 | **193** | congruence + function/closure | yes | the compiled body under a substitution σ of the function's free variables |
+| optimize | 248 | **245** | congruence + closure with `Pr` | yes | the compilation function (`opt-body` with prune's renaming) |
+| concretize | **167** | 191 | congruence + closure + projection | yes | the compilation function (`conc-body`) |
+| delay | 183 | **146** | congruence + closure/pair, app/let, call | yes | the relation itself (`M ≈ delay M`) |
+| globalize | 201 | **168** | congruence + code/reference, table-indexed | yes | the compilation function (`glob`), through the table |
+| rco | **278** | 410 | let chains, for every value | no | the compilation function under a substitution of values |
+| lift locals | 323 | **186** | term in a context of lets ↔ Imp state | no | (frames, as in the CEK proof) |
+| explicate control | **127** | **127** | shared with the CEK proof | — | — |
+| select instructions | **238** | **238** | shared with the CEK proof | — | — |
 
 * **The closure-conversion passes** (enclose to globalize) each need an inductive relation on terms, closed under substitution (`≈-subst`), which none of the other styles has: after a β the source is `N[V/x]`, and terms in general are no longer the compilation of anything. Closure under substitution is proved once per relation for any relation between substitutions that relates variables and is preserved under binders, and gives renaming and then substitution (`proof/Framework/Syntax/SubstRel.agda`, infrastructure); per pass it is one line per constructor (21 to 42 lines).
 * **But the code of a closure is still related by the compilation function.** In Clos2–Clos5 the code of a closure is cleared (∁): no substitution enters it, so the target's code is the pass applied to the source's, as in the CEK proofs. Applying related closures substitutes related values into that code, which a fundamental lemma relates, `sub τ M ≈ sub τ' (pass M)` for related τ and τ' (enclose 37 lines, optimize 42, concretize 43): this is the substitution counterpart of the CEK proofs' environment relations. Only enclose's source code, ISWIM's λ bodies, is substituted into, and there the relation carries the substitution explicitly: `lam (N[σ]) ≈ clos (enclose N) F₁…Fₙ` when σ is related to what the closure captures. Delay and globalize do not look at variables, so for them the relation on code is the relation itself (`M ≈ delay M`, `M ≈ glob M`) and no fundamental lemma is needed.
@@ -624,9 +626,9 @@ As of PR #41 (inlining; the rest as of PR #40). A source optimizer, the first pa
 
 | | graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|
-| the proof | 266 | 470 | 609 | 580 |
-| simplify row (with `SimplifyFacts`) | 373 | 577 | 716 | 687 |
-| of which, for inlining (PR #41) | +11 | +37 | +48 | +75 |
+| the proof | **266** | 470 | 609 | 580 |
+| simplify row (with `SimplifyFacts`) | **373** | 577 | 716 | 687 |
+| of which, for inlining (PR #41) | **+11** | +37 | +48 | +75 |
 | precondition | none | closed program | closed program | closed program |
 | relation | equation | value relation (closures by `simp` under `Facts`), states frame by frame | the same value relation | relation on terms closed under substitution, with a step and a let rule |
 | direction | — | target simulated by the source, with stuttering | forward at the same clock, backward at a larger one | target simulated by the source |
@@ -657,14 +659,14 @@ The growth, per row (code lines, from `loc.py`; the shared code of all four proo
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|
-| semantics of the languages | +28 | +9 | +3 | +3 |
-| simplify | +5 | +16 | +17 | +51 |
-| enclose | +6 | +5 | +3 | +8 |
-| optimize | +5 | +6 | +3 | +8 |
-| concretize | +2 | +4 | +1 | +5 |
-| delay | +48 | +5 | +1 | +6 |
-| shared modules not used by all four proofs (scoping) | — | +13 | +13 | +13 |
-| **total** | **+94** | **+58** | **+41** | **+94** |
+| semantics of the languages | +28 | +9 | **+3** | **+3** |
+| simplify | **+5** | +16 | +17 | +51 |
+| enclose | +6 | +5 | **+3** | +8 |
+| optimize | +5 | +6 | **+3** | +8 |
+| concretize | +2 | +4 | **+1** | +5 |
+| delay | +48 | +5 | **+1** | +6 |
+| shared modules not used by all four proofs (scoping) | — | **+13** | **+13** | **+13** |
+| **total** | +94 | +58 | **+41** | +94 |
 
 Adequacy grew by 25 lines (ISWIM +12, the shared scoping lemmas +13), to 3233. The direct backward simulation for delay (an experiment) grew by 2.
 
@@ -813,21 +815,21 @@ This is `Equivalent` for errors, constants and divergence. An answer that is not
 
 | | graph model with errors | before the monad | graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation |
 |---|---:|---:|---:|---:|---:|---:|
-| semantics of the languages | 447 | 639 | 443 | 660 | 466 | 644 |
-| simplify | 349 | 380 | 343 | 572 | 644 | 710 |
-| CC: enclose | 90 | 109 | 81 | 188 | 140 | 186 |
-| CC: optimize | 149 | 186 | 134 | 224 | 170 | 222 |
-| CC: concretize | 134 | 151 | 141 | 182 | 127 | 157 |
-| CC: delay | 898 | 1037 | 594 | 134 | 90 | 183 |
-| CC: globalize | 157 | 157 | 155 | 157 | 111 | 192 |
-| rco | 194 | 206 | 118 | 396 | 245 | 247 |
-| lift locals | 138 | 129 | 142 | 172 | 98 | 306 |
-| explicate control | 144 | 145 | 154 | 124 | 118 | 124 |
-| select instructions | 363 | 349 | 271 | 235 | 107 | 235 |
-| composition | 33 | 33 | 32 | 26 | 22 | 27 |
-| shared modules not used by all four proofs | 398 | 398 | — | 456 | 456 | 456 |
+| semantics of the languages | 447 | 639 | **443** | 660 | 466 | 644 |
+| simplify | 349 | 380 | **343** | 572 | 644 | 710 |
+| CC: enclose | 90 | 109 | **81** | 188 | 140 | 186 |
+| CC: optimize | 149 | 186 | **134** | 224 | 170 | 222 |
+| CC: concretize | 134 | 151 | 141 | 182 | **127** | 157 |
+| CC: delay | 898 | 1037 | 594 | 134 | **90** | 183 |
+| CC: globalize | 157 | 157 | 155 | 157 | **111** | 192 |
+| rco | 194 | 206 | **118** | 396 | 245 | 247 |
+| lift locals | 138 | 129 | 142 | 172 | **98** | 306 |
+| explicate control | 144 | 145 | 154 | 124 | **118** | 124 |
+| select instructions | 363 | 349 | 271 | 235 | **107** | 235 |
+| composition | 33 | 33 | 32 | 26 | **22** | 27 |
+| shared modules not used by all four proofs | **398** | 398 | — | 456 | 456 | 456 |
 | the graph model's meaning of the primitives | 34 | 34 | — | — | — | — |
-| **total** | **3528** | **3953** | **2608** | **3526** | **2794** | **3689** |
+| **total** | 3528 | 3953 | **2608** | 3526 | 2794 | 3689 |
 
 How to read the table:
 * **Semantics** (447 against 639). Each language's semantics is a table of operators. Before the monad the row also had Clos2's continuity (`Clos2Continuous`, 135 lines), which no proof used; it is gone.
@@ -842,15 +844,15 @@ How to read the table:
 
 | adequacy | graph model with errors | before the monad | graph model |
 |---|---:|---:|---:|
-| ISWIM | 790 | 915 | 663 |
-| Clos5 | 904 | 1153 | 712 |
-| X86 | 2096 | 2149 | 1115 |
-| well-formedness of compiled programs | 364 | 364 | 262 |
-| end to end | 39 | 39 | 25 |
+| ISWIM | 790 | 915 | **663** |
+| Clos5 | 904 | 1153 | **712** |
+| X86 | 2096 | 2149 | **1115** |
+| well-formedness of compiled programs | 364 | 364 | **262** |
+| end to end | 39 | 39 | **25** |
 | simplify through the ISWIM machine | 30 | 30 | — |
-| shared modules not used by all four proofs, nor by the proof of its model | 58 | 58 | 456 |
+| shared modules not used by all four proofs, nor by the proof of its model | **58** | 58 | 456 |
 | the graph model's adequacy modules it uses | 52 | 52 | — |
-| **total** | **4333** | **4760** | **3233** |
+| **total** | 4333 | 4760 | **3233** |
 
   * Each logical relation has one bind lemma that handles an operand's error (`ℂ-bind`, `𝕄-bind`), and one lemma for a failed kind check, through `kind` (`𝒱-bad`, `𝕄-check`); the per-operator error cases are gone.
   * **X86** (2096). Soundness (1260) still has one case per way the machine stops with an error (`final-err`); the logical relation (589) is where the monad saves. The consistency of the tables (`X86Consistent`, 110) is the operators' consistency.
