@@ -167,3 +167,42 @@ kind-ω {⟨⟩} ()
 ⊑-⌊⌋ : ∀ d {D} → d ≢ ω → d ⊑ D → d ⊑ ⌊ D ⌋
 ⊑-⌊⌋ d d≢ = ⊑-⇂ d (λ { e e∈ k refl → d≢ (kind-ω (sym k)) })
 
+
+{- Code ------------------------------------------------------------------------------}
+
+{- the entries of code (a closed function of two arguments) are related
+   when its body is -}
+code-ΛΛ : ∀ {k F C} → (∀ V U w → V ≢ [] → U ≢ [] → V ≈ V → U ≈ U → NoErr V → NoErr U → w ∈ F (mem V) (mem U)
+    → Code k (V ↦ (U ↦ w)) C)
+  → ∀ u → u ∈ ΛΛᵐ ⟨ F , ptt ⟩ → Code k u C
+code-ΛΛ h ν _ = ptt
+code-ΛΛ h (V ↦ ν) _ = ptt
+code-ΛΛ h (V ↦ (U ↦ w)) ⟨ ⟨ ⟨ w∈ , ⟨ neU , cU ⟩ ⟩ , ⟨ neV , cV ⟩ ⟩ , ⟨ nV , nU ⟩ ⟩ = h V U w neV neU cV cU nV nU w∈
+code-ΛΛ h (V ↦ const _) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (V ↦ ω) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (V ↦ ⦅ _ , _ ⦆) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (V ↦ (tup[ _ ] _)) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (V ↦ left _) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (V ↦ right _) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (V ↦ ⟨⟩) ⟨ ⟨ () , _ ⟩ , _ ⟩
+code-ΛΛ h (const _) ⟨ () , _ ⟩
+code-ΛΛ h ω ⟨ () , _ ⟩
+code-ΛΛ h ⦅ _ , _ ⦆ ⟨ () , _ ⟩
+code-ΛΛ h (tup[ _ ] _) ⟨ () , _ ⟩
+code-ΛΛ h (left _) ⟨ () , _ ⟩
+code-ΛΛ h (right _) ⟨ () , _ ⟩
+code-ΛΛ h ⟨⟩ ⟨ () , _ ⟩
+
+{- the code of no definition: its call errs, on related sets that are not empty -}
+
+app-single : ∀ {C E X e x w} → ((e ∷ []) ↦ ((x ∷ []) ↦ w)) ∈ C → e ∈ E → x ∈ X → w ∈ ⋆ ⟨ ⋆ ⟨ C , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
+app-single c∈ e∈ x∈ = ⟨ _ ∷ [] , ⟨ ⟨ _ ∷ [] , ⟨ c∈ , ⟨ (λ { _ (here refl) → e∈ }) , (λ ()) ⟩ ⟩ ⟩ , ⟨ (λ { _ (here refl) → x∈ }) , (λ ()) ⟩ ⟩ ⟩
+
+errcode-rel : ∀ k u → u ∈ errcode → Code k u errcode
+errcode-rel k = code-ΛΛ λ { [] U w neV _ _ _ _ _ _ → ⊥-elim (neV refl) ; V [] w _ neU _ _ _ _ _ → ⊥-elim (neU refl)
+  ; (v ∷ V) (u ∷ U) .ω _ _ _ _ _ _ refl E X cE cX clE clX ⟨ rv , _ ⟩ ⟨ ru , _ ⟩ →
+    let ⟨ e , e∈ ⟩ = ⊑-ne v rv ; ⟨ x , x∈ ⟩ = ⊑-ne u ru
+        e≢ = clE e (proj₁ e∈) ; x≢ = clX x x∈ in
+    lift (app-single {errcode} {E ⇂ₖ k} {X} {e} {x} {ω} ⟨ ⟨ ⟨ refl , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ ()) , ≈-single ⟩ ⟩
+
+                                 , ⟨ (λ { (here eq) → e≢ (sym eq) }) , (λ { (here eq) → x≢ (sym eq) }) ⟩ ⟩ e∈ x∈) }
