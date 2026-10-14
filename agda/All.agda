@@ -241,7 +241,7 @@ import proof.Semantics.GraphErr.Typed.Clos5
 import proof.Semantics.GraphErr.Typed.Imp
 
 {- ---------------------------------------------------------------------------
-   proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86
+   proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86ᵀ
    machines) and of the graph model with errors (ISWIM and X86 machines;
    Clos5ᵀ derived from the CEK column's simulation)
    --------------------------------------------------------------------------- -}
@@ -262,6 +262,11 @@ import proof.Adequacy.GraphErr.Soundness
 import proof.Adequacy.ISWIM
 import proof.Adequacy.LogRel
 import proof.Adequacy.Soundness
+import proof.Adequacy.X86
+import proof.Adequacy.X86Common
+import proof.Adequacy.X86Compiled
+import proof.Adequacy.X86LogRel
+import proof.Adequacy.X86Soundness
 
 {- ---------------------------------------------------------------------------
    examples (smoke tests)
