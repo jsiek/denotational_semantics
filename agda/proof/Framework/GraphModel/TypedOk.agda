@@ -32,6 +32,7 @@ open import Framework.abt.Sig using (∁)
 open import Framework.GraphModel.TypedCheck using (checkedᵠ)
 
 open import Data.List using (List; []; _∷_; replicate)
+open import Data.List.Relation.Unary.Any using (here)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Empty using (⊥-elim)
@@ -154,6 +155,27 @@ module _ (H : 𝒫 Value → Set) (H-mono : ∀ {X X'} → X ⊆ X' → H X → 
     cnt {X} NE m c w (inj₂ ⟨ w∈ , ⟨ h , wk ⟩ ⟩) with one X c w∈ | H-fin NE c h
     ... | ⟨ a , w∈′ ⟩ | ⟨ b , h′ ⟩ = done (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) (approx-join a b) w
       (inj₂ ⟨ m (join-l a b) w w∈′ , ⟨ H-mono (m (join-r a b)) h′ , wk ⟩ ⟩)
+
+{- Environments reindexed: the head kept, the next position dropped (skip),
+   or none (η) -}
+
+Ok-η : ∀ {E} → Ok E → Ok (λ ρ → E (ρ 0 • λ i → ρ (suc i)))
+Ok-η {E} o = Ok-≃ (λ ρ → ⟨ proj₁ o (λ { zero _ z → z ; (suc i) _ z → z }) , proj₁ o (λ { zero _ z → z ; (suc i) _ z → z }) ⟩) o
+
+Ok-skip : ∀ {E} → Ok E → Ok (λ ρ → E (ρ 0 • λ i → ρ (suc (suc i))))
+Ok-skip ⟨ m , ⟨ k , c ⟩ ⟩ =
+  ⟨ (λ ρ⊆ → m λ { zero → ρ⊆ 0 ; (suc i) → ρ⊆ (suc (suc i)) })
+  , ⟨ cnt , (λ ρ~ → c λ { zero → ρ~ 0 ; (suc i) → ρ~ (suc (suc i)) }) ⟩ ⟩
+  where
+  cnt : ∀ {ρ} → nonempty-env ρ → Cont (λ ρ → _) ρ
+  cnt {ρ} NE w w∈ with k (λ { zero → NE 0 ; (suc i) → NE (suc (suc i)) }) w w∈
+  ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩ =
+    ⟨ ρ″ , ⟨ (λ { zero → f 0 ; (suc zero) → fin1 ; (suc (suc i)) → f (suc i) })
+    , ⟨ (λ { zero → s 0 ; (suc zero) → λ { _ refl → proj₂ (NE 1) } ; (suc (suc i)) → s (suc i) })
+    , m (λ { zero _ z → z ; (suc i) _ z → z }) w w∈′ ⟩ ⟩ ⟩
+    where
+    ρ″ = ρ′ 0 • ⌈ proj₁ (NE 1) ⌉ • λ i → ρ′ (suc i)
+    fin1 = ⟨ proj₁ (NE 1) ∷ [] , ⟨ ⟨ (λ { _ refl → here refl }) , (λ { _ (here refl) → refl }) ⟩ , (λ ()) ⟩ ⟩
 
 {- Bodies use finite parts of their arguments --------------------------------------}
 
