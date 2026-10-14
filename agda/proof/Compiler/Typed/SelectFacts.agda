@@ -21,7 +21,7 @@ open import Language.Typed.Type hiding (_≟_)
 open import Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Blocks; _▷_; Body; Blk; blk; block)
 open import Compiler.Typed.Select
 open import Framework.Lookup using (_!_)
-open import proof.Framework.Membership using (lvl-<)
+open import proof.Framework.Lookup using (lvl-<)
 open import proof.Framework.ListUtil using (‼-snoc-<; ‼-snoc-length)
 open import Framework.ListUtil using (_‼_)
 import Language.X86 as L
