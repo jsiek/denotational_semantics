@@ -18,7 +18,13 @@
   a trapped error (o-error, ω) when the tag is not G. So the flat types
   need decidable equality.
 
-  Contexts are lists of types, variables are typed de Bruijn indices.
+  Contexts are lists of types, variables are typed de Bruijn indices
+  (Framework/Membership.agda).
+
+  Tag: the flat types that project can test, those that cast insertion
+  projects to (a function, a sum, an integer, a tuple of at least one
+  component). Each can be tested by an existing X86 instruction that
+  errs on any other value (Compiler/Typed/Select.agda).
 
 -}
 
@@ -51,6 +57,16 @@ out-flat : Prim → Flat
 out-flat sub = base Int
 out-flat eq = sum
 
+data Tag : Set where
+  tfun tsum tint : Tag
+  ttup : ℕ → Tag            {- a tuple of suc n components -}
+
+flat : Tag → Flat
+flat tfun = fun
+flat tsum = sum
+flat tint = base Int
+flat (ttup n) = tup (suc n)
+
 {- Decidable equality of flat types ---------------------------------------}
 
 _≟_ : (G H : Flat) → Dec (G ≡ H)
@@ -80,12 +96,4 @@ fun ≟ sum = no λ ()
 Ctx : Set
 Ctx = List Ty
 
-infix 4 _∋_
-data _∋_ : Ctx → Ty → Set where
-  Z : ∀ {Γ A} → (A ∷ Γ) ∋ A
-  S : ∀ {Γ A B} → Γ ∋ A → (B ∷ Γ) ∋ A
-
-{- the position of a variable, for environments indexed by ℕ -}
-idx : ∀ {Γ A} → Γ ∋ A → ℕ
-idx Z = zero
-idx (S x) = suc (idx x)
+open import Framework.Membership using (_∋_; Z; S; idx; lvl) public

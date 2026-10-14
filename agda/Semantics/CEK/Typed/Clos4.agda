@@ -3,10 +3,9 @@
   A CEK machine for Clos4ᵀ (Language/Typed/Clos4.agda), as the one for
   Clos3ᵀ (Semantics/CEK/Typed/Clos3.agda). The value of code is the
   code; a closure is a packed pair of code and an environment of the
-  same length n, and unpack runs the body for that n with the
-  environment and the code. A call evaluates code, environment and
-  argument, then runs the code; there is no check, since the code has
-  type code n.
+  same length n. callc L M evaluates the closure and the argument, then
+  runs the closure's code with its environment and the argument; there
+  is no check, since the closure has type ⟪ fun ⟫.
 
 -}
 
@@ -47,12 +46,10 @@ _!_ : ∀ {Γ A} → Env Γ → Γ ∋ A → Val A
 
 data Cont : Ty → Set where
   halt : Cont Any
-  callC : ∀ {Γ n} → Tm Γ ⟪ tup n ⟫ → Tm Γ Any → Env Γ → Cont Any → Cont (code n)
-  callE : ∀ {Γ n} → Val (code n) → Tm Γ Any → Env Γ → Cont Any → Cont ⟪ tup n ⟫
-  callA : ∀ {n} → Val (code n) → Val ⟪ tup n ⟫ → Cont Any → Cont Any
+  callL : ∀ {Γ} → Tm Γ Any → Env Γ → Cont Any → Cont ⟪ fun ⟫
+  callR : Val ⟪ fun ⟫ → Cont Any → Cont Any
   packL : ∀ {Γ n} → Tm Γ ⟪ tup n ⟫ → Env Γ → Cont ⟪ fun ⟫ → Cont (code n)
   packR : ∀ {n} → Val (code n) → Cont ⟪ fun ⟫ → Cont ⟪ tup n ⟫
-  unpackK : ∀ {Γ} → ((n : ℕ) → Tm (⟪ tup n ⟫ ∷ code n ∷ Γ) Any) → Env Γ → Cont Any → Cont ⟪ fun ⟫
   {- the values so far (reversed) and the components still to evaluate -}
   tupK : ∀ {Γ n j} (vs : List (Val Any)) → Vec (Tm Γ Any) j → Env Γ
     → length vs + suc j ≡ n → Cont ⟪ tup n ⟫ → Cont Any
@@ -63,7 +60,7 @@ data Cont : Ty → Set where
   primR : ∀ p → ℤ → Cont ⟪ out-flat p ⟫ → Cont ⟪ base Int ⟫
   letK : ∀ {Γ} → Tm (Any ∷ Γ) Any → Env Γ → Cont Any → Cont Any
   injK : ∀ G → Cont Any → Cont ⟪ G ⟫
-  projK : ∀ G → Cont ⟪ G ⟫ → Cont Any
+  projK : ∀ t → Cont ⟪ flat t ⟫ → Cont Any
 
 data State : Set where
   eval : ∀ {Γ A} → Tm Γ A → Env Γ → Cont A → State
@@ -95,9 +92,8 @@ tuple-next vs (M ∷ Ms) ρ e κ = eval M ρ (tupK vs Ms ρ e κ)
 step : State → Next State
 step (eval (` x) ρ κ) = next (ret (ρ ! x) κ)
 step (eval (code N) ρ κ) = next (ret (code N) κ)
-step (eval (call L M N) ρ κ) = next (eval L ρ (callC M N ρ κ))
+step (eval (callc L M) ρ κ) = next (eval L ρ (callL M ρ κ))
 step (eval (pack L M) ρ κ) = next (eval L ρ (packL M ρ κ))
-step (eval (unpack L B) ρ κ) = next (eval L ρ (unpackK B ρ κ))
 step (eval (lit B c) ρ κ) = next (ret (const c) κ)
 step (eval (tuple Ms) ρ κ) = next (tuple-next [] Ms ρ refl κ)
 step (eval (get i M) ρ κ) = next (eval M ρ (getK i κ))
@@ -107,14 +103,12 @@ step (eval (case L M N) ρ κ) = next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p L M) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (eval (let′ M N) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (eval (inject G M) ρ κ) = next (eval M ρ (injK G κ))
-step (eval (project G M) ρ κ) = next (eval M ρ (projK G κ))
+step (eval (project t M) ρ κ) = next (eval M ρ (projK t κ))
 step (ret v halt) = stop (obs v)
-step (ret c (callC M N ρ κ)) = next (eval M ρ (callE c N ρ κ))
-step (ret e (callE c N ρ κ)) = next (eval N ρ (callA c e κ))
-step (ret w (callA (code N) e κ)) = next (eval N (w ∷ e ∷ []) κ)
+step (ret f (callL M ρ κ)) = next (eval M ρ (callR f κ))
+step (ret w (callR (pack (code N) e) κ)) = next (eval N (w ∷ e ∷ []) κ)
 step (ret c (packL M ρ κ)) = next (eval M ρ (packR c κ))
 step (ret e (packR c κ)) = next (ret (pack c e) κ)
-step (ret (pack {n} c e) (unpackK B ρ κ)) = next (eval (B n) (e ∷ c ∷ ρ) κ)
 step (ret v (tupK vs Ms ρ e κ)) = next (tuple-next (v ∷ vs) Ms ρ (more {v = v} vs e) κ)
 step (ret (tup vs) (getK i κ)) = next (ret (lookup vs i) κ)
 step (ret v (inlK κ)) = next (ret (inl v) κ)
@@ -126,7 +120,7 @@ step (ret (const m) (primR p n κ)) = next (ret (δᵀ p n m) κ)
 step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret v (injK G κ)) = next (ret (dyn G v) κ)
 {- the only error: a value of another flat type -}
-step (ret (dyn H v) (projK G κ)) with H ≟F G
+step (ret (dyn H v) (projK t κ)) with H ≟F flat t
 ... | yes refl = next (ret v κ)
 ... | no _ = stop o-error
 

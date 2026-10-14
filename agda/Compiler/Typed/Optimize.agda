@@ -46,7 +46,7 @@ uses (case L M N) x = uses L x ∨ (uses M (suc x) ∨ uses N (suc x))
 uses (prim p L M) x = uses L x ∨ uses M x
 uses (let′ M N) x = uses M x ∨ uses N (suc x)
 uses (inject G M) x = uses M x
-uses (project G M) x = uses M x
+uses (project t M) x = uses M x
 usesV [] x = false
 usesV (M ∷ Ms) x = uses M x ∨ usesV Ms x
 
@@ -78,7 +78,7 @@ opt r (case L M N) = case (opt r L) (opt (ext r) M) (opt (ext r) N)
 opt r (prim p L M) = prim p (opt r L) (opt r M)
 opt r (let′ M N) = let′ (opt r M) (opt (ext r) N)
 opt r (inject G M) = inject G (opt r M)
-opt r (project G M) = project G (opt r M)
+opt r (project t M) = project t (opt r M)
 opts r [] = []
 opts r (M ∷ Ms) = opt r M ∷ opts r Ms
 

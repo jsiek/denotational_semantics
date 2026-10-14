@@ -5,10 +5,9 @@
   the closure and calls its code with its environment:
 
     clos N Ms ⇒ pack (code N') (tuple Ms'),
-    app L M   ⇒ unpack L' (λ n → call (` 1) (` 0) M'),
+    app L M   ⇒ callc L' M'.
 
-  where M' is under the two variables that unpack binds (the environment
-  and the code). The pass carries a renaming of the variables for them.
+  (It carries a renaming of the variables, the identity for a program.)
 
 -}
 
@@ -34,7 +33,7 @@ delays : ∀ {Γ Δ n} → Ren Γ Δ → Vec (Tm Γ Any) n → Vec (T.Tm Δ Any)
 
 delay r (` x) = T.` r x
 delay r (clos N Ms) = T.pack (T.code (delay (λ x → x) N)) (T.tuple (delays r Ms))
-delay r (app L M) = T.unpack (delay r L) λ n → T.call (T.` S Z) (T.` Z) (delay (λ x → S (S (r x))) M)
+delay r (app L M) = T.callc (delay r L) (delay r M)
 delay r (lit B c) = T.lit B c
 delay r (tuple Ms) = T.tuple (delays r Ms)
 delay r (get i M) = T.get i (delay r M)
@@ -44,7 +43,7 @@ delay r (case L M N) = T.case (delay r L) (delay (ext r) M) (delay (ext r) N)
 delay r (prim p L M) = T.prim p (delay r L) (delay r M)
 delay r (let′ M N) = T.let′ (delay r M) (delay (ext r) N)
 delay r (inject G M) = T.inject G (delay r M)
-delay r (project G M) = T.project G (delay r M)
+delay r (project t M) = T.project t (delay r M)
 
 delays r [] = []
 delays r (M ∷ Ms) = delay r M ∷ delays r Ms

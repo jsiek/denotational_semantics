@@ -54,10 +54,10 @@ dec5-ws = ((s≤s z≤n , tt , tt) , tt) , tt , tt
 {- cast insertion: the operator is projected to a function, the operands
    of sub are let-bound and projected to integers -}
 dec5ᵀ : cast-program dec5 dec5-ws
-  ≡ T.app (T.project fun (T.inject fun (T.lam
+  ≡ T.app (T.project tfun (T.inject fun (T.lam
           (T.let′ (T.` zero) (T.let′ (T.inject (base Int) (T.lit Int (+ 1)))
-            (T.inject (base Int) (T.prim sub (T.project (base Int) (T.` suc zero))
-                                             (T.project (base Int) (T.` zero)))))))))
+            (T.inject (base Int) (T.prim sub (T.project tint (T.` suc zero))
+                                             (T.project tint (T.` zero)))))))))
         (T.inject (base Int) (T.lit Int (+ 5)))
 dec5ᵀ = refl
 

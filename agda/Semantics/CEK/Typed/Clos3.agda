@@ -56,7 +56,7 @@ data Cont : Ty → Set where
   primR : ∀ p → ℤ → Cont ⟪ out-flat p ⟫ → Cont ⟪ base Int ⟫
   letK : ∀ {Γ} → Tm (Any ∷ Γ) Any → Env Γ → Cont Any → Cont Any
   injK : ∀ G → Cont Any → Cont ⟪ G ⟫
-  projK : ∀ G → Cont ⟪ G ⟫ → Cont Any
+  projK : ∀ t → Cont ⟪ flat t ⟫ → Cont Any
 
 data State : Set where
   eval : ∀ {Γ A} → Tm Γ A → Env Γ → Cont A → State
@@ -97,7 +97,7 @@ step (eval (case L M N) ρ κ) = next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p L M) ρ κ) = next (eval L ρ (primL p M ρ κ))
 step (eval (let′ M N) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (eval (inject G M) ρ κ) = next (eval M ρ (injK G κ))
-step (eval (project G M) ρ κ) = next (eval M ρ (projK G κ))
+step (eval (project t M) ρ κ) = next (eval M ρ (projK t κ))
 step (ret v halt) = stop (obs v)
 step (ret f (appL M ρ κ)) = next (eval M ρ (appR f κ))
 step (ret w (appR (clos N vs) κ)) = next (eval N (w ∷ tup vs ∷ []) κ)
@@ -113,7 +113,7 @@ step (ret (const m) (primR p n κ)) = next (ret (δᵀ p n m) κ)
 step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)
 step (ret v (injK G κ)) = next (ret (dyn G v) κ)
 {- the only error: a value of another flat type -}
-step (ret (dyn H v) (projK G κ)) with H ≟F G
+step (ret (dyn H v) (projK t κ)) with H ≟F flat t
 ... | yes refl = next (ret v κ)
 ... | no _ = stop o-error
 

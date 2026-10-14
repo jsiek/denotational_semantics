@@ -12,13 +12,13 @@
 
   * code N : code n, for closed code N with the argument (variable 0)
     and the environment (variable 1, of type ⟪ tup n ⟫);
-  * call L M N calls the code L with the environment M and the argument N;
   * pack L M : ⟪ fun ⟫ packs code and environment of the same length;
-  * unpack L B opens a closure L of some length n and runs B n with the
-    environment as variable 0 and the code as variable 1. The body is a
-    family of terms, one for each length (an infinitely branching, but
-    strictly positive, constructor), so the existential is eliminated
-    without a check.
+  * callc L M opens the closure L and calls its code with its
+    environment and the argument M. It is the only elimination of the
+    existential, and it is parametric in the length, so it needs no
+    check and compiles to one sequence of instructions for every length
+    (a body that could depend on the length, as an unpack into a family
+    of terms indexed by it, could not be compiled to untyped code).
 
 -}
 
@@ -36,9 +36,8 @@ open import Data.Vec using (Vec)
 data Tm (Γ : Ctx) : Ty → Set where
   `_ : ∀ {A} → Γ ∋ A → Tm Γ A
   code : ∀ {n} → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any → Tm Γ (code n)
-  call : ∀ {n} → Tm Γ (code n) → Tm Γ ⟪ tup n ⟫ → Tm Γ Any → Tm Γ Any
   pack : ∀ {n} → Tm Γ (code n) → Tm Γ ⟪ tup n ⟫ → Tm Γ ⟪ fun ⟫
-  unpack : Tm Γ ⟪ fun ⟫ → ((n : ℕ) → Tm (⟪ tup n ⟫ ∷ code n ∷ Γ) Any) → Tm Γ Any
+  callc : Tm Γ ⟪ fun ⟫ → Tm Γ Any → Tm Γ Any
   lit : (B : Base) → base-rep B → Tm Γ ⟪ base B ⟫
   tuple : ∀ {n} → Vec (Tm Γ Any) n → Tm Γ ⟪ tup n ⟫
   get : ∀ {n} → Fin n → Tm Γ ⟪ tup n ⟫ → Tm Γ Any
@@ -47,4 +46,4 @@ data Tm (Γ : Ctx) : Ty → Set where
   prim : (p : Prim) → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ out-flat p ⟫
   let′ : Tm Γ Any → Tm (Any ∷ Γ) Any → Tm Γ Any
   inject : (G : Flat) → Tm Γ ⟪ G ⟫ → Tm Γ Any
-  project : (G : Flat) → Tm Γ Any → Tm Γ ⟪ G ⟫
+  project : (t : Tag) → Tm Γ Any → Tm Γ ⟪ flat t ⟫

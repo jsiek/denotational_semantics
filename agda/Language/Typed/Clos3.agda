@@ -34,4 +34,4 @@ data Tm (Γ : Ctx) : Ty → Set where
   prim : (p : Prim) → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ base Int ⟫ → Tm Γ ⟪ out-flat p ⟫
   let′ : Tm Γ Any → Tm (Any ∷ Γ) Any → Tm Γ Any
   inject : (G : Flat) → Tm Γ ⟪ G ⟫ → Tm Γ Any
-  project : (G : Flat) → Tm Γ Any → Tm Γ ⟪ G ⟫
+  project : (t : Tag) → Tm Γ Any → Tm Γ ⟪ flat t ⟫

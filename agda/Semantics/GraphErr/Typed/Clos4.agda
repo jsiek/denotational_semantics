@@ -1,12 +1,10 @@
 {-
 
   The semantics of Clos4ᵀ (Language/Typed/Clos4.agda) in the graph model
-  with errors. Code is a closed function of two arguments (ΛΛᵐ); a call
-  binds code, environment and argument and applies the code to both,
-  with no check; a closure is a pair. unpack binds the pair and runs the
-  body with its environment (cdr) and its code (car), for the length n
-  of the environment (its values have kind tup n; one n for a consistent
-  closure). A value of type ⟪ fun ⟫ is a pair, so project sees a pair
+  with errors. Code is a closed function of two arguments (ΛΛᵐ); a closure
+  is a pair of code and environment. callc binds the closure and the
+  argument and applies the closure's code (car) to its environment (cdr)
+  and the argument, with no check. A value of type ⟪ fun ⟫ is a pair, so project sees a pair
   as a function (kind₄).
 
 -}
@@ -41,11 +39,9 @@ kind₄ k = k
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
 ⟦ code N ⟧ ρ = ΛΛᵐ ⟨ (λ X Y → ⟦ N ⟧ (Y • X • λ _ → init)) , ptt ⟩
-⟦ call L M N ⟧ ρ =
-  ⟦ L ⟧ ρ ≫= λ F → ⟦ M ⟧ ρ ≫= λ E → ⟦ N ⟧ ρ ≫= λ X → ⋆ ⟨ ⋆ ⟨ F , ⟨ E , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 ⟦ pack L M ⟧ ρ = pairᵐ ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
-⟦ unpack L B ⟧ ρ = ⟦ L ⟧ ρ ≫= λ P w → Σ[ n ∈ ℕ ]
-  (Σ[ t ∈ Value ] t ∈ cdr ⟨ P , ptt ⟩ × kind t ≡ tup n) × w ∈ ⟦ B n ⟧ (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ)
+⟦ callc L M ⟧ ρ = ⟦ L ⟧ ρ ≫= λ P → ⟦ M ⟧ ρ ≫= λ X →
+  ⋆ ⟨ ⋆ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {n = n} Ms ⟧ ρ = 𝒯ᵐ n (⟦ Ms ⟧s ρ)
 ⟦ get i M ⟧ ρ = getᵗ i (⟦ M ⟧ ρ)
@@ -55,7 +51,7 @@ kind₄ k = k
 ⟦ prim p L M ⟧ ρ = primᵗ p (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ let′ M N ⟧ ρ = ⟦ M ⟧ ρ ≫= λ X → ⟦ N ⟧ (X • ρ)
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ
-⟦ project G M ⟧ ρ = projectᵠ kind₄ (kindᶠ G) (⟦ M ⟧ ρ)
+⟦ project t M ⟧ ρ = projectᵠ kind₄ (kindᶠ (flat t)) (⟦ M ⟧ ρ)
 
 ⟦ [] ⟧s ρ = ptt
 ⟦ M ∷ Ms ⟧s ρ = ⟨ ⟦ M ⟧ ρ , ⟦ Ms ⟧s ρ ⟩

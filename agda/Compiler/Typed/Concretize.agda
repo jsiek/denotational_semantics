@@ -60,7 +60,7 @@ concretize φ (case L M N) =
 concretize φ (prim p L M) = T.prim p (concretize φ L) (concretize φ M)
 concretize φ (let′ M N) = T.let′ (concretize φ M) (concretize (ext-ref φ) N)
 concretize φ (inject G M) = T.inject G (concretize φ M)
-concretize φ (project G M) = T.project G (concretize φ M)
+concretize φ (project t M) = T.project t (concretize φ M)
 
 concs φ [] = []
 concs φ (M ∷ Ms) = concretize φ M ∷ concs φ Ms

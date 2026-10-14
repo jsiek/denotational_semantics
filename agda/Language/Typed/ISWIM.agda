@@ -33,4 +33,4 @@ data Tm (k : ℕ) : Ty → Set where
   prim : (p : Prim) → Tm k ⟪ base Int ⟫ → Tm k ⟪ base Int ⟫ → Tm k ⟪ out-flat p ⟫
   let′ : Tm k Any → Tm (suc k) Any → Tm k Any
   inject : (G : Flat) → Tm k ⟪ G ⟫ → Tm k Any
-  project : (G : Flat) → Tm k Any → Tm k ⟪ G ⟫
+  project : (t : Tag) → Tm k Any → Tm k ⟪ flat t ⟫

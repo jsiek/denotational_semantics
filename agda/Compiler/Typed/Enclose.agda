@@ -32,7 +32,7 @@ enclose (case L M N) = T.case (enclose L) (enclose M) (enclose N)
 enclose (prim p L M) = T.prim p (enclose L) (enclose M)
 enclose (let′ M N) = T.let′ (enclose M) (enclose N)
 enclose (inject G M) = T.inject G (enclose M)
-enclose (project G M) = T.project G (enclose M)
+enclose (project t M) = T.project t (enclose M)
 
 encs [] = []
 encs (M ∷ Ms) = enclose M ∷ encs Ms
