@@ -17,7 +17,7 @@ import Language.Typed.Mon as M
 open import Language.Typed.Imp
 
 open import Data.List using ([]; _∷_)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 
 lift : ∀ {Σ Δ A} → M.Exp Σ Δ A → Exp Σ Δ A
 lift (M.atm a) = simple (atm a)
@@ -35,9 +35,4 @@ lift (M.project t a) = simple (project t a)
 
 {- the pass, for a whole program -}
 lift-program : M.Program → Program
-lift-program (M.program ds e) = program (defs ds) (lift e)
-  where
-  defs : ∀ {Σ ns} → All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) ns
-    → All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) ns
-  defs [] = []
-  defs (d ∷ ds) = lift d ∷ defs ds
+lift-program (M.program ds e) = program (All-map lift ds) (lift e)

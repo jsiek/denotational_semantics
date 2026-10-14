@@ -338,6 +338,13 @@ GROUPS = [
     ('typ', 'typed gerr: CC: delay', [TGC + 'Delay*.agda']),
     ('typ', 'typed gerr: composition', [TGC + 'CompilerCorrect.agda']),
 
+    # the typed pipeline, phase 2, CEK machines + simulations (the machines
+    # are in 'typed CEK: semantics' above)
+    ('infra', 'typed CEK: lookup in typed lists, typed indices',
+     [W + 'Lookup.agda', WP + 'Membership.agda']),
+    ('typ', 'typed: select: definitions and labels exist, frames are large enough (shared)',
+     [PC + 'Typed/SelectFacts.agda']),
+
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
     ('thm', 'theorem statements', ['agda/Theorems/*.agda']),
