@@ -17,6 +17,7 @@ module Semantics.Interp.Typed.Clos5 where
 open import Language.Typed.Type
 open import Language.Typed.Clos5
 open import Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -25,11 +26,6 @@ open import Data.Vec using (Vec; []; _∷_)
 
 import Semantics.Interp.Typed.Values
 module Vals (Σ : List ℕ) = Semantics.Interp.Typed.Values (Σ ∋_)
-
-{- the definition f of a table -}
-def : ∀ {P : ℕ → Set} {Σ n} → All P Σ → Σ ∋ n → P n
-def (d ∷ ds) Z = d
-def (d ∷ ds) (S f) = def ds f
 
 module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   open Vals Σ
@@ -57,7 +53,7 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   evals ck ρ (M ∷ Ms) = do v ← eval ck ρ M; vs ← evals ck ρ Ms; ret (v ∷ vs)
 
   call zero f w = timeout
-  call (suc ck) (pack (code f) e) w = eval ck (w ∷ e ∷ []) (def ds f)
+  call (suc ck) (pack (code f) e) w = eval ck (w ∷ e ∷ []) (ds ! f)
 
 sem : Program → Semantics
 sem (program {Σ} ds M) = semantics (Val Any) obs (λ ck → eval ds ck [] M)

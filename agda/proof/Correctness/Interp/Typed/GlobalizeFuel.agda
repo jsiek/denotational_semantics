@@ -27,7 +27,8 @@ open import Compiler.Typed.Globalize
 open import proof.Semantics.Interp.Clock
 import Semantics.Interp.Typed.Clos4 as S4
 import Semantics.Interp.Typed.Clos5 as T
-open T using (def)
+open import Framework.Lookup using (_!_)
+open import proof.Framework.Membership using (⊑-∋-trans)
 
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Product using (Σ-syntax; _×_; _,_)
@@ -79,11 +80,6 @@ wk-id (project t M) = cong (project t) (wk-id M)
 wks-id [] = refl
 wks-id (M ∷ Ms) = cong₂ _∷_ (wk-id M) (wks-id Ms)
 
-⊑-∋-trans : ∀ {A : Set} {Γ Γ' Γ'' : List A} {a} (s : Γ ⊑ Γ') (t : Γ' ⊑ Γ'') (x : Γ ∋ a)
-  → ⊑-∋ (⊑-trans s t) x ≡ ⊑-∋ t (⊑-∋ s x)
-⊑-∋-trans s here⊑ x = refl
-⊑-∋-trans s (there⊑ t) x = cong S (⊑-∋-trans s t x)
-
 {- the definitions D' are D and more -}
 data Ext : ∀ {Σ Σ'} → Made Σ → Σ ⊑ Σ' → Made Σ' → Set where
   same : ∀ {Σ} {D : Made Σ} → Ext D here⊑ D
@@ -132,18 +128,18 @@ glob₂-ext f L M D with glob L D | glob-ext L D
 {- For the final table dsf ------------------------------------------------------}
 
 module G {Σf : List ℕ} (dsf : All (Code Σf) Σf) where
-  open T.Vals Σf renaming (Val to TVal; Env to TEnv; _!_ to _!ᵗ_)
+  open T.Vals Σf renaming (Val to TVal; Env to TEnv)
 
   {- the definitions D are found in dsf through r -}
   Contains : ∀ {Σ} → Made Σ → Ren Σ Σf → Set
   Contains [] r = ⊤
-  Contains (D ▷ N) r = Σ[ r' ∈ Ren _ Σf ] (∀ {m} (x : _ ∋ m) → r (S x) ≡ r' x) × def dsf (r Z) ≡ wk r' N
+  Contains (D ▷ N) r = Σ[ r' ∈ Ren _ Σf ] (∀ {m} (x : _ ∋ m) → r (S x) ≡ r' x) × dsf ! r Z ≡ wk r' N
     × Contains D (λ x → r (S x))
 
   contains-cong : ∀ {Σ} (D : Made Σ) {r r' : Ren Σ Σf} → (∀ {m} (x : Σ ∋ m) → r x ≡ r' x) → Contains D r → Contains D r'
   contains-cong [] h c = tt
   contains-cong (D ▷ N) h (r'' , h' , e , c) =
-    r'' , (λ x → trans (sym (h (S x))) (h' x)) , subst (λ f → def dsf f ≡ _) (h Z) e , contains-cong D (λ x → h (S x)) c
+    r'' , (λ x → trans (sym (h (S x))) (h' x)) , subst (λ f → dsf ! f ≡ _) (h Z) e , contains-cong D (λ x → h (S x)) c
 
   contains-ext : ∀ {Σ Σ'} {D : Made Σ} {s} {D' : Made Σ'} {r : Ren Σ' Σf} → Ext D s D' → Contains D' r → Contains D (λ x → r (⊑-∋ s x))
   contains-ext same c = c
@@ -158,13 +154,13 @@ module G {Σf : List ℕ} (dsf : All (Code Σf) Σf) where
       is-glob : glob N D ≡ o
       r : Ren (Out.Σ' o) Σf
       contains : Contains (Out.made o) r
-      is-def : def dsf f ≡ wk r (Out.res o)
+      is-def : dsf ! f ≡ wk r (Out.res o)
 
   open import proof.Semantics.Interp.Typed.Rel {λ n → S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any} {Σf ∋_}
   open Rel GCode (Same GCode) public
 
   Env≈ : ∀ {Γ} → S4.Env Γ → TEnv Γ → Set
-  Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ S4.! x ≈ ρ₂ !ᵗ x
+  Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ ! x ≈ ρ₂ ! x
 
   env-ext : ∀ {Γ ρ₁ ρ₂ v w} → v ≈ w → Env≈ {Γ} ρ₁ ρ₂ → Env≈ {Any ∷ Γ} (v ∷ ρ₁) (w ∷ ρ₂)
   env-ext v E Z = v
@@ -238,11 +234,11 @@ module G {Σf : List ℕ} (dsf : All (Code Σf) Σf) where
 
 {- the definitions made, closed over the whole table, are found there -}
 close-ok : ∀ {Σ Σf} (dsf : All (Code Σf) Σf) (D : Made Σ) (s : Σ ⊑ Σf)
-  → (∀ {n} (x : Σ ∋ n) → def dsf (⊑-∋ s x) ≡ def (close D s) x) → G.Contains dsf D (⊑-∋ s)
+  → (∀ {n} (x : Σ ∋ n) → dsf ! ⊑-∋ s x ≡ close D s ! x) → G.Contains dsf D (⊑-∋ s)
 close-ok dsf [] s h = tt
 close-ok dsf (D ▷ N) s h =
   ⊑-∋ s' , (λ x → sym (⊑-∋-trans (there⊑ here⊑) s x)) , h Z
-  , G.contains-cong dsf D (⊑-∋-trans (there⊑ here⊑) s) (close-ok dsf D s' λ x → trans (cong (def dsf) (⊑-∋-trans (there⊑ here⊑) s x)) (h (S x)))
+  , G.contains-cong dsf D (⊑-∋-trans (there⊑ here⊑) s) (close-ok dsf D s' λ x → trans (cong (dsf !_) (⊑-∋-trans (there⊑ here⊑) s x)) (h (S x)))
   where s' = ⊑-trans (there⊑ here⊑) s
 
 globalize-correct : ∀ (M : S.Tm [] Any) → Equivalent (S4.sem M) (T.sem (globalize M))

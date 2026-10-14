@@ -45,10 +45,6 @@ data Val : Ty → Set where
 Env : Ctx → Set
 Env = All Val
 
-_!_ : ∀ {Γ A} → Env Γ → Γ ∋ A → Val A
-(v ∷ ρ) ! Z = v
-(v ∷ ρ) ! S x = ρ ! x
-
 obs : ∀ {A} → Val A → Obs
 obs-vec : ∀ {n} → Vec (Val Any) n → List Obs
 obs (code _) = o-fun

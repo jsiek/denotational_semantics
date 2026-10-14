@@ -15,7 +15,8 @@ open import Language.Typed.Type
 open import Language.Typed.Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
 import Language.Typed.Clos5 as C
 open import proof.Semantics.Interp.Clock
-open import Semantics.Interp.Typed.Clos5 using (module Vals; def; eval; evals)
+open import Semantics.Interp.Typed.Clos5 using (module Vals; eval; evals)
+open import Framework.Lookup using (_!_)
 open import Semantics.Interp.Typed.Imp using (atom)
 
 open import Data.List using (List)
@@ -24,7 +25,7 @@ open import Data.Nat using (ℕ)
 open import Data.Vec using (Vec; []; _∷_; map)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans)
 
-def-map : ∀ {P Q : ℕ → Set} {Σ n} (g : ∀ {m} → P m → Q m) (ds : All P Σ) (x : Σ ∋ n) → def (All-map g ds) x ≡ g (def ds x)
+def-map : ∀ {P Q : ℕ → Set} {Σ n} (g : ∀ {m} → P m → Q m) (ds : All P Σ) (x : Σ ∋ n) → All-map g ds ! x ≡ g (ds ! x)
 def-map g (d ∷ ds) Z = refl
 def-map g (d ∷ ds) (S x) = def-map g ds x
 

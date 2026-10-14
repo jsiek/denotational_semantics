@@ -13,6 +13,7 @@ module Semantics.Interp.Typed.Clos4 where
 open import Language.Typed.Type
 open import Language.Typed.Clos4
 open import Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

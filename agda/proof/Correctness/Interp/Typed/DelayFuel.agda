@@ -19,6 +19,7 @@ open import Language.Typed.Clos3
 import Language.Typed.Clos4 as C4
 open import Compiler.Typed.Delay
 open import proof.Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
 import Semantics.Interp.Typed.Clos3 as S
 import Semantics.Interp.Typed.Clos4 as T
 open import proof.Semantics.Interp.Typed.Rel
@@ -34,7 +35,7 @@ Code N N' = delay (λ x → x) N ≡ N'
 open Rel Code (Same Code)
 
 Env≈ : ∀ {Γ Δ} → Ren Γ Δ → S.Env Γ → T.Env Δ → Set
-Env≈ r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ S.! x ≈ ρ₂ T.! r x
+Env≈ r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ ! x ≈ ρ₂ ! r x
 
 env-ext : ∀ {Γ Δ} {r : Ren Γ Δ} {ρ₁ ρ₂ v w} → v ≈ w → Env≈ r ρ₁ ρ₂ → Env≈ (ext {B = Any} r) (v ∷ ρ₁) (w ∷ ρ₂)
 env-ext v E Z = v

@@ -26,7 +26,7 @@ import Semantics.Interp.Typed.Clos5 as C
 import Semantics.Interp.Typed.Imp as I
 import Semantics.Interp.Typed.CFG as G
 open import Semantics.Interp.Typed.Imp using (atom; eval-simple)
-open import Semantics.Interp.Typed.CFG using (restrict)
+open import Framework.Lookup using (_!_; forget)
 open import proof.Semantics.Interp.Typed.Clos5 using (def-map; either-cong)
 
 open import Data.List using (List; []; _∷_)
@@ -86,8 +86,8 @@ module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ �
 
     assign-ok : ∀ {Bs Δ Δ' A} (e : Imp.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ Bs (A ∷ Δ')) (bs : Blocks Σ Bs) {K : Env (A ∷ Δ') → Result (Val Any)}
       → (∀ φ → G.tail ds' ck bs φ k ≡ K φ)
-      → Ok bs (explicate-assign e p k bs) (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ restrict p φ))
-    assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (sym (simple≡ φ s)) λ v → h (v ∷ restrict p φ)
+      → Ok bs (explicate-assign e p k bs) (λ φ → I.eval ds ck φ e >>= λ v → K (v ∷ forget p φ))
+    assign-ok (Imp.simple s) p k bs h = ok same λ φ → bind≡ (sym (simple≡ φ s)) λ v → h (v ∷ forget p φ)
     assign-ok (Imp.assign e₁ e₂) p k bs h with explicate-assign e₂ (there⊑ p) k bs | assign-ok e₂ (there⊑ p) k bs h
     ... | out g bs₁ t | ok e m with explicate-assign e₁ here⊑ t bs₁ | assign-ok e₁ here⊑ t bs₁ m
     ...   | o | ok e' m' = after-ok o e (ok e' λ φ → trans (m' φ) (sym (bind-assoc (I.eval ds ck φ e₁))))
@@ -117,7 +117,7 @@ module _ {Σ : List ℕ} (ds : All (λ n → Imp.Exp Σ (Any ∷ ⟪ tup n ⟫ �
 
   calls≡ : ∀ ck f w → I.call ds ck f w ≡ G.call ds' ck f w
   calls≡ zero f w = refl
-  calls≡ (suc ck) (pack (code f) e) w rewrite def-map explicate-body ds f = sym (body-ok ck (calls≡ ck) (C.def ds f) _)
+  calls≡ (suc ck) (pack (code f) e) w rewrite def-map explicate-body ds f = sym (body-ok ck (calls≡ ck) (ds ! f) _)
 
 explicate-correct : ∀ (P : Imp.Program) → Equivalent (I.sem P) (G.sem (explicate P))
 explicate-correct (Imp.program ds e) = clocked-≡ λ ck → sym (body-ok ds ck (calls≡ ds ck) e [])

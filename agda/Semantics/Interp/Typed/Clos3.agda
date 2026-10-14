@@ -12,6 +12,7 @@ module Semantics.Interp.Typed.Clos3 where
 open import Language.Typed.Type
 open import Language.Typed.Clos3
 open import Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
 
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)

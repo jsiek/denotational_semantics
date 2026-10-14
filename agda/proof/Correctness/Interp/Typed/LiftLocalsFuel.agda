@@ -17,6 +17,7 @@ open import Language.Typed.Mon
 import Language.Typed.Imp as Imp
 open import Compiler.Typed.LiftLocals
 open import proof.Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
 import Semantics.Interp.Typed.Clos5 as C
 import Semantics.Interp.Typed.Imp as I
 open import Semantics.Interp.Typed.Imp using (atom)
@@ -52,7 +53,7 @@ module _ {Σ : List ℕ} (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ [
   calls≡ : ∀ ck f w → I.call dsI ck f w ≡ C.call dsC ck f w
   calls≡ zero f w = refl
   calls≡ (suc ck) (pack (code f) e) w rewrite def-map lift ds f | def-map ⌜_⌝ ds f =
-    lift-ok ck (calls≡ ck) (C.def ds f) _
+    lift-ok ck (calls≡ ck) (ds ! f) _
 
 lift-locals-correct : ∀ (P : Program) → Equivalent (C.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
 lift-locals-correct (program {Σ} ds e) = clocked-≡ λ ck → sym (lift-ok ds ck (calls≡ ds ck) e [])

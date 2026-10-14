@@ -18,6 +18,7 @@ open import Language.Typed.Clos2
 import Language.Typed.Clos3 as C3
 open import Compiler.Typed.Concretize
 open import proof.Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
 import Semantics.Interp.Typed.Clos2 as S
 import Semantics.Interp.Typed.Clos3 as T
 open import proof.Semantics.Interp.Typed.Rel {λ k → Tm (suc k) Any} {λ n → C3.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
@@ -35,8 +36,8 @@ open Rel Code (Same Code)
 
 {- the value at a reference -}
 deref : ∀ {Γ} → Ref Γ → T.Env Γ → T.Val Any
-deref (var x) ρ = ρ T.! x
-deref (prj i x) ρ = T.nth i (ρ T.! x)
+deref (var x) ρ = ρ ! x
+deref (prj i x) ρ = T.nth i (ρ ! x)
 
 Env≈ : ∀ {k Γ} → (Fin k → Ref Γ) → S.Env k → T.Env Γ → Set
 Env≈ φ ρ₁ ρ₂ = ∀ x → V.lookup ρ₁ x ≈ deref (φ x) ρ₂

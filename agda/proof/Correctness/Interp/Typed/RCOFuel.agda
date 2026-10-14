@@ -24,7 +24,8 @@ open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝�
 open import Compiler.Typed.RCO
 open import proof.Semantics.Interp.Clock
 import Semantics.Interp.Typed.Clos5 as C
-open C using (eval; evals; call; def)
+open C using (eval; evals; call)
+open import Framework.Lookup using (_!_)
 open import Semantics.Interp.Typed.Imp using (atom)
 open import proof.Semantics.Interp.Typed.Clos5 using (def-map; atm-bind; atoms-bind; either-cong)
 
@@ -127,7 +128,7 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
   calls≡ zero f w = refl
   calls≡ (suc ck) (pack (code f) e) w
     rewrite def-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) f | def-map (λ D → rco D (λ x → x)) ds f =
-    sym (rco-ok ck (calls≡ ck) (def ds f) (λ x → x) λ x → refl)
+    sym (rco-ok ck (calls≡ ck) (ds ! f) (λ x → x) λ x → refl)
 
 rco-correct : ∀ (P : Program) → Equivalent (C.sem P) (C.sem ⌜ rco-program P ⌝ₚ)
 rco-correct (program ds N) = clocked-≡ λ ck → sym (rco-ok ds ck (calls≡ ds ck) N (λ x → x) λ x → refl)

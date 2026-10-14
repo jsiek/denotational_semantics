@@ -19,7 +19,8 @@ module Semantics.Interp.Typed.Imp where
 open import Language.Typed.Type
 open import Language.Typed.Imp
 open import Semantics.Interp.Clock
-open import Semantics.Interp.Typed.Clos5 using (module Vals; def)
+open import Framework.Lookup using (_!_)
+open import Semantics.Interp.Typed.Clos5 using (module Vals)
 
 open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
@@ -58,7 +59,7 @@ module _ {Σ : List ℕ} (ds : All (λ n → Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ [
   eval ck φ (case a e₁ e₂) = either (atom φ a) (λ v → eval ck (v ∷ φ) e₁) (λ v → eval ck (v ∷ φ) e₂)
 
   call zero f w = timeout
-  call (suc ck) (pack (code f) e) w = eval ck (w ∷ e ∷ []) (def ds f)
+  call (suc ck) (pack (code f) e) w = eval ck (w ∷ e ∷ []) (ds ! f)
 
 sem : Program → Semantics
 sem (program {Σ} ds e) = semantics (Val Any) obs (λ ck → eval ds ck [] e)

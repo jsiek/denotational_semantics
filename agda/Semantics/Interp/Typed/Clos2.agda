@@ -17,7 +17,7 @@ open import Data.Nat using (ℕ; zero; suc)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 
 open import Semantics.Interp.Typed.Values (λ k → Tm (suc k) Any) public
-  hiding (Env; _!_)
+  hiding (Env)
 
 Env : ℕ → Set
 Env k = Vec (Val Any) k
