@@ -15,17 +15,26 @@ cannot go uncounted.
 
 Two pipelines.  The main one (the default) is the typed pipeline:
 ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> ...
---select--> X86, with intrinsically typed intermediate languages.  The
+--select--> X86ᵀ, with intrinsically typed intermediate languages and an
+intrinsically typed assembly language, X86ᵀ, as the target.  The
 untyped pipeline that preceded it is preserved in agda/Untyped/ (module
 prefix Untyped.); --untyped prints its tables, and the default output
 ends with a table that compares the two, column by column.  Each column
 of a pipeline is a side ('den', 'op', 'ck', 'red', 'gerr' for the typed
 one; 'uden', 'uop', 'uck', 'ured', 'ugerr' for the untyped one), and so
 are their adequacy proofs ('adeq', 'gadeq'; 'uadeq', 'ugadeq').  What
-both pipelines use (untyped ISWIM and simplify with its proofs, X86 and
-its semantics, the primitives, the observations, the ISWIM and X86
-adequacy) stays in agda/ and belongs to groups of both sides
-('den+uden'): it is counted in full in that row of both pipelines.
+both pipelines use (untyped ISWIM and simplify with its proofs, the
+primitives, the observations, the ISWIM adequacy) stays in agda/ and
+belongs to groups of both sides ('den+uden'): it is counted in full in
+that row of both pipelines.  Untyped X86 (Language/X86.agda) and its
+CEK machine stay in agda/ too, for the untyped pipeline and for the
+typed one's assurance (below); its other semantics and its adequacy are
+the untyped pipeline's, in agda/Untyped/.
+
+Assurance (side 'assure', not in any total nor in the comparison):
+checks that the typed pipeline's X86ᵀ is faithful to untyped X86, such
+as that select, with the types erased, emits the instructions of select
+into untyped X86 (Theorems/Erasure.agda).
 
 The code is split into an audit surface (the theorem statements,
 agda/Theorems/ and agda/Untyped/Theorems/, and the definitions they use,
@@ -68,7 +77,7 @@ script checks that it reaches no module of the other proofs but that
 one.
 
 A group may belong to two proofs ('op+red': the machines of Impᵀ, CFGᵀ
-and X86 and the proofs of explicate control and select instructions,
+and X86ᵀ and the proofs of explicate control and select instructions,
 shared by the CEK and reduction proofs); it is counted in full in that
 row of both.
 
@@ -133,10 +142,8 @@ UNTYPED = dict(sides=('uden', 'uop', 'uck', 'ured'), gerr='ugerr', adeq='uadeq',
                exp='uexp', name='untyped pipeline (preserved)')
 BOTH = 'den+uden'
 
-# a pilot, not in the totals: the typed assembly language X86ᵀ as the
-# target, in the CEK column and the graph model with errors (side 'tal';
-# its statements are Theorems/TAL.agda); see tal_pilot
-TAL_THM = A + 'Theorems/TAL.agda'
+# the statements of the assurance (side 'assure'), not in the totals
+ASSURE_THM = A + 'Theorems/Erasure.agda'
 
 # (side, group, glob patterns)
 GROUPS = [
@@ -144,13 +151,19 @@ GROUPS = [
     # proofs use (cast insertion on closed programs, globalize's references,
     # select's labels and frames, simplify keeps programs closed), and the
     # observations.  Those not used by all four proofs of a pipeline are
-    # counted in each proof that uses them (see main).  Untyped ISWIM, X86,
-    # the primitives, simplify and the observations are used by both
-    # pipelines.
+    # counted in each proof that uses them (see main).  Untyped ISWIM, the
+    # primitives, simplify and the observations are used by both
+    # pipelines; untyped X86 is the untyped pipeline's target.
     ('shared', 'syntax, languages, compiler passes',
      [L + '*.agda', L + 'Typed/*.agda', C + '*.agda', PC + '*.agda', A + 'Semantics/Observation.agda']),
     ('ushared', 'syntax, languages, compiler passes',
-     [u(L) + '*.agda', u(C) + '*.agda', u(PC) + '*.agda']),
+     [u(L) + '*.agda', u(C) + '*.agda', u(PC) + '*.agda', L + 'X86.agda']),
+
+    # assurance, not in the totals: with the types erased, select emits the
+    # instructions of select into untyped X86 (the typed pipeline's select
+    # before X86ᵀ, Compiler/SelectX86.agda)
+    ('assure', 'erasure: select emits the instructions of select into untyped X86',
+     [L + 'Typed/X86Erase.agda', C + 'SelectX86.agda', PC + 'SelectErase.agda']),
 
     # language-independent infrastructure: not in the totals (see main)
     ('infra', 'abstract binding trees',
@@ -209,8 +222,7 @@ GROUPS = [
     # the meaning of the primitives (Prim.agda) is here, as prim? is in each
     # machine and interpreter
     (BOTH, 'semantics of the languages',
-     [G + 'Prim.agda', GP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda',
-      G + 'Frames.agda', G + 'X86.agda', GP + 'X86.agda']),
+     [G + 'Prim.agda', GP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda']),
     ('den', 'semantics of the languages', [G + 'Typed/*.agda', GP + 'Typed/*.agda']),
     (BOTH, 'simplify', [GC + 'SimplifyCorrect.agda']),
     ('den', 'cast insertion', [GC + 'CastCorrect.agda']),
@@ -228,14 +240,17 @@ GROUPS = [
     # --- CEK machines + simulations ------------------------------------------
     # with the framework at this compiler's observations (Smallstep.agda,
     # Simulation.agda).  The machines of Clos5ᵀ (whose values Impᵀ's uses),
-    # Impᵀ, CFGᵀ and X86, and the framework instances, are shared with the
-    # reduction proof ('op+red': counted in both columns)
+    # Impᵀ, CFGᵀ and X86ᵀ, and the framework instances, are shared with the
+    # reduction proof ('op+red': counted in both columns).  The machine of
+    # untyped X86 and its values are the untyped pipeline's.
     ('op+uop', 'semantics of the languages', [O + 'ISWIM.agda']),
     ('op+red+uop+ured', 'semantics of the languages',
-     [O + 'Values.agda', O + 'X86.agda', O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+     [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
+    ('uop+ured', 'semantics of the languages', [O + 'Values.agda', O + 'X86.agda']),
     ('op', 'semantics of the languages',
      [O + 'Typed/ISWIM.agda', O + 'Typed/Clos2.agda', O + 'Typed/Clos3.agda', O + 'Typed/Clos4.agda']),
-    ('op+red', 'semantics of the languages', [O + 'Typed/Clos5.agda', O + 'Typed/Imp.agda', O + 'Typed/CFG.agda']),
+    ('op+red', 'semantics of the languages',
+     [O + 'Typed/Clos5.agda', O + 'Typed/Imp.agda', O + 'Typed/CFG.agda', O + 'Typed/X86.agda']),
     # what several pass proofs share: Lock, the steps of project (Common), and
     # the Clos5ᵀ machine on atoms (Clos5Common, rco and lift locals)
     ('op', 'lemmas shared by the passes', [OC + 'Common.agda', OC + 'Clos5Common.agda']),
@@ -258,8 +273,7 @@ GROUPS = [
 
     # --- clocked interpreters + value relations --------------------------------
     # with the framework at this compiler's observations (Clock.agda)
-    ('ck+uck', 'semantics of the languages',
-     [F + 'ISWIM.agda', F + 'Clock.agda', FP + 'Clock.agda', F + 'Values.agda', F + 'X86.agda']),
+    ('ck+uck', 'semantics of the languages', [F + 'ISWIM.agda', F + 'Clock.agda', FP + 'Clock.agda']),
     ('ck', 'semantics of the languages', [F + 'Typed/*.agda', FP + 'Typed/*.agda']),
     ('ck+uck', 'simplify', [FC + 'SimplifyFuel.agda']),
     ('ck', 'cast insertion', [FC + 'CastFuel.agda']),
@@ -292,8 +306,7 @@ GROUPS = [
 
     # --- the graph model with errors -------------------------------------------
     ('gerr+ugerr', 'semantics of the languages',
-     [GE + 'Prim.agda', GEP + 'Prim.agda', GE + 'ISWIM.agda', GEP + 'ISWIM.agda',
-      GE + 'Frames.agda', GE + 'X86.agda']),
+     [GE + 'Prim.agda', GEP + 'Prim.agda', GE + 'ISWIM.agda', GEP + 'ISWIM.agda']),
     ('gerr', 'semantics of the languages', [GE + 'Typed/*.agda', GEP + 'Typed/*.agda']),
     ('gerr+ugerr', 'simplify', [GEC + 'SimplifyCorrect.agda']),
     ('gerr', 'cast insertion', [GEC + 'CastCorrect.agda']),
@@ -305,46 +318,25 @@ GROUPS = [
     ('gerr', 'rco', [GEC + 'RCOCorrect.agda']),
     ('gerr', 'lift locals', [GEC + 'LiftLocalsCorrect.agda']),
     ('gerr', 'explicate control', [GEC + 'ExplicateCorrect.agda']),
-    # select is Same, not ≃: X86 is CFGᵀ with checks (SelectCheck,
-    # SelectX86: ≃), and the typed/untyped boundary (the rest: Same); see
-    # select_breakdown
-    ('gerr', 'select instructions', [GEC + 'Select*.agda']),
+    ('gerr', 'select instructions', [GEC + 'SelectCorrect.agda']),
     ('gerr', 'composition', [GEC + 'CompilerCorrect.agda']),
 
     # --- adequacy ----------------------------------------------------------------
-    # of the graph model: ISWIM and X86 are those of both pipelines
+    # of the graph model: ISWIM is that of both pipelines; X86ᵀ is direct
     ('adeq+uadeq', 'ISWIM', [AP + 'Common.agda', AP + 'Soundness.agda', AP + 'LogRel.agda', AP + 'ISWIM.agda']),
     ('adeq', 'Clos5', [AP + 'Clos5*.agda']),
-    ('adeq+uadeq', 'X86',
-     [AP + 'X86Common.agda', AP + 'X86Soundness.agda', AP + 'X86LogRel.agda', AP + 'X86.agda', AP + 'Values.agda']),
-    ('adeq+uadeq', 'well-formedness of compiled programs', [AP + 'X86WF.agda']),
-    ('adeq', 'well-formedness of compiled programs', [AP + 'X86CompileWF.agda', AP + 'X86Refs.agda']),
+    ('adeq', 'X86ᵀ', [AP + 'X86*.agda']),
     ('adeq', 'end to end', [AP + 'EndToEnd.agda']),
-    # of the graph model with errors; its Clos5ᵀ adequacy is derived from the
-    # simulation of the CEK column, in its end to end (GraphErr/EndToEnd)
+    # of the graph model with errors: X86ᵀ is direct; its Clos5ᵀ adequacy is
+    # derived from the simulation of the CEK column, in its end to end
+    # (GraphErr/EndToEnd)
     ('gadeq+ugadeq', 'ISWIM', [GEA + 'Soundness.agda', GEA + 'LogRel.agda', GEA + 'ISWIM.agda']),
-    ('gadeq+ugadeq', 'X86',
-     [GEA + 'X86Common.agda', GEA + 'X86Consistent.agda', GEA + 'X86Soundness.agda',
-      GEA + 'X86LogRel.agda', GEA + 'X86.agda']),
-    ('gadeq+ugadeq', 'well-formedness of compiled programs', [GEA + 'X86WF.agda']),
+    ('gadeq', 'X86ᵀ', [GEA + 'X86*.agda']),
     ('gadeq+ugadeq', 'end to end', [GEA + 'Agree.agda']),
     ('gadeq', 'end to end', [GEA + 'EndToEnd.agda']),
     ('gadeq+ugadeq', 'simplify through the ISWIM machine', [GEA + 'Simplify.agda']),
 
     ('examples', 'examples', [PC + 'Examples/*.agda']),
-
-    # --- a pilot, not in the totals: X86ᵀ, a typed assembly language ---------
-    ('tal', 'X86ᵀ, the language', [L + 'Typed/X86.agda']),
-    ('tal', 'typed select, the pass', [C + 'SelectTAL.agda']),
-    ('tal', 'the compiler to X86ᵀ', [C + 'PipelineTAL.agda']),
-    ('tal', 'erasure: typed select emits the instructions of select',
-     [L + 'Typed/X86Erase.agda', PC + 'SelectTALErase.agda']),
-    ('tal', 'CEK: the X86ᵀ machine', [O + 'Typed/X86.agda']),
-    ('tal', 'CEK: select', [OC + 'SelectTALSim.agda']),
-    ('tal', 'CEK: composition', [OC + 'PipelineTALSim.agda']),
-    ('tal', 'graph model with errors: the semantics of X86ᵀ', [GE + 'Typed/X86.agda']),
-    ('tal', 'graph model with errors: select', [GEC + 'SelectTALCorrect.agda']),
-    ('tal', 'graph model with errors: composition', [GEC + 'CompilerTALCorrect.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
@@ -352,7 +344,7 @@ GROUPS = [
 
     # --- the untyped pipeline, preserved ---------------------------------------
     ('uden', 'semantics of the languages',
-     [u(G) + 'Clos2Iswim.agda', u(GP) + 'Clos2Iswim.agda', u(G) + 'Clos3Iswim.agda', u(GP) + 'Clos3Iswim.agda',
+     [u(G) + 'Frames.agda', u(G) + 'X86.agda', u(GP) + 'X86.agda', u(G) + 'Clos2Iswim.agda', u(GP) + 'Clos2Iswim.agda', u(G) + 'Clos3Iswim.agda', u(GP) + 'Clos3Iswim.agda',
       u(G) + 'Clos4Iswim.agda', u(GP) + 'Clos4Iswim.agda', u(G) + 'Clos5Iswim.agda',
       u(GP) + 'Clos5IswimContinuous.agda', u(G) + 'Imp.agda', u(G) + 'ImpK.agda', u(G) + 'CFG.agda']),
     ('uden', 'CC: enclose', [u(GC) + 'EncloseCorrect.agda']),
@@ -415,12 +407,19 @@ GROUPS = [
     ('ugerr', 'composition', [u(GEC) + 'CompilerCorrect.agda']),
     ('uadeq', 'Clos5', [u(AP) + 'Clos5Common.agda', u(AP) + 'Clos5Soundness.agda', u(AP) + 'Clos5LogRel.agda',
                         u(AP) + 'Clos5.agda']),
+    ('uadeq', 'X86',
+     [u(AP) + 'X86Common.agda', u(AP) + 'X86Soundness.agda', u(AP) + 'X86LogRel.agda', u(AP) + 'X86.agda',
+      u(AP) + 'Values.agda']),
     ('uadeq', 'well-formedness of compiled programs',
-     [u(AP) + 'Clos5WF.agda', u(AP) + 'CompileWF.agda', u(AP) + 'X86CompileWF.agda']),
+     [u(AP) + 'Clos5WF.agda', u(AP) + 'CompileWF.agda', u(AP) + 'X86CompileWF.agda', u(AP) + 'X86WF.agda']),
     ('uadeq', 'end to end', [u(AP) + 'EndToEnd.agda', u(AP) + 'ISWIMCompile.agda']),
     ('ugadeq', 'Clos5', [u(GEA) + 'Clos5Common.agda', u(GEA) + 'Clos5Soundness.agda', u(GEA) + 'Clos5LogRel.agda',
                          u(GEA) + 'Clos5.agda']),
-    ('ugadeq', 'well-formedness of compiled programs', [u(GEA) + 'Clos5WF.agda', u(GEA) + 'X86CompileWF.agda']),
+    ('ugadeq', 'X86',
+     [u(GEA) + 'X86Common.agda', u(GEA) + 'X86Consistent.agda', u(GEA) + 'X86Soundness.agda',
+      u(GEA) + 'X86LogRel.agda', u(GEA) + 'X86.agda']),
+    ('ugadeq', 'well-formedness of compiled programs',
+     [u(GEA) + 'Clos5WF.agda', u(GEA) + 'X86CompileWF.agda', u(GEA) + 'X86WF.agda']),
     ('ugadeq', 'end to end', [u(GEA) + 'EndToEnd.agda']),
     ('uexamples', 'examples', [u(GC) + '*Example.agda', u(PC) + 'Examples/*.agda']),
     # not in the totals: a direct backward simulation for delay, without
@@ -434,7 +433,7 @@ GROUPS = [
     ('uthm', 'theorem statements', [U + 'Theorems/*.agda']),
 ]
 
-ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'well-formedness of compiled programs', 'end to end',
+ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'X86ᵀ', 'well-formedness of compiled programs', 'end to end',
              'simplify through the ISWIM machine']
 ROWS = ['semantics of the languages', 'lemmas shared by the passes', 'simplify', 'cast insertion',
         'CC: enclose', 'CC: optimize', 'CC: concretize', 'CC: delay', 'CC: globalize', 'rco',
@@ -668,7 +667,7 @@ class Count:
         # reached from the theorem files through modules outside them, and
         # importing none of them (but the theorem files, which cite the
         # proofs).
-        thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {TAL_THM}
+        thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {ASSURE_THM}
         if thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
         surface = {f for f in self.every if not is_proof(f)}
@@ -920,65 +919,15 @@ class Count:
         print()
 
 
-def select_breakdown(c):
-    """The select row of the typed graph model with errors, in its two parts."""
-    x86 = [GEC + 'SelectCheck.agda', GEC + 'SelectX86.agda']
-    rest = [f for f in c.files_of[('gerr', 'select instructions')] if f not in x86]
-    a, b = sum(code_lines(f) for f in x86), sum(code_lines(f) for f in rest)
-    print(f'Select in the graph model with errors: {a} lines for X86 ≃ CFGᵀ with checks '
-          f'(SelectCheck, SelectX86) and {b} for the typed/untyped boundary, Same '
-          f'(SelectRel, SelectCheckOk, SelectReflect, SelectPreserve, SelectCorrect).')
-    print()
-
-
-def tal_pilot(c):
-    """The pilot of the typed assembly language X86ᵀ (not in the totals): in
-    each of its two columns, select into X86ᵀ (its proof and the semantics
-    of X86ᵀ) against select into X86 today (its proof, the facts about its
-    output, and the semantics of X86 in that column); the languages and
-    passes both columns share; the infrastructure each reaches."""
-    def cl(fs):
-        return sum(code_lines(f) for f in fs)
-    t = lambda gname: c.counts[('tal', gname)]
-    facts = cl([PC + 'SelectFacts.agda'])
-    rows = [('select instructions (the proof)',
-             [cl([OC + 'SelectSim.agda']), t('CEK: select'),
-              cl(c.files_of[('gerr', 'select instructions')]), t('graph model with errors: select')]),
-            ("the facts about select's output (`SelectFacts`)", [facts, None, facts, None]),
-            ('the semantics of the target',
-             [cl([O + 'X86.agda', O + 'Values.agda']), t('CEK: the X86ᵀ machine'),
-              cl([GE + 'X86.agda', GE + 'Frames.agda']), t('graph model with errors: the semantics of X86ᵀ')]),
-            # today's compositions are a line of PipelineSim (the composition
-            # row) and lines of SelectCorrect (in its select row)
-            ('the compiler, composed', [None, t('CEK: composition'), None, t('graph model with errors: composition')])]
-    print('| X86ᵀ pilot (not in the totals) | CEK machine + simulation: X86 | CEK machine + simulation: X86ᵀ '
-          '| graph model with errors: X86 | graph model with errors: X86ᵀ |')
-    print('|---|---:|---:|---:|---:|')
-    tot = [0, 0, 0, 0]
-    for r, ns in rows:
-        tot = [a + (n or 0) for a, n in zip(tot, ns)]
-        print(f'| {r} | ' + ' | '.join(bold_min(ns[:2]) + bold_min(ns[2:])) + ' |')
-    print('| **total** | ' + ' | '.join(bold_min(tot[:2]) + bold_min(tot[2:])) + ' |')
-    print()
-    print('| X86ᵀ pilot: shared by both columns (not in the totals) | X86 | X86ᵀ |')
-    print('|---|---:|---:|')
-    print(f'| the target language | ' + ' | '.join(bold_min([cl([L + 'X86.agda']), t('X86ᵀ, the language')])) + ' |')
-    print(f'| select instructions, the pass | '
-          + ' | '.join(bold_min([cl([C + 'Select.agda']), t('typed select, the pass')])) + ' |')
-    print(f"| the compiler to X86ᵀ (`compile-tal`) | — | {t('the compiler to X86ᵀ')} |")
-    print(f"| the statements (`Theorems/TAL.agda`) | — | {code_lines(TAL_THM)} |")
-    print(f"| erasure, and that typed select emits the instructions of select (not needed) | — | "
-          f"{t('erasure: typed select emits the instructions of select')} |")
-    print()
-    # the infrastructure each select proof reaches, with its target's semantics
-    roots = {'CEK, X86': [OC + 'SelectSim.agda'], 'CEK, X86ᵀ': [OC + 'SelectTALSim.agda'],
-             'errors, X86': c.files_of[('gerr', 'select instructions')],
-             'errors, X86ᵀ': [GEC + 'SelectTALCorrect.agda']}
-    reach = {k: reachable({unit(f) for f in fs}, c.graph) & c.infra for k, fs in roots.items()}
-    for a, b in (('CEK, X86ᵀ', 'CEK, X86'), ('errors, X86ᵀ', 'errors, X86')):
-        new = sorted(reach[a] - reach[b])
-        print(f'Infrastructure that select into X86ᵀ reaches and select into X86 does not ({a.split(",")[0]}): '
-              + (', '.join(f'{c.display(un)} ({c.ulines(un)})' for un in new) or 'none') + '.')
+def assurance(c):
+    """The assurance of the typed pipeline (not in the totals, nor in the
+    comparison): what checks that X86ᵀ is faithful to untyped X86."""
+    print('| assurance (not in the totals) | lines |')
+    print('|---|---:|')
+    for side, gname, _ in GROUPS:
+        if side == 'assure':
+            print(f'| {gname} | {c.counts[(side, gname)]} |')
+    print(f'| the statements (`Theorems/Erasure.agda`) | {code_lines(ASSURE_THM)} |')
     print()
 
 
@@ -1025,10 +974,9 @@ def main():
         c.errors_infra(UNTYPED)
         return
     c.print_pipeline(T)
-    select_breakdown(c)
     c.errors_infra(TYPED)
     compare(c, T, Un)
-    tal_pilot(c)
+    assurance(c)
 
 
 if __name__ == '__main__':
