@@ -26,6 +26,8 @@ module Compiler.Typed.Cast where
 open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
 open import Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
+open import Framework.Syntax.ScopeDec Op sig using (ws?)
+open import Relation.Nullary using (yes; no)
 open import Language.Typed.Type
 import Language.Typed.ISWIM as T
 
@@ -67,3 +69,14 @@ casts {n = suc n} r (M ,, Ms) (w , ws) = cast r M w ∷ casts r Ms ws
 {- the pass, for a whole (well-scoped, closed) program -}
 cast-program : (M : AST) → WS 0 M → T.Tm 0 Any
 cast-program = cast (λ x → x)
+
+{- the pass on any program: a program that is not closed (that cast
+   insertion cannot type) becomes one that stops with an error at once,
+   the application of an empty tuple; the theorems are for closed
+   programs, for which cast-closed M is cast-program M w for every w
+   (proof/Compiler/Typed/CastScope.agda) -}
+cast-closed : AST → T.Tm 0 Any
+cast-closed M with ws? 0 M
+... | yes w = cast-program M w
+... | no _ = T.app (T.project tfun unit) unit
+  where unit = T.inject (tup 0) (T.tuple [])
