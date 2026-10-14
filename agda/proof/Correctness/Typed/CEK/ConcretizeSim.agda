@@ -117,7 +117,7 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 {- the only error: both machines project, and fail, at the same time -}
 proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
   → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
-proj~ {H} {G} r k with H ≟F G
+proj~ {H} {G} r k with H ≟F flat G
 ... | yes refl = same-next (ret~ r k)
 ... | no _ = same-stop
 

@@ -191,7 +191,7 @@ cc r (app ⦅ L ,, M ,, Nil ⦆) ⟨ wL , ⟨ wM , _ ⟩ ⟩ wf R =
   ≃-trans (⋆ᵐ-≃ (cc r L wL wf R) (cc r M wM wf R)) (≃-sym (app-proj _ (con L wL wf R)))
 cc r (lit B k ⦅ Nil ⦆) _ wf R = ≃-refl
 cc r (tuple n ⦅ Ms ⦆) w wf R = 𝒯ᵐ-≃ n (ccs r Ms w wf R)
-cc r (get {n} i ⦅ M ,, Nil ⦆) ⟨ w , _ ⟩ wf R =
+cc r (get {suc n} i ⦅ M ,, Nil ⦆) ⟨ w , _ ⟩ wf R =
   ≃-trans (projᵐ-≃ i (cc r M w wf R)) (≃-sym (get-proj i (con M w wf R)))
 cc r (inl-op ⦅ M ,, Nil ⦆) ⟨ w , _ ⟩ wf R = inlᵐ-≃ (cc r M w wf R)
 cc r (inr-op ⦅ M ,, Nil ⦆) ⟨ w , _ ⟩ wf R = inrᵐ-≃ (cc r M w wf R)

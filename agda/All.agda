@@ -141,6 +141,7 @@ import proof.Compiler.Examples.LiftLocalsExample
 import proof.Compiler.Examples.ExplicateExample
 import proof.Compiler.Examples.SelectExample
 import proof.Compiler.Examples.TypedExample
+import proof.Compiler.Examples.TypedPipelineExample
 
 {- ---------------------------------------------------------------------------
    proof/: the CEK machine + simulation development, independent of
@@ -308,3 +309,15 @@ import proof.Correctness.Typed.GraphErr.OptimizeCorrect
 import proof.Correctness.Typed.GraphErr.ConcretizeCorrect
 import proof.Correctness.Typed.GraphErr.DelayCorrect
 import proof.Correctness.Typed.GraphErr.CompilerCorrect
+
+{- the typed pipeline, phase 1: the typed compiler to X86
+   (Compiler/Typed/Pipeline.agda), cast insertion on closed programs, and
+   the specifications of each column's statements (phase 2) -}
+import Compiler.Typed.Pipeline
+import proof.Compiler.Typed.CastScope
+import proof.Spec.Typed.Denotational
+import proof.Spec.Typed.Simulation
+import proof.Spec.Typed.Interpreter
+import proof.Spec.Typed.Reduction
+import proof.Spec.Typed.GraphErrors
+import proof.Spec.Typed.Adequacy

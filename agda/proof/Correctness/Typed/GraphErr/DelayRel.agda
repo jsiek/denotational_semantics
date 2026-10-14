@@ -10,9 +10,8 @@
 
   What the types remove: the source application has no check of its
   operator, and the target call no late check, so a target closure is
-  related only by its applications (app-obs) and its components being
-  values (pair-obs); kinds (kind-obs, where a closure has the kind of a
-  function, kind₄) matter only to project, the one check (R-checkₗ,
+  related only by its applications (app-obs); kinds (kind-obs, where a
+  closure has the kind of a function, kind₄) matter only to project, the one check (R-checkₗ,
   bad-reflect, R-restrict).
 
 -}
@@ -162,7 +161,6 @@ record Obs (Q : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫
     err-obs : ω ⋵ V → ω ∈ D
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     kind-obs : ∀ d → d ⋵ V → d ≢ ω → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × kind s ≡ kind₄ (kind d)
-    pair-obs : ∀ c t → ⦅ c , t ⦆ ⋵ V → c ≢ ω × t ≢ ω
     app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q U E → Q W (D ● E)
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q W (Untag t D)
 
@@ -171,7 +169,7 @@ Obs-map : ∀ {k j Q₁ Q₂ V D} → Bnd (suc k) V → Bnd (suc j) V
   → (∀ {W E} → Bnd j W → Bnd k W → Q₂ W E → Q₁ W E)
   → Obs Q₁ V D → Obs Q₂ V D
 Obs-map bk bj to from o = record
-  { err-obs = err-obs ; const-obs = const-obs ; kind-obs = kind-obs ; pair-obs = pair-obs
+  { err-obs = err-obs ; const-obs = const-obs ; kind-obs = kind-obs
   ; app-obs = λ cs E cE gU rU → to (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
       (app-obs cs E cE gU (from (Bnd-Calls-args bj cs) (Bnd-Calls-args bk cs) rU))
   ; tag-obs = λ t W W⊆ → to (Bnd-Untag t bk W⊆) (Bnd-Untag t bj W⊆) (tag-obs t W W⊆)
@@ -193,7 +191,6 @@ private
     { err-obs = λ ω∈ → ⊥-elim (V⊆∅ _ ω∈)
     ; const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
     ; kind-obs = λ d d∈ _ → ⊥-elim (V⊆∅ _ d∈)
-    ; pair-obs = λ c t ct∈ → ⊥-elim (V⊆∅ _ ct∈)
     ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → V⊆∅ _ uv∈) cs)
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
@@ -204,7 +201,6 @@ private
     { err-obs = λ ω∈ → V⊆ _ ω∈
     ; const-obs = λ c c∈ → V⊆ _ c∈
     ; kind-obs = λ d d∈ d≢ → ⟨ d , ⟨ ⟨ V⊆ d d∈ , d≢ ⟩ , data-kind d (fl d d∈) ⟩ ⟩
-    ; pair-obs = λ c t ct∈ → ⊥-elim (noflat (fl _ ct∈))
     ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
     ; tag-obs = λ t W W⊆ →
         R′-data k (λ d d∈ → V⊆ _ (W⊆ d d∈)) (λ d d∈ → data-untag t (fl _ (W⊆ d d∈)))
@@ -218,7 +214,7 @@ private
     { err-obs = λ ω∈ → D⊆ _ (err-obs ω∈)
     ; const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
     ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , k ⟩ ⟩ = kind-obs d d∈ d≢ in ⟨ s , ⟨ ⌊⌋-mono D⊆ s s∈ , k ⟩ ⟩
-    ; pair-obs = pair-obs
+   
     ; app-obs = λ cs E cE gU rU → R′-mono k (●-mono-l D⊆) (app-obs cs E cE gU rU)
     ; tag-obs = λ t W W⊆ → R′-mono k (λ d → D⊆ (tag t d)) (tag-obs t W W⊆)
     }
@@ -254,7 +250,6 @@ R-sub {V₁} {V₂} sub err r = fold record
   { err-obs = err
   ; const-obs = λ c c∈ → const-obs c (sub _ c∈ (λ ()))
   ; kind-obs = λ d d∈ d≢ → kind-obs d (sub d d∈ d≢) d≢
-  ; pair-obs = λ c t ct∈ → pair-obs c t (sub _ ct∈ (λ ()))
   ; app-obs = λ cs → app-obs (Calls-⊆ (λ u v uv∈ → sub _ uv∈ (λ ())) cs)
   ; tag-obs = λ t W W⊆ → tag-obs t W (λ d d∈ → sub _ (W⊆ d d∈) (tag≢ω t))
   }
@@ -345,7 +340,7 @@ R-restrict k {X'} {X} h W W⊆ = fold record
   ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , proj₂ (W⊆ _ c∈) ⟩
   ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , e ⟩ ⟩ = kind-obs d d∈ d≢ in
       ⟨ s , ⟨ ⟨ ⟨ proj₁ s∈ , trans e (proj₂ (W⊆ d d∈)) ⟩ , proj₂ s∈ ⟩ , e ⟩ ⟩
-  ; pair-obs = pair-obs
+ 
   ; app-obs = app
   ; tag-obs = tg }
   where

@@ -6,17 +6,15 @@
 
   The machines run in lock step, except that building a closure takes
   three more Clos4ᵀ steps (the code, then the tuple of free variables,
-  under pack), and that calling a closure takes five more (unpack binds
-  the environment and the code, then call evaluates both before the
-  operand). Neither machine checks the operator, so the only error, a
-  failed project, happens in both at the same time.
+  under pack). Neither machine checks the operator, so the only error,
+  a failed project, happens in both at the same time.
 
   Values are related (_≈_) when they agree, except that a Clos3ᵀ closure
   of N and vs is related to the pack of code (delay N) and a tuple of
   values related to vs. Environments are related through the renaming r
   that delay carries (EnvRel): variable x of ρ₁ and variable r x of ρ₂
   hold related values. Continuations are related frame by frame: appL
-  to unpackK, appR to callA, and closK to packR.
+  to callL, appR to callR, and closK to packR.
 
 -}
 
@@ -63,9 +61,8 @@ EnvRel r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ Src.! x ≈ ρ₂ Tgt.! r
 data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   halt : Src.halt ≈k Tgt.halt
   appL : ∀ {Γ Δ} {r : Ren Γ Δ} {M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.appL M ρ₁ κ₁ ≈k Tgt.unpackK (λ n → C4.call (C4.` S Z) (C4.` Z) (delay (λ x → S (S (r x))) M)) ρ₂ κ₂
-  appR : ∀ {n N} {vs : Vec _ n} {ws κ₁ κ₂} → V.Pointwise _≈_ vs ws → κ₁ ≈k κ₂
-    → Src.appR (Src.clos N vs) κ₁ ≈k Tgt.callA (Tgt.code (delay (λ x → x) N)) (Tgt.tup ws) κ₂
+    → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (delay r M) ρ₂ κ₂
+  appR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.appR v κ₁ ≈k Tgt.callR w κ₂
   tupK : ∀ {Γ Δ} {r : Ren Γ Δ} {n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {e : _ ≡ n} {e' κ₁ κ₂}
     → L.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.tupK vs Ms ρ₁ e κ₁ ≈k Tgt.tupK ws (delays r Ms) ρ₂ e' κ₂
@@ -114,7 +111,7 @@ env-ext r er (S x) = er x
 {- the only error: both machines project, and fail, at the same time -}
 proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂
   → Lock _~_ (Src.step (Src.ret (Src.dyn H v) (Src.projK G κ₁))) (Tgt.step (Tgt.ret (Tgt.dyn H w) (Tgt.projK G κ₂)))
-proj~ {H} {G} r k with H ≟F G
+proj~ {H} {G} r k with H ≟F flat G
 ... | yes refl = same-next (ret~ r k)
 ... | no _ = same-stop
 
@@ -145,10 +142,8 @@ module _ (P : C4.Tm [] Any) where
   sim (eval~ {M = inject G M} er k) = steps₁ refl (eval~ er (injK k))
   sim (eval~ {M = project G M} er k) = steps₁ refl (eval~ er (projK k))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
-  {- calling a closure: unpack it, then evaluate the code and the environment -}
-  sim (ret~ (clos≈ rs) (appL er k)) =
-    steps (plus refl (refl ◅ refl ◅ refl ◅ refl ◅ refl ◅ ε)) (eval~ er (appR rs k))
-  sim (ret~ r (appR rs k)) = steps₁ refl (eval~ (λ { Z → r ; (S Z) → tup≈ rs }) k)
+  sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
+  sim (ret~ r (appR (clos≈ rs) k)) = steps₁ refl (eval~ (λ { Z → r ; (S Z) → tup≈ rs }) k)
   sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r L.∷ rs) er k)
   sim (ret~ (tup≈ rs) (closK k)) = steps₁ refl (ret~ (clos≈ rs) k)
   sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (V.lookup rs i) k)

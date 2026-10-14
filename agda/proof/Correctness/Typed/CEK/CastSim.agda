@@ -75,22 +75,22 @@ Env≈ {k} r ρ ρ' = ∀ x (lt : x < k) → Σ[ v ∈ S.Val ] ρ ‼ x ≡ just
 
 {- the body of the lets of a primitive -}
 pbody : ∀ {k} p → I.Tm (suc (suc k)) Any
-pbody p = I.inject (out-flat p) (I.prim p (I.project (base Int) (I.` fs fz)) (I.project (base Int) (I.` fz)))
+pbody p = I.inject (out-flat p) (I.prim p (I.project tint (I.` fs fz)) (I.project tint (I.` fz)))
 
 data _≈k_ : S.Cont → T.Cont Any → Set where
   halt : S.halt ≈k T.halt
   appL : ∀ {k k' M ρ ρ' κ κ'} {r : Fin k → Fin k'} (w : WS k M) → Env≈ r ρ ρ' → κ ≈k κ'
-    → S.appL M ρ κ ≈k T.projK fun (T.appL (cast r M w) ρ' κ')
+    → S.appL M ρ κ ≈k T.projK tfun (T.appL (cast r M w) ρ' κ')
   appR : ∀ {v f κ κ'} → v ≈ T.dyn fun f → κ ≈k κ' → S.appR v κ ≈k T.appR f κ'
   tupK : ∀ {k k' n j vs vs' ρ ρ' κ κ'} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) {ws : WS-args k Ms}
     {e : length vs' N.+ suc j ≡ n} → Pointwise _≈_ vs vs' → Env≈ r ρ ρ' → κ ≈k κ'
     → S.tupK vs (args→list Ms) ρ κ ≈k T.tupK vs' (casts r Ms ws) ρ' e (T.injK (tup n) κ')
-  getK : ∀ {n} {i : Fin n} {κ κ'} → κ ≈k κ' → S.getK i κ ≈k T.projK (tup n) (T.getK i κ')
+  getK : ∀ {n} {i : Fin (suc n)} {κ κ'} → κ ≈k κ' → S.getK i κ ≈k T.projK (ttup n) (T.getK i κ')
   inlK : ∀ {κ κ'} → κ ≈k κ' → S.inlK κ ≈k T.inlK (T.injK sum κ')
   inrK : ∀ {κ κ'} → κ ≈k κ' → S.inrK κ ≈k T.inrK (T.injK sum κ')
   caseK : ∀ {k k' M N ρ ρ' κ κ'} {r : Fin k → Fin k'} (wM : WS (suc k) M) (wN : WS (suc k) N)
     → Env≈ r ρ ρ' → κ ≈k κ'
-    → S.caseK M N ρ κ ≈k T.projK sum (T.caseK (cast (ext r) M wM) (cast (ext r) N wN) ρ' κ')
+    → S.caseK M N ρ κ ≈k T.projK tsum (T.caseK (cast (ext r) M wM) (cast (ext r) N wN) ρ' κ')
   primL : ∀ {k k' p M ρ ρ' κ κ'} {r : Fin k → Fin k'} (w : WS k M) → Env≈ r ρ ρ' → κ ≈k κ'
     → S.primL p M ρ κ ≈k T.letK (I.let′ (cast (λ x → fs (r x)) M w) (pbody p)) ρ' κ'
   primR : ∀ {k p v v' κ κ'} {ρ' : T.Env k} → v ≈ v' → κ ≈k κ' → S.primR p v κ ≈k T.letK (pbody p) (v' ∷ ρ') κ'
@@ -134,13 +134,13 @@ proj≈ {suc n} fz {v ∷ vs} {_ ∷ ws} (r ∷ rs)
   rewrite length→has-length n vs (trans (Pointwise-length rs) (length-toList ws)) = v , refl , r
 
 {- the only error of the typed machine -}
-project-ok : ∀ G (x : T.Val ⟪ G ⟫) (κ : T.Cont ⟪ G ⟫) → T.step (T.ret (T.dyn G x) (T.projK G κ)) ≡ next (T.ret x κ)
-project-ok G x κ with G ≟F G
+project-ok : ∀ t (x : T.Val ⟪ flat t ⟫) (κ : T.Cont ⟪ flat t ⟫) → T.step (T.ret (T.dyn (flat t) x) (T.projK t κ)) ≡ next (T.ret x κ)
+project-ok t x κ with flat t ≟F flat t
 ... | yes refl = refl
 ... | no ne = ⊥-elim (ne refl)
 
-project-bad : ∀ {H G} → H ≢ G → (x : T.Val ⟪ H ⟫) (κ : T.Cont ⟪ G ⟫) → T.step (T.ret (T.dyn H x) (T.projK G κ)) ≡ stop o-error
-project-bad {H} {G} ne x κ with H ≟F G
+project-bad : ∀ {H t} → H ≢ flat t → (x : T.Val ⟪ H ⟫) (κ : T.Cont ⟪ flat t ⟫) → T.step (T.ret (T.dyn H x) (T.projK t κ)) ≡ stop o-error
+project-bad {H} {t} ne x κ with H ≟F flat t
 ... | yes e = ⊥-elim (ne e)
 ... | no _ = refl
 
@@ -192,7 +192,7 @@ module _ (P : I.Tm 0 Any) where
   sim (eval~ {M = app ⦅ L ,, M ,, Nil ⦆} (wL , wM , _) E κ) = go refl (refl ▷ done (eval~ wL E (appL wM E κ)))
   sim (eval~ {M = lit B c ⦅ Nil ⦆} _ E κ) = go refl (refl ▷ refl ▷ done (ret~ const≈ κ))
   sim (eval~ {M = tuple n ⦅ Ms ⦆} ws E κ) = go refl (refl ▷ tuple-next~ Ms ws [] E κ)
-  sim (eval~ {M = get i ⦅ M ,, Nil ⦆} (w , _) E κ) = go refl (refl ▷ done (eval~ w E (getK κ)))
+  sim (eval~ {M = get {suc n} i ⦅ M ,, Nil ⦆} (w , _) E κ) = go refl (refl ▷ done (eval~ w E (getK κ)))
   sim (eval~ {M = inl-op ⦅ M ,, Nil ⦆} (w , _) E κ) = go refl (refl ▷ done (eval~ w E (inlK κ)))
   sim (eval~ {M = inr-op ⦅ M ,, Nil ⦆} (w , _) E κ) = go refl (refl ▷ done (eval~ w E (inrK κ)))
   sim (eval~ {M = case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆} (wL , wM , wN , _) E κ) =
@@ -207,7 +207,7 @@ module _ (P : I.Tm 0 Any) where
   sim (ret~ (inr≈ _) (appL w E κ)) = stops refl
   sim (ret~ r (appR (clo≈ E) κ)) = go refl (done (eval~ _ (env-ext E r) κ))
   sim (ret~ r (tupK Ms rs E κ)) = go refl (tuple-next~ Ms _ (r ∷ rs) E κ)
-  sim (ret~ (tup≈ {n = m} rs) (getK {n} {i} κ)) with m N.≟ n
+  sim (ret~ (tup≈ {n = m} rs) (getK {n} {i} κ)) with m N.≟ suc n
   ... | yes refl with proj≈ i rs
   ...   | v , e , r = answers-at (cong (λ x → S.ret? x _) e) (go (project-ok _ _ _) (refl ▷ done (ret~ r κ)))
   sim (ret~ (tup≈ rs) (getK {i = i} κ)) | no ne =

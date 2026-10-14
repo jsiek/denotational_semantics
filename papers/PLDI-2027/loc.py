@@ -307,7 +307,8 @@ GROUPS = [
     # proofs in two columns; not in the totals.  Its language-independent
     # helpers are infrastructure.
     ('infra', 'typed pilot: decidable base types, vectors (collecting, selecting)',
-     [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda']),
+     [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda',
+      W + 'Membership.agda', W + 'Syntax/ScopeDec.agda']),
     ('infra', 'typed pilot: semantics of intrinsically typed syntax (graph model)',
      [W + 'GraphModel/Typed*.agda', WP + 'GraphModel/Typed*.agda']),
     ('typ', 'typed: types and languages', [L + 'Typed/*.agda']),
@@ -315,6 +316,11 @@ GROUPS = [
     ('typ', 'typed: CC passes', [C + 'Typed/Enclose.agda', C + 'Typed/Concretize.agda',
                                  C + 'Typed/Delay.agda']),
     ('typ', 'typed: CC: optimize pass', [C + 'Typed/Optimize.agda']),
+    ('typ', 'typed: later passes', [C + 'Typed/Globalize.agda', C + 'Typed/RCO.agda',
+                                   C + 'Typed/LiftLocals.agda', C + 'Typed/Explicate.agda',
+                                   C + 'Typed/Select.agda']),
+    ('typ', 'typed: cast insertion on closed programs', [PC + 'Typed/CastScope.agda']),
+    ('typ', 'typed: specifications of the statements (phase 2)', ['agda/proof/Spec/Typed/*.agda']),
     ('typ', 'typed: the compiler', [C + 'Typed/Pipeline.agda']),
     ('typ', 'typed CEK: semantics', [O + 'Typed/*.agda']),
     ('typ', 'typed CEK: lemmas shared by the passes', [TOC + 'Common.agda']),

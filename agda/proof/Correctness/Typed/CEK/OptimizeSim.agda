@@ -148,7 +148,7 @@ module _ (P : Tm 0 Any) where
 
   proj~ : ∀ {H G v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Lock (Match 0)
     (C.step (C.ret (C.dyn H v) (C.projK G κ₁))) (C.step (C.ret (C.dyn H w) (C.projK G κ₂)))
-  proj~ {H} {G} r k with H ≟F G
+  proj~ {H} {G} r k with H ≟F flat G
   ... | yes refl = same-next (lag₀ (ret~ r k))
   ... | no _ = same-stop
 

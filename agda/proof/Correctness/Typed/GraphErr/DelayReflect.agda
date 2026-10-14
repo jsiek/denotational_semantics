@@ -5,12 +5,10 @@
   DelayRel, as in proof/Correctness/GraphErr/DelayReflect.agda.
 
   The errors are reflected by the monad (R-bind); each construct is then
-  its kernel. The closure is reflected by its applications: the target's
-  unpack binds the closure, its code and environment (car, cdr: values,
-  by pair-obs, so they add no error) and the argument, and its batch of
-  calls (collect) is the source's application (app-obs). Its length n
-  is that of every environment of the consistent closure. project is
-  the one check (R-checkₗ, R-restrict).
+  its kernel. The closure is reflected by its applications: callc binds
+  the closure and the argument, and its batch of calls (collect) of the
+  code (car) on the environment (cdr) is the source's application
+  (app-obs). project is the one check (R-checkₗ, R-restrict).
 
 -}
 
@@ -19,14 +17,14 @@ open import Framework.Primitives
 open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right; ⋆₂-mono)
+open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right)
 open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ)
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Language.Typed.Type using (Any; ⟪_⟫; code; tup; _∋_; Z; S; idx)
+open import Language.Typed.Type using (Any; ⟪_⟫; code; tup; _∋_; Z; S; idx; flat)
 open import Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
 import Language.Typed.Clos4 as T
 import proof.Semantics.GraphErr.Typed.Clos3 as S3
@@ -114,7 +112,6 @@ inl-R {X'} {X} cl h V V⊆ = fold record
   { err-obs = λ ω∈ → ⊥-elim (V⊆ ω ω∈)
   ; const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)
   ; kind-obs = λ d d∈ _ → kd d (V⊆ d d∈)
-  ; pair-obs = λ c t ct∈ → ⊥-elim (V⊆ _ ct∈)
   ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V⊆ _ uv∈) cs)
   ; tag-obs = λ { leftT W W⊆ → h W (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
@@ -128,7 +125,6 @@ inr-R {X'} {X} cl h V V⊆ = fold record
   { err-obs = λ ω∈ → ⊥-elim (V⊆ ω ω∈)
   ; const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)
   ; kind-obs = λ d d∈ _ → kd d (V⊆ d d∈)
-  ; pair-obs = λ c t ct∈ → ⊥-elim (V⊆ _ ct∈)
   ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V⊆ _ uv∈) cs)
   ; tag-obs = λ { rightT W W⊆ → h W (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
@@ -157,7 +153,6 @@ primD-R {p} {X'} {X} {Y'} {Y} hX hY V V⊆ = R-data V⊆' dt
   { err-obs = λ ω∈ → ⊥-elim (V⊆ ω ω∈)
   ; const-obs = λ c c∈ → ⊥-elim (V⊆ _ c∈)
   ; kind-obs = λ d d∈ _ → kd d (V⊆ d d∈)
-  ; pair-obs = λ c t ct∈ → ⊥-elim (V⊆ _ ct∈)
   ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V⊆ _ uv∈) cs)
   ; tag-obs = λ { (tupT i) W W⊆ → nth-case i W W⊆
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
@@ -298,54 +293,23 @@ delay-reflect (let′ M N) {r} {ρ'} {ρ} E =
 
 delay-reflect (inject G M) E = delay-reflect M E
 
-delay-reflect (project G M) E =
-  R-bind {F' = λ X → checkedᵠ kind₄ (kindᶠ G) X (X ⇂ λ d → kind₄ (kind d) ≡ kindᶠ G)} {F = λ X → checked (kindᶠ G) X (X ⇂ λ d → kind d ≡ kindᶠ G)}
+delay-reflect (project t M) E =
+  R-bind {F' = λ X → checkedᵠ kind₄ G X (X ⇂ λ d → kind₄ (kind d) ≡ G)} {F = λ X → checked G X (X ⇂ λ d → kind d ≡ G)}
     (S3.con M (Envs.ρ~ E)) (delay-reflect M E) λ _ _ hX →
-  R-checkₗ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩) (λ W W⊆ → R-mono (λ x → inj₂) (R-restrict (kindᶠ G) hX W W⊆))
+  R-checkₗ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩) (λ W W⊆ → R-mono (λ x → inj₂) (R-restrict G hX W W⊆))
+  where G = kindᶠ (flat t)
 
 delay-reflect (app L M) {r} {ρ'} {ρ} E =
-  R-bind {F' = S4.Unpack Body ρ'} {F = λ Xs → Xs ● ⟦ M ⟧ ρ} (S3.con L ρ~) (delay-reflect L E) APP
+  R-bind {F' = λ P → Arg ≫= K P} {F = λ F → F ● ⟦ M ⟧ ρ} (S3.con L ρ~) (delay-reflect L E) λ _ _ hX →
+  R-bindₗ {Arg} {K P} (λ ω∈ → inj₁ ⟨ refl , R-err (delay-reflect M E _ (single⊆ ω∈)) ⟩) λ _ W W⊆ →
+  let ⟨ Ws , ⟨ U , ⟨ Ws⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩ = collect P ⌊ Arg ⌋ clean⌊⌋ W W⊆ in
+  Obs.app-obs (unfold (hX Ws Ws⊆)) cs (⟦ M ⟧ ρ) (S3.con M ρ~)
+    (Con-⊆ (S4.con (delay r M) ρ'~) (λ d d∈ → proj₁ (U⊆ d d∈))) (delay-reflect M E U (λ d d∈ → proj₁ (U⊆ d d∈)))
   where
   open Envs E
-  Body : ∀ n → Env Value → 𝒫 Value
-  Body n = ⟦ T.call {n = n} (T.` S Z) (T.` Z) (delay (λ x → S (S (r x))) M) ⟧'
+  Arg = ⟦ delay r M ⟧' ρ'
   P = ⌊ ⟦ delay r L ⟧' ρ' ⌋
-  cP : Con P
-  cP = Con-⊆ (S4.con (delay r L) ρ'~) ⌊⌋-⊆
-  APP : Conv (⟦ delay r L ⟧' ρ') → Conv (⟦ L ⟧ ρ) → Rel P ⌊ ⟦ L ⟧ ρ ⌋ → Rel (S4.Unpack Body ρ' P) (⌊ ⟦ L ⟧ ρ ⌋ ● ⟦ M ⟧ ρ)
-  APP _ _ hX [] _ = R-∅ (λ _ ())
-  APP _ _ hX (w ∷ W) W⊆ with W⊆ w (here refl)
-  ... | ⟨ n , ⟨ ⟨ t , ⟨ ⟨ u , p∈ ⟩ , tk ⟩ ⟩ , _ ⟩ ⟩ = call (w ∷ W) same
-    where
-    same : mem (w ∷ W) ⊆ Body n (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ')
-    same x x∈ with W⊆ x x∈
-    ... | ⟨ m , ⟨ ⟨ t' , ⟨ ⟨ u' , p∈' ⟩ , tk' ⟩ ⟩ , x∈B ⟩ ⟩ with trans (sym tk') (trans (~-kind t' t (proj₂ (cP _ _ p∈' p∈))) tk)
-    ... | refl = x∈B
-    pairs : ∀ {c t} → ⦅ c , t ⦆ ∈ P → c ≢ ω × t ≢ ω
-    pairs ct∈ = Obs.pair-obs (unfold (hX _ (single⊆ ct∈))) _ _ (here refl)
-    E'' : Envs (λ x → S (S (r x))) (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ') ρ
-    E'' = envs NE (extend-nonempty-env (extend-nonempty-env NE' ⟨ u , ⟨ t , p∈ ⟩ ⟩) ⟨ t , ⟨ u , p∈ ⟩ ⟩) ρ~
-      (Con-• (λ a b a∈ b∈ → proj₂ (cP _ _ (proj₂ a∈) (proj₂ b∈))) (Con-• (λ a b a∈ b∈ → proj₁ (cP _ _ (proj₂ a∈) (proj₂ b∈))) ρ'~))
-      ρ⊳
-    Arg = ⟦ delay (λ x → S (S (r x))) M ⟧' (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ')
-    kernel : Rel (⋆ ⟨ ⋆ ⟨ ⌊ car ⟨ P , ptt ⟩ ⌋ , ⟨ ⌊ cdr ⟨ P , ptt ⟩ ⌋ , ptt ⟩ ⟩ , ⟨ ⌊ Arg ⌋ , ptt ⟩ ⟩) (⌊ ⟦ L ⟧ ρ ⌋ ● ⟦ M ⟧ ρ)
-    kernel W W⊆ with collect P ⌊ Arg ⌋ clean⌊⌋ W
-                       (λ d d∈ → lower (⋆₂-mono ⟨ ⌊ car ⟨ P , ptt ⟩ ⌋ , ⟨ ⌊ cdr ⟨ P , ptt ⟩ ⌋ , ⟨ ⌊ Arg ⌋ , ptt ⟩ ⟩ ⟩ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ⟨ ⌊ Arg ⌋ , ptt ⟩ ⟩ ⟩ ⟨ lift ⌊⌋-⊆ , ⟨ lift ⌊⌋-⊆ , ⟨ lift (λ x z → z) , ptt ⟩ ⟩ ⟩) d (W⊆ d d∈))
-    ... | ⟨ Ws , ⟨ U , ⟨ Ws⊆ , ⟨ U⊆ , cs ⟩ ⟩ ⟩ ⟩ =
-      Obs.app-obs (unfold (hX Ws Ws⊆)) cs (⟦ M ⟧ ρ) (S3.con M ρ~)
-        (Con-⊆ (S4.con (delay (λ x → S (S (r x))) M) (Envs.ρ'~ E'')) (λ d d∈ → proj₁ (U⊆ d d∈)))
-        (delay-reflect M E'' U (λ d d∈ → proj₁ (U⊆ d d∈)))
-    call : Rel (Body n (cdr ⟨ P , ptt ⟩ • car ⟨ P , ptt ⟩ • ρ')) (⌊ ⟦ L ⟧ ρ ⌋ ● ⟦ M ⟧ ρ)
-    call =
-      R-bindₗ {Cp} {λ C → Cd ≫= λ Y → Arg ≫= λ X → ⋆ ⟨ ⋆ ⟨ C , ⟨ Y , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩} {Src}
-        (λ { ⟨ t , ct∈ ⟩ → ⊥-elim (proj₁ (pairs ct∈) refl) }) λ _ →
-      R-bindₗ {Cd} {λ Y → Arg ≫= λ X → ⋆ ⟨ ⋆ ⟨ ⌊ Cp ⌋ , ⟨ Y , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩} {Src}
-        (λ { ⟨ c , ct∈ ⟩ → ⊥-elim (proj₂ (pairs ct∈) refl) }) λ _ →
-      R-bindₗ {Arg} {λ X → ⋆ ⟨ ⋆ ⟨ ⌊ Cp ⌋ , ⟨ ⌊ Cd ⌋ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩} {Src}
-        (λ ω∈ → inj₁ ⟨ refl , R-err (delay-reflect M E'' _ (single⊆ ω∈)) ⟩) λ _ → kernel
-      where Cp = car ⟨ P , ptt ⟩
-            Cd = cdr ⟨ P , ptt ⟩
-            Src = ⌊ ⟦ L ⟧ ρ ⌋ ● ⟦ M ⟧ ρ
+  K = λ P X → ⋆ ⟨ ⋆ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
 
 delay-reflect (clos {n = n} N Ms) {r} {ρ'} {ρ} E =
   R-bindₗ {ΛΛᵐ ⟨ F' , ptt ⟩} {λ C → T' ≫= λ Y → pair ⟨ C , ⟨ Y , ptt ⟩ ⟩} {⟦ clos N Ms ⟧ ρ} (λ { ⟨ () , _ ⟩ }) λ _ →
@@ -363,7 +327,6 @@ delay-reflect (clos {n = n} N Ms) {r} {ρ'} {ρ} E =
     { err-obs = λ ω∈ → ⊥-elim (V'⊆ ω ω∈)
     ; const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
     ; kind-obs = λ d d∈ _ → kd d (V'⊆ d d∈)
-    ; pair-obs = λ c t ct∈ → ⟨ proj₂ (proj₁ (V'⊆ _ ct∈)) , proj₂ (proj₂ (V'⊆ _ ct∈)) ⟩
     ; app-obs = clos-app
     ; tag-obs = λ t W W⊆ → R-∅ (λ d d∈ → pair-tag t (V'⊆ _ (W⊆ d d∈)))
     }
