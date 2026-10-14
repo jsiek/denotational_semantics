@@ -31,6 +31,7 @@ open import proof.Compiler.Typed.CastScope using (cast-closed-≡)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import Framework.ListUtil using (_‼_; proj; has-length)
 open import proof.Semantics.Interp.Clock
+open import proof.Framework.VecProj using (proj-pw; proj-bad)
 import Semantics.Interp.ISWIM as S
 import Semantics.Interp.Typed.ISWIM as T
 
@@ -77,30 +78,6 @@ obs≈ (inl≈ r) = cong o-inl (obs≈ r)
 obs≈ (inr≈ r) = cong o-inr (obs≈ r)
 obs≈-list {ws = []} [] = refl
 obs≈-list {ws = _ ∷ _} (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
-
-{- Tuples: ISWIM checks the length at component 0 -----------------------------}
-
-len-ok : ∀ {n xs} {ws : Vec (T.Val Any) n} → Pointwise _≈_ xs (toList ws) → has-length n xs ≡ true
-len-ok {ws = []} [] = refl
-len-ok {ws = _ ∷ _} (_ ∷ rs) = len-ok rs
-
-len-bad : ∀ {m n xs} {ws : Vec (T.Val Any) m} → m ≢ n → Pointwise _≈_ xs (toList ws) → has-length n xs ≡ false
-len-bad {n = zero} {ws = []} ne [] with () ← ne refl
-len-bad {n = suc n} {ws = []} ne [] = refl
-len-bad {n = zero} {ws = _ ∷ _} ne (_ ∷ rs) = refl
-len-bad {n = suc n} {ws = _ ∷ _} ne (_ ∷ rs) = len-bad (λ e → ne (cong suc e)) rs
-
-proj≈ : ∀ {n} (i : Fin n) {vs} {ws : Vec (T.Val Any) n} → Pointwise _≈_ vs (toList ws)
-  → M.Pointwise _≈_ (proj i vs) (just (lookup ws i))
-proj≈ fz {ws = _ ∷ _} (r ∷ rs) rewrite len-ok rs = M.just r
-proj≈ (fs i) {ws = _ ∷ _} (r ∷ rs) = proj≈ i rs
-
-proj-bad : ∀ {m n} (i : Fin n) {vs} {ws : Vec (T.Val Any) m} → m ≢ n → Pointwise _≈_ vs (toList ws)
-  → proj i vs ≡ nothing
-proj-bad fz {ws = []} ne [] = refl
-proj-bad fz {ws = _ ∷ _} ne (r ∷ rs) rewrite len-bad (λ e → ne (cong suc e)) rs = refl
-proj-bad (fs i) {ws = []} ne [] = refl
-proj-bad (fs i) {ws = _ ∷ _} ne (r ∷ rs) = proj-bad i (λ e → ne (cong suc e)) rs
 
 {- Primitives: both operands are checked after both are evaluated -}
 out≈ : ∀ p n m → S.out (Language.Prim.δ p n m) ≈ T.dyn (out-flat p) (T.δ p (T.const n) (T.const m))
@@ -158,7 +135,7 @@ run≈ ck (get {suc n} i ⦅ M ,, Nil ⦆) (w , _) E = bind-rel∘ (run≈ ck M 
   where
   get≈ : ∀ {v v'} → v ≈ v' → RelResult _≈_ (S.project i v) (T.project? (ttup n i) v' >>= λ u → ret (T.nth i u))
   get≈ (tup≈ {n = m} rs) with m N.≟ suc n
-  ... | yes refl = from-maybe-rel (proj≈ i rs)
+  ... | yes refl = from-maybe-rel (proj-pw i rs)
   ... | no ne rewrite proj-bad i ne rs = error
   get≈ (clo≈ _) = error
   get≈ const≈ = error
