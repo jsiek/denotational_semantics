@@ -129,6 +129,23 @@ sub-id h (project t M) = cong (project t) (sub-id h M)
 sub-ids h [] = refl
 sub-ids h (M ∷ Ms) = cong₂ _∷_ (sub-id h M) (sub-ids h Ms)
 
+
+{- a closed term, weakened and then substituted -}
+wk-[] : ∀ {A} (V : Tm 0 A) W → ren suc V [ W ] ≡ V
+wk-[] V W = trans (ren-trav tmK {τ = `_} (λ ()) V) (sub-id (λ _ → refl) V)
+
 {- under a binder, then for the bound variable: closed values for the rest -}
 exts-[] : ∀ {k A} (σ : Fin k → Tm 0 Any) W (N : Tm (suc k) A) → sub (exts tmK σ) N [ W ] ≡ sub (W • σ) N
-exts-[] σ W = trav-sub tmL λ { zero → refl ; (suc x) → trans (ren-trav tmK {τ = `_} (λ ()) (σ x)) (sub-id (λ _ → refl) (σ x)) }
+exts-[] σ W = trav-sub tmL λ { zero → refl ; (suc x) → wk-[] (σ x) W }
+
+{- a traversal keeps values -}
+value-trav : ∀ {𝒦 k j A} {σ : Sub 𝒦 k j} {V : Tm k A} → Value V → Value (trav 𝒦 σ V)
+values-trav : ∀ {𝒦 k j n} {σ : Sub 𝒦 k j} {Vs : Vec (Tm k Any) n} → All Value Vs → All Value (travs 𝒦 σ Vs)
+value-trav lam = lam
+value-trav lit = lit
+value-trav (tuple vs) = tuple (values-trav vs)
+value-trav (inl v) = inl (value-trav v)
+value-trav (inr v) = inr (value-trav v)
+value-trav (inject v) = inject (value-trav v)
+values-trav [] = []
+values-trav (v ∷ vs) = value-trav v ∷ values-trav vs
