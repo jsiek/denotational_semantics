@@ -340,3 +340,11 @@ import Theorems.Typed.Interpreter
    the statements are Theorems/Typed/{Denotational,Adequacy}.agda -}
 import Theorems.Typed.Denotational
 import Theorems.Typed.Adequacy
+
+{- the typed pipeline, phase 2, the graph model with errors -}
+import proof.Correctness.Typed.GraphErr.GlobalizeCorrect
+import proof.Correctness.Typed.GraphErr.RCOCorrect
+import proof.Correctness.Typed.GraphErr.LiftLocalsCorrect
+import proof.Correctness.Typed.GraphErr.ExplicateCorrect
+import proof.Correctness.Typed.GraphErr.SelectCheck
+import proof.Semantics.GraphErr.Typed.CFG
