@@ -315,6 +315,7 @@ import proof.Correctness.Typed.GraphErr.CompilerCorrect
    the specifications of each column's statements (phase 2) -}
 import Compiler.Typed.Pipeline
 import proof.Compiler.Typed.CastScope
+import proof.Compiler.Typed.GlobalizeOlder
 import proof.Spec.Typed.Denotational
 import proof.Spec.Typed.Simulation
 import proof.Spec.Typed.Interpreter
@@ -330,3 +331,12 @@ import Semantics.CEK.Typed.Imp
 import Semantics.CEK.Typed.CFG
 import proof.Compiler.Typed.SelectFacts
 import Theorems.Typed.Simulation
+
+{- the typed pipeline, phase 2, clocked interpreters + value relations:
+   the statements -}
+import Theorems.Typed.Interpreter
+
+{- the typed pipeline, phase 2, the plain graph model and its adequacy:
+   the statements are Theorems/Typed/{Denotational,Adequacy}.agda -}
+import Theorems.Typed.Denotational
+import Theorems.Typed.Adequacy
