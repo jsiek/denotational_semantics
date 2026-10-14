@@ -109,7 +109,7 @@ trav-sub {𝒦} L = fuse tmK 𝒦 tmK (λ σ τ ρ → ∀ x → trav 𝒦 τ (�
 
 {- substituting variables for themselves -}
 sub-id : ∀ {k A} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (M : Tm k A) → sub σ M ≡ M
-sub-ids : ∀ {k n} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (Ms : Vec (Tm k Any) n) → subs σ Ms ≡ Ms
+sub-ids : ∀ {k n} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → (Ms : Vec (Tm k Any) n) → travs tmK σ Ms ≡ Ms
 sub-id-exts : ∀ {k} {σ : Fin k → Tm k Any} → (∀ x → σ x ≡ ` x) → ∀ x → exts tmK σ x ≡ ` x
 sub-id-exts h zero = refl
 sub-id-exts h (suc x) = cong (ren suc) (h x)

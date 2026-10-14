@@ -1,8 +1,7 @@
 {-
 
   The values of the Clos4ᵀ reduction semantics
-  (Semantics/Reduction/Typed/Clos4.agda), which reduce to val and which
-  renaming and substitution keep.
+  (Semantics/Reduction/Typed/Clos4.agda), which reduce to val.
 
 -}
 
@@ -40,19 +39,3 @@ value-red (inr v) rewrite value-red v = refl
 value-red (inject v) rewrite value-red v = refl
 values-red [] = refl
 values-red (v ∷ vs) rewrite value-red v | values-red vs = refl
-
-value-trav : ∀ {𝒦 Γ Δ A} {σ : Sub 𝒦 Γ Δ} {V : Tm Γ A} → Value V → Value (trav 𝒦 σ V)
-values-trav : ∀ {𝒦 Γ Δ n} {σ : Sub 𝒦 Γ Δ} {Vs : Vec (Tm Γ Any) n} → All Value Vs → All Value (travs 𝒦 σ Vs)
-value-trav code = code
-value-trav (pack v w) = pack (value-trav v) (value-trav w)
-value-trav lit = lit
-value-trav (tuple vs) = tuple (values-trav vs)
-value-trav (inl v) = inl (value-trav v)
-value-trav (inr v) = inr (value-trav v)
-value-trav (inject v) = inject (value-trav v)
-values-trav [] = []
-values-trav (v ∷ vs) = value-trav v ∷ values-trav vs
-
-lookup-travs : ∀ {𝒦 Γ Δ n} (σ : Sub 𝒦 Γ Δ) (Ms : Vec (Tm Γ Any) n) i → lookup (travs 𝒦 σ Ms) i ≡ trav 𝒦 σ (lookup Ms i)
-lookup-travs σ (M ∷ Ms) zero = refl
-lookup-travs σ (M ∷ Ms) (suc i) = lookup-travs σ Ms i

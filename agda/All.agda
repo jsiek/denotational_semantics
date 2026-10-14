@@ -340,3 +340,7 @@ import Theorems.Typed.Interpreter
    the statements are Theorems/Typed/{Denotational,Adequacy}.agda -}
 import Theorems.Typed.Denotational
 import Theorems.Typed.Adequacy
+
+{- the typed pipeline, phase 2, reduction semantics + simulations: the
+   statements are Theorems/Typed/Reduction.agda -}
+import Theorems.Typed.Reduction

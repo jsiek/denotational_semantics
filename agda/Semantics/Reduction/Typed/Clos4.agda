@@ -70,8 +70,6 @@ tmK = record { K = Tm ; vr = `_ ; tm = λ M → M ; wk = ren S }
 sub : ∀ {Γ Δ A} → (∀ {B} → Γ ∋ B → Tm Δ B) → Tm Γ A → Tm Δ A
 sub σ = trav tmK σ
 
-subs : ∀ {Γ Δ n} → (∀ {B} → Γ ∋ B → Tm Δ B) → Vec (Tm Γ Any) n → Vec (Tm Δ Any) n
-subs σ = travs tmK σ
 
 {- a closing substitution: values for the variables, the newest first -}
 infixr 5 _•_

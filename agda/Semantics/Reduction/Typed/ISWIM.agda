@@ -73,8 +73,6 @@ tmK = record { K = λ k _ → Tm k Any ; vr = `_ ; tm = λ M → M ; wk = ren su
 sub : ∀ {k k' A} → (Fin k → Tm k' Any) → Tm k A → Tm k' A
 sub σ = trav tmK σ
 
-subs : ∀ {k k' n} → (Fin k → Tm k' Any) → Vec (Tm k Any) n → Vec (Tm k' Any) n
-subs σ = travs tmK σ
 
 infixr 5 _•_
 _•_ : ∀ {k k'} → Tm k' Any → (Fin k → Tm k' Any) → Fin (suc k) → Tm k' Any
