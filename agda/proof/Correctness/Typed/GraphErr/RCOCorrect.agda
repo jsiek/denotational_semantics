@@ -51,7 +51,8 @@ open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_�
 open import Data.Unit using (⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 open import Level using (lift)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong₂)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong; cong₂; sym)
+open import Function using (flip; _$_)
 
 {- binds on sets of values equal to Ys are the kernel on Ys -}
 ≃s⇒RRs : ∀ n {Ds Es : Results (𝒫 Value) (replicate n ■)} → (∀ i → nthD Ds i ≃ nthD Es i) → RRs (replicate n ■) Ds Es
@@ -216,7 +217,7 @@ rco-correct : ∀ (P : Program) → ⟦ ⌜ rco-program P ⌝ₚ ⟧₅ ≃ ⟦ 
 rco-correct (program {Σ} ds N) = rco-sem TT (tbl-val (λ _ → ΛΛᵐ-val) ds) N (λ x → x) (mkR λ ())
   where
   TT : ∀ k → tbl code₅ (All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds)) k ≃ tbl code₅ ds k
-  TT k rewrite map-map (λ D → rco D (λ x → x)) ⌜_⌝ ds =
-    tbl-map (λ T → ∀ k → Val (T k)) (tbl-val (λ _ → ΛΛᵐ-val)) (λ D → ⌜ rco D (λ x → x) ⌝)
+  TT k rewrite map-map (λ D → rco D (λ x → x)) ⌜_⌝ ds = flip ≃-trans (≃-reflexive (cong (λ es → tbl code₅ es k) (map-id ds))) $
+    tbl-map (λ T → ∀ k → Val (T k)) (λ D → ⌜ rco D (λ x → x) ⌝) (λ D → D) (λ es → tbl-val {c = code₅} (λ _ → ΛΛᵐ-val) (All-map (λ D → D) es))
       (λ TT' TV' d → ΛΛᵐ-≃′ λ V U neV _ nV neU _ nU →
          rco-sem TT' TV' d (λ x → x) (mkR λ { Z → ⟨ ≃-refl , noerr-val U neU nU ⟩ ; (S Z) → ⟨ ≃-refl , noerr-val V neV nV ⟩ })) ds k
