@@ -25,7 +25,7 @@ open import proof.Framework.Lookup using (lvl-<)
 open import proof.Framework.ListUtil using (‼-snoc-<; ‼-snoc-length)
 open import Framework.ListUtil using (_‼_)
 import Language.X86 as L
-open import Semantics.CEK.X86 using (block-at)
+open import Language.X86 using (block-at)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; _∷ʳ_; length; reverse)

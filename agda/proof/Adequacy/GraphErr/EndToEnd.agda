@@ -8,8 +8,8 @@
   X86: the semantics and the machine are the untyped ones, so this is
   their adequacy (Adequacy/GraphErr/X86.agda) for well-formed programs,
   and the typed compiler's programs are well formed: its labels refer to
-  older definitions (Adequacy/X86CompileWF.agda proves more, slots in the
-  frame and consistency, for the graph model's X86 adequacy).
+  older definitions (Adequacy/X86Refs.agda, which also gives the graph
+  model's X86 adequacy its slots in the frame).
 
   Clos5ᵀ: not a logical relation of its own. The ISWIM machine on M and
   the Clos5ᵀ machine on compile M agree on every outcome (the CEK
@@ -36,7 +36,7 @@ import Semantics.CEK.X86 as X86ₘ
 open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
-open import Compiler.Pipeline using (compile; compile-x86)
+open import Compiler.Pipeline using (compile; compile₄; compile-x86)
 open import Compiler.EncloseScope using (Closed)
 open import proof.Correctness.GraphErr.CompilerCorrect using (Same; compile-same₅)
 open import proof.Correctness.GraphErr.SelectCorrect using (compile-x86-same)
@@ -45,10 +45,11 @@ import proof.Adequacy.GraphErr.ISWIM as A
 import proof.Adequacy.GraphErr.X86 as Aₓ
 import proof.Adequacy.GraphErr.X86WF as E
 import proof.Adequacy.X86WF as P
-import proof.Adequacy.X86CompileWF as T
+open import proof.Adequacy.X86Refs using (code-wf)
+open import proof.Compiler.GlobalizeOlder using (globalize-older)
 open import proof.Adequacy.GraphErr.Agree using (Agree; agree; ⇔-sym; ⇔-trans; Same-sym; empty-Same) public
 
-open import Data.List using (List; []; _∷_)
+open import Data.List using (List; []; _∷_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (tt)
@@ -96,11 +97,13 @@ private
   defs [] _ = tt
   defs (b ∷ bs) ⟨ r , rs ⟩ = ⟨ body-ok b r , defs bs rs ⟩
 
-wf : ∀ P → P.WF P → E.WF P
-wf (program ds b) ⟨ wd , ⟨ wb , _ ⟩ ⟩ = ⟨ defs ds wd , body-ok b wb ⟩
+wf : ∀ P → P.DefsWF (Program.defs P) × P.BodyOK (length (Program.defs P)) (Body.locals (Program.main P)) (Program.main P)
+  → E.WF P
+wf (program ds b) ⟨ wd , wb ⟩ = ⟨ defs ds wd , body-ok b wb ⟩
 
+{- its labels refer to older definitions (Adequacy/X86Refs.agda) -}
 compile-x86-wf : ∀ M → Closed M → E.WF (compile-x86 M)
-compile-x86-wf M c = wf (compile-x86 M) (T.compile-x86-wf M c)
+compile-x86-wf M c = wf (compile-x86 M) (code-wf (compile M) (globalize-older (compile₄ M)))
 
 x86-error-iff : ∀ M → Closed M → (ω ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
 x86-error-iff M c = Aₓ.error-iff (compile-x86 M) (compile-x86-wf M c)

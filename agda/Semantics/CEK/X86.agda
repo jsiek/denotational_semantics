@@ -33,6 +33,7 @@ module Semantics.CEK.X86 where
 
 open import Framework.Primitives using (Int)
 open import Language.X86
+open import Language.X86 using (block-at) public
 open import Language.Prim using (sub; eq; Out; bool)
 open import Semantics.Observation
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
@@ -131,13 +132,6 @@ test nothing k = stop o-error
 {- definition k, counting from the oldest -}
 global : List Body → ℕ → Maybe Body
 global ds k = reverse ds ‼ k
-
-{- block l among bs (newest first), with the blocks older than it -}
-block-at : List Block → ℕ → Maybe (Block × List Block)
-block-at [] l = nothing
-block-at (b ∷ bs) l with l ≟ length bs
-... | yes _ = just (b , bs)
-... | no _ = block-at bs l
 
 goto : Maybe (Block × List Block) → Stack → Maybe Bool → Frame → Regs → Next State
 goto (just (b , bs)) σ f φ ρ = next (run (Block.instrs b) (Block.jump b) bs σ f φ ρ)

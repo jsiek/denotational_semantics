@@ -56,8 +56,11 @@ module Language.X86 where
 open import Framework.Primitives using (Base; base-rep)
 
 open import Data.Fin using (Fin)
-open import Data.List using (List)
-open import Data.Nat using (ℕ)
+open import Data.List using (List; []; _∷_; length)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (ℕ; _≟_)
+open import Data.Product using (_×_; _,_)
+open import Relation.Nullary using (yes; no)
 
 data Reg : Set where
   rax rdi rsi : Reg
@@ -116,3 +119,10 @@ record Program : Set where
   field
     defs : List Body
     main : Body
+
+{- block l among bs (newest first), with the blocks older than it -}
+block-at : List Block → ℕ → Maybe (Block × List Block)
+block-at [] l = nothing
+block-at (b ∷ bs) l with l ≟ length bs
+... | yes _ = just (b , bs)
+... | no _ = block-at bs l
