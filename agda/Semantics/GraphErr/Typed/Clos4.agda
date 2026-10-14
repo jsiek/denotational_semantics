@@ -6,7 +6,8 @@
   with no check; a closure is a pair. unpack binds the pair and runs the
   body with its environment (cdr) and its code (car), for every length:
   the body for a length other than that of the environment finds no
-  component of it.
+  component of it. A value of type ⟪ fun ⟫ is a pair, so project ⟪ fun ⟫
+  checks for a pair (kind₄).
 
 -}
 
@@ -29,6 +30,11 @@ open import Data.Vec using (Vec; []; _∷_)
 open import Data.Product using (Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
+{- the kind of the values of a flat type: a function is a pair -}
+kind₄ : Flat → Kind
+kind₄ fun = prod
+kind₄ G = kindᶠ G
+
 ⟦_⟧ : ∀ {Γ A} → Tm Γ A → Env Value → 𝒫 Value
 ⟦_⟧s : ∀ {Γ n} → Vec (Tm Γ Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
 
@@ -48,7 +54,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 ⟦ prim p L M ⟧ ρ = primᵗ p (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ let′ M N ⟧ ρ = ⟦ M ⟧ ρ ≫= λ X → ⟦ N ⟧ (X • ρ)
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ
-⟦ project G M ⟧ ρ = projectᵗ G (⟦ M ⟧ ρ)
+⟦ project G M ⟧ ρ = projectᵗ (kind₄ G) (⟦ M ⟧ ρ)
 
 ⟦ [] ⟧s ρ = ptt
 ⟦ M ∷ Ms ⟧s ρ = ⟨ ⟦ M ⟧ ρ , ⟦ Ms ⟧s ρ ⟩

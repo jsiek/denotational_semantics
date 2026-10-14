@@ -8,8 +8,11 @@
   hold ω, from a failed project, which the binds propagate.
 
   * A value of type Any is a value of the graph model, tagged by its kind
-    (kind, in ErrorMonad), so inject is the identity, and project G
-    checks that kind: it is the only operator that adds ω.
+    (kind, in ErrorMonad), so inject is the identity, and project checks
+    that kind: it is the only operator that adds ω, and it keeps only the
+    elements of the right kind (so a denotation stays consistent). The
+    kind of a flat type is kindᶠ, except that a function of Clos4ᵀ is a
+    pair (Semantics/GraphErr/Typed/Clos4.agda).
   * let x = M in N is the bind of N.
 
 -}
@@ -27,6 +30,7 @@ open import Language.Prim using (Prim)
 open import Language.Typed.Type using (Flat; base; tup; sum; fun)
 
 open import Data.Fin using (Fin)
+open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
@@ -37,8 +41,8 @@ kindᶠ (tup n) = tup n
 kindᶠ sum = inj
 kindᶠ fun = fun
 
-projectᵗ : Flat → 𝒫 Value → 𝒫 Value
-projectᵗ G D = D ≫= λ X → checked (kindᶠ G) X X
+projectᵗ : Kind → 𝒫 Value → 𝒫 Value
+projectᵗ k D = D ≫= λ X → checked k X (X ⇂ λ d → kind d ≡ k)
 
 appᵗ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 appᵗ D E = D ≫= λ F → E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩
