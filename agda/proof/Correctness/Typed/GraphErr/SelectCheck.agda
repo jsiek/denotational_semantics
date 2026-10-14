@@ -49,7 +49,9 @@ test (ttup n i) A = projᵐ i ⟨ A , ptt ⟩
 𝒮ᶜ : ∀ {Σ Δ A} → Simple Σ Δ A → Table → Env Value → 𝒫 Value
 𝒮ᶜ (atm a) T ρ = 𝒜 a T ρ
 𝒮ᶜ (pack c e) T ρ = pairᵐ ⟨ 𝒜 c T ρ , ⟨ 𝒜 e T ρ , ptt ⟩ ⟩
-𝒮ᶜ (callc f a) T ρ = callᵐ ⟨ carᵐ ⟨ 𝒜 f T ρ , ptt ⟩ , ⟨ cdrᵐ ⟨ 𝒜 f T ρ , ptt ⟩ , ⟨ 𝒜 a T ρ , ptt ⟩ ⟩ ⟩
+𝒮ᶜ (callc f a) T ρ = strictᵐ C (strictᵐ D (strictᵐ (𝒜 a T ρ) (callᵐ ⟨ C , ⟨ D , ⟨ 𝒜 a T ρ , ptt ⟩ ⟩ ⟩)))
+  where C = carᵐ ⟨ 𝒜 f T ρ , ptt ⟩
+        D = cdrᵐ ⟨ 𝒜 f T ρ , ptt ⟩
 𝒮ᶜ (tuple {n = n} as) T ρ = 𝒯ᵐ n (⟦ M.⌜ as ⌝ᵛ ⟧s[ T ] ρ)
 𝒮ᶜ (get i a) T ρ = projᵐ i ⟨ 𝒜 a T ρ , ptt ⟩
 𝒮ᶜ (inl a) T ρ = inlᵐ ⟨ 𝒜 a T ρ , ptt ⟩
