@@ -218,20 +218,6 @@ inr-rel h ⟨⟩ ()
 
 {- Values -----------------------------------------------------------------------------}
 
-kindᶠ-inj : ∀ {G H} → kindᶠ G ≡ kindᶠ H → G ≡ H
-kindᶠ-inj {G} {H} e = trans (sym (inv G)) (trans (cong back e) (inv H))
-  where
-  back : Kind → Flat
-  back (Kind.base B) = base B
-  back (Kind.tup n) = tup n
-  back Kind.inj = sum
-  back _ = fun
-  inv : ∀ G → back (kindᶠ G) ≡ G
-  inv (base B) = refl
-  inv (tup n) = refl
-  inv sum = refl
-  inv fun = refl
-
 {- the check of chk: the kinds of the elements related to a value of type Any
    are those of its flat type -}
 proj-adeq : ∀ t (u : Val Σ Any) {X} → PS X u

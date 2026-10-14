@@ -129,6 +129,12 @@ module _ {Σ : List ℕ} (T : Table) where
   put-mono (reg r) k l D⊆ = k (le-reg r l D⊆)
   put-mono (slot p _) k l D⊆ = let-mono D⊆ (λ X → k (le-slot {X = X} {X} p l (λ _ z → z)))
 
+  putˢ-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {κ κ' : Kont} → (∀ {ρ ρ' R R' F F'} → Le ψ' ρ ρ' R R' F F' → κ ρ R F ⊆ κ' ρ' R' F')
+    → ∀ {ρ ρ' R R' F F' D D'} → Le ψ ρ ρ' R R' F F' → D ⊆ D' → putˢ {Σ} T d D κ ρ R F ⊆ putˢ {Σ} T d D' κ' ρ' R' F'
+  putˢ-mono (reg r) {κ} {κ'} k {ρ} {ρ'} {R} {R'} {F} {F'} {D} {D'} l D⊆ =
+    ≫=-mono {F = λ _ → κ ρ (R [ r ≔ D ]) F} {λ _ → κ' ρ' (R' [ r ≔ D' ]) F'} D⊆ (λ _ → k (le-reg r l D⊆))
+  putˢ-mono (slot p lt) = put-mono (slot p lt)
+
   mono-seq : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {B B' : BEnv Bs} → BLe B B' → ∀ {ρ ρ' R R' F F'} → Le ψ ρ ρ' R R' F F'
     → ⟦_⟧ˢ T k B ρ R F ⊆ ⟦_⟧ˢ T k B' ρ' R' F'
   mono-seq (movq a d ∷ k) b l = put-mono d (mono-seq k b) l (𝒪-mono a l)
@@ -145,10 +151,7 @@ module _ {Σ : List ℕ} (T : Table) where
     where
     C⊆ = λ w → λ { ⟨ V , ⟨ ⟨ U , ⟨ e∈ , ⟨ U⊆ , U≢ ⟩ ⟩ ⟩ , ⟨ V⊆ , V≢ ⟩ ⟩ ⟩ →
       ⟨ V , ⟨ ⟨ U , ⟨ 𝒪-mono a l _ e∈ , ⟨ (λ d d∈ → rg l rdi e₁ d (U⊆ d d∈)) , U≢ ⟩ ⟩ ⟩ , ⟨ (λ d d∈ → rg l rsi e₂ d (V⊆ d d∈)) , V≢ ⟩ ⟩ ⟩ }
-  mono-seq (chk t x (reg r) ∷ k) {B} {B'} b {ρ} {ρ'} {R} {R'} l = ≫=-mono {F = λ _ → ⟦_⟧ˢ T k B ρ ((R [ rax ≔ init ]) [ r ≔ _ ]) init} {λ _ → ⟦_⟧ˢ T k B' ρ' ((R' [ rax ≔ init ]) [ r ≔ _ ]) init} P⊆ (λ _ → mono-seq k b (le-reg r (le-rax l) P⊆))
-    where P⊆ = lower (mono (project-good kind₄ t) _ _ ⟨ lift (fr l x) , ptt ⟩)
-  mono-seq (chk t x (slot p lt) ∷ k) b l =
-    put-mono (slot p lt) (mono-seq k b) (le-rax l) (lower (mono (project-good kind₄ t) _ _ ⟨ lift (fr l x) , ptt ⟩))
+  mono-seq (chk t x d ∷ k) b l = putˢ-mono d (mono-seq k b) (le-rax l) (lower (mono (project-good kind₄ t) _ _ ⟨ lift (fr l x) , ptt ⟩))
   mono-seq (retq e) b l = rg l rax e
   mono-seq (jmp l') b l = b l' (fr l)
   mono-seq (je l₁ l₂) {B} {B'} b {ρ} {ρ'} l = ≫=-mono {F = λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩} {λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ (λ _ → B' l₁ ρ') , ⟨ (λ _ → B' l₂ ρ') , ptt ⟩ ⟩ ⟩} (fl l refl) (λ X⊆ → 𝒞⇂-⊆ {A = λ _ → B l₁ ρ} {λ _ → B' l₁ ρ'} {λ _ → B l₂ ρ} {λ _ → B' l₂ ρ'} X⊆

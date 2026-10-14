@@ -32,7 +32,8 @@ open import proof.Framework.GraphModel.Domain using (Value; ω; ν; Con; Con-⌈
 open import proof.Framework.GraphModel.ErrorMonad using (ΛΛᵐ-val; errcode-con) renaming (Val to Valᴰ)
 open import Framework.GraphModel.Env using (Env)
 open import Framework.GraphModel.ErrorMonad using (errcode)
-open import Semantics.GraphErr.Typed.Ops using (init)
+open import Semantics.GraphErr.Typed.Ops using (init; kindᶠ)
+open import Framework.GraphModel.ErrorMonad using (Kind)
 open import Semantics.GraphErr.Typed.Imp using (Table)
 open import Semantics.GraphErr.Typed.Clos5 using (tbl)
 open import Semantics.GraphErr.Typed.X86 using (RegsD; called-regs; codeₜ) renaming (_[_≔_] to _[_≔ˢ_])
@@ -167,12 +168,43 @@ Rets-Errs {s} {v} ⟨ t , ⟨ τ , r ⟩ ⟩ er with er halt
   stop-inj : ∀ {o o' : Obs} → stop {S = State Σ} o ≡ stop o' → o ≡ o'
   stop-inj refl = refl
 
+{- Values ----------------------------------------------------------------------------}
+
+pack-η : ∀ (v : Val Σ ⟪ fun ⟫) → v ≡ pack (code-of v) (env-of v)
+pack-η (pack c e) = refl
+
+{- the kinds of flat types are distinct -}
+kindᶠ-inj : ∀ {G H} → kindᶠ G ≡ kindᶠ H → G ≡ H
+kindᶠ-inj {G} {H} e = trans (sym (inv G)) (trans (cong back e) (inv H))
+  where
+  back : Kind → Flat
+  back (Kind.base B) = base B
+  back (Kind.tup n) = tup n
+  back Kind.inj = sum
+  back _ = fun
+  inv : ∀ G → back (kindᶠ G) ≡ G
+  inv (base B) = refl
+  inv (tup n) = refl
+  inv sum = refl
+  inv fun = refl
+
 {- Related locations ---------------------------------------------------------------}
 
 {- the slot of the open closure holds it -}
 Op : ∀ {η Δ} (O : Maybe (Δ ∋ ⟪ fun ⟫)) → Frame Σ Δ → Opened Σ η O → Set
 Op nothing φ _ = ⊤
 Op (just x) φ o = φ ! x ≡ pack (proj₁ o) (proj₂ o)
+
+{- the value in a register, of type τ -}
+rty : ℕ → RTy → Ty
+rty η (ty A) = A
+rty η codeα = code η
+rty η tupα = ⟪ tup η ⟫
+
+toV : ∀ {η} τ → RV Σ η τ → Val Σ (rty η τ)
+toV (ty A) v = v
+toV codeα v = v
+toV tupα v = v
 
 module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
 
@@ -181,9 +213,7 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   PS D v = ∀ d → d ∈ D → P d v
 
   PR : ∀ {η} τ → 𝒫 Value → RV Σ η τ → Set
-  PR (ty A) D v = PS D v
-  PR codeα D v = PS D v
-  PR tupα D v = PS D v
+  PR τ D v = PS D (toV τ v)
 
   PM : ∀ {η} mt → 𝒫 Value → MV Σ η mt → Set
   PM (just τ) D v = PR τ D v
@@ -241,15 +271,13 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫) → Rel m ρ R F
     → Rel {ψ = st (wipe Γ) Δ (just x) F'} ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩ ρ R F
   wipe-rel {Γ = Γ} {m = m} x (mr f g l o) =
-    mr f (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi → fg (Regs.si Γ) (g rsi) }) l (pk (frame m ! x))
+    mr f (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi → fg (Regs.si Γ) (g rsi) }) l (pack-η (frame m ! x))
     where
     fg : ∀ {η η'} mt {D v} → PM {η} mt D v → PM {η'} (forgetα mt) D (forgetᵥ mt v)
     fg (just (ty A)) h = h
     fg (just codeα) h = tt
     fg (just tupα) h = tt
     fg nothing h = tt
-    pk : ∀ (v : Val Σ ⟪ fun ⟫) → v ≡ pack (code-of v) (env-of v)
-    pk (pack c e) = refl
 
 {- The table of the program -----------------------------------------------------------}
 
