@@ -175,51 +175,46 @@ module G {Σf : List ℕ} (dsf : All (Code Σf) Σf) where
   runs≈ : ∀ ck {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) {r : Ren (Out.Σ' (globs Ms D)) Σf} {ρ₁ ρ₂}
     → Contains (Out.made (globs Ms D)) r → Env≈ ρ₁ ρ₂
     → RelResult (Pointwise _≈_) (S4.evals ck ρ₁ Ms) (T.evals dsf ck ρ₂ (wks r (Out.res (globs Ms D))))
-  run₁ : ∀ ck {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) {r : Ren (Out.Σ' (glob M D)) Σf} {ρ₁ ρ₂}
-    → Contains (Out.made (glob M D)) r → Env≈ ρ₁ ρ₂
-    → RelResult _≈_ (S4.eval ck ρ₁ M) (T.eval dsf ck ρ₂ (wk r (Out.res (glob M D))))
   call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S4.call ck f v) (T.call dsf ck g w)
 
-  run≈ ck M D c E = run₁ ck M D c E
-
-  run₁ ck (S.` x) D c E = ret (E x)
-  run₁ ck (S.code N) D {r} c E with glob N D in eq
+  run≈ ck (S.` x) D c E = ret (E x)
+  run≈ ck (S.code N) D {r} c E with glob N D in eq
   ... | out s D' N' with c
   ...   | r' , h , d , c' = ret (code≈ (gcode D _ eq r' (contains-cong D' h c') d))
-  run₁ ck (S.pack L M) D {r} c E with glob L D | run≈ ck L D
+  run≈ ck (S.pack L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
     bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → ret (pack≈' v w)
-  run₁ ck (S.callc L M) D {r} c E with glob L D | run≈ ck L D
+  run≈ ck (S.callc L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
     bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → call≈ ck v w
-  run₁ ck (S.lit B k) D c E = ret const≈
-  run₁ ck (S.tuple Ms) D c E with globs Ms D | runs≈ ck Ms D
+  run≈ ck (S.lit B k) D c E = ret const≈
+  run≈ ck (S.tuple Ms) D c E with globs Ms D | runs≈ ck Ms D
   ... | out s D' Ms' | ih = bind-rel (ih c E) λ vs → ret (tup≈ vs)
-  run₁ ck (S.get i M) D c E with glob M D | run≈ ck M D
+  run≈ ck (S.get i M) D c E with glob M D | run≈ ck M D
   ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (nth≈ i v)
-  run₁ ck (S.inl M) D c E with glob M D | run≈ ck M D
+  run≈ ck (S.inl M) D c E with glob M D | run≈ ck M D
   ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (inl≈ v)
-  run₁ ck (S.inr M) D c E with glob M D | run≈ ck M D
+  run≈ ck (S.inr M) D c E with glob M D | run≈ ck M D
   ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (inr≈ v)
-  run₁ ck (S.case L M N) D {r} c E with glob L D | run≈ ck L D
+  run≈ ck (S.case L M N) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM with glob N D₂ | glob-ext N D₂ | run≈ ck N D₂
   ...     | out s₃ D₃ N' | e₃ | ihN rewrite wk-wk r (⊑-∋ (⊑-trans s₂ s₃)) L' | wk-wk r (⊑-∋ s₃) M' =
     bind-rel (ihL (contains-ext (ext-trans e₂ e₃) c) E) λ u → either≈ u
       (λ v → ihM (contains-ext e₃ c) (env-ext v E)) (λ v → ihN c (env-ext v E))
-  run₁ ck (S.prim p L M) D {r} c E with glob L D | run≈ ck L D
+  run≈ ck (S.prim p L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
     bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → ret (δ≈ p v w)
-  run₁ ck (S.let′ M N) D {r} c E with glob M D | run≈ ck M D
+  run≈ ck (S.let′ M N) D {r} c E with glob M D | run≈ ck M D
   ... | out s₁ D₁ M' | ihM with glob N D₁ | glob-ext N D₁ | run≈ ck N D₁
   ...   | out s₂ D₂ N' | e₂ | ihN rewrite wk-wk r (⊑-∋ s₂) M' =
     bind-rel (ihM (contains-ext e₂ c) E) λ v → ihN c (env-ext v E)
-  run₁ ck (S.inject G M) D c E with glob M D | run≈ ck M D
+  run≈ ck (S.inject G M) D c E with glob M D | run≈ ck M D
   ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (dyn≈ v)
-  run₁ ck (S.project t M) D c E with glob M D | run≈ ck M D
+  run≈ ck (S.project t M) D c E with glob M D | run≈ ck M D
   ... | out s D' M' | ih = bind-rel (ih c E) (project≈ t)
 
   runs≈ ck [] D c E = ret []
