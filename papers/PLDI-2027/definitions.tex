@@ -2969,13 +2969,46 @@ Lemmas~\ref{lem:t-gerr-cast}, \ref{lem:t-gerr-enclose},
 $\Tl{Clos3}$), Theorem~\ref{lem:t-gerr-delay} ($\Same$), and
 Theorems~\ref{lem:t-gerr-globalize}, \ref{lem:t-gerr-rco-prog},
 \ref{lem:t-gerr-lift-prog}, \ref{lem:t-gerr-explicate} and
-\ref{lem:t-gerr-select} ($\simeq$). Adequacy (Part~II and
-\texttt{Theorems/GraphErrors.agda}) turns these into statements about the
-ISWIM and $\Tl{Clos5}$ machines.
-% TODO-X86T: adequacy of the graph model with errors for the X86^T machine
-% (being written, replacing the untyped X86 adequacy that moved to
-% agda/Untyped/) should be added here: "... about the ISWIM, Clos5^T and
-% X86^T machines", with the x86-*-iff and end-to-end-x86-* statements.
+\ref{lem:t-gerr-select} ($\simeq$). Adequacy turns these into statements
+about the ISWIM, $\Tl{Clos5}$ and $\Tl{X86}$ machines
+(\texttt{Theorems/GraphErrors.agda}).
+
+\paragraph{Adequacy for $\Tl{X86}$.} The meaning tells the three outcomes
+of the $\Tl{X86}$ machine apart, directly
+(\texttt{proof/\allowbreak Adequacy/\allowbreak GraphErr/\allowbreak X86.agda}): for an $\Tl{X86}$ program $P$
+whose table is consistent and in which the code of each definition depends
+only on the older definitions (as the semantics gives definition $k$ only
+the meanings of $b_0, \ldots, b_{k-1}$, while the machine may call any),
+\begin{align*}
+  \omega \in \SEM{P}^{\Tl{X86},\omega} &\iff \Term_{\Tl{X86}(P)}(\error) &
+  c \in \SEM{P}^{\Tl{X86},\omega} &\iff \Term_{\Tl{X86}(P)}(c) \\
+  \mathit{val}(\SEM{P}^{\Tl{X86},\omega}) &\iff \text{it terminates with an answer} &
+  \SEM{P}^{\Tl{X86},\omega} = \emptyset &\iff \Div_{\Tl{X86}(P)} .
+\end{align*}
+Soundness (\texttt{X86Soundness.agda}) gives each state a set that a step
+can only shrink: the meaning of its sequence, under its stack, on finite
+parts of the meanings of the values in the locations its type has; only
+$\key{chk}$ stops with an error, on a value whose meaning has an element
+of another kind than its tag. Adequacy (\texttt{X86LogRel.agda}) is a
+logical relation $\mathbb{V}$ between elements and machine values, as for
+ISWIM; an element of the meaning of a sequence is related to the run
+from its state ($\omega$ to an error, any other element to the return of
+a related value), a location to a set when all its elements are related
+to its value, and code by its entries $X \mapsto (Y \mapsto w)$. Since the
+types say what each location holds, and an operand is never $\omega$, a
+register write needs no strictness, and every element of a call's result
+is related to the one value the callee returns, the machine being
+deterministic: so the semantics, with substitutions for register writes,
+is faithful to the machine. The programs of the compiler meet the two
+conditions (\texttt{compile-ok}, \texttt{EndToEnd.agda}): the code of each
+definition means that of the $\Tl{Clos5}$ definition it comes from, which
+globalize makes refer only to older ones, and the table is consistent, as
+$\Tl{CFG}$'s is. So the ISWIM machine on $M$ and the $\Tl{X86}$ machine on
+$\pass{compile\text{-}x86}(M)$ agree on every outcome, by
+Theorem~\ref{lem:t-gerr-compiler} and the adequacy of both machines, with
+no use of the CEK column's simulation. Adequacy for the $\Tl{Clos5}$
+machine is still derived, from the ISWIM machine's, $\Same$, and the CEK
+column's simulation.
 
 \paragraph{Where it doesn't match the Agda literally.}
 The Agda names below have superscripts and subscripts, written here as
@@ -5785,15 +5818,23 @@ closed $M$.
   ($c \in \SEM{M}\rho_0 \iff \Term_{\mathrm{ISWIM}(M)}(c)$) and on answers
   ($\SEM{M}\rho_0 \NE$ iff the machine terminates with an answer), and a
   program that errs or diverges means $\emptyset$; the same four hold for
-  the $\Tl{Clos5}$ machine on $\pass{compile}(M)$. With the denotational
-  theorems, observed through the machines, $\pass{compile}$ preserves the
-  constants a program terminates with and whether it terminates with an
-  answer.
-  % TODO-X86T: the X86 statements (x86-const-iff, x86-nonempty-iff,
-  % end-to-end-x86-*) were removed with the untyped X86 adequacy (now in
-  % agda/Untyped/). Add the direct adequacy of the graph model for the
-  % X86^T machine on compile-x86(M), and the end-to-end statements for
-  % compile-x86, once they are in Theorems/Adequacy.agda.
+  the $\Tl{Clos5}$ machine on $\pass{compile}(M)$, and the first two for
+  the $\Tl{X86}$ machine on $\pass{compile\text{-}x86}(M)$
+  ($c \in \SEM{\pass{compile\text{-}x86}(M)}^{\Tl{X86}} \iff
+  \Term_{\Tl{X86}(\pass{compile\text{-}x86}(M))}(c)$, and nonempty iff it
+  terminates with an answer: \texttt{x86-const-iff},
+  \texttt{x86-nonempty-iff}). With the denotational
+  theorems, observed through the machines, $\pass{compile}$ and
+  $\pass{compile\text{-}x86}$ preserve the constants a program terminates
+  with and whether it terminates with an answer
+  (\texttt{end-to-end-x86-const}, \texttt{end-to-end-x86-converges}, from
+  the adequacy for ISWIM, \texttt{compile-x86-same} and the adequacy for
+  $\Tl{X86}$). For $\Tl{X86}$, adequacy (a logical relation with the values
+  of $\Tl{Clos5}$, \texttt{proof/Adequacy/X86LogRel.agda} and
+  \texttt{Clos5Values.agda}) holds for every program; soundness
+  (\texttt{X86Soundness.agda}) for a consistent table that holds each
+  definition's code under the whole table, which the compiler's programs
+  have (\texttt{X86Compiled.agda}).
 \item \textbf{Graph model with errors} (\texttt{Theorems/GraphErrors.agda};
   Section~\ref{sec:t-gerr}). Every pass but delay preserves the
   meaning exactly, errors included (simplify and cast insertion when
@@ -5806,21 +5847,26 @@ closed $M$.
   $\SEM{M}\rho_0$, when $\mathit{Closed}(M)$, through
   $\SEM{\pass{compile\text{-}x86}(M)}^{\Tl{X86},\omega}$.
   Adequacy: for closed $M$, the meaning tells apart
-  the outcomes of the ISWIM machine on $M$ and of the $\Tl{Clos5}$ machine on
-  $\pass{compile}(M)$:
+  the outcomes of the ISWIM machine on $M$, of the $\Tl{Clos5}$ machine on
+  $\pass{compile}(M)$ and of the $\Tl{X86}$ machine on
+  $\pass{compile\text{-}x86}(M)$:
   $\omega$ is in it iff the machine errs, $c$ iff it terminates with $c$,
-  a value iff it terminates with an answer, and nothing iff it diverges.
-  So the ISWIM machine on $M$ and the $\Tl{Clos5}$ machine on its
-  compilation stop with an error together, stop with the same constants,
-  stop with an answer together, and diverge together; and likewise for
-  simplify, through the ISWIM machine. Adequacy for the $\Tl{Clos5}$
+  a value iff it terminates with an answer, and nothing iff it diverges
+  (\texttt{x86-error-iff}, \texttt{x86-const-iff},
+  \texttt{x86-converges-iff}, \texttt{x86-diverges-iff} for $\Tl{X86}$).
+  So the ISWIM machine on $M$ and the $\Tl{Clos5}$ and $\Tl{X86}$ machines on
+  its compilation stop with an error together, stop with the same
+  constants, stop with an answer together, and diverge together
+  (\texttt{end-to-end-x86-error}, \ldots); and likewise for
+  simplify, through the ISWIM machine. Adequacy for the $\Tl{X86}$ machine
+  is direct, a soundness proof and a logical relation against the
+  $\Tl{X86}$ machine (\texttt{proof/Adequacy/GraphErr/X86.agda}), for the
+  programs of the compiler, whose table is consistent and whose
+  definitions' code depends only on the older ones (\texttt{compile-ok});
+  so the end-to-end statements for $\pass{compile\text{-}x86}$ do not use
+  the CEK column. Adequacy for the $\Tl{Clos5}$
   machine is derived from the ISWIM machine's, $\Same$, and the CEK
   column's simulation, not proved by a logical relation of its own.
-  % TODO-X86T: the x86-*-iff and end-to-end-x86-* statements were removed
-  % with the untyped X86 adequacy (now in agda/Untyped/). Add the direct
-  % adequacy of the graph model with errors for the X86^T machine on
-  % compile-x86(M), and the end-to-end statements through it, once they
-  % are in Theorems/GraphErrors.agda.
 \item \textbf{Erasure} (\texttt{Theorems/X86Erasure.agda}), assurance
   theorems, not passes of the compiler and not among the comparison's
   statements: $\Tl{X86}$ is X86 with types. Erasing the types keeps the
