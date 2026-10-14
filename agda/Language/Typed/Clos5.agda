@@ -1,7 +1,7 @@
 {-
 
   Clos5ᵀ: Clos5, intrinsically typed. The output of typed globalize
-  (Compiler/Typed/Globalize.agda).
+  (Compiler/Globalize.agda).
 
   The code of every function is a global definition. A program has a
   table Σ, the lengths of the environments of its definitions (newest

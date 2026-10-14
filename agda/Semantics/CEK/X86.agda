@@ -2,7 +2,7 @@
 
   An abstract machine for X86 (Language/X86.agda), one instruction (or
   jump) per step. Values are those of the Clos5 machine, and frames are
-  lists of slots as in Imp (Semantics/CEK/Imp.agda). A state
+  lists of slots (Semantics/CEK/Values.agda). A state
     run is j bs σ f φ ρ
   runs the instructions is and then the jump j, with the blocks bs that
   j may jump to (as in CFG: those older than the current block, or all

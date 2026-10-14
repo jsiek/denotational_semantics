@@ -1,7 +1,7 @@
 {-
 
   CFGᵀ: CFG, intrinsically typed. The output of typed explicate control
-  (Compiler/Typed/Explicate.agda), after Essentials of Compilation.
+  (Compiler/Explicate.agda), after Essentials of Compilation.
 
   A body is a control-flow graph of blocks; a block is a tail, typed by
   the frame context Δ it starts in (the types of the slots it may read,

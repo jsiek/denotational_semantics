@@ -5,7 +5,7 @@
   (Semantics/CEK/X86.agda), for well-formed programs (WF,
   Adequacy/GraphErr/X86WF.agda: each label refers to an older
   definition), which the compilers produce. As for Clos5
-  (Adequacy/GraphErr/Clos5.agda), the denotation tells all three outcomes
+  (Untyped/proof/Adequacy/GraphErr/Clos5.agda), the denotation tells all three outcomes
   of the machine apart:
 
     error-iff     : ω ∈ ⟦ P ⟧ₓ exactly when the machine stops with an
@@ -17,7 +17,7 @@
     diverges-iff  : ⟦ P ⟧ₓ is empty exactly when it diverges.
 
   (For the programs compile-x86 M of the typed compiler, see
-  Adequacy/Typed/GraphErr.agda.)
+  Adequacy/GraphErr/EndToEnd.agda.)
 
   Soundness is in GraphErr/X86Soundness.agda (with the consistency of
   the table of every program, GraphErr/X86Consistent.agda), adequacy

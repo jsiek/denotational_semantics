@@ -6,7 +6,7 @@
   the graph model with errors and the two denotations are the Same: they
   err together, have the same constants, and have values together.
   Used by the end-to-end theorems of the graph model with errors
-  (Adequacy/Typed/GraphErr.agda, and those of the preserved untyped
+  (Adequacy/GraphErr/EndToEnd.agda, and those of the preserved untyped
   compiler).
 
 -}

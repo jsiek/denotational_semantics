@@ -149,7 +149,6 @@ import Untyped.proof.Adequacy.GraphErr.Clos5LogRel
 import Untyped.proof.Adequacy.GraphErr.Clos5Soundness
 import Untyped.proof.Adequacy.GraphErr.Clos5WF
 import Untyped.proof.Adequacy.GraphErr.EndToEnd
-import Untyped.proof.Adequacy.GraphErr.Simplify
 import Untyped.proof.Adequacy.GraphErr.X86CompileWF
 import Untyped.proof.Adequacy.ISWIMCompile
 import Untyped.proof.Adequacy.X86CompileWF

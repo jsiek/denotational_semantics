@@ -1,7 +1,7 @@
 {-
 
   Clos3ᵀ: Clos3, intrinsically typed. The output of typed concretize
-  (Compiler/Typed/Concretize.agda).
+  (Compiler/Concretize.agda).
 
   A closure clos N (M₀ ∷ … ∷ Mₙ₋₁) has closed code N with two
   variables: the argument (variable 0, of type Any) and the tuple of its

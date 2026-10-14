@@ -1,7 +1,7 @@
 {-
 
   ISWIMᵀ: ISWIM with explicit casts, intrinsically typed. The output of
-  cast insertion (Compiler/Typed/Cast.agda).
+  cast insertion (Compiler/Cast.agda).
 
   Tm k A is a term of type A in a context of k variables, each of type
   Any (functions, let and case bind values of type Any). The operations

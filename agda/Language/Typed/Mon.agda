@@ -1,7 +1,7 @@
 {-
 
   Monᵀ: monadic normal form of Clos5ᵀ, intrinsically. The output of
-  typed remove complex operands (Compiler/Typed/RCO.agda).
+  typed remove complex operands (Compiler/RCO.agda).
 
   An atom is a variable, a literal or a reference to a definition. The
   operands of every operation, and the scrutinee of case, are atoms; the

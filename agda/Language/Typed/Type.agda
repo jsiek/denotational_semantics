@@ -2,7 +2,7 @@
 
   The types of the typed intermediate languages (Language/Typed/), after
   Essentials of Compilation, ch. 9 (the dynamically typed source becomes
-  statically typed by cast insertion, Compiler/Typed/Cast.agda).
+  statically typed by cast insertion, Compiler/Cast.agda).
 
   * Any: a value of any flat type, tagged with it.
   * Flat types mirror the values of the untyped languages: a constant of
@@ -24,7 +24,7 @@
   Tag: the flat types that project can test, those that cast insertion
   projects to (a function, a sum, an integer, a tuple of at least one
   component). Each can be tested by an existing X86 instruction that
-  errs on any other value (Compiler/Typed/Select.agda).
+  errs on any other value (Compiler/Select.agda).
 
 -}
 

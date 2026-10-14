@@ -1,7 +1,7 @@
 {-
 
   The semantics of Impᵀ (Language/Typed/Imp.agda) in the graph model, in
-  continuation-passing style, as Semantics/Graph/ImpK.agda. The frame σ
+  continuation-passing style, as Untyped/Semantics/Graph/ImpK.agda. The frame σ
   gives each slot (a typed index, position idx) a meaning; since the
   frame is typed, an expression never changes the slots it can see, so
   a continuation κ takes only the value of the expression. Atoms and

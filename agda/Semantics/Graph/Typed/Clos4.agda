@@ -1,7 +1,7 @@
 {-
 
   The semantics of Clos4ᵀ (Language/Typed/Clos4.agda) in the graph model,
-  as that of Clos4 (Semantics/Graph/Clos4Iswim.agda): code is a closed
+  as that of Clos4 (Untyped/Semantics/Graph/Clos4Iswim.agda): code is a closed
   function of two arguments, a closure the pair of code and environment,
   and callc applies the closure's code (car) to its environment (cdr) and
   the argument. A value of type ⟪ fun ⟫ is a pair, so project tests a

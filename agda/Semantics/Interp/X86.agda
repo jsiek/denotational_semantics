@@ -19,7 +19,7 @@
   result and %rdi, %rsi and the flag unset. main runs in a frame of
   locals zeros, with %rax 0 and the rest unset.
 
-  As in CFG (Semantics/Interp/CFG.agda), only calls tick the clock (see the design
+  As in CFGᵀ (Semantics/Interp/Typed/CFG.agda), only calls tick the clock (see the design
   note in Clock.agda), and a jump to l walks the list of blocks it may
   jump to (newest first) and runs block l with the blocks older than
   it, so the interpreter is structurally recursive on the clock, the

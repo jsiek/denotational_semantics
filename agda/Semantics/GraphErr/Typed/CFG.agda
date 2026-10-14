@@ -1,7 +1,7 @@
 {-
 
   The semantics of CFGᵀ (Language/Typed/CFG.agda) in the graph model
-  with errors, as that of CFG (Semantics/GraphErr/CFG.agda). The frame
+  with errors, as that of CFG (Untyped/Semantics/GraphErr/CFG.agda). The frame
   is the environment, as in Impᵀ (Semantics/GraphErr/Typed/Imp.agda);
   a tail that forgets the slots of a finished scope (p : Δ' ⊑ Δ) sees
   the environment without them (drop). A label means the block it

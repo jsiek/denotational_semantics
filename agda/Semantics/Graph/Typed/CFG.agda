@@ -1,7 +1,7 @@
 {-
 
   The semantics of CFGᵀ (Language/Typed/CFG.agda) in the graph model, as
-  that of CFG (Semantics/Graph/CFG.agda). A tail runs in a frame σ, given
+  that of CFG (Untyped/Semantics/Graph/CFG.agda). A tail runs in a frame σ, given
   the meanings B of the blocks it can see (by their typed labels), and
   means a set of values. Atoms and simple expressions are Impᵀ's
   (Semantics/Graph/Typed/Imp.agda).

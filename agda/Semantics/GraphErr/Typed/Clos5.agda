@@ -4,7 +4,7 @@
   with errors: that of Clos4ᵀ (Semantics/GraphErr/Typed/Clos4.agda), with
   the code of a function a reference to a global definition. Under a
   table T, the meanings of the definitions by their position from the
-  oldest (as in Semantics/GraphErr/Clos5.agda), a reference f means
+  oldest (as in Untyped/Semantics/GraphErr/Clos5.agda), a reference f means
   T (lvl f); let binds a value of any type.
 
   The table of a program (tbl) gives each definition the meanings of

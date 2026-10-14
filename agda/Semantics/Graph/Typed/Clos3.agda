@@ -1,7 +1,7 @@
 {-
 
   The semantics of Clos3ᵀ (Language/Typed/Clos3.agda) in the graph model,
-  as that of Clos3 (Semantics/Graph/Clos3Iswim.agda): a closure is its
+  as that of Clos3 (Untyped/Semantics/Graph/Clos3Iswim.agda): a closure is its
   code, a closed function of the tuple of its free variables and of the
   argument, applied to that tuple; otherwise as ISWIMᵀ. Variable x is
   position idx x of the environment.

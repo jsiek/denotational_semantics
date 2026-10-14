@@ -3,7 +3,7 @@
   Soundness of the X86 machine with respect to the graph model: what the
   machine computes is in the denotation of the (well-formed) program.
 
-  As for Clos5 (Adequacy/Clos5Soundness.agda), each machine state
+  As for Clos5 (Untyped/proof/Adequacy/Clos5Soundness.agda), each machine state
   denotes a set of values (𝒮) that every step can only shrink (step-⊆),
   and code pointers denote the entries of the table T⁺, with ν added.
   The state runs in continuation-passing style (Semantics/Graph/X86.agda), and the

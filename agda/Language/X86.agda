@@ -5,7 +5,7 @@ module Language.X86 where
  (Compiler/Select.agda): x86 with variables, after Essentials of
  Compilation, over abstract values.
 
- A body is a control-flow graph of blocks, as in CFG (Language/CFG.agda),
+ A body is a control-flow graph of blocks, as in CFGᵀ (Language/Typed/CFG.agda),
  but a block is a sequence of instructions ending in a jump. The
  locations are the slots of the current frame (the variables) and the
  registers %rax, %rdi and %rsi; an operand is a location, an immediate,

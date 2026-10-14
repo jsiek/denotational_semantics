@@ -2,8 +2,8 @@ module Semantics.Graph.X86 where
 {-
 
  The semantics of X86, the language after the select-instructions pass
- (Language/X86.agda), in continuation-passing style, as Semantics/Graph/CFG.agda and
- Semantics/Graph/ImpK.agda.
+ (Language/X86.agda), in continuation-passing style, as Semantics/Graph/Typed/CFG.agda and
+ Semantics/Graph/Typed/Imp.agda.
 
  The state of a body is its frame σ (a store, Semantics/Graph/Frames.agda), its
  registers ρ (a set of values for each), and the flag φ, a set of values

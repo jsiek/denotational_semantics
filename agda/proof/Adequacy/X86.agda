@@ -4,7 +4,7 @@
   respect to the X86 machine (Semantics/CEK/X86.agda), for
   well-formed programs (WF, Adequacy/X86WF.agda), which the compiler
   produces from closed ISWIM programs (compile-x86-wf,
-  Adequacy/X86CompileWF.agda). As for Clos5 (Adequacy/Clos5.agda):
+  Adequacy/X86CompileWF.agda). As for Clos5 (Untyped/proof/Adequacy/Clos5.agda):
 
     soundness : if the machine terminates with an answer o, then
       ⟦ P ⟧ₚ has an element of the shape of o (Adequacy/X86Soundness.agda);

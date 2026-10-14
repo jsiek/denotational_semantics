@@ -93,7 +93,7 @@ import Untyped.proof.Correctness.GraphErr.ExplicateCorrect as ExplicateCorrect
 import Untyped.proof.Correctness.GraphErr.SelectCorrect as SelectCorrect
 import Untyped.proof.Correctness.GraphErr.CompilerCorrect as CompilerCorrect
 import proof.Adequacy.GraphErr.ISWIM as Adequacy
-import Untyped.proof.Adequacy.GraphErr.Simplify as SimplifyMachine
+import proof.Adequacy.GraphErr.Simplify as SimplifyMachine
 import Untyped.proof.Adequacy.GraphErr.Clos5 as AdequacyClos5
 import Untyped.proof.Adequacy.GraphErr.X86CompileWF as AdequacyX86
 import Untyped.proof.Adequacy.GraphErr.EndToEnd as EndToEnd

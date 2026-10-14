@@ -10,7 +10,7 @@
     the right component of a tuple of the right size, a left or right
     injection. A function is also observed through the entries ⦅ u , v ⦆
     of a pair, which is how closures are represented after delay
-    (Adequacy/Clos5.agda); the ISWIM semantics never produces them.
+    (Adequacy/Clos5.agda, for Clos5ᵀ); the ISWIM semantics never produces them.
 
 -}
 

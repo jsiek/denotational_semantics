@@ -1,7 +1,7 @@
 {-
 
   Clos4ᵀ: Clos4, intrinsically typed. The output of typed delay
-  (Compiler/Typed/Delay.agda).
+  (Compiler/Delay.agda).
 
   A closure is a pair of closed code and the tuple of its free
   variables, packed so that its type ⟪ fun ⟫ hides the length n of the

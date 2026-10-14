@@ -1,7 +1,7 @@
 {-
 
   The semantics of Clos2ᵀ (Language/Typed/Clos2.agda) in the graph model,
-  as that of Clos2 (Semantics/Graph/Clos2Iswim.agda): a closure is strict
+  as that of Clos2 (Untyped/Semantics/Graph/Clos2Iswim.agda): a closure is strict
   in its free variables (guard-n) and is the function of the argument
   whose body sees the argument and the meanings of the free variables;
   otherwise as ISWIMᵀ (Semantics/Graph/Typed/ISWIM.agda).

@@ -3,7 +3,7 @@
   Well-formed X86 programs, for the graph model with errors
   (Semantics/GraphErr/X86.agda): the precondition of soundness and
   adequacy for the X86 machine (GraphErr/X86.agda); the compilers produce
-  them from closed ISWIM programs (Adequacy/Typed/GraphErr.agda; for the
+  them from closed ISWIM programs (Adequacy/GraphErr/EndToEnd.agda; for the
   preserved untyped compiler, GraphErr/X86CompileWF.agda in agda/Untyped/).
 
   Each label refers to an older definition (L): the semantics interprets
