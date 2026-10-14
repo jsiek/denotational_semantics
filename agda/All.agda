@@ -43,6 +43,10 @@ import Theorems.Adequacy
    theorems) -}
 import Theorems.TAL
 
+{- an assurance (not in the totals): erasing X86ᵀ to X86 keeps the meaning
+   of every program, in the CEK machines -}
+import Theorems.X86Erasure
+
 {- ---------------------------------------------------------------------------
    The untyped pipeline, preserved
    --------------------------------------------------------------------------- -}
