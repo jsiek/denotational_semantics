@@ -33,6 +33,7 @@ import Theorems.Interpreter
 import Theorems.Adequacy
 import Theorems.Reduction
 import Theorems.GraphErrors
+import Theorems.Typed
 
 {- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
@@ -139,6 +140,7 @@ import proof.Compiler.Examples.RCOExample
 import proof.Compiler.Examples.LiftLocalsExample
 import proof.Compiler.Examples.ExplicateExample
 import proof.Compiler.Examples.SelectExample
+import proof.Compiler.Examples.TypedExample
 
 {- ---------------------------------------------------------------------------
    proof/: the CEK machine + simulation development, independent of
@@ -289,3 +291,18 @@ import proof.Adequacy.GraphErr.X86Soundness
 import proof.Adequacy.GraphErr.X86LogRel
 import proof.Adequacy.GraphErr.X86
 import proof.Adequacy.GraphErr.EndToEnd
+
+{- the typed pilot (see papers/PLDI-2027/loc.md): cast insertion into the
+   statically typed ISWIMᵀ–Clos4ᵀ, the typed closure-conversion passes,
+   and their proofs on the CEK machines and in the graph model with
+   errors; the statements are Theorems/Typed.agda -}
+import proof.Correctness.Typed.CEK.CastSim
+import proof.Correctness.Typed.CEK.EncloseSim
+import proof.Correctness.Typed.CEK.ConcretizeSim
+import proof.Correctness.Typed.CEK.DelaySim
+import proof.Correctness.Typed.CEK.CompilerSim
+import proof.Correctness.Typed.GraphErr.CastCorrect
+import proof.Correctness.Typed.GraphErr.EncloseCorrect
+import proof.Correctness.Typed.GraphErr.ConcretizeCorrect
+import proof.Correctness.Typed.GraphErr.DelayCorrect
+import proof.Correctness.Typed.GraphErr.CompilerCorrect

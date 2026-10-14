@@ -663,11 +663,18 @@ def main():
         print(f'| {NAMES[s]}: theorem statements | {code_lines(THEOREMS[s])} | '
               + ' | '.join(str(code_lines(THEOREMS[s])) if t == s else '—' for t in ALL) + ' |')
     tot = {s: flines(sreach[s] - (thm - {THEOREMS[s]})) for s in ALL}
-    alls = surface
+    # the typed pilot's surface is reported in its own section of loc.md
+    typ_surface = {f for f in surface if seen[f][0] == 'typ' or f == THEOREMS['typ']
+                   or seen[f][1].startswith('typed pilot')}
+    alls = surface - typ_surface
     styles = [s for s in ALL if s != 'adeq']
     low = min(tot[s] for s in styles)
     print(f'| **total** | {flines(alls)} | '
           + ' | '.join(f'**{tot[s]}**' if s != 'adeq' and tot[s] == low else str(tot[s]) for s in ALL) + ' |')
+    print()
+    print(f'The typed pilot\'s audit surface (not in this table): '
+          f'{flines(reachable({THEOREMS["typ"]}, sgraph))} lines reached from Theorems/Typed.agda, '
+          f'{flines(typ_surface)} of them its own.')
     print()
     print(f'The adequacy statements also use ρ₀ from the denotational ones '
           f'(Theorems/Denotational.agda), not counted in its column.')
@@ -693,7 +700,7 @@ def main():
         users = [NAMES[s] for s in SIDES + ('adeq', 'gerr', 'gadeq') if u in reach[s]]
         name = ('proof.' if not os.path.exists(u) else '') + modname(u)
         print(f'| `{name}`{split_mark(u) if os.path.exists(u) else ""} | {ulines(u)} | '
-              f'{", ".join(users) or "no proof"} |')
+              f'{", ".join(users) or ("the typed pilot" if group_of[u][1].startswith("typed pilot") else "no proof")} |')
     print()
     print(f'Shared by all four proofs, not counted: {len(by_all)} modules, {nall} lines.')
     for s in SIDES + ('adeq', 'gerr', 'gadeq'):

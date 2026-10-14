@@ -74,6 +74,11 @@ that every module outside `proof/` is used by a theorem statement).
     machines on its compilation stop with an error together, stop with
     the same constants, stop with an answer together, and diverge
     together.
+  * `Theorems/Typed.agda`: the typed pilot (papers/PLDI-2027/loc.md):
+    cast insertion from ISWIM into the intrinsically typed ISWIMᵀ
+    (`Language/Typed/`, `Compiler/Typed/`) and typed enclose, concretize
+    and delay, proved on typed CEK machines (`Semantics/CEK/Typed/`)
+    and in the graph model with errors (`Semantics/GraphErr/Typed/`).
 * The compiler, shared by all four styles:
   * `Language/`: the languages (ISWIM, Clos2–Clos5, monadic normal
     form, Imp, CFG, X86) and the primitives.
