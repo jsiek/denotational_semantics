@@ -2796,25 +2796,26 @@ $\rt{v}{\kappa}$ pairs a term or value of type $A$ with a continuation
 expecting $A$, and an environment is typed by the context of its term,
 so a state is well typed by construction. The machines are machines in
 the sense of Part~II: step functions that move to the next state or
-stop with an observation (Section~\ref{sec:obs}).
+stop with an observation (Section~\ref{sec:obs}). The source ISWIM and
+the target X86 run on Part~II's machines.
 
 Every transition of Part~II that stops with $\error$ on a value of the
 wrong kind (an operator that is not a closure, a $\prj{i}$ of a
-non-tuple, a $\key{case}$ of a non-injection, a primitive on a
-non-integer, an unbound variable, a missing definition or block) has no
-counterpart: those states cannot be written. Each typed machine stops
-with $\error$ in exactly one way, a $\Tproject{t}$ of a value whose tag
-is not the flat type $\Tflatof{t}$ that $t$ tests.
+non-tuple or of a tuple of another length, a $\key{case}$ of a
+non-injection, a primitive on a non-integer, an unbound variable, a
+missing definition or block) has no counterpart: those states cannot be
+written. Each typed machine stops with $\error$ in exactly one way, a
+$\Tproject{t}$ of a value whose flat type is not $\Tflatof{t}$.
 
 \subsection{Values, continuations and shared transitions}\label{sec:t-cek-shared}
 
-A value of type $\TAny$ is a value of a flat type $G$ tagged with $G$,
-$\TdynV{G}{v}$; the components of tuples and injections, and the
-values in environments of variables of type $\TAny$, have type $\TAny$.
-The flat types $G$ are an integer (a base type), $\key{tup}\;n$,
-$\key{sum}$ and $\key{fun}$; a project's tag $t$ tests one of
-$\key{fun}$, $\key{sum}$, the integers, or a tuple of $n+1$ components
-($\Tflatof{t}$).
+A value of type $\TAny$ is a value $v$ of a flat type $G$ tagged with
+$G$, $\TdynV{G}{v}$; the components of tuples and injections, and the
+values of variables of type $\TAny$, have type $\TAny$. A value of type
+$\Tflat{B}$ is a constant $c$ of base type $B$, one of type
+$\Tflat{\Ttup{n}}$ a tuple of $n$ values, and one of type
+$\Tflat{\Tsum}$ an injection; a project's tag $t$ tests the flat type
+$\Tflatof{t}$.
 \[
 \begin{array}{rcl}
   v &::=& \cdots \mid c \mid \tupV{v_1, \ldots, v_n} \mid \inlV v \mid \inrV v \mid \TdynV{G}{v} \\
@@ -2827,25 +2828,37 @@ $\key{fun}$, $\key{sum}$, the integers, or a tuple of $n+1$ components
 \begin{align*}
   \obs(\TdynV{G}{v}) &= \obs(v), \qquad \text{otherwise $\obs$ as in Part~II (closures, code and packs give $\key{fun}$)} \\
   \Tres{n} &= n, \quad
-  \Tres{\mathsf{true}} = \inlV \TdynV{\key{tup}\,0}{\tupV{}}, \quad
-  \Tres{\mathsf{false}} = \inrV \TdynV{\key{tup}\,0}{\tupV{}} \\
+  \Tres{\mathsf{true}} = \inlV \TdynV{\Ttup{0}}{\tupV{}}, \quad
+  \Tres{\mathsf{false}} = \inrV \TdynV{\Ttup{0}}{\tupV{}} \\
   \Mach{\ell}(M) &= (\mathit{State}^{\ell},\; \step{\ell},\; \ev{M}{\emptyset}{\halt})
     \qquad (\ell \in \{\Tl{ISWIM}, \Tl{Clos2}, \Tl{Clos3}, \Tl{Clos4}\})
 \end{align*}
-The primitive $\key{eq}$ gives an injection of the empty tuple tagged
-with $\key{tup}\;0$. $\tnext$ is that of
-Section~\ref{sec:machine-shared}. The transitions shared by the machines
-of $\Tl{ISWIM}$ to $\Tl{Clos5}$ are those of Part~II for variables,
-constants, tuples, $\prj{i}$, $\key{inl}$, $\key{inr}$, $\key{case}$ and
-primitives, without the cases that stop with $\error$, together with
-$\key{let}$ (now in every language) and the casts:
+The primitive $\key{eq}$ gives an injection of the empty tuple, tagged
+with $\Ttup{0}$. $\tnext$ is that of Section~\ref{sec:machine-shared},
+which builds a tuple of the type its continuation expects. The
+transitions shared by the machines of $\Tl{ISWIM}$ to $\Tl{Clos5}$ are
+those of Part~II for variables, constants, tuples, $\prj{i}$,
+$\key{inl}$, $\key{inr}$, $\key{case}$ and primitives, without the cases
+that stop with $\error$, together with $\key{let}$ (now in every
+language) and the casts:
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{x}{\rho}{\kappa} & \nxt \rt{\rho(x)}{\kappa} \\
+  \ev{c}{\rho}{\kappa} & \nxt \rt{c}{\kappa} \\
+  \ev{\tuple{M_1, \ldots, M_n}}{\rho}{\kappa} & \nxt \tnext(\epsilon;\, M_1 \ldots M_n;\, \rho;\, \kappa) \\
+  \ev{(\prj{i} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{getK_i}{\kappa}} \\
+  \ev{(\inl M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{inlK}{\kappa}}
+    \qquad\text{and likewise for } \key{inr} \\
+  \ev{(\Case{L}{x}{M}{y}{N})}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} \\
+  \ev{\prim{p}{L}{M}}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{primL_p}{M, \rho, \kappa}} \\
   \ev{(\Let x = M \In N)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{letK}{x.N, \rho, \kappa}} \\
   \ev{(\Tinject{G} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{injK_G}{\kappa}} \\
   \ev{(\Tproject{t} M)}{\rho}{\kappa} & \nxt \ev{M}{\rho}{\Kf{projK_t}{\kappa}} \\[1ex]
+  \rt{v}{\halt} & \stp \obs(v) \\
+  \rt{v}{\Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa}} & \nxt \tnext(\bar{v}\,v;\, \bar{M};\, \rho;\, \kappa) \\
   \rt{\tupV{v_1, \ldots, v_n}}{\Kf{getK_i}{\kappa}} & \nxt \rt{v_i}{\kappa} \\
+  \rt{v}{\Kf{inlK}{\kappa}} & \nxt \rt{(\inlV v)}{\kappa}
+    \qquad\text{and likewise for } \key{inr} \\
   \rt{(\inlV u)}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{M}{\ext{\rho}{x}{u}}{\kappa} \\
   \rt{(\inrV u)}{\Kf{caseK}{x.M, y.N, \rho, \kappa}} & \nxt \ev{N}{\ext{\rho}{y}{u}}{\kappa} \\
   \rt{n}{\Kf{primL_p}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{primR_p}{n, \kappa}} \\
@@ -2857,13 +2870,13 @@ $\key{let}$ (now in every language) and the casts:
 \end{array}
 \]
 The last line is the only $\error$ of the machines. A variable is
-always bound, $i$ is below the tuple's length, and a $\key{case}$ or
+always bound, $i$ is at most the tuple's length, and a $\key{case}$ or
 primitive always finds an injection or an integer, by typing.
 
 \subsection{\texorpdfstring{$\Tl{ISWIM}$}{ISWIM}}\label{sec:t-cek-iswim}
 
 As in Part~II, without the $\error$ cases: an operator has type
-$\Tflat{\key{fun}}$, so its value is a closure.
+$\Tflat{\Tfun}$, so its value is a closure.
 \[
 \begin{array}{rcl}
   v &::=& \cloV{\lam{x} N}{\rho} \mid \cdots \\
@@ -2904,8 +2917,15 @@ tuple, and its value keeps their values as the environment of its code.
 \subsection{\texorpdfstring{$\Tl{Clos3}$}{Clos3}}\label{sec:t-cek-clos3}
 
 As $\Tl{Clos2}$, with environments typed by contexts: the code of a
-closure is closed over its argument $y : \TAny$ and its environment
-$e : \Tflat{\key{tup}\;n}$, and runs with the tuple of the closure's values.
+closure is closed over its environment $e : \Tflat{\Ttup{n}}$ and its
+argument $y : \TAny$, and runs with the tuple of the closure's values.
+\[
+\begin{array}{rcl}
+  v &::=& \closV{e\, y.\, N}{v_1 \ldots v_n} \mid \cdots \\
+  \kappa &::=& \Kf{appL}{M, \rho, \kappa} \mid \Kf{appR}{v, \kappa}
+    \mid \Kf{closK}{e\, y.\, N, \kappa} \mid \cdots
+\end{array}
+\]
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{(\clos{M_1 \ldots M_n}{e\, y} N)}{\rho}{\kappa} &
@@ -2919,11 +2939,11 @@ with application ($\key{appL}$) as in $\Tl{Clos2}$.
 \subsection{\texorpdfstring{$\Tl{Clos4}$}{Clos4}}\label{sec:t-cek-clos4}
 
 Code is a value of type $\Tcode{n}$; a closure, of type
-$\Tflat{\key{fun}}$, packs code of type $\Tcode{n}$ with an environment
-of type $\Tflat{\key{tup}\;n}$ (the type $\Tflat{\key{fun}}$ hides $n$).
+$\Tflat{\Tfun}$, packs code of type $\Tcode{n}$ with an environment
+of type $\Tflat{\Ttup{n}}$ (the type $\Tflat{\Tfun}$ hides $n$).
 $\Tcallc{L}{M}$ evaluates the closure and the argument and runs the
 closure's code with its environment and the argument, with no check,
-since the closure has type $\Tflat{\key{fun}}$. There are no pairs and no
+since the closure has type $\Tflat{\Tfun}$. There are no pairs and no
 three-operand application as in the untyped Clos4.
 \[
 \begin{array}{rcl}
@@ -2934,7 +2954,7 @@ three-operand application as in the untyped Clos4.
 \]
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
-  \ev{\TcodeV{e\, y.\, N}}{\rho}{\kappa} & \nxt \rt{\TcodeV{e\, y.\, N}}{\kappa} \\
+  \ev{\Tcodetm{e}{y}{N}}{\rho}{\kappa} & \nxt \rt{\TcodeV{e\, y.\, N}}{\kappa} \\
   \ev{\Tpack{L}{M}}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{packL}{M, \rho, \kappa}} \\
   \ev{\Tcallc{L}{M}}{\rho}{\kappa} & \nxt \ev{L}{\rho}{\Kf{callL}{M, \rho, \kappa}} \\[1ex]
   \rt{v}{\Kf{packL}{M, \rho, \kappa}} & \nxt \ev{M}{\rho}{\Kf{packR}{v, \kappa}} \\
@@ -2946,33 +2966,33 @@ three-operand application as in the untyped Clos4.
 
 \subsection{\texorpdfstring{$\Tl{Clos5}$ and $\Tl{Mon}$}{Clos5 and Mon}}\label{sec:t-cek-clos5}
 
-A program runs with its table of definitions $d_0, \ldots, d_{m-1}$; values,
-environments and continuations are indexed by the table. Code is a
-reference $\codeV{j}$ to a definition, a typed index into the table, so
-a call always finds its definition. The continuations are those of
-$\Tl{Clos4}$, and $\key{let}$ may bind a variable of any type. The
-machine takes values apart with total functions (the integer of a
-value of type $\Tflat{\key{int}}$, the components of a tuple, the
+A program runs with its definitions $d_0, \ldots, d_{m-1}$; values,
+environments and continuations are indexed by the table $\Sigma$. Code
+is a reference $\codeV{k}$ to definition $d_k$, a typed index into the
+table, so a call always finds its definition. The continuations are
+those of $\Tl{Clos4}$, and $\key{let}$ may bind a variable of any type.
+The machine takes values apart with total functions (the integer of a
+value of type $\Tflat{\key{Int}}$, the components of a tuple, the
 payload of an injection), since their types say what they are; these
 and the values are shared with the machines of $\Tl{Imp}$ and $\Tl{CFG}$.
 \[
 \begin{array}{rcl}
-  v, f, u &::=& \codeV{j} \mid \Tpack{v}{u} \mid \cdots \\
+  v, f, u &::=& \codeV{k} \mid \Tpack{v}{u} \mid \cdots \\
   \Mach{\Tl{Clos5}}(d_0, \ldots, d_{m-1};\; M) &=& (\mathit{State}^{\Tl{Clos5}},\; \step{\Tl{Clos5}}_{d_0 \ldots d_{m-1}},\; \ev{M}{\emptyset}{\halt})
 \end{array}
 \]
 The transitions are those of $\Tl{Clos4}$, with
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
-  \ev{\funref{j}}{\rho}{\kappa} & \nxt \rt{\codeV{j}}{\kappa} \\
-  \rt{w}{\Kf{callR}{\Tpack{\codeV{j}}{u}, \kappa}} & \nxt \ev{N}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
-    & d_j = \key{fun}\; e\,y.\,N
+  \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\
+  \rt{w}{\Kf{callR}{\Tpack{\codeV{k}}{u}, \kappa}} & \nxt \ev{N_k}{\{e {\mapsto} u, y {\mapsto} w\}}{\kappa}
+    & d_k = \Tcodetm{e}{y}{N_k}
 \end{array}
 \]
 in place of those for code. $\Tl{Mon}$ has no machine of its own: a
 $\Tl{Mon}$ program $P$ runs as its embedding $\Tembed{P}$ into $\Tl{Clos5}$,
 $\Mach{\Tl{Mon}}(P) = \Mach{\Tl{Clos5}}(\Tembed{P})$, which maps an atom to
-the variable, literal or $\funref{j}$ it is and every other construct
+the variable, constant or $\funref{k}$ it is and every other construct
 to the $\Tl{Clos5}$ construct of the same name.
 
 \subsection{\texorpdfstring{$\Tl{Imp}$}{Imp}}\label{sec:t-cek-imp}
@@ -2980,28 +3000,31 @@ to the $\Tl{Clos5}$ construct of the same name.
 An expression runs in a frame $\sigma$ of slots typed by its frame
 context $\Delta$, the types of the slots assigned so far; a slot is a
 typed index into $\Delta$, so an atom always has a value. The frame
-grows: $\assign{x}{e_1}{e_2}$ and a $\key{case}$ assign the next slot,
-written $\sigma, x {\mapsto} v$, which only the expression in their
-scope sees, and a continuation keeps the frame it resumes in.
-There is therefore no $\key{ret}$ state, no frames $F$ of operands, no
-$\key{caseK}$ and no $\key{callK}$, as there are in Part~II's Imp machine.
-The values are those of $\Tl{Clos5}$.
+grows: $\assign{s}{e_1}{e_2}$ and a $\key{case}$ write the next slot,
+$s = |\sigma|$, and only the expression in their scope sees it; we
+write $(\sigma, v)$ for $\sigma$ with its next slot holding $v$. A
+continuation keeps the frame it resumes in. There is therefore no
+$\key{ret}$ state, no frames $F$ of operands, no $\key{caseK}$ and no
+$\key{callK}$, as there are in Part~II's Imp machine. The values are
+those of $\Tl{Clos5}$.
 \[
 \begin{array}{rcl}
   \mathit{State}^{\Tl{Imp}} &::=& \evi{e}{\sigma}{\kappa} \\
-  \kappa &::=& \halt \mid \Kf{assignK}{x.e, \sigma, \kappa} \\
+  \kappa &::=& \halt \mid \Kf{assignK}{e, \sigma, \kappa} \\
   \mathit{Res} &::=& \key{value}(v) \mid \key{fail} \mid \key{call}(f, w)
 \end{array}
 \]
-A simple expression takes one step: its operands are atoms, so it gives
-a value, fails, or calls a closure. $\mathit{run}$ is shared with $\Tl{CFG}$.
+$\Kf{assignK}{e_2, \sigma, \kappa}$ waits for the value of $e_1$ in
+$\assign{s}{e_1}{e_2}$, run in the frame $\sigma$. A simple expression
+takes one step: its operands are atoms, so it gives a value, fails, or
+calls a closure. $\mathit{run}$ is shared with $\Tl{CFG}$.
 \[
 \begin{array}{@{}l@{\;=\;}l@{\qquad}l@{\;=\;}l@{}}
-  \sigma(c) & c & \sigma(\funref{j}) & \codeV{j} \\
+  \sigma(c) & c & \sigma(\funref{k}) & \codeV{k} \\
   \mathit{run}(a, \sigma) & \key{value}(\sigma(a)) &
-  \mathit{run}(\Tpack{a}{b}, \sigma) & \key{value}(\Tpack{\sigma(a)}{\sigma(b)}) \\
-  \mathit{run}(\Tcallc{a}{b}, \sigma) & \key{call}(\sigma(a), \sigma(b)) &
-  \mathit{run}(\tuple{a_1, \ldots, a_l}, \sigma) & \key{value}(\tupV{\sigma(a_1), \ldots, \sigma(a_l)}) \\
+  \mathit{run}(\Tpack{a_1}{a_2}, \sigma) & \key{value}(\Tpack{\sigma(a_1)}{\sigma(a_2)}) \\
+  \mathit{run}(\Tcallc{a_1}{a_2}, \sigma) & \key{call}(\sigma(a_1), \sigma(a_2)) &
+  \mathit{run}(\tuple{a_1, \ldots, a_n}, \sigma) & \key{value}(\tupV{\sigma(a_1), \ldots, \sigma(a_n)}) \\
   \mathit{run}(\prj{i} a, \sigma) & \key{value}(v_i) \quad (\sigma(a) = \tupV{\bar{v}}) &
   \mathit{run}(\inl a, \sigma) & \key{value}(\inlV \sigma(a)) \\
   \mathit{run}(\inr a, \sigma) & \key{value}(\inrV \sigma(a)) &
@@ -3013,24 +3036,24 @@ a value, fails, or calls a closure. $\mathit{run}$ is shared with $\Tl{CFG}$.
   \mathit{run}(\Tproject{t} a, \sigma) =
     \begin{cases} \key{value}(v) & \sigma(a) = \TdynV{H}{v},\; H = \Tflatof{t} \\ \key{fail} & \text{otherwise} \end{cases}
 \]
-A call runs the definition in a frame of its environment (slot~0) and
-argument (slot~1), written $(u\, w)$, with the caller's continuation,
+A call runs the definition in the frame $(u, w)$ of its environment
+(slot~$0$) and argument (slot~$1$), with the caller's continuation,
 which holds the caller's frame. For a program with definitions
-$d_0, \ldots, d_{m-1}$, each an expression over the slots $e$ and $y$:
+$e_0, \ldots, e_{m-1}$:
 \begin{align*}
   \mathit{cont}(v, \halt) &= \stp \obs(v) \\
-  \mathit{cont}(v, \Kf{assignK}{x.e, \sigma, \kappa}) &= \nxt \evi{e}{(\sigma, x {\mapsto} v)}{\kappa} \\[1ex]
+  \mathit{cont}(v, \Kf{assignK}{e, \sigma, \kappa}) &= \nxt \evi{e}{(\sigma, v)}{\kappa} \\[1ex]
   \mathit{res}(\key{value}(v), \kappa) &= \mathit{cont}(v, \kappa) \\
   \mathit{res}(\key{fail}, \kappa) &= \stp \error \\
-  \mathit{res}(\key{call}(\Tpack{\codeV{j}}{u}, w), \kappa) &= \nxt \evi{d_j}{(u\, w)}{\kappa} \\[1ex]
-  \Mach{\Tl{Imp}}(d_0, \ldots, d_{m-1};\; e) &= (\mathit{State}^{\Tl{Imp}},\; \step{\Tl{Imp}}_{d_0 \ldots d_{m-1}},\; \evi{e}{\emptyset}{\halt})
+  \mathit{res}(\key{call}(\Tpack{\codeV{k}}{u}, w), \kappa) &= \nxt \evi{e_k}{(u, w)}{\kappa} \\[1ex]
+  \Mach{\Tl{Imp}}(e_0, \ldots, e_{m-1};\; e) &= (\mathit{State}^{\Tl{Imp}},\; \step{\Tl{Imp}}_{e_0 \ldots e_{m-1}},\; \evi{e}{\emptyset}{\halt})
 \end{align*}
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \evi{r}{\sigma}{\kappa} & \mathit{res}(\mathit{run}(r, \sigma), \kappa) \\
-  \evi{(\assign{x}{e_1}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{\sigma}{\Kf{assignK}{x.e_2, \sigma, \kappa}} \\
-  \evi{(\Case{a}{x}{e_1}{x}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{(\sigma, x {\mapsto} u)}{\kappa} & \sigma(a) = \inlV u \\
-  & \nxt \evi{e_2}{(\sigma, x {\mapsto} u)}{\kappa} & \sigma(a) = \inrV u
+  \evi{(\assign{s}{e_1}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{\sigma}{\Kf{assignK}{e_2, \sigma, \kappa}} \\
+  \evi{(\Casei{a}{s}{e_1}{e_2})}{\sigma}{\kappa} & \nxt \evi{e_1}{(\sigma, u)}{\kappa} & \sigma(a) = \inlV u \\
+  & \nxt \evi{e_2}{(\sigma, u)}{\kappa} & \sigma(a) = \inrV u
 \end{array}
 \]
 where $r$ is a simple expression.
@@ -3044,52 +3067,812 @@ typed index into those, so a jump always finds its block, and a block
 reads only slots that are assigned. As in Part~II, a state runs a tail
 with the blocks it may jump to, those of its body for the start of a
 body and those older than block $l$ for block $l$, and
-$\key{block}(\vec{t}, l) = (t_l;\; t_0 \ldots t_{l-1})$ is that of
-Part~II's CFG machine, now total. An assignment or $\key{case}$ with
-scope $\Delta'$ (a prefix of the frame context) forgets the slots after
-$\Delta'$, which belong to a finished scope, and assigns the next one;
-$\sigma|_{\Delta'}$ is $\sigma$ without them. A step runs one statement.
+$\key{block}(t_0 \ldots t_{j-1}, l) = (t_l;\; t_0 \ldots t_{l-1})$ is
+that of Part~II's CFG machine, now total. An assignment or $\key{case}$
+that writes slot $s$ continues in $(\Tcut{\sigma}{s}, v)$: the slots
+from $s$ on belong to a finished scope and are forgotten. A step runs
+one statement.
 \[
 \begin{array}{rcl}
   \mathit{State}^{\Tl{CFG}} &::=& \exc{t}{\sigma}{\vec{t}}{\kappa} \\
-  t &::=& \key{return}\; r \mid x \mathrel{:=_{\Delta'}} r;\; t \mid \key{goto}\; l
-    \mid \key{case}_{\Delta'}\;a\;\key{of}\;\key{inl}\,x \Rightarrow \key{goto}\;l_1 \mid \key{inr}\,x \Rightarrow \key{goto}\;l_2 \\
-  \kappa &::=& \halt \mid \Kf{seqK}{\Delta', \sigma, x.t, \vec{t}, \kappa} \mid \Kf{retK}{\kappa}
+  \kappa &::=& \halt \mid \Kf{seqK}{s, \sigma, t, \vec{t}, \kappa} \mid \Kf{retK}{\kappa}
 \end{array}
 \]
-We abbreviate the $\key{case}$ tail to $\key{case}_{\Delta'}\;a\;(x.l_1)\;(x.l_2)$.
 A call runs the start of the callee's body under $\key{seqK}$ (the
-caller's assignment, which assigns the result and continues) or
-$\key{retK}$ (the caller's $\key{return}$, which returns the result). For
-a program with bodies $b_0, \ldots, b_{m-1}$:
+caller's assignment $\assign{s}{r}{t}$, run in the frame $\sigma$ with
+the blocks $\vec{t}$, which assigns the result and continues) or
+$\key{retK}$ (the caller's $\key{return}$, which returns the result).
+For a program with bodies $b_0, \ldots, b_{m-1}$:
 \begin{align*}
-  \mathit{enter}(\Tpack{\codeV{j}}{u}, w, \kappa) &= \nxt \exc{t}{(u\, w)}{\vec{t}}{\kappa}
-    \qquad (b_j = (\vec{t};\; t)) \\[1ex]
+  \mathit{enter}(\Tpack{\codeV{k}}{u}, w, \kappa) &= \nxt \exc{t}{(u, w)}{\vec{t}}{\kappa}
+    \qquad (b_k = (\vec{t};\; t)) \\[1ex]
   \mathit{cont}(v, \halt) &= \stp \obs(v) \\
-  \mathit{cont}(v, \Kf{seqK}{\Delta', \sigma, x.t, \vec{t}, \kappa}) &= \nxt \exc{t}{(\sigma|_{\Delta'}, x {\mapsto} v)}{\vec{t}}{\kappa} \\
+  \mathit{cont}(v, \Kf{seqK}{s, \sigma, t, \vec{t}, \kappa}) &= \nxt \exc{t}{(\Tcut{\sigma}{s}, v)}{\vec{t}}{\kappa} \\
   \mathit{cont}(v, \Kf{retK}{\kappa}) &= \mathit{cont}(v, \kappa) \\[1ex]
   \Mach{\Tl{CFG}}(b_0, \ldots, b_{m-1};\; (\vec{t};\; t)) &=
     (\mathit{State}^{\Tl{CFG}},\; \step{\Tl{CFG}}_{b_0 \ldots b_{m-1}},\; \exc{t}{\emptyset}{\vec{t}}{\halt})
 \end{align*}
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
-  \exc{(\key{return}\; r)}{\sigma}{\vec{t}}{\kappa} & \mathit{cont}(v, \kappa) & \mathit{run}(r, \sigma) = \key{value}(v) \\
+  \exc{(\Treturn{r})}{\sigma}{\vec{t}}{\kappa} & \mathit{cont}(v, \kappa) & \mathit{run}(r, \sigma) = \key{value}(v) \\
   & \mathit{enter}(f, w, \Kf{retK}{\kappa}) & \mathit{run}(r, \sigma) = \key{call}(f, w) \\
   & \stp \error & \mathit{run}(r, \sigma) = \key{fail} \\
-  \exc{(x \mathrel{:=_{\Delta'}} r;\; t)}{\sigma}{\vec{t}}{\kappa} &
-    \nxt \exc{t}{(\sigma|_{\Delta'}, x {\mapsto} v)}{\vec{t}}{\kappa} & \mathit{run}(r, \sigma) = \key{value}(v) \\
-  & \mathit{enter}(f, w, \Kf{seqK}{\Delta', \sigma, x.t, \vec{t}, \kappa}) & \mathit{run}(r, \sigma) = \key{call}(f, w) \\
+  \exc{(\assign{s}{r}{t})}{\sigma}{\vec{t}}{\kappa} &
+    \nxt \exc{t}{(\Tcut{\sigma}{s}, v)}{\vec{t}}{\kappa} & \mathit{run}(r, \sigma) = \key{value}(v) \\
+  & \mathit{enter}(f, w, \Kf{seqK}{s, \sigma, t, \vec{t}, \kappa}) & \mathit{run}(r, \sigma) = \key{call}(f, w) \\
   & \stp \error & \mathit{run}(r, \sigma) = \key{fail} \\
-  \exc{(\key{goto}\; l)}{\sigma}{\vec{t}}{\kappa} & \nxt \exc{t'}{\sigma}{\vec{t}'}{\kappa} & (t';\; \vec{t}') = \key{block}(\vec{t}, l) \\
-  \exc{(\key{case}_{\Delta'}\;a\;(x.l_1)\;(x.l_2))}{\sigma}{\vec{t}}{\kappa} &
-    \nxt \exc{t'}{(\sigma|_{\Delta'}, x {\mapsto} u)}{\vec{t}'}{\kappa} & \sigma(a) = \inlV u,\; (t';\; \vec{t}') = \key{block}(\vec{t}, l_1) \\
-  & \nxt \exc{t'}{(\sigma|_{\Delta'}, x {\mapsto} u)}{\vec{t}'}{\kappa} & \sigma(a) = \inrV u,\; (t';\; \vec{t}') = \key{block}(\vec{t}, l_2)
+  \exc{(\Tgoto{l})}{\sigma}{\vec{t}}{\kappa} & \nxt \exc{t'}{\sigma}{\vec{t}'}{\kappa} & (t';\; \vec{t}') = \key{block}(\vec{t}, l) \\
+  \exc{(\Tcase{a}{s}{l_1}{l_2})}{\sigma}{\vec{t}}{\kappa} &
+    \nxt \exc{t'}{(\Tcut{\sigma}{s}, u)}{\vec{t}'}{\kappa} & \sigma(a) = \inlV u,\; (t';\; \vec{t}') = \key{block}(\vec{t}, l_1) \\
+  & \nxt \exc{t'}{(\Tcut{\sigma}{s}, u)}{\vec{t}'}{\kappa} & \sigma(a) = \inrV u,\; (t';\; \vec{t}') = \key{block}(\vec{t}, l_2)
 \end{array}
 \]
 Unlike Part~II's CFG machine, there is no state that
 evaluates an operand or returns a value: a step runs a whole statement.
 
 %-------------------------------------------------------------------------------
+\subsection{Relations}\label{sec:t-cek-rel}
+
+Each pass is proved correct by a forward simulation
+(\texttt{agda/\allowbreak proof/\allowbreak Correctness/\allowbreak CEK}, stated in
+\texttt{agda/\allowbreak Theorems/\allowbreak Simulation.agda}), $\FSim$ of
+Section~\ref{sec:sims} with one more answer: a source step that stops
+with $o$ may also be answered by a target run to a final state with the
+same observation, $s_2 \lto^+ t \land \Final(t, o)$. Forward simulation
+still gives equivalence (Theorem~\ref{thm:equivalent}), and equivalence
+composes (Lemma~\ref{lem:equiv-trans}). Besides plus simulations
+(Lemma~\ref{lem:plus-sim}), two shapes of simulation are built from a
+relation $\sim$ between states. In the first, the source lags behind a
+state related to the target's:
+\[
+  s_1 \sim^{\mathrm{lag}}_i s_2 \iff \exists t.\; s_1 \lto^i_{L_1} t \land t \sim s_2 .
+\]
+In the second, both machines move from related states:
+\[
+  \mathit{Both}_\sim(s_1, s_2) \iff
+  \begin{array}[t]{l}
+    (\Final_{L_1}(s_1, o) \land s_2 \lto^*_{L_2} t \land \Final_{L_2}(t, o)) \\
+    \lor\; (s_1 \lto^+_{L_1} s_1' \land s_2 \lto^+_{L_2} s_2' \land s_1' \sim s_2') \\
+    \lor\; (s_1 \lto^+_{L_1} t_1 \land \Final_{L_1}(t_1, o) \land s_2 \lto^+_{L_2} t_2 \land \Final_{L_2}(t_2, o))
+  \end{array}
+\]
+\begin{lemma}[Lagging Simulation]\label{lem:t-cek-lag}
+If $\start{L_1} \sim^{\mathrm{lag}}_i \start{L_2}$ for some $i$, and
+whenever $s_1 \sim s_2$ the target answers $\step{L_1}(s_1)$ with
+matches in $\sim^{\mathrm{lag}}$, then $\FSim(L_1, L_2, \sim^{\mathrm{lag}})$.
+\end{lemma}
+\begin{lemma}[Both Move]\label{lem:t-cek-both}
+If $\start{L_1} \sim \start{L_2}$ and $\mathit{Both}_\sim(s_1, s_2)$
+whenever $s_1 \sim s_2$, then $\FSim(L_1, L_2, \sim')$, where $\sim'$ is
+the lagging $\sim^{\mathrm{lag}}$ of $\sim$ and of the pairs of final
+states with the same observation.
+\end{lemma}
+
+Each pass relates source and target values ($v \approx w$), environments
+($\rho_1 \approx \rho_2$), continuations ($\kappa_1 \approxk \kappa_2$),
+and states ($s_1 \sim s_2$). The clauses of $\approx$ not shown are
+$c \approx c$, $\tupV{\bar{v}} \approx \tupV{\bar{w}}$ if
+$\bar{v} \approx \bar{w}$ (pointwise), $\inlV v \approx \inlV w$ and
+$\inrV v \approx \inrV w$ if $v \approx w$, and
+$\TdynV{G}{v} \approx \TdynV{G}{w}$ if $v \approx w$. Environments are
+related pointwise, $\rho_1 \approx \rho_2$ when
+$\rho_1(x) \approx \rho_2(x)$ for every variable $x$ in scope, unless
+said otherwise. The frames of $\approxk$ not shown are related to the
+same frame whose terms are the pass's translations of its terms, with
+related values, environments and rest ($\halt \approxk \halt$,
+$\Kf{getK_i}{\kappa_1} \approxk \Kf{getK_i}{\kappa_2}$ if
+$\kappa_1 \approxk \kappa_2$, \ldots). In every pass the source and target
+values of a related state have the same type, and:
+
+\begin{lemma}[Related Values Are Observed Alike]\label{lem:t-cek-obs}
+In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$; and, in each
+pass from enclose to globalize,
+$\Tres{\delta(p, n, m)} \approx \Tres{\delta(p, n, m)}$.
+\end{lemma}
+
+\begin{lemma}[Projects Fail Together]\label{lem:t-cek-proj}
+In each pass from enclose to globalize, if $v \approx w$ and
+$\kappa_1 \approxk \kappa_2$, then
+$\rt{\TdynV{H}{v}}{\Kf{projK_t}{\kappa_1}}$ and
+$\rt{\TdynV{H}{w}}{\Kf{projK_t}{\kappa_2}}$ both stop with $\error$,
+or both step, to $\rt{v}{\kappa_1} \sim \rt{w}{\kappa_2}$.
+\end{lemma}
+
+\subsubsection{Simplify}
+
+Simplify is the untyped pipeline's pass, on untyped ISWIM, and so is its
+proof: the relations of Section~\ref{sec:sim-simplify}, and
+Theorem~\ref{thm:simplify-correct}.
+
+\subsubsection{Cast Insertion}
+
+The source runs on the untyped ISWIM machine of Part~II, the target on
+the $\Tl{ISWIM}$ machine. An ISWIM value is related to a value of type
+$\TAny$, tagged with the flat type of its kind:
+\begin{align*}
+  \cloV{\lam{x} N}{\rho} &\approx \TdynV{\Tfun}{\cloV{\lam{x} \pass{cast}(N)}{\rho'}}
+    \iff \rho \approx \rho' \\
+  c &\approx \TdynV{B}{c} \qquad (c \text{ of base type } B) \\
+  \tupV{v_1, \ldots, v_n} &\approx \TdynV{\Ttup{n}}{\tupV{w_1, \ldots, w_n}}
+    \iff \forall i.\; v_i \approx w_i \\
+  \inlV v &\approx \TdynV{\Tsum}{\inlV w} \iff v \approx w
+    \qquad\text{and likewise for } \key{inr} \\[1ex]
+  \rho &\approx \rho' \iff \forall x \text{ in scope}.\; \exists v.\; \rho(x) = v \land v \approx \rho'(x)
+\end{align*}
+($\rho'$ may bind more variables: those of the $\key{let}$s that cast
+insertion adds around a primitive's operands.) The typed continuations
+expect a value of type $\TAny$; a source frame is related to the typed
+frame wrapped in the $\key{injK}$ and $\key{projK}$ frames of the casts
+that cast insertion puts around it, and a primitive's frames to the
+$\key{letK}$ frames of the $\key{let}$s that bind its operands. With
+$B_p = \Tinject{\Tout{p}} \prim{p}{\Tproject{\Tint} x}{\Tproject{\Tint} y}$
+the body of those $\key{let}$s and $\rho \approx \rho'$, $\kappa \approxk \kappa'$:
+\begin{align*}
+  \Kf{appL}{M, \rho, \kappa} &\approxk \Kf{projK_{\Tfun}}{\Kf{appL}{\pass{cast}(M), \rho', \kappa'}} \\
+  \Kf{appR}{v, \kappa} &\approxk \Kf{appR}{f, \kappa'} \quad\text{if } v \approx \TdynV{\Tfun}{f} \\
+  \Kf{tupK}{\bar{v}, \bar{M}, \rho, \kappa} &\approxk
+    \Kf{tupK}{\bar{w}, \pass{cast}(\bar{M}), \rho', \Kf{injK_{\Ttup{n}}}{\kappa'}}
+    \quad\text{if } \bar{v} \approx \bar{w},\ n = |\bar{v}| + 1 + |\bar{M}| \\
+  \Kf{getK_i}{\kappa} &\approxk \Kf{projK_{\Tttup{n}{i}}}{\Kf{getK_i}{\kappa'}}
+    \qquad (\prj{i} \text{ of arity } n) \\
+  \Kf{inlK}{\kappa} &\approxk \Kf{inlK}{\Kf{injK_{\Tsum}}{\kappa'}}
+    \qquad\text{and likewise for } \key{inr} \\
+  \Kf{caseK}{x.M, y.N, \rho, \kappa} &\approxk
+    \Kf{projK_{\Tsum}}{\Kf{caseK}{x.\pass{cast}(M), y.\pass{cast}(N), \rho', \kappa'}} \\
+  \Kf{primL_p}{M, \rho, \kappa} &\approxk
+    \Kf{letK}{x.\,(\Let y = \pass{cast}(M) \In B_p), \rho', \kappa'} \\
+  \Kf{primR_p}{v, \kappa} &\approxk \Kf{letK}{y.\,B_p, \ext{\rho''}{x}{w}, \kappa'}
+    \quad\text{if } v \approx w \text{ (any } \rho'') \\
+  \Kf{letK}{x.N, \rho, \kappa} &\approxk \Kf{letK}{x.\pass{cast}(N), \rho', \kappa'} \\[1ex]
+  \ev{M}{\rho}{\kappa} &\sim \ev{\pass{cast}(M)}{\rho'}{\kappa'}
+    \iff \rho \approx \rho' \land \kappa \approxk \kappa' \\
+  \rt{v}{\kappa} &\sim \rt{v'}{\kappa'} \iff v \approx v' \land \kappa \approxk \kappa'
+\end{align*}
+Every source step is matched by one or more target steps (the target
+also takes the steps of the casts and $\key{let}$s). Where the source
+stops with $\error$ on an operand of the wrong kind, the target stops at
+the corresponding $\key{project}$: at once, or, for a primitive, after
+the steps that load both operands (a run to a final state).
+
+\begin{lemma}[Cast Simulation]\label{lem:t-cek-cast-fsim}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \FSim(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{ISWIM}}(\pass{cast}(M)), \sim) ,
+\]
+with every index $0$.
+\end{lemma}
+
+\begin{theorem}[Correctness of Cast Insertion, Simulation]\label{thm:t-cek-cast}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies
+  \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{ISWIM}}(\pass{cast\text{-}closed}(M))) ,
+\]
+since $\pass{cast\text{-}closed}(M) = \pass{cast}(M)$ for a closed $M$.
+\end{theorem}
+
+\subsubsection{CC: Enclose}
+
+A closure captures every variable in scope, $x_1, \ldots, x_k$, so its
+environment is the source environment:
+\begin{align*}
+  \cloV{\lam{y} N}{\{x_1 {\mapsto} v_1, \ldots, x_k {\mapsto} v_k\}} \approx {}&
+    \closV{x_1 \ldots x_k\, y.\, \pass{enclose}(N)}{w_1 \ldots w_k}
+    \iff \forall i.\; v_i \approx w_i \\[1ex]
+  \ev{M}{\rho_1}{\kappa_1} \sim {}& \ev{\pass{enclose}(M)}{\rho_2}{\kappa_2}
+    \iff \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim {}& \rt{w}{\kappa_2} \iff v \approx w \land \kappa_1 \approxk \kappa_2
+\end{align*}
+and every frame is related to the same frame
+($\Kf{appL}{M, \rho_1, \kappa_1} \approxk \Kf{appL}{\pass{enclose}(M), \rho_2, \kappa_2}$, \ldots).
+The machines run in lock step, except that evaluating a $\lambda$ (one
+step) takes the target several: it evaluates the variables $x_1,
+\ldots, x_k$ it captures, which collects exactly $\rho_2$, and builds
+the closure.
+
+\begin{lemma}[Enclose Simulation]\label{lem:t-cek-enclose-fsim}
+For every closed $\Tl{ISWIM}$ term $M$,
+\[
+  \mathit{PlusSim}(\Mach{\Tl{ISWIM}}(M), \Mach{\Tl{Clos2}}(\pass{enclose}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Enclose, Simulation]\label{thm:t-cek-enclose}
+For every closed $\Tl{ISWIM}$ term $M$,
+\[
+  \Equiv(\Mach{\Tl{ISWIM}}(M), \Mach{\Tl{Clos2}}(\pass{enclose}(M))) .
+\]
+\end{theorem}
+
+\subsubsection{CC: Optimize}
+
+Optimize keeps the free variables $x_i$ of a closure
+$\clos{M_1 \ldots M_n}{x_1 \ldots x_n\, y} N$ at the positions
+$K = \{ i \mid x_i \in \FV(N) \text{ or } M_i \text{ is not a variable} \}$;
+write $\bar{x}_K$ for the kept names, in order. Environments agree on
+the free variables of a term,
+$\rho_1 \approx_X \rho_2 \iff \forall x \in X.\; \rho_1(x) \approx \rho_2(x)$.
+A closure is related to one that keeps the values at a set $K$ of
+positions that covers the free variables of its code:
+\begin{align*}
+  \mathit{Thin}_K(v_1 \ldots v_n, \bar{w}) &\iff \bar{w} = (w_i)_{i \in K} \land \forall i \in K.\; v_i \approx w_i \\
+  \closV{\bar{x}\, y.\, N}{\bar{v}} \approx \closV{\bar{x}_K\, y.\, \pass{optimize}(N)}{\bar{w}}
+    &\iff \{ i \mid x_i \in \FV(N) \} \subseteq K \land \mathit{Thin}_K(\bar{v}, \bar{w})
+\end{align*}
+Continuations are related frame by frame, with
+$\rho_1 \approx_{\FV(M)} \rho_2$ for each frame's terms $M$ (for
+$\key{caseK}$ and $\key{letK}$, the free variables of the branches or
+body other than the bound one). The target builds a closure from the
+kept terms only, so while the source evaluates the free variables
+$M_{j+1}, \ldots, M_n$ of a closure, with $v_1 \ldots v_{j-1}$ collected
+and $x_j$ kept, its frame is related to the target's when the values
+still to come give related closures ($\mathit{Done}$):
+\begin{align*}
+  \Kf{tupK}{v_1 \ldots v_{j-1}, M_{j+1} \ldots M_n, \rho_1, \Kf{closK}{\bar{x}\, y.\, N, \kappa_1}}
+    \approxk {}& \Kf{tupK}{\bar{w}, \pass{optimize}(\bar{M}_{K > j}), \rho_2,
+                      \Kf{closK}{\bar{x}_K\, y.\, N', \kappa_2}} \\
+  \iff j \in K \land {}& (\forall i > j.\; i \in K \lor (M_i \text{ a variable} \land x_i \notin \FV(N))) \\
+  \land\; {}& \rho_1 \approx_{\FV(M_{j+1} \ldots M_n)} \rho_2 \land \mathit{Done}_j(\bar{v}, \bar{w})
+    \land \kappa_1 \approxk \kappa_2
+\end{align*}
+\begin{align*}
+  \mathit{Done}_j(v_1 \ldots v_{j-1}, \bar{w}) \iff {}& \forall u_j \ldots u_n\, \bar{u}'.\;
+    \mathit{Thin}_{K \cap [j, n]}(u_j \ldots u_n, \bar{u}') \implies {} \\
+    &\qquad \closV{\bar{x}\, y.\, N}{v_1 \ldots v_{j-1}\, u_j \ldots u_n}
+      \approx \closV{\bar{x}_K\, y.\, N'}{\bar{w}\, \bar{u}'}
+\end{align*}
+where $N' = \pass{optimize}(N)$ and $\bar{M}_{K > j}$ are the kept
+$M_i$ with $i > j$. The synchronisation points:
+\begin{align*}
+  \ev{M}{\rho_1}{\kappa_1} \sim {}& \ev{\pass{optimize}(M)}{\rho_2}{\kappa_2}
+    \iff \rho_1 \approx_{\FV(M)} \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim {}& \rt{w}{\kappa_2} \iff v \approx w \land \kappa_1 \approxk \kappa_2 \\
+  \rt{\tupV{\bar{v}}}{\Kf{closK}{\bar{x}\, y.\, N, \kappa_1}} \sim {}&
+    \rt{\tupV{\bar{w}}}{\Kf{closK}{\bar{x}_K\, y.\, N', \kappa_2}} \\
+    \iff {}& \closV{\bar{x}\, y.\, N}{\bar{v}} \approx \closV{\bar{x}_K\, y.\, N'}{\bar{w}}
+      \land \kappa_1 \approxk \kappa_2
+\end{align*}
+The states are matched by $\sim^{\mathrm{lag}}$: the source is $i$ steps
+behind a synchronisation point, where $i = 2d$ while it evaluates $d$
+dropped free variables in a row (each in an $\key{eval}$ and a
+$\key{ret}$ step, matched by no target step).
+
+\begin{lemma}[Optimize Simulation]\label{lem:t-cek-optimize-fsim}
+For every closed $\Tl{Clos2}$ term $M$,
+\[
+  \FSim(\Mach{\Tl{Clos2}}(M), \Mach{\Tl{Clos2}}(\pass{optimize}(M)), \sim^{\mathrm{lag}}) ,
+\]
+by Lemma~\ref{lem:t-cek-lag}.
+\end{lemma}
+
+\begin{theorem}[Correctness of Optimize, Simulation]\label{thm:t-cek-optimize}
+For every closed $\Tl{Clos2}$ term $M$,
+\[
+  \Equiv(\Mach{\Tl{Clos2}}(M), \Mach{\Tl{Clos2}}(\pass{optimize}(M))) .
+\]
+\end{theorem}
+Unlike Part~II, there is no precondition: typed terms are well scoped
+by construction.
+
+\subsubsection{CC: Concretize}
+
+Environments are related through the map $\varphi$ of concretize, which
+sends a $\Tl{Clos2}$ variable to a reference $x$ or $\prj{i} x$ of
+$\Tl{Clos3}$; the value at a reference is
+\[
+  \rho_3[x] = \rho_3(x) \qquad
+  \rho_3[\prj{i} x] = w_i \quad (\rho_3(x) = \tupV{w_1, \ldots, w_n}) \qquad
+  \rho_2 \approx_\varphi \rho_3 \iff \forall x.\; \rho_2(x) \approx \rho_3[\varphi(x)]
+\]
+\begin{align*}
+  \closV{x_1 \ldots x_n\, y.\, N}{\bar{v}} \approx {}&
+    \closV{e\, y.\, \pass{concretize}_{\varphi_n}(N)}{\bar{w}}
+    \iff \bar{v} \approx \bar{w} \\[1ex]
+  \Kf{appL}{M, \rho_2, \kappa_2} \approxk {}&
+    \Kf{appL}{\pass{concretize}_\varphi(M), \rho_3, \kappa_3}
+    \iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \Kf{caseK}{x.M, y.N, \rho_2, \kappa_2} \approxk {}&
+    \Kf{caseK}{x.\pass{concretize}_{\ext{\varphi}{x}{x}}(M),\,
+               y.\pass{concretize}_{\ext{\varphi}{y}{y}}(N), \rho_3, \kappa_3} \\
+    &\iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \Kf{closK}{x_1 \ldots x_n\, y.\, N, \kappa_2} \approxk {}&
+    \Kf{closK}{e\, y.\, \pass{concretize}_{\varphi_n}(N), \kappa_3}
+    \iff \kappa_2 \approxk \kappa_3 \\[1ex]
+  \ev{M}{\rho_2}{\kappa_2} \sim {}& \ev{\pass{concretize}_\varphi(M)}{\rho_3}{\kappa_3}
+    \iff \rho_2 \approx_\varphi \rho_3 \land \kappa_2 \approxk \kappa_3 \\
+  \rt{v}{\kappa_2} \sim {}& \rt{w}{\kappa_3} \iff v \approx w \land \kappa_2 \approxk \kappa_3
+\end{align*}
+with $\varphi_n$ as in concretize, the frames $\key{tupK}$ and
+$\key{primL}$ like $\key{appL}$, $\key{letK}$ like $\key{caseK}$, and the
+others the same frame. The machines run in lock
+step, except that a variable read in one step may become a projection
+read in three; it cannot fail, so it needs no state of its own (unlike
+Part~II, whose source may read an unbound variable):
+
+\begin{lemma}[Reading a Reference]\label{lem:t-cek-ref}
+$\ev{\varphi(x)}{\rho_3}{\kappa} \lto^+_{\Tl{Clos3}} \rt{\rho_3[\varphi(x)]}{\kappa}$.
+\end{lemma}
+
+\begin{lemma}[Concretize Simulation]\label{lem:t-cek-concretize-fsim}
+For every closed $\Tl{Clos2}$ term $M$,
+\[
+  \mathit{PlusSim}(\Mach{\Tl{Clos2}}(M), \Mach{\Tl{Clos3}}(\pass{concretize}_{\emptyset}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Concretize, Simulation]\label{thm:t-cek-concretize}
+For every closed $\Tl{Clos2}$ term $M$,
+\[
+  \Equiv(\Mach{\Tl{Clos2}}(M), \Mach{\Tl{Clos3}}(\pass{concretize}_{\emptyset}(M))) .
+\]
+\end{theorem}
+
+\subsubsection{CC: Delay}
+
+\begin{align*}
+  \closV{e\, y.\, N}{\bar{v}} \approx {}&
+    \Tpack{\TcodeV{e\, y.\, \pass{delay}(N)}}{\tupV{\bar{w}}} \iff \bar{v} \approx \bar{w} \\[1ex]
+  \Kf{appL}{M, \rho_1, \kappa_1} \approxk {}& \Kf{callL}{\pass{delay}(M), \rho_2, \kappa_2}
+    \iff \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{appR}{v, \kappa_1} \approxk {}& \Kf{callR}{w, \kappa_2}
+    \iff v \approx w \land \kappa_1 \approxk \kappa_2 \\
+  \Kf{closK}{e\, y.\, N, \kappa_1} \approxk {}& \Kf{packR}{\TcodeV{e\, y.\, \pass{delay}(N)}, \kappa_2}
+    \iff \kappa_1 \approxk \kappa_2 \\[1ex]
+  \ev{M}{\rho_1}{\kappa_1} \sim {}& \ev{\pass{delay}(M)}{\rho_2}{\kappa_2}
+    \iff \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim {}& \rt{w}{\kappa_2} \iff v \approx w \land \kappa_1 \approxk \kappa_2
+\end{align*}
+and the other frames the same frame. Neither machine checks the
+operator of a call, so the machines run in lock step, except that
+building a closure takes the target three more steps (the code, then
+the tuple under $\key{packR}$). The relation is far simpler than
+Part~II's, which follows $\key{let}$, $\key{fst}$ and $\key{snd}$.
+
+\begin{lemma}[Delay Simulation]\label{lem:t-cek-delay-fsim}
+For every closed $\Tl{Clos3}$ term $M$,
+\[
+  \mathit{PlusSim}(\Mach{\Tl{Clos3}}(M), \Mach{\Tl{Clos4}}(\pass{delay}(M)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Delay, Simulation]\label{thm:t-cek-delay}
+For every closed $\Tl{Clos3}$ term $M$,
+\[
+  \Equiv(\Mach{\Tl{Clos3}}(M), \Mach{\Tl{Clos4}}(\pass{delay}(M))) .
+\]
+\end{theorem}
+
+\subsubsection{CC: Globalize}
+
+The relations are those for the definitions
+$\vec{d} = d_0, \ldots, d_{m-1}$, $d_k = \Tcodetm{e}{y}{N_k}$, that
+globalize makes for the whole program. A $\Tl{Clos4}$ term is related to
+a $\Tl{Clos5}$ term ($M \leadsto M'$) when they are the same, except that
+code is related to a reference to a definition whose body its body is
+related to; values likewise:
+\begin{align*}
+  \Tcodetm{e}{y}{N} &\leadsto \funref{k} \iff N \leadsto N_k \\
+  \mathit{op}(M_1, \ldots, M_n) &\leadsto \mathit{op}(M'_1, \ldots, M'_n) \iff \forall i.\; M_i \leadsto M'_i \\[1ex]
+  \TcodeV{e\, y.\, N} &\approx \codeV{k} \iff N \leadsto N_k \\
+  \Tpack{v}{u} &\approx \Tpack{v'}{u'} \iff v \approx v' \land u \approx u'
+\end{align*}
+Each frame is related to the same frame when its terms are related by
+$\leadsto$, its values and environments by $\approx$, and its rest by
+$\approxk$; for example,
+\begin{align*}
+  \Kf{callL}{M, \rho_1, \kappa_1} \approxk \Kf{callL}{M', \rho_2, \kappa_2}
+    &\iff M \leadsto M' \land \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\[1ex]
+  \ev{M}{\rho_1}{\kappa_1} \sim \ev{M'}{\rho_2}{\kappa_2}
+    &\iff M \leadsto M' \land \rho_1 \approx \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim \rt{w}{\kappa_2} &\iff v \approx w \land \kappa_1 \approxk \kappa_2
+\end{align*}
+The machines run in lock step.
+
+\begin{lemma}[Globalize Relates]\label{lem:t-cek-glob}
+If $\pass{globalize}(M) = (\vec{d};\; M')$, then $M \leadsto M'$ for
+the definitions $\vec{d}$. (The pass makes each term over the
+definitions made so far and later weakens it; the definitions made
+before a term are those of $\vec{d}$ at the same positions, since
+$\pass{glob}$ only adds definitions.)
+\end{lemma}
+
+\begin{lemma}[Globalize Simulation]\label{lem:t-cek-globalize-fsim}
+For every closed $\Tl{Clos4}$ term $M$, if $\pass{globalize}(M) = (\vec{d};\; M')$, then
+\[
+  \mathit{PlusSim}(\Mach{\Tl{Clos4}}(M), \Mach{\Tl{Clos5}}(\vec{d};\; M'), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Globalize, Simulation]\label{thm:t-cek-globalize}
+For every closed $\Tl{Clos4}$ term $M$,
+\[
+  \Equiv(\Mach{\Tl{Clos4}}(M), \Mach{\Tl{Clos5}}(\pass{globalize}(M))) .
+\]
+\end{theorem}
+
+\subsubsection{Remove Complex Operands}
+
+Both machines are the $\Tl{Clos5}$ machine, the source on $P = (\vec{d};\; M)$
+and the target on $\Tembed{\pass{rco}(P)}$; values are related by
+equality ($\codeV{k}$ names $d_k$ in the source and $\pass{rco}(d_k)$ in
+the target). The target environment holds the values of the
+$\key{let}$s as well:
+\[
+  \rho_1 \preceq \rho_2 \iff \forall x \in \mathrm{dom}(\rho_1).\; \rho_2(x) = \rho_1(x) .
+\]
+For an operand $N$ of a construct, the rest of the translation is a
+function $Q$ of the atom $a$ that stands for $N$:
+$\pass{atomize}_Q(N) = Q(N)$ if $N$ is an atom and
+$\Let z = \pass{rco}(N) \In Q(z)$ otherwise ($z$ fresh). (For
+$\Tpack{L}{N}$, the rest after the atom $a$ for $L$ is
+$\pass{atomize}_{Q'}(N)$ with $Q'(b) = \Tpack{a}{b}$, and so on.) A
+source continuation $\kappa_1$ continues as $Q$ given the value of the
+atom, $\mathit{KRel}(\kappa_1, Q, \rho_2, \kappa_2)$, when for every
+$\rho_2' \succeq \rho_2$ (the target goes under more $\key{let}$s) and
+every atom $a$ over $\rho_2'$,
+\[
+  \mathit{Both}_\sim(\rt{\rho_2'(a)}{\kappa_1},\; \ev{\Tembed{Q(a)}}{\rho_2'}{\kappa_2}) .
+\]
+The continuations:
+\begin{align*}
+  \halt &\approxk \halt \\
+  \Kf{letK}{x.N, \rho_1, \kappa_1} &\approxk \Kf{letK}{x.\Tembed{\pass{rco}(N)}, \rho_2, \kappa_2}
+    \iff \rho_1 \preceq \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \kappa_1 &\approxk \Kf{letK}{z.\Tembed{Q(z)}, \rho_2, \kappa_2}
+    \iff \mathit{KRel}(\kappa_1, Q, \rho_2, \kappa_2)
+\end{align*}
+The last clause relates a source frame waiting for the value of a
+complex operand to the target's $\key{let}$ that binds it. The states:
+\begin{align*}
+  \ev{M}{\rho_1}{\kappa_1} \sim {}& \ev{\Tembed{\pass{rco}(M)}}{\rho_2}{\kappa_2}
+    \iff \rho_1 \preceq \rho_2 \land \kappa_1 \approxk \kappa_2 \\
+  \rt{v}{\kappa_1} \sim {}& \rt{v}{\kappa_2} \iff \kappa_1 \approxk \kappa_2
+\end{align*}
+An atom evaluates to its value in one step and cannot fail, so it does
+not matter when each side evaluates it.
+
+\begin{lemma}[Operand Frames]\label{lem:t-cek-krel}
+Each source frame that waits for an operand continues as the rest of
+the translation: if $\kappa_1 \approxk \kappa_2$ and
+$\rho_1 \preceq \rho_2$, then
+$\mathit{KRel}(F(\kappa_1), Q_F, \rho_2, \kappa_2)$ for the frames $F$ of
+the operations on one operand ($\key{getK}$, $\key{inlK}$, $\key{inrK}$,
+$\key{injK}$, $\key{projK}$, $\key{caseK}$), of the two operands of
+$\key{pack}$, $\key{callc}$ and primitives ($\key{packL}$, $\key{packR}$,
+$\key{callL}$, $\key{callR}$, $\key{primL}$, $\key{primR}$), and of
+tuples ($\key{tupK}$), with $Q_F$ the rest of the translation of the
+construct.
+\end{lemma}
+
+\begin{lemma}[Atomize]\label{lem:t-cek-atomize}
+If $\rho_1 \preceq \rho_2$ and $\mathit{KRel}(\kappa_1, Q, \rho_2, \kappa_2)$, then
+\[
+  \mathit{Both}_\sim(\ev{N}{\rho_1}{\kappa_1},\; \ev{\Tembed{\pass{atomize}_Q(N)}}{\rho_2}{\kappa_2}) .
+\]
+\end{lemma}
+
+\begin{lemma}[RCO Simulation]\label{lem:t-cek-rco-fsim}
+For every $\Tl{Clos5}$ program $P$, if $s_1 \sim s_2$ then
+$\mathit{Both}_\sim(s_1, s_2)$; so
+\[
+  \FSim(\Mach{\Tl{Clos5}}(P), \Mach{\Tl{Clos5}}(\Tembed{\pass{rco}(P)}), \sim') ,
+\]
+by Lemma~\ref{lem:t-cek-both}.
+\end{lemma}
+
+\begin{theorem}[Correctness of RCO, Simulation]\label{thm:t-cek-rco}
+For every $\Tl{Clos5}$ program $P$,
+\[
+  \Equiv(\Mach{\Tl{Clos5}}(P), \Mach{\Tl{Mon}}(\pass{rco}(P))) .
+\]
+\end{theorem}
+Unlike Part~II, there is no precondition.
+
+\subsubsection{Lift Locals}
+
+The source is the $\Tl{Imp}$ machine on $\pass{lift}(P)$ and the target the
+$\Tl{Clos5}$ machine on $\Tembed{P}$ (the simulation goes from $\Tl{Imp}$ to
+$\Tl{Mon}$, and the theorem follows by the symmetry of $\Equiv$). The
+pass is structural, and the frame of the $\Tl{Imp}$ machine is the
+environment of the $\Tl{Clos5}$ machine (slot $s$ is the variable at level
+$s$), so the two run on the same values and frames:
+\begin{align*}
+  \halt &\approxk \halt \\
+  \Kf{assignK}{\pass{lift}(N), \sigma, \kappa_1} &\approxk \Kf{letK}{x.\Tembed{N}, \sigma, \kappa_2}
+    \iff \kappa_1 \approxk \kappa_2 \\[1ex]
+  \evi{\pass{lift}(N)}{\sigma}{\kappa_1} &\sim \ev{\Tembed{N}}{\sigma}{\kappa_2}
+    \iff \kappa_1 \approxk \kappa_2
+\end{align*}
+One $\Tl{Imp}$ step runs a simple expression on its atoms, which the
+$\Tl{Clos5}$ machine evaluates one by one, through continuation frames;
+then both continue with related continuations, or both call (to related
+states in the callee's body), or both stop with the same observation.
+
+\begin{lemma}[Atoms Evaluate in One Step]\label{lem:t-cek-atom}
+\[
+  \ev{\Tembed{a}}{\sigma}{\kappa} \lto_{\Tl{Clos5}} \rt{\sigma(a)}{\kappa}
+  \qquad
+  \ev{\Tembed{\tuple{a_1, \ldots, a_n}}}{\sigma}{\kappa} \lto^+_{\Tl{Clos5}}
+    \rt{\tupV{\sigma(a_1), \ldots, \sigma(a_n)}}{\kappa} .
+\]
+\end{lemma}
+
+\begin{lemma}[Lift Simulation]\label{lem:t-cek-lift-fsim}
+For every $\Tl{Mon}$ program $P$, if $s_1 \sim s_2$ then
+$\mathit{Both}_\sim(s_1, s_2)$; so
+\[
+  \FSim(\Mach{\Tl{Imp}}(\pass{lift}(P)), \Mach{\Tl{Mon}}(P), \sim') ,
+\]
+by Lemma~\ref{lem:t-cek-both}.
+\end{lemma}
+
+\begin{theorem}[Correctness of Lift Locals, Simulation]\label{thm:t-cek-lift}
+For every $\Tl{Mon}$ program $P$,
+\[
+  \Equiv(\Mach{\Tl{Mon}}(P), \Mach{\Tl{Imp}}(\pass{lift}(P))) .
+\]
+\end{theorem}
+
+\subsubsection{Explicate Control}
+
+The machines share the values, the frames and $\mathit{run}$, and an
+expression runs in the same frame in both: an assignment or
+$\key{case}$ tail forgets exactly the slots that the $\Tl{Imp}$
+continuation does not see. Write $\pass{tail}(e, \vec{t}) = (t;\, \vec{t}')$
+and $\pass{assign}(e, s, k, \vec{t}) = (t;\, \vec{t}')$ for the tail
+made of $e$ and the blocks $\vec{t}'$, from the blocks $\vec{t}$ made
+before; the pass only adds blocks, $\vec{t} \preceq \vec{t}'$ ($\vec{t}$
+is a prefix of $\vec{t}'$), and the older labels find the same blocks:
+if $\vec{t} \preceq \vec{t}'$ and $l < |\vec{t}|$, then
+$\key{block}(\vec{t}', l) = \key{block}(\vec{t}, l)$.
+
+A $\Tl{CFG}$ continuation continues as an $\Tl{Imp}$ one given the value of
+a body, $\kappa_1 \approx \kappa_2$; and
+$\mathit{Ctl}_{\vec{t}}(\sigma, \kappa_1, k, \kappa_2)$ when $\kappa_1$,
+given a value $v$, continues as the tail $k$ in the frame $(\sigma, v)$
+with the blocks $\vec{t}$, under $\kappa_2$: $\kappa_1$ is
+$\Kf{assignK}{e_2, \sigma, \kappa}$ and $k$ the tail made of $e_2$, or
+$k$ is a jump to a block that is:
+\begin{align*}
+  \halt &\approx \halt \\
+  \kappa_1 &\approx \Kf{retK}{\kappa_2} \Leftarrow \kappa_1 \approx \kappa_2 \\
+  \kappa_1 &\approx \Kf{seqK}{s, \sigma, k, \vec{t}, \kappa_2} \Leftarrow
+    \mathit{Ctl}_{\vec{t}}(\Tcut{\sigma}{s}, \kappa_1, k, \kappa_2) \\[1ex]
+  \mathit{Ctl}_{\vec{t}'}(\sigma, \Kf{assignK}{e_2, \sigma, \kappa}, t, \kappa_2) &\Leftarrow
+    \kappa \approx \kappa_2 \land \pass{tail}(e_2, \vec{t}) = (t;\, \vec{t}') \\
+  \mathit{Ctl}_{\vec{t}'}(\sigma, \Kf{assignK}{e_2, \sigma, \kappa}, t, \kappa_2) &\Leftarrow
+    \mathit{Ctl}_{\vec{t}}(\Tcut{\sigma}{s}, \kappa, k, \kappa_2) \land
+    \pass{assign}(e_2, s, k, \vec{t}) = (t;\, \vec{t}') \\
+  \mathit{Ctl}_{\vec{t}'}(\sigma, \kappa_1, \Tgoto{l}, \kappa_2) &\Leftarrow
+    \mathit{Ctl}_{\vec{t}}(\sigma, \kappa_1, k, \kappa_2) \land \key{block}(\vec{t}', l) = (k;\, \vec{t})
+\end{align*}
+The states, indexed by the measure of the stutter, with
+$\mathit{depth}(\assign{s}{e_1}{e_2}) = 1 + \mathit{depth}(e_1)$ and
+$\mathit{depth}(e) = 0$ otherwise:
+\begin{align*}
+  \evi{e}{\sigma}{\kappa_1} \sim_{\mathit{depth}(e)} {}& \exc{t}{\sigma}{\vec{t}'}{\kappa_2}
+    \Leftarrow \kappa_1 \approx \kappa_2 \land \pass{tail}(e, \vec{t}) = (t;\, \vec{t}') \\
+  \evi{e}{\sigma}{\kappa_1} \sim_{\mathit{depth}(e)} {}& \exc{t}{\sigma}{\vec{t}'}{\kappa_2}
+    \Leftarrow \mathit{Ctl}_{\vec{t}}(\Tcut{\sigma}{s}, \kappa_1, k, \kappa_2) \land
+      \pass{assign}(e, s, k, \vec{t}) = (t;\, \vec{t}')
+\end{align*}
+An $\Tl{Imp}$ step from $\assign{s}{e_1}{e_2}$ is matched by no $\Tl{CFG}$
+step: $e_1$ runs as the tail that $\assign{s}{e_1}{e_2}$ runs as, with a
+smaller index. Any other $\Tl{Imp}$ step is matched by one or more $\Tl{CFG}$
+steps: a statement, then the jumps to join points.
+
+\begin{lemma}[Join]\label{lem:t-cek-join}
+If $\mathit{Ctl}_{\vec{t}}(\sigma, \kappa_1, k, \kappa_2)$, then for
+every $v$, $\mathit{cont}(v, \kappa_1) = \nxt s_1$ for an $s_1$ with
+\[
+  \exc{k}{(\sigma, v)}{\vec{t}}{\kappa_2} \lto^*_{\Tl{CFG}} s_2
+  \quad\text{and}\quad s_1 \sim_j s_2
+\]
+for some $j$ and $s_2$.
+\end{lemma}
+
+\begin{lemma}[Explicate Simulation]\label{lem:t-cek-explicate-fsim}
+For every $\Tl{Imp}$ program $P$,
+\[
+  \FSim(\Mach{\Tl{Imp}}(P), \Mach{\Tl{CFG}}(\pass{explicate}(P)), \sim) .
+\]
+\end{lemma}
+
+\begin{theorem}[Correctness of Explicate Control, Simulation]\label{thm:t-cek-explicate}
+For every $\Tl{Imp}$ program $P$,
+\[
+  \Equiv(\Mach{\Tl{Imp}}(P), \Mach{\Tl{CFG}}(\pass{explicate}(P))) .
+\]
+\end{theorem}
+
+\subsubsection{Select Instructions}
+
+X86 is unchanged and keeps its own trapped errors; the proof shows that
+select's code reaches none of them except at a project's test. We write
+an X86 state (Section~\ref{sec:machine-x86}) as
+$\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Pi\;f\;\tau\;\rho$, with $\Pi$ the
+call stack and $\tau$ the frame (Part~II's $\Sigma$ and $\sigma$). An X86
+value is the erasure of a typed value:
+\[
+  \lfloor \codeV{k} \rfloor = \codeV{k} \qquad
+  \lfloor \Tpack{v}{u} \rfloor = \pairV{\lfloor v \rfloor}{\lfloor u \rfloor} \qquad
+  \lfloor \TdynV{G}{v} \rfloor = \lfloor v \rfloor \qquad
+  \lfloor c \rfloor = c
+\]
+and homomorphically on tuples and injections. The X86 frame holds the
+erasure of each slot at its level, and is large enough for the tail and
+its blocks:
+\begin{align*}
+  \mathit{Agree}(\sigma, \tau) &\iff \forall s < |\sigma|.\; \tau(s) = \lfloor \sigma(s) \rfloor \\
+  \mathit{Fits}(t, \vec{t}, \tau) &\iff \mathit{depth}(t) \leq |\tau| \land
+    \forall t' \in \vec{t}.\; \mathit{depth}(t') \leq |\tau|
+\end{align*}
+Write $\pass{sel}(t) = \mathit{ins}(t);\, \mathit{end}(t)$ for the
+instructions and jump of the block of $t$. The call stack holds, for each
+return frame of the $\Tl{CFG}$ continuation, the caller's frame and the
+instructions that move $\rax$ to where the caller wants the result:
+\begin{align*}
+  \halt &\sim \halt \\
+  \Kf{seqK}{s, \sigma, t, \vec{t}, \kappa} &\sim
+    \key{retK}((\key{movq}\; \rax, s;\; \mathit{ins}(t)), \mathit{end}(t), \pass{sel}(\vec{t}), \tau, \Pi)
+    \Leftarrow \mathit{Agree}(\sigma, \tau) \land \mathit{Fits}(t, \vec{t}, \tau) \land \kappa \sim \Pi \\
+  \Kf{retK}{\kappa} &\sim \key{retK}((\key{movq}\; \rax, \rax), \key{retq}, \vec{\beta}, \tau, \Pi)
+    \Leftarrow \kappa \sim \Pi \\[1ex]
+  \exc{t}{\sigma}{\vec{t}}{\kappa} &\sim
+    \xrun\;\mathit{ins}(t)\;\mathit{end}(t)\;\pass{sel}(\vec{t})\;\Pi\;f\;\tau\;\rho
+    \Leftarrow \mathit{Agree}(\sigma, \tau) \land \mathit{Fits}(t, \vec{t}, \tau) \land \kappa \sim \Pi
+\end{align*}
+One $\Tl{CFG}$ step (a statement) is matched by the few X86 instructions
+selected for it, which compute its value into its destination, or err
+exactly where the $\Tl{CFG}$ machine does, or call:
+
+\begin{lemma}[Selected Simple Expressions]\label{lem:t-cek-sel}
+If $\mathit{Agree}(\sigma, \tau)$, then from
+$s_2 = \xrun\;(\pass{sel}(r, d);\, \vec{\imath})\;j\;\vec{\beta}\;\Pi\;f\;\tau\;\rho$:
+\begin{itemize}
+\item if $\mathit{run}(r, \sigma) = \key{value}(v)$, X86 runs to a state
+  whose next step puts $\lfloor v \rfloor$ in $d$ and continues with
+  the rest, $\xrun\;\vec{\imath}\;j\;\vec{\beta}\;\Pi\;f'\;\tau\;\rho'$
+  for some $f'$ and $\rho'$;
+\item if $\mathit{run}(r, \sigma) = \key{fail}$, X86 runs to a state that
+  stops with $\error$ (the test $\Tcheck{t}$ of the project errs exactly
+  when the flat type is not $\Tflatof{t}$);
+\item if $\mathit{run}(r, \sigma) = \key{call}(\Tpack{\codeV{k}}{u}, w)$
+  and $b_k = (\vec{t};\, t)$, then
+  \begin{align*}
+    s_2 \lto^+_{\mathrm{X86}} {}&
+    \xrun\;\mathit{ins}(t)\;\mathit{end}(t)\;\pass{sel}(\vec{t}) \\
+    &\quad \key{retK}((\key{movq}\;\rax, d;\, \vec{\imath}), j, \vec{\beta}, \tau, \Pi)\;\bot\;\tau_0\;\rho_0
+  \end{align*}
+  with $\mathit{Agree}((u, w), \tau_0)$ and $\mathit{Fits}(t, \vec{t}, \tau_0)$.
+\end{itemize}
+\end{lemma}
+
+\begin{lemma}[Return]\label{lem:t-cek-back}
+If $\kappa \sim \Pi$, $\rho(\rax) = \lfloor v \rfloor$,
+$s_1 \mapsto \mathit{cont}(v, \kappa)$ and
+$s_2 \lto^*_{\mathrm{X86}} \xrun\;\epsilon\;\key{retq}\;\vec{\beta}\;\Pi\;f\;\tau\;\rho$,
+then $\mathit{Both}_\sim(s_1, s_2)$: X86 pops its stack as the $\Tl{CFG}$
+continuation says.
+\end{lemma}
+
+\begin{lemma}[Select Simulation]\label{lem:t-cek-select-fsim}
+For every $\Tl{CFG}$ program $P$, if $s_1 \sim s_2$ then
+$\mathit{Both}_\sim(s_1, s_2)$; so
+\[
+  \FSim(\Mach{\Tl{CFG}}(P), \Mach{\mathrm{X86}}(\pass{select}(P)), \sim') ,
+\]
+by Lemma~\ref{lem:t-cek-both}.
+\end{lemma}
+
+\begin{theorem}[Correctness of Select Instructions, Simulation]\label{thm:t-cek-select}
+For every $\Tl{CFG}$ program $P$,
+\[
+  \Equiv(\Mach{\Tl{CFG}}(P), \Mach{\mathrm{X86}}(\pass{select}(P))) .
+\]
+\end{theorem}
+
+\subsubsection{End to End}
+
+\begin{theorem}[Compiler Correctness, Simulation]\label{thm:t-cek-compile}
+For every ISWIM term $M$,
+\[
+  \FV(M) = \emptyset \implies \Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{Clos5}}(\pass{compile}(M))) ,
+\]
+by Theorem~\ref{thm:simplify-correct}, Lemma~\ref{lem:simplify-closed},
+Theorems~\ref{thm:t-cek-cast}, \ref{thm:t-cek-enclose}, \ref{thm:t-cek-optimize},
+\ref{thm:t-cek-concretize}, \ref{thm:t-cek-delay} and~\ref{thm:t-cek-globalize},
+and Lemma~\ref{lem:equiv-trans}. In particular the compiled program
+terminates with the same constants, terminates with an answer exactly
+when the original does, stops with $\error$ exactly when it does, and
+diverges exactly when it does.
+\end{theorem}
+
+\begin{theorem}[Correctness of the Later Compilers, Simulation]\label{thm:t-cek-compile-x86}
+For every ISWIM term $M$ with $\FV(M) = \emptyset$,
+\begin{align*}
+  &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{Mon}}(\pass{compile\text{-}mon}(M))) \\
+  &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{Imp}}(\pass{compile\text{-}imp}(M))) \\
+  &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\Tl{CFG}}(\pass{compile\text{-}cfg}(M))) \\
+  &\Equiv(\Mach{\mathrm{ISWIM}}(M), \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))) ,
+\end{align*}
+by Theorem~\ref{thm:t-cek-compile}, Theorems~\ref{thm:t-cek-rco},
+\ref{thm:t-cek-lift}, \ref{thm:t-cek-explicate} and~\ref{thm:t-cek-select}
+in turn, and Lemma~\ref{lem:equiv-trans}.
+\end{theorem}
+
+\paragraph{Where it doesn't match the Agda literally.}
+\begin{itemize}
+\item \textbf{Environments and frames} are vectors (\texttt{Vec}) in
+  $\Tl{ISWIM}$ and $\Tl{Clos2}$ and typed lists (\texttt{All Val $\Gamma$})
+  from $\Tl{Clos3}$ on, newest first, looked up by de Bruijn index; here
+  named. The frame $(u, w)$ of a definition is \texttt{w $\cdot$ e $\cdot$ []},
+  and $(\sigma, v)$ is \texttt{v $\cdot$ $\sigma$}. A $\Tl{Clos2}$ closure's
+  code $N$ binds the argument and the $n$ free variables as
+  \texttt{Tm (suc n) Any}, and its environment is \texttt{w $\cdot$ vs}.
+\item \textbf{Tuples}: $\key{tupK}$ and \texttt{tuple-next} collect the
+  values newest first, with an equation for the tuple's length
+  (\texttt{collected}, \texttt{Framework/VecUtil.agda}); a
+  $\Tl{Clos2}$ or $\Tl{Clos3}$ closure keeps its values as a vector, not
+  a tuple. $\Kf{primR_p}{n, \kappa}$ holds the integer $n$.
+\item \textbf{$\Tl{Clos5}$}: the step function is parametrized by the
+  definitions (\texttt{step ds}); a code value is \texttt{code f} with
+  $f : \Sigma \ni n$ a typed index, and $k$ is its level; what an
+  $\key{eval}$ state does is \texttt{begin}, a call is \texttt{call},
+  and the total functions are \texttt{int}, \texttt{elems},
+  \texttt{choose}; a project is \texttt{proj?}.
+\item \textbf{$\Tl{Imp}$ and $\Tl{CFG}$}: $\Kf{assignK}{e_2, \sigma,
+  \kappa}$ is \texttt{assignK e$_2$ $\varphi$ $\kappa$} (the slot is
+  implicit); $\Kf{seqK}{s, \sigma, t, \vec{t}, \kappa}$ is
+  \texttt{seqK p $\varphi$ t bs $\kappa$}, with
+  $p : \Delta' \sqsubseteq \Delta$ for $s = |\Delta'|$ and
+  $\Tcut{\sigma}{s}$ the Agda's \texttt{forget p $\varphi$};
+  $\key{block}$ returns a record \texttt{Blk} (\texttt{blk bs t}), run by
+  \texttt{go}; $\mathit{run}$ of a project is \texttt{ok? (proj? t \ldots)}.
+\item \textbf{Simulations}: the extra answer is \texttt{runs}
+  (\texttt{proof/Framework/Simulation.agda}); $\sim^{\mathrm{lag}}$ is
+  \texttt{Lag} and Lemma~\ref{lem:t-cek-lag} \texttt{lag-fsim};
+  $\mathit{Both}$ and Lemma~\ref{lem:t-cek-both} are \texttt{Both} and
+  \texttt{both-fsim} (\texttt{proof/Framework/Both.agda});
+  Lemma~\ref{lem:t-cek-proj} is \texttt{proj$\sim$} with \texttt{Lock}
+  (\texttt{proof/Correctness/CEK/Common.agda}).
+\item \textbf{Renamings}: the passes carry maps of the variables, and so
+  do the environment relations: \texttt{Env$\approx$ r} (cast),
+  \texttt{Agree (uses M) r} (optimize, with the flags \texttt{uses}),
+  \texttt{EnvRel $\varphi$} (concretize, with \texttt{ref-val} for
+  $\rho_3[\cdot]$), \texttt{EnvRel r} (delay), \texttt{ER r} (rco,
+  $\rho_1 \preceq \rho_2$ is $\rho_2(r(x)) = \rho_1(x)$). Here names stay.
+  Cast's relation is indexed but the index is unused.
+\item \textbf{Optimize}: a kept set $K$ is a vector of flags
+  (\texttt{fl}), $\mathit{Thin}_K$ is \texttt{Thin}, the cover condition
+  \texttt{Kept}, the condition on the free variables still to come
+  \texttt{Fl} (\texttt{kept}, \texttt{var}), and the target code is
+  \texttt{opt (squeeze fl) N}; the source of a closure's frame is
+  \texttt{closK}, the synchronisation point \texttt{close$\sim$}.
+\item \textbf{Globalize}: $\leadsto$ is \texttt{I $\vdash$ M $\leadsto$ M'}
+  for an interpretation \texttt{I} of the references; for the final
+  definitions it is \texttt{Top}. Lemma~\ref{lem:t-cek-glob} is
+  \texttt{glob-$\leadsto$}, from \texttt{Faithful},
+  \texttt{close-faithful} and \texttt{glob-grows}.
+\item \textbf{RCO}: $Q$ is the Kripke continuation \texttt{k} of
+  \texttt{atomize}, which takes a renaming to the extended scope and an
+  atom; the third clause of $\approxk$ is \texttt{pend};
+  Lemma~\ref{lem:t-cek-krel} is \texttt{krel-get}, \ldots,
+  \texttt{kv-tuple}, and Lemma~\ref{lem:t-cek-atomize} is \texttt{atz}
+  (with \texttt{atzs} for tuples).
+\item \textbf{Explicate}: $\vec{t} \preceq \vec{t}'$ is \texttt{Ext};
+  the two clauses of $\sim$ are \texttt{tail$\sim$} and
+  \texttt{asg$\sim$}, those of $\mathit{Ctl}$ \texttt{asgT}, \texttt{asgA}
+  and \texttt{jmp}; Lemma~\ref{lem:t-cek-join} is \texttt{ctl}.
+\item \textbf{Select}: the erasure is \texttt{$\lfloor\_\rfloor$}, the
+  outcomes of Lemma~\ref{lem:t-cek-sel} are \texttt{XOut}
+  (\texttt{xval}, \texttt{xfail}, \texttt{xcall}), and
+  Lemma~\ref{lem:t-cek-back} is \texttt{back}. The callee's frame
+  $\tau_0$ is $\lfloor u \rfloor\, \lfloor w \rfloor\, 0^{N-2}$ with $N$
+  the depth of its body.
+\end{itemize}
+
 \section{Clocked Interpreters}\label{sec:t-interp}
 
 The clocked interpreters of the typed languages
