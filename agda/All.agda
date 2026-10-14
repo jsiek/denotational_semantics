@@ -133,6 +133,7 @@ import proof.Correctness.Graph.GlobalizeCorrect
 import proof.Correctness.Graph.LiftLocalsCorrect
 import proof.Correctness.Graph.OptimizeCorrect
 import proof.Correctness.Graph.RCOCorrect
+import proof.Correctness.Graph.SelectCorrect
 import proof.Correctness.Graph.SimplifyCorrect
 import proof.Semantics.Graph.ISWIM
 import proof.Semantics.Graph.ISWIMContinuous
