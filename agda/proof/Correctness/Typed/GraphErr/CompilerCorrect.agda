@@ -35,6 +35,21 @@ open import proof.Correctness.Typed.GraphErr.DelayCorrect
   using (delay-correct-error; delay-correct-const; delay-correct-val)
 
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (sym; cong)
+open import Compiler.EncloseScope using (Closed)
+open import Compiler.Simplify using (simplify)
+open import Compiler.Typed.Cast using (cast-closed)
+open import Compiler.Typed.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg)
+open import proof.Compiler.Typed.CastScope using (simplify-ws; cast-closed-≡)
+open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
+open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
+open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
+open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
+open import Language.Typed.Mon using (⌜_⌝ₚ)
+open import proof.Correctness.Typed.GraphErr.GlobalizeCorrect using (globalize-correct)
+open import proof.Correctness.Typed.GraphErr.RCOCorrect using (rco-correct)
+open import proof.Correctness.Typed.GraphErr.LiftLocalsCorrect using (lift-locals-correct)
+open import proof.Correctness.Typed.GraphErr.ExplicateCorrect using (explicate-correct)
 
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
@@ -54,3 +69,33 @@ compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (enclose-correct 
     , ⟨ (λ c → ⇔∘ ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩ (delay-correct-const M₃ c))
       , ⇔∘ ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ })
            , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) ⟩ (delay-correct-val M₃) ⟩ ⟩
+
+{- The typed compiler from untyped ISWIM (Compiler/Typed/Pipeline.agda) -----------}
+
+≃-Same : ∀ {D E E'} → Same D E → E ≃ E' → Same D E'
+≃-Same ⟨ e , ⟨ c , v ⟩ ⟩ ⟨ E⊆ , E⊇ ⟩ =
+  ⟨ ⇔∘ e ⟨ E⊆ ω , E⊇ ω ⟩
+  , ⟨ (λ k → ⇔∘ (c k) ⟨ E⊆ (dconst k) , E⊇ (dconst k) ⟩)
+    , ⇔∘ v ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊇ d d∈ , d≢ ⟩ ⟩ }) ⟩ ⟩ ⟩
+
+compile₄-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) (S4.⟦ compile₄ M ⟧ ρ₀)
+compile₄-same M c rewrite cast-closed-≡ (simplify M) (simplify-ws M c) =
+  ≃-Same′ (simplify-correct M c) (compile-same (simplify M) (simplify-ws M c))
+  where
+  ≃-Same′ : ∀ {D D' E} → D ≃ D' → Same D' E → Same D E
+  ≃-Same′ ⟨ D⊆ , D⊇ ⟩ ⟨ e , ⟨ k , v ⟩ ⟩ =
+    ⟨ ⇔∘ ⟨ D⊆ ω , D⊇ ω ⟩ e
+    , ⟨ (λ b → ⇔∘ ⟨ D⊆ (dconst b) , D⊇ (dconst b) ⟩ (k b))
+      , ⇔∘ ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ }) , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊇ d d∈ , d≢ ⟩ ⟩ }) ⟩ v ⟩ ⟩
+
+compile-same₅ : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
+compile-same₅ M c = ≃-Same (compile₄-same M c) (globalize-correct (compile₄ M))
+
+compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
+compile-mon-same M c = ≃-Same (compile-same₅ M c) (≃-sym (rco-correct (compile M)))
+
+compile-imp-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
+compile-imp-same M c = ≃-Same (compile-mon-same M c) (≃-sym (lift-locals-correct (compile-mon M)))
+
+compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
+compile-cfg-same M c = ≃-Same (compile-imp-same M c) (≃-sym (explicate-correct (compile-imp M)))
