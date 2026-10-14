@@ -73,11 +73,6 @@ sub σ = trav tmK σ
 subs : ∀ {k k' n} → (Fin k → Tm k' Any) → Vec (Tm k Any) n → Vec (Tm k' Any) n
 subs σ = travs tmK σ
 
-infixr 5 _•_
-_•_ : ∀ {k k'} → Tm k' Any → (Fin k → Tm k' Any) → Fin (suc k) → Tm k' Any
-(V • σ) zero = V
-(V • σ) (suc x) = σ x
-
 {- substituting a value for variable 0 -}
 _[_] : ∀ {A} → Tm 1 A → Tm 0 Any → Tm 0 A
 N [ V ] = sub (λ _ → V) N
