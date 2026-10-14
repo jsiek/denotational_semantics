@@ -1,14 +1,14 @@
 {-
 
-  Selections (Framework/Select.agda): Thin R fl xs ys says that ys are
+  Selections (Framework/VecSelect.agda): Thin R fl xs ys says that ys are
   the kept xs, each related by R; then R relates the values at a Kept
   variable and at its squeeze.
 
 -}
 
-module proof.Framework.Select where
+module proof.Framework.VecSelect where
 
-open import Framework.Select
+open import Framework.VecSelect
 
 open import Data.Bool using (Bool; true; false; T; _∨_)
 open import Data.Unit using (tt)

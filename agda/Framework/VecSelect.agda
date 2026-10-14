@@ -7,7 +7,7 @@
 
 -}
 
-module Framework.Select where
+module Framework.VecSelect where
 
 open import Data.Bool using (Bool; true; false; T)
 open import Data.Fin using (Fin; zero; suc)

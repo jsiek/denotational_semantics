@@ -19,7 +19,7 @@ module Compiler.Typed.Optimize where
 
 open import Language.Typed.Type using (Any)
 open import Language.Typed.Clos2
-open import Framework.Select
+open import Framework.VecSelect
 
 open import Data.Bool using (Bool; true; false; T; _∨_)
 open import Data.Fin using (Fin; zero; suc)

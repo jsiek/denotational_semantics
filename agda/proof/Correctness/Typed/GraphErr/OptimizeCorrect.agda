@@ -27,8 +27,8 @@ open import Language.Typed.Clos2
 open import proof.Semantics.GraphErr.Typed.Clos2
   using (⟦_⟧; ⟦_⟧s; fv-env; appᵗ-≃; getᵗ-≃; caseᵗ-≃; primᵗ-≃; projectᵗ-≃; ⌊⌋-≃; fv-env-nth)
 open import Compiler.Typed.Optimize
-open import Framework.Select
-open import proof.Framework.Select
+open import Framework.VecSelect
+open import proof.Framework.VecSelect
 
 open import Data.Bool using (Bool; T)
 open import Data.Fin using (Fin; zero; suc; toℕ)

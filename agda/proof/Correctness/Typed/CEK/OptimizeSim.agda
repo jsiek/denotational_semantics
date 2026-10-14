@@ -26,8 +26,8 @@ module proof.Correctness.Typed.CEK.OptimizeSim where
 open import Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Language.Typed.Clos2
 open import Compiler.Typed.Optimize
-open import Framework.Select
-open import proof.Framework.Select
+open import Framework.VecSelect
+open import proof.Framework.VecSelect
 open import Framework.VecUtil using (more; collected)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep

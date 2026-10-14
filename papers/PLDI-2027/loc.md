@@ -56,8 +56,7 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | reduction framework: reduction semantics, simulations between them | 235 | — | — | — | 235 | — |
 | clocked big-step framework | 243 | — | — | 243 | — | — |
 | runs of a step function from any state | 29 | — | — | — | — | — |
-| typed pilot: decidable base types, collecting vectors | 48 | — | — | — | — | — |
-| **total** | 3804 | 1900 | 875 | 860 | 1172 | 2765 |
+| **total** | 3756 | 1900 | 875 | 860 | 1172 | 2765 |
 
 Adequacy uses 2110 lines of the infrastructure, 210 of them not used by the denotational proof.
 
@@ -167,7 +166,6 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
 | `Framework.Iff` | 3 | simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.ListUtil` (+ proof/) | 114 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.Primitives` | 17 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
-| `Framework.PrimitivesDec` | 38 | the typed pilot |
 | `Framework.Reduction` (+ proof/) | 235 | reduction |
 | `proof.Framework.Runs` | 29 | adequacy, adequacy with errors |
 | `proof.Framework.Simulation` | 116 | simulation, reduction |
@@ -182,12 +180,17 @@ Shared by all four proofs, and not counted: 21 modules, 850 lines. Counted in th
 | `proof.Framework.Syntax.SubstRel` | 35 | reduction |
 | `Framework.Syntax.SyntaxUtil` | 6 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.Syntax.Uses` (+ proof/) | 44 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
-| `Framework.VecUtil` | 10 | the typed pilot |
 | `Framework.abt.AbstractBindingTree` | 14 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.abt.Fold2` | 19 | graph model, adequacy, graph model with errors, adequacy with errors |
 | `Framework.abt.GSubst` | 7 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.abt.ScopedTuple` (+ proof/) | 129 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.abt.Sig` | 16 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
+| `proof.Framework.GraphModel.TypedBinders` | 85 | the typed pilot |
+| `Framework.GraphModel.TypedCheck` | 3 | the typed pilot |
+| `proof.Framework.GraphModel.TypedOk` | 113 | the typed pilot |
+| `Framework.PrimitivesDec` | 38 | the typed pilot |
+| `Framework.VecSelect` (+ proof/) | 41 | the typed pilot |
+| `Framework.VecUtil` | 10 | the typed pilot |
 | `Framework.abt.Var` | 14 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 
 ## What the groups contain
@@ -304,6 +307,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-13 | graph model with errors, monadic (pilot), step 1: Clos3 and Clos4 on the monad (pairs, the late-checked call), concretize and delay; a cleanup of the step-0 proofs (one `Val` predicate, β laws stated with it, `binds-good`, `clos-β`, `⟦⟧-closed₀`). Not in the totals: delay 901 lines against 1037 in the errors model (594 in the graph model), concretize 134 against 151, simplify 351 (was 385) against 380, enclose 92 (was 108) against 109, ISWIM adequacy 790 against 915, error-specific infrastructure 564 against 997 for the same four languages; the denotational framework row grows by 3 (`⟦⟧-closed₀`); none of the totals changes (PR #53) | **2608** | 3526 | 2794 | 3689 |
 | 2026-10-13 | graph model with errors rebuilt on the error monad for the whole compiler, replacing the old development (PR #53, step 2): Clos5, Imp, CFG and X86 semantics on the monad; optimize, globalize, rco, lift locals, explicate control, select and the composition; adequacy for the Clos5 and X86 machines. The errors column: passes and semantics 3953 → 3528 (delay 1037 → 898, rco 206 → 194, select 349 → 363, lift locals 129 → 138; Clos2Continuous, unused, dropped), adequacy 4760 → 4333 (Clos5 1153 → 904, X86 2149 → 2096), error-specific infrastructure 1317 → 935, now sharing 474 lines of the graph model's operators; no other total changes | **2608** | 3526 | 2794 | 3689 |
 | 2026-10-13 | typed intermediate languages, a pilot (ISWIM → Clos4; not in the totals): cast insertion into intrinsically typed ISWIMᵀ–Clos4ᵀ (closures in Clos4ᵀ packed as ∃ n. code n × tup n), typed enclose, concretize and delay, in the CEK and graph-with-errors columns; the CC passes shrink (CEK enclose 188 → 106, concretize 182 → 115, delay 134 → 101; graph model with errors enclose 90 → 38, concretize 134 → 69) but not delay in the graph model with errors (898 → 919), and cast insertion costs 195 / 122; the segment, without optimize, CEK 1032 → 1083, graph model with errors 1541 → 1741. New infrastructure 48 (3756 → 3804); see [Typed intermediate languages (pilot)](#typed-intermediate-languages-pilot) | **2608** | 3526 | 2794 | 3689 |
+| 2026-10-14 | typed pilot, step 2 (not in the totals): typed optimize on Clos2ᵀ in both columns (CEK 133 against 224, graph model with errors 63 against 149); infrastructure for semantics of intrinsically typed syntax (201 lines, the pilot's own infrastructure table), which takes the typed graph lemmas from 266 to 70 lines; Clos4ᵀ closures project as functions, delay in the graph model with errors 919 → 878. The segment, like for like without cast insertion: CEK 1062 against 1311, graph model with errors 1489 against 1745 | **2608** | 3526 | 2794 | 3689 |
 
 **Infrastructure audit, step 1 (PR #42).** The last row moves language-independent reasoning that the proofs had repeated, or had written locally, into the infrastructure, under the policy of [Language-independent infrastructure](#language-independent-infrastructure). No theorem statement, pass or semantics changed. What moved:
 
@@ -877,9 +881,7 @@ PRs #50 and #51 built the graph model with errors with its own error-propagating
 
 Not in the totals. Today ISWIM and every intermediate language are untyped. Each semantics checks the kinds of values itself, and a misuse stops with the trapped error `o-error` / ω. The pilot asks whether that error handling goes away when casts are inserted early, as in *Essentials of Compilation*, ch. 9, so that the intermediate languages are statically typed. It covers ISWIM → Clos4 in two contrasting columns, the CEK machines and the graph model with errors. Its statements are in `agda/Theorems/Typed.agda`.
 
-    ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
-
-There is no optimize: enclose's output goes to concretize directly.
+    ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
 
 **Design.**
 * **Types** (`Language/Typed/Type.agda`).
@@ -905,13 +907,14 @@ There is no optimize: enclose's output goes to concretize directly.
     * `pack` builds a closure.
     * `unpack L B` opens one. Its body `B : (n : ℕ) → Tm (⟪ tup n ⟫ ∷ code n ∷ Γ) Any` is a family of terms, one for each length. That constructor branches infinitely but is strictly positive, so Agda's `--safe` accepts it.
     * Opening a closure needs no check. There is no unchecked or untyped access to the environment, and no trapped check that cannot fail.
+  * Optimize (`Compiler/Typed/Optimize.agda`, 67 lines) prunes a closure's free variables as the untyped pass does: it drops one that the code does not use and whose term is a variable (closures are strict), and renames the code's variables. Its Bool-valued `uses` (17 lines) and the facts both proofs share about the kept positions (22) are in the pass module; the selection of kept positions is infrastructure (`Framework/VecSelect.agda`).
   * Delay is `app L M ⇒ unpack L' (λ n → call (` 1) (` 0) M')`, with a renaming for the two variables.
 * **CEK machines** (`Semantics/CEK/Typed/`). Values, environments and continuations are typed, and a state is well typed by construction. Each machine has one way to stop with `o-error`, a failed project. The untyped machines have five or six, plus an unbound variable.
 * **Graph model with errors** (`Semantics/GraphErr/Typed/`).
   * The operators are the graph model's under the binds of the error monad, with no `checked`.
   * `inject` is the identity, since a value's kind is its tag.
   * `project k D = D ≫= λ X → checked k X (X ⇂ kind ≡ k)`. It keeps only the values of the right kind; without that filter a denotation is not consistent.
-  * In Clos4ᵀ a function is a pair, so `project fun` checks for a pair.
+  * In Clos4ᵀ a function is a pair. Its project sees kinds through `kind₄`, which maps a pair to a function (`checkedᵠ`, infrastructure), so that every language projects to the same kind `kindᶠ G` and a Clos4ᵀ closure has the kind of a function.
   * `unpack` runs its body for the length n of the environment, read off the kind `tup n` of its values. Running it for every n would give `const n` for every n in a body that ignores its environment.
 
 The pilot's proof agents found these last three points: their first versions were wrong.
@@ -923,40 +926,48 @@ The pilot's proof agents found these last three points: their first versions wer
 | languages ISWIM–Clos4 (shared) | 115 | **101** | 115 | **101** |
 | passes (shared): cast insertion | — | 26 | — | 26 |
 | passes (shared): CC: enclose, concretize, delay | 89 | **79** | 89 | **79** |
-| passes (shared): CC: optimize | 55 | — | 55 | — |
+| passes (shared): CC: optimize | **55** | 67 | **55** | 67 |
 | passes (shared): the compiler | — | 3 | — | 3 |
-| semantics of the languages | 324 | **322** | **215** | 368 |
+| semantics of the languages | 324 | **322** | 215 | **174** |
 | lemmas shared by the passes | — | 30 | — | — |
 | cast insertion | — | 195 | — | 122 |
 | CC: enclose | 188 | **106** | 90 | **38** |
-| CC: optimize | 224 | — | 149 | — |
+| CC: optimize | 224 | **133** | 149 | **63** |
 | CC: concretize | 182 | **115** | 134 | **69** |
-| CC: delay | 134 | **101** | **898** | 919 |
-| composition | — | 5 | — | 16 |
-| **total, without optimize** | **1032** | 1083 | **1541** | 1741 |
-| **total** | 1311 | **1083** | 1745 | **1741** |
+| CC: delay | 134 | **101** | 898 | **878** |
+| composition | — | 5 | — | 17 |
+| **total** | 1311 | **1283** | 1745 | **1637** |
+| **total without cast insertion (like for like)** | 1311 | **1062** | 1745 | **1489** |
 
-| infrastructure group | lines | graph model | graph model with errors | both | adequacy adds: graph model | adequacy adds: graph model with errors |
+| typed pilot: infrastructure (not in the totals) | lines | used by typed CEK | used by typed graph model with errors |
+|---|---:|---:|---:|
+| decidable base types, vectors (collecting, selecting) | 89 | 89 | 79 |
+| semantics of intrinsically typed syntax (graph model) | 201 | — | 201 |
 
-* **The CC passes shrink in both columns**, except delay in the graph model with errors.
+* **The CC passes shrink in both columns.**
   * **CEK:**
     * enclose 188 → 106;
+    * optimize 224 → 133;
     * concretize 182 → 115;
     * delay 134 → 101.
   * **Graph model with errors:**
     * enclose 90 → 38;
+    * optimize 149 → 63;
     * concretize 134 → 69;
-    * delay 898 → 919.
+    * delay 898 → 878.
 * **Cast insertion is new**, and it is where the kind errors are now handled: CEK 195 (147 for the simulation, plus 48 lines of list and primitive lemmas copied from adequacy so that the pilot does not import it), graph model with errors 122.
-* **The segment as a whole is not smaller, counting cast insertion** (but see the recommendation: the late design must insert the checks too).
-  * CEK: 1083 against 1032 without optimize, or 1311 with it.
-  * Graph model with errors: 1741 against 1541, or 1745 with optimize.
+* **The segment.**
+  * Counting cast insertion: CEK 1283 against 1311, graph model with errors 1637 against 1745.
+  * Like for like, leaving cast insertion out of both sides (see the recommendation: the late design must insert the checks too): CEK 1062 against 1311 (−19%), graph model with errors 1489 against 1745 (−15%).
 * **The typed CEK machines are no shorter** (322 against 324). The kind cases are gone, but typed continuations, the length equations of tuple frames (`Framework/VecUtil.agda`, infrastructure) and inject/project frames take their place.
-* **The typed graph semantics (368) is 99 lines of definitions and 266 lines of lemmas.** The lemmas cover monotonicity, consistency and continuity, which the untyped semantics get from the generic fold over abstract binding trees (`GoodSemantics`, infrastructure).
-  * The typed semantics are defined by recursion on intrinsically typed terms, so each language proves these itself: Clos2ᵀ 44, Clos3ᵀ 121, Clos4ᵀ 101 (the continuity of `unpack`, β of code).
-  * Concretize and delay need them for the β laws of closures.
-  * A generic fold for intrinsically typed syntax would move most of these lines into infrastructure.
-* **The audit surface of the pilot:** 715 lines of its own (types, languages, passes, semantics, statements), against 115 lines of languages, 89 of passes and the semantics rows today.
+* **The typed graph semantics (174) are 104 lines of definitions and 70 lines of lemmas.**
+  * The untyped semantics get monotonicity, consistency and continuity from the generic fold over abstract binding trees (`GoodSemantics`, infrastructure).
+  * The typed semantics are defined by recursion on intrinsically typed terms, so they need the same facts. Infrastructure for semantics of intrinsically typed syntax (`proof/Framework/GraphModel/{TypedOk,TypedBinders}.agda`, `Framework/GraphModel/TypedCheck.agda`, 201 lines) now gives them from per-operator properties:
+    * `Ok` (monotone, consistent, continuous) and its combinators for an operator, a variable, a constant, a let, a vector of operands, code, and the existential `unpack`;
+    * the β laws of code, and the finitary bodies the β laws need.
+  * What stays in the column is per-operator facts (Clos2ᵀ, 26 lines: each typed operator is `Good`, and its congruence) and, per language, the structural induction `ok`, one line per constructor, with `oks` and `con` (Clos3ᵀ 22, Clos4ᵀ 22).
+  * Before that infrastructure these lemmas were 266 lines. A generic fold proper, as for the abstract binding trees, would need the typed languages to be instances of one generic syntax. Each language would then need a description, a translation into it and a proof that it agrees with the semantics, which costs more than the one-line-per-constructor induction it replaces.
+* **The audit surface of the pilot:** 812 lines of its own (types, languages, passes, semantics, statements), against 115 lines of languages, 144 of passes and the semantics rows today.
 
 **Error handling removed.**
 * **CEK.**
@@ -966,12 +977,12 @@ The pilot's proof agents found these last three points: their first versions wer
   * What is left of errors is 6 lines per proof for project, a step that succeeds or stops in both machines, plus 7 shared lines (`Lock`).
   * Cast insertion spends about 28 of its 147 lines on errors.
 * **Graph model with errors.**
-  * Enclose and concretize handle errors with one congruence line each for `project`, plus 6 lines (`project-good`).
+  * Enclose, optimize and concretize handle errors with one congruence line each for `project`; that `project` is `Good` is one line on infrastructure.
   * In cast insertion, about 81 of 122 lines relate a check to a project.
   * Delay is the exception (below).
 * **The early and the late operator check** are gone. ISWIMᵀ to Clos3ᵀ application and Clos4ᵀ's call check nothing, because cast insertion has already put the operator's project where the ISWIM machine checks it. Typed CEK delay is a plain plus simulation.
 
-**Why typed delay in the graph model is not smaller** (919 against 898; 594 in the graph model without errors). The types did remove the early and late checks, the let through Λ, and the checks of prim, get and case: the backward fundamental lemma went from 376 to 333. Three costs come back.
+**Why typed delay in the graph model is hardly smaller** (878 against 898; 594 in the graph model without errors). The types did remove the early and late checks, the let through Λ, and the checks of prim, get and case: the backward fundamental lemma went from 376 to 333. Three costs come back.
 * **The relation cannot be indexed by types.** `Any` contains `⟪ fun ⟫`, so the types are recursive. The forward relation still recurses on source values. The backward relation is still indexed by the depth of finite target lists. A closure's calls still mix the code and environments of several pairs (`Calls`, `collect`).
 * **Project's filter** relates sets restricted by kind on both sides (about 80 lines with its error).
 * **Others:**
@@ -979,7 +990,7 @@ The pilot's proof agents found these last three points: their first versions wer
   * the renamings of typed delay (about 35);
   * the semantic lemmas above.
 
-  Giving a Clos4ᵀ closure the kind of a function, so that `kind₄ = kindᶠ`, would save an estimated 30–40 lines.
+  Giving a Clos4ᵀ closure the kind of a function (its project sees a pair as a function) saved 41 lines of delay (919 → 878): the kind correspondence between the two languages (`tgt`, `back`, `isfun`, the `≢ prod` side conditions) is gone, for 4 more lines of the semantics and 12 of infrastructure.
 
 **Forecast for the rest of the pipeline, if continued typed.**
 * **Globalize** (Clos4ᵀ → Clos5ᵀ). Code references index a typed table of definitions (`fun-ref : Σ ∋ n → Tm Γ (code n)`), so a call to a missing definition cannot be written. Growing tables (`GlobalizeTable`) become weakenings of the table's membership. Expect the CEK proof to shrink as enclose and concretize did (157 → about 100), and the graph proof to stay an equation (157 → about 80), plus about 100 lines of semantic lemmas for Clos5ᵀ.
@@ -997,8 +1008,9 @@ The pilot's proof agents found these last three points: their first versions wer
 * **The question is where the checks go, not whether.** Today's pipeline never makes the kind checks explicit: every semantics down to X86 checks kinds itself. A compiler to real x86 has to insert them somewhere, as tag tests on tagged words. Cast insertion is that pass, put early. It extends the compiler towards a complete one; that the later passes get simpler is a bonus.
 * **So the like-for-like comparison leaves cast insertion out of both sides.** The late design would need its own check-insertion pass (near select, as *Essentials of Compilation*'s `reveal_casts` and tag bits are), whose proof relates each implicit check to tag-test code. It is not measured, but at that level it is unlikely to be cheaper than cast insertion's 195 / 122 lines.
 * **On that basis, early wins in the passes:**
-  * CEK: the CC proofs (enclose, concretize, delay, plus 30 shared lines) are 352 against 504;
-  * graph model with errors: 1026 against 1122.
-* **The semantics are the cost.** Typed CEK machines are no shorter (322 against 324). The typed graph semantics are 368 against 215, because each typed language re-proves monotonicity, consistency and continuity (266 lines) that the generic fold gives untyped syntax. A generic fold for intrinsically typed syntax, in infrastructure, would remove most of that.
+  * CEK: the CC proofs (enclose, optimize, concretize, delay, plus 30 shared lines) are 485 against 728;
+  * graph model with errors: 1048 against 1271;
+  * the segment, with the languages, passes and semantics: CEK 1062 against 1311, graph model with errors 1489 against 1745.
+* **The semantics cost nothing more.** Typed CEK machines are no shorter (322 against 324). The typed graph semantics are 174 against 215, now that their monotonicity, consistency and continuity come from infrastructure for intrinsically typed syntax (201 lines, not counted, as the untyped fold is not).
 * **The later passes should gain more** (rco, lift locals, explicate control, globalize), and select would carry the remaining invariant that X86's own trapped errors are unreachable.
-* **To do before converting:** optimize for the typed languages (pruning the captured variables), the generic typed fold, and the function kind for Clos4ᵀ closures (an estimated 30–40 lines off delay).
+* **Done since the first pilot:** optimize for the typed languages, the infrastructure for typed semantics, and the function kind for Clos4ᵀ closures.

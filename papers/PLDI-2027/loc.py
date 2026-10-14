@@ -307,7 +307,7 @@ GROUPS = [
     # proofs in two columns; not in the totals.  Its language-independent
     # helpers are infrastructure.
     ('infra', 'typed pilot: decidable base types, vectors (collecting, selecting)',
-     [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda', W + 'Select.agda', WP + 'Select.agda']),
+     [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda']),
     ('infra', 'typed pilot: semantics of intrinsically typed syntax (graph model)',
      [W + 'GraphModel/Typed*.agda', WP + 'GraphModel/Typed*.agda']),
     ('typ', 'typed: types and languages', [L + 'Typed/*.agda']),
