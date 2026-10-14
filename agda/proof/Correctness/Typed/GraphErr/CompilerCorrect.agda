@@ -1,12 +1,13 @@
 {-
 
-  The typed pilot's compiler (Compiler/Typed/Pipeline.agda) in the graph
-  model with errors: for a well-scoped closed ISWIM program, the Clos4ᵀ
-  program errs exactly when the source does, produces the same constants,
-  and produces a value exactly when the source does (Same, as in
-  proof/Correctness/GraphErr/CompilerCorrect.agda, repeated here). Cast
-  insertion, enclose, optimize and concretize preserve the meaning exactly (≃);
-  delay preserves and reflects the three facts.
+  The typed compiler (Compiler/Typed/Pipeline.agda) in the graph model
+  with errors: for a closed ISWIM program, the compiled program errs
+  exactly when the source does, produces the same constants, and
+  produces a value exactly when the source does (Same). Simplify, cast
+  insertion, enclose, optimize, concretize, globalize, rco, lift locals
+  and explicate control preserve the meaning exactly (≃); delay
+  preserves and reflects the three facts. (Select instructions:
+  SelectCorrect.agda.)
 
 -}
 
@@ -19,11 +20,11 @@ open import Framework.GraphModel.ErrorMonad using (val∈)
 open import Framework.Iff using (_⇔_)
 open import Language.ISWIM using (AST; Op; sig)
 open import Framework.Syntax.Scope Op sig using (WS)
-open import Compiler.Typed.Pipeline using (compileᵀ)
 open import Compiler.Typed.Cast using (cast-program)
 open import Compiler.Typed.Enclose using (enclose)
 open import Compiler.Typed.Optimize using (optimize-program)
 open import Compiler.Typed.Concretize using (concretize-program)
+open import Compiler.Typed.Delay using (delay-program)
 open import Semantics.GraphErr.ISWIM using (⟦_⟧)
 import Semantics.GraphErr.Typed.Clos3
 import Semantics.GraphErr.Typed.ISWIM
@@ -59,20 +60,22 @@ Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst
 ⇔∘ : ∀ {A B C : Set} → A ⇔ B → B ⇔ C → A ⇔ C
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
-compile-same : ∀ (M : AST) (w : WS 0 M) → Same (⟦ M ⟧ ρ₀) (S4.⟦ compileᵀ M w ⟧ ρ₀)
+{- cast insertion to delay, on a well-scoped closed program -}
+compile-same : ∀ (M : AST) (w : WS 0 M)
+  → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program (concretize-program (optimize-program (enclose (cast-program M w)))) ⟧ ρ₀)
 compile-same M w = go (≃-trans (cast-correct M w) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂))))
   where
   M₁ = cast-program M w
   M₂ = optimize-program (enclose M₁)
   M₃ = concretize-program M₂
-  go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ compileᵀ M w ⟧ ρ₀)
+  go : ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.Clos3.⟦ M₃ ⟧ ρ₀ → Same (⟦ M ⟧ ρ₀) (S4.⟦ delay-program M₃ ⟧ ρ₀)
   go ⟨ D⊆ , E⊆ ⟩ =
     ⟨ ⇔∘ ⟨ D⊆ ω , E⊆ ω ⟩ (delay-correct-error M₃)
     , ⟨ (λ c → ⇔∘ ⟨ D⊆ (dconst c) , E⊆ (dconst c) ⟩ (delay-correct-const M₃ c))
       , ⇔∘ ⟨ (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ D⊆ d d∈ , d≢ ⟩ ⟩ })
            , (λ { ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ → ⟨ d , ⟨ E⊆ d d∈ , d≢ ⟩ ⟩ }) ⟩ (delay-correct-val M₃) ⟩ ⟩
 
-{- The typed compiler from untyped ISWIM (Compiler/Typed/Pipeline.agda) -----------}
+{- The typed compiler from untyped ISWIM ------------------------------------------}
 
 ≃-Same : ∀ {D E E'} → Same D E → E ≃ E' → Same D E'
 ≃-Same ⟨ e , ⟨ c , v ⟩ ⟩ ⟨ E⊆ , E⊇ ⟩ =

@@ -1,9 +1,9 @@
 {-
 
-  An example of the typed pilot's pipeline (Compiler/Typed/Pipeline.agda):
+  An example of cast insertion and the typed closure-conversion passes:
   (λx. x - 1) 5, and an application of a non-function, 5 5, through cast
-  insertion, enclose, concretize and delay, run on the ISWIM machine and
-  on the Clos4ᵀ machine.
+  insertion, enclose, optimize, concretize and delay, run on the ISWIM
+  machine and on the Clos4ᵀ machine.
 
 -}
 
@@ -14,7 +14,12 @@ open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
 open import Language.Typed.Type
 import Language.Typed.ISWIM as T
 open import Compiler.Typed.Cast using (cast-program)
-open import Compiler.Typed.Pipeline using (compileᵀ)
+open import Compiler.Typed.Enclose using (enclose)
+open import Compiler.Typed.Optimize using (optimize-program)
+open import Compiler.Typed.Concretize using (concretize-program)
+open import Compiler.Typed.Delay using (delay-program)
+import Language.Typed.Clos4 as Clos4ᵀ
+open import Data.List using ([])
 open import Semantics.Observation using (Obs; o-const; o-error)
 open import Semantics.CEK.Smallstep using (Machine; next; stop)
 import Semantics.CEK.ISWIM as ISWIMₘ
@@ -30,6 +35,10 @@ open import Data.Unit using (tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 module proof.Compiler.Examples.TypedExample where
+
+{- cast insertion to delay, on a well-scoped closed program -}
+to-clos4 : (M : AST) → WS 0 M → Clos4ᵀ.Tm [] Any
+to-clos4 M w = delay-program (concretize-program (optimize-program (enclose (cast-program M w))))
 
 {- run a machine for at most n steps -}
 run : ℕ → (L : Machine) → Maybe Obs
@@ -64,7 +73,7 @@ dec5ᵀ = refl
 dec5-iswim : run 20 (ISWIMₘ.sem dec5) ≡ just (o-const Int (+ 4))
 dec5-iswim = refl
 
-dec5-clos4 : run 60 (Clos4ᵀₘ.sem (compileᵀ dec5 dec5-ws)) ≡ just (o-const Int (+ 4))
+dec5-clos4 : run 60 (Clos4ᵀₘ.sem (to-clos4 dec5 dec5-ws)) ≡ just (o-const Int (+ 4))
 dec5-clos4 = refl
 
 {- 5 5: the ISWIM machine finds that 5 is not a function; the compiled
@@ -78,5 +87,5 @@ bad-ws = tt , tt , tt
 bad-iswim : run 10 (ISWIMₘ.sem bad) ≡ just o-error
 bad-iswim = refl
 
-bad-clos4 : run 20 (Clos4ᵀₘ.sem (compileᵀ bad bad-ws)) ≡ just o-error
+bad-clos4 : run 20 (Clos4ᵀₘ.sem (to-clos4 bad bad-ws)) ≡ just o-error
 bad-clos4 = refl

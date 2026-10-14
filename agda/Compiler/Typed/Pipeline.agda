@@ -9,18 +9,15 @@
 
   compile₄ goes to Clos4ᵀ, compile to Clos5ᵀ, and compile-mon,
   compile-imp, compile-cfg and compile-x86 continue, as the untyped
-  compositions of Compiler/Pipeline.agda do. Simplify stays on untyped
+  compositions of the preserved untyped pipeline do
+  (Untyped/Compiler/Pipeline.agda). Simplify stays on untyped
   ISWIM; cast insertion (cast-closed) needs a closed program.
-
-  compileᵀ is the pilot's composition (no simplify, a well-scoped
-  program), kept for the pilot's statements.
 
 -}
 
 module Compiler.Typed.Pipeline where
 
-open import Language.ISWIM using (AST; Op; sig)
-open import Framework.Syntax.Scope Op sig using (WS)
+open import Language.ISWIM using (AST)
 open import Language.Typed.Type using (Any)
 import Language.Typed.Clos4 as Clos4ᵀ
 import Language.Typed.Clos5 as Clos5ᵀ
@@ -29,7 +26,7 @@ import Language.Typed.Imp as Impᵀ
 import Language.Typed.CFG as CFGᵀ
 import Language.X86 as X86
 open import Compiler.Simplify using (simplify)
-open import Compiler.Typed.Cast using (cast-program; cast-closed)
+open import Compiler.Typed.Cast using (cast-closed)
 open import Compiler.Typed.Enclose using (enclose)
 open import Compiler.Typed.Optimize using (optimize-program)
 open import Compiler.Typed.Concretize using (concretize-program)
@@ -41,9 +38,6 @@ open import Compiler.Typed.Explicate using (explicate)
 open import Compiler.Typed.Select using (select)
 
 open import Data.List using ([])
-
-compileᵀ : (M : AST) → WS 0 M → Clos4ᵀ.Tm [] Any
-compileᵀ M w = delay-program (concretize-program (optimize-program (enclose (cast-program M w))))
 
 compile₄ : AST → Clos4ᵀ.Tm [] Any
 compile₄ M = delay-program (concretize-program (optimize-program (enclose (cast-closed (simplify M)))))
