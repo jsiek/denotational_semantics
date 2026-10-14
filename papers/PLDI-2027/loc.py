@@ -205,7 +205,7 @@ GROUPS = [
     # machine and interpreter
     (BOTH, 'semantics of the languages',
      [G + 'Prim.agda', GP + 'Prim.agda', G + 'ISWIM.agda', GP + 'ISWIM.agda', GP + 'ISWIMContinuous.agda',
-      G + 'Frames.agda', G + 'X86.agda']),
+      G + 'Frames.agda', G + 'X86.agda', GP + 'X86.agda']),
     ('den', 'semantics of the languages', [G + 'Typed/*.agda', GP + 'Typed/*.agda']),
     (BOTH, 'simplify', [GC + 'SimplifyCorrect.agda']),
     ('den', 'cast insertion', [GC + 'CastCorrect.agda']),

@@ -139,6 +139,7 @@ import proof.Semantics.Graph.Typed.Clos3
 import proof.Semantics.Graph.Typed.Clos4
 import proof.Semantics.Graph.Typed.Clos5
 import proof.Semantics.Graph.Typed.Ops
+import proof.Semantics.Graph.X86
 
 {- ---------------------------------------------------------------------------
    proof/: the CEK machines + simulations

@@ -43,6 +43,7 @@ open L using (Loc; reg; rax; rdi; rsi; Instr; Block; block; jmp; je; retq)
 open import Compiler.Select
 open import proof.Compiler.SelectFacts using (depth-≥; len-defs; len-blocks)
 import Semantics.Graph.X86 as X
+open import proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
 open X using (Store; read; _[_↦_]; checked; zeros; _[_≔_]; isinl; called; args)
 open import proof.Semantics.Graph.Typed.Ops using (Table; tables; accepts; guardᵖ; fun₄; init)
 open import proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; Meanings; blocks; drop; 𝒜; 𝒮; tail-mono; blocks-mono)
@@ -101,60 +102,6 @@ drop-idx (there⊑ p) σ y = drop-idx p (λ i → σ (suc i)) y
 ˢ-++ : ∀ xs {ys T n κ} → X.⟦ xs ++ ys ⟧ˢ T n κ ≡ X.⟦ xs ⟧ˢ T n (X.⟦ ys ⟧ˢ T n κ)
 ˢ-++ [] = refl
 ˢ-++ (i ∷ xs) {T = T} {n} = cong (X.⟦ i ⟧ⁱ T n) (ˢ-++ xs)
-
-{- No slot holds both an inl and an inr -}
-Tagged : 𝒫 Value → Set
-Tagged D = ∀ {u v} → left u ∈ D → right v ∈ D → ⊥
-
-Inv : Store → Set
-Inv σ = ∀ y → Tagged (σ y)
-
-tagged-≈ : ∀ {V} → V ≈ V → Tagged (mem V)
-tagged-≈ {V} c l r = ≈⇒Every V V c _ _ l r
-
-inv-↦ : ∀ {σ x X} → Inv σ → Tagged X → Inv (σ [ x ↦ X ])
-inv-↦ {x = x} i t y with y ≟ x
-... | yes _ = t
-... | no _ = i y
-
-{- case: test, bind the payload, and branch on the flag (as in the untyped proof) -}
-case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
-  → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
-  → ⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩
-    ≃ 𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩
-case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
-  where
-  G : _
-  G w ⟨ [] , ⟨ ⟨ _ , ⟨ ne , _ ⟩ ⟩ , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ f , ⟨ _ , ⟨ fl , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-    with fl f (here refl)
-  ... | inj₁ ⟨ u , ⟨ l∈ , _ ⟩ ⟩ =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (lefts (V⊆ d d∈))) , ⟨ proj₁ (F₁≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
-    where
-    lefts : ∀ {d} → payloadD A d → left d ∈ A
-    lefts (inj₁ l) = l
-    lefts (inj₂ r) = ⊥-elim (tg l∈ r)
-  ... | inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ f , ⟨ _ , ⟨ fr , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-    with fr f (here refl)
-  ... | inj₂ ⟨ u , ⟨ r∈ , _ ⟩ ⟩ =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (rights (V⊆ d d∈))) , ⟨ proj₁ (F₂≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
-    where
-    rights : ∀ {d} → payloadD A d → right d ∈ A
-    rights (inj₁ l) = ⊥-elim (tg l r∈)
-    rights (inj₂ r) = r
-  ... | inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  H : _
-  H w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₁ ⟨ v , ⟨ A⊇ _ (l∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₁≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
-                , ⟨ (λ ()) , c ⟩ ⟩
-              , ⟨ (λ d d∈ → inj₁ (A⊇ _ (l∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
-  H w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₂ ⟨ v , ⟨ A⊇ _ (r∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₂≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
-                , ⟨ (λ ()) , c ⟩ ⟩
-              , ⟨ (λ d d∈ → inj₂ (A⊇ _ (r∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
 
 {- The pass preserves meanings -----------------------------------------------------------}
 

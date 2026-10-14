@@ -46,6 +46,7 @@ open import Untyped.Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 
 open import Untyped.Semantics.Graph.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
 open import Semantics.Graph.X86
+open import proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
 open import Untyped.proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
 open import Untyped.proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)
@@ -74,20 +75,6 @@ module Untyped.proof.Correctness.Graph.SelectCorrect where
 open import proof.Framework.GraphModel.Laws using (strict-≃; strict-≃₂; strict-≃₃; ⋆-ne)
 
 {- No slot holds both an inl and an inr ------------------------------------------------}
-
-Tagged : 𝒫 Value → Set
-Tagged D = ∀ {u v} → left u ∈ D → right v ∈ D → ⊥
-
-Inv : Store → Set
-Inv σ = ∀ y → Tagged (σ y)
-
-tagged-≈ : ∀ {V} → V ≈ V → Tagged (mem V)
-tagged-≈ {V} c l r = ≈⇒Every V V c _ _ l r
-
-inv-↦ : ∀ {σ x X} → Inv σ → Tagged X → Inv (σ [ x ↦ X ])
-inv-↦ {x = x} i t y with y ≟ x
-... | yes _ = t
-... | no _ = i y
 
 tagged-table : ∀ ds k → Tagged (table ds k)
 tagged-table [] k ()
@@ -153,46 +140,6 @@ module Mono (T : Table) (n : ℕ) where
   blocks-mono (t ∷ bs) l s with l ≟ length bs
   ... | yes _ = tail-mono t (blocks-mono bs) s
   ... | no _ = blocks-mono bs l s
-
-{- case: test, bind the payload, and branch on the flag ----------------------------------}
-
-case-core : ∀ {A A' : 𝒫 Value} {F₁ F₂ G₁ G₂ : 𝒫 Value → 𝒫 Value} → A ≃ A' → Tagged A
-  → (∀ V → V ≈ V → F₁ (mem V) ≃ G₁ (mem V)) → (∀ V → V ≈ V → F₂ (mem V) ≃ G₂ (mem V))
-  → ⋆ ⟨ Λ ⟨ (λ X → 𝒞 ⟨ isinl A , ⟨ (λ _ → F₁ X) , ⟨ (λ _ → F₂ X) , ptt ⟩ ⟩ ⟩) , ptt ⟩ , ⟨ payloadD A , ptt ⟩ ⟩
-    ≃ 𝒞 ⟨ A' , ⟨ G₁ , ⟨ G₂ , ptt ⟩ ⟩ ⟩
-case-core {A} {A'} ⟨ A⊆ , A⊇ ⟩ tg F₁≃ F₂≃ = ⟨ G , H ⟩
-  where
-  G : _
-  G w ⟨ [] , ⟨ ⟨ _ , ⟨ ne , _ ⟩ ⟩ , _ ⟩ ⟩ = ⊥-elim (ne refl)
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ f , ⟨ _ , ⟨ fl , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-    with fl f (here refl)
-  ... | inj₁ ⟨ u , ⟨ l∈ , _ ⟩ ⟩ =
-    inj₁ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (lefts (V⊆ d d∈))) , ⟨ proj₁ (F₁≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
-    where
-    lefts : ∀ {d} → payloadD A d → left d ∈ A
-    lefts (inj₁ l) = l
-    lefts (inj₂ r) = ⊥-elim (tg l∈ r)
-  ... | inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  G w ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ f , ⟨ _ , ⟨ fr , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩ , ⟨ _ , c ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩
-    with fr f (here refl)
-  ... | inj₂ ⟨ u , ⟨ r∈ , _ ⟩ ⟩ =
-    inj₂ ⟨ v , ⟨ V , ⟨ (λ d d∈ → A⊆ _ (rights (V⊆ d d∈))) , ⟨ proj₁ (F₂≃ (v ∷ V) c) w w∈ , c ⟩ ⟩ ⟩ ⟩
-    where
-    rights : ∀ {d} → payloadD A d → right d ∈ A
-    rights (inj₁ l) = ⊥-elim (tg l r∈)
-    rights (inj₂ r) = r
-  ... | inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩
-  H : _
-  H w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₁ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₁ ⟨ v , ⟨ A⊇ _ (l∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₁≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
-                , ⟨ (λ ()) , c ⟩ ⟩
-              , ⟨ (λ d d∈ → inj₁ (A⊇ _ (l∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
-  H w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , ⟨ w∈ , c ⟩ ⟩ ⟩ ⟩) =
-    ⟨ v ∷ V , ⟨ ⟨ inj₂ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → inj₂ ⟨ v , ⟨ A⊇ _ (r∈ v (here refl)) , refl ⟩ ⟩ })
-                                      , ⟨ proj₂ (F₂≃ (v ∷ V) c) w w∈ , ⟨ tt ∷ [] , tt ⟩ ⟩ ⟩ ⟩ ⟩
-                , ⟨ (λ ()) , c ⟩ ⟩
-              , ⟨ (λ d d∈ → inj₂ (A⊇ _ (r∈ d d∈))) , (λ ()) ⟩ ⟩ ⟩
 
 prim-ne : ∀ p {D E} → nonempty (primD p ⟨ D , ⟨ E , ptt ⟩ ⟩) → nonempty D
 prim-ne p ⟨ w , ⟨ k , ⟨ m , ⟨ k∈ , _ ⟩ ⟩ ⟩ ⟩ = ⟨ _ , k∈ ⟩
