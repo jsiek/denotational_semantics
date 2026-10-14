@@ -31,7 +31,6 @@ open import Semantics.Graph.ISWIM using (⟦_⟧)
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
 open import proof.Correctness.Graph.CastCorrect using (cast-correct)
 open import proof.Correctness.Graph.EncloseCorrect using (enclose-correct)
@@ -42,7 +41,6 @@ open import proof.Correctness.Graph.GlobalizeCorrect using (globalize-correct)
 open import proof.Correctness.Graph.RCOCorrect using (rco-correct)
 open import proof.Correctness.Graph.LiftLocalsCorrect using (lift-locals-correct)
 open import proof.Correctness.Graph.ExplicateCorrect using (explicate-correct)
-open import proof.Correctness.Graph.SelectCorrect using (select-correct)
 
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 
@@ -79,6 +77,3 @@ compile-imp-same M c = then (compile-mon-same M c) (lift-locals-correct (compile
 
 compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = then (compile-imp-same M c) (explicate-correct (compile-imp M))
-
-compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₓ
-compile-x86-same M c = then (compile-cfg-same M c) (select-correct (compile-cfg M))

@@ -2,9 +2,12 @@
 
   X86ᵀ: a typed assembly language, after Morrisett, Walker, Crary and
   Glew's TAL, intrinsically typed in the style of Rouvoet et al.'s
-  typed compilation to typed bytecode. A pilot (Theorems/TAL.agda): the
-  output of typed select instructions (Compiler/SelectTAL.agda), with
-  the instructions of X86 (Language/X86.agda) and their meaning.
+  typed compilation to typed bytecode: the target of the compiler, the
+  output of select instructions (Compiler/Select.agda), with the
+  instructions of x86 with variables over abstract values, after
+  Essentials of Compilation (those of the untyped X86,
+  Language/X86.agda, which the untyped pipeline targets), and their
+  meaning.
 
   An instruction is typed by the machine state it starts in and the one
   it leaves (Instr Σ n ψ ψ'); a state type (St) gives
@@ -35,12 +38,37 @@
   The only check is project's: chk t x, d moves slot x : Any to d at
   ⟪ flat t ⟫, and is the trapped error when x holds another kind. It
   is a pseudo-instruction for the X86 test of t and the move (check,
-  Compiler/Select.agda), which clobber %rax or the flag: chk leaves
+  Compiler/SelectX86.agda), which clobber %rax or the flag: chk leaves
   %rax unset and no flag. A value of type ⟪ G ⟫ is one of type Any
   (a ↑, as inject is a move in X86).
 
   A typed proof argument (an equation for a register, a frame bound) is
-  not an operand: without the types, the instructions are those of X86.
+  not an operand: without the types, the instructions are those of X86
+  (Language/Typed/X86Erase.agda).
+
+  Informally, the instructions, which run in a frame, registers and a
+  flag, and their jumps:
+    movq a, d          d := a
+    subq a, r          r := r - a (integers)
+    cmpq a₂, a₁        flag := (a₁ = a₂) (integers)
+    sete d             d := inl ⟨⟩ if the flag is set, inr ⟨⟩ if not
+    testinl a          flag := whether the injection a is an inl
+    alloc o, d         d := the pair, tuple or injection o
+    load f a, d        d := component i of the tuple a, or the payload
+                       of the injection a
+    load fst x, r      r := the code of the closure in slot x (opens it)
+    load snd x, r      r := the environment of the open closure
+    callq a            run the definition of the code a with %rdi and
+                       %rsi, and continue with its result in %rax
+    chk t x, d         d := slot x if it holds a value of tag t, and
+                       otherwise stop with the error
+    retq               return %rax
+    jmp l              run block l in the frame as it is
+    je l₁ l₂           run block l₁ if the flag is set, l₂ if not
+  The values are those of Clos5ᵀ and the later languages: integers and
+  the other constants, code pointers, closures (pairs of code and
+  environment), tuples and injections; the heap is abstract (alloc and
+  load have no addresses), as in X86.
 
 -}
 
@@ -50,7 +78,6 @@ open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Typed.Type
 open import Framework.Membership using (_⊑_)
 open import Language.Typed.Mon using (Atm; var; lit; ref) public
-open import Language.X86 using (Reg; rax; rdi; rsi) public
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Fin using (Fin)
@@ -60,6 +87,9 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ; _<_)
 open import Data.Vec using (Vec)
 open import Relation.Binary.PropositionalEquality using (_≡_)
+
+data Reg : Set where
+  rax rdi rsi : Reg
 
 {- the types of registers: a type, or the code or environment of the
    open closure -}

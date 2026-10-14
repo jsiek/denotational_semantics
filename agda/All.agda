@@ -5,10 +5,11 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
-  The intermediate languages (Language/Typed/) are intrinsically typed;
-  the source, ISWIM, and the target, X86, are untyped. The untyped
+  The intermediate languages and the target, the typed assembly
+  language X86ᵀ (Language/Typed/), are intrinsically typed; the source,
+  ISWIM, is untyped. The untyped
   pipeline that preceded this one is preserved in Untyped/ (see
   Untyped/All.agda), and checked too.
 
@@ -39,9 +40,9 @@ import Theorems.Reduction
 import Theorems.GraphErrors
 import Theorems.Adequacy
 
-{- a pilot: the typed assembly language X86ᵀ as the target (not in the main
-   theorems) -}
-import Theorems.TAL
+{- assurance (not in the comparison): without its types, the code select
+   emits is that of select into untyped X86 -}
+import Theorems.Erasure
 
 {- ---------------------------------------------------------------------------
    The untyped pipeline, preserved
@@ -110,7 +111,7 @@ import proof.Framework.abt.ScopedTuple
 
 import proof.Compiler.CastScope
 import proof.Compiler.GlobalizeOlder
-import proof.Compiler.SelectFacts
+import proof.Compiler.SelectErase
 import proof.Compiler.SimplifyFacts
 import proof.Compiler.SimplifyScope
 
@@ -132,7 +133,6 @@ import proof.Correctness.Graph.GlobalizeCorrect
 import proof.Correctness.Graph.LiftLocalsCorrect
 import proof.Correctness.Graph.OptimizeCorrect
 import proof.Correctness.Graph.RCOCorrect
-import proof.Correctness.Graph.SelectCorrect
 import proof.Correctness.Graph.SimplifyCorrect
 import proof.Semantics.Graph.ISWIM
 import proof.Semantics.Graph.ISWIMContinuous
@@ -181,7 +181,6 @@ import proof.Correctness.Interp.GlobalizeFuel
 import proof.Correctness.Interp.LiftLocalsFuel
 import proof.Correctness.Interp.OptimizeFuel
 import proof.Correctness.Interp.RCOFuel
-import proof.Correctness.Interp.SelectFuel
 import proof.Correctness.Interp.SimplifyFuel
 import proof.Semantics.Interp.Clock
 import proof.Semantics.Interp.Typed.Clos5
@@ -225,13 +224,7 @@ import proof.Correctness.GraphErr.GlobalizeCorrect
 import proof.Correctness.GraphErr.LiftLocalsCorrect
 import proof.Correctness.GraphErr.OptimizeCorrect
 import proof.Correctness.GraphErr.RCOCorrect
-import proof.Correctness.GraphErr.SelectCheck
-import proof.Correctness.GraphErr.SelectCheckOk
 import proof.Correctness.GraphErr.SelectCorrect
-import proof.Correctness.GraphErr.SelectPreserve
-import proof.Correctness.GraphErr.SelectReflect
-import proof.Correctness.GraphErr.SelectRel
-import proof.Correctness.GraphErr.SelectX86
 import proof.Correctness.GraphErr.SimplifyCorrect
 import proof.Semantics.GraphErr.ISWIM
 import proof.Semantics.GraphErr.Prim
@@ -272,9 +265,7 @@ import proof.Adequacy.Soundness
 import proof.Adequacy.Values
 import proof.Adequacy.X86
 import proof.Adequacy.X86Common
-import proof.Adequacy.X86CompileWF
 import proof.Adequacy.X86LogRel
-import proof.Adequacy.X86Refs
 import proof.Adequacy.X86Soundness
 import proof.Adequacy.X86WF
 

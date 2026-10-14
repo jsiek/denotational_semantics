@@ -67,7 +67,6 @@ import Semantics.Interp.Typed.Clos4 as Clos4ᵀᵢ
 import Semantics.Interp.Typed.Clos5 as Clos5ᵀᵢ
 import Semantics.Interp.Typed.Imp as Impᵀᵢ
 import Semantics.Interp.Typed.CFG as CFGᵀᵢ
-import Semantics.Interp.X86 as X86ᵢ
 
 import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
 import proof.Correctness.Interp.CastFuel as CastFuel
@@ -79,7 +78,6 @@ import proof.Correctness.Interp.GlobalizeFuel as GlobalizeFuel
 import proof.Correctness.Interp.RCOFuel as RCOFuel
 import proof.Correctness.Interp.LiftLocalsFuel as LiftLocalsFuel
 import proof.Correctness.Interp.ExplicateFuel as ExplicateFuel
-import proof.Correctness.Interp.SelectFuel as SelectFuel
 import proof.Correctness.Interp.CompilerFuel as CompilerFuel
 
 {- Each pass ------------------------------------------------------------------}
@@ -116,11 +114,6 @@ lift-locals-correct = LiftLocalsFuel.lift-locals-correct
 explicate-correct : ∀ (P : Impᵀ.Program) → Equivalent (Impᵀᵢ.sem P) (CFGᵀᵢ.sem (explicate P))
 explicate-correct = ExplicateFuel.explicate-correct
 
-{- X86's own errors are unreachable: the X86 program gives the erased
-   result of the CFGᵀ one -}
-select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀᵢ.sem P) (X86ᵢ.sem (select P))
-select-correct = SelectFuel.select-correct
-
 {- The whole compiler, for closed programs ----------------------------------}
 
 compile-correct : ∀ (M : ISWIM.AST) → Closed M
@@ -138,10 +131,6 @@ compile-imp-correct = CompilerFuel.compile-imp-correct
 compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
   → Equivalent (ISWIMᵢ.sem M) (CFGᵀᵢ.sem (compile-cfg M))
 compile-cfg-correct = CompilerFuel.compile-cfg-correct
-
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (X86ᵢ.sem (compile-x86 M))
-compile-x86-correct = CompilerFuel.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original

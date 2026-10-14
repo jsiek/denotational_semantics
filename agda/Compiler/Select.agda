@@ -1,81 +1,42 @@
 {-
 
-  Typed select instructions (CFGᵀ → X86), after Essentials of
-  Compilation, as the untyped pass (Untyped/Compiler/Select.agda). X86 stays
-  untyped, and so does its machine.
+  Typed select instructions (CFGᵀ → X86ᵀ), after Essentials of
+  Compilation: the instructions of select into untyped X86
+  (Compiler/SelectX86.agda), typed (Language/Typed/X86.agda). Without
+  the types they are the same instructions
+  (proof/Compiler/SelectErase.agda, Theorems/Erasure.agda).
 
-  * A slot is the X86 variable at its level (its position from the
-    oldest slot, Framework/Membership.lvl); a reference to a definition,
-    and a label, are their levels too, which are the numbers X86 uses
-    (counted from the oldest). The frame of a body has as many slots as
-    the deepest level its tails write (depth).
-  * inject is a move: an X86 value carries its own kind.
-  * project t a errs unless a holds a value of tag t, and then moves a.
-    The test is an existing X86 instruction that errs on a value of any
-    other kind and otherwise only clobbers %rax or the flag (check):
-    an integer: movq a, %rax; subq $0, %rax; a sum: testinl a; a
-    function (a closure, a pair): load fst a, %rax; a tuple of n + 1
-    components: load (get 0) a, %rax.
-  * callc f a opens the closure f: load fst f, %rax (its code);
-    load snd f, %rdi (its environment); movq a, %rsi; callq %rax.
-  * The rest as in the untyped pass.
+  * A slot is the typed index of CFGᵀ; the frame of a body has as many
+    slots as the deepest level its tails write (depth),
+    and each write carries the proof that it is in the frame.
+  * The code of a simple expression is selected in continuation-passing
+    style (sel s o k): its value goes to %rax (ret) or to the next slot
+    (to p), and then k runs, whatever the registers and the flag are.
+  * callc f a: load fst f, %rax opens the closure f; load snd f, %rdi
+    and movq a, %rsi give %rdi and %rsi the types callq needs.
+  * project t a is chk t a, the check and the move.
+  * The start of a definition moves %rdi and %rsi to slots 0 and 1.
 
 -}
 
 module Compiler.Select where
 
-open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
 open import Language.Typed.Type
-open import Framework.Membership using (_⊑_; lvl)
-open import Language.Typed.CFG as CFG using (Tail; return; seq; goto; case; Blocks; _▷_)
+open import Framework.Membership using (_⊑_; here⊑)
+import Language.Typed.CFG as C
+open C using (Tail; return; seq; goto; case; _▷_)
 import Language.Typed.Imp as I
-open I using (var; lit; ref)
-open import Language.X86
+open import Language.Typed.X86
 
-open import Data.Fin using (zero)
-open import Data.Integer using (0ℤ)
-open import Data.List using (List; []; _∷_; _++_; length)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Nat using (ℕ; suc; _⊔_)
-open import Data.Vec using (Vec; toList; map)
-
-select-atm : ∀ {Σ Δ A} → I.Atm Σ Δ A → Arg
-select-atm (var x) = loc (var (lvl x))
-select-atm (lit B c) = imm B c
-select-atm (ref f) = label (lvl f)
-
-{- instructions that err unless a holds a value of tag t -}
-check : Tag → Arg → List Instr
-check tint a = movq a (reg rax) ∷ subq (imm Int 0ℤ) (reg rax) ∷ []
-check tsum a = testinl a ∷ []
-check tfun a = load fst a (reg rax) ∷ []
-check (ttup n i) a = load (get i) a (reg rax) ∷ []
-
-{- s, computed into d -}
-select-simple : ∀ {Σ Δ A} → I.Simple Σ Δ A → Loc → List Instr
-select-simple (I.atm a) d = movq (select-atm a) d ∷ []
-select-simple (I.pack c e) d = alloc pair (select-atm c ∷ select-atm e ∷ []) d ∷ []
-select-simple (I.callc f a) d =
-  load fst (select-atm f) (reg rax) ∷ load snd (select-atm f) (reg rdi) ∷ movq (select-atm a) (reg rsi)
-  ∷ callq (loc (reg rax)) ∷ movq (loc (reg rax)) d ∷ []
-select-simple (I.tuple as) d = alloc tuple (toList (map select-atm as)) d ∷ []
-select-simple (I.get i a) d = load (get i) (select-atm a) d ∷ []
-select-simple (I.inl a) d = alloc inl (select-atm a ∷ []) d ∷ []
-select-simple (I.inr a) d = alloc inr (select-atm a ∷ []) d ∷ []
-select-simple (I.prim sub a b) d =
-  movq (select-atm a) (reg rax) ∷ subq (select-atm b) (reg rax) ∷ movq (loc (reg rax)) d ∷ []
-select-simple (I.prim eq a b) d = cmpq (select-atm b) (select-atm a) ∷ sete d ∷ []
-select-simple (I.inject G a) d = movq (select-atm a) d ∷ []
-select-simple (I.project t a) d = check t (select-atm a) ++ movq (select-atm a) d ∷ []
-
-select-tail : ∀ {Σ Bs Δ} → Tail Σ Bs Δ → Block
-select-tail (return s) = block (select-simple s (reg rax)) retq
-select-tail (seq {Δ'} p s t) =
-  block (select-simple s (var (length Δ')) ++ Block.instrs (select-tail t)) (Block.jump (select-tail t))
-select-tail (goto l) = block [] (jmp (lvl l))
-select-tail (case {Δ'} a p l₁ l₂) =
-  block (testinl (select-atm a) ∷ load payload (select-atm a) (var (length Δ')) ∷ []) (je (lvl l₁) (lvl l₂))
+open import Data.Bool using (Bool)
+open import Data.List using (List; []; _∷_; length)
+open import Data.List.Relation.Unary.All using (All) renaming (map to All-map)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (ℕ; suc; _≤_; _⊔_; s≤s; z≤n)
+open import Data.Nat.Properties using (≤-trans; ≤-refl; m≤m⊔n; m≤n⊔m)
+open import Data.Vec using (Vec; []; _∷_)
+open import Relation.Binary.PropositionalEquality using (refl)
 
 {- the number of slots a tail uses -}
 depth : ∀ {Σ Bs Δ} → Tail Σ Bs Δ → ℕ
@@ -84,29 +45,70 @@ depth {Δ = Δ} (seq p s t) = length Δ ⊔ depth t
 depth {Δ = Δ} (goto l) = length Δ
 depth {Δ = Δ} (case {Δ'} a p l₁ l₂) = length Δ ⊔ suc (length Δ')
 
-select-blocks : ∀ {Σ Bs} → Blocks Σ Bs → List Block
-select-blocks CFG.[] = []
-select-blocks (bs ▷ t) = select-tail t ∷ select-blocks bs
-
-blocks-depth : ∀ {Σ Bs} → Blocks Σ Bs → ℕ
-blocks-depth CFG.[] = 0
+blocks-depth : ∀ {Σ Bs} → C.Blocks Σ Bs → ℕ
+blocks-depth C.[] = 0
 blocks-depth (bs ▷ t) = depth t ⊔ blocks-depth bs
 
-select-body : ∀ {Σ Δ} → List Instr → CFG.Body Σ Δ → Body
-select-body pre (CFG.body bs t) =
-  body (blocks-depth bs ⊔ depth t) (select-blocks bs)
-    (block (pre ++ Block.instrs (select-tail t)) (Block.jump (select-tail t)))
+depth-≥ : ∀ {Σ Bs Δ} (t : Tail Σ Bs Δ) → length Δ ≤ depth t
+depth-≥ (return s) = ≤-refl
+depth-≥ (seq p s t) = m≤m⊔n _ _
+depth-≥ (goto l) = ≤-refl
+depth-≥ (case a p l₁ l₂) = m≤m⊔n _ _
 
-{- the start of a definition takes its environment and argument from
-   %rdi and %rsi into slots 0 and 1 -}
-prologue : List Instr
-prologue = movq (loc (reg rdi)) (var 0) ∷ movq (loc (reg rsi)) (var 1) ∷ []
+atms : ∀ {Σ Δ m Γ O F} → Vec (Atm Σ Δ Any) m → Vec (Arg Σ (st Γ Δ O F) (ty Any)) m
+atms [] = []
+atms (a ∷ as) = atom a ∷ atms as
 
-{- the definitions -}
-select-defs : ∀ {Σ ns} → All (λ n → CFG.Body Σ (Any ∷ ⟪ tup n ⟫ ∷ [])) ns → List Body
-select-defs [] = []
-select-defs (d ∷ ds) = select-body prologue d ∷ select-defs ds
+{- where the value of a simple expression goes: %rax, or the next slot -}
+data Out (n : ℕ) (Δ : Ctx) (A : Ty) : Ctx → Set where
+  ret : Out n Δ A Δ
+  to : ∀ {Δ'} (p : Δ' ⊑ Δ) → .(suc (length Δ') ≤ n) → Out n Δ A (A ∷ Δ')
+
+after : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → Regs → Maybe (Δ ∋ ⟪ fun ⟫) → Bool → St
+after {Δ = Δ} {A} ret Γ O F = st (Γ [ rax ↦ just (ty A) ]) Δ O F
+after {A = A} (to {Δ'} p _) Γ O F = st Γ (A ∷ Δ') nothing F
+
+dst : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {Γ O F} → Dst n (st Γ Δ O F) (ty A) (after o Γ O F)
+dst ret = reg rax
+dst (to p lt) = slot p lt
+
+{- the code of s into o, then k, with any registers and flag -}
+sel : ∀ {Σ n Bs Δ A Δ''} → I.Simple Σ Δ A → (o : Out n Δ A Δ'')
+  → (∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)) → ∀ {Γ O F} → Seq Σ n Bs (st Γ Δ O F)
+sel (I.atm a) o k = movq (atom a) (dst o) ∷ k
+sel (I.pack c e) o k = alloc (pair (atom c) (atom e)) (dst o) ∷ k
+sel (I.callc (var x) a) o k =
+  loadfst x rax ∷ loadsnd rdi ∷ movq (atom a) (reg rsi) ∷ callq (reg rax refl) refl refl ∷ movq (reg rax refl) (dst o) ∷ k
+sel (I.tuple as) o k = alloc (tuple (atms as)) (dst o) ∷ k
+sel (I.get i a) o k = load (get i) (atom a) (dst o) ∷ k
+sel (I.inl a) o k = alloc (inl (atom a)) (dst o) ∷ k
+sel (I.inr a) o k = alloc (inr (atom a)) (dst o) ∷ k
+sel (I.prim sub a b) o k = movq (atom a) (reg rax) ∷ subq (atom b) rax refl ∷ movq (reg rax refl) (dst o) ∷ k
+sel (I.prim eq a b) o k = cmpq (atom b) (atom a) ∷ sete (dst o) ∷ k
+sel (I.inject G a) o k = movq (atom a ↑) (dst o) ∷ k
+sel (I.project t (var x)) o k = chk t x (dst o) ∷ k
+
+tail : ∀ {Σ n Bs Δ} (t : Tail Σ Bs Δ) → .(depth t ≤ n) → ∀ {Γ O F} → Seq Σ n Bs (st Γ Δ O F)
+tail (return s) le = sel s ret (retq refl)
+tail (seq p s t) le = sel s (to p (≤-trans (depth-≥ t) (≤-trans (m≤n⊔m _ _) le))) (tail t (≤-trans (m≤n⊔m _ _) le))
+tail (goto l) le = jmp l
+tail (case a p l₁ l₂) le = testinl (atom a) ∷ load payload (atom a) (slot p (≤-trans (m≤n⊔m _ _) le)) ∷ je l₁ l₂
+
+blocks : ∀ {Σ n Bs} (bs : C.Blocks Σ Bs) → .(blocks-depth bs ≤ n) → Blocks Σ n Bs
+blocks C.[] le = []
+blocks (bs ▷ t) le = blocks bs (≤-trans (m≤n⊔m _ _) le) ▷ tail t (≤-trans (m≤m⊔n _ _) le)
+
+{- main, in a frame of the slots its tails write -}
+main-body : ∀ {Σ} → C.Body Σ [] → Body Σ (entry [])
+main-body (C.body bs t) = body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _)) (tail t (m≤n⊔m _ _))
+
+{- a definition: its start moves its environment and argument to slots 0 and 1 -}
+def-body : ∀ {Σ m} → C.Body Σ (Any ∷ ⟪ tup m ⟫ ∷ []) → Body Σ (called m)
+def-body (C.body bs t) =
+  body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _))
+    (movq (reg rdi refl) (slot here⊑ (≤-trans (s≤s z≤n) le)) ∷ movq (reg rsi refl) (slot here⊑ le) ∷ tail t (m≤n⊔m _ _))
+  where le = ≤-trans (depth-≥ t) (m≤n⊔m _ _)
 
 {- the pass, for a whole program -}
-select : CFG.Program → Program
-select (CFG.program ds b) = program (select-defs ds) (select-body [] b)
+select : C.Program → Program
+select (C.program ds b) = program (All-map def-body ds) (main-body b)

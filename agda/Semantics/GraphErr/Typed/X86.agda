@@ -1,8 +1,8 @@
 {-
 
   The semantics of X86ᵀ (Language/Typed/X86.agda) in the graph model
-  with errors, a pilot (Theorems/TAL.agda): that of X86
-  (Semantics/GraphErr/X86.agda) with the typed operators of the typed
+  with errors: that of untyped X86 (Untyped/Semantics/GraphErr/X86.agda)
+  with the typed operators of the typed
   languages (Semantics/GraphErr/Typed/Ops.agda), which check nothing.
   The frame is the environment, as in CFGᵀ (Semantics/GraphErr/Typed/CFG.agda):
   slot x is position idx x, and writing slot k forgets the slots after

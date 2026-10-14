@@ -6,8 +6,8 @@
   produces a value exactly when the source does (Same). Simplify, cast
   insertion, enclose, optimize, concretize, globalize, rco, lift locals
   and explicate control preserve the meaning exactly (≃); delay
-  preserves and reflects the three facts. (Select instructions:
-  SelectCorrect.agda.)
+  preserves and reflects the three facts; select instructions is ≃
+  (SelectCorrect.agda).
 
 -}
 
@@ -42,17 +42,19 @@ open import Relation.Binary.PropositionalEquality using (sym; cong)
 open import Compiler.EncloseScope using (Closed)
 open import Compiler.Simplify using (simplify)
 open import Compiler.Cast using (cast-closed)
-open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg)
+open import Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import proof.Compiler.CastScope using (simplify-ws; cast-closed-≡)
 open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
 open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
 open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
 open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
+open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
 open import Language.Typed.Mon using (⌜_⌝ₚ)
 open import proof.Correctness.GraphErr.GlobalizeCorrect using (globalize-correct)
 open import proof.Correctness.GraphErr.RCOCorrect using (rco-correct)
 open import proof.Correctness.GraphErr.LiftLocalsCorrect using (lift-locals-correct)
 open import proof.Correctness.GraphErr.ExplicateCorrect using (explicate-correct)
+open import proof.Correctness.GraphErr.SelectCorrect using (select-correct)
 
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((dconst c ∈ D) ⇔ (dconst c ∈ E))) × (val∈ D ⇔ val∈ E)
@@ -104,6 +106,9 @@ compile-imp-same M c = ≃-Same (compile-mon-same M c) (≃-sym (lift-locals-cor
 
 compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = ≃-Same (compile-imp-same M c) (≃-sym (explicate-correct (compile-imp M)))
+
+compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
+compile-x86-same M c = ≃-Same (compile-cfg-same M c) (≃-sym (select-correct (compile-cfg M)))
 
 {- cast insertion on closed programs (cast-closed) -}
 cast-correct-closed : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀

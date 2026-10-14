@@ -1,14 +1,14 @@
 {-
 
-  Typed select instructions (Compiler/SelectTAL.agda) emits the
-  instructions of select instructions (Compiler/Select.agda), once the
-  types are erased (Language/Typed/X86Erase.agda), a pilot
-  (Theorems/TAL.agda): the same blocks, the same frame sizes, the same
+  Select instructions (Compiler/Select.agda) emits the instructions of
+  select into untyped X86 (Compiler/SelectX86.agda), once the types are
+  erased (Language/Typed/X86Erase.agda; Theorems/Erasure.agda): the
+  same blocks, the same frame sizes, the same
   code for every statement, chk being the test of project and the move.
 
 -}
 
-module proof.Compiler.SelectTALErase where
+module proof.Compiler.SelectErase where
 
 open import Language.Typed.Type
 open import Framework.Membership using (_⊑_; here⊑)
@@ -20,8 +20,8 @@ import Data.Nat
 open import Language.Typed.X86
 open import Language.Typed.X86Erase
 import Language.X86 as L
-import Compiler.Select as U
-import Compiler.SelectTAL as T
+import Compiler.SelectX86 as U
+import Compiler.Select as T
 open T using (Out; ret; to)
 
 open import Data.List using (List; []; _∷_; _++_; length)
@@ -35,7 +35,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong
 
 {- where the value of a simple expression goes, in X86 -}
 out : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → L.Loc
-out ret = L.reg rax
+out ret = L.reg L.rax
 out (to {Δ'} p _) = L.var (length Δ')
 
 dst-e : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {Γ O F} → eDst (T.dst o {Γ} {O} {F}) ≡ out o
@@ -57,15 +57,15 @@ sel-e : ∀ {Σ n Bs Δ A Δ''} (s : I.Simple Σ Δ A) (o : Out n Δ A Δ'') (k 
 sel-e (I.atm a) o k b hk = block≡ (cong (λ d → L.movq (U.select-atm a) d ∷ []) (dst-e o)) hk
 sel-e (I.pack c e) o k b hk = block≡ (cong (λ d → L.alloc L.pair (U.select-atm c ∷ U.select-atm e ∷ []) d ∷ []) (dst-e o)) hk
 sel-e {Δ = Δ} (I.callc (I.var x) a) o k b hk =
-  block≡ (cong (λ d → L.load L.fst (L.loc (L.var (lvl x))) (L.reg rax) ∷ L.load L.snd (L.loc (L.var (lvl x))) (L.reg rdi)
-                   ∷ L.movq (U.select-atm a) (L.reg rsi) ∷ L.callq (L.loc (L.reg rax)) ∷ L.movq (L.loc (L.reg rax)) d ∷ [])
+  block≡ (cong (λ d → L.load L.fst (L.loc (L.var (lvl x))) (L.reg L.rax) ∷ L.load L.snd (L.loc (L.var (lvl x))) (L.reg L.rdi)
+                   ∷ L.movq (U.select-atm a) (L.reg L.rsi) ∷ L.callq (L.loc (L.reg L.rax)) ∷ L.movq (L.loc (L.reg L.rax)) d ∷ [])
               (dst-e o {St.rs (returned Δ)} {nothing} {false})) (hk {St.rs (returned Δ)} {nothing} {false})
 sel-e (I.tuple as) o k b hk = block≡ (cong₂ (λ l d → L.alloc L.tuple l d ∷ []) (atms-e as) (dst-e o)) hk
 sel-e (I.get i a) o k b hk = block≡ (cong (λ d → L.load (L.get i) (U.select-atm a) d ∷ []) (dst-e o)) hk
 sel-e (I.inl a) o k b hk = block≡ (cong (λ d → L.alloc L.inl (U.select-atm a ∷ []) d ∷ []) (dst-e o)) hk
 sel-e (I.inr a) o k b hk = block≡ (cong (λ d → L.alloc L.inr (U.select-atm a ∷ []) d ∷ []) (dst-e o)) hk
 sel-e (I.prim Language.Prim.sub a c) o k b hk =
-  block≡ (cong (λ d → L.movq (U.select-atm a) (L.reg rax) ∷ L.subq (U.select-atm c) (L.reg rax) ∷ L.movq (L.loc (L.reg rax)) d ∷ [])
+  block≡ (cong (λ d → L.movq (U.select-atm a) (L.reg L.rax) ∷ L.subq (U.select-atm c) (L.reg L.rax) ∷ L.movq (L.loc (L.reg L.rax)) d ∷ [])
             (dst-e o)) hk
 sel-e (I.prim Language.Prim.eq a c) o k b hk =
   block≡ (cong (λ d → L.cmpq (U.select-atm c) (U.select-atm a) ∷ L.sete d ∷ []) (dst-e o)) hk

@@ -1,8 +1,7 @@
 {-
 
-  A machine for X86ᵀ (Language/Typed/X86.agda), a pilot
-  (Theorems/TAL.agda): the X86 machine (Semantics/CEK/X86.agda) on typed
-  states, with the values of the Clos5ᵀ machine (Semantics/CEK/Typed/Clos5.agda).
+  A machine for X86ᵀ (Language/Typed/X86.agda): the machine of untyped
+  X86 (Semantics/CEK/X86.agda) on typed states, with the values of the Clos5ᵀ machine (Semantics/CEK/Typed/Clos5.agda).
   A state
     run k bs σ η m
   runs the sequence k, with the blocks bs it may jump to, the call

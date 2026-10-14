@@ -8,7 +8,7 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   To read them: the typed languages (Language/Typed/), the passes
   (Compiler/), the semantics of each typed language
@@ -18,11 +18,8 @@
   element ω; in the typed semantics only project (a cast from Any)
   checks kinds and errs.
 
-  Select is the one pass that is not an equation (≃), unlike in the
-  untyped graph model with errors: X86 checks the kind of every operand,
-  so its code has error entries at inputs of the wrong kind, where the
-  code of CFGᵀ, which checks nothing, has none. It errs, produces the
-  same constants and produces a value exactly when CFGᵀ does (Same).
+  Every pass but delay is an equation (≃), select instructions
+  included: X86ᵀ, like CFGᵀ, checks kinds only at project (chk).
 
   Adequacy: for X86, the untyped machine's (Adequacy/GraphErr/X86.agda)
   on the typed compiler's programs, which are well formed; for Clos5ᵀ,
@@ -42,7 +39,6 @@ open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.CEK.Smallstep using (Terminates; Diverges)
 import Semantics.CEK.ISWIM as ISWIMₘ
 import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
-import Semantics.CEK.X86 as X86ₘ
 
 import Language.ISWIM as ISWIM
 open import Language.Typed.Type using (Any)
@@ -78,7 +74,7 @@ open import Semantics.GraphErr.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧
 open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧₅)
 open import Semantics.GraphErr.Typed.Imp using (⟦_⟧ᵢ)
 open import Semantics.GraphErr.Typed.CFG using (⟦_⟧ᶜ)
-open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Semantics.GraphErr.Typed.X86 using (⟦_⟧ₜ)
 
 import proof.Correctness.GraphErr.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.GraphErr.EncloseCorrect as Enclose
@@ -108,8 +104,8 @@ open import Relation.Nullary using (¬_)
 
 {- Each pass ------------------------------------------------------------------}
 
-{- every pass but delay and select preserves the meaning of a program
-   exactly (≃), errors included -}
+{- every pass but delay preserves the meaning of a program exactly (≃),
+   errors included -}
 
 simplify-correct : ∀ (M : ISWIM.AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct = SimplifyCorrect.simplify-correct
@@ -158,8 +154,8 @@ explicate-correct = Explicate.explicate-correct
 Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E))) × (val∈ D ⇔ val∈ E)
 
-{- select: Same, for every CFGᵀ program -}
-select-correct : ∀ (P : CFGᵀ.Program) → Same ⟦ P ⟧ᶜ ⟦ select P ⟧ₓ
+{- for every CFGᵀ program -}
+select-correct : ∀ (P : CFGᵀ.Program) → ⟦ select P ⟧ₜ ≃ ⟦ P ⟧ᶜ
 select-correct = Select.select-correct
 
 {- The whole compiler, for closed programs -------------------------------------}
@@ -176,8 +172,8 @@ compile-imp-correct = Compiler.compile-imp-same
 compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-correct = Compiler.compile-cfg-same
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₓ
-compile-x86-correct = Select.compile-x86-same
+compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
+compile-x86-correct = Compiler.compile-x86-same
 
 {- Adequacy: the denotation of a closed program tells all three outcomes
    of its machine apart -------------------------------------------------------}
@@ -216,23 +212,6 @@ clos5-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
   → Diverges (Clos5ᵀₘ.sem (compile M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile M ⟧₅))
 clos5-diverges-iff = Adequacy.clos5-diverges-iff
 
-{- the X86 machine, for the programs compile-x86 produces -}
-x86-error-iff : ∀ (M : ISWIM.AST) → Closed M
-  → (ω ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
-x86-error-iff = Adequacy.x86-error-iff
-
-x86-const-iff : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} {k : base-rep B}
-  → (const k ∈ ⟦ compile-x86 M ⟧ₓ) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
-x86-const-iff = Adequacy.x86-const-iff
-
-x86-converges-iff : ∀ (M : ISWIM.AST) → Closed M
-  → (Σ[ d ∈ Value ] d ∈ ⟦ compile-x86 M ⟧ₓ × d ≢ ω) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
-x86-converges-iff = Adequacy.x86-converges-iff
-
-x86-diverges-iff : ∀ (M : ISWIM.AST) → Closed M
-  → Diverges (X86ₘ.sem (compile-x86 M)) ⇔ (∀ (d : Value) → ¬ (d ∈ ⟦ compile-x86 M ⟧ₓ))
-x86-diverges-iff = Adequacy.x86-diverges-iff
-
 {- The compiler, observed through the machines ---------------------------------}
 
 end-to-end-error : ∀ (M : ISWIM.AST) → Closed M
@@ -250,22 +229,6 @@ end-to-end-converges M c = Agree.converges (Adequacy.end-to-end M c)
 end-to-end-diverges : ∀ (M : ISWIM.AST) → Closed M
   → Diverges (ISWIMₘ.sem M) ⇔ Diverges (Clos5ᵀₘ.sem (compile M))
 end-to-end-diverges M c = Agree.diverges (Adequacy.end-to-end M c)
-
-end-to-end-x86-error : ∀ (M : ISWIM.AST) → Closed M
-  → Terminates (ISWIMₘ.sem M) o-error ⇔ Terminates (X86ₘ.sem (compile-x86 M)) o-error
-end-to-end-x86-error M c = Agree.error (Adequacy.end-to-end-x86 M c)
-
-end-to-end-x86-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (ISWIMₘ.sem M) (o-const B k) ⇔ Terminates (X86ₘ.sem (compile-x86 M)) (o-const B k)
-end-to-end-x86-const M c = Agree.const (Adequacy.end-to-end-x86 M c)
-
-end-to-end-x86-converges : ∀ (M : ISWIM.AST) → Closed M
-  → Converges (Terminates (ISWIMₘ.sem M)) ⇔ Converges (Terminates (X86ₘ.sem (compile-x86 M)))
-end-to-end-x86-converges M c = Agree.converges (Adequacy.end-to-end-x86 M c)
-
-end-to-end-x86-diverges : ∀ (M : ISWIM.AST) → Closed M
-  → Diverges (ISWIMₘ.sem M) ⇔ Diverges (X86ₘ.sem (compile-x86 M))
-end-to-end-x86-diverges M c = Agree.diverges (Adequacy.end-to-end-x86 M c)
 
 {- simplify, observed through the ISWIM machine -}
 simplify-machine-error : ∀ (M : ISWIM.AST) → Closed M

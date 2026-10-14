@@ -59,7 +59,6 @@ open import Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Graph.CastCorrect as Cast
@@ -71,7 +70,6 @@ import proof.Correctness.Graph.GlobalizeCorrect as Globalize
 import proof.Correctness.Graph.RCOCorrect as RCO
 import proof.Correctness.Graph.LiftLocalsCorrect as LiftLocals
 import proof.Correctness.Graph.ExplicateCorrect as Explicate
-import proof.Correctness.Graph.SelectCorrect as Select
 import proof.Correctness.Graph.CompilerCorrect as Compiler
 
 open import Data.List using ([])
@@ -127,11 +125,6 @@ lift-locals-correct = LiftLocals.lift-locals-correct
 explicate-correct : ∀ (P : Impᵀ.Program) → ⟦ explicate P ⟧ᶜ ≃ ⟦ P ⟧ᵢ
 explicate-correct = Explicate.explicate-correct
 
-{- for every CFGᵀ program: a frame is typed, so select's frames are large
-   enough by construction -}
-select-correct : ∀ (P : CFGᵀ.Program) → ⟦ select P ⟧ₓ ≃ ⟦ P ⟧ᶜ
-select-correct = Select.select-correct
-
 {- The whole compiler, for closed programs ----------------------------------}
 
 {- the compiled program produces the same constants as the original, and
@@ -178,13 +171,3 @@ compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
   → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-cfg M ⟧ᶜ)
   × (nonempty ⟦ compile-cfg M ⟧ᶜ → nonempty (⟦ M ⟧ ρ₀))
 compile-cfg-correct-nonempty M w = proj₂ (Compiler.compile-cfg-same M w)
-
-compile-x86-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₓ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₓ → const c ∈ ⟦ M ⟧ ρ₀)
-compile-x86-correct-const M w = proj₁ (Compiler.compile-x86-same M w)
-
-compile-x86-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₓ)
-  × (nonempty ⟦ compile-x86 M ⟧ₓ → nonempty (⟦ M ⟧ ρ₀))
-compile-x86-correct-nonempty M w = proj₂ (Compiler.compile-x86-same M w)
