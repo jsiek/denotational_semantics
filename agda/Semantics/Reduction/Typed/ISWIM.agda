@@ -30,7 +30,7 @@ open import Data.Nat using (ℕ; suc)
 open import Data.Unit using (⊤; tt)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-open import Relation.Nullary using (yes; no; does)
+open import Relation.Nullary using (Dec; yes; no; does)
 
 {- Renaming and substitution ----------------------------------------------}
 
@@ -125,10 +125,12 @@ prim? p (lit Int n) (lit Int m) = to (out p n m)
 prim? p _ _ = error
 
 {- the only error: a value injected from another flat type -}
+proj-dec : ∀ {G H} → Dec (G ≡ H) → Tm 0 ⟪ G ⟫ → Red (Tm 0 ⟪ H ⟫)
+proj-dec (yes refl) V = to V
+proj-dec (no _) V = error
+
 project? : ∀ t {A} → Tm 0 A → Red (Tm 0 ⟪ flat t ⟫)
-project? t (inject G V) with G ≟F flat t
-... | yes refl = to V
-... | no _ = error
+project? t (inject G V) = proj-dec (G ≟F flat t) V
 project? t _ = error
 
 red : ∀ {A} → Tm 0 A → Red (Tm 0 A)

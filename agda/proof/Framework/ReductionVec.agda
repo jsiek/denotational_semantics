@@ -13,8 +13,9 @@ module proof.Framework.ReductionVec (Obs : Set) (o-error : Obs) where
 open import proof.Framework.Reduction Obs o-error
 open import Framework.ReductionVec Obs o-error public
 
+open import Data.Fin using (Fin; zero; suc)
 open import Data.Nat using (ℕ)
-open import Data.Vec using (Vec; []; _∷_)
+open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Data.Vec.Relation.Unary.All using (All; []; _∷_)
 open import Data.Vec.Relation.Binary.Pointwise.Inductive using (Pointwise; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans)
@@ -30,3 +31,8 @@ module _ {S T : Set} {red : T → Red T} {Val : T → Set} {R : S → T → Set}
   ans-∷ rs a as = ans-in (frame _ (λ X → reds-∷ X _)) (_∷ rs) a
     λ v m → ans-in (frame {g = λ Xs → _ ∷ Xs} _ (λ Xs → trans (reds-∷ _ Xs) (val-in (val-red v)))) (m ∷_) as
       λ vs ms → val ε (v ∷ vs) (m ∷ ms)
+
+{- a component of a vector with a property -}
+all-lookup : ∀ {A : Set} {P : A → Set} {n} {xs : Vec A n} → All P xs → ∀ i → P (lookup xs i)
+all-lookup (p ∷ ps) zero = p
+all-lookup (p ∷ ps) (suc i) = all-lookup ps i
