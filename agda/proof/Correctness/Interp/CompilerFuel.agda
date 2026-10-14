@@ -4,7 +4,7 @@
   clocked interpreters: each pass is proved clock for clock (simplify
   clock-monotone), and the end theorems compose (equiv-trans), from
   untyped ISWIM to Clos5ᵀ (compile), Monᵀ run as Clos5ᵀ (compile-mon),
-  Impᵀ, CFGᵀ and X86. The only precondition is that the ISWIM program
+  Impᵀ, CFGᵀ and X86ᵀ. The only precondition is that the ISWIM program
   is closed.
 
 -}
@@ -29,6 +29,7 @@ import Semantics.Interp.Typed.Clos4 as Clos4ᵀᵢ
 import Semantics.Interp.Typed.Clos5 as Clos5ᵀᵢ
 import Semantics.Interp.Typed.Imp as Impᵀᵢ
 import Semantics.Interp.Typed.CFG as CFGᵀᵢ
+import Semantics.Interp.Typed.X86 as X86ᵀᵢ
 
 open import proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
 open import proof.Correctness.Interp.CastFuel using (cast-correct)
@@ -40,6 +41,7 @@ open import proof.Correctness.Interp.GlobalizeFuel using (globalize-correct)
 open import proof.Correctness.Interp.RCOFuel using (rco-correct)
 open import proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correct)
 open import proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
+open import proof.Correctness.Interp.SelectFuel using (select-correct)
 
 open import Data.Product using (_,_; proj₁; proj₂)
 
@@ -63,6 +65,9 @@ compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-locals-cor
 
 compile-cfg-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (CFGᵀᵢ.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct (compile-imp M))
+
+compile-x86-correct : ∀ M → Closed M → Equivalent (ISWIMᵢ.sem M) (X86ᵀᵢ.sem (compile-x86 M))
+compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct (compile-cfg M))
 
 {- in particular -}
 
