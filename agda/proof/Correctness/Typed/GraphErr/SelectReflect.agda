@@ -25,7 +25,7 @@ open import proof.Framework.GraphModel.Ops using (⋆; pair; car; cdr; proj; �
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.TypedOk using (Ok; fin₁; fin₂)
-open import proof.Framework.GraphModel.TypedBinders using (ΛΛᵐ-call)
+open import proof.Framework.GraphModel.TypedBinders using (ΛΛᵐ-call; callcᵈ)
 open import proof.Semantics.Graph.Prim using (primD; out)
 open import proof.Semantics.GraphErr.Typed.Clos5 using (tbl; ok; con)
 open import proof.Semantics.GraphErr.Typed.Imp using (letᵗ-≫=)
@@ -285,7 +285,129 @@ prim-r p {A} {B} {A'} {B'} vA vB vA' vB' oka okb ia ib w w∈
                  (βᵛ⁻ {B'} {λ Y → primD p ⟨ ⌊ A' ⌋ , ⟨ Y , ptt ⟩ ⟩} vB' _
                     ⟨ n , ⟨ m , ⟨ ⌊⌋⊇ (proj₁ vA') _ (ia n (proj₁ n∈)) , ⟨ ⌊⌋⊇ (proj₁ vB') _ (ib m (proj₁ m∈)) , refl ⟩ ⟩ ⟩ ⟩))
 
+{- project: an error of the test is a value of the wrong kind -}
+test-bad : ∀ t {A A'} → Val A → Lifted _⊑_ A A' → ω ∈ test t A → Σ[ d ∈ Value ] d ∈ ⌊ A ⌋ × kind₄ (kind d) ≢ kindᶠ (flat t)
+test-bad tint {A} vA r ω∈ with βᵛ {ℬ Int (Data.Integer.+ 0) ptt} {λ Y → checked (base Int) ⌊ A ⌋ (checked (base Int) Y (primD sub ⟨ ⌊ A ⌋ , ⟨ Y , ptt ⟩ ⟩))} ℬ-val ω
+  (βᵛ {A} {λ X → ℬ Int (Data.Integer.+ 0) ptt ≫= λ Y → checked (base Int) X (checked (base Int) Y (primD sub ⟨ X , ⟨ Y , ptt ⟩ ⟩))} vA ω ω∈)
+  where import Data.Integer
+... | inj₁ ⟨ _ , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩ = ⟨ d , ⟨ d∈ , (λ e → dk (kind₄-base e)) ⟩ ⟩
+... | inj₂ (inj₁ ⟨ _ , ⟨ const _ , ⟨ ⟨ ⟨ refl , refl ⟩ , _ ⟩ , dk ⟩ ⟩ ⟩) = ⊥-elim (dk refl)
+... | inj₂ (inj₂ ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , () ⟩ ⟩ ⟩ ⟩)
+test-bad tsum {A} vA r ω∈ with βᵛ {A} {λ X → checked inj X (isinlD X)} vA ω ω∈
+... | inj₁ ⟨ _ , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩ = ⟨ d , ⟨ d∈ , (λ e → dk (kind₄-inj e)) ⟩ ⟩
+... | inj₂ (inj₁ ⟨ _ , ⟨ _ , () ⟩ ⟩)
+... | inj₂ (inj₂ ⟨ _ , ⟨ _ , () ⟩ ⟩)
+test-bad tfun {A} {A'} vA r ω∈ with βᵛ {A} {λ X → checked prod X (car ⟨ X , ptt ⟩)} vA ω ω∈
+... | inj₁ ⟨ _ , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩ = ⟨ d , ⟨ d∈ , (λ e → dk (kind₄-prod e)) ⟩ ⟩
+... | inj₂ ⟨ v , p∈ ⟩ = ⊥-elim (car-≢ {ω} {v} {A'} (r ⦅ ω , v ⦆ (proj₁ p∈)) refl)
+test-bad (ttup n i) {A} vA r ω∈ with βᵛ {A} {λ X → checked (tup (suc n)) X (proj i ⟨ X , ptt ⟩)} vA ω ω∈
+... | inj₁ ⟨ _ , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩ = ⟨ d , ⟨ d∈ , (λ e → dk (kind₄-tup e)) ⟩ ⟩
+... | inj₂ t∈ = ⊥-elim (lower (proj₁ (r _ (proj₁ t∈))) refl)
+
+{- a value of the test: a value of the right kind, and what the typed test needs -}
+test-ok : ∀ t {A A'} → Val A → Clean A' → Lifted _⊑_ A A' → Conv (test t A)
+  → Σ[ d ∈ Value ] d ∈ ⌊ A ⌋ × kind₄ (kind d) ≡ kindᶠ (flat t) × hit t ⌊ A' ⌋
+test-ok tint {A} vA cl r ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩
+  with βᵛ {ℬ Int (Data.Integer.+ 0) ptt} {λ Y → checked (base Int) ⌊ A ⌋ (checked (base Int) Y (primD sub ⟨ ⌊ A ⌋ , ⟨ Y , ptt ⟩ ⟩))} ℬ-val v
+  (βᵛ {A} {λ X → ℬ Int (Data.Integer.+ 0) ptt ≫= λ Y → checked (base Int) X (checked (base Int) Y (primD sub ⟨ X , ⟨ Y , ptt ⟩ ⟩))} vA v v∈)
+  where import Data.Integer
+... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (v≢ refl)
+... | inj₂ (inj₁ ⟨ refl , _ ⟩) = ⊥-elim (v≢ refl)
+... | inj₂ (inj₂ ⟨ n , ⟨ _ , ⟨ n∈ , _ ⟩ ⟩ ⟩) = ⟨ const n , ⟨ n∈ , ⟨ refl , tt ⟩ ⟩ ⟩
+test-ok tsum {A} vA cl r ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ with βᵛ {A} {λ X → checked inj X (isinlD X)} vA v v∈
+... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (v≢ refl)
+... | inj₂ (inj₁ ⟨ u , ⟨ u∈ , _ ⟩ ⟩) = ⟨ left u , ⟨ u∈ , ⟨ refl , tt ⟩ ⟩ ⟩
+... | inj₂ (inj₂ ⟨ u , ⟨ u∈ , _ ⟩ ⟩) = ⟨ right u , ⟨ u∈ , ⟨ refl , tt ⟩ ⟩ ⟩
+test-ok tfun {A} vA cl r ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ with βᵛ {A} {λ X → checked prod X (car ⟨ X , ptt ⟩)} vA v v∈
+... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (v≢ refl)
+... | inj₂ ⟨ e , p∈ ⟩ = ⟨ ⦅ v , e ⦆ , ⟨ p∈ , ⟨ refl , tt ⟩ ⟩ ⟩
+test-ok (ttup n i) {A} {A'} vA cl r ⟨ v , ⟨ v∈ , v≢ ⟩ ⟩ with βᵛ {A} {λ X → checked (tup (suc n)) X (proj i ⟨ X , ptt ⟩)} vA v v∈
+... | inj₁ ⟨ refl , _ ⟩ = ⊥-elim (v≢ refl)
+... | inj₂ t∈ = ⟨ tup[ i ] v , ⟨ t∈ , ⟨ refl , hit′ ⟩ ⟩ ⟩
+  where
+  hit′ : Σ[ e ∈ Value ] (tup[ i ] e) ∈ ⌊ A' ⌋
+  hit′ = let ⟨ e , e∈ ⟩ = ⊑-ne v (proj₂ (r _ (proj₁ t∈))) in ⟨ e , ⟨ e∈ , cl _ e∈ ⟩ ⟩
+
+project-r : ∀ t {A A'} → Val A → Con A → Val A' → Lifted _⊑_ A A'
+  → Lifted _⊑_ (strictᵐ (test t A) A) (projectᵠ kind₄ t A' ⇂ Kd (flat t))
+project-r t {A} {A'} vA cA vA' r .ω (inj₁ ⟨ refl , ω∈ ⟩) with test-bad t vA r ω∈
+... | ⟨ d , ⟨ d∈ , dk ⟩ ⟩ with ⊑-wit d (r d (proj₁ d∈)) (proj₂ d∈)
+...   | ⟨ e , ⟨ e∈ , ke ⟩ ⟩ =
+  lift ⟨ βᵛ⁻ {A'} {λ X → checkedᵠ kind₄ (kindᶠ (flat t)) X (keep kind₄ t X)} vA' ω
+           (inj₁ ⟨ refl , ⟨ e , ⟨ ⟨ e∈ , (λ { refl → proj₂ d∈ (kind-ω (sym ke)) }) ⟩ , (λ k → dk (trans (cong kind₄ (sym ke)) k)) ⟩ ⟩ ⟩)
+       , inj₁ refl ⟩
+project-r t {A} {A'} vA cA vA' r w (inj₂ ⟨ c , w∈ ⟩) with test-ok t vA (proj₁ vA') r c
+... | ⟨ d , ⟨ d∈ , ⟨ dk , h ⟩ ⟩ ⟩ =
+  ⊑-mono w (λ e e∈ → ⟨ βᵛ⁻ {A'} {λ X → checkedᵠ kind₄ (kindᶠ (flat t)) X (keep kind₄ t X)} vA' e (inj₂ e∈)
+                     , inj₂ (proj₂ (proj₂ e∈)) ⟩)
+    (⊑-⇂ w (λ e e∈ ke → ⟨ h , trans (cong kind₄ (trans ke kw)) dk ⟩)
+      (⊑-⌊⌋ w w≢ (r w w∈)))
+  where
+  w≢ = proj₁ vA w w∈
+  kw : kind w ≡ kind d
+  kw = ~-kind w d (cA w d w∈ (proj₁ d∈))
+
+{- a call: the closure's code, applied to its environment and the argument -}
+callc-r : ∀ {F A F' A'} → Val F → Con F → Val A → Val F' → Con F' → Val A' → Con A'
+  → Lifted _⊑_ F (F' ⇂ Kd fun) → Lifted _⊑_ A A'
+  → Lifted _⊑_ (strictᵐ (carᵐ ⟨ F , ptt ⟩) (strictᵐ (cdrᵐ ⟨ F , ptt ⟩) (strictᵐ A
+                  (callᵐ ⟨ carᵐ ⟨ F , ptt ⟩ , ⟨ cdrᵐ ⟨ F , ptt ⟩ , ⟨ A , ptt ⟩ ⟩ ⟩))))
+               (binds 2 ⟨ F' , ⟨ A' , ptt ⟩ ⟩ callcᵈ)
+callc-r {F} {A} {F'} {A'} vF cF vA vF' cF' vA' cA' rF rA w w∈ = go w∈
+  where
+  C = carᵐ ⟨ F , ptt ⟩
+  D = cdrᵐ ⟨ F , ptt ⟩
+  Q = F' ⇂ Kd fun
+  prods : ∀ d → d ∈ ⌊ F ⌋ → kind d ≡ prod
+  prods d d∈ = kind₄-prod (⊑-kok d (rF d (proj₁ d∈)) (proj₂ d∈))
+  car-in : ∀ {u} → u ∈ C → Σ[ v ∈ Value ] ⦅ u , v ⦆ ∈ ⌊ F ⌋
+  car-in u∈ = no-bad {prod} {⌊ F ⌋} {car ⟨ ⌊ F ⌋ , ptt ⟩} prods _ (βᵛ {F} {λ X → checked prod X (car ⟨ X , ptt ⟩)} vF _ u∈)
+  cdr-in : ∀ {v} → v ∈ D → Σ[ u ∈ Value ] ⦅ u , v ⦆ ∈ ⌊ F ⌋
+  cdr-in v∈ = no-bad {prod} {⌊ F ⌋} {cdr ⟨ ⌊ F ⌋ , ptt ⟩} prods _ (βᵛ {F} {λ X → checked prod X (cdr ⟨ X , ptt ⟩)} vF _ v∈)
+  C-ω : ω ∈ C → ⊥
+  C-ω ω∈ = let ⟨ v , p∈ ⟩ = car-in ω∈ in car-≢ {ω} {v} {Q} (rF ⦅ ω , v ⦆ (proj₁ p∈)) refl
+  D-ω : ω ∈ D → ⊥
+  D-ω ω∈ = let ⟨ u , p∈ ⟩ = cdr-in ω∈ in lower (proj₁ (proj₂ (rF ⦅ u , ω ⦆ (proj₁ p∈)))) refl
+  funs : ∀ d → d ∈ ⌊ C ⌋ → kind d ≡ fun
+  funs d d∈ = let ⟨ v , p∈ ⟩ = car-in (proj₁ d∈) in code-fun (kind v) d (proj₁ (rF _ (proj₁ p∈)))
+  E = ⌊ Cdrs Q ⌋
+  X = ⌊ A' ⌋
+  cE : Con E
+  cE = Con-⊆ (cdrs-con {Q} (Con-⊆ cF' (λ _ → proj₁))) ⌊⌋-⊆
+
+  call : ∀ {V U} → (V ↦ (U ↦ w)) ∈ ⌊ C ⌋ → mem V ⊆ ⌊ D ⌋ → mem U ⊆ ⌊ A ⌋ → w ⊑ binds 2 ⟨ F' , ⟨ A' , ptt ⟩ ⟩ callcᵈ
+  call {V} {U} u∈ V⊆ U⊆ with car-in (proj₁ u∈)
+  ... | ⟨ e₀ , p∈ ⟩ =
+    ⊑-mono w into (proj₁ (rF _ (proj₁ p∈)) E X cE (Con-⊆ cA' ⌊⌋-⊆) (λ _ → proj₂) (λ _ → proj₂) rV rU)
+    where
+    rV : V ⊑* (E ⇂ₖ kind e₀)
+    rV = ⊑*-from V λ v v∈ → let ⟨ u' , q∈ ⟩ = cdr-in (proj₁ (V⊆ v v∈)) ; r = rF _ (proj₁ q∈) in
+      subst (λ k → v ⊑ (E ⇂ₖ k)) (~-kind v e₀ (proj₂ (cF _ _ (proj₁ q∈) (proj₁ p∈))))
+        (⊑-kind v (⊑-⌊⌋ v (lower (proj₁ (proj₂ r))) (proj₂ (proj₂ r))))
+    rU : U ⊑* X
+    rU = ⊑*-from U λ x x∈ → ⊑-⌊⌋ x (proj₂ (U⊆ x x∈)) (rA x (proj₁ (U⊆ x x∈)))
+    into : ⋆ ⟨ ⋆ ⟨ Cars Q , ⟨ E ⇂ₖ kind e₀ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩ ⊆ binds 2 ⟨ F' , ⟨ A' , ptt ⟩ ⟩ callcᵈ
+    into y y∈ = βᵛ⁻ {F'} {λ P → A' ≫= λ Y → ⋆ ⟨ ⋆ ⟨ car ⟨ P , ptt ⟩ , ⟨ cdr ⟨ P , ptt ⟩ , ptt ⟩ ⟩ , ⟨ Y , ptt ⟩ ⟩} vF' y
+      (βᵛ⁻ {A'} {λ Y → ⋆ ⟨ ⋆ ⟨ car ⟨ ⌊ F' ⌋ , ptt ⟩ , ⟨ cdr ⟨ ⌊ F' ⌋ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ Y , ptt ⟩ ⟩} vA' y
+        (lower (⋆-mono ⟨ ⋆ ⟨ Cars Q , ⟨ E ⇂ₖ kind e₀ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
+                       ⟨ ⋆ ⟨ car ⟨ ⌊ F' ⌋ , ptt ⟩ , ⟨ cdr ⟨ ⌊ F' ⌋ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ X , ptt ⟩ ⟩
+          ⟨ lift (lower (⋆-mono ⟨ Cars Q , ⟨ E ⇂ₖ kind e₀ , ptt ⟩ ⟩ ⟨ car ⟨ ⌊ F' ⌋ , ptt ⟩ , ⟨ cdr ⟨ ⌊ F' ⌋ , ptt ⟩ , ptt ⟩ ⟩
+                    ⟨ lift (λ { u ⟨ v , q ⟩ → ⟨ v , ⟨ proj₁ q , (λ ()) ⟩ ⟩ })
+                    , ⟨ lift (λ { v ⟨ ⟨ ⟨ u , q ⟩ , _ ⟩ , _ ⟩ → ⟨ u , ⟨ proj₁ q , (λ ()) ⟩ ⟩ }) , ptt ⟩ ⟩))
+          , ⟨ lift (λ _ z → z) , ptt ⟩ ⟩) y y∈))
+  go : w ∈ strictᵐ C (strictᵐ D (strictᵐ A (callᵐ ⟨ C , ⟨ D , ⟨ A , ptt ⟩ ⟩ ⟩))) → w ⊑ binds 2 ⟨ F' , ⟨ A' , ptt ⟩ ⟩ callcᵈ
+  go (inj₁ ⟨ _ , ω∈ ⟩) = ⊥-elim (C-ω ω∈)
+  go (inj₂ ⟨ _ , inj₁ ⟨ _ , ω∈ ⟩ ⟩) = ⊥-elim (D-ω ω∈)
+  go (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ⟨ _ , ω∈ ⟩ ⟩ ⟩) = ⊥-elim (proj₁ vA ω ω∈ refl)
+  go (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ⟨ _ , ω∈ ⟩ ⟩ ⟩ ⟩) = ⊥-elim (C-ω ω∈)
+  go (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ⟨ _ , ω∈ ⟩ ⟩ ⟩ ⟩ ⟩) = ⊥-elim (D-ω ω∈)
+  go (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₁ ⟨ _ , ω∈ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) = ⊥-elim (proj₁ vA ω ω∈ refl)
+  go (inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , inj₂ ⟨ _ , k∈ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩)
+    with no-bad {fun} {⌊ C ⌋} {⋆ ⟨ ⋆ ⟨ ⌊ C ⌋ , ⟨ ⌊ D ⌋ , ptt ⟩ ⟩ , ⟨ ⌊ A ⌋ , ptt ⟩ ⟩} funs w k∈
+  ... | ⟨ U , ⟨ ⟨ V , ⟨ u∈ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ = call u∈ V⊆ U⊆
+
 {- The relation preserved ----------------------------------------------------------}
+
 
 
 module Sim {Σ : List ℕ} {Tᶜ T : Table}
@@ -312,7 +434,14 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
     ar (lit B c) = ℬ-r
     ar (ref f) = TR f
 
+    aconᶠ : (a : Atm Σ Δ ⟪ fun ⟫) → Con (𝒜 a Tᶜ ρᶜ)
+    aconᶠ (var x) = conᶜ h x
+
+    aconᴬ : (a : Atm Σ Δ Any) → Con (𝒜 a Tᶜ ρᶜ)
+    aconᴬ (var x) = conᶜ h x
+
     {- an atom of a flat type: its values have its kind -}
+
     ar-kind : ∀ {G} (a : Atm Σ Δ ⟪ G ⟫) d → d ∈ ⌊ 𝒜 a Tᶜ ρᶜ ⌋ → kind₄ (kind d) ≡ kindᶠ G
     ar-kind a d ⟨ d∈ , d≢ ⟩ = ⊑-kok d (ar a d d∈) d≢
 
@@ -337,8 +466,15 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
       C⊆ x x∈ = let ⟨ y , y∈ ⟩ = proj₂ (v' e) in ⟨ y , in-Q x∈ y∈ ⟩
       E⊆ : (E' ⇂ Kd (tup n)) ⊆ Cdrs Q
       E⊆ y ⟨ y∈ , _ ⟩ = let ⟨ x , x∈ ⟩ = proj₂ (v' c) in ⟨ x , in-Q x∈ y∈ ⟩
-    simS (callc f a) w w∈ = {!!}
-    simS (tuple {n = n} as) = {!!}
+    simS (callc f a) = callc-r (vᶜ f) (aconᶠ f) (vᶜ a) (v' f) (c' f) (v' a) (c' a) (ar f) (ar a)
+    simS (tuple {n = n} as) d d∈ =
+      ⊑-⇂ d (λ e e∈ _ → 𝒯ᵐ-kok n e e∈) (binds-lift n ⊑-lift cons rels (λ cl hs → 𝒯-r n cl hs) d d∈)
+      where
+      cons : ∀ i → Con (nthD (⟦ M.⌜ as ⌝ᵛ ⟧s[ T ] ρ) i)
+      cons i = subst Con (sym (nth-atm as T ρ i)) (c' (Data.Vec.lookup as i))
+      rels : ∀ i → Lifted _⊑_ (nthD (⟦ M.⌜ as ⌝ᵛ ⟧s[ Tᶜ ] ρᶜ) i) (nthD (⟦ M.⌜ as ⌝ᵛ ⟧s[ T ] ρ) i)
+      rels i x x∈ = subst (x ⊑_) (sym (nth-atm as T ρ i))
+                      (ar (Data.Vec.lookup as i) x (subst (λ D → D x) (nth-atm as Tᶜ ρᶜ i) x∈))
     simS (get {n} i a) w w∈ = ⊑-mono w N⊆ (proj₂ (ar a (tup[ i ] w) (proj₁ t∈)))
       where
       A' = 𝒜 a T ρ
@@ -362,4 +498,5 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
       (λ d d∈ → kind₄-base (ar-kind a d d∈)) (λ d d∈ → kind₄-base (ar-kind b d d∈))
       (λ k k∈ → proj₁ (lower (ar a _ k∈))) (λ k k∈ → proj₁ (lower (ar b _ k∈)))
     simS (inject G a) d d∈ = ⊑-mono d (λ _ → proj₁) (ar a d d∈)
-    simS (project t a) = {!!}
+    simS (project t a) = project-r t (vᶜ a) (aconᴬ a) (v' a) (ar a)
+
