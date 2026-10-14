@@ -11,7 +11,7 @@
     with the table of the older ones (table-at), and the older
     definitions mean the same in the table of all of them as in their
     own (agree);
-  * inversions of the operators whose elements have one shape.
+  * the inversions of Clos5Values.agda.
 
 -}
 
@@ -49,20 +49,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (yes; no)
 
 open Runs (step ds) public
-
-{- Levels ----------------------------------------------------------------------}
-
-lvl< : ∀ {A : Set} {Γ : List A} {a} (x : Γ ∋ a) → lvl x < length Γ
-lvl< Z = ≤-refl
-lvl< (S x) = m<n⇒m<1+n (lvl< x)
-
-{- an index is determined by its level -}
-lvl-inj : ∀ {Γ : List ℕ} {m n} (f : Γ ∋ m) (g : Γ ∋ n) → lvl f ≡ lvl g → _≡_ {A = ∃[ k ] Γ ∋ k} ⟨ m , f ⟩ ⟨ n , g ⟩
-lvl-inj Z Z e = refl
-lvl-inj Z (S g) e = ⊥-elim (<-irrefl (sym e) (lvl< g))
-lvl-inj (S f) Z e = ⊥-elim (<-irrefl e (lvl< f))
-lvl-inj (S f) (S g) e with lvl-inj f g e
-... | refl = refl
+open import proof.Adequacy.Clos5Values using (lvl<; lvl-inj; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv) public
 
 {- The older definitions ---------------------------------------------------------}
 
@@ -162,72 +149,3 @@ tuple-run {γ = γ} acc (M ∷ Ms) (v ∷ vs) e (ev ∷ evs) with tuple-run (v �
 ... | ⟨ ws , ⟨ τ , eq ⟩ ⟩ =
   ⟨ ws , ⟨ (λ κ → ev (tupK acc Ms γ e κ) ++↠ refl ∷↠ τ κ)
        , trans eq (trans (cong (_++ vs) (unfold-reverse v acc)) (++-assoc (reverse acc) (v ∷ []) vs)) ⟩ ⟩
-
-{- Inversions ------------------------------------------------------------------------}
-
-ℬ-inv : ∀ {B} {k : base-rep B} d → d ∈ ℬ B k ptt → d ≡ dconst k
-ℬ-inv (dconst k) ⟨ refl , refl ⟩ = refl
-ℬ-inv (V ↦ w) ()
-ℬ-inv ν ()
-ℬ-inv ω ()
-ℬ-inv ⦅ u , v ⦆ ()
-ℬ-inv (tup[ i ] d) ()
-ℬ-inv (left d) ()
-ℬ-inv (right d) ()
-ℬ-inv ⟨⟩ ()
-
-pair-inv : ∀ {D E} d → d ∈ pair ⟨ D , ⟨ E , ptt ⟩ ⟩ → Σ[ u ∈ Value ] Σ[ u' ∈ Value ] d ≡ ⦅ u , u' ⦆ × u ∈ D × u' ∈ E
-pair-inv ⦅ u , u' ⦆ ⟨ u∈ , u'∈ ⟩ = ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩
-pair-inv (dconst k) ()
-pair-inv (V ↦ w) ()
-pair-inv ν ()
-pair-inv ω ()
-pair-inv (tup[ i ] d) ()
-pair-inv (left d) ()
-pair-inv (right d) ()
-pair-inv ⟨⟩ ()
-
-inl-inv : ∀ {D} d → d ∈ inlD ⟨ D , ptt ⟩ → Σ[ u ∈ Value ] d ≡ left u × u ∈ D
-inl-inv (left u) u∈ = ⟨ u , ⟨ refl , u∈ ⟩ ⟩
-inl-inv (dconst k) ()
-inl-inv (V ↦ w) ()
-inl-inv ν ()
-inl-inv ω ()
-inl-inv ⦅ u , v ⦆ ()
-inl-inv (tup[ i ] d) ()
-inl-inv (right d) ()
-inl-inv ⟨⟩ ()
-
-inr-inv : ∀ {D} d → d ∈ inrD ⟨ D , ptt ⟩ → Σ[ u ∈ Value ] d ≡ right u × u ∈ D
-inr-inv (right u) u∈ = ⟨ u , ⟨ refl , u∈ ⟩ ⟩
-inr-inv (dconst k) ()
-inr-inv (V ↦ w) ()
-inr-inv ν ()
-inr-inv ω ()
-inr-inv ⦅ u , v ⦆ ()
-inr-inv (tup[ i ] d) ()
-inr-inv (left d) ()
-inr-inv ⟨⟩ ()
-
-{- an element of a tuple of n components -}
-𝒯-inv : ∀ n {Ds} d → d ∈ 𝒯 n Ds
-  → (n ≡ 0 × d ≡ ⟨⟩) ⊎ Σ[ m ∈ ℕ ] Σ[ i ∈ Fin (suc m) ] Σ[ u ∈ Value ] Σ[ e ∈ n ≡ suc m ]
-       d ≡ tup[ i ] u × u ∈ nthD Ds (subst Fin (sym e) i) × (∀ j → nonempty (nthD Ds j))
-𝒯-inv zero ⟨⟩ _ = inj₁ ⟨ refl , refl ⟩
-𝒯-inv (suc n) (tup[ i ] u) ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ = inj₂ ⟨ n , ⟨ i , ⟨ u , ⟨ refl , ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-𝒯-inv zero (tup[ i ] u) ()
-𝒯-inv (suc n) ⟨⟩ ()
-𝒯-inv zero (dconst k) ()
-𝒯-inv (suc n) (dconst k) ()
-𝒯-inv zero (V ↦ w) ()
-𝒯-inv (suc n) (V ↦ w) ()
-𝒯-inv zero ν ()
-𝒯-inv (suc n) ν ()
-𝒯-inv zero ω ()
-𝒯-inv (suc n) ω ()
-𝒯-inv zero ⦅ u , v ⦆ ()
-𝒯-inv (suc n) ⦅ u , v ⦆ ()
-𝒯-inv zero (left d) ()
-𝒯-inv (suc n) (left d) ()
-𝒯-inv zero (right d) ()
-𝒯-inv (suc n) (right d) ()

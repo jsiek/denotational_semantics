@@ -250,6 +250,7 @@ import proof.Adequacy.Clos5
 import proof.Adequacy.Clos5Common
 import proof.Adequacy.Clos5LogRel
 import proof.Adequacy.Clos5Soundness
+import proof.Adequacy.Clos5Values
 import proof.Adequacy.Common
 import proof.Adequacy.EndToEnd
 import proof.Adequacy.GraphErr.Agree
