@@ -31,7 +31,8 @@ open import Compiler.Typed.LiftLocals using (lift; lift-program)
 open import Compiler.Typed.Explicate using (Out; out; after; explicate-assign; explicate-tail; explicate-body; explicate)
 open import Compiler.Typed.Select
 open import proof.Adequacy.X86WF using (OK; Code; BodyOK; DefsWF)
-open import proof.Compiler.Typed.GlobalizeOlder using (Older; Olders; OlderDefs; lvl<)
+open import proof.Compiler.Typed.GlobalizeOlder using (Older; Olders; OlderDefs)
+open import proof.Framework.Membership using (lvl-<)
 
 open import Data.List using (List; []; _∷_; _++_; length)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
@@ -198,7 +199,7 @@ module _ (K : ℕ) where
     S< x = x < n
 
     atm-R : ∀ {Σ Δ A} (a : Atm Σ Δ A) → length Δ ≤ n → RA a → OK (_< K) S< (select-atm a)
-    atm-R (var x) Δ≤ _ = <-≤-trans (lvl< x) Δ≤
+    atm-R (var x) Δ≤ _ = <-≤-trans (lvl-< x) Δ≤
     atm-R (lit B c) Δ≤ _ = tt
     atm-R (ref f) Δ≤ h = h
 
@@ -243,7 +244,7 @@ module _ (K : ℕ) where
 older-all : ∀ {Σ Γ A} (M : C.Tm Σ Γ A) → Older (length Σ) M
 olders-all : ∀ {Σ Γ n} (Ms : Vec (C.Tm Σ Γ Any) n) → Olders (length Σ) Ms
 older-all (C.` x) = tt
-older-all (C.fun-ref f) = lvl< f
+older-all (C.fun-ref f) = lvl-< f
 older-all (C.pack L M) = older-all L , older-all M
 older-all (C.callc L M) = older-all L , older-all M
 older-all (C.lit B c) = tt
