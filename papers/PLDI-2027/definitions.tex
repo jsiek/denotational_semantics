@@ -177,11 +177,13 @@ passes in \texttt{agda/Compiler}, and the semantics of each style in
 \texttt{agda/Semantics} (of the typed languages in its \texttt{Typed}
 subdirectories). Part~\ref{part:typed} presents the typed pipeline, the main
 one: the types, the typed languages, cast insertion and the typed passes, the
-semantics of the typed languages in each style, and the theorems.
+semantics of the typed languages in each style with the relations of each
+style's proofs, and the theorems; it has its own notes on where it doesn't
+match the Agda literally, at the end of its sections.
 Part~\ref{part:untyped} presents the untyped pipeline that preceded it,
 preserved in \texttt{agda/Untyped}, with the definitions both share (ISWIM,
-simplify, X86, and their semantics); the contents list below is that of
-Part~\ref{part:untyped}.
+simplify, X86, and their semantics); the contents list and the notes below
+are those of Part~\ref{part:untyped}.
 It uses the notation of \texttt{talks/ITRS-2020} and named variables
 instead of de Bruijn indices.
 The public theorem statements are in \texttt{agda/Theorems}; they and the
@@ -538,15 +540,14 @@ environment from $\Tl{Clos4}$ on). The type $\Tcode{n}$, from $\Tl{Clos4}$ on, i
 that of closed code that takes an environment, a tuple of $n$ values, and
 an argument. $\Tinject{G}$ turns a value of type $\Tflat{G}$ into one of
 type $\TAny$, and $\Tproject{t}$ turns it back; $\key{project}$ is the only
-operation that can fail: it stops with a trapped error ($\omega$) when the
+operation that can fail: it stops with a trapped error, $\error$, when the
 tag is not $\Tflatof{t}$. The tags $t$ are the flat types that
 $\key{project}$ can test, those that cast insertion projects to; each is
 tested by an existing X86 instruction that errs on any other value
 (Section~\ref{sec:t-passes}). The flat type of a primitive's result is
 $\Tout{p}$.
 \begin{syntax}
-  & B &::=& \key{Nat} \mid \key{Int} \mid \key{Bool} \mid \key{Unit}
-    \mid \key{Void} \mid \key{Blame} \\
+  & B &::=& \key{Nat} \mid \key{Int} \mid \key{Bool} \\
   & G, H &::=& B \mid \Ttup{n} \mid \Tsum \mid \Tfun \\
   & A &::=& \TAny \mid \Tflat{G} \mid \Tcode{n} \\
   & t &::=& \Tfun \mid \Tsum \mid \Tint \mid \Tttup{n}{i}
@@ -563,9 +564,12 @@ $\Tout{p}$.
   \Tout{\key{sub}} = \key{Int} \quad
   \Tout{\key{eq}} = \Tsum
 \]
-A tuple tag $\Tttup{n}{i}$ names the component $i$ that the projection
-reads, which is where X86 tests the tuple. Flat types have decidable
-equality.
+A tuple tag $\Tttup{n}{i}$ is for a tuple of $n \geq 1$ components
+(cast insertion projects to it only for a $\prj{i}$, which needs at least
+one), and names the component $i$ that the projection reads, which is
+where X86 tests the tuple. A value of type $\TAny$ carries its flat type,
+and $\key{project}$ compares it with $\Tflatof{t}$, so flat types have
+decidable equality.
 
 \subsection{\texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T}}
 
@@ -765,25 +769,25 @@ write slot $s = |\Delta'|$ for a prefix $\Delta'$ of $\Delta$: the slots
 from $s$ on are forgotten (they belong to a finished scope) and slot $s$ is
 assigned anew.
 \begin{syntax}
-  & t &::=& \key{return}\; r \mid \assign{s}{r}{t} \mid \key{goto}\; l
-    \mid \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\[1ex]
+  & t &::=& \Treturn{r} \mid \assign{s}{r}{t} \mid \Tgoto{l}
+    \mid \Tcase{a}{s}{l_1}{l_2} \\[1ex]
   & b &::=& (t_0, \ldots, t_{j-1};\; t) \\
   & P &::=& (b_0, \ldots, b_{m-1};\; b)
 \end{syntax}
 \[
-  \frac{\Sigma; \Delta \vdash r : \TAny}{\Sigma; \vec{\Delta}; \Delta \vdash \key{return}\; r}
+  \frac{\Sigma; \Delta \vdash r : \TAny}{\Sigma; \vec{\Delta}; \Delta \vdash \Treturn{r}}
   \qquad
   \frac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash r : A \quad
         \Sigma; \vec{\Delta}; \Delta', A \vdash t}
        {\Sigma; \vec{\Delta}; \Delta \vdash \assign{|\Delta'|}{r}{t}}
   \qquad
-  \frac{\Delta_l = \Delta}{\Sigma; \vec{\Delta}; \Delta \vdash \key{goto}\; l}
+  \frac{\Delta_l = \Delta}{\Sigma; \vec{\Delta}; \Delta \vdash \Tgoto{l}}
 \]
 \[
   \frac{\Sigma; \Delta \vdash a : \Tflat{\Tsum} \quad \Delta' \sqsubseteq \Delta \quad
         \Delta_{l_1} = \Delta_{l_2} = \Delta', \TAny}
        {\Sigma; \vec{\Delta}; \Delta \vdash
-        \key{case}\;a\;\key{of}_{|\Delta'|}\;\key{goto}\;l_1 \mid \key{goto}\;l_2}
+        \Tcase{a}{|\Delta'|}{l_1}{l_2}}
   \qquad
   \frac{\Sigma; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
         \Sigma; \vec{\Delta}; \Delta \vdash t}
@@ -912,19 +916,27 @@ become atoms. The fresh variable has the type of the operand, which may be
 any type (code, an environment, a closure, \ldots), hence $\Tl{Mon}$'s
 $\key{let}$ at any type. A $\key{case}$ or $\key{let}$ is complex: its
 branches and body are translated in place, so nothing is duplicated.
-With $\pass{atomize}$ and $\pass{lets}$ as in the untyped pass (atoms $x$,
-$c$ and $\funref{k}$ stay in place, any other operand $M$ is bound,
-$x{=}M$),
+An operand that is an atom ($x$, $c$ or $\funref{k}$) stays in place;
+any other operand $M$ is translated and bound to a fresh variable:
+\begin{align*}
+  \pass{atomize}(M) &= (\epsilon;\; M) \qquad M \text{ an atom} \\
+  \pass{atomize}(M) &= (x{=}\pass{rco}(M);\; x) \qquad \text{otherwise, } x \text{ fresh} \\
+  \pass{atomize}(M_1, \ldots, M_n) &= (\vec{b}_1 \cdots \vec{b}_n;\; a_1, \ldots, a_n)
+    \quad\text{where } (\vec{b}_i; a_i) = \pass{atomize}(M_i) \\
+  \pass{lets}(x_1{=}N_1 \cdots x_k{=}N_k,\; N) &= \Let x_1 = N_1 \In \cdots \Let x_k = N_k \In N
+\end{align*}
+The operations with operands are
 \begin{multline*}
   \mathit{op}(M_1, \ldots, M_n) \in \{\, \Tpack{M}{N},\ \Tcallc{M}{N},\
      \tuple{M_1, \ldots, M_n},\ \prj{i} M,\ \inl M,\ \inr M, \\
      \prim{p}{M}{N},\ \Tinject{G} M,\ \Tproject{t} M \,\}
 \end{multline*}
 \begin{align*}
+  \pass{rco}(a) &= a \qquad a \text{ an atom} \\
   \pass{rco}(\mathit{op}(M_1, \ldots, M_n)) &= \pass{lets}(\vec{b}, \mathit{op}(a_1, \ldots, a_n)) \\
-  &\qquad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(\pass{rco}(M_1), \ldots, \pass{rco}(M_n)) \\
+  &\qquad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(M_1, \ldots, M_n) \\
   \pass{rco}(\Case{L}{x}{M}{y}{N}) &= \pass{lets}(\vec{b}, \Case{a}{x}{\pass{rco}(M)}{y}{\pass{rco}(N)}) \\
-  &\qquad \text{where } (\vec{b}; a) = \pass{atomize}(\pass{rco}(L)) \\
+  &\qquad \text{where } (\vec{b}; a) = \pass{atomize}(L) \\
   \pass{rco}(\Let x = M \In N) &= \Let x = \pass{rco}(M) \In \pass{rco}(N) \\
   \pass{rco}((d_0, \ldots, d_{m-1};\; M)) &= (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M)) \\
   \pass{rco}(\Tcodetm{e}{y}{N}) &= \Tcodetm{e}{y}{\pass{rco}(N)}
@@ -958,28 +970,30 @@ and every other construct is a simple expression, unchanged.
 The equations are those of the untyped pass: $\pass{tail}(e)$ translates
 $e$ in tail position, $\pass{assign}(e, s, k)$ translates ``slot $s := e$,
 then the tail $k$'' in continuation-passing style, and a $\key{case}$ on
-the right of an assignment adds $k$ as a block, the join point. Both thread
+the right of an assignment adds $k$ as a block, the join point, which
+both branches jump to. $\pass{add}(t)$ adds the block $t$ and gives its
+label. Both thread
 the blocks made so far, each typed over the older ones, so a new block's
 label is the newest, and a label made earlier stays valid as more blocks are
 added. In $\pass{assign}(e, s, k)$, $k$ starts in the frame $\Delta', A$
 with $s = |\Delta'|$, $\Delta'$ a prefix of the frame $\Delta$ of $e$.
 \begin{align*}
-  \pass{tail}(r) &= \key{return}\; r \\
+  \pass{tail}(r) &= \Treturn{r} \\
   \pass{tail}(\assign{s}{e_1}{e_2}) &= \pass{assign}(e_1, s, \pass{tail}(e_2)) \\
-  \pass{tail}(\Casei{a}{s}{e_1}{e_2}) &=
-    \key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\
+  \pass{tail}(\Casei{a}{s}{e_1}{e_2}) &= \Tcase{a}{s}{l_1}{l_2} \\
   &\qquad \text{where } l_1 = \pass{add}(\pass{tail}(e_1)),\ l_2 = \pass{add}(\pass{tail}(e_2)) \\[1ex]
   \pass{assign}(r, s, k) &= \assign{s}{r}{k} \\
   \pass{assign}(\assign{s'}{e_1}{e_2}, s, k) &= \pass{assign}(e_1, s', \pass{assign}(e_2, s, k)) \\
-  \pass{assign}(\Casei{a}{s'}{e_1}{e_2}, s, k) &=
-    \key{case}\;a\;\key{of}_{s'}\;\key{goto}\;l_1 \mid \key{goto}\;l_2 \\
+  \pass{assign}(\Casei{a}{s'}{e_1}{e_2}, s, k) &= \Tcase{a}{s'}{l_1}{l_2} \\
   &\qquad \text{where } l = \pass{add}(k),\
-    l_i = \pass{add}(\pass{assign}(e_i, s, \key{goto}\;l)) \\[1ex]
+    l_i = \pass{add}(\pass{assign}(e_i, s, \Tgoto{l})) \\[1ex]
   \pass{explicate}(e) &= (\vec{t};\; t)
     \quad\text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
 \end{align*}
 and $\pass{explicate}$ maps over the definitions and main of a program.
-Unlike the untyped pass, a body carries no frame size.
+Unlike the untyped pass, a body carries no frame size. A $\key{case}$
+in $\Tl{Imp}$ writes the next slot of its frame, so the $\key{case}$ tail
+it becomes writes slot $|\Delta|$ (its $\Delta'$ is all of $\Delta$).
 
 \subsection{Select Instructions (\texorpdfstring{$\Tl{CFG}$}{CFG-T} \texorpdfstring{$\to$}{->} X86)}
 
@@ -990,8 +1004,8 @@ uses; so $\bar{s} = s$, $\bar{c} = c$, and $\overline{\funref{k}} =
 move; $\Tproject{t} a$ first runs $\Tcheck{t}$, an existing X86 instruction
 that errs on a value of any other kind and otherwise only clobbers
 $\rax$ or the flag. $\key{callc}$ opens the closure: its code and
-environment are the two fields of a pair. The simple expressions and tails
-not shown are as in the untyped pass.
+environment are the two fields of a pair. The other simple expressions
+and the tails are as in the untyped pass. With $d$ a location:
 \begin{align*}
   \Tcheck{\Tint}(o) &= \key{movq}\; o, \rax;\ \key{subq}\; \$0, \rax &
   \Tcheck{\Tsum}(o) &= \key{testinl}\; o \\
@@ -999,30 +1013,40 @@ not shown are as in the untyped pass.
   \Tcheck{\Tttup{n}{i}}(o) &= \key{load}\; \pi_i\; o, \rax
 \end{align*}
 \begin{align*}
-  \pass{sel}(\Tinject{G} a, d) &= \key{movq}\; \bar{a}, d \\
-  \pass{sel}(\Tproject{t} a, d) &= \Tcheck{t}(\bar{a});\ \key{movq}\; \bar{a}, d \\
+  \pass{sel}(a, d) &= \key{movq}\; \bar{a}, d \\
   \pass{sel}(\Tpack{a_1}{a_2}, d) &= \key{alloc}\; \key{pair}\; \bar{a}_1, \bar{a}_2, d \\
   \pass{sel}(\Tcallc{a_1}{a_2}, d) &= \key{load}\; \key{fst}\; \bar{a}_1, \rax;\
     \key{load}\; \key{snd}\; \bar{a}_1, \rdi;\ \key{movq}\; \bar{a}_2, \rsi; \\
-  &\qquad \key{callq}\; \rax;\ \key{movq}\; \rax, d \\[1ex]
-  \pass{sel}(\assign{s}{r}{t}) &= \pass{sel}(r, s);\ \pass{sel}(t) \qquad s = |\Delta'| \\
-  \pass{sel}(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &=
+  &\qquad \key{callq}\; \rax;\ \key{movq}\; \rax, d \\
+  \pass{sel}(\tuple{a_1, \ldots, a_n}, d) &= \key{alloc}\; \key{tuple}\; \bar{a}_1, \ldots, \bar{a}_n, d \\
+  \pass{sel}(\prj{i} a, d) &= \key{load}\; \pi_i\; \bar{a}, d \\
+  \pass{sel}(\inl a, d) &= \key{alloc}\; \key{inl}\; \bar{a}, d
+    \qquad\text{and likewise for } \key{inr} \\
+  \pass{sel}(\key{sub}(a_1, a_2), d) &= \key{movq}\; \bar{a}_1, \rax;\
+    \key{subq}\; \bar{a}_2, \rax;\ \key{movq}\; \rax, d \\
+  \pass{sel}(\key{eq}(a_1, a_2), d) &= \key{cmpq}\; \bar{a}_2, \bar{a}_1;\ \key{sete}\; d \\
+  \pass{sel}(\Tinject{G} a, d) &= \key{movq}\; \bar{a}, d \\
+  \pass{sel}(\Tproject{t} a, d) &= \Tcheck{t}(\bar{a});\ \key{movq}\; \bar{a}, d \\[1ex]
+  \pass{sel}(\Treturn{r}) &= \pass{sel}(r, \rax);\ \key{retq} \\
+  \pass{sel}(\assign{s}{r}{t}) &= \pass{sel}(r, s);\ \pass{sel}(t) \\
+  \pass{sel}(\Tgoto{l}) &= \key{jmp}\; l \\
+  \pass{sel}(\Tcase{a}{s}{l_1}{l_2}) &=
     \key{testinl}\; \bar{a};\ \key{load}\; \key{payload}\; \bar{a}, s;\ \key{je}\; l_1, l_2
-    \qquad s = |\Delta'|
 \end{align*}
 The frame of a body has as many slots as the deepest level its tails
 write: with $\Delta$ the frame a tail starts in,
 \begin{align*}
-  \mathit{depth}(\key{return}\; r) = \mathit{depth}(\key{goto}\; l) &= |\Delta| \\
+  \mathit{depth}(\Treturn{r}) = \mathit{depth}(\Tgoto{l}) &= |\Delta| \\
   \mathit{depth}(\assign{s}{r}{t}) &= \max(|\Delta|, \mathit{depth}(t)) \\
-  \mathit{depth}(\key{case}\;a\;\key{of}_{s}\;\key{goto}\;l_1 \mid \key{goto}\;l_2) &= \max(|\Delta|, s + 1) \\
+  \mathit{depth}(\Tcase{a}{s}{l_1}{l_2}) &= \max(|\Delta|, s + 1) \\
   \pass{select}((t_0, \ldots, t_{j-1};\; t)) &=
     (\max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}), \mathit{depth}(t));\
      \pass{sel}(t_0), \ldots, \pass{sel}(t_{j-1});\ \pass{sel}(t))
 \end{align*}
 and the start of each definition begins with the prologue
 $\key{movq}\; \rdi, 0;\ \key{movq}\; \rsi, 1$, as in the untyped pass,
-which moves its environment and argument to slots $0$ and $1$.
+which moves its environment and argument to slots $0$ and $1$; main has
+no prologue.
 
 \subsection{The Compiler}
 
@@ -1074,10 +1098,14 @@ $\pass{cast}$; simplify keeps programs closed
   $\key{seq}$ and $\key{case}$ of $\Tl{CFG}$ carry a proof
   $p : \Delta' \sqsubseteq \Delta$ and write slot $|\Delta'|$. The CFG
   assignment $\assign{s}{r}{t}$ is the Agda's \texttt{seq}.
-\item \textbf{Tuple tags} $\Tttup{n}{i}$ are the Agda's \texttt{ttup n i}, a
-  tuple of $n + 1$ components with $i : \mathtt{Fin}\,(n+1)$; tuple
-  indices run from $1$ to $n$ here, from $0$ in the Agda. $\key{Bool}$ is
-  the Agda's blackboard-bold B.
+\item \textbf{Tuple tags} $\Tttup{n}{i}$, for a tuple of $n \geq 1$
+  components read at component $1 \leq i \leq n$, are the Agda's
+  \texttt{ttup} $(n-1)$ $(i-1)$: \texttt{ttup m j} is for a tuple of
+  $m + 1$ components, with $j : \mathtt{Fin}\,(m+1)$, so that it needs no
+  proof that the tuple is not empty. Tuple indices run from $1$ to $n$
+  here, from $0$ in the Agda. The tags $\Tfun$, $\Tsum$ and $\Tint$ are
+  \texttt{tfun}, \texttt{tsum} and \texttt{tint}. $\key{Bool}$ is the
+  Agda's blackboard-bold B.
 \item \textbf{Cast insertion} is defined on terms with a proof that they are
   well scoped (\texttt{WS k M}), and carries a renaming of the variables,
   for the variable the $\key{let}$ of a primitive adds around its second
@@ -1110,7 +1138,7 @@ $\pass{cast}$; simplify keeps programs closed
   \texttt{blocks-depth bs $\sqcup$ depth t}; the prologue is
   \texttt{prologue}, added by \texttt{select-defs}.
 \item \textbf{$\Tl{Mon}$} has its own syntax (\texttt{Atm}, \texttt{Exp});
-  its meaning is the embedding $\ulcorner\cdot\urcorner$ into $\Tl{Clos5}$.
+  its meaning is the embedding $\Tembed{\cdot}$ into $\Tl{Clos5}$.
 \end{itemize}
 
 
@@ -2142,54 +2170,126 @@ instructions are the CEK column's.
 
 \section{The Theorems}\label{sec:t-thm}
 
-The public statements are in \texttt{agda/Theorems/}; for a closed ISWIM
-program $M$ (one with no free variables), and with
-$\pass{compile\text{-}x86} = \pass{select} \circ \pass{explicate} \circ
-\pass{lift} \circ \pass{rco} \circ \pass{globalize} \circ \pass{delay}
-\circ \pass{concretize} \circ \pass{optimize} \circ \pass{enclose} \circ
-\pass{cast} \circ \pass{simplify}$:
+The public statements are in \texttt{agda/Theorems/}, each with its type
+written out. Write $\mathit{Closed}(M)$ for an ISWIM program $M$ with no
+free variables (the Agda's \texttt{Closed}, \texttt{Compiler/EncloseScope.agda}),
+and
+\[
+  \pass{compile\text{-}x86} = \pass{select} \circ \pass{explicate} \circ
+  \pass{lift} \circ \pass{rco} \circ \pass{globalize} \circ \pass{delay}
+  \circ \pass{concretize}_\emptyset \circ \pass{optimize} \circ \pass{enclose} \circ
+  \pass{cast\text{-}closed} \circ \pass{simplify}
+\]
+(Section~\ref{sec:t-passes}). Each pass is stated for every program of its
+source language, except simplify and cast insertion, whose source is
+untyped ISWIM. A $\Tl{Mon}$ program $P$ is given meaning, and run, as its
+embedding $\Tembed{P}$ into $\Tl{Clos5}$: rco is stated as
+$P \mapsto \Tembed{\pass{rco}(P)}$ and lift locals as
+$\Tembed{P} \mapsto \pass{lift}(P)$. The whole compiler is stated for
+each prefix, $\pass{compile}$ (into $\Tl{Clos5}$), $\pass{compile\text{-}mon}$
+(through the embedding), $\pass{compile\text{-}imp}$,
+$\pass{compile\text{-}cfg}$ and $\pass{compile\text{-}x86}$, for every
+closed $M$.
 \begin{itemize}
-\item \textbf{Denotational: graph model} (\texttt{Theorems/Denotational.agda}).
-  Every pass but delay preserves the meaning exactly, $\SEM{M}\rho_0 \simeq
-  \SEM{\pass{pass}(M)}\rho_0$ (for $\Tl{Mon}$, the meaning of its embedding
-  into $\Tl{Clos5}$); delay preserves and reflects constants and
-  nonemptiness; so $\SEM{\pass{compile\text{-}x86}(M)}$ has the same
-  constants as $\SEM{M}\rho_0$, and is nonempty exactly when it is.
-  No pass has a precondition.
-\item \textbf{CEK machine + simulation} (\texttt{Theorems/Simulation.agda}),
-  \textbf{clocked interpreter + value relations}
-  (\texttt{Theorems/Interpreter.agda}) and \textbf{reduction semantics +
-  simulation} (\texttt{Theorems/Reduction.agda}). Each pass, and the compiler
-  into each of $\Tl{Clos5}$, $\Tl{Mon}$, $\Tl{Imp}$, $\Tl{CFG}$ and X86, gives
-  $\Equiv$ semantics: each terminates with an observation $o$ (an error
-  included) exactly when the other does, and one diverges exactly when the
-  other does.
-\item \textbf{Adequacy} (\texttt{Theorems/Adequacy.agda}). The graph model
-  is sound and adequate for the ISWIM machine, and for the $\Tl{Clos5}$ and
-  X86 machines on the programs the compiler produces; so, observed through
-  the machines, the compiler preserves the constants a program computes and
-  whether it terminates with an answer.
-\item \textbf{Graph model with errors} (\texttt{Theorems/GraphErrors.agda}).
-  Every pass but delay and select preserves the meaning exactly, errors
-  included; delay preserves and reflects an error, the constants and having
-  a value; select is $\mathit{Same}$ (an error, the same constants and a
-  value together; Section~\ref{sec:t-gerr}); and the ISWIM machine on $M$
-  and the $\Tl{Clos5}$ and X86 machines on its compilation stop with an
-  error together, stop with the same constants, stop with an answer
-  together, and diverge together. Adequacy for the $\Tl{Clos5}$ machine is
-  derived from the CEK column's simulation, not proved by a logical
-  relation of its own.
+\item \textbf{Denotational: graph model} (\texttt{Theorems/Denotational.agda};
+  Section~\ref{sec:t-den}). Every pass but delay preserves the meaning
+  exactly: $\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$ for every
+  $M$; $\SEM{M}\rho_0 \simeq \SEM{\pass{cast\text{-}closed}(M)}^{\Tl{ISWIM}}\rho_0$
+  when $\mathit{Closed}(M)$; and likewise, with no precondition, for
+  enclose, optimize, concretize, globalize, rco, lift locals, explicate
+  control and select instructions (for select, for every $\Tl{CFG}$
+  program: its frames are typed, so the frames of the X86 program are
+  large enough by construction). Delay preserves and reflects the
+  constants and nonemptiness: $c \in \SEM{M}^{\Tl{3}}\rho_0 \iff
+  c \in \SEM{\pass{delay}(M)}^{\Tl{4}}\rho_0$, and likewise for
+  $\NE$. So, when $\mathit{Closed}(M)$, the meaning of each prefix of the
+  compiler applied to $M$ has the same constants as $\SEM{M}\rho_0$, and is
+  nonempty exactly when $\SEM{M}\rho_0$ is (\texttt{compile-correct-const},
+  \texttt{compile-correct-nonempty}, and so on).
+\item \textbf{CEK machine + simulation} (\texttt{Theorems/Simulation.agda};
+  Section~\ref{sec:t-cek}), \textbf{clocked interpreter + value relations}
+  (\texttt{Theorems/Interpreter.agda}; Section~\ref{sec:t-interp}) and
+  \textbf{reduction semantics + simulation} (\texttt{Theorems/Reduction.agda};
+  Section~\ref{sec:t-red}). Each pass gives $\Equiv$ semantics: each
+  terminates with an observation $o$ ($\error$ included) exactly when the
+  other does, and one diverges exactly when the other does,
+  \[
+    (\forall o.\; \Term_{L_1}(o) \iff \Term_{L_2}(o)) \land (\Div_{L_1} \iff \Div_{L_2}),
+  \]
+  for simplify and cast insertion when $\mathit{Closed}(M)$, and for every
+  program for the other passes. In the reduction column, the semantics of
+  $\Tl{Imp}$, $\Tl{CFG}$ and X86 are the CEK machines. Each prefix of the
+  compiler gives $\Equiv$ semantics with ISWIM when $\mathit{Closed}(M)$;
+  and in particular, for $\pass{compile}$, the compiled program terminates
+  with the same constants, terminates (with an answer) exactly when the
+  original does, errs exactly when it does, and diverges exactly when it
+  does (\texttt{compile-const}, \texttt{compile-converges},
+  \texttt{compile-error}, \texttt{compile-diverges}).
+\item \textbf{Adequacy} (\texttt{Theorems/Adequacy.agda}). For closed $M$:
+  the graph model is sound and adequate for the ISWIM machine on constants
+  ($c \in \SEM{M}\rho_0 \iff \Term_{\mathrm{ISWIM}(M)}(c)$) and on answers
+  ($\SEM{M}\rho_0 \NE$ iff the machine terminates with an answer), and a
+  program that errs or diverges means $\emptyset$; the same four hold for
+  the $\Tl{Clos5}$ machine on $\pass{compile}(M)$, and the first two for
+  the X86 machine on $\pass{compile\text{-}x86}(M)$. With the denotational
+  theorems, observed through the machines, $\pass{compile}$ and
+  $\pass{compile\text{-}x86}$ preserve the constants a program terminates
+  with and whether it terminates with an answer.
+\item \textbf{Graph model with errors} (\texttt{Theorems/GraphErrors.agda};
+  Section~\ref{sec:t-gerr}). Every pass but delay and select preserves the
+  meaning exactly, errors included (simplify and cast insertion when
+  $\mathit{Closed}(M)$); delay preserves and reflects an error ($\omega$),
+  the constants, and having a value (an element other than $\omega$);
+  select is $\Same$ (an error, the same constants and a value together),
+  and so is each prefix of the compiler, from $\SEM{M}\rho_0$, when
+  $\mathit{Closed}(M)$. Adequacy: for closed $M$, the meaning tells apart
+  the outcomes of the ISWIM machine on $M$, of the $\Tl{Clos5}$ machine on
+  $\pass{compile}(M)$ and of the X86 machine on $\pass{compile\text{-}x86}(M)$:
+  $\omega$ is in it iff the machine errs, $c$ iff it terminates with $c$,
+  a value iff it terminates with an answer, and nothing iff it diverges.
+  So the ISWIM machine on $M$ and the $\Tl{Clos5}$ and X86 machines on its
+  compilation stop with an error together, stop with the same constants,
+  stop with an answer together, and diverge together; and likewise for
+  simplify, through the ISWIM machine. Adequacy for the X86 machine is that
+  of Part~\ref{part:untyped}'s X86 machine, on the typed compiler's
+  programs, which are well formed; for the $\Tl{Clos5}$ machine it is derived
+  from the ISWIM machine's, $\Same$, and the CEK column's simulation, not
+  proved by a logical relation of its own.
 \end{itemize}
 
 \part{The Untyped Pipeline (Preserved)}\label{part:untyped}
 
-The pipeline that preceded the typed one, preserved in \texttt{agda/Untyped/}, whose
-intermediate languages are untyped and whose semantics check the kinds of values themselves.
-Its definitions of ISWIM, simplify and X86, and the semantics of ISWIM and X86 in each style,
-are shared with the typed pipeline (Part~\ref{part:typed}); everything else here is in
-\texttt{agda/Untyped/}, whose paths mirror those of \texttt{agda/}.
+This part presents the untyped pipeline, the one that preceded the typed
+pipeline of Part~\ref{part:typed}. It is preserved, and checked by
+\texttt{make check}, in \texttt{agda/Untyped/} (module prefix
+\texttt{Untyped.}), whose paths mirror those of \texttt{agda/}; it is no
+longer the main development. Its intermediate languages are untyped, and
+their semantics check the kinds of values themselves:
+\[
+\begin{array}{l}
+\mathrm{ISWIM} \xrightarrow{\pass{simplify}} \mathrm{ISWIM}
+  \xrightarrow{\pass{enclose}} \mathrm{Clos2} \xrightarrow{\pass{optimize}} \mathrm{Clos2}
+  \xrightarrow{\pass{concretize}} \mathrm{Clos3} \xrightarrow{\pass{delay}} \mathrm{Clos4}
+  \xrightarrow{\pass{globalize}} \mathrm{Clos5} \\
+\qquad \xrightarrow{\pass{rco}} \text{monadic Clos5}
+  \xrightarrow{\pass{lift}} \mathrm{Imp} \xrightarrow{\pass{explicate}} \mathrm{CFG}
+  \xrightarrow{\pass{select}} \mathrm{X86}
+\end{array}
+\]
+Its definitions of ISWIM, simplify and X86, and the semantics of ISWIM
+and X86 in each style, are shared with the typed pipeline; everything
+else here is in \texttt{agda/Untyped/}. The part has the languages
+(Section~\ref{sec:u-langs}) and the passes (Section~\ref{sec:u-passes}),
+and then one section per column, each with its semantics and the
+relations of its proofs: the graph model (Section~\ref{sec:u-den}), CEK
+machines (Section~\ref{sec:u-cek}), clocked interpreters
+(Section~\ref{sec:u-interp}), reduction semantics
+(Section~\ref{sec:u-red}), and the graph model with errors
+(Section~\ref{sec:graph-errors}). The ``Where it doesn't match the Agda
+literally'' notes and the contents list in About this document are for
+this part.
 
-\section{Languages}
+\section{Languages}\label{sec:u-langs}
 
 \subsection{ISWIM}
 
@@ -2350,7 +2450,7 @@ blocks and jumps are as in CFG.
 \end{syntax}
 
 %===============================================================================
-\section{Compilation}
+\section{Compilation}\label{sec:u-passes}
 
 \[
   \pass{compile} = \pass{globalize} \circ \pass{delay} \circ \pass{concretize}_{\mathit{id}}
@@ -3595,7 +3695,7 @@ by Theorems~\ref{thm:compile-cfg} and~\ref{thm:select}.
 \end{theorem}
 
 %===============================================================================
-\section{CEK Machine + Simulation}
+\section{CEK Machine + Simulation}\label{sec:u-cek}
 
 \subsection{Observations and Machines}
 
@@ -4868,7 +4968,7 @@ For every Clos3 term $M$,
 \end{theorem}
 
 %===============================================================================
-\section{Clocked Interpreter + Value Relations}
+\section{Clocked Interpreter + Value Relations}\label{sec:u-interp}
 
 \subsection{Results and Clocks}
 
