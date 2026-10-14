@@ -416,6 +416,15 @@ let-⊇ {D} {F} cD c m fin w w∈ = proj₂ (letᵗ-≫= {D} {F} m cD (λ _ → 
 
 
 
+{- the environment of the rest of a tail, with a new slot -}
+er-ext : ∀ {Δ' Δ A} (p : Δ' ≤ₗ Δ) {ρᶜ ρ Xᶜ X} → ER {Δ} ρᶜ ρ → SR A Xᶜ X → Val Xᶜ → Con Xᶜ → Clean X
+  → ER {A ∷ Δ'} (Xᶜ • drop p ρᶜ) (X • drop p ρ)
+er-ext p {ρᶜ} {ρ} h r v c cl = record
+  { rel = λ { Z → r ; (S y) → subst₂ (SR _) (sym (drop-idx p ρᶜ y)) (sym (drop-idx p ρ y)) (rel h (⊑-∋ p y)) }
+  ; valᶜ = λ { Z → v ; (S y) → subst Val (sym (drop-idx p ρᶜ y)) (valᶜ h (⊑-∋ p y)) }
+  ; conᶜ = λ { Z → c ; (S y) → subst Con (sym (drop-idx p ρᶜ y)) (conᶜ h (⊑-∋ p y)) }
+  ; clean = λ { Z → cl ; (S y) → subst Clean (sym (drop-idx p ρ y)) (clean h (⊑-∋ p y)) } }
+
 module Sim {Σ : List ℕ} {Tᶜ T : Table}
   (TR : ∀ {n} (f : Σ ∋ n) → SR (code n) (Tᶜ (lvl f)) (T (lvl f)))
   (TVᶜ : ∀ k → Val (Tᶜ k)) (TV : ∀ k → Val (T k)) (TC : ∀ k → Con (T k)) where
@@ -531,15 +540,6 @@ module Sim {Σ : List ℕ} {Tᶜ T : Table}
   {- the blocks are related -}
   BR : ∀ {Bs} → BEnv Bs → BEnv Bs → Set₁
   BR {Bs} Bᶜ B = ∀ {Δ} (l : Bs ∋ Δ) {ρᶜ ρ} → ER {Δ} ρᶜ ρ → Con-env ρ → nonempty-env ρ → Lifted _⊑_ (Bᶜ l ρᶜ) (B l ρ)
-
-  {- the environment of the rest of a tail, with a new slot -}
-  er-ext : ∀ {Δ' Δ A} (p : Δ' ≤ₗ Δ) {ρᶜ ρ Xᶜ X} → ER {Δ} ρᶜ ρ → SR A Xᶜ X → Val Xᶜ → Con Xᶜ → Clean X
-    → ER {A ∷ Δ'} (Xᶜ • drop p ρᶜ) (X • drop p ρ)
-  er-ext p {ρᶜ} {ρ} h r v c cl = record
-    { rel = λ { Z → r ; (S y) → subst₂ (SR _) (sym (drop-idx p ρᶜ y)) (sym (drop-idx p ρ y)) (rel h (⊑-∋ p y)) }
-    ; valᶜ = λ { Z → v ; (S y) → subst Val (sym (drop-idx p ρᶜ y)) (valᶜ h (⊑-∋ p y)) }
-    ; conᶜ = λ { Z → c ; (S y) → subst Con (sym (drop-idx p ρᶜ y)) (conᶜ h (⊑-∋ p y)) }
-    ; clean = λ { Z → cl ; (S y) → subst Clean (sym (drop-idx p ρ y)) (clean h (⊑-∋ p y)) } }
 
   tail-r : ∀ {Bs Δ} (t : Tail Σ Bs Δ) {Bᶜ B : BEnv Bs} → BR Bᶜ B → (∀ {Δ'} (l : Bs ∋ Δ') → Ok (B l))
     → ∀ {ρᶜ ρ} → ER {Δ} ρᶜ ρ → Con-env ρ → nonempty-env ρ → Lifted _⊑_ (⟦ t ⟧ᶜᵗ Tᶜ Bᶜ ρᶜ) (⟦ t ⟧ᵗ T B ρ)
