@@ -53,8 +53,8 @@ case-good = strict-good (in⇂-good {Q = ValPayload} 𝒞-good)
 prim-good : ∀ p → Good ⊤ (■ ∷ ■ ∷ []) (λ Ds → primᵗ p (proj₁ Ds) (proj₁ (proj₂ Ds)))
 prim-good p = strict-good (strict₂-good (primD-good p))
 
-project-good : ∀ k → Good ⊤ (■ ∷ []) (λ Ds → projectᵗ k (proj₁ Ds))
-project-good k = strict-good (check-kind-good k)
+project-good : ∀ φ k → Good ⊤ (■ ∷ []) (λ Ds → projectᵠ φ k (proj₁ Ds))
+project-good φ k = strict-good (check-kind-good φ k)
 
 appᵗ-≃ : ∀ {D D' E E'} → D ≃ D' → E ≃ E' → appᵗ D E ≃ appᵗ D' E'
 appᵗ-≃ D≃ E≃ = mono-≃ (mono app-good) ⟨ lift D≃ , ⟨ lift E≃ , ptt ⟩ ⟩
@@ -70,8 +70,8 @@ caseᵗ-≃ {F = F} {F'} {G} {G'} D≃ F≃ G≃ =
   ⟨ ≫=-mono (proj₁ D≃) (λ X⊆ → 𝒞⇂-⊆ {A = F} {F'} {G} {G'} X⊆ (λ V a b c → proj₁ (F≃ V a b c)) (λ V a b c → proj₁ (G≃ V a b c)))
   , ≫=-mono (proj₂ D≃) (λ X⊆ → 𝒞⇂-⊆ {A = F'} {F} {G'} {G} X⊆ (λ V a b c → proj₂ (F≃ V a b c)) (λ V a b c → proj₂ (G≃ V a b c))) ⟩
 
-projectᵗ-≃ : ∀ k {D D'} → D ≃ D' → projectᵗ k D ≃ projectᵗ k D'
-projectᵗ-≃ k D≃ = mono-≃ (mono (project-good k)) ⟨ lift D≃ , ptt ⟩
+projectᵗ-≃ : ∀ φ k {D D'} → D ≃ D' → projectᵠ φ k D ≃ projectᵠ φ k D'
+projectᵗ-≃ φ k D≃ = mono-≃ (mono (project-good φ k)) ⟨ lift D≃ , ptt ⟩
 
 {- The code of a closure ----------------------------------------------------------}
 

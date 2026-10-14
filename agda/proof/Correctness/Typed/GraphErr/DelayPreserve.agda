@@ -25,7 +25,7 @@ open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ)
+open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ)
 open import Language.Typed.Type using (Any; ⟪_⟫; tup; fun; _∋_; Z; S; idx)
 open import Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
 import Language.Typed.Clos4 as T
@@ -34,7 +34,7 @@ open S3 using (⟦_⟧; ⟦_⟧s)
 import proof.Semantics.GraphErr.Typed.Clos4 as S4
 open S4 using (fin₁; fin₂; ΛΛᵐ-call; kind₄) renaming (⟦_⟧ to ⟦_⟧'; ⟦_⟧s to ⟦_⟧s')
 open import Compiler.Typed.Delay using (Ren; ext; delay; delays; delay-program)
-open import proof.Correctness.Typed.GraphErr.DelayRel using (_●_; tgt; tgt-inj; kind₄-tgt; kindᶠ≢prod; out-data)
+open import proof.Correctness.Typed.GraphErr.DelayRel using (_●_; out-data)
 
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Fin using (Fin; zero; suc)
@@ -105,20 +105,20 @@ PairV-mono s ⟨ u , ⟨ t , ⟨ n , ⟨ p∈ , r ⟩ ⟩ ⟩ ⟩ = ⟨ u , ⟨ 
 ⊑-mono ⟨⟩ D⊆ (lift v∈) = lift (D⊆ _ v∈)
 
 {- a source value other than ω is exhibited by a target value of its kind -}
-⊑-wit : ∀ v {D'} → v ⊑ D' → v ≢ ω → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind d' ≡ tgt (kind v) × kind v ≢ prod
+⊑-wit : ∀ v {D'} → v ⊑ D' → v ≢ ω → Σ[ d' ∈ Value ] d' ∈ ⌊ D' ⌋ × kind₄ (kind d') ≡ kind v
 ⊑-ne : ∀ v {D'} → v ⊑ D' → nonempty D'
 ⊑-ne v {D'} v⊑ with ω? v
 ... | inj₁ refl = ⟨ ω , lower v⊑ ⟩
 ... | inj₂ v≢ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , proj₁ d'∈ ⟩
-⊑-wit ν (lift ⟨ u , ⟨ t , ⟨ _ , ⟨ p∈ , _ ⟩ ⟩ ⟩ ⟩) _ = ⟨ _ , ⟨ ⟨ p∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
-⊑-wit (U ↦ w) ⟨ lift ⟨ u , ⟨ t , ⟨ _ , ⟨ p∈ , _ ⟩ ⟩ ⟩ ⟩ , _ ⟩ _ = ⟨ _ , ⟨ ⟨ p∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
-⊑-wit (tup[ i ] d) d⊑ _ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ tup[ i ] d' , ⟨ ⟨ d'∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
-⊑-wit (left d) d⊑ _ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ left d' , ⟨ ⟨ d'∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
-⊑-wit (right d) d⊑ _ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ right d' , ⟨ ⟨ d'∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
-⊑-wit (const k) (lift v∈) _ = ⟨ _ , ⟨ ⟨ v∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
+⊑-wit ν (lift ⟨ u , ⟨ t , ⟨ _ , ⟨ p∈ , _ ⟩ ⟩ ⟩ ⟩) _ = ⟨ _ , ⟨ ⟨ p∈ , (λ ()) ⟩ , refl ⟩ ⟩
+⊑-wit (U ↦ w) ⟨ lift ⟨ u , ⟨ t , ⟨ _ , ⟨ p∈ , _ ⟩ ⟩ ⟩ ⟩ , _ ⟩ _ = ⟨ _ , ⟨ ⟨ p∈ , (λ ()) ⟩ , refl ⟩ ⟩
+⊑-wit (tup[ i ] d) d⊑ _ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ tup[ i ] d' , ⟨ ⟨ d'∈ , (λ ()) ⟩ , refl ⟩ ⟩
+⊑-wit (left d) d⊑ _ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ left d' , ⟨ ⟨ d'∈ , (λ ()) ⟩ , refl ⟩ ⟩
+⊑-wit (right d) d⊑ _ = let ⟨ d' , d'∈ ⟩ = ⊑-ne d d⊑ in ⟨ right d' , ⟨ ⟨ d'∈ , (λ ()) ⟩ , refl ⟩ ⟩
+⊑-wit (const k) (lift v∈) _ = ⟨ _ , ⟨ ⟨ v∈ , (λ ()) ⟩ , refl ⟩ ⟩
 ⊑-wit ω _ ne = ⊥-elim (ne refl)
 ⊑-wit ⦅ u , v ⦆ (lift ())
-⊑-wit ⟨⟩ (lift v∈) _ = ⟨ _ , ⟨ ⟨ v∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
+⊑-wit ⟨⟩ (lift v∈) _ = ⟨ _ , ⟨ ⟨ v∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
 ⊑-val : ∀ {v D'} → v ≢ ω → v ⊑ D' → Conv D'
 ⊑-val {v} v≢ v⊑ = let ⟨ d' , ⟨ d'∈ , _ ⟩ ⟩ = ⊑-wit v v⊑ v≢ in ⟨ d' , d'∈ ⟩
@@ -127,11 +127,11 @@ PairV-mono s ⟨ u , ⟨ t , ⟨ n , ⟨ p∈ , r ⟩ ⟩ ⟩ ⟩ = ⟨ u , ⟨ 
 ⊑-lift = record { ω→ = lower ; →ω = lift ; S-mono = λ {d} → ⊑-mono d ; S-val = ⊑-val }
 
 {- project: the check, and the values of the right kind -}
-⊑-restrict : ∀ v {X'} → v ⊑ X' → v ⊑ (X' ⇂ λ d → kind d ≡ tgt (kind v))
-⊑-restrict ν {X'} (lift p) = lift (PairV-mono {X'} {X' ⇂ λ d → kind d ≡ prod} (λ u v p∈ → ⟨ p∈ , refl ⟩) p)
+⊑-restrict : ∀ v {X'} → v ⊑ X' → v ⊑ (X' ⇂ λ d → kind₄ (kind d) ≡ kind v)
+⊑-restrict ν {X'} (lift p) = lift (PairV-mono {X'} {X' ⇂ λ d → kind₄ (kind d) ≡ fun} (λ u v p∈ → ⟨ p∈ , refl ⟩) p)
 ⊑-restrict (U ↦ w) {X'} ⟨ lift p , f ⟩ =
-  ⟨ lift (PairV-mono {X'} {X' ⇂ λ d → kind d ≡ prod} (λ u v p∈ → ⟨ p∈ , refl ⟩) p)
-  , (λ E' cE U⊑ → ⊑-mono w (⊙-mono {X'} {X' ⇂ λ d → kind d ≡ prod} (λ u v p∈ → ⟨ p∈ , refl ⟩)) (f E' cE U⊑)) ⟩
+  ⟨ lift (PairV-mono {X'} {X' ⇂ λ d → kind₄ (kind d) ≡ fun} (λ u v p∈ → ⟨ p∈ , refl ⟩) p)
+  , (λ E' cE U⊑ → ⊑-mono w (⊙-mono {X'} {X' ⇂ λ d → kind₄ (kind d) ≡ fun} (λ u v p∈ → ⟨ p∈ , refl ⟩)) (f E' cE U⊑)) ⟩
 ⊑-restrict (tup[ i ] d) d⊑ = ⊑-mono d (λ e e∈ → ⟨ e∈ , refl ⟩) d⊑
 ⊑-restrict (left d) d⊑ = ⊑-mono d (λ e e∈ → ⟨ e∈ , refl ⟩) d⊑
 ⊑-restrict (right d) d⊑ = ⊑-mono d (λ e e∈ → ⟨ e∈ , refl ⟩) d⊑
@@ -140,13 +140,11 @@ PairV-mono s ⟨ u , ⟨ t , ⟨ n , ⟨ p∈ , r ⟩ ⟩ ⟩ ⟩ = ⟨ u , ⟨ 
 ⊑-restrict ⦅ u , v ⦆ (lift ())
 ⊑-restrict ⟨⟩ (lift v∈) = lift ⟨ v∈ , refl ⟩
 
-⊑-proj : ∀ G {X X'} → Clean X → Lifted _⊑_ X X'
-  → Lifted _⊑_ (checked (kindᶠ G) X (X ⇂ λ d → kind d ≡ kindᶠ G)) (checked (kind₄ G) X' (X' ⇂ λ d → kind d ≡ kind₄ G))
-⊑-proj G clX h w (inj₁ ⟨ refl , ⟨ s , ⟨ s∈ , sk ⟩ ⟩ ⟩) with ⊑-wit s (h s s∈) (clX s s∈)
-... | ⟨ d' , ⟨ d'∈ , ⟨ dk , np ⟩ ⟩ ⟩ = lift (inj₁ ⟨ refl , ⟨ d' , ⟨ proj₁ d'∈ ,
-  (λ e → sk (tgt-inj _ _ np (kindᶠ≢prod G) (trans (sym dk) (trans e (kind₄-tgt G))))) ⟩ ⟩ ⟩)
-⊑-proj G clX h w (inj₂ ⟨ w∈ , wk ⟩) =
-  ⊑-mono w (λ { d ⟨ d∈ , e ⟩ → inj₂ ⟨ d∈ , trans e (trans (cong tgt wk) (sym (kind₄-tgt G))) ⟩ }) (⊑-restrict w (h w w∈))
+⊑-proj : ∀ k {X X'} → Clean X → Lifted _⊑_ X X'
+  → Lifted _⊑_ (checked k X (X ⇂ λ d → kind d ≡ k)) (checkedᵠ kind₄ k X' (X' ⇂ λ d → kind₄ (kind d) ≡ k))
+⊑-proj k clX h w (inj₁ ⟨ refl , ⟨ s , ⟨ s∈ , sk ⟩ ⟩ ⟩) with ⊑-wit s (h s s∈) (clX s s∈)
+... | ⟨ d' , ⟨ d'∈ , dk ⟩ ⟩ = lift (inj₁ ⟨ refl , ⟨ d' , ⟨ proj₁ d'∈ , (λ e → sk (trans (sym dk) e)) ⟩ ⟩ ⟩)
+⊑-proj k clX h w (inj₂ ⟨ w∈ , wk ⟩) = ⊑-mono w (λ { d ⟨ d∈ , e ⟩ → inj₂ ⟨ d∈ , trans e wk ⟩ }) (⊑-restrict w (h w w∈))
 
 data-⊑ : ∀ v {D'} → Data v → v ∈ D' → v ⊑ D'
 data-⊑ (left d) dd v∈ = data-⊑ d dd v∈
@@ -306,8 +304,8 @@ preserve (let′ M N) {r} {ρ} {ρ'} E =
 preserve (inject G M) E = preserve M E
 
 preserve (project G M) {r} E =
-  ≫=-lift {F = λ X → checked (kindᶠ G) X (X ⇂ λ d → kind d ≡ kindᶠ G)} {F' = λ X → checked (kind₄ G) X (X ⇂ λ d → kind d ≡ kind₄ G)}
-    ⊑-lift (S4.con (delay r M) (Envs.ρ'~ E)) (preserve M E) λ _ _ hX → ⊑-proj G clean⌊⌋ hX
+  ≫=-lift {F = λ X → checked (kindᶠ G) X (X ⇂ λ d → kind d ≡ kindᶠ G)} {F' = λ X → checkedᵠ kind₄ (kindᶠ G) X (X ⇂ λ d → kind₄ (kind d) ≡ kindᶠ G)}
+    ⊑-lift (S4.con (delay r M) (Envs.ρ'~ E)) (preserve M E) λ _ _ hX → ⊑-proj (kindᶠ G) clean⌊⌋ hX
 
 preserve (app L M) {r} {ρ} {ρ'} E =
   ≫=-lift {F = λ Xs → Xs ● ⟦ M ⟧ ρ} {F' = S4.Unpack Body ρ'} ⊑-lift (S4.con (delay r L) ρ'~) (preserve L E) APP

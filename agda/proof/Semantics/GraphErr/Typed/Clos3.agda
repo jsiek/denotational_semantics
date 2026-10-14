@@ -47,7 +47,7 @@ ok (case L M N) = ok-op case-good ⟨ ok L , ⟨ ok M , ⟨ ok N , ptt ⟩ ⟩ �
 ok (prim p L M) = ok-op (prim-good p) ⟨ ok L , ⟨ ok M , ptt ⟩ ⟩
 ok (let′ M N) = let-ok (ok M) (ok N)
 ok (inject G M) = ok M
-ok (project G M) = ok-op (project-good _) ⟨ ok M , ptt ⟩
+ok (project G M) = ok-op (project-good (λ k → k) _) ⟨ ok M , ptt ⟩
 
 oks [] = ptt
 oks (M ∷ Ms) = ⟨ ok M , oks Ms ⟩

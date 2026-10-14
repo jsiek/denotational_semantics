@@ -117,7 +117,7 @@ conc (let′ M N) φ {ρ₂} {ρ₃} c rel =
   ≫=-≃ {F = λ X → ⟦ N ⟧ (X • ρ₂)} {λ X → ⟦ concretize (ext-ref φ) N ⟧₃ (X • ρ₃)} (conc M φ c rel)
     (λ _ _ → conc N (ext-ref φ) (Con-• (Con-⊆ (con (concretize φ M) c) ⌊⌋-⊆) c) (rel-ext rel (⌊⌋-≃ (conc M φ c rel))))
 conc (inject G M) φ c rel = conc M φ c rel
-conc (project G M) φ c rel = projectᵗ-≃ _ (conc M φ c rel)
+conc (project G M) φ c rel = projectᵗ-≃ (λ k → k) _ (conc M φ c rel)
 
 concs-nth (M ∷ Ms) φ c rel zero = conc M φ c rel
 concs-nth (M ∷ Ms) φ c rel (suc i) = concs-nth Ms φ c rel i

@@ -107,7 +107,7 @@ opt-ok (let′ M N) {r} {ρ} {ρ'} V ag =
     (λ c _ → opt-ok N (ext-vals (⌊⌋-val c) V) (ext-agree (⌊⌋-≃ M≃) (subR ag)))
   where M≃ = opt-ok M V (subL ag)
 opt-ok (inject G M) V ag = opt-ok M V ag
-opt-ok (project G M) V ag = projectᵗ-≃ _ (opt-ok M V ag)
+opt-ok (project G M) V ag = projectᵗ-≃ (λ k → k) _ (opt-ok M V ag)
 
 opts-ok (M ∷ Ms) V ag zero = opt-ok M V (subL ag)
 opts-ok (M ∷ Ms) V ag (suc i) = opts-ok Ms V (subR ag) i

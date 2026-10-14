@@ -11,8 +11,9 @@
   What the types remove: the source application has no check of its
   operator, and the target call no late check, so a target closure is
   related only by its applications (app-obs) and its components being
-  values (pair-obs); kinds (kind-obs) matter only to project, the one
-  check (R-checkₗ, bad-reflect, R-restrict).
+  values (pair-obs); kinds (kind-obs, where a closure has the kind of a
+  function, kind₄) matter only to project, the one check (R-checkₗ,
+  bad-reflect, R-restrict).
 
 -}
 
@@ -25,9 +26,8 @@ open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Semantics.GraphErr.Prim using (out)
 open import Language.Prim using (int; bool)
-open import Language.Typed.Type using (base; tup; sum; fun)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ)
 open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
+open import Semantics.GraphErr.Typed.Ops using (checkedᵠ)
 open import Data.Bool using (true; false)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
@@ -58,41 +58,13 @@ D ● E = E ≫= λ X → ⋆ ⟨ D , ⟨ X , ptt ⟩ ⟩
 
 {- Kinds ----------------------------------------------------------------------}
 
-{- the kind of a target value for a source value of kind k: a function
-   is a closure, a pair; other kinds are kept -}
-tgt : Kind → Kind
-tgt fun = prod
-tgt k = k
-
-tgt-inj : ∀ x k → x ≢ prod → k ≢ prod → tgt x ≡ tgt k → x ≡ k
-tgt-inj fun fun _ _ _ = refl
-tgt-inj fun prod _ np _ = ⊥-elim (np refl)
-tgt-inj prod k np _ _ = ⊥-elim (np refl)
-tgt-inj inj inj _ _ _ = refl
-tgt-inj error error _ _ _ = refl
-tgt-inj (tup m) (tup n) _ _ refl = refl
-tgt-inj (base B) (base C) _ _ refl = refl
-
-{- kind₄ is tgt of kindᶠ, and kindᶠ is never prod -}
-kind₄-tgt : ∀ G → kind₄ G ≡ tgt (kindᶠ G)
-kind₄-tgt (base B) = refl
-kind₄-tgt (tup n) = refl
-kind₄-tgt sum = refl
-kind₄-tgt fun = refl
-
-kindᶠ≢prod : ∀ G → kindᶠ G ≢ prod
-kindᶠ≢prod (base B) ()
-kindᶠ≢prod (tup n) ()
-kindᶠ≢prod sum ()
-kindᶠ≢prod fun ()
-
-{- data correspond to themselves -}
-data-tgt : ∀ d → Data d → tgt (kind d) ≡ kind d × kind d ≢ prod
-data-tgt (const k) _ = ⟨ refl , (λ ()) ⟩
-data-tgt ⟨⟩ _ = ⟨ refl , (λ ()) ⟩
-data-tgt (left x) _ = ⟨ refl , (λ ()) ⟩
-data-tgt (right x) _ = ⟨ refl , (λ ()) ⟩
-data-tgt ω _ = ⟨ refl , (λ ()) ⟩
+{- data have their kind in Clos4ᵀ -}
+data-kind : ∀ d → Data d → kind d ≡ kind₄ (kind d)
+data-kind (const k) _ = refl
+data-kind ⟨⟩ _ = refl
+data-kind (left x) _ = refl
+data-kind (right x) _ = refl
+data-kind ω _ = refl
 
 out-data : ∀ o → Data (out o)
 out-data (int n) = flat-const
@@ -189,7 +161,7 @@ record Obs (Q : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫
   field
     err-obs : ω ⋵ V → ω ∈ D
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
-    kind-obs : ∀ d → d ⋵ V → d ≢ ω → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × tgt (kind s) ≡ kind d × kind s ≢ prod
+    kind-obs : ∀ d → d ⋵ V → d ≢ ω → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × kind s ≡ kind₄ (kind d)
     pair-obs : ∀ c t → ⦅ c , t ⦆ ⋵ V → c ≢ ω × t ≢ ω
     app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q U E → Q W (D ● E)
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q W (Untag t D)
@@ -231,7 +203,7 @@ private
   R′-data (suc k) {V} V⊆ fl = record
     { err-obs = λ ω∈ → V⊆ _ ω∈
     ; const-obs = λ c c∈ → V⊆ _ c∈
-    ; kind-obs = λ d d∈ d≢ → ⟨ d , ⟨ ⟨ V⊆ d d∈ , d≢ ⟩ , data-tgt d (fl d d∈) ⟩ ⟩
+    ; kind-obs = λ d d∈ d≢ → ⟨ d , ⟨ ⟨ V⊆ d d∈ , d≢ ⟩ , data-kind d (fl d d∈) ⟩ ⟩
     ; pair-obs = λ c t ct∈ → ⊥-elim (noflat (fl _ ct∈))
     ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
     ; tag-obs = λ t W W⊆ →
@@ -344,7 +316,7 @@ R-bind {A'} {A} {F'} {F} cA hA hF =
 {- Project ---------------------------------------------------------------------}
 
 {- a target check is related to D when its failure is an error of D -}
-R-checkₗ : ∀ {k' X' A' D} → (Bad k' X' → ω ∈ D) → Rel A' D → Rel (checked k' X' A') D
+R-checkₗ : ∀ {k' X' A' D} → (Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k' → ω ∈ D) → Rel A' D → Rel (checkedᵠ kind₄ k' X' A') D
 R-checkₗ {k'} {X'} {A'} {D} bad hA V V⊆ = R-cases {A = A'} vals err hA
   where
   vals : ∀ w → w ⋵ V → w ≢ ω → w ∈ A'
@@ -357,58 +329,36 @@ R-checkₗ {k'} {X'} {A'} {D} bad hA V V⊆ = R-cases {A = A'} vals err hA
   ... | inj₁ ⟨ _ , b ⟩ = bad b
 
 {- a target value of the wrong kind gives a source value of the wrong kind -}
-bad-reflect : ∀ G {X' X} → Clean X' → Rel X' X → Bad (kind₄ G) X' → Bad (kindᶠ G) X
-bad-reflect G clX hX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ with Obs.kind-obs (unfold (hX _ (single⊆ d∈))) _ (here refl) (clX d d∈)
-... | ⟨ s , ⟨ s∈ , ⟨ sk , _ ⟩ ⟩ ⟩ = ⟨ s , ⟨ proj₁ s∈ , (λ eq → dk (trans (sym sk) (trans (cong tgt eq) (sym (kind₄-tgt G))))) ⟩ ⟩
+bad-reflect : ∀ {k X' X} → Clean X' → Rel X' X → Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k → Bad k X
+bad-reflect clX hX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ with Obs.kind-obs (unfold (hX _ (single⊆ d∈))) _ (here refl) (clX d d∈)
+... | ⟨ s , ⟨ s∈ , sk ⟩ ⟩ = ⟨ s , ⟨ proj₁ s∈ , (λ eq → dk (trans (sym sk) eq)) ⟩ ⟩
 
-back : ∀ G x → x ≢ prod → x ≡ kind₄ G → x ≡ kindᶠ G
-back (base B) x _ e = e
-back (tup n) x _ e = e
-back sum x _ e = e
-back fun x np e = ⊥-elim (np e)
-
-noerr : ∀ G → error ≢ kind₄ G
-noerr (base B) ()
-noerr (tup n) ()
-noerr sum ()
-noerr fun ()
-
-isfun : ∀ G → prod ≡ kind₄ G → fun ≡ kindᶠ G
-isfun fun _ = refl
-
-tag-kind : ∀ t {a b} → kind (tag t a) ≡ kind (tag t b)
+tag-kind : ∀ t {a b} → kind (tag t a) ≡ kind₄ (kind (tag t b))
 tag-kind (tupT i) = refl
 tag-kind leftT = refl
 tag-kind rightT = refl
 
-tag-np : ∀ t {a} → kind (tag t a) ≢ prod
-tag-np (tupT i) ()
-tag-np leftT ()
-tag-np rightT ()
-
-{- the target values of kind kind₄ G are related to the source values of kind kindᶠ G -}
-R-restrict : ∀ G {X' X} → Rel X' X → Rel (X' ⇂ λ d → kind d ≡ kind₄ G) (X ⇂ λ d → kind d ≡ kindᶠ G)
-R-restrict G {X'} {X} h W W⊆ = fold record
-  { err-obs = λ ω∈ → ⊥-elim (noerr G (proj₂ (W⊆ ω ω∈)))
-  ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , back G _ (λ ()) (proj₂ (W⊆ _ c∈)) ⟩
-  ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , ⟨ e , np ⟩ ⟩ ⟩ = kind-obs d d∈ d≢ in
-      ⟨ s , ⟨ ⟨ ⟨ proj₁ s∈ , tgt-inj _ _ np (kindᶠ≢prod G) (trans e (trans (proj₂ (W⊆ d d∈)) (kind₄-tgt G))) ⟩
-            , proj₂ s∈ ⟩ , ⟨ e , np ⟩ ⟩ ⟩
+{- the target values of kind k are related to the source values of kind k -}
+R-restrict : ∀ k {X' X} → Rel X' X → Rel (X' ⇂ λ d → kind₄ (kind d) ≡ k) (X ⇂ λ d → kind d ≡ k)
+R-restrict k {X'} {X} h W W⊆ = fold record
+  { err-obs = λ ω∈ → ⟨ err-obs ω∈ , proj₂ (W⊆ ω ω∈) ⟩
+  ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , proj₂ (W⊆ _ c∈) ⟩
+  ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , e ⟩ ⟩ = kind-obs d d∈ d≢ in
+      ⟨ s , ⟨ ⟨ ⟨ proj₁ s∈ , trans e (proj₂ (W⊆ d d∈)) ⟩ , proj₂ s∈ ⟩ , e ⟩ ⟩
   ; pair-obs = pair-obs
   ; app-obs = app
   ; tag-obs = tg }
   where
   open Obs (unfold (h W (λ d d∈ → proj₁ (W⊆ d d∈))))
-  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → R U E → R W₂ ((X ⇂ λ d → kind d ≡ kindᶠ G) ● E)
+  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → R U E → R W₂ ((X ⇂ λ d → kind d ≡ k) ● E)
   app {W₂ = []} _ _ _ _ _ = R-∅ (λ _ ())
   app {W₂ = w ∷ W₂} cs E cE cU rU =
-    R-mono (●-mono-e {X} {X ⇂ λ d → kind d ≡ kindᶠ G} (λ V x e∈ → ⟨ e∈ , isfun G (proj₂ (W⊆ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w (here refl))))))) ⟩))
+    R-mono (●-mono-e {X} {X ⇂ λ d → kind d ≡ k} (λ V x e∈ → ⟨ e∈ , proj₂ (W⊆ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w (here refl)))))) ⟩))
       (app-obs cs E cE cU rU)
-  tg : ∀ t W' → mem W' ⊆ Untag t (mem W) → R W' (Untag t (X ⇂ λ d → kind d ≡ kindᶠ G))
+  tg : ∀ t W' → mem W' ⊆ Untag t (mem W) → R W' (Untag t (X ⇂ λ d → kind d ≡ k))
   tg t [] _ = R-∅ (λ _ ())
   tg t (w ∷ W') W'⊆ =
-    R-mono (λ d d∈ → ⟨ d∈ , back G _ (tag-np t) (trans (tag-kind t) (proj₂ (W⊆ _ (W'⊆ w (here refl))))) ⟩)
-      (tag-obs t (w ∷ W') W'⊆)
+    R-mono (λ d d∈ → ⟨ d∈ , trans (tag-kind t) (proj₂ (W⊆ _ (W'⊆ w (here refl)))) ⟩) (tag-obs t (w ∷ W') W'⊆)
 
 {- the initial environment of a closed program -}
 Init-R : ∀ {V} → mem V ⊆ ⌈ ω ⌉ → R V ⌈ ω ⌉

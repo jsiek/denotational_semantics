@@ -11,7 +11,7 @@
     (ok-op), also on the operands of a vector of terms (ok-vec, through
     split, the bodies of a function to Results); variables and
     constants are Ok, and so is a bind into a body (let-ok); the check
-    of a kind is Good (check-kind-good);
+    of a kind, seen through a map φ on kinds, is Good (check-kind-good);
   * a body under one or two binders uses only finite parts of the sets
     it is given (fin₁, fin₂, fin-code).
 
@@ -29,15 +29,17 @@ open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env
   using (Env; nonempty-env; _~ₑ[_]_; _⊆ₑ_; •-~; extend-nonempty-env; single-env; single-fin; single-⊆; v∈single[xv]x)
 open import Framework.abt.Sig using (∁)
+open import Framework.GraphModel.TypedCheck using (checkedᵠ)
 
 open import Data.List using (List; []; _∷_; replicate)
 open import Data.Nat using (ℕ; zero; suc)
-open import Data.Sum using (inj₂)
+open import Data.Sum using (inj₁; inj₂)
+open import Data.Empty using (⊥-elim)
 open import Data.Product using (_×_; proj₁; proj₂; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt; ⊤ to ⊤′)
 open import Level using (lift; lower)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; cong; trans; sym)
 
 Ok : (Env Value → 𝒫 Value) → Set₁
 Ok E = Mono E × (∀ {ρ} → nonempty-env ρ → Cont E ρ)
@@ -125,13 +127,26 @@ let-ok {E} {N} ⟨ mE , ⟨ kE , cE ⟩ ⟩ ⟨ mN , ⟨ kN , cN ⟩ ⟩ =
     env⊆ zero d d∈ = ⌊⌋-mono (mE (join-l a b)) d (V⊆ d (proj₁ (proj₁ (proj₂ (f 0))) d d∈))
     env⊆ (suc x) d d∈ = join-r a b x d d∈
 
-{- the check that keeps the elements of kind k (the kernel of a project) -}
-check-kind-good : ∀ k → Good ⊤ (■ ∷ []) (λ Ds → checked k (proj₁ Ds) (proj₁ Ds ⇂ λ d → kind d ≡ k))
-check-kind-good k = mk-good (λ { _ _ ⟨ lift X⊆ , _ ⟩ → lift (checked-mono X⊆ (⇂-mono X⊆)) })
-  (λ { _ _ ⟨ lift X~ , _ ⟩ → lift (checked-consis X~ (⇂-~ X~) needs needs) })
-  (λ { _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ → checked-cont c (⇂-cont c) })
-  where needs : ∀ {X} → Needs k X (X ⇂ λ d → kind d ≡ k)
-        needs w ⟨ w∈ , wk ⟩ = inj₂ ⟨ w , ⟨ w∈ , wk ⟩ ⟩
+{- the check that keeps the elements of kind k, their kinds seen through φ
+   (the kernel of a project) -}
+check-kind-good : ∀ φ k → Good ⊤ (■ ∷ []) (λ Ds → checkedᵠ φ k (proj₁ Ds) (proj₁ Ds ⇂ λ d → φ (kind d) ≡ k))
+check-kind-good φ k = mk-good
+  (λ { _ _ ⟨ lift X⊆ , _ ⟩ → lift λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩) → inj₁ ⟨ refl , ⟨ d , ⟨ X⊆ d d∈ , dk ⟩ ⟩ ⟩
+                                   ; w (inj₂ w∈) → inj₂ (⇂-mono {P = λ d → φ (kind d) ≡ k} X⊆ w w∈) } })
+  (λ { _ _ ⟨ lift X~ , _ ⟩ → lift (con X~) })
+  (λ { _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ → cnt c })
+  where
+  con : ∀ {X X'} → Every _~_ X X'
+    → Every _~_ (checkedᵠ φ k X (X ⇂ λ d → φ (kind d) ≡ k)) (checkedᵠ φ k X' (X' ⇂ λ d → φ (kind d) ≡ k))
+  con X~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
+  con X~ u w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) (inj₂ ⟨ w∈ , wk ⟩) = ⊥-elim (ek (trans (cong φ (~-kind e w (X~ e w e∈ w∈))) wk))
+  con X~ u w (inj₂ ⟨ u∈ , uk ⟩) (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) = ⊥-elim (ek (trans (cong φ (sym (~-kind u e (X~ u e u∈ e∈)))) uk))
+  con X~ u w (inj₂ ⟨ u∈ , _ ⟩) (inj₂ ⟨ w∈ , _ ⟩) = X~ u w u∈ w∈
+  cnt : ∀ {X : VEnv → 𝒫 Value} {ρ} → Cont X ρ → Cont (λ ρ → checkedᵠ φ k (X ρ) (X ρ ⇂ λ d → φ (kind d) ≡ k)) ρ
+  cnt {X} c w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with one X c e∈
+  ... | ⟨ a , e∈′ ⟩ = done (λ ρ → checkedᵠ φ k (X ρ) (X ρ ⇂ λ d → φ (kind d) ≡ k)) a ω (inj₁ ⟨ refl , ⟨ e , ⟨ e∈′ , ek ⟩ ⟩ ⟩)
+  cnt {X} c w (inj₂ w∈) with ⇂-cont {X} {λ d → φ (kind d) ≡ k} c w w∈
+  ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₂ w∈′ ⟩ ⟩ ⟩
 
 {- Bodies use finite parts of their arguments --------------------------------------}
 

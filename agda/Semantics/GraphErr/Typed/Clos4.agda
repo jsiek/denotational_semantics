@@ -6,8 +6,8 @@
   with no check; a closure is a pair. unpack binds the pair and runs the
   body with its environment (cdr) and its code (car), for the length n
   of the environment (its values have kind tup n; one n for a consistent
-  closure). A value of type ⟪ fun ⟫ is a pair, so project ⟪ fun ⟫
-  checks for a pair (kind₄).
+  closure). A value of type ⟪ fun ⟫ is a pair, so project sees a pair
+  as a function (kind₄).
 
 -}
 
@@ -31,10 +31,10 @@ open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
-{- the kind of the values of a flat type: a function is a pair -}
-kind₄ : Flat → Kind
-kind₄ fun = prod
-kind₄ G = kindᶠ G
+{- the kind of a value, for project: a pair (a closure) is a function -}
+kind₄ : Kind → Kind
+kind₄ prod = fun
+kind₄ k = k
 
 ⟦_⟧ : ∀ {Γ A} → Tm Γ A → Env Value → 𝒫 Value
 ⟦_⟧s : ∀ {Γ n} → Vec (Tm Γ Any) n → Env Value → Results (𝒫 Value) (replicate n ■)
@@ -55,7 +55,7 @@ kind₄ G = kindᶠ G
 ⟦ prim p L M ⟧ ρ = primᵗ p (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ let′ M N ⟧ ρ = ⟦ M ⟧ ρ ≫= λ X → ⟦ N ⟧ (X • ρ)
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ
-⟦ project G M ⟧ ρ = projectᵗ (kind₄ G) (⟦ M ⟧ ρ)
+⟦ project G M ⟧ ρ = projectᵠ kind₄ (kindᶠ G) (⟦ M ⟧ ρ)
 
 ⟦ [] ⟧s ρ = ptt
 ⟦ M ∷ Ms ⟧s ρ = ⟨ ⟦ M ⟧ ρ , ⟦ Ms ⟧s ρ ⟩

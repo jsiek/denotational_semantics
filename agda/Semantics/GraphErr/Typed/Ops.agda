@@ -11,8 +11,9 @@
     (kind, in ErrorMonad), so inject is the identity, and project checks
     that kind: it is the only operator that adds ω, and it keeps only the
     elements of the right kind (so a denotation stays consistent). The
-    kind of a flat type is kindᶠ, except that a function of Clos4ᵀ is a
-    pair (Semantics/GraphErr/Typed/Clos4.agda).
+    kind of a flat type is kindᶠ; a language may see the kinds of its
+    values through a map φ (projectᵠ): a closure of Clos4ᵀ, a pair, has
+    the kind of a function (Semantics/GraphErr/Typed/Clos4.agda).
   * let x = M in N is the bind of N.
 
 -}
@@ -25,13 +26,15 @@ open import Framework.GraphModel.DOpSig
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops using (⋆; proj; 𝒞)
 open import Framework.GraphModel.ErrorMonad
+open import Framework.GraphModel.TypedCheck using (checkedᵠ) public
 open import Semantics.Graph.Prim using (primD)
 open import Language.Prim using (Prim)
 open import Language.Typed.Type using (Flat; base; tup; sum; fun)
 
 open import Data.Fin using (Fin)
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Data.Product using () renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
+open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 {- the kind of the values of a flat type -}
@@ -41,8 +44,11 @@ kindᶠ (tup n) = tup n
 kindᶠ sum = inj
 kindᶠ fun = fun
 
+projectᵠ : (Kind → Kind) → Kind → 𝒫 Value → 𝒫 Value
+projectᵠ φ k D = D ≫= λ X → checkedᵠ φ k X (X ⇂ λ d → φ (kind d) ≡ k)
+
 projectᵗ : Kind → 𝒫 Value → 𝒫 Value
-projectᵗ k D = D ≫= λ X → checked k X (X ⇂ λ d → kind d ≡ k)
+projectᵗ = projectᵠ λ k → k
 
 appᵗ : 𝒫 Value → 𝒫 Value → 𝒫 Value
 appᵗ D E = D ≫= λ F → E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩

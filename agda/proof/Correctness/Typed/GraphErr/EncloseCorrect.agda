@@ -73,7 +73,7 @@ enc (let′ M N) {ρ} {ρ'} r =
   ≫=-≃ {F = λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ enclose N ⟧₂ (X • ρ')} (enc M r)
     (λ _ c → enc N (ext (⌊⌋-≃ (enc M r)) (⌊⌋-val c) r))
 enc (inject G M) r = enc M r
-enc (project G M) r = projectᵗ-≃ _ (enc M r)
+enc (project G M) r = projectᵗ-≃ (λ k → k) _ (enc M r)
 
 encs-nth (M ∷ Ms) r zero = enc M r
 encs-nth (M ∷ Ms) r (suc i) = encs-nth Ms r i

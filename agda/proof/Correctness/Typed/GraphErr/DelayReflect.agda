@@ -20,7 +20,7 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right; ⋆₂-mono)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ)
+open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ)
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
@@ -120,8 +120,8 @@ inl-R {X'} {X} cl h V V⊆ = fold record
                 ; rightT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈)) } }
   where
-  kd : ∀ d → d ∈ inl ⟨ X' , ptt ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ inl ⟨ X , ptt ⟩ ⌋ × tgt (kind s) ≡ kind d × kind s ≢ prod
-  kd (left d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-conv (h _ (single⊆ d∈)) (cl d d∈) in ⟨ left s , ⟨ ⟨ s∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
+  kd : ∀ d → d ∈ inl ⟨ X' , ptt ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ inl ⟨ X , ptt ⟩ ⌋ × kind s ≡ kind₄ (kind d)
+  kd (left d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-conv (h _ (single⊆ d∈)) (cl d d∈) in ⟨ left s , ⟨ ⟨ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
 inr-R : ∀ {X' X} → Clean X' → Rel X' X → Rel (inr ⟨ X' , ptt ⟩) (inr ⟨ X , ptt ⟩)
 inr-R {X'} {X} cl h V V⊆ = fold record
@@ -134,8 +134,8 @@ inr-R {X'} {X} cl h V V⊆ = fold record
                 ; leftT W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈))
                 ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V⊆ _ (W⊆ d d∈)) } }
   where
-  kd : ∀ d → d ∈ inr ⟨ X' , ptt ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ inr ⟨ X , ptt ⟩ ⌋ × tgt (kind s) ≡ kind d × kind s ≢ prod
-  kd (right d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-conv (h _ (single⊆ d∈)) (cl d d∈) in ⟨ right s , ⟨ ⟨ s∈ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
+  kd : ∀ d → d ∈ inr ⟨ X' , ptt ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ inr ⟨ X , ptt ⟩ ⌋ × kind s ≡ kind₄ (kind d)
+  kd (right d) d∈ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-conv (h _ (single⊆ d∈)) (cl d d∈) in ⟨ right s , ⟨ ⟨ s∈ , (λ ()) ⟩ , refl ⟩ ⟩
 
 primD-R : ∀ {p X' X Y' Y} → Rel X' X → Rel Y' Y
   → Rel (primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩) (primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩)
@@ -165,10 +165,10 @@ primD-R {p} {X'} {X} {Y'} {Y} hX hY V V⊆ = R-data V⊆' dt
   where
   comp-ne : ∀ j → nonempty (nthD Xs' j) → nonempty (nthD Xs j)
   comp-ne j ⟨ d , d∈ ⟩ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = R-conv (hs j _ (single⊆ d∈)) (cl j d d∈) in ⟨ s , s∈ ⟩
-  kd : ∀ d → d ∈ 𝒯 (suc n) Xs' → Σ[ s ∈ Value ] s ∈ ⌊ 𝒯 (suc n) Xs ⌋ × tgt (kind s) ≡ kind d × kind s ≢ prod
+  kd : ∀ d → d ∈ 𝒯 (suc n) Xs' → Σ[ s ∈ Value ] s ∈ ⌊ 𝒯 (suc n) Xs ⌋ × kind s ≡ kind₄ (kind d)
   kd (tup[ i ] x) ⟨ refl , ⟨ x∈ , ne ⟩ ⟩ =
     let ⟨ y , y∈ ⟩ = comp-ne i ⟨ x , x∈ ⟩
-    in ⟨ tup[ i ] y , ⟨ ⟨ ⟨ refl , ⟨ y∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ , (λ ()) ⟩ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
+    in ⟨ tup[ i ] y , ⟨ ⟨ ⟨ refl , ⟨ y∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ , (λ ()) ⟩ , refl ⟩ ⟩
   nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Untag (tupT i) (mem V) → R W' (Untag (tupT i) (𝒯 (suc n) Xs))
   nth-case i [] _ = R-∅ (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V⊆ _ (W'⊆ w (here refl))
@@ -299,9 +299,9 @@ delay-reflect (let′ M N) {r} {ρ'} {ρ} E =
 delay-reflect (inject G M) E = delay-reflect M E
 
 delay-reflect (project G M) E =
-  R-bind {F' = λ X → checked (kind₄ G) X (X ⇂ λ d → kind d ≡ kind₄ G)} {F = λ X → checked (kindᶠ G) X (X ⇂ λ d → kind d ≡ kindᶠ G)}
+  R-bind {F' = λ X → checkedᵠ kind₄ (kindᶠ G) X (X ⇂ λ d → kind₄ (kind d) ≡ kindᶠ G)} {F = λ X → checked (kindᶠ G) X (X ⇂ λ d → kind d ≡ kindᶠ G)}
     (S3.con M (Envs.ρ~ E)) (delay-reflect M E) λ _ _ hX →
-  R-checkₗ (λ b → inj₁ ⟨ refl , bad-reflect G clean⌊⌋ hX b ⟩) (λ W W⊆ → R-mono (λ x → inj₂) (R-restrict G hX W W⊆))
+  R-checkₗ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩) (λ W W⊆ → R-mono (λ x → inj₂) (R-restrict (kindᶠ G) hX W W⊆))
 
 delay-reflect (app L M) {r} {ρ'} {ρ} E =
   R-bind {F' = S4.Unpack Body ρ'} {F = λ Xs → Xs ● ⟦ M ⟧ ρ} (S3.con L ρ~) (delay-reflect L E) APP
@@ -376,8 +376,8 @@ delay-reflect (clos {n = n} N Ms) {r} {ρ'} {ρ} E =
     ν∈ : ν ∈ ⌊ D ⌋
     ν∈ = ⟨ ⟨ t₀ ∷ [] , ⟨ ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ (λ { (here eq) → proj₂ t₀∈ (sym eq) }) , tt ⟩ ⟩
                        , ⟨ single⊆ t₀∈ , (λ ()) ⟩ ⟩ ⟩ , (λ ()) ⟩
-    kd : ∀ d → d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × tgt (kind s) ≡ kind d × kind s ≢ prod
-    kd ⦅ c , t ⦆ _ = ⟨ ν , ⟨ ν∈ , ⟨ refl , (λ ()) ⟩ ⟩ ⟩
+    kd : ∀ d → d ∈ pair ⟨ ⌊ ΛΛᵐ ⟨ F' , ptt ⟩ ⌋ , ⟨ ⌊ T' ⌋ , ptt ⟩ ⟩ → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × kind s ≡ kind₄ (kind d)
+    kd ⦅ c , t ⦆ _ = ⟨ ν , ⟨ ν∈ , refl ⟩ ⟩
     Cdrs⊆T' : Cdrs V' ⊆ ⌊ T' ⌋
     Cdrs⊆T' fv ⟨ _ , e∈ ⟩ = proj₂ (V'⊆ _ e∈)
     cT = Con-⊆ (S3.con (tuple Ms) ρ~) ⌊⌋-⊆
