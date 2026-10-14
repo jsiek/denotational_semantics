@@ -138,6 +138,11 @@ BOTH = 'den+uden'
 # its statements are Theorems/TAL.agda); see tal_pilot
 TAL_THM = A + 'Theorems/TAL.agda'
 
+# an assurance, not in the totals: erasing X86ᵀ to X86 keeps the meaning of
+# every program, in the CEK machines (its statements are
+# Theorems/X86Erasure.agda, in the 'thm' group, outside every total)
+ERASURE_THM = A + 'Theorems/X86Erasure.agda'
+
 # (side, group, glob patterns)
 GROUPS = [
     # the languages, the passes and the lemmas about their output that the
@@ -345,6 +350,9 @@ GROUPS = [
     ('tal', 'graph model with errors: the semantics of X86ᵀ', [GE + 'Typed/X86.agda']),
     ('tal', 'graph model with errors: select', [GEC + 'SelectTALCorrect.agda']),
     ('tal', 'graph model with errors: composition', [GEC + 'CompilerTALCorrect.agda']),
+
+    # --- an assurance, not in the totals: X86ᵀ erases to X86, operationally ---
+    ('assurance', 'assurance (not in the totals)', [A + 'proof/Assurance/X86Erasure.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
@@ -668,7 +676,7 @@ class Count:
         # reached from the theorem files through modules outside them, and
         # importing none of them (but the theorem files, which cite the
         # proofs).
-        thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {TAL_THM}
+        thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {TAL_THM, ERASURE_THM}
         if thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
         surface = {f for f in self.every if not is_proof(f)}
