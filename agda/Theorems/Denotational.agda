@@ -137,7 +137,7 @@ select-correct = Select.select-correct
 {- the compiled program produces the same constants as the original, and
    produces something exactly when the original does: into Clos5ᵀ
    (compile), Monᵀ (compile-mon), Impᵀ (compile-imp), CFGᵀ (compile-cfg)
-   and X86 (compile-x86) -}
+   and X86ᵀ (compile-x86) -}
 
 compile-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
   → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧₅)

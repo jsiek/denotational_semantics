@@ -12,8 +12,9 @@
 
   To read them: the typed languages (Language/Typed/), the passes
   (Compiler/), the semantics of each typed language
-  (Semantics/GraphErr/Typed/; Monᵀ means its embedding into Clos5ᵀ, ⌜_⌝ₚ),
-  those of ISWIM and X86 (Semantics/GraphErr/), and the domain and
+  (Semantics/GraphErr/Typed/, X86ᵀ included; Monᵀ means its embedding
+  into Clos5ᵀ, ⌜_⌝ₚ), that of ISWIM (Semantics/GraphErr/), the machines
+  of ISWIM, Clos5ᵀ and X86ᵀ (Semantics/CEK/), and the domain and
   operators they are built from (Framework/GraphModel/). An error is the
   element ω; in the typed semantics only project (a cast from Any)
   checks kinds and errs.
@@ -21,7 +22,7 @@
   Every pass but delay is an equation (≃), select instructions
   included: X86ᵀ, like CFGᵀ, checks kinds only at project (chk).
 
-  Adequacy: for X86ᵀ, that of its semantics for its machine
+  Adequacy: for X86ᵀ, direct, that of its semantics for its machine
   (Adequacy/GraphErr/X86.agda), on the programs of the compiler, whose
   definitions' code depends only on the older ones and whose table is
   consistent; for Clos5ᵀ, derived from the ISWIM machine's, Same, and
