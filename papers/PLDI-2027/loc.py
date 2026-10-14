@@ -308,7 +308,7 @@ GROUPS = [
     # helpers are infrastructure.
     ('infra', 'typed pilot: decidable base types, vectors (collecting, selecting)',
      [W + 'PrimitivesDec.agda', W + 'VecUtil.agda', WP + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda',
-      W + 'Membership.agda', W + 'Syntax/ScopeDec.agda']),
+      W + 'Membership.agda', WP + 'Membership.agda', W + 'Syntax/ScopeDec.agda']),
     ('infra', 'typed pilot: semantics of intrinsically typed syntax (graph model)',
      [W + 'GraphModel/Typed*.agda', WP + 'GraphModel/Typed*.agda']),
     ('typ', 'typed: types and languages', [L + 'Typed/*.agda']),
@@ -342,6 +342,8 @@ GROUPS = [
     # the typed pipeline, phase 2, CEK machines + simulations (the machines
     # are in 'typed CEK: semantics' above)
     ('infra', 'typed CEK: lookup in typed lists', [W + 'Lookup.agda']),
+    ('typ', 'typed: select: definitions and labels exist, frames are large enough (shared)',
+     [PC + 'Typed/SelectFacts.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
