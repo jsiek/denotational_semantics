@@ -341,6 +341,10 @@ import Theorems.Typed.Interpreter
 import Theorems.Typed.Denotational
 import Theorems.Typed.Adequacy
 
+{- the typed pipeline, phase 2, reduction semantics + simulations: the
+   statements are Theorems/Typed/Reduction.agda -}
+import Theorems.Typed.Reduction
+
 {- the typed pipeline, phase 2, the graph model with errors -}
 import proof.Correctness.Typed.GraphErr.GlobalizeCorrect
 import proof.Correctness.Typed.GraphErr.RCOCorrect
@@ -348,3 +352,4 @@ import proof.Correctness.Typed.GraphErr.LiftLocalsCorrect
 import proof.Correctness.Typed.GraphErr.ExplicateCorrect
 import proof.Correctness.Typed.GraphErr.SelectCheck
 import proof.Semantics.GraphErr.Typed.CFG
+import proof.Correctness.Typed.GraphErr.SelectCorrect

@@ -106,6 +106,7 @@ GEC = 'agda/proof/Correctness/GraphErr/'
 GEA = 'agda/proof/Adequacy/GraphErr/'
 TOC = 'agda/proof/Correctness/Typed/CEK/'
 TGC = 'agda/proof/Correctness/Typed/GraphErr/'
+TRC = 'agda/proof/Correctness/Typed/Reduction/'
 TGG = 'agda/proof/Correctness/Typed/Graph/'
 
 # (side, group, glob patterns)
@@ -392,6 +393,23 @@ GROUPS = [
     ('thm', 'typed graph: theorem statements',
      ['agda/Theorems/Typed/Denotational.agda', 'agda/Theorems/Typed/Adequacy.agda']),
 
+    # the typed pipeline, phase 2, reduction semantics + simulations
+    # (statements: Theorems/Typed/Reduction.agda); simplify's proof is
+    # today's, and explicate control and select instructions are the CEK
+    # column's ('shared with reduction' above)
+    ('infra', 'typed red: kits for renaming and substitution, operands in vectors',
+     [W + 'Syntax/Kit.agda', W + 'ReductionVec.agda', WP + 'ReductionVec.agda']),
+    ('typ', 'typed red: semantics', [RD + 'Typed/*.agda', RP + 'Typed/*.agda']),
+    ('typ', 'typed red: cast insertion', [TRC + 'CastRed.agda']),
+    ('typ', 'typed red: CC: enclose', [TRC + 'EncloseRed.agda']),
+    ('typ', 'typed red: CC: optimize', [TRC + 'OptimizeRed.agda']),
+    ('typ', 'typed red: CC: concretize', [TRC + 'ConcretizeRed.agda']),
+    ('typ', 'typed red: CC: delay', [TRC + 'DelayRed.agda']),
+    ('typ', 'typed red: CC: globalize', [TRC + 'GlobalizeRed.agda']),
+    ('typ', 'typed red: rco', [TRC + 'RCORed.agda']),
+    ('typ', 'typed red: lift locals', [TRC + 'LiftLocalsRed.agda']),
+    ('typ', 'typed red: composition', [TRC + 'PipelineRed.agda']),
+
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
     ('thm', 'theorem statements', ['agda/Theorems/*.agda', 'agda/Theorems/Typed/*.agda']),
@@ -403,6 +421,7 @@ THEOREMS = {'den': 'agda/Theorems/Denotational.agda', 'op': 'agda/Theorems/Simul
             'typ': 'agda/Theorems/Typed.agda',
             'typ-op': 'agda/Theorems/Typed/Simulation.agda',
             'typ-ck': 'agda/Theorems/Typed/Interpreter.agda',
+            'typ-red': 'agda/Theorems/Typed/Reduction.agda',
             'tden': 'agda/Theorems/Typed/Denotational.agda', 'tadeq': 'agda/Theorems/Typed/Adequacy.agda'}
 
 
@@ -747,6 +766,8 @@ def main():
           f'{flines(typ_surface)} of them its own.')
     print(f'The typed pipeline, CEK machines + simulation (not in this table): '
           f'{flines(reachable({THEOREMS["typ-op"]}, sgraph))} lines reached from Theorems/Typed/Simulation.agda.')
+    print(f'The typed pipeline, reduction semantics + simulation (not in this table): '
+          f'{flines(reachable({THEOREMS["typ-red"]}, sgraph))} lines reached from Theorems/Typed/Reduction.agda.')
     print()
     print(f'The adequacy statements also use ρ₀ from the denotational ones '
           f'(Theorems/Denotational.agda), not counted in its column.')
