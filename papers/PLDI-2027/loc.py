@@ -438,6 +438,12 @@ NAMES = {'den': 'graph model', 'op': 'simulation', 'ck': 'interpreter',
 EXTRA = 'shared modules not used by all four proofs'
 
 
+def tag(P):
+    """The marker of the untyped pipeline's tables, so that their header lines
+    differ from the main ones."""
+    return '' if P is TYPED else ' (untyped pipeline)'
+
+
 def label(s):
     return LABELS[STYLE[s]]
 
@@ -716,7 +722,7 @@ class Count:
         P, mcols, cells, total = R['P'], R['mcols'], R['cells'], R['total']
         sides, gerr, adeq, gadeq = P['sides'], P['gerr'], P['adeq'], P['gadeq']
         extra, borrowed = R['extra'], R['borrowed']
-        print('| component | ' + ' | '.join(label(s) for s in mcols) + ' |')
+        print(f'| component{tag(P)} | ' + ' | '.join(label(s) for s in mcols) + ' |')
         print('|---|' + '---:|' * len(mcols))
         for r in ROWS:
             ns = [cells[(s, r)] for s in mcols]
@@ -728,7 +734,7 @@ class Count:
         print()
 
         reach, infra = self.reach, self.infra
-        print('| language-independent infrastructure (not in the totals) | lines | '
+        print(f'| language-independent infrastructure{tag(P)} (not in the totals) | lines | '
               + ' | '.join(f'used by {label(s)}' for s in mcols) + ' |')
         print('|---|---:|' + '---:|' * len(mcols))
         itotal = {s: 0 for s in mcols}
@@ -746,7 +752,7 @@ class Count:
         print(f"Adequacy uses {self.lines(infra & reach[adeq])} lines of the infrastructure, "
               f"{self.lines(infra & reach[adeq] - reach[sides[0]])} of them not used by the denotational proof.")
         print()
-        print('| adequacy (denotational side only) | graph model | graph model with errors |')
+        print(f'| adequacy{tag(P)} (denotational side only) | graph model | graph model with errors |')
         print('|---|---:|---:|')
         for gname in R['anames']:
             print(f'| {gname} | ' + ' | '.join(bold_min([self.counts.get((s, gname)) for s in (adeq, gadeq)])) + ' |')
@@ -764,7 +770,7 @@ class Count:
         print()
         exps = [(side, gname) for side, gname, _ in GROUPS if side == P['exp']]
         if exps:
-            print('| experiment (not in the totals) | lines |')
+            print(f'| experiment{tag(P)} (not in the totals) | lines |')
             print('|---|---:|')
             for side, gname in exps:
                 print(f'| {gname} | {self.counts[(side, gname)]} |')
@@ -794,7 +800,7 @@ class Count:
         def flines(fs):
             return sum(code_lines(f) for f in fs)
         sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in cols}
-        print('| audit surface (not in the totals) | lines | '
+        print(f'| audit surface{tag(P)} (not in the totals) | lines | '
               + ' | '.join(f'read for {label(s)}' for s in cols) + ' |')
         print('|---|---:|' + '---:|' * len(cols))
         print(f'| languages, compiler passes, syntax, base types (shared) | {flines(set().union(*sh.values()))} | '
@@ -829,16 +835,16 @@ class Count:
     def print_modules(self, R):
         P, reach = R['P'], self.reach
         users_of = P['sides'] + (P['adeq'], P['gerr'], P['gadeq'])
-        print('| shared module | lines | used by |')
+        print(f'| shared module{tag(P)} | lines | used by |')
         print('|---|---:|---|')
         for un in sorted(R['shared'], key=lambda x: self.display(x)):
             users = [name(s) for s in users_of if un in reach[s]]
             if not users:
                 continue
-            tag = 'all four proofs' if un in R['by_all'] else ', '.join(users)
-            print(f'| {self.display(un)} | {self.ulines(un)} | {tag} |')
+            who = 'all four proofs' if un in R['by_all'] else ', '.join(users)
+            print(f'| {self.display(un)} | {self.ulines(un)} | {who} |')
         print()
-        print('| infrastructure module | lines | used by |')
+        print(f'| infrastructure module{tag(P)} | lines | used by |')
         print('|---|---:|---|')
         for un in sorted(self.infra, key=lambda x: self.display(x)):
             users = [name(s) for s in users_of if un in reach[s]]
@@ -871,7 +877,7 @@ class Count:
         den, gerr, adeq, gadeq = P['sides'][0], P['gerr'], P['adeq'], P['gadeq']
         rd = reach[adeq] - reach[den]
         ra = reach[gadeq] - reach[gerr]
-        print('| infrastructure group | lines | graph model | graph model with errors | both '
+        print(f'| infrastructure group{tag(P)} | lines | graph model | graph model with errors | both '
               '| adequacy adds: graph model | adequacy adds: graph model with errors |')
         print('|---|---:|---:|---:|---:|---:|---:|')
         tot = [0] * 6
