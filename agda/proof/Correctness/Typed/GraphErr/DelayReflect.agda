@@ -18,7 +18,7 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ)
+open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; keep)
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
@@ -294,9 +294,9 @@ delay-reflect (let′ M N) {r} {ρ'} {ρ} E =
 delay-reflect (inject G M) E = delay-reflect M E
 
 delay-reflect (project t M) E =
-  R-bind {F' = λ X → checkedᵠ kind₄ G X (X ⇂ λ d → kind₄ (kind d) ≡ G)} {F = λ X → checked G X (X ⇂ λ d → kind d ≡ G)}
+  R-bind {F' = λ X → checkedᵠ kind₄ G X (keep kind₄ t X)} {F = λ X → checked G X (keep (λ k → k) t X)}
     (S3.con M (Envs.ρ~ E)) (delay-reflect M E) λ _ _ hX →
-  R-checkₗ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩) (λ W W⊆ → R-mono (λ x → inj₂) (R-restrict G hX W W⊆))
+  R-checkₗ (λ b → inj₁ ⟨ refl , bad-reflect clean⌊⌋ hX b ⟩) (λ W W⊆ → R-mono (λ x → inj₂) (R-restrict t hX W W⊆))
   where G = kindᶠ (flat t)
 
 delay-reflect (app L M) {r} {ρ'} {ρ} E =

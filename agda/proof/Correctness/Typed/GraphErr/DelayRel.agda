@@ -26,7 +26,8 @@ open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Semantics.GraphErr.Prim using (out)
 open import Language.Prim using (int; bool)
 open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
-open import Semantics.GraphErr.Typed.Ops using (checkedᵠ)
+open import Semantics.GraphErr.Typed.Ops using (checkedᵠ; hit; keep; kindᶠ)
+open import Language.Typed.Type using (ttup; tfun; tsum; tint; flat)
 open import Data.Bool using (true; false)
 
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
@@ -333,27 +334,40 @@ tag-kind (tupT i) = refl
 tag-kind leftT = refl
 tag-kind rightT = refl
 
-{- the target values of kind k are related to the source values of kind k -}
-R-restrict : ∀ k {X' X} → Rel X' X → Rel (X' ⇂ λ d → kind₄ (kind d) ≡ k) (X ⇂ λ d → kind d ≡ k)
-R-restrict k {X'} {X} h W W⊆ = fold record
-  { err-obs = λ ω∈ → ⟨ err-obs ω∈ , proj₂ (W⊆ ω ω∈) ⟩
-  ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , proj₂ (W⊆ _ c∈) ⟩
+{- a target tuple entry for a component gives a source one -}
+hit-reflect : ∀ t {X' X} → Rel X' X → hit t X' → hit t X
+hit-reflect (ttup n i) h ⟨ e , e∈ ⟩ with ω? e
+... | inj₁ refl = ⟨ ω , R-err (Obs.tag-obs (unfold (h _ (single⊆ e∈))) (tupT i) (ω ∷ []) (λ { _ (here refl) → here refl })) ⟩
+... | inj₂ e≢ = let ⟨ s , s∈ ⟩ = R-conv (Obs.tag-obs (unfold (h _ (single⊆ e∈))) (tupT i) (e ∷ []) (λ { _ (here refl) → here refl })) e≢
+                in ⟨ s , proj₁ s∈ ⟩
+hit-reflect tfun h _ = tt
+hit-reflect tsum h _ = tt
+hit-reflect tint h _ = tt
+
+{- the target values that project keeps are related to the source ones -}
+R-restrict : ∀ t {X' X} → Rel X' X → Rel (keep kind₄ t X') (keep (λ k → k) t X)
+R-restrict t {X'} {X} h W W⊆ = fold record
+  { err-obs = λ ω∈ → ⟨ err-obs ω∈ , ⟨ hitX ω∈ , proj₂ (proj₂ (W⊆ ω ω∈)) ⟩ ⟩
+  ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , ⟨ hitX c∈ , proj₂ (proj₂ (W⊆ _ c∈)) ⟩ ⟩
   ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , e ⟩ ⟩ = kind-obs d d∈ d≢ in
-      ⟨ s , ⟨ ⟨ ⟨ proj₁ s∈ , trans e (proj₂ (W⊆ d d∈)) ⟩ , proj₂ s∈ ⟩ , e ⟩ ⟩
- 
+      ⟨ s , ⟨ ⟨ ⟨ proj₁ s∈ , ⟨ hitX d∈ , trans e (proj₂ (proj₂ (W⊆ d d∈))) ⟩ ⟩ , proj₂ s∈ ⟩ , e ⟩ ⟩
   ; app-obs = app
   ; tag-obs = tg }
   where
   open Obs (unfold (h W (λ d d∈ → proj₁ (W⊆ d d∈))))
-  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → R U E → R W₂ ((X ⇂ λ d → kind d ≡ k) ● E)
+  k = kindᶠ (flat t)
+  hitX : ∀ {d} → d ⋵ W → hit t X
+  hitX d∈ = hit-reflect t h (proj₁ (proj₂ (W⊆ _ d∈)))
+  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → R U E → R W₂ (keep (λ k → k) t X ● E)
   app {W₂ = []} _ _ _ _ _ = R-∅ (λ _ ())
   app {W₂ = w ∷ W₂} cs E cE cU rU =
-    R-mono (●-mono-e {X} {X ⇂ λ d → kind d ≡ k} (λ V x e∈ → ⟨ e∈ , proj₂ (W⊆ _ (CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w (here refl)))))) ⟩))
+    R-mono (●-mono-e {X} {keep (λ k → k) t X} (λ V x e∈ → ⟨ e∈ , ⟨ hitX c∈ , proj₂ (proj₂ (W⊆ _ c∈)) ⟩ ⟩))
       (app-obs cs E cE cU rU)
-  tg : ∀ t W' → mem W' ⊆ Untag t (mem W) → R W' (Untag t (X ⇂ λ d → kind d ≡ k))
-  tg t [] _ = R-∅ (λ _ ())
-  tg t (w ∷ W') W'⊆ =
-    R-mono (λ d d∈ → ⟨ d∈ , trans (tag-kind t) (proj₂ (W⊆ _ (W'⊆ w (here refl)))) ⟩) (tag-obs t (w ∷ W') W'⊆)
+    where c∈ = CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w (here refl))))
+  tg : ∀ t' W' → mem W' ⊆ Untag t' (mem W) → R W' (Untag t' (keep (λ k → k) t X))
+  tg t' [] _ = R-∅ (λ _ ())
+  tg t' (w ∷ W') W'⊆ =
+    R-mono (λ d d∈ → ⟨ d∈ , ⟨ hitX (W'⊆ w (here refl)) , trans (tag-kind t') (proj₂ (proj₂ (W⊆ _ (W'⊆ w (here refl))))) ⟩ ⟩) (tag-obs t' (w ∷ W') W'⊆)
 
 {- the initial environment of a closed program -}
 Init-R : ∀ {V} → mem V ⊆ ⌈ ω ⌉ → R V ⌈ ω ⌉

@@ -41,7 +41,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 ⟦ prim p L M ⟧ ρ = primᵗ p (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ let′ M N ⟧ ρ = ⟦ M ⟧ ρ ≫= λ X → ⟦ N ⟧ (X • ρ)
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ
-⟦ project t M ⟧ ρ = projectᵗ (kindᶠ (flat t)) (⟦ M ⟧ ρ)
+⟦ project t M ⟧ ρ = projectᵗ t (⟦ M ⟧ ρ)
 
 ⟦ [] ⟧s ρ = ptt
 ⟦ M ∷ Ms ⟧s ρ = ⟨ ⟦ M ⟧ ρ , ⟦ Ms ⟧s ρ ⟩

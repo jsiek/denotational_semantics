@@ -29,9 +29,11 @@ open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
-{- the kind of a value, for project: a pair (a closure) is a function -}
+{- the kind of a value, for project: a pair (a closure) is a function,
+   and code is not (it is not a value of type Any) -}
 kind₄ : Kind → Kind
 kind₄ prod = fun
+kind₄ fun = error
 kind₄ k = k
 
 ⟦_⟧ : ∀ {Γ A} → Tm Γ A → Env Value → 𝒫 Value
@@ -51,7 +53,7 @@ kind₄ k = k
 ⟦ prim p L M ⟧ ρ = primᵗ p (⟦ L ⟧ ρ) (⟦ M ⟧ ρ)
 ⟦ let′ M N ⟧ ρ = ⟦ M ⟧ ρ ≫= λ X → ⟦ N ⟧ (X • ρ)
 ⟦ inject G M ⟧ ρ = ⟦ M ⟧ ρ
-⟦ project t M ⟧ ρ = projectᵠ kind₄ (kindᶠ (flat t)) (⟦ M ⟧ ρ)
+⟦ project t M ⟧ ρ = projectᵠ kind₄ t (⟦ M ⟧ ρ)
 
 ⟦ [] ⟧s ρ = ptt
 ⟦ M ∷ Ms ⟧s ρ = ⟨ ⟦ M ⟧ ρ , ⟦ Ms ⟧s ρ ⟩

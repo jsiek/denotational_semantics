@@ -29,9 +29,11 @@ open import Framework.GraphModel.ErrorMonad
 open import Framework.GraphModel.TypedCheck using (checkedᵠ) public
 open import Semantics.Graph.Prim using (primD)
 open import Language.Prim using (Prim)
-open import Language.Typed.Type using (Flat; base; tup; sum; fun)
+open import Language.Typed.Type using (Flat; base; tup; sum; fun; Tag; tfun; tsum; tint; ttup; flat)
 
 open import Data.Fin using (Fin)
+open import Data.Nat using (suc)
+open import Data.Unit using (⊤)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_)
@@ -44,10 +46,23 @@ kindᶠ (tup n) = tup n
 kindᶠ sum = inj
 kindᶠ fun = fun
 
-projectᵠ : (Kind → Kind) → Kind → 𝒫 Value → 𝒫 Value
-projectᵠ φ k D = D ≫= λ X → checkedᵠ φ k X (X ⇂ λ d → φ (kind d) ≡ k)
+{- what the test of a tag needs besides the kind: for a tuple, an entry
+   for the component that get reads (a tuple's meaning may hold entries
+   for some components only, and the test of X86 reads that one) -}
+hit : Tag → 𝒫 Value → Set
+hit (ttup n i) X = Σ[ e ∈ Value ] tup[_]_ {suc n} i e ∈ X
+hit tfun X = ⊤
+hit tsum X = ⊤
+hit tint X = ⊤
 
-projectᵗ : Kind → 𝒫 Value → 𝒫 Value
+{- the values of X of the kind of t, if X passes the test of t -}
+keep : (Kind → Kind) → Tag → 𝒫 Value → 𝒫 Value
+keep φ t X = X ⇂ λ d → hit t X × φ (kind d) ≡ kindᶠ (flat t)
+
+projectᵠ : (Kind → Kind) → Tag → 𝒫 Value → 𝒫 Value
+projectᵠ φ t D = D ≫= λ X → checkedᵠ φ (kindᶠ (flat t)) X (keep φ t X)
+
+projectᵗ : Tag → 𝒫 Value → 𝒫 Value
 projectᵗ = projectᵠ λ k → k
 
 appᵗ : 𝒫 Value → 𝒫 Value → 𝒫 Value

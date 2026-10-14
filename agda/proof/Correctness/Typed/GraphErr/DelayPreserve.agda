@@ -23,8 +23,8 @@ open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.GraphErr.Prim using (primD; out)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ)
-open import Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; flat)
+open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; hit; keep)
+open import Language.Typed.Type using (Any; ⟪_⟫; tup; _∋_; Z; S; idx; flat; ttup; tfun; tsum; tint)
 open import Language.Typed.Clos3 as L3 using (Tm; `_; clos; app; lit; tuple; get; case; prim; let′; inject; project)
 import Language.Typed.Clos4 as T
 import proof.Semantics.GraphErr.Typed.Clos3 as S3
@@ -135,11 +135,18 @@ PairV-mono s ⟨ u , ⟨ t , p∈ ⟩ ⟩ = ⟨ u , ⟨ t , s u t p∈ ⟩ ⟩
 ⊑-restrict ⦅ u , v ⦆ (lift ())
 ⊑-restrict ⟨⟩ (lift v∈) = lift ⟨ v∈ , refl ⟩
 
-⊑-proj : ∀ k {X X'} → Clean X → Lifted _⊑_ X X'
-  → Lifted _⊑_ (checked k X (X ⇂ λ d → kind d ≡ k)) (checkedᵠ kind₄ k X' (X' ⇂ λ d → kind₄ (kind d) ≡ k))
-⊑-proj k clX h w (inj₁ ⟨ refl , ⟨ s , ⟨ s∈ , sk ⟩ ⟩ ⟩) with ⊑-wit s (h s s∈) (clX s s∈)
+hit-⊑ : ∀ t {X X'} → Lifted _⊑_ X X' → hit t X → hit t X'
+hit-⊑ (ttup n i) h ⟨ e , e∈ ⟩ = ⊑-ne e (h _ e∈)
+hit-⊑ tfun h _ = tt
+hit-⊑ tsum h _ = tt
+hit-⊑ tint h _ = tt
+
+⊑-proj : ∀ t {X X'} → Clean X → Lifted _⊑_ X X' → let k = kindᶠ (flat t) in
+  Lifted _⊑_ (checked k X (keep (λ k → k) t X)) (checkedᵠ kind₄ k X' (keep kind₄ t X'))
+⊑-proj t clX h w (inj₁ ⟨ refl , ⟨ s , ⟨ s∈ , sk ⟩ ⟩ ⟩) with ⊑-wit s (h s s∈) (clX s s∈)
 ... | ⟨ d' , ⟨ d'∈ , dk ⟩ ⟩ = lift (inj₁ ⟨ refl , ⟨ d' , ⟨ proj₁ d'∈ , (λ e → sk (trans (sym dk) e)) ⟩ ⟩ ⟩)
-⊑-proj k clX h w (inj₂ ⟨ w∈ , wk ⟩) = ⊑-mono w (λ { d ⟨ d∈ , e ⟩ → inj₂ ⟨ d∈ , trans e wk ⟩ }) (⊑-restrict w (h w w∈))
+⊑-proj t clX h w (inj₂ ⟨ w∈ , ⟨ ht , wk ⟩ ⟩) =
+  ⊑-mono w (λ { d ⟨ d∈ , e ⟩ → inj₂ ⟨ d∈ , ⟨ hit-⊑ t h ht , trans e wk ⟩ ⟩ }) (⊑-restrict w (h w w∈))
 
 data-⊑ : ∀ v {D'} → Data v → v ∈ D' → v ⊑ D'
 data-⊑ (left d) dd v∈ = data-⊑ d dd v∈
@@ -256,8 +263,8 @@ preserve (let′ M N) {r} {ρ} {ρ'} E =
 preserve (inject G M) E = preserve M E
 
 preserve (project t M) {r} E =
-  ≫=-lift {F = λ X → checked G X (X ⇂ λ d → kind d ≡ G)} {F' = λ X → checkedᵠ kind₄ G X (X ⇂ λ d → kind₄ (kind d) ≡ G)}
-    ⊑-lift (S4.con (delay r M) (Envs.ρ'~ E)) (preserve M E) λ _ _ hX → ⊑-proj G clean⌊⌋ hX
+  ≫=-lift {F = λ X → checked G X (keep (λ k → k) t X)} {F' = λ X → checkedᵠ kind₄ G X (keep kind₄ t X)}
+    ⊑-lift (S4.con (delay r M) (Envs.ρ'~ E)) (preserve M E) λ _ _ hX → ⊑-proj t clean⌊⌋ hX
   where G = kindᶠ (flat t)
 
 preserve (app L M) {r} {ρ} {ρ'} E =

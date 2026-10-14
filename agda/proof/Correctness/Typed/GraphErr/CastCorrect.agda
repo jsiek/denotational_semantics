@@ -38,8 +38,9 @@ open import proof.Semantics.Graph.Prim using (primD-mono)
 open import Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)
 open import proof.Semantics.GraphErr.ISWIM
-open import Language.Typed.Type using (Flat; base; tup; sum; fun; _≟_)
-open import Semantics.GraphErr.Typed.Ops using (kindᶠ; projectᵗ; primᵗ; appᵗ; getᵗ; caseᵗ)
+open import Language.Typed.Type using (Flat; base; tup; sum; fun; _≟_; tint; tfun; tsum; ttup) renaming (flat to flatT)
+open import Semantics.GraphErr.Typed.Ops using (kindᶠ; projectᵗ; primᵗ; appᵗ; getᵗ; caseᵗ; hit; keep)
+open import Data.Unit using (tt)
 import Semantics.GraphErr.Typed.ISWIM as T
 open import Compiler.Typed.Cast
 
@@ -91,30 +92,34 @@ kind? : ∀ k G → Dec (k ≡ kindᶠ G)
 kind? k G = map′ (from-flat k G) (λ { refl → to-flat G }) (≡-dec _≟_ (flat k) (just G))
 
 {- on a consistent set of values, the check of a project is the check of
-   a kernel that needs a value of that kind: either all values have the
-   kind, or none, and then both are the error -}
-project-check : ∀ G {X} K → Mono₁ K → Needs (kindᶠ G) X (K X) → Con X → Val X
-  → checked (kindᶠ G) X ((X ⇂ λ d → kind d ≡ kindᶠ G) ≫= K) ≃ checked (kindᶠ G) X (K X)
-project-check G K m nd c ⟨ cl , ⟨ d , d∈ ⟩ ⟩ with kind? (kind d) G
-... | yes dk = chk-≃ (≃-trans (≫=-β m (λ e e∈ → cl e (proj₁ e∈)) ⟨ d , ⟨ d∈ , dk ⟩ ⟩)
-                       ⟨ m ⇂-⊆ , m (λ e e∈ → ⟨ e∈ , trans (~-kind e d (c e d e∈ d∈)) dk ⟩) ⟩)
+   a kernel that needs a value of that kind, and a value only when the
+   set passes the test of the tag: either all values have the kind, or
+   none, and then both are the error -}
+project-check : ∀ t {X} K → let k = kindᶠ (flatT t) in Mono₁ K → Needs k X (K X) → (∀ w → w ∈ K X → hit t X)
+  → Con X → Val X → checked k X (keep (λ k → k) t X ≫= K) ≃ checked k X (K X)
+project-check t K m nd hk c ⟨ cl , ⟨ d , d∈ ⟩ ⟩ with kind? (kind d) (flatT t)
+... | yes dk = chk-≃ ⟨ (λ { w (inj₁ ⟨ _ , ω∈ ⟩) → ⊥-elim (cl ω (proj₁ ω∈) refl)
+                           ; w (inj₂ ⟨ _ , w∈ ⟩) → m (λ e e∈ → proj₁ (proj₁ e∈)) w w∈ })
+                     , (λ w w∈ → let h = hk w w∈ in
+                         inj₂ ⟨ ⟨ d , ⟨ ⟨ d∈ , ⟨ h , dk ⟩ ⟩ , cl d d∈ ⟩ ⟩
+                              , m (λ e e∈ → ⟨ ⟨ e∈ , ⟨ h , trans (~-kind e d (c e d e∈ d∈)) dk ⟩ ⟩ , cl e e∈ ⟩) w w∈ ⟩) ⟩
 ... | no dk = ⟨ (λ { w (inj₁ b) → inj₁ b ; w (inj₂ (inj₁ ⟨ _ , ⟨ ω∈ , _ ⟩ ⟩)) → ⊥-elim (cl ω ω∈ refl)
-                   ; w (inj₂ (inj₂ ⟨ ⟨ e , ⟨ ⟨ e∈ , ek ⟩ , _ ⟩ ⟩ , _ ⟩)) → ⊥-elim (dk (trans (~-kind d e (c d e d∈ e∈)) ek)) })
+                   ; w (inj₂ (inj₂ ⟨ ⟨ e , ⟨ ⟨ e∈ , ⟨ _ , ek ⟩ ⟩ , _ ⟩ ⟩ , _ ⟩)) → ⊥-elim (dk (trans (~-kind d e (c d e d∈ e∈)) ek)) })
               , (λ { w (inj₁ b) → inj₁ b ; w (inj₂ w∈) → [ (λ { refl → inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩ })
                    , (λ { ⟨ u , ⟨ u∈ , uk ⟩ ⟩ → ⊥-elim (dk (trans (~-kind d u (c d u d∈ u∈)) uk)) }) ]′ (nd w w∈) }) ⟩
 
 {- a bind of a project is a checked bind -}
-proj-≫= : ∀ G {D} K → Mono₁ K → (∀ {X} → Needs (kindᶠ G) X (K X)) → Con D
-  → (projectᵗ (kindᶠ G) D ≫= K) ≃ (D ≫= λ X → checked (kindᶠ G) X (K X))
-proj-≫= G {D} K m nd cD = ≃-trans (≫=-assoc {D} {λ X → checked k X (X ⇂ λ d → kind d ≡ k)} m)
-  (≫=-cong {D} {λ X → checked k X (X ⇂ λ d → kind d ≡ k) ≫= K} {λ X → checked k X (K X)} λ c →
-     ≃-trans (checked-≫= {G = K} m) (project-check G K m nd (Con-⊆ cD ⌊⌋-⊆) ⟨ (λ _ d∈ → proj₂ d∈) , c ⟩))
-  where k = kindᶠ G
+proj-≫= : ∀ t {D} K → let k = kindᶠ (flatT t) in Mono₁ K → (∀ {X} → Needs k X (K X)) → (∀ {X} w → w ∈ K X → hit t X) → Con D
+  → (projectᵗ t D ≫= K) ≃ (D ≫= λ X → checked k X (K X))
+proj-≫= t {D} K m nd hk cD = ≃-trans (≫=-assoc {D} {λ X → checked k X (keep (λ k → k) t X)} m)
+  (≫=-cong {D} {λ X → checked k X (keep (λ k → k) t X) ≫= K} {λ X → checked k X (K X)} λ c →
+     ≃-trans (checked-≫= {G = K} m) (project-check t K m nd hk (Con-⊆ cD ⌊⌋-⊆) ⟨ (λ _ d∈ → proj₂ d∈) , c ⟩))
+  where k = kindᶠ (flatT t)
 
-proj-val : ∀ G {X} K → Mono₁ K → (∀ {X} → Needs (kindᶠ G) X (K X)) → Con X → Val X
-  → (projectᵗ (kindᶠ G) X ≫= K) ≃ checked (kindᶠ G) X (K X)
-proj-val G K m nd c ⟨ cl , ne ⟩ =
-  ≃-trans (proj-≫= G K m nd c) (≫=-β {F = λ X → checked (kindᶠ G) X (K X)} (λ X⊆ → checked-mono X⊆ (m X⊆)) cl ne)
+proj-val : ∀ t {X} K → let k = kindᶠ (flatT t) in Mono₁ K → (∀ {X} → Needs k X (K X)) → (∀ {X} w → w ∈ K X → hit t X)
+  → Con X → Val X → (projectᵗ t X ≫= K) ≃ checked k X (K X)
+proj-val t K m nd hk c ⟨ cl , ne ⟩ =
+  ≃-trans (proj-≫= t K m nd hk c) (≫=-β {F = λ X → checked (kindᶠ (flatT t)) X (K X)} (λ X⊆ → checked-mono X⊆ (m X⊆)) cl ne)
 
 pmono : ∀ p {X X' Y Y'} → X ⊆ X' → Y ⊆ Y' → primD p ⟨ X , ⟨ Y , ptt ⟩ ⟩ ⊆ primD p ⟨ X' , ⟨ Y' , ptt ⟩ ⟩
 pmono p X⊆ Y⊆ = lower (primD-mono p _ _ ⟨ lift X⊆ , ⟨ lift Y⊆ , ptt ⟩ ⟩)
@@ -128,29 +133,29 @@ Pk-≃ p e f = ⟨ checked-mono (proj₁ e) (checked-mono (proj₁ f) (pmono p (
              , checked-mono (proj₂ e) (checked-mono (proj₂ f) (pmono p (proj₂ e) (proj₂ f))) ⟩
 
 prim-proj : ∀ p {X Y} → Con X → Con Y → Val X → Val Y
-  → primᵗ p (projectᵗ (base Int) X) (projectᵗ (base Int) Y) ≃ Pk p X Y
+  → primᵗ p (projectᵗ tint X) (projectᵗ tint Y) ≃ Pk p X Y
 prim-proj p {X} {Y} cX cY vX vY =
-  ≃-trans (proj-val (base Int) (λ A → projectᵗ (base Int) Y ≫= λ B → primD p ⟨ A , ⟨ B , ptt ⟩ ⟩)
+  ≃-trans (proj-val tint (λ A → projectᵗ tint Y ≫= λ B → primD p ⟨ A , ⟨ B , ptt ⟩ ⟩)
              (λ {A} {A'} A⊆ → ≫=-mono {F = λ B → primD p ⟨ A , ⟨ B , ptt ⟩ ⟩} {λ B → primD p ⟨ A' , ⟨ B , ptt ⟩ ⟩}
                                          (λ _ z → z) (pmono p A⊆))
-             (λ {A} → ≫=-needs {D = projectᵗ (base Int) Y} {λ B → primD p ⟨ A , ⟨ B , ptt ⟩ ⟩} λ { _ ⟨ n , ⟨ _ , ⟨ n∈ , _ ⟩ ⟩ ⟩ → inj₂ ⟨ const n , ⟨ n∈ , refl ⟩ ⟩ }) cX vX)
-          (chk-≃ (proj-val (base Int) (λ B → primD p ⟨ X , ⟨ B , ptt ⟩ ⟩) (pmono p {X} {X} (λ _ z → z))
-                    (λ { _ ⟨ _ , ⟨ m , ⟨ _ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → inj₂ ⟨ const m , ⟨ m∈ , refl ⟩ ⟩ }) cY vY))
+             (λ {A} → ≫=-needs {D = projectᵗ tint Y} {λ B → primD p ⟨ A , ⟨ B , ptt ⟩ ⟩} λ { _ ⟨ n , ⟨ _ , ⟨ n∈ , _ ⟩ ⟩ ⟩ → inj₂ ⟨ const n , ⟨ n∈ , refl ⟩ ⟩ }) (λ _ _ → tt) cX vX)
+          (chk-≃ (proj-val tint (λ B → primD p ⟨ X , ⟨ B , ptt ⟩ ⟩) (pmono p {X} {X} (λ _ z → z))
+                    (λ { _ ⟨ _ , ⟨ m , ⟨ _ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → inj₂ ⟨ const m , ⟨ m∈ , refl ⟩ ⟩ }) (λ _ _ → tt) cY vY))
 
 {- the typed operators on a projected operand are the checked untyped ones -}
-app-proj : ∀ {D} E → Con D → appᵗ (projectᵗ fun D) E ≃ ⋆ᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩
-app-proj E = proj-≫= fun (λ F → E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
+app-proj : ∀ {D} E → Con D → appᵗ (projectᵗ tfun D) E ≃ ⋆ᵐ ⟨ D , ⟨ E , ptt ⟩ ⟩
+app-proj E = proj-≫= tfun (λ F → E ≫= λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩)
   (λ {F} {F'} F⊆ → ≫=-mono {F = λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩} {λ X → ⋆ ⟨ F' , ⟨ X , ptt ⟩ ⟩} (λ _ z → z)
                      λ X⊆ → lower (⋆-mono _ _ ⟨ lift F⊆ , ⟨ lift X⊆ , ptt ⟩ ⟩))
-  (λ {F} → ≫=-needs {D = E} {λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩} λ {X} → ⋆-needs {F} {X})
+  (λ {F} → ≫=-needs {D = E} {λ X → ⋆ ⟨ F , ⟨ X , ptt ⟩ ⟩} λ {X} → ⋆-needs {F} {X}) (λ _ _ → tt)
 
-get-proj : ∀ {n} (i : Fin n) {D} → Con D → getᵗ i (projectᵗ (tup n) D) ≃ projᵐ i ⟨ D , ptt ⟩
-get-proj i = proj-≫= (tup _) (λ X → proj i ⟨ X , ptt ⟩) (λ X⊆ → lower (proj-mono i _ _ ⟨ lift X⊆ , ptt ⟩))
-  (λ _ d∈ → inj₂ ⟨ _ , ⟨ d∈ , refl ⟩ ⟩)
+get-proj : ∀ {n} (i : Fin (suc n)) {D} → Con D → getᵗ i (projectᵗ (ttup n i) D) ≃ projᵐ i ⟨ D , ptt ⟩
+get-proj i = proj-≫= (ttup _ i) (λ X → proj i ⟨ X , ptt ⟩) (λ X⊆ → lower (proj-mono i _ _ ⟨ lift X⊆ , ptt ⟩))
+  (λ _ d∈ → inj₂ ⟨ _ , ⟨ d∈ , refl ⟩ ⟩) (λ w w∈ → ⟨ w , w∈ ⟩)
 
-case-proj : ∀ {D} F G → Con D → caseᵗ (projectᵗ inj D) F G ≃ 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
-case-proj F G = proj-≫= sum (λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩)
-  (λ X⊆ → 𝒞⇂-⊆ {A = F} {F} {G} {G} X⊆ (λ _ _ _ _ _ z → z) (λ _ _ _ _ _ z → z)) (λ {X} → 𝒞-needs {X} {ValPayload} {F} {G})
+case-proj : ∀ {D} F G → Con D → caseᵗ (projectᵗ tsum D) F G ≃ 𝒞ᵐ ⟨ D , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩
+case-proj F G = proj-≫= tsum (λ X → 𝒞 ⟨ X ⇂ ValPayload , ⟨ F , ⟨ G , ptt ⟩ ⟩ ⟩)
+  (λ X⊆ → 𝒞⇂-⊆ {A = F} {F} {G} {G} X⊆ (λ _ _ _ _ _ z → z) (λ _ _ _ _ _ z → z)) (λ {X} → 𝒞-needs {X} {ValPayload} {F} {G}) (λ _ _ → tt)
 
 {- Environments --------------------------------------------------------------------}
 
@@ -202,8 +207,8 @@ cc r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ⟨ wL , ⟨ wM , ⟨ wN , _ �
         G' = λ X → T.⟦ cast (ext r) N wN ⟧ (X • σ)
 cc r (prim p ⦅ L ,, M ,, Nil ⦆) ⟨ wL , ⟨ wM , _ ⟩ ⟩ {ρ} {σ} wf R =
   ≫=-≃ {F = λ X → ⟦ M ⟧ ρ ≫= λ Y → Pk p X Y}
-       {λ X → T.⟦ cast (λ x → suc (r x)) M wM ⟧ (X • σ) ≫= λ Y → primᵗ p (projectᵗ (base Int) X) (projectᵗ (base Int) Y)}
-       eL λ _ cL' → ≫=-≃ {F = Pk p ⌊ ⟦ L ⟧ ρ ⌋} {λ Y → primᵗ p (projectᵗ (base Int) ⌊ T.⟦ cast r L wL ⟧ σ ⌋) (projectᵗ (base Int) Y)}
+       {λ X → T.⟦ cast (λ x → suc (r x)) M wM ⟧ (X • σ) ≫= λ Y → primᵗ p (projectᵗ tint X) (projectᵗ tint Y)}
+       eL λ _ cL' → ≫=-≃ {F = Pk p ⌊ ⟦ L ⟧ ρ ⌋} {λ Y → primᵗ p (projectᵗ tint ⌊ T.⟦ cast r L wL ⟧ σ ⌋) (projectᵗ tint Y)}
          eM λ _ cM' →
     ≃-trans (Pk-≃ p (⌊⌋-≃ eL) (⌊⌋-≃ eM))
             (≃-sym (prim-proj p (⌊con⌋ L wL wf R) (⌊con⌋ M wM wf R) ⟨ (λ _ d∈ → proj₂ d∈) , cL' ⟩ ⟨ (λ _ d∈ → proj₂ d∈) , cM' ⟩))

@@ -127,26 +127,33 @@ let-ok {E} {N} ⟨ mE , ⟨ kE , cE ⟩ ⟩ ⟨ mN , ⟨ kN , cN ⟩ ⟩ =
     env⊆ zero d d∈ = ⌊⌋-mono (mE (join-l a b)) d (V⊆ d (proj₁ (proj₁ (proj₂ (f 0))) d d∈))
     env⊆ (suc x) d d∈ = join-r a b x d d∈
 
-{- the check that keeps the elements of kind k, their kinds seen through φ
-   (the kernel of a project) -}
-check-kind-good : ∀ φ k → Good ⊤ (■ ∷ []) (λ Ds → checkedᵠ φ k (proj₁ Ds) (proj₁ Ds ⇂ λ d → φ (kind d) ≡ k))
-check-kind-good φ k = mk-good
-  (λ { _ _ ⟨ lift X⊆ , _ ⟩ → lift λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩) → inj₁ ⟨ refl , ⟨ d , ⟨ X⊆ d d∈ , dk ⟩ ⟩ ⟩
-                                   ; w (inj₂ w∈) → inj₂ (⇂-mono {P = λ d → φ (kind d) ≡ k} X⊆ w w∈) } })
-  (λ { _ _ ⟨ lift X~ , _ ⟩ → lift (con X~) })
-  (λ { _ NE ⟨ ⟨ _ , c ⟩ , _ ⟩ → cnt c })
-  where
-  con : ∀ {X X'} → Every _~_ X X'
-    → Every _~_ (checkedᵠ φ k X (X ⇂ λ d → φ (kind d) ≡ k)) (checkedᵠ φ k X' (X' ⇂ λ d → φ (kind d) ≡ k))
-  con X~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
-  con X~ u w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) (inj₂ ⟨ w∈ , wk ⟩) = ⊥-elim (ek (trans (cong φ (~-kind e w (X~ e w e∈ w∈))) wk))
-  con X~ u w (inj₂ ⟨ u∈ , uk ⟩) (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) = ⊥-elim (ek (trans (cong φ (sym (~-kind u e (X~ u e u∈ e∈)))) uk))
-  con X~ u w (inj₂ ⟨ u∈ , _ ⟩) (inj₂ ⟨ w∈ , _ ⟩) = X~ u w u∈ w∈
-  cnt : ∀ {X : VEnv → 𝒫 Value} {ρ} → Cont X ρ → Cont (λ ρ → checkedᵠ φ k (X ρ) (X ρ ⇂ λ d → φ (kind d) ≡ k)) ρ
-  cnt {X} c w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with one X c e∈
-  ... | ⟨ a , e∈′ ⟩ = done (λ ρ → checkedᵠ φ k (X ρ) (X ρ ⇂ λ d → φ (kind d) ≡ k)) a ω (inj₁ ⟨ refl , ⟨ e , ⟨ e∈′ , ek ⟩ ⟩ ⟩)
-  cnt {X} c w (inj₂ w∈) with ⇂-cont {X} {λ d → φ (kind d) ≡ k} c w w∈
-  ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩ = ⟨ ρ′ , ⟨ f , ⟨ s , inj₂ w∈′ ⟩ ⟩ ⟩
+{- the check that keeps the elements of kind k, their kinds seen through φ,
+   when the set passes a further test H that is monotone and needs only a
+   finite part of the set (the kernel of a project) -}
+module _ (H : 𝒫 Value → Set) (H-mono : ∀ {X X'} → X ⊆ X' → H X → H X')
+  (H-fin : ∀ {X : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Cont X ρ → H (X ρ) → Σ[ a ∈ Approx ρ ] H (X (env a))) where
+
+  Keep : (Kind → Kind) → Kind → 𝒫 Value → 𝒫 Value
+  Keep φ k X = X ⇂ λ d → H X × φ (kind d) ≡ k
+
+  check-kind-good : ∀ φ k → Good ⊤ (■ ∷ []) (λ Ds → checkedᵠ φ k (proj₁ Ds) (Keep φ k (proj₁ Ds)))
+  check-kind-good φ k = mk-good
+    (λ { _ _ ⟨ lift X⊆ , _ ⟩ → lift λ { w (inj₁ ⟨ refl , ⟨ d , ⟨ d∈ , dk ⟩ ⟩ ⟩) → inj₁ ⟨ refl , ⟨ d , ⟨ X⊆ d d∈ , dk ⟩ ⟩ ⟩
+                                     ; w (inj₂ ⟨ w∈ , ⟨ h , wk ⟩ ⟩) → inj₂ ⟨ X⊆ w w∈ , ⟨ H-mono X⊆ h , wk ⟩ ⟩ } })
+    (λ { _ _ ⟨ lift X~ , _ ⟩ → lift (con X~) })
+    (λ { _ NE ⟨ ⟨ m , c ⟩ , _ ⟩ → cnt NE m c })
+    where
+    con : ∀ {X X'} → Every _~_ X X' → Every _~_ (checkedᵠ φ k X (Keep φ k X)) (checkedᵠ φ k X' (Keep φ k X'))
+    con X~ u w (inj₁ ⟨ refl , _ ⟩) (inj₁ ⟨ refl , _ ⟩) = tt
+    con X~ u w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) (inj₂ ⟨ w∈ , ⟨ _ , wk ⟩ ⟩) = ⊥-elim (ek (trans (cong φ (~-kind e w (X~ e w e∈ w∈))) wk))
+    con X~ u w (inj₂ ⟨ u∈ , ⟨ _ , uk ⟩ ⟩) (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) = ⊥-elim (ek (trans (cong φ (sym (~-kind u e (X~ u e u∈ e∈)))) uk))
+    con X~ u w (inj₂ ⟨ u∈ , _ ⟩) (inj₂ ⟨ w∈ , _ ⟩) = X~ u w u∈ w∈
+    cnt : ∀ {X : VEnv → 𝒫 Value} {ρ} → nonempty-env ρ → Mono X → Cont X ρ → Cont (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) ρ
+    cnt {X} NE m c w (inj₁ ⟨ refl , ⟨ e , ⟨ e∈ , ek ⟩ ⟩ ⟩) with one X c e∈
+    ... | ⟨ a , e∈′ ⟩ = done (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) a ω (inj₁ ⟨ refl , ⟨ e , ⟨ e∈′ , ek ⟩ ⟩ ⟩)
+    cnt {X} NE m c w (inj₂ ⟨ w∈ , ⟨ h , wk ⟩ ⟩) with one X c w∈ | H-fin NE c h
+    ... | ⟨ a , w∈′ ⟩ | ⟨ b , h′ ⟩ = done (λ ρ → checkedᵠ φ k (X ρ) (Keep φ k (X ρ))) (approx-join a b) w
+      (inj₂ ⟨ m (join-l a b) w w∈′ , ⟨ H-mono (m (join-r a b)) h′ , wk ⟩ ⟩)
 
 {- Bodies use finite parts of their arguments --------------------------------------}
 
