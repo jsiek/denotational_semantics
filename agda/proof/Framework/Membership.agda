@@ -14,7 +14,7 @@ open import Framework.Lookup using (_!_; forget)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 open import Data.Nat using (_<_; _≤_; s≤s)
 open import Data.Nat.Properties using (n<1+n; m<n⇒m<1+n; ≤-refl; ≤-trans; n≤1+n; <-irrefl)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
@@ -50,3 +50,7 @@ forget-! (there⊑ p) (_ ∷ ps) x = forget-! p ps x
 ⊑-∋-trans : (p : xs ⊑ ys) (q : ys ⊑ zs) (x : xs ∋ a) → ⊑-∋ (⊑-trans p q) x ≡ ⊑-∋ q (⊑-∋ p x)
 ⊑-∋-trans p here⊑ x = refl
 ⊑-∋-trans p (there⊑ q) x = cong S (⊑-∋-trans p q x)
+
+map-! : ∀ {Q : A → Set} (f : ∀ {x} → P x → Q x) (ps : All P xs) (x : xs ∋ a) → All-map f ps ! x ≡ f (ps ! x)
+map-! f (_ ∷ ps) Z = refl
+map-! f (_ ∷ ps) (S x) = map-! f ps x
