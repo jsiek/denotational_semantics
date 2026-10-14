@@ -3,7 +3,8 @@
   Typed select instructions into X86ᵀ (CFGᵀ → X86ᵀ, Compiler/SelectTAL.agda)
   is correct in the graph model with errors, a pilot (Theorems/TAL.agda):
   the X86ᵀ program means exactly what the CFGᵀ program does (≃), for
-  every CFGᵀ program, and so the compiler to X86ᵀ is Same.
+  every CFGᵀ program; the compiler to X86ᵀ, Same, is in
+  CompilerTALCorrect.agda.
 
   The X86ᵀ frame is the CFGᵀ environment, and both check nothing but
   project, so the code selected for a statement means the statement:
@@ -43,8 +44,6 @@ open GC using (BEnv; drop)
 import Semantics.GraphErr.Typed.X86 as GX
 open GX using (RegsD; _[_≔_]; args)
 open import Semantics.GraphErr.Typed.Clos5 using (⟦_⟧s[_])
-open import Semantics.GraphErr.ISWIM using (⟦_⟧)
-open import proof.Correctness.GraphErr.CompilerCorrect using (Same; ≃-Same; compile-cfg-same)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋)
 open import Language.Typed.Type hiding (_≟_)
 import Language.Typed.Mon as M
@@ -53,10 +52,7 @@ import Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
 open import Language.Typed.X86
 open import Compiler.SelectTAL
-open import Language.ISWIM using (AST)
 open import Language.Prim using (sub; eq)
-open import Compiler.EncloseScope using (Closed)
-open import Compiler.Pipeline using (compile-cfg)
 
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.List using (List; []; _∷_)
@@ -345,6 +341,3 @@ table-≃ {Σ} ds k =
 select-correct : ∀ (P : C.Program) → GX.⟦ select P ⟧ₜ ≃ GC.⟦ P ⟧ᶜ
 select-correct (C.program ds (C.body bs t)) =
   tail-≃ (table-≃ ds) t _ (blocks-≃ (table-≃ ds) bs _) (λ _ → init) (λ ()) _ _
-
-compile-tal-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) GX.⟦ compile-tal M ⟧ₜ
-compile-tal-same M c = ≃-Same (compile-cfg-same M c) (≃-sym (select-correct (compile-cfg M)))

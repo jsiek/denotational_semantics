@@ -27,8 +27,6 @@ import Language.Typed.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
 import Language.Typed.Imp as I
 open import Language.Typed.X86
-open import Language.ISWIM using (AST)
-open import Compiler.Pipeline using (compile-cfg)
 
 open import Data.Bool using (Bool)
 open import Data.List using (List; []; _∷_; length)
@@ -113,7 +111,3 @@ def-body (C.body bs t) =
 {- the pass, for a whole program -}
 select : C.Program → Program
 select (C.program ds b) = program (All-map def-body ds) (main-body b)
-
-{- the compiler, to X86ᵀ -}
-compile-tal : AST → Program
-compile-tal M = select (compile-cfg M)

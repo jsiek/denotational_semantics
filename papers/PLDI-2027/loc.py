@@ -133,6 +133,11 @@ UNTYPED = dict(sides=('uden', 'uop', 'uck', 'ured'), gerr='ugerr', adeq='uadeq',
                exp='uexp', name='untyped pipeline (preserved)')
 BOTH = 'den+uden'
 
+# a pilot, not in the totals: the typed assembly language X86ᵀ as the
+# target, in the CEK column and the graph model with errors (side 'tal';
+# its statements are Theorems/TAL.agda); see tal_pilot
+TAL_THM = A + 'Theorems/TAL.agda'
+
 # (side, group, glob patterns)
 GROUPS = [
     # the languages, the passes and the lemmas about their output that the
@@ -327,6 +332,19 @@ GROUPS = [
     ('gadeq+ugadeq', 'simplify through the ISWIM machine', [GEA + 'Simplify.agda']),
 
     ('examples', 'examples', [PC + 'Examples/*.agda']),
+
+    # --- a pilot, not in the totals: X86ᵀ, a typed assembly language ---------
+    ('tal', 'X86ᵀ, the language', [L + 'Typed/X86.agda']),
+    ('tal', 'typed select, the pass', [C + 'SelectTAL.agda']),
+    ('tal', 'the compiler to X86ᵀ', [C + 'PipelineTAL.agda']),
+    ('tal', 'erasure: typed select emits the instructions of select',
+     [L + 'Typed/X86Erase.agda', PC + 'SelectTALErase.agda']),
+    ('tal', 'CEK: the X86ᵀ machine', [O + 'Typed/X86.agda']),
+    ('tal', 'CEK: select', [OC + 'SelectTALSim.agda']),
+    ('tal', 'CEK: composition', [OC + 'PipelineTALSim.agda']),
+    ('tal', 'graph model with errors: the semantics of X86ᵀ', [GE + 'Typed/X86.agda']),
+    ('tal', 'graph model with errors: select', [GEC + 'SelectTALCorrect.agda']),
+    ('tal', 'graph model with errors: composition', [GEC + 'CompilerTALCorrect.agda']),
 
     # not in the totals: the public theorem statements (see the audit-surface
     # table)
@@ -650,7 +668,7 @@ class Count:
         # reached from the theorem files through modules outside them, and
         # importing none of them (but the theorem files, which cite the
         # proofs).
-        thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values())
+        thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {TAL_THM}
         if thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
         surface = {f for f in self.every if not is_proof(f)}
@@ -913,6 +931,57 @@ def select_breakdown(c):
     print()
 
 
+def tal_pilot(c):
+    """The pilot of the typed assembly language X86ᵀ (not in the totals): in
+    each of its two columns, select into X86ᵀ (its proof and the semantics
+    of X86ᵀ) against select into X86 today (its proof, the facts about its
+    output, and the semantics of X86 in that column); the languages and
+    passes both columns share; the infrastructure each reaches."""
+    def cl(fs):
+        return sum(code_lines(f) for f in fs)
+    t = lambda gname: c.counts[('tal', gname)]
+    facts = cl([PC + 'SelectFacts.agda'])
+    rows = [('select instructions (the proof)',
+             [cl([OC + 'SelectSim.agda']), t('CEK: select'),
+              cl(c.files_of[('gerr', 'select instructions')]), t('graph model with errors: select')]),
+            ("the facts about select's output (`SelectFacts`)", [facts, None, facts, None]),
+            ('the semantics of the target',
+             [cl([O + 'X86.agda', O + 'Values.agda']), t('CEK: the X86ᵀ machine'),
+              cl([GE + 'X86.agda', GE + 'Frames.agda']), t('graph model with errors: the semantics of X86ᵀ')]),
+            # today's compositions are a line of PipelineSim (the composition
+            # row) and lines of SelectCorrect (in its select row)
+            ('the compiler, composed', [None, t('CEK: composition'), None, t('graph model with errors: composition')])]
+    print('| X86ᵀ pilot (not in the totals) | CEK machine + simulation: X86 | CEK machine + simulation: X86ᵀ '
+          '| graph model with errors: X86 | graph model with errors: X86ᵀ |')
+    print('|---|---:|---:|---:|---:|')
+    tot = [0, 0, 0, 0]
+    for r, ns in rows:
+        tot = [a + (n or 0) for a, n in zip(tot, ns)]
+        print(f'| {r} | ' + ' | '.join(bold_min(ns[:2]) + bold_min(ns[2:])) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min(tot[:2]) + bold_min(tot[2:])) + ' |')
+    print()
+    print('| X86ᵀ pilot: shared by both columns (not in the totals) | X86 | X86ᵀ |')
+    print('|---|---:|---:|')
+    print(f'| the target language | ' + ' | '.join(bold_min([cl([L + 'X86.agda']), t('X86ᵀ, the language')])) + ' |')
+    print(f'| select instructions, the pass | '
+          + ' | '.join(bold_min([cl([C + 'Select.agda']), t('typed select, the pass')])) + ' |')
+    print(f"| the compiler to X86ᵀ (`compile-tal`) | — | {t('the compiler to X86ᵀ')} |")
+    print(f"| the statements (`Theorems/TAL.agda`) | — | {code_lines(TAL_THM)} |")
+    print(f"| erasure, and that typed select emits the instructions of select (not needed) | — | "
+          f"{t('erasure: typed select emits the instructions of select')} |")
+    print()
+    # the infrastructure each select proof reaches, with its target's semantics
+    roots = {'CEK, X86': [OC + 'SelectSim.agda'], 'CEK, X86ᵀ': [OC + 'SelectTALSim.agda'],
+             'errors, X86': c.files_of[('gerr', 'select instructions')],
+             'errors, X86ᵀ': [GEC + 'SelectTALCorrect.agda']}
+    reach = {k: reachable({unit(f) for f in fs}, c.graph) & c.infra for k, fs in roots.items()}
+    for a, b in (('CEK, X86ᵀ', 'CEK, X86'), ('errors, X86ᵀ', 'errors, X86')):
+        new = sorted(reach[a] - reach[b])
+        print(f'Infrastructure that select into X86ᵀ reaches and select into X86 does not ({a.split(",")[0]}): '
+              + (', '.join(f'{c.display(un)} ({c.ulines(un)})' for un in new) or 'none') + '.')
+    print()
+
+
 def compare(c, T, Un):
     """The typed pipeline against the untyped one, column by column (the lower
     of the two is bold in each column); the totals with and without cast
@@ -959,6 +1028,7 @@ def main():
     select_breakdown(c)
     c.errors_infra(TYPED)
     compare(c, T, Un)
+    tal_pilot(c)
 
 
 if __name__ == '__main__':

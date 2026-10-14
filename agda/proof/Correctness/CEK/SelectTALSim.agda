@@ -13,7 +13,8 @@
   (a statement) is matched by the instructions selected for it: they
   write its value to its destination (xval), fail at chk where the
   project fails (xfail), or call (xcall). There is nothing else to
-  rule out: X86ᵀ has no other error.
+  rule out: X86ᵀ has no other error. The compiler to X86ᵀ is in
+  PipelineTALSim.agda.
 
 -}
 
@@ -29,15 +30,10 @@ open C using (Tail; return; seq; goto; case; _▷_)
 import Language.Typed.Imp as I
 open import Language.Typed.X86
 open import Compiler.SelectTAL
-open import Language.ISWIM using (AST)
-open import Compiler.EncloseScope using (Closed)
-open import Compiler.Pipeline using (compile-cfg)
 open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (Machine; Next; next; stop; Star; ε; _◅_; _◅◅_; Plus; plus; step⁺; star-plus; plus-star; plus→star; Final)
-open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-trans)
+open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)
 open import proof.Framework.Both Obs using (Both; halt; move; both-fsim)
-open import proof.Correctness.CEK.PipelineSim using (compile-cfg-correct)
-import Semantics.CEK.ISWIM as ISWIMₘ
 import Semantics.CEK.Typed.X86 as X
 import Semantics.CEK.Typed.CFG as G
 open G using (Res; value; fail; call; pack; code; choose)
@@ -192,10 +188,7 @@ module Sim {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ 
 
   fsim = both-fsim Match (exec~ halt) sim
 
-{- The end theorems ---------------------------------------------------------------}
+{- The end theorem ---------------------------------------------------------------}
 
 select-correct : ∀ P → Equivalent (G.sem P) (X.sem (select P))
 select-correct (C.program ds b) = equivalent (Sim.fsim ds b)
-
-compile-tal-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (X.sem (compile-tal M))
-compile-tal-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct _)
