@@ -1,100 +1,130 @@
-# Paper outline (draft)
+# Paper outline (draft 2)
 
-Working title: **There is no semantics to rule them all!**
+Title: TBD. The working title "There is no semantics to rule them all!" fitted a comparison paper and will change.
 
-A first outline for discussion, not paper text. Numbers are from `loc.py --mu` on master after PR #66 and will change. Paper sections are written double-blind: earlier work in this repository is described as "we", without saying who (see `history-outline.md`).
+This is an outline for discussion, not paper text. Numbers come from `loc.py --mu` on master after PR #66 and will change. Paper sections are written double-blind: earlier work in this repository is "we", without saying who (see `history-outline.md`).
 
-## Thesis
-One compiler, from a typed ISWIM with recursive types to a typed x86, is proved correct four times, once per semantic style: a denotational graph model, a CEK machine with simulations, a clocked interpreter with value relations, and a reduction semantics with simulations. Each style was given a best effort, under the same accounting rules. No style is smallest for every pass. The cost of a proof depends on how well the pass's change of representation fits the style. The clearest example is closure conversion's delay pass, which is cheap operationally and expensive denotationally. It needed a new kind of logical relation, the approximant logical relation.
+## Main claim
+A denotational semantics based on graph models can be used to prove a realistic compiler correct, mechanized, all the way to assembly. The compiler goes from ISWIMμ (a call-by-value λ-calculus with recursive types) to a typed x86 in ten passes. Each pass is proved by relating denotations, and adequacy connects the result to running code. The novelty claims are pending the literature check (`novelty-lit.md`, to be added to the notes).
+
+## Research questions
+- **RQ1. Can a graph-model semantics be used to prove the correctness of a compiler?** Mechanized, through closure conversion, down to assembly, with an end-to-end theorem about running code.
+- **RQ2. What does it take?** Which passes are equations, what needs a relation (the approximant logical relation), the supporting properties of the model (consistency, continuity), and adequacy at both ends.
+- **RQ3. How does it compare with the operational approaches on the same compiler?** The operational proofs are experimental setup, not contributions: they give an apples-to-apples baseline.
+- **RQ4 (brief). How do dynamic typing and errors affect this?**
 
 ## 1. Introduction
-- The question: which semantics makes compiler correctness proofs smallest? Folklore favours operational semantics with simulations (CompCert); denotational semantics promises compositional, equational proofs.
-- What we did: the same compiler, the same proof obligations, four styles, mechanized in Agda (`--safe`, stdlib only), with a fair line count.
-- Headline results (main table, §5):
-  - totals: graph 1958, CEK 2258, interpreter **1653**, reduction 3207;
-  - per pass, the smallest style varies: graph wins simplify (360 against 584–715), globalize and explicate; the interpreter wins most of the others;
-  - delay is the outlier: graph 524 against interpreter 35. Without delay, graph would be smallest (1434 against 1618).
-- Contributions:
-  1. the four mechanized proofs and the accounting method;
-  2. the approximant logical relation, for reflecting a pass that lowers abstraction between two graph-model semantics;
-  3. a per-pass analysis of which style suits which kind of pass;
-  4. the effect of dynamic typing and errors (brief): it changes totals by 1–7% and does not change the ranking.
+- **Motivation.** Denotational semantics promises compositional, equational reasoning about programs, yet mechanized compiler verification has been operational, with CompCert's simulations as the standard. Graph models are an elementary, set-theoretic form of denotational semantics (Plotkin, Scott, Engeler) that is easy to mechanize, but they have been used for little beyond adequacy and source-level optimizations.
+- **What we did (RQ1).** We proved a ten-pass compiler correct with graph-model semantics for every intermediate language, ending in an end-to-end theorem: the source and the compiled x86 program stop with the same constant, or both diverge.
+- **What it took (RQ2).**
+  - Most passes are equations of denotations, proved one construct at a time.
+  - Closure lowering (delay) needs a new kind of relation for its reflection direction: the approximant logical relation.
+- **How it compares (RQ3).** We proved the same compiler in three operational styles under the same accounting rules:
+  - totals: graph 1958, CEK 2258, interpreter 1653, reduction 3207;
+  - the graph model is smallest for equational passes (simplify 360 against 584–715);
+  - it is costliest for delay (524 against 35–139).
+- **Contributions:**
+  1. a mechanized graph-model correctness proof of a realistic compiler, down to a typed assembly language, with adequacy at both ends;
+  2. the approximant logical relation, for passes that lower abstraction;
+  3. a like-for-like measurement against three operational styles on the same compiler, pass by pass;
+  4. the effect of dynamic typing and errors (brief).
 
-## 2. The compiler
-- ISWIMμ: call-by-value λ-calculus with integers, tuples, sums, primitives and iso-recursive types (`fold`/`unfold`). There is no `fix`; recursion and divergence come from the Z combinator, typed through μ.
-- The pipeline:
+## 2. Background: graph models
+- **Denotations.** A denotation is a set of finite values. A function's finite value is a finite table of input/output entries, and application ⟦L M⟧ρ collects the outputs of the tables in ⟦L⟧ρ whose inputs are covered by ⟦M⟧ρ.
+- **The properties the proofs rely on:**
+  - monotonicity and continuity;
+  - consistency, with binders that bind only consistent finite sets;
+  - divergence denotes ∅.
+- **Why reflection is the hard direction.** Divergence is the absence of elements, so a forward relation cannot carry it. A correctness statement ⟦src⟧ ≃ ⟦tgt⟧ therefore needs both inclusions.
+
+## 3. The compiler
+- **ISWIMμ:** integers, tuples, sums, primitives, and iso-recursive types with `fold`/`unfold`. There is no `fix`: recursion and divergence come from the Z combinator, typed through μ.
+- **The pipeline:**
   - simplify (a simplified cp0);
   - closure conversion in four passes: enclose, optimize, concretize, delay;
-  - globalize, rco, lift locals, explicate control, select;
+  - globalize, remove complex operands, lift locals, explicate control, select instructions;
   - the target X86μ, a typed assembly language.
-- All languages are intrinsically typed, so no pass needs a scoping or typing precondition.
-- One figure: the pipeline with each language's key feature.
+- **Intrinsically typed intermediate languages:** no pass needs a scoping or typing precondition.
+- Fig. 1: the pipeline.
 
-## 3. Four semantics
-For each style: what a semantics of each language looks like, and the shape of a pass-correctness proof.
-- **Graph model:** a denotation is a set of finite values (Plotkin/Engeler style), and a correctness statement is ⟦src⟧ ≃ ⟦tgt⟧. Adequacy connects it to running code and is reported separately.
-- **CEK machine + forward simulation:** a generic simulation framework; backward simulation from forward simulation plus determinism.
-- **Clocked interpreter + value relations:** proofs that go clock for clock.
-- **Reduction semantics + simulation:** substitution by the standard kit; explicate and select reuse the CEK machines.
-- The common end-to-end theorem, for `main : Int`: the source and the compiled X86 program stop with the same constant, or both diverge.
-- **Fairness and accounting:**
-  - best effort in every style;
-  - what counts: semantics, per-pass proofs, compositions;
-  - what doesn't count: infrastructure is counted only by use and reported separately; imports aren't counted; adequacy is reported separately;
-  - the audit surface (the theorem statements and the definitions they use).
+## 4. Proving the compiler correct with graph models (RQ1, RQ2)
+- **4.1 The semantics** of each intermediate language as a graph model. Closures, code tables, frames and control-flow graphs all get graph-model meanings.
+- **4.2 Equational passes.** For simplify, enclose, optimize, concretize, globalize, rco, lift locals and explicate, ⟦pass M⟧ ≃ ⟦M⟧ is proved construct by construct from operator laws. Typical shapes and sizes.
+- **4.3 Delay and the approximant logical relation** (the technical core):
+  - **the problem:** a target call takes its code from `car` and its environment from `cdr` separately;
+  - **why the natural relations fail** (`history-outline.md`): single values; whole sets (▷ with nothing to discharge it); element depth (as in Pitts's projections); one target point in an infinite context;
+  - **the insight:** only one side needs to shrink, and the car/cdr matching happens inside the index;
+  - **the definition:** 𝖠𝖫𝖱(D, V′), its layers, fuel as a termination device, depth irrelevance;
+  - **why a type index cannot replace the depth index:** at μX. X ⇒ Int the application case returns to the same type.
+- **4.4 Select and the typed assembly language.** The meaning of X86μ, and select proved as an equation.
+- **4.5 Adequacy and the end-to-end theorem:**
+  - adequacy for ISWIMμ against its abstract machine, and for X86μ directly;
+  - no-error lemmas;
+  - the end theorem, the same one the operational proofs state.
+- **4.6 Mechanization.** Agda (`--safe`, stdlib only), the audit surface, sizes.
 
-## 4. The approximant logical relation
-- **The problem:** reflecting delay (closure lowering) in the graph model, ⟦tgt⟧ ⊆ ⟦src⟧. A target call takes its code from `car` and its environment from `cdr` separately.
-- **A tour of the natural relations and why each fails** (`history-outline.md`):
-  - single values;
-  - whole sets, needing ▷ with nothing to discharge it;
-  - element depth, as in Pitts's projections;
-  - one target point in an infinite target context.
-- **The insight:** a simulation needs only one side to shrink, and the car/cdr matching must happen inside the index. So the relation pairs a finite target approximant with an arbitrary source set, by recursion on the approximant's depth.
-- **The definition:** 𝖠𝖫𝖱(D, V′) and its layers, fuel as a termination device, depth irrelevance.
-- **Why a type index can't replace the depth index:** at μX. X ⇒ Int the application case returns to the same type.
-- **Cost:** delay in the graph model is 524 lines, mostly the relation and reflection.
+## 5. Evaluation: comparison with operational approaches (RQ3)
+- **Setup.** The same compiler proved with CEK machines and simulations, clocked interpreters with value relations, and reduction semantics with simulations, each a best effort. These are the baseline, not contributions.
+- **Accounting rules:**
+  - semantics, per-pass proofs and compositions are counted;
+  - infrastructure is counted by use and reported separately;
+  - imports are not counted;
+  - adequacy is reported separately.
+- **Table 1, the main per-pass comparison:**
+  - totals: graph 1958, CEK 2258, interpreter **1653**, reduction 3207;
+  - graph wins simplify, globalize and explicate; the interpreter wins most of the rest;
+  - without delay, graph would be smallest: 1434 against 1618.
+- **Analysis by kind of pass:**
+  - equational passes are cheap denotationally;
+  - passes that change how values are represented need a relation in every style, but only the denotational proof must also reflect divergence;
+  - machine states and administrative steps cost the CEK and reduction styles.
+- **Full cost:**
+  - semantics rows: reduction's semantics are the largest;
+  - infrastructure: graph 1542, CEK 447, interpreter 413, reduction 1190;
+  - adequacy, which only the denotational route needs: 1599 lines;
+  - the audit surface.
+- **Threats to validity:**
+  - lines of Agda as a proxy for effort;
+  - effort and expertise per style;
+  - AI assistance, with an ACM disclosure;
+  - what infrastructure each style could share.
 
-## 5. Results
-- **The main table:** rows are semantics, simplify, each pass and composition; columns are the four styles; lowest number bold. Plus infrastructure by use, adequacy, and the audit surface.
-- **Per pass:**
-  - which representation changes suit which style;
-  - equational passes (where ⟦pass M⟧ ≃ ⟦M⟧) are cheap denotationally;
-  - passes that change how values are represented need a relation in every style, and only the denotational one must also reflect divergence (∅);
-  - CEK and reduction pay for machine states and administrative steps;
-  - the interpreter is cheapest wherever a pass is a local rewrite.
-- **Semantics rows:** what each style must define, and why reduction's semantics are the largest.
-- **Infrastructure:** graph 1542, CEK 447, interpreter 413, reduction 1190 (not in the totals). Discuss what is reusable.
+## 6. Dynamic typing and errors (RQ4, brief)
+- **The same compiler from dynamically typed ISWIM:** cast insertion, `Any = μX. Σ_G G[X]`, `project`/`chk`, and a graph model with errors to observe them.
+- **Totals barely move:** graph 2064 → 1958, CEK 2390 → 2258, interpreter 1719 → 1653, reduction 3320 → 3207.
+- **Delay's cost comes from recursive types, not errors:** graph delay goes 552 → 524 (errors account for about 28 lines).
 
-## 6. Dynamic typing and errors (brief)
-- The same compiler from dynamically typed ISWIM: cast insertion, `Any`, `project` and `chk`, and a fifth column, the graph model with errors.
-- **Totals barely move** (typed ISWIM without cast insertion → ISWIMμ): graph 2064 → 1958, CEK 2390 → 2258, interpreter 1719 → 1653, reduction 3320 → 3207. The ranking is unchanged.
-- **Delay's cost is caused by recursive types, not by errors:** 552 → 524 lines. Errors account for about 28 lines (`fun-obs`, the `project` cases).
-- `Any = μX. Σ_G G[X]`: the ISWIM pipeline is ISWIMμ plus an error construct.
-- The graph model with errors: what observing errors costs in the denotational style.
+## 7. Discussion: mixing semantics
+- Graph models are cheapest for equational passes, and the operational styles for passes that change representation. A compiler proof could use a different style for each pass, joined where needed by adequacy or by a simulation between styles.
+- What it would cost, and what the end theorem would be. This is worth exploring; it may become an experiment that reports numbers, not just a discussion point.
 
-## 7. Related work
-Organised as in `related-work-literature.md`:
-- relations for adequacy: Martin-Löf, Winskel §13.4, Abramsky, intersection types, and Siek 2017 and PLFA (cited in the third person);
-- relations between two denotational semantics: Reynolds 1974 (the tower's shape), Milne–Strachey, Stoy, Mulmuley, Pitts, Meyer–Wand, Filinski, and Chlipala 2007 (closest in purpose);
-- compiler verification: CompCert and its simulation style, CakeML, Benton–Hur, Hur–Dreyer, Minamide–Morrisett–Harper, and the Wand–Clinger single-model approach;
-- comparisons of semantic styles and of proof effort.
+## 8. Related work
+Organised as in `related-work-literature.md` and the novelty search:
+- **Denotational compiler verification:** Chlipala 2007, Benton–Hur, interaction trees and Vellvm, calculated compilers (Hutton–Bahr), and earlier work (Morris, Thatcher–Wagner–Wright, Wand, Clinger, Polak).
+- **Graph and filter models, and their mechanizations:** Plotkin, Scott, Engeler, and Siek 2017 and PLFA (cited in the third person).
+- **Relations for adequacy versus relations between two denotations:** Reynolds 1974 (the tower), Pitts, Milne–Strachey, Stoy, Mulmuley.
+- **Operational compiler verification:** CompCert, CakeML, Hur–Dreyer, typed closure conversion.
 
-## 8. Conclusion
-- No style rules them all; the right choice is per pass.
-- Consequences: mix styles across passes (adequacy and simulation can be composed), or pick a style that suits the passes that change representation most.
-- Future work: a generic framework for intrinsically typed syntax, which would remove per-language Ok and renaming lemmas; exceptions or call/cc; exposing allocation.
+## 9. Conclusion and future work
+- Graph models work for compiler verification. They are cheapest where passes are equations, and their cost concentrates in passes that lower abstraction.
+- Future work:
+  - mixing semantics;
+  - a generic framework for intrinsically typed syntax;
+  - effects (exceptions, call/cc);
+  - exposing allocation.
 
 ## Figures and tables
 - Fig. 1: the pipeline.
-- Fig. 2: the four semantics of one construct, e.g. application.
+- Fig. 2: graph-model semantics of a few constructs.
 - Fig. 3: the approximant logical relation.
-- Table 1: the main per-pass comparison.
-- Table 2: dynamic typing and errors (typed ISWIM vs ISWIMμ per style).
-- Table 3, possibly: infrastructure and the audit surface.
+- Table 1: per-pass sizes in the four styles.
+- Table 2: dynamic typing and errors.
+- Table 3, possibly: infrastructure, adequacy and the audit surface.
 
-## Open questions for the author
-- The page budget for §4 against §5: the relation is a contribution in its own right, but the comparison is the main story.
-- Whether to present adequacy sizes at all (currently internal).
-- Whether the CompCert-style framing belongs in the introduction or only in related work.
+## Open questions
+- The title.
+- Novelty claims, to be worded after the literature check.
+- The page budget for §4.3 against §5.
+- Whether mixing semantics (§7) becomes an experiment before submission.
+- Matthew Heimerdinger's affiliation.
 - The artifact: an anonymized copy of the Agda development.
