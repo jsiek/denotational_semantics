@@ -387,7 +387,7 @@ Row by row against the same rows of the typed pipeline (the semantics of each la
 * **Recursive types and Agda's unification.** `unfold : Tm Γ (μ A) → Tm Γ (A [ μ A ])` and the machines' `foldK : Cont (μ A) → Cont (A [ μ A ])` have an index that is a function application, so Agda cannot split a term or a continuation at a concrete type such as `base Int` (it cannot decide whether `A [ μ A ] ≟ base Int`). No definition or proof needs that: every function splits terms, continuations and relations at a generic type, as with `prim`, whose index `out-flat p` (now `out-ty p`) has the same property; where a value is split at `μ A`, Agda splits the continuation first. So `unfold` takes no equation argument.
 * **Optimize with heterogeneous contexts.** An unused free variable cannot be sent to the argument, as the typed pass does, since its type differs. Optimize's renaming is instead defined only on the variables that the term uses (`Ren (uses M) Γ'`, given a proof that the variable is used), and a closure's code is renamed by `squeeze`, defined on the kept variables; `covers` (the code uses only kept variables) moves from the proofs into the pass. The graph proof shrinks (89 → 83), the CEK one too (133 → 127).
 
-**Clocked interpreters (P1).** The pilot's interpreters (`Mu/Semantics/Interp/`) are the typed pipeline's, with `fold` a value and `unfold` taking it apart: no result is an error, only a timeout. The values are those of the typed pipeline (a closure is packed code and the tuple of its environment), indexed by the code's environment, argument and result types, and the value relation (`Mu/proof/Semantics/Interp/Rel.agda`) is the typed one, with `fold≈` for `dyn≈` and `unfold≈` for `project≈`. Each pass is proved clock for clock, as in the typed pipeline (`Mu/proof/Correctness/Interp/`). Row by row against the typed interpreter column, without simplify and cast insertion:
+**Clocked interpreters (P1).** The pilot's interpreters (`Mu/Semantics/Interp/`), of ISWIMμ through X86μ, are the typed pipeline's, with `fold` a value and `unfold` taking it apart: no result is an error, only a timeout. The values are those of the typed pipeline (a closure is packed code and the tuple of its environment), indexed by the code's environment, argument and result types, and the value relation (`Mu/proof/Semantics/Interp/Rel.agda`) is the typed one, with `fold≈` for `dyn≈` and `unfold≈` for `project≈`. In X86μ the hidden witness η of the open closure is a list of types where X86ᵀ's is a length. Each pass is proved clock for clock, as in the typed pipeline (`Mu/proof/Correctness/Interp/`), and the composition gives `compile-x86-correct`. Row by row against the typed interpreter column, without simplify and cast insertion (`loc.py --mu`):
 
 | ISWIMμ pilot against the typed pipeline | interpreter: typed | interpreter: μ |
 |---|---:|---:|
@@ -395,18 +395,32 @@ Row by row against the same rows of the typed pipeline (the semantics of each la
 | semantics: Clos2 | 25 | 23 |
 | semantics: Clos3 | 23 | 23 |
 | semantics: Clos4 | 24 | 24 |
+| semantics: Clos5 (with the lemmas about Mon's embedding) | 49 | 49 |
+| semantics: Imp | 30 | 30 |
+| semantics: CFG | 20 | 20 |
+| semantics: X86 | 110 | 106 |
 | semantics: values (`Values`) | 33 | 32 |
 | semantics: value relations (`Rel`) | 46 | 44 |
 | CC: enclose | 33 | 33 |
 | CC: optimize | 60 | 65 |
 | CC: concretize | 42 | 42 |
 | CC: delay | 35 | 35 |
-| **total** | 346 | 344 |
-| composition (typed: all the passes, to X86ᵀ; μ: to Clos4μ) | 33 | 6 |
+| CC: globalize | 183 | 183 |
+| rco | 85 | 85 |
+| lift locals | 27 | 27 |
+| explicate control | 72 | 75 |
+| select instructions | 52 | 48 |
+| **total** | 974 | 967 |
+| composition | 33 | 31 |
+| **total with the composition** | 1007 | 998 |
 
-* **The interpreter column barely moves (346 → 344).** Dynamic typing costs the interpreter almost nothing: `project`'s failure is one line in the values (`project?`) and one in the relation (`project≈`, with its `error` case), and the passes treat `project` and `unfold` alike, as one congruence (`bind-rel … project≈`, `bind-rel … unfold≈`). The rows are otherwise line for line the same proofs.
-* **Optimize grows (60 → 65)**: the renaming is defined only on the variables a term uses (as in the other columns of the pilot), so the agreement of the environments is restricted by hand for each subterm (`λ x t → ag x (∨-l _ t)`), where the typed proof uses the infrastructure's `subL`/`subR` on vectors of flags.
-* The examples run on the interpreters too (`Mu/proof/Compiler/Examples/RecursionInterp.agda`: countdown 3 by the fixed-point combinator returns 0, Ω times out).
+In the terms of the main table, today's interpreter column without simplify and cast insertion is 1079: these 1007 lines, the untyped ISWIM interpreter with the clock (57; the source of cast insertion) and the observations (15). The pilot's is 1015: its 998 lines, the clock (2) and the observations (15). Its source is ISWIMμ, whose interpreter is in the rows.
+
+* **Dynamic typing costs the interpreter almost nothing (1007 → 998, −1%).** `project`'s failure is one line in the values (`project?`) and one in the relation (`project≈`, with its `error` case). The passes treat `project` and `unfold` alike, as one congruence each (`bind-rel … project≈`, `bind-rel … unfold≈`). Otherwise the rows are the same proofs, line for line: globalize, rco and lift locals have exactly the typed sizes.
+* **Optimize grows (60 → 65).** The renaming is defined only on the variables a term uses, as in the pilot's other columns. So the agreement of the environments is restricted by hand for each subterm (`λ x t → ag x (∨-l _ t)`), where the typed proof uses the infrastructure's `subL`/`subR` on vectors of flags.
+* **Explicate control grows (72 → 75).** A CFGμ body is indexed by its result type, so the lemmas are stated in a module over it.
+* **Select instructions shrinks (52 → 48), and X86 by 4.** X86μ's case is one pseudo-instruction (testinl, the load of the payload and je, as chk is in X86ᵀ), so its interpreter case and select's proof of it are one `either` each.
+* The examples run on the interpreters too (`Mu/proof/Compiler/Examples/RecursionInterp.agda`): countdown 3 by the fixed-point combinator returns 0 on ISWIMμ, Clos4μ and X86μ, and Ω times out.
 
 ## What the groups contain
 

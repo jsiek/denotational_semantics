@@ -489,6 +489,11 @@ GROUPS = [
     ('mu-ck', 'CC: optimize', [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
     ('mu-ck', 'CC: concretize', [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
     ('mu-ck', 'CC: delay', [MUP + 'Correctness/Interp/DelayFuel.agda']),
+    ('mu-ck', 'CC: globalize', [MUP + 'Correctness/Interp/GlobalizeFuel.agda']),
+    ('mu-ck', 'rco', [MUP + 'Correctness/Interp/RCOFuel.agda']),
+    ('mu-ck', 'lift locals', [MUP + 'Correctness/Interp/LiftLocalsFuel.agda']),
+    ('mu-ck', 'explicate control', [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
+    ('mu-ck', 'select instructions', [MUP + 'Correctness/Interp/SelectFuel.agda']),
     ('mu-ck', 'composition', [MUP + 'Correctness/Interp/CompilerFuel.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
 ]
@@ -1147,12 +1152,22 @@ MU_CK_ROWS = [
     ('semantics: Clos2', [F + 'Typed/Clos2.agda'], [MU + 'Semantics/Interp/Clos2.agda']),
     ('semantics: Clos3', [F + 'Typed/Clos3.agda'], [MU + 'Semantics/Interp/Clos3.agda']),
     ('semantics: Clos4', [F + 'Typed/Clos4.agda'], [MU + 'Semantics/Interp/Clos4.agda']),
+    ('semantics: Clos5 (with the lemmas about Mon\'s embedding)', [F + 'Typed/Clos5.agda', FP + 'Typed/Clos5.agda'],
+     [MU + 'Semantics/Interp/Clos5.agda', MUP + 'Semantics/Interp/Clos5.agda']),
+    ('semantics: Imp', [F + 'Typed/Imp.agda'], [MU + 'Semantics/Interp/Imp.agda']),
+    ('semantics: CFG', [F + 'Typed/CFG.agda'], [MU + 'Semantics/Interp/CFG.agda']),
+    ('semantics: X86', [F + 'Typed/X86.agda'], [MU + 'Semantics/Interp/X86.agda']),
     ('semantics: values (`Values`)', [F + 'Typed/Values.agda'], [MU + 'Semantics/Interp/Values.agda']),
     ('semantics: value relations (`Rel`)', [FP + 'Typed/Rel.agda'], [MUP + 'Semantics/Interp/Rel.agda']),
     ('CC: enclose', [FC + 'EncloseFuel.agda'], [MUP + 'Correctness/Interp/EncloseFuel.agda']),
     ('CC: optimize', [FC + 'OptimizeFuel.agda'], [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
     ('CC: concretize', [FC + 'ConcretizeFuel.agda'], [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
     ('CC: delay', [FC + 'DelayFuel.agda'], [MUP + 'Correctness/Interp/DelayFuel.agda']),
+    ('CC: globalize', [FC + 'GlobalizeFuel.agda'], [MUP + 'Correctness/Interp/GlobalizeFuel.agda']),
+    ('rco', [FC + 'RCOFuel.agda'], [MUP + 'Correctness/Interp/RCOFuel.agda']),
+    ('lift locals', [FC + 'LiftLocalsFuel.agda'], [MUP + 'Correctness/Interp/LiftLocalsFuel.agda']),
+    ('explicate control', [FC + 'ExplicateFuel.agda'], [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
+    ('select instructions', [FC + 'SelectFuel.agda'], [MUP + 'Correctness/Interp/SelectFuel.agda']),
 ]
 
 
@@ -1173,7 +1188,9 @@ def mu_ck_report(c):
         print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
     print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
     comp = [n([FC + 'CompilerFuel.agda']), n([MUP + 'Correctness/Interp/CompilerFuel.agda'])]
-    print('| composition (typed: all the passes, to X86ᵀ; μ: to Clos4μ) | ' + ' | '.join(cell(x) for x in comp) + ' |')
+    tot = [t + x for t, x in zip(tot, comp)]
+    print('| composition | ' + ' | '.join(cell(x) for x in comp) + ' |')
+    print('| **total with the composition** | ' + ' | '.join(str(t) for t in tot) + ' |')
     print()
 
 
