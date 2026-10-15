@@ -23,7 +23,9 @@
     (Mu/proof/Correctness/Graph/DelayRel.agda);
   * CEK machine + simulation: Mu/proof/Correctness/CEK/PipelineSim.agda
     (compile-x86-correct, and compile-x86-const and
-    compile-x86-diverges for main : Int).
+    compile-x86-diverges for main : Int);
+  * clocked interpreter + value relations:
+    Mu/proof/Correctness/Interp/CompilerFuel.agda (compile-x86-correct).
 
 -}
 
@@ -31,4 +33,6 @@ module Mu.All where
 
 import Mu.proof.Correctness.Graph.CompilerCorrect
 import Mu.proof.Correctness.CEK.PipelineSim
+import Mu.proof.Correctness.Interp.CompilerFuel
 import Mu.proof.Compiler.Examples.RecursionExample
+import Mu.proof.Compiler.Examples.RecursionInterp

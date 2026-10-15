@@ -108,11 +108,11 @@ outside agda/Untyped/ imports one inside it.
 The ISWIMμ pilot (agda/Mu/, module prefix Mu.; sides 'mu-*', in no total,
 nor in any other table): a typed ISWIM with iso-recursive types and its
 closure-conversion passes (enclose, optimize, concretize, delay), in the
-graph model and the CEK machines, a parallel copy of the typed pipeline's
-languages, passes and proofs.  --mu prints its counts against the same
+graph model, the CEK machines and the clocked interpreters, a parallel
+copy of the typed pipeline's languages, passes and proofs.  --mu prints its counts against the same
 rows of the typed pipeline (the semantics of ISWIMᵀ, Clos2ᵀ–Clos4ᵀ, the
 lemmas the passes share, and the four passes).  Its groups are checked as
-the others are (every module in one group), its two columns must not reach
+the others are (every module in one group), its columns must not reach
 each other's modules nor a module of a proof of either pipeline (what both
 pipelines share, such as the meaning of the primitives and the small-step
 framework, they may use), and its infrastructure must import only
@@ -495,6 +495,17 @@ GROUPS = [
     ('mu-op', 'explicate control', [MUP + 'Correctness/CEK/ExplicateSim.agda']),
     ('mu-op', 'select instructions', [MUP + 'Correctness/CEK/SelectSim.agda']),
     ('mu-op', 'composition', [MUP + 'Correctness/CEK/PipelineSim.agda']),
+    ('mu-ck', 'semantics of the languages', [MU + 'Semantics/Interp/*.agda', MUP + 'Semantics/Interp/*.agda']),
+    ('mu-ck', 'CC: enclose', [MUP + 'Correctness/Interp/EncloseFuel.agda']),
+    ('mu-ck', 'CC: optimize', [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
+    ('mu-ck', 'CC: concretize', [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
+    ('mu-ck', 'CC: delay', [MUP + 'Correctness/Interp/DelayFuel.agda']),
+    ('mu-ck', 'CC: globalize', [MUP + 'Correctness/Interp/GlobalizeFuel.agda']),
+    ('mu-ck', 'rco', [MUP + 'Correctness/Interp/RCOFuel.agda']),
+    ('mu-ck', 'lift locals', [MUP + 'Correctness/Interp/LiftLocalsFuel.agda']),
+    ('mu-ck', 'explicate control', [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
+    ('mu-ck', 'select instructions', [MUP + 'Correctness/Interp/SelectFuel.agda']),
+    ('mu-ck', 'composition', [MUP + 'Correctness/Interp/CompilerFuel.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
 ]
 
@@ -1104,7 +1115,7 @@ def mu_check(c):
     """The pilot's columns are independent of each other and of the proofs of
     either pipeline (they may use what both pipelines share), and its
     infrastructure imports only infrastructure."""
-    sides = ('mu-den', 'mu-op')
+    sides = ('mu-den', 'mu-op', 'mu-ck')
     own = {s: {un for un, (side, _) in c.group_of.items() if side == s} for s in sides}
     reach = {s: reachable(own[s], c.graph) for s in sides}
     typed, untyped = set(TYPED['sides']) | {'gerr', 'adeq', 'gadeq'}, set(UNTYPED['sides']) | {'ugerr', 'uadeq', 'ugadeq'}
@@ -1173,6 +1184,57 @@ def mu_report(c, T):
     print()
 
 
+# the clocked interpreters of the pilot ('mu-ck') against the typed
+# pipeline's, row by row: the interpreter of each language, the values
+# they share and the value relations, and each pass.  The typed column is
+# without simplify and cast insertion, which the pilot does not have.
+MU_CK_ROWS = [
+    ('semantics: ISWIM', [F + 'Typed/ISWIM.agda'], [MU + 'Semantics/Interp/ISWIM.agda']),
+    ('semantics: Clos2', [F + 'Typed/Clos2.agda'], [MU + 'Semantics/Interp/Clos2.agda']),
+    ('semantics: Clos3', [F + 'Typed/Clos3.agda'], [MU + 'Semantics/Interp/Clos3.agda']),
+    ('semantics: Clos4', [F + 'Typed/Clos4.agda'], [MU + 'Semantics/Interp/Clos4.agda']),
+    ('semantics: Clos5 (with the lemmas about Mon\'s embedding)', [F + 'Typed/Clos5.agda', FP + 'Typed/Clos5.agda'],
+     [MU + 'Semantics/Interp/Clos5.agda', MUP + 'Semantics/Interp/Clos5.agda']),
+    ('semantics: Imp', [F + 'Typed/Imp.agda'], [MU + 'Semantics/Interp/Imp.agda']),
+    ('semantics: CFG', [F + 'Typed/CFG.agda'], [MU + 'Semantics/Interp/CFG.agda']),
+    ('semantics: X86', [F + 'Typed/X86.agda'], [MU + 'Semantics/Interp/X86.agda']),
+    ('semantics: values (`Values`)', [F + 'Typed/Values.agda'], [MU + 'Semantics/Interp/Values.agda']),
+    ('semantics: value relations (`Rel`)', [FP + 'Typed/Rel.agda'], [MUP + 'Semantics/Interp/Rel.agda']),
+    ('CC: enclose', [FC + 'EncloseFuel.agda'], [MUP + 'Correctness/Interp/EncloseFuel.agda']),
+    ('CC: optimize', [FC + 'OptimizeFuel.agda'], [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
+    ('CC: concretize', [FC + 'ConcretizeFuel.agda'], [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
+    ('CC: delay', [FC + 'DelayFuel.agda'], [MUP + 'Correctness/Interp/DelayFuel.agda']),
+    ('CC: globalize', [FC + 'GlobalizeFuel.agda'], [MUP + 'Correctness/Interp/GlobalizeFuel.agda']),
+    ('rco', [FC + 'RCOFuel.agda'], [MUP + 'Correctness/Interp/RCOFuel.agda']),
+    ('lift locals', [FC + 'LiftLocalsFuel.agda'], [MUP + 'Correctness/Interp/LiftLocalsFuel.agda']),
+    ('explicate control', [FC + 'ExplicateFuel.agda'], [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
+    ('select instructions', [FC + 'SelectFuel.agda'], [MUP + 'Correctness/Interp/SelectFuel.agda']),
+]
+
+
+def mu_ck_report(c):
+    """The pilot's clocked interpreters against the typed pipeline's."""
+
+    def n(fs):
+        return sum(code_lines(f) for f in fs) if fs else None
+
+    def cell(x):
+        return '—' if x is None else str(x)
+    print('| ISWIMμ pilot against the typed pipeline | interpreter: typed | interpreter: μ |')
+    print('|---|---:|---:|')
+    tot = [0, 0]
+    for row, ft, fm in MU_CK_ROWS:
+        ns = [n(ft), n(fm)]
+        tot = [t + (x or 0) for t, x in zip(tot, ns)]
+        print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
+    print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
+    comp = [n([FC + 'CompilerFuel.agda']), n([MUP + 'Correctness/Interp/CompilerFuel.agda'])]
+    tot = [t + x for t, x in zip(tot, comp)]
+    print('| composition | ' + ' | '.join(cell(x) for x in comp) + ' |')
+    print('| **total with the composition** | ' + ' | '.join(str(t) for t in tot) + ' |')
+    print()
+
+
 def main():
     c = Count()
     mu_check(c)
@@ -1181,6 +1243,7 @@ def main():
         print('## The ISWIMμ pilot')
         print()
         mu_report(c, T)
+        mu_ck_report(c)
         return
     if '--untyped' in sys.argv[1:]:
         print(f'## The {UNTYPED["name"]}')
