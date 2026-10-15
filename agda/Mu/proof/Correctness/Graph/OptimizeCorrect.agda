@@ -81,23 +81,6 @@ fv-ne : ∀ {Δ C} {Ds : Rs Δ} → (∀ i → nonempty (nthD Ds i)) → (i : Δ
 fv-ne ne Z = ne zero
 fv-ne ne (S i) = fv-ne (λ j → ne (suc j)) i
 
-{- a dropped free variable is a variable -}
-dropped : ∀ {Γ C} (M : Tm Γ C) b → keep? M b ≡ false → ∀ {ρ} → NE Γ ρ → nonempty (⟦ M ⟧ ρ)
-dropped M true ()
-dropped (` x) false refl V = V x
-dropped (clos _ _) false ()
-dropped (app _ _) false ()
-dropped (lit _ _) false ()
-dropped (tuple _) false ()
-dropped (get _ _) false ()
-dropped (inl _) false ()
-dropped (inr _) false ()
-dropped (case _ _ _) false ()
-dropped (prim _ _ _) false ()
-dropped (let′ _ _) false ()
-dropped (fold _) false ()
-dropped (unfold _) false ()
-
 opt-ok : ∀ {Γ Γ' A} (M : Tm Γ A) {r : Ren (uses M) Γ'} {ρ ρ'} → NE Γ ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt M r ⟧ ρ'
 opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'} → NE Γ ρ → Agree (usesA Ms) r ρ ρ'
   → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts Ms r ⟧s ρ') i
@@ -105,9 +88,9 @@ opts-ok : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'
 th-ok : ∀ {Γ Γ' Δ} (u : ∀ {C} → Δ ∋ C → Bool) (Ms : All (Tm Γ) Δ) {r : Ren (usesA Ms) Γ'} {ρ ρ'}
   → NE Γ ρ → Agree (usesA Ms) r ρ ρ' → Th (flags u Ms) (⟦ Ms ⟧s ρ) (⟦ select (flags u Ms) (opts Ms r) ⟧s ρ')
 th-ok u [] V ag = []
-th-ok u (M ∷ Ms) V ag with keep? M (u Z) in eq
-... | true = keep (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
-... | false = drop (dropped M (u Z) eq V) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
+th-ok u (M ∷ Ms) V ag with keep? M (u Z) | fl-ok M (u Z)
+... | true | _ = keep (opt-ok M V (λ x t → ag x (∨-l _ t))) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
+... | false | var-fv {x = x} = drop (V x) (th-ok (λ x → u (S x)) Ms V (λ x t → ag x (∨-r (uses M x) t)))
 
 opt-ok (` x) V ag = ag x (fromWitness refl)
 opt-ok (clos {Δ} N Ms) {r} {ρ} {ρ'} V ag =

@@ -106,3 +106,25 @@ opts (M ∷ Ms) r = opt M (λ x u → r x (∨-l _ u)) ∷ opts Ms (λ x u → r
 
 optimize-program : ∀ {A} → Tm [] A → Tm [] A
 optimize-program M = opt M (λ ())
+
+{- What a flag says (for the proofs): a free variable is kept, or it is
+   a variable -}
+data Fl {Γ C} : Bool → Tm Γ C → Set where
+  kept-fv : ∀ {M} → Fl true M
+  var-fv : ∀ {x} → Fl false (` x)
+
+fl-ok : ∀ {Γ C} (M : Tm Γ C) b → Fl (keep? M b) M
+fl-ok M true = kept-fv
+fl-ok (` x) false = var-fv
+fl-ok (clos _ _) false = kept-fv
+fl-ok (app _ _) false = kept-fv
+fl-ok (lit _ _) false = kept-fv
+fl-ok (tuple _) false = kept-fv
+fl-ok (get _ _) false = kept-fv
+fl-ok (inl _) false = kept-fv
+fl-ok (inr _) false = kept-fv
+fl-ok (case _ _ _) false = kept-fv
+fl-ok (prim _ _ _) false = kept-fv
+fl-ok (let′ _ _) false = kept-fv
+fl-ok (fold _) false = kept-fv
+fl-ok (unfold _) false = kept-fv
