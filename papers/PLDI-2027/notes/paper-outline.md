@@ -23,6 +23,7 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
 ## 1. Introduction
 - **Motivation.** Denotational semantics promises compositional, equational reasoning about programs, yet mechanized compiler verification has been operational, with CompCert's simulations as the standard. Graph models are an elementary, set-theoretic form of denotational semantics (Plotkin, Scott, Engeler) that is easy to mechanize, but they have been used for little beyond adequacy and source-level optimizations.
 - **What we did (RQ1).** We proved a ten-pass compiler correct with graph-model semantics for every intermediate language, ending in an end-to-end theorem: the source and the compiled x86 program stop with the same constant, or both diverge.
+- **Mechanization, artifact, and AI disclosure.** One sentence: everything is mechanized in Agda (`--safe`, standard library only), and the proofs are available in the artifact. Immediately after it, the disclosure of AI assistance (ACM policy). It goes here, not in threats to validity, because it is not a threat to validity.
 - **What it took (RQ2).**
   - Most passes are equations of denotations, proved one construct at a time.
   - Closure lowering (delay) needs a new kind of relation for its reflection direction: the approximant logical relation.
@@ -93,7 +94,6 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
 - **Threats to validity:**
   - lines of Agda as a proxy for effort;
   - effort and expertise per style;
-  - AI assistance, with an ACM disclosure;
   - what infrastructure each style could share.
 
 ## 6. Dynamic typing and errors (RQ4, brief)

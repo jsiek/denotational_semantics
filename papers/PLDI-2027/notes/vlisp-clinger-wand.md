@@ -325,6 +325,14 @@ representation." (p. 17)
 
 ### Verdict — Wand 1991
 
+**Classification (author, 2026-10-15): not a denotational semantics.** The meanings are λ-terms up to
+interconvertibility, which is not extensional, and no model is used (except the open term model in the
+sketched proof of Theorem 3). It is a compositional translation into an equational λ-theory. Representation
+changes are easy there because a closure record is a single term, so `Ap(abs x.M) = λx.M` is a β-equation;
+in a set-based model a closure denotes a set, and car and cdr can mix elements of it, which is what the
+approximant logical relation handles.
+
+
 - performs closure conversion: **partly** — Section 7 is a genuine closure-passing-style representation
   (records of closed code + free-variable values, `movec`, `jsr`/`rts`), proved correct as a
   λ-representation, but: for a tiny untyped language without a recursion construct (recursion explicitly
@@ -368,7 +376,7 @@ language as part of a whole verified pipeline:
   interpreter; Scheme compiler target has primitive closures; PreScheme eliminates closures rather than
   converting them; not mechanized.
 - Clinger 1984: (secondary sources) target byte code with closures; paper proof.
-- Wand 1991: the closest to "denotational/equational proof of closure conversion", but a single
+- Wand 1991: the closest to an equational (not denotational; see §3) proof of closure conversion, but a single
   representation step for a tiny untyped language without recursion, target still λ-terms, paper proof.
 
 So the combination "denotational + higher-order + recursive types + through closure conversion + to assembly"
