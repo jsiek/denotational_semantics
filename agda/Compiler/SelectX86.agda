@@ -18,7 +18,8 @@
     other kind and otherwise only clobbers %rax or the flag (check):
     an integer: movq a, %rax; subq $0, %rax; a sum: testinl a; a
     function (a closure, a pair): load fst a, %rax; a tuple of n + 1
-    components: load (get 0) a, %rax.
+    components (ttup n i): load (get i) a, %rax, at the component i
+    that get reads.
   * callc f a opens the closure f: load fst f, %rax (its code);
     load snd f, %rdi (its environment); movq a, %rsi; callq %rax.
   * The rest as in the untyped pass.
