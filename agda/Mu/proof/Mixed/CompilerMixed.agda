@@ -48,7 +48,7 @@ open import Mu.proof.Correctness.Interp.RCOFuel using (rco-correct)
 open import Mu.proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correct)
 open import Mu.proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
 open import Mu.proof.Correctness.Interp.SelectFuel using (select-correct)
-open import Mu.proof.Mixed.ISWIM using (const-iff; diverges-iff)
+open import Mu.proof.Adequacy.ISWIM using (const-iff; diverges-iff)
 
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
