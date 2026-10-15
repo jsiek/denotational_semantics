@@ -33,7 +33,7 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
 
-module _ {Σ : List Sig} (ds : All (Code Σ) Σ) where
+module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   open C.Vals Σ
   private ds' = map ⌜_⌝ (map (λ D → rco D (λ x → x)) ds)
 

@@ -44,7 +44,7 @@ ext-trans : ∀ {Σ R Bs₀ Bs₁ Bs₂} {bs₀ : Blocks Σ R Bs₀} {bs₁ : Bl
 ext-trans e₁ same = e₁
 ext-trans e₁ (more e₂) = more (ext-trans e₁ e₂)
 
-module _ {Σ : List Sig} (ds : All (λ s → Imp.Exp Σ (Args s) (Sig.cod s)) Σ) where
+module _ {Σ : List DSig} (ds : All (λ s → Imp.Exp Σ (Args s) (DSig.cod s)) Σ) where
   open C.Vals Σ
   private ds' = map explicate-body ds
 

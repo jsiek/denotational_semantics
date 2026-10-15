@@ -43,7 +43,7 @@ open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (does)
 
-module _ (Σ : List Sig) where
+module _ (Σ : List DSig) where
   open Vals Σ
 
   {- the values of a register type, α being η -}
@@ -83,7 +83,7 @@ module _ (Σ : List Sig) where
 
 open Mach public
 
-module _ {Σ : List Sig} where
+module _ {Σ : List DSig} where
   open Vals Σ
 
   _⦅_⦆ : ∀ {η Γ} → RegVals Σ η Γ → (r : Reg) → MV Σ η (Γ ‹ r ›)
@@ -148,7 +148,7 @@ module _ {Σ : List Sig} where
   env-of (pack c e) = e
 
 {- the interpreter for a program with the definitions ds -}
-module _ {Σ : List Sig} (ds : All (λ s → Body Σ (Sig.cod s) (called s)) Σ) where
+module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (called s)) Σ) where
   open Vals Σ
 
   run : ∀ {n R Bs ψ} → ℕ → Blocks Σ n R Bs → ∀ η → Mach Σ η ψ → Seq Σ n R Bs ψ → Result (Val R)

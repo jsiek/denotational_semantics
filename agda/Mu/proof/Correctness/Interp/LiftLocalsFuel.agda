@@ -26,7 +26,7 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong)
 
-module _ {Σ : List Sig} (ds : All (λ s → Exp Σ (Args s) (Sig.cod s)) Σ) where
+module _ {Σ : List DSig} (ds : All (λ s → Exp Σ (Args s) (DSig.cod s)) Σ) where
   open C.Vals Σ
   private
     dsC = map ⌜_⌝ ds

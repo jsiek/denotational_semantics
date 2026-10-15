@@ -23,7 +23,7 @@ open import Mu.Semantics.Interp.Clos5 using (module Vals)
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-module _ {Σ : List Sig} where
+module _ {Σ : List DSig} where
   open Vals Σ
 
   atom : ∀ {Δ A} → Env Δ → Atm Σ Δ A → Val A
@@ -44,7 +44,7 @@ module _ {Σ : List Sig} where
   eval-simple call φ (fold a) = ret (fold (atom φ a))
   eval-simple call φ (unfold a) = ret (unfold-v (atom φ a))
 
-module _ {Σ : List Sig} (ds : All (λ s → Exp Σ (Args s) (Sig.cod s)) Σ) where
+module _ {Σ : List DSig} (ds : All (λ s → Exp Σ (Args s) (DSig.cod s)) Σ) where
   open Vals Σ
 
   eval : ∀ {Δ A} → ℕ → Env Δ → Exp Σ Δ A → Result (Val A)

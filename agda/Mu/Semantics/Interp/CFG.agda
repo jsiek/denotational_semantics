@@ -26,7 +26,7 @@ open import Mu.Semantics.Interp.Imp using (atom; eval-simple)
 open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
-module _ {Σ : List Sig} (ds : All (λ s → Body Σ (Sig.cod s) (Args s)) Σ) where
+module _ {Σ : List DSig} (ds : All (λ s → Body Σ (DSig.cod s) (Args s)) Σ) where
   open Vals Σ
 
   tail : ∀ {R Bs Δ} → ℕ → Blocks Σ R Bs → Env Δ → Tail Σ R Bs Δ → Result (Val R)

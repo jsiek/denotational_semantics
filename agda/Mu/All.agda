@@ -21,7 +21,7 @@
   * CEK machine + simulation: Mu/proof/Correctness/CEK/PipelineSim.agda
     (compile₄-correct);
   * clocked interpreter + value relations:
-    Mu/proof/Correctness/Interp/CompilerFuel.agda (compile₄-correct).
+    Mu/proof/Correctness/Interp/CompilerFuel.agda (compile-x86-correct).
 
 -}
 

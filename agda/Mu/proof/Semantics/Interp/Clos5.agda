@@ -12,7 +12,7 @@
 module Mu.proof.Semantics.Interp.Clos5 where
 
 open import Mu.Language.Type
-open import Mu.Language.Mon using (Sig; Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
+open import Mu.Language.Mon using (DSig; Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ᵛ)
 import Mu.Language.Clos5 as C
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
 open import proof.Semantics.Interp.Clock
@@ -27,7 +27,7 @@ def-map : ∀ {X : Set} {P Q : X → Set} {Σ s} (g : ∀ {s} → P s → Q s) (
 def-map g (d ∷ ds) Z = refl
 def-map g (d ∷ ds) (S x) = def-map g ds x
 
-module _ {Σ : List Sig} {ds : All (C.Code Σ) Σ} {ck : ℕ} where
+module _ {Σ : List DSig} {ds : All (C.Code Σ) Σ} {ck : ℕ} where
   open Vals Σ
 
   atm-bind : ∀ {Γ A B} {φ : Env Γ} (a : Atm Σ Γ A) {f : Val A → Result B}

@@ -35,7 +35,7 @@ open import Data.Product using (Σ-syntax; _×_; _,_)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 
-Ren : List Sig → List Sig → Set
+Ren : List DSig → List DSig → Set
 Ren Σ Σ' = ∀ {n} → Σ ∋ n → Σ' ∋ n
 
 {- Weakening of tables -----------------------------------------------------------}
@@ -126,7 +126,7 @@ glob₂-ext f L M D with glob L D | glob-ext L D
 
 {- For the final table dsf ------------------------------------------------------}
 
-module G {Σf : List Sig} (dsf : All (Code Σf) Σf) where
+module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   open T.Vals Σf renaming (Val to TVal; Env to TEnv)
 
   {- the definitions D are found in dsf through r -}
@@ -147,7 +147,7 @@ module G {Σf : List Sig} (dsf : All (Code Σf) Σf) where
   record GCode {Δ A B} (N : S.Tm (A ∷ tup Δ ∷ []) B) (f : Σf ∋ sig Δ A B) : Set where
     constructor gcode
     field
-      {Σ₀} : List Sig
+      {Σ₀} : List DSig
       D : Made Σ₀
       o : Out Σ₀ (λ Σ' → Tm Σ' (A ∷ tup Δ ∷ []) B)
       is-glob : glob N D ≡ o

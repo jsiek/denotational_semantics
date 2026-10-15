@@ -23,9 +23,9 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 
 import Mu.Semantics.Interp.Values
-module Vals (Σ : List Sig) = Mu.Semantics.Interp.Values (λ Δ A B → Σ ∋ sig Δ A B)
+module Vals (Σ : List DSig) = Mu.Semantics.Interp.Values (λ Δ A B → Σ ∋ sig Δ A B)
 
-module _ {Σ : List Sig} (ds : All (Code Σ) Σ) where
+module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   open Vals Σ
 
   eval : ∀ {Γ A} → ℕ → Env Γ → Tm Σ Γ A → Result (Val A)

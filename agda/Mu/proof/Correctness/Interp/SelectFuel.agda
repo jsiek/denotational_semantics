@@ -40,7 +40,7 @@ open import Data.List using (List; []; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; trans)
 
-module _ {Σ : List Sig} (ds : All (λ s → C.Body Σ (Sig.cod s) (Args s)) Σ) where
+module _ {Σ : List DSig} (ds : All (λ s → C.Body Σ (DSig.cod s) (Args s)) Σ) where
   open Vals Σ
 
   xds = map def-body ds
