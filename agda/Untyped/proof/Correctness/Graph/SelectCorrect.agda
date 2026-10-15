@@ -1,7 +1,7 @@
 {-
 
   Correctness of select instructions (CFG → X86, Compiler/Select.agda):
-  the meaning of the X86 program (Semantics/Graph/X86.agda) is that of the CFG
+  the meaning of the X86 program (Untyped/Semantics/Graph/X86.agda) is that of the CFG
   program (Semantics/Graph/CFG.agda), given that each global definition has at least
   2 slots, its parameters (Defs); the programs that compile-cfg produces
   do (defs-2).
@@ -45,8 +45,8 @@ open import Untyped.Compiler.Pipeline using (compile-x86; compile-cfg)
 open import Untyped.Semantics.Graph.Imp using (Table; Store; _[_↦_]; checked; 𝒜; 𝒜s; 𝒮; zeros; frame)
 open import Untyped.Semantics.Graph.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
-open import Semantics.Graph.X86
-open import proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
+open import Untyped.Semantics.Graph.X86
+open import Untyped.proof.Semantics.Graph.X86 using (Tagged; Inv; tagged-≈; inv-↦; case-core)
 open import Untyped.proof.Correctness.Graph.ExplicateCommon using (module Agreeing; checked-≃)
 open import Untyped.proof.Correctness.Graph.ExplicateCorrectK using (compile-cfg-same)
 open import Untyped.proof.Correctness.Graph.CompilerCorrect using (Same; Same-trans; ≃→Same)

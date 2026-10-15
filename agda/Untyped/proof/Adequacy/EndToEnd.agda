@@ -46,7 +46,7 @@ import proof.Adequacy.ISWIM as AI
 import Untyped.proof.Adequacy.ISWIMCompile as AIC
 import Untyped.proof.Adequacy.Clos5 as A5
 import Semantics.CEK.X86 as X
-import proof.Adequacy.X86 as AX
+import Untyped.proof.Adequacy.X86 as AX
 open import Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
 open import Untyped.proof.Correctness.Graph.SelectCorrect using (compile-x86-correct-const; compile-x86-correct-nonempty)
 

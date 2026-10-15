@@ -53,7 +53,7 @@ open import Untyped.Semantics.Graph.Clos4Iswim using () renaming (⟦_⟧ to ⟦
 open import Untyped.Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Untyped.Semantics.Graph.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
 open import Untyped.Semantics.Graph.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Untyped.Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import Untyped.proof.Correctness.Graph.EncloseCorrect as EncloseCorrect

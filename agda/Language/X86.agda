@@ -54,6 +54,7 @@ module Language.X86 where
 -}
 
 open import Framework.Primitives using (Base; base-rep)
+open import Language.Reg public
 
 open import Data.Fin using (Fin)
 open import Data.List using (List; []; _∷_; length)
@@ -62,8 +63,6 @@ open import Data.Nat using (ℕ; _≟_)
 open import Data.Product using (_×_; _,_)
 open import Relation.Nullary using (yes; no)
 
-data Reg : Set where
-  rax rdi rsi : Reg
 
 data Loc : Set where
   var : ℕ → Loc                           {- a slot of the current frame -}

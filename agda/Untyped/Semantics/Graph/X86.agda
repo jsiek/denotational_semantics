@@ -1,11 +1,11 @@
-module Semantics.Graph.X86 where
+module Untyped.Semantics.Graph.X86 where
 {-
 
  The semantics of X86, the language after the select-instructions pass
  (Language/X86.agda), in continuation-passing style, as Semantics/Graph/Typed/CFG.agda and
  Semantics/Graph/Typed/Imp.agda.
 
- The state of a body is its frame σ (a store, Semantics/Graph/Frames.agda), its
+ The state of a body is its frame σ (a store, Untyped/Semantics/Graph/Frames.agda), its
  registers ρ (a set of values for each), and the flag φ, a set of values
  left ⟨⟩ (set) and right ⟨⟩ (not set); ∅ is no flag, so that sete and je
  then error. What runs from a point of a body on (Kont) means, given
@@ -52,7 +52,7 @@ open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Domain
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim using (primD)
-open import Semantics.Graph.Frames
+open import Untyped.Semantics.Graph.Frames
   using (Table; Store; read; _[_↦_]; checked; zeros) public
 open import Language.Prim using (sub; eq)
 open import Language.X86 renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ)

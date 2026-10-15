@@ -4,7 +4,8 @@
   the denotation of a program is witnessed by a run of the machine, for
   the table ds of its definitions. As for untyped Clos5
   (Untyped/proof/Adequacy/Clos5LogRel.agda): a logical relation 𝕍 d v, by
-  recursion on the denotational value d (and on the injections dyn of v),
+  recursion on the denotational value d (and on the injections dyn of v;
+  Clos5Values.agda, shared with X86ᵀ, which runs definitions otherwise),
   and the fundamental lemma (adequate) by induction on the term, with the
   table related to the code pointers (𝕋, tab). Typed values have the
   shape of their type, so no case for a value of the wrong kind is
@@ -36,6 +37,7 @@ open import Semantics.CEK.Typed.Clos5
 open import Semantics.Observation using (Obs; o-const; Answer)
 open import Framework.Lookup using (_!_)
 open import proof.Adequacy.Clos5Common ds
+open import proof.Adequacy.Clos5Values using (module Rel; proj?-ok)
 import proof.Framework.GraphModel.Env as E
 
 open import Data.Bool using (true; false)
@@ -53,132 +55,13 @@ open import Data.Vec.Properties using (length-toList)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no; does)
 
-{- The logical relation ---------------------------------------------------------------}
+{- The logical relation (Clos5Values.agda) --------------------------------------------}
 
 {- definition f runs on the environment e and the argument a to a value with P -}
 Run : ∀ {n} → Σ ∋ n → Val Σ ⟪ tup n ⟫ → Val Σ Any → (Val Σ Any → Set) → Set
 Run f e a P = Σ[ v ∈ Val Σ Any ] (a ∷ e ∷ []) ⊢ ds ! f ⇓ v × P v
 
-𝕍 : ∀ {A} → Value → Val Σ A → Set
-𝕍s : ∀ {A} → List Value → Val Σ A → Set
-𝕍At : ∀ {n} → Fin n → Value → List (Val Σ Any) → Set
-
-𝕍 d (dyn G v) = 𝕍 d v
-𝕍 (dconst k) (const k') = dconst k ≡ dconst k'
-𝕍 ν (code f) = ⊤
-𝕍 (X ↦ ν) (code f) = ⊤
-𝕍 (X ↦ (Y ↦ w)) (code f) = ∀ e → 𝕍s X e → ∀ a → 𝕍s Y a → Run f e a (𝕍 w)
-𝕍 ⦅ u , u' ⦆ (pack c e) = 𝕍 u c × 𝕍 u' e
-𝕍 ⟨⟩ (tup []) = ⊤
-𝕍 (tup[ i ] d) (tup ws) = 𝕍At i d (toList ws)
-𝕍 (left d) (inl v) = 𝕍 d v
-𝕍 (right d) (inr v) = 𝕍 d v
-𝕍 _ _ = ⊥
-
-𝕍s [] v = ⊤
-𝕍s (d ∷ V) v = 𝕍 d v × 𝕍s V v
-
-𝕍At {suc n} zero d (v ∷ vs) = length vs ≡ n × 𝕍 d v
-𝕍At (suc i) d (v ∷ vs) = 𝕍At i d vs
-𝕍At _ d [] = ⊥
-
-𝕍s-∈ : ∀ {A} V {v : Val Σ A} {d} → 𝕍s V v → d ∈ mem V → 𝕍 d v
-𝕍s-∈ (d ∷ V) ⟨ r , _ ⟩ (here refl) = r
-𝕍s-∈ (d ∷ V) ⟨ _ , rs ⟩ (there d∈) = 𝕍s-∈ V rs d∈
-
-all→𝕍s : ∀ {A} V {v : Val Σ A} → (∀ d → d ∈ mem V → 𝕍 d v) → 𝕍s V v
-all→𝕍s [] all = tt
-all→𝕍s (d ∷ V) all = ⟨ all d (here refl) , all→𝕍s V (λ d' d'∈ → all d' (there d'∈)) ⟩
-
-𝕍At-lookup : ∀ {n} (i : Fin n) d (ws : Vec (Val Σ Any) n) → 𝕍At i d (toList ws) → 𝕍 d (lookup ws i)
-𝕍At-lookup zero d (w ∷ ws) ⟨ _ , r ⟩ = r
-𝕍At-lookup (suc i) d (w ∷ ws) r = 𝕍At-lookup i d ws r
-
-𝕍At-len : ∀ {n} (i : Fin n) d vs → 𝕍At i d vs → length vs ≡ n
-𝕍At-len {suc n} zero d (v ∷ vs) ⟨ len , _ ⟩ = cong suc len
-𝕍At-len (suc i) d (v ∷ vs) r = cong suc (𝕍At-len i d vs r)
-
-{- the tag of a value of type Any, read off a related element that a tag accepts -}
-tag : ∀ t {H} d (u : Val Σ ⟪ H ⟫) → accepts fun₄ t d → 𝕍 d u → H ≡ flat t
-tag tfun ⦅ _ , _ ⦆ (pack c e) _ _ = refl
-tag tfun ⦅ _ , _ ⦆ (const k) _ ()
-tag tfun ⦅ _ , _ ⦆ (tup ws) _ ()
-tag tfun ⦅ _ , _ ⦆ (inl v) _ ()
-tag tfun ⦅ _ , _ ⦆ (inr v) _ ()
-tag tfun (dconst k) u () _
-tag tfun (V ↦ w) u () _
-tag tfun ν u () _
-tag tfun ω u () _
-tag tfun (tup[ i ] d) u () _
-tag tfun (left d) u () _
-tag tfun (right d) u () _
-tag tfun ⟨⟩ u () _
-tag tsum _ (inl v) (inj₁ ⟨ _ , refl ⟩) _ = refl
-tag tsum _ (inr v) (inj₂ ⟨ _ , refl ⟩) _ = refl
-tag tsum _ (inr v) (inj₁ ⟨ _ , refl ⟩) ()
-tag tsum _ (inl v) (inj₂ ⟨ _ , refl ⟩) ()
-tag tsum _ (pack c e) (inj₁ ⟨ _ , refl ⟩) ()
-tag tsum _ (pack c e) (inj₂ ⟨ _ , refl ⟩) ()
-tag tsum _ (const k) (inj₁ ⟨ _ , refl ⟩) ()
-tag tsum _ (const k) (inj₂ ⟨ _ , refl ⟩) ()
-tag tsum _ (tup ws) (inj₁ ⟨ _ , refl ⟩) ()
-tag tsum _ (tup ws) (inj₂ ⟨ _ , refl ⟩) ()
-tag tint _ (const k) ⟨ _ , refl ⟩ refl = refl
-tag tint _ (pack c e) ⟨ _ , refl ⟩ ()
-tag tint _ (tup ws) ⟨ _ , refl ⟩ ()
-tag tint _ (inl v) ⟨ _ , refl ⟩ ()
-tag tint _ (inr v) ⟨ _ , refl ⟩ ()
-tag (ttup n i) _ (tup ws) ⟨ x , refl ⟩ r = cong tup (trans (sym (length-toList ws)) (𝕍At-len i x (toList ws) r))
-tag (ttup n i) _ (pack c e) ⟨ _ , refl ⟩ ()
-tag (ttup n i) _ (const k) ⟨ _ , refl ⟩ ()
-tag (ttup n i) _ (inl v) ⟨ _ , refl ⟩ ()
-tag (ttup n i) _ (inr v) ⟨ _ , refl ⟩ ()
-
-≟F-refl : ∀ G → (G ≟F G) ≡ yes refl
-≟F-refl G with G ≟F G
-... | yes refl = refl
-... | no ne = ⊥-elim (ne refl)
-
-proj?-ok : ∀ t (u : Val Σ ⟪ flat t ⟫) → proj? t (dyn (flat t) u) ≡ just u
-proj?-ok t u rewrite ≟F-refl (flat t) = refl
-
-{- primitives -}
-𝕍-δ : ∀ p n m → 𝕍 (dout (δ p n m)) (δᵀ {Σ} p n m)
-𝕍-δ sub n m = refl
-𝕍-δ eq n m with does (n ≟ℤ m)
-... | true = tt
-... | false = tt
-
-{- the observation of a value related to a constant is that constant -}
-𝕍-const : ∀ {A B} {k : base-rep B} (v : Val Σ A) → 𝕍 (dconst k) v → obs v ≡ o-const B k
-𝕍-const (dyn G v) r = 𝕍-const v r
-𝕍-const (const k) refl = refl
-𝕍-const (code f) ()
-𝕍-const (pack c e) ()
-𝕍-const (tup ws) ()
-𝕍-const (inl v) ()
-𝕍-const (inr v) ()
-
-obs-answer : ∀ {A} (v : Val Σ A) → Answer (obs v)
-obs-answer (dyn G v) = obs-answer v
-obs-answer (code f) ()
-obs-answer (pack c e) ()
-obs-answer (const k) ()
-obs-answer (tup ws) ()
-obs-answer (inl v) ()
-obs-answer (inr v) ()
-
-{- Related environments and tables -----------------------------------------------------}
-
-𝔾 : ∀ {Γ} → E.Env Value → Env Σ Γ → Set
-𝔾 {Γ} ρ γ = ∀ {A} (x : Γ ∋ A) d → d ∈ ρ (idx x) → 𝕍 d (γ ! x)
-
-𝔾-ext : ∀ {Γ A ρ} {γ : Env Σ Γ} V (v : Val Σ A) → 𝔾 ρ γ → 𝕍s V v → 𝔾 (mem V • ρ) (v ∷ γ)
-𝔾-ext V v G Vv Z d d∈ = 𝕍s-∈ V Vv d∈
-𝔾-ext V v G Vv (S x) = G x
-
-𝕋 : Table Σ → Set
-𝕋 T = ∀ {n} (f : Σ ∋ n) d → d ∈ T f → 𝕍 d (code f)
+open Rel Run public
 
 {- Lemmas about runs -------------------------------------------------------------------}
 
@@ -289,39 +172,7 @@ adequate-args (M ∷ Ms) 𝕋T G ne with adequate M 𝕋T G (proj₂ (ne zero)) 
 
 {- The table of the program ---------------------------------------------------------------}
 
-{- the code of definition f, which the machine finds: N -}
-code-rel : ∀ {n} {f : Σ ∋ n} (N : Code Σ n) {T : Table Σ} → ds ! f ≡ N → 𝕋 T → ∀ d → d ∈ code′ T N → 𝕍 d (code f)
-code-rel N q 𝕋T ν _ = tt
-code-rel N q 𝕋T (X ↦ ν) _ = tt
-code-rel N q 𝕋T (X ↦ (Y ↦ w)) ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ e Xe a Ya with adequate N 𝕋T G w∈
-  where
-  G : 𝔾 (mem Y • mem X • λ _ → init) (a ∷ e ∷ [])
-  G Z d d∈ = 𝕍s-∈ Y Ya d∈
-  G (S Z) d d∈ = 𝕍s-∈ X Xe d∈
-... | ⟨ v , ⟨ ev , r ⟩ ⟩ = ⟨ v , ⟨ subst (λ B → (a ∷ e ∷ []) ⊢ B ⇓ v) (sym q) ev , r ⟩ ⟩
-code-rel N q 𝕋T (X ↦ dconst k) ()
-code-rel N q 𝕋T (X ↦ ω) ()
-code-rel N q 𝕋T (X ↦ ⦅ u , v ⦆) ()
-code-rel N q 𝕋T (X ↦ (tup[ i ] d)) ()
-code-rel N q 𝕋T (X ↦ left d) ()
-code-rel N q 𝕋T (X ↦ right d) ()
-code-rel N q 𝕋T (X ↦ ⟨⟩) ()
-code-rel N q 𝕋T (dconst k) ()
-code-rel N q 𝕋T ω ()
-code-rel N q 𝕋T ⦅ u , v ⦆ ()
-code-rel N q 𝕋T (tup[ i ] d) ()
-code-rel N q 𝕋T (left d) ()
-code-rel N q 𝕋T (right d) ()
-code-rel N q 𝕋T ⟨⟩ ()
-
-{- a part ps of the table, reached through r -}
-tab : ∀ {ns} (ps : All (Code Σ) ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n) → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
-  → (∀ {n} (g : ns ∋ n) → ds ! r g ≡ ps ! g) → 𝕋 (tables code′ ps)
-tab [] r rl L f d ()
-tab {_ ∷ ns} (N ∷ ps) r rl L f d d∈ with lvl f ≟ length ns
-... | no _ = tab ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x)) f d d∈
-... | yes l with lvl-inj f (r Z) (trans l (sym (rl Z)))
-...   | refl = code-rel N (L Z) (tab ps (λ x → r (S x)) (λ x → rl (S x)) (λ x → L (S x))) d d∈
-
+{- the code of definition f, which the machine finds -}
 tab-ds : 𝕋 (tables code′ ds)
-tab-ds = tab ds (λ x → x) (λ _ → refl) (λ _ → refl)
+tab-ds = tab code′ ds λ {T} 𝕋T {n} f → code-𝕍 (λ X Y → ⟦ ds ! f ⟧[ T ] (Y • X • λ _ → init)) λ X Y w w∈ e Xe a Ya →
+  adequate (ds ! f) 𝕋T (λ { Z d d∈ → 𝕍s-∈ Y Ya d∈ ; (S Z) d d∈ → 𝕍s-∈ X Xe d∈ }) w∈

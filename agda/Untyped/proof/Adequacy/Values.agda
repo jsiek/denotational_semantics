@@ -19,7 +19,7 @@
 
 -}
 
-module proof.Adequacy.Values where
+module Untyped.proof.Adequacy.Values where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (int; bool; δ)
@@ -30,7 +30,7 @@ open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (ℬ; inl; inr; pair-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (pair to dpair)
 open import proof.Semantics.Graph.Prim using (primD) renaming (out to dout)
-open import Semantics.Graph.Frames using (Table)
+open import Untyped.Semantics.Graph.Frames using (Table)
 open import Semantics.Observation
 open import proof.Framework.ListUtil using (proj; has-length)
 open import Semantics.CEK.Values using (Val; code; pair; const; tup; obs; obs-list; out)

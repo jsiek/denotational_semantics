@@ -37,7 +37,7 @@ open import Compiler.EncloseScope using (Closed)
 open import Untyped.Theorems.Denotational using (ρ₀)
 open import Semantics.Graph.ISWIM using (⟦_⟧)
 open import Untyped.Semantics.Graph.Clos5Iswim using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
-open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Untyped.Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 import Semantics.CEK.ISWIM as ISWIMₘ
 import Untyped.Semantics.CEK.Clos5 as Clos5ₘ
@@ -46,7 +46,7 @@ import Semantics.CEK.X86 as X86ₘ
 import proof.Adequacy.ISWIM as AdequacyISWIM
 import Untyped.proof.Adequacy.ISWIMCompile as ISWIMCompile
 import Untyped.proof.Adequacy.Clos5 as AdequacyClos5
-import proof.Adequacy.X86 as AdequacyX86
+import Untyped.proof.Adequacy.X86 as AdequacyX86
 open import Untyped.proof.Adequacy.X86CompileWF using (compile-x86-wf)
 import Untyped.proof.Adequacy.EndToEnd as EndToEnd
 

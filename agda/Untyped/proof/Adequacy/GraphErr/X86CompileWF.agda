@@ -38,15 +38,15 @@ open import Data.Product using (_×_; _,_; proj₁; proj₂; Σ-syntax)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
-open import proof.Adequacy.GraphErr.X86WF
+open import Untyped.proof.Adequacy.GraphErr.X86WF
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ω) renaming (const to dconst)
-open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
 import Semantics.CEK.X86 as X86ₘ
-open import proof.Adequacy.GraphErr.X86 using (error-iff; const-iff; converges-iff; diverges-iff)
+open import Untyped.proof.Adequacy.GraphErr.X86 using (error-iff; const-iff; converges-iff; diverges-iff)
 open import Relation.Binary.PropositionalEquality using (_≢_)
 open import Relation.Nullary using (¬_)
 

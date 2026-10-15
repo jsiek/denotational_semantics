@@ -1,7 +1,7 @@
 {-
 
   Lemmas about the semantics of X86 in the graph model
-  (Semantics/Graph/X86.agda), used by the proofs of select instructions
+  (Untyped/Semantics/Graph/X86.agda), used by the proofs of select instructions
   of both pipelines (Correctness/Graph/SelectCorrect.agda, and that of
   the preserved untyped pipeline): no slot holds both an inl and an inr
   (Tagged, Inv), and X86's case, which tests the operand (isinl), binds
@@ -10,9 +10,9 @@
 
 -}
 
-module proof.Semantics.Graph.X86 where
+module Untyped.proof.Semantics.Graph.X86 where
 
-open import Semantics.Graph.X86 public
+open import Untyped.Semantics.Graph.X86 public
 
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain

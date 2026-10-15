@@ -2,7 +2,7 @@
 
   Correctness of select instructions (CFG → X86, Compiler/Select.agda) in
   the graph model with errors: the meaning of the X86 program
-  (Semantics/GraphErr/X86.agda) is that of the CFG program
+  (Untyped/Semantics/GraphErr/X86.agda) is that of the CFG program
   (Semantics/GraphErr/CFG.agda).
 
     select-correct : ⟦ select P ⟧ₚ ≃ ⟪ P ⟫ₚ
@@ -48,7 +48,7 @@ open import Compiler.EncloseScope using (Closed)
 open import Untyped.Semantics.GraphErr.Imp using (𝒜; 𝒜s; 𝒮; frame)
 open import Untyped.Semantics.GraphErr.CFG
   using () renaming (⟦_⟧[_] to ⟪_⟫[_]; Blocks to Blocksₜ; blocks to blocksₜ; table to tableₜ; code to codeₜ; ⟦_⟧ₚ to ⟪_⟫ₚ)
-open import Semantics.GraphErr.X86
+open import Untyped.Semantics.GraphErr.X86
 open import Untyped.proof.Correctness.GraphErr.ExplicateCorrect using (module Agreeing; frameᵐ-≃)
 open import Framework.Primitives using (Int)
 open import Framework.GraphModel.OpsBase using (ℬ)

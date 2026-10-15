@@ -5,10 +5,11 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
-  The intermediate languages (Language/Typed/) are intrinsically typed;
-  the source, ISWIM, and the target, X86, are untyped. The untyped
+  The intermediate languages and the target, the typed assembly
+  language X86ᵀ (Language/Typed/), are intrinsically typed; the source,
+  ISWIM, is untyped. The untyped
   pipeline that preceded this one is preserved in Untyped/ (see
   Untyped/All.agda), and checked too.
 
@@ -38,6 +39,14 @@ import Theorems.Interpreter
 import Theorems.Reduction
 import Theorems.GraphErrors
 import Theorems.Adequacy
+
+{- assurance (not in the totals, nor in the comparison): erasing X86ᵀ to
+   X86 keeps the meaning of every program, in the CEK machines, and the
+   code select emits is, without its types, that of select into untyped
+   X86 -}
+import Theorems.X86Erasure
+import proof.Assurance.X86Agree
+import proof.Assurance.X86Erasure
 
 {- ---------------------------------------------------------------------------
    The untyped pipeline, preserved
@@ -106,7 +115,7 @@ import proof.Framework.abt.ScopedTuple
 
 import proof.Compiler.CastScope
 import proof.Compiler.GlobalizeOlder
-import proof.Compiler.SelectFacts
+import proof.Compiler.SelectErase
 import proof.Compiler.SimplifyFacts
 import proof.Compiler.SimplifyScope
 
@@ -139,7 +148,6 @@ import proof.Semantics.Graph.Typed.Clos3
 import proof.Semantics.Graph.Typed.Clos4
 import proof.Semantics.Graph.Typed.Clos5
 import proof.Semantics.Graph.Typed.Ops
-import proof.Semantics.Graph.X86
 
 {- ---------------------------------------------------------------------------
    proof/: the CEK machines + simulations
@@ -221,13 +229,7 @@ import proof.Correctness.GraphErr.GlobalizeCorrect
 import proof.Correctness.GraphErr.LiftLocalsCorrect
 import proof.Correctness.GraphErr.OptimizeCorrect
 import proof.Correctness.GraphErr.RCOCorrect
-import proof.Correctness.GraphErr.SelectCheck
-import proof.Correctness.GraphErr.SelectCheckOk
 import proof.Correctness.GraphErr.SelectCorrect
-import proof.Correctness.GraphErr.SelectPreserve
-import proof.Correctness.GraphErr.SelectReflect
-import proof.Correctness.GraphErr.SelectRel
-import proof.Correctness.GraphErr.SelectX86
 import proof.Correctness.GraphErr.SimplifyCorrect
 import proof.Semantics.GraphErr.ISWIM
 import proof.Semantics.GraphErr.Prim
@@ -237,9 +239,10 @@ import proof.Semantics.GraphErr.Typed.Clos3
 import proof.Semantics.GraphErr.Typed.Clos4
 import proof.Semantics.GraphErr.Typed.Clos5
 import proof.Semantics.GraphErr.Typed.Imp
+import proof.Adequacy.GraphErr.X86Mono
 
 {- ---------------------------------------------------------------------------
-   proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86
+   proof/: adequacy of the plain graph model (ISWIM, Clos5ᵀ and X86ᵀ
    machines) and of the graph model with errors (ISWIM and X86 machines;
    Clos5ᵀ derived from the CEK column's simulation)
    --------------------------------------------------------------------------- -}
@@ -248,6 +251,7 @@ import proof.Adequacy.Clos5
 import proof.Adequacy.Clos5Common
 import proof.Adequacy.Clos5LogRel
 import proof.Adequacy.Clos5Soundness
+import proof.Adequacy.Clos5Values
 import proof.Adequacy.Common
 import proof.Adequacy.EndToEnd
 import proof.Adequacy.GraphErr.Agree
@@ -258,21 +262,16 @@ import proof.Adequacy.GraphErr.Simplify
 import proof.Adequacy.GraphErr.Soundness
 import proof.Adequacy.GraphErr.X86
 import proof.Adequacy.GraphErr.X86Common
-import proof.Adequacy.GraphErr.X86Consistent
 import proof.Adequacy.GraphErr.X86LogRel
 import proof.Adequacy.GraphErr.X86Soundness
-import proof.Adequacy.GraphErr.X86WF
 import proof.Adequacy.ISWIM
 import proof.Adequacy.LogRel
 import proof.Adequacy.Soundness
-import proof.Adequacy.Values
 import proof.Adequacy.X86
 import proof.Adequacy.X86Common
-import proof.Adequacy.X86CompileWF
+import proof.Adequacy.X86Compiled
 import proof.Adequacy.X86LogRel
-import proof.Adequacy.X86Refs
 import proof.Adequacy.X86Soundness
-import proof.Adequacy.X86WF
 
 {- ---------------------------------------------------------------------------
    examples (smoke tests)

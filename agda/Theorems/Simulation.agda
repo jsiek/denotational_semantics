@@ -9,11 +9,11 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language has a small-step machine (here Lₘ.sem for language L):
-  untyped ISWIM (Semantics/CEK/ISWIM.agda) and X86
-  (Semantics/CEK/X86.agda), and the typed ones (Semantics/CEK/Typed/).
+  untyped ISWIM (Semantics/CEK/ISWIM.agda), and the typed ones
+  (Semantics/CEK/Typed/), down to the typed assembly language X86ᵀ.
   Monᵀ has no machine: a Monᵀ program runs as its embedding ⌜ P ⌝ₚ
   (Language/Typed/Mon.agda) on the Clos5ᵀ machine. A machine terminates
   with an observation (Semantics/Observation.agda) or diverges. Two
@@ -69,7 +69,7 @@ import Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
 import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
 import Semantics.CEK.Typed.Imp as Impᵀₘ
 import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.X86 as X86ₘ
+import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 import proof.Correctness.CEK.SimplifySim as SimplifySim
 import proof.Correctness.CEK.EncloseSim as EncloseSim
@@ -119,8 +119,8 @@ lift-locals-correct = LiftLocalsSim.lift-locals-correct
 explicate-correct : ∀ (P : Impᵀ.Program) → Equivalent (Impᵀₘ.sem P) (CFGᵀₘ.sem (explicate P))
 explicate-correct = ExplicateSim.explicate-correct
 
-{- X86 keeps its own trapped errors; select's code never reaches them -}
-select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀₘ.sem P) (X86ₘ.sem (select P))
+{- X86ᵀ's only trapped error is chk's, project's check -}
+select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀₘ.sem P) (X86ᵀₘ.sem (select P))
 select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
@@ -137,7 +137,7 @@ compile-imp-correct = PipelineSim.compile-imp-correct
 compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (CFGᵀₘ.sem (compile-cfg M))
 compile-cfg-correct = PipelineSim.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (X86ₘ.sem (compile-x86 M))
+compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMₘ.sem M) (X86ᵀₘ.sem (compile-x86 M))
 compile-x86-correct = PipelineSim.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the

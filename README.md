@@ -3,8 +3,9 @@ Denotational semantics based on graph and filter models
 
 ## The closure-conversion compiler
 
-`agda/All.agda` gathers a compiler from ISWIM to X86, with closure
-conversion and intrinsically typed intermediate languages, and its
+`agda/All.agda` gathers a compiler from ISWIM to X86ᵀ, a typed assembly
+language, with closure conversion and intrinsically typed intermediate
+languages, and its
 correctness proofs, in five styles (denotational: graph model; CEK
 machine + simulation, after CompCert; clocked interpreter + value
 relations, after CakeML; reduction semantics + simulation, by
@@ -14,18 +15,23 @@ two graph models for the machines:
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: enclose--> Clos2ᵀ
           --CC: optimize--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
           --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
 (The passes marked "CC:" are the closure-conversion passes; the
 languages marked ᵀ are intrinsically typed.)
 
-The source, ISWIM, and the target, X86 (x86 with variables over
-abstract values), are untyped. Cast insertion, after *Essentials of
+The source, ISWIM, is untyped. Cast insertion, after *Essentials of
 Compilation*, ch. 9, makes every check of the kind of a value explicit,
 as a `project` from the type `Any` of tagged values; in the typed
-languages after it, `project` is the only operation that can fail, and
-select instructions compiles it to an X86 instruction that errs on a
-value of another kind.
+languages after it, `project` is the only operation that can fail. The
+target, X86ᵀ, is x86 with variables over abstract values, intrinsically
+typed after Morrisett, Walker, Crary and Glew's TAL: its instructions
+are typed by the types of the registers, the frame and the flag they
+start and end with, and its only check is `project`'s (`chk`), which
+stands for the X86 instruction that errs on a value of another kind.
+Without its types, the code is that of x86 with variables (untyped X86),
+which select emitted before (an assurance theorem,
+`agda/Theorems/X86Erasure.agda`).
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a

@@ -36,7 +36,7 @@ import Semantics.CEK.Typed.Clos4 as Clos4ᵀₘ
 import Semantics.CEK.Typed.Clos5 as Clos5ᵀₘ
 import Semantics.CEK.Typed.Imp as Impᵀₘ
 import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.X86 as X86ₘ
+import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges)
@@ -65,7 +65,7 @@ compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-locals-cor
 compile-cfg-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (CFGᵀₘ.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct _)
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (X86ₘ.sem (compile-x86 M))
+compile-x86-correct : ∀ M → Closed M → Equivalent (ISWIMₘ.sem M) (X86ᵀₘ.sem (compile-x86 M))
 compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct _)
 
 {- in particular, for compile -}

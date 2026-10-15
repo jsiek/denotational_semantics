@@ -8,8 +8,9 @@
                    ⇔  Clos5ᵀ machine         (Adequacy/Clos5.agda)
 
   with Clos5ᵀ adequacy's precondition discharged by globalize-older, and
-  likewise into X86 through the X86 machine (Adequacy/X86.agda), with its
-  precondition discharged by compile-x86-wf (Adequacy/X86CompileWF.agda).
+  likewise into X86ᵀ through the X86ᵀ machine (Adequacy/X86.agda, whose
+  precondition the compiled programs meet, X86Compiled.agda), from
+  compile-x86-same.
 
 -}
 
@@ -26,11 +27,10 @@ open import proof.Semantics.CEK.Smallstep using (Terminates)
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 import Semantics.CEK.ISWIM as I
 import Semantics.CEK.Typed.Clos5 as C5
-import Semantics.CEK.X86 as X
+import Semantics.CEK.Typed.X86 as X
 import proof.Adequacy.ISWIM as AI
 import proof.Adequacy.Clos5 as A5
 import proof.Adequacy.X86 as AX
-open import proof.Adequacy.X86CompileWF using (compile-x86-wf)
 open import proof.Compiler.GlobalizeOlder using (globalize-older)
 open import proof.Correctness.Graph.CompilerCorrect using (compile-same; compile-x86-same)
 
@@ -65,13 +65,11 @@ end-to-end-converges M c =
 end-to-end-x86-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
   → Terminates (I.sem M) (o-const B k) ⇔ Terminates (X.sem (compile-x86 M)) (o-const B k)
 end-to-end-x86-const M c k =
-  ⟨ (λ t → AX.adequacy-const (compile-x86 M) wf (proj₁ (proj₁ (compile-x86-same M c) k) (AI.sound-const M t)))
-  , (λ t → AI.adequacy-const M c (proj₂ (proj₁ (compile-x86-same M c) k) (AX.sound-const (compile-x86 M) wf t))) ⟩
-  where wf = compile-x86-wf M c
+  ⟨ (λ t → proj₁ (AX.x86-const-iff M c) (proj₁ (proj₁ (compile-x86-same M c) k) (AI.sound-const M t)))
+  , (λ t → AI.adequacy-const M c (proj₂ (proj₁ (compile-x86-same M c) k) (proj₂ (AX.x86-const-iff M c) t))) ⟩
 
 end-to-end-x86-converges : ∀ M → Closed M
   → Converges (Terminates (I.sem M)) ⇔ Converges (Terminates (X.sem (compile-x86 M)))
 end-to-end-x86-converges M c =
-  ⟨ (λ t → AX.adequacy-converges (compile-x86 M) wf (proj₁ (proj₂ (compile-x86-same M c)) (AI.sound-nonempty M t)))
-  , (λ t → AI.adequacy-converges M c (proj₂ (proj₂ (compile-x86-same M c)) (AX.sound-nonempty (compile-x86 M) wf t))) ⟩
-  where wf = compile-x86-wf M c
+  ⟨ (λ t → proj₁ (AX.x86-nonempty-iff M c) (proj₁ (proj₂ (compile-x86-same M c)) (AI.sound-nonempty M t)))
+  , (λ t → AI.adequacy-converges M c (proj₂ (proj₂ (compile-x86-same M c)) (proj₂ (AX.x86-nonempty-iff M c) t))) ⟩

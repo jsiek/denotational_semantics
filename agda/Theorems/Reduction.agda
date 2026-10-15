@@ -9,15 +9,14 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language with binders has a reduction semantics by substitution
   (here Lᵣ.sem for language L): untyped ISWIM
   (Semantics/Reduction/ISWIM.agda) and the typed ones
   (Semantics/Reduction/Typed/). Monᵀ runs as its embedding ⌜ P ⌝ₚ
-  (Language/Typed/Mon.agda) in Clos5ᵀ. Impᵀ, CFGᵀ and X86 have no
-  binders and keep their machines (here Lₘ.sem, Semantics/CEK/Typed/ and
-  Semantics/CEK/X86.agda). A semantics terminates with an observation
+  (Language/Typed/Mon.agda) in Clos5ᵀ. Impᵀ, CFGᵀ and X86ᵀ have no
+  binders and keep their machines (here Lₘ.sem, Semantics/CEK/Typed/). A semantics terminates with an observation
   (Semantics/Observation.agda) or diverges. Two semantics are Equivalent
   (Framework/Smallstep.agda) when each terminates with o exactly when the
   other does (o-error, an error, included), and one diverges exactly
@@ -71,7 +70,7 @@ import Semantics.Reduction.Typed.Clos4 as Clos4ᵀᵣ
 import Semantics.Reduction.Typed.Clos5 as Clos5ᵀᵣ
 import Semantics.CEK.Typed.Imp as Impᵀₘ
 import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.X86 as X86ₘ
+import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 import proof.Correctness.Reduction.SimplifyRed as SimplifyRed
 import proof.Correctness.Reduction.CastRed as CastRed
@@ -120,12 +119,12 @@ lift-locals-correct : ∀ (P : Monᵀ.Program) → Equivalent (Clos5ᵀᵣ.sem �
 lift-locals-correct = LiftLocalsRed.lift-locals-correct
 
 {- explicate control and select instructions, between the machines of
-   Impᵀ, CFGᵀ and X86 (the proofs of the CEK machine + simulation column) -}
+   Impᵀ, CFGᵀ and X86ᵀ (the proofs of the CEK machine + simulation column) -}
 explicate-correct : ∀ (P : Impᵀ.Program) → Equivalent (Impᵀₘ.sem P) (CFGᵀₘ.sem (explicate P))
 explicate-correct = ExplicateSim.explicate-correct
 
-{- X86 keeps its own trapped errors; select's code never reaches them -}
-select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀₘ.sem P) (X86ₘ.sem (select P))
+{- X86ᵀ's only trapped error is chk's, project's check -}
+select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀₘ.sem P) (X86ᵀₘ.sem (select P))
 select-correct = SelectSim.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
@@ -142,7 +141,7 @@ compile-imp-correct = PipelineRed.compile-imp-correct
 compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMᵣ.sem M) (CFGᵀₘ.sem (compile-cfg M))
 compile-cfg-correct = PipelineRed.compile-cfg-correct
 
-compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMᵣ.sem M) (X86ₘ.sem (compile-x86 M))
+compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMᵣ.sem M) (X86ᵀₘ.sem (compile-x86 M))
 compile-x86-correct = PipelineRed.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the

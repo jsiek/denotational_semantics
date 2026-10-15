@@ -29,7 +29,7 @@ import Untyped.Semantics.GraphErr.Clos4 as S4
 open import Untyped.Semantics.GraphErr.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Untyped.Semantics.GraphErr.ImpK using () renaming (⟦_⟧ᴷₚ to ⟦_⟧ᵢ)
 open import Untyped.Semantics.GraphErr.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Untyped.Semantics.GraphErr.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
 
 open import proof.Correctness.GraphErr.SimplifyCorrect using (simplify-correct)
 open import Untyped.proof.Correctness.GraphErr.EncloseCorrect using (enclose-correct)

@@ -1,7 +1,7 @@
 {-
 
   The table of every X86 program is consistent in the graph model with
-  errors (Semantics/GraphErr/X86.agda): table-con. Soundness
+  errors (Untyped/Semantics/GraphErr/X86.agda): table-con. Soundness
   (GraphErr/X86Soundness.agda) binds finite parts of the denotations of
   machine values, and code pointers denote entries of the table, so these
   must be consistent.
@@ -15,7 +15,7 @@
 
 -}
 
-module proof.Adequacy.GraphErr.X86Consistent where
+module Untyped.proof.Adequacy.GraphErr.X86Consistent where
 
 open import Framework.Primitives using (Int)
 open import Language.Prim using (sub; eq)
@@ -31,7 +31,7 @@ open import Framework.GraphModel.Ops using (payloadD)
 open import proof.Framework.GraphModel.Domain using (~-refl)
 open import Language.X86
   renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
-open import Semantics.GraphErr.X86
+open import Untyped.Semantics.GraphErr.X86
 
 open import Data.Empty using (⊥-elim)
 open import Data.Integer using (+_)

@@ -7,13 +7,13 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   To read them: the typed languages (Language/Typed/), the passes
-  (Compiler/), the semantics of each typed language
+  (Compiler/), the semantics of each typed language, X86ᵀ included
   (Semantics/Graph/Typed/; Monᵀ means its embedding into Clos5ᵀ, ⌜_⌝ₚ),
-  those of ISWIM and X86 (Semantics/Graph/), and the domain and operators
-  they are built from (Framework/GraphModel/). In the graph model a
+  that of ISWIM (Semantics/Graph/), and the domain and operators they
+  are built from (Framework/GraphModel/). In the graph model a
   failed project, like any error, means ∅.
 
 -}
@@ -59,7 +59,7 @@ open import Semantics.Graph.Typed.Clos4 using () renaming (⟦_⟧ to ⟦_⟧₄
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
 
 import proof.Correctness.Graph.SimplifyCorrect as SimplifyCorrect
 import proof.Correctness.Graph.CastCorrect as Cast
@@ -129,7 +129,7 @@ explicate-correct = Explicate.explicate-correct
 
 {- for every CFGᵀ program: a frame is typed, so select's frames are large
    enough by construction -}
-select-correct : ∀ (P : CFGᵀ.Program) → ⟦ select P ⟧ₓ ≃ ⟦ P ⟧ᶜ
+select-correct : ∀ (P : CFGᵀ.Program) → ⟦ select P ⟧ₜ ≃ ⟦ P ⟧ᶜ
 select-correct = Select.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
@@ -137,7 +137,7 @@ select-correct = Select.select-correct
 {- the compiled program produces the same constants as the original, and
    produces something exactly when the original does: into Clos5ᵀ
    (compile), Monᵀ (compile-mon), Impᵀ (compile-imp), CFGᵀ (compile-cfg)
-   and X86 (compile-x86) -}
+   and X86ᵀ (compile-x86) -}
 
 compile-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
   → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile M ⟧₅)
@@ -180,11 +180,11 @@ compile-cfg-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
 compile-cfg-correct-nonempty M w = proj₂ (Compiler.compile-cfg-same M w)
 
 compile-x86-correct-const : ∀ (M : ISWIM.AST) → Closed M → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₓ)
-  × (const c ∈ ⟦ compile-x86 M ⟧ₓ → const c ∈ ⟦ M ⟧ ρ₀)
+  → (const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ compile-x86 M ⟧ₜ)
+  × (const c ∈ ⟦ compile-x86 M ⟧ₜ → const c ∈ ⟦ M ⟧ ρ₀)
 compile-x86-correct-const M w = proj₁ (Compiler.compile-x86-same M w)
 
 compile-x86-correct-nonempty : ∀ (M : ISWIM.AST) → Closed M
-  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₓ)
-  × (nonempty ⟦ compile-x86 M ⟧ₓ → nonempty (⟦ M ⟧ ρ₀))
+  → (nonempty (⟦ M ⟧ ρ₀) → nonempty ⟦ compile-x86 M ⟧ₜ)
+  × (nonempty ⟦ compile-x86 M ⟧ₜ → nonempty (⟦ M ⟧ ρ₀))
 compile-x86-correct-nonempty M w = proj₂ (Compiler.compile-x86-same M w)

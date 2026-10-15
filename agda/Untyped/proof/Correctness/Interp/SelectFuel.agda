@@ -36,7 +36,7 @@ open import proof.Semantics.Interp.Clock
 open import Untyped.Semantics.Interp.Clos5 using (Val; code; pair; const; tup; inl; inr; obs; out; first; second; project; prim?)
 open import Untyped.Semantics.Interp.Imp using (_[_]≔_; atom; atoms; eval-simple)
 import Untyped.Semantics.Interp.CFG as G
-import Semantics.Interp.X86 as X
+import Untyped.Semantics.Interp.X86 as X
 open X using (regs; arg; args; write; bool?)
 import Semantics.Interp.ISWIM as ISWIM
 open import Untyped.proof.Correctness.Interp.ExplicateFuel using (compile-cfg-correct)

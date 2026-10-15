@@ -1,8 +1,8 @@
-module Semantics.Graph.Frames where
+module Untyped.Semantics.Graph.Frames where
 {-
 
  Tables of global definitions and stores of frame slots in the graph
- model, which the semantics of X86 (Semantics/Graph/X86.agda) uses, and
+ model, which the semantics of X86 (Untyped/Semantics/Graph/X86.agda) uses, and
  which the semantics of the preserved untyped Clos5, Imp and CFG
  (agda/Untyped/) share with it.
 

@@ -1,11 +1,11 @@
 # The closure-conversion compiler and its correctness proofs
 
-A compiler from ISWIM to X86,
+A compiler from ISWIM to X86ᵀ, a typed assembly language,
 
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: enclose--> Clos2ᵀ
           --CC: optimize--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
           --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
 (The passes marked "CC:" are the closure-conversion passes; the
 languages marked ᵀ are intrinsically typed.)
@@ -18,14 +18,19 @@ substitution, and forward simulations); and the graph model with errors
 (an error denotes a set holding ω, divergence ∅); with both graph models
 proved sound and adequate for the machines.
 
-The source, ISWIM, and the target, X86, are untyped. Cast insertion
-(after *Essentials of Compilation*, ch. 9) makes every check of the kind
-of a value explicit, as a `project` from the type `Any` of tagged
-values, placed where the ISWIM machine checks; the intermediate
-languages after it are intrinsically typed (terms indexed by a context
-and a type), so `project` is the only operation that can fail, until
-select instructions compiles it to an X86 instruction that errs on a
-value of another kind.
+The source, ISWIM, is untyped. Cast insertion (after *Essentials of
+Compilation*, ch. 9) makes every check of the kind of a value explicit,
+as a `project` from the type `Any` of tagged values, placed where the
+ISWIM machine checks; the languages after it are intrinsically typed
+(terms indexed by a context and a type), so `project` is the only
+operation that can fail. The target, X86ᵀ (`Language/Typed/X86.agda`),
+is a typed assembly language after Morrisett, Walker, Crary and Glew's
+TAL: x86 with variables over abstract values, its instructions typed by
+the machine states they start and end in (the types of the registers,
+the frame, the open closure and the flag); its only check is
+`project`'s, `chk`, which stands for the X86 instruction that errs on a
+value of another kind and the move. Without the types it is untyped X86
+(`Language/X86.agda`), the target of the untyped pipeline.
 
 The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
 simplified version of Chez Scheme's cp0: constant folding, case of a
@@ -49,19 +54,27 @@ other than `--without-K`, failing if it finds any.
 ## Layout
 
 * `Theorems/`: the public theorem statements (below).
-* `Language/`: the untyped source ISWIM, the untyped target X86, and the
-  primitives; `Language/Typed/`: the types (`Type.agda`: `Any`, the flat
-  types, the tags `project` tests, `code n`) and the typed languages
-  ISWIMᵀ, Clos2ᵀ–Clos5ᵀ, Monᵀ, Impᵀ and CFGᵀ.
+* `Language/`: the untyped source ISWIM, untyped X86 (the untyped
+  pipeline's target), and the primitives; `Language/Typed/`: the types
+  (`Type.agda`: `Any`, the flat types, the tags `project` tests,
+  `code n`), the typed languages ISWIMᵀ, Clos2ᵀ–Clos5ᵀ, Monᵀ, Impᵀ and
+  CFGᵀ, and the target, X86ᵀ (`X86.agda`), with its erasure into X86
+  (`X86Erase.agda`).
 * `Compiler/`: the passes (simplify, cast insertion, enclose, optimize,
   concretize, delay, globalize, rco, lift locals, explicate control,
-  select instructions) and their compositions (`Pipeline.agda`:
-  `compile₄`, `compile`, `compile-mon`, `compile-imp`, `compile-cfg`,
-  `compile-x86`), and `Closed` (`EncloseScope.agda`), the precondition
-  of the theorems about the whole compiler.
-* `Semantics/<style>/`: the semantics of ISWIM and X86 in each style,
-  and in `Semantics/<style>/Typed/` those of the typed languages
-  (`<style>` is `Graph`, `CEK`, `Interp`, `Reduction` or `GraphErr`);
+  select instructions, into X86ᵀ) and their compositions
+  (`Pipeline.agda`: `compile₄`, `compile`, `compile-mon`, `compile-imp`,
+  `compile-cfg`, `compile-x86`, which ends at X86ᵀ), `Closed`
+  (`EncloseScope.agda`), the precondition of the theorems about the
+  whole compiler, and select into untyped X86 (`SelectX86.agda`), not a
+  pass but the code select emits without the types.
+* `Semantics/<style>/`: the semantics of ISWIM in each style, and in
+  `Semantics/<style>/Typed/` those of the typed languages, X86ᵀ among
+  them (`<style>` is `Graph`, `CEK`, `Interp`, `Reduction` or
+  `GraphErr`; the reduction semantics has none for the languages
+  without binders, whose machines it shares with `CEK`);
+  `Semantics/CEK/X86.agda`: the machine of untyped X86 (for the untyped
+  pipeline, and for the typed one's assurance);
   `Semantics/Observation.agda`: the observations.
 * `Framework/`: the language-independent infrastructure (abstract
   binding trees, syntax and substitution, typed indices and vectors, the
@@ -78,14 +91,17 @@ other than `--without-K`, failing if it finds any.
 
   `Untyped/` mirrors this directory: `Untyped/X.agda` (module
   `Untyped.X`) was `X.agda` before the typed pipeline became the main
-  one. It holds only what the untyped pipeline alone uses (its languages
+  one (or, for X86's semantics in the graph models and the interpreter
+  and its adequacy, before the typed pipeline came to end at X86ᵀ). It
+  holds only what the untyped pipeline alone uses (its languages
   Clos2–Clos5, monadic Clos5, Imp and CFG, its passes, their semantics
-  and proofs in every style, its adequacy for Clos5, its theorem
-  statements in `Untyped/Theorems/`, its examples and experiments); what
-  both pipelines use (ISWIM, X86, simplify and its proofs, the
-  primitives, the observations, the ISWIM and X86 adequacy, the
-  frameworks) stays here. `Untyped/All.agda` imports it, and `All.agda`
-  imports that.
+  and proofs in every style, X86's semantics but its machine, its
+  adequacy for Clos5 and X86, its theorem statements in
+  `Untyped/Theorems/`, its examples and experiments); what both
+  pipelines use (ISWIM, simplify and its proofs, the primitives, the
+  observations, the ISWIM adequacy, the frameworks), and X86 and its
+  machine, which the typed pipeline's assurance uses, stay here.
+  `Untyped/All.agda` imports it, and `All.agda` imports that.
 
 ## The audit surface
 
@@ -101,39 +117,40 @@ used by a theorem statement).
   defined as the corresponding theorem of `proof/`:
   * `Theorems/Denotational.agda`: each pass preserves the meaning of a
     program in the graph model (delay: its constants and whether it has
-    any), and the whole compiler, into Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86,
+    any), and the whole compiler, into Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86ᵀ,
     preserves the constants a closed program produces and whether it
     produces anything.
   * `Theorems/Simulation.agda`: each pass, and the compiler into each of
-    Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86, produces an equivalent machine
+    Clos5ᵀ, Monᵀ, Impᵀ, CFGᵀ and X86ᵀ, produces an equivalent machine
     (the same observations on termination, including an error, and
     divergence exactly when the source diverges).
   * `Theorems/Interpreter.agda`: the same, for the clocked interpreters.
   * `Theorems/Reduction.agda`: the same, for the reduction semantics of
     ISWIM, ISWIMᵀ and Clos2ᵀ–Clos5ᵀ and the machines of Impᵀ, CFGᵀ and
-    X86.
+    X86ᵀ.
   * `Theorems/Adequacy.agda`: the graph model is sound and adequate for
-    the ISWIM machine, and for the Clos5ᵀ and X86 machines running
+    the ISWIM machine, and for the Clos5ᵀ and X86ᵀ machines running
     compiled programs; so the compiler, observed through the machines
     only, preserves the constants a closed program computes and whether
     it terminates with an answer.
   * `Theorems/GraphErrors.agda`: in the graph model with errors every
-    pass but delay and select preserves the meaning of a program, delay
-    preserves and reflects errors, constants and values, select relates
-    them (`Same`: errors, constants and values together; X86 checks
-    kinds where CFGᵀ does not), and so does the whole compiler; the
-    model is adequate for the ISWIM and X86 machines on all three
-    outcomes, and for the Clos5ᵀ machine by the CEK column's simulation;
-    so the ISWIM machine on a closed program and the Clos5ᵀ and X86
-    machines on its compilation stop with an error together, stop with
-    the same constants, stop with an answer together, and diverge
-    together.
+    pass but delay preserves the meaning of a program, delay preserves
+    and reflects errors, constants and values (`Same`), and so does the
+    whole compiler; the model is adequate for the ISWIM and X86ᵀ
+    machines on all three outcomes, and for the Clos5ᵀ machine by the
+    CEK column's simulation; so the ISWIM machine on a closed program
+    and the Clos5ᵀ and X86ᵀ machines on its compilation stop with an
+    error together, stop with the same constants, stop with an answer
+    together, and diverge together.
+  * `Theorems/X86Erasure.agda` (assurance, not part of the comparison):
+    without its types, the X86ᵀ code select emits is the X86 code of
+    select into untyped X86 (`Compiler/SelectX86.agda`).
   * `Untyped/Theorems/`: the same six files for the untyped pipeline.
 * The definitions they use: `Language/`, `Compiler/`, `Semantics/`,
   `Framework/` (see the layout above), and those of `Untyped/` outside
   `Untyped/proof/` for the untyped statements. Per style:
   * denotational: `Semantics/Graph/` (the meaning of the primitives,
-    `Prim.agda`, ISWIM, X86 and its frames, and `Typed/`) and
+    `Prim.agda`, ISWIM, and `Typed/`) and
     `Framework/GraphModel/` (sets as predicates, environments, the
     values and their consistency, the operators, the guard of `project`);
   * graph model with errors: `Semantics/GraphErr/` and
@@ -151,9 +168,8 @@ used by a theorem statement).
     reduction semantics by substitution for ISWIM, ISWIMᵀ and
     Clos2ᵀ–Clos5ᵀ), `Framework/Reduction.agda` (reductions as machines)
     and `Framework/Smallstep.agda`, and the machines of Clos5ᵀ (its
-    values), Impᵀ, CFGᵀ and X86 (`Semantics/CEK/Typed/{Clos5,Imp,CFG}.agda`,
-    `Semantics/CEK/X86.agda`), shared with the CEK machine + simulation
-    style;
+    values), Impᵀ, CFGᵀ and X86ᵀ (`Semantics/CEK/Typed/{Clos5,Imp,CFG,X86}.agda`),
+    shared with the CEK machine + simulation style;
   * adequacy: those of the denotational and simulation theorems.
 
 ## `proof/`
@@ -188,12 +204,11 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   and `proof/Semantics/Reduction/`: the values of each reduction
   semantics;
 * `proof/Correctness/GraphErr/`, `proof/Semantics/GraphErr/` and
-  `proof/Adequacy/GraphErr/`: the graph model with errors (select through
-  CFGᵀ with checks, `Select*.agda`; Clos5ᵀ adequacy derived from
-  `PipelineSim`, `Adequacy/GraphErr/EndToEnd.agda`);
-* `proof/Adequacy/`: soundness, adequacy, and the well-formedness of
-  compiled programs (the ISWIM and X86 ones are those of the untyped
-  pipeline too);
+  `proof/Adequacy/GraphErr/`: the graph model with errors (X86ᵀ adequacy
+  direct; Clos5ᵀ adequacy derived from `PipelineSim`,
+  `Adequacy/GraphErr/EndToEnd.agda`);
+* `proof/Adequacy/`: soundness and adequacy (the ISWIM ones are those of
+  the untyped pipeline too);
 * `proof/Framework/`: the language-independent lemmas (continuity of the
   operators, the generic denotational semantics and its monotonicity and
   continuity, the semantics of intrinsically typed syntax, renaming,
@@ -203,9 +218,9 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   values and known values it inspects, `SimplifyFacts.agda`, used by its
   proofs, and that it keeps programs closed, `SimplifyScope.agda`; cast
   insertion on closed programs, `CastScope.agda`; globalize's references
-  to older definitions, `GlobalizeOlder.agda`; select's labels and
-  frames, `SelectFacts.agda`), and examples (`Examples/`: smoke tests
-  run by `refl`);
+  to older definitions, `GlobalizeOlder.agda`; that select emits, without
+  the types, the code of select into untyped X86, `SelectErase.agda`),
+  and examples (`Examples/`: smoke tests run by `refl`);
 * `Untyped/proof/`: the same for the untyped pipeline, with its
   experiments: a direct semantics of Imp with lift locals and explicate
   control proved against it, and a direct backward simulation for delay.

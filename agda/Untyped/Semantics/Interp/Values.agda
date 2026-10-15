@@ -1,6 +1,6 @@
 {-
 
-  The values of the X86 interpreter (Semantics/Interp/X86.agda), which
+  The values of the X86 interpreter (Untyped/Semantics/Interp/X86.agda), which
   the interpreters of the preserved untyped Clos5, Imp and CFG
   (agda/Untyped/) share: code pointers, pairs (closures), constants,
   tuples and injections, their observations, the primitives on them and
@@ -8,7 +8,7 @@
 
 -}
 
-module Semantics.Interp.Values where
+module Untyped.Semantics.Interp.Values where
 
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim; Out; int; bool)

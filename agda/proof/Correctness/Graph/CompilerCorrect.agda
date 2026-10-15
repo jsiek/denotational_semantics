@@ -2,7 +2,7 @@
 
   The typed compiler (Compiler/Pipeline.agda) in the plain graph
   model: for a closed ISWIM program, the compiled program, in Clos5ᵀ,
-  Monᵀ (by its embedding), Impᵀ, CFGᵀ and X86, produces the same
+  Monᵀ (by its embedding), Impᵀ, CFGᵀ and X86ᵀ, produces the same
   constants as the source, and produces something exactly when the
   source does (Same). Simplify (the same proof as the untyped
   pipeline's), cast insertion and every later pass but delay preserve
@@ -31,7 +31,7 @@ open import Semantics.Graph.ISWIM using (⟦_⟧)
 open import Semantics.Graph.Typed.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅)
 open import Semantics.Graph.Typed.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Semantics.Graph.Typed.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
-open import Semantics.Graph.X86 using () renaming (⟦_⟧ₚ to ⟦_⟧ₓ)
+open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ)
 open import proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
 open import proof.Correctness.Graph.CastCorrect using (cast-correct)
 open import proof.Correctness.Graph.EncloseCorrect using (enclose-correct)
@@ -80,5 +80,5 @@ compile-imp-same M c = then (compile-mon-same M c) (lift-locals-correct (compile
 compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
 compile-cfg-same M c = then (compile-imp-same M c) (explicate-correct (compile-imp M))
 
-compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₓ
+compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
 compile-x86-same M c = then (compile-cfg-same M c) (select-correct (compile-cfg M))

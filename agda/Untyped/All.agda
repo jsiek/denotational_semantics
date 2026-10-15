@@ -11,9 +11,12 @@
 
   agda/Untyped/ mirrors agda/: Untyped/X.agda was X.agda, and the module
   Untyped.X was X. What both pipelines use stays in agda/: untyped ISWIM
-  and simplify with their proofs, X86 and its semantics, the primitives,
-  the observations, the frameworks (Framework/), and the ISWIM and X86
-  adequacy. A path in a comment of a module here, such as
+  and simplify with their proofs, the primitives, the observations, the
+  frameworks (Framework/), and the ISWIM adequacy; and so do X86
+  (Language/X86.agda) and its machine (Semantics/CEK/X86.agda), which
+  the typed pipeline's assurance uses (the erasure of X86ᵀ). The other
+  semantics of X86 and its adequacy moved here when the typed pipeline
+  came to end at X86ᵀ (PR #58). A path in a comment of a module here, such as
   Semantics/CEK/Clos5.agda, names the module of agda/Untyped/ if there is
   one, and that of agda/ otherwise.
 
@@ -73,6 +76,7 @@ import Untyped.proof.Correctness.Graph.OptimizeCorrect
 import Untyped.proof.Correctness.Graph.PipelineExample
 import Untyped.proof.Correctness.Graph.RCOCorrect
 import Untyped.proof.Correctness.Graph.SelectCorrect
+import Untyped.proof.Semantics.Graph.X86
 
 {- proof/: the CEK machines + simulations (and the experiment of a direct backward simulation for delay) -}
 import Untyped.proof.Semantics.CEK.Backward
@@ -135,7 +139,7 @@ import Untyped.proof.Correctness.GraphErr.OptimizeCorrect
 import Untyped.proof.Correctness.GraphErr.RCOCorrect
 import Untyped.proof.Correctness.GraphErr.SelectCorrect
 
-{- proof/: adequacy of the graph model and of the graph model with errors for the Clos5 machine, and the compiler's programs -}
+{- proof/: adequacy of the graph model and of the graph model with errors for the Clos5 and X86 machines, and the compiler's programs -}
 import Untyped.proof.Adequacy.Clos5
 import Untyped.proof.Adequacy.Clos5Common
 import Untyped.proof.Adequacy.Clos5LogRel
@@ -152,3 +156,15 @@ import Untyped.proof.Adequacy.GraphErr.EndToEnd
 import Untyped.proof.Adequacy.GraphErr.X86CompileWF
 import Untyped.proof.Adequacy.ISWIMCompile
 import Untyped.proof.Adequacy.X86CompileWF
+import Untyped.proof.Adequacy.Values
+import Untyped.proof.Adequacy.X86
+import Untyped.proof.Adequacy.X86Common
+import Untyped.proof.Adequacy.X86LogRel
+import Untyped.proof.Adequacy.X86Soundness
+import Untyped.proof.Adequacy.X86WF
+import Untyped.proof.Adequacy.GraphErr.X86
+import Untyped.proof.Adequacy.GraphErr.X86Common
+import Untyped.proof.Adequacy.GraphErr.X86Consistent
+import Untyped.proof.Adequacy.GraphErr.X86LogRel
+import Untyped.proof.Adequacy.GraphErr.X86Soundness
+import Untyped.proof.Adequacy.GraphErr.X86WF

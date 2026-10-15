@@ -3,7 +3,7 @@
   The typed compiler (Compiler/Pipeline.agda) is correct on the
   reduction semantics, for closed programs: each pass is Equivalent
   (proof/Correctness/Reduction/*Red.agda) and equivalence composes.
-  Simplify's proof is the untyped one; Impᵀ, CFGᵀ and X86 have no
+  Simplify's proof is the untyped one; Impᵀ, CFGᵀ and X86ᵀ have no
   binders and keep their machines, with the CEK column's proofs of
   explicate control and select instructions.
 
@@ -34,7 +34,7 @@ import Semantics.Reduction.ISWIM as S
 import Semantics.Reduction.Typed.Clos5 as T
 import Semantics.CEK.Typed.Imp as Impᵀₘ
 import Semantics.CEK.Typed.CFG as CFGᵀₘ
-import Semantics.CEK.X86 as X86ₘ
+import Semantics.CEK.Typed.X86 as X86ᵀₘ
 
 open import Data.Product using (_,_; proj₁; proj₂)
 
@@ -53,7 +53,7 @@ compile-imp-correct M c = equiv-trans (compile-mon-correct M c) (lift-locals-cor
 compile-cfg-correct : ∀ M → Closed M → Equivalent (S.sem M) (CFGᵀₘ.sem (compile-cfg M))
 compile-cfg-correct M c = equiv-trans (compile-imp-correct M c) (explicate-correct _)
 
-compile-x86-correct : ∀ M → Closed M → Equivalent (S.sem M) (X86ₘ.sem (compile-x86 M))
+compile-x86-correct : ∀ M → Closed M → Equivalent (S.sem M) (X86ᵀₘ.sem (compile-x86 M))
 compile-x86-correct M c = equiv-trans (compile-cfg-correct M c) (select-correct _)
 
 {- in particular, for compile -}

@@ -8,12 +8,13 @@
     ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
           --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
           --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
-          --explicate control--> CFGᵀ --select instructions--> X86
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
   Each language has an interpreter with a clock (Semantics/Interp/ for
-  ISWIM and X86, Semantics/Interp/Typed/ for the typed languages; here
-  Lᵢ.sem for language L). A typed interpreter is a total function of
-  typed terms to typed values, which errs only where a project fails.
+  ISWIM, Semantics/Interp/Typed/ for the typed languages, X86ᵀ among
+  them; here Lᵢ.sem for language L). A typed interpreter is a total
+  function of typed terms to typed values, which errs only where a
+  project fails (in X86ᵀ, at chk, project's check).
   Monᵀ runs as its embedding ⌜ P ⌝ₚ into Clos5ᵀ. A program terminates
   with an observation (Semantics/Observation.agda) when, for some clock,
   it returns a value observed as o or errors (o-error), and diverges
@@ -67,7 +68,7 @@ import Semantics.Interp.Typed.Clos4 as Clos4ᵀᵢ
 import Semantics.Interp.Typed.Clos5 as Clos5ᵀᵢ
 import Semantics.Interp.Typed.Imp as Impᵀᵢ
 import Semantics.Interp.Typed.CFG as CFGᵀᵢ
-import Semantics.Interp.X86 as X86ᵢ
+import Semantics.Interp.Typed.X86 as X86ᵀᵢ
 
 import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
 import proof.Correctness.Interp.CastFuel as CastFuel
@@ -116,9 +117,9 @@ lift-locals-correct = LiftLocalsFuel.lift-locals-correct
 explicate-correct : ∀ (P : Impᵀ.Program) → Equivalent (Impᵀᵢ.sem P) (CFGᵀᵢ.sem (explicate P))
 explicate-correct = ExplicateFuel.explicate-correct
 
-{- X86's own errors are unreachable: the X86 program gives the erased
+{- X86ᵀ's only error is chk, project's check: the X86ᵀ program gives the
    result of the CFGᵀ one -}
-select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀᵢ.sem P) (X86ᵢ.sem (select P))
+select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀᵢ.sem P) (X86ᵀᵢ.sem (select P))
 select-correct = SelectFuel.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
@@ -140,7 +141,7 @@ compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
 compile-cfg-correct = CompilerFuel.compile-cfg-correct
 
 compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (X86ᵢ.sem (compile-x86 M))
+  → Equivalent (ISWIMᵢ.sem M) (X86ᵀᵢ.sem (compile-x86 M))
 compile-x86-correct = CompilerFuel.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
