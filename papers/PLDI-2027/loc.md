@@ -9,6 +9,7 @@
   - [[#Audit-surface counts]]
   - [[#Shared modules]]
 - [[#Dynamic typing and errors]]
+- [[#Mixing semantics]]
 - [[#The ISWIM pipeline in full]]
   - [[#Counts of the ISWIM pipeline]]
   - [[#Audit-surface counts (ISWIM)]]
@@ -68,7 +69,7 @@ ISWIMμ is the main experiment. The ISWIM pipeline (`agda/`), whose source is un
 The operational columns derive both from their `Equivalent` (`compile-x86-correct`, which holds at every type). The graph model derives them from its own end-to-end theorem (`compile-x86-same`, stated in `Mu/Theorems/Denotational.agda` as `compile-x86-correct-const` and `-nonempty`, and for `main : Int` as `compile-x86-int-const` and `-nonempty`: the same constants, nonempty together), adequacy for the machines of ISWIMμ and X86μ (see [[#Adequacy]]), and the lemma that neither machine stops with an error: a machine that never errs and does not converge diverges. So the caveat that the columns state different theorems does not apply to ISWIMμ, and it needs no graph model with errors.
 
 Counts are code lines: lines that are neither blank, nor comments, nor part of an import statement (`import` or `open import`, with its continuation lines). Imports are left out because their number depends on how finely a development is split into modules, not on what it proves; they were counted until PR #35 (see [[#History]]). The tables are regenerated with
-`python3 papers/PLDI-2027/loc.py` from the repository root, which prints ISWIMμ's tables and then the short comparison with the ISWIM pipeline (with `--iswim` for the ISWIM pipeline's full tables, `--untyped` for the untyped pipeline's, `--mu-detail` for ISWIMμ against the ISWIM pipeline row by row; the table of contents and the links between sections are Obsidian heading links, regenerated and checked by `python3 papers/PLDI-2027/toc.py`). The script fails if any Agda module is not assigned to a group, if a proof of any pipeline imports another proof's modules, adequacy's, an example's or an experiment's (ISWIMμ's columns may use what the ISWIM pipelines share, such as the meaning of the primitives and the instances of the frameworks at this compiler's observations), if a module outside `agda/Untyped/` imports one inside it, if a module of the language-independent infrastructure imports anything that is not infrastructure, if a module of an audit surface imports a proof module (the theorem files excepted), or if a module outside the `proof/` directories is not used by a theorem statement: those of `agda/Mu/` by ISWIMμ's, in `agda/Mu/Theorems/` (see [[#Audit surface]]). A module split into definitions (`agda/Mu/X.agda`) and lemmas (`agda/Mu/proof/X.agda`; likewise `agda/X.agda` and `agda/proof/X.agda`, and `agda/Untyped/X.agda` and `agda/Untyped/proof/X.agda`) counts as one module, in one group. The import bundles `Framework.GraphModel.Prelude` and `Framework.GraphModel.ErrorPrelude` (and their `proof/` halves), which only re-export the modules that every semantics and proof in the graph models opens, are in no group: an import of a bundle is read as imports of the modules it re-exports, so the bundles change no count.
+`python3 papers/PLDI-2027/loc.py` from the repository root, which prints ISWIMμ's tables and then the short comparison with the ISWIM pipeline (with `--iswim` for the ISWIM pipeline's full tables, `--untyped` for the untyped pipeline's, `--mu-detail` for ISWIMμ against the ISWIM pipeline row by row, `--mixed` for mixing the graph model and the interpreters, see [[#Mixing semantics]]; the table of contents and the links between sections are Obsidian heading links, regenerated and checked by `python3 papers/PLDI-2027/toc.py`). The script fails if any Agda module is not assigned to a group, if a proof of any pipeline imports another proof's modules, adequacy's, an example's or an experiment's (ISWIMμ's columns may use what the ISWIM pipelines share, such as the meaning of the primitives and the instances of the frameworks at this compiler's observations), if a module outside `agda/Untyped/` imports one inside it, if a module of the language-independent infrastructure imports anything that is not infrastructure, if a module of an audit surface imports a proof module (the theorem files excepted), or if a module outside the `proof/` directories is not used by a theorem statement: those of `agda/Mu/` by ISWIMμ's, in `agda/Mu/Theorems/` (see [[#Audit surface]]). A module split into definitions (`agda/Mu/X.agda`) and lemmas (`agda/Mu/proof/X.agda`; likewise `agda/X.agda` and `agda/proof/X.agda`, and `agda/Untyped/X.agda` and `agda/Untyped/proof/X.agda`) counts as one module, in one group. The import bundles `Framework.GraphModel.Prelude` and `Framework.GraphModel.ErrorPrelude` (and their `proof/` halves), which only re-export the modules that every semantics and proof in the graph models opens, are in no group: an import of a bundle is read as imports of the modules it re-exports, so the bundles change no count.
 
 **How totals are computed.** Each module belongs to one group: a column of one of the pipelines, adequacy, shared, language-independent infrastructure, examples, or an experiment. A few groups belong to two columns: the machines of Clos5μ (whose values the Impμ machine uses), Impμ, CFGμ and X86μ and the proofs of explicate control and select instructions are shared by the CEK and reduction proofs, and are counted in full in the corresponding rows of both (likewise in the ISWIM pipeline). A proof's total is its own modules plus every shared module that it imports, directly or transitively, *unless all four proofs of its pipeline import it*, plus, for ISWIMμ, the ISWIM pipeline's modules it reuses (the graph model's meaning of the primitives; the instances of the small-step, reduction and clocked frameworks at this compiler's observations). So each column is the standalone size of that proof, apart from two things. What is common to all four proofs: the languages, the compiler passes and `compile-x86`, and the lemmas about the compiler's output that all four use. And the language-independent infrastructure, code that other languages and compilers would reuse unchanged (the abt library and syntax lemmas, typed indices and vectors, heterogeneous vectors, the denotational framework, the graph model and the semantics of intrinsically typed syntax in it, the small-step, reduction and clocked frameworks, and substitution; see [[#Language-independent infrastructure]]). Neither is counted in any column; the infrastructure has its own table, which shows what each proof relies on. A shared module that only some proofs use is counted in each of them; it is the row "shared modules not used by all four proofs", listed [[#Shared modules|below]]. Examples are not counted. Adequacy is reported separately (see below). The import graph is read from the `import` and `open import` lines.
 
@@ -315,6 +316,83 @@ The ISWIM pipeline (`agda/`; in full in [[#The ISWIM pipeline in full]]) compile
 
 * **Adequacy 2190 → 1599**, of which about 320 is the Clos5ᵀ machine's adequacy, which ISWIMμ does not need; like for like (into X86 alone) about 1870 → 1599.
 * **What ISWIMμ settled** (`notes/iswim-mu-design.md`, notes [P0]–[P3]): `unfold` needs no equation (no definition splits a term at a concrete type); heterogeneous contexts cost nothing net (optimize's renaming is defined on the used variables, `squeeze`); the existential of X86μ's closures hides a `Ctx` at no cost; no pass after delay looks at μ.
+
+## Mixing semantics
+
+The question: each pass has a cheapest style, so is the compiler cheaper to prove if each pass is proved in the cheaper of the graph model and the interpreter, with the styles joined by **bridges**? A bridge is an adequacy theorem between a language's graph semantics and its interpreter, built wherever the style changes. Design and estimates: `notes/mixed-semantics.md`.
+
+Only three passes are cheaper in the graph model: simplify (360 against 633), globalize (118 against 183) and explicate control (71 against 75).
+
+* **Split (a)** proves simplify in the graph model and every other pass by the interpreters. It needs one bridge, at ISWIMμ (`Mu/proof/Mixed/`), used twice: for the program and for its simplification.
+  * The chain: interpreter(M) ⇔ ⟦M⟧ ⇔ ⟦simplify M⟧ ⇔ interpreter(simplify M) ⇔ X86μ interpreter(compile-x86 M).
+  * Its end theorem is the interpreter column's (`Mu/proof/Mixed/CompilerMixed.agda`: `compile-x86-const`, `compile-x86-diverges`).
+  * It reuses the per-pass proofs of both columns unchanged.
+* **Splits (b) and (c)** also prove globalize and/or explicate control in the graph model. They need two more bridges for each pass (at Clos4μ and Clos5μ, at Impμ and CFGμ). They are estimated, not built: each further bridge is counted at the size of ISWIMμ's.
+
+`loc.py` (the full tables with `--mixed`):
+
+| proof of the ISWIMμ compiler | passes in the graph model | bridges | total | end theorem about |
+|---|---|---:|---:|---|
+| denotational: graph model | all | — | 1958 | denotations |
+| CEK machine + simulation | — | — | 2258 | the machines |
+| clocked interpreter + value relations | — | — | **1653** | the interpreters |
+| reduction semantics + simulation | — | — | 3207 | the reduction semantics |
+| denotational: graph model, and its adequacy | all | — | 3557 | the machines |
+| mixed (a) simplify in the graph model | simplify | 1 | 1839 | the interpreters |
+| mixed (b) also globalize (estimate) | simplify, globalize | 3 | ~2528 | the interpreters |
+| mixed (b) also explicate control (estimate) | simplify, explicate control | 3 | ~2595 | the interpreters |
+| mixed (c) the per-pass minimum: also globalize and explicate control (estimate) | simplify, globalize, explicate control | 5 | ~3265 | the interpreters |
+
+Split (a), row by row, against the two columns it draws on:
+
+| component (ISWIMμ) | mixed (a): proved by | mixed (a) | graph model | interpreter |
+|---|---|---:|---:|---:|
+| semantics: interpreters (all languages) | interpreter | 374 | — | 374 |
+| semantics: graph model (ISWIMμ only) | graph model | 38 | 375 | — |
+| simplify | graph model | 360 | 360 | 633 |
+| CC: enclose | interpreter | 33 | 43 | 33 |
+| CC: optimize | interpreter | 65 | 83 | 65 |
+| CC: concretize | interpreter | 42 | 68 | 42 |
+| CC: delay | interpreter | 35 | 524 | 35 |
+| CC: globalize | interpreter | 183 | 118 | 183 |
+| rco | interpreter | 85 | 125 | 85 |
+| lift locals | interpreter | 27 | 44 | 27 |
+| explicate control | interpreter | 75 | 71 | 75 |
+| select instructions | interpreter | 48 | 83 | 48 |
+| bridge at ISWIMμ | — | 395 | — | — |
+| composition | — | 28 | 30 | 36 |
+| shared modules not used by all four proofs | — | 15 | — | 15 |
+| the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances) | — | 36 | 34 | 2 |
+| **total** | — | **1839** | 1958 | 1653 |
+| language-independent infrastructure used (not in the totals) | — | 1571 | 1542 | 413 |
+
+The bridge at ISWIMμ is an adequacy theorem for ISWIMμ with respect to its interpreter. It is smaller than today's ISWIMμ adequacy, which is with respect to the CEK machine:
+
+| ISWIMμ adequacy | w.r.t. the CEK machine | w.r.t. the interpreter (the bridge) |
+|---|---:|---:|
+| soundness | 239 | **174** |
+| logical relation, fundamental lemma | 128 | **121** |
+| statements (constants, convergence or divergence) | **23** | 26 |
+| tuples of sets (`Mu.proof.Adequacy.Tuples`, the same module) | 74 | 74 |
+| **total** | 464 | **395** |
+
+* **Mixing does not pay on ISWIMμ.**
+  * Split (a) is 1839 lines, 186 more than the interpreter column (1653).
+  * Simplify saves 273 lines (633 → 360).
+  * The bridge (395) and ISWIMμ's graph semantics (38) and primitives (34) cost 467.
+  * Split (a) also uses almost all of the graph model's infrastructure (1571 against the interpreter's 413), which is in no total.
+  * The other passes that are cheaper in the graph model save 65 (globalize) and 4 (explicate control). Each needs two more bridges, so (b) and (c) are far worse: about 2500–3300.
+  * A bridge costs as much as a pass's whole proof, so mixing pays only for a pass whose saving exceeds the bridges it needs. On this compiler only simplify comes close, and it falls short.
+* **Against the graph model, mixing is a real gain.** Split (a) reaches running code (the interpreters) at 1839, against the graph model's 3557 with adequacy (the machines). It keeps the graph model's proof of simplify, its cheapest by far, and avoids the graph model's delay (524 against 35).
+* **The bridge is cheaper than today's adequacy.**
+  * Soundness is by induction on the clock and the term, with no continuations: 174 against 239.
+  * The logical relation uses results stable from some clock on (`Stable`, `st-bind`), so it needs no monotonicity lemma. Its determinism is `stable-unique`: 121 against 128.
+  * Soundness also shows that the interpreter never errs (the result predicate excludes `error`), so the bridge needs no no-error lemma.
+  * So ISWIMμ adequacy with respect to the interpreter is 395 lines, against 464 with respect to the CEK machine (−15%).
+* **What each end theorem includes.**
+  * The graph column's end theorem (`compile-x86-same`) is about denotations. It reaches running code only with adequacy (1599, reported separately).
+  * The operational columns' end theorems, and split (a)'s, are about running code already: the machines, the interpreters, the reduction semantics.
+  * The audit surface of split (a) is the interpreter column's plus ISWIMμ's graph semantics and the graph model's domain and operators. The bridge's statement mentions them, although the end theorem does not.
 
 ## The ISWIM pipeline in full
 
@@ -799,6 +877,7 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-15 | ISWIMμ pilot P2 (not in the totals): adequacy of the graph model for the ISWIMμ and X86μ machines (X86μ direct, no Clos5μ adequacy), 2190 → 1619 against the typed pipeline's; no-error lemmas for every semantics of ISWIMμ and X86μ (199 lines, in no total); the four columns state the same end-to-end theorem for `main : Int` (same constant, or both diverge), the graph model through adequacy, with no graph model with errors; `loc.py --mu` prints the four styles against each other (1577, 1673, **1020**, 2521); see [[#Current counts\|ISWIMμ pilot]] | 2131 | 2582 | **1814** | 3620 |
 | 2026-10-15 | ISWIMμ pilot P3 (not in the totals): simplify on ISWIMμ (typed cp0, with `unfold` of a known `fold` as one more known-value rule), proved in all four styles and put in front of every composition (and so of adequacy's end to end): simplify rows 360, 584, 633, 715 against the typed pipeline's 342, 574, 640, 716; ISWIMμ's renaming kit shared between simplify and the reduction semantics (reduction semantics 995 → 965), ISWIMμ's continuity lemmas moved from adequacy to the graph semantics (355 → 375; adequacy 1619 → 1599); the pilot's totals 1958, 2258, **1653**, 3207 against 2064, 2390, 1719, 3320 for the typed pipeline without cast insertion; see [[#Current counts\|ISWIMμ pilot]] | 2131 | 2582 | **1814** | 3620 |
 | 2026-10-15 | ISWIMμ is the main experiment (PR #70): its theorem statements in `agda/Mu/Theorems/` (graph model, simulation, interpreter, reduction, adequacy: 78, 38, 38, 38 and 29 lines, not in the totals) and its audit surface (1564, 1750, **1485**, 1940; adequacy 1891), closed by moving `AllProp` to `Mu/proof/Framework/` and splitting `Mu/Framework/ReductionAll.agda` into its definition (`red-∷`) and a proof half (ISWIMμ's reduction infrastructure 40 → 41, the new module line, in no total); `loc.py` prints ISWIMμ's tables by default and the ISWIM pipeline's with `--iswim`; no total changes. From this row on the columns are ISWIMμ's (the ISWIM pipeline's stay 2131, 2582, **1814**, 3620; see [[#Dynamic typing and errors]]) | 1958 | 2258 | **1653** | 3207 |
+| 2026-10-15 | mixing semantics (not in the totals; see [[#Mixing semantics]]): simplify in the graph model, the other passes by the interpreters, joined by a bridge at ISWIMμ between its graph semantics and its interpreter (395, also ISWIMμ adequacy w.r.t. the interpreter, against 464 w.r.t. the CEK machine), 1839 in all; the splits that also prove globalize or explicate control in the graph model estimated at about 2500–3300; `loc.py --mixed`; no total changes | 1958 | 2258 | **1653** | 3207 |
 
 **The typed pipeline (PRs #55, #56).** The third row from the end (the last two are the typed assembly language). The pilot (the two rows before it, see [[#Typed intermediate languages (pilot, superseded)]]) recommended inserting the checks early; phase 1 (PR #56) defined the typed languages and passes from untyped ISWIM to X86, phase 2 ported each column, and phase 3 made the typed pipeline the main one: the untyped modules moved to `agda/Untyped/` (module prefix `Untyped.`), the typed ones took the main names (`Compiler/Typed/X` → `Compiler/X`, `proof/Correctness/Typed/<style>/X` → `proof/Correctness/<style>/X`, `Theorems/Typed/X` → `Theorems/X`), and the pilot's statements (`Theorems/Typed.agda`) and composition (`compileᵀ`) were retired, the main statements subsuming them. The modules both pipelines use stayed in `agda/`; to keep them independent of the untyped languages, the frames and tables of X86's semantics (`Semantics/Graph/Frames.agda`, `Semantics/GraphErr/Frames.agda`), the X86 interpreter's values (`Semantics/Interp/Values.agda`), the X86 machine's frames (into `Semantics/CEK/Values.agda`) and `block-at` (into `Language/X86.agda`) were split off, and ISWIM adequacy lost the untyped compiler's corollaries (now `Untyped/proof/Adequacy/ISWIMCompile.agda`). That moves the untyped totals by a few lines (2608 → 2610, 3526 → 3521, 2794 → 2795, 3689 → 3684); the lemmas about X86's case that both graph-model select proofs had (`case-core`) are now shared, in `proof/Semantics/Graph/X86.agda`.
 
