@@ -5,7 +5,7 @@ Title: TBD. The working title "There is no semantics to rule them all!" fitted a
 This is an outline for discussion, not paper text. Numbers come from `loc.py --mu` on master after PR #66 and will change. Paper sections are written double-blind: earlier work in this repository is "we", without saying who (see `history-outline.md`).
 
 ## Main claim
-A denotational semantics based on graph models can be used to prove a realistic compiler correct, mechanized, all the way to assembly. The compiler goes from ISWIMμ (a call-by-value λ-calculus with recursive types) to a typed x86 in ten passes. Each pass is proved by relating denotations, and adequacy connects the result to running code. The novelty claims are pending the literature check (`novelty-lit.md`, to be added to the notes).
+A denotational semantics based on graph models can be used to prove a realistic compiler correct, mechanized, all the way to assembly. The compiler goes from ISWIMμ (a call-by-value λ-calculus with recursive types) to a typed x86 in ten passes. Each pass is proved by relating denotations, and adequacy connects the result to running code. The novelty claims and their safe wording are in `novelty-literature.md`: not "the first mechanized denotational compiler proof" (Chlipala 2007 and others), but, to our knowledge, the first multi-pass compiler between different languages proved with graph-model semantics, and the first mechanized adequacy of a denotational semantics for an assembly language.
 
 ## Research questions
 - **RQ1. Can a graph-model semantics be used to prove the correctness of a compiler?** Mechanized, through closure conversion, down to assembly, with an end-to-end theorem about running code.
@@ -94,9 +94,10 @@ A denotational semantics based on graph models can be used to prove a realistic 
 - **Totals barely move:** graph 2064 → 1958, CEK 2390 → 2258, interpreter 1719 → 1653, reduction 3320 → 3207.
 - **Delay's cost comes from recursive types, not errors:** graph delay goes 552 → 524 (errors account for about 28 lines).
 
-## 7. Discussion: mixing semantics
-- Graph models are cheapest for equational passes, and the operational styles for passes that change representation. A compiler proof could use a different style for each pass, joined where needed by adequacy or by a simulation between styles.
-- What it would cost, and what the end theorem would be. This is worth exploring; it may become an experiment that reports numbers, not just a discussion point.
+## 7. Discussion: mixing semantics (a negative result, one paragraph)
+- The idea: use, for each pass, the cheapest style, joined by bridges (adequacy of a language's graph semantics against its interpreter) where the style changes.
+- Measured (PR #72, `notes/mixed-semantics.md`): graph model for simplify, interpreter for the rest, one bridge at ISWIMμ: 1839 lines, against 1653 for the pure interpreter proof. A bridge (395 lines) costs about as much as a whole pass proof and more than the largest saving (simplify, 273); more splits are estimated at 2530–3265.
+- Worth a paragraph and a small table: per-pass minima do not add up. By-products: adequacy against the interpreter is cheaper than against the CEK machine (395 against 464), and it gives the graph model a cheaper route to running code.
 
 ## 8. Related work
 Organised as in `related-work-literature.md` and the novelty search:
@@ -125,6 +126,5 @@ Organised as in `related-work-literature.md` and the novelty search:
 - The title.
 - Novelty claims, to be worded after the literature check.
 - The page budget for §4.3 against §5.
-- Whether mixing semantics (§7) becomes an experiment before submission.
 - Matthew Heimerdinger's affiliation.
 - The artifact: an anonymized copy of the Agda development.
