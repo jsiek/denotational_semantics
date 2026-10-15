@@ -1066,8 +1066,10 @@ MU_ROWS = [
      [MUP + 'Correctness/CEK/DelaySim.agda']),
 ]
 MU_DELAY = ['Rel', 'Preserve', 'Reflect', 'Correct']
-MU_SHARED = ([L + 'Typed/' + x + '.agda' for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4')]
-             + [C + x + '.agda' for x in ('Enclose', 'Optimize', 'Concretize', 'Delay')])
+MU_SHARED = ([L + 'Typed/' + x + '.agda'
+              for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5', 'Mon', 'Imp', 'CFG', 'X86')]
+             + [C + x + '.agda' for x in ('Enclose', 'Optimize', 'Concretize', 'Delay', 'Globalize', 'RCO',
+                                          'LiftLocals', 'Explicate', 'Select', 'Pipeline')])
 MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda']
 
 
@@ -1127,7 +1129,7 @@ def mu_report(c):
     print('| not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
     mush = [f for f in c.every if c.seen[f][0] == 'mu-shared']
-    print(f'| languages and passes (ISWIM … Clos4, enclose … delay) | {n(MU_SHARED)} | {n(mush)} |')
+    print(f'| languages and passes (ISWIM … X86, enclose … select, and their composition) | {n(MU_SHARED)} | {n(mush)} |')
     mui = [f for f in c.every if c.seen[f][0] == 'mu-infra']
     print(f'| infrastructure: vectors (`VecUtil`, `VecSelect`) against heterogeneous vectors (`Mu/Framework/AllUtil`) '
           f'| {n(MU_INFRA)} | {n(mui)} |')
