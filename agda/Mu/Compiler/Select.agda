@@ -101,7 +101,7 @@ main-body : ∀ {Σ R} → C.Body Σ R [] → Body Σ R (entry [])
 main-body (C.body bs t) = body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _)) (tail t (m≤n⊔m _ _))
 
 {- a definition: its start moves its environment and argument to slots 0 and 1 -}
-def-body : ∀ {Σ s} → C.Body Σ (Sig.cod s) (Args s) → Body Σ (Sig.cod s) (called s)
+def-body : ∀ {Σ s} → C.Body Σ (DSig.cod s) (Args s) → Body Σ (DSig.cod s) (called s)
 def-body (C.body bs t) =
   body (blocks-depth bs ⊔ depth t) (blocks bs (m≤m⊔n _ _))
     (movq (reg rdi refl) (slot here⊑ (≤-trans (s≤s z≤n) le)) ∷ movq (reg rsi refl) (slot here⊑ le) ∷ tail t (m≤n⊔m _ _))

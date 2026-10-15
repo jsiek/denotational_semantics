@@ -16,13 +16,13 @@ module Mu.Language.Imp where
 
 open import Language.Prim using (Prim)
 open import Mu.Language.Type
-open import Mu.Language.Mon using (Sig; sig; Args; Atm; var; lit; ref) public
+open import Mu.Language.Mon using (DSig; sig; Args; Atm; var; lit; ref) public
 open import Mu.Framework.AllUtil using (All)
 
 open import Data.List using (List; []; _∷_)
 open import Framework.Primitives using (Int)
 
-data Simple (Σ : List Sig) (Δ : Ctx) : Type → Set where
+data Simple (Σ : List DSig) (Δ : Ctx) : Type → Set where
   atm : ∀ {A} → Atm Σ Δ A → Simple Σ Δ A
   pack : ∀ {Δ' A B} → Atm Σ Δ (code Δ' A B) → Atm Σ Δ (tup Δ') → Simple Σ Δ (A ⇒ B)
   callc : ∀ {A B} → Atm Σ Δ (A ⇒ B) → Atm Σ Δ A → Simple Σ Δ B
@@ -34,7 +34,7 @@ data Simple (Σ : List Sig) (Δ : Ctx) : Type → Set where
   fold : ∀ {A c} → Atm Σ Δ (unroll A {c}) → Simple Σ Δ (μ A {c})
   unfold : ∀ {A c} → Atm Σ Δ (μ A {c}) → Simple Σ Δ (unroll A {c})
 
-data Exp (Σ : List Sig) (Δ : Ctx) : Type → Set where
+data Exp (Σ : List DSig) (Δ : Ctx) : Type → Set where
   simple : ∀ {A} → Simple Σ Δ A → Exp Σ Δ A
   assign : ∀ {A B} → Exp Σ Δ A → Exp Σ (A ∷ Δ) B → Exp Σ Δ B
   case : ∀ {A B C} → Atm Σ Δ (A ⊹ B) → Exp Σ (A ∷ Δ) C → Exp Σ (B ∷ Δ) C → Exp Σ Δ C
@@ -44,6 +44,6 @@ data Exp (Σ : List Sig) (Δ : Ctx) : Type → Set where
 record Program (A : Type) : Set where
   constructor program
   field
-    {table} : List Sig
-    defs : All (λ s → Exp table (Args s) (Sig.cod s)) table
+    {table} : List DSig
+    defs : All (λ s → Exp table (Args s) (DSig.cod s)) table
     main : Exp table [] A

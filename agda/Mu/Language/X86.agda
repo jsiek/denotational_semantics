@@ -62,7 +62,7 @@ module Mu.Language.X86 where
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_)
-open import Mu.Language.Mon using (Sig; sig; Args; Atm; var; lit; ref) public
+open import Mu.Language.Mon using (DSig; sig; Args; Atm; var; lit; ref) public
 open import Language.Reg public
 open import Mu.Framework.AllUtil using (All)
 
@@ -131,7 +131,7 @@ returned Δ B = st (rt (just (ty B)) nothing nothing) Δ nothing false
 
 {- operands: a register, or an atom (a slot, an immediate or a label,
    as in Monμ), folded or unfolded -}
-data Arg (Σ : List Sig) (ψ : St) : RTy → Set where
+data Arg (Σ : List DSig) (ψ : St) : RTy → Set where
   atom : ∀ {A} → Atm Σ (St.fr ψ) A → Arg Σ ψ (ty A)
   reg : ∀ r {τ} → St.rs ψ ‹ r › ≡ just τ → Arg Σ ψ τ
   _↑ : ∀ {A c} → Arg Σ ψ (ty (unroll A {c})) → Arg Σ ψ (ty (μ A {c}))
@@ -143,13 +143,13 @@ data Dst (n : ℕ) : St → RTy → St → Set where
   slot : ∀ {Γ Δ Δ' O F A} (p : Δ' ⊑ Δ) → .(length Δ' < n) → Dst n (st Γ Δ O F) (ty A) (st Γ (A ∷ Δ') nothing F)
 
 {- what alloc builds -}
-data Obj (Σ : List Sig) (ψ : St) : Type → Set where
+data Obj (Σ : List DSig) (ψ : St) : Type → Set where
   pair : ∀ {Δ A B} → Arg Σ ψ (ty (code Δ A B)) → Arg Σ ψ (ty (tup Δ)) → Obj Σ ψ (A ⇒ B)
   tuple : ∀ {Δ} → All (λ A → Arg Σ ψ (ty A)) Δ → Obj Σ ψ (tup Δ)
   inl : ∀ {A B} → Arg Σ ψ (ty A) → Obj Σ ψ (A ⊹ B)
   inr : ∀ {A B} → Arg Σ ψ (ty B) → Obj Σ ψ (A ⊹ B)
 
-data Instr (Σ : List Sig) (n : ℕ) : St → St → Set where
+data Instr (Σ : List DSig) (n : ℕ) : St → St → Set where
   movq : ∀ {ψ τ ψ'} → Arg Σ ψ τ → Dst n ψ τ ψ' → Instr Σ n ψ ψ'
   subq : ∀ {Γ Δ O F} → Arg Σ (st Γ Δ O F) ℤty → ∀ r → Γ ‹ r › ≡ just ℤty
     → Instr Σ n (st Γ Δ O F) (st (Γ [ r ↦ just ℤty ]) Δ O F)
@@ -167,7 +167,7 @@ data Instr (Σ : List Sig) (n : ℕ) : St → St → Set where
 
 {- instructions, then a jump, to the blocks Bs, in a body of result R -}
 infixr 5 _∷_
-data Seq (Σ : List Sig) (n : ℕ) (R : Type) (Bs : List Ctx) : St → Set where
+data Seq (Σ : List DSig) (n : ℕ) (R : Type) (Bs : List Ctx) : St → Set where
   _∷_ : ∀ {ψ ψ'} → Instr Σ n ψ ψ' → Seq Σ n R Bs ψ' → Seq Σ n R Bs ψ
   retq : ∀ {Γ Δ O F} → Γ ‹ rax › ≡ just (ty R) → Seq Σ n R Bs (st Γ Δ O F)
   jmp : ∀ {Γ Δ O F} → Bs ∋ Δ → Seq Σ n R Bs (st Γ Δ O F)
@@ -179,12 +179,12 @@ entry : Ctx → St
 entry Δ = st unset Δ nothing false
 
 {- the blocks of a body, newest first, each over the older ones -}
-data Blocks (Σ : List Sig) (n : ℕ) (R : Type) : List Ctx → Set where
+data Blocks (Σ : List DSig) (n : ℕ) (R : Type) : List Ctx → Set where
   [] : Blocks Σ n R []
   _▷_ : ∀ {Bs Δ} → Blocks Σ n R Bs → Seq Σ n R Bs (entry Δ) → Blocks Σ n R (Δ ∷ Bs)
 
 {- a body: the number of slots of its frame, its blocks and its start -}
-record Body (Σ : List Sig) (R : Type) (ψ : St) : Set where
+record Body (Σ : List DSig) (R : Type) (ψ : St) : Set where
   constructor body
   field
     locals : ℕ
@@ -194,18 +194,18 @@ record Body (Σ : List Sig) (R : Type) (ψ : St) : Set where
 
 {- a definition of signature s starts with its environment in %rdi and
    its argument in %rsi -}
-called : Sig → St
-called s = st (rt nothing (just (ty (tup (Sig.env s)))) (just (ty (Sig.dom s)))) [] nothing false
+called : DSig → St
+called s = st (rt nothing (just (ty (tup (DSig.env s)))) (just (ty (DSig.dom s)))) [] nothing false
 
 record Program (A : Type) : Set where
   constructor program
   field
-    {table} : List Sig
-    defs : All (λ s → Body table (Sig.cod s) (called s)) table
+    {table} : List DSig
+    defs : All (λ s → Body table (DSig.cod s) (called s)) table
     main : Body table A (entry [])
 
 {- block l, with the blocks older than it -}
-record Blk (Σ : List Sig) (n : ℕ) (R : Type) (Δ : Ctx) : Set where
+record Blk (Σ : List DSig) (n : ℕ) (R : Type) (Δ : Ctx) : Set where
   constructor blk
   field
     {older} : List Ctx

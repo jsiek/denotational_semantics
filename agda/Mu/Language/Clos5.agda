@@ -26,14 +26,13 @@ open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Data.List using (List; []; _∷_)
 
 {- the signature of a definition: environment, argument, result -}
-record Sig : Set where
+record DSig : Set where
   constructor sig
   field
     env : Ctx
     dom cod : Type
-open Sig public
 
-data Tm (Σ : List Sig) (Γ : Ctx) : Type → Set where
+data Tm (Σ : List DSig) (Γ : Ctx) : Type → Set where
   `_ : ∀ {A} → Γ ∋ A → Tm Σ Γ A
   fun-ref : ∀ {Δ A B} → Σ ∋ sig Δ A B → Tm Σ Γ (code Δ A B)
   pack : ∀ {Δ A B} → Tm Σ Γ (code Δ A B) → Tm Σ Γ (tup Δ) → Tm Σ Γ (A ⇒ B)
@@ -51,16 +50,16 @@ data Tm (Σ : List Sig) (Γ : Ctx) : Type → Set where
 
 {- the context of the code of a definition: the argument is variable 0,
    the environment variable 1 -}
-Args : Sig → Ctx
-Args s = dom s ∷ tup (env s) ∷ []
+Args : DSig → Ctx
+Args s = DSig.dom s ∷ tup (DSig.env s) ∷ []
 
-Code : List Sig → Sig → Set
-Code Σ s = Tm Σ (Args s) (cod s)
+Code : List DSig → DSig → Set
+Code Σ s = Tm Σ (Args s) (DSig.cod s)
 
 record Program (A : Type) : Set where
   constructor program
   field
-    {table} : List Sig
+    {table} : List DSig
     defs : All (Code table) table
     main : Tm table [] A
 

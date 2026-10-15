@@ -24,15 +24,15 @@ open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Data.List using (List; []; _∷_)
 
 {- the definitions made so far, newest first, each over the older ones -}
-data Made : List Sig → Set where
+data Made : List DSig → Set where
   [] : Made []
   _▷_ : ∀ {Σ s} → Made Σ → Code Σ s → Made (s ∷ Σ)
 
 {- a result over the table after some more definitions -}
-record Out (Σ : List Sig) (P : List Sig → Set) : Set where
+record Out (Σ : List DSig) (P : List DSig → Set) : Set where
   constructor out
   field
-    {Σ'} : List Sig
+    {Σ'} : List DSig
     grows : Σ ⊑ Σ'
     made : Made Σ'
     res : P Σ'
