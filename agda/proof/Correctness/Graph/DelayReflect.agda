@@ -1,8 +1,8 @@
 {-
 
   Backward (reflect) direction of typed delay (Clos3ᵀ → Clos4ᵀ) in the
-  graph model, with the relation R of DelayRel (source sets against
-  finite lists of target observations), as for untyped delay
+  graph model, with the approximant logical relation ApproxLR of DelayRel
+  (source sets against finite target approximants), as for untyped delay
   (Untyped/proof/Correctness/Graph/DelayReflectFinite.agda). The target call
   (callc) is the source application on the calls collected from finitely
   many pairs (collect); project is a guard on both sides, and a target
@@ -87,14 +87,14 @@ collect L' N' (w ∷ V') V'⊆
                    in ⟨ U₁ , ⟨ x , ⟨ CarEntry-⊆ inW e₁ , u∈₁ ⟩ ⟩ ⟩
 
 {- a target value that project accepts is reflected by a source value it accepts -}
-untag-ne : ∀ t u {D} → R D (tag t u ∷ []) → nonempty (Untag t D)
-untag-ne t u r = Obs.nonempty-obs (unfold (Obs.tag-obs (unfold r) t (u ∷ []) (λ { _ (here refl) → here refl }))) (λ ())
+untag-ne : ∀ t u {D} → ApproxLR D (tag t u ∷ []) → nonempty (Untag t D)
+untag-ne t u r = ApproxLRLayer.nonempty-obs (unfold (ApproxLRLayer.tag-obs (unfold r) t (u ∷ []) (λ { _ (here refl) → here refl }))) (λ ())
 
-acc-reflect : ∀ t d' {D} → accepts fun₄ t d' → R D (d' ∷ []) → Σ[ d ∈ Value ] d ∈ D × accepts fun₂ t d
-acc-reflect tfun ⦅ u , v ⦆ _ r = Obs.fun-obs (unfold r) (here refl)
+acc-reflect : ∀ t d' {D} → accepts fun₄ t d' → ApproxLR D (d' ∷ []) → Σ[ d ∈ Value ] d ∈ D × accepts fun₂ t d
+acc-reflect tfun ⦅ u , v ⦆ _ r = ApproxLRLayer.fun-obs (unfold r) (here refl)
 acc-reflect tsum _ (inj₁ ⟨ u , refl ⟩) r = let ⟨ x , x∈ ⟩ = untag-ne leftT u r in ⟨ left x , ⟨ x∈ , inj₁ ⟨ x , refl ⟩ ⟩ ⟩
 acc-reflect tsum _ (inj₂ ⟨ u , refl ⟩) r = let ⟨ x , x∈ ⟩ = untag-ne rightT u r in ⟨ right x , ⟨ x∈ , inj₂ ⟨ x , refl ⟩ ⟩ ⟩
-acc-reflect tint _ ⟨ k , refl ⟩ r = ⟨ const k , ⟨ Obs.const-obs (unfold r) k (here refl) , ⟨ k , refl ⟩ ⟩ ⟩
+acc-reflect tint _ ⟨ k , refl ⟩ r = ⟨ const k , ⟨ ApproxLRLayer.const-obs (unfold r) k (here refl) , ⟨ k , refl ⟩ ⟩ ⟩
 acc-reflect (ttup n i) _ ⟨ u , refl ⟩ r = let ⟨ x , x∈ ⟩ = untag-ne (tupT i) u r in ⟨ tup[ i ] x , ⟨ x∈ , ⟨ x , refl ⟩ ⟩ ⟩
 
 {- The fundamental lemma ------------------------------------------------------}
@@ -105,28 +105,28 @@ record Envs {Γ Δ} (r : Ren Γ Δ) (ρ ρ' : Env Value) : Set₁ where
     NE : nonempty-env ρ
     ρ~ : Con-env ρ
     ρ'~ : Con-env ρ'
-    ρ⊳ : ∀ {A} (x : Γ ∋ A) V → mem V ⊆ ρ' (idx (r x)) → R (ρ (idx x)) V
+    ρ⊳ : ∀ {A} (x : Γ ∋ A) V → mem V ⊆ ρ' (idx (r x)) → ApproxLR (ρ (idx x)) V
 
 ext-envs : ∀ {Γ Δ} {r : Ren Γ Δ} {ρ ρ' X X'} → Envs r ρ ρ' → nonempty X → Con X → Con X'
-  → (∀ V → mem V ⊆ X' → R X V) → Envs (ext {B = Any} r) (X • ρ) (X' • ρ')
+  → (∀ V → mem V ⊆ X' → ApproxLR X V) → Envs (ext {B = Any} r) (X • ρ) (X' • ρ')
 ext-envs (envs NE ρ~ ρ'~ ρ⊳) ne c c' h =
   envs (extend-nonempty-env NE ne) (Con-• c ρ~) (Con-• c' ρ'~) (λ { Z → h ; (S x) → ρ⊳ x })
 
 delay-reflect : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ V' → mem V' ⊆ ⟦ delay r M ⟧' ρ' → R (⟦ M ⟧ ρ) V'
+  → ∀ V' → mem V' ⊆ ⟦ delay r M ⟧' ρ' → ApproxLR (⟦ M ⟧ ρ) V'
 reflect-nth : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ delays r Ms ⟧s' ρ') i → R (nthD (⟦ Ms ⟧s ρ) i) V'
+  → (i : Fin n) → ∀ V' → mem V' ⊆ nthD (⟦ delays r Ms ⟧s' ρ') i → ApproxLR (nthD (⟦ Ms ⟧s ρ) i) V'
 reflect-𝒯 : ∀ {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ V' → mem V' ⊆ 𝒯 n (⟦ delays r Ms ⟧s' ρ') → R (𝒯 n (⟦ Ms ⟧s ρ)) V'
+  → ∀ V' → mem V' ⊆ 𝒯 n (⟦ delays r Ms ⟧s' ρ') → ApproxLR (𝒯 n (⟦ Ms ⟧s ρ)) V'
 
 ne-reflect : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
   → nonempty (⟦ delay r M ⟧' ρ') → nonempty (⟦ M ⟧ ρ)
-ne-reflect M E ⟨ v , v∈ ⟩ = Obs.nonempty-obs (unfold (delay-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
+ne-reflect M E ⟨ v , v∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (delay-reflect M E (v ∷ []) (single⊆ v∈))) (λ ())
 
 tag-reflect : ∀ {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ ρ'} → Envs r ρ ρ'
-  → ∀ t W → mem W ⊆ Untag t (⟦ delay r M ⟧' ρ') → R (Untag t (⟦ M ⟧ ρ)) W
+  → ∀ t W → mem W ⊆ Untag t (⟦ delay r M ⟧' ρ') → ApproxLR (Untag t (⟦ M ⟧ ρ)) W
 tag-reflect M E t W W⊆ =
-  Obs.tag-obs (unfold (delay-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
+  ApproxLRLayer.tag-obs (unfold (delay-reflect M E (lmap (tag t) W) mW)) t W (λ d d∈ → ∈-map⁺ (tag t) d∈)
   where
   mW : mem (lmap (tag t) W) ⊆ _
   mW d d∈ with ∈-map⁻ (tag t) d∈
@@ -136,28 +136,28 @@ tag-reflect M E t W W⊆ =
 reflect-branch : ∀ {Γ Δ} (s : Tag) (L : Tm Γ ⟪ sum ⟫) (B : Tm (Any ∷ Γ) Any) {r : Ren Γ Δ} {ρ ρ' C} → Envs r ρ ρ'
   → ∀ v → tag s v ∈ ⟦ delay r L ⟧' ρ' → (∀ {a b} → tag s a ~ tag s b → a ~ b)
   → (nonempty (Untag s (⟦ L ⟧ ρ)) → ⟦ B ⟧ (Untag s (⟦ L ⟧ ρ) • ρ) ⊆ C)
-  → ∀ V' → mem V' ⊆ ⟦ delay (ext r) B ⟧' (Untag s (⟦ delay r L ⟧' ρ') • ρ') → R C V'
+  → ∀ V' → mem V' ⊆ ⟦ delay (ext r) B ⟧' (Untag s (⟦ delay r L ⟧' ρ') • ρ') → ApproxLR C V'
 reflect-branch s L B {r} E v sv s~ B⊆ V' V'⊆ =
-  R-mono (B⊆ NE-s)
+  ApproxLR-mono (B⊆ NE-s)
     (delay-reflect B (ext-envs E NE-s (Untag-con s s~ (S3.con L ρ~)) (Untag-con s s~ (S4.con (delay r L) ρ'~))
        (tag-reflect L E s)) V' V'⊆)
   where
   open Envs E
-  NE-s = Obs.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
+  NE-s = ApproxLRLayer.nonempty-obs (unfold (tag-reflect L E s (v ∷ []) (single⊆ sv))) (λ ())
 
 delay-reflect (` x) E = Envs.ρ⊳ E x
 
 delay-reflect (app L N) {r} {ρ' = ρ'} E V' V'⊆ with collect (⟦ delay r L ⟧' ρ') (⟦ delay r N ⟧' ρ') V' V'⊆
 ... | ⟨ W , ⟨ U , ⟨ W⊆L' , ⟨ U⊆N' , cs ⟩ ⟩ ⟩ ⟩ =
-  Obs.app-obs (unfold (delay-reflect L E W W⊆L')) cs _ (S3.con N (Envs.ρ~ E))
+  ApproxLRLayer.app-obs (unfold (delay-reflect L E W W⊆L')) cs _ (S3.con N (Envs.ρ~ E))
     (Con-⊆ (S4.con (delay r N) (Envs.ρ'~ E)) U⊆N') (delay-reflect N E U U⊆N')
 
-delay-reflect (lit B c) E V' V'⊆ = R-flat V'⊆ (λ v v∈ → ℬ-flat v (V'⊆ v v∈))
+delay-reflect (lit B c) E V' V'⊆ = ApproxLR-flat V'⊆ (λ v v∈ → ℬ-flat v (V'⊆ v v∈))
 
-delay-reflect (prim p L M) E V' V'⊆ = R-data V⊆ dt
+delay-reflect (prim p L M) E V' V'⊆ = ApproxLR-data V⊆ dt
   where
   const-reflect : ∀ N {c : base-rep Int} → const c ∈ ⟦ delay _ N ⟧' _ → const c ∈ ⟦ N ⟧ _
-  const-reflect N {c} c∈ = Obs.const-obs (unfold (delay-reflect N E (const c ∷ []) (single⊆ c∈))) c (here refl)
+  const-reflect N {c} c∈ = ApproxLRLayer.const-obs (unfold (delay-reflect N E (const c ∷ []) (single⊆ c∈))) c (here refl)
   V⊆ : mem V' ⊆ ⟦ prim p L M ⟧ _
   V⊆ v v∈ with V'⊆ v v∈
   ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ = ⟨ n , ⟨ m , ⟨ const-reflect L n∈ , ⟨ const-reflect M m∈ , refl ⟩ ⟩ ⟩ ⟩
@@ -173,10 +173,10 @@ delay-reflect (inl M) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆ in inj-ne v v∈
   ; fun-obs = λ p∈ → ⊥-elim (V'⊆ _ p∈)
-  ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
+  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { leftT W W⊆ → delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) } }
+                ; rightT W W⊆ → ApproxLR-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; (tupT i) W W⊆ → ApproxLR-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) } }
   where
   inj-ne : ∀ v → v ∈ ⟦ delay _ (inl M) ⟧' _ → nonempty (⟦ inl M ⟧ _)
   inj-ne (left d) d∈ = let ⟨ m , m∈ ⟩ = ne-reflect M E ⟨ d , d∈ ⟩ in ⟨ left m , m∈ ⟩
@@ -185,15 +185,15 @@ delay-reflect (inr M) E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆ in inj-ne v v∈
   ; fun-obs = λ p∈ → ⊥-elim (V'⊆ _ p∈)
-  ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
+  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { rightT W W⊆ → delay-reflect M E W (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; (tupT i) W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) } }
+                ; leftT W W⊆ → ApproxLR-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; (tupT i) W W⊆ → ApproxLR-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) } }
   where
   inj-ne : ∀ v → v ∈ ⟦ delay _ (inr M) ⟧' _ → nonempty (⟦ inr M ⟧ _)
   inj-ne (right d) d∈ = let ⟨ m , m∈ ⟩ = ne-reflect M E ⟨ d , d∈ ⟩ in ⟨ right m , m∈ ⟩
 
-delay-reflect (case L M N) E [] V'⊆ = R-∅ (λ _ ())
+delay-reflect (case L M N) E [] V'⊆ = ApproxLR-∅ (λ _ ())
 delay-reflect (case L M N) {r} {ρ} {ρ'} E (w ∷ V') V'⊆ with V'⊆ w (here refl)
 ... | inj₁ ⟨ v , ⟨ _ , ⟨ allL , _ ⟩ ⟩ ⟩ =
   reflect-branch leftT L M E v lv (λ a~b → a~b) M⊆ (w ∷ V') V'⊆F
@@ -220,11 +220,11 @@ delay-reflect (case L M N) {r} {ρ} {ρ'} E (w ∷ V') V'⊆ with V'⊆ w (here 
   ... | inj₂ ⟨ u , ⟨ U , ⟨ allR' , ⟨ x∈G , _ ⟩ ⟩ ⟩ ⟩ = mono₁ (S4.ok (delay (ext r) N)) ρ' allR' x x∈G
   ... | inj₁ ⟨ u , ⟨ U , ⟨ allL , _ ⟩ ⟩ ⟩ = ⊥-elim (S4.con (delay r L) ρ'~ _ _ rv (allL u (here refl)))
 
-delay-reflect (let′ M N) E [] V'⊆ = R-∅ (λ _ ())
+delay-reflect (let′ M N) E [] V'⊆ = ApproxLR-∅ (λ _ ())
 delay-reflect (let′ M N) {r} {ρ} {ρ'} E (w ∷ V') V'⊆
     with letD-collect (mono₁ (S4.ok (delay (ext r) N)) ρ') (w ∷ V') V'⊆
 ... | ⟨ U , ⟨ U⊆ , V'⊆N ⟩ ⟩ =
-  R-mono (proj₂ (Λ-β (mono₁ (S3.ok N) ρ) (fin₁ (S3.ok N) NE NE-M) (S3.con M ρ~)))
+  ApproxLR-mono (proj₂ (Λ-β (mono₁ (S3.ok N) ρ) (fin₁ (S3.ok N) NE NE-M) (S3.con M ρ~)))
     (delay-reflect N (ext-envs E NE-M (S3.con M ρ~) (Con-⊆ (S4.con (delay r M) ρ'~) U⊆)
        (λ Y' Y'⊆ → delay-reflect M E Y' (λ d d∈ → U⊆ d (Y'⊆ d d∈)))) (w ∷ V') V'⊆N)
   where
@@ -233,18 +233,18 @@ delay-reflect (let′ M N) {r} {ρ} {ρ'} E (w ∷ V') V'⊆
 
 delay-reflect (inject G M) E = delay-reflect M E
 
-delay-reflect (project t M) E [] V'⊆ = R-∅ (λ _ ())
+delay-reflect (project t M) E [] V'⊆ = ApproxLR-∅ (λ _ ())
 delay-reflect (project t M) E (w ∷ V') V'⊆ with V'⊆ w (here refl)
 ... | ⟨ ⟨ d' , ⟨ d'∈ , acc ⟩ ⟩ , _ ⟩ with acc-reflect t d' acc (delay-reflect M E (d' ∷ []) (single⊆ d'∈))
 ... | ⟨ d , ⟨ d∈ , acc' ⟩ ⟩ =
-  R-mono (λ x x∈ → ⟨ ⟨ d , ⟨ d∈ , acc' ⟩ ⟩ , x∈ ⟩) (delay-reflect M E (w ∷ V') (λ x x∈ → proj₂ (V'⊆ x x∈)))
+  ApproxLR-mono (λ x x∈ → ⟨ ⟨ d , ⟨ d∈ , acc' ⟩ ⟩ , x∈ ⟩) (delay-reflect M E (w ∷ V') (λ x x∈ → proj₂ (V'⊆ x x∈)))
 
 delay-reflect (clos {n = n} N Ms) {r} {ρ} {ρ'} E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → let ⟨ v , v∈ ⟩ = ne-mem ne V'⊆ in ⟨ ν , ν∈ (pair-ne v v∈) ⟩
   ; fun-obs = λ p∈ → ⟨ ν , ⟨ ν∈ (pair-ne _ (V'⊆ _ p∈)) , tt ⟩ ⟩
   ; app-obs = clos-app
-  ; tag-obs = λ t W W⊆ → R-∅ (λ d d∈ → pair-tag t (V'⊆ _ (W⊆ d d∈)))
+  ; tag-obs = λ t W W⊆ → ApproxLR-∅ (λ d d∈ → pair-tag t (V'⊆ _ (W⊆ d d∈)))
   }
   where
   open Envs E
@@ -260,22 +260,22 @@ delay-reflect (clos {n = n} N Ms) {r} {ρ} {ρ'} E V' V'⊆ = fold record
   pair-tag rightT ()
 
   T-ne : nonempty T' → nonempty T
-  T-ne ⟨ t' , t'∈ ⟩ = Obs.nonempty-obs (unfold (reflect-𝒯 Ms E (t' ∷ []) (single⊆ t'∈))) (λ ())
+  T-ne ⟨ t' , t'∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (reflect-𝒯 Ms E (t' ∷ []) (single⊆ t'∈))) (λ ())
   ν∈ : nonempty T' → ν ∈ D
   ν∈ ne = let ⟨ t , t∈ ⟩ = T-ne ne in ⟨ t ∷ [] , ⟨ ⟨ tt , ⟨ (λ ()) , ≈-single ⟩ ⟩ , ⟨ single⊆ t∈ , (λ ()) ⟩ ⟩ ⟩
 
   Cdrs⊆T' : Cdrs V' ⊆ T'
   Cdrs⊆T' fv ⟨ _ , e∈ ⟩ = proj₂ (V'⊆ _ e∈)
 
-  clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → Con E → Con (mem U') → R E U' → R (D ● E) W'
-  clos-app {W' = []} _ _ _ _ _ = R-∅ (λ _ ())
+  clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → Con E → Con (mem U') → ApproxLR E U' → ApproxLR (D ● E) W'
+  clos-app {W' = []} _ _ _ _ _ = ApproxLR-∅ (λ _ ())
   clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
-    R-mono (ΛΛ-β {F = λ X Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ω ⌉)} cT cE (fin₂ (S3.ok N) NE-T NE-E))
+    ApproxLR-mono (ΛΛ-β {F = λ X Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ω ⌉)} cT cE (fin₂ (S3.ok N) NE-T NE-E))
       (delay-reflect N {r = λ x → x} (envs NE-ρs (Con-• cE (Con-• cT (λ _ → Con-⌈⌉ ω))) ρ''~ ρ''⊳) (w ∷ W') W⊆B)
     where
     wit = Calls.results cs w (here refl)
     ent = proj₁ (proj₂ wit)
-    NE-E = Obs.nonempty-obs (unfold rU) (ne-⊆ (proj₂ (proj₂ (proj₂ wit))) (proj₁ (proj₂ (proj₂ wit))))
+    NE-E = ApproxLRLayer.nonempty-obs (unfold rU) (ne-⊆ (proj₂ (proj₂ (proj₂ wit))) (proj₁ (proj₂ (proj₂ wit))))
     NE-T = T-ne (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → Cdrs⊆T' d (CarEntry.FV⊆ ent d d∈)))
     ρ'' : Env Value
     ρ'' = mem U' • Cdrs V' • (λ _ → ⌈ ω ⌉)
@@ -288,36 +288,36 @@ delay-reflect (clos {n = n} N Ms) {r} {ρ} {ρ'} E V' V'⊆ = fold record
     ρ''~ : Con-env ρ''
     ρ''~ = Con-• U'~ (Con-• (Con-⊆ (S4.con (T.tuple (delays r Ms)) ρ'~) Cdrs⊆T') (λ _ → Con-⌈⌉ ω))
     NE-ρs = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) NE-T) NE-E
-    ρ''⊳ : ∀ {A} (x : (Any ∷ ⟪ tup n ⟫ ∷ []) ∋ A) V → mem V ⊆ ρ'' (idx x) → R ((Es • T • (λ _ → ⌈ ω ⌉)) (idx x)) V
-    ρ''⊳ Z Y' Y'⊆ = R-⊆ Y'⊆ rU
+    ρ''⊳ : ∀ {A} (x : (Any ∷ ⟪ tup n ⟫ ∷ []) ∋ A) V → mem V ⊆ ρ'' (idx x) → ApproxLR ((Es • T • (λ _ → ⌈ ω ⌉)) (idx x)) V
+    ρ''⊳ Z Y' Y'⊆ = ApproxLR-⊆ Y'⊆ rU
     ρ''⊳ (S Z) Y' Y'⊆ = reflect-𝒯 Ms E Y' (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈))
 
 reflect-nth (M ∷ Ms) E zero = delay-reflect M E
 reflect-nth (M ∷ Ms) E (suc i) = reflect-nth Ms E i
 
 reflect-𝒯 {n = zero} Ms E V' V'⊆ =
-  R-flat (λ v v∈ → proj₁ (𝒯0-flat v (V'⊆ v v∈))) (λ v v∈ → proj₂ (𝒯0-flat v (V'⊆ v v∈)))
+  ApproxLR-flat (λ v v∈ → proj₁ (𝒯0-flat v (V'⊆ v v∈))) (λ v v∈ → proj₂ (𝒯0-flat v (V'⊆ v v∈)))
 reflect-𝒯 {n = suc n} Ms {r} {ρ} {ρ'} E V' V'⊆ = fold record
   { const-obs = λ c c∈ → ⊥-elim (V'⊆ _ c∈)
   ; nonempty-obs = λ ne → tup-ne (ne-mem ne V'⊆)
   ; fun-obs = λ p∈ → ⊥-elim (V'⊆ _ p∈)
-  ; app-obs = λ cs _ _ _ _ → R-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
+  ; app-obs = λ cs _ _ _ _ → ApproxLR-∅ (Calls-none (λ u v uv∈ → V'⊆ _ uv∈) cs)
   ; tag-obs = λ { (tupT i) W W⊆ → nth-case i W W⊆
-                ; leftT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
-                ; rightT W W⊆ → R-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) } }
+                ; leftT W W⊆ → ApproxLR-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈))
+                ; rightT W W⊆ → ApproxLR-∅ (λ d d∈ → V'⊆ _ (W⊆ d d∈)) } }
   where
   Ds' = ⟦ delays r Ms ⟧s' ρ'
   Ds = ⟦ Ms ⟧s ρ
   comp-ne : ∀ j → nonempty (nthD Ds' j) → nonempty (nthD Ds j)
-  comp-ne j ⟨ d , d∈ ⟩ = Obs.nonempty-obs (unfold (reflect-nth Ms E j (d ∷ []) (single⊆ d∈))) (λ ())
+  comp-ne j ⟨ d , d∈ ⟩ = ApproxLRLayer.nonempty-obs (unfold (reflect-nth Ms E j (d ∷ []) (single⊆ d∈))) (λ ())
   tup-ne : nonempty (𝒯 (suc n) Ds') → nonempty (𝒯 (suc n) Ds)
   tup-ne ⟨ tup[ i ] d , ⟨ refl , ⟨ d∈ , ne ⟩ ⟩ ⟩ =
     let ⟨ d₀ , d₀∈ ⟩ = comp-ne i ⟨ d , d∈ ⟩ in ⟨ tup[ i ] d₀ , ⟨ refl , ⟨ d₀∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩ ⟩
-  nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Untag (tupT i) (mem V') → R (Untag (tupT i) (𝒯 (suc n) Ds)) W'
-  nth-case i [] _ = R-∅ (λ _ ())
+  nth-case : ∀ {m} (i : Fin m) W' → mem W' ⊆ Untag (tupT i) (mem V') → ApproxLR (Untag (tupT i) (𝒯 (suc n) Ds)) W'
+  nth-case i [] _ = ApproxLR-∅ (λ _ ())
   nth-case i (w ∷ W') W'⊆ with V'⊆ _ (W'⊆ w (here refl))
   ... | ⟨ refl , ⟨ _ , ne ⟩ ⟩ =
-    R-mono (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩) (reflect-nth Ms E i (w ∷ W') sub)
+    ApproxLR-mono (λ d d∈ → ⟨ refl , ⟨ d∈ , (λ j → comp-ne j (ne j)) ⟩ ⟩) (reflect-nth Ms E i (w ∷ W') sub)
     where
     sub : mem (w ∷ W') ⊆ nthD Ds' i
     sub d d∈ with V'⊆ _ (W'⊆ d d∈)
@@ -329,7 +329,7 @@ Envs₀ : ∀ (r : Ren [] []) → Envs r ρ₀ ρ₀
 Envs₀ r = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ → Con-⌈⌉ ω) (λ ())
 
 reflect-const : ∀ (M : Tm [] Any) {B} (c : base-rep B) → const c ∈ ⟦ delay-program M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀
-reflect-const M c c∈ = Obs.const-obs (unfold (delay-reflect M (Envs₀ _) (const c ∷ []) (single⊆ c∈))) c (here refl)
+reflect-const M c c∈ = ApproxLRLayer.const-obs (unfold (delay-reflect M (Envs₀ _) (const c ∷ []) (single⊆ c∈))) c (here refl)
 
 reflect-nonempty : ∀ (M : Tm [] Any) → nonempty (⟦ delay-program M ⟧' ρ₀) → nonempty (⟦ M ⟧ ρ₀)
 reflect-nonempty M = ne-reflect M (Envs₀ _)

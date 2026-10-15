@@ -49,6 +49,7 @@
 \newcommand{\app}{\star}
 \newcommand{\NE}{\neq\emptyset}
 \newcommand{\Rel}[2]{\mathcal{R}(#1, #2)}
+\newcommand{\ApproxLR}[2]{\mathsf{ALR}(#1, #2)}
 \newcommand{\consis}{\mathit{consis}}
 \newcommand{\obseq}{\cong}
 
@@ -256,7 +257,7 @@ denotational lemmas, the syntax lemmas, forward simulations) are under
   \item the enclose and optimize equalities;
   \item for concretize, the $\mathit{Ref}$ semantics and $\sim_\varphi$;
   \item for delay, the let equation, the element-wise relation $\sqsubseteq$
-    for preservation, and $\mathit{depth}$, $\mathcal{R}$, and $\rhd$
+    for preservation, and $\mathit{depth}$, $\mathsf{ALR}$, and $\rhd$
     for reflection;
   \item for globalize, $\mathit{Extends}$, $\mathit{RB}_n$, and $\mathit{Agree}_n$;
   \item for rco, the let laws, strict operators, the let chain, and the
@@ -1772,8 +1773,9 @@ for a closed $M$.
 Delay changes how a closure is represented, so its correctness is not an
 equation: as in Part~II (Lemmas~\ref{lem:delay-preserve}
 and~\ref{lem:delay-reflect}), a logical relation between source values and
-target sets shows that the pass preserves, and another between finite
-sets of target values and source sets that it reflects, the constants
+target sets shows that the pass preserves, and another, the approximant
+logical relation between source sets and finite sets of target values,
+that it reflects, the constants
 and nonemptiness. The types add the clauses for project: a $\Tl{Clos3}$
 value that project accepts is a function entry, where the $\Tl{Clos4}$
 one is a pair.
@@ -1809,9 +1811,12 @@ If $\rho'(x) \NE$ for every $x$, $\consis(\rho')$, and $\rho \sqsubseteq \rho'$,
 \end{lemma}
 
 \paragraph{Reflection.}
-The relation $\Rel{D}{V'}$ between a set $D$ of $\Tl{Clos3}$ values and a
-finite set $V'$ of $\Tl{Clos4}$ values, by recursion on
-$\mathit{depth}(V')$ (Part~II), where $\mathit{Entry}$ and $\mathit{Calls}$
+The \emph{approximant logical relation} $\ApproxLR{D}{V'}$ relates an
+arbitrary set $D$ of $\Tl{Clos3}$ values to a finite target approximant,
+a finite set $V'$ of $\Tl{Clos4}$ values, by recursion on
+$\mathit{depth}(V')$ (Part~II); the Agda iterates it on fuel only to
+make the recursion structural, and shows that any fuel bounding the
+depth gives the same relation. Here $\mathit{Entry}$ and $\mathit{Calls}$
 are those of Part~II, and $\tau$ ranges over $\key{tup}_i$, $\key{left}$
 and $\key{right}$:
 \begin{align*}
@@ -1822,30 +1827,30 @@ and $\key{right}$:
     \forall w \in W.\; \exists U_0 \NE.\; \mathit{Entry}(V', U_0, w) \land U_0 \subseteq U \\
     \land\; \forall u \in U.\; \exists U_0\, w.\; \mathit{Entry}(V', U_0, w) \land u \in U_0
   \end{array} \\[1ex]
-  \Rel{D}{V'} &\iff
+  \ApproxLR{D}{V'} &\iff
   \begin{array}[t]{l}
     \forall c \in V'.\; c \in D \\
     \land\; (V' \NE \implies D \NE) \\
     \land\; (\forall u\, v.\; \pairv{u}{v} \in V' \implies \exists d \in D.\; \Tfuntwo(d)) \\
     \land\; \forall U\, W\, E.\;
-       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{E}{U} \implies \Rel{D \app E}{W} \\
+       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \ApproxLR{E}{U} \implies \ApproxLR{D \app E}{W} \\
     \land\; \forall \tau\, W.\; W \subseteq \{ d \mid \tau(d) \in V' \}
-       \implies \Rel{\{ d \mid \tau(d) \in D \}}{W}
+       \implies \ApproxLR{\{ d \mid \tau(d) \in D \}}{W}
   \end{array} \\[1ex]
-  \rho \rhd \rho' &\iff \forall x\, V'.\; V' \subseteq \rho'(x) \implies \Rel{\rho(x)}{V'}
+  \rho \rhd \rho' &\iff \forall x\, V'.\; V' \subseteq \rho'(x) \implies \ApproxLR{\rho(x)}{V'}
 \end{align*}
 Unlike Part~II, a pair in $V'$ needs a function in $D$ (for project), and
 the argument $E$ of a call is consistent. Unlike Part~II too, the source
 is on the left: Part~II writes $\Rel{V'}{D}$ and $\rho' \rhd \rho$.
 \begin{lemma}[Project Reflects]\label{lem:t-den-acc-reflect}
-If $\Taccepts{\Tfunfour}(t, d')$ and $\Rel{D}{\{d'\}}$, then
+If $\Taccepts{\Tfunfour}(t, d')$ and $\ApproxLR{D}{\{d'\}}$, then
 $\Taccepts{\Tfuntwo}(t, d)$ for some $d \in D$.
 \end{lemma}
 \begin{lemma}[Delay Reflects]\label{lem:t-den-delay-reflect}
 If $\rho(x) \NE$ for every $x$, $\consis(\rho)$, $\consis(\rho')$, and $\rho \rhd \rho'$,
 then for every finite $V'$,
 \[
-  V' \subseteq \SEM{\pass{delay}(M)}^{\Tl{4}}\rho' \implies \Rel{\SEM{M}^{\Tl{3}}\rho}{V'} .
+  V' \subseteq \SEM{\pass{delay}(M)}^{\Tl{4}}\rho' \implies \ApproxLR{\SEM{M}^{\Tl{3}}\rho}{V'} .
 \]
 \end{lemma}
 A target call $V' \subseteq L' \odot N'$ is a batch of calls of a finite
@@ -2160,10 +2165,11 @@ each from the one before it (\texttt{compile-x86-same},
   relation $\mathit{Th}$ is over flags (\texttt{keeps}), and its
   $\FV(M)$ is \texttt{uses M}.
 \item \textbf{Delay}'s relations: $\sqsubseteq$ is \texttt{\_}$\sqsubseteq$\texttt{\_} with
-  \texttt{PairV}, \texttt{Nth}, \texttt{Lefts}, \texttt{Rights}; $\mathcal{R}$
-  is the record \texttt{Obs} (\texttt{const-obs}, \texttt{nonempty-obs},
-  \texttt{fun-obs}, \texttt{app-obs}, \texttt{tag-obs}), iterated on fuel
-  ($R'$) up to the depth of $V'$, a list; $\mathit{Entry}$ is
+  \texttt{PairV}, \texttt{Nth}, \texttt{Lefts}, \texttt{Rights}; $\mathsf{ALR}$
+  is \texttt{ApproxLR}, the record \texttt{ApproxLRLayer} (\texttt{const-obs}, \texttt{nonempty-obs},
+  \texttt{fun-obs}, \texttt{app-obs}, \texttt{tag-obs}) iterated on fuel
+  (\texttt{ApproxLR}$_{\leq}$) up to the depth of $V'$, a list, with
+  \texttt{ApproxLR-depth-irrelevant} for the fuel; $\mathit{Entry}$ is
   \texttt{CarEntry}, and $\{ d \mid \tau(d) \in D \}$ is \texttt{Untag $\tau$ D}.
 \item \textbf{Globalize}'s $\key{made}$ is \texttt{made} over \texttt{Made},
   $\mathit{Extends}$ is the record \texttt{Ext}, the weakening lemma is
@@ -2647,9 +2653,10 @@ the body on a finite part of $T$, which the pair's environment $T'$
 relates, and the body's environment is related again.
 
 \paragraph{Reflection.}
-The relation $\Rel{D}{V'}$ between a set $D$ of $\Tl{Clos3}$ values and a
-finite set $V'$ of $\Tl{Clos4}$ values is defined by recursion on
-$\mathit{depth}(V')$ (as in Part~II), where $t$ ranges over the tags
+The approximant logical relation $\ApproxLR{D}{V'}$ relates a set $D$
+of $\Tl{Clos3}$ values to a finite target approximant, a finite set $V'$
+of $\Tl{Clos4}$ values, by recursion on $\mathit{depth}(V')$ (as in
+Part~II), where $t$ ranges over the tags
 $\key{tup}_i$, $\key{left}$ and $\key{right}$, and $U$ and $W$ over finite
 sets of $\Tl{Clos4}$ values. A target closure is a set of pairs whose
 calls combine the codes and environments of several pairs:
@@ -2662,17 +2669,17 @@ calls combine the codes and environments of several pairs:
     \land\; \forall u \in U.\; \exists U_0\, w.\; \mathit{Entry}(V', U_0, w) \land u \in U_0
     \;\land\; \omega \notin U
   \end{array} \\[1ex]
-  \Rel{D}{V'} &\iff
+  \ApproxLR{D}{V'} &\iff
   \begin{array}[t]{l}
     (\omega \in V' \implies \omega \in D)
     \land\; \forall c \in V'.\; c \in D \\
     \land\; \forall d \in V'.\; d \neq \omega \implies \exists s \in \lfloor D \rfloor.\; \Tkind(s) = \Tkindfour(\Tkind(d)) \\
     \land\; \forall U\, W\, E.\;
-       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{E}{U} \implies \Rel{D \bullet E}{W} \\
+       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \ApproxLR{E}{U} \implies \ApproxLR{D \bullet E}{W} \\
     \land\; \forall t\, W.\; W \subseteq \{ d \mid t(d) \in V' \}
-       \implies \Rel{\{ d \mid t(d) \in D \}}{W}
+       \implies \ApproxLR{\{ d \mid t(d) \in D \}}{W}
   \end{array} \\[1ex]
-  D \rhd D' &\iff \forall V'.\; V' \text{ finite},\ V' \subseteq D' \implies \Rel{D}{V'} \qquad
+  D \rhd D' &\iff \forall V'.\; V' \text{ finite},\ V' \subseteq D' \implies \ApproxLR{D}{V'} \qquad
   \rho \rhd \rho' \iff \forall x.\; \rho(x) \rhd \rho'(x)
 \end{align*}
 \begin{lemma}[Reflecting through the Monad]\label{lem:t-gerr-reflect-bind}
@@ -3046,13 +3053,13 @@ in math ($\texttt{app}^{\mathsf{t}}$ is \texttt{app} with a superscript t).
   and the untyped let as a bind is $\texttt{let}^{\mathsf{m}}$\texttt{-}$\bind$.
 \item \textbf{Delay}'s relations: $v \sqsubseteq D'$ is $\sqsubseteq$ of
   \texttt{DelayPreserve.agda}, lifted to sets by \texttt{Lifted}, and
-  $\Rel{D}{V'}$ is \texttt{R D V'}, with the fields of \texttt{Obs}
+  $\ApproxLR{D}{V'}$ is \texttt{ApproxLR D V'}, with the fields of \texttt{ApproxLRLayer}
   (\texttt{DelayRel.agda}): \texttt{err-obs}, \texttt{const-obs},
   \texttt{kind-obs}, \texttt{app-obs} and \texttt{tag-obs}; $D \rhd D'$ is
   \texttt{Rel D D'}, and $\bullet$ and $\odot$ are the Agda's. Of
   Lemmas~\ref{lem:t-gerr-delay-lift} and~\ref{lem:t-gerr-reflect-bind}, the
-  binds are \texttt{binds-lift} and \texttt{R-bind}, and project is
-  $\texttt{R-check}_{\mathsf{r}}$, \texttt{bad-reflect} and \texttt{R-restrict}. The
+  binds are \texttt{binds-lift} and \texttt{ApproxLR-bind}, and project is
+  $\texttt{ApproxLR-check}_{\mathsf{r}}$, \texttt{bad-reflect} and \texttt{ApproxLR-restrict}. The
   environments are records \texttt{Envs}.
 \item \textbf{Globalize}'s table of the definitions made is
   \texttt{madeT}, $\mathit{Agree}$ is \texttt{Agr}, and $\vec{d} \preceq \vec{d}'$
