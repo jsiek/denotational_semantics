@@ -4,7 +4,7 @@
   between their reduction semantics, in lock step, as for typed
   globalize (proof/Correctness/Reduction/GlobalizeRed.agda).
 
-  The Clos5ᵀ program runs with the definitions ds that the pass made for
+  The Clos5μ program runs with the definitions ds that the pass made for
   the whole program, and the relation is for ds: a congruence, closed
   under substitution (≈-trav), except that code N is related to a
   reference f when N is related to the definition lookup ds f. The pass
