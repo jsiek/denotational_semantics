@@ -387,6 +387,27 @@ Row by row against the same rows of the typed pipeline (the semantics of each la
 * **Recursive types and Agda's unification.** `unfold : Tm Γ (μ A) → Tm Γ (A [ μ A ])` and the machines' `foldK : Cont (μ A) → Cont (A [ μ A ])` have an index that is a function application, so Agda cannot split a term or a continuation at a concrete type such as `base Int` (it cannot decide whether `A [ μ A ] ≟ base Int`). No definition or proof needs that: every function splits terms, continuations and relations at a generic type, as with `prim`, whose index `out-flat p` (now `out-ty p`) has the same property; where a value is split at `μ A`, Agda splits the continuation first. So `unfold` takes no equation argument.
 * **Optimize with heterogeneous contexts.** An unused free variable cannot be sent to the argument, as the typed pass does, since its type differs. Optimize's renaming is instead defined only on the variables that the term uses (`Ren (uses M) Γ'`, given a proof that the variable is used), and a closure's code is renamed by `squeeze`, defined on the kept variables; `covers` (the code uses only kept variables) moves from the proofs into the pass. The graph proof shrinks (89 → 83), the CEK one too (133 → 127).
 
+**Clocked interpreters (P1).** The pilot's interpreters (`Mu/Semantics/Interp/`) are the typed pipeline's, with `fold` a value and `unfold` taking it apart: no result is an error, only a timeout. The values are those of the typed pipeline (a closure is packed code and the tuple of its environment), indexed by the code's environment, argument and result types, and the value relation (`Mu/proof/Semantics/Interp/Rel.agda`) is the typed one, with `fold≈` for `dyn≈` and `unfold≈` for `project≈`. Each pass is proved clock for clock, as in the typed pipeline (`Mu/proof/Correctness/Interp/`). Row by row against the typed interpreter column, without simplify and cast insertion:
+
+| ISWIMμ pilot against the typed pipeline | interpreter: typed | interpreter: μ |
+|---|---:|---:|
+| semantics: ISWIM | 25 | 23 |
+| semantics: Clos2 | 25 | 23 |
+| semantics: Clos3 | 23 | 23 |
+| semantics: Clos4 | 24 | 24 |
+| semantics: values (`Values`) | 33 | 32 |
+| semantics: value relations (`Rel`) | 46 | 44 |
+| CC: enclose | 33 | 33 |
+| CC: optimize | 60 | 65 |
+| CC: concretize | 42 | 42 |
+| CC: delay | 35 | 35 |
+| **total** | 346 | 344 |
+| composition (typed: all the passes, to X86ᵀ; μ: to Clos4μ) | 33 | 6 |
+
+* **The interpreter column barely moves (346 → 344).** Dynamic typing costs the interpreter almost nothing: `project`'s failure is one line in the values (`project?`) and one in the relation (`project≈`, with its `error` case), and the passes treat `project` and `unfold` alike, as one congruence (`bind-rel … project≈`, `bind-rel … unfold≈`). The rows are otherwise line for line the same proofs.
+* **Optimize grows (60 → 65)**: the renaming is defined only on the variables a term uses (as in the other columns of the pilot), so the agreement of the environments is restricted by hand for each subterm (`λ x t → ag x (∨-l _ t)`), where the typed proof uses the infrastructure's `subL`/`subR` on vectors of flags.
+* The examples run on the interpreters too (`Mu/proof/Compiler/Examples/RecursionInterp.agda`: countdown 3 by the fixed-point combinator returns 0, Ω times out).
+
 ## What the groups contain
 
 * **shared (counted only in the proofs that use it when not all four do, see above):** the languages (untyped ISWIM, the typed languages in `Language/Typed/` with their types `Language/Typed/Type.agda`, X86ᵀ among them, its registers `Language/Reg.agda`, and the primitives `Language/Prim.agda`), the compiler passes (`Compiler/`) and their compositions `compile₄`, `compile`, `compile-mon`, `compile-imp`, `compile-cfg` and `compile-x86` (`Compiler/Pipeline.agda`), which all four proofs use; the observations and the end-theorem shape (`Semantics/Observation.agda`); and the lemmas about the compiler's output that the proofs use:
@@ -411,7 +432,7 @@ Row by row against the same rows of the typed pipeline (the semantics of each la
 * **shared modules not used by all four proofs:** see [Shared modules](#shared-modules).
 * **simplify:** the pass (`Compiler/Simplify.agda`) is shared, as every pass is; its syntactic lemmas (`proof/Compiler/SimplifyFacts.agda`), which all its proofs use, are counted in the simplify row of every column. See [Simplify](#simplify).
 * **the preserved untyped pipeline** (`agda/Untyped/`): its own groups, by the same rules; what it shares with the typed pipeline (ISWIM, simplify and its proofs, the primitives, the observations, the ISWIM adequacy) is counted in both. Untyped X86, its semantics in every style and its adequacy are the untyped pipeline's (X86 and its CEK machine stay in `agda/`, since the assurance uses them).
-* **the ISWIMμ pilot (not in the totals)** (`agda/Mu/`): its languages and passes (`mu-shared`), heterogeneous vectors (`mu-infra`), its graph-model and CEK columns (`mu-den`, `mu-op`, by the rows above), and an example (`mu-examples`); `loc.py` checks that its columns use neither each other nor a proof of either pipeline (what both pipelines share they may use); see [ISWIMμ pilot](#iswimμ-pilot).
+* **the ISWIMμ pilot (not in the totals)** (`agda/Mu/`): its languages and passes (`mu-shared`), heterogeneous vectors (`mu-infra`), its graph-model, CEK and interpreter columns (`mu-den`, `mu-op`, `mu-ck`, by the rows above), and an example (`mu-examples`); `loc.py` checks that its columns use neither each other nor a proof of either pipeline (what both pipelines share they may use); see [ISWIMμ pilot](#iswimμ-pilot).
 * **assurance (not in the totals):** what checks that X86ᵀ is faithful to untyped X86 (`Theorems/X86Erasure.agda`, `proof/Assurance/`, the erasure and select into untyped X86, `Compiler/SelectX86.agda`, with its proof `proof/Compiler/SelectErase.agda`); see [Assurance](#assurance).
 
 ## Caveats

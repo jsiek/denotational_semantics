@@ -19,7 +19,9 @@
     (compile₄-same), with delay by the approximant logical relation
     (Mu/proof/Correctness/Graph/DelayRel.agda);
   * CEK machine + simulation: Mu/proof/Correctness/CEK/PipelineSim.agda
-    (compile₄-correct).
+    (compile₄-correct);
+  * clocked interpreter + value relations:
+    Mu/proof/Correctness/Interp/CompilerFuel.agda (compile₄-correct).
 
 -}
 
@@ -27,4 +29,6 @@ module Mu.All where
 
 import Mu.proof.Correctness.Graph.CompilerCorrect
 import Mu.proof.Correctness.CEK.PipelineSim
+import Mu.proof.Correctness.Interp.CompilerFuel
 import Mu.proof.Compiler.Examples.RecursionExample
+import Mu.proof.Compiler.Examples.RecursionInterp
