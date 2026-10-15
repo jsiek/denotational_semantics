@@ -288,7 +288,8 @@ Bibliographic data [V] (Crossref; Pitts 1996's bibliography also says 159–267;
 says 159–268). Proof method [U]: full text not obtained (tried again 2026-10-15: no PDF on the
 Oxford publication page or Abramsky's publication list; the Cambridge TR UCAM-CL-TR-259 is paper
 only; OpenAlex marks the Elsevier copy "bronze" open access but ScienceDirect refused automated
-access). From memory it reuses the
+access). A PDF was later placed at `papers/PLDI-2027/related/abramsky-1993.pdf`, but it is an image-only
+scan with no text layer (pdftotext extracts nothing), so it is still unread. From memory it reuses the
 LLC/domain-logic approach. Ong's 1988 Imperial PhD thesis has "§3.2.3 A General Adequacy
 Result" for continuous lazy λ-models [V title only, method unseen]. Do not quote this paper
 for its method.
@@ -714,9 +715,58 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
   semantics of computer languages and their implementations"].
 - **Stoy**, *Denotational Semantics: The Scott–Strachey Approach to Programming Language
   Theory*, MIT Press, 1977 [U]. **Stoy**, "The congruence of two programming language
-  definitions", TCS 13 (1981) 151–174, doi:10.1016/0304-3975(81)90037-2 [V bib via Crossref;
-  content unread].
-- **Content [V only via secondary sources]:**
+  definitions", TCS 13 (1981) 151–174, doi:10.1016/0304-3975(81)90037-2 [V bib via Crossref].
+- **Stoy 1981, content [V, `related/stoy-1981.pdf`, read 2026-10-15].** The PDF is a scan with a
+  poor OCR layer; in the quotes below OCR misspellings are corrected, and nothing lost in the OCR is
+  filled in. Page numbers are the printed TCS pages.
+  - **What is related.** Not standard vs. store semantics (as these notes previously said, from
+    secondary sources), but a denotational semantics and an interpreter for a small language PL:
+    "one definition gave the denotational semantics, in the style of Scott and Strachey [12], and
+    another defined the language using an interpreter, along lines similar to the use of VDL [6]. In
+    this paper we present a proof of the congruence of these two definitions." (p. 151). PL is
+    "simple enough for its semantics to be given solely in terms of environments" (p. 153).
+  - **Two stages.** Stage 1 relates the direct semantics to a new continuation semantics (category
+    B, same language); "Our first stage closely resembles this proof [Reynolds 1974], though our
+    expression of it is a little different: Reynolds's use of 'directed complete relations'
+    corresponds to our use of 'inclusive predicates'." (p. 152). Stage 2 relates the continuation
+    semantics to the interpreter (category A: denotation vs. an operational definition), via
+    "derepresentation functions, which map representations into the values they represent" (§8,
+    p. 159).
+  - **Existence (stage 1).** "These predicates have definitions which involve circularity and they
+    can be rewritten as a fixed point equation. However, the function of which this set of predicates
+    is the fixed point is not monotonic, and so the existence of such a fixed point cannot be inferred
+    by the usual appeal to the result of Tarski" (p. 156). The construction: "The construction of
+    solutions to these recursive domain equations involves sequences of 'approximation' domains, of
+    which the required domains are, in some well-defined sense, the limits. We may define predicates
+    on each of these approximation domains: this involves no circularity, but instead uses the
+    predicates on earlier domains. Then we may define predicates for some element of the limit domain
+    by applying the appropriate predicates to the element's images in all the approximation domains,
+    and taking the conjunction of the results." (p. 156). So stage-indexed over both domains, then
+    intersected, as in Reynolds.
+  - **Asymmetry (stage 2 only).** Exact congruence predicates could not be shown to exist: "we must be
+    content with predicates asserting that the denotational value is an approximation of the
+    interpretive one" (p. 152); fixed-point induction on the interpreter gives only that "the
+    interpreter defines a function which is weaker (in the sense of the partial ordering of the
+    appropriate lattice) than that defined by the denotational semantics" (p. 158), so the proof
+    goes in both directions and combines them (§11). The reason given: "The present extra
+    complications arise in general when one tries to relate an infinitary abstract object, such as
+    the function associated with some PL procedure by the denotational definition, with its finitary
+    representation, such as the tree which represents the procedure in the interpreter." (p. 159);
+    and, for the exact predicates, "Formally, it is the basis of the induction which fails" because
+    the first approximation domain has one element "doing duty for all the functions" (§9.2, p. 163).
+    Stoy leaves their existence open: "we are not thereby claiming that no such predicates exist (that
+    is still an open question), but merely that we do not know how to demonstrate their existence"
+    (p. 163).
+  - Three inductions: "based on their size, their duration, and the richness of their value domains
+    - and there is no correlation whatever between them." (p. 158). Interpreter functions are
+    "represented by closures" (p. 167). Paper proof; mechanical aids are named as future relief
+    (p. 169).
+  - **For C6:** the stage indexing is by approximation domains of the inverse limit (not finite
+    elements), and the order-asymmetric ("weaker than") predicates are between a denotation and an
+    interpreter (category A), not between two denotations. Stoy's remark about an "infinitary
+    abstract object" vs. its "finitary representation" names the same tension our relation handles,
+    but on the operational side.
+- **Content of the rest [V only via secondary sources]:**
   - Wand & Oliva (LFP 1992) [V]: "Such proofs typically involved complex arguments about
     inclusive predicates that related the domains in the source and target semantics [Milne &
     Strachey; Stoy] … by methods that were essentially denotational (induction on
@@ -739,15 +789,18 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
     automatically prove the existence of most of the inclusive predicates which arise in
     practice."
   - Not indexed by finite elements [V].
-- **Classification: B** (heterogeneous, two semantics), with stage/inverse-limit existence.
+- **Classification: B** (heterogeneous, two semantics), with stage/inverse-limit existence; Stoy
+  1981's second stage is **A** (denotation vs. interpreter).
   Note the **asymmetric "weaker-than" predicates** (Stoy, Mulmuley): they are asymmetric in
-  *order* (d ⊑-approximates e), not in finiteness.
-- **Polak 1980/81** [V, thesis STAN-CS-80-802; see `novelty-literature.md` §1.9]: a compiler
-  proof whose code-generation relations ϑ between the LS (source) and LT (target) domains are
-  recursive and, Polak notes, not even monotone ("If l increases ϑ_S becomes smaller", p. 136).
-  Existence is not proved: "Reynolds [Re74] presents a set of easy to check criteria that ensure
-  existence of fixed points. It can be seen that our definitions satisfy his criteria; thus we
-  subsequently assume that the above predicates are well defined." (§IV.5.3.5, p. 136).
+  *order* (d ⊑-approximates e), not in finiteness, and in Stoy 1981 [V] they arise only in the
+  denotation-vs-interpreter stage.
+- **Polak 1980/81** [V, thesis STAN-CS-80-802 and the LNCS 124 book; see `novelty-literature.md`
+  §1.9]: a compiler proof whose code-generation relations ϑ between the LS (source) and LT
+  (target) domains are recursive and, Polak notes, not even monotone ("If l increases ϑ_S becomes
+  smaller", thesis p. 136, book p. 127). Existence is not proved: "Reynolds [Re74] presents a set
+  of easy to check criteria that ensure existence of fixed points. It can be seen that our
+  definitions satisfy his criteria; thus we subsequently assume that the above predicates are well
+  defined." (§IV.5.3.5, thesis p. 136, book p. 127; identical wording in the book).
   Classification **B** (heterogeneous, compiler source vs target), first-order languages, not
   indexed by finite elements.
 - **Relation to our R:** the historical home of "prove two semantics congruent by two one-way
@@ -756,11 +809,37 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
 
 ## B5. Meyer & Wand 1985; Filinski 1996/2007; Wand–Clinger single-model approach; Stoughton
 - **Meyer & Wand**, "Continuation Semantics in Typed Lambda-Calculi (Summary)", *Logics of
-  Programs*, LNCS 193, 1985, pp. 219–224 [V metadata via Crossref; text not read].
-  - Content [U]: a search-tool summary of the abstract says that for typed λ-calculi
-    inclusive predicates can be replaced by retractions, and that the meaning of a closed term
-    is a retraction of the meaning of its CPS transform. A second search (2026-10-15) returned
-    the same summary from the publisher's preview; the text itself was still not obtained.
+  Programs*, LNCS 193, 1985, pp. 219–224 [V metadata via Crossref; V text, `related/meyer-wand-1985.pdf`,
+  read 2026-10-15; a six-page summary].
+  - Abstract [V, p. 219]: "Previous work on the semantics of continuations has concentrated on
+    untyped lambda-calculi and has used primarily the mechanism of inclusive predicates. Such
+    predicates are easy to understand on atomic values, but they become obscure on functional
+    values. In the case of the typed lambda-calculus, we show that such predicates can be replaced
+    by retractions. The main theorem states that the meaning of a closed term is a retraction of
+    the meaning of the corresponding continuationised term."
+  - On the earlier line [V, p. 219]: Reynolds 74, Stoy 81 and Sethi & Tang 80 "all … discussed
+    essentially an untyped lambda calculus with atoms, interpreted in Scott's D∞ model or something
+    like it. … The key was the construction of a suitable relation. This was done by the method of
+    inclusive predicates, which depended on the details of the models."
+  - Method [V, pp. 219–223; page numbers inferred from the running heads, the first page being
+    219]: simply typed λ-calculus with an answer type o; the CPS transform M ↦ M̄
+    at type (α′ → o) → o, with (α → β)′ = α′ → (β′ → o) → o. Retractions α ◁ β are pairs of
+    "lambda-definable maps i: α → β and j: β → α such that j ∘ i is the identity" (§6). Main
+    Theorem (§9): for closed M of type α, M = j_α(J_α M̄) (OCR of the formula is damaged; the
+    statement is that the direct meaning is recovered from the CPS meaning by a retraction).
+    "Rather than have the direct and continuation meanings of a term connected by a relation, we
+    show that the direct meaning may be recovered from the continuation meaning by a retraction …
+    Hoare's notion of a 'concrete invariant' appears as a crucial part of the proof." (pp. 219–220).
+    For open terms a type-indexed predicate P_α on representations (an "acceptable" predicate,
+    §10) is needed; existence (§12): "We prove the existence of two acceptable predicates. The
+    first uses induction on types; the second depends on the strong normalization theorem."
+    "the reasoning in the proof lies entirely in the λ-calculus, and hence the theorem holds in
+    any model" (p. 220).
+  - Limits [V, §15, p. 223]: "The situation becomes more complicated if we study calculi in which
+    strong normalization fails, such as the typed calculus with fixed-point operators. … it is not
+    clear as of this writing whether this approach extends to these cases."
+  - For C6: type-indexed, no recursion or fixed points, a retraction rather than a relation
+    indexed by elements; not finite-element indexed.
   - Filinski's characterization [V, *Controlling Effects*, 1996, §3.4]: "Meyer and Wand's more
     abstract approach [MW85] applied to all models of simply-typed λ-calculi, but did not
     encompass computational effects – not even nontermination."
@@ -772,14 +851,38 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
   were closely tied to specific semantic models." Here ST80 = Sethi & Tang, JACM 1980 [U for
   details].
 - **Filinski**, "On the relations between monadic semantics", TCS 375(1–3):41–75, 2007,
-  doi:10.1016/j.tcs.2006.12.027 [V bib, V abstract]. The paper uses a metalanguage with general
-  recursive types and multiple effects, and a "methodology for relating two such
-  interpretations", with Reynolds's direct-vs-continuation example as the prototype.
-  - How the relations on recursive types are constructed is **[U]**: the full text could not
-    be obtained (retried 2026-10-15: ScienceDirect refuses automated access although OpenAlex
-    lists it as open access; not on Filinski's DIKU paper page). It is plausibly Pitts-style, but
-    do not state that without checking.
-  - Classification B, heterogeneous.
+  doi:10.1016/j.tcs.2006.12.027 [V, full text `related/filinski-2007.pdf`, read 2026-10-15]. The
+  paper uses a metalanguage with general recursive types and multiple effects, and a "methodology
+  for relating two such interpretations", with Reynolds's direct-vs-continuation example as the
+  prototype.
+  - **One object language, two semantics.** The goal is "comparing different denotational
+    semantics of the same language" (§1, p. 41). The object language (Reynolds's untyped CBN/CBV
+    λ-calculus with numerals) is translated once into the metalanguage: "Define a single,
+    compositional translation of the sample language … to the metalanguage, in such a way that we
+    can recover both the direct and the continuation semantics as particular domain-theoretic
+    interpretations of effects in the metalanguage." (§1.5, p. 46). So it is not a compiler-like
+    relation between two languages. Target theorem: "Theorem 1 (Agreement of Semantics). For closed
+    t, [[t]]^D = Abs([[t]]^C)" (p. 45), where Abs identifies the error answer with divergence.
+  - **Construction at recursive types: Pitts-style, by minimal invariance.** "Reynolds's paper goes
+    back to the inverse-limit constructions of E^d and E^c, and reinforces them to construct the
+    relation ≈ at the same time. In this paper we will use a more abstract method, due to Pitts,
+    which establishes the existence (and uniqueness) of ≈ based only on a simple, equational
+    characterization of minimality." (§1.4, p. 45). §3.3 "Relations on recursive types",
+    Theorem 39 "(Existence of Invariant Relations)" (p. 65): for relational actions F_r^+, F_r^−
+    "there exists a unique pair of admissible relations R^+, R^−" satisfying the fixed-point
+    equations; existence by Knaster–Tarski on admissible relations ordered by ⊆ (positive) and ⊇
+    (negative), uniqueness from minimal invariance ("Unlike Pitts's proof, ours does not exploit
+    the fact that the Knaster–Tarski construction actually finds the least (pre)fixed point of the
+    operator", p. 65). Example 40 (p. 66) shows uniqueness fails for a non-minimal solution.
+  - **Indexing:** type-indexed over the metalanguage's types, including µ-types
+    (r⟦µα.τ⟧θr), parameterized by relational actions for the effects (§3.2, §3.5). No
+    stages, no step indices, no finite elements; symmetric (both sides are arbitrary elements of
+    the two cpos).
+  - Conclusion (§4, p. 73): "the naive, circular characterization of the logical relation at
+    µ-types is actually uniquely satisfiable." Future work includes "relations … between syntax
+    and semantics, as used to show agreement between a denotational semantics and an operational
+    one".
+  - Classification B, heterogeneous (two cpos), homogeneous in language. Does not affect C6.
 - **Filinski & Støvring**, "Inductive reasoning about effectful data types", ICFP 2007 [V
   abstract]: "rigid induction" integrated into logical-relations arguments, used to show that
   success-stream and failure-continuation models of backtracking are equivalent. This is B
@@ -793,8 +896,13 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
   - Wand, "Correctness of procedure representations in higher-order assembly language", MFPS
     1991, LNCS 598 [V]. Closure representation is handled inside one λ-theory by a
     conservative-extension theorem (Theorem 3), not by a cross-model relation.
-  - Clinger, "The Scheme 311 compiler: an exercise in denotational semantics", LFP 1984 [U,
-    not read].
+  - Clinger, "The Scheme 311 compiler: an exercise in denotational semantics", LFP 1984 [V,
+    `related/clinger-1984.pdf`; details in `vlisp-clinger-wand.md` §2]: target instructions get
+    "a continuation semantics for each instruction" (p. 359) in the source's domains, and "Most of
+    the correctness proof consists of trivial calculations. This is possible because the meanings
+    of target code instructions are expressed in the same language used to express source
+    meanings" (p. 356). Single model, so no inclusive predicates; the target keeps closures (a
+    `lambda` instruction). Denotational in our sense (meanings are domain elements).
   - Classification: these *avoid* B by putting source and target in one model or theory. Wand
     1991 in particular is **not** a denotational semantics in our sense (author's classification,
     2026-10-15): meanings are λ-terms up to interconvertibility, which is not extensional, and no
@@ -928,7 +1036,8 @@ entailment closure.
 **(b) Stage / step indexing.**
 - Milne 1973, Plotkin 1973 and Reynolds 1974 [V for Reynolds] build relations as towers θ_0 =
   ⊤, θ_{n+1} = B(θ_n) over the inverse-limit stages of *both* domains, then intersect over n.
-  Milne–Strachey, Stoy and Mulmuley [secondary V] use the same inverse-limit route for
+  Stoy 1981 [V] ("approximation domains … taking the conjunction of the results", p. 156) and,
+  per secondary sources, Milne–Strachey and Mulmuley use the same inverse-limit route for
   inclusive predicates.
 - Pitts 1993/1996 [V] replaces stages by the minimal-invariant property (mixed fixed points).
   BKV 2009 mechanizes that route [V].
@@ -940,15 +1049,21 @@ entailment closure.
 
 **(c) Denotation-to-denotation relations (category B).**
 - Reynolds 1974 [V]: direct vs. continuation; two different reflexive domains; stage-indexed.
-- Milne–Strachey 1976 and Stoy 1977/1981 [U primary, V secondary]: standard vs. store
-  semantics; inclusive predicates; inverse-limit induction.
+- Milne–Strachey 1976 [U primary, V secondary]: inclusive predicates; inverse-limit induction.
+- Stoy 1981 [V]: direct vs. continuation semantics of one language (B, symmetric congruence
+  predicates, built on approximation domains and intersected), then continuation semantics vs. an
+  interpreter (A, order-asymmetric). Not standard vs. store semantics, as these notes had said.
 - Mulmuley 1985/87 [V TR]: a general mechanized existence theory for two semantics (D1, D2),
   via finitary projections in a universal domain; asymmetric "weaker-than" predicates.
-- Meyer–Wand 1985 [U content]: typed; retractions instead of inclusive predicates.
+- Meyer–Wand 1985 [V]: typed λ-calculus without fixed points; the direct meaning of a closed term
+  is recovered from the meaning of its CPS transform by a λ-definable retraction; a type-indexed
+  "concrete invariant" for open terms.
 - Pitts 1996 §6 [V]: homogeneous binary relations on one domain (simulations / co-induction).
   Pitts 1993 §4 [V] only conjectures that Reynolds's heterogeneous relation fits his method.
-- Filinski 2007 [V abstract only]: relates two monadic interpretations with general recursive
-  types; construction unverified.
+- Filinski 2007 [V]: two monadic interpretations of one metalanguage (hence of one object
+  language), related by a type-indexed logical relation; at µ-types the relation exists and is
+  unique by a Pitts-style argument (Theorem 39, p. 65: Knaster–Tarski plus minimal invariance).
+  Symmetric, no stages, no finite elements.
 - Chlipala 2007 [V]: pass-by-pass relations between the denotations (Coq sets) of source and
   target ILs, including closure conversion. Type-indexed, total source, no recursive domains.
 - Polak 1980 [V]: heterogeneous source/target predicates for a first-order Pascal-subset compiler;
@@ -962,25 +1077,29 @@ entailment closure.
   Siek/PLFA).
 - Benton–Hur 2009 [V] is asymmetric in a different sense: half-denotational, half-operational,
   with step indices on the machine side only.
-- Stoy/Mulmuley [V secondary] use order-asymmetric "weaker-than" predicates, but over whole
-  domains.
+- Stoy/Mulmuley use order-asymmetric "weaker-than" predicates, but over whole domains. In Stoy
+  1981 [V] they relate a denotation to an interpreter (category A), and Stoy explains the need for
+  them by the gap between "an infinitary abstract object" and "its finitary representation, such
+  as the tree which represents the procedure in the interpreter" (p. 159).
 
 ## S2. Answers for Part B specifically
 - **Is any prior denotation-to-denotation relation indexed by finite elements?** None that we
   found or verified.
   - Reynolds/Milne/Stoy/Mulmuley index by inverse-limit stages of both domains, which are
     projections of arbitrary elements, not compact elements.
-  - Pitts uses the minimal invariant.
-  - Chlipala and Meyer–Wand use types.
+  - Pitts uses the minimal invariant, and so does Filinski 2007 [V] for relations between two
+    monadic interpretations.
+  - Chlipala, Meyer–Wand [V] and Filinski [V] use types (Filinski's types include µ-types).
   - The finite-element method (Martin-Löf/Winskel) appears in the literature only for adequacy
     (category A). Pitts describes it only in that role, and it is restricted to Scott domains
     via information systems.
-  - Caveats: Filinski 2007's construction and the primary texts of Milne–Strachey, Stoy and
-    Mulmuley's book are unverified.
+  - Caveats: the primary texts of Milne–Strachey and Mulmuley's book are unverified. (Filinski
+    2007 and Stoy 1981 are now read; neither indexes by finite elements.)
 - **Is any prior B relation asymmetric with a finite element on one side and an arbitrary
   element on the other?** None found.
-  - The only asymmetric B relations seen are order-asymmetric (Stoy/Mulmuley "weaker-than",
-    Reynolds's η direction), not finiteness-asymmetric.
+  - The only asymmetric relations seen between semantics are order-asymmetric (Stoy/Mulmuley
+    "weaker-than", Reynolds's η direction), not finiteness-asymmetric; Stoy's [V] are between a
+    denotation and an interpreter, so they are not even B.
   - **Safe phrasing for the paper:** "to our knowledge, the first relation between two
     denotational semantics indexed by a finite approximation on one side". Keep "to our
     knowledge" because of the gaps above.
@@ -991,27 +1110,27 @@ entailment closure.
 ## S3. Claims that remain unverified (do not state without checking)
 Resolved on 2026-10-15: Pitts 1996's issue number (2) and the page of the §2 Reynolds remark
 (p. 68); the Krivine English edition (Ellis Horwood 1993, from Open Library, translator unverified).
-Tried again without success: Abramsky & Ong 1993, Filinski 2007, Meyer–Wand 1985 (no accessible
-full text). None of the items below bears on C3; items 5–8 are the caveats on C6.
+Resolved in the third pass (PDFs in `papers/PLDI-2027/related/`): Filinski 2007 (construction:
+§3.3, Theorem 39), Meyer–Wand 1985 (content), Clinger 1984 (content), Stoy 1981 (content; it
+corrects the earlier "standard vs. store" description). Abramsky & Ong 1993: a PDF was supplied
+but it is an image-only scan with no text layer, so it is still unread. None of the items below
+bears on C3; items 5–6 are the remaining caveats on C6.
 
 1. Which "Gordon Plotkin's lecture notes" Winskel means in §13.11 (Pisa notes [80] or CSLI 1985
    [83]).
 2. Winskel chapter numbering in later printings (a 2001 listing appears to differ).
-3. Abramsky & Ong 1993's adequacy method (full text not read). Also whether the DTLF APAL
+3. Abramsky & Ong 1993's adequacy method (PDF has no text layer). Also whether the DTLF APAL
    article contains the lazy-λ adequacy material.
 4. Krivine English edition: translator and series.
-5. Milne–Strachey 1976 and Stoy 1977: chapter and section locations of the inclusive-predicate
-   constructions.
+5. Milne–Strachey 1976 and Stoy 1977 (the book): chapter and section locations of the
+   inclusive-predicate constructions.
 6. Mulmuley's 1987 book (only the 1985 TR was read).
-7. Filinski 2007: how relations on recursive types are constructed, and in which section.
-8. Meyer–Wand 1985: content (retractions, typed). Only metadata and a search summary were
-   seen.
-9. Clinger 1984 content. Wand–Steckler 1994 proof method.
-10. Sieber 1992 bib and whether it uses "finitary". Whether the O'Hearn–Riecke body (not just
-    the abstract) uses "finitary logical relations".
-11. Engeler 1981 and Scott 1976 one-line descriptions (taken from Plotkin and Siek, not the
-    originals).
-12. The BBKV "Formalizing Domains…" final publication venue.
-13. Name check: no Google Scholar, DBLP or ACM full-text search was completed (still blocked on
+7. Wand–Steckler 1994 proof method.
+8. Sieber 1992 bib and whether it uses "finitary". Whether the O'Hearn–Riecke body (not just
+   the abstract) uses "finitary logical relations".
+9. Engeler 1981 and Scott 1976 one-line descriptions (taken from Plotkin and Siek, not the
+   originals).
+10. The BBKV "Formalizing Domains…" final publication venue.
+11. Name check: no Google Scholar, DBLP or ACM full-text search was completed (still blocked on
     2026-10-15: Scholar 429, DBLP bot check, ACM 403). OpenAlex and arXiv abstract searches for
     the novelty claims found no relation between two denotations indexed by finite elements.
