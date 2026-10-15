@@ -1809,8 +1809,8 @@ If $\rho'(x) \NE$ for every $x$, $\consis(\rho')$, and $\rho \sqsubseteq \rho'$,
 \end{lemma}
 
 \paragraph{Reflection.}
-The relation $\Rel{V'}{D}$ between a finite set $V'$ of $\Tl{Clos4}$
-values and a set $D$ of $\Tl{Clos3}$ values, by recursion on
+The relation $\Rel{D}{V'}$ between a set $D$ of $\Tl{Clos3}$ values and a
+finite set $V'$ of $\Tl{Clos4}$ values, by recursion on
 $\mathit{depth}(V')$ (Part~II), where $\mathit{Entry}$ and $\mathit{Calls}$
 are those of Part~II, and $\tau$ ranges over $\key{tup}_i$, $\key{left}$
 and $\key{right}$:
@@ -1822,29 +1822,30 @@ and $\key{right}$:
     \forall w \in W.\; \exists U_0 \NE.\; \mathit{Entry}(V', U_0, w) \land U_0 \subseteq U \\
     \land\; \forall u \in U.\; \exists U_0\, w.\; \mathit{Entry}(V', U_0, w) \land u \in U_0
   \end{array} \\[1ex]
-  \Rel{V'}{D} &\iff
+  \Rel{D}{V'} &\iff
   \begin{array}[t]{l}
     \forall c \in V'.\; c \in D \\
     \land\; (V' \NE \implies D \NE) \\
     \land\; (\forall u\, v.\; \pairv{u}{v} \in V' \implies \exists d \in D.\; \Tfuntwo(d)) \\
     \land\; \forall U\, W\, E.\;
-       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{U}{E} \implies \Rel{W}{D \app E} \\
+       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{E}{U} \implies \Rel{D \app E}{W} \\
     \land\; \forall \tau\, W.\; W \subseteq \{ d \mid \tau(d) \in V' \}
-       \implies \Rel{W}{\{ d \mid \tau(d) \in D \}}
+       \implies \Rel{\{ d \mid \tau(d) \in D \}}{W}
   \end{array} \\[1ex]
-  \rho' \rhd \rho &\iff \forall x\, V'.\; V' \subseteq \rho'(x) \implies \Rel{V'}{\rho(x)}
+  \rho \rhd \rho' &\iff \forall x\, V'.\; V' \subseteq \rho'(x) \implies \Rel{\rho(x)}{V'}
 \end{align*}
 Unlike Part~II, a pair in $V'$ needs a function in $D$ (for project), and
-the argument $E$ of a call is consistent.
+the argument $E$ of a call is consistent. Unlike Part~II too, the source
+is on the left: Part~II writes $\Rel{V'}{D}$ and $\rho' \rhd \rho$.
 \begin{lemma}[Project Reflects]\label{lem:t-den-acc-reflect}
-If $\Taccepts{\Tfunfour}(t, d')$ and $\Rel{\{d'\}}{D}$, then
+If $\Taccepts{\Tfunfour}(t, d')$ and $\Rel{D}{\{d'\}}$, then
 $\Taccepts{\Tfuntwo}(t, d)$ for some $d \in D$.
 \end{lemma}
 \begin{lemma}[Delay Reflects]\label{lem:t-den-delay-reflect}
-If $\rho(x) \NE$ for every $x$, $\consis(\rho)$, $\consis(\rho')$, and $\rho' \rhd \rho$,
+If $\rho(x) \NE$ for every $x$, $\consis(\rho)$, $\consis(\rho')$, and $\rho \rhd \rho'$,
 then for every finite $V'$,
 \[
-  V' \subseteq \SEM{\pass{delay}(M)}^{\Tl{4}}\rho' \implies \Rel{V'}{\SEM{M}^{\Tl{3}}\rho} .
+  V' \subseteq \SEM{\pass{delay}(M)}^{\Tl{4}}\rho' \implies \Rel{\SEM{M}^{\Tl{3}}\rho}{V'} .
 \]
 \end{lemma}
 A target call $V' \subseteq L' \odot N'$ is a batch of calls of a finite
@@ -1870,17 +1871,17 @@ table. The definitions $\vec{d}'$ extend $\vec{d}$ when $\vec{d}$ is a prefix
 of $\vec{d}'$, $\mathit{Extends}(\vec{d}, \vec{d}')$, and then
 $\key{made}(\vec{d}')(k) = \key{made}(\vec{d})(k)$ for $k < |\vec{d}|$.
 \begin{lemma}[Weakening]\label{lem:t-den-wk}
-If $M$ is typed over the table $\Sigma$ and $T(k) \simeq T'(k)$ for every
+If $M$ is typed over the table $\Sigma$ and $T'(k) \simeq T(k)$ for every
 $k < |\Sigma|$, then
-$\SEM{M}^{\Tl{5}}_T\rho \simeq \SEM{M}^{\Tl{5}}_{T'}\rho$.
+$\SEM{M}^{\Tl{5}}_{T'}\rho \simeq \SEM{M}^{\Tl{5}}_T\rho$.
 \end{lemma}
 \begin{lemma}[Correctness of Glob]\label{lem:t-den-glob}
 If $\pass{glob}(M, \vec{d}) = (M', \vec{d}')$, then $\mathit{Extends}(\vec{d}, \vec{d}')$ and
-$\SEM{M'}^{\Tl{5}}_{\key{made}(\vec{d}')}\rho \simeq \SEM{M}^{\Tl{4}}\rho$ for every $\rho$.
+$\SEM{M}^{\Tl{4}}\rho \simeq \SEM{M'}^{\Tl{5}}_{\key{made}(\vec{d}')}\rho$ for every $\rho$.
 \end{lemma}
 \begin{lemma}[The Table of the Program]\label{lem:t-den-table-close}
 For definitions $\vec{d}$ each typed over the older ones, and every $k < |\vec{d}|$,
-$\key{table}(\vec{d})(k) \simeq \key{made}(\vec{d})(k)$, where in
+$\key{made}(\vec{d})(k) \simeq \key{table}(\vec{d})(k)$, where in
 $\key{table}(\vec{d})$ each definition is weakened to the whole table.
 \end{lemma}
 \begin{theorem}[Correctness of Globalize]\label{thm:t-den-globalize}
@@ -1890,45 +1891,46 @@ $\SEM{M}^{\Tl{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\Tl{5}}$.
 
 \subsubsection{Remove Complex Operands}
 
-Fix tables $T$ and $T'$ with $T(k) \simeq T'(k)$ and $\consis(T(k))$ for
-every $k$. The environment $\sigma$ of the output agrees with the
-environment $\gamma$ of the input (through the renaming the pass carries,
-since the output binds more variables):
+Fix tables $T$ (of the input) and $T'$ (of the output) with
+$T(k) \simeq T'(k)$ and $\consis(T'(k))$ for every $k$. The environment
+$\gamma$ of the input agrees with the environment $\sigma$ of the output
+(through the renaming the pass carries, since the output binds more
+variables):
 \begin{align*}
-  \mathit{Ag}(\sigma, \gamma) &\iff \forall x \text{ in scope of the input}.\; \sigma(x) \simeq \gamma(x)
+  \mathit{Ag}(\gamma, \sigma) &\iff \forall x \text{ in scope of the input}.\; \gamma(x) \simeq \sigma(x)
 \end{align*}
 Each construct whose operands rco names means a strict operator
 $O$ on the meanings of its operands ($\mathit{Strict}(O)$ of Part~II):
 $\key{pair}$ for $\key{pack}$, $\odot$ for $\key{callc}$, $\mathcal{T}$,
 $\key{proj}_i$, $\key{inl}$, $\key{inr}$, $\key{prim}_p$, the identity for
 $\Tinject{G}$, $\key{project}^{\Tfunfour}_t$ for $\Tproject{t}$, and
-$\mathcal{C}(-, \lambda X.\, \SEM{M}^{\Tl{5}}_{T'}\ext{\gamma}{x}{X},
-\lambda Y.\, \SEM{N}^{\Tl{5}}_{T'}\ext{\gamma}{y}{Y})$ for
+$\mathcal{C}(-, \lambda X.\, \SEM{M}^{\Tl{5}}_{T}\ext{\gamma}{x}{X},
+\lambda Y.\, \SEM{N}^{\Tl{5}}_{T}\ext{\gamma}{y}{Y})$ for
 $\Case{L}{x}{M}{y}{N}$. Binding an operand by a $\key{let}$ is the $\beta$
 law of its body (the body is continuous, and the bound set consistent),
 so it changes nothing:
 \begin{lemma}[Let Chain]\label{lem:t-den-let-chain}
 Let $O$ be strict, $(\vec{b};\; a_1, \ldots, a_n) = \pass{atomize}(\pass{rco}(M_1), \ldots, \pass{rco}(M_n))$,
-$\sigma(x) \NE$ for every $x$, $\consis(\sigma)$, and $\mathit{Ag}(\sigma, \gamma)$.
+$\sigma(x) \NE$ for every $x$, $\consis(\sigma)$, and $\mathit{Ag}(\gamma, \sigma)$.
 If, for every nonempty, consistent $\sigma'$ that extends $\sigma$ with
 the variables of $\vec{b}$,
-$\SEM{X}^{\Tl{5}}_T\sigma' \simeq O(\SEM{a_1}^{\Tl{5}}_T\sigma', \ldots, \SEM{a_n}^{\Tl{5}}_T\sigma')$, then
+$O(\SEM{a_1}^{\Tl{5}}_{T'}\sigma', \ldots, \SEM{a_n}^{\Tl{5}}_{T'}\sigma') \simeq \SEM{X}^{\Tl{5}}_{T'}\sigma'$, then
 \[
-  \SEM{\pass{lets}(\vec{b}, X)}^{\Tl{5}}_T\sigma \simeq
-  O(\SEM{M_1}^{\Tl{5}}_{T'}\gamma, \ldots, \SEM{M_n}^{\Tl{5}}_{T'}\gamma) .
+  O(\SEM{M_1}^{\Tl{5}}_{T}\gamma, \ldots, \SEM{M_n}^{\Tl{5}}_{T}\gamma) \simeq
+  \SEM{\pass{lets}(\vec{b}, X)}^{\Tl{5}}_{T'}\sigma .
 \]
 \end{lemma}
 \begin{theorem}[Correctness of RCO]\label{thm:t-den-rco}
-If $\sigma(x) \NE$ for every $x$, $\consis(\sigma)$, and $\mathit{Ag}(\sigma, \gamma)$, then
+If $\sigma(x) \NE$ for every $x$, $\consis(\sigma)$, and $\mathit{Ag}(\gamma, \sigma)$, then
 \[
-  \SEM{\Tembed{\pass{rco}(M)}}^{\Tl{5}}_T\sigma \simeq \SEM{M}^{\Tl{5}}_{T'}\gamma .
+  \SEM{M}^{\Tl{5}}_{T}\gamma \simeq \SEM{\Tembed{\pass{rco}(M)}}^{\Tl{5}}_{T'}\sigma .
 \]
 For every $\Tl{Clos5}$ program $P$,
 \[
-  \SEM{\pass{rco}(P)}^{\Tl{Mon}} = \SEM{\Tembed{\pass{rco}(P)}}^{\Tl{5}} \simeq \SEM{P}^{\Tl{5}} .
+  \SEM{P}^{\Tl{5}} \simeq \SEM{\Tembed{\pass{rco}(P)}}^{\Tl{5}} = \SEM{\pass{rco}(P)}^{\Tl{Mon}} .
 \]
 \end{theorem}
-For the program, the tables of the output and the input agree definition
+For the program, the tables of the input and the output agree definition
 by definition, by the theorem for each body, in the frame of the
 parameters of a function entry, which are nonempty and consistent.
 
@@ -1937,8 +1939,8 @@ parameters of a function entry, which are nonempty and consistent.
 A variable of a $\Tl{Mon}$ body is the slot at its level, so the frame
 $\sigma$ of the lifted body is also the environment of the source:
 $x$ means $\sigma(\ell(x))$, and no relation between them is needed.
-Fix tables $T$ (of $\Tl{Imp}$) and $T'$ (of $\Tl{Clos5}$) with
-$T(k) \simeq T'(k)$ and $\consis(T'(k))$ for every $k$. Lifted code is run
+Fix tables $T$ (of $\Tl{Clos5}$) and $T'$ (of $\Tl{Imp}$) with
+$T(k) \simeq T'(k)$ and $\consis(T(k))$ for every $k$. Lifted code is run
 with a continuation that means what the enclosing assignments make of the
 value, as in Part~II: nothing at the end of a body, and $\Lambda(G) \app
 D$ for the right-hand side of an assignment whose rest means $G$.
@@ -1954,7 +1956,7 @@ $K(\mathcal{C}(D, F_1, F_2)) \simeq \mathcal{C}(D, \lambda X.\, K(F_1(X)), \lamb
 \begin{lemma}[Correctness of Lift]\label{lem:t-den-lift}
 If $\consis(\sigma)$, then for every continuation $K$ of the form above,
 \[
-  \SEM{\pass{lift}(M)}^{\Tl{Imp}}_T\sigma\,K \simeq K(\SEM{\Tembed{M}}^{\Tl{5}}_{T'}\sigma) .
+  K(\SEM{\Tembed{M}}^{\Tl{5}}_{T}\sigma) \simeq \SEM{\pass{lift}(M)}^{\Tl{Imp}}_{T'}\sigma\,K .
 \]
 \end{lemma}
 A simple expression is the same operator on the same atoms; an assignment
@@ -1963,12 +1965,12 @@ and a case commute with the continuation, by the laws.
 \begin{theorem}[Correctness of Lift Locals]\label{thm:t-den-lift}
 For every $k$,
 \[
-  \key{table}^{\mathrm{K}}(\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1}))(k)
-  \simeq \key{table}(\Tembed{d_0}, \ldots, \Tembed{d_{m-1}})(k) ,
+  \key{table}(\Tembed{d_0}, \ldots, \Tembed{d_{m-1}})(k)
+  \simeq \key{table}^{\mathrm{K}}(\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1}))(k) ,
 \]
 and for every $\Tl{Mon}$ program $P$,
 \[
-  \SEM{\pass{lift}(P)}^{\Tl{Imp}} \simeq \SEM{P}^{\Tl{Mon}} .
+  \SEM{P}^{\Tl{Mon}} \simeq \SEM{\pass{lift}(P)}^{\Tl{Imp}} .
 \]
 \end{theorem}
 
@@ -1979,14 +1981,14 @@ The pass threads the list of blocks: $\pass{tail}(e, \vec{t}) = (t;\,
 tail $t$ and the blocks $\vec{t}'$, which extend $\vec{t}$ with the blocks
 the pass adds, $\vec{t} \preceq \vec{t}'$ (a prefix), and the blocks keep
 their meanings: if $\vec{t} \preceq \vec{t}'$, then
-$\key{blocks}_T(\vec{t}')(l) = \key{blocks}_T(\vec{t})(l)$ for every label
+$\key{blocks}_T(\vec{t})(l) = \key{blocks}_T(\vec{t}')(l)$ for every label
 $l$ of $\vec{t}$. A label is typed, so no tail of $\vec{t}$ can jump
 beyond $\vec{t}$, and the $\mathit{Stable}$ of Part~II is not needed.
-Fix tables $T$ (of $\Tl{CFG}$) and $T'$ (of $\Tl{Imp}$) with
+Fix tables $T$ (of $\Tl{Imp}$) and $T'$ (of $\Tl{CFG}$) with
 $T(k) \simeq T'(k)$ for every $k$. Assigning slot $s$ and then running $k$
 with the blocks $\vec{t}$ is
 \begin{align*}
-  \key{asg}_{s,k,\vec{t}}(\sigma, D) &= \Lambda(\lambda X.\, \SEM{k}^{\Tl{CFG}}_{T,\key{blocks}_T(\vec{t})}(\Tcut{\sigma}{s}, X)) \app D ,
+  \key{asg}_{s,k,\vec{t}}(\sigma, D) &= \Lambda(\lambda X.\, \SEM{k}^{\Tl{CFG}}_{T',\key{blocks}_{T'}(\vec{t})}(\Tcut{\sigma}{s}, X)) \app D ,
 \end{align*}
 as $\assign{s}{r}{k}$ does in $\Tl{CFG}$. The pass is in
 continuation-passing style, and so is the semantics of $\Tl{Imp}$: each
@@ -1996,22 +1998,22 @@ holds $k$.
 \begin{lemma}[Continuation-Passing]\label{lem:t-den-cps}
 If $\pass{assign}(e, s, k, \vec{t}) = (t;\, \vec{t}')$, then $\vec{t} \preceq \vec{t}'$ and, for every $\sigma$,
 \[
-  \SEM{t}^{\Tl{CFG}}_{T,\key{blocks}_T(\vec{t}')}\sigma \simeq
-  \SEM{e}^{\Tl{Imp}}_{T'}\sigma\,(\lambda D.\, \key{asg}_{s,k,\vec{t}}(\sigma, D)) .
+  \SEM{e}^{\Tl{Imp}}_{T}\sigma\,(\lambda D.\, \key{asg}_{s,k,\vec{t}}(\sigma, D)) \simeq
+  \SEM{t}^{\Tl{CFG}}_{T',\key{blocks}_{T'}(\vec{t}')}\sigma .
 \]
 \end{lemma}
 \begin{lemma}[Tail]\label{lem:t-den-explicate-tail}
 If $\pass{tail}(e, \vec{t}) = (t;\, \vec{t}')$, then $\vec{t} \preceq \vec{t}'$ and, for every $\sigma$,
 \[
-  \SEM{t}^{\Tl{CFG}}_{T,\key{blocks}_T(\vec{t}')}\sigma \simeq
-  \SEM{e}^{\Tl{Imp}}_{T'}\sigma\,(\lambda D.\, D) .
+  \SEM{e}^{\Tl{Imp}}_{T}\sigma\,(\lambda D.\, D) \simeq
+  \SEM{t}^{\Tl{CFG}}_{T',\key{blocks}_{T'}(\vec{t}')}\sigma .
 \]
-So $\mathit{run}_T(\pass{explicate}(e))(\sigma) \simeq \SEM{e}^{\Tl{Imp}}_{T'}\sigma\,(\lambda D.\, D)$.
+So $\SEM{e}^{\Tl{Imp}}_{T}\sigma\,(\lambda D.\, D) \simeq \mathit{run}_{T'}(\pass{explicate}(e))(\sigma)$.
 \end{lemma}
 \begin{theorem}[Correctness of Explicate Control]\label{thm:t-den-explicate}
 For every $\Tl{Imp}$ program $P$,
 \[
-  \SEM{\pass{explicate}(P)}^{\Tl{CFG}} \simeq \SEM{P}^{\Tl{Imp}} .
+  \SEM{P}^{\Tl{Imp}} \simeq \SEM{\pass{explicate}(P)}^{\Tl{CFG}} .
 \]
 \end{theorem}
 
@@ -2032,16 +2034,16 @@ holds both an $\key{inl}$ and an $\key{inr}$:
   \mathit{Inv}(\sigma) \iff \forall i.\; \mathit{Tagged}(\sigma(i))
 \end{align*}
 which holds of every frame, since $\Lambda$ binds consistent finite sets.
-Fix tables $T$ (of $\Tl{X86}$) and $T'$ (of $\Tl{CFG}$) with
-$T(k) \simeq T'(k)$ for every $k$, and the blocks $B$ a sequence may jump
+Fix tables $T$ (of $\Tl{CFG}$) and $T'$ (of $\Tl{X86}$) with
+$T(k) \simeq T'(k)$ for every $k$, and the blocks $B'$ a sequence may jump
 to. What runs after the value of $r$ is in $o$ means $K$ of it:
 \begin{align*}
   \key{then}_{\key{ret}}(K, D) &= D \qquad
   \key{then}_{\key{to}\;s}(K, D) = \Lambda(K) \app D \\
-  \mathit{Fits}_{\key{ret}}(k, K, \sigma) &\iff \forall \sigma'\, R\, F.\;
-    \SEM{k}_B(\sigma', R, F) \simeq R(\rax) \\
-  \mathit{Fits}_{\key{to}\;s}(k, K, \sigma) &\iff \forall V.\; V \text{ consistent} \implies
-    \forall R\, F.\; \SEM{k}_B((\Tcut{\sigma}{s}, V), R, F) \simeq K(V)
+  \mathit{Fits}_{\key{ret}}(K, k, \sigma) &\iff \forall \sigma'\, R\, F.\;
+    R(\rax) \simeq \SEM{k}_{B'}(\sigma', R, F) \\
+  \mathit{Fits}_{\key{to}\;s}(K, k, \sigma) &\iff \forall V.\; V \text{ consistent} \implies
+    \forall R\, F.\; K(V) \simeq \SEM{k}_{B'}((\Tcut{\sigma}{s}, V), R, F)
 \end{align*}
 for $k$ at any registers, open closure and flag, and $V$ finite. A strict
 write before $\key{then}_o$ changes nothing, since $\key{then}_o(K, D)$
@@ -2049,22 +2051,22 @@ is nonempty only when $D$ is:
 $\key{guard}(D; \key{then}_o(K, D)) \simeq \key{then}_o(K, D)$.
 
 \begin{lemma}[Select a Simple Expression]\label{lem:t-den-sel}
-If $\mathit{Fits}_o(k, K, \sigma)$, then for every $R$ and $F$
+If $\mathit{Fits}_o(K, k, \sigma)$, then for every $R$ and $F$
 \[
-  \SEM{\pass{sel}(r, o, k)}^{\Tl{X86}}_{T,B}(\sigma, R, F) \simeq \key{then}_o(K, \mathcal{S}_\sigma(r)) ,
+  \key{then}_o(K, \mathcal{S}_\sigma(r)) \simeq \SEM{\pass{sel}(r, o, k)}^{\Tl{X86}}_{T',B'}(\sigma, R, F) ,
 \]
-with $\mathcal{S}$ that of $T'$.
+with $\mathcal{S}$ that of $T$.
 \end{lemma}
 
 \begin{lemma}[Case]\label{lem:t-den-case-core}
 If $\mathit{Tagged}(A)$, $F_1(V) \simeq G_1(V)$ and $F_2(V) \simeq G_2(V)$
 for every finite consistent $V$, then
 \[
-  \Lambda(\lambda X.\, \mathcal{C}(\key{isinl}(A),\; \lambda \_.\, F_1(X),\; \lambda \_.\, F_2(X))) \app \key{payload}(A)
-  \simeq \mathcal{C}(A, G_1, G_2) .
+  \mathcal{C}(A, F_1, F_2) \simeq
+  \Lambda(\lambda X.\, \mathcal{C}(\key{isinl}(A),\; \lambda \_.\, G_1(X),\; \lambda \_.\, G_2(X))) \app \key{payload}(A) .
 \]
 \end{lemma}
-The blocks $B$ of $\Tl{X86}$ and $B'$ of $\Tl{CFG}$ agree,
+The blocks $B$ of $\Tl{CFG}$ and $B'$ of $\Tl{X86}$ agree,
 \[
   B \mathrel{\mathit{BR}} B' \iff \forall l\, \sigma.\;
     \mathit{Inv}(\sigma) \implies B(l)(\sigma) \simeq B'(l)(\sigma) .
@@ -2073,24 +2075,24 @@ The blocks $B$ of $\Tl{X86}$ and $B'$ of $\Tl{CFG}$ agree,
 If $B \mathrel{\mathit{BR}} B'$, $\mathit{depth}(t) \leq n$ and
 $\mathit{Inv}(\sigma)$, then for every $R$ and $F$
 \[
-  \SEM{\pass{tail}(t)}^{\Tl{X86}}_{T,B}(\sigma, R, F) \simeq \SEM{t}^{\Tl{CFG}}_{T',B'}\,\sigma ;
+  \SEM{t}^{\Tl{CFG}}_{T,B}\,\sigma \simeq \SEM{\pass{tail}(t)}^{\Tl{X86}}_{T',B'}(\sigma, R, F) ;
 \]
-and $\key{blocks}^{\Tl{X86}}_{T}(\pass{tail}(\vec{t})) \mathrel{\mathit{BR}} \key{blocks}^{\Tl{CFG}}_{T'}(\vec{t})$.
+and $\key{blocks}^{\Tl{CFG}}_{T}(\vec{t}) \mathrel{\mathit{BR}} \key{blocks}^{\Tl{X86}}_{T'}(\pass{tail}(\vec{t}))$.
 \end{lemma}
 The prologue binds finite parts $V$ and $W$ of the parameters (an entry
 of $\Lambda$ has a finite input), where $\Tl{CFG}$ runs the body in the
 frame $(V, W)$ at once: a bind of a finite consistent set is $\beta$,
-$\Lambda(G) \app V \simeq G(V)$ for $G$ monotone, and a $\Tl{CFG}$ tail is
+$G(V) \simeq \Lambda(G) \app V$ for $G$ monotone, and a $\Tl{CFG}$ tail is
 monotone in its frame.
 \begin{lemma}[Start]\label{lem:t-den-sel-start}
 For the body $b$ of every definition,
-$\key{code}^{\mathrm{X}}_T(\pass{select}^{+}(b)) \simeq \key{code}^{\mathrm{CFG}}_{T'}(b)$;
-so the tables of $\pass{select}(P)$ and of $P$ agree at every $k$.
+$\key{code}^{\mathrm{CFG}}_{T}(b) \simeq \key{code}^{\mathrm{X}}_{T'}(\pass{select}^{+}(b))$;
+so the tables of $P$ and of $\pass{select}(P)$ agree at every $k$.
 \end{lemma}
 \begin{theorem}[Correctness of Select Instructions]\label{thm:t-den-select}
 For every $\Tl{CFG}$ program $P$,
 \[
-  \SEM{\pass{select}(P)}^{\Tl{X86}} \simeq \SEM{P}^{\Tl{CFG}} .
+  \SEM{P}^{\Tl{CFG}} \simeq \SEM{\pass{select}(P)}^{\Tl{X86}} .
 \]
 \end{theorem}
 There is no precondition: the frames are typed, and a definition's frame
@@ -2645,8 +2647,8 @@ the body on a finite part of $T$, which the pair's environment $T'$
 relates, and the body's environment is related again.
 
 \paragraph{Reflection.}
-The relation $\Rel{V'}{D}$ between a finite set $V'$ of $\Tl{Clos4}$ values
-and a set $D$ of $\Tl{Clos3}$ values is defined by recursion on
+The relation $\Rel{D}{V'}$ between a set $D$ of $\Tl{Clos3}$ values and a
+finite set $V'$ of $\Tl{Clos4}$ values is defined by recursion on
 $\mathit{depth}(V')$ (as in Part~II), where $t$ ranges over the tags
 $\key{tup}_i$, $\key{left}$ and $\key{right}$, and $U$ and $W$ over finite
 sets of $\Tl{Clos4}$ values. A target closure is a set of pairs whose
@@ -2660,31 +2662,31 @@ calls combine the codes and environments of several pairs:
     \land\; \forall u \in U.\; \exists U_0\, w.\; \mathit{Entry}(V', U_0, w) \land u \in U_0
     \;\land\; \omega \notin U
   \end{array} \\[1ex]
-  \Rel{V'}{D} &\iff
+  \Rel{D}{V'} &\iff
   \begin{array}[t]{l}
     (\omega \in V' \implies \omega \in D)
     \land\; \forall c \in V'.\; c \in D \\
     \land\; \forall d \in V'.\; d \neq \omega \implies \exists s \in \lfloor D \rfloor.\; \Tkind(s) = \Tkindfour(\Tkind(d)) \\
     \land\; \forall U\, W\, E.\;
-       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{U}{E} \implies \Rel{W}{D \bullet E} \\
+       \mathit{Calls}(V', U, W) \land \consis(E) \land \consis(U) \land \Rel{E}{U} \implies \Rel{D \bullet E}{W} \\
     \land\; \forall t\, W.\; W \subseteq \{ d \mid t(d) \in V' \}
-       \implies \Rel{W}{\{ d \mid t(d) \in D \}}
+       \implies \Rel{\{ d \mid t(d) \in D \}}{W}
   \end{array} \\[1ex]
-  D' \rhd D &\iff \forall V'.\; V' \text{ finite},\ V' \subseteq D' \implies \Rel{V'}{D} \qquad
-  \rho' \rhd \rho \iff \forall x.\; \rho'(x) \rhd \rho(x)
+  D \rhd D' &\iff \forall V'.\; V' \text{ finite},\ V' \subseteq D' \implies \Rel{D}{V'} \qquad
+  \rho \rhd \rho' \iff \forall x.\; \rho(x) \rhd \rho'(x)
 \end{align*}
 \begin{lemma}[Reflecting through the Monad]\label{lem:t-gerr-reflect-bind}
-If $\consis(D)$, $D' \rhd D$, and $F'(\lfloor D' \rfloor) \rhd F(\lfloor D \rfloor)$
-whenever $\mathit{val}(D')$, $\mathit{val}(D)$ and $\lfloor D' \rfloor \rhd \lfloor D \rfloor$,
-then $D' \bind F' \rhd D \bind F$. For project, if
-$X' \rhd X$, the target check's error is a source error (a target value
+If $\consis(D)$, $D \rhd D'$, and $F(\lfloor D \rfloor) \rhd F'(\lfloor D' \rfloor)$
+whenever $\mathit{val}(D)$, $\mathit{val}(D')$ and $\lfloor D \rfloor \rhd \lfloor D' \rfloor$,
+then $D \bind F \rhd D' \bind F'$. For project, if
+$X \rhd X'$, the target check's error is a source error (a target value
 of the wrong kind gives a source value of the wrong kind), and
-$\Tkeep{\Tkindfour}_t(X') \rhd \Tkeep{\mathrm{id}}_t(X)$.
+$\Tkeep{\mathrm{id}}_t(X) \rhd \Tkeep{\Tkindfour}_t(X')$.
 \end{lemma}
 
 \begin{lemma}[Delay Reflects]\label{lem:t-gerr-delay-reflect}
-If $\rho$ and $\rho'$ are nonempty and consistent, and $\rho' \rhd \rho$,
-then $\SEM{\pass{delay}(M)}^{\Tl{4},\omega}\rho' \rhd \SEM{M}^{\Tl{3},\omega}\rho$.
+If $\rho$ and $\rho'$ are nonempty and consistent, and $\rho \rhd \rho'$,
+then $\SEM{M}^{\Tl{3},\omega}\rho \rhd \SEM{\pass{delay}(M)}^{\Tl{4},\omega}\rho'$.
 \end{lemma}
 A target call $\Tcallc{L'}{M'}$ binds the closure and the argument; a
 finite part of its result is a batch of calls of finitely many pairs of
@@ -2744,8 +2746,8 @@ $\key{table}^{\omega}(\vec{d})$.
 Every typed operator is a kernel under binds of its operands, with no
 check. So binding a complex operand to a variable first is the bind the
 operator does anyway, and on an atom, a set of values, the operator's
-binds are their left unit. Fix tables $T$ (of the target) and $T'$ (of
-the source) with $T(k) \simeq T'(k)$ and $\mathit{Val}(T'(k))$ for every
+binds are their left unit. Fix tables $T$ (of the source) and $T'$ (of
+the target) with $T(k) \simeq T'(k)$ and $\mathit{Val}(T(k))$ for every
 $k$. The environments agree up to the variables the pass adds:
 \[
   \rho \approx \rho' \iff \forall x \text{ in scope}.\;
@@ -2755,19 +2757,19 @@ where $x$ in $\rho'$ is the variable of the target that $x$ is renamed to.
 \begin{lemma}[Atomize]\label{lem:t-gerr-atomize}
 Let $\rho \approx \rho'$ and $(\vec{b};\, a) = \pass{atomize}(N)$. If, for
 every $\rho''$ that extends $\rho'$ with the variables of $\vec{b}$ and
-every set of values $X$ with $\SEM{a}^{\Tl{5},\omega}_T\rho'' \simeq X$,
-$\SEM{Q}^{\Tl{5},\omega}_T\rho'' \simeq H(X)$, then
+every set of values $X$ with $X \simeq \SEM{a}^{\Tl{5},\omega}_{T'}\rho''$,
+$H(X) \simeq \SEM{Q}^{\Tl{5},\omega}_{T'}\rho''$, then
 \[
-  \SEM{\pass{lets}(\vec{b}, Q)}^{\Tl{5},\omega}_T\rho' \simeq \SEM{N}^{\Tl{5},\omega}_{T'}\rho \bind H .
+  \SEM{N}^{\Tl{5},\omega}_{T}\rho \bind H \simeq \SEM{\pass{lets}(\vec{b}, Q)}^{\Tl{5},\omega}_{T'}\rho' .
 \]
 \end{lemma}
 \begin{lemma}[Correctness of RCO]\label{lem:t-gerr-rco}
 If $\rho \approx \rho'$, then
-$\SEM{\Tembed{\pass{rco}(M)}}^{\Tl{5},\omega}_T\rho' \simeq \SEM{M}^{\Tl{5},\omega}_{T'}\rho$.
+$\SEM{M}^{\Tl{5},\omega}_{T}\rho \simeq \SEM{\Tembed{\pass{rco}(M)}}^{\Tl{5},\omega}_{T'}\rho'$.
 \end{lemma}
 \begin{theorem}[Correctness of RCO]\label{lem:t-gerr-rco-prog}
 For every $\Tl{Clos5}$ program $P$,
-$\SEM{\Tembed{\pass{rco}(P)}}^{\Tl{5},\omega} \simeq \SEM{P}^{\Tl{5},\omega}$.
+$\SEM{P}^{\Tl{5},\omega} \simeq \SEM{\Tembed{\pass{rco}(P)}}^{\Tl{5},\omega}$.
 \end{theorem}
 The tables agree definition by definition, by Lemma~\ref{lem:t-gerr-rco}
 on the parameters, sets of values; code is a set of values.
@@ -2790,16 +2792,16 @@ A slot binding is the bind of its body: if $\consis(D)$ and $G$ is
 monotone and finitary, $\Tletv(D, G) \simeq D \bind G$.
 \end{lemma}
 \begin{lemma}[Correctness of Lift]\label{lem:t-gerr-lift}
-Let $T(k) \simeq T'(k)$ and $\consis(T'(k))$ for every $k$, and $M$ be a
+Let $T(k) \simeq T'(k)$ and $\consis(T(k))$ for every $k$, and $M$ be a
 $\Tl{Mon}$ expression. If $\rho$ is nonempty and consistent, and
-$\kappa(D) \simeq K(D)$ for every consistent $D$, then
+$K(D) \simeq \kappa(D)$ for every consistent $D$, then
 \[
-  \SEM{\pass{lift}(M)}^{\Tl{Imp},\omega}_T\rho\,\kappa \simeq K(\SEM{\Tembed{M}}^{\Tl{5},\omega}_{T'}\rho) .
+  K(\SEM{\Tembed{M}}^{\Tl{5},\omega}_{T}\rho) \simeq \SEM{\pass{lift}(M)}^{\Tl{Imp},\omega}_{T'}\rho\,\kappa .
 \]
 \end{lemma}
 \begin{theorem}[Correctness of Lift Locals]\label{lem:t-gerr-lift-prog}
 For every $\Tl{Mon}$ program $P$,
-$\SEM{\pass{lift}(P)}^{\Tl{Imp},\omega} \simeq \SEM{\Tembed{P}}^{\Tl{5},\omega}$.
+$\SEM{\Tembed{P}}^{\Tl{5},\omega} \simeq \SEM{\pass{lift}(P)}^{\Tl{Imp},\omega}$.
 \end{theorem}
 
 \subsubsection{Explicate Control}
@@ -2809,27 +2811,27 @@ blocks, $\vec{t} \preceq \vec{t}'$ when $\vec{t}$ is a prefix of $\vec{t}'$, the
 pass only adds blocks, and a label made earlier finds the same block:
 $\key{blocks}_T(\vec{t}')(l) = \key{blocks}_T(\vec{t})(l)$ for $l < |\vec{t}|$.
 Labels are typed, so a jump never misses, and there are no frame
-checks. Fix $T$ (of $\Tl{CFG}$) and $T'$ (of $\Tl{Imp}$) with
+checks. Fix $T$ (of $\Tl{Imp}$) and $T'$ (of $\Tl{CFG}$) with
 $T(k) \simeq T'(k)$ for every $k$.
 \begin{lemma}[Continuation-Passing]\label{lem:t-gerr-cps}
 If $\pass{assign}(e, s, k, \vec{t}) = (t;\, \vec{t}')$, then $\vec{t} \preceq \vec{t}'$, and if
 \[
-  \kappa(D) \simeq \Tletv(D,\; \lambda X.\, \SEM{k}^{\Tl{CFG},\omega}_{T,\key{blocks}_T(\vec{t})}(\Tcut{\sigma}{s}, X))
+  \kappa(D) \simeq \Tletv(D,\; \lambda X.\, \SEM{k}^{\Tl{CFG},\omega}_{T',\key{blocks}_{T'}(\vec{t})}(\Tcut{\sigma}{s}, X))
 \]
 for every $D$, then
 \[
-  \SEM{t}^{\Tl{CFG},\omega}_{T,\key{blocks}_T(\vec{t}')}\sigma \simeq
-  \SEM{e}^{\Tl{Imp},\omega}_{T'}\sigma\,\kappa .
+  \SEM{e}^{\Tl{Imp},\omega}_{T}\sigma\,\kappa \simeq
+  \SEM{t}^{\Tl{CFG},\omega}_{T',\key{blocks}_{T'}(\vec{t}')}\sigma .
 \]
 \end{lemma}
 \begin{lemma}[Tail]\label{lem:t-gerr-tail}
 If $\pass{tail}(e, \vec{t}) = (t;\, \vec{t}')$, then $\vec{t} \preceq \vec{t}'$ and
-$\SEM{t}^{\Tl{CFG},\omega}_{T,\key{blocks}_T(\vec{t}')}\sigma \simeq
-  \SEM{e}^{\Tl{Imp},\omega}_{T'}\sigma\,(\lambda D.\, D)$.
+$\SEM{e}^{\Tl{Imp},\omega}_{T}\sigma\,(\lambda D.\, D) \simeq
+  \SEM{t}^{\Tl{CFG},\omega}_{T',\key{blocks}_{T'}(\vec{t}')}\sigma$.
 \end{lemma}
 \begin{theorem}[Correctness of Explicate Control]\label{lem:t-gerr-explicate}
 For every $\Tl{Imp}$ program $P$,
-$\SEM{\pass{explicate}(P)}^{\Tl{CFG},\omega} \simeq \SEM{P}^{\Tl{Imp},\omega}$.
+$\SEM{P}^{\Tl{Imp},\omega} \simeq \SEM{\pass{explicate}(P)}^{\Tl{CFG},\omega}$.
 \end{theorem}
 
 \subsubsection{Select Instructions}\label{sec:t-gerr-select}
@@ -2852,16 +2854,17 @@ holds both an $\key{inl}$ and an $\key{inr}$:
 \end{align*}
 Every slot is written by $\Tletv$, which binds a finite, consistent set of
 values, so $\mathit{Inv}$ holds of every frame a block or a definition
-runs in. Fix tables $T$ (of $\Tl{X86}$) and $T'$ (of $\Tl{CFG}$) with
-$T(k) \simeq T'(k)$ for every $k$, and the blocks $B$ that a sequence may
-jump to. What runs after the value of $r$ is in $o$ means $K$ of it:
+runs in. Fix tables $T$ (of $\Tl{CFG}$) and $T'$ (of $\Tl{X86}$) with
+$T(k) \simeq T'(k)$ for every $k$, and the blocks $B$ (of $\Tl{X86}$) that
+a sequence may jump to. $K$ of the value of $r$ is what runs after it is
+in $o$:
 \begin{align*}
   \key{then}_{\key{ret}}(K, D) &= D \qquad
   \key{then}_{\key{to}\;s}(K, D) = \Tletv(D, K) \\
-  \mathit{Fits}_{\key{ret}}(k, K, \sigma) &\iff \forall \sigma'\, R\, F.\;
-    \SEM{k}_B(\sigma', R, F) \simeq R(\rax) \\
-  \mathit{Fits}_{\key{to}\;s}(k, K, \sigma) &\iff \forall X.\; \mathit{Atom}(X) \implies
-    \forall R\, F.\; \SEM{k}_B((\Tcut{\sigma}{s}, X), R, F) \simeq K(X)
+  \mathit{Fits}_{\key{ret}}(K, k, \sigma) &\iff \forall \sigma'\, R\, F.\;
+    R(\rax) \simeq \SEM{k}_B(\sigma', R, F) \\
+  \mathit{Fits}_{\key{to}\;s}(K, k, \sigma) &\iff \forall X.\; \mathit{Atom}(X) \implies
+    \forall R\, F.\; K(X) \simeq \SEM{k}_B((\Tcut{\sigma}{s}, X), R, F)
 \end{align*}
 for $k$ at any registers, open closure and flag.
 
@@ -2879,21 +2882,21 @@ nothing: $\key{strict}^{\omega}(C, \key{then}_o(K, C)) \simeq \key{then}_o(K, C)
 since $\Tletv$ is itself a bind of $C$.
 
 \begin{lemma}[Select a Simple Expression]\label{lem:t-gerr-sel}
-If $\mathit{Fits}_o(k, K, \sigma)$ and $\mathit{Inv}_\Delta(\sigma)$, then for
+If $\mathit{Fits}_o(K, k, \sigma)$ and $\mathit{Inv}_\Delta(\sigma)$, then for
 every $R$ and $F$
 \[
-  \SEM{\pass{sel}(r, o, k)}_{T,B}(\sigma, R, F) \simeq \key{then}_o(K, \mathcal{S}_\sigma(r)) ,
+  \key{then}_o(K, \mathcal{S}_\sigma(r)) \simeq \SEM{\pass{sel}(r, o, k)}_{T',B}(\sigma, R, F) ,
 \]
-with $\mathcal{S}$ that of $T$; and $\mathcal{S}_\sigma(r)$ of $T$ is
+with $\mathcal{S}$ that of $T'$; and $\mathcal{S}_\sigma(r)$ of $T$ is
 $\mathcal{S}_\sigma(r)$ of $T'$.
 \end{lemma}
 
 \begin{lemma}[Case]\label{lem:t-gerr-case-core}
 If $\mathit{Atom}(A)$, then
 \[
+  \mathcal{C}^{\mathsf{T}}(A, F_1, F_2) \simeq
   \Tletv(A \bind \lambda X.\, \key{payload}(X^{\checkmark}),\;
-    \lambda X.\, \mathcal{C}^{\mathsf{T}}(A \bind \key{isinl},\; \lambda \_.\, F_1(X),\; \lambda \_.\, F_2(X)))
-  \simeq \mathcal{C}^{\mathsf{T}}(A, F_1, F_2) .
+    \lambda X.\, \mathcal{C}^{\mathsf{T}}(A \bind \key{isinl},\; \lambda \_.\, F_1(X),\; \lambda \_.\, F_2(X))) .
 \]
 \end{lemma}
 A $\Tl{CFG}$ case binds the payload of the $\key{inl}$s or of the
@@ -2902,7 +2905,7 @@ branches on the flag, which agree when $A$ is $\mathit{Tagged}$. The atom
 of a case, of type $\Tflat{\Tsum}$, is a slot, so the tables need not be
 $\mathit{Tagged}$.
 
-The blocks $B$ of $\Tl{X86}$ and $B'$ of $\Tl{CFG}$ agree,
+The blocks $B$ of $\Tl{CFG}$ and $B'$ of $\Tl{X86}$ agree,
 \[
   B \mathrel{\mathit{BR}} B' \iff \forall l\, \sigma.\;
     \mathit{Inv}_{\Delta_l}(\sigma) \implies B(l)(\sigma) \simeq B'(l)(\sigma) .
@@ -2911,28 +2914,28 @@ The blocks $B$ of $\Tl{X86}$ and $B'$ of $\Tl{CFG}$ agree,
 If $B \mathrel{\mathit{BR}} B'$, $\mathit{depth}(t) \leq n$ and
 $\mathit{Inv}_\Delta(\sigma)$, then for every $R$ and $F$
 \[
-  \SEM{\pass{tail}(t)}^{\Tl{X86},\omega}_{T,B}(\sigma, R, F) \simeq \SEM{t}^{\Tl{CFG},\omega}_{T',B'}\,\sigma ;
+  \SEM{t}^{\Tl{CFG},\omega}_{T,B}\,\sigma \simeq \SEM{\pass{tail}(t)}^{\Tl{X86},\omega}_{T',B'}(\sigma, R, F) ;
 \]
-and $\key{blocks}^{\Tl{X86}}_{T}(\pass{tail}(\vec{t})) \mathrel{\mathit{BR}} \key{blocks}^{\Tl{CFG}}_{T'}(\vec{t})$.
+and $\key{blocks}^{\Tl{CFG}}_{T}(\vec{t}) \mathrel{\mathit{BR}} \key{blocks}^{\Tl{X86}}_{T'}(\pass{tail}(\vec{t}))$.
 \end{lemma}
 The prologue of a definition binds finite parts $V$ and $W$ of its
 parameters (the inputs of an entry of $\Lambda\Lambda^{\omega}$), where
 $\Tl{CFG}$ runs the body in the frame $(V, W)$ at once; a let of a finite,
 consistent set of values without $\omega$ is $\beta$,
-$\Tletv(V, G) \simeq G(V)$ for $G$ monotone, and the semantics of
+$G(V) \simeq \Tletv(V, G)$ for $G$ monotone, and the semantics of
 $\Tl{CFG}$ is monotone in its frame.
 \begin{lemma}[Start]\label{lem:t-gerr-sel-start}
-If $T'(k)$ is consistent for every $k$, then for the body $b$ of every
+If $T(k)$ is consistent for every $k$, then for the body $b$ of every
 definition,
 \[
-  \key{code}^{\mathrm{X}}_T(\pass{select}^{+}(b)) \simeq \key{code}^{\mathrm{C}}_{T'}(b) ;
+  \key{code}^{\mathrm{C}}_{T}(b) \simeq \key{code}^{\mathrm{X}}_{T'}(\pass{select}^{+}(b)) ;
 \]
-so the tables of $\pass{select}(P)$ and of $P$ agree at every $k$.
+so the tables of $P$ and of $\pass{select}(P)$ agree at every $k$.
 \end{lemma}
 \begin{theorem}[Correctness of Select Instructions]\label{lem:t-gerr-select}
 For every $\Tl{CFG}$ program $P$,
 \[
-  \SEM{\pass{select}(P)}^{\Tl{X86},\omega} \simeq \SEM{P}^{\Tl{CFG},\omega} .
+  \SEM{P}^{\Tl{CFG},\omega} \simeq \SEM{\pass{select}(P)}^{\Tl{X86},\omega} .
 \]
 \end{theorem}
 Main starts in the empty frame $\rho_0$, for which $\mathit{Inv}_\emptyset$
@@ -3043,13 +3046,13 @@ in math ($\texttt{app}^{\mathsf{t}}$ is \texttt{app} with a superscript t).
   and the untyped let as a bind is $\texttt{let}^{\mathsf{m}}$\texttt{-}$\bind$.
 \item \textbf{Delay}'s relations: $v \sqsubseteq D'$ is $\sqsubseteq$ of
   \texttt{DelayPreserve.agda}, lifted to sets by \texttt{Lifted}, and
-  $\Rel{V'}{D}$ is \texttt{R}, with the fields of \texttt{Obs}
+  $\Rel{D}{V'}$ is \texttt{R D V'}, with the fields of \texttt{Obs}
   (\texttt{DelayRel.agda}): \texttt{err-obs}, \texttt{const-obs},
-  \texttt{kind-obs}, \texttt{app-obs} and \texttt{tag-obs}; $D' \rhd D$ is
-  \texttt{Rel D' D}, and $\bullet$ and $\odot$ are the Agda's. Of
+  \texttt{kind-obs}, \texttt{app-obs} and \texttt{tag-obs}; $D \rhd D'$ is
+  \texttt{Rel D D'}, and $\bullet$ and $\odot$ are the Agda's. Of
   Lemmas~\ref{lem:t-gerr-delay-lift} and~\ref{lem:t-gerr-reflect-bind}, the
   binds are \texttt{binds-lift} and \texttt{R-bind}, and project is
-  \texttt{R-check}, \texttt{bad-reflect} and \texttt{R-restrict}. The
+  $\texttt{R-check}_{\mathsf{r}}$, \texttt{bad-reflect} and \texttt{R-restrict}. The
   environments are records \texttt{Envs}.
 \item \textbf{Globalize}'s table of the definitions made is
   \texttt{madeT}, $\mathit{Agree}$ is \texttt{Agr}, and $\vec{d} \preceq \vec{d}'$
@@ -3973,17 +3976,19 @@ Unlike Part~II, there is no precondition.
 
 \subsubsection{Lift Locals}
 
-The source is the $\Tl{Imp}$ machine on $\pass{lift}(P)$ and the target the
-$\Tl{Clos5}$ machine on $\Tembed{P}$ (the simulation goes from $\Tl{Imp}$ to
-$\Tl{Mon}$, and the theorem follows by the symmetry of $\Equiv$). The
+The source is the $\Tl{Clos5}$ machine on $\Tembed{P}$ and the target the
+$\Tl{Imp}$ machine on $\pass{lift}(P)$; the relations put the source on
+the left, but the simulation goes from $\Tl{Imp}$ to $\Tl{Mon}$, with the
+converse $\sim^{-1}$ of $\sim$, and the theorem follows by the symmetry of
+$\Equiv$. The
 pass is structural, and the frame of the $\Tl{Imp}$ machine is the
 environment of the $\Tl{Clos5}$ machine (slot $s$ is the variable at level
 $s$), so the two run on the same values and frames:
 \begin{align*}
   \halt &\approxk \halt \\
-  \Kf{assignK}{\pass{lift}(N), \sigma, \kappa_1} &\approxk \Kf{letK}{x.\Tembed{N}, \sigma, \kappa_2}
+  \Kf{letK}{x.\Tembed{N}, \sigma, \kappa_1} &\approxk \Kf{assignK}{\pass{lift}(N), \sigma, \kappa_2}
     \iff \kappa_1 \approxk \kappa_2 \\[1ex]
-  \evi{\pass{lift}(N)}{\sigma}{\kappa_1} &\sim \ev{\Tembed{N}}{\sigma}{\kappa_2}
+  \ev{\Tembed{N}}{\sigma}{\kappa_1} &\sim \evi{\pass{lift}(N)}{\sigma}{\kappa_2}
     \iff \kappa_1 \approxk \kappa_2
 \end{align*}
 One $\Tl{Imp}$ step runs a simple expression on its atoms, which the
@@ -4001,10 +4006,10 @@ states in the callee's body), or both stop with the same observation.
 \end{lemma}
 
 \begin{lemma}[Lift Simulation]\label{lem:t-cek-lift-fsim}
-For every $\Tl{Mon}$ program $P$, if $s_1 \sim s_2$ then
-$\mathit{Both}_\sim(s_1, s_2)$; so
+For every $\Tl{Mon}$ program $P$, if $s_2 \sim s_1$ then
+$\mathit{Both}_{\sim^{-1}}(s_1, s_2)$; so
 \[
-  \FSim(\Mach{\Tl{Imp}}(\pass{lift}(P)), \Mach{\Tl{Mon}}(P), \sim') ,
+  \FSim(\Mach{\Tl{Imp}}(\pass{lift}(P)), \Mach{\Tl{Mon}}(P), (\sim^{-1})') ,
 \]
 by Lemma~\ref{lem:t-cek-both}.
 \end{lemma}
@@ -4846,7 +4851,7 @@ definitions and $\vec{d}' = \Tembed{\pass{rco}(\vec{d})}$. The target
 environment $\varphi$ holds the source one $\gamma$, and possibly the
 fresh variables of the $\key{let}$s:
 \[
-  \gamma \subseteq \varphi \iff \forall x \in \mathrm{dom}(\gamma).\; \varphi(x) = \gamma(x) .
+  \gamma \subseteq \varphi \iff \forall x \in \mathrm{dom}(\gamma).\; \gamma(x) = \varphi(x) .
 \]
 The Agda's $\pass{atomize}$ is in continuation-passing style:
 $\pass{atomize}(M, \kappa)$ binds $M$ to a fresh variable if it is not an
@@ -4855,12 +4860,12 @@ $a$ in the scope of the new $\key{let}$. Fix a clock $k$ at which calls
 agree, $\CALL{\vec{d}}{k}\,f\,w = \CALL{\vec{d}'}{k}\,f\,w$ for all $f$
 and $w$. A continuation $\kappa$ means $K$ in $\varphi$ when, for every
 $\varphi' \supseteq \varphi$ and atom $a$,
-$\EV{\vec{d}'}{k}\,\varphi'\,\Tembed{\kappa(a)} = K(\varphi'(a))$.
+$K(\varphi'(a)) = \EV{\vec{d}'}{k}\,\varphi'\,\Tembed{\kappa(a)}$.
 
 \begin{lemma}[Atomize, Clock for Clock]\label{lem:t-interp-atomize}
 If $\gamma \subseteq \varphi$ and $\kappa$ means $K$ in $\varphi$, then
 \[
-  \EV{\vec{d}'}{k}\,\varphi\,\Tembed{\pass{atomize}(M, \kappa)} = \EV{\vec{d}}{k}\,\gamma\,M \bind K ,
+  \EV{\vec{d}}{k}\,\gamma\,M \bind K = \EV{\vec{d}'}{k}\,\varphi\,\Tembed{\pass{atomize}(M, \kappa)} ,
 \]
 and so for several operands, $\pass{atomize}(M_1, \ldots, M_n, \kappa)$
 and $\EVS{\vec{d}}{k}\,\gamma\,(M_1 \ldots M_n) \bind K$.
@@ -4869,7 +4874,7 @@ and $\EVS{\vec{d}}{k}\,\gamma\,(M_1 \ldots M_n) \bind K$.
 \begin{lemma}[RCO, Clock for Clock]\label{lem:t-interp-rco}
 If $\gamma \subseteq \varphi$, then
 \[
-  \EV{\vec{d}'}{k}\,\varphi\,\Tembed{\pass{rco}(M)} = \EV{\vec{d}}{k}\,\gamma\,M .
+  \EV{\vec{d}}{k}\,\gamma\,M = \EV{\vec{d}'}{k}\,\varphi\,\Tembed{\pass{rco}(M)} .
 \]
 \end{lemma}
 The two lemmas are proved together, by induction on $M$. Calls agree at
@@ -4893,12 +4898,12 @@ typed by the same context, with slot $\ell(x)$ holding $x$
 (\texttt{LiftLocalsFuel.agda}). The pass maps each call to one call, so
 the interpreters tick in lock step. Let $\vec{d}$ be the definitions of
 a $\Tl{Mon}$ program and fix a clock $k$ at which calls agree,
-$\CALL{\pass{lift}(\vec{d})}{k}\,f\,w = \CALL{\Tembed{\vec{d}}}{k}\,f\,w$.
+$\CALL{\Tembed{\vec{d}}}{k}\,f\,w = \CALL{\pass{lift}(\vec{d})}{k}\,f\,w$.
 
 \begin{lemma}[Lift, Clock for Clock]\label{lem:t-interp-lift}
 For every $\Tl{Mon}$ expression $M$ and environment $\sigma$ of its context,
 \[
-  \EV{\pass{lift}(\vec{d})}{k}\,\sigma\,\pass{lift}(M) = \EV{\Tembed{\vec{d}}}{k}\,\sigma\,\Tembed{M} .
+  \EV{\Tembed{\vec{d}}}{k}\,\sigma\,\Tembed{M} = \EV{\pass{lift}(\vec{d})}{k}\,\sigma\,\pass{lift}(M) .
 \]
 \end{lemma}
 A $\key{let}$ and its assignment both extend the environment with the
@@ -4933,33 +4938,33 @@ threads the blocks made so far and only adds to them:
 
 \begin{lemma}[Jump to an Older Block]\label{lem:t-interp-jump-at}
 If $\vec{t} \sqsubseteq \vec{t}'$ and $l < |\vec{t}|$, then
-$\key{jump}^k\,\vec{t}'\,l\,\sigma = \key{jump}^k\,\vec{t}\,l\,\sigma$.
+$\key{jump}^k\,\vec{t}\,l\,\sigma = \key{jump}^k\,\vec{t}'\,l\,\sigma$.
 \end{lemma}
 
 The output of the pass from the blocks $\vec{t}$, a tail $t$ and the
 blocks $\vec{t}'$ made by then, means $K$ when
 \[
-  \mathit{Ok}_{\vec{t}}((\vec{t}';\; t), K) \iff \vec{t} \sqsubseteq \vec{t}' \land
-    \forall \sigma.\; \key{tail}^k\,\vec{t}'\,\sigma\,t = K(\sigma) .
+  \mathit{Ok}_{\vec{t}}(K, (\vec{t}';\; t)) \iff \vec{t} \sqsubseteq \vec{t}' \land
+    \forall \sigma.\; K(\sigma) = \key{tail}^k\,\vec{t}'\,\sigma\,t .
 \]
 
 \begin{lemma}[Assignment, Clock for Clock]\label{lem:t-interp-assign}
-If $\key{tail}^k\,\vec{t}\,\sigma\,t' = K(\sigma)$ for every $\sigma$,
+If $K(\sigma) = \key{tail}^k\,\vec{t}\,\sigma\,t'$ for every $\sigma$,
 then for the frame $\Delta$ of $e$ and $s \leq |\Delta|$,
 \[
-  \mathit{Ok}_{\vec{t}}(\pass{assign}(e, s, t'),\;
-    \lambda \sigma.\, \Do v \leftarrow \EV{}{k}\,\sigma\,e;\; K(\Tcut{\sigma}{s}, v)) ,
+  \mathit{Ok}_{\vec{t}}(\lambda \sigma.\, \Do v \leftarrow \EV{}{k}\,\sigma\,e;\; K(\Tcut{\sigma}{s}, v),\;
+    \pass{assign}(e, s, t')) ,
 \]
 with $\pass{assign}$ run from the blocks $\vec{t}$.
 \end{lemma}
 
 \begin{lemma}[Tail, Clock for Clock]\label{lem:t-interp-tail}
 For every $\Tl{Imp}$ expression $e$ and blocks $\vec{t}$,
-$\mathit{Ok}_{\vec{t}}(\pass{tail}(e),\; \lambda \sigma.\, \EV{}{k}\,\sigma\,e)$,
+$\mathit{Ok}_{\vec{t}}(\lambda \sigma.\, \EV{}{k}\,\sigma\,e,\; \pass{tail}(e))$,
 with $\pass{tail}$ run from the blocks $\vec{t}$.
 \end{lemma}
-In particular a body runs as its expression, $\key{tail}^k\,\vec{t}\,\sigma\,t
-= \EV{}{k}\,\sigma\,e$ for $\pass{explicate}(e) = (\vec{t};\; t)$; and calls
+In particular a body runs as its expression, $\EV{}{k}\,\sigma\,e
+= \key{tail}^k\,\vec{t}\,\sigma\,t$ for $\pass{explicate}(e) = (\vec{t};\; t)$; and calls
 agree at every clock, by induction on the clock.
 
 \begin{theorem}[Correctness of Explicate Control, Interpreter]\label{thm:t-interp-explicate}
@@ -4979,7 +4984,7 @@ $\vec{b}$ of a $\Tl{CFG}$ program and a clock $k$ at which calls give the
 same results:
 \[
   \mathit{Calls}_k \iff \forall v\, w.\;
-    \CALL{\pass{select}(\vec{b})}{k}(\mathit{code}(v), \mathit{env}(v), w) = \CALL{\vec{b}}{k}\,v\,w ,
+    \CALL{\vec{b}}{k}\,v\,w = \CALL{\pass{select}(\vec{b})}{k}(\mathit{code}(v), \mathit{env}(v), w) ,
 \]
 for every closure $v = \Tpack{\codeV{j}}{u}$, with $\mathit{code}(v) = \codeV{j}$
 and $\mathit{env}(v) = u$. Write $\key{run}^k$ and $\key{jump}^k_{\mathrm{X}}$ for
@@ -4988,11 +4993,11 @@ of $\vec{b}$.
 
 \begin{lemma}[Simple Expression, Clock for Clock]\label{lem:t-interp-simple}
 If $\mathit{Calls}_k$, and
-$\key{run}^k\,\vec{\beta}\,\eta'\,\key{put}(\bar{o}, v, \langle R', \sigma, O', f' \rangle)\,k_o = K(v)$
+$K(v) = \key{run}^k\,\vec{\beta}\,\eta'\,\key{put}(\bar{o}, v, \langle R', \sigma, O', f' \rangle)\,k_o$
 for every $\eta'$, $R'$, $O'$, $f'$ and $v$, then for any $\eta$, $R$, $O$, $f$
 \[
-  \key{run}^k\,\vec{\beta}\,\eta\,\langle R, \sigma, O, f \rangle\,\pass{sel}(r, o, k_o) =
-  \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \bind K .
+  \key{simple}_{\CALL{\vec{b}}{k}}(\sigma, r) \bind K =
+  \key{run}^k\,\vec{\beta}\,\eta\,\langle R, \sigma, O, f \rangle\,\pass{sel}(r, o, k_o) .
 \]
 \end{lemma}
 Every case is definitional but a call (by $\mathit{Calls}_k$), $\key{eq}$
@@ -5003,8 +5008,8 @@ rest.
 \begin{lemma}[Tail, Jump and Case, Clock for Clock]\label{lem:t-interp-sel-tail}
 If $\mathit{Calls}_k$, then for any $\eta$, $R$, $O$, $f$
 \begin{align*}
-  \key{run}^k\,\pass{tail}(\vec{t})\,\eta\,\langle R, \sigma, O, f \rangle\,\pass{tail}(t) &= \key{tail}^k\,\vec{t}\,\sigma\,t , \\
-  \key{jump}^k_{\mathrm{X}}\,\pass{tail}(\vec{t})\,\eta\,l\,\sigma &= \key{jump}^k\,\vec{t}\,l\,\sigma ,
+  \key{tail}^k\,\vec{t}\,\sigma\,t &= \key{run}^k\,\pass{tail}(\vec{t})\,\eta\,\langle R, \sigma, O, f \rangle\,\pass{tail}(t) , \\
+  \key{jump}^k\,\vec{t}\,l\,\sigma &= \key{jump}^k_{\mathrm{X}}\,\pass{tail}(\vec{t})\,\eta\,l\,\sigma ,
 \end{align*}
 and the flag and payload of a $\key{case}$ choose the block that
 $\key{either}$ does.
@@ -5065,7 +5070,7 @@ diverges exactly when $M$ does.
   from indices to \texttt{Ref}s (\texttt{var}, \texttt{prj}), and $\rho_3(\varphi(x))$
   is \texttt{deref}. RCO's $\gamma \subseteq \varphi$ is \texttt{Agree $\rho$ $\gamma$ $\varphi$}
   through a renaming $\rho$, and a continuation $\kappa$ takes the
-  renaming to the scope of its atom (\texttt{KOk}).
+  renaming to the scope of its atom (\texttt{KOk $K$ $\kappa$ $\varphi$}).
 \item \textbf{Optimize}'s kept positions are flags $\mathit{fl}$
   (\texttt{opt$\approx$ fl}), the kept values \texttt{select fl}, and the code
   is renamed by \texttt{squeeze fl}; $x_i \in \FV(N)$ is \texttt{uses N (suc i)}
@@ -5774,7 +5779,7 @@ closed $M$.
   when $\mathit{Closed}(M)$; and likewise, with no precondition, for
   enclose, optimize, concretize, globalize, rco, lift locals, explicate
   control and select instructions (for select, for every $\Tl{CFG}$
-  program, $\SEM{\pass{select}(P)}^{\Tl{X86}} \simeq \SEM{P}^{\Tl{CFG}}$: its
+  program, $\SEM{P}^{\Tl{CFG}} \simeq \SEM{\pass{select}(P)}^{\Tl{X86}}$: its
   frames are typed, so the frames of the $\Tl{X86}$ program are large
   enough by construction). Delay preserves and reflects the
   constants and nonemptiness: $c \in \SEM{M}^{\Tl{3}}\rho_0 \iff
@@ -5839,7 +5844,7 @@ closed $M$.
   Section~\ref{sec:t-gerr}). Every pass but delay preserves the
   meaning exactly, errors included (simplify and cast insertion when
   $\mathit{Closed}(M)$), select instructions too:
-  $\SEM{\pass{select}(P)}^{\Tl{X86},\omega} \simeq \SEM{P}^{\Tl{CFG},\omega}$
+  $\SEM{P}^{\Tl{CFG},\omega} \simeq \SEM{\pass{select}(P)}^{\Tl{X86},\omega}$
   for every $\Tl{CFG}$ program $P$, since $\Tl{X86}$, like $\Tl{CFG}$, checks
   kinds only at project ($\key{chk}$). Delay preserves and reflects an
   error ($\omega$), the constants, and having a value (an element other
@@ -6828,12 +6833,12 @@ which is consistent and nonempty, as $\Lambda$ requires.
 
 \begin{lemma}[Correctness of Simplify]\label{lem:simplify}
 Let $\rho$ and $\rho'$ be nonempty and consistent, and for every $x$ with $E(x) = (T, K)$, let
-$\SEM{T}\rho' \simeq \rho(x)$ and $K$ describe $\rho(x)$: if $K$ is a value,
-$\SEM{K}\rho' \simeq \rho(x)$, and if $K = \langle \lam{y} N, E_f \rangle$, then
-$\SEM{\lam{y} N}\rho_f \simeq \rho(x)$ for some nonempty, consistent $\rho_f$ of
+$\rho(x) \simeq \SEM{T}\rho'$ and $K$ describe $\rho(x)$: if $K$ is a value,
+$\rho(x) \simeq \SEM{K}\rho'$, and if $K = \langle \lam{y} N, E_f \rangle$, then
+$\rho(x) \simeq \SEM{\lam{y} N}\rho_f$ for some nonempty, consistent $\rho_f$ of
 which the same holds for $E_f$. Then
 \[
-  \SEM{\pass{simp}_E(M)}^{\mathrm{ISWIM}}\rho' \simeq \SEM{M}^{\mathrm{ISWIM}}\rho ,
+  \SEM{M}^{\mathrm{ISWIM}}\rho \simeq \SEM{\pass{simp}_E(M)}^{\mathrm{ISWIM}}\rho' ,
 \]
 and $\mathcal{K}_E(M)$ describes $\SEM{M}\rho$. In particular
 $\SEM{M}\rho_0 \simeq \SEM{\pass{simplify}(M)}\rho_0$.
@@ -7892,33 +7897,35 @@ In each pass, if $v \approx w$, then $\obs(v) = \obs(w)$.
 \subsubsection{Simplify}\label{sec:sim-simplify}
 
 A target closure is the simplified body of a source closure, under facts
-$E$ that are true of the two environments ($\rho' \models_E \rho$): for each
-$x$ with $E(x) = (T, K)$, the value term $T$ denotes in $\rho'$ a value related
-to $\rho(x)$, and, if $K \neq \bot$, $K$ describes $\rho(x)$: a value the same
+$E$ that are true of the two environments ($\rho \models_E \rho'$): for each
+$x$ with $E(x) = (T, K)$, $\rho(x)$ is related to a value that the value term
+$T$ denotes in $\rho'$, and, if $K \neq \bot$, $K$ describes $\rho(x)$: a value the same
 up to functions, and a known function $\langle \lam{y} N, E_f \rangle$ the source
-closure $\cloV{\lam{y} N}{\rho_f}$ for some $\rho_f$ with $\rho' \models_{E_f} \rho_f$.
+closure $\cloV{\lam{y} N}{\rho_f}$ for some $\rho_f$ with $\rho_f \models_{E_f} \rho'$.
 States are related frame by frame, the code by $\pass{simp}$:
 \begin{align*}
-  \cloV{\lam{y} \pass{simp}_{E'}(N)}{\rho'} \approx \cloV{\lam{y} N}{\rho}
-    &\iff \rho' \models_E \rho \qquad (E' = E \text{ under } y,\; y \text{ unknown}) \\
-  \ev{\pass{simp}_E(M)}{\rho'}{\kappa'} \sim \ev{M}{\rho}{\kappa}
-    &\iff \rho' \models_E \rho \land \kappa' \approxk \kappa \\
-  \rt{v'}{\kappa'} \sim \rt{v}{\kappa} &\iff v' \approx v \land \kappa' \approxk \kappa
+  \cloV{\lam{y} N}{\rho} \approx \cloV{\lam{y} \pass{simp}_{E'}(N)}{\rho'}
+    &\iff \rho \models_E \rho' \qquad (E' = E \text{ under } y,\; y \text{ unknown}) \\
+  \ev{M}{\rho}{\kappa} \sim \ev{\pass{simp}_E(M)}{\rho'}{\kappa'}
+    &\iff \rho \models_E \rho' \land \kappa \approxk \kappa' \\
+  \rt{v}{\kappa} \sim \rt{v'}{\kappa'} &\iff v \approx v' \land \kappa \approxk \kappa'
 \end{align*}
-with the target on the left. Where simplify reduced, the source runs ahead:
+with the source on the left. Where simplify reduced, the source runs ahead:
 if $\pass{simp}_E(M)$ is a value, or $M$ has a known value, then
 $\ev{M}{\rho}{\kappa} \lto^* \rt{v}{\kappa}$ for a $v$ it describes; at an
 inlined call, the source runs the operator to the known function's closure,
 then continues as for $\beta$. Where the
 target does more (it evaluates a duplicated small value, or the value of a
-let that simplify kept), it stutters: a match $s' \sim_i s$ says that the
-target is $i$ steps from a state related to $s$.
+let that simplify kept), it stutters. The simulation goes from the target
+to the source, so its matches are of the target's state $s'$ and the
+source's $s$: $s' \mathrel{\sim^{-1}_i} s$ says that the target is $i$ steps from a
+state $t'$ with $s \sim t'$.
 
 \begin{lemma}[Simplify Simulation]\label{lem:simplify-fsim}
 For every ISWIM term $M$,
 \[
   \FV(M) = \emptyset \implies
-  \FSim(\Mach{\mathrm{ISWIM}}(\pass{simplify}(M)), \Mach{\mathrm{ISWIM}}(M), \sim) .
+  \FSim(\Mach{\mathrm{ISWIM}}(\pass{simplify}(M)), \Mach{\mathrm{ISWIM}}(M), \sim^{-1}) .
 \]
 \end{lemma}
 
@@ -9012,18 +9019,17 @@ value, inlining), so the proof is clock monotone (Theorem~\ref{thm:clocked-le}),
 the monotonicity of the ISWIM interpreter in the clock and two lemmas.
 
 \begin{lemma}[Simplify, Forward at the Same Clock]
-If $\rho' \models_E \rho$, then for every clock $k$,
+If $\rho \models_E \rho'$, then for every clock $k$,
 \[
-  \mathit{Le}_{\succeq}(\EV{\mathrm{ISWIM}}{k}\,\rho\,M,\; \EV{\mathrm{ISWIM}}{k}\,\rho'\,\pass{simp}_E(M)) ,
+  \mathit{Le}_{\approx}(\EV{\mathrm{ISWIM}}{k}\,\rho\,M,\; \EV{\mathrm{ISWIM}}{k}\,\rho'\,\pass{simp}_E(M)) .
 \]
-where $v \succeq v'$ is $v' \approx v$.
 \end{lemma}
 
 \begin{lemma}[Simplify, Backward]
-If $\rho' \models_E \rho$ and $r' = \EV{\mathrm{ISWIM}}{k}\,\rho'\,\pass{simp}_E(M) \neq \tmo$, then there are
+If $\rho \models_E \rho'$ and $r' = \EV{\mathrm{ISWIM}}{k}\,\rho'\,\pass{simp}_E(M) \neq \tmo$, then there are
 $r$ and $k_0$ with
 \[
-  \RelRes{\succeq}(r, r') \land \forall k' \geq k_0.\; \EV{\mathrm{ISWIM}}{k'}\,\rho\,M = r .
+  \RelRes{\approx}(r, r') \land \forall k' \geq k_0.\; \EV{\mathrm{ISWIM}}{k'}\,\rho\,M = r .
 \]
 \end{lemma}
 
