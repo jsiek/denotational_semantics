@@ -2,12 +2,12 @@
 
   The passes of the pilot, composed: from ISWIMμ to X86μ,
 
-    ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ --concretize--> Clos3μ
-           --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ
+    ISWIMμ --simplify--> ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ
+           --concretize--> Clos3μ --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
-  as the typed pipeline's (Compiler/Pipeline.agda) after cast insertion:
+  as the typed pipeline's (Compiler/Pipeline.agda), without cast insertion:
   compile₄ goes to Clos4μ, compile to Clos5μ, and compile-mon,
   compile-imp, compile-cfg and compile-x86 continue. A program is a
   closed term of any type, and each compiled program has its type.
@@ -24,6 +24,7 @@ import Mu.Language.Mon as Monμ
 import Mu.Language.Imp as Impμ
 import Mu.Language.CFG as CFGμ
 import Mu.Language.X86 as X86μ
+open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Enclose using (enclose)
 open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
@@ -37,7 +38,7 @@ open import Mu.Compiler.Select using (select)
 open import Data.List using ([])
 
 compile₄ : ∀ {A : Type} → ISWIMμ.Tm [] A → Clos4μ.Tm [] A
-compile₄ M = delay-program (concretize-program (optimize-program (enclose M)))
+compile₄ M = delay-program (concretize-program (optimize-program (enclose (simplify M))))
 
 compile : ∀ {A : Type} → ISWIMμ.Tm [] A → Clos5μ.Program A
 compile M = globalize (compile₄ M)

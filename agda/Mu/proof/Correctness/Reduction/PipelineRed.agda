@@ -22,6 +22,7 @@ open import Mu.Compiler.Pipeline using (compile₄; compile; compile-mon; compil
 open import Semantics.Observation using (Obs; o-const; _⇔_)
 open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverges)
 open import proof.Framework.Simulation Obs using (equiv-trans)
+open import Mu.proof.Correctness.Reduction.SimplifyRed using (simplify-correct)
 open import Mu.proof.Correctness.Reduction.EncloseRed using (enclose-correct)
 open import Mu.proof.Correctness.Reduction.OptimizeRed using (optimize-correct)
 open import Mu.proof.Correctness.Reduction.ConcretizeRed using (concretize-correct)
@@ -43,7 +44,8 @@ open import Data.List using ([])
 
 compile₄-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Clos4ᵣ.sem (compile₄ M))
 compile₄-correct M =
-  equiv-trans (enclose-correct M) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _)))
+  equiv-trans (simplify-correct M)
+    (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _))))
 
 compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Clos5ᵣ.sem (compile M))
 compile-correct M = equiv-trans (compile₄-correct M) (globalize-correct _)

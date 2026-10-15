@@ -22,6 +22,7 @@ open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (con
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
+open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Enclose using (enclose)
 open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
@@ -32,6 +33,7 @@ open import Mu.Semantics.Graph.Clos5 using () renaming (⟦_⟧ₚ to ⟦_⟧₅
 open import Mu.Semantics.Graph.Imp using () renaming (⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Mu.Semantics.Graph.CFG using () renaming (⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Mu.Semantics.Graph.X86 using (⟦_⟧ₜ)
+open import Mu.proof.Correctness.Graph.SimplifyCorrect using (simplify-correct)
 open import Mu.proof.Correctness.Graph.EncloseCorrect using (enclose-correct)
 open import Mu.proof.Correctness.Graph.OptimizeCorrect using (optimize-correct)
 open import Mu.proof.Correctness.Graph.ConcretizeCorrect using (concretize-correct)
@@ -59,13 +61,14 @@ then ⟨ c , n ⟩ ⟨ E⊆ , E'⊆ ⟩ =
   , ⇔∘ n ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E'⊆ d d∈ ⟩ }) ⟩ ⟩
 
 compile₄-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) (⟦ compile₄ M ⟧₄ ρ₀)
-compile₄-same M with ≃-trans (enclose-correct M) (≃-trans (optimize-correct (enclose M)) (concretize-correct M₂))
+compile₄-same M with ≃-trans (simplify-correct M) (≃-trans (enclose-correct M₁) (≃-trans (optimize-correct (enclose M₁)) (concretize-correct M₂)))
   where
-  M₂ = optimize-program (enclose M)
+  M₁ = simplify M
+  M₂ = optimize-program (enclose M₁)
 ... | ⟨ D⊆ , E⊆ ⟩ =
   ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (delay-correct-const M₃ k))
   , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (delay-correct-nonempty M₃) ⟩
-  where M₃ = concretize-program (optimize-program (enclose M))
+  where M₃ = concretize-program (optimize-program (enclose (simplify M)))
 
 compile-same : ∀ {A} (M : Tm [] A) → Same (⟦ M ⟧ ρ₀) ⟦ compile M ⟧₅
 compile-same M = then (compile₄-same M) (globalize-correct (compile₄ M))

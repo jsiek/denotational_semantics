@@ -18,6 +18,7 @@ open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equiv-trans)
+open import Mu.proof.Correctness.CEK.SimplifySim using (simplify-correct)
 open import Mu.proof.Correctness.CEK.EncloseSim using (enclose-correct)
 open import Mu.proof.Correctness.CEK.OptimizeSim using (optimize-correct)
 open import Mu.proof.Correctness.CEK.ConcretizeSim using (concretize-correct)
@@ -41,7 +42,8 @@ open import Data.List using ([])
 
 compile₄-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (Clos4μₘ.sem (compile₄ M))
 compile₄-correct M =
-  equiv-trans (enclose-correct M) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _)))
+  equiv-trans (simplify-correct M)
+    (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _))))
 
 compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμₘ.sem M) (Clos5μₘ.sem (compile M))
 compile-correct M = equiv-trans (compile₄-correct M) (globalize-correct _)

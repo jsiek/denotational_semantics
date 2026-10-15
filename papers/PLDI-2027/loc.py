@@ -485,7 +485,11 @@ GROUPS = [
     ('mu-shared', 'syntax, languages, compiler passes',
      [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/GlobalizeOlder.agda']),
     ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating', [MU + 'Framework/*.agda']),
+    # simplify's syntactic lemmas are used by its four proofs: counted in the
+    # simplify row of each column, as in the main table
+    ('mu-den+mu-op+mu-ck+mu-red', 'simplify', [MUP + 'Compiler/SimplifyFacts.agda']),
     ('mu-den', 'semantics of the languages', [MU + 'Semantics/Graph/*.agda', MUP + 'Semantics/Graph/*.agda']),
+    ('mu-den', 'simplify', [MUP + 'Correctness/Graph/SimplifyCorrect.agda']),
     ('mu-den', 'CC: enclose', [MUP + 'Correctness/Graph/EncloseCorrect.agda']),
     ('mu-den', 'CC: optimize', [MUP + 'Correctness/Graph/OptimizeCorrect.agda']),
     ('mu-den', 'CC: concretize', [MUP + 'Correctness/Graph/ConcretizeCorrect.agda']),
@@ -502,6 +506,7 @@ GROUPS = [
     # as the typed pipeline's are ('op+red')
     ('mu-op', 'semantics of the languages', [MU + 'Semantics/CEK/' + x + '.agda' for x in ('ISWIM', 'Clos2', 'Clos3', 'Clos4')]),
     ('mu-op+mu-red', 'semantics of the languages', [MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]),
+    ('mu-op', 'simplify', [MUP + 'Correctness/CEK/SimplifySim.agda']),
     ('mu-op', 'CC: enclose', [MUP + 'Correctness/CEK/EncloseSim.agda']),
     ('mu-op', 'CC: optimize', [MUP + 'Correctness/CEK/OptimizeSim.agda']),
     ('mu-op', 'CC: concretize', [MUP + 'Correctness/CEK/ConcretizeSim.agda']),
@@ -514,6 +519,7 @@ GROUPS = [
     ('mu-op+mu-red', 'select instructions', [MUP + 'Correctness/CEK/SelectSim.agda']),
     ('mu-op', 'composition', [MUP + 'Correctness/CEK/PipelineSim.agda']),
     ('mu-ck', 'semantics of the languages', [MU + 'Semantics/Interp/*.agda', MUP + 'Semantics/Interp/*.agda']),
+    ('mu-ck', 'simplify', [MUP + 'Correctness/Interp/SimplifyFuel.agda']),
     ('mu-ck', 'CC: enclose', [MUP + 'Correctness/Interp/EncloseFuel.agda']),
     ('mu-ck', 'CC: optimize', [MUP + 'Correctness/Interp/OptimizeFuel.agda']),
     ('mu-ck', 'CC: concretize', [MUP + 'Correctness/Interp/ConcretizeFuel.agda']),
@@ -534,7 +540,7 @@ GROUPS = [
     # P2: adequacy of the graph model, for the ISWIMμ machine and the X86μ
     # machine (direct), as the typed pipeline's ('adeq'); no Clos5μ
     # adequacy, which the end-to-end theorem into X86μ does not need
-    ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('ISWIMOk', 'Tuples', 'Soundness', 'LogRel', 'ISWIM')]),
+    ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('Tuples', 'Soundness', 'LogRel', 'ISWIM')]),
     # the values of the Clos5μ machine in the graph model and the tables'
     # lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
     ('mu-adeq', 'Clos5', [MUP + 'Adequacy/Clos5Values.agda', MUP + 'Adequacy/Clos5Common.agda']),
@@ -549,6 +555,7 @@ GROUPS = [
     # proofs of explicate control and select instructions (MU_RED_SHARED), as
     # the typed pipeline's reduction column does ('op+red')
     ('mu-red', 'semantics of the languages', [MU + 'Semantics/Reduction/*.agda', MUP + 'Semantics/Reduction/*.agda']),
+    ('mu-red', 'simplify', [MUP + 'Correctness/Reduction/SimplifyRed.agda']),
     ('mu-red', 'CC: enclose', [MUP + 'Correctness/Reduction/EncloseRed.agda']),
     ('mu-red', 'CC: optimize', [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
     ('mu-red', 'CC: concretize', [MUP + 'Correctness/Reduction/ConcretizeRed.agda']),

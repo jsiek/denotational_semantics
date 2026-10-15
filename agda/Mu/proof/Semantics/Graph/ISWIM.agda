@@ -1,7 +1,7 @@
 {-
 
   Lemmas about the semantics of ISWIMμ in the graph model
-  (Mu/Semantics/Graph/ISWIM.agda), for its adequacy: its denotations
+  (Mu/Semantics/Graph/ISWIM.agda), for simplify and adequacy: its denotations
   are Ok (monotone, continuous and consistent), by induction on the
   term, one line per construct, as for Clos5μ
   (Mu/proof/Semantics/Graph/Clos5.agda); fold and unfold are the

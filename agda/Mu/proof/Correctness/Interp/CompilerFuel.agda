@@ -3,7 +3,7 @@
   The compiler of the pilot (Mu/Compiler/Pipeline.agda) is correct by
   clocked interpreters, as the typed one
   (proof/Correctness/Interp/CompilerFuel.agda): each pass is proved
-  clock for clock, and the end theorems compose (equiv-trans), from
+  clock for clock (simplify, which removes calls, clock-monotone), and the end theorems compose (equiv-trans), from
   ISWIMμ to Clos4μ (compile₄), Clos5μ (compile), Monμ run as Clos5μ
   (compile-mon), Impμ, CFGμ and X86μ. A program is a closed term of any
   type; for a main of type Int, the interpreters of ISWIMμ and X86μ
@@ -18,6 +18,7 @@ open import Framework.Primitives using (Int)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
+open import Mu.Compiler.Simplify using (simplify)
 open import Mu.Compiler.Enclose using (enclose)
 open import Mu.Compiler.Optimize using (optimize-program)
 open import Mu.Compiler.Concretize using (concretize-program)
@@ -31,6 +32,7 @@ import Mu.Semantics.Interp.Imp as Impμᵢ
 import Mu.Semantics.Interp.CFG as CFGμᵢ
 import Mu.Semantics.Interp.X86 as X86μᵢ
 
+open import Mu.proof.Correctness.Interp.SimplifyFuel using (simplify-correct)
 open import Mu.proof.Correctness.Interp.EncloseFuel using (enclose-correct)
 open import Mu.proof.Correctness.Interp.OptimizeFuel using (optimize-correct)
 open import Mu.proof.Correctness.Interp.ConcretizeFuel using (concretize-correct)
@@ -47,9 +49,9 @@ open import Data.Product using (_,_; proj₁; proj₂)
 
 compile₄-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (Clos4μᵢ.sem (compile₄ M))
 compile₄-correct M =
-  equiv-trans (enclose-correct M) (equiv-trans (optimize-correct M₁)
-    (equiv-trans (concretize-correct M₂) (delay-correct (concretize-program M₂))))
-  where M₁ = enclose M
+  equiv-trans (simplify-correct M) (equiv-trans (enclose-correct (simplify M)) (equiv-trans (optimize-correct M₁)
+    (equiv-trans (concretize-correct M₂) (delay-correct (concretize-program M₂)))))
+  where M₁ = enclose (simplify M)
         M₂ = optimize-program M₁
 
 compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (ISWIMμᵢ.sem M) (Clos5μᵢ.sem (compile M))
