@@ -1,11 +1,16 @@
 {-
 
-  The relation of the backward (reflect) direction of typed delay
-  (Clos3ᵀ → Clos4ᵀ) in the graph model, as for untyped delay
-  (Untyped/proof/Correctness/Graph/DelayFiniteRel.agda): R D V' relates a
-  source set D to a finite list V' of target observations, by recursion on
-  the depth of V' (with fuel), since a target closure is a set of pairs whose
-  calls combine the codes and environments of several pairs (Calls).
+  The approximant logical relation, for the backward (reflect) direction
+  of typed delay (Clos3ᵀ → Clos4ᵀ) in the graph model, as for untyped
+  delay (Untyped/proof/Correctness/Graph/DelayFiniteRel.agda).
+  ApproxLR D V' relates an arbitrary source denotation D (a set of Clos3ᵀ
+  values) to a finite target approximant V' (a list of Clos4ᵀ values), by
+  recursion on the depth of V', since a target closure is a set of pairs
+  whose calls combine the codes and environments of several pairs (Calls).
+  ApproxLRLayer is one unfolding of the relation, with the recursive call
+  left open (Q). The fuel index of ApproxLR≤ is only a termination
+  device: ApproxLR-depth-irrelevant shows that any fuel bounding the
+  depth gives the same relation (unfold, fold).
   The types add one clause, for project: a pair (a target closure) in V'
   is reflected by a source function (fun-obs).
 
@@ -95,9 +100,9 @@ Bnd-Calls-args bV cs u u∈ =
 Bnd-Calls-apps : ∀ {k V U W} → Bnd (suc k) V → Calls V U W → Bnd k W
 Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.results cs w w∈))))
 
-{- The relation ---------------------------------------------------------------}
+{- The approximant logical relation -------------------------------------------}
 
-record Obs (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
+record ApproxLRLayer (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     nonempty-obs : V ≢ [] → nonempty D
@@ -105,11 +110,11 @@ record Obs (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List
     app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
     tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q (Untag t D) W
 
-Obs-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
+ApproxLRLayer-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
   → (∀ {E W} → Bnd k W → Bnd j W → Q₁ E W → Q₂ E W)
   → (∀ {E W} → Bnd j W → Bnd k W → Q₂ E W → Q₁ E W)
-  → Obs Q₁ D V → Obs Q₂ D V
-Obs-map bk bj to from o = record
+  → ApproxLRLayer Q₁ D V → ApproxLRLayer Q₂ D V
+ApproxLRLayer-map bk bj to from o = record
   { const-obs = const-obs
   ; nonempty-obs = nonempty-obs
   ; fun-obs = fun-obs
@@ -117,84 +122,84 @@ Obs-map bk bj to from o = record
       (app-obs cs E cE gU (from (Bnd-Calls-args bj cs) (Bnd-Calls-args bk cs) rU))
   ; tag-obs = λ t W W⊆ → to (Bnd-Untag t bk W⊆) (Bnd-Untag t bj W⊆) (tag-obs t W W⊆)
   }
-  where open Obs o
+  where open ApproxLRLayer o
 
 private
-  R′ : ℕ → 𝒫 Value → List Value → Set₁
-  R′ zero D V = pTrue
-  R′ (suc k) D V = Obs (R′ k) D V
+  ApproxLR≤ : ℕ → 𝒫 Value → List Value → Set₁
+  ApproxLR≤ zero D V = pTrue
+  ApproxLR≤ (suc k) D V = ApproxLRLayer (ApproxLR≤ k) D V
 
-R : 𝒫 Value → List Value → Set₁
-R D V = R′ (suc (depths V)) D V
+ApproxLR : 𝒫 Value → List Value → Set₁
+ApproxLR D V = ApproxLR≤ (suc (depths V)) D V
 
 private
-  R′-∅ : ∀ k {D V} → mem V ⊆ ∅ → R′ k D V
-  R′-∅ zero _ = ptt
-  R′-∅ (suc k) {V = V} V⊆∅ = record
+  ApproxLR≤-∅ : ∀ k {D V} → mem V ⊆ ∅ → ApproxLR≤ k D V
+  ApproxLR≤-∅ zero _ = ptt
+  ApproxLR≤-∅ (suc k) {V = V} V⊆∅ = record
     { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
     ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V⊆∅))
     ; fun-obs = λ p∈ → ⊥-elim (V⊆∅ _ p∈)
-    ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → V⊆∅ _ uv∈) cs)
-    ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
+    ; app-obs = λ cs E _ _ _ → ApproxLR≤-∅ k (Calls-none (λ u v uv∈ → V⊆∅ _ uv∈) cs)
+    ; tag-obs = λ t W W⊆ → ApproxLR≤-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  R′-data : ∀ k {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k D V
-  R′-data zero _ _ = ptt
-  R′-data (suc k) {V = V} V⊆ fl = record
+  ApproxLR≤-data : ∀ k {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → ApproxLR≤ k D V
+  ApproxLR≤-data zero _ _ = ptt
+  ApproxLR≤-data (suc k) {V = V} V⊆ fl = record
     { const-obs = λ c c∈ → V⊆ _ c∈
     ; nonempty-obs = λ ne → ne-mem ne V⊆
     ; fun-obs = λ p∈ → ⊥-elim (noflat (fl _ p∈))
-    ; app-obs = λ cs E _ _ _ → R′-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
+    ; app-obs = λ cs E _ _ _ → ApproxLR≤-∅ k (Calls-none (λ u v uv∈ → noflat (fl _ uv∈)) cs)
     ; tag-obs = λ t W W⊆ →
-        R′-data k (λ d d∈ → V⊆ _ (W⊆ d d∈)) (λ d d∈ → data-untag t (fl _ (W⊆ d d∈)))
+        ApproxLR≤-data k (λ d d∈ → V⊆ _ (W⊆ d d∈)) (λ d d∈ → data-untag t (fl _ (W⊆ d d∈)))
     }
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  R′-mono : ∀ k {D₁ D₂ V} → D₁ ⊆ D₂ → R′ k D₁ V → R′ k D₂ V
-  R′-mono zero _ _ = ptt
-  R′-mono (suc k) D⊆ r = record
+  ApproxLR≤-mono : ∀ k {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR≤ k D₁ V → ApproxLR≤ k D₂ V
+  ApproxLR≤-mono zero _ _ = ptt
+  ApproxLR≤-mono (suc k) D⊆ r = record
     { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
     ; nonempty-obs = λ ne → ⟨ proj₁ (nonempty-obs ne) , D⊆ _ (proj₂ (nonempty-obs ne)) ⟩
     ; fun-obs = λ p∈ → let ⟨ d , ⟨ d∈ , f ⟩ ⟩ = fun-obs p∈ in ⟨ d , ⟨ D⊆ d d∈ , f ⟩ ⟩
-    ; app-obs = λ cs E cE gU rU → R′-mono k (●-mono-l D⊆) (app-obs cs E cE gU rU)
-    ; tag-obs = λ t W W⊆ → R′-mono k (λ d → D⊆ (tag t d)) (tag-obs t W W⊆)
+    ; app-obs = λ cs E cE gU rU → ApproxLR≤-mono k (●-mono-l D⊆) (app-obs cs E cE gU rU)
+    ; tag-obs = λ t W W⊆ → ApproxLR≤-mono k (λ d → D⊆ (tag t d)) (tag-obs t W W⊆)
     }
-    where open Obs r
+    where open ApproxLRLayer r
 
-  R′-irr : ∀ k j {D V} → Bnd k V → Bnd j V → R′ k D V → R′ j D V
-  R′-irr k zero _ _ _ = ptt
-  R′-irr zero (suc j) bk _ _ = R′-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
+  ApproxLR-depth-irrelevant : ∀ k j {D V} → Bnd k V → Bnd j V → ApproxLR≤ k D V → ApproxLR≤ j D V
+  ApproxLR-depth-irrelevant k zero _ _ _ = ptt
+  ApproxLR-depth-irrelevant zero (suc j) bk _ _ = ApproxLR≤-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
     where <0 : ∀ {n} → n < 0 → ⊥
           <0 ()
-  R′-irr (suc k) (suc j) bk bj = Obs-map bk bj (R′-irr k j) (R′-irr j k)
+  ApproxLR-depth-irrelevant (suc k) (suc j) bk bj = ApproxLRLayer-map bk bj (ApproxLR-depth-irrelevant k j) (ApproxLR-depth-irrelevant j k)
 
-unfold : ∀ {D V} → R D V → Obs R D V
-unfold {V = V} = Obs-map bV bV (λ b _ → R′-irr _ _ b (Bnd-depths _)) (λ _ b → R′-irr _ _ (Bnd-depths _) b)
+unfold : ∀ {D V} → ApproxLR D V → ApproxLRLayer ApproxLR D V
+unfold {V = V} = ApproxLRLayer-map bV bV (λ b _ → ApproxLR-depth-irrelevant _ _ b (Bnd-depths _)) (λ _ b → ApproxLR-depth-irrelevant _ _ (Bnd-depths _) b)
   where bV = Bnd-depths V
 
-fold : ∀ {D V} → Obs R D V → R D V
-fold {V = V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
+fold : ∀ {D V} → ApproxLRLayer ApproxLR D V → ApproxLR D V
+fold {V = V} = ApproxLRLayer-map bV bV (λ _ b → ApproxLR-depth-irrelevant _ _ (Bnd-depths _) b) (λ b _ → ApproxLR-depth-irrelevant _ _ b (Bnd-depths _))
   where bV = Bnd-depths V
 
-R-∅ : ∀ {D V} → mem V ⊆ ∅ → R D V
-R-∅ = R′-∅ _
+ApproxLR-∅ : ∀ {D V} → mem V ⊆ ∅ → ApproxLR D V
+ApproxLR-∅ = ApproxLR≤-∅ _
 
-R-data : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R D V
-R-data = R′-data _
+ApproxLR-data : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → ApproxLR D V
+ApproxLR-data = ApproxLR≤-data _
 
-R-flat : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R D V
-R-flat V⊆ fl = R′-data _ V⊆ (λ v v∈ → flat-data (fl v v∈))
+ApproxLR-flat : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → ApproxLR D V
+ApproxLR-flat V⊆ fl = ApproxLR≤-data _ V⊆ (λ v v∈ → flat-data (fl v v∈))
 
-R-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → R D₁ V → R D₂ V
-R-mono = R′-mono _
+ApproxLR-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → ApproxLR D₁ V → ApproxLR D₂ V
+ApproxLR-mono = ApproxLR≤-mono _
 
-R-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → R D V₂ → R D V₁
-R-⊆ V₁⊆V₂ r = fold record
+ApproxLR-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → ApproxLR D V₂ → ApproxLR D V₁
+ApproxLR-⊆ V₁⊆V₂ r = fold record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
   ; fun-obs = λ p∈ → fun-obs (V₁⊆V₂ _ p∈)
   ; app-obs = λ cs → app-obs (Calls-⊆ V₁⊆V₂ cs)
   ; tag-obs = λ t W W⊆ → tag-obs t W (λ d d∈ → V₁⊆V₂ _ (W⊆ d d∈))
   }
-  where open Obs (unfold r)
+  where open ApproxLRLayer (unfold r)
