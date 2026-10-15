@@ -1,7 +1,7 @@
 {-
 
-  The types of ISWIMμ and of the typed intermediate languages of the
-  pilot (agda/Mu/): base types, functions, n-ary tuples, binary sums and
+  The types of ISWIMμ and of the typed intermediate languages of its
+  compiler (agda/Mu/): base types, functions, n-ary tuples, binary sums and
   iso-recursive types μX.A, with type variables as de Bruijn indices (Ty
   n has n free type variables). The body of a μ is contractive: it is
   not a variable nor another μ (no μX.X), so that unfolding is

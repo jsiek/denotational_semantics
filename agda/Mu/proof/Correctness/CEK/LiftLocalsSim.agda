@@ -23,7 +23,7 @@ import Mu.Language.Mon as M
 open M using (DSig; Args; atm; pack; callc; tuple; get; inl; inr; case; prim; let′; fold; unfold; ⌜_⌝; ⌜_⌝ₚ)
 open import Mu.Compiler.LiftLocals using (lift; lift-program)
 open import Mu.Framework.AllUtil using (All; []; _∷_; map)
-open import Mu.Framework.AllProp using (lookup-map)
+open import Mu.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Plus; plus; plus-star; star-plus; step⁺; plus→star)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-sym)

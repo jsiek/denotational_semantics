@@ -1,7 +1,7 @@
 {-
 
   ISWIMμ: ISWIM, intrinsically typed, with iso-recursive types. The
-  source of the pilot (agda/Mu/).
+  source of the ISWIMμ compiler (agda/Mu/).
 
   Tm Γ A is a term of type A in the context Γ (a list of closed types,
   Mu/Language/Type.agda). The constructs are ISWIM's, typed, with

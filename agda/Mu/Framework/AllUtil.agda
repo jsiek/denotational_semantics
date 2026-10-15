@@ -1,7 +1,7 @@
 {-
 
   Heterogeneous vectors (All P Δ, one P A for each A of the list Δ),
-  for the languages of the ISWIMμ pilot (agda/Mu/), whose contexts and
+  for the languages of ISWIMμ (agda/Mu/), whose contexts and
   tuples are lists of types: lookup by a typed index (Δ ∋ A), the
   position of an index as a Fin, building one from a function on the
   indices (tab), a reversed prefix (_<><_, for the machines, which

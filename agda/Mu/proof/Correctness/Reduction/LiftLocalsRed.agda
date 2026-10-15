@@ -17,7 +17,7 @@
   Unlike the typed pipeline's, the continuations of the Impμ machine do
   not say the type of the result, so a state decodes to a pair of a type
   (fin) and a term of that type, and the source runs on such pairs
-  (redΣ, which is equivalent: pairs, Mu/Framework/ReductionAll.agda).
+  (redΣ, which is equivalent: pairs, Mu/proof/Framework/ReductionAll.agda).
   Nothing fails.
 
 -}
@@ -32,13 +32,13 @@ open Mon using (Atm; var; lit; ref; ⌜_⌝ᵃ; ⌜_⌝ₚ)
 open import Mu.Language.Imp
 open import Mu.Compiler.LiftLocals using (lift; lift-program)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
-open import Mu.Framework.AllProp using (lookup-map)
+open import Mu.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation
 open import Framework.Smallstep Obs using (Machine; Next; next; stop; Step; Steps; zero; suc; ε; _◅_)
 open import proof.Framework.Smallstep Obs using (plus; step⁺)
 open import proof.Framework.Simulation Obs using (Answers≺; stops; steps; stutters; runs; Lag; lag; lag-fsim; equivalent; answers-at; equiv-trans)
 open import proof.Framework.Reduction Obs o-error using (Red; val; error; to; step-in; toNext; reduction; Frame; frame; frame-id; frame-∘; val-in; step-in-to)
-open import Mu.Framework.ReductionAll Obs o-error using (Each; []; _∷_; obsΣ; redΣ; pairs)
+open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; obsΣ; redΣ; pairs)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.Clos5 as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])

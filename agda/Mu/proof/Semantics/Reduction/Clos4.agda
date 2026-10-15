@@ -12,7 +12,7 @@ open import Mu.Language.Type hiding (_[_])
 open import Mu.Language.Clos4
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
-open import Mu.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
 
 open import Data.List using ([]; _∷_)
