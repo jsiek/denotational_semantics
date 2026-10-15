@@ -1233,7 +1233,7 @@ def mu_report(c, T):
     print('| not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
     mush = [f for f in c.every if c.seen[f][0] == 'mu-shared']
-    print(f'| languages and passes (ISWIM … X86, enclose … select, and their composition) | {n(MU_SHARED)} | {n(mush)} |')
+    print(f'| languages and passes (ISWIM … X86, enclose … select, and their composition; μ also simplify, with the renaming of ISWIMμ) | {n(MU_SHARED)} | {n(mush)} |')
     mui = [f for f in c.every if c.seen[f][0] == 'mu-infra']
     print(f'| infrastructure: vectors and lookup lemmas (`VecUtil`, `VecSelect`, `proof/Framework/Lookup`) '
           f'against heterogeneous vectors (`Mu/Framework/AllUtil`, `AllProp`) '
@@ -1298,9 +1298,14 @@ def mu_ck_report(c):
 # rows (name, typed files, μ files), like for like: the typed reduction
 # column without simplify and cast insertion (and without the reduction
 # semantics of untyped ISWIM, which only their proofs use)
+# (ISWIMμ's renaming and substitution, Mu/Language/ISWIMSubst.agda, are
+# shared with simplify, and so not counted in the main table; here they
+# stay in ISWIM's row, like for like with ISWIMᵀ's, whose kit is in its
+# reduction semantics)
 MU_RED_ROWS = [
     ('semantics: ' + x, [RD + 'Typed/' + x + '.agda', RP + 'Typed/' + x + '.agda'],
-     [MU + 'Semantics/Reduction/' + x + '.agda', MUP + 'Semantics/Reduction/' + x + '.agda'])
+     [MU + 'Semantics/Reduction/' + x + '.agda', MUP + 'Semantics/Reduction/' + x + '.agda']
+     + ([MU + 'Language/ISWIMSubst.agda'] if x == 'ISWIM' else []))
     for x in ('ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5')] + [
     ('semantics: transition systems (shared)', [RD + 'Smallstep.agda'], [RD + 'Smallstep.agda']),
     ('semantics: machines of Clos5, Imp, CFG, X86 (the CEK column\'s)',
@@ -1507,9 +1512,11 @@ def mu_main(c, T):
     cells, total = T['cells'], T['total']
     print('| per style (secondary) | graph model | CEK | interpreter | reduction |')
     print('|---|---:|---:|---:|---:|')
-    tt = [total[s] - (cells[(s, 'simplify')] or 0) - (cells[(s, 'cast insertion')] or 0) for s in TYPED['sides']]
-    print('| typed pipeline, main table total without simplify and cast insertion | ' + ' | '.join(map(str, tt)) + ' |')
+    tt = [total[s] - (cells[(s, 'cast insertion')] or 0) for s in TYPED['sides']]
+    print('| typed pipeline, main table total without cast insertion | ' + ' | '.join(map(str, tt)) + ' |')
     print('| ISWIMμ pilot, total | ' + ' | '.join(str(M['total'][s]) for s in MU_SIDES) + ' |')
+    print('| typed pipeline: simplify | ' + ' | '.join(str(cells[(s, 'simplify')]) for s in TYPED['sides']) + ' |')
+    print('| ISWIMμ pilot: simplify | ' + ' | '.join(str(c.counts[(s, 'simplify')]) for s in MU_SIDES) + ' |')
     print('| typed pipeline: delay | ' + ' | '.join(str(cells[(s, 'CC: delay')]) for s in TYPED['sides']) + ' |')
     print('| ISWIMμ pilot: delay | ' + ' | '.join(str(c.counts[(s, 'CC: delay')]) for s in MU_SIDES) + ' |')
     print()

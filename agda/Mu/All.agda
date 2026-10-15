@@ -5,8 +5,8 @@
   parallel copy of the typed pipeline's (agda/All.agda), for
   papers/PLDI-2027/notes/iswim-mu-design.md.
 
-    ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ --concretize--> Clos3μ
-           --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ
+    ISWIMμ --simplify--> ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ
+           --concretize--> Clos3μ --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ
            --lift locals--> Impμ --explicate control--> CFGμ
            --select instructions--> X86μ
 
