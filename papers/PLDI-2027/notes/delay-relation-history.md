@@ -22,15 +22,15 @@ Authors: Jeremy Siek (`jsiek`, also "Jeremy G. Siek") and `madheime`, who made e
 | B1 | B | 2021-07-15 – 07-29 | `agda/old/Delay.agda` (72a2016 … bad7e05), Siek | single value ≅ single value, lifted to **set vs set** both ways: `D₁ ≈ D₂ = D₁ ⪅ D₂ × D₁ ⪆ D₂` (∀∃ both ways) | inductive on values; logical relation on set-functions at binders | both | abandoned; backward lambda, app, tuple holes |
 | B2 | B | 2021-08-13/15 | `agda/old/DelayClos.agda` (5e1a8e1, 765679e), Siek | single value ≅ single value, source functions annotated with free variables (`fvs ⊢ V ↦ w`); `to` function | inductive on values | **cut down to forward only** (`≲`) | partial; holes |
 | B3 | B | 2021-11-21 – 12-04 | `agda/NewDelayCorrect.agda` → `GraphModel/DelayCorrect.agda`, madheime | function `to : Value → Value` (annotated source values) | structural on one value | forward | **complete** ("delay pass forward direction complete", 88d3be7) |
-| B4 | B | 2021-12-03 | same file (bb9636b), `delay-val`/`dv` | inductive value vs value, with ∃ target environment | inductive | forward | all holes; "SUMMARY OF PROBLEM" comment |
+| B4 | B | 2021-12-03 | same file (bb9636b), `delay-val`/`dv` | inductive value vs value, with ∃ target environment | inductive | forward | all holes; a comment summarizes the obstruction |
 | B5 | B | 2021-12-09 – 2022-01-07 | same (28e6b3d, 20d029b, 4e2d805), `fro : Value → Value` | target value ↦ source value | structural on one target value | backward | all cases but **app**: car and cdr membership don't give one pair |
 | B6 | B | 2022-01-26 | `GraphModel/DelayCorrectSal.agda` (1a84f1b) | unary `salient` on target values + `fro` | structural | backward | 22 holes; `terminating-has-salience` open |
 | B7 | B | 2022-01-26 | `GraphModel/DelayCorrectRel.agda` | `~del` value vs value with a negated premise (`--no-positivity-check`) | inductive | both | backward closure, app, tuple, case holes |
 | B8 | B | 2022-01-26 | `GraphModel/DelayCorrectSet.agda` | `_~d_ : 𝒫 Value → 𝒫 Value → Set₁`, **infinite set vs infinite set** | inductive with element witnesses | both | only var, lit, inl, inr |
-| B9 | B | 2022-02-02 – 02-15 | `DelayCorrectSingle/Multi/AnnLam.agda` (ac50238, 9985092, b7d0aab) | `~to`/`~tos` pointwise; `fro` + "smash closure" of target denotations | structural | both | Single: "THIS IS WRONG ... my breaking point". AnnLam: app goes through via `keylemma'`; `smash-⟦⟧'` unproved |
+| B9 | B | 2022-02-02 – 02-15 | `DelayCorrectSingle/Multi/AnnLam.agda` (ac50238, 9985092, b7d0aab) | `~to`/`~tos` pointwise; `fro` + "smash closure" of target denotations | structural | both | Single: the single-value relation was found too weak (a value needs several related values). AnnLam: app goes through via `keylemma'`; `smash-⟦⟧'` unproved |
 | B10 | B | 2022-02-18 – 03-29 | Filter model: `Model/Filter/DelayCorrect.agda` → `Correctness/Delay/PreserveAnnFunIswim.agda`, `ReflectIswimIswim{,Fail}.agda` | `to`/`fro` with ⊔ values; a `failure : 𝒫 Value → Value → Set₁` | structural | forward nearly done; backward partial | forward: termination hole at ⊔ inside a closure. Fail variant: app trivial, closure intro breaks |
 | B11 | B | 2022-03-29 – 04-13 | `ReflectIswimIswimGood.agda`, `ReflectIswimGood.agda`, `Clos4Good.agda`, `Goodness*.agda`, `TtoG` (7e524c5, dcddd61) | "Good" target semantics (restricted pairs) + `mkGood ctxt d`; `has-good-related-subset` (value vs subset) | structural, context value threaded | backward | reflect into Good done; Good ⊇ target (`TtoG`) all holes |
-| B12 | B | 2022-03-09 | `Model/Graph/Correctness/DelayCorrectRel.agda` (fea5cf3) | `~tos`: source list vs target list (each source element related to All target elements) | inductive | forward | closure case holes; "this definition may still be wrong" |
+| B12 | B | 2022-03-09 | `Model/Graph/Correctness/DelayCorrectRel.agda` (fea5cf3) | `~tos`: source list vs target list (each source element related to All target elements) | inductive | forward | closure case holes |
 | B13 | B | 2022-04-23 | `DelayIswimIswimReflect.agda` (b89f30e, ff4edb0) | `fro c T Dₜ Dₛ`: **infinite set vs infinite set**, indexed by target **type** and a **step count** c | course-of-values on c, then on the type | backward | var only; ff4edb0: "this works for everything but function elimination" |
 | B14 | B | 2022-04-27 – 05-04 | `DelayIswimIswimReflectNew.agda` (f1e4f17 "pointed-set relation", 73bc8eb "element-directed logical relation") | `fro dₜ Dₜ Dₛ`: one **target point** dₜ, with an arbitrary target set Dₜ and an arbitrary source set Dₛ; `froList` over finite lists | structural on the target point | backward | var, lit, inl, inr. Closure-intro `cond` and the app source witness open; 3 postulates. **Last attempt before the 2026 restart** |
 | B15 | B (paper) | 2023-06-08/09 | `blog/stuck.md`, blog post, `notes.txt` (85a504b, 397a375) | (i) ∀∃ both ways over sets with an element equivalence `~`; (ii) "bulk" relation `D₁ ≈ D₂` on **infinite sets**, guarded by ▷ | guarded (later ▷) | both | not mechanized; the post asks for help |
@@ -95,10 +95,10 @@ delay-correct : ≈-env ρ ρ′ → (ℐ⟦ M ⟧ ρ) ≈ (𝒞⟦ delay M ⟧ 
     - B10-Fail makes app trivial but breaks closure introduction.
     - B9-AnnLam pushes it into an unproved "smash-closed" property of target denotations.
     - B11 pushes it into an unproved "every target value has a Good counterpart" lemma (`TtoG`).
-  - Evidence from the files' own comments:
-    - "Solution 2: We abandon the function-iness of the relation/proof … rely on continuity to know that finite sets exist" (bb9636b).
-    - "THIS IS WRONG, probably … I think we need the power to have multiple related values for a single value … note: this is my breaking point" (`DelayCorrectSingle.agda:81`).
-    - "the problem is that if I am a smaller codomain, then I am evaluated in a larger context …" (`Goodness.agda`).
+  - Technical observations recorded in the files' comments (paraphrased):
+    - bb9636b proposes giving up a functional relation and relying on continuity for the existence of finite sets.
+    - `DelayCorrectSingle.agda` concludes that relating single values is too weak: one value needs several related values.
+    - `Goodness.agda` notes that a function value with a smaller codomain is evaluated in a larger context.
 - **Set-against-set relations.** B8 `_~d_ : 𝒫 Value → 𝒫 Value → Set₁` (2022-01-26) and B13.
 - **B13, type- and step-indexed (b89f30e, ff4edb0; 2022-04-23):**
 ```agda
@@ -253,3 +253,11 @@ _⊑_ : Value → 𝒫 Value → Set₁
 
 ## Provenance (from the author, 2026-10-14)
 The 2026-10-09 relation came out of a conversation between the author and Claude (Opus 5.5), informed by the whole repository (including madheime's 2022 near miss) and specifically the June 2023 blog post. Indexing by depth was an idea the author had already considered; putting it together with an asymmetric relation in the style of madheime's `fro` (here: a finite target list against an arbitrary source set) was Claude's.
+
+### Account from the originating session
+At the author's request, the Claude session in which the relation arose gave this account of the reasoning (lightly edited):
+
+1. The last attempt, `fro d' Dₜ Dₛ` (B14), indexes by a single target element but carries the whole infinite target set as context. The closure-case hole comes from that: the context cannot be shrunk, and only part of the argument set is related.
+2. The "bulk" relation (B15) goes to the other extreme, relating whole infinite sets on both sides. That makes the recursion mixed-variance, so it needs ▷, and a denotational semantics has no evaluation step to discharge it.
+3. A first idea was a Pitts-style approximation: index by element depth, like the projections πₙ. That fails directly, because a small output of a function can depend on an arbitrarily deep input.
+4. What fixed it was two observations. A simulation only has to be one-sided, so only one side needs to shrink and the other can be any set. And the car/cdr matching has to happen inside the index for junk and mixing to go away, so the index has to be a finite set rather than a single element.
