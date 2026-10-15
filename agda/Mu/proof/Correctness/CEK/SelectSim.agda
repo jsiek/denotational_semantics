@@ -23,7 +23,7 @@ open import Mu.Language.Type
 open import Framework.Membership using (_⊑_)
 open import Framework.Lookup using (forget)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)
-open import Mu.Framework.AllProp using (lookup-map)
+open import Mu.proof.Framework.AllProp using (lookup-map)
 import Mu.Language.CFG as C
 open C using (Tail; return; seq; goto; case; _▷_)
 import Mu.Language.Imp as I

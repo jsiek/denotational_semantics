@@ -1,6 +1,6 @@
 {-
 
-  The compiler of the pilot (Mu/Compiler/Pipeline.agda) is correct on
+  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) is correct on
   the machines: the ISWIMμ machine on a closed program M and the machine
   of each later language on its compilation are Equivalent, by
   composing the passes, as for the typed pipeline

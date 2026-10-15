@@ -1,10 +1,10 @@
 {-
 
-  Tuples of sets of values, for the adequacy proofs of the pilot: the
+  Tuples of sets of values, for the adequacy proofs of ISWIMμ: the
   denotation of a tuple value from those of its components (𝒯L), with
   monotonicity and consistency. A copy of the part of
   proof/Adequacy/Soundness.agda (the ISWIM adequacy of the typed and
-  untyped pipelines) that is about tuples, so that the pilot's
+  untyped pipelines) that is about tuples, so that ISWIMμ's
   adequacy does not depend on the typed pipeline's.
 
 -}

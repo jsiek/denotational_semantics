@@ -1,6 +1,6 @@
 {-
 
-  The compiler of the pilot (Mu/Compiler/Pipeline.agda) is correct by
+  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) is correct by
   clocked interpreters, as the typed one
   (proof/Correctness/Interp/CompilerFuel.agda): each pass is proved
   clock for clock (simplify, which removes calls, clock-monotone), and the end theorems compose (equiv-trans), from

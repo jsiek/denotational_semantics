@@ -19,7 +19,7 @@ open import Mu.Language.ISWIM
 open import Mu.Semantics.Reduction.ISWIM
 open import Mu.proof.Semantics.Reduction.ISWIM using (Value; lam; lit; tuple; inl; inr; fold)
 open import Semantics.Observation using (Obs; o-error; Answer)
-open import Mu.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
+open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Red; val; to; step-in; toNext; Terminates; Next; next; stop)
 open import Data.Empty using (⊥)

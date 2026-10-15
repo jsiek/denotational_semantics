@@ -1,36 +1,50 @@
 #!/usr/bin/env python3
-"""Count code lines of the five compiler-correctness proofs, and of the
-audit surface.
+"""Count code lines of the compiler-correctness proofs, and of the audit
+surface.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
-For the untyped pipeline preserved in agda/Untyped/:  ... loc.py --untyped
-For the ISWIMμ pilot in agda/Mu/:  ... loc.py --mu
+which prints the tables of ISWIMμ (agda/Mu/), the main experiment, and
+then a short comparison with the ISWIM pipeline (dynamic typing and
+errors).  Further tables:
+  --iswim       the full tables of the ISWIM pipeline (agda/, typed after
+                cast insertion), with the graph model with errors
+  --untyped     those of the untyped ISWIM pipeline preserved in agda/Untyped/
+  --mu          the ISWIMμ tables only
+  --mu-detail   ISWIMμ against the ISWIM pipeline, row by row, per style
 
 A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
 `open import`, with its continuation lines): imports depend on how
 finely a development is split into modules, not on its content.  Every
-.agda file under agda/ (except agda/old/ and the two All.agda) must
+.agda file under agda/ (except agda/old/ and the three All.agda) must
 belong to exactly one group; the script fails otherwise, so new modules
 cannot go uncounted.
 
-Two pipelines.  The main one (the default) is the typed pipeline:
-ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> ...
---select--> X86ᵀ, with intrinsically typed intermediate languages and an
-intrinsically typed assembly language, X86ᵀ, as the target.  The
-untyped pipeline that preceded it is preserved in agda/Untyped/ (module
-prefix Untyped.); --untyped prints its tables, and the default output
-ends with a table that compares the two, column by column.  Each column
-of a pipeline is a side ('den', 'op', 'ck', 'red', 'gerr' for the typed
-one; 'uden', 'uop', 'uck', 'ured', 'ugerr' for the untyped one), and so
-are their adequacy proofs ('adeq', 'gadeq'; 'uadeq', 'ugadeq').  What
-both pipelines use (untyped ISWIM and simplify with its proofs, the
-primitives, the observations, the ISWIM adequacy) stays in agda/ and
-belongs to groups of both sides ('den+uden'): it is counted in full in
-that row of both pipelines.  Untyped X86 (Language/X86.agda) and its
-CEK machine stay in agda/ too, for the untyped pipeline and for the
-typed one's assurance (below); its other semantics and its adequacy are
-the untyped pipeline's, in agda/Untyped/.
+Three pipelines.  The main one (the default) is ISWIMμ (agda/Mu/, module
+prefix Mu.): a typed ISWIM with iso-recursive types (no recursion
+construct, no errors) and its compiler to the typed assembly language
+X86μ, ISWIMμ --simplify--> ISWIMμ --enclose--> ... --select--> X86μ,
+proved in four styles (sides 'mu-den', 'mu-op', 'mu-ck', 'mu-red', and
+its adequacy 'mu-adeq'; see below).  The ISWIM pipeline (agda/), reported
+briefly by default and in full with --iswim, shows how dynamic typing
+and errors affect the comparison: ISWIM --simplify--> ISWIM --cast
+insertion--> ISWIMᵀ --enclose--> ... --select--> X86ᵀ, with
+intrinsically typed intermediate languages and an intrinsically typed
+assembly language, X86ᵀ, as the target, and a fifth column, the graph
+model with errors.  The untyped pipeline that preceded it is preserved
+in agda/Untyped/ (module prefix Untyped.); --untyped prints its tables,
+and --iswim ends with a table that compares the two, column by column.
+Each column of the ISWIM pipelines is a side ('den', 'op', 'ck', 'red',
+'gerr' for the typed one; 'uden', 'uop', 'uck', 'ured', 'ugerr' for the
+untyped one), and so are their adequacy proofs ('adeq', 'gadeq';
+'uadeq', 'ugadeq').  What both ISWIM pipelines use (untyped ISWIM and
+simplify with its proofs, the primitives, the observations, the ISWIM
+adequacy) stays in agda/ and belongs to groups of both sides
+('den+uden'): it is counted in full in that row of both pipelines.
+Untyped X86 (Language/X86.agda) and its CEK machine stay in agda/ too,
+for the untyped pipeline and for the typed one's assurance (below); its
+other semantics and its adequacy are the untyped pipeline's, in
+agda/Untyped/.
 
 Assurance (side 'assure', not in any total nor in the comparison):
 checks that the typed pipeline's X86ᵀ is faithful to untyped X86, such
@@ -39,15 +53,16 @@ select, with the types erased, emits the instructions of select into
 untyped X86 (Theorems/X86Erasure.agda).
 
 The code is split into an audit surface (the theorem statements,
-agda/Theorems/ and agda/Untyped/Theorems/, and the definitions they use,
-everywhere outside a proof/ directory) and the proof/ directories
-(agda/proof/, agda/Untyped/proof/), which need not be read to trust the
-results.  A module that mixes definitions and lemmas is split in two:
-the definitions at agda/X.agda, the lemmas at agda/proof/X.agda (in the
-untyped pipeline, agda/Untyped/X.agda and agda/Untyped/proof/X.agda).
-For the counts below the two halves are one unit (as they were one
-module before the split): they belong to the same group, and a proof
-reaches the unit when it reaches either half.
+agda/Mu/Theorems/, agda/Theorems/ and agda/Untyped/Theorems/, and the
+definitions they use, everywhere outside a proof/ directory) and the
+proof/ directories (agda/Mu/proof/, agda/proof/, agda/Untyped/proof/),
+which need not be read to trust the results.  A module that mixes
+definitions and lemmas is split in two: the definitions at agda/X.agda,
+the lemmas at agda/proof/X.agda (likewise agda/Mu/X.agda and
+agda/Mu/proof/X.agda, and agda/Untyped/X.agda and
+agda/Untyped/proof/X.agda).  For the counts below the two halves are one
+unit (as they were one module before the split): they belong to the same
+group, and a proof reaches the unit when it reaches either half.
 
 Language-independent infrastructure (side 'infra') is reported in a
 separate table and is not in any total.  The test is whether the code
@@ -105,37 +120,38 @@ script fails if one proof reaches another proof's modules (of either
 pipeline), adequacy's, an example's or an experiment's, or if a module
 outside agda/Untyped/ imports one inside it.
 
-The ISWIMμ pilot (agda/Mu/, module prefix Mu.; sides 'mu-*', in no total
-of the pipelines, nor in their tables): a typed ISWIM with iso-recursive
-types and its compiler to X86μ, a parallel copy of the typed pipeline's
-languages, passes and proofs, in the four styles.  --mu prints its own
-main table, in the shape of the pipelines' (the four styles against each
-other, the lowest of each row in bold; each column's total counts the
-shared modules it reaches that the four do not all reach, and the typed
-pipeline's modules it reuses, such as the meaning of the primitives and
-the frameworks' instances at this compiler's observations), then its
-adequacy (reported separately, against the typed pipeline's), the
-no-error lemmas (in no total), the infrastructure by use, and its totals
-per style against the typed pipeline's.  --mu-detail prints the pilot
-against the typed pipeline row by row, per style.  Its groups are checked
-as the others are (every module in one group), its columns must not
-reach each other's modules (the CEK and reduction columns share the
-machines of the first-order languages and the proofs of explicate control
-and select instructions, 'mu-op+mu-red'), adequacy's, the no-error
-lemmas' or the examples', nor a module of a proof of either pipeline
-(what both pipelines share, such as the meaning of the primitives and the
-small-step framework, they may use), and its infrastructure must import
-only infrastructure; it has no theorem statements, so it is not on the
-audit surface.
+ISWIMμ (agda/Mu/, module prefix Mu.; sides 'mu-*', in no total of the
+ISWIM pipelines, nor in their tables): its languages, passes and proofs
+are a parallel copy of the typed ISWIM pipeline's, without cast
+insertion, in the four styles.  Its main table is in the shape of the
+pipelines' (the four styles against each other, the lowest of each row
+in bold; each column's total counts the shared modules it reaches that
+the four do not all reach, and the ISWIM pipeline's modules it reuses,
+such as the meaning of the primitives and the frameworks' instances at
+this compiler's observations), then its adequacy (reported separately,
+against the ISWIM pipeline's), the no-error lemmas (in no total), the
+infrastructure by use, the audit surface and the shared modules; the
+default output ends with its totals per style against the ISWIM
+pipeline's.  --mu-detail prints ISWIMμ against the ISWIM pipeline row by
+row, per style.  Its groups are checked as the others are (every module
+in one group), its columns must not reach each other's modules (the CEK
+and reduction columns share the machines of the first-order languages
+and the proofs of explicate control and select instructions,
+'mu-op+mu-red'), adequacy's, the no-error lemmas' or the examples', nor
+a module of a proof of either ISWIM pipeline (what the pipelines share,
+such as the meaning of the primitives and the small-step framework, they
+may use), and its infrastructure must import only infrastructure.
 
 The public theorem statements are new boilerplate (each restates a
 theorem of the proofs with its type), so they are not in the totals;
-they are in the audit-surface table, which gives, for each style, the
+they are in the audit-surface tables, which give, for each style, the
 lines of the audit surface that its statements reach: the shared part
 (languages, passes, syntax), counted once, the semantics of that style,
-and the statements.  The script fails if a module of the audit surface
+and the statements.  The script fails if a module of an audit surface
 imports a proof module (the theorem files do, by design), or if a module
-outside the proof/ directories is not reached from the theorem files.
+outside the proof/ directories is not reached from the theorem files:
+those of agda/Mu/ from ISWIMμ's (agda/Mu/Theorems/), the others from the
+ISWIM pipelines'.
 """
 import glob, os, re, sys
 
@@ -478,13 +494,14 @@ GROUPS = [
     ('uexp', 'graph model: direct Imp — explicate control', [u(GC) + 'ExplicateCorrect.agda']),
     ('uthm', 'theorem statements', [U + 'Theorems/*.agda']),
 
-    # --- the ISWIMμ pilot (agda/Mu/), in no total ------------------------------
+    # --- ISWIMμ (agda/Mu/), in no total of the ISWIM pipelines -------------------
     # with the lemma that globalize refers only to older definitions, which
     # only adequacy uses (shared in the typed pipeline, where the graph model
     # with errors uses it too), counted as a shared module
     ('mu-shared', 'syntax, languages, compiler passes',
      [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/GlobalizeOlder.agda']),
-    ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating', [MU + 'Framework/*.agda']),
+    ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating',
+     [MU + 'Framework/*.agda', MUP + 'Framework/AllProp.agda']),
     # simplify's syntactic lemmas are used by its four proofs: counted in the
     # simplify row of each column, as in the main table
     ('mu-den+mu-op+mu-ck+mu-red', 'simplify', [MUP + 'Compiler/SimplifyFacts.agda']),
@@ -548,7 +565,7 @@ GROUPS = [
     ('mu-adeq', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
     ('mu-adeq', 'end to end', [MUP + 'Adequacy/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
-    # the pilot's reduction column (in --mu's reduction table): reduction
+    # ISWIMμ's reduction column: reduction
     # semantics of the languages with binders, the simulations, and the
     # reduction framework for heterogeneous vectors (infrastructure); it
     # shares the CEK column's machines of the first-order languages and its
@@ -564,7 +581,11 @@ GROUPS = [
     ('mu-red', 'rco', [MUP + 'Correctness/Reduction/RCORed.agda']),
     ('mu-red', 'lift locals', [MUP + 'Correctness/Reduction/LiftLocalsRed.agda']),
     ('mu-red', 'composition', [MUP + 'Correctness/Reduction/PipelineRed.agda']),
-    ('mu-rinfra', 'reduction of heterogeneous vectors', [MU + 'Framework/ReductionAll.agda']),
+    ('mu-rinfra', 'reduction of heterogeneous vectors',
+     [MU + 'Framework/ReductionAll.agda', MUP + 'Framework/ReductionAll.agda']),
+    # not in the totals: ISWIMμ's public theorem statements (see its
+    # audit-surface table)
+    ('mu-thm', 'theorem statements', [MU + 'Theorems/*.agda']),
 ]
 
 ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'X86ᵀ', 'well-formedness of compiled programs', 'end to end',
@@ -590,9 +611,9 @@ EXTRA = 'shared modules not used by all four proofs'
 
 
 def tag(P):
-    """The marker of the untyped pipeline's tables, so that their header lines
-    differ from the main ones."""
-    return '' if P is TYPED else ' (untyped pipeline)'
+    """The marker of the untyped pipeline's and ISWIMμ's tables, so that their
+    header lines differ from the typed ISWIM pipeline's."""
+    return '' if P is TYPED else ' (untyped pipeline)' if P is UNTYPED else ' (ISWIMμ)'
 
 
 def label(s):
@@ -601,6 +622,19 @@ def label(s):
 
 def name(s):
     return NAMES[STYLE[s]]
+
+
+def any_style(s):
+    """The style of a side of any pipeline, ISWIMμ's ('mu-den', ...) too."""
+    return s[len('mu-'):] if s.startswith('mu-') else STYLE[s]
+
+
+def any_label(s):
+    return LABELS[any_style(s)]
+
+
+def any_name(s):
+    return NAMES[any_style(s)]
 
 
 def strip_comments(s):
@@ -814,9 +848,16 @@ class Count:
         thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {ASSURE_THM}
         if thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
+        # ISWIMμ's audit surface is that of agda/Mu/, reached from its own
+        # theorem files (agda/Mu/Theorems/), with the modules of agda/ they
+        # reach (the frameworks, the observations, ...)
+        mthm = set(MU_P['thm'].values())
+        if mthm != {f for f, (side, _) in self.seen.items() if side == 'mu-thm'}:
+            sys.exit('the theorem files of ISWIMμ are not ' + ', '.join(sorted(mthm)))
         surface = {f for f in self.every if not is_proof(f) and not f.startswith(MU)}
-        self.sgraph = {f: {g for g in self.fgraph[f] if g in surface} for f in surface}
-        for f in sorted(surface - thm):
+        msurface = {f for f in self.every if not is_proof(f) and f.startswith(MU)}
+        self.sgraph = {f: {g for g in self.fgraph[f] if g in surface | msurface} for f in surface | msurface}
+        for f in sorted((surface | msurface) - thm - mthm):
             bad = sorted(g for g in self.fgraph[f] if is_proof(g))
             if bad:
                 sys.exit(f'{f}, on the audit surface, imports proof modules:\n  ' + '\n  '.join(bad))
@@ -824,7 +865,11 @@ class Count:
         if unreached:
             sys.exit('outside the proof/ directories but not reached from the theorem files:\n  '
                      + '\n  '.join(unreached))
-        self.thm = thm
+        unreached = sorted(msurface - reachable(mthm, self.sgraph))
+        if unreached:
+            sys.exit('in agda/Mu/, outside Mu/proof/, but not reached from the theorem files of ISWIMμ:\n  '
+                     + '\n  '.join(unreached))
+        self.thm, self.mthm = thm, mthm
 
     def analyze(self, P):
         """The totals of pipeline P: per column and row, the shared modules each
@@ -949,20 +994,20 @@ class Count:
 
         def kind(f):
             side, gname = seen[f]
-            if side in ('thm', 'uthm'):
+            if side in ('thm', 'uthm', 'mu-thm'):
                 return 'statements'
-            if side in ('shared', 'ushared') or (side == 'infra' and gname in shared_infra):
+            if side in ('shared', 'ushared', 'mu-shared', 'mu-infra') or (side == 'infra' and gname in shared_infra):
                 return 'shared'
             return 'semantics'
         T = P['thm']
-        cols = P['sides'] + (P['adeq'], P['gerr'])
+        cols = P['sides'] + (P['adeq'],) + ((P['gerr'],) if P['gerr'] else ())
         sreach = {s: reachable({T[s]}, sgraph) for s in cols}
 
         def flines(fs):
             return sum(code_lines(f) for f in fs)
         sh = {s: {f for f in sreach[s] if kind(f) == 'shared'} for s in cols}
         print(f'| audit surface{tag(P)} (not in the totals) | lines | '
-              + ' | '.join(f'read for {label(s)}' for s in cols) + ' |')
+              + ' | '.join(f'read for {any_label(s)}' for s in cols) + ' |')
         print('|---|---:|' + '---:|' * len(cols))
         print(f'| languages, compiler passes, syntax, base types (shared) | {flines(set().union(*sh.values()))} | '
               + ' | '.join(str(flines(sh[s])) for s in cols) + ' |')
@@ -972,13 +1017,15 @@ class Count:
                 'red': 'reduction semantics, machines of the first-order languages, transition systems',
                 'gerr': 'domain, error-propagating operators, semantics of each language'}
         sem_files = {s: {f for f in sreach[s] if kind(f) == 'semantics'} for s in cols}
-        for s in P['sides'] + (P['gerr'],):
+        for s in cols:
+            if s == P['adeq']:
+                continue
             fs = sem_files[s]
-            print(f'| {name(s)}: {SEMS[STYLE[s]]} | {flines(fs)} | '
+            print(f'| {any_name(s)}: {SEMS[any_style(s)]} | {flines(fs)} | '
                   + ' | '.join(str(flines(sem_files[t] & fs)) if sem_files[t] & fs else '—' for t in cols) + ' |')
         thm = set(T.values())
         for s in cols:
-            print(f'| {name(s)}: theorem statements | {code_lines(T[s])} | '
+            print(f'| {any_name(s)}: theorem statements | {code_lines(T[s])} | '
                   + ' | '.join(str(code_lines(T[s])) if t == s else '—' for t in cols) + ' |')
         tot = {s: flines(sreach[s] - (thm - {T[s]})) for s in cols}
         alls = set().union(*(sreach[s] for s in cols))
@@ -1108,16 +1155,16 @@ def compare(c, T, Un):
     print()
 
 
-# --- the ISWIMμ pilot ------------------------------------------------------
+# --- ISWIMμ against the ISWIM pipeline, row by row (--mu-detail) -----------
 
-# the rows of the pilot, and the files of the typed pipeline it compares
+# the rows of ISWIMμ, and the files of the typed ISWIM pipeline it compares
 # with, for the graph model ('den') and the CEK machines ('op'): the
 # semantics of each language (its definitions and lemmas), what the
 # languages share, the lemmas the passes share, the passes from enclose to
 # select, and the composition (row, typed graph, typed CEK, μ graph, μ CEK).
 # Monᵀ and Monμ have no semantics of their own (their embedding into Clos5).
 # The typed graph model's Ops has project (with fun₂/fun₄) and the tables,
-# the pilot's only the tables; the typed CEK lemmas Common collect a tuple's
+# ISWIMμ's only the tables; the typed CEK lemmas Common collect a tuple's
 # values with its length equation.
 
 
@@ -1170,7 +1217,7 @@ MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda', WP 
 
 
 def mu_check(c):
-    """The pilot's columns are independent of each other and of the proofs of
+    """ISWIMμ's columns are independent of each other and of the proofs of
     either pipeline (they may use what both pipelines share), and its
     infrastructure imports only infrastructure."""
     sides = ('mu-den', 'mu-op', 'mu-ck')
@@ -1192,11 +1239,11 @@ def mu_check(c):
     minfra = {un for un, (side, _) in c.group_of.items() if side == 'mu-infra'}
     bad = sorted(reachable(minfra, c.graph) - minfra - c.infra)
     if bad:
-        sys.exit("the pilot's infrastructure imports modules that are not infrastructure:\n  " + '\n  '.join(bad))
+        sys.exit("ISWIMμ's infrastructure imports modules that are not infrastructure:\n  " + '\n  '.join(bad))
 
 
 def mu_report(c, T):
-    """The ISWIMμ pilot against the typed pipeline, row by row, in the graph
+    """ISWIMμ against the typed ISWIM pipeline, row by row, in the graph
     model and the CEK machines; and against the totals of the main table
     without simplify and cast insertion."""
 
@@ -1205,7 +1252,7 @@ def mu_report(c, T):
 
     def cell(x):
         return '—' if x is None else str(x)
-    print('| ISWIMμ pilot against the typed pipeline | graph model: typed | graph model: μ '
+    print('| ISWIMμ against the ISWIM pipeline | graph model: typed | graph model: μ '
           '| CEK: typed | CEK: μ |')
     print('|---|---:|---:|---:|---:|')
     tot = [0, 0, 0, 0]
@@ -1243,10 +1290,10 @@ def mu_report(c, T):
     print()
 
 
-# the clocked interpreters of the pilot ('mu-ck') against the typed
+# the clocked interpreters of ISWIMμ ('mu-ck') against the typed
 # pipeline's, row by row: the interpreter of each language, the values
 # they share and the value relations, and each pass.  The typed column is
-# without simplify and cast insertion, which the pilot does not have.
+# without simplify and cast insertion, which ISWIMμ does not have.
 MU_CK_ROWS = [
     ('semantics: ISWIM', [F + 'Typed/ISWIM.agda'], [MU + 'Semantics/Interp/ISWIM.agda']),
     ('semantics: Clos2', [F + 'Typed/Clos2.agda'], [MU + 'Semantics/Interp/Clos2.agda']),
@@ -1272,14 +1319,14 @@ MU_CK_ROWS = [
 
 
 def mu_ck_report(c):
-    """The pilot's clocked interpreters against the typed pipeline's."""
+    """ISWIMμ's clocked interpreters against the typed ISWIM pipeline's."""
 
     def n(fs):
         return sum(code_lines(f) for f in fs) if fs else None
 
     def cell(x):
         return '—' if x is None else str(x)
-    print('| ISWIMμ pilot against the typed pipeline | interpreter: typed | interpreter: μ |')
+    print('| ISWIMμ against the ISWIM pipeline | interpreter: typed | interpreter: μ |')
     print('|---|---:|---:|')
     tot = [0, 0]
     for row, ft, fm in MU_CK_ROWS:
@@ -1294,7 +1341,7 @@ def mu_ck_report(c):
     print()
 
 
-# --- the pilot's reduction column ---------------------------------------------
+# --- ISWIMμ's reduction column, row by row ------------------------------------
 # rows (name, typed files, μ files), like for like: the typed reduction
 # column without simplify and cast insertion (and without the reduction
 # semantics of untyped ISWIM, which only their proofs use)
@@ -1325,14 +1372,14 @@ MU_RED_ROWS = [
     ('select instructions (the CEK column\'s)', [OC + 'SelectSim.agda'], [MUP + 'Correctness/CEK/SelectSim.agda']),
 ]
 MU_RED_COMP = ([RC + 'PipelineRed.agda'], [MUP + 'Correctness/Reduction/PipelineRed.agda'])
-# what the pilot's reduction column shares with its CEK column
+# what ISWIMμ's reduction column shares with its CEK column
 MU_RED_SHARED = ([MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]
                  + [MUP + 'Correctness/CEK/' + x + 'Sim.agda' for x in ('Explicate', 'Select')])
 
 
 def mu_red_check(c):
-    """As mu_check, for the pilot's reduction column: it reaches no module of
-    another of the pilot's columns (those it shares with one, 'mu-op+mu-red',
+    """As mu_check, for ISWIMμ's reduction column: it reaches no module of
+    another of ISWIMμ's columns (those it shares with one, 'mu-op+mu-red',
     apart) nor of a proof of either pipeline (what both share apart), and its
     infrastructure imports only infrastructure."""
     shared = {unit(f) for f in MU_RED_SHARED}
@@ -1352,12 +1399,12 @@ def mu_red_check(c):
     rinfra = {un for un, (side, _) in c.group_of.items() if side in ('mu-infra', 'mu-rinfra')}
     bad = sorted(reachable(rinfra, c.graph) - rinfra - c.infra)
     if bad:
-        sys.exit("the pilot's reduction infrastructure imports modules that are not infrastructure:\n  "
+        sys.exit("ISWIMμ's reduction infrastructure imports modules that are not infrastructure:\n  "
                  + '\n  '.join(bad))
 
 
 def mu_red_report(c):
-    """The pilot's reduction column against the typed one, row by row."""
+    """ISWIMμ's reduction column against the typed ISWIM one, row by row."""
 
     def n(fs):
         fs = [f for f in fs if os.path.exists(f)]
@@ -1365,7 +1412,7 @@ def mu_red_report(c):
 
     def cell(x):
         return '—' if x is None else str(x)
-    print('| ISWIMμ pilot against the typed pipeline: reduction | typed | μ |')
+    print('| ISWIMμ against the ISWIM pipeline: reduction | typed | μ |')
     print('|---|---:|---:|')
     tot = [0, 0]
     for row, t, m in MU_RED_ROWS:
@@ -1384,21 +1431,29 @@ def mu_red_report(c):
     print('| reduction: not counted in the rows | typed | μ |')
     print('|---|---:|---:|')
     print(f'| reduction of vectors (`ReductionVec`) against heterogeneous vectors (`Mu/Framework/ReductionAll`) '
-          f'| {n([W + "ReductionVec.agda", WP + "ReductionVec.agda"])} | {n([MU + "Framework/ReductionAll.agda"])} |')
+          f'| {n([W + "ReductionVec.agda", WP + "ReductionVec.agda"])} '
+          f'| {n([MU + "Framework/ReductionAll.agda", MUP + "Framework/ReductionAll.agda"])} |')
     print()
 
 
-# --- the pilot's main table: the four styles against each other -----------
+# --- ISWIMμ's main table: the four styles against each other --------------
 
 MU_SIDES = ('mu-den', 'mu-op', 'mu-ck', 'mu-red')
 MU_LABELS = {'mu-den': 'denotational: graph model', 'mu-op': 'CEK machine + simulation',
              'mu-ck': 'clocked interpreter + value relations', 'mu-red': 'reduction semantics + simulation',
              'mu-adeq': 'adequacy'}
-MU_BORROWED = "the typed pipeline's modules it reuses (meaning of the primitives, framework instances)"
+MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances)"
+# ISWIMμ as a pipeline, for the audit-surface table (it has no graph model
+# with errors)
+MU_P = dict(sides=MU_SIDES, gerr=None, adeq='mu-adeq',
+            thm={'mu-den': MU + 'Theorems/Denotational.agda', 'mu-op': MU + 'Theorems/Simulation.agda',
+                 'mu-ck': MU + 'Theorems/Interpreter.agda', 'mu-red': MU + 'Theorems/Reduction.agda',
+                 'mu-adeq': MU + 'Theorems/Adequacy.agda'},
+            name='ISWIMμ')
 
 
 def mu_analyze(c):
-    """The pilot's counts, as analyze's for a pipeline: each column's rows, the
+    """ISWIMμ's counts, as analyze's for a pipeline: each column's rows, the
     shared modules (languages, passes, the primitives, the observations) it
     reaches that the four do not all reach, and the modules of the typed
     pipeline it reuses (the meaning of the primitives, the instances of the
@@ -1427,12 +1482,11 @@ def mu_analyze(c):
                 minfra=minfra)
 
 
-def mu_main(c, T):
-    """The four styles against each other on the pilot, in the shape of the
-    main table; then adequacy, the no-error lemmas and the infrastructure
-    by use; then the pilot against the typed pipeline, per style."""
-    M = mu_analyze(c)
-    print('| component (ISWIMμ pilot) | ' + ' | '.join(MU_LABELS[s] for s in MU_SIDES) + ' |')
+def mu_main(c, T, M):
+    """The four styles against each other on ISWIMμ, in the shape of the
+    pipelines' main table; then adequacy, the no-error lemmas, the
+    infrastructure by use, the audit surface and the shared modules."""
+    print('| component (ISWIMμ) | ' + ' | '.join(MU_LABELS[s] for s in MU_SIDES) + ' |')
     print('|---|' + '---:|' * len(MU_SIDES))
     for r in ROWS:
         ns = [c.counts.get((s, r)) for s in MU_SIDES]
@@ -1443,15 +1497,15 @@ def mu_main(c, T):
     print('| **total** | ' + ' | '.join(bold_min([M['total'][s] for s in MU_SIDES])) + ' |')
     print()
     mush = {un for un, (side, _) in c.group_of.items() if side == 'mu-shared'}
-    print(f"Shared by all four, not counted: the pilot's languages and passes ({c.lines(mush & M['by_all'])} lines) "
-          f"and {c.lines(M['by_all'] - mush)} lines of the typed pipeline's (the primitives, registers).")
+    print(f"Shared by all four, not counted: ISWIMμ's languages and passes ({c.lines(mush & M['by_all'])} lines) "
+          f"and {c.lines(M['by_all'] - mush)} lines of the ISWIM pipeline's (the primitives, registers).")
     for s in MU_SIDES:
         if M['extra'][s] or M['borrowed'][s]:
             print(f'Counted in {MU_LABELS[s]}: '
                   + ', '.join(f'{c.display(un)} ({c.ulines(un)})' for un in sorted(M['extra'][s] | M['borrowed'][s])) + '.')
     print()
 
-    # adequacy, against the typed pipeline's (plain graph model)
+    # adequacy, against the ISWIM pipeline's (plain graph model)
     TA = TYPED['adeq']
     rows = [('ISWIM', 'ISWIM: the source machine (typed: untyped ISWIM\'s, shared with the untyped pipeline)', 'ISWIM'),
             ('Clos5', 'Clos5: the values of its machine and the tables, which X86 adequacy uses '
@@ -1460,7 +1514,7 @@ def mu_main(c, T):
             ('well-formedness of compiled programs', 'well-formedness of compiled programs',
              'well-formedness of compiled programs'),
             ('end to end', 'end to end', 'end to end')]
-    print('| adequacy of the graph model (reported separately) | typed pipeline | ISWIMμ pilot |')
+    print('| adequacy of the graph model (reported separately) | ISWIM pipeline | ISWIMμ |')
     print('|---|---:|---:|')
     for tr, label_, mr in rows:
         print(f'| {label_} | ' + ' | '.join(bold_min([c.counts.get((TA, tr)), c.counts.get(('mu-adeq', mr)) if mr else None])) + ' |')
@@ -1486,7 +1540,7 @@ def mu_main(c, T):
 
     # infrastructure by use
     cols = MU_SIDES + ('mu-adeq',)
-    print('| language-independent infrastructure (ISWIMμ pilot, not in the totals) | lines | '
+    print('| language-independent infrastructure (ISWIMμ, not in the totals) | lines | '
           + ' | '.join(f'used by {MU_LABELS[s]}' for s in cols) + ' |')
     print('|---|---:|' + '---:|' * len(cols))
     itotal = {s: 0 for s in cols}
@@ -1501,24 +1555,82 @@ def mu_main(c, T):
                 itotal[s] += n
                 row.append(str(n) if n else '—')
             if any(r != '—' for r in row):
-                name_ = gname + (' (the pilot\'s)' if side != 'infra' else '')
+                name_ = gname + (' (ISWIMμ\'s)' if side != 'infra' else '')
                 print(f'| {name_} | {c.lines(us)} | ' + ' | '.join(row) + ' |')
     print('| **total** | — | ' + ' | '.join(str(itotal[s]) for s in cols) + ' |')
     print()
     print('Adequacy\'s column counts only the infrastructure that the graph model does not use.')
     print()
 
-    # the pilot against the typed pipeline, per style
+    c.print_audit(MU_P)
+    mu_modules(c, M)
+
+
+def mu_modules(c, M):
+    """The modules that ISWIMμ's proofs share with each other, those of the
+    ISWIM pipeline it reuses, and its infrastructure, with their users."""
+    cols = MU_SIDES + ('mu-adeq',)
+    reach = M['reach']
+    shared = {un for un, (side, _) in c.group_of.items() if side in ('shared', 'mu-shared')}
+    print('| shared module (ISWIMμ) | lines | used by |')
+    print('|---|---:|---|')
+    for un in sorted(shared, key=lambda x: c.display(x)):
+        users = [any_name(s) for s in cols if un in reach[s]]
+        if users:
+            who = 'all four proofs' if un in M['by_all'] else ', '.join(users)
+            print(f'| {c.display(un)} | {c.ulines(un)} | {who} |')
+    print()
+    reused = {un for s in cols for un in reach[s] if not c.group_of[un][0].startswith('mu-')
+              and un not in c.infra and un not in shared}
+    print("| the ISWIM pipeline's module reused by ISWIMμ | lines | used by |")
+    print('|---|---:|---|')
+    for un in sorted(reused, key=lambda x: c.display(x)):
+        print(f'| {c.display(un)} | {c.ulines(un)} | '
+              + ', '.join(any_name(s) for s in cols if un in reach[s]) + ' |')
+    print()
+    print('| infrastructure module (ISWIMμ) | lines | used by |')
+    print('|---|---:|---|')
+    for un in sorted(c.infra | M['minfra'], key=lambda x: c.display(x)):
+        users = [any_name(s) for s in cols if un in reach[s]]
+        if users:
+            print(f'| {c.display(un)} | {c.ulines(un)} | {", ".join(users)} |')
+    print()
+    mex = [f for f in c.every if c.seen[f][0] == 'mu-examples']
+    print(f"Examples, not counted: {sum(code_lines(f) for f in mex)} lines.")
+    print()
+    print("Module (+ proof/): the definitions are on the audit surface, the lemmas "
+          "in its proof/ half; the lines are those of both.")
+    print()
+
+
+def iswim_brief(c, T, M):
+    """The ISWIM pipeline against ISWIMμ, briefly: the totals per style (and
+    the graph model with errors), simplify and delay, adequacy, and delay in
+    the graph model by module."""
     cells, total = T['cells'], T['total']
-    print('| per style (secondary) | graph model | CEK | interpreter | reduction |')
-    print('|---|---:|---:|---:|---:|')
-    tt = [total[s] - (cells[(s, 'cast insertion')] or 0) for s in TYPED['sides']]
-    print('| typed pipeline, main table total without cast insertion | ' + ' | '.join(map(str, tt)) + ' |')
-    print('| ISWIMμ pilot, total | ' + ' | '.join(str(M['total'][s]) for s in MU_SIDES) + ' |')
-    print('| typed pipeline: simplify | ' + ' | '.join(str(cells[(s, 'simplify')]) for s in TYPED['sides']) + ' |')
-    print('| ISWIMμ pilot: simplify | ' + ' | '.join(str(c.counts[(s, 'simplify')]) for s in MU_SIDES) + ' |')
-    print('| typed pipeline: delay | ' + ' | '.join(str(cells[(s, 'CC: delay')]) for s in TYPED['sides']) + ' |')
-    print('| ISWIMμ pilot: delay | ' + ' | '.join(str(c.counts[(s, 'CC: delay')]) for s in MU_SIDES) + ' |')
+    cols = TYPED['sides'] + (TYPED['gerr'],)
+    print('| per style | ' + ' | '.join(NAMES[STYLE[s]] for s in cols) + ' |')
+    print('|---|' + '---:|' * len(cols))
+    print('| ISWIM pipeline, total | ' + ' | '.join(str(total[s]) for s in cols) + ' |')
+    print('| ISWIM pipeline, total without cast insertion | '
+          + ' | '.join(str(total[s] - (cells[(s, 'cast insertion')] or 0)) for s in cols) + ' |')
+    print('| ISWIMμ, total | ' + ' | '.join(str(M['total'][s]) for s in MU_SIDES) + ' | — |')
+    for r, rname in (('simplify', 'simplify'), ('CC: delay', 'delay')):
+        print(f'| ISWIM pipeline: {rname} | ' + ' | '.join(str(cells[(s, r)]) for s in cols) + ' |')
+        print(f'| ISWIMμ: {rname} | ' + ' | '.join(str(c.counts[(s, r)]) for s in MU_SIDES) + ' | — |')
+    print()
+    print('| adequacy (reported separately) | graph model | graph model with errors |')
+    print('|---|---:|---:|')
+    print(f"| ISWIM pipeline | {T['adq'][TYPED['adeq']]} | {T['adq'][TYPED['gadeq']]} |")
+    print(f"| ISWIMμ | {M['total']['mu-adeq']} | — |")
+    print()
+    print('| graph-model delay, by module | ISWIM pipeline | ISWIMμ |')
+    print('|---|---:|---:|')
+    for x in MU_DELAY:
+        print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
+              f'| {code_lines(MUP + "Correctness/Graph/Delay" + x + ".agda")} |')
+    print(f'| **total** | {sum(code_lines(GC + "Delay" + x + ".agda") for x in MU_DELAY)} '
+          f'| {sum(code_lines(MUP + "Correctness/Graph/Delay" + x + ".agda") for x in MU_DELAY)} |')
     print()
 
 
@@ -1527,28 +1639,40 @@ def main():
     mu_check(c)
     mu_red_check(c)
     T, Un = c.analyze(TYPED), c.analyze(UNTYPED)
-    if '--mu-detail' in sys.argv[1:]:
-        print('## The ISWIMμ pilot against the typed pipeline, row by row')
+    args = sys.argv[1:]
+    if '--mu-detail' in args:
+        print('## ISWIMμ against the ISWIM pipeline, row by row')
         print()
         mu_report(c, T)
         mu_ck_report(c)
         mu_red_report(c)
         return
-    if '--mu' in sys.argv[1:]:
-        print('## The ISWIMμ pilot')
-        print()
-        mu_main(c, T)
-        return
-    if '--untyped' in sys.argv[1:]:
+    if '--untyped' in args:
         print(f'## The {UNTYPED["name"]}')
         print()
         c.print_pipeline(Un)
         c.errors_infra(UNTYPED)
         return
-    c.print_pipeline(T)
-    c.errors_infra(TYPED)
-    compare(c, T, Un)
-    assurance(c)
+    if '--iswim' in args:
+        print('## The ISWIM pipeline')
+        print()
+        c.print_pipeline(T)
+        c.errors_infra(TYPED)
+        compare(c, T, Un)
+        assurance(c)
+        return
+    M = mu_analyze(c)
+    print('## ISWIMμ')
+    print()
+    mu_main(c, T, M)
+    if '--mu' in args:
+        return
+    print('## Dynamic typing and errors: the ISWIM pipeline')
+    print()
+    print('Full tables: --iswim (and --untyped for the untyped pipeline; --mu-detail for ISWIMμ '
+          'against the ISWIM pipeline, row by row).')
+    print()
+    iswim_brief(c, T, M)
 
 
 if __name__ == '__main__':

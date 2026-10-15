@@ -24,7 +24,7 @@ open import Mu.Compiler.Enclose using (enclose; encs)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; tab; All₂; lookup₂)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
+open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.ISWIM as S
 import Mu.proof.Semantics.Reduction.Clos2 as T

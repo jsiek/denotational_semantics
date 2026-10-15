@@ -1,6 +1,6 @@
 {-
 
-  Globalize makes only references to older definitions, for the pilot
+  Globalize makes only references to older definitions, for ISWIMμ
   (agda/Mu/), as for the typed pipeline (proof/Compiler/GlobalizeOlder.agda);
   X86μ adequacy needs it (Mu/proof/Adequacy/X86Compiled.agda).
 

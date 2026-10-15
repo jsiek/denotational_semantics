@@ -1,6 +1,6 @@
 {-
 
-  Relations between the values of two interpreters of the pilot
+  Relations between the values of two interpreters of ISWIMμ
   (Mu/Semantics/Interp/Values.agda, with codes C₁ and C₂), for the
   proofs of the passes, as proof/Semantics/Interp/Typed/Rel.agda: values
   are related (_≈_) when they have the same shape, codes are related by

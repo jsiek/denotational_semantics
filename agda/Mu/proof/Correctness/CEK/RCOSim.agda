@@ -34,7 +34,7 @@ import Mu.Language.Mon as M
 open M using (Atm; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import Mu.Compiler.RCO
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map; _<><_; _<><ᵃ_)
-open import Mu.Framework.AllProp using (lookup-map)
+open import Mu.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation using (Obs)
 open import proof.Semantics.CEK.Smallstep using (next; ε; _◅_; plus; step⁺)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent)

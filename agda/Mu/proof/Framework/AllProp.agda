@@ -6,7 +6,7 @@
 
 -}
 
-module Mu.Framework.AllProp where
+module Mu.proof.Framework.AllProp where
 
 open import Framework.Membership using (_∋_; Z; S)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; map)

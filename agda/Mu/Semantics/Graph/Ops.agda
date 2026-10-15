@@ -1,9 +1,9 @@
 {-
 
-  What the languages of the pilot from Clos5μ on share in the graph
+  What the languages of ISWIMμ from Clos5μ on share in the graph
   model: the tables of global definitions, as in
-  Semantics/Graph/Typed/Ops.agda (which also has project, which the
-  pilot does not have).
+  Semantics/Graph/Typed/Ops.agda (which also has project, which
+  ISWIMμ does not have).
 
   A table gives each definition of a program (Σ ∋ s) its meaning. The
   definitions are given meaning newest first, each with the table of

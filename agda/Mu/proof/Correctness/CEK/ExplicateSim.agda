@@ -33,7 +33,7 @@ open Imp using (simple; assign; case)
 open import Mu.Language.CFG
 open import Mu.Compiler.Explicate
 open import Mu.Framework.AllUtil using (All; []; _∷_; map)
-open import Mu.Framework.AllProp using (lookup-map)
+open import Mu.proof.Framework.AllProp using (lookup-map)
 open import proof.Semantics.CEK.Smallstep using (next; Star; ε; _◅_; Reach)
 open import proof.Semantics.CEK.Simulation
   using (Answers≺; stops; steps; stutters; steps₁≺; after≺; answers-at; FSim; Equivalent; equivalent)
