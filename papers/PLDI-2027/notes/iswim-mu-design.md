@@ -1,6 +1,6 @@
 # A typed ISWIM with recursive types: design of the experiment (v2)
 
-> **Status (2026-10-15).** The design as approved, with the pilot P0 built and the core of P1 (the back end, in the graph model and the CEK machines) (`agda/Mu/`, `loc.py --mu`, the section "ISWIMμ pilot" of `../loc.md`). Where the pilot showed the design wrong or settled an open point, a note marked **[P0]** or **[P1]** says so; the rest is the design as written. In short:
+> **Status (2026-10-15).** The design as approved, with the pilot P0, P1 (the back end, in all four columns) and P2 (adequacy and the no-error lemmas) built (`agda/Mu/`, `loc.py --mu`, the section "ISWIMμ pilot" of `../loc.md`). Where the pilot showed the design wrong or settled an open point, a note marked **[P0]**, **[P1]** or **[P2]** says so; the rest is the design as written. In short:
 >
 > * The measured rows fall inside the estimates: graph-model delay 552 → 524, the other three passes 197 → 194 (graph) and 354 → 331 (CEK), CEK delay 99 → 96.
 > * The depth index of ApproxLR stays load-bearing, as argued in §3.2 (now also in the comment of `Mu/proof/Correctness/Graph/DelayRel.agda`).
@@ -8,6 +8,7 @@
 > * Heterogeneous contexts cost nothing net: optimize got smaller, and the CEK lemmas about tuple lengths disappeared (§3.3).
 > * **[P1]** The whole pipeline, row by row against the typed one without simplify and cast insertion: graph model 1649 → 1543, CEK 1789 → 1655 (against the main table's 1722 and 1881, which also count what simplify needs: 1543 and 1655, inside the estimates). Of the graph model's 106, 49 are select's `case`, which X86μ makes a pseudo-instruction (§2.2), not the cost of errors.
 > * **[P1]** The X86 existential over a `Ctx` cost nothing (§2.2); no pass after delay looks at μ.
+> * **[P2]** The four columns state the same end-to-end theorem for `main : Int` (same constant, or both diverge); the graph model gets it from `compile-x86-same`, adequacy and the no-error lemmas, with no graph model with errors (§3.6). Graph-model adequacy is 1619 against today's 2190 (about 1870 like for like, without the Clos5ᵀ machine's), below the estimated 2100–2200, since Clos5μ adequacy turned out unnecessary. The four styles on the pilot: graph 1577, CEK 1673, interpreter 1020, reduction 2521 (`loc.py --mu`), the main table's ranking.
 
 Revision of `typed-source-design.md` (v1, which had simple types plus `rec`), after the author's response. The goals now are:
 
@@ -186,6 +187,8 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
 * **Observation.** Restrict `main` to ground type (`Int`).
   * **[P0]** Not needed for the pilot's theorems, which hold for a closed program of any type: the CEK machines observe a function as `o-fun`, as today, and the graph-model theorem is about constants and nonemptiness. The restriction matters only for P2's end-to-end `Equivalent` from the graph model.
   * The graph model's "same constants, nonempty together", plus adequacy, plus a lemma per machine that it never stops with `o-error` (a few lines, by inspection of the typed step function), gives `Equivalent`.
+  * **[P2]** Done for `main : Int` as the two statements the operational columns make (`Mu/proof/Adequacy/EndToEnd.agda`: `end-to-end-x86-const`, `end-to-end-x86-diverges`, and `end-to-end-x86-converges` at any type): a machine that never errs and does not converge diverges (`never-final-diverges`), so divergence follows from convergence and the no-error lemmas. The interpreter column gained the same two statements (`CompilerFuel`); the CEK and reduction columns had them.
+  * **[P2] No-error lemmas** (199 lines, in no total): the CEK machines of ISWIMμ and X86μ (68, by inspection of `step`; the only ones the end theorem needs), the interpreters of ISWIMμ and X86μ (87, following their recursion; no `error` result is ever built), and the reduction semantics of ISWIMμ (44). The reduction semantics is the only one with error cases left: the redexes split their operand at a generic type with an equation (green slime) and have catch-alls, and `obs` errs on non-values. They are unreachable, by progress (a closed term is a value, of the form of its type, or reduces); removing them would need redexes on values rather than terms, so they stay. Nothing was removed elsewhere: no other semantics has an error case.
   * The four columns state **the same theorem**, which removes the caveat "the theorems differ".
   * **[P1]** Imposed at the end-to-end statements: `compile-x86-int` (graph model, `Same` for `main : Int`) and `compile-x86-const`/`compile-x86-diverges` (CEK); the passes and the intermediate compositions hold at any type.
   * **The graph-with-errors column is unneeded**: it has nothing left to observe.
@@ -194,6 +197,7 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
   * Clos5 and X86 adequacy lose `chk`/`project` (about −20 to −40);
   * no errors adequacy.
   * About 2100–2200 against 2214.
+  * **[P2]** 1619 against 2190 (today's, after PR #67). The logical relation is today's, by recursion on the denotational value, with `𝕍 d (fold v) = 𝕍 d v`; `fold`/`unfold` are identities in every denotation. ISWIMμ against its CEK machine: 484 against untyped ISWIM's 653 (no `ShapeOf`, no kind errors; but the Ok lemmas of the semantics, 20, by induction on the term since it is not an instance of the generic-signature framework, and a copy of the tuples-of-sets lemmas, 74, so as not to depend on the typed pipeline's adequacy). **Clos5μ adequacy is unnecessary**: X86 adequacy is direct, and today's Clos5ᵀ adequacy serves only the end statements into the Clos5ᵀ machine; only the values of the Clos5μ machine and the table lemmas are ported (307 against 715). X86μ: 697 against 679 (`case` as `choose`/𝒞, the `↓` operand, result types, `OpR` as a datatype), well-formedness of compiled programs 38 (+ `GlobalizeOlder`, 54, shared as today), end to end 22.
 
 ## 4. What the experiment shows
 
@@ -218,7 +222,7 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
 |---|---|
 | P0 pilot | ISWIMμ → Clos4μ (enclose, optimize, concretize, delay) in **graph + CEK**; confirm that ApproxLR ports unchanged and measure H1/H2 on the CC passes; go/no-go. **[P0] Done**: graph model 908 → 842, CEK 800 → 730 on the rows of these four passes and the four languages' semantics (with `Ops` and `Common`); ApproxLR ported minus `fun-obs` |
 | P1 | Clos5μ…X86μ, all four columns, composition. **[P1] Graph model and CEK done**: per row, globalize 118 → 118 / 219 → 213, rco 128 → 125 / 150 → 147, lift locals 44 → 44 / 56 → 51, explicate 71 → 71 / 106 → 105, select 134 → 83 (132 like for like) / 111 → 107; the semantics of Clos5…X86 with `Ops` 254 → 231 / 290 → 272 |
-| P2 | adequacy (ISWIMμ, Clos5μ, X86μ) and the no-error lemmas, giving the end-to-end `Equivalent` from the graph model |
+| P2 | adequacy (ISWIMμ, Clos5μ, X86μ) and the no-error lemmas, giving the end-to-end `Equivalent` from the graph model. **[P2] Done**: adequacy for ISWIMμ and X86μ (no Clos5μ, unneeded), 1619 against 2190; no-error lemmas 199; the four columns state the same theorem for `main : Int` |
 | P3 (optional) | port simplify to ISWIMμ (typed cp0; folding through `unfold (fold V)` is one more known-value rule) |
 
 **Lines** (today = typed pipeline without simplify and cast insertion):

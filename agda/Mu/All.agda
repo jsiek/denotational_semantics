@@ -37,5 +37,9 @@ import Mu.proof.Correctness.Graph.CompilerCorrect
 import Mu.proof.Correctness.CEK.PipelineSim
 import Mu.proof.Correctness.Interp.CompilerFuel
 import Mu.proof.Correctness.Reduction.PipelineRed
+import Mu.proof.Adequacy.EndToEnd
+import Mu.proof.Semantics.CEK.NoError
+import Mu.proof.Semantics.Interp.NoError
+import Mu.proof.Semantics.Reduction.NoError
 import Mu.proof.Compiler.Examples.RecursionExample
 import Mu.proof.Compiler.Examples.RecursionInterp
