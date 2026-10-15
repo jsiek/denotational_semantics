@@ -1,0 +1,33 @@
+%% The abstract, input by paper.tex. Numbers are from loc.py (ISWIMμ, the
+%% default report); keep them in sync.
+
+Denotational semantics promises compositional, equational reasoning
+about programs, and compiler correctness was among its first
+applications, yet verified compilers today are almost entirely
+operational. The denotational compiler proofs in the literature, on
+paper or mechanized, either (1) are limited to source languages that
+are first-order or strongly normalizing, or (2) compile to target
+languages that treat closures as primitive values and so avoid closure
+conversion. We use a denotational semantics based on a graph model to
+prove a ten-pass compiler correct, from a call-by-value
+$\lambda$-calculus with iso-recursive types (so it supports general
+recursion and admits divergence), through closure conversion, to a
+typed assembly language.  The proof is mechanized in Agda. Every
+intermediate language has a denotational semantics, and most passes
+are proved by an equation between the denotations of a program before
+and after the pass. The exception is the step of closure conversion
+that lowers closures into code and environment pairs: its reflection
+direction needs a new kind of logical relation on denotations, which
+we call \emph{approximant logical relations}. To evaluate this
+denotational approach compared to operational ones, we prove the same
+compiler correct in three operational styles and report on the size of
+the proofs. The denotational end-to-end proof of correctness comes in
+smaller than the proofs using abstract machines and reduction
+semantics, but larger than the proof using clocked interpreters.  In
+particular, the denotational approach yields smaller proofs for
+compiler passes in which the program values remain at the same level
+of abstraction, such as inlining, where equational reasoning suffices.
+But the denotational proofs are larger when the compiler translates
+program values into a lower level of abstraction, such as lowering
+closures to their flat representation.
+
