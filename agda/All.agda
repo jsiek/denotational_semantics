@@ -55,6 +55,14 @@ import proof.Assurance.X86Erasure
 import Untyped.All
 
 {- ---------------------------------------------------------------------------
+   The ISWIMμ pilot (not in the totals): a typed ISWIM with iso-recursive
+   types and its compiler to X86μ, in the graph model and the CEK
+   machines (see Mu/All.agda)
+   --------------------------------------------------------------------------- -}
+
+import Mu.All
+
+{- ---------------------------------------------------------------------------
    proof/: language-independent lemmas: about tuples of the abt extract,
    lists, the syntax of any signature (renaming, scoping, uses,
    substitution), sets and environments, the graph model (values,
