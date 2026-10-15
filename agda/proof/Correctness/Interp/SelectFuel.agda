@@ -47,7 +47,7 @@ module _ {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ �
 
   xds = All-map def-body ds
 
-  equal-bit : ∀ v w → X.bit (X.equal v w) ≡ δ eq v w
+  equal-bit : ∀ v w → δ eq v w ≡ X.bit (X.equal v w)
   equal-bit (const n) (const k) = refl
 
   args-ok : ∀ {Δ j η Γ O F} {m : X.Mach Σ η (st Γ Δ O F)} (as : Vec (Atm Σ Δ Any) j) → X.args (atms as) m ≡ map (value-of (X.frame m)) as
@@ -56,15 +56,15 @@ module _ {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ �
 
   {- calls give the same results at clock ck -}
   Calls : ℕ → Set
-  Calls ck = ∀ v w → X.call xds ck (X.code-of v) (X.env-of v) w ≡ G.call ds ck v w
+  Calls ck = ∀ v w → G.call ds ck v w ≡ X.call xds ck (X.code-of v) (X.env-of v) w
 
   module _ (ck : ℕ) (H : Calls ck) where
 
     sel-ok : ∀ {n Bs Δ A Δ''} {bs : Blocks Σ n Bs} {η Γ O F} {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
       {f : X.Flag Σ F} {φ : Env Δ} (o : Out n Δ A Δ'') {k : ∀ {Γ O F} → Seq Σ n Bs (after o Γ O F)} {K}
       → (∀ {η Γ O F} (ρ : X.RegVals Σ η Γ) (op : X.Opened Σ η O) (f : X.Flag Σ F) v
-           → X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k ≡ K v)
-      → (s : I.Simple Σ Δ A) → X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k) ≡ (eval-simple (G.call ds ck) φ s >>= K)
+           → K v ≡ X.run xds ck bs η (put (dst o) v ⟨ ρ , φ , op , f ⟩) k)
+      → (s : I.Simple Σ Δ A) → (eval-simple (G.call ds ck) φ s >>= K) ≡ X.run xds ck bs η ⟨ ρ , φ , op , f ⟩ (sel s o k)
     sel-ok o h (I.atm a) = h _ _ _ _
     sel-ok o h (I.pack a b) = h _ _ _ _
     sel-ok {φ = φ} o h (I.callc (var x) a) = bind≡ (H (φ ! x) (value-of φ a)) λ v → h _ _ _ v
@@ -73,20 +73,20 @@ module _ {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ �
     sel-ok o h (I.inl a) = h _ _ _ _
     sel-ok o h (I.inr a) = h _ _ _ _
     sel-ok o h (I.prim sub a b) = h _ _ _ _
-    sel-ok {φ = φ} o {K = K} h (I.prim eq a b) = trans (h _ _ _ _) (cong K (equal-bit (value-of φ a) (value-of φ b)))
+    sel-ok {φ = φ} o {K = K} h (I.prim eq a b) = trans (cong K (equal-bit (value-of φ a) (value-of φ b))) (h _ _ _ _)
     sel-ok o h (I.inject G a) = h _ _ _ _
     sel-ok {φ = φ} o h (I.project t (var x)) = bind-cong (project? t (φ ! x)) λ v → h _ _ _ v
 
     tail-ok : ∀ {n Bs Δ} {bs : C.Blocks Σ Bs} {η Γ O F} {ρ : X.RegVals Σ η Γ} {op : X.Opened Σ η O}
       {f : X.Flag Σ F} {φ : Env Δ} (t : Tail Σ Bs Δ) .{le le'}
-      → X.run xds ck (blocks {n = n} bs le') η ⟨ ρ , φ , op , f ⟩ (tail t le) ≡ G.tail ds ck bs φ t
+      → G.tail ds ck bs φ t ≡ X.run xds ck (blocks {n = n} bs le') η ⟨ ρ , φ , op , f ⟩ (tail t le)
     jump-ok : ∀ {n Bs Δ} (bs : C.Blocks Σ Bs) (l : Bs ∋ Δ) .{le} {η φ}
-      → X.jump xds ck (blocks {n = n} bs le) η l φ ≡ G.jump ds ck bs l φ
+      → G.jump ds ck bs l φ ≡ X.jump xds ck (blocks {n = n} bs le) η l φ
     case-ok : ∀ {n Bs Δ'} {bs : C.Blocks Σ Bs} {l₁ l₂ : Bs ∋ (Any ∷ Δ')} .{le} {η} {φ : Env Δ'} (v : Val ⟪ sum ⟫)
-      → X.jump xds ck (blocks {n = n} bs le) η (if either v (λ _ → true) (λ _ → false) then l₁ else l₂) (X.field′ payload v ∷ φ)
-        ≡ either v (λ u → G.jump ds ck bs l₁ (u ∷ φ)) (λ u → G.jump ds ck bs l₂ (u ∷ φ))
+      → either v (λ u → G.jump ds ck bs l₁ (u ∷ φ)) (λ u → G.jump ds ck bs l₂ (u ∷ φ))
+        ≡ X.jump xds ck (blocks {n = n} bs le) η (if either v (λ _ → true) (λ _ → false) then l₁ else l₂) (X.field′ payload v ∷ φ)
 
-    tail-ok (return s) = trans (sel-ok ret (λ _ _ _ _ → refl) s) (bind-ret _)
+    tail-ok (return s) = trans (sym (bind-ret _)) (sel-ok ret (λ _ _ _ _ → refl) s)
     tail-ok (seq p s t) = sel-ok (to p _) (λ _ _ _ _ → tail-ok t) s
     tail-ok {bs = bs} (goto l) = jump-ok bs l
     tail-ok {bs = bs} {φ = φ} (case a p l₁ l₂) = case-ok {bs = bs} (value-of φ a)
@@ -103,4 +103,4 @@ module _ {Σ : List ℕ} (ds : All (λ n → C.Body Σ (Any ∷ ⟪ tup n ⟫ �
   ... | C.body bs t = tail-ok ck (call-ok ck) t
 
 select-correct : ∀ (P : C.Program) → Equivalent (G.sem P) (X.sem (select P))
-select-correct (C.program ds (C.body bs t)) = clocked-≡ λ ck → sym (tail-ok ds ck (call-ok ds ck) t)
+select-correct (C.program ds (C.body bs t)) = clocked-≡ λ ck → tail-ok ds ck (call-ok ds ck) t

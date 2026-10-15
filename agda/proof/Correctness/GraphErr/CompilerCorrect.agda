@@ -99,16 +99,16 @@ compile-same₅ : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ comp
 compile-same₅ M c = ≃-Same (compile₄-same M c) (globalize-correct (compile₄ M))
 
 compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅
-compile-mon-same M c = ≃-Same (compile-same₅ M c) (≃-sym (rco-correct (compile M)))
+compile-mon-same M c = ≃-Same (compile-same₅ M c) (rco-correct (compile M))
 
 compile-imp-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-imp M ⟧ᵢ
-compile-imp-same M c = ≃-Same (compile-mon-same M c) (≃-sym (lift-locals-correct (compile-mon M)))
+compile-imp-same M c = ≃-Same (compile-mon-same M c) (lift-locals-correct (compile-mon M))
 
 compile-cfg-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-cfg M ⟧ᶜ
-compile-cfg-same M c = ≃-Same (compile-imp-same M c) (≃-sym (explicate-correct (compile-imp M)))
+compile-cfg-same M c = ≃-Same (compile-imp-same M c) (explicate-correct (compile-imp M))
 
 compile-x86-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ compile-x86 M ⟧ₜ
-compile-x86-same M c = ≃-Same (compile-cfg-same M c) (≃-sym (select-correct (compile-cfg M)))
+compile-x86-same M c = ≃-Same (compile-cfg-same M c) (select-correct (compile-cfg M))
 
 {- cast insertion on closed programs (cast-closed) -}
 cast-correct-closed : ∀ (M : AST) → Closed M → ⟦ M ⟧ ρ₀ ≃ Semantics.GraphErr.Typed.ISWIM.⟦ cast-closed M ⟧ ρ₀

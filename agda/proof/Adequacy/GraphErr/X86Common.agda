@@ -136,14 +136,14 @@ Rets : State Σ → Val Σ Any → Set
 Rets s v = Σ[ t ∈ State Σ ] s ↠ t × Returns t v
 
 {- ω means an error, any other element the return of a value with P -}
-Res : State Σ → Value → (Val Σ Any → Set) → Set
-Res s w P = (w ≡ ω × Errs s) ⊎ Σ[ v ∈ Val Σ Any ] Rets s v × P v
+Res : Value → State Σ → (Val Σ Any → Set) → Set
+Res w s P = (w ≡ ω × Errs s) ⊎ Σ[ v ∈ Val Σ Any ] Rets s v × P v
 
-Res-pre : ∀ {s s' w P} → s ↠ s' → Res s' w P → Res s w P
+Res-pre : ∀ {s s' w P} → s ↠ s' → Res w s' P → Res w s P
 Res-pre τ (inj₁ ⟨ e , er ⟩) = inj₁ ⟨ e , (λ σ → let ⟨ t , ⟨ τ' , q ⟩ ⟩ = er σ in ⟨ t , ⟨ ↠-⊕ σ τ ++↠ τ' , q ⟩ ⟩) ⟩
 Res-pre τ (inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ' , r ⟩ ⟩ , p ⟩ ⟩) = inj₂ ⟨ v , ⟨ ⟨ t , ⟨ τ ++↠ τ' , r ⟩ ⟩ , p ⟩ ⟩
 
-Res-step : ∀ {s s' w P} → step ds s ≡ next s' → Res s' w P → Res s w P
+Res-step : ∀ {s s' w P} → step ds s ≡ next s' → Res w s' P → Res w s P
 Res-step q = Res-pre (q ∷↠ done)
 
 obs≢err : ∀ {A} (v : Val Σ A) → obs v ≢ o-error
@@ -223,8 +223,8 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   PF true F b = PS F (bit b)
   PF false F _ = ⊤
 
-  {- the slots, registers and flag of m and the semantic ρ, R and F -}
-  record Rel {η ψ} (m : Mach Σ η ψ) (ρ : Env Value) (R : RegsD) (F : 𝒫 Value) : Set where
+  {- the semantic ρ, R and F and the slots, registers and flag of m -}
+  record Rel {η ψ} (ρ : Env Value) (R : RegsD) (F : 𝒫 Value) (m : Mach Σ η ψ) : Set where
     constructor mr
     field
       fr : ∀ {A} (x : St.fr ψ ∋ A) → PS (ρ (idx x)) (frame m ! x)
@@ -237,15 +237,15 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
   cast-rel refl h = h
 
   {- writing register r -}
-  reg-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} r {τ v D} → PR τ D v → Rel m ρ R F
-    → Rel {ψ = st (Γ [ r ↦ just τ ]) Δ O F'} ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩ ρ (R [ r ≔ˢ D ]) F
+  reg-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} r {τ v D} → PR τ D v → Rel ρ R F m
+    → Rel {ψ = st (Γ [ r ↦ just τ ]) Δ O F'} ρ (R [ r ≔ˢ D ]) F ⟨ regs m [ r ≔ v ] , frame m , opened m , flag m ⟩
   reg-rel rax h (mr f g l o) = mr f (λ { rax → h ; rdi → g rdi ; rsi → g rsi }) l o
   reg-rel rdi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → h ; rsi → g rsi }) l o
   reg-rel rsi h (mr f g l o) = mr f (λ { rax → g rax ; rdi → g rdi ; rsi → h }) l o
 
   {- writing slot k, which forgets the slots after it -}
-  slot-rel : ∀ {η Γ Δ Δ' O F' A} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (p : Δ' ⊑ Δ) {v : Val Σ A} {D} → PS D v → Rel m ρ R F
-    → Rel {ψ = st Γ (A ∷ Δ') nothing F'} ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩ (D • drop p ρ) R F
+  slot-rel : ∀ {η Γ Δ Δ' O F' A} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (p : Δ' ⊑ Δ) {v : Val Σ A} {D} → PS D v → Rel ρ R F m
+    → Rel {ψ = st Γ (A ∷ Δ') nothing F'} (D • drop p ρ) R F ⟨ regs m , v ∷ forget p (frame m) , tt , flag m ⟩
   slot-rel {m = m} {ρ} p h (mr f g l o) = mr fr′ g l tt
     where
     fr′ : ∀ {A} (x : _ ∋ A) → _
@@ -253,23 +253,23 @@ module Locs (P : ∀ {A} → Value → Val Σ A → Set) where
     fr′ (S y) = subst₂ PS (sym (drop-idx p ρ y)) (sym (forget-! p (frame m) y)) (f (⊑-∋ p y))
 
   {- the flag, set -}
-  flag-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} b {G} → PS G (bit b) → Rel m ρ R F
-    → Rel {ψ = st Γ Δ O true} ⟨ regs m , frame m , opened m , b ⟩ ρ R G
+  flag-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} b {G} → PS G (bit b) → Rel ρ R F m
+    → Rel {ψ = st Γ Δ O true} ρ R G ⟨ regs m , frame m , opened m , b ⟩
   flag-rel b h (mr f g l o) = mr f g h o
 
   {- the registers after a call or a return -}
   ret-rel : ∀ {η Δ} {φ : Frame Σ Δ} {ρ C v} → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x)) → PS C v
-    → Rel {η} {returned Δ} ⟨ rv v tt tt , φ , tt , tt ⟩ ρ (called-regs C) init
+    → Rel {η} {returned Δ} ρ (called-regs C) init ⟨ rv v tt tt , φ , tt , tt ⟩
   ret-rel f h = mr f (λ { rax → h ; rdi → tt ; rsi → tt }) tt tt
 
   {- %rax and the flag, unset by chk -}
-  rax-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F G} → Rel m ρ R F
-    → Rel {ψ = st (Γ [ rax ↦ nothing ]) Δ O false} ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩ ρ (R [ rax ≔ˢ init ]) G
+  rax-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F G} → Rel ρ R F m
+    → Rel {ψ = st (Γ [ rax ↦ nothing ]) Δ O false} ρ (R [ rax ≔ˢ init ]) G ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩
   rax-rel (mr f g l o) = mr f (λ { rax → tt ; rdi → g rdi ; rsi → g rsi }) tt o
 
   {- opening the closure in slot x forgets the code and environment of the last one -}
-  wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫) → Rel m ρ R F
-    → Rel {ψ = st (wipe Γ) Δ (just x) F'} ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩ ρ R F
+  wipe-rel : ∀ {η Γ Δ O F'} {m : Mach Σ η (st Γ Δ O F')} {ρ R F} (x : Δ ∋ ⟪ fun ⟫) → Rel ρ R F m
+    → Rel {ψ = st (wipe Γ) Δ (just x) F'} ρ R F ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩
   wipe-rel {Γ = Γ} {m = m} x (mr f g l o) =
     mr f (λ { rax → fg (Regs.ax Γ) (g rax) ; rdi → fg (Regs.di Γ) (g rdi) ; rsi → fg (Regs.si Γ) (g rsi) }) l (pack-η (frame m ! x))
     where

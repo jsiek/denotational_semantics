@@ -112,14 +112,14 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
   {- what a continuation of rco gives: related terms, for every atom that is a value under a substitution
      that agrees -}
-  Kont : ∀ {Δ A B} → Clo Δ → (Tm Σ [] A → Tm Σ [] B) → K Σ Δ A B → Set
-  Kont {Δ} {A} {B} τ h k = ∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (a : Atm Σ Δ' A) → Agree τ τ' r
+  Kont : ∀ {Δ A B} → (Tm Σ [] A → Tm Σ [] B) → Clo Δ → K Σ Δ A B → Set
+  Kont {Δ} {A} {B} h τ k = ∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (a : Atm Σ Δ' A) → Agree τ τ' r
     → Value (sub τ' ⌜ a ⌝ᵃ) → h (sub τ' ⌜ a ⌝ᵃ) ≈ sub τ' ⌜ k r a ⌝
 
   rco≈ : ∀ {Γ Δ A} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
     → sub σ M ≈ sub τ ⌜ rco M ρ ⌝
   atomize≈ : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
-    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont τ h k → h (sub σ M) ≈ sub τ ⌜ atomize M ρ k ⌝
+    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k → h (sub σ M) ≈ sub τ ⌜ atomize M ρ k ⌝
   atomizes≈ : ∀ {Γ Δ n B} (Ms : Vec (Tm Σ Γ Any) n) (ρ : Ren Γ Δ) (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → Mon.Exp Σ Δ' B)
     (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ → {g : Vec (Tm Σ [] Any) n → Tm Σ [] B} → Frame (T.reds ds) red₁ g
     → (∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (as : Vec (Atm Σ Δ' Any) n) → Agree τ τ' r
@@ -135,7 +135,7 @@ module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
   {- a complex operand: a let -}
   let-op : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
-    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont τ h k
+    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k
     → h (sub σ M) ≈ sub τ ⌜ Mon.let′ (rco M ρ) (k S (var Z)) ⌝
   let-op M ρ k σ τ a vs F kk =
     letc≈ F (rco≈ M ρ σ τ a vs)

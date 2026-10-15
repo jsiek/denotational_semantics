@@ -71,31 +71,31 @@ clos5-closed ds od f d d∈ =
 
 {- the X86ᵀ program that the compiler produces, from its Clos5ᵀ one -}
 compiled : ∀ (M : AST) → let ds = Program.defs (compile-x86 M) in ConT (tables codeₜ ds) × Contains codeₜ ds
-compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₁ (TT f))) , closed ⟩
+compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , closed ⟩
   where
   ds₅ = Language.Typed.Clos5.Program.defs (compile M)
   dsₘ = All-map (λ D → rco D (λ x → x)) ds₅
   dsᵢ = All-map liftₗ dsₘ
   ds꜀ = All-map explicate-body dsᵢ
   cTₘ = tables-con code-con (All-map ⌜_⌝ dsₘ)
-  TT : ∀ {n} (f : _ ∋ n) → tables codeₜ (All-map def-body ds꜀) f ≃ table ds₅ f
-  TT f = ≃-trans (table-≃ ds꜀ f) (≃-trans (table-explicate dsᵢ f) (≃-trans (table-lift dsₘ f) (table-rco ds₅ f)))
+  TT : ∀ {n} (f : _ ∋ n) → table ds₅ f ≃ tables codeₜ (All-map def-body ds꜀) f
+  TT f = ≃-trans (table-rco ds₅ f) (≃-trans (table-lift dsₘ f) (≃-trans (table-explicate dsᵢ f) (table-≃ ds꜀ f)))
   closed : Contains codeₜ (All-map def-body ds꜀)
-  closed f d d∈ = proj₂ (TT f) d (clos5-closed ds₅ (globalize-older (compile₄ M)) f d (proj₁ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
+  closed f d d∈ = proj₁ (TT f) d (clos5-closed ds₅ (globalize-older (compile₄ M)) f d (proj₂ code≃ d (subst (λ b → d ∈ codeₜ (tables codeₜ (All-map def-body ds꜀)) b) eq d∈)))
     where
     eq : All-map def-body ds꜀ ! f ≡ def-body (explicate-body (liftₗ (rco (ds₅ ! f) (λ x → x))))
     eq = trans (map-! def-body ds꜀ f) (cong def-body (trans (map-! explicate-body dsᵢ f)
            (cong explicate-body (trans (map-! liftₗ dsₘ f) (cong liftₗ (map-! (λ D → rco D (λ x → x)) ds₅ f))))))
     dₘ = rco (ds₅ ! f) (λ x → x)
     Tₘ = tables code′ (All-map ⌜_⌝ dsₘ)
-    code≃ : codeₜ (tables codeₜ (All-map def-body ds꜀)) (def-body (explicate-body (liftₗ dₘ))) ≃ code′ (table ds₅) (ds₅ ! f)
-    code≃ = ≃-trans (code-≃ (table-≃ ds꜀) (explicate-body (liftₗ dₘ)))
-      (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ) (liftₗ dₘ) _) (≃-trans lift≃ rco≃))
+    code≃ : code′ (table ds₅) (ds₅ ! f) ≃ codeₜ (tables codeₜ (All-map def-body ds꜀)) (def-body (explicate-body (liftₗ dₘ)))
+    code≃ = ≃-trans rco≃ (≃-trans lift≃
+      (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ) (liftₗ dₘ) _) (code-≃ (table-≃ ds꜀) (explicate-body (liftₗ dₘ)))))
       where
-      lift≃ : codeᵢ (tables codeᵢ dsᵢ) (liftₗ dₘ) ≃ code′ Tₘ ⌜ dₘ ⌝
+      lift≃ : code′ Tₘ ⌜ dₘ ⌝ ≃ codeᵢ (tables codeᵢ dsᵢ) (liftₗ dₘ)
       lift≃ = Λ-≃ λ V _ cV → Λ-≃ λ U _ cU → lift-sem cTₘ (table-lift dsₘ) dₘ _ nothing
                 (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
-      rco≃ : code′ Tₘ ⌜ dₘ ⌝ ≃ code′ (table ds₅) (ds₅ ! f)
+      rco≃ : code′ (table ds₅) (ds₅ ! f) ≃ code′ Tₘ ⌜ dₘ ⌝
       rco≃ = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → rco-sem cTₘ (table-rco ds₅) (ds₅ ! f) (λ x → x) _ _
         (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
         (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω))) (λ x → ≃-refl)

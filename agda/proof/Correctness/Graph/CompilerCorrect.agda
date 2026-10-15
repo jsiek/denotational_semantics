@@ -54,8 +54,8 @@ Same D E = (∀ {B} (c : base-rep B) → (dconst c ∈ D) ⇔ (dconst c ∈ E)) 
 ⇔∘ ⟨ f , g ⟩ ⟨ h , k ⟩ = ⟨ (λ a → h (f a)) , (λ c → g (k c)) ⟩
 
 {- Same D E, and E ≃ E' -}
-then : ∀ {D E E'} → Same D E → E' ≃ E → Same D E'
-then ⟨ c , n ⟩ ⟨ E'⊆ , E⊆ ⟩ =
+then : ∀ {D E E'} → Same D E → E ≃ E' → Same D E'
+then ⟨ c , n ⟩ ⟨ E⊆ , E'⊆ ⟩ =
   ⟨ (λ k → ⇔∘ (c k) ⟨ E⊆ _ , E'⊆ _ ⟩)
   , ⇔∘ n ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E'⊆ d d∈ ⟩ }) ⟩ ⟩
 
@@ -68,7 +68,7 @@ compile-same M c with ≃-trans (simplify-correct M) (≃-trans (cast-correct (s
 ... | ⟨ D⊆ , E⊆ ⟩ =
   then ⟨ (λ k → ⇔∘ ⟨ D⊆ _ , E⊆ _ ⟩ (delay-correct-const M₃ k))
        , ⇔∘ ⟨ (λ { ⟨ d , d∈ ⟩ → ⟨ d , D⊆ d d∈ ⟩ }) , (λ { ⟨ d , d∈ ⟩ → ⟨ d , E⊆ d d∈ ⟩ }) ⟩ (delay-correct-nonempty M₃) ⟩
-       (≃-sym (globalize-correct (compile₄ M)))
+       (globalize-correct (compile₄ M))
   where M₃ = concretize-program (optimize-program (enclose (cast-closed (simplify M))))
 
 compile-mon-same : ∀ (M : AST) → Closed M → Same (⟦ M ⟧ ρ₀) ⟦ ⌜ compile-mon M ⌝ₚ ⟧₅

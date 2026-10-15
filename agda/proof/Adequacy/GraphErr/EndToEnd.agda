@@ -124,16 +124,16 @@ private
   Good : Table → Set
   Good T = ∀ k → Valᴰ (T k) × Con (T k)
 
-  x86-code : ∀ {Σ T n} → Good T → (D : Code Σ n) → codeₜ T (pipe D) ≃ code₅ T D
+  x86-code : ∀ {Σ T n} → Good T → (D : Code Σ n) → code₅ T D ≃ codeₜ T (pipe D)
   x86-code {T = T} gT D =
-    ≃-trans {D₂ = codeᶜ T (explicate-body (lift e))} (code-≃ (λ _ → ≃-refl) (λ k → proj₂ (gT k)) (explicate-body (lift e)))
-      (≃-trans {D₂ = codeᵢ T (lift e)} (ΛΛᵐ-≃ λ X Y → body-sem (λ _ → ≃-refl) (lift e) _)
-        (≃-trans {D₂ = code₅ T Mon.⌜ e ⌝} (ΛΛᵐ-≃′ λ V U neV cV _ neU cU _ →
+    ≃-trans {D₂ = code₅ T Mon.⌜ e ⌝} (ΛΛᵐ-≃′ λ V U neV _ nV neU _ nU → rco-sem (λ _ → ≃-refl) (λ k → proj₁ (gT k)) D (λ x → x)
+            (mkR λ { Z → ⟨ ≃-refl , noerr-val U neU nU ⟩ ; (S Z) → ⟨ ≃-refl , noerr-val V neV nV ⟩ }))
+      (≃-trans {D₂ = codeᵢ T (lift e)} (ΛΛᵐ-≃′ λ V U neV cV _ neU cU _ →
                     lift-sem (λ _ → ≃-refl) (λ k → proj₂ (gT k)) e nothing (up tt)
                       (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
                       (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω))) (λ _ _ → ≃-refl))
-          (ΛΛᵐ-≃′ λ V U neV _ nV neU _ nU → rco-sem (λ _ → ≃-refl) (λ k → proj₁ (gT k)) D (λ x → x)
-            (mkR λ { Z → ⟨ ≃-refl , noerr-val U neU nU ⟩ ; (S Z) → ⟨ ≃-refl , noerr-val V neV nV ⟩ }))))
+        (≃-trans {D₂ = codeᶜ T (explicate-body (lift e))} (ΛΛᵐ-≃ λ X Y → body-sem (λ _ → ≃-refl) (lift e) _)
+          (code-≃ (λ _ → ≃-refl) (λ k → proj₂ (gT k)) (explicate-body (lift e)))))
     where e = rco D (λ x → x)
 
   pipe-! : ∀ {Σ ns n} (ds : All (Code Σ) ns) (f : ns ∋ n)
@@ -146,14 +146,14 @@ private
   older-at {ds = d ∷ ds} ⟨ _ , os ⟩ (S f) = older-at os f
 
 compile-ok : ∀ M → X.OK (compile-x86 M)
-compile-ok M = ⟨ (λ k → Con-⊆ (tbl-con (λ TC d → codeᶜ-con TC d) cds k) (proj₁ (table-≃ cds k))) , ind ⟩
+compile-ok M = ⟨ (λ k → Con-⊆ (tbl-con (λ TC d → codeᶜ-con TC d) cds k) (proj₂ (table-≃ cds k))) , ind ⟩
   where
   ds = C₅.Program.defs (compile M)
   cds = CFG.Program.defs (compile-cfg M)
   ind : C.Indep (X86ᵀ.Program.defs (compile-x86 M))
   ind f {T} {T'} gT gT' ag rewrite pipe-! ds f =
-    ≃-trans (x86-code gT (ds ! f)) (≃-trans (ΛΛᵐ-≃ λ X Y → old-≃ ag (ds ! f) (older-at (globalize-older (compile₄ M)) f) (λ _ → ≃-refl))
-      (≃-sym (x86-code gT' (ds ! f))))
+    ≃-trans (≃-sym (x86-code gT (ds ! f))) (≃-trans (ΛΛᵐ-≃ λ X Y → old-≃ ag (ds ! f) (older-at (globalize-older (compile₄ M)) f) (λ _ → ≃-refl))
+      (x86-code gT' (ds ! f)))
 
 {- The X86ᵀ machine --------------------------------------------------------------------}
 

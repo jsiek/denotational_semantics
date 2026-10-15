@@ -132,8 +132,8 @@ module _ {T : Table} (TC : ∀ k → Con (T k)) where
 
 {- under an invariant I of the source tables (iv) -}
 tbl-map : ∀ {P P' Q : ℕ → Set} {c : Table → ∀ {n} → P n → 𝒫 Value} {c' : Table → ∀ {n} → P' n → 𝒫 Value}
-  (I : Table → Set) (f : ∀ {n} → Q n → P n) (g : ∀ {n} → Q n → P' n) → (∀ {ns} (ds : All Q ns) → I (tbl c' (All-map g ds)))
-  → (∀ {T T'} → (∀ k → T k ≃ T' k) → I T' → ∀ {n} (d : Q n) → c T (f d) ≃ c' T' (g d))
+  (I : Table → Set) (f : ∀ {n} → Q n → P n) (g : ∀ {n} → Q n → P' n) → (∀ {ns} (ds : All Q ns) → I (tbl c (All-map f ds)))
+  → (∀ {T T'} → (∀ k → T k ≃ T' k) → I T → ∀ {n} (d : Q n) → c T (f d) ≃ c' T' (g d))
   → ∀ {ns} (ds : All Q ns) k → tbl c (All-map f ds) k ≃ tbl c' (All-map g ds) k
 tbl-map I f g iv h [] k = ≃-refl
 tbl-map I f g iv h {_ ∷ ns} (d ∷ ds) k with k ≟ length ns

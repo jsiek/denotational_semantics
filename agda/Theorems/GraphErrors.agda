@@ -143,13 +143,13 @@ delay-correct-val = Delay.delay-correct-val
 globalize-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → ⟦ M ⟧₄ ρ₀ ≃ ⟦ globalize M ⟧₅
 globalize-correct = Globalize.globalize-correct
 
-rco-correct : ∀ (P : Clos5ᵀ.Program) → ⟦ ⌜ rco-program P ⌝ₚ ⟧₅ ≃ ⟦ P ⟧₅
+rco-correct : ∀ (P : Clos5ᵀ.Program) → ⟦ P ⟧₅ ≃ ⟦ ⌜ rco-program P ⌝ₚ ⟧₅
 rco-correct = RCO.rco-correct
 
-lift-locals-correct : ∀ (P : Monᵀ.Program) → ⟦ lift-program P ⟧ᵢ ≃ ⟦ ⌜ P ⌝ₚ ⟧₅
+lift-locals-correct : ∀ (P : Monᵀ.Program) → ⟦ ⌜ P ⌝ₚ ⟧₅ ≃ ⟦ lift-program P ⟧ᵢ
 lift-locals-correct = LiftLocals.lift-locals-correct
 
-explicate-correct : ∀ (P : Impᵀ.Program) → ⟦ explicate P ⟧ᶜ ≃ ⟦ P ⟧ᵢ
+explicate-correct : ∀ (P : Impᵀ.Program) → ⟦ P ⟧ᵢ ≃ ⟦ explicate P ⟧ᶜ
 explicate-correct = Explicate.explicate-correct
 
 {- two meanings err together, hold the same constants, and hold a value
@@ -158,7 +158,7 @@ Same : 𝒫 Value → 𝒫 Value → Set
 Same D E = ((ω ∈ D) ⇔ (ω ∈ E)) × (∀ {B} (c : base-rep B) → ((const c ∈ D) ⇔ (const c ∈ E))) × (val∈ D ⇔ val∈ E)
 
 {- for every CFGᵀ program -}
-select-correct : ∀ (P : CFGᵀ.Program) → ⟦ select P ⟧ₜ ≃ ⟦ P ⟧ᶜ
+select-correct : ∀ (P : CFGᵀ.Program) → ⟦ P ⟧ᶜ ≃ ⟦ select P ⟧ₜ
 select-correct = Select.select-correct
 
 {- The whole compiler, for closed programs -------------------------------------}

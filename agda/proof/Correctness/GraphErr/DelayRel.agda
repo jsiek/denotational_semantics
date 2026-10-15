@@ -2,16 +2,16 @@
 
   The relation of the backward (reflect) direction of the correctness of
   typed delay (Clos3ᵀ → Clos4ᵀ) in the graph model with errors, as in
-  Untyped/proof/Correctness/GraphErr/DelayRel.agda: indexed by finite lists of
-  target observations (by their depth), since a target closure is a set
-  of pairs whose calls combine the codes and environments of several
-  pairs (Calls). A value of type Any may be a closure, so the relation
+  Untyped/proof/Correctness/GraphErr/DelayRel.agda: R D V' relates a source
+  set D to a finite list V' of target observations, by recursion on the
+  depth of V', since a target closure is a set of pairs whose calls
+  combine the codes and environments of several pairs (Calls). A value of type Any may be a closure, so the relation
   cannot be by recursion on types: Any makes the types recursive.
 
   What the types remove: the source application has no check of its
   operator, and the target call no late check, so a target closure is
   related only by its applications (app-obs); kinds (kind-obs, where a
-  closure has the kind of a function, kind₄) matter only to project, the one check (R-checkₗ,
+  closure has the kind of a function, kind₄) matter only to project, the one check (R-checkᵣ,
   bad-reflect, R-restrict).
 
 -}
@@ -153,18 +153,18 @@ Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.
 
 {- The relation ---------------------------------------------------------------}
 
-record Obs (Q : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫 Value) : Set₁ where
+record Obs (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
   field
     err-obs : ω ⋵ V → ω ∈ D
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     kind-obs : ∀ d → d ⋵ V → d ≢ ω → Σ[ s ∈ Value ] s ∈ ⌊ D ⌋ × kind s ≡ kind₄ (kind d)
-    app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q U E → Q W (D ● E)
-    tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q W (Untag t D)
+    app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
+    tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q (Untag t D) W
 
-Obs-map : ∀ {k j Q₁ Q₂ V D} → Bnd (suc k) V → Bnd (suc j) V
-  → (∀ {W E} → Bnd k W → Bnd j W → Q₁ W E → Q₂ W E)
-  → (∀ {W E} → Bnd j W → Bnd k W → Q₂ W E → Q₁ W E)
-  → Obs Q₁ V D → Obs Q₂ V D
+Obs-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
+  → (∀ {E W} → Bnd k W → Bnd j W → Q₁ E W → Q₂ E W)
+  → (∀ {E W} → Bnd j W → Bnd k W → Q₂ E W → Q₁ E W)
+  → Obs Q₁ D V → Obs Q₂ D V
 Obs-map bk bj to from o = record
   { err-obs = err-obs ; const-obs = const-obs ; kind-obs = kind-obs
   ; app-obs = λ cs E cE gU rU → to (Bnd-Calls-apps bk cs) (Bnd-Calls-apps bj cs)
@@ -174,17 +174,17 @@ Obs-map bk bj to from o = record
   where open Obs o
 
 private
-  R′ : ℕ → List Value → 𝒫 Value → Set₁
-  R′ zero V D = pTrue
-  R′ (suc k) V D = Obs (R′ k) V D
+  R′ : ℕ → 𝒫 Value → List Value → Set₁
+  R′ zero D V = pTrue
+  R′ (suc k) D V = Obs (R′ k) D V
 
-R : List Value → 𝒫 Value → Set₁
-R V D = R′ (suc (depths V)) V D
+R : 𝒫 Value → List Value → Set₁
+R D V = R′ (suc (depths V)) D V
 
 private
-  R′-∅ : ∀ k {V D} → mem V ⊆ ∅ → R′ k V D
+  R′-∅ : ∀ k {D V} → mem V ⊆ ∅ → R′ k D V
   R′-∅ zero _ = ptt
-  R′-∅ (suc k) {V} V⊆∅ = record
+  R′-∅ (suc k) {V = V} V⊆∅ = record
     { err-obs = λ ω∈ → ⊥-elim (V⊆∅ _ ω∈)
     ; const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
     ; kind-obs = λ d d∈ _ → ⊥-elim (V⊆∅ _ d∈)
@@ -192,9 +192,9 @@ private
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  R′-data : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k V D
+  R′-data : ∀ k {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k D V
   R′-data zero _ _ = ptt
-  R′-data (suc k) {V} V⊆ fl = record
+  R′-data (suc k) {V = V} V⊆ fl = record
     { err-obs = λ ω∈ → V⊆ _ ω∈
     ; const-obs = λ c c∈ → V⊆ _ c∈
     ; kind-obs = λ d d∈ d≢ → ⟨ d , ⟨ ⟨ V⊆ d d∈ , d≢ ⟩ , data-kind d (fl d d∈) ⟩ ⟩
@@ -205,45 +205,45 @@ private
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  R′-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R′ k V D₁ → R′ k V D₂
+  R′-mono : ∀ k {D₁ D₂ V} → D₁ ⊆ D₂ → R′ k D₁ V → R′ k D₂ V
   R′-mono zero _ _ = ptt
   R′-mono (suc k) D⊆ r = record
     { err-obs = λ ω∈ → D⊆ _ (err-obs ω∈)
     ; const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
     ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , k ⟩ ⟩ = kind-obs d d∈ d≢ in ⟨ s , ⟨ ⌊⌋-mono D⊆ s s∈ , k ⟩ ⟩
-   
+
     ; app-obs = λ cs E cE gU rU → R′-mono k (●-mono-l D⊆) (app-obs cs E cE gU rU)
     ; tag-obs = λ t W W⊆ → R′-mono k (λ d → D⊆ (tag t d)) (tag-obs t W W⊆)
     }
     where open Obs r
 
-  R′-irr : ∀ k j {V D} → Bnd k V → Bnd j V → R′ k V D → R′ j V D
+  R′-irr : ∀ k j {D V} → Bnd k V → Bnd j V → R′ k D V → R′ j D V
   R′-irr k zero _ _ _ = ptt
   R′-irr zero (suc j) bk _ _ = R′-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
     where <0 : ∀ {n} → n < 0 → ⊥
           <0 ()
   R′-irr (suc k) (suc j) bk bj = Obs-map bk bj (R′-irr k j) (R′-irr j k)
 
-unfold : ∀ {V D} → R V D → Obs R V D
-unfold {V} = Obs-map bV bV (λ b _ → R′-irr _ _ b (Bnd-depths _)) (λ _ b → R′-irr _ _ (Bnd-depths _) b)
+unfold : ∀ {D V} → R D V → Obs R D V
+unfold {V = V} = Obs-map bV bV (λ b _ → R′-irr _ _ b (Bnd-depths _)) (λ _ b → R′-irr _ _ (Bnd-depths _) b)
   where bV = Bnd-depths V
 
-fold : ∀ {V D} → Obs R V D → R V D
-fold {V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
+fold : ∀ {D V} → Obs R D V → R D V
+fold {V = V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
   where bV = Bnd-depths V
 
-R-∅ : ∀ {V D} → mem V ⊆ ∅ → R V D
+R-∅ : ∀ {D V} → mem V ⊆ ∅ → R D V
 R-∅ = R′-∅ _
 
-R-data : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R V D
+R-data : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R D V
 R-data = R′-data _
 
-R-mono : ∀ {V D₁ D₂} → D₁ ⊆ D₂ → R V D₁ → R V D₂
+R-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → R D₁ V → R D₂ V
 R-mono = R′-mono _
 
 {- the values of V₂ are in V₁, and its ω is in D -}
-R-sub : ∀ {V₁ V₂ D} → (∀ w → w ⋵ V₂ → w ≢ ω → w ⋵ V₁) → (ω ⋵ V₂ → ω ∈ D) → R V₁ D → R V₂ D
-R-sub {V₁} {V₂} sub err r = fold record
+R-sub : ∀ {D V₁ V₂} → (∀ w → w ⋵ V₂ → w ≢ ω → w ⋵ V₁) → (ω ⋵ V₂ → ω ∈ D) → R D V₁ → R D V₂
+R-sub {D} {V₁} {V₂} sub err r = fold record
   { err-obs = err
   ; const-obs = λ c c∈ → const-obs c (sub _ c∈ (λ ()))
   ; kind-obs = λ d d∈ d≢ → kind-obs d (sub d d∈ d≢) d≢
@@ -252,32 +252,32 @@ R-sub {V₁} {V₂} sub err r = fold record
   }
   where open Obs (unfold r)
 
-R-⊆ : ∀ {V₁ V₂ D} → mem V₁ ⊆ mem V₂ → R V₂ D → R V₁ D
+R-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → R D V₂ → R D V₁
 R-⊆ s r = R-sub (λ w w∈ _ → s w w∈) (λ ω∈ → Obs.err-obs (unfold r) (s ω ω∈)) r
 
 {- what a relation gives, for one target value -}
-R-err : ∀ {D} → R (ω ∷ []) D → ω ∈ D
+R-err : ∀ {D} → R D (ω ∷ []) → ω ∈ D
 R-err r = Obs.err-obs (unfold r) (here refl)
 
-R-conv : ∀ {d D} → R (d ∷ []) D → d ≢ ω → Conv D
+R-conv : ∀ {D d} → R D (d ∷ []) → d ≢ ω → Conv D
 R-conv r d≢ = let ⟨ s , ⟨ s∈ , _ ⟩ ⟩ = Obs.kind-obs (unfold r) _ (here refl) d≢ in ⟨ s , s∈ ⟩
 
 {- Reflecting errors through the monad -------------------------------------------}
 
 {- the values of V are in A, and its ω in D -}
-R-cases : ∀ {V A D} → (∀ w → w ⋵ V → w ≢ ω → w ∈ A) → (ω ⋵ V → ω ∈ D)
-  → (∀ W → mem W ⊆ A → R W D) → R V D
-R-cases {V} vA err h =
+R-cases : ∀ {D V A} → (∀ w → w ⋵ V → w ≢ ω → w ∈ A) → (ω ⋵ V → ω ∈ D)
+  → (∀ W → mem W ⊆ A → R D W) → R D V
+R-cases {V = V} vA err h =
   R-sub (dropω-keep V) err (h (dropω V) (λ w w∈ → vA w (dropω-⊆ V w w∈) (dropω-noω V w w∈)))
 
-{- the target lists of A' are related to B -}
+{- B is related to the target lists of A' -}
 Rel : 𝒫 Value → 𝒫 Value → Set₁
-Rel A' B = ∀ W → mem W ⊆ A' → R W B
+Rel B A' = ∀ W → mem W ⊆ A' → R B W
 
-{- a target bind is related to D when its errors are errors of D and its
+{- D is related to a target bind when its errors are errors of D and its
    continuation, on the values of its operand, is related to D -}
-R-bindₗ : ∀ {A' F' D} → (ω ∈ A' → ω ∈ D) → (Conv A' → Rel (F' ⌊ A' ⌋) D) → Rel (A' ≫= F') D
-R-bindₗ {A'} {F'} {D} err hF V V⊆ = R-cases {A = λ w → Conv A' × w ∈ F' ⌊ A' ⌋} vals errs go
+R-bindᵣ : ∀ {D A' F'} → (ω ∈ A' → ω ∈ D) → (Conv A' → Rel D (F' ⌊ A' ⌋)) → Rel D (A' ≫= F')
+R-bindᵣ {D} {A'} {F'} err hF V V⊆ = R-cases {A = λ w → Conv A' × w ∈ F' ⌊ A' ⌋} vals errs go
   where
   vals : ∀ w → w ⋵ V → w ≢ ω → Conv A' × w ∈ F' ⌊ A' ⌋
   vals w w∈ w≢ with V⊆ w w∈
@@ -287,29 +287,29 @@ R-bindₗ {A'} {F'} {D} err hF V V⊆ = R-cases {A = λ w → Conv A' × w ∈ F
   errs ω∈ with V⊆ ω ω∈
   ... | inj₁ ⟨ _ , ω∈' ⟩ = err ω∈'
   ... | inj₂ ⟨ c , ω∈F ⟩ = R-err (hF c (ω ∷ []) (single⊆ ω∈F))
-  go : ∀ W → mem W ⊆ (λ w → Conv A' × w ∈ F' ⌊ A' ⌋) → R W D
+  go : ∀ W → mem W ⊆ (λ w → Conv A' × w ∈ F' ⌊ A' ⌋) → R D W
   go [] _ = R-∅ (λ _ ())
   go (w ∷ W) W⊆ = hF (proj₁ (W⊆ w (here refl))) (w ∷ W) (λ x x∈ → proj₂ (W⊆ x x∈))
 
 {- a target bind reflects to a source bind: the operand A' to A, and the
    continuation F' to F on their values -}
-R-bind : ∀ {A' A F' F} → Con A → Rel A' A
-  → (Conv A' → Conv A → Rel ⌊ A' ⌋ ⌊ A ⌋ → Rel (F' ⌊ A' ⌋) (F ⌊ A ⌋))
-  → Rel (A' ≫= F') (A ≫= F)
-R-bind {A'} {A} {F'} {F} cA hA hF =
-  R-bindₗ {A'} {F'} {A ≫= F} (λ ω∈ → inj₁ ⟨ refl , R-err (hA (ω ∷ []) (single⊆ ω∈)) ⟩)
-          (λ c W W⊆ → R-mono (λ x x∈ → inj₂ ⟨ cv c , x∈ ⟩) (hF c (cv c) (hX c) W W⊆))
+R-bind : ∀ {A A' F F'} → Con A → Rel A A'
+  → (Conv A → Conv A' → Rel ⌊ A ⌋ ⌊ A' ⌋ → Rel (F ⌊ A ⌋) (F' ⌊ A' ⌋))
+  → Rel (A ≫= F) (A' ≫= F')
+R-bind {A} {A'} {F} {F'} cA hA hF =
+  R-bindᵣ {A ≫= F} {A'} {F'} (λ ω∈ → inj₁ ⟨ refl , R-err (hA (ω ∷ []) (single⊆ ω∈)) ⟩)
+          (λ c W W⊆ → R-mono (λ x x∈ → inj₂ ⟨ cv c , x∈ ⟩) (hF (cv c) c (hX c) W W⊆))
   where
   cv : Conv A' → Conv A
   cv ⟨ d , ⟨ d∈ , d≢ ⟩ ⟩ = R-conv (hA (d ∷ []) (single⊆ d∈)) d≢
-  hX : ∀ c → Rel ⌊ A' ⌋ ⌊ A ⌋
+  hX : ∀ c → Rel ⌊ A ⌋ ⌊ A' ⌋
   hX c W W⊆ = R-mono (⌊⌋-clean (con-clean cA (cv c))) (hA W (λ w w∈ → proj₁ (W⊆ w w∈)))
 
 {- Project ---------------------------------------------------------------------}
 
-{- a target check is related to D when its failure is an error of D -}
-R-checkₗ : ∀ {k' X' A' D} → (Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k' → ω ∈ D) → Rel A' D → Rel (checkedᵠ kind₄ k' X' A') D
-R-checkₗ {k'} {X'} {A'} {D} bad hA V V⊆ = R-cases {A = A'} vals err hA
+{- D is related to a target check when its failure is an error of D -}
+R-checkᵣ : ∀ {D k' X' A'} → (Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k' → ω ∈ D) → Rel D A' → Rel D (checkedᵠ kind₄ k' X' A')
+R-checkᵣ {D} {k'} {X'} {A'} bad hA V V⊆ = R-cases {A = A'} vals err hA
   where
   vals : ∀ w → w ⋵ V → w ≢ ω → w ∈ A'
   vals w w∈ w≢ with V⊆ w w∈
@@ -321,7 +321,7 @@ R-checkₗ {k'} {X'} {A'} {D} bad hA V V⊆ = R-cases {A = A'} vals err hA
   ... | inj₁ ⟨ _ , b ⟩ = bad b
 
 {- a target value of the wrong kind gives a source value of the wrong kind -}
-bad-reflect : ∀ {k X' X} → Clean X' → Rel X' X → Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k → Bad k X
+bad-reflect : ∀ {k X X'} → Clean X' → Rel X X' → Σ[ d ∈ Value ] d ∈ X' × kind₄ (kind d) ≢ k → Bad k X
 bad-reflect clX hX ⟨ d , ⟨ d∈ , dk ⟩ ⟩ with Obs.kind-obs (unfold (hX _ (single⊆ d∈))) _ (here refl) (clX d d∈)
 ... | ⟨ s , ⟨ s∈ , sk ⟩ ⟩ = ⟨ s , ⟨ proj₁ s∈ , (λ eq → dk (trans (sym sk) eq)) ⟩ ⟩
 
@@ -331,7 +331,7 @@ tag-kind leftT = refl
 tag-kind rightT = refl
 
 {- a target tuple entry for a component gives a source one -}
-hit-reflect : ∀ t {X' X} → Rel X' X → hit t X' → hit t X
+hit-reflect : ∀ t {X X'} → Rel X X' → hit t X' → hit t X
 hit-reflect (ttup n i) h ⟨ e , e∈ ⟩ with ω? e
 ... | inj₁ refl = ⟨ ω , R-err (Obs.tag-obs (unfold (h _ (single⊆ e∈))) (tupT i) (ω ∷ []) (λ { _ (here refl) → here refl })) ⟩
 ... | inj₂ e≢ = let ⟨ s , s∈ ⟩ = R-conv (Obs.tag-obs (unfold (h _ (single⊆ e∈))) (tupT i) (e ∷ []) (λ { _ (here refl) → here refl })) e≢
@@ -340,9 +340,9 @@ hit-reflect tfun h _ = tt
 hit-reflect tsum h _ = tt
 hit-reflect tint h _ = tt
 
-{- the target values that project keeps are related to the source ones -}
-R-restrict : ∀ t {X' X} → Rel X' X → Rel (keep kind₄ t X') (keep (λ k → k) t X)
-R-restrict t {X'} {X} h W W⊆ = fold record
+{- the source values that project keeps are related to the target ones -}
+R-restrict : ∀ t {X X'} → Rel X X' → Rel (keep (λ k → k) t X) (keep kind₄ t X')
+R-restrict t {X} {X'} h W W⊆ = fold record
   { err-obs = λ ω∈ → ⟨ err-obs ω∈ , ⟨ hitX ω∈ , proj₂ (proj₂ (W⊆ ω ω∈)) ⟩ ⟩
   ; const-obs = λ c c∈ → ⟨ const-obs c c∈ , ⟨ hitX c∈ , proj₂ (proj₂ (W⊆ _ c∈)) ⟩ ⟩
   ; kind-obs = λ d d∈ d≢ → let ⟨ s , ⟨ s∈ , e ⟩ ⟩ = kind-obs d d∈ d≢ in
@@ -354,17 +354,17 @@ R-restrict t {X'} {X} h W W⊆ = fold record
   k = kindᶠ (flat t)
   hitX : ∀ {d} → d ⋵ W → hit t X
   hitX d∈ = hit-reflect t h (proj₁ (proj₂ (W⊆ _ d∈)))
-  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → R U E → R W₂ (keep (λ k → k) t X ● E)
+  app : ∀ {U W₂} → Calls W U W₂ → ∀ E → Con E → Con (mem U) → R E U → R (keep (λ k → k) t X ● E) W₂
   app {W₂ = []} _ _ _ _ _ = R-∅ (λ _ ())
   app {W₂ = w ∷ W₂} cs E cE cU rU =
     R-mono (●-mono-e {X} {keep (λ k → k) t X} (λ V x e∈ → ⟨ e∈ , ⟨ hitX c∈ , proj₂ (proj₂ (W⊆ _ c∈)) ⟩ ⟩))
       (app-obs cs E cE cU rU)
     where c∈ = CarEntry.car∈ (proj₁ (proj₂ (Calls.results cs w (here refl))))
-  tg : ∀ t' W' → mem W' ⊆ Untag t' (mem W) → R W' (Untag t' (keep (λ k → k) t X))
+  tg : ∀ t' W' → mem W' ⊆ Untag t' (mem W) → R (Untag t' (keep (λ k → k) t X)) W'
   tg t' [] _ = R-∅ (λ _ ())
   tg t' (w ∷ W') W'⊆ =
     R-mono (λ d d∈ → ⟨ d∈ , ⟨ hitX (W'⊆ w (here refl)) , trans (tag-kind t') (proj₂ (proj₂ (W⊆ _ (W'⊆ w (here refl))))) ⟩ ⟩) (tag-obs t' (w ∷ W') W'⊆)
 
 {- the initial environment of a closed program -}
-Init-R : ∀ {V} → mem V ⊆ ⌈ ω ⌉ → R V ⌈ ω ⌉
+Init-R : ∀ {V} → mem V ⊆ ⌈ ω ⌉ → R ⌈ ω ⌉ V
 Init-R V⊆ = R-data V⊆ (λ v v∈ → flat-data (Init-flat (V⊆ v v∈)))

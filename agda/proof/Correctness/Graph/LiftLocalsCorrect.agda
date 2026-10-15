@@ -5,7 +5,7 @@
   is the meaning of the input (its embedding into Clos5ᵀ) given to the
   continuation.
 
-    lift-sem : ⟦ lift e ⟧ᴷ T σ K⟨ k ⟩ ≃ K⟨ k ⟩ (⟦ ⌜ e ⌝ ⟧[ T' ] σ)
+    lift-sem : K⟨ k ⟩ (⟦ ⌜ e ⌝ ⟧[ T ] σ) ≃ ⟦ lift e ⟧ᴷ T' σ K⟨ k ⟩
 
   for tables that agree and a consistent frame. Every continuation of
   the Impᵀ semantics is K⟨ k ⟩: the end of a body (nothing) or the rest
@@ -45,18 +45,18 @@ open import Data.Vec using (Vec; []; _∷_)
 open import Level using () renaming (lift to up)
 open import Relation.Nullary using (yes; no)
 
-module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {n} (f : Σ ∋ n) → T f ≃ T' f) where
+module _ {Σ} {T T' : Table Σ} (cT : ConT T) (TT : ∀ {n} (f : Σ ∋ n) → T f ≃ T' f) where
 
-  atm-≃ : ∀ {Δ A} (a : Atm Σ Δ A) σ → 𝒜 a T σ ≃ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ
+  atm-≃ : ∀ {Δ A} (a : Atm Σ Δ A) σ → ⟦ ⌜ a ⌝ᵃ ⟧[ T ] σ ≃ 𝒜 a T' σ
   atm-≃ (var x) σ = ≃-refl
   atm-≃ (lit B c) σ = ≃-refl
   atm-≃ (ref f) σ = TT f
 
-  atms-≃ : ∀ {Δ n} (as : Vec (Atm Σ Δ Any) n) σ i → nthD (𝒜s as T σ) i ≃ nthD (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ) i
+  atms-≃ : ∀ {Δ n} (as : Vec (Atm Σ Δ Any) n) σ i → nthD (⟦ ⌜ as ⌝ᵛ ⟧s[ T ] σ) i ≃ nthD (𝒜s as T' σ) i
   atms-≃ (a ∷ as) σ zero = atm-≃ a σ
   atms-≃ (a ∷ as) σ (suc i) = atms-≃ as σ i
 
-  lift-sem : ∀ {Δ A} (e : M.Exp Σ Δ A) σ k → Con-env σ → ⟦ lift e ⟧ᴷ T σ K⟨ k ⟩ ≃ K⟨ k ⟩ (⟦ ⌜ e ⌝ ⟧[ T' ] σ)
+  lift-sem : ∀ {Δ A} (e : M.Exp Σ Δ A) σ k → Con-env σ → K⟨ k ⟩ (⟦ ⌜ e ⌝ ⟧[ T ] σ) ≃ ⟦ lift e ⟧ᴷ T' σ K⟨ k ⟩
   lift-sem (M.atm a) σ k C = K-≃ k (atm-≃ a σ)
   lift-sem (M.pack a b) σ k C = K-≃ k (mono-≃ pair-mono ⟨ up (atm-≃ a σ) , ⟨ up (atm-≃ b σ) , ptt ⟩ ⟩)
   lift-sem (M.callc a b) σ k C = K-≃ k (mono-≃ (mono (callc-good {⊤})) ⟨ up (atm-≃ a σ) , ⟨ up (atm-≃ b σ) , ptt ⟩ ⟩)
@@ -68,22 +68,22 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {n} (f : Σ ∋ n) → 
   lift-sem (M.inject G a) σ k C = K-≃ k (atm-≃ a σ)
   lift-sem (M.project t a) σ k C = K-≃ k (project-≃ fun₄ t (atm-≃ a σ))
   lift-sem (M.let′ e₁ e₂) σ k C =
-    ≃-trans (lift-sem e₁ σ (just λ X → ⟦ lift e₂ ⟧ᴷ T (X • σ) K⟨ k ⟩) C)
-    (≃-trans (⋆-≃ (Λ-≃ {λ X → ⟦ lift e₂ ⟧ᴷ T (X • σ) K⟨ k ⟩} {λ X → K⟨ k ⟩ (⟦ ⌜ e₂ ⌝ ⟧[ T' ] (X • σ))}
+    ≃-trans (let-law k (con cT ⌜ e₁ ⌝ C) λ X⊆ → proj₁ (ok cT ⌜ e₂ ⌝) (•-~ _⊆_ (λ _ _ z → z) X⊆))
+    (≃-trans (⋆-≃ (Λ-≃ {λ X → K⟨ k ⟩ (⟦ ⌜ e₂ ⌝ ⟧[ T ] (X • σ))} {λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩}
                      λ V _ c → lift-sem e₂ (mem V • σ) k (Con-• (≈⇒Con c) C)) ≃-refl)
-             (≃-sym (let-law k (con cT ⌜ e₁ ⌝ C) λ X⊆ → proj₁ (ok cT ⌜ e₂ ⌝) (•-~ _⊆_ (λ _ _ z → z) X⊆))))
+             (lift-sem e₁ σ (just λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩) C))
   lift-sem (M.case a e₁ e₂) σ k C =
-    ≃-trans (𝒞-≃ {F = λ X → ⟦ lift e₁ ⟧ᴷ T (X • σ) K⟨ k ⟩} {λ X → K⟨ k ⟩ (⟦ ⌜ e₁ ⌝ ⟧[ T' ] (X • σ))}
-                  {λ X → ⟦ lift e₂ ⟧ᴷ T (X • σ) K⟨ k ⟩} {λ X → K⟨ k ⟩ (⟦ ⌜ e₂ ⌝ ⟧[ T' ] (X • σ))}
+    ≃-trans (case-law k (con cT ⌜ M.atm a ⌝ C) (mono′ e₁) (mono′ e₂))
+            (𝒞-≃ {F = λ X → K⟨ k ⟩ (⟦ ⌜ e₁ ⌝ ⟧[ T ] (X • σ))} {λ X → ⟦ lift e₁ ⟧ᴷ T' (X • σ) K⟨ k ⟩}
+                  {λ X → K⟨ k ⟩ (⟦ ⌜ e₂ ⌝ ⟧[ T ] (X • σ))} {λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩}
                   (atm-≃ a σ) (λ v V c → lift-sem e₁ _ k (Con-• (≈⇒Con c) C)) (λ v V c → lift-sem e₂ _ k (Con-• (≈⇒Con c) C)))
-            (≃-sym (case-law k (con cT ⌜ M.atm a ⌝ C) (mono′ e₁) (mono′ e₂)))
     where mono′ = λ (e : M.Exp Σ (Any ∷ _) Any) {X} {X'} X⊆ → proj₁ (ok cT ⌜ e ⌝) {X • σ} {X' • σ} (•-~ _⊆_ (λ _ _ z → z) X⊆)
 
 {- Programs ---------------------------------------------------------------------------}
 
 {- the table of the output means what the table of the input does -}
 table-lift : ∀ {Σ ns} (ds : All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) ns) {n} (f : Σ ∋ n)
-  → tables I.code′ (All-map lift ds) f ≃ tables code′ (All-map ⌜_⌝ ds) f
+  → tables code′ (All-map ⌜_⌝ ds) f ≃ tables I.code′ (All-map lift ds) f
 table-lift [] f = ≃-refl
 table-lift {ns = _ ∷ ns} (d ∷ ds) f with lvl f ≟ length ns
 ... | yes _ = Λ-≃ λ V _ cV → Λ-≃ λ U _ cU →
@@ -91,6 +91,6 @@ table-lift {ns = _ ∷ ns} (d ∷ ds) f with lvl f ≟ length ns
     (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
 ... | no _ = table-lift ds f
 
-lift-locals-correct : ∀ (P : M.Program) → I.⟦ lift-program P ⟧ₚ ≃ ⟦ ⌜ P ⌝ₚ ⟧ₚ
+lift-locals-correct : ∀ (P : M.Program) → ⟦ ⌜ P ⌝ₚ ⟧ₚ ≃ I.⟦ lift-program P ⟧ₚ
 lift-locals-correct (M.program ds e) =
   lift-sem (table-con (All-map ⌜_⌝ ds)) (table-lift ds) e _ nothing (λ _ → Con-⌈⌉ ω)

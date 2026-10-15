@@ -2,9 +2,9 @@
 
   The relation of the backward (reflect) direction of typed delay
   (Clos3ᵀ → Clos4ᵀ) in the graph model, as for untyped delay
-  (Untyped/proof/Correctness/Graph/DelayFiniteRel.agda): R V' D relates a finite
-  list V' of target observations to a source set D, by recursion on the
-  depth of V' (with fuel), since a target closure is a set of pairs whose
+  (Untyped/proof/Correctness/Graph/DelayFiniteRel.agda): R D V' relates a
+  source set D to a finite list V' of target observations, by recursion on
+  the depth of V' (with fuel), since a target closure is a set of pairs whose
   calls combine the codes and environments of several pairs (Calls).
   The types add one clause, for project: a pair (a target closure) in V'
   is reflected by a source function (fun-obs).
@@ -97,18 +97,18 @@ Bnd-Calls-apps bV cs w w∈ = proj₂ (Bnd-CarEntry bV (proj₁ (proj₂ (Calls.
 
 {- The relation ---------------------------------------------------------------}
 
-record Obs (Q : List Value → 𝒫 Value → Set₁) (V : List Value) (D : 𝒫 Value) : Set₁ where
+record Obs (Q : 𝒫 Value → List Value → Set₁) (D : 𝒫 Value) (V : List Value) : Set₁ where
   field
     const-obs : ∀ {B} (c : base-rep B) → const c ⋵ V → const c ∈ D
     nonempty-obs : V ≢ [] → nonempty D
     fun-obs : ∀ {u v} → ⦅ u , v ⦆ ⋵ V → Σ[ d ∈ Value ] d ∈ D × fun₂ d
-    app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q U E → Q W (D ● E)
-    tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q W (Untag t D)
+    app-obs : ∀ {U W} → Calls V U W → ∀ E → Con E → Con (mem U) → Q E U → Q (D ● E) W
+    tag-obs : ∀ t W → mem W ⊆ Untag t (mem V) → Q (Untag t D) W
 
-Obs-map : ∀ {k j Q₁ Q₂ V D} → Bnd (suc k) V → Bnd (suc j) V
-  → (∀ {W E} → Bnd k W → Bnd j W → Q₁ W E → Q₂ W E)
-  → (∀ {W E} → Bnd j W → Bnd k W → Q₂ W E → Q₁ W E)
-  → Obs Q₁ V D → Obs Q₂ V D
+Obs-map : ∀ {k j Q₁ Q₂ D V} → Bnd (suc k) V → Bnd (suc j) V
+  → (∀ {E W} → Bnd k W → Bnd j W → Q₁ E W → Q₂ E W)
+  → (∀ {E W} → Bnd j W → Bnd k W → Q₂ E W → Q₁ E W)
+  → Obs Q₁ D V → Obs Q₂ D V
 Obs-map bk bj to from o = record
   { const-obs = const-obs
   ; nonempty-obs = nonempty-obs
@@ -120,17 +120,17 @@ Obs-map bk bj to from o = record
   where open Obs o
 
 private
-  R′ : ℕ → List Value → 𝒫 Value → Set₁
-  R′ zero V D = pTrue
-  R′ (suc k) V D = Obs (R′ k) V D
+  R′ : ℕ → 𝒫 Value → List Value → Set₁
+  R′ zero D V = pTrue
+  R′ (suc k) D V = Obs (R′ k) D V
 
-R : List Value → 𝒫 Value → Set₁
-R V D = R′ (suc (depths V)) V D
+R : 𝒫 Value → List Value → Set₁
+R D V = R′ (suc (depths V)) D V
 
 private
-  R′-∅ : ∀ k {V D} → mem V ⊆ ∅ → R′ k V D
+  R′-∅ : ∀ k {D V} → mem V ⊆ ∅ → R′ k D V
   R′-∅ zero _ = ptt
-  R′-∅ (suc k) {V} V⊆∅ = record
+  R′-∅ (suc k) {V = V} V⊆∅ = record
     { const-obs = λ c c∈ → ⊥-elim (V⊆∅ _ c∈)
     ; nonempty-obs = λ ne → ⊥-elim (proj₂ (ne-mem ne V⊆∅))
     ; fun-obs = λ p∈ → ⊥-elim (V⊆∅ _ p∈)
@@ -138,9 +138,9 @@ private
     ; tag-obs = λ t W W⊆ → R′-∅ k (λ d d∈ → V⊆∅ _ (W⊆ d d∈))
     }
 
-  R′-data : ∀ k {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k V D
+  R′-data : ∀ k {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R′ k D V
   R′-data zero _ _ = ptt
-  R′-data (suc k) {V} V⊆ fl = record
+  R′-data (suc k) {V = V} V⊆ fl = record
     { const-obs = λ c c∈ → V⊆ _ c∈
     ; nonempty-obs = λ ne → ne-mem ne V⊆
     ; fun-obs = λ p∈ → ⊥-elim (noflat (fl _ p∈))
@@ -151,7 +151,7 @@ private
     where noflat : ∀ {u v} → Data ⦅ u , v ⦆ → ⊥
           noflat ()
 
-  R′-mono : ∀ k {V D₁ D₂} → D₁ ⊆ D₂ → R′ k V D₁ → R′ k V D₂
+  R′-mono : ∀ k {D₁ D₂ V} → D₁ ⊆ D₂ → R′ k D₁ V → R′ k D₂ V
   R′-mono zero _ _ = ptt
   R′-mono (suc k) D⊆ r = record
     { const-obs = λ c c∈ → D⊆ _ (const-obs c c∈)
@@ -162,34 +162,34 @@ private
     }
     where open Obs r
 
-  R′-irr : ∀ k j {V D} → Bnd k V → Bnd j V → R′ k V D → R′ j V D
+  R′-irr : ∀ k j {D V} → Bnd k V → Bnd j V → R′ k D V → R′ j D V
   R′-irr k zero _ _ _ = ptt
   R′-irr zero (suc j) bk _ _ = R′-∅ (suc j) (λ v v∈ → <0 (bk v v∈))
     where <0 : ∀ {n} → n < 0 → ⊥
           <0 ()
   R′-irr (suc k) (suc j) bk bj = Obs-map bk bj (R′-irr k j) (R′-irr j k)
 
-unfold : ∀ {V D} → R V D → Obs R V D
-unfold {V} = Obs-map bV bV (λ b _ → R′-irr _ _ b (Bnd-depths _)) (λ _ b → R′-irr _ _ (Bnd-depths _) b)
+unfold : ∀ {D V} → R D V → Obs R D V
+unfold {V = V} = Obs-map bV bV (λ b _ → R′-irr _ _ b (Bnd-depths _)) (λ _ b → R′-irr _ _ (Bnd-depths _) b)
   where bV = Bnd-depths V
 
-fold : ∀ {V D} → Obs R V D → R V D
-fold {V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
+fold : ∀ {D V} → Obs R D V → R D V
+fold {V = V} = Obs-map bV bV (λ _ b → R′-irr _ _ (Bnd-depths _) b) (λ b _ → R′-irr _ _ b (Bnd-depths _))
   where bV = Bnd-depths V
 
-R-∅ : ∀ {V D} → mem V ⊆ ∅ → R V D
+R-∅ : ∀ {D V} → mem V ⊆ ∅ → R D V
 R-∅ = R′-∅ _
 
-R-data : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R V D
+R-data : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Data v) → R D V
 R-data = R′-data _
 
-R-flat : ∀ {V D} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R V D
+R-flat : ∀ {D V} → mem V ⊆ D → (∀ v → v ⋵ V → Flat v) → R D V
 R-flat V⊆ fl = R′-data _ V⊆ (λ v v∈ → flat-data (fl v v∈))
 
-R-mono : ∀ {V D₁ D₂} → D₁ ⊆ D₂ → R V D₁ → R V D₂
+R-mono : ∀ {D₁ D₂ V} → D₁ ⊆ D₂ → R D₁ V → R D₂ V
 R-mono = R′-mono _
 
-R-⊆ : ∀ {V₁ V₂ D} → mem V₁ ⊆ mem V₂ → R V₂ D → R V₁ D
+R-⊆ : ∀ {D V₁ V₂} → mem V₁ ⊆ mem V₂ → R D V₂ → R D V₁
 R-⊆ V₁⊆V₂ r = fold record
   { const-obs = λ c c∈ → const-obs c (V₁⊆V₂ _ c∈)
   ; nonempty-obs = λ ne → nonempty-obs (ne-⊆ V₁⊆V₂ ne)
