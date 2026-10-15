@@ -4,6 +4,7 @@ audit surface.
 
 Run from the repository root:  python3 papers/PLDI-2027/loc.py
 For the untyped pipeline preserved in agda/Untyped/:  ... loc.py --untyped
+For the ISWIMμ pilot in agda/Mu/:  ... loc.py --mu
 
 A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
@@ -104,6 +105,20 @@ script fails if one proof reaches another proof's modules (of either
 pipeline), adequacy's, an example's or an experiment's, or if a module
 outside agda/Untyped/ imports one inside it.
 
+The ISWIMμ pilot (agda/Mu/, module prefix Mu.; sides 'mu-*', in no total,
+nor in any other table): a typed ISWIM with iso-recursive types and its
+closure-conversion passes (enclose, optimize, concretize, delay), in the
+graph model and the CEK machines, a parallel copy of the typed pipeline's
+languages, passes and proofs.  --mu prints its counts against the same
+rows of the typed pipeline (the semantics of ISWIMᵀ, Clos2ᵀ–Clos4ᵀ, the
+lemmas the passes share, and the four passes).  Its groups are checked as
+the others are (every module in one group), its two columns must not reach
+each other's modules nor a module of a proof of either pipeline (what both
+pipelines share, such as the meaning of the primitives and the small-step
+framework, they may use), and its infrastructure must import only
+infrastructure; it has no theorem statements, so it is not on the audit
+surface.
+
 The public theorem statements are new boilerplate (each restates a
 theorem of the proofs with its type), so they are not in the totals;
 they are in the audit-surface table, which gives, for each style, the
@@ -126,6 +141,8 @@ RD, RP, RC = A + 'Semantics/Reduction/', A + 'proof/Semantics/Reduction/', A + '
 GE, GEP, GEC = A + 'Semantics/GraphErr/', A + 'proof/Semantics/GraphErr/', A + 'proof/Correctness/GraphErr/'
 AP, GEA = A + 'proof/Adequacy/', A + 'proof/Adequacy/GraphErr/'
 W, WP = A + 'Framework/', A + 'proof/Framework/'
+MU = A + 'Mu/'
+MUP = MU + 'proof/'
 
 
 def u(p):
@@ -451,6 +468,23 @@ GROUPS = [
     ('uexp', 'graph model: direct Imp — lift locals', [u(GC) + 'LiftLocalsCorrect.agda']),
     ('uexp', 'graph model: direct Imp — explicate control', [u(GC) + 'ExplicateCorrect.agda']),
     ('uthm', 'theorem statements', [U + 'Theorems/*.agda']),
+
+    # --- the ISWIMμ pilot (agda/Mu/), in no total ------------------------------
+    ('mu-shared', 'syntax, languages, compiler passes', [MU + 'Language/*.agda', MU + 'Compiler/*.agda']),
+    ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating', [MU + 'Framework/*.agda']),
+    ('mu-den', 'semantics of the languages', [MU + 'Semantics/Graph/*.agda', MUP + 'Semantics/Graph/*.agda']),
+    ('mu-den', 'CC: enclose', [MUP + 'Correctness/Graph/EncloseCorrect.agda']),
+    ('mu-den', 'CC: optimize', [MUP + 'Correctness/Graph/OptimizeCorrect.agda']),
+    ('mu-den', 'CC: concretize', [MUP + 'Correctness/Graph/ConcretizeCorrect.agda']),
+    ('mu-den', 'CC: delay', [MUP + 'Correctness/Graph/Delay*.agda']),
+    ('mu-den', 'composition', [MUP + 'Correctness/Graph/CompilerCorrect.agda']),
+    ('mu-op', 'semantics of the languages', [MU + 'Semantics/CEK/*.agda']),
+    ('mu-op', 'CC: enclose', [MUP + 'Correctness/CEK/EncloseSim.agda']),
+    ('mu-op', 'CC: optimize', [MUP + 'Correctness/CEK/OptimizeSim.agda']),
+    ('mu-op', 'CC: concretize', [MUP + 'Correctness/CEK/ConcretizeSim.agda']),
+    ('mu-op', 'CC: delay', [MUP + 'Correctness/CEK/DelaySim.agda']),
+    ('mu-op', 'composition', [MUP + 'Correctness/CEK/PipelineSim.agda']),
+    ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
 ]
 
 ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'X86ᵀ', 'well-formedness of compiled programs', 'end to end',
@@ -553,12 +587,14 @@ def imports(path):
 
 
 def is_proof(f):
-    return f.startswith(A + 'proof/') or f.startswith(U + 'proof/')
+    return f.startswith(A + 'proof/') or f.startswith(U + 'proof/') or f.startswith(MUP)
 
 
 def unit(f):
     """The unit of a file: agda/X.agda for both agda/X.agda and its proof half
-    agda/proof/X.agda (likewise under agda/Untyped/)."""
+    agda/proof/X.agda (likewise under agda/Untyped/ and agda/Mu/)."""
+    if f.startswith(MUP):
+        return MU + f[len(MUP):]
     if f.startswith(U + 'proof/'):
         return U + f[len(U + 'proof/'):]
     if f.startswith(A + 'proof/'):
@@ -619,7 +655,7 @@ class Count:
             for s in sides_of(side):
                 counts[(s, gname)] = counts.get((s, gname), 0) + sum(code_lines(f) for f in files)
         every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
-                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda')
+                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda', MU + 'All.agda')
                  and f not in BUNDLES}
         missing = sorted(every - set(seen))
         if missing:
@@ -698,7 +734,7 @@ class Count:
         thm = set(TYPED['thm'].values()) | set(UNTYPED['thm'].values()) | {ASSURE_THM}
         if thm != {f for f, (side, _) in self.seen.items() if side in ('thm', 'uthm')}:
             sys.exit('the theorem files are not ' + ', '.join(sorted(thm)))
-        surface = {f for f in self.every if not is_proof(f)}
+        surface = {f for f in self.every if not is_proof(f) and not f.startswith(MU)}
         self.sgraph = {f: {g for g in self.fgraph[f] if g in surface} for f in surface}
         for f in sorted(surface - thm):
             bad = sorted(g for g in self.fgraph[f] if is_proof(g))
@@ -992,9 +1028,117 @@ def compare(c, T, Un):
     print()
 
 
+# --- the ISWIMμ pilot ------------------------------------------------------
+
+# the rows of the pilot, and the files of the typed pipeline it compares
+# with, for the graph model ('den') and the CEK machines ('op'): the
+# semantics of each language (its definitions and lemmas), the lemmas the
+# passes share, and the four passes.  The typed graph model's Ops (project,
+# fun₂/fun₄, the tables of Clos5ᵀ and later) and the CEK lemmas Common
+# (collecting a tuple's values with its length equation, Lock for project)
+# have no counterpart in the pilot.
+MU_ROWS = [
+    ('semantics: ISWIM', [G + 'Typed/ISWIM.agda'], [O + 'Typed/ISWIM.agda'],
+     [MU + 'Semantics/Graph/ISWIM.agda'], [MU + 'Semantics/CEK/ISWIM.agda']),
+    ('semantics: Clos2', [G + 'Typed/Clos2.agda', GP + 'Typed/Clos2.agda'], [O + 'Typed/Clos2.agda'],
+     [MU + 'Semantics/Graph/Clos2.agda', MUP + 'Semantics/Graph/Clos2.agda'], [MU + 'Semantics/CEK/Clos2.agda']),
+    ('semantics: Clos3', [G + 'Typed/Clos3.agda', GP + 'Typed/Clos3.agda'], [O + 'Typed/Clos3.agda'],
+     [MU + 'Semantics/Graph/Clos3.agda', MUP + 'Semantics/Graph/Clos3.agda'], [MU + 'Semantics/CEK/Clos3.agda']),
+    ('semantics: Clos4', [G + 'Typed/Clos4.agda', GP + 'Typed/Clos4.agda'], [O + 'Typed/Clos4.agda'],
+     [MU + 'Semantics/Graph/Clos4.agda', MUP + 'Semantics/Graph/Clos4.agda'], [MU + 'Semantics/CEK/Clos4.agda']),
+    ('what the typed languages share: project, tables (`Ops`)', [G + 'Typed/Ops.agda', GP + 'Typed/Ops.agda'], [], [], []),
+    ('lemmas shared by the passes (`Common`)', [], [OC + 'Common.agda'], [], []),
+    ('CC: enclose', [GC + 'EncloseCorrect.agda'], [OC + 'EncloseSim.agda'],
+     [MUP + 'Correctness/Graph/EncloseCorrect.agda'], [MUP + 'Correctness/CEK/EncloseSim.agda']),
+    ('CC: optimize', [GC + 'OptimizeCorrect.agda'], [OC + 'OptimizeSim.agda'],
+     [MUP + 'Correctness/Graph/OptimizeCorrect.agda'], [MUP + 'Correctness/CEK/OptimizeSim.agda']),
+    ('CC: concretize', [GC + 'ConcretizeCorrect.agda'], [OC + 'ConcretizeSim.agda'],
+     [MUP + 'Correctness/Graph/ConcretizeCorrect.agda'], [MUP + 'Correctness/CEK/ConcretizeSim.agda']),
+    ('CC: delay', [GC + 'Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')],
+     [OC + 'DelaySim.agda'],
+     [MUP + 'Correctness/Graph/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')],
+     [MUP + 'Correctness/CEK/DelaySim.agda']),
+]
+MU_DELAY = ['Rel', 'Preserve', 'Reflect', 'Correct']
+MU_SHARED = ([L + 'Typed/' + x + '.agda' for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4')]
+             + [C + x + '.agda' for x in ('Enclose', 'Optimize', 'Concretize', 'Delay')])
+MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda']
+
+
+def mu_check(c):
+    """The pilot's columns are independent of each other and of the proofs of
+    either pipeline (they may use what both pipelines share), and its
+    infrastructure imports only infrastructure."""
+    sides = ('mu-den', 'mu-op')
+    own = {s: {un for un, (side, _) in c.group_of.items() if side == s} for s in sides}
+    reach = {s: reachable(own[s], c.graph) for s in sides}
+    typed, untyped = set(TYPED['sides']) | {'gerr', 'adeq', 'gadeq'}, set(UNTYPED['sides']) | {'ugerr', 'uadeq', 'ugadeq'}
+    for s in sides:
+        bad = set()
+        for un in reach[s]:
+            side = c.group_of[un][0]
+            if side in sides and side != s:
+                bad.add(un)
+            ss = set(sides_of(side))
+            if ss <= set(STYLE) and not (ss & typed and ss & untyped):
+                bad.add(un)
+        if bad:
+            sys.exit(f'{s} imports modules of another proof:\n  ' + '\n  '.join(sorted(bad)))
+    minfra = {un for un, (side, _) in c.group_of.items() if side == 'mu-infra'}
+    bad = sorted(reachable(minfra, c.graph) - minfra - c.infra)
+    if bad:
+        sys.exit("the pilot's infrastructure imports modules that are not infrastructure:\n  " + '\n  '.join(bad))
+
+
+def mu_report(c):
+    """The ISWIMμ pilot against the typed pipeline, row by row, in the graph
+    model and the CEK machines."""
+
+    def n(fs):
+        return sum(code_lines(f) for f in fs) if fs else None
+
+    def cell(x):
+        return '—' if x is None else str(x)
+    print('| ISWIMμ pilot against the typed pipeline | graph model: typed | graph model: μ '
+          '| CEK: typed | CEK: μ |')
+    print('|---|---:|---:|---:|---:|')
+    tot = [0, 0, 0, 0]
+    for row, gt, ot, gm, om in MU_ROWS:
+        ns = [n(gt), n(gm), n(ot), n(om)]
+        tot = [t + (x or 0) for t, x in zip(tot, ns)]
+        print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
+    print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
+    comp = [n([GC + 'CompilerCorrect.agda']), n([MUP + 'Correctness/Graph/CompilerCorrect.agda']),
+            n([OC + 'PipelineSim.agda']), n([MUP + 'Correctness/CEK/PipelineSim.agda'])]
+    print('| composition (typed: all the passes, to X86ᵀ; μ: to Clos4μ) | ' + ' | '.join(cell(x) for x in comp) + ' |')
+    print()
+    print('| graph-model delay, by module | typed | μ |')
+    print('|---|---:|---:|')
+    for x in MU_DELAY:
+        print(f'| `Delay{x}` | {code_lines(GC + "Delay" + x + ".agda")} '
+              f'| {code_lines(MUP + "Correctness/Graph/Delay" + x + ".agda")} |')
+    print()
+    print('| not counted in the rows | typed | μ |')
+    print('|---|---:|---:|')
+    mush = [f for f in c.every if c.seen[f][0] == 'mu-shared']
+    print(f'| languages and passes (ISWIM … Clos4, enclose … delay) | {n(MU_SHARED)} | {n(mush)} |')
+    mui = [f for f in c.every if c.seen[f][0] == 'mu-infra']
+    print(f'| infrastructure: vectors (`VecUtil`, `VecSelect`) against heterogeneous vectors (`Mu/Framework/AllUtil`) '
+          f'| {n(MU_INFRA)} | {n(mui)} |')
+    mex = [f for f in c.every if c.seen[f][0] == 'mu-examples']
+    print(f'| examples | — | {n(mex)} |')
+    print()
+
+
 def main():
     c = Count()
+    mu_check(c)
     T, Un = c.analyze(TYPED), c.analyze(UNTYPED)
+    if '--mu' in sys.argv[1:]:
+        print('## The ISWIMμ pilot')
+        print()
+        mu_report(c)
+        return
     if '--untyped' in sys.argv[1:]:
         print(f'## The {UNTYPED["name"]}')
         print()
