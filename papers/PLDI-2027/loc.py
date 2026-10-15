@@ -477,6 +477,11 @@ GROUPS = [
     ('mu-den', 'CC: optimize', [MUP + 'Correctness/Graph/OptimizeCorrect.agda']),
     ('mu-den', 'CC: concretize', [MUP + 'Correctness/Graph/ConcretizeCorrect.agda']),
     ('mu-den', 'CC: delay', [MUP + 'Correctness/Graph/Delay*.agda']),
+    ('mu-den', 'CC: globalize', [MUP + 'Correctness/Graph/GlobalizeCorrect.agda']),
+    ('mu-den', 'rco', [MUP + 'Correctness/Graph/RCOCorrect.agda']),
+    ('mu-den', 'lift locals', [MUP + 'Correctness/Graph/LiftLocalsCorrect.agda']),
+    ('mu-den', 'explicate control', [MUP + 'Correctness/Graph/ExplicateCorrect.agda']),
+    ('mu-den', 'select instructions', [MUP + 'Correctness/Graph/SelectCorrect.agda']),
     ('mu-den', 'composition', [MUP + 'Correctness/Graph/CompilerCorrect.agda']),
     ('mu-op', 'semantics of the languages', [MU + 'Semantics/CEK/*.agda']),
     ('mu-op', 'CC: enclose', [MUP + 'Correctness/CEK/EncloseSim.agda']),
@@ -1044,34 +1049,56 @@ def compare(c, T, Un):
 
 # the rows of the pilot, and the files of the typed pipeline it compares
 # with, for the graph model ('den') and the CEK machines ('op'): the
-# semantics of each language (its definitions and lemmas), the lemmas the
-# passes share, and the four passes.  The typed graph model's Ops (project,
-# fun₂/fun₄, the tables of Clos5ᵀ and later) and the CEK lemmas Common
-# (collecting a tuple's values with its length equation, Lock for project)
-# have no counterpart in the pilot.
-MU_ROWS = [
-    ('semantics: ISWIM', [G + 'Typed/ISWIM.agda'], [O + 'Typed/ISWIM.agda'],
-     [MU + 'Semantics/Graph/ISWIM.agda'], [MU + 'Semantics/CEK/ISWIM.agda']),
-    ('semantics: Clos2', [G + 'Typed/Clos2.agda', GP + 'Typed/Clos2.agda'], [O + 'Typed/Clos2.agda'],
-     [MU + 'Semantics/Graph/Clos2.agda', MUP + 'Semantics/Graph/Clos2.agda'], [MU + 'Semantics/CEK/Clos2.agda']),
-    ('semantics: Clos3', [G + 'Typed/Clos3.agda', GP + 'Typed/Clos3.agda'], [O + 'Typed/Clos3.agda'],
-     [MU + 'Semantics/Graph/Clos3.agda', MUP + 'Semantics/Graph/Clos3.agda'], [MU + 'Semantics/CEK/Clos3.agda']),
-    ('semantics: Clos4', [G + 'Typed/Clos4.agda', GP + 'Typed/Clos4.agda'], [O + 'Typed/Clos4.agda'],
-     [MU + 'Semantics/Graph/Clos4.agda', MUP + 'Semantics/Graph/Clos4.agda'], [MU + 'Semantics/CEK/Clos4.agda']),
-    ('what the typed languages share: project, tables (`Ops`)', [G + 'Typed/Ops.agda', GP + 'Typed/Ops.agda'], [], [], []),
-    ('lemmas shared by the passes (`Common`)', [], [OC + 'Common.agda'], [], []),
-    ('CC: enclose', [GC + 'EncloseCorrect.agda'], [OC + 'EncloseSim.agda'],
-     [MUP + 'Correctness/Graph/EncloseCorrect.agda'], [MUP + 'Correctness/CEK/EncloseSim.agda']),
-    ('CC: optimize', [GC + 'OptimizeCorrect.agda'], [OC + 'OptimizeSim.agda'],
-     [MUP + 'Correctness/Graph/OptimizeCorrect.agda'], [MUP + 'Correctness/CEK/OptimizeSim.agda']),
-    ('CC: concretize', [GC + 'ConcretizeCorrect.agda'], [OC + 'ConcretizeSim.agda'],
-     [MUP + 'Correctness/Graph/ConcretizeCorrect.agda'], [MUP + 'Correctness/CEK/ConcretizeSim.agda']),
-    ('CC: delay', [GC + 'Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')],
-     [OC + 'DelaySim.agda'],
-     [MUP + 'Correctness/Graph/Delay' + x + '.agda' for x in ('Rel', 'Preserve', 'Reflect', 'Correct')],
-     [MUP + 'Correctness/CEK/DelaySim.agda']),
-]
+# semantics of each language (its definitions and lemmas), what the
+# languages share, the lemmas the passes share, the passes from enclose to
+# select, and the composition (row, typed graph, typed CEK, μ graph, μ CEK).
+# Monᵀ and Monμ have no semantics of their own (their embedding into Clos5).
+# The typed graph model's Ops has project (with fun₂/fun₄) and the tables,
+# the pilot's only the tables; the typed CEK lemmas Common collect a tuple's
+# values with its length equation.
+
+
+def mu_sem(x, typed_graph_lemmas=False, mu_graph_lemmas=False):
+    """The row of the semantics of language x."""
+    return (f'semantics: {x}',
+            [G + f'Typed/{x}.agda'] + ([GP + f'Typed/{x}.agda'] if typed_graph_lemmas else []),
+            [O + f'Typed/{x}.agda'],
+            [MU + f'Semantics/Graph/{x}.agda'] + ([MUP + f'Semantics/Graph/{x}.agda'] if mu_graph_lemmas else []),
+            [MU + f'Semantics/CEK/{x}.agda'])
+
+
+def mu_pass(row, graph, cek):
+    """The row of a pass, whose proofs have the same names in both pipelines."""
+    return (row, [GC + g for g in graph], [OC + o for o in cek],
+            [MUP + 'Correctness/Graph/' + g for g in graph], [MUP + 'Correctness/CEK/' + o for o in cek])
+
+
 MU_DELAY = ['Rel', 'Preserve', 'Reflect', 'Correct']
+MU_ROWS = [
+    mu_sem('ISWIM'),
+    mu_sem('Clos2', True, True),
+    mu_sem('Clos3', True, True),
+    mu_sem('Clos4', True, True),
+    mu_sem('Clos5', True, True),
+    mu_sem('Imp'),
+    mu_sem('CFG', True, True),
+    mu_sem('X86'),
+    ('what the languages share: project (typed only), tables (`Ops`)',
+     [G + 'Typed/Ops.agda', GP + 'Typed/Ops.agda'], [],
+     [MU + 'Semantics/Graph/Ops.agda', MUP + 'Semantics/Graph/Ops.agda'], []),
+    ('lemmas shared by the passes (`Common`, `Clos5Common`)', [], [OC + 'Common.agda', OC + 'Clos5Common.agda'],
+     [], []),
+    mu_pass('CC: enclose', ['EncloseCorrect.agda'], ['EncloseSim.agda']),
+    mu_pass('CC: optimize', ['OptimizeCorrect.agda'], ['OptimizeSim.agda']),
+    mu_pass('CC: concretize', ['ConcretizeCorrect.agda'], ['ConcretizeSim.agda']),
+    mu_pass('CC: delay', ['Delay' + x + '.agda' for x in MU_DELAY], ['DelaySim.agda']),
+    mu_pass('CC: globalize', ['GlobalizeCorrect.agda'], []),
+    mu_pass('rco', ['RCOCorrect.agda'], []),
+    mu_pass('lift locals', ['LiftLocalsCorrect.agda'], []),
+    mu_pass('explicate control', ['ExplicateCorrect.agda'], []),
+    mu_pass('select instructions', ['SelectCorrect.agda'], []),
+    mu_pass('composition', ['CompilerCorrect.agda'], ['PipelineSim.agda']),
+]
 MU_SHARED = ([L + 'Typed/' + x + '.agda'
               for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5', 'Mon', 'Imp', 'CFG', 'X86')]
              + [C + x + '.agda' for x in ('Enclose', 'Optimize', 'Concretize', 'Delay', 'Globalize', 'RCO',
@@ -1104,11 +1131,13 @@ def mu_check(c):
         sys.exit("the pilot's infrastructure imports modules that are not infrastructure:\n  " + '\n  '.join(bad))
 
 
-def mu_report(c):
+def mu_report(c, T):
     """The ISWIMμ pilot against the typed pipeline, row by row, in the graph
-    model and the CEK machines."""
+    model and the CEK machines; and against the totals of the main table
+    without simplify and cast insertion."""
 
     def n(fs):
+        fs = [f for f in fs if os.path.exists(f)]  # INTERIM: until the CEK column is merged
         return sum(code_lines(f) for f in fs) if fs else None
 
     def cell(x):
@@ -1122,9 +1151,15 @@ def mu_report(c):
         tot = [t + (x or 0) for t, x in zip(tot, ns)]
         print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
     print('| **total** | ' + ' | '.join(str(t) for t in tot) + ' |')
-    comp = [n([GC + 'CompilerCorrect.agda']), n([MUP + 'Correctness/Graph/CompilerCorrect.agda']),
-            n([OC + 'PipelineSim.agda']), n([MUP + 'Correctness/CEK/PipelineSim.agda'])]
-    print('| composition (typed: all the passes, to X86ᵀ; μ: to Clos4μ) | ' + ' | '.join(cell(x) for x in comp) + ' |')
+    # the main table's totals of the typed pipeline, without simplify and
+    # cast insertion: they also count untyped ISWIM's semantics and the
+    # primitives' (which simplify needs), the untyped ISWIM machine and the
+    # framework instances, and the observations
+    cells, total = T['cells'], T['total']
+    main_tot = {s: total[s] - (cells[(s, 'simplify')] or 0) - (cells[(s, 'cast insertion')] or 0)
+                for s in ('den', 'op')}
+    print(f"| the main table's total, without simplify and cast insertion | {main_tot['den']} | — "
+          f"| {main_tot['op']} | — |")
     print()
     print('| graph-model delay, by module | typed | μ |')
     print('|---|---:|---:|')
@@ -1222,7 +1257,7 @@ def main():
     if '--mu' in sys.argv[1:]:
         print('## The ISWIMμ pilot')
         print()
-        mu_report(c)
+        mu_report(c, T)
         mu_red_report(c)
         return
     if '--untyped' in sys.argv[1:]:
