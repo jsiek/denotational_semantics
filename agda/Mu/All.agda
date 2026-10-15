@@ -37,15 +37,18 @@
     and compile-x86-const and compile-x86-diverges for main : Int);
   * reduction semantics + simulation:
     Mu/proof/Correctness/Reduction/PipelineRed.agda (likewise);
-  * adequacy of the graph model for the machines of ISWIMμ and X86μ:
-    Mu/proof/Adequacy/EndToEnd.agda (the graph model's end-to-end
-    theorem, observed through the machines: the operational styles'
-    statement for main : Int);
+  * adequacy of the graph model for the clocked interpreters of ISWIMμ
+    and X86μ: Mu/proof/Adequacy/EndToEnd.agda (the graph model's
+    end-to-end theorem, observed through the interpreters: the
+    operational styles' statement for main : Int); an alternative,
+    reported separately, against the CEK machines instead:
+    Mu/proof/Adequacy/CEK/EndToEnd.agda;
   * mixing semantics (an experiment): simplify in the graph model and
-    the other passes by the interpreters, joined at ISWIMμ by the bridge
-    between its graph semantics and its interpreter:
-    Mu/proof/Mixed/CompilerMixed.agda (the interpreter column's
-    compile-x86-const and compile-x86-diverges for main : Int).
+    the other passes by the interpreters, joined at ISWIMμ by the
+    adequacy of its graph semantics for its interpreter
+    (Mu/proof/Adequacy/ISWIM.agda): Mu/proof/Mixed/CompilerMixed.agda
+    (the interpreter column's compile-x86-const and
+    compile-x86-diverges for main : Int).
 
 -}
 
@@ -61,6 +64,7 @@ import Mu.proof.Correctness.CEK.PipelineSim
 import Mu.proof.Correctness.Interp.CompilerFuel
 import Mu.proof.Correctness.Reduction.PipelineRed
 import Mu.proof.Adequacy.EndToEnd
+import Mu.proof.Adequacy.CEK.EndToEnd
 import Mu.proof.Mixed.CompilerMixed
 import Mu.proof.Semantics.CEK.NoError
 import Mu.proof.Semantics.Interp.NoError

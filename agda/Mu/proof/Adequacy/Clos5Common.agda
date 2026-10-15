@@ -1,7 +1,7 @@
 {-
 
   What the graph model makes of the table of a Clos5μ program, for the
-  adequacy of the X86μ machine (Mu/proof/Adequacy/X86Compiled.agda), as
+  adequacy of X86μ (Mu/proof/Adequacy/X86Compiled.agda), as
   in the typed pipeline (proof/Adequacy/Clos5Common.agda and
   Clos5Soundness.agda), without the Clos5 machine:
 
@@ -30,13 +30,12 @@ open import Mu.Language.Clos5
 open import Mu.proof.Semantics.Graph.Ops using (Table; tables; ConT; callc-good)
 open import Mu.proof.Semantics.Graph.Clos5 using (⟦_⟧[_]; ⟦_⟧s[_]; ok)
 open import Mu.proof.Compiler.GlobalizeOlder using (Older; Olders; OlderDefs)
-open import Mu.proof.Adequacy.Clos5Values using (lvl<)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 
 open import Data.Empty using (⊥-elim)
 open import Data.List using (List; []; _∷_; length; replicate)
 open import Data.Nat using (ℕ; _<_; _≟_)
-open import Data.Nat.Properties using (<-irrefl; <-trans)
+open import Data.Nat.Properties using (<-irrefl; <-trans; ≤-refl; m<n⇒m<1+n)
 open import Data.Product using (proj₁) renaming (_,_ to ⟨_,_⟩)
 open import Data.Unit using (⊤)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
@@ -45,6 +44,10 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (yes; no)
 
 {- The older definitions ---------------------------------------------------------}
+
+lvl< : ∀ {A : Set} {Γ : List A} {a} (x : Γ ∋ a) → lvl x < length Γ
+lvl< Z = ≤-refl
+lvl< (S x) = m<n⇒m<1+n (lvl< x)
 
 older : ∀ {ss : List DSig} {s} → ss ∋ s → List DSig
 older {_ ∷ ss} Z = ss

@@ -27,7 +27,9 @@ prefix Mu.): a typed ISWIM with iso-recursive types (no recursion
 construct, no errors) and its compiler to the typed assembly language
 X86μ, ISWIMμ --simplify--> ISWIMμ --enclose--> ... --select--> X86μ,
 proved in four styles (sides 'mu-den', 'mu-op', 'mu-ck', 'mu-red', and
-its adequacy 'mu-adeq'; see below).  The ISWIM pipeline (agda/), reported
+the graph model's adequacy for the clocked interpreters, 'mu-adeq', with
+an alternative against the CEK machines, 'mu-adeq-cek', reported
+alongside it; see below).  The ISWIM pipeline (agda/), reported
 briefly by default and in full with --iswim, shows how dynamic typing
 and errors affect the comparison: ISWIM --simplify--> ISWIM --cast
 insertion--> ISWIMᵀ --enclose--> ... --select--> X86ᵀ, with
@@ -144,20 +146,32 @@ a module of a proof of either ISWIM pipeline (what the pipelines share,
 such as the meaning of the primitives and the small-step framework, they
 may use), and its infrastructure must import only infrastructure.
 
+ISWIMμ's adequacy ('mu-adeq') is for the clocked interpreters of ISWIMμ
+and X86μ (Mu/proof/Adequacy/), and its end theorem is the interpreter
+column's.  The adequacy for the CEK machines that preceded it
+('mu-adeq-cek', Mu/proof/Adequacy/CEK/, in no total) is kept as an
+alternative and shown beside it, row by row: the modules both use (the
+tuples of sets, the tables' lemmas, the well-formedness of compiled
+programs) are in groups of both sides ('mu-adeq+mu-adeq-cek'), counted
+in full in each.
+
 Mixing semantics (side 'mu-mix', in no total of the four; --mixed, and a
 short table after ISWIMμ's in the default output): split (a) proves
 simplify in the graph model and the other passes by the interpreters,
 joined by the bridge at ISWIMμ (its graph semantics against its
-interpreter, Mu/proof/Mixed/), and reuses the per-pass proofs of both
-columns unchanged.  Its total is what its composition reaches, counted as
-a column's is: its own modules, the modules of the graph-model and
-interpreter columns it reaches (by row), the tuples of sets of ISWIMμ's
-adequacy (in the bridge's row), the shared modules it reaches that the
-four do not all reach, and the ISWIM pipeline's modules it reuses.  The
-script fails if it reaches a module of the CEK or reduction columns, or
-of adequacy but the tuples of sets.  The splits that also prove globalize
-or explicate control in the graph model are estimated from the measured
-rows, each further bridge at the size of ISWIMμ's.
+interpreter), and reuses the per-pass proofs of both columns unchanged.
+The bridge is ISWIMμ's adequacy for its interpreter (the ISWIM row of
+'mu-adeq'), shared with the graph model's adequacy.  The mixed total is
+what its composition reaches, counted as a column's is, and stands on
+its own (it is not added to adequacy's, so the bridge is counted once in
+it): its own modules, the modules of the graph-model and interpreter
+columns it reaches (by row), the ISWIM row of adequacy (as the bridge),
+the shared modules it reaches that the four do not all reach, and the
+ISWIM pipeline's modules it reuses.  The script fails if it reaches a
+module of the CEK or reduction columns, or of adequacy outside its ISWIM
+row.  The splits that also prove globalize or explicate control in the
+graph model are estimated from the measured rows, each further bridge at
+the size of ISWIMμ's.
 
 The public theorem statements are new boilerplate (each restates a
 theorem of the proofs with its type), so they are not in the totals;
@@ -564,30 +578,39 @@ GROUPS = [
     ('mu-ck', 'explicate control', [MUP + 'Correctness/Interp/ExplicateFuel.agda']),
     ('mu-ck', 'select instructions', [MUP + 'Correctness/Interp/SelectFuel.agda']),
     ('mu-ck', 'composition', [MUP + 'Correctness/Interp/CompilerFuel.agda']),
-    # P2: that no semantics of ISWIMμ or X86μ stops with an error (the
-    # graph model's end-to-end theorem through adequacy needs the CEK
-    # machines'; the others are stated for completeness), in no column
+    # P2: that no semantics of ISWIMμ or X86μ stops with an error (only
+    # the alternative adequacy for the CEK machines needs the machines';
+    # the others are stated for completeness), in no column
     ('mu-noerr', 'CEK machines of ISWIMμ and X86μ (X86μ\'s is also the reduction column\'s)',
      [MUP + 'Semantics/CEK/NoError.agda']),
     ('mu-noerr', 'clocked interpreters of ISWIMμ and X86μ', [MUP + 'Semantics/Interp/NoError.agda']),
     ('mu-noerr', 'reduction semantics of ISWIMμ', [MUP + 'Semantics/Reduction/NoError.agda']),
-    # P2: adequacy of the graph model, for the ISWIMμ machine and the X86μ
-    # machine (direct), as the typed pipeline's ('adeq'); no Clos5μ
-    # adequacy, which the end-to-end theorem into X86μ does not need
-    ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('Tuples', 'Soundness', 'LogRel', 'ISWIM')]),
-    # the values of the Clos5μ machine in the graph model and the tables'
-    # lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
-    ('mu-adeq', 'Clos5', [MUP + 'Adequacy/Clos5Values.agda', MUP + 'Adequacy/Clos5Common.agda']),
+    # P2: adequacy of the graph model, for the clocked interpreters of
+    # ISWIMμ and X86μ (direct), with the interpreter column's end theorem;
+    # no Clos5μ adequacy, which the end-to-end theorem into X86μ does not
+    # need.  The ISWIM row is also the bridge of the mixed proof.  The
+    # alternative for the CEK machines ('mu-adeq-cek', in no total) shares
+    # the tuples of sets, the tables' lemmas and the well-formedness of
+    # compiled programs ('mu-adeq+mu-adeq-cek', counted in both)
+    ('mu-adeq+mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/Tuples.agda']),
+    ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('Soundness', 'LogRel', 'ISWIM')]),
+    # the values of the Clos5μ interpreter in the graph model and the
+    # tables' lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
+    ('mu-adeq+mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/Clos5Common.agda']),
+    ('mu-adeq', 'Clos5', [MUP + 'Adequacy/Clos5Values.agda']),
     ('mu-adeq', 'X86', [MUP + 'Adequacy/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
-    ('mu-adeq', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
+    ('mu-adeq+mu-adeq-cek', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
     ('mu-adeq', 'end to end', [MUP + 'Adequacy/EndToEnd.agda']),
+    # the alternative: adequacy for the CEK machines of ISWIMμ and X86μ
+    ('mu-adeq-cek', 'ISWIM', [MUP + 'Adequacy/CEK/' + x + '.agda' for x in ('Soundness', 'LogRel', 'ISWIM')]),
+    ('mu-adeq-cek', 'Clos5', [MUP + 'Adequacy/CEK/Clos5Values.agda']),
+    ('mu-adeq-cek', 'X86', [MUP + 'Adequacy/CEK/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
+    ('mu-adeq-cek', 'end to end', [MUP + 'Adequacy/CEK/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # mixing semantics (--mixed): simplify in the graph model and the other
     # passes by the interpreters, joined by the bridge at ISWIMμ (its graph
-    # semantics against its interpreter); it reuses the per-pass proofs of
-    # both columns (and the tuples of sets of ISWIMμ's adequacy), in no
-    # total of the four
-    ('mu-mix', 'bridge at ISWIMμ', [MUP + 'Mixed/' + x + '.agda' for x in ('Soundness', 'LogRel', 'ISWIM')]),
+    # semantics against its interpreter: the ISWIM row of adequacy); it
+    # reuses the per-pass proofs of both columns, in no total of the four
     ('mu-mix', 'composition', [MUP + 'Mixed/CompilerMixed.agda']),
     # ISWIMμ's reduction column: reduction
     # semantics of the languages with binders, the simulations, and the
@@ -1253,7 +1276,7 @@ def mu_check(c):
         for un in reach[s]:
             side = c.group_of[un][0]
             if (set(sides_of(side)) & set(sides) and s not in sides_of(side)) \
-                    or side in ('mu-adeq', 'mu-noerr', 'mu-examples', 'mu-mix'):
+                    or set(sides_of(side)) & {'mu-adeq', 'mu-adeq-cek', 'mu-noerr', 'mu-examples', 'mu-mix'}:
                 bad.add(un)
             ss = set(sides_of(side))
             if ss <= set(STYLE) and not (ss & typed and ss & untyped):
@@ -1463,9 +1486,11 @@ def mu_red_report(c):
 # --- ISWIMμ's main table: the four styles against each other --------------
 
 MU_SIDES = ('mu-den', 'mu-op', 'mu-ck', 'mu-red')
+# adequacy (for the interpreters), and its alternative for the CEK machines
+MU_ADEQ = ('mu-adeq', 'mu-adeq-cek')
 MU_LABELS = {'mu-den': 'denotational: graph model', 'mu-op': 'CEK machine + simulation',
              'mu-ck': 'clocked interpreter + value relations', 'mu-red': 'reduction semantics + simulation',
-             'mu-adeq': 'adequacy'}
+             'mu-adeq': 'adequacy', 'mu-adeq-cek': 'adequacy for the CEK machines'}
 MU_BORROWED = "the ISWIM pipeline's modules it reuses (meaning of the primitives, framework instances)"
 # ISWIMμ as a pipeline, for the audit-surface table (it has no graph model
 # with errors)
@@ -1482,24 +1507,27 @@ def mu_analyze(c):
     reaches that the four do not all reach, and the modules of the typed
     pipeline it reuses (the meaning of the primitives, the instances of the
     frameworks at this compiler's observations), counted where they are used;
-    adequacy as an add-on to the graph model."""
-    cols = MU_SIDES + ('mu-adeq',)
+    adequacy as an add-on to the graph model (and its alternative for the
+    CEK machines likewise)."""
+    cols = MU_SIDES + MU_ADEQ
     own = {s: {un for un, (side, _) in c.group_of.items() if s in sides_of(side)} for s in cols}
     reach = {s: reachable(own[s], c.graph) for s in cols}
     shared = {un for un, (side, _) in c.group_of.items() if side in ('shared', 'mu-shared')}
     by_all = shared.intersection(*(reach[s] for s in MU_SIDES))
     extra = {s: (shared & reach[s]) - by_all for s in MU_SIDES}
-    extra['mu-adeq'] = (shared & reach['mu-adeq']) - by_all - extra['mu-den']
+    for a in MU_ADEQ:
+        extra[a] = (shared & reach[a]) - by_all - extra['mu-den']
     minfra = {un for un, (side, _) in c.group_of.items() if side in ('mu-infra', 'mu-rinfra')}
 
     def borrowed_of(s):
         return {un for un in reach[s] if not c.group_of[un][0].startswith('mu-')
                 and un not in c.infra and un not in shared}
     borrowed = {s: borrowed_of(s) for s in MU_SIDES}
-    borrowed['mu-adeq'] = borrowed_of('mu-adeq') - borrowed['mu-den']
+    for a in MU_ADEQ:
+        borrowed[a] = borrowed_of(a) - borrowed['mu-den']
     total = {}
     for s in cols:
-        rows = ROWS if s != 'mu-adeq' else [g for _, g, _ in GROUPS]
+        rows = ROWS if s not in MU_ADEQ else [g for _, g, _ in GROUPS]
         total[s] = (sum(c.counts.get((s, r)) or 0 for r in dict.fromkeys(rows))
                     + c.lines(extra[s]) + c.lines(borrowed[s]))
     return dict(own=own, reach=reach, extra=extra, borrowed=borrowed, total=total, by_all=by_all,
@@ -1529,28 +1557,38 @@ def mu_main(c, T, M):
                   + ', '.join(f'{c.display(un)} ({c.ulines(un)})' for un in sorted(M['extra'][s] | M['borrowed'][s])) + '.')
     print()
 
-    # adequacy, against the ISWIM pipeline's (plain graph model)
+    # adequacy, against the ISWIM pipeline's (plain graph model): ISWIMμ's
+    # for the interpreters, and its alternative for the CEK machines
     TA = TYPED['adeq']
-    rows = [('ISWIM', 'ISWIM: the source machine (typed: untyped ISWIM\'s, shared with the untyped pipeline)', 'ISWIM'),
-            ('Clos5', 'Clos5: the values of its machine and the tables, which X86 adequacy uses '
+    rows = [('ISWIM', 'ISWIM: the source (typed: untyped ISWIM\'s machine, shared with the untyped pipeline)', 'ISWIM'),
+            ('Clos5', 'Clos5: the values of its machine or interpreter and the tables, which X86 adequacy uses '
                       '(typed: also the adequacy of the Clos5ᵀ machine)', 'Clos5'),
-            ('X86ᵀ', 'X86: the target machine, direct', 'X86'),
+            ('X86ᵀ', 'X86: the target, direct', 'X86'),
             ('well-formedness of compiled programs', 'well-formedness of compiled programs',
              'well-formedness of compiled programs'),
             ('end to end', 'end to end', 'end to end')]
-    print('| adequacy of the graph model (reported separately) | ISWIM pipeline | ISWIMμ |')
-    print('|---|---:|---:|')
+    print('| adequacy of the graph model (reported separately) | ISWIM pipeline: CEK machines '
+          '| ISWIMμ: CEK machines (alternative) | ISWIMμ: interpreters |')
+    print('|---|---:|---:|---:|')
     for tr, label_, mr in rows:
-        print(f'| {label_} | ' + ' | '.join(bold_min([c.counts.get((TA, tr)), c.counts.get(('mu-adeq', mr)) if mr else None])) + ' |')
+        print(f'| {label_} | ' + ' | '.join(bold_min([c.counts.get((TA, tr))] + [c.counts.get((a, mr)) for a in ('mu-adeq-cek', 'mu-adeq')])) + ' |')
     print(f'| {EXTRA}, nor by the graph model | '
-          + ' | '.join(bold_min([c.lines(T['extra'][TA]) or None, c.lines(M['extra']['mu-adeq']) or None])) + ' |')
+          + ' | '.join(bold_min([c.lines(T['extra'][TA]) or None]
+                                + [c.lines(M['extra'][a]) or None for a in ('mu-adeq-cek', 'mu-adeq')])) + ' |')
     print(f"| {MU_BORROWED.replace('it reuses', 'μ reuses')}, nor by the graph model | — | "
-          f"{c.lines(M['borrowed']['mu-adeq']) or '—'} |")
-    print('| **total** | ' + ' | '.join(bold_min([T['adq'][TA], M['total']['mu-adeq']])) + ' |')
+          + ' | '.join(str(c.lines(M['borrowed'][a]) or '—') for a in ('mu-adeq-cek', 'mu-adeq')) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min([T['adq'][TA], M['total']['mu-adeq-cek'], M['total']['mu-adeq']])) + ' |')
     print()
-    print('Counted in μ adequacy: '
-          + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
-                      for un in sorted(M['extra']['mu-adeq'] | M['borrowed']['mu-adeq'])) + '.')
+    for a in ('mu-adeq', 'mu-adeq-cek'):
+        print(f'Counted in μ {MU_LABELS[a]}: '
+              + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
+                          for un in sorted(M['extra'][a] | M['borrowed'][a])) + '.')
+    print()
+    print('Only ISWIMμ\'s adequacy for the interpreters is in its totals (and in the graph model\'s '
+          f"total to running code, {M['total']['mu-den']} + {M['total']['mu-adeq']} = "
+          f"{M['total']['mu-den'] + M['total']['mu-adeq']}); the alternative for the CEK machines is shown "
+          'for comparison. The tuples of sets, the tables\' lemmas and the well-formedness of compiled '
+          'programs are in both columns.')
     print()
     print('| no-error lemmas (not in any total) | lines |')
     print('|---|---:|')
@@ -1644,11 +1682,11 @@ def mixed_analyze(c, M):
     the graph model, estimated from the measured rows (each further bridge
     at the size of ISWIMμ's, without the tuples of sets it would share)."""
     reach = reachable({unit(MIX_ROOT)}, c.graph)
-    tuples = unit(MUP + 'Adequacy/Tuples.agda')
     for un in reach:
-        side = c.group_of[un][0]
+        side, row = c.group_of[un]
+        bridge = 'mu-adeq' in sides_of(side) and row == 'ISWIM'
         if side.startswith('mu-') and side not in ('mu-shared', 'mu-infra', 'mu-rinfra', 'mu-mix') \
-                and not set(sides_of(side)) & {'mu-den', 'mu-ck'} and un != tuples:
+                and not set(sides_of(side)) & {'mu-den', 'mu-ck'} and not bridge:
             sys.exit(f'the mixed proof imports a module of {side}: {un}')
         if set(sides_of(side)) & {'mu-op', 'mu-red'} and not set(sides_of(side)) & {'mu-den', 'mu-ck'}:
             sys.exit(f'the mixed proof imports a module of {side}: {un}')
@@ -1656,7 +1694,7 @@ def mixed_analyze(c, M):
     for un in reach:
         side, row = c.group_of[un]
         ss = set(sides_of(side))
-        if side in ('mu-mix', 'mu-adeq'):
+        if side == 'mu-mix' or 'mu-adeq' in ss:
             key = 'composition' if row == 'composition' else 'bridge'
         elif ss & {'mu-den', 'mu-ck'}:
             key = row
@@ -1675,7 +1713,7 @@ def mixed_analyze(c, M):
     infra = c.lines(un for un in reach if un in c.infra | M['minfra'])
     pure_infra = {s: c.lines(un for un in M['reach'][s] if un in c.infra | M['minfra']) for s in ('mu-den', 'mu-ck')}
     # the estimated splits
-    core = c.lines(un for un in reach if c.group_of[un] == ('mu-mix', 'bridge at ISWIMμ'))
+    core = c.lines(un for un in reach if c.group_of[un] == ('mu-adeq', 'ISWIM'))
 
     def gsem(langs):
         return sum(code_lines(f) for x in langs
@@ -1695,8 +1733,9 @@ def mixed_analyze(c, M):
 
 
 def mixed_brief(c, M, X):
-    """The splits against the pure columns, and the ISWIMμ bridge as an
-    adequacy theorem against today's (w.r.t. the CEK machine)."""
+    """The splits against the pure columns, and the ISWIMμ bridge (ISWIMμ's
+    adequacy for its interpreter) against the alternative for the CEK
+    machine."""
     about = {'mu-den': 'denotations', 'mu-op': 'the machines', 'mu-ck': 'the interpreters',
              'mu-red': 'the reduction semantics'}
     print('| proof of the ISWIMμ compiler | passes in the graph model | bridges | total | end theorem about |')
@@ -1704,7 +1743,9 @@ def mixed_brief(c, M, X):
     for s in MU_SIDES:
         print(f'| {MU_LABELS[s]} | {"all" if s == "mu-den" else "—"} | — | {M["total"][s]} | {about[s]} |')
     print(f'| denotational: graph model, and its adequacy | all | — '
-          f'| {M["total"]["mu-den"] + M["total"]["mu-adeq"]} | the machines |')
+          f'| {M["total"]["mu-den"] + M["total"]["mu-adeq"]} | the interpreters |')
+    print(f'| denotational: graph model, and its adequacy for the CEK machines (alternative) | all | — '
+          f'| {M["total"]["mu-den"] + M["total"]["mu-adeq-cek"]} | the machines |')
     for name_, passes, t, measured in X['splits']:
         nb = len({x for r in passes for x in MIX_LANGS[r]})
         print(f'| mixed {name_}{"" if measured else " (estimate)"} | '
@@ -1712,8 +1753,10 @@ def mixed_brief(c, M, X):
               '| the interpreters |')
     print()
     print(f"The bridge at ISWIMμ (its graph semantics against its interpreter, both directions) is "
-          f"{X['rows']['bridge']} lines; as an adequacy theorem for ISWIMμ, it would replace today's, "
-          f"w.r.t. the CEK machine, of {c.counts[('mu-adeq', 'ISWIM')]}. The estimates count each further bridge at "
+          f"{X['rows']['bridge']} lines: it is the ISWIM row of the graph model's adequacy (for the "
+          f"interpreters), shared, against {c.counts[('mu-adeq-cek', 'ISWIM')]} for the ISWIMμ CEK machine. "
+          "Each total counts it once: the mixed totals stand alone, and are not added to adequacy's. "
+          f"The estimates count each further bridge at "
           f"{X['core']} lines (the ISWIMμ bridge without the tuples of sets), each further language's graph "
           "semantics and the tables (`Ops`), and no change to the composition.")
     print()
@@ -1721,7 +1764,8 @@ def mixed_brief(c, M, X):
 
 def mixed_report(c, M, X):
     """Split (a) row by row against the two pure columns it draws on, the
-    bridge against today's ISWIMμ adequacy, and the infrastructure used."""
+    bridge against the ISWIMμ adequacy for the CEK machine, and the
+    infrastructure used."""
     print('| component (ISWIMμ) | mixed (a): proved by | mixed (a) | graph model | interpreter |')
     print('|---|---|---:|---:|---:|')
     rows, style = X['rows'], X['style']
@@ -1732,7 +1776,7 @@ def mixed_report(c, M, X):
     for r in MIX_PASSES:
         by = 'graph model' if style.get(r) == {'mu-den'} else 'interpreter'
         print(f"| {r} | {by} | {rows[r]} | {c.counts[('mu-den', r)]} | {c.counts[('mu-ck', r)]} |")
-    print(f"| bridge at ISWIMμ | — | {rows['bridge']} | — | — |")
+    print(f"| bridge at ISWIMμ (ISWIMμ's adequacy, shared with the graph model's) | — | {rows['bridge']} | — | — |")
     print(f"| composition | — | {rows['composition']} | {c.counts[('mu-den', 'composition')]} "
           f"| {c.counts[('mu-ck', 'composition')]} |")
     ex = [M['extra'][s] for s in ('mu-den', 'mu-ck')]
@@ -1746,14 +1790,14 @@ def mixed_report(c, M, X):
     print('Counted in mixed (a): '
           + ', '.join(f'{c.display(un)} ({c.ulines(un)})' for un in sorted(X['extra'] | X['borrowed'])) + '.')
     print()
-    print('| ISWIMμ adequacy | w.r.t. the CEK machine | w.r.t. the interpreter (the bridge) |')
+    print('| ISWIMμ adequacy | w.r.t. the CEK machine (alternative) | w.r.t. the interpreter (the bridge) |')
     print('|---|---:|---:|')
     for label_, x in (('soundness', 'Soundness'), ('logical relation, fundamental lemma', 'LogRel'),
                       ('statements (constants, convergence or divergence)', 'ISWIM')):
-        print(f'| {label_} | {code_lines(MUP + "Adequacy/" + x + ".agda")} | {code_lines(MUP + "Mixed/" + x + ".agda")} |')
+        print(f'| {label_} | {code_lines(MUP + "Adequacy/CEK/" + x + ".agda")} | {code_lines(MUP + "Adequacy/" + x + ".agda")} |')
     t = code_lines(MUP + 'Adequacy/Tuples.agda')
     print(f'| tuples of sets (`Mu.proof.Adequacy.Tuples`, the same module) | {t} | {t} |')
-    print(f"| **total** | {c.counts[('mu-adeq', 'ISWIM')]} | **{X['rows']['bridge']}** |")
+    print(f"| **total** | {c.counts[('mu-adeq-cek', 'ISWIM')]} | **{X['rows']['bridge']}** |")
     print()
 
 

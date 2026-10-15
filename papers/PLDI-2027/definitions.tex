@@ -3233,11 +3233,12 @@ The four styles state the same end-to-end theorem, for a main program of
 type $\key{Int}$: the source and the compiled $\Ml{X86}$ program stop with the
 same constant, or both diverge. The three operational styles get it from
 $\Equiv$ for $\pass{compile\text{-}x86}$; the graph model from
-$\Same$ (Theorem~\ref{thm:m-den-compiler}), adequacy for the $\Ml{ISWIM}$
-and $\Ml{X86}$ machines, and the lemmas that neither machine stops with an
-error. Adequacy is reported separately in the comparison, since the
-denotational semantics can be taken as \emph{the} semantics, and the
-no-error lemmas are in no total.
+$\Same$ (Theorem~\ref{thm:m-den-compiler}) and adequacy for the clocked
+interpreters of $\Ml{ISWIM}$ and $\Ml{X86}$, so that it states the
+interpreter column's theorem, about the same interpreters. Adequacy is
+reported separately in the comparison, since the denotational semantics
+can be taken as \emph{the} semantics, and the no-error lemmas are in no
+total.
 
 \subsection{Observations}
 
@@ -3245,7 +3246,11 @@ A machine (or clocked program) $L$ terminates with $o$, $\Term_L(o)$, or
 diverges, $\Div_L$ (Section~\ref{sec:obs}); it \emph{converges} when it
 terminates with an answer, an observation other than $\error$
 (\texttt{Converges}). For a main program of type $\key{Int}$ an answer is a
-constant $n$.
+constant $n$. A clocked program $f$ \emph{returns $v$ from some clock on}
+when there is a clock $c$ with $f(k) = \Ret v$ for every $k \geq c$
+(\texttt{Stable}, \texttt{proof/Framework/Clocked.agda}); such results
+compose (\texttt{st-bind}: a bind returns from the larger of the two
+clocks on) and are unique (\texttt{stable-unique}).
 
 \subsection{No errors}
 
@@ -3255,9 +3260,8 @@ For every closed $\Ml{ISWIM}$ term $M$ and $\Ml{X86}$ program $P$ of any type,
 \item the CEK machines never stop with an error,
   $\neg\Term_{\Mach{\Ml{ISWIM}}(M)}(\error)$ and
   $\neg\Term_{\Mach{\Ml{X86}}(P)}(\error)$
-  (\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{iswim-no-error},
-  \texttt{x86-no-error}; the proof is
-  \texttt{proof/\allowbreak Semantics/\allowbreak CEK/\allowbreak NoError.agda}), by inspection of the step functions: a machine
+  (\texttt{proof/\allowbreak Semantics/\allowbreak CEK/\allowbreak NoError.agda}:
+  \texttt{iswim-no-error}, \texttt{x86-no-error}), by inspection of the step functions: a machine
   stops only when it returns a value to the empty continuation (stack),
   every other state steps, and no value is observed as $\error$
   (\texttt{iswim-stops}, \texttt{iswim-answer}, \texttt{clos5-answer});
@@ -3282,26 +3286,39 @@ The reduction semantics is the only one with error cases left in its
 definition; removing them would need redexes on values rather than terms.
 A machine that never stops with an error and does not converge diverges
 (\texttt{never-final-diverges}, \texttt{proof/Framework/Simulation.agda});
-so for these machines divergence is the
-negation of convergence.
+so for these machines divergence is the negation of convergence. No
+end-to-end theorem uses the lemma: the soundness halves of adequacy for
+the interpreters show again that they never err (below), and the
+adequacy for the CEK machines that preceded it, which uses the
+machines' lemma, is kept only as an alternative
+(\texttt{proof/Adequacy/CEK/}, Section~\ref{sec:m-adequacy}).
 
 \subsection{Adequacy}\label{sec:m-adequacy}
 
-Adequacy relates the graph model to the CEK machines of $\Ml{ISWIM}$ and
-$\Ml{X86}$ (\texttt{proof/Adequacy/}); it is direct to $\Ml{X86}$, with no
-adequacy for $\Ml{Clos5}$ or the other intermediate languages, and does not
-use the simulations of the CEK column.
+Adequacy relates the graph model to the clocked interpreters of
+$\Ml{ISWIM}$ and $\Ml{X86}$ (\texttt{proof/Adequacy/}); it is direct to
+$\Ml{X86}$, with no adequacy for $\Ml{Clos5}$ or the other intermediate
+languages, and does not use the value relations of the interpreter
+column. Each half is by induction on the clock and the program, not over
+the steps of a machine: soundness has no continuations or call stack,
+and the logical relation's evaluation is ``returns $v$ from some clock
+on''. The soundness halves only ever produce a timeout or a value whose
+denotation is part of the program's, so they also show that the
+interpreters never err.
 
 \paragraph{$\Ml{ISWIM}$} (\texttt{ISWIM.agda}). \emph{Soundness}
-(\texttt{Soundness.agda}): each machine state denotes a set of values,
-through denotations $\mathcal{V}(v)$ of machine values (a closure denotes
-its $\lambda$ in the denotation of its environment; $\mathcal{V}(\Mfold v) =
-\mathcal{V}(v)$) and of continuations, the contexts their frames stand for
-($\key{foldK}$ and $\key{unfoldK}$ the identity); every step can only shrink
-it (\texttt{step-$\subseteq$}), and the only final state returns a value to
-$\halt$ (\texttt{halts}). \emph{Adequacy} (\texttt{LogRel.agda}): a logical
-relation $\mathbb{V}(d, v)$, by recursion on the denotational value $d$ and
-on the $\Mfold$s of $v$,
+(\texttt{Soundness.agda}): what the interpreter returns at any clock
+denotes a part of the denotation, through denotations $\mathcal{V}(v)$ of
+values (a closure denotes its $\lambda$ in the denotation of its
+environment; $\mathcal{V}(\Mfold v) = \mathcal{V}(v)$), by induction on
+the clock and the term: a result \emph{holds} of a set $D$ when it is a
+timeout or a value $v$ with $\mathcal{V}(v) \subseteq D$, never an error
+(\texttt{Holds}, \texttt{Sound}), and the binds of the interpreter
+preserve it (\texttt{bind-holds}); a call, $\key{let}$ and $\key{case}$
+use the continuity of the semantics and that every value denotes a
+nonempty, consistent set. \emph{Adequacy} (\texttt{LogRel.agda}): a
+logical relation $\mathbb{V}(d, v)$, by recursion on the denotational value
+$d$ and on the $\Mfold$s of $v$,
 \begin{align*}
   \mathbb{V}(d, \Mfold v) &\iff \mathbb{V}(d, v) \qquad
   \mathbb{V}(c, c') \iff c = c' \qquad
@@ -3313,79 +3330,102 @@ on the $\Mfold$s of $v$,
   \mathbb{V}(\Left{d}, \inlV v) \iff \mathbb{V}(d, v) \qquad
   \mathbb{V}(\Right{d}, \inrV v) \iff \mathbb{V}(d, v)
 \end{align*}
-and false otherwise, where $\gamma \vdash M \Downarrow v$ is ``$\ev{M}{\gamma}{\kappa}$
-runs to $\rt{v}{\kappa}$ for every $\kappa$''. The fundamental lemma
+and false otherwise, where $\gamma \vdash M \Downarrow v$ is ``the
+interpreter, on $M$ in $\gamma$, returns $v$ from some clock on''. The
+results of subterms compose by \texttt{st-bind}, so no lemma about the
+interpreter's monotonicity in the clock is needed. The fundamental lemma
 (\texttt{adequate}) is by induction on the term, with related environments;
 an application needs one argument value related to all the (finitely many)
-elements of $V$, the value of the argument, since the machine is
-deterministic (\texttt{$\Downarrow$-det}). The relation is by recursion on
+elements of $V$, the value of the argument, since the interpreter returns
+one value (\texttt{$\Downarrow$-det}, by \texttt{stable-unique}). The relation is by recursion on
 the denotational value $d$, not on the type: as for delay
 (Section~\ref{sec:m-den-delay}), a type index would not decrease at $\mu$.
 So for every closed $M$ of any type
 (\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{iswim-const-iff},
-\texttt{iswim-nonempty-iff}; and \texttt{iswim-diverges-empty}: a
-diverging machine's program denotes nothing),
+\texttt{iswim-diverges-iff}),
 \begin{align*}
-  c \in \SEM{M}\rho_0 &\iff \Term_{\Mach{\Ml{ISWIM}}(M)}(c) \\
-  \SEM{M}\rho_0 \NE &\iff \Mach{\Ml{ISWIM}}(M) \text{ converges.}
+  c \in \SEM{M}\rho_0 &\iff \Term_{\Interp{\Ml{ISWIM}}(M)}(c) \\
+  \Div_{\Interp{\Ml{ISWIM}}(M)} &\iff \SEM{M}\rho_0 = \emptyset .
 \end{align*}
-Since the machine is typed it never stops with $\error$, so, unlike
-untyped ISWIM's adequacy, there is no statement about errors, and the
-shape of an observation is read off the related value.
+Divergence needs no lemma about errors: if the denotation is empty, a
+sound result at any clock is a timeout; if it is not, the interpreter
+returns a value from some clock on. Since the interpreter is typed, there
+is no statement about errors, and the shape of an observation is read
+off the related value.
 
 \paragraph{$\Ml{X86}$} (\texttt{X86.agda}). \emph{Adequacy}
 (\texttt{X86LogRel.agda}), for every program: the logical relation
-$\mathbb{V}$ of the $\Ml{Clos5}$ machine's values
-(\texttt{Clos5Values.agda}; $\mathbb{V}(d, \Mfold v) = \mathbb{V}(d, v)$), code
-$\codeV{k}$ being related to $\Lambda X.\, \Lambda Y.\, w$ when the machine
-runs definition $k$ on values related to $X$ and $Y$, on any stack, to a
-return of a value related to $w$ (\texttt{Run}, \texttt{Ret}); the
+$\mathbb{V}$ of the $\Ml{Clos5}$ interpreter's values, which the $\Ml{X86}$
+interpreter shares (\texttt{Clos5Values.agda}; $\mathbb{V}(d, \Mfold v) =
+\mathbb{V}(d, v)$), code $\codeV{k}$ being related to $\Lambda X.\, \Lambda
+Y.\, w$ when a call of definition $k$ on values related to $X$ and $Y$
+returns, from some clock on, a value related to $w$ (\texttt{Run}); the
 fundamental lemma is by induction on the sequence, given that the blocks it
 may jump to are adequate, with the frame, registers and flag of the
-semantics related to the machine's at the types the state type gives them
+semantics related to the interpreter's at the types the state type gives them
 (\texttt{$\mathbb{M}$}), and the open closure that of its slot
-(\texttt{OpR}). A call returns the same value for every element of its
-denotation, since runs are deterministic (\texttt{Ret-det}); $\Mfold$ and
-$\Munfold$ are the identity on denotations, and $\key{case}$ takes the
-injection in its slot apart, as $\mathcal{C}$ does. \emph{Soundness}
-(\texttt{X86Soundness.agda}), for a table that is consistent and contains
-the code of each definition interpreted with the whole table: each state
-denotes a set that a step can only shrink, a location denoting a finite
-part of the meaning of the value it holds (\texttt{Apx}), since the
-semantics binds a slot to a finite set and calls code on finite parts of
-$\rdi$ and $\rsi$. The programs that the compiler produces have such a
+(\texttt{OpR}). An instruction other than $\key{callq}$ is one recursive
+call of the interpreter on the rest of the sequence, so it needs no step
+lemma; a call returns the same value for every element of its
+denotation (\texttt{stable-unique}), and the rest of the caller composes
+with it by \texttt{st-bind}; $\Mfold$ and $\Munfold$ are the identity on
+denotations, and $\key{case}$ takes the injection in its slot apart, as
+$\mathcal{C}$ does. \emph{Soundness} (\texttt{X86Soundness.agda}), for a
+table that is consistent and contains the code of each definition
+interpreted with the whole table, by induction on the clock, the blocks
+and the sequence: what the interpreter returns from a sequence run in a
+state denotes a part of what the sequence denotes from some
+approximation of the state, a location denoting a finite part of the
+meaning of the value it holds (\texttt{Apx}), since the semantics binds
+a slot to a finite set and calls code on finite parts of $\rdi$ and
+$\rsi$. A call combines the callee's approximations of its start, one
+for each element of the finite part of the result that the caller uses,
+into one (\texttt{merge}), and makes from it the entries $X \mapsto (Y
+\mapsto w)$ of the code that the caller applies (\texttt{call-$\subseteq$}).
+The programs that the compiler produces have such a
 table (\texttt{X86Compiled.agda}, \texttt{compiled}), from globalize's
 references to older definitions only
 (\texttt{proof/Compiler/GlobalizeOlder.agda}) and the table lemmas of the
 graph-model proofs of rco, lift locals, explicate control and select
 (\texttt{table-rco}, \texttt{table-lift}, \texttt{table-explicate},
 \texttt{table-$\simeq$}). So for every closed $M$ of any type
-(\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{x86-const-iff}, \texttt{x86-nonempty-iff}),
+(\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{x86-const-iff}, \texttt{x86-diverges-iff}),
 \begin{align*}
-  c \in \SEM{\pass{compile\text{-}x86}(M)}^{\Ml{X86}} &\iff \Term_{\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))}(c) \\
-  \SEM{\pass{compile\text{-}x86}(M)}^{\Ml{X86}} \NE &\iff \Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M)) \text{ converges.}
+  c \in \SEM{\pass{compile\text{-}x86}(M)}^{\Ml{X86}} &\iff \Term_{\Interp{\Ml{X86}}(\pass{compile\text{-}x86}(M))}(c) \\
+  \Div_{\Interp{\Ml{X86}}(\pass{compile\text{-}x86}(M))} &\iff \SEM{\pass{compile\text{-}x86}(M)}^{\Ml{X86}} = \emptyset .
 \end{align*}
+
+\paragraph{The alternative: adequacy for the CEK machines}
+(\texttt{proof/Adequacy/CEK/}, not among the statements of
+\texttt{Theorems/}). The same two theorems for the CEK machines of
+$\Ml{ISWIM}$ and $\Ml{X86}$, with the same logical relations, but
+$\gamma \vdash M \Downarrow v$ is ``the machine runs from $\ev{M}{\gamma}{\kappa}$
+to $\rt{v}{\kappa}$ for every $\kappa$'', soundness shows that every step can
+only shrink the set a state denotes (continuations and call stacks
+denoting the contexts they stand for), and the statements are about
+constants and convergence; divergence then needs
+Lemma~\ref{lem:m-no-error} for the machines. It shares the tuples of
+sets, the tables' lemmas and \texttt{X86Compiled.agda}, and is reported
+beside the adequacy for the interpreters in the comparison.
 
 \subsection{The end-to-end theorem}
 
 \begin{theorem}[End to End, Graph Model]\label{thm:m-end-to-end-den}\sloppy
-For every closed $\Ml{ISWIM}$ program $M$ of any type,
-$\Mach{\Ml{ISWIM}}(M)$ converges iff $\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))$
-does (\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{end-to-end-x86-converges}); and for $M : \key{Int}$ and every
-integer $n$,
+For every closed $\Ml{ISWIM}$ program $M : \key{Int}$ and every integer $n$,
 \begin{align*}
-  \Term_{\Mach{\Ml{ISWIM}}(M)}(n) &\iff \Term_{\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))}(n) \\
-  \Div_{\Mach{\Ml{ISWIM}}(M)} &\iff \Div_{\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))}
+  \Term_{\Interp{\Ml{ISWIM}}(M)}(n) &\iff \Term_{\Interp{\Ml{X86}}(\pass{compile\text{-}x86}(M))}(n) \\
+  \Div_{\Interp{\Ml{ISWIM}}(M)} &\iff \Div_{\Interp{\Ml{X86}}(\pass{compile\text{-}x86}(M))}
 \end{align*}
-(\texttt{end-to-end-x86-const}, \texttt{end-to-end-x86-diverges}; the
-proof is \texttt{proof/Adequacy/EndToEnd.agda}).
+(\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{end-to-end-x86-const},
+\texttt{end-to-end-x86-diverges}; the proof is
+\texttt{proof/Adequacy/EndToEnd.agda}).
 \end{theorem}
-The machine of $M$ terminates with $n$ iff $n \in \SEM{M}\rho_0$
+The interpreter of $M$ terminates with $n$ iff $n \in \SEM{M}\rho_0$
 (adequacy for $\Ml{ISWIM}$), iff $n \in \SEM{\pass{compile\text{-}x86}(M)}$
-(Theorem~\ref{thm:m-den-compiler}), iff the $\Ml{X86}$ machine terminates
-with $n$ (adequacy for $\Ml{X86}$); likewise for convergence; and
-divergence follows from convergence by Lemma~\ref{lem:m-no-error}. No graph
-model with errors is needed: there are no errors to observe.
+(Theorem~\ref{thm:m-den-compiler}), iff the $\Ml{X86}$ interpreter terminates
+with $n$ (adequacy for $\Ml{X86}$); likewise for divergence, through the
+emptiness of the two denotations, which $\Same$ relates. No graph model
+with errors is needed: there are no errors to observe.
 
 \begin{theorem}[End to End, Common to the Four Styles]\label{thm:m-end-to-end}\sloppy
 For every closed $\Ml{ISWIM}$ program $M : \key{Int}$, the source and its
@@ -3397,13 +3437,13 @@ or both diverge:
 \]
 where $(L, L')$ is
 \begin{itemize}
-\item $(\Mach{\Ml{ISWIM}}, \Mach{\Ml{X86}})$ in the graph model
-  (Theorem~\ref{thm:m-end-to-end-den}) and in the CEK column
-  (Theorem~\ref{thm:m-cek-compile}; \texttt{compile-x86-const},
-  \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Simulation.agda});
-\item $(\Interp{\Ml{ISWIM}}, \Interp{\Ml{X86}})$ in the interpreter column
+\item $(\Interp{\Ml{ISWIM}}, \Interp{\Ml{X86}})$ in the graph model
+  (Theorem~\ref{thm:m-end-to-end-den}) and in the interpreter column
   (Theorem~\ref{thm:m-interp-compiler}; \texttt{compile-x86-const},
   \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Interpreter.agda});
+\item $(\Mach{\Ml{ISWIM}}, \Mach{\Ml{X86}})$ in the CEK column
+  (Theorem~\ref{thm:m-cek-compile}; \texttt{compile-x86-const},
+  \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Simulation.agda});
 \item $(\mathcal{R}^{\Ml{ISWIM}}, \Mach{\Ml{X86}})$ in the reduction column
   (Theorem~\ref{thm:m-red-compiler}; \texttt{compile-x86-const},
   \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Reduction.agda}).
@@ -3411,23 +3451,23 @@ where $(L, L')$ is
 \end{theorem}
 In the operational columns the theorem is an instance of $\Equiv$, which
 holds at any type and also equates errors, of which there are none
-(Lemma~\ref{lem:m-no-error}); in the graph model it needs the no-error
-lemmas of the two CEK machines. So the four columns state one theorem,
-and the comparison has no caveat that the theorems differ. The
-intermediate compositions ($\pass{compile}_4$ to $\pass{compile\text{-}cfg}$)
-and the passes hold at any type.
+(Lemma~\ref{lem:m-no-error}); in the graph model it comes from adequacy,
+whose soundness halves show that the interpreters never err. So the four
+columns state one theorem, and the comparison has no caveat that the
+theorems differ. The intermediate compositions ($\pass{compile}_4$ to
+$\pass{compile\text{-}cfg}$) and the passes hold at any type.
 
 \begin{sloppypar}
 \paragraph{The statements.} The public statements are in
 \texttt{agda/Mu/Theorems/}, one file per style and one for adequacy:
 \texttt{Denotational.agda}, \texttt{Simulation.agda},
 \texttt{Interpreter.agda}, \texttt{Reduction.agda} and
-\texttt{Adequacy.agda} (the latter with the end-to-end theorem through the
-machines, and the no-error lemmas of the two CEK machines). Each theorem
+\texttt{Adequacy.agda} (the latter with adequacy for the two interpreters
+and the end-to-end theorem through them). Each theorem
 there has its full type written out and is defined as its proof, under
 \texttt{agda/Mu/proof}; all are imported by \texttt{agda/Mu/All.agda}.
-The statements for $\pass{compile}_4$ and the no-error lemmas of the
-clocked interpreters and of the reduction semantics are not among them;
+The statements for $\pass{compile}_4$, the no-error lemmas and the
+alternative adequacy for the CEK machines are not among them;
 they are the top-level definitions named above, in the proof files.
 \end{sloppypar}
 %===============================================================================

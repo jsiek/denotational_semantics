@@ -1,24 +1,25 @@
 {-
 
   Soundness and adequacy of the graph model of ISWIMμ
-  (Mu/Semantics/Graph/ISWIM.agda) with respect to the ISWIMμ machine
-  (Mu/Semantics/CEK/ISWIM.agda), for closed programs of any type,
-  started in ρ₀ on the denotational side and in the empty environment
-  on the machine side, as for ISWIM (proof/Adequacy/ISWIM.agda):
+  (Mu/Semantics/Graph/ISWIM.agda) with respect to its clocked
+  interpreter (Mu/Semantics/Interp/ISWIM.agda), for closed programs of
+  any type, started in ρ₀ on the denotational side and in the empty
+  environment on the interpreter's, as Mu/proof/Adequacy/CEK/ISWIM.agda
+  is for the ISWIMμ machine:
 
-    soundness (Mu/proof/Adequacy/Soundness.agda): if the machine
-      terminates with o, it returns a value v observed as o, and the
-      denotation of v is part of ⟦ M ⟧ ρ₀;
+    soundness (Mu/proof/Adequacy/Soundness.agda): what the interpreter
+      returns at some clock denotes a part of ⟦ M ⟧ ρ₀, and it never
+      errs;
     adequacy (Mu/proof/Adequacy/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
-      related to the value the machine returns.
+      related to the value the interpreter returns from some clock on.
 
-  So ⟦ M ⟧ ρ₀ contains const k exactly when the machine terminates with
-  o-const B k, it is nonempty exactly when the machine terminates with
-  an answer, and it is empty when the machine diverges. Since the
-  machine is typed it never stops with o-error, so, unlike for ISWIM,
-  there is no statement about errors; as for Clos5ᵀ
-  (proof/Adequacy/Clos5.agda), the shape of an observation is read off
-  the related value (𝕍-const, obs-answer) rather than off d.
+  So ⟦ M ⟧ ρ₀ contains const k exactly when the interpreter terminates
+  with o-const B k (const-iff), and it is empty exactly when the
+  interpreter diverges (diverges-iff). This is the source half of the
+  graph model's end-to-end theorem (Mu/proof/Adequacy/EndToEnd.agda),
+  and the bridge at ISWIMμ of the mixed proof, which joins a pass
+  proved in the graph model to passes proved by the interpreters
+  (Mu/proof/Mixed/CompilerMixed.agda).
 
 -}
 
@@ -27,52 +28,54 @@ module Mu.proof.Adequacy.ISWIM where
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
+open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Semantics.Graph.ISWIM using (⟦_⟧)
-open import Mu.Semantics.CEK.ISWIM using (sem; Val; ret; halt; obs)
-open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep using (Terminates; Diverges; diverges-not-terminates)
-import Mu.proof.Adequacy.Soundness as S
-open import Mu.proof.Adequacy.LogRel using (𝕍; adequate; 𝕍-const; obs-answer; ↠→star)
+open import Mu.Semantics.Interp.ISWIM using (Val; eval; sem; obs)
+open import Semantics.Observation using (o-const; _⇔_)
+open import Mu.proof.Adequacy.Soundness using (timeout; ret; Sound; sound; 𝒱-const; 𝒱-ne)
+open import Mu.proof.Adequacy.LogRel using (𝕍; adequate; 𝕍-const)
 
+open import Data.Empty using (⊥-elim)
 open import Data.List using ([])
+open import Mu.Framework.AllUtil using ([])
+open import Data.Maybe using (just)
+open import Data.Nat.Properties using (≤-refl)
 open import Data.Product using (_×_; Σ-syntax) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (refl; sym; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; trans)
 open import Relation.Nullary using (¬_)
 
-{- Soundness -------------------------------------------------------------------}
+private
+  just-inj : ∀ {X : Set} {a b : X} → just a ≡ just b → a ≡ b
+  just-inj refl = refl
 
-sound-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → Terminates (sem M) (o-const B k) → dconst k ∈ ⟦ M ⟧ ρ₀
-sound-const M t with S.soundness M t
-... | ⟨ _ , ⟨ v , ⟨ o≡ , v⊆ ⟩ ⟩ ⟩ = v⊆ _ (S.𝒱-const v (sym o≡))
+  {- a sound result observed as a constant: the constant is in D -}
+  const-in : ∀ {A} {r : Result (Val A)} {D B} {k : base-rep B} → Sound r D
+    → outcome obs r ≡ just (o-const B k) → dconst k ∈ D
+  const-in (ret {v} v⊆) e = v⊆ _ (𝒱-const v (just-inj e))
 
-sound-nonempty : ∀ {A} (M : Tm [] A) → Converges (Terminates (sem M)) → nonempty (⟦ M ⟧ ρ₀)
-sound-nonempty M ⟨ o , ⟨ _ , t ⟩ ⟩ with S.soundness M t
-... | ⟨ _ , ⟨ v , ⟨ _ , v⊆ ⟩ ⟩ ⟩ = let ⟨ d , d∈ ⟩ = S.𝒱-ne v in ⟨ d , v⊆ d d∈ ⟩
+  {- a sound result in an empty D times out -}
+  empty-timeout : ∀ {A} {r : Result (Val A)} {D} → Sound r D → ¬ nonempty D → r ≡ timeout
+  empty-timeout timeout ne = refl
+  empty-timeout (ret {v} v⊆) ne with 𝒱-ne v
+  ... | ⟨ d , d∈ ⟩ = ⊥-elim (ne ⟨ d , v⊆ d d∈ ⟩)
 
-{- Adequacy --------------------------------------------------------------------}
-
-adequacy : ∀ {A} (M : Tm [] A) {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ v ∈ Val A ] Terminates (sem M) (obs v) × 𝕍 d v
-adequacy M d∈ with adequate M (λ ()) d∈
-... | ⟨ v , ⟨ e , r ⟩ ⟩ = ⟨ v , ⟨ ⟨ ret v halt , ⟨ ↠→star (e halt) , refl ⟩ ⟩ , r ⟩ ⟩
-
-adequacy-const : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → dconst k ∈ ⟦ M ⟧ ρ₀ → Terminates (sem M) (o-const B k)
-adequacy-const M k∈ with adequacy M k∈
-... | ⟨ v , ⟨ t , r ⟩ ⟩ = subst (Terminates (sem M)) (𝕍-const v r) t
-
-adequacy-converges : ∀ {A} (M : Tm [] A) → nonempty (⟦ M ⟧ ρ₀) → Converges (Terminates (sem M))
-adequacy-converges M ⟨ d , d∈ ⟩ with adequacy M d∈
-... | ⟨ v , ⟨ t , _ ⟩ ⟩ = ⟨ obs v , ⟨ obs-answer v , t ⟩ ⟩
-
-{- Characterizations ------------------------------------------------------------}
+{- adequacy: an element of the denotation is related to the value the
+   interpreter returns from some clock on -}
+returns : ∀ {A} (M : Tm [] A) {d} → d ∈ ⟦ M ⟧ ρ₀ → Σ[ v ∈ Val A ] Σ[ ck ∈ _ ] eval ck [] M ≡ ret v × 𝕍 d v
+returns M d∈ with adequate M (λ ()) d∈
+... | ⟨ v , ⟨ ⟨ c , e ⟩ , r ⟩ ⟩ = ⟨ v , ⟨ c , ⟨ e c ≤-refl , r ⟩ ⟩ ⟩
 
 const-iff : ∀ {A} (M : Tm [] A) {B} {k : base-rep B} → (dconst k ∈ ⟦ M ⟧ ρ₀) ⇔ Terminates (sem M) (o-const B k)
-const-iff M = ⟨ adequacy-const M , sound-const M ⟩
+const-iff M =
+  ⟨ (λ k∈ → let ⟨ v , ⟨ ck , ⟨ e , r ⟩ ⟩ ⟩ = returns M k∈ in
+       ⟨ ck , trans (cong (outcome obs) e) (cong just (𝕍-const v r)) ⟩)
+  , (λ { ⟨ ck , e ⟩ → const-in (sound ck [] M) e }) ⟩
 
-nonempty-iff : ∀ {A} (M : Tm [] A) → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
-nonempty-iff M = ⟨ adequacy-converges M , sound-nonempty M ⟩
-
-{- a program that diverges denotes the empty set -}
-diverges-empty : ∀ {A} (M : Tm [] A) → Diverges (sem M) → ∀ (d : Value) → ¬ (d ∈ ⟦ M ⟧ ρ₀)
-diverges-empty M div d d∈ with adequacy M d∈
-... | ⟨ v , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t
+diverges-iff : ∀ {A} (M : Tm [] A) → Diverges (sem M) ⇔ (¬ nonempty (⟦ M ⟧ ρ₀))
+diverges-iff M =
+  ⟨ (λ { div ⟨ d , d∈ ⟩ → let ⟨ v , ⟨ ck , ⟨ e , _ ⟩ ⟩ ⟩ = returns M d∈ in ret≢timeout (trans (sym e) (div ck)) })
+  , (λ ne ck → empty-timeout (sound ck [] M) ne) ⟩
+  where
+  ret≢timeout : ∀ {X : Set} {v : X} → ¬ (Result.ret v ≡ Result.timeout)
+  ret≢timeout ()
