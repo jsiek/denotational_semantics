@@ -485,6 +485,18 @@ GROUPS = [
     ('mu-op', 'CC: delay', [MUP + 'Correctness/CEK/DelaySim.agda']),
     ('mu-op', 'composition', [MUP + 'Correctness/CEK/PipelineSim.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
+    # the pilot's reduction column (in --mu's reduction table): reduction
+    # semantics of the languages with binders, the simulations, and the
+    # reduction framework for heterogeneous vectors (infrastructure)
+    ('mu-red', 'semantics of the languages', [MU + 'Semantics/Reduction/*.agda', MUP + 'Semantics/Reduction/*.agda']),
+    ('mu-red', 'CC: enclose', [MUP + 'Correctness/Reduction/EncloseRed.agda']),
+    ('mu-red', 'CC: optimize', [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
+    ('mu-red', 'CC: concretize', [MUP + 'Correctness/Reduction/ConcretizeRed.agda']),
+    ('mu-red', 'CC: delay', [MUP + 'Correctness/Reduction/DelayRed.agda']),
+    ('mu-red', 'CC: globalize', [MUP + 'Correctness/Reduction/GlobalizeRed.agda']),
+    ('mu-red', 'rco', [MUP + 'Correctness/Reduction/RCORed.agda']),
+    ('mu-red', 'composition', [MUP + 'Correctness/Reduction/PipelineRed.agda']),
+    ('mu-rinfra', 'reduction of heterogeneous vectors', [MU + 'Framework/ReductionAll.agda']),
 ]
 
 ADEQ_ROWS = ['ISWIM', 'Clos5', 'X86', 'X86ᵀ', 'well-formedness of compiled programs', 'end to end',
@@ -1132,14 +1144,86 @@ def mu_report(c):
     print()
 
 
+# --- the pilot's reduction column ---------------------------------------------
+# rows (name, typed files, μ files), like for like: the typed reduction
+# column without simplify and cast insertion (and without the reduction
+# semantics of untyped ISWIM, which only their proofs use)
+MU_RED_ROWS = [
+    ('semantics: ' + x, [RD + 'Typed/' + x + '.agda', RP + 'Typed/' + x + '.agda'],
+     [MU + 'Semantics/Reduction/' + x + '.agda', MUP + 'Semantics/Reduction/' + x + '.agda'])
+    for x in ('ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5')] + [
+    ('semantics: transition systems (shared)', [RD + 'Smallstep.agda'], [RD + 'Smallstep.agda']),
+    ('CC: enclose', [RC + 'EncloseRed.agda'], [MUP + 'Correctness/Reduction/EncloseRed.agda']),
+    ('CC: optimize', [RC + 'OptimizeRed.agda'], [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
+    ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/Reduction/ConcretizeRed.agda']),
+    ('CC: delay', [RC + 'DelayRed.agda'], [MUP + 'Correctness/Reduction/DelayRed.agda']),
+    ('CC: globalize', [RC + 'GlobalizeRed.agda'], [MUP + 'Correctness/Reduction/GlobalizeRed.agda']),
+    ('rco', [RC + 'RCORed.agda'], [MUP + 'Correctness/Reduction/RCORed.agda']),
+]
+MU_RED_COMP = ([RC + 'PipelineRed.agda'], [MUP + 'Correctness/Reduction/PipelineRed.agda'])
+
+
+def mu_red_check(c):
+    """As mu_check, for the pilot's reduction column: it reaches no module of
+    another of the pilot's columns (those it shares with one, 'mu-op+mu-red',
+    apart) nor of a proof of either pipeline (what both share apart), and its
+    infrastructure imports only infrastructure."""
+    own = {un for un, (side, _) in c.group_of.items() if 'mu-red' in sides_of(side)}
+    typed, untyped = set(TYPED['sides']) | {'gerr', 'adeq', 'gadeq'}, set(UNTYPED['sides']) | {'ugerr', 'uadeq', 'ugadeq'}
+    bad = set()
+    for un in reachable(own, c.graph):
+        side = c.group_of[un][0]
+        ss = set(sides_of(side))
+        if side.startswith('mu-') and 'mu-red' not in ss and side not in ('mu-shared', 'mu-infra', 'mu-rinfra'):
+            bad.add(un)
+        if ss <= set(STYLE) and not (ss & typed and ss & untyped):
+            bad.add(un)
+    if bad:
+        sys.exit('mu-red imports modules of another proof:\n  ' + '\n  '.join(sorted(bad)))
+    rinfra = {un for un, (side, _) in c.group_of.items() if side in ('mu-infra', 'mu-rinfra')}
+    bad = sorted(reachable(rinfra, c.graph) - rinfra - c.infra)
+    if bad:
+        sys.exit("the pilot's reduction infrastructure imports modules that are not infrastructure:\n  "
+                 + '\n  '.join(bad))
+
+
+def mu_red_report(c):
+    """The pilot's reduction column against the typed one, row by row."""
+
+    def n(fs):
+        fs = [f for f in fs if os.path.exists(f)]
+        return sum(code_lines(f) for f in fs) if fs else None
+
+    def cell(x):
+        return '—' if x is None else str(x)
+    print('| ISWIMμ pilot against the typed pipeline: reduction | typed | μ |')
+    print('|---|---:|---:|')
+    tot = [0, 0]
+    for row, t, m in MU_RED_ROWS:
+        ns = [n(t), n(m)]
+        tot = [a + (x or 0) for a, x in zip(tot, ns)]
+        print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
+    print('| **total** | ' + ' | '.join(str(x) for x in tot) + ' |')
+    print('| composition (typed: all the passes, to X86ᵀ) | '
+          + ' | '.join(cell(n(fs)) for fs in MU_RED_COMP) + ' |')
+    print()
+    print('| reduction: not counted in the rows | typed | μ |')
+    print('|---|---:|---:|')
+    print(f'| reduction of vectors (`ReductionVec`) against heterogeneous vectors (`Mu/Framework/ReductionAll`) '
+          f'| {n([W + "ReductionVec.agda", WP + "ReductionVec.agda"])} | {n([MU + "Framework/ReductionAll.agda"])} |')
+    print()
+
+
 def main():
     c = Count()
     mu_check(c)
+    mu_red_check(c)
     T, Un = c.analyze(TYPED), c.analyze(UNTYPED)
     if '--mu' in sys.argv[1:]:
         print('## The ISWIMμ pilot')
         print()
         mu_report(c)
+        mu_red_report(c)
         return
     if '--untyped' in sys.argv[1:]:
         print(f'## The {UNTYPED["name"]}')
