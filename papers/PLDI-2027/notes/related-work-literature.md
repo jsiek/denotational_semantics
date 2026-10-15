@@ -285,7 +285,10 @@ Result numbers below were checked in that PDF [V].
   doi     = {10.1006/inco.1993.1044}}
 ```
 Bibliographic data [V] (Crossref; Pitts 1996's bibliography also says 159–267; the Oxford page
-says 159–268). Proof method [U]: full text not obtained. From memory it reuses the
+says 159–268). Proof method [U]: full text not obtained (tried again 2026-10-15: no PDF on the
+Oxford publication page or Abramsky's publication list; the Cambridge TR UCAM-CL-TR-259 is paper
+only; OpenAlex marks the Elsevier copy "bronze" open access but ScienceDirect refused automated
+access). From memory it reuses the
 LLC/domain-logic approach. Ong's 1988 Imperial PhD thesis has "§3.2.3 A General Adequacy
 Result" for continuous lazy λ-models [V title only, method unseen]. Do not quote this paper
 for its method.
@@ -331,8 +334,9 @@ Bibliographic data [V] (Crossref):
   publisher = {Ellis Horwood}, year = {1993},
   note      = {French original: Lambda-calcul, types et mod{\`e}les, Masson, Paris, 1990}}
 ```
-Krivine [V] from the PDF on Krivine's site. The PDF shows "Paris, 1990"; the Ellis Horwood
-1993 details are [U]. Cleanest citation for "a relation between intersection types and terms,
+Krivine [V] from the PDF on Krivine's site. The PDF shows "Paris, 1990". English edition [A, Open
+Library record OL7174632W]: *Lambda-Calculus, Types and Models*, Ellis Horwood, 1993, ISBN
+0-13-062407-1, 192 pp. The translator and the series are not verified. Cleanest citation for "a relation between intersection types and terms,
 by induction on types":
 - Krivine, ch. 3 "Intersection type systems" [V]: types are interpreted as saturated sets of
   terms "by induction on the length of A: … |Ω| = Λ; if A = B → C, then |A| = |B| → |C|; if
@@ -555,7 +559,8 @@ references; recursive types are handled by step levels of worlds.
              preliminary version: Relational properties of recursively defined domains,
              Proc. 8th LICS 1993, pp. 86--97}}
 ```
-**[V]** volume 127, pp. 66–90, 1996 (article no. 0052) from the PDF header; issue number 2 [U].
+**[V]** volume 127, pp. 66–90, 1996 (article no. 0052) from the PDF header; issue number 2 [V, Crossref
+record for doi:10.1006/inco.1996.0052, which also gives June 1996].
 
 Structure **[V]**: §1 Introduction; §2 Overview; §3 "Minimal Solutions of Domain Equations" ( Theorem 3.3 existence
 of minimal invariants, Theorem 3.4 Freyd's mixed initiality/finality, Example 3.6 the lazy
@@ -605,7 +610,9 @@ Which relations are A and which B **[V]**:
   relations but does **not** work it out: invariant relations "lie at the heart of some
   proofs of correspondence between denotational and operational semantics (as in (Plotkin,
   1985), or (Meyer and Cosmadakis, 1988, Appendix), for example), or between two denotational
-  semantics (as in (Reynolds, 1974) for example)" (§2 Overview, p. 67 or 68 — exact page unverified).
+  semantics (as in (Reynolds, 1974) for example)" (§2 Overview, under "Results — Invariant Relations",
+  **p. 68** [V, the author's PDF at cl.cam.ac.uk/~amp12/papers/relpod/relpod.pdf, which carries the
+  journal pagination: running head "68 ANDREW M. PITTS"]).
 
 How it copes with recursive domains: minimal-invariant property (Freyd) + admissible actions
 on relations; a mixed (negative/positive) separation R⁻/R⁺ and fixed-point induction.
@@ -735,6 +742,14 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
 - **Classification: B** (heterogeneous, two semantics), with stage/inverse-limit existence.
   Note the **asymmetric "weaker-than" predicates** (Stoy, Mulmuley): they are asymmetric in
   *order* (d ⊑-approximates e), not in finiteness.
+- **Polak 1980/81** [V, thesis STAN-CS-80-802; see `novelty-literature.md` §1.9]: a compiler
+  proof whose code-generation relations ϑ between the LS (source) and LT (target) domains are
+  recursive and, Polak notes, not even monotone ("If l increases ϑ_S becomes smaller", p. 136).
+  Existence is not proved: "Reynolds [Re74] presents a set of easy to check criteria that ensure
+  existence of fixed points. It can be seen that our definitions satisfy his criteria; thus we
+  subsequently assume that the above predicates are well defined." (§IV.5.3.5, p. 136).
+  Classification **B** (heterogeneous, compiler source vs target), first-order languages, not
+  indexed by finite elements.
 - **Relation to our R:** the historical home of "prove two semantics congruent by two one-way
   relations". Our two directions (preservation and reflection) echo this. Note that "finitary
   projection" is a technical term here (see Name check).
@@ -744,7 +759,8 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
   Programs*, LNCS 193, 1985, pp. 219–224 [V metadata via Crossref; text not read].
   - Content [U]: a search-tool summary of the abstract says that for typed λ-calculi
     inclusive predicates can be replaced by retractions, and that the meaning of a closed term
-    is a retraction of the meaning of its CPS transform.
+    is a retraction of the meaning of its CPS transform. A second search (2026-10-15) returned
+    the same summary from the publisher's preview; the text itself was still not obtained.
   - Filinski's characterization [V, *Controlling Effects*, 1996, §3.4]: "Meyer and Wand's more
     abstract approach [MW85] applied to all models of simply-typed λ-calculi, but did not
     encompass computational effects – not even nontermination."
@@ -760,7 +776,9 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
   recursive types and multiple effects, and a "methodology for relating two such
   interpretations", with Reynolds's direct-vs-continuation example as the prototype.
   - How the relations on recursive types are constructed is **[U]**: the full text could not
-    be obtained. It is plausibly Pitts-style, but do not state that without checking.
+    be obtained (retried 2026-10-15: ScienceDirect refuses automated access although OpenAlex
+    lists it as open access; not on Filinski's DIKU paper page). It is plausibly Pitts-style, but
+    do not state that without checking.
   - Classification B, heterogeneous.
 - **Filinski & Støvring**, "Inductive reasoning about effectful data types", ICFP 2007 [V
   abstract]: "rigid induction" integrated into logical-relations arguments, used to show that
@@ -777,7 +795,10 @@ from the CMU preprint (16 pages, KiltHub/figshare 6608018). The page numbers bel
     conservative-extension theorem (Theorem 3), not by a cross-model relation.
   - Clinger, "The Scheme 311 compiler: an exercise in denotational semantics", LFP 1984 [U,
     not read].
-  - Classification: these *avoid* B by putting source and target in one model.
+  - Classification: these *avoid* B by putting source and target in one model or theory. Wand
+    1991 in particular is **not** a denotational semantics in our sense (author's classification,
+    2026-10-15): meanings are λ-terms up to interconvertibility, which is not extensional, and no
+    model is used except in the sketched conservativity proof. See `vlisp-clinger-wand.md` §3.
   - Relation to ours: our Clos3/Clos4 graph models are separate but similar. The single-model
     alternative is the obvious "why not just…" a referee may raise.
 - **Stoughton** [V via the BRICS PCF bibliography]: Jung & Stoughton TLCA 1993 ("finitary PCF"
@@ -930,7 +951,10 @@ entailment closure.
   types; construction unverified.
 - Chlipala 2007 [V]: pass-by-pass relations between the denotations (Coq sets) of source and
   target ILs, including closure conversion. Type-indexed, total source, no recursive domains.
-- The Wand–Clinger line [V via Wand–Oliva] avoids B by using one model for source and target.
+- Polak 1980 [V]: heterogeneous source/target predicates for a first-order Pascal-subset compiler;
+  existence assumed via Reynolds's criteria.
+- The Wand–Clinger line [V via Wand–Oliva] avoids B by using one model (Clinger) or one equational
+  λ-theory (Wand 1991, not denotational in our sense) for source and target.
 
 **(d) Asymmetry.**
 - Finite-vs-arbitrary asymmetry exists only in category A: a finite token, neighbourhood,
@@ -965,12 +989,17 @@ entailment closure.
   treats closure representations inside one λ-theory.
 
 ## S3. Claims that remain unverified (do not state without checking)
+Resolved on 2026-10-15: Pitts 1996's issue number (2) and the page of the §2 Reynolds remark
+(p. 68); the Krivine English edition (Ellis Horwood 1993, from Open Library, translator unverified).
+Tried again without success: Abramsky & Ong 1993, Filinski 2007, Meyer–Wand 1985 (no accessible
+full text). None of the items below bears on C3; items 5–8 are the caveats on C6.
+
 1. Which "Gordon Plotkin's lecture notes" Winskel means in §13.11 (Pisa notes [80] or CSLI 1985
    [83]).
 2. Winskel chapter numbering in later printings (a 2001 listing appears to differ).
 3. Abramsky & Ong 1993's adequacy method (full text not read). Also whether the DTLF APAL
    article contains the lazy-λ adequacy material.
-4. Krivine, English edition details (Ellis Horwood 1993).
+4. Krivine English edition: translator and series.
 5. Milne–Strachey 1976 and Stoy 1977: chapter and section locations of the inclusive-predicate
    constructions.
 6. Mulmuley's 1987 book (only the 1985 TR was read).
@@ -982,8 +1011,7 @@ entailment closure.
     the abstract) uses "finitary logical relations".
 11. Engeler 1981 and Scott 1976 one-line descriptions (taken from Plotkin and Siek, not the
     originals).
-12. Pitts 1996 issue number (2) and the exact page of the §2 Reynolds remark (p. 67 or 68).
-13. The BBKV "Formalizing Domains…" final publication venue.
-14. Name check: no Google Scholar, DBLP or ACM full-text search was completed (rate-limited or
-    blocked).
-
+12. The BBKV "Formalizing Domains…" final publication venue.
+13. Name check: no Google Scholar, DBLP or ACM full-text search was completed (still blocked on
+    2026-10-15: Scholar 429, DBLP bot check, ACM 403). OpenAlex and arXiv abstract searches for
+    the novelty claims found no relation between two denotations indexed by finite elements.
