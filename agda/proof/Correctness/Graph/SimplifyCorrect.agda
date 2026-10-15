@@ -3,10 +3,10 @@
   Correctness of the simplify pass (ISWIM → ISWIM) in the graph model.
 
   The main lemma (simp-ok): if what simp knows of each variable x is true
-  of the source's environment γ in the target's γ' (Desc: the term that
-  replaces x, and what x is known to be, denote γ x in γ'), then what
-  simp E M says of M is true: its term, and what it is known to be,
-  denote ⟦ M ⟧ γ in γ'. A known function λ N denotes ⟦ λ N ⟧ γf for a
+  of the source's environment γ in the target's γ' (Desc: γ x is denoted
+  in γ' by the term that replaces x, and by what x is known to be), then
+  what simp E M says of M is true: ⟦ M ⟧ γ is denoted in γ' by its term,
+  and by what it is known to be. A known function λ N denotes ⟦ λ N ⟧ γf for a
   source environment γf of which its Facts are true (KDesc), so an
   inlined call is a call of ⟦ λ N ⟧ γf: β and inlining share let-ok.
 
@@ -68,48 +68,48 @@ wf-• ⟨ ne , c ⟩ neD cD = ⟨ extend-nonempty-env ne neD , Con-• cD c ⟩
 {- I is true of D in γ': its term denotes D, and so does what it is known
    to be (KDesc): a value, or a function λ N closed in a source
    environment γ of which its Facts are true -}
-record Desc (I : Info) (γ' : Env Value) (D : 𝒫 Value) : Set₁
-data KDesc : Known → Env Value → 𝒫 Value → Set₁
+record Desc (D : 𝒫 Value) (I : Info) (γ' : Env Value) : Set₁
+data KDesc : 𝒫 Value → Known → Env Value → Set₁
 
 Ok : Facts → Env Value → Env Value → Set₁
-Ok E γ γ' = ∀ x → Desc (E x) γ' (γ x)
+Ok E γ γ' = ∀ x → Desc (γ x) (E x) γ'
 
-record Desc I γ' D where
+record Desc D I γ' where
   inductive
   constructor desc
   field
-    tm : ⟦ term I ⟧ γ' ≃ D
-    kn : ∀ {K} → known I ≡ just K → KDesc K γ' D
+    tm : D ≃ ⟦ term I ⟧ γ'
+    kn : ∀ {K} → known I ≡ just K → KDesc D K γ'
 open Desc
 
 data KDesc where
-  kval : ∀ {K γ' D} → SV K → ⟦ K ⟧ γ' ≃ D → KDesc (val K) γ' D
-  kfun : ∀ {N E γ' D} γ → Wf γ → Ok E γ γ' → ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ ≃ D → KDesc (fun N E) γ' D
+  kval : ∀ {D K γ'} → SV K → D ≃ ⟦ K ⟧ γ' → KDesc D (val K) γ'
+  kfun : ∀ {D N E γ'} γ → Wf γ → Ok E γ γ' → D ≃ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ → KDesc D (fun N E) γ'
 
-kv : ∀ {K γ' D} → KDesc (val K) γ' D → SV K × ⟦ K ⟧ γ' ≃ D
+kv : ∀ {D K γ'} → KDesc D (val K) γ' → SV K × D ≃ ⟦ K ⟧ γ'
 kv (kval v eq) = ⟨ v , eq ⟩
 
-desc-≃ : ∀ {I γ' D D'} → Desc I γ' D → D ≃ D' → Desc I γ' D'
-desc-≃ {I} {γ'} d eq = desc (≃-trans (tm d) eq) (λ e → G _ (kn d e))
+desc-≃ : ∀ {D D' I γ'} → Desc D I γ' → D' ≃ D → Desc D' I γ'
+desc-≃ {I = I} {γ'} d eq = desc (≃-trans eq (tm d)) (λ e → G _ (kn d e))
   where
-  G : ∀ K → KDesc K γ' _ → KDesc K γ' _
-  G (val K) (kval v K≃) = kval v (≃-trans K≃ eq)
-  G (fun N E) (kfun γ wf ok F≃) = kfun γ wf ok (≃-trans F≃ eq)
+  G : ∀ K → KDesc _ K γ' → KDesc _ K γ'
+  G (val K) (kval v K≃) = kval v (≃-trans eq K≃)
+  G (fun N E) (kfun γ wf ok F≃) = kfun γ wf ok (≃-trans eq F≃)
 
-desc-self : ∀ {V γ' D} → SV V → ⟦ V ⟧ γ' ≃ D → Desc (self V) γ' D
+desc-self : ∀ {D V γ'} → SV V → D ≃ ⟦ V ⟧ γ' → Desc D (self V) γ'
 desc-self v eq = desc eq (λ { refl → kval v eq })
 
-desc-info : ∀ {M γ' D} → ⟦ M ⟧ γ' ≃ D → Desc (info M) γ' D
-desc-info {M} eq with value M in e
+desc-info : ∀ {D M γ'} → D ≃ ⟦ M ⟧ γ' → Desc D (info M) γ'
+desc-info {M = M} eq with value M in e
 ... | true = desc eq (λ { refl → kval (value-sv M e) eq })
 ... | false = desc eq (λ ())
 
 {- under one more binder, in the target -}
-desc-shift : ∀ I {γ' D} X → Desc I γ' D → Desc (shift-info I) (X • γ') D
-kdesc-shift : ∀ K {γ' D} X → KDesc K γ' D → KDesc (shift-known K) (X • γ') D
-desc-shift (M ∣ nothing) {γ'} X d = desc (≃-trans (shift-≃ M X γ') (tm d)) (λ ())
-desc-shift (M ∣ just K) {γ'} X d = desc (≃-trans (shift-≃ M X γ') (tm d)) (λ { refl → kdesc-shift K X (kn d refl) })
-kdesc-shift (val K) {γ'} X (kval v K≃) = kval (sv-rename suc v) (≃-trans (shift-≃ K X γ') K≃)
+desc-shift : ∀ I {D γ'} X → Desc D I γ' → Desc D (shift-info I) (X • γ')
+kdesc-shift : ∀ K {D γ'} X → KDesc D K γ' → KDesc D (shift-known K) (X • γ')
+desc-shift (M ∣ nothing) {γ' = γ'} X d = desc (≃-trans (tm d) (≃-sym (shift-≃ M X γ'))) (λ ())
+desc-shift (M ∣ just K) {γ' = γ'} X d = desc (≃-trans (tm d) (≃-sym (shift-≃ M X γ'))) (λ { refl → kdesc-shift K X (kn d refl) })
+kdesc-shift (val K) {γ' = γ'} X (kval v K≃) = kval (sv-rename suc v) (≃-trans K≃ (≃-sym (shift-≃ K X γ')))
 kdesc-shift (fun N E) X (kfun γ wf ok F≃) = kfun γ wf (λ x → desc-shift (E x) X (ok x)) F≃
 
 ok-under : ∀ {E γ γ'} X → Ok E γ γ' → Ok (under E) (X • γ) (X • γ')
@@ -175,23 +175,23 @@ tuple-proj {suc n} i Ks γ vs ne eq =
   , (λ d d∈ → ⟨ refl , ⟨ subst (d ∈_) (sym eq) d∈ , svs-ne vs ne ⟩ ⟩) ⟩
 
 component-ok : ∀ {n} (i : Fin n) k {K γ' D} → component i k ≡ just K → nonempty-env γ'
-  → (∀ {Kt} → k ≡ just Kt → KDesc Kt γ' D) → SV K × ⟦ K ⟧ γ' ≃ proj i ⟨ D , ptt ⟩
+  → (∀ {Kt} → k ≡ just Kt → KDesc D Kt γ') → SV K × proj i ⟨ D , ptt ⟩ ≃ ⟦ K ⟧ γ'
 component-ok i (just (val Kt)) {K} {γ'} e ne h with kv (h refl)
 ... | ⟨ P.tuple {m} {Ks} vs , Kt≃ ⟩ with proj-nth i Ks γ' e
 ...   | ⟨ refl , eq ⟩ =
-  ⟨ component-just i vs e , ≃-trans (≃-sym (tuple-proj i Ks {K} γ' vs ne eq)) (proj-≃ i Kt≃) ⟩
+  ⟨ component-just i vs e , ≃-trans (proj-≃ i Kt≃) (tuple-proj i Ks {K} γ' vs ne eq) ⟩
 
 {- a known integer -}
-int-ok : ∀ k {n γ' D} → int-of k ≡ just n → (∀ {K} → k ≡ just K → KDesc K γ' D)
-  → ⟦ lit Int n ⦅ Nil ⦆ ⟧ γ' ≃ D
+int-ok : ∀ k {n γ' D} → int-of k ≡ just n → (∀ {K} → k ≡ just K → KDesc D K γ')
+  → D ≃ ⟦ lit Int n ⦅ Nil ⦆ ⟧ γ'
 int-ok (just (val K)) {γ' = γ'} e h with int-of-just (proj₁ (kv (h refl))) e
 ... | refl = proj₂ (kv (h refl))
 
 {- the result of a primitive -}
-prim-term-≃ : ∀ o γ → ⟦ prim-term o ⟧ γ ≃ ⌈ out o ⌉
-prim-term-≃ (int n) γ = ⟨ (λ { (const {Int} n') ⟨ refl , refl ⟩ → refl }) , (λ { _ refl → ⟨ refl , refl ⟩ }) ⟩
-prim-term-≃ (bool true) γ = ⟨ (λ { (left ⟨⟩) tt → refl }) , (λ { _ refl → tt }) ⟩
-prim-term-≃ (bool false) γ = ⟨ (λ { (right ⟨⟩) tt → refl }) , (λ { _ refl → tt }) ⟩
+prim-term-≃ : ∀ o γ → ⌈ out o ⌉ ≃ ⟦ prim-term o ⟧ γ
+prim-term-≃ (int n) γ = ⟨ (λ { _ refl → ⟨ refl , refl ⟩ }) , (λ { (const {Int} n') ⟨ refl , refl ⟩ → refl }) ⟩
+prim-term-≃ (bool true) γ = ⟨ (λ { _ refl → tt }) , (λ { (left ⟨⟩) tt → refl }) ⟩
+prim-term-≃ (bool false) γ = ⟨ (λ { _ refl → tt }) , (λ { (right ⟨⟩) tt → refl }) ⟩
 
 prim-fold : ∀ p n m γ → primD p ⟨ ⟦ lit Int n ⦅ Nil ⦆ ⟧ γ , ⟨ ⟦ lit Int m ⦅ Nil ⦆ ⟧ γ , ptt ⟩ ⟩ ≃ ⌈ out (δ p n m) ⌉
 prim-fold p n m γ =
@@ -200,21 +200,21 @@ prim-fold p n m γ =
 
 {- The main lemma ------------------------------------------------------------------}
 
-simp-ok : ∀ fl M {E γ γ'} → Wf γ → Wf γ' → Ok E γ γ' → Desc (simp fl E M) γ' (⟦ M ⟧ γ)
+simp-ok : ∀ fl M {E γ γ'} → Wf γ → Wf γ' → Ok E γ γ' → Desc (⟦ M ⟧ γ) (simp fl E M) γ'
 simp-args-ok : ∀ fl {n} (as : Args (replicate n ■)) {E γ γ'} → Wf γ → Wf γ' → Ok E γ γ'
-  → ∀ i → nthD (⟦ simp-args fl E as ⟧₊ γ') i ≃ nthD (⟦ as ⟧₊ γ) i
-app-ok : ∀ fl L M {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc I γ' (⟦ M ⟧ γ)
-  → Desc (simp-app fl E L I) γ' (⟦ app ⦅ L ,, M ,, Nil ⦆ ⟧ γ)
-let-ok : ∀ fl N {E γ γ' I D} → Wf γ → Wf γ' → Ok E γ γ' → Desc I γ' D → Con D
-  → Desc (simp-let fl E N I) γ' (⋆ ⟨ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ , ⟨ D , ptt ⟩ ⟩)
-call-ok : ∀ fl J I {γ' F D} → Wf γ' → Desc J γ' F → Desc I γ' D → Con D
-  → Desc (simp-call fl J I) γ' (⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩)
-case-ok : ∀ fl L M N {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc I γ' (⟦ L ⟧ γ)
-  → Desc (simp-case fl E I M N) γ' (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ)
+  → ∀ i → nthD (⟦ as ⟧₊ γ) i ≃ nthD (⟦ simp-args fl E as ⟧₊ γ') i
+app-ok : ∀ fl L M {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc (⟦ M ⟧ γ) I γ'
+  → Desc (⟦ app ⦅ L ,, M ,, Nil ⦆ ⟧ γ) (simp-app fl E L I) γ'
+let-ok : ∀ fl N {E γ γ' I D} → Wf γ → Wf γ' → Ok E γ γ' → Desc D I γ' → Con D
+  → Desc (⋆ ⟨ ⟦ lam ⦅ ⟩ N ,, Nil ⦆ ⟧ γ , ⟨ D , ptt ⟩ ⟩) (simp-let fl E N I) γ'
+call-ok : ∀ fl J I {γ' F D} → Wf γ' → Desc F J γ' → Desc D I γ' → Con D
+  → Desc (⋆ ⟨ F , ⟨ D , ptt ⟩ ⟩) (simp-call fl J I) γ'
+case-ok : ∀ fl L M N {E γ γ' I} → Wf γ → Wf γ' → Ok E γ γ' → Desc (⟦ L ⟧ γ) I γ'
+  → Desc (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ) (simp-case fl E I M N) γ'
 
 {- a body under a binder that stays -}
 under-ok : ∀ fl N {E γ γ'} → Wf γ → Wf γ' → Ok E γ γ' → ∀ V → V ≢ [] → V ≈ V
-  → ⟦ term (simp fl (under E) N) ⟧ (mem V • γ') ≃ ⟦ N ⟧ (mem V • γ)
+  → ⟦ N ⟧ (mem V • γ) ≃ ⟦ term (simp fl (under E) N) ⟧ (mem V • γ')
 under-ok fl N wf wf' ok V ne c =
   tm (simp-ok fl N (wf-• wf (E≢[]⇒nonempty-mem ne) (≈⇒Con c)) (wf-• wf' (E≢[]⇒nonempty-mem ne) (≈⇒Con c))
                  (ok-under (mem V) ok))
@@ -227,7 +227,7 @@ simp-ok fl (lit B k ⦅ Nil ⦆) wf wf' ok = desc-self P.lit ≃-refl
 simp-ok fl (tuple n ⦅ as ⦆) wf wf' ok = desc-info (𝒯-≃ n (simp-args-ok fl as wf wf' ok))
 simp-ok fl (get i ⦅ L ,, Nil ⦆) {E} {γ' = γ'} wf wf' ok = get-ok (simp fl E L) (simp-ok fl L wf wf' ok)
   where
-  get-ok : ∀ I → Desc I γ' (⟦ L ⟧ _) → Desc (simp-get i I) γ' (⟦ get i ⦅ L ,, Nil ⦆ ⟧ _)
+  get-ok : ∀ I → Desc (⟦ L ⟧ _) I γ' → Desc (⟦ get i ⦅ L ,, Nil ⦆ ⟧ _) (simp-get i I) γ'
   get-ok I d with component i (known I) in e
   ... | nothing = desc (proj-≃ i (tm d)) (λ ())
   ... | just K with component-ok i (known I) e (proj₁ wf') (kn d) | small K
@@ -239,19 +239,18 @@ simp-ok fl (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) wf wf' ok = case-ok fl L
 simp-ok fl (prim p ⦅ L ,, M ,, Nil ⦆) {E} {γ = γ} {γ'} wf wf' ok =
   prim-ok (simp fl E L) (simp fl E M) (simp-ok fl L wf wf' ok) (simp-ok fl M wf wf' ok)
   where
-  dflt : ∀ {I J} → Desc I γ' (⟦ L ⟧ γ) → Desc J γ' (⟦ M ⟧ γ)
-    → Desc (prim p ⦅ term I ,, term J ,, Nil ⦆ ∣ nothing) γ' (⟦ prim p ⦅ L ,, M ,, Nil ⦆ ⟧ γ)
+  dflt : ∀ {I J} → Desc (⟦ L ⟧ γ) I γ' → Desc (⟦ M ⟧ γ) J γ'
+    → Desc (⟦ prim p ⦅ L ,, M ,, Nil ⦆ ⟧ γ) (prim p ⦅ term I ,, term J ,, Nil ⦆ ∣ nothing) γ'
   dflt dI dJ = desc (primD-≃ p (tm dI) (tm dJ)) (λ ())
-  prim-ok : ∀ I J → Desc I γ' (⟦ L ⟧ γ) → Desc J γ' (⟦ M ⟧ γ) → Desc (simp-prim p I J) γ' (⟦ prim p ⦅ L ,, M ,, Nil ⦆ ⟧ γ)
+  prim-ok : ∀ I J → Desc (⟦ L ⟧ γ) I γ' → Desc (⟦ M ⟧ γ) J γ' → Desc (⟦ prim p ⦅ L ,, M ,, Nil ⦆ ⟧ γ) (simp-prim p I J) γ'
   prim-ok I J dI dJ with int-of (known I) in e₁
   ... | nothing = dflt dI dJ
   ... | just n with int-of (known J) in e₂
   ...   | nothing = dflt dI dJ
   ...   | just m =
     desc-self (prim-term-sv _)
-      (≃-trans (prim-term-≃ (δ p n m) γ')
-        (≃-sym (≃-trans (primD-≃ p (≃-sym (int-ok (known I) e₁ (kn dI))) (≃-sym (int-ok (known J) e₂ (kn dJ))))
-                        (prim-fold p n m γ'))))
+      (≃-trans (≃-trans (primD-≃ p (int-ok (known I) e₁ (kn dI)) (int-ok (known J) e₂ (kn dJ))) (prim-fold p n m γ'))
+        (prim-term-≃ (δ p n m) γ'))
 
 simp-ok fl (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) wf wf' ok =
   let-ok fl N wf wf' ok (simp-ok fl M wf wf' ok) (ISWIM-con-env M (proj₂ wf))
@@ -276,42 +275,42 @@ call-ok (suc fl) (T ∣ just (val K)) I wf' dJ dI cD = desc (⋆-≃ (tm dJ) (tm
    substituted, another value stays bound and known, anything else stays
    bound -}
 let-ok fl N {E} {γ} {γ'} {I} {D} wf wf' ok d cD with small (term I) in s | value (term I) in v
-... | true | _ = desc-≃ (simp-ok fl N (wf-• wf neD cD) wf' ok') (≃-sym (let-β N γ D (proj₁ wf) neD cD))
+... | true | _ = desc-≃ (simp-ok fl N (wf-• wf neD cD) wf' ok') (let-β N γ D (proj₁ wf) neD cD)
   where
-  neD = ⟨ _ , proj₁ (tm d) _ (proj₂ (sv-ne (small-sv (term I) s) (proj₁ wf'))) ⟩
+  neD = ⟨ _ , proj₂ (tm d) _ (proj₂ (sv-ne (small-sv (term I) s) (proj₁ wf'))) ⟩
   ok' : Ok (I • E) (D • γ) γ'
   ok' zero = d
   ok' (suc x) = ok x
 ... | false | true =
-  desc (≃-trans (let-β N' γ' _ (proj₁ wf') neV cV)
-          (≃-trans (tm (simp-ok fl N (wf-• wf neD cD) (wf-• wf' neV cV) ok')) (≃-sym (let-β N γ D (proj₁ wf) neD cD))))
+  desc (≃-trans (let-β N γ D (proj₁ wf) neD cD)
+          (≃-trans (tm (simp-ok fl N (wf-• wf neD cD) (wf-• wf' neV cV) ok')) (≃-sym (let-β N' γ' _ (proj₁ wf') neV cV))))
        (λ ())
   where
   N' = term (simp fl (known-as I E) N)
   neV = sv-ne (value-sv (term I) v) (proj₁ wf')
   cV = ISWIM-con-env (term I) (proj₂ wf')
-  neD = ⟨ _ , proj₁ (tm d) _ (proj₂ neV) ⟩
+  neD = ⟨ _ , proj₂ (tm d) _ (proj₂ neV) ⟩
   ok' : Ok (known-as I E) (D • γ) (⟦ term I ⟧ γ' • γ')
   ok' zero = desc (tm d) (kn (desc-shift I _ d))
   ok' (suc x) = desc-shift (E x) _ (ok x)
 ... | false | false =
-  desc (⋆-≃ (Λ-≃ {λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ')} {λ X → ⟦ N ⟧ (X • γ)} (under-ok fl N wf wf' ok)) (tm d)) (λ ())
+  desc (⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • γ)} {λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ')} (under-ok fl N wf wf' ok)) (tm d)) (λ ())
 
 {- a case on a known injection takes its branch -}
 case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d with branch (known I) in e
 ... | nothing =
-  desc (𝒞-≃ {F = λ X → ⟦ term (simp fl (under E) M) ⟧ (X • γ')} {λ X → ⟦ M ⟧ (X • γ)}
-             {λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ')} {λ X → ⟦ N ⟧ (X • γ)}
+  desc (𝒞-≃ {F = λ X → ⟦ M ⟧ (X • γ)} {λ X → ⟦ term (simp fl (under E) M) ⟧ (X • γ')}
+             {λ X → ⟦ N ⟧ (X • γ)} {λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ')}
              (tm d) (λ v V c → under-ok fl M wf wf' ok (v ∷ V) (λ ()) c) (λ v V c → under-ok fl N wf wf' ok (v ∷ V) (λ ()) c))
        (λ ())
 ... | just ⟨ true , K ⟩ = taken (known I) e (kn d)
   where
-  taken : ∀ k → branch k ≡ just ⟨ true , K ⟩ → (∀ {Kt} → k ≡ just Kt → KDesc Kt γ' (⟦ L ⟧ γ))
-    → Desc (simp fl (self K • E) M) γ' (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ)
+  taken : ∀ k → branch k ≡ just ⟨ true , K ⟩ → (∀ {Kt} → k ≡ just Kt → KDesc (⟦ L ⟧ γ) Kt γ')
+    → Desc (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ) (simp fl (self K • E) M) γ'
   taken (just (val Kt)) e h with kv (h refl)
   taken (just (val Kt)) e h | ⟨ P.inl {K₀} v , Kt≃ ⟩ with small K₀ | e
   taken (just (val Kt)) e h | ⟨ P.inl {K₀} v , Kt≃ ⟩ | true | refl =
-    desc-≃ (simp-ok fl M (wf-• wf neK cK) wf' ok') (≃-sym (case-inl L M N γ _ (≃-sym Kt≃) (proj₁ wf) neK cK))
+    desc-≃ (simp-ok fl M (wf-• wf neK cK) wf' ok') (case-inl L M N γ _ Kt≃ (proj₁ wf) neK cK)
     where
     neK = sv-ne v (proj₁ wf')
     cK = ISWIM-con-env K (proj₂ wf')
@@ -324,12 +323,12 @@ case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d with branch (known I) in e
   taken (just (val Kt)) e h | ⟨ P.inr {K₀} v , _ ⟩ | false | ()
 ... | just ⟨ false , K ⟩ = taken (known I) e (kn d)
   where
-  taken : ∀ k → branch k ≡ just ⟨ false , K ⟩ → (∀ {Kt} → k ≡ just Kt → KDesc Kt γ' (⟦ L ⟧ γ))
-    → Desc (simp fl (self K • E) N) γ' (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ)
+  taken : ∀ k → branch k ≡ just ⟨ false , K ⟩ → (∀ {Kt} → k ≡ just Kt → KDesc (⟦ L ⟧ γ) Kt γ')
+    → Desc (⟦ case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ⟧ γ) (simp fl (self K • E) N) γ'
   taken (just (val Kt)) e h with kv (h refl)
   taken (just (val Kt)) e h | ⟨ P.inr {K₀} v , Kt≃ ⟩ with small K₀ | e
   taken (just (val Kt)) e h | ⟨ P.inr {K₀} v , Kt≃ ⟩ | true | refl =
-    desc-≃ (simp-ok fl N (wf-• wf neK cK) wf' ok') (≃-sym (case-inr L M N γ _ (≃-sym Kt≃) (proj₁ wf) neK cK))
+    desc-≃ (simp-ok fl N (wf-• wf neK cK) wf' ok') (case-inr L M N γ _ Kt≃ (proj₁ wf) neK cK)
     where
     neK = sv-ne v (proj₁ wf')
     cK = ISWIM-con-env K (proj₂ wf')
@@ -344,5 +343,5 @@ case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d with branch (known I) in e
 {- The end theorem: every program, in the environment where every variable
    means {ω} -}
 simplify-correct : ∀ M → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
-simplify-correct M = ≃-sym (tm (simp-ok inline-fuel M wf₀ wf₀ (λ x → desc-self (P.var x) ≃-refl)))
+simplify-correct M = tm (simp-ok inline-fuel M wf₀ wf₀ (λ x → desc-self (P.var x) ≃-refl))
   where wf₀ = ⟨ (λ _ → ⟨ ω , refl ⟩) , (λ _ → Con-⌈⌉ ω) ⟩

@@ -55,9 +55,9 @@ callc-≃ a b = mono-≃ (mono (callc-good {⊤})) ⟨ lift a , ⟨ lift b , ptt
 {- Changing the table -----------------------------------------------------------------}
 
 module _ {Σ Σ'} (r : ∀ {n} → Σ ∋ n → Σ' ∋ n) {T : Table Σ'} {T' : Table Σ}
-         (h : ∀ {n} (f : Σ ∋ n) → T (r f) ≃ T' f) where
-  wk-sem : ∀ {Γ A} (M : Tm Σ Γ A) ρ → ⟦ wk r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
-  wks-sem : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) ρ i → nthD (⟦ wks r Ms ⟧s[ T ] ρ) i ≃ nthD (⟦ Ms ⟧s[ T' ] ρ) i
+         (h : ∀ {n} (f : Σ ∋ n) → T' f ≃ T (r f)) where
+  wk-sem : ∀ {Γ A} (M : Tm Σ Γ A) ρ → ⟦ M ⟧[ T' ] ρ ≃ ⟦ wk r M ⟧[ T ] ρ
+  wks-sem : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) ρ i → nthD (⟦ Ms ⟧s[ T' ] ρ) i ≃ nthD (⟦ wks r Ms ⟧s[ T ] ρ) i
   wk-sem (` x) ρ = ≃-refl
   wk-sem (fun-ref f) ρ = h f
   wk-sem (pack L M) ρ = pair-≃ (wk-sem L ρ) (wk-sem M ρ)
@@ -67,10 +67,10 @@ module _ {Σ Σ'} (r : ∀ {n} → Σ ∋ n → Σ' ∋ n) {T : Table Σ'} {T' :
   wk-sem (get i M) ρ = proj-≃ i (wk-sem M ρ)
   wk-sem (inl M) ρ = inl-≃ (wk-sem M ρ)
   wk-sem (inr M) ρ = inr-≃ (wk-sem M ρ)
-  wk-sem (case L M N) ρ = 𝒞-≃ {F = λ X → ⟦ wk r M ⟧[ T ] (X • ρ)} {λ X → ⟦ M ⟧[ T' ] (X • ρ)}
-    {λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} (wk-sem L ρ) (λ _ _ _ → wk-sem M _) (λ _ _ _ → wk-sem N _)
+  wk-sem (case L M N) ρ = 𝒞-≃ {F = λ X → ⟦ M ⟧[ T' ] (X • ρ)} {λ X → ⟦ wk r M ⟧[ T ] (X • ρ)}
+    {λ X → ⟦ N ⟧[ T' ] (X • ρ)} {λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} (wk-sem L ρ) (λ _ _ _ → wk-sem M _) (λ _ _ _ → wk-sem N _)
   wk-sem (prim p L M) ρ = primD-≃ p (wk-sem L ρ) (wk-sem M ρ)
-  wk-sem (let′ M N) ρ = letD-≃ {F = λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} (wk-sem M ρ) (λ _ _ _ → wk-sem N _)
+  wk-sem (let′ M N) ρ = letD-≃ {F = λ X → ⟦ N ⟧[ T' ] (X • ρ)} {λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} (wk-sem M ρ) (λ _ _ _ → wk-sem N _)
   wk-sem (inject G M) ρ = wk-sem M ρ
   wk-sem (project t M) ρ = project-≃ fun₄ t (wk-sem M ρ)
   wks-sem (M ∷ Ms) ρ zero = wk-sem M ρ
@@ -95,24 +95,24 @@ ext-trans {s₁ = s₁} {s₂} {D₂ = D₂} e₁ e₂ = ext λ f →
 
 {- a term made before more definitions, weakened to them -}
 wk-made : ∀ {Σ Σ' Γ A} {s : Σ ⊑ Σ'} {D D'} → Ext s D D' → (M : Tm Σ Γ A) → ∀ ρ
-  → ⟦ wk (⊑-∋ s) M ⟧[ made D' ] ρ ≃ ⟦ M ⟧[ made D ] ρ
-wk-made e = wk-sem _ (λ f → ≃-reflexive (at e f))
+  → ⟦ M ⟧[ made D ] ρ ≃ ⟦ wk (⊑-∋ s) M ⟧[ made D' ] ρ
+wk-made e = wk-sem _ (λ f → ≃-reflexive (sym (at e f)))
 
 {- What glob makes ----------------------------------------------------------------------}
 
 OK : ∀ {Σ Γ A} → S.Tm Γ A → Made Σ → Out Σ (λ Σ' → Tm Σ' Γ A) → Set₁
-OK M D (out s D' M') = Ext s D D' × (∀ ρ → ⟦ M' ⟧[ made D' ] ρ ≃ ⟦ M ⟧₄ ρ)
+OK M D (out s D' M') = Ext s D D' × (∀ ρ → ⟦ M ⟧₄ ρ ≃ ⟦ M' ⟧[ made D' ] ρ)
 
 OKs : ∀ {Σ Γ n} → Vec (S.Tm Γ Any) n → Made Σ → Out Σ (λ Σ' → Vec (Tm Σ' Γ Any) n) → Set₁
-OKs Ms D (out s D' Ms') = Ext s D D' × (∀ ρ i → nthD (⟦ Ms' ⟧s[ made D' ] ρ) i ≃ nthD (⟦ Ms ⟧s₄ ρ) i)
+OKs Ms D (out s D' Ms') = Ext s D D' × (∀ ρ i → nthD (⟦ Ms ⟧s₄ ρ) i ≃ nthD (⟦ Ms' ⟧s[ made D' ] ρ) i)
 
 {- a construct of one or two operands means the same when they do -}
 Cong₁ : ∀ {Γ Γ₁ A B} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) → S.Tm Γ₁ A → S.Tm Γ B → Set₁
-Cong₁ f M M₄ = ∀ {Σ'} {T : Table Σ'} {M'} → (∀ ρ → ⟦ M' ⟧[ T ] ρ ≃ ⟦ M ⟧₄ ρ) → ∀ ρ → ⟦ f M' ⟧[ T ] ρ ≃ ⟦ M₄ ⟧₄ ρ
+Cong₁ f M M₄ = ∀ {Σ'} {T : Table Σ'} {M'} → (∀ ρ → ⟦ M ⟧₄ ρ ≃ ⟦ M' ⟧[ T ] ρ) → ∀ ρ → ⟦ M₄ ⟧₄ ρ ≃ ⟦ f M' ⟧[ T ] ρ
 
 Cong₂ : ∀ {Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) → S.Tm Γ₁ A → S.Tm Γ₂ B → S.Tm Γ C → Set₁
-Cong₂ f L M M₄ = ∀ {Σ'} {T : Table Σ'} {L' M'} → (∀ ρ → ⟦ L' ⟧[ T ] ρ ≃ ⟦ L ⟧₄ ρ) → (∀ ρ → ⟦ M' ⟧[ T ] ρ ≃ ⟦ M ⟧₄ ρ)
-  → ∀ ρ → ⟦ f L' M' ⟧[ T ] ρ ≃ ⟦ M₄ ⟧₄ ρ
+Cong₂ f L M M₄ = ∀ {Σ'} {T : Table Σ'} {L' M'} → (∀ ρ → ⟦ L ⟧₄ ρ ≃ ⟦ L' ⟧[ T ] ρ) → (∀ ρ → ⟦ M ⟧₄ ρ ≃ ⟦ M' ⟧[ T ] ρ)
+  → ∀ ρ → ⟦ M₄ ⟧₄ ρ ≃ ⟦ f L' M' ⟧[ T ] ρ
 
 glob-ok : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → OK M D (glob M D)
 globs-ok : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → OKs Ms D (globs Ms D)
@@ -136,12 +136,12 @@ glob-ok (S.case L M N) D with glob L D | glob-ok L D
 ...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ with glob N D₂ | glob-ok N D₂
 ...     | out s₃ D₃ N' | ⟨ e₃ , h₃ ⟩ =
   ⟨ ext-trans e₁ (ext-trans e₂ e₃)
-  , (λ ρ → 𝒞-≃ {F = λ X → ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ] (X • ρ)} {λ X → ⟦ M ⟧₄ (X • ρ)}
-                {λ X → ⟦ N' ⟧[ made D₃ ] (X • ρ)} {λ X → ⟦ N ⟧₄ (X • ρ)} (≃-trans (wk-made (ext-trans e₂ e₃) L' ρ) (h₁ ρ))
-                (λ _ _ _ → ≃-trans (wk-made e₃ M' _) (h₂ _)) (λ _ _ _ → h₃ _)) ⟩
+  , (λ ρ → 𝒞-≃ {F = λ X → ⟦ M ⟧₄ (X • ρ)} {λ X → ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ] (X • ρ)}
+                {λ X → ⟦ N ⟧₄ (X • ρ)} {λ X → ⟦ N' ⟧[ made D₃ ] (X • ρ)} (≃-trans (h₁ ρ) (wk-made (ext-trans e₂ e₃) L' ρ))
+                (λ _ _ _ → ≃-trans (h₂ _) (wk-made e₃ M' _)) (λ _ _ _ → h₃ _)) ⟩
 glob-ok (S.prim p L M) D = glob₂-ok (prim p) L M D {M₄ = S.prim p L M} λ hL hM ρ → primD-≃ p (hL ρ) (hM ρ)
 glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N} λ {_} {T} {_} {N'} hL hM ρ →
-  letD-≃ {F = λ X → ⟦ N' ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧₄ (X • ρ)} (hL ρ) (λ _ _ _ → hM _)
+  letD-≃ {F = λ X → ⟦ N ⟧₄ (X • ρ)} {λ X → ⟦ N' ⟧[ T ] (X • ρ)} (hL ρ) (λ _ _ _ → hM _)
 glob-ok (S.inject G M) D = glob₁-ok (inject G) M D {M₄ = S.inject G M} λ h → h
 glob-ok (S.project t M) D = glob₁-ok (project t) M D {M₄ = S.project t M} λ h ρ → project-≃ fun₄ t (h ρ)
 
@@ -149,25 +149,25 @@ globs-ok [] D = ⟨ ext (λ f → refl) , (λ ρ ()) ⟩
 globs-ok (M ∷ Ms) D with glob M D | glob-ok M D
 ... | out s₁ D₁ M' | ⟨ e₁ , h₁ ⟩ with globs Ms D₁ | globs-ok Ms D₁
 ...   | out s₂ D₂ Ms' | ⟨ e₂ , h₂ ⟩ =
-  ⟨ ext-trans e₁ e₂ , (λ { ρ zero → ≃-trans (wk-made e₂ M' ρ) (h₁ ρ) ; ρ (suc i) → h₂ ρ i }) ⟩
+  ⟨ ext-trans e₁ e₂ , (λ { ρ zero → ≃-trans (h₁ ρ) (wk-made e₂ M' ρ) ; ρ (suc i) → h₂ ρ i }) ⟩
 
 glob₁-ok f M D c with glob M D | glob-ok M D
 ... | out s D' M' | ⟨ e , h ⟩ = ⟨ e , c h ⟩
 
 glob₂-ok f L M D c with glob L D | glob-ok L D
 ... | out s₁ D₁ L' | ⟨ e₁ , h₁ ⟩ with glob M D₁ | glob-ok M D₁
-...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ = ⟨ ext-trans e₁ e₂ , c (λ ρ → ≃-trans (wk-made e₂ L' ρ) (h₁ ρ)) h₂ ⟩
+...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ = ⟨ ext-trans e₁ e₂ , c (λ ρ → ≃-trans (h₁ ρ) (wk-made e₂ L' ρ)) h₂ ⟩
 
 {- The table of the program ------------------------------------------------------------}
 
-table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {n} (f : Σ' ∋ n) → tables code′ (close D s) (⊑-∋ s f) ≃ made D f
+table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {n} (f : Σ' ∋ n) → made D f ≃ tables code′ (close D s) (⊑-∋ s f)
 table-close {Σ} (_▷_ {Σ''} D N) s f with lvl (⊑-∋ s f) ≟ length Σ'' | lvl-⊑ s f
 table-close (D ▷ N) s Z | yes _ | _ =
   ΛΛ-≃ λ X Y → wk-sem _ (table-close D (⊑-trans (there⊑ here⊑) s)) N _
 table-close (D ▷ N) s Z | no ne | eq = ⊥-elim (ne eq)
 table-close (D ▷ N) s (S f) | yes eq | eq' = ⊥-elim (<-irrefl (trans (sym eq') eq) (lvl-< f))
 table-close (D ▷ N) s (S f) | no _ | _ =
-  subst (λ g → tables code′ (close D s') g ≃ made D f) (⊑-∋-trans (there⊑ here⊑) s f) (table-close D s' f)
+  subst (λ g → made D f ≃ tables code′ (close D s') g) (⊑-∋-trans (there⊑ here⊑) s f) (table-close D s' f)
   where s' = ⊑-trans (there⊑ here⊑) s
 
 wk-id : ∀ {Σ Γ A} (M : Tm Σ Γ A) → wk (λ f → f) M ≡ M
@@ -193,4 +193,4 @@ wks-id (M ∷ Ms) = cong₂ _∷_ (wk-id M) (wks-id Ms)
 
 globalize-correct : ∀ (M : S.Tm [] Any) → ⟦ M ⟧₄ (λ _ → init) ≃ ⟦ globalize M ⟧ₚ
 globalize-correct M with glob M [] | glob-ok M []
-... | out _ D M' | ⟨ _ , h ⟩ = ≃-sym (≃-trans (subst (λ N → ⟦ N ⟧[ table (close D here⊑) ] (λ _ → init) ≃ ⟦ M' ⟧[ made D ] (λ _ → init)) (wk-id M') (wk-sem (λ f → f) (table-close D here⊑) M' _)) (h _))
+... | out _ D M' | ⟨ _ , h ⟩ = ≃-trans (h _) (subst (λ N → ⟦ M' ⟧[ made D ] (λ _ → init) ≃ ⟦ N ⟧[ table (close D here⊑) ] (λ _ → init)) (wk-id M') (wk-sem (λ f → f) (table-close D here⊑) M' _))
