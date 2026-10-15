@@ -27,10 +27,10 @@ import Mu.Language.Mon as Mon
 open Mon using (Atm; var; lit; ref; atm; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import Mu.Compiler.RCO
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
-open import Mu.Framework.AllProp using (lookup-map)
+open import Mu.proof.Framework.AllProp using (lookup-map)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import Mu.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
+open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.Clos5 as T
 open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])

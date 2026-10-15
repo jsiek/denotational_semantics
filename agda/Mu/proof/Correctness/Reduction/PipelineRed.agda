@@ -1,6 +1,6 @@
 {-
 
-  The compiler of the pilot (Mu/Compiler/Pipeline.agda) is correct on
+  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) is correct on
   the reduction semantics, for closed programs: each pass is Equivalent
   (Mu/proof/Correctness/Reduction/*Red.agda) and equivalence composes,
   as for the typed pipeline (proof/Correctness/Reduction/PipelineRed.agda).

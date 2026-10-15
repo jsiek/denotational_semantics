@@ -1,6 +1,6 @@
 {-
 
-  The passes of the pilot, composed: from ISWIMμ to X86μ,
+  The passes of the ISWIMμ compiler, composed: from ISWIMμ to X86μ,
 
     ISWIMμ --simplify--> ISWIMμ --enclose--> Clos2μ --optimize--> Clos2μ
            --concretize--> Clos3μ --delay--> Clos4μ --globalize--> Clos5μ --rco--> Monμ

@@ -55,9 +55,10 @@ import proof.Assurance.X86Erasure
 import Untyped.All
 
 {- ---------------------------------------------------------------------------
-   The ISWIMμ pilot (not in the totals): a typed ISWIM with iso-recursive
-   types and its compiler to X86μ, in the graph model and the CEK
-   machines (see Mu/All.agda)
+   The ISWIMμ compiler (the main experiment of the size comparison): a
+   typed ISWIM with iso-recursive types and its compiler to X86μ, in the
+   four styles, with its theorem statements in Mu/Theorems/ (see
+   Mu/All.agda)
    --------------------------------------------------------------------------- -}
 
 import Mu.All

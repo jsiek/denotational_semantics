@@ -1,6 +1,6 @@
 {-
 
-  X86μ: the typed assembly language of the pilot, the target of the
+  X86μ: the typed assembly language of ISWIMμ's compiler, the target of the
   compiler, the output of select instructions (Mu/Compiler/Select.agda).
   As X86ᵀ (Language/Typed/X86.agda), with the types of CFGμ, and with
   no check: nothing traps.

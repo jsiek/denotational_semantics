@@ -1,6 +1,6 @@
 {-
 
-  The compiler of the pilot in the graph model, observed through the
+  The ISWIMμ compiler in the graph model, observed through the
   machines, as proof/Adequacy/EndToEnd.agda for the typed pipeline: for
   a closed ISWIMμ program M,
 

@@ -1,6 +1,6 @@
 {-
 
-  The compiler of the pilot (Mu/Compiler/Pipeline.agda) in the plain
+  The ISWIMμ compiler (Mu/Compiler/Pipeline.agda) in the plain
   graph model, as for the typed pipeline
   (proof/Correctness/Graph/CompilerCorrect.agda): for a closed ISWIMμ
   program, the compiled program, in Clos4μ, Clos5μ, Monμ (by its
@@ -9,7 +9,7 @@
   Every pass but delay preserves the meaning exactly (≃); delay
   preserves and reflects constants and nonemptiness. The end-to-end
   theorem is stated for a main program of type Int, the observation of
-  the pilot (compile-x86-int); the others hold at any type.
+  ISWIMμ (compile-x86-int); the others hold at any type.
 
 -}
 

@@ -18,6 +18,13 @@ substitution, and forward simulations); and the graph model with errors
 (an error denotes a set holding ω, divergence ∅); with both graph models
 proved sound and adequate for the machines.
 
+A second compiler, from ISWIMμ, a typed ISWIM with iso-recursive types,
+to the typed assembly language X86μ (`Mu/`, below), is proved correct
+in the first four styles, with the graph model proved adequate for the
+machines; it is the main experiment of the size comparison
+(`papers/PLDI-2027/loc.md`), and this pipeline shows how dynamic typing
+and errors change it.
+
 The source, ISWIM, is untyped. Cast insertion (after *Essentials of
 Compilation*, ch. 9) makes every check of the kind of a value explicit,
 as a `project` from the type `Any` of tagged values, placed where the
@@ -107,21 +114,24 @@ other than `--without-K`, failing if it finds any.
   observations, the ISWIM adequacy, the frameworks), and X86 and its
   machine, which the typed pipeline's assurance uses, stay here.
   `Untyped/All.agda` imports it, and `All.agda` imports that.
-* `Mu/`: the ISWIMμ pilot, not in the totals: a typed ISWIM with
-  iso-recursive types (no recursion construct, no errors) and its
-  compiler to the typed assembly language X86μ,
+* `Mu/`: ISWIMμ, the main experiment of the size comparison: a typed
+  ISWIM with iso-recursive types (no recursion construct, no errors)
+  and its compiler to the typed assembly language X86μ,
 
-      ISWIMμ --CC: enclose--> Clos2μ --CC: optimize--> Clos2μ
+      ISWIMμ --simplify--> ISWIMμ --CC: enclose--> Clos2μ --CC: optimize--> Clos2μ
              --CC: concretize--> Clos3μ --CC: delay--> Clos4μ
              --CC: globalize--> Clos5μ --rco--> Monμ --lift locals--> Impμ
              --explicate control--> CFGμ --select instructions--> X86μ
 
-  proved in the graph model and the CEK machines
-  (`papers/PLDI-2027/notes/iswim-mu-design.md`). `Mu/` mirrors this
-  directory as `Untyped/` does (module prefix `Mu.`), and uses
-  `Framework/` unchanged; it has no theorem statements, so it is not on
-  the audit surface. `Mu/All.agda` imports it, and `All.agda` imports
-  that.
+  proved in the graph model (with its adequacy for the machines of
+  ISWIMμ and X86μ), the CEK machines, the clocked interpreters and the
+  reduction semantics (`papers/PLDI-2027/notes/iswim-mu-design.md`).
+  `Mu/` mirrors this directory as `Untyped/` does (module prefix `Mu.`,
+  with `Language/Typed/` as `Mu/Language/` and
+  `Semantics/<style>/Typed/` as `Mu/Semantics/<style>/`), and uses
+  `Framework/` unchanged; its theorem statements are in
+  `Mu/Theorems/`, its proofs in `Mu/proof/`. `Mu/All.agda` imports it,
+  and `All.agda` imports that.
 
 ## The audit surface
 
@@ -131,7 +141,38 @@ and nothing else. No module outside a `proof/` directory imports one in
 it, except the theorem files, which cite the proofs, and nothing outside
 `Untyped/` imports a module of `Untyped/` (`papers/PLDI-2027/loc.py`
 checks these, and that every module outside the `proof/` directories is
-used by a theorem statement).
+used by a theorem statement: those of `Mu/` by ISWIMμ's, in
+`Mu/Theorems/`).
+
+* ISWIMμ's theorem statements (`Mu/Theorems/`), each with its type
+  written out and defined as the corresponding theorem of `Mu/proof/`;
+  a program is a closed term of any type, and the end-to-end theorem is
+  stated for a main program of type Int, the same in every style:
+  * `Mu/Theorems/Denotational.agda`: each pass preserves the meaning of
+    a program in the graph model (delay: its constants and whether it
+    has any), and the whole compiler, into Clos5μ, Monμ, Impμ, CFGμ and
+    X86μ, preserves the constants a program produces and whether it
+    produces anything;
+  * `Mu/Theorems/Simulation.agda`, `Interpreter.agda`, `Reduction.agda`:
+    each pass, and the compiler into each of Clos5μ, Monμ, Impμ, CFGμ
+    and X86μ, produces an equivalent machine (interpreter, reduction
+    semantics: the same observations on termination, and divergence
+    exactly when the source diverges); for a main of type Int, the
+    source and X86μ stop with the same constant, or both diverge
+    (`compile-x86-const`, `compile-x86-diverges`);
+  * `Mu/Theorems/Adequacy.agda`: the graph model is sound and adequate
+    for the ISWIMμ machine, and for the X86μ machine running compiled
+    programs, and neither machine stops with an error; so the compiler,
+    observed through the machines only, preserves the constants a
+    program computes and whether it terminates, and for a main of type
+    Int states the operational styles' end-to-end theorem
+    (`end-to-end-x86-const`, `end-to-end-x86-diverges`).
+  The definitions they use are those of `Mu/` outside `Mu/proof/` (its
+  languages, passes, semantics in each style, and heterogeneous vectors,
+  `Mu/Framework/`), and of `Framework/`, `Semantics/Observation.agda`
+  and the instances of the frameworks at the observations
+  (`Semantics/CEK/Smallstep.agda`, `Semantics/Interp/Clock.agda`,
+  `Semantics/Reduction/Smallstep.agda`) here.
 
 * Theorem statements (`Theorems/`), each with its type written out and
   defined as the corresponding theorem of `proof/`:
@@ -244,12 +285,19 @@ directory per style, and adequacy is in `proof/Adequacy/`:
 * `Untyped/proof/`: the same for the untyped pipeline, with its
   experiments: a direct semantics of Imp with lift locals and explicate
   control proved against it, and a direct backward simulation for delay.
+* `Mu/proof/`: the same for ISWIMμ (its reduction column shares the
+  CEK column's proofs of explicate control and select instructions; its
+  adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ machine, and
+  uses that neither machine stops with an error,
+  `Mu/proof/Semantics/CEK/NoError.agda`).
 
-`All.agda` imports the theorem files, every module of `proof/`, and
-`Untyped/All.agda`, so that `make check` checks everything. `old/` holds
+`All.agda` imports the theorem files, every module of `proof/`,
+`Untyped/All.agda` and `Mu/All.agda` (which imports `Mu/Theorems/` and
+`Mu/proof/`), so that `make check` checks everything. `old/` holds
 earlier developments, not checked by `make check` (see the top-level
 README).
 
 Line counts of the proofs, and of the audit surface, are in
-`papers/PLDI-2027/loc.md` (`python3 papers/PLDI-2027/loc.py`, and
-`--untyped` for the preserved pipeline).
+`papers/PLDI-2027/loc.md` (`python3 papers/PLDI-2027/loc.py`, for
+ISWIMμ and, briefly, this pipeline; `--iswim` for this pipeline's full
+tables, `--untyped` for the preserved pipeline).
