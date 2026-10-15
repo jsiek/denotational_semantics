@@ -35,16 +35,13 @@ open import proof.Framework.Runs using (module Runs)
 
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (reverse; _++_)
-open import Data.List.Properties using (unfold-reverse; ++-assoc; ++-identityʳ; length-reverse)
-open import Data.Nat.Properties using (<-irrefl; <-trans; ≤-refl; m<n⇒m<1+n; +-identityʳ)
+open import Data.Nat.Properties using (<-irrefl; <-trans; ≤-refl; m<n⇒m<1+n)
 open import Data.Product using (_×_; Σ-syntax; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Data.Vec using (Vec; []; _∷_; toList; fromList; replicate)
-open import Data.Vec.Properties using (toList∘fromList)
-open import Framework.VecUtil using (toVec; collected)
+open import Data.Vec using (Vec; []; _∷_; replicate)
+open import Framework.VecUtil using (_<><_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
 open import Relation.Nullary using (yes; no)
 
@@ -131,21 +128,11 @@ private
 
 {- the values of a tuple's components ---------------------------------------------}
 
-data Evals {Γ} (γ : Env Σ Γ) : ∀ {j} → Vec (Tm Σ Γ Any) j → List (Val Σ Any) → Set where
+data Evals {Γ} (γ : Env Σ Γ) : ∀ {j} → Vec (Tm Σ Γ Any) j → Vec (Val Σ Any) j → Set where
   [] : Evals γ [] []
   _∷_ : ∀ {j M v} {Ms : Vec _ j} {vs} → γ ⊢ M ⇓ v → Evals γ Ms vs → Evals γ (M ∷ Ms) (v ∷ vs)
 
-toList-toVec : ∀ {A : Set} {n} (xs : List A) (e : length xs ≡ n) → toList (toVec xs e) ≡ xs
-toList-toVec xs refl = toList∘fromList xs
-
-toList-collected : ∀ {n} (vs : List (Val Σ Any)) (e : length vs Data.Nat.+ 0 ≡ n) → toList (collected vs e) ≡ reverse vs
-toList-collected vs e = toList-toVec (reverse vs) (trans (length-reverse vs) (trans (sym (+-identityʳ _)) e))
-
-tuple-run : ∀ {Γ n j} {γ : Env Σ Γ} acc (Ms : Vec (Tm Σ Γ Any) j) vs (e : length acc Data.Nat.+ j ≡ n)
-  → Evals γ Ms vs
-  → Σ[ ws ∈ Vec (Val Σ Any) n ] (∀ κ → tuple-next acc Ms γ e κ ↠ ret (tup ws) κ) × toList ws ≡ reverse acc ++ vs
-tuple-run acc [] [] e [] = ⟨ collected acc e , ⟨ (λ κ → done) , trans (toList-collected acc e) (sym (++-identityʳ _)) ⟩ ⟩
-tuple-run {γ = γ} acc (M ∷ Ms) (v ∷ vs) e (ev ∷ evs) with tuple-run (v ∷ acc) Ms vs _ evs
-... | ⟨ ws , ⟨ τ , eq ⟩ ⟩ =
-  ⟨ ws , ⟨ (λ κ → ev (tupK acc Ms γ e κ) ++↠ refl ∷↠ τ κ)
-       , trans eq (trans (cong (_++ vs) (unfold-reverse v acc)) (++-assoc (reverse acc) (v ∷ []) vs)) ⟩ ⟩
+tuple-run : ∀ {Γ m j} {γ : Env Σ Γ} (acc : Vec _ m) (Ms : Vec (Tm Σ Γ Any) j) {vs} → Evals γ Ms vs
+  → ∀ κ → tuple-next acc Ms γ κ ↠ ret (tup (acc <>< vs)) κ
+tuple-run acc [] [] κ = done
+tuple-run {γ = γ} acc (M ∷ Ms) (ev ∷ evs) κ = ev (tupK acc Ms γ κ) ++↠ refl ∷↠ tuple-run (_ ∷ acc) Ms evs κ

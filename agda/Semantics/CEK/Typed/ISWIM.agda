@@ -17,13 +17,13 @@ open import Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Language.Typed.ISWIM
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
-open import Framework.VecUtil using (more; collected)
+open import Framework.VecUtil using (_+ʳ_; _<><_)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Fin using (Fin)
 open import Data.Integer using (ℤ; _-_; _≟_)
-open import Data.List using (List; []; _∷_; length)
-open import Data.Nat using (ℕ; suc; _+_)
+open import Data.List using (List; []; _∷_)
+open import Data.Nat using (ℕ; suc)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (yes; no; does)
@@ -42,9 +42,8 @@ data Cont : Ty → Set where
   halt : Cont Any
   appL : ∀ {k} → Tm k Any → Env k → Cont Any → Cont ⟪ fun ⟫
   appR : Val ⟪ fun ⟫ → Cont Any → Cont Any
-  {- the values so far (reversed) and the components still to evaluate -}
-  tupK : ∀ {k n j} (vs : List (Val Any)) → Vec (Tm k Any) j → Env k
-    → length vs + suc j ≡ n → Cont ⟪ tup n ⟫ → Cont Any
+  {- the values so far (newest first) and the components still to evaluate -}
+  tupK : ∀ {k m j} → Vec (Val Any) m → Vec (Tm k Any) j → Env k → Cont ⟪ tup (m +ʳ suc j) ⟫ → Cont Any
   getK : ∀ {n} → Fin n → Cont Any → Cont ⟪ tup n ⟫
   inlK inrK : Cont ⟪ sum ⟫ → Cont Any
   caseK : ∀ {k} → Tm (suc k) Any → Tm (suc k) Any → Env k → Cont Any → Cont ⟪ sum ⟫
@@ -75,17 +74,16 @@ obs-vec (v ∷ vs) = obs v ∷ obs-vec vs
 δᵀ eq n m = if does (n ≟ m) then inl (dyn (tup 0) (tup [])) else inr (dyn (tup 0) (tup []))
 
 {- evaluate the rest of a tuple's components, or build it -}
-tuple-next : ∀ {k n j} (vs : List (Val Any)) → Vec (Tm k Any) j → Env k
-  → length vs + j ≡ n → Cont ⟪ tup n ⟫ → State
-tuple-next vs [] ρ e κ = ret (tup (collected vs e)) κ
-tuple-next vs (M ∷ Ms) ρ e κ = eval M ρ (tupK vs Ms ρ e κ)
+tuple-next : ∀ {k m j} → Vec (Val Any) m → Vec (Tm k Any) j → Env k → Cont ⟪ tup (m +ʳ j) ⟫ → State
+tuple-next vs [] ρ κ = ret (tup (vs <>< [])) κ
+tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
 step : State → Next State
 step (eval (` x) ρ κ) = next (ret (lookup ρ x) κ)
 step (eval (lam N) ρ κ) = next (ret (clo N ρ) κ)
 step (eval (app L M) ρ κ) = next (eval L ρ (appL M ρ κ))
 step (eval (lit B c) ρ κ) = next (ret (const c) κ)
-step (eval (tuple Ms) ρ κ) = next (tuple-next [] Ms ρ refl κ)
+step (eval (tuple Ms) ρ κ) = next (tuple-next [] Ms ρ κ)
 step (eval (get i M) ρ κ) = next (eval M ρ (getK i κ))
 step (eval (inl M) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr M) ρ κ) = next (eval M ρ (inrK κ))
@@ -97,7 +95,7 @@ step (eval (project t M) ρ κ) = next (eval M ρ (projK t κ))
 step (ret v halt) = stop (obs v)
 step (ret f (appL M ρ κ)) = next (eval M ρ (appR f κ))
 step (ret w (appR (clo N ρ) κ)) = next (eval N (w ∷ ρ) κ)
-step (ret v (tupK vs Ms ρ e κ)) = next (tuple-next (v ∷ vs) Ms ρ (more {v = v} vs e) κ)
+step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
 step (ret (tup vs) (getK i κ)) = next (ret (lookup vs i) κ)
 step (ret v (inlK κ)) = next (ret (inl v) κ)
 step (ret v (inrK κ)) = next (ret (inr v) κ)

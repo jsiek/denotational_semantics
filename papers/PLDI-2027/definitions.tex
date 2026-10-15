@@ -4216,8 +4216,10 @@ in turn, and Lemma~\ref{lem:equiv-trans}.
   code $N$ binds the argument and the $n$ free variables as
   \texttt{Tm (suc n) Any}, and its environment is \texttt{w $\cdot$ vs}.
 \item \textbf{Tuples}: $\key{tupK}$ and \texttt{tuple-next} collect the
-  values newest first, with an equation for the tuple's length
-  (\texttt{collected}, \texttt{Framework/VecUtil.agda}); a
+  values newest first, in a vector $\bar{v}$ of length $m$; with $j$
+  components left the tuple has length $m \mathbin{+^{r}} j$, and it is
+  $\bar{v} \mathbin{<\!\!>\!\!<} []$ at the end (\texttt{\_+\textsuperscript{r}\_},
+  \texttt{\_<><\_}, \texttt{Framework/VecUtil.agda}); a
   $\Tl{Clos2}$ or $\Tl{Clos3}$ closure keeps its values as a vector, not
   a tuple. $\Kf{primR_p}{n, \kappa}$ holds the integer $n$.
 \item \textbf{$\Tl{Clos5}$}: the step function is parametrized by the

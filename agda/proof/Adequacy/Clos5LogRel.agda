@@ -82,7 +82,7 @@ adequate : ∀ {Γ A} (M : Tm Σ Γ A) {T : Table Σ} {ρ} {γ : Env Σ Γ} {d} 
   → Σ[ v ∈ Val Σ A ] γ ⊢ M ⇓ v × 𝕍 d v
 adequate-args : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) {T : Table Σ} {ρ} {γ : Env Σ Γ} → 𝕋 T → 𝔾 ρ γ
   → (∀ j → nonempty (nthD (⟦ Ms ⟧s[ T ] ρ) j))
-  → Σ[ vs ∈ List (Val Σ Any) ] Evals γ Ms vs × (∀ j d → d ∈ nthD (⟦ Ms ⟧s[ T ] ρ) j → 𝕍At j d vs)
+  → Σ[ vs ∈ Vec (Val Σ Any) n ] Evals γ Ms vs × (∀ j d → d ∈ nthD (⟦ Ms ⟧s[ T ] ρ) j → 𝕍At j d (toList vs))
 
 adequate (` x) 𝕋T G d∈ = ⟨ _ , ⟨ (λ κ → refl ∷↠ done) , G x _ d∈ ⟩ ⟩
 adequate (fun-ref f) 𝕋T G d∈ = ⟨ code f , ⟨ (λ κ → refl ∷↠ done) , 𝕋T f _ d∈ ⟩ ⟩
@@ -105,16 +105,13 @@ adequate (callc L M) {γ = γ} {d} 𝕋T G ⟨ v₀ ∷ V , ⟨ ⟨ u₀ ∷ U ,
 adequate (lit B c) {d = d} 𝕋T G d∈ with ℬ-inv d d∈
 ... | refl = ⟨ const c , ⟨ (λ κ → refl ∷↠ done) , refl ⟩ ⟩
 adequate (tuple {n = n} Ms) {γ = γ} {d} 𝕋T G d∈ with 𝒯-inv n d d∈
-... | inj₁ ⟨ refl , refl ⟩ with tuple-run {γ = γ} [] Ms [] refl (none Ms)
+... | inj₁ ⟨ refl , refl ⟩ = ⟨ tup [] , ⟨ (λ κ → refl ∷↠ tuple-run [] Ms (none Ms) κ) , tt ⟩ ⟩
   where
   none : (Ms : Vec (Tm Σ _ Any) 0) → Evals γ Ms []
   none [] = []
-...   | ⟨ [] , ⟨ τ , _ ⟩ ⟩ = ⟨ tup [] , ⟨ (λ κ → refl ∷↠ τ κ) , tt ⟩ ⟩
 adequate (tuple {n = n} Ms) {γ = γ} {d} 𝕋T G d∈
     | inj₂ ⟨ m , ⟨ i , ⟨ u , ⟨ refl , ⟨ refl , ⟨ u∈ , ne ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ with adequate-args Ms 𝕋T G ne
-... | ⟨ vs , ⟨ evs , rs ⟩ ⟩ with tuple-run {γ = γ} [] Ms vs refl evs
-... | ⟨ ws , ⟨ τ , teq ⟩ ⟩ =
-  ⟨ tup ws , ⟨ (λ κ → refl ∷↠ τ κ) , subst (𝕍At i u) (sym teq) (rs i u u∈) ⟩ ⟩
+... | ⟨ vs , ⟨ evs , rs ⟩ ⟩ = ⟨ tup vs , ⟨ (λ κ → refl ∷↠ tuple-run [] Ms evs κ) , rs i u u∈ ⟩ ⟩
 adequate (get i M) 𝕋T G d∈ with adequate M 𝕋T G d∈
 ... | ⟨ tup ws , ⟨ e , r ⟩ ⟩ =
   ⟨ lookup ws i , ⟨ (λ κ → refl ∷↠ e (getK i κ) ++↠ refl ∷↠ done) , 𝕍At-lookup i _ ws r ⟩ ⟩
@@ -162,12 +159,8 @@ adequate-args [] 𝕋T G ne = ⟨ [] , ⟨ [] , (λ ()) ⟩ ⟩
 adequate-args (M ∷ Ms) 𝕋T G ne with adequate M 𝕋T G (proj₂ (ne zero)) | adequate-args Ms 𝕋T G (λ j → ne (suc j))
 ... | ⟨ v , ⟨ e , _ ⟩ ⟩ | ⟨ vs , ⟨ evs , rs ⟩ ⟩ = ⟨ v ∷ vs , ⟨ e ∷ evs , R ⟩ ⟩
   where
-  R : ∀ j d → d ∈ nthD (⟦ M ∷ Ms ⟧s[ _ ] _) j → 𝕍At j d (v ∷ vs)
-  R zero d d∈ = ⟨ len evs , collect 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M 𝕋T G d∈ }) e d (here refl) ⟩
-    where
-    len : ∀ {j Ns ws} → Evals _ {j} Ns ws → length ws ≡ j
-    len [] = refl
-    len (_ ∷ es) = cong suc (len es)
+  R : ∀ j d → d ∈ nthD (⟦ M ∷ Ms ⟧s[ _ ] _) j → 𝕍At j d (v ∷ toList vs)
+  R zero d d∈ = ⟨ length-toList vs , collect 𝕍 (d ∷ []) (λ { d' (here refl) → adequate M 𝕋T G d∈ }) e d (here refl) ⟩
   R (suc j) d d∈ = rs j d d∈
 
 {- The table of the program ---------------------------------------------------------------}

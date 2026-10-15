@@ -27,14 +27,14 @@ open import Compiler.Delay
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-open import proof.Correctness.CEK.Common using (collected≈; Lock; same-stop; same-next; lock)
+open import proof.Framework.VecUtil using (_<><₂_)
+open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
 import Semantics.CEK.Typed.Clos3 as Src
 import Semantics.CEK.Typed.Clos4 as Tgt
 
 open import Data.Bool using (true; false)
 open import Data.Integer using (_≟_)
 open import Data.List using ([]; _∷_)
-import Data.List.Relation.Binary.Pointwise as L
 open import Data.List.Relation.Unary.All using ([]; _∷_)
 open import Data.Vec using (Vec; []; _∷_)
 open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
@@ -63,9 +63,9 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   appL : ∀ {Γ Δ} {r : Ren Γ Δ} {M} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.appL M ρ₁ κ₁ ≈k Tgt.callL (delay r M) ρ₂ κ₂
   appR : ∀ {v w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.appR v κ₁ ≈k Tgt.callR w κ₂
-  tupK : ∀ {Γ Δ} {r : Ren Γ Δ} {n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {e : _ ≡ n} {e' κ₁ κ₂}
-    → L.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.tupK vs Ms ρ₁ e κ₁ ≈k Tgt.tupK ws (delays r Ms) ρ₂ e' κ₂
+  tupK : ∀ {Γ Δ} {r : Ren Γ Δ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂}
+    → V.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tupK vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (delays r Ms) ρ₂ κ₂
   closK : ∀ {n N κ₁ κ₂} → κ₁ ≈k κ₂ → Src.closK {n} N κ₁ ≈k Tgt.packR (Tgt.code (delay (λ x → x) N)) κ₂
   getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK κ₁ ≈k Tgt.inlK κ₂
@@ -121,18 +121,18 @@ module _ (P : C4.Tm [] Any) where
 
   L₂ = Tgt.sem P
 
-  tuple-next~ : ∀ {Γ Δ} {r : Ren Γ Δ} {n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {e : _ ≡ n} {e' κ₁ κ₂}
-    → L.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
-    → Src.tuple-next vs Ms ρ₁ e κ₁ ~ Tgt.tuple-next ws (delays r Ms) ρ₂ e' κ₂
-  tuple-next~ {Ms = []} {e = e} {e'} rs er k = ret~ (tup≈ (collected≈ rs e e')) k
+  tuple-next~ : ∀ {Γ Δ} {r : Ren Γ Δ} {m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂}
+    → V.Pointwise _≈_ vs ws → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
+    → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (delays r Ms) ρ₂ κ₂
+  tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (er x) k)
-  sim (eval~ {M = clos N Ms} er k) = steps (plus refl (refl ◅ refl ◅ refl ◅ ε)) (tuple-next~ L.[] er (closK k))
+  sim (eval~ {M = clos N Ms} er k) = steps (plus refl (refl ◅ refl ◅ refl ◅ ε)) (tuple-next~ [] er (closK k))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
   sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
-  sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ L.[] er k)
+  sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ [] er k)
   sim (eval~ {M = get i M} er k) = steps₁ refl (eval~ er (getK k))
   sim (eval~ {M = inl M} er k) = steps₁ refl (eval~ er (inlK k))
   sim (eval~ {M = inr M} er k) = steps₁ refl (eval~ er (inrK k))
@@ -144,7 +144,7 @@ module _ (P : C4.Tm [] Any) where
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
   sim (ret~ r (appR (clos≈ rs) k)) = steps₁ refl (eval~ (λ { Z → r ; (S Z) → tup≈ rs }) k)
-  sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r L.∷ rs) er k)
+  sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r ∷ rs) er k)
   sim (ret~ (tup≈ rs) (closK k)) = steps₁ refl (ret~ (clos≈ rs) k)
   sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (V.lookup rs i) k)
   sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)
