@@ -10,10 +10,7 @@
 module Semantics.GraphErr.Prim where
 
 open import Framework.Primitives using (Int)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.ErrorMonad
+open import Framework.GraphModel.ErrorPrelude
 open import Semantics.Graph.Prim using (primD; out) public
 open import Language.Prim using (Prim)
 

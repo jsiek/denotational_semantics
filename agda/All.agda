@@ -73,9 +73,11 @@ import proof.Framework.GraphModel.DomainUtil
 import proof.Framework.GraphModel.DomainUtilBase
 import proof.Framework.GraphModel.Env
 import proof.Framework.GraphModel.ErrorMonad
+import proof.Framework.GraphModel.ErrorPrelude
 import proof.Framework.GraphModel.Laws
 import proof.Framework.GraphModel.Ops
 import proof.Framework.GraphModel.OpsBase
+import proof.Framework.GraphModel.Prelude
 import proof.Framework.GraphModel.RenameSem
 import proof.Framework.GraphModel.Semantics
 import proof.Framework.GraphModel.SemanticsCore

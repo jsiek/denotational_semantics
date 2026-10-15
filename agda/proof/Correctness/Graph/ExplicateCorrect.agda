@@ -18,10 +18,8 @@
 
 module proof.Correctness.Graph.ExplicateCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
-open import Framework.GraphModel.Env using (Env)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import Language.Typed.Type hiding (_≟_)
 import Language.Typed.Imp as I

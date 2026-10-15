@@ -9,12 +9,7 @@
 
 module Semantics.GraphErr.Typed.Clos2 where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.OpsBase using (ℬ)
-open import Framework.GraphModel.ErrorMonad
-open import Framework.GraphModel.Env using (Env)
+open import Framework.GraphModel.ErrorPrelude
 open import Semantics.GraphErr.Typed.Ops
 open import Language.Typed.Type
 open import Language.Typed.Clos2

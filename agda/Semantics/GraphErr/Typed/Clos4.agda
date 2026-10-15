@@ -11,13 +11,8 @@
 
 module Semantics.GraphErr.Typed.Clos4 where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.ErrorPrelude
 open import Framework.GraphModel.Ops using (⋆; car; cdr)
-open import Framework.GraphModel.OpsBase using (ℬ)
-open import Framework.GraphModel.ErrorMonad
-open import Framework.GraphModel.Env using (Env)
 open import Semantics.GraphErr.Typed.Ops
 open import Language.Typed.Type
 open import Language.Typed.Clos4

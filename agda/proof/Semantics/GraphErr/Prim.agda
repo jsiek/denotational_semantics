@@ -3,10 +3,7 @@ module proof.Semantics.GraphErr.Prim where
 open import Semantics.GraphErr.Prim public
 
 open import Framework.Primitives using (Int)
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.ContinuityBase using (Good; mono)
 open import proof.Semantics.Graph.Prim using (primD-good)
 open import Language.Prim using (Prim; δ)

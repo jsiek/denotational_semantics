@@ -8,9 +8,8 @@
 
 -}
 
-open import Framework.GraphModel.SetsAsPredicates
+open import Framework.GraphModel.Prelude
 open import Framework.Primitives using (base-rep)
-open import Framework.GraphModel.Domain
 open import Framework.GraphModel.ErrorMonad using (val∈)
 open import proof.Framework.GraphModel.Domain using (ρ₀)
 open import Language.Typed.Type using (Any)

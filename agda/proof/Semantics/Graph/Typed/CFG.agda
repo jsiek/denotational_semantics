@@ -14,9 +14,8 @@ open import Semantics.Graph.Typed.CFG public
 open import Semantics.Graph.Typed.Imp using (𝒜s)
 open import proof.Semantics.Graph.Typed.Ops using (Table; project-good; fun₄)
 
-open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
-open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
 open import proof.Framework.GraphModel.Env using (_⊆ₑ_; •-~)

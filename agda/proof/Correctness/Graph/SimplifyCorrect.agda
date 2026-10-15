@@ -25,8 +25,7 @@ module proof.Correctness.Graph.SimplifyCorrect where
 
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import proof.Semantics.Graph.Prim
 open import Language.ISWIM

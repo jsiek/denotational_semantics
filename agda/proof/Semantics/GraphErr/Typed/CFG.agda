@@ -10,10 +10,8 @@
 
 module proof.Semantics.GraphErr.Typed.CFG where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (•-~)
 open import proof.Framework.GraphModel.TypedOk using (Ok; ok-op; Ok-≃; Ok-η; Ok-skip)
 open import proof.Semantics.GraphErr.Typed.Clos2 using (case-good)

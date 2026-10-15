@@ -10,11 +10,8 @@
 
 module Semantics.Graph.Typed.Clos3 where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
-open import Framework.GraphModel.Env using (Env)
 open import Semantics.Graph.Prim using (primD)
 open import Semantics.Graph.Typed.Ops
 open import Language.Typed.Type

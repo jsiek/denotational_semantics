@@ -21,11 +21,8 @@
 module Semantics.GraphErr.Typed.Ops where
 
 open import Framework.Primitives using (Int)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.ErrorPrelude
 open import Framework.GraphModel.Ops using (⋆; proj; 𝒞)
-open import Framework.GraphModel.ErrorMonad
 open import Framework.GraphModel.TypedCheck using (checkedᵠ) public
 open import Semantics.Graph.Prim using (primD)
 open import Language.Prim using (Prim)

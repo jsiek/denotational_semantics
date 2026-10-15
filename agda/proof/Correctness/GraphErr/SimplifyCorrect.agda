@@ -26,10 +26,7 @@ module proof.Correctness.GraphErr.SimplifyCorrect where
 
 open import Framework.Primitives using (Int)
 open import Framework.Syntax.SyntaxUtil
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.OpsBase
-open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.Ops using (𝒯-mono; inl; inr)
 open import Level using (lower)
 open import proof.Semantics.GraphErr.Prim

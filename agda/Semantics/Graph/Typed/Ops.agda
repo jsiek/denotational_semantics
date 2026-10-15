@@ -21,8 +21,7 @@
 module Semantics.Graph.Typed.Ops where
 
 open import Framework.Primitives using (Int)
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.TypedGuard using (guardᵖ) public
 open import Language.Typed.Type hiding (_≟_)
 

@@ -19,10 +19,7 @@
 
 module proof.Correctness.GraphErr.ExplicateCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.ErrorMonad hiding (_▷_)
-open import proof.Framework.GraphModel.Env using (Env)
+open import proof.Framework.GraphModel.ErrorPrelude hiding (_▷_)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
 open import proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
 open import proof.Semantics.GraphErr.Typed.Clos5 using (tm-≃; tbl-map; map-id)

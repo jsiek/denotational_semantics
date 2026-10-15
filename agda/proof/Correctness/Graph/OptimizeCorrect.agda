@@ -15,11 +15,8 @@
 
 module proof.Correctness.Graph.OptimizeCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
-open import proof.Framework.GraphModel.Env using (Env)
 open import proof.Framework.GraphModel.TypedGraph using (guard-≃)
 open import proof.Semantics.Graph.Prim using (primD-≃)
 open import Language.Typed.Type

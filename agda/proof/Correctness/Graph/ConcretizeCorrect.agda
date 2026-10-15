@@ -16,10 +16,8 @@
 
 module proof.Correctness.Graph.ConcretizeCorrect where
 
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Laws using (⋆-ne)
 open import proof.Framework.GraphModel.Env using (Env; •-~)

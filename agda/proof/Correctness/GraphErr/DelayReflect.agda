@@ -12,16 +12,12 @@
 
 -}
 
-open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.ErrorPrelude
 open import Framework.Primitives
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.OpsBase
-open import proof.Framework.GraphModel.DOpSig
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; proj; inl; inr; 𝒞; pair; car; cdr; 𝒞-left; 𝒞-right)
 open import Semantics.GraphErr.Typed.Ops using (kindᶠ; checkedᵠ; keep)
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
 open import proof.Framework.GraphModel.DomainUtilBase
-open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
 open import proof.Semantics.GraphErr.Prim using (primD; out)
 open import Language.Typed.Type using (Any; ⟪_⟫; code; tup; _∋_; Z; S; idx; flat)

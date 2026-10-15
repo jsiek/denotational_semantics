@@ -14,11 +14,7 @@
 
 module Semantics.GraphErr.Typed.Imp where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.Ops using (⋆)
-open import Framework.GraphModel.ErrorMonad
-open import Framework.GraphModel.Env using (Env)
+open import Framework.GraphModel.ErrorPrelude
 open import Semantics.GraphErr.Typed.Ops
 open import Semantics.GraphErr.Typed.Clos5 using (Table; ⟦_⟧[_]; tbl) public
 open import Language.Typed.Type hiding (_≟_)

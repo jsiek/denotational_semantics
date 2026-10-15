@@ -80,6 +80,11 @@ other than `--without-K`, failing if it finds any.
   binding trees, syntax and substitution, typed indices and vectors, the
   graph model and its error monad, the semantics of intrinsically typed
   syntax, the small-step, reduction and clocked frameworks).
+  `Framework/GraphModel/Prelude.agda` and `ErrorPrelude.agda` only
+  re-export what every semantics in the graph model (with errors) opens:
+  sets as predicates, DOp signatures, the domain, `Env`, `⋆` and `ℬ`
+  (and the error monad); their `proof/` halves add the lemmas about
+  them, for the proofs.  `papers/PLDI-2027/loc.py` looks through them.
 * `proof/`: the proofs, mirroring the paths above (see below).
 * `Untyped/`: the untyped pipeline that preceded this one, preserved
   and checked:

@@ -82,6 +82,14 @@ and X86ᵀ and the proofs of explicate control and select instructions,
 shared by the CEK and reduction proofs); it is counted in full in that
 row of both.
 
+Import bundles (BUNDLES: Framework/GraphModel/Prelude.agda and
+ErrorPrelude.agda, and their proof/ halves) only re-export other
+modules, so that the semantics and proofs in the graph models open
+them with one import.  They are not modules of their own here: they
+belong to no group, and a module that imports one imports what it
+re-exports (transitively), so a bundle changes no count.  The script
+fails if a bundle has a line other than its module header and imports.
+
 Totals come from the import graph (`import`/`open import` lines, with or
 without `as`, `using`, module arguments or `public`).  A proof's total is
 its own modules plus the shared modules it reaches transitively that are
@@ -145,6 +153,10 @@ BOTH = 'den+uden'
 
 # the statements of the assurance (side 'assure'), not in the totals
 ASSURE_THM = A + 'Theorems/X86Erasure.agda'
+
+# import bundles: imports only, looked through (see above)
+BUNDLES = {W + 'GraphModel/Prelude.agda', W + 'GraphModel/ErrorPrelude.agda',
+           WP + 'GraphModel/Prelude.agda', WP + 'GraphModel/ErrorPrelude.agda'}
 
 # (side, group, glob patterns)
 GROUPS = [
@@ -527,12 +539,15 @@ IMPORT = re.compile(r'(?<![^\s;{(])(?:open\s+)?import\s+([^\s;(){}]+)')
 
 
 def imports(path):
-    """Files under agda/ that path imports (library modules are ignored)."""
+    """Files under agda/ that path imports (library modules are ignored),
+    with each import bundle replaced by the files it re-exports."""
     text = strip_comments(open(path, encoding='utf-8').read())
     out = set()
     for m in IMPORT.finditer(text):
         f = 'agda/' + m.group(1).replace('.', '/') + '.agda'
-        if os.path.exists(f):
+        if f in BUNDLES:
+            out |= imports(f)
+        elif os.path.exists(f):
             out.add(f)
     return out
 
@@ -587,9 +602,13 @@ class Count:
         seen, counts, files_of = {}, {}, {}
         # a file named explicitly by a group is not matched by another's wildcard
         explicit = {p for _, _, pats in GROUPS for p in pats if '*' not in p}
+        for b in sorted(BUNDLES):
+            # a bundle has only its module header and imports
+            if code_lines(b) != 1:
+                sys.exit(f'{b}, an import bundle, has lines other than imports')
         for side, gname, pats in GROUPS:
             files = sorted({f for p in pats for f in glob.glob(p)
-                            if '*' not in p or f not in explicit})
+                            if ('*' not in p or f not in explicit) and f not in BUNDLES})
             if not files:
                 sys.exit(f'no files for group {side}/{gname}')
             for f in files:
@@ -600,7 +619,8 @@ class Count:
             for s in sides_of(side):
                 counts[(s, gname)] = counts.get((s, gname), 0) + sum(code_lines(f) for f in files)
         every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
-                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda')}
+                 if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda')
+                 and f not in BUNDLES}
         missing = sorted(every - set(seen))
         if missing:
             sys.exit('not in any group:\n  ' + '\n  '.join(missing))

@@ -16,13 +16,9 @@
 
 module proof.Correctness.GraphErr.ConcretizeCorrect where
 
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.DenotProperties using (Every)
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.OpsBase
 open import proof.Framework.GraphModel.Ops using (𝒯; ⋆; proj; 𝒯-consis)
-open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; •-~)
 open import Language.Typed.Type using (Any)
 open import Language.Typed.Clos2

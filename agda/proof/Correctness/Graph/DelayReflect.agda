@@ -11,9 +11,8 @@
 
 -}
 
-open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Prelude
 open import Framework.Primitives
-open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; pair; car; cdr; nthD; 𝒞-left; 𝒞-right; Λ-β; ΛΛ-β; letD-collect; Mono₁)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.DomainUtil using (cdr-witness; 𝒯0-flat)
