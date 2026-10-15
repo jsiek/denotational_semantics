@@ -1,30 +1,29 @@
 %% The abstract, input by paper.tex. Numbers are from loc.py (ISWIMμ, the
 %% default report); keep them in sync.
 
-Denotational semantics promises compositional, equational reasoning about
-programs, and compiler correctness was among its first applications, yet
-verified compilers today are almost entirely operational. Denotational
-compiler proofs, on paper or mechanized, stop at a terminating or
-first-order source language, or compile to an abstract machine that keeps
-closures as primitive values and so avoids closure conversion. We use graph
-models, a denotational semantics in which a program denotes a set of
-finite input/output tables and a diverging program denotes the empty set,
-to prove a ten-pass compiler correct, from a call-by-value
-$\lambda$-calculus with iso-recursive types, which has general recursion
-and divergence, through closure conversion, to a typed assembly language.
-The proof is mechanized in Agda. Every intermediate language has a graph-model
+Denotational semantics promises compositional, equational reasoning
+about programs, and compiler correctness was among its first
+applications, yet verified compilers today are almost entirely
+operational. Denotational compiler proofs, on paper or mechanized,
+have been either (1) limited to source languages that are terminating
+or first-order, or (2) compile to an abstract machine that keeps
+closures as primitive values and so avoids closure conversion. We use
+a denotational semantics based on a graph model to prove a ten-pass
+compiler correct, from a call-by-value $\lambda$-calculus with
+iso-recursive types (which supports general recursion), through
+closure conversion, to a typed assembly language.  The proof is
+mechanized in Agda. Every intermediate language has a denotational
 semantics, and most passes are proved by an equation between the
-denotations of a program before and after the pass. The exception is the
-step of closure conversion that lowers closures into code and environment
-pairs: its reflection direction needs a new kind of logical relation
-between two denotational semantics, the approximant logical relation,
-defined by recursion on the depth of a finite approximation of the
-target's meaning, because recursive types rule out recursion on types.
-Adequacy at both ends yields an end-to-end theorem about running code: the
-source and the compiled program return the same integer, or both diverge.
-To measure the cost, we prove the same compiler correct in three
-operational styles. The graph-model proofs of the passes total 1958 lines,
-between those for clocked interpreters (1653) and abstract machines (2258)
-and well below reduction semantics (3207); adequacy adds 1532. The graph
-model gives the smallest proofs of inlining, hoisting and conversion to a
-control-flow graph, and its cost concentrates in closure lowering.
+denotations of a program before and after the pass. The exception is
+the step of closure conversion that lowers closures into code and
+environment pairs: its reflection direction needs a new kind of
+logical relation between two denotational semantics, which we name an
+approximant logical relation. To evaluate this denotational approach
+to the well-established operational approaches, we prove the same
+compiler correct in three operational styles and report on the size of
+the proofs. The denotational proof of the compiler totals 1958 lines,
+between those for clocked interpreters (1653) and abstract machines
+(2258) and well below reduction semantics (3207). The denotational
+approach gives the smallest proofs of correctness for inlining,
+hoisting and conversion to a control-flow graph, but the largest proof
+for closure lowering.
