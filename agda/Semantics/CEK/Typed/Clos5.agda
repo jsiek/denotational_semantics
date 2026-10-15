@@ -24,15 +24,15 @@ open import Language.Typed.Clos5
 open import Framework.Lookup using (_!_)
 open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr; o-error)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
-open import Framework.VecUtil using (more; collected)
+open import Framework.VecUtil using (_+ʳ_; _<><_)
 
 open import Data.Bool using (if_then_else_)
 open import Data.Fin using (Fin)
 open import Data.Integer using (ℤ; _-_; _≟_)
-open import Data.List using (List; []; _∷_; length)
+open import Data.List using (List; []; _∷_)
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Maybe using (Maybe; just; nothing)
-open import Data.Nat using (ℕ; suc; _+_)
+open import Data.Nat using (ℕ; suc)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Relation.Nullary using (yes; no; does)
@@ -90,9 +90,8 @@ data Cont (Σ : List ℕ) : Ty → Set where
   callR : Val Σ ⟪ fun ⟫ → Cont Σ Any → Cont Σ Any
   packL : ∀ {Γ n} → Tm Σ Γ ⟪ tup n ⟫ → Env Σ Γ → Cont Σ ⟪ fun ⟫ → Cont Σ (code n)
   packR : ∀ {n} → Val Σ (code n) → Cont Σ ⟪ fun ⟫ → Cont Σ ⟪ tup n ⟫
-  {- the values so far (reversed) and the components still to evaluate -}
-  tupK : ∀ {Γ n j} (vs : List (Val Σ Any)) → Vec (Tm Σ Γ Any) j → Env Σ Γ
-    → length vs + suc j ≡ n → Cont Σ ⟪ tup n ⟫ → Cont Σ Any
+  {- the values so far (newest first) and the components still to evaluate -}
+  tupK : ∀ {Γ m j} → Vec (Val Σ Any) m → Vec (Tm Σ Γ Any) j → Env Σ Γ → Cont Σ ⟪ tup (m +ʳ suc j) ⟫ → Cont Σ Any
   getK : ∀ {n} → Fin n → Cont Σ Any → Cont Σ ⟪ tup n ⟫
   inlK inrK : Cont Σ ⟪ sum ⟫ → Cont Σ Any
   caseK : ∀ {Γ} → Tm Σ (Any ∷ Γ) Any → Tm Σ (Any ∷ Γ) Any → Env Σ Γ → Cont Σ Any → Cont Σ ⟪ sum ⟫
@@ -109,10 +108,9 @@ data State (Σ : List ℕ) : Set where
 module _ {Σ : List ℕ} where
 
   {- evaluate the rest of a tuple's components, or build it -}
-  tuple-next : ∀ {Γ n j} (vs : List (Val Σ Any)) → Vec (Tm Σ Γ Any) j → Env Σ Γ
-    → length vs + j ≡ n → Cont Σ ⟪ tup n ⟫ → State Σ
-  tuple-next vs [] ρ e κ = ret (tup (collected vs e)) κ
-  tuple-next vs (M ∷ Ms) ρ e κ = eval M ρ (tupK vs Ms ρ e κ)
+  tuple-next : ∀ {Γ m j} → Vec (Val Σ Any) m → Vec (Tm Σ Γ Any) j → Env Σ Γ → Cont Σ ⟪ tup (m +ʳ j) ⟫ → State Σ
+  tuple-next vs [] ρ κ = ret (tup (vs <>< [])) κ
+  tuple-next vs (M ∷ Ms) ρ κ = eval M ρ (tupK vs Ms ρ κ)
 
   {- what evaluating a term does first -}
   begin : ∀ {Γ A} → Tm Σ Γ A → Env Σ Γ → Cont Σ A → State Σ
@@ -121,7 +119,7 @@ module _ {Σ : List ℕ} where
   begin (pack L M) ρ κ = eval L ρ (packL M ρ κ)
   begin (callc L M) ρ κ = eval L ρ (callL M ρ κ)
   begin (lit B c) ρ κ = ret (const c) κ
-  begin (tuple Ms) ρ κ = tuple-next [] Ms ρ refl κ
+  begin (tuple Ms) ρ κ = tuple-next [] Ms ρ κ
   begin (get i M) ρ κ = eval M ρ (getK i κ)
   begin (inl M) ρ κ = eval M ρ (inlK κ)
   begin (inr M) ρ κ = eval M ρ (inrK κ)
@@ -145,7 +143,7 @@ module _ {Σ : List ℕ} where
     step (ret w (callR f κ)) = next (call f w κ)
     step (ret c (packL M ρ κ)) = next (eval M ρ (packR c κ))
     step (ret e (packR c κ)) = next (ret (pack c e) κ)
-    step (ret v (tupK vs Ms ρ e κ)) = next (tuple-next (v ∷ vs) Ms ρ (more {v = v} vs e) κ)
+    step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
     step (ret v (getK i κ)) = next (ret (lookup (elems v) i) κ)
     step (ret v (inlK κ)) = next (ret (inl v) κ)
     step (ret v (inrK κ)) = next (ret (inr v) κ)

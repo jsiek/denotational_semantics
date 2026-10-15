@@ -28,7 +28,7 @@ open import Semantics.Observation using (Obs; o-error)
 open import proof.Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; Star; ε; _◅_; Plus; plus; plus-star; star-plus; step⁺; plus→star)
 open import proof.Semantics.CEK.Simulation using (Equivalent; equivalent; equiv-sym)
 open import proof.Framework.Both Obs using (Both; halt; move; ends; both-fsim)
-open import proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms; collected-push)
+open import proof.Correctness.CEK.Clos5Common using (atm-step; tuple-atoms)
 import Semantics.CEK.Typed.Clos5 as C
 import Semantics.CEK.Typed.Imp as I
 
@@ -38,6 +38,7 @@ open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ)
 open import Data.Product using (_,_)
+open import Data.Vec using ([])
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong; subst)
 
 module Sim {Σ : List ℕ} (ds : All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ ∷ []) Any) Σ) (e₀ : M.Exp Σ [] Any) where
@@ -96,8 +97,7 @@ module Sim {Σ : List ℕ} (ds : All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ �
   sim (eval~ {e = atm a} k) = val refl k (step⁺ (at a))
   sim (eval~ {e = pack a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
   sim (eval~ {e = callc f a} k) = call _ _ refl k (plus refl (at f ◅ refl ◅ at a ◅ ε))
-  sim (eval~ {e = tuple as} {φ = φ} k) with tuple-atoms ds₂ ⌜ e₀ ⌝ [] as refl
-  ... | e' , σ = val refl k (subst (λ V → Plus L₂ (C.eval ⌜ tuple as ⌝ φ _) (C.ret (C.tup V) _)) (collected-push φ as e') (plus refl σ))
+  sim (eval~ {e = tuple as} k) = val refl k (plus refl (tuple-atoms ds₂ ⌜ e₀ ⌝ [] as))
   sim (eval~ {e = get i a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
   sim (eval~ {e = inl a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
   sim (eval~ {e = inr a} k) = val refl k (plus refl (at a ◅ refl ◅ ε))
