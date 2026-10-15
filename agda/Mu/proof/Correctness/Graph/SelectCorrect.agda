@@ -59,7 +59,7 @@ fin-β {V = V} m ne c = ≃-sym (Λ-β m (λ w w∈ → ⟨ V , ⟨ ne , ⟨ (λ
 
 {- The pass -------------------------------------------------------------------------------}
 
-{- d := D, then K, in CFGᵀ -}
+{- d := D, then K, in CFGμ -}
 then : ∀ {n Δ A Δ''} → Out n Δ A Δ'' → (𝒫 Value → 𝒫 Value) → 𝒫 Value → 𝒫 Value
 then ret K D = D
 then (to p _) K D = ⋆ ⟨ Λ ⟨ K , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
@@ -68,7 +68,7 @@ then-ne : ∀ {n Δ A Δ''} (o : Out n Δ A Δ'') {K D w} → w ∈ then o K D �
 then-ne ret w∈ = ⟨ _ , w∈ ⟩
 then-ne (to p _) {K} {D} w∈ = proj₂ (⋆-ne {Λ ⟨ K , ptt ⟩} {D} ⟨ _ , w∈ ⟩)
 
-{- for tables T (of CFGᵀ) and T' (of X86ᵀ) that agree -}
+{- for tables T (of CFGμ) and T' (of X86μ) that agree -}
 module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ≃ T' f) where
 
   𝒪s-atms : ∀ {Δ Δs Γ O F} (as : All (Atm Σ Δ) Δs) ρ R → 𝒜s as T' ρ ≡ X.𝒪s T' (atms {Γ = Γ} {O} {F} as) ρ R
