@@ -16,9 +16,14 @@ mapping to journal/LNCS pages is not verified page-by-page; for the LASC papers 
 typeset in the Kluwer style with "1{28", "1{78", "1{72" page ranges, consistent with an offset.
 
 **Not obtained:** Clinger 1984 (ACM DL returned 403; Semantic Scholar marks it CLOSED; no copy on
-Internet Archive). The MITRE reports (M92B092 byte-code compiler, M92B093 faithfulness, M92B094
-flattener, M92B095 linker) were not found online. Everything said about Clinger 1984 below comes from
-**secondary descriptions in the VLISP/Wand papers** and is flagged as such.
+Internet Archive). Everything said about Clinger 1984 below comes from **secondary descriptions in
+the VLISP/Wand papers** and is flagged as such.
+
+**Obtained later (2026-10-15):** the MITRE reports were distributed as DVI files through the Scheme
+Repository; the Indiana mirror `ftp.cs.indiana.edu/pub/scheme-repository/doc/pubs/vlisp/` is on the
+Wayback Machine with `compiler.dvi.Z`, `faithfulness.dvi.Z`, `flattener.dvi.Z`, `linker.dvi.Z`,
+`vm.dvi.Z`, `prescheme*.dvi.Z` and others. `faithfulness.dvi.Z` (M92B093, TeX output 1993-03-10) was
+read; see "Faithfulness report" below. The others were not read.
 
 ---
 
@@ -190,6 +195,18 @@ computed. This is a sort of partial correctness.").
 Denotational: Scheme -> bbc (Clinger-style, same domains), PreScheme front end and PreScheme -> combinator
 code. Operational: everything after (flattener, linker/image, VM refinements incl. GC; PreScheme
 linear-data and stored-program machines).
+
+### Faithfulness report (M92B093), read 2026-10-15
+
+Farmer, Guttman, Monk, Ramsdell, Swarup, "Faithfulness of the VLISP Operational Semantics", MITRE
+M92B093, September 1992 (37 pp.). Abstract: "This report provides a detailed proof that the
+operational semantics for the highest-level interpreter (virtual machine) is faithful to the
+denotational semantics used in the byte-code compiler proof." The comparison is at the Tabular Byte
+Code level (§1). Definition (§4, p. 4): "The operational semantics for tbc is faithful if, for all
+tbc templates t and all initial states Σ for t, D[[Σ]] = O[[Σ]] whenever O[[Σ]] is defined." Proof:
+each machine rule preserves the denotation of the state (Lemma 5.3, 34 cases, §6), so a halting run's
+answer equals the initial state's denotation (Theorem 5.5, p. 6). One direction, paper proof,
+closures primitive in the machine. This matches GSS p. 6 quoted above.
 
 ### How far down
 

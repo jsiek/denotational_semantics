@@ -108,7 +108,7 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
 
 ## 8. Related work
 Organised as in `related-work-literature.md` and the novelty search:
-- **Denotational compiler verification:** Chlipala 2007, Benton–Hur, interaction trees and Vellvm, calculated compilers (Hutton–Bahr), and earlier work (Morris, Thatcher–Wagner–Wright, Wand, Clinger, Polak).
+- **Denotational compiler verification:** Chlipala 2007, Benton–Hur, interaction trees and Vellvm, calculated compilers (Hutton–Bahr), Cheng et al. 2026, and earlier work (Morris, Thatcher–Wagner–Wright, Polak, Clinger, VLISP). Wand 1991 goes with them as related work but is not denotational (an equational λ-theory; see `vlisp-clinger-wand.md` §3).
 - **Graph and filter models, and their mechanizations:** Plotkin, Scott, Engeler, and Siek 2017 and PLFA (cited in the third person).
 - **Relations for adequacy versus relations between two denotations:** Reynolds 1974 (the tower), Pitts, Milne–Strachey, Stoy, Mulmuley.
 - **Operational compiler verification:** CompCert, CakeML, Hur–Dreyer, typed closure conversion.
