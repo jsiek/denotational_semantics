@@ -1,11 +1,13 @@
 # A typed ISWIM with recursive types: design of the experiment (v2)
 
-> **Status (2026-10-15).** The design as approved, with the pilot P0 built (`agda/Mu/`, `loc.py --mu`, the section "ISWIMμ pilot" of `../loc.md`). Where the pilot showed the design wrong or settled an open point, a note marked **[P0]** says so; the rest is the design as written. In short:
+> **Status (2026-10-15).** The design as approved, with the pilot P0 built and the core of P1 (the back end, in the graph model and the CEK machines) (`agda/Mu/`, `loc.py --mu`, the section "ISWIMμ pilot" of `../loc.md`). Where the pilot showed the design wrong or settled an open point, a note marked **[P0]** or **[P1]** says so; the rest is the design as written. In short:
 >
 > * The measured rows fall inside the estimates: graph-model delay 552 → 524, the other three passes 197 → 194 (graph) and 354 → 331 (CEK), CEK delay 99 → 96.
 > * The depth index of ApproxLR stays load-bearing, as argued in §3.2 (now also in the comment of `Mu/proof/Correctness/Graph/DelayRel.agda`).
 > * The unification risk did not materialize: `unfold` needs no equation argument (§5).
 > * Heterogeneous contexts cost nothing net: optimize got smaller, and the CEK lemmas about tuple lengths disappeared (§3.3).
+> * **[P1]** The whole pipeline, row by row against the typed one without simplify and cast insertion: graph model 1649 → 1543, CEK 1789 → 1655 (against the main table's 1722 and 1881, which also count what simplify needs: 1543 and 1655, inside the estimates). Of the graph model's 106, 49 are select's `case`, which X86μ makes a pseudo-instruction (§2.2), not the cost of errors.
+> * **[P1]** The X86 existential over a `Ctx` cost nothing (§2.2); no pass after delay looks at μ.
 
 Revision of `typed-source-design.md` (v1, which had simple types plus `rec`), after the author's response. The goals now are:
 
@@ -112,6 +114,11 @@ These are the same constructors and the same passes, re-indexed. Where μ appear
 | `X86` | `RTy`'s `codeα`/`tupα` hide a `Ctx`; no `chk`; `fold`/`unfold` are a `movq` between slots of the two types (**μ**; as `inject` is today a move), or a typing coercion with no instruction |
 
 * **[P0] Optimize** cannot send an unused free variable to the argument, as the typed pass does, since the types differ. Its renaming is defined only on the variables the term uses (`Ren (uses M) Γ'`: a variable and a proof that it is used), and a closure's code is renamed by `squeeze`, defined on the kept variables. `covers` (the code uses only kept variables) moves from the proofs into the pass. No thinnings or strengthening lemmas were needed. The heterogeneous vectors (lookup, flags, `select`, `squeeze`, pointwise relations, `Thin`) are 78 lines of infrastructure (`Mu/Framework/AllUtil.agda`).
+* **[P1] The back end.** Clos5μ … X86μ are as in the table, with these settled:
+  * A table is a list of signatures `DSig` (environment, argument and result types), and every IR from Clos5μ on indexes a program by the type of `main` and a body by its result type (`Tail Σ R Bs Δ`, `Seq Σ n R Bs ψ`, the CFG machine's continuations by the type they await). `Sig` would clash with the abt library's.
+  * **The X86 existential.** A closure `A ⇒ B` hides a `Ctx`. As in X86ᵀ, the witness is never named in a type: `load fst x, r` (x : A ⇒ B) gives r the type `codeα A B`, with only the argument and result types, which the closure's type shows; `load snd` gives `tupα`; both refer to the closure opened last, and opening another forgets the earlier one's registers (`wipe`). `callq` needs `codeα A B`, `%rdi : tupα`, `%rsi : A`, and leaves `%rax : B`. The CEK machine carries the witness as a `Ctx` (η, `RV η (codeα A B) = Val Σ (code η A B)`), as the typed one carries a length. No proof needed more.
+  * **Sums in X86μ.** X86ᵀ's case is `testinl x; load payload x, slot k; je l₁ l₂`; its payload has type `Any` on both sides. In X86μ the slot has the left type in block l₁ and the right type in block l₂, and no state type between the load and the jump can type it (TAL refines the type of the tested value instead). So X86μ's `case x p l₁ l₂` is one typed pseudo-instruction that ends a sequence, as `chk` is for X86ᵀ's check and move, and would erase to the three instructions. A consequence for the count: the typed graph proof of select spends 49 lines (`Tagged`, `Inv`, `case-core`) showing that the three instructions agree with CFGᵀ's case; X86μ's needs none. Like for like, graph select is about 132, not 83.
+  * `fold`/`unfold` are `↑`/`↓` on operands, a `movq` (as decided in §6.9).
 * **Where μ shows up:** only in the types of values (environments and frames may hold μ-typed values, and code types and state types may mention μ) and in the two coercions. **No pass looks at μ**: closure conversion, globalize, rco, lift locals, explicate and select are oblivious to it. That orthogonality is a result worth stating.
 * **Parallel copy or "alongside"?** One could keep `Any` and add μ to one `Ty`, serving both pipelines from one set of IRs. But the proofs would then include `project`'s failure cases for the typed source too, and the error-free column could not be measured. **Recommend a parallel copy**, `agda/Mu/` with module prefix `Mu.`, and `loc.py --mu`, reusing `Framework/` unchanged. A merge can come later if wanted.
 
@@ -180,6 +187,7 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
   * **[P0]** Not needed for the pilot's theorems, which hold for a closed program of any type: the CEK machines observe a function as `o-fun`, as today, and the graph-model theorem is about constants and nonemptiness. The restriction matters only for P2's end-to-end `Equivalent` from the graph model.
   * The graph model's "same constants, nonempty together", plus adequacy, plus a lemma per machine that it never stops with `o-error` (a few lines, by inspection of the typed step function), gives `Equivalent`.
   * The four columns state **the same theorem**, which removes the caveat "the theorems differ".
+  * **[P1]** Imposed at the end-to-end statements: `compile-x86-int` (graph model, `Same` for `main : Int`) and `compile-x86-const`/`compile-x86-diverges` (CEK); the passes and the intermediate compositions hold at any type.
   * **The graph-with-errors column is unneeded**: it has nothing left to observe.
 * **Adequacy** (reported separately):
   * ISWIMμ adequacy is about ISWIM's 653, minus its kind-error cases;
@@ -209,7 +217,7 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
 | phase | content |
 |---|---|
 | P0 pilot | ISWIMμ → Clos4μ (enclose, optimize, concretize, delay) in **graph + CEK**; confirm that ApproxLR ports unchanged and measure H1/H2 on the CC passes; go/no-go. **[P0] Done**: graph model 908 → 842, CEK 800 → 730 on the rows of these four passes and the four languages' semantics (with `Ops` and `Common`); ApproxLR ported minus `fun-obs` |
-| P1 | Clos5μ…X86μ, all four columns, composition |
+| P1 | Clos5μ…X86μ, all four columns, composition. **[P1] Graph model and CEK done**: per row, globalize 118 → 118 / 219 → 213, rco 128 → 125 / 150 → 147, lift locals 44 → 44 / 56 → 51, explicate 71 → 71 / 106 → 105, select 134 → 83 (132 like for like) / 111 → 107; the semantics of Clos5…X86 with `Ops` 254 → 231 / 290 → 272 |
 | P2 | adequacy (ISWIMμ, Clos5μ, X86μ) and the no-error lemmas, giving the end-to-end `Equivalent` from the graph model |
 | P3 (optional) | port simplify to ISWIMμ (typed cp0; folding through `unfold (fold V)` is one more known-value rule) |
 
@@ -234,7 +242,7 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
 
 * **Green slime.** Matching a term of a concrete type (`Tm Γ (base Int)`) against `unfold`, whose index is `A [ μ A ]`, cannot be unified by Agda. Mitigation: `unfold` takes an equation (`A [ μ A ] ≡ B`), or the relevant functions stay type-generic. Settle this in P0.
   * **[P0] Settled: no equation.** `unfold : Tm Γ (μ A) → Tm Γ (A [ μ A ])` and the machines' `foldK : Cont (μ A) → Cont (A [ μ A ])` keep the plain index. As the pilot confirmed, Agda cannot split such a term or continuation at a concrete type. But no definition or proof does: every one splits terms, continuations and their relations at a generic type. That is the discipline the typed pipeline already follows for `prim`, whose index `out-flat p` has the same property. Where a value is split at `μ A` (`ret (fold v) (unfoldK κ)`, and the same case of each simulation), Agda's coverage checker splits the continuation first, at the generic type.
-* **Heterogeneous environments.** **[P0]** Resolved for P0 (see §2.2 and §3.3). The X86 existential over a `Ctx` remains for P1.
+* **Heterogeneous environments.** **[P0]** Resolved for P0 (see §2.2 and §3.3). **[P1]** The X86 existential over a `Ctx` is resolved too, at no cost (§2.2); the new obstacle in X86 was sums, not the existential.
 * **Heterogeneous environments.** Optimize's pruning over `All (Tm Γ) Δ` needs thinnings, and the X86 existential hides a `Ctx`. This is the largest unknown in the shared code.
 * **The predicted small change in graph delay could be wrong** in either direction. That is the point of P0.
 * **No simplify in round 1** means totals are comparable only row by row.
