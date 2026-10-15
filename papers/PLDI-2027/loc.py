@@ -488,6 +488,12 @@ GROUPS = [
     ('mu-op', 'CC: optimize', [MUP + 'Correctness/CEK/OptimizeSim.agda']),
     ('mu-op', 'CC: concretize', [MUP + 'Correctness/CEK/ConcretizeSim.agda']),
     ('mu-op', 'CC: delay', [MUP + 'Correctness/CEK/DelaySim.agda']),
+    ('mu-op', 'lemmas shared by the passes', [MUP + 'Correctness/CEK/Clos5Common.agda']),
+    ('mu-op', 'CC: globalize', [MUP + 'Correctness/CEK/GlobalizeSim.agda']),
+    ('mu-op', 'rco', [MUP + 'Correctness/CEK/RCOSim.agda']),
+    ('mu-op', 'lift locals', [MUP + 'Correctness/CEK/LiftLocalsSim.agda']),
+    ('mu-op', 'explicate control', [MUP + 'Correctness/CEK/ExplicateSim.agda']),
+    ('mu-op', 'select instructions', [MUP + 'Correctness/CEK/SelectSim.agda']),
     ('mu-op', 'composition', [MUP + 'Correctness/CEK/PipelineSim.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # the pilot's reduction column (in --mu's reduction table): reduction
@@ -1087,23 +1093,23 @@ MU_ROWS = [
      [G + 'Typed/Ops.agda', GP + 'Typed/Ops.agda'], [],
      [MU + 'Semantics/Graph/Ops.agda', MUP + 'Semantics/Graph/Ops.agda'], []),
     ('lemmas shared by the passes (`Common`, `Clos5Common`)', [], [OC + 'Common.agda', OC + 'Clos5Common.agda'],
-     [], []),
+     [], [MUP + 'Correctness/CEK/Clos5Common.agda']),
     mu_pass('CC: enclose', ['EncloseCorrect.agda'], ['EncloseSim.agda']),
     mu_pass('CC: optimize', ['OptimizeCorrect.agda'], ['OptimizeSim.agda']),
     mu_pass('CC: concretize', ['ConcretizeCorrect.agda'], ['ConcretizeSim.agda']),
     mu_pass('CC: delay', ['Delay' + x + '.agda' for x in MU_DELAY], ['DelaySim.agda']),
-    mu_pass('CC: globalize', ['GlobalizeCorrect.agda'], []),
-    mu_pass('rco', ['RCOCorrect.agda'], []),
-    mu_pass('lift locals', ['LiftLocalsCorrect.agda'], []),
-    mu_pass('explicate control', ['ExplicateCorrect.agda'], []),
-    mu_pass('select instructions', ['SelectCorrect.agda'], []),
+    mu_pass('CC: globalize', ['GlobalizeCorrect.agda'], ['GlobalizeSim.agda']),
+    mu_pass('rco', ['RCOCorrect.agda'], ['RCOSim.agda']),
+    mu_pass('lift locals', ['LiftLocalsCorrect.agda'], ['LiftLocalsSim.agda']),
+    mu_pass('explicate control', ['ExplicateCorrect.agda'], ['ExplicateSim.agda']),
+    mu_pass('select instructions', ['SelectCorrect.agda'], ['SelectSim.agda']),
     mu_pass('composition', ['CompilerCorrect.agda'], ['PipelineSim.agda']),
 ]
 MU_SHARED = ([L + 'Typed/' + x + '.agda'
               for x in ('Type', 'ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5', 'Mon', 'Imp', 'CFG', 'X86')]
              + [C + x + '.agda' for x in ('Enclose', 'Optimize', 'Concretize', 'Delay', 'Globalize', 'RCO',
                                           'LiftLocals', 'Explicate', 'Select', 'Pipeline')])
-MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda']
+MU_INFRA = [W + 'VecUtil.agda', W + 'VecSelect.agda', WP + 'VecSelect.agda', WP + 'Lookup.agda']
 
 
 def mu_check(c):
@@ -1137,7 +1143,6 @@ def mu_report(c, T):
     without simplify and cast insertion."""
 
     def n(fs):
-        fs = [f for f in fs if os.path.exists(f)]  # INTERIM: until the CEK column is merged
         return sum(code_lines(f) for f in fs) if fs else None
 
     def cell(x):
@@ -1172,7 +1177,8 @@ def mu_report(c, T):
     mush = [f for f in c.every if c.seen[f][0] == 'mu-shared']
     print(f'| languages and passes (ISWIM … X86, enclose … select, and their composition) | {n(MU_SHARED)} | {n(mush)} |')
     mui = [f for f in c.every if c.seen[f][0] == 'mu-infra']
-    print(f'| infrastructure: vectors (`VecUtil`, `VecSelect`) against heterogeneous vectors (`Mu/Framework/AllUtil`) '
+    print(f'| infrastructure: vectors and lookup lemmas (`VecUtil`, `VecSelect`, `proof/Framework/Lookup`) '
+          f'against heterogeneous vectors (`Mu/Framework/AllUtil`, `AllProp`) '
           f'| {n(MU_INFRA)} | {n(mui)} |')
     mex = [f for f in c.every if c.seen[f][0] == 'mu-examples']
     print(f'| examples | — | {n(mex)} |')
