@@ -19,14 +19,10 @@ open import Semantics.GraphErr.Typed.Clos2 public
 open import proof.Framework.GraphModel.TypedBinders using (⌊⌋-≃; binds-val-≃; binds-≃₂) public
 open import proof.Framework.GraphModel.TypedOk using (check-kind-good)
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.OpsBase
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.Continuity using (⋆-good; proj-good; 𝒞-good)
 open import proof.Framework.GraphModel.ContinuityBase using (Good; mono; VEnv; Cont; Approx; env; one; approx-init)
 open import proof.Framework.GraphModel.Env using (nonempty-env)
-open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Semantics.Graph.Prim using (primD-good)
 open import Language.Typed.Type using (Flat; Tag; ttup; tfun; tsum; tint; flat)
 open import Semantics.GraphErr.Typed.Ops

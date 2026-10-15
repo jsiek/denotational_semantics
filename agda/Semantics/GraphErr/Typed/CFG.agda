@@ -12,10 +12,7 @@
 
 module Semantics.GraphErr.Typed.CFG where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.ErrorMonad
-open import Framework.GraphModel.Env using (Env)
+open import Framework.GraphModel.ErrorPrelude
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Semantics.GraphErr.Typed.Ops
 open import Semantics.GraphErr.Typed.Imp using (Table; tbl; 𝒜; 𝒮; letᵗ) public

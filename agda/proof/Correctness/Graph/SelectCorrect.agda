@@ -25,11 +25,9 @@
 
 module proof.Correctness.Graph.SelectCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒞; 𝒯; payloadD; strict; Mono₁; Λ-≃; ⋆-≃; Λ-β)
 open import proof.Framework.GraphModel.Laws using (strict-≃; ⋆-ne)
-open import proof.Framework.GraphModel.Env using (Env)
 open import proof.Semantics.Graph.Typed.Ops using (Table; tables; init)
 open import proof.Semantics.Graph.Typed.CFG using (⟦_⟧ᵗ; Meanings; drop; 𝒮; 𝒮-≃; tail-mono; blocks-mono)
   renaming (code′ to codeᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)

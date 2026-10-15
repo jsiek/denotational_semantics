@@ -18,15 +18,11 @@
 
 module proof.Correctness.GraphErr.RCOCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (nthD; ℬ)
 open import proof.Framework.GraphModel.Ops using (pair; proj; inl; inr; 𝒯; 𝒞)
 open import proof.Framework.GraphModel.Continuity using (pair-good; proj-good; inl-good; inr-good; 𝒯-good)
 open import proof.Framework.GraphModel.ContinuityBase using (Good; mono)
-open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Framework.GraphModel.Env using (Env)
 open import proof.Framework.GraphModel.TypedBinders using (binds-val-≃; callcᵈ; callc-good)
 open import proof.Framework.GraphModel.TypedOk using (check-kind-good)
 open import proof.Semantics.Graph.Prim using (primD-good)

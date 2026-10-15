@@ -13,8 +13,7 @@ open import Semantics.Graph.Typed.Ops public
 open import proof.Framework.GraphModel.TypedGuard using (guardᵖ-good; guardᵖ-≃) public
 open import proof.Framework.GraphModel.TypedOkBase public
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.ContinuityBase using (Good)
 open import Language.Typed.Type hiding (_≟_)
 

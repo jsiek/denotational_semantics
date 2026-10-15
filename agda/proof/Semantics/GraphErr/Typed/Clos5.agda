@@ -20,13 +20,9 @@ open import Semantics.GraphErr.Typed.Clos5 public
 open import proof.Framework.GraphModel.TypedOk using (Ok; Oks; ok-op; var-ok; const-ok; let-ok; split; ok-vec) public
 open import proof.Framework.GraphModel.TypedBinders using (code-ok; callc-good; callcᵈ)
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.OpsBase
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.Continuity using (ℬ-good)
 open import proof.Framework.GraphModel.ContinuityBase using (mono)
-open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; _~ₑ[_]_; •-~)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Semantics.GraphErr.Typed.Clos2

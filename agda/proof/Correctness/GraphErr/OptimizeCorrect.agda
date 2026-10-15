@@ -16,12 +16,7 @@
 
 module proof.Correctness.GraphErr.OptimizeCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.OpsBase
-open import proof.Framework.GraphModel.ErrorMonad
-open import proof.Framework.GraphModel.Env using (Env)
+open import proof.Framework.GraphModel.ErrorPrelude
 open import Language.Typed.Type
 open import Language.Typed.Clos2
 open import proof.Semantics.GraphErr.Typed.Clos2

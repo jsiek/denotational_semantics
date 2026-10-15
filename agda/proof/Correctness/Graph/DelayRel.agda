@@ -11,9 +11,8 @@
 
 -}
 
-open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Prelude
 open import Framework.Primitives
-open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (⋆; car; cdr)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Semantics.Graph.Prim using (out)

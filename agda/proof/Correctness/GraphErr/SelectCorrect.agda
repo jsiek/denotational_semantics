@@ -26,12 +26,9 @@
 
 module proof.Correctness.GraphErr.SelectCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.ErrorMonad
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (Mono₁; Finitary)
 open import proof.Framework.GraphModel.Ops using (⋆; car; cdr; payloadD; Λ; 𝒞)
-open import proof.Framework.GraphModel.Env using (Env)
 open import proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)
 open import proof.Semantics.GraphErr.Typed.Clos5 using (tm-≃; tbl-map; tbl-con; map-id; tbl)
 open import proof.Semantics.GraphErr.Typed.Imp using (letᵗ-≃)

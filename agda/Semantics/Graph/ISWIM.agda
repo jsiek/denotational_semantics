@@ -7,13 +7,10 @@ module Semantics.Graph.ISWIM where
 
 -}
 
-open import Framework.GraphModel.DOpSig
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops
 open import Semantics.Graph.Prim
 open import Language.ISWIM
-open import Framework.GraphModel.Env using (Env)
 open import Framework.abt.Fold2 Op sig using (fold)
 
 open import Data.Product using () renaming (_,_ to ⟨_,_⟩)

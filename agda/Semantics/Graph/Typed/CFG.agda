@@ -20,10 +20,8 @@
 
 module Semantics.Graph.Typed.CFG where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.Ops
-open import Framework.GraphModel.Env using (Env)
 open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Semantics.Graph.Typed.Ops
 open import Semantics.Graph.Typed.Imp using (𝒜; 𝒮) public

@@ -11,9 +11,8 @@
 
 -}
 
-open import proof.Framework.GraphModel.SetsAsPredicates
+open import proof.Framework.GraphModel.Prelude
 open import Framework.Primitives
-open import proof.Framework.GraphModel.Domain
 open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒯; nthD; pair; car; cdr; 𝒞-left; 𝒞-right; Λ-β; ΛΛ-β; ⋆₂-mono)
 open import proof.Framework.GraphModel.DomainUtilBase
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)

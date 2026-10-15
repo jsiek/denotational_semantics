@@ -18,10 +18,8 @@
 
 module proof.Correctness.GraphErr.LiftLocalsCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (Mono₁)
-open import proof.Framework.GraphModel.ErrorMonad
 open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
 open import proof.Framework.GraphModel.TypedOk using (fin₁)
 open import proof.Semantics.GraphErr.Typed.Clos2 using (caseᵗ-≃)

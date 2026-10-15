@@ -10,11 +10,9 @@
 
 module proof.Semantics.GraphErr.Typed.Imp where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.ErrorPrelude
 open import proof.Framework.GraphModel.OpsBase using (Mono₁; Finitary)
 open import proof.Framework.GraphModel.Ops using (𝒞)
-open import proof.Framework.GraphModel.ErrorMonad
 open import Semantics.GraphErr.Typed.Ops using (caseᵗ)
 open import Semantics.GraphErr.Typed.Imp using (letᵗ)
 

@@ -24,12 +24,8 @@
 
 module Semantics.GraphErr.Typed.X86 where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
-open import Framework.GraphModel.DOpSig
+open import Framework.GraphModel.ErrorPrelude
 open import Framework.GraphModel.Ops using (⋆; car; cdr; payloadD)
-open import Framework.GraphModel.ErrorMonad
-open import Framework.GraphModel.Env using (Env)
 open import Semantics.GraphErr.Typed.Ops
 open import Semantics.GraphErr.Typed.Clos4 using (kind₄)
 open import Semantics.GraphErr.Typed.Clos5 using (tbl)

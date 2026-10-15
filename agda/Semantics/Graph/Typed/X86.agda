@@ -31,11 +31,9 @@
 
 module Semantics.Graph.Typed.X86 where
 
-open import Framework.GraphModel.SetsAsPredicates
-open import Framework.GraphModel.Domain
+open import Framework.GraphModel.Prelude
 open import Framework.GraphModel.DOpSig using (Results)
 open import Framework.GraphModel.Ops renaming (pair to pairD; inl to inlD; inr to inrD)
-open import Framework.GraphModel.Env using (Env)
 open import Semantics.Graph.Prim using (primD)
 open import Semantics.Graph.Typed.Ops
 open import Semantics.Graph.Typed.Imp using (𝒜)

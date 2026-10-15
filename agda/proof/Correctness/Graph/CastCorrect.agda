@@ -18,11 +18,9 @@
 module proof.Correctness.Graph.CastCorrect where
 
 open import Framework.Syntax.SyntaxUtil
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.Prelude
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.TypedGraph using (let-single)
-open import proof.Framework.GraphModel.Env using (Env)
 open import proof.Semantics.Graph.Prim using (primD; primD-≃; primD-mono)
 open import Language.ISWIM
 open import Framework.Syntax.Scope Op sig using (WS; WS-args)

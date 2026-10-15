@@ -17,11 +17,8 @@
 
 module proof.Correctness.GraphErr.GlobalizeCorrect where
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
+open import proof.Framework.GraphModel.ErrorPrelude hiding (_▷_)
 open import proof.Framework.GraphModel.OpsBase using (nthD)
-open import proof.Framework.GraphModel.ErrorMonad hiding (_▷_)
 open import proof.Framework.GraphModel.Env using (Env; _~ₑ[_]_; •-~)
 open import proof.Framework.Lookup using (lvl-⊑; ⊑-len)
 open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
