@@ -1,6 +1,6 @@
 # Novelty check: mechanized compiler correctness with denotational (graph-model) semantics
 
-Compiled 2026-10-15. Read-only literature search. A second pass the same day closed most of the gaps listed at the end (Polak 1980/81, the VLISP faithfulness report, Bahr–Hutton 2022, Œuf, Pardo et al., Siek 2025, Siek 2017's wording, Mosses 2025/2026, game semantics) and ran the final searches; the entries below record what was found and where. A third pass read the PDFs the author placed in `papers/PLDI-2027/related/` (Polak's LNCS 124 book, Clinger 1984, Stoy 1981, Meyer–Wand 1985, Filinski 2007, Bahr–Hutton 2022, Pardo et al. 2018, Tune–Kavvos 2026; text extracted with pdftotext); `abramsky-1993.pdf` has no text layer and was not read.
+Compiled 2026-10-15. Read-only literature search. A second pass the same day closed most of the gaps listed at the end (Polak 1980/81, the VLISP faithfulness report, Bahr–Hutton 2022, Œuf, Pardo et al., Siek 2025, Siek 2017's wording, Mosses 2025/2026, game semantics) and ran the final searches; the entries below record what was found and where. A third pass read the PDFs the author placed in `papers/PLDI-2027/related/` (Polak's LNCS 124 book, Clinger 1984, Stoy 1981, Meyer–Wand 1985, Filinski 2007, Bahr–Hutton 2022, Pardo et al. 2018, Tune–Kavvos 2026; text extracted with pdftotext); `abramsky-1993.pdf` has no text layer and was read later page by page as images: its adequacy proof (Theorem 5.4.9, p. 206) is the LLC domain-logic method [V], see `related-work-literature.md` A4b.
 
 ## How each claim was checked
 

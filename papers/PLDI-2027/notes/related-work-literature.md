@@ -285,14 +285,29 @@ Result numbers below were checked in that PDF [V].
   doi     = {10.1006/inco.1993.1044}}
 ```
 Bibliographic data [V] (Crossref; Pitts 1996's bibliography also says 159–267; the Oxford page
-says 159–268). Proof method [U]: full text not obtained (tried again 2026-10-15: no PDF on the
-Oxford publication page or Abramsky's publication list; the Cambridge TR UCAM-CL-TR-259 is paper
-only; OpenAlex marks the Elsevier copy "bronze" open access but ScienceDirect refused automated
-access). A PDF was later placed at `papers/PLDI-2027/related/abramsky-1993.pdf`, but it is an image-only
-scan with no text layer (pdftotext extracts nothing), so it is still unread. From memory it reuses the
-LLC/domain-logic approach. Ong's 1988 Imperial PhD thesis has "§3.2.3 A General Adequacy
-Result" for continuous lazy λ-models [V title only, method unseen]. Do not quote this paper
-for its method.
+says 159–268). Proof method **[V]**, read from `papers/PLDI-2027/related/abramsky-1993.pdf`
+(image-only scan, read page by page; journal page numbers as printed). Same method as LLC (A4a),
+§5 "A Domain Logic for Applicative Transition Systems", pp. 197–207:
+- Domain logic L ::= t | φ∧ψ | (φ→ψ)⊥ with satisfaction over any q-ats by recursion on formulas:
+  "a ⊨ (φ → ψ)⊥ ≡ a⇓f & [∀b ∈ A. b ⊨ φ ⇒ f(b) ⊨ ψ]" (Def. 5.2.2, p. 198); λ ≡ (t → t)⊥ and
+  "a⇓ ⟺ a ⊨ λ".
+- A program logic M, Γ ⊢ φ (intersection-type-like rules), with Theorem 5.3.3 (Soundness of
+  Program Logic), "M, Γ ⊢ φ ⇒ M, Γ ⊨ φ" for every lazy λ-model, "proof is again routine" (pp.
+  201–202). Theorem 5.4.6: "D is L-complete", via Stone duality (D ≅ Filt(L)) and the
+  completeness theorem of DTLF [Abr87c] (p. 204). Proposition 5.4.8: Filt(L) is an lts
+  isomorphic to D, and "[[M]]^D_ρ" corresponds to "[[M]]^{Filt L}" (p. 205).
+- **Theorem 5.4.9 (Computational Adequacy)**, p. 206: "For all M ∈ Λ°, M⇓ ⟺ D ⊨ M⇓ (i.e.,
+  [[M]]^D ≠ ⊥)". Proof: "⇒" "follows immediately from D being a lazy λ-model"; for "⇐",
+  [[M]]^D ≠ ⊥ ⇒ [[M]]^{Filt L} ≠ {t} ⇒ M ⊢ λ ⇒ M ⊨ λ (Theorem 5.3.3, in the term model) ⇒ M⇓.
+  Comment (p. 206): "The triviality of this proof is notable, since analogous results in the
+  literature have required lengthy arguments involving recursively defined predicates (cf.
+  (Plo85))."
+- What is related to what: formulas (names of compact elements of D) to elements of an
+  applicative transition system, here closed terms of the operational model; no relation between
+  terms and arbitrary domain elements is defined. Classification **A**; the hard part
+  (recursive domain) is moved into the completeness of the logic.
+Ong's 1988 Imperial PhD thesis has "§3.2.3 A General Adequacy Result" for continuous lazy
+λ-models [V title only, method unseen].
 
 ### A4c. Abramsky, "Domain Theory in Logical Form" (1991)
 ```bibtex
@@ -1112,15 +1127,15 @@ Resolved on 2026-10-15: Pitts 1996's issue number (2) and the page of the §2 Re
 (p. 68); the Krivine English edition (Ellis Horwood 1993, from Open Library, translator unverified).
 Resolved in the third pass (PDFs in `papers/PLDI-2027/related/`): Filinski 2007 (construction:
 §3.3, Theorem 39), Meyer–Wand 1985 (content), Clinger 1984 (content), Stoy 1981 (content; it
-corrects the earlier "standard vs. store" description). Abramsky & Ong 1993: a PDF was supplied
-but it is an image-only scan with no text layer, so it is still unread. None of the items below
+corrects the earlier "standard vs. store" description), Abramsky & Ong 1993 (image-only scan read
+page by page: adequacy via the domain logic, Theorem 5.4.9, p. 206; see A4b). None of the items below
 bears on C3; items 5–6 are the remaining caveats on C6.
 
 1. Which "Gordon Plotkin's lecture notes" Winskel means in §13.11 (Pisa notes [80] or CSLI 1985
    [83]).
 2. Winskel chapter numbering in later printings (a 2001 listing appears to differ).
-3. Abramsky & Ong 1993's adequacy method (PDF has no text layer). Also whether the DTLF APAL
-   article contains the lazy-λ adequacy material.
+3. Whether the DTLF APAL article contains the lazy-λ adequacy material. (Abramsky & Ong 1993's
+   adequacy method: resolved, see A4b.)
 4. Krivine English edition: translator and series.
 5. Milne–Strachey 1976 and Stoy 1977 (the book): chapter and section locations of the
    inclusive-predicate constructions.
