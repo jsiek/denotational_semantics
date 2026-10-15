@@ -39,6 +39,7 @@ open import Data.Empty using (⊥-elim)
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 open import Data.Product using (proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (refl)
 open import Relation.Nullary using (¬_)
 
 end-to-end-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)

@@ -34,7 +34,7 @@ open import Mu.proof.Semantics.Graph.Ops using (Table; tables; ConT; init)
 open import Mu.Semantics.CEK.Clos5
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Semantics.Observation using (Obs; o-const; Answer)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
+open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con)
 import proof.Framework.GraphModel.Env as E
 
 open import Data.Bool using (true; false)

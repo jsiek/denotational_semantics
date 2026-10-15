@@ -479,7 +479,11 @@ GROUPS = [
     ('uthm', 'theorem statements', [U + 'Theorems/*.agda']),
 
     # --- the ISWIMμ pilot (agda/Mu/), in no total ------------------------------
-    ('mu-shared', 'syntax, languages, compiler passes', [MU + 'Language/*.agda', MU + 'Compiler/*.agda']),
+    # with the lemma that globalize refers only to older definitions, which
+    # only adequacy uses (shared in the typed pipeline, where the graph model
+    # with errors uses it too), counted as a shared module
+    ('mu-shared', 'syntax, languages, compiler passes',
+     [MU + 'Language/*.agda', MU + 'Compiler/*.agda', MUP + 'Compiler/GlobalizeOlder.agda']),
     ('mu-infra', 'heterogeneous vectors: lookup, collecting, selecting, relating', [MU + 'Framework/*.agda']),
     ('mu-den', 'semantics of the languages', [MU + 'Semantics/Graph/*.agda', MUP + 'Semantics/Graph/*.agda']),
     ('mu-den', 'CC: enclose', [MUP + 'Correctness/Graph/EncloseCorrect.agda']),
@@ -531,7 +535,12 @@ GROUPS = [
     # machine (direct), as the typed pipeline's ('adeq'); no Clos5μ
     # adequacy, which the end-to-end theorem into X86μ does not need
     ('mu-adeq', 'ISWIM', [MUP + 'Adequacy/' + x + '.agda' for x in ('ISWIMOk', 'Tuples', 'Soundness', 'LogRel', 'ISWIM')]),
-
+    # the values of the Clos5μ machine in the graph model and the tables'
+    # lemmas, which X86μ adequacy uses (as X86ᵀ's uses Clos5ᵀ's)
+    ('mu-adeq', 'Clos5', [MUP + 'Adequacy/Clos5Values.agda', MUP + 'Adequacy/Clos5Common.agda']),
+    ('mu-adeq', 'X86', [MUP + 'Adequacy/X86' + x + '.agda' for x in ('Common', 'LogRel', 'Soundness', '')]),
+    ('mu-adeq', 'well-formedness of compiled programs', [MUP + 'Adequacy/X86Compiled.agda']),
+    ('mu-adeq', 'end to end', [MUP + 'Adequacy/EndToEnd.agda']),
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # the pilot's reduction column (in --mu's reduction table): reduction
     # semantics of the languages with binders, the simulations, and the
@@ -1433,8 +1442,9 @@ def mu_main(c, T):
     # adequacy, against the typed pipeline's (plain graph model)
     TA = TYPED['adeq']
     rows = [('ISWIM', 'ISWIM: the source machine (typed: untyped ISWIM\'s, shared with the untyped pipeline)', 'ISWIM'),
-            ('Clos5', 'Clos5: the Clos5 machine (typed: with the values shared with X86ᵀ)', None),
-            ('X86ᵀ', 'X86: the target machine, direct (μ: with the values, as typed Clos5\'s)', 'X86'),
+            ('Clos5', 'Clos5: the values of its machine and the tables, which X86 adequacy uses '
+                      '(typed: also the adequacy of the Clos5ᵀ machine)', 'Clos5'),
+            ('X86ᵀ', 'X86: the target machine, direct', 'X86'),
             ('well-formedness of compiled programs', 'well-formedness of compiled programs',
              'well-formedness of compiled programs'),
             ('end to end', 'end to end', 'end to end')]

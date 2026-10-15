@@ -66,7 +66,7 @@ open import Framework.Membership using (_⊑_; here⊑; there⊑)
 open import Mu.Framework.AllUtil using ([]; _∷_; pos)
 open import Mu.proof.Adequacy.X86Common ds
 open import Mu.proof.Adequacy.Clos5Values using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
-open import proof.Adequacy.Soundness using (At; 𝒯L; At-length)
+open import Mu.proof.Adequacy.Tuples using (At; 𝒯L; At-length)
 
 open import Data.Bool using (Bool; true; false)
 open import Data.Empty using (⊥-elim)
