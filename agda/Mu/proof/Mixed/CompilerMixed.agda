@@ -4,7 +4,8 @@
   model (Mu/proof/Correctness/Graph/SimplifyCorrect.agda), every other
   pass by the clocked interpreters (Mu/proof/Correctness/Interp/, as in
   CompilerFuel.agda), joined at ISWIMμ by the bridge between its graph
-  semantics and its interpreter (Mu/proof/Mixed/ISWIM.agda), used for
+  semantics and its interpreter (Mu/proof/Adequacy/ISWIM.agda, the
+  graph model's adequacy for the ISWIMμ interpreter), used for
   the program and for its simplification:
 
     ISWIMμ interpreter, M  ⇔  ⟦ M ⟧ ρ₀              (bridge)

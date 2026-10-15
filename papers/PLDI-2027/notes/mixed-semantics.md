@@ -1,6 +1,6 @@
 # Mixing semantics: graph model and clocked interpreter
 
-> **Status (2026-10-15).** Design written first (§1–§4, estimates as they stood before building); split (a) then built and measured (§5), (b) and (c) estimated only. In short: split (a) is 1839 lines against the interpreter column's 1653, so mixing does not pay on ISWIMμ; the bridge at ISWIMμ, 395 lines, is also an ISWIMμ adequacy theorem w.r.t. the interpreter, against 464 w.r.t. the CEK machine. Results in §5 and in the section "Mixing semantics" of `../loc.md` (`loc.py --mixed`).
+> **Status (2026-10-15).** Design written first (§1–§4, estimates as they stood before building); split (a) then built and measured (§5), (b) and (c) estimated only. In short: split (a) is 1839 lines against the interpreter column's 1653, so mixing does not pay on ISWIMμ; the bridge at ISWIMμ, 395 lines, is also an ISWIMμ adequacy theorem w.r.t. the interpreter, against 464 w.r.t. the CEK machine. Results in §5 and in the section "Mixing semantics" of `../loc.md` (`loc.py --mixed`). Since then (§6) the graph model's adequacy is against the interpreters, and the bridge *is* its ISWIMμ half, moved to `agda/Mu/proof/Adequacy/`.
 
 The question: the four columns of ISWIMμ prove every pass in one style. Each pass has a cheapest style (the bold cells of the main table of `../loc.md`). Is the compiler cheaper to prove if each pass uses the cheaper of the graph-model proof and the interpreter proof, joined by **bridges**? A bridge is an adequacy theorem between a language's graph semantics and its clocked interpreter, at each language where the style changes.
 
@@ -92,7 +92,7 @@ Split (a) reaches the interpreters with one bridge in place of the graph column'
 
 ## 5. Results (built: split (a))
 
-Built in `agda/Mu/proof/Mixed/`:
+Built in `agda/Mu/proof/Mixed/` (the bridge's three modules are now in `agda/Mu/proof/Adequacy/`, see §6):
 
 * `Soundness.agda` (174): soundness of the interpreter.
 * `LogRel.agda` (121): the logical relation and the fundamental lemma.
@@ -130,3 +130,14 @@ The per-pass proofs of both columns are unchanged. The bridge reuses the tuples 
 * The interpreter is the cheaper target for adequacy (395 against 464). Its soundness is by induction on the clock and the term, and stable results compose.
 
 A short paragraph and one table (the split table above) suffice. The per-row table belongs in the artifact (`loc.py --mixed`).
+
+## 6. Afterwards: adequacy against the interpreters
+
+The bridge at ISWIMμ was cheaper than ISWIMμ's adequacy w.r.t. the CEK machine, so the graph model's adequacy was redone against the interpreters, for ISWIMμ and X86μ (`agda/Mu/proof/Adequacy/`, stated in `agda/Mu/Theorems/Adequacy.agda`):
+
+* **ISWIMμ:** the bridge itself, moved from `Mu/proof/Mixed/` to `Mu/proof/Adequacy/` (`Soundness`, `LogRel`, `ISWIM`, with `Tuples`): 395, against 464. `CompilerMixed.agda` stays in `Mu/proof/Mixed/` and imports it from there.
+* **X86μ:** direct against the X86μ interpreter, with the Clos5μ interpreter's values (`Clos5Values` 231 + `Clos5Common` 70) and the well-formedness of compiled programs (`X86Compiled`, 38), as before: `X86LogRel` 169 (199 for the machine), `X86Soundness` 499 (470), `X86Common` 4 (10), `X86` 40 (18); the X86 row 712 against 697. Unlike ISWIMμ's, X86μ's adequacy does not shrink: without a call stack, soundness must merge the callee's approximations of its start, one per element of the result, where the machine carries one approximation down the stack.
+* **End to end:** `compile-x86-same` and the two adequacy theorems give exactly the interpreter column's statements (`compile-x86-const`, `compile-x86-diverges`; 15, against 22), with no no-error lemma: soundness shows that neither interpreter errs, and divergence is the emptiness of the denotations.
+* **Totals:** adequacy 1599 → 1532; the graph model to running code 3557 → 3490 (graph column 1958 + adequacy 1532), against interpreter 1653, CEK 2258, reduction 3207, and mixed (a) 1839.
+* **The mixing numbers do not change,** and the bridge is not double counted: `loc.py` counts it once in each total that reaches it. Split (a)'s 1839 includes it (in its bridge row) and stands alone; the graph model's 3490 includes it (in adequacy's ISWIM row). No total adds the two.
+* The adequacy for the CEK machines is kept as an alternative (`agda/Mu/proof/Adequacy/CEK/`, reachable from `agda/Mu/All.agda`, not stated in `Mu/Theorems/`), reported beside the new one by `loc.py` (side `mu-adeq-cek`, in no total).

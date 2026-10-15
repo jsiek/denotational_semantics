@@ -1,7 +1,7 @@
 {-
 
   What the graph model makes of the table of a Clos5μ program, for the
-  adequacy of the X86μ machine (Mu/proof/Adequacy/X86Compiled.agda), as
+  adequacy of X86μ (Mu/proof/Adequacy/X86Compiled.agda), as
   in the typed pipeline (proof/Adequacy/Clos5Common.agda and
   Clos5Soundness.agda), without the Clos5 machine:
 

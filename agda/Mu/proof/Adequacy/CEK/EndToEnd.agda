@@ -4,9 +4,9 @@
   machines, as proof/Adequacy/EndToEnd.agda for the typed pipeline: for
   a closed ISWIMμ program M,
 
-    ISWIMμ machine  ⇔  ⟦ M ⟧ ρ₀                (Adequacy/ISWIM.agda)
+    ISWIMμ machine  ⇔  ⟦ M ⟧ ρ₀                (Adequacy/CEK/ISWIM.agda)
                     ⇔  ⟦ compile-x86 M ⟧ₜ       (Correctness/Graph/CompilerCorrect.agda)
-                    ⇔  X86μ machine             (Adequacy/X86.agda)
+                    ⇔  X86μ machine             (Adequacy/CEK/X86.agda)
 
   for constants and for convergence. Since neither machine stops with
   an error (proof/Semantics/CEK/NoError.agda), a machine that does not
@@ -15,6 +15,11 @@
   (Correctness/CEK/PipelineSim.agda, Correctness/Interp/CompilerFuel.agda,
   Correctness/Reduction/PipelineRed.agda): the two machines stop with
   the same constant, or both diverge.
+
+  An alternative to Mu/proof/Adequacy/EndToEnd.agda, which observes the
+  compiler through the clocked interpreters instead and is the graph
+  model's end theorem (Mu/Theorems/Adequacy.agda); this one is kept for
+  the comparison of the two targets of adequacy, reported separately.
 
 -}
 

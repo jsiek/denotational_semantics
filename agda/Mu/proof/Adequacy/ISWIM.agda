@@ -1,22 +1,24 @@
 {-
 
-  The bridge at ISWIMμ: soundness and adequacy of the graph model of
-  ISWIMμ (Mu/Semantics/Graph/ISWIM.agda) with respect to its clocked
+  Soundness and adequacy of the graph model of ISWIMμ
+  (Mu/Semantics/Graph/ISWIM.agda) with respect to its clocked
   interpreter (Mu/Semantics/Interp/ISWIM.agda), for closed programs of
   any type, started in ρ₀ on the denotational side and in the empty
-  environment on the interpreter's, as Mu/proof/Adequacy/ISWIM.agda is
-  for the ISWIMμ machine:
+  environment on the interpreter's, as Mu/proof/Adequacy/CEK/ISWIM.agda
+  is for the ISWIMμ machine:
 
-    soundness (Mu/proof/Mixed/Soundness.agda): what the interpreter
+    soundness (Mu/proof/Adequacy/Soundness.agda): what the interpreter
       returns at some clock denotes a part of ⟦ M ⟧ ρ₀, and it never
       errs;
-    adequacy (Mu/proof/Mixed/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
+    adequacy (Mu/proof/Adequacy/LogRel.agda): every d ∈ ⟦ M ⟧ ρ₀ is
       related to the value the interpreter returns from some clock on.
 
   So ⟦ M ⟧ ρ₀ contains const k exactly when the interpreter terminates
   with o-const B k (const-iff), and it is empty exactly when the
-  interpreter diverges (diverges-iff): what a pass proved in the graph
-  model needs, to be joined to passes proved by the interpreters
+  interpreter diverges (diverges-iff). This is the source half of the
+  graph model's end-to-end theorem (Mu/proof/Adequacy/EndToEnd.agda),
+  and the bridge at ISWIMμ of the mixed proof, which joins a pass
+  proved in the graph model to passes proved by the interpreters
   (Mu/proof/Mixed/CompilerMixed.agda).
 
 -}

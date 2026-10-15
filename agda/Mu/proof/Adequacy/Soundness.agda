@@ -6,7 +6,7 @@
   clock, denotes a part of the denotation of the program; and it never
   errs.
 
-  As the soundness of the ISWIMμ machine (Mu/proof/Adequacy/Soundness.agda),
+  As the soundness of the ISWIMμ machine (Mu/proof/Adequacy/CEK/Soundness.agda),
   through denotations of values (𝒱; a closure denotes its λ in the
   denotation of its environment, 𝓔), but by induction on the clock and
   the term instead of over the steps of a machine: no continuations.
