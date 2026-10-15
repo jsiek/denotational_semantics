@@ -1330,7 +1330,10 @@ $\key{code}^{\mathrm{X}}$.
 %-------------------------------------------------------------------------------
 \subsection{Relations}\label{sec:m-den-rel}
 
-The proofs are in \texttt{proof/Correctness/Graph/}. Every pass but delay
+The proofs are in \texttt{proof/Correctness/Graph/}; the statements of the
+theorems for closed programs (of each pass, and of the compiler) are in
+\texttt{Theorems/\allowbreak Denotational.agda}, under the names given below, each
+defined as its proof. Every pass but delay
 preserves the meaning of a program exactly ($\simeq$); delay preserves and
 reflects the constants a program produces and whether it produces
 anything. A typed term has no unbound variable, so no relation needs to
@@ -1376,7 +1379,8 @@ continuity is \texttt{proof/Semantics/Graph/ISWIM.agda}'s.
 If $\mathit{Rel}(\rho, \rho')$, then
 \[ \SEM{M}^{\Ml{ISWIM}}\rho \simeq \SEM{\pass{enclose}(M)}^{\Ml{2}}\rho' \]
 (\texttt{enc}); in particular $\SEM{M}\rho_0 \simeq \SEM{\pass{enclose}(M)}^{\Ml{2}}\rho_0$
-for a closed $M$ (\texttt{EncloseCorrect.agda}, \texttt{enclose-correct}).
+for a closed $M$ (\texttt{enclose-correct}; the proof is
+\texttt{EncloseCorrect.agda}).
 \end{lemma}
 Every case but $\lambda$ is a congruence. A function becomes a closure
 that captures all the variables in scope: they are nonempty, so its guard
@@ -1605,7 +1609,7 @@ If $\sigma$ is nonempty and consistent and $\mathit{Ag}(\gamma, \sigma)$, then
 \[ \SEM{M}^{\Ml{5}}_{T}\gamma \simeq \SEM{\Tembed{\pass{rco}(M)}}^{\Ml{5}}_{T'}\sigma \]
 (\texttt{rco-sem}). For every $\Ml{Clos5}$ program $P$,
 \[ \SEM{P}^{\Ml{5}} \simeq \SEM{\Tembed{\pass{rco}(P)}}^{\Ml{5}} = \SEM{\pass{rco}(P)}^{\Ml{Mon}} \]
-(\texttt{RCOCorrect.agda}, \texttt{rco-correct}, with \texttt{table-rco}).
+(\texttt{rco-correct}, from \texttt{table-rco} of \texttt{RCOCorrect.agda}).
 \end{theorem}
 
 \subsubsection{Lift Locals}
@@ -1627,7 +1631,7 @@ If $\consis(\sigma)$, then for every continuation $K$ of the form above,
 (\texttt{lift-sem}); the tables agree definition by definition
 (\texttt{table-lift}), and for every $\Ml{Mon}$ program $P$,
 \[ \SEM{P}^{\Ml{Mon}} \simeq \SEM{\pass{lift}(P)}^{\Ml{Imp}} \]
-(\texttt{LiftLocalsCorrect.agda}, \texttt{lift-locals-correct}).
+(\texttt{lift-locals-correct}; the proof is \texttt{LiftLocalsCorrect.agda}).
 \end{theorem}
 
 \subsubsection{Explicate Control}
@@ -1653,7 +1657,7 @@ $\SEM{e}^{\Ml{Imp}}_{T}\sigma\,(\lambda D.\, D) \simeq
 \begin{theorem}[Correctness of Explicate Control]\label{thm:m-den-explicate}
 For every $\Ml{Imp}$ program $P$,
 \[ \SEM{P}^{\Ml{Imp}} \simeq \SEM{\pass{explicate}(P)}^{\Ml{CFG}} \]
-(\texttt{ExplicateCorrect.agda}, \texttt{explicate-correct}).
+(\texttt{explicate-correct}; the proof is \texttt{ExplicateCorrect.agda}).
 \end{theorem}
 
 \subsubsection{Select Instructions}
@@ -1728,7 +1732,7 @@ together,
 Every pass but delay gives $\simeq$, which composes with $\Same$
 (\texttt{then}), and delay gives $\Same$ (Theorem~\ref{thm:m-den-delay}).
 
-\begin{theorem}[Compiler Correctness, Graph Model]\label{thm:m-den-compiler}
+\begin{theorem}[Compiler Correctness, Graph Model]\label{thm:m-den-compiler}\sloppy
 For every closed $\Ml{ISWIM}$ program $M$ of any type,
 \begin{align*}
   &\Same(\SEM{M}\rho_0,\; \SEM{\pass{compile}_4(M)}^{\Ml{4}}\rho_0) &
@@ -1742,9 +1746,15 @@ by Lemmas~\ref{lem:m-den-simplify}, \ref{lem:m-den-enclose},
 \ref{lem:m-den-optimize} and~\ref{lem:m-den-concretize}, and
 Theorems~\ref{thm:m-den-delay}, \ref{thm:m-den-globalize},
 \ref{thm:m-den-rco}, \ref{thm:m-den-lift}, \ref{thm:m-den-explicate}
-and~\ref{thm:m-den-select} (\texttt{compile$_4$-same}, \texttt{compile-same},
-\ldots, \texttt{compile-x86-same}; for a main of type $\key{Int}$,
-\texttt{compile-x86-int}).
+and~\ref{thm:m-den-select} (\texttt{Theorems/\allowbreak Denotational.agda}, each
+$\Same$ as its two halves: \texttt{compile-correct-const} and
+\texttt{compile-correct-nonempty}, \ldots,
+\texttt{compile-x86-correct-const} and
+\texttt{compile-x86-correct-nonempty}; for a main of type $\key{Int}$,
+\texttt{compile-x86-int-const} and \texttt{compile-x86-int-nonempty}.
+The statement for $\pass{compile}_4$ is a step of the proof,
+\texttt{compile$_4$-same} of \texttt{CompilerCorrect.agda}, not one of
+the public statements).
 \end{theorem}
 Adequacy turns the last into the operational statement
 (Section~\ref{sec:m-thm}).
@@ -2088,7 +2098,9 @@ the answer of the dynamically typed pipeline's CEK column: a source step
 that stops with $o$ may also be answered by a target run to a final state
 with the same observation. Forward simulation gives equivalence
 (Theorem~\ref{thm:equivalent}), and equivalence composes
-(Lemma~\ref{lem:equiv-trans}). Besides plus simulations
+(Lemma~\ref{lem:equiv-trans}). The statements of the theorems (of each
+pass, and of the compiler) are in \texttt{Theorems/\allowbreak Simulation.agda},
+under the names given below, each defined as its proof. Besides plus simulations
 (Lemma~\ref{lem:plus-sim}), two shapes of simulation are built from a
 relation $\sim$ between states
 (\texttt{proof/Framework/Simulation.agda}, \texttt{Both.agda}): the
@@ -2426,10 +2438,11 @@ For every closed $\Ml{ISWIM}$ program $M$ of any type,
   &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M)))
 \end{align*}
 by the theorems for each pass and Lemma~\ref{lem:equiv-trans}
-(\texttt{PipelineSim.agda}: \texttt{compile$_4$-correct}, \ldots,
+(\texttt{Theorems/\allowbreak Simulation.agda}: \texttt{compile-correct}, \ldots,
 \texttt{compile-x86-correct}; for a main of type $\key{Int}$,
 \texttt{compile-x86-const} and \texttt{compile-x86-diverges},
-Section~\ref{sec:m-thm}).
+Section~\ref{sec:m-thm}; the statement for $\pass{compile}_4$ is a step of
+the proof, \texttt{compile$_4$-correct} of \texttt{PipelineSim.agda}).
 \end{theorem}
 
 \paragraph{Where it doesn't match the Agda literally.}
@@ -2645,7 +2658,10 @@ for every clock, a program and its compilation both time out or return
 related values, $\RelRes{\approx}$ (both err never happens: neither
 interpreter errs). For the passes from $\Ml{Clos5}$ on the values are the
 same and the results equal (\texttt{clocked-$\equiv$}). Each proof uses
-Lemma~\ref{lem:bind-rel} at every $\bind$.
+Lemma~\ref{lem:bind-rel} at every $\bind$. The statements of the theorems
+(of each pass, and of the compiler) are in
+\texttt{Theorems/\allowbreak Interpreter.agda}, under the names given below, each
+defined as its proof.
 
 \paragraph{The value relation between interpreters.}
 The passes from $\Ml{ISWIM}$ to $\Ml{Clos5}$ relate the values of two
@@ -2791,7 +2807,9 @@ For every program $P$ of the source language of each pass,
 \[ \Equiv(\Interp{\Ml{Clos5}}(P), \Interp{\Ml{Mon}}(\pass{rco}(P)))\,, \]
 $\Equiv(\Interp{\Ml{Mon}}(P), \Interp{\Ml{Imp}}(\pass{lift}(P)))$ and
 \[ \Equiv(\Interp{\Ml{Imp}}(P), \Interp{\Ml{CFG}}(\pass{explicate}(P)))\,, \]
-with equal results for every clock.
+with equal results for every clock (\texttt{rco-correct},
+\texttt{lift-locals-correct}, \texttt{explicate-correct}, which state
+$\Equiv$).
 \end{theorem}
 
 \subsubsection{Select Instructions}
@@ -2822,10 +2840,12 @@ is $\Equiv$ to $\Interp{\Ml{Clos4}}(\pass{compile}_4(M))$,
 $\Interp{\Ml{Clos5}}(\pass{compile}(M))$, $\Interp{\Ml{Mon}}(\pass{compile\text{-}mon}(M))$,
 $\Interp{\Ml{Imp}}(\pass{compile\text{-}imp}(M))$, $\Interp{\Ml{CFG}}(\pass{compile\text{-}cfg}(M))$
 and $\Interp{\Ml{X86}}(\pass{compile\text{-}x86}(M))$, by the theorems for each
-pass and Lemma~\ref{lem:equiv-trans-clk} (\texttt{CompilerFuel.agda}:
-\texttt{compile$_4$-correct}, \ldots, \texttt{compile-x86-correct}; for a
+pass and Lemma~\ref{lem:equiv-trans-clk} (\texttt{Theorems/\allowbreak Interpreter.agda}:
+\texttt{compile-correct}, \ldots, \texttt{compile-x86-correct}; for a
 main of type $\key{Int}$, \texttt{compile-x86-const} and
-\texttt{compile-x86-diverges}).
+\texttt{compile-x86-diverges}; the statement for $\pass{compile}_4$ is a
+step of the proof, \texttt{compile$_4$-correct} of
+\texttt{CompilerFuel.agda}).
 \end{theorem}
 
 \paragraph{Where it doesn't match the Agda literally.}
@@ -2981,7 +3001,9 @@ congruence ($x \approx x$, $c \approx c$, each construct, $\Mfold$ and
 $\Munfold$ included, related to the same construct with related subterms),
 closed under substitution for the kits of both renaming and substitution
 (Lemma~\ref{lem:red-subst}, \texttt{$\approx$-trav}); we show only the other
-clauses.
+clauses. The statements of the theorems (of each pass, and of the
+compiler) are in \texttt{Theorems/\allowbreak Reduction.agda}, under the names given
+below, each defined as its proof.
 
 \subsubsection{Simplify}
 
@@ -3166,7 +3188,8 @@ For every $\Ml{Mon}$ program $P$,
 
 Explicate control and select instructions are between machines, by the
 CEK column's proofs (Theorems~\ref{thm:m-cek-explicate}
-and~\ref{thm:m-cek-select}).
+and~\ref{thm:m-cek-select}; restated in \texttt{Theorems/\allowbreak Reduction.agda}
+as \texttt{explicate-correct} and \texttt{select-correct}).
 \begin{theorem}[Compiler Correctness, Reduction]\label{thm:m-red-compiler}
 For every closed $\Ml{ISWIM}$ program $M$ of any type,
 $\mathcal{R}^{\Ml{ISWIM}}(M)$ is $\Equiv$ to
@@ -3176,10 +3199,12 @@ $\mathcal{R}^{\Ml{Clos5}}(\pass{compile}(M))$,
 $\Mach{\Ml{Imp}}(\pass{compile\text{-}imp}(M))$,
 $\Mach{\Ml{CFG}}(\pass{compile\text{-}cfg}(M))$ and
 $\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))$, by the theorems for each pass
-and Lemma~\ref{lem:equiv-trans} (\texttt{PipelineRed.agda}:
-\texttt{compile$_4$-correct}, \ldots, \texttt{compile-x86-correct}; for a
+and Lemma~\ref{lem:equiv-trans} (\texttt{Theorems/\allowbreak Reduction.agda}:
+\texttt{compile-correct}, \ldots, \texttt{compile-x86-correct}; for a
 main of type $\key{Int}$, \texttt{compile-x86-const} and
-\texttt{compile-x86-diverges}).
+\texttt{compile-x86-diverges}; the statement for $\pass{compile}_4$ is a
+step of the proof, \texttt{compile$_4$-correct} of
+\texttt{PipelineRed.agda}).
 \end{theorem}
 
 \paragraph{Where it doesn't match the Agda literally.}
@@ -3224,14 +3249,15 @@ constant $n$.
 
 \subsection{No errors}
 
-\begin{lemma}[No Errors]\label{lem:m-no-error}
+\begin{lemma}[No Errors]\label{lem:m-no-error}\sloppy
 For every closed $\Ml{ISWIM}$ term $M$ and $\Ml{X86}$ program $P$ of any type,
 \begin{itemize}
 \item the CEK machines never stop with an error,
   $\neg\Term_{\Mach{\Ml{ISWIM}}(M)}(\error)$ and
   $\neg\Term_{\Mach{\Ml{X86}}(P)}(\error)$
-  (\texttt{proof/Semantics/CEK/NoError.agda}: \texttt{iswim-no-error},
-  \texttt{x86-no-error}), by inspection of the step functions: a machine
+  (\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{iswim-no-error},
+  \texttt{x86-no-error}; the proof is
+  \texttt{proof/\allowbreak Semantics/\allowbreak CEK/\allowbreak NoError.agda}), by inspection of the step functions: a machine
   stops only when it returns a value to the empty continuation (stack),
   every other state steps, and no value is observed as $\error$
   (\texttt{iswim-stops}, \texttt{iswim-answer}, \texttt{clos5-answer});
@@ -3296,7 +3322,9 @@ deterministic (\texttt{$\Downarrow$-det}). The relation is by recursion on
 the denotational value $d$, not on the type: as for delay
 (Section~\ref{sec:m-den-delay}), a type index would not decrease at $\mu$.
 So for every closed $M$ of any type
-(\texttt{const-iff}, \texttt{nonempty-iff}),
+(\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{iswim-const-iff},
+\texttt{iswim-nonempty-iff}; and \texttt{iswim-diverges-empty}: a
+diverging machine's program denotes nothing),
 \begin{align*}
   c \in \SEM{M}\rho_0 &\iff \Term_{\Mach{\Ml{ISWIM}}(M)}(c) \\
   \SEM{M}\rho_0 \NE &\iff \Mach{\Ml{ISWIM}}(M) \text{ converges.}
@@ -3332,7 +3360,7 @@ references to older definitions only
 graph-model proofs of rco, lift locals, explicate control and select
 (\texttt{table-rco}, \texttt{table-lift}, \texttt{table-explicate},
 \texttt{table-$\simeq$}). So for every closed $M$ of any type
-(\texttt{x86-const-iff}, \texttt{x86-nonempty-iff}),
+(\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{x86-const-iff}, \texttt{x86-nonempty-iff}),
 \begin{align*}
   c \in \SEM{\pass{compile\text{-}x86}(M)}^{\Ml{X86}} &\iff \Term_{\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))}(c) \\
   \SEM{\pass{compile\text{-}x86}(M)}^{\Ml{X86}} \NE &\iff \Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M)) \text{ converges.}
@@ -3340,17 +3368,17 @@ graph-model proofs of rco, lift locals, explicate control and select
 
 \subsection{The end-to-end theorem}
 
-\begin{theorem}[End to End, Graph Model]\label{thm:m-end-to-end-den}
+\begin{theorem}[End to End, Graph Model]\label{thm:m-end-to-end-den}\sloppy
 For every closed $\Ml{ISWIM}$ program $M$ of any type,
 $\Mach{\Ml{ISWIM}}(M)$ converges iff $\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))$
-does (\texttt{end-to-end-x86-converges}); and for $M : \key{Int}$ and every
+does (\texttt{Theorems/\allowbreak Adequacy.agda}: \texttt{end-to-end-x86-converges}); and for $M : \key{Int}$ and every
 integer $n$,
 \begin{align*}
   \Term_{\Mach{\Ml{ISWIM}}(M)}(n) &\iff \Term_{\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))}(n) \\
   \Div_{\Mach{\Ml{ISWIM}}(M)} &\iff \Div_{\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))}
 \end{align*}
-(\texttt{proof/Adequacy/EndToEnd.agda}: \texttt{end-to-end-x86-const},
-\texttt{end-to-end-x86-diverges}).
+(\texttt{end-to-end-x86-const}, \texttt{end-to-end-x86-diverges}; the
+proof is \texttt{proof/Adequacy/EndToEnd.agda}).
 \end{theorem}
 The machine of $M$ terminates with $n$ iff $n \in \SEM{M}\rho_0$
 (adequacy for $\Ml{ISWIM}$), iff $n \in \SEM{\pass{compile\text{-}x86}(M)}$
@@ -3359,7 +3387,7 @@ with $n$ (adequacy for $\Ml{X86}$); likewise for convergence; and
 divergence follows from convergence by Lemma~\ref{lem:m-no-error}. No graph
 model with errors is needed: there are no errors to observe.
 
-\begin{theorem}[End to End, Common to the Four Styles]\label{thm:m-end-to-end}
+\begin{theorem}[End to End, Common to the Four Styles]\label{thm:m-end-to-end}\sloppy
 For every closed $\Ml{ISWIM}$ program $M : \key{Int}$, the source and its
 compilation $\pass{compile\text{-}x86}(M)$ stop with the same constant,
 or both diverge:
@@ -3372,11 +3400,13 @@ where $(L, L')$ is
 \item $(\Mach{\Ml{ISWIM}}, \Mach{\Ml{X86}})$ in the graph model
   (Theorem~\ref{thm:m-end-to-end-den}) and in the CEK column
   (Theorem~\ref{thm:m-cek-compile}; \texttt{compile-x86-const},
-  \texttt{compile-x86-diverges} of \texttt{PipelineSim.agda});
+  \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Simulation.agda});
 \item $(\Interp{\Ml{ISWIM}}, \Interp{\Ml{X86}})$ in the interpreter column
-  (Theorem~\ref{thm:m-interp-compiler}; \texttt{CompilerFuel.agda});
+  (Theorem~\ref{thm:m-interp-compiler}; \texttt{compile-x86-const},
+  \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Interpreter.agda});
 \item $(\mathcal{R}^{\Ml{ISWIM}}, \Mach{\Ml{X86}})$ in the reduction column
-  (Theorem~\ref{thm:m-red-compiler}; \texttt{PipelineRed.agda}).
+  (Theorem~\ref{thm:m-red-compiler}; \texttt{compile-x86-const},
+  \texttt{compile-x86-diverges} of \texttt{Theorems/\allowbreak Reduction.agda}).
 \end{itemize}
 \end{theorem}
 In the operational columns the theorem is an instance of $\Equiv$, which
@@ -3388,14 +3418,17 @@ intermediate compositions ($\pass{compile}_4$ to $\pass{compile\text{-}cfg}$)
 and the passes hold at any type.
 
 \begin{sloppypar}
-\paragraph{The statements.} The pilot has no \texttt{Theorems/} directory
-of its own: the statements are the top-level definitions named above, in
-\texttt{proof/Correctness/Graph/CompilerCorrect.agda},
-\texttt{proof/Correctness/CEK/PipelineSim.agda},
-\texttt{proof/Correctness/Interp/CompilerFuel.agda},
-\texttt{proof/Correctness/Reduction/PipelineRed.agda},
-\texttt{proof/Adequacy/EndToEnd.agda} and the three \texttt{NoError.agda}
-files, all imported by \texttt{agda/Mu/All.agda}.
+\paragraph{The statements.} The public statements are in
+\texttt{agda/Mu/Theorems/}, one file per style and one for adequacy:
+\texttt{Denotational.agda}, \texttt{Simulation.agda},
+\texttt{Interpreter.agda}, \texttt{Reduction.agda} and
+\texttt{Adequacy.agda} (the latter with the end-to-end theorem through the
+machines, and the no-error lemmas of the two CEK machines). Each theorem
+there has its full type written out and is defined as its proof, under
+\texttt{agda/Mu/proof}; all are imported by \texttt{agda/Mu/All.agda}.
+The statements for $\pass{compile}_4$ and the no-error lemmas of the
+clocked interpreters and of the reduction semantics are not among them;
+they are the top-level definitions named above, in the proof files.
 \end{sloppypar}
 %===============================================================================
 \part{Dynamic Typing and Errors}\label{part:dyn}
