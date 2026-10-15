@@ -107,6 +107,19 @@ other than `--without-K`, failing if it finds any.
   observations, the ISWIM adequacy, the frameworks), and X86 and its
   machine, which the typed pipeline's assurance uses, stay here.
   `Untyped/All.agda` imports it, and `All.agda` imports that.
+* `Mu/`: the ISWIMμ pilot, not in the totals: a typed ISWIM with
+  iso-recursive types (no recursion construct, no errors) and its
+  closure-conversion passes,
+
+      ISWIMμ --CC: enclose--> Clos2μ --CC: optimize--> Clos2μ
+             --CC: concretize--> Clos3μ --CC: delay--> Clos4μ
+
+  proved in the graph model and the CEK machines
+  (`papers/PLDI-2027/notes/iswim-mu-design.md`). `Mu/` mirrors this
+  directory as `Untyped/` does (module prefix `Mu.`), and uses
+  `Framework/` unchanged; it has no theorem statements, so it is not on
+  the audit surface. `Mu/All.agda` imports it, and `All.agda` imports
+  that.
 
 ## The audit surface
 
