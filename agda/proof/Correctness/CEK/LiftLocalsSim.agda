@@ -33,6 +33,7 @@ import Semantics.CEK.Typed.Clos5 as C
 import Semantics.CEK.Typed.Imp as I
 
 open import Data.List using (List; []; _∷_)
+open import Function using (flip)
 open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ)
@@ -49,14 +50,17 @@ module Sim {Σ : List ℕ} (ds : All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ �
   at = atm-step ds₂ ⌜ e₀ ⌝
 
   infix 4 _≈_ _~_
-  data _≈_ : ∀ {A} → I.Cont Σ A → C.Cont Σ A → Set where
-    halt : I.halt ≈ C.halt
-    assignK : ∀ {Δ A B} {e : M.Exp Σ (A ∷ Δ) B} {φ κ₁ κ₂} → κ₁ ≈ κ₂ → I.assignK (lift e) φ κ₁ ≈ C.letK ⌜ e ⌝ φ κ₂
+  {- the source's (Clos5ᵀ) on the left, the target's (Impᵀ) on the right -}
+  data _≈_ : ∀ {A} → C.Cont Σ A → I.Cont Σ A → Set where
+    halt : C.halt ≈ I.halt
+    assignK : ∀ {Δ A B} {e : M.Exp Σ (A ∷ Δ) B} {φ κ₁ κ₂} → κ₂ ≈ κ₁ → C.letK ⌜ e ⌝ φ κ₂ ≈ I.assignK (lift e) φ κ₁
 
-  data _~_ : I.State Σ → C.State Σ → Set where
-    eval~ : ∀ {Δ A} {e : M.Exp Σ Δ A} {φ κ₁ κ₂} → κ₁ ≈ κ₂ → I.eval (lift e) φ κ₁ ~ C.eval ⌜ e ⌝ φ κ₂
+  data _~_ : C.State Σ → I.State Σ → Set where
+    eval~ : ∀ {Δ A} {e : M.Exp Σ Δ A} {φ κ₁ κ₂} → κ₂ ≈ κ₁ → C.eval ⌜ e ⌝ φ κ₂ ~ I.eval (lift e) φ κ₁
 
-  B = Both {L₁ = L₁} {L₂ = L₂} _~_
+  {- the Impᵀ machine (L₁) is the one simulated, so Both takes the
+     converse of _~_ -}
+  B = Both {L₁ = L₁} {L₂ = L₂} (flip _~_)
 
   private variable
     A : Ty
@@ -66,29 +70,29 @@ module Sim {Σ : List ℕ} (ds : All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ �
     κ₂ : C.Cont Σ A
 
   {- a value goes to related continuations -}
-  val : ∀ {v : C.Val Σ A} → I.step ds₁ s₁ ≡ I.cont ds₁ v κ₁ → κ₁ ≈ κ₂ → Plus L₂ s₂ (C.ret v κ₂) → B s₁ s₂
+  val : ∀ {v : C.Val Σ A} → I.step ds₁ s₁ ≡ I.cont ds₁ v κ₁ → κ₂ ≈ κ₁ → Plus L₂ s₂ (C.ret v κ₂) → B s₁ s₂
   val st halt π = halt st (plus→star π) refl
   val st (assignK k) π = move (step⁺ st) (plus-star π (refl ◅ ε)) (eval~ k)
 
-  call : ∀ f w → I.step ds₁ s₁ ≡ I.res ds₁ (I.call f w) κ₁ → κ₁ ≈ κ₂ → Plus L₂ s₂ (C.ret w (C.callR f κ₂))
+  call : ∀ f w → I.step ds₁ s₁ ≡ I.res ds₁ (I.call f w) κ₁ → κ₂ ≈ κ₁ → Plus L₂ s₂ (C.ret w (C.callR f κ₂))
     → B s₁ s₂
   call (C.pack (C.code g) e) w st k π =
     move (step⁺ (trans st (cong (λ d → next (I.eval d _ _)) (map-! lift ds g))))
          (plus-star π (cong (λ d → next (C.eval d _ _)) (map-! ⌜_⌝ ds g) ◅ ε)) (eval~ k)
 
-  proj : ∀ {t' : Tag} (m : Maybe (C.Val Σ ⟪ flat t' ⟫)) {κ₁ : I.Cont Σ ⟪ flat t' ⟫} {κ₂ : C.Cont Σ ⟪ flat t' ⟫} → I.step ds₁ s₁ ≡ I.res ds₁ (I.ok? m) κ₁ → κ₁ ≈ κ₂
+  proj : ∀ {t' : Tag} (m : Maybe (C.Val Σ ⟪ flat t' ⟫)) {κ₁ : I.Cont Σ ⟪ flat t' ⟫} {κ₂ : C.Cont Σ ⟪ flat t' ⟫} → I.step ds₁ s₁ ≡ I.res ds₁ (I.ok? m) κ₁ → κ₂ ≈ κ₁
     → Star L₂ s₂ t → C.step ds₂ t ≡ next? o-error (λ w → C.ret w κ₂) m → B s₁ s₂
   proj (just w) st k σ st₂ = val st k (star-plus σ (step⁺ st₂))
   proj nothing st k σ st₂ = halt st σ st₂
 
-  choose : ∀ {Δ} (v : C.Val Σ ⟪ sum ⟫) {e₁ e₂ : M.Exp Σ (Any ∷ Δ) Any} {φ} → κ₁ ≈ κ₂
+  choose : ∀ {Δ} (v : C.Val Σ ⟪ sum ⟫) {e₁ e₂ : M.Exp Σ (Any ∷ Δ) Any} {φ} → κ₂ ≈ κ₁
     → I.step ds₁ s₁ ≡ next (C.choose v (λ u → I.eval (lift e₁) (u ∷ φ) κ₁) (λ u → I.eval (lift e₂) (u ∷ φ) κ₁))
     → Star L₂ s₂ t → C.step ds₂ t ≡ next (C.choose v (λ u → C.eval ⌜ e₁ ⌝ (u ∷ φ) κ₂) (λ u → C.eval ⌜ e₂ ⌝ (u ∷ φ) κ₂))
     → B s₁ s₂
   choose (C.inl u) k st σ st₂ = move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
   choose (C.inr u) k st σ st₂ = move (step⁺ st) (star-plus σ (step⁺ st₂)) (eval~ k)
 
-  sim : s₁ ~ s₂ → B s₁ s₂
+  sim : s₂ ~ s₁ → B s₁ s₂
   sim (eval~ {e = atm a} k) = val refl k (step⁺ (at a))
   sim (eval~ {e = pack a b} k) = val refl k (plus refl (at a ◅ refl ◅ at b ◅ refl ◅ ε))
   sim (eval~ {e = callc f a} k) = call _ _ refl k (plus refl (at f ◅ refl ◅ at a ◅ ε))
@@ -106,5 +110,5 @@ module Sim {Σ : List ℕ} (ds : All (λ n → M.Exp Σ (Any ∷ ⟪ tup n ⟫ �
 {- The end theorem -------------------------------------------------------------}
 
 lift-locals-correct : ∀ (P : M.Program) → Equivalent (C.sem ⌜ P ⌝ₚ) (I.sem (lift-program P))
-lift-locals-correct (M.program ds e) = equiv-sym (equivalent (both-fsim _~_ (eval~ halt) sim))
+lift-locals-correct (M.program ds e) = equiv-sym (equivalent (both-fsim (flip _~_) (eval~ halt) sim))
   where open Sim ds e
