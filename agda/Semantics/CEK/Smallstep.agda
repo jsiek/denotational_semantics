@@ -43,7 +43,9 @@
     steps are matched by no target step (as for optimize, where the
     source evaluates free variables that the target drops),
     the forward simulation is given directly: a match indexed by a
-    natural number, which such a step must decrease.
+    natural number, which such a step must decrease. For simplify and
+    lift locals the target's machine is the one simulated, by the
+    source's, and Equivalent is symmetric.
 
   * Layout: Semantics/Observation.agda (shared with the clocked
     interpreters); the framework, language independent, in
@@ -51,7 +53,8 @@
     proof/Framework/{Smallstep,Simulation}.agda (lemmas, forward
     simulations), instantiated at these observations here and in
     proof/Semantics/CEK/{Smallstep,Simulation}.agda;
-    Semantics/CEK/*.agda (one per language);
+    Semantics/CEK/ISWIM.agda and Semantics/CEK/Typed/*.agda (one per
+    language);
     proof/Correctness/CEK/*Sim.agda (one per pass).
 
 -}

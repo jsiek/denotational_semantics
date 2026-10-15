@@ -8,6 +8,12 @@
   those whose source lags behind a state related to the target's (Lag,
   lag-fsim). See the design note in Semantics/CEK/Smallstep.agda.
 
+  The machine simulated (L₁) is on the left of the match, the one that
+  answers its steps (L₂) on the right. For most passes L₁ is the
+  source's machine; where the target's is simulated by the source's
+  (simplify, and lift locals in the CEK proof), the proof passes the
+  converse of its relation, and equiv-sym turns the end theorem around.
+
 -}
 
 module proof.Framework.Simulation (Obs : Set) where
