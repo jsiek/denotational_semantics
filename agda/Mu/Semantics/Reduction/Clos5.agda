@@ -88,6 +88,7 @@ module _ {Σ : List DSig} where
 
   obs : ∀ {A} → Tm Σ [] A → Obs
   obss : ∀ {Δ} → All (Tm Σ []) Δ → List Obs
+  obs (fun-ref _) = o-fun
   obs (pack _ _) = o-fun
   obs (lit B c) = o-const B c
   obs (tuple Ms) = o-tuple (obss Ms)

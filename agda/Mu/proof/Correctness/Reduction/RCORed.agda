@@ -27,6 +27,7 @@ import Mu.Language.Mon as Mon
 open Mon using (Atm; var; lit; ref; atm; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import Mu.Compiler.RCO
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup) renaming (map to All-map)
+open import Mu.Framework.AllProp using (lookup-map)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
 open import Mu.Framework.ReductionAll Obs o-error using (Each; []; _∷_; each-lookup)
@@ -40,12 +41,6 @@ open import Relation.Nullary using (does)
 open import Data.Bool using (true; false)
 import Data.Integer as Z
 import Language.Prim as Pr
-
-{- a lookup in a map -}
-map-lookup : ∀ {X : Set} {P Q : X → Set} {xs : List X} {a} (f : ∀ {x} → P x → Q x) (ps : All P xs) (i : xs ∋ a)
-  → lookup (All-map f ps) i ≡ f (lookup ps i)
-map-lookup f (_ ∷ ps) Z = refl
-map-lookup f (_ ∷ ps) (S i) = map-lookup f ps i
 
 module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
 
@@ -217,7 +212,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
                    (subst (λ x → Ans′ (h M) x _) (trans (Frame.eq F M) (val-in (value-red v))) (sim (k M v)))
   sim (call≈ {W = W} f@(T.pack {M = E} (T.fun-ref {f = g}) e) w) rewrite value-red {ds = ds} f | value-red {ds = ds} w =
     to (one (trans (val-in (value-red f)) (trans (val-in (value-red w))
-              (cong (λ D → to (sub (W • E • ∅) D)) (trans (map-lookup ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) g) (cong ⌜_⌝ (map-lookup (λ D → rco D (λ x → x)) ds g)))))))
+              (cong (λ D → to (sub (W • E • ∅) D)) (trans (lookup-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) g) (cong ⌜_⌝ (lookup-map (λ D → rco D (λ x → x)) ds g)))))))
        (rco≈ (lookup ds g) (λ x → x) (W • E • ∅) (W • E • ∅) (λ _ → refl) (ext-vals w (ext-vals e λ ())))
   sim (get≈ {i = i} v@(T.tuple vs)) rewrite value-red {ds = ds} v = to (one (val-in (value-red v))) (val≈ (each-lookup vs i))
   sim (prim≈ {p} T.lit T.lit) = to (one refl) (val≈ (out-value p _ _))

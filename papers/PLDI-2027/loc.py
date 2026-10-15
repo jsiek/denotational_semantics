@@ -498,7 +498,10 @@ GROUPS = [
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # the pilot's reduction column (in --mu's reduction table): reduction
     # semantics of the languages with binders, the simulations, and the
-    # reduction framework for heterogeneous vectors (infrastructure)
+    # reduction framework for heterogeneous vectors (infrastructure); it
+    # shares the CEK column's machines of the first-order languages and its
+    # proofs of explicate control and select instructions (MU_RED_SHARED), as
+    # the typed pipeline's reduction column does ('op+red')
     ('mu-red', 'semantics of the languages', [MU + 'Semantics/Reduction/*.agda', MUP + 'Semantics/Reduction/*.agda']),
     ('mu-red', 'CC: enclose', [MUP + 'Correctness/Reduction/EncloseRed.agda']),
     ('mu-red', 'CC: optimize', [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
@@ -506,6 +509,7 @@ GROUPS = [
     ('mu-red', 'CC: delay', [MUP + 'Correctness/Reduction/DelayRed.agda']),
     ('mu-red', 'CC: globalize', [MUP + 'Correctness/Reduction/GlobalizeRed.agda']),
     ('mu-red', 'rco', [MUP + 'Correctness/Reduction/RCORed.agda']),
+    ('mu-red', 'lift locals', [MUP + 'Correctness/Reduction/LiftLocalsRed.agda']),
     ('mu-red', 'composition', [MUP + 'Correctness/Reduction/PipelineRed.agda']),
     ('mu-rinfra', 'reduction of heterogeneous vectors', [MU + 'Framework/ReductionAll.agda']),
 ]
@@ -1194,14 +1198,26 @@ MU_RED_ROWS = [
      [MU + 'Semantics/Reduction/' + x + '.agda', MUP + 'Semantics/Reduction/' + x + '.agda'])
     for x in ('ISWIM', 'Clos2', 'Clos3', 'Clos4', 'Clos5')] + [
     ('semantics: transition systems (shared)', [RD + 'Smallstep.agda'], [RD + 'Smallstep.agda']),
+    ('semantics: machines of Clos5, Imp, CFG, X86 (the CEK column\'s)',
+     [O + 'Typed/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')],
+     [MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]),
+    ('semantics: the CEK framework at this compiler\'s observations (shared)',
+     [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda'],
+     [O + 'Smallstep.agda', OP + 'Smallstep.agda', OP + 'Simulation.agda']),
     ('CC: enclose', [RC + 'EncloseRed.agda'], [MUP + 'Correctness/Reduction/EncloseRed.agda']),
     ('CC: optimize', [RC + 'OptimizeRed.agda'], [MUP + 'Correctness/Reduction/OptimizeRed.agda']),
     ('CC: concretize', [RC + 'ConcretizeRed.agda'], [MUP + 'Correctness/Reduction/ConcretizeRed.agda']),
     ('CC: delay', [RC + 'DelayRed.agda'], [MUP + 'Correctness/Reduction/DelayRed.agda']),
     ('CC: globalize', [RC + 'GlobalizeRed.agda'], [MUP + 'Correctness/Reduction/GlobalizeRed.agda']),
     ('rco', [RC + 'RCORed.agda'], [MUP + 'Correctness/Reduction/RCORed.agda']),
+    ('lift locals', [RC + 'LiftLocalsRed.agda'], [MUP + 'Correctness/Reduction/LiftLocalsRed.agda']),
+    ('explicate control (the CEK column\'s)', [OC + 'ExplicateSim.agda'], [MUP + 'Correctness/CEK/ExplicateSim.agda']),
+    ('select instructions (the CEK column\'s)', [OC + 'SelectSim.agda'], [MUP + 'Correctness/CEK/SelectSim.agda']),
 ]
 MU_RED_COMP = ([RC + 'PipelineRed.agda'], [MUP + 'Correctness/Reduction/PipelineRed.agda'])
+# what the pilot's reduction column shares with its CEK column
+MU_RED_SHARED = ([MU + 'Semantics/CEK/' + x + '.agda' for x in ('Clos5', 'Imp', 'CFG', 'X86')]
+                 + [MUP + 'Correctness/CEK/' + x + 'Sim.agda' for x in ('Explicate', 'Select')])
 
 
 def mu_red_check(c):
@@ -1209,13 +1225,15 @@ def mu_red_check(c):
     another of the pilot's columns (those it shares with one, 'mu-op+mu-red',
     apart) nor of a proof of either pipeline (what both share apart), and its
     infrastructure imports only infrastructure."""
-    own = {un for un, (side, _) in c.group_of.items() if 'mu-red' in sides_of(side)}
+    shared = {unit(f) for f in MU_RED_SHARED}
+    own = {un for un, (side, _) in c.group_of.items() if 'mu-red' in sides_of(side)} | shared
     typed, untyped = set(TYPED['sides']) | {'gerr', 'adeq', 'gadeq'}, set(UNTYPED['sides']) | {'ugerr', 'uadeq', 'ugadeq'}
     bad = set()
     for un in reachable(own, c.graph):
         side = c.group_of[un][0]
         ss = set(sides_of(side))
-        if side.startswith('mu-') and 'mu-red' not in ss and side not in ('mu-shared', 'mu-infra', 'mu-rinfra'):
+        if side.startswith('mu-') and 'mu-red' not in ss and un not in shared \
+                and side not in ('mu-shared', 'mu-infra', 'mu-rinfra'):
             bad.add(un)
         if ss <= set(STYLE) and not (ss & typed and ss & untyped):
             bad.add(un)
@@ -1245,8 +1263,11 @@ def mu_red_report(c):
         tot = [a + (x or 0) for a, x in zip(tot, ns)]
         print(f'| {row} | ' + ' | '.join(cell(x) for x in ns) + ' |')
     print('| **total** | ' + ' | '.join(str(x) for x in tot) + ' |')
-    print('| composition (typed: all the passes, to X86ᵀ) | '
+    print('| composition | '
           + ' | '.join(cell(n(fs)) for fs in MU_RED_COMP) + ' |')
+    T = c.analyze(TYPED)
+    main = T['total']['red'] - (T['cells'][('red', 'simplify')] or 0) - (T['cells'][('red', 'cast insertion')] or 0)
+    print(f"| the main table's total, without simplify and cast insertion | {main} | — |")
     print()
     print('| reduction: not counted in the rows | typed | μ |')
     print('|---|---:|---:|')

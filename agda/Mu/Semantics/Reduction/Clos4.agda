@@ -85,6 +85,7 @@ N [ V ] = sub (V • ∅) N
 
 obs : ∀ {A} → Tm [] A → Obs
 obss : ∀ {Δ} → All (Tm []) Δ → List Obs
+obs (code _) = o-fun
 obs (pack _ _) = o-fun
 obs (lit B c) = o-const B c
 obs (tuple Ms) = o-tuple (obss Ms)
