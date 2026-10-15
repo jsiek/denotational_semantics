@@ -5,11 +5,12 @@
   are Ok (monotone, continuous and consistent), by induction on the
   term, one line per construct, as for Clos5μ
   (Mu/proof/Semantics/Graph/Clos5.agda); fold and unfold are the
-  identity.
+  identity. (Only adequacy uses them, so they are here rather than in
+  Mu/proof/Semantics/Graph/.)
 
 -}
 
-module Mu.proof.Semantics.Graph.ISWIM where
+module Mu.proof.Adequacy.ISWIMOk where
 
 open import Mu.Semantics.Graph.ISWIM public
 

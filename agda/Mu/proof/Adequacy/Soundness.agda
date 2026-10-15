@@ -34,10 +34,10 @@ open import proof.Framework.GraphModel.TypedOkBase using (fin₁)
 import proof.Framework.GraphModel.Env as E
 open import proof.Semantics.Graph.Prim using (primD; primD-good) renaming (out to dout)
 open import proof.Framework.Runs using (module Runs)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
+open import Mu.proof.Adequacy.Tuples using (At; AllNE; 𝒯L; AllCon; 𝒯L-con; _⊆L_; ⊆L-refl; 𝒯L-mono; At-length)
 open import Mu.Language.Type
 open import Mu.Language.ISWIM
-open import Mu.proof.Semantics.Graph.ISWIM using (⟦_⟧; ⟦_⟧s; ok; con)
+open import Mu.proof.Adequacy.ISWIMOk using (⟦_⟧; ⟦_⟧s; ok; con)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos; _<><_; _<><ᵃ_)
 open import Mu.Semantics.CEK.ISWIM
 open import Semantics.Observation using (Obs; o-const)
