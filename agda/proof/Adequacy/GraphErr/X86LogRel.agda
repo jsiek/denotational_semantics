@@ -94,7 +94,7 @@ KOK _ d = ⊤
 𝕍₀ (dconst k) (const k') = dconst k ≡ dconst k'
 𝕍₀ ν (code f) = ⊤
 𝕍₀ (X ↦ ν) (code f) = ⊤
-𝕍₀ (X ↦ (Y ↦ w)) (code f) = ∀ e a → 𝕍s X e → 𝕍s Y a → Res (callee f e a) w (𝕍 w)
+𝕍₀ (X ↦ (Y ↦ w)) (code f) = ∀ e a → 𝕍s X e → 𝕍s Y a → Res w (callee f e a) (𝕍 w)
 𝕍₀ ⦅ u , u' ⦆ (pack c e) = 𝕍 u c × 𝕍 u' e
 𝕍₀ ⟨⟩ (tup []) = ⊤
 𝕍₀ (tup[_]_ {n'} i d) (tup {n} ws) = Σ[ e ∈ n' ≡ n ] 𝕍 d (lookup ws (subst Fin e i))
@@ -276,12 +276,12 @@ enter-eq (code f) e a σ = refl
 
 {- an element of a call of code related to v, on related operands -}
 call-res : ∀ {η} (v : Val Σ (code η)) {e a Fn Di Si} → PS Fn v → PS Di e → PS Si a
-  → ∀ c → c ∈ ⋆ ⟨ ⋆ ⟨ Fn , ⟨ Di , ptt ⟩ ⟩ , ⟨ Si , ptt ⟩ ⟩ → Res (callee′ v e a) c (𝕍 c)
+  → ∀ c → c ∈ ⋆ ⟨ ⋆ ⟨ Fn , ⟨ Di , ptt ⟩ ⟩ , ⟨ Si , ptt ⟩ ⟩ → Res c (callee′ v e a) (𝕍 c)
 call-res (code f) hF hD hS c ⟨ V , ⟨ ⟨ U , ⟨ e∈ , ⟨ U⊆ , _ ⟩ ⟩ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ =
   proj₂ (hF _ e∈) _ _ (all→𝕍s U U⊆ hD) (all→𝕍s V V⊆ hS)
 
 {- a result with a value: all of its elements are related to the one value returned -}
-collect : ∀ {s C} → (∀ c → c ∈ C → Res s c (𝕍 c)) → Conv C → Σ[ v ∈ Val Σ Any ] Rets s v × PS C v
+collect : ∀ {s C} → (∀ c → c ∈ C → Res c s (𝕍 c)) → Conv C → Σ[ v ∈ Val Σ Any ] Rets s v × PS C v
 collect res ⟨ c₀ , ⟨ c₀∈ , c₀≢ ⟩ ⟩ with res c₀ c₀∈
 ... | inj₁ ⟨ e , _ ⟩ = ⊥-elim (c₀≢ e)
 ... | inj₂ ⟨ v , ⟨ ok , _ ⟩ ⟩ = ⟨ v , ⟨ ok , all ⟩ ⟩
@@ -295,7 +295,7 @@ collect res ⟨ c₀ , ⟨ c₀∈ , c₀≢ ⟩ ⟩ with res c₀ c₀∈
 
 module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f)) where
 
-  𝒪-adeq : ∀ {η ψ τ} (a : Arg Σ ψ τ) {m : Mach Σ η ψ} {ρ R F} → Rel m ρ R F → PR τ (𝒪 T a ρ R) (arg a m)
+  𝒪-adeq : ∀ {η ψ τ} (a : Arg Σ ψ τ) {m : Mach Σ η ψ} {ρ R F} → Rel ρ R F m → PR τ (𝒪 T a ρ R) (arg a m)
   𝒪-adeq (atom (var x)) q = fr q x
   𝒪-adeq (atom (lit B c)) q d d∈ with ℬ-inv d d∈
   ... | refl = ⟨ refl , refl ⟩
@@ -304,7 +304,7 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   𝒪-adeq (a ↑) q d d∈ = ⟨ tt , 𝒪-adeq a q d d∈ ⟩
 
   {- the operands of a tuple, bound left to right -}
-  args-adeq : ∀ {η ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {m : Mach Σ η ψ} {ρ R F} → Rel m ρ R F
+  args-adeq : ∀ {η ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) {m : Mach Σ η ψ} {ρ R F} → Rel ρ R F m
     → ∀ {K : Results (𝒫 Value) (replicate j ■) → 𝒫 Value} {Q : Value → Set}
     → (∀ Xs → (∀ i → PS (nthD Xs i) (lookup (args as m) i)) → ∀ w → w ∈ K Xs → Q w)
     → ∀ w → w ∈ binds j (𝒪s T as ρ R) K → Q w
@@ -312,7 +312,7 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   args-adeq (a ∷ as) {m} {ρ} {R} q {K} k = bind-rel {v = arg a m} (λ X → binds _ (𝒪s T as ρ R) (λ Xs → K ⟨ X , Xs ⟩)) (𝒪-adeq a q)
     (args-adeq as q (λ Xs hs → k ⟨ _ , Xs ⟩ (λ { zero d d∈ → 𝒪-adeq a q d (proj₁ d∈) ; (suc i) → hs i })))
 
-  obj-adeq : ∀ {η ψ A} (o : Obj Σ ψ A) {m : Mach Σ η ψ} {ρ R F} → Rel m ρ R F → PS (object T o ρ R) (obj o m)
+  obj-adeq : ∀ {η ψ A} (o : Obj Σ ψ A) {m : Mach Σ η ψ} {ρ R F} → Rel ρ R F m → PS (object T o ρ R) (obj o m)
   obj-adeq (pair c e) {m} {ρ} {R} q = bind-rel {v = arg c m} (λ X → 𝒪 T e ρ R ≫= λ Y → pairD ⟨ X , ⟨ Y , ptt ⟩ ⟩) (𝒪-adeq c q)
     (bind-rel {v = arg e m} (λ Y → pairD ⟨ ⌊ 𝒪 T c ρ R ⌋ , ⟨ Y , ptt ⟩ ⟩) (𝒪-adeq e q) P)
     where
@@ -324,15 +324,15 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
   obj-adeq (inr a) {m} {ρ} {R} q = bind-rel {v = arg a m} (λ X → inrD ⟨ X , ptt ⟩) (𝒪-adeq a q) (inr-rel (λ d d∈ → 𝒪-adeq a q d (proj₁ d∈)))
 
   {- the blocks bs and their meanings B are related -}
-  BR : ∀ {n Bs} → Blocks Σ n Bs → BEnv Bs → Set₁
-  BR bs B = ∀ {Δ} (l : _ ∋ Δ) η (φ : Frame Σ Δ) ρ → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x))
-    → ∀ w → w ∈ B l ρ → Res (go ds (block bs l) halt η φ) w (𝕍 w)
+  BR : ∀ {n Bs} → BEnv Bs → Blocks Σ n Bs → Set₁
+  BR B bs = ∀ {Δ} (l : _ ∋ Δ) η (φ : Frame Σ Δ) ρ → (∀ {A} (x : Δ ∋ A) → PS (ρ (idx x)) (φ ! x))
+    → ∀ w → w ∈ B l ρ → Res w (go ds (block bs l) halt η φ) (𝕍 w)
 
-  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} {B : BEnv Bs} → BR bs B → ∀ {η} (m : Mach Σ η ψ) {ρ R F}
-    → Rel m ρ R F → ∀ w → w ∈ ⟦_⟧ˢ T k B ρ R F → Res (run k bs halt η m) w (𝕍 w)
+  adequate : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {bs : Blocks Σ n Bs} {B : BEnv Bs} → BR B bs → ∀ {η} (m : Mach Σ η ψ) {ρ R F}
+    → Rel ρ R F m → ∀ w → w ∈ ⟦_⟧ˢ T k B ρ R F → Res w (run k bs halt η m) (𝕍 w)
 
   put-adeq : ∀ {n Bs ψ τ ψ' η} (d : Dst n ψ τ ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
-    → BR bs B → Rel m ρ R F → PR τ D v → ∀ w → w ∈ putᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res (run k bs halt η (put d v m)) w (𝕍 w)
+    → BR B bs → Rel ρ R F m → PR τ D v → ∀ w → w ∈ putᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
   put-adeq (reg r) k br q h = adequate k br _ (reg-rel r h q)
   put-adeq (slot p _) k {v = v} br q h w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
   put-adeq (slot p _) k br q h w (inj₂ ⟨ _ , ⟨ V , ⟨ ⟨ ⟨ w∈ , _ ⟩ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ ⟩) =
@@ -340,7 +340,7 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
 
   {- chk's strict write -}
   putˢ-adeq : ∀ {n Bs ψ A ψ' η} (d : Dst n ψ (ty A) ψ') (k : Seq Σ n Bs ψ') {bs} {B : BEnv Bs} {m : Mach Σ η ψ} {ρ R F v D}
-    → BR bs B → Rel m ρ R F → PS D v → ∀ w → w ∈ putˢᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res (run k bs halt η (put d v m)) w (𝕍 w)
+    → BR B bs → Rel ρ R F m → PS D v → ∀ w → w ∈ putˢᴰ {Σ} T d D (⟦_⟧ˢ T k B) ρ R F → Res w (run k bs halt η (put d v m)) (𝕍 w)
   putˢ-adeq (reg r) k {v = v} br q h w (inj₁ ⟨ refl , ω∈ ⟩) = ⊥-elim (no-ω {v = v} h ω∈)
   putˢ-adeq (reg r) k br q h w (inj₂ ⟨ _ , w∈ ⟩) = adequate k br _ (reg-rel r h q) w w∈
   putˢ-adeq (slot p lt) = put-adeq (slot p lt)
@@ -367,7 +367,7 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
     pre : ∀ σ → step ds (run (callq a e₁ e₂ ∷ k) bs σ _ m) ≡ next (callee′ (arg a m) _ _ ⊕ retK k bs (frame m) σ)
     pre σ = enter-eq (arg a m) _ _ (retK k bs (frame m) σ)
     C = ⋆ ⟨ ⋆ ⟨ 𝒪 T a ρ R , ⟨ R rdi , ptt ⟩ ⟩ , ⟨ R rsi , ptt ⟩ ⟩
-    CALL : ∀ w → w ∈ (C ≫= λ _ → ⟦_⟧ˢ T k B ρ (called-regs C) init) → Res (run (callq a e₁ e₂ ∷ k) bs halt _ m) w (𝕍 w)
+    CALL : ∀ w → w ∈ (C ≫= λ _ → ⟦_⟧ˢ T k B ρ (called-regs C) init) → Res w (run (callq a e₁ e₂ ∷ k) bs halt _ m) (𝕍 w)
     CALL w (inj₁ ⟨ refl , ω∈ ⟩) with res ω ω∈
     ... | inj₁ ⟨ _ , er ⟩ = inj₁ ⟨ refl , (λ σ → let ⟨ t , ⟨ τ , q' ⟩ ⟩ = er (retK k bs (frame m) σ) in ⟨ t , ⟨ pre σ ∷↠ τ , q' ⟩ ⟩) ⟩
     ... | inj₂ ⟨ v , ⟨ _ , r ⟩ ⟩ = ⊥-elim (𝕍-ω v r)
@@ -391,18 +391,18 @@ module _ (T : Table) (𝕋 : ∀ {n} (f : Σ ∋ n) → PS (T (lvl f)) (code f))
     r : ∀ b {u} → 𝕍 (right u) (bit {Σ} b) → b ≡ false
     r false _ = refl
     r true ⟨ _ , () ⟩
-    J : ∀ w → w ∈ 𝒞 ⟨ ⌊ F ⌋ ⇂ ValPayload , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩ → Res (run (je l₁ l₂) bs halt _ m) w (𝕍 w)
+    J : ∀ w → w ∈ 𝒞 ⟨ ⌊ F ⌋ ⇂ ValPayload , ⟨ (λ _ → B l₁ ρ) , ⟨ (λ _ → B l₂ ρ) , ptt ⟩ ⟩ ⟩ → Res w (run (je l₁ l₂) bs halt _ m) (𝕍 w)
     J w (inj₁ ⟨ u , ⟨ U , ⟨ ls , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
       Res-step (cong nx (l _ (fl q _ (proj₁ (proj₁ (ls u (here refl))))))) (br l₁ _ (frame m) _ (fr q) w w∈)
     J w (inj₂ ⟨ u , ⟨ U , ⟨ rs , ⟨ w∈ , _ ⟩ ⟩ ⟩ ⟩) =
       Res-step (cong nx (r _ (fl q _ (proj₁ (proj₁ (rs u (here refl))))))) (br l₂ _ (frame m) _ (fr q) w w∈)
 
-  blocks-adeq : ∀ {n Bs} (bs : Blocks Σ n Bs) → BR bs (blocksᴰ T bs)
+  blocks-adeq : ∀ {n Bs} (bs : Blocks Σ n Bs) → BR (blocksᴰ T bs) bs
   blocks-adeq (bs ▷ k) Z η φ ρ f = adequate k (blocks-adeq bs) _ (mr f (λ { rax → tt ; rdi → tt ; rsi → tt }) tt tt)
   blocks-adeq (bs ▷ k) (S l) = blocks-adeq bs l
 
-  run-adeq : ∀ {ψ} (b : Body Σ ψ) {η} (m : Mach Σ η ψ) {ρ R F} → Rel m ρ R F
-    → ∀ w → w ∈ runᴰ T b ρ R F → Res (run (Body.start b) (Body.blocks b) halt η m) w (𝕍 w)
+  run-adeq : ∀ {ψ} (b : Body Σ ψ) {η} (m : Mach Σ η ψ) {ρ R F} → Rel ρ R F m
+    → ∀ w → w ∈ runᴰ T b ρ R F → Res w (run (Body.start b) (Body.blocks b) halt η m) (𝕍 w)
   run-adeq (body n bs k) = adequate k (blocks-adeq bs)
 
 {- The table ------------------------------------------------------------------------}
@@ -444,5 +444,5 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
 
   {- the main sequence, from the start -}
   main-adeq : ∀ (b : Body Σ (entry [])) w → w ∈ runᴰ T⁺ b (λ _ → init) (λ _ → init) init
-    → Res (run (Body.start b) (Body.blocks b) halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩) w (𝕍 w)
+    → Res w (run (Body.start b) (Body.blocks b) halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩) (𝕍 w)
   main-adeq b = run-adeq T⁺ tbl-rel b _ (mr (λ ()) (λ { rax → tt ; rdi → tt ; rsi → tt }) tt tt)

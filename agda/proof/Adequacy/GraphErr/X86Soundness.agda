@@ -231,10 +231,10 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   {- Parts of operands -------------------------------------------------------------------}
 
   {- parts of the operands of m that give each part w of v through Src -}
-  Need : ∀ {η ψ A} → Mach Σ η ψ → Val Σ A → (Ap → 𝒫 Value) → Set
-  Need m v Src = ∀ w → w ∈𝒱 v → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → w ∈ Src A)
+  Need : ∀ {η ψ A} → (Ap → 𝒫 Value) → Mach Σ η ψ → Val Σ A → Set
+  Need Src m v = ∀ w → w ∈𝒱 v → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → w ∈ Src A)
 
-  needs : ∀ {η ψ A} {m : Mach Σ η ψ} {v : Val Σ A} {Src} → Need m v Src → ∀ W → PS (mem W) v
+  needs : ∀ {η ψ A} {m : Mach Σ η ψ} {v : Val Σ A} {Src} → Need Src m v → ∀ W → PS (mem W) v
     → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → mem W ⊆ Src A)
   needs h [] _ = ⟨ ∅ₐ , ⟨ fits∅ , (λ _ _ _ ()) ⟩ ⟩
   needs h (w ∷ W) W⊆ with h w (W⊆ w (here refl)) | needs h W (λ d d∈ → W⊆ d (there d∈))
@@ -279,7 +279,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
     → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → w ∈ Src A)
   one ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → g A N⊑ _ (here refl)) ⟩ ⟩
 
-  𝒪-need : ∀ {η ψ τ} (a : Arg Σ ψ τ) {m : Mach Σ η ψ} → Need m (toV τ (arg a m)) (λ A → 𝒪 T⁺ a (ρ̂ A) (R̂ A))
+  𝒪-need : ∀ {η ψ τ} (a : Arg Σ ψ τ) {m : Mach Σ η ψ} → Need (λ A → 𝒪 T⁺ a (ρ̂ A) (R̂ A)) m (toV τ (arg a m))
   𝒪-need (atom (var x)) w w∈ = one (slot-need x (w ∷ []) (single w∈))
   𝒪-need (atom (lit B c)) w const∈ = ⟨ ∅ₐ , ⟨ fits∅ , (λ _ _ → ⟨ refl , refl ⟩) ⟩ ⟩
   𝒪-need (atom (ref f)) w (code∈ w∈) = ⟨ ∅ₐ , ⟨ fits∅ , (λ _ _ → w∈) ⟩ ⟩
@@ -288,13 +288,13 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
 
   {- the parts of a pair of parts, from those of its operands -}
   pair∈ : ∀ {A B} {u u' : Value} {v : Val Σ A} {v' : Val Σ B} {S S' : Ap → 𝒫 Value} {η ψ} {m : Mach Σ η ψ}
-    → u ∈𝒱 v → u' ∈𝒱 v' → Need m v S → Need m v' S'
+    → u ∈𝒱 v → u' ∈𝒱 v' → Need S m v → Need S' m v'
     → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → u ∈ ⌊ S A ⌋ × u' ∈ ⌊ S' A ⌋)
   pair∈ u∈ u'∈ h h' with h _ u∈ | h' _ u'∈
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ | ⟨ N' , ⟨ f' , g' ⟩ ⟩ =
     ⟨ N ∪ₐ N' , ⟨ ∪-fits f f' , (λ A N⊑ → ⟨ ⟨ g A (∪ˡ N⊑) , noω u∈ ⟩ , ⟨ g' A (∪ʳ N⊑) , noω u'∈ ⟩ ⟩) ⟩ ⟩
 
-  obj-need : ∀ {η ψ A} (o : Obj Σ ψ A) {m : Mach Σ η ψ} → Need m (obj o m) (λ A → object T⁺ o (ρ̂ A) (R̂ A))
+  obj-need : ∀ {η ψ A} (o : Obj Σ ψ A) {m : Mach Σ η ψ} → Need (λ A → object T⁺ o (ρ̂ A) (R̂ A)) m (obj o m)
   obj-need (pair c e) w (pack∈ u∈ u'∈) with pair∈ u∈ u'∈ (𝒪-need c) (𝒪-need e)
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → let ⟨ a , b ⟩ = g A N⊑ in inj₂ ⟨ ⟨ _ , a ⟩ , inj₂ ⟨ ⟨ _ , b ⟩ , ⟨ a , b ⟩ ⟩ ⟩) ⟩ ⟩
   obj-need (tuple []) w unit∈ = ⟨ ∅ₐ , ⟨ fits∅ , (λ _ _ → tt) ⟩ ⟩
@@ -322,8 +322,8 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → inj₂ ⟨ ⟨ _ , ⟨ g A N⊑ , noω u∈ ⟩ ⟩ , ⟨ g A N⊑ , noω u∈ ⟩ ⟩) ⟩ ⟩
 
   {- the fields of tuples and injections -}
-  field-need : ∀ {η ψ B C} (f : Field B C) {m : Mach Σ η ψ} (v : Val Σ B) {S} → Need m v S
-    → Need m (field′ f v) (λ A → fieldᴰ {Σ} T⁺ f (S A))
+  field-need : ∀ {η ψ B C} (f : Field B C) {m : Mach Σ η ψ} (v : Val Σ B) {S} → Need S m v
+    → Need (λ A → fieldᴰ {Σ} T⁺ f (S A)) m (field′ f v)
   field-need (get i) (tup ws@(_ ∷ _)) h w w∈ with h _ (tup∈ i w∈)
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → inj₂ ⟨ ⟨ _ , ⟨ g A N⊑ , (λ ()) ⟩ ⟩ , ⟨ g A N⊑ , (λ ()) ⟩ ⟩) ⟩ ⟩
   field-need payload (inl u) h w w∈ with h _ (inl∈ w∈)
@@ -332,8 +332,8 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → inj₂ ⟨ ⟨ _ , ⟨ g A N⊑ , (λ ()) ⟩ ⟩ , inj₂ ⟨ ⟨ g A N⊑ , (λ ()) ⟩ , noω w∈ ⟩ ⟩) ⟩ ⟩
 
   {- primitives, on two integers -}
-  prim-need : ∀ p {η ψ} {m : Mach Σ η ψ} (u u' : Val Σ ⟪ base Int ⟫) {S S'} → Need m u S → Need m u' S'
-    → Need m (δᵀ p (int u) (int u')) (λ A → primᵗ p (S A) (S' A))
+  prim-need : ∀ p {η ψ} {m : Mach Σ η ψ} (u u' : Val Σ ⟪ base Int ⟫) {S S'} → Need S m u → Need S' m u'
+    → Need (λ A → primᵗ p (S A) (S' A)) m (δᵀ p (int u) (int u'))
   prim-need p (const n) (const n') h h' w w∈ with pair∈ const∈ const∈ h h'
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → let ⟨ a , b ⟩ = g A N⊑ in
     inj₂ ⟨ ⟨ _ , a ⟩ , inj₂ ⟨ ⟨ _ , b ⟩ , ⟨ n , ⟨ n' , ⟨ a , ⟨ b , out p w∈ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩) ⟩ ⟩
@@ -345,22 +345,22 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
     out eq (inr∈ (dyn∈ unit∈)) | false = refl
 
   {- the flag that testinl sets -}
-  isinl-need : ∀ {η ψ} {m : Mach Σ η ψ} (v : Val Σ ⟪ sum ⟫) {S} → Need m v S → Need m (bit (is-inl v)) (λ A → S A ≫= isinlD)
+  isinl-need : ∀ {η ψ} {m : Mach Σ η ψ} (v : Val Σ ⟪ sum ⟫) {S} → Need S m v → Need (λ A → S A ≫= isinlD) m (bit (is-inl v))
   isinl-need (inl u) h w (inl∈ (dyn∈ unit∈)) with h _ (inl∈ (pt∈ u))
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → inj₂ ⟨ ⟨ _ , ⟨ g A N⊑ , (λ ()) ⟩ ⟩ , inj₁ ⟨ _ , ⟨ ⟨ g A N⊑ , (λ ()) ⟩ , refl ⟩ ⟩ ⟩) ⟩ ⟩
   isinl-need (inr u) h w (inr∈ (dyn∈ unit∈)) with h _ (inr∈ (pt∈ u))
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → inj₂ ⟨ ⟨ _ , ⟨ g A N⊑ , (λ ()) ⟩ ⟩ , inj₂ ⟨ _ , ⟨ ⟨ g A N⊑ , (λ ()) ⟩ , refl ⟩ ⟩ ⟩) ⟩ ⟩
 
   {- the code and environment of a closure, from its slot -}
-  SlotNeed : ∀ {η ψ A} → Mach Σ η ψ → Val Σ A → (Ap → 𝒫 Value) → Set
-  SlotNeed m v Q = ∀ W → PS (mem W) v → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → mem W ⊆ Q A)
+  SlotNeed : ∀ {η ψ A} → (Ap → 𝒫 Value) → Mach Σ η ψ → Val Σ A → Set
+  SlotNeed Q m v = ∀ W → PS (mem W) v → Σ[ N ∈ Ap ] Fits m N × (∀ A → N ⊑ₐ A → mem W ⊆ Q A)
 
-  car-need : ∀ {η ψ} {m : Mach Σ η ψ} (v : Val Σ ⟪ fun ⟫) {S} → SlotNeed m v S → Need m (code-of v) (λ A → car ⟨ S A , ptt ⟩)
+  car-need : ∀ {η ψ} {m : Mach Σ η ψ} (v : Val Σ ⟪ fun ⟫) {S} → SlotNeed S m v → Need (λ A → car ⟨ S A , ptt ⟩) m (code-of v)
   car-need (pack c e) h w w∈ with h _ (single (pack∈ w∈ (pt∈ e)))
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → ⟨ _ , g A N⊑ _ (here refl) ⟩) ⟩ ⟩
 
-  cdr-need : ∀ {η' η ψ} {m : Mach Σ η ψ} {v : Val Σ ⟪ fun ⟫} {c : Val Σ (code η')} {e S} → v ≡ pack c e → SlotNeed m v S
-    → Need m e (λ A → cdr ⟨ S A , ptt ⟩)
+  cdr-need : ∀ {η' η ψ} {m : Mach Σ η ψ} {v : Val Σ ⟪ fun ⟫} {c : Val Σ (code η')} {e S} → v ≡ pack c e → SlotNeed S m v
+    → Need (λ A → cdr ⟨ S A , ptt ⟩) m e
   cdr-need {c = c} refl h w w∈ with h _ (single (pack∈ (pt∈ c) w∈))
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → ⟨ _ , g A N⊑ _ (here refl) ⟩) ⟩ ⟩
 
@@ -383,8 +383,8 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   hit-ok tsum v h = tt
   hit-ok tint v h = tt
 
-  chk-need : ∀ t {η ψ} {m : Mach Σ η ψ} (u : Val Σ Any) {v S} → proj? t u ≡ just v → SlotNeed m u S
-    → Need m v (λ A → projectᵠ kind₄ t (S A))
+  chk-need : ∀ t {η ψ} {m : Mach Σ η ψ} (u : Val Σ Any) {v S} → proj? t u ≡ just v → SlotNeed S m u
+    → Need (λ A → projectᵠ kind₄ t (S A)) m v
   chk-need t (dyn H v) e h w w∈ with H ≟F flat t
   chk-need t (dyn H v) refl h w w∈ | yes refl with h (w ∷ hw t v ∷ []) (λ { _ (here refl) → dyn∈ w∈ ; _ (there (here refl)) → dyn∈ (hw∈ t v) })
   ... | ⟨ N , ⟨ f , g ⟩ ⟩ = ⟨ N , ⟨ f , (λ A N⊑ → inj₂ ⟨ ⟨ _ , ⟨ g A N⊑ _ (here refl) , noω w∈ ⟩ ⟩
@@ -421,11 +421,11 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   𝒮 (run k bs σ η m) d = Σ[ A ∈ Ap ] Fits m A × d ∈ 𝒦 σ (𝕂 k bs (ρ̂ A) (R̂ A) (F̂ A))
 
   {- a step back that keeps the stack and the blocks -}
-  Back : ∀ {n Bs ψ ψ' η η'} → Mach Σ η ψ → Mach Σ η' ψ' → Seq Σ n Bs ψ' → Blocks Σ n Bs → (Ap → 𝒫 Value) → Set
-  Back m m' k bs Sem = ∀ A' → Fits m' A' → Σ[ A ∈ Ap ] Fits m A × 𝕂 k bs (ρ̂ A') (R̂ A') (F̂ A') ⊆ Sem A
+  Back : ∀ {n Bs ψ ψ' η η'} → (Ap → 𝒫 Value) → Mach Σ η ψ → Mach Σ η' ψ' → Seq Σ n Bs ψ' → Blocks Σ n Bs → Set
+  Back Sem m m' k bs = ∀ A' → Fits m' A' → Σ[ A ∈ Ap ] Fits m A × 𝕂 k bs (ρ̂ A') (R̂ A') (F̂ A') ⊆ Sem A
 
   back : ∀ {n Bs ψ ψ' η η'} σ (k : Seq Σ n Bs ψ) bs (k' : Seq Σ n Bs ψ') {m : Mach Σ η ψ} {m' : Mach Σ η' ψ'}
-    → Back m m' k' bs (λ A → 𝕂 k bs (ρ̂ A) (R̂ A) (F̂ A)) → 𝒮 (run k' bs σ η' m') ⊆ 𝒮 (run k bs σ η m)
+    → Back (λ A → 𝕂 k bs (ρ̂ A) (R̂ A) (F̂ A)) m m' k' bs → 𝒮 (run k' bs σ η' m') ⊆ 𝒮 (run k bs σ η m)
   back σ k bs k' h d ⟨ A' , ⟨ f' , d∈ ⟩ ⟩ with h A' f'
   ... | ⟨ A , ⟨ f , I ⟩ ⟩ = ⟨ A , ⟨ f , 𝒦-mono σ I d d∈ ⟩ ⟩
 
@@ -462,7 +462,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   undrop-fits (there⊑ p) (_ ∷ φ) h (S x) = undrop-fits p φ h x
 
   put-back : ∀ {n Bs ψ τ ψ' η} (d : Dst n ψ τ ψ') {k : Seq Σ n Bs ψ'} {bs} {m : Mach Σ η ψ} (v : RV Σ η τ) {Src}
-    → Need m (toV τ v) Src → Back m (put d v m) k bs (λ A → putᴰ {Σ} T⁺ d (Src A) (𝕂 k bs) (ρ̂ A) (R̂ A) (F̂ A))
+    → Need Src m (toV τ v) → Back (λ A → putᴰ {Σ} T⁺ d (Src A) (𝕂 k bs) (ρ̂ A) (R̂ A) (F̂ A)) m (put d v m) k bs
   put-back (reg r) {k} {bs} v h A' f' with reg-back r f'
   ... | ⟨ pr , ⟨ fc , L ⟩ ⟩ with needs h (rg A' r) pr
   ... | ⟨ N , ⟨ fN , g ⟩ ⟩ = ⟨ clr r A' ∪ₐ N , ⟨ ∪-fits fc fN , 𝕂-mono k bs (L N (g _ (∪ʳ ⊑-refl))) ⟩ ⟩
@@ -489,7 +489,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
 
   {- chk's strict write -}
   putˢ-back : ∀ {n Bs ψ A ψ' η} (d : Dst n ψ (ty A) ψ') {k : Seq Σ n Bs ψ'} {bs} {m : Mach Σ η ψ} (v : Val Σ A) {Src}
-    → Need m v Src → Back m (put d v m) k bs (λ A → putˢᴰ {Σ} T⁺ d (Src A) (𝕂 k bs) (ρ̂ A) (R̂ A) (F̂ A))
+    → Need Src m v → Back (λ A → putˢᴰ {Σ} T⁺ d (Src A) (𝕂 k bs) (ρ̂ A) (R̂ A) (F̂ A)) m (put d v m) k bs
   putˢ-back (reg r) {k} {bs} v h A' f' with reg-back r f'
   ... | ⟨ pr , ⟨ fc , L ⟩ ⟩ with needs h (pt v ∷ rg A' r) (λ { _ (here refl) → pt∈ v ; d (there d∈) → pr d d∈ })
   ... | ⟨ N , ⟨ fN , g ⟩ ⟩ = ⟨ clr r A' ∪ₐ N , ⟨ ∪-fits fc fN , (λ d d∈ →
@@ -498,7 +498,7 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
 
   {- the flag, back -}
   flag-back : ∀ {n Bs Γ Δ O F₀ η} {k : Seq Σ n Bs (st Γ Δ O true)} {bs} {m : Mach Σ η (st Γ Δ O F₀)} b {Src}
-    → Need m (bit b) Src → Back m ⟨ regs m , frame m , opened m , b ⟩ k bs (λ A → 𝕂 k bs (ρ̂ A) (R̂ A) (Src A))
+    → Need Src m (bit b) → Back (λ A → 𝕂 k bs (ρ̂ A) (R̂ A) (Src A)) m ⟨ regs m , frame m , opened m , b ⟩ k bs
   flag-back {k = k} {bs} b h A' (fits f g l) with needs h (fl A') l
   ... | ⟨ N , ⟨ fN , gN ⟩ ⟩ = ⟨ ap (sl A') (rg A') [] ∪ₐ N , ⟨ ∪-fits (fits f g (PF-[] _)) fN ,
     𝕂-mono k bs (le (λ x → ++ˡ) (λ r _ → ++ˡ) (λ _ → gN _ (∪ʳ ⊑-refl))) ⟩ ⟩
@@ -529,8 +529,8 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
 
   loadfst-back : ∀ {n Bs Γ Δ O F₀ η} (x : Δ ∋ ⟪ fun ⟫) r {k : Seq Σ n Bs (st (wipe Γ [ r ↦ just codeα ]) Δ (just x) F₀)} {bs}
     {m : Mach Σ η (st Γ Δ O F₀)}
-    → Back m ⟨ wipeᵣ (regs m) [ r ≔ code-of (frame m ! x) ] , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩ k bs
-        (λ A → 𝕂 k bs (ρ̂ A) (R̂ A [ r ≔ˢ car ⟨ ρ̂ A (idx x) , ptt ⟩ ]) (F̂ A))
+    → Back (λ A → 𝕂 k bs (ρ̂ A) (R̂ A [ r ≔ˢ car ⟨ ρ̂ A (idx x) , ptt ⟩ ]) (F̂ A))
+        m ⟨ wipeᵣ (regs m) [ r ≔ code-of (frame m ! x) ] , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩ k bs
   loadfst-back x r {k} {bs} {m} A' f'
     with put-back (reg r) {k} {bs} {m = ⟨ wipeᵣ (regs m) , frame m , ⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩ , flag m ⟩}
            _ (car-need (frame m ! x) (slot-need x)) A' f'
@@ -555,8 +555,8 @@ module _ (TC : ∀ k → Con (T⁺ k)) (ind : Indep) where
   {- chk, back: %rax and the flag, unset, have no parts -}
   chk-back : ∀ {n Bs Γ Δ O F₀ η ψ'} t (x : Δ ∋ Any) (d : Dst n (st (Γ [ rax ↦ nothing ]) Δ O false) (ty ⟪ flat t ⟫) ψ')
     {k : Seq Σ n Bs ψ'} {bs} {m : Mach Σ η (st Γ Δ O F₀)} {v} → proj? t (frame m ! x) ≡ just v
-    → Back m (put d v ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩) k bs
-        (λ A → putˢᴰ {Σ} T⁺ d (projectᵠ kind₄ t (ρ̂ A (idx x))) (𝕂 k bs) (ρ̂ A) (R̂ A [ rax ≔ˢ init ]) init)
+    → Back (λ A → putˢᴰ {Σ} T⁺ d (projectᵠ kind₄ t (ρ̂ A (idx x))) (𝕂 k bs) (ρ̂ A) (R̂ A [ rax ≔ˢ init ]) init)
+        m (put d v ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩) k bs
   chk-back t x d {k} {bs} {m} {v} pe A' f' with putˢ-back d {k} {bs} v (chk-need t (frame m ! x) pe (slot-need x)) A' f'
   ... | ⟨ A₁ , ⟨ fits f g l , ⊆₁ ⟩ ⟩ = ⟨ ap (sl A₁) (λ { rax → [] ; r → rg A₁ r }) [] , ⟨ fits f (λ { rax → PM-[] _ ; rdi → g rdi ; rsi → g rsi }) (PF-[] _)
     , (λ d' d'∈ → putˢ-mono {Σ} T⁺ d {𝕂 k bs} {𝕂 k bs} (𝕂-mono k bs) (le (λ _ _ z → z) (λ { rax () ; rdi _ _ z → z ; rsi _ _ z → z }) (λ ())) (λ _ z → z) d' (⊆₁ d' d'∈)) ⟩ ⟩
