@@ -438,6 +438,38 @@ In the terms of the main table, today's interpreter column without simplify and 
 * **Select instructions shrinks (52 → 48), and X86 by 4.** X86μ's case is one pseudo-instruction (testinl, the load of the payload and je, as chk is in X86ᵀ), so its interpreter case and select's proof of it are one `either` each.
 * The examples run on the interpreters too (`Mu/proof/Compiler/Examples/RecursionInterp.agda`): countdown 3 by the fixed-point combinator returns 0 on ISWIMμ, Clos4μ and X86μ, and Ω times out.
 
+**Reduction (P1).** The pilot's reduction semantics (`Mu/Semantics/Reduction/`), of ISWIMμ through Clos5μ, are the typed pipeline's: call by value, left to right, by substitution, with congruence rules (`step-in`). `fold V` is a value and `unfold (fold V)` reduces to `V`; nothing is stuck. Renaming and substitution are one traversal with today's kit (`Framework/Syntax/Kit.agda`), instantiated at contexts that are lists of types, as Clos4ᵀ and Clos5ᵀ already did: `exts`, `ren`, `sub`, `_•_` and `_[_]`, with the usual laws (fusion, `sub-id`, `exts-[]`) in the `proof/` halves. Typed substitution with heterogeneous operands costs nothing: the ISWIMμ semantics with its laws is 187 lines against ISWIMᵀ's 189. The CEK column's machines of Clos5μ, Impμ, CFGμ and X86μ, and its proofs of explicate control and select instructions, are shared, as the typed reduction column does (`op+red`). Monμ runs as its embedding in Clos5μ. Each pass is a forward simulation (`Mu/proof/Correctness/Reduction/`), and the composition gives `compile-x86-correct`. Row by row against the typed reduction column, without simplify and cast insertion (`loc.py --mu`):
+
+| ISWIMμ pilot against the typed pipeline: reduction | typed | μ |
+|---|---:|---:|
+| semantics: ISWIM | 189 | 187 |
+| semantics: Clos2 | 117 | 119 |
+| semantics: Clos3 | 123 | 119 |
+| semantics: Clos4 | 114 | 114 |
+| semantics: Clos5 | 184 | 184 |
+| semantics: transition systems (shared) | 1 | 1 |
+| semantics: machines of Clos5, Imp, CFG, X86 (the CEK column's) | 290 | 272 |
+| semantics: the CEK framework at this compiler's observations (shared) | 3 | 3 |
+| CC: enclose | 161 | 164 |
+| CC: optimize | 228 | 232 |
+| CC: concretize | 155 | 154 |
+| CC: delay | 142 | 139 |
+| CC: globalize | 221 | 219 |
+| rco | 167 | 164 |
+| lift locals | 205 | 204 |
+| explicate control (the CEK column's) | 106 | 105 |
+| select instructions (the CEK column's) | 111 | 107 |
+| **total** | 2517 | 2487 |
+| composition | 27 | 19 |
+| **total with the composition** | 2544 | 2506 |
+
+In the terms of the main table, today's reduction column without simplify and cast insertion is 2606: these 2544 lines and the reduction semantics of untyped ISWIM (62), the source of cast insertion. The pilot's is 2506. Not in the rows: the reduction of heterogeneous vectors and of pairs of a type and a term (`Mu/Framework/ReductionAll.agda`, 40, infrastructure) against `ReductionVec` (19).
+
+* **Dynamic typing costs the reduction column almost nothing (2544 → 2506, −1.5%).** The per-pass rows differ by at most 4 lines either way. `project` and its decision (`proj-dec`) go from every semantics and simulation, and `fold` and `unfold` come in. The heterogeneous operands cost a few lines (`All₂`, `Each`) where the typed proofs use `Pointwise` and `All` on vectors. Most of the difference is in the shared machines and select (−22).
+* **Recursive types and unification, again.** A term cannot be split at a concrete type (`unfold`'s index `A [ μ A ]`; `prim`'s `out-ty p`), so each redex takes its operand at a generic type with an equation (`β : Tm [] C → C ≡ A ⇒ B → …`, matched with `refl`), and the code of a `pack` is split by a second function. A relation constructor whose index is a stuck function (concretize's `var≈`, target `ref-tm (φ x)`) also blocks a split at a concrete type, even of a different constructor, so it takes an equation instead (`var≈ : ref-tm (φ x) ≡ M' → …`), as delay's already did.
+* **Lift locals needs pairs.** The Impμ machine's continuations do not say the type of the final result (`halt : Cont Σ A` for every `A`; Impᵀ's results are all `Any`), so a machine state decodes to a pair of a type (`fin κ`) and a term. The source runs on such pairs (`redΣ`), which is equivalent to running on terms (`pairs`, 15 lines of infrastructure). The proof is otherwise the typed one (205 → 204).
+* **Observations.** Code (`code N` in Clos4μ, a reference in Clos5μ) is observed as `o-fun`, as by the machines; the typed reduction semantics observe it as an error, which no program of type `Any` reaches.
+
 ## What the groups contain
 
 * **shared (counted only in the proofs that use it when not all four do, see above):** the languages (untyped ISWIM, the typed languages in `Language/Typed/` with their types `Language/Typed/Type.agda`, X86ᵀ among them, its registers `Language/Reg.agda`, and the primitives `Language/Prim.agda`), the compiler passes (`Compiler/`) and their compositions `compile₄`, `compile`, `compile-mon`, `compile-imp`, `compile-cfg` and `compile-x86` (`Compiler/Pipeline.agda`), which all four proofs use; the observations and the end-theorem shape (`Semantics/Observation.agda`); and the lemmas about the compiler's output that the proofs use:
@@ -462,7 +494,7 @@ In the terms of the main table, today's interpreter column without simplify and 
 * **shared modules not used by all four proofs:** see [Shared modules](#shared-modules).
 * **simplify:** the pass (`Compiler/Simplify.agda`) is shared, as every pass is; its syntactic lemmas (`proof/Compiler/SimplifyFacts.agda`), which all its proofs use, are counted in the simplify row of every column. See [Simplify](#simplify).
 * **the preserved untyped pipeline** (`agda/Untyped/`): its own groups, by the same rules; what it shares with the typed pipeline (ISWIM, simplify and its proofs, the primitives, the observations, the ISWIM adequacy) is counted in both. Untyped X86, its semantics in every style and its adequacy are the untyped pipeline's (X86 and its CEK machine stay in `agda/`, since the assurance uses them).
-* **the ISWIMμ pilot (not in the totals)** (`agda/Mu/`): its languages and passes (`mu-shared`), heterogeneous vectors (`mu-infra`, `AllUtil` and `AllProp`), its graph-model, CEK and interpreter columns (`mu-den`, `mu-op`, `mu-ck`, by the rows above), and an example (`mu-examples`); `loc.py` checks that its columns use neither each other nor a proof of either pipeline (what both pipelines share they may use); see [ISWIMμ pilot](#iswimμ-pilot).
+* **the ISWIMμ pilot (not in the totals)** (`agda/Mu/`): its languages and passes (`mu-shared`), heterogeneous vectors (`mu-infra`, `AllUtil` and `AllProp`), its graph-model, CEK, interpreter and reduction columns (`mu-den`, `mu-op`, `mu-ck`, `mu-red`, by the rows above; the reduction column shares the CEK column's machines of the first-order languages and its proofs of explicate control and select, and its infrastructure is `mu-rinfra`), and an example (`mu-examples`); `loc.py` checks that its columns use neither each other nor a proof of either pipeline (what both pipelines share they may use); see [ISWIMμ pilot](#iswimμ-pilot).
 * **assurance (not in the totals):** what checks that X86ᵀ is faithful to untyped X86 (`Theorems/X86Erasure.agda`, `proof/Assurance/`, the erasure and select into untyped X86, `Compiler/SelectX86.agda`, with its proof `proof/Compiler/SelectErase.agda`); see [Assurance](#assurance).
 
 ## Caveats
