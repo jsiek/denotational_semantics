@@ -4,26 +4,29 @@
 Denotational semantics promises compositional, equational reasoning
 about programs, and compiler correctness was among its first
 applications, yet verified compilers today are almost entirely
-operational. Denotational compiler proofs, on paper or mechanized,
-have been either (1) limited to source languages that are terminating
-or first-order, or (2) compile to an abstract machine that keeps
-closures as primitive values and so avoids closure conversion. We use
-a denotational semantics based on a graph model to prove a ten-pass
-compiler correct, from a call-by-value $\lambda$-calculus with
-iso-recursive types (which supports general recursion), through
-closure conversion, to a typed assembly language.  The proof is
-mechanized in Agda. Every intermediate language has a denotational
-semantics, and most passes are proved by an equation between the
-denotations of a program before and after the pass. The exception is
-the step of closure conversion that lowers closures into code and
-environment pairs: its reflection direction needs a new kind of
-logical relation between two denotational semantics, which we name an
-approximant logical relation. To evaluate this denotational approach
-to the well-established operational approaches, we prove the same
-compiler correct in three operational styles and report on the size of
-the proofs. The denotational proof of the compiler totals 1958 lines,
-between those for clocked interpreters (1653) and abstract machines
-(2258) and well below reduction semantics (3207). The denotational
-approach gives the smallest proofs of correctness for inlining,
-hoisting and conversion to a control-flow graph, but the largest proof
-for closure lowering.
+operational. The denotational compiler proofs in the literature, on
+paper or mechanized, have been either (1) limited to source languages
+that are first-order or strongly normalizing, or (2) compile to target
+languages that treat closures as primitive values and so avoids
+closure conversion. We use a denotational semantics based on a graph
+model to prove a ten-pass compiler correct, from a call-by-value
+$\lambda$-calculus with iso-recursive types, through closure
+conversion, to a typed assembly language.  The proof is mechanized in
+Agda. Every intermediate language has a denotational semantics, and
+most passes are proved by an equation between the denotations of a
+program before and after the pass. The exception is the step of
+closure conversion that lowers closures into code and environment
+pairs: its reflection direction needs a new kind of logical relation
+on denotations, which we call \emph{approximant logical relations}. To
+evaluate this denotational approach compared to operational ones, we
+prove the same compiler correct in three operational styles and report
+on the size of the proofs. The denotational end-to-end proof of
+correctness comes in smaller than the proofs using abstract machines
+and reduction semantics, but larger than the proof using clocked
+interpreters.  In particular, the denotational approach yields elegant
+proofs for compiler passes in which the program values remain at the
+same level of abstraction, such as inlining, where equational
+reasoning suffices.  But the denotational proofs are more involved
+when program values are translated to a lower level of abstraction,
+such as lowering closures to their flat repsentation.
+
