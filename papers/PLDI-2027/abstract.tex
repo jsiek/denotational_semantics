@@ -24,10 +24,10 @@ compiler correct in three operational styles and report on the size of
 the proofs. The denotational end-to-end proof of correctness comes in
 smaller than the proofs using abstract machines and reduction
 semantics, but larger than the proof using clocked interpreters.  In
-particular, the denotational approach yields elegant proofs for
+particular, the denotational approach yields smaller proofs for
 compiler passes in which the program values remain at the same level
 of abstraction, such as inlining, where equational reasoning suffices.
-But the denotational proofs are more involved when program values are
-translated to a lower level of abstraction, such as lowering closures
-to their flat representation.
+But the denotational proofs are larger when the compiler translates
+program values into a lower level of abstraction, such as lowering
+closures to their flat representation.
 
