@@ -2,16 +2,17 @@
 %% default report); keep them in sync.
 
 Denotational semantics promises compositional, equational reasoning about
-programs, yet mechanized compiler verification has been almost entirely
-operational. The mechanized denotational proofs that exist stop at a
-terminating source language, a first-order language, or a single pass,
-because a Turing-complete, higher-order language requires a semantics that
-accounts for divergence. We show that a denotational semantics based on
-graph models, in which a denotation is a set of finite input/output tables,
-meets this requirement. We prove correct, in Agda, a ten-pass compiler from
-a call-by-value $\lambda$-calculus with iso-recursive types, which has
-general recursion and divergence, through closure conversion, to a typed
-assembly language. Every intermediate language has a graph-model
+programs, and compiler correctness was among its first applications, yet
+verified compilers today are almost entirely operational. Denotational
+compiler proofs, on paper or mechanized, stop at a terminating or
+first-order source language, or compile to an abstract machine that keeps
+closures as primitive values and so avoids closure conversion. We show
+that a denotational semantics based on graph models, in which a denotation
+is a set of finite input/output tables, handles both divergence and
+closure conversion: we prove a ten-pass compiler correct from a call-by-value
+$\lambda$-calculus with iso-recursive types, which has general recursion
+and divergence, through closure conversion, to a typed assembly language.
+The proof is mechanized in Agda. Every intermediate language has a graph-model
 semantics, and most passes are proved by an equation between the
 denotations of a program before and after the pass. The exception is the
 step of closure conversion that lowers closures into code and environment
