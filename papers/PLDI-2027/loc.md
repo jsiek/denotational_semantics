@@ -29,29 +29,29 @@ As of PR #58 (the target of the typed pipeline is the typed assembly language X8
 
 | component | denotational: graph model | CEK machine + simulation | clocked interpreter + value relations | reduction semantics + simulation | graph model with errors |
 |---|---:|---:|---:|---:|---:|
-| semantics of the languages | 450 | 684 | **442** | 1068 | 518 |
-| lemmas shared by the passes | — | 55 | — | — | — |
+| semantics of the languages | 450 | 674 | **442** | 1066 | 518 |
+| lemmas shared by the passes | — | 20 | — | — | — |
 | simplify | **342** | 574 | 640 | 716 | 348 |
-| cast insertion | **67** | 195 | 95 | 300 | 125 |
-| CC: enclose | 41 | 106 | **33** | 161 | 38 |
-| CC: optimize | 89 | 133 | **60** | 228 | 63 |
+| cast insertion | **67** | 192 | 95 | 300 | 125 |
+| CC: enclose | 41 | 100 | **33** | 161 | 38 |
+| CC: optimize | 89 | 121 | **60** | 228 | 63 |
 | CC: concretize | 67 | 115 | **42** | 155 | 69 |
 | CC: delay | 552 | 99 | **35** | 142 | 801 |
 | CC: globalize | 118 | 219 | 183 | 221 | **105** |
-| rco | 128 | 150 | **85** | 167 | 128 |
-| lift locals | 44 | 56 | **27** | 205 | 50 |
+| rco | 128 | 149 | **85** | 167 | 128 |
+| lift locals | 44 | 55 | **27** | 205 | 50 |
 | explicate control | 71 | 106 | 72 | 106 | **68** |
 | select instructions | 134 | 111 | **52** | 111 | 222 |
 | composition | 28 | 32 | 33 | **27** | 44 |
 | shared modules not used by all four proofs | — | **15** | **15** | **15** | — |
 | the graph model's meaning of the primitives | — | — | — | — | 34 |
-| **total** | 2131 | 2650 | **1814** | 3622 | 2613 |
+| **total** | 2131 | 2582 | **1814** | 3620 | 2613 |
 
 How to read the rows:
-* **Semantics of the languages.** The graph model: ISWIM and the primitives (73, the same as the untyped pipeline's), and the typed languages, X86ᵀ among them (377: 66 for X86ᵀ; the lemmas, monotonicity, consistency and continuity, come from the infrastructure for intrinsically typed syntax, and X86ᵀ's select proof needs none). CEK: the ISWIM machine (74, as in the untyped pipeline), the framework instances (3), and the eight typed machines (607; X86ᵀ's 114). Interpreter: ISWIM and the clock (57) and the typed interpreters with their values and value relation (385; X86ᵀ's 110). Reduction: ISWIM's reduction semantics (48), those of ISWIMᵀ–Clos5ᵀ with their values (727: 458 for the reductions, 269 for the values), and the machines of Clos5ᵀ, Impᵀ, CFGᵀ and X86ᵀ it shares with the CEK column (290). Graph model with errors: ISWIM and the primitives (62) and the typed languages (456; X86ᵀ's 66).
-* **Lemmas shared by the passes** (CEK only): two machines that collect related values into a tuple, with its length equation, build related tuples (`Common`, 30, used by the closure-conversion passes), and the Clos5ᵀ machine on atoms (`Clos5Common`, 25, used by rco and lift locals).
+* **Semantics of the languages.** The graph model: ISWIM and the primitives (73, the same as the untyped pipeline's), and the typed languages, X86ᵀ among them (377: 66 for X86ᵀ; the lemmas, monotonicity, consistency and continuity, come from the infrastructure for intrinsically typed syntax, and X86ᵀ's select proof needs none). CEK: the ISWIM machine (74, as in the untyped pipeline), the framework instances (3), and the eight typed machines (597; X86ᵀ's 114). Interpreter: ISWIM and the clock (57) and the typed interpreters with their values and value relation (385; X86ᵀ's 110). Reduction: ISWIM's reduction semantics (48), those of ISWIMᵀ–Clos5ᵀ with their values (727: 458 for the reductions, 269 for the values), and the machines of Clos5ᵀ, Impᵀ, CFGᵀ and X86ᵀ it shares with the CEK column (288). Graph model with errors: ISWIM and the primitives (62) and the typed languages (456; X86ᵀ's 66).
+* **Lemmas shared by the passes** (CEK only): two machines that both stop with the same observation or both step to related states (`Lock`, in `Common`, 9, used by the closure-conversion passes), and the Clos5ᵀ machine on atoms (`Clos5Common`, 11, used by rco and lift locals). The typed machines collect a tuple's values newest first in a vector, whose length gives the tuple's type by a reverse-append index (`m +ʳ j`, `vs <>< []`, `Framework/VecUtil.agda`), as the ISWIMμ pilot's machines do, so no proof needs the length equations of the tuples collected so far (since PR #67).
 * **Simplify** is the untyped pipeline's proof in every column (the source language did not change), with the syntactic lemmas all of them use (`proof/Compiler/SimplifyFacts.agda`, 110 lines).
-* **Cast insertion** is new; the untyped pipeline has no pass that inserts the checks (see [Typed against untyped](#typed-against-untyped)). The CEK proof (195) includes 48 lines of list and primitive lemmas copied from adequacy, so that it does not import adequacy.
+* **Cast insertion** is new; the untyped pipeline has no pass that inserts the checks (see [Typed against untyped](#typed-against-untyped)). The CEK proof (192) includes 48 lines of list and primitive lemmas copied from adequacy, so that it does not import adequacy.
 * **Select instructions** is CFGᵀ → X86ᵀ, an equation (≃) in both graph models, a forward simulation in the CEK and reduction columns (the same proof), clock for clock with equal results in the interpreter. X86ᵀ holds the values of Clos5ᵀ in CFGᵀ's frame, so no proof relates values or frames; its only check is `project`'s (`chk`). See [Typed assembly language](#typed-assembly-language).
 * **Shared modules.** Cast insertion needs a closed program, so all four proofs use the scoping lemmas (`SimplifyScope`, `CastScope`), which are therefore not counted; the operational proofs count only the observations (15). See [Shared modules](#shared-modules).
 
@@ -62,7 +62,7 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | abstract binding trees | 190 | 190 | 190 | 190 | 190 | 190 |
 | syntax lemmas (renaming, scoping, uses, substitution), list lookups | 519 | 418 | 418 | 418 | 504 | 418 |
 | base types, logical equivalence | 58 | 58 | 58 | 58 | 58 | 58 |
-| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 128 | 98 | 108 | 118 | 108 | 98 |
+| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 98 | 110 | 118 | 110 | 98 |
 | denotational framework | 375 | 350 | — | — | — | 375 |
 | graph model: values, consistency, machinery for any operators | 364 | 364 | — | — | — | 364 |
 | graph model: its operators | 623 | 623 | — | — | — | 474 |
@@ -72,26 +72,26 @@ Language-independent infrastructure, not in any total (see [Language-independent
 | reduction framework: reduction semantics, simulations between them | 254 | — | — | — | 254 | — |
 | clocked big-step framework | 249 | — | — | 249 | — | — |
 | runs of a step function from any state | 29 | — | — | — | — | — |
-| **total** | 4232 | 2238 | 1047 | 1033 | 1387 | 3100 |
+| **total** | 4234 | 2238 | 1049 | 1033 | 1389 | 3100 |
 
-Adequacy uses 2404 lines of the infrastructure, 166 of them not used by the denotational proof.
+Adequacy uses 2406 lines of the infrastructure, 168 of them not used by the denotational proof.
 
 Adequacy relates the denotational semantics of ISWIM, Clos5ᵀ and X86ᵀ to their machines. It turns `CompilerCorrect`, and the end-to-end theorem for the whole compiler, `compile-x86`, into statements about running programs (`proof/Adequacy/EndToEnd.agda`, `proof/Adequacy/GraphErr/EndToEnd.agda`). It is reported separately, because the denotational semantics can be taken as *the* semantics of a language, in which case adequacy is not needed; its sizes are internal information, not part of the comparison. It is an add-on to the denotational proof, so its total also counts the shared modules it imports that the denotational total does not already count (the observations and `GlobalizeOlder`, that globalize refers only to older definitions); the denotational total plus the adequacy total is then standalone, except for the infrastructure and for the machines, which adequacy reuses from the simulation proof and which are not counted again. The ISWIM rows are the untyped pipeline's proofs, unchanged; Clos5 is the Clos5ᵀ machine's, and X86ᵀ the X86ᵀ machine's, both direct in the graph model. The last column is the adequacy of the graph model with errors (for ISWIM, Clos5ᵀ and X86ᵀ, on errors, constants, answers and divergence), counted the same way against its own proof: the shared modules it uses that the errors column does not count, and the graph model's modules it reuses (`Adequacy.Common`).
 
 | adequacy (denotational side only) | graph model | graph model with errors |
 |---|---:|---:|
 | ISWIM | **653** | 790 |
-| Clos5 | 739 | — |
+| Clos5 | 715 | — |
 | X86ᵀ | **679** | 1215 |
 | well-formedness of compiled programs | 41 | — |
 | end to end | **33** | 125 |
 | simplify through the ISWIM machine | — | 30 |
 | shared modules not used by all four proofs, nor by the proof of its model | **69** | **69** |
 | the graph model's modules it uses | — | 52 |
-| **total** | **2214** | 2281 |
-| the CEK proof it derives Clos5ᵀ adequacy from (not in the total) | — | 2192 |
+| **total** | **2190** | 2281 |
+| the CEK proof it derives Clos5ᵀ adequacy from (not in the total) | — | 2126 |
 
-The CEK modules that adequacy with errors reaches only to derive Clos5ᵀ adequacy: `proof.Correctness.CEK.CastSim` (147), `proof.Correctness.CEK.CastSimLemmas` (48), `proof.Correctness.CEK.Clos5Common` (25), `proof.Correctness.CEK.Common` (30), `proof.Correctness.CEK.ConcretizeSim` (115), `proof.Correctness.CEK.DelaySim` (99), `proof.Correctness.CEK.EncloseSim` (106), `proof.Correctness.CEK.ExplicateSim` (106), `proof.Correctness.CEK.GlobalizeSim` (219), `proof.Correctness.CEK.LiftLocalsSim` (56), `proof.Correctness.CEK.OptimizeSim` (133), `proof.Correctness.CEK.PipelineSim` (32), `proof.Correctness.CEK.RCOSim` (150), `proof.Correctness.CEK.SelectSim` (111), `proof.Correctness.CEK.SimplifySim` (464), `proof.Semantics.CEK.Simulation` (1), `Semantics.CEK.Typed.CFG` (33), `Semantics.CEK.Typed.Clos2` (77), `Semantics.CEK.Typed.Clos3` (80), `Semantics.CEK.Typed.Clos4` (85), `Semantics.CEK.Typed.ISWIM` (75).
+The CEK modules that adequacy with errors reaches only to derive Clos5ᵀ adequacy: `proof.Correctness.CEK.CastSim` (144), `proof.Correctness.CEK.CastSimLemmas` (48), `proof.Correctness.CEK.Clos5Common` (11), `proof.Correctness.CEK.Common` (9), `proof.Correctness.CEK.ConcretizeSim` (115), `proof.Correctness.CEK.DelaySim` (99), `proof.Correctness.CEK.EncloseSim` (100), `proof.Correctness.CEK.ExplicateSim` (106), `proof.Correctness.CEK.GlobalizeSim` (219), `proof.Correctness.CEK.LiftLocalsSim` (55), `proof.Correctness.CEK.OptimizeSim` (121), `proof.Correctness.CEK.PipelineSim` (32), `proof.Correctness.CEK.RCOSim` (149), `proof.Correctness.CEK.SelectSim` (111), `proof.Correctness.CEK.SimplifySim` (464), `proof.Semantics.CEK.Simulation` (1), `Semantics.CEK.Typed.CFG` (33), `Semantics.CEK.Typed.Clos2` (75), `Semantics.CEK.Typed.Clos3` (78), `Semantics.CEK.Typed.Clos4` (83), `Semantics.CEK.Typed.ISWIM` (73).
 
 * **X86ᵀ adequacy is direct in both graph models** (internal information): soundness and a logical relation between the semantics of X86ᵀ and its CEK machine (`proof/Adequacy/X86*.agda`, 679 lines with 41 for the compiled programs' conditions; `proof/Adequacy/GraphErr/X86*.agda`, 1215 lines, with about 50 in its end to end for the compiled programs' conditions), against 1240 and 2085 for untyped X86 (now the untyped pipeline's alone). The relations follow the types: a register, slot or flag is related at the type the state type gives it, and the open closure agrees with its slot; values are related as the Clos5ᵀ machine's are (the graph model reuses its relation, `Clos5Values`, split from Clos5ᵀ adequacy). Adequacy holds for every X86ᵀ program; soundness needs a consistent table in which each definition's code depends only on the older definitions (the semantics gives each the older ones, as Clos5ᵀ's does), which the compiled programs satisfy (from `globalize-older` and the table lemmas of the graph-model proofs of rco, lift locals, explicate control and select). The end-to-end theorems for `compile-x86` come from ISWIM adequacy, `compile-x86-same` and X86ᵀ adequacy, and no longer from the CEK column. In the graph model with errors this also settles the pilot's open point: X86ᵀ's semantics writes registers non-strictly (only `callq` and `chk` strictly), and it is faithful to the machine (no change to it was needed).
 * **The adequacy of the graph model with errors for Clos5ᵀ is derived, not standalone.** It follows from ISWIM adequacy, its `Same` result for `compile` and the CEK column's end-to-end simulation (`PipelineSim`): the ISWIM machine on M and the Clos5ᵀ machine on `compile M` agree on every outcome (`proof/Adequacy/GraphErr/EndToEnd.agda`; with `Agree`, the end-to-end row). So its Clos5 row is —, and the CEK proof it relies on (the modules above) is shown in its own row, not in its total. A direct proof, a logical relation for Clos5ᵀ with errors as the untyped pipeline has for Clos5 (904 lines), would be about 1000 lines; keeping it derived is a choice made for now, and the comparison of the adequacy totals is not like for like.
@@ -103,7 +103,7 @@ Infrastructure reached by each graph model, and what adequacy adds:
 | abstract binding trees | 190 | 190 | 190 | 190 | — | — |
 | syntax lemmas (renaming, scoping, uses, substitution), list lookups | 519 | 418 | 418 | 418 | — | — |
 | base types, logical equivalence | 58 | 58 | 58 | 58 | — | — |
-| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 128 | 98 | 98 | 98 | 10 | 10 |
+| typed indices, lookup in typed lists, vectors (collecting, selecting, projecting) | 130 | 98 | 98 | 98 | 12 | 12 |
 | denotational framework | 375 | 350 | 375 | 350 | — | — |
 | graph model: values, consistency, machinery for any operators | 364 | 364 | 364 | 364 | — | — |
 | graph model: its operators | 623 | 623 | 474 | 474 | — | — |
@@ -111,7 +111,7 @@ Infrastructure reached by each graph model, and what adequacy adds:
 | graph model: semantics of intrinsically typed syntax | 235 | 137 | 188 | 90 | — | — |
 | small-step framework: transition systems, simulations | 273 | — | — | — | 127 | 273 |
 | runs of a step function from any state | 29 | — | — | — | 29 | 29 |
-| **total** | 3729 | 2238 | 3100 | 2042 | 166 | 312 |
+| **total** | 3731 | 2238 | 3100 | 2042 | 168 | 314 |
 
 The graph model with errors reuses these modules of the graph model's operators: `Framework.GraphModel.Continuity` (135), `Framework.GraphModel.DomainUtil` (15), `Framework.GraphModel.Ops` (324).
 
@@ -123,19 +123,19 @@ The lines a reader must audit to trust each style's theorems (see [Audit surface
 
 | audit surface (not in the totals) | lines | read for denotational: graph model | read for CEK machine + simulation | read for clocked interpreter + value relations | read for reduction semantics + simulation | read for adequacy | read for graph model with errors |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| languages, compiler passes, syntax, base types (shared) | 1244 | 1176 | 1212 | 1202 | 1244 | 1212 | 1212 |
+| languages, compiler passes, syntax, base types (shared) | 1241 | 1176 | 1209 | 1202 | 1241 | 1209 | 1209 |
 | graph model: domain, operators, semantics of each language | 401 | 401 | — | — | — | 401 | 135 |
-| simulation: small-step machines, transition systems | 717 | — | 717 | — | 326 | 367 | 367 |
+| simulation: small-step machines, transition systems | 707 | — | 707 | — | 324 | 365 | 365 |
 | interpreter: clocked interpreters, results | 410 | — | — | 410 | — | — | — |
-| reduction: reduction semantics, machines of the first-order languages, transition systems | 856 | — | 326 | — | 856 | 293 | 293 |
-| graph model with errors: domain, error-propagating operators, semantics of each language | 865 | 135 | 367 | — | 293 | 502 | 865 |
+| reduction: reduction semantics, machines of the first-order languages, transition systems | 854 | — | 324 | — | 854 | 291 | 291 |
+| graph model with errors: domain, error-propagating operators, semantics of each language | 863 | 135 | 365 | — | 291 | 500 | 863 |
 | graph model: theorem statements | 72 | 72 | — | — | — | — | — |
 | simulation: theorem statements | 48 | — | 48 | — | — | — | — |
 | interpreter: theorem statements | 52 | — | — | 52 | — | — | — |
 | reduction: theorem statements | 48 | — | — | — | 48 | — | — |
 | adequacy: theorem statements | 49 | — | — | — | — | 49 | — |
 | graph model with errors: theorem statements | 119 | — | — | — | — | — | 119 |
-| **total** | 4053 | **1649** | 1977 | 1664 | 2148 | 2029 | 2196 |
+| **total** | 4040 | **1649** | 1964 | 1664 | 2143 | 2024 | 2191 |
 
 The adequacy statements also use ρ₀ from the denotational ones (Theorems/Denotational.agda), not counted in its column.
 
@@ -218,7 +218,7 @@ Examples, not counted: 119 lines.
 | `Framework.Syntax.SyntaxUtil` | 6 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.Syntax.Uses` (+ proof/) | 44 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.VecSelect` (+ proof/) | 41 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
-| `Framework.VecUtil` | 10 | simulation, reduction, adequacy, adequacy with errors |
+| `Framework.VecUtil` (+ proof/) | 12 | simulation, reduction, adequacy, adequacy with errors |
 | `Framework.abt.AbstractBindingTree` | 14 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
 | `Framework.abt.Fold2` | 19 | graph model, adequacy, graph model with errors, adequacy with errors |
 | `Framework.abt.GSubst` | 7 | graph model, simulation, interpreter, reduction, adequacy, graph model with errors, adequacy with errors |
@@ -271,38 +271,38 @@ The typed pipeline against the preserved untyped one, column by column (from the
 
 | typed against untyped | denotational: graph model: untyped | denotational: graph model: typed | CEK machine + simulation: untyped | CEK machine + simulation: typed | clocked interpreter + value relations: untyped | clocked interpreter + value relations: typed | reduction semantics + simulation: untyped | reduction semantics + simulation: typed | graph model with errors: untyped | graph model with errors: typed |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| semantics of the languages | 492 | **450** | **655** | 684 | 467 | **442** | **639** | 1068 | **448** | 518 |
-| lemmas shared by the passes | — | — | — | 55 | — | — | — | — | — | — |
+| semantics of the languages | 492 | **450** | **655** | 674 | 467 | **442** | **639** | 1066 | **448** | 518 |
+| lemmas shared by the passes | — | — | — | 20 | — | — | — | — | — | — |
 | simplify | **342** | **342** | **574** | **574** | **640** | **640** | **716** | **716** | **348** | **348** |
-| cast insertion | — | 67 | — | 195 | — | 95 | — | 300 | — | 125 |
-| CC: enclose | 81 | **41** | 188 | **106** | 140 | **33** | 186 | **161** | 90 | **38** |
-| CC: optimize | 134 | **89** | 224 | **133** | 170 | **60** | **222** | 228 | 149 | **63** |
+| cast insertion | — | 67 | — | 192 | — | 95 | — | 300 | — | 125 |
+| CC: enclose | 81 | **41** | 188 | **100** | 140 | **33** | 186 | **161** | 90 | **38** |
+| CC: optimize | 134 | **89** | 224 | **121** | 170 | **60** | **222** | 228 | 149 | **63** |
 | CC: concretize | 141 | **67** | 182 | **115** | 127 | **42** | 157 | **155** | 134 | **69** |
 | CC: delay | 594 | **552** | 134 | **99** | 90 | **35** | 183 | **142** | 898 | **801** |
 | CC: globalize | 155 | **118** | **157** | 219 | **111** | 183 | **192** | 221 | 157 | **105** |
-| rco | **118** | 128 | 396 | **150** | 245 | **85** | 247 | **167** | 194 | **128** |
-| lift locals | 142 | **44** | 172 | **56** | 98 | **27** | 306 | **205** | 138 | **50** |
+| rco | **118** | 128 | 396 | **149** | 245 | **85** | 247 | **167** | 194 | **128** |
+| lift locals | 142 | **44** | 172 | **55** | 98 | **27** | 306 | **205** | 138 | **50** |
 | explicate control | 154 | **71** | 124 | **106** | 118 | **72** | 124 | **106** | 144 | **68** |
 | select instructions | 224 | **134** | 235 | **111** | 107 | **52** | 235 | **111** | 363 | **222** |
 | composition | 32 | **28** | **26** | 32 | **22** | 33 | **27** | **27** | **33** | 44 |
 | shared modules not used by all four proofs | — | — | 456 | **15** | 456 | **15** | 456 | **15** | 398 | — |
 | the graph model's meaning of the primitives | — | — | — | — | — | — | — | — | **34** | **34** |
-| **total** | 2609 | **2131** | 3523 | **2650** | 2791 | **1814** | 3690 | **3622** | 3528 | **2613** |
-| **total without cast insertion** | 2609 | **2064** | 3523 | **2455** | 2791 | **1719** | 3690 | **3322** | 3528 | **2488** |
+| **total** | 2609 | **2131** | 3523 | **2582** | 2791 | **1814** | 3690 | **3620** | 3528 | **2613** |
+| **total without cast insertion** | 2609 | **2064** | 3523 | **2390** | 2791 | **1719** | 3690 | **3320** | 3528 | **2488** |
 
 | adequacy, typed against untyped | graph model: untyped | graph model: typed | graph model with errors: untyped | graph model with errors: typed |
 |---|---:|---:|---:|---:|
-| **total** | 3234 | **2214** | 4338 | **2281** |
+| **total** | 3234 | **2190** | 4338 | **2281** |
 
-* **Like for like.** The untyped pipeline has no pass that inserts the checks: every semantics down to X86 checks kinds itself, and a compiler to real x86 would still need a check-insertion pass somewhere (near select, as *Essentials of Compilation*'s tag bits are). So the row to compare is the total without cast insertion. Like for like, the typed pipeline is smaller in every column: the graph model by 21% (2609 → 2064), the CEK proof by 30% (3523 → 2455), the interpreter by 38% (2791 → 1719), the reduction proof by 10% (3690 → 3322) and the graph model with errors by 29% (3528 → 2488). Counting cast insertion: 2131, 2650, 1814, 3622 and 2613. The two pipelines' targets differ: the untyped one ends at untyped X86, the typed one at X86ᵀ, which erases to it (see [Assurance](#assurance)).
-* **The effect of typing differs a lot by style.** The closure-conversion passes enclose to delay shrink, most in the interpreter (enclose 140 → 33, delay 90 → 35) and least in the reduction column (enclose 186 → 161, concretize 157 → 155; optimize even grows, 222 → 228): a reduction semantics substitutes values into typed terms, so its proofs keep the renaming and substitution lemmas, now at every type. Cast insertion costs the most there (300 lines, against 67 to 195), and its semantics row grows the most (639 → 1068: typed reductions and values for five languages, and the typed machines of Clos5ᵀ, Impᵀ, CFGᵀ and X86ᵀ that it shares with the CEK column). The reduction column gains least: 368 lines like for like.
-* **Lift locals is nearly the identity, and select is small.** Impᵀ's frame is typed by the context of the Monᵀ term, so lift locals keeps the variables as they are (44, 56, 27 and 50 lines, against 98 to 172; reduction 306 → 205, which still relates a reduction semantics by substitution to the frames of the Impᵀ machine). The slots of the frame are typed indices down to X86ᵀ, whose frame is CFGᵀ's, so select, which grew in every column when it had to assign levels and show frames large enough for untyped X86 (`SelectFacts`), is now smaller than the untyped pipeline's everywhere: graph model 224 → 133, CEK and reduction 235 → 111, interpreter 107 → 52, graph model with errors 363 → 222.
+* **Like for like.** The untyped pipeline has no pass that inserts the checks: every semantics down to X86 checks kinds itself, and a compiler to real x86 would still need a check-insertion pass somewhere (near select, as *Essentials of Compilation*'s tag bits are). So the row to compare is the total without cast insertion. Like for like, the typed pipeline is smaller in every column: the graph model by 21% (2609 → 2064), the CEK proof by 32% (3523 → 2390), the interpreter by 38% (2791 → 1719), the reduction proof by 10% (3690 → 3320) and the graph model with errors by 29% (3528 → 2488). Counting cast insertion: 2131, 2582, 1814, 3620 and 2613. The two pipelines' targets differ: the untyped one ends at untyped X86, the typed one at X86ᵀ, which erases to it (see [Assurance](#assurance)).
+* **The effect of typing differs a lot by style.** The closure-conversion passes enclose to delay shrink, most in the interpreter (enclose 140 → 33, delay 90 → 35) and least in the reduction column (enclose 186 → 161, concretize 157 → 155; optimize even grows, 222 → 228): a reduction semantics substitutes values into typed terms, so its proofs keep the renaming and substitution lemmas, now at every type. Cast insertion costs the most there (300 lines, against 67 to 192), and its semantics row grows the most (639 → 1066: typed reductions and values for five languages, and the typed machines of Clos5ᵀ, Impᵀ, CFGᵀ and X86ᵀ that it shares with the CEK column). The reduction column gains least: 370 lines like for like.
+* **Lift locals is nearly the identity, and select is small.** Impᵀ's frame is typed by the context of the Monᵀ term, so lift locals keeps the variables as they are (44, 55, 27 and 50 lines, against 98 to 172; reduction 306 → 205, which still relates a reduction semantics by substitution to the frames of the Impᵀ machine). The slots of the frame are typed indices down to X86ᵀ, whose frame is CFGᵀ's, so select, which grew in every column when it had to assign levels and show frames large enough for untyped X86 (`SelectFacts`), is now smaller than the untyped pipeline's everywhere: graph model 224 → 133, CEK and reduction 235 → 111, interpreter 107 → 52, graph model with errors 363 → 222.
 * **Globalize grows in the operational columns** (CEK 157 → 219, interpreter 111 → 183, reduction 192 → 221): the pass makes each term over the table of definitions built so far, typed by it, and the proofs must weaken it to the final table (`⊢-wk`, `Faithful` in `GlobalizeSim`). It shrinks in the two graph models (155 → 118, 157 → 105).
-* **Rco shrinks** in the operational columns (CEK 396 → 150, interpreter 245 → 85, reduction 247 → 167): there is no late code check to preserve, Monᵀ is monadic by construction, and typed terms are well scoped by construction, so the operational proofs no longer need `Scoped` and its 229 lines (`PipelineScope`), which leave the shared row (456 → 15; the closedness lemmas that cast insertion needs are used by all four typed proofs, and so not counted).
+* **Rco shrinks** in the operational columns (CEK 396 → 149, interpreter 245 → 85, reduction 247 → 167): there is no late code check to preserve, Monᵀ is monadic by construction, and typed terms are well scoped by construction, so the operational proofs no longer need `Scoped` and its 229 lines (`PipelineScope`), which leave the shared row (456 → 15; the closedness lemmas that cast insertion needs are used by all four typed proofs, and so not counted).
 * **Delay in the graph model** shrinks least (594 → 552; with errors 898 → 801): the relation still cannot be indexed by the recursive type `Any`; see [Typed intermediate languages (pilot)](#typed-intermediate-languages-pilot-superseded).
 * **The graph model with errors** was the one column that grew like for like (3529 → 3651) while the typed pipeline ended at untyped X86: select had to relate CFGᵀ, which checks only at `project`, to X86, which checks every operand (1349 lines, `Same`). Ending at X86ᵀ, select is ≃ (222) and the column is 29% smaller than the untyped one.
-* **Adequacy** (internal information): the graph model's 3234 → 2214; the graph model with errors' 4338 → 2281, but its Clos5ᵀ adequacy is derived from the CEK column (above), so that comparison is not like for like. X86ᵀ adequacy is direct in both (679 and 1215, against untyped X86's 1240 and 2085).
-* **The audit surface grows** in every style (graph model 1510 → 1649, CEK 1805 → 1977, interpreter 1619 → 1664, reduction 1729 → 2148, graph model with errors 1985 → 2196): the typed languages and semantics are larger to read than the untyped ones (X86ᵀ is 98 lines against X86's 48, and its semantics in each style is about the size of X86's), and the reduction column reads typed reductions and the typed machines it shares. The graph model's audit surface is now the smallest.
+* **Adequacy** (internal information): the graph model's 3234 → 2190; the graph model with errors' 4338 → 2281, but its Clos5ᵀ adequacy is derived from the CEK column (above), so that comparison is not like for like. X86ᵀ adequacy is direct in both (679 and 1215, against untyped X86's 1240 and 2085).
+* **The audit surface grows** in every style (graph model 1510 → 1649, CEK 1805 → 1964, interpreter 1619 → 1664, reduction 1729 → 2143, graph model with errors 1985 → 2191): the typed languages and semantics are larger to read than the untyped ones (X86ᵀ is 98 lines against X86's 48, and its semantics in each style is about the size of X86's), and the reduction column reads typed reductions and the typed machines it shares. The graph model's audit surface is now the smallest.
 
 ### The untyped pipeline (preserved)
 
@@ -595,8 +595,9 @@ The development is split, as in jsiek/AI-for-pl, into what must be read to trust
 | 2026-10-14 | X86ᵀ is the target of the typed pipeline (PR #58): typed select (CFGᵀ → X86ᵀ) proved in all five columns, ≃ in both graph models (the errors model's `Same` and its 1015-line boundary retired), equal results clock for clock in the interpreter; X86ᵀ semantics in each style (graph model 66, CEK and reduction 114, interpreter 110, graph model with errors 66); select 226 → 133, 313 → 111, 179 → 52, 313 → 111 and 1349 → 222, `SelectFacts` (37) retired. Untyped X86's semantics but its machine, and its adequacy, moved to `agda/Untyped/`; X86ᵀ adequacy direct in both graph models (679 and 1215, against 1240 and 2085 for X86); assurance, not in the totals: erasure to X86 keeps the meaning of every X86ᵀ program (CEK machines, PR #59) and select emits the instructions of select into X86. Graph model with errors 3776 → 2614 | 2131 | 2648 | **1818** | 3616 |
 | 2026-10-14 | every compiler-correctness relation with the source on the left and the target on the right, and every per-pass ≃ as ⟦src⟧ ≃ ⟦tgt⟧ (`R D V′` for delay, the simplify relations, the tables of the later passes); the ≃-sym detours this made unnecessary are gone, the interpreter's converses `_≽_` and `_≽s_` deleted; the CEK and reduction simplify simulations, which run from the target, take the converse of the flipped relation (simplify 343 → 342, 572 → 574, 644 → 640, 710 → 716, 349 → 348; graph model select 133 → 134). Graph model with errors 2614 → 2613 | 2131 | 2650 | **1814** | 3622 |
 | 2026-10-14 | delay's reflection relation in both graph models named the approximant logical relation (`R` → `ApproxLR`, `Obs` → `ApproxLRLayer`, the fuel tower `R′` → `ApproxLR≤`, `R′-irr` → `ApproxLR-depth-irrelevant`, the `R-…` lemmas → `ApproxLR-…`); no count changes | 2131 | 2650 | **1814** | 3622 |
-| 2026-10-15 | ISWIMμ pilot P0 (not in the totals): a typed ISWIM with iso-recursive types, no recursion construct and no errors, ISWIMμ → Clos4μ (enclose, optimize, concretize, delay) in the graph model and the CEK machines, in `agda/Mu/`; against the same rows of the typed pipeline 908 → 842 and 800 → 730, graph-model delay 552 → 524 with ApproxLR's depth index still load-bearing; see [ISWIMμ pilot](#iswimμ-pilot) | 2131 | 2650 | **1814** | 3622 |
-| 2026-10-15 | ISWIMμ pilot P1 (not in the totals): the back end, Clos5μ, Monμ, Impμ, CFGμ and the typed assembly language X86μ (no `chk`; a sum's case a pseudo-instruction), globalize to select, in the graph model and the CEK machines; row by row against the typed pipeline without simplify and cast insertion 1649 → 1543 and 1789 → 1655 (of the graph model's 106, 49 are X86μ's case); see [ISWIMμ pilot](#iswimμ-pilot) | 2131 | 2650 | **1814** | 3622 |
+| 2026-10-15 | the typed CEK machines (ISWIMᵀ, Clos2ᵀ–Clos5ᵀ) collect a tuple's values newest first in a vector, the tuple's length a reverse-append index (`_+ʳ_`, `_<><_` in `Framework/VecUtil.agda`, related vectors by `_<><₂_`), as in the ISWIMμ pilot, instead of in a list with an equation for its length: the semantics row 684 → 674 (reduction, which shares the Clos5ᵀ machine, 1068 → 1066), the lemmas shared by the passes 55 → 20 (`Common`'s length-equation lemmas gone, 30 → 9; `Clos5Common` 25 → 11), cast insertion 195 → 192, enclose 106 → 100, optimize 133 → 121, rco 150 → 149, lift locals 56 → 55; Clos5ᵀ adequacy in the graph model 739 → 715 (adequacy 2214 → 2190), the CEK proof the errors adequacy derives from 2192 → 2126; infrastructure +2 (`VecUtil` 10 → 12 with its `proof/` half). The interpreter (`evals` builds the vector in order), the reduction semantics (a tuple reduces in place) and the graph models collect no tuples, so they are unchanged (PR #67) | 2131 | 2582 | **1814** | 3620 |
+| 2026-10-15 | ISWIMμ pilot P0 (not in the totals): a typed ISWIM with iso-recursive types, no recursion construct and no errors, ISWIMμ → Clos4μ (enclose, optimize, concretize, delay) in the graph model and the CEK machines, in `agda/Mu/`; against the same rows of the typed pipeline 908 → 842 and 800 → 730, graph-model delay 552 → 524 with ApproxLR's depth index still load-bearing; see [ISWIMμ pilot](#iswimμ-pilot) | 2131 | 2582 | **1814** | 3620 |
+| 2026-10-15 | ISWIMμ pilot P1 (not in the totals): the back end, Clos5μ, Monμ, Impμ, CFGμ and the typed assembly language X86μ (no `chk`; a sum's case a pseudo-instruction), globalize to select, in the graph model and the CEK machines; row by row against the typed pipeline without simplify and cast insertion 1649 → 1543 and 1789 → 1655 (of the graph model's 106, 49 are X86μ's case); see [ISWIMμ pilot](#iswimμ-pilot) | 2131 | 2582 | **1814** | 3620 |
 
 **The typed pipeline (PRs #55, #56).** The third row from the end (the last two are the typed assembly language). The pilot (the two rows before it, see [Typed intermediate languages (pilot, superseded)](#typed-intermediate-languages-pilot-superseded)) recommended inserting the checks early; phase 1 (PR #56) defined the typed languages and passes from untyped ISWIM to X86, phase 2 ported each column, and phase 3 made the typed pipeline the main one: the untyped modules moved to `agda/Untyped/` (module prefix `Untyped.`), the typed ones took the main names (`Compiler/Typed/X` → `Compiler/X`, `proof/Correctness/Typed/<style>/X` → `proof/Correctness/<style>/X`, `Theorems/Typed/X` → `Theorems/X`), and the pilot's statements (`Theorems/Typed.agda`) and composition (`compileᵀ`) were retired, the main statements subsuming them. The modules both pipelines use stayed in `agda/`; to keep them independent of the untyped languages, the frames and tables of X86's semantics (`Semantics/Graph/Frames.agda`, `Semantics/GraphErr/Frames.agda`), the X86 interpreter's values (`Semantics/Interp/Values.agda`), the X86 machine's frames (into `Semantics/CEK/Values.agda`) and `block-at` (into `Language/X86.agda`) were split off, and ISWIM adequacy lost the untyped compiler's corollaries (now `Untyped/proof/Adequacy/ISWIMCompile.agda`). That moves the untyped totals by a few lines (2608 → 2610, 3526 → 3521, 2794 → 2795, 3689 → 3684); the lemmas about X86's case that both graph-model select proofs had (`case-core`) are now shared, in `proof/Semantics/Graph/X86.agda`.
 

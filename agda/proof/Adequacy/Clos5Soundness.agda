@@ -54,15 +54,14 @@ open import Data.Bool using (true; false)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Integer using (ℤ) renaming (_≟_ to _≟ℤ_)
-open import Data.List using (reverse)
-open import Data.List.Base using (reverseAcc)
+open import Framework.VecUtil using (_<><_)
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.Maybe using (just; nothing)
 open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Data.Vec using (Vec; []; _∷_; toList; lookup)
+open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Level using (Lift; lift; lower)
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
 open import Data.List using (replicate)
@@ -139,7 +138,7 @@ open Den T cT T-ν public
 ⟦ [] ⟧* ρ = []
 ⟦ M ∷ Ms ⟧* ρ = ⟦ M ⟧⁺ ρ ∷ ⟦ Ms ⟧* ρ
 
-rev𝒱 : List (Val Σ Any) → List (𝒫 Value) → List (𝒫 Value)
+rev𝒱 : ∀ {m} → Vec (Val Σ Any) m → List (𝒫 Value) → List (𝒫 Value)
 rev𝒱 [] Ds = Ds
 rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 
@@ -149,7 +148,7 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦 (callR f κ) D = 𝒦 κ (⋆ ⟨ ⋆ ⟨ car ⟨ 𝒱 f , ptt ⟩ , ⟨ cdr ⟨ 𝒱 f , ptt ⟩ , ptt ⟩ ⟩ , ⟨ D , ptt ⟩ ⟩)
 𝒦 (packL M γ κ) D = 𝒦 κ (dpair ⟨ D , ⟨ ⟦ M ⟧⁺ (𝓔 γ) , ptt ⟩ ⟩)
 𝒦 (packR c κ) D = 𝒦 κ (dpair ⟨ 𝒱 c , ⟨ D , ptt ⟩ ⟩)
-𝒦 (tupK vs Ms γ e κ) D = 𝒦 κ (𝒯L (rev𝒱 vs (D ∷ ⟦ Ms ⟧* (𝓔 γ))))
+𝒦 (tupK vs Ms γ κ) D = 𝒦 κ (𝒯L (rev𝒱 vs (D ∷ ⟦ Ms ⟧* (𝓔 γ))))
 𝒦 (getK i κ) D = 𝒦 κ (proj i ⟨ D , ptt ⟩)
 𝒦 (inlK κ) D = 𝒦 κ (inlD ⟨ D , ptt ⟩)
 𝒦 (inrK κ) D = 𝒦 κ (inrD ⟨ D , ptt ⟩)
@@ -170,9 +169,9 @@ rev𝒱 (v ∷ vs) Ds = rev𝒱 vs (𝒱 v ∷ Ds)
 𝒦-mono (callR f κ) D⊆ = 𝒦-mono κ (m2r callc-good (𝒱 f) D⊆)
 𝒦-mono (packL M γ κ) D⊆ = 𝒦-mono κ (m2l pair-good (⟦ M ⟧⁺ (𝓔 γ)) D⊆)
 𝒦-mono (packR c κ) D⊆ = 𝒦-mono κ (m2r pair-good (𝒱 c) D⊆)
-𝒦-mono (tupK vs Ms γ e κ) {D} {E} D⊆ = 𝒦-mono κ (𝒯L-mono _ _ (rev-mono vs ⟨ D⊆ , ⊆L-refl _ ⟩))
+𝒦-mono (tupK vs Ms γ κ) {D} {E} D⊆ = 𝒦-mono κ (𝒯L-mono _ _ (rev-mono vs ⟨ D⊆ , ⊆L-refl _ ⟩))
   where
-  rev-mono : ∀ vs {Ds Es} → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
+  rev-mono : ∀ {m} (vs : Vec _ m) {Ds Es} → Ds ⊆L Es → rev𝒱 vs Ds ⊆L rev𝒱 vs Es
   rev-mono [] s = s
   rev-mono (v ∷ vs) s = rev-mono vs ⟨ ⊆r , s ⟩
 𝒦-mono (getK i κ) D⊆ = 𝒦-mono κ (m1 (proj-good i) D⊆)
@@ -217,25 +216,14 @@ body-in N γ v d d∈ = fin₁ (ok cT N) (𝓔-ne γ) (𝒱-ne v) d d∈
 
 {- Tuples -------------------------------------------------------------------------------------}
 
-𝒱s : List (Val Σ Any) → List (𝒫 Value)
-𝒱s [] = []
-𝒱s (v ∷ vs) = 𝒱 v ∷ 𝒱s vs
+𝒱v-<>< : ∀ {m n} (vs : Vec (Val Σ Any) m) (ws : Vec _ n) → 𝒱v (vs <>< ws) ≡ rev𝒱 vs (𝒱v ws)
+𝒱v-<>< [] ws = refl
+𝒱v-<>< (v ∷ vs) ws = 𝒱v-<>< vs (v ∷ ws)
 
-𝒱v-toList : ∀ {n} (ws : Vec (Val Σ Any) n) → 𝒱v ws ≡ 𝒱s (toList ws)
-𝒱v-toList [] = refl
-𝒱v-toList (w ∷ ws) = cong (𝒱 w ∷_) (𝒱v-toList ws)
-
-𝒱s-reverseAcc : ∀ acc vs → 𝒱s (reverseAcc acc vs) ≡ rev𝒱 vs (𝒱s acc)
-𝒱s-reverseAcc acc [] = refl
-𝒱s-reverseAcc acc (v ∷ vs) = 𝒱s-reverseAcc (v ∷ acc) vs
-
-tuple-next-𝒮 : ∀ {Γ n j} vs (Ms : Vec (Tm Σ Γ Any) j) (γ : Env Σ Γ) (e : length vs Data.Nat.+ j ≡ n) κ
-  → 𝒮 (tuple-next vs Ms γ e κ) ⊆ 𝒦 κ (𝒯L (rev𝒱 vs (⟦ Ms ⟧* (𝓔 γ))))
-tuple-next-𝒮 vs [] γ e κ d d∈ =
-  subst (λ Ds → 𝒦 κ (𝒯L Ds) d)
-    (trans (𝒱v-toList (collected′ vs e)) (trans (cong 𝒱s (toList-collected vs e)) (𝒱s-reverseAcc [] vs))) d∈
-  where open import Framework.VecUtil using () renaming (collected to collected′)
-tuple-next-𝒮 vs (M ∷ Ms) γ e κ d d∈ = d∈
+tuple-next-𝒮 : ∀ {Γ m j} (vs : Vec _ m) (Ms : Vec (Tm Σ Γ Any) j) (γ : Env Σ Γ) κ
+  → 𝒮 (tuple-next vs Ms γ κ) ⊆ 𝒦 κ (𝒯L (rev𝒱 vs (⟦ Ms ⟧* (𝓔 γ))))
+tuple-next-𝒮 vs [] γ κ d d∈ = subst (λ Ds → 𝒦 κ (𝒯L Ds) d) (𝒱v-<>< vs []) d∈
+tuple-next-𝒮 vs (M ∷ Ms) γ κ d d∈ = d∈
 
 𝒯L-args : ∀ {Γ n} (Ms : Vec (Tm Σ Γ Any) n) ρ → 𝒯L (⟦ Ms ⟧* ρ) ⊆ 𝒯 n (⟦ Ms ⟧s[ T ] ρ)
 𝒯L-args [] ρ ⟨⟩ tt = tt
@@ -275,7 +263,7 @@ begin-⊆ (fun-ref f) γ κ = λ d d∈ → d∈
 begin-⊆ (pack L M) γ κ = λ d d∈ → d∈
 begin-⊆ (callc L M) γ κ = λ d d∈ → d∈
 begin-⊆ (lit B c) γ κ = λ d d∈ → d∈
-begin-⊆ (tuple Ms) γ κ d d∈ = 𝒦-mono κ (𝒯L-args Ms (𝓔 γ)) d (tuple-next-𝒮 [] Ms γ refl κ d d∈)
+begin-⊆ (tuple Ms) γ κ d d∈ = 𝒦-mono κ (𝒯L-args Ms (𝓔 γ)) d (tuple-next-𝒮 [] Ms γ κ d d∈)
 begin-⊆ (get i M) γ κ = λ d d∈ → d∈
 begin-⊆ (inl M) γ κ = λ d d∈ → d∈
 begin-⊆ (inr M) γ κ = λ d d∈ → d∈
@@ -292,7 +280,7 @@ step-⊆ (ret v (callL M γ κ)) refl = λ d d∈ → d∈
 step-⊆ (ret a (callR (pack (code f) e) κ)) refl = 𝒦-mono κ (call-⊆ f e a)
 step-⊆ (ret c (packL M γ κ)) refl = λ d d∈ → d∈
 step-⊆ (ret e (packR c κ)) refl = λ d d∈ → d∈
-step-⊆ (ret v (tupK vs Ms γ e κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ _ κ
+step-⊆ (ret v (tupK vs Ms γ κ)) refl = tuple-next-𝒮 (v ∷ vs) Ms γ κ
 step-⊆ (ret (tup ws) (getK i κ)) refl = 𝒦-mono κ λ d d∈ → ⟨ At-lookup i ws d∈ , 𝒱v-ne ws ⟩
 step-⊆ (ret v (inlK κ)) refl = λ d d∈ → d∈
 step-⊆ (ret v (inrK κ)) refl = λ d d∈ → d∈
@@ -339,7 +327,7 @@ halts (ret v (callL M γ κ)) () ans
 halts (ret v (callR f κ)) () ans
 halts (ret v (packL M γ κ)) () ans
 halts (ret v (packR c κ)) () ans
-halts (ret v (tupK vs Ms γ e κ)) () ans
+halts (ret v (tupK vs Ms γ κ)) () ans
 halts (ret v (getK i κ)) () ans
 halts (ret v (inlK κ)) () ans
 halts (ret v (inrK κ)) () ans

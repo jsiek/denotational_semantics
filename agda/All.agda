@@ -115,6 +115,7 @@ import proof.Framework.Syntax.SubstRel
 import proof.Framework.Syntax.Uses
 import proof.Framework.VecProj
 import proof.Framework.VecSelect
+import proof.Framework.VecUtil
 import proof.Framework.abt.ScopedTuple
 
 {- ---------------------------------------------------------------------------

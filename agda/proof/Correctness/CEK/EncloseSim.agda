@@ -23,26 +23,22 @@ open import Language.Typed.Type renaming (_≟_ to _≟F_)
 open import Language.Typed.ISWIM
 import Language.Typed.Clos2 as C2
 open import Compiler.Enclose
-open import Framework.VecUtil using (more)
+open import Framework.VecUtil using (_<><_)
 open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
-open import proof.Correctness.CEK.Common
-  using (collected≈; toList-collected; fromList-pw; Lock; same-stop; same-next; lock)
+open import proof.Framework.VecUtil using (_<><₂_)
+open import proof.Correctness.CEK.Common using (Lock; same-stop; same-next; lock)
 import Semantics.CEK.Typed.ISWIM as Src
 import Semantics.CEK.Typed.Clos2 as Tgt
 
 open import Data.Bool using (true; false)
 open import Data.Fin using (Fin)
 open import Data.Integer using (_≟_)
-open import Data.List using ([]; _∷_; length; reverse; _++_; [_])
-open import Data.List.Properties using (unfold-reverse; ++-assoc; ++-identityʳ)
-import Data.List.Relation.Binary.Pointwise as L
-open import Data.Nat using (_+_)
-open import Data.Product using (Σ-syntax; _×_; _,_)
-open import Data.Vec using (Vec; []; _∷_; lookup; map; toList; allFin)
+open import Data.List using ([]; _∷_)
+open import Data.Vec using (Vec; []; _∷_; lookup; map; allFin)
 open import Data.Vec.Properties using (tabulate-allFin; map-lookup-allFin)
-open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_; Pointwise-≡⇒≡)
+open import Data.Vec.Relation.Binary.Pointwise.Inductive as V using ([]; _∷_)
 open import Language.Prim using (sub; eq)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (yes; no; does)
@@ -67,9 +63,9 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   appL : ∀ {k M} {ρ₁ : Src.Env k} {ρ₂ κ₁ κ₂} → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → Src.appL M ρ₁ κ₁ ≈k Tgt.appL (enclose M) ρ₂ κ₂
   appR : ∀ {f g κ₁ κ₂} → f ≈ g → κ₁ ≈k κ₂ → Src.appR f κ₁ ≈k Tgt.appR g κ₂
-  tupK : ∀ {k n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {e : _ ≡ n} {e' κ₁ κ₂}
-    → L.Pointwise _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-    → Src.tupK vs Ms ρ₁ e κ₁ ≈k Tgt.tupK ws (encs Ms) ρ₂ e' κ₂
+  tupK : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {κ₁ κ₂}
+    → V.Pointwise _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
+    → Src.tupK vs Ms ρ₁ κ₁ ≈k Tgt.tupK ws (encs Ms) ρ₂ κ₂
   getK : ∀ {n i κ₁ κ₂} → κ₁ ≈k κ₂ → Src.getK {n} i κ₁ ≈k Tgt.getK i κ₂
   inlK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inlK κ₁ ≈k Tgt.inlK κ₂
   inrK : ∀ {κ₁ κ₂} → κ₁ ≈k κ₂ → Src.inrK κ₁ ≈k Tgt.inrK κ₂
@@ -120,33 +116,27 @@ module _ (P : C2.Tm 0 Any) where
   L₂ = Tgt.sem P
 
   {- evaluating the variables xs as the rest of a tuple -}
-  capture : ∀ {k j n} (xs : Vec (Fin k) j) vs ρ (e : length vs + j ≡ n) κ
-    → Σ[ V ∈ Vec _ n ] Star L₂ (Tgt.tuple-next vs (map C2.`_ xs) ρ e κ) (Tgt.ret (Tgt.tup V) κ)
-                     × toList V ≡ reverse vs ++ toList (map (lookup ρ) xs)
-  capture [] vs ρ e κ = _ , ε , trans (toList-collected vs e) (sym (++-identityʳ _))
-  capture (x ∷ xs) vs ρ e κ with capture xs (lookup ρ x ∷ vs) ρ (more {v = lookup ρ x} vs e) κ
-  ... | V , σ , t = V , refl ◅ refl ◅ σ ,
-    trans t (trans (cong (_++ _) (unfold-reverse (lookup ρ x) vs)) (++-assoc (reverse vs) [ _ ] _))
+  capture : ∀ {k j m} (xs : Vec (Fin k) j) (vs : Vec _ m) ρ κ
+    → Star L₂ (Tgt.tuple-next vs (map C2.`_ xs) ρ κ) (Tgt.ret (Tgt.tup (vs <>< map (lookup ρ) xs)) κ)
+  capture [] vs ρ κ = ε
+  capture (x ∷ xs) vs ρ κ = refl ◅ refl ◅ capture xs (lookup ρ x ∷ vs) ρ κ
 
-  tuple-next~ : ∀ {k n j vs ws} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {e : _ ≡ n} {e' κ₁ κ₂}
-    → L.Pointwise _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
-    → Src.tuple-next vs Ms ρ₁ e κ₁ ~ Tgt.tuple-next ws (encs Ms) ρ₂ e' κ₂
-  tuple-next~ {Ms = []} {e = e} {e'} rs er k = ret~ (tup≈ (collected≈ rs e e')) k
+  tuple-next~ : ∀ {k m j} {vs : Vec _ m} {ws : Vec _ m} {Ms : Vec _ j} {ρ₁ : Src.Env k} {ρ₂} {κ₁ κ₂}
+    → V.Pointwise _≈_ vs ws → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
+    → Src.tuple-next vs Ms ρ₁ κ₁ ~ Tgt.tuple-next ws (encs Ms) ρ₂ κ₂
+  tuple-next~ {Ms = []} rs er k = ret~ (tup≈ (rs <><₂ [])) k
   tuple-next~ {Ms = M ∷ Ms} rs er k = eval~ er (tupK rs er k)
 
   sim : ∀ {s₁ s₂} → s₁ ~ s₂ → Answers L₂ _~_ (Src.step s₁) s₂
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (V.lookup er x) k)
-  sim (eval~ {n} {M = lam N} {ρ₂ = ρ₂} {κ₂ = κ₂} er k)
-    with capture (allFin n) [] ρ₂ refl (Tgt.closK (enclose N) κ₂)
-  ... | V , σ , t =
-    steps (plus refl (subst (λ Ms → Star L₂ (Tgt.tuple-next [] Ms ρ₂ refl κ') (Tgt.ret (Tgt.tup V) κ')) (sym (tabulate-allFin C2.`_)) σ
-                      ◅◅ (refl ◅ ε)))
-          (ret~ (clo≈ (subst (_≈ρ_ _) (sym V≡) er)) k)
+  sim (eval~ {n} {M = lam N} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) =
+    steps (plus refl (subst (λ Ms → Star L₂ (Tgt.tuple-next [] Ms ρ₂ κ') (Tgt.ret (Tgt.tup (map (lookup ρ₂) (allFin n))) κ')) (sym (tabulate-allFin C2.`_))
+                       (capture (allFin n) [] ρ₂ κ') ◅◅ (refl ◅ ε)))
+          (ret~ (clo≈ (subst (_≈ρ_ _) (sym (map-lookup-allFin ρ₂)) er)) k)
     where κ' = Tgt.closK (enclose N) κ₂
-          V≡ = Pointwise-≡⇒≡ (fromList-pw V ρ₂ (L.≡⇒Pointwise-≡ (trans t (cong toList (map-lookup-allFin ρ₂)))))
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
   sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
-  sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ L.[] er k)
+  sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ [] er k)
   sim (eval~ {M = get i M} er k) = steps₁ refl (eval~ er (getK k))
   sim (eval~ {M = inl M} er k) = steps₁ refl (eval~ er (inlK k))
   sim (eval~ {M = inr M} er k) = steps₁ refl (eval~ er (inrK k))
@@ -158,7 +148,7 @@ module _ (P : C2.Tm 0 Any) where
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
   sim (ret~ r (appR (clo≈ er) k)) = steps₁ refl (eval~ (r ∷ er) k)
-  sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r L.∷ rs) er k)
+  sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r ∷ rs) er k)
   sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (V.lookup rs i) k)
   sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)
   sim (ret~ r (inrK k)) = steps₁ refl (ret~ (inr≈ r) k)

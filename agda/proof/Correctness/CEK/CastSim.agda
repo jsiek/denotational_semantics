@@ -32,7 +32,7 @@ open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 open import Framework.ListUtil using (_‼_; proj; args→list)
-open import Framework.VecUtil using (toVec; collected)
+open import Framework.VecUtil using (_<><_)
 open import proof.Correctness.CEK.CastSimLemmas using (length→has-length; δ?-nothing₁; δ?-nothing₂; proj-just-length)
 import Semantics.CEK.ISWIM as S
 import Semantics.CEK.Typed.ISWIM as T
@@ -43,16 +43,14 @@ open import Data.Bool using (true; false)
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; fromℕ<) renaming (zero to fz; suc to fs)
 import Data.Integer as Z
-open import Data.List using (List; []; _∷_; length; replicate; reverse)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺; Pointwise-length)
-open import Data.List.Properties using (length-reverse)
-open import Data.Nat.Properties using (+-identityʳ)
+open import Data.List using (List; []; _∷_; replicate; reverseAcc)
+open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; Pointwise-length)
 open import Data.Maybe using (just; nothing; map)
 open import Data.Nat using (ℕ; zero; suc; _<_; s≤s)
 import Data.Nat as N
 open import Data.Product using (_×_; Σ-syntax; _,_)
-open import Data.Vec using (Vec; []; _∷_; lookup; toList; fromList)
-open import Data.Vec.Properties using (toList∘fromList; length-toList)
+open import Data.Vec using (Vec; []; _∷_; lookup; toList)
+open import Data.Vec.Properties using (length-toList)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (yes; no; does)
 
@@ -82,9 +80,9 @@ data _≈k_ : S.Cont → T.Cont Any → Set where
   appL : ∀ {k k' M ρ ρ' κ κ'} {r : Fin k → Fin k'} (w : WS k M) → Env≈ r ρ ρ' → κ ≈k κ'
     → S.appL M ρ κ ≈k T.projK tfun (T.appL (cast r M w) ρ' κ')
   appR : ∀ {v f κ κ'} → v ≈ T.dyn fun f → κ ≈k κ' → S.appR v κ ≈k T.appR f κ'
-  tupK : ∀ {k k' n j vs vs' ρ ρ' κ κ'} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) {ws : WS-args k Ms}
-    {e : length vs' N.+ suc j ≡ n} → Pointwise _≈_ vs vs' → Env≈ r ρ ρ' → κ ≈k κ'
-    → S.tupK vs (args→list Ms) ρ κ ≈k T.tupK vs' (casts r Ms ws) ρ' e (T.injK (tup n) κ')
+  tupK : ∀ {k k' m j vs ρ ρ' κ κ'} {vs' : Vec _ m} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) {ws : WS-args k Ms}
+    → Pointwise _≈_ vs (toList vs') → Env≈ r ρ ρ' → κ ≈k κ'
+    → S.tupK vs (args→list Ms) ρ κ ≈k T.tupK vs' (casts r Ms ws) ρ' (T.injK _ κ')
   getK : ∀ {n} {i : Fin (suc n)} {κ κ'} → κ ≈k κ' → S.getK i κ ≈k T.projK (ttup n i) (T.getK i κ')
   inlK : ∀ {κ κ'} → κ ≈k κ' → S.inlK κ ≈k T.inlK (T.injK sum κ')
   inrK : ∀ {κ κ'} → κ ≈k κ' → S.inrK κ ≈k T.inrK (T.injK sum κ')
@@ -118,14 +116,11 @@ env-ext : ∀ {k k' ρ ρ' v v'} {r : Fin k → Fin k'} → Env≈ r ρ ρ' → 
 env-ext E r zero _ = _ , refl , r
 env-ext E r (suc x) (s≤s lt) = E x lt
 
-toList-toVec : ∀ {A : Set} {n} (xs : List A) (e : length xs ≡ n) → toList (toVec xs e) ≡ xs
-toList-toVec xs refl = toList∘fromList xs
-
-collected≈ : ∀ {n vs vs'} (e : length vs' N.+ 0 ≡ n) → Pointwise _≈_ vs vs'
-  → Pointwise _≈_ (reverse vs) (toList (collected vs' e))
-collected≈ {vs' = vs'} e rs = subst (Pointwise _≈_ _) (sym eqn) (reverse⁺ rs)
-  where eqn : toList (collected vs' e) ≡ reverse vs'
-        eqn = toList-toVec (reverse vs') (trans (length-reverse vs') (trans (sym (+-identityʳ _)) e))
+{- the values so far (newest first), reversed in front of the rest -}
+rev≈ : ∀ {m n vs us} {vs' : Vec _ m} {us' : Vec _ n} → Pointwise _≈_ vs (toList vs') → Pointwise _≈_ us (toList us')
+  → Pointwise _≈_ (reverseAcc us vs) (toList (vs' <>< us'))
+rev≈ {vs' = []} [] rs' = rs'
+rev≈ {vs' = _ ∷ _} (r ∷ rs) rs' = rev≈ rs (r ∷ rs')
 
 proj≈ : ∀ {n} (i : Fin n) {vs} {ws : Vec (T.Val Any) n} → Pointwise _≈_ vs (toList ws)
   → Σ[ v ∈ S.Val ] proj i vs ≡ just v × v ≈ lookup ws i
@@ -179,10 +174,10 @@ module _ (P : I.Tm 0 Any) where
   go : ∀ {i s₁ s s'} → Step L₂ s s' → Reach L₂ _~_ s₁ s' → Answers≺ L₂ R i (next s₁) s
   go = after≺ {j = 0}
 
-  tuple-next~ : ∀ {k k' n j vs vs' ρ ρ' κ κ'} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) (ws : WS-args k Ms)
-    {e : length vs' N.+ j ≡ n} → Pointwise _≈_ vs vs' → Env≈ r ρ ρ' → κ ≈k κ'
-    → Reach L₂ _~_ (S.tuple-next vs (args→list Ms) ρ κ) (T.tuple-next vs' (casts r Ms ws) ρ' e (T.injK (tup n) κ'))
-  tuple-next~ {j = zero} Nil _ {e} rs E κ = refl ▷ done (ret~ (tup≈ (collected≈ e rs)) κ)
+  tuple-next~ : ∀ {k k' m j vs ρ ρ' κ κ'} {vs' : Vec _ m} {r : Fin k → Fin k'} (Ms : Args (replicate j ■)) (ws : WS-args k Ms)
+    → Pointwise _≈_ vs (toList vs') → Env≈ r ρ ρ' → κ ≈k κ'
+    → Reach L₂ _~_ (S.tuple-next vs (args→list Ms) ρ κ) (T.tuple-next vs' (casts r Ms ws) ρ' (T.injK _ κ'))
+  tuple-next~ {j = zero} Nil _ rs E κ = refl ▷ done (ret~ (tup≈ (rev≈ rs [])) κ)
   tuple-next~ {j = suc j} (M ,, Ms) (w , ws) rs E κ = done (eval~ w E (tupK Ms rs E κ))
 
   sim : ∀ {i s₁ s₂} → s₁ ~ s₂ → Answers≺ L₂ R i (S.step s₁) s₂
