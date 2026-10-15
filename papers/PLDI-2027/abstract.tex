@@ -1,0 +1,29 @@
+%% The abstract, input by paper.tex. Numbers are from loc.py (ISWIMμ, the
+%% default report); keep them in sync.
+
+Denotational semantics promises compositional, equational reasoning about
+programs, yet mechanized compiler verification has been almost entirely
+operational. The mechanized denotational proofs that exist stop at a
+terminating source language, a first-order language, or a single pass,
+because a Turing-complete, higher-order language requires a semantics that
+accounts for divergence. We show that a denotational semantics based on
+graph models, in which a denotation is a set of finite input/output tables,
+meets this requirement. We prove correct, in Agda, a ten-pass compiler from
+a call-by-value $\lambda$-calculus with iso-recursive types, which has
+general recursion and divergence, through closure conversion, to a typed
+assembly language. Every intermediate language has a graph-model
+semantics, and most passes are proved by an equation between the
+denotations of a program before and after the pass. The exception is the
+step of closure conversion that lowers closures into code and environment
+pairs: its reflection direction needs a new kind of logical relation
+between two denotational semantics, the approximant logical relation,
+defined by recursion on the depth of a finite approximation of the
+target's meaning, because recursive types rule out recursion on types.
+Adequacy at both ends yields an end-to-end theorem about running code: the
+source and the compiled program return the same integer, or both diverge.
+To measure the cost, we prove the same compiler correct in three
+operational styles. The graph-model proofs of the passes total 1958 lines,
+between those for clocked interpreters (1653) and abstract machines (2258)
+and well below reduction semantics (3207); adequacy adds 1532. The graph
+model gives the smallest proofs of inlining, hoisting and conversion to a
+control-flow graph, and its cost concentrates in closure lowering.
