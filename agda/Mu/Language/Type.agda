@@ -1,9 +1,10 @@
 {-
 
   The types of ISWIMμ and of the typed intermediate languages of its
-  compiler (agda/Mu/): base types, functions, n-ary tuples, binary sums and
-  iso-recursive types μX.A, with type variables as de Bruijn indices (Ty
-  n has n free type variables). The body of a μ is contractive: it is
+  compiler (agda/Mu/): base types (Base of Framework/Primitives.agda:
+  Nat, Int, 𝔹, Unit, Void and Blame), functions, n-ary tuples, binary
+  sums and iso-recursive types μX.A, with type variables as de Bruijn
+  indices (Ty n has n free type variables). The body of a μ is contractive: it is
   not a variable nor another μ (no μX.X), so that unfolding is
   productive. Terms are indexed by closed types (Type = Ty 0); a
   context is a list of them.
