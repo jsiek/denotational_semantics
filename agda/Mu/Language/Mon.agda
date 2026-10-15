@@ -16,18 +16,18 @@ module Mu.Language.Mon where
 open import Framework.Primitives using (Base; base-rep; Int)
 open import Language.Prim using (Prim)
 open import Mu.Language.Type
-open import Mu.Language.Clos5 using (Sig; sig; Args) public
+open import Mu.Language.Clos5 using (DSig; sig; Args) public
 import Mu.Language.Clos5 as C
 open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_)
 
-data Atm (Σ : List Sig) (Γ : Ctx) : Type → Set where
+data Atm (Σ : List DSig) (Γ : Ctx) : Type → Set where
   var : ∀ {A} → Γ ∋ A → Atm Σ Γ A
   lit : (B : Base) → base-rep B → Atm Σ Γ (base B)
   ref : ∀ {Δ A B} → Σ ∋ sig Δ A B → Atm Σ Γ (code Δ A B)
 
-data Exp (Σ : List Sig) (Γ : Ctx) : Type → Set where
+data Exp (Σ : List DSig) (Γ : Ctx) : Type → Set where
   atm : ∀ {A} → Atm Σ Γ A → Exp Σ Γ A
   pack : ∀ {Δ A B} → Atm Σ Γ (code Δ A B) → Atm Σ Γ (tup Δ) → Exp Σ Γ (A ⇒ B)
   callc : ∀ {A B} → Atm Σ Γ (A ⇒ B) → Atm Σ Γ A → Exp Σ Γ B
@@ -44,8 +44,8 @@ data Exp (Σ : List Sig) (Γ : Ctx) : Type → Set where
 record Program (A : Type) : Set where
   constructor program
   field
-    {table} : List Sig
-    defs : All (λ s → Exp table (Args s) (Sig.cod s)) table
+    {table} : List DSig
+    defs : All (λ s → Exp table (Args s) (DSig.cod s)) table
     main : Exp table [] A
 
 {- renaming the variables of an atom -}

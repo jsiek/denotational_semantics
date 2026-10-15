@@ -23,23 +23,23 @@ module Mu.Language.CFG where
 
 open import Mu.Language.Type
 open import Framework.Membership using (_⊑_)
-open import Mu.Language.Imp using (Sig; sig; Args; Atm; Simple) public
+open import Mu.Language.Imp using (DSig; sig; Args; Atm; Simple) public
 open import Mu.Framework.AllUtil using (All)
 
 open import Data.List using (List; []; _∷_)
 
-data Tail (Σ : List Sig) (R : Type) (Bs : List Ctx) (Δ : Ctx) : Set where
+data Tail (Σ : List DSig) (R : Type) (Bs : List Ctx) (Δ : Ctx) : Set where
   return : Simple Σ Δ R → Tail Σ R Bs Δ
   seq : ∀ {Δ' A} → Δ' ⊑ Δ → Simple Σ Δ A → Tail Σ R Bs (A ∷ Δ') → Tail Σ R Bs Δ
   goto : Bs ∋ Δ → Tail Σ R Bs Δ
   case : ∀ {Δ' A B} → Atm Σ Δ (A ⊹ B) → Δ' ⊑ Δ → Bs ∋ (A ∷ Δ') → Bs ∋ (B ∷ Δ') → Tail Σ R Bs Δ
 
 {- the blocks of a body, newest first, each over the older ones -}
-data Blocks (Σ : List Sig) (R : Type) : List Ctx → Set where
+data Blocks (Σ : List DSig) (R : Type) : List Ctx → Set where
   [] : Blocks Σ R []
   _▷_ : ∀ {Bs Δ} → Blocks Σ R Bs → Tail Σ R Bs Δ → Blocks Σ R (Δ ∷ Bs)
 
-record Body (Σ : List Sig) (R : Type) (Δ : Ctx) : Set where
+record Body (Σ : List DSig) (R : Type) (Δ : Ctx) : Set where
   constructor body
   field
     {labels} : List Ctx
@@ -49,13 +49,13 @@ record Body (Σ : List Sig) (R : Type) (Δ : Ctx) : Set where
 record Program (A : Type) : Set where
   constructor program
   field
-    {table} : List Sig
-    defs : All (λ s → Body table (Sig.cod s) (Args s)) table
+    {table} : List DSig
+    defs : All (λ s → Body table (DSig.cod s) (Args s)) table
     main : Body table A []
 
 {- block l of the blocks, with the blocks older than it (those it may
    jump to) -}
-record Blk (Σ : List Sig) (R : Type) (Δ : Ctx) : Set where
+record Blk (Σ : List DSig) (R : Type) (Δ : Ctx) : Set where
   constructor blk
   field
     {older} : List Ctx

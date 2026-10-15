@@ -33,7 +33,7 @@ ext r Z = Z
 ext r (S x) = S (r x)
 
 {- a continuation that takes an atom, under more binders -}
-K : List Sig → Ctx → Type → Type → Set
+K : List DSig → Ctx → Type → Type → Set
 K Σ Δ A B = ∀ {Δ'} → Ren Δ Δ' → Atm Σ Δ' A → Exp Σ Δ' B
 
 rco : ∀ {Σ Γ Δ A} → Tm Σ Γ A → Ren Γ Δ → Exp Σ Δ A

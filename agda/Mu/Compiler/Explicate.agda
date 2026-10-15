@@ -24,7 +24,7 @@ open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map
 open import Data.List using (List; []; _∷_)
 
 {- a tail over the blocks made so far, and more blocks -}
-record Out (Σ : List Sig) (R : Type) (Bs : List Ctx) (Δ : Ctx) : Set where
+record Out (Σ : List DSig) (R : Type) (Bs : List Ctx) (Δ : Ctx) : Set where
   constructor out
   field
     {Bs'} : List Ctx
