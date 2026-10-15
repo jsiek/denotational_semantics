@@ -6,10 +6,10 @@ programs, and compiler correctness was among its first applications, yet
 verified compilers today are almost entirely operational. Denotational
 compiler proofs, on paper or mechanized, stop at a terminating or
 first-order source language, or compile to an abstract machine that keeps
-closures as primitive values and so avoids closure conversion. We show
-that a denotational semantics based on graph models, in which a denotation
-is a set of finite input/output tables, handles both divergence and
-closure conversion: we prove a ten-pass compiler correct from a call-by-value
+closures as primitive values and so avoids closure conversion. We use graph
+models, a denotational semantics in which a program denotes a set of
+finite input/output tables and a diverging program denotes the empty set,
+to prove a ten-pass compiler correct, from a call-by-value
 $\lambda$-calculus with iso-recursive types, which has general recursion
 and divergence, through closure conversion, to a typed assembly language.
 The proof is mechanized in Agda. Every intermediate language has a graph-model
