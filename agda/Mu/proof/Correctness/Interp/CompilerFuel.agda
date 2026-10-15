@@ -6,12 +6,16 @@
   clock for clock, and the end theorems compose (equiv-trans), from
   ISWIMμ to Clos4μ (compile₄), Clos5μ (compile), Monμ run as Clos5μ
   (compile-mon), Impμ, CFGμ and X86μ. A program is a closed term of any
-  type.
+  type; for a main of type Int, the interpreters of ISWIMμ and X86μ
+  stop with the same constant, or both diverge (compile-x86-const,
+  compile-x86-diverges), as in the other columns.
 
 -}
 
 module Mu.proof.Correctness.Interp.CompilerFuel where
 
+open import Framework.Primitives using (Int)
+open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
 open import Mu.Compiler.Enclose using (enclose)
@@ -37,6 +41,7 @@ open import Mu.proof.Correctness.Interp.LiftLocalsFuel using (lift-locals-correc
 open import Mu.proof.Correctness.Interp.ExplicateFuel using (explicate-correct)
 open import Mu.proof.Correctness.Interp.SelectFuel using (select-correct)
 
+open import Data.Integer using (ℤ)
 open import Data.List using ([])
 open import Data.Product using (_,_; proj₁; proj₂)
 
@@ -81,3 +86,12 @@ compile-error M = Equivalent.terminates (compile-correct M) o-error
 
 compile-diverges : ∀ {A} (M : Tm [] A) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (Clos5μᵢ.sem (compile M))
 compile-diverges M = Equivalent.diverges (compile-correct M)
+
+{- for a main of type Int, as the other columns state it -}
+
+compile-x86-const : ∀ (M : Tm [] (base Int)) (k : ℤ)
+  → Terminates (ISWIMμᵢ.sem M) (o-const Int k) ⇔ Terminates (X86μᵢ.sem (compile-x86 M)) (o-const Int k)
+compile-x86-const M k = Equivalent.terminates (compile-x86-correct M) (o-const Int k)
+
+compile-x86-diverges : ∀ (M : Tm [] (base Int)) → Diverges (ISWIMμᵢ.sem M) ⇔ Diverges (X86μᵢ.sem (compile-x86 M))
+compile-x86-diverges M = Equivalent.diverges (compile-x86-correct M)
