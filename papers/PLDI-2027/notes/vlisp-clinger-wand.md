@@ -15,9 +15,10 @@ Page numbers below are **preprint** page numbers (the number printed in the extr
 mapping to journal/LNCS pages is not verified page-by-page; for the LASC papers the preprints are
 typeset in the Kluwer style with "1{28", "1{78", "1{72" page ranges, consistent with an offset.
 
-**Not obtained:** Clinger 1984 (ACM DL returned 403; Semantic Scholar marks it CLOSED; no copy on
-Internet Archive). Everything said about Clinger 1984 below comes from **secondary descriptions in
-the VLISP/Wand papers** and is flagged as such.
+**Obtained later (2026-10-15, second pass):** Clinger 1984, from the author's PDF in
+`papers/PLDI-2027/related/clinger-1984.pdf` (a scan of the LFP '84 pages 356–364 with an OCR text
+layer, read with pdftotext). §2 below is now checked against it; the OCR of the semantic equations
+(Figures 1, 4, 5) is badly damaged, so formulas are paraphrased, not quoted.
 
 **Obtained later (2026-10-15):** the MITRE reports were distributed as DVI files through the Scheme
 Repository; the Indiana mirror `ftp.cs.indiana.edu/pub/scheme-repository/doc/pubs/vlisp/` is on the
@@ -249,16 +250,53 @@ only for representative cases (GSS p. 76: "only cases that appeared to us to be 
 
 ## 2. Clinger 1984, "The Scheme 311 Compiler: An Exercise in Denotational Semantics"
 
-**Primary source not seen** (ACM DL 403; no open copy found). The following is what the VLISP/Wand
-papers say about it; treat as secondary.
+**Primary source read (2026-10-15, second pass) [V]**, LFP '84 pp. 356–364 (printed page numbers).
+The OCR of the semantic equations is damaged, so formulas below are paraphrased, not quoted.
 
-- Target is a tree-structured byte code with a denotational semantics in the same domains as Scheme;
-  each instruction's denotation acts on registers + store (overview p. 16: "In the Scheme byte compiler,
-  for instance, we follow Clinger [3] in giving each instruction a denotation that may be regarded as
-  acting on four registers together with a store"). VLISP's bbc is "based on Clinger's target language"
-  (GSS p. 3), and bbc contains a primitive `<closure t>` instruction (see above). That Clinger's own
-  target has an equivalent closure-creating instruction is **likely but unverified** from the primary
-  source.
+- **What is proved.** "This paper describes and proves the correctness of a simple compiler algorithm
+  for Scheme, a statically scoped dialect of Lisp. The algorithm has been used as the basis for an
+  interactive compiler generating interpreted byte code" (p. 356). The source semantics is "a
+  simplified and updated version" of the standard (continuation) semantics of Scheme [Figure 1],
+  "fudged a bit to reflect the compiler's quirks" (right-to-left argument evaluation; primitive
+  operators compiled in line) (p. 356). Fluid variables and `eval` are omitted.
+- **Target.** "The Scheme 311 compiler algorithm as described here produces code for a hypothetical and
+  rather abstract Scheme machine." (p. 357). "The instructions of the Scheme machine are specified by
+  detailing a continuation semantics for each instruction [Figure 4]." (p. 359). Code segments are
+  elements of a domain P = E → E* → U_R → K → C, so "the Scheme machine has an accumulator capable of
+  holding an expressed value, a stack of expressed values, a register to hold the run-time environment,
+  and a register to hold the expression continuation." (p. 359). The instruction set of Figure 4
+  (p. 360) has `save`, `restore`, `invoke`, `fetch`, `lexical`, `set`, `setlex`, `push`, `op`, `if`,
+  `illegal` and a **`lambda` instruction** whose denotation builds a procedure value (an element of F)
+  from a code segment and the current run-time-environment register; the compiler clause for
+  `(lambda (I*) E)` emits `lambda (#I*)` around the compiled body (Figure 5, p. 362). So procedures
+  stay primitive in the target [V, read through the damaged OCR of Figures 4–5].
+- **Method.** One model: "Most of the correctness proof consists of trivial calculations. This is
+  possible because the meanings of target code instructions are expressed in the same language used to
+  express source meanings, and that language can be wielded as a calculus." (p. 356). Environments are
+  factored into compile-time and run-time parts (Figure 2, p. 359). "The proof is similar in spirit to
+  that of [29] [Wand, TOPLAS 1982], though the algorithm was designed and a compiler built before any
+  thought was given to a formal correctness proof." (p. 356).
+- **Correctness statement.** "Part B of the following theorem asserts that this code, when applied to a
+  random value ε in the accumulator, an empty stack, and a reasonable run-time environment, will yield
+  the standard meaning of the expression in the environment formed by composing the run-time and
+  compile-time environments. This establishes the algorithm's correctness." (p. 360). An equation
+  between the denotation of the compiled code and ℰ⟦E⟧(ρ_R ∘ ρ_C)κ in one model; there is no separate
+  machine semantics and no adequacy.
+- **Proof, mechanization.** "Sketch of proof: The proof proceeds by induction on E and E*." (p. 360);
+  "The remainder of the proof consists of similar calculations." (p. 361). Paper proof; no proof tool
+  is mentioned.
+- **How far down.** Only the abstract machine above. The algorithm "has been used in several
+  implementations including Scheme 311 Versions 2 through 4 [5], Scheme 84 [6], and a byte code
+  implementation for the Motorola 68000" (p. 363); these implementations are not verified.
+- **Own priority remark.** "This paper is the first in that line to prove the correctness of a usable
+  compiler for a real programming language." (p. 363). Store-level optimizations would need "a store
+  semantics and to perform a messy congruence proof [11]" (p. 362; [11] = Milne & Strachey).
+
+Secondary descriptions (consistent with the primary):
+
+- VLISP overview p. 16: "In the Scheme byte compiler, for instance, we follow Clinger [3] in giving each
+  instruction a denotation that may be regarded as acting on four registers together with a store";
+  VLISP's bbc is "based on Clinger's target language" (GSS p. 3).
 - Wand & Oliva 1992 (`lfp-92.txt`, p. 2): "In this approach, the target language was a sublanguage of
   the λ-calculus, designed to be closed under reduction. The target machine simply had to simulate the
   reduction of the target program. ... This approach was refined by Clinger [3] to prove the correctness
@@ -269,19 +307,15 @@ papers say about it; treat as secondary.
   before any thought was given to a formal correctness proof." [5, page 356]. GSS p. 28 attributes the main
   inductive lemma ("Clinger's Lemma") to Clinger and says its proof cases are "very similar in manner to
   Clinger's original proof [1]".
-- Method (secondary): a Wand-style proof — source and target share domains; correctness = equality of
-  denotations; structural induction on source syntax; paper-and-pencil.
+### Verdict — Clinger 1984 (primary source read)
 
-### Verdict — Clinger 1984 (from secondary sources; primary not seen)
-
-- performs closure conversion: **no (unverified from primary)** — no secondary source mentions any closure
-  representation pass; its descendant (VLISP bbc) has primitive closures.
-- target has primitive closures: **yes (unverified from primary)** — inferred from VLISP bbc being "based on
-  Clinger's target language" and having `<closure t>`.
-- mechanized: **no** (paper proof; consistent with 1984 and with Clinger's quoted remark; no claim of
-  mechanization anywhere).
-- how far down: to a denotationally specified byte-code/abstract machine (the target-language "λ-calculus
-  sublanguage" per Wand & Oliva); not to real assembly (unverified from primary).
+- performs closure conversion: **no** [V] — the target's `lambda` instruction builds procedure values.
+- target has primitive closures: **yes** [V] — Figure 4's `lambda` (read through damaged OCR).
+- mechanized: **no** [V] — a paper proof sketch by induction on expressions.
+- how far down: a "hypothetical and rather abstract Scheme machine" whose meaning is a continuation
+  semantics in the same domains as the source; not real assembly; no machine semantics, so no adequacy.
+- classification: denotational in the author's sense (meanings are elements of Scott–Strachey domains,
+  not terms up to convertibility), single-model.
 
 ---
 
@@ -392,7 +426,8 @@ language as part of a whole verified pipeline:
 - VLISP: whole system, Turing complete, denotational top proof, reaches (unverified) 68000/SPARC only via the
   interpreter; Scheme compiler target has primitive closures; PreScheme eliminates closures rather than
   converting them; not mechanized.
-- Clinger 1984: (secondary sources) target byte code with closures; paper proof.
+- Clinger 1984 (primary read): target is an abstract Scheme machine given by a continuation semantics,
+  with a closure-building `lambda` instruction; paper proof.
 - Wand 1991: the closest to an equational (not denotational; see §3) proof of closure conversion, but a single
   representation step for a tiny untyped language without recursion, target still λ-terms, paper proof.
 
