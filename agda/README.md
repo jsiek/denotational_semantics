@@ -109,10 +109,12 @@ other than `--without-K`, failing if it finds any.
   `Untyped/All.agda` imports it, and `All.agda` imports that.
 * `Mu/`: the ISWIMμ pilot, not in the totals: a typed ISWIM with
   iso-recursive types (no recursion construct, no errors) and its
-  closure-conversion passes,
+  compiler to the typed assembly language X86μ,
 
       ISWIMμ --CC: enclose--> Clos2μ --CC: optimize--> Clos2μ
              --CC: concretize--> Clos3μ --CC: delay--> Clos4μ
+             --CC: globalize--> Clos5μ --rco--> Monμ --lift locals--> Impμ
+             --explicate control--> CFGμ --select instructions--> X86μ
 
   proved in the graph model and the CEK machines
   (`papers/PLDI-2027/notes/iswim-mu-design.md`). `Mu/` mirrors this
