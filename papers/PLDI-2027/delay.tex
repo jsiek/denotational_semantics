@@ -140,11 +140,11 @@ a list of values rather than a single value.
     \pairv{U_e \mapsto (U_a \mapsto w)}{t} \in V
     \;\land\; U_e \neq [\,]
     \;\land\; U_e \subseteq \cdr(V)\\[0.5ex]
+  \mathsf{args}(V) & = & \{\, u \mid \entryin{U_a}{w}{V},\; u \in U_a \,\}\\[0.5ex]
   \callsto{V}{U}{W} & \iff &
+    U \subseteq \mathsf{args}(V) \;\land\;
     (\forall w \in W.\; \exists U_a.\; \entryin{U_a}{w}{V}
-      \land U_a \neq [\,] \land U_a \subseteq U)\\
-  & & {}\land\; (\forall u \in U.\; \exists U_a, w.\;
-      \entryin{U_a}{w}{V} \land u \in U_a)
+      \land U_a \neq [\,] \land U_a \subseteq U)
 \end{array}\\[5ex]
 \textbf{One layer of the relation} \quad
   (D, E \subseteq \Val \text{ source sets};\;
@@ -178,13 +178,30 @@ a list of values rather than a single value.
 \paragraph{The relation}
 Figure~\ref{fig:alr} defines the approximant logical relation
 $D \ALR V$, which relates a source set $D$ to a finite list $V$ of
-target values. A \emph{batch of calls} $\callsto{V}{U}{W}$ records that
-each result $w$ in the finite list $W$ comes from an entry
-$\pairv{U_e \mapsto (U_a \mapsto w)}{t}$ of $V$, a code entry
-paired with an environment, whose environment inputs $U_e$ are
-among the environments $\cdr(V)$ that $V$ itself provides and whose
-argument inputs $U_a$ are among the arguments $U$; and that each
-argument in $U$ is used by such an entry. One layer ${\trianglerighteq^{Q}}$ of
+target values. Its building block is the notion of an entry that a
+call can use. A target closure is a set of pairs
+$\pairv{u}{t}$ of code and environment, and the code $u$, a curried
+function, has entries of the form $U_e \mapsto (U_a \mapsto w)$:
+given the environments $U_e$, it returns a function that maps the
+arguments $U_a$ to $w$. We write $\entryin{U_a}{w}{V}$ when $V$
+contains such a pair \emph{and} the environments $U_e$ are among the
+environments $\cdr(V)$ that $V$ itself provides. The second condition
+is what makes the relation sound in the presence of junk: a code entry
+for an environment that the program never supplies, such as the entry
+for $x{=}0$ in the example above, is not usable. Because a call takes
+the code from $\car$ and the environment from $\cdr$, the code and the
+environment of a usable entry may come from different pairs of $V$, and
+the definition allows that.
+
+A \emph{batch of calls} $\callsto{V}{U}{W}$ then says two things, and
+they have different jobs. The second conjunct says that each result $w$
+in $W$ is produced by a usable entry of $V$ whose arguments are among
+$U$; this is what the batch is about. The first conjunct,
+$U \subseteq \mathsf{args}(V)$, says that $U$ contains only arguments
+that some usable entry of $V$ takes. It does not restrict which results
+appear; it keeps the arguments small. Without it, $U$ could contain
+values deeper than $V$, and the recursion below would not be well
+founded. One layer ${\trianglerighteq^{Q}}$ of
 the relation has four clauses: the constants of $V$ are in $D$; if $V$
 is nonempty, so is $D$; every batch of calls of $V$ on arguments
 related to a source set $E$ produces results related to $D \app E$; and
@@ -193,8 +210,9 @@ third clause is the only place where $\car$ and $\cdr$ meet, and they
 meet inside the finite list $V$.
 
 The definition is by recursion on the depth of $V$: the arguments $U$
-and the results $W$ of a batch of calls are strictly shallower than
-$V$, and so are its projections. The index $k$ of ${\ALR_k}$ is only a
+of a batch of calls are strictly shallower than $V$ because
+$U \subseteq \mathsf{args}(V)$, the results $W$ are because each comes
+from an entry of $V$, and so are the projections of $V$. The index $k$ of ${\ALR_k}$ is only a
 termination device: any index that bounds the depth of $V$ gives the
 same relation (Lemma~\ref{lem:depth-irrelevant}), so we may fold and
 unfold ${\ALR}$ as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$ directly.
