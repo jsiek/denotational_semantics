@@ -8,18 +8,14 @@
 
 Proving a compiler correct is one of the oldest applications of formal
 semantics. \citet{McCarthyPainter67} proved correct a compiler for
-arithmetic expressions in 1967, and \citet{MilnerWeyhrauch72} had a
-machine check the correctness proof of a compiler for a small Algol-like
-language five years later. In the 1970s, the denotational semantics of
+arithmetic expressions in 1967, and \citet{MilnerWeyhrauch72} proved correct a compiler for a small Algol-like language, in Scott's logic of computable functions, five years later. In the 1970s, the denotational semantics of
 Scott and Strachey offered an especially clean foundation for such
 proofs. The meaning of a program is a mathematical object, so a compiler
 pass is correct when the meaning of a program before the pass equals its
-meaning afterward, and the proof is equational reasoning. \citet{Polak81} used this recipe, together with a
-mechanical verifier, on a compiler for a subset of Pascal;
+meaning afterward, and the proof is equational reasoning. \citet{Polak81} used this recipe on a compiler for a subset of Pascal;
 \citet{Clinger84} used it to prove correct a compiler for Scheme; and
 Guttman, Ramsdell, and Wand \citeyearpar{VLISP95} carried it into
-VLISP, a verified implementation of Scheme that went down to byte code,
-though on paper rather than in a proof assistant.
+VLISP, a verified implementation of Scheme that went down to byte code.
 
 Verified compilers today look different. CompCert \citep{Leroy09},
 CakeML \citep{CakeML14} and CertiCoq \citep{CertiCoq19} are all proved
@@ -74,8 +70,7 @@ such as the interaction trees of \citet{XiaITrees20} and the
 compositional verification of \citet{Cheng26}, so there are no closures
 to convert. Others have targets in which closures remain primitive
 values: \citet{BentonHur09} relate a domain-theoretic semantics to a
-machine in a single pass, and the paper proofs of \citet{Clinger84} and
-VLISP do the same for Scheme. We know of no denotational proof of
+machine in a single pass, and the proofs of \citet{Clinger84} and VLISP do the same for Scheme. We know of no denotational proof of
 closure conversion for a language with general recursion that both
 preserves and reflects divergence.
 
@@ -87,8 +82,7 @@ combinator, so \iswim\ has general recursion and admits divergence. The
 compiler has ten passes: a source-level simplifier, four passes that
 implement closure conversion, and five that bring the program down to
 assembly (making functions global, removing complex operands, lifting
-locals, making control flow explicit, and selecting instructions). The
-proof uses only Agda's standard library and no postulates. Every
+locals, making control flow explicit, and selecting instructions).  Every
 language in the compiler, from \iswim\ to assembly, has a denotational
 semantics, and the correctness theorem is that the source program and
 the compiled program stop with the same constant, or both diverge.
@@ -100,10 +94,7 @@ meaning of a function is a set of tables, each table a finite list of
 input--output entries, and the meaning of an application collects the
 outputs of the tables whose inputs are covered by the meaning of the
 argument. A program that diverges has no evidence to offer, so its
-meaning is the empty set. The model is elementary enough to formalize
-with sets and inductive definitions, and it was used by Siek
-\citeyearpar{Siek17} to give a mechanized account of adequacy and to
-prove a function inliner correct. In that setting every pass is an
+meaning is the empty set. The model is elementary, needing only sets and inductive definitions, and it was used by Siek \citeyearpar{Siek17} to prove adequacy and the correctness of a function inliner. In that setting every pass is an
 equation between sets, and most passes of our compiler are proved
 exactly that way, one language construct at a time.
 
