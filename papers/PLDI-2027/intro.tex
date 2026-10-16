@@ -100,7 +100,9 @@ call-by-value $\lambda$-calculus with iso-recursive types, which we call
 \iswim, through closure conversion, to a typed assembly language, and
 we check every step in Agda. Recursive types let us write the call-by-value fixed-point
 combinator, so \iswim\ has general recursion and admits divergence. The
-compiler has ten passes: a source-level simplifier, four passes that
+compiler has ten passes: a source-to-source optimizer modeled on the cp0 pass of
+Chez Scheme \citep{WaddellDybvig97}, which inlines functions and folds
+constants, then four passes that
 implement closure conversion, and five that bring the program down to
 assembly (making functions global, removing complex operands, lifting
 locals, making control flow explicit, and selecting instructions).  Every
@@ -177,8 +179,7 @@ proof is smaller than the proofs using abstract machines (2,258 lines) and reduc
 semantics (3,207 lines) and larger than the proof using clocked
 interpreters (1,653 lines), but the total hides the more interesting
 story. Where a pass leaves program values at the same level of
-abstraction, equational reasoning wins: the denotational proof for the
-simplifier takes 360 lines against 584 to 715 for the others. Where a
+abstraction, equational reasoning wins: the denotational proof for the source optimizer takes 360 lines against 584 to 715 for the others. Where a
 pass changes how closures are represented, the denotational proof loses:
 delay takes 524 lines against 35 to 139.
 
