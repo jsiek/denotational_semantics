@@ -134,6 +134,7 @@ This section is a working tool for the "Where this fits" subsection of the intro
 
 ## 5. Evaluation: comparison with operational approaches (RQ3)
 - **Setup.** The same compiler proved with CEK machines and simulations, clocked interpreters with value relations, and reduction semantics with simulations, each a best effort. These are the baseline, not contributions.
+- **Prior comparisons of semantic styles** (`related-work.md` §1.3), to be cited here and in §8, and the reason the claim is narrow: Kahn, Hoffmann and Li 2025 (three operational styles, one compilation to a K machine, Agda, a table of proof sizes: small-step completeness is the costly part), Owens et al. 2016 (relational against functional big-step on one phase, 43 against 18 lines), and Leroy and Grall's folklore that big-step suits compiler proofs. Ours differs in scale (a ten-pass compiler to assembly) and in including a denotational style.
 - **Accounting rules:**
   - semantics, per-pass proofs and compositions are counted;
   - infrastructure is counted by use and reported separately;
@@ -175,6 +176,7 @@ The "not so closely related" work, ordered by tier (number of K1, K2a, K2b, K3 m
 - **Not compiler proofs, so outside the tiers:**
   - graph and filter models and their mechanizations: Plotkin, Scott, Engeler, Barendregt–Coppo–Dezani, Siek 2017 and PLFA (third person), and the mechanized domain theory of Benton–Kennedy–Varming, de Jong–Escardó and Mosses;
   - relations for adequacy versus relations between two denotations: Reynolds 1974 (the tower), Pitts, Milne–Strachey, Stoy, Mulmuley, Meyer–Wand, Filinski, the step-indexed and guarded alternatives, and Martin-Löf, Winskel and Abramsky for finite-element indexing in adequacy proofs; this paragraph carries the claim for the approximant logical relation, and is the place for the authors' remarks on why such relations are hard (`related-work.md` §1.1: non-monotone fixed points, reflexive domains, existence "an open question");
+  - comparisons of semantic styles for compiler proofs: Kahn–Hoffmann–Li 2025, Owens et al. 2016, Leroy–Grall 2009, Leroy 2010, Knothe–Bringmann 2026 (small-step and big-step in one CompCert pipeline, the mixed-semantics idea of §7), Martin and Toal 1991;
   - adequacy for machines and assembly beyond the two named in the introduction (the decoder DSL, guarded interaction trees);
   - game semantics (Ghica; CompCertO's interfaces) as a contrast.
 
