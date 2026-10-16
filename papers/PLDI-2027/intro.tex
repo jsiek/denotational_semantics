@@ -8,19 +8,20 @@
 
 Proving a compiler correct is one of the oldest applications of formal
 semantics. \citet{McCarthyPainter67} proved correct a compiler for
-arithmetic expressions in 1967, and \citet{MilnerWeyhrauch72} proved correct a compiler for a small Algol-like language, in Scott's logic of computable functions, five years later. In the 1970s, the denotational semantics of
-Scott and Strachey offered an especially clean foundation for such
-proofs. The meaning of a program is a mathematical object, so a compiler
-pass is correct when the meaning of a program before the pass equals its
-meaning afterward, and the proof is equational reasoning. \citet{Polak81} used this recipe on a compiler for a subset of Pascal;
-\citet{Clinger84} used it to prove correct a compiler for Scheme; and
+arithmetic expressions in 1967, and \citet{MilnerWeyhrauch72} proved
+correct a compiler for a small Algol-like language, in Scott's logic of
+computable functions, five years later. In the 1970s, the denotational
+semantics of Scott and Strachey offered an especially clean foundation
+for such proofs. The meaning of a program is a mathematical object, so a
+compiler pass is correct when the meaning of a program before the pass
+equals its meaning afterward, and the proof is equational reasoning.
+\citet{Polak81} used this recipe on a compiler for a subset of Pascal,
+\citet{Clinger84} used it to prove correct a compiler for Scheme, and
 Guttman, Ramsdell, and Wand \citeyearpar{VLISP95} carried it into
 VLISP, a verified implementation of Scheme that went down to byte code.
-
-Verified compilers today look different. CompCert \citep{Leroy09},
-CakeML \citep{CakeML14} and CertiCoq \citep{CertiCoq19} are all proved
-correct with operational semantics, using simulations and step-indexed
-logical relations.
+In all of these, either the source language is first-order or the
+target machine supports closures directly, so none of them had to
+perform closure conversion.
 
 A compiler for a higher-order language needs a pass that a compiler for
 C does not: closure conversion. A function that mentions variables from
@@ -33,37 +34,30 @@ that the rest of the compiler never sees a function value. It is the
 step that turns functions into data, so a proof that it is correct must
 relate two very different views of what a function is.
 
-The notable exception to the operational trend is \citet{Chlipala07}, who
-built, in Coq, a compiler from the simply typed $\lambda$-calculus to
-assembly language, with a denotational semantics for every intermediate
-language, including the pass that performs closure conversion. His
-source language, however, has no recursion, so every program terminates
-and its denotation is an ordinary Coq function. When \citet{Chlipala10}
-next built a compiler for an untyped language with general recursion, he
-switched to operational semantics, explaining that his earlier approach
-``cannot be applied directly to Turing-complete programming languages.''
-
-The obstacle is divergence. A correct compiler must neither lose a
-program's answers nor invent new ones, and in particular it must compile
-a diverging program to a diverging program. A correctness theorem
-therefore has two halves. \emph{Preservation} says that whatever the
-source program computes, the compiled program computes.
+Denotational proofs of closure conversion have run into the same
+obstacle again and again: divergence. A correct compiler must neither
+lose a program's answers nor invent new ones, and in particular it must
+compile a diverging program to a diverging program. A correctness
+theorem therefore has two halves. \emph{Preservation} says that whatever
+the source program computes, the compiled program computes.
 \emph{Reflection} says the converse: whatever the compiled program
 computes, the source program computes, so a program that diverges is not
-compiled into one that terminates. Preservation is the easy half.
-Reflection is where denotational proofs of closure conversion have
-stalled. After closure conversion, a function is no longer a function
-but a pair of code and environment, and the target language contains
-many such pairs that no source function produces. \citet{Chlipala07}
-observed that the target denotations ``allow more behavior'' than the
-source and sidestepped the problem with types, which is possible only
-because his source language is total.
+compiled into one that terminates. Preservation is the easy half;
+reflection is the hard one, because after closure conversion the target
+language contains many code--environment pairs that no source function
+produces. \citet{Chlipala07} built, in Coq, a compiler from the simply
+typed $\lambda$-calculus to assembly language with a denotational
+semantics for every intermediate language, including the target of
+closure conversion. He observed that the target denotations ``allow more
+behavior'' than the source and sidestepped the problem with types, which
+works because his source language has no recursion: every program
+terminates, and its denotation is an ordinary Coq function.
 
-The nearest misses in the literature fall on one side of this split or
-the other. \citet{Nielsen00} gave a denotational proof, using
-domain-theoretic semantics for both languages, that defunctionalization
-preserves the meaning of programs in a simply typed language with
-recursive functions. His relation is indexed by types and relates a
+With recursion, the denotational attempts stop short. \citet{Nielsen00}
+gave a denotational proof, using domain-theoretic semantics for both
+languages, that defunctionalization, a close cousin of closure
+conversion, preserves the meaning of programs in a simply typed language
+with recursive functions. His relation is indexed by types and relates a
 diverging source program to every target program, which lets a
 fixed-point induction prove that terminating programs keep their meaning
 but says nothing in the other direction. Nielsen leaves that direction
@@ -73,19 +67,28 @@ complete proof, but with an operational semantics for the source
 language and a denotational one only for the first-order target, and
 they report that they ``know of no other proofs of correctness (that is,
 both directions) for ordinary or CFA-based defunctionalization in the
-presence of recursion.'' \citet{PottierGauthier06} proved that untyped
-defunctionalization preserves convergence and divergence, again with
-operational semantics.
+presence of recursion.''
 
-Denotational proofs that do cover divergence have avoided closure
-conversion in one of two ways. Some have first-order source languages,
-such as the interaction trees of \citet{XiaITrees20} and the
-compositional verification of \citet{Cheng26}, so there are no closures
-to convert. Others have targets in which closures remain primitive
-values: \citet{BentonHur09} relate a domain-theoretic semantics to a
-machine in a single pass, and the proofs of \citet{Clinger84} and VLISP do the same for Scheme. We know of no denotational proof of
-closure conversion for a language with general recursion that both
-preserves and reflects divergence.
+Operational semantics, meanwhile, carried the day.
+\citet{PottierGauthier06} proved that untyped defunctionalization
+preserves both convergence and divergence by a simulation between
+operational configurations. When \citet{Chlipala10} next built a
+compiler for an untyped language with general recursion, he switched to
+operational semantics, explaining that his earlier approach ``cannot be
+applied directly to Turing-complete programming languages.'' The large
+verified compilers for higher-order languages are operational: CakeML
+\citep{CakeML14} proves its closure conversion with a clocked functional
+big-step semantics, and CertiCoq \citep{CertiCoq19} proves its with
+step-indexed logical relations. CompCert \citep{Leroy09}, whose source
+language is first-order, set the standard for the simulation proofs that
+most of this work follows. The denotational proofs that do cover
+divergence avoid closure conversion: some have first-order source
+languages, such as the interaction trees of \citet{XiaITrees20} and the
+compositional verification of \citet{Cheng26}, and others, such as the
+proof of \citet{BentonHur09}, compile to a machine in which closures
+remain primitive values. We know of no denotational proof of closure
+conversion for a language with general recursion that both preserves
+and reflects divergence.
 
 This paper gives such a proof. We prove correct a compiler from a
 call-by-value $\lambda$-calculus with iso-recursive types, which we call
