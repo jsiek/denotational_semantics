@@ -20,7 +20,20 @@ VLISP, a verified implementation of Scheme that went down to byte code.
 Verified compilers today look different. CompCert \citep{Leroy09},
 CakeML \citep{CakeML14} and CertiCoq \citep{CertiCoq19} are all proved
 correct with operational semantics, using simulations and step-indexed
-logical relations. The notable exception is \citet{Chlipala07}, who
+logical relations.
+
+A compiler for a higher-order language needs a pass that a compiler for
+C does not: closure conversion. A function that mentions variables from
+its enclosing scope is a \emph{closure}, code bundled with the values of
+its free variables, but machine code has nothing of the sort. Closure
+conversion therefore replaces each closure with an ordinary pair of a
+code pointer and an environment, and each call with a step that takes
+the code and the environment out of the pair and jumps to the code, so
+that the rest of the compiler never sees a function value. It is the
+step that turns functions into data, so a proof that it is correct must
+relate two very different views of what a function is.
+
+The notable exception to the operational trend is \citet{Chlipala07}, who
 built, in Coq, a compiler from the simply typed $\lambda$-calculus to
 assembly language, with a denotational semantics for every intermediate
 language, including the pass that performs closure conversion. His
