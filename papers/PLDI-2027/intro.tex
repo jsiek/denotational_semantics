@@ -115,11 +115,25 @@ of \citet{Plotkin93}, \citet{Scott76} and \citet{Engeler81}. The
 meaning of a program is a set of finite pieces of evidence about its
 behavior. The meaning of a function is a set of input--output entries,
 and the meaning of an application collects the outputs of the entries
-whose input are covered by the meaning of the argument. A program that
+whose inputs are covered by the meaning of the argument. A program that
 diverges has no evidence to offer, so its meaning is the empty
-set. The model is elementary, needing only sets and inductive
-definitions, and the model was used by Siek \citeyearpar{Siek17} to
-prove adequacy and the correctness of a function inliner.
+set. We chose a graph model because it is elementary: a denotation is just a
+set, and the model needs none of the complete partial orders, continuous
+functions, and inverse limits of traditional domain theory. The difference shows when the semantics is mechanized. The core of our
+graph model (its values, consistency, and the generic machinery for
+operators) takes 364 lines of Agda. To measure the alternative, we built
+a pilot of the same semantics on Scott domains, for the source language,
+the first intermediate language, and the first pass of closure
+conversion of an earlier, untyped version of our compiler, using
+de Jong's domain theory in the TypeTopology library
+\citep{TypeTopology}. The pilot's own constructions (sums, lifting,
+products and exponentials of dcpos, locally continuous functors, and the
+solution of the domain equation as a bilimit) take 847 lines of Agda, on
+top of 5,434 lines of TypeTopology's domain theory, and they assume propositional truncation, function extensionality, and
+propositional extensionality, none of which the graph model needs. \citet{BBKV10} likewise report about 4,400 lines of
+Coq for their library of domain theory.
+Siek \citeyearpar{Siek17} also used a graph model to prove adequacy and
+the correctness of a function inliner.
 
 Most passes of our compiler are proved by an equation between the
 meanings of a program before and after the pass, one language construct

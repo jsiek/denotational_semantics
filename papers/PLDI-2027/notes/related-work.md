@@ -364,6 +364,7 @@ All of these bear on C6. None is indexed by a finite approximation on one side w
 | `knothe-bringmann-2026-small-and-big-step-loops.pdf` | Knothe & Bringmann, "Combining Small-Step and Big-Step Semantics to Verify Loop Optimizations", arXiv 2602.19868 | Mixed semantics in CompCert | §1.3 |
 | `leroy-grall-2009-coinductive-big-step.pdf` | Leroy & Grall, "Coinductive big-step operational semantics", 2009 (arXiv 0808.0586) | Styles proved equivalent; compiler proved once | §1.3 |
 | `leroy-2010-mechanized-semantics.pdf` | Leroy, "Mechanized semantics", lecture notes, arXiv 1010.5582 | Lemma 21 (forward simulation + determinism) | §1.3 |
+| `benton-birkedal-kennedy-varming-formalizing-domains.pdf` | Benton, Birkedal, Kennedy & Varming, "Formalizing Domains, Ultrametric Spaces and Semantics of Programming Languages", manuscript (MSCS draft, c. 2010) | Size of mechanized domain theory: "Categories and the domain theory library, including the theory of recursive domain equations, total around 4400 lines" of Coq; the simply typed language's soundness and adequacy about 1000 more, the unityped language about 1200 | III A8c; cited in the introduction |
 | `stoy-1981.pdf` | Stoy, "The Congruence of Two Programming Language Definitions", TCS 1981 | C6: inclusive predicates; OCR of a scan, so quotes need checking against the printed page | I §1.9; III B4 |
 | `tune-2026.pdf` | Tune & Kavvos, "Bimodels and Biorthogonality for Abstract Machines", ICFP 2026 | C7: mechanized adequacy against CK/CEK machines | I §3 |
 
