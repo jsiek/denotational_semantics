@@ -4,6 +4,8 @@ Title: TBD. The working title "There is no semantics to rule them all!" fitted a
 
 This is an outline for discussion, not paper text. Numbers come from `loc.py --mu` on master after PR #66 and will change. Paper sections are written double-blind: earlier work in this repository is "we", without saying who (see `history-outline.md`).
 
+**Audience.** The typical PLDI reviewer is not very familiar with denotational semantics. So the paper starts from what they know (the compiler, its passes and languages, §2) before the graph models (§3), explains the models through the compiler's own languages and examples, and introduces each denotational idea just before the proof that needs it.
+
 ## Main claim
 A denotational semantics based on graph models can be used to prove a realistic compiler correct, mechanized, all the way to assembly. The compiler goes from ISWIMμ (a call-by-value λ-calculus with recursive types) to a typed x86 in ten passes. Each pass is proved by relating denotations, and adequacy connects the result to running code. The novelty claims and their safe wording are in `novelty-literature.md`: not "the first mechanized denotational compiler proof" (Chlipala 2007 and others), but, to our knowledge, the first multi-pass compiler between different languages proved with graph-model semantics, and the first mechanized adequacy of a denotational semantics for an assembly language.
 
@@ -31,21 +33,9 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
   - totals: graph 1958, CEK 2258, interpreter 1653, reduction 3207;
   - the graph model is smallest for equational passes (simplify 360 against 584–715);
   - it is costliest for delay (524 against 35–139).
-- **Contributions:**
-  1. a mechanized graph-model correctness proof of a realistic compiler, down to a typed assembly language, with adequacy at both ends;
-  2. the approximant logical relation, for passes that lower abstraction;
-  3. a like-for-like measurement against three operational styles on the same compiler, pass by pass;
-  4. the effect of dynamic typing and errors (brief).
+- **Contributions** (`contributions.tex`, PR #82): one sentence each, with a forward reference: the graph-model compiler proof; approximant logical relations; adequacy for the source and the assembly language, and the end-to-end theorem; the comparison with three operational styles.
 
-## 2. Background: graph models
-- **Denotations.** A denotation is a set of finite values. A function's finite value is a finite table of input/output entries, and application ⟦L M⟧ρ collects the outputs of the tables in ⟦L⟧ρ whose inputs are covered by ⟦M⟧ρ.
-- **The properties the proofs rely on:**
-  - monotonicity and continuity;
-  - consistency, with binders that bind only consistent finite sets;
-  - divergence denotes ∅.
-- **Why reflection is the hard direction.** Divergence is the absence of elements, so a forward relation cannot carry it. A correctness statement ⟦src⟧ ≃ ⟦tgt⟧ therefore needs both inclusions.
-
-## 3. The compiler
+## 2. The compiler
 - **ISWIMμ:** integers, tuples, sums, primitives, and iso-recursive types with `fold`/`unfold`. There is no `fix`: recursion and divergence come from the Z combinator, typed through μ.
 - **The pipeline:**
   - simplify (a simplified cp0);
@@ -54,6 +44,15 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
   - the target X86μ, a typed assembly language.
 - **Intrinsically typed intermediate languages:** no pass needs a scoping or typing precondition.
 - Fig. 1: the pipeline.
+
+## 3. Background: graph models
+- **Through the compiler's own languages.** Examples come from ISWIMμ and the intermediate languages of §2 (e.g. the meaning of a λ, of an application, of a diverging Z-combinator loop), not from the pure λ-calculus.
+- **Denotations.** A denotation is a set of finite values. A function's finite value is a finite table of input/output entries, and application ⟦L M⟧ρ collects the outputs of the tables in ⟦L⟧ρ whose inputs are covered by ⟦M⟧ρ.
+- **The properties the proofs rely on:**
+  - monotonicity and continuity;
+  - consistency, with binders that bind only consistent finite sets;
+  - divergence denotes ∅.
+- **Why reflection is the hard direction.** Divergence is the absence of elements, so a forward relation cannot carry it. A correctness statement ⟦src⟧ ≃ ⟦tgt⟧ therefore needs both inclusions.
 
 ## 4. Proving the compiler correct with graph models (RQ1, RQ2)
 - **4.1 The semantics** of each intermediate language as a graph model. Closures, code tables, frames and control-flow graphs all get graph-model meanings.
@@ -66,7 +65,7 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
   - **why a type index cannot replace the depth index:** at μX. X ⇒ Int the application case returns to the same type.
 - **4.4 Select and the typed assembly language.** The meaning of X86μ, and select proved as an equation.
 - **4.5 Adequacy and the end-to-end theorem:**
-  - adequacy for ISWIMμ against its abstract machine, and for X86μ directly;
+  - adequacy for ISWIMμ and for X86μ against their interpreters (PR #76; the CEK-based proofs are an uncounted alternative);
   - no-error lemmas;
   - the end theorem, the same one the operational proofs state.
 - **4.6 Mechanization.** Agda (`--safe`, stdlib only), the audit surface, sizes.
@@ -89,7 +88,7 @@ So the claim to make: a Turing-complete, higher-order source, compiled through c
 - **Full cost:**
   - semantics rows: reduction's semantics are the largest;
   - infrastructure: graph 1542, CEK 447, interpreter 413, reduction 1190;
-  - adequacy, which only the denotational route needs: 1599 lines;
+  - adequacy (1532 lines), reported as its own result: with the graph semantics taken as definitional, the denotational proof is complete without it, and adequacy connects it to running code;
   - the audit surface.
 - **Threats to validity:**
   - lines of Agda as a proxy for effort;
