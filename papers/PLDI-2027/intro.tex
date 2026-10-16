@@ -10,12 +10,11 @@ Proving a compiler correct is one of the oldest applications of formal
 semantics. \citet{McCarthyPainter67} proved correct a compiler for
 arithmetic expressions in 1967, and \citet{MilnerWeyhrauch72} had a
 machine check the correctness proof of a compiler for a small Algol-like
-language five years later. What these proofs need is a semantics in
-which the meaning of a program is a mathematical object, and in the
-1970s the denotational semantics of Scott and Strachey offered exactly
-that. With it, a compiler pass is correct when the meaning of a program
-before the pass equals its meaning afterward, and the proof is
-equational reasoning. \citet{Polak81} used this recipe, together with a
+language five years later. In the 1970s, the denotational semantics of
+Scott and Strachey offered an especially clean foundation for such
+proofs. The meaning of a program is a mathematical object, so a compiler
+pass is correct when the meaning of a program before the pass equals its
+meaning afterward, and the proof is equational reasoning. \citet{Polak81} used this recipe, together with a
 mechanical verifier, on a compiler for a subset of Pascal;
 \citet{Clinger84} used it to prove correct a compiler for Scheme; and
 Guttman, Ramsdell, and Wand \citeyearpar{VLISP95} carried it into
