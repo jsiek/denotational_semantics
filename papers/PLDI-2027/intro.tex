@@ -46,9 +46,12 @@ the source program computes, the compiled program computes.
 \emph{Reflection} says the converse: whatever the compiled program
 computes, the source program computes, so a program that diverges is not
 compiled into one that terminates. Preservation is the easy half;
-reflection is the hard one, because after closure conversion the target
-language contains many code--environment pairs that no source function
-produces. \citet{Chlipala07} built, in Coq, a compiler from the simply
+reflection is the hard one. After closure conversion, the meaning of a
+function's code describes its behavior on every environment, not just
+on the environment that the compiled program pairs it with, so the
+meanings of target programs contain code--environment pairs that
+correspond to no source function, and a proof of reflection must show
+that these pairs never contribute an answer. \citet{Chlipala07} built, in Coq, a compiler from the simply
 typed $\lambda$-calculus to assembly language with a denotational
 semantics for every intermediate language, including the target of
 closure conversion. Chlipala observed that the target denotations ``allow more
