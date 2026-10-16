@@ -117,12 +117,12 @@ outputs of the tables whose inputs are covered by the meaning of the
 argument. A program that diverges has no evidence to offer, so its
 meaning is the empty set. The model is
 elementary, needing only sets and inductive definitions, and the model
-was used by Siek \citeyearpar{Siek17} to prove adequacy and the correctness of a function inliner. In that setting every pass is an
-equation between sets, and most passes of our compiler are proved
-exactly that way, one language construct at a time.
+was used by Siek \citeyearpar{Siek17} to prove adequacy and the correctness of a function inliner.
 
-The exception is the pass that lowers closures into code and environment
-pairs, which we call \emph{delay}. The preservation half of
+Most passes of our compiler are proved by an equation between the
+meanings of a program before and after the pass, one language construct
+at a time. The exception is the pass that lowers closures into code and
+environment pairs, which we call \emph{delay}. The preservation half of
 the proof for delay is a structural induction, but the reflection half
 resisted every relation we and others
 tried. Relating one target value to one source value fails because the
@@ -133,12 +133,9 @@ Step-indexed relations tame such definitions by counting steps of
 evaluation, but a denotational semantics has no steps to count.
 Indexing by the depth of a value, in the style of Pitts's projections,
 fails because a small output of a function can depend on an arbitrarily
-deep input. These dead ends are why, in a blog post titled ``Help!
-We're Failing to Prove Correctness of Closure Conversion using
-Denotational Semantics (Graph Models)'', \citet{Siek23} asked the
-community for ideas.
+deep input.
 
-What worked was to let only one side shrink. Instead of relating two
+The key insight is that only one side of the relation needs to shrink. Instead of relating two
 infinite sets, we relate a finite set of target observations to an
 arbitrary source denotation, and we define the relation by recursion on
 the depth of the finite set. We call the result an \emph{approximant
