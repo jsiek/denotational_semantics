@@ -20,15 +20,16 @@ equals its meaning afterward, and the proof is equational reasoning.
 \citet{Clinger84} used the same recipe to prove correct a compiler for
 Scheme, and
 Guttman, Ramsdell, and Wand \citeyearpar{VLISP95} carried the recipe into VLISP, a verified implementation of Scheme that went down to byte code.
-In each of these compilers, either the source language is first-order or
-the target machine supports closures directly, so none of the compilers
-had to perform closure conversion, the pass, described next, that gives
-functions a first-order representation.
+In each of these compilers, either the source language lacks
+first-class, lexically scoped functions, or the target language supports
+such functions directly.
 
-A compiler for a higher-order language needs a pass that a compiler for
-C does not: closure conversion. A function that mentions variables from
-its enclosing scope is a \emph{closure}, code bundled with the values of
-its free variables, but machine code has nothing of the sort. Closure
+Compiling a language with first-class, lexically scoped functions to a
+first-order target language, such as assembly, requires a pass called
+\emph{closure conversion}. A function that mentions variables from its
+enclosing scope is represented at run time by a \emph{closure}, code
+bundled with the values of its free variables, but a first-order target
+language has nothing of the sort. Closure
 conversion therefore replaces each closure with an ordinary pair of a
 code pointer and an environment, and each call with a step that takes
 the code and the environment out of the pair and jumps to the code, so
