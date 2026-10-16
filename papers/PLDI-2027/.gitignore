@@ -6,3 +6,5 @@
 *.out
 *.toc
 related/
+*.bbl
+*.blg
