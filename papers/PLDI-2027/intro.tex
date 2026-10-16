@@ -110,16 +110,16 @@ language in the compiler, from \iswim\ to assembly, has a denotational
 semantics, and the correctness theorem is that the source program and
 the compiled program stop with the same constant, or both diverge.
 
-The denotational semantics we use is a graph model, in the tradition of
-\citet{Plotkin93}, \citet{Scott76} and \citet{Engeler81}. The meaning of
-a program is a set of finite pieces of evidence about its behavior. The
-meaning of a function is a set of tables, each table a finite list of
-input--output entries, and the meaning of an application collects the
-outputs of the tables whose inputs are covered by the meaning of the
-argument. A program that diverges has no evidence to offer, so its
-meaning is the empty set. The model is
-elementary, needing only sets and inductive definitions, and the model
-was used by Siek \citeyearpar{Siek17} to prove adequacy and the correctness of a function inliner.
+The denotational semantics we use is a graph model, in the tradition
+of \citet{Plotkin93}, \citet{Scott76} and \citet{Engeler81}. The
+meaning of a program is a set of finite pieces of evidence about its
+behavior. The meaning of a function is a set of input--output entries,
+and the meaning of an application collects the outputs of the entries
+whose input are covered by the meaning of the argument. A program that
+diverges has no evidence to offer, so its meaning is the empty
+set. The model is elementary, needing only sets and inductive
+definitions, and the model was used by Siek \citeyearpar{Siek17} to
+prove adequacy and the correctness of a function inliner.
 
 Most passes of our compiler are proved by an equation between the
 meanings of a program before and after the pass, one language construct
@@ -137,19 +137,20 @@ Indexing by the depth of a value, in the style of Pitts's projections,
 fails because a small output of a function can depend on an arbitrarily
 deep input.
 
-The key insight is that only one side of the relation needs to shrink. Instead of relating two
-infinite sets, we relate a finite set of target observations to a
-possibly infinite source denotation, and we define the relation by recursion on
-the depth of the finite set. We call the result an \emph{approximant
-logical relation}. The depth of the finite approximation bounds the
-recursion, so the definition is well founded without steps, without
-types, and without any restriction on the source side. Recursion on types could not do the same job: with recursive types, the
-application case of a function of type $\mu X.\,X \Rightarrow
-\mathrm{Int}$ returns to the same type, so a relation defined by
-recursion on types would not be well founded. The
+The key insight is that only one side of the relation needs to shrink.
+Instead of relating two infinite sets, we relate a finite set of
+target observations to a possibly infinite source denotation, and we
+define the relation by recursion on the depth of the finite set.  We
+call the result an \emph{approximant logical relation}.  The depth of
+the finite approximation bounds the recursion, so the definition is
+well founded without indexing with types or steps of
+computation. Recursion on types could not do the same job: with
+recursive types, the application case of a function of type $(\mu
+X.\,X {\rightarrow}\mathrm{Int})$ returns to the same type, so a
+relation defined by recursion on types would not be well founded. The
 approximant logical relation is, to our knowledge, the first relation
-between two denotational semantics that is defined by recursion on a finite
-approximation of one of the two denotations.
+between two denotational semantics that is defined by recursion on a
+finite approximation of one of the two denotations.
 
 A denotational correctness theorem is a statement about meanings, and a
 reader may reasonably ask what the theorem says about running programs. We
@@ -175,13 +176,15 @@ compilation to a Krivine machine correct. Our comparison is, to our knowledge, t
 denotational style.
 
 The denotational proof comes to 1,958 lines of Agda. The denotational
-proof is smaller than the proofs using abstract machines (2,258 lines) and reduction
-semantics (3,207 lines) and larger than the proof using clocked
-interpreters (1,653 lines), but the total hides the more interesting
-story. Where a pass leaves program values at the same level of
-abstraction, equational reasoning wins: the denotational proof for the source optimizer takes 360 lines against 584 to 715 for the others. Where a
-pass changes how closures are represented, the denotational proof loses:
-delay takes 524 lines against 35 to 139.
+proof is smaller than the proofs using abstract machines (2,258 lines)
+and reduction semantics (3,207 lines) and larger than the proof using
+clocked interpreters (1,653 lines), but the total hides the more
+interesting story. Where a pass leaves program values at the same
+level of abstraction, equational reasoning wins: the denotational
+proof for the source optimizer takes 360 lines against 584 to 715 for
+the others. Where a pass changes how closures are represented, the
+denotational proof loses: delay takes 524 lines against between 35 and
+139 for the operational proofs.
 
 %% TODO(authors): the proofs are available as an artifact; the
 %% AI-assistance disclosure required by ACM policy goes here.
