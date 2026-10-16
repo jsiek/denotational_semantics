@@ -6,6 +6,28 @@ This is an outline for discussion, not paper text. Numbers come from `loc.py --m
 
 **Audience.** The typical PLDI reviewer is not very familiar with denotational semantics. So the paper starts from what they know (the compiler, its passes and languages, §2) before the graph models (§3), explains the models through the compiler's own languages and examples, and introduces each denotational idea just before the proof that needs it.
 
+## Page budget
+
+PLDI 2027 allows **20 pages of text, including the AI-use paragraph, but excluding the Data Availability Statement, references and appendices**, in the ACM `acmsmall` format (single column, 10 pt font, 12 pt leading, text block 5.478 in × 7.884 in), built with `\documentclass[acmsmall,screen,review,anonymous,nonacm]{acmart}` (as `paper.tex` now does). Citations may be author-year (as we use) or numeric. Figures and tables must be legible in grayscale: in Table 1 and Figure 3 mark the winning cells by weight or shape, not by color alone. Budgets include figures and tables. The AI-use paragraph sits in the introduction (its budget includes it); the Data Availability Statement (the artifact) goes after the conclusion and is outside the 20 pages, so details about the artifact can move there from §4.6. The allocation follows the contributions: the compiler proof with the reflection of divergence and the approximant logical relation (§4, especially §4.3) gets the most space, then the comparison (§5), then the background needed to read them (§§2–3); the brief results (§§6–7) and the conclusion get the least.
+
+| Part | Pages | Supports |
+|---|---:|---|
+| Abstract (with title and front matter) | 0.5 | — |
+| 1. Introduction (with contributions) | 3.5 | all |
+| 2. The compiler | 1.5 | C2–C4 (what is proved) |
+| 3. Background: graph models | 2.0 | C2, C6 (what the reader needs for §4) |
+| 4. Proving the compiler correct | 6.5 | C2–C8 (the main claims) |
+| 5. Evaluation: comparison with operational approaches | 3.0 | C9 |
+| 6. Dynamic typing and errors | 0.5 | RQ4 |
+| 7. Discussion: mixing semantics | 0.5 | C9 (a negative result) |
+| 8. Related work | 1.5 | positioning beyond the introduction |
+| 9. Conclusion and future work | 0.5 | — |
+| **Total** | **20.0** | |
+
+Within §4: 4.1 the semantics 1.0, 4.2 equational passes 1.25, 4.3 delay and the approximant logical relation 2.75, 4.4 select and the typed assembly language 0.5, 4.5 adequacy and the end-to-end theorem 0.75, 4.6 mechanization 0.25.
+
+If space runs short, cut in this order: §7 to a few sentences in §5; §6 to a paragraph in §5; §4.6 into §5's setup; §8 down to 1.0 (the introduction already covers the near misses). Protect §4.3 and Table 1 in §5.
+
 ## Main claim
 A denotational semantics based on graph models can be used to prove a realistic compiler correct, mechanized, all the way to assembly. The compiler goes from ISWIMμ (a call-by-value λ-calculus with recursive types) to a typed x86 in ten passes. Each pass is proved by relating denotations, and adequacy connects the result to running code. The novelty claims and their safe wording are in `related-work.md` (§1): not "the first mechanized denotational compiler proof" (Chlipala 2007 and others), but, to our knowledge, the first multi-pass compiler between different languages proved with graph-model semantics, and the first mechanized adequacy of a denotational semantics for an assembly language.
 
@@ -76,7 +98,7 @@ This section is a working tool for the "Where this fits" subsection of the intro
 
 **Rule for choosing.** A work belongs in the introduction if a reviewer who knows it could reasonably say "this already does what you claim", or if it shows how others treated divergence in a closure-conversion-like proof. It belongs in §8 if it is background or a contrast the reviewer would not raise against the claim. Revisit the table when the claims are reworded.
 
-## 1. Introduction
+## 1. Introduction (3.5 pages)
 - **Motivation.** Denotational semantics promises compositional, equational reasoning about programs, yet mechanized compiler verification has been operational, with CompCert's simulations as the standard. Graph models are an elementary, set-theoretic form of denotational semantics (Plotkin, Scott, Engeler) that is easy to mechanize, but they have been used for little beyond adequacy and source-level optimizations.
 - **What we did (RQ1).** We proved a ten-pass compiler correct with graph-model semantics for every intermediate language, ending in an end-to-end theorem: the source and the compiled x86 program stop with the same constant, or both diverge.
 - **Where this fits: closely related work** (a subsection of the introduction, about a page and a half; see "The novelty criteria" above). It is organised around one question: **how has prior work treated divergence in a proof of closure conversion?** It does four things:
@@ -97,7 +119,7 @@ This section is a working tool for the "Where this fits" subsection of the intro
   - **Prior comparisons are smaller in scope** (`related-work.md` §1.3), and the introduction should say so in a sentence or two, to be accurate about novelty: Kahn, Hoffmann and Li (2025) compare three operational semantics (small-step, big-step and their big-stop) by the lines of Agda needed to prove one compilation to a K machine correct; Owens et al. (2016) compare relational and functional big-step semantics on one compiler phase (43 against 18 lines); Leroy and Grall (2009) and Leroy's lecture notes relate the styles by equivalence theorems but prove each compiler under one style; Knothe and Bringmann (2026) combine small-step and big-step semantics in one CompCert pipeline without comparing costs. Ours is, to our knowledge, the first on a whole multi-pass compiler to assembly, and the first to include a denotational style. Cite them again in §5 and §8.
 - **Contributions** (`contributions.tex`, PR #82): one sentence each, with a forward reference: the graph-model compiler proof; approximant logical relations; adequacy for the source and the assembly language, and the end-to-end theorem; the comparison, on one ten-pass compiler, of a denotational style with three operational styles (stated narrowly, since earlier comparisons of semantic styles exist for one pass or phase).
 
-## 2. The compiler
+## 2. The compiler (1.5 pages)
 - **ISWIMμ:** integers, tuples, sums, primitives, and iso-recursive types with `fold`/`unfold`. There is no `fix`: recursion and divergence come from the Z combinator, typed through μ.
 - **The pipeline:**
   - simplify (a simplified cp0);
@@ -107,7 +129,7 @@ This section is a working tool for the "Where this fits" subsection of the intro
 - **Intrinsically typed intermediate languages:** no pass needs a scoping or typing precondition.
 - Fig. 1: the pipeline.
 
-## 3. Background: graph models
+## 3. Background: graph models (2.0 pages)
 - **Why a graph model rather than Scott domains** (the introduction only summarizes this and points here, as `sec:graph-models`). The graph model is elementary: a denotation is just a set, with no complete partial orders, continuous functions or inverse limits. The evidence, all counted like `loc.py` (no comments, blank lines or imports):
   - the core of our graph model (values, consistency, generic machinery for operators) is 364 lines of Agda, about 1,200 with the meanings of the operators of all our languages (`loc.md`, infrastructure table: 364 + 623 + 235);
   - the Scott-domain pilot (branch `scott-pilot`; source language, Clos2 and enclose of the earlier untyped compiler) builds on Tom de Jong's domain theory in TypeTopology: its own constructions (sums, lifting, products and exponentials of dcpos, locally continuous functors, the bilimit solution of the domain equation) are 847 lines, on top of about 5,400 lines of TypeTopology's domain theory (13 `DomainTheory` modules reached by its imports; about 25,900 lines counting all 120 TypeTopology modules reached, including the univalent foundations); its operators and semantics of signatures are 185 more, the semantics of ISWIM, Clos2 and primitives 75, the proof of enclose 118;
@@ -122,24 +144,24 @@ This section is a working tool for the "Where this fits" subsection of the intro
   - divergence denotes ∅.
 - **Why reflection is the hard direction.** Divergence is the absence of elements, so a forward relation cannot carry it. A correctness statement ⟦src⟧ ≃ ⟦tgt⟧ therefore needs both inclusions.
 
-## 4. Proving the compiler correct with graph models (RQ1, RQ2)
-- **4.1 The semantics** of each intermediate language as a graph model. Closures, code tables, frames and control-flow graphs all get graph-model meanings.
-- **4.2 Equational passes.** For simplify, enclose, optimize, concretize, globalize, rco, lift locals and explicate, ⟦pass M⟧ ≃ ⟦M⟧ is proved construct by construct from operator laws. Typical shapes and sizes.
-- **4.3 Delay and the approximant logical relation** (the technical core):
+## 4. Proving the compiler correct with graph models (RQ1, RQ2) (6.5 pages)
+- **4.1 The semantics** (1.0 page) of each intermediate language as a graph model. Closures, code tables, frames and control-flow graphs all get graph-model meanings.
+- **4.2 Equational passes** (1.25 pages). For simplify, enclose, optimize, concretize, globalize, rco, lift locals and explicate, ⟦pass M⟧ ≃ ⟦M⟧ is proved construct by construct from operator laws. Typical shapes and sizes.
+- **4.3 Delay and the approximant logical relation** (2.75 pages; the technical core):
   - **the problem:** a target call takes its code from `car` and its environment from `cdr` separately;
   - **why the natural relations fail** (`history-outline.md`): single values; whole sets (▷ with nothing to discharge it); element depth (as in Pitts's projections); one target point in an infinite context;
   - **the insight:** only one side needs to shrink, and the car/cdr matching happens inside the index;
   - **the definition:** 𝖠𝖫𝖱(D, V′), its layers, fuel as a termination device, depth irrelevance;
   - **why a type index cannot replace the depth index:** at μX. X ⇒ Int the application case returns to the same type.
   - **comparison with Nielsen 2000 and with Pitts (to do, needed for §4.3 and §8):** Nielsen's relation (`related-work.md` Part II §1) is the closest denotation-to-denotation proof of a closure-conversion-like pass. It is type-indexed, relates source denotations to defunctionalized target denotations, treats ⊥ as related to everything, and uses fixed-point induction. It proves only the forward direction ("weak correctness"), so it has no analogue of our reflection proof. Say how ours differs (finite-approximation index on the target, reflection, recursive types) and why his method does not extend, and compare with Pitts's relations for recursive types (Part III B1, B2).
-- **4.4 Select and the typed assembly language.** The meaning of X86μ, and select proved as an equation.
-- **4.5 Adequacy and the end-to-end theorem:**
+- **4.4 Select and the typed assembly language** (0.5 page). The meaning of X86μ, and select proved as an equation.
+- **4.5 Adequacy and the end-to-end theorem** (0.75 page):
   - adequacy for ISWIMμ and for X86μ against their interpreters (PR #76; the CEK-based proofs are an uncounted alternative);
   - no-error lemmas;
   - the end theorem, the same one the operational proofs state.
-- **4.6 Mechanization.** Agda (`--safe`, stdlib only), the audit surface, sizes.
+- **4.6 Mechanization** (0.25 page). Agda (`--safe`, stdlib only), the audit surface, sizes.
 
-## 5. Evaluation: comparison with operational approaches (RQ3)
+## 5. Evaluation: comparison with operational approaches (RQ3) (3.0 pages)
 - **Setup.** The same compiler proved with CEK machines and simulations, clocked interpreters with value relations, and reduction semantics with simulations, each a best effort. These are the baseline, not contributions.
 - **Prior comparisons of semantic styles** (`related-work.md` §1.3), to be cited here and in §8, and the reason the claim is narrow: Kahn, Hoffmann and Li 2025 (three operational styles, one compilation to a K machine, Agda, a table of proof sizes: small-step completeness is the costly part), Owens et al. 2016 (relational against functional big-step on one phase, 43 against 18 lines), and Leroy and Grall's folklore that big-step suits compiler proofs. Ours differs in scale (a ten-pass compiler to assembly) and in including a denotational style.
 - **Accounting rules:**
@@ -165,17 +187,17 @@ This section is a working tool for the "Where this fits" subsection of the intro
   - effort and expertise per style;
   - what infrastructure each style could share.
 
-## 6. Dynamic typing and errors (RQ4, brief)
+## 6. Dynamic typing and errors (RQ4, brief) (0.5 page)
 - **The same compiler from dynamically typed ISWIM:** cast insertion, `Any = μX. Σ_G G[X]`, `project`/`chk`, and a graph model with errors to observe them.
 - **Totals barely move:** graph 2064 → 1958, CEK 2390 → 2258, interpreter 1719 → 1653, reduction 3320 → 3207.
 - **Delay's cost comes from recursive types, not errors:** graph delay goes 552 → 524 (errors account for about 28 lines).
 
-## 7. Discussion: mixing semantics (a negative result, one paragraph)
+## 7. Discussion: mixing semantics (a negative result, one paragraph) (0.5 page)
 - The idea: use, for each pass, the cheapest style, joined by bridges (adequacy of a language's graph semantics against its interpreter) where the style changes.
 - Measured (PR #72, `notes/mixed-semantics.md`): graph model for simplify, interpreter for the rest, one bridge at ISWIMμ: 1839 lines, against 1653 for the pure interpreter proof. A bridge (395 lines) costs about as much as a whole pass proof and more than the largest saving (simplify, 273); more splits are estimated at 2530–3265.
 - Worth a paragraph and a small table: per-pass minima do not add up. By-products: adequacy against the interpreter is cheaper than against the CEK machine (395 against 464), and it gives the graph model a cheaper route to running code.
 
-## 8. Related work
+## 8. Related work (1.5 pages)
 The "not so closely related" work, ordered by tier (number of K1, K2a, K2b, K3 missed), starting with the lowest tier. The works in the introduction's table (Nielsen, Chlipala 2007 and 2010, CompCert, Clinger and VLISP, Siek 2017, interaction trees, Cheng et al., Polak, CakeML, CertiCoq, Banerjee–Heintze–Riecke, Benton–Hur, the calculated compilers and Danielsson, Steckler–Wand, Wand 1991, Pardo et al.) get at most a back-reference here. Organised as in `related-work.md` (§2.0 there is the tier list).
 - **Tier 1: operational and type-theoretic closure conversion, and further first-order denotational compilers.** Ahmed–Blume, Pilsner, Hur–Dreyer, Pyrosome, Wang–Nadathur, Perconti–Ahmed (each misses only K1 when its source has recursion, and shows what the operational methods already achieve); Vellvm, HELIX, Vélus, and the LCF work (each misses only K3).
 - **Tier 2: other near misses.** CompCertO and CompCertTSO (the CompCert variants, with game-inspired interfaces and weak memory); Sullivan–Wand and Wand–Sullivan (the operationally-based term model: the nearest thing to "almost denotational", and the reason K1 says extensional model); Rodríguez–Pagano–Fridlender; Martin & Toal; the historical commuting-square line (Morris, Thatcher–Wagner–Wright); Cogent and McKinna–Wright; typed, total closure conversion (Minamide–Morrisett–Harper, Bowman–Ahmed, Beluga, Sullivan–Downen–Ariola, whose delayed environments are close in spirit to the delay pass).
@@ -190,7 +212,7 @@ The "not so closely related" work, ordered by tier (number of K1, K2a, K2b, K3 m
   - adequacy for machines and assembly beyond the two named in the introduction (the decoder DSL, guarded interaction trees);
   - game semantics (Ghica; CompCertO's interfaces) as a contrast.
 
-## 9. Conclusion and future work
+## 9. Conclusion and future work (0.5 page)
 - Graph models work for compiler verification. They are cheapest where passes are equations, and their cost concentrates in passes that lower abstraction.
 - Future work:
   - mixing semantics;
@@ -210,6 +232,6 @@ The "not so closely related" work, ordered by tier (number of K1, K2a, K2b, K3 m
 - The title.
 - Novelty claims, to be worded after the literature check. Open items: (0) compare our approximant logical relation with Nielsen's relation and Pitts's (see §4.3); (1) the abstract's two horns do not cover Nielsen 2000 and Banerjee–Heintze–Riecke 2001 (see "The novelty criteria"); the abstract now has a third horn for K2b ("prove only that terminating programs are preserved"); Banerjee et al. are not covered by it, but they are not a denotational proof under K1, so the abstract's "denotational compiler proofs" excludes them. (2) Sullivan–Wand and Wand–Sullivan were read only to the abstracts and introductions; check that their lambda lifting is not a closure-conversion proof and that their term model is not extensional. (3) Nielsen's and Banerjee et al.'s proofs are on paper (one a sketch), so the safest framing of the claim stresses what they lack, divergence covered (K2) and an extensional model on both sides (K1); that ours is also mechanized and goes to assembly is a further, separate distinction.
 - Whether the introduction should list the criteria K1, K2a, K2b, K3 explicitly or just walk through the near misses.
-- The page budget for §4.3 against §5.
+- The page budget for §4.3 against §5: settled in "Page budget" (2.75 against 3.0); revisit after drafting §4.3.
 - Matthew Heimerdinger's affiliation.
 - The artifact: an anonymized copy of the Agda development.

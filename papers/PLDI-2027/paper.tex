@@ -1,8 +1,11 @@
 %% PLDI 2027 submission, from the acmart template acmsmall-conf.tex
 %% (acmart-primary/samples/). Build with `make` in this directory, which
-%% puts acmart-primary/ on TEXINPUTS. For the submission, keep the
-%% review and anonymous options; drop them for the camera-ready version.
-\documentclass[acmsmall,screen,review,anonymous]{acmart}
+%% puts acmart-primary/ on TEXINPUTS. The options are those the PLDI 2027
+%% call asks for (acmsmall, with review, screen, anonymous and nonacm);
+%% drop review, anonymous and nonacm for the camera-ready version.
+%% Page limit: 20 pages of text, including the AI-use paragraph, but not
+%% the Data Availability Statement, references or appendices.
+\documentclass[acmsmall,screen,review,anonymous,nonacm]{acmart}
 \AtBeginDocument{%
   \providecommand\BibTeX{{%
     Bib\TeX}}}
@@ -59,6 +62,14 @@
 \section{Introduction}
 
 \input{intro}
+
+%% Sections 2 and 3 (the compiler; graph models) are still to be written;
+%% their labels are referenced from Section 4.3.
+\section{Proving the Compiler Correct}
+\label{sec:compiler-proof}
+
+%% 4.1, 4.2 to come.
+\input{delay}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{all}
