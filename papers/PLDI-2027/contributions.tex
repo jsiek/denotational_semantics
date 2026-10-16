@@ -1,25 +1,33 @@
 %% The technical contributions, at the end of the introduction, input by
-%% paper.tex. One sentence each (two in a pinch); each is novel (to our knowledge, per
-%% notes/related-work.md: C2-C4, C6, C7, C9) and is expanded in the
-%% section it points to. The section labels are placeholders until those
-%% sections exist.
+%% paper.tex. One sentence each (two in a pinch); each is novel (to our
+%% knowledge, per notes/related-work.md). The first rests on the four core
+%% criteria K1, K2a, K2b, K3 (a denotational proof, of closure conversion,
+%% for a source with general recursion, that preserves and reflects
+%% divergence; claims C2-C4); mechanization and assembly (K4, K5) are
+%% facts about the work, not part of the novelty claim. The second is C6,
+%% the third C7-C8, the fourth C9. Each is expanded in the section it
+%% points to. The section labels are placeholders until those sections
+%% exist.
 
 Our technical contributions are:
 \begin{itemize}
-\item A proof, mechanized in Agda, that a ten-pass compiler from a
-  call-by-value $\lambda$-calculus with iso-recursive types, through
-  closure conversion, to a typed assembly language is correct, using a
-  denotational (graph-model) semantics for each language
+\item A denotational proof, mechanized in Agda, that a ten-pass
+  compiler from a call-by-value $\lambda$-calculus with iso-recursive
+  types, through closure conversion, to a typed assembly language is
+  correct in the strong sense that divergence is both preserved and
+  reflected, using a graph-model semantics for each language
   (\S\ref{sec:compiler-proof}).
 \item Approximant logical relations relate two denotations by
   recursion on the depth of a finite approximation of one of them,
-  which plays the key role in proving correctness for the lowering of
-  closures to their flat representation (\S\ref{sec:approx-lr}).
+  which is what lets us prove that lowering closures to their flat
+  representation reflects divergence, the direction that earlier
+  denotational proofs of defunctionalization left open
+  (\S\ref{sec:approx-lr}).
 \item Proofs that the denotational semantics of the source language
   and of the assembly language are adequate with respect to
-  interpreters for those languages, which provides assurance that our
-  correctness theorem is equivalent to one based on operational
-  semantics (\S\ref{sec:adequacy}).
+  interpreters for those languages, which turns our theorem about
+  denotations into an end-to-end theorem about running code, the same
+  one that operational semantics would give (\S\ref{sec:adequacy}).
 \item A comparison with proofs of correctness for the same compiler
   using three different operational semantics (abstract machines,
   clocked interpreters and reduction semantics), which shows that the
