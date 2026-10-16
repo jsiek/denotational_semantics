@@ -10,7 +10,7 @@ are first-order or strongly normalizing, (2) compile to target
 languages that treat closures as primitive values and so avoid closure
 conversion, or (3) prove only that termination is preserved but not
 reflected. We use a denotational semantics based on a graph model to
-prove a ten-pass compiler correct, from a call-by-value
+prove a compiler correct, from a call-by-value
 $\lambda$-calculus with iso-recursive types (so it supports general
 recursion and admits divergence), through closure conversion, to a
 typed assembly language. The proof is total: divergence is preserved and
