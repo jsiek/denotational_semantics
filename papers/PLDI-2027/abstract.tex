@@ -13,14 +13,14 @@ reflected. We use a denotational semantics based on a graph model to
 prove a ten-pass compiler correct, from a call-by-value
 $\lambda$-calculus with iso-recursive types (so it supports general
 recursion and admits divergence), through closure conversion, to a
-typed assembly language. The proof is mechanized in Agda and is total:
-divergence is preserved and reflected. Every intermediate language has
+typed assembly language. The proof is total: divergence is preserved and
+reflected. Every intermediate language has
 a denotational semantics, and most passes are proved by an equation
 between the denotations of a program before and after the pass. The
 exception is the step of closure conversion that lowers closures into
 code and environment pairs: its reflection direction needs a new kind
 of logical relation on denotations, which we call \emph{approximant
-logical relations}.
+logical relations}. The proof is mechanized in Agda.
 
 To evaluate this denotational approach compared to operational ones,
 we prove correctness of the same compiler in three operational styles

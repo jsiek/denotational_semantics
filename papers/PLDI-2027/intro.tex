@@ -74,10 +74,10 @@ machine in a single pass, and the proofs of \citet{Clinger84} and VLISP do the s
 closure conversion for a language with general recursion that both
 preserves and reflects divergence.
 
-This paper gives such a proof. We prove correct, in Agda, a compiler
-from a call-by-value $\lambda$-calculus with iso-recursive types, which
-we call \iswim, through closure conversion, to a typed assembly
-language. Recursive types let us write the call-by-value fixed-point
+This paper gives such a proof. We prove correct a compiler from a
+call-by-value $\lambda$-calculus with iso-recursive types, which we call
+\iswim, through closure conversion, to a typed assembly language, and
+we check every step in Agda. Recursive types let us write the call-by-value fixed-point
 combinator, so \iswim\ has general recursion and admits divergence. The
 compiler has ten passes: a source-level simplifier, four passes that
 implement closure conversion, and five that bring the program down to
