@@ -16,7 +16,7 @@ mapping to journal/LNCS pages is not verified page-by-page; for the LASC papers 
 typeset in the Kluwer style with "1{28", "1{78", "1{72" page ranges, consistent with an offset.
 
 **Obtained later (2026-10-15, second pass):** Clinger 1984, from the author's PDF in
-`papers/PLDI-2027/related/clinger-1984.pdf` (a scan of the LFP '84 pages 356–364 with an OCR text
+`related-denot/clinger-1984.pdf` (a scan of the LFP '84 pages 356–364 with an OCR text
 layer, read with pdftotext). §2 below is now checked against it; the OCR of the semantic equations
 (Figures 1, 4, 5) is badly damaged, so formulas are paraphrased, not quoted.
 

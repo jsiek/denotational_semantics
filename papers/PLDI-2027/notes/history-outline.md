@@ -34,4 +34,4 @@ Step 5 is the payoff. It leads into the technical background:
 
 ## Sources
 - Each step's evidence: `delay-relation-history.md`, where step 1 is B1–B12, step 2 is B8 and B15, step 3 is the originating-session account, and step 4 is B14.
-- Citations: `related-work-literature.md`.
+- Citations: `related-work.md` (Part III).
