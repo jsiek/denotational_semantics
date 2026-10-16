@@ -21,14 +21,14 @@ direction needs a new kind of logical relation on denotations, which
 we call \emph{approximant logical relations}.
 
 To evaluate this denotational approach compared to operational ones,
-we prove the same compiler correct in three operational styles and
-report on the size of the proofs. The denotational end-to-end proof of
-correctness comes in smaller than the proofs using abstract machines
-and reduction semantics, but larger than the proof using clocked
-interpreters.  In particular, the denotational approach yields smaller
-proofs for compiler passes in which the program values remain at the
-same level of abstraction, such as inlining, where equational
-reasoning suffices.  But the denotational proofs are larger when the
-compiler translates program values into a lower level of abstraction,
-such as lowering closures to their flat representation.
+we prove correctness of the same compiler in three operational styles
+and report on the size of the proofs. The denotational end-to-end
+proof of correctness comes in smaller than the proofs using abstract
+machines and reduction semantics, but larger than the proof using
+clocked interpreters.  In particular, the denotational approach yields
+smaller proofs for compiler passes in which the program values remain
+at the same level of abstraction, such as inlining, where equational
+reasoning suffices.  But the denotational proofs are larger for
+compiler passes that translate program values into a lower level of
+abstraction, such as lowering closures to their flat representation.
 
