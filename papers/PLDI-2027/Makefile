@@ -1,7 +1,7 @@
 ## Build the paper with the acmart class in acmart-primary/.
 export TEXINPUTS := ./acmart-primary//:$(TEXINPUTS)
 
-paper.pdf: paper.tex intro.tex contributions.tex abstract.tex refs.bib
+paper.pdf: paper.tex intro.tex contributions.tex abstract.tex all.bib
 	pdflatex -interaction=nonstopmode paper.tex
 	bibtex paper
 	pdflatex -interaction=nonstopmode paper.tex

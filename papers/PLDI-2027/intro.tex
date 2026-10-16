@@ -7,8 +7,8 @@
 \newcommand{\iswim}{\ensuremath{\mathrm{ISWIM}_\mu}}
 
 Proving a compiler correct is one of the oldest applications of formal
-semantics. \citet{McCarthyPainter67} proved correct a compiler for
-arithmetic expressions in 1967, and \citet{MilnerWeyhrauch72} proved
+semantics. \citet{McCarthy:1967aa} proved correct a compiler for
+arithmetic expressions in 1967, and \citet{Milner:1972ab} proved
 correct a compiler for a simple imperative
 language, in Scott's logic of
 computable functions, five years later. In the 1970s, the denotational
@@ -16,10 +16,10 @@ semantics of Scott and Strachey offered an especially clean foundation
 for such proofs. The meaning of a program is a mathematical object, so a
 compiler pass is correct when the meaning of a program before the pass
 equals its meaning afterward, and the proof is equational reasoning.
-\citet{Polak81} used this recipe on a compiler for a subset of Pascal,
-\citet{Clinger84} used the same recipe to prove correct a compiler for
+\citet{Polak:1981aa} used this recipe on a compiler for a subset of Pascal,
+\citet{Clinger:1984aa} used the same recipe to prove correct a compiler for
 Scheme, and
-Guttman, Ramsdell, and Wand \citeyearpar{VLISP95} carried the recipe into VLISP, a verified implementation of Scheme that went down to byte code.
+Guttman, Ramsdell, and Wand \citeyearpar{Guttman:1995aa} carried the recipe into VLISP, a verified implementation of Scheme that went down to byte code.
 However, in each of these compilers either the source language lacks
 first-class, lexically scoped functions, or the target language supports
 such functions directly.
@@ -51,7 +51,7 @@ function's code describes its behavior on every environment, not just
 on the environment that the compiled program pairs it with, so the
 meanings of target programs contain code--environment pairs that
 correspond to no source function, and a proof of reflection must show
-that these pairs never contribute an answer. \citet{Chlipala07} built, in Coq, a compiler from the simply
+that these pairs never contribute an answer. \citet{Chlipala:2007fk} built, in Coq, a compiler from the simply
 typed $\lambda$-calculus to assembly language with a denotational
 semantics for every intermediate language, including the target of
 closure conversion. Chlipala observed that the target denotations ``allow more
@@ -59,7 +59,7 @@ behavior'' than the source and sidestepped the problem with types, an approach t
 Chlipala's source language has no recursion: every program
 terminates, and its denotation is an ordinary Coq function.
 
-With recursion, the denotational attempts stop short. \citet{Nielsen00}
+With recursion, the denotational attempts stop short. \citet{Nielsen:2000aa}
 gave a denotational proof, using domain-theoretic semantics for both
 languages, that defunctionalization, a close cousin of closure
 conversion, preserves the meaning of programs in a simply typed language
@@ -68,7 +68,7 @@ diverging source program to every target program, which lets a
 fixed-point induction prove that terminating programs keep their meaning
 but says nothing in the other direction. Nielsen leaves that direction
 for later: ``Eventually, we want to prove full correctness, i.e.,
-semantic equivalence of the two programs.'' \citet{BHR01} gave the
+semantic equivalence of the two programs.'' \citet{Banerjee:2001aa} gave the
 complete proof, but with an operational semantics for the source
 language and a denotational one only for the first-order target, and
 Banerjee, Heintze, and Riecke report that they ``know of no other proofs of correctness (that is,
@@ -76,21 +76,21 @@ both directions) for ordinary or CFA-based defunctionalization in the
 presence of recursion.''
 
 Operational semantics, meanwhile, carried the day.
-\citet{PottierGauthier06} proved that untyped defunctionalization
+\citet{Pottier:2006aa} proved that untyped defunctionalization
 preserves both convergence and divergence by a simulation between
-operational configurations. When \citet{Chlipala10} next built a
+operational configurations. When \citet{Chlipala:2010aa} next built a
 compiler for an untyped language with general recursion, Chlipala switched to operational semantics, explaining that the approach
 of his 2007 compiler ``cannot be applied directly to Turing-complete programming languages.'' The state-of-the-art
 verified compilers for higher-order languages are operational: CakeML
-\citep{CakeML14} proves its closure conversion with a clocked functional
-big-step semantics, and CertiCoq \citep{CertiCoq19}
-proves the same pass correct with step-indexed logical relations. CompCert \citep{Leroy09}, whose source
+\citep{Kumar:2014aa} proves its closure conversion with a clocked functional
+big-step semantics, and CertiCoq \citep{Paraskevopoulou:2019aa}
+proves the same pass correct with step-indexed logical relations. CompCert \citep{Leroy:2009aa}, whose source
 language is first-order, set the standard for the simulation proofs that most of these
 compilers follow. The denotational proofs that do cover
 divergence avoid closure conversion: some have first-order source
-languages, such as the interaction trees of \citet{XiaITrees20} and the
-compositional verification of \citet{Cheng26}, and others, such as the
-proof of \citet{BentonHur09}, compile to a machine in which closures
+languages, such as the interaction trees of \citet{Xia:2019aa} and the
+compositional verification of \citet{Cheng:2026aa}, and others, such as the
+proof of \citet{Benton:2009aa}, compile to a machine in which closures
 remain primitive values. We know of no denotational proof of closure
 conversion for a language with general recursion that both preserves
 and reflects divergence.
@@ -101,7 +101,7 @@ call-by-value $\lambda$-calculus with iso-recursive types, which we call
 we check every step in Agda. Recursive types let us write the call-by-value fixed-point
 combinator, so \iswim\ has general recursion and admits divergence. The
 compiler has ten passes: a source-to-source optimizer modeled on the cp0 pass of
-Chez Scheme \citep{WaddellDybvig97}, which inlines functions and folds
+Chez Scheme \citep{Waddell:1997fk}, which inlines functions and folds
 constants, then four passes that
 implement closure conversion, and five that bring the program down to
 assembly (making functions global, removing complex operands, lifting
@@ -111,7 +111,7 @@ semantics, and the correctness theorem is that the source program and
 the compiled program stop with the same constant, or both diverge.
 
 The denotational semantics we use is a graph model, in the tradition
-of \citet{Plotkin93}, \citet{Scott76} and \citet{Engeler81}. The
+of \citet{Plotkin:1993ab}, \citet{Scott:1976lq} and \citet{Engeler:1981aa}. The
 meaning of a program is a set of finite pieces of evidence about its
 behavior. The meaning of a function is a set of input--output entries,
 and the meaning of an application collects the outputs of the entries
@@ -121,7 +121,7 @@ set. We chose a graph model because it is elementary: a denotation is just a
 set, with none of the complete partial orders, continuous functions, and
 inverse limits of traditional domain theory, so mechanizing the model
 takes a fraction of the effort (Section~\ref{sec:graph-models}).
-Siek \citeyearpar{Siek17} also used a graph model to prove adequacy and
+Siek \citeyearpar{Siek:2017ab} also used a graph model to prove adequacy and
 the correctness of a function inliner.
 
 Most passes of our compiler are proved by an equation between the
@@ -156,7 +156,7 @@ between two denotational semantics that is defined by recursion on a
 finite approximation of one of the two denotations.
 
 A different route would replace the graph model by Scott domains and
-appeal to \citet{Pitts96}, who proves that relations defined by recursion
+appeal to \citet{Pitts:1996aa}, who proves that relations defined by recursion
 with both positive and negative occurrences exist on recursively defined
 domains. A graph model has no domain equation for that theorem to use,
 and we discuss the trade-off in Section~\ref{sec:related}.
@@ -177,9 +177,9 @@ simulations, as in CompCert; clocked interpreters with value relations,
 as in CakeML; and reduction semantics with simulations. We held all four
 proofs to the same accounting rules and the same end-to-end theorem.
 Comparisons of semantic styles for compiler proofs exist, but at a
-smaller scale. \citet{Owens16} found that proving one compiler phase
+smaller scale. \citet{Owens:2016aa} found that proving one compiler phase
 correct took 43 lines against a relational big-step semantics and 18
-lines against a functional one, and \citet{Kahn25} compared three
+lines against a functional one, and \citet{Kahn:2025aa} compared three
 operational semantics by the lines of Agda needed to prove one
 compilation to a Krivine machine correct. Our comparison is, to our knowledge, the first on a whole compiler down to assembly that includes a
 denotational style.
