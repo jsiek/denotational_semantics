@@ -1,0 +1,78 @@
+%% Section 3: background on graph models. Seed: the figure of values and
+%% operators that the later sections use. Budget: 2.0 pages
+%% (notes/paper-outline.md). Definitions follow the Agda:
+%% agda/Framework/GraphModel/Domain.agda (values, consistency),
+%% agda/Framework/GraphModel/Ops.agda (operators),
+%% agda/proof/Framework/GraphModel/DomainUtilBase.agda (projections, depth).
+%% The text of the section is still to be written: it should explain the
+%% model through the compiler's own languages and examples, the properties
+%% the proofs rely on (monotonicity, continuity, consistency, divergence
+%% as the empty set), why reflection is the hard direction, and why a
+%% graph model rather than domain theory (the line counts are in the
+%% outline).
+
+\section{Graph Models}
+\label{sec:graph-models}
+
+\begin{figure}[t]
+\small
+\[
+\begin{array}{@{}l@{}}
+\textbf{Values} \quad (V, W \text{ finite lists of values})\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  u, v, w & ::= & c \mid V \mapsto w \mid \nu \mid \pairv{u}{v}
+    \mid \mathsf{tup}_i(v) \mid \mathsf{left}(v) \mid \mathsf{right}(v)
+    \mid \langle\rangle \mid \omega
+\end{array}\\[4ex]
+\textbf{Operators} \quad (D, E, D_1, \ldots, D_n \subseteq \Val)\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
+  \Lambda F & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}\\
+  \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
+  \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
+  \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
+  \mathcal{T}(D_1, \ldots, D_n) & = &
+    \{\, \mathsf{tup}_i(v) \mid v \in D_i \,\}
+    \quad \text{if } D_1, \ldots, D_n \neq \emptyset,
+    \text{ and } \emptyset \text{ otherwise}\\
+  \mathsf{inl}(D) & = & \{\, \mathsf{left}(v) \mid v \in D \,\}
+    \qquad
+  \mathsf{inr}(D) \;=\; \{\, \mathsf{right}(v) \mid v \in D \,\}\\
+  \pi_t(D) & = & \{\, v \mid t(v) \in D \,\}
+    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}
+\end{array}\\[17ex]
+\textbf{Consistency} \quad
+  (\mathsf{con}(D) \iff u \sim v \text{ for all } u, v \in D)\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  c \sim c' & \iff & c = c'\\
+  (V \mapsto w) \sim (V' \mapsto w') & \iff &
+    (V \approx V' \Rightarrow w \sim w')
+    \qquad
+    (V \mapsto w) \sim \nu, \quad \nu \sim \nu\\
+  \pairv{u}{v} \sim \pairv{u'}{v'} & \iff & u \sim u' \land v \sim v'\\
+  \mathsf{tup}_i(v) \sim \mathsf{tup}_j(v') & \iff & i = j \Rightarrow v \sim v'\\
+  \mathsf{left}(v) \sim \mathsf{left}(v') & \iff & v \sim v'
+    \qquad
+  \mathsf{right}(v) \sim \mathsf{right}(v') \iff v \sim v'
+\end{array}\\[1ex]
+\text{and no other pairs of values are consistent;
+  $V \approx V'$ means $u \sim v$ for all $u \in V$ and $v \in V'$.}\\[3ex]
+\textbf{Depth}\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \depth(V \mapsto w) & = & 1 + \max(\depth(V), \depth(w))\qquad
+  \depth(\pairv{u}{v}) \;=\; 1 + \max(\depth(u), \depth(v))\\
+  \depth(t(v)) & = & 1 + \depth(v)
+    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
+  \depth(V) & = & \max_{v \in V} \depth(v),
+    \quad \text{and } \depth(v) = 0 \text{ for the other values}
+\end{array}
+\end{array}
+\]
+\caption{The values of the graph model and the operators on denotations
+  (sets of values) that the semantics of the compiler's languages are
+  built from. A finite list of values stands for the set of its
+  elements wherever a set is expected.}
+\label{fig:graph-ops}
+\end{figure}
+
+%% TODO: the text of Section 3.

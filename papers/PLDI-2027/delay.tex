@@ -10,18 +10,6 @@
 %% Paper names of the languages (notes/paper-outline.md, section 2):
 %% EnvClos is the Agda Clos3, FlatClos the Agda Clos4.
 
-\newcommand{\Val}{\mathsf{Value}}
-\newcommand{\den}[1]{[\![#1]\!]}
-\newcommand{\app}{\mathbin{\bullet}}
-\newcommand{\callop}{\mathbin{\odot}}
-\newcommand{\pairv}[2]{\langle\!|#1,#2|\!\rangle}
-\newcommand{\car}{\mathsf{car}}
-\newcommand{\cdr}{\mathsf{cdr}}
-\newcommand{\ALR}{\mathrel{\trianglerighteq}}
-%% D \ALR V is the Agda ApproxLR D V (source set left, finite target list right).
-\newcommand{\Calls}{\mathsf{Calls}}
-\newcommand{\depth}{\mathsf{depth}}
-\newcommand{\kw}[1]{\mathtt{#1}}
 
 \subsection{Delay and the Approximant Logical Relation}
 \label{sec:approx-lr}
@@ -145,58 +133,58 @@ a list of values rather than a single value.
 \[
 \begin{array}{@{}l@{}}
 \textbf{Entries and batches of calls} \quad
-  (V, U, U_0, W, \mathit{FV} \text{ finite lists of values})\\[1ex]
+  (V, U, U_a, U_e, W \text{ finite lists of values})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \cdr(V) & = & \{\, v \mid \pairv{u}{v} \in V \,\}\\[0.5ex]
-  \mathsf{Entry}(V, U_0, w) & \iff &
-    \exists\, \mathit{FV}, t.\;
-    \pairv{\mathit{FV} \mapsto (U_0 \mapsto w)}{t} \in V
-    \;\land\; \mathit{FV} \neq [\,]
-    \;\land\; \mathit{FV} \subseteq \cdr(V)\\[0.5ex]
-  \Calls(V, U, W) & \iff &
-    (\forall w \in W.\; \exists U_0.\; \mathsf{Entry}(V, U_0, w)
-      \land U_0 \neq [\,] \land U_0 \subseteq U)\\
-  & & {}\land\; (\forall u \in U.\; \exists U_0, w.\;
-      \mathsf{Entry}(V, U_0, w) \land u \in U_0)
+  \entryin{U_a}{w}{V} & \iff &
+    \exists\, U_e, t.\;
+    \pairv{U_e \mapsto (U_a \mapsto w)}{t} \in V
+    \;\land\; U_e \neq [\,]
+    \;\land\; U_e \subseteq \cdr(V)\\[0.5ex]
+  \callsto{V}{U}{W} & \iff &
+    (\forall w \in W.\; \exists U_a.\; \entryin{U_a}{w}{V}
+      \land U_a \neq [\,] \land U_a \subseteq U)\\
+  & & {}\land\; (\forall u \in U.\; \exists U_a, w.\;
+      \entryin{U_a}{w}{V} \land u \in U_a)
 \end{array}\\[5ex]
 \textbf{One layer of the relation} \quad
   (D, E \subseteq \Val \text{ source sets};\;
    Q \text{ the relation for the recursive calls})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  D \mathrel{\mathcal{L}(Q)} V & \iff &
+  D \layer{Q} V & \iff &
     (\forall c.\; c \in V \Rightarrow c \in D)\\
   & \land & (V \neq [\,] \Rightarrow D \neq \emptyset)\\
   & \land & (\forall U, W, E.\;
-     \Calls(V, U, W) \land \mathsf{con}(E) \land \mathsf{con}(U)
+     \callsto{V}{U}{W} \land \mathsf{con}(E) \land \mathsf{con}(U)
      \land E \mathrel{Q} U \Rightarrow (D \app E) \mathrel{Q} W)\\
   & \land & (\forall \pi, W.\; W \subseteq \pi(V) \Rightarrow \pi(D) \mathrel{Q} W)
 \end{array}\\[7ex]
 \textbf{The approximant logical relation}\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \ALR_0 V & \iff & \mathsf{true}\\
-  D \ALR_{k+1} V & \iff & D \mathrel{\mathcal{L}(\ALR_k)} V\\
+  D \ALR_{k+1} V & \iff & D \layer{\ALR_k} V\\
   D \ALR V & \iff & D \ALR_{1 + \depth(V)} V
 \end{array}
 \end{array}
 \]
 \caption{The approximant logical relation $D \ALR V$ between a set $D$
   of source (EnvClos) values and a finite list $V$ of target (FlatClos)
-  values. Here $c$ ranges over constants, $\pi$ over the projections of
-  tuple components and sum injections, $\mathsf{con}$ is consistency,
-  and $\depth(V)$ is the largest depth of a value in $V$.}
+  values. A finite list stands for the set of its elements. Here $c$
+  ranges over constants and $\pi$ over the projections of tuple
+  components and sum injections; $\cdr$, $\mathsf{con}$ and $\depth$
+  are as in Figure~\ref{fig:graph-ops}.}
 \label{fig:alr}
 \end{figure}
 
 \paragraph{The relation}
 Figure~\ref{fig:alr} defines the approximant logical relation
 $D \ALR V$, which relates a source set $D$ to a finite list $V$ of
-target values. A \emph{batch of calls} $\Calls(V, U, W)$ records that
+target values. A \emph{batch of calls} $\callsto{V}{U}{W}$ records that
 each result $w$ in the finite list $W$ comes from an entry
-$\pairv{\mathit{FV} \mapsto (U_0 \mapsto w)}{t}$ of $V$, a code entry
-paired with an environment, whose environment inputs $\mathit{FV}$ are
+$\pairv{U_e \mapsto (U_a \mapsto w)}{t}$ of $V$, a code entry
+paired with an environment, whose environment inputs $U_e$ are
 among the environments $\cdr(V)$ that $V$ itself provides and whose
-argument inputs $U_0$ are among the arguments $U$; and that each
-argument in $U$ is used by such an entry. One layer $\mathcal{L}(Q)$ of
+argument inputs $U_a$ are among the arguments $U$; and that each
+argument in $U$ is used by such an entry. One layer ${\trianglerighteq^{Q}}$ of
 the relation has four clauses: the constants of $V$ are in $D$; if $V$
 is nonempty, so is $D$; every batch of calls of $V$ on arguments
 related to a source set $E$ produces results related to $D \app E$; and
@@ -209,7 +197,7 @@ and the results $W$ of a batch of calls are strictly shallower than
 $V$, and so are its projections. The index $k$ of ${\ALR_k}$ is only a
 termination device: any index that bounds the depth of $V$ gives the
 same relation (Lemma~\ref{lem:depth-irrelevant}), so we may fold and
-unfold ${\ALR}$ as if it satisfied ${\ALR} = \mathcal{L}({\ALR})$ directly.
+unfold ${\ALR}$ as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$ directly.
 
 \begin{lemma}[Depth irrelevance]\label{lem:depth-irrelevant}
 If every value in $V$ has depth less than $k$ and less than $j$, then
@@ -246,19 +234,19 @@ $\den{M}\rho \ALR V$.
 The proof is by induction on $M$. Two cases carry the weight. For a
 call, a finite $V \subseteq D' \callop E'$ is produced by finitely many
 pairs and arguments, by continuity of the graph model: there are finite
-$W \subseteq D'$ and $U \subseteq E'$ with $\Calls(W, U, V)$. The
+$W \subseteq D'$ and $U \subseteq E'$ with $\callsto{W}{U}{V}$. The
 induction hypotheses give $\den{L}\rho \ALR W$ and
 $\den{M}\rho \ALR U$, and clause~3 of the first, applied to this batch
 of calls, gives $\den{L}\rho \app \den{M}\rho \ALR V$. For a closure,
 we must establish clause~3 for the set of pairs
 $\den{\kw{pack}\;(\kw{code}\;N')\;(\kw{tuple}\;\vec{M}')}\rho'$: an
-entry of a batch of calls has environment inputs $\mathit{FV}$ drawn
+entry of a batch of calls has environment inputs $U_e$ drawn
 from the environments that the list itself provides, which are
 approximations of the tuple of free variables, so the induction
 hypothesis for $\vec{M}$ relates them to the source environment, and
 the induction hypothesis for the body $N$ relates the results. This is
-where the condition $\mathit{FV} \subseteq \cdr(V)$ in the definition
-of $\Calls$ earns its keep: it is exactly what excludes the code
+where the condition $U_e \subseteq \cdr(V)$ in the definition
+of a batch of calls earns its keep: it is exactly what excludes the code
 entries for environments that the program never supplies.
 
 \begin{theorem}[Correctness of delay]\label{thm:delay}
