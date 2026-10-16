@@ -139,6 +139,7 @@ The column "Divergence" says how each work treats divergence, since K2b is the h
 | **1** | K1 | CakeML backend; CertiCoq | ✓; ~ | ✓ | Operational: functional big-step with clocks; step-indexed relations. Divergence preserved. |
 | **1** | K1 | Banerjee–Heintze–Riecke 2001 | ✗ | ✗ | `(e,∅) ⇓ n` in the source iff in the target, by adequacy of the target's denotation and a lexicographic induction on unwindings of recursive functions and terms. Source operational. Main proof a sketch. |
 | **1** | K1 | Typed and operational closure conversion whose source has recursion (Ahmed–Blume, Pilsner, Pyrosome, Wang–Nadathur, Perconti–Ahmed) | mostly ✗ | some | Step-indexed or simulation relations; K2a and K2b vary by paper. |
+| **2** | K1, K3 | CompCert (and CompCertTSO, CompCertO) | ✓ | ✓ | Operational. Source C is Turing complete and first-order, so there are no closures to convert (K3). Divergence is covered by the semantic-preservation theorem over behaviours (terminating, diverging, going wrong). How the reflection direction is obtained (forward simulation plus determinism of the target) is from memory [M]: check Leroy's papers before saying it. |
 | **2** | K1, K3 | Benton–Hur 2009 | ✗ | ✓ | Both directions (Theorems 1 and 2): step-indexed biorthogonal relation on the machine side and an admissible closure on the denotation side. Target operational (SECD with closures). |
 | **2** | K1, K3 | Bahr–Hutton 2022; Danielsson 2012 | ✗ | ✓ | Partiality monad; strong or weak bisimilarity. Interpreters, VM keeps closures. (Bahr–Hutton 2015, 2020: converging behaviour only, so also K2b, Tier 3.) |
 | **2** | K1, K2b | Chlipala 2010 | ✓ | ✓ | "ignores non-termination". |
@@ -196,7 +197,7 @@ All of these prove their compilers with operational semantics, simulations, logi
 
 | Work | Mech. | Source language | Closure conversion | Proof style | Claims | Role | Where |
 |---|---|---|---|---|---|---|---|
-| CompCert, CompCertTSO | Coq | C | — | simulations | — | Contrast | I §1.10 |
+| **CompCert** (Leroy 2006, 2009; and CompCertTSO) | Coq | C (Clight and below): Turing complete, first-order | none: no closures to convert | operational; simulation proofs through about twenty passes down to assembly | C9 | **Tier 2** (misses K1 and K3); the most famous compiler-correctness proof, so it must be named | I §1.10 |
 | CakeML backend (Owens et al. 2017; Tan et al. 2019) | HOL4 | typed ML; CC on untyped ClosLang | yes | functional big-step with clocks | C9 | Contrast | I §1.10; II §3 |
 | CertiCoq (Paraskevopoulou–Appel 2019; –Li–Appel 2021) | Coq | untyped CPS λ ILs | yes (flat) | step-indexed LR, composed across passes | C3 | Contrast; the untyped mechanized CC line | II §3 |
 | Pilsner 2015; Hur–Dreyer 2011 | Coq | ML-like imperative HO language; System F-like with recursive types | multi-pass (Pilsner) | parametric simulations; Kripke step-indexed LR | — | Contrast | II §3; III A8d |
