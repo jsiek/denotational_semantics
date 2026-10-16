@@ -108,6 +108,12 @@ This section is a working tool for the "Where this fits" subsection of the intro
 - Fig. 1: the pipeline.
 
 ## 3. Background: graph models
+- **Why a graph model rather than Scott domains** (the introduction only summarizes this and points here, as `sec:graph-models`). The graph model is elementary: a denotation is just a set, with no complete partial orders, continuous functions or inverse limits. The evidence, all counted like `loc.py` (no comments, blank lines or imports):
+  - the core of our graph model (values, consistency, generic machinery for operators) is 364 lines of Agda, about 1,200 with the meanings of the operators of all our languages (`loc.md`, infrastructure table: 364 + 623 + 235);
+  - the Scott-domain pilot (branch `scott-pilot`; source language, Clos2 and enclose of the earlier untyped compiler) builds on Tom de Jong's domain theory in TypeTopology: its own constructions (sums, lifting, products and exponentials of dcpos, locally continuous functors, the bilimit solution of the domain equation) are 847 lines, on top of about 5,400 lines of TypeTopology's domain theory (13 `DomainTheory` modules reached by its imports; about 25,900 lines counting all 120 TypeTopology modules reached, including the univalent foundations); its operators and semantics of signatures are 185 more, the semantics of ISWIM, Clos2 and primitives 75, the proof of enclose 118;
+  - the pilot assumes propositional truncation, function extensionality and propositional extensionality; the graph model needs none of them (and the whole development is `--safe`, standard library only);
+  - Benton, Birkedal, Kennedy and Varming report "around 4400 lines" of Coq for their category and domain-theory library, including recursive domain equations (`related-denot/benton-birkedal-kennedy-varming-formalizing-domains.pdf`).
+  Cite TypeTopology (`refs.bib: TypeTopology`) and BBKV10.
 - **Through the compiler's own languages.** Examples come from ISWIMμ and the intermediate languages of §2 (e.g. the meaning of a λ, of an application, of a diverging Z-combinator loop), not from the pure λ-calculus.
 - **Denotations.** A denotation is a set of finite values. A function's finite value is a finite table of input/output entries, and application ⟦L M⟧ρ collects the outputs of the tables in ⟦L⟧ρ whose inputs are covered by ⟦M⟧ρ.
 - **The properties the proofs rely on:**
