@@ -136,17 +136,17 @@ fails because a small output of a function can depend on an arbitrarily
 deep input.
 
 The key insight is that only one side of the relation needs to shrink. Instead of relating two
-infinite sets, we relate a finite set of target observations to an
-arbitrary source denotation, and we define the relation by recursion on
+infinite sets, we relate a finite set of target observations to a
+possibly infinite source denotation, and we define the relation by recursion on
 the depth of the finite set. We call the result an \emph{approximant
 logical relation}. The depth of the finite approximation bounds the
 recursion, so the definition is well founded without steps, without
-types, and without any restriction on the source side. Types cannot
-replace this index: with recursive types, the application case of a
-function of type $\mu X.\,X \Rightarrow \mathrm{Int}$ returns to the
-same type, so a relation indexed by type does not decrease. The
+types, and without any restriction on the source side. Recursion on types could not do the same job: with recursive types, the
+application case of a function of type $\mu X.\,X \Rightarrow
+\mathrm{Int}$ returns to the same type, so a relation defined by
+recursion on types would not be well founded. The
 approximant logical relation is, to our knowledge, the first relation
-between two denotational semantics that is indexed by a finite
+between two denotational semantics that is defined by recursion on a finite
 approximation of one of the two denotations.
 
 A denotational correctness theorem is a statement about meanings, and a
