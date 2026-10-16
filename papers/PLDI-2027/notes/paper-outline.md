@@ -126,6 +126,20 @@ This section is a working tool for the "Where this fits" subsection of the intro
   - closure conversion in four passes: enclose, optimize, concretize, delay;
   - globalize, remove complex operands, lift locals, explicate control, select instructions;
   - the target X86μ, a typed assembly language.
+- **Language names in the paper** (they say what changed; the Agda module names stay as they are, with this mapping in the artifact's README):
+
+  | Paper | Agda | What distinguishes it | Produced by |
+  |---|---|---|---|
+  | ISWIMμ | ISWIMμ | source: call-by-value λ with tuples, sums, iso-recursive types | — |
+  | Clos | Clos2μ | closures list their free variables; the code sees them as separate variables | enclose (and optimize) |
+  | EnvClos | Clos3μ | the code reads its free variables from one environment tuple | concretize |
+  | FlatClos | Clos4μ | a closure is a pair of code and environment; a call opens it | delay |
+  | GlobalFun | Clos5μ | all code is global definitions, referred to by name | globalize |
+  | Mon | Monμ | monadic normal form (atomic operands) | remove complex operands |
+  | Imp | Impμ | frames of slots with assignment; structured control | lift locals |
+  | CFG | CFGμ | control-flow graph of blocks | explicate control |
+  | X86μ | X86μ | typed assembly | select instructions |
+
 - **Intrinsically typed intermediate languages:** no pass needs a scoping or typing precondition.
 - Fig. 1: the pipeline.
 

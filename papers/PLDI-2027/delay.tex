@@ -7,6 +7,8 @@
 %% DelayPreserve.agda (the forward relation) and DelayCorrect.agda (the
 %% theorem). The history of the relation is told as a tour of relation
 %% shapes, without names or dates (notes/history-outline.md).
+%% Paper names of the languages (notes/paper-outline.md, section 2):
+%% EnvClos is the Agda Clos3, FlatClos the Agda Clos4.
 
 \newcommand{\Val}{\mathsf{Value}}
 \newcommand{\den}[1]{[\![#1]\!]}
@@ -15,7 +17,8 @@
 \newcommand{\pairv}[2]{\langle\!|#1,#2|\!\rangle}
 \newcommand{\car}{\mathsf{car}}
 \newcommand{\cdr}{\mathsf{cdr}}
-\newcommand{\ALR}{\mathsf{ALR}}
+\newcommand{\ALR}{\mathrel{\trianglerighteq}}
+%% D \ALR V is the Agda ApproxLR D V (source set left, finite target list right).
 \newcommand{\Calls}{\mathsf{Calls}}
 \newcommand{\depth}{\mathsf{depth}}
 \newcommand{\kw}[1]{\mathtt{#1}}
@@ -25,13 +28,43 @@
 
 This section is about the one pass of our compiler whose proof is not
 an equation. Delay is the pass of closure conversion that changes how a
-closure is represented. In its source language, Clos3, a closure
+closure is represented. In its source language, EnvClos, a closure
 $\kw{clos}\;N\;\vec{M}$ pairs the code $N$, which is closed and takes
 its free variables as a tuple, with the expressions $\vec{M}$ that
-compute those free variables; the closure is still a function, and an
-application $\kw{app}\;L\;M$ applies it directly. In the target
-language, Clos4, a closure is an ordinary pair, and a call takes the
-pair apart:
+compute those free variables, and an application $\kw{app}\;L\;M$
+applies a closure to an argument. Semantically, a closure is still a
+function: the meaning of a closure is the meaning of its code, a curried function
+of the environment and then the argument, applied to the tuple of the
+free variables, and the meaning of an application is application:
+\[
+\begin{array}{rcl}
+  \den{\kw{clos}\;N\;\vec{M}}\rho & = &
+    \Lambda X.\, \Lambda Y.\, \den{N}(X, Y) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
+  \den{\kw{app}\;L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
+\end{array}
+\]
+where $\den{N}(X, Y)$ is the meaning of $N$ with its environment
+parameter bound to $X$ and its argument bound to $Y$.
+
+In the target language, FlatClos, a closure is an ordinary pair of code
+and environment, and a call takes the pair apart. The code means the
+same curried function, $\kw{pack}$ builds the set of pairs
+$\pairv{u}{v}$ with $u$ from the code and $v$ from the environment, and
+a call applies the first components to the second components and then
+to the argument:
+\[
+\begin{array}{rcl}
+  \den{\kw{code}\;N}\rho & = & \Lambda X.\, \Lambda Y.\, \den{N}(X, Y)\\
+  \den{\kw{pack}\;L\;M}\rho & = &
+    \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
+  \den{\kw{callc}\;L\;M}\rho & = &
+    (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho
+\end{array}
+\]
+We write $D' \callop E'$ for
+$(\car(D') \app \cdr(D')) \app E'$. Delay turns each closure into a
+pair and each application into a call, and translates every other
+construct homomorphically:
 \[
 \begin{array}{rcl}
   \mathit{delay}(\kw{clos}\;N\;\vec{M}) & = &
@@ -40,29 +73,6 @@ pair apart:
     \kw{callc}\;\mathit{delay}(L)\;\mathit{delay}(M)
 \end{array}
 \]
-Every other construct is translated homomorphically.
-
-\paragraph{The two semantics}
-Recall from Section~\ref{sec:graph-models} that a denotation is a set
-of values, that a function's values are entries $V \mapsto w$ with a
-finite, nonempty list $V$ of inputs, and that application collects the
-outputs of the entries whose inputs the argument covers:
-\[
-  D \app E \;=\; \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}.
-\]
-In Clos3, a closure means its code applied to the tuple of its free
-variables, so it denotes a set of function entries, and an application
-is $\den{\kw{app}\;L\;M}\rho = \den{L}\rho \app \den{M}\rho$. In Clos4,
-code is a curried function of the environment and then the argument,
-$\kw{pack}$ builds the set of pairs $\pairv{u}{v}$ with $u$ from the
-code and $v$ from the environment, and a call applies the first
-components to the second components and then to the argument:
-\[
-  \den{\kw{callc}\;L\;M}\rho \;=\; (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho,
-\]
-where $\car(D) = \{u \mid \pairv{u}{v} \in D\}$ and
-$\cdr(D) = \{v \mid \pairv{u}{v} \in D\}$. We write $D' \callop E'$ for
-the right-hand side with $\den{L}\rho = D'$ and $\den{M}\rho = E'$.
 
 \paragraph{Why preservation is easy and reflection is not}
 Delay changes the representation of values, so its correctness is not
@@ -87,7 +97,7 @@ The backward half, reflection, must show that every value the target
 produces is accounted for by the source, and here the representation of
 closures gets in the way. To see how, consider a function that adds
 nine, $\lambda y.\, x + y$ in an environment where $x$ is $9$. In
-Clos3 its meaning is a set of entries such as $[1] \mapsto 10$ and
+EnvClos its meaning is a set of entries such as $[1] \mapsto 10$ and
 $[6] \mapsto 15$. After delay, its code takes the environment as an
 extra argument, and the meaning of the code is a table with entries for
 \emph{every} environment, including $[x{=}0] \mapsto ([6] \mapsto 6)$,
@@ -130,43 +140,80 @@ the $\car$ and $\cdr$ of several pairs, the matching of codes to
 environments must happen \emph{inside} the finite list, so the index is
 a list of values rather than a single value.
 
+\begin{figure}[t]
+\small
+\[
+\begin{array}{@{}l@{}}
+\textbf{Entries and batches of calls} \quad
+  (V, U, U_0, W, \mathit{FV} \text{ finite lists of values})\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \cdr(V) & = & \{\, v \mid \pairv{u}{v} \in V \,\}\\[0.5ex]
+  \mathsf{Entry}(V, U_0, w) & \iff &
+    \exists\, \mathit{FV}, t.\;
+    \pairv{\mathit{FV} \mapsto (U_0 \mapsto w)}{t} \in V
+    \;\land\; \mathit{FV} \neq [\,]
+    \;\land\; \mathit{FV} \subseteq \cdr(V)\\[0.5ex]
+  \Calls(V, U, W) & \iff &
+    (\forall w \in W.\; \exists U_0.\; \mathsf{Entry}(V, U_0, w)
+      \land U_0 \neq [\,] \land U_0 \subseteq U)\\
+  & & {}\land\; (\forall u \in U.\; \exists U_0, w.\;
+      \mathsf{Entry}(V, U_0, w) \land u \in U_0)
+\end{array}\\[5ex]
+\textbf{One layer of the relation} \quad
+  (D, E \subseteq \Val \text{ source sets};\;
+   Q \text{ the relation for the recursive calls})\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  D \mathrel{\mathcal{L}(Q)} V & \iff &
+    (\forall c.\; c \in V \Rightarrow c \in D)\\
+  & \land & (V \neq [\,] \Rightarrow D \neq \emptyset)\\
+  & \land & (\forall U, W, E.\;
+     \Calls(V, U, W) \land \mathsf{con}(E) \land \mathsf{con}(U)
+     \land E \mathrel{Q} U \Rightarrow (D \app E) \mathrel{Q} W)\\
+  & \land & (\forall \pi, W.\; W \subseteq \pi(V) \Rightarrow \pi(D) \mathrel{Q} W)
+\end{array}\\[7ex]
+\textbf{The approximant logical relation}\\[1ex]
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  D \ALR_0 V & \iff & \mathsf{true}\\
+  D \ALR_{k+1} V & \iff & D \mathrel{\mathcal{L}(\ALR_k)} V\\
+  D \ALR V & \iff & D \ALR_{1 + \depth(V)} V
+\end{array}
+\end{array}
+\]
+\caption{The approximant logical relation $D \ALR V$ between a set $D$
+  of source (EnvClos) values and a finite list $V$ of target (FlatClos)
+  values. Here $c$ ranges over constants, $\pi$ over the projections of
+  tuple components and sum injections, $\mathsf{con}$ is consistency,
+  and $\depth(V)$ is the largest depth of a value in $V$.}
+\label{fig:alr}
+\end{figure}
+
 \paragraph{The relation}
-For a finite list $V$ of target values, a \emph{batch of calls}
-$\Calls(V, U, W)$ records that each result $w$ in the finite list $W$
-comes from an entry
-$\pairv{\mathit{FV} \mapsto (U_0 \mapsto w)}{t}$ of $V$ whose
-environment inputs $\mathit{FV}$ are nonempty and are among the
-environments $\cdr(V)$ that $V$ itself provides, and whose argument
-inputs $U_0$ are nonempty and contained in $U$; and that each $u$ in
-$U$ is an argument input of such an entry. The approximant logical
-relation $\ALR(D, V)$ relates a source set $D$ to a finite list $V$ of
-target values when:
-\begin{enumerate}
-\item every constant in $V$ is in $D$;
-\item if $V$ is nonempty, so is $D$;
-\item for every batch of calls $\Calls(V, U, W)$ and every consistent
-  source set $E$ with $U$ consistent and $\ALR(E, U)$, we have
-  $\ALR(D \app E, W)$;
-\item for the projection $\pi$ of each tuple component or sum
-  injection, and every finite $W \subseteq \pi(V)$, we have
-  $\ALR(\pi(D), W)$.
-\end{enumerate}
-Clause~3 is the only place where $\car$ and $\cdr$ meet, and they meet
-inside the finite list $V$. The definition is by recursion on the
-depth of $V$: the arguments $U$ and the results $W$ of a batch of calls
-are strictly shallower than $V$, and so are the projections in
-clause~4. In Agda the recursion is expressed with a counter,
-$\ALR_0 = \top$ and
-$\ALR_{k+1}(D, V) = \mathcal{L}(\ALR_k)(D, V)$, where $\mathcal{L}(Q)$
-is clauses 1--4 with the recursive occurrences replaced by $Q$, and
-$\ALR(D, V) = \ALR_{1 + \depth(V)}(D, V)$. The counter is only a
-termination device: any counter that bounds the depth of $V$ gives the
-same relation (Lemma~\ref{lem:depth-irrelevant}), which lets us fold
-and unfold $\ALR$ as if it were defined directly by clauses 1--4.
+Figure~\ref{fig:alr} defines the approximant logical relation
+$D \ALR V$, which relates a source set $D$ to a finite list $V$ of
+target values. A \emph{batch of calls} $\Calls(V, U, W)$ records that
+each result $w$ in the finite list $W$ comes from an entry
+$\pairv{\mathit{FV} \mapsto (U_0 \mapsto w)}{t}$ of $V$, a code entry
+paired with an environment, whose environment inputs $\mathit{FV}$ are
+among the environments $\cdr(V)$ that $V$ itself provides and whose
+argument inputs $U_0$ are among the arguments $U$; and that each
+argument in $U$ is used by such an entry. One layer $\mathcal{L}(Q)$ of
+the relation has four clauses: the constants of $V$ are in $D$; if $V$
+is nonempty, so is $D$; every batch of calls of $V$ on arguments
+related to a source set $E$ produces results related to $D \app E$; and
+every projection of $V$ is related to the same projection of $D$. The
+third clause is the only place where $\car$ and $\cdr$ meet, and they
+meet inside the finite list $V$.
+
+The definition is by recursion on the depth of $V$: the arguments $U$
+and the results $W$ of a batch of calls are strictly shallower than
+$V$, and so are its projections. The index $k$ of ${\ALR_k}$ is only a
+termination device: any index that bounds the depth of $V$ gives the
+same relation (Lemma~\ref{lem:depth-irrelevant}), so we may fold and
+unfold ${\ALR}$ as if it satisfied ${\ALR} = \mathcal{L}({\ALR})$ directly.
 
 \begin{lemma}[Depth irrelevance]\label{lem:depth-irrelevant}
 If every value in $V$ has depth less than $k$ and less than $j$, then
-$\ALR_k(D, V)$ if and only if $\ALR_j(D, V)$.
+$D \ALR_k V$ if and only if $D \ALR_j V$.
 \end{lemma}
 
 The relation is also monotone in $D$ and antitone in $V$: a larger
@@ -178,31 +225,31 @@ relation by recursion on types, as \citet{Chlipala:2007fk} and
 \citet{Nielsen:2000aa} do. Recursive types rule this out. The meaning of
 $\kw{fold}$ and $\kw{unfold}$ is the identity, so the relation at
 $\mu X.\,A$ would have to be the relation at $A[\mu X.\,A/X]$, which is
-not smaller; at $\mu X.\,X \Rightarrow \mathrm{Int}$, the application
+not smaller; at $\mu X.\,X \rightarrow \mathrm{Int}$, the application
 clause asks for the relation at the argument type, which is
-$\mu X.\,X \Rightarrow \mathrm{Int}$ itself. The depth of the finite
+$\mu X.\,X \rightarrow \mathrm{Int}$ itself. The depth of the finite
 approximation, by contrast, decreases at every call, and the values of
 the graph model are untyped, so the depth needs no help from the types.
 
 \paragraph{The fundamental lemma}
 Environments $\rho$ and $\rho'$ are related when, for every variable
 $x$ and every finite $V \subseteq \rho'(x)$, we have
-$\ALR(\rho(x), V)$, together with the consistency and nonemptiness
+$\rho(x) \ALR V$, together with the consistency and nonemptiness
 that the graph model requires of environments.
 
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
-If $\rho$ and $\rho'$ are related, then for every term $M$ of Clos3 and
+If $\rho$ and $\rho'$ are related, then for every term $M$ of EnvClos and
 every finite $V \subseteq \den{\mathit{delay}(M)}\rho'$, we have
-$\ALR(\den{M}\rho, V)$.
+$\den{M}\rho \ALR V$.
 \end{lemma}
 
 The proof is by induction on $M$. Two cases carry the weight. For a
 call, a finite $V \subseteq D' \callop E'$ is produced by finitely many
 pairs and arguments, by continuity of the graph model: there are finite
 $W \subseteq D'$ and $U \subseteq E'$ with $\Calls(W, U, V)$. The
-induction hypotheses give $\ALR(\den{L}\rho, W)$ and
-$\ALR(\den{M}\rho, U)$, and clause~3 of the first, applied to this batch
-of calls, gives $\ALR(\den{L}\rho \app \den{M}\rho, V)$. For a closure,
+induction hypotheses give $\den{L}\rho \ALR W$ and
+$\den{M}\rho \ALR U$, and clause~3 of the first, applied to this batch
+of calls, gives $\den{L}\rho \app \den{M}\rho \ALR V$. For a closure,
 we must establish clause~3 for the set of pairs
 $\den{\kw{pack}\;(\kw{code}\;N')\;(\kw{tuple}\;\vec{M}')}\rho'$: an
 entry of a batch of calls has environment inputs $\mathit{FV}$ drawn
@@ -215,7 +262,7 @@ of $\Calls$ earns its keep: it is exactly what excludes the code
 entries for environments that the program never supplies.
 
 \begin{theorem}[Correctness of delay]\label{thm:delay}
-For a closed term $M$ of Clos3 and a constant $c$,
+For a closed term $M$ of EnvClos and a constant $c$,
 $c \in \den{M}$ if and only if $c \in \den{\mathit{delay}(M)}$, and
 $\den{M}$ is nonempty if and only if $\den{\mathit{delay}(M)}$ is.
 \end{theorem}
@@ -230,9 +277,21 @@ relation $\sqsubseteq$.
 Delay is the most expensive pass of the denotational proof: 524 lines
 of Agda, against 35 to 139 for the same pass in the three operational
 styles (Section~\ref{sec:evaluation}). Most of the difference has three
-sources. First, the denotational proof needs two relations, one for
-each direction, while a simulation proof gets the backward direction
-for free from forward simulation and the determinism of the target.
+sources. First, the denotational proof needs two directions, while a
+simulation proof gets the backward direction for free from forward
+simulation and the determinism of the target. The graph model has an
+analogue of determinism, the consistency of denotations, and it does
+part of the job: if the source produces a constant, the forward
+direction puts that constant in the target, and consistency rules out
+any other. But the graph model represents divergence as the empty set,
+the absence of evidence, and a forward relation cannot carry absence.
+Showing that a diverging program compiles to a diverging program is
+therefore a separate argument, and that argument is reflection. (We use
+different relations for the two directions, the structural one for
+preservation and the approximant one for reflection, because a single
+relation parameterized by the direction made the proof longer: on an
+earlier version of the compiler, switching from one relation to two cut
+the proof of delay from 1,358 to 832 lines.)
 Second, reflection needs the finite lists, the batches of calls, and
 the lemma that extracts them from a target call. Third, $\beta$-rules in
 the graph model hold only under side conditions of nonemptiness and

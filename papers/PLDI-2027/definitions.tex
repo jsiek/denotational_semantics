@@ -292,12 +292,12 @@ $\Ml{Clos4}$ and later, is that of closed code that takes an environment,
 a tuple of type $\Mtup{\Delta}$, and an argument of type $A$.
 \begin{syntax}
   & B &::=& \key{Nat} \mid \key{Int} \mid \key{Bool} \mid \key{Unit} \mid \key{Void} \\
-  & A, C &::=& B \mid A \Rightarrow C \mid \Mtup{(A_1, \ldots, A_n)} \mid A + C
+  & A, C &::=& B \mid A \rightarrow C \mid \Mtup{(A_1, \ldots, A_n)} \mid A + C
     \mid \Mmu{X}{A} \mid X \mid \Mcodety{\Delta}{A}{C} \\
   & \Gamma, \Delta &::=& A_1, \ldots, A_n
 \end{syntax}
 The body $A$ of $\Mmu{X}{A}$ is \emph{contractive}: it starts with a base
-type, $\Rightarrow$, $\key{tup}$, $+$ or $\key{code}$, not with a variable or
+type, $\rightarrow$, $\key{tup}$, $+$ or $\key{code}$, not with a variable or
 another $\mu$; that rules out $\Mmu{X}{X}$ and keeps unfolding productive.
 The unfolding of $\Mmu{X}{A}$ is $\Munroll{X}{A}$, with type substitution
 on \texttt{Ty} (\texttt{tren}, \texttt{tsubst}, \texttt{unroll}). The
@@ -327,8 +327,8 @@ term is well scoped by construction.
 \[
 \begin{array}{r@{\;:\;}l@{\qquad}l}
   x & A & x{:}A \in \Gamma \\
-  \lam{x} N & A \Rightarrow C & \Gamma, x{:}A \vdash N : C \\
-  L\;M & C & L : A \Rightarrow C,\ M : A \\
+  \lam{x} N & A \rightarrow C & \Gamma, x{:}A \vdash N : C \\
+  L\;M & C & L : A \rightarrow C,\ M : A \\
   c & B & c \text{ a constant of base type } B \\
   \tuple{M_1,\ldots,M_n} & \Mtup{(A_1, \ldots, A_n)} & M_i : A_i \\
   \prj{i} M & A_i & M : \Mtup{(A_1, \ldots, A_n)},\ 1 \leq i \leq n \\
@@ -347,14 +347,14 @@ program of type $\key{Int}$ (Section~\ref{sec:m-thm}).
 $\key{fix}$. Self-application is typable through a recursive type
 (\texttt{proof/Compiler/Examples/RecursionExample.agda}):
 \begin{align*}
-  \omega &= \lam{x} (\Munfold x)\;x : (\Mmu{X}{X \Rightarrow \key{Int}}) \Rightarrow \key{Int}
+  \omega &= \lam{x} (\Munfold x)\;x : (\Mmu{X}{X \rightarrow \key{Int}}) \rightarrow \key{Int}
   \qquad \Omega = \omega\;(\Mfold \omega) : \key{Int} , \\
   \mathit{fix} &= \lam{f} g\;(\Mfold g), \quad
     g = \lam{x} f\;(\lam{v} (\Munfold x)\;x\;v), \quad
-    x : \Mmu{X}{X \Rightarrow (\key{Int} \Rightarrow \key{Int})} ,
+    x : \Mmu{X}{X \rightarrow (\key{Int} \rightarrow \key{Int})} ,
 \end{align*}
 where $\Omega$ diverges and $\mathit{fix}$ is the call-by-value fixed-point
-combinator at $\key{Int} \Rightarrow \key{Int}$; the example compiles a
+combinator at $\key{Int} \rightarrow \key{Int}$; the example compiles a
 countdown with $\mathit{fix}$ and runs it, and $\Omega$, on the
 $\Ml{ISWIM}$ and $\Ml{Clos4}$ machines and on the $\Ml{ISWIM}$, $\Ml{Clos4}$
 and $\Ml{X86}$ interpreters, by computation
@@ -373,7 +373,7 @@ terms $M_1 \ldots M_n$, which have types $\Delta = A_1, \ldots, A_n$.
 \[
   \frac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
         x_1{:}A_1, \ldots, x_n{:}A_n, y{:}A \vdash N : C}
-       {\Gamma \vdash \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N : A \Rightarrow C}
+       {\Gamma \vdash \clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N : A \rightarrow C}
 \]
 The closure's type does not show $\Delta$. The other constructs are typed
 as in $\Ml{ISWIM}$.
@@ -389,15 +389,15 @@ code reads them with projections (\texttt{Language/Clos3.agda}).
 \[
   \frac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
         e{:}\Mtup{\Delta},\, y{:}A \vdash N : C}
-       {\Gamma \vdash \clos{M_1\ldots M_n}{e\, y} N : A \Rightarrow C}
+       {\Gamma \vdash \clos{M_1\ldots M_n}{e\, y} N : A \rightarrow C}
   \qquad \Delta = A_1, \ldots, A_n
 \]
 
 \subsection{\texorpdfstring{$\Ml{Clos4}$}{Clos4-mu}}
 
 A closure is a pair of closed code and the tuple of its free variables,
-packed so that its type $A \Rightarrow C$ hides the types $\Delta$ of the
-tuple (\texttt{Language/Clos4.agda}): $A \Rightarrow C$ is the existential
+packed so that its type $A \rightarrow C$ hides the types $\Delta$ of the
+tuple (\texttt{Language/Clos4.agda}): $A \rightarrow C$ is the existential
 $\exists \Delta.\, \Mcodety{\Delta}{A}{C} \times \Mtup{\Delta}$ of typed
 closure conversion (Minamide, Morrisett and Harper), with a list of types
 as the witness. $\key{pack}$ builds a closure from code and an environment
@@ -415,9 +415,9 @@ the existential and is parametric in $\Delta$, so it needs no check.
        {\Gamma \vdash \Tcodetm{e}{y}{N} : \Mcodety{\Delta}{A}{C}}
   \qquad
   \frac{\Gamma \vdash L : \Mcodety{\Delta}{A}{C} \quad \Gamma \vdash M : \Mtup{\Delta}}
-       {\Gamma \vdash \Tpack{L}{M} : A \Rightarrow C}
+       {\Gamma \vdash \Tpack{L}{M} : A \rightarrow C}
   \qquad
-  \frac{\Gamma \vdash L : A \Rightarrow C \quad \Gamma \vdash M : A}
+  \frac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
        {\Gamma \vdash \Tcallc{L}{M} : C}
 \]
 
@@ -568,7 +568,7 @@ leaves. A state type $\psi = \Tst{\Theta}{\Delta}{O}{F}$ gives
 \item the frame $\Delta$, the types of the slots assigned so far, as in
   $\Ml{CFG}$, in a frame of $n$ slots fixed by the body;
 \item the open closure $O$: none ($\cdot$), or a slot $x$ of $\Delta$ of a
-  function type $A \Rightarrow C$ (below);
+  function type $A \rightarrow C$ (below);
 \item the flag $F$: $\Tset$ or $\Tunset$.
 \end{itemize}
 \begin{syntax}
@@ -614,7 +614,7 @@ of $n$ slots, and closes the open closure:
   \frac{\Delta' \sqsubseteq \Delta \quad |\Delta'| < n}
        {n \vdash |\Delta'| : \Tst{\Theta}{\Delta}{O}{F} \Rightarrow_A \Tst{\Theta}{\Delta', A}{\cdot}{F}}
 \]
-An object $o$ of $\key{alloc}$ has type $A \Rightarrow C$ for
+An object $o$ of $\key{alloc}$ has type $A \rightarrow C$ for
 $\key{pair}(a_1, a_2)$ with $a_1 : \Mcodety{\Delta}{A}{C}$ and
 $a_2 : \Mtup{\Delta}$ (a closure), $\Mtup{(A_1, \ldots, A_m)}$ for a tuple of
 operands of types $A_1, \ldots, A_m$, and $A + B$ for an injection. An
@@ -628,7 +628,7 @@ $\psi = \Tst{\Theta}{\Delta}{O}{F}$ and operands typed in $\psi$:
   \key{sete}\; d & \Tst{\Theta}{\Delta}{O}{\Tset} \Rightarrow \psi' & d : \Tst{\Theta}{\Delta}{O}{\Tset} \Rightarrow_{\Mbool} \psi' \\
   \key{alloc}\; o, d & \psi \Rightarrow \psi' & o : A,\ d : \psi \Rightarrow_A \psi' \\
   \key{load}\; \pi_i\; a, d & \psi \Rightarrow \psi' & a : \Mtup{(A_1, \ldots, A_m)},\ d : \psi \Rightarrow_{A_i} \psi' \\
-  \key{load}\; \key{fst}\; x, \%r & \psi \Rightarrow \Tst{\Twipe{\Theta}[r{:}\codeAB{A}{C}]}{\Delta}{x}{F} & x : A \Rightarrow C \in \Delta \\
+  \key{load}\; \key{fst}\; x, \%r & \psi \Rightarrow \Tst{\Twipe{\Theta}[r{:}\codeAB{A}{C}]}{\Delta}{x}{F} & x : A \rightarrow C \in \Delta \\
   \key{load}\; \key{snd}\; x, \%r & \Tst{\Theta}{\Delta}{x}{F} \Rightarrow \Tst{\Theta[r{:}\tupA]}{\Delta}{x}{F} & \\
   \key{callq}\; a & \psi \Rightarrow \Treturned{\Delta, C} & a : \codeAB{A}{C}, \\
   \multicolumn{2}{l}{} & \Theta(\rdi) = \tupA,\ \Theta(\rsi) = A
@@ -670,7 +670,7 @@ block, a read of an unset register, of a slot not assigned or of the flag
 when it is not set, and a write of a slot beyond the frame cannot be
 written.
 
-\paragraph{The open closure.} The type $A \Rightarrow C$ of a closure
+\paragraph{The open closure.} The type $A \rightarrow C$ of a closure
 hides the types $\Delta$ of its environment ($\exists \alpha.\,
 \Mcodety{\alpha}{A}{C} \times \Mtup{\alpha}$), and a call needs the code
 and the environment of the \emph{same} closure. $\key{load}\;\key{fst}\;
@@ -1514,13 +1514,13 @@ that any fuel bounding the depth gives the same relation
 \paragraph{Why a type index cannot replace the depth.} One might try to
 define the relation by recursion on the $\Ml{Clos3}$ type $A$ of the term,
 $R_A(D, V')$, as a logical relation usually is. The function case is fine,
-since $A$ and $C$ are smaller than $A \Rightarrow C$:
-$R_{A \Rightarrow C}(D, V')$ asks $R_A$ of the arguments and $R_C$ of the
+since $A$ and $C$ are smaller than $A \rightarrow C$:
+$R_{A \rightarrow C}(D, V')$ asks $R_A$ of the arguments and $R_C$ of the
 results. But $\Mfold$ and $\Munfold$ are the identity on denotations, so
 the relation at $\Mmu{X}{A}$ has to be the one at its unfolding,
 $R_{\Mmu{X}{A}} = R_{\Munroll{X}{A}}$, which is not structurally smaller.
-At $A_0 = \Mmu{X}{X \Rightarrow \key{Int}}$, the type of $\omega$'s
-argument, $R_{A_0}$ unfolds to $R_{A_0 \Rightarrow \key{Int}}$, whose
+At $A_0 = \Mmu{X}{X \rightarrow \key{Int}}$, the type of $\omega$'s
+argument, $R_{A_0}$ unfolds to $R_{A_0 \rightarrow \key{Int}}$, whose
 clause for calls asks for $R_{A_0}$ on the arguments: the relation at the
 same type again. No other order on types repairs this, since unfolding
 grows the type, and the relation cannot be an inductive datatype instead,
@@ -2511,7 +2511,7 @@ With $c$ a constant of base type $B$ and $\gamma \in C_{\Delta,A,C}$:
 \[
 \begin{array}{r@{\;:\;}l@{\qquad}r@{\;:\;}l}
   \TcodeV{\gamma} & \Mcodety{\Delta}{A}{C} &
-  \Tpack{v}{u} & A \Rightarrow C \quad (v : \Mcodety{\Delta}{A}{C},\ u : \Mtup{\Delta}) \\
+  \Tpack{v}{u} & A \rightarrow C \quad (v : \Mcodety{\Delta}{A}{C},\ u : \Mtup{\Delta}) \\
   c & B &
   \tupV{v_1, \ldots, v_n} & \Mtup{(A_1, \ldots, A_n)} \quad (v_i : A_i) \\
   \inlV v,\ \inrV v & A + C \quad (v : A, \text{ resp. } C) &
@@ -3218,7 +3218,7 @@ step of the proof, \texttt{compile$_4$-correct} of
   congruence $\key{step\text{-}in}$, and a frame $h$ of RCO's relation is a
   \texttt{Frame}.
 \item The redexes take the operand at a generic type $C$ with an equation
-  $C \equiv A \Rightarrow B$ (and so on), and fall through to $\error$
+  $C \equiv A \rightarrow B$ (and so on), and fall through to $\error$
   otherwise; $\obs$ is \texttt{o-error} on a term that is not a value.
   Neither is reached (\texttt{proof/Semantics/Reduction/NoError.agda}).
 \item The relation of simplify is \texttt{\_$\succcurlyeq$\_} (written with
