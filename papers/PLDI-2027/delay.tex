@@ -99,7 +99,7 @@ a single source value, and the relation that worked for preservation
 has no counterpart for reflection.
 
 \paragraph{Relations that do not work}
-We, and others we consulted, tried the natural alternatives, and each
+We tried the natural alternatives, and each
 failure points to a piece of the solution.
 \begin{itemize}
 \item \emph{Relating single values}, a target value to a source value,
@@ -111,12 +111,6 @@ failure points to a piece of the solution.
   step-indexed relation would guard the recursive occurrence with a
   ``later'' modality and discharge it at a step of evaluation; a
   denotational semantics has no steps.
-\item \emph{Relating values only up to their $n$-th approximation},
-  in the graph model by cutting values off at depth $n$, as
-  \citet{Reynolds:1974aa} did when he built his relation stage by stage
-  along the inverse-limit construction of the domains
-  \citep{Scott:1971aa,Smyth:1982aa}, fails because a shallow output of
-  a function can depend on an arbitrarily deep input.
 \item \emph{Indexing by one target value within its whole target set}
   comes closest, but the function case must relate the entire argument
   set, which is infinite and cannot be shrunk to match the finite index.
@@ -219,6 +213,14 @@ from an entry of $V$, and so are the projections of $V$. The index $k$ of ${\ALR
 termination device: any index that bounds the depth of $V$ gives the
 same relation (Lemma~\ref{lem:depth-irrelevant}), so we may fold and
 unfold ${\ALR}$ as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$ directly.
+The tower $\ALR_0, \ALR_1, \ldots$ has the same shape as the one
+\citet{Reynolds:1974aa} used to relate the direct and continuation
+semantics of a language, which he built stage by stage along the
+inverse-limit construction of its domains
+\citep{Scott:1971aa,Smyth:1982aa}. His index ranges over the stages of
+both domains and his relation is the intersection over all of them;
+ours bounds the depth of the finite target side only, and depth
+irrelevance makes an intersection unnecessary.
 
 \begin{lemma}[Depth irrelevance]\label{lem:depth-irrelevant}
 If every value in $V$ has depth less than $k$ and less than $j$, then

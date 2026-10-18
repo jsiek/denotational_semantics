@@ -146,20 +146,14 @@ construct at a time. The exception is the pass that lowers closures
 into code and environment pairs, which we call \emph{delay}. The
 preservation half of the proof for delay uses a logical relation
 between a single source value and a set of target values, defined by
-recursion on the source value. On the hand, the reflection half
+recursion on the source value. On the other hand, the reflection half
 resisted every relation we tried. Relating one target value to one
 source value fails because the target takes the code and the
 environment of a closure apart, so no single source value corresponds
 to a single target value. Relating whole sets on both sides makes the
 definition recursive in negative positions.  Step-indexed relations
 tame such definitions by counting steps of evaluation, but a
-denotational semantics has no steps to count.  Relating values only up
-to their $n$-th approximation, as
-\citet{Reynolds:1974aa} did when he built his relation stage by stage
-along the inverse-limit construction of the domains
-\citep{Scott:1971aa,Smyth:1982aa}, fails because a coarse approximation
-of a function's output can depend on an arbitrarily fine approximation
-of its input.
+denotational semantics has no steps to count.
 
 The key insight is that only one side of the relation needs to shrink.
 Instead of relating two infinite sets, we relate a finite set of
