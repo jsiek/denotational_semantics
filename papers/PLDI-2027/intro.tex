@@ -39,7 +39,8 @@ closure conversion must relate two very different views of what a
 function is.
 
 Denotational proofs of closure conversion have run into the same
-obstacle again and again: divergence. A correct compiler must neither
+obstacle again and again: showing that compilation never turns a
+diverging program into one that terminates. A correct compiler must neither
 lose a program's answers nor invent new ones. A correctness theorem
 therefore has two halves. \emph{Preservation} says that whatever the
 source program computes, the compiled program computes.
@@ -61,10 +62,10 @@ answer. \citet{Chlipala:2007fk} built, in Coq, a compiler from the
 simply typed $\lambda$-calculus to assembly language with a
 denotational semantics for every intermediate language, including the
 target of closure conversion. Chlipala observed that the target
-denotations ``allow more behavior'' than the source and sidestepped
-the problem with types, an approach that works because Chlipala's
-source language has no recursion: every program terminates, and its
-denotation is an ordinary Coq function.
+denotations ``allow more behavior'' than the source, but his source
+language has no recursion: every program terminates, and its
+denotation is an ordinary Coq function, so there is no divergence to
+reflect.
 
 With recursion, the denotational attempts stop
 short. \citet{Nielsen:2000aa} gave a denotational proof, using
