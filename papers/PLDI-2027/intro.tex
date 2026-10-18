@@ -144,8 +144,11 @@ Most passes of our compiler are proved by an equation between the
 meanings of a program before and after the pass, one language construct
 at a time. The exception is the pass that lowers closures into code and
 environment pairs, which we call \emph{delay}. The preservation half of
-the proof for delay is a structural induction, but the reflection half
-resisted every relation we and others
+the proof for delay uses a logical relation between a single source
+value and a set of target values, defined by recursion on the source
+value: a target set implements a function entry when, applied to any
+arguments that implement the entry's inputs, it implements the entry's
+output. The reflection half resisted every relation we and others
 tried. Relating one target value to one source value fails because the
 target takes the code and the environment of a closure apart, so no
 single source value corresponds to a single target value. Relating whole
