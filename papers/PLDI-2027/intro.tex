@@ -84,11 +84,11 @@ only for the first-order target, and Banerjee, Heintze, and Riecke
 report that they ``know of no other proofs of correctness (that is,
 both directions) for ordinary or CFA-based defunctionalization in the
 presence of recursion.'' The denotational proofs that do cover
-divergence avoid closure conversion: some have first-order source
-languages, such as the interaction trees of \citet{Xia:2019aa} and the
-compositional verification of \citet{Cheng:2026aa}, and others, such as
-the proof of \citet{Benton:2009aa}, compile to a machine in which
-closures remain primitive values.
+divergence avoid closure conversion. Some have first-order source
+languages: \citet{Xia:2019aa} use interaction trees for a compiler from
+an imperative language to assembly, and \citet{Cheng:2026aa} use sets of
+behaviors for the front end of CompCert. Others, such as the proof of \citet{Benton:2009aa}, compile
+to a machine in which closures remain primitive values.
 
 Operational semantics, meanwhile, carried the day.
 \citet{Pottier:2006aa} proved that untyped defunctionalization
