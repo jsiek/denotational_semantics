@@ -109,8 +109,9 @@ primitive values. We know of no denotational proof of closure
 conversion for a language with general recursion that both preserves
 and reflects divergence. This gap is our first research question.
 \begin{description}
-\item[RQ1] Can a denotational semantics prove closure conversion correct
-  for a language with general recursion, preserving and reflecting divergence?
+\item[RQ1] Can closure conversion be proved correct with respect
+to a denotational semantics for a language with general recursion,
+preserving and reflecting divergence?
 \end{description}
 
 We answer yes. We prove correct a compiler from a
@@ -193,8 +194,8 @@ program stop with the same constant or both diverge, which is the same
 statement that proofs based on operational semantics make.
 
 \begin{description}
-\item[RQ3] How does the denotational proof compare with proofs of the
-  same compiler based on operational semantics?
+\item[RQ3] How does the denotational proof of correctness compare with
+  proofs of the same compiler based on operational semantics?
 \end{description}
 To find out, we proved
 the same compiler correct three more times, using the operational
