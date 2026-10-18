@@ -83,7 +83,12 @@ operational semantics for the source language and a denotational one
 only for the first-order target, and Banerjee, Heintze, and Riecke
 report that they ``know of no other proofs of correctness (that is,
 both directions) for ordinary or CFA-based defunctionalization in the
-presence of recursion.''
+presence of recursion.'' The denotational proofs that do cover
+divergence avoid closure conversion: some have first-order source
+languages, such as the interaction trees of \citet{Xia:2019aa} and the
+compositional verification of \citet{Cheng:2026aa}, and others, such as
+the proof of \citet{Benton:2009aa}, compile to a machine in which
+closures remain primitive values.
 
 Operational semantics, meanwhile, carried the day.
 \citet{Pottier:2006aa} proved that untyped defunctionalization
@@ -100,14 +105,10 @@ with step-indexed logical relations. CompCert \citep{Leroy:2009aa},
 whose source language is first-order, set the standard for the
 simulation proofs that most of these compilers follow.
 
-The denotational proofs that do cover divergence avoid closure
-conversion: some have first-order source languages, such as the
-interaction trees of \citet{Xia:2019aa} and the compositional
-verification of \citet{Cheng:2026aa}, and others, such as the proof of
-\citet{Benton:2009aa}, compile to a machine in which closures remain
-primitive values. We know of no denotational proof of closure
-conversion for a language with general recursion that both preserves
-and reflects divergence. This gap leads to our first research question.
+Thus, while operational proofs of closure conversion abound, we know of
+no denotational proof of closure conversion for a language with general
+recursion that both preserves and reflects divergence. This gap leads
+to our first research question.
 \begin{description}
 \item[RQ1] Can a denotational semantics prove correct a whole compiler
   from a higher-order language with general recursion down to assembly?
