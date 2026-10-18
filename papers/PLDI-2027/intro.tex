@@ -7,14 +7,14 @@
 
 Proving the correctness of a compiler is one of the oldest
 applications of formal semantics. \citet{McCarthy:1967aa} proved
-correct a compiler for arithmetic expressions in 1967, and
+correct a compiler for arithmetic expressions, and
 \citet{Milner:1972ab} proved correct a compiler for a simple
-imperative language, in Scott's logic of computable functions, five
-years later. In the 1970s, the denotational semantics of Scott and
-Strachey offered an especially clean foundation for such proofs. The
-meaning of a program is a mathematical object, so a compiler pass is
-correct when the meaning of a program before the pass equals its
-meaning afterward, and the proof is equational reasoning.
+imperative language, in Scott's logic of computable functions.  
+\citet{Scott:1971ab} introduced denotational semantics as an especially
+clean foundation for such proofs. The meaning of a program is a
+mathematical object, so a compiler pass is correct when the meaning of
+a program before the pass equals its meaning afterward, and the proof
+is equational reasoning.
 \citet{Polak:1981aa} used this recipe on a compiler for a subset of
 Pascal, \citet{Clinger:1984aa} used the same recipe to prove correct a
 compiler for Scheme, and Guttman, Ramsdell, and Wand
