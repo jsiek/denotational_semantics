@@ -162,10 +162,14 @@ define the relation by recursion on the depth of the finite set.  We
 call the result an \emph{approximant logical relation}.  The depth of
 the finite approximation bounds the recursion, so the definition is
 well founded without indexing with types or steps of
-computation. Recursion on types could not do the same job: with
-recursive types, the application case of a function of type $(\mu
-X.\,X {\rightarrow}\mathrm{Int})$ unfolds to the same type, so a
-relation defined by recursion on types would not be well founded. The
+computation. Recursion on types could not do the same job. The
+relation at a recursive type would have to be the relation at its
+unfolding, and the unfolding of $\mu X.\,X \rightarrow \mathrm{Int}$
+is the function type $(\mu X.\,X \rightarrow \mathrm{Int}) \rightarrow
+\mathrm{Int}$, whose application case asks for the relation at the
+argument type, $\mu X.\,X \rightarrow \mathrm{Int}$: the very type we
+started from. So a relation defined by recursion on types would not be
+well founded. The
 approximant logical relation is, to our knowledge, the first relation
 between two denotational semantics that is defined by recursion on a
 finite approximation of one of the two denotations.
