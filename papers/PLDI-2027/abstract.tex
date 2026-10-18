@@ -22,12 +22,13 @@ code and environment pairs: its reflection direction needs a new kind
 of logical relation on denotations, which we call \emph{approximant
 logical relations}. The proof is mechanized in Agda.
 
-To evaluate this denotational approach compared to operational ones,
-we prove correctness of the same compiler in three operational styles
-and report on the size of the proofs. The denotational end-to-end
-proof of correctness comes in smaller than the proofs using abstract
-machines and reduction semantics, but larger than the proof using
-clocked interpreters.  In particular, the denotational approach yields
+To compare this denotational approach with operational ones, we prove
+correctness of the same compiler in three operational styles and report
+on the size of the proofs. Under a common accounting of the four
+whole-compiler correctness proofs, the denotational development is
+smaller than the proofs using abstract machines and reduction
+semantics, but larger than the proof using clocked interpreters.  In
+particular, the denotational approach yields
 smaller proofs for compiler passes in which the program values remain
 at the same level of abstraction, such as inlining, where equational
 reasoning suffices.  But the denotational proofs are larger for

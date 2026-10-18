@@ -185,37 +185,42 @@ equation as the domain, with both positive and negative occurrences of
 the relation, exists and is unique. We discuss the trade-offs in Section~\ref{sec:related}.
 
 A denotational correctness theorem is a statement about meanings, and a
-reader may reasonably ask what the theorem says about running programs. We
-therefore prove that the graph-model semantics of \iswim\ and of the
-assembly language are adequate with respect to interpreters for those
-languages. Together with the compiler theorem, adequacy gives the
-end-to-end statement that a source program and its compiled assembly
-program stop with the same constant or both diverge, which is the same
-statement that proofs based on operational semantics make.
+reader may reasonably ask what the theorem says about running programs.
+Our compiler theorem spans the whole pipeline: the source and target
+denotations contain the same constants and are nonempty together. We
+also prove that the graph-model semantics of \iswim\ and of the assembly
+language are adequate with respect to interpreters for those languages.
+Together with the compiler theorem, adequacy yields the corresponding
+statement about execution: a source program and its compiled assembly
+program stop with the same constant or both diverge.
 
 \begin{description}
 \item[RQ3] How does the denotational proof of correctness compare with
   proofs of the same compiler based on operational semantics?
 \end{description}
-To find out, we proved
-the same compiler correct three more times, using the operational
-styles behind the best-known verified compilers: abstract machines with
-simulations, as in CompCert; clocked interpreters with value relations,
-as in CakeML; and reduction semantics with simulations. We held all four
-proofs to the same accounting rules and the same end-to-end theorem.
-Comparisons of semantic styles for compiler proofs exist, but at a
-smaller scale. \citet{Owens:2016aa} found that proving one compiler phase
-correct took 43 lines against a relational big-step semantics and 18
-lines against a functional one, and \citet{Kahn:2025aa} compared three
-operational semantics by the lines of Agda needed to prove one
-compilation to a Krivine machine correct. Our comparison is, to our knowledge, the first on a whole compiler down to assembly that includes a
-denotational style.
+To find out, we proved the same compiler correct three more times,
+using the operational styles behind the best-known verified compilers:
+abstract machines with simulations, as in CompCert; clocked
+interpreters with value relations, as in CakeML; and reduction
+semantics with simulations. Each development covers the complete
+ten-pass pipeline and proves an analogous correctness property in its
+own semantics. (We prove adequacy of the denotational semantics to
+ensure that the analogous correctness properties are equivalent.)
+Prior comparisons of semantic styles for compiler proofs exist, but at
+a smaller scale. \citet{Owens:2016aa} found that proving one compiler
+phase correct took 43 lines with a relational big-step semantics and
+18 lines with a functional one, and \citet{Kahn:2025aa} compared three
+operational semantics by the lines of Agda needed to prove compilation
+to a Krivine machine correct. Our comparison is, to our knowledge, the
+first on a compiler for a higher-order language down to assembly that
+includes a denotational style.
 
-The denotational proof comes to 1,958 lines of Agda. The denotational
-proof is smaller than the proofs using abstract machines (2,258 lines)
-and reduction semantics (3,207 lines) and larger than the proof using
-clocked interpreters (1,653 lines), but the total hides the more
-interesting story. Where a pass leaves program values at the same
+Counting the compiler-correctness proofs under these rules, the
+denotational development comes to 1,958 lines of Agda. It is smaller
+than the proofs using abstract machines (2,258 lines) and reduction
+semantics (3,207 lines) and larger than the proof using clocked
+interpreters (1,653 lines), but the total hides the more interesting
+story. Where a pass leaves program values at the same
 level of abstraction, equational reasoning wins: the denotational
 proof for the source optimizer takes 360 lines against 584 to 715 for
 the others. Where a pass changes how closures are represented, the
