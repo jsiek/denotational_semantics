@@ -111,9 +111,12 @@ failure points to a piece of the solution.
   step-indexed relation would guard the recursive occurrence with a
   ``later'' modality and discharge it at a step of evaluation; a
   denotational semantics has no steps.
-\item \emph{Indexing by the depth of the related values}, in the style
-  of the projections of the inverse-limit construction, fails because a
-  shallow output of a function can depend on an arbitrarily deep input.
+\item \emph{Relating values only up to their $n$-th approximation},
+  in the graph model by cutting values off at depth $n$, as
+  \citet{Reynolds:1974aa} did when he built his relation stage by stage
+  along the inverse-limit construction of the domains
+  \citep{Scott:1971aa,Smyth:1982aa}, fails because a shallow output of
+  a function can depend on an arbitrarily deep input.
 \item \emph{Indexing by one target value within its whole target set}
   comes closest, but the function case must relate the entire argument
   set, which is infinite and cannot be shrunk to match the finite index.
