@@ -107,11 +107,10 @@ verification of \citet{Cheng:2026aa}, and others, such as the proof of
 \citet{Benton:2009aa}, compile to a machine in which closures remain
 primitive values. We know of no denotational proof of closure
 conversion for a language with general recursion that both preserves
-and reflects divergence. This gap is our first research question.
+and reflects divergence. This gap leads to our first research question.
 \begin{description}
-\item[RQ1] Can closure conversion be proved correct with respect
-to a denotational semantics for a language with general recursion,
-preserving and reflecting divergence?
+\item[RQ1] Can a denotational semantics prove correct a whole compiler
+  from a higher-order language with general recursion down to assembly?
 \end{description}
 
 We answer yes. We prove correct a compiler from a
@@ -146,9 +145,9 @@ graph models draws inspiration from the filter models of
 inliner of \citet{Siek:2017ab}.
 
 \begin{description}
-\item[RQ2] What does a denotational proof of a whole compiler require:
-  which passes can be proved by equations, what kind of relation the
-  other passes need, and how the theorem connects to running programs?
+\item[RQ2] How can a denotational proof show that closure conversion
+  reflects divergence, despite target code--environment pairs that
+  match no source function?
 \end{description}
 Most passes of our compiler are proved by an equation between the
 meanings of a program before and after the pass, one language
