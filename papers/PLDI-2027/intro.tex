@@ -147,29 +147,23 @@ into code and environment pairs, which we call \emph{delay}. The
 preservation half of the proof for delay uses a logical relation
 between a single source value and a set of target values, defined by
 recursion on the source value. On the other hand, the reflection half
-resisted every relation we tried. Relating one target value to one
-source value fails because the target takes the code and the
+resisted nearly every relation we tried. Relating one target value to
+one source value fails because the target takes the code and the
 environment of a closure apart, so no single source value corresponds
 to a single target value. Relating possibly inifinite sets on both
-sides makes the definition recursive in negative positions.
-Step-indexed relations tame such definitions by counting steps of
-evaluation, but a denotational semantics has no steps to count.
+sides makes the definition recursive in negative positions. A
+type-indexed logical relation does not work for \iswim\
+because \iswim\ includes recursive types.  Step-indexed logical
+relations tame such definitions by counting reduction steps, but a
+denotational semantics has no steps to count.
 
-The key insight is that only one side of the relation needs to shrink.
+Our key insight is that only one side of the relation needs to shrink.
 Instead of relating two infinite sets, we relate a finite set of
 target observations to a possibly infinite source denotation, and we
 define the relation by recursion on the depth of the finite set.  We
 call the result an \emph{approximant logical relation}.  The depth of
 the finite approximation bounds the recursion, so the definition is
-well founded without indexing with types or steps of
-computation. Recursion on types could not do the same job. The
-relation at a recursive type would have to be the relation at its
-unfolding, and the unfolding of $\mu X.\,X \rightarrow \mathrm{Int}$
-is the function type $(\mu X.\,X \rightarrow \mathrm{Int}) \rightarrow
-\mathrm{Int}$, whose application case asks for the relation at the
-argument type, $\mu X.\,X \rightarrow \mathrm{Int}$: the very type we
-started from. So a relation defined by recursion on types would not be
-well founded. The
+well founded without indexing with types or steps of computation.  The
 approximant logical relation is, to our knowledge, the first relation
 between two denotational semantics that is defined by recursion on a
 finite approximation of one of the two denotations.
