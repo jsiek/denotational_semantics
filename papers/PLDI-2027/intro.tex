@@ -40,13 +40,17 @@ function is.
 
 Denotational proofs of closure conversion have run into the same
 obstacle again and again: divergence. A correct compiler must neither
-lose a program's answers nor invent new ones, and in particular a
-compiler must compile a diverging program to a diverging program. A
-correctness theorem therefore has two halves. \emph{Preservation} says
-that whatever the source program computes, the compiled program
-computes.  \emph{Reflection} says the converse: whatever the compiled
-program computes, the source program computes, so a program that
-diverges is not compiled into one that terminates. Preservation is the
+lose a program's answers nor invent new ones. A correctness theorem
+therefore has two halves. \emph{Preservation} says that whatever the
+source program computes, the compiled program computes.
+\emph{Reflection} says the converse: whatever the compiled program
+computes, the source program computes. Each half also says something
+about divergence, by contraposition. If the compiled program of a
+diverging source program produced an answer, reflection would require
+the source program to produce it too; so reflection guarantees that a
+diverging program is compiled to a diverging program. Symmetrically,
+preservation guarantees that the compiled program diverges only when
+the source program does. Preservation is the
 easy half; reflection is the hard one. After closure conversion, the
 meaning of a function's code describes its behavior on every
 environment, not just on the environment that the compiled program
