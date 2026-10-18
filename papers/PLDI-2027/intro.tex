@@ -67,17 +67,17 @@ language has no recursion: every program terminates, and its
 denotation is an ordinary Coq function, so there is no divergence to
 reflect.
 
-With recursion, the denotational attempts stop
+For languages with general recursion, the denotational attempts fell
 short. \citet{Nielsen:2000aa} gave a denotational proof, using
-domain-theoretic semantics for both languages, that
-defunctionalization, a close cousin of closure conversion, preserves
-the meaning of programs in a simply typed language with recursive
-functions. Nielsen's relation is indexed by types and relates a
-diverging source program to every target program, which lets a
-fixed-point induction prove that terminating programs keep their
-meaning but says nothing in the other direction. Nielsen leaves that
-direction for later: ``Eventually, we want to prove full correctness,
-i.e., semantic equivalence of the two programs.''
+domain-theoretic semantics, that defunctionalization, a close cousin
+of closure conversion, preserves the meaning of programs in a simply
+typed language with recursive functions. Nielsen's relation is indexed
+by types and relates a diverging source program to every target
+program, which lets a fixed-point induction prove that terminating
+programs keep their meaning but says nothing in the other
+direction. Nielsen leaves that direction for later: ``Eventually, we
+want to prove full correctness, i.e., semantic equivalence of the two
+programs.''
 \citet{Banerjee:2001aa} gave the complete proof, but with an
 operational semantics for the source language and a denotational one
 only for the first-order target, and Banerjee, Heintze, and Riecke
