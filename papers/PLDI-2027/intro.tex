@@ -150,10 +150,10 @@ recursion on the source value. On the other hand, the reflection half
 resisted every relation we tried. Relating one target value to one
 source value fails because the target takes the code and the
 environment of a closure apart, so no single source value corresponds
-to a single target value. Relating whole sets on both sides makes the
-definition recursive in negative positions.  Step-indexed relations
-tame such definitions by counting steps of evaluation, but a
-denotational semantics has no steps to count.
+to a single target value. Relating possibly inifinite sets on both
+sides makes the definition recursive in negative positions.
+Step-indexed relations tame such definitions by counting steps of
+evaluation, but a denotational semantics has no steps to count.
 
 The key insight is that only one side of the relation needs to shrink.
 Instead of relating two infinite sets, we relate a finite set of
@@ -164,7 +164,7 @@ the finite approximation bounds the recursion, so the definition is
 well founded without indexing with types or steps of
 computation. Recursion on types could not do the same job: with
 recursive types, the application case of a function of type $(\mu
-X.\,X {\rightarrow}\mathrm{Int})$ returns to the same type, so a
+X.\,X {\rightarrow}\mathrm{Int})$ unfolds to the same type, so a
 relation defined by recursion on types would not be well founded. The
 approximant logical relation is, to our knowledge, the first relation
 between two denotational semantics that is defined by recursion on a
