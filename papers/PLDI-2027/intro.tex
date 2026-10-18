@@ -107,9 +107,14 @@ verification of \citet{Cheng:2026aa}, and others, such as the proof of
 \citet{Benton:2009aa}, compile to a machine in which closures remain
 primitive values. We know of no denotational proof of closure
 conversion for a language with general recursion that both preserves
-and reflects divergence.
+and reflects divergence. This gap is our first research question.
+\begin{description}
+\item[RQ1] Can a denotational semantics be used to prove correct a
+  compiler for a language with general recursion, through closure
+  conversion, so that divergence is both preserved and reflected?
+\end{description}
 
-This paper gives such a proof. We prove correct a compiler from a
+We answer yes. We prove correct a compiler from a
 call-by-value $\lambda$-calculus with iso-recursive types, which we
 call \iswim, through closure conversion, to a typed assembly language,
 and we check every step in Agda. Recursive types let us write the
@@ -140,6 +145,9 @@ graph models draws inspiration from the filter models of
 \citet{Wadler:2020aa} and the proof of correctness of a function
 inliner of \citet{Siek:2017ab}.
 
+\begin{description}
+\item[RQ2] What does such a proof take?
+\end{description}
 Most passes of our compiler are proved by an equation between the
 meanings of a program before and after the pass, one language
 construct at a time. The exception is the pass that lowers closures
@@ -150,7 +158,7 @@ recursion on the source value. On the other hand, the reflection half
 resisted nearly every relation we tried. Relating one target value to
 one source value fails because the target takes the code and the
 environment of a closure apart, so no single source value corresponds
-to a single target value. Relating possibly inifinite sets on both
+to a single target value. Relating possibly infinite sets on both
 sides makes the definition recursive in negative positions. A
 type-indexed logical relation does not work for \iswim\
 because \iswim\ includes recursive types.  Step-indexed logical
@@ -183,7 +191,11 @@ end-to-end statement that a source program and its compiled assembly
 program stop with the same constant or both diverge, which is the same
 statement that proofs based on operational semantics make.
 
-Does the denotational approach pay for itself? To find out, we proved
+\begin{description}
+\item[RQ3] How does the denotational proof compare with proofs of the
+  same compiler based on operational semantics?
+\end{description}
+To find out, we proved
 the same compiler correct three more times, using the operational
 styles behind the best-known verified compilers: abstract machines with
 simulations, as in CompCert; clocked interpreters with value relations,
