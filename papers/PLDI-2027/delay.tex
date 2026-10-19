@@ -14,9 +14,15 @@
 \subsection{Delay and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-This section is about the one pass of our compiler whose proof is not
-an equation. Delay is the pass of closure conversion that changes how a
-closure is represented. In its source language, EnvClos, a closure
+The proof for delay is the final link in our answer to whether a whole
+compiler, from a higher-order language with general recursion down to
+assembly, can be proved correct with denotational semantics (RQ1), and
+delay is the reason that not every pass of the compiler can be proved
+correct by equational reasoning (RQ3). It is the step of closure conversion that lowers
+closures to pairs of code and environment, and the only pass of our
+compiler whose correctness is not an equation between denotations. This
+section shows why its semantic reflection resists the natural relations
+and how the approximant logical relation proves it. In its source language, EnvClos, a closure
 $\kw{clos}\;N\;\vec{M}$ pairs the code $N$, which is closed and takes
 its free variables as a tuple, with the expressions $\vec{M}$ that
 compute those free variables, and an application $\kw{app}\;L\;M$
@@ -168,8 +174,9 @@ a list of elements rather than a single element.
   of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
   elements. A finite list stands for the set of its elements. Here $c$
   ranges over constants and $\pi$ over the projections of tuple
-  components and sum injections; $\cdr$, $\mathsf{con}$ and $\depth$
-  are as in Figure~\ref{fig:graph-ops}.}
+  components and sum injections; $\cdr$ and $\mathsf{con}$ are
+  as in Figure~\ref{fig:graph-ops}, and $\depth(V)$ is the largest
+  depth of an element of $V$ (Appendix~\ref{app:depth}).}
 \label{fig:alr}
 \end{figure}
 

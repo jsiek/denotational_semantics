@@ -18,7 +18,7 @@
 \small
 \[
 \begin{array}{@{}l@{}}
-\textbf{Graph elements} \quad (V, W \text{ finite lists of elements})\\[1ex]
+\textbf{Graph elements} \quad (V, W \text{ finite lists of elements};\; i, j \in \mathbb{N})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   u, v, w & ::= & c \mid V \mapsto w \mid \nu \mid \pairv{u}{v}
     \mid \mathsf{tup}_i(v) \mid \mathsf{left}(v) \mid \mathsf{right}(v)
@@ -56,16 +56,7 @@
   \mathsf{right}(v) \sim \mathsf{right}(v') \iff v \sim v'
 \end{array}\\[1ex]
 \text{and no other pairs of elements are consistent;
-  $V \approx V'$ means $u \sim v$ for all $u \in V$ and $v \in V'$.}\\[3ex]
-\textbf{Depth}\\[1ex]
-\begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \depth(V \mapsto w) & = & 1 + \max(\depth(V), \depth(w))\qquad
-  \depth(\pairv{u}{v}) \;=\; 1 + \max(\depth(u), \depth(v))\\
-  \depth(t(v)) & = & 1 + \depth(v)
-    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
-  \depth(V) & = & \max_{v \in V} \depth(v),
-    \quad \text{and } \depth(v) = 0 \text{ for the other elements}
-\end{array}
+  $V \approx V'$ means $u \sim v$ for all $u \in V$ and $v \in V'$.}
 \end{array}
 \]
 \caption{The elements of the graph model and the operators on denotations
