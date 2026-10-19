@@ -22,12 +22,14 @@ compiler can be proved correct by equational reasoning (RQ3). The
 delay pass is the step of closure conversion that lowers closures to
 pairs of code and environment. This section shows why its semantic
 reflection resists our prior attempts and how the approximant logical
-relation finally proves it. In the source language EnvClos of delay, a closure
-$\kw{clos}\;N\;\vec{M}$ is still a function: its meaning is the meaning
-of its code $N$, a closed, curried function of the environment $X$ and
-then the argument $Y$, applied to the tuple of the free variables
-$\vec{M}$; and an application $\kw{app}\;L\;M$ means function
-application:
+relation finally proves it.
+
+In the source language EnvClos of delay, a closure
+$\kw{clos}\;N\;\vec{M}$ is still a function: its meaning is the
+meaning of its code $N$, a closed, curried function of the environment
+$X$ and then the argument $Y$, applied to the tuple of the free
+variables $\vec{M}$; and an application $\kw{app}\;L\;M$ means
+function application:
 \[
 \begin{array}{rcl}
   \den{\kw{clos}\;N\;\vec{M}}\rho & = &
@@ -36,24 +38,23 @@ application:
 \end{array}
 \]
 
-In the target language, FlatClos, a closure is an ordinary pair of code
-and environment, and a call takes the pair apart. The code means the
-same curried function, $\kw{pack}$ builds the set of pairs
-$\pairv{u}{v}$ with $u$ from the code and $v$ from the environment, and
-a call applies the first components to the second components and then
-to the argument, which we write $D' \callop E'$:
+In the target language, FlatClos, a closure is represented by a pair
+of code and environment, and a call takes the pair apart. The
+semantics for code is the same curried function, $\kw{pack}$ builds
+the set of pairs $\pairv{u}{v}$ with $u$ from the code and $v$ from
+the environment, and a call applies the first components to the second
+components and then to the argument, which we write $D \callop E$:
 \[
 \begin{array}{rcl}
   \den{\kw{code}\;N}\rho & = & \Lambda X.\, \Lambda Y.\, \den{N}(X, Y)\\
   \den{\kw{pack}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
-  \qquad\text{where } D' \callop E' = (\car(D') \app \cdr(D')) \app E'
+  \qquad\text{where } D \callop E = (\car(D) \app \cdr(D)) \app E
 \end{array}
 \]
-Delay turns each closure into a
-pair and each application into a call, and translates every other
-construct homomorphically:
+Delay translates each closure into a pair and each application into a
+call, and translates every other construct homomorphically:
 \[
 \begin{array}{rcl}
   \mathit{delay}(\kw{clos}\;N\;\vec{M}) & = &
@@ -64,14 +65,14 @@ construct homomorphically:
 \]
 
 \paragraph{Why preservation is easy and reflection is not}
-Delay changes the representation of closures, so its correctness is not
-an equation. The theorem we prove is that a closed program and its
-translation produce the same constants, and that one produces something
-exactly when the other does. The forward half, preservation, needs a
-relation between a \emph{single} source element and a \emph{set} of
-target elements, defined by recursion on the source element. Its
-interesting case says what it means for a target set to implement a
-function entry:
+Delay changes the representation of closures, so its correctness is
+not an equation. The theorem we prove is that a closed program and its
+translation produce the same constants, and that one produces
+something exactly when the other does. The forward half, preservation,
+only requires a relation between a \emph{single} source element and a
+\emph{set} of target elements, defined by recursion on the source
+element. Its interesting case says what it means for a target set to
+implement a function entry:
 \[
   (U \mapsto w) \sqsubseteq D' \iff
   D' \text{ contains a pair, and }
