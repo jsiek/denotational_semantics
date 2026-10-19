@@ -46,18 +46,17 @@ and environment, and a call takes the pair apart. The code means the
 same curried function, $\kw{pack}$ builds the set of pairs
 $\pairv{u}{v}$ with $u$ from the code and $v$ from the environment, and
 a call applies the first components to the second components and then
-to the argument:
+to the argument, which we write $D' \callop E'$:
 \[
 \begin{array}{rcl}
   \den{\kw{code}\;N}\rho & = & \Lambda X.\, \Lambda Y.\, \den{N}(X, Y)\\
   \den{\kw{pack}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
-  \den{\kw{callc}\;L\;M}\rho & = &
-    (\car(\den{L}\rho) \app \cdr(\den{L}\rho)) \app \den{M}\rho
+  \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
+  \qquad\text{where } D' \callop E' = (\car(D') \app \cdr(D')) \app E'
 \end{array}
 \]
-We write $D' \callop E'$ for
-$(\car(D') \app \cdr(D')) \app E'$. Delay turns each closure into a
+Delay turns each closure into a
 pair and each application into a call, and translates every other
 construct homomorphically:
 \[
