@@ -64,6 +64,30 @@ call, and translates every other construct homomorphically:
 \end{array}
 \]
 
+\begin{figure}[t]
+\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  (U \mapsto w) \sqsubseteq D' & = &
+    (\exists u, t.\; \pairv{u}{t} \in D') \;\land\;
+    \forall E'.\; \mathsf{con}(E') \land U \sqsubseteq^* E'
+      \Rightarrow w \sqsubseteq D' \callop E'\\
+  \nu \sqsubseteq D' & = & \exists u, t.\; \pairv{u}{t} \in D'\\
+  t(v) \sqsubseteq D' & = & v \sqsubseteq \pi_t(D')
+    \qquad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
+  v \sqsubseteq D' & = & v \in D'
+    \qquad \text{for the other elements}\\[1ex]
+  [\,] \sqsubseteq^* E' & = & \mathsf{true}\\
+  (u :: U) \sqsubseteq^* E' & = & u \sqsubseteq E' \land U \sqsubseteq^* E'
+\end{array}
+\]
+\caption{The relation $v \sqsubseteq D'$ for the preservation half of
+  delay, between a single source (EnvClos) element $v$ and a set $D'$ of
+  target (FlatClos) elements, defined by recursion on $v$; $U
+  \sqsubseteq^* E'$ extends it to a finite list $U$.}
+\label{fig:preserve}
+\end{figure}
+
 \paragraph{Why preservation is easy and reflection is not}
 Delay changes the representation of closures, so its correctness is
 not an equation. The theorem we prove is that a closed program and its
@@ -71,14 +95,10 @@ translation produce the same constants, and that one produces
 something exactly when the other does. The forward half, preservation,
 only requires a relation between a \emph{single} source element and a
 \emph{set} of target elements, defined by recursion on the source
-element. Its interesting case says what it means for a target set to
-implement a function entry:
-\[
-  (U \mapsto w) \sqsubseteq D' \iff
-  D' \text{ contains a pair, and }
-  U \sqsubseteq^* E' \text{ implies } w \sqsubseteq D' \callop E'
-  \text{ for every consistent } E'.
-\]
+element (Figure~\ref{fig:preserve}). The clause for a function entry
+says what it means for a target set to implement it: the set must
+contain a closure, and calling it on arguments that implement the
+entry's inputs must implement the entry's output.
 The source element is finite, so the recursion is structural, and the
 proof that $v \in \den{M}\rho$ implies
 $v \sqsubseteq \den{\mathit{delay}(M)}\rho'$ is a routine induction on
