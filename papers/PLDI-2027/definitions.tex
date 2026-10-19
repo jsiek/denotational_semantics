@@ -114,7 +114,7 @@
 \newcommand{\xrun}{\key{run}}
 
 % the typed pipeline (Part II): types, tags and casts
-\newcommand{\Tl}[1]{\textrm{#1}^{\mathsf{T}}}  % a typed language: \Tl{Clos2}
+\newcommand{\Tl}[1]{\textrm{#1}^{\mathsf{T}}}  % a typed language: \Tl{Clos}
 \newcommand{\TAny}{\key{Any}}
 \newcommand{\Tflat}[1]{\langle\!\langle #1 \rangle\!\rangle}  % the flat type G as a type
 \newcommand{\Tcode}[1]{\key{code}\;#1}         % the type of code
@@ -131,7 +131,7 @@
 \newcommand{\Tcodetm}[3]{\key{code}(#1\,#2.\,#3)}  % closed code: environment, argument, body
 \newcommand{\Tpack}[2]{\key{pack}(#1, #2)}     % a closure: code and environment
 \newcommand{\Tcallc}[2]{\key{callc}(#1, #2)}   % call a closure
-\newcommand{\Tembed}[1]{\ulcorner #1 \urcorner}  % Mon^T into Clos5^T
+\newcommand{\Tembed}[1]{\ulcorner #1 \urcorner}  % Mon^T into GlobalFun^T
 \newcommand{\Tunit}{\Tinject{\Ttup{0}}\emptytup}  % the empty tuple, injected
 \newcommand{\Tcheck}[1]{\pass{check}_{#1}}     % the X86 test of a tag
 % the typed pipeline: tails of CFG^T, and frames of Imp^T and CFG^T
@@ -170,7 +170,7 @@
 
 
 % ISWIM-mu (Part I): types, terms and X86-mu
-\newcommand{\Ml}[1]{\textrm{#1}^{\mu}}                  % a language of the ISWIM-mu pipeline: \Ml{Clos2}
+\newcommand{\Ml}[1]{\textrm{#1}^{\mu}}                  % a language of the ISWIM-mu pipeline: \Ml{Clos}
 \newcommand{\Mmu}[2]{\mu #1.\,#2}                         % a recursive type
 \newcommand{\Mtup}[1]{\key{tup}\,#1}                      % a tuple type
 \newcommand{\Mcodety}[3]{\key{code}\;#1\;#2\;#3}          % the type of code: environment, argument, result
@@ -209,6 +209,14 @@ Bruijn indices; each part has notes on where it doesn't match the Agda
 literally. Relations put the source on the left and the target on the
 right.
 
+The closure-conversion languages have the names they have in the paper,
+which say what changed; the Agda modules keep their numbered names:
+Clos is the Agda \texttt{Clos2} (closures that list their free
+variables), EnvClos is \texttt{Clos3} (code that reads its free
+variables from an environment tuple), FlatClos is \texttt{Clos4} (a
+closure is a pair of code and environment), and GlobalFun is
+\texttt{Clos5} (all code is global definitions).
+
 \begin{itemize}
 \item Part~\ref{part:mu}, the main experiment: $\Ml{ISWIM}$, a typed ISWIM
   with iso-recursive types, and its compiler, every intermediate language
@@ -238,9 +246,9 @@ The compiler of the main experiment (\texttt{agda/Mu}, module prefix
 \[
 \begin{array}{l}
 \Ml{ISWIM} \xrightarrow{\pass{simplify}} \Ml{ISWIM}
-  \xrightarrow{\pass{enclose}} \Ml{Clos2} \xrightarrow{\pass{optimize}} \Ml{Clos2}
-  \xrightarrow{\pass{concretize}} \Ml{Clos3} \xrightarrow{\pass{delay}} \Ml{Clos4} \\
-\qquad \xrightarrow{\pass{globalize}} \Ml{Clos5} \xrightarrow{\pass{rco}} \Ml{Mon}
+  \xrightarrow{\pass{enclose}} \Ml{Clos} \xrightarrow{\pass{optimize}} \Ml{Clos}
+  \xrightarrow{\pass{concretize}} \Ml{EnvClos} \xrightarrow{\pass{delay}} \Ml{FlatClos} \\
+\qquad \xrightarrow{\pass{globalize}} \Ml{GlobalFun} \xrightarrow{\pass{rco}} \Ml{Mon}
   \xrightarrow{\pass{lift}} \Ml{Imp} \xrightarrow{\pass{explicate}} \Ml{CFG}
   \xrightarrow{\pass{select}} \Ml{X86}
 \end{array}
@@ -288,7 +296,7 @@ tuples, binary sums and iso-recursive types $\Mmu{X}{A}$, with type
 variables (de~Bruijn indices in the Agda: \texttt{Ty n} has $n$ free type
 variables). Terms are indexed by closed types; a context $\Gamma$ or
 $\Delta$ is a list of them. The type $\Mcodety{\Delta}{A}{B}$, in
-$\Ml{Clos4}$ and later, is that of closed code that takes an environment,
+$\Ml{FlatClos}$ and later, is that of closed code that takes an environment,
 a tuple of type $\Mtup{\Delta}$, and an argument of type $A$.
 \begin{syntax}
   & B &::=& \key{Nat} \mid \key{Int} \mid \key{Bool} \mid \key{Unit} \mid \key{Void} \\
@@ -356,11 +364,11 @@ $\key{fix}$. Self-application is typable through a recursive type
 where $\Omega$ diverges and $\mathit{fix}$ is the call-by-value fixed-point
 combinator at $\key{Int} \rightarrow \key{Int}$; the example compiles a
 countdown with $\mathit{fix}$ and runs it, and $\Omega$, on the
-$\Ml{ISWIM}$ and $\Ml{Clos4}$ machines and on the $\Ml{ISWIM}$, $\Ml{Clos4}$
+$\Ml{ISWIM}$ and $\Ml{FlatClos}$ machines and on the $\Ml{ISWIM}$, $\Ml{FlatClos}$
 and $\Ml{X86}$ interpreters, by computation
 (\texttt{RecursionInterp.agda}). So no semantics needs a least fixed point.
 
-\subsection{\texorpdfstring{$\Ml{Clos2}$}{Clos2-mu}}
+\subsection{\texorpdfstring{$\Ml{Clos}$}{Clos-mu}}
 
 As $\Ml{ISWIM}$, but each $\lambda$ is a closure
 (\texttt{Language/Clos2.agda}): its code $N$ is closed, with the parameter
@@ -378,7 +386,7 @@ terms $M_1 \ldots M_n$, which have types $\Delta = A_1, \ldots, A_n$.
 The closure's type does not show $\Delta$. The other constructs are typed
 as in $\Ml{ISWIM}$.
 
-\subsection{\texorpdfstring{$\Ml{Clos3}$}{Clos3-mu}}
+\subsection{\texorpdfstring{$\Ml{EnvClos}$}{EnvClos-mu}}
 
 Each closure stores its captured values in one tuple $e$, from which its
 code reads them with projections (\texttt{Language/Clos3.agda}).
@@ -393,7 +401,7 @@ code reads them with projections (\texttt{Language/Clos3.agda}).
   \qquad \Delta = A_1, \ldots, A_n
 \]
 
-\subsection{\texorpdfstring{$\Ml{Clos4}$}{Clos4-mu}}
+\subsection{\texorpdfstring{$\Ml{FlatClos}$}{FlatClos-mu}}
 
 A closure is a pair of closed code and the tuple of its free variables,
 packed so that its type $A \rightarrow C$ hides the types $\Delta$ of the
@@ -421,9 +429,9 @@ the existential and is parametric in $\Delta$, so it needs no check.
        {\Gamma \vdash \Tcallc{L}{M} : C}
 \]
 
-\subsection{\texorpdfstring{$\Ml{Clos5}$}{Clos5-mu}}
+\subsection{\texorpdfstring{$\Ml{GlobalFun}$}{GlobalFun-mu}}
 
-As $\Ml{Clos4}$, but the code of every function is a global definition
+As $\Ml{FlatClos}$, but the code of every function is a global definition
 (\texttt{Language/Clos5.agda}). A program has a table
 $\Sigma = s_0, \ldots, s_{m-1}$ of the \emph{signatures} of its
 definitions $d_0, \ldots, d_{m-1}$, a signature $s_k = (\Delta_k; A_k \to
@@ -450,14 +458,14 @@ A term over a smaller table is weakened to a bigger one (\texttt{wk}).
 
 \subsection{\texorpdfstring{$\Ml{Mon}$}{Mon-mu}}
 
-The monadic normal form of $\Ml{Clos5}$, with its own syntax
+The monadic normal form of $\Ml{GlobalFun}$, with its own syntax
 (\texttt{Language/Mon.agda}), so that monadic form needs no proof; its
-meaning is that of its embedding $\Tembed{\cdot}$ into $\Ml{Clos5}$. An
+meaning is that of its embedding $\Tembed{\cdot}$ into $\Ml{GlobalFun}$. An
 atom is a variable, a constant or a reference to a definition; the
 operands of every operation, $\Mfold$ and $\Munfold$ included, and the
 scrutinee of $\key{case}$, are atoms, while the right-hand side and body
 of $\key{let}$ and the branches of $\key{case}$ are expressions. Typing is
-as in $\Ml{Clos5}$.
+as in $\Ml{GlobalFun}$.
 \begin{syntax}
   & a &::=& x \mid c \mid \funref{k} \\
   & M, N &::=& a \mid \Tpack{a_1}{a_2} \mid \Tcallc{a_1}{a_2}
@@ -556,7 +564,7 @@ frame. $\key{block}(\vec{t}, l)$ is block $l$ with the blocks older than it
 
 The target: a typed assembly language, after Morrisett, Walker, Crary and
 Glew's TAL, intrinsically typed (\texttt{Language/X86.agda}). Its
-instructions are those of x86 over the values of $\Ml{Clos5}$ and the
+instructions are those of x86 over the values of $\Ml{GlobalFun}$ and the
 later languages, with an abstract heap, and one pseudo-instruction; each
 is typed by the type of the machine state it starts in and the one it
 leaves. A state type $\psi = \Tst{\Theta}{\Delta}{O}{F}$ gives
@@ -752,7 +760,7 @@ of $\key{chk}$.
   operands.
 \item \textbf{$\Ml{Mon}$} has its own syntax (\texttt{Atm}, \texttt{Exp});
   its meaning is the embedding $\Tembed{\cdot}$ (\texttt{$\ulcorner\_\urcorner$},
-  \texttt{$\ulcorner\_\urcorner_{\mathsf{p}}$}) into $\Ml{Clos5}$.
+  \texttt{$\ulcorner\_\urcorner_{\mathsf{p}}$}) into $\Ml{GlobalFun}$.
 \end{itemize}
 %===============================================================================
 \section{Compilation}\label{sec:m-passes}
@@ -835,7 +843,7 @@ are recognized at any type (\texttt{lam?}). Typed terms are closed by
 construction, so the untyped pass's lemma that it keeps programs closed is
 not needed.
 
-\subsection{CC: Enclose (\texorpdfstring{$\Ml{ISWIM} \to \Ml{Clos2}$}{ISWIM-mu -> Clos2-mu})}
+\subsection{CC: Enclose (\texorpdfstring{$\Ml{ISWIM} \to \Ml{Clos}$}{ISWIM-mu -> Clos-mu})}
 
 Enclose (\texttt{Compiler/Enclose.agda}) makes each function a closure
 that captures every variable in scope, in order, so its body is unchanged
@@ -845,7 +853,7 @@ that captures every variable in scope, in order, so its body is unchanged
     \qquad\text{where } x_1, \ldots, x_k \text{ are the variables in scope}
 \end{align*}
 
-\subsection{CC: Optimize (\texorpdfstring{$\Ml{Clos2} \to \Ml{Clos2}$}{Clos2-mu -> Clos2-mu})}
+\subsection{CC: Optimize (\texorpdfstring{$\Ml{Clos} \to \Ml{Clos}$}{Clos-mu -> Clos-mu})}
 
 Optimize (\texttt{Compiler/Optimize.agda}) removes the captured values that
 the code does not use. Closures are strict, so a captured term is dropped
@@ -867,13 +875,13 @@ the proof (\texttt{covers}) that the code uses only kept ones. The kept
 positions are flags (\texttt{keeps}, \texttt{keep?}), and the kept terms
 \texttt{select}; a program is \texttt{optimize-program}.
 
-\subsection{CC: Concretize (\texorpdfstring{$\Ml{Clos2} \to \Ml{Clos3}$}{Clos2-mu -> Clos3-mu})}
+\subsection{CC: Concretize (\texorpdfstring{$\Ml{Clos} \to \Ml{EnvClos}$}{Clos-mu -> EnvClos-mu})}
 
 Each closure stores its captured values in one tuple $e$, of type
 $\Mtup{\Delta}$, and inside its code the name $x_i$ becomes $\prj{i} e$
 (\texttt{Compiler/Concretize.agda}). The map $\varphi$ sends each
-$\Ml{Clos2}$ variable to a reference $r ::= x \mid \prj{i} x$ in
-$\Ml{Clos3}$ (\texttt{Ref}: \texttt{var}, \texttt{prj}).
+$\Ml{Clos}$ variable to a reference $r ::= x \mid \prj{i} x$ in
+$\Ml{EnvClos}$ (\texttt{Ref}: \texttt{var}, \texttt{prj}).
 \begin{align*}
   \pass{concretize}_\varphi(x) &= \varphi(x) \\
   \pass{concretize}_\varphi(\clos{M_1\ldots M_n}{x_1\ldots x_n\, y} N) &=
@@ -885,7 +893,7 @@ $\Ml{Clos3}$ (\texttt{Ref}: \texttt{var}, \texttt{prj}).
 bound variable maps to itself (\texttt{ext-ref}); a program is
 concretized with $\varphi = \emptyset$ (\texttt{concretize-program}).
 
-\subsection{CC: Delay (\texorpdfstring{$\Ml{Clos3} \to \Ml{Clos4}$}{Clos3-mu -> Clos4-mu})}
+\subsection{CC: Delay (\texorpdfstring{$\Ml{EnvClos} \to \Ml{FlatClos}$}{EnvClos-mu -> FlatClos-mu})}
 
 A closure becomes a packed pair of its code and the tuple of its captured
 values, and an application opens the closure and calls its code
@@ -899,7 +907,7 @@ $\key{let}$, $\key{fst}$ or $\key{snd}$:
 (It carries a renaming of the variables, the identity for a program,
 \texttt{delay-program}.)
 
-\subsection{CC: Globalize (\texorpdfstring{$\Ml{Clos4} \to \Ml{Clos5}$}{Clos4-mu -> Clos5-mu})}
+\subsection{CC: Globalize (\texorpdfstring{$\Ml{FlatClos} \to \Ml{GlobalFun}$}{FlatClos-mu -> GlobalFun-mu})}
 
 The code of every function becomes a global definition, and the code
 itself a reference to it (\texttt{Compiler/Globalize.agda}). The pass
@@ -920,7 +928,7 @@ $(\Delta; A \to C)$ for code of type $\Mcodety{\Delta}{A}{C}$.
   \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
 \end{align*}
 
-\subsection{Remove Complex Operands (\texorpdfstring{$\Ml{Clos5} \to \Ml{Mon}$}{Clos5-mu -> Mon-mu})}
+\subsection{Remove Complex Operands (\texorpdfstring{$\Ml{GlobalFun} \to \Ml{Mon}$}{GlobalFun-mu -> Mon-mu})}
 
 Every complex operand is bound to a fresh variable by a $\key{let}$, from
 left to right, so the operands of every operation become atoms
@@ -1143,8 +1151,8 @@ proves its denotations monotone, consistent and continuous
 ($\mathit{Ok}$) by induction on the term, one line per construct, are in
 \texttt{proof/Framework/GraphModel/TypedOkBase.agda} (shared with the
 dynamically typed pipeline), and the lemmas of each language
-($\mathit{Ok}$ of $\Ml{ISWIM}$, $\Ml{Clos3}$, $\Ml{Clos4}$ and
-$\Ml{Clos5}$, consistency of a table, monotonicity of a $\Ml{CFG}$ tail in
+($\mathit{Ok}$ of $\Ml{ISWIM}$, $\Ml{EnvClos}$, $\Ml{FlatClos}$ and
+$\Ml{GlobalFun}$, consistency of a table, monotonicity of a $\Ml{CFG}$ tail in
 its frame) are in \texttt{proof/Semantics/Graph/}.
 
 We write variables by name, as in Part~\ref{part:untyped}; in the Agda an
@@ -1168,7 +1176,7 @@ those for $\lambda$ and application, $\Lambda$ and $\app$, and
   \SEM{\Munfold M}^{\ell}\rho = \SEM{M}^{\ell}\rho
 \end{align*}
 in every language $\ell$ (and, in $\Ml{Imp}$ and $\Ml{CFG}$, for the simple
-expressions on atoms). $\Ml{Clos2}$ and $\Ml{Clos3}$ are as Clos2 and Clos3,
+expressions on atoms). $\Ml{Clos}$ and $\Ml{EnvClos}$ are as Clos and EnvClos,
 except that a closure captures the values of terms $M_1, \ldots, M_n$, not
 only variables:
 \begin{align*}
@@ -1180,8 +1188,8 @@ only variables:
     \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\Ml{3}}\rho_0(e{:=}X, y{:=}Y)))
     \app \mathcal{T}(\SEM{M_1}^{\Ml{3}}\rho, \ldots, \SEM{M_n}^{\Ml{3}}\rho)
 \end{align*}
-where $\Ml{2}, \ldots, \Ml{5}$ abbreviate $\Ml{Clos2}, \ldots, \Ml{Clos5}$.
-In $\Ml{Clos4}$ code is a closed function of two arguments, the
+where $\Ml{2}, \ldots, \Ml{5}$ abbreviate $\Ml{Clos}, \ldots, \Ml{GlobalFun}$.
+In $\Ml{FlatClos}$ code is a closed function of two arguments, the
 environment and the argument; a closure is the pair of code and
 environment, built by $\key{pack}$; and $\key{callc}$ applies the
 closure's code ($\key{car}$) to its environment ($\key{cdr}$) and then to
@@ -1193,7 +1201,7 @@ the argument:
     = D \odot \SEM{M}^{\Ml{4}}\rho
     \quad\text{where } D = \SEM{L}^{\Ml{4}}\rho
 \end{align*}
-$\Ml{Clos5}$ is $\Ml{Clos4}$ with code replaced by a reference $\funref{k}$
+$\Ml{GlobalFun}$ is $\Ml{FlatClos}$ with code replaced by a reference $\funref{k}$
 to the definition $d_k$, given meaning by a table $T$ of the meanings of
 the definitions (\texttt{Semantics/Graph/Ops.agda}, \texttt{Table},
 \texttt{tables}). Each definition $d_k$ is given meaning with the table of
@@ -1209,7 +1217,7 @@ $\emptyset$, and main with the table of all of them:
     \end{cases} \\
   \SEM{(d_0, \ldots, d_{m-1};\; M)}^{\Ml{5}} &= \SEM{M}^{\Ml{5}}_{\key{table}(d_0,\ldots,d_{m-1})}\,\rho_0
 \end{align*}
-with the other clauses those of $\Ml{Clos4}$ under $T$. The table is
+with the other clauses those of $\Ml{FlatClos}$ under $T$. The table is
 generic in what a definition is, and is also that of $\Ml{Imp}$, $\Ml{CFG}$
 and $\Ml{X86}$, with their own $\key{code}$. A $\Ml{Mon}$ program $P$ means
 its embedding: $\SEM{P}^{\Ml{Mon}} = \SEM{\Tembed{P}}^{\Ml{5}}$.
@@ -1220,7 +1228,7 @@ $s$, and $(\sigma, X)$ is $\sigma$ extended with its next slot holding
 $X$. An expression never changes the slots it can see, so a continuation
 $\kappa : \SET{\V} \to \SET{\V}$ takes only the value of the expression.
 The atoms and simple expressions, shared with $\Ml{CFG}$, are
-$\Ml{Clos5}$'s operators on atoms:
+$\Ml{GlobalFun}$'s operators on atoms:
 \begin{align*}
   \mathcal{A}_\sigma(s) &= \sigma(s) \qquad
   \mathcal{A}_\sigma(c) = \mathcal{B}(c) \qquad
@@ -1249,7 +1257,7 @@ With $T$ fixed, writing $\SEM{e}\sigma\,\kappa$ for $\SEM{e}^{\Ml{Imp}}_T\sigma\
     \SEM{e}^{\Ml{Imp}}_{\key{table}^{\mathrm{K}}(e_0,\ldots,e_{m-1})}\,\rho_0\,(\lambda D.\, D)
 \end{align*}
 where $(X, Y)$ is the frame with the environment $X$ in slot $0$ and the
-argument $Y$ in slot $1$, and $\key{table}^{\mathrm{K}}$ is $\Ml{Clos5}$'s
+argument $Y$ in slot $1$, and $\key{table}^{\mathrm{K}}$ is $\Ml{GlobalFun}$'s
 table with $\key{code}^{\mathrm{K}}$.
 
 \paragraph{$\Ml{CFG}$} (\texttt{Semantics/Graph/CFG.agda}). A label is an
@@ -1324,7 +1332,7 @@ $\key{case}$ pseudo-instruction is $\Ml{CFG}$'s $\key{case}$:
   \SEM{(b_0, \ldots, b_{m-1};\; b)}^{\Ml{X86}} &= \mathit{run}_{\key{table}^{\mathrm{X}}(b_0, \ldots, b_{m-1})}(b)(\rho_0, R_\omega, \{\omega\})
 \end{align*}
 with $R_{X,Y}$ holding $\{\omega\}$, $X$ and $Y$ in $\rax$, $\rdi$ and
-$\rsi$, and $\key{table}^{\mathrm{X}}$ $\Ml{Clos5}$'s table with
+$\rsi$, and $\key{table}^{\mathrm{X}}$ $\Ml{GlobalFun}$'s table with
 $\key{code}^{\mathrm{X}}$.
 
 %-------------------------------------------------------------------------------
@@ -1420,7 +1428,7 @@ Each variable means what its reference means:
   \SEM{\prj{i} x}_r\rho = \key{proj}_i(\rho(x)) \qquad
   \rho_2 \sim_\varphi \rho_3 \iff \forall x \text{ in scope}.\; \rho_2(x) \simeq \SEM{\varphi(x)}_r\rho_3
 \end{align*}
-A $\Ml{Clos2}$ closure is strict in its captured values; a $\Ml{Clos3}$
+A $\Ml{Clos}$ closure is strict in its captured values; a $\Ml{EnvClos}$
 closure is its code applied to their tuple, which is nonempty exactly
 when they are. Then the code applied to the tuple is the function of the
 body on it, and the code finds $x_i$ as $\prj{i} e$ of the tuple:
@@ -1451,8 +1459,8 @@ without their clauses for $\key{project}$, and $\Mfold$ and $\Munfold$ are
 the identity on both sides.
 
 \paragraph{Preservation.}
-The relation $v \sqsubseteq D'$ between a $\Ml{Clos3}$ value $v$ and a set
-$D'$ of $\Ml{Clos4}$ values, by recursion on $v$; a function is exhibited
+The relation $v \sqsubseteq D'$ between a $\Ml{EnvClos}$ value $v$ and a set
+$D'$ of $\Ml{FlatClos}$ values, by recursion on $v$; a function is exhibited
 by a set with a pair, a closure, whose calls ($\odot$, as $\key{callc}$)
 exhibit its results:
 \begin{align*}
@@ -1475,8 +1483,8 @@ If $\rho'(x) \NE$ for every $x$, $\consis(\rho')$, and $\rho \sqsubseteq \rho'$,
 
 \paragraph{Reflection.}
 The \emph{approximant logical relation} $\ApproxLR{D}{V'}$ relates an
-arbitrary set $D$ of $\Ml{Clos3}$ values to a finite target approximant,
-a finite set $V'$ of $\Ml{Clos4}$ values, by recursion on
+arbitrary set $D$ of $\Ml{EnvClos}$ values to a finite target approximant,
+a finite set $V'$ of $\Ml{FlatClos}$ values, by recursion on
 $\mathit{depth}(V')$. A target closure is a set of pairs whose calls
 combine the codes and environments of several pairs, so a call is a batch
 ($\mathit{Calls}$); $\tau$ ranges over $\key{tup}_i$, $\key{left}$ and
@@ -1512,7 +1520,7 @@ that any fuel bounding the depth gives the same relation
 \texttt{fold}).
 
 \paragraph{Why a type index cannot replace the depth.} One might try to
-define the relation by recursion on the $\Ml{Clos3}$ type $A$ of the term,
+define the relation by recursion on the $\Ml{EnvClos}$ type $A$ of the term,
 $R_A(D, V')$, as a logical relation usually is. The function case is fine,
 since $A$ and $C$ are smaller than $A \rightarrow C$:
 $R_{A \rightarrow C}(D, V')$ asks $R_A$ of the arguments and $R_C$ of the
@@ -1545,7 +1553,7 @@ $W \subseteq L'$ on a finite $U \subseteq N'$ ($\mathit{Calls}(W, U, V')$,
 takes, by consistency, all its results from one branch.
 
 \begin{theorem}[Correctness of Delay]\label{thm:m-den-delay}
-For every closed $\Ml{Clos3}$ term $M$ and constant $c$,
+For every closed $\Ml{EnvClos}$ term $M$ and constant $c$,
 \[
   c \in \SEM{M}^{\Ml{3}}\rho_0 \iff c \in \SEM{\pass{delay}(M)}^{\Ml{4}}\rho_0
   \qquad\text{and}\qquad
@@ -1574,7 +1582,7 @@ $\SEM{M}^{\Ml{4}}\rho \simeq \SEM{M'}^{\Ml{5}}_{\key{made}(\vec{d}')}\rho$ for e
 (\texttt{glob-ok}).
 \end{lemma}
 \begin{theorem}[Correctness of Globalize]\label{thm:m-den-globalize}
-For every closed $\Ml{Clos4}$ term $M$,
+For every closed $\Ml{FlatClos}$ term $M$,
 \[ \SEM{M}^{\Ml{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\Ml{5}} \]
 (\texttt{globalize-correct}, with \texttt{table-close}: the table of the
 program agrees with $\key{made}$).
@@ -1607,7 +1615,7 @@ $O(\SEM{M_1}^{\Ml{5}}_{T}\gamma, \ldots, \SEM{M_n}^{\Ml{5}}_{T}\gamma) \simeq
 \begin{theorem}[Correctness of RCO]\label{thm:m-den-rco}
 If $\sigma$ is nonempty and consistent and $\mathit{Ag}(\gamma, \sigma)$, then
 \[ \SEM{M}^{\Ml{5}}_{T}\gamma \simeq \SEM{\Tembed{\pass{rco}(M)}}^{\Ml{5}}_{T'}\sigma \]
-(\texttt{rco-sem}). For every $\Ml{Clos5}$ program $P$,
+(\texttt{rco-sem}). For every $\Ml{GlobalFun}$ program $P$,
 \[ \SEM{P}^{\Ml{5}} \simeq \SEM{\Tembed{\pass{rco}(P)}}^{\Ml{5}} = \SEM{\pass{rco}(P)}^{\Ml{Mon}} \]
 (\texttt{rco-correct}, from \texttt{table-rco} of \texttt{RCOCorrect.agda}).
 \end{theorem}
@@ -1616,7 +1624,7 @@ If $\sigma$ is nonempty and consistent and $\mathit{Ag}(\gamma, \sigma)$, then
 
 A variable of a $\Ml{Mon}$ body is the slot at its level, so the frame
 $\sigma$ of the lifted body is also the environment of the source, and no
-relation between them is needed. Fix tables $T$ (of $\Ml{Clos5}$) and $T'$
+relation between them is needed. Fix tables $T$ (of $\Ml{GlobalFun}$) and $T'$
 (of $\Ml{Imp}$) with $T(k) \simeq T'(k)$ and $\consis(T(k))$. Lifted code is
 run with a continuation that means what the enclosing assignments make of
 the value: nothing at the end of a body, and $\Lambda(G) \app D$ for the
@@ -1770,7 +1778,7 @@ Adequacy turns the last into the operational statement
   with $s = |\Delta'|$.
 \item \textbf{Tables} are indexed by typed references $f : \Sigma \ni s$
   (\texttt{Table}, \texttt{tables}), here by their levels $k$; the codes are
-  \texttt{code$'$} (of $\Ml{Clos5}$, $\Ml{Imp}$ and $\Ml{CFG}$) and
+  \texttt{code$'$} (of $\Ml{GlobalFun}$, $\Ml{Imp}$ and $\Ml{CFG}$) and
   \texttt{code$_{\mathsf{t}}$} ($\key{code}^{\mathrm{X}}$). The empty frame and
   an unbound variable are \texttt{init} $= \{\omega\}$. Component $i$ of a
   tuple is its position \texttt{pos i}.
@@ -1836,9 +1844,9 @@ a tuple, one of a sum type an injection.
   \Tres{\mathsf{true}} = \inlV \tupV{}, \quad
   \Tres{\mathsf{false}} = \inrV \tupV{} \\
   \Mach{\ell}(M) &= (\mathit{State}^{\ell},\; \step{\ell},\; \ev{M}{\emptyset}{\halt})
-    \qquad (\ell \in \{\Ml{ISWIM}, \Ml{Clos2}, \Ml{Clos3}, \Ml{Clos4}\})
+    \qquad (\ell \in \{\Ml{ISWIM}, \Ml{Clos}, \Ml{EnvClos}, \Ml{FlatClos}\})
 \end{align*}
-The transitions shared by the machines of $\Ml{ISWIM}$ to $\Ml{Clos5}$ are
+The transitions shared by the machines of $\Ml{ISWIM}$ to $\Ml{GlobalFun}$ are
 those of Part~\ref{part:untyped} for variables, constants, tuples,
 $\prj{i}$, $\key{inl}$, $\key{inr}$, $\key{case}$ and primitives, without
 the cases that stop with $\error$, together with $\key{let}$ and the
@@ -1876,7 +1884,7 @@ $\Mfold$. A variable is always bound, a $\prj{i}$ finds a tuple with an
 $i$-th component, and a $\key{case}$ or primitive always finds an injection
 or an integer, by typing.
 
-\subsection{\texorpdfstring{$\Ml{ISWIM}$ to $\Ml{Clos4}$}{ISWIM-mu to Clos4-mu}}
+\subsection{\texorpdfstring{$\Ml{ISWIM}$ to $\Ml{FlatClos}$}{ISWIM-mu to FlatClos-mu}}
 
 \begin{sloppypar}
 The four machines are those of the typed languages of Part~\ref{part:dyn}
@@ -1893,21 +1901,21 @@ and runs the body:
   \rt{w}{\Kf{appR}{\cloV{\lam{x} N}{\rho}, \kappa}} & \nxt \ev{N}{\ext{\rho}{x}{w}}{\kappa}
 \end{array}
 \]
-A $\Ml{Clos2}$ closure evaluates its captured terms left to right, as a
+A $\Ml{Clos}$ closure evaluates its captured terms left to right, as a
 tuple, and keeps their values as the environment of its code; a
-$\Ml{Clos3}$ closure the same, its code running with the tuple:
+$\Ml{EnvClos}$ closure the same, its code running with the tuple:
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{(\clos{M_1 \ldots M_n}{\bar{x}\, y} N)}{\rho}{\kappa} &
     \nxt \tnext(\epsilon;\, M_1 \ldots M_n;\, \rho;\, \Kf{closK}{\bar{x}\, y.\, N, \kappa}) \\
   \rt{\tupV{\bar{v}}}{\Kf{closK}{\bar{x}\, y.\, N, \kappa}} & \nxt \rt{\closV{\bar{x}\, y.\, N}{\bar{v}}}{\kappa} \\
   \rt{w}{\Kf{appR}{\closV{\bar{x}\, y.\, N}{\bar{v}}, \kappa}} & \nxt \ev{N}{\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}}{\kappa}
-    & (\Ml{Clos2}) \\
+    & (\Ml{Clos}) \\
   \rt{w}{\Kf{appR}{\closV{e\, y.\, N}{\bar{v}}, \kappa}} & \nxt \ev{N}{\{e {\mapsto} \tupV{\bar{v}}, y {\mapsto} w\}}{\kappa}
-    & (\Ml{Clos3})
+    & (\Ml{EnvClos})
 \end{array}
 \]
-In $\Ml{Clos4}$ code is a value of type $\Mcodety{\Delta}{A}{C}$, and a
+In $\Ml{FlatClos}$ code is a value of type $\Mcodety{\Delta}{A}{C}$, and a
 closure packs code with an environment of type $\Mtup{\Delta}$;
 $\Tcallc{L}{M}$ evaluates the closure and the argument and runs the
 closure's code with its environment and the argument, with no check:
@@ -1923,7 +1931,7 @@ closure's code with its environment and the argument, with no check:
 \end{array}
 \]
 
-\subsection{\texorpdfstring{$\Ml{Clos5}$ and $\Ml{Mon}$}{Clos5-mu and Mon-mu}}
+\subsection{\texorpdfstring{$\Ml{GlobalFun}$ and $\Ml{Mon}$}{GlobalFun-mu and Mon-mu}}
 
 A program runs with its definitions $d_0, \ldots, d_{m-1}$
 (\texttt{Semantics/CEK/Clos5.agda}); values, environments and
@@ -1934,7 +1942,7 @@ value of type $\key{Int}$, the components of a tuple, the payload of an
 injection, the value under a $\Mfold$: \texttt{int}, \texttt{elems},
 \texttt{choose}, \texttt{unfold$_v$}), since their types say what they are;
 these and the values are shared with the machines of $\Ml{Imp}$, $\Ml{CFG}$
-and $\Ml{X86}$. The transitions are those of $\Ml{Clos4}$, with
+and $\Ml{X86}$. The transitions are those of $\Ml{FlatClos}$, with
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\
@@ -1943,7 +1951,7 @@ and $\Ml{X86}$. The transitions are those of $\Ml{Clos4}$, with
 \end{array}
 \]
 in place of those for code. A $\Ml{Mon}$ program runs as its embedding,
-$\Mach{\Ml{Mon}}(P) = \Mach{\Ml{Clos5}}(\Tembed{P})$.
+$\Mach{\Ml{Mon}}(P) = \Mach{\Ml{GlobalFun}}(\Tembed{P})$.
 
 \subsection{\texorpdfstring{$\Ml{Imp}$}{Imp-mu}}
 
@@ -2180,10 +2188,10 @@ source environment (\texttt{EncloseSim.agda}):
 The machines run in lock step, except that evaluating a $\lambda$ takes the
 target several steps: it evaluates the variables it captures, which
 collects exactly $\rho_2$, and builds the closure. So
-\[ \mathit{PlusSim}(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Clos2}}(\pass{enclose}(M)), \sim)\,. \]
+\[ \mathit{PlusSim}(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Clos}}(\pass{enclose}(M)), \sim)\,. \]
 \begin{theorem}[Correctness of Enclose, Simulation]\label{thm:m-cek-enclose}
 For every closed $M$,
-\[ \Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Clos2}}(\pass{enclose}(M))) \]
+\[ \Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Clos}}(\pass{enclose}(M))) \]
 (\texttt{enclose-correct}).
 \end{theorem}
 
@@ -2210,8 +2218,8 @@ $\sim^{\mathrm{lag}}$: the source is $2d$ steps behind a synchronisation
 point while it evaluates $d$ dropped free variables in a row (each in an
 $\key{eval}$ and a $\key{ret}$ step, matched by no target step).
 \begin{theorem}[Correctness of Optimize, Simulation]\label{thm:m-cek-optimize}
-For every closed $\Ml{Clos2}$ term $M$,
-\[ \Equiv(\Mach{\Ml{Clos2}}(M), \Mach{\Ml{Clos2}}(\pass{optimize}(M))) \]
+For every closed $\Ml{Clos}$ term $M$,
+\[ \Equiv(\Mach{\Ml{Clos}}(M), \Mach{\Ml{Clos}}(\pass{optimize}(M))) \]
 (\texttt{optimize-correct}).
 \end{theorem}
 The machines collect a tuple's values newest first, so the closure's
@@ -2237,8 +2245,8 @@ binder). The machines run in lock step, except that a variable read in one
 step may become a projection read in three, which cannot fail
 (\texttt{ref-run}).
 \begin{theorem}[Correctness of Concretize, Simulation]\label{thm:m-cek-concretize}
-For every closed $\Ml{Clos2}$ term $M$,
-\[ \Equiv(\Mach{\Ml{Clos2}}(M), \Mach{\Ml{Clos3}}(\pass{concretize}_{\emptyset}(M))) \]
+For every closed $\Ml{Clos}$ term $M$,
+\[ \Equiv(\Mach{\Ml{Clos}}(M), \Mach{\Ml{EnvClos}}(\pass{concretize}_{\emptyset}(M))) \]
 (\texttt{concretize-correct}).
 \end{theorem}
 
@@ -2258,8 +2266,8 @@ so the machines run in lock step, except that building a closure takes
 the target three more steps (the code, then the tuple under
 $\key{packR}$): a plus simulation.
 \begin{theorem}[Correctness of Delay, Simulation]\label{thm:m-cek-delay}
-For every closed $\Ml{Clos3}$ term $M$,
-\[ \Equiv(\Mach{\Ml{Clos3}}(M), \Mach{\Ml{Clos4}}(\pass{delay}(M))) \]
+For every closed $\Ml{EnvClos}$ term $M$,
+\[ \Equiv(\Mach{\Ml{EnvClos}}(M), \Mach{\Ml{FlatClos}}(\pass{delay}(M))) \]
 (\texttt{delay-correct}).
 \end{theorem}
 
@@ -2267,8 +2275,8 @@ For every closed $\Ml{Clos3}$ term $M$,
 
 The relations are those for the definitions
 $\vec{d} = d_0, \ldots, d_{m-1}$, $d_k = \Tcodetm{e}{y}{N_k}$, that globalize
-makes for the whole program (\texttt{GlobalizeSim.agda}). A $\Ml{Clos4}$
-term is related to a $\Ml{Clos5}$ term ($M \leadsto M'$) when they are the
+makes for the whole program (\texttt{GlobalizeSim.agda}). A $\Ml{FlatClos}$
+term is related to a $\Ml{GlobalFun}$ term ($M \leadsto M'$) when they are the
 same, except that code is related to a reference to a definition whose
 body its body is related to; values likewise:
 \[
@@ -2283,14 +2291,14 @@ of the references of a smaller table ($I \vdash M \leadsto M'$,
 before a term are those of $\vec{d}$ at the same positions
 (\texttt{Faithful}, \texttt{glob-grows}, \texttt{MExt}).
 \begin{theorem}[Correctness of Globalize, Simulation]\label{thm:m-cek-globalize}
-For every closed $\Ml{Clos4}$ term $M$,
-\[ \Equiv(\Mach{\Ml{Clos4}}(M), \Mach{\Ml{Clos5}}(\pass{globalize}(M))) \]
+For every closed $\Ml{FlatClos}$ term $M$,
+\[ \Equiv(\Mach{\Ml{FlatClos}}(M), \Mach{\Ml{GlobalFun}}(\pass{globalize}(M))) \]
 (\texttt{globalize-correct}).
 \end{theorem}
 
 \subsubsection{Remove Complex Operands}
 
-Both machines are the $\Ml{Clos5}$ machine, the source on $P$ and the target
+Both machines are the $\Ml{GlobalFun}$ machine, the source on $P$ and the target
 on $\Tembed{\pass{rco}(P)}$ (\texttt{RCOSim.agda}); the two runs compute the
 same values. The target environment holds the values of the $\key{let}$s
 as well: a source term $M$ in $\rho_1$ is related to $\pass{rco}(M)$ in
@@ -2320,18 +2328,18 @@ operands of $\key{pack}$, $\key{callc}$ and primitives, and $\key{tupK}$).
 An atom evaluates to its value in one step and cannot fail
 (\texttt{Clos5Common.agda}). The machines move by $\mathit{Both}$.
 \begin{theorem}[Correctness of RCO, Simulation]\label{thm:m-cek-rco}
-For every $\Ml{Clos5}$ program $P$,
-\[ \Equiv(\Mach{\Ml{Clos5}}(P), \Mach{\Ml{Mon}}(\pass{rco}(P))) \]
+For every $\Ml{GlobalFun}$ program $P$,
+\[ \Equiv(\Mach{\Ml{GlobalFun}}(P), \Mach{\Ml{Mon}}(\pass{rco}(P))) \]
 (\texttt{rco-correct}).
 \end{theorem}
 
 \subsubsection{Lift Locals}
 
-The source is the $\Ml{Clos5}$ machine on $\Tembed{P}$ and the target the
+The source is the $\Ml{GlobalFun}$ machine on $\Tembed{P}$ and the target the
 $\Ml{Imp}$ machine on $\pass{lift}(P)$ (\texttt{LiftLocalsSim.agda}); the
 simulation goes from $\Ml{Imp}$ to $\Ml{Mon}$, and the theorem follows by
 the symmetry of $\Equiv$. The pass is structural, and the frame of the
-$\Ml{Imp}$ machine is the environment of the $\Ml{Clos5}$ machine, so the two
+$\Ml{Imp}$ machine is the environment of the $\Ml{GlobalFun}$ machine, so the two
 run on the same values and frames:
 \begin{align*}
   \Kf{letK}{x.\Tembed{N}, \sigma, \kappa_1} &\approxk \Kf{assignK}{\pass{lift}(N), \sigma, \kappa_2}
@@ -2340,7 +2348,7 @@ run on the same values and frames:
     \iff \kappa_1 \approxk \kappa_2
 \end{align*}
 One $\Ml{Imp}$ step runs a simple expression on its atoms, which the
-$\Ml{Clos5}$ machine evaluates one by one, through continuation frames
+$\Ml{GlobalFun}$ machine evaluates one by one, through continuation frames
 (\texttt{atm-step}); then both continue with related continuations, or
 both call, or both stop with the same observation ($\mathit{Both}$).
 \begin{theorem}[Correctness of Lift Locals, Simulation]\label{thm:m-cek-lift}
@@ -2430,8 +2438,8 @@ For every $\Ml{CFG}$ program $P$,
 \begin{theorem}[Compiler Correctness, Simulation]\label{thm:m-cek-compile}
 For every closed $\Ml{ISWIM}$ program $M$ of any type,
 \begin{align*}
-  &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Clos4}}(\pass{compile}_4(M))) &
-  &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Clos5}}(\pass{compile}(M))) \\
+  &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{FlatClos}}(\pass{compile}_4(M))) &
+  &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{GlobalFun}}(\pass{compile}(M))) \\
   &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Mon}}(\pass{compile\text{-}mon}(M))) &
   &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{Imp}}(\pass{compile\text{-}imp}(M))) \\
   &\Equiv(\Mach{\Ml{ISWIM}}(M), \Mach{\Ml{CFG}}(\pass{compile\text{-}cfg}(M))) &
@@ -2450,13 +2458,13 @@ the proof, \texttt{compile$_4$-correct} of \texttt{PipelineSim.agda}).
 \item \textbf{Environments and frames} are typed lists (\texttt{All Val
   $\Gamma$}), newest first, looked up by de Bruijn index; here named. The
   frame $(u, w)$ of a definition is \texttt{w $\cdot$ u $\cdot$ []}, and
-  $(\sigma, v)$ is \texttt{v $\cdot$ $\sigma$}. A $\Ml{Clos2}$ closure keeps its
+  $(\sigma, v)$ is \texttt{v $\cdot$ $\sigma$}. A $\Ml{Clos}$ closure keeps its
   values as \texttt{All Val $\Delta$}, its code over \texttt{A $\cdot$ $\Delta$}.
 \item \textbf{Tuples}: $\key{tupK}$ and \texttt{tuple-next} collect the values
   newest first in \texttt{All Val $\Delta'$}, and the tuple's type is
   \texttt{tup ($\Delta'$ <>< $\Delta$)} (reverse-append, \texttt{\_<><\_} and
   \texttt{\_<><$^{\mathsf{a}}$\_} of \texttt{Framework/AllUtil.agda}).
-\item \textbf{$\Ml{Clos5}$}: the step function is parametrized by the
+\item \textbf{$\Ml{GlobalFun}$}: the step function is parametrized by the
   definitions (\texttt{step ds}); a code value is \texttt{code f} with $f$ a
   typed index into the table; what an $\key{eval}$ state does is
   \texttt{begin}, and a call is \texttt{call}.
@@ -2506,7 +2514,7 @@ interpreters, indexed by their type, and parameterized by what the code of
 a closure with an environment of types $\Delta$, an argument of type $A$
 and a result of type $C$ is in each language, $C_{\Delta,A,C}$. A closure
 is always code packed with the tuple of its environment, even in the
-languages before $\Ml{Clos4}$, where code is not a value of the language.
+languages before $\Ml{FlatClos}$, where code is not a value of the language.
 With $c$ a constant of base type $B$ and $\gamma \in C_{\Delta,A,C}$:
 \[
 \begin{array}{r@{\;:\;}l@{\qquad}r@{\;:\;}l}
@@ -2520,12 +2528,12 @@ With $c$ a constant of base type $B$ and $\gamma \in C_{\Delta,A,C}$:
 \]
 \[
 \begin{array}{l|ccc}
-  & \Ml{ISWIM},\ \Ml{Clos2} & \Ml{Clos3},\ \Ml{Clos4} & \Ml{Clos5},\ \Ml{Imp},\ \Ml{CFG},\ \Ml{X86} \\ \hline
+  & \Ml{ISWIM},\ \Ml{Clos} & \Ml{EnvClos},\ \Ml{FlatClos} & \Ml{GlobalFun},\ \Ml{Imp},\ \Ml{CFG},\ \Ml{X86} \\ \hline
   C_{\Delta,A,C} & \Delta, y{:}A \vdash N : C & e{:}\Mtup{\Delta}, y{:}A \vdash N : C &
     k \text{ with } s_k = (\Delta; A \to C)
 \end{array}
 \]
-written $\lam{y} N$ ($\Ml{ISWIM}$), $\bar{x}\, y.\, N$ ($\Ml{Clos2}$), $e\,
+written $\lam{y} N$ ($\Ml{ISWIM}$), $\bar{x}\, y.\, N$ ($\Ml{Clos}$), $e\,
 y.\, N$ and $\codeV{k}$. $\obs$ is the machines' ($\obs(\Mfold v) =
 \obs(v)$, code and closures observed as $\key{fun}$). The operations on
 values are total on values of their types:
@@ -2538,12 +2546,12 @@ values are total on values of their types:
 
 \subsection{The interpreters}
 
-For $\ell$ one of $\Ml{ISWIM}$ to $\Ml{Clos4}$, and for $\Ml{Clos5}$ with
+For $\ell$ one of $\Ml{ISWIM}$ to $\Ml{FlatClos}$, and for $\Ml{GlobalFun}$ with
 the definitions $\vec{d} = d_0, \ldots, d_{m-1}$ (written $\EV{\vec{d}}{k}$,
 $\CALL{\vec{d}}{k}$; \texttt{Semantics/Interp/\{ISWIM,Clos2,Clos3,Clos4,Clos5\}.agda}):
 \begin{align*}
   \Interp{\ell}(M) &= (\obs,\; \lambda k.\, \EV{\ell}{k}\,\emptyset\,M) \\
-  \Interp{\Ml{Clos5}}(\vec{d};\; M) &= (\obs,\; \lambda k.\, \EV{\vec{d}}{k}\,\emptyset\,M) \\[1ex]
+  \Interp{\Ml{GlobalFun}}(\vec{d};\; M) &= (\obs,\; \lambda k.\, \EV{\vec{d}}{k}\,\emptyset\,M) \\[1ex]
   \EV{\ell}{k}\,\rho\,x &= \Ret \rho(x) \qquad
   \EV{\ell}{k}\,\rho\,c = \Ret c \\
   \EV{\ell}{k}\,\rho\,\tuple{M_1, \ldots, M_n} &=
@@ -2567,21 +2575,21 @@ $\CALL{\vec{d}}{k}$; \texttt{Semantics/Interp/\{ISWIM,Clos2,Clos3,Clos4,Clos5\}.
 \end{align*}
 An application evaluates its operator and its operand and then calls,
 \[ \Do f \leftarrow \EV{\ell}{k}\,\rho\,L;\; w \leftarrow \EV{\ell}{k}\,\rho\,M;\; \CALL{\ell}{k}\,f\,w\,, \]
-for $L\;M$ in $\Ml{ISWIM}$ to $\Ml{Clos3}$ and for $\Tcallc{L}{M}$ in
-$\Ml{Clos4}$ and $\Ml{Clos5}$. Closures and calls:
+for $L\;M$ in $\Ml{ISWIM}$ to $\Ml{EnvClos}$ and for $\Tcallc{L}{M}$ in
+$\Ml{FlatClos}$ and $\Ml{GlobalFun}$. Closures and calls:
 \begin{align*}
   \EV{\Ml{ISWIM}}{k}\,\rho\,(\lam{y} N) &= \Ret \Tpack{\TcodeV{\lam{y} N}}{\tupV{\rho}} \\
   \CALL{\Ml{ISWIM}}{k+1}\,\Tpack{\TcodeV{\lam{y} N}}{\tupV{\rho}}\,w &= \EV{\Ml{ISWIM}}{k}\,\ext{\rho}{y}{w}\,N \\
-  \EV{\Ml{Clos2}}{k}\,\rho\,(\clos{M_1 \ldots M_n}{\bar{x}\, y} N) &=
-    \Do \bar{v} \leftarrow \EVS{\Ml{Clos2}}{k}\,\rho\,(M_1 \ldots M_n); \\
+  \EV{\Ml{Clos}}{k}\,\rho\,(\clos{M_1 \ldots M_n}{\bar{x}\, y} N) &=
+    \Do \bar{v} \leftarrow \EVS{\Ml{Clos}}{k}\,\rho\,(M_1 \ldots M_n); \\
   &\qquad \Ret \Tpack{\TcodeV{\bar{x}\, y.\, N}}{\tupV{\bar{v}}} \\
-  \CALL{\Ml{Clos2}}{k+1}\,\Tpack{\TcodeV{\bar{x}\, y.\, N}}{\tupV{\bar{v}}}\,w &=
-    \EV{\Ml{Clos2}}{k}\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}\,N \\
-  \EV{\Ml{Clos3}}{k}\,\rho\,(\clos{M_1 \ldots M_n}{e\, y} N) &=
-    \Do \bar{v} \leftarrow \EVS{\Ml{Clos3}}{k}\,\rho\,(M_1 \ldots M_n);\; \Ret \Tpack{\TcodeV{e\, y.\, N}}{\tupV{\bar{v}}} \\
+  \CALL{\Ml{Clos}}{k+1}\,\Tpack{\TcodeV{\bar{x}\, y.\, N}}{\tupV{\bar{v}}}\,w &=
+    \EV{\Ml{Clos}}{k}\,\{\bar{x} {\mapsto} \bar{v}, y {\mapsto} w\}\,N \\
+  \EV{\Ml{EnvClos}}{k}\,\rho\,(\clos{M_1 \ldots M_n}{e\, y} N) &=
+    \Do \bar{v} \leftarrow \EVS{\Ml{EnvClos}}{k}\,\rho\,(M_1 \ldots M_n);\; \Ret \Tpack{\TcodeV{e\, y.\, N}}{\tupV{\bar{v}}} \\
   \CALL{\ell}{k+1}\,\Tpack{\TcodeV{e\, y.\, N}}{u}\,w &=
-    \EV{\ell}{k}\,\{e {\mapsto} u, y {\mapsto} w\}\,N \qquad (\ell \in \{\Ml{Clos3}, \Ml{Clos4}\}) \\
-  \EV{\Ml{Clos4}}{k}\,\rho\,\Tcodetm{e}{y}{N} &= \Ret \TcodeV{e\, y.\, N} \\
+    \EV{\ell}{k}\,\{e {\mapsto} u, y {\mapsto} w\}\,N \qquad (\ell \in \{\Ml{EnvClos}, \Ml{FlatClos}\}) \\
+  \EV{\Ml{FlatClos}}{k}\,\rho\,\Tcodetm{e}{y}{N} &= \Ret \TcodeV{e\, y.\, N} \\
   \EV{\ell}{k}\,\rho\,\Tpack{L}{M} &=
     \Do v \leftarrow \EV{\ell}{k}\,\rho\,L;\; u \leftarrow \EV{\ell}{k}\,\rho\,M;\; \Ret \Tpack{v}{u} \\
   \EV{\vec{d}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\
@@ -2590,7 +2598,7 @@ $\Ml{Clos4}$ and $\Ml{Clos5}$. Closures and calls:
     \quad (d_j = \Tcodetm{e}{y}{N})
 \end{align*}
 $\Ml{Mon}$ runs as its embedding, $\Interp{\Ml{Mon}}(P) =
-\Interp{\Ml{Clos5}}(\Tembed{P})$.
+\Interp{\Ml{GlobalFun}}(\Tembed{P})$.
 
 \paragraph{$\Ml{Imp}$ and $\Ml{CFG}$} (\texttt{Semantics/Interp/\{Imp,CFG\}.agda}).
 An expression runs in a frame $\sigma$ and returns a value; an atom is read
@@ -2656,7 +2664,7 @@ $\key{run}^k_{\vec{b}}\,\vec{\beta}\,\eta\,m\,\beta$:
 Each pass but simplify is proved clock for clock (Theorem~\ref{thm:clocked}):
 for every clock, a program and its compilation both time out or return
 related values, $\RelRes{\approx}$ (both err never happens: neither
-interpreter errs). For the passes from $\Ml{Clos5}$ on the values are the
+interpreter errs). For the passes from $\Ml{GlobalFun}$ on the values are the
 same and the results equal (\texttt{clocked-$\equiv$}). Each proof uses
 Lemma~\ref{lem:bind-rel} at every $\bind$. The statements of the theorems
 (of each pass, and of the compiler) are in
@@ -2664,7 +2672,7 @@ Lemma~\ref{lem:bind-rel} at every $\bind$. The statements of the theorems
 defined as its proof.
 
 \paragraph{The value relation between interpreters.}
-The passes from $\Ml{ISWIM}$ to $\Ml{Clos5}$ relate the values of two
+The passes from $\Ml{ISWIM}$ to $\Ml{GlobalFun}$ relate the values of two
 interpreters by one relation (\texttt{proof/Semantics/Interp/Rel.agda}),
 given a relation $\mathit{Code}(\gamma, \gamma')$ on codes and a relation
 $\mathit{Clo}(\gamma, \bar{v}', \gamma', \bar{w})$ on closures:
@@ -2746,16 +2754,16 @@ Each is clock for clock, with the value relation above
 \end{itemize}
 \begin{theorem}[Correctness of Enclose, Optimize, Concretize and Delay, Interpreter]\label{thm:m-interp-cc}
 For every closed term $M$ of the source language of each pass,
-\[ \Equiv(\Interp{\Ml{ISWIM}}(M), \Interp{\Ml{Clos2}}(\pass{enclose}(M)))\,, \]
-\[ \Equiv(\Interp{\Ml{Clos2}}(M), \Interp{\Ml{Clos2}}(\pass{optimize}(M)))\,, \]
-$\Equiv(\Interp{\Ml{Clos2}}(M), \Interp{\Ml{Clos3}}(\pass{concretize}_\emptyset(M)))$ and
-\[ \Equiv(\Interp{\Ml{Clos3}}(M), \Interp{\Ml{Clos4}}(\pass{delay}(M))) \]
+\[ \Equiv(\Interp{\Ml{ISWIM}}(M), \Interp{\Ml{Clos}}(\pass{enclose}(M)))\,, \]
+\[ \Equiv(\Interp{\Ml{Clos}}(M), \Interp{\Ml{Clos}}(\pass{optimize}(M)))\,, \]
+$\Equiv(\Interp{\Ml{Clos}}(M), \Interp{\Ml{EnvClos}}(\pass{concretize}_\emptyset(M)))$ and
+\[ \Equiv(\Interp{\Ml{EnvClos}}(M), \Interp{\Ml{FlatClos}}(\pass{delay}(M))) \]
 (\texttt{enclose-correct}, \ldots, \texttt{delay-correct}).
 \end{theorem}
 
 \subsubsection{CC: Globalize}
 
-The $\Ml{Clos5}$ interpreter runs with the table $D = D_0, \ldots, D_{m-1}$
+The $\Ml{GlobalFun}$ interpreter runs with the table $D = D_0, \ldots, D_{m-1}$
 that the pass makes for the whole program (\texttt{GlobalizeFuel.agda}).
 The pass only appends to the definitions it threads, so the definitions
 $\vec{d}$ made by any point of the pass are, weakened, a prefix of $D$,
@@ -2767,8 +2775,8 @@ $N'$ weakened), and the value relation is that with $\Same_{\mathit{Code}}$.
 Globalize maps each $\key{callc}$ to one, so the interpreters call in lock
 step.
 \begin{theorem}[Correctness of Globalize, Interpreter]\label{thm:m-interp-globalize}
-For every closed $\Ml{Clos4}$ term $M$,
-\[ \Equiv(\Interp{\Ml{Clos4}}(M), \Interp{\Ml{Clos5}}(\pass{globalize}(M))) \]
+For every closed $\Ml{FlatClos}$ term $M$,
+\[ \Equiv(\Interp{\Ml{FlatClos}}(M), \Interp{\Ml{GlobalFun}}(\pass{globalize}(M))) \]
 (\texttt{globalize-correct}).
 \end{theorem}
 
@@ -2787,7 +2795,7 @@ The values are the same, and the results equal for every clock:
   \[ \EV{\vec{d}}{k}\,\gamma\,M = \EV{\vec{d}'}{k}\,\varphi\,\Tembed{\pass{rco}(M)} \]
   (\texttt{rco-ok}); calls agree at every clock (\texttt{calls$\equiv$});
 \item \textbf{lift locals} (\texttt{LiftLocalsFuel.agda}): the $\Ml{Imp}$
-  frame of an expression is the $\Ml{Clos5}$ environment of its embedding,
+  frame of an expression is the $\Ml{GlobalFun}$ environment of its embedding,
   and the pass maps each call to one call:
   \[ \EV{\Tembed{\vec{d}}}{k}\,\sigma\,\Tembed{M} = \EV{\pass{lift}(\vec{d})}{k}\,\sigma\,\pass{lift}(M) \]
   (\texttt{lift-ok});
@@ -2804,7 +2812,7 @@ The values are the same, and the results equal for every clock:
 \end{itemize}
 \begin{theorem}[Correctness of RCO, Lift Locals and Explicate Control, Interpreter]\label{thm:m-interp-back}
 For every program $P$ of the source language of each pass,
-\[ \Equiv(\Interp{\Ml{Clos5}}(P), \Interp{\Ml{Mon}}(\pass{rco}(P)))\,, \]
+\[ \Equiv(\Interp{\Ml{GlobalFun}}(P), \Interp{\Ml{Mon}}(\pass{rco}(P)))\,, \]
 $\Equiv(\Interp{\Ml{Mon}}(P), \Interp{\Ml{Imp}}(\pass{lift}(P)))$ and
 \[ \Equiv(\Interp{\Ml{Imp}}(P), \Interp{\Ml{CFG}}(\pass{explicate}(P)))\,, \]
 with equal results for every clock (\texttt{rco-correct},
@@ -2836,8 +2844,8 @@ equal results for every clock (\texttt{select-correct}).
 
 \begin{theorem}[Compiler Correctness, Interpreter]\label{thm:m-interp-compiler}
 For every closed $\Ml{ISWIM}$ program $M$ of any type, $\Interp{\Ml{ISWIM}}(M)$
-is $\Equiv$ to $\Interp{\Ml{Clos4}}(\pass{compile}_4(M))$,
-$\Interp{\Ml{Clos5}}(\pass{compile}(M))$, $\Interp{\Ml{Mon}}(\pass{compile\text{-}mon}(M))$,
+is $\Equiv$ to $\Interp{\Ml{FlatClos}}(\pass{compile}_4(M))$,
+$\Interp{\Ml{GlobalFun}}(\pass{compile}(M))$, $\Interp{\Ml{Mon}}(\pass{compile\text{-}mon}(M))$,
 $\Interp{\Ml{Imp}}(\pass{compile\text{-}imp}(M))$, $\Interp{\Ml{CFG}}(\pass{compile\text{-}cfg}(M))$
 and $\Interp{\Ml{X86}}(\pass{compile\text{-}x86}(M))$, by the theorems for each
 pass and Lemma~\ref{lem:equiv-trans-clk} (\texttt{Theorems/\allowbreak Interpreter.agda}:
@@ -2853,8 +2861,8 @@ step of the proof, \texttt{compile$_4$-correct} of
 \item \textbf{Variables and environments.} Environments are lists typed by
   the context (\texttt{All Val $\Gamma$}), newest first; the frame $(u, w)$
   is \texttt{w :: u :: []}. A code $\gamma$ is a term (\texttt{Tm (A $\cdot$
-  $\Delta$) B} in $\Ml{ISWIM}$ and $\Ml{Clos2}$, a term over \texttt{A $\cdot$
-  tup $\Delta$ $\cdot$ []} in $\Ml{Clos3}$ and $\Ml{Clos4}$) or an index
+  $\Delta$) B} in $\Ml{ISWIM}$ and $\Ml{Clos}$, a term over \texttt{A $\cdot$
+  tup $\Delta$ $\cdot$ []} in $\Ml{EnvClos}$ and $\Ml{FlatClos}$) or an index
   \texttt{$\Sigma \ni$ sig $\Delta$ A B} into the table (\texttt{Vals}).
 \item \textbf{Renamings.} The proofs of optimize and delay relate
   environments through the renaming the pass carries; concretize's
@@ -2868,7 +2876,7 @@ step of the proof, \texttt{compile$_4$-correct} of
 %===============================================================================
 \section{Reduction Semantics}\label{sec:m-red}
 
-The languages with binders, $\Ml{ISWIM}$ and $\Ml{Clos2}$--$\Ml{Clos5}$, get a
+The languages with binders, $\Ml{ISWIM}$ and $\Ml{Clos}$--$\Ml{GlobalFun}$, get a
 reduction semantics by substitution (\texttt{Semantics/Reduction/}), as the
 untyped ones do in Part~\ref{part:untyped} (Section~\ref{sec:red}): a state
 is a closed term, and a step reduces a redex in an evaluation context,
@@ -2905,7 +2913,7 @@ What the types change:
 
 \paragraph{Renaming and substitution.}
 Terms are intrinsically scoped and typed, by a context of types (in
-$\Ml{Clos5}$ also by the table $\Sigma$). Renaming and substitution are one
+$\Ml{GlobalFun}$ also by the table $\Sigma$). Renaming and substitution are one
 traversal $\mathit{trav}_{\mathcal{K}}$, parameterised by a \emph{kit}
 $\mathcal{K}$ (McBride's type-preserving renaming and substitution;
 \texttt{Framework/Syntax/Kit.agda}; for $\Ml{ISWIM}$,
@@ -2945,22 +2953,22 @@ reduces to $\key{val}$, and that renaming and substitution keep values.
 (\texttt{Semantics/Reduction/ISWIM.agda}: $\beta$, \texttt{get?}, \texttt{case?},
 \texttt{prim?}, \texttt{unfold?}).
 
-\subsection{\texorpdfstring{$\Ml{Clos2}$ to $\Ml{Clos5}$}{Clos2-mu to Clos5-mu}}
+\subsection{\texorpdfstring{$\Ml{Clos}$ to $\Ml{GlobalFun}$}{Clos-mu to GlobalFun-mu}}
 
 As $\Ml{ISWIM}$, with closures in place of $\lambda$. A closure evaluates
 its captured terms left to right, and is a value once they are values. Its
 code is closed, so no substitution enters it.
 \[
   (\clos{V_1\ldots V_n}{x_1\ldots x_n\, y} N)\;W \to N[x_1 := V_1, \ldots, x_n := V_n, y := W]
-  \qquad (\Ml{Clos2})
+  \qquad (\Ml{Clos})
 \]
 \[
   (\clos{V_1\ldots V_n}{e\, y} N)\;W \to N[e := \tuple{V_1, \ldots, V_n}, y := W]
-  \qquad (\Ml{Clos3})
+  \qquad (\Ml{EnvClos})
 \]
-In $\Ml{Clos4}$ code is a value, and so is a pack of values; a call
+In $\Ml{FlatClos}$ code is a value, and so is a pack of values; a call
 evaluates the closure and the argument, left to right, and then calls the
-code of the closure with its environment and the argument; in $\Ml{Clos5}$
+code of the closure with its environment and the argument; in $\Ml{GlobalFun}$
 a reference $\funref{k}$ is a value, and the reduction
 $\mathit{red}_{\bar{d}}$ of a program with the definitions
 $\bar{d} = d_0, \ldots, d_{m-1}$ calls the definition:
@@ -2973,11 +2981,11 @@ with the contexts
   E ::= \Tpack{E}{M} \mid \Tpack{V}{E} \mid \Tcallc{E}{M} \mid \Tcallc{V}{E} \mid \cdots
 \]
 (\texttt{Semantics/\allowbreak Reduction/\allowbreak \{Clos2,Clos3,Clos4,Clos5\}.agda}). The program
-runs as $\mathcal{R}^{\Ml{Clos5}}(d_0, \ldots, d_{m-1};\; M)$.
+runs as $\mathcal{R}^{\Ml{GlobalFun}}(d_0, \ldots, d_{m-1};\; M)$.
 
 \subsection{\texorpdfstring{$\Ml{Mon}$, $\Ml{Imp}$, $\Ml{CFG}$ and $\Ml{X86}$}{Mon-mu, Imp-mu, CFG-mu and X86-mu}}
 
-$\Ml{Mon}$ runs as its embedding into $\Ml{Clos5}$. $\Ml{Imp}$, $\Ml{CFG}$ and
+$\Ml{Mon}$ runs as its embedding into $\Ml{GlobalFun}$. $\Ml{Imp}$, $\Ml{CFG}$ and
 $\Ml{X86}$ have no binders, so they keep their machines, the CEK column's
 (Section~\ref{sec:m-cek}), and the proofs of explicate control and select
 instructions are the CEK column's.
@@ -3041,7 +3049,7 @@ For every closed $M$,
 \subsubsection{CC: Enclose}
 
 Substitution goes into an $\Ml{ISWIM}$ function, but not into the code of a
-$\Ml{Clos2}$ closure, only into the terms it captures. So a function, after a
+$\Ml{Clos}$ closure, only into the terms it captures. So a function, after a
 substitution $\sigma$ of the variables $x_1, \ldots, x_n$ in its scope, is
 related to the closure of related code that captures terms related to
 $\sigma$ (\texttt{EncloseRed.agda}):
@@ -3053,7 +3061,7 @@ $\sigma$ (\texttt{EncloseRed.agda}):
 The two reductions run in lock step.
 \begin{theorem}[Correctness of Enclose, Reduction]\label{thm:m-red-enclose}
 For every closed $M$,
-\[ \Equiv(\mathcal{R}^{\Ml{ISWIM}}(M), \mathcal{R}^{\Ml{Clos2}}(\pass{enclose}(M))) \]
+\[ \Equiv(\mathcal{R}^{\Ml{ISWIM}}(M), \mathcal{R}^{\Ml{Clos}}(\pass{enclose}(M))) \]
 (\texttt{enclose-correct}).
 \end{theorem}
 
@@ -3076,8 +3084,8 @@ captured terms as the flags $\mathit{fl}$ keep them:
 In a closed term a dropped free variable is a value, which the source
 evaluates in no step, so the two reductions run in lock step.
 \begin{theorem}[Correctness of Optimize, Reduction]\label{thm:m-red-optimize}
-For every closed $\Ml{Clos2}$ term $M$,
-\[ \Equiv(\mathcal{R}^{\Ml{Clos2}}(M), \mathcal{R}^{\Ml{Clos2}}(\pass{optimize}(M))) \]
+For every closed $\Ml{Clos}$ term $M$,
+\[ \Equiv(\mathcal{R}^{\Ml{Clos}}(M), \mathcal{R}^{\Ml{Clos}}(\pass{optimize}(M))) \]
 (\texttt{optimize-correct}).
 \end{theorem}
 
@@ -3085,7 +3093,7 @@ For every closed $\Ml{Clos2}$ term $M$,
 
 The relation $M \approx_\varphi M'$ (\texttt{ConcretizeRed.agda}) relates a
 variable $x$ to where it lives, $\varphi(x)$; in both languages substitution
-enters only a closure's captured terms. Applying a $\Ml{Clos3}$ closure
+enters only a closure's captured terms. Applying a $\Ml{EnvClos}$ closure
 substitutes the tuple of its captured values for $e$, so where the source
 has a value, the target has a projection from that tuple, which takes a
 step:
@@ -3096,8 +3104,8 @@ step:
     &\iff N \approx_{\varphi_n} N' \land M_i \approx_\varphi M_i' \text{ for every } i
 \end{align*}
 \begin{theorem}[Correctness of Concretize, Reduction]\label{thm:m-red-concretize}
-For every closed $\Ml{Clos2}$ term $M$,
-\[ \Equiv(\mathcal{R}^{\Ml{Clos2}}(M), \mathcal{R}^{\Ml{Clos3}}(\pass{concretize}_{\emptyset}(M))) \]
+For every closed $\Ml{Clos}$ term $M$,
+\[ \Equiv(\mathcal{R}^{\Ml{Clos}}(M), \mathcal{R}^{\Ml{EnvClos}}(\pass{concretize}_{\emptyset}(M))) \]
 (\texttt{concretize-correct}).
 \end{theorem}
 
@@ -3112,14 +3120,14 @@ code and the tuple of its captured terms, and an application to a call:
 \end{align*}
 The two reductions run in lock step.
 \begin{theorem}[Correctness of Delay, Reduction]\label{thm:m-red-delay}
-For every closed $\Ml{Clos3}$ term $M$,
-\[ \Equiv(\mathcal{R}^{\Ml{Clos3}}(M), \mathcal{R}^{\Ml{Clos4}}(\pass{delay}(M))) \]
+For every closed $\Ml{EnvClos}$ term $M$,
+\[ \Equiv(\mathcal{R}^{\Ml{EnvClos}}(M), \mathcal{R}^{\Ml{FlatClos}}(\pass{delay}(M))) \]
 (\texttt{delay-correct}).
 \end{theorem}
 
 \subsubsection{CC: Globalize}
 
-The $\Ml{Clos5}$ program runs with the definitions $\bar{d}$ that the pass
+The $\Ml{GlobalFun}$ program runs with the definitions $\bar{d}$ that the pass
 made for the whole program, and the relation is for $\bar{d}$
 (\texttt{GlobalizeRed.agda}):
 $\Tcodetm{e}{y}{N} \approx_{\bar{d}} \funref{k} \iff
@@ -3127,8 +3135,8 @@ d_k = \Tcodetm{e}{y}{N_k} \land N \approx_{\bar{d}} N_k$. A subterm is related
 to its output, weakened to the whole table, when the definitions made
 agree with $\bar{d}$ (\texttt{Agree}). The reductions run in lock step.
 \begin{theorem}[Correctness of Globalize, Reduction]\label{thm:m-red-globalize}
-For every closed $\Ml{Clos4}$ term $M$,
-\[ \Equiv(\mathcal{R}^{\Ml{Clos4}}(M), \mathcal{R}^{\Ml{Clos5}}(\pass{globalize}(M))) \]
+For every closed $\Ml{FlatClos}$ term $M$,
+\[ \Equiv(\mathcal{R}^{\Ml{FlatClos}}(M), \mathcal{R}^{\Ml{GlobalFun}}(\pass{globalize}(M))) \]
 (\texttt{globalize-correct}).
 \end{theorem}
 
@@ -3156,14 +3164,14 @@ fundamental lemma: $M[\sigma] \approx \Tembed{\pass{rco}(M)}[\sigma]$
 $\pass{atomize}$, related for every substitution that agrees through the
 renaming).
 \begin{theorem}[Correctness of RCO, Reduction]\label{thm:m-red-rco}
-For every $\Ml{Clos5}$ program $P$,
-\[ \Equiv(\mathcal{R}^{\Ml{Clos5}}(P), \mathcal{R}^{\Ml{Clos5}}(\Tembed{\pass{rco}(P)})) \]
+For every $\Ml{GlobalFun}$ program $P$,
+\[ \Equiv(\mathcal{R}^{\Ml{GlobalFun}}(P), \mathcal{R}^{\Ml{GlobalFun}}(\Tembed{\pass{rco}(P)})) \]
 (\texttt{rco-correct}).
 \end{theorem}
 
 \subsubsection{Lift Locals}
 
-The source, the $\Ml{Clos5}$ reduction of $\Tembed{P}$, substitutes values
+The source, the $\Ml{GlobalFun}$ reduction of $\Tembed{P}$, substitutes values
 for the variables; the target, the $\Ml{Imp}$ machine on $\pass{lift}(P)$,
 keeps them in its frame (\texttt{LiftLocalsRed.agda}). A machine state
 decodes to a term $D(s)$: its expression, with the values of its frame
@@ -3180,7 +3188,7 @@ the source runs on such pairs (\texttt{red$\Sigma$}, equivalent by
 \texttt{pairs}, \texttt{Framework/ReductionAll.agda}).
 \begin{theorem}[Correctness of Lift Locals, Reduction]\label{thm:m-red-lift}
 For every $\Ml{Mon}$ program $P$,
-\[ \Equiv(\mathcal{R}^{\Ml{Clos5}}(\Tembed{P}), \Mach{\Ml{Imp}}(\pass{lift}(P))) \]
+\[ \Equiv(\mathcal{R}^{\Ml{GlobalFun}}(\Tembed{P}), \Mach{\Ml{Imp}}(\pass{lift}(P))) \]
 (\texttt{lift-locals-correct}).
 \end{theorem}
 
@@ -3193,9 +3201,9 @@ as \texttt{explicate-correct} and \texttt{select-correct}).
 \begin{theorem}[Compiler Correctness, Reduction]\label{thm:m-red-compiler}
 For every closed $\Ml{ISWIM}$ program $M$ of any type,
 $\mathcal{R}^{\Ml{ISWIM}}(M)$ is $\Equiv$ to
-$\mathcal{R}^{\Ml{Clos4}}(\pass{compile}_4(M))$,
-$\mathcal{R}^{\Ml{Clos5}}(\pass{compile}(M))$,
-\[ \mathcal{R}^{\Ml{Clos5}}(\Tembed{\pass{compile\text{-}mon}(M)})\,, \]
+$\mathcal{R}^{\Ml{FlatClos}}(\pass{compile}_4(M))$,
+$\mathcal{R}^{\Ml{GlobalFun}}(\pass{compile}(M))$,
+\[ \mathcal{R}^{\Ml{GlobalFun}}(\Tembed{\pass{compile\text{-}mon}(M)})\,, \]
 $\Mach{\Ml{Imp}}(\pass{compile\text{-}imp}(M))$,
 $\Mach{\Ml{CFG}}(\pass{compile\text{-}cfg}(M))$ and
 $\Mach{\Ml{X86}}(\pass{compile\text{-}x86}(M))$, by the theorems for each pass
@@ -3297,7 +3305,7 @@ machines' lemma, is kept only as an alternative
 
 Adequacy relates the graph model to the clocked interpreters of
 $\Ml{ISWIM}$ and $\Ml{X86}$ (\texttt{proof/Adequacy/}); it is direct to
-$\Ml{X86}$, with no adequacy for $\Ml{Clos5}$ or the other intermediate
+$\Ml{X86}$, with no adequacy for $\Ml{GlobalFun}$ or the other intermediate
 languages, and does not use the value relations of the interpreter
 column. Each half is by induction on the clock and the program, not over
 the steps of a machine: soundness has no continuations or call stack,
@@ -3355,7 +3363,7 @@ off the related value.
 
 \paragraph{$\Ml{X86}$} (\texttt{X86.agda}). \emph{Adequacy}
 (\texttt{X86LogRel.agda}), for every program: the logical relation
-$\mathbb{V}$ of the $\Ml{Clos5}$ interpreter's values, which the $\Ml{X86}$
+$\mathbb{V}$ of the $\Ml{GlobalFun}$ interpreter's values, which the $\Ml{X86}$
 interpreter shares (\texttt{Clos5Values.agda}; $\mathbb{V}(d, \Mfold v) =
 \mathbb{V}(d, v)$), code $\codeV{k}$ being related to $\Lambda X.\, \Lambda
 Y.\, w$ when a call of definition $k$ on values related to $X$ and $Y$
@@ -3482,9 +3490,9 @@ language $\Tl{X86}$:
 \[
 \begin{array}{l}
 \mathrm{ISWIM} \xrightarrow{\pass{simplify}} \mathrm{ISWIM} \xrightarrow{\pass{cast}} \Tl{ISWIM}
-  \xrightarrow{\pass{enclose}} \Tl{Clos2} \xrightarrow{\pass{optimize}} \Tl{Clos2}
-  \xrightarrow{\pass{concretize}} \Tl{Clos3} \xrightarrow{\pass{delay}} \Tl{Clos4} \\
-\qquad \xrightarrow{\pass{globalize}} \Tl{Clos5} \xrightarrow{\pass{rco}} \Tl{Mon}
+  \xrightarrow{\pass{enclose}} \Tl{Clos} \xrightarrow{\pass{optimize}} \Tl{Clos}
+  \xrightarrow{\pass{concretize}} \Tl{EnvClos} \xrightarrow{\pass{delay}} \Tl{FlatClos} \\
+\qquad \xrightarrow{\pass{globalize}} \Tl{GlobalFun} \xrightarrow{\pass{rco}} \Tl{Mon}
   \xrightarrow{\pass{lift}} \Tl{Imp} \xrightarrow{\pass{explicate}} \Tl{CFG}
   \xrightarrow{\pass{select}} \Tl{X86}
 \end{array}
@@ -3509,7 +3517,7 @@ value of type $\TAny$ is a value of some flat type $G$, tagged with it.
 The flat types mirror the values of untyped ISWIM: a constant of a base
 type, a tuple of $n$ values of type $\TAny$, a sum ($\key{inl}$ or
 $\key{inr}$ of a value of type $\TAny$), and a function from $\TAny$ to
-$\TAny$. The type $\Tcode{n}$, from $\Tl{Clos4}$ on, is that of closed code
+$\TAny$. The type $\Tcode{n}$, from $\Tl{FlatClos}$ on, is that of closed code
 taking an environment of $n$ values. In the notation of
 Part~\ref{part:mu},
 \[
@@ -3519,7 +3527,7 @@ Part~\ref{part:mu},
 \]
 where $\mathit{case}_t$ is the case on the tag, with an error in every
 branch but $\Tflatof{t}$'s. $\TAny$ is an open-ended sum, which fixes the shape of everything else: the contexts
-of $\Tl{ISWIM}$ and $\Tl{Clos2}$ are numbers (every variable has type
+of $\Tl{ISWIM}$ and $\Tl{Clos}$ are numbers (every variable has type
 $\TAny$), $\Tflat{\Tfun}$ is $\TAny \to \TAny$, $\Tflat{\Ttup{n}}$ holds
 $\TAny$s, and tables are lists of numbers. The tags $t$ are the flat types
 that $\key{project}$ can test; a tuple tag $\Tttup{n}{i}$ also names the
@@ -3554,12 +3562,12 @@ where every variable has type $\TAny$, a $\lambda$ has type
 $\Tflat{\Tfun}$ with a body of type $\TAny$, an application takes an
 operator of type $\Tflat{\Tfun}$, $\prj{i}$ an operand of type
 $\Tflat{\Ttup{n}}$, $\key{case}$ one of type $\Tflat{\Tsum}$, and a
-primitive operands of type $\Tflat{\key{Int}}$. $\Tl{Clos2}$ to $\Tl{CFG}$
+primitive operands of type $\Tflat{\key{Int}}$. $\Tl{Clos}$ to $\Tl{CFG}$
 are those of Part~\ref{part:mu} at these types, with $\Tinject{G}$ and
 $\Tproject{t}$ in place of $\Mfold$ and $\Munfold$ (and as simple
 expressions in $\Tl{Imp}$ and $\Tl{CFG}$); a closure has type
 $\Tflat{\Tfun} = \exists n.\, \Tcode{n} \times \Tflat{\Ttup{n}}$ from
-$\Tl{Clos4}$ on, a table is a list $\Sigma = n_0, \ldots, n_{m-1}$, and the two
+$\Tl{FlatClos}$ on, a table is a list $\Sigma = n_0, \ldots, n_{m-1}$, and the two
 targets of a $\Tl{CFG}$ $\key{case}$ start in the same frame $\Delta', \TAny$.
 
 \subsection{Cast Insertion (ISWIM \texorpdfstring{$\to$}{->} \texorpdfstring{$\Tl{ISWIM}$}{ISWIM-T})}\label{sec:t-cast}
@@ -3660,8 +3668,8 @@ project means $\emptyset$, as any error does in the plain graph model):
   \Taccepts{F}(\Tsum, d) &\iff d = \Left{u} \text{ or } \Right{u} \\
   \Taccepts{F}(\Tttup{n}{i}, d) &\iff d = \tup{i}{u}, \text{ an entry of a tuple of } n \text{ components}
 \end{align*}
-where a function is an entry of a graph up to $\Tl{Clos3}$
-($\Tfuntwo(d) \iff d = V \mapsto w$ or $\nu$) and a pair from $\Tl{Clos4}$
+where a function is an entry of a graph up to $\Tl{EnvClos}$
+($\Tfuntwo(d) \iff d = V \mapsto w$ or $\nu$) and a pair from $\Tl{FlatClos}$
 on ($\Tfunfour(d) \iff d = \pairv{u}{v}$). What this costs the proofs:
 \begin{itemize}
 \item \emph{cast insertion} (\texttt{CastCorrect.agda}): the untyped
@@ -3747,8 +3755,8 @@ kind than that of $\Tflatof{t}$, and keeps the values of that kind:
 where $\Tkind(d)$ is the kind of a value of the domain ($\Tkind(\omega) =
 \mathit{err}$), $\Tkindf(G)$ that of the values of a flat type, and
 $\Thit(\Tttup{n}{i}, X)$ asks for an entry of component $i$
-(\texttt{Framework/GraphModel/TypedCheck.agda}). Up to $\Tl{Clos3}$ $\varphi$
-is the identity; from $\Tl{Clos4}$ on a closure is a pair, so $\Tkindfour$
+(\texttt{Framework/GraphModel/TypedCheck.agda}). Up to $\Tl{EnvClos}$ $\varphi$
+is the identity; from $\Tl{FlatClos}$ on a closure is a pair, so $\Tkindfour$
 sees a pair as a function and code as an error. A $\key{let}$ is the bind
 of its body, and a slot is bound as $\Tletv(D, F) = D \bind \lambda X.\,
 \Lambda^{\omega}(F) \app X$; $\Tl{X86}$'s $\key{chk}$ is a strict write of
@@ -3825,10 +3833,10 @@ semantics check the kinds of values themselves:
 \[
 \begin{array}{l}
 \mathrm{ISWIM} \xrightarrow{\pass{simplify}} \mathrm{ISWIM}
-  \xrightarrow{\pass{enclose}} \mathrm{Clos2} \xrightarrow{\pass{optimize}} \mathrm{Clos2}
-  \xrightarrow{\pass{concretize}} \mathrm{Clos3} \xrightarrow{\pass{delay}} \mathrm{Clos4}
-  \xrightarrow{\pass{globalize}} \mathrm{Clos5} \\
-\qquad \xrightarrow{\pass{rco}} \text{monadic Clos5}
+  \xrightarrow{\pass{enclose}} \mathrm{Clos} \xrightarrow{\pass{optimize}} \mathrm{Clos}
+  \xrightarrow{\pass{concretize}} \mathrm{EnvClos} \xrightarrow{\pass{delay}} \mathrm{FlatClos}
+  \xrightarrow{\pass{globalize}} \mathrm{GlobalFun} \\
+\qquad \xrightarrow{\pass{rco}} \text{monadic GlobalFun}
   \xrightarrow{\pass{lift}} \mathrm{Imp} \xrightarrow{\pass{explicate}} \mathrm{CFG}
   \xrightarrow{\pass{select}} \mathrm{X86}
 \end{array}
@@ -3871,11 +3879,11 @@ of the surface. The meaning of the primitives is in
 \begin{enumerate}
 \item \textbf{The compiler:}
   \begin{itemize}
-  \item the syntax of ISWIM and Clos2--Clos5, including Clos5 programs,
+  \item the syntax of ISWIM and Clos--GlobalFun, including GlobalFun programs,
     and the primitives $\key{sub}$ and $\key{eq}$;
   \item enclose, optimize, concretize, delay (with the let), and globalize;
-  \item remove complex operands (rco) into monadic Clos5, $\pass{compile\text{-}mon}$,
-    and well-scoped Clos5 programs ($\mathit{Scoped}_5$);
+  \item remove complex operands (rco) into monadic GlobalFun, $\pass{compile\text{-}mon}$,
+    and well-scoped GlobalFun programs ($\mathit{Scoped}_5$);
   \item the imperative language Imp, lift locals into it, and
     $\pass{compile\text{-}imp}$;
   \item the control-flow-graph language CFG, explicate control into it, and
@@ -3893,7 +3901,7 @@ of the surface. The meaning of the primitives is in
     $\mathcal{C}$ binding only consistent sets, the preservation of a relation
     by a semantics, and continuity;
   \item the semantics: the clauses all languages share, then each language's own
-    clauses, including Clos5's table-indexed semantics, $\key{code}$, and $\key{table}$;
+    clauses, including GlobalFun's table-indexed semantics, $\key{code}$, and $\key{table}$;
   \item what the semantics of Imp and CFG share: stores, $\mathit{read}_n$,
     $\mathit{checked}_n$, atoms $\mathcal{A}$, simple expressions $\mathcal{S}$,
     $\key{frame}$, and $\key{table}$;
@@ -3928,7 +3936,7 @@ of the surface. The meaning of the primitives is in
   \begin{itemize}
   \item observations, machines as step functions, termination, divergence,
     and determinism;
-  \item the machines of ISWIM, Clos2--Clos5, Imp, and CFG: values, continuation frames,
+  \item the machines of ISWIM, Clos--GlobalFun, Imp, and CFG: values, continuation frames,
     and transitions; the evaluation of simple expressions ($\mathit{first}$,
     $\mathit{resume}$) that Imp and CFG share;
   \item the X86 machine: states with a call stack, flag, frame, and
@@ -3956,7 +3964,7 @@ of the surface. The meaning of the primitives is in
   \item results, clocked programs, termination, divergence, and $\mathit{Equivalent}$;
   \item $\mathit{RelResult}$, and the theorem that related results for every
     clock give $\mathit{Equivalent}$;
-  \item the clocked interpreters of ISWIM, Clos2--Clos5, Imp, CFG, and X86, with
+  \item the clocked interpreters of ISWIM, Clos--GlobalFun, Imp, CFG, and X86, with
     $\key{eval\text{-}simple}$, $\key{inj?}$, and $\key{set}$ shared by Imp and CFG;
   \item for each pass, the lemma relating the interpreters clock for clock,
     and its correctness theorem; for rco, with equal results, and the let chain;
@@ -3968,7 +3976,7 @@ of the surface. The meaning of the primitives is in
 \item \textbf{Reduction semantics + simulation:}
   \begin{itemize}
   \item reductions as machines ($\mathit{Red}$, $\mathit{toNext}$), and the
-    reduction semantics of ISWIM and Clos2--Clos5 by substitution, with
+    reduction semantics of ISWIM and Clos--GlobalFun by substitution, with
     evaluation contexts; Imp, CFG, and X86 keep their machines;
   \item simulations between reductions: answering a stop by a run to a final
     state, $\mathit{Ans}$, congruence, the theorem that a simulation gives
@@ -3987,8 +3995,8 @@ Using names instead of de Bruijn indices changes a few definitions:
 \item \textbf{Enclose} lists $\FV(\lam{y} N)$ as the closure's free variables.
   The Agda lists the first $m$ surrounding variables, enough to cover every
   variable the body uses.
-\item \textbf{Closure free variables} are variables in Clos2 and
-  references in Clos3, which is all the passes produce. The Agda allows
+\item \textbf{Closure free variables} are variables in Clos and
+  references in EnvClos, which is all the passes produce. The Agda allows
   arbitrary terms there.
 \item \textbf{Optimize} has no renaming parameter. It keeps $x_i$ when
   $x_i \in \FV(N)$.
@@ -3996,7 +4004,7 @@ Using names instead of de Bruijn indices changes a few definitions:
   variables. Closed code can't refer to them.
 \item \textbf{Tuple indices} run from $1$ to $n$.
 \item \textbf{Global definitions} are listed oldest first, so $\funref{k}$ names $d_k$.
-\item \textbf{Clos5 definitions} are closed by the grammar. The Agda's
+\item \textbf{GlobalFun definitions} are closed by the grammar. The Agda's
   syntax allows any definition; $\mathit{Scoped}_5$ is the Agda's
   \texttt{Scoped} (\texttt{Compiler/PipelineScope.agda}).
 \item \textbf{Fresh variables} of rco are de Bruijn indices in the Agda:
@@ -4047,7 +4055,7 @@ Using names instead of de Bruijn indices changes a few definitions:
 In the simulation proof:
 \begin{itemize}
 \item \textbf{Machine environments} are finite maps from variables.
-  The Agda uses lists indexed by de Bruijn indices, and a Clos2 closure
+  The Agda uses lists indexed by de Bruijn indices, and a Clos closure
   holds the values of its free variables last first.
 \item \textbf{Values collected} in $\key{tupK}$ and $\key{closK}$ frames are
   listed in order. The Agda lists them in reverse.
@@ -4056,8 +4064,8 @@ In the simulation proof:
   exactly when the values are.
 \item \textbf{Projections} $\prj{i} M$ carry the arity $n$ of the tuple,
   as \texttt{get} does in the Agda ($i : \mathtt{Fin}\;n$).
-\item \textbf{Enclose}'s $\approx_X$ needs no bound on the Clos2 environment.
-  The Agda's \texttt{Agree} also asks that the Clos2 environment covers
+\item \textbf{Enclose}'s $\approx_X$ needs no bound on the Clos environment.
+  The Agda's \texttt{Agree} also asks that the Clos environment covers
   the variables the closure captures.
 \item \textbf{Optimize}'s relations need no renaming. The Agda relates
   variable $x$ to $r(x)$ for the renaming $r$ that optimize carries, and
@@ -4073,7 +4081,7 @@ In the simulation proof:
 \item \textbf{Delay}'s $\approx^{?}$ on environments skips the fresh variables $f$.
   The Agda relates environments through a renaming that skips the
   let-bound variables.
-\item \textbf{Global definitions} in the Agda's Clos5 machine and globalize
+\item \textbf{Global definitions} in the Agda's GlobalFun machine and globalize
   relation are listed newest first.
 \item \textbf{RCO}'s $\rho_1 \preceq \rho_2$ is the Agda's \texttt{Ren}: the
   source term $M$ is related to \texttt{rename r (rco M)} for a renaming
@@ -4119,12 +4127,12 @@ In the interpreter proof:
   relates $M$ to \texttt{rename r (delay M)} for a renaming \texttt{r}
   of the environments, since the operand of an application is evaluated
   under the let-bound variable.
-\item \textbf{The Clos5 interpreter}'s table is listed newest first in the
+\item \textbf{The GlobalFun interpreter}'s table is listed newest first in the
   Agda, which looks up definition $j$ in its reverse (\texttt{global}).
 \item \textbf{Clocked programs} are the Agda's \texttt{Semantics}, and
   $\outc$ is \texttt{outcome}, which returns a \texttt{Maybe Obs}.
 \item \textbf{The Imp interpreter} collects the values of the atoms of a
-  tuple onto an accumulator, last first, as Clos5's does.
+  tuple onto an accumulator, last first, as GlobalFun's does.
 \item \textbf{The CFG interpreter}'s $\key{tail}$ and $\key{jump}$ are
   structurally recursive on the clock, then the list of blocks, then the
   tail: a jump walks the list, newest first, to its block.
@@ -4153,7 +4161,7 @@ In the reduction proof:
   body uses (\texttt{Uses}) and keeps the target closed (\texttt{WS 0}).
 \item \textbf{The preconditions} $\FV(M) = \emptyset$ of optimize and
   concretize are the Agda's \texttt{WS 0 M}.
-\item \textbf{RCO}'s contexts $h$ are frames of the Clos5 reduction
+\item \textbf{RCO}'s contexts $h$ are frames of the GlobalFun reduction
   (\texttt{Frame}), and the operands of a construct are reduced left to right
   (\texttt{LR}); the let chains are those of \texttt{lift}.
 \item \textbf{Lift locals}' frame is $\rho$ reversed followed by the slots
@@ -4182,7 +4190,7 @@ There are no booleans: $\key{eq}$ returns $\inl\tuple{}$ for true and $\inr\tupl
   \delta(\key{eq}, n, m) = (n = m)
 \]
 
-\subsection{Clos2}
+\subsection{Clos}
 
 Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its free variables $z_1\ldots z_n$ to names $x_1\ldots x_n$, so its body refers only to those names and its parameter.
 \begin{syntax}
@@ -4195,7 +4203,7 @@ Like ISWIM, but each $\lambda$ becomes a closure that binds the values of its fr
   \FV(\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N) = \{z_1, \ldots, z_n\}
 \]
 
-\subsection{Clos3}
+\subsection{EnvClos}
 
 Each closure now packs references $r_1\ldots r_n$ to its free variables into one tuple bound to $e$, so its body reaches them by projections from $e$.
 \begin{syntax}
@@ -4209,7 +4217,7 @@ Each closure now packs references $r_1\ldots r_n$ to its free variables into one
   \FV(\clos{r_1\ldots r_n}{e\, y} N) = \FV(r_1) \cup \cdots \cup \FV(r_n)
 \]
 
-\subsection{Clos4}
+\subsection{FlatClos}
 
 Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, built with $\key{pair}$, taken apart with $\key{fst}$ and $\key{snd}$, and applied to an environment and an argument with $L(M, N)$; $\key{let}$, from the source, is also used by the delayed application.
 \begin{syntax}
@@ -4223,9 +4231,9 @@ Closures are explicit pairs of closed code $\fun{e\,y.\,N}$ and an environment, 
   \FV(\fun{e\,y.\,N}) = \emptyset
 \]
 
-\subsection{Clos5}
+\subsection{GlobalFun}
 
-Like Clos4, but the code is hoisted into a program's list of global definitions $d_k$, which terms refer to as $\funref{k}$.
+Like FlatClos, but the code is hoisted into a program's list of global definitions $d_k$, which terms refer to as $\funref{k}$.
 \begin{syntax}
   & L, M, N &::=& x \mid \funref{k} \mid L(M, N) \mid c
     \mid \pair{M}{N} \mid \FST M \mid \SND M \mid \prim{p}{L}{M} \\
@@ -4236,9 +4244,9 @@ Like Clos4, but the code is hoisted into a program's list of global definitions 
   & P &::=& (d_0, \ldots, d_{m-1};\; M)
 \end{syntax}
 
-\subsection{Monadic Clos5}
+\subsection{Monadic GlobalFun}
 
-The sublanguage of Clos5 in monadic normal form: the operands of every construct but $\key{let}$ are atoms $a$, while the right-hand side and body of $\key{let}$ and the branches of $\key{case}$ may be complex.
+The sublanguage of GlobalFun in monadic normal form: the operands of every construct but $\key{let}$ are atoms $a$, while the right-hand side and body of $\key{let}$ and the branches of $\key{case}$ may be complex.
 \begin{syntax}
   & a &::=& x \mid \funref{k} \mid c \\
   & M, N &::=& a \mid a_1(a_2, a_3) \mid \pair{a_1}{a_2} \mid \FST a \mid \SND a
@@ -4398,7 +4406,7 @@ For every ISWIM term $M$,
 \]
 \end{lemma}
 
-\subsection{CC: Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos2)}
+\subsection{CC: Enclose (ISWIM \texorpdfstring{$\to$}{->} Clos)}
 
 Enclose decides which variables each closure captures (its free variables) and closes off its body, so that the body sees the captured values only through its own bound names.
 \begin{align*}
@@ -4406,7 +4414,7 @@ Enclose decides which variables each closure captures (its free variables) and c
     \qquad\text{where } x_1, \ldots, x_n = \FV(\lam{y} N)
 \end{align*}
 
-\subsection{CC: Optimize (Clos2 \texorpdfstring{$\to$}{->} Clos2)}
+\subsection{CC: Optimize (Clos \texorpdfstring{$\to$}{->} Clos)}
 
 Optimize removes the captured variables that the body does not use.
 \begin{align*}
@@ -4415,12 +4423,12 @@ Optimize removes the captured variables that the body does not use.
   \text{where } \{ i_1 < \cdots < i_k \} &= \{ i \mid x_i \in \FV(N) \}
 \end{align*}
 
-\subsection{CC: Concretize (Clos2 \texorpdfstring{$\to$}{->} Clos3)}
+\subsection{CC: Concretize (Clos \texorpdfstring{$\to$}{->} EnvClos)}
 
 Concretize stores each closure's captured values in a single tuple and turns their uses in the body into projections from that tuple.
 \[
   \varphi : \X \to \mathit{Ref}
-  \qquad (\mathit{Ref} \text{ is the set of Clos3 references } r)
+  \qquad (\mathit{Ref} \text{ is the set of EnvClos references } r)
 \]
 \begin{align*}
   \pass{concretize}_\varphi(x) &= \varphi(x) \\
@@ -4437,7 +4445,7 @@ Concretize stores each closure's captured values in a single tuple and turns the
     \Let x = \pass{concretize}_\varphi(M) \In \pass{concretize}_{\ext{\varphi}{x}{x}}(N)
 \end{align*}
 
-\subsection{CC: Delay (Clos3 \texorpdfstring{$\to$}{->} Clos4)}
+\subsection{CC: Delay (EnvClos \texorpdfstring{$\to$}{->} FlatClos)}
 
 Delay represents each closure as an explicit pair of closed code and its environment tuple, and makes application pass the environment to the code.
 \begin{align*}
@@ -4448,7 +4456,7 @@ Delay represents each closure as an explicit pair of closed code and its environ
     \qquad f \text{ fresh}
 \end{align*}
 
-\subsection{CC: Globalize (Clos4 \texorpdfstring{$\to$}{->} Clos5)}
+\subsection{CC: Globalize (FlatClos \texorpdfstring{$\to$}{->} GlobalFun)}
 
 Globalize hoists all code into a table of global definitions and replaces each piece of code by a reference to its entry.
 \[
@@ -4466,7 +4474,7 @@ Globalize hoists all code into a table of global definitions and replaces each p
   \pass{globalize}(M) &= (\vec{d};\; M') \quad\text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
 \end{align*}
 
-\subsection{Remove Complex Operands (Clos5 \texorpdfstring{$\to$}{->} Monadic Clos5)}
+\subsection{Remove Complex Operands (GlobalFun \texorpdfstring{$\to$}{->} Monadic GlobalFun)}
 
 Remove complex operands binds each complex operand to a fresh variable with a $\key{let}$, from left to right, so that every operand becomes an atom.
 \[
@@ -4518,7 +4526,7 @@ For every ISWIM term $M$,
 \]
 \end{lemma}
 
-\subsection{Lift Locals (Monadic Clos5 \texorpdfstring{$\to$}{->} Imp)}
+\subsection{Lift Locals (Monadic GlobalFun \texorpdfstring{$\to$}{->} Imp)}
 
 Lift locals gives every variable of a body a slot of the body's frame,
 declared up front, and turns $\key{let}$ into assignment. A variable gets
@@ -4547,7 +4555,7 @@ of the variables in scope, and $n$ is the size of the frame.
   &\qquad\text{where } b = (n;\; \pass{lift}_{n,\emptyset,0}(M)),\ n = \mathit{height}(M)
 \end{align*}
 A variable out of scope gets the slot $n$, beyond the frame, so that it
-errors, as an unbound variable does in Clos5.
+errors, as an unbound variable does in GlobalFun.
 
 \subsection{Explicate Control (Imp \texorpdfstring{$\to$}{->} CFG)}
 
@@ -4698,7 +4706,7 @@ which the operators preserve, each is consistent:
 \begin{lemma}[Consistency]\label{lem:con}
 If $\consis(\rho)$, then $\consis(\SEM{M}^{\ell}\rho)$ for
 $\ell \in \{\mathrm{ISWIM}, 3, 4\}$, and $\consis(\SEM{M}^{\mathrm{5}}_T\rho)$
-when $\consis(T(k))$ for every $k$. For all Clos5 definitions
+when $\consis(T(k))$ for every $k$. For all GlobalFun definitions
 $d_0, \ldots, d_{m-1}$ and every $k$,
 \[
   \consis(\key{table}(d_0, \ldots, d_{m-1})(k)) .
@@ -4751,7 +4759,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L\;M}^{\mathrm{ISWIM}}\rho &= \SEM{L}^{\mathrm{ISWIM}}\rho \app \SEM{M}^{\mathrm{ISWIM}}\rho
 \end{align*}
 
-\subsubsection{Clos2}
+\subsubsection{Clos}
 
 \begin{align*}
   \SEM{\clos{z_1\ldots z_n}{x_1\ldots x_n\, y} N}^{\mathrm{2}}\rho &=
@@ -4761,7 +4769,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L\;M}^{\mathrm{2}}\rho &= \SEM{L}^{\mathrm{2}}\rho \app \SEM{M}^{\mathrm{2}}\rho
 \end{align*}
 
-\subsubsection{Clos3}
+\subsubsection{EnvClos}
 
 \begin{align*}
   \SEM{\clos{r_1\ldots r_n}{e\, y} N}^{\mathrm{3}}\rho &=
@@ -4770,7 +4778,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{L\;M}^{\mathrm{3}}\rho &= \SEM{L}^{\mathrm{3}}\rho \app \SEM{M}^{\mathrm{3}}\rho
 \end{align*}
 
-\subsubsection{Clos4}
+\subsubsection{FlatClos}
 
 \begin{align*}
   \SEM{\fun{e\,y.\,N}}^{\mathrm{4}}\rho &= \Lambda(\lambda X.\, \Lambda(\lambda Y.\, \SEM{N}^{\mathrm{4}}\rho_0(e{:=}X, y{:=}Y))) \\
@@ -4780,7 +4788,7 @@ defined by the common clauses below together with the clauses for $\ell$.
   \SEM{\SND M}^{\mathrm{4}}\rho &= \key{cdr}(\SEM{M}^{\mathrm{4}}\rho)
 \end{align*}
 
-\subsubsection{Clos5}
+\subsubsection{GlobalFun}
 
 \begin{align*}
   \SEM{\funref{k}}^{\mathrm{5}}_T\rho &= T(k) \\
@@ -4805,7 +4813,7 @@ together with the common clauses, with $\SEM{-}^{\mathrm{5}}_T$ in place of $\SE
 
 A store $\sigma$ gives each slot a meaning. An expression or tail runs in
 a frame of $n$ slots. Reading a slot beyond the frame gives $\{\omega\}$,
-as an unbound variable does in Clos5; assigning one errors, so the
+as an unbound variable does in GlobalFun; assigning one errors, so the
 construct means $\emptyset$ ($\mathit{checked}_n$). A simple expression
 leaves the store as it was. With the table $T$ and $n$ fixed:
 \begin{align*}
@@ -5107,8 +5115,8 @@ If $f \notin \FV(N)$ and $\consis(\SEM{L}^{\mathrm{4}}\rho)$, then
 \end{lemma}
 
 \paragraph{Preservation.}
-The relation $v \sqsubseteq D'$ between a Clos3 value $v$ and a set $D'$ of
-Clos4 values is defined by recursion on $v$.
+The relation $v \sqsubseteq D'$ between a EnvClos value $v$ and a set $D'$ of
+FlatClos values is defined by recursion on $v$.
 \begin{align*}
   \nu \sqsubseteq D' &\iff D' \NE \\
   (U \mapsto w) \sqsubseteq D' &\iff D' \NE \land
@@ -5140,10 +5148,10 @@ If $\rho'(x) \NE$ for every $x$, $\consis(\rho')$, and $\rho \sqsubseteq \rho'$,
 \end{align*}
 
 \paragraph{Reflection.}
-The relation $\Rel{V'}{D}$ between a finite set $V'$ of Clos4 values and
-a set $D$ of Clos3 values, defined by recursion on $\mathit{depth}(V')$,
+The relation $\Rel{V'}{D}$ between a finite set $V'$ of FlatClos values and
+a set $D$ of EnvClos values, defined by recursion on $\mathit{depth}(V')$,
 where $t$ ranges over the tags $\key{tup}_i$, $\key{left}$, and $\key{right}$,
-and $U$ and $W$ range over finite sets of Clos4 values.
+and $U$ and $W$ range over finite sets of FlatClos values.
 \begin{align*}
   \mathit{Entry}(V', U_0, w) &\iff \exists F \NE.\; \exists d.\;
      \pairv{F \mapsto (U_0 \mapsto w)}{d} \in V',\; F \subseteq \key{cdr}(V') \\
@@ -5204,7 +5212,7 @@ $\SEM{M}^{\mathrm{4}}\rho_0 \simeq \SEM{\pass{globalize}(M)}^{\mathrm{5}}$.
 
 \subsubsection{Remove Complex Operands}
 
-\begin{lemma}[Continuity of Clos5]\label{lem:continuity5}
+\begin{lemma}[Continuity of GlobalFun]\label{lem:continuity5}
 For every table $T$, $\SEM{M}^{\mathrm{5}}_T$ is monotone and continuous.
 \end{lemma}
 
@@ -5260,7 +5268,7 @@ $\SEM{X}^{\mathrm{5}}_T\rho' \simeq O(\SEM{a_1}^{\mathrm{5}}_T\rho', \ldots, \SE
 \begin{theorem}[Correctness of RCO]\label{thm:rco}
 If $\consis(T(k))$ for every $k$, $\rho(x) \NE$ for every $x$, and $\consis(\rho)$, then
 $\SEM{\pass{rco}(M)}^{\mathrm{5}}_T\rho \simeq \SEM{M}^{\mathrm{5}}_T\rho$.
-For every Clos5 program $P$,
+For every GlobalFun program $P$,
 \[
   \SEM{\pass{rco}(P)}^{\mathrm{5}} \simeq \SEM{P}^{\mathrm{5}} .
 \]
@@ -5289,7 +5297,7 @@ the right-hand side of a let whose body and continuation mean $G$.
 \begin{align*}
   K_{\cdot}(D) &= D \qquad K_G(D) = \Lambda(G) \app D
 \end{align*}
-The commuting conversions are then on the Clos5 side. Each needs the
+The commuting conversions are then on the GlobalFun side. Each needs the
 bound set to be consistent, so that the finitely many runs that
 $\Lambda(G) \app -$ uses can be joined into one.
 
@@ -5309,7 +5317,7 @@ If $\consis(A)$ and $F_1$ and $F_2$ are monotone, then
 
 \begin{lemma}[Correctness of Lift]\label{lem:lift-sem}
 Let $T(k) \simeq T'(k)$ and $\consis(T'(k))$ for every $k$, and $M$ be a
-monadic Clos5 term. If $d + \mathit{height}(M) \leq n$, $\varphi(x) < d$
+monadic GlobalFun term. If $d + \mathit{height}(M) \leq n$, $\varphi(x) < d$
 for every $x \in \mathrm{dom}(\varphi)$, $\mathit{Scope}_{\varphi}(\rho)$,
 $\mathit{Agree}_{\varphi}(\sigma, \rho)$, $\consis(\rho)$, and
 $\kappa(D, \sigma') \simeq K(D)$ for every $D$ and every $\sigma'$ with
@@ -5326,7 +5334,7 @@ $\key{table}^{\mathrm{K}}(\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1}))(k) \si
 \end{lemma}
 
 \begin{theorem}[Correctness of Lift Locals]\label{thm:lift}
-For every monadic Clos5 program $P$,
+For every monadic GlobalFun program $P$,
 \[
   \SEM{\pass{lift}(P)}^{\mathrm{ImpK}} \simeq \SEM{P}^{\mathrm{5}} .
 \]
@@ -5339,7 +5347,7 @@ not to the store $\sigma$, so after a binder, whose slot is in
 $\varphi[x \mapsto d]$ but not in $\varphi$, only the slot is forgotten.
 
 \begin{lemma}[Correctness of Lift, Direct]\label{lem:lift-sem-d}
-Let $T(k) \simeq T'(k)$ for every $k$, and $M$ be a monadic Clos5 term.
+Let $T(k) \simeq T'(k)$ for every $k$, and $M$ be a monadic GlobalFun term.
 If $d + \mathit{height}(M) \leq n$, $\varphi(x) < d$ for every
 $x \in \mathrm{dom}(\varphi)$, $\mathit{Scope}_{\varphi}(\rho)$, and
 $\mathit{Agree}_{\varphi}(\sigma, \rho)$, then
@@ -5352,7 +5360,7 @@ $\mathit{Agree}_{\varphi}(\sigma, \rho)$, then
 \end{lemma}
 
 \begin{theorem}[Correctness of Lift Locals, Direct]\label{thm:lift-d}
-For every monadic Clos5 program $P$,
+For every monadic GlobalFun program $P$,
 \[
   \SEM{\pass{lift}(P)}^{\mathrm{ImpD}} \simeq \SEM{P}^{\mathrm{5}} .
 \]
@@ -5687,7 +5695,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsubsection{Clos2}
+\subsubsection{Clos}
 
 \[
 \begin{array}{rcl}
@@ -5716,7 +5724,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsubsection{Clos3}
+\subsubsection{EnvClos}
 
 \[
 \begin{array}{rcl}
@@ -5738,7 +5746,7 @@ We write $s \mapsto n$ for $\step{\ell}(s) = n$.
 \end{array}
 \]
 
-\subsubsection{Clos4}
+\subsubsection{FlatClos}
 
 An application checks that its operator is code when it calls it, after
 evaluating all three operands.
@@ -5772,7 +5780,7 @@ evaluating all three operands.
 \end{array}
 \]
 
-\subsubsection{Clos5}
+\subsubsection{GlobalFun}
 
 The machine of a program runs with its global definitions.
 \[
@@ -5781,7 +5789,7 @@ The machine of a program runs with its global definitions.
   \Mach{5}(d_0, \ldots, d_{m-1};\; M) &=& (\mathit{State}^{5},\; \step{5}_{d_0 \ldots d_{m-1}},\; \ev{M}{\emptyset}{\halt})
 \end{array}
 \]
-The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of Clos4, with $\codeV{k}$ in place of $\funV{e\,y.\,N}$:
+The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of FlatClos, with $\codeV{k}$ in place of $\funV{e\,y.\,N}$:
 \[
 \begin{array}{@{}l@{\;\mapsto\;}l@{\quad}l@{}}
   \ev{\funref{k}}{\rho}{\kappa} & \nxt \rt{\codeV{k}}{\kappa} \\[1ex]
@@ -5795,9 +5803,9 @@ The continuations and the rules of $\step{5}_{d_0 \ldots d_{m-1}}$ are those of 
 
 Both kinds of state carry the frame $\sigma$ of the running body, a list
 of values, so an assignment is seen by everything after it. The values
-are those of Clos5, and the continuation frames hold no environment.
+are those of GlobalFun, and the continuation frames hold no environment.
 The operands of a simple expression are atoms, evaluated left to right
-in a step each, collecting their values in frames $F$ as in Clos5. What
+in a step each, collecting their values in frames $F$ as in GlobalFun. What
 a simple expression does at its start ($\mathit{first}$) and when the
 value of an operand comes back ($\mathit{resume}$) is shared with the CFG
 machine: evaluate another operand, return a value (or stop with an error), or call
@@ -5858,7 +5866,7 @@ definition $k$.
   & \key{value}(\bot) & \text{otherwise}
 \end{array}
 \]
-As in Clos5, a call checks that its operator is code after evaluating its
+As in GlobalFun, a call checks that its operator is code after evaluating its
 three operands. It runs the body $(n;\; e)$ in a fresh frame of
 $\max(2, n)$ slots, and $\key{callK}$ returns to the caller's frame.
 For a program with bodies $b_0, \ldots, b_{m-1}$:
@@ -5942,7 +5950,7 @@ of Imp with $\mathit{call}$ running the start of the callee's body with its bloc
 
 \subsubsection{X86}\label{sec:machine-x86}
 
-One instruction or jump per step. The values are those of Clos5 and
+One instruction or jump per step. The values are those of GlobalFun and
 the frames those of Imp. A state runs the instructions $\vec{\imath}$
 and then the jump $j$, with the blocks $\vec{\beta}$ that $j$ may jump
 to (as in CFG), the call stack $\Sigma$, the flag $f$, the frame
@@ -6252,14 +6260,14 @@ For every ISWIM term $M$,
 \end{lemma}
 
 \begin{lemma}[Optimize Simulation]\label{lem:optimize-fsim}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \mathit{WS}(M) \implies \FSim(\Mach{2}(M), \Mach{2}(\pass{optimize}(M)), \sim) .
 \]
 \end{lemma}
 
 \begin{theorem}[Correctness of Optimize]\label{thm:optimize-correct}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \mathit{WS}(M) \implies \Equiv(\Mach{2}(M), \Mach{2}(\pass{optimize}(M))) .
 \]
@@ -6306,14 +6314,14 @@ For every Clos2 term $M$,
 \end{align*}
 
 \begin{lemma}[Concretize Simulation]\label{lem:concretize-fsim}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \mathit{PlusSim}(\Mach{2}(M), \Mach{3}(\pass{concretize}_{\mathit{id}}(M)), \sim) .
 \]
 \end{lemma}
 
 \begin{theorem}[Correctness of Concretize]\label{thm:concretize-correct}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \Equiv(\Mach{2}(M), \Mach{3}(\pass{concretize}_{\mathit{id}}(M))) .
 \]
@@ -6354,14 +6362,14 @@ where $L_M = (\FST f)(\SND f, \pass{delay}(M))$, as in delay, and
 $\kappa_F = \Kf{appF}{\SND f, \pass{delay}(M), \ext{\rho_2}{f}{w}, \kappa_2}$.
 
 \begin{lemma}[Delay Simulation]\label{lem:delay-fsim}
-For every Clos3 term $M$,
+For every EnvClos term $M$,
 \[
   \mathit{PlusSim}(\Mach{3}(M), \Mach{4}(\pass{delay}(M)), \sim) .
 \]
 \end{lemma}
 
 \begin{theorem}[Correctness of Delay]\label{thm:delay-correct}
-For every Clos3 term $M$,
+For every EnvClos term $M$,
 \[
   \Equiv(\Mach{3}(M), \Mach{4}(\pass{delay}(M))) .
 \]
@@ -6396,14 +6404,14 @@ If $\mathit{Extends}((\vec{d}, d), D)$, then $D_{|\vec{d}|} = d$.
 \end{lemma}
 
 \begin{lemma}[Globalize Simulation]\label{lem:globalize-fsim}
-For every Clos4 term $M$, if $\pass{globalize}(M) = (D;\; M')$, then
+For every FlatClos term $M$, if $\pass{globalize}(M) = (D;\; M')$, then
 \[
   \mathit{PlusSim}(\Mach{4}(M), \Mach{5}(D;\; M'), \sim) .
 \]
 \end{lemma}
 
 \begin{theorem}[Correctness of Globalize]\label{thm:globalize-correct}
-For every Clos4 term $M$,
+For every FlatClos term $M$,
 \[
   \Equiv(\Mach{4}(M), \Mach{5}(\pass{globalize}(M))) .
 \]
@@ -6470,14 +6478,14 @@ $\rt{v}{\kappa_2}$. So both machines take the construct's own step (a call,
 a projection, \ldots) together, and error together.
 
 \begin{lemma}[RCO Simulation]\label{lem:rco-fsim}
-For every Clos5 program $P$,
+For every GlobalFun program $P$,
 \[
   \mathit{Scoped}_5(P) \implies \FSim(\Mach{5}(P), \Mach{5}(\pass{rco}(P)), \sim) .
 \]
 \end{lemma}
 
 \begin{theorem}[Correctness of RCO, Simulation]\label{thm:rco-sim}
-For every Clos5 program $P$,
+For every GlobalFun program $P$,
 \[
   \mathit{Scoped}_5(P) \implies \Equiv(\Mach{5}(P), \Mach{5}(\pass{rco}(P))) .
 \]
@@ -6540,14 +6548,14 @@ The target's only extra steps are the returns from calls: when the source
 returns a value, the target pops its $\key{callK}$ frames.
 
 \begin{lemma}[Lift Simulation]\label{lem:lift-fsim}
-For every monadic Clos5 program $P$,
+For every monadic GlobalFun program $P$,
 \[
   \mathit{PlusSim}(\Mach{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P)), \sim) .
 \]
 \end{lemma}
 
 \begin{theorem}[Correctness of Lift Locals, Simulation]\label{thm:lift-sim}
-For every monadic Clos5 program $P$,
+For every monadic GlobalFun program $P$,
 \[
   \Equiv(\Mach{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P))) .
 \]
@@ -6827,14 +6835,14 @@ and, when moreover $v = \closV{e\, y.\, N}{v'}$ and $w = \pairV{\phi}{u}$ with $
 \end{align*}
 
 \begin{lemma}[Delay Backward Simulation]\label{lem:delay-bsim}
-For every Clos3 term $M$,
+For every EnvClos term $M$,
 \[
   \BSim(\Mach{3}(M), \Mach{4}(\pass{delay}(M)), \sim, <) .
 \]
 \end{lemma}
 
 \begin{theorem}[Delay Reflects]\label{thm:delay-reflects}
-For every Clos3 term $M$,
+For every EnvClos term $M$,
 \begin{align*}
   \Term_{\Mach{4}(\pass{delay}(M))}(o) &\implies \Term_{\Mach{3}(M)}(o) \\
   \Div^\infty_{\Mach{4}(\pass{delay}(M))} &\implies \Div^\infty_{\Mach{3}(M)} .
@@ -6987,7 +6995,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \end{cases}
 \end{align*}
 
-\subsubsection{Clos2}
+\subsubsection{Clos}
 
 \begin{align*}
   \EV{2}{k}\,\rho\,(\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N) &=
@@ -7001,7 +7009,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \end{cases}
 \end{align*}
 
-\subsubsection{Clos3}
+\subsubsection{EnvClos}
 
 \begin{align*}
   \EV{3}{k}\,\rho\,(\clos{r_1 \ldots r_n}{e\, y} N) &=
@@ -7015,7 +7023,7 @@ Here $\key{proj}^n_i$ and $\res{-}$ are those of Section~\ref{sec:machine-shared
     \end{cases}
 \end{align*}
 
-\subsubsection{Clos4}
+\subsubsection{FlatClos}
 
 As in the machine, the operator is checked after all three operands.
 \begin{align*}
@@ -7039,10 +7047,10 @@ As in the machine, the operator is checked after all three operands.
     \begin{cases} \Ret v_2 & v = \pairV{v_1}{v_2} \\ \error & \text{otherwise} \end{cases}
 \end{align*}
 
-\subsubsection{Clos5}
+\subsubsection{GlobalFun}
 
 The interpreter of a program runs with its global definitions $\vec{d} = d_0, \ldots, d_{m-1}$.
-Its clauses are those of Clos4, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, except
+Its clauses are those of FlatClos, with $\EV{\vec{d}}{k}$ in place of $\EV{4}{k}$, except
 \begin{align*}
   \EV{\vec{d}}{k}\,\rho\,\funref{j} &= \Ret \codeV{j} \\[1ex]
   \APP{\vec{d}}{k}\,\rho\,M\,N\,f &=
@@ -7065,7 +7073,7 @@ The interpreter of a program runs with its bodies $\vec{b} = b_0, \ldots, b_{m-1
 An expression runs in a frame $\sigma$, with $\sigma(a)$ and $\sigma[s := v]$ as in
 the machine, and returns a value and the frame as it left it. The value
 of a simple expression, given how to call an operator ($C$), its
-injection test, and assignment are shared with CFG. As in Clos5, the
+injection test, and assignment are shared with CFG. As in GlobalFun, the
 operator of a call is checked after the operands, and only calls tick.
 \begin{align*}
   \EV{\vec{b}}{k} &: \mathit{Frame} \to \mathit{Exp} \to \mathit{Result}(\mathit{Val} \times \mathit{Frame}) \\
@@ -7297,7 +7305,7 @@ for the closure $\clos{z_1 \ldots z_n}{x_1 \ldots x_n\, y} N$.
 \end{lemma}
 
 \begin{theorem}[Correctness of Optimize, Interpreter]\label{thm:optimize-clk}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \mathit{WS}(M) \implies \Equiv(\Interp{2}(M), \Interp{2}(\pass{optimize}(M))) .
 \]
@@ -7315,7 +7323,7 @@ If $\rho_2 \approx_\varphi \rho_3$, then for every clock $k$,
 \end{lemma}
 
 \begin{theorem}[Correctness of Concretize, Interpreter]\label{thm:concretize-clk}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \Equiv(\Interp{2}(M), \Interp{3}(\pass{concretize}_{\mathit{id}}(M))) .
 \]
@@ -7333,7 +7341,7 @@ If $\rho_1 \approxq \rho_2$, then for every clock $k$,
 \end{lemma}
 
 \begin{theorem}[Correctness of Delay, Interpreter]\label{thm:delay-clk}
-For every Clos3 term $M$,
+For every EnvClos term $M$,
 \[
   \Equiv(\Interp{3}(M), \Interp{4}(\pass{delay}(M))) .
 \]
@@ -7352,7 +7360,7 @@ If $M \leadsto M'$ and $\rho_1 \approx \rho_2$, then for every clock $k$,
 \end{lemma}
 
 \begin{theorem}[Correctness of Globalize, Interpreter]\label{thm:globalize-clk}
-For every Clos4 term $M$,
+For every FlatClos term $M$,
 \[
   \Equiv(\Interp{4}(M), \Interp{5}(\pass{globalize}(M))) .
 \]
@@ -7384,7 +7392,7 @@ then for every clock $k$,
 \end{lemma}
 
 \begin{theorem}[Correctness of RCO, Interpreter]\label{thm:rco-clk}
-For every Clos5 program $P$,
+For every GlobalFun program $P$,
 \[
   \mathit{Scoped}_5(P) \implies \Equiv(\Interp{5}(P), \Interp{5}(\pass{rco}(P))) .
 \]
@@ -7401,7 +7409,7 @@ the frame it left, is related to a value of the source by
 The pass maps each call to one call, so the interpreters tick in lock step.
 
 \begin{lemma}[Lift, Clock for Clock]\label{lem:lift-clk}
-Let $M$ be a monadic Clos5 term and $\vec{d}$ monadic Clos5 definitions.
+Let $M$ be a monadic GlobalFun term and $\vec{d}$ monadic GlobalFun definitions.
 If $|\rho| + \mathit{height}(M) \leq n$ and $\rho \approx^n_\varphi \sigma$, then for every clock $k$,
 \[
   \RelRes{\mathit{Out}^n_{\rho,\varphi}}(\EV{\vec{d}}{k}\,\rho\,M,\;
@@ -7410,7 +7418,7 @@ If $|\rho| + \mathit{height}(M) \leq n$ and $\rho \approx^n_\varphi \sigma$, the
 \end{lemma}
 
 \begin{theorem}[Correctness of Lift Locals, Interpreter]\label{thm:lift-clk}
-For every monadic Clos5 program $P$,
+For every monadic GlobalFun program $P$,
 \[
   \Equiv(\Interp{5}(P), \Interp{\mathrm{Imp}}(\pass{lift}(P))) .
 \]
@@ -7563,7 +7571,7 @@ by Theorems~\ref{thm:compile-cfg-clk} and~\ref{thm:select-clk} and Lemma~\ref{le
 
 \subsection{Reduction Semantics}\label{sec:red}
 
-The languages with binders (ISWIM, Clos2--Clos5) get a reduction semantics
+The languages with binders (ISWIM, Clos--GlobalFun) get a reduction semantics
 by substitution: a state is a term, and a step reduces a redex in an
 evaluation context, substituting values for bound variables. A variable
 is never looked up: one that is reached is unbound, and the term is stuck.
@@ -7622,7 +7630,7 @@ The context $(\lam{x} N)\;E$ checks that the operator is a function before
 the argument is evaluated, as the ISWIM machine does: $V\;M$ with $V$ not a
 function is stuck.
 
-\subsubsection{Clos2 and Clos3}
+\subsubsection{Clos and EnvClos}
 
 A closure is a value once its free variables are values.
 \[
@@ -7631,17 +7639,17 @@ A closure is a value once its free variables are values.
   E &::=& \clos{V_1 \ldots V_{i-1}\, E\, M_{i+1} \ldots M_n}{x_1\ldots x_n\, y} N \mid E\;M \mid V_\lambda\;E \mid \cdots
 \end{array}
 \]
-where $V_\lambda$ is a closure value, and in Clos2
+where $V_\lambda$ is a closure value, and in Clos
 \[
   (\clos{V_1\ldots V_n}{x_1\ldots x_n\, y} N)\;W \to N[x_1 := V_1, \ldots, x_n := V_n, y := W]
 \]
-and in Clos3, with the tuple of the free variables for $e$,
+and in EnvClos, with the tuple of the free variables for $e$,
 \[
   (\clos{V_1\ldots V_n}{e\, y} N)\;W \to N[e := \tuple{V_1, \ldots, V_n}, y := W] .
 \]
 The other contexts and redexes are those of ISWIM.
 
-\subsubsection{Clos4 and Clos5}
+\subsubsection{FlatClos and GlobalFun}
 
 The operator of an application is checked to be code only at the call,
 after its three operands.
@@ -7659,7 +7667,7 @@ after its three operands.
   \Let x = V \In N & N[x := V]
 \end{array}
 \]
-In Clos5, $\funref{k}$ is a value, and a program $(d_0, \ldots, d_{m-1};\; M)$
+In GlobalFun, $\funref{k}$ is a value, and a program $(d_0, \ldots, d_{m-1};\; M)$
 reduces $M$ with the definitions:
 $\funref{k}(U, W) \to N[e := U, y := W]$ when $k < m$ and $d_k = \key{fun}\; e\,y.\,N$.
 
@@ -7710,7 +7718,7 @@ that is preserved under binders.
 Each relation is a congruence: $x \approx x$, $c \approx c$, and each
 construct is related to the same construct with related subterms; we show
 only the other clauses. Where a pass compiles code that no substitution
-enters (the body of a Clos2--Clos4 closure, a global definition), the
+enters (the body of a Clos--FlatClos closure, a global definition), the
 relation on that code is the compilation function, and applying related
 closures substitutes related values into it, which a fundamental lemma
 relates.
@@ -7789,7 +7797,7 @@ $\sigma(x)$ is a variable or a value, then $M[\sigma] \approx \pass{optimize}_r(
 \end{lemma}
 
 \begin{theorem}[Correctness of Optimize, Reduction]\label{thm:optimize-red}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\mathcal{R}^{2}(M), \mathcal{R}^{2}(\pass{optimize}(M))) .
 \]
@@ -7797,7 +7805,7 @@ For every Clos2 term $M$,
 
 \subsubsection{CC: Concretize}
 
-Applying a Clos3 closure substitutes the tuple of its free variables, so where
+Applying a EnvClos closure substitutes the tuple of its free variables, so where
 the source has a value, the target has a projection from that tuple, which
 takes a step:
 \[
@@ -7812,7 +7820,7 @@ is the term of $\varphi(x)$ (a variable or a projection).
 \end{lemma}
 
 \begin{theorem}[Correctness of Concretize, Reduction]\label{thm:concretize-red}
-For every Clos2 term $M$,
+For every Clos term $M$,
 \[
   \FV(M) = \emptyset \implies \Equiv(\mathcal{R}^{2}(M), \mathcal{R}^{3}(\pass{concretize}_{\mathit{id}}(M))) .
 \]
@@ -7835,7 +7843,7 @@ target after its let, $\FST$, and $\SND$. Code is related by the relation
 itself, so $M \approx \pass{delay}(M)$ for every $M$, and $\approx$ is closed
 under substitution.
 \begin{theorem}[Correctness of Delay, Reduction]\label{thm:delay-red}
-For every Clos3 term $M$,
+For every EnvClos term $M$,
 \[
   \Equiv(\mathcal{R}^{3}(M), \mathcal{R}^{4}(\pass{delay}(M))) .
 \]
@@ -7850,7 +7858,7 @@ For the table $D$ of the whole program,
 and a term is related to its globalization when the table it makes grows
 into $D$, as in the other proofs.
 \begin{theorem}[Correctness of Globalize, Reduction]\label{thm:globalize-red}
-For every Clos4 term $M$,
+For every FlatClos term $M$,
 \[
   \Equiv(\mathcal{R}^{4}(M), \mathcal{R}^{5}(\pass{globalize}(M))) .
 \]
@@ -7858,7 +7866,7 @@ For every Clos4 term $M$,
 
 \subsubsection{Remove Complex Operands}
 
-The values of Clos5 contain no code, so source and target compute the same
+The values of GlobalFun contain no code, so source and target compute the same
 values, and the relation is not closed under substitution but built from the
 code under a substitution $\sigma$ of values. A complex operand $M$ in the
 context $h$ of its construct is related to its let in the target:
@@ -7873,7 +7881,7 @@ branches and body compiled under $\sigma$.
 If $\sigma$ maps the variables of $M$ to values, then $M[\sigma] \approx \pass{rco}(M)[\sigma]$.
 \end{lemma}
 \begin{theorem}[Correctness of RCO, Reduction]\label{thm:rco-red}
-For every Clos5 program $P$,
+For every GlobalFun program $P$,
 \[
   \mathit{Scoped}_5(P) \implies \Equiv(\mathcal{R}^{5}(P), \mathcal{R}^{5}(\pass{rco}(P))) .
 \]
@@ -7889,7 +7897,7 @@ that does what $C$ does (assigning the let's slot and running its body,
 and returning from calls), and a value term to the machine value with the
 same data.
 \begin{theorem}[Correctness of Lift Locals, Reduction]\label{thm:lift-red}
-For every monadic Clos5 program $P$,
+For every monadic GlobalFun program $P$,
 \[
   \Equiv(\mathcal{R}^{5}(P), \Mach{\mathrm{Imp}}(\pass{lift}(P))) .
 \]
@@ -7962,14 +7970,14 @@ of another kind. Each operator is the graph model's operator (its
 where $X^{\checkmark}$ keeps the injections of $X$ whose payload is not
 $\omega$; $\key{inr}^{\omega}$ and $\key{cdr}^{\omega}$ likewise.
 Application checks its operator before it binds its argument, as the
-ISWIM, Clos2 and Clos3 machines do: applying a non-function is an error
+ISWIM, Clos and EnvClos machines do: applying a non-function is an error
 even when the argument diverges. $\key{call}^{\omega}$ is the call of
-Clos4 and the later languages: code, environment and argument are bound
+FlatClos and the later languages: code, environment and argument are bound
 left to right, and only then is the code checked (the late check of
 their machines). The binders $\Lambda^{\omega}$ and $\mathcal{C}^{\omega}$
 bind no $\omega$; operands never are $\omega$ (the bind sees to that),
 but without the restriction $\lam{x}\lam{y} x$ would have the entry
-$[\omega] \mapsto \nu$ in ISWIM, where its closure in Clos2 has
+$[\omega] \mapsto \nu$ in ISWIM, where its closure in Clos has
 $[\omega] \mapsto \omega$. For the global definitions and the
 first-order languages there are also
 \begin{align*}
@@ -7990,7 +7998,7 @@ are derived from its kernel's
 \subsection{Semantics}
 
 $\SEM{-}^{\mathrm{ISWIM},\omega}$ and $\SEM{-}^{2,\omega}$ are the
-clauses of the graph model's semantics of ISWIM and Clos2 with each
+clauses of the graph model's semantics of ISWIM and Clos with each
 operator replaced by its error-propagating counterpart:
 \begin{align*}
   \SEM{x}^{\ell,\omega}\rho &= \rho(x) \qquad
@@ -8005,7 +8013,7 @@ operator replaced by its error-propagating counterpart:
 and tuples, projections, injections, case and primitives likewise with
 $\mathcal{T}^{\omega}$, $\key{proj}^{\omega}_i$, $\key{inl}^{\omega}$,
 $\key{inr}^{\omega}$, $\mathcal{C}^{\omega}$ and $\key{prim}^{\omega}_p$.
-For Clos3 and Clos4,
+For EnvClos and FlatClos,
 \begin{align*}
   \SEM{\clos{r_1\ldots r_n}{e\, y} N}^{3,\omega}\rho &=
     \Lambda\Lambda^{\omega}(\lambda X\, Y.\, \SEM{N}^{3,\omega}\rho_0(e{:=}X, y{:=}Y))
@@ -8015,13 +8023,13 @@ For Clos3 and Clos4,
   \SEM{\pair{M}{N}}^{4,\omega}\rho &= \key{pair}^{\omega}(\SEM{M}^{4,\omega}\rho, \SEM{N}^{4,\omega}\rho) \qquad
   \SEM{\FST M}^{4,\omega}\rho = \key{car}^{\omega}(\SEM{M}^{4,\omega}\rho)
 \end{align*}
-and $\key{snd}$ by $\key{cdr}^{\omega}$; Clos3's application is
+and $\key{snd}$ by $\key{cdr}^{\omega}$; EnvClos's application is
 $\app^{\omega}$, with the early check. All of these semantics are
-monotone and consistent, and all but Clos2's (whose continuity no proof
+monotone and consistent, and all but Clos's (whose continuity no proof
 needs) continuous.
 
-\paragraph{Clos5.} As Clos4, with the global definitions of the graph
-model's Clos5, except that a
+\paragraph{GlobalFun.} As FlatClos, with the global definitions of the graph
+model's GlobalFun, except that a
 reference to a definition that is not there is $\key{errcode}$, not
 $\emptyset$:
 \begin{align*}
@@ -8101,7 +8109,7 @@ well-scoped program, which the compiler produces),
   \SEM{\pass{explicate}(P)}^{\mathrm{CFG},\omega} &\simeq \SEM{P}^{\mathrm{ImpK},\omega} \qquad
   \SEM{\pass{select}(P)}^{\mathrm{X86},\omega} \simeq \SEM{P}^{\mathrm{CFG},\omega}
 \end{align*}
-(lift locals for a program in monadic normal form). For every Clos3
+(lift locals for a program in monadic normal form). For every EnvClos
 term $M$, writing $D = \SEM{M}^{3,\omega}\rho_0$ and
 $D' = \SEM{\pass{delay}(M)}^{4,\omega}\rho_0$,
 \[
@@ -8116,7 +8124,7 @@ operand that is a set of values binds as the left unit, a let is the bind
 of its body, binds associate, and a case and a check commute with a bind. Simplify duplicates and drops only values, and a
 variable stands for a value, so the theorem is for closed terms (for an
 open one, $\Let y = x \In 0$ becomes $0$, though $x$ errs in $\rho_0$).
-A Clos2 closure is an error when one of its free variables is, so
+A Clos closure is an error when one of its free variables is, so
 enclose needs the variables a closure captures to have values and no
 errors, and optimize, which drops the free variables a closure does not
 use, needs its input well scoped. Rco binds every operand by a
@@ -8128,7 +8136,7 @@ X86 run a called body in a frame of $\max(2, n)$ slots.
 
 \begin{theorem}[The Compiler, with Errors]
 For every closed ISWIM term $M$, writing $D = \SEM{M}^{\mathrm{ISWIM},\omega}\rho_0$
-and $D'$ for the meaning of $\pass{compile}(M)$ (Clos5),
+and $D'$ for the meaning of $\pass{compile}(M)$ (GlobalFun),
 $\pass{compile\text{-}mon}(M)$, $\pass{compile\text{-}imp}(M)$,
 $\pass{compile\text{-}cfg}(M)$ or $\pass{compile\text{-}x86}(M)$,
 \[
@@ -8144,7 +8152,7 @@ $\pass{compile\text{-}cfg}(M)$ or $\pass{compile\text{-}x86}(M)$,
 For every closed ISWIM term $M$, writing $D$ for
 $\SEM{M}^{\mathrm{ISWIM},\omega}\rho_0$ and $L$ for $\Mach{\mathrm{ISWIM}}(M)$
 (or $D$ for $\SEM{\pass{compile}(M)}^{5,\omega}$ and $L$ for
-$\Mach{\mathrm{Clos5}}(\pass{compile}(M))$, or $D$ for
+$\Mach{\mathrm{GlobalFun}}(\pass{compile}(M))$, or $D$ for
 $\SEM{\pass{compile\text{-}x86}(M)}^{\mathrm{X86},\omega}$ and $L$ for
 $\Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))$),
 \begin{align*}
@@ -8161,7 +8169,7 @@ for the graph model.
 
 \begin{theorem}[End to End, with Errors]
 For every closed ISWIM term $M$, with $L = \Mach{\mathrm{ISWIM}}(M)$ and
-$L' = \Mach{\mathrm{Clos5}}(\pass{compile}(M))$ or
+$L' = \Mach{\mathrm{GlobalFun}}(\pass{compile}(M))$ or
 $L' = \Mach{\mathrm{X86}}(\pass{compile\text{-}x86}(M))$,
 \[
   \Term_L(\error) \iff \Term_{L'}(\error), \quad
