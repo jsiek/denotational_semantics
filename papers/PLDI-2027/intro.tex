@@ -9,12 +9,10 @@ Denotational semantics offers an appealing account of compiler
 correctness: the meaning of a program is a mathematical object, so a
 compiler pass is correct when the meaning of a program before the pass
 equals its meaning afterward, and the proof is equational reasoning.
-Compiler correctness was among the first applications of formal
-semantics \citep{McCarthy:1967aa,Milner:1972ab,Scott:1971ab}, and this
-recipe guided several early  proofs of compiler correctness
-\citep{Polak:1981aa,Clinger:1984aa,Guttman:1995aa}. The recipe becomes
-difficult when compilation changes the representation of program
-values. For example, compiling first-class, lexically scoped functions
+This recipe guided early denotational proofs of compiler correctness
+\citep{Polak:1981aa,Clinger:1984aa}, but becomes difficult when
+compilation changes the representation of program values. For example,
+compiling first-class, lexically scoped functions
 to a first-order target language, such as assembly, requires replacing
 functions with a lower-level representation.  In
 particular, \emph{closure conversion} replaces each function with a
