@@ -63,25 +63,26 @@ construct homomorphically:
 \]
 
 \paragraph{Why preservation is easy and reflection is not}
-Delay changes the representation of values, so its correctness is not
+Delay changes the representation of closures, so its correctness is not
 an equation. The theorem we prove is that a closed program and its
 translation produce the same constants, and that one produces something
 exactly when the other does. The forward half, preservation, needs a
-relation between a \emph{single} source value and a \emph{set} of
-target values, defined by recursion on the source value. Its interesting
-case says what it means for a target set to implement a function entry:
+relation between a \emph{single} source element and a \emph{set} of
+target elements, defined by recursion on the source element. Its
+interesting case says what it means for a target set to implement a
+function entry:
 \[
   (U \mapsto w) \sqsubseteq D' \iff
   D' \text{ contains a pair, and }
   U \sqsubseteq^* E' \text{ implies } w \sqsubseteq D' \callop E'
   \text{ for every consistent } E'.
 \]
-The source value is finite, so the recursion is structural, and the
+The source element is finite, so the recursion is structural, and the
 proof that $v \in \den{M}\rho$ implies
 $v \sqsubseteq \den{\mathit{delay}(M)}\rho'$ is a routine induction on
 $M$.
 
-The backward half, reflection, must show that every value the target
+The backward half, reflection, must show that every element the target
 produces is accounted for by the source, and here the representation of
 closures gets in the way. To see how, consider a function that adds
 nine, $\lambda y.\, x + y$ in an environment where $x$ is $9$. In
@@ -94,24 +95,24 @@ $x{=}9$. So the target's meanings contain code--environment
 combinations that correspond to no source function. Worse, a call takes
 the code from $\car$ and the environment from $\cdr$
 \emph{separately}, so a result may combine the code entry of one pair
-with the environment of another. No single target value corresponds to
-a single source value, and the relation that worked for preservation
-has no counterpart for reflection.
+with the environment of another. No single target element corresponds
+to a single source element, and the relation that worked for
+preservation has no counterpart for reflection.
 
 \paragraph{Relations that do not work}
 We tried the natural alternatives, and each
 failure points to a piece of the solution.
 \begin{itemize}
-\item \emph{Relating single values}, a target value to a source value,
-  works for every construct except the call, because of the mixing of
-  $\car$ and $\cdr$ described above.
+\item \emph{Relating single elements}, a target element to a source
+  element, works for every construct except the call, because of the
+  mixing of $\car$ and $\cdr$ described above.
 \item \emph{Relating whole sets on both sides} handles the mixing, but
   the function case then mentions the relation in both positive and
   negative positions, so the definition is not well founded. A
   step-indexed relation would guard the recursive occurrence with a
   ``later'' modality and discharge it at a step of evaluation; a
   denotational semantics has no steps.
-\item \emph{Indexing by one target value within its whole target set}
+\item \emph{Indexing by one target element within its whole target set}
   comes closest, but the function case must relate the entire argument
   set, which is infinite and cannot be shrunk to match the finite index.
 \end{itemize}
@@ -119,18 +120,18 @@ failure points to a piece of the solution.
 \paragraph{The key insight}
 A simulation needs only one side to shrink. Reflection asks whether
 what the target produces is produced by the source, so the target side
-can be a \emph{finite} list of observations, while the source side
+can be a \emph{finite} list of elements, while the source side
 remains an arbitrary, possibly infinite, set. And because a call mixes
 the $\car$ and $\cdr$ of several pairs, the matching of codes to
 environments must happen \emph{inside} the finite list, so the index is
-a list of values rather than a single value.
+a list of elements rather than a single element.
 
 \begin{figure}[t]
 \small
 \[
 \begin{array}{@{}l@{}}
 \textbf{Entries and batches of calls} \quad
-  (V, U, U_a, U_e, W \text{ finite lists of values})\\[1ex]
+  (V, U, U_a, U_e, W \text{ finite lists of elements})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \entryin{U_a}{w}{V} & \iff &
     \exists\, U_e, t.\;
@@ -144,7 +145,7 @@ a list of values rather than a single value.
       \land U_a \neq [\,] \land U_a \subseteq U)
 \end{array}\\[5ex]
 \textbf{One layer of the relation} \quad
-  (D, E \subseteq \Val \text{ source sets};\;
+  (D, E \subseteq \Elem \text{ source sets};\;
    Q \text{ the relation for the recursive calls})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \layer{Q} V & \iff &
@@ -164,8 +165,8 @@ a list of values rather than a single value.
 \end{array}
 \]
 \caption{The approximant logical relation $D \ALR V$ between a set $D$
-  of source (EnvClos) values and a finite list $V$ of target (FlatClos)
-  values. A finite list stands for the set of its elements. Here $c$
+  of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
+  elements. A finite list stands for the set of its elements. Here $c$
   ranges over constants and $\pi$ over the projections of tuple
   components and sum injections; $\cdr$, $\mathsf{con}$ and $\depth$
   are as in Figure~\ref{fig:graph-ops}.}
@@ -175,7 +176,7 @@ a list of values rather than a single value.
 \paragraph{The relation}
 Figure~\ref{fig:alr} defines the approximant logical relation
 $D \ALR V$, which relates a source set $D$ to a finite list $V$ of
-target values. Its building block is the notion of an entry that a
+target elements. Its building block is the notion of an entry that a
 call can use. A target closure is a set of pairs
 $\pairv{u}{t}$ of code and environment, and the code $u$, a curried
 function, has entries of the form $U_e \mapsto (U_a \mapsto w)$:
@@ -197,7 +198,7 @@ $U$; this is what the batch is about. The first conjunct,
 $U \subseteq \mathsf{args}(V)$, says that $U$ contains only arguments
 that some usable entry of $V$ takes. It does not restrict which results
 appear; it keeps the arguments small. Without it, $U$ could contain
-values deeper than $V$, and the recursion below would not be well
+elements deeper than $V$, and the recursion below would not be well
 founded. One layer ${\trianglerighteq^{Q}}$ of
 the relation has four clauses: the constants of $V$ are in $D$; if $V$
 is nonempty, so is $D$; every batch of calls of $V$ on arguments
@@ -223,7 +224,7 @@ ours bounds the depth of the finite target side only, and depth
 irrelevance makes an intersection unnecessary.
 
 \begin{lemma}[Depth irrelevance]\label{lem:depth-irrelevant}
-If every value in $V$ has depth less than $k$ and less than $j$, then
+If every element in $V$ has depth less than $k$ and less than $j$, then
 $D \ALR_k V$ if and only if $D \ALR_j V$.
 \end{lemma}
 
@@ -239,7 +240,7 @@ $\mu X.\,A$ would have to be the relation at $A[\mu X.\,A/X]$, which is
 not smaller; at $\mu X.\,X \rightarrow \mathrm{Int}$, the application
 clause asks for the relation at the argument type, which is
 $\mu X.\,X \rightarrow \mathrm{Int}$ itself. The depth of the finite
-approximation, by contrast, decreases at every call, and the values of
+approximation, by contrast, decreases at every call, and the elements of
 the graph model are untyped, so the depth needs no help from the types.
 
 \paragraph{The fundamental lemma}
@@ -281,7 +282,7 @@ $\den{M}$ is nonempty if and only if $\den{\mathit{delay}(M)}$ is.
 Reflection follows from Lemma~\ref{lem:delay-fundamental} with the
 empty environments: a constant $c$ of the target is the one-element
 list $[c]$, and clauses 1 and 2 give $c \in \den{M}$ and the
-nonemptiness of $\den{M}$. Preservation follows from the single-value
+nonemptiness of $\den{M}$. Preservation follows from the single-element
 relation $\sqsubseteq$.
 
 \paragraph{The cost}

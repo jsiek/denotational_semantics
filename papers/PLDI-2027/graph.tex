@@ -1,7 +1,7 @@
-%% Section 3: background on graph models. Seed: the figure of values and
+%% Section 3: background on graph models. Seed: the figure of elements and
 %% operators that the later sections use. Budget: 2.0 pages
 %% (notes/paper-outline.md). Definitions follow the Agda:
-%% agda/Framework/GraphModel/Domain.agda (values, consistency),
+%% agda/Framework/GraphModel/Domain.agda (elements, consistency),
 %% agda/Framework/GraphModel/Ops.agda (operators),
 %% agda/proof/Framework/GraphModel/DomainUtilBase.agda (projections, depth).
 %% The text of the section is still to be written: it should explain the
@@ -18,13 +18,13 @@
 \small
 \[
 \begin{array}{@{}l@{}}
-\textbf{Values} \quad (V, W \text{ finite lists of values})\\[1ex]
+\textbf{Graph elements} \quad (V, W \text{ finite lists of elements})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   u, v, w & ::= & c \mid V \mapsto w \mid \nu \mid \pairv{u}{v}
     \mid \mathsf{tup}_i(v) \mid \mathsf{left}(v) \mid \mathsf{right}(v)
     \mid \langle\rangle \mid \omega
 \end{array}\\[4ex]
-\textbf{Operators} \quad (D, E, D_1, \ldots, D_n \subseteq \Val)\\[1ex]
+\textbf{Operators} \quad (D, E, D_1, \ldots, D_n \subseteq \Elem)\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
   \Lambda F & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}\\
@@ -55,7 +55,7 @@
     \qquad
   \mathsf{right}(v) \sim \mathsf{right}(v') \iff v \sim v'
 \end{array}\\[1ex]
-\text{and no other pairs of values are consistent;
+\text{and no other pairs of elements are consistent;
   $V \approx V'$ means $u \sim v$ for all $u \in V$ and $v \in V'$.}\\[3ex]
 \textbf{Depth}\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -64,13 +64,13 @@
   \depth(t(v)) & = & 1 + \depth(v)
     \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
   \depth(V) & = & \max_{v \in V} \depth(v),
-    \quad \text{and } \depth(v) = 0 \text{ for the other values}
+    \quad \text{and } \depth(v) = 0 \text{ for the other elements}
 \end{array}
 \end{array}
 \]
-\caption{The values of the graph model and the operators on denotations
-  (sets of values) that the semantics of the compiler's languages are
-  built from. A finite list of values stands for the set of its
+\caption{The elements of the graph model and the operators on denotations
+  (sets of elements) that the semantics of the compiler's languages are
+  built from. A finite list of elements stands for the set of its
   elements wherever a set is expected.}
 \label{fig:graph-ops}
 \end{figure}
