@@ -15,3 +15,9 @@
 \newcommand{\layer}[1]{\mathrel{\trianglerighteq^{#1}}}
 \newcommand{\depth}{\mathsf{depth}}
 \newcommand{\kw}[1]{\mathtt{#1}}
+%% The heading of a definition in a figure: a title on the left and, in a
+%% box on the right, the form of what is defined.
+\newcommand{\defhead}[2]{\par\smallskip\noindent\textbf{#1}\hfill\fbox{$#2$}\par}
+%% Tighter display spacing for figures of definitions (use after \small).
+\newcommand{\figdefs}{\setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}%
+  \setlength{\abovedisplayshortskip}{2pt}\setlength{\belowdisplayshortskip}{2pt}}

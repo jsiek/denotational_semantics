@@ -65,7 +65,8 @@ call, and translates every other construct homomorphically:
 \]
 
 \begin{figure}[t]
-\small
+\small\figdefs
+\defhead{}{v \sqsubseteq D'}
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   (U \mapsto w) \sqsubseteq D' & = &
@@ -76,7 +77,13 @@ call, and translates every other construct homomorphically:
   t(v) \sqsubseteq D' & = & v \sqsubseteq \pi_t(D')
     \qquad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
   v \sqsubseteq D' & = & v \in D'
-    \qquad \text{for the other elements}\\[1ex]
+    \qquad \text{for the other elements}
+\end{array}
+\]
+
+\defhead{}{U \sqsubseteq^* E'}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
   [\,] \sqsubseteq^* E' & = & \mathsf{true}\\
   (u :: U) \sqsubseteq^* E' & = & u \sqsubseteq E' \land U \sqsubseteq^* E'
 \end{array}
@@ -149,26 +156,33 @@ environments must happen \emph{inside} the finite list, so the index is
 a list of elements rather than a single element.
 
 \begin{figure}[t]
-\small
+\small\figdefs
+\defhead{Usable entries}{\entryin{U_a}{w}{V}}
 \[
-\begin{array}{@{}l@{}}
-\textbf{Entries and batches of calls} \quad
-  (V, U, U_a, U_e, W \text{ finite lists of elements})\\[1ex]
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \entryin{U_a}{w}{V} & \iff &
     \exists\, U_e, t.\;
     \pairv{U_e \mapsto (U_a \mapsto w)}{t} \in V
     \;\land\; U_e \neq [\,]
-    \;\land\; U_e \subseteq \cdr(V)\\[0.5ex]
-  \mathsf{args}(V) & = & \{\, u \mid \entryin{U_a}{w}{V},\; u \in U_a \,\}\\[0.5ex]
-  \callsto{V}{U}{W} & \iff &
+    \;\land\; U_e \subseteq \cdr(V)
+\end{array}
+\]
+
+\defhead{Arguments of usable entries}{\mathsf{args}(V)}
+\[
+  \mathsf{args}(V) \;=\; \{\, u \mid \entryin{U_a}{w}{V},\; u \in U_a \,\}
+\]
+
+\defhead{Batches of calls}{\callsto{V}{U}{W}}
+\[
+  \callsto{V}{U}{W} \iff
     U \subseteq \mathsf{args}(V) \;\land\;
     (\forall w \in W.\; \exists U_a.\; \entryin{U_a}{w}{V}
       \land U_a \neq [\,] \land U_a \subseteq U)
-\end{array}\\[5ex]
-\textbf{One layer of the relation} \quad
-  (D, E \subseteq \Elem \text{ source sets};\;
-   Q \text{ the relation for the recursive calls})\\[1ex]
+\]
+
+\defhead{One layer of the relation}{D \layer{Q} V}
+\[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \layer{Q} V & \iff &
     (\forall c.\; c \in V \Rightarrow c \in D)\\
@@ -177,15 +191,20 @@ a list of elements rather than a single element.
      \callsto{V}{U}{W} \land \mathsf{con}(E) \land \mathsf{con}(U)
      \land E \mathrel{Q} U \Rightarrow (D \app E) \mathrel{Q} W)\\
   & \land & (\forall \pi, W.\; W \subseteq \pi(V) \Rightarrow \pi(D) \mathrel{Q} W)
-\end{array}\\[7ex]
-\textbf{The approximant logical relation}\\[1ex]
+\end{array}
+\]
+
+\defhead{The approximant logical relation}{D \ALR_k V \qquad D \ALR V}
+\[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \ALR_0 V & \iff & \mathsf{true}\\
   D \ALR_{k+1} V & \iff & D \layer{\ALR_k} V\\
   D \ALR V & \iff & D \ALR_{1 + \depth(V)} V
 \end{array}
-\end{array}
 \]
+\noindent Here $V, U, U_a, U_e, W$ are finite lists of target elements,
+$D, E \subseteq \Elem$ are sets of source elements, and $Q$ is the
+relation used for the recursive occurrences.
 \caption{The approximant logical relation $D \ALR V$ between a set $D$
   of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
   elements. A finite list stands for the set of its elements. Here $c$
