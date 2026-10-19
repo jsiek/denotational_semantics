@@ -22,15 +22,12 @@ compiler can be proved correct by equational reasoning (RQ3). The
 delay pass is the step of closure conversion that lowers closures to
 pairs of code and environment. This section shows why its semantic
 reflection resists our prior attempts and how the approximant logical
-relation finally proves it. In the source language EnvClos of delay, a
-closure $\kw{clos}\;N\;\vec{M}$ pairs the code $N$, which is closed
-and takes its free variables as a tuple, with the expressions
-$\vec{M}$ that compute the values of those free variables, and an
-application $\kw{app}\;L\;M$ applies a closure to an
-argument. Semantically, a closure is still a function: the meaning of
-a closure is the meaning of its code (a curried function of the
-environment and then the argument) applied to the tuple of the free
-variables, and the meaning of an application is function application:
+relation finally proves it. In the source language EnvClos of delay, a closure
+$\kw{clos}\;N\;\vec{M}$ is still a function: its meaning is the meaning
+of its code $N$, a closed, curried function of the environment $X$ and
+then the argument $Y$, applied to the tuple of the free variables
+$\vec{M}$; and an application $\kw{app}\;L\;M$ means function
+application:
 \[
 \begin{array}{rcl}
   \den{\kw{clos}\;N\;\vec{M}}\rho & = &
