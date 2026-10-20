@@ -270,11 +270,13 @@ The definition of the approximant logical relation $D \ALR V$ is by
 recursion on the depth of $V$. The relation occurs at the arguments of
 a call, in negative position, which is what made the relation between
 two infinite sets ill founded. Here every recursive occurrence is at a
-list shallower than $V$: the arguments $U$ because $U \subseteq
-\mathsf{args}(V)$ (without this conjunct, $U$ could contain elements
-deeper than $V$), the results $W$ because each comes from an entry of
-$V$, and the projections of $V$ because they are components of its
-elements. The index $k$ of ${\ALR_k}$ is only a termination device:
+list shallower than $V$. The arguments $U$ are shallower than $V$
+because the first conjunct of a batch of calls requires
+$U \subseteq \mathsf{args}(V)$; without that conjunct, $U$ could
+contain elements deeper than $V$. The results $W$ are shallower than
+$V$ because each of them is the output of an entry in $V$. Finally,
+the projections of $V$ are shallower than $V$ because they consist of
+components of the elements of $V$. The index $k$ of ${\ALR_k}$ is only a termination device:
 any index that bounds the depth of $V$ gives the same relation
 (Lemma~\ref{lem:depth-irrelevant}), so we may fold and unfold ${\ALR}$
 as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
