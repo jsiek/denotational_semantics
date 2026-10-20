@@ -348,8 +348,9 @@ of $D'$ that contribute these codes and environments, and the
 arguments, yields finite lists $W \subseteq D'$ and $U \subseteq E'$
 with $\callsto{W}{U}{V}$. The induction hypotheses give
 $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$. Unfolding the first and
-applying clause~3 to this batch of calls with $E = \den{K}\rho$ gives
-$\den{L}\rho \app \den{K}\rho \ALR V$, that is, $\den{M}\rho \ALR V$.
+applying clause~3 to this batch of calls with $E = \den{K}\rho$ proves
+the conclusion $\den{L}\rho \app \den{K}\rho \ALR V$, that is,
+$\den{M}\rho \ALR V$.
 
 \emph{Case $M = \kw{clos}\,N\,\vec{K}$.} Then
 $\mathit{delay}(M) = \kw{pack}\,(\kw{code}\,\mathit{delay}(N))\,(\kw{tuple}\,\mathit{delay}(\vec{K}))$,
