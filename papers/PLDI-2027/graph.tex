@@ -155,6 +155,7 @@ environment that hold no variable, because the semantics requires every
 position of an environment to be nonempty.
 
 \paragraph{Recursion and divergence}
+
 \iswim\ has no recursion operator. As in the untyped
 $\lambda$-calculus, recursion comes from self-application, which the
 recursive types of \iswim\ make typable. The constructs $\kw{fold}$
@@ -179,38 +180,32 @@ of a correctness proof: a relation that follows the source program
 forward cannot carry the absence of elements to the target.
 
 \paragraph{Consistency}
-Our model adds a requirement of consistency. It complicates the
-semantics, so we first explain why we need it. The most important
-reason is the proof for the delay pass (Section~\ref{sec:approx-lr}).
-A call in FlatClos takes the code from one pair and the environment
-from another, so a closure's meaning may combine the code of one pair
-with the environment of a different pair. Consistency ensures that the
+
+Our model adds a requirement of consistency because it is needed in
+the proof for the delay pass (Section~\ref{sec:approx-lr}).  A call in
+FlatClos takes the code from one pair and the environment from
+another, so a closure's meaning may combine the code of one pair with
+the environment of a different pair. Consistency ensures that the
 environments of these pairs are consistent with each other, so that
 the code runs with approximations of its own environment and not with
-the environment of some other closure. The second reason is
-$\kw{case}$. A compiled $\kw{case}$ tests a tag once and takes one
-branch, so the meaning of a $\kw{case}$ must draw from only one of its
-branches. This holds when the meaning of the scrutinee does not
-contain both a $\mathsf{left}$ and a $\mathsf{right}$ element, which
-consistency guarantees.
-
-Consistency has a precedent in the $\lambda$-calculus model that
-\citet{Scott:1982aa} builds from information systems, whose function
-entries pair consistent sets of inputs and outputs. As in the coherent
-domains of \citet{Plotkin:1978aa}, our consistency is pairwise: a set
-is consistent when its elements are pairwise consistent. Two constants
-are consistent when they are equal, and two entries are consistent
-when consistent inputs lead to consistent outputs
-(Figure~\ref{fig:graph-ops}). This rule for entries is the consistency
-of a function space of information systems \citep{Larsen:1984aa} in
-its pairwise form \citep{Schwichtenberg:2006aa}. The operator $\Lambda$
+the environment of some other closure.
+%
+Consistency has a precedent in the $\lambda$-calculus model of
+\citet{Scott:1982aa} function entries pair consistent sets of inputs
+and outputs. As in the coherent domains of \citet{Plotkin:1978aa}, our
+consistency is pairwise: a set is consistent when its elements are
+pairwise consistent. Two constants are consistent when they are equal,
+and two entries are consistent when consistent inputs lead to
+consistent outputs (Figure~\ref{fig:graph-ops}). This rule for entries
+is the consistency of a function space of information systems
+\citep{Larsen:1984aa,Schwichtenberg:2006aa}. The operator $\Lambda$
 builds only entries whose inputs are consistent, which rules out
-entries such as $[1, 2] \mapsto 3$ in the meaning of
-$\lambda x.\, x + 1$, whose input describes no single argument. The
-meaning of a term in a consistent environment is consistent, which we
-prove for the languages whose correctness proofs rely on it.
+entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\, x +
+1$, whose input describes no single argument. The meaning of a term in
+a consistent environment is consistent.
 
 \paragraph{The properties of the semantics}
+
 %% Lemma: agda/proof/Framework/GraphModel/Ops.agda, Λ-β (and ΛΛ-β for
 %% the curried form used in the delay proof).
 %% The finitary premise holds for term meanings by `ok` in
@@ -235,21 +230,22 @@ similarly for a function of two sets.
 \end{lemma}
 
 \paragraph{Why a graph model}
-A graph model is elementary: a denotation is just a set of elements of
-an inductive data type, with no complete partial orders, continuous
-function spaces, or inverse limits. This keeps the mechanization small.
-Our graph model, with the generic machinery for its operators, is 364
+
+We chose a graph model primarily to keep the mechanization small.  Our
+graph model, with the generic machinery for its operators, is 364
 lines of Agda, and about 1,200 lines with the operators of all the
-compiler's languages. Early in this project we built a pilot on Scott
-domains, using the domain theory of TypeTopology
-\citep{Escardo:TypeTopology}. The pilot covered only the source language and Clos of an earlier,
-untyped version of the compiler, and the pass between them. Yet its own constructions
+compiler's languages. Early in this project we experimented with using
+Scott domains, using the domain theory of TypeTopology repository
+\citep{Escardo:TypeTopology}. The experiment covered the source
+language and Clos of an earlier, untyped version of the compiler, and
+the pass between them. Yet the constructions for the Scott domain
 (sums, lifting, products and exponentials of domains, locally
 continuous functors, and the solution of the domain equation) took 847
-lines, on top of about 5,400 lines of TypeTopology's domain theory. The
-pilot also assumes propositional truncation, function extensionality,
-and propositional extensionality, whereas our development uses Agda's
-safe mode and only its standard library. \citet{Benton:2010aa} report
-around 4,400 lines of Coq for a comparable library of domain theory.
+lines, on top of about 5,400 lines of TypeTopology's domain
+theory. The experiment also required postulates for propositional
+truncation, function extensionality, and propositional extensionality,
+whereas our development uses Agda's safe mode (no postulates) and only
+its standard library. \citet{Benton:2010aa} report around 4,400 lines
+of Coq for a comparable library of domain theory.
 
 \clearpage
