@@ -1,0 +1,121 @@
+%% Section 4 opening and 4.1: the whole-compiler theorem and the passes
+%% proved by an equation (RQ2). Sources: agda/Mu/Theorems/Denotational.agda
+%% (the statements), agda/Mu/proof/Correctness/Graph/*Correct.agda (the
+%% proofs and their header comments), loc.md (Current counts; Simplify).
+%% Numbers come from loc.md (loc.py --mu) and will change; update them
+%% before submission.
+
+The correctness theorem for the whole compiler says that a closed
+program and its translation produce the same constants, and that one
+produces something exactly when the other does.
+
+\begin{theorem}[Compiler correctness]\label{thm:compiler}
+Let $M$ be a closed term of \iswim. For every constant $c$,
+$c \in \den{M}$ if and only if $c \in \den{\pass{compile}(M)}$.
+Moreover, $\den{M}$ is nonempty if and only if
+$\den{\pass{compile}(M)}$ is nonempty.
+\end{theorem}
+
+The proof composes one result per pass. Every pass except
+\pass{delay} preserves the meaning of a program exactly: the program
+and its translation denote the same set. The theorem for \pass{delay}
+(Theorem~\ref{thm:delay}) is the weaker statement about constants and
+nonemptiness, and the composition carries it through the remaining
+passes, which are equations. Together with the adequacy of the
+semantics of \iswim\ and x86$\mu$ with respect to their interpreters
+(Section~\ref{sec:adequacy}), Theorem~\ref{thm:compiler} gives the
+usual operational statement: the compiled program terminates with the
+same answer as the source, and diverges exactly when the source does.
+
+This section first shows how the passes other than \pass{delay} are
+proved, which answers RQ2
+(Section~\ref{sec:equational}), and then why \pass{delay} needs more
+(Section~\ref{sec:approx-lr}).
+
+\subsection{Passes Proved by an Equation}
+\label{sec:equational}
+
+For nine of the ten passes, the theorem is an equation between the
+meaning of a program and the meaning of its translation, such as
+$\den{M} = \den{\pass{simplify}(M)}$ or
+$\den{M} = \den{\pass{globalize}(M)}$. Each proof is an induction on
+the term that generalizes the equation to open terms: if the source
+and target environments are related, then the meaning of a term in the
+source environment equals the meaning of its translation in the target
+environment. The relation on environments says what the pass assumes
+about the variables in scope, and most cases of the induction need
+nothing else. Because every semantics is compositional and the passes
+translate most forms homomorphically, the case for such a form applies
+the same operator to equal arguments and is immediate. The real work
+is in the few cases that the pass changes, where an equation about the
+operators of the graph model replaces the source form with the target
+form.
+
+\paragraph{Simplify}
+
+The proof for \pass{simplify} shows the method at its best. Its main
+lemma says that if what \pass{simplify} knows about each variable is
+true of the source environment, then what it returns about a term is
+true as well: the source term means, in the source environment, what
+the simplified term means in the target environment, and the source
+term's meaning is described by what is known about it. The
+transformations rest on a single equation, $\beta$ for a syntactic
+value, which follows from Lemma~\ref{lem:beta}: a function body applied
+to an operand whose meaning $D$ is nonempty and consistent means the
+body in an environment that binds its variable to $D$. Inlining reuses
+the same equation, because a known function is described by its
+meaning in the environment where it was defined. The simplifications
+that \pass{simplify} performs under binders, and the calls that it
+removes, are equations between sets and need no account of
+evaluation steps. The operational proofs, by contrast, must replay
+these reductions as steps of the source program, relate states in
+which the source runs ahead or the target stutters, and, for the
+clocked interpreter, cope with a target that needs fewer clock ticks
+than its source. The denotational proof is 360 lines of Agda, against
+584 to 715 for the three operational proofs.
+
+\paragraph{Closure conversion before delay}
+
+The first three steps of closure conversion are also equations,
+because in Clos and EnvClos a closure still means a function. For
+\pass{enclose}, a closure that captures every variable in scope means
+the same function as the $\lambda$-abstraction it replaces, since the
+captured values are exactly the values of those variables. For
+\pass{optimize}, dropping a captured variable that the code does not
+use leaves the meaning of the code unchanged. For \pass{concretize}, an
+EnvClos closure applies its curried code to the tuple of the captured
+values, and the second part of Lemma~\ref{lem:beta}, together with the
+equation $\pi_{\mathsf{tup}_i}(\mathcal{T}(D_1, \ldots, D_n)) = D_i$
+for nonempty $D_1, \ldots, D_n$, shows that this means the same
+function as the Clos closure, whose code reads each captured value
+directly.
+
+\paragraph{The back end}
+
+The passes after \pass{delay} are equations for similar reasons.
+\pass{globalize} moves code into a table of global definitions, and
+its proof shows that a reference $f_k$ means what the code it replaced
+means, given the table of the definitions made so far; a weakening
+lemma says that a term means the same under a larger table. The
+semantics of Imp, CFG, and x86$\mu$ are in continuation-passing style,
+and an assignment to a slot is strict, as a $\kw{let}$ is
+(Appendix~\ref{app:languages}). So \pass{lift locals}, which turns a
+$\kw{let}$ into an assignment, \pass{explicate control}, which turns
+the continuation of an assignment into a block and a jump, and
+\pass{select instructions}, which turns each simple expression into a
+few instructions, are each proved by an induction whose cases are
+equations between the continuation-passing meanings.
+
+\paragraph{The answer to RQ2}
+
+Equational reasoning yields concise proofs for the passes that keep
+the representation of values. For \pass{simplify}, \pass{globalize},
+and \pass{explicate control}, the denotational proof is the smallest of
+the four styles: 360, 118, and 71 lines, against 584 to 715, 183 to
+219, and 75 to 105 for the operational proofs. For the other
+equational passes, the denotational proofs are 10 to 40 lines larger
+than the smallest operational ones, which use clocked interpreters
+(Section~\ref{sec:evaluation}). The exception is \pass{delay}, the pass
+that changes the representation of closures from functions to pairs of
+code and environment. Its correctness is not an equation, and its
+proof is the subject of the rest of this section.
