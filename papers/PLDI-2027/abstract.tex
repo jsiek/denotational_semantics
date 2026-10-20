@@ -8,7 +8,8 @@ operational. The denotational compiler proofs in the literature either
 (1) are limited to source languages that are first-order or strongly
 normalizing, (2) compile to target languages that treat closures as
 primitive values and so avoid closure conversion, or (3) prove only
-that termination is preserved but not reflected. We use a denotational
+semantic preservation, which does not rule out a diverging program
+compiling to one that terminates. We use a denotational
 semantics based on a graph model to prove a compiler correct, from a
 call-by-value $\lambda$-calculus with iso-recursive types (so it
 supports general recursion and admits divergence), through closure
