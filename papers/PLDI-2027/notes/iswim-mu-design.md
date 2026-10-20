@@ -61,7 +61,7 @@ This is design only. The base is `origin/master` 9f0d5c2 (PR #64); counts are fr
   * **[P0]** The first version required a contractive body (a hidden argument `{Contractive A}` of `μ`, by induction-recursion with `Ty`). Nothing used it, and PR #86 removed it; `Ty` is now an ordinary inductive type.
 * The terms are ISWIM's, typed: `` ` ``, `lam`, `app`, `lit`, `tuple`, `get (Δ ∋ A)`, `inl`, `inr`, `case`, `prim {sub, eq}`, `let`, plus `fold` and `unfold`.
 * Type substitution `A [ B ]` (renaming and substitution on `Ty`) is about 30–40 shared lines. No term-level lemma needs it, because there is no polymorphism and contexts hold closed types.
-    * **[P0]** 46 lines with contractiveness (no lemma about it was needed anywhere); fewer after PR #86 removed it.
+  * **[P0]** 46 lines with contractiveness (no lemma about it was needed anywhere); fewer after PR #86 removed it.
 
 ### 1.3 Divergence and recursion without `rec`
 
