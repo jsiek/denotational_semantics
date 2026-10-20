@@ -60,8 +60,9 @@ finite pieces of evidence about the behavior, which we call
 \emph{elements}. Our model is a variant of the model of
 \citet{Engeler:1981aa}, which we extend with the data structures of
 our compiler's languages.  We first explain how the model represents
-functions, then how it handles recursion and divergence, and then the
-consistency requirement that distinguishes our variant.  Throughout
+functions, then how it handles recursion and divergence, and then why
+we require consistency, which rules out sets of elements that cannot
+all describe the same value.  Throughout
 the explanation, we refer to Figure~\ref{fig:graph-ops}, which defines
 elements and the operators on sets of elements from which we build the
 semantics of the source, target, and intermediate languages.  We end
