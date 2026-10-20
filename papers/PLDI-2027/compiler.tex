@@ -104,10 +104,13 @@ passes through seven intermediate languages:
 \end{tikzpicture}
 \end{center}
 The grammars for all the languages are presented in
-Figure~\ref{fig:grammars}. Every language is intrinsically typed in
-Agda, so every term is well typed by construction and no pass needs a
-precondition about scoping or typing.  Every language also has a
-semantics in the graph model of Section~\ref{sec:graph-models}, and
+Figure~\ref{fig:grammars}, and their typing rules in
+Appendix~\ref{app:types}.\footnote{Every language is intrinsically
+typed in our Agda development, so every term is well typed by
+construction and no pass needs a precondition about scoping or
+typing.}  Every language also has a semantics in the graph model of
+Section~\ref{sec:graph-models}, given in full in
+Appendix~\ref{app:languages}, and
 every pass except delay preserves the meaning of a program exactly.
 
 \paragraph{The source language}
@@ -125,10 +128,7 @@ Neither does anything at run time:
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
-The body $A$ of a recursive type must be contractive, that is, it must
-not be a type variable or another $\mu$, so unfolding always makes
-progress. The other typing rules are standard
-(Appendix~\ref{app:types}). \iswim\ has no recursion operator.
+The other typing rules are standard (Appendix~\ref{app:types}). \iswim\ has no recursion operator.
 Instead, recursive types make self-application typable, so the
 call-by-value fixed-point combinator can be written directly:
 \[
