@@ -149,27 +149,23 @@ piece of the solution.
 \end{itemize}
 
 \paragraph{The key insight}
+
 We solve the mixing problem by relating the source not to a single
 target element but to a finite \emph{list} of target elements. When a
 call $D' \callop E'$ produces a result $w$, it draws on only finitely
-many pairs of $D'$: one whose code contributes an entry
-$U_e \mapsto (U_a \mapsto w)$, and others whose environments make up
-$U_e$. Collecting these pairs into a finite list $V \subseteq D'$ gives
-a witness that contains both halves of the call, so the code and the
-environments are matched \emph{inside} $V$, no matter which pairs they
-come from. The relation then lets a call use exactly the code entries
-whose environments $V$ itself provides, which also discards the junk
+many pairs of $D'$: one whose code contributes an entry $U_e \mapsto
+(U_a \mapsto w)$, and others whose environments make up
+$U_e$. Collecting these pairs into a finite list $V \subseteq D'$
+gives a witness that contains both halves of the call, so the code and
+the environments are matched \emph{inside} $V$, no matter which pairs
+they come from. The relation then lets a call use exactly the code
+entries whose environments $V$ itself provides, and ignore the junk
 entries for environments that the program never supplies. The
-counterpart of $V$ on the source side is a whole source denotation $D$,
-which contains every entry of the source closures, so whatever
-combination a call draws from $V$ is accounted for by $D$.
-
-This choice also makes the recursion well founded, because only one
-side needs to shrink. Reflection asks whether what the target produces
-is also produced by the source, so the target side can be finite while
-the source side remains an arbitrary, possibly infinite, set. The
-relation can therefore be defined by recursion on the depth of $V$, as
-we explain below.
+counterpart of $V$ on the source side is a whole source denotation
+$D$, which contains every entry of the source closures, so whatever
+combination a call draws from $V$ is accounted for by $D$. This choice
+also makes the relation well founded, as we explain below in the
+paragraph on termination.
 
 \begin{figure}[t]
 \small\figdefs
@@ -231,38 +227,37 @@ relation used for the recursive occurrences.
 \label{fig:alr}
 \end{figure}
 
-\paragraph{The relation}
-Figure~\ref{fig:alr} defines the approximant logical relation
-$D \ALR V$, which relates a source set $D$ to a finite list $V$ of
-target elements. Its building block is the notion of an entry that a
-call can use. A target closure is a set of pairs
-$\pairv{u}{t}$ of code and environment, and the code $u$, a curried
-function, has entries of the form $U_e \mapsto (U_a \mapsto w)$:
-given the environments $U_e$, it returns a function that maps the
-arguments $U_a$ to $w$. We write $\entryin{U_a}{w}{V}$ when $V$
-contains such a pair \emph{and} the environments $U_e$ are among the
-environments $\cdr(V)$ that $V$ itself provides. The second condition
-is what makes the relation sound in the presence of junk: a code entry
-for an environment that the program never supplies, such as the entry
-for $x{=}0$ in the example above, is not usable. Because a call takes
-the code from $\car$ and the environment from $\cdr$, the code and the
-environment of a usable entry may come from different pairs of $V$, and
-the definition allows that.
+\paragraph{The approximant logical relation}
 
-A \emph{batch of calls} $\callsto{V}{U}{W}$ then says two things, and
-they have different jobs. The second conjunct says that each result $w$
-in $W$ is produced by a usable entry of $V$ whose arguments are among
-$U$; this is what the batch is about. The first conjunct,
+Figure~\ref{fig:alr} defines the approximant logical relation $D \ALR
+V$, which relates a finite list $V$ of target elements to a source set
+$D$. Its building block is the notion of a \emph{usable entry} of a
+graph.  A target closure is a set of pairs $\pairv{u}{t}$ of code and
+environment, and the code $u$, a curried function, has entries of the
+form $U_e \mapsto (U_a \mapsto w)$: given the environment $U_e$, it
+returns a function that maps the arguments $U_a$ to $w$. We write
+$\entryin{U_a}{w}{V}$ when $V$ contains such a pair \emph{and} the
+environments $U_e$ are among the environments $\cdr(V)$ that $V$
+itself provides. The second condition is what makes the relation sound
+in the presence of junk: a code entry for an environment that the
+program never supplies, such as the entry for $x{=}2$ in the example
+above, does not appear in a usable entry. Because a call takes the
+code from $\car$ and the environment from $\cdr$, the code and the
+environment of a usable entry may come from different pairs of $V$.
+
+A \emph{batch of calls} $\callsto{V}{U}{W}$ then says two things.  The
+second conjunct says that each result $w$ in $W$ is produced by a
+usable entry of $V$ whose arguments are among $U$. The first conjunct,
 $U \subseteq \mathsf{args}(V)$, says that $U$ contains only arguments
-that some usable entry of $V$ takes. It does not restrict which results
-appear; it keeps the arguments shallower than $V$, which the recursion
-needs. One layer ${\trianglerighteq^{Q}}$ of
-the relation has four clauses: the constants of $V$ are in $D$; if $V$
-is nonempty, so is $D$; every batch of calls of $V$ on arguments
-related to a source set $E$ produces results related to $D \app E$; and
-every projection of $V$ is related to the same projection of $D$. The
-third clause is the only place where $\car$ and $\cdr$ meet, and they
-meet inside the finite list $V$.
+that some usable entry of $V$ take, so the arguments are shallower
+than $V$, which the recursion needs. One layer
+${\trianglerighteq^{Q}}$ of the relation has four clauses: the
+constants of $V$ are in $D$; if $V$ is nonempty, so is $D$; every
+batch of calls of $V$ on arguments related to a source set $E$
+produces results related to $D \app E$; and every projection of $V$ is
+related to the same projection of $D$. The third clause is the only
+place where $\car$ and $\cdr$ meet, and they meet inside the finite
+list $V$.
 
 \paragraph{Termination}
 The definition is by recursion on the depth of $V$. The relation
