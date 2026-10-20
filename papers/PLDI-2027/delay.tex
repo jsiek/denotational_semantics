@@ -277,10 +277,11 @@ contain elements deeper than $V$. The results $W$ are shallower than
 $V$ because each of them is the output of an entry in $V$. Finally,
 the projections of $V$ are shallower than $V$ because they consist of
 components of the elements of $V$. The index $k$ of ${\ALR_k}$ is only a termination device:
-any index that bounds the depth of $V$ gives the same relation
-(Lemma~\ref{lem:depth-irrelevant}), so we may fold and unfold ${\ALR}$
-as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
-directly.  The tower $\ALR_0, \ALR_1, \ldots$ has the same shape as
+any index that bounds the depth of $V$ gives the same relation, and
+therefore ${\ALR}$ satisfies its defining equation
+${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
+(Lemma~\ref{lem:depth-irrelevant}). The proofs about ${\ALR}$ fold and
+unfold it with this equation and never mention the index.  The tower $\ALR_0, \ALR_1, \ldots$ has the same shape as
 the one \citet{Reynolds:1974aa} used to relate the direct and
 continuation semantics of a language, which he built stage by stage
 along the inverse-limit construction of its domains
@@ -289,9 +290,13 @@ both domains and his relation is the intersection over all of them;
 ours bounds the depth of the finite target side only, and depth
 irrelevance makes an intersection unnecessary.
 
-\begin{lemma}[Depth irrelevance]\label{lem:depth-irrelevant}
-If every element in $V$ has depth less than $k$ and less than $j$, then
-$D \ALR_k V$ if and only if $D \ALR_j V$.
+\begin{lemma}[Depth irrelevance and unfolding]\label{lem:depth-irrelevant}
+\leavevmode
+\begin{enumerate}
+\item If every element in $V$ has depth less than $k$ and less than
+  $j$, then $D \ALR_k V$ if and only if $D \ALR_j V$.
+\item $D \ALR V$ if and only if $D \layer{\ALR} V$.
+\end{enumerate}
 \end{lemma}
 
 The relation is also monotone in $D$ and antitone in $V$: a larger
