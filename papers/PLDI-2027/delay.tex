@@ -267,19 +267,19 @@ The third clause is where the $\car$ and $\cdr$ of the call operator
 meet. Through usable entries, the code comes from $\car(V)$ and the
 environments come from $\cdr(V)$, both within the finite list $V$.
 
-\paragraph{Termination}
+\paragraph{Termination of the Approximant Logical Relation}
 
-The approximant logical relation $D \ALR V$ is defined by recursion on
-the depth of $V$. The relation occurs at the arguments of a call, in
+The relation $D \ALR V$ is defined by recursion on the depth of
+$V$. The relation is used recursively at the arguments of a call, in
 negative position. That occurrence is what made the relation between
 two infinite sets ill founded. Here, every recursive occurrence is at
 a list shallower than $V$. The arguments $U$ are shallower than $V$
-because the first conjunct of a batch of calls requires
-$U \subseteq \mathsf{args}(V)$; without that conjunct, $U$ could
-contain elements deeper than $V$. The results $W$ are shallower than
-$V$ because each of them is the output of an entry in $V$. Finally,
-the projections of $V$ are shallower than $V$ because they consist of
-components of the elements of $V$. 
+because the first conjunct of a batch of calls requires $U \subseteq
+\mathsf{args}(V)$; without that conjunct, $U$ could contain elements
+deeper than $V$. The results $W$ are shallower than $V$ because each
+of them is the output of an entry in $V$. Finally, the projections of
+$V$ are shallower than $V$ because they consist of components of the
+elements of $V$.
 
 The index $k$ of ${\ALR_k}$ serves only to ensure termination. Any
 index that bounds the depth of $V$ gives the same relation, and
