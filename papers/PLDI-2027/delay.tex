@@ -337,8 +337,8 @@ cases follow immediately from the induction hypothesis. The cases for
 tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
 induction hypotheses for their subterms. Two cases carry the weight.
 
-\emph{Case $M = \kw{app}\;L\;K$.} Then
-$\mathit{delay}(M) = \kw{callc}\;\mathit{delay}(L)\;\mathit{delay}(K)$,
+\emph{Case $M = \kw{app}\,L\,K$.} Then
+$\mathit{delay}(M) = \kw{callc}\,\mathit{delay}(L)\,\mathit{delay}(K)$,
 so $V \subseteq D' \callop E'$ where
 $D' = \den{\mathit{delay}(L)}\rho'$ and
 $E' = \den{\mathit{delay}(K)}\rho'$. Each element of $V$ is produced by
@@ -351,8 +351,8 @@ $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$. Unfolding the first and
 applying clause~3 to this batch of calls with $E = \den{K}\rho$ gives
 $\den{L}\rho \app \den{K}\rho \ALR V$, that is, $\den{M}\rho \ALR V$.
 
-\emph{Case $M = \kw{clos}\;N\;\vec{K}$.} Then
-$\mathit{delay}(M) = \kw{pack}\;(\kw{code}\;\mathit{delay}(N))\;(\kw{tuple}\;\mathit{delay}(\vec{K}))$,
+\emph{Case $M = \kw{clos}\,N\,\vec{K}$.} Then
+$\mathit{delay}(M) = \kw{pack}\,(\kw{code}\,\mathit{delay}(N))\,(\kw{tuple}\,\mathit{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
