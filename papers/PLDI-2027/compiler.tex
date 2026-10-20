@@ -205,20 +205,24 @@ variables, but from Imp on they stand for slots, and each $\kw{let}$
 becomes an assignment to the next slot. The compiler omits register
 allocation: every local variable lives in its slot. The
 \pass{explicate control} pass turns the nested $\kw{case}$s of Imp
-into a control-flow graph of blocks that end in a $\kw{return}$, a
-$\kw{goto}$, or a $\kw{case}$ that jumps to one of two blocks.
+into a control-flow graph. A CFG program $P$ has a function body for
+each global definition and one for the main program. A function body
+$(t_0, \ldots, t_{j-1};\, t)$ consists of numbered blocks $t_0, \ldots,
+t_{j-1}$ and a starting tail $t$. A tail is a sequence of assignments
+$x \mathrel{:=} r$ that ends by returning a value ($\kw{return}\;r$),
+by jumping to a block ($\kw{goto}\;l$), or by a $\kw{case}$ that writes
+the payload of an injection to a slot and jumps to one of two blocks.
+A block may jump only to blocks numbered before it, so the control
+flow is acyclic.
 
 Finally, \pass{select instructions} produces x86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
 registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
-and an abstract heap. A program $P$ has the same structure as in CFG: a
-function body $b$ for each global definition and one for the main
-program. A function body $(n;\, s_0, \ldots, s_{j-1};\, s)$ declares the number $n$ of
-slots in its frame and consists of numbered blocks $s_0, \ldots,
-s_{j-1}$ and a starting sequence $s$. A sequence $s$ is a list of
-instructions $i$ that ends by returning ($\kw{retq}$), by jumping to a
-block ($\kw{jmp}\;l$), or by a $\kw{case}$ that jumps to one of two
-blocks. An instruction reads operands $a$, which are slots, constants,
+and an abstract heap. Programs have the same structure as in CFG, except that a function
+body $(n;\, s_0, \ldots, s_{j-1};\, s)$ also declares the number $n$ of
+slots in its frame, and its blocks and starting point are sequences
+$s$ of instructions $i$. A sequence ends as a tail does in CFG, with
+$\kw{retq}$, $\kw{jmp}\;l$, or $\kw{case}$. An instruction reads operands $a$, which are slots, constants,
 names of definitions, and registers, and writes to a destination $d$,
 which is a register or a slot. The registers are used to stage
 arithmetic and calls. The instruction $\kw{alloc}$ allocates an object
