@@ -365,44 +365,22 @@ $\mathit{delay}(M) = \kw{pack}\,(\kw{code}\,\mathit{delay}(N))\,(\kw{tuple}\,\ma
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
-four clauses of $D \layer{\ALR} V$.
+four clauses of $D \layer{\ALR} V$. Clauses 1 and 4 hold trivially
+because $V$ contains only pairs. Clause 2 follows from the induction
+hypothesis for $\vec{K}$.
 
-Clauses 1 and 4 hold trivially. Every element of $V$ is a pair, so $V$
-contains no constants and every projection of $V$ is empty.
-
-For clause 2, suppose that $V$ is nonempty. Then $T'$ is nonempty, so
-$T$ is nonempty by the induction hypothesis for $\vec{K}$. It follows
-that $\nu \in D$.
-
-For clause 3, suppose that $\callsto{V}{U}{W}$, that $E$ and $U$
-are consistent, and that $E \ALR U$. We must show $D \app E \ALR W$. Each
-$w \in W$ comes from a code entry $U_e \mapsto (U_a \mapsto w)$ in
-$\car(V)$, where $U_e$ is a nonempty list within $\cdr(V)$ and $U_a$
-is a nonempty list within $U$. The code entry belongs to the meaning of $\kw{code}\,\mathit{delay}(N)$,
-so $w \in \den{\mathit{delay}(N)}(U_e, U_a)$. By
-monotonicity, $w \in \den{\mathit{delay}(N)}(\cdr(V), U)$. This is the
-meaning of the target body with its environment parameter bound to
-$\cdr(V)$ and its argument parameter bound to $U$. We relate this
-target environment to the source environment $(T, E)$. First, both $T$
-and $E$ are nonempty. The set $T$ is nonempty by the induction
-hypothesis for $\vec{K}$, because $U_e$ is a nonempty list within
-$\cdr(V)$ and $\cdr(V) \subseteq T'$. The set $E$ is nonempty by
-clause~2 of $E \ALR U$, because $U$ contains the nonempty list $U_a$.
-Second, both environments are consistent. On the source side, $E$ is
-consistent by assumption, and $T$ is consistent because the meaning of
-every term in a consistent environment is consistent. On the target side, $U$ is consistent by
-assumption, and $\cdr(V)$ is consistent because it lies within the
-consistent set $T'$. Third, the environments are related. For the environment parameter,
-the induction hypothesis for $\vec{K}$ gives $T \ALR V_e$ for every
-finite $V_e \subseteq \cdr(V)$, because $\cdr(V) \subseteq T'$. For the
-argument parameter, $E \ALR U$ holds by assumption, and so $E$ is
-related to every sublist of $U$. The induction hypothesis for the body
-$N$ then gives $\den{N}(T, E) \ALR W$. The second part of
-Lemma~\ref{lem:beta} gives $\den{N}(T, E) \subseteq D \app E$. Because
-${\ALR}$ is monotone in its source set, $D \app E \ALR W$.
-
-We have proved the four clauses, so the second part of
-Lemma~\ref{lem:depth-irrelevant} gives $D \ALR V$.
+Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
+and $E \ALR U$. Each $w \in W$ comes from a code entry
+$U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
+and $U_a \subseteq U$. By monotonicity, $w$ is in the meaning of the
+target body $\mathit{delay}(N)$ with its parameters bound to $\cdr(V)$
+and $U$. This target environment is related to the source environment
+$(T, E)$. The environments are related by the induction hypothesis for
+$\vec{K}$, because $\cdr(V) \subseteq T'$, and the arguments are
+related by assumption. The induction hypothesis for the body $N$ then
+gives $\den{N}(T, E) \ALR W$. Finally, Lemma~\ref{lem:beta} gives
+$\den{N}(T, E) \subseteq D \app E$, and ${\ALR}$ is monotone in its
+source set, so $D \app E \ALR W$.
 
 \begin{theorem}[Correctness of delay]\label{thm:delay}
 Let $M$ be a closed term of EnvClos, and let $\den{\cdot}$ denote
