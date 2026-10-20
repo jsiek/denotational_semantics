@@ -66,9 +66,9 @@
 \label{fig:grammars}
 \end{figure}
 
-Our compiler translates \iswim, a call-by-value $\lambda$-calculus,
-to X86$\mu$, a typed assembly language, in ten passes through seven
-intermediate languages:
+Our compiler translates \iswim, a call-by-value $\lambda$-calculus
+with recursive types, to X86$\mu$, a typed assembly language, in ten
+passes through seven intermediate languages:
 \begin{center}
 \small
 \begin{tikzpicture}[x=3.6cm, y=1.25cm, every node/.style={inner sep=2pt},
@@ -103,12 +103,12 @@ intermediate languages:
     {closure conversion};
 \end{tikzpicture}
 \end{center}
-Figure~\ref{fig:grammars} gives the grammars of all the languages. Every
-language is intrinsically typed in Agda, so every term is well typed by
-construction and no pass needs a precondition about scoping or typing.
-Every language also has a semantics in the graph model of
-Section~\ref{sec:graph-models}, and every pass except delay preserves
-the meaning of a program exactly.
+The grammars for all the languages are presented in
+Figure~\ref{fig:grammars}. Every language is intrinsically typed in
+Agda, so every term is well typed by construction and no pass needs a
+precondition about scoping or typing.  Every language also has a
+semantics in the graph model of Section~\ref{sec:graph-models}, and
+every pass except delay preserves the meaning of a program exactly.
 
 \paragraph{The source language}
 \iswim\ has integers, $n$-ary tuples, binary sums, the primitives
@@ -182,6 +182,7 @@ Since $\kw{callc}$ is the only way to open a closure and works for
 every $\Delta$, no run-time check is needed.
 
 \paragraph{The back end}
+
 Globalize turns the code of every function into a global definition
 $d_k$, and each occurrence of the code into a reference $f_k$ to it, so
 a GlobalFun program is a list of definitions and a main term. Remove
@@ -195,21 +196,22 @@ assignment to the next slot. There is no register allocation: every
 local variable lives in its slot. Explicate control
 turns the nested $\kw{case}$s of Imp into a control-flow graph of
 blocks that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$
-that jumps to one of two blocks. Finally, select instructions produces
-X86$\mu$, a typed assembly language in the style of TAL
-\citep{Morrisett:1999fk} with the registers $\kw{rax}$, $\kw{rdi}$,
-and $\kw{rsi}$, a frame of slots, and an abstract heap. The registers
-are used only to stage arithmetic and calls. The instruction
-$\kw{alloc}$ allocates a closure, a tuple, or an injection. A call
-first opens the closure in a slot $x$: $\kw{load}\;\kw{fst}\;x,
-\%r$ loads its code, and $\kw{load}\;\kw{snd}\;x, \%r$ loads its
-environment. Then $\kw{callq}$ calls the code with the environment in
-$\kw{rdi}$ and the argument in $\kw{rsi}$, and the result arrives in
-$\kw{rax}$. The type system tracks which closure is open, so that a
-call never combines the code of one closure with the environment of
-another. A $\kw{case}$ is a single pseudo-instruction that tests the
-tag of an injection, writes its payload to a slot, and jumps to one of
-two blocks; it stands for a test, a load, and a conditional jump. The
-coercions $\kw{fold}$ and $\kw{unfold}$ survive to X86$\mu$ as the
-operand annotations ${\uparrow}a$ and ${\downarrow}a$, which do nothing
-at run time.
+that jumps to one of two blocks.
+
+Finally, select instructions produces X86$\mu$, a typed assembly
+language in the style of TAL \citep{Morrisett:1999fk} with the
+registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
+and an abstract heap. The registers are used to stage arithmetic
+and calls. The instruction $\kw{alloc}$ allocates a closure, a tuple,
+or an injection. A call first opens the closure in a slot $x$:
+$\kw{load}\;\kw{fst}\;x, \%r$ loads its code, and
+$\kw{load}\;\kw{snd}\;x, \%r$ loads its environment. Then $\kw{callq}$
+calls the code with the environment in $\kw{rdi}$ and the argument in
+$\kw{rsi}$, and the result arrives in $\kw{rax}$. The type system
+tracks which closure is open, so that a call never combines the code
+of one closure with the environment of another. A $\kw{case}$ is a
+single pseudo-instruction that tests the tag of an injection, writes
+its payload to a slot, and jumps to one of two blocks; it stands for a
+test, a load, and a conditional jump. The coercions $\kw{fold}$ and
+$\kw{unfold}$ survive to X86$\mu$ as the operand annotations
+${\uparrow}a$ and ${\downarrow}a$, which do nothing at run time.
