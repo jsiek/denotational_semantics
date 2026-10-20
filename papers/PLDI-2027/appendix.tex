@@ -378,7 +378,7 @@ older than $l$, and the body means $\den{t}_{T,B}$. Definitions and
 programs are given meaning as in Imp, with the body in place of the
 expression and no continuation.
 
-\subsection{The X86$\mu$ Language}
+\subsection{The x86$\mu$ Language}
 
 An instruction is typed by the type of the machine state it starts in
 and the one it leaves. A state type
@@ -450,12 +450,12 @@ $\psi$, the instructions are typed by:
 \]
 Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
 the environment of an earlier open closure, so $\alpha$ always stands
-for the environment of one closure. A sequence is typed by the result
+for the environment of one closure. A sequence $s$ is typed by the result
 type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
 its starting state:
 \[
-  \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash \beta : \psi'}
-        {\Sigma; n; R; \vec{\Delta} \vdash i;\; \beta : \psi}
+  \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash s : \psi'}
+        {\Sigma; n; R; \vec{\Delta} \vdash i;\; s : \psi}
 \]
 \[
   \dfrac{\Theta(\kw{rax}) = R}{\Sigma; n; R; \vec{\Delta} \vdash \kw{retq} : \langle \Theta; \Delta; O; F \rangle}
@@ -515,7 +515,7 @@ $\{\langle\rangle\}$; only a call can diverge, so only it is strict in
 its result. The sequences mean
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \den{i;\; \beta}_B & = & \den{i}\,\den{\beta}_B\\
+  \den{i;\; s}_B & = & \den{i}\,\den{s}_B\\
   \den{\kw{retq}}_B\,\sigma R F & = & R(\kw{rax})\\
   \den{\kw{jmp}\;l}_B\,\sigma R F & = & B(l)(\sigma)\\
   \den{\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)}_B\,\sigma R F & = &
@@ -524,12 +524,12 @@ its result. The sequences mean
       \mlam{X} B(l_2)(\sigma|_y[y{:=}X]))
 \end{array}
 \]
-where a block means $B(l)(\sigma) = \den{\beta_l}_{B_l}\,\sigma\,R_0\,
+where a block means $B(l)(\sigma) = \den{s_l}_{B_l}\,\sigma\,R_0\,
 \{\langle\rangle\}$, with $R_0$ mapping every register to
 $\{\langle\rangle\}$ and $B_l$ giving the blocks older than $l$. A
 definition means
-$T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{\beta}_B\,\rho_0\,R_{X,Y}\,
-\{\langle\rangle\}))$ for its body $\beta$ with blocks $B$, where
+$T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{s}_B\,\rho_0\,R_{X,Y}\,
+\{\langle\rangle\}))$ for its body $s$ with blocks $B$, where
 $R_{X,Y}$ maps $\kw{rdi}$ to $X$, $\kw{rsi}$ to $Y$, and $\kw{rax}$ to
 $\{\langle\rangle\}$; the tables are as in GlobalFun. A program means
 the meaning of its main body in $\rho_0$ and $R_0$, with the flag
