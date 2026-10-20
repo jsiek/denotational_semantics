@@ -83,7 +83,7 @@ passes through seven intermediate languages:
   \draw (c2b) -- node[lbl,right] {\pass{concretize}} (c3);
   \draw (c3) -- node[lbl,above] {\pass{delay}} (c4);
   \draw (c4) -- node[lbl,above] {\pass{globalize}} (c5);
-  \draw (c5) -- node[lbl,above] {\pass{remove complex operands}} (mon);
+  \draw (c5) -- node[lbl,above] {\pass{RCO}} (mon);
   \draw (mon) -- node[lbl,left] {\pass{lift locals}} (imp);
   \draw (imp) -- node[lbl,above] {\pass{explicate control}} (cfg);
   \draw (cfg) -- node[lbl,above] {\pass{select instructions}} (x86);
@@ -92,8 +92,7 @@ passes through seven intermediate languages:
       (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (1.62,-1.3)
       -- (1.62,-0.62) -- (1.25,-0.62) -- cycle;
   \end{scope}
-  \node[font=\small\itshape, text=gray!70!black] at (2.45,-0.5)
-    {closure conversion};
+  \node[font=\itshape, text=gray!70!black] at (2.45,-0.5){closure conversion};
 \end{tikzpicture}
 \end{center}
 The grammars for all the languages are presented in
@@ -101,16 +100,17 @@ Figure~\ref{fig:grammars}, and their typing rules in
 Appendix~\ref{app:types}.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
 construction and no pass needs a precondition about scoping or
-typing.} In Figure~\ref{fig:grammars}, each closure language lists only
-the forms it adds to the one above it, and ``$\ldots$'' stands for the
-remaining forms of \iswim. Throughout, $c$ ranges over constants, $p$
-over the primitives $\kw{sub}$ and $\kw{eq}$, $l$ over block labels,
-and $f_k$ over the names of a program's global definitions, where $f_k$ refers to the definition $d_k$. From Imp on, $x$
-and $y$ range over fixed locations in a function's stack frame, as we
-explain below.  Every language also has a semantics in the graph model of
-Section~\ref{sec:graph-models}, given in full in
-Appendix~\ref{app:languages}, and
-every pass except \pass{delay} preserves the meaning of a program exactly.
+typing.} In Figure~\ref{fig:grammars}, each closure language lists
+only the forms it adds to the one above it, and ``$\ldots$'' stands
+for the remaining forms of \iswim. Throughout, $c$ ranges over
+constants, $p$ over the primitives $\kw{sub}$ and $\kw{eq}$, $l$ over
+block labels, and $f_k$ over the names of a program's global
+definitions, where $f_k$ refers to the definition $d_k$. In the
+languages prior to Imp, $x$, $y$, and $z$ range over variables. From
+Imp on, they range over fixed locations in a function's stack frame,
+as we explain below.  Every language also has a semantics in the graph
+model of Section~\ref{sec:graph-models}, given in full in
+Appendix~\ref{app:languages}.
 
 \paragraph{The source language}
 
@@ -153,15 +153,15 @@ The next four passes perform closure conversion. The \pass{enclose}
 pass turns each $\lambda$-abstraction into a closure
 $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$ of Clos, which binds a name
 $x_i$ for each captured value $M_i$ and the parameter $y$ in its code
-$N$, so the code is closed. \pass{Enclose} captures every variable in
-scope, and the \pass{optimize} pass then drops the captured values
-that the code does not use. The \pass{concretize} pass stores the
-captured values of a closure in a single environment tuple, so an
-EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds just two
+$N$, so the code is closed. The \pass{enclose} pass captures every
+variable in scope, and the \pass{optimize} pass then drops the
+captured values that the code does not use. The \pass{concretize} pass
+stores the captured values of a closure in a single environment tuple,
+so an EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds just two
 variables in its code, the environment $z$ and the parameter $y$, and
-the code reads $x_i$ as $\kw{get}_i\,z$. \pass{Delay} then separates a
-closure into its code and its environment
-(Section~\ref{sec:approx-lr}). In FlatClos, $\kw{code}\;(z, y.\,N)$ is
+the code reads $x_i$ as $\kw{get}_i\,z$. The \pass{delay} pass then
+separates a closure into its code and its environment, translating
+from EnvClos to FlatClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is
 closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which
 expects an environment of type $\kw{tup}(\Delta)$ and an argument of
 type $A$. The form $\kw{pack}\;L\;M$ builds a closure (represented as
@@ -172,36 +172,41 @@ $\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
 so closures with different environments have the same type. The form
 $\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
 environment and the argument $M$.
-\[
+\begin{gather*}
   \frac{z : \kw{tup}(\Delta),\, y : A \vdash N : C}
        {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
-  \qquad
-  \frac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
-        \quad \Gamma \vdash M : \kw{tup}(\Delta)}
+  \quad
+  \frac{\begin{array}{l}
+        \Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)\\
+        \Gamma \vdash M : \kw{tup}(\Delta)
+        \end{array}}
        {\Gamma \vdash \kw{pack}\;L\;M : A \rightarrow C}
-\]
-\[
-  \frac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
+  \quad
+  \frac{\begin{array}{l}
+        \Gamma \vdash L : A \rightarrow C \\
+        \Gamma \vdash M : A
+        \end{array}}
        {\Gamma \vdash \kw{callc}\;L\;M : C}
-\]
+\end{gather*}
 
 \paragraph{The back end}
 
 The \pass{globalize} pass turns the code of every function into a
 global definition $d_k$, and each occurrence of the code into a
 reference $f_k$ to it, so a GlobalFun program is a list of function
-definitions and a main term. The pass \pass{remove complex operands}
-binds each operand that is not atomic to a variable with $\kw{let}$,
-so the operands of every operation in Mon are atomic.  \pass{Lift
-  locals} gives each variable a fixed location in the function's stack
-frame, called a \emph{slot}, numbered by how many variables are bound
-before it. We keep writing $x$ and $y$ for these variables, but from
-Imp on they stand for slots, and each $\kw{let}$ becomes an assignment
-to the next slot. The compiler omits register allocation: every local
-variable lives in its slot. The \pass{explicate control} pass turns
-the nested $\kw{case}$s of Imp into a control-flow graph of blocks
-that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$ that
-jumps to one of two blocks.
+definitions and a main term. The pass \pass{remove complex operands
+  (RCO)} binds each operand that is not atomic to a variable with
+$\kw{let}$, so the operands of every operation in Mon are atomic.
+The atomic terms are variables, constants, and function names.
+The \pass{lift locals} pass gives each variable a fixed location in the
+function's stack frame, called a \emph{slot}, numbered by how many
+variables are bound before it. We keep writing $x$ and $y$ for these
+variables, but from Imp on they stand for slots, and each $\kw{let}$
+becomes an assignment to the next slot. The compiler omits register
+allocation: every local variable lives in its slot. The
+\pass{explicate control} pass turns the nested $\kw{case}$s of Imp
+into a control-flow graph of blocks that end in a $\kw{return}$, a
+$\kw{goto}$, or a $\kw{case}$ that jumps to one of two blocks.
 
 Finally, \pass{select instructions} produces X86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
