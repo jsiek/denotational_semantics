@@ -437,10 +437,10 @@ $\psi$, the instructions are typed by:
         {\Sigma; n \vdash \kw{load}\; \kw{get}_i\; a, d : \psi \Rightarrow \psi'}
   \\[14pt]
   \dfrac{x : A \rightarrow C \in \Delta}
-        {\Sigma; n \vdash \kw{load}\; \kw{fst}\; x, \%r : \psi \Rightarrow
+        {\Sigma; n \vdash \kw{fst}\; x, \%r : \psi \Rightarrow
          \langle \mathit{wipe}(\Theta)[r{:}\kw{code}_\alpha(A \rightarrow C)]; \Delta; x; F \rangle}
   \\[14pt]
-  \Sigma; n \vdash \kw{load}\; \kw{snd}\; x, \%r : \langle \Theta; \Delta; x; F \rangle \Rightarrow
+  \Sigma; n \vdash \kw{snd}\; x, \%r : \langle \Theta; \Delta; x; F \rangle \Rightarrow
     \langle \Theta[r{:}\kw{tup}(\alpha)]; \Delta; x; F \rangle
   \\[14pt]
   \dfrac{a : \kw{code}_\alpha(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{tup}(\alpha)
@@ -503,8 +503,8 @@ CFG does:
   \den{\kw{alloc}\; o, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{o}\sigma R)\,\kappa\,\sigma R F\\
   \den{\kw{load}\; \kw{get}_i\; a, d}\kappa\,\sigma R F & = &
     \mathit{put}(d, \pi_{\mathsf{tup}_i}(\mathcal{O}\den{a}\sigma R))\,\kappa\,\sigma R F\\
-  \den{\kw{load}\; \kw{fst}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\car(\sigma(x))]\,F\\
-  \den{\kw{load}\; \kw{snd}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\cdr(\sigma(x))]\,F\\
+  \den{\kw{fst}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\car(\sigma(x))]\,F\\
+  \den{\kw{snd}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\cdr(\sigma(x))]\,F\\
   \den{\kw{callq}\; a}\kappa\,\sigma R F & = &
     \mathsf{guard}(C;\; \kappa\,\sigma\,R_C\,\{\langle\rangle\})
     \quad\text{where } C = (\mathcal{O}\den{a}\sigma R \app R(\kw{rdi})) \app R(\kw{rsi})

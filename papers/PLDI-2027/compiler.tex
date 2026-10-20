@@ -49,7 +49,7 @@
  & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
  & i & ::= & \kw{movq}\;a, d \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
   \mid \kw{sete}\;d \mid \kw{alloc}\;o, d \mid \kw{load}\;\kw{get}_i\;a, d\\
- & & \mid & \kw{load}\;\kw{fst}\;x, \%r \mid \kw{load}\;\kw{snd}\;x, \%r \mid \kw{callq}\;a\\
+ & & \mid & \kw{fst}\;x, \%r \mid \kw{snd}\;x, \%r \mid \kw{callq}\;a\\
  & \beta & ::= & i;\; \beta \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)\\
  & b & ::= & (n;\, \beta_0, \ldots, \beta_{j-1};\, \beta)
   \qquad P ::= (\vec{b};\, b)
@@ -212,8 +212,8 @@ or an injection. A call
 $\kw{callc}\;x\;a$ of the closure in slot $x$ on the argument $a$
 becomes the following instructions:
 \[
-  \kw{load}\;\kw{fst}\;x, \%\kw{rax};\quad
-  \kw{load}\;\kw{snd}\;x, \%\kw{rdi};\quad
+  \kw{fst}\;x, \%\kw{rax};\quad
+  \kw{snd}\;x, \%\kw{rdi};\quad
   \kw{movq}\;a, \%\kw{rsi};\quad
   \kw{callq}\;\%\kw{rax}
 \]
