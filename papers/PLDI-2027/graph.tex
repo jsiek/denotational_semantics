@@ -154,29 +154,21 @@ of a correctness proof: a relation that follows the source program
 forward cannot carry the absence of elements to the target.
 
 \paragraph{Consistency}
-Our model adds a requirement of consistency because it is needed in
-the proof for the delay pass (Section~\ref{sec:approx-lr}). A call in
-FlatClos takes the code from one pair and the environment from
-another, so a closure's meaning may combine the code of one pair with
-the environment of a different pair. Consistency ensures that the
-environments of these pairs are consistent with each other, so that
-the code runs with approximations of its own environment and not with
-the environment of some other closure.
 
 We write $u \sim v$ when the elements $u$ and $v$ are consistent,
-which means, intuitively, that they could describe the same value. Two
-constants are consistent when they are equal, two entries are
-consistent when consistent inputs lead to consistent outputs, and
-elements that describe different kinds of values, such as $\mathsf{left}(u)$ and
-$\mathsf{right}(v)$, are not consistent. A set $D$ is consistent,
-written $\mathsf{con}(D)$, when its elements are pairwise consistent,
-and two lists are consistent with each other, written $V \approx V'$,
-when every element of one is consistent with every element of the
-other. Appendix~\ref{app:consistency} gives the formal definition. The
-operator $\Lambda$ builds only entries whose inputs are consistent,
-which rules out entries such as $[1, 2] \mapsto 3$ in the meaning of
-$\lambda x.\, x + 1$, whose input describes no single argument. The
-meaning of a term in a consistent environment is consistent.
+which means, intuitively, that they could describe the same value.
+Appendix~\ref{app:consistency} gives the definition. The operator
+$\Lambda$ builds only entries whose inputs are consistent, which rules
+out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,
+x + 1$, whose input describes no single argument.
+%
+Our model requires consistency because it is needed in the proof for
+the delay pass (Section~\ref{sec:approx-lr}). A call in FlatClos takes
+the code from one pair and the environment from another, so a
+closure's meaning may combine the code of one pair with the
+environment of a different pair. Consistency ensures that the
+environments of these pairs are consistent with each other.
+
 
 \paragraph{The properties of the semantics}
 
@@ -198,7 +190,7 @@ similarly for a function of two sets.
 \begin{enumerate}
 \item If $F$ is monotone and finitary at a consistent $D$, then
   $\Lambda(F) \app D = F(D)$.
-\item If $F$ is finitary at consistent $T$ and $E$, then
+\item If $F$ is finitary at a consistent $T$ and $E$, then
   $F(T, E) \subseteq (\Lambda(\mlam{X} \Lambda(\mlam{Y} F(X, Y))) \app T) \app E$.
 \end{enumerate}
 \end{lemma}

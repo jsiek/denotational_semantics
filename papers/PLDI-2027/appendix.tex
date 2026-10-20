@@ -12,7 +12,14 @@
 \label{app:consistency}
 
 Consistency is defined on elements, and from it on sets and lists
-(Section~\ref{sec:graph-models}).
+(Section~\ref{sec:graph-models}).  Two constants are consistent when
+they are equal, two entries are consistent when consistent inputs lead
+to consistent outputs, and elements that describe different kinds of
+values, such as $\mathsf{left}(u)$ and $\mathsf{right}(v)$, are not
+consistent. A set $D$ is consistent, written $\mathsf{con}(D)$, when
+its elements are pairwise consistent, and two lists are consistent
+with each other, written $V \approx V'$, when every element of one is
+consistent with every element of the other.
 
 \begin{figure}[h]
 \small\figdefs
