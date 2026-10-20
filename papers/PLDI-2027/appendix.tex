@@ -12,8 +12,7 @@
 \label{app:depth}
 
 The depth of an element of the graph model is the height of its
-syntax tree, not counting constants, $\nu$, $\langle\rangle$ and
-$\omega$; the depth of a finite list is the largest depth of its
+syntax tree, not counting constants, $\nu$ and $\langle\rangle$; the depth of a finite list is the largest depth of its
 elements (zero for the empty list):
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -22,7 +21,7 @@ elements (zero for the empty list):
   \depth(t(v)) & = & 1 + \depth(v)
     \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
   \depth(v) & = & 0
-    \quad \text{for } v \in \{c, \nu, \langle\rangle, \omega\}\\
+    \quad \text{for } v \in \{c, \nu, \langle\rangle\}\\
   \depth(V) & = & \max_{v \in V} \depth(v)
 \end{array}
 \]

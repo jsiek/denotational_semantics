@@ -10,7 +10,8 @@
 
 -}
 
-open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; 𝒯; pair; car; cdr; nthD; 𝒞-left; 𝒞-right; Λ-β; ΛΛ-β; letD-collect; Mono₁)
 open import proof.Framework.GraphModel.DomainUtilBase
@@ -252,15 +253,15 @@ delay-reflect (clos {Δ} N Ms) {r} {ρ} {ρ'} E V' V'⊆ = foldᴬ record
   clos-app : ∀ {U' W'} → Calls V' U' W' → ∀ E → Con E → Con (mem U') → ApproxLR E U' → ApproxLR (D ● E) W'
   clos-app {W' = []} _ _ _ _ _ = ApproxLR-∅ (λ _ ())
   clos-app {U'} {w ∷ W'} cs Es cE U'~ rU =
-    ApproxLR-mono (ΛΛ-β {F = λ X Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ω ⌉)} cT cE (fin₂ (S3.ok N) NE-T NE-E))
-      (delay-reflect N {r = λ x → x} (envs NE-ρs (Con-• cE (Con-• cT (λ _ → Con-⌈⌉ ω))) ρ''~ ρ''⊳) (w ∷ W') W⊆B)
+    ApproxLR-mono (ΛΛ-β {F = λ X Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ⟨⟩ ⌉)} cT cE (fin₂ (S3.ok N) NE-T NE-E))
+      (delay-reflect N {r = λ x → x} (envs NE-ρs (Con-• cE (Con-• cT (λ _ → Con-⌈⌉ ⟨⟩))) ρ''~ ρ''⊳) (w ∷ W') W⊆B)
     where
     wit = Calls.results cs w (here refl)
     ent = proj₁ (proj₂ wit)
     NE-E = ApproxLRLayer.nonempty-obs (unfoldᴬ rU) (ne-⊆ (proj₂ (proj₂ (proj₂ wit))) (proj₁ (proj₂ (proj₂ wit))))
     NE-T = T-ne (ne-mem (CarEntry.FV≢[] ent) (λ d d∈ → Cdrs⊆T' d (CarEntry.FV⊆ ent d d∈)))
     ρ'' : Env Value
-    ρ'' = mem U' • Cdrs V' • (λ _ → ⌈ ω ⌉)
+    ρ'' = mem U' • Cdrs V' • (λ _ → ⌈ ⟨⟩ ⌉)
     W⊆B : mem (w ∷ W') ⊆ ⟦ delay (λ x → x) N ⟧' ρ''
     W⊆B x x∈ with Calls.results cs x x∈
     ... | ⟨ U₀ , ⟨ car-entry FV t e∈ neFV FV⊆ , ⟨ _ , U₀⊆ ⟩ ⟩ ⟩ with V'⊆ _ e∈
@@ -268,9 +269,9 @@ delay-reflect (clos {Δ} N Ms) {r} {ρ} {ρ'} E V' V'⊆ = foldᴬ record
       proj₁ (S4.ok (delay (λ x → x) N)) (λ { zero → U₀⊆ ; (suc zero) → FV⊆ ; (suc (suc y)) → λ d z → z }) x x∈B
     cT = S3.con (tuple Ms) ρ~
     ρ''~ : Con-env ρ''
-    ρ''~ = Con-• U'~ (Con-• (Con-⊆ (S4.con (T.tuple (delays r Ms)) ρ'~) Cdrs⊆T') (λ _ → Con-⌈⌉ ω))
-    NE-ρs = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) NE-T) NE-E
-    ρ''⊳ : ∀ {A} (x : (_ ∷ tup Δ ∷ []) ∋ A) V → mem V ⊆ ρ'' (idx x) → ApproxLR ((Es • T • (λ _ → ⌈ ω ⌉)) (idx x)) V
+    ρ''~ = Con-• U'~ (Con-• (Con-⊆ (S4.con (T.tuple (delays r Ms)) ρ'~) Cdrs⊆T') (λ _ → Con-⌈⌉ ⟨⟩))
+    NE-ρs = extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ⟨⟩ , refl ⟩) NE-T) NE-E
+    ρ''⊳ : ∀ {A} (x : (_ ∷ tup Δ ∷ []) ∋ A) V → mem V ⊆ ρ'' (idx x) → ApproxLR ((Es • T • (λ _ → ⌈ ⟨⟩ ⌉)) (idx x)) V
     ρ''⊳ Z Y' Y'⊆ = ApproxLR-⊆ Y'⊆ rU
     ρ''⊳ (S Z) Y' Y'⊆ = reflect-𝒯 Ms E Y' (λ y y∈ → Cdrs⊆T' y (Y'⊆ y y∈))
 
@@ -308,7 +309,7 @@ reflect-𝒯 {Δ' = _ ∷ Δ'} Ms {r} {ρ} {ρ'} E V' V'⊆ = foldᴬ record
 {- The end theorem (backward half) --------------------------------------------}
 
 Envs₀ : ∀ (r : Ren [] []) → Envs r ρ₀ ρ₀
-Envs₀ r = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ _ → Con-⌈⌉ ω) (λ ())
+Envs₀ r = envs (λ _ → ⟨ ⟨⟩ , refl ⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())
 
 reflect-const : ∀ {A} (M : Tm [] A) {B} (c : base-rep B) → const c ∈ ⟦ delay-program M ⟧' ρ₀ → const c ∈ ⟦ M ⟧ ρ₀
 reflect-const M c c∈ = ApproxLRLayer.const-obs (unfoldᴬ (delay-reflect M (Envs₀ _) (const c ∷ []) (single⊆ c∈))) c (here refl)

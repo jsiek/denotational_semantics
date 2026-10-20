@@ -24,7 +24,7 @@ open import Data.Nat using (_≟_)
 open import Relation.Nullary using (yes; no)
 
 init : 𝒫 Value
-init = ⌈ ω ⌉
+init = ⌈ ⟨⟩ ⌉
 
 Table : List DSig → Set₁
 Table Σ = ∀ {s} → Σ ∋ s → 𝒫 Value

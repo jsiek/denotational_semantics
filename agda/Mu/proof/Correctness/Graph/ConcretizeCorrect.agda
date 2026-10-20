@@ -17,7 +17,8 @@
 
 module Mu.proof.Correctness.Graph.ConcretizeCorrect where
 
-open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import proof.Framework.GraphModel.DenotProperties using (Every)
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.Laws using (⋆-ne)
@@ -74,7 +75,7 @@ concs-nth : ∀ {Γ Γ' Δ} (Ms : All (Tm Γ) Δ) (φ : Refs Γ Γ') {ρ₂ ρ�
 conc (` x) φ c rel = rel x
 conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} c rel =
   ⟨ (λ { w ⟨ ne , w∈ ⟩ → proj₁ (eq (λ i → ne→ i (ne i))) w w∈ })
-  , (λ w w∈ → let ne' = 𝒯-ne n (proj₂ (⋆-ne {ΛΛ ⟨ (λ X Y → ⟦ N' ⟧₃ (Y • X • λ _ → ⌈ ω ⌉)) , ptt ⟩} {𝒯 n Es} ⟨ w , w∈ ⟩)) in ⟨ (λ i → ne← i (ne' i)) , proj₂ (eq ne') w w∈ ⟩) ⟩
+  , (λ w w∈ → let ne' = 𝒯-ne n (proj₂ (⋆-ne {ΛΛ ⟨ (λ X Y → ⟦ N' ⟧₃ (Y • X • λ _ → ⌈ ⟨⟩ ⌉)) , ptt ⟩} {𝒯 n Es} ⟨ w , w∈ ⟩)) in ⟨ (λ i → ne← i (ne' i)) , proj₂ (eq ne') w w∈ ⟩) ⟩
   where
   n = length Δ
   N' = concretize fv-ref N
@@ -90,8 +91,8 @@ conc (clos {Δ} N Ms) φ {ρ₂} {ρ₃} c rel =
             (λ X⊆ → proj₁ (ok N') (•-~ _⊆_ (•-~ _⊆_ (λ _ _ z → z) X⊆) (λ _ z → z))) (fin-code (ok N') (𝒯-intro n ne))))
     where
     cT = 𝒯-con n Es (cons-con (concs φ Ms) c)
-    body : ∀ V → _ → V ≈ V → ⟦ N ⟧ (mem V • fv-env n Ds) ≃ ⟦ N' ⟧₃ (mem V • 𝒯 n Es • λ _ → ⌈ ω ⌉)
-    body V _ cV = conc N fv-ref (Con-• (≈⇒Con cV) (Con-• cT (λ _ → Con-⌈⌉ ω)))
+    body : ∀ V → _ → V ≈ V → ⟦ N ⟧ (mem V • fv-env n Ds) ≃ ⟦ N' ⟧₃ (mem V • 𝒯 n Es • λ _ → ⌈ ⟨⟩ ⌉)
+    body V _ cV = conc N fv-ref (Con-• (≈⇒Con cV) (Con-• cT (λ _ → Con-⌈⌉ ⟨⟩)))
       λ { Z → ≃-refl
         ; (S i) → ≃-trans (≃-reflexive (fv-env-pos Ds i))
                     (≃-trans (concs-nth Ms φ c rel (pos i)) (≃-sym (proj-𝒯 n ne (pos i)))) }
@@ -117,4 +118,4 @@ concs-nth (M ∷ Ms) φ c rel zero = conc M φ c rel
 concs-nth (M ∷ Ms) φ c rel (suc i) = concs-nth Ms φ c rel i
 
 concretize-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ concretize-program M ⟧₃ ρ₀
-concretize-correct M = conc M (λ ()) (λ _ → Con-⌈⌉ ω) (λ ())
+concretize-correct M = conc M (λ ()) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())

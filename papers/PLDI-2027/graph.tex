@@ -19,7 +19,7 @@
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   u, v, w & ::= & c \mid V \mapsto w \mid \nu \mid \pairv{u}{v}
     \mid \mathsf{tup}_i(v) \mid \mathsf{left}(v) \mid \mathsf{right}(v)
-    \mid \langle\rangle \mid \omega
+    \mid \langle\rangle
 \end{array}
 \]
 \noindent where $V, W$ range over finite lists of elements and $i, j \in \mathbb{N}$.
@@ -149,9 +149,10 @@ even if it is never applied. The other elements describe the data of
 our languages: a constant $c$; a pair $\pairv{u}{v}$, which FlatClos
 uses for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
 component $i$ of a tuple is described by $v$; the injections
-$\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; the empty tuple
-$\langle\rangle$; and $\omega$, which fills the positions of an
-environment that hold no variable.
+$\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty tuple
+$\langle\rangle$. The empty tuple also fills the positions of an
+environment that hold no variable, because the semantics requires every
+position of an environment to be nonempty.
 
 \paragraph{Recursion and divergence}
 \iswim\ has no recursion operator. As in the untyped
@@ -178,18 +179,36 @@ of a correctness proof: a relation that follows the source program
 forward cannot carry the absence of elements to the target.
 
 \paragraph{Consistency}
-We depart from \citet{Siek:2017ab} and \citet{Wadler:2020aa} by
-requiring consistency. Two constants are consistent when they are
-equal, and two entries are consistent when consistent inputs lead to
-consistent outputs (Figure~\ref{fig:graph-ops}). The operator $\Lambda$
+Our model adds a requirement of consistency. It complicates the
+semantics, so we first explain why we need it. The most important
+reason is the proof for the delay pass (Section~\ref{sec:approx-lr}).
+A call in FlatClos takes the code from one pair and the environment
+from another, so a closure's meaning may combine the code of one pair
+with the environment of a different pair. Consistency ensures that the
+environments of these pairs are consistent with each other, so that
+the code runs with approximations of its own environment and not with
+the environment of some other closure. The second reason is
+$\kw{case}$. A compiled $\kw{case}$ tests a tag once and takes one
+branch, so the meaning of a $\kw{case}$ must draw from only one of its
+branches. This holds when the meaning of the scrutinee does not
+contain both a $\mathsf{left}$ and a $\mathsf{right}$ element, which
+consistency guarantees.
+
+Consistency has a precedent in the $\lambda$-calculus model that
+\citet{Scott:1982aa} builds from information systems, whose function
+entries pair consistent sets of inputs and outputs. As in the coherent
+domains of \citet{Plotkin:1978aa}, our consistency is pairwise: a set
+is consistent when its elements are pairwise consistent. Two constants
+are consistent when they are equal, and two entries are consistent
+when consistent inputs lead to consistent outputs
+(Figure~\ref{fig:graph-ops}). This rule for entries is the consistency
+of a function space of information systems \citep{Larsen:1984aa} in
+its pairwise form \citep{Schwichtenberg:2006aa}. The operator $\Lambda$
 builds only entries whose inputs are consistent, which rules out
 entries such as $[1, 2] \mapsto 3$ in the meaning of
 $\lambda x.\, x + 1$, whose input describes no single argument. The
 meaning of a term in a consistent environment is consistent, which we
 prove for the languages whose correctness proofs rely on it.
-Consistency is the graph model's analogue of determinism. For example,
-the meaning of a closed program contains at most one constant, and the
-meaning of a $\kw{case}$ draws from only one of its branches.
 
 \paragraph{The properties of the semantics}
 %% Lemma: agda/proof/Framework/GraphModel/Ops.agda, Λ-β (and ΛΛ-β for
@@ -204,15 +223,14 @@ premises come from the definitions of $\Lambda$ and application, which
 use only entries whose input is nonempty and consistent.
 
 \begin{lemma}[$\beta$]\label{lem:beta}
-\leavevmode
+Call a function $F$ on sets \emph{finitary} at $D$ if every
+$w \in F(D)$ is in $F(V)$ for some nonempty finite $V \subseteq D$, and
+similarly for a function of two sets.
 \begin{enumerate}
-\item Let $F$ be a monotone function on sets such that every
-  $w \in F(D)$ is in $F(V)$ for some nonempty finite $V \subseteq D$.
-  If $D$ is consistent, then $\Lambda(F) \app D = F(D)$.
-\item Let $F$ be a function of two sets such that every
-  $w \in F(T, E)$ is in $F(V, U)$ for some nonempty finite
-  $V \subseteq T$ and $U \subseteq E$. If $T$ and $E$ are consistent,
-  then $F(T, E) \subseteq (\Lambda(\mlam{X} \Lambda(\mlam{Y} F(X, Y))) \app T) \app E$.
+\item If $F$ is monotone and finitary at a consistent $D$, then
+  $\Lambda(F) \app D = F(D)$.
+\item If $F$ is finitary at consistent $T$ and $E$, then
+  $F(T, E) \subseteq (\Lambda(\mlam{X} \Lambda(\mlam{Y} F(X, Y))) \app T) \app E$.
 \end{enumerate}
 \end{lemma}
 

@@ -23,7 +23,8 @@ module Mu.proof.Adequacy.Soundness where
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq) renaming (δ to δᴾ)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain hiding (ρ₀) renaming (const to dconst)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; 𝒞; Λ; proj; Λ-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (inl to inlD; inr to inrD)
@@ -76,7 +77,7 @@ private
 𝓔 : ∀ {Γ} → Env Γ → E.Env Value
 
 {- no ISWIMμ program has a value of a code type -}
-𝒱 (code N) = ⌈ ω ⌉
+𝒱 (code N) = ⌈ ⟨⟩ ⌉
 𝒱 (pack (code N) (tup γ)) = Λ ⟨ (λ X → ⟦ N ⟧ (X • 𝓔 γ)) , ptt ⟩
 𝒱 (const {B} k) = ℬ B k ptt
 𝒱 (tup vs) = 𝒯L (𝒱s vs)
@@ -102,7 +103,7 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 
 𝒱-ne : ∀ {A} (v : Val A) → nonempty (𝒱 v)
 𝒱s-ne : ∀ {Δ} (vs : All Val Δ) → AllNE (𝒱s vs)
-𝒱-ne (code N) = ⟨ ω , refl ⟩
+𝒱-ne (code N) = ⟨ ⟨⟩ , refl ⟩
 𝒱-ne (pack (code N) (tup γ)) = ⟨ ν , tt ⟩
 𝒱-ne (const k) = ⟨ dconst k , ⟨ refl , refl ⟩ ⟩
 𝒱-ne (tup []) = ⟨ ⟨⟩ , tt ⟩
@@ -115,14 +116,14 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱s-ne (v ∷ vs) = ⟨ 𝒱-ne v , 𝒱s-ne vs ⟩
 
 𝓔-ne : ∀ {Γ} (γ : Env Γ) → E.nonempty-env (𝓔 γ)
-𝓔-ne [] x = ⟨ ω , refl ⟩
+𝓔-ne [] x = ⟨ ⟨⟩ , refl ⟩
 𝓔-ne (v ∷ γ) zero = 𝒱-ne v
 𝓔-ne (v ∷ γ) (suc x) = 𝓔-ne γ x
 
 𝒱-con : ∀ {A} (v : Val A) → Con (𝒱 v)
 𝒱s-con : ∀ {Δ} (vs : All Val Δ) → AllCon (𝒱s vs)
 𝓔-con : ∀ {Γ} (γ : Env Γ) → Con-env (𝓔 γ)
-𝒱-con (code N) = Con-⌈⌉ ω
+𝒱-con (code N) = Con-⌈⌉ ⟨⟩
 𝒱-con (pack (code N) (tup γ)) =
   lower (Λ-consis _ _ ⟨ (λ X X' X~ → lift (proj₂ (proj₂ (ok N)) (E.•-~ (Every _~_) (𝓔-con γ) X~))) , ptt ⟩)
 𝒱-con (const {B} k) = lower (ℬ-consis B k ptt ptt ptt)
@@ -132,7 +133,7 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱-con (fold v) = 𝒱-con v
 𝒱s-con [] = tt
 𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
-𝓔-con [] x = Con-⌈⌉ ω
+𝓔-con [] x = Con-⌈⌉ ⟨⟩
 𝓔-con (v ∷ γ) zero = 𝒱-con v
 𝓔-con (v ∷ γ) (suc x) = 𝓔-con γ x
 
