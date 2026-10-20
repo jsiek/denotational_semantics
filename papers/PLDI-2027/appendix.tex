@@ -534,3 +534,285 @@ $R_{X,Y}$ maps $\kw{rdi}$ to $X$, $\kw{rsi}$ to $Y$, and $\kw{rax}$ to
 $\{\langle\rangle\}$; the tables are as in GlobalFun. A program means
 the meaning of its main function body in $\rho_0$ and $R_0$, with the flag
 $\{\langle\rangle\}$.
+
+\section{The Compiler Passes}
+\label{app:passes}
+
+%% From definitions.tex (Compilation) and agda/Mu/Compiler/*.agda.
+This appendix defines each pass of Section~\ref{sec:compiler} as a
+recursive function on the syntax of Figure~\ref{fig:grammars}. In each
+pass, the clauses not shown are homomorphic: they translate the
+subterms and rebuild the same form. No pass inspects a recursive type;
+$\kw{fold}$ and $\kw{unfold}$ pass through every pass as operations
+with one operand.
+
+\subsection{\pass{simplify} (\iswim\ to \iswim)}
+
+\pass{simplify} carries what it knows about each variable,
+$E(x) = (T, K)$: the term $T$ that replaces $x$ (a variable or a small
+value), and what $x$ is known to be, $K$: a value, a function
+$\langle \lambda y.\, N, E_f \rangle$ (its body before simplification,
+with what was known where it was defined), or nothing ($\bot$). On a
+term it returns the simplified term, $\pass{simp}_E(M)$, and what is
+known about its value, $\mathcal{K}_E(M)$. Values are variables,
+$\lambda$-abstractions, constants, and tuples, injections, and
+$\kw{fold}$s of values. A value is \emph{small} when it is a variable,
+a constant, $\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one
+of those; only small values are duplicated. A value is known to be
+itself, and $\mathcal{K}_E(\lambda y.\, N) = \langle \lambda y.\, N, E
+\rangle$. Under a binder that stays, the bound variable is itself and
+is known only as itself ($E'$ below). Binding a body to an operand,
+$\pass{let}_E(x.\,N, M)$, is shared by $\kw{let}$, $\beta$, and
+inlining. With $V = \pass{simp}_E(M)$:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{let}_E(x.\,N, M) & = & \pass{simp}_{E[x{:=}(V, \mathcal{K}_E(M))]}(N)
+    \quad \text{if } V \text{ is small}\\
+  & = & \kw{let}\;x = V\;\kw{in}\;\pass{simp}_{E[x{:=}(x, \mathcal{K}_E(M))]}(N)
+    \quad \text{if } V \text{ is another value}\\
+  & = & \kw{let}\;x = V\;\kw{in}\;\pass{simp}_{E'}(N)
+    \quad \text{otherwise}\\[4pt]
+  \pass{simp}_E(x) & = & T \quad \text{where } E(x) = (T, K)\\
+  \pass{simp}_E(\kw{let}\;x = M\;\kw{in}\;N) & = & \pass{let}_E(x.\,N, M)\\
+  \pass{simp}_E((\lambda x.\, N)\;M) & = & \pass{let}_E(x.\,N, M)\\
+  \pass{simp}_E(L\;M) & = & \pass{let}_{E_f}(x.\,N, M)
+    \quad \text{if } \mathcal{K}_E(L) = \langle \lambda x.\, N, E_f \rangle \text{ (inlining)}\\
+  \pass{simp}_E(\kw{prim}_p\;L\;M) & = & \mathit{res}(\delta(p, n, m))
+    \quad \text{if } \mathcal{K}_E(L) = n \text{ and } \mathcal{K}_E(M) = m\\
+  \pass{simp}_E(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = & \pass{simp}_{E[x{:=}(K, K)]}(M)
+    \quad \text{if } \mathcal{K}_E(L) = \kw{inl}\;K \text{ and } K \text{ is small}\\
+  \pass{simp}_E(\kw{get}_i\,L) & = & K_i
+    \quad \text{if } \mathcal{K}_E(L) = \kw{tuple}\;(K_1, \ldots, K_n) \text{ and } K_i \text{ is small}\\
+  \mathcal{K}_E(\kw{get}_i\,L) & = & K_i
+    \quad \text{if } \mathcal{K}_E(L) = \kw{tuple}\;(K_1, \ldots, K_n)\\
+  \pass{simp}_E(\kw{unfold}\;L) & = & K
+    \quad \text{if } \mathcal{K}_E(L) = \kw{fold}\;K \text{ and } K \text{ is small}\\
+  \mathcal{K}_E(\kw{unfold}\;L) & = & K
+    \quad \text{if } \mathcal{K}_E(L) = \kw{fold}\;K\\[4pt]
+  \pass{simplify}(M) & = & \pass{simp}_{x \mapsto (x, x)}(M)
+\end{array}
+\]
+and likewise for $\kw{inr}$. Here $\mathit{res}(o)$ is the term of a
+primitive's result: a constant, or $\kw{inl}\;\langle\rangle$ or
+$\kw{inr}\;\langle\rangle$ for $\kw{eq}$. A $\kw{fold}$ is not small,
+so a $\kw{fold}$ of a value stays bound by a $\kw{let}$ and known. The
+inlining clause simplifies the known function's body again, at the
+call, from the source, under $E_f$ and what is known about the operand,
+and replaces the call if the result has at most 24 nodes. To keep
+$\pass{simp}$ structurally recursive, it carries fuel (4), which
+inlining decreases. \pass{simplify} drops only evaluations whose value
+is known, which have no effect, and otherwise keeps the order of
+evaluation: an operand that is not a value is never substituted but
+stays bound by a $\kw{let}$.
+
+\subsection{\pass{enclose} (\iswim\ to Clos)}
+
+\pass{enclose} makes each function a closure that captures every
+variable in scope, in order, so its body is unchanged:
+\[
+  \pass{enclose}(\lambda y.\, N) =
+    \kw{clos}\;(x_1, \ldots, x_k, y.\,\pass{enclose}(N))\;(x_1, \ldots, x_k)
+\]
+where $x_1, \ldots, x_k$ are the variables in scope.
+
+\subsection{\pass{optimize} (Clos to Clos)}
+
+\pass{optimize} removes the captured values that the code does not use.
+Closures are strict, so a captured term is dropped only when the code
+does not use its name and the term is a variable, which is all that
+\pass{enclose} captures:
+\[
+\begin{array}{@{}l@{}}
+  \pass{optimize}(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
+  \qquad \kw{clos}\;(x_{i_1}, \ldots, x_{i_k}, y.\,\pass{optimize}(N))\;
+    (\pass{optimize}(M_{i_1}), \ldots, \pass{optimize}(M_{i_k}))\\
+  \qquad \text{where } \{ i_1 < \cdots < i_k \} =
+    \{ i \mid x_i \in \mathit{FV}(N) \text{ or } M_i \text{ is not a variable} \}
+\end{array}
+\]
+
+\subsection{\pass{concretize} (Clos to EnvClos)}
+
+Each closure stores its captured values in one tuple, bound to $z$ in
+its code, and the code reads the name $x_i$ as $\kw{get}_i\,z$. The map
+$\varphi$ sends each Clos variable to a reference, $x$ or
+$\kw{get}_i\,z$, in EnvClos:
+\[
+\begin{array}{@{}l@{}}
+  \pass{concretize}_\varphi(x) = \varphi(x)\\
+  \pass{concretize}_\varphi(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
+  \qquad \kw{clos}\;(z, y.\,\pass{concretize}_{\varphi'}(N))\;
+      (\pass{concretize}_\varphi(M_1), \ldots, \pass{concretize}_\varphi(M_n))\\
+  \qquad \text{where } \varphi' =
+    \{ y \mapsto y,\; x_1 \mapsto \kw{get}_1\,z,\; \ldots,\; x_n \mapsto \kw{get}_n\,z \}
+\end{array}
+\]
+Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
+and a program is concretized with the empty map.
+
+\subsection{\pass{delay} (EnvClos to FlatClos)}
+
+A closure becomes a pair of its code and the tuple of its captured
+values, and an application opens the closure and calls its code:
+\[
+  \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) =
+    \kw{pack}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))
+\]
+\[
+  \pass{delay}(L\;M) = \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
+\]
+
+\subsection{\pass{globalize} (FlatClos to GlobalFun)}
+
+The code of every function becomes a global definition, and the code
+itself a reference to it. The pass threads the list $\vec{d}$ of the
+definitions made so far, from left to right. For code, it first
+globalizes the body, so the functions nested in it become definitions
+first. For any other form $\mathit{op}$ with subterms $A_1, \ldots,
+A_n$ (each under its binders $\bar{x}_i$):
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{glob}(x, \vec{d}) & = & (x, \vec{d})\\
+  \pass{glob}(\kw{code}\;(z, y.\,N), \vec{d}) & = &
+    (f_{|\vec{d}_1|},\; \vec{d}_1, \kw{code}\;(z, y.\,N'))\\
+  & & \quad \text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d})\\
+  \pass{glob}(\mathit{op}(\bar{x}_1.\,A_1, \ldots, \bar{x}_n.\,A_n), \vec{d}_0) & = &
+    (\mathit{op}(\bar{x}_1.\,A'_1, \ldots, \bar{x}_n.\,A'_n), \vec{d}_n)\\
+  & & \quad \text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1})\\[4pt]
+  \pass{globalize}(M) & = & (\vec{d};\; M')
+    \quad \text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
+\end{array}
+\]
+Each definition refers only to the definitions made before it.
+
+\subsection{\pass{remove complex operands} (GlobalFun to Mon)}
+
+Every complex operand is bound to a fresh variable by a $\kw{let}$,
+from left to right, so the operands of every operation become atoms. A
+$\kw{case}$ or $\kw{let}$ is complex; its branches and body are
+translated in place, so nothing is duplicated. An operand that is an
+atom stays in place; any other operand is translated and bound to a
+fresh variable:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{atomize}(a) & = & (\epsilon;\; a)\\
+  \pass{atomize}(M) & = & (x{=}\pass{rco}(M);\; x)
+    \quad \text{otherwise } (x \text{ fresh})\\
+  \pass{atomize}(M_1, \ldots, M_n) & = & (\vec{b}_1 \cdots \vec{b}_n;\; a_1, \ldots, a_n)
+    \quad \text{where } (\vec{b}_i; a_i) = \pass{atomize}(M_i)\\
+  \pass{lets}(x_1{=}N_1 \cdots x_k{=}N_k,\; N) & = &
+    \kw{let}\;x_1 = N_1\;\kw{in}\;\cdots\;\kw{let}\;x_k = N_k\;\kw{in}\;N\\[4pt]
+  \pass{rco}(a) & = & a\\
+  \pass{rco}(o\;(M_1, \ldots, M_n)) & = & \pass{lets}(\vec{b},\; o\;(a_1, \ldots, a_n))\\
+  & & \quad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(M_1, \ldots, M_n)\\
+  \pass{rco}(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = &
+    \pass{lets}(\vec{b},\; \kw{case}\;a\;(x.\,\pass{rco}(M))\;(y.\,\pass{rco}(N)))\\
+  & & \quad \text{where } (\vec{b}; a) = \pass{atomize}(L)\\
+  \pass{rco}(\kw{let}\;x = M\;\kw{in}\;N) & = & \kw{let}\;x = \pass{rco}(M)\;\kw{in}\;\pass{rco}(N)\\
+  \pass{rco}(\kw{code}\;(z, y.\,N)) & = & \kw{code}\;(z, y.\,\pass{rco}(N))\\
+  \pass{rco}((d_0, \ldots, d_{m-1};\; M)) & = & (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M))
+\end{array}
+\]
+where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
+
+\subsection{\pass{lift locals} (Mon to Imp)}
+
+A $\kw{let}$ becomes an assignment to the next slot of the frame, and
+the variable a $\kw{case}$ binds becomes the slot its payload is
+written to. A variable becomes the slot at its level $\ell(x)$, the
+number of variables bound before it; in a definition
+$\kw{code}\;(z, y.\,N)$, $\ell(z) = 0$ and $\ell(y) = 1$. With $\Gamma$
+the variables in scope:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{lift}(x) & = & \ell(x)\\
+  \pass{lift}(\kw{let}\;x = M\;\kw{in}\;N) & = &
+    |\Gamma| \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)\\
+  \pass{lift}(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
+    \kw{case}\;\pass{lift}(a)\;(|\Gamma|.\,\pass{lift}(M))\;(|\Gamma|.\,\pass{lift}(N))\\
+  \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}(N)\\
+  \pass{lift}((d_0, \ldots, d_{m-1};\; M)) & = &
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}(M))
+\end{array}
+\]
+and every other form is a simple expression, unchanged.
+
+\subsection{\pass{explicate control} (Imp to CFG)}
+
+$\pass{tail}(e)$ translates $e$ in tail position, and
+$\pass{assign}(e, x, k)$ translates ``write $e$ to slot $x$, then run
+the tail $k$'' in continuation-passing style. A $\kw{case}$ on the
+right of an assignment adds $k$ as a block, the join point, to which
+both branches jump. $\pass{add}(t)$ adds the block $t$ and returns its
+label. Both functions thread the blocks made so far, each typed over
+the older ones, so a label made earlier stays valid as more blocks are
+added.
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{tail}(r) & = & \kw{return}\;r\\
+  \pass{tail}(x \mathrel{:=} e_1;\; e_2) & = & \pass{assign}(e_1, x, \pass{tail}(e_2))\\
+  \pass{tail}(\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)) & = & \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)
+    \quad \text{where } l_i = \pass{add}(\pass{tail}(e_i))\\[4pt]
+  \pass{assign}(r, x, k) & = & x \mathrel{:=} r;\; k\\
+  \pass{assign}(x' \mathrel{:=} e_1;\; e_2, x, k) & = & \pass{assign}(e_1, x', \pass{assign}(e_2, x, k))\\
+  \pass{assign}(\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2), x, k) & = & \kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)\\
+  & & \quad \text{where } l = \pass{add}(k) \text{ and } l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))\\[4pt]
+  \pass{explicate}(e) & = & (\vec{t};\; t)
+    \quad \text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
+\end{array}
+\]
+and $\pass{explicate}$ maps over the definitions and main expression of
+a program.
+
+\subsection{\pass{select instructions} (CFG to x86$\mu$)}
+
+The code of a simple expression $r$ is selected in continuation-passing
+style, $\pass{sel}(r, o, k)$: its value goes to $o$, which is either
+$\kw{rax}$ (written $\kw{ret}$) or the next slot $x$ (written
+$\kw{to}\;x$), and then the instructions $k$ run. We write $\bar{o}$
+for the destination, $\%\kw{rax}$ or $x$. An operand of a function
+type or a sum type is a slot $x$, because no constant has those types,
+so $\kw{callc}$ and $\kw{case}$ take a slot.
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{sel}(a, o, k) & = & \kw{movq}\; a, \bar{o};\; k\\
+  \pass{sel}(\kw{pack}\;a_1\;a_2, o, k) & = & \kw{alloc}\; \kw{pair}(a_1, a_2), \bar{o};\; k\\
+  \pass{sel}(\kw{callc}\;x\;a, o, k) & = &
+    \kw{fst}\; x, \%\kw{rax};\; \kw{snd}\; x, \%\kw{rdi};\; \kw{movq}\; a, \%\kw{rsi};\\
+  & & \kw{callq}\; \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{o};\; k\\
+  \pass{sel}(\kw{tuple}\;(a_1, \ldots, a_n), o, k) & = & \kw{alloc}\; \kw{tuple}(a_1, \ldots, a_n), \bar{o};\; k\\
+  \pass{sel}(\kw{get}_i\,a, o, k) & = & \kw{load}\; \kw{get}_i\; a, \bar{o};\; k\\
+  \pass{sel}(\kw{inl}\;a, o, k) & = & \kw{alloc}\; \kw{inl}(a), \bar{o};\; k
+    \qquad \text{and likewise for } \kw{inr}\\
+  \pass{sel}(\kw{prim}_{\kw{sub}}\;a_1\;a_2, o, k) & = &
+    \kw{movq}\; a_1, \%\kw{rax};\; \kw{subq}\; a_2, \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{o};\; k\\
+  \pass{sel}(\kw{prim}_{\kw{eq}}\;a_1\;a_2, o, k) & = & \kw{cmpq}\; a_2, a_1;\; \kw{sete}\; \bar{o};\; k\\
+  \pass{sel}(\kw{fold}\;a, o, k) & = & \kw{movq}\; \kw{fold}\;a, \bar{o};\; k\\
+  \pass{sel}(\kw{unfold}\;a, o, k) & = & \kw{movq}\; \kw{unfold}\;a, \bar{o};\; k\\[4pt]
+  \pass{tail}(\kw{return}\;r) & = & \pass{sel}(r, \kw{ret}, \kw{retq})\\
+  \pass{tail}(x \mathrel{:=} r;\; t) & = & \pass{sel}(r, \kw{to}\;x, \pass{tail}(t))\\
+  \pass{tail}(\kw{goto}\;l) & = & \kw{jmp}\; l\\
+  \pass{tail}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) & = & \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)
+\end{array}
+\]
+The frame of a function body has as many slots as the deepest slot its
+tails write. With $\Delta$ the frame a tail starts in:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \mathit{depth}(\kw{return}\;r) = \mathit{depth}(\kw{goto}\;l) & = & |\Delta|\\
+  \mathit{depth}(x \mathrel{:=} r;\; t) & = & \max(|\Delta|, \mathit{depth}(t))\\
+  \mathit{depth}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
+  \pass{select}((t_0, \ldots, t_{j-1};\; t)) & = &
+    (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\; \pass{tail}(t))\\
+  \pass{select}^{+}((t_0, \ldots, t_{j-1};\; t)) & = &
+    (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\\
+  & & \quad \kw{movq}\; \%\kw{rdi}, 0;\; \kw{movq}\; \%\kw{rsi}, 1;\; \pass{tail}(t))
+\end{array}
+\]
+with $n = \max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}),
+\mathit{depth}(t))$. The main function body uses $\pass{select}$, and
+each definition uses $\pass{select}^{+}$, whose prologue moves the
+environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
+1: $\pass{select}((b_0, \ldots, b_{m-1};\; b)) =
+(\pass{select}^{+}(b_0), \ldots, \pass{select}^{+}(b_{m-1});\;
+\pass{select}(b))$.
