@@ -250,16 +250,21 @@ second conjunct says that each result $w$ in $W$ is produced by a
 usable entry of $V$ whose arguments are among $U$. The first conjunct,
 $U \subseteq \mathsf{args}(V)$, says that $U$ contains only arguments
 that some usable entry of $V$ take, so the arguments are shallower
-than $V$, which the recursion needs. One layer
-${\trianglerighteq^{Q}}$ of the relation has four clauses: the
-constants of $V$ are in $D$; if $V$ is nonempty, so is $D$; every
-batch of calls of $V$ on arguments related to a source set $E$
-produces results related to $D \app E$; and every projection of $V$ is
-related to the same projection of $D$. The third clause is the only
-place where $\car$ and $\cdr$ meet, and they meet inside the finite
-list $V$.
+than $V$, which the recursion needs.
+
+One layer ${\trianglerighteq^{Q}}$ of the relation has four clauses:
+\begin{enumerate}
+  \item the constants of $V$ are in $D$;
+  \item if $V$ is nonempty, so is $D$;
+  \item every batch of calls to $V$ on argument $U$ related to $E$
+    produces a $W$ related to $D \app E$; and
+  \item every projection of $V$ is related to the same projection of $D$.
+\end{enumerate}
+The third clause is the only place where $\car$ and $\cdr$ meet, and
+they meet inside the finite list $V$.
 
 \paragraph{Termination}
+
 The definition is by recursion on the depth of $V$. The relation
 occurs at the arguments of a call, in negative position, which is what
 made the relation between two infinite sets ill founded. Here every
