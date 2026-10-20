@@ -114,35 +114,35 @@ $v \sqsubseteq \den{\mathit{delay}(M)}\rho'$ is a routine induction on
 $M$.
 
 The backward half, reflection, must show that every element the target
-produces is accounted for by the source, and here the representation of
-closures gets in the way. To see how, consider a function that adds
-nine, $\lambda y.\, x + y$ in an environment where $x$ is $9$. In
-EnvClos its meaning is a set of entries such as $[1] \mapsto 10$ and
-$[6] \mapsto 15$. After delay, its code takes the environment as an
-extra argument, and the meaning of the code is a table with entries for
-\emph{every} environment, including $[x{=}0] \mapsto ([6] \mapsto 6)$,
-even though the program only ever pairs this code with the environment
-$x{=}9$. So the target's meanings contain code--environment
-combinations that correspond to no source function. Worse, a call takes
-the code from $\car$ and the environment from $\cdr$
+produces is accounted for by the source, and here the representation
+of closures gets in the way. To see how, consider the function
+$\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos
+its meaning is a set of entries such as $[1] \mapsto 10$ and $[6]
+\mapsto 15$. After delay, its code takes the environment as an extra
+parameter, and the meaning of the code is a table with entries for
+\emph{every} environment, such as the following two:
+\[
+  [9] \mapsto ([1] \mapsto 10) \qquad
+  [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
+\]
+even though the program only applies this function with the
+environment $[9]$. So the target's meanings contain code--environment
+combinations that correspond to no source function. Worse, a call
+takes the code from $\car$ and the environment from $\cdr$
 \emph{separately}, so a result may combine the code entry of one pair
-with the environment of another. No single target element corresponds
-to a single source element, and the relation that worked for
-preservation has no counterpart for reflection.
+with the environment of another. 
 
 \paragraph{Relations that do not work}
-We tried the natural alternatives, and each
-failure points to a piece of the solution.
+We tried several natural alternatives, and each failure points to a
+piece of the solution.
 \begin{itemize}
-\item \emph{Relating single elements}, a target element to a source
-  element, works for every construct except the call, because of the
-  mixing of $\car$ and $\cdr$ described above.
-\item \emph{Relating whole sets on both sides} handles the mixing, but
-  the function case then mentions the relation in both positive and
-  negative positions, so the definition is not well founded. A
-  step-indexed relation would guard the recursive occurrence with a
-  ``later'' modality and discharge it at a step of evaluation; a
-  denotational semantics has no steps.
+\item \emph{Relating a single element to a single element} works for
+  every construct except the call, because of the mixing of $\car$ and
+  $\cdr$ described above.
+\item \emph{Relating a possibly infinite set on both sides} handles
+  the mixing, but the function case mentions the relation in both
+  positive and negative positions, so the definition is not well
+  founded.
 \item \emph{Indexing by one target element within its whole target set}
   comes closest, but the function case must relate the entire argument
   set, which is infinite and cannot be shrunk to match the finite index.
