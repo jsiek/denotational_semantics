@@ -328,7 +328,7 @@ it assigns, like a $\kw{let}$:
 
 \subsection{The CFG Language}
 
-A tail is typed by the type $R$ of the body's result, the list
+A tail is typed by the type $R$ of the function body's result, the list
 $\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
 blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
 index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
@@ -355,8 +355,8 @@ $|\Delta'|$ forgets the slots from $|\Delta'|$ on.
          \Sigma; R; \vec{\Delta}; \Delta \vdash t}
         {\Sigma; R; \Delta \vdash (t_0, \ldots, t_{j-1};\; t)}
 \]
-A definition's body starts in the frame $\kw{tup}(\Delta_k), A_k$ with
-result type $C_k$, and the main body in the empty frame. A tail means a
+A definition's function body starts in the frame $\kw{tup}(\Delta_k), A_k$ with
+result type $C_k$, and the main function body in the empty frame. A tail means a
 set, given its frame $\sigma$ and the meanings $B$ of the blocks it can
 see. Writing slot $x$ cuts the frame to the slots before $x$, written
 $\sigma|_x$, and then assigns $x$:
@@ -372,10 +372,10 @@ $\sigma|_x$, and then assigns $x$:
       \mlam{X} B(l_2)(\sigma|_x[x{:=}X]))
 \end{array}
 \]
-The blocks of a body $(t_0, \ldots, t_{j-1};\, t)$ mean
+The blocks of a function body $(t_0, \ldots, t_{j-1};\, t)$ mean
 $B(l)(\sigma) = \den{t_l}_{T,B_l}\sigma$, where $B_l$ gives the blocks
-older than $l$, and the body means $\den{t}_{T,B}$. Definitions and
-programs are given meaning as in Imp, with the body in place of the
+older than $l$, and the function body means $\den{t}_{T,B}$. Definitions and
+programs are given meaning as in Imp, with the function body in place of the
 expression and no continuation.
 
 \subsection{The x86$\mu$ Language}
@@ -389,7 +389,7 @@ function type), and whether the flag $F$ is set. A register holds a
 value of a type $A$, the code $\kw{code}_\alpha(A \rightarrow C)$ or the
 environment $\kw{tup}(\alpha)$ of the open closure, or nothing; the
 type variable $\alpha$ stands for the hidden types of the environment
-of the open closure. A body declares the size $n$ of its frame. The
+of the open closure. A function body declares the size $n$ of its frame. The
 operands are typed by these rules, with the atoms typed as in Imp in
 the frame of the state:
 \[
@@ -529,8 +529,8 @@ where a block means $B(l)(\sigma) = \den{s_l}_{B_l}\,\sigma\,R_0\,
 $\{\langle\rangle\}$ and $B_l$ giving the blocks older than $l$. A
 definition means
 $T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{s}_B\,\rho_0\,R_{X,Y}\,
-\{\langle\rangle\}))$ for its body $s$ with blocks $B$, where
+\{\langle\rangle\}))$ for its function body $s$ with blocks $B$, where
 $R_{X,Y}$ maps $\kw{rdi}$ to $X$, $\kw{rsi}$ to $Y$, and $\kw{rax}$ to
 $\{\langle\rangle\}$; the tables are as in GlobalFun. A program means
-the meaning of its main body in $\rho_0$ and $R_0$, with the flag
+the meaning of its main function body in $\rho_0$ and $R_0$, with the flag
 $\{\langle\rangle\}$.

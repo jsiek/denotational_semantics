@@ -212,8 +212,8 @@ Finally, \pass{select instructions} produces x86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
 registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
 and an abstract heap. A program $P$ has the same structure as in CFG: a
-body $b$ for each global definition and one for the main program. A
-body $(n;\, s_0, \ldots, s_{j-1};\, s)$ declares the number $n$ of
+function body $b$ for each global definition and one for the main
+program. A function body $(n;\, s_0, \ldots, s_{j-1};\, s)$ declares the number $n$ of
 slots in its frame and consists of numbered blocks $s_0, \ldots,
 s_{j-1}$ and a starting sequence $s$. A sequence $s$ is a list of
 instructions $i$ that ends by returning ($\kw{retq}$), by jumping to a
