@@ -173,8 +173,8 @@ paragraph on termination.
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \entryin{U_a}{w}{V} & \iff &
-    \exists\, U_e, t.\;
-    \pairv{U_e \mapsto (U_a \mapsto w)}{t} \in V
+    \exists\, U_e.\;
+    (U_e \mapsto (U_a \mapsto w)) \in \car(V)
     \;\land\; U_e \neq [\,]
     \;\land\; U_e \subseteq \cdr(V)
 \end{array}
@@ -236,14 +236,14 @@ graph.  A target closure is a set of pairs $\pairv{u}{t}$ of code and
 environment, and the code $u$, a curried function, has entries of the
 form $U_e \mapsto (U_a \mapsto w)$: given the environment $U_e$, it
 returns a function that maps the arguments $U_a$ to $w$. We write
-$\entryin{U_a}{w}{V}$ when $V$ contains such a pair \emph{and} the
-environments $U_e$ are among the environments $\cdr(V)$ that $V$
-itself provides. The second condition is what makes the relation sound
+$\entryin{U_a}{w}{V}$ when such an entry is among the codes $\car(V)$
+\emph{and} the environments $U_e$ are among the environments $\cdr(V)$
+that $V$ itself provides. The second condition is what makes the relation sound
 in the presence of junk: a code entry for an environment that the
 program never supplies, such as the entry for $x{=}2$ in the example
-above, does not appear in a usable entry. Because a call takes the
-code from $\car$ and the environment from $\cdr$, the code and the
-environment of a usable entry may come from different pairs of $V$.
+above, does not appear in a usable entry. Just as a call $D' \callop E'$ takes the
+code from $\car(D')$ and the environment from $\cdr(D')$, the code and
+the environment of a usable entry may come from different pairs of $V$.
 
 A \emph{batch of calls} $\callsto{V}{U}{W}$ then says two things.  The
 second conjunct says that each result $w$ in $W$ is produced by a
@@ -260,8 +260,9 @@ One layer ${\trianglerighteq^{Q}}$ of the relation has four clauses:
     produces a $W$ related to $D \app E$; and
   \item every projection of $V$ is related to the same projection of $D$.
 \end{enumerate}
-The third clause is the only place where $\car$ and $\cdr$ meet, and
-they meet inside the finite list $V$.
+The third clause is where the $\car$ and $\cdr$ of the call operator
+meet: through usable entries, the code comes from $\car(V)$ and the
+environments from $\cdr(V)$, both within the finite list $V$.
 
 \paragraph{Termination}
 
