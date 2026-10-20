@@ -38,8 +38,8 @@ data Exp (Σ : List DSig) (Γ : Ctx) : Type → Set where
   case : ∀ {A B C} → Atm Σ Γ (A ⊹ B) → Exp Σ (A ∷ Γ) C → Exp Σ (B ∷ Γ) C → Exp Σ Γ C
   prim : (p : Prim) → Atm Σ Γ (base Int) → Atm Σ Γ (base Int) → Exp Σ Γ (out-ty p)
   let′ : ∀ {A B} → Exp Σ Γ A → Exp Σ (A ∷ Γ) B → Exp Σ Γ B
-  fold : ∀ {A c} → Atm Σ Γ (unroll A {c}) → Exp Σ Γ (μ A {c})
-  unfold : ∀ {A c} → Atm Σ Γ (μ A {c}) → Exp Σ Γ (unroll A {c})
+  fold : ∀ {A} → Atm Σ Γ (unroll A) → Exp Σ Γ (μ A)
+  unfold : ∀ {A} → Atm Σ Γ (μ A) → Exp Σ Γ (unroll A)
 
 record Program (A : Type) : Set where
   constructor program

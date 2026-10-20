@@ -117,7 +117,7 @@ prim? : ∀ p {A B} → Tm [] A → Tm [] B → Red (Tm [] (out-ty p))
 prim? p (lit Int n) (lit Int m) = to (out p n m)
 prim? p _ _ = error
 
-unfold? : ∀ {C A c} → Tm [] C → C ≡ μ A {c} → Red (Tm [] (unroll A {c}))
+unfold? : ∀ {C A} → Tm [] C → C ≡ μ A → Red (Tm [] (unroll A))
 unfold? (fold V) refl = to V
 unfold? _ _ = error
 

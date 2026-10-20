@@ -31,8 +31,8 @@ data Simple (Σ : List DSig) (Δ : Ctx) : Type → Set where
   inl : ∀ {A B} → Atm Σ Δ A → Simple Σ Δ (A ⊹ B)
   inr : ∀ {A B} → Atm Σ Δ B → Simple Σ Δ (A ⊹ B)
   prim : (p : Prim) → Atm Σ Δ (base Int) → Atm Σ Δ (base Int) → Simple Σ Δ (out-ty p)
-  fold : ∀ {A c} → Atm Σ Δ (unroll A {c}) → Simple Σ Δ (μ A {c})
-  unfold : ∀ {A c} → Atm Σ Δ (μ A {c}) → Simple Σ Δ (unroll A {c})
+  fold : ∀ {A} → Atm Σ Δ (unroll A) → Simple Σ Δ (μ A)
+  unfold : ∀ {A} → Atm Σ Δ (μ A) → Simple Σ Δ (unroll A)
 
 data Exp (Σ : List DSig) (Δ : Ctx) : Type → Set where
   simple : ∀ {A} → Simple Σ Δ A → Exp Σ Δ A

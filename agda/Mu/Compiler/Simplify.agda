@@ -187,7 +187,7 @@ branch (just (val (inr K))) refl = if small K then just (inj₂ K) else nothing
 branch _ _ = nothing
 
 {- the value under a fold that a term of type C = μ A is known to be -}
-unfolded : ∀ {Γ C A c} → Maybe (Known Γ C) → C ≡ μ A {c} → Maybe (Tm Γ (unroll A {c}))
+unfolded : ∀ {Γ C A} → Maybe (Known Γ C) → C ≡ μ A → Maybe (Tm Γ (unroll A))
 unfolded (just (val (fold K))) refl = just K
 unfolded _ _ = nothing
 
@@ -240,7 +240,7 @@ simp-let : ∀ {Δ Γ A B} → ℕ → Facts Δ Γ → Tm (A ∷ Δ) B → Info 
 simp-get : ∀ {Γ Δ A} → Δ ∋ A → Info Γ (tup Δ) → Info Γ A
 simp-case : ∀ {Δ Γ A B C} → ℕ → Facts Δ Γ → Info Γ (A ⊹ B) → Tm (A ∷ Δ) C → Tm (B ∷ Δ) C → Info Γ C
 simp-prim : ∀ {Γ} p → Info Γ (base Int) → Info Γ (base Int) → Info Γ (out-ty p)
-simp-unfold : ∀ {Γ A c} → Info Γ (μ A {c}) → Info Γ (unroll A {c})
+simp-unfold : ∀ {Γ A} → Info Γ (μ A) → Info Γ (unroll A)
 
 simp f E (` x) = E x
 simp f E (lam N) = lam (term (simp f (under E) N)) ∣ just (fun N E)

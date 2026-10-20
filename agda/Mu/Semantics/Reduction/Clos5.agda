@@ -127,7 +127,7 @@ module _ {Σ : List DSig} where
   prim? p (lit Int n) (lit Int m) = to (out p n m)
   prim? p _ _ = error
 
-  unfold? : ∀ {C A c} → Tm Σ [] C → C ≡ μ A {c} → Red (Tm Σ [] (unroll A {c}))
+  unfold? : ∀ {C A} → Tm Σ [] C → C ≡ μ A → Red (Tm Σ [] (unroll A))
   unfold? (fold V) refl = to V
   unfold? _ _ = error
 

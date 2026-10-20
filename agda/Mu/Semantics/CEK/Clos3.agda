@@ -28,7 +28,7 @@ data Val : Type → Set where
   tup : ∀ {Δ} → All Val Δ → Val (tup Δ)
   inl : ∀ {A B} → Val A → Val (A ⊹ B)
   inr : ∀ {A B} → Val B → Val (A ⊹ B)
-  fold : ∀ {A c} → Val (unroll A {c}) → Val (μ A {c})
+  fold : ∀ {A} → Val (unroll A) → Val (μ A)
 
 Env : Ctx → Set
 Env = All Val
@@ -47,8 +47,8 @@ data Cont : Type → Set where
   primL : ∀ {Γ} p → Tm Γ (base Int) → Env Γ → Cont (out-ty p) → Cont (base Int)
   primR : ∀ p → ℤ → Cont (out-ty p) → Cont (base Int)
   letK : ∀ {Γ A B} → Tm (A ∷ Γ) B → Env Γ → Cont B → Cont A
-  foldK : ∀ {A c} → Cont (μ A {c}) → Cont (unroll A {c})
-  unfoldK : ∀ {A c} → Cont (unroll A {c}) → Cont (μ A {c})
+  foldK : ∀ {A} → Cont (μ A) → Cont (unroll A)
+  unfoldK : ∀ {A} → Cont (unroll A) → Cont (μ A)
 
 data State : Set where
   eval : ∀ {Γ A} → Tm Γ A → Env Γ → Cont A → State

@@ -48,7 +48,7 @@ data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
   tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → Src.inl {A} {B} v ≈ Tgt.inl w
   inr≈ : ∀ {A B v w} → v ≈ w → Src.inr {A} {B} v ≈ Tgt.inr w
-  fold≈ : ∀ {A c v w} → v ≈ w → Src.fold {A} {c} v ≈ Tgt.fold w
+  fold≈ : ∀ {A v w} → v ≈ w → Src.fold {A} v ≈ Tgt.fold w
 
 EnvRel : ∀ {Γ Δ} → Ren Γ Δ → Src.Env Γ → Tgt.Env Δ → Set
 EnvRel r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → lookup ρ₁ x ≈ lookup ρ₂ (r x)
@@ -73,8 +73,8 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
   letK : ∀ {Γ Δ A B} {r : Ren Γ Δ} {N : Tm (A ∷ Γ) B} {ρ₁ : Src.Env Γ} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → Src.letK N ρ₁ κ₁ ≈k Tgt.letK (delay (ext r) N) ρ₂ κ₂
-  foldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → Src.foldK {A} {c} κ₁ ≈k Tgt.foldK κ₂
-  unfoldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → Src.unfoldK {A} {c} κ₁ ≈k Tgt.unfoldK κ₂
+  foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.foldK {A} κ₁ ≈k Tgt.foldK κ₂
+  unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.unfoldK {A} κ₁ ≈k Tgt.unfoldK κ₂
 
 data _~_ : Src.State → Tgt.State → Set where
   eval~ : ∀ {Γ Δ A} {r : Ren Γ Δ} {M : Tm Γ A} {ρ₁} {ρ₂ : Tgt.Env Δ} {κ₁ κ₂} → EnvRel r ρ₁ ρ₂ → κ₁ ≈k κ₂

@@ -141,9 +141,9 @@ data _⟶_ {Γ} where
   prim₂ : ∀ {p V M M'} → SV V → M ⟶ M' → prim p V M ⟶ prim p V M'
   letβ : ∀ {A B} {V : Tm Γ A} {N : Tm (A ∷ Γ) B} → SV V → let′ V N ⟶ N [ V ]ₒ
   let₁ : ∀ {A B} {M M' : Tm Γ A} {N : Tm (A ∷ Γ) B} → M ⟶ M' → let′ M N ⟶ let′ M' N
-  fold₁ : ∀ {A c} {M M' : Tm Γ (unroll A {c})} → M ⟶ M' → fold {A = A} {c} M ⟶ fold M'
-  unfoldβ : ∀ {A c} {V : Tm Γ (unroll A {c})} → SV V → unfold (fold {A = A} {c} V) ⟶ V
-  unfold₁ : ∀ {A c} {M M' : Tm Γ (μ A {c})} → M ⟶ M' → unfold M ⟶ unfold M'
+  fold₁ : ∀ {A} {M M' : Tm Γ (unroll A)} → M ⟶ M' → fold {A = A} M ⟶ fold M'
+  unfoldβ : ∀ {A} {V : Tm Γ (unroll A)} → SV V → unfold (fold {A = A} V) ⟶ V
+  unfold₁ : ∀ {A} {M M' : Tm Γ (μ A)} → M ⟶ M' → unfold M ⟶ unfold M'
 
 data _⟶s_ {Γ} where
   here : ∀ {A Δ} {M M' : Tm Γ A} {Ms : All (Tm Γ) Δ} → M ⟶ M' → (M ∷ Ms) ⟶s (M' ∷ Ms)
@@ -318,8 +318,8 @@ data _≽_ {Γ} : ∀ {A} → Tm Γ A → Tm Γ A → Set where
     → app (lam N) W ≽ let′ V' N'
   letv≽ : ∀ {A B} {W V' : Tm Γ A} {N N' : Tm (A ∷ Γ) B} → SV W → W ≽ V' → N [ W ]ₒ ≽ N' [ V' ]ₒ
     → let′ W N ≽ let′ V' N'
-  fold≽ : ∀ {A c} {M M' : Tm Γ (unroll A {c})} → M ≽ M' → fold {A = A} {c} M ≽ fold M'
-  unfold≽ : ∀ {A c} {M M' : Tm Γ (μ A {c})} → M ≽ M' → unfold M ≽ unfold M'
+  fold≽ : ∀ {A} {M M' : Tm Γ (unroll A)} → M ≽ M' → fold {A = A} M ≽ fold M'
+  unfold≽ : ∀ {A} {M M' : Tm Γ (μ A)} → M ≽ M' → unfold M ≽ unfold M'
 
 steps : ∀ {Γ A} {M M₁ M' : Tm Γ A} → M ⟶* M₁ → M₁ ≽ M' → M ≽ M'
 steps RT.ε r = r
@@ -421,8 +421,8 @@ tuple-inv : ∀ {Γ Δ} {W : Tm Γ (tup Δ)} {Ms'} → SV W → W ≽ tuple Ms'
 tuple-inv (P.tuple ws) (tuple≽ rs) = _ , refl , ws , rs
 tuple-inv w (step s _) = ⊥-elim (sv-nostep w s)
 
-fold-inv : ∀ {Γ A c} {W : Tm Γ (μ A {c})} {V'} → SV W → W ≽ fold V'
-  → Σ[ W₀ ∈ Tm Γ (unroll A {c}) ] W ≡ fold W₀ × SV W₀ × W₀ ≽ V'
+fold-inv : ∀ {Γ A} {W : Tm Γ (μ A)} {V'} → SV W → W ≽ fold V'
+  → Σ[ W₀ ∈ Tm Γ (unroll A) ] W ≡ fold W₀ × SV W₀ × W₀ ≽ V'
 fold-inv (P.fold w) (fold≽ r) = _ , refl , w , r
 fold-inv w (step s _) = ⊥-elim (sv-nostep w s)
 

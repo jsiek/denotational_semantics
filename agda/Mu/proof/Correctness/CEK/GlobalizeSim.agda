@@ -67,8 +67,8 @@ data _⊢_⇝_ {Σ} (I : Interp Σ) {Γ} : ∀ {A} → S.Tm Γ A → Tm Σ Γ A 
     → I ⊢ S.case L M N ⇝ case L' M' N'
   prim : ∀ {p L L' M M'} → I ⊢ L ⇝ L' → I ⊢ M ⇝ M' → I ⊢ S.prim p L M ⇝ prim p L' M'
   let′ : ∀ {A B} {M : S.Tm Γ A} {M'} {N : S.Tm (A ∷ Γ) B} {N'} → I ⊢ M ⇝ M' → I ⊢ N ⇝ N' → I ⊢ S.let′ M N ⇝ let′ M' N'
-  fold : ∀ {A c M M'} → I ⊢ M ⇝ M' → I ⊢ S.fold {A = A} {c} M ⇝ fold M'
-  unfold : ∀ {A c M M'} → I ⊢ M ⇝ M' → I ⊢ S.unfold {A = A} {c} M ⇝ unfold M'
+  fold : ∀ {A M M'} → I ⊢ M ⇝ M' → I ⊢ S.fold {A = A} M ⇝ fold M'
+  unfold : ∀ {A M M'} → I ⊢ M ⇝ M' → I ⊢ S.unfold {A = A} M ⇝ unfold M'
 
 {- weakening a term -}
 ⊢-wk : ∀ {Σ₁ Σ₂} {I : Interp Σ₁} {J : Interp Σ₂} {σ : ∀ {s} → Σ₁ ∋ s → Σ₂ ∋ s}
@@ -201,7 +201,7 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Sₘ.tup vs ≈ Tₘ.tup ws
     inl≈ : ∀ {A B v w} → v ≈ w → Sₘ.inl {A} {B} v ≈ Tₘ.inl w
     inr≈ : ∀ {A B v w} → v ≈ w → Sₘ.inr {A} {B} v ≈ Tₘ.inr w
-    fold≈ : ∀ {A c v w} → v ≈ w → Sₘ.fold {A} {c} v ≈ Tₘ.fold w
+    fold≈ : ∀ {A v w} → v ≈ w → Sₘ.fold {A} v ≈ Tₘ.fold w
 
   EnvRel : ∀ {Γ} → Sₘ.Env Γ → Tₘ.Env Σ Γ → Set
   EnvRel = All₂ _≈_
@@ -227,8 +227,8 @@ module Table {Σ : List DSig} (defs : All (Code Σ) Σ) where
     primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.primR p n κ₁ ≈k Tₘ.primR p n κ₂
     letK : ∀ {Γ A B} {N : S.Tm (A ∷ Γ) B} {N' ρ₁ ρ₂ κ₁ κ₂} → N ⇝ N' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂
       → Sₘ.letK N ρ₁ κ₁ ≈k Tₘ.letK N' ρ₂ κ₂
-    foldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.foldK {A} {c} κ₁ ≈k Tₘ.foldK κ₂
-    unfoldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.unfoldK {A} {c} κ₁ ≈k Tₘ.unfoldK κ₂
+    foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.foldK {A} κ₁ ≈k Tₘ.foldK κ₂
+    unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Sₘ.unfoldK {A} κ₁ ≈k Tₘ.unfoldK κ₂
 
   data _~_ : Sₘ.State → Tₘ.State Σ → Set where
     eval~ : ∀ {Γ A} {M : S.Tm Γ A} {M' ρ₁ ρ₂ κ₁ κ₂} → M ⇝ M' → EnvRel ρ₁ ρ₂ → κ₁ ≈k κ₂

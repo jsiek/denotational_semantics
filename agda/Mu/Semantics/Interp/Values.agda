@@ -37,7 +37,7 @@ data Val : Type → Set where
   tup : ∀ {Δ} → All Val Δ → Val (tup Δ)
   inl : ∀ {A B} → Val A → Val (A ⊹ B)
   inr : ∀ {A B} → Val B → Val (A ⊹ B)
-  fold : ∀ {A c} → Val (unroll A {c}) → Val (μ A {c})
+  fold : ∀ {A} → Val (unroll A) → Val (μ A)
 
 Env : Ctx → Set
 Env = All Val
@@ -69,5 +69,5 @@ either (inl v) f g = f v
 either (inr v) f g = g v
 
 {- the value under a fold -}
-unfold-v : ∀ {A c} → Val (μ A {c}) → Val (unroll A {c})
+unfold-v : ∀ {A} → Val (μ A) → Val (unroll A)
 unfold-v (fold v) = v

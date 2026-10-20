@@ -50,7 +50,7 @@ module Rel (Code : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B → Set)
     tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → S.tup vs ≈ T.tup ws
     inl≈ : ∀ {A B v w} → v ≈ w → S.inl {A} {B} v ≈ T.inl w
     inr≈ : ∀ {A B v w} → v ≈ w → S.inr {A} {B} v ≈ T.inr w
-    fold≈ : ∀ {A c v w} → v ≈ w → S.fold {A} {c} v ≈ T.fold w
+    fold≈ : ∀ {A v w} → v ≈ w → S.fold {A} v ≈ T.fold w
 
   obs≈ : ∀ {A} {v : S.Val A} {w} → v ≈ w → S.obs v ≡ T.obs w
   obs≈* : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → S.obs-all vs ≡ T.obs-all ws
@@ -73,7 +73,7 @@ module Rel (Code : ∀ {Δ A B} → C₁ Δ A B → C₂ Δ A B → Set)
   nth≈ : ∀ {Δ A} (i : Δ ∋ A) {v w} → v ≈ w → S.nth i v ≈ T.nth i w
   nth≈ i (tup≈ rs) = lookup₂ rs i
 
-  unfold≈ : ∀ {A c} {v : S.Val (μ A {c})} {w} → v ≈ w → S.unfold-v v ≈ T.unfold-v w
+  unfold≈ : ∀ {A} {v : S.Val (μ A)} {w} → v ≈ w → S.unfold-v v ≈ T.unfold-v w
   unfold≈ (fold≈ r) = r
 
   either≈ : ∀ {A B} {X Y : Set} {R : X → Y → Set} {u : S.Val (A ⊹ B)} {u'} {f₁ f₂ g₁ g₂}

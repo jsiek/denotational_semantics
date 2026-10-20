@@ -177,7 +177,7 @@ prim-𝕍 : ∀ p {D E} (u v : Val Σ (base Int)) → (∀ d → d ∈ D → �
 prim-𝕍 p u v hD hE d ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩
   rewrite int-𝕍 u (hD _ n∈) | int-𝕍 v (hE _ m∈) = 𝕍-δ p n m
 
-unfold-𝕍 : ∀ {A c d} (v : Val Σ (μ A {c})) → 𝕍 d v → 𝕍 d (unfoldᵥ v)
+unfold-𝕍 : ∀ {A d} (v : Val Σ (μ A)) → 𝕍 d v → 𝕍 d (unfoldᵥ v)
 unfold-𝕍 (fold v) r = r
 
 elems-𝕍 : ∀ {Δ A d} (i : Δ ∋ A) (v : Val Σ (tup Δ)) → 𝕍 (tup[ pos i ] d) v → 𝕍 d (lookup (elems v) i)

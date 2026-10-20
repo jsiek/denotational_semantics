@@ -31,7 +31,7 @@ data Value {Γ} : ∀ {A} → Tm Γ A → Set where
   tuple : ∀ {Δ} {Vs : All (Tm Γ) Δ} → Each Value Vs → Value (tuple Vs)
   inl : ∀ {A B} {V : Tm Γ A} → Value V → Value (inl {B = B} V)
   inr : ∀ {A B} {V : Tm Γ B} → Value V → Value (inr {A = A} V)
-  fold : ∀ {A c} {V : Tm Γ (unroll A {c})} → Value V → Value (fold {A = A} {c} V)
+  fold : ∀ {A} {V : Tm Γ (unroll A)} → Value V → Value (fold {A = A} V)
 
 value-red : ∀ {A} {V : Tm [] A} → Value V → red V ≡ val
 values-red : ∀ {Δ} {Vs : All (Tm []) Δ} → Each Value Vs → reds Vs ≡ val

@@ -103,7 +103,7 @@ data _≈_ where
   tup≈ : ∀ {Δ} {vs ws : All S.Val Δ} → All₂ _≈_ vs ws → S.tup vs ≈ S.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → S.inl {A} {B} v ≈ S.inl w
   inr≈ : ∀ {A B v w} → v ≈ w → S.inr {A} {B} v ≈ S.inr w
-  fold≈ : ∀ {A c v w} → v ≈ w → S.fold {A} {c} v ≈ S.fold w
+  fold≈ : ∀ {A v w} → v ≈ w → S.fold {A} v ≈ S.fold w
 
 Desc b v (` y) ρ' = v ≈ lookup ρ' y
 Desc true v (lam N) ρ' = v ≈ clo N ρ'
@@ -148,7 +148,7 @@ obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
 nth≈ : ∀ {Δ A} (i : Δ ∋ A) {v w} → v ≈ w → S.nth i v ≈ S.nth i w
 nth≈ i (tup≈ rs) = lookup₂ rs i
 
-unfold≈ : ∀ {A c} {v w : S.Val (μ A {c})} → v ≈ w → S.unfold-v v ≈ S.unfold-v w
+unfold≈ : ∀ {A} {v w : S.Val (μ A)} → v ≈ w → S.unfold-v v ≈ S.unfold-v w
 unfold≈ (fold≈ r) = r
 
 {- Describing values --------------------------------------------------------------}
@@ -321,9 +321,9 @@ teval (inr M) {ρ'} (v , refl , d) with teval M d
 ... | w , e , r = S.inr w , ev , inr≈ r
   where ev : ∀ ck → S.eval ck ρ' (inr M) ≡ ret (S.inr w)
         ev ck rewrite e ck = refl
-teval (fold {A = A} {c} M) {ρ'} (v , refl , d) with teval M d
+teval (fold {A = A} M) {ρ'} (v , refl , d) with teval M d
 ... | w , e , r = S.fold w , ev , fold≈ r
-  where ev : ∀ ck → S.eval ck ρ' (fold {A = A} {c} M) ≡ ret (S.fold {A} {c} w)
+  where ev : ∀ ck → S.eval ck ρ' (fold {A = A} M) ≡ ret (S.fold {A} w)
         ev ck rewrite e ck = refl
 tevals [] {vs = []} tt = [] , (λ ck → refl) , []
 tevals (M ∷ Ms) {ρ'} {vs = v ∷ vs} (d , ds) with teval M d | tevals Ms ds
@@ -363,7 +363,7 @@ run-terms : ∀ {Δ Γ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {ρ ρ'}
   → Σ[ vs ∈ All S.Val Δ' ] Stable (λ ck → S.evals ck ρ Ms) (ret vs) × Strongs vs (simps fl E Ms) ρ'
 run-get : ∀ {Δ Γ Δ' A} fl (i : Δ' ∋ A) (L : Tm Δ (tup Δ')) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
   → component i (known (simp fl E L)) refl ≡ just K → Σ[ v ∈ S.Val A ] Run (get i L) ρ v × Den v K ρ'
-run-unf : ∀ {Δ Γ A c} fl (L : Tm Δ (μ A {c})) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
+run-unf : ∀ {Δ Γ A} fl (L : Tm Δ (μ A)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
   → unfolded (known (simp fl E L)) refl ≡ just K → Σ[ v ∈ S.Val _ ] Run (unfold L) ρ v × Den v K ρ'
 run-inl : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⊹ B)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
   → branch (known (simp fl E L)) refl ≡ just (inj₁ K) → Σ[ v ∈ S.Val A ] Run L ρ (S.inl v) × Strong v K ρ'

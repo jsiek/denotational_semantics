@@ -85,8 +85,8 @@ data _⊢_≈_ where
   prim≈ : ∀ {Γ Γ' p} {ρ : VM Γ Γ'} {L L' M M'} → ρ ⊢ L ≈ L' → ρ ⊢ M ≈ M' → ρ ⊢ prim p L M ≈ prim p L' M'
   let≈ : ∀ {Γ Γ' A B} {ρ : VM Γ Γ'} {M : Tm Γ A} {M'} {N : Tm (A ∷ Γ) B} {N'} → ρ ⊢ M ≈ M' → extρ ρ ⊢ N ≈ N'
     → ρ ⊢ let′ M N ≈ let′ M' N'
-  fold≈ : ∀ {Γ Γ' A c} {ρ : VM Γ Γ'} {M : Tm Γ (unroll A {c})} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ fold {A = A} {c} M ≈ fold M'
-  unfold≈ : ∀ {Γ Γ' A c} {ρ : VM Γ Γ'} {M : Tm Γ (μ A {c})} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ unfold M ≈ unfold M'
+  fold≈ : ∀ {Γ Γ' A} {ρ : VM Γ Γ'} {M : Tm Γ (unroll A)} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ fold {A = A} M ≈ fold M'
+  unfold≈ : ∀ {Γ Γ' A} {ρ : VM Γ Γ'} {M : Tm Γ (μ A)} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ unfold M ≈ unfold M'
 
 data Caps ρ where
   [] : Caps ρ [] [] []

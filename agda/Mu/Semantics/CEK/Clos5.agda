@@ -36,7 +36,7 @@ data Val (Σ : List DSig) : Type → Set where
   tup : ∀ {Δ} → All (Val Σ) Δ → Val Σ (tup Δ)
   inl : ∀ {A B} → Val Σ A → Val Σ (A ⊹ B)
   inr : ∀ {A B} → Val Σ B → Val Σ (A ⊹ B)
-  fold : ∀ {A c} → Val Σ (unroll A {c}) → Val Σ (μ A {c})
+  fold : ∀ {A} → Val Σ (unroll A) → Val Σ (μ A)
 
 Env : List DSig → Ctx → Set
 Env Σ = All (Val Σ)
@@ -66,7 +66,7 @@ module _ {Σ : List DSig} where
   choose (inl v) f g = f v
   choose (inr v) f g = g v
 
-  unfoldᵥ : ∀ {A c} → Val Σ (μ A {c}) → Val Σ (unroll A {c})
+  unfoldᵥ : ∀ {A} → Val Σ (μ A) → Val Σ (unroll A)
   unfoldᵥ (fold v) = v
 
   {- a primitive on two integers: eq gives inl ⟨⟩ for true -}
@@ -89,8 +89,8 @@ data Cont (Σ : List DSig) : Type → Set where
   primL : ∀ {Γ} p → Tm Σ Γ (base Int) → Env Σ Γ → Cont Σ (out-ty p) → Cont Σ (base Int)
   primR : ∀ p → ℤ → Cont Σ (out-ty p) → Cont Σ (base Int)
   letK : ∀ {Γ A B} → Tm Σ (A ∷ Γ) B → Env Σ Γ → Cont Σ B → Cont Σ A
-  foldK : ∀ {A c} → Cont Σ (μ A {c}) → Cont Σ (unroll A {c})
-  unfoldK : ∀ {A c} → Cont Σ (unroll A {c}) → Cont Σ (μ A {c})
+  foldK : ∀ {A} → Cont Σ (μ A) → Cont Σ (unroll A)
+  unfoldK : ∀ {A} → Cont Σ (unroll A) → Cont Σ (μ A)
 
 data State (Σ : List DSig) : Set where
   eval : ∀ {Γ A} → Tm Σ Γ A → Env Σ Γ → Cont Σ A → State Σ

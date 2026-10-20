@@ -146,7 +146,7 @@ eq-𝕍 : ∀ {D E} (u v : Val (base Int)) → (∀ d → d ∈ D → 𝕍 d u) 
   → ∀ d → d ∈ primD eq ⟨ D , ⟨ E , ptt ⟩ ⟩ → 𝕍 d (bit {Σ} (equal u v))
 eq-𝕍 (const n) (const m) = prim-𝕍 eq (const n) (const m)
 
-unfold-𝕍 : ∀ {A c d} (v : Val (μ A {c})) → 𝕍 d v → 𝕍 d (unfold-v v)
+unfold-𝕍 : ∀ {A d} (v : Val (μ A)) → 𝕍 d v → 𝕍 d (unfold-v v)
 unfold-𝕍 (fold v) r = r
 
 nth-𝕍 : ∀ {Δ A d} (i : Δ ∋ A) (v : Val (tup Δ)) → 𝕍 (tup[ pos i ] d) v → 𝕍 d (nth i v)

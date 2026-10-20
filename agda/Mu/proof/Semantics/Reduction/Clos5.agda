@@ -34,7 +34,7 @@ module _ {Σ : List DSig} where
     tuple : ∀ {Δ} {Vs : All (Tm Σ Γ) Δ} → Each Value Vs → Value (tuple Vs)
     inl : ∀ {A B} {V : Tm Σ Γ A} → Value V → Value (inl {B = B} V)
     inr : ∀ {A B} {V : Tm Σ Γ B} → Value V → Value (inr {A = A} V)
-    fold : ∀ {A c} {V : Tm Σ Γ (unroll A {c})} → Value V → Value (fold {A = A} {c} V)
+    fold : ∀ {A} {V : Tm Σ Γ (unroll A)} → Value V → Value (fold {A = A} V)
 
   value-red : ∀ {ds A} {V : Tm Σ [] A} → Value V → red ds V ≡ val
   values-red : ∀ {ds Δ} {Vs : All (Tm Σ []) Δ} → Each Value Vs → reds ds Vs ≡ val
