@@ -364,16 +364,20 @@ and then $\nu \in D$. For clause 3, suppose $\callsto{V}{U}{W}$ and
 $E \ALR U$; we must show $D \app E \ALR W$. Each $w \in W$ comes from a
 usable entry $U_e \mapsto (U_a \mapsto w) \in \car(V)$ with
 $U_e \subseteq \cdr(V)$ and $U_a \subseteq U$, so by monotonicity $w$
-is in the meaning of the body $\mathit{delay}(N)$ in the environment
-that maps the parameters to $U$ and $\cdr(V)$. This environment is
-related to the source environment that maps them to $E$ and $T$: the
-first by assumption, and the second by the induction hypothesis for
-$\vec{K}$, because $\cdr(V) \subseteq T'$. The induction hypothesis for
-the body $N$ then gives $\den{N}(E, T) \ALR W$, and
-$\den{N}(E, T) \subseteq D \app E$ by Lemma~\ref{lem:beta}, applied
-twice, so $D \app E \ALR W$ because ${\ALR}$ is monotone in its source
-set. The condition $U_e \subseteq \cdr(V)$ is what lets the
-environments of the target body come from the list $V$ itself.
+is in $\den{\mathit{delay}(N)}(\cdr(V), U)$, the meaning of the target
+body with its environment parameter bound to $\cdr(V)$ and its argument
+parameter bound to $U$. This environment is related to the source
+environment $(T, E)$. The argument parameters are related by
+assumption, and the environment parameters are related by the induction
+hypothesis for $\vec{K}$, because $\cdr(V) \subseteq T'$. The induction
+hypothesis for the body $N$ then gives $\den{N}(T, E) \ALR W$. Both $T$
+and $E$ are nonempty. The set $T$ is nonempty because $U_e$ is a
+nonempty list within $\cdr(V)$, and the induction hypothesis for
+$\vec{K}$ applies to it. The set $E$ is nonempty by clause~2 of
+$E \ALR U$, because $U_a$ is a nonempty list within $U$. The second
+part of Lemma~\ref{lem:beta} therefore gives
+$\den{N}(T, E) \subseteq D \app E$, and so $D \app E \ALR W$ because
+${\ALR}$ is monotone in its source set.
 
 \begin{theorem}[Correctness of delay]\label{thm:delay}
 For a closed term $M$ of EnvClos and a constant $c$,
