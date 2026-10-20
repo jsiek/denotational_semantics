@@ -45,8 +45,8 @@ data Tm (Σ : List DSig) (Γ : Ctx) : Type → Set where
   case : ∀ {A B C} → Tm Σ Γ (A ⊹ B) → Tm Σ (A ∷ Γ) C → Tm Σ (B ∷ Γ) C → Tm Σ Γ C
   prim : (p : Prim) → Tm Σ Γ (base Int) → Tm Σ Γ (base Int) → Tm Σ Γ (out-ty p)
   let′ : ∀ {A B} → Tm Σ Γ A → Tm Σ (A ∷ Γ) B → Tm Σ Γ B
-  fold : ∀ {A c} → Tm Σ Γ (unroll A {c}) → Tm Σ Γ (μ A {c})
-  unfold : ∀ {A c} → Tm Σ Γ (μ A {c}) → Tm Σ Γ (unroll A {c})
+  fold : ∀ {A} → Tm Σ Γ (unroll A) → Tm Σ Γ (μ A)
+  unfold : ∀ {A} → Tm Σ Γ (μ A) → Tm Σ Γ (unroll A)
 
 {- the context of the code of a definition: the argument is variable 0,
    the environment variable 1 -}

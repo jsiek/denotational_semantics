@@ -60,8 +60,8 @@ data _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Γ A → Set where
     → case L M N ≈ C.case L' M' N'
   prim≈ : ∀ {Γ p} {L : Tm Γ _} {L' M M'} → L ≈ L' → M ≈ M' → prim p L M ≈ C.prim p L' M'
   let≈ : ∀ {Γ A B} {M : Tm Γ A} {M'} {N : Tm (A ∷ Γ) B} {N'} → M ≈ M' → N ≈ N' → let′ M N ≈ C.let′ M' N'
-  fold≈ : ∀ {Γ A c} {M : Tm Γ (unroll A {c})} {M'} → M ≈ M' → fold {A = A} {c} M ≈ C.fold M'
-  unfold≈ : ∀ {Γ A c} {M : Tm Γ (μ A {c})} {M'} → M ≈ M' → unfold M ≈ C.unfold M'
+  fold≈ : ∀ {Γ A} {M : Tm Γ (unroll A)} {M'} → M ≈ M' → fold {A = A} M ≈ C.fold M'
+  unfold≈ : ∀ {Γ A} {M : Tm Γ (μ A)} {M'} → M ≈ M' → unfold M ≈ C.unfold M'
 
 {- The fundamental lemma -------------------------------------------------------}
 

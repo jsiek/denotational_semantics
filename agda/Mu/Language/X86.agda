@@ -134,8 +134,8 @@ returned Δ B = st (rt (just (ty B)) nothing nothing) Δ nothing false
 data Arg (Σ : List DSig) (ψ : St) : RTy → Set where
   atom : ∀ {A} → Atm Σ (St.fr ψ) A → Arg Σ ψ (ty A)
   reg : ∀ r {τ} → St.rs ψ ‹ r › ≡ just τ → Arg Σ ψ τ
-  _↑ : ∀ {A c} → Arg Σ ψ (ty (unroll A {c})) → Arg Σ ψ (ty (μ A {c}))
-  _↓ : ∀ {A c} → Arg Σ ψ (ty (μ A {c})) → Arg Σ ψ (ty (unroll A {c}))
+  _↑ : ∀ {A} → Arg Σ ψ (ty (unroll A)) → Arg Σ ψ (ty (μ A))
+  _↓ : ∀ {A} → Arg Σ ψ (ty (μ A)) → Arg Σ ψ (ty (unroll A))
 
 {- destinations, in a frame of n slots -}
 data Dst (n : ℕ) : St → RTy → St → Set where

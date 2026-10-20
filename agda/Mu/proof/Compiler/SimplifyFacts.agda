@@ -41,7 +41,7 @@ data SV {Γ} where
   tuple : ∀ {Δ} {Ms : All (Tm Γ) Δ} → SVs Ms → SV (tuple Ms)
   inl : ∀ {A B} {V : Tm Γ A} → SV V → SV (inl {B = B} V)
   inr : ∀ {A B} {V : Tm Γ B} → SV V → SV (inr {A = A} V)
-  fold : ∀ {A c} {V : Tm Γ (unroll A {c})} → SV V → SV (fold {A = A} {c} V)
+  fold : ∀ {A} {V : Tm Γ (unroll A)} → SV V → SV (fold {A = A} V)
 
 infixr 5 _∷_
 data SVs {Γ} where
@@ -165,6 +165,6 @@ branch-inr (just (val (inr K))) refl e with small K in s | e
 branch-inr (just (val (inl K))) refl e with small K | e
 ... | true | ()
 
-unfold-inv : ∀ {Γ C A c} (k : Maybe (Known Γ C)) (e : C ≡ μ A {c}) {K} → unfolded k e ≡ just K
+unfold-inv : ∀ {Γ C A} (k : Maybe (Known Γ C)) (e : C ≡ μ A) {K} → unfolded k e ≡ just K
   → subst (λ C → Maybe (Known Γ C)) e k ≡ just (val (fold K))
 unfold-inv (just (val (fold K))) refl refl = refl

@@ -52,8 +52,8 @@ data _⊢_≈_ : ∀ {Γ Δ A} → Ren Γ Δ → Tm Γ A → C.Tm Δ A → Set w
   prim≈ : ∀ {Γ Δ p} {ρ : Ren Γ Δ} {L L' M M'} → ρ ⊢ L ≈ L' → ρ ⊢ M ≈ M' → ρ ⊢ prim p L M ≈ C.prim p L' M'
   let≈ : ∀ {Γ Δ A B} {ρ : Ren Γ Δ} {M : Tm Γ A} {M'} {N : Tm (A ∷ Γ) B} {N'} → ρ ⊢ M ≈ M' → ext ρ ⊢ N ≈ N'
     → ρ ⊢ let′ M N ≈ C.let′ M' N'
-  fold≈ : ∀ {Γ Δ A c} {ρ : Ren Γ Δ} {M : Tm Γ (unroll A {c})} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ fold {A = A} {c} M ≈ C.fold M'
-  unfold≈ : ∀ {Γ Δ A c} {ρ : Ren Γ Δ} {M : Tm Γ (μ A {c})} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ unfold M ≈ C.unfold M'
+  fold≈ : ∀ {Γ Δ A} {ρ : Ren Γ Δ} {M : Tm Γ (unroll A)} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ fold {A = A} M ≈ C.fold M'
+  unfold≈ : ∀ {Γ Δ A} {ρ : Ren Γ Δ} {M : Tm Γ (μ A)} {M'} → ρ ⊢ M ≈ M' → ρ ⊢ unfold M ≈ C.unfold M'
 
 {- The fundamental lemma ------------------------------------------------------------------}
 

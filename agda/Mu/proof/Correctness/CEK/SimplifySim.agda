@@ -107,7 +107,7 @@ data _≈_ where
   tup≈ : ∀ {Δ} {vs ws : All S.Val Δ} → All₂ _≈_ vs ws → S.tup vs ≈ S.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → S.inl {A} {B} v ≈ S.inl w
   inr≈ : ∀ {A B v w} → v ≈ w → S.inr {A} {B} v ≈ S.inr w
-  fold≈ : ∀ {A c v w} → v ≈ w → S.fold {A} {c} v ≈ S.fold w
+  fold≈ : ∀ {A v w} → v ≈ w → S.fold {A} v ≈ S.fold w
 
 Desc b v (` y) ρ' = v ≈ lookup ρ' y
 Desc true v (lam N) ρ' = v ≈ S.clo N ρ'
@@ -159,8 +159,8 @@ data _≈k_ : ∀ {A} → S.Cont A → S.Cont A → Set where
   {- a let that simplify kept, of a source β, inlined call or let -}
   letK : ∀ {fl Δ Γ A B} {E : Facts Δ Γ} {N : Tm (A ∷ Δ) B} {ρ ρ' G κ κ'} → Binds N ρ G → Ok E ρ ρ' → κ ≈k κ'
     → G κ ≈k S.letK (term (simp fl (under E) N)) ρ' κ'
-  foldK : ∀ {A c} {κ κ' : S.Cont (μ A {c})} → κ ≈k κ' → S.foldK {A} {c} κ ≈k S.foldK κ'
-  unfoldK : ∀ {A c} {κ κ' : S.Cont (unroll A {c})} → κ ≈k κ' → S.unfoldK {A} {c} κ ≈k S.unfoldK κ'
+  foldK : ∀ {A} {κ κ' : S.Cont (μ A)} → κ ≈k κ' → S.foldK {A} κ ≈k S.foldK κ'
+  unfoldK : ∀ {A} {κ κ' : S.Cont (unroll A)} → κ ≈k κ' → S.unfoldK {A} κ ≈k S.unfoldK κ'
 
 data _~_ : S.State → S.State → Set where
   eval~ : ∀ {fl Δ Γ A} {E : Facts Δ Γ} {M : Tm Δ A} {ρ ρ' κ κ'} → Ok E ρ ρ' → κ ≈k κ'
@@ -378,7 +378,7 @@ module _ {T₀ : Type} (P P' : Tm [] T₀) where
   run-get : ∀ {Δ Γ Δ' A} fl (i : Δ' ∋ A) (L : Tm Δ (tup Δ')) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
     → component i (known (simp fl E L)) refl ≡ just K → Σ[ v ∈ S.Val A ] Run (get i L) ρ v × Den v K ρ'
   {- the value under a known fold -}
-  run-unf : ∀ {Δ Γ A c} fl (L : Tm Δ (μ A {c})) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
+  run-unf : ∀ {Δ Γ A} fl (L : Tm Δ (μ A)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
     → unfolded (known (simp fl E L)) refl ≡ just K → Σ[ v ∈ S.Val _ ] Run (unfold L) ρ v × Den v K ρ'
   {- the branch of a case on a known injection -}
   run-inl : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⊹ B)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'

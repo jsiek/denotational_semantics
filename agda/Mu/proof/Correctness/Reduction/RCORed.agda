@@ -72,7 +72,7 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
     call≈ : ∀ {A B} {F : Tm Σ [] (A ⇒ B)} {W} → Value F → Value W → callc F W ≈ callc F W
     get≈ : ∀ {Δ A} {i : Δ ∋ A} {V : Tm Σ [] (tup Δ)} → Value V → get i V ≈ get i V
     prim≈ : ∀ {p V W} → Value V → Value W → prim p V W ≈ prim p V W
-    unfold≈ : ∀ {A c} {V : Tm Σ [] (μ A {c})} → Value V → unfold V ≈ unfold V
+    unfold≈ : ∀ {A} {V : Tm Σ [] (μ A)} → Value V → unfold V ≈ unfold V
     case≈ : ∀ {Γ Δ A B C} {σ : Clo Γ} {τ : Clo Δ} {ρ : Ren Γ Δ} {V : Tm Σ [] (A ⊹ B)} {M : Tm Σ (A ∷ Γ) C} {N : Tm Σ (B ∷ Γ) C} → Agree σ τ ρ → Vals σ → Value V
       → case V (sub (exts tmK σ) M) (sub (exts tmK σ) N)
         ≈ case V (sub (exts tmK τ) ⌜ rco M (ext ρ) ⌝) (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝)

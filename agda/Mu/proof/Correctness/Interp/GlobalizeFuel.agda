@@ -112,8 +112,8 @@ glob-ext (S.case L M N) D with glob L D | glob-ext L D
 ...     | out s₃ D₃ N' | e₃ = ext-trans e₁ (ext-trans e₂ e₃)
 glob-ext (S.prim p L M) D = glob₂-ext (prim p) L M D
 glob-ext (S.let′ M N) D = glob₂-ext let′ M N D
-glob-ext (S.fold {A} {c} M) D = glob₁-ext (fold {A = A} {c}) M D
-glob-ext (S.unfold {A} {c} M) D = glob₁-ext (unfold {A = A} {c}) M D
+glob-ext (S.fold {A} M) D = glob₁-ext (fold {A = A}) M D
+glob-ext (S.unfold {A} M) D = glob₁-ext (unfold {A = A}) M D
 globs-ext [] D = same
 globs-ext (M ∷ Ms) D with glob M D | glob-ext M D
 ... | out s₁ D₁ M' | e₁ with globs Ms D₁ | globs-ext Ms D₁

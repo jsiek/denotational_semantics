@@ -136,12 +136,12 @@ module Sim {Σ : List DSig} (ds : All (Code Σ) Σ) {T} (M₀ : Tm Σ [] T) wher
   krel-inr : ∀ {Δ A B} {φ₂ : Env Σ Δ} {κ₁ κ₂ : Cont Σ (A ⊹ B)} → κ₁ ≈ κ₂ → KRel (inrK κ₁) (λ _ a → M.inr a) φ₂ κ₂
   krel-inr k r' φ₂' a e' = pre₂ _~_ refl (pre₂ _~_ (at₂ a) (same refl refl k))
 
-  krel-fold : ∀ {Δ A c} {φ₂ : Env Σ Δ} {κ₁ κ₂ : Cont Σ (μ A {c})} → κ₁ ≈ κ₂ → KRel (foldK κ₁) (λ _ a → M.fold a) φ₂ κ₂
+  krel-fold : ∀ {Δ A} {φ₂ : Env Σ Δ} {κ₁ κ₂ : Cont Σ (μ A)} → κ₁ ≈ κ₂ → KRel (foldK κ₁) (λ _ a → M.fold a) φ₂ κ₂
   krel-fold k r' φ₂' a e' = pre₂ _~_ refl (pre₂ _~_ (at₂ a) (same refl refl k))
 
-  krel-unfold : ∀ {Δ A c} {φ₂ : Env Σ Δ} {κ₁ κ₂ : Cont Σ (unroll A {c})} → κ₁ ≈ κ₂
-    → KRel (unfoldK {A = A} {c} κ₁) (λ _ a → M.unfold {A = A} {c} a) φ₂ κ₂
-  krel-unfold {A = A} {c} k r' φ₂' a e' = pre₂ _~_ refl (pre₂ _~_ (at₂ a) (same {u = unfoldᵥ {A = A} {c} (atom φ₂' a)} refl refl k))
+  krel-unfold : ∀ {Δ A} {φ₂ : Env Σ Δ} {κ₁ κ₂ : Cont Σ (unroll A)} → κ₁ ≈ κ₂
+    → KRel (unfoldK {A = A} κ₁) (λ _ a → M.unfold {A = A} a) φ₂ κ₂
+  krel-unfold {A = A} k r' φ₂' a e' = pre₂ _~_ refl (pre₂ _~_ (at₂ a) (same {u = unfoldᵥ {A = A} (atom φ₂' a)} refl refl k))
 
   krel-case : ∀ {Γ Δ A B C} {N₁ : Tm Σ (A ∷ Γ) C} {N₂ : Tm Σ (B ∷ Γ) C} {r : Ren Γ Δ} {φ₁ φ₂ κ₁ κ₂} → ER r φ₁ φ₂ → κ₁ ≈ κ₂
     → KRel (caseK N₁ N₂ φ₁ κ₁) (λ r₁ a → M.case a (rco N₁ (ext λ x → r₁ (r x))) (rco N₂ (ext λ x → r₁ (r x)))) φ₂ κ₂
@@ -205,7 +205,7 @@ module Sim {Σ : List DSig} (ds : All (Code Σ) Σ) {T} (M₀ : Tm Σ [] T) wher
   sim-eval (prim p L N) e k = pre₁ _~_ refl refl (atz L e (krel-primL N e k))
   sim-eval (let′ N₁ N₂) e k = move (step⁺ refl) (step⁺ refl) (eval~ e (letK e k))
   sim-eval (fold N) e k = pre₁ _~_ refl refl (atz N e (krel-fold k))
-  sim-eval (unfold {A} {c} N) e k = pre₁ _~_ refl refl (atz N e (krel-unfold {A = A} {c = c} k))
+  sim-eval (unfold {A} N) e k = pre₁ _~_ refl refl (atz N e (krel-unfold {A = A} k))
 
   atz (` x) {r} {k} {φ₂ = φ₂} {κ₁} e kr =
     pre₁ _~_ refl refl (subst (λ v → 𝔅 (ret v κ₁) (eval ⌜ k (λ y → y) (var (r x)) ⌝ φ₂ _)) (at e x) (kr (λ y → y) φ₂ (var (r x)) er-id))

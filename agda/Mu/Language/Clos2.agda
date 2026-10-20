@@ -31,5 +31,5 @@ data Tm (Γ : Ctx) : Type → Set where
   case : ∀ {A B C} → Tm Γ (A ⊹ B) → Tm (A ∷ Γ) C → Tm (B ∷ Γ) C → Tm Γ C
   prim : (p : Prim) → Tm Γ (base Int) → Tm Γ (base Int) → Tm Γ (out-ty p)
   let′ : ∀ {A B} → Tm Γ A → Tm (A ∷ Γ) B → Tm Γ B
-  fold : ∀ {A c} → Tm Γ (unroll A {c}) → Tm Γ (μ A {c})
-  unfold : ∀ {A c} → Tm Γ (μ A {c}) → Tm Γ (unroll A {c})
+  fold : ∀ {A} → Tm Γ (unroll A) → Tm Γ (μ A)
+  unfold : ∀ {A} → Tm Γ (μ A) → Tm Γ (unroll A)

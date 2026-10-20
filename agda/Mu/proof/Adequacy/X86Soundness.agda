@@ -348,7 +348,7 @@ eq-in : ∀ (u v : Val (base Int)) {D E} → mem (dconst (int u) ∷ []) ⊆ D �
   → 𝒱 (bit {Σ} (equal u v)) ⊆ primD eq ⟨ D , ⟨ E , ptt ⟩ ⟩
 eq-in (const n) (const m) = prim-in eq (const n) (const m)
 
-unfold-𝒱 : ∀ {A c} (v : Val (μ A {c})) → 𝒱 (unfold-v v) ⊆ 𝒱 v
+unfold-𝒱 : ∀ {A} (v : Val (μ A)) → 𝒱 (unfold-v v) ⊆ 𝒱 v
 unfold-𝒱 (fold v) = ⊆r
 
 {- the environment of the open closure is the second component of its slot -}

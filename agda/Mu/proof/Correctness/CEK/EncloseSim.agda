@@ -47,7 +47,7 @@ data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
   tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → Src.inl {A} {B} v ≈ Tgt.inl w
   inr≈ : ∀ {A B v w} → v ≈ w → Src.inr {A} {B} v ≈ Tgt.inr w
-  fold≈ : ∀ {A c v w} → v ≈ w → Src.fold {A} {c} v ≈ Tgt.fold w
+  fold≈ : ∀ {A v w} → v ≈ w → Src.fold {A} v ≈ Tgt.fold w
 
 _≈ρ_ : ∀ {Γ} → Src.Env Γ → Tgt.Env Γ → Set
 _≈ρ_ = All₂ _≈_
@@ -70,8 +70,8 @@ data _≈k_ : ∀ {A} → Src.Cont A → Tgt.Cont A → Set where
   primR : ∀ {p n κ₁ κ₂} → κ₁ ≈k κ₂ → Src.primR p n κ₁ ≈k Tgt.primR p n κ₂
   letK : ∀ {Γ A B N} {ρ₁ : Src.Env Γ} {ρ₂ κ₁ κ₂} → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂
     → Src.letK {A = A} {B} N ρ₁ κ₁ ≈k Tgt.letK (enclose N) ρ₂ κ₂
-  foldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → Src.foldK {A} {c} κ₁ ≈k Tgt.foldK κ₂
-  unfoldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → Src.unfoldK {A} {c} κ₁ ≈k Tgt.unfoldK κ₂
+  foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.foldK {A} κ₁ ≈k Tgt.foldK κ₂
+  unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → Src.unfoldK {A} κ₁ ≈k Tgt.unfoldK κ₂
 
 data _~_ : Src.State → Tgt.State → Set where
   eval~ : ∀ {Γ A} {M : Tm Γ A} {ρ₁ ρ₂ κ₁ κ₂} → ρ₁ ≈ρ ρ₂ → κ₁ ≈k κ₂

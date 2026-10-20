@@ -58,8 +58,8 @@ data _⊢_≈_ : ∀ {Γ Γ' A} → Refs Γ Γ' → Tm Γ A → C.Tm Γ' A → S
   prim≈ : ∀ {Γ Γ' p} {φ : Refs Γ Γ'} {L L' M M'} → φ ⊢ L ≈ L' → φ ⊢ M ≈ M' → φ ⊢ prim p L M ≈ C.prim p L' M'
   let≈ : ∀ {Γ Γ' A B} {φ : Refs Γ Γ'} {M : Tm Γ A} {M'} {N : Tm (A ∷ Γ) B} {N'} → φ ⊢ M ≈ M' → ext-ref φ ⊢ N ≈ N'
     → φ ⊢ let′ M N ≈ C.let′ M' N'
-  fold≈ : ∀ {Γ Γ' A c} {φ : Refs Γ Γ'} {M : Tm Γ (unroll A {c})} {M'} → φ ⊢ M ≈ M' → φ ⊢ fold {A = A} {c} M ≈ C.fold M'
-  unfold≈ : ∀ {Γ Γ' A c} {φ : Refs Γ Γ'} {M : Tm Γ (μ A {c})} {M'} → φ ⊢ M ≈ M' → φ ⊢ unfold M ≈ C.unfold M'
+  fold≈ : ∀ {Γ Γ' A} {φ : Refs Γ Γ'} {M : Tm Γ (unroll A)} {M'} → φ ⊢ M ≈ M' → φ ⊢ fold {A = A} M ≈ C.fold M'
+  unfold≈ : ∀ {Γ Γ' A} {φ : Refs Γ Γ'} {M : Tm Γ (μ A)} {M'} → φ ⊢ M ≈ M' → φ ⊢ unfold M ≈ C.unfold M'
 
 {- The fundamental lemma -------------------------------------------------------------}
 

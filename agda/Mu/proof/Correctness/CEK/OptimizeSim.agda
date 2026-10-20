@@ -57,7 +57,7 @@ data _≈_ : ∀ {A} → C.Val A → C.Val A → Set where
   tup≈ : ∀ {Δ} {vs ws : All _ Δ} → All₂ _≈_ vs ws → C.tup vs ≈ C.tup ws
   inl≈ : ∀ {A B v w} → v ≈ w → C.inl {A} {B} v ≈ C.inl w
   inr≈ : ∀ {A B v w} → v ≈ w → C.inr {A} {B} v ≈ C.inr w
-  fold≈ : ∀ {A c v w} → v ≈ w → C.fold {A} {c} v ≈ C.fold w
+  fold≈ : ∀ {A v w} → v ≈ w → C.fold {A} v ≈ C.fold w
 
 Agree : ∀ {Γ Γ'} (u : ∀ {C} → Γ ∋ C → Bool) → Ren u Γ' → C.Env Γ → C.Env Γ' → Set
 Agree u r ρ₁ ρ₂ = ∀ {C} x (t : T (u {C} x)) → lookup ρ₁ x ≈ lookup ρ₂ (r x t)
@@ -99,8 +99,8 @@ data _≈k_ : ∀ {A} → C.Cont A → C.Cont A → Set where
   letK : ∀ {Γ Γ' A B} {N : Tm (A ∷ Γ) B} {r : Ren (λ x → uses N (S x)) Γ'} {ρ₁ ρ₂ κ₁ κ₂}
     → Agree (λ x → uses N (S x)) r ρ₁ ρ₂ → κ₁ ≈k κ₂
     → C.letK N ρ₁ κ₁ ≈k C.letK (opt N (ext {u = uses N} r)) ρ₂ κ₂
-  foldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → C.foldK {A} {c} κ₁ ≈k C.foldK κ₂
-  unfoldK : ∀ {A c κ₁ κ₂} → κ₁ ≈k κ₂ → C.unfoldK {A} {c} κ₁ ≈k C.unfoldK κ₂
+  foldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → C.foldK {A} κ₁ ≈k C.foldK κ₂
+  unfoldK : ∀ {A κ₁ κ₂} → κ₁ ≈k κ₂ → C.unfoldK {A} κ₁ ≈k C.unfoldK κ₂
 
 data _~_ : C.State → C.State → Set where
   eval~ : ∀ {Γ Γ' A} {M : Tm Γ A} {r : Ren (uses M) Γ'} {ρ₁ ρ₂ κ₁ κ₂} → Agree (uses M) r ρ₁ ρ₂ → κ₁ ≈k κ₂

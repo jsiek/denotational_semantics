@@ -331,7 +331,7 @@ int∈ (const k) = ⟨ refl , refl ⟩
 prim-in : ∀ p {n m D E} → mem (dconst n ∷ []) ⊆ D → mem (dconst m ∷ []) ⊆ E → 𝒱 (δᵀ {Σ} p n m) ⊆ primD p ⟨ D , ⟨ E , ptt ⟩ ⟩
 prim-in p {n} {m} n∈ m∈ d d∈ = ⟨ n , ⟨ m , ⟨ n∈ _ (here refl) , ⟨ m∈ _ (here refl) , proj₂ (proj₂ (proj₂ (proj₂ (prim-⊆ p n m d d∈)))) ⟩ ⟩ ⟩ ⟩
 
-unfold-𝒱 : ∀ {A c} (v : Val Σ (μ A {c})) → 𝒱 (unfoldᵥ v) ⊆ 𝒱 v
+unfold-𝒱 : ∀ {A} (v : Val Σ (μ A)) → 𝒱 (unfoldᵥ v) ⊆ 𝒱 v
 unfold-𝒱 (fold v) = ⊆r
 
 {- the environment of the open closure is the second component of its slot -}

@@ -143,8 +143,8 @@ glob-ok (S.case L M N) D with glob L D | glob-ok L D
 glob-ok (S.prim p L M) D = glob₂-ok (prim p) L M D {M₄ = S.prim p L M} λ hL hM ρ → primD-≃ p (hL ρ) (hM ρ)
 glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N} λ {_} {T} {_} {N'} hL hM ρ →
   letD-≃ {F = λ X → ⟦ N ⟧₄ (X • ρ)} {λ X → ⟦ N' ⟧[ T ] (X • ρ)} (hL ρ) (λ _ _ _ → hM _)
-glob-ok (S.fold {A} {c} M) D = glob₁-ok (fold {A = A} {c}) M D {M₄ = S.fold M} λ h → h
-glob-ok (S.unfold {A} {c} M) D = glob₁-ok (unfold {A = A} {c}) M D {M₄ = S.unfold M} λ h → h
+glob-ok (S.fold {A} M) D = glob₁-ok (fold {A = A}) M D {M₄ = S.fold M} λ h → h
+glob-ok (S.unfold {A} M) D = glob₁-ok (unfold {A = A}) M D {M₄ = S.unfold M} λ h → h
 
 globs-ok [] D = ⟨ ext (λ f → refl) , (λ ρ ()) ⟩
 globs-ok (M ∷ Ms) D with glob M D | glob-ok M D
@@ -185,8 +185,8 @@ wk-id (inr M) = cong inr (wk-id M)
 wk-id (case L M N) = cong₂ (λ L' (P : _ × _) → case L' (proj₁ P) (proj₂ P)) (wk-id L) (cong₂ ⟨_,_⟩ (wk-id M) (wk-id N))
 wk-id (prim p L M) = cong₂ (prim p) (wk-id L) (wk-id M)
 wk-id (let′ M N) = cong₂ let′ (wk-id M) (wk-id N)
-wk-id (fold {A} {c} M) = cong (fold {A = A} {c}) (wk-id M)
-wk-id (unfold {A} {c} M) = cong (unfold {A = A} {c}) (wk-id M)
+wk-id (fold {A} M) = cong (fold {A = A}) (wk-id M)
+wk-id (unfold {A} M) = cong (unfold {A = A}) (wk-id M)
 wks-id [] = refl
 wks-id (M ∷ Ms) = cong₂ _∷_ (wk-id M) (wks-id Ms)
 
