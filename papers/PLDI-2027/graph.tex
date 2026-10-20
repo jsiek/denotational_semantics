@@ -112,7 +112,15 @@ defined as an inductive data type, can provide that.
 
 Concretely, a row is an element $V \mapsto w$, called an \emph{entry},
 whose input $V$ is a finite list of elements and whose output $w$ is
-an element. The meaning of a function, given by operator $\Lambda$
+an element. The input could instead be a single element, as in the models of
+\citet{Siek:2017ab} and \citet{Wadler:2020aa}. Either choice works, but
+a list makes the metatheory cleaner. The argument of a function is
+often itself a function, and the body may call it several times. A
+list $V$ can contain one entry for each of those calls. With a single
+input element, that element must describe several entries at once, so
+elements must include whole tables of entries
+\citep{Siek:2017ab} or joins $v \sqcup w$ \citep{Wadler:2020aa}.
+The meaning of a function, given by operator $\Lambda$
 (Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
 \mapsto w$ such that each output $w$ is in the meaning of the
 function's body when the body is evaluated in an environment that maps
