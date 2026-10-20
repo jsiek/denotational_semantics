@@ -304,9 +304,10 @@ a tuple of type $\Mtup{\Delta}$, and an argument of type $A$.
     \mid \Mmu{X}{A} \mid X \mid \Mcodety{\Delta}{A}{C} \\
   & \Gamma, \Delta &::=& A_1, \ldots, A_n
 \end{syntax}
-The body $A$ of $\Mmu{X}{A}$ is \emph{contractive}: it starts with a base
-type, $\rightarrow$, $\key{tup}$, $+$ or $\key{code}$, not with a variable or
-another $\mu$; that rules out $\Mmu{X}{X}$ and keeps unfolding productive.
+The body $A$ of $\Mmu{X}{A}$ is unrestricted: $\Mfold$ and $\Munfold$
+are explicit coercions, so even $\Mmu{X}{X}$ needs no contractiveness
+condition.
+
 The unfolding of $\Mmu{X}{A}$ is $\Munroll{X}{A}$, with type substitution
 on \texttt{Ty} (\texttt{tren}, \texttt{tsubst}, \texttt{unroll}). The
 result type of a primitive is $\Tout{\key{sub}} = \key{Int}$ and
@@ -725,9 +726,7 @@ of $\key{chk}$.
   $e{:}\Mtup{\Delta}, y{:}A$.
 \item \textbf{Types}: \texttt{Ty n} with \texttt{base}, \texttt{\_$\Rightarrow$\_},
   \texttt{tup}, the sum (written $+$ here), \texttt{code},
-  \texttt{var} and \texttt{$\mu$}, whose body carries a hidden proof
-  \texttt{\{Contractive A\}} (defined by induction-recursion with
-  \texttt{Ty}); $\Munroll{X}{A}$ is \texttt{unroll A}, $\Tout{p}$ is
+  \texttt{var} and \texttt{$\mu$}; $\Munroll{X}{A}$ is \texttt{unroll A}, $\Tout{p}$ is
   \texttt{out-ty p}, and $\key{Bool}$ is the Agda's blackboard-bold B.
   $\Mfold$ and $\Munfold$ take no equation between types: every definition
   and proof splits terms at a generic type (the design note's ``green

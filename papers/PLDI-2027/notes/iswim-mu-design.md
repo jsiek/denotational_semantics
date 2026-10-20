@@ -57,11 +57,11 @@ This is design only. The base is `origin/master` 9f0d5c2 (PR #64); counts are fr
 ### 1.2 Grammar
 
 * `Ty n ::= base B | A ⇒ B | tup Δ | A ⊹ B | μ A | var x`, with `μ : Ty (suc n) → Ty n`. Terms are indexed by closed types `Ty 0`.
-* The body of μ is **contractive**: it must start with `⇒`, `tup`, `⊹` or `base`, not a variable or another μ. That rules out `μX.X`, has no cost in expressiveness, and keeps unfolding productive.
-  * **[P0]** Enforced by a hidden argument of `μ`, `{Contractive A}`, with `Contractive` defined by induction-recursion with `Ty` (⊤ or ⊥ by the head of A), which `--safe` allows. Renaming and substitution carry it (one line per head). `Ty` also has `code Δ A B` (Clos4μ only).
+* The body of μ is unrestricted. Iso-recursive types need no contractiveness: `fold` and `unfold` are explicit coercions, so even `μX.X` is harmless. `Ty` also has `code Δ A B` (Clos4μ only).
+  * **[P0]** The first version required a contractive body (a hidden argument `{Contractive A}` of `μ`, by induction-recursion with `Ty`). Nothing used it, and PR #86 removed it; `Ty` is now an ordinary inductive type.
 * The terms are ISWIM's, typed: `` ` ``, `lam`, `app`, `lit`, `tuple`, `get (Δ ∋ A)`, `inl`, `inr`, `case`, `prim {sub, eq}`, `let`, plus `fold` and `unfold`.
 * Type substitution `A [ B ]` (renaming and substitution on `Ty`) is about 30–40 shared lines. No term-level lemma needs it, because there is no polymorphism and contexts hold closed types.
-  * **[P0]** 46 lines, with contractiveness; no lemma about it was needed anywhere.
+    * **[P0]** 46 lines with contractiveness (no lemma about it was needed anywhere); fewer after PR #86 removed it.
 
 ### 1.3 Divergence and recursion without `rec`
 
@@ -258,7 +258,7 @@ As CEK: `unfold` on `fold v` returns v, and there is no error result. This is th
 1. **Iso- or equi-recursive?** Iso, with `fold`/`unfold` as coercions that vanish at run time (§1.1).
 2. **`rec`/`fix` as a construct?** No: Z is typable through μ, so divergence and recursion are in the language. If wanted, offer it as front-end sugar, never as a construct: as a construct it would need a least fixed point in the graph model and a self parameter, which today's pipeline avoids.
 3. **An `error` construct, to embed untyped ISWIM faithfully?** No. Today's pipeline is that design point. Leaving it out is what makes H1 a clean comparison.
-4. **Contractive μ only?** Yes. It costs nothing and keeps unfolding productive.
+4. **Contractive μ only?** Originally yes; PR #86 dropped it, since iso-recursive types do not need it and no proof used it.
 5. **Make ApproxLR type-indexed as well?** No. The type index can't carry the recursion (§3.2) and the values are untyped. Report the failed type-indexed definition as the argument, not as code.
 6. **Parallel copy, or μ alongside `Any` in one `Ty`?** A parallel copy (`agda/Mu/`). Alongside would mix `project`'s failure cases into the error-free column.
 7. **Observation?** `main : Int`, so the four end theorems coincide.
