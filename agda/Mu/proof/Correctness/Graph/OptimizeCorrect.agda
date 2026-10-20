@@ -16,7 +16,8 @@
 
 module Mu.proof.Correctness.Graph.OptimizeCorrect where
 
-open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
 open import proof.Framework.GraphModel.TypedGraph using (guard-≃)
 open import proof.Semantics.Graph.Prim using (primD-≃)

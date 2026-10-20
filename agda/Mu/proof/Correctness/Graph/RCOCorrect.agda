@@ -184,11 +184,11 @@ table-rco [] f = ≃-refl
 table-rco {ss = _ ∷ ss} (d ∷ ds) f with lvl f ≟ length ss
 ... | yes _ = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU →
   rco-sem (tables-con code-con (All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds))) (table-rco ds) d (λ x → x) _ _
-    (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
-    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω))) (λ x → ≃-refl)
+    (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ⟨⟩ , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
+    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩))) (λ x → ≃-refl)
 ... | no _ = table-rco ds f
 
 rco-correct : ∀ {A} (P : Program A) → ⟦ P ⟧ₚ ≃ ⟦ ⌜ rco-program P ⌝ₚ ⟧ₚ
 rco-correct (program ds N) =
   rco-sem (table-con (All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds))) (table-rco ds) N (λ x → x) _ _
-    (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ x → ≃-refl)
+    (λ _ → ⟨ ⟨⟩ , refl ⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ x → ≃-refl)

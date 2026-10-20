@@ -10,7 +10,8 @@
 
 -}
 
-open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import Framework.Primitives
 open import proof.Framework.GraphModel.Ops using (⋆; Λ; 𝒯; nthD; pair; car; cdr; 𝒞-left; 𝒞-right; Λ-β; ΛΛ-β; ⋆₂-mono)
 open import proof.Framework.GraphModel.DomainUtilBase
@@ -171,7 +172,7 @@ preserve (clos {Δ} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨
   where
   open Envs E
   n = length Δ
-  F' = λ X Y → ⟦ delay (λ x → x) N ⟧' (Y • X • λ _ → ⌈ ω ⌉)
+  F' = λ X Y → ⟦ delay (λ x → x) N ⟧' (Y • X • λ _ → ⌈ ⟨⟩ ⌉)
   T' = 𝒯 n (⟦ delays r Ms ⟧s' ρ')
   cT' = S4.con (T.tuple (delays r Ms)) ρ'~
   P' = ⟦ delay r (clos N Ms) ⟧' ρ'
@@ -180,7 +181,7 @@ preserve (clos {Δ} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨
   NE-T' = let ⟨ fv , fv∈ ⟩ = ne-mem neFV (λ d d∈ → d∈) in ⊑-ne fv (fv⊑ fv fv∈)
   PV : PairV P'
   PV = ⟨ ν , ⟨ proj₁ NE-T' , ⟨ tt , proj₂ NE-T' ⟩ ⟩ ⟩
-  G : ∀ v → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → ⌈ ω ⌉))) , ptt ⟩ → v ⊑ P'
+  G : ∀ v → v ∈ Λ ⟨ (λ Y → ⟦ N ⟧ (Y • mem FV • (λ _ → ⌈ ⟨⟩ ⌉))) , ptt ⟩ → v ⊑ P'
   G ν _ = lift PV
   G (U ↦ w) ⟨ w∈ , ⟨ neU , _ ⟩ ⟩ = ⟨ lift PV , call ⟩
     where
@@ -188,9 +189,9 @@ preserve (clos {Δ} N Ms) {r} {ρ} {ρ'} E v ⟨ FV , ⟨ ⟨ v∈ , _ ⟩ , ⟨
     call E' cE' U⊑ = ⊑-mono w β (preserve N {r = λ x → x} Eb w w∈)
       where
       NE-E' = let ⟨ u , u∈ ⟩ = ne-mem neU (λ d d∈ → d∈) in ⊑-ne u (⊑*-elim U⊑ u u∈)
-      Eb : Envs (λ x → x) (mem U • mem FV • λ _ → ⌈ ω ⌉) (E' • T' • λ _ → ⌈ ω ⌉)
-      Eb = envs (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) NE-T') NE-E')
-                (Con-• cE' (Con-• cT' (λ _ → Con-⌈⌉ ω)))
+      Eb : Envs (λ x → x) (mem U • mem FV • λ _ → ⌈ ⟨⟩ ⌉) (E' • T' • λ _ → ⌈ ⟨⟩ ⌉)
+      Eb = envs (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ⟨⟩ , refl ⟩) NE-T') NE-E')
+                (Con-• cE' (Con-• cT' (λ _ → Con-⌈⌉ ⟨⟩)))
                 (λ { Z → ⊑*-elim U⊑ ; (S Z) → fv⊑ })
       β : F' T' E' ⊆ P' ⊙ E'
       β x x∈ = ⋆⋆-mono {Λ ⟨ (λ X → Λ ⟨ F' X , ptt ⟩) , ptt ⟩} {car ⟨ P' , ptt ⟩} {T'} {cdr ⟨ P' , ptt ⟩} (λ c c∈ → ⟨ proj₁ NE-T' , ⟨ c∈ , proj₂ NE-T' ⟩ ⟩) (λ y y∈ → ⟨ ν , ⟨ tt , y∈ ⟩ ⟩) (λ d z → z) x
@@ -208,7 +209,7 @@ preserve-𝒯 {Δ' = _ ∷ _} Ms E (tup[ i ] d) ⟨ refl , ⟨ d∈ , ne ⟩ ⟩
 {- The end theorem (forward half) ------------------------------------------------}
 
 Envs₀ : ∀ (r : Ren [] []) → Envs r ρ₀ ρ₀
-Envs₀ r = envs (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ ())
+Envs₀ r = envs (λ _ → ⟨ ⟨⟩ , refl ⟩) (λ _ → Con-⌈⌉ ⟨⟩) (λ ())
 
 preserve-const : ∀ {A} (M : Tm [] A) {B} (c : base-rep B) → const c ∈ ⟦ M ⟧ ρ₀ → const c ∈ ⟦ delay-program M ⟧' ρ₀
 preserve-const M c c∈ = lower (preserve M (Envs₀ _) (const c) c∈)

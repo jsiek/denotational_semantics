@@ -10,7 +10,7 @@
 
 open import Framework.GraphModel.Prelude
 open import Framework.Primitives using (base-rep)
-open import proof.Framework.GraphModel.Domain using (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import Mu.Language.Clos3 using (Tm)
 open import Mu.Compiler.Delay using (delay-program)
 open import Mu.Semantics.Graph.Clos3 using (⟦_⟧)

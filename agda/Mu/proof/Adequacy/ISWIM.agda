@@ -27,7 +27,8 @@ module Mu.proof.Adequacy.ISWIM where
 
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import proof.Semantics.Interp.Clock using (Result; timeout; ret; outcome; Terminates; Diverges)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Semantics.Graph.ISWIM using (⟦_⟧)

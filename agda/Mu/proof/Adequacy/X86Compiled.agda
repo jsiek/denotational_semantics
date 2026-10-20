@@ -20,7 +20,7 @@
 module Mu.proof.Adequacy.X86Compiled where
 
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ω; Con-⊆; Con-•; Con-⌈⌉; ≈⇒Con; _•_)
+open import proof.Framework.GraphModel.Domain using (Value; ⟨⟩; Con-⊆; Con-•; Con-⌈⌉; ≈⇒Con; _•_)
 open import proof.Framework.GraphModel.Ops using (Λ-≃; ΛΛ-≃; ΛΛ-mono)
 open import proof.Framework.GraphModel.Env using (extend-nonempty-env; •-~)
 open import Mu.proof.Semantics.Graph.Ops using (Table; ConT; tables; tables-con; init)
@@ -91,8 +91,8 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
       where
       lift≃ : code′ Tₘ ⌜ dₘ ⌝ ≃ codeᵢ (tables codeᵢ dsᵢ) (liftₗ dₘ)
       lift≃ = Λ-≃ λ V _ cV → Λ-≃ λ U _ cU → lift-sem cTₘ (table-lift dsₘ) dₘ _ nothing
-                (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
+                (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩)))
       rco≃ : code′ (table ds₅) (lookup ds₅ f) ≃ code′ Tₘ ⌜ dₘ ⌝
       rco≃ = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → rco-sem cTₘ (table-rco ds₅) (lookup ds₅ f) (λ x → x) _ _
-        (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
-        (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω))) (λ x → ≃-refl)
+        (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ⟨⟩ , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
+        (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩))) (λ x → ≃-refl)

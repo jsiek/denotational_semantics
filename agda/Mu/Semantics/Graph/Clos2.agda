@@ -24,7 +24,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 {- the environment of the code of a closure: its free variables -}
 fv-env : ∀ n → Results (𝒫 Value) (replicate n ■) → Env Value
-fv-env zero _ _ = ⌈ ω ⌉
+fv-env zero _ _ = ⌈ ⟨⟩ ⌉
 fv-env (suc n) ⟨ X , Xs ⟩ zero = X
 fv-env (suc n) ⟨ X , Xs ⟩ (suc i) = fv-env n Xs i
 

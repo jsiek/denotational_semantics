@@ -25,7 +25,7 @@ module Mu.Theorems.Denotational where
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.GraphModel.SetsAsPredicates using (⌈_⌉; _∈_; nonempty; _≃_)
 open import Framework.GraphModel.Env using (Env)
-open import Framework.GraphModel.Domain using (Value; const; ω)
+open import Framework.GraphModel.Domain using (Value; const; ⟨⟩)
 
 open import Mu.Language.Type using (base)
 import Mu.Language.ISWIM as ISWIMμ
@@ -74,11 +74,11 @@ import Mu.proof.Correctness.Graph.CompilerCorrect as Compiler
 open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂)
 
-{- The environment of a closed program: every variable denotes {ω}, the
+{- The environment of a closed program: every variable denotes {⟨⟩}, the
    default value. (It only matters for open terms, as the passes are
    stated on whole terms.) -}
 ρ₀ : Env Value
-ρ₀ = λ _ → ⌈ ω ⌉
+ρ₀ = λ _ → ⌈ ⟨⟩ ⌉
 
 {- Each pass ------------------------------------------------------------------}
 

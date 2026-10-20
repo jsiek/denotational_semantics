@@ -30,7 +30,8 @@
 module Mu.proof.Correctness.Graph.SimplifyCorrect where
 
 open import Framework.Primitives using (Int)
-open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Prelude hiding (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
 open import proof.Framework.GraphModel.TypedOkBase using (fin₁)
 open import proof.Framework.GraphModel.TypedGraph using (𝒯-intro; proj-𝒯)
@@ -369,4 +370,4 @@ case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d | just (inj₂ K) with branch-in
 {- The end theorem: every closed program -}
 simplify-correct : ∀ {A} (M : Tm [] A) → ⟦ M ⟧ ρ₀ ≃ ⟦ simplify M ⟧ ρ₀
 simplify-correct M = tm (simp-ok inline-fuel M wf₀ wf₀ (λ ()))
-  where wf₀ = ⟨ (λ _ → ⟨ ω , refl ⟩) , (λ _ → Con-⌈⌉ ω) ⟩
+  where wf₀ = ⟨ (λ _ → ⟨ ⟨⟩ , refl ⟩) , (λ _ → Con-⌈⌉ ⟨⟩) ⟩

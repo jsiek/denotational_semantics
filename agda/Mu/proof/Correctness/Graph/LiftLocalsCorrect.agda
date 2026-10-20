@@ -88,9 +88,9 @@ table-lift [] f = ≃-refl
 table-lift {ss = _ ∷ ss} (d ∷ ds) f with lvl f ≟ length ss
 ... | yes _ = Λ-≃ λ V _ cV → Λ-≃ λ U _ cU →
   lift-sem (tables-con code-con (All-map ⌜_⌝ ds)) (table-lift ds) d _ nothing
-    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
+    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩)))
 ... | no _ = table-lift ds f
 
 lift-locals-correct : ∀ {A} (P : M.Program A) → ⟦ ⌜ P ⌝ₚ ⟧ₚ ≃ I.⟦ lift-program P ⟧ₚ
 lift-locals-correct (M.program ds e) =
-  lift-sem (table-con (All-map ⌜_⌝ ds)) (table-lift ds) e _ nothing (λ _ → Con-⌈⌉ ω)
+  lift-sem (table-con (All-map ⌜_⌝ ds)) (table-lift ds) e _ nothing (λ _ → Con-⌈⌉ ⟨⟩)
