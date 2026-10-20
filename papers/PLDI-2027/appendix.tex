@@ -131,7 +131,7 @@ hold no variable. The meaning of a closed program $M$ is
 $\den{M} = \den{M}\rho_0$. The operators are those of
 Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 
-\subsection{\iswim}
+\subsection{The \iswim\ Language}
 
 A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of
 variable types.
@@ -191,7 +191,7 @@ The semantics:
     \mathcal{C}(\den{L}\rho,\; \mlam{X} \den{M}\rho[x{:=}X],\; \mlam{Y} \den{N}\rho[y{:=}Y])
 \]
 
-\subsection{Clos and EnvClos}
+\subsection{The Clos and EnvClos Languages}
 
 Clos and EnvClos type and interpret their other forms as \iswim\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
@@ -224,7 +224,7 @@ curried meaning of its code to the tuple of the captured values
 \end{array}
 \]
 
-\subsection{FlatClos}
+\subsection{The FlatClos Language}
 
 FlatClos replaces closures and application with code, packing, and
 calls, and types and interprets its other forms as \iswim\ does:
@@ -249,7 +249,7 @@ calls, and types and interprets its other forms as \iswim\ does:
   \den{\kw{callc}\;L\;M}\rho = \den{L}\rho \callop \den{M}\rho
 \]
 
-\subsection{GlobalFun and Mon}
+\subsection{The GlobalFun and Mon Languages}
 
 A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
@@ -279,7 +279,7 @@ Mon has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
 and has the meaning of its embedding into GlobalFun: an atom and an
 operation on atoms are GlobalFun terms already.
 
-\subsection{Imp}
+\subsection{The Imp Language}
 
 A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
@@ -326,7 +326,7 @@ it assigns, like a $\kw{let}$:
 \end{array}
 \]
 
-\subsection{CFG}
+\subsection{The CFG Language}
 
 A tail is typed by the type $R$ of the body's result, the list
 $\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
@@ -378,7 +378,7 @@ older than $l$, and the body means $\den{t}_{T,B}$. Definitions and
 programs are given meaning as in Imp, with the body in place of the
 expression and no continuation.
 
-\subsection{X86$\mu$}
+\subsection{The X86$\mu$ Language}
 
 An instruction is typed by the type of the machine state it starts in
 and the one it leaves. A state type
