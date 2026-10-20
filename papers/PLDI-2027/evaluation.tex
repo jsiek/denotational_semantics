@@ -1,0 +1,32 @@
+%% Section 5: evaluation, comparing the denotational proof with the three
+%% operational ones (RQ2, RQ4). Budget: 3.0 pages
+%% (notes/paper-outline.md, section 5). Numbers come from loc.md
+%% (loc.py --mu) and will change; update them before submission.
+%% TODO: setup, accounting rules, Table 1, analysis by kind of pass, full
+%% cost, threats to validity.
+
+\section{Evaluation}
+\label{sec:evaluation}
+
+\paragraph{Delay is the pass whose denotational proof costs the most.}
+The denotational proof of delay takes 524 lines of Agda, against 35 to
+139 lines for the same pass in the three operational styles. Most of the difference has three
+sources. First, the denotational proof needs two directions, while a
+simulation proof gets the backward direction for free from forward
+simulation and the determinism of the target. The graph model has an
+analogue of determinism, the consistency of denotations, and it does
+part of the job: if the source produces a constant, the forward
+direction puts that constant in the target, and consistency rules out
+any other. But the graph model represents divergence as the empty set,
+the absence of evidence, and a forward relation cannot carry absence.
+Showing that a diverging program compiles to a diverging program is
+therefore a separate argument, and that argument is reflection. (We use
+different relations for the two directions, the structural one for
+preservation and the approximant one for reflection, because a single
+relation parameterized by the direction made the proof longer: on an
+earlier version of the compiler, switching from one relation to two cut
+the proof of delay from 1,358 to 832 lines.)
+Second, reflection needs the finite lists, the batches of calls, and
+the lemma that extracts them from a target call. Third, $\beta$-rules in
+the graph model hold only under side conditions of nonemptiness and
+continuity, which a machine gets for free by taking a step.

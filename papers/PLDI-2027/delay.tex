@@ -14,22 +14,22 @@
 \subsection{Delay and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The proof for delay is the most difficult link in our answer to
-whether a whole compiler, from a higher-order language with general
-recursion down to assembly, can be proved correct with denotational
-semantics (RQ1), and delay is the reason that not every pass of the
-compiler can be proved correct by equational reasoning (RQ3). The
-delay pass is the step of closure conversion that lowers closures to
-pairs of code and environment. This section shows why its semantic
-reflection resists our prior attempts and how the approximant logical
-relation finally proves it.
+The delay pass is the step of closure conversion that lowers closures
+to pairs of code and environment. Its proof is the most difficult link
+in our answer to RQ1, which asks whether a whole compiler, from a
+higher-order language with general recursion down to assembly, can be
+proved correct with denotational semantics. Delay is also the reason
+that the answer to RQ3 is negative, because it does not yield to
+equational reasoning. This section shows why
+semantic reflection for delay resisted our earlier attempts and how the
+approximant logical relation proves it.
 
-In the source language EnvClos of delay, a closure
-$\kw{clos}\;N\;\vec{M}$ is still a function: its meaning is the
-meaning of its code $N$, a closed, curried function of the environment
-$X$ and then the argument $Y$, applied to the tuple of the free
-variables $\vec{M}$; and an application $\kw{app}\;L\;M$ means
-function application:
+The source language of delay is EnvClos. In EnvClos, a closure
+$\kw{clos}\;N\;\vec{M}$ is still a function. Its code $N$ is closed,
+and its meaning is a curried function of the environment $X$ and then
+the argument $Y$. The meaning of the closure is this function applied
+to the tuple of the free variables $\vec{M}$. An application
+$\kw{app}\;L\;M$ means function application:
 \[
 \begin{array}{rcl}
   \den{\kw{clos}\;N\;\vec{M}}\rho & = &
@@ -38,12 +38,14 @@ function application:
 \end{array}
 \]
 
-In the target language, FlatClos, a closure is represented by a pair
-of code and environment, and a call takes the pair apart. The
-semantics for code is the same curried function, $\kw{pack}$ builds
-the set of pairs $\pairv{u}{v}$ with $u$ from the code and $v$ from
-the environment, and a call applies the first components to the second
-components and then to the argument (the operator $\callop$ of Figure~\ref{fig:graph-ops}):
+The target language of delay is FlatClos. In FlatClos, a closure is
+a pair of code and environment, and a call takes the pair apart. The
+meaning of $\kw{code}\;N$ is the same curried function as before. The
+meaning of $\kw{pack}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
+$u$ from the code $L$ and $v$ from the environment $M$. A call applies
+the first components of the pairs to their second components and then
+to the argument, which is the operator $\callop$ of
+Figure~\ref{fig:graph-ops}:
 \[
 \begin{array}{rcl}
   \den{\kw{code}\;N}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}(X, Y)))\\
@@ -53,7 +55,7 @@ components and then to the argument (the operator $\callop$ of Figure~\ref{fig:g
 \end{array}
 \]
 Delay translates each closure into a pair and each application into a
-call, and translates every other construct homomorphically:
+call. It translates every other construct homomorphically:
 \[
 \begin{array}{rcl}
   \mathit{delay}(\kw{clos}\;N\;\vec{M}) & = &
@@ -88,81 +90,82 @@ call, and translates every other construct homomorphically:
 \end{array}
 \]
 \caption{The relation $v \sqsubseteq D'$ (``$D'$ satisfies $v$'') for
-  the preservation half of delay, between a single source (EnvClos) element $v$ and a set $D'$ of
-  target (FlatClos) elements, defined by recursion on $v$; $U
-  \sqsubseteq^* E'$ extends it to a finite list $U$.}
+  the preservation half of delay. It relates a single source (EnvClos)
+  element $v$ to a set $D'$ of target (FlatClos) elements and is
+  defined by recursion on $v$. The relation $U \sqsubseteq^* E'$
+  extends it to a finite list $U$.}
 \label{fig:preserve}
 \end{figure}
 
 \paragraph{Why preservation is easy and reflection is not}
 Delay changes the representation of closures, so its correctness is
-not an equation. The theorem we prove is that a closed program and its
-translation produce the same constants, and that one produces
-something exactly when the other does. The forward half, preservation,
-only requires a relation between a \emph{single} source element and a
+not an equation. Instead, we prove that a closed program and its
+translation produce the same constants, and that one produces something
+exactly when the other does. The forward half, preservation, requires
+only a relation between a \emph{single} source element and a
 \emph{set} of target elements, defined by recursion on the source
-element (Figure~\ref{fig:preserve}); we read $v \sqsubseteq D'$ as
+element (Figure~\ref{fig:preserve}). We read $v \sqsubseteq D'$ as
 ``$D'$ satisfies $v$''. The clause for a function entry says when a
-target set satisfies it: the set must contain a closure, and calling
-that closure on arguments that satisfy the entry's inputs must satisfy
-the entry's output. The relation is in the style of the satisfaction relation of
-Abramsky's domain logic \citep{Abramsky:1990vv,Abramsky:1993fk}, with a
-source graph element in the role of the formula.
-The source element is finite, so the recursion is structural, and the
-proof that $v \in \den{M}\rho$ implies
+target set satisfies the entry. The set must contain a closure, and
+calling the set on arguments that satisfy the entry's inputs must
+produce a set that satisfies the entry's output. The relation is in the
+style of the satisfaction relation of Abramsky's domain logic
+\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source graph element in
+the role of the formula. The source element is finite, so the
+recursion is structural. The proof that $v \in \den{M}\rho$ implies
 $v \sqsubseteq \den{\mathit{delay}(M)}\rho'$ is a routine induction on
 $M$.
 
-The backward half, reflection, must show that every element the target
-produces is accounted for by the source, and here the representation
-of closures gets in the way. To see how, consider the function
-$\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos
-its meaning is a set of entries such as $[1] \mapsto 10$ and $[6]
-\mapsto 15$. After delay, its code takes the environment as an extra
-parameter, and the meaning of the code is a table with entries for
-\emph{every} environment, such as the following two:
+The backward half, reflection, must show that the source accounts for
+every element that the target produces. Here the representation of
+closures gets in the way. To see how, consider the function
+$\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
+its meaning is a set of entries such as $[1] \mapsto 10$ and
+$[6] \mapsto 15$. After delay, its code takes the environment as an
+extra parameter. The meaning of the code is then a table with entries
+for \emph{every} environment, such as the following two:
 \[
   [9] \mapsto ([1] \mapsto 10) \qquad
   [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
 \]
-even though the program only applies this function with the
-environment $[9]$. So the target's meanings contain code--environment
-combinations that correspond to no source function. Worse, a call
-takes the code from $\car$ and the environment from $\cdr$
+The program pairs this code only with the environment $[9]$, so the
+entry for $[2]$ is junk: it corresponds to no source function. Worse, a
+call takes the code from $\car$ and the environment from $\cdr$
 \emph{separately}, so a result may combine the code entry of one pair
 with the environment of another. 
 
 \paragraph{Relations that do not work}
-We tried several natural alternatives, and each failure points to a
-piece of the solution.
+We tried several natural relations. Each failure points to a piece of
+the solution.
 \begin{itemize}
 \item \emph{Relating a single element to a single element} works for
-  every construct except the call, because of the mixing of $\car$ and
-  $\cdr$ described above.
-\item \emph{Relating a possibly infinite set on both sides} handles
-  the mixing, but the function case mentions the relation in both
-  positive and negative positions, so the definition is not well
-  founded.
-\item \emph{Indexing by one target element within its whole target set}
-  comes closest, but the function case must relate the entire argument
-  set, which is infinite and cannot be shrunk to match the finite index.
+  every construct except the call. It fails for the call because of
+  the mixing of $\car$ and $\cdr$ described above.
+\item \emph{Relating a possibly infinite set to a possibly infinite
+  set} handles the mixing. However, the function case uses the
+  relation in both positive and negative positions, so the definition
+  is not well founded.
+\item \emph{Indexing by one target element within its whole target
+  set} comes closest. However, the function case must relate the
+  entire argument set, which may be infinite and cannot shrink to match
+  the finite index.
 \end{itemize}
 
 \paragraph{The key insight}
 
 We solve the mixing problem by relating the source not to a single
 target element but to a finite \emph{list} of target elements. When a
-call $D' \callop E'$ produces a result $w$, it draws on only finitely
-many pairs of $D'$: one whose code contributes an entry $U_e \mapsto
-(U_a \mapsto w)$, and others whose environments make up
-$U_e$. Collecting these pairs into a finite list $V \subseteq D'$
-gives a witness that contains both halves of the call, so the code and
-the environments are matched \emph{inside} $V$, no matter which pairs
-they come from. The relation then lets a call use exactly the code
-entries whose environments $V$ itself provides, and ignore the junk
-entries for environments that the program never supplies.  This choice
-of a finite list $V$ also makes the relation well founded, as we
-explain below in the paragraph on termination.
+call $D' \callop E'$ produces a result $w$, it uses only finitely many
+pairs of $D'$. One pair supplies a code entry
+$U_e \mapsto (U_a \mapsto w)$, and other pairs supply the environments
+in $U_e$. Collecting these pairs gives a finite list $V \subseteq D'$
+that contains both halves of the call. The code and the environments
+are therefore matched \emph{inside} $V$, no matter which pairs they
+come from. The relation lets a call use exactly the code entries whose
+environments $V$ itself provides, so it ignores the junk entries for
+environments that the program never supplies. The choice of a finite
+list $V$ also makes the relation well founded, as we explain in the
+paragraph on termination below.
 
 \begin{figure}[t]
 \small\figdefs
@@ -218,7 +221,7 @@ relation used for the recursive occurrences.
   of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
   elements. A finite list stands for the set of its elements. Here $c$
   ranges over constants and $\pi$ over the projections of tuple
-  components and sum injections; $\cdr$ and $\mathsf{con}$ are
+    components and sum injections; $\car$, $\cdr$, and $\mathsf{con}$ are
   as in Figure~\ref{fig:graph-ops}, and $\depth(V)$ is the largest
   depth of an element of $V$ (Appendix~\ref{app:depth}).}
 \label{fig:alr}
@@ -226,65 +229,71 @@ relation used for the recursive occurrences.
 
 \paragraph{The approximant logical relation}
 
-Figure~\ref{fig:alr} defines the approximant logical relation $D \ALR
-V$, which relates a finite list $V$ of target elements to a source set
-$D$. Its building block is the notion of a \emph{usable entry} of a
-graph.  A target closure is a set of pairs $\pairv{u}{t}$ of code and
-environment, and the code $u$, a curried function, has entries of the
-form $U_e \mapsto (U_a \mapsto w)$: given the environment $U_e$, it
-returns a function that maps the arguments $U_a$ to $w$. We write
+Figure~\ref{fig:alr} defines the approximant logical relation
+$D \ALR V$, which relates a finite list $V$ of target elements to a
+source set $D$. Its building block is the \emph{usable entry} of a
+list. A target closure is a set of pairs $\pairv{u}{t}$ of code and
+environment. The code $u$ is a curried function, so its entries have
+the form $U_e \mapsto (U_a \mapsto w)$: it maps the environment $U_e$
+to a function that maps the arguments $U_a$ to $w$. We write
 $\entryin{U_a}{w}{V}$ when such an entry is among the codes $\car(V)$
-\emph{and} the environments $U_e$ are among the environments $\cdr(V)$
-that $V$ itself provides. The second condition is what makes the relation sound
-in the presence of junk: a code entry for an environment that the
-program never supplies, such as the entry for $x{=}2$ in the example
-above, does not appear in a usable entry. Just as a call $D' \callop E'$ takes the
-code from $\car(D')$ and the environment from $\cdr(D')$, the code and
-the environment of a usable entry may come from different pairs of $V$.
+\emph{and} the environments $U_e$ are among the environments
+$\cdr(V)$ that $V$ itself provides. The second condition makes the
+relation sound in the presence of junk. A code entry for an environment
+that the program never supplies, such as the entry for $[2]$ in the
+example above, is not usable. A call $D' \callop E'$ takes the code
+from $\car(D')$ and the environment from $\cdr(D')$. In the same way,
+the code and the environment of a usable entry may come from different
+pairs of $V$.
 
-A \emph{batch of calls} $\callsto{V}{U}{W}$ then says two things.  The
-second conjunct says that each result $w$ in $W$ is produced by a
-usable entry of $V$ whose arguments are among $U$. The first conjunct,
-$U \subseteq \mathsf{args}(V)$, says that $U$ contains only arguments
-that some usable entry of $V$ take, so the arguments are shallower
-than $V$, which the recursion needs.
+A \emph{batch of calls} $\callsto{V}{U}{W}$ says two things. The
+first conjunct, $U \subseteq \mathsf{args}(V)$, says that every
+argument in $U$ is taken by some usable entry of $V$. This keeps the
+arguments shallower than $V$, which the recursion needs. The second
+conjunct says that each result $w$ in $W$ is produced by a usable entry
+of $V$ whose arguments are among $U$.
 
 One layer ${\trianglerighteq^{Q}}$ of the relation has four clauses:
 \begin{enumerate}
-  \item the constants of $V$ are in $D$;
-  \item if $V$ is nonempty, so is $D$;
-  \item every batch of calls to $V$ on argument $U$ related to $E$
-    produces a $W$ related to $D \app E$; and
-  \item every projection of $V$ is related to the same projection of $D$.
+  \item every constant in $V$ is in $D$;
+  \item if $V$ is nonempty, then $D$ is nonempty;
+  \item for every batch of calls $\callsto{V}{U}{W}$ and every
+    consistent set $E$ related to $U$, the set $D \app E$ is related
+    to $W$; and
+  \item every sublist of a projection of $V$ is related to the same
+    projection of $D$.
 \end{enumerate}
 The third clause is where the $\car$ and $\cdr$ of the call operator
-meet: through usable entries, the code comes from $\car(V)$ and the
-environments from $\cdr(V)$, both within the finite list $V$.
+meet. Through usable entries, the code comes from $\car(V)$ and the
+environments come from $\cdr(V)$, both within the finite list $V$.
 
 \paragraph{Termination}
 
-The definition of the approximant logical relation $D \ALR V$ is by
-recursion on the depth of $V$. The relation occurs at the arguments of
-a call, in negative position, which is what made the relation between
-two infinite sets ill founded. Here every recursive occurrence is at a
-list shallower than $V$. The arguments $U$ are shallower than $V$
+The approximant logical relation $D \ALR V$ is defined by recursion on
+the depth of $V$. The relation occurs at the arguments of a call, in
+negative position. That occurrence is what made the relation between
+two infinite sets ill founded. Here, every recursive occurrence is at
+a list shallower than $V$. The arguments $U$ are shallower than $V$
 because the first conjunct of a batch of calls requires
 $U \subseteq \mathsf{args}(V)$; without that conjunct, $U$ could
 contain elements deeper than $V$. The results $W$ are shallower than
 $V$ because each of them is the output of an entry in $V$. Finally,
 the projections of $V$ are shallower than $V$ because they consist of
-components of the elements of $V$. The index $k$ of ${\ALR_k}$ is only a termination device:
-any index that bounds the depth of $V$ gives the same relation, and
+components of the elements of $V$. 
+
+The index $k$ of ${\ALR_k}$ serves only to ensure termination. Any
+index that bounds the depth of $V$ gives the same relation, and
 therefore ${\ALR}$ satisfies its defining equation
 ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
-(Lemma~\ref{lem:depth-irrelevant}). The proofs about ${\ALR}$ fold and
-unfold it with this equation and never mention the index.  The tower $\ALR_0, \ALR_1, \ldots$ has the same shape as
-the one \citet{Reynolds:1974aa} used to relate the direct and
-continuation semantics of a language, which he built stage by stage
-along the inverse-limit construction of its domains
+(Lemma~\ref{lem:depth-irrelevant}). The proofs about ${\ALR}$ use this
+equation in both directions and never mention the index. The tower
+$\ALR_0, \ALR_1, \ldots$ has the same shape as the one that
+\citet{Reynolds:1974aa} used to relate the direct and continuation
+semantics of a language. He built his relation stage by stage along
+the inverse-limit construction of the domains
 \citep{Scott:1971aa,Smyth:1982aa}. His index ranges over the stages of
-both domains and his relation is the intersection over all of them;
-ours bounds the depth of the finite target side only, and depth
+both domains, and his relation is the intersection over all stages.
+Our index bounds only the depth of the finite target side, and depth
 irrelevance makes an intersection unnecessary.
 
 \begin{lemma}[Depth irrelevance and unfolding]\label{lem:depth-irrelevant}
@@ -296,39 +305,40 @@ irrelevance makes an intersection unnecessary.
 \end{enumerate}
 \end{lemma}
 
-The relation is also monotone in $D$ and antitone in $V$: a larger
-source set and a sublist of the target list preserve it.
+The relation is also monotone in $D$ and antitone in $V$: enlarging
+the source set or taking a sublist of the target list preserves it.
 
 \paragraph{Why not recursion on types}
 
 The intermediate languages are typed, so one might hope to define the
 relation by recursion on types, as \citet{Chlipala:2007fk} and
-\citet{Nielsen:2000aa} do. The presense of recursive types in
-\iswim\ rule this out. The meaning of $\kw{fold}$ and $\kw{unfold}$ is
-the identity, so the relation at $\mu X.\,A$ would have to be the
-relation at $A[\mu X.\,A/X]$, which is not smaller; at $\mu X.\,X
-\rightarrow \mathrm{Int}$, the application clause asks for the
-relation at the argument type, which is $\mu X.\,X \rightarrow
-\mathrm{Int}$ itself. The depth of the graph element, by contrast,
-decreases at every call.
+\citet{Nielsen:2000aa} do. The recursive types of \iswim\ rule this
+out. The constructs $\kw{fold}$ and $\kw{unfold}$ mean the identity, so
+the relation at $\mu X.\,A$ would have to be the relation at
+$A[\mu X.\,A/X]$, which is not a smaller type. For example, at the
+type $\mu X.\,X \rightarrow \mathrm{Int}$, the clause for application
+needs the relation at the argument type, which is
+$\mu X.\,X \rightarrow \mathrm{Int}$ itself. By contrast, the depth of
+the target list decreases at every call.
 
 \paragraph{The fundamental lemma}
 
-Environments $\rho$ and $\rho'$ are related when, for every variable
-$x$ and every finite $V \subseteq \rho'(x)$, we have $\rho(x) \ALR V$,
-together with the consistency and nonemptiness that the graph model
-requires of environments.
+A source environment $\rho$ and a target environment $\rho'$ are
+related when $\rho(x) \ALR V$ for every variable $x$ and every finite
+$V \subseteq \rho'(x)$. We also require that both environments be
+consistent and that $\rho$ map every variable to a nonempty set.
 
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
-If $\rho$ and $\rho'$ are related, then for every term $M$ of EnvClos
-and every finite $V$, if $\den{\mathit{delay}(M)}\rho' \supseteq V$,
-then $\den{M}\rho \ALR V$.
+If $\rho$ and $\rho'$ are related, then $\den{M}\rho \ALR V$ for every
+term $M$ of EnvClos and every finite
+$V \subseteq \den{\mathit{delay}(M)}\rho'$.
 \end{lemma}
 
-The proof is by induction on $M$, folding and unfolding ${\ALR}$ with
-Lemma~\ref{lem:depth-irrelevant}. Most cases are routine. In the case of a
-variable, the conclusion is given directly by the relation between the
-environments $\rho$ and $\rho'$. The constructs $\kw{fold}$ and
+The proof is by induction on $M$. Throughout, the second part of
+Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
+the four clauses of $D \layer{\ALR} V$. Most cases are routine. In the case of a
+variable, the relation between $\rho$ and $\rho'$ gives the conclusion
+directly. The constructs $\kw{fold}$ and
 $\kw{unfold}$ denote the identity function in both languages, so their
 cases follow immediately from the induction hypothesis. The cases for
 tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
@@ -336,79 +346,82 @@ induction hypotheses for their subterms. Two cases carry the weight.
 
 \emph{Case $M = \kw{app}\,L\,K$.} Then
 $\mathit{delay}(M) = \kw{callc}\,\mathit{delay}(L)\,\mathit{delay}(K)$,
-so $V \subseteq D' \callop E'$ where
+so $V \subseteq D' \callop E'$, where
 $D' = \den{\mathit{delay}(L)}\rho'$ and
 $E' = \den{\mathit{delay}(K)}\rho'$. Each element of $V$ is produced by
 a code entry from $\car(D')$, finitely many environments from
-$\cdr(D')$, and finitely many arguments from $E'$. Collecting the pairs
-of $D'$ that contribute these codes and environments, and the
-arguments, yields finite lists $W \subseteq D'$ and $U \subseteq E'$
-with $\callsto{W}{U}{V}$. The induction hypotheses give
-$\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$. Unfolding the first and
-applying clause~3 to this batch of calls with $E = \den{K}\rho$ proves
-the conclusion $\den{L}\rho \app \den{K}\rho \ALR V$, that is,
+$\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
+of $D'$ that supply these codes and environments into a finite list
+$W \subseteq D'$, and the arguments into a finite list
+$U \subseteq E'$. Then $\callsto{W}{U}{V}$. The induction hypotheses
+give $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$, and both
+$\den{K}\rho$ and $U$ are consistent. Clause~3 for
+$\den{L}\rho \ALR W$, applied to this batch of calls with
+$E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
 \emph{Case $M = \kw{clos}\,N\,\vec{K}$.} Then
 $\mathit{delay}(M) = \kw{pack}\,(\kw{code}\,\mathit{delay}(N))\,(\kw{tuple}\,\mathit{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
-$D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the four clauses of $D \layer{\ALR} V$, and then the second
-part of Lemma~\ref{lem:depth-irrelevant} gives $D \ALR V$. Clauses 1 and 4 hold
-trivially, because every element of $V$ is a pair, so $V$ contains no constants and every projection of $V$ is empty. For clause 2, if $V$ is nonempty then
-so is $T'$, the induction hypothesis for $\vec{K}$ makes $T$ nonempty,
-and then $\nu \in D$. For clause 3, suppose $\callsto{V}{U}{W}$ and
-$E \ALR U$; we must show $D \app E \ALR W$. Each $w \in W$ comes from a
-usable entry $U_e \mapsto (U_a \mapsto w) \in \car(V)$ with
-$U_e \subseteq \cdr(V)$ and $U_a \subseteq U$, so by monotonicity $w$
-is in $\den{\mathit{delay}(N)}(\cdr(V), U)$, the meaning of the target
-body with its environment parameter bound to $\cdr(V)$ and its argument
-parameter bound to $U$. This environment is related to the source
-environment $(T, E)$. The argument parameters are related by
-assumption, and the environment parameters are related by the induction
-hypothesis for $\vec{K}$, because $\cdr(V) \subseteq T'$. The induction
-hypothesis for the body $N$ then gives $\den{N}(T, E) \ALR W$. Both $T$
-and $E$ are nonempty. The set $T$ is nonempty because $U_e$ is a
-nonempty list within $\cdr(V)$, and the induction hypothesis for
-$\vec{K}$ applies to it. The set $E$ is nonempty by clause~2 of
-$E \ALR U$, because $U_a$ is a nonempty list within $U$. The second
-part of Lemma~\ref{lem:beta} therefore gives
-$\den{N}(T, E) \subseteq D \app E$, and so $D \app E \ALR W$ because
-${\ALR}$ is monotone in its source set.
+$D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
+four clauses of $D \layer{\ALR} V$.
+
+Clauses 1 and 4 hold trivially. Every element of $V$ is a pair, so $V$
+contains no constants and every projection of $V$ is empty.
+
+For clause 2, suppose that $V$ is nonempty. Then $T'$ is nonempty, so
+$T$ is nonempty by the induction hypothesis for $\vec{K}$. It follows
+that $\nu \in D$.
+
+For clause 3, suppose that $\callsto{V}{U}{W}$, that $E$ and $U$
+are consistent, and that $E \ALR U$. We must show $D \app E \ALR W$. Each
+$w \in W$ comes from a code entry $U_e \mapsto (U_a \mapsto w)$ in
+$\car(V)$, where $U_e$ is a nonempty list within $\cdr(V)$ and $U_a$
+is a nonempty list within $U$. The code entry belongs to the meaning of $\kw{code}\,\mathit{delay}(N)$,
+so $w \in \den{\mathit{delay}(N)}(U_e, U_a)$. By
+monotonicity, $w \in \den{\mathit{delay}(N)}(\cdr(V), U)$. This is the
+meaning of the target body with its environment parameter bound to
+$\cdr(V)$ and its argument parameter bound to $U$. We relate this
+target environment to the source environment $(T, E)$. First, both $T$
+and $E$ are nonempty. The set $T$ is nonempty by the induction
+hypothesis for $\vec{K}$, because $U_e$ is a nonempty list within
+$\cdr(V)$ and $\cdr(V) \subseteq T'$. The set $E$ is nonempty by
+clause~2 of $E \ALR U$, because $U$ contains the nonempty list $U_a$.
+Second, both environments are consistent. On the source side, $E$ is
+consistent by assumption, and $T$ is consistent because the meaning of
+every term in a consistent environment is consistent. On the target side, $U$ is consistent by
+assumption, and $\cdr(V)$ is consistent because it lies within the
+consistent set $T'$. Third, the environments are related. For the environment parameter,
+the induction hypothesis for $\vec{K}$ gives $T \ALR V_e$ for every
+finite $V_e \subseteq \cdr(V)$, because $\cdr(V) \subseteq T'$. For the
+argument parameter, $E \ALR U$ holds by assumption, and so $E$ is
+related to every sublist of $U$. The induction hypothesis for the body
+$N$ then gives $\den{N}(T, E) \ALR W$. The second part of
+Lemma~\ref{lem:beta} gives $\den{N}(T, E) \subseteq D \app E$. Because
+${\ALR}$ is monotone in its source set, $D \app E \ALR W$.
+
+We have proved the four clauses, so the second part of
+Lemma~\ref{lem:depth-irrelevant} gives $D \ALR V$.
 
 \begin{theorem}[Correctness of delay]\label{thm:delay}
-For a closed term $M$ of EnvClos and a constant $c$,
-$c \in \den{M}$ if and only if $c \in \den{\mathit{delay}(M)}$, and
-$\den{M}$ is nonempty if and only if $\den{\mathit{delay}(M)}$ is.
+Let $M$ be a closed term of EnvClos, and let $\den{\cdot}$ denote
+meaning in the empty environment. For every constant $c$,
+$c \in \den{M}$ if and only if $c \in \den{\mathit{delay}(M)}$.
+Moreover, $\den{M}$ is nonempty if and only if
+$\den{\mathit{delay}(M)}$ is nonempty.
 \end{theorem}
 
-Reflection follows from Lemma~\ref{lem:delay-fundamental} with the
-empty environments: a constant $c$ of the target is the one-element
-list $[c]$, and clauses 1 and 2 give $c \in \den{M}$ and the
-nonemptiness of $\den{M}$. Preservation follows from the single-element
-relation $\sqsubseteq$.
+The empty environments are related, so reflection follows from
+Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\mathit{delay}(M)}$,
+the lemma applied to the one-element list $[c]$ gives
+$\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If
+$\den{\mathit{delay}(M)}$ contains an element $v$, the lemma applied
+to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
+follows from the relation $\sqsubseteq$ of
+Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
+$c \in D'$, and $v \sqsubseteq D'$ implies that $D'$ is nonempty.
 
-\paragraph{The cost}
-Delay is the most expensive pass of the denotational proof: 524 lines
-of Agda, against 35 to 139 for the same pass in the three operational
-styles (Section~\ref{sec:evaluation}). Most of the difference has three
-sources. First, the denotational proof needs two directions, while a
-simulation proof gets the backward direction for free from forward
-simulation and the determinism of the target. The graph model has an
-analogue of determinism, the consistency of denotations, and it does
-part of the job: if the source produces a constant, the forward
-direction puts that constant in the target, and consistency rules out
-any other. But the graph model represents divergence as the empty set,
-the absence of evidence, and a forward relation cannot carry absence.
-Showing that a diverging program compiles to a diverging program is
-therefore a separate argument, and that argument is reflection. (We use
-different relations for the two directions, the structural one for
-preservation and the approximant one for reflection, because a single
-relation parameterized by the direction made the proof longer: on an
-earlier version of the compiler, switching from one relation to two cut
-the proof of delay from 1,358 to 832 lines.)
-Second, reflection needs the finite lists, the batches of calls, and
-the lemma that extracts them from a target call. Third, $\beta$-rules in
-the graph model hold only under side conditions of nonemptiness and
-continuity, which a machine gets for free by taking a step. We return
-to these numbers in Section~\ref{sec:evaluation}.
+Section~\ref{sec:evaluation} compares the size of this proof with the
+operational proofs of delay.
+
