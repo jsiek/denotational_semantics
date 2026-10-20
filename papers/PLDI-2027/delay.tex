@@ -149,13 +149,27 @@ piece of the solution.
 \end{itemize}
 
 \paragraph{The key insight}
-A simulation needs only one side to shrink. Reflection asks whether
-what the target produces is produced by the source, so the target side
-can be a \emph{finite} list of elements, while the source side
-remains an arbitrary, possibly infinite, set. And because a call mixes
-the $\car$ and $\cdr$ of several pairs, the matching of codes to
-environments must happen \emph{inside} the finite list, so the index is
-a list of elements rather than a single element.
+We solve the mixing problem by relating the source not to a single
+target element but to a finite \emph{list} of target elements. When a
+call $D' \callop E'$ produces a result $w$, it draws on only finitely
+many pairs of $D'$: one whose code contributes an entry
+$U_e \mapsto (U_a \mapsto w)$, and others whose environments make up
+$U_e$. Collecting these pairs into a finite list $V \subseteq D'$ gives
+a witness that contains both halves of the call, so the code and the
+environments are matched \emph{inside} $V$, no matter which pairs they
+come from. The relation then lets a call use exactly the code entries
+whose environments $V$ itself provides, which also discards the junk
+entries for environments that the program never supplies. The
+counterpart of $V$ on the source side is a whole source denotation $D$,
+which contains every entry of the source closures, so whatever
+combination a call draws from $V$ is accounted for by $D$.
+
+This choice also makes the recursion well founded, because only one
+side needs to shrink. Reflection asks whether what the target produces
+is also produced by the source, so the target side can be finite while
+the source side remains an arbitrary, possibly infinite, set. The
+relation can therefore be defined by recursion on the depth of $V$, as
+we explain below.
 
 \begin{figure}[t]
 \small\figdefs
@@ -241,9 +255,8 @@ in $W$ is produced by a usable entry of $V$ whose arguments are among
 $U$; this is what the batch is about. The first conjunct,
 $U \subseteq \mathsf{args}(V)$, says that $U$ contains only arguments
 that some usable entry of $V$ takes. It does not restrict which results
-appear; it keeps the arguments small. Without it, $U$ could contain
-elements deeper than $V$, and the recursion below would not be well
-founded. One layer ${\trianglerighteq^{Q}}$ of
+appear; it keeps the arguments shallower than $V$, which the recursion
+needs. One layer ${\trianglerighteq^{Q}}$ of
 the relation has four clauses: the constants of $V$ are in $D$; if $V$
 is nonempty, so is $D$; every batch of calls of $V$ on arguments
 related to a source set $E$ produces results related to $D \app E$; and
@@ -251,10 +264,15 @@ every projection of $V$ is related to the same projection of $D$. The
 third clause is the only place where $\car$ and $\cdr$ meet, and they
 meet inside the finite list $V$.
 
-The definition is by recursion on the depth of $V$: the arguments $U$
-of a batch of calls are strictly shallower than $V$ because
-$U \subseteq \mathsf{args}(V)$, the results $W$ are because each comes
-from an entry of $V$, and so are the projections of $V$. The index $k$ of ${\ALR_k}$ is only a
+\paragraph{Termination}
+The definition is by recursion on the depth of $V$. The relation
+occurs at the arguments of a call, in negative position, which is what
+made the relation between two infinite sets ill founded. Here every
+recursive occurrence is at a list shallower than $V$: the arguments $U$
+because $U \subseteq \mathsf{args}(V)$ (without this conjunct, $U$
+could contain elements deeper than $V$), the results $W$ because each
+comes from an entry of $V$, and the projections of $V$ because they
+are components of its elements. The index $k$ of ${\ALR_k}$ is only a
 termination device: any index that bounds the depth of $V$ gives the
 same relation (Lemma~\ref{lem:depth-irrelevant}), so we may fold and
 unfold ${\ALR}$ as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$ directly.
