@@ -88,6 +88,11 @@ explanation follows the elementary presentations of
 Figure~\ref{fig:graph-ops} defines the elements and the operators on
 sets of elements from which we build the semantics of every language in
 the compiler.
+We first explain how the model represents functions, then how it
+handles recursion and divergence, and then the consistency requirement
+that distinguishes our variant. We end with the properties of the
+semantics that our proofs rely on, including a $\beta$-law, and with
+our reasons for choosing a graph model over traditional domain theory.
 
 \paragraph{Functions as tables}
 One can describe a function by tabulating it: each row of the table
