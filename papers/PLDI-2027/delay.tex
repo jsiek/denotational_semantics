@@ -266,21 +266,22 @@ environments from $\cdr(V)$, both within the finite list $V$.
 
 \paragraph{Termination}
 
-The definition is by recursion on the depth of $V$. The relation
-occurs at the arguments of a call, in negative position, which is what
-made the relation between two infinite sets ill founded. Here every
-recursive occurrence is at a list shallower than $V$: the arguments $U$
-because $U \subseteq \mathsf{args}(V)$ (without this conjunct, $U$
-could contain elements deeper than $V$), the results $W$ because each
-comes from an entry of $V$, and the projections of $V$ because they
-are components of its elements. The index $k$ of ${\ALR_k}$ is only a
-termination device: any index that bounds the depth of $V$ gives the
-same relation (Lemma~\ref{lem:depth-irrelevant}), so we may fold and
-unfold ${\ALR}$ as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$ directly.
-The tower $\ALR_0, \ALR_1, \ldots$ has the same shape as the one
-\citet{Reynolds:1974aa} used to relate the direct and continuation
-semantics of a language, which he built stage by stage along the
-inverse-limit construction of its domains
+The definition of the approximant logical relation $D \ALR V$ is by
+recursion on the depth of $V$. The relation occurs at the arguments of
+a call, in negative position, which is what made the relation between
+two infinite sets ill founded. Here every recursive occurrence is at a
+list shallower than $V$: the arguments $U$ because $U \subseteq
+\mathsf{args}(V)$ (without this conjunct, $U$ could contain elements
+deeper than $V$), the results $W$ because each comes from an entry of
+$V$, and the projections of $V$ because they are components of its
+elements. The index $k$ of ${\ALR_k}$ is only a termination device:
+any index that bounds the depth of $V$ gives the same relation
+(Lemma~\ref{lem:depth-irrelevant}), so we may fold and unfold ${\ALR}$
+as if it satisfied ${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
+directly.  The tower $\ALR_0, \ALR_1, \ldots$ has the same shape as
+the one \citet{Reynolds:1974aa} used to relate the direct and
+continuation semantics of a language, which he built stage by stage
+along the inverse-limit construction of its domains
 \citep{Scott:1971aa,Smyth:1982aa}. His index ranges over the stages of
 both domains and his relation is the intersection over all of them;
 ours bounds the depth of the finite target side only, and depth
