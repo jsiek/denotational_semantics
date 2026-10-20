@@ -208,11 +208,18 @@ language in the style of TAL \citep{Morrisett:1999fk} with the
 registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
 and an abstract heap. The registers are used to stage arithmetic
 and calls. The instruction $\kw{alloc}$ allocates a closure, a tuple,
-or an injection. A call first opens the closure in a slot $x$:
-$\kw{load}\;\kw{fst}\;x, \%r$ loads its code, and
-$\kw{load}\;\kw{snd}\;x, \%r$ loads its environment. Then $\kw{callq}$
-calls the code with the environment in $\kw{rdi}$ and the argument in
-$\kw{rsi}$, and the result arrives in $\kw{rax}$. The type system
+or an injection. A call
+$\kw{callc}\;x\;a$ of the closure in slot $x$ on the argument $a$
+becomes the following instructions:
+\[
+  \kw{load}\;\kw{fst}\;x, \%\kw{rax};\quad
+  \kw{load}\;\kw{snd}\;x, \%\kw{rdi};\quad
+  \kw{movq}\;a, \%\kw{rsi};\quad
+  \kw{callq}\;\%\kw{rax}
+\]
+The first two instructions load the code and the environment of the
+closure, the third puts the argument in place, and the call leaves its
+result in $\kw{rax}$. The type system
 tracks which closure is open, so that a call never combines the code
 of one closure with the environment of another. A $\kw{case}$ is a
 single pseudo-instruction that tests the tag of an injection, writes
