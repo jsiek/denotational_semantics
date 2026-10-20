@@ -11,7 +11,7 @@
 %% EnvClos is the Agda Clos3, FlatClos the Agda Clos4.
 
 
-\subsection{Delay and the Approximant Logical Relation}
+\subsection{Correctness of Delay and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
 The delay pass is the step of closure conversion that lowers closures
@@ -134,7 +134,8 @@ call takes the code from $\car$ and the environment from $\cdr$
 \emph{separately}, so a result may combine the code entry of one pair
 with the environment of another. 
 
-\paragraph{Relations that do not work}
+\paragraph{Relation designs that failed}
+
 We tried several natural relations. Each failure points to a piece of
 the solution.
 \begin{itemize}
