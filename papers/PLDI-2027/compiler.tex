@@ -122,14 +122,15 @@ for true and $\kw{inr}\;\langle\rangle$ for false, so $\kw{case}$ serves
 as the conditional. A recursive type $\mu X.\, A$ is isomorphic to its
 unfolding $A[\mu X.\, A / X]$, and the two coercions of this
 isomorphism are explicit: $\kw{fold}$ turns a term of the unfolding
-into a term of the recursive type, and $\kw{unfold}$ turns it back.
-Neither does anything at run time:
+into a term of the recursive type, and $\kw{unfold}$ turns it back, as
+their typing rules show:
 \[
   \frac{\Gamma \vdash M : A[\mu X.\, A / X]}{\Gamma \vdash \kw{fold}\;M : \mu X.\, A}
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
-The other typing rules are standard (Appendix~\ref{app:types}). \iswim\ has no recursion operator.
+Neither coercion does anything at run time. The other typing rules are
+standard (Appendix~\ref{app:types}). \iswim\ has no recursion operator.
 Instead, recursive types make self-application typable, so the
 call-by-value fixed-point combinator can be written directly:
 \[
