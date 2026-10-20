@@ -5,6 +5,9 @@
 %% Numbers come from loc.md (loc.py --mu) and will change; update them
 %% before submission.
 
+\section{Proving the Compiler Correct}
+\label{sec:compiler-proof}
+
 The correctness theorem for the whole compiler says that a closed
 program and its translation produce the same constants, and that one
 produces something exactly when the other does.
@@ -119,3 +122,5 @@ than the smallest operational ones, which use clocked interpreters
 that changes the representation of closures from functions to pairs of
 code and environment. Its correctness is not an equation, and its
 proof is the subject of the rest of this section.
+
+\input{delay}
