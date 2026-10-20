@@ -160,12 +160,9 @@ gives a witness that contains both halves of the call, so the code and
 the environments are matched \emph{inside} $V$, no matter which pairs
 they come from. The relation then lets a call use exactly the code
 entries whose environments $V$ itself provides, and ignore the junk
-entries for environments that the program never supplies. The
-counterpart of $V$ on the source side is a whole source denotation
-$D$, which contains every entry of the source closures, so whatever
-combination a call draws from $V$ is accounted for by $D$. This choice
-also makes the relation well founded, as we explain below in the
-paragraph on termination.
+entries for environments that the program never supplies.  This choice
+of a finite list $V$ also makes the relation well founded, as we
+explain below in the paragraph on termination.
 
 \begin{figure}[t]
 \small\figdefs
