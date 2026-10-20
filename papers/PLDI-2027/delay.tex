@@ -11,20 +11,20 @@
 %% EnvClos is the Agda Clos3, FlatClos the Agda Clos4.
 
 
-\subsection{Correctness of Delay and the Approximant Logical Relation}
+\subsection{Correctness of \pass{Delay} and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The delay pass is the step of closure conversion that lowers closures
+The \pass{delay} pass is the step of closure conversion that lowers closures
 to pairs of code and environment. Its proof is the most difficult link
 in our answer to RQ1, which asks whether a whole compiler, from a
 higher-order language with general recursion down to assembly, can be
-proved correct with denotational semantics. Delay is also the reason
+proved correct with denotational semantics. \pass{Delay} is also the reason
 that the answer to RQ3 is negative, because it does not yield to
 equational reasoning. This section shows why
-semantic reflection for delay resisted our earlier attempts and how the
+semantic reflection for \pass{delay} resisted our earlier attempts and how the
 approximant logical relation proves it.
 
-The source language of delay is EnvClos. In EnvClos, a closure
+The source language of \pass{delay} is EnvClos. In EnvClos, a closure
 $\kw{clos}\;N\;\vec{M}$ is still a function. Its code $N$ is closed,
 and its meaning is a curried function of the environment $X$ and then
 the argument $Y$. The meaning of the closure is this function applied
@@ -38,7 +38,7 @@ $\kw{app}\;L\;M$ means function application:
 \end{array}
 \]
 
-The target language of delay is FlatClos. In FlatClos, a closure is
+The target language of \pass{delay} is FlatClos. In FlatClos, a closure is
 a pair of code and environment, and a call takes the pair apart. The
 meaning of $\kw{code}\;N$ is the same curried function as before. The
 meaning of $\kw{pack}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
@@ -54,14 +54,14 @@ Figure~\ref{fig:graph-ops}:
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
 \end{array}
 \]
-Delay translates each closure into a pair and each application into a
+\pass{Delay} translates each closure into a pair and each application into a
 call. It translates every other construct homomorphically:
 \[
 \begin{array}{rcl}
-  \mathit{delay}(\kw{clos}\;N\;\vec{M}) & = &
-    \kw{pack}\;(\kw{code}\;\mathit{delay}(N))\;(\kw{tuple}\;\mathit{delay}(\vec{M}))\\
-  \mathit{delay}(\kw{app}\;L\;M) & = &
-    \kw{callc}\;\mathit{delay}(L)\;\mathit{delay}(M)
+  \pass{delay}(\kw{clos}\;N\;\vec{M}) & = &
+    \kw{pack}\;(\kw{code}\;\pass{delay}(N))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
+  \pass{delay}(\kw{app}\;L\;M) & = &
+    \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
 \end{array}
 \]
 
@@ -90,7 +90,7 @@ call. It translates every other construct homomorphically:
 \end{array}
 \]
 \caption{The relation $v \sqsubseteq D'$ (``$D'$ satisfies $v$'') for
-  the preservation half of delay. It relates a single source (EnvClos)
+  the preservation half of \pass{delay}. It relates a single source (EnvClos)
   element $v$ to a set $D'$ of target (FlatClos) elements and is
   defined by recursion on $v$. The relation $U \sqsubseteq^* E'$
   extends it to a finite list $U$.}
@@ -99,7 +99,7 @@ call. It translates every other construct homomorphically:
 
 \paragraph{Why preservation is easy and reflection is not}
 
-Delay changes the representation of closures, so its correctness is
+\pass{Delay} changes the representation of closures, so its correctness is
 not an equation. Instead, we prove that a closed program and its
 translation produce the same constants, and that one produces something
 exactly when the other does. The forward half, preservation, requires
@@ -114,7 +114,7 @@ style of the satisfaction relation of Abramsky's domain logic
 \citep{Abramsky:1990vv,Abramsky:1993fk}, with a source graph element in
 the role of the formula. The source element is finite, so the
 recursion is structural. The proof that $v \in \den{M}\rho$ implies
-$v \sqsubseteq \den{\mathit{delay}(M)}\rho'$ is a routine induction on
+$v \sqsubseteq \den{\pass{delay}(M)}\rho'$ is a routine induction on
 $M$.
 
 The backward half, reflection, must show that the source accounts for
@@ -122,7 +122,7 @@ every element that the target produces. Here the representation of
 closures gets in the way. To see how, consider the function
 $\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
 its meaning is a set of entries such as $[1] \mapsto 10$ and
-$[6] \mapsto 15$. After delay, its code takes the environment as an
+$[6] \mapsto 15$. After \pass{delay}, its code takes the environment as an
 extra parameter. The meaning of the code is then a table with entries
 for \emph{every} environment, such as the following two:
 \[
@@ -326,7 +326,7 @@ consistent and that $\rho$ map every variable to a nonempty set.
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
 If $\rho$ and $\rho'$ are related, then $\den{M}\rho \ALR V$ for every
 term $M$ of EnvClos and every finite
-$V \subseteq \den{\mathit{delay}(M)}\rho'$.
+$V \subseteq \den{\pass{delay}(M)}\rho'$.
 \end{lemma}
 
 The proof is by induction on $M$. Throughout, the second part of
@@ -340,10 +340,10 @@ tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
 induction hypotheses for their subterms. Two cases carry the weight.
 
 \emph{Case $M = \kw{app}\,L\,K$.} Then
-$\mathit{delay}(M) = \kw{callc}\,\mathit{delay}(L)\,\mathit{delay}(K)$,
+$\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,
 so $V \subseteq D' \callop E'$, where
-$D' = \den{\mathit{delay}(L)}\rho'$ and
-$E' = \den{\mathit{delay}(K)}\rho'$. Each element of $V$ is produced by
+$D' = \den{\pass{delay}(L)}\rho'$ and
+$E' = \den{\pass{delay}(K)}\rho'$. Each element of $V$ is produced by
 a code entry from $\car(D')$, finitely many environments from
 $\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
 of $D'$ that supply these codes and environments into a finite list
@@ -356,9 +356,9 @@ $E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
 \emph{Case $M = \kw{clos}\,N\,\vec{K}$.} Then
-$\mathit{delay}(M) = \kw{pack}\,(\kw{code}\,\mathit{delay}(N))\,(\kw{tuple}\,\mathit{delay}(\vec{K}))$,
+$\pass{delay}(M) = \kw{pack}\,(\kw{code}\,\pass{delay}(N))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
-$T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
+$T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
 four clauses of $D \layer{\ALR} V$. Clauses 1 and 4 hold trivially
 because $V$ contains only pairs. Clause 2 follows from the induction
@@ -368,7 +368,7 @@ Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
 $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
 and $U_a \subseteq U$. By monotonicity, $w$ is in the meaning of the
-target body $\mathit{delay}(N)$ with its parameters bound to $\cdr(V)$
+target body $\pass{delay}(N)$ with its parameters bound to $\cdr(V)$
 and $U$. This target environment is related to the source environment
 $(T, E)$. The environments are related by the induction hypothesis for
 $\vec{K}$, because $\cdr(V) \subseteq T'$, and the arguments are
@@ -377,24 +377,24 @@ gives $\den{N}(T, E) \ALR W$. Finally, Lemma~\ref{lem:beta} gives
 $\den{N}(T, E) \subseteq D \app E$, and ${\ALR}$ is monotone in its
 source set, so $D \app E \ALR W$.
 
-\begin{theorem}[Correctness of delay]\label{thm:delay}
+\begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
 Let $M$ be a closed term of EnvClos, and let $\den{\cdot}$ denote
 meaning in the empty environment. For every constant $c$,
-$c \in \den{M}$ if and only if $c \in \den{\mathit{delay}(M)}$.
+$c \in \den{M}$ if and only if $c \in \den{\pass{delay}(M)}$.
 Moreover, $\den{M}$ is nonempty if and only if
-$\den{\mathit{delay}(M)}$ is nonempty.
+$\den{\pass{delay}(M)}$ is nonempty.
 \end{theorem}
 
 The empty environments are related, so reflection follows from
-Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\mathit{delay}(M)}$,
+Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\pass{delay}(M)}$,
 the lemma applied to the one-element list $[c]$ gives
 $\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If
-$\den{\mathit{delay}(M)}$ contains an element $v$, the lemma applied
+$\den{\pass{delay}(M)}$ contains an element $v$, the lemma applied
 to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
 follows from the relation $\sqsubseteq$ of
 Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
 $c \in D'$, and $v \sqsubseteq D'$ implies that $D'$ is nonempty.
 
 Section~\ref{sec:evaluation} compares the size of this proof with the
-operational proofs of delay.
+operational proofs of \pass{delay}.
 

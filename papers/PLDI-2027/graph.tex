@@ -163,7 +163,7 @@ out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,
 x + 1$, whose input describes no single argument.
 %
 Our model requires consistency because it is needed in the proof for
-the delay pass (Section~\ref{sec:approx-lr}). A call in FlatClos takes
+the \pass{delay} pass (Section~\ref{sec:approx-lr}). A call in FlatClos takes
 the code from one pair and the environment from another, so a
 closure's meaning may combine the code of one pair with the
 environment of a different pair. Consistency ensures that the

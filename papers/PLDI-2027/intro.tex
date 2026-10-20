@@ -82,7 +82,7 @@ make control flow explicit, and select instructions. Every language in
 the compiler has a denotational semantics. Most passes are proved
 correct by an equation between the denotations before and after the
 pass. RQ3 nevertheless has a negative answer. The pass that lowers
-closures to code and environment pairs, which we call \emph{delay},
+closures to code and environment pairs, which we call \pass{delay},
 does not yield to equational reasoning; its reflection proof uses the
 approximant logical relation discussed above.
 
@@ -179,7 +179,7 @@ style.
 
 The comparison answers RQ2 affirmatively. Equational reasoning can be
 particularly concise: the denotational proof for the source optimizer,
-\emph{simplify}, takes 360 lines against 584 to 715 for the operational
+\pass{simplify}, takes 360 lines against 584 to 715 for the operational
 proofs. The answer to RQ4 is mixed. Counting the compiler-correctness
 proofs under the same rules, the denotational development ranks second
 at 1,958 lines of Agda: behind the proof using clocked interpreters
@@ -187,7 +187,7 @@ at 1,958 lines of Agda: behind the proof using clocked interpreters
 lines) and reduction semantics (3,207 lines).  The comparison also
 quantifies the negative answer to RQ3: where a pass changes how
 closures are represented, the denotational proof is more complex.  The
-proof of \emph{delay} takes 524 lines with the denotational semantics,
+proof of \pass{delay} takes 524 lines with the denotational semantics,
 compared with 35 to 139 for the operational proofs.
 
 %% TODO(authors): the proofs are available as an artifact; the

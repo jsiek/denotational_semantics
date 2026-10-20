@@ -54,15 +54,7 @@
   \qquad P ::= (\vec{b};\, b)
 \end{array}
 \]
-\caption{The grammars of the compiler's languages. Each closure language
-  lists only the forms it adds to the one above it; ``$\ldots$'' stands
-  for the remaining forms of \iswim. The code $N$ of a Clos closure has
-  a free variable for each captured value and one for the parameter;
-  the code of an EnvClos closure has two, for the environment and the
-  parameter. Here $c$ ranges over constants, $p$
-  over the primitives $\kw{sub}$ and $\kw{eq}$, from Imp on, $x$ and $y$ range over fixed locations in a function's
-  stack frame, $l$ over block labels, and $f_k$ over the global definitions of
-  a program.}
+\caption{The grammars of the compiler's languages.}
 \label{fig:grammars}
 \end{figure}
 
@@ -84,16 +76,16 @@ passes through seven intermediate languages:
   \node (imp) at (0,-2) {Imp};
   \node (cfg) at (1,-2) {CFG};
   \node (x86) at (2,-2) {X86$\mu$};
-  \draw (s0) -- node[lbl,above] {simplify} (s1);
-  \draw (s1) -- node[lbl,above] {enclose} (c2);
-  \draw (c2) -- node[lbl,above] {optimize} (c2b);
-  \draw (c2b) -- node[lbl,right] {concretize} (c3);
-  \draw (c3) -- node[lbl,above] {delay} (c4);
-  \draw (c4) -- node[lbl,above] {globalize} (c5);
-  \draw (c5) -- node[lbl,above] {remove complex operands} (mon);
-  \draw (mon) -- node[lbl,left] {lift locals} (imp);
-  \draw (imp) -- node[lbl,above] {explicate control} (cfg);
-  \draw (cfg) -- node[lbl,above] {select instructions} (x86);
+  \draw (s0) -- node[lbl,above] {\pass{simplify}} (s1);
+  \draw (s1) -- node[lbl,above] {\pass{enclose}} (c2);
+  \draw (c2) -- node[lbl,above] {\pass{optimize}} (c2b);
+  \draw (c2b) -- node[lbl,right] {\pass{concretize}} (c3);
+  \draw (c3) -- node[lbl,above] {\pass{delay}} (c4);
+  \draw (c4) -- node[lbl,above] {\pass{globalize}} (c5);
+  \draw (c5) -- node[lbl,above] {\pass{remove complex operands}} (mon);
+  \draw (mon) -- node[lbl,left] {\pass{lift locals}} (imp);
+  \draw (imp) -- node[lbl,above] {\pass{explicate control}} (cfg);
+  \draw (cfg) -- node[lbl,above] {\pass{select instructions}} (x86);
   \begin{scope}[on background layer]
     \draw[-, rounded corners=6pt, fill=gray!12, draw=gray!60, dashed]
       (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (1.62,-1.3)
@@ -108,10 +100,16 @@ Figure~\ref{fig:grammars}, and their typing rules in
 Appendix~\ref{app:types}.\footnote{Every language is intrinsically
 typed in our Agda development, so every term is well typed by
 construction and no pass needs a precondition about scoping or
-typing.}  Every language also has a semantics in the graph model of
+typing.} In Figure~\ref{fig:grammars}, each closure language lists only
+the forms it adds to the one above it, and ``$\ldots$'' stands for the
+remaining forms of \iswim. Throughout, $c$ ranges over constants, $p$
+over the primitives $\kw{sub}$ and $\kw{eq}$, $l$ over block labels,
+and $f_k$ over the global definitions of a program. From Imp on, $x$
+and $y$ range over fixed locations in a function's stack frame, as we
+explain below.  Every language also has a semantics in the graph model of
 Section~\ref{sec:graph-models}, given in full in
 Appendix~\ref{app:languages}, and
-every pass except delay preserves the meaning of a program exactly.
+every pass except \pass{delay} preserves the meaning of a program exactly.
 
 \paragraph{The source language}
 
@@ -142,7 +140,7 @@ with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
 
-The first pass, named simplify, is a bare-bones version of the source
+The first pass, named \pass{simplify}, is a bare-bones version of the source
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
 known values, folds primitives on known constants, reduces a
 $\kw{case}$, projection, or $\kw{unfold}$ of a known value, and
@@ -150,15 +148,15 @@ inlines calls to small known functions.
 
 \paragraph{Closure conversion}
 
-The next four passes perform closure conversion. Enclose turns each
+The next four passes perform closure conversion. \pass{Enclose} turns each
 $\lambda$-abstraction into a closure $\kw{clos}\;N\;\vec{M}$ of Clos,
 whose code $N$ is closed: its free variables are a name $x_i$ for each
-captured value $M_i$ and the parameter $y$. Enclose captures every
-variable in scope, and optimize then drops the captured values that the
-code does not use. Concretize stores the captured values of a closure
+captured value $M_i$ and the parameter $y$. \pass{Enclose} captures every
+variable in scope, and \pass{optimize} then drops the captured values that the
+code does not use. \pass{Concretize} stores the captured values of a closure
 in a single environment tuple, so the code of an EnvClos closure has
 two free variables, the environment $e$ and the parameter $y$, and
-reads $x_i$ as $\kw{get}_i\,e$. Delay then separates a closure into its
+reads $x_i$ as $\kw{get}_i\,e$. \pass{Delay} then separates a closure into its
 code and its environment (Section~\ref{sec:approx-lr}). In FlatClos,
 $\kw{code}\;N$ is closed code of type $\kw{code}(\Delta; A \rightarrow
 C)$, which expects an environment of type $\kw{tup}(\Delta)$ and an
@@ -187,22 +185,22 @@ every $\Delta$, no run-time check is needed.
 
 \paragraph{The back end}
 
-Globalize turns the code of every function into a global definition
+\pass{Globalize} turns the code of every function into a global definition
 $d_k$, and each occurrence of the code into a reference $f_k$ to it, so
 a GlobalFun program is a list of definitions and a main term. Remove
 complex operands binds each operand that is not an atom to a variable
 with $\kw{let}$, so the operands of every operation in Mon are atoms.
-Lift locals gives each variable a fixed location in the function's
+\pass{Lift locals} gives each variable a fixed location in the function's
 stack frame, called a \emph{slot}, numbered by how many variables are
 bound before it. We keep writing $x$ and $y$ for these variables, but
 from Imp on they stand for slots, and each $\kw{let}$ becomes an
 assignment to the next slot. There is no register allocation: every
-local variable lives in its slot. Explicate control
+local variable lives in its slot. \pass{Explicate control}
 turns the nested $\kw{case}$s of Imp into a control-flow graph of
 blocks that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$
 that jumps to one of two blocks.
 
-Finally, select instructions produces X86$\mu$, a typed assembly
+Finally, \pass{select instructions} produces X86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
 registers $\kw{rax}$, $\kw{rdi}$, and $\kw{rsi}$, a frame of slots,
 and an abstract heap. The registers are used to stage arithmetic

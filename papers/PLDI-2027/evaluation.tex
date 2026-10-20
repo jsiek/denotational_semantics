@@ -8,9 +8,9 @@
 \section{Evaluation}
 \label{sec:evaluation}
 
-\paragraph{Delay is the pass whose denotational proof costs the most.}
+\paragraph{\pass{Delay} is the pass whose denotational proof costs the most.}
 
-The denotational proof of delay takes 524 lines of Agda, against 35 to
+The denotational proof of \pass{delay} takes 524 lines of Agda, against 35 to
 139 lines for the same pass in the three operational styles. Most of the difference has three
 sources. First, the denotational proof needs two directions, while a
 simulation proof gets the backward direction for free from forward
@@ -26,7 +26,7 @@ different relations for the two directions, the structural one for
 preservation and the approximant one for reflection, because a single
 relation parameterized by the direction made the proof longer: on an
 earlier version of the compiler, switching from one relation to two cut
-the proof of delay from 1,358 to 832 lines.)
+the proof of \pass{delay} from 1,358 to 832 lines.)
 Second, reflection needs the finite lists, the batches of calls, and
 the lemma that extracts them from a target call. Third, $\beta$-rules in
 the graph model hold only under side conditions of nonemptiness and
