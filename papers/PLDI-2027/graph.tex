@@ -47,30 +47,6 @@
 \end{array}
 \]
 
-\defhead{Consistency of elements}{u \sim v}
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{}}
-  c \sim c' & \iff & c = c'\\
-  (V \mapsto w) \sim (V' \mapsto w') & \iff &
-    (V \approx V' \Rightarrow w \sim w')
-    \qquad
-    (V \mapsto w) \sim \nu, \quad \nu \sim \nu\\
-  \pairv{u}{v} \sim \pairv{u'}{v'} & \iff & u \sim u' \land v \sim v'\\
-  \mathsf{tup}_i(v) \sim \mathsf{tup}_j(v') & \iff & i = j \Rightarrow v \sim v'\\
-  \mathsf{left}(v) \sim \mathsf{left}(v') & \iff & v \sim v'
-    \qquad
-  \mathsf{right}(v) \sim \mathsf{right}(v') \iff v \sim v'
-\end{array}
-\]
-\noindent and no other pairs of elements are consistent.
-
-\defhead{Consistency of sets and lists}{\mathsf{con}(D) \qquad V \approx V'}
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \mathsf{con}(D) & \iff & u \sim v \text{ for all } u, v \in D\\
-  V \approx V' & \iff & u \sim v \text{ for all } u \in V \text{ and } v \in V'
-\end{array}
-\]
 \caption{The elements of the graph model and the operators on denotations
   (sets of elements) that the semantics of the compiler's languages are
   built from. A finite list of elements stands for the set of its
@@ -166,43 +142,40 @@ $Z$ has a meaning whose tables contain smaller copies of themselves,
 like a set of nested dolls \citep{Siek:2017ab}.
 
 A program that diverges produces no evidence, so its meaning is the
-empty set. Consider $\Omega = \Delta\;(\kw{fold}\;\Delta)$ with
-$\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$. If $w \in \den{\Omega}$,
-then $\den{\Delta}$ contains an entry $V \mapsto w$ with
-$V \subseteq \den{\Delta}$, and $w \in \den{x\;x}$ with $x$ bound to
-$V$. So $V$ contains an entry $V' \mapsto w$ with $V' \subseteq V$.
-This entry is again an entry of $\den{\Delta}$ whose input is included
-in $\den{\Delta}$, and it is strictly smaller than $V \mapsto w$.
-Repeating the argument yields an infinite descending chain of finite
-elements, which is impossible, so $\den{\Omega} = \emptyset$. Divergence
+empty set. For example, $\Omega = \Delta\;(\kw{fold}\;\Delta)$ with
+$\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$: an
+output of $\Omega$ would need an entry of $\den{\Delta}$ whose input
+contains a strictly smaller entry of $\den{\Delta}$ with the same
+output, and so on forever, which is impossible for finite elements.
+Divergence
 as the empty set is the reason that reflection is the hard direction
 of a correctness proof: a relation that follows the source program
 forward cannot carry the absence of elements to the target.
 
 \paragraph{Consistency}
-
 Our model adds a requirement of consistency because it is needed in
-the proof for the delay pass (Section~\ref{sec:approx-lr}).  A call in
+the proof for the delay pass (Section~\ref{sec:approx-lr}). A call in
 FlatClos takes the code from one pair and the environment from
 another, so a closure's meaning may combine the code of one pair with
 the environment of a different pair. Consistency ensures that the
 environments of these pairs are consistent with each other, so that
 the code runs with approximations of its own environment and not with
 the environment of some other closure.
-%
-Consistency has a precedent in the $\lambda$-calculus model of
-\citet{Scott:1982aa} function entries pair consistent sets of inputs
-and outputs. As in the coherent domains of \citet{Plotkin:1978aa}, our
-consistency is pairwise: a set is consistent when its elements are
-pairwise consistent. Two constants are consistent when they are equal,
-and two entries are consistent when consistent inputs lead to
-consistent outputs (Figure~\ref{fig:graph-ops}). This rule for entries
-is the consistency of a function space of information systems
-\citep{Larsen:1984aa,Schwichtenberg:2006aa}. The operator $\Lambda$
-builds only entries whose inputs are consistent, which rules out
-entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\, x +
-1$, whose input describes no single argument. The meaning of a term in
-a consistent environment is consistent.
+
+We write $u \sim v$ when the elements $u$ and $v$ are consistent,
+which means, intuitively, that they could describe the same value. Two
+constants are consistent when they are equal, two entries are
+consistent when consistent inputs lead to consistent outputs, and
+elements that describe different kinds of values, such as $\mathsf{left}(u)$ and
+$\mathsf{right}(v)$, are not consistent. A set $D$ is consistent,
+written $\mathsf{con}(D)$, when its elements are pairwise consistent,
+and two lists are consistent with each other, written $V \approx V'$,
+when every element of one is consistent with every element of the
+other. Appendix~\ref{app:consistency} gives the formal definition. The
+operator $\Lambda$ builds only entries whose inputs are consistent,
+which rules out entries such as $[1, 2] \mapsto 3$ in the meaning of
+$\lambda x.\, x + 1$, whose input describes no single argument. The
+meaning of a term in a consistent environment is consistent.
 
 \paragraph{The properties of the semantics}
 

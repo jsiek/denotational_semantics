@@ -8,6 +8,42 @@
 \section{The Graph Model}
 \label{app:graph-model}
 
+\subsection{Consistency}
+\label{app:consistency}
+
+Consistency is defined on elements, and from it on sets and lists
+(Section~\ref{sec:graph-models}).
+
+\begin{figure}[h]
+\small\figdefs
+\defhead{Consistency of elements}{u \sim v}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  c \sim c' & \iff & c = c'\\
+  (V \mapsto w) \sim (V' \mapsto w') & \iff &
+    (V \approx V' \Rightarrow w \sim w')
+    \qquad
+    (V \mapsto w) \sim \nu, \quad \nu \sim \nu\\
+  \pairv{u}{v} \sim \pairv{u'}{v'} & \iff & u \sim u' \land v \sim v'\\
+  \mathsf{tup}_i(v) \sim \mathsf{tup}_j(v') & \iff & i = j \Rightarrow v \sim v'\\
+  \mathsf{left}(v) \sim \mathsf{left}(v') & \iff & v \sim v'
+    \qquad
+  \mathsf{right}(v) \sim \mathsf{right}(v') \iff v \sim v'
+\end{array}
+\]
+\noindent and no other pairs of elements are consistent.
+
+\defhead{Consistency of sets and lists}{\mathsf{con}(D) \qquad V \approx V'}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \mathsf{con}(D) & \iff & u \sim v \text{ for all } u, v \in D\\
+  V \approx V' & \iff & u \sim v \text{ for all } u \in V \text{ and } v \in V'
+\end{array}
+\]
+\caption{Consistency of elements, sets, and lists.}
+\label{fig:consistency}
+\end{figure}
+
 \subsection{Depth}
 \label{app:depth}
 
