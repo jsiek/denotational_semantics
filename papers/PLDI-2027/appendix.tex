@@ -546,10 +546,12 @@ subterms and rebuild the same form. No pass inspects a recursive type;
 $\kw{fold}$ and $\kw{unfold}$ pass through every pass as operations
 with one operand. The compiler is the composition of the passes:
 \[
+\begin{array}{@{}l@{}}
   \pass{compile} = \pass{select} \circ \pass{explicate} \circ \pass{lift}
-    \circ \pass{rco} \circ \pass{globalize} \circ \pass{delay}
-    \circ \pass{concretize}_\emptyset \circ \pass{optimize}
-    \circ \pass{enclose} \circ \pass{simplify}
+    \circ \pass{rco} \circ \pass{globalize}\\
+  \qquad\qquad {} \circ \pass{delay} \circ \pass{concretize}_\emptyset
+    \circ \pass{optimize} \circ \pass{enclose} \circ \pass{simplify}
+\end{array}
 \]
 
 \subsection{\pass{simplify} (\iswim\ to \iswim)}
