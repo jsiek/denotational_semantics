@@ -298,27 +298,29 @@ The relation is also monotone in $D$ and antitone in $V$: a larger
 source set and a sublist of the target list preserve it.
 
 \paragraph{Why not recursion on types}
+
 The intermediate languages are typed, so one might hope to define the
 relation by recursion on types, as \citet{Chlipala:2007fk} and
-\citet{Nielsen:2000aa} do. Recursive types rule this out. The meaning of
-$\kw{fold}$ and $\kw{unfold}$ is the identity, so the relation at
-$\mu X.\,A$ would have to be the relation at $A[\mu X.\,A/X]$, which is
-not smaller; at $\mu X.\,X \rightarrow \mathrm{Int}$, the application
-clause asks for the relation at the argument type, which is
-$\mu X.\,X \rightarrow \mathrm{Int}$ itself. The depth of the finite
-approximation, by contrast, decreases at every call, and the elements of
-the graph model are untyped, so the depth needs no help from the types.
+\citet{Nielsen:2000aa} do. The presense of recursive types in
+\iswim\ rule this out. The meaning of $\kw{fold}$ and $\kw{unfold}$ is
+the identity, so the relation at $\mu X.\,A$ would have to be the
+relation at $A[\mu X.\,A/X]$, which is not smaller; at $\mu X.\,X
+\rightarrow \mathrm{Int}$, the application clause asks for the
+relation at the argument type, which is $\mu X.\,X \rightarrow
+\mathrm{Int}$ itself. The depth of the graph element, by contrast,
+decreases at every call.
 
 \paragraph{The fundamental lemma}
+
 Environments $\rho$ and $\rho'$ are related when, for every variable
-$x$ and every finite $V \subseteq \rho'(x)$, we have
-$\rho(x) \ALR V$, together with the consistency and nonemptiness
-that the graph model requires of environments.
+$x$ and every finite $V \subseteq \rho'(x)$, we have $\rho(x) \ALR V$,
+together with the consistency and nonemptiness that the graph model
+requires of environments.
 
 \begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
-If $\rho$ and $\rho'$ are related, then for every term $M$ of EnvClos and
-every finite $V \subseteq \den{\mathit{delay}(M)}\rho'$, we have
-$\den{M}\rho \ALR V$.
+If $\rho$ and $\rho'$ are related, then for every term $M$ of EnvClos
+and every finite $V$, if $\den{\mathit{delay}(M)}\rho' \supseteq V$,
+then $\den{M}\rho \ALR V$.
 \end{lemma}
 
 The proof is by induction on $M$. Two cases carry the weight. For a
