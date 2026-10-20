@@ -329,11 +329,13 @@ then $\den{M}\rho \ALR V$.
 \end{lemma}
 
 The proof is by induction on $M$, folding and unfolding ${\ALR}$ with
-Lemma~\ref{lem:depth-irrelevant}. Most cases are routine. A variable
-follows from the relation between the environments, $\kw{fold}$ and
-$\kw{unfold}$ mean the identity on both sides, and the cases for
+Lemma~\ref{lem:depth-irrelevant}. Most cases are routine. In the case of a
+variable, the conclusion is given directly by the relation between the
+environments $\rho$ and $\rho'$. The constructs $\kw{fold}$ and
+$\kw{unfold}$ denote the identity function in both languages, so their
+cases follow immediately from the induction hypothesis. The cases for
 tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
-induction hypotheses. Two cases carry the weight.
+induction hypotheses for their subterms. Two cases carry the weight.
 
 \emph{Case $M = \kw{app}\;L\;K$.} Then
 $\mathit{delay}(M) = \kw{callc}\;\mathit{delay}(L)\;\mathit{delay}(K)$,
@@ -355,7 +357,7 @@ so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
 four clauses of $D \layer{\ALR} V$ and fold. Clauses 1 and 4 hold
-because $V$ contains only pairs. For clause 2, if $V$ is nonempty then
+trivially, because every element of $V$ is a pair, so $V$ contains no constants and every projection of $V$ is empty. For clause 2, if $V$ is nonempty then
 so is $T'$, the induction hypothesis for $\vec{K}$ makes $T$ nonempty,
 and then $\nu \in D$. For clause 3, suppose $\callsto{V}{U}{W}$ and
 $E \ALR U$; we must show $D \app E \ALR W$. Each $w \in W$ comes from a
