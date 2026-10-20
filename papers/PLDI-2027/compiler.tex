@@ -153,27 +153,27 @@ The next four passes perform closure conversion. The \pass{enclose}
 pass turns each $\lambda$-abstraction into a closure
 $\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}$ of Clos, which binds a name
 $x_i$ for each captured value $M_i$ and the parameter $y$ in its code
-$N$, so the code is closed. \pass{Enclose} captures every variable in scope, and
-the \pass{optimize} pass then drops the captured values that the code
-does not use. The \pass{concretize} pass stores the captured values of
-a closure in a single environment tuple, so an EnvClos closure
-$\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds just two variables in its code, the
-environment $z$ and the parameter $y$, and the code reads $x_i$ as
-$\kw{get}_i\,z$. \pass{Delay} then separates a
+$N$, so the code is closed. \pass{Enclose} captures every variable in
+scope, and the \pass{optimize} pass then drops the captured values
+that the code does not use. The \pass{concretize} pass stores the
+captured values of a closure in a single environment tuple, so an
+EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds just two
+variables in its code, the environment $z$ and the parameter $y$, and
+the code reads $x_i$ as $\kw{get}_i\,z$. \pass{Delay} then separates a
 closure into its code and its environment
-(Section~\ref{sec:approx-lr}). In FlatClos, $\kw{code}\;(z, y.\,N)$ is closed
-code of type $\kw{code}(\Delta; A \rightarrow C)$, which expects an
-environment of type $\kw{tup}(\Delta)$ and an argument of type
-$A$. The form $\kw{pack}\;L\;M$ builds a closure from code $L$ and an
-environment $M$ of the same $\Delta$. Its type, $A \rightarrow C$,
-hides $\Delta$, as in the existential type $\exists \Delta.\,
-\kw{code}(\Delta; A \rightarrow C) \times \kw{tup}(\Delta)$ of typed
-closure conversion \citep{Minamide:1996ys}, so closures with different
-environments have the same type. The form $\kw{callc}\;L\;M$ opens the
-closure $L$ and calls its code with its environment and the argument
-$M$.
+(Section~\ref{sec:approx-lr}). In FlatClos, $\kw{code}\;(z, y.\,N)$ is
+closed code of type $\kw{code}(\Delta; A \rightarrow C)$, which
+expects an environment of type $\kw{tup}(\Delta)$ and an argument of
+type $A$. The form $\kw{pack}\;L\;M$ builds a closure (represented as
+a pair) from code $L$ and an environment $M$ of the same $\Delta$. Its
+type, $A \rightarrow C$, hides $\Delta$, as in the existential type
+$\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
+\kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
+so closures with different environments have the same type. The form
+$\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
+environment and the argument $M$.
 \[
-  \frac{e : \kw{tup}(\Delta),\, y : A \vdash N : C}
+  \frac{z : \kw{tup}(\Delta),\, y : A \vdash N : C}
        {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
   \qquad
   \frac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
@@ -184,25 +184,24 @@ $M$.
   \frac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
        {\Gamma \vdash \kw{callc}\;L\;M : C}
 \]
-Since $\kw{callc}$ is the only way to open a closure and works for
-every $\Delta$, no run-time check is needed.
 
 \paragraph{The back end}
 
-\pass{Globalize} turns the code of every function into a global definition
-$d_k$, and each occurrence of the code into a reference $f_k$ to it, so
-a GlobalFun program is a list of definitions and a main term. Remove
-complex operands binds each operand that is not an atom to a variable
-with $\kw{let}$, so the operands of every operation in Mon are atoms.
-\pass{Lift locals} gives each variable a fixed location in the function's
-stack frame, called a \emph{slot}, numbered by how many variables are
-bound before it. We keep writing $x$ and $y$ for these variables, but
-from Imp on they stand for slots, and each $\kw{let}$ becomes an
-assignment to the next slot. There is no register allocation: every
-local variable lives in its slot. \pass{Explicate control}
-turns the nested $\kw{case}$s of Imp into a control-flow graph of
-blocks that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$
-that jumps to one of two blocks.
+The \pass{globalize} pass turns the code of every function into a
+global definition $d_k$, and each occurrence of the code into a
+reference $f_k$ to it, so a GlobalFun program is a list of function
+definitions and a main term. The pass \pass{remove complex operands}
+binds each operand that is not atomic to a variable with $\kw{let}$,
+so the operands of every operation in Mon are atomic.  \pass{Lift
+  locals} gives each variable a fixed location in the function's stack
+frame, called a \emph{slot}, numbered by how many variables are bound
+before it. We keep writing $x$ and $y$ for these variables, but from
+Imp on they stand for slots, and each $\kw{let}$ becomes an assignment
+to the next slot. The compiler omits register allocation: every local
+variable lives in its slot. The \pass{explicate control} pass turns
+the nested $\kw{case}$s of Imp into a control-flow graph of blocks
+that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$ that
+jumps to one of two blocks.
 
 Finally, \pass{select instructions} produces X86$\mu$, a typed assembly
 language in the style of TAL \citep{Morrisett:1999fk} with the
