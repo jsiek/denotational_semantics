@@ -370,8 +370,8 @@ related to the source environment that maps them to $E$ and $T$: the
 first by assumption, and the second by the induction hypothesis for
 $\vec{K}$, because $\cdr(V) \subseteq T'$. The induction hypothesis for
 the body $N$ then gives $\den{N}(E, T) \ALR W$, and
-$\den{N}(E, T) \subseteq D \app E$ by $\beta$-reduction in the graph
-model, so $D \app E \ALR W$ because ${\ALR}$ is monotone in its source
+$\den{N}(E, T) \subseteq D \app E$ by Lemma~\ref{lem:beta}, applied
+twice, so $D \app E \ALR W$ because ${\ALR}$ is monotone in its source
 set. The condition $U_e \subseteq \cdr(V)$ is what lets the
 environments of the target body come from the list $V$ itself.
 

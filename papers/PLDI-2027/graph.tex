@@ -82,4 +82,21 @@
 
 %% TODO: the text of Section 3.
 
+%% Lemma: agda/proof/Framework/GraphModel/Ops.agda, Λ-β (and ΛΛ-β for
+%% the curried form used in the delay proof).
+The graph model validates $\beta$-reduction, but only for arguments
+that are consistent and for functions whose outputs depend on finite,
+nonempty parts of their input. These conditions come from the
+definitions of $\Lambda$ and application in Figure~\ref{fig:graph-ops},
+which use only entries $V \mapsto w$ whose input $V$ is nonempty and
+consistent. The meaning of every term in each of the compiler's
+languages, viewed as a function of one of its variables, satisfies the
+second condition.
+
+\begin{lemma}[$\beta$]\label{lem:beta}
+Let $F$ be a monotone function on sets such that every $w \in F(D)$ is
+in $F(V)$ for some nonempty finite $V \subseteq D$. If $D$ is
+consistent, then $\Lambda(F) \app D = F(D)$.
+\end{lemma}
+
 \clearpage
