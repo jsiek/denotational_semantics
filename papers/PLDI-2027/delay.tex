@@ -25,22 +25,23 @@ semantic reflection for \pass{delay} resisted our earlier attempts and how the
 approximant logical relation proves it.
 
 The source language of \pass{delay} is EnvClos. In EnvClos, a closure
-$\kw{clos}\;N\;\vec{M}$ is still a function. Its code $N$ is closed,
+$\kw{clos}\;(e, y.\,N)\;\vec{M}$ is still a function. Its code $N$ is closed,
+with free variables $e$ for the environment and $y$ for the argument,
 and its meaning is a curried function of the environment $X$ and then
 the argument $Y$. The meaning of the closure is this function applied
-to the tuple of the free variables $\vec{M}$. An application
-$\kw{app}\;L\;M$ means function application:
+to the tuple of the captured values $\vec{M}$. An application $L\;M$
+means function application:
 \[
 \begin{array}{rcl}
-  \den{\kw{clos}\;N\;\vec{M}}\rho & = &
-    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}(X, Y))) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
-  \den{\kw{app}\;L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
+    \den{\kw{clos}\;(e, y.\,N)\;\vec{M}}\rho & = &
+    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}[e{:=}X, y{:=}Y])) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
+  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
 \end{array}
 \]
 
 The target language of \pass{delay} is FlatClos. In FlatClos, a closure is
 a pair of code and environment, and a call takes the pair apart. The
-meaning of $\kw{code}\;N$ is the same curried function as before. The
+meaning of $\kw{code}\;(e, y.\,N)$ is the same curried function as before. The
 meaning of $\kw{pack}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
 $u$ from the code $L$ and $v$ from the environment $M$. A call applies
 the first components of the pairs to their second components and then
@@ -48,7 +49,7 @@ to the argument, which is the operator $\callop$ of
 Figure~\ref{fig:graph-ops}:
 \[
 \begin{array}{rcl}
-  \den{\kw{code}\;N}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}(X, Y)))\\
+    \den{\kw{code}\;(e, y.\,N)}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}[e{:=}X, y{:=}Y]))\\
   \den{\kw{pack}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
@@ -58,9 +59,9 @@ Figure~\ref{fig:graph-ops}:
 call. It translates every other construct homomorphically:
 \[
 \begin{array}{rcl}
-  \pass{delay}(\kw{clos}\;N\;\vec{M}) & = &
-    \kw{pack}\;(\kw{code}\;\pass{delay}(N))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
-  \pass{delay}(\kw{app}\;L\;M) & = &
+    \pass{delay}(\kw{clos}\;(e, y.\,N)\;\vec{M}) & = &
+    \kw{pack}\;(\kw{code}\;(e, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
+  \pass{delay}(L\;M) & = &
     \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
 \end{array}
 \]
@@ -339,7 +340,7 @@ cases follow immediately from the induction hypothesis. The cases for
 tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
 induction hypotheses for their subterms. Two cases carry the weight.
 
-\emph{Case $M = \kw{app}\,L\,K$.} Then
+\emph{Case $M = L\;K$.} Then
 $\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,
 so $V \subseteq D' \callop E'$, where
 $D' = \den{\pass{delay}(L)}\rho'$ and
@@ -355,8 +356,8 @@ $\den{L}\rho \ALR W$, applied to this batch of calls with
 $E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
 $\den{M}\rho \ALR V$.
 
-\emph{Case $M = \kw{clos}\,N\,\vec{K}$.} Then
-$\pass{delay}(M) = \kw{pack}\,(\kw{code}\,\pass{delay}(N))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
+\emph{Case $M = \kw{clos}\,(e, y.\,N)\,\vec{K}$.} Then
+$\pass{delay}(M) = \kw{pack}\,(\kw{code}\,(e, y.\,\pass{delay}(N)))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
 $D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
@@ -368,13 +369,13 @@ Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
 and $E \ALR U$. Each $w \in W$ comes from a code entry
 $U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
 and $U_a \subseteq U$. By monotonicity, $w$ is in the meaning of the
-target body $\pass{delay}(N)$ with its parameters bound to $\cdr(V)$
-and $U$. This target environment is related to the source environment
+target body $\pass{delay}(N)$ with $e$ bound to $\cdr(V)$ and $y$
+bound to $U$. This target environment is related to the source environment
 $(T, E)$. The environments are related by the induction hypothesis for
 $\vec{K}$, because $\cdr(V) \subseteq T'$, and the arguments are
 related by assumption. The induction hypothesis for the body $N$ then
-gives $\den{N}(T, E) \ALR W$. Finally, Lemma~\ref{lem:beta} gives
-$\den{N}(T, E) \subseteq D \app E$, and ${\ALR}$ is monotone in its
+gives $\den{N}[e{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
+gives $\den{N}[e{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
 source set, so $D \app E \ALR W$.
 
 \begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
