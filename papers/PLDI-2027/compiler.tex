@@ -114,6 +114,7 @@ Appendix~\ref{app:languages}, and
 every pass except delay preserves the meaning of a program exactly.
 
 \paragraph{The source language}
+
 \iswim\ has integers, $n$-ary tuples, binary sums, the primitives
 $\kw{sub}$ and $\kw{eq}$, and iso-recursive types. Most of its forms
 are standard. The primitive $\kw{eq}$ returns $\kw{inl}\;\langle\rangle$
@@ -139,6 +140,7 @@ call-by-value fixed-point combinator can be written directly:
 with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
+
 The first pass, simplify, is a simplified version of the source
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
 known values, folds primitives on known constants, reduces a
@@ -146,6 +148,7 @@ $\kw{case}$, projection, or $\kw{unfold}$ of a known value, and inlines
 calls to small known functions.
 
 \paragraph{Closure conversion}
+
 The next four passes perform closure conversion. Enclose turns each
 $\lambda$-abstraction into a closure $\kw{clos}\;N\;\vec{M}$ of Clos,
 whose code $N$ is closed: its free variables are a name $x_i$ for each

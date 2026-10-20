@@ -179,7 +179,7 @@
 \newcommand{\Mfold}{\key{fold}\,}
 \newcommand{\Munfold}{\key{unfold}\,}
 \newcommand{\codeAB}[2]{\key{code}\alpha\;#1\;#2}         % the register type of the open closure's code
-\newcommand{\Tdown}[1]{#1{\downarrow}}                    % an operand of type mu X. A used at its unfolding
+\newcommand{\Tdown}[1]{#1{\downarrow}}                    % (unused since X86mu writes unfold a)
 \newcommand{\Mxcase}[4]{\key{case}\;#1\;\key{of}_{#2}\;#3 \mid #4}  % X86-mu's case pseudo-instruction
 
 \newenvironment{syntax}{\[\begin{array}{l@{\quad}rcl}}{\end{array}\]}
@@ -587,7 +587,7 @@ leaves. A state type $\psi = \Tst{\Theta}{\Delta}{O}{F}$ gives
   & \psi &::=& \Tst{\Theta}{\Delta}{O}{F}
     \qquad O ::= \cdot \mid x \qquad F ::= \Tset \mid \Tunset \\[1ex]
   & r &::=& \rax \mid \rdi \mid \rsi \\
-  & a &::=& s \mid c \mid \funref{k} \mid \%r \mid \Tup{a} \mid \Tdown{a}
+  & a &::=& s \mid c \mid \funref{k} \mid \%r \mid \Mfold a \mid \Munfold a
     \qquad d \;::=\; \%r \mid s \\
   & o &::=& \key{pair}(a_1, a_2) \mid \key{tuple}(a_1, \ldots, a_m) \mid \key{inl}(a) \mid \key{inr}(a) \\
   & i &::=& \key{movq}\; a, d \mid \key{subq}\; a, \%r \mid \key{cmpq}\; a_2, a_1
@@ -600,8 +600,8 @@ leaves. A state type $\psi = \Tst{\Theta}{\Delta}{O}{F}$ gives
 \end{syntax}
 An operand is an atom of $\Ml{Mon}$ over slots (a slot, an immediate, or
 the label of a definition), a register, or an operand of type
-$\Munroll{X}{A}$ used at $\Mmu{X}{A}$ ($\Tup{a}$, a $\Mfold$) or back
-($\Tdown{a}$, an $\Munfold$): $\Mfold$ and $\Munfold$ are moves. A
+$\Munroll{X}{A}$ used at $\Mmu{X}{A}$ ($\Mfold a$) or back
+($\Munfold a$): $\Mfold$ and $\Munfold$ are moves. A
 destination is a register or a slot. The typing of the atoms is
 $\Ml{Imp}$'s, in the frame $\Delta$ of the state; a destination
 $n \vdash d : \psi \Rightarrow_\tau \psi'$ is written at type $\tau$ and
@@ -613,9 +613,9 @@ of $n$ slots, and closes the open closure:
   \frac{\Theta(r) = \tau}{\Sigma; \Tst{\Theta}{\Delta}{O}{F} \vdash \%r : \tau}
 \]
 \[
-  \frac{\Sigma; \psi \vdash a : \Munroll{X}{A}}{\Sigma; \psi \vdash \Tup{a} : \Mmu{X}{A}}
+  \frac{\Sigma; \psi \vdash a : \Munroll{X}{A}}{\Sigma; \psi \vdash \Mfold a : \Mmu{X}{A}}
   \qquad
-  \frac{\Sigma; \psi \vdash a : \Mmu{X}{A}}{\Sigma; \psi \vdash \Tdown{a} : \Munroll{X}{A}}
+  \frac{\Sigma; \psi \vdash a : \Mmu{X}{A}}{\Sigma; \psi \vdash \Munfold a : \Munroll{X}{A}}
 \]
 \[
   n \vdash \%r : \Tst{\Theta}{\Delta}{O}{F} \Rightarrow_\tau \Tst{\Theta[r{:}\tau]}{\Delta}{O}{F}
@@ -1044,8 +1044,8 @@ slot.
   \pass{sel}(\key{sub}(a_1, a_2), o, k) &= \key{movq}\; a_1, \rax;\
     \key{subq}\; a_2, \rax;\ \key{movq}\; \rax, \bar{o};\ k \\
   \pass{sel}(\key{eq}(a_1, a_2), o, k) &= \key{cmpq}\; a_2, a_1;\ \key{sete}\; \bar{o};\ k \\
-  \pass{sel}(\Mfold a, o, k) &= \key{movq}\; \Tup{a}, \bar{o};\ k \\
-  \pass{sel}(\Munfold a, o, k) &= \key{movq}\; \Tdown{a}, \bar{o};\ k \\[1ex]
+  \pass{sel}(\Mfold a, o, k) &= \key{movq}\; \Mfold a, \bar{o};\ k \\
+  \pass{sel}(\Munfold a, o, k) &= \key{movq}\; \Munfold a, \bar{o};\ k \\[1ex]
   \pass{tail}(\Treturn{r}) &= \pass{sel}(r, \key{ret}, \key{retq}) \\
   \pass{tail}(\assign{s}{r}{t}) &= \pass{sel}(r, \key{to}\;s, \pass{tail}(t)) \\
   \pass{tail}(\Tgoto{l}) &= \key{jmp}\; l \\
@@ -1294,7 +1294,7 @@ code never reads them. With $\mathcal{A}_\sigma$ of the table $T$:
 \begin{align*}
   \mathcal{O}_{\sigma,R}(a) &= \mathcal{A}_\sigma(a) \ \ (a \text{ an atom}) \qquad
   \mathcal{O}_{\sigma,R}(\%r) = R(r) \qquad
-  \mathcal{O}_{\sigma,R}(\Tup{a}) = \mathcal{O}_{\sigma,R}(\Tdown{a}) = \mathcal{O}_{\sigma,R}(a) \\
+  \mathcal{O}_{\sigma,R}(\Mfold a) = \mathcal{O}_{\sigma,R}(\Munfold a) = \mathcal{O}_{\sigma,R}(a) \\
   \mathcal{O}_{\sigma,R}(\key{pair}(a_1, a_2)) &= \key{pair}(\mathcal{O}_{\sigma,R}(a_1), \mathcal{O}_{\sigma,R}(a_2)) \qquad
   \mathcal{O}_{\sigma,R}(\key{tuple}(\vec{a})) = \mathcal{T}(\mathcal{O}_{\sigma,R}(\vec{a})) \\
   \mathcal{O}_{\sigma,R}(\key{inl}(a)) &= \key{inl}(\mathcal{O}_{\sigma,R}(a))
@@ -2047,12 +2047,12 @@ sequence, its blocks and its frame:
   \mathit{State}^{\Ml{X86}} ::= \xrun\;\beta\;\vec{\beta}\;\Pi\;\eta\;\langle R, \sigma, O, f \rangle \qquad
   \Pi ::= \halt \mid \key{retK}(\beta, \vec{\beta}, \sigma, \Pi)
 \]
-An operand has a value of its type; $\Tup{a}$ folds, $\Tdown{a}$ unfolds:
+An operand has a value of its type; $\Mfold a$ folds and $\Munfold a$ unfolds:
 \begin{align*}
   m(a) &= \sigma(a) \ \ (a \text{ an atom}) \qquad
   m(\%r) = R(r) \qquad
-  m(\Tup{a}) = \Mfold m(a) \qquad
-  m(\Tdown{a}) = v \ \ (m(a) = \Mfold v) \\
+  m(\Mfold a) = \Mfold m(a) \qquad
+  m(\Munfold a) = v \ \ (m(a) = \Mfold v) \\
   \key{put}(\%r, v, m) &= \langle R[r := v], \sigma, O, f \rangle \qquad
   \key{put}(s, v, m) = \langle R, (\Tcut{\sigma}{s}, v), \cdot, f \rangle
 \end{align*}
