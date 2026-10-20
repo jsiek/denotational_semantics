@@ -81,48 +81,60 @@
 A denotational semantics maps each program to a mathematical object
 that describes its behavior. In a graph model, that object is a set of
 finite pieces of evidence about the behavior, which we call
-\emph{elements}. Our model is a variant of the model of \citet{Engeler:1981aa}, which
-we extend with the data structures of our compiler's languages. Our
-explanation follows the elementary presentations of
-\citet{Siek:2017ab} and \citet{Wadler:2020aa}.
-Figure~\ref{fig:graph-ops} defines the elements and the operators on
-sets of elements from which we build the semantics of every language in
-the compiler.
-We first explain how the model represents functions, then how it
-handles recursion and divergence, and then the consistency requirement
-that distinguishes our variant. We end with the properties of the
-semantics that our proofs rely on, including a $\beta$-law, and with
-our reasons for choosing a graph model over traditional domain theory.
+\emph{elements}. Our model is a variant of the model of
+\citet{Engeler:1981aa}, which we extend with the data structures of
+our compiler's languages.  We first explain how the model represents
+functions, then how it handles recursion and divergence, and then the
+consistency requirement that distinguishes our variant.  Throughout
+the explanation, we refer to Figure~\ref{fig:graph-ops}, which defines
+elements and the operators on sets of elements from which we build the
+semantics of the source, target, and intermediate languages.  We end
+this section with the properties of the semantics that our proofs rely
+on, including a $\beta$-law, and with our reasons for choosing a graph
+model over traditional domain theory.
 
 \paragraph{Functions as tables}
+
 One can describe a function by tabulating it: each row of the table
-pairs an input with the corresponding output, and applying the function
-means looking up a row. Two problems arise
-\citep{Wadler:2020aa}. First, a function on an infinite domain needs
-an infinite table. Second, a function that is applied to itself would
-need a table that contains a copy of itself. Graph models solve both
-problems. For the first, a terminating program applies each function to
-only finitely many arguments, so finite tables suffice
-\citep{Scott:1976lq,Plotkin:1993ab}. The meaning of a function is the
-set of all its finite tables, or equivalently the set of all their
-rows. For the second, a row applies to an argument when the row's input
-is \emph{included} in the argument, rather than equal to it. A table
-then needs only a smaller copy of itself, and finite elements, defined
-as an inductive data type, can provide that.
+pairs an input with the corresponding output, and applying the
+function means looking up a row. Two problems arise. First, a function
+on an infinite domain (such as the integers) needs an infinite
+table. Second, a function that is applied to itself (such as the Y
+combinator) would need a table that contains a copy of itself. Graph
+models solve both problems. For the first, a terminating program
+applies each function to only finitely many arguments, so finite
+tables suffice \citep{Scott:1976lq,Plotkin:1993ab}. The meaning of a
+function is the set of all its finite tables, or equivalently the set
+of all their rows. For the second, a row applies to an argument when
+the row's input is \emph{included} in the argument, rather than equal
+to it. A table then needs only a smaller copy of itself, and elements,
+defined as an inductive data type, can provide that.
 
 Concretely, a row is an element $V \mapsto w$, called an \emph{entry},
-whose input $V$ is a finite list of elements and whose output $w$ is an
-element. The meaning of a function is a set of entries, and application
-$D \app E$ collects the outputs of the entries in $D$ whose inputs are
-included in $E$ (Figure~\ref{fig:graph-ops}). In \iswim, the meaning of
-a $\lambda$-abstraction and of an application are
+whose input $V$ is a finite list of elements and whose output $w$ is
+an element. The meaning of a function, given by operator $\Lambda$
+(Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
+\mapsto w$ such that each output $w$ is in the meaning of the
+function's body when the body is evaluated in an environment that maps
+its parameter to input $V$.  In \iswim, the meaning of a
+$\lambda$-abstraction is given below, where an environment $\rho$ maps
+each variable to a set of elements and $\boldsymbol{\lambda}$ is the
+notation for specifying a mathematical function.
 \[
 \begin{array}{rcl}
-  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])\\
+  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])
+\end{array}
+\]
+The meaning of function application is given by operator $D \app E$
+(Figure~\ref{fig:graph-ops}).  It collects all the entries of $D$
+whose input is contained in the argument $E$, and returns the outputs
+of those entries. So the following equation defines the meaning of
+application in \iswim.
+\[
+\begin{array}{rcl}
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
 \end{array}
 \]
-where an environment $\rho$ maps each variable to a set of elements.
 For example, $\den{\lambda x.\, x + 1}$ contains the entry
 $[n] \mapsto n{+}1$ for every integer $n$, and
 $\den{(\lambda x.\, x + 1)\; 3} = \{4\}$. Besides its entries, the
