@@ -148,26 +148,28 @@ inlines calls to small known functions.
 
 \paragraph{Closure conversion}
 
-The next four passes perform closure conversion. \pass{Enclose} turns each
-$\lambda$-abstraction into a closure $\kw{clos}\;N\;\vec{M}$ of Clos,
-whose code $N$ is closed: its free variables are a name $x_i$ for each
-captured value $M_i$ and the parameter $y$. \pass{Enclose} captures every
-variable in scope, and \pass{optimize} then drops the captured values that the
-code does not use. \pass{Concretize} stores the captured values of a closure
-in a single environment tuple, so the code of an EnvClos closure has
-two free variables, the environment $e$ and the parameter $y$, and
-reads $x_i$ as $\kw{get}_i\,e$. \pass{Delay} then separates a closure into its
-code and its environment (Section~\ref{sec:approx-lr}). In FlatClos,
-$\kw{code}\;N$ is closed code of type $\kw{code}(\Delta; A \rightarrow
-C)$, which expects an environment of type $\kw{tup}(\Delta)$ and an
-argument of type $A$. The form $\kw{pack}\;L\;M$ builds a closure from
-code $L$ and an environment $M$ of the same $\Delta$. Its type,
-$A \rightarrow C$, hides $\Delta$, as in the existential type
-$\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
-\kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
-so closures with different environments have the same type. The form
-$\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
-environment and the argument $M$.
+The next four passes perform closure conversion. The \pass{enclose}
+pass turns each $\lambda$-abstraction into a closure
+$\kw{clos}\;N\;\vec{M}$ of Clos, whose code $N$ is closed: its free
+variables are a name $x_i$ for each captured value $M_i$ and the
+parameter $y$. \pass{Enclose} captures every variable in scope, and
+the \pass{optimize} pass then drops the captured values that the code
+does not use. The \pass{concretize} pass stores the captured values of
+a closure in a single environment tuple, so the code of an EnvClos
+closure has two free variables, the environment $e$ and the parameter
+$y$, and reads $x_i$ as $\kw{get}_i\,e$. \pass{Delay} then separates a
+closure into its code and its environment
+(Section~\ref{sec:approx-lr}). In FlatClos, $\kw{code}\;N$ is closed
+code of type $\kw{code}(\Delta; A \rightarrow C)$, which expects an
+environment of type $\kw{tup}(\Delta)$ and an argument of type
+$A$. The form $\kw{pack}\;L\;M$ builds a closure from code $L$ and an
+environment $M$ of the same $\Delta$. Its type, $A \rightarrow C$,
+hides $\Delta$, as in the existential type $\exists \Delta.\,
+\kw{code}(\Delta; A \rightarrow C) \times \kw{tup}(\Delta)$ of typed
+closure conversion \citep{Minamide:1996ys}, so closures with different
+environments have the same type. The form $\kw{callc}\;L\;M$ opens the
+closure $L$ and calls its code with its environment and the argument
+$M$.
 \[
   \frac{e : \kw{tup}(\Delta),\, y : A \vdash N : C}
        {\Gamma \vdash \kw{code}\;N : \kw{code}(\Delta; A \rightarrow C)}
