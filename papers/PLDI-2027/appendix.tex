@@ -203,8 +203,8 @@ its captured values.
 \]
 \[
   \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
-         e{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
-        {\Gamma \vdash \kw{clos}\;(e, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(EnvClos)}
+         z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
+        {\Gamma \vdash \kw{clos}\;(z, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(EnvClos)}
 \]
 Below, $\den{\vec{M}}\rho$ stands for $\den{M_1}\rho, \ldots, \den{M_n}\rho$. A Clos closure is the function of its parameter $y$ whose code runs
 with the captured values for $x_1, \ldots, x_n$; closures are strict, so
@@ -217,8 +217,8 @@ curried meaning of its code to the tuple of the captured values
     \mathsf{guard}(\den{M_1}\rho, \ldots, \den{M_n}\rho;\;
       \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\den{\vec{M}}\rho, y{:=}Y]))
     \hfill \text{(Clos)}\\[4pt]
-    \den{\kw{clos}\;(e, y.\,N)\;\vec{M}}\rho =
-    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[e{:=}X, y{:=}Y])) \app
+    \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho =
+    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y])) \app
       \mathcal{T}(\den{\vec{M}}\rho)
     \quad \text{(EnvClos)}
 \end{array}
@@ -229,8 +229,8 @@ curried meaning of its code to the tuple of the captured values
 FlatClos replaces closures and application with code, packing, and
 calls, and types and interprets its other forms as \iswim\ does:
 \[
-  \dfrac{e{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
-        {\Gamma \vdash \kw{code}\;(e, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
+  \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
+        {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
   \qquad
   \dfrac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
          \quad \Gamma \vdash M : \kw{tup}(\Delta)}
@@ -241,7 +241,7 @@ calls, and types and interprets its other forms as \iswim\ does:
         {\Gamma \vdash \kw{callc}\;L\;M : C}
 \]
 \[
-  \den{\kw{code}\;(e, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[e{:=}X, y{:=}Y]))
+  \den{\kw{code}\;(z, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))
   \qquad
   \den{\kw{pack}\;L\;M}\rho = \mathsf{pair}(\den{L}\rho, \den{M}\rho)
 \]
@@ -258,11 +258,11 @@ $\Sigma; \Gamma \vdash M : A$. The other forms are typed as in FlatClos.
 \[
   \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
   \qquad
-  \dfrac{\Sigma; e{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \ (k < m)
+  \dfrac{\Sigma; z{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \ (k < m)
          \quad \Sigma; \emptyset \vdash M : A}
         {\vdash (d_0, \ldots, d_{m-1};\; M) : A}
 \]
-where $d_k = \kw{code}\;(e, y.\,N_k)$. A term means a set given a table $T$ that gives each definition its
+where $d_k = \kw{code}\;(z, y.\,N_k)$. A term means a set given a table $T$ that gives each definition its
 meaning, $\den{M}_T\rho$; the other forms are interpreted as in
 FlatClos, passing $T$ along. A definition means the curried function
 of its code, given the table $T_k$ of the definitions older than it
@@ -270,7 +270,7 @@ of its code, given the table $T_k$ of the definitions older than it
 \[
   \den{f_k}_T\rho = T(k)
   \qquad
-  T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N_k}_{T_k}\rho_0[e{:=}X, y{:=}Y]))
+  T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N_k}_{T_k}\rho_0[z{:=}X, y{:=}Y]))
 \]
 \[
   \den{(d_0, \ldots, d_{m-1};\; M)} = \den{M}_T\rho_0

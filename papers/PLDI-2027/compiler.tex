@@ -12,6 +12,7 @@
 \small
 \[
 \begin{array}{@{}l@{\;\;}r@{\;}c@{\;}l@{}}
+\text{Variables} & x, y, z & & \text{(from Imp on, slots of a stack frame)}\\
 \text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
   \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
  & \Delta & ::= & A_1, \ldots, A_n\\[3pt]
@@ -22,12 +23,12 @@
   \mid \kw{fold}\;M \mid \kw{unfold}\;M\\[3pt]
 \text{Clos} & L, M, N & ::= & \ldots \mid \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}
   \qquad (\text{in place of } \lambda x.\, N)\\
-\text{EnvClos} & L, M, N & ::= & \ldots \mid \kw{clos}\;(e, y.\,N)\;\vec{M}\\
-\text{FlatClos} & L, M, N & ::= & \ldots \mid \kw{code}\;(e, y.\,N) \mid \kw{pack}\;L\;M \mid \kw{callc}\;L\;M
+\text{EnvClos} & L, M, N & ::= & \ldots \mid \kw{clos}\;(z, y.\,N)\;\vec{M}\\
+\text{FlatClos} & L, M, N & ::= & \ldots \mid \kw{code}\;(z, y.\,N) \mid \kw{pack}\;L\;M \mid \kw{callc}\;L\;M
   \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
 \text{GlobalFun} & L, M, N & ::= & \ldots \mid f_k
   \qquad (\text{in place of } \kw{code})\\
- & d & ::= & \kw{code}\;(e, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
+ & d & ::= & \kw{code}\;(z, y.\,N) \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
 \text{Mon} & a & ::= & x \mid c \mid f_k\\
  & o & ::= & \kw{pack} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
   \mid \kw{inr} \mid \kw{prim}_p \mid \kw{fold} \mid \kw{unfold}\\
@@ -156,11 +157,11 @@ $N$, so the code is closed. \pass{Enclose} captures every variable in scope, and
 the \pass{optimize} pass then drops the captured values that the code
 does not use. The \pass{concretize} pass stores the captured values of
 a closure in a single environment tuple, so an EnvClos closure
-$\kw{clos}\;(e, y.\,N)\;\vec{M}$ binds just two variables in its code, the
-environment $e$ and the parameter $y$, and the code reads $x_i$ as
-$\kw{get}_i\,e$. \pass{Delay} then separates a
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds just two variables in its code, the
+environment $z$ and the parameter $y$, and the code reads $x_i$ as
+$\kw{get}_i\,z$. \pass{Delay} then separates a
 closure into its code and its environment
-(Section~\ref{sec:approx-lr}). In FlatClos, $\kw{code}\;(e, y.\,N)$ is closed
+(Section~\ref{sec:approx-lr}). In FlatClos, $\kw{code}\;(z, y.\,N)$ is closed
 code of type $\kw{code}(\Delta; A \rightarrow C)$, which expects an
 environment of type $\kw{tup}(\Delta)$ and an argument of type
 $A$. The form $\kw{pack}\;L\;M$ builds a closure from code $L$ and an
@@ -173,7 +174,7 @@ closure $L$ and calls its code with its environment and the argument
 $M$.
 \[
   \frac{e : \kw{tup}(\Delta),\, y : A \vdash N : C}
-       {\Gamma \vdash \kw{code}\;(e, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
+       {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
   \qquad
   \frac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
         \quad \Gamma \vdash M : \kw{tup}(\Delta)}
