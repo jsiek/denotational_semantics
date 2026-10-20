@@ -14,7 +14,7 @@
   * Only callq can diverge (∅), so only it writes its result strictly
     (strict, E provided that D is nonempty): it applies the code to
     %rdi and %rsi (⋆, as CFGμ's call) and puts the result in %rax.
-  * An unset register, and an unset flag, hold init, {ω}: typed code
+  * An unset register, and an unset flag, hold init, {⟨⟩}: typed code
     never reads them. After a call %rdi, %rsi and the flag are unset.
   * fold and unfold (↑, ↓) are the identity; case is 𝒞 on the slot, as
     CFGμ's case.

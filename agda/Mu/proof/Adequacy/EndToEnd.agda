@@ -22,7 +22,7 @@ module Mu.proof.Adequacy.EndToEnd where
 
 open import Framework.Primitives using (Int)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (ρ₀)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Semantics.Graph.ISWIM using (⟦_⟧)

@@ -315,7 +315,7 @@ module Den {Σ : List DSig} (T : Table Σ) (cT : ConT T) (T-ν : ∀ {s} (f : Σ
   𝓔 (v ∷ γ) = 𝒱 v • 𝓔 γ
 
   𝓔-ne : ∀ {Γ} (γ : Env Γ) → E.nonempty-env (𝓔 γ)
-  𝓔-ne [] x = ⟨ ω , refl ⟩
+  𝓔-ne [] x = ⟨ ⟨⟩ , refl ⟩
   𝓔-ne (v ∷ γ) zero = 𝒱-ne v
   𝓔-ne (v ∷ γ) (suc x) = 𝓔-ne γ x
 

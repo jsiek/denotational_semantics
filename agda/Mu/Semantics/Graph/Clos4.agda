@@ -25,7 +25,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 ⟦_⟧s : ∀ {Γ Δ} → All (Tm Γ) Δ → Env Value → Results (𝒫 Value) (replicate (length Δ) ■)
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
-⟦ code N ⟧ ρ = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ω ⌉)) , ptt ⟩) , ptt ⟩
+⟦ code N ⟧ ρ = Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ⟨⟩ ⌉)) , ptt ⟩) , ptt ⟩
 ⟦ pack L M ⟧ ρ = pair ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ callc L M ⟧ ρ = ⋆ ⟨ ⋆ ⟨ car ⟨ ⟦ L ⟧ ρ , ptt ⟩ , ⟨ cdr ⟨ ⟦ L ⟧ ρ , ptt ⟩ , ptt ⟩ ⟩ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧ ρ = ℬ B c ptt

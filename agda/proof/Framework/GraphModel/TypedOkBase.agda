@@ -115,34 +115,39 @@ fin₁ ⟨ m , ⟨ k , _ ⟩ ⟩ {ρ} NE neX w w∈ with k (extend-nonempty-env 
   env⊆ zero = proj₁ (proj₁ (proj₂ (f 0)))
   env⊆ (suc x) = s (suc x)
 
-{- the body of code, on its environment T and argument X -}
-fin₂ : ∀ {E} → Ok E → ∀ {T X} → nonempty T → nonempty X → ∀ w → w ∈ E (X • T • λ _ → ⌈ ω ⌉)
-  → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ X × w ∈ E (mem U • mem V • λ _ → ⌈ ω ⌉)
-fin₂ ⟨ m , ⟨ k , _ ⟩ ⟩ neT neX w w∈
-    with k (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) neT) neX) w w∈
+{- the body of code, on its environment T and argument X; the other
+   variables hold a filler {c} (ω in the untyped and dynamically typed
+   developments, ⟨⟩ in ISWIMμ) -}
+fin₂ : ∀ {E} → Ok E → ∀ {c T X} → nonempty T → nonempty X → ∀ w → w ∈ E (X • T • λ _ → ⌈ c ⌉)
+  → Σ[ V ∈ List Value ] Σ[ U ∈ List Value ] V ≢ [] × U ≢ [] × mem V ⊆ T × mem U ⊆ X × w ∈ E (mem U • mem V • λ _ → ⌈ c ⌉)
+fin₂ ⟨ m , ⟨ k , _ ⟩ ⟩ {c} neT neX w w∈
+    with k (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ c , refl ⟩) neT) neX) w w∈
 ... | ⟨ ρ′ , ⟨ f , ⟨ s , w∈′ ⟩ ⟩ ⟩ =
   ⟨ proj₁ (f 1) , ⟨ proj₁ (f 0) , ⟨ proj₂ (proj₂ (f 1)) , ⟨ proj₂ (proj₂ (f 0))
   , ⟨ (λ d d∈ → s 1 d (proj₂ (proj₁ (proj₂ (f 1))) d d∈)) , ⟨ (λ d d∈ → s 0 d (proj₂ (proj₁ (proj₂ (f 0))) d d∈))
   , m env⊆ w w∈′ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
   where
-  env⊆ : ρ′ ⊆ₑ (mem (proj₁ (f 0)) • mem (proj₁ (f 1)) • λ _ → ⌈ ω ⌉)
+  env⊆ : ρ′ ⊆ₑ (mem (proj₁ (f 0)) • mem (proj₁ (f 1)) • λ _ → ⌈ c ⌉)
   env⊆ zero = proj₁ (proj₁ (proj₂ (f 0)))
   env⊆ (suc zero) = proj₁ (proj₁ (proj₂ (f 1)))
   env⊆ (suc (suc x)) = s (suc (suc x))
 
 {- the body of code, on a finite argument U, uses a finite part of its environment T -}
-FinCode : (Env Value → 𝒫 Value) → Set₁
-FinCode E = ∀ {T} → nonempty T → ∀ U w → U ≢ [] → w ∈ E (mem U • T • λ _ → ⌈ ω ⌉)
-  → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ T × w ∈ E (mem U • mem V • λ _ → ⌈ ω ⌉)
+FinCode-with : Value → (Env Value → 𝒫 Value) → Set₁
+FinCode-with c E = ∀ {T} → nonempty T → ∀ U w → U ≢ [] → w ∈ E (mem U • T • λ _ → ⌈ c ⌉)
+  → Σ[ V ∈ List Value ] V ≢ [] × mem V ⊆ T × w ∈ E (mem U • mem V • λ _ → ⌈ c ⌉)
 
-fin-code : ∀ {E} → Ok E → FinCode E
+FinCode : (Env Value → 𝒫 Value) → Set₁
+FinCode = FinCode-with ω
+
+fin-code : ∀ {E c} → Ok E → FinCode-with c E
 fin-code o neT U w neU w∈ with fin₂ o neT (E≢[]⇒nonempty-mem neU) w w∈
 ... | ⟨ V , ⟨ U′ , ⟨ neV , ⟨ _ , ⟨ V⊆ , ⟨ U′⊆ , w∈′ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ =
   ⟨ V , ⟨ neV , ⟨ V⊆ , proj₁ o (•-~ _⊆_ (λ _ _ z → z) U′⊆) w w∈′ ⟩ ⟩ ⟩
 
 {- code, a closed function of two arguments whose body is Ok -}
-ΛΛ-ok : ∀ {E} → Ok E → Ok (λ _ → ΛΛ ⟨ (λ X Y → E (Y • X • λ _ → ⌈ ω ⌉)) , ptt ⟩)
-ΛΛ-ok o = const-ok (ΛΛ-con λ X X' Y Y' X~ Y~ → proj₂ (proj₂ o) (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ ω) X~) Y~))
+ΛΛ-ok : ∀ {E c} → Ok E → Ok (λ _ → ΛΛ ⟨ (λ X Y → E (Y • X • λ _ → ⌈ c ⌉)) , ptt ⟩)
+ΛΛ-ok {c = c} o = const-ok (ΛΛ-con λ X X' Y Y' X~ Y~ → proj₂ (proj₂ o) (•-~ (Every _~_) (•-~ (Every _~_) (λ _ → Con-⌈⌉ c) X~) Y~))
 
 {- Callc -------------------------------------------------------------------------}
 

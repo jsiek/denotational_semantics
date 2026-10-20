@@ -25,7 +25,7 @@ open import Data.Unit.Polymorphic using () renaming (tt to ptt)
 
 ⟦ ` x ⟧ ρ = ρ (idx x)
 ⟦ clos {Δ} N Ms ⟧ ρ =
-  ⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ω ⌉)) , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 (length Δ) (⟦ Ms ⟧s ρ) , ptt ⟩ ⟩
+  ⋆ ⟨ Λ ⟨ (λ X → Λ ⟨ (λ Y → ⟦ N ⟧ (Y • X • λ _ → ⌈ ⟨⟩ ⌉)) , ptt ⟩) , ptt ⟩ , ⟨ 𝒯 (length Δ) (⟦ Ms ⟧s ρ) , ptt ⟩ ⟩
 ⟦ app L M ⟧ ρ = ⋆ ⟨ ⟦ L ⟧ ρ , ⟨ ⟦ M ⟧ ρ , ptt ⟩ ⟩
 ⟦ lit B c ⟧ ρ = ℬ B c ptt
 ⟦ tuple {Δ} Ms ⟧ ρ = 𝒯 (length Δ) (⟦ Ms ⟧s ρ)

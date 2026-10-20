@@ -23,7 +23,8 @@ module Mu.proof.Adequacy.CEK.Soundness where
 open import Framework.Primitives using (Int)
 open import Language.Prim using (Prim; sub; eq; δ)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain hiding (ρ₀) renaming (const to dconst)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import proof.Framework.GraphModel.Ops
   using (⋆; ℬ; 𝒯; nthD; 𝒞; Λ; proj; Λ-consis; ℬ-consis; inl-consis; inr-consis)
   renaming (inl to inlD; inr to inrD)
@@ -161,7 +162,7 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱s-ne (v ∷ vs) = ⟨ 𝒱-ne v , 𝒱s-ne vs ⟩
 
 𝓔-ne : ∀ {Γ} (γ : Env Γ) → E.nonempty-env (𝓔 γ)
-𝓔-ne [] x = ⟨ ω , refl ⟩
+𝓔-ne [] x = ⟨ ⟨⟩ , refl ⟩
 𝓔-ne (v ∷ γ) zero = 𝒱-ne v
 𝓔-ne (v ∷ γ) (suc x) = 𝓔-ne γ x
 
@@ -176,7 +177,7 @@ len𝒱s (v ∷ vs) = cong N.suc (len𝒱s vs)
 𝒱-con (fold v) = 𝒱-con v
 𝒱s-con [] = tt
 𝒱s-con (v ∷ vs) = ⟨ 𝒱-con v , 𝒱s-con vs ⟩
-𝓔-con [] x = Con-⌈⌉ ω
+𝓔-con [] x = Con-⌈⌉ ⟨⟩
 𝓔-con (v ∷ γ) zero = 𝒱-con v
 𝓔-con (v ∷ γ) (suc x) = 𝓔-con γ x
 

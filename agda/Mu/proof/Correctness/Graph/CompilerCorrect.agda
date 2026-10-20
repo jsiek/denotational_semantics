@@ -18,7 +18,8 @@ module Mu.proof.Correctness.Graph.CompilerCorrect where
 open import Framework.Primitives using (base-rep; Int)
 open import Framework.Iff using (_⇔_)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
+open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
+open import Mu.Semantics.Graph.Closed using (ρ₀)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)

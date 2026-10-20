@@ -49,7 +49,7 @@ module _ {Σ} {T : Table Σ} (cT : ConT T) where
   con M c = proj₂ (proj₂ (ok M)) c
 
   code-con : ∀ {s} (N : Code Σ s) → Con (code′ T N)
-  code-con N = proj₂ (proj₂ (ΛΛ-ok (ok N))) {ρ = λ _ → init} (λ _ → Con-⌈⌉ ω)
+  code-con N = proj₂ (proj₂ (ΛΛ-ok (ok N))) {ρ = λ _ → init} (λ _ → Con-⌈⌉ ⟨⟩)
 
 table-con : ∀ {Σ} (ds : All (Code Σ) Σ) → ConT (table ds)
 table-con = tables-con code-con
