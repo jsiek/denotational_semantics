@@ -8,19 +8,19 @@ operational. The denotational compiler proofs in the literature either
 (1) are limited to source languages that are first-order or strongly
 normalizing, (2) compile to target languages that treat closures as
 primitive values and so avoid closure conversion, or (3) prove only
-semantic preservation, which does not rule out a diverging program
-compiling to one that terminates. We use a denotational
-semantics based on a graph model to prove a compiler correct, from a
-call-by-value $\lambda$-calculus with iso-recursive types (so it
-supports general recursion and admits divergence), through closure
-conversion, to a typed assembly language. The proof is total:
-divergence is preserved and reflected. Every intermediate language has
-a denotational semantics, and most passes are proved by an equation
-between the denotations of a program before and after the pass. The
-exception is the step of closure conversion that lowers closures into
-code and environment pairs: its reflection direction needs a new kind
-of logical relation on denotations, which we call \emph{approximant
-logical relations}. The proof is mechanized in Agda.
+semantic preservation and not reflection, which does not rule out a
+diverging program compiling to one that terminates. We use a
+denotational semantics based on a graph model to prove a compiler
+correct, from a call-by-value $\lambda$-calculus with iso-recursive
+types (so it supports general recursion and admits divergence),
+through closure conversion, to a typed assembly language. The proof is
+total: divergence is preserved and reflected. Most passes in the
+compiler are proved correct by an equation between the denotations of
+a program before and after the pass. The exception is the step of
+closure conversion that lowers closures into code and environment
+pairs: its reflection direction needs a new kind of logical relation
+on denotations, which we call \emph{approximant logical
+relations}. The proof is mechanized in Agda.
 
 To compare this denotational approach with operational ones, we prove
 correctness of the same compiler in three operational styles and report
