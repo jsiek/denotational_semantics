@@ -42,7 +42,7 @@
   \mid \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)\\
  & b & ::= & (t_0, \ldots, t_{j-1};\, t)
   \qquad P ::= (\vec{b};\, b)\\[3pt]
-\text{X86}\mu & a & ::= & x \mid c \mid f_k \mid \%r \mid {\uparrow}a \mid {\downarrow}a
+\text{X86}\mu & a & ::= & x \mid c \mid f_k \mid \%r \mid \kw{fold}\;a \mid \kw{unfold}\;a
   \qquad d ::= \%r \mid x
   \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
  & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
@@ -213,5 +213,5 @@ of one closure with the environment of another. A $\kw{case}$ is a
 single pseudo-instruction that tests the tag of an injection, writes
 its payload to a slot, and jumps to one of two blocks; it stands for a
 test, a load, and a conditional jump. The coercions $\kw{fold}$ and
-$\kw{unfold}$ survive to X86$\mu$ as the operand annotations
-${\uparrow}a$ and ${\downarrow}a$, which do nothing at run time.
+$\kw{unfold}$ survive to X86$\mu$ as annotations on operands,
+$\kw{fold}\;a$ and $\kw{unfold}\;a$, which do nothing at run time.

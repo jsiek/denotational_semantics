@@ -398,9 +398,9 @@ the frame of the state:
   \dfrac{\Theta(r) = \tau}{\Sigma; \langle \Theta; \Delta; O; F \rangle \vdash \%r : \tau}
 \]
 \[
-  \dfrac{\Sigma; \psi \vdash a : A[\mu X.\, A / X]}{\Sigma; \psi \vdash {\uparrow}a : \mu X.\, A}
+  \dfrac{\Sigma; \psi \vdash a : A[\mu X.\, A / X]}{\Sigma; \psi \vdash \kw{fold}\;a : \mu X.\, A}
   \qquad
-  \dfrac{\Sigma; \psi \vdash a : \mu X.\, A}{\Sigma; \psi \vdash {\downarrow}a : A[\mu X.\, A / X]}
+  \dfrac{\Sigma; \psi \vdash a : \mu X.\, A}{\Sigma; \psi \vdash \kw{unfold}\;a : A[\mu X.\, A / X]}
 \]
 A destination is written at a type $\tau$ and leaves a new state,
 $n \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot cuts the
@@ -481,7 +481,7 @@ an instruction transforms the meaning $\kappa$ of the rest of the
 sequence. An unset register and an unset flag hold $\{\langle\rangle\}$.
 An operand means $\mathcal{O}\den{a}\sigma R = \mathcal{A}\den{a}\sigma$
 for an atom, $R(r)$ for $\%r$, and $\mathcal{O}\den{a}\sigma R$ for
-${\uparrow}a$ and ${\downarrow}a$. An object means the operator of its
+$\kw{fold}\;a$ and $\kw{unfold}\;a$. An object means the operator of its
 kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
 $\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
 $\mathit{put}$, updates a register, or binds a slot as an assignment in
