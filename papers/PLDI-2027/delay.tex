@@ -33,7 +33,7 @@ function application:
 \[
 \begin{array}{rcl}
   \den{\kw{clos}\;N\;\vec{M}}\rho & = &
-    (\Lambda X.\, \Lambda Y.\, \den{N}(X, Y)) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
+    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}(X, Y))) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
   \den{\kw{app}\;L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
 \end{array}
 \]
@@ -43,14 +43,13 @@ of code and environment, and a call takes the pair apart. The
 semantics for code is the same curried function, $\kw{pack}$ builds
 the set of pairs $\pairv{u}{v}$ with $u$ from the code and $v$ from
 the environment, and a call applies the first components to the second
-components and then to the argument, which we write $D \callop E$:
+components and then to the argument (the operator $\callop$ of Figure~\ref{fig:graph-ops}):
 \[
 \begin{array}{rcl}
-  \den{\kw{code}\;N}\rho & = & \Lambda X.\, \Lambda Y.\, \den{N}(X, Y)\\
+  \den{\kw{code}\;N}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}(X, Y)))\\
   \den{\kw{pack}\;L\;M}\rho & = &
     \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
-  \qquad\text{where } D \callop E = (\car(D) \app \cdr(D)) \app E
 \end{array}
 \]
 Delay translates each closure into a pair and each application into a
@@ -88,8 +87,8 @@ call, and translates every other construct homomorphically:
   (u :: U) \sqsubseteq^* E' & = & u \sqsubseteq E' \land U \sqsubseteq^* E'
 \end{array}
 \]
-\caption{The relation $v \sqsubseteq D'$ for the preservation half of
-  delay, between a single source (EnvClos) element $v$ and a set $D'$ of
+\caption{The relation $v \sqsubseteq D'$ (``$D'$ satisfies $v$'') for
+  the preservation half of delay, between a single source (EnvClos) element $v$ and a set $D'$ of
   target (FlatClos) elements, defined by recursion on $v$; $U
   \sqsubseteq^* E'$ extends it to a finite list $U$.}
 \label{fig:preserve}
@@ -102,10 +101,19 @@ translation produce the same constants, and that one produces
 something exactly when the other does. The forward half, preservation,
 only requires a relation between a \emph{single} source element and a
 \emph{set} of target elements, defined by recursion on the source
-element (Figure~\ref{fig:preserve}). The clause for a function entry
-says what it means for a target set to implement it: the set must
-contain a closure, and calling it on arguments that implement the
-entry's inputs must implement the entry's output.
+element (Figure~\ref{fig:preserve}); we read $v \sqsubseteq D'$ as
+``$D'$ satisfies $v$''. The clause for a function entry says when a
+target set satisfies it: the set must contain a closure, and calling
+that closure on arguments that satisfy the entry's inputs must satisfy
+the entry's output. The relation has the shape of the satisfaction
+relation of Abramsky's domain logic \citep{Abramsky:1990vv,Abramsky:1993fk},
+in which a domain element $a$ satisfies a function formula
+$(\varphi \rightarrow \psi)$ when it converges to a function $f$ such
+that $f(b)$ satisfies $\psi$ for every $b$ that satisfies $\varphi$.
+Here a source graph element plays the role of the formula (both
+describe a finite piece of behavior, and a formula names a finite
+element of the domain), and a target denotation plays the role of the
+domain element that satisfies it.
 The source element is finite, so the recursion is structural, and the
 proof that $v \in \den{M}\rho$ implies
 $v \sqsubseteq \den{\mathit{delay}(M)}\rho'$ is a routine induction on

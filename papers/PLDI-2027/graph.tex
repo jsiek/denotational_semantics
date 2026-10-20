@@ -30,10 +30,13 @@
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
-  \Lambda F & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}\\
+  \Lambda(F) & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}
+    \qquad (F \text{ a function on sets, e.g. } \mlam{X} E)\\
   \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
   \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
   \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
+  D \callop E & = & (\car(D) \app \cdr(D)) \app E
+    \qquad \text{(calling the closures in } D\text{)}\\
   \mathcal{T}(D_1, \ldots, D_n) & = &
     \{\, \mathsf{tup}_i(v) \mid v \in D_i \,\}
     \quad \text{if } D_1, \ldots, D_n \neq \emptyset,
