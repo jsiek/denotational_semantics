@@ -328,23 +328,49 @@ and every finite $V$, if $\den{\mathit{delay}(M)}\rho' \supseteq V$,
 then $\den{M}\rho \ALR V$.
 \end{lemma}
 
-The proof is by induction on $M$. Two cases carry the weight. For a
-call, a finite $V \subseteq D' \callop E'$ is produced by finitely many
-pairs and arguments, by continuity of the graph model: there are finite
-$W \subseteq D'$ and $U \subseteq E'$ with $\callsto{W}{U}{V}$. The
-induction hypotheses give $\den{L}\rho \ALR W$ and
-$\den{M}\rho \ALR U$, and clause~3 of the first, applied to this batch
-of calls, gives $\den{L}\rho \app \den{M}\rho \ALR V$. For a closure,
-we must establish clause~3 for the set of pairs
-$\den{\kw{pack}\;(\kw{code}\;N')\;(\kw{tuple}\;\vec{M}')}\rho'$: an
-entry of a batch of calls has environment inputs $U_e$ drawn
-from the environments that the list itself provides, which are
-approximations of the tuple of free variables, so the induction
-hypothesis for $\vec{M}$ relates them to the source environment, and
-the induction hypothesis for the body $N$ relates the results. This is
-where the condition $U_e \subseteq \cdr(V)$ in the definition
-of a batch of calls earns its keep: it is exactly what excludes the code
-entries for environments that the program never supplies.
+The proof is by induction on $M$, folding and unfolding ${\ALR}$ with
+Lemma~\ref{lem:depth-irrelevant}. Most cases are routine. A variable
+follows from the relation between the environments, $\kw{fold}$ and
+$\kw{unfold}$ mean the identity on both sides, and the cases for
+tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
+induction hypotheses. Two cases carry the weight.
+
+\emph{Case $M = \kw{app}\;L\;K$.} Then
+$\mathit{delay}(M) = \kw{callc}\;\mathit{delay}(L)\;\mathit{delay}(K)$,
+so $V \subseteq D' \callop E'$ where
+$D' = \den{\mathit{delay}(L)}\rho'$ and
+$E' = \den{\mathit{delay}(K)}\rho'$. Each element of $V$ is produced by
+a code entry from $\car(D')$, finitely many environments from
+$\cdr(D')$, and finitely many arguments from $E'$. Collecting the pairs
+of $D'$ that contribute these codes and environments, and the
+arguments, yields finite lists $W \subseteq D'$ and $U \subseteq E'$
+with $\callsto{W}{U}{V}$. The induction hypotheses give
+$\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$. Unfolding the first and
+applying clause~3 to this batch of calls with $E = \den{K}\rho$ gives
+$\den{L}\rho \app \den{K}\rho \ALR V$, that is, $\den{M}\rho \ALR V$.
+
+\emph{Case $M = \kw{clos}\;N\;\vec{K}$.} Then
+$\mathit{delay}(M) = \kw{pack}\;(\kw{code}\;\mathit{delay}(N))\;(\kw{tuple}\;\mathit{delay}(\vec{K}))$,
+so $V$ is a list of pairs whose environments lie in
+$T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
+$D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
+four clauses of $D \layer{\ALR} V$ and fold. Clauses 1 and 4 hold
+because $V$ contains only pairs. For clause 2, if $V$ is nonempty then
+so is $T'$, the induction hypothesis for $\vec{K}$ makes $T$ nonempty,
+and then $\nu \in D$. For clause 3, suppose $\callsto{V}{U}{W}$ and
+$E \ALR U$; we must show $D \app E \ALR W$. Each $w \in W$ comes from a
+usable entry $U_e \mapsto (U_a \mapsto w) \in \car(V)$ with
+$U_e \subseteq \cdr(V)$ and $U_a \subseteq U$, so by monotonicity $w$
+is in the meaning of the body $\mathit{delay}(N)$ in the environment
+that maps the parameters to $U$ and $\cdr(V)$. This environment is
+related to the source environment that maps them to $E$ and $T$: the
+first by assumption, and the second by the induction hypothesis for
+$\vec{K}$, because $\cdr(V) \subseteq T'$. The induction hypothesis for
+the body $N$ then gives $\den{N}(E, T) \ALR W$, and
+$\den{N}(E, T) \subseteq D \app E$ by $\beta$-reduction in the graph
+model, so $D \app E \ALR W$ because ${\ALR}$ is monotone in its source
+set. The condition $U_e \subseteq \cdr(V)$ is what lets the
+environments of the target body come from the list $V$ itself.
 
 \begin{theorem}[Correctness of delay]\label{thm:delay}
 For a closed term $M$ of EnvClos and a constant $c$,
