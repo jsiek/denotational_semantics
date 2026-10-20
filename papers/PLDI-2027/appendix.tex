@@ -559,18 +559,21 @@ with one operand. The compiler is the composition of the passes:
 %% agda/Mu/Compiler/Simplify.agda: Info, Known, self, info, under,
 %% known-as, value, small, simp, simp-app, simp-call, simp-let, simp-get,
 %% simp-case, simp-prim, simp-unfold, inline-fuel, inline-size.
-On a term, \pass{simplify} returns a pair $(T \mid K)$ of the simplified
-term $T$ and what it knows about the term's value, $K$: a value $V$, a
-function $\langle \lambda x.\, N, E \rangle$ (its body before
+The pass works with \emph{syntactic values}, the terms
+\[
+  V ::= x \mid \lambda x.\, N \mid c \mid \kw{tuple}\;(V_1, \ldots, V_n)
+    \mid \kw{inl}\;V \mid \kw{inr}\;V \mid \kw{fold}\;V
+\]
+A syntactic value is \emph{small} when it is a variable, a constant,
+$\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one of those;
+only small values are duplicated. On a term, \pass{simplify} returns a
+pair $(T, K)$ of the simplified term $T$ and what it knows about
+the term's value, $K$: a syntactic value $V$ that the term is known to
+equal, a function $\langle \lambda x.\, N, E \rangle$ (its body before
 simplification, with what was known where it was defined), or nothing,
 $\bot$. An environment $E$ maps each variable to such a pair: the term
-that replaces the variable and what the variable is known to be. Values
-are variables, $\lambda$-abstractions, constants, and tuples,
-injections, and $\kw{fold}$s of values. A value is \emph{small} when it
-is a variable, a constant, $\langle\rangle$, or $\kw{inl}\;a$ or
-$\kw{inr}\;a$ of one of those; only small values are duplicated. We
-write $\mathit{self}(V) = (V \mid V)$, and $\mathit{info}(M) = (M \mid
-M)$ if $M$ is a value and $(M \mid \bot)$ otherwise. Under a binder $x$
+that replaces the variable and what the variable is known to be. We
+write $\mathit{self}(V) = (V, V)$, and $\mathit{info}(M) = (M, M)$ if $M$ is a syntactic value and $(M, \bot)$ otherwise. Under a binder $x$
 that stays, $x$ is itself and is known only as itself:
 $E' = E[x{:=}\mathit{self}(x)]$.
 
@@ -581,16 +584,16 @@ which inlines with one less:
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
   \pass{simp}_E(x) & = & E(x)\\
   \pass{simp}_E(\lambda x.\, N) & = &
-    (\lambda x.\, T \mid \langle \lambda x.\, N, E \rangle)\\
-  & & \quad \text{where } (T \mid K) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
+    (\lambda x.\, T, \langle \lambda x.\, N, E \rangle)\\
+  & & \quad \text{where } (T, K) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
   \pass{simp}_E(L\;M) & = & \pass{app}_E(L, \pass{simp}_E(M))\\
   \pass{simp}_E(c) & = & \mathit{self}(c)\\
   \pass{simp}_E(\kw{tuple}\;(M_1, \ldots, M_n)) & = &
     \mathit{info}(\kw{tuple}\;(T_1, \ldots, T_n))\\
-  & & \quad \text{where } (T_i \mid K_i) = \pass{simp}_E(M_i)\\
+  & & \quad \text{where } (T_i, K_i) = \pass{simp}_E(M_i)\\
   \pass{simp}_E(\kw{get}_i\,L) & = & \pass{get}_i(\pass{simp}_E(L))\\
   \pass{simp}_E(\kw{inl}\;M) & = & \mathit{info}(\kw{inl}\;T)
-    \quad \text{where } (T \mid K) = \pass{simp}_E(M)\\
+    \quad \text{where } (T, K) = \pass{simp}_E(M)\\
   & & \quad \text{and likewise for } \kw{inr} \text{ and } \kw{fold}\\
   \pass{simp}_E(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = &
     \pass{case}_E(\pass{simp}_E(L), x.\,M, y.\,N)\\
@@ -607,11 +610,11 @@ fuel left and its body, simplified at the call, has at most 24 nodes:
   \pass{app}_E(\lambda x.\, N, I) & = & \pass{let}_E(x.\,N, I)\\
   \pass{app}_E(L, I) & = & \pass{call}(\pass{simp}_E(L), I)
     \quad \text{otherwise}\\[4pt]
-  \pass{call}^{\phi+1}((T \mid \langle \lambda x.\, N, E_f \rangle), I) & = & P
+  \pass{call}^{\phi+1}((T, \langle \lambda x.\, N, E_f \rangle), I) & = & P
     \quad \text{if } |P| \leq 24, \text{ where } P = \pass{let}^{\phi}_{E_f}(x.\,N, I)\\
-  & = & (T\;T' \mid \bot)
-    \quad \text{otherwise, where } I = (T' \mid K')\\
-  \pass{call}^{\phi}((T \mid K), (T' \mid K')) & = & (T\;T' \mid \bot)
+  & = & (T\;T', \bot)
+    \quad \text{otherwise, where } I = (T', K')\\
+  \pass{call}^{\phi}((T, K), (T', K')) & = & (T\;T', \bot)
     \quad \text{in all other cases}
 \end{array}
 \]
@@ -620,41 +623,41 @@ operand, by $\kw{let}$, $\beta$, or inlining, substitutes the operand
 if it is small, and otherwise keeps it bound by a $\kw{let}$:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{let}_E(x.\,N, (V \mid K)) & = & \pass{simp}_{E[x:=(V \mid K)]}(N)
-    \quad \text{if } V \text{ is small}\\
-  & = & (\kw{let}\;x = V\;\kw{in}\;T \mid \bot)
-    \quad \text{if } V \text{ is another value,}\\
-  & & \quad \text{where } (T \mid K'') = \pass{simp}_{E[x:=(x \mid K)]}(N)\\
-  & = & (\kw{let}\;x = V\;\kw{in}\;T \mid \bot)
+  \pass{let}_E(x.\,N, (T', K)) & = & \pass{simp}_{E[x:=(T', K)]}(N)
+    \quad \text{if } T' \text{ is a small syntactic value}\\
+  & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
+    \quad \text{if } T' \text{ is another syntactic value,}\\
+  & & \quad \text{where } (T, K'') = \pass{simp}_{E[x:=(x, K)]}(N)\\
+  & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
     \quad \text{otherwise,}\\
-  & & \quad \text{where } (T \mid K'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
+  & & \quad \text{where } (T, K'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
 \end{array}
 \]
 A projection, $\kw{unfold}$, $\kw{case}$, or primitive on a known value
 reduces:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \pass{get}_i((T \mid \kw{tuple}\;(K_1, \ldots, K_n))) & = & \mathit{self}(K_i)
+  \pass{get}_i((T, \kw{tuple}\;(K_1, \ldots, K_n))) & = & \mathit{self}(K_i)
     \quad \text{if } K_i \text{ is small}\\
-  & = & (\kw{get}_i\,T \mid K_i) \quad \text{otherwise}\\
-  \pass{get}_i((T \mid K)) & = & (\kw{get}_i\,T \mid \bot)
+  & = & (\kw{get}_i\,T, K_i) \quad \text{otherwise}\\
+  \pass{get}_i((T, K)) & = & (\kw{get}_i\,T, \bot)
     \quad \text{if } K \text{ is not a tuple}\\
-  \pass{unfold}((T \mid \kw{fold}\;K)) & = & \mathit{self}(K)
+  \pass{unfold}((T, \kw{fold}\;K)) & = & \mathit{self}(K)
     \quad \text{if } K \text{ is small}\\
-  & = & (\kw{unfold}\;T \mid K) \quad \text{otherwise}\\
-  \pass{unfold}((T \mid K)) & = & (\kw{unfold}\;T \mid \bot)
+  & = & (\kw{unfold}\;T, K) \quad \text{otherwise}\\
+  \pass{unfold}((T, K)) & = & (\kw{unfold}\;T, \bot)
     \quad \text{if } K \text{ is not a } \kw{fold}\\
-  \pass{case}_E((T \mid \kw{inl}\;K), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(K)]}(M)
+  \pass{case}_E((T, \kw{inl}\;K), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(K)]}(M)
     \quad \text{if } K \text{ is small}\\
   & & \quad \text{(and likewise for } \kw{inr}\text{)}\\
-  \pass{case}_E((T \mid K), x.\,M, y.\,N) & = &
-    (\kw{case}\;T\;(x.\,T_1)\;(y.\,T_2) \mid \bot)
+  \pass{case}_E((T, K), x.\,M, y.\,N) & = &
+    (\kw{case}\;T\;(x.\,T_1)\;(y.\,T_2), \bot)
     \quad \text{otherwise,}\\
-  & & \quad \text{where } (T_1 \mid K_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
-  & & \quad \text{and } (T_2 \mid K_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
-  \pass{prim}_p((T_1 \mid n), (T_2 \mid m)) & = & \mathit{self}(\mathit{res}(\delta(p, n, m)))
+  & & \quad \text{where } (T_1, K_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
+  & & \quad \text{and } (T_2, K_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
+  \pass{prim}_p((T_1, n), (T_2, m)) & = & \mathit{self}(\mathit{res}(\delta(p, n, m)))
     \quad \text{if } n \text{ and } m \text{ are integers}\\
-  \pass{prim}_p((T_1 \mid K_1), (T_2 \mid K_2)) & = & (\kw{prim}_p\;T_1\;T_2 \mid \bot)
+  \pass{prim}_p((T_1, K_1), (T_2, K_2)) & = & (\kw{prim}_p\;T_1\;T_2, \bot)
     \quad \text{otherwise}
 \end{array}
 \]
@@ -663,12 +666,12 @@ $\mathit{res}(\mathsf{true}) = \kw{inl}\;\langle\rangle$, and
 $\mathit{res}(\mathsf{false}) = \kw{inr}\;\langle\rangle$. Finally,
 \[
   \pass{simplify}(M) = T
-  \quad \text{where } (T \mid K) = \pass{simp}^{4}_{E_0}(M)
+  \quad \text{where } (T, K) = \pass{simp}^{4}_{E_0}(M)
   \text{ and } E_0(x) = \mathit{self}(x) \text{ for every } x.
 \]
 \pass{simplify} drops only evaluations whose value is known, which
 have no effect, and otherwise keeps the order of evaluation: an operand
-that is not a value is never substituted but stays bound by a
+that is not a syntactic value is never substituted but stays bound by a
 $\kw{let}$.
 
 \subsection{\pass{enclose} (\iswim\ to Clos)}
