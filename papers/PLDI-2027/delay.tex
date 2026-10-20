@@ -356,8 +356,8 @@ $\den{M}\rho \ALR V$.
 $\mathit{delay}(M) = \kw{pack}\,(\kw{code}\,\mathit{delay}(N))\,(\kw{tuple}\,\mathit{delay}(\vec{K}))$,
 so $V$ is a list of pairs whose environments lie in
 $T' = \mathcal{T}(\den{\mathit{delay}(\vec{K})}\rho')$. Let
-$D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
-four clauses of $D \layer{\ALR} V$ and fold. Clauses 1 and 4 hold
+$D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the four clauses of $D \layer{\ALR} V$, and then the second
+part of Lemma~\ref{lem:depth-irrelevant} gives $D \ALR V$. Clauses 1 and 4 hold
 trivially, because every element of $V$ is a pair, so $V$ contains no constants and every projection of $V$ is empty. For clause 2, if $V$ is nonempty then
 so is $T'$, the induction hypothesis for $\vec{K}$ makes $T$ nonempty,
 and then $\nu \in D$. For clause 3, suppose $\callsto{V}{U}{W}$ and
