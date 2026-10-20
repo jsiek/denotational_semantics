@@ -34,22 +34,22 @@
  & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
   \mid \kw{let}\;x = M\;\kw{in}\;N
   \qquad P ::= (\vec{d};\, M)\\[3pt]
-\text{Imp} & a & ::= & s \mid c \mid f_k
+\text{Imp} & a & ::= & x \mid c \mid f_k
   \qquad r ::= a \mid o\;\vec{a}\\
- & e & ::= & r \mid s \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;(s.\,e_1)\;(s.\,e_2)
+ & e & ::= & r \mid x \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)
   \qquad P ::= (e_0, \ldots, e_{m-1};\, e)\\[3pt]
-\text{CFG} & t & ::= & \kw{return}\;r \mid s \mathrel{:=} r;\; t \mid \kw{goto}\;l
-  \mid \kw{case}\;a\;(s.\,l_1)\;(s.\,l_2)\\
+\text{CFG} & t & ::= & \kw{return}\;r \mid x \mathrel{:=} r;\; t \mid \kw{goto}\;l
+  \mid \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)\\
  & b & ::= & (t_0, \ldots, t_{j-1};\, t)
   \qquad P ::= (\vec{b};\, b)\\[3pt]
-\text{X86}\mu & a & ::= & s \mid c \mid f_k \mid \%r \mid {\uparrow}a \mid {\downarrow}a
-  \qquad d ::= \%r \mid s
+\text{X86}\mu & a & ::= & x \mid c \mid f_k \mid \%r \mid {\uparrow}a \mid {\downarrow}a
+  \qquad d ::= \%r \mid x
   \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
  & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
  & i & ::= & \kw{movq}\;a, d \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
   \mid \kw{sete}\;d \mid \kw{alloc}\;o, d \mid \kw{load}\;\kw{get}_i\;a, d\\
- & & \mid & \kw{load}\;\kw{fst}\;s, \%r \mid \kw{load}\;\kw{snd}\;s, \%r \mid \kw{callq}\;a\\
- & \beta & ::= & i;\; \beta \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;s\;(s.\,l_1)\;(s.\,l_2)\\
+ & & \mid & \kw{load}\;\kw{fst}\;x, \%r \mid \kw{load}\;\kw{snd}\;x, \%r \mid \kw{callq}\;a\\
+ & \beta & ::= & i;\; \beta \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)\\
  & b & ::= & (n;\, \beta_0, \ldots, \beta_{j-1};\, \beta)
   \qquad P ::= (\vec{b};\, b)
 \end{array}
@@ -60,8 +60,8 @@
   a free variable for each captured value and one for the parameter;
   the code of an EnvClos closure has two, for the environment and the
   parameter. Here $c$ ranges over constants, $p$
-  over the primitives $\kw{sub}$ and $\kw{eq}$, $s$ over the slots of a
-  frame, $l$ over block labels, and $f_k$ over the global definitions of
+  over the primitives $\kw{sub}$ and $\kw{eq}$, from Imp on, $x$ and $y$ range over fixed locations in a function's
+  stack frame, $l$ over block labels, and $f_k$ over the global definitions of
   a program.}
 \label{fig:grammars}
 \end{figure}
@@ -99,7 +99,7 @@ intermediate languages:
       (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (1.62,-1.3)
       -- (1.62,-0.62) -- (1.25,-0.62) -- cycle;
   \end{scope}
-  \node[lbl, font=\scriptsize\itshape, text=gray!70!black] at (2.45,-0.5)
+  \node[font=\small\itshape, text=gray!70!black] at (2.45,-0.5)
     {closure conversion};
 \end{tikzpicture}
 \end{center}
@@ -187,17 +187,22 @@ $d_k$, and each occurrence of the code into a reference $f_k$ to it, so
 a GlobalFun program is a list of definitions and a main term. Remove
 complex operands binds each operand that is not an atom to a variable
 with $\kw{let}$, so the operands of every operation in Mon are atoms.
-Lift locals turns each variable into a slot of the function's frame and
-each $\kw{let}$ into an assignment to the next slot. Explicate control
+Lift locals gives each variable a fixed location in the function's
+stack frame, called a \emph{slot}, numbered by how many variables are
+bound before it. We keep writing $x$ and $y$ for these variables, but
+from Imp on they stand for slots, and each $\kw{let}$ becomes an
+assignment to the next slot. There is no register allocation: every
+local variable lives in its slot. Explicate control
 turns the nested $\kw{case}$s of Imp into a control-flow graph of
 blocks that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$
 that jumps to one of two blocks. Finally, select instructions produces
 X86$\mu$, a typed assembly language in the style of TAL
 \citep{Morrisett:1999fk} with the registers $\kw{rax}$, $\kw{rdi}$,
-and $\kw{rsi}$, a frame of slots, and an abstract heap. The instruction
+and $\kw{rsi}$, a frame of slots, and an abstract heap. The registers
+are used only to stage arithmetic and calls. The instruction
 $\kw{alloc}$ allocates a closure, a tuple, or an injection. A call
-first opens the closure in a slot $s$: $\kw{load}\;\kw{fst}\;s,
-\%r$ loads its code, and $\kw{load}\;\kw{snd}\;s, \%r$ loads its
+first opens the closure in a slot $x$: $\kw{load}\;\kw{fst}\;x,
+\%r$ loads its code, and $\kw{load}\;\kw{snd}\;x, \%r$ loads its
 environment. Then $\kw{callq}$ calls the code with the environment in
 $\kw{rdi}$ and the argument in $\kw{rsi}$, and the result arrives in
 $\kw{rax}$. The type system tracks which closure is open, so that a

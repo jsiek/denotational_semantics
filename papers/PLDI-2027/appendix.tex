@@ -58,8 +58,8 @@ A_n$ of its captured values.
 \]
 FlatClos types $\kw{code}$, $\kw{pack}$, and $\kw{callc}$ as in
 Section~\ref{sec:compiler}. In GlobalFun, a program has a table
-$\Sigma = s_0, \ldots, s_{m-1}$ of the signatures
-$s_k = (\Delta_k; A_k \rightarrow C_k)$ of its definitions, and a term
+$\Sigma = \sigma_0, \ldots, \sigma_{m-1}$ of the signatures
+$\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its definitions, and a term
 is typed by the table as well as its context, $\Sigma; \Gamma \vdash M
 : A$:
 \[
@@ -75,10 +75,10 @@ Mon is typed as GlobalFun, with atoms in place of operands.
 \subsection{Imp}
 A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
-far; slot $s < j$ has type $A_s$. An assignment and a $\kw{case}$ write
+far; slot $x < j$ has type $A_x$. An assignment and a $\kw{case}$ write
 the next slot, $|\Delta|$.
 \[
-  \Sigma; \Delta \vdash s : A_s
+  \Sigma; \Delta \vdash x : A_x
   \qquad
   \frac{\Sigma; \Delta \vdash e_1 : A \quad \Sigma; \Delta, A \vdash e_2 : C}
        {\Sigma; \Delta \vdash |\Delta| \mathrel{:=} e_1;\; e_2 : C}
