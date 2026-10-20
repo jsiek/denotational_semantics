@@ -117,22 +117,22 @@ every pass except delay preserves the meaning of a program exactly.
 
 \iswim\ has integers, $n$-ary tuples, binary sums, the primitives
 $\kw{sub}$ and $\kw{eq}$, and iso-recursive types. Most of its forms
-are standard. The primitive $\kw{eq}$ returns $\kw{inl}\;\langle\rangle$
-for true and $\kw{inr}\;\langle\rangle$ for false, so $\kw{case}$ serves
-as the conditional. A recursive type $\mu X.\, A$ is isomorphic to its
-unfolding $A[\mu X.\, A / X]$, and the two coercions of this
-isomorphism are explicit: $\kw{fold}$ turns a term of the unfolding
-into a term of the recursive type, and $\kw{unfold}$ turns it back, as
-their typing rules show:
+are standard. The primitive $\kw{eq}$ returns
+$\kw{inl}\;\langle\rangle$ for true and $\kw{inr}\;\langle\rangle$ for
+false, so $\kw{case}$ serves as the conditional. A recursive type $\mu
+X.\, A$ is isomorphic to its unfolding $A[\mu X.\, A / X]$, and the
+two coercions of this isomorphism are explicit. The $\kw{fold}$
+operation turns a term of the unfolding into a term of the recursive
+type, and $\kw{unfold}$ turns it back:
 \[
   \frac{\Gamma \vdash M : A[\mu X.\, A / X]}{\Gamma \vdash \kw{fold}\;M : \mu X.\, A}
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
 Neither coercion does anything at run time. The other typing rules are
-standard (Appendix~\ref{app:types}). \iswim\ has no recursion operator.
-Instead, recursive types make self-application typable, so the
-call-by-value fixed-point combinator can be written directly:
+straightforward (Appendix~\ref{app:types}). \iswim\ has no recursion
+operator.  Instead, recursive types make self-application typable, so
+the call-by-value fixed-point combinator can be written directly:
 \[
   \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
   \quad\text{where}\quad
@@ -142,11 +142,11 @@ with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
 
-The first pass, simplify, is a simplified version of the source
+The first pass, named simplify, is a bare-bones version of the source
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
 known values, folds primitives on known constants, reduces a
-$\kw{case}$, projection, or $\kw{unfold}$ of a known value, and inlines
-calls to small known functions.
+$\kw{case}$, projection, or $\kw{unfold}$ of a known value, and
+inlines calls to small known functions.
 
 \paragraph{Closure conversion}
 
