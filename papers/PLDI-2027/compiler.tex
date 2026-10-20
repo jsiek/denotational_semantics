@@ -69,20 +69,40 @@
 Our compiler translates \iswim, a call-by-value $\lambda$-calculus,
 to X86$\mu$, a typed assembly language, in ten passes through seven
 intermediate languages:
-\[
-\begin{array}{@{}l@{}}
-\iswim \xrightarrow{\text{simplify}} \iswim
-  \xrightarrow{\text{enclose}} \text{Clos}
-  \xrightarrow{\text{optimize}} \text{Clos}
-  \xrightarrow{\text{concretize}} \text{EnvClos}
-  \xrightarrow{\text{delay}} \text{FlatClos}\\[2pt]
-\quad \xrightarrow{\text{globalize}} \text{GlobalFun}
-  \xrightarrow{\text{remove complex operands}} \text{Mon}
-  \xrightarrow{\text{lift locals}} \text{Imp}\\[2pt]
-\quad \xrightarrow{\text{explicate control}} \text{CFG}
-  \xrightarrow{\text{select instructions}} \text{X86}\mu
-\end{array}
-\]
+\begin{center}
+\small
+\begin{tikzpicture}[x=3.6cm, y=1.25cm, every node/.style={inner sep=2pt},
+    lbl/.style={font=\scriptsize}, ->, >=stealth]
+  \node (s0) at (0,0)  {\iswim};
+  \node (s1) at (1,0)  {\iswim};
+  \node (c2) at (2,0)  {Clos};
+  \node (c2b) at (3,0) {Clos};
+  \node (c3) at (3,-1) {EnvClos};
+  \node (c4) at (2,-1) {FlatClos};
+  \node (c5) at (1,-1) {GlobalFun};
+  \node (mon) at (0,-1) {Mon};
+  \node (imp) at (0,-2) {Imp};
+  \node (cfg) at (1,-2) {CFG};
+  \node (x86) at (2,-2) {X86$\mu$};
+  \draw (s0) -- node[lbl,above] {simplify} (s1);
+  \draw (s1) -- node[lbl,above] {enclose} (c2);
+  \draw (c2) -- node[lbl,above] {optimize} (c2b);
+  \draw (c2b) -- node[lbl,right] {concretize} (c3);
+  \draw (c3) -- node[lbl,above] {delay} (c4);
+  \draw (c4) -- node[lbl,above] {globalize} (c5);
+  \draw (c5) -- node[lbl,above] {remove complex operands} (mon);
+  \draw (mon) -- node[lbl,left] {lift locals} (imp);
+  \draw (imp) -- node[lbl,above] {explicate control} (cfg);
+  \draw (cfg) -- node[lbl,above] {select instructions} (x86);
+  \begin{scope}[on background layer]
+    \draw[-, rounded corners=6pt, fill=gray!12, draw=gray!60, dashed]
+      (1.25,0.42) -- (3.38,0.42) -- (3.38,-1.3) -- (1.62,-1.3)
+      -- (1.62,-0.62) -- (1.25,-0.62) -- cycle;
+  \end{scope}
+  \node[lbl, font=\scriptsize\itshape, text=gray!70!black] at (2.45,-0.5)
+    {closure conversion};
+\end{tikzpicture}
+\end{center}
 Figure~\ref{fig:grammars} gives the grammars of all the languages. Every
 language is intrinsically typed in Agda, so every term is well typed by
 construction and no pass needs a precondition about scoping or typing.
