@@ -5,6 +5,185 @@
 
 \appendix
 
+\section{Type Systems}
+\label{app:types}
+
+%% From definitions.tex (Types and Languages) and agda/Mu/Language/*.agda.
+Every language of Section~\ref{sec:compiler} is intrinsically typed in
+the Agda: a term is indexed by its context and its type, so only well
+typed terms can be written. This appendix gives the typing rules in the
+notation of Figure~\ref{fig:grammars}. The base types are
+$\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$, with
+$\kw{Bool} = \kw{tup}() + \kw{tup}()$. The result type of a primitive
+is $\kw{Int}$ for $\kw{sub}$ and $\kw{Bool}$ for $\kw{eq}$. The body of
+a recursive type $\mu X.\, A$ is contractive: it starts with a base
+type, $\rightarrow$, $\kw{tup}$, $+$, or $\kw{code}$.
+
+\subsection{\iswim}
+A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of
+variable types.
+\[
+\begin{array}{@{}r@{\;:\;}l@{\qquad}l@{}}
+  x & A & x{:}A \in \Gamma \\
+  \lambda x.\, N & A \rightarrow C & \Gamma, x{:}A \vdash N : C \\
+  L\;M & C & L : A \rightarrow C,\ M : A \\
+  c & B & c \text{ a constant of base type } B \\
+  \kw{tuple}\;(M_1, \ldots, M_n) & \kw{tup}(A_1, \ldots, A_n) & M_i : A_i \\
+  \kw{get}_i\,M & A_i & M : \kw{tup}(A_1, \ldots, A_n),\ 1 \leq i \leq n \\
+  \kw{inl}\;M,\ \kw{inr}\;M & A + C & M : A, \text{ resp. } M : C \\
+  \kw{case}\;L\;(x.\,M)\;(y.\,N) & D & L : A + C,\ \Gamma, x{:}A \vdash M : D,\ \Gamma, y{:}C \vdash N : D \\
+  \kw{prim}_p\;L\;M & \mathit{out}(p) & L, M : \kw{Int} \\
+  \kw{let}\;x = M\;\kw{in}\;N & C & M : A,\ \Gamma, x{:}A \vdash N : C \\
+  \kw{fold}\;M & \mu X.\, A & M : A[\mu X.\, A / X] \\
+  \kw{unfold}\;M & A[\mu X.\, A / X] & M : \mu X.\, A
+\end{array}
+\]
+Each line reads: the term on the left has the type in the middle, in
+$\Gamma$, provided the premises on the right hold, with the subterms
+typed in $\Gamma$ unless stated otherwise.
+
+\subsection{The Closure Languages}
+Clos, EnvClos, FlatClos, and GlobalFun type their other forms as \iswim\
+does. A closure's type does not show the types $\Delta = A_1, \ldots,
+A_n$ of its captured values.
+\[
+  \frac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+        x_1{:}A_1, \ldots, x_n{:}A_n, y{:}A \vdash N : C}
+       {\Gamma \vdash \kw{clos}\;N\;\vec{M} : A \rightarrow C}\;\text{(Clos)}
+\]
+\[
+  \frac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+        e{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
+       {\Gamma \vdash \kw{clos}\;N\;\vec{M} : A \rightarrow C}\;\text{(EnvClos)}
+\]
+FlatClos types $\kw{code}$, $\kw{pack}$, and $\kw{callc}$ as in
+Section~\ref{sec:compiler}. In GlobalFun, a program has a table
+$\Sigma = s_0, \ldots, s_{m-1}$ of the signatures
+$s_k = (\Delta_k; A_k \rightarrow C_k)$ of its definitions, and a term
+is typed by the table as well as its context, $\Sigma; \Gamma \vdash M
+: A$:
+\[
+  \frac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
+\]
+\[
+  \frac{\Sigma; e{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \ (d_k = \kw{code}\;N_k,\ k < m)
+        \quad \Sigma; \emptyset \vdash M : A}
+       {\vdash (d_0, \ldots, d_{m-1};\; M) : A}
+\]
+Mon is typed as GlobalFun, with atoms in place of operands.
+
+\subsection{Imp}
+A body runs in a frame of slots, typed by the list
+$\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
+far; slot $s < j$ has type $A_s$. An assignment and a $\kw{case}$ write
+the next slot, $|\Delta|$.
+\[
+  \Sigma; \Delta \vdash s : A_s
+  \qquad
+  \frac{\Sigma; \Delta \vdash e_1 : A \quad \Sigma; \Delta, A \vdash e_2 : C}
+       {\Sigma; \Delta \vdash |\Delta| \mathrel{:=} e_1;\; e_2 : C}
+\]
+\[
+  \frac{\Sigma; \Delta \vdash a : A + B \quad
+        \Sigma; \Delta, A \vdash e_1 : C \quad \Sigma; \Delta, B \vdash e_2 : C}
+       {\Sigma; \Delta \vdash \kw{case}\;a\;(|\Delta|.\,e_1)\;(|\Delta|.\,e_2) : C}
+\]
+A definition $e_k$ is typed in the frame $\kw{tup}(\Delta_k), A_k$ (its
+environment in slot 0 and its argument in slot 1) at type $C_k$, and
+the main expression in the empty frame.
+
+\subsection{CFG}
+A tail is typed by the type $R$ of the body's result, the list
+$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
+blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
+index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
+than it, so control flow is acyclic. Here $\Delta' \sqsubseteq \Delta$
+says that $\Delta'$ is a prefix of $\Delta$; an assignment to slot
+$|\Delta'|$ forgets the slots from $|\Delta'|$ on.
+\[
+  \frac{\Sigma; \Delta \vdash r : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;r}
+  \qquad
+  \frac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash r : A \quad
+        \Sigma; R; \vec{\Delta}; \Delta', A \vdash t}
+       {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} r;\; t}
+  \qquad
+  \frac{\Delta_l = \Delta}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{goto}\;l}
+\]
+\[
+  \frac{\Sigma; \Delta \vdash a : A + B \quad \Delta' \sqsubseteq \Delta \quad
+        \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
+       {\Sigma; R; \vec{\Delta}; \Delta \vdash
+        \kw{case}\;a\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2)}
+\]
+\[
+  \frac{\Sigma; R; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
+        \Sigma; R; \vec{\Delta}; \Delta \vdash t}
+       {\Sigma; R; \Delta \vdash (t_0, \ldots, t_{j-1};\; t)}
+\]
+
+\subsection{X86$\mu$}
+An instruction is typed by the type of the machine state it starts in
+and the one it leaves. A state type
+$\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types $\Theta$
+of the registers, the frame $\Delta$ of the slots assigned so far, the
+open closure $O$ (none, written $\cdot$, or a slot $x$ of $\Delta$ of a
+function type), and whether the flag $F$ is set. A register holds a
+value of a type $A$, the code $\kw{code}_\alpha(A \rightarrow C)$ or the
+environment $\kw{tup}(\alpha)$ of the open closure, or nothing. The
+type variable $\alpha$ stands for the hidden types of the environment
+of the open closure. An operand ${\uparrow}a$ has type $\mu X.\, A$ when
+$a$ has type $A[\mu X.\, A / X]$, and ${\downarrow}a$ the reverse. A
+destination $d$ is written at a type $\tau$,
+$n \vdash d : \psi \Rightarrow_\tau \psi'$: a register write sets the
+register's type, and a write to slot $|\Delta'|$, for a prefix
+$\Delta'$ of $\Delta$ with $|\Delta'| < n$, leaves the frame
+$\Delta', A$ and closes the open closure. The instructions are typed
+as follows, with $\psi = \langle \Theta; \Delta; O; F \rangle$:
+\[
+\footnotesize
+\begin{array}{@{}l@{\;:\;}l@{\quad}l@{}}
+  \kw{movq}\; a, d & \psi \Rightarrow \psi' & a : \tau,\ d : \psi \Rightarrow_\tau \psi' \\
+  \kw{subq}\; a, \%r & \psi \Rightarrow \psi & a : \kw{Int},\ \Theta(r) = \kw{Int} \\
+  \kw{cmpq}\; a_2, a_1 & \psi \Rightarrow \langle \Theta; \Delta; O; \kw{set} \rangle & a_1, a_2 : \kw{Int} \\
+  \kw{sete}\; d & \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow \psi' & d : \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi' \\
+  \kw{alloc}\; o, d & \psi \Rightarrow \psi' & o : A,\ d : \psi \Rightarrow_A \psi' \\
+  \kw{load}\; \kw{get}_i\; a, d & \psi \Rightarrow \psi' & a : \kw{tup}(A_1, \ldots, A_m),\ d : \psi \Rightarrow_{A_i} \psi' \\
+  \kw{load}\; \kw{fst}\; x, \%r & \psi \Rightarrow \langle \mathit{wipe}(\Theta)[r{:}\kw{code}_\alpha(A \rightarrow C)]; \Delta; x; F \rangle & x : A \rightarrow C \in \Delta \\
+  \kw{load}\; \kw{snd}\; x, \%r & \langle \Theta; \Delta; x; F \rangle \Rightarrow \langle \Theta[r{:}\kw{tup}(\alpha)]; \Delta; x; F \rangle & \\
+  \kw{callq}\; a & \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle
+    & a : \kw{code}_\alpha(A \rightarrow C),\ \Theta(\kw{rdi}) = \kw{tup}(\alpha), \\
+  \multicolumn{2}{l}{} & \Theta(\kw{rsi}) = A
+\end{array}
+\]
+Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
+the environment of an earlier open closure, so $\alpha$ always stands
+for the environment of one closure. An object $\kw{pair}(a_1, a_2)$ has
+type $A \rightarrow C$ when $a_1 : \kw{code}(\Delta; A \rightarrow C)$
+and $a_2 : \kw{tup}(\Delta)$; tuples and injections are typed as in
+\iswim. A sequence $\beta$ is typed by the result type $R$, the frames
+$\vec{\Delta}$ of the blocks it may jump to, and its starting state:
+\[
+  \frac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash \beta : \psi'}
+       {\Sigma; n; R; \vec{\Delta} \vdash i;\; \beta : \psi}
+\]
+\[
+  \frac{\Theta(\kw{rax}) = R}{\Sigma; n; R; \vec{\Delta} \vdash \kw{retq} : \langle \Theta; \Delta; O; F \rangle}
+  \qquad
+  \frac{\Delta_l = \Delta}{\Sigma; n; R; \vec{\Delta} \vdash \kw{jmp}\;l : \langle \Theta; \Delta; O; F \rangle}
+\]
+\[
+  \frac{x : A + B \in \Delta \quad \Delta' \sqsubseteq \Delta \quad |\Delta'| < n \quad
+        \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
+       {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2) : \langle \Theta; \Delta; O; F \rangle}
+\]
+A block starts in the state $\langle \emptyset; \Delta_l; \cdot;
+\kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
+$b_k$ of signature $(\Delta_k; A_k \rightarrow C_k)$ starts with its
+environment in $\kw{rdi}$ and its argument in $\kw{rsi}$, in the state
+$\langle \kw{rdi}{:}\kw{tup}(\Delta_k), \kw{rsi}{:}A_k; \emptyset; \cdot;
+\kw{unset} \rangle$, and has result type $C_k$.
+
+
 \section{The Graph Model}
 \label{app:graph-model}
 

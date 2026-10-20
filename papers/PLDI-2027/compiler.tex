@@ -1,0 +1,190 @@
+%% Section 2: the compiler and its languages. Budget: 1.5 pages
+%% (notes/paper-outline.md, section 2). Grammars follow definitions.tex
+%% (Types and Languages, Compilation) and agda/Mu/Language/*.agda; paper
+%% names of the languages: Clos = Clos2μ, EnvClos = Clos3μ, FlatClos =
+%% Clos4μ, GlobalFun = Clos5μ. Every pass but delay is an equation
+%% (agda/Mu/Theorems/Denotational.agda).
+
+\section{The Compiler and Its Languages}
+\label{sec:compiler}
+
+\begin{figure}[t]
+\small
+\[
+\begin{array}{@{}l@{\;\;}r@{\;}c@{\;}l@{}}
+\text{Types} & A, C & ::= & B \mid A \rightarrow C \mid \kw{tup}(A_1, \ldots, A_n)
+  \mid A + C \mid \mu X.\, A \mid X \mid \kw{code}(\Delta; A \rightarrow C)\\
+ & \Delta & ::= & A_1, \ldots, A_n\\[3pt]
+\iswim & L, M, N & ::= & x \mid \lambda x.\, N \mid L\;M \mid c
+  \mid \kw{tuple}\;\vec{M} \mid \kw{get}_i\,M \mid \kw{inl}\;M \mid \kw{inr}\;M
+  \mid \kw{case}\;L\;(x.\,M)\;(y.\,N)\\
+ & & \mid & \kw{prim}_p\;L\;M \mid \kw{let}\;x = M\;\kw{in}\;N
+  \mid \kw{fold}\;M \mid \kw{unfold}\;M\\[3pt]
+\text{Clos} & L, M, N & ::= & \ldots \mid \kw{clos}\;N\;\vec{M}
+  \qquad (\text{in place of } \lambda x.\, N)\\
+\text{EnvClos} & L, M, N & ::= & \ldots \mid \kw{clos}\;N\;\vec{M}\\
+\text{FlatClos} & L, M, N & ::= & \ldots \mid \kw{code}\;N \mid \kw{pack}\;L\;M \mid \kw{callc}\;L\;M
+  \qquad (\text{in place of } \kw{clos} \text{ and } L\;M)\\
+\text{GlobalFun} & L, M, N & ::= & \ldots \mid f_k
+  \qquad (\text{in place of } \kw{code}\;N)\\
+ & d & ::= & \kw{code}\;N \qquad P ::= (d_0, \ldots, d_{m-1};\, M)\\[3pt]
+\text{Mon} & a & ::= & x \mid c \mid f_k\\
+ & o & ::= & \kw{pack} \mid \kw{callc} \mid \kw{tuple} \mid \kw{get}_i \mid \kw{inl}
+  \mid \kw{inr} \mid \kw{prim}_p \mid \kw{fold} \mid \kw{unfold}\\
+ & M, N & ::= & a \mid o\;\vec{a} \mid \kw{case}\;a\;(x.\,M)\;(y.\,N)
+  \mid \kw{let}\;x = M\;\kw{in}\;N
+  \qquad P ::= (\vec{d};\, M)\\[3pt]
+\text{Imp} & a & ::= & s \mid c \mid f_k
+  \qquad r ::= a \mid o\;\vec{a}\\
+ & e & ::= & r \mid s \mathrel{:=} e_1;\; e_2 \mid \kw{case}\;a\;(s.\,e_1)\;(s.\,e_2)
+  \qquad P ::= (e_0, \ldots, e_{m-1};\, e)\\[3pt]
+\text{CFG} & t & ::= & \kw{return}\;r \mid s \mathrel{:=} r;\; t \mid \kw{goto}\;l
+  \mid \kw{case}\;a\;(s.\,l_1)\;(s.\,l_2)\\
+ & b & ::= & (t_0, \ldots, t_{j-1};\, t)
+  \qquad P ::= (\vec{b};\, b)\\[3pt]
+\text{X86}\mu & a & ::= & s \mid c \mid f_k \mid \%r \mid {\uparrow}a \mid {\downarrow}a
+  \qquad d ::= \%r \mid s
+  \qquad r ::= \kw{rax} \mid \kw{rdi} \mid \kw{rsi}\\
+ & o & ::= & \kw{pair}(a_1, a_2) \mid \kw{tuple}(\vec{a}) \mid \kw{inl}(a) \mid \kw{inr}(a)\\
+ & i & ::= & \kw{movq}\;a, d \mid \kw{subq}\;a, \%r \mid \kw{cmpq}\;a_2, a_1
+  \mid \kw{sete}\;d \mid \kw{alloc}\;o, d \mid \kw{load}\;\kw{get}_i\;a, d\\
+ & & \mid & \kw{load}\;\kw{fst}\;s, \%r \mid \kw{load}\;\kw{snd}\;s, \%r \mid \kw{callq}\;a\\
+ & \beta & ::= & i;\; \beta \mid \kw{retq} \mid \kw{jmp}\;l \mid \kw{case}\;s\;(s.\,l_1)\;(s.\,l_2)\\
+ & b & ::= & (n;\, \beta_0, \ldots, \beta_{j-1};\, \beta)
+  \qquad P ::= (\vec{b};\, b)
+\end{array}
+\]
+\caption{The grammars of the compiler's languages. Each closure language
+  lists only the forms it adds to the one above it; ``$\ldots$'' stands
+  for the remaining forms of \iswim. The code $N$ of a Clos closure has
+  a free variable for each captured value and one for the parameter;
+  the code of an EnvClos closure has two, for the environment and the
+  parameter. Here $c$ ranges over constants, $p$
+  over the primitives $\kw{sub}$ and $\kw{eq}$, $s$ over the slots of a
+  frame, $l$ over block labels, and $f_k$ over the global definitions of
+  a program.}
+\label{fig:grammars}
+\end{figure}
+
+Our compiler translates \iswim, a call-by-value $\lambda$-calculus,
+to X86$\mu$, a typed assembly language, in ten passes through seven
+intermediate languages:
+\[
+\begin{array}{@{}l@{}}
+\iswim \xrightarrow{\text{simplify}} \iswim
+  \xrightarrow{\text{enclose}} \text{Clos}
+  \xrightarrow{\text{optimize}} \text{Clos}
+  \xrightarrow{\text{concretize}} \text{EnvClos}
+  \xrightarrow{\text{delay}} \text{FlatClos}\\[2pt]
+\quad \xrightarrow{\text{globalize}} \text{GlobalFun}
+  \xrightarrow{\text{remove complex operands}} \text{Mon}
+  \xrightarrow{\text{lift locals}} \text{Imp}\\[2pt]
+\quad \xrightarrow{\text{explicate control}} \text{CFG}
+  \xrightarrow{\text{select instructions}} \text{X86}\mu
+\end{array}
+\]
+Figure~\ref{fig:grammars} gives the grammars of all the languages. Every
+language is intrinsically typed in Agda, so every term is well typed by
+construction and no pass needs a precondition about scoping or typing.
+Every language also has a semantics in the graph model of
+Section~\ref{sec:graph-models}, and every pass except delay preserves
+the meaning of a program exactly.
+
+\paragraph{The source language}
+\iswim\ has integers, $n$-ary tuples, binary sums, the primitives
+$\kw{sub}$ and $\kw{eq}$, and iso-recursive types. Most of its forms
+are standard. The primitive $\kw{eq}$ returns $\kw{inl}\;\langle\rangle$
+for true and $\kw{inr}\;\langle\rangle$ for false, so $\kw{case}$ serves
+as the conditional. A recursive type $\mu X.\, A$ is isomorphic to its
+unfolding $A[\mu X.\, A / X]$, and the two coercions of this
+isomorphism are explicit: $\kw{fold}$ turns a term of the unfolding
+into a term of the recursive type, and $\kw{unfold}$ turns it back.
+Neither does anything at run time:
+\[
+  \frac{\Gamma \vdash M : A[\mu X.\, A / X]}{\Gamma \vdash \kw{fold}\;M : \mu X.\, A}
+  \qquad
+  \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
+\]
+The body $A$ of a recursive type must be contractive, that is, it must
+not be a type variable or another $\mu$, so unfolding always makes
+progress. The other typing rules are standard
+(Appendix~\ref{app:types}). \iswim\ has no recursion operator.
+Instead, recursive types make self-application typable, so the
+call-by-value fixed-point combinator can be written directly:
+\[
+  \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
+  \quad\text{where}\quad
+  g = \lambda x.\, f\;(\lambda v.\, (\kw{unfold}\;x)\;x\;v)
+\]
+with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
+
+\paragraph{The optimizer}
+The first pass, simplify, is a simplified version of the source
+optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
+known values, folds primitives on known constants, reduces a
+$\kw{case}$, projection, or $\kw{unfold}$ of a known value, and inlines
+calls to small known functions.
+
+\paragraph{Closure conversion}
+The next four passes perform closure conversion. Enclose turns each
+$\lambda$-abstraction into a closure $\kw{clos}\;N\;\vec{M}$ of Clos,
+whose code $N$ is closed: its free variables are a name $x_i$ for each
+captured value $M_i$ and the parameter $y$. Enclose captures every
+variable in scope, and optimize then drops the captured values that the
+code does not use. Concretize stores the captured values of a closure
+in a single environment tuple, so the code of an EnvClos closure has
+two free variables, the environment $e$ and the parameter $y$, and
+reads $x_i$ as $\kw{get}_i\,e$. Delay then separates a closure into its
+code and its environment (Section~\ref{sec:approx-lr}). In FlatClos,
+$\kw{code}\;N$ is closed code of type $\kw{code}(\Delta; A \rightarrow
+C)$, which expects an environment of type $\kw{tup}(\Delta)$ and an
+argument of type $A$. The form $\kw{pack}\;L\;M$ builds a closure from
+code $L$ and an environment $M$ of the same $\Delta$. Its type,
+$A \rightarrow C$, hides $\Delta$, as in the existential type
+$\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
+\kw{tup}(\Delta)$ of typed closure conversion \citep{Minamide:1996ys},
+so closures with different environments have the same type. The form
+$\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
+environment and the argument $M$.
+\[
+  \frac{e : \kw{tup}(\Delta),\, y : A \vdash N : C}
+       {\Gamma \vdash \kw{code}\;N : \kw{code}(\Delta; A \rightarrow C)}
+  \qquad
+  \frac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
+        \quad \Gamma \vdash M : \kw{tup}(\Delta)}
+       {\Gamma \vdash \kw{pack}\;L\;M : A \rightarrow C}
+\]
+\[
+  \frac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
+       {\Gamma \vdash \kw{callc}\;L\;M : C}
+\]
+Since $\kw{callc}$ is the only way to open a closure and works for
+every $\Delta$, no run-time check is needed.
+
+\paragraph{The back end}
+Globalize turns the code of every function into a global definition
+$d_k$, and each occurrence of the code into a reference $f_k$ to it, so
+a GlobalFun program is a list of definitions and a main term. Remove
+complex operands binds each operand that is not an atom to a variable
+with $\kw{let}$, so the operands of every operation in Mon are atoms.
+Lift locals turns each variable into a slot of the function's frame and
+each $\kw{let}$ into an assignment to the next slot. Explicate control
+turns the nested $\kw{case}$s of Imp into a control-flow graph of
+blocks that end in a $\kw{return}$, a $\kw{goto}$, or a $\kw{case}$
+that jumps to one of two blocks. Finally, select instructions produces
+X86$\mu$, a typed assembly language in the style of TAL
+\citep{Morrisett:1999fk} with the registers $\kw{rax}$, $\kw{rdi}$,
+and $\kw{rsi}$, a frame of slots, and an abstract heap. The instruction
+$\kw{alloc}$ allocates a closure, a tuple, or an injection. A call
+first opens the closure in a slot $s$: $\kw{load}\;\kw{fst}\;s,
+\%r$ loads its code, and $\kw{load}\;\kw{snd}\;s, \%r$ loads its
+environment. Then $\kw{callq}$ calls the code with the environment in
+$\kw{rdi}$ and the argument in $\kw{rsi}$, and the result arrives in
+$\kw{rax}$. The type system tracks which closure is open, so that a
+call never combines the code of one closure with the environment of
+another. A $\kw{case}$ is a single pseudo-instruction that tests the
+tag of an injection, writes its payload to a slot, and jumps to one of
+two blocks; it stands for a test, a load, and a conditional jump. The
+coercions $\kw{fold}$ and $\kw{unfold}$ survive to X86$\mu$ as the
+operand annotations ${\uparrow}a$ and ${\downarrow}a$, which do nothing
+at run time.
