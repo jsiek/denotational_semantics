@@ -11,18 +11,19 @@
 %% EnvClos is the Agda Clos3, FlatClos the Agda Clos4.
 
 
-\subsection{Correctness of \pass{Delay} and the Approximant Logical Relation}
+\subsection{Correctness of \pass{delay} and the Approximant Logical Relation}
 \label{sec:approx-lr}
 
-The \pass{delay} pass is the step of closure conversion that lowers closures
-to pairs of code and environment. Its proof is the most difficult link
-in our answer to RQ1, which asks whether a whole compiler, from a
-higher-order language with general recursion down to assembly, can be
-proved correct with denotational semantics. \pass{Delay} is also the reason
-that the answer to RQ3 is negative, because it does not yield to
-equational reasoning. This section shows why
-semantic reflection for \pass{delay} resisted our earlier attempts and how the
-approximant logical relation proves it.
+The \pass{delay} pass is the step of closure conversion that lowers
+closures to pairs of code and environment. Its proof is the most
+difficult link in our answer to RQ1, which asks whether a whole
+compiler, from a higher-order language with general recursion down to
+assembly, can be proved correct with denotational semantics. The proof
+of correctness for the \pass{delay} pass is also the reason that the
+answer to RQ3 is negative, because it does not yield to equational
+reasoning. This section shows why semantic reflection for \pass{delay}
+resisted our earlier attempts and how the approximant logical relation
+proves it.
 
 The source language of \pass{delay} is EnvClos. In EnvClos, a closure
 $\kw{clos}\;(z, y.\,N)\;\vec{M}$ is still a function. Its code $N$ is closed,
@@ -55,8 +56,9 @@ Figure~\ref{fig:graph-ops}:
   \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
 \end{array}
 \]
-\pass{Delay} translates each closure into a pair and each application into a
-call. It translates every other construct homomorphically:
+The \pass{delay} pass translates each closure into a pair and each
+application into a call. It translates every other construct
+homomorphically:
 \[
 \begin{array}{rcl}
     \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) & = &
@@ -100,23 +102,22 @@ call. It translates every other construct homomorphically:
 
 \paragraph{Why preservation is easy and reflection is not}
 
-\pass{Delay} changes the representation of closures, so its correctness is
-not an equation. Instead, we prove that a closed program and its
-translation produce the same constants, and that one produces something
-exactly when the other does. The forward half, preservation, requires
-only a relation between a \emph{single} source element and a
-\emph{set} of target elements, defined by recursion on the source
-element (Figure~\ref{fig:preserve}). We read $v \sqsubseteq D'$ as
-``$D'$ satisfies $v$''. The clause for a function entry says when a
-target set satisfies the entry. The set must contain a closure, and
-calling the set on arguments that satisfy the entry's inputs must
-produce a set that satisfies the entry's output. The relation is in the
-style of the satisfaction relation of Abramsky's domain logic
-\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source graph element in
-the role of the formula. The source element is finite, so the
-recursion is structural. The proof that $v \in \den{M}\rho$ implies
-$v \sqsubseteq \den{\pass{delay}(M)}\rho'$ is a routine induction on
-$M$.
+The \pass{delay} pass changes the representation of closures, so its
+correctness is not an equation. Instead, we prove that a closed
+program and its translation produce the same constants, and that one
+produces something exactly when the other does. The forward half,
+preservation, requires only a relation between a \emph{single} source
+element and a \emph{set} of target elements, defined by recursion on
+the source element (Figure~\ref{fig:preserve}). We read $v \sqsubseteq
+D'$ as ``$D'$ satisfies $v$''. The clause for a function entry says
+when a target set satisfies the entry. The set must contain a closure,
+and calling the set on arguments that satisfy the entry's inputs must
+produce a set that satisfies the entry's output. The relation is in
+the style of the satisfaction relation of Abramsky's domain logic
+\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source graph element
+in the role of the formula. The source element is finite, so the
+recursion is structural. The proof that $v \in \den{M}\rho$ implies $v
+\sqsubseteq \den{\pass{delay}(M)}\rho'$ is a routine induction on $M$.
 
 The backward half, reflection, must show that the source accounts for
 every element that the target produces. Here the representation of
