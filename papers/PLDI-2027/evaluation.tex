@@ -49,8 +49,9 @@ that the denotational correctness theorem is equivalent
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
 languages, the proof of each pass, and the composition of the passes.
-They exclude what all four share, namely the languages and passes
-(921 lines). We report the language-independent infrastructure that
+They exclude the Agda code that all four proofs use unchanged: the
+intrinsically typed syntax of the languages and the functions that
+implement the passes (921 lines). We report the language-independent infrastructure that
 each style relies on, and the adequacy of the graph model, separately.
 
 \subsection{Results}
@@ -95,40 +96,51 @@ smallest, at 1,360 lines against 1,618 for the interpreters.
 
 \subsection{Analysis}
 
-\paragraph{The graph model wins where a pass simplifies or restructures code.}
+\paragraph{The graph model is smallest, or close to it, when a pass is proved by equational reasoning.}
 
-The denotational proof is the smallest for \pass{simplify} and
-\pass{globalize}, and about the same size as the interpreter proof for
-\pass{explicate control}. For \pass{simplify},
-the gap is largest: 349 lines against 584 to 715. Its denotational
-proof treats the reductions that the pass performs under binders as
-equations (Section~\ref{sec:equational}). Each operational proof must
-instead replay those reductions as steps of the source program: on
-open terms in the reduction semantics, or as a run-ahead of the source
-machine or interpreter, with stuttering where the target does more. The
-interpreter proof is the largest of the three, because \pass{simplify}
-removes calls, so the target needs fewer clock ticks than the source,
+For the nine passes proved by an equation, the denotational proof is
+the smallest for \pass{simplify} and \pass{globalize}, about the same
+size as the smallest for \pass{explicate control}, and at most 28
+lines larger than the smallest for the other six. The size of a
+denotational proof depends mainly on whether the pass preserves the
+meaning of a program exactly. When it does, the proof is an induction
+whose cases are congruences and a few laws of the graph model
+(Section~\ref{sec:equational}), no matter how the pass changes the
+way the program runs. The size of an operational proof depends instead
+on how closely the run of the target follows the run of the source.
+
+When the two runs correspond closely, as for most of the passes, the
+operational proofs are short too, and the interpreters
+come out slightly ahead. The difference is not in the congruence
+cases, which take one line per construct in both styles. A denotation
+is a set of values, so the graph model must prove side conditions that
+hold trivially for the single value that an interpreter computes: that
+the sets involved are nonempty, for strict closures, $\kw{let}$s, and
+writes, and that they are consistent, for the binders. It must also
+apply $\beta$ and related laws, with their premises, where an
+interpreter simply runs; the prologue of a function body in x86$\mu$
+is the largest example.
+
+When the two runs differ more, the operational proofs must account
+for the difference, and the graph model wins. \pass{simplify} is the clearest
+case, at 349 lines against 584 to 715. It reduces programs under
+binders and removes calls, so the target takes fewer steps than the
+source. Each operational proof must replay those reductions as steps
+of the source program: on open terms in the reduction semantics, or as
+a run-ahead of the source machine or interpreter, with stuttering
+where the target does more. The interpreter proof is the largest of
+the three, because the target needs fewer clock ticks than the source,
 which breaks the usual clock-for-clock argument. For \pass{globalize},
-the interpreter proof relates the two tables of definitions value by
-value, while the denotational proof shows that a reference means what
-the code it replaced means.
-
-\paragraph{Elsewhere the interpreters are slightly smaller.}
-
-For the other equational passes, the denotational proofs are 1 to 28
-lines larger than the interpreter proofs. The difference is not in the
-congruence cases, which take one line per construct in both styles. A
-denotation is a set of values, so the graph model must prove side
-conditions that hold trivially for the single value that an
-interpreter computes: that the sets involved are nonempty, for strict
-closures, $\kw{let}$s, and writes, and that they are consistent, for
-the binders. It must also apply $\beta$ and related laws, with their
-premises, where an interpreter simply runs; the prologue of a function
-body in x86$\mu$ is the largest example.
+the runs differ in where the code of a function lives: in the target
+it is a reference into a table of definitions. The interpreter proof
+relates the two tables value by value, while the denotational proof
+shows that a reference means what the code it replaced means.
 
 \paragraph{\pass{Delay} is the pass whose denotational proof costs the most.}
 
-The denotational proof of \pass{delay} takes 524 lines of Agda,
+The converse also holds. \pass{Delay} is not an equation, because it
+changes how closures are represented, yet the run of the target
+follows the run of the source closely. The denotational proof of \pass{delay} takes 524 lines of Agda,
 against 35 to 139 lines for the same pass in the three operational
 styles. Most of the difference has three sources. First, the
 denotational proof needs two directions, while a simulation proof gets
