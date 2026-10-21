@@ -32,6 +32,7 @@ open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-t
 import Mu.Language.Clos4 as S
 open import Mu.Language.Clos5
 open import Mu.Compiler.Globalize
+open import Mu.proof.Semantics.Graph.Binders using (let-≃; case-≃)
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos)
 open import proof.Framework.Lookup using (lvl-<; lvl-⊑; ⊑-∋-trans)
 
@@ -68,10 +69,9 @@ module _ {Σ Σ'} (r : ∀ {s} → Σ ∋ s → Σ' ∋ s) {T : Table Σ'} {T' :
   wk-sem (get i M) ρ = proj-≃ (pos i) (wk-sem M ρ)
   wk-sem (inl M) ρ = inl-≃ (wk-sem M ρ)
   wk-sem (inr M) ρ = inr-≃ (wk-sem M ρ)
-  wk-sem (case L M N) ρ = 𝒞-≃ {F = λ X → ⟦ M ⟧[ T' ] (X • ρ)} {λ X → ⟦ wk r M ⟧[ T ] (X • ρ)}
-    {λ X → ⟦ N ⟧[ T' ] (X • ρ)} {λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} (wk-sem L ρ) (λ _ _ _ → wk-sem M _) (λ _ _ _ → wk-sem N _)
+  wk-sem (case L M N) ρ = case-≃ (wk-sem L ρ) (λ X _ _ → wk-sem M (X • ρ)) (λ X _ _ → wk-sem N (X • ρ))
   wk-sem (prim p L M) ρ = primD-≃ p (wk-sem L ρ) (wk-sem M ρ)
-  wk-sem (let′ M N) ρ = letD-≃ {F = λ X → ⟦ N ⟧[ T' ] (X • ρ)} {λ X → ⟦ wk r N ⟧[ T ] (X • ρ)} (wk-sem M ρ) (λ _ _ _ → wk-sem N _)
+  wk-sem (let′ M N) ρ = let-≃ (wk-sem M ρ) λ X _ _ → wk-sem N (X • ρ)
   wk-sem (fold M) ρ = wk-sem M ρ
   wk-sem (unfold M) ρ = wk-sem M ρ
   wks-sem (M ∷ Ms) ρ zero = wk-sem M ρ
@@ -137,12 +137,10 @@ glob-ok (S.case L M N) D with glob L D | glob-ok L D
 ...   | out s₂ D₂ M' | ⟨ e₂ , h₂ ⟩ with glob N D₂ | glob-ok N D₂
 ...     | out s₃ D₃ N' | ⟨ e₃ , h₃ ⟩ =
   ⟨ ext-trans e₁ (ext-trans e₂ e₃)
-  , (λ ρ → 𝒞-≃ {F = λ X → ⟦ M ⟧₄ (X • ρ)} {λ X → ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ] (X • ρ)}
-                {λ X → ⟦ N ⟧₄ (X • ρ)} {λ X → ⟦ N' ⟧[ made D₃ ] (X • ρ)} (≃-trans (h₁ ρ) (wk-made (ext-trans e₂ e₃) L' ρ))
-                (λ _ _ _ → ≃-trans (h₂ _) (wk-made e₃ M' _)) (λ _ _ _ → h₃ _)) ⟩
+  , (λ ρ → case-≃ (≃-trans (h₁ ρ) (wk-made (ext-trans e₂ e₃) L' ρ))
+                (λ X _ _ → ≃-trans (h₂ (X • ρ)) (wk-made e₃ M' (X • ρ))) (λ X _ _ → h₃ (X • ρ))) ⟩
 glob-ok (S.prim p L M) D = glob₂-ok (prim p) L M D {M₄ = S.prim p L M} λ hL hM ρ → primD-≃ p (hL ρ) (hM ρ)
-glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N} λ {_} {T} {_} {N'} hL hM ρ →
-  letD-≃ {F = λ X → ⟦ N ⟧₄ (X • ρ)} {λ X → ⟦ N' ⟧[ T ] (X • ρ)} (hL ρ) (λ _ _ _ → hM _)
+glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N} λ hL hM ρ → let-≃ (hL ρ) λ X _ _ → hM (X • ρ)
 glob-ok (S.fold {A} M) D = glob₁-ok (fold {A = A}) M D {M₄ = S.fold M} λ h → h
 glob-ok (S.unfold {A} M) D = glob₁-ok (unfold {A = A}) M D {M₄ = S.unfold M} λ h → h
 

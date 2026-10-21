@@ -43,8 +43,8 @@ open import Mu.Compiler.Explicate using (explicate-body)
 open import Mu.Compiler.Select using (def-body)
 open import Mu.proof.Compiler.GlobalizeOlder using (OlderDefs; globalize-older)
 open import Mu.proof.Adequacy.Clos5Common using (table-at; agree; tbl-mono; olderAt)
-open import Mu.proof.Correctness.Graph.RCOCorrect using (rco-sem; table-rco)
-open import Mu.proof.Correctness.Graph.LiftLocalsCorrect using (lift-sem; table-lift)
+open import Mu.proof.Correctness.Graph.RCOCorrect using (code-rco; table-rco)
+open import Mu.proof.Correctness.Graph.LiftLocalsCorrect using (code-lift; table-lift)
 open import Mu.proof.Correctness.Graph.ExplicateCorrect using (body-≃; table-explicate)
 open import Mu.proof.Correctness.Graph.SelectCorrect using (code-≃; table-≃)
 
@@ -90,9 +90,6 @@ compiled M = ⟨ (λ f → Con-⊆ (table-con ds₅ f) (proj₂ (TT f))) , close
       (≃-trans (ΛΛ-≃ λ X Y → body-≃ (table-explicate dsᵢ) (liftₗ dₘ) _) (code-≃ (table-≃ ds꜀) (explicate-body (liftₗ dₘ)))))
       where
       lift≃ : code′ Tₘ ⌜ dₘ ⌝ ≃ codeᵢ (tables codeᵢ dsᵢ) (liftₗ dₘ)
-      lift≃ = Λ-≃ λ V _ cV → Λ-≃ λ U _ cU → lift-sem cTₘ (table-lift dsₘ) dₘ _ nothing
-                (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩)))
+      lift≃ = code-lift cTₘ (table-lift dsₘ) dₘ
       rco≃ : code′ (table ds₅) (lookup ds₅ f) ≃ code′ Tₘ ⌜ dₘ ⌝
-      rco≃ = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → rco-sem cTₘ (table-rco ds₅) (lookup ds₅ f) (λ x → x) _ _
-        (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ⟨⟩ , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
-        (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩))) (λ x → ≃-refl)
+      rco≃ = code-rco cTₘ (table-rco ds₅) (lookup ds₅ f)

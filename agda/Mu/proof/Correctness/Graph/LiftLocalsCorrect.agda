@@ -33,6 +33,7 @@ open import Mu.Language.Type
 import Mu.Language.Mon as M
 open M using (DSig; Args; Atm; var; lit; ref; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import Mu.Compiler.LiftLocals
+open import Mu.proof.Semantics.Graph.Binders using (lam-≃; let-≃; case-≃; body-mono)
 open import Mu.Framework.AllUtil using (All; []; _∷_; pos) renaming (map to All-map)
 
 open import Data.Fin using (zero; suc)
@@ -68,16 +69,15 @@ module _ {Σ} {T T' : Table Σ} (cT : ConT T) (TT : ∀ {s} (f : Σ ∋ s) → T
   lift-sem (M.fold a) σ k C = K-≃ k (atm-≃ a σ)
   lift-sem (M.unfold a) σ k C = K-≃ k (atm-≃ a σ)
   lift-sem (M.let′ e₁ e₂) σ k C =
-    ≃-trans (let-law k (con cT ⌜ e₁ ⌝ C) λ X⊆ → proj₁ (ok cT ⌜ e₂ ⌝) (•-~ _⊆_ (λ _ _ z → z) X⊆))
-    (≃-trans (⋆-≃ (Λ-≃ {λ X → K⟨ k ⟩ (⟦ ⌜ e₂ ⌝ ⟧[ T ] (X • σ))} {λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩}
-                     λ V _ c → lift-sem e₂ (mem V • σ) k (Con-• (≈⇒Con c) C)) ≃-refl)
-             (lift-sem e₁ σ (just λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩) C))
+    ≃-trans (let-law k (con cT ⌜ e₁ ⌝ C) (body-mono (ok cT ⌜ e₂ ⌝) σ))
+      (≃-trans (let-≃ ≃-refl λ X _ cX → lift-sem e₂ (X • σ) k (Con-• cX C)) (lift-sem e₁ σ (just λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩) C))
   lift-sem (M.case a e₁ e₂) σ k C =
-    ≃-trans (case-law k (con cT ⌜ M.atm a ⌝ C) (mono′ e₁) (mono′ e₂))
-            (𝒞-≃ {F = λ X → K⟨ k ⟩ (⟦ ⌜ e₁ ⌝ ⟧[ T ] (X • σ))} {λ X → ⟦ lift e₁ ⟧ᴷ T' (X • σ) K⟨ k ⟩}
-                  {λ X → K⟨ k ⟩ (⟦ ⌜ e₂ ⌝ ⟧[ T ] (X • σ))} {λ X → ⟦ lift e₂ ⟧ᴷ T' (X • σ) K⟨ k ⟩}
-                  (atm-≃ a σ) (λ v V c → lift-sem e₁ _ k (Con-• (≈⇒Con c) C)) (λ v V c → lift-sem e₂ _ k (Con-• (≈⇒Con c) C)))
-    where mono′ = λ {B} (e : M.Exp Σ (B ∷ _) _) {X} {X'} X⊆ → proj₁ (ok cT ⌜ e ⌝) {X • σ} {X' • σ} (•-~ _⊆_ (λ _ _ z → z) X⊆)
+    ≃-trans (case-law k (con cT ⌜ M.atm a ⌝ C) (body-mono (ok cT ⌜ e₁ ⌝) σ) (body-mono (ok cT ⌜ e₂ ⌝) σ))
+      (case-≃ (atm-≃ a σ) (λ X _ cX → lift-sem e₁ (X • σ) k (Con-• cX C)) (λ X _ cX → lift-sem e₂ (X • σ) k (Con-• cX C)))
+
+  {- the code of a definition means the code of its output -}
+  code-lift : ∀ {s} (d : M.Exp Σ (Args s) (DSig.cod s)) → code′ T ⌜ d ⌝ ≃ I.code′ T' (lift d)
+  code-lift d = lam-≃ λ X _ cX → lam-≃ λ Y _ cY → lift-sem d _ nothing (Con-• cY (Con-• cX (λ _ → Con-⌈⌉ ⟨⟩)))
 
 {- Programs ---------------------------------------------------------------------------}
 
@@ -86,9 +86,7 @@ table-lift : ∀ {Σ ss} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) ss)
   → tables code′ (All-map ⌜_⌝ ds) f ≃ tables I.code′ (All-map lift ds) f
 table-lift [] f = ≃-refl
 table-lift {ss = _ ∷ ss} (d ∷ ds) f with lvl f ≟ length ss
-... | yes _ = Λ-≃ λ V _ cV → Λ-≃ λ U _ cU →
-  lift-sem (tables-con code-con (All-map ⌜_⌝ ds)) (table-lift ds) d _ nothing
-    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ⟨⟩)))
+... | yes _ = code-lift (tables-con code-con (All-map ⌜_⌝ ds)) (table-lift ds) d
 ... | no _ = table-lift ds f
 
 lift-locals-correct : ∀ {A} (P : M.Program A) → ⟦ ⌜ P ⌝ₚ ⟧ₚ ≃ I.⟦ lift-program P ⟧ₚ
