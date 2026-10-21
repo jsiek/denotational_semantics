@@ -31,8 +31,10 @@ usual operational statement: the compiled program terminates with the
 same answer as the source, and diverges exactly when the source does.
 
 This section first shows how the passes other than \pass{delay} are
-proved, which answers RQ2
-(Section~\ref{sec:equational}), and then why \pass{delay} needs more
+proved (Section~\ref{sec:equational}). These proofs answer whether the
+compositionality and equational reasoning of denotational semantics
+yield concise correctness proofs for some compiler passes (RQ2). The
+section then shows why \pass{delay} needs more
 (Section~\ref{sec:approx-lr}).
 
 \subsection{Passes Proved by an Equation}
@@ -41,73 +43,221 @@ proved, which answers RQ2
 For nine of the ten passes, the theorem is an equation between the
 meaning of a program and the meaning of its translation, such as
 $\den{M} = \den{\pass{simplify}(M)}$ or
-$\den{M} = \den{\pass{globalize}(M)}$. Each proof is an induction on
-the term that generalizes the equation to open terms: if the source
-and target environments are related, then the meaning of a term in the
-source environment equals the meaning of its translation in the target
-environment. The relation on environments says what the pass assumes
+$\den{M} = \den{\pass{globalize}(M)}$. To apply induction, each proof
+generalizes the equation from closed programs to open terms. The
+generalized statement says that a term, in a source environment, means
+the same as its translation, in a related target environment. The relation on environments says what the pass assumes
 about the variables in scope, and most cases of the induction need
 nothing else. Because every semantics is compositional and the passes
 translate most forms homomorphically, the case for such a form applies
 the same operator to equal arguments and is immediate. The real work
 is in the few cases that the pass changes, where an equation about the
 operators of the graph model replaces the source form with the target
-form.
+form. Below we show that case for each pass as a calculation, with the
+justification of each step on the right. Where a step needs a set to
+be nonempty, we show the nonempty case; in the other case both sides
+are empty.
 
 \paragraph{Simplify}
 
-The proof for \pass{simplify} shows the method at its best. Its main
-lemma says that if what \pass{simplify} knows about each variable is
-true of the source environment, then what it returns about a term is
-true as well: the source term means, in the source environment, what
-the simplified term means in the target environment, and the source
-term's meaning is described by what is known about it. The
-transformations rest on a single equation, $\beta$ for a syntactic
-value, which follows from Lemma~\ref{lem:beta}: a function body applied
-to an operand whose meaning $D$ is nonempty and consistent means the
-body in an environment that binds its variable to $D$. Inlining reuses
-the same equation, because a known function is described by its
-meaning in the environment where it was defined. The simplifications
-that \pass{simplify} performs under binders, and the calls that it
-removes, are equations between sets and need no account of
-evaluation steps. The operational proofs, by contrast, must replay
-these reductions as steps of the source program, relate states in
-which the source runs ahead or the target stutters, and, for the
-clocked interpreter, cope with a target that needs fewer clock ticks
-than its source. The denotational proof is 360 lines of Agda, against
-584 to 715 for the three operational proofs.
+The main lemma for \pass{simplify} carries an invariant: whatever
+\pass{simplify} knows about each variable is true of the source
+environment $\rho$ and the target environment $\rho'$. If a variable is
+replaced by the term $T$, it means $\den{T}\rho'$, and if it is known to
+be a function $\langle \lambda x.\, N, E_f \rangle$, it means
+$\den{\lambda x.\, N}\rho_f$ for some environment $\rho_f$ of which
+$E_f$ is true. The key case is inlining. Suppose $L$ is known to be
+$\langle \lambda x.\, N, E_f \rangle$, the operand $M$ simplifies to a
+small value, and the inlined body simplifies to $T''$. Then
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho & \text{(meaning of application)}\\
+    & = & \den{\lambda x.\,N}\rho_f \app \den{M}\rho & \text{(invariant for $L$)}\\
+    & = & \den{N}\rho_f[x{:=}\den{M}\rho] & \text{(Lemma~\ref{lem:beta}, part 1)}\\
+    & = & \den{T''}\rho' & \text{(induction hypothesis for $N$)}
+\end{array}
+\]}
+The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
+which holds because a syntactic value denotes a nonempty set, and
+consistent, which holds because $\rho$ is. A $\beta$-redex
+$(\lambda x.\, N)\;M$ is the same calculation without the second step.
+The operational proofs must instead replay the reductions that
+\pass{simplify} performs under binders as steps of the source program,
+relate states in which the source runs ahead or the target stutters,
+and, for the clocked interpreter, cope with a target that needs fewer
+clock ticks than its source. The denotational proof is 360 lines of
+Agda, against 584 to 715 for the three operational proofs.
 
-\paragraph{Closure conversion before delay}
+\paragraph{Enclose}
 
-The first three steps of closure conversion are also equations,
-because in Clos and EnvClos a closure still means a function. For
-\pass{enclose}, a closure that captures every variable in scope means
-the same function as the $\lambda$-abstraction it replaces, since the
-captured values are exactly the values of those variables. For
-\pass{optimize}, dropping a captured variable that the code does not
-use leaves the meaning of the code unchanged. For \pass{concretize}, an
-EnvClos closure applies its curried code to the tuple of the captured
-values, and the second part of Lemma~\ref{lem:beta}, together with the
-equation $\pi_{\mathsf{tup}_i}(\mathcal{T}(D_1, \ldots, D_n)) = D_i$
-for nonempty $D_1, \ldots, D_n$, shows that this means the same
-function as the Clos closure, whose code reads each captured value
-directly.
+The environments agree on the variables $\vec{x}$ in scope, and the
+target environment is nonempty on them. A $\lambda$-abstraction becomes
+a closure that captures all of $\vec{x}$. With $N' =
+\pass{enclose}(N)$ and $F = \mlam{Y} \den{N'}\rho_0[\vec{x}{:=}\rho'(\vec{x}),
+y{:=}Y]$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\lambda y.\,N}\rho & = & \Lambda(\mlam{Y} \den{N}\rho[y{:=}Y]) & \text{(meaning of $\lambda$)}\\
+    & = & \Lambda(F) & \text{(induction hypothesis for $N$)}\\
+    & = & \mathsf{guard}(\rho'(x_1), \ldots, \rho'(x_k);\; \Lambda(F)) & \text{($\rho'$ is nonempty on $\vec{x}$)}\\
+    & = & \den{\kw{clos}\;(\vec{x}, y.\,N')\;\vec{x}}\rho' & \text{(meaning of a closure)}
+\end{array}
+\]}
 
-\paragraph{The back end}
+\paragraph{Optimize}
 
-The passes after \pass{delay} are equations for similar reasons.
-\pass{globalize} moves code into a table of global definitions, and
-its proof shows that a reference $f_k$ means what the code it replaced
-means, given the table of the definitions made so far; a weakening
-lemma says that a term means the same under a larger table. The
-semantics of Imp, CFG, and x86$\mu$ are in continuation-passing style,
-and an assignment to a slot is strict, as a $\kw{let}$ is
-(Appendix~\ref{app:languages}). So \pass{lift locals}, which turns a
-$\kw{let}$ into an assignment, \pass{explicate control}, which turns
-the continuation of an assignment into a block and a jump, and
-\pass{select instructions}, which turns each simple expression into a
-few instructions, are each proved by an induction whose cases are
-equations between the continuation-passing meanings.
+The environments agree on the variables that a term uses, and the
+source environment is nonempty. Let $D_i = \den{M_i}\rho$ and $D'_i =
+\den{\pass{optimize}(M_i)}\rho'$, let $I$ be the indices of the kept
+captured values, and let $N' = \pass{optimize}(N)$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho
+    & = & \mathsf{guard}(\vec{D};\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(meaning of a closure)}\\
+    & = & \mathsf{guard}(\vec{D}'_I;\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(the guards hold together)}\\
+    & = & \mathsf{guard}(\vec{D}'_I;\; \Lambda(\mlam{Y} \den{N'}\rho_0[\vec{x}_I{:=}\vec{D}'_I, y{:=}Y])) & \text{(induction hypothesis for $N$)}\\
+    & = & \den{\kw{clos}\;(\vec{x}_I, y.\,N')\;\vec{M}'_I}\rho' & \text{(meaning of a closure)}
+\end{array}
+\]}
+The guards hold together because a dropped captured value is a
+variable, which the environment makes nonempty. The induction
+hypothesis applies because $N$ uses only $\vec{x}_I$ and $y$.
+
+\paragraph{Concretize}
+
+Each variable $x$ means in $\rho$ what its reference $\varphi(x)$, either
+$x$ or $\kw{get}_i\,z$, means in $\rho'$. Let $D_i = \den{M_i}\rho$ and
+$D'_i = \den{\pass{concretize}_\varphi(M_i)}\rho'$, so that $D_i = D'_i$,
+and let $N' = \pass{concretize}_{\varphi'}(N)$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho
+    & = & \mathsf{guard}(\vec{D};\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(meaning of a Clos closure)}\\
+    & = & \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y]) & \text{(each $D_i$ is nonempty)}\\
+    & = & \Lambda(\mlam{Y} \den{N'}\rho_0[z{:=}\mathcal{T}(\vec{D}'), y{:=}Y]) & \text{(induction hypothesis for $N$)}\\
+    & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N'}\rho_0[z{:=}X, y{:=}Y])) \app \mathcal{T}(\vec{D}') & \text{(Lemma~\ref{lem:beta}, part 1)}\\
+    & = & \den{\kw{clos}\;(z, y.\,N')\;\vec{M}'}\rho' & \text{(meaning of an EnvClos closure)}
+\end{array}
+\]}
+The induction hypothesis applies because the code reads $x_i$ as
+$\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
+D'_i = D_i$ when every $D'_i$ is nonempty. The use of
+Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
+nonempty and consistent.
+
+\paragraph{Globalize}
+
+The induction hypothesis says that a term means the same as its
+translation under the table $T'$ of the definitions made so far. For
+code, \pass{globalize} first translates the body $N$ to $N'$ and then
+adds the definition $d_k = \kw{code}\;(z, y.\,N')$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\kw{code}\;(z, y.\,N)}\rho
+    & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y])) & \text{(meaning of code)}\\
+    & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N'}_{T_k}\rho_0[z{:=}X, y{:=}Y])) & \text{(induction hypothesis for $N$)}\\
+    & = & T(k) & \text{(meaning of definition $d_k$)}\\
+    & = & \den{f_k}_T\,\rho & \text{(meaning of $f_k$)}
+\end{array}
+\]}
+The other cases also use a weakening lemma: a term means the same under
+a larger table that agrees on the definitions the term refers to.
+
+\paragraph{Remove complex operands}
+
+When an operand $M$ is not an atom, \pass{remove complex operands}
+binds it to a fresh variable $x$ with a $\kw{let}$. For a projection,
+with $D = \den{\pass{rco}(M)}_{T'}\rho'$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\kw{get}_i\,M}_T\,\rho & = & \pi_{\mathsf{tup}_i}(\den{M}_T\,\rho) & \text{(meaning of $\kw{get}_i$)}\\
+    & = & \pi_{\mathsf{tup}_i}(D) & \text{(induction hypothesis for $M$)}\\
+    & = & \den{\kw{get}_i\,x}_{T'}\,\rho'[x{:=}D] & \text{(meaning of $\kw{get}_i$)}\\
+    & = & \Lambda(\mlam{X} \den{\kw{get}_i\,x}_{T'}\,\rho'[x{:=}X]) \app D & \text{(Lemma~\ref{lem:beta}, part 1)}\\
+    & = & \den{\kw{let}\;x = \pass{rco}(M)\;\kw{in}\;\kw{get}_i\,x}_{T'}\,\rho' & \text{(meaning of $\kw{let}$)}
+\end{array}
+\]}
+The Agda proves this once for every strict operation and every
+continuation, and chains it over several operands.
+
+\paragraph{Lift locals}
+
+The semantics of Imp is in continuation-passing style, so the
+induction hypothesis relates a Mon term $e$ and its translation under
+a continuation $\kappa$: $\kappa(\den{e}_T\,\sigma) =
+\den{\pass{lift}(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
+assignment to the next slot $x$. With $\kappa' = \mlam{D}
+\Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
+D$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \kappa(\den{\kw{let}\;x = M\;\kw{in}\;N}_T\,\sigma)
+    & = & \kappa(\Lambda(\mlam{X} \den{N}_T\,\sigma[x{:=}X]) \app \den{M}_T\,\sigma) & \text{(meaning of $\kw{let}$)}\\
+    & = & \Lambda(\mlam{X} \kappa(\den{N}_T\,\sigma[x{:=}X])) \app \den{M}_T\,\sigma & \text{(a $\kw{let}$ commutes with $\kappa$)}\\
+    & = & \Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
+    & = & \den{\pass{lift}(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
+    & = & \den{x \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
+\end{array}
+\]}
+The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
+consistent and the body to be monotone. The $\kw{case}$ case follows
+the same pattern.
+
+\paragraph{Explicate control}
+
+The induction hypothesis says that an Imp expression $e$, run with the
+continuation $\kappa_{x,k}$ that writes slot $x$ and then runs the tail
+$k$, means the same as the tail $\pass{assign}(e, x, k)$, given the
+meanings $B$ of the blocks. The key case is an assignment whose
+right-hand side is a $\kw{case}$. The pass adds $k$ as a block $l$, the
+join point, so $B(l)$ is the meaning of $k$, and each branch $e_i$
+becomes a block $l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))$.
+We show the first branch; the second is the same:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2)}_T\,\sigma\,\kappa_{x,k}
+    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,k},\; \ldots) & \text{(Imp)}\\
+    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,\kw{goto}\,l},\; \ldots) & \text{(join point $l$)}\\
+    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} B(l_1)(\sigma[x'{:=}X]),\; \ldots) & \text{(ind.\ hyp.)}\\
+    & = & \den{\kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)}_{T',B}\,\sigma & \text{(CFG)}
+\end{array}
+\]}
+A further lemma says that blocks added later do not change the meaning
+of a label made earlier.
+
+\paragraph{Select instructions}
+
+The induction hypothesis says that a CFG tail $t$ means the same as
+its instructions $\pass{tail}(t)$, for any registers $R$ and flag $F$.
+A call $x \mathrel{:=} \kw{callc}\;y\;a;\; t$ writes the result
+$C = \sigma(y) \callop \mathcal{A}\den{a}\sigma$ to slot $x$. Let $s$ be
+the sequence $\kw{movq}\;\%\kw{rax}, x;\; \pass{tail}(t)$, let $R_C$
+hold $C$ in $\kw{rax}$, and let $R_1$ be $R$ with the code of the
+closure in $\kw{rax}$, its environment in $\kw{rdi}$, and the argument
+in $\kw{rsi}$:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{x \mathrel{:=} \kw{callc}\;y\;a;\; t}_{T,B}\,\sigma
+    & = & \Lambda(\mlam{X} \den{t}_{T,B}(\sigma|_x[x{:=}X])) \app C & \text{(meaning of assignment)}\\
+    & = & \Lambda(\mlam{X} \den{\pass{tail}(t)}(\sigma|_x[x{:=}X])\,R_C\,\{\langle\rangle\}) \app C & \text{(induction hypothesis for $t$)}\\
+    & = & \den{s}\,\sigma\,R_C\,\{\langle\rangle\} & \text{(meaning of a write to $x$)}\\
+    & = & \mathsf{guard}(C;\; \den{s}\,\sigma\,R_C\,\{\langle\rangle\}) & \text{(an application to $\emptyset$ is $\emptyset$)}\\
+    & = & \den{\kw{callq}\;\%\kw{rax};\; s}\,\sigma\,R_1\,F & \text{(meaning of $\kw{callq}$)}\\
+    & = & \den{\kw{fst}\;y,\%\kw{rax};\; \kw{snd}\;y,\%\kw{rdi};\; \kw{movq}\;a,\%\kw{rsi};\; s}\,\sigma\,R\,F & \text{(meaning of the loads)}
+\end{array}
+\]}
+The step for $\kw{callq}$ holds because $(\car(\sigma(y)) \app
+\cdr(\sigma(y))) \app \mathcal{A}\den{a}\sigma$ is the definition of
+$\sigma(y) \callop \mathcal{A}\den{a}\sigma$, which is $C$.
 
 \paragraph{The answer to RQ2}
 
