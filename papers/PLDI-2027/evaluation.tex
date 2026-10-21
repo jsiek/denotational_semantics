@@ -96,33 +96,41 @@ smallest, at 1,360 lines against 1,618 for the interpreters.
 
 \subsection{Analysis}
 
-\paragraph{The graph model is smallest, or close to it, when a pass is proved by equational reasoning.}
+\paragraph{The graph model tends to be smallest, or close to it, when a pass is proved by equational reasoning.}
 
 For the nine passes proved by an equation, the denotational proof is
 the smallest for \pass{simplify} and \pass{globalize}, about the same
 size as the smallest for \pass{explicate control}, and at most 28
-lines larger than the smallest for the other six. The size of a
-denotational proof depends mainly on whether the pass preserves the
-meaning of a program exactly. When it does, the proof is an induction
-whose cases are congruences and a few laws of the graph model
-(Section~\ref{sec:equational}), no matter how the pass changes the
-way the program runs. The size of an operational proof depends instead
-on how closely the run of the target follows the run of the source.
+lines larger than the smallest for the other six. Two factors seem to
+drive these sizes. The size of a denotational proof tends to depend
+most on whether the pass preserves the meaning of a program exactly.
+When it does, the proof is an induction whose cases are congruences
+and a few laws of the graph model (Section~\ref{sec:equational}),
+largely independent of how the pass changes the way the program runs.
+The size of an operational proof tends to depend instead on how
+closely the run of the target follows the run of the source.
 
 When the two runs correspond closely, as for most of the passes, the
-operational proofs are short too, and the interpreters
-come out slightly ahead. The difference is not in the congruence
-cases, which take one line per construct in both styles. A denotation
-is a set of values, so the graph model must prove side conditions that
-hold trivially for the single value that an interpreter computes: that
-the sets involved are nonempty, for strict closures, $\kw{let}$s, and
+interpreter proofs tend to be short as well, and slightly smaller than
+the denotational ones. The difference is not in the congruence cases,
+which take one line per construct in both styles. A denotation is a
+set of values, so the graph model must prove side conditions that hold
+trivially for the single value that an interpreter computes: that the
+sets involved are nonempty, for strict closures, $\kw{let}$s, and
 writes, and that they are consistent, for the binders. It must also
 apply $\beta$ and related laws, with their premises, where an
-interpreter simply runs; the prologue of a function body in x86$\mu$
-is the largest example.
+interpreter simply runs. These costs are largest, in relative terms,
+for \pass{lift locals} and \pass{select instructions}, whose
+denotational proofs are about 1.4 and 1.6 times the interpreter
+proofs: the continuation-passing semantics of Imp puts a commuting
+conversion into \pass{lift locals}, and the prologue of a function body
+in x86$\mu$ takes two $\beta$-steps. The tendency also does not extend
+to every operational style: the reduction semantics, which works by
+substitution, is often much larger even for these passes, as for
+\pass{optimize} and \pass{lift locals}.
 
-When the two runs differ more, the operational proofs must account
-for the difference, and the graph model wins. \pass{simplify} is the clearest
+When the two runs differ more, the operational proofs tend to grow,
+and the graph model comes out ahead. \pass{simplify} is the clearest
 case, at 349 lines against 584 to 715. It reduces programs under
 binders and removes calls, so the target takes fewer steps than the
 source. Each operational proof must replay those reductions as steps
@@ -130,17 +138,19 @@ of the source program: on open terms in the reduction semantics, or as
 a run-ahead of the source machine or interpreter, with stuttering
 where the target does more. The interpreter proof is the largest of
 the three, because the target needs fewer clock ticks than the source,
-which breaks the usual clock-for-clock argument. For \pass{globalize},
-the runs differ in where the code of a function lives: in the target
-it is a reference into a table of definitions. The interpreter proof
-relates the two tables value by value, while the denotational proof
-shows that a reference means what the code it replaced means.
+which breaks the usual clock-for-clock argument. \pass{globalize} fits
+the pattern less cleanly. Its interpreter proof is still clock for
+clock; the runs differ only in where the code of a function lives,
+since in the target it is a reference into a table of definitions.
+The interpreter proof relates the two tables value by value, while the
+denotational proof shows that a reference means what the code it
+replaced means.
 
 \paragraph{\pass{Delay} is the pass whose denotational proof costs the most.}
 
-The converse also holds. \pass{Delay} is not an equation, because it
-changes how closures are represented, yet the run of the target
-follows the run of the source closely. The denotational proof of \pass{delay} takes 524 lines of Agda,
+\pass{Delay} shows the opposite tendency. It is not an equation,
+because it changes how closures are represented, yet the run of the
+target follows the run of the source closely. The denotational proof of \pass{delay} takes 524 lines of Agda,
 against 35 to 139 lines for the same pass in the three operational
 styles. Most of the difference has three sources. First, the
 denotational proof needs two directions, while a simulation proof gets
@@ -178,17 +188,17 @@ languages, is a further 1,529 lines (Section~\ref{sec:adequacy}).
 
 \subsection{The Answers to RQ2 and RQ4}
 
-The comparison confirms the answer to RQ2. For the passes that
-simplify or restructure code while keeping the representation of
-values, the equational proofs are concise: the smallest of the four
-styles for \pass{simplify} and \pass{globalize}, about the same as the
-smallest for \pass{explicate control}, and within 30 lines of the
-smallest for the others.
-The answer to RQ4 is mixed. Overall, the denotational development ranks
-second, behind the clocked interpreters and ahead of abstract machines
-and reduction semantics. Its advantage on the passes that keep the
-representation of values is outweighed by the single pass that
-changes it.
+The comparison supports the answer to RQ2. For the passes that keep
+the representation of values, the equational proofs tend to be
+concise: the smallest of the four styles for \pass{simplify} and
+\pass{globalize}, about the same as the smallest for \pass{explicate
+control}, and within 30 lines of the smallest for the others, though
+\pass{lift locals} and \pass{select instructions} are relatively the
+furthest behind. The answer to RQ4 is mixed. Overall, the denotational
+development ranks second, behind the clocked interpreters and ahead of
+abstract machines and reduction semantics. Its advantage on the passes
+that keep the representation of values is outweighed by \pass{delay},
+the one pass that changes it.
 
 \subsection{Threats to Validity}
 
