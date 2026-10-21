@@ -97,8 +97,9 @@ smallest, at 1,360 lines against 1,618 for the interpreters.
 
 \paragraph{The graph model wins where a pass simplifies or restructures code.}
 
-The denotational proof is the smallest for \pass{simplify},
-\pass{globalize}, and \pass{explicate control}. For \pass{simplify},
+The denotational proof is the smallest for \pass{simplify} and
+\pass{globalize}, and about the same size as the interpreter proof for
+\pass{explicate control}. For \pass{simplify},
 the gap is largest: 349 lines against 584 to 715. Its denotational
 proof treats the reductions that the pass performs under binders as
 equations (Section~\ref{sec:equational}). Each operational proof must
@@ -168,8 +169,9 @@ languages, is a further 1,529 lines (Section~\ref{sec:adequacy}).
 The comparison confirms the answer to RQ2. For the passes that
 simplify or restructure code while keeping the representation of
 values, the equational proofs are concise: the smallest of the four
-styles for \pass{simplify}, \pass{globalize}, and \pass{explicate
-control}, and within 30 lines of the smallest for the others.
+styles for \pass{simplify} and \pass{globalize}, about the same as the
+smallest for \pass{explicate control}, and within 30 lines of the
+smallest for the others.
 The answer to RQ4 is mixed. Overall, the denotational development ranks
 second, behind the clocked interpreters and ahead of abstract machines
 and reduction semantics. Its advantage on the passes that keep the
@@ -178,7 +180,11 @@ changes it.
 
 \subsection{Threats to Validity}
 
-Lines of Agda are only a proxy for proof effort. Each development is
+Lines of Agda are only a proxy for proof effort. Counting lexical
+tokens instead, which is insensitive to layout, gives the same ranking:
+each style averages 20 to 21 tokens per line, and the graph model's
+total is 1.12 times the interpreters' by tokens, against 1.14 times by
+lines. Counting non-whitespace characters also gives the same ranking. Each development is
 our best effort, but experience gained in one style carries over to
 the next. The comparison
 covers one compiler, and the sizes depend on choices of semantics, for
