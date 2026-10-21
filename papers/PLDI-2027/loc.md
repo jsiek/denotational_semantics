@@ -75,6 +75,8 @@ Counts are code lines: lines that are neither blank, nor comments, nor part of a
 
 ## Current counts
 
+*Other measures.* `loc.py --tokens` and `loc.py --chars` count the same code in lexical tokens and in non-whitespace characters. On ISWIMμ the totals are 38780, 48250, **34710** and 65206 tokens and 74948, 95949, **70601** and 126655 characters (graph model, CEK, interpreter, reduction), against 1884, 2258, **1653** and 3207 lines: the same ranking, with 20.3–21.4 tokens per line in every column. By tokens, explicate control goes to the interpreter (1500 against 1595); every other row has the same smallest column as by lines.
+
 In every table that compares the proof styles, the lowest number of each row is in bold: the best result for that row. Tables of infrastructure are not marked, since relying on less of it is not in itself better.
 
 The four styles on ISWIMμ (`loc.py`). Each total counts the shared modules that the four do not all reach (the observations, 15, in the operational columns) and the ISWIM pipeline's modules the column reuses (the graph model's meaning of the primitives, 34; the instances of the small-step, reduction and clocked frameworks at this compiler's observations, 2–4). The closure-conversion passes (enclose, optimize, concretize, delay, globalize) are labelled "CC: " in the tables, since simplify, rco and the later passes are not part of closure conversion:

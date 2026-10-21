@@ -11,6 +11,10 @@ errors).  Further tables:
   --untyped     those of the untyped ISWIM pipeline preserved in agda/Untyped/
   --mu          the ISWIMμ tables only
   --mu-detail   ISWIMμ against the ISWIM pipeline, row by row, per style
+  --tokens      measure in lexical tokens instead of lines (with any of
+                the above): a parenthesis, brace, `;` or `@` is one token,
+                and so is every other run of non-whitespace characters
+  --chars       measure in non-whitespace characters instead of lines
   --mixed       mixing semantics on ISWIMμ: simplify in the graph model,
                 the other passes by the interpreters, joined by a bridge
 
@@ -706,12 +710,32 @@ IMPORT_START = re.compile(r'(\s*)(?:open\s+)?import\b')
 _CODE = {}
 
 
-def code_lines(path):
-    """The code lines of path, not counting import statements: a line that
+# What code_lines measures: 'lines' (the default), 'tokens' (--tokens) or
+# 'chars' (--chars), on the same code lines in every case.
+MEASURE = 'lines'
+
+# An approximation of Agda's lexer: a parenthesis, brace, `;` or `@` is a
+# token, and so is every other run of non-whitespace characters (so a name
+# such as `ΛΛ-⋆` or `ρ'` is one token).
+TOKEN = re.compile(r'\{\{|\}\}|[(){};@]|[^\s(){};@]+')
+
+
+def measure(line, how):
+    if how == 'tokens':
+        return len(TOKEN.findall(line))
+    if how == 'chars':
+        return len(''.join(line.split()))
+    return 1
+
+
+def code_lines(path, how=None):
+    """The size of path's code, not counting import statements: a line that
     starts with `import` or `open import`, and the lines after it that are
-    indented more deeply (its continuation)."""
-    if path in _CODE:
-        return _CODE[path]
+    indented more deeply (its continuation).  The size is in lines, tokens
+    or characters (MEASURE, unless how is given)."""
+    how = how or MEASURE
+    if (path, how) in _CODE:
+        return _CODE[(path, how)]
     text = strip_comments(open(path, encoding='utf-8').read())
     n, indent = 0, None
     for line in text.split('\n'):
@@ -723,8 +747,8 @@ def code_lines(path):
         m = IMPORT_START.match(line)
         indent = len(m.group(1)) if m else None
         if not m:
-            n += 1
-    _CODE[path] = n
+            n += measure(line, how)
+    _CODE[(path, how)] = n
     return n
 
 
@@ -801,7 +825,7 @@ class Count:
         explicit = {p for _, _, pats in GROUPS for p in pats if '*' not in p}
         for b in sorted(BUNDLES):
             # a bundle has only its module header and imports
-            if code_lines(b) != 1:
+            if code_lines(b, 'lines') != 1:
                 sys.exit(f'{b}, an import bundle, has lines other than imports')
         for side, gname, pats in GROUPS:
             files = sorted({f for p in pats for f in glob.glob(p)
@@ -1833,6 +1857,16 @@ def iswim_brief(c, T, M):
 
 
 def main():
+    global MEASURE
+    args = sys.argv[1:]
+    if '--tokens' in args:
+        MEASURE = 'tokens'
+    elif '--chars' in args:
+        MEASURE = 'chars'
+    if MEASURE != 'lines':
+        print(f'(All counts below are in {"lexical tokens" if MEASURE == "tokens" else "non-whitespace characters"}, '
+              'not lines, though the tables still say "lines".)')
+        print()
     c = Count()
     mu_check(c)
     mu_red_check(c)
