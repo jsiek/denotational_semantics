@@ -126,13 +126,16 @@ $\kw{let}$s, and writes require their sets to be nonempty, and the
 binders require them to be consistent. The denotational proofs must
 establish these conditions, whereas they hold trivially for the single
 value that an interpreter computes. It must also
-apply $\beta$ and related laws, with their premises, where an
-interpreter simply runs. These costs are largest, in relative terms,
-for \pass{lift locals} and \pass{select instructions}, whose
-denotational proofs are about 1.4 and 1.6 times the interpreter
-proofs: the continuation-passing semantics of Imp puts a commuting
-conversion into \pass{lift locals}, and the prologue of a function body
-in x86$\mu$ takes two $\beta$-steps. The tendency concerns the
+apply laws of the graph model that have premises, where an interpreter
+simply runs: the $\beta$-law of Lemma~\ref{lem:beta}, and commuting
+conversions that move a $\kw{let}$ or $\kw{case}$ past a
+continuation. These costs are largest, relative to the
+interpreter proofs, for \pass{lift locals} and \pass{select
+instructions}. Their denotational proofs are about 1.4 and 1.6 times
+the size of the interpreter proofs. In \pass{lift locals}, the
+continuation-passing semantics of Imp requires a commuting conversion.
+In \pass{select instructions}, the prologue of a function body in
+x86$\mu$ requires two uses of Lemma~\ref{lem:beta}. The tendency concerns the
 interpreters only. The reduction semantics, which works by
 substitution, is often much larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
@@ -177,9 +180,9 @@ parameterized by the direction made the proof longer: on an earlier
 version of the compiler, switching from one relation to two cut the
 proof of \pass{delay} from 1,358 to 832 lines. Second, reflection needs
 the finite lists, the batches of calls, and the lemma that extracts
-them from a target call. Third, the $\beta$-law of the graph model
-holds only under side conditions of nonemptiness and continuity, which
-a machine gets for free by taking a step.
+them from a target call. Third, the $\beta$-law of Lemma~\ref{lem:beta}
+holds only under side conditions of nonemptiness, consistency, and
+continuity, which a machine gets for free by taking a step.
 
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
