@@ -119,11 +119,13 @@ control}, and \pass{select instructions}, both the denotational and the
 interpreter proofs are short. The interpreter proofs are smaller by 1
 to 28 lines, except for \pass{explicate control}, where the two are
 about the same size. The difference is not in the congruence cases,
-which take one line per construct in both styles. A denotation is a
-set of values, so the graph model must prove side conditions that hold
-trivially for the single value that an interpreter computes: that the
-sets involved are nonempty, for strict closures, $\kw{let}$s, and
-writes, and that they are consistent, for the binders. It must also
+which take one line per construct in both styles. In the graph model, a term
+denotes a set of values rather than a single value, and several
+operators place conditions on these sets: strict closures,
+$\kw{let}$s, and writes require their sets to be nonempty, and the
+binders require them to be consistent. The denotational proofs must
+establish these conditions, whereas they hold trivially for the single
+value that an interpreter computes. It must also
 apply $\beta$ and related laws, with their premises, where an
 interpreter simply runs. These costs are largest, in relative terms,
 for \pass{lift locals} and \pass{select instructions}, whose
