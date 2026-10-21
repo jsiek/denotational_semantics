@@ -50,3 +50,12 @@ E≢[]⇒nonempty-mem : ∀{T}{E : List T}
   → E ≢ [] → nonempty (mem E)
 E≢[]⇒nonempty-mem {T} {[]} E≢[] = ⊥-elim (E≢[] refl)
 E≢[]⇒nonempty-mem {T} {x ∷ E} E≢[] = ⟨ x , here refl ⟩
+
+ne-mem : ∀ {T} {V : List T} {D : 𝒫 T} → V ≢ [] → mem V ⊆ D → nonempty D
+ne-mem {V = []} ne _ = ⊥-elim (ne refl)
+ne-mem {V = v ∷ V} _ V⊆ = ⟨ v , V⊆ v (here refl) ⟩
+
+{- A ≃ B when they are equal under P and an element of either gives P -}
+≃-when : ∀ {T} {P : Set} {A B : 𝒫 T} → (∀ w → w ∈ A → P) → (∀ w → w ∈ B → P)
+  → (P → A ≃ B) → A ≃ B
+≃-when pA pB eq = ⟨ (λ w w∈ → proj₁ (eq (pA w w∈)) w w∈) , (λ w w∈ → proj₂ (eq (pB w w∈)) w w∈) ⟩

@@ -5,3 +5,6 @@
 *.fdb_latexmk
 *.out
 *.toc
+related/
+*.bbl
+*.blg

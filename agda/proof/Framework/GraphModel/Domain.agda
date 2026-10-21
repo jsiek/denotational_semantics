@@ -5,6 +5,7 @@ open import Framework.GraphModel.Domain public
 open import Framework.Primitives
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DenotProperties
+open import Framework.GraphModel.Env using (Env)
 
 open import Data.List using (List ; _∷_ ; [])
 open import Data.List.Relation.Unary.Any using (here; there)
@@ -14,6 +15,10 @@ open import Data.Sum using (_⊎_; inj₂)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Unit using (tt) renaming (⊤ to True)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
+
+{- the environment of a closed program -}
+ρ₀ : Env Value
+ρ₀ = λ _ → ⌈ ω ⌉
 
 ≈⇒Every : ∀ A B → A ≈ B → Every _~_ (mem A) (mem B)
 ≈⇒Every (x ∷ A) B ⟨ x~B , A~B ⟩ a b (here refl) b∈B = 

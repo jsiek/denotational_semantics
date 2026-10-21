@@ -1,25 +1,22 @@
 {-
 
-  Soundness and adequacy of the graph model (Semantics/Graph/X86.agda, ⟦_⟧ₚ) with
-  respect to the X86 machine (Semantics/CEK/X86.agda), for
-  well-formed programs (WF, Adequacy/X86WF.agda), which the compiler
-  produces from closed ISWIM programs (compile-x86-wf,
-  Adequacy/X86CompileWF.agda). As for Clos5 (Adequacy/Clos5.agda):
+  Soundness and adequacy of the graph model of X86ᵀ
+  (Semantics/Graph/Typed/X86.agda, ⟦_⟧ₜ) with respect to the X86ᵀ
+  machine (Semantics/CEK/Typed/X86.agda), as for Clos5ᵀ
+  (proof/Adequacy/Clos5.agda):
 
-    soundness : if the machine terminates with an answer o, then
-      ⟦ P ⟧ₚ has an element of the shape of o (Adequacy/X86Soundness.agda);
-    adequacy : if d ∈ ⟦ P ⟧ₚ, then the machine terminates with an
-      answer o, and d has the shape of o (Adequacy/X86LogRel.agda);
+    adequacy (X86LogRel.agda), for every program: every d ∈ ⟦ P ⟧ₜ is
+      related to the value that the machine returns;
+    soundness (X86Soundness.agda), for a program whose table is
+      consistent and contains the code of each definition interpreted
+      with the whole table: if the machine stops with an answer, the
+      value it returns denotes a part of ⟦ P ⟧ₜ.
 
-  so that ⟦ P ⟧ₚ contains const k exactly when the machine terminates
-  with o-const B k, and is nonempty exactly when the machine terminates
-  with an answer.
-
-  What is new is the semantics in continuation-passing style, with a
-  frame of slots, registers and a flag, and the call stack of the
-  machine. The machine and the semantics agree on what a call does:
-  the callee starts with %rdi and %rsi set and %rax and the flag unset,
-  and a call or a return goes wrong on an unset argument or result.
+  So ⟦ P ⟧ₜ holds const k exactly when the machine terminates with
+  o-const B k, and it is nonempty exactly when the machine terminates
+  with an answer; the programs that the compiler produces have such a
+  table (X86Compiled.agda), so this holds of them with no other
+  precondition.
 
 -}
 
@@ -28,39 +25,41 @@ module proof.Adequacy.X86 where
 open import Framework.Primitives using (base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.Domain using () renaming (const to dconst)
-open import Language.X86 using (program; body)
-open import Semantics.Graph.X86 using (⟦_⟧ₚ)
+open import proof.Semantics.Graph.Typed.Ops using (ConT; tables)
+open import Language.Typed.Type using (Any)
+open import Language.Typed.X86 using (Program; program)
+open import Language.ISWIM using (AST)
+open import Compiler.EncloseScope using (Closed)
+open import Compiler.Pipeline using (compile-x86)
+open import Semantics.Graph.Typed.X86 using (⟦_⟧ₜ; codeₜ)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep using (Terminates)
-open import Semantics.CEK.X86 using (sem; obs; halt?; halt)
-open import proof.Adequacy.Common using (ShapeOf; shape-answer; shape-const)
-open import proof.Adequacy.X86WF using (WF) public
-open import proof.Adequacy.X86Soundness using (soundness) public
-open import proof.Adequacy.X86CompileWF using (compile-x86-wf) public
-import proof.Adequacy.X86Common as C
+open import Semantics.CEK.Typed.X86 using (sem; obs; Val)
+open import proof.Adequacy.X86Compiled using (Contains; compiled)
 import proof.Adequacy.X86LogRel as LR
+import proof.Adequacy.X86Soundness as S
 
-open import Data.Product using (Σ-syntax; _×_) renaming (_,_ to ⟨_,_⟩)
-open import Relation.Binary.PropositionalEquality using (refl; cong; subst)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (sym; subst)
 
-sound-const : ∀ P → WF P → ∀ {B} {k : base-rep B} → Terminates (sem P) (o-const B k) → dconst k ∈ ⟦ P ⟧ₚ
-sound-const P wf t with soundness P wf t (λ ())
-... | ⟨ d , ⟨ d∈ , refl ⟩ ⟩ = d∈
+adequacy : ∀ P {d} → d ∈ ⟦ P ⟧ₜ → Σ[ v ∈ Val (Program.table P) Any ] Terminates (sem P) (obs v) × LR.𝕍 (Program.defs P) d v
+adequacy (program ds b) = LR.adequacy ds b
 
-sound-nonempty : ∀ P → WF P → Converges (Terminates (sem P)) → nonempty ⟦ P ⟧ₚ
-sound-nonempty P wf ⟨ o , ⟨ ans , t ⟩ ⟩ with soundness P wf t ans
-... | ⟨ d , ⟨ d∈ , _ ⟩ ⟩ = ⟨ d , d∈ ⟩
+module _ (P : Program) (cT : ConT (tables codeₜ (Program.defs P))) (cl : Contains codeₜ (Program.defs P)) where
 
-adequacy : ∀ P → WF P → ∀ {d} → d ∈ ⟦ P ⟧ₚ → Σ[ o ∈ Obs ] Terminates (sem P) o × ShapeOf o d
-adequacy (program ds (body n bs b)) ⟨ wfd , ⟨ ok , _ ⟩ ⟩ {d} d∈ with LR.adequate-main ds wfd ok d∈
-... | ⟨ v , ⟨ r , rv ⟩ ⟩ with r halt
-... | ⟨ _ , ⟨ _ , ⟨ _ , ⟨ _ , ⟨ τ , e ⟩ ⟩ ⟩ ⟩ ⟩ =
-  ⟨ obs v , ⟨ ⟨ _ , ⟨ C.↠→star ds τ , cong halt? e ⟩ ⟩ , LR.𝕍-shape ds d v rv ⟩ ⟩
+  const-iff : ∀ {B} {k : base-rep B} → (dconst k ∈ ⟦ P ⟧ₜ) ⇔ Terminates (sem P) (o-const B k)
+  const-iff = ⟨ (λ k∈ → let ⟨ v , ⟨ t , r ⟩ ⟩ = adequacy P k∈ in subst (Terminates (sem P)) (LR.𝕍-const (Program.defs P) v r) t)
+              , (λ t → let ⟨ v , ⟨ e , v⊆ ⟩ ⟩ = S.soundness (Program.defs P) cT cl (Program.main P) t (λ ()) in
+                       v⊆ _ (S.𝒱-const (Program.defs P) cT cl v (sym e))) ⟩
 
-adequacy-const : ∀ P → WF P → ∀ {B} {k : base-rep B} → dconst k ∈ ⟦ P ⟧ₚ → Terminates (sem P) (o-const B k)
-adequacy-const P wf k∈ with adequacy P wf k∈
-... | ⟨ o , ⟨ t , sh ⟩ ⟩ = subst (Terminates (sem P)) (shape-const sh) t
+  nonempty-iff : nonempty ⟦ P ⟧ₜ ⇔ Converges (Terminates (sem P))
+  nonempty-iff = ⟨ (λ { ⟨ d , d∈ ⟩ → let ⟨ v , ⟨ t , _ ⟩ ⟩ = adequacy P d∈ in ⟨ obs v , ⟨ LR.obs-answer (Program.defs P) v , t ⟩ ⟩ })
+                 , (λ { ⟨ o , ⟨ ans , t ⟩ ⟩ → let ⟨ v , ⟨ _ , v⊆ ⟩ ⟩ = S.soundness (Program.defs P) cT cl (Program.main P) t ans in
+                                         let ⟨ d , d∈ ⟩ = S.𝒱-ne (Program.defs P) cT cl v in ⟨ d , v⊆ d d∈ ⟩ }) ⟩
 
-adequacy-converges : ∀ P → WF P → nonempty ⟦ P ⟧ₚ → Converges (Terminates (sem P))
-adequacy-converges P wf ⟨ d , d∈ ⟩ with adequacy P wf d∈
-... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
+{- the programs that the compiler produces -}
+x86-const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B} → (dconst k ∈ ⟦ compile-x86 M ⟧ₜ) ⇔ Terminates (sem (compile-x86 M)) (o-const B k)
+x86-const-iff M _ = const-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))
+
+x86-nonempty-iff : ∀ M → Closed M → nonempty ⟦ compile-x86 M ⟧ₜ ⇔ Converges (Terminates (sem (compile-x86 M)))
+x86-nonempty-iff M _ = nonempty-iff (compile-x86 M) (proj₁ (compiled M)) (proj₂ (compiled M))

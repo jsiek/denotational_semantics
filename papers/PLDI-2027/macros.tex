@@ -1,0 +1,30 @@
+%% Notation shared by the sections of the paper.
+
+\newcommand{\iswim}{\ensuremath{\mathrm{ISWIM}_\mu}}
+\newcommand{\Elem}{\mathsf{Element}}
+\usepackage{stmaryrd}
+\usepackage{tikz}
+\usetikzlibrary{backgrounds}
+\newcommand{\den}[1]{\llbracket #1 \rrbracket}
+\newcommand{\app}{\mathbin{\bullet}}
+\newcommand{\callop}{\mathbin{\odot}}
+\newcommand{\pairv}[2]{\langle\!|#1,#2|\!\rangle}
+\newcommand{\car}{\mathsf{car}}
+\newcommand{\cdr}{\mathsf{cdr}}
+\newcommand{\ALR}{\mathrel{\trianglerighteq}}
+%% D \ALR V is the Agda ApproxLR D V (source set left, finite target list right).
+\newcommand{\callsto}[3]{#1 \cdot #2 \leadsto #3}
+\newcommand{\entryin}[3]{#1 \mapsto #2 \mathrel{\dot{\in}} #3}
+\newcommand{\layer}[1]{\mathrel{\trianglerighteq^{#1}}}
+\newcommand{\depth}{\mathsf{depth}}
+\newcommand{\kw}[1]{\mathtt{#1}}
+%% The heading of a definition in a figure: a title on the left and, in a
+%% box on the right, the form of what is defined.
+\newcommand{\defhead}[2]{\par\smallskip\noindent\textbf{#1}\hfill\fbox{$#2$}\par}
+%% Tighter display spacing for figures of definitions (use after \small).
+\newcommand{\figdefs}{\setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}%
+  \setlength{\abovedisplayshortskip}{2pt}\setlength{\belowdisplayshortskip}{2pt}}
+%% Meta-level (semantic) lambda, bold to distinguish it from the
+%% syntactic lambda of the languages.
+\newcommand{\mlam}[1]{\boldsymbol{\lambda} #1.\,}
+\newcommand{\pass}[1]{\textsf{\bfseries #1}}          % the name of a compiler pass

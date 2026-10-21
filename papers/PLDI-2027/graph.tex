@@ -1,0 +1,216 @@
+%% Section 3: background on graph models. Seed: the figure of elements and
+%% operators that the later sections use. Budget: 2.0 pages
+%% (notes/paper-outline.md). Definitions follow the Agda:
+%% agda/Framework/GraphModel/Domain.agda (elements, consistency),
+%% agda/Framework/GraphModel/Ops.agda (operators),
+%% agda/proof/Framework/GraphModel/DomainUtilBase.agda (projections, depth).
+%% Exposition after Siek 2017 (Revisiting Elementary Denotational
+%% Semantics, cited in the third person) and the Denotational chapter of
+%% PLFA: functions as finite tables, self-application by inclusion,
+%% divergence as the empty set. Line counts: notes/paper-outline.md, section 3.
+
+\section{Graph Models}
+\label{sec:graph-models}
+
+\begin{figure}[t]
+\small\figdefs
+\defhead{Graph elements}{u, v, w \in \Elem}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  u, v, w & ::= & c \mid V \mapsto w \mid \nu \mid \pairv{u}{v}
+    \mid \mathsf{tup}_i(v) \mid \mathsf{left}(v) \mid \mathsf{right}(v)
+    \mid \langle\rangle
+\end{array}
+\]
+\noindent where $V, W$ range over finite lists of elements and $i, j \in \mathbb{N}$.
+
+\defhead{Operators on denotations}{\mathit{op}(D_1, \ldots, D_n) \subseteq \Elem}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  D \app E & = & \{\, w \mid V \mapsto w \in D,\; V \neq [\,],\; V \subseteq E \,\}\\
+  \Lambda(F) & = & \{\, V \mapsto w \mid V \neq [\,],\; \mathsf{con}(V),\; w \in F(V) \,\} \cup \{\nu\}
+    \qquad (F \text{ a function on sets, e.g. } \mlam{X} E)\\
+  \mathsf{pair}(D, E) & = & \{\, \pairv{u}{v} \mid u \in D,\; v \in E \,\}\\
+  \car(D) & = & \{\, u \mid \pairv{u}{v} \in D \,\}\\
+  \cdr(D) & = & \{\, v \mid \pairv{u}{v} \in D \,\}\\
+  D \callop E & = & (\car(D) \app \cdr(D)) \app E
+    \qquad \text{(calling the closures in } D\text{)}\\
+  \mathcal{T}(D_1, \ldots, D_n) & = &
+    \{\, \mathsf{tup}_i(v) \mid v \in D_i \,\}
+    \quad \text{if } D_1, \ldots, D_n \neq \emptyset,
+    \text{ and } \emptyset \text{ otherwise}\\
+  \mathsf{inl}(D) & = & \{\, \mathsf{left}(v) \mid v \in D \,\}
+    \qquad
+  \mathsf{inr}(D) \;=\; \{\, \mathsf{right}(v) \mid v \in D \,\}\\
+  \pi_t(D) & = & \{\, v \mid t(v) \in D \,\}
+    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}
+\end{array}
+\]
+
+\caption{The elements of the graph model and the operators on denotations
+  (sets of elements) that the semantics of the compiler's languages are
+  built from. A finite list of elements stands for the set of its
+  elements wherever a set is expected.}
+\label{fig:graph-ops}
+\end{figure}
+
+A denotational semantics maps each program to a mathematical object
+that describes its behavior. In a graph model, that object is a set of
+finite pieces of evidence about the behavior, which we call
+\emph{elements}. Our model is a variant of the model of
+\citet{Engeler:1981aa}, which we extend with the data structures of
+our compiler's languages.  We first explain how the model represents
+functions, then how it handles recursion and divergence, and then why
+we require consistency, which rules out sets of elements that cannot
+all describe the same value.  Throughout
+the explanation, we refer to Figure~\ref{fig:graph-ops}, which defines
+elements and the operators on sets of elements from which we build the
+semantics of the source, target, and intermediate languages.  We end
+this section with the properties of the semantics that our proofs rely
+on, including a $\beta$-law, and with our reasons for choosing a graph
+model over traditional domain theory.
+
+\paragraph{Functions as tables}
+
+One can describe a function by tabulating it: each row of the table
+pairs an input with the corresponding output, and applying the
+function means looking up a row. Two problems arise. First, a function
+on an infinite domain (such as the integers) needs an infinite
+table. Second, a function that is applied to itself (such as the Y
+combinator) would need a table that contains a copy of itself. Graph
+models solve both problems. For the first, a terminating program
+applies each function to only finitely many arguments, so finite
+tables suffice \citep{Scott:1976lq,Plotkin:1993ab}. The meaning of a
+function is the set of all its finite tables, or equivalently the set
+of all their rows. For the second, a row applies to an argument when
+the row's input is \emph{included} in the argument, rather than equal
+to it. A table then needs only a smaller copy of itself, and elements,
+defined as an inductive data type, can provide that.
+
+Concretely, a row is an element $V \mapsto w$, called an \emph{entry},
+whose input $V$ is a finite list of elements and whose output $w$ is
+an element. The input could instead be a single element, as in filter models
+\citep{Barendregt:1983aa}, but a list makes the metatheory cleaner: the
+argument of a function is often itself a function, and $V$ can then
+contain one entry for each call to it.
+The meaning of a function, given by operator $\Lambda$
+(Figure~\ref{fig:graph-ops}), is the set of entries of the form $V
+\mapsto w$ such that each output $w$ is in the meaning of the
+function's body when the body is evaluated in an environment that maps
+its parameter to input $V$.  In \iswim, the meaning of a
+$\lambda$-abstraction is given below, where an environment $\rho$ maps
+each variable to a set of elements and $\boldsymbol{\lambda}$ is the
+notation for specifying a mathematical function.
+\[
+\begin{array}{rcl}
+  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])
+\end{array}
+\]
+The meaning of function application is given by operator $D \app E$
+(Figure~\ref{fig:graph-ops}).  It collects all the entries of $D$
+whose input is contained in the argument $E$, and returns the outputs
+of those entries. So the following equation defines the meaning of
+application in \iswim.
+\[
+\begin{array}{rcl}
+  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
+\end{array}
+\]
+For example, $\den{\lambda x.\, x + 1}$ contains the entry
+$[n] \mapsto n{+}1$ for every integer $n$, and
+$\den{(\lambda x.\, x + 1)\; 3} = \{4\}$. Besides its entries, the
+meaning of every $\lambda$-abstraction contains the element $\nu$,
+which says only that the term is a function. Thus a $\lambda$-abstraction
+has a nonempty meaning, as befits a value in a call-by-value language,
+even if it is never applied. The other elements describe the data of
+our languages: a constant $c$; a pair $\pairv{u}{v}$, which FlatClos
+uses for closures; a tuple element $\mathsf{tup}_i(v)$, which says that
+component $i$ of a tuple is described by $v$; the injections
+$\mathsf{left}(v)$ and $\mathsf{right}(v)$ of a sum; and the empty tuple
+$\langle\rangle$. The empty tuple also fills the positions of an
+environment that hold no variable, because the semantics requires every
+position of an environment to be nonempty.
+
+\paragraph{Recursion and divergence}
+
+\iswim\ has no recursion operator. As in the untyped
+$\lambda$-calculus, recursion comes from self-application, which the
+recursive types of \iswim\ make typable. The constructs $\kw{fold}$
+and $\kw{unfold}$ mean the identity, so recursive types cost nothing in
+the semantics. Because entries apply to arguments that include their
+input, the self-applied function in a fixed-point combinator such as
+$Z$ has a meaning whose tables contain smaller copies of themselves,
+like a set of nested dolls \citep{Siek:2017ab}.
+
+A program that diverges produces no evidence, so its meaning is the
+empty set. For example, $\Omega = \Delta\;(\kw{fold}\;\Delta)$ with
+$\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$: an
+output of $\Omega$ would need an entry of $\den{\Delta}$ whose input
+contains a strictly smaller entry of $\den{\Delta}$ with the same
+output, and so on forever, which is impossible for finite elements.
+Divergence
+as the empty set is the reason that reflection is the hard direction
+of a correctness proof: a relation that follows the source program
+forward cannot carry the absence of elements to the target.
+
+\paragraph{Consistency}
+
+We write $u \sim v$ when the elements $u$ and $v$ are consistent,
+which means, intuitively, that they could describe the same value.
+Appendix~\ref{app:consistency} gives the definition. The operator
+$\Lambda$ builds only entries whose inputs are consistent, which rules
+out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,
+x + 1$, whose input describes no single argument.
+%
+Our model requires consistency because it is needed in the proof for
+the \pass{delay} pass (Section~\ref{sec:approx-lr}). A call in FlatClos takes
+the code from one pair and the environment from another, so a
+closure's meaning may combine the code of one pair with the
+environment of a different pair. Consistency ensures that the
+environments of these pairs are consistent with each other.
+
+
+\paragraph{The properties of the semantics}
+
+%% Lemma: agda/proof/Framework/GraphModel/Ops.agda, Λ-β (and ΛΛ-β for
+%% the curried form used in the delay proof).
+%% The finitary premise holds for term meanings by `ok` in
+%% agda/Mu/proof/Semantics/Graph/{ISWIM,Clos3,Clos4,Clos5}.agda (fin₁, fin₂).
+The meaning of a term is monotone in its environment, and it is
+continuous in the sense that each element of the meaning depends on
+only finitely many elements of the environment. These properties,
+together with consistency, give the graph model a $\beta$-law. Its
+premises come from the definitions of $\Lambda$ and application, which
+use only entries whose input is nonempty and consistent.
+
+\begin{lemma}[$\beta$]\label{lem:beta}
+Call a function $F$ on sets \emph{finitary} at $D$ if every
+$w \in F(D)$ is in $F(V)$ for some nonempty finite $V \subseteq D$, and
+similarly for a function of two sets.
+\begin{enumerate}
+\item If $F$ is monotone and finitary at a consistent $D$, then
+  $\Lambda(F) \app D = F(D)$.
+\item If $F$ is finitary at a consistent $T$ and $E$, then
+  $F(T, E) \subseteq (\Lambda(\mlam{X} \Lambda(\mlam{Y} F(X, Y))) \app T) \app E$.
+\end{enumerate}
+\end{lemma}
+
+\paragraph{Why a graph model}
+
+We chose a graph model primarily to keep the mechanization small.  Our
+graph model, including the operators of all the compiler's languages,
+is about 1,200 lines of Agda. Early in this project we experimented with using
+Scott domains, using the domain theory of TypeTopology repository
+\citep{Escardo:TypeTopology}. The experiment covered the source
+language and Clos of an earlier, untyped version of the compiler, and
+the passes between them. Yet the constructions for the Scott domain
+(sums, lifting, products and exponentials of domains, locally
+continuous functors, and the solution of the domain equation) took 847
+lines, on top of about 5,400 lines of TypeTopology's domain
+theory. The experiment also required postulates for propositional
+truncation, function extensionality, and propositional extensionality,
+whereas our development uses Agda's safe mode (no postulates) and only
+its standard library. \citet{Benton:2010aa} report around 4,400 lines
+of Coq for a comparable library of domain theory.
+
+\clearpage

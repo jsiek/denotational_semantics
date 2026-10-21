@@ -1,169 +1,73 @@
 {-
 
-  Correctness of the delay pass (Clos3 → Clos4), clock for clock (see the
-  design note in Clock.agda). delay turns an application app L M into
-
-    let x = L' in app (fst x) (snd x) (shift M')
-
-  which calls one function, as the source does, and let does not tick.
-
-  Values are related (_≈_) when they agree, except that a Clos3 closure of
-  N and v is related to the Clos4 pair of fun (delay N) and a value
-  related to v. The operand M of an application is evaluated under one
-  more variable (the let-bound closure), so, as in DelaySim, a source term
-  M in ρ₁ is related to the target term rename r (delay M) in ρ₂, where the
-  renaming r maps each variable of ρ₁ to a related one of ρ₂ (EnvRel).
-
-  No precondition is needed: the end theorem holds for every Clos3
-  program, closed or not (a free variable goes wrong in both).
+  Correctness of typed delay (Clos3ᵀ → Clos4ᵀ), clock for clock (see
+  the design note in Semantics/Interp/Clock.agda): clos N Ms becomes
+  pack (code N') (tuple Ms'), and app becomes callc, which calls as app
+  does. The pass renames variables (the identity for a program), so
+  environments are related through the renaming (Env≈); a closure of N
+  and vs is related to a pack of the code delay N and related values
+  (Rel, Same).
 
 -}
 
 module proof.Correctness.Interp.DelayFuel where
 
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.Clos3
-import Language.Clos4 as C4
-open import Compiler.Delay
-open import Semantics.Observation
-open import Language.Prim using (int; bool)
-open import Data.Bool using (true; false)
-open import proof.Framework.ListUtil using (_‼_; proj-pw)
-open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Clos3 as S
-import Semantics.Interp.Clos4 as T
-
-open import proof.Framework.Syntax.Rename C4.Op C4.sig
-  using (ext; rename; rename-args; shift; rename-fuse; rename-id)
-
-open import Data.List using (List; []; _∷_; replicate; reverse)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (just; nothing)
-import Data.Maybe.Relation.Binary.Pointwise as M
+open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ; zero; suc)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂; subst)
-open import Function using (_∘_)
+open import Language.Typed.Type
+open import Language.Typed.Clos3
+import Language.Typed.Clos4 as C4
+open import Compiler.Delay
+open import proof.Semantics.Interp.Clock
+open import Framework.Lookup using (_!_)
+import Semantics.Interp.Typed.Clos3 as S
+import Semantics.Interp.Typed.Clos4 as T
+open import proof.Semantics.Interp.Typed.Rel
+  {λ n → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any} {λ n → C4.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any}
 
-{- The relation -----------------------------------------------------------------}
+open import Data.List.Relation.Unary.All using ([]; _∷_)
+open import Data.Vec using (Vec; []; _∷_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
-infix 4 _≈_
+Code : ∀ {n} → Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any → C4.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any → Set
+Code N N' = delay (λ x → x) N ≡ N'
 
-data _≈_ : S.Val → T.Val → Set where
-  clos≈ : ∀ {N v w} → v ≈ w → S.clos N v ≈ T.pair (T.fun (delay N)) w
-  const≈ : ∀ {B k} → S.const B k ≈ T.const B k
-  tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → S.tup vs ≈ T.tup ws
-  inl≈ : ∀ {v w} → v ≈ w → S.inl v ≈ T.inl w
-  inr≈ : ∀ {v w} → v ≈ w → S.inr v ≈ T.inr w
+open Rel Code (Same Code)
 
-{- the renaming r takes each variable of ρ₁ to a related one of ρ₂ -}
-EnvRel : (ℕ → ℕ) → S.Env → T.Env → Set
-EnvRel r ρ₁ ρ₂ = ∀ x → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ r x)
+Env≈ : ∀ {Γ Δ} → Ren Γ Δ → S.Env Γ → T.Env Δ → Set
+Env≈ r ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ ! x ≈ ρ₂ ! r x
 
-env-ext : ∀ {r ρ₁ ρ₂ v w} → v ≈ w → EnvRel r ρ₁ ρ₂ → EnvRel (ext r) (v ∷ ρ₁) (w ∷ ρ₂)
-env-ext r ρ zero = M.just r
-env-ext r ρ (suc x) = ρ x
+env-ext : ∀ {Γ Δ} {r : Ren Γ Δ} {ρ₁ ρ₂ v w} → v ≈ w → Env≈ r ρ₁ ρ₂ → Env≈ (ext {B = Any} r) (v ∷ ρ₁) (w ∷ ρ₂)
+env-ext v E Z = v
+env-ext v E (S x) = E x
 
-{- Related values are observed alike -}
-obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
-obs≈ (clos≈ _) = refl
-obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈-list [] = refl
-obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+run≈ : ∀ ck {Γ Δ A} (M : Tm Γ A) {r : Ren Γ Δ} {ρ₁ ρ₂} → Env≈ r ρ₁ ρ₂
+  → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (delay r M))
+runs≈ : ∀ ck {Γ Δ n} (Ms : Vec (Tm Γ Any) n) {r : Ren Γ Δ} {ρ₁ ρ₂} → Env≈ r ρ₁ ρ₂
+  → RelResult (Pointwise _≈_) (S.evals ck ρ₁ Ms) (T.evals ck ρ₂ (delays r Ms))
+call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S.call ck f v) (T.call ck g w)
 
-{- related operands give related results of a primitive -}
-prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
-... | nothing = M.nothing
-... | just (int n) = M.just const≈
-... | just (bool true) = M.just (inl≈ (tup≈ []))
-... | just (bool false) = M.just (inr≈ (tup≈ []))
+run≈ ck (` x) E = ret (E x)
+run≈ ck (clos N Ms) {r} {ρ₂ = ρ₂} E = subst (RelResult _≈_ _) (sym (bind-assoc (T.evals ck ρ₂ (delays r Ms))))
+  (bind-rel (runs≈ ck Ms E) λ vs → ret (pack≈ vs (same refl)))
+run≈ ck (app L M) E = bind-rel (run≈ ck L E) λ f → bind-rel (run≈ ck M E) λ w → call≈ ck f w
+run≈ ck (lit B c) E = ret const≈
+run≈ ck (tuple Ms) E = bind-rel (runs≈ ck Ms E) λ vs → ret (tup≈ vs)
+run≈ ck (get i M) E = bind-rel (run≈ ck M E) λ v → ret (nth≈ i v)
+run≈ ck (inl M) E = bind-rel (run≈ ck M E) λ v → ret (inl≈ v)
+run≈ ck (inr M) E = bind-rel (run≈ ck M E) λ v → ret (inr≈ v)
+run≈ ck (case L M N) E =
+  bind-rel (run≈ ck L E) λ u → either≈ u (λ v → run≈ ck M (env-ext v E)) (λ v → run≈ ck N (env-ext v E))
+run≈ ck (prim p L M) E = bind-rel (run≈ ck L E) λ v → bind-rel (run≈ ck M E) λ w → ret (δ≈ p v w)
+run≈ ck (let′ M N) E = bind-rel (run≈ ck M E) λ v → run≈ ck N (env-ext v E)
+run≈ ck (inject G M) E = bind-rel (run≈ ck M E) λ v → ret (dyn≈ v)
+run≈ ck (project t M) E = bind-rel (run≈ ck M E) (project≈ t)
 
-{- Clock for clock ---------------------------------------------------------------}
+runs≈ ck [] E = ret []
+runs≈ ck (M ∷ Ms) E = bind-rel (run≈ ck M E) λ v → bind-rel (runs≈ ck Ms E) λ vs → ret (v ∷ vs)
 
-{- what follows the let-bound closure: app (fst x) (snd x) (shift M') -}
-snd0 : C4.AST
-snd0 = C4.snd-op C4.⦅ C4.` 0 ,, Nil ⦆
+call≈ zero f w = timeout
+call≈ (suc ck) (pack≈ {c = N} rs (same refl)) w = run≈ ck N λ { Z → w ; (S Z) → tup≈ rs }
 
-run≈ : ∀ ck r {ρ₁ ρ₂} M → EnvRel r ρ₁ ρ₂
-  → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (rename r (delay M)))
-args≈ : ∀ ck r {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) → EnvRel r ρ₁ ρ₂
-  → Pointwise _≈_ vs ws
-  → RelResult (Pointwise _≈_) (S.eval-args ck ρ₁ vs args)
-      (T.eval-args ck ρ₂ ws (rename-args r (del-map-args args)))
-{- the source checks for a closure; the target takes the first component -}
-apply≈ : ∀ ck r {ρ₁ ρ₂ f g} M → EnvRel r ρ₁ ρ₂ → f ≈ g
-  → RelResult _≈_ (S.apply ck ρ₁ M f)
-      (T.first g >>= T.apply ck (g ∷ ρ₂) snd0 (rename (ext r) (shift (delay M))))
-{- under the identity renaming -}
-run-id : ∀ ck {ρ₁ ρ₂} M → EnvRel (λ x → x) ρ₁ ρ₂
-  → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval ck ρ₂ (delay M))
-call≈ : ∀ ck {ρ₁ ρ₂} N → EnvRel (λ x → x) ρ₁ ρ₂
-  → RelResult _≈_ (S.call ck N ρ₁) (T.call (T.fun (delay N)) ck ρ₂)
-branch≈ : ∀ ck r {ρ₁ ρ₂ v w} M N → EnvRel r ρ₁ ρ₂ → v ≈ w
-  → RelResult _≈_ (S.branch ck ρ₁ M N v)
-      (T.branch ck ρ₂ (rename (ext r) (delay M)) (rename (ext r) (delay N)) w)
-
-run≈ ck r (` x) ρ = from-maybe-rel (ρ x)
-run≈ ck r (clos-op n ⦅ cons (clear (bind (bind (ast N)))) fvs ⦆) ρ =
-  clos-rel (args≈ ck r fvs ρ [])
-  where
-  {- the target builds the tuple, then the pair -}
-  clos-rel : ∀ {r₁ r₂} → RelResult (Pointwise _≈_) r₁ r₂
-    → RelResult _≈_ (r₁ >>= λ vs → ret (S.clos N (S.tup (reverse vs))))
-        ((r₂ >>= λ ws → ret (T.tup (reverse ws))) >>= λ e → ret (T.pair (T.fun (delay N)) e))
-  clos-rel timeout = timeout
-  clos-rel wrong = wrong
-  clos-rel (ret rs) = ret (clos≈ (tup≈ (reverse⁺ rs)))
-run≈ ck r (app ⦅ L ,, M ,, Nil ⦆) ρ = bind-rel (run≈ ck r L ρ) (apply≈ ck r M ρ)
-run≈ ck r (lit B k ⦅ Nil ⦆) ρ = ret const≈
-run≈ ck r (tuple n ⦅ args ⦆) ρ = bind-rel (args≈ ck r args ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
-run≈ ck r (get i ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) get≈
-  where
-  get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
-  get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-  get≈ (clos≈ _) = wrong
-  get≈ const≈ = wrong
-  get≈ (inl≈ _) = wrong
-  get≈ (inr≈ _) = wrong
-run≈ ck r (inl-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inl≈ v))
-run≈ ck r (inr-op ⦅ M ,, Nil ⦆) ρ = bind-rel (run≈ ck r M ρ) (λ v → ret (inr≈ v))
-run≈ ck r (prim p ⦅ L ,, M ,, Nil ⦆) ρ =
-  bind-rel (run≈ ck r L ρ) λ v → bind-rel (run≈ ck r M ρ) λ w → from-maybe-rel (prim≈ p v w)
-run≈ ck r (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ =
-  bind-rel (run≈ ck r L ρ) (branch≈ ck r M N ρ)
-
-args≈ ck r {zero} Nil ρ rs = ret rs
-args≈ ck r {suc n} (M ,, args) ρ rs =
-  bind-rel (run≈ ck r M ρ) (λ v → args≈ ck r args ρ (v ∷ rs))
-
-{- the operand sees past the let-bound closure: rename (ext r) ∘ shift = suc ∘ r -}
-apply≈ ck r M ρ (clos≈ {N} v) =
-  subst (λ M' → RelResult _≈_ _ (T.eval ck _ M' >>= _))
-        (sym (rename-fuse (ext r) suc (delay M)))
-    (bind-rel (run≈ ck (λ x → suc (r x)) M ρ)
-      (λ w → call≈ ck N λ { zero → M.just w ; (suc zero) → M.just v ; (suc (suc x)) → M.nothing }))
-apply≈ ck r M ρ const≈ = wrong
-apply≈ ck r M ρ (tup≈ _) = wrong
-apply≈ ck r M ρ (inl≈ _) = wrong
-apply≈ ck r M ρ (inr≈ _) = wrong
-
-call≈ zero N ρ = timeout
-call≈ (suc ck) N ρ = run-id ck N ρ
-
-run-id ck {ρ₁} M ρ =
-  subst (RelResult _≈_ (S.eval ck ρ₁ M) ∘ T.eval ck _) (rename-id (delay M)) (run≈ ck (λ x → x) M ρ)
-
-branch≈ ck r M N ρ (inl≈ v) = run≈ ck (ext r) M (env-ext v ρ)
-branch≈ ck r M N ρ (inr≈ v) = run≈ ck (ext r) N (env-ext v ρ)
-branch≈ ck r M N ρ (clos≈ _) = wrong
-branch≈ ck r M N ρ const≈ = wrong
-branch≈ ck r M N ρ (tup≈ _) = wrong
-
-{- The end theorem: for every Clos3 program -----------------------------------}
-
-delay-correct : ∀ M → Equivalent (S.sem M) (T.sem (delay M))
-delay-correct M = clocked _≈_ obs≈ (λ ck → run-id ck {[]} M (λ x → M.nothing))
+delay-correct : ∀ (M : Tm [] Any) → Equivalent (S.sem M) (T.sem (delay-program M))
+delay-correct M = clocked _≈_ obs≈ λ ck → run≈ ck M λ ()

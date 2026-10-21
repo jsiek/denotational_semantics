@@ -7,14 +7,14 @@
   machine side.
 
     soundness : if the machine terminates with an answer o (anything but
-      o-wrong), then ⟦ M ⟧ ρ₀ has an element of the shape of o (ShapeOf,
+      o-error), then ⟦ M ⟧ ρ₀ has an element of the shape of o (ShapeOf,
       in Adequacy/Common.agda); for o-const B k, the constant itself.
     adequacy : if d ∈ ⟦ M ⟧ ρ₀, then the machine terminates with an
       answer o, and d has the shape of o.
 
   so that ⟦ M ⟧ ρ₀ contains const k exactly when the machine terminates
   with o-const B k, and is nonempty exactly when the machine terminates
-  with an answer (and so is empty when it goes wrong or diverges).
+  with an answer (and so is empty when it errors or diverges).
   Combined with the correctness of the compiler in the graph model
   (CompilerCorrect.agda), the constants of the compiled Clos5 program
   are exactly the constants the ISWIM machine computes.
@@ -41,18 +41,14 @@ module proof.Adequacy.ISWIM where
 
 open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (Value) renaming (const to dconst)
-open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
+open import proof.Framework.GraphModel.Domain using (Value; ρ₀) renaming (const to dconst)
 open import Language.ISWIM
 open import proof.Semantics.Graph.ISWIM using (⟦_⟧)
-open import Semantics.Graph.Clos5Iswim using (⟦_⟧ₚ)
-open import proof.Correctness.Graph.CompilerCorrect
-  using (compile; compile-correct-const; compile-correct-nonempty)
 open import Semantics.Observation
 open import proof.Semantics.CEK.Smallstep
-  using (Terminates; Diverges; diverges-not-terminates; next; stop)
+  using (Terminates; Diverges; diverges-not-terminates; terminates-det; next; stop)
 open import Semantics.CEK.ISWIM
-open import proof.Compiler.EncloseScope using (Closed)
+open import Compiler.EncloseScope using (Closed)
 open import proof.Framework.Syntax.Uses Op sig using (uses-bound)
 open import proof.Adequacy.Common
 open import proof.Adequacy.Soundness using (soundness) public
@@ -97,14 +93,6 @@ adequacy-converges : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) → Conve
 adequacy-converges M c ⟨ d , d∈ ⟩ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , sh ⟩ ⟩ = ⟨ o , ⟨ shape-answer sh , t ⟩ ⟩
 
-{- The machine terminates with at most one observation ----------------------}
-
-terminates-det : ∀ M {o₁ o₂} → Terminates (sem M) o₁ → Terminates (sem M) o₂ → o₁ ≡ o₂
-terminates-det M ⟨ t₁ , ⟨ σ₁ , f₁ ⟩ ⟩ ⟨ t₂ , ⟨ σ₂ , f₂ ⟩ ⟩
-    with ↠-final-det (star→↠ σ₁) (star→↠ σ₂) f₁ f₂
-... | refl with trans (sym f₁) f₂
-... | refl = refl
-
 {- Characterizations ------------------------------------------------------------}
 
 const-iff : ∀ M → Closed M → ∀ {B} {k : base-rep B}
@@ -114,28 +102,11 @@ const-iff M c = ⟨ adequacy-const M c , sound-const M ⟩
 nonempty-iff : ∀ M → Closed M → nonempty (⟦ M ⟧ ρ₀) ⇔ Converges (Terminates (sem M))
 nonempty-iff M c = ⟨ adequacy-converges M c , sound-nonempty M ⟩
 
-{- a program that goes wrong, or diverges, denotes the empty set -}
-wrong-empty : ∀ M → Closed M → Terminates (sem M) o-wrong → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
-wrong-empty M c w d d∈ with adequacy M c d∈
-... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det M t w)
+{- a program that errors, or diverges, denotes the empty set -}
+error-empty : ∀ M → Closed M → Terminates (sem M) o-error → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
+error-empty M c w d d∈ with adequacy M c d∈
+... | ⟨ o , ⟨ t , sh ⟩ ⟩ = shape-answer sh (terminates-det t w)
 
 diverges-empty : ∀ M → Closed M → Diverges (sem M) → ∀ d → ¬ (d ∈ ⟦ M ⟧ ρ₀)
 diverges-empty M c div d d∈ with adequacy M c d∈
 ... | ⟨ o , ⟨ t , _ ⟩ ⟩ = diverges-not-terminates div t
-
-{- The compiler, observed through the ISWIM machine ---------------------------}
-
-{- the constants of the compiled program are those the ISWIM machine
-   computes, and it produces something exactly when the machine
-   terminates with an answer -}
-compile-correct-machine-const : ∀ M → Closed M → ∀ {B} (k : base-rep B)
-  → Terminates (sem M) (o-const B k) ⇔ (dconst k ∈ ⟦ compile M ⟧ₚ)
-compile-correct-machine-const M c k =
-  ⟨ (λ t → proj₁ (compile-correct-const M k) (sound-const M t))
-  , (λ k∈ → adequacy-const M c (proj₂ (compile-correct-const M k) k∈)) ⟩
-
-compile-correct-machine-converges : ∀ M → Closed M
-  → Converges (Terminates (sem M)) ⇔ nonempty ⟦ compile M ⟧ₚ
-compile-correct-machine-converges M c =
-  ⟨ (λ t → proj₁ (compile-correct-nonempty M) (sound-nonempty M t))
-  , (λ ne → adequacy-converges M c (proj₂ (compile-correct-nonempty M) ne)) ⟩

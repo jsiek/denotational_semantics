@@ -19,7 +19,7 @@
   * A machine is a step function, step : State → Next State, which either
     moves to the next state or stops with an observation (see
     Observation.agda): the observation of the value returned to the empty
-    continuation, or o-wrong when the machine is stuck (an unbound
+    continuation, or o-error when the machine is stuck (an unbound
     variable, applying a non-function, projecting from a non-tuple, ...).
     So every state either steps or is final, and machines are
     deterministic, by construction.
@@ -33,7 +33,7 @@
     target step when a natural-number index of the match decreases. Since
     both machines are deterministic and total, this gives the end theorem
     (Equivalent): the program and its compilation terminate with the same
-    observations (including o-wrong), and one diverges iff the other does.
+    observations (including o-error), and one diverges iff the other does.
     We never need "terminates or diverges", which is not constructive.
     When no source step is matched by zero target steps (as for enclose),
     plus-simulation builds the forward simulation from one lemma,
@@ -43,7 +43,9 @@
     steps are matched by no target step (as for optimize, where the
     source evaluates free variables that the target drops),
     the forward simulation is given directly: a match indexed by a
-    natural number, which such a step must decrease.
+    natural number, which such a step must decrease. For simplify and
+    lift locals the target's machine is the one simulated, by the
+    source's, and Equivalent is symmetric.
 
   * Layout: Semantics/Observation.agda (shared with the clocked
     interpreters); the framework, language independent, in
@@ -51,7 +53,8 @@
     proof/Framework/{Smallstep,Simulation}.agda (lemmas, forward
     simulations), instantiated at these observations here and in
     proof/Semantics/CEK/{Smallstep,Simulation}.agda;
-    Semantics/CEK/*.agda (one per language);
+    Semantics/CEK/ISWIM.agda and Semantics/CEK/Typed/*.agda (one per
+    language);
     proof/Correctness/CEK/*Sim.agda (one per pass).
 
 -}

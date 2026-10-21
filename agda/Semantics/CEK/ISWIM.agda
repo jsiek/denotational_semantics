@@ -13,7 +13,7 @@ open import Language.Prim using (Prim; Out; int; bool)
 open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_)
 open import Language.ISWIM
 open import Semantics.Observation
-open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
+open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; next?; machine)
 open import Framework.ListUtil
 
 open import Data.Fin using (Fin)
@@ -42,6 +42,7 @@ data Cont : Set where
   caseK : AST → AST → Env → Cont → Cont
   primL : Prim → AST → Env → Cont → Cont   {- evaluating the first operand -}
   primR : Prim → Val → Cont → Cont         {- evaluating the second operand -}
+  letK : AST → Env → Cont → Cont           {- evaluating the bound term; next the body -}
 
 data State : Set where
   eval : AST → Env → Cont → State
@@ -74,8 +75,7 @@ prim? : Prim → Val → Val → Maybe Val
 prim? p v w = map out (δ? p (obs v) (obs w))
 
 ret? : Maybe Val → Cont → Next State
-ret? (just v) κ = next (ret v κ)
-ret? nothing κ = stop o-wrong
+ret? mv κ = next? o-error (λ v → ret v κ) mv
 
 step : State → Next State
 step (eval (` x) ρ κ) = ret? (ρ ‼ x) κ
@@ -88,27 +88,29 @@ step (eval (inl-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inlK κ))
 step (eval (inr-op ⦅ M ,, Nil ⦆) ρ κ) = next (eval M ρ (inrK κ))
 step (eval (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval L ρ (caseK M N ρ κ))
 step (eval (prim p ⦅ L ,, M ,, Nil ⦆) ρ κ) = next (eval L ρ (primL p M ρ κ))
+step (eval (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ κ) = next (eval M ρ (letK N ρ κ))
 step (ret v halt) = stop (obs v)
 {- the operator is checked before the argument is evaluated, so that
-   delay, which takes the operator apart first, preserves going wrong
+   delay, which takes the operator apart first, preserves errors
    (as in Clos2 and Clos3). Clos4 and Clos5 check that the operator is
    code only at the call, after all three operands, like an indirect call
-   instruction: delay's fst of the closure has already gone wrong on a
+   instruction: delay's fst of the closure has already stopped with an error on a
    non-closure, so on its output that late check always passes -}
 step (ret v@(clo _ _) (appL M ρ κ)) = next (eval M ρ (appR v κ))
-step (ret _ (appL M ρ κ)) = stop o-wrong
+step (ret _ (appL M ρ κ)) = stop o-error
 step (ret w (appR (clo N ρ) κ)) = next (eval N (w ∷ ρ) κ)
-step (ret w (appR _ κ)) = stop o-wrong
+step (ret w (appR _ κ)) = stop o-error
 step (ret v (tupK vs Ms ρ κ)) = next (tuple-next (v ∷ vs) Ms ρ κ)
 step (ret (tup vs) (getK i κ)) = ret? (proj i vs) κ
-step (ret _ (getK i κ)) = stop o-wrong
+step (ret _ (getK i κ)) = stop o-error
 step (ret v (inlK κ)) = next (ret (inl v) κ)
 step (ret v (inrK κ)) = next (ret (inr v) κ)
 step (ret (inl v) (caseK M N ρ κ)) = next (eval M (v ∷ ρ) κ)
 step (ret (inr v) (caseK M N ρ κ)) = next (eval N (v ∷ ρ) κ)
-step (ret _ (caseK M N ρ κ)) = stop o-wrong
+step (ret _ (caseK M N ρ κ)) = stop o-error
 step (ret v (primL p M ρ κ)) = next (eval M ρ (primR p v κ))
 step (ret w (primR p v κ)) = ret? (prim? p v w) κ
+step (ret v (letK N ρ κ)) = next (eval N (v ∷ ρ) κ)
 
 {- a program starts in the empty environment with the empty continuation -}
 sem : AST → Machine

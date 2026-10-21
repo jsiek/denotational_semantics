@@ -3,7 +3,9 @@
   Lemmas about the runs of the machines of Framework/Smallstep.agda:
   runs of one or more steps (Plus), composing runs, determinism,
   divergence, and how a target state answers a source step (Answers,
-  for plus simulations; see Simulation.agda).
+  for plus simulations; see Simulation.agda), directly or after running
+  ahead to a matching state (Reach). The runs of a step function from
+  any state are in Runs.agda.
 
 -}
 
@@ -12,6 +14,8 @@ module proof.Framework.Smallstep (Obs : Set) where
 open import Framework.Smallstep Obs
 
 open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Maybe using (Maybe; just; nothing)
+import Data.Maybe.Relation.Binary.Pointwise as M
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Nat.Properties using (+-identityʳ; +-suc)
 open import Data.Product using (_×_; Σ-syntax; _,_; proj₂)
@@ -33,6 +37,9 @@ module _ {L : Machine} where
 
   plus-star : ∀ {s s' s''} → Plus L s s' → Star L s' s'' → Plus L s s''
   plus-star (plus st σ) τ = plus st (σ ◅◅ τ)
+
+  step⁺ : ∀ {s s'} → Step L s s' → Plus L s s'
+  step⁺ st = plus st ε
 
   plus→star : ∀ {s s'} → Plus L s s' → Star L s s'
   plus→star (plus st σ) = st ◅ σ
@@ -77,6 +84,10 @@ module _ {L : Machine} where
   ... | zero , _ , zero = final-det fin' fin
   ... | suc _ , _ , suc st _ = ⊥-elim (final-nostep fin' st)
 
+  {- a machine terminates with at most one observation -}
+  terminates-det : ∀ {o₁ o₂} → Terminates L o₁ → Terminates L o₂ → o₁ ≡ o₂
+  terminates-det (_ , σ₁ , f₁) (_ , σ₂ , f₂) = final-unique σ₁ f₁ (proj₂ (star→steps σ₂)) f₂
+
   {- Divergence is never reaching a final state -}
   diverges-not-terminates : ∀ {o} → Diverges L → ¬ Terminates L o
   diverges-not-terminates run (s , σ , fin) with star→steps σ
@@ -106,3 +117,37 @@ data Answers {S₁ : Set} (L₂ : Machine) (R : S₁ → State L₂ → Set)
   : Next S₁ → State L₂ → Set where
   stops : ∀ {o s₂} → Final L₂ s₂ o → Answers L₂ R (stop o) s₂
   steps : ∀ {s₁' s₂ s₂'} → Plus L₂ s₂ s₂' → R s₁' s₂' → Answers L₂ R (next s₁') s₂
+
+{- a target state from which the target reaches a state matching s₁ -}
+Reach : ∀ {S₁ : Set} (L₂ : Machine) → (S₁ → State L₂ → Set) → S₁ → State L₂ → Set
+Reach L₂ R s₁ s₂ = Σ[ t ∈ State L₂ ] Star L₂ s₂ t × R s₁ t
+
+module _ {S₁ : Set} {L₂ : Machine} {R : S₁ → State L₂ → Set} where
+
+  reach : ∀ {s₁ s₂} → R s₁ s₂ → Reach L₂ R s₁ s₂
+  reach m = _ , ε , m
+
+  {- one target step to a match, or one step and then on to a match -}
+  steps₁ : ∀ {s₁ s₂ s₂'} → Step L₂ s₂ s₂' → R s₁ s₂' → Answers L₂ R (next s₁) s₂
+  steps₁ st = steps (step⁺ st)
+
+  after : ∀ {s₁ s₂ s₂'} → Step L₂ s₂ s₂' → Reach L₂ R s₁ s₂' → Answers L₂ R (next s₁) s₂
+  after st (_ , σ , m) = steps (plus st σ) m
+
+  {- both machines continue with related things (next?), or both stop -}
+  next?-reach : ∀ {A B : Set} {P : A → B → Set} {o f g ma mb s₂} → M.Pointwise P ma mb
+    → (∀ {a b} → P a b → Reach L₂ R (f a) (g b)) → Machine.step L₂ s₂ ≡ next? o g mb
+    → Answers L₂ R (next? o f ma) s₂
+  next?-reach (M.just p) h st = after st (h p)
+  next?-reach M.nothing h st = stops st
+
+  next?-answers : ∀ {A B : Set} {P : A → B → Set} {o f g ma mb s₂} → M.Pointwise P ma mb
+    → (∀ {a b} → P a b → R (f a) (g b)) → Machine.step L₂ s₂ ≡ next? o g mb
+    → Answers L₂ R (next? o f ma) s₂
+  next?-answers p h = next?-reach p (λ q → reach (h q))
+
+  {- the same thing in both -}
+  next?-same : ∀ {A : Set} {o f g} {ma : Maybe A} {s₂} → (∀ a → Reach L₂ R (f a) (g a))
+    → Machine.step L₂ s₂ ≡ next? o g ma → Answers L₂ R (next? o f ma) s₂
+  next?-same {ma = just a} h st = after st (h a)
+  next?-same {ma = nothing} h st = stops st

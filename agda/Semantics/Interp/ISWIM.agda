@@ -54,7 +54,7 @@ prim? p v w = map out (δ? p (obs v) (obs w))
 
 project : ∀ {n} → Fin n → Val → Result Val
 project i (tup vs) = from-maybe (proj i vs)
-project i _ = wrong
+project i _ = error
 
 eval : ℕ → Env → AST → Result Val
 {- the values of the rest of a tuple's components, consed onto vs -}
@@ -75,6 +75,7 @@ eval ck ρ (inr-op ⦅ M ,, Nil ⦆) = do v ← eval ck ρ M; ret (inr v)
 eval ck ρ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) = eval ck ρ L >>= branch ck ρ M N
 eval ck ρ (prim p ⦅ L ,, M ,, Nil ⦆) =
   do v ← eval ck ρ L; w ← eval ck ρ M; from-maybe (prim? p v w)
+eval ck ρ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) = do v ← eval ck ρ M; eval ck (v ∷ ρ) N
 
 eval-args {zero} ck ρ vs Nil = ret vs
 eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ (v ∷ vs) args
@@ -82,14 +83,14 @@ eval-args {suc n} ck ρ vs (M ,, args) = do v ← eval ck ρ M; eval-args ck ρ 
 {- the operator is checked before the argument is evaluated (Clos4 and
    Clos5 check only at the call; see Semantics/CEK/ISWIM.agda) -}
 apply ck ρ M (clo N ρ') = do w ← eval ck ρ M; call ck N (w ∷ ρ')
-apply ck ρ M _ = wrong
+apply ck ρ M _ = error
 
 call zero N ρ = timeout
 call (suc ck) N ρ = eval ck ρ N
 
 branch ck ρ M N (inl v) = eval ck (v ∷ ρ) M
 branch ck ρ M N (inr v) = eval ck (v ∷ ρ) N
-branch ck ρ M N _ = wrong
+branch ck ρ M N _ = error
 
 {- a program runs in the empty environment -}
 sem : AST → Semantics

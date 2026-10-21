@@ -1,334 +1,198 @@
 {-
 
-  Correctness of remove complex operands (Clos5 → Clos5,
-  Compiler/RCO.agda): the pass preserves denotations exactly.
+  Correctness of typed remove complex operands (Clos5ᵀ → Monᵀ) in the
+  graph model: the embedding of the output means what the input means.
 
-    rco-correct : ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ    (ρ nonempty, T and ρ consistent)
-    rco-program-correct : ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ
+    rco-sem : ⟦ M ⟧[ T ] γ ≃ ⟦ ⌜ rco M ρ ⌝ ⟧[ T' ] σ
 
-  The laws behind it:
-
-  - let is strict, and otherwise substitutes the meaning of the
-    right-hand side for the variable (let-strict, let-β; let-β uses
-    continuity, hence a nonempty environment, and binds a finite part
-    of the right-hand side, hence a consistent one);
-  - renaming (proof/Framework/GraphModel/RenameSem.agda), for the atoms and the operands that
-    the lets put under more binders;
-  - every operator of a construct whose operands rco names is strict
-    (a Strict operator below), so binding an operand first by a strict
-    let changes nothing (lift-≃, the let chain, stated once);
-
-  after which each construct is one line, by the congruence of its
-  operator.
+  for environments that agree through the renaming ρ (Ag), σ nonempty
+  and consistent, and tables that agree (T' consistent). Every operator
+  rco names the operands of is strict in them (Strict,
+  proof/Framework/GraphModel/Strict.agda), so binding an operand first
+  by a let changes nothing: the let is the β law of its body (Λ-β, the
+  body finitary by its continuity), and the continuation of atomize
+  means the operator on the atom under any extension of the frame
+  (atomize-sem, atomizes-sem, atomize₂-sem).
 
 -}
 
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Ops
-open import proof.Semantics.Graph.Prim
-open import Language.Clos5
-open import proof.Framework.Syntax.Rename Op sig using (rename; rename-args; ext)
-open import Compiler.RCO
-  using (rco; rco-args; rco-program; atom?; lift; case-on)
-open import Semantics.Graph.Clos5Iswim
-  using (Table; ⟦_⟧[_]; ⟦_⟧₊[_]; code; table; ⟦_⟧ₚ; init)
-open import proof.Semantics.Graph.Clos5IswimContinuous
-  using (Clos5-Semantics; ⟦⟧[]-monotone; term-continuous; Clos5-con; table-con)
-import proof.Framework.GraphModel.RenameSem Op sig as RenameSem
-open import proof.Correctness.Graph.GlobalizeCorrect
-  using (RRs; nthD-≃; app-≃; pair-≃; car-≃; cdr-≃; prim-≃)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃)
-open import proof.Correctness.Graph.DelayFiniteCommon using (ρ₀)
-open import proof.Correctness.Graph.CompilerCorrect
-  using (Same; Same-trans; ≃→Same; compile-same)
-open import Compiler.Pipeline using (compile; compile-mon)
-open import proof.Semantics.Graph.ISWIM using () renaming (⟦_⟧ to ⟦_⟧ᵢ)
-import Language.ISWIM as ISWIM
-open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env)
-open import Framework.Syntax.SyntaxUtil using (_,,_; ⟩_,,_; Nil)
-open import Framework.Primitives using (base-rep)
-
-open import Data.Nat using (ℕ; zero; suc; _+_; _≟_)
-open import Data.Nat.Properties using (+-suc; +-identityʳ)
-open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; replicate; map; length)
-open import Data.List.Properties using (length-map)
-open import Data.List.Relation.Unary.Any using (here)
-open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Empty using (⊥-elim)
-open import Data.Unit using (⊤; tt)
-open import Data.Unit.Polymorphic using () renaming (tt to ptt)
-open import Level using (lower) renaming (lift to up)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; subst)
-open import Relation.Nullary using (yes; no)
-
 module proof.Correctness.Graph.RCOCorrect where
 
-{- Laws of the semantics -------------------------------------------------------}
+open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Ops renaming (inl to inlD; inr to inrD)
+open import proof.Framework.GraphModel.ContinuityBase using (mono)
+open import proof.Framework.GraphModel.Env using (Env; nonempty-env; extend-nonempty-env; •-~)
+open import proof.Framework.GraphModel.Strict
+open import proof.Semantics.Graph.Prim using (primD; primD-mono)
+open import proof.Semantics.Graph.Typed.Ops
+open import proof.Semantics.Graph.Typed.Clos5 using (ok; con; table-con; code-con)
+open import Semantics.Graph.Typed.Clos5
+open import Language.Typed.Type hiding (_≟_)
+open import Language.Typed.Clos5
+import Language.Typed.Mon as M
+open M using (Atm; Exp; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
+open import Compiler.RCO
 
-rename-≃ : ∀ T M r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
-  → ⟦ rename r M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ'
-rename-≃ T = RenameSem.rename-≃ {{Clos5-Semantics T}}
+open import Data.List using (List; []; _∷_; length)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
+open import Data.List.Relation.Unary.Any using (here)
+open import Data.Nat using (ℕ; suc; _≟_)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Unit using (⊤; tt)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+open import Data.Vec using (Vec; []; _∷_)
+open import Level using (lift; lower)
+open import Relation.Binary.PropositionalEquality using (refl)
+open import Relation.Nullary using (yes; no)
 
-rename-args-≃ : ∀ T {n} (Ms : Args (replicate n ■)) r (ρ ρ' : Env Value) → (∀ x → ρ (r x) ≃ ρ' x)
-  → RRs (replicate n ■) (⟦ rename-args r Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T ] ρ')
-rename-args-≃ T {zero} Nil r ρ ρ' rel = ptt
-rename-args-≃ T {suc n} (M ,, Ms) r ρ ρ' rel =
-  ⟨ up (rename-≃ T M r ρ ρ' rel) , rename-args-≃ T Ms r ρ ρ' rel ⟩
-
-RRs-refl : ∀ {n} Ds → RRs (replicate n ■) Ds Ds
-RRs-refl {zero} Ds = ptt
-RRs-refl {suc n} ⟨ D , Ds ⟩ = ⟨ up ≃-refl , RRs-refl Ds ⟩
-
-ne-mem : ∀ {V : List Value} {D} → V ≢ [] → mem V ⊆ D → nonempty D
-ne-mem V≢[] V⊆ with E≢[]⇒nonempty-mem V≢[]
-... | ⟨ v , v∈ ⟩ = ⟨ v , V⊆ v v∈ ⟩
-
-{- A ≃ B when they are equal under P and an element of either gives P -}
-strict-≃ : ∀ {P : Set} {A B : 𝒫 Value} → (∀ w → w ∈ A → P) → (∀ w → w ∈ B → P)
-  → (P → A ≃ B) → A ≃ B
-strict-≃ pA pB eq = ⟨ (λ w w∈ → proj₁ (eq (pA w w∈)) w w∈) , (λ w w∈ → proj₂ (eq (pB w w∈)) w w∈) ⟩
-
-LET : AST → AST → AST
-LET M N = let-op ⦅ M ,, ⟩ N ,, Nil ⦆
-
-let-strict : ∀ T M N ρ w → w ∈ ⟦ LET M N ⟧[ T ] ρ → nonempty (⟦ M ⟧[ T ] ρ)
-let-strict T M N ρ w ⟨ V , ⟨ _ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ = ne-mem V≢[] V⊆
-
-let-β : ∀ T M N ρ → nonempty-env ρ → nonempty (⟦ M ⟧[ T ] ρ) → Con (⟦ M ⟧[ T ] ρ)
-  → ⟦ LET M N ⟧[ T ] ρ ≃ ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ)
-let-β T M N ρ NE neD cD = ⟨ G , H ⟩
-  where
-  G : ⟦ LET M N ⟧[ T ] ρ ⊆ ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ)
-  G w ⟨ V , ⟨ ⟨ w∈ , _ ⟩ , ⟨ V⊆ , _ ⟩ ⟩ ⟩ = ⟦⟧[]-monotone T N ⊆ₑ w w∈
-    where ⊆ₑ : ∀ x → (mem V • ρ) x ⊆ (⟦ M ⟧[ T ] ρ • ρ) x
-          ⊆ₑ zero = V⊆
-          ⊆ₑ (suc x) d d∈ = d∈
-  H : ⟦ N ⟧[ T ] (⟦ M ⟧[ T ] ρ • ρ) ⊆ ⟦ LET M N ⟧[ T ] ρ
-  H w w∈ with term-continuous T N _ (extend-nonempty-env NE neD) w w∈
-  ... | ⟨ Vs , ⟨ fin , w∈' ⟩ ⟩ =
-    ⟨ Vs 0 , ⟨ ⟨ ⟦⟧[]-monotone T N ⊆ₑ w w∈' , ⟨ proj₁ (fin 0) , Con⇒≈ (Vs 0) cD (proj₂ (fin 0)) ⟩ ⟩
-             , ⟨ proj₂ (fin 0) , proj₁ (fin 0) ⟩ ⟩ ⟩
-    where ⊆ₑ : ∀ x → mem (Vs x) ⊆ (mem (Vs 0) • ρ) x
-          ⊆ₑ zero d d∈ = d∈
-          ⊆ₑ (suc x) = proj₂ (fin (suc x))
-
-Λ-≃ : ∀ {F F'} → (∀ V → V ≢ [] → V ≈ V → F (mem V) ≃ F' (mem V)) → Λ ⟨ F , ptt ⟩ ≃ Λ ⟨ F' , ptt ⟩
-Λ-≃ {F} {F'} eq = ⟨ G (λ V ne c → proj₁ (eq V ne c)) , G (λ V ne c → proj₂ (eq V ne c)) ⟩
-  where
-  G : ∀ {A B : 𝒫 Value → 𝒫 Value} → (∀ V → V ≢ [] → V ≈ V → A (mem V) ⊆ B (mem V))
-    → Λ ⟨ A , ptt ⟩ ⊆ Λ ⟨ B , ptt ⟩
-  G A⊆ ν tt = tt
-  G A⊆ (V ↦ w) ⟨ w∈ , ne ⟩ = ⟨ A⊆ V (proj₁ ne) (proj₂ ne) w w∈ , ne ⟩
-
-{- Strict operators ----------------------------------------------------------------}
-
-NEs : ∀ n → Results (𝒫 Value) (replicate n ■) → Set
-NEs zero _ = ⊤
-NEs (suc n) ⟨ D , Ds ⟩ = nonempty D × NEs n Ds
-
-{- an operator on n operands, a congruence, empty if one operand is -}
-record Strict (n : ℕ) : Set₁ where
-  field
-    op : Results (𝒫 Value) (replicate n ■) → 𝒫 Value
-    cong : ∀ {Ds Es} → RRs (replicate n ■) Ds Es → op Ds ≃ op Es
-    strict : ∀ Ds w → w ∈ op Ds → NEs n Ds
-open Strict
-
-{- the operator with its first operand fixed to D -}
-_▷_ : ∀ {n} → 𝒫 Value → Strict (suc n) → Strict n
-D ▷ O = record { op = λ Ds → op O ⟨ D , Ds ⟩
-               ; cong = λ eq → cong O ⟨ up ≃-refl , eq ⟩
-               ; strict = λ Ds w w∈ → proj₂ (strict O _ w w∈) }
-
-{- ρ' is ρ under k more bound variables -}
-Ext : ℕ → Env Value → Env Value → Set
-Ext k ρ' ρ = ∀ x → ρ' (k + x) ≃ ρ x
-
-ext-suc : ∀ {k ρ' ρ D} → Ext k ρ' (D • ρ) → Ext (suc k) ρ' ρ
-ext-suc {k} {ρ'} {ρ} e x = subst (λ y → ρ' y ≃ ρ x) (+-suc k x) (e (suc x))
-
-ext-top : ∀ {k ρ' ρ D} → Ext k ρ' (D • ρ) → ρ' k ≃ D
-ext-top {k} {ρ'} {ρ} {D} e = subst (λ y → ρ' y ≃ D) (+-identityʳ k) (e 0)
-
-{- f k, on atoms in an environment ρ under k more bound variables, means O -}
-Denotes : ∀ {n} → Table → (ℕ → Args (replicate n ■) → AST) → Strict n → Env Value → Set₁
-Denotes T f O ρ = ∀ k ρ' As → Ext k ρ' ρ → ⟦ f k As ⟧[ T ] ρ' ≃ op O (⟦ As ⟧₊[ T ] ρ')
-
-{- The let chain: binding the complex operands first does not change the
-   meaning of a strict operator on them -}
-lift-≃ : ∀ T (TC : ∀ k → Con (T k)) {n} f (Ms : Args (replicate n ■)) (O : Strict n) ρ → nonempty-env ρ
-  → Con-env ρ → Denotes T f O ρ → ⟦ lift f Ms ⟧[ T ] ρ ≃ op O (⟦ Ms ⟧₊[ T ] ρ)
-lift-≃ T TC {zero} f Nil O ρ NE C den = den 0 ρ Nil (λ x → ≃-refl)
-lift-≃ T TC {suc n} f (M ,, Ms) O ρ NE C den with atom? M
-... | yes _ = lift-≃ T TC (λ k As → f k (rename (k +_) M ,, As)) Ms (⟦ M ⟧[ T ] ρ ▷ O) ρ NE C
-  λ k ρ' As e → ≃-trans (den k ρ' _ e) (cong O ⟨ up (rename-≃ T M (k +_) ρ' ρ e) , RRs-refl _ ⟩)
-... | no _ = strict-≃ (let-strict T M B ρ) (λ w w∈ → proj₁ (strict O _ w w∈)) λ neD →
-  ≃-trans (let-β T M B ρ NE neD cD)
-  (≃-trans (lift-≃ T TC f' Ms' (D ▷ O) (D • ρ) (extend-nonempty-env NE neD) (Con-• cD C)
-              λ k ρ' As e → ≃-trans (den (suc k) ρ' _ (ext-suc {k} {ρ'} {ρ} {D} e))
-                                    (cong O ⟨ up (ext-top {k} {ρ'} {ρ} {D} e) , RRs-refl _ ⟩))
-           (cong O ⟨ up ≃-refl , rename-args-≃ T Ms suc (D • ρ) ρ (λ x → ≃-refl) ⟩))
-  where D = ⟦ M ⟧[ T ] ρ
-        cD = Clos5-con T TC M C
-        f' = λ k As → f (suc k) (` k ,, As)
-        Ms' = rename-args suc Ms
-        B = lift f' Ms'
-
-{- The operators -----------------------------------------------------------------}
-
-app-op : Strict 3
-app-op = record { op = λ { ⟨ L , ⟨ M , ⟨ N , _ ⟩ ⟩ ⟩ → ⋆ ⟨ ⋆ ⟨ L , ⟨ M , ptt ⟩ ⟩ , ⟨ N , ptt ⟩ ⟩ }
-  ; cong = app-≃
-  ; strict = λ { _ w ⟨ V , ⟨ ⟨ U , ⟨ f∈ , ⟨ U⊆ , U≢[] ⟩ ⟩ ⟩ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ →
-      ⟨ ⟨ _ , f∈ ⟩ , ⟨ ne-mem U≢[] U⊆ , ⟨ ne-mem V≢[] V⊆ , tt ⟩ ⟩ ⟩ } }
-
-pair-op′ : Strict 2
-pair-op′ = record { op = pair ; cong = pair-≃ ; strict = S }
-  where S : ∀ Ds w → w ∈ pair Ds → NEs 2 Ds
-        S _ ⦅ u , v ⦆ ⟨ u∈ , v∈ ⟩ = ⟨ ⟨ u , u∈ ⟩ , ⟨ ⟨ v , v∈ ⟩ , tt ⟩ ⟩
-
-car-op : Strict 1
-car-op = record { op = car ; cong = car-≃ ; strict = λ { _ u ⟨ v , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
-
-cdr-op : Strict 1
-cdr-op = record { op = cdr ; cong = cdr-≃ ; strict = λ { _ v ⟨ u , ∈ ⟩ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ } }
-
-tuple-op : ∀ n → Strict n
-tuple-op n = record { op = 𝒯 n ; cong = λ eq → 𝒯-≃ n (nthD-≃ _ _ eq) ; strict = S n }
-  where
-  all : ∀ n Ds → (∀ j → nonempty (nthD Ds j)) → NEs n Ds
-  all zero Ds ne = tt
-  all (suc n) ⟨ D , Ds ⟩ ne = ⟨ ne zero , all n Ds (λ j → ne (suc j)) ⟩
-  S : ∀ n Ds w → w ∈ 𝒯 n Ds → NEs n Ds
-  S zero Ds w _ = tt
-  S (suc n) Ds (tup[ i ] d) ⟨ refl , ⟨ _ , ne ⟩ ⟩ = all (suc n) Ds ne
-
-get-op : ∀ {n} (i : Fin n) → Strict 1
-get-op i = record { op = proj i ; cong = λ eq → proj-≃ i (lower (proj₁ eq))
-                  ; strict = λ _ d ∈ → ⟨ ⟨ _ , ∈ ⟩ , tt ⟩ }
-
-inl-op′ : Strict 1
-inl-op′ = record { op = inl ; cong = λ eq → inl-≃ (lower (proj₁ eq)) ; strict = S }
-  where S : ∀ Ds w → w ∈ inl Ds → NEs 1 Ds
-        S _ (left v) ∈ = ⟨ ⟨ v , ∈ ⟩ , tt ⟩
-
-inr-op′ : Strict 1
-inr-op′ = record { op = inr ; cong = λ eq → inr-≃ (lower (proj₁ eq)) ; strict = S }
-  where S : ∀ Ds w → w ∈ inr Ds → NEs 1 Ds
-        S _ (right v) ∈ = ⟨ ⟨ v , ∈ ⟩ , tt ⟩
+{- the operators that rco names the operands of, besides Strict.agda's -}
+callc-op : Strict 2
+callc-op = record { op = callcᵈ ; cong = mono-≃ (mono (callc-good {⊤}))
+  ; ne-of = λ { _ w ⟨ V , ⟨ ⟨ U , ⟨ ⟨ _ , p∈ ⟩ , _ ⟩ ⟩ , ⟨ V⊆ , V≢[] ⟩ ⟩ ⟩ → ⟨ ⟨ _ , p∈ ⟩ , ⟨ ne-mem V≢[] V⊆ , tt ⟩ ⟩ } }
 
 prim-op : ∀ p → Strict 2
-prim-op p = record { op = primD p ; cong = prim-≃ p
-  ; strict = λ { _ w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → ⟨ ⟨ _ , n∈ ⟩ , ⟨ ⟨ _ , m∈ ⟩ , tt ⟩ ⟩ } }
+prim-op p = record { op = primD p ; cong = mono-≃ (primD-mono p)
+  ; ne-of = λ { _ w ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , _ ⟩ ⟩ ⟩ ⟩ → ⟨ ⟨ _ , n∈ ⟩ , ⟨ ⟨ _ , m∈ ⟩ , tt ⟩ ⟩ } }
 
-{- case on D, with the branches E and F -}
-case-op′ : (E F : 𝒫 Value → 𝒫 Value) → Strict 1
-case-op′ E F = record { op = λ { ⟨ D , _ ⟩ → 𝒞 ⟨ D , ⟨ E , ⟨ F , ptt ⟩ ⟩ ⟩ }
-  ; cong = λ eq → 𝒞-≃ {F = E} {E} {F} {F} (lower (proj₁ eq)) (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl)
-  ; strict = λ { _ w (inj₁ ⟨ v , ⟨ V , ⟨ l∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , l∈ v (here refl) ⟩ , tt ⟩
-               ; _ w (inj₂ ⟨ v , ⟨ V , ⟨ r∈ , _ ⟩ ⟩ ⟩) → ⟨ ⟨ _ , r∈ v (here refl) ⟩ , tt ⟩ } }
+id-op : Strict 1
+id-op = record { op = proj₁ ; cong = λ eq → lower (proj₁ eq) ; ne-of = λ _ w w∈ → ⟨ ⟨ w , w∈ ⟩ , tt ⟩ }
 
-{- The pass preserves denotations ---------------------------------------------}
+project-op : Tag → Strict 1
+project-op t = record { op = λ Ds → projectᵍ fun₄ t (proj₁ Ds) ; cong = λ eq → project-≃ fun₄ t (lower (proj₁ eq))
+  ; ne-of = λ _ w w∈ → ⟨ ⟨ w , proj₂ w∈ ⟩ , tt ⟩ }
 
-{- a construct c whose operator is O: its operands, under their lets -}
-rco-op : ∀ T T' (TC : ∀ k → Con (T k)) {n} (c : Args (replicate n ■) → AST) (O : Strict n)
-  (Ms : Args (replicate n ■)) ρ → nonempty-env ρ → Con-env ρ → (∀ T ρ As → ⟦ c As ⟧[ T ] ρ ≃ op O (⟦ As ⟧₊[ T ] ρ))
-  → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
-  → ⟦ lift (λ _ → c) (rco-args Ms) ⟧[ T ] ρ ≃ ⟦ c Ms ⟧[ T' ] ρ
-rco-op T T' TC c O Ms ρ NE C den IH =
-  ≃-trans (lift-≃ T TC (λ _ → c) (rco-args Ms) O ρ NE C (λ k ρ' As _ → den T ρ' As))
-          (≃-trans (cong O IH) (≃-sym (den T' ρ Ms)))
+{- the operator O with its operands after the first fixed to Es -}
+first : ∀ {n} → Strict (suc n) → Results (𝒫 Value) (Data.List.replicate n ■) → Strict 1
+first O Es = record { op = λ Ds → op O ⟨ proj₁ Ds , Es ⟩ ; cong = λ eq → cong O ⟨ proj₁ eq , RRs-refl Es ⟩
+  ; ne-of = λ Ds w w∈ → ⟨ proj₁ (ne-of O _ w w∈) , tt ⟩ }
 
-{- with the same meanings in the tables T and T' -}
-rco-sem : ∀ T T' → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ M ρ → nonempty-env ρ → Con-env ρ
-  → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T' ] ρ
-rco-args-sem : ∀ T T' → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ {n} (Ms : Args (replicate n ■)) ρ
-  → nonempty-env ρ → Con-env ρ → RRs (replicate n ■) (⟦ rco-args Ms ⟧₊[ T ] ρ) (⟦ Ms ⟧₊[ T' ] ρ)
+module _ {Σ} {T T' : Table Σ} (cT : ConT T') (TT : ∀ {n} (f : Σ ∋ n) → T f ≃ T' f) where
 
-rco-sem T T' TC TT (` x) ρ NE C = ≃-refl
-rco-sem T T' TC TT (fun-ref k ⦅ Nil ⦆) ρ NE C = TT k
-rco-sem T T' TC TT (app ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (app ⦅_⦆) app-op Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (lit B k ⦅ Nil ⦆) ρ NE C = ≃-refl
-rco-sem T T' TC TT (pair-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (pair-op ⦅_⦆) pair-op′ Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (fst-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (fst-op ⦅_⦆) car-op Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (snd-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (snd-op ⦅_⦆) cdr-op Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (tuple n ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (tuple n ⦅_⦆) (tuple-op n) Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (get i ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (get i ⦅_⦆) (get-op i) Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (inl-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (inl-op ⦅_⦆) inl-op′ Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (inr-op ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (inr-op ⦅_⦆) inr-op′ Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (prim p ⦅ Ms ⦆) ρ NE C = rco-op T T' TC (prim p ⦅_⦆) (prim-op p) Ms ρ NE C (λ _ _ _ → ≃-refl) (rco-args-sem T T' TC TT Ms ρ NE C)
-rco-sem T T' TC TT (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ρ NE C =
-  ≃-trans (lift-≃ T TC (case-on (rco M) (rco N)) (rco L ,, Nil) O ρ NE C den)
-          (cong O ⟨ up (rco-sem T T' TC TT L ρ NE C) , ptt ⟩)
-  where
-  O = case-op′ (λ X → ⟦ M ⟧[ T' ] (X • ρ)) (λ X → ⟦ N ⟧[ T' ] (X • ρ))
-  branch : ∀ k ρ' → Ext k ρ' ρ → ∀ B v V → (v ∷ V) ≈ (v ∷ V)
-    → ⟦ rename (ext (k +_)) (rco B) ⟧[ T ] (mem (v ∷ V) • ρ') ≃ ⟦ B ⟧[ T' ] (mem (v ∷ V) • ρ)
-  branch k ρ' e B v V c =
-    ≃-trans (rename-≃ T (rco B) (ext (k +_)) (mem (v ∷ V) • ρ') (mem (v ∷ V) • ρ)
-               λ { zero → ≃-refl ; (suc x) → e x })
-            (rco-sem T T' TC TT B (mem (v ∷ V) • ρ) (extend-nonempty-env NE ⟨ v , here refl ⟩) (Con-• (≈⇒Con c) C))
-  den : Denotes T (case-on (rco M) (rco N)) O ρ
-  den k ρ' (A ,, Nil) e =
-    𝒞-≃ {⟦ A ⟧[ T ] ρ'} {⟦ A ⟧[ T ] ρ'} {λ X → ⟦ rename (ext (k +_)) (rco M) ⟧[ T ] (X • ρ')} {λ X → ⟦ M ⟧[ T' ] (X • ρ)}
-        {λ X → ⟦ rename (ext (k +_)) (rco N) ⟧[ T ] (X • ρ')} {λ X → ⟦ N ⟧[ T' ] (X • ρ)}
-        ≃-refl (branch k ρ' e M) (branch k ρ' e N)
-rco-sem T T' TC TT (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ρ NE C =
-  ⋆-≃ (Λ-≃ {λ X → ⟦ rco N ⟧[ T ] (X • ρ)} {λ X → ⟦ N ⟧[ T' ] (X • ρ)} λ V ne c →
-         rco-sem T T' TC TT N (mem V • ρ) (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne)) (Con-• (≈⇒Con c) C))
-      (rco-sem T T' TC TT M ρ NE C)
+  {- the frames agree through the renaming ρ -}
+  Ag : ∀ {Γ Δ} → Ren Γ Δ → Env Value → Env Value → Set
+  Ag ρ γ σ = ∀ {A} x → γ (idx x) ≃ σ (idx (ρ {A} x))
 
-rco-args-sem T T' TC TT {zero} Nil ρ NE C = ptt
-rco-args-sem T T' TC TT {suc n} (M ,, Ms) ρ NE C =
-  ⟨ up (rco-sem T T' TC TT M ρ NE C) , rco-args-sem T T' TC TT Ms ρ NE C ⟩
+  ren-atm : ∀ {Δ Δ' A σ σ'} (r : Ren Δ Δ') (a : Atm Σ Δ A) → Ag r σ σ' → ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ ≃ ⟦ ⌜ ren r a ⌝ᵃ ⟧[ T' ] σ'
+  ren-atm r (var x) ag = ag x
+  ren-atm r (lit B c) ag = ≃-refl
+  ren-atm r (ref f) ag = ≃-refl
 
-rco-correct : ∀ T → (∀ k → Con (T k)) → ∀ M ρ → nonempty-env ρ → Con-env ρ
-  → ⟦ rco M ⟧[ T ] ρ ≃ ⟦ M ⟧[ T ] ρ
-rco-correct T TC = rco-sem T T TC (λ k → ≃-refl)
+  {- frames extended through r, nonempty and consistent -}
+  record Ext {Δ Δ'} (r : Ren Δ Δ') (σ σ' : Env Value) : Set where
+    constructor ext′
+    field ne : nonempty-env σ'
+          cn : Con-env σ'
+          agr : Ag r σ σ'
+  open Ext
 
-{- Programs ---------------------------------------------------------------------}
+  rco-sem : ∀ {Γ Δ A} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) γ σ → nonempty-env σ → Con-env σ → Ag ρ γ σ
+    → ⟦ N ⟧[ T ] γ ≃ ⟦ ⌜ rco N ρ ⌝ ⟧[ T' ] σ
 
-code-≃ : ∀ {T T'} → (∀ k → Con (T k)) → (∀ k → T k ≃ T' k) → ∀ N → code T (rco N) ≃ code T' N
-code-≃ {T} {T'} TC TT N =
-  Λ-≃ λ V neV cV → Λ-≃ λ U neU cU → rco-sem T T' TC TT N _
-    (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV))
-                         (E≢[]⇒nonempty-mem neU))
-    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω)))
+  atomize-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) γ σ → nonempty-env σ → Con-env σ
+    → Ag ρ γ σ → (O : Strict 1)
+    → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
+    → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ atomize N ρ k ⌝ ⟧[ T' ] σ
+  {- a complex operand, bound by a let -}
+  let-sem : ∀ {Γ Δ A B} (N : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) γ σ → nonempty-env σ → Con-env σ
+    → Ag ρ γ σ → (O : Strict 1)
+    → (∀ {Δ'} (r : Ren Δ Δ') σ' a → Ext r σ σ' → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ≃ ⟦ ⌜ k r a ⌝ ⟧[ T' ] σ')
+    → op O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ≃ ⟦ ⌜ M.let′ (rco N ρ) (k S (var Z)) ⌝ ⟧[ T' ] σ
+  atomize-sem (` x) ρ k γ σ NE C ag O ks =
+    ≃-trans (cong O ⟨ lift (ag x) , ptt ⟩) (ks (λ y → y) σ _ (ext′ NE C (λ y → ≃-refl)))
+  atomize-sem (fun-ref f) ρ k γ σ NE C ag O ks =
+    ≃-trans (cong O ⟨ lift (TT f) , ptt ⟩) (ks (λ y → y) σ _ (ext′ NE C (λ y → ≃-refl)))
+  atomize-sem (lit B c) ρ k γ σ NE C ag O ks = ks (λ y → y) σ _ (ext′ NE C (λ y → ≃-refl))
+  atomize-sem N@(pack _ _) = let-sem N
+  atomize-sem N@(callc _ _) = let-sem N
+  atomize-sem N@(tuple _) = let-sem N
+  atomize-sem N@(get _ _) = let-sem N
+  atomize-sem N@(inl _) = let-sem N
+  atomize-sem N@(inr _) = let-sem N
+  atomize-sem N@(case _ _ _) = let-sem N
+  atomize-sem N@(prim _ _ _) = let-sem N
+  atomize-sem N@(let′ _ _) = let-sem N
+  atomize-sem N@(inject _ _) = let-sem N
+  atomize-sem N@(project _ _) = let-sem N
+  let-sem N ρ k γ σ NE C ag O ks =
+    ≃-when (λ w w∈ → let ⟨ v , v∈ ⟩ = proj₁ (ne-of O _ w w∈) in ⟨ v , proj₁ IH v v∈ ⟩)
+      (λ { w ⟨ V , ⟨ _ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ → ne-mem ne V⊆ }) λ neD →
+    ≃-trans (cong O ⟨ lift IH , ptt ⟩)
+      (≃-trans (ks S _ (var Z) (ext′ (extend-nonempty-env NE neD) (Con-• (con cT ⌜ rco N ρ ⌝ C) C) (λ y → ≃-refl)))
+               (≃-sym (Λ-β (λ X⊆ → proj₁ okt (•-~ _⊆_ (λ _ _ z → z) X⊆)) (fin₁ okt NE neD) (con cT ⌜ rco N ρ ⌝ C))))
+    where IH = rco-sem N ρ γ σ NE C ag
+          okt = ok cT ⌜ k S (var Z) ⌝
 
-table-rco : ∀ ds k → table (map rco ds) k ≃ table ds k
-table-rco [] k = ≃-refl
-table-rco (N ∷ Ns) k with k ≟ length (map rco Ns) | k ≟ length Ns
-... | yes _ | yes _ = code-≃ (table-con (map rco Ns)) (table-rco Ns) N
-... | no _ | no _ = table-rco Ns k
-... | yes k≡ | no k≢ = ⊥-elim (k≢ (trans k≡ (length-map rco Ns)))
-... | no k≢ | yes k≡ = ⊥-elim (k≢ (trans k≡ (sym (length-map rco Ns))))
+  atomizes-sem : ∀ {Γ Δ n B} (Ns : Vec (Tm Σ Γ Any) n) (ρ : Ren Γ Δ)
+    (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → Exp Σ Δ' B) γ σ → nonempty-env σ → Con-env σ
+    → Ag ρ γ σ → (O : Strict n)
+    → (∀ {Δ'} (r : Ren Δ Δ') σ' as → Ext r σ σ' → op O (⟦ ⌜ as ⌝ᵛ ⟧s[ T' ] σ') ≃ ⟦ ⌜ k r as ⌝ ⟧[ T' ] σ')
+    → op O (⟦ Ns ⟧s[ T ] γ) ≃ ⟦ ⌜ atomizes Ns ρ k ⌝ ⟧[ T' ] σ
+  atomizes-sem [] ρ k γ σ NE C ag O ks = ks (λ y → y) σ [] (ext′ NE C (λ y → ≃-refl))
+  atomizes-sem (N ∷ Ns) ρ k γ σ NE C ag O ks =
+    atomize-sem N ρ _ γ σ NE C ag (first O (⟦ Ns ⟧s[ T ] γ)) λ r σ' a e →
+      atomizes-sem Ns _ _ γ σ' (ne e) (cn e) (λ x → ≃-trans (ag x) (agr e (ρ x))) (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' ▷ O)
+        λ r' σ'' xs e' →
+          ≃-trans (cong O ⟨ lift (ren-atm r' a (agr e')) , RRs-refl _ ⟩)
+                  (ks _ σ'' (ren r' a ∷ xs) (ext′ (ne e') (cn e') (λ y → ≃-trans (agr e y) (agr e' (r y)))))
 
-rco-program-correct : ∀ P → ⟦ rco-program P ⟧ₚ ≃ ⟦ P ⟧ₚ
-rco-program-correct (program ds M) =
-  rco-sem (table (map rco ds)) (table ds) (table-con (map rco ds)) (table-rco ds) M (λ _ → init)
-    (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω)
+  atomize₂-sem : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (N : Tm Σ Γ A₂) (ρ : Ren Γ Δ)
+    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Exp Σ Δ' B) γ σ → nonempty-env σ → Con-env σ
+    → Ag ρ γ σ → (O : Strict 2)
+    → (∀ {Δ'} σ' (a : Atm Σ Δ' A₁) b → op O ⟨ ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' , ⟨ ⟦ ⌜ b ⌝ᵃ ⟧[ T' ] σ' , ptt ⟩ ⟩ ≃ ⟦ ⌜ k a b ⌝ ⟧[ T' ] σ')
+    → op O ⟨ ⟦ L ⟧[ T ] γ , ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩ ⟩ ≃ ⟦ ⌜ atomize₂ L N ρ k ⌝ ⟧[ T' ] σ
+  atomize₂-sem L N ρ k γ σ NE C ag O ks =
+    atomize-sem L ρ _ γ σ NE C ag (first O ⟨ ⟦ N ⟧[ T ] γ , ptt ⟩) λ r σ' a e →
+      atomize-sem N _ _ γ σ' (ne e) (cn e) (λ x → ≃-trans (ag x) (agr e (ρ x))) (⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ' ▷ O)
+        λ r' σ'' b e' →
+          ≃-trans (cong O ⟨ lift (ren-atm r' a (agr e')) , ⟨ lift ≃-refl , ptt ⟩ ⟩) (ks σ'' (ren r' a) b)
 
-{- The whole compiler, into monadic normal form --------------------------------
+  {- under a binder -}
+  ag-ext : ∀ {Γ Δ B} {ρ : Ren Γ Δ} {γ σ X} → Ag ρ γ σ → Ag (ext {B = B} ρ) (X • γ) (X • σ)
+  ag-ext ag Z = ≃-refl
+  ag-ext ag (S x) = ag x
 
-  compile-mon = rco-program ∘ compile (Compiler/Pipeline.agda): as for
-  compile (CompilerCorrect.agda), the result produces the same constants
-  as the ISWIM program, and produces something exactly when it does. -}
+  rco-sem (` x) ρ γ σ NE C ag = ag x
+  rco-sem (fun-ref f) ρ γ σ NE C ag = TT f
+  rco-sem (pack L N) ρ γ σ NE C ag = atomize₂-sem L N ρ M.pack γ σ NE C ag pair-op′ λ _ _ _ → ≃-refl
+  rco-sem (callc L N) ρ γ σ NE C ag = atomize₂-sem L N ρ M.callc γ σ NE C ag callc-op λ _ _ _ → ≃-refl
+  rco-sem (lit B c) ρ γ σ NE C ag = ≃-refl
+  rco-sem (tuple Ns) ρ γ σ NE C ag = atomizes-sem Ns ρ _ γ σ NE C ag (tuple-op _) λ _ _ _ _ → ≃-refl
+  rco-sem (get i N) ρ γ σ NE C ag = atomize-sem N ρ _ γ σ NE C ag (get-op i) λ _ _ _ _ → ≃-refl
+  rco-sem (inl N) ρ γ σ NE C ag = atomize-sem N ρ _ γ σ NE C ag inl-op′ λ _ _ _ _ → ≃-refl
+  rco-sem (inr N) ρ γ σ NE C ag = atomize-sem N ρ _ γ σ NE C ag inr-op′ λ _ _ _ _ → ≃-refl
+  rco-sem (case L N₁ N₂) ρ γ σ NE C ag =
+    atomize-sem L ρ _ γ σ NE C ag (case-op′ (λ X → ⟦ N₁ ⟧[ T ] (X • γ)) (λ X → ⟦ N₂ ⟧[ T ] (X • γ)))
+      λ r σ' a e →
+        let ag₁ = λ {A} (x : _ ∋ A) → ≃-trans (ag x) (agr e (ρ x))
+            br : ∀ (N' : Tm Σ _ Any) v V → (v ∷ V) ≈ (v ∷ V) → _
+            br N' v V c = rco-sem N' _ (mem (v ∷ V) • γ) (mem (v ∷ V) • σ')
+                            (extend-nonempty-env (ne e) ⟨ v , here refl ⟩) (Con-• (≈⇒Con c) (cn e)) (ag-ext ag₁)
+        in 𝒞-≃ {D = ⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ'} {⟦ ⌜ a ⌝ᵃ ⟧[ T' ] σ'} {λ X → ⟦ N₁ ⟧[ T ] (X • γ)} {λ X → ⟦ ⌜ rco N₁ (ext λ x → r (ρ x)) ⌝ ⟧[ T' ] (X • σ')}
+               {λ X → ⟦ N₂ ⟧[ T ] (X • γ)} {λ X → ⟦ ⌜ rco N₂ (ext λ x → r (ρ x)) ⌝ ⟧[ T' ] (X • σ')}
+               ≃-refl (br N₁) (br N₂)
+  rco-sem (prim p L N) ρ γ σ NE C ag = atomize₂-sem L N ρ (M.prim p) γ σ NE C ag (prim-op p) λ _ _ _ → ≃-refl
+  rco-sem (let′ N₁ N₂) ρ γ σ NE C ag =
+    ⋆-≃ (Λ-≃ {λ X → ⟦ N₂ ⟧[ T ] (X • γ)} {λ X → ⟦ ⌜ rco N₂ (ext ρ) ⌝ ⟧[ T' ] (X • σ)} λ V ne c →
+           rco-sem N₂ (ext ρ) (mem V • γ) (mem V • σ) (extend-nonempty-env NE (E≢[]⇒nonempty-mem ne))
+             (Con-• (≈⇒Con c) C) (ag-ext ag))
+        (rco-sem N₁ ρ γ σ NE C ag)
+  rco-sem (inject G N) ρ γ σ NE C ag = atomize-sem N ρ _ γ σ NE C ag id-op λ _ _ _ _ → ≃-refl
+  rco-sem (project t N) ρ γ σ NE C ag = atomize-sem N ρ _ γ σ NE C ag (project-op t) λ _ _ _ _ → ≃-refl
 
-compile-mon-same : ∀ (M : ISWIM.AST) → Same (⟦ M ⟧ᵢ ρ₀) ⟦ compile-mon M ⟧ₚ
-compile-mon-same M =
-  Same-trans (compile-same M) (≃→Same (≃-sym (rco-program-correct (compile M))))
+{- Programs ---------------------------------------------------------------------------}
 
-compile-mon-correct-const : ∀ (M : ISWIM.AST) → ∀ {B} (c : base-rep B)
-  → (const c ∈ ⟦ M ⟧ᵢ ρ₀ → const c ∈ ⟦ compile-mon M ⟧ₚ)
-  × (const c ∈ ⟦ compile-mon M ⟧ₚ → const c ∈ ⟦ M ⟧ᵢ ρ₀)
-compile-mon-correct-const M = proj₁ (compile-mon-same M)
+{- the table of the output means what the table of the input does -}
+table-rco : ∀ {Σ ns} (ds : All (Code Σ) ns) {n} (f : Σ ∋ n)
+  → tables code′ ds f ≃ tables code′ (All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds)) f
+table-rco [] f = ≃-refl
+table-rco {ns = _ ∷ ns} (d ∷ ds) f with lvl f ≟ length ns
+... | yes _ = Λ-≃ λ V neV cV → Λ-≃ λ U neU cU →
+  rco-sem (tables-con code-con (All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds))) (table-rco ds) d (λ x → x) _ _
+    (extend-nonempty-env (extend-nonempty-env (λ _ → ⟨ ω , refl ⟩) (E≢[]⇒nonempty-mem neV)) (E≢[]⇒nonempty-mem neU))
+    (Con-• (≈⇒Con cU) (Con-• (≈⇒Con cV) (λ _ → Con-⌈⌉ ω))) (λ x → ≃-refl)
+... | no _ = table-rco ds f
 
-compile-mon-correct-nonempty : ∀ (M : ISWIM.AST)
-  → (nonempty (⟦ M ⟧ᵢ ρ₀) → nonempty ⟦ compile-mon M ⟧ₚ)
-  × (nonempty ⟦ compile-mon M ⟧ₚ → nonempty (⟦ M ⟧ᵢ ρ₀))
-compile-mon-correct-nonempty M = proj₂ (compile-mon-same M)
+rco-correct : ∀ (P : Program) → ⟦ P ⟧ₚ ≃ ⟦ ⌜ rco-program P ⌝ₚ ⟧ₚ
+rco-correct (program ds N) =
+  rco-sem (table-con (All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds))) (table-rco ds) N (λ x → x) _ _
+    (λ _ → ⟨ ω , refl ⟩) (λ _ → Con-⌈⌉ ω) (λ x → ≃-refl)

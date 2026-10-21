@@ -1,74 +1,138 @@
 {-
 
-  Definitions shared by the soundness and adequacy proofs for Clos5
-  (see Adequacy/Clos5.agda for the overview):
+  Definitions shared by the soundness and adequacy proofs for the Clos5ᵀ
+  machine (see proof/Adequacy/Clos5.agda):
 
-  * s ↠ t, runs of the Clos5 machine of a table ds from any state, and
-    their determinism;
-  * where a definition found by the machine (global ds k) sits in the
-    table, and what the semantics makes of it (table-at, table-agree).
+  * runs of the machine of a table ds from any state, evaluation of a
+    term to a value (⇓) and its determinism, observed at every type
+    through a continuation that ends in halt (probe);
+  * the definitions older than a definition f (older f, drop f), and
+    what the semantics makes of the table: definition f means its code
+    with the table of the older ones (table-at), and the older
+    definitions mean the same in the table of all of them as in their
+    own (agree);
+  * the inversions of Clos5Values.agda.
 
 -}
 
-open import Data.List using (List; []; _∷_; _++_; length)
-open import Language.Clos5 using (AST; global)
+open import Data.List using (List; []; _∷_; length)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Nat using (ℕ; zero; suc; _<_; _≟_)
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Language.Typed.Clos5
 
-module proof.Adequacy.Clos5Common (ds : List AST) where
+module proof.Adequacy.Clos5Common {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
+open import Framework.Primitives using (Base; base-rep)
 open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.Domain using (ν)
-open import Semantics.Graph.Clos5Iswim using (table) renaming (code to codeD)
-open import proof.Correctness.Graph.GlobalizeCorrect using (table-ext; table-top)
-open import proof.Framework.ListUtil using (reverse-‼-split)
-open import Semantics.CEK.Clos5
-open import proof.Compiler.GlobalizeTable using (_⊑_)
-open import proof.Adequacy.Clos5WF using (DefsWF)
-open import proof.Adequacy.Common using (module Runs)
+open import proof.Framework.GraphModel.Domain
+  using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩) renaming (const to dconst)
+open import proof.Framework.GraphModel.Ops using (ℬ; pair; 𝒯; nthD) renaming (inl to inlD; inr to inrD)
+open import Semantics.Graph.Typed.Ops using (Table; tables)
+open import Semantics.CEK.Typed.Clos5
+open import Framework.Lookup using (_!_)
+open import proof.Framework.Runs using (module Runs)
 
-open import Data.List.Properties
-  using ()
-open import Data.Maybe using (just)
-open import Data.Nat using (_<_; _≟_)
-open import Data.Nat.Properties using (n<1+n; ≤-pred; m≤n⇒m<n∨m≡n)
-open import Data.Product using (Σ-syntax; _×_; _,_; proj₂)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans)
-open import Relation.Nullary using (yes; no)
 open import Data.Empty using (⊥-elim)
-
-{- Runs of the machine -----------------------------------------------------------}
+open import Data.Fin using (Fin; zero; suc)
+open import Data.Nat.Properties using (<-irrefl; <-trans; ≤-refl; m<n⇒m<1+n)
+open import Data.Product using (_×_; Σ-syntax; ∃-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Unit using (⊤; tt)
+open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+open import Data.Vec using (Vec; []; _∷_; replicate)
+open import Framework.VecUtil using (_<><_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst)
+open import Relation.Nullary using (yes; no)
 
 open Runs (step ds) public
+open import proof.Adequacy.Clos5Values using (lvl<; lvl-inj; ℬ-inv; pair-inv; inl-inv; inr-inv; 𝒯-inv) public
 
-{- The table of global definitions ------------------------------------------------}
+{- The older definitions ---------------------------------------------------------}
 
-{- the definition that the machine finds at k sits on top of the k
-   definitions older than it -}
-global-split : ∀ k {B} → global ds k ≡ just B → Σ[ Ns ∈ List AST ] (B ∷ Ns ⊑ ds) × length Ns ≡ k
-global-split k eq with reverse-‼-split ds k eq
-... | xs , Ns , e , len = Ns , (xs , e) , len
+older : ∀ {ns : List ℕ} {n} → ns ∋ n → List ℕ
+older {_ ∷ ns} Z = ns
+older (S f) = older f
 
-DefsWF-⊑ : ∀ {Ns} → Ns ⊑ ds → DefsWF ds → DefsWF Ns
-DefsWF-⊑ (xs , refl) = go xs
-  where
-  go : ∀ xs {Ns} → DefsWF (xs ++ Ns) → DefsWF Ns
-  go [] w = w
-  go (x ∷ xs) w = go xs (proj₂ w)
+drop : ∀ {P : ℕ → Set} {ns n} (f : ns ∋ n) → All P ns → All P (older f)
+drop Z (_ ∷ ps) = ps
+drop (S f) (_ ∷ ps) = drop f ps
 
-{- the meaning of a definition, with the table of the older ones -}
-table-at : ∀ {B Ns} → B ∷ Ns ⊑ ds → table ds (length Ns) ≡ codeD (table Ns) B
-table-at {B} {Ns} (xs , refl) =
-  trans (table-ext xs (B ∷ Ns) (length Ns) (n<1+n (length Ns))) (table-top B Ns)
+older-lvl : ∀ {ns : List ℕ} {n} (f : ns ∋ n) → length (older f) ≡ lvl f
+older-lvl Z = refl
+older-lvl (S f) = older-lvl f
 
-{- the older definitions mean the same in the whole table -}
-table-agree : ∀ {Ns} → Ns ⊑ ds → ∀ j → j < length Ns → table ds j ≡ table Ns j
-table-agree {Ns} (xs , refl) j j< = table-ext xs Ns j j<
+module _ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) where
 
-{- every existing definition is a function -}
-ν-table : ∀ (Ns : List AST) k → k < length Ns → ν ∈ table Ns k
-ν-table (N ∷ Ns) k k< with k ≟ length Ns
-... | yes _ = tt
-... | no k≢ with m≤n⇒m<n∨m≡n (≤-pred k<)
-...   | inj₁ lt = ν-table Ns k lt
-...   | inj₂ eq = ⊥-elim (k≢ eq)
+  {- definition g of a part ps of the table, reached through r -}
+  table-at′ : ∀ {ns} (ps : All D ns) (r : ∀ {n} → ns ∋ n → Σ ∋ n) → (∀ {n} (g : ns ∋ n) → lvl (r g) ≡ lvl g)
+    → ∀ {n} (g : ns ∋ n) → tables cd ps (r g) ≡ cd (tables cd (drop g ps)) (ps ! g)
+  table-at′ {_ ∷ ns} (p ∷ ps) r rl Z with lvl (r Z) ≟ length ns
+  ... | yes _ = refl
+  ... | no ne = ⊥-elim (ne (rl Z))
+  table-at′ {_ ∷ ns} (p ∷ ps) r rl (S g) with lvl (r (S g)) ≟ length ns
+  ... | yes e = ⊥-elim (<-irrefl (trans (sym (rl (S g))) e) (lvl< g))
+  ... | no _ = table-at′ ps (λ x → r (S x)) (λ x → rl (S x)) g
+
+  {- the definitions older than f mean the same without the newer ones -}
+  agree : ∀ {ns n} (ps : All D ns) (f : ns ∋ n) {m} (g : Σ ∋ m) → lvl g < length (older f)
+    → tables cd ps g ≡ tables cd (drop f ps) g
+  agree {_ ∷ ns} (p ∷ ps) Z g g< with lvl g ≟ length ns
+  ... | yes e = ⊥-elim (<-irrefl e g<)
+  ... | no _ = refl
+  agree {_ ∷ ns} (p ∷ ps) (S f) g g< with lvl g ≟ length ns
+  ... | yes e = ⊥-elim (<-irrefl e (<-trans g< (subst (_< length ns) (sym (older-lvl f)) (lvl< f))))
+  ... | no _ = agree ps f g g<
+
+table-at : ∀ {D : ℕ → Set} (cd : Table Σ → ∀ {n} → D n → 𝒫 Value) (ps : All D Σ)
+  → ∀ {n} (f : Σ ∋ n) → tables cd ps f ≡ cd (tables cd (drop f ps)) (ps ! f)
+table-at cd ps = table-at′ cd ps (λ x → x) (λ _ → refl)
+
+{- Evaluation ----------------------------------------------------------------------}
+
+infix 4 _⊢_⇓_
+_⊢_⇓_ : ∀ {Γ A} → Env Σ Γ → Tm Σ Γ A → Val Σ A → Set
+γ ⊢ M ⇓ v = ∀ κ → eval M γ κ ↠ ret v κ
+
+{- a value of each type, observed through a continuation that halts -}
+unit-tup : ∀ n → Val Σ ⟪ tup n ⟫
+unit-tup n = tup (replicate n (dyn (tup 0) (tup [])))
+
+K₀ : ∀ A → Cont Σ A
+K₀ Any = halt
+K₀ ⟪ G ⟫ = injK G halt
+K₀ (code n) = letK (inject fun (pack (` Z) (` (S Z)))) (unit-tup n ∷ []) halt
+
+W : ∀ {A} → Val Σ A → Val Σ Any
+W {Any} v = v
+W {⟪ G ⟫} v = dyn G v
+W {code n} v = dyn fun (pack v (unit-tup n))
+
+probe : ∀ {A} (v : Val Σ A) → ret v (K₀ A) ↠ ret (W v) halt
+probe {Any} v = done
+probe {⟪ G ⟫} v = refl ∷↠ done
+probe {code n} v = refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ refl ∷↠ done
+
+W-inj : ∀ {A} {v₁ v₂ : Val Σ A} → W v₁ ≡ W v₂ → v₁ ≡ v₂
+W-inj {Any} e = e
+W-inj {⟪ G ⟫} refl = refl
+W-inj {code n} refl = refl
+
+private
+  ret-inj : ∀ {a b : Val Σ Any} → ret a halt ≡ ret b halt → a ≡ b
+  ret-inj refl = refl
+
+⇓-det : ∀ {Γ A} {γ : Env Σ Γ} {M : Tm Σ Γ A} {v₁ v₂} → γ ⊢ M ⇓ v₁ → γ ⊢ M ⇓ v₂ → v₁ ≡ v₂
+⇓-det {A = A} {v₁ = v₁} {v₂} e₁ e₂ =
+  W-inj (ret-inj (↠-final-det (e₁ (K₀ A) ++↠ probe v₁) (e₂ (K₀ A) ++↠ probe v₂) refl refl))
+
+{- the values of a tuple's components ---------------------------------------------}
+
+data Evals {Γ} (γ : Env Σ Γ) : ∀ {j} → Vec (Tm Σ Γ Any) j → Vec (Val Σ Any) j → Set where
+  [] : Evals γ [] []
+  _∷_ : ∀ {j M v} {Ms : Vec _ j} {vs} → γ ⊢ M ⇓ v → Evals γ Ms vs → Evals γ (M ∷ Ms) (v ∷ vs)
+
+tuple-run : ∀ {Γ m j} {γ : Env Σ Γ} (acc : Vec _ m) (Ms : Vec (Tm Σ Γ Any) j) {vs} → Evals γ Ms vs
+  → ∀ κ → tuple-next acc Ms γ κ ↠ ret (tup (acc <>< vs)) κ
+tuple-run acc [] [] κ = done
+tuple-run {γ = γ} acc (M ∷ Ms) (ev ∷ evs) κ = ev (tupK acc Ms γ κ) ++↠ refl ∷↠ tuple-run (_ ∷ acc) Ms evs κ

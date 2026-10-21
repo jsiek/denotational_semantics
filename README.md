@@ -3,21 +3,52 @@ Denotational semantics based on graph and filter models
 
 ## The closure-conversion compiler
 
-`agda/All.agda` gathers a closure-conversion compiler, from ISWIM to
-X86, and its correctness proofs, in four styles (denotational: graph
-model; CEK machine + simulation, after CompCert; clocked interpreter +
-value relations, after CakeML; reduction semantics + simulation, by
-substitution), with the adequacy of the graph model for the machines:
+`agda/All.agda` gathers a compiler from ISWIM to X86ᵀ, a typed assembly
+language, with closure conversion and intrinsically typed intermediate
+languages, and its
+correctness proofs, in five styles (denotational: graph model; CEK
+machine + simulation, after CompCert; clocked interpreter + value
+relations, after CakeML; reduction semantics + simulation, by
+substitution; and the graph model with errors), with the adequacy of the
+two graph models for the machines:
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
-          --lift locals--> Imp --explicate control--> CFG
-          --select instructions--> X86
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --CC: enclose--> Clos2ᵀ
+          --CC: optimize--> Clos2ᵀ --CC: concretize--> Clos3ᵀ --CC: delay--> Clos4ᵀ
+          --CC: globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
-The public theorem statements are in `agda/Theorems/`; with the
-definitions they use (everything outside `agda/proof/`) they are what
-must be read to trust the results, and `agda/proof/` holds the proofs.
-See `agda/README.md`.
+(The passes marked "CC:" are the closure-conversion passes; the
+languages marked ᵀ are intrinsically typed.)
+
+The source, ISWIM, is untyped. Cast insertion, after *Essentials of
+Compilation*, ch. 9, makes every check of the kind of a value explicit,
+as a `project` from the type `Any` of tagged values; in the typed
+languages after it, `project` is the only operation that can fail. The
+target, X86ᵀ, is x86 with variables over abstract values, intrinsically
+typed after Morrisett, Walker, Crary and Glew's TAL: its instructions
+are typed by the types of the registers, the frame and the flag they
+start and end with, and its only check is `project`'s (`chk`), which
+stands for the X86 instruction that errs on a value of another kind.
+Without its types, the code is that of x86 with variables (untyped X86),
+which select emitted before (an assurance theorem,
+`agda/Theorems/X86Erasure.agda`).
+
+The first pass, simplify (ISWIM → ISWIM), is a source optimizer, a
+simplified version of Chez Scheme's cp0: constant folding, case of a
+known injection, projection from a known tuple, β on values (and on
+`let`), and inlining of known functions (under fuel, when the result is
+small); an operand that is not a value stays bound by a `let`.
+
+The untyped pipeline that preceded this one (ISWIM → Clos2 → … → Clos5
+→ Imp → CFG → X86, with untyped intermediate languages whose semantics
+check kinds themselves) is preserved, with its proofs in the same five
+styles, in `agda/Untyped/`; `make check` checks it too.
+
+The public theorem statements are in `agda/Theorems/` (and
+`agda/Untyped/Theorems/`); with the definitions they use (everything
+outside the `proof/` directories) they are what must be read to trust
+the results, and `agda/proof/` (and `agda/Untyped/proof/`) holds the
+proofs. See `agda/README.md`.
 
 It needs only the Agda standard library, and is checked with `--safe`
 (so nothing postulated is used). From the root of the repository:
@@ -30,13 +61,17 @@ version 2.4 of the standard library.
 
 The parts of the abt library that it uses are in `agda/Framework/abt/`.
 
-A pilot of a fifth style, denotational: Scott domains (`agda/AllScott.agda`,
-`agda/Theorems/Scott.agda`), also needs TypeTopology; check it with
+Line counts of the proofs, and their comparison, are in
+`papers/PLDI-2027/loc.md` (`python3 papers/PLDI-2027/loc.py`, and
+`--untyped` for the preserved pipeline).
+
+The denotational: Scott domains column (`agda/AllScott.agda`,
+`agda/Mu/Theorems/Scott.agda`) also needs TypeTopology; check it with
 
     make check-scott
 
 which clones TypeTopology at a pinned commit into `_deps/` (not tracked),
-patches it, and checks the pilot against it and the standard library.
+patches it, and checks the column against it and the standard library.
 
 ## Other developments
 

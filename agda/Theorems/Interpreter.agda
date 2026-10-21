@@ -1,71 +1,77 @@
 {-
 
-  The correctness of the compiler, by clocked interpreters and value
-  relations: the public statements.
-  The proofs (clock for clock) are in
-  proof/Correctness/Interp/; each theorem here is one of
-  them, with its type written out, so that it can be read without opening
-  proof/.
+  The correctness of the compiler (Compiler/Pipeline.agda),
+  by clocked interpreters and value relations: the public statements.
+  The proofs (clock for clock) are in proof/Correctness/Interp/;
+  each theorem here is one of them, with its type written out.
 
-    ISWIM --enclose--> Clos2 --optimize--> Clos2 --concretize--> Clos3
-          --delay--> Clos4 --globalize--> Clos5 --rco--> Clos5
-          --lift locals--> Imp --explicate control--> CFG
-          --select instructions--> X86
+    ISWIM --simplify--> ISWIM --cast insertion--> ISWIMᵀ --enclose--> Clos2ᵀ
+          --optimize--> Clos2ᵀ --concretize--> Clos3ᵀ --delay--> Clos4ᵀ
+          --globalize--> Clos5ᵀ --rco--> Monᵀ --lift locals--> Impᵀ
+          --explicate control--> CFGᵀ --select instructions--> X86ᵀ
 
-  Each language has an interpreter with a clock
-  (Semantics/Interp/, here Lᵢ.sem for language L): a program
-  terminates with an observation (Semantics/Observation.agda) when, for
-  some clock, it returns a value observed as o or goes wrong (o-wrong),
-  and diverges when it times out for every clock. Two programs are
-  Equivalent (Framework/Clocked.agda) when each terminates with o exactly
-  when the other does, and one diverges exactly when the other does.
+  Each language has an interpreter with a clock (Semantics/Interp/ for
+  ISWIM, Semantics/Interp/Typed/ for the typed languages, X86ᵀ among
+  them; here Lᵢ.sem for language L). A typed interpreter is a total
+  function of typed terms to typed values, which errs only where a
+  project fails (in X86ᵀ, at chk, project's check).
+  Monᵀ runs as its embedding ⌜ P ⌝ₚ into Clos5ᵀ. A program terminates
+  with an observation (Semantics/Observation.agda) when, for some clock,
+  it returns a value observed as o or errors (o-error), and diverges
+  when it times out for every clock. Two programs are Equivalent
+  (Framework/Clocked.agda) when each terminates with o exactly when the
+  other does, and one diverges exactly when the other does.
 
-  To read them: the languages (Language/), the passes
-  (Compiler/), the interpreters, the observations, and the
-  preconditions: Closed (Compiler/EncloseScope.agda), WS
-  (Framework/Syntax/Scope.agda), Scoped (Compiler/PipelineScope.agda)
-  and MonProgram (Language/Mon.agda).
+  To read them: the languages (Language/, Language/Typed/), the passes
+  (Compiler/), the interpreters, the observations, and
+  the precondition Closed (Compiler/EncloseScope.agda).
 
 -}
 
 module Theorems.Interpreter where
 
-open import Semantics.Observation using (o-const; o-wrong; Converges; _⇔_)
+open import Semantics.Observation using (o-const; o-error; Converges; _⇔_)
 open import Semantics.Interp.Clock using (Terminates; Diverges; Equivalent)
 
 import Language.ISWIM as ISWIM
-import Language.Clos2 as Clos2
-import Language.Clos3 as Clos3
-import Language.Clos4 as Clos4
-import Language.Clos5 as Clos5
-open import Language.Mon using (MonProgram)
-import Language.Imp as Imp
-import Language.CFG as CFG
+open import Language.Typed.Type using (Any)
+import Language.Typed.ISWIM as ISWIMᵀ
+import Language.Typed.Clos2 as Clos2ᵀ
+import Language.Typed.Clos3 as Clos3ᵀ
+import Language.Typed.Clos4 as Clos4ᵀ
+import Language.Typed.Clos5 as Clos5ᵀ
+import Language.Typed.Mon as Monᵀ
+open Monᵀ using (⌜_⌝ₚ)
+import Language.Typed.Imp as Impᵀ
+import Language.Typed.CFG as CFGᵀ
+open import Data.List using ([])
 
+open import Compiler.Simplify using (simplify)
+open import Compiler.Cast using (cast-closed)
 open import Compiler.Enclose using (enclose)
 open import Compiler.Optimize using (optimize-program)
 open import Compiler.Concretize using (concretize-program)
-open import Compiler.Delay using (delay)
+open import Compiler.Delay using (delay-program)
 open import Compiler.Globalize using (globalize)
 open import Compiler.RCO using (rco-program)
 open import Compiler.LiftLocals using (lift-program)
 open import Compiler.Explicate using (explicate)
 open import Compiler.Select using (select)
 open import Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
-
 open import Compiler.EncloseScope using (Closed)
-open import Framework.Syntax.Scope Clos2.Op Clos2.sig using (WS)
-open import Compiler.PipelineScope using (Scoped)
 
 import Semantics.Interp.ISWIM as ISWIMᵢ
-import Semantics.Interp.Clos2 as Clos2ᵢ
-import Semantics.Interp.Clos3 as Clos3ᵢ
-import Semantics.Interp.Clos4 as Clos4ᵢ
-import Semantics.Interp.Clos5 as Clos5ᵢ
-import Semantics.Interp.Imp as Impᵢ
-import Semantics.Interp.CFG as CFGᵢ
-import Semantics.Interp.X86 as X86ᵢ
+import Semantics.Interp.Typed.ISWIM as ISWIMᵀᵢ
+import Semantics.Interp.Typed.Clos2 as Clos2ᵀᵢ
+import Semantics.Interp.Typed.Clos3 as Clos3ᵀᵢ
+import Semantics.Interp.Typed.Clos4 as Clos4ᵀᵢ
+import Semantics.Interp.Typed.Clos5 as Clos5ᵀᵢ
+import Semantics.Interp.Typed.Imp as Impᵀᵢ
+import Semantics.Interp.Typed.CFG as CFGᵀᵢ
+import Semantics.Interp.Typed.X86 as X86ᵀᵢ
 
+import proof.Correctness.Interp.SimplifyFuel as SimplifyFuel
+import proof.Correctness.Interp.CastFuel as CastFuel
 import proof.Correctness.Interp.EncloseFuel as EncloseFuel
 import proof.Correctness.Interp.OptimizeFuel as OptimizeFuel
 import proof.Correctness.Interp.ConcretizeFuel as ConcretizeFuel
@@ -79,82 +85,82 @@ import proof.Correctness.Interp.CompilerFuel as CompilerFuel
 
 {- Each pass ------------------------------------------------------------------}
 
-{- enclose, for closed programs -}
-enclose-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (Clos2ᵢ.sem (enclose M))
+{- simplify, for closed programs (clock-monotone) -}
+simplify-correct : ∀ (M : ISWIM.AST) → Closed M
+  → Equivalent (ISWIMᵢ.sem M) (ISWIMᵢ.sem (simplify M))
+simplify-correct = SimplifyFuel.simplify-correct
+
+cast-correct : ∀ (M : ISWIM.AST) → Closed M → Equivalent (ISWIMᵢ.sem M) (ISWIMᵀᵢ.sem (cast-closed M))
+cast-correct = CastFuel.cast-correct
+
+enclose-correct : ∀ (M : ISWIMᵀ.Tm 0 Any) → Equivalent (ISWIMᵀᵢ.sem M) (Clos2ᵀᵢ.sem (enclose M))
 enclose-correct = EncloseFuel.enclose-correct
 
-{- optimize, for well-scoped programs (which enclose produces) -}
-optimize-correct : ∀ (M : Clos2.AST) → WS 0 M
-  → Equivalent (Clos2ᵢ.sem M) (Clos2ᵢ.sem (optimize-program M))
+optimize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵢ.sem M) (Clos2ᵀᵢ.sem (optimize-program M))
 optimize-correct = OptimizeFuel.optimize-correct
 
-concretize-correct : ∀ (M : Clos2.AST)
-  → Equivalent (Clos2ᵢ.sem M) (Clos3ᵢ.sem (concretize-program M))
+concretize-correct : ∀ (M : Clos2ᵀ.Tm 0 Any) → Equivalent (Clos2ᵀᵢ.sem M) (Clos3ᵀᵢ.sem (concretize-program M))
 concretize-correct = ConcretizeFuel.concretize-correct
 
-delay-correct : ∀ (M : Clos3.AST) → Equivalent (Clos3ᵢ.sem M) (Clos4ᵢ.sem (delay M))
+delay-correct : ∀ (M : Clos3ᵀ.Tm [] Any) → Equivalent (Clos3ᵀᵢ.sem M) (Clos4ᵀᵢ.sem (delay-program M))
 delay-correct = DelayFuel.delay-correct
 
-globalize-correct : ∀ (M : Clos4.AST) → Equivalent (Clos4ᵢ.sem M) (Clos5ᵢ.sem (globalize M))
+globalize-correct : ∀ (M : Clos4ᵀ.Tm [] Any) → Equivalent (Clos4ᵀᵢ.sem M) (Clos5ᵀᵢ.sem (globalize M))
 globalize-correct = GlobalizeFuel.globalize-correct
 
-{- remove complex operands, for well-scoped programs (which the compiler
-   produces) -}
-rco-correct : ∀ (P : Clos5.Program) → Scoped P
-  → Equivalent (Clos5ᵢ.sem P) (Clos5ᵢ.sem (rco-program P))
+rco-correct : ∀ (P : Clos5ᵀ.Program) → Equivalent (Clos5ᵀᵢ.sem P) (Clos5ᵀᵢ.sem ⌜ rco-program P ⌝ₚ)
 rco-correct = RCOFuel.rco-correct
 
-{- lift locals, for programs in monadic normal form (which rco produces) -}
-lift-locals-correct : ∀ (P : Clos5.Program) (mp : MonProgram P)
-  → Equivalent (Clos5ᵢ.sem P) (Impᵢ.sem (lift-program P mp))
-lift-locals-correct = LiftLocalsFuel.lift-correct
+lift-locals-correct : ∀ (P : Monᵀ.Program) → Equivalent (Clos5ᵀᵢ.sem ⌜ P ⌝ₚ) (Impᵀᵢ.sem (lift-program P))
+lift-locals-correct = LiftLocalsFuel.lift-locals-correct
 
-explicate-correct : ∀ (P : Imp.Program) → Equivalent (Impᵢ.sem P) (CFGᵢ.sem (explicate P))
+explicate-correct : ∀ (P : Impᵀ.Program) → Equivalent (Impᵀᵢ.sem P) (CFGᵀᵢ.sem (explicate P))
 explicate-correct = ExplicateFuel.explicate-correct
 
-select-correct : ∀ (P : CFG.Program) → Equivalent (CFGᵢ.sem P) (X86ᵢ.sem (select P))
+{- X86ᵀ's only error is chk, project's check: the X86ᵀ program gives the
+   result of the CFGᵀ one -}
+select-correct : ∀ (P : CFGᵀ.Program) → Equivalent (CFGᵀᵢ.sem P) (X86ᵀᵢ.sem (select P))
 select-correct = SelectFuel.select-correct
 
 {- The whole compiler, for closed programs ----------------------------------}
 
 compile-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵢ.sem (compile M))
+  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem (compile M))
 compile-correct = CompilerFuel.compile-correct
 
 compile-mon-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵢ.sem (compile-mon M))
-compile-mon-correct = RCOFuel.compile-mon-correct
+  → Equivalent (ISWIMᵢ.sem M) (Clos5ᵀᵢ.sem ⌜ compile-mon M ⌝ₚ)
+compile-mon-correct = CompilerFuel.compile-mon-correct
 
 compile-imp-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (Impᵢ.sem (compile-imp M))
-compile-imp-correct = LiftLocalsFuel.compile-imp-correct
+  → Equivalent (ISWIMᵢ.sem M) (Impᵀᵢ.sem (compile-imp M))
+compile-imp-correct = CompilerFuel.compile-imp-correct
 
 compile-cfg-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (CFGᵢ.sem (compile-cfg M))
-compile-cfg-correct = ExplicateFuel.compile-cfg-correct
+  → Equivalent (ISWIMᵢ.sem M) (CFGᵀᵢ.sem (compile-cfg M))
+compile-cfg-correct = CompilerFuel.compile-cfg-correct
 
 compile-x86-correct : ∀ (M : ISWIM.AST) → Closed M
-  → Equivalent (ISWIMᵢ.sem M) (X86ᵢ.sem (compile-x86 M))
-compile-x86-correct = SelectFuel.compile-x86-correct
+  → Equivalent (ISWIMᵢ.sem M) (X86ᵀᵢ.sem (compile-x86 M))
+compile-x86-correct = CompilerFuel.compile-x86-correct
 
 {- in particular, for compile: the compiled program terminates with the
    same constants, terminates with an answer exactly when the original
-   does, goes wrong exactly when it does, and diverges exactly when it
+   does, errors exactly when it does, and diverges exactly when it
    does -}
 
 compile-const : ∀ (M : ISWIM.AST) → Closed M → ∀ B k
-  → Terminates (ISWIMᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵢ.sem (compile M)) (o-const B k)
+  → Terminates (ISWIMᵢ.sem M) (o-const B k) ⇔ Terminates (Clos5ᵀᵢ.sem (compile M)) (o-const B k)
 compile-const = CompilerFuel.compile-const
 
 compile-converges : ∀ (M : ISWIM.AST) → Closed M
-  → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵢ.sem (compile M)))
+  → Converges (Terminates (ISWIMᵢ.sem M)) ⇔ Converges (Terminates (Clos5ᵀᵢ.sem (compile M)))
 compile-converges = CompilerFuel.compile-converges
 
-compile-wrong : ∀ (M : ISWIM.AST) → Closed M
-  → Terminates (ISWIMᵢ.sem M) o-wrong ⇔ Terminates (Clos5ᵢ.sem (compile M)) o-wrong
-compile-wrong = CompilerFuel.compile-wrong
+compile-error : ∀ (M : ISWIM.AST) → Closed M
+  → Terminates (ISWIMᵢ.sem M) o-error ⇔ Terminates (Clos5ᵀᵢ.sem (compile M)) o-error
+compile-error = CompilerFuel.compile-error
 
 compile-diverges : ∀ (M : ISWIM.AST) → Closed M
-  → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵢ.sem (compile M))
+  → Diverges (ISWIMᵢ.sem M) ⇔ Diverges (Clos5ᵀᵢ.sem (compile M))
 compile-diverges = CompilerFuel.compile-diverges

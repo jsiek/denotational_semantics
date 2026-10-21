@@ -1,401 +1,248 @@
 {-
 
-  Correctness of the remove-complex-operands pass (Clos5 → Clos5,
-  Compiler/RCO.agda) by a forward simulation of the Clos5 reduction
-  semantics by itself (see the design note in
-  Semantics/Reduction/Smallstep.agda). The source runs with the table ds
-  and the target with map rco ds.
+  Correctness of typed remove complex operands (Clos5ᵀ → Monᵀ) by a
+  forward simulation of the Clos5ᵀ reduction semantics by itself: the
+  source runs with its definitions ds, the target, the embedding of the
+  Monᵀ program (⌜_⌝ₚ), with the definitions rco makes of them.
 
-  Values contain no code (a code reference is a number), so the source
-  and the target compute the same values, as terms. A construct with
-  operands M₁ … Mₙ becomes a chain of lets for the complex operands and
-  then the construct on atoms. The source reduces a complex operand in
-  the context h of the construct (an operand frame) while the target
-  reduces it under its let (letc≈); once it is a value W, the target
-  substitutes W, and is then related to h W (for every value W: this
-  is not a logical relation, since the two sides get the same W). So
-  the relation on terms needs no closure under substitution: every
-  substitution is that of a β, a case or a let, into code, which is
-  related by the compilation function under that substitution (the
-  fundamental lemma rco≈: sub σ M is related to sub σ (rco M)).
-
-  Precondition: the program is well scoped (Scoped). An unbound atom
-  would go wrong in the source before a later complex operand runs, but
-  in the target only after it (see RCOSim).
+  As for the untyped pass (Untyped/proof/Correctness/Reduction/RCORed.agda):
+  values contain no code, so both compute the same values. A complex
+  operand M in the context h of the source is reduced by the target
+  under a let (letc≈); once it is a value W, the target substitutes it,
+  and is then related to h W. Every substitution is that of a call, a
+  case or a let into code, which is related by the pass under that
+  substitution (the fundamental lemma rco≈: sub σ M is related to
+  sub τ ⌜ rco M ρ ⌝ when τ agrees with σ through ρ). The continuations
+  of the pass take an atom under more binders (atomize≈): they are
+  related for every substitution that agrees through the renaming.
 
 -}
 
 module proof.Correctness.Reduction.RCORed where
 
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.Clos5
-open import Language.Mon using (Atom; var; lit; ref; atom-rename)
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Framework.Lookup using (_!_)
+open import proof.Framework.Lookup using (map-!)
+open import Language.Typed.Clos5 hiding (wk; wks)
+import Language.Typed.Mon as Mon
+open Mon using (Atm; var; lit; ref; atm; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
 open import Compiler.RCO
-open import Compiler.Pipeline using (compile; compile-mon)
-open import Compiler.PipelineScope using (Scoped)
-open import proof.Compiler.PipelineScope using (compile-scoped)
-open import proof.Compiler.EncloseScope using (Closed)
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong
-open import proof.Framework.Simulation Obs using (equiv-trans)
+open import proof.Framework.Reduction Obs o-error
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Clos5 as T
-open T using (Value; Values; value-red; values-red)
-import Semantics.Reduction.ISWIM as S
-open import proof.Correctness.Reduction.CompilerRed using (compile-correct)
-open import proof.Framework.Syntax.Subst Op sig
-  using (Subst; sub; sub-args; exts; ids; extend; _[_]; sub-id; sub-cong; ren-sub; exts-[]; extend-skip)
-open import proof.Framework.Syntax.Rename Op sig using (ext; rename; rename-args; rename-fuse-args; rename-id-args)
-open import Framework.Syntax.Scope Op sig using (WS; WS-args)
-open import proof.Framework.ListUtil using (_‼_; proj; args→list; has-length)
-open import Data.List.Relation.Unary.Any.Properties using (reverse⁻)
-open import Language.Prim using (int; bool)
+import proof.Semantics.Reduction.Typed.Clos5 as T
+open T using (Value; value-red; sub; exts; tmK; _•_; ∅; _[_])
+
+open import Data.List using (List; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_) renaming (map to All-map)
+open import Data.Nat using (ℕ)
+open import Data.Vec using (Vec; []; _∷_; lookup)
+open import Data.Vec.Relation.Unary.All using () renaming (All to Allᵥ; [] to []ᵥ; _∷_ to _∷ᵥ_)
+open import proof.Framework.ReductionVec Obs o-error using (all-lookup)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; subst; subst₂)
+open import Relation.Nullary using (Dec; yes; no; does)
 open import Data.Bool using (true; false)
+import Data.Integer as Z
+import Language.Prim as Pr
 
-open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; length; replicate; map; reverse)
-open import Data.List.Properties using (reverse-map)
-open import Data.List.Membership.Propositional using (_∈_)
-open import Data.List.Relation.Unary.All using (All; lookup)
-open import Data.List.Relation.Unary.Any using (Any; here; there)
-open import Data.List.Membership.Propositional.Properties using (∈-map⁺)
-open import Data.Maybe using (Maybe; just; nothing) renaming (map to mmap)
-open import Data.Nat using (ℕ; zero; suc; _+_; _<_; s≤s; z≤n)
-open import Data.Nat.Properties using (+-suc; +-identityʳ)
-open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
-open import Data.Unit using (⊤; tt)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst; subst₂)
-open import Relation.Nullary using (yes; no)
+module _ {Σ : List ℕ} (ds : All (Code Σ) Σ) where
 
-{- The let chains of rco ---------------------------------------------------------}
-
-lift-keep : ∀ {n} (f : ℕ → Args (replicate (suc n) ■) → AST) M Ms → Atom M
-  → lift f (M ,, Ms) ≡ lift (λ k As → f k (rename (k +_) M ,, As)) Ms
-lift-keep f M Ms a with atom? M
-... | yes _ = refl
-... | no na = ⊥-elim (na a)
-
-lift-let : ∀ {n} (f : ℕ → Args (replicate (suc n) ■) → AST) M Ms → (Atom M → ⊥)
-  → lift f (M ,, Ms) ≡ let-op ⦅ M ,, ⟩ lift (λ k As → f (suc k) (` k ,, As)) (rename-args suc Ms) ,, Nil ⦆
-lift-let f M Ms na with atom? M
-... | yes a = ⊥-elim (na a)
-... | no _ = refl
-
-rco-atom : ∀ {M} → Atom M → rco M ≡ M
-rco-atom (var x) = refl
-rco-atom (lit B n) = refl
-rco-atom (ref n) = refl
-
-{- rco makes an atom only of an atom -}
-lift-na : ∀ {n} g (f : ℕ → Args (replicate n ■) → AST) Ms
-  → (∀ k As → Atom (rename g (f k As)) → ⊥) → Atom (rename g (lift f Ms)) → ⊥
-lift-na g f Ms na with binds (atomize Ms)
-... | [] = na _ _
-... | _ ∷ _ = λ ()
-
-atom-rco : ∀ M g → Atom (rename g (rco M)) → Atom M
-atom-rco (` x) g a = var x
-atom-rco (fun-ref n ⦅ Nil ⦆) g a = ref n
-atom-rco (lit B n ⦅ Nil ⦆) g a = lit B n
-atom-rco (app ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → app ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (pair-op ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → pair-op ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (fst-op ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → fst-op ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (snd-op ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → snd-op ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (tuple n ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → tuple n ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (get i ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → get i ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (inl-op ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → inl-op ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (inr-op ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → inr-op ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) g a =
-  ⊥-elim (lift-na g (case-on (rco M) (rco N)) (rco L ,, Nil) (λ { k (A ,, Nil) () }) a)
-atom-rco (prim p ⦅ Ms ⦆) g a = ⊥-elim (lift-na g (λ _ → prim p ⦅_⦆) (rco-args Ms) (λ k As → λ ()) a)
-atom-rco (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) g ()
-
-{- the definitions of the target table are rco of the source's -}
-global-map : ∀ ds k → global (map rco ds) k ≡ mmap rco (global ds k)
-global-map ds k = trans (cong (_‼ k) (sym (reverse-map rco ds))) (‼-map (reverse ds) k)
-  where ‼-map : ∀ (xs : List AST) k → map rco xs ‼ k ≡ mmap rco (xs ‼ k)
-        ‼-map [] k = refl
-        ‼-map (x ∷ xs) zero = refl
-        ‼-map (x ∷ xs) (suc k) = ‼-map xs k
-
-global-all : ∀ {P : AST → Set} {ds} → All P ds → ∀ k {N} → global ds k ≡ just N → P N
-global-all {ds = ds} ps k eq = lookup ps (reverse⁻ (‼-any (reverse ds) k eq))
-  where ‼-any : ∀ (xs : List AST) k {x} → xs ‼ k ≡ just x → Any (x ≡_) xs
-        ‼-any (y ∷ xs) zero refl = here refl
-        ‼-any (y ∷ xs) (suc k) eq = there (‼-any xs k eq)
-
-{- the values of a tuple, and of a primitive -}
-proj-value : ∀ {n} (i : Fin n) {m} {Vs : Args (replicate m ■)} {V} → Values Vs
-  → proj i (args→list Vs) ≡ just V → Value V
-proj-value zero T.[] ()
-proj-value (suc i) T.[] ()
-proj-value {suc n} zero {Vs = V' ,, Vs'} (v T.∷ vs) e with has-length n (args→list Vs')
-proj-value {suc n} zero (v T.∷ vs) refl | true = v
-proj-value {suc n} zero (v T.∷ vs) () | false
-proj-value (suc i) (v T.∷ vs) e = proj-value i vs e
-
-out-value : ∀ o → Value (T.out o)
-out-value (int n) = T.lit
-out-value (bool true) = T.inl (T.tuple T.[])
-out-value (bool false) = T.inr (T.tuple T.[])
-
-{- The simulation, for a program with table ds whose definitions are scoped -------}
-
-module Sim (ds : List AST) (wds : All (WS 2) ds) where
+  ds' : All (Code Σ) Σ
+  ds' = All-map ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds)
 
   red₁ = T.red ds
-  red₂ = T.red (map rco ds)
+  red₂ = T.red ds'
 
-  {- σ maps the variables below k to values -}
-  Vals : ℕ → Subst → Set
-  Vals k σ = ∀ x → x < k → Value (σ x)
+  {- closing substitutions, and those of values -}
+  Clo : Ctx → Set
+  Clo Γ = ∀ {B} → Γ ∋ B → Tm Σ [] B
 
-  {- The relation on terms -----------------------------------------------------}
+  Vals : ∀ {Γ} → Clo Γ → Set
+  Vals σ = ∀ {B} (x : _ ∋ B) → Value (σ x)
+
+  Agree : ∀ {Γ Δ} → Clo Γ → Clo Δ → Ren Γ Δ → Set
+  Agree σ τ ρ = ∀ {B} (x : _ ∋ B) → τ (ρ x) ≡ σ x
+
+  {- The relation ---------------------------------------------------------------}
 
   infix 4 _≈_
-  data _≈_ : AST → AST → Set where
-    val≈ : ∀ {V} → Value V → V ≈ V
+  data _≈_ : ∀ {A} → Tm Σ [] A → Tm Σ [] A → Set where
+    val≈ : ∀ {A} {V : Tm Σ [] A} → Value V → V ≈ V
     {- an operand M in the context h of the source, and under a let in the target -}
-    letc≈ : ∀ {h M M' B} → Frame red₁ red₁ h → M ≈ M'
-      → (∀ W → Value W → h W ≈ B [ W ]) → h M ≈ let-op ⦅ M' ,, ⟩ B ,, Nil ⦆
-    {- the constructs whose operands are values, and let, in both -}
-    call≈ : ∀ {F E W} → Value F → Value E → Value W → app ⦅ F ,, E ,, W ,, Nil ⦆ ≈ app ⦅ F ,, E ,, W ,, Nil ⦆
-    fst≈ : ∀ {V} → Value V → fst-op ⦅ V ,, Nil ⦆ ≈ fst-op ⦅ V ,, Nil ⦆
-    snd≈ : ∀ {V} → Value V → snd-op ⦅ V ,, Nil ⦆ ≈ snd-op ⦅ V ,, Nil ⦆
-    get≈ : ∀ {n} {i : Fin n} {V} → Value V → get i ⦅ V ,, Nil ⦆ ≈ get i ⦅ V ,, Nil ⦆
-    prim≈ : ∀ {p V W} → Value V → Value W → prim p ⦅ V ,, W ,, Nil ⦆ ≈ prim p ⦅ V ,, W ,, Nil ⦆
-    case≈ : ∀ {k σ V M N} → Vals k σ → WS (suc k) M → WS (suc k) N → Value V
-      → case-op ⦅ V ,, ⟩ sub (exts σ) M ,, ⟩ sub (exts σ) N ,, Nil ⦆
-        ≈ case-op ⦅ V ,, ⟩ sub (exts σ) (rco M) ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆
-    let≈ : ∀ {k σ M M' N} → Vals k σ → WS (suc k) N → M ≈ M'
-      → let-op ⦅ M ,, ⟩ sub (exts σ) N ,, Nil ⦆ ≈ let-op ⦅ M' ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆
+    letc≈ : ∀ {A B} {h : Tm Σ [] A → Tm Σ [] B} {M M' N} → Frame red₁ red₁ h → M ≈ M'
+      → (∀ W → Value W → h W ≈ N [ W ]) → h M ≈ let′ M' N
+    {- the constructs whose operands are values, and case and let, in both -}
+    call≈ : ∀ {F W} → Value F → Value W → callc F W ≈ callc F W
+    get≈ : ∀ {n i} {V : Tm Σ [] ⟪ tup n ⟫} → Value V → get i V ≈ get i V
+    prim≈ : ∀ {p V W} → Value V → Value W → prim p V W ≈ prim p V W
+    project≈ : ∀ {t V} → Value V → project t V ≈ project t V
+    case≈ : ∀ {Γ Δ} {σ : Clo Γ} {τ : Clo Δ} {ρ : Ren Γ Δ} {V M N} → Agree σ τ ρ → Vals σ → Value V
+      → case V (sub (exts tmK σ) M) (sub (exts tmK σ) N)
+        ≈ case V (sub (exts tmK τ) ⌜ rco M (ext ρ) ⌝) (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝)
+    let≈ : ∀ {Γ Δ A B} {σ : Clo Γ} {τ : Clo Δ} {ρ : Ren Γ Δ} {M M' : Tm Σ [] A} {N : Tm Σ (A ∷ Γ) B} → Agree σ τ ρ → Vals σ
+      → M ≈ M' → let′ M (sub (exts tmK σ) N) ≈ let′ M' (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝)
 
   {- a target value is the source's -}
-  ≈-val : ∀ {M V} → Value V → M ≈ V → M ≡ V
-  ≈-val v (val≈ _) = refl
+  ≈-val : ∀ {A} {M V : Tm Σ [] A} → M ≈ V → Value V → M ≡ V
+  ≈-val (val≈ _) _ = refl
+  ≈-val (letc≈ _ _ _) ()
+  ≈-val (call≈ _ _) ()
+  ≈-val (get≈ _) ()
+  ≈-val (prim≈ _ _) ()
+  ≈-val (project≈ _) ()
+  ≈-val (case≈ _ _ _) ()
+  ≈-val (let≈ _ _ _) ()
 
-  {- The source reduces the operands of h left to right -}
-  LR : ∀ {n} → (Args (replicate n ■) → AST) → Set
-  LR {zero} h = ⊤
-  LR {suc n} h = (∀ Ms → Frame red₁ red₁ (λ X → h (X ,, Ms))) × (∀ {V} → Value V → LR (λ Ms → h (V ,, Ms)))
+  {- The fundamental lemma --------------------------------------------------------}
 
-  lr-args : ∀ {n} {G : Args (replicate n ■) → AST} → Frame (T.red-args ds) red₁ G → LR G
-  lr-args {zero} F = tt
-  lr-args {suc n} F =
-    (λ Ms → frame-∘ (frame _ (λ _ → refl)) F) , λ v → lr-args (frame-∘ (frame _ (λ _ → val-in (value-red v))) F)
+  ext-agree : ∀ {Γ Δ A} {σ : Clo Γ} {τ : Clo Δ} {ρ : Ren Γ Δ} (W : Tm Σ [] A) → Agree σ τ ρ → Agree (W • σ) (W • τ) (ext ρ)
+  ext-agree W a Z = refl
+  ext-agree W a (S x) = a x
 
-  lr1 : (h : Args (replicate 1 ■) → AST) (κ : AST → Red AST)
-    → (∀ X → red₁ (h (X ,, Nil)) ≡ step-in (λ Y → h (Y ,, Nil)) (red₁ X) (κ X)) → LR h
-  lr1 h κ e = (λ { Nil → frame κ e }) , λ _ → tt
+  ext-vals : ∀ {Γ A} {σ : Clo Γ} {W : Tm Σ [] A} → Value W → Vals σ → Vals (W • σ)
+  ext-vals w vs Z = w
+  ext-vals w vs (S x) = vs x
 
-  {- The fundamental lemma: code under a substitution of values -----------------}
+  {- an atom, renamed -}
+  atm-ren : ∀ {Δ Δ' A} (a : Atm Σ Δ A) {r : Ren Δ Δ'} {τ : Clo Δ} {τ' : Clo Δ'} → Agree τ τ' r
+    → sub τ' ⌜ Mon.ren r a ⌝ᵃ ≡ sub τ ⌜ a ⌝ᵃ
+  atm-ren (var x) e = e x
+  atm-ren (lit B c) e = refl
+  atm-ren (ref f) e = refl
 
-  rco≈ : ∀ {k} σ M → Vals k σ → WS k M → sub σ M ≈ sub σ (rco M)
-  rco≈s : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms)
+  {- what a continuation of rco gives: related terms, for every atom that is a value under a substitution
+     that agrees -}
+  Kont : ∀ {Δ A B} → (Tm Σ [] A → Tm Σ [] B) → Clo Δ → K Σ Δ A B → Set
+  Kont {Δ} {A} {B} h τ k = ∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (a : Atm Σ Δ' A) → Agree τ τ' r
+    → Value (sub τ' ⌜ a ⌝ᵃ) → h (sub τ' ⌜ a ⌝ᵃ) ≈ sub τ' ⌜ k r a ⌝
 
-  {- a construct h on the operands Ms after σ, and the target's chain for
-     them, renamed by r, after ρ, which agrees with σ through r, with g
-     on the atoms at the end -}
-  chain : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → ∀ r ρ (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST)
-    → (∀ x → ρ (r x) ≡ σ x) → LR h
-    → (∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws ρ) As)
-         → h (sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j As))
-    → h (sub-args σ Ms) ≈ sub ρ (lift g (rename-args r (rco-args Ms)))
-  chain {zero} σ Nil vs ws fs r ρ h g eq lr fin = fin 0 Nil Nil T.[]
-  chain {suc n} {k} σ (M ,, Ms) vs (w , ws) (f ∷ fs) r ρ h g eq lr fin with atom? M
-  ... | yes a rewrite rco-atom a | lift-keep g (rename r M) (rename-args r (rco-args Ms)) (atom-rename r a) =
-    chain σ Ms vs ws fs r ρ (λ As → h (sub σ M ,, As)) (λ j As → g j (rename (j +_) (rename r M) ,, As)) eq (proj₂ lr (atom-val a w)) fin'
-    where
-    atom-val : ∀ {M} → Atom M → WS k M → Value (sub σ M)
-    atom-val (var x) w = vs x w
-    atom-val (lit B n) w = T.lit
-    atom-val (ref n) w = T.fun
-    same : ∀ j (Ws : Args (replicate j ■)) → sub (extend Ws ρ) (rename (j +_) (rename r M)) ≡ sub σ M
-    same j Ws = trans (ren-sub _ _ (rename r M)) (trans (ren-sub _ r M)
-                  (sub-cong (λ x → trans (extend-skip Ws ρ (r x)) (eq x)) M))
-    fin' : ∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws ρ) As)
-      → h (sub σ M ,, sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j (rename (j +_) (rename r M) ,, As))
-    fin' j Ws As vs' = subst (λ X → h (X ,, sub-args (extend Ws ρ) As) ≈ sub (extend Ws ρ) (g j (rename (j +_) (rename r M) ,, As))) (same j Ws)
-                             (fin j Ws (rename (j +_) (rename r M) ,, As) (subst Value (sym (same j Ws)) (atom-val a w) T.∷ vs'))
-  ... | no na rewrite lift-let g (rename r (rco M)) (rename-args r (rco-args Ms)) (λ a → na (atom-rco M r a))
-                    | rename-fuse-args suc r (rco-args Ms) =
-    letc≈ (proj₁ lr (sub-args σ Ms))
-          (subst (λ X → sub σ M ≈ X) (sym (trans (ren-sub ρ r (rco M)) (sub-cong eq (rco M)))) f)
-          λ W v → subst (λ X → h (W ,, sub-args σ Ms) ≈ X) (sym (exts-[] W ρ (lift (λ j As → g (suc j) (` j ,, As)) (rename-args (λ x → suc (r x)) (rco-args Ms)))))
-                        (chain σ Ms vs ws fs (λ x → suc (r x)) (W • ρ) (λ As → h (W ,, As)) (λ j As → g (suc j) (` j ,, As)) eq (proj₂ lr v)
-                               (λ j Ws As vs' → subst (λ X → h (X ,, sub-args (extend Ws (W • ρ)) As) ≈ sub (extend Ws (W • ρ)) (g (suc j) (` j ,, As))) (skip j Ws W)
-                                                      (fin (suc j) (W ,, Ws) (` j ,, As)
-                                                           (subst Value (sym (skip j Ws W)) v T.∷ vs'))))
-    where
-    skip : ∀ j (Ws : Args (replicate j ■)) W → extend Ws (W • ρ) j ≡ W
-    skip j Ws W = subst (λ y → extend Ws (W • ρ) y ≡ W) (+-identityʳ j) (extend-skip Ws (W • ρ) 0)
+  rco≈ : ∀ {Γ Δ A} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
+    → sub σ M ≈ sub τ ⌜ rco M ρ ⌝
+  atomize≈ : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
+    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k → h (sub σ M) ≈ sub τ ⌜ atomize M ρ k ⌝
+  atomizes≈ : ∀ {Γ Δ n B} (Ms : Vec (Tm Σ Γ Any) n) (ρ : Ren Γ Δ) (k : ∀ {Δ'} → Ren Δ Δ' → Vec (Atm Σ Δ' Any) n → Mon.Exp Σ Δ' B)
+    (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ → {g : Vec (Tm Σ [] Any) n → Tm Σ [] B} → Frame (T.reds ds) red₁ g
+    → (∀ {Δ'} (r : Ren Δ Δ') (τ' : Clo Δ') (as : Vec (Atm Σ Δ' Any) n) → Agree τ τ' r
+         → Allᵥ Value (T.travs tmK τ' ⌜ as ⌝ᵛ) → g (T.travs tmK τ' ⌜ as ⌝ᵛ) ≈ sub τ' ⌜ k r as ⌝)
+    → g (T.travs tmK σ Ms) ≈ sub τ ⌜ atomizes Ms ρ k ⌝
+  atomize₂≈ : ∀ {Γ Δ A₁ A₂ B} (L : Tm Σ Γ A₁) (M : Tm Σ Γ A₂) (ρ : Ren Γ Δ)
+    (k : ∀ {Δ'} → Atm Σ Δ' A₁ → Atm Σ Δ' A₂ → Mon.Exp Σ Δ' B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
+    → {h : Tm Σ [] A₁ → Tm Σ [] A₂ → Tm Σ [] B} → (∀ {Y} → Frame red₁ red₁ (λ X → h X Y))
+    → (∀ {X} → Value X → Frame red₁ red₁ (h X))
+    → (∀ {Δ'} (τ' : Clo Δ') a b → Value (sub τ' ⌜ a ⌝ᵃ) → Value (sub τ' ⌜ b ⌝ᵃ)
+         → h (sub τ' ⌜ a ⌝ᵃ) (sub τ' ⌜ b ⌝ᵃ) ≈ sub τ' ⌜ k a b ⌝)
+    → h (sub σ L) (sub σ M) ≈ sub τ ⌜ atomize₂ L M ρ k ⌝
 
-  {- the chain of a construct -}
-  chain₀ : ∀ {n k} σ (Ms : Args (replicate n ■)) → Vals k σ → WS-args k Ms
-    → Pw (λ M M' → sub σ M ≈ sub σ M') Ms (rco-args Ms) → (h : Args (replicate n ■) → AST) (g : ℕ → Args (replicate n ■) → AST) → LR h
-    → (∀ j (Ws : Args (replicate j ■)) As → Values (sub-args (extend Ws σ) As)
-         → h (sub-args (extend Ws σ) As) ≈ sub (extend Ws σ) (g j As))
-    → h (sub-args σ Ms) ≈ sub σ (lift g (rco-args Ms))
-  chain₀ σ Ms vs ws fs h g lr fin =
-    subst (λ X → h (sub-args σ Ms) ≈ sub σ (lift g X)) (rename-id-args (λ _ → refl) (rco-args Ms))
-          (chain σ Ms vs ws fs (λ x → x) σ h g (λ _ → refl) lr fin)
+  {- a complex operand: a let -}
+  let-op : ∀ {Γ Δ A B} (M : Tm Σ Γ A) (ρ : Ren Γ Δ) (k : K Σ Δ A B) (σ : Clo Γ) (τ : Clo Δ) → Agree σ τ ρ → Vals σ
+    → {h : Tm Σ [] A → Tm Σ [] B} → Frame red₁ red₁ h → Kont h τ k
+    → h (sub σ M) ≈ sub τ ⌜ Mon.let′ (rco M ρ) (k S (var Z)) ⌝
+  let-op M ρ k σ τ a vs F kk =
+    letc≈ F (rco≈ M ρ σ τ a vs)
+      λ W w → subst (_ ≈_) (sym (T.exts-[] τ W ⌜ k S (var Z) ⌝)) (kk S (W • τ) (var Z) (λ _ → refl) w)
 
-  rco≈ σ (` x) vs w = val≈ (vs x w)
-  rco≈ σ (fun-ref n ⦅ Nil ⦆) vs w = val≈ T.fun
-  rco≈ σ (lit B n ⦅ Nil ⦆) vs w = val≈ T.lit
-  rco≈ σ (app ⦅ Ms@(M₁ ,, M₂ ,, M₃ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (app ⦅_⦆) (λ _ → app ⦅_⦆) lr
-      λ { j Ws (A ,, B ,, C ,, Nil) (a T.∷ b T.∷ c T.∷ T.[]) → call≈ a b c }
-    where lr : LR (app ⦅_⦆)
-          lr = (λ { (Y ,, Z ,, Nil) → frame _ (λ _ → refl) })
-             , λ v → (λ { (Z ,, Nil) → frame _ (λ _ → val-in (value-red v)) })
-             , λ w → (λ { Nil → frame _ (λ _ → trans (val-in (value-red v)) (val-in (value-red w))) }) , λ _ → tt
-  rco≈ σ (pair-op ⦅ Ms@(M₁ ,, M₂ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (pair-op ⦅_⦆) (λ _ → pair-op ⦅_⦆) lr
-      λ { j Ws (A ,, B ,, Nil) (a T.∷ b T.∷ T.[]) → val≈ (T.pair a b) }
-    where lr : LR (pair-op ⦅_⦆)
-          lr = (λ { (Y ,, Nil) → frame _ (λ _ → refl) })
-             , λ v → (λ { Nil → frame _ (λ _ → val-in (value-red v)) }) , λ _ → tt
-  rco≈ σ (fst-op ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (fst-op ⦅_⦆) (λ _ → fst-op ⦅_⦆) (lr1 (fst-op ⦅_⦆) _ (λ _ → refl))
-      λ { j Ws (A ,, Nil) (a T.∷ T.[]) → fst≈ a }
-  rco≈ σ (snd-op ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (snd-op ⦅_⦆) (λ _ → snd-op ⦅_⦆) (lr1 (snd-op ⦅_⦆) _ (λ _ → refl))
-      λ { j Ws (A ,, Nil) (a T.∷ T.[]) → snd≈ a }
-  rco≈ σ (tuple n ⦅ Ms ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (tuple n ⦅_⦆) (λ _ → tuple n ⦅_⦆) (lr-args (frame _ (λ _ → refl)))
-      λ j Ws As as → val≈ (T.tuple as)
-  rco≈ σ (get i ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (get i ⦅_⦆) (λ _ → get i ⦅_⦆) (lr1 (get i ⦅_⦆) _ (λ _ → refl))
-      λ { j Ws (A ,, Nil) (a T.∷ T.[]) → get≈ a }
-  rco≈ σ (inl-op ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (inl-op ⦅_⦆) (λ _ → inl-op ⦅_⦆) (lr1 (inl-op ⦅_⦆) _ (λ _ → refl))
-      λ { j Ws (A ,, Nil) (a T.∷ T.[]) → val≈ (T.inl a) }
-  rco≈ σ (inr-op ⦅ Ms@(M₁ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (inr-op ⦅_⦆) (λ _ → inr-op ⦅_⦆) (lr1 (inr-op ⦅_⦆) _ (λ _ → refl))
-      λ { j Ws (A ,, Nil) (a T.∷ T.[]) → val≈ (T.inr a) }
-  rco≈ {k} σ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) vs (wL , wM , wN , _) =
-    chain₀ σ (L ,, Nil) vs (wL , tt) (rco≈ σ L vs wL ∷ []) hc (case-on (rco M) (rco N)) (lr1 hc _ (λ _ → refl))
-      λ { j Ws (A ,, Nil) (a T.∷ T.[]) → subst₂ (λ X Y → case-op ⦅ sub (extend Ws σ) A ,, ⟩ sub (exts σ) M ,, ⟩ sub (exts σ) N ,, Nil ⦆ ≈ case-op ⦅ sub (extend Ws σ) A ,, ⟩ X ,, ⟩ Y ,, Nil ⦆)
-                                                (branch j Ws (rco M)) (branch j Ws (rco N)) (case≈ {M = M} {N = N} vs wM wN a) }
-    where
-    hc : Args (replicate 1 ■) → AST
-    hc (X ,, Nil) = case-op ⦅ X ,, ⟩ sub (exts σ) M ,, ⟩ sub (exts σ) N ,, Nil ⦆
-    branch : ∀ j (Ws : Args (replicate j ■)) X
-      → sub (exts σ) X ≡ sub (exts (extend Ws σ)) (rename (ext (j +_)) X)
-    branch j Ws X = sym (trans (ren-sub _ _ X) (sub-cong (λ { zero → refl ; (suc x) → cong (rename suc) (extend-skip Ws σ x) }) X))
-  rco≈ σ (prim p ⦅ Ms@(M₁ ,, M₂ ,, Nil) ⦆) vs ws =
-    chain₀ σ Ms vs ws (rco≈s σ Ms vs ws) (prim p ⦅_⦆) (λ _ → prim p ⦅_⦆) lr
-      λ { j Ws (A ,, B ,, Nil) (a T.∷ b T.∷ T.[]) → prim≈ a b }
-    where lr : LR (prim p ⦅_⦆)
-          lr = (λ { (Y ,, Nil) → frame _ (λ _ → refl) })
-             , λ v → (λ { Nil → frame _ (λ _ → val-in (value-red v)) }) , λ _ → tt
-  rco≈ σ (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) vs (wM , wN , _) = let≈ {N = N} vs wN (rco≈ σ M vs wM)
-  rco≈s {zero} σ Nil vs ws = []
-  rco≈s {suc n} σ (M ,, Ms) vs (w , ws) = rco≈ σ M vs w ∷ rco≈s σ Ms vs ws
+  rco≈ (` x) ρ σ τ a vs = subst (_≈ _) (a x) (val≈ (subst Value (sym (a x)) (vs x)))
+  rco≈ (fun-ref f) ρ σ τ a vs = val≈ T.fun-ref
+  rco≈ (pack L M) ρ σ τ a vs =
+    atomize₂≈ L M ρ Mon.pack σ τ a vs {h = pack} (frame _ λ _ → refl) (λ v → frame _ λ _ → val-in (value-red v))
+      λ τ' a b v w → val≈ (T.pack v w)
+  rco≈ (callc L M) ρ σ τ a vs =
+    atomize₂≈ L M ρ Mon.callc σ τ a vs {h = callc} (frame _ λ _ → refl) (λ v → frame _ λ _ → val-in (value-red v))
+      λ τ' a b v w → call≈ v w
+  rco≈ (lit B c) ρ σ τ a vs = val≈ T.lit
+  rco≈ (tuple Ms) ρ σ τ a vs =
+    atomizes≈ Ms ρ (λ _ as → Mon.tuple as) σ τ a vs {g = tuple} (frame _ λ _ → refl) λ r τ' as e vs' → val≈ (T.tuple vs')
+  rco≈ (get i M) ρ σ τ a vs = atomize≈ M ρ _ σ τ a vs {h = get i} (frame _ λ _ → refl) λ r τ' b e v → get≈ v
+  rco≈ (inl M) ρ σ τ a vs = atomize≈ M ρ _ σ τ a vs {h = inl} (frame _ λ _ → refl) λ r τ' b e v → val≈ (T.inl v)
+  rco≈ (inr M) ρ σ τ a vs = atomize≈ M ρ _ σ τ a vs {h = inr} (frame _ λ _ → refl) λ r τ' b e v → val≈ (T.inr v)
+  rco≈ (case L M N) ρ σ τ a vs =
+    atomize≈ L ρ _ σ τ a vs {h = λ X → case X _ _} (frame _ λ _ → refl) λ r τ' b e v → case≈ {τ = τ'} {ρ = λ x → r (ρ x)} {M = M} {N = N} (λ x → trans (e (ρ x)) (a x)) vs v
+  rco≈ (prim p L M) ρ σ τ a vs =
+    atomize₂≈ L M ρ (Mon.prim p) σ τ a vs {h = prim p} (frame _ λ _ → refl) (λ v → frame _ λ _ → val-in (value-red v))
+      λ τ' a b v w → prim≈ v w
+  rco≈ (let′ M N) ρ σ τ a vs = let≈ {τ = τ} {ρ = ρ} {N = N} a vs (rco≈ M ρ σ τ a vs)
+  rco≈ (inject G M) ρ σ τ a vs = atomize≈ M ρ _ σ τ a vs {h = inject G} (frame _ λ _ → refl) λ r τ' b e v → val≈ (T.inject v)
+  rco≈ (project t M) ρ σ τ a vs = atomize≈ M ρ _ σ τ a vs {h = project t} (frame _ λ _ → refl) λ r τ' b e v → project≈ v
 
-  {- one more value for a bound variable -}
-  vals-• : ∀ {k σ W} → Value W → Vals k σ → Vals (suc k) (W • σ)
-  vals-• w vs zero _ = w
-  vals-• w vs (suc x) (s≤s x<) = vs x x<
+  atomize≈ (` x) ρ k σ τ a vs {h} F kk = subst (λ X → h X ≈ _) (a x) (kk (λ y → y) τ (var (ρ x)) (λ _ → refl) (subst Value (sym (a x)) (vs x)))
+  atomize≈ (fun-ref f) ρ k σ τ a vs F kk = kk (λ y → y) τ (ref f) (λ _ → refl) T.fun-ref
+  atomize≈ (lit B c) ρ k σ τ a vs F kk = kk (λ y → y) τ (lit B c) (λ _ → refl) T.lit
+  atomize≈ M@(pack _ _) = let-op M
+  atomize≈ M@(callc _ _) = let-op M
+  atomize≈ M@(tuple _) = let-op M
+  atomize≈ M@(get _ _) = let-op M
+  atomize≈ M@(inl _) = let-op M
+  atomize≈ M@(inr _) = let-op M
+  atomize≈ M@(case _ _ _) = let-op M
+  atomize≈ M@(prim _ _ _) = let-op M
+  atomize≈ M@(let′ _ _) = let-op M
+  atomize≈ M@(inject _ _) = let-op M
+  atomize≈ M@(project _ _) = let-op M
 
-  {- The simulation -----------------------------------------------------------------}
+  atomizes≈ [] ρ k σ τ a vs F kk = kk (λ y → y) τ [] (λ _ → refl) []ᵥ
+  atomizes≈ (M ∷ Ms) ρ k σ τ a vs {g} G kk =
+    atomize≈ M ρ _ σ τ a vs (frame-∘ (frame {g = _∷ _} _ λ _ → refl) G)
+      λ r τ' b e v → atomizes≈ Ms _ _ σ τ' (λ x → trans (e (ρ x)) (a x)) vs
+        (frame-∘ (frame {g = _ ∷_} _ λ _ → val-in (value-red v)) G)
+        λ r' τ'' as e' vs' → subst (λ X → g (X ∷ _) ≈ _) (atm-ren b e')
+          (kk _ τ'' (Mon.ren r' b ∷ as) (λ x → trans (e' (r x)) (e x)) (subst Value (sym (atm-ren b e')) v ∷ᵥ vs'))
 
+  atomize₂≈ L M ρ k σ τ a vs {h} F₁ F₂ kk =
+    atomize≈ L ρ _ σ τ a vs F₁
+      λ r τ' b e v → atomize≈ M _ _ σ τ' (λ x → trans (e (ρ x)) (a x)) vs (F₂ v)
+        λ r' τ'' c e' w → subst (λ X → h X (sub τ'' ⌜ c ⌝ᵃ) ≈ _) (atm-ren b e') (kk τ'' (Mon.ren r' b) c (subst Value (sym (atm-ren b e')) v) w)
+
+  {- The simulation ------------------------------------------------------------------}
+
+  Ans′ : ∀ {A} → Tm Σ [] A → Red (Tm Σ [] A) → Tm Σ [] A → Set
   Ans′ = Ans red₂ Value _≈_
 
-  {- once the operands of a call are values -}
-  call-step : ∀ {ds' F E W r} → Value F → Value E → Value W → T.call ds' F E W ≡ r
-    → T.red ds' (app ⦅ F ,, E ,, W ,, Nil ⦆) ≡ r
-  call-step {ds'} f e w eq rewrite value-red {ds'} f | value-red {ds'} e | value-red {ds'} w = eq
+  out-value : ∀ p n m → Value (T.out {Σ} {[]} p n m)
+  out-value Pr.sub n m = T.lit
+  out-value Pr.eq n m with does (n Z.≟ m)
+  ... | true = T.inl (T.inject (T.tuple []ᵥ))
+  ... | false = T.inr (T.inject (T.tuple []ᵥ))
 
-  call-sim : ∀ {F E W} → Value F → Value E → Value W → Ans′ (app ⦅ F ,, E ,, W ,, Nil ⦆) (T.call ds F E W) (app ⦅ F ,, E ,, W ,, Nil ⦆)
-  call-sim {fun-ref k ⦅ Nil ⦆} {E} {W} f e w with global ds k in eq
-  ... | nothing = wrong ε (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq))))
-  ... | just N = to (one (call-step f e w (cong (λ m → T.call? m E W) (trans (global-map ds k) (cong (mmap rco) eq)))))
-                    (rco≈ (W • E • ids) N (vals-• w (vals-• e λ _ ())) (global-all wds k eq))
-  call-sim f@(T.pair _ _) e w = wrong ε (call-step f e w refl)
-  call-sim T.lit e w = wrong ε (call-step T.lit e w refl)
-  call-sim f@(T.tuple _) e w = wrong ε (call-step f e w refl)
-  call-sim f@(T.inl _) e w = wrong ε (call-step f e w refl)
-  call-sim f@(T.inr _) e w = wrong ε (call-step f e w refl)
-
-  sim : ∀ {M M'} → M ≈ M' → Ans′ M (red₁ M) M'
+  sim : ∀ {A} {M M' : Tm Σ [] A} → M ≈ M' → Ans′ M (red₁ M) M'
   sim (val≈ v) = subst (λ x → Ans′ _ x _) (sym (value-red v)) (val ε v (val≈ v))
-  sim (letc≈ {h} {M} F r k) =
+  sim (letc≈ {h = h} {M} F r k) =
     subst (λ x → Ans′ (h M) x _) (sym (Frame.eq F M))
-      (ans-in (frame _ (λ _ → refl)) (λ r' → letc≈ F r' k) (sim r) λ v r' → cont v r')
+      (ans-in (frame _ λ _ → refl) (λ r' → letc≈ F r' k) (sim r) λ v r' → cont v r')
     where
-    cont : ∀ {V'} → Value V' → M ≈ V' → Ans′ (h M) (Frame.κ F M) (let-op ⦅ V' ,, ⟩ _ ,, Nil ⦆)
-    cont v r' with ≈-val v r'
+    cont : ∀ {V'} → Value V' → M ≈ V' → Ans′ (h M) (Frame.κ F M) (let′ V' _)
+    cont v r' with ≈-val r' v
     ... | refl = ans-step (val-in (value-red v))
                    (subst (λ x → Ans′ (h M) x _) (trans (Frame.eq F M) (val-in (value-red v))) (sim (k M v)))
-  sim (call≈ f e w) = ans-skip (value-red f) (ans-skip (value-red e) (ans-skip (value-red w) (call-sim f e w)))
-  sim (fst≈ v) = ans-skip (value-red v) (fst-sim v)
-    where fst-sim : ∀ {V} → Value V → Ans′ (fst-op ⦅ V ,, Nil ⦆) (T.fst? V) (fst-op ⦅ V ,, Nil ⦆)
-          fst-sim (T.pair a b) = to (one (val-in (value-red (T.pair a b)))) (val≈ a)
-          fst-sim T.fun = wrong ε refl
-          fst-sim T.lit = wrong ε refl
-          fst-sim v@(T.tuple _) = wrong ε (val-in (value-red v))
-          fst-sim v@(T.inl _) = wrong ε (val-in (value-red v))
-          fst-sim v@(T.inr _) = wrong ε (val-in (value-red v))
-  sim (snd≈ v) = ans-skip (value-red v) (snd-sim v)
-    where snd-sim : ∀ {V} → Value V → Ans′ (snd-op ⦅ V ,, Nil ⦆) (T.snd? V) (snd-op ⦅ V ,, Nil ⦆)
-          snd-sim (T.pair a b) = to (one (val-in (value-red (T.pair a b)))) (val≈ b)
-          snd-sim T.fun = wrong ε refl
-          snd-sim T.lit = wrong ε refl
-          snd-sim v@(T.tuple _) = wrong ε (val-in (value-red v))
-          snd-sim v@(T.inl _) = wrong ε (val-in (value-red v))
-          snd-sim v@(T.inr _) = wrong ε (val-in (value-red v))
-  sim (get≈ {i = i} v) = ans-skip (value-red v) (get-sim v)
-    where get-sim : ∀ {V} → Value V → Ans′ (get i ⦅ V ,, Nil ⦆) (T.get? i V) (get i ⦅ V ,, Nil ⦆)
-          get-sim v@(T.tuple {as = as} vs) with proj i (args→list as) in eq
-          ... | nothing = wrong ε (trans (val-in (value-red v)) (cong T.ret? eq))
-          ... | just V = to (one (trans (val-in (value-red v)) (cong T.ret? eq))) (val≈ (proj-value i vs eq))
-          get-sim T.fun = wrong ε refl
-          get-sim v@(T.pair _ _) = wrong ε (val-in (value-red v))
-          get-sim T.lit = wrong ε refl
-          get-sim v@(T.inl _) = wrong ε (val-in (value-red v))
-          get-sim v@(T.inr _) = wrong ε (val-in (value-red v))
-  sim (prim≈ {p} {V} {W} v w) = ans-skip (value-red v) (ans-skip (value-red w) prim-sim)
-    where prim-sim : Ans′ (prim p ⦅ V ,, W ,, Nil ⦆) (T.prim? p V W) (prim p ⦅ V ,, W ,, Nil ⦆)
-          prim-sim with δ? p (T.obs V) (T.obs W) in eq
-          ... | nothing = wrong ε (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → T.ret? (mmap T.out m)) eq)))
-          ... | just o = to (one (trans (val-in (value-red v)) (trans (val-in (value-red w)) (cong (λ m → T.ret? (mmap T.out m)) eq))))
-                            (val≈ (out-value o))
-  sim (case≈ {σ = σ} {M = M} {N} vs wM wN v) = ans-skip (value-red v) (case-sim v)
-    where case-sim : ∀ {V} → Value V
-            → Ans′ (case-op ⦅ V ,, ⟩ sub (exts σ) M ,, ⟩ sub (exts σ) N ,, Nil ⦆)
-                   (T.case? V (sub (exts σ) M) (sub (exts σ) N))
-                   (case-op ⦅ V ,, ⟩ sub (exts σ) (rco M) ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆)
-          case-sim v@(T.inl a) = to (one (val-in (value-red v)))
-            (subst₂ _≈_ (sym (exts-[] _ σ M)) (sym (exts-[] _ σ (rco M))) (rco≈ _ M (vals-• a vs) wM))
-          case-sim v@(T.inr a) = to (one (val-in (value-red v)))
-            (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (vals-• a vs) wN))
-          case-sim T.fun = wrong ε refl
-          case-sim v@(T.pair _ _) = wrong ε (val-in (value-red v))
-          case-sim T.lit = wrong ε refl
-          case-sim v@(T.tuple _) = wrong ε (val-in (value-red v))
-  sim (let≈ {σ = σ} {N = N} vs wN r) =
-    ans-in (frame _ (λ _ → refl)) (let≈ {N = N} vs wN) (sim r)
-      λ v r' → let-sim v r'
-    where let-sim : ∀ {M V'} → Value V' → M ≈ V'
-            → Ans′ (let-op ⦅ M ,, ⟩ sub (exts σ) N ,, Nil ⦆) (to (sub (exts σ) N [ M ])) (let-op ⦅ V' ,, ⟩ sub (exts σ) (rco N) ,, Nil ⦆)
-          let-sim v r' with ≈-val v r'
-          ... | refl = to (one (val-in (value-red v)))
-                          (subst₂ _≈_ (sym (exts-[] _ σ N)) (sym (exts-[] _ σ (rco N))) (rco≈ _ N (vals-• v vs) wN))
+  sim (call≈ {W = W} f@(T.pack {L = fun-ref g} {E} T.fun-ref e) w) rewrite value-red {ds = ds} f | value-red {ds = ds} w =
+    to (one (trans (val-in (value-red f)) (trans (val-in (value-red w))
+              (cong (λ D → to (sub (W • E • ∅) D)) (trans (map-! ⌜_⌝ (All-map (λ D → rco D (λ x → x)) ds) g) (cong ⌜_⌝ (map-! (λ D → rco D (λ x → x)) ds g)))))))
+       (rco≈ (ds ! g) (λ x → x) (W • E • ∅) (W • E • ∅) (λ _ → refl) (ext-vals w (ext-vals e λ ())))
+  sim (get≈ {i = i} v@(T.tuple vs)) rewrite value-red {ds = ds} v = to (one (val-in (value-red v))) (val≈ (all-lookup vs i))
+  sim (prim≈ {p} T.lit T.lit) = to (one refl) (val≈ (out-value p _ _))
+  sim (project≈ {t} v@(T.inject {G = G} {V = V} v')) rewrite value-red {ds = ds} v = pd (G ≟F flat t) (val-in (value-red v))
+    where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → red₂ X ≡ T.proj-dec d V → Ans′ Y (T.proj-dec d V) X
+          pd (yes refl) e = to (one e) (val≈ v')
+          pd (no _) e = error ε e
+  sim (case≈ {σ = σ} {τ} {ρ} {M = M} {N} a vs v) = ans-skip (value-red v) (case-sim v)
+    where
+    case-sim : ∀ {V} → Value V → Ans′ (case V (sub (exts tmK σ) M) (sub (exts tmK σ) N)) (T.case? V (sub (exts tmK σ) M) (sub (exts tmK σ) N))
+                 (case V (sub (exts tmK τ) ⌜ rco M (ext ρ) ⌝) (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝))
+    case-sim v@(T.inl w) = to (one (val-in (value-red v)))
+      (subst₂ _≈_ (sym (T.exts-[] σ _ M)) (sym (T.exts-[] τ _ ⌜ rco M (ext ρ) ⌝)) (rco≈ M _ _ _ (ext-agree _ a) (ext-vals w vs)))
+    case-sim v@(T.inr w) = to (one (val-in (value-red v)))
+      (subst₂ _≈_ (sym (T.exts-[] σ _ N)) (sym (T.exts-[] τ _ ⌜ rco N (ext ρ) ⌝)) (rco≈ N _ _ _ (ext-agree _ a) (ext-vals w vs)))
+  sim (let≈ {σ = σ} {τ} {ρ} {N = N} a vs r) =
+    ans-in (frame _ λ _ → refl) (let≈ {τ = τ} {ρ = ρ} {N = N} a vs) (sim r) λ v r' → let-sim v r'
+    where
+    let-sim : ∀ {M V'} → Value V' → M ≈ V'
+      → Ans′ (let′ M (sub (exts tmK σ) N)) (to (sub (exts tmK σ) N [ M ])) (let′ V' (sub (exts tmK τ) ⌜ rco N (ext ρ) ⌝))
+    let-sim v r' with ≈-val r' v
+    ... | refl = to (one (val-in (value-red v)))
+      (subst₂ _≈_ (sym (T.exts-[] σ _ N)) (sym (T.exts-[] τ _ ⌜ rco N (ext ρ) ⌝)) (rco≈ N _ _ _ (ext-agree _ a) (ext-vals v vs)))
 
-{- The end theorem: for well-scoped programs ---------------------------------}
+{- The end theorem ---------------------------------------------------------------------}
 
-rco-correct : ∀ P → Scoped P → Equivalent (T.sem P) (T.sem (rco-program P))
-rco-correct (program ds M) (wds , wM) =
-  red-equivalent value-red _≈_ sim (λ m _ v → cong T.obs (≈-val v m))
-    (subst₂ _≈_ (sub-id M) (sub-id (rco M)) (rco≈ ids M (λ _ ()) wM))
-  where open Sim ds wds
-
-{- The whole compiler, into monadic normal form --------------------------------}
-
-compile-mon-correct : ∀ M → Closed M → Equivalent (S.sem M) (T.sem (compile-mon M))
-compile-mon-correct M c = equiv-trans (compile-correct M c) (rco-correct (compile M) (compile-scoped M c))
+rco-correct : ∀ (P : Program) → Equivalent (T.sem P) (T.sem ⌜ rco-program P ⌝ₚ)
+rco-correct (program ds M) =
+  red-equivalent value-red (_≈_ ds) (sim ds) (λ m _ v → cong T.obs (≈-val ds m v))
+    (subst₂ (_≈_ ds) (T.sub-id (λ ()) M) (T.sub-id (λ ()) ⌜ rco M (λ x → x) ⌝) (rco≈ ds M (λ x → x) ∅ ∅ (λ ()) (λ ())))

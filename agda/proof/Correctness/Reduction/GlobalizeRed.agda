@@ -1,277 +1,310 @@
 {-
 
-  Correctness of the globalize pass (Clos4 → Clos5) by a forward
-  simulation between their reduction semantics (see the design note in
-  Semantics/Reduction/Smallstep.agda).
+  Correctness of typed globalize (Clos4ᵀ → Clos5ᵀ) by a forward
+  simulation between their reduction semantics, in lock step.
 
-  The two reductions run in lock step. The Clos5 program runs with the
-  table of global definitions D that the pass produced for the whole
-  program, and the relation is indexed by D.
-
-  The relation on terms (_≈_) is a congruence, closed under substitution
-  (≈-subst), except for code: fun N is related to a reference k to a
-  definition N' of D when N is related to N'. The code of a function,
-  which no substitution enters, is related through the compilation
-  function: the pass threads the table through the term, so a subterm M
-  is compiled to proj₁ (glob M ds) for the table ds made before it, and
-  M is related to it when the table made after it only grows into D
-  (glob≈, with the lemmas about growing tables shared with the CEK
-  proof, proof/Compiler/GlobalizeTable.agda).
-
-  No precondition is needed: a free variable goes wrong in both.
+  The Clos5ᵀ program runs with the definitions ds that the pass made for
+  the whole program, and the relation is for ds: a congruence, closed
+  under substitution (≈-trav), except that code N is related to a
+  reference f when N is related to the definition ds ! f. The pass
+  threads the definitions made so far (Made) through the term, each over
+  the table before it, and weakens: a subterm is related to its output,
+  weakened to the whole table along s, when the definitions made agree
+  with ds along s (Agree).
 
 -}
 
 module proof.Correctness.Reduction.GlobalizeRed where
 
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.Clos4
-import Language.Clos5 as C
+open import Language.Typed.Type renaming (_≟_ to _≟F_)
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+open import proof.Framework.Lookup using (⊑-irr; ⊑-∋-trans)
+open import Framework.Lookup using (_!_)
+open import Language.Typed.Clos4
+import Language.Typed.Clos5 as C
 open import Compiler.Globalize
-open import proof.Compiler.GlobalizeTable
 open import Semantics.Observation
-open import proof.Framework.Reduction Obs o-wrong
+open import proof.Framework.Reduction Obs o-error
+open import proof.Framework.ReductionVec Obs o-error using (ans-∷; cong₃)
 open import Semantics.Reduction.Smallstep using (Equivalent)
-import proof.Semantics.Reduction.Clos4 as S
-import proof.Semantics.Reduction.Clos5 as T
-import proof.Framework.Syntax.Subst Op sig as SS
-import proof.Framework.Syntax.Subst C.Op C.sig as TS
-import proof.Framework.Syntax.SubstRel Op sig C.Op C.sig as SubstRel
-open SS using (sub; sub-args; exts; ids)
-open import proof.Framework.ListUtil using (proj-pw)
+import proof.Semantics.Reduction.Typed.Clos4 as S
+import proof.Semantics.Reduction.Typed.Clos5 as T
+open T using (Value; value-red)
+import Language.Prim as P
 
-open import Data.Fin using (Fin)
-open import Data.List using (List; []; replicate; _∷_)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Maybe using (just; nothing; map)
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Product using (Σ-syntax; _×_; _,_; proj₁; proj₂)
-open import Data.Unit using (⊤; tt)
-open import Language.Prim using (int; bool)
 open import Data.Bool using (true; false)
+import Data.Integer as Z
+open import Data.List using (List; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Nat using (ℕ)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import Data.Unit using (⊤; tt)
+open import Data.Vec using (Vec; []; _∷_)
+open import Data.Vec.Relation.Unary.All using () renaming (All to Allᵥ; [] to []ᵥ; _∷_ to _∷ᵥ_)
+open import Data.Vec.Relation.Binary.Pointwise.Inductive using (Pointwise; []; _∷_)
+import Data.Vec.Relation.Binary.Pointwise.Inductive as PW
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
+open import Relation.Nullary using (Dec; yes; no; does)
 
-module _ (D : Defs) where
+{- weakening the table twice -}
+wk-wk : ∀ {Σ Σ' Σ'' Γ A} {e : ∀ {n} → Σ' ∋ n → Σ'' ∋ n} {e' : ∀ {n} → Σ ∋ n → Σ' ∋ n} {e'' : ∀ {n} → Σ ∋ n → Σ'' ∋ n}
+  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x) → (M : C.Tm Σ Γ A) → C.wk e (C.wk e' M) ≡ C.wk e'' M
+wks-wk : ∀ {Σ Σ' Σ'' Γ n} {e : ∀ {n} → Σ' ∋ n → Σ'' ∋ n} {e' : ∀ {n} → Σ ∋ n → Σ' ∋ n} {e'' : ∀ {n} → Σ ∋ n → Σ'' ∋ n}
+  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x) → (Ms : Vec (C.Tm Σ Γ Any) n) → C.wks e (C.wks e' Ms) ≡ C.wks e'' Ms
+wk-wk h (C.` x) = refl
+wk-wk h (C.fun-ref f) = cong C.fun-ref (h f)
+wk-wk h (C.pack L M) = cong₂ C.pack (wk-wk h L) (wk-wk h M)
+wk-wk h (C.callc L M) = cong₂ C.callc (wk-wk h L) (wk-wk h M)
+wk-wk h (C.lit B c) = refl
+wk-wk h (C.tuple Ms) = cong C.tuple (wks-wk h Ms)
+wk-wk h (C.get i M) = cong (C.get i) (wk-wk h M)
+wk-wk h (C.inl M) = cong C.inl (wk-wk h M)
+wk-wk h (C.inr M) = cong C.inr (wk-wk h M)
+wk-wk h (C.case L M N) = cong₃ C.case (wk-wk h L) (wk-wk h M) (wk-wk h N)
+wk-wk h (C.prim p L M) = cong₂ (C.prim p) (wk-wk h L) (wk-wk h M)
+wk-wk h (C.let′ M N) = cong₂ C.let′ (wk-wk h M) (wk-wk h N)
+wk-wk h (C.inject G M) = cong (C.inject G) (wk-wk h M)
+wk-wk h (C.project t M) = cong (C.project t) (wk-wk h M)
+wks-wk h [] = refl
+wks-wk h (M ∷ Ms) = cong₂ _∷_ (wk-wk h M) (wks-wk h Ms)
 
-  {- The relation on terms, for the final table D ---------------------------------}
+module _ {Σf : List ℕ} (ds : All (C.Code Σf) Σf) where
+
+  {- The relation ---------------------------------------------------------------}
 
   infix 4 _≈_
-  data _≈_ : AST → C.AST → Set where
-    var≈ : ∀ {x} → ` x ≈ C.` x
-    fun≈ : ∀ {k N N'} → C.global D k ≡ just N' → N ≈ N'
-      → fun-op ⦅ cons (clear (bind (bind (ast N)))) Nil ⦆ ≈ C.fun-ref k C.⦅ Nil ⦆
-    app≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
-      → app ⦅ L ,, M ,, N ,, Nil ⦆ ≈ C.app C.⦅ L' ,, M' ,, N' ,, Nil ⦆
-    lit≈ : ∀ {B k} → lit B k ⦅ Nil ⦆ ≈ C.lit B k C.⦅ Nil ⦆
-    pair≈ : ∀ {L L' M M'} → L ≈ L' → M ≈ M' → pair-op ⦅ L ,, M ,, Nil ⦆ ≈ C.pair-op C.⦅ L' ,, M' ,, Nil ⦆
-    fst≈ : ∀ {M M'} → M ≈ M' → fst-op ⦅ M ,, Nil ⦆ ≈ C.fst-op C.⦅ M' ,, Nil ⦆
-    snd≈ : ∀ {M M'} → M ≈ M' → snd-op ⦅ M ,, Nil ⦆ ≈ C.snd-op C.⦅ M' ,, Nil ⦆
-    tuple≈ : ∀ {n as as'} → Pw _≈_ {n} as as' → tuple n ⦅ as ⦆ ≈ C.tuple n C.⦅ as' ⦆
-    get≈ : ∀ {n} {i : Fin n} {M M'} → M ≈ M' → get i ⦅ M ,, Nil ⦆ ≈ C.get i C.⦅ M' ,, Nil ⦆
-    inl≈ : ∀ {M M'} → M ≈ M' → inl-op ⦅ M ,, Nil ⦆ ≈ C.inl-op C.⦅ M' ,, Nil ⦆
-    inr≈ : ∀ {M M'} → M ≈ M' → inr-op ⦅ M ,, Nil ⦆ ≈ C.inr-op C.⦅ M' ,, Nil ⦆
-    case≈ : ∀ {L L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
-      → case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆ ≈ C.case-op C.⦅ L' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆
-    prim≈ : ∀ {p L L' M M'} → L ≈ L' → M ≈ M' → prim p ⦅ L ,, M ,, Nil ⦆ ≈ C.prim p C.⦅ L' ,, M' ,, Nil ⦆
-    let≈ : ∀ {M M' N N'} → M ≈ M' → N ≈ N' → let-op ⦅ M ,, ⟩ N ,, Nil ⦆ ≈ C.let-op C.⦅ M' ,, ⟩ N' ,, Nil ⦆
+  data _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Σf Γ A → Set where
+    var≈ : ∀ {Γ A} {x : Γ ∋ A} → ` x ≈ C.` x
+    code≈ : ∀ {Γ n N} {f : Σf ∋ n} → N ≈ ds ! f → code {Γ} N ≈ C.fun-ref f
+    pack≈ : ∀ {Γ n} {L : Tm Γ (code n)} {L' M M'} → L ≈ L' → M ≈ M' → pack L M ≈ C.pack L' M'
+    callc≈ : ∀ {Γ} {L : Tm Γ _} {L' M M'} → L ≈ L' → M ≈ M' → callc L M ≈ C.callc L' M'
+    lit≈ : ∀ {Γ B c} → lit {Γ} B c ≈ C.lit B c
+    tuple≈ : ∀ {Γ n} {Ms : Vec (Tm Γ Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → tuple Ms ≈ C.tuple Ms'
+    get≈ : ∀ {Γ n i} {M : Tm Γ ⟪ tup n ⟫} {M'} → M ≈ M' → get i M ≈ C.get i M'
+    inl≈ : ∀ {Γ} {M : Tm Γ Any} {M'} → M ≈ M' → inl M ≈ C.inl M'
+    inr≈ : ∀ {Γ} {M : Tm Γ Any} {M'} → M ≈ M' → inr M ≈ C.inr M'
+    case≈ : ∀ {Γ} {L : Tm Γ _} {L' M M' N N'} → L ≈ L' → M ≈ M' → N ≈ N' → case L M N ≈ C.case L' M' N'
+    prim≈ : ∀ {Γ p} {L : Tm Γ _} {L' M M'} → L ≈ L' → M ≈ M' → prim p L M ≈ C.prim p L' M'
+    let≈ : ∀ {Γ} {M : Tm Γ _} {M' N N'} → M ≈ M' → N ≈ N' → let′ M N ≈ C.let′ M' N'
+    inject≈ : ∀ {Γ G} {M : Tm Γ ⟪ G ⟫} {M'} → M ≈ M' → inject G M ≈ C.inject G M'
+    project≈ : ∀ {Γ t} {M : Tm Γ Any} {M'} → M ≈ M' → project t M ≈ C.project t M'
 
-  {- the operands of an operator, related -}
-  GR : ∀ {bs} → Args bs → C.Args bs → Set
-  GRa : ∀ {b} → Arg b → C.Arg b → Set
-  GR nil C.nil = ⊤
-  GR (cons a as) (C.cons a' as') = GRa a a' × GR as as'
-  GRa (ast M) (C.ast M') = M ≈ M'
-  GRa (bind a) (C.bind a') = GRa a a'
-  GRa (clear a) (C.clear a') = GRa a a'
+  {- The fundamental lemma ----------------------------------------------------------}
 
-  {- a term is related to its globalization, when the table it makes grows into D -}
-  glob≈ : ∀ M ds → proj₂ (glob M ds) ⊑ D → M ≈ proj₁ (glob M ds)
-  glob≈a : ∀ {b} (a : Arg b) ds → proj₂ (glob-arg a ds) ⊑ D → GRa a (proj₁ (glob-arg a ds))
-  glob≈s : ∀ {bs} (as : Args bs) ds → proj₂ (glob-args as ds) ⊑ D → GR as (proj₁ (glob-args as ds))
-  glob≈ (` x) ds p = var≈
-  glob≈ (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p = fun≈ (global-⊑ p) (glob≈ N ds (∷-⊑ p))
-  glob≈ (app ⦅ as@(L ,, M ,, N ,, Nil) ⦆) ds p with glob≈s as ds p
-  ... | r , s , t , _ = app≈ r s t
-  glob≈ (lit B k ⦅ Nil ⦆) ds p = lit≈
-  glob≈ (pair-op ⦅ as@(L ,, M ,, Nil) ⦆) ds p with glob≈s as ds p
-  ... | r , s , _ = pair≈ r s
-  glob≈ (fst-op ⦅ as@(M ,, Nil) ⦆) ds p = fst≈ (proj₁ (glob≈s as ds p))
-  glob≈ (snd-op ⦅ as@(M ,, Nil) ⦆) ds p = snd≈ (proj₁ (glob≈s as ds p))
-  glob≈ (tuple n ⦅ as ⦆) ds p = tuple≈ (pw n as (glob≈s as ds p))
-    where pw : ∀ n (as : Args (replicate n ■)) {as'} → GR as as' → Pw _≈_ as as'
-          pw zero nil {C.nil} _ = []
-          pw (suc n) (cons (ast M) as) {C.cons (C.ast M') as'} (r , rs) = r ∷ pw n as rs
-  glob≈ (get i ⦅ as@(M ,, Nil) ⦆) ds p = get≈ (proj₁ (glob≈s as ds p))
-  glob≈ (inl-op ⦅ as@(M ,, Nil) ⦆) ds p = inl≈ (proj₁ (glob≈s as ds p))
-  glob≈ (inr-op ⦅ as@(M ,, Nil) ⦆) ds p = inr≈ (proj₁ (glob≈s as ds p))
-  glob≈ (case-op ⦅ as@(L ,, ⟩ M ,, ⟩ N ,, Nil) ⦆) ds p with glob≈s as ds p
-  ... | r , s , t , _ = case≈ r s t
-  glob≈ (prim q ⦅ as@(L ,, M ,, Nil) ⦆) ds p with glob≈s as ds p
-  ... | r , s , _ = prim≈ r s
-  glob≈ (let-op ⦅ as@(M ,, ⟩ N ,, Nil) ⦆) ds p with glob≈s as ds p
-  ... | r , s , _ = let≈ r s
-  glob≈a (ast M) ds p = glob≈ M ds p
-  glob≈a (bind a) ds p = glob≈a a ds p
-  glob≈a (clear a) ds p = glob≈a a ds p
-  glob≈s nil ds p = tt
-  glob≈s (cons a as) ds p = glob≈a a ds (⊑-trans (glob-grows-args as _) p) , glob≈s as _ p
+  {- the definitions made agree with ds, weakened along s -}
+  Agree : ∀ {Σ} → Made Σ → Σ ⊑ Σf → Set
+  Agree [] s = ⊤
+  Agree (D ▷ N) s = ds ! ⊑-∋ s Z ≡ C.wk (⊑-∋ (⊑-trans (there⊑ here⊑) s)) N × Agree D (⊑-trans (there⊑ here⊑) s)
 
-  {- Closure under substitution -------------------------------------------------}
+  agree-irr : ∀ {Σ} {D : Made Σ} {s s'} → Agree D s → Agree D s'
+  agree-irr {s = s} {s'} a rewrite ⊑-irr s s' = a
 
-  module Kit (P : SS.Subst → TS.Subst → Set) (p≈ : ∀ {σ σ'} → P σ σ' → ∀ x → σ x ≈ σ' x)
-    (pok : ∀ {σ σ'} → P σ σ' → ⊤) (pexts : ∀ {σ σ'} → P σ σ' → P (exts σ) (TS.exts σ')) where
+  {- the source is related to the output, weakened, and the definitions made before agree too -}
+  Glob : ∀ {Σ Γ A} → Tm Γ A → Made Σ → Out Σ (λ Σ' → C.Tm Σ' Γ A) → Set
+  Glob M D (out g D' M') = ∀ s → Agree D' s → M ≈ C.wk (⊑-∋ s) M' × Agree D (⊑-trans g s)
 
-    ≈-sub : ∀ {σ σ' M M'} → P σ σ' → M ≈ M' → sub σ M ≈ TS.sub σ' M'
-    ≈-subs : ∀ {σ σ' n as as'} → P σ σ' → Pw _≈_ {n} as as' → Pw _≈_ (sub-args σ as) (TS.sub-args σ' as')
-    ≈-sub p var≈ = p≈ p _
-    ≈-sub p (fun≈ e r) = fun≈ e r
-    ≈-sub p (app≈ r s t) = app≈ (≈-sub p r) (≈-sub p s) (≈-sub p t)
-    ≈-sub p lit≈ = lit≈
-    ≈-sub p (pair≈ r s) = pair≈ (≈-sub p r) (≈-sub p s)
-    ≈-sub p (fst≈ r) = fst≈ (≈-sub p r)
-    ≈-sub p (snd≈ r) = snd≈ (≈-sub p r)
-    ≈-sub p (tuple≈ rs) = tuple≈ (≈-subs p rs)
-    ≈-sub p (get≈ r) = get≈ (≈-sub p r)
-    ≈-sub p (inl≈ r) = inl≈ (≈-sub p r)
-    ≈-sub p (inr≈ r) = inr≈ (≈-sub p r)
-    ≈-sub p (case≈ r s t) = case≈ (≈-sub p r) (≈-sub (pexts p) s) (≈-sub (pexts p) t)
-    ≈-sub p (prim≈ r s) = prim≈ (≈-sub p r) (≈-sub p s)
-    ≈-sub p (let≈ r s) = let≈ (≈-sub p r) (≈-sub (pexts p) s)
-    ≈-subs p [] = []
-    ≈-subs p (r ∷ rs) = ≈-sub p r ∷ ≈-subs p rs
+  Globs : ∀ {Σ Γ n} → Vec (Tm Γ Any) n → Made Σ → Out Σ (λ Σ' → Vec (C.Tm Σ' Γ Any) n) → Set
+  Globs Ms D (out g D' Ms') = ∀ s → Agree D' s → Pointwise _≈_ Ms (C.wks (⊑-∋ s) Ms') × Agree D (⊑-trans g s)
 
-  open SubstRel.Closure _≈_ var≈ (λ _ _ → ⊤) (λ _ → tt) (λ _ → tt) Kit.≈-sub using (≈-subst)
+  {- one operand, and then another, under the weakening of the first -}
+  wk≈ : ∀ {Σ Σ' Γ A} {M : Tm Γ A} {M' : C.Tm Σ Γ A} {g : Σ ⊑ Σ'} {s : Σ' ⊑ Σf}
+    → M ≈ C.wk (⊑-∋ (⊑-trans g s)) M' → M ≈ C.wk (⊑-∋ s) (C.wk (⊑-∋ g) M')
+  wk≈ {M' = M'} {g} {s} r = subst (_ ≈_) (sym (wk-wk (λ x → sym (⊑-∋-trans g s x)) M')) r
 
-  {- The simulation -----------------------------------------------------------------}
+  glob≈ : ∀ {Σ Γ A} (M : Tm Γ A) (D : Made Σ) → Glob M D (glob M D)
+  globs≈ : ∀ {Σ Γ n} (Ms : Vec (Tm Γ Any) n) (D : Made Σ) → Globs Ms D (globs Ms D)
+  glob₁≈ : ∀ {Σ Γ Γ₁ A B} {f : ∀ {Σ'} → C.Tm Σ' Γ₁ A → C.Tm Σ' Γ B} {h : Tm Γ₁ A → Tm Γ B}
+    → (∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X'} → X ≈ C.wk e X' → h X ≈ C.wk e (f X'))
+    → (M : Tm Γ₁ A) (D : Made Σ) → Glob (h M) D (glob₁ f M D)
+  glob₂≈ : ∀ {Σ Γ Γ₁ Γ₂ A B Cc} {f : ∀ {Σ'} → C.Tm Σ' Γ₁ A → C.Tm Σ' Γ₂ B → C.Tm Σ' Γ Cc} {h : Tm Γ₁ A → Tm Γ₂ B → Tm Γ Cc}
+    → (∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X' Y Y'} → X ≈ C.wk e X' → Y ≈ C.wk e Y' → h X Y ≈ C.wk e (f X' Y'))
+    → (L : Tm Γ₁ A) (M : Tm Γ₂ B) (D : Made Σ) → Glob (h L M) D (glob₂ f L M D)
 
-  Ans′ = Ans (T.red D) T.Value _≈_
+  glob≈ (` x) D s a = var≈ , agree-irr a
+  glob≈ (code N) D with glob N D | glob≈ N D
+  ... | out g D' N' | ih = λ { s (e , a) → let (r , a') = ih _ a in
+          code≈ (subst (_ ≈_) (sym e) r) , agree-irr a' }
+  glob≈ (pack L M) D = glob₂≈ pack≈ L M D
+  glob≈ (callc L M) D = glob₂≈ callc≈ L M D
+  glob≈ (lit B c) D s a = lit≈ , agree-irr a
+  glob≈ (tuple Ms) D with globs Ms D | globs≈ Ms D
+  ... | out g D' Ms' | ih = λ s a → let (rs , a') = ih s a in tuple≈ rs , a'
+  glob≈ (get i M) D = glob₁≈ get≈ M D
+  glob≈ (inl M) D = glob₁≈ inl≈ M D
+  glob≈ (inr M) D = glob₁≈ inr≈ M D
+  glob≈ (case L M N) D with glob L D | glob≈ L D
+  ... | out g₁ D₁ L' | ih₁ with glob M D₁ | glob≈ M D₁
+  ...   | out g₂ D₂ M' | ih₂ with glob N D₂ | glob≈ N D₂
+  ...     | out g₃ D₃ N' | ih₃ = λ s a →
+    let (r₃ , a₂) = ih₃ s a ; (r₂ , a₁) = ih₂ _ a₂ ; (r₁ , a₀) = ih₁ _ a₁ in
+    case≈ (wk≈ (subst (_ ≈_) (cong (λ q → C.wk (⊑-∋ q) L') (⊑-irr _ _)) r₁)) (wk≈ r₂) r₃ , agree-irr a₀
+  glob≈ (prim p L M) D = glob₂≈ prim≈ L M D
+  glob≈ (let′ M N) D = glob₂≈ let≈ M N D
+  glob≈ (inject G M) D = glob₁≈ inject≈ M D
+  glob≈ (project t M) D = glob₁≈ project≈ M D
 
-  vr : ∀ {V} → T.Value V → T.red D V ≡ val
-  vr = T.value-red
+  globs≈ [] D s a = [] , agree-irr a
+  globs≈ (M ∷ Ms) D with glob M D | glob≈ M D
+  ... | out g₁ D₁ M' | ih₁ with globs Ms D₁ | globs≈ Ms D₁
+  ...   | out g₂ D₂ Ms' | ih₂ = λ s a →
+    let (rs , a₁) = ih₂ s a ; (r , a₀) = ih₁ _ a₁ in wk≈ r ∷ rs , agree-irr a₀
 
-  obs≈ : ∀ {M M'} → M ≈ M' → S.obs M ≡ T.obs M'
-  obs≈s : ∀ {n as as'} → Pw _≈_ {n} as as' → S.obs-args as ≡ T.obs-args as'
-  obs≈ var≈ = refl
-  obs≈ (fun≈ _ _) = refl
-  obs≈ (app≈ _ _ _) = refl
+  glob₁≈ c M D with glob M D | glob≈ M D
+  ... | out g D' M' | ih = λ s a → let (r , a') = ih s a in c r , a'
+
+  glob₂≈ c L M D with glob L D | glob≈ L D
+  ... | out g₁ D₁ L' | ih₁ with glob M D₁ | glob≈ M D₁
+  ...   | out g₂ D₂ M' | ih₂ = λ s a →
+    let (r₂ , a₁) = ih₂ s a ; (r₁ , a₀) = ih₁ _ a₁ in c (wk≈ r₁) r₂ , agree-irr a₀
+
+  {- the definitions of the whole program agree with ds -}
+  agree-close : ∀ {Σ} (D : Made Σ) (s : Σ ⊑ Σf) → (∀ {n} (f : Σ ∋ n) → ds ! ⊑-∋ s f ≡ close D s ! f) → Agree D s
+  agree-close [] s h = tt
+  agree-close (D ▷ N) s h =
+    h Z , agree-close D _ λ f → trans (cong (ds !_) (⊑-∋-trans (there⊑ here⊑) s f)) (h (S f))
+
+  {- Closure under substitution -----------------------------------------------------}
+
+  record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit {Σf}) : Set where
+    field
+      rel-vr : ∀ {Γ B} → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ (Z {Γ = Γ} {a = B})) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z)
+      rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
+        → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)
+
+  module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
+    open KR K
+
+    OK : ∀ {Γ Δ} → S.Sub 𝒦₁ Γ Δ → T.Sub 𝒦₂ Γ Δ → Set
+    OK σ τ = ∀ {A} (x : _ ∋ A) → S.Kit.tm 𝒦₁ (σ x) ≈ T.Kit.tm 𝒦₂ (τ x)
+
+    ok-ext : ∀ {Γ Δ B} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} → OK σ τ → OK (S.exts 𝒦₁ {B = B} σ) (T.exts 𝒦₂ τ)
+    ok-ext ok Z = rel-vr
+    ok-ext ok (S x) = rel-wk (ok x)
+
+    ≈-trav : ∀ {Γ Δ A} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {M : Tm Γ A} {M'} → M ≈ M' → OK σ τ
+      → S.trav 𝒦₁ σ M ≈ T.trav 𝒦₂ τ M'
+    ≈-travs : ∀ {Γ Δ n} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ Δ} {Ms : Vec (Tm Γ Any) n} {Ms' : Vec (C.Tm Σf Γ Any) n}
+      → Pointwise _≈_ Ms Ms' → OK σ τ → Pointwise _≈_ (S.travs 𝒦₁ σ Ms) (T.travs 𝒦₂ τ Ms')
+    ≈-trav var≈ ok = ok _
+    ≈-trav (code≈ r) ok = code≈ r
+    ≈-trav (pack≈ r s) ok = pack≈ (≈-trav r ok) (≈-trav s ok)
+    ≈-trav (callc≈ r s) ok = callc≈ (≈-trav r ok) (≈-trav s ok)
+    ≈-trav lit≈ ok = lit≈
+    ≈-trav (tuple≈ rs) ok = tuple≈ (≈-travs rs ok)
+    ≈-trav (get≈ r) ok = get≈ (≈-trav r ok)
+    ≈-trav (inl≈ r) ok = inl≈ (≈-trav r ok)
+    ≈-trav (inr≈ r) ok = inr≈ (≈-trav r ok)
+    ≈-trav (case≈ r s t) ok = case≈ (≈-trav r ok) (≈-trav s (ok-ext ok)) (≈-trav t (ok-ext ok))
+    ≈-trav (prim≈ r s) ok = prim≈ (≈-trav r ok) (≈-trav s ok)
+    ≈-trav (let≈ r s) ok = let≈ (≈-trav r ok) (≈-trav s (ok-ext ok))
+    ≈-trav (inject≈ r) ok = inject≈ (≈-trav r ok)
+    ≈-trav (project≈ r) ok = project≈ (≈-trav r ok)
+    ≈-travs [] ok = []
+    ≈-travs (r ∷ rs) ok = ≈-trav r ok ∷ ≈-travs rs ok
+
+  varKR : KR S.varK T.varK
+  varKR = record { rel-vr = var≈ ; rel-wk = λ { var≈ → var≈ } }
+
+  tmKR : KR S.tmK T.tmK
+  tmKR = record { rel-vr = var≈ ; rel-wk = λ r → Trav.≈-trav varKR r λ _ → var≈ }
+
+  {- The simulation ----------------------------------------------------------------------}
+
+  Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm Σf [] A → Set
+  Ans′ = Ans (T.red ds) Value _≈_
+
+  obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
+  obss≈ : ∀ {n} {Vs : Vec (Tm [] Any) n} {Vs'} → Pointwise _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
+  obs≈ (var≈ {x = ()})
+  obs≈ (code≈ _) = refl
+  obs≈ (pack≈ _ _) = refl
+  obs≈ (callc≈ _ _) = refl
   obs≈ lit≈ = refl
-  obs≈ (pair≈ _ _) = refl
-  obs≈ (fst≈ _) = refl
-  obs≈ (snd≈ _) = refl
-  obs≈ (tuple≈ rs) = cong o-tuple (obs≈s rs)
+  obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
   obs≈ (get≈ _) = refl
   obs≈ (inl≈ r) = cong o-inl (obs≈ r)
   obs≈ (inr≈ r) = cong o-inr (obs≈ r)
   obs≈ (case≈ _ _ _) = refl
   obs≈ (prim≈ _ _) = refl
   obs≈ (let≈ _ _) = refl
-  obs≈s [] = refl
-  obs≈s (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈s rs)
+  obs≈ (inject≈ r) = obs≈ r
+  obs≈ (project≈ _) = refl
+  obss≈ [] = refl
+  obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
 
-  ret?-ans : ∀ {M mv mw X} → M.Pointwise _≈_ mv mw → T.red D X ≡ T.ret? mw → Ans′ M (S.ret? mv) X
-  ret?-ans (M.just r) e = to (one e) r
-  ret?-ans M.nothing e = wrong ε e
+  out≈ : ∀ p n m → S.out {[]} p n m ≈ T.out p n m
+  out≈ P.sub n m = lit≈
+  out≈ P.eq n m with does (n Z.≟ m)
+  ... | true = inl≈ (inject≈ (tuple≈ []))
+  ... | false = inr≈ (inject≈ (tuple≈ []))
 
-  {- a call, once its operands are values -}
-  call-step : ∀ {F E W r} → T.Value F → T.Value E → T.Value W → T.call D F E W ≡ r
-    → T.red D (C.app C.⦅ F ,, E ,, W ,, Nil ⦆) ≡ r
-  call-step v v' w e rewrite vr v | vr v' | vr w = e
+  ≈-[] : ∀ {A} {N : Tm (Any ∷ []) A} {N' V V'} → N ≈ N' → V ≈ V' → (N S.[ V ]) ≈ (N' T.[ V' ])
+  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m ; (S ()) }
 
-  one≈ : ∀ {V V'} → V ≈ V' → T.Value V' → ∀ x → (V • ids) x ≈ (V' TS.• TS.ids) x
-  one≈ r v zero = r
-  one≈ r v (suc x) = var≈
-
-  sim : ∀ {M M'} → M ≈ M' → Ans′ M (S.red M) M'
-  sims : ∀ {n as as'} → Pw _≈_ {n} as as' → Ans (T.red-args D) T.Values (Pw _≈_) as (S.red-args as) as'
-  sim var≈ = wrong ε refl
-  sim (fun≈ e r) = val ε T.fun (fun≈ e r)
-  sim (app≈ {L} {L'} {M} {M'} {N} {N'} r s t) =
-    ans-in (frame _ (λ _ → refl)) (λ r' → app≈ r' s t) (sim r)
-      λ v r' → ans-in (frame {g = λ X → C.app C.⦅ _ ,, X ,, N' ,, Nil ⦆} _ (λ X → val-in (vr v)))
-                      (λ s' → app≈ r' s' t) (sim s)
-        λ v' s' → ans-in (frame {g = λ X → C.app C.⦅ _ ,, _ ,, X ,, Nil ⦆} _
-                                (λ X → trans (val-in (vr v)) (val-in (vr v'))))
-                         (app≈ r' s') (sim t) (call-sim v v' r' s')
+  sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
+  sims : ∀ {n} {Ms : Vec (Tm [] Any) n} {Ms'} → Pointwise _≈_ Ms Ms' → Ans (T.reds ds) (Allᵥ Value) (Pointwise _≈_) Ms (S.reds Ms) Ms'
+  sim (var≈ {x = ()})
+  sim (code≈ r) = val ε T.fun-ref (code≈ r)
+  sim (pack≈ r s) =
+    ans-in (frame _ λ _ → refl) (λ m → pack≈ m s) (sim r)
+      λ v m → ans-in (frame {g = C.pack _} _ λ _ → val-in (value-red v)) (pack≈ m) (sim s) λ w m' → val ε (T.pack v w) (pack≈ m m')
+  sim (callc≈ r s) =
+    ans-in (frame _ λ _ → refl) (λ m → callc≈ m s) (sim r)
+      λ v m → ans-in (frame {g = C.callc _} _ λ _ → val-in (value-red v)) (callc≈ m) (sim s) λ w m' → call-sim v m w m'
     where
-    call-sim : ∀ {F F' E E' W W'} → T.Value F' → T.Value E' → F ≈ F' → E ≈ E' → T.Value W' → W ≈ W'
-      → Ans′ (app ⦅ F ,, E ,, W ,, Nil ⦆) (S.call F E W) (C.app C.⦅ F' ,, E' ,, W' ,, Nil ⦆)
-    call-sim v v' (fun≈ e r) s' w t' =
-      to (one (call-step v v' w (cong (λ x → T.call? x _ _) e)))
-         (≈-subst ((λ { zero → t' ; (suc zero) → s' ; (suc (suc x)) → var≈ }) , tt) r)
-    call-sim v@(T.pair _ _) v' (pair≈ _ _) s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@T.lit v' lit≈ s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@(T.tuple _) v' (tuple≈ _) s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@(T.inl _) v' (inl≈ _) s' w t' = wrong ε (call-step v v' w refl)
-    call-sim v@(T.inr _) v' (inr≈ _) s' w t' = wrong ε (call-step v v' w refl)
+    call-sim : ∀ {V V' W W'} → Value V' → V ≈ V' → Value W' → W ≈ W' → Ans′ (callc V W) (S.call V W) (C.callc V' W')
+    call-sim (T.pack T.fun-ref e) (pack≈ (code≈ n) m) w m' =
+      to (one (trans (val-in (value-red (T.pack T.fun-ref e))) (val-in (value-red w))))
+         (Trav.≈-trav tmKR n λ { Z → m' ; (S Z) → m })
   sim lit≈ = val ε T.lit lit≈
-  sim (pair≈ r s) =
-    ans-in (frame _ (λ _ → refl)) (λ r' → pair≈ r' s) (sim r)
-      λ v r' → ans-in (frame {g = λ X → C.pair-op C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (vr v))) (pair≈ r') (sim s)
-        λ v' s' → val ε (T.pair v v') (pair≈ r' s')
-  sim (fst≈ r) = ans-in (frame _ (λ _ → refl)) fst≈ (sim r) fst-sim
+  sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
+  sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)
+    λ { (T.tuple vs) (tuple≈ ms) → to (one (val-in (value-red (T.tuple vs)))) (PW.lookup ms i) }
+  sim (inl≈ r) = ans-in (frame _ λ _ → refl) inl≈ (sim r) λ v m → val ε (T.inl v) (inl≈ m)
+  sim (inr≈ r) = ans-in (frame _ λ _ → refl) inr≈ (sim r) λ v m → val ε (T.inr v) (inr≈ m)
+  sim (case≈ r s t) = ans-in (frame _ λ _ → refl) (λ m → case≈ m s t) (sim r)
+    λ { (T.inl v) (inl≈ m) → to (one (val-in (value-red (T.inl v)))) (≈-[] s m)
+      ; (T.inr v) (inr≈ m) → to (one (val-in (value-red (T.inr v)))) (≈-[] t m) }
+  sim (prim≈ {p = p} r s) = ans-in (frame _ λ _ → refl) (λ m → prim≈ m s) (sim r)
+    λ { T.lit lit≈ → ans-in (frame {g = C.prim p _} _ λ _ → refl) (prim≈ lit≈) (sim s)
+      λ { T.lit lit≈ → to (one refl) (out≈ p _ _) } }
+  sim (let≈ r s) = ans-in (frame _ λ _ → refl) (λ m → let≈ m s) (sim r)
+    λ v m → to (one (val-in (value-red v))) (≈-[] s m)
+  sim (inject≈ r) = ans-in (frame _ λ _ → refl) inject≈ (sim r) λ v m → val ε (T.inject v) (inject≈ m)
+  sim (project≈ {t = t} r) = ans-in (frame _ λ _ → refl) project≈ (sim r) λ { (T.inject v) (inject≈ m) → proj-sim v m }
     where
-    fst-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (fst-op ⦅ M ,, Nil ⦆) (S.fst? M) (C.fst-op C.⦅ V' ,, Nil ⦆)
-    fst-sim v@(T.pair _ _) (pair≈ r s) = to (one (val-in (vr v))) r
-    fst-sim T.fun (fun≈ _ _) = wrong ε refl
-    fst-sim T.lit lit≈ = wrong ε refl
-    fst-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (vr v))
-    fst-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (vr v))
-    fst-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (vr v))
-  sim (snd≈ r) = ans-in (frame _ (λ _ → refl)) snd≈ (sim r) snd-sim
-    where
-    snd-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (snd-op ⦅ M ,, Nil ⦆) (S.snd? M) (C.snd-op C.⦅ V' ,, Nil ⦆)
-    snd-sim v@(T.pair _ _) (pair≈ r s) = to (one (val-in (vr v))) s
-    snd-sim T.fun (fun≈ _ _) = wrong ε refl
-    snd-sim T.lit lit≈ = wrong ε refl
-    snd-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (vr v))
-    snd-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (vr v))
-    snd-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (vr v))
-  sim (tuple≈ rs) = ans-in (frame _ (λ _ → refl)) tuple≈ (sims rs) (λ vs rs' → val ε (T.tuple vs) (tuple≈ rs'))
-  sim (get≈ {i = i} r) = ans-in (frame _ (λ _ → refl)) get≈ (sim r) get-sim
-    where
-    get-sim : ∀ {M V'} → T.Value V' → M ≈ V' → Ans′ (get i ⦅ M ,, Nil ⦆) (S.get? i M) (C.get i C.⦅ V' ,, Nil ⦆)
-    get-sim v@(T.tuple _) (tuple≈ rs) = ret?-ans (proj-pw {R = _≈_} i (pw-list rs)) (val-in (vr v))
-    get-sim T.fun (fun≈ _ _) = wrong ε refl
-    get-sim v@(T.pair _ _) (pair≈ _ _) = wrong ε (val-in (vr v))
-    get-sim T.lit lit≈ = wrong ε refl
-    get-sim v@(T.inl _) (inl≈ _) = wrong ε (val-in (vr v))
-    get-sim v@(T.inr _) (inr≈ _) = wrong ε (val-in (vr v))
-  sim (inl≈ r) = ans-in (frame _ (λ _ → refl)) inl≈ (sim r) (λ v r' → val ε (T.inl v) (inl≈ r'))
-  sim (inr≈ r) = ans-in (frame _ (λ _ → refl)) inr≈ (sim r) (λ v r' → val ε (T.inr v) (inr≈ r'))
-  sim (case≈ {M = M} {M'} {N} {N'} r s t) = ans-in (frame _ (λ _ → refl)) (λ r' → case≈ r' s t) (sim r) case-sim
-    where
-    case-sim : ∀ {L V'} → T.Value V' → L ≈ V'
-      → Ans′ (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) (S.case? L M N) (C.case-op C.⦅ V' ,, ⟩ M' ,, ⟩ N' ,, Nil ⦆)
-    case-sim v@(T.inl v₁) (inl≈ r') = to (one (val-in (vr v))) (≈-subst (one≈ r' v₁ , tt) s)
-    case-sim v@(T.inr v₁) (inr≈ r') = to (one (val-in (vr v))) (≈-subst (one≈ r' v₁ , tt) t)
-    case-sim T.fun (fun≈ _ _) = wrong ε refl
-    case-sim v@(T.pair _ _) (pair≈ _ _) = wrong ε (val-in (vr v))
-    case-sim T.lit lit≈ = wrong ε refl
-    case-sim v@(T.tuple _) (tuple≈ _) = wrong ε (val-in (vr v))
-  sim (prim≈ {p} r s) =
-    ans-in (frame _ (λ _ → refl)) (λ r' → prim≈ r' s) (sim r)
-      λ v r' → ans-in (frame {g = λ X → C.prim p C.⦅ _ ,, X ,, Nil ⦆} _ (λ X → val-in (vr v))) (prim≈ r') (sim s)
-        λ v' s' → ret?-ans (out≈ (obs≈ r') (obs≈ s')) (trans (val-in (vr v)) (val-in (vr v')))
-    where
-    out≈ : ∀ {o₁ o₁' o₂ o₂'} → o₁ ≡ o₁' → o₂ ≡ o₂'
-      → M.Pointwise _≈_ (map S.out (δ? p o₁ o₂)) (map T.out (δ? p o₁' o₂'))
-    out≈ {o₁} {_} {o₂} refl refl with δ? p o₁ o₂
-    ... | nothing = M.nothing
-    ... | just (int n) = M.just lit≈
-    ... | just (bool true) = M.just (inl≈ (tuple≈ []))
-    ... | just (bool false) = M.just (inr≈ (tuple≈ []))
-  sim (let≈ r s) =
-    ans-in (frame _ (λ _ → refl)) (λ r' → let≈ r' s) (sim r)
-      λ v r' → to (one (val-in (vr v))) (≈-subst (one≈ r' v , tt) s)
-  sims [] = val ε T.[] []
-  sims (r ∷ rs) =
-    ans-in (frame _ (λ _ → refl)) (λ r' → r' ∷ rs) (sim r)
-      λ v r' → ans-in (frame {g = λ Xs → _ ,, Xs} _ (λ X → val-in (vr v))) (r' ∷_) (sims rs)
-        λ vs rs' → val ε (v T.∷ vs) (r' ∷ rs')
+    proj-sim : ∀ {G V V'} → Value V' → V ≈ V' → Ans′ (project t (inject G V)) (S.project? t (inject G V)) (C.project t (C.inject G V'))
+    proj-sim {G} {V} {V'} v m = pd (G ≟F flat t) (val-in (value-red (T.inject v)))
+      where pd : ∀ {H} (d : Dec (G ≡ H)) {X Y} → T.red ds X ≡ T.proj-dec d V' → Ans′ Y (S.proj-dec d V) X
+            pd (yes refl) e = to (one e) m
+            pd (no _) e = error ε e
+  sims [] = val ε []ᵥ []
+  sims (r ∷ rs) = ans-∷ (T.reds ds) (λ _ _ → refl) value-red rs (sim r) (sims rs)
 
-{- The end theorem: for every Clos4 program ----------------------------------}
+{- weakening along the identity -}
+wk-id : ∀ {Σ Γ A} {e : ∀ {n} → Σ ∋ n → Σ ∋ n} → (∀ {n} (x : Σ ∋ n) → e x ≡ x) → (M : C.Tm Σ Γ A) → C.wk e M ≡ M
+wks-id : ∀ {Σ Γ n} {e : ∀ {n} → Σ ∋ n → Σ ∋ n} → (∀ {n} (x : Σ ∋ n) → e x ≡ x) → (Ms : Vec (C.Tm Σ Γ Any) n) → C.wks e Ms ≡ Ms
+wk-id h (C.` x) = refl
+wk-id h (C.fun-ref f) = cong C.fun-ref (h f)
+wk-id h (C.pack L M) = cong₂ C.pack (wk-id h L) (wk-id h M)
+wk-id h (C.callc L M) = cong₂ C.callc (wk-id h L) (wk-id h M)
+wk-id h (C.lit B c) = refl
+wk-id h (C.tuple Ms) = cong C.tuple (wks-id h Ms)
+wk-id h (C.get i M) = cong (C.get i) (wk-id h M)
+wk-id h (C.inl M) = cong C.inl (wk-id h M)
+wk-id h (C.inr M) = cong C.inr (wk-id h M)
+wk-id h (C.case L M N) = cong₃ C.case (wk-id h L) (wk-id h M) (wk-id h N)
+wk-id h (C.prim p L M) = cong₂ (C.prim p) (wk-id h L) (wk-id h M)
+wk-id h (C.let′ M N) = cong₂ C.let′ (wk-id h M) (wk-id h N)
+wk-id h (C.inject G M) = cong (C.inject G) (wk-id h M)
+wk-id h (C.project t M) = cong (C.project t) (wk-id h M)
+wks-id h [] = refl
+wks-id h (M ∷ Ms) = cong₂ _∷_ (wk-id h M) (wks-id h Ms)
 
-globalize-correct : ∀ M → Equivalent (S.sem M) (T.sem (globalize M))
-globalize-correct M =
-  red-equivalent T.value-red (_≈_ D) (sim D) (λ m _ _ → obs≈ D m) (glob≈ D M [] ⊑-refl)
-  where D = proj₂ (glob M [])
+{- The end theorem ---------------------------------------------------------------------}
+
+globalize-correct : ∀ (M : Tm [] Any) → Equivalent (S.sem M) (T.sem (globalize M))
+globalize-correct M with glob M [] | (λ {Σf} (ds : All (C.Code Σf) Σf) → glob≈ ds M [])
+... | out g D M' | ih =
+  red-equivalent value-red (_≈_ (close D here⊑)) (sim (close D here⊑)) (λ m _ _ → obs≈ (close D here⊑) m)
+    (subst (λ X → _≈_ (close D here⊑) M X) (wk-id (λ _ → refl) M') (proj₁ (ih (close D here⊑) here⊑ (agree-close (close D here⊑) D here⊑ λ _ → refl))))

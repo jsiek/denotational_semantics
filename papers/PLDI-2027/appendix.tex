@@ -1,0 +1,890 @@
+%% Appendix, for the supplementary material (outside the 20-page limit).
+%% Holds the formal definitions that the paper uses but does not discuss
+%% in detail (rule of thumb: what the text discusses in detail is defined
+%% in the paper; the rest goes here).
+
+\appendix
+
+\section{The Graph Model}
+\label{app:graph-model}
+
+\subsection{Consistency}
+\label{app:consistency}
+
+Consistency is defined on elements, and from it on sets and lists
+(Section~\ref{sec:graph-models}).  Two constants are consistent when
+they are equal, two entries are consistent when consistent inputs lead
+to consistent outputs, and elements that describe different kinds of
+values, such as $\mathsf{left}(u)$ and $\mathsf{right}(v)$, are not
+consistent. A set $D$ is consistent, written $\mathsf{con}(D)$, when
+its elements are pairwise consistent, and two lists are consistent
+with each other, written $V \approx V'$, when every element of one is
+consistent with every element of the other.
+
+\begin{figure}[h]
+\small\figdefs
+\defhead{Consistency of elements}{u \sim v}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  c \sim c' & \iff & c = c'\\
+  (V \mapsto w) \sim (V' \mapsto w') & \iff &
+    (V \approx V' \Rightarrow w \sim w')
+    \qquad
+    (V \mapsto w) \sim \nu, \quad \nu \sim \nu\\
+  \pairv{u}{v} \sim \pairv{u'}{v'} & \iff & u \sim u' \land v \sim v'\\
+  \mathsf{tup}_i(v) \sim \mathsf{tup}_j(v') & \iff & i = j \Rightarrow v \sim v'\\
+  \mathsf{left}(v) \sim \mathsf{left}(v') & \iff & v \sim v'
+    \qquad
+  \mathsf{right}(v) \sim \mathsf{right}(v') \iff v \sim v'
+\end{array}
+\]
+\noindent and no other pairs of elements are consistent.
+
+\defhead{Consistency of sets and lists}{\mathsf{con}(D) \qquad V \approx V'}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \mathsf{con}(D) & \iff & u \sim v \text{ for all } u, v \in D\\
+  V \approx V' & \iff & u \sim v \text{ for all } u \in V \text{ and } v \in V'
+\end{array}
+\]
+\caption{Consistency of elements, sets, and lists.}
+\label{fig:consistency}
+\end{figure}
+
+\subsection{Depth}
+\label{app:depth}
+
+The depth of an element of the graph model is the height of its
+syntax tree, not counting constants, $\nu$ and $\langle\rangle$; the depth of a finite list is the largest depth of its
+elements (zero for the empty list):
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \depth(V \mapsto w) & = & 1 + \max(\depth(V), \depth(w))\\
+  \depth(\pairv{u}{v}) & = & 1 + \max(\depth(u), \depth(v))\\
+  \depth(t(v)) & = & 1 + \depth(v)
+    \quad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
+  \depth(v) & = & 0
+    \quad \text{for } v \in \{c, \nu, \langle\rangle\}\\
+  \depth(V) & = & \max_{v \in V} \depth(v)
+\end{array}
+\]
+
+\subsection{Further Operators}
+\label{app:operators}
+
+%% Framework/GraphModel/Ops.agda (𝒞, guard-n, strict), OpsBase.agda (ℬ),
+%% Semantics/Graph/Prim.agda (primD, out), Language/Prim.agda (δ).
+Besides the operators of Figure~\ref{fig:graph-ops}, the semantics of
+the languages use the following ones. The empty tuple means
+$\mathcal{T}() = \{\langle\rangle\}$. A primitive applies to the integers
+in its operands; $\kw{eq}$ produces $\mathsf{left}(\langle\rangle)$ for
+true and $\mathsf{right}(\langle\rangle)$ for false:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \mathsf{prim}_p(D, E) & = & \{\, \mathit{out}(\delta(p, n, m)) \mid n \in D,\; m \in E \text{ integers} \,\}\\
+  \delta(\kw{sub}, n, m) & = & n - m
+  \qquad
+  \delta(\kw{eq}, n, m) = (n = m)\\
+  \mathit{out}(n) & = & n
+  \qquad
+  \mathit{out}(\mathsf{true}) = \mathsf{left}(\langle\rangle)
+  \qquad
+  \mathit{out}(\mathsf{false}) = \mathsf{right}(\langle\rangle)
+\end{array}
+\]
+The operator $\mathcal{C}$ gives the meaning of a $\kw{case}$. Like
+$\Lambda$, it binds only nonempty, consistent, finite lists, here of
+the payloads of the injections in the scrutinee:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \mathcal{C}(D, F, G) & = &
+    \{\, w \mid V \neq [\,],\; \mathsf{con}(V),\; \mathsf{left}(V) \subseteq D,\; w \in F(V) \,\}\\
+  & \cup & \{\, w \mid V \neq [\,],\; \mathsf{con}(V),\; \mathsf{right}(V) \subseteq D,\; w \in G(V) \,\}
+\end{array}
+\]
+where $\mathsf{left}(V) = \{\mathsf{left}(v) \mid v \in V\}$, and
+likewise for $\mathsf{right}$. Finally, a guard makes a set strict in
+other sets:
+\[
+  \mathsf{guard}(D_1, \ldots, D_n;\, E) = E
+  \text{ if } D_1, \ldots, D_n \text{ are nonempty, and } \emptyset \text{ otherwise.}
+\]
+
+\section{The Languages}
+\label{app:languages}
+\label{app:types}
+
+%% Typing: definitions.tex (Types and Languages) and
+%% agda/Mu/Language/*.agda. Semantics: agda/Mu/Semantics/Graph/*.agda.
+This appendix gives, for each language of Section~\ref{sec:compiler},
+its type system and its semantics in the graph model. The base types
+are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$.
+The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$ for
+$\kw{sub}$ and $\kw{tup}() + \kw{tup}()$ for $\kw{eq}$. 
+
+In the semantics, an environment $\rho$ maps each variable to a set of
+elements, and $\rho[x{:=}X]$ maps $x$ to $X$ and every other variable
+as $\rho$ does. Every position of an environment must be nonempty, so
+the environment $\rho_0$ of a closed program maps every variable to
+$\{\langle\rangle\}$, and so do the positions of an environment that
+hold no variable. The meaning of a closed program $M$ is
+$\den{M} = \den{M}\rho_0$. The operators are those of
+Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
+
+\subsection{The \iswim\ Language}
+
+A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of
+variable types.
+\[
+\begin{array}{@{}c@{}}
+  \dfrac{x{:}A \in \Gamma}{\Gamma \vdash x : A}
+  \qquad
+  \dfrac{\Gamma, x{:}A \vdash N : C}{\Gamma \vdash \lambda x.\, N : A \rightarrow C}
+  \qquad
+  \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}{\Gamma \vdash L\;M : C}
+  \qquad
+  \dfrac{c \text{ a constant of base type } B}{\Gamma \vdash c : B}
+  \\[14pt]
+  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n)}
+        {\Gamma \vdash \kw{tuple}\;(M_1, \ldots, M_n) : \kw{tup}(A_1, \ldots, A_n)}
+  \qquad
+  \dfrac{\Gamma \vdash M : \kw{tup}(A_1, \ldots, A_n) \quad 1 \leq i \leq n}
+        {\Gamma \vdash \kw{get}_i\,M : A_i}
+  \\[14pt]
+  \dfrac{\Gamma \vdash M : A}{\Gamma \vdash \kw{inl}\;M : A + C}
+  \qquad
+  \dfrac{\Gamma \vdash M : C}{\Gamma \vdash \kw{inr}\;M : A + C}
+  \qquad
+  \dfrac{\Gamma \vdash L : A + C \quad \Gamma, x{:}A \vdash M : D \quad \Gamma, y{:}C \vdash N : D}
+        {\Gamma \vdash \kw{case}\;L\;(x.\,M)\;(y.\,N) : D}
+  \\[14pt]
+  \dfrac{\Gamma \vdash L : \kw{Int} \quad \Gamma \vdash M : \kw{Int}}
+        {\Gamma \vdash \kw{prim}_p\;L\;M : \mathit{out}(p)}
+  \qquad
+  \dfrac{\Gamma \vdash M : A \quad \Gamma, x{:}A \vdash N : C}
+        {\Gamma \vdash \kw{let}\;x = M\;\kw{in}\;N : C}
+  \\[14pt]
+  \dfrac{\Gamma \vdash M : A[\mu X.\, A / X]}{\Gamma \vdash \kw{fold}\;M : \mu X.\, A}
+  \qquad
+  \dfrac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
+\end{array}
+\]
+The semantics:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
+  \den{x}\rho & = & \rho(x) &
+  \den{c}\rho & = & \{c\}\\
+  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) &
+  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho\\
+  \den{\kw{tuple}\;(M_1, \ldots, M_n)}\rho & = & \mathcal{T}(\den{M_1}\rho, \ldots, \den{M_n}\rho) &
+  \den{\kw{get}_i\,M}\rho & = & \pi_{\mathsf{tup}_i}(\den{M}\rho)\\
+  \den{\kw{inl}\;M}\rho & = & \mathsf{inl}(\den{M}\rho) &
+  \den{\kw{inr}\;M}\rho & = & \mathsf{inr}(\den{M}\rho)\\
+  \den{\kw{prim}_p\;L\;M}\rho & = & \mathsf{prim}_p(\den{L}\rho, \den{M}\rho) &
+  \den{\kw{fold}\;M}\rho & = & \den{M}\rho\\
+  \den{\kw{let}\;x = M\;\kw{in}\;N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X]) \app \den{M}\rho &
+  \den{\kw{unfold}\;M}\rho & = & \den{M}\rho
+\end{array}
+\]
+\[
+  \den{\kw{case}\;L\;(x.\,M)\;(y.\,N)}\rho =
+    \mathcal{C}(\den{L}\rho,\; \mlam{X} \den{M}\rho[x{:=}X],\; \mlam{Y} \den{N}\rho[y{:=}Y])
+\]
+
+\subsection{The Clos and EnvClos Languages}
+
+Clos and EnvClos type and interpret their other forms as \iswim\ does.
+A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
+its captured values.
+\[
+  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+         x_1{:}A_1, \ldots, x_n{:}A_n, y{:}A \vdash N : C}
+        {\Gamma \vdash \kw{clos}\;(\vec{x}, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(Clos)}
+\]
+\[
+  \dfrac{\Gamma \vdash M_i : A_i \ (1 \leq i \leq n) \qquad
+         z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
+        {\Gamma \vdash \kw{clos}\;(z, y.\,N)\;\vec{M} : A \rightarrow C}\;\text{(EnvClos)}
+\]
+Below, $\den{\vec{M}}\rho$ stands for $\den{M_1}\rho, \ldots, \den{M_n}\rho$. A Clos closure is the function of its parameter $y$ whose code runs
+with the captured values for $x_1, \ldots, x_n$; closures are strict, so
+it is guarded by the captured values. An EnvClos closure applies the
+curried meaning of its code to the tuple of the captured values
+(Section~\ref{sec:approx-lr}).
+\[
+\begin{array}{@{}l@{}}
+    \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho =
+    \mathsf{guard}(\den{M_1}\rho, \ldots, \den{M_n}\rho;\;
+      \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\den{\vec{M}}\rho, y{:=}Y]))
+    \hfill \text{(Clos)}\\[4pt]
+    \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho =
+    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y])) \app
+      \mathcal{T}(\den{\vec{M}}\rho)
+    \quad \text{(EnvClos)}
+\end{array}
+\]
+
+\subsection{The FlatClos Language}
+
+FlatClos replaces closures and application with code, packing, and
+calls, and types and interprets its other forms as \iswim\ does:
+\[
+  \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
+        {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
+  \qquad
+  \dfrac{\Gamma \vdash L : \kw{code}(\Delta; A \rightarrow C)
+         \quad \Gamma \vdash M : \kw{tup}(\Delta)}
+        {\Gamma \vdash \kw{pack}\;L\;M : A \rightarrow C}
+\]
+\[
+  \dfrac{\Gamma \vdash L : A \rightarrow C \quad \Gamma \vdash M : A}
+        {\Gamma \vdash \kw{callc}\;L\;M : C}
+\]
+\[
+  \den{\kw{code}\;(z, y.\,N)}\rho =  \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y]))
+  \qquad
+  \den{\kw{pack}\;L\;M}\rho = \mathsf{pair}(\den{L}\rho, \den{M}\rho)
+\]
+\[
+  \den{\kw{callc}\;L\;M}\rho = \den{L}\rho \callop \den{M}\rho
+\]
+
+\subsection{The GlobalFun and Mon Languages}
+
+A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
+of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
+definitions, and a term is typed by the table as well as its context,
+$\Sigma; \Gamma \vdash M : A$. The other forms are typed as in FlatClos.
+\[
+  \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
+  \qquad
+  \dfrac{\Sigma; z{:}\kw{tup}(\Delta_k), y{:}A_k \vdash N_k : C_k \ (k < m)
+         \quad \Sigma; \emptyset \vdash M : A}
+        {\vdash (d_0, \ldots, d_{m-1};\; M) : A}
+\]
+where $d_k = \kw{code}\;(z, y.\,N_k)$. A term means a set given a table $T$ that gives each definition its
+meaning, $\den{M}_T\rho$; the other forms are interpreted as in
+FlatClos, passing $T$ along. A definition means the curried function
+of its code, given the table $T_k$ of the definitions older than it
+($T_k(j) = T(j)$ for $j < k$, and $T_k(j) = \emptyset$ otherwise):
+\[
+  \den{f_k}_T\rho = T(k)
+  \qquad
+  T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N_k}_{T_k}\rho_0[z{:=}X, y{:=}Y]))
+\]
+\[
+  \den{(d_0, \ldots, d_{m-1};\; M)} = \den{M}_T\rho_0
+\]
+Mon has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
+and has the meaning of its embedding into GlobalFun: an atom and an
+operation on atoms are GlobalFun terms already.
+
+\subsection{The Imp Language}
+
+A body runs in a frame of slots, typed by the list
+$\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
+far; slot $x < j$ has type $A_x$. An assignment and a $\kw{case}$ write
+the next slot, $|\Delta|$. Atoms and simple expressions are typed as
+in Mon, over slots.
+\[
+  \dfrac{x < |\Delta|}{\Sigma; \Delta \vdash x : A_x}
+  \qquad
+  \dfrac{\Sigma; \Delta \vdash e_1 : A \quad \Sigma; \Delta, A \vdash e_2 : C}
+        {\Sigma; \Delta \vdash |\Delta| \mathrel{:=} e_1;\; e_2 : C}
+\]
+\[
+  \dfrac{\Sigma; \Delta \vdash a : A + B \quad
+         \Sigma; \Delta, A \vdash e_1 : C \quad \Sigma; \Delta, B \vdash e_2 : C}
+        {\Sigma; \Delta \vdash \kw{case}\;a\;(|\Delta|.\,e_1)\;(|\Delta|.\,e_2) : C}
+\]
+\[
+  \dfrac{\Sigma; \kw{tup}(\Delta_k), A_k \vdash e_k : C_k \ (k < m)
+         \quad \Sigma; \emptyset \vdash e : A}
+        {\vdash (e_0, \ldots, e_{m-1};\; e) : A}
+\]
+A definition starts with its environment in slot 0 and its argument in
+slot 1. The semantics is in continuation-passing style: the frame
+$\sigma$ maps each slot to a set, and the continuation $\kappa$ takes
+the meaning of the expression. An atom means $\mathcal{A}\den{x}\sigma =
+\sigma(x)$, $\mathcal{A}\den{c}\sigma = \{c\}$, or
+$\mathcal{A}\den{f_k}\sigma = T(k)$, and a simple expression
+$\mathcal{S}\den{o\;\vec{a}}\sigma$ applies the GlobalFun operator of
+$o$ to the meanings of its atoms. An assignment is strict in the value
+it assigns, like a $\kw{let}$:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \den{r}_T\sigma\kappa & = & \kappa(\mathcal{S}\den{r}\sigma)\\
+  \den{x \mathrel{:=} e_1;\; e_2}_T\sigma\kappa & = &
+    \den{e_1}_T\sigma\,(\mlam{D} \Lambda(\mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa) \app D)\\
+  \den{\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)}_T\sigma\kappa & = &
+    \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
+      \mlam{X} \den{e_1}_T\sigma[x{:=}X]\kappa,\;
+      \mlam{X} \den{e_2}_T\sigma[x{:=}X]\kappa)\\
+  T(k) & = & \Lambda(\mlam{X} \Lambda(\mlam{Y}
+    \den{e_k}_{T_k}\rho_0[0{:=}X, 1{:=}Y]\,(\mlam{D} D)))\\
+  \den{(e_0, \ldots, e_{m-1};\; e)} & = & \den{e}_T\rho_0\,(\mlam{D} D)
+\end{array}
+\]
+
+\subsection{The CFG Language}
+
+A tail is typed by the type $R$ of the function body's result, the list
+$\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
+blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
+index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
+than it, so control flow is acyclic. Here $\Delta' \sqsubseteq \Delta$
+says that $\Delta'$ is a prefix of $\Delta$; an assignment to slot
+$|\Delta'|$ forgets the slots from $|\Delta'|$ on.
+\[
+  \dfrac{\Sigma; \Delta \vdash r : R}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{return}\;r}
+  \qquad
+  \dfrac{\Delta' \sqsubseteq \Delta \quad \Sigma; \Delta \vdash r : A \quad
+         \Sigma; R; \vec{\Delta}; \Delta', A \vdash t}
+        {\Sigma; R; \vec{\Delta}; \Delta \vdash |\Delta'| \mathrel{:=} r;\; t}
+  \qquad
+  \dfrac{\Delta_l = \Delta}{\Sigma; R; \vec{\Delta}; \Delta \vdash \kw{goto}\;l}
+\]
+\[
+  \dfrac{\Sigma; \Delta \vdash a : A + B \quad \Delta' \sqsubseteq \Delta \quad
+         \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
+        {\Sigma; R; \vec{\Delta}; \Delta \vdash
+         \kw{case}\;a\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2)}
+\]
+\[
+  \dfrac{\Sigma; R; \Delta_0, \ldots, \Delta_{l-1}; \Delta_l \vdash t_l \ (l < j) \quad
+         \Sigma; R; \vec{\Delta}; \Delta \vdash t}
+        {\Sigma; R; \Delta \vdash (t_0, \ldots, t_{j-1};\; t)}
+\]
+A definition's function body starts in the frame $\kw{tup}(\Delta_k), A_k$ with
+result type $C_k$, and the main function body in the empty frame. A tail means a
+set, given its frame $\sigma$ and the meanings $B$ of the blocks it can
+see. Writing slot $x$ cuts the frame to the slots before $x$, written
+$\sigma|_x$, and then assigns $x$:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \den{\kw{return}\;r}_{T,B}\sigma & = & \mathcal{S}\den{r}\sigma\\
+  \den{x \mathrel{:=} r;\; t}_{T,B}\sigma & = &
+    \Lambda(\mlam{X} \den{t}_{T,B}\,\sigma|_x[x{:=}X]) \app \mathcal{S}\den{r}\sigma\\
+  \den{\kw{goto}\;l}_{T,B}\sigma & = & B(l)(\sigma)\\
+  \den{\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)}_{T,B}\sigma & = &
+    \mathcal{C}(\mathcal{A}\den{a}\sigma,\;
+      \mlam{X} B(l_1)(\sigma|_x[x{:=}X]),\;
+      \mlam{X} B(l_2)(\sigma|_x[x{:=}X]))
+\end{array}
+\]
+The blocks of a function body $(t_0, \ldots, t_{j-1};\, t)$ mean
+$B(l)(\sigma) = \den{t_l}_{T,B_l}\sigma$, where $B_l$ gives the blocks
+older than $l$, and the function body means $\den{t}_{T,B}$. Definitions and
+programs are given meaning as in Imp, with the function body in place of the
+expression and no continuation.
+
+\subsection{The x86$\mu$ Language}
+
+An instruction is typed by the type of the machine state it starts in
+and the one it leaves. A state type
+$\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types $\Theta$
+of the registers, the frame $\Delta$ of the slots assigned so far, the
+open closure $O$ (none, written $\cdot$, or a slot $x$ of $\Delta$ of a
+function type), and whether the flag $F$ is set. A register holds a
+value of a type $A$, the code $\kw{code}_\alpha(A \rightarrow C)$ or the
+environment $\kw{tup}(\alpha)$ of the open closure, or nothing; the
+type variable $\alpha$ stands for the hidden types of the environment
+of the open closure. A function body declares the size $n$ of its frame. The
+operands are typed by these rules, with the atoms typed as in Imp in
+the frame of the state:
+\[
+  \dfrac{\Sigma; \Delta \vdash a : A}{\Sigma; \langle \Theta; \Delta; O; F \rangle \vdash a : A}
+  \qquad
+  \dfrac{\Theta(r) = \tau}{\Sigma; \langle \Theta; \Delta; O; F \rangle \vdash \%r : \tau}
+\]
+\[
+  \dfrac{\Sigma; \psi \vdash a : A[\mu X.\, A / X]}{\Sigma; \psi \vdash \kw{fold}\;a : \mu X.\, A}
+  \qquad
+  \dfrac{\Sigma; \psi \vdash a : \mu X.\, A}{\Sigma; \psi \vdash \kw{unfold}\;a : A[\mu X.\, A / X]}
+\]
+A destination is written at a type $\tau$ and leaves a new state,
+$n \vdash d : \psi \Rightarrow_\tau \psi'$. A write to a slot cuts the
+frame and closes the open closure:
+\[
+  n \vdash \%r : \langle \Theta; \Delta; O; F \rangle \Rightarrow_\tau \langle \Theta[r{:}\tau]; \Delta; O; F \rangle
+  \qquad
+  \dfrac{\Delta' \sqsubseteq \Delta \quad |\Delta'| < n}
+        {n \vdash |\Delta'| : \langle \Theta; \Delta; O; F \rangle \Rightarrow_A \langle \Theta; \Delta', A; \cdot; F \rangle}
+\]
+An object $\kw{pair}(a_1, a_2)$ has type $A \rightarrow C$ when
+$a_1 : \kw{code}(\Delta; A \rightarrow C)$ and $a_2 : \kw{tup}(\Delta)$;
+tuples and injections of operands are typed as in \iswim. With
+$\psi = \langle \Theta; \Delta; O; F \rangle$ and operands typed in
+$\psi$, the instructions are typed by:
+\[
+\begin{array}{@{}c@{}}
+  \dfrac{a : \tau \quad n \vdash d : \psi \Rightarrow_\tau \psi'}
+        {\Sigma; n \vdash \kw{movq}\; a, d : \psi \Rightarrow \psi'}
+  \qquad
+  \dfrac{a : \kw{Int} \quad \Theta(r) = \kw{Int}}
+        {\Sigma; n \vdash \kw{subq}\; a, \%r : \psi \Rightarrow \psi}
+  \\[14pt]
+  \dfrac{a_1 : \kw{Int} \quad a_2 : \kw{Int}}
+        {\Sigma; n \vdash \kw{cmpq}\; a_2, a_1 : \psi \Rightarrow \langle \Theta; \Delta; O; \kw{set} \rangle}
+  \\[14pt]
+  \dfrac{n \vdash d : \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow_{\kw{Bool}} \psi'}
+        {\Sigma; n \vdash \kw{sete}\; d : \langle \Theta; \Delta; O; \kw{set} \rangle \Rightarrow \psi'}
+  \qquad
+  \dfrac{o : A \quad n \vdash d : \psi \Rightarrow_A \psi'}
+        {\Sigma; n \vdash \kw{alloc}\; o, d : \psi \Rightarrow \psi'}
+  \\[14pt]
+  \dfrac{a : \kw{tup}(A_1, \ldots, A_m) \quad n \vdash d : \psi \Rightarrow_{A_i} \psi'}
+        {\Sigma; n \vdash \kw{load}\; \kw{get}_i\; a, d : \psi \Rightarrow \psi'}
+  \\[14pt]
+  \dfrac{x : A \rightarrow C \in \Delta}
+        {\Sigma; n \vdash \kw{fst}\; x, \%r : \psi \Rightarrow
+         \langle \mathit{wipe}(\Theta)[r{:}\kw{code}_\alpha(A \rightarrow C)]; \Delta; x; F \rangle}
+  \\[14pt]
+  \Sigma; n \vdash \kw{snd}\; x, \%r : \langle \Theta; \Delta; x; F \rangle \Rightarrow
+    \langle \Theta[r{:}\kw{tup}(\alpha)]; \Delta; x; F \rangle
+  \\[14pt]
+  \dfrac{a : \kw{code}_\alpha(A \rightarrow C) \quad \Theta(\kw{rdi}) = \kw{tup}(\alpha)
+         \quad \Theta(\kw{rsi}) = A}
+        {\Sigma; n \vdash \kw{callq}\; a : \psi \Rightarrow \langle \kw{rax}{:}C; \Delta; \cdot; \kw{unset} \rangle}
+\end{array}
+\]
+Here $\mathit{wipe}(\Theta)$ unsets the registers that hold the code or
+the environment of an earlier open closure, so $\alpha$ always stands
+for the environment of one closure. A sequence $s$ is typed by the result
+type $R$, the frames $\vec{\Delta}$ of the blocks it may jump to, and
+its starting state:
+\[
+  \dfrac{\Sigma; n \vdash i : \psi \Rightarrow \psi' \quad \Sigma; n; R; \vec{\Delta} \vdash s : \psi'}
+        {\Sigma; n; R; \vec{\Delta} \vdash i;\; s : \psi}
+\]
+\[
+  \dfrac{\Theta(\kw{rax}) = R}{\Sigma; n; R; \vec{\Delta} \vdash \kw{retq} : \langle \Theta; \Delta; O; F \rangle}
+\]
+\[
+  \dfrac{\Delta_l = \Delta}{\Sigma; n; R; \vec{\Delta} \vdash \kw{jmp}\;l : \langle \Theta; \Delta; O; F \rangle}
+\]
+\[
+  \dfrac{x : A + B \in \Delta \quad \Delta' \sqsubseteq \Delta \quad |\Delta'| < n \quad
+         \Delta_{l_1} = \Delta', A \quad \Delta_{l_2} = \Delta', B}
+        {\Sigma; n; R; \vec{\Delta} \vdash \kw{case}\;x\;(|\Delta'|.\,l_1)\;(|\Delta'|.\,l_2) : \langle \Theta; \Delta; O; F \rangle}
+\]
+A block starts in the state $\langle \emptyset; \Delta_l; \cdot;
+\kw{unset} \rangle$, and blocks are acyclic as in CFG. A definition
+$b_k$ of signature $(\Delta_k; A_k \rightarrow C_k)$ starts with its
+environment in $\kw{rdi}$ and its argument in $\kw{rsi}$, in the state
+$\langle \kw{rdi}{:}\kw{tup}(\Delta_k), \kw{rsi}{:}A_k; \emptyset; \cdot;
+\kw{unset} \rangle$, and has result type $C_k$.
+
+The semantics of a sequence is a function of the frame $\sigma$, the
+registers $R$ (a map from registers to sets), and the flag $F$ (a set);
+an instruction transforms the meaning $\kappa$ of the rest of the
+sequence. An unset register and an unset flag hold $\{\langle\rangle\}$.
+An operand means $\mathcal{O}\den{a}\sigma R = \mathcal{A}\den{a}\sigma$
+for an atom, $R(r)$ for $\%r$, and $\mathcal{O}\den{a}\sigma R$ for
+$\kw{fold}\;a$ and $\kw{unfold}\;a$. An object means the operator of its
+kind on the meanings of its operands ($\mathsf{pair}$, $\mathcal{T}$,
+$\mathsf{inl}$, $\mathsf{inr}$). A write to a destination, written
+$\mathit{put}$, updates a register, or binds a slot as an assignment in
+CFG does:
+\[
+  \mathit{put}(\%r, D)\,\kappa\,\sigma R F = \kappa\,\sigma\,R[r{:=}D]\,F
+  \qquad
+  \mathit{put}(x, D)\,\kappa\,\sigma R F =
+    \Lambda(\mlam{X} \kappa\,(\sigma|_x[x{:=}X])\,R\,F) \app D
+\]
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \den{\kw{movq}\; a, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{a}\sigma R)\,\kappa\,\sigma R F\\
+  \den{\kw{subq}\; a, \%r}\kappa\,\sigma R F & = &
+    \kappa\,\sigma\,R[r{:=}\mathsf{prim}_{\kw{sub}}(R(r), \mathcal{O}\den{a}\sigma R)]\,F\\
+  \den{\kw{cmpq}\; a_2, a_1}\kappa\,\sigma R F & = &
+    \kappa\,\sigma\,R\,(\mathsf{prim}_{\kw{eq}}(\mathcal{O}\den{a_1}\sigma R, \mathcal{O}\den{a_2}\sigma R))\\
+  \den{\kw{sete}\; d}\kappa\,\sigma R F & = & \mathit{put}(d, F)\,\kappa\,\sigma R F\\
+  \den{\kw{alloc}\; o, d}\kappa\,\sigma R F & = & \mathit{put}(d, \mathcal{O}\den{o}\sigma R)\,\kappa\,\sigma R F\\
+  \den{\kw{load}\; \kw{get}_i\; a, d}\kappa\,\sigma R F & = &
+    \mathit{put}(d, \pi_{\mathsf{tup}_i}(\mathcal{O}\den{a}\sigma R))\,\kappa\,\sigma R F\\
+  \den{\kw{fst}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\car(\sigma(x))]\,F\\
+  \den{\kw{snd}\; x, \%r}\kappa\,\sigma R F & = & \kappa\,\sigma\,R[r{:=}\cdr(\sigma(x))]\,F\\
+  \den{\kw{callq}\; a}\kappa\,\sigma R F & = &
+    \mathsf{guard}(C;\; \kappa\,\sigma\,R_C\,\{\langle\rangle\})
+    \quad\text{where } C = (\mathcal{O}\den{a}\sigma R \app R(\kw{rdi})) \app R(\kw{rsi})
+\end{array}
+\]
+Here $R_C$ maps $\kw{rax}$ to $C$ and the other registers to
+$\{\langle\rangle\}$; only a call can diverge, so only it is strict in
+its result. The sequences mean
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \den{i;\; s}_B & = & \den{i}\,\den{s}_B\\
+  \den{\kw{retq}}_B\,\sigma R F & = & R(\kw{rax})\\
+  \den{\kw{jmp}\;l}_B\,\sigma R F & = & B(l)(\sigma)\\
+  \den{\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)}_B\,\sigma R F & = &
+    \mathcal{C}(\sigma(x),\;
+      \mlam{X} B(l_1)(\sigma|_y[y{:=}X]),\;
+      \mlam{X} B(l_2)(\sigma|_y[y{:=}X]))
+\end{array}
+\]
+where a block means $B(l)(\sigma) = \den{s_l}_{B_l}\,\sigma\,R_0\,
+\{\langle\rangle\}$, with $R_0$ mapping every register to
+$\{\langle\rangle\}$ and $B_l$ giving the blocks older than $l$. A
+definition means
+$T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{s}_B\,\rho_0\,R_{X,Y}\,
+\{\langle\rangle\}))$ for its function body $s$ with blocks $B$, where
+$R_{X,Y}$ maps $\kw{rdi}$ to $X$, $\kw{rsi}$ to $Y$, and $\kw{rax}$ to
+$\{\langle\rangle\}$; the tables are as in GlobalFun. A program means
+the meaning of its main function body in $\rho_0$ and $R_0$, with the flag
+$\{\langle\rangle\}$.
+
+\section{The Compiler Passes}
+\label{app:passes}
+
+%% From definitions.tex (Compilation) and agda/Mu/Compiler/*.agda.
+This appendix defines each pass of Section~\ref{sec:compiler} as a
+recursive function on the syntax of Figure~\ref{fig:grammars}. In each
+pass, the clauses not shown are homomorphic: they translate the
+subterms and rebuild the same form. No pass inspects a recursive type;
+$\kw{fold}$ and $\kw{unfold}$ pass through every pass as operations
+with one operand. The compiler is the composition of the passes:
+\[
+\begin{array}{@{}l@{}}
+  \pass{compile} = \pass{select} \circ \pass{explicate} \circ \pass{lift}
+    \circ \pass{rco} \circ \pass{globalize}\\
+  \qquad\qquad {} \circ \pass{delay} \circ \pass{concretize}_\emptyset
+    \circ \pass{optimize} \circ \pass{enclose} \circ \pass{simplify}
+\end{array}
+\]
+
+\subsection{\pass{simplify} (\iswim\ to \iswim)}
+
+%% agda/Mu/Compiler/Simplify.agda: Info, Known, self, info, under,
+%% known-as, value, small, simp, simp-app, simp-call, simp-let, simp-get,
+%% simp-case, simp-prim, simp-unfold, inline-fuel, inline-size.
+The pass works with \emph{syntactic values}, the terms
+\[
+  V ::= x \mid \lambda x.\, N \mid c \mid \kw{tuple}\;(V_1, \ldots, V_n)
+    \mid \kw{inl}\;V \mid \kw{inr}\;V \mid \kw{fold}\;V
+\]
+A syntactic value is \emph{small} when it is a variable, a constant,
+$\langle\rangle$, or $\kw{inl}\;a$ or $\kw{inr}\;a$ of one of those;
+only small values are duplicated. On a term, \pass{simplify} returns a
+pair $(T, K)$ of the simplified term $T$ and what it knows about
+the term's value, $K$: a syntactic value $V$ that the term is known to
+equal, a function $\langle \lambda x.\, N, E \rangle$ (its body before
+simplification, with what was known where it was defined), or nothing,
+$\bot$. An environment $E$ maps each variable to such a pair: the term
+that replaces the variable and what the variable is known to be. We
+write $\mathit{self}(V) = (V, V)$, and $\mathit{info}(M) = (M, M)$ if $M$ is a syntactic value and $(M, \bot)$ otherwise. Under a binder $x$
+that stays, $x$ is itself and is known only as itself:
+$E' = E[x{:=}\mathit{self}(x)]$.
+
+The pass carries fuel $\phi$ that limits nested inlining. Every
+equation passes $\phi$ along unchanged except the one for a call,
+which inlines with one less:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{simp}_E(x) & = & E(x)\\
+  \pass{simp}_E(\lambda x.\, N) & = &
+    (\lambda x.\, T, \langle \lambda x.\, N, E \rangle)\\
+  & & \quad \text{where } (T, K) = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)\\
+  \pass{simp}_E(L\;M) & = & \pass{app}_E(L, \pass{simp}_E(M))\\
+  \pass{simp}_E(c) & = & \mathit{self}(c)\\
+  \pass{simp}_E(\kw{tuple}\;(M_1, \ldots, M_n)) & = &
+    \mathit{info}(\kw{tuple}\;(T_1, \ldots, T_n))\\
+  & & \quad \text{where } (T_i, K_i) = \pass{simp}_E(M_i)\\
+  \pass{simp}_E(\kw{get}_i\,L) & = & \pass{get}_i(\pass{simp}_E(L))\\
+  \pass{simp}_E(\kw{inl}\;M) & = & \mathit{info}(\kw{inl}\;T)
+    \quad \text{where } (T, K) = \pass{simp}_E(M)\\
+  & & \quad \text{and likewise for } \kw{inr} \text{ and } \kw{fold}\\
+  \pass{simp}_E(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = &
+    \pass{case}_E(\pass{simp}_E(L), x.\,M, y.\,N)\\
+  \pass{simp}_E(\kw{prim}_p\;L\;M) & = & \pass{prim}_p(\pass{simp}_E(L), \pass{simp}_E(M))\\
+  \pass{simp}_E(\kw{let}\;x = M\;\kw{in}\;N) & = & \pass{let}_E(x.\,N, \pass{simp}_E(M))\\
+  \pass{simp}_E(\kw{unfold}\;L) & = & \pass{unfold}(\pass{simp}_E(L))
+\end{array}
+\]
+An application of a $\lambda$-abstraction is a $\beta$-redex; any other
+application is a call, which inlines a known function when there is
+fuel left and its body, simplified at the call, has at most 24 nodes:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{app}_E(\lambda x.\, N, I) & = & \pass{let}_E(x.\,N, I)\\
+  \pass{app}_E(L, I) & = & \pass{call}(\pass{simp}_E(L), I)
+    \quad \text{otherwise}\\[4pt]
+  \pass{call}^{\phi+1}((T, \langle \lambda x.\, N, E_f \rangle), I) & = & P
+    \quad \text{if } |P| \leq 24, \text{ where } P = \pass{let}^{\phi}_{E_f}(x.\,N, I)\\
+  & = & (T\;T', \bot)
+    \quad \text{otherwise, where } I = (T', K')\\
+  \pass{call}^{\phi}((T, K), (T', K')) & = & (T\;T', \bot)
+    \quad \text{in all other cases}
+\end{array}
+\]
+Here $|P|$ is the number of nodes in the term of $P$. A body bound to an
+operand, by $\kw{let}$, $\beta$, or inlining, substitutes the operand
+if it is small, and otherwise keeps it bound by a $\kw{let}$:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{let}_E(x.\,N, (T', K)) & = & \pass{simp}_{E[x:=(T', K)]}(N)
+    \quad \text{if } T' \text{ is a small syntactic value}\\
+  & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
+    \quad \text{if } T' \text{ is another syntactic value,}\\
+  & & \quad \text{where } (T, K'') = \pass{simp}_{E[x:=(x, K)]}(N)\\
+  & = & (\kw{let}\;x = T'\;\kw{in}\;T, \bot)
+    \quad \text{otherwise,}\\
+  & & \quad \text{where } (T, K'') = \pass{simp}_{E[x:=\mathit{self}(x)]}(N)
+\end{array}
+\]
+A projection, $\kw{unfold}$, $\kw{case}$, or primitive on a known value
+reduces:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{get}_i((T, \kw{tuple}\;(K_1, \ldots, K_n))) & = & \mathit{self}(K_i)
+    \quad \text{if } K_i \text{ is small}\\
+  & = & (\kw{get}_i\,T, K_i) \quad \text{otherwise}\\
+  \pass{get}_i((T, K)) & = & (\kw{get}_i\,T, \bot)
+    \quad \text{if } K \text{ is not a tuple}\\
+  \pass{unfold}((T, \kw{fold}\;K)) & = & \mathit{self}(K)
+    \quad \text{if } K \text{ is small}\\
+  & = & (\kw{unfold}\;T, K) \quad \text{otherwise}\\
+  \pass{unfold}((T, K)) & = & (\kw{unfold}\;T, \bot)
+    \quad \text{if } K \text{ is not a } \kw{fold}\\
+  \pass{case}_E((T, \kw{inl}\;K), x.\,M, y.\,N) & = & \pass{simp}_{E[x:=\mathit{self}(K)]}(M)
+    \quad \text{if } K \text{ is small}\\
+  & & \quad \text{(and likewise for } \kw{inr}\text{)}\\
+  \pass{case}_E((T, K), x.\,M, y.\,N) & = &
+    (\kw{case}\;T\;(x.\,T_1)\;(y.\,T_2), \bot)
+    \quad \text{otherwise,}\\
+  & & \quad \text{where } (T_1, K_1) = \pass{simp}_{E[x:=\mathit{self}(x)]}(M)\\
+  & & \quad \text{and } (T_2, K_2) = \pass{simp}_{E[y:=\mathit{self}(y)]}(N)\\
+  \pass{prim}_p((T_1, n), (T_2, m)) & = & \mathit{self}(\mathit{res}(\delta(p, n, m)))
+    \quad \text{if } n \text{ and } m \text{ are integers}\\
+  \pass{prim}_p((T_1, K_1), (T_2, K_2)) & = & (\kw{prim}_p\;T_1\;T_2, \bot)
+    \quad \text{otherwise}
+\end{array}
+\]
+Here $\mathit{res}(k) = k$ for an integer $k$,
+$\mathit{res}(\mathsf{true}) = \kw{inl}\;\langle\rangle$, and
+$\mathit{res}(\mathsf{false}) = \kw{inr}\;\langle\rangle$. Finally,
+\[
+  \pass{simplify}(M) = T
+  \quad \text{where } (T, K) = \pass{simp}^{4}_{E_0}(M)
+  \text{ and } E_0(x) = \mathit{self}(x) \text{ for every } x.
+\]
+\pass{simplify} drops only evaluations whose value is known, which
+have no effect, and otherwise keeps the order of evaluation: an operand
+that is not a syntactic value is never substituted but stays bound by a
+$\kw{let}$.
+
+\subsection{\pass{enclose} (\iswim\ to Clos)}
+
+\pass{enclose} makes each function a closure that captures every
+variable in scope, in order, so its body is unchanged:
+\[
+  \pass{enclose}(\lambda y.\, N) =
+    \kw{clos}\;(x_1, \ldots, x_k, y.\,\pass{enclose}(N))\;(x_1, \ldots, x_k)
+\]
+where $x_1, \ldots, x_k$ are the variables in scope.
+
+\subsection{\pass{optimize} (Clos to Clos)}
+
+\pass{optimize} removes the captured values that the code does not use.
+Closures are strict, so a captured term is dropped only when the code
+does not use its name and the term is a variable, which is all that
+\pass{enclose} captures:
+\[
+\begin{array}{@{}l@{}}
+  \pass{optimize}(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
+  \qquad \kw{clos}\;(x_{i_1}, \ldots, x_{i_k}, y.\,\pass{optimize}(N))\;
+    (\pass{optimize}(M_{i_1}), \ldots, \pass{optimize}(M_{i_k}))\\
+  \qquad \text{where } \{ i_1 < \cdots < i_k \} =
+    \{ i \mid x_i \in \mathit{FV}(N) \text{ or } M_i \text{ is not a variable} \}
+\end{array}
+\]
+
+\subsection{\pass{concretize} (Clos to EnvClos)}
+
+Each closure stores its captured values in one tuple, bound to $z$ in
+its code, and the code reads the name $x_i$ as $\kw{get}_i\,z$. The map
+$\varphi$ sends each Clos variable to a reference, $x$ or
+$\kw{get}_i\,z$, in EnvClos:
+\[
+\begin{array}{@{}l@{}}
+  \pass{concretize}_\varphi(x) = \varphi(x)\\
+  \pass{concretize}_\varphi(\kw{clos}\;(x_1, \ldots, x_n, y.\,N)\;(M_1, \ldots, M_n)) =\\
+  \qquad \kw{clos}\;(z, y.\,\pass{concretize}_{\varphi'}(N))\;
+      (\pass{concretize}_\varphi(M_1), \ldots, \pass{concretize}_\varphi(M_n))\\
+  \qquad \text{where } \varphi' =
+    \{ y \mapsto y,\; x_1 \mapsto \kw{get}_1\,z,\; \ldots,\; x_n \mapsto \kw{get}_n\,z \}
+\end{array}
+\]
+Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
+and a program is concretized with the empty map.
+
+\subsection{\pass{delay} (EnvClos to FlatClos)}
+
+A closure becomes a pair of its code and the tuple of its captured
+values, and an application opens the closure and calls its code:
+\[
+  \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) =
+    \kw{pack}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))
+\]
+\[
+  \pass{delay}(L\;M) = \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
+\]
+
+\subsection{\pass{globalize} (FlatClos to GlobalFun)}
+
+The code of every function becomes a global definition, and the code
+itself a reference to it. The pass threads the list $\vec{d}$ of the
+definitions made so far, from left to right. For code, it first
+globalizes the body, so the functions nested in it become definitions
+first. For any other form $\mathit{op}$ with subterms $A_1, \ldots,
+A_n$ (each under its binders $\bar{x}_i$):
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{glob}(x, \vec{d}) & = & (x, \vec{d})\\
+  \pass{glob}(\kw{code}\;(z, y.\,N), \vec{d}) & = &
+    (f_{|\vec{d}_1|},\; (\vec{d}_1, \kw{code}\;(z, y.\,N')))\\
+  & & \quad \text{where } (N', \vec{d}_1) = \pass{glob}(N, \vec{d})\\
+  \pass{glob}(\mathit{op}(\bar{x}_1.\,A_1, \ldots, \bar{x}_n.\,A_n), \vec{d}_0) & = &
+    (\mathit{op}(\bar{x}_1.\,A'_1, \ldots, \bar{x}_n.\,A'_n), \vec{d}_n)\\
+  & & \quad \text{where } (A'_i, \vec{d}_i) = \pass{glob}(A_i, \vec{d}_{i-1})\\[4pt]
+  \pass{globalize}(M) & = & (\vec{d};\; M')
+    \quad \text{where } (M', \vec{d}) = \pass{glob}(M, \epsilon)
+\end{array}
+\]
+Each definition refers only to the definitions made before it.
+
+\subsection{\pass{remove complex operands} (GlobalFun to Mon)}
+
+Every complex operand is bound to a fresh variable by a $\kw{let}$,
+from left to right, so the operands of every operation become atoms. A
+$\kw{case}$ or $\kw{let}$ is complex; its branches and body are
+translated in place, so nothing is duplicated. An operand that is an
+atom stays in place; any other operand is translated and bound to a
+fresh variable:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{atomize}(a) & = & (\epsilon;\; a)\\
+  \pass{atomize}(M) & = & (x{=}\pass{rco}(M);\; x)
+    \quad \text{otherwise } (x \text{ fresh})\\
+  \pass{atomize}(M_1, \ldots, M_n) & = & (\vec{b}_1 \cdots \vec{b}_n;\; a_1, \ldots, a_n)
+    \quad \text{where } (\vec{b}_i; a_i) = \pass{atomize}(M_i)\\
+  \pass{lets}(x_1{=}N_1 \cdots x_k{=}N_k,\; N) & = &
+    \kw{let}\;x_1 = N_1\;\kw{in}\;\cdots\;\kw{let}\;x_k = N_k\;\kw{in}\;N\\[4pt]
+  \pass{rco}(a) & = & a\\
+  \pass{rco}(o\;(M_1, \ldots, M_n)) & = & \pass{lets}(\vec{b},\; o\;(a_1, \ldots, a_n))\\
+  & & \quad \text{where } (\vec{b}; a_1, \ldots, a_n) = \pass{atomize}(M_1, \ldots, M_n)\\
+  \pass{rco}(\kw{case}\;L\;(x.\,M)\;(y.\,N)) & = &
+    \pass{lets}(\vec{b},\; \kw{case}\;a\;(x.\,\pass{rco}(M))\;(y.\,\pass{rco}(N)))\\
+  & & \quad \text{where } (\vec{b}; a) = \pass{atomize}(L)\\
+  \pass{rco}(\kw{let}\;x = M\;\kw{in}\;N) & = & \kw{let}\;x = \pass{rco}(M)\;\kw{in}\;\pass{rco}(N)\\
+  \pass{rco}(\kw{code}\;(z, y.\,N)) & = & \kw{code}\;(z, y.\,\pass{rco}(N))\\
+  \pass{rco}((d_0, \ldots, d_{m-1};\; M)) & = & (\pass{rco}(d_0), \ldots, \pass{rco}(d_{m-1});\; \pass{rco}(M))
+\end{array}
+\]
+where $o$ ranges over the operations of Mon (Figure~\ref{fig:grammars}).
+
+\subsection{\pass{lift locals} (Mon to Imp)}
+
+A $\kw{let}$ becomes an assignment to the next slot of the frame, and
+the variable a $\kw{case}$ binds becomes the slot its payload is
+written to. A variable becomes the slot at its level $\ell(x)$, the
+number of variables bound before it; in a definition
+$\kw{code}\;(z, y.\,N)$, $\ell(z) = 0$ and $\ell(y) = 1$. With $\Gamma$
+the variables in scope:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{lift}(x) & = & \ell(x)\\
+  \pass{lift}(\kw{let}\;x = M\;\kw{in}\;N) & = &
+    |\Gamma| \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)\\
+  \pass{lift}(\kw{case}\;a\;(x.\,M)\;(y.\,N)) & = &
+    \kw{case}\;\pass{lift}(a)\;(|\Gamma|.\,\pass{lift}(M))\;(|\Gamma|.\,\pass{lift}(N))\\
+  \pass{lift}(\kw{code}\;(z, y.\,N)) & = & \pass{lift}(N)\\
+  \pass{lift}((d_0, \ldots, d_{m-1};\; M)) & = &
+    (\pass{lift}(d_0), \ldots, \pass{lift}(d_{m-1});\; \pass{lift}(M))
+\end{array}
+\]
+and every other form is a simple expression, unchanged.
+
+\subsection{\pass{explicate control} (Imp to CFG)}
+
+$\pass{tail}(e)$ translates $e$ in tail position, and
+$\pass{assign}(e, x, k)$ translates ``write $e$ to slot $x$, then run
+the tail $k$'' in continuation-passing style. A $\kw{case}$ on the
+right of an assignment adds $k$ as a block, the join point, to which
+both branches jump. $\pass{add}(t)$ adds the block $t$ and returns its
+label. Both functions thread the blocks made so far, each typed over
+the older ones, so a label made earlier stays valid as more blocks are
+added. Blocks are added in the order in which the equations compute
+them, inner calls first and from left to right: $\pass{tail}(e_2)$
+before the assignment of $e_1$, $l$ before $l_1$, and $l_1$ before
+$l_2$.
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{tail}(r) & = & \kw{return}\;r\\
+  \pass{tail}(x \mathrel{:=} e_1;\; e_2) & = & \pass{assign}(e_1, x, \pass{tail}(e_2))\\
+  \pass{tail}(\kw{case}\;a\;(x.\,e_1)\;(x.\,e_2)) & = & \kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)
+    \quad \text{where } l_i = \pass{add}(\pass{tail}(e_i))\\[4pt]
+  \pass{assign}(r, x, k) & = & x \mathrel{:=} r;\; k\\
+  \pass{assign}(x' \mathrel{:=} e_1;\; e_2, x, k) & = & \pass{assign}(e_1, x', \pass{assign}(e_2, x, k))\\
+  \pass{assign}(\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2), x, k) & = & \kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)\\
+  & & \quad \text{where } l = \pass{add}(k) \text{ and } l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))\\[4pt]
+  \pass{explicate}(e) & = & (\vec{t};\; t)
+    \quad \text{where } t = \pass{tail}(e) \text{ and } \vec{t} \text{ are the blocks it adds}
+\end{array}
+\]
+and $\pass{explicate}$ maps over the definitions and main expression of
+a program.
+
+\subsection{\pass{select instructions} (CFG to x86$\mu$)}
+
+The code of a simple expression $r$ is selected in continuation-passing
+style, $\pass{sel}(r, o, k)$: its value goes to $o$, which is either
+$\kw{rax}$ (written $\kw{ret}$) or the next slot $x$ (written
+$\kw{to}\;x$), and then the instructions $k$ run. We write $\bar{o}$
+for the destination, $\%\kw{rax}$ or $x$. An operand of a function
+type or a sum type is a slot $x$, because no constant has those types,
+so $\kw{callc}$ and $\kw{case}$ take a slot.
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \pass{sel}(a, o, k) & = & \kw{movq}\; a, \bar{o};\; k\\
+  \pass{sel}(\kw{pack}\;a_1\;a_2, o, k) & = & \kw{alloc}\; \kw{pair}(a_1, a_2), \bar{o};\; k\\
+  \pass{sel}(\kw{callc}\;x\;a, o, k) & = &
+    \kw{fst}\; x, \%\kw{rax};\; \kw{snd}\; x, \%\kw{rdi};\; \kw{movq}\; a, \%\kw{rsi};\\
+  & & \kw{callq}\; \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{o};\; k\\
+  \pass{sel}(\kw{tuple}\;(a_1, \ldots, a_n), o, k) & = & \kw{alloc}\; \kw{tuple}(a_1, \ldots, a_n), \bar{o};\; k\\
+  \pass{sel}(\kw{get}_i\,a, o, k) & = & \kw{load}\; \kw{get}_i\; a, \bar{o};\; k\\
+  \pass{sel}(\kw{inl}\;a, o, k) & = & \kw{alloc}\; \kw{inl}(a), \bar{o};\; k
+    \qquad \text{and likewise for } \kw{inr}\\
+  \pass{sel}(\kw{prim}_{\kw{sub}}\;a_1\;a_2, o, k) & = &
+    \kw{movq}\; a_1, \%\kw{rax};\; \kw{subq}\; a_2, \%\kw{rax};\; \kw{movq}\; \%\kw{rax}, \bar{o};\; k\\
+  \pass{sel}(\kw{prim}_{\kw{eq}}\;a_1\;a_2, o, k) & = & \kw{cmpq}\; a_2, a_1;\; \kw{sete}\; \bar{o};\; k\\
+  \pass{sel}(\kw{fold}\;a, o, k) & = & \kw{movq}\; \kw{fold}\;a, \bar{o};\; k\\
+  \pass{sel}(\kw{unfold}\;a, o, k) & = & \kw{movq}\; \kw{unfold}\;a, \bar{o};\; k\\[4pt]
+  \pass{tail}(\kw{return}\;r) & = & \pass{sel}(r, \kw{ret}, \kw{retq})\\
+  \pass{tail}(x \mathrel{:=} r;\; t) & = & \pass{sel}(r, \kw{to}\;x, \pass{tail}(t))\\
+  \pass{tail}(\kw{goto}\;l) & = & \kw{jmp}\; l\\
+  \pass{tail}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) & = & \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)
+\end{array}
+\]
+The frame of a function body has as many slots as the largest frame
+that any of its tails starts in or writes. With $\Delta$ the frame a tail starts in:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \mathit{depth}(\kw{return}\;r) = \mathit{depth}(\kw{goto}\;l) & = & |\Delta|\\
+  \mathit{depth}(x \mathrel{:=} r;\; t) & = & \max(|\Delta|, \mathit{depth}(t))\\
+  \mathit{depth}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
+  \pass{select}((t_0, \ldots, t_{j-1};\; t)) & = &
+    (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\; \pass{tail}(t))\\
+  \pass{select}^{+}((t_0, \ldots, t_{j-1};\; t)) & = &
+    (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\\
+  & & \quad \kw{movq}\; \%\kw{rdi}, 0;\; \kw{movq}\; \%\kw{rsi}, 1;\; \pass{tail}(t))
+\end{array}
+\]
+with $n = \max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}),
+\mathit{depth}(t))$. The main function body uses $\pass{select}$, and
+each definition uses $\pass{select}^{+}$, whose prologue moves the
+environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
+1: $\pass{select}((b_0, \ldots, b_{m-1};\; b)) =
+(\pass{select}^{+}(b_0), \ldots, \pass{select}^{+}(b_{m-1});\;
+\pass{select}(b))$.

@@ -5,7 +5,7 @@ module Language.X86 where
  (Compiler/Select.agda): x86 with variables, after Essentials of
  Compilation, over abstract values.
 
- A body is a control-flow graph of blocks, as in CFG (Language/CFG.agda),
+ A body is a control-flow graph of blocks, as in CFGᵀ (Language/Typed/CFG.agda),
  but a block is a sequence of instructions ending in a jump. The
  locations are the slots of the current frame (the variables) and the
  registers %rax, %rdi and %rsi; an operand is a location, an immediate,
@@ -19,12 +19,12 @@ module Language.X86 where
  field of one; there are no addresses.
 
  Informally, the semantics of the instructions, which run in a frame and
- a register file and go wrong where stated:
+ a register file and error where stated:
    movq a, d          d := a
    subq a, d          d := d - a; both integers
    cmpq a₂, a₁        flag := (a₁ = a₂); both integers
    sete d             d := inl ⟨⟩ if the flag is set, inr ⟨⟩ if not;
-                      no flag goes wrong
+                      no flag errors
    testinl a          flag := whether a is an inl; a an injection
    alloc s as, d      d := the object of shape s with fields as
                       (a pair of two, a tuple of any number, an
@@ -38,29 +38,31 @@ module Language.X86 where
                       unset and no flag, and continue with %rax as it
                       returns; the caller's frame is untouched; the
                       call clobbers %rdi, %rsi and the flag: reading
-                      them before they are set again goes wrong
+                      them before they are set again errors
  A block ends with retq (return %rax, which must be set), jmp l, or
- je l₁ l₂ (jump to l₁ if the flag is set and to l₂ if not; no flag goes
- wrong). Reading or
- assigning a slot beyond the frame goes wrong. Jumps are as in CFG:
+ je l₁ l₂ (jump to l₁ if the flag is set and to l₂ if not; no flag
+ errors). Reading or
+ assigning a slot beyond the frame errors. Jumps are as in CFG:
  blocks are listed newest first, block l may jump only to older blocks,
  and the start of a body to any block. As in CFG, the body of a global
  definition runs in a fresh frame of max(2, locals) slots holding 0
  (its start first moves %rdi and %rsi, its free variables and
  argument, to slots 0 and 1), and main runs in a fresh frame of locals
  slots holding 0, with %rax holding 0, %rdi and %rsi unset (reading
- them goes wrong) and no flag.
+ them errors) and no flag.
 
 -}
 
 open import Framework.Primitives using (Base; base-rep)
+open import Language.Reg public
 
 open import Data.Fin using (Fin)
-open import Data.List using (List)
-open import Data.Nat using (ℕ)
+open import Data.List using (List; []; _∷_; length)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (ℕ; _≟_)
+open import Data.Product using (_×_; _,_)
+open import Relation.Nullary using (yes; no)
 
-data Reg : Set where
-  rax rdi rsi : Reg
 
 data Loc : Set where
   var : ℕ → Loc                           {- a slot of the current frame -}
@@ -116,3 +118,10 @@ record Program : Set where
   field
     defs : List Body
     main : Body
+
+{- block l among bs (newest first), with the blocks older than it -}
+block-at : List Block → ℕ → Maybe (Block × List Block)
+block-at [] l = nothing
+block-at (b ∷ bs) l with l ≟ length bs
+... | yes _ = just (b , bs)
+... | no _ = block-at bs l

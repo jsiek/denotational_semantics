@@ -1,0 +1,402 @@
+%% Section 4.3: delay and the approximant logical relation. First draft.
+%% Budget: 2.75 pages (notes/paper-outline.md). The definitions follow the
+%% Agda: agda/Mu/Compiler/Delay.agda (the pass),
+%% agda/Mu/Semantics/Graph/Clos3.agda and Clos4.agda (the semantics),
+%% agda/Mu/proof/Correctness/Graph/DelayRel.agda (the relation),
+%% DelayReflect.agda (the fundamental lemma, collect),
+%% DelayPreserve.agda (the forward relation) and DelayCorrect.agda (the
+%% theorem). The history of the relation is told as a tour of relation
+%% shapes, without names or dates (notes/history-outline.md).
+%% Paper names of the languages (notes/paper-outline.md, section 2):
+%% EnvClos is the Agda Clos3, FlatClos the Agda Clos4.
+
+
+\subsection{Correctness of \pass{delay} and the Approximant Logical Relation}
+\label{sec:approx-lr}
+
+The \pass{delay} pass is the step of closure conversion that lowers
+closures to pairs of code and environment. Its proof is the most
+difficult link in our answer to RQ1, which asks whether a whole
+compiler, from a higher-order language with general recursion down to
+assembly, can be proved correct with denotational semantics. The proof
+of correctness for the \pass{delay} pass is also the reason that the
+answer to RQ3 is negative, because it does not yield to equational
+reasoning. This section shows why semantic reflection for \pass{delay}
+resisted our earlier attempts and how the approximant logical relation
+proves it.
+
+The source language of \pass{delay} is EnvClos. In EnvClos, a closure
+$\kw{clos}\;(z, y.\,N)\;\vec{M}$ is still a function. Its code $N$ is closed,
+with free variables $z$ for the environment and $y$ for the argument,
+and its meaning is a curried function of the environment $X$ and then
+the argument $Y$. The meaning of the closure is this function applied
+to the tuple of the captured values $\vec{M}$. An application $L\;M$
+means function application:
+\[
+\begin{array}{rcl}
+    \den{\kw{clos}\;(z, y.\,N)\;\vec{M}}\rho & = &
+    \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}[z{:=}X, y{:=}Y])) \;\app\; \mathcal{T}(\den{\vec{M}}\rho)\\
+  \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
+\end{array}
+\]
+
+The target language of \pass{delay} is FlatClos. In FlatClos, a closure is
+a pair of code and environment, and a call takes the pair apart. The
+meaning of $\kw{code}\;(z, y.\,N)$ is the same curried function as before. The
+meaning of $\kw{pack}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
+$u$ from the code $L$ and $v$ from the environment $M$. A call applies
+the first components of the pairs to their second components and then
+to the argument, which is the operator $\callop$ of
+Figure~\ref{fig:graph-ops}:
+\[
+\begin{array}{rcl}
+    \den{\kw{code}\;(z, y.\,N)}\rho & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}[z{:=}X, y{:=}Y]))\\
+  \den{\kw{pack}\;L\;M}\rho & = &
+    \{\, \pairv{u}{v} \mid u \in \den{L}\rho,\; v \in \den{M}\rho \,\}\\
+  \den{\kw{callc}\;L\;M}\rho & = & \den{L}\rho \callop \den{M}\rho
+\end{array}
+\]
+The \pass{delay} pass translates each closure into a pair and each
+application into a call. It translates every other construct
+homomorphically:
+\[
+\begin{array}{rcl}
+    \pass{delay}(\kw{clos}\;(z, y.\,N)\;\vec{M}) & = &
+    \kw{pack}\;(\kw{code}\;(z, y.\,\pass{delay}(N)))\;(\kw{tuple}\;\pass{delay}(\vec{M}))\\
+  \pass{delay}(L\;M) & = &
+    \kw{callc}\;\pass{delay}(L)\;\pass{delay}(M)
+\end{array}
+\]
+
+\begin{figure}[t]
+\small\figdefs
+\defhead{}{v \sqsubseteq D'}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  (U \mapsto w) \sqsubseteq D' & = &
+    (\exists u, t.\; \pairv{u}{t} \in D') \;\land\;
+    \forall E'.\; \mathsf{con}(E') \land U \sqsubseteq^* E'
+      \Rightarrow w \sqsubseteq D' \callop E'\\
+  \nu \sqsubseteq D' & = & \exists u, t.\; \pairv{u}{t} \in D'\\
+  t(v) \sqsubseteq D' & = & v \sqsubseteq \pi_t(D')
+    \qquad \text{for } t \in \{\mathsf{tup}_i, \mathsf{left}, \mathsf{right}\}\\
+  v \sqsubseteq D' & = & v \in D'
+    \qquad \text{for the other elements}
+\end{array}
+\]
+
+\defhead{}{U \sqsubseteq^* E'}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  [\,] \sqsubseteq^* E' & = & \mathsf{true}\\
+  (u :: U) \sqsubseteq^* E' & = & u \sqsubseteq E' \land U \sqsubseteq^* E'
+\end{array}
+\]
+\caption{The relation $v \sqsubseteq D'$ (``$D'$ satisfies $v$'') for
+  the preservation half of \pass{delay}. It relates a single source (EnvClos)
+  element $v$ to a set $D'$ of target (FlatClos) elements and is
+  defined by recursion on $v$. The relation $U \sqsubseteq^* E'$
+  extends it to a finite list $U$.}
+\label{fig:preserve}
+\end{figure}
+
+\paragraph{Why preservation is easy and reflection is not}
+
+The \pass{delay} pass changes the representation of closures, so its
+correctness is not an equation. Instead, we prove that a closed
+program and its translation produce the same constants, and that one
+produces something exactly when the other does. The forward half,
+preservation, requires only a relation between a \emph{single} source
+element and a \emph{set} of target elements, defined by recursion on
+the source element (Figure~\ref{fig:preserve}). We read $v \sqsubseteq
+D'$ as ``$D'$ satisfies $v$''. The clause for a function entry says
+when a target set satisfies the entry. The set must contain a closure,
+and calling the set on arguments that satisfy the entry's inputs must
+produce a set that satisfies the entry's output. The relation is in
+the style of the satisfaction relation of Abramsky's domain logic
+\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source graph element
+in the role of the formula. The source element is finite, so the
+recursion is structural. The proof that $v \in \den{M}\rho$ implies $v
+\sqsubseteq \den{\pass{delay}(M)}\rho'$ is a routine induction on $M$.
+
+The backward half, reflection, must show that the source accounts for
+every element that the target produces. Here the representation of
+closures gets in the way. To see how, consider the function
+$\lambda y.\, x + y$ in an environment where $x$ is $9$. In EnvClos,
+its meaning is a set of entries such as $[1] \mapsto 10$ and
+$[6] \mapsto 15$. After \pass{delay}, its code takes the environment as an
+extra parameter. The meaning of the code is then a table with entries
+for \emph{every} environment, such as the following two:
+\[
+  [9] \mapsto ([1] \mapsto 10) \qquad
+  [2] \mapsto ([1] \mapsto 3)  \qquad \ldots
+\]
+The program pairs this code only with the environment $[9]$, so the
+entry for $[2]$ is junk: it corresponds to no source function. Worse, a
+call takes the code from $\car$ and the environment from $\cdr$
+\emph{separately}, so a result may combine the code entry of one pair
+with the environment of another. 
+
+\paragraph{Relation designs that failed}
+
+We tried several natural relations. Each failure points to a piece of
+the solution.
+\begin{itemize}
+\item \emph{Relating a single element to a single element} works for
+  every construct except the call. It fails for the call because of
+  the mixing of $\car$ and $\cdr$ described above.
+\item \emph{Relating a possibly infinite set to a possibly infinite
+  set} handles the mixing. However, the function case uses the
+  relation in both positive and negative positions, so the definition
+  is not well founded.
+\item \emph{Indexing by one target element within its whole target
+  set} comes closest. However, the function case must relate the
+  entire argument set, which may be infinite and cannot shrink to match
+  the finite index.
+\end{itemize}
+
+\paragraph{The key insight}
+
+We solve the mixing problem by relating the source not to a single
+target element but to a finite \emph{list} of target elements. When a
+call $D' \callop E'$ produces a result $w$, it uses only finitely many
+pairs of $D'$. One pair supplies a code entry
+$U_e \mapsto (U_a \mapsto w)$, and other pairs supply the environments
+in $U_e$. Collecting these pairs gives a finite list $V \subseteq D'$
+that contains both halves of the call. The code and the environments
+are therefore matched \emph{inside} $V$, no matter which pairs they
+come from. The relation lets a call use exactly the code entries whose
+environments $V$ itself provides, so it ignores the junk entries for
+environments that the program never supplies. The choice of a finite
+list $V$ also makes the relation well founded, as we explain in the
+paragraph on termination below.
+
+\begin{figure}[t]
+\small\figdefs
+\defhead{Usable entries}{\entryin{U_a}{w}{V}}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  \entryin{U_a}{w}{V} & \iff &
+    \exists\, U_e.\;
+    (U_e \mapsto (U_a \mapsto w)) \in \car(V)
+    \;\land\; U_e \neq [\,]
+    \;\land\; U_e \subseteq \cdr(V)
+\end{array}
+\]
+
+\defhead{Arguments of usable entries}{\mathsf{args}(V)}
+\[
+  \mathsf{args}(V) \;=\; \{\, u \mid \entryin{U_a}{w}{V},\; u \in U_a \,\}
+\]
+
+\defhead{Batches of calls}{\callsto{V}{U}{W}}
+\[
+  \callsto{V}{U}{W} \iff
+    U \subseteq \mathsf{args}(V) \;\land\;
+    (\forall w \in W.\; \exists U_a.\; \entryin{U_a}{w}{V}
+      \land U_a \neq [\,] \land U_a \subseteq U)
+\]
+
+\defhead{One layer of the relation}{D \layer{Q} V}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  D \layer{Q} V & \iff &
+    (\forall c.\; c \in V \Rightarrow c \in D)\\
+  & \land & (V \neq [\,] \Rightarrow D \neq \emptyset)\\
+  & \land & (\forall U, W, E.\;
+     \callsto{V}{U}{W} \land \mathsf{con}(E) \land \mathsf{con}(U)
+     \land E \mathrel{Q} U \Rightarrow (D \app E) \mathrel{Q} W)\\
+  & \land & (\forall \pi, W.\; W \subseteq \pi(V) \Rightarrow \pi(D) \mathrel{Q} W)
+\end{array}
+\]
+
+\defhead{The approximant logical relation}{D \ALR_k V \qquad D \ALR V}
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{}}
+  D \ALR_0 V & \iff & \mathsf{true}\\
+  D \ALR_{k+1} V & \iff & D \layer{\ALR_k} V\\
+  D \ALR V & \iff & D \ALR_{1 + \depth(V)} V
+\end{array}
+\]
+\noindent Here $V, U, U_a, U_e, W$ are finite lists of target elements,
+$D, E \subseteq \Elem$ are sets of source elements, and $Q$ is the
+relation used for the recursive occurrences.
+\caption{The approximant logical relation $D \ALR V$ between a set $D$
+  of source (EnvClos) elements and a finite list $V$ of target (FlatClos)
+  elements. A finite list stands for the set of its elements. Here $c$
+  ranges over constants and $\pi$ over the projections of tuple
+    components and sum injections; $\car$ and $\cdr$ are as in
+  Figure~\ref{fig:graph-ops}, $\mathsf{con}$ is consistency
+  (Section~\ref{sec:graph-models}), and $\depth(V)$ is the largest
+  depth of an element of $V$ (Appendix~\ref{app:depth}).}
+\label{fig:alr}
+\end{figure}
+
+\paragraph{The approximant logical relation}
+
+Figure~\ref{fig:alr} defines the approximant logical relation
+$D \ALR V$, which relates a finite list $V$ of target elements to a
+source set $D$. Its building block is the \emph{usable entry} of a
+list. A target closure is a set of pairs $\pairv{u}{t}$ of code and
+environment. The code $u$ is a curried function, so its entries have
+the form $U_e \mapsto (U_a \mapsto w)$: it maps the environment $U_e$
+to a function that maps the arguments $U_a$ to $w$. We write
+$\entryin{U_a}{w}{V}$ when such an entry is among the codes $\car(V)$
+\emph{and} the environments $U_e$ are among the environments
+$\cdr(V)$ that $V$ itself provides. The second condition makes the
+relation sound in the presence of junk. A code entry for an environment
+that the program never supplies, such as the entry for $[2]$ in the
+example above, is not usable. A call $D' \callop E'$ takes the code
+from $\car(D')$ and the environment from $\cdr(D')$. In the same way,
+the code and the environment of a usable entry may come from different
+pairs of $V$.
+
+A \emph{batch of calls} $\callsto{V}{U}{W}$ says two things. The
+first conjunct, $U \subseteq \mathsf{args}(V)$, says that every
+argument in $U$ is taken by some usable entry of $V$. This keeps the
+arguments shallower than $V$, which the recursion needs. The second
+conjunct says that each result $w$ in $W$ is produced by a usable entry
+of $V$ whose arguments are among $U$.
+
+One layer ${\trianglerighteq^{Q}}$ of the relation has four clauses:
+\begin{enumerate}
+  \item every constant in $V$ is in $D$;
+  \item if $V$ is nonempty, then $D$ is nonempty;
+  \item for every batch of calls $\callsto{V}{U}{W}$ and every
+    consistent set $E$ related to $U$, the set $D \app E$ is related
+    to $W$; and
+  \item every sublist of a projection of $V$ is related to the same
+    projection of $D$.
+\end{enumerate}
+The third clause is where the $\car$ and $\cdr$ of the call operator
+meet. Through usable entries, the code comes from $\car(V)$ and the
+environments come from $\cdr(V)$, both within the finite list $V$.
+
+\paragraph{Termination of the Approximant Logical Relation}
+
+The relation $D \ALR V$ is defined by recursion on the depth of
+$V$. The relation is used recursively at the arguments of a call, in
+negative position. That occurrence is what made the relation between
+two infinite sets ill founded. Here, every recursive occurrence is at
+a list shallower than $V$. The arguments $U$ are shallower than $V$
+because the first conjunct of a batch of calls requires $U \subseteq
+\mathsf{args}(V)$; without that conjunct, $U$ could contain elements
+deeper than $V$. The results $W$ are shallower than $V$ because each
+of them is the output of an entry in $V$. Finally, the projections of
+$V$ are shallower than $V$ because they consist of components of the
+elements of $V$.
+
+The index $k$ of ${\ALR_k}$ serves only to ensure termination. Any
+index that bounds the depth of $V$ gives the same relation, and
+therefore ${\ALR}$ satisfies its defining equation
+${\ALR} = {\trianglerighteq^{\trianglerighteq}}$
+(Lemma~\ref{lem:depth-irrelevant}). The proofs about ${\ALR}$ use this
+equation in both directions and never mention the index.
+
+\begin{lemma}[Depth irrelevance and unfolding]\label{lem:depth-irrelevant}
+\leavevmode
+\begin{enumerate}
+\item If every element in $V$ has depth less than $k$ and less than
+  $j$, then $D \ALR_k V$ if and only if $D \ALR_j V$.
+\item $D \ALR V$ if and only if $D \layer{\ALR} V$.
+\end{enumerate}
+\end{lemma}
+
+The relation is also monotone in $D$ and antitone in $V$: enlarging
+the source set or taking a sublist of the target list preserves it.
+
+\paragraph{Why not recursion on types}
+
+The intermediate languages are typed, so one might hope to define the
+relation by recursion on types, as \citet{Chlipala:2007fk} and
+\citet{Nielsen:2000aa} do. The recursive types of \iswim\ rule this
+out. The constructs $\kw{fold}$ and $\kw{unfold}$ mean the identity, so
+the relation at $\mu X.\,A$ would have to be the relation at
+$A[\mu X.\,A/X]$, which is not a smaller type. For example, at the
+type $\mu X.\,X \rightarrow \mathrm{Int}$, the clause for application
+needs the relation at the argument type, which is
+$\mu X.\,X \rightarrow \mathrm{Int}$ itself. By contrast, the depth of
+the target list decreases at every call.
+
+\paragraph{The fundamental lemma}
+
+A source environment $\rho$ and a target environment $\rho'$ are
+related when $\rho(x) \ALR V$ for every variable $x$ and every finite
+$V \subseteq \rho'(x)$. We also require that both environments be
+consistent and that $\rho$ map every variable to a nonempty set.
+
+\begin{lemma}[Fundamental lemma]\label{lem:delay-fundamental}
+If $\rho$ and $\rho'$ are related, then $\den{M}\rho \ALR V$ for every
+term $M$ of EnvClos and every finite
+$V \subseteq \den{\pass{delay}(M)}\rho'$.
+\end{lemma}
+
+The proof is by induction on $M$. Throughout, the second part of
+Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
+the four clauses of $D \layer{\ALR} V$. Most cases are routine. In the case of a
+variable, the relation between $\rho$ and $\rho'$ gives the conclusion
+directly. The constructs $\kw{fold}$ and
+$\kw{unfold}$ denote the identity function in both languages, so their
+cases follow immediately from the induction hypothesis. The cases for
+tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
+induction hypotheses for their subterms. Two cases carry the weight.
+
+\emph{Case $M = L\;K$.} Then
+$\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,
+so $V \subseteq D' \callop E'$, where
+$D' = \den{\pass{delay}(L)}\rho'$ and
+$E' = \den{\pass{delay}(K)}\rho'$. Each element of $V$ is produced by
+a code entry from $\car(D')$, finitely many environments from
+$\cdr(D')$, and finitely many arguments from $E'$. We collect the pairs
+of $D'$ that supply these codes and environments into a finite list
+$W \subseteq D'$, and the arguments into a finite list
+$U \subseteq E'$. Then $\callsto{W}{U}{V}$. The induction hypotheses
+give $\den{L}\rho \ALR W$ and $\den{K}\rho \ALR U$, and both
+$\den{K}\rho$ and $U$ are consistent. Clause~3 for
+$\den{L}\rho \ALR W$, applied to this batch of calls with
+$E = \den{K}\rho$, gives $\den{L}\rho \app \den{K}\rho \ALR V$. That is,
+$\den{M}\rho \ALR V$.
+
+\emph{Case $M = \kw{clos}\,(z, y.\,N)\,\vec{K}$.} Then
+$\pass{delay}(M) = \kw{pack}\,(\kw{code}\,(z, y.\,\pass{delay}(N)))\,(\kw{tuple}\,\pass{delay}(\vec{K}))$,
+so $V$ is a list of pairs whose environments lie in
+$T' = \mathcal{T}(\den{\pass{delay}(\vec{K})}\rho')$. Let
+$D = \den{M}\rho$ and $T = \mathcal{T}(\den{\vec{K}}\rho)$. We prove the
+four clauses of $D \layer{\ALR} V$. Clauses 1 and 4 hold trivially
+because $V$ contains only pairs. Clause 2 follows from the induction
+hypothesis for $\vec{K}$.
+
+Clause 3 is the heart of the proof. Suppose that $\callsto{V}{U}{W}$
+and $E \ALR U$. Each $w \in W$ comes from a code entry
+$U_e \mapsto (U_a \mapsto w)$ in $\car(V)$ with $U_e \subseteq \cdr(V)$
+and $U_a \subseteq U$. By monotonicity, $w$ is in the meaning of the
+target body $\pass{delay}(N)$ with $z$ bound to $\cdr(V)$ and $y$
+bound to $U$. This target environment is related to the source environment
+$(T, E)$. The environments are related by the induction hypothesis for
+$\vec{K}$, because $\cdr(V) \subseteq T'$, and the arguments are
+related by assumption. The induction hypothesis for the body $N$ then
+gives $\den{N}[z{:=}T, y{:=}E] \ALR W$. Finally, Lemma~\ref{lem:beta}
+gives $\den{N}[z{:=}T, y{:=}E] \subseteq D \app E$, and ${\ALR}$ is monotone in its
+source set, so $D \app E \ALR W$.
+
+\begin{theorem}[Correctness of \pass{delay}]\label{thm:delay}
+Let $M$ be a closed term of EnvClos, and let $\den{\cdot}$ denote
+meaning in the empty environment. For every constant $c$,
+$c \in \den{M}$ if and only if $c \in \den{\pass{delay}(M)}$.
+Moreover, $\den{M}$ is nonempty if and only if
+$\den{\pass{delay}(M)}$ is nonempty.
+\end{theorem}
+
+The empty environments are related, so reflection follows from
+Lemma~\ref{lem:delay-fundamental}. If $c \in \den{\pass{delay}(M)}$,
+the lemma applied to the one-element list $[c]$ gives
+$\den{M} \ALR [c]$, and clause~1 gives $c \in \den{M}$. If
+$\den{\pass{delay}(M)}$ contains an element $v$, the lemma applied
+to $[v]$ and clause~2 show that $\den{M}$ is nonempty. Preservation
+follows from the relation $\sqsubseteq$ of
+Figure~\ref{fig:preserve}. For a constant, $c \sqsubseteq D'$ means
+$c \in D'$, and $v \sqsubseteq D'$ implies that $D'$ is nonempty.
+
+Section~\ref{sec:evaluation} compares the size of this proof with the
+operational proofs of \pass{delay}.
+

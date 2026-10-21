@@ -1,200 +1,148 @@
 {-
 
-  Correctness of the optimize pass (Clos2 → Clos2).
+  Correctness of typed optimize (Clos2ᵀ → Clos2ᵀ) in the graph model
+  (Semantics/Graph/Typed/Clos2.agda).
 
-  Optimize renames variables (by r) and drops free variables that a
-  closure's code does not use. The denotation is unchanged:
-  ⟦ M ⟧ ρ ≃ ⟦ optimize r M ⟧ ρ', when ρ and ρ' agree through r on the
-  variables M uses, and ρ is nonempty. Since this is an equality, it
-  gives both the forward and the backward direction.
-
-  The environment must be nonempty because closures are strict: a dropped
-  free variable is a variable, so it is nonempty, and dropping it does not
-  change whether the closure has values.
+  ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ' when ρ and ρ' agree through r on the
+  variables that M uses (Agree), and ρ is nonempty on all variables in
+  scope (NE). Every case but the closure is a congruence. The free
+  variables of a closure and the kept ones are related by the selection
+  (Th): a kept one is equal, a dropped one is a variable, so nonempty.
+  Hence the two closures' guards hold together, and the environments of
+  the codes agree through squeeze on the variables the code uses.
 
 -}
 
-open import Framework.Syntax.SigUtil
-open import Framework.Syntax.SyntaxUtil
-open import proof.Framework.GraphModel.SetsAsPredicates
-open import proof.Framework.GraphModel.DOpSig
-open import proof.Framework.GraphModel.Domain
-open import proof.Framework.GraphModel.Ops
-open import proof.Semantics.Graph.Prim
-open import Language.Clos2
-open import proof.Semantics.Graph.Clos2Iswim
-open import Compiler.Optimize
-open import proof.Correctness.Graph.DelayFiniteCommon using (Env; Init; ρ₀)
-open import proof.Correctness.Graph.ConcretizeCorrect
-  using (init₀; push; apply-push; ⋆-≃; 𝒯-≃; proj-≃; inl-≃; inr-≃; 𝒞-≃; primD-≃)
-open import proof.Framework.GraphModel.Env using (nonempty-env; extend-nonempty-env)
-
-open import Data.Nat using (ℕ; zero; suc; _+_)
-open import Data.Nat.Properties using (+-suc; +-identityʳ)
-open import Data.Fin using (Fin; zero; suc)
-open import Data.List using (List; []; _∷_; replicate)
-open import Data.List.Relation.Unary.Any using (here)
-open import Data.Product using (_×_; proj₁; proj₂; Σ; Σ-syntax)
-  renaming (_,_ to ⟨_,_⟩ )
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Empty using (⊥-elim)
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; _≢_; refl; subst)
-open import Relation.Nullary using (Dec; yes; no)
-
 module proof.Correctness.Graph.OptimizeCorrect where
 
-{- Helpers --------------------------------------------------------------------}
+open import proof.Framework.GraphModel.Prelude
+open import proof.Framework.GraphModel.Ops
+open import proof.Framework.GraphModel.TypedGraph using (guard-≃)
+open import proof.Semantics.Graph.Prim using (primD-≃)
+open import Language.Typed.Type
+open import Language.Typed.Clos2
+open import proof.Semantics.Graph.Typed.Ops using (project-≃)
+open import proof.Semantics.Graph.Typed.Clos2 using (⟦_⟧; ⟦_⟧s; fv-env; fv-env-nth)
+open import Compiler.Optimize
+open import Framework.VecSelect
+open import proof.Framework.VecSelect
 
-unbind-bind : ∀ m (N : AST) → unbind-n m (bind-n-ast m N) ≡ N
-unbind-bind zero N = refl
-unbind-bind (suc m) N = unbind-bind m N
+open import Data.Bool using (Bool; true; false; T)
+open import Data.Fin using (Fin; zero; suc; toℕ)
+open import Data.List using (replicate)
+open import Data.List.Relation.Unary.Any using (here)
+open import Data.Nat using (ℕ; zero; suc)
+open import Data.Vec using (Vec; []; _∷_; lookup)
+open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst; subst₂)
+open import Relation.Nullary.Decidable using (fromWitness)
 
-push-ne : ∀ n (Ds : Results (𝒫 Value) (replicate n ■)) ρ
-  → (∀ i → nonempty (nthD Ds i)) → nonempty-env ρ → nonempty-env (push Ds ρ)
-push-ne zero _ ρ _ NE = NE
-push-ne (suc n) ⟨ D , Ds ⟩ ρ ne NE =
-  push-ne n Ds (D • ρ) (λ i → ne (suc i)) (extend-nonempty-env NE (ne zero))
+NE : ∀ k → Env Value → Set
+NE k ρ = ∀ (x : Fin k) → nonempty (ρ (toℕ x))
 
-{- What pruning a closure's free variables preserves --------------------------}
+Agree : ∀ {k k'} → (Fin k → Bool) → (Fin k → Fin k') → Env Value → Env Value → Set
+Agree u r ρ ρ' = ∀ x → T (u x) → ρ (toℕ x) ≃ ρ' (toℕ (r x))
 
-record PruneOK n (U : ℕ → Set) (fvs : Args (replicate n ■)) (P : Pruned) (b : ℕ → ℕ)
-    (ρ ρ' : Env) : Set₁ where
-  field
-    {- the kept free variables are nonempty exactly when all of them were -}
-    ne→ : (∀ i → nonempty (nthD (⟦ fvs ⟧₊ ρ) i)) → ∀ i → nonempty (nthD (⟦ kept P ⟧₊ ρ') i)
-    ne← : (∀ i → nonempty (nthD (⟦ kept P ⟧₊ ρ') i)) → ∀ i → nonempty (nthD (⟦ fvs ⟧₊ ρ) i)
-    {- every position that the code uses is renumbered to the same set -}
-    push≃ : ∀ ρ₁ ρ₂ → (∀ k → U (n + k) → ρ₁ k ≃ ρ₂ (b k))
-      → ∀ j → U j → push (⟦ fvs ⟧₊ ρ) ρ₁ j ≃ push (⟦ kept P ⟧₊ ρ') ρ₂ (index P j)
+ext-agree : ∀ {k k' u r ρ ρ' X} → Agree {k} {k'} (λ x → u (suc x)) r ρ ρ' → Agree u (ext r) (X • ρ) (X • ρ')
+ext-agree ag zero _ = ≃-refl
+ext-agree ag (suc x) t = ag x t
 
-keep-ok : ∀ {n U} {M M' : AST} {fvs : Args (replicate n ■)} {P b ρ ρ'}
-  → ⟦ M ⟧ ρ ≃ ⟦ M' ⟧ ρ'
-  → PruneOK n U fvs P (keep-base b) ρ ρ'
-  → PruneOK (suc n) U (M ,, fvs) (keep M' P) b ρ ρ'
-keep-ok {n} {U} {M} {M'} {fvs} {P} {b} {ρ} {ρ'} M≃ ok = record
-  { ne→ = λ { ne zero → ⟨ proj₁ (ne zero) , proj₁ M≃ _ (proj₂ (ne zero)) ⟩
-            ; ne (suc i) → PruneOK.ne→ ok (λ i → ne (suc i)) i }
-  ; ne← = λ { ne zero → ⟨ proj₁ (ne zero) , proj₂ M≃ _ (proj₂ (ne zero)) ⟩
-            ; ne (suc i) → PruneOK.ne← ok (λ i → ne (suc i)) i }
-  ; push≃ = λ ρ₁ ρ₂ bse j u →
-      PruneOK.push≃ ok (⟦ M ⟧ ρ • ρ₁) (⟦ M' ⟧ ρ' • ρ₂) (bse' ρ₁ ρ₂ bse) j u
-  }
+ext-ne : ∀ {k ρ X} → nonempty X → NE k ρ → NE (suc k) (X • ρ)
+ext-ne v V zero = v
+ext-ne v V (suc x) = V x
+
+{- the free variables of a closure, as a vector -}
+vec : ∀ n → Results (𝒫 Value) (replicate n ■) → Vec (𝒫 Value) n
+vec zero _ = []
+vec (suc n) ⟨ X , Xs ⟩ = X ∷ vec n Xs
+
+vec-nth : ∀ n Xs (i : Fin n) → lookup (vec n Xs) i ≡ nthD Xs i
+vec-nth (suc n) ⟨ X , Xs ⟩ zero = refl
+vec-nth (suc n) ⟨ X , Xs ⟩ (suc i) = vec-nth n Xs i
+
+code-env : ∀ n Xs Y (x : Fin (suc n)) → (Y • fv-env n Xs) (toℕ x) ≡ lookup (Y ∷ vec n Xs) x
+code-env n Xs Y zero = refl
+code-env (suc n) ⟨ X , Xs ⟩ Y (suc zero) = refl
+code-env (suc n) ⟨ X , Xs ⟩ Y (suc (suc i)) = code-env n Xs X (suc i)
+
+{- the kept free variables: equal; the dropped ones: nonempty -}
+data Th : ∀ {n} (fl : Vec Bool n) → Vec (𝒫 Value) n → Vec (𝒫 Value) (count fl) → Set₁ where
+  [] : Th [] [] []
+  keep : ∀ {n fl x y xs ys} → x ≃ y → Th {n} fl xs ys → Th (true ∷ fl) (x ∷ xs) (y ∷ ys)
+  drop : ∀ {n fl x xs ys} → nonempty x → Th {n} fl xs ys → Th (false ∷ fl) (x ∷ xs) ys
+
+th-thin : ∀ {n fl xs ys} → Th {n} fl xs ys → Thin _≃_ fl xs ys
+th-thin [] = []
+th-thin (keep e th) = keep e (th-thin th)
+th-thin (drop _ th) = drop (th-thin th)
+
+ANE : ∀ {n} → Vec (𝒫 Value) n → Set
+ANE xs = ∀ i → nonempty (lookup xs i)
+
+th-ne→ : ∀ {n fl xs ys} → Th {n} fl xs ys → ANE xs → ANE ys
+th-ne→ (keep e th) ne zero = let ⟨ d , d∈ ⟩ = ne zero in ⟨ d , proj₁ e d d∈ ⟩
+th-ne→ (keep e th) ne (suc j) = th-ne→ th (λ i → ne (suc i)) j
+th-ne→ (drop _ th) ne j = th-ne→ th (λ i → ne (suc i)) j
+
+th-ne← : ∀ {n fl xs ys} → Th {n} fl xs ys → ANE ys → ANE xs
+th-ne← (keep e th) ne zero = let ⟨ d , d∈ ⟩ = ne zero in ⟨ d , proj₂ e d d∈ ⟩
+th-ne← (keep e th) ne (suc i) = th-ne← th (λ j → ne (suc j)) i
+th-ne← (drop x th) ne zero = x
+th-ne← (drop x th) ne (suc i) = th-ne← th ne i
+
+{- between nthD and the vector -}
+to-vec : ∀ n {Xs} → (∀ i → nonempty (nthD Xs i)) → ANE (vec n Xs)
+to-vec n ne i = subst nonempty (sym (vec-nth n _ i)) (ne i)
+
+of-vec : ∀ n {Xs} → ANE (vec n Xs) → ∀ i → nonempty (nthD Xs i)
+of-vec n ne i = subst nonempty (vec-nth n _ i) (ne i)
+
+opt-ok : ∀ {k k' A} (M : Tm k A) {r : Fin k → Fin k'} {ρ ρ'} → NE k ρ → Agree (uses M) r ρ ρ' → ⟦ M ⟧ ρ ≃ ⟦ opt r M ⟧ ρ'
+opts-ok : ∀ {k k' n} (Ms : Vec (Tm k Any) n) {r : Fin k → Fin k'} {ρ ρ'} → NE k ρ → Agree (usesV Ms) r ρ ρ'
+  → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ opts r Ms ⟧s ρ') i
+
+th-ok : ∀ {k k' n} (fl : Vec Bool n) (Ms : Vec (Tm k Any) n) {u : Fin n → Bool} {r : Fin k → Fin k'} {ρ ρ'}
+  → (∀ i → Fl (u i) (lookup fl i) (lookup Ms i)) → NE k ρ → Agree (usesV Ms) r ρ ρ'
+  → Th fl (vec n (⟦ Ms ⟧s ρ)) (vec _ (⟦ select fl (opts r Ms) ⟧s ρ'))
+th-ok [] [] s V ag = []
+th-ok (b ∷ fl) (M ∷ Ms) s V ag with s zero
+... | kept = keep (opt-ok M V (subL ag)) (th-ok fl Ms (λ i → s (suc i)) V (subR ag))
+... | var {x = x} _ = drop (V x) (th-ok fl Ms (λ i → s (suc i)) V (subR ag))
+
+opt-ok (` x) V ag = ag x (fromWitness refl)
+opt-ok (clos {n} N Ms) {r} {ρ} {ρ'} V ag =
+  guard-≃ n (count fl) (λ ne → of-vec (count fl) (th-ne→ th (to-vec n ne))) (λ ne → of-vec n (th-ne← th (to-vec (count fl) ne)))
+    λ ne → Λ-≃ λ W neW _ →
+      opt-ok N {squeeze fl}
+        (ext-ne (E≢[]⇒nonempty-mem neW) λ i → subst nonempty (sym (fv-env-nth n Ds i)) (ne i))
+        λ x u → subst₂ _≃_ (sym (code-env n Ds (mem W) x)) (sym (code-env _ Es (mem W) (squeeze fl x)))
+                  (thin-lookup ≃-refl (th-thin th) x (covers {N = N} {Ms} s x u))
   where
-  bse' : ∀ ρ₁ ρ₂ → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
-    → ∀ k → U (n + k) → (⟦ M ⟧ ρ • ρ₁) k ≃ (⟦ M' ⟧ ρ' • ρ₂) (keep-base b k)
-  bse' ρ₁ ρ₂ bse zero _ = M≃
-  bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
+  s = flags-ok (λ i → uses N (suc i)) Ms
+  fl = keeps N Ms
+  Ds = ⟦ Ms ⟧s ρ
+  Es = ⟦ select fl (opts r Ms) ⟧s ρ'
+  th = th-ok fl Ms s V ag
+opt-ok (app L M) V ag = ⋆-≃ (opt-ok L V (subL ag)) (opt-ok M V (subR ag))
+opt-ok (lit B c) V ag = ≃-refl
+opt-ok (tuple {n = n} Ms) V ag = 𝒯-≃ n (opts-ok Ms V ag)
+opt-ok (get i M) V ag = proj-≃ i (opt-ok M V ag)
+opt-ok (inl M) V ag = inl-≃ (opt-ok M V ag)
+opt-ok (inr M) V ag = inr-≃ (opt-ok M V ag)
+opt-ok (case L M N) {r} {ρ} {ρ'} V ag =
+  𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ opt (ext r) M ⟧ (X • ρ')} {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ opt (ext r) N ⟧ (X • ρ')}
+    (opt-ok L V (subL ag))
+    (λ v W _ → opt-ok M (ext-ne ⟨ v , here refl ⟩ V) (ext-agree (subL (subR {u = uses L} ag))))
+    (λ v W _ → opt-ok N (ext-ne ⟨ v , here refl ⟩ V) (ext-agree (subR (subR {u = uses L} ag))))
+opt-ok (prim p L M) V ag = primD-≃ p (opt-ok L V (subL ag)) (opt-ok M V (subR ag))
+opt-ok (let′ M N) {r} {ρ} {ρ'} V ag =
+  letD-≃ {F = λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ opt (ext r) N ⟧ (X • ρ')} (opt-ok M V (subL ag))
+    (λ W neW _ → opt-ok N (ext-ne (E≢[]⇒nonempty-mem neW) V) (ext-agree (subR ag)))
+opt-ok (inject G M) V ag = opt-ok M V ag
+opt-ok (project t M) V ag = project-≃ _ t (opt-ok M V ag)
 
-{- The main lemma -------------------------------------------------------------}
+opts-ok (M ∷ Ms) V ag zero = opt-ok M V (subL ag)
+opts-ok (M ∷ Ms) V ag (suc i) = opts-ok Ms V (subR ag) i
 
-opt-correct : ∀ (M : AST) r ρ ρ' → nonempty-env ρ → (∀ x → Uses x M → ρ x ≃ ρ' (r x))
-  → ⟦ M ⟧ ρ ≃ ⟦ optimize r M ⟧ ρ'
-
-opt-body-correct : ∀ r k (a : Arg (ν-n k (ν ■))) ρ ρ' → nonempty-env ρ
-  → (∀ x → Uses x (unbind-n k a) → ρ x ≃ ρ' (r x))
-  → ⟦ unbind-n k a ⟧ ρ ≃ ⟦ opt-body r k a ⟧ ρ'
-
-opt-args-correct : ∀ {n} (args : Args (replicate n ■)) r ρ ρ' → nonempty-env ρ
-  → (∀ x → UsesArgs x args → ρ x ≃ ρ' (r x))
-  → ∀ i → nthD (⟦ args ⟧₊ ρ) i ≃ nthD (⟦ opt-args r args ⟧₊ ρ') i
-
-prune-ok : ∀ n r {U : ℕ → Set} (dec : ∀ j → Dec (U j)) (fvs : Args (replicate n ■))
-  (b : ℕ → ℕ) ρ ρ' → nonempty-env ρ → (∀ x → UsesArgs x fvs → ρ x ≃ ρ' (r x))
-  → PruneOK n U fvs (prune n r dec fvs b) b ρ ρ'
-
-opt-correct (` x) r ρ ρ' NE rel = rel x refl
-opt-correct (clos-op n ⦅ ! clear a ,, fvs ⦆) r ρ ρ' NE rel = ⟨ G , H ⟩
-  where
-  N = unbind-n n a
-  P = prune n r (λ j → uses? (suc j) N) fvs (λ k → k)
-  ok = prune-ok n r (λ j → uses? (suc j) N) fvs (λ k → k) ρ ρ' NE (λ x u → rel x (inj₂ u))
-  Ds = ⟦ fvs ⟧₊ ρ
-  Ds' = ⟦ kept P ⟧₊ ρ'
-  m = count P
-  N' = opt-body (ext-var (index P)) n a
-
-  {- applying the closure to U runs the same body on the same free variables -}
-  body≃ : ∀ U → U ≢ [] → (∀ i → nonempty (nthD Ds i))
-    → apply-n n (⟦ a ⟧ₐ init₀) Ds (mem U) ≃ apply-n m (⟦ bind-n-ast m N' ⟧ₐ init₀) Ds' (mem U)
-  body≃ U neU ne
-    rewrite apply-push n a init₀ Ds (mem U)
-          | apply-push m (bind-n-ast m N') init₀ Ds' (mem U)
-          | unbind-bind m N' =
-    opt-body-correct (ext-var (index P)) n a (mem U • push Ds init₀) (mem U • push Ds' init₀)
-      (extend-nonempty-env (push-ne n Ds init₀ ne (λ _ → ⟨ ω , refl ⟩)) (E≢[]⇒nonempty-mem neU))
-      rel₁
-    where
-    rel₁ : ∀ x → Uses x N → (mem U • push Ds init₀) x ≃ (mem U • push Ds' init₀) (ext-var (index P) x)
-    rel₁ zero _ = ≃-refl
-    rel₁ (suc j) u = PruneOK.push≃ ok init₀ init₀ (λ k _ → ≃-refl) j u
-
-  G : ⟦ clos-op n ⦅ ! clear a ,, fvs ⦆ ⟧ ρ ⊆ ⟦ optimize r (clos-op n ⦅ ! clear a ,, fvs ⦆) ⟧ ρ'
-  G ν ⟨ ne , tt ⟩ = ⟨ PruneOK.ne→ ok ne , tt ⟩
-  G (U ↦ x) ⟨ ne , ⟨ x∈ , neU ⟩ ⟩ = ⟨ PruneOK.ne→ ok ne , ⟨ proj₁ (body≃ U (proj₁ neU) ne) x x∈ , neU ⟩ ⟩
-
-  H : ⟦ optimize r (clos-op n ⦅ ! clear a ,, fvs ⦆) ⟧ ρ' ⊆ ⟦ clos-op n ⦅ ! clear a ,, fvs ⦆ ⟧ ρ
-  H ν ⟨ ne' , tt ⟩ = ⟨ PruneOK.ne← ok ne' , tt ⟩
-  H (U ↦ x) ⟨ ne' , ⟨ x∈ , neU ⟩ ⟩ =
-    ⟨ PruneOK.ne← ok ne' , ⟨ proj₂ (body≃ U (proj₁ neU) (PruneOK.ne← ok ne')) x x∈ , neU ⟩ ⟩
-opt-correct (app ⦅ L ,, M ,, Nil ⦆) r ρ ρ' NE rel =
-  ⋆-≃ (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-      (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₂ (inj₁ u))))
-opt-correct (lit B k ⦅ Nil ⦆) r ρ ρ' NE rel = ≃-refl
-opt-correct (tuple n ⦅ args ⦆) r ρ ρ' NE rel = 𝒯-≃ n (opt-args-correct args r ρ ρ' NE rel)
-opt-correct (get i ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
-  proj-≃ i (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-opt-correct (inl-op ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
-  inl-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-opt-correct (inr-op ⦅ M ,, Nil ⦆) r ρ ρ' NE rel =
-  inr-≃ (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-opt-correct (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) r ρ ρ' NE rel =
-  𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) M ⟧ (X • ρ')}
-      {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ optimize (ext-var r) N ⟧ (X • ρ')}
-      (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-      (λ v V _ → opt-correct M (ext-var r) _ _ (NE-ext v) (rel-ext M (λ x u → rel x (inj₂ (inj₁ u)))))
-      (λ v V _ → opt-correct N (ext-var r) _ _ (NE-ext v) (rel-ext N (λ x u → rel x (inj₂ (inj₂ (inj₁ u))))))
-  where
-  NE-ext : ∀ {V} v → nonempty-env (mem (v ∷ V) • ρ)
-  NE-ext v = extend-nonempty-env NE ⟨ v , here refl ⟩
-  rel-ext : ∀ B {X} → (∀ x → Uses (suc x) B → ρ x ≃ ρ' (r x))
-    → ∀ x → Uses x B → (X • ρ) x ≃ (X • ρ') (ext-var r x)
-  rel-ext B rx zero _ = ≃-refl
-  rel-ext B rx (suc x) u = rx x u
-opt-correct (prim p ⦅ L ,, M ,, Nil ⦆) r ρ ρ' NE rel =
-  primD-≃ p (opt-correct L r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-            (opt-correct M r ρ ρ' NE (λ x u → rel x (inj₂ (inj₁ u))))
-
-opt-body-correct r zero (bind (ast N)) ρ ρ' NE rel = opt-correct N r ρ ρ' NE rel
-opt-body-correct r (suc k) (bind a) = opt-body-correct r k a
-
-opt-args-correct {suc n} (M ,, args) r ρ ρ' NE rel zero =
-  opt-correct M r ρ ρ' NE (λ x u → rel x (inj₁ u))
-opt-args-correct {suc n} (M ,, args) r ρ ρ' NE rel (suc i) =
-  opt-args-correct args r ρ ρ' NE (λ x u → rel x (inj₂ u)) i
-
-prune-ok zero r dec Nil b ρ ρ' NE rel = record
-  { ne→ = λ _ () ; ne← = λ _ () ; push≃ = λ ρ₁ ρ₂ bse j u → bse j u }
-prune-ok (suc n) r {U} dec ((` y) ,, fvs) b ρ ρ' NE rel with dec n
-... | yes _ =
-  keep-ok (rel y (inj₁ refl))
-          (prune-ok n r dec fvs (keep-base b) ρ ρ' NE (λ x u → rel x (inj₂ u)))
-... | no ¬u = record
-  { ne→ = λ ne → PruneOK.ne→ ok (λ i → ne (suc i))
-  ; ne← = λ { ne' zero → NE y ; ne' (suc i) → PruneOK.ne← ok ne' i }
-  ; push≃ = λ ρ₁ ρ₂ bse j u → PruneOK.push≃ ok (ρ y • ρ₁) ρ₂ (bse' ρ₁ ρ₂ bse) j u
-  }
-  where
-  ok = prune-ok n r dec fvs (drop-base b) ρ ρ' NE (λ x u → rel x (inj₂ u))
-  bse' : ∀ ρ₁ ρ₂ → (∀ k → U (suc n + k) → ρ₁ k ≃ ρ₂ (b k))
-    → ∀ k → U (n + k) → (ρ y • ρ₁) k ≃ ρ₂ (drop-base b k)
-  bse' ρ₁ ρ₂ bse zero uk = ⊥-elim (¬u (subst U (+-identityʳ n) uk))
-  bse' ρ₁ ρ₂ bse (suc k) uk = bse k (subst U (+-suc n k) uk)
-prune-ok (suc n) r dec ((op ⦅ args ⦆) ,, fvs) b ρ ρ' NE rel =
-  keep-ok (opt-correct (op ⦅ args ⦆) r ρ ρ' NE (λ x u → rel x (inj₁ u)))
-          (prune-ok n r dec fvs (keep-base b) ρ ρ' NE (λ x u → rel x (inj₂ u)))
-
-{- The end theorem ------------------------------------------------------------}
-
-optimize-correct-closed : ∀ (M : AST) → ⟦ M ⟧ ρ₀ ≃ ⟦ optimize-program M ⟧ ρ₀
-optimize-correct-closed M = opt-correct M (λ x → x) ρ₀ ρ₀ (λ _ → ⟨ ω , refl ⟩) (λ x _ → ≃-refl)
+optimize-correct : ∀ (M : Tm 0 Any) → ⟦ M ⟧ ρ₀ ≃ ⟦ optimize-program M ⟧ ρ₀
+optimize-correct M = opt-ok M (λ ()) (λ ())

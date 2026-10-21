@@ -1,185 +1,248 @@
 {-
 
-  Correctness of the globalize pass (Clos4 → Clos5), clock for clock (see
-  the design note in Clock.agda): for every clock, a term and its
-  globalization, in related environments, both time out, both go wrong,
-  or return related values. Globalize maps each application to one
-  application, so the two interpreters call functions in lock step.
+  Correctness of typed globalize (Clos4ᵀ → Clos5ᵀ), clock for clock (see
+  the design note in Semantics/Interp/Clock.agda): globalize maps each
+  callc to one callc, so the interpreters call in lock step.
 
-  As in the simulation proof (proof/Correctness/CEK/GlobalizeSim.agda),
-  which shares the lemmas about growing tables (proof/Compiler/GlobalizeTable.agda)
-  with this one, the Clos5 interpreter
-  runs with the table D that the pass made for the whole program, and the
-  relation is indexed by D. A subterm M is compiled to proj₁ (glob M ds)
-  for the table ds made before it, and the table made after it,
-  proj₂ (glob M ds), only grows into D (_⊑_). Code fun N is related to a
-  code pointer code k when the table made by globalizing N, with N's own
-  definition on top, is part of D: then looking up k in D finds the
-  globalized N (global-⊑). Environments are related pointwise, so there
-  is no precondition.
+  The Clos5ᵀ interpreter runs with the table dsf that the pass made for
+  the whole program. A subterm M, globalized after the definitions D,
+  gives a term over the table of the definitions made by then, which is
+  weakened by r into the final table; the definitions made by then are
+  found in dsf through r (Contains). Every definition made from D
+  stays (Ext), so a term made earlier finds its definitions as well.
+  Code N is related to a reference f when definition f is the
+  globalized N, weakened (GCode); environments are related pointwise.
 
 -}
 
 module proof.Correctness.Interp.GlobalizeFuel where
 
-open import Framework.Syntax.SyntaxUtil using (_,,_; Nil; ⟩_,,_)
-open import Language.Clos4
+open import Data.List using (List; []; _∷_)
+open import Data.Nat using (ℕ; zero; suc)
+open import Language.Typed.Type
+open import Framework.Membership using (_⊑_; here⊑; there⊑; ⊑-∋; ⊑-trans)
+import Language.Typed.Clos4 as S
+open import Language.Typed.Clos5
 open import Compiler.Globalize
-open import Semantics.Observation
-open import Language.Prim using (int; bool)
-open import Data.Bool using (true; false)
-open import proof.Framework.ListUtil using (_‼_; proj-pw)
-open import proof.Compiler.GlobalizeTable
-  using (_⊑_; ⊑-refl; ⊑-trans; ∷-⊑; glob-grows; glob-grows-args; global-⊑)
 open import proof.Semantics.Interp.Clock
-import Semantics.Interp.Clos4 as S
-import Semantics.Interp.Clos5 as T
+import Semantics.Interp.Typed.Clos4 as S4
+import Semantics.Interp.Typed.Clos5 as T
+open import Framework.Lookup using (_!_)
+open import proof.Framework.Lookup using (⊑-∋-trans)
 
-open import Data.List using (List; []; _∷_; length; replicate)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; reverse⁺)
-open import Data.Maybe using (just; nothing)
-import Data.Maybe.Relation.Binary.Pointwise as M
-open import Data.Nat using (zero; suc)
-open import Data.Product using (proj₁; proj₂)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; cong₂)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Product using (Σ-syntax; _×_; _,_)
+open import Data.Unit using (⊤; tt)
+open import Data.Vec using (Vec; []; _∷_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 
-{- The relation, for the final table D --------------------------------------------}
+Ren : List ℕ → List ℕ → Set
+Ren Σ Σ' = ∀ {n} → Σ ∋ n → Σ' ∋ n
 
-module Rel (D : Defs) where
+{- Weakening of tables -----------------------------------------------------------}
 
-  infix 4 _≈_
+wk-wk : ∀ {Σ₁ Σ₂ Σ₃ Γ A} (r : Ren Σ₂ Σ₃) (r' : Ren Σ₁ Σ₂) (M : Tm Σ₁ Γ A) → wk r (wk r' M) ≡ wk (λ x → r (r' x)) M
+wks-wk : ∀ {Σ₁ Σ₂ Σ₃ Γ n} (r : Ren Σ₂ Σ₃) (r' : Ren Σ₁ Σ₂) (Ms : Vec (Tm Σ₁ Γ Any) n)
+  → wks r (wks r' Ms) ≡ wks (λ x → r (r' x)) Ms
+wk-wk r r' (` x) = refl
+wk-wk r r' (fun-ref f) = refl
+wk-wk r r' (pack L M) = cong₂ pack (wk-wk r r' L) (wk-wk r r' M)
+wk-wk r r' (callc L M) = cong₂ callc (wk-wk r r' L) (wk-wk r r' M)
+wk-wk r r' (lit B c) = refl
+wk-wk r r' (tuple Ms) = cong tuple (wks-wk r r' Ms)
+wk-wk r r' (get i M) = cong (get i) (wk-wk r r' M)
+wk-wk r r' (inl M) = cong inl (wk-wk r r' M)
+wk-wk r r' (inr M) = cong inr (wk-wk r r' M)
+wk-wk r r' (case L M N) rewrite wk-wk r r' L | wk-wk r r' M | wk-wk r r' N = refl
+wk-wk r r' (prim p L M) = cong₂ (prim p) (wk-wk r r' L) (wk-wk r r' M)
+wk-wk r r' (let′ M N) = cong₂ let′ (wk-wk r r' M) (wk-wk r r' N)
+wk-wk r r' (inject G M) = cong (inject G) (wk-wk r r' M)
+wk-wk r r' (project t M) = cong (project t) (wk-wk r r' M)
+wks-wk r r' [] = refl
+wks-wk r r' (M ∷ Ms) = cong₂ _∷_ (wk-wk r r' M) (wks-wk r r' Ms)
 
-  data _≈_ : S.Val → T.Val → Set where
-    fun≈ : ∀ {N ds} → proj₁ (glob N ds) ∷ proj₂ (glob N ds) ⊑ D
-      → S.fun N ≈ T.code (length (proj₂ (glob N ds)))
-    pair≈ : ∀ {v v' w w'} → v ≈ v' → w ≈ w' → S.pair v w ≈ T.pair v' w'
-    const≈ : ∀ {B k} → S.const B k ≈ T.const B k
-    tup≈ : ∀ {vs ws} → Pointwise _≈_ vs ws → S.tup vs ≈ T.tup ws
-    inl≈ : ∀ {v w} → v ≈ w → S.inl v ≈ T.inl w
-    inr≈ : ∀ {v w} → v ≈ w → S.inr v ≈ T.inr w
+wk-id : ∀ {Σ Γ A} (M : Tm Σ Γ A) → wk (λ x → x) M ≡ M
+wks-id : ∀ {Σ Γ n} (Ms : Vec (Tm Σ Γ Any) n) → wks (λ x → x) Ms ≡ Ms
+wk-id (` x) = refl
+wk-id (fun-ref f) = refl
+wk-id (pack L M) = cong₂ pack (wk-id L) (wk-id M)
+wk-id (callc L M) = cong₂ callc (wk-id L) (wk-id M)
+wk-id (lit B c) = refl
+wk-id (tuple Ms) = cong tuple (wks-id Ms)
+wk-id (get i M) = cong (get i) (wk-id M)
+wk-id (inl M) = cong inl (wk-id M)
+wk-id (inr M) = cong inr (wk-id M)
+wk-id (case L M N) rewrite wk-id L | wk-id M | wk-id N = refl
+wk-id (prim p L M) = cong₂ (prim p) (wk-id L) (wk-id M)
+wk-id (let′ M N) = cong₂ let′ (wk-id M) (wk-id N)
+wk-id (inject G M) = cong (inject G) (wk-id M)
+wk-id (project t M) = cong (project t) (wk-id M)
+wks-id [] = refl
+wks-id (M ∷ Ms) = cong₂ _∷_ (wk-id M) (wks-id Ms)
 
-  _≈ρ_ : S.Env → T.Env → Set
-  _≈ρ_ = Pointwise _≈_
+{- the definitions D' are D and more -}
+data Ext : ∀ {Σ Σ'} → Made Σ → Σ ⊑ Σ' → Made Σ' → Set where
+  same : ∀ {Σ} {D : Made Σ} → Ext D here⊑ D
+  more : ∀ {Σ Σ' n} {D : Made Σ} {s} {D' : Made Σ'} {N : Code Σ' n} → Ext D s D' → Ext D (there⊑ s) (D' ▷ N)
 
-  {- Related values are observed alike -}
-  obs≈ : ∀ {v w} → v ≈ w → S.obs v ≡ T.obs w
-  obs≈-list : ∀ {vs ws} → Pointwise _≈_ vs ws → S.obs-list vs ≡ T.obs-list ws
-  obs≈ (fun≈ _) = refl
-  obs≈ (pair≈ _ _) = refl
-  obs≈ const≈ = refl
-  obs≈ (tup≈ rs) = cong o-tuple (obs≈-list rs)
-  obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-  obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-  obs≈-list [] = refl
-  obs≈-list (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈-list rs)
+ext-trans : ∀ {Σ₀ Σ₁ Σ₂} {D₀ : Made Σ₀} {D₁ : Made Σ₁} {D₂ : Made Σ₂} {s₁ s₂}
+  → Ext D₀ s₁ D₁ → Ext D₁ s₂ D₂ → Ext D₀ (⊑-trans s₁ s₂) D₂
+ext-trans e₁ same = e₁
+ext-trans e₁ (more e₂) = more (ext-trans e₁ e₂)
 
-  {- related operands give related results of a primitive -}
-  prim≈ : ∀ p {v₁ v₂ w₁ w₂} → v₁ ≈ w₁ → v₂ ≈ w₂ → M.Pointwise _≈_ (S.prim? p v₁ v₂) (T.prim? p w₁ w₂)
-  prim≈ p {w₁ = w₁} {w₂ = w₂} r s rewrite obs≈ r | obs≈ s with δ? p (T.obs w₁) (T.obs w₂)
-  ... | nothing = M.nothing
-  ... | just (int n) = M.just const≈
-  ... | just (bool true) = M.just (inl≈ (tup≈ []))
-  ... | just (bool false) = M.just (inr≈ (tup≈ []))
+glob-ext : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → Ext D (Out.grows (glob M D)) (Out.made (glob M D))
+globs-ext : ∀ {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) → Ext D (Out.grows (globs Ms D)) (Out.made (globs Ms D))
+glob₁-ext : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ)
+  → Ext D (Out.grows (glob₁ f M D)) (Out.made (glob₁ f M D))
+glob₂-ext : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) L M (D : Made Σ)
+  → Ext D (Out.grows (glob₂ f L M D)) (Out.made (glob₂ f L M D))
+glob-ext (S.` x) D = same
+glob-ext (S.code N) D with glob N D | glob-ext N D
+... | out s D' N' | e = more e
+glob-ext (S.pack L M) D = glob₂-ext pack L M D
+glob-ext (S.callc L M) D = glob₂-ext callc L M D
+glob-ext (S.lit B c) D = same
+glob-ext (S.tuple Ms) D with globs Ms D | globs-ext Ms D
+... | out s D' Ms' | e = e
+glob-ext (S.get i M) D = glob₁-ext (get i) M D
+glob-ext (S.inl M) D = glob₁-ext inl M D
+glob-ext (S.inr M) D = glob₁-ext inr M D
+glob-ext (S.case L M N) D with glob L D | glob-ext L D
+... | out s₁ D₁ L' | e₁ with glob M D₁ | glob-ext M D₁
+...   | out s₂ D₂ M' | e₂ with glob N D₂ | glob-ext N D₂
+...     | out s₃ D₃ N' | e₃ = ext-trans e₁ (ext-trans e₂ e₃)
+glob-ext (S.prim p L M) D = glob₂-ext (prim p) L M D
+glob-ext (S.let′ M N) D = glob₂-ext let′ M N D
+glob-ext (S.inject G M) D = glob₁-ext (inject G) M D
+glob-ext (S.project t M) D = glob₁-ext (project t) M D
+globs-ext [] D = same
+globs-ext (M ∷ Ms) D with glob M D | glob-ext M D
+... | out s₁ D₁ M' | e₁ with globs Ms D₁ | globs-ext Ms D₁
+...   | out s₂ D₂ Ms' | e₂ = ext-trans e₁ e₂
+glob₁-ext f M D with glob M D | glob-ext M D
+... | out s D' M' | e = e
+glob₂-ext f L M D with glob L D | glob-ext L D
+... | out s₁ D₁ L' | e₁ with glob M D₁ | glob-ext M D₁
+...   | out s₂ D₂ M' | e₂ = ext-trans e₁ e₂
 
-  lookup-pw : ∀ x {ρ₁ ρ₂} → ρ₁ ≈ρ ρ₂ → M.Pointwise _≈_ (ρ₁ ‼ x) (ρ₂ ‼ x)
-  lookup-pw x [] = M.nothing
-  lookup-pw zero (r ∷ rs) = M.just r
-  lookup-pw (suc x) (r ∷ rs) = lookup-pw x rs
+{- For the final table dsf ------------------------------------------------------}
 
-  {- the destructors, on related values -}
-  first≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.first v) (T.first w)
-  first≈ (pair≈ r _) = ret r
-  first≈ (fun≈ _) = wrong
-  first≈ const≈ = wrong
-  first≈ (tup≈ _) = wrong
-  first≈ (inl≈ _) = wrong
-  first≈ (inr≈ _) = wrong
+module G {Σf : List ℕ} (dsf : All (Code Σf) Σf) where
+  open T.Vals Σf renaming (Val to TVal; Env to TEnv)
 
-  second≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.second v) (T.second w)
-  second≈ (pair≈ _ r) = ret r
-  second≈ (fun≈ _) = wrong
-  second≈ const≈ = wrong
-  second≈ (tup≈ _) = wrong
-  second≈ (inl≈ _) = wrong
-  second≈ (inr≈ _) = wrong
+  {- the definitions D are found in dsf through r -}
+  Contains : ∀ {Σ} → Made Σ → Ren Σ Σf → Set
+  Contains [] r = ⊤
+  Contains (D ▷ N) r = Σ[ r' ∈ Ren _ Σf ] (∀ {m} (x : _ ∋ m) → r (S x) ≡ r' x) × dsf ! r Z ≡ wk r' N
+    × Contains D (λ x → r (S x))
 
-  {- Clock for clock -------------------------------------------------------------}
+  contains-cong : ∀ {Σ} (D : Made Σ) {r r' : Ren Σ Σf} → (∀ {m} (x : Σ ∋ m) → r x ≡ r' x) → Contains D r → Contains D r'
+  contains-cong [] h c = tt
+  contains-cong (D ▷ N) h (r'' , h' , e , c) =
+    r'' , (λ x → trans (sym (h (S x))) (h' x)) , subst (λ f → dsf ! f ≡ _) (h Z) e , contains-cong D (λ x → h (S x)) c
 
-  {- M, globalized after the table ds, with the table it makes part of D -}
-  run≈ : ∀ ck {ρ₁ ρ₂} M ds → proj₂ (glob M ds) ⊑ D → ρ₁ ≈ρ ρ₂
-    → RelResult _≈_ (S.eval ck ρ₁ M) (T.eval D ck ρ₂ (proj₁ (glob M ds)))
-  args≈ : ∀ ck {n ρ₁ ρ₂ vs ws} (args : Args (replicate n ■)) ds
-    → proj₂ (glob-args args ds) ⊑ D → ρ₁ ≈ρ ρ₂ → Pointwise _≈_ vs ws
-    → RelResult (Pointwise _≈_) (S.eval-args ck ρ₁ vs args)
-                                (T.eval-args D ck ρ₂ ws (proj₁ (glob-args args ds)))
-  apply≈ : ∀ ck {ρ₁ ρ₂ f g} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
-    → f ≈ g → RelResult _≈_ (S.apply ck ρ₁ M N f)
-                (T.apply D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) g)
-  call≈ : ∀ ck {ρ₁ ρ₂ f g} → f ≈ g → ρ₁ ≈ρ ρ₂
-    → RelResult _≈_ (S.call f ck ρ₁) (T.call D ck (T.code? D g) ρ₂)
-  branch≈ : ∀ ck {ρ₁ ρ₂ v w} M N ds → proj₂ (glob N (proj₂ (glob M ds))) ⊑ D → ρ₁ ≈ρ ρ₂
-    → v ≈ w → RelResult _≈_ (S.branch ck ρ₁ M N v)
-                (T.branch D ck ρ₂ (proj₁ (glob M ds)) (proj₁ (glob N (proj₂ (glob M ds)))) w)
+  contains-ext : ∀ {Σ Σ'} {D : Made Σ} {s} {D' : Made Σ'} {r : Ren Σ' Σf} → Ext D s D' → Contains D' r → Contains D (λ x → r (⊑-∋ s x))
+  contains-ext same c = c
+  contains-ext (more e) (_ , _ , _ , c) = contains-ext e c
 
-  run≈ ck (` x) ds p ρ = from-maybe-rel (lookup-pw x ρ)
-  run≈ ck (fun-op ⦅ cons (clear (bind (bind (ast N)))) nil ⦆) ds p ρ = ret (fun≈ p)
-  run≈ ck (app ⦅ L ,, M ,, N ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
-             (apply≈ ck M N _ p ρ)
-  run≈ ck (lit B k ⦅ Nil ⦆) ds p ρ = ret const≈
-  run≈ ck (pair-op ⦅ L ,, M ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) p) ρ) λ r →
-    bind-rel (run≈ ck M _ p ρ) λ r' → ret (pair≈ r r')
-  run≈ ck (fst-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) first≈
-  run≈ ck (snd-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) second≈
-  run≈ ck (tuple n ⦅ args ⦆) ds p ρ = bind-rel (args≈ ck args ds p ρ []) (λ rs → ret (tup≈ (reverse⁺ rs)))
-  run≈ ck (get i ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) get≈
-    where
-    get≈ : ∀ {v w} → v ≈ w → RelResult _≈_ (S.project i v) (T.project i w)
-    get≈ (tup≈ rs) = from-maybe-rel (proj-pw i rs)
-    get≈ (fun≈ _) = wrong
-    get≈ (pair≈ _ _) = wrong
-    get≈ const≈ = wrong
-    get≈ (inl≈ _) = wrong
-    get≈ (inr≈ _) = wrong
-  run≈ ck (inl-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) (λ r → ret (inl≈ r))
-  run≈ ck (inr-op ⦅ M ,, Nil ⦆) ds p ρ = bind-rel (run≈ ck M ds p ρ) (λ r → ret (inr≈ r))
-  run≈ ck (case-op ⦅ L ,, ⟩ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) (⊑-trans (glob-grows N _) p)) ρ)
-             (branch≈ ck M N _ p ρ)
-  run≈ ck (prim q ⦅ L ,, M ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck L ds (⊑-trans (glob-grows M _) p) ρ) λ r →
-    bind-rel (run≈ ck M _ p ρ) λ r' → from-maybe-rel (prim≈ q r r')
-  run≈ ck (let-op ⦅ M ,, ⟩ N ,, Nil ⦆) ds p ρ =
-    bind-rel (run≈ ck M ds (⊑-trans (glob-grows N _) p) ρ) λ r → run≈ ck N _ p (r ∷ ρ)
+  record GCode {n} (N : S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any) (f : Σf ∋ n) : Set where
+    constructor gcode
+    field
+      {Σ₀} : List ℕ
+      D : Made Σ₀
+      o : Out Σ₀ (λ Σ' → Tm Σ' (Any ∷ ⟪ tup n ⟫ ∷ []) Any)
+      is-glob : glob N D ≡ o
+      r : Ren (Out.Σ' o) Σf
+      contains : Contains (Out.made o) r
+      is-def : dsf ! f ≡ wk r (Out.res o)
 
-  args≈ ck {zero} Nil ds p ρ rs = ret rs
-  args≈ ck {suc n} (M ,, args) ds p ρ rs =
-    bind-rel (run≈ ck M ds (⊑-trans (glob-grows-args args _) p) ρ)
-             (λ r → args≈ ck args _ p ρ (r ∷ rs))
+  open import proof.Semantics.Interp.Typed.Rel {λ n → S.Tm (Any ∷ ⟪ tup n ⟫ ∷ []) Any} {Σf ∋_}
+  open Rel GCode (Same GCode) public
 
-  apply≈ ck M N ds p ρ f =
-    bind-rel (run≈ ck M ds (⊑-trans (glob-grows N _) p) ρ) λ e →
-    bind-rel (run≈ ck N _ p ρ) λ w → call≈ ck f (w ∷ e ∷ [])
+  Env≈ : ∀ {Γ} → S4.Env Γ → TEnv Γ → Set
+  Env≈ ρ₁ ρ₂ = ∀ {A} (x : _ ∋ A) → ρ₁ ! x ≈ ρ₂ ! x
 
-  {- calling code k finds the globalized body in D -}
-  call≈ zero (fun≈ q) ρ rewrite global-⊑ q = timeout
-  call≈ (suc ck) (fun≈ {N} {ds} q) ρ rewrite global-⊑ q = run≈ ck N ds (∷-⊑ q) ρ
-  call≈ ck (pair≈ _ _) ρ = wrong
-  call≈ ck const≈ ρ = wrong
-  call≈ ck (tup≈ _) ρ = wrong
-  call≈ ck (inl≈ _) ρ = wrong
-  call≈ ck (inr≈ _) ρ = wrong
+  env-ext : ∀ {Γ ρ₁ ρ₂ v w} → v ≈ w → Env≈ {Γ} ρ₁ ρ₂ → Env≈ {Any ∷ Γ} (v ∷ ρ₁) (w ∷ ρ₂)
+  env-ext v E Z = v
+  env-ext v E (S x) = E x
 
-  branch≈ ck M N ds p ρ (inl≈ r) = run≈ ck M ds (⊑-trans (glob-grows N _) p) (r ∷ ρ)
-  branch≈ ck M N ds p ρ (inr≈ r) = run≈ ck N _ p (r ∷ ρ)
-  branch≈ ck M N ds p ρ (fun≈ _) = wrong
-  branch≈ ck M N ds p ρ (pair≈ _ _) = wrong
-  branch≈ ck M N ds p ρ const≈ = wrong
-  branch≈ ck M N ds p ρ (tup≈ _) = wrong
+  pack≈' : ∀ {n} {c : S4.Val (code n)} {c' e e'} → c ≈ c' → e ≈ e' → S4.pack c e ≈ T.Vals.pack c' e'
+  pack≈' (code≈ g) (tup≈ rs) = pack≈ rs (same g)
 
-{- The end theorem, for any program, with no precondition ----------------------------}
+  run≈ : ∀ ck {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) {r : Ren (Out.Σ' (glob M D)) Σf} {ρ₁ ρ₂}
+    → Contains (Out.made (glob M D)) r → Env≈ ρ₁ ρ₂
+    → RelResult _≈_ (S4.eval ck ρ₁ M) (T.eval dsf ck ρ₂ (wk r (Out.res (glob M D))))
+  runs≈ : ∀ ck {Σ Γ n} (Ms : Vec (S.Tm Γ Any) n) (D : Made Σ) {r : Ren (Out.Σ' (globs Ms D)) Σf} {ρ₁ ρ₂}
+    → Contains (Out.made (globs Ms D)) r → Env≈ ρ₁ ρ₂
+    → RelResult (Pointwise _≈_) (S4.evals ck ρ₁ Ms) (T.evals dsf ck ρ₂ (wks r (Out.res (globs Ms D))))
+  call≈ : ∀ ck {f g v w} → f ≈ g → v ≈ w → RelResult _≈_ (S4.call ck f v) (T.call dsf ck g w)
 
-globalize-correct : ∀ M → Equivalent (S.sem M) (T.sem (globalize M))
-globalize-correct M = clocked _≈_ obs≈ (λ ck → run≈ ck M [] ⊑-refl [])
-  where open Rel (proj₂ (glob M []))
+  run≈ ck (S.` x) D c E = ret (E x)
+  run≈ ck (S.code N) D {r} c E with glob N D in eq
+  ... | out s D' N' with c
+  ...   | r' , h , d , c' = ret (code≈ (gcode D _ eq r' (contains-cong D' h c') d))
+  run≈ ck (S.pack L M) D {r} c E with glob L D | run≈ ck L D
+  ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
+  ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
+    bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → ret (pack≈' v w)
+  run≈ ck (S.callc L M) D {r} c E with glob L D | run≈ ck L D
+  ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
+  ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
+    bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → call≈ ck v w
+  run≈ ck (S.lit B k) D c E = ret const≈
+  run≈ ck (S.tuple Ms) D c E with globs Ms D | runs≈ ck Ms D
+  ... | out s D' Ms' | ih = bind-rel (ih c E) λ vs → ret (tup≈ vs)
+  run≈ ck (S.get i M) D c E with glob M D | run≈ ck M D
+  ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (nth≈ i v)
+  run≈ ck (S.inl M) D c E with glob M D | run≈ ck M D
+  ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (inl≈ v)
+  run≈ ck (S.inr M) D c E with glob M D | run≈ ck M D
+  ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (inr≈ v)
+  run≈ ck (S.case L M N) D {r} c E with glob L D | run≈ ck L D
+  ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
+  ...   | out s₂ D₂ M' | e₂ | ihM with glob N D₂ | glob-ext N D₂ | run≈ ck N D₂
+  ...     | out s₃ D₃ N' | e₃ | ihN rewrite wk-wk r (⊑-∋ (⊑-trans s₂ s₃)) L' | wk-wk r (⊑-∋ s₃) M' =
+    bind-rel (ihL (contains-ext (ext-trans e₂ e₃) c) E) λ u → either≈ u
+      (λ v → ihM (contains-ext e₃ c) (env-ext v E)) (λ v → ihN c (env-ext v E))
+  run≈ ck (S.prim p L M) D {r} c E with glob L D | run≈ ck L D
+  ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
+  ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
+    bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → ret (δ≈ p v w)
+  run≈ ck (S.let′ M N) D {r} c E with glob M D | run≈ ck M D
+  ... | out s₁ D₁ M' | ihM with glob N D₁ | glob-ext N D₁ | run≈ ck N D₁
+  ...   | out s₂ D₂ N' | e₂ | ihN rewrite wk-wk r (⊑-∋ s₂) M' =
+    bind-rel (ihM (contains-ext e₂ c) E) λ v → ihN c (env-ext v E)
+  run≈ ck (S.inject G M) D c E with glob M D | run≈ ck M D
+  ... | out s D' M' | ih = bind-rel (ih c E) λ v → ret (dyn≈ v)
+  run≈ ck (S.project t M) D c E with glob M D | run≈ ck M D
+  ... | out s D' M' | ih = bind-rel (ih c E) (project≈ t)
+
+  runs≈ ck [] D c E = ret []
+  runs≈ ck (M ∷ Ms) D {r} c E with glob M D | run≈ ck M D
+  ... | out s₁ D₁ M' | ihM with globs Ms D₁ | globs-ext Ms D₁ | runs≈ ck Ms D₁
+  ...   | out s₂ D₂ Ms' | e₂ | ihMs rewrite wk-wk r (⊑-∋ s₂) M' =
+    bind-rel (ihM (contains-ext e₂ c) E) λ v → bind-rel (ihMs c E) λ vs → ret (v ∷ vs)
+
+  call≈ zero f w = timeout
+  call≈ (suc ck) (pack≈ {c = N} rs (same (gcode D _ refl r c d))) w rewrite d =
+    run≈ ck N D c λ { Z → w ; (S Z) → tup≈ rs }
+
+{- the definitions made, closed over the whole table, are found there -}
+close-ok : ∀ {Σ Σf} (dsf : All (Code Σf) Σf) (D : Made Σ) (s : Σ ⊑ Σf)
+  → (∀ {n} (x : Σ ∋ n) → dsf ! ⊑-∋ s x ≡ close D s ! x) → G.Contains dsf D (⊑-∋ s)
+close-ok dsf [] s h = tt
+close-ok dsf (D ▷ N) s h =
+  ⊑-∋ s' , (λ x → sym (⊑-∋-trans (there⊑ here⊑) s x)) , h Z
+  , G.contains-cong dsf D (⊑-∋-trans (there⊑ here⊑) s) (close-ok dsf D s' λ x → trans (cong (dsf !_) (⊑-∋-trans (there⊑ here⊑) s x)) (h (S x)))
+  where s' = ⊑-trans (there⊑ here⊑) s
+
+globalize-correct : ∀ (M : S.Tm [] Any) → Equivalent (S4.sem M) (T.sem (globalize M))
+globalize-correct M with glob M [] in eq
+... | out s D M' = clocked _≈_ obs≈ λ ck → subst (λ N → RelResult _≈_ (S4.eval ck [] M) (T.eval dsf ck [] N)) (wk-id M')
+    (run-out ck eq (close-ok dsf D here⊑ λ x → refl) λ ())
+  where
+  dsf = close D here⊑
+  open G dsf
+  run-out : ∀ ck {o} → glob M [] ≡ o → {r : Ren (Out.Σ' o) _} → Contains (Out.made o) r → Env≈ [] []
+    → RelResult _≈_ (S4.eval ck [] M) (T.eval dsf ck [] (wk r (Out.res o)))
+  run-out ck refl = run≈ ck M []

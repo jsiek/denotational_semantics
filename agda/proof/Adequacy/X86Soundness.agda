@@ -1,998 +1,667 @@
 {-
 
-  Soundness of the X86 machine with respect to the graph model: what the
-  machine computes is in the denotation of the (well-formed) program.
+  Soundness of the X86ᵀ machine (Semantics/CEK/Typed/X86.agda) with
+  respect to the graph model (Semantics/Graph/Typed/X86.agda): what the
+  machine computes is in the denotation of the program, for a table
+  that is consistent (cT) and contains the code of each definition
+  interpreted with the whole table (closed), as the table of a compiled
+  program does (X86Compiled.agda): the machine runs a definition with
+  the whole table, the semantics with the table of the older ones.
 
-  As for Clos5 (Adequacy/Clos5Soundness.agda), each machine state
-  denotes a set of values (𝒮) that every step can only shrink (step-⊆),
-  and code pointers denote the entries of the table T⁺, with ν added.
-  The state runs in continuation-passing style (Semantics/Graph/X86.agda), and the
-  call stack is its continuation (𝒦): a return frame runs the caller's
-  rest with %rax holding the callee's result.
+  As for untyped X86 (Untyped/proof/Adequacy/X86Soundness.agda), each
+  state denotes a set of values (𝒮) that a step can only shrink
+  (back), the call stack being its continuation (𝒦), and a location
+  (a register or a slot, numbered as in 𝓛) denotes not the whole meaning
+  𝒱 v of the value v it holds (Clos5Values.agda) but a finite part of it
+  (an approximation, Apx), as the semantics binds a slot to a finite set
+  and calls code on finite parts of %rdi and %rsi. A step that writes v
+  is matched by approximating, before the step, the operands it reads by
+  enough of their values to compute the part of v written (Grow, put-⊆),
+  one element at a time (grow-each), and by the monotonicity of the
+  semantics (seq-mono). A call makes, from the callee's approximation,
+  the entries X ↦ (Y ↦ w) of the code that the caller applies (call-⊆).
 
-  A location (a slot of the frame or a register) does not denote the
-  whole meaning 𝒱 v of the value v it holds, but a finite part of it
-  (Ap), as the semantics binds a slot to a finite part of a set and
-  calls code on finite parts of %rdi and %rsi: a state denotes what its
-  instructions mean for some such approximation of its locations. A
-  step that writes v to d is matched by approximating, before the step,
-  the operands it reads by enough of their values to compute the part of
-  v that d holds after it (grow, write), and by the monotonicity of the
-  semantics (Mono). A call makes, from the callee's approximation, the
-  entries X ↦ (Y ↦ w) of the code that the caller applies.
-
-  Labels refer to older definitions and the table is consistent (WF):
-  the code of a definition is interpreted with the table of the older
-  ones, and approximations must be consistent to be bound.
+  load snd reads the environment of the open closure, which the machine
+  keeps apart from its slot: in the states that the machine reaches,
+  they agree (Inv, which back also shows a step keeps). Typed code
+  reads no unset register and no unset flag: those hold no part (∅).
 
 -}
 
-module proof.Adequacy.X86Soundness where
+open import Data.List using (List; []; _∷_)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
+open import Data.Nat using (ℕ)
+open import Language.Typed.X86
+open import Framework.Membership using (_∋_)
+open import Framework.Lookup using (_!_)
+open import proof.Framework.GraphModel.SetsAsPredicates using (_⊆_)
+open import proof.Semantics.Graph.Typed.Ops using (ConT; tables)
+open import Semantics.Graph.Typed.X86 using (codeₜ)
 
+module proof.Adequacy.X86Soundness {Σ : List ℕ} (ds : All (λ m → Body Σ (called m)) Σ)
+  (cT : ConT (tables codeₜ ds)) (closed : ∀ {n} (f : Σ ∋ n) → codeₜ (tables codeₜ ds) (ds ! f) ⊆ tables codeₜ ds f) where
+
+open import Language.Prim using (sub; eq)
+open import Language.Typed.Type hiding (_∋_) renaming (_≟_ to _≟F_)
 open import Framework.Primitives using (Int)
-open import Language.Prim using (bool; δ; sub; eq)
 open import proof.Framework.GraphModel.SetsAsPredicates
 open import proof.Framework.GraphModel.DOpSig using (results-rel-pres)
-open import proof.Framework.GraphModel.Domain
-  using (Value; _↦_; ν; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _~_; Con; Con⇒≈; ≈-single)
+open import proof.Framework.GraphModel.Domain using (Value; _↦_; ν; ω; ⦅_,_⦆; tup[_]_; left; right; ⟨⟩; _•_; ■; Con⇒≈; ≈-single)
   renaming (const to dconst)
 open import proof.Framework.GraphModel.Ops
-  using (⋆; 𝒯; nthD; inl; inr; Λ; ⋆-mono; pair-mono; car-mono; cdr-mono; 𝒯-mono; proj-mono; 𝒞-mono; ■)
-  renaming (proj to dproj; pair to dpair)
-open import proof.Semantics.Graph.Prim using (primD; primD-mono) renaming (out to dout)
-open import Language.X86
-  renaming (pair to pairₛ; inl to inlₛ; inr to inrₛ; tuple to tupleₛ; fst to fstₛ; snd to sndₛ; get to getₛ)
-open import Semantics.Graph.X86
-  renaming (Regs to SRegs; code to codeD; run to runD; put to putD; call to callD; args to argsD;
-            read to readD; zeros to zerosD; _[_↦_] to _[_↦ₛ_]; flag to flagD)
-open import Semantics.Observation
-open import proof.Semantics.CEK.Smallstep using (Terminates; next; stop)
-open import proof.Framework.ListUtil using (replicate-‼-just; _‼_; proj)
-open import Semantics.CEK.X86
-  using (Val; code; pair; const; tup; obs; out; prim?; Frame; State; Stack; halt; retK; run; step; block-at; global; sem; get-field; build; is-inl; cmp; truth; bit; _[_]≔_; zeros; arg; args; test; goto; callq?; regs)
-  renaming (read to readM; put to putM; call to callM; Regs to MRegs; _[_↦_] to _[_↦ₘ_])
-import Semantics.CEK.X86 as T using (inl; inr)
-open import proof.Adequacy.Common using (ShapeOf; δ?-inv)
-open import proof.Adequacy.Soundness using (At; AllNE; 𝒯L; At-length; inl-⊆; inr-⊆; 𝒯L-mono; _⊆L_)
-open import proof.Adequacy.Values using (module Den)
-open import proof.Adequacy.X86WF
-import proof.Adequacy.X86Common as Common
+  using (⋆; Λ; 𝒞; nthD; ⋆-mono; Λ-mono; pair-mono; 𝒯-mono; inl-mono; inr-mono; car-mono; cdr-mono; 𝒞-mono)
+  renaming (car to carD; cdr to cdrD; proj to projD)
+open import proof.Framework.GraphModel.Env using (Env; _⊆ₑ_; •-~)
+open import proof.Semantics.Graph.Prim using (primD; primD-mono)
+open import proof.Semantics.Graph.Typed.Ops using (Table; fun₄; projectᵍ; init)
+open import proof.Semantics.Graph.Typed.CFG using (Meanings; drop; drop-mono; 𝒜-mono)
+open import Semantics.Graph.Typed.X86 using (⟦_⟧ⁱ; ⟦_⟧ˢ; ⟦_⟧ₜ; 𝒪; 𝒪s; object; isinl; called-regs; RegsD; Kont)
+  renaming (put to putₛ; field′ to fieldₛ; _[_≔_] to _[_≔ₛ_]; args to argsₛ; blocks to blocksₛ; run to runₛ)
+open import Semantics.CEK.Typed.X86
+open import Semantics.Observation using (Obs; Answer)
+open import proof.Semantics.CEK.Smallstep using (Star; Terminates; Next; next; stop)
+open import Framework.Lookup using (forget)
+open import Framework.Membership using (_⊑_; here⊑; there⊑; idx)
+open import proof.Adequacy.X86Common ds
+open import proof.Adequacy.Clos5Values using (module Den; pair-inv; inl-inv; inr-inv; 𝒯L[]-inv)
+open import proof.Adequacy.Soundness using (At; 𝒯L; At-length)
 
 open import Data.Bool using (Bool; true; false)
-open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
-open import Data.Integer using ()
-open import Data.List using (List; []; _∷_; _++_; [_]; length; map; reverse; replicate)
+open import Data.List using (_++_; map; replicate)
 open import Data.List.Membership.Propositional.Properties using (∈-++⁺ˡ; ∈-++⁺ʳ; ∈-++⁻; ∈-map⁺; ∈-map⁻)
-open import Data.List.Properties using (++-assoc; length-map; length-replicate)
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.List.Relation.Unary.Any using (here; there)
-open import Data.List.Relation.Binary.Pointwise using (Pointwise; []; _∷_; Pointwise-length)
-open import Data.Maybe using (Maybe; just; nothing; _>>=_) renaming (map to mmap)
-open import Data.Nat using (ℕ; zero; suc; _<_; _≟_; _<?_; _⊔_; _∸_; _+_)
-open import Data.Nat.Properties using ()
-open import Data.Product using (Σ-syntax; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
+open import Data.Maybe using (Maybe; just; nothing)
+open import Data.Nat using (zero; suc; _≟_)
+open import Data.Integer using () renaming (_≟_ to _≟ℤ_)
+open import Relation.Nullary using (does)
+open import Data.Product using (_×_; Σ-syntax; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Data.Unit.Polymorphic using () renaming (tt to ptt)
+open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Level using (lift; lower)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; trans; cong; subst)
-open import Relation.Nullary using (Dec; yes; no)
+open import Relation.Nullary using (yes; no)
 
-{- Registers ---------------------------------------------------------------------}
+T : Table Σ
+T = tables codeₜ ds
 
-_≟R_ : (g g' : Reg) → Dec (g ≡ g')
-rax ≟R rax = yes refl
-rax ≟R rdi = no λ ()
-rax ≟R rsi = no λ ()
-rdi ≟R rax = no λ ()
-rdi ≟R rdi = yes refl
-rdi ≟R rsi = no λ ()
-rsi ≟R rax = no λ ()
-rsi ≟R rdi = no λ ()
-rsi ≟R rsi = yes refl
+T-ν : ∀ {n} (f : Σ ∋ n) → ν ∈ T f
+T-ν f = closed f ν tt
 
-≔-here : ∀ (ρ : SRegs) g D → (ρ [ g ≔ D ]) g ≡ D
-≔-here ρ rax D = refl
-≔-here ρ rdi D = refl
-≔-here ρ rsi D = refl
+open Den T cT T-ν public
 
-≔-other : ∀ (ρ : SRegs) g D g' → g' ≢ g → (ρ [ g ≔ D ]) g' ≡ ρ g'
-≔-other ρ rax D rax ne = ⊥-elim (ne refl)
-≔-other ρ rax D rdi ne = refl
-≔-other ρ rax D rsi ne = refl
-≔-other ρ rdi D rax ne = refl
-≔-other ρ rdi D rdi ne = ⊥-elim (ne refl)
-≔-other ρ rdi D rsi ne = refl
-≔-other ρ rsi D rax ne = refl
-≔-other ρ rsi D rdi ne = refl
-≔-other ρ rsi D rsi ne = ⊥-elim (ne refl)
+⊆r : ∀ {D : 𝒫 Value} → D ⊆ D
+⊆r _ z = z
 
-{- Monotonicity of the semantics ------------------------------------------------------}
+∅⊆ : ∀ {D E : 𝒫 Value} → D ⊆ ∅ → D ⊆ E
+∅⊆ h d d∈ = ⊥-elim (h d d∈)
 
-{- the semantics is monotone in the frame, the registers and the flag, and
-   in the entries of the table at the labels the code reads (L) -}
-module Mono {T T' : Table} {L : ℕ → Set} (TT : ∀ k → L k → T k ⊆ T' k) (n : ℕ) where
+{- Monotonicity of the semantics in the frame, the registers and the flag -----------}
 
-  Le : Store → SRegs → 𝒫 Value → Store → SRegs → 𝒫 Value → Set
-  Le σ ρ F σ' ρ' F' = (∀ x → σ x ⊆ σ' x) × (∀ g → ρ g ⊆ ρ' g) × F ⊆ F'
+_⊆ᵣ_ : RegsD → RegsD → Set
+R ⊆ᵣ R' = ∀ r → R r ⊆ R' r
 
-  MonoK : Kont → Kont → Set₁
-  MonoK κ κ' = ∀ {σ ρ F σ' ρ' F'} → Le σ ρ F σ' ρ' F' → κ σ ρ F ⊆ κ' σ' ρ' F'
+MonoK : Kont → Set₁
+MonoK κ = ∀ {ρ ρ' R R' F F'} → ρ ⊆ₑ ρ' → R ⊆ᵣ R' → F ⊆ F' → κ ρ R F ⊆ κ ρ' R' F'
 
-  MonoB : Blocks → Blocks → Set₁
-  MonoB B B' = ∀ l → MonoK (B l) (B' l)
+≔-mono : ∀ r {R R' D D'} → R ⊆ᵣ R' → D ⊆ D' → (R [ r ≔ₛ D ]) ⊆ᵣ (R' [ r ≔ₛ D' ])
+≔-mono rax h D⊆ = λ { rax → D⊆ ; rdi → h rdi ; rsi → h rsi }
+≔-mono rdi h D⊆ = λ { rax → h rax ; rdi → D⊆ ; rsi → h rsi }
+≔-mono rsi h D⊆ = λ { rax → h rax ; rdi → h rdi ; rsi → D⊆ }
 
-  𝒪-mono : ∀ {S σ ρ σ' ρ'} a → OK L S a → (∀ x → σ x ⊆ σ' x) → (∀ g → ρ g ⊆ ρ' g)
-    → 𝒪 T n σ ρ a ⊆ 𝒪 T' n σ' ρ' a
-  𝒪-mono (loc (var x)) _ s r with x <? n
-  ... | yes _ = s x
-  ... | no _ = λ _ z → z
-  𝒪-mono (loc (reg g)) _ s r = r g
-  𝒪-mono (imm B k) _ s r = λ _ z → z
-  𝒪-mono (label k) ok s r = TT k ok
+primD-⊆ : ∀ p {D D' E E'} → D ⊆ D' → E ⊆ E' → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
+primD-⊆ p D⊆ E⊆ = lower (primD-mono p _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
 
-  𝒪s-mono : ∀ {S σ ρ σ' ρ'} as → All (OK L S) as → (∀ x → σ x ⊆ σ' x) → (∀ g → ρ g ⊆ ρ' g)
-    → results-rel-pres _⊆_ (replicate (length as) ■) (𝒪s T n σ ρ as) (𝒪s T' n σ' ρ' as)
-  𝒪s-mono [] _ s r = ptt
-  𝒪s-mono (a ∷ as) (o ∷ os) s r = ⟨ lift (𝒪-mono a o s r) , 𝒪s-mono as os s r ⟩
+fieldₛ-mono : ∀ {A B} (f : Field A B) {D D'} → D ⊆ D' → fieldₛ T f D ⊆ fieldₛ T f D'
+fieldₛ-mono (get i) D⊆ d = D⊆ (tup[ i ] d)
+fieldₛ-mono payload D⊆ d (inj₁ l) = inj₁ (D⊆ _ l)
+fieldₛ-mono payload D⊆ d (inj₂ r) = inj₂ (D⊆ _ r)
 
-  object-mono : ∀ {S σ ρ σ' ρ'} sh as → All (OK L S) as → (∀ x → σ x ⊆ σ' x) → (∀ g → ρ g ⊆ ρ' g)
-    → object T n σ ρ sh as ⊆ object T' n σ' ρ' sh as
-  object-mono pairₛ (a ∷ b ∷ []) (oa ∷ ob ∷ []) s r =
-    lower (pair-mono _ _ ⟨ lift (𝒪-mono a oa s r) , ⟨ lift (𝒪-mono b ob s r) , ptt ⟩ ⟩)
-  object-mono tupleₛ as os s r = lower (𝒯-mono (length as) _ _ (𝒪s-mono as os s r))
-  object-mono inlₛ (a ∷ []) (oa ∷ []) s r (left d) d∈ = 𝒪-mono a oa s r d d∈
-  object-mono inrₛ (a ∷ []) (oa ∷ []) s r (right d) d∈ = 𝒪-mono a oa s r d d∈
+isinl-mono : ∀ {D D'} → D ⊆ D' → isinl D ⊆ isinl D'
+isinl-mono D⊆ w (inj₁ ⟨ u , ⟨ u∈ , e ⟩ ⟩) = inj₁ ⟨ u , ⟨ D⊆ _ u∈ , e ⟩ ⟩
+isinl-mono D⊆ w (inj₂ ⟨ u , ⟨ u∈ , e ⟩ ⟩) = inj₂ ⟨ u , ⟨ D⊆ _ u∈ , e ⟩ ⟩
 
-  field-mono : ∀ f {D D'} → D ⊆ D' → field′ f D ⊆ field′ f D'
-  field-mono fstₛ D⊆ = lower (car-mono _ _ ⟨ lift D⊆ , ptt ⟩)
-  field-mono sndₛ D⊆ = lower (cdr-mono _ _ ⟨ lift D⊆ , ptt ⟩)
-  field-mono (getₛ i) D⊆ = lower (proj-mono i _ _ ⟨ lift D⊆ , ptt ⟩)
-  field-mono payload D⊆ d (inj₁ l) = inj₁ (D⊆ _ l)
-  field-mono payload D⊆ d (inj₂ r) = inj₂ (D⊆ _ r)
+module _ {ρ ρ' : Env Value} {R R' : RegsD} (s : ρ ⊆ₑ ρ') (h : R ⊆ᵣ R') where
 
-  isinl-mono : ∀ {D D'} → D ⊆ D' → isinl D ⊆ isinl D'
-  isinl-mono D⊆ w (inj₁ ⟨ u , ⟨ u∈ , e ⟩ ⟩) = inj₁ ⟨ u , ⟨ D⊆ _ u∈ , e ⟩ ⟩
-  isinl-mono D⊆ w (inj₂ ⟨ u , ⟨ u∈ , e ⟩ ⟩) = inj₂ ⟨ u , ⟨ D⊆ _ u∈ , e ⟩ ⟩
+  𝒪-mono : ∀ {ψ τ} (a : Arg Σ ψ τ) → 𝒪 T a ρ R ⊆ 𝒪 T a ρ' R'
+  𝒪-mono (atom a) = 𝒜-mono s a
+  𝒪-mono (reg r _) = h r
+  𝒪-mono (a ↑) = 𝒪-mono a
 
-  ↦-le : ∀ {σ σ' : Store} x X → (∀ y → σ y ⊆ σ' y) → ∀ y → (σ [ x ↦ₛ X ]) y ⊆ (σ' [ x ↦ₛ X ]) y
-  ↦-le x X s y with y ≟ x
-  ... | yes _ = λ _ z → z
-  ... | no _ = s y
+  𝒪s-mono : ∀ {ψ j} (as : Vec (Arg Σ ψ (ty Any)) j) → results-rel-pres _⊆_ (replicate j ■) (𝒪s T as ρ R) (𝒪s T as ρ' R')
+  𝒪s-mono [] = ptt
+  𝒪s-mono (a ∷ as) = ⟨ lift (𝒪-mono a) , 𝒪s-mono as ⟩
 
-  ≔-le : ∀ {ρ ρ' : SRegs} {D D'} g → D ⊆ D' → (∀ g → ρ g ⊆ ρ' g) → ∀ g' → (ρ [ g ≔ D ]) g' ⊆ (ρ' [ g ≔ D' ]) g'
-  ≔-le {ρ} {ρ'} {D} {D'} g D⊆ r g' with g' ≟R g
-  ... | yes refl rewrite ≔-here ρ g D | ≔-here ρ' g D' = D⊆
-  ... | no ne rewrite ≔-other ρ g D g' ne | ≔-other ρ' g D' g' ne = r g'
+  object-mono : ∀ {ψ A} (o : Obj Σ ψ A) → object T o ρ R ⊆ object T o ρ' R'
+  object-mono (pair c e) = lower (pair-mono _ _ ⟨ lift (𝒪-mono c) , ⟨ lift (𝒪-mono e) , ptt ⟩ ⟩)
+  object-mono (tuple as) = lower (𝒯-mono _ _ _ (𝒪s-mono as))
+  object-mono (inl a) = lower (inl-mono _ _ ⟨ lift (𝒪-mono a) , ptt ⟩)
+  object-mono (inr a) = lower (inr-mono _ _ ⟨ lift (𝒪-mono a) , ptt ⟩)
 
-  checked-mono : ∀ x {D D'} → D ⊆ D' → checked n x D ⊆ checked n x D'
-  checked-mono x D⊆ with x <? n
-  ... | yes _ = D⊆
-  ... | no _ = λ _ z → z
+put-mono : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {D D' κ ρ ρ' R R' F F'} → D ⊆ D' → MonoK κ → ρ ⊆ₑ ρ' → R ⊆ᵣ R' → F ⊆ F'
+  → putₛ T d D κ ρ R F ⊆ putₛ T d D' κ ρ' R' F'
+put-mono (reg r) D⊆ mκ s h f = mκ s (≔-mono r h D⊆) f
+put-mono (slot p _) D⊆ mκ s h f =
+  lower (⋆-mono _ _ ⟨ Λ-mono _ _ ⟨ (λ X Y X⊆ → lift (mκ (•-~ _⊆_ (drop-mono p s) X⊆) h f)) , ptt ⟩ , ⟨ lift D⊆ , ptt ⟩ ⟩)
 
-  put-mono : ∀ d {D D' κ κ'} → D ⊆ D' → MonoK κ κ' → MonoK (putD n d D κ) (putD n d D' κ')
-  put-mono (var x) {D} {D'} D⊆ mκ ⟨ s , ⟨ r , f ⟩ ⟩ =
-    checked-mono x λ { w ⟨ V , ⟨ ⟨ w∈ , neV ⟩ , ⟨ V⊆ , ne ⟩ ⟩ ⟩ →
-      ⟨ V , ⟨ ⟨ mκ ⟨ ↦-le x (mem V) s , ⟨ r , f ⟩ ⟩ w w∈ , neV ⟩ , ⟨ (λ d d∈ → D⊆ d (V⊆ d d∈)) , ne ⟩ ⟩ ⟩ }
-  put-mono (reg g) D⊆ mκ ⟨ s , ⟨ r , f ⟩ ⟩ w ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ =
-    ⟨ ⟨ u , D⊆ u u∈ ⟩ , mκ ⟨ s , ⟨ ≔-le g D⊆ r , f ⟩ ⟩ w w∈ ⟩
+instr-mono : ∀ {n ψ ψ'} (i : Instr Σ n ψ ψ') {κ} → MonoK κ → MonoK (⟦_⟧ⁱ T i κ)
+instr-mono (movq a d) mκ s h f = put-mono d (𝒪-mono s h a) mκ s h f
+instr-mono (subq a r _) mκ s h f = mκ s (≔-mono r h (primD-⊆ sub (h r) (𝒪-mono s h a))) f
+instr-mono (cmpq a₂ a₁) mκ s h f = mκ s h (primD-⊆ eq (𝒪-mono s h a₁) (𝒪-mono s h a₂))
+instr-mono (sete d) mκ s h f = put-mono d f mκ s h f
+instr-mono (testinl a) mκ s h f = mκ s h (isinl-mono (𝒪-mono s h a))
+instr-mono (alloc o d) mκ s h f = put-mono d (object-mono s h o) mκ s h f
+instr-mono (load fl a d) mκ s h f = put-mono d (fieldₛ-mono fl (𝒪-mono s h a)) mκ s h f
+instr-mono (loadfst x r) mκ s h f = mκ s (≔-mono r h (lower (car-mono _ _ ⟨ lift (s (idx x)) , ptt ⟩))) f
+instr-mono (loadsnd r) mκ s h f = mκ s (≔-mono r h (lower (cdr-mono _ _ ⟨ lift (s _) , ptt ⟩))) f
+instr-mono (callq a _ _) mκ s h f w ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ =
+  ⟨ ⟨ u , C⊆ u u∈ ⟩ , mκ s (λ { rax → C⊆ ; rdi → ⊆r ; rsi → ⊆r }) ⊆r w w∈ ⟩
+  where C⊆ = lower (⋆-mono _ _ ⟨ ⋆-mono _ _ ⟨ lift (𝒪-mono s h a) , ⟨ lift (h rdi) , ptt ⟩ ⟩ , ⟨ lift (h rsi) , ptt ⟩ ⟩)
+instr-mono (chk t x d) mκ s h f w ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ =
+  ⟨ ⟨ u , D⊆ u u∈ ⟩ , put-mono d D⊆ mκ s (≔-mono rax h ⊆r) ⊆r w w∈ ⟩
+  where D⊆ = λ w → λ { ⟨ ⟨ d , ⟨ d∈ , a ⟩ ⟩ , w∈ ⟩ → ⟨ ⟨ d , ⟨ s (idx x) d d∈ , a ⟩ ⟩ , s (idx x) w w∈ ⟩ }
 
-  primD-⊆ : ∀ p {D D' E E'} → D ⊆ D' → E ⊆ E' → primD p ⟨ D , ⟨ E , ptt ⟩ ⟩ ⊆ primD p ⟨ D' , ⟨ E' , ptt ⟩ ⟩
-  primD-⊆ p D⊆ E⊆ = lower (primD-mono p _ _ ⟨ lift D⊆ , ⟨ lift E⊆ , ptt ⟩ ⟩)
+MonoB : ∀ {Bs : List Ctx} → Meanings Bs → Set₁
+MonoB {Bs} B = ∀ {Δ} (l : Bs ∋ Δ) {ρ ρ'} → ρ ⊆ₑ ρ' → B l ρ ⊆ B l ρ'
 
-  flag-mono : ∀ {F₀ F₀' κ κ'} → F₀ ⊆ F₀' → MonoK κ κ' → ∀ {σ ρ F σ' ρ' F'} → Le σ ρ F σ' ρ' F'
-    → flagD F₀ κ σ ρ ⊆ flagD F₀' κ' σ' ρ'
-  flag-mono F⊆ mκ ⟨ s , ⟨ r , _ ⟩ ⟩ w ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ = ⟨ ⟨ u , F⊆ u u∈ ⟩ , mκ ⟨ s , ⟨ r , F⊆ ⟩ ⟩ w w∈ ⟩
+seq-mono : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) {B : Meanings Bs} → MonoB B → MonoK (⟦_⟧ˢ T k B)
+seq-mono (i ∷ k) mB = instr-mono i (seq-mono k mB)
+seq-mono (retq _) mB s h f = h rax
+seq-mono (jmp l) mB s h f = mB l s
+seq-mono (je l₁ l₂) mB s h f = lower (𝒞-mono _ _ ⟨ lift f , ⟨ (λ _ _ _ → lift (mB l₁ s)) , ⟨ (λ _ _ _ → lift (mB l₂ s)) , ptt ⟩ ⟩ ⟩)
 
-  called-le : ∀ {R R'} → R ⊆ R' → ∀ g → called R g ⊆ called R' g
-  called-le R⊆ rax = R⊆
-  called-le R⊆ rdi = λ _ z → z
-  called-le R⊆ rsi = λ _ z → z
+blocks-mono : ∀ {n Bs} (bs : Blocks Σ n Bs) → MonoB (blocksₛ T bs)
+blocks-mono (bs ▷ k) Z s = seq-mono k (blocks-mono bs) s (λ _ → ⊆r) ⊆r
+blocks-mono (bs ▷ k) (S l) = blocks-mono bs l
 
-  is-mono : ∀ {S} is {κ κ'} → Code L S is → MonoK κ κ' → MonoK (⟦ is ⟧ˢ T n κ) (⟦ is ⟧ˢ T' n κ')
-  is-mono [] _ mκ = mκ
-  is-mono (movq a d ∷ is) ⟨ oa , c ⟩ mκ le@(⟨ s , ⟨ r , _ ⟩ ⟩) =
-    put-mono d (𝒪-mono a oa s r) (is-mono is c mκ) le
-  is-mono (subq a d ∷ is) ⟨ ⟨ oa , od ⟩ , c ⟩ mκ le@(⟨ s , ⟨ r , _ ⟩ ⟩) =
-    put-mono d (primD-⊆ sub (𝒪-mono (loc d) od s r) (𝒪-mono a oa s r)) (is-mono is c mκ) le
-  is-mono (cmpq a₂ a₁ ∷ is) ⟨ ⟨ o₂ , o₁ ⟩ , c ⟩ mκ le@(⟨ s , ⟨ r , _ ⟩ ⟩) =
-    flag-mono (primD-⊆ eq (𝒪-mono a₁ o₁ s r) (𝒪-mono a₂ o₂ s r)) (is-mono is c mκ) le
-  is-mono (sete d ∷ is) ⟨ _ , c ⟩ mκ le@(⟨ _ , ⟨ _ , f ⟩ ⟩) = put-mono d f (is-mono is c mκ) le
-  is-mono (testinl a ∷ is) ⟨ oa , c ⟩ mκ le@(⟨ s , ⟨ r , _ ⟩ ⟩) =
-    flag-mono (isinl-mono (𝒪-mono a oa s r)) (is-mono is c mκ) le
-  is-mono (alloc sh as d ∷ is) ⟨ os , c ⟩ mκ le@(⟨ s , ⟨ r , _ ⟩ ⟩) =
-    put-mono d (object-mono sh as os s r) (is-mono is c mκ) le
-  is-mono (load f a d ∷ is) ⟨ oa , c ⟩ mκ le@(⟨ s , ⟨ r , _ ⟩ ⟩) =
-    put-mono d (field-mono f (𝒪-mono a oa s r)) (is-mono is c mκ) le
-  is-mono (callq a ∷ is) ⟨ oa , c ⟩ mκ ⟨ s , ⟨ r , _ ⟩ ⟩ w ⟨ ⟨ u , u∈ ⟩ , w∈ ⟩ =
-    ⟨ ⟨ u , R⊆ u u∈ ⟩ , is-mono is c mκ ⟨ s , ⟨ called-le R⊆ , (λ _ z → z) ⟩ ⟩ w w∈ ⟩
+K : ∀ {n Bs ψ} → Seq Σ n Bs ψ → Blocks Σ n Bs → Kont
+K k bs = ⟦_⟧ˢ T k (blocksₛ T bs)
+
+K-mono : ∀ {n Bs ψ} (k : Seq Σ n Bs ψ) bs → MonoK (K k bs)
+K-mono k bs = seq-mono k (blocks-mono bs)
+
+{- a jump runs the block, from its frame -}
+blocks-at : ∀ {n Bs Δ} (bs : Blocks Σ n Bs) (l : Bs ∋ Δ) {ρ}
+  → K (Blk.start (block bs l)) (Blk.blocks (block bs l)) ρ (λ _ → init) init ⊆ blocksₛ T bs l ρ
+blocks-at (bs ▷ k) Z = ⊆r
+blocks-at (bs ▷ k) (S l) = blocks-at bs l
+
+{- Approximations ---------------------------------------------------------------------}
+
+{- what a register holds -}
+𝒱ᵐ : ∀ {η} m → MV Σ η m → 𝒫 Value
+𝒱ᵐ (just (ty A)) v = 𝒱 v
+𝒱ᵐ (just codeα) v = 𝒱 v
+𝒱ᵐ (just tupα) v = 𝒱 v
+𝒱ᵐ nothing v = ∅
+
+𝒱ʳ-ne : ∀ {η} τ (v : RV Σ η τ) → nonempty (𝒱ᵐ (just τ) v)
+𝒱ʳ-ne (ty A) v = 𝒱-ne v
+𝒱ʳ-ne codeα v = 𝒱-ne v
+𝒱ʳ-ne tupα v = 𝒱-ne v
+
+cast-𝒱 : ∀ {η m τ} (e : m ≡ just τ) {v : MV Σ η m} → 𝒱ᵐ (just τ) (cast e v) ⊆ 𝒱ᵐ m v
+cast-𝒱 refl = ⊆r
+
+forget-𝒱 : ∀ {η η'} m {v : MV Σ η m} → 𝒱ᵐ {η'} (forgetα m) (forgetᵥ m v) ⊆ 𝒱ᵐ m v
+forget-𝒱 (just (ty A)) = ⊆r
+forget-𝒱 (just codeα) = λ _ ()
+forget-𝒱 (just tupα) = λ _ ()
+forget-𝒱 nothing = λ _ ()
+
+{- the locations of a machine: %rax, %rdi and %rsi at 0, 1 and 2, slot i at 3 + i -}
+ix : Reg → ℕ
+ix rax = 0
+ix rdi = 1
+ix rsi = 2
+
+ix<3 : ∀ r i → suc (suc (suc i)) ≢ ix r
+ix<3 rax i ()
+ix<3 rdi i ()
+ix<3 rsi i ()
+
+𝓛 : ∀ {η Γ Δ} → RegVals Σ η Γ → Frame Σ Δ → ℕ → 𝒫 Value
+𝓛 {Γ = Γ} ρ φ 0 = 𝒱ᵐ (Regs.ax Γ) (RegVals.ax ρ)
+𝓛 {Γ = Γ} ρ φ 1 = 𝒱ᵐ (Regs.di Γ) (RegVals.di ρ)
+𝓛 {Γ = Γ} ρ φ 2 = 𝒱ᵐ (Regs.si Γ) (RegVals.si ρ)
+𝓛 ρ φ (suc (suc (suc i))) = 𝓔 φ i
+
+{- after r := v, the other locations are unchanged -}
+upd-𝓛 : ∀ r {η Γ Δ τ} {ρ : RegVals Σ η Γ} {φ : Frame Σ Δ} {v : MV Σ η τ}
+  → (∀ l → l ≢ ix r → 𝓛 (_[_≔_] {τ = τ} ρ r v) φ l ⊆ 𝓛 ρ φ l) × 𝓛 (_[_≔_] {τ = τ} ρ r v) φ (ix r) ⊆ 𝒱ᵐ τ v
+upd-𝓛 rax = ⟨ (λ { 0 ne → ⊥-elim (ne refl) ; 1 _ → ⊆r ; 2 _ → ⊆r ; (suc (suc (suc i))) _ → ⊆r }) , ⊆r ⟩
+upd-𝓛 rdi = ⟨ (λ { 0 _ → ⊆r ; 1 ne → ⊥-elim (ne refl) ; 2 _ → ⊆r ; (suc (suc (suc i))) _ → ⊆r }) , ⊆r ⟩
+upd-𝓛 rsi = ⟨ (λ { 0 _ → ⊆r ; 1 _ → ⊆r ; 2 ne → ⊥-elim (ne refl) ; (suc (suc (suc i))) _ → ⊆r }) , ⊆r ⟩
+
+wipe-𝓛 : ∀ {η η' Γ Δ} {ρ : RegVals Σ η Γ} {φ : Frame Σ Δ} l → 𝓛 (wipeᵣ {η' = η'} ρ) φ l ⊆ 𝓛 ρ φ l
+wipe-𝓛 {Γ = rt a b c} = λ { 0 → forget-𝒱 a ; 1 → forget-𝒱 b ; 2 → forget-𝒱 c ; (suc (suc (suc i))) → ⊆r }
+
+{- a finite part of each location -}
+Apx : Set
+Apx = ℕ → List Value
+
+σ̂ : Apx → Env Value
+σ̂ A i = mem (A (suc (suc (suc i))))
+
+ρ̂ : Apx → RegsD
+ρ̂ A r = mem (A (ix r))
+
+AL : ∀ {η ψ} → Apx → Mach Σ η ψ → Set
+AL A m = ∀ l → mem (A l) ⊆ 𝓛 (regs m) (frame m) l
+
+Ext : Apx → Apx → Set
+Ext A B = ∀ l → mem (A l) ⊆ mem (B l)
+
+σ̂E : ∀ {A B} → Ext A B → σ̂ A ⊆ₑ σ̂ B
+σ̂E E i = E (suc (suc (suc i)))
+
+ρ̂E : ∀ {A B} → Ext A B → ρ̂ A ⊆ᵣ ρ̂ B
+ρ̂E E r = E (ix r)
+
+one : ∀ {d} {D : 𝒫 Value} → d ∈ D → mem (d ∷ []) ⊆ D
+one d∈ _ (here refl) = d∈
+
+{- a nonempty finite part of X -}
+ext : ∀ {X : 𝒫 Value} → List Value → nonempty X → List Value
+ext W ne = W ++ proj₁ ne ∷ []
+
+ext-⊆ : ∀ {X} W (ne : nonempty X) → mem W ⊆ X → mem (ext W ne) ⊆ X
+ext-⊆ W ne W⊆ d d∈ with ∈-++⁻ W d∈
+... | inj₁ d∈W = W⊆ d d∈W
+... | inj₂ (here refl) = proj₂ ne
+
+ext-ne : ∀ {X} W (ne : nonempty X) → ext W ne ≢ []
+ext-ne [] ne ()
+ext-ne (_ ∷ W) ne ()
+
+add : Apx → ℕ → List Value → Apx
+add A l W l' with l' ≟ l
+... | yes _ = A l' ++ W
+... | no _ = A l'
+
+clear : Apx → ℕ → Apx
+clear A l l' with l' ≟ l
+... | yes _ = []
+... | no _ = A l'
+
+clear-≢ : ∀ {A l l'} → l' ≢ l → mem (A l') ⊆ mem (clear A l l')
+clear-≢ {A} {l} {l'} ne with l' ≟ l
+... | yes e = ⊥-elim (ne e)
+... | no _ = ⊆r
+
+{- r := D, the other registers growing -}
+upd : ∀ r {A' A : Apx} {D} → (∀ l → l ≢ ix r → mem (A' l) ⊆ mem (A l)) → mem (A' (ix r)) ⊆ D → ρ̂ A' ⊆ᵣ (ρ̂ A [ r ≔ₛ D ])
+upd rax E h = λ { rax → h ; rdi → E 1 (λ ()) ; rsi → E 2 (λ ()) }
+upd rdi E h = λ { rax → E 0 (λ ()) ; rdi → h ; rsi → E 2 (λ ()) }
+upd rsi E h = λ { rax → E 0 (λ ()) ; rdi → E 1 (λ ()) ; rsi → h }
+
+{- the slots before a write of slot p, from those after it -}
+undrop : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → (ℕ → List Value) → ℕ → List Value
+undrop here⊑ f = f
+undrop (there⊑ p) f zero = []
+undrop (there⊑ p) f (suc i) = undrop p f i
+
+undrop-AL : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) {f} {φ : Frame Σ Δ} → (∀ j → mem (f j) ⊆ 𝓔 (forget p φ) j) → ∀ i → mem (undrop p f i) ⊆ 𝓔 φ i
+undrop-AL here⊑ h = h
+undrop-AL (there⊑ p) {φ = v ∷ φ} h zero = λ _ ()
+undrop-AL (there⊑ p) {φ = v ∷ φ} h (suc i) = undrop-AL p h i
+
+drop-undrop : ∀ {Δ' Δ} (p : Δ' ⊑ Δ) f → (λ j → mem (f j)) ⊆ₑ drop p (λ i → mem (undrop p f i))
+drop-undrop here⊑ f j = ⊆r
+drop-undrop (there⊑ p) f = drop-undrop p f
+
+und : ∀ {Δ' Δ : Ctx} → Δ' ⊑ Δ → Apx → Apx
+und p A' = λ { 0 → A' 0 ; 1 → A' 1 ; 2 → A' 2 ; (suc (suc (suc i))) → undrop p (λ j → A' (suc (suc (suc (suc j))))) i }
+
+und-AL : ∀ {Δ' Δ A η Γ} (p : Δ' ⊑ Δ) {A'} {ρ : RegVals Σ η Γ} {φ : Frame Σ Δ} {v : Val Σ A}
+  → (∀ l → mem (A' l) ⊆ 𝓛 ρ (v ∷ forget p φ) l) → ∀ l → mem (und p A' l) ⊆ 𝓛 ρ φ l
+und-AL p al' = λ { 0 → al' 0 ; 1 → al' 1 ; 2 → al' 2 ; (suc (suc (suc i))) → undrop-AL p (λ j → al' (suc (suc (suc (suc j))))) i }
+
+{- a jump, from a state with no register and no flag -}
+jump : ∀ {n Bs Δ} (bs : Blocks Σ n Bs) (l : Bs ∋ Δ) {A' : Apx} {η'} {φ : Frame Σ Δ}
+  → (∀ l' → mem (A' l') ⊆ 𝓛 {η'} {unset} (rv tt tt tt) φ l')
+  → K (Blk.start (block bs l)) (Blk.blocks (block bs l)) (σ̂ A') (ρ̂ A') ∅ ⊆ blocksₛ T bs l (σ̂ A')
+jump bs l al' u u∈ = blocks-at bs l u
+  (K-mono (Blk.start (block bs l)) (Blk.blocks (block bs l)) (λ _ → ⊆r) (λ { rax → ∅⊆ (al' 0) ; rdi → ∅⊆ (al' 1) ; rsi → ∅⊆ (al' 2) }) (λ _ ()) u u∈)
+
+unset-AL : ∀ {A' : Apx} {η η' Γ Δ} {ρ : RegVals Σ η Γ} {φ : Frame Σ Δ}
+  → (∀ l → mem (A' l) ⊆ 𝓛 {η'} {unset} (rv tt tt tt) φ l) → ∀ l → mem (A' l) ⊆ 𝓛 ρ φ l
+unset-AL al' = λ { 0 → ∅⊆ (al' 0) ; 1 → ∅⊆ (al' 1) ; 2 → ∅⊆ (al' 2) ; (suc (suc (suc i))) → al' _ }
+
+{- Values -}
+int∈ : (v : Val Σ ⟪ base Int ⟫) → dconst (int v) ∈ 𝒱 v
+int∈ (const k) = ⟨ refl , refl ⟩
+
+prim-in : ∀ p {n m D E} → mem (dconst n ∷ []) ⊆ D → mem (dconst m ∷ []) ⊆ E → 𝒱 (δᵀ {Σ} p n m) ⊆ primD p ⟨ D , ⟨ E , ptt ⟩ ⟩
+prim-in p {n} {m} n∈ m∈ d d∈ = ⟨ n , ⟨ m , ⟨ n∈ _ (here refl) , ⟨ m∈ _ (here refl) , proj₂ (proj₂ (proj₂ (proj₂ (prim-⊆ p n m d d∈)))) ⟩ ⟩ ⟩ ⟩
+
+proj?-𝒱 : ∀ t (v : Val Σ Any) {u} → proj? t v ≡ just u → 𝒱 u ⊆ 𝒱 v
+proj?-𝒱 t (dyn H w) e with H ≟F flat t
+proj?-𝒱 t (dyn H w) refl | yes refl = ⊆r
+proj?-𝒱 t (dyn H w) () | no _
+
+put-inv : ∀ {n ψ τ ψ'} (d : Dst n ψ τ ψ') {η} {m : Mach Σ η ψ} {v} → OpR (St.op ψ) (frame m) (opened m)
+  → OpR (St.op ψ') (frame (put d v m)) (opened (put d v m))
+put-inv (reg r) i = i
+put-inv (slot p _) i = tt
+
+{- Growing an approximation, from A₀, so that P holds -}
+record Grow {η ψ} (m : Mach Σ η ψ) (P : Apx → Set) : Set where
+  constructor grow
+  field grown : ∀ A₀ → AL A₀ m → Σ[ A ∈ Apx ] AL A m × Ext A₀ A × P A
+open Grow
+
+module _ {η ψ} {m : Mach Σ η ψ} where
+
+  grow-at : ∀ l W → mem W ⊆ 𝓛 (regs m) (frame m) l → Grow m (λ A → mem W ⊆ mem (A l))
+  grow-at l W W⊆ = grow λ A₀ al → ⟨ add A₀ l W , ⟨ al′ A₀ al , ⟨ ext′ A₀ , here′ A₀ ⟩ ⟩ ⟩
     where
-    R⊆ = lower (⋆-mono _ _ ⟨ ⋆-mono _ _ ⟨ lift (𝒪-mono a oa s r) , ⟨ lift (r rdi) , ptt ⟩ ⟩
-                           , ⟨ lift (r rsi) , ptt ⟩ ⟩)
+    al′ : ∀ A₀ → AL A₀ m → AL (add A₀ l W) m
+    al′ A₀ al l' with l' ≟ l
+    ... | yes refl = λ d d∈ → [ al l d , W⊆ d ]′ (∈-++⁻ (A₀ l) d∈)
+      where open import Data.Sum using ([_,_]′)
+    ... | no _ = al l'
+    ext′ : ∀ A₀ → Ext A₀ (add A₀ l W)
+    ext′ A₀ l' with l' ≟ l
+    ... | yes _ = λ d d∈ → ∈-++⁺ˡ d∈
+    ... | no _ = ⊆r
+    here′ : ∀ A₀ → mem W ⊆ mem (add A₀ l W l)
+    here′ A₀ with l ≟ l
+    ... | yes _ = λ d d∈ → ∈-++⁺ʳ (A₀ l) d∈
+    ... | no ne = ⊥-elim (ne refl)
 
-  jump-mono : ∀ j {B B'} → MonoB B B' → MonoK (⟦ j ⟧ʲ B) (⟦ j ⟧ʲ B')
-  jump-mono retq mB ⟨ _ , ⟨ r , _ ⟩ ⟩ = r rax
-  jump-mono (jmp l) mB = mB l
-  jump-mono (je l₁ l₂) mB le@(⟨ _ , ⟨ _ , f ⟩ ⟩) =
-    lower (𝒞-mono _ _ ⟨ lift f , ⟨ (λ _ _ _ → lift (mB l₁ le)) , ⟨ (λ _ _ _ → lift (mB l₂ le)) , ptt ⟩ ⟩ ⟩)
+  {- P, then Q -}
+  both : ∀ {P Q : Apx → Set} → Grow m P → (∀ {A B} → Ext A B → P A → P B) → Grow m Q → Grow m (λ A → P A × Q A)
+  both g mP g' = grow λ A₀ al → let ⟨ A₁ , ⟨ al₁ , ⟨ E₁ , p ⟩ ⟩ ⟩ = grown g A₀ al ; ⟨ A₂ , ⟨ al₂ , ⟨ E₂ , q ⟩ ⟩ ⟩ = grown g' A₁ al₁
+    in ⟨ A₂ , ⟨ al₂ , ⟨ (λ l d d∈ → E₂ l d (E₁ l d d∈)) , ⟨ mP E₂ p , q ⟩ ⟩ ⟩ ⟩
 
-  blocks-mono : ∀ {S} bs → All (λ b → Code L S (Block.instrs b)) bs → MonoB (blocks T n bs) (blocks T' n bs)
-  blocks-mono [] _ l le = λ _ ()
-  blocks-mono (b ∷ bs) (c ∷ cs) l with l ≟ length bs
-  ... | yes _ = is-mono (Block.instrs b) c (jump-mono (Block.jump b) (blocks-mono bs cs))
-  ... | no _ = blocks-mono bs cs l
+  _⊳_ : ∀ {P Q : Apx → Set} → Grow m P → (∀ {A} → P A → Q A) → Grow m Q
+  g ⊳ f = grow λ A₀ al → let ⟨ A , ⟨ al′ , ⟨ E , p ⟩ ⟩ ⟩ = grown g A₀ al in ⟨ A , ⟨ al′ , ⟨ E , f p ⟩ ⟩ ⟩
 
-  body-mono : ∀ {S} m bs b → All (λ c → Code L S (Block.instrs c)) (b ∷ bs) → MonoK (runD T n (body m bs b)) (runD T' n (body m bs b))
-  body-mono m bs b (c ∷ cs) = is-mono (Block.instrs b) c (jump-mono (Block.jump b) (blocks-mono bs cs))
+  {- a finite part of D, one element at a time -}
+  grow-each : ∀ (D : Apx → 𝒫 Value) → (∀ {A B} → Ext A B → D A ⊆ D B) → ∀ V
+    → (∀ z → z ∈ mem V → Grow m (λ A → z ∈ D A)) → Grow m (λ A → mem V ⊆ D A)
+  grow-each D mD [] h = grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , (λ _ ()) ⟩ ⟩ ⟩
+  grow-each D mD (z ∷ V) h = both (h z (here refl)) (λ E → mD E _) (grow-each D mD V (λ z' z'∈ → h z' (there z'∈)))
+    ⊳ λ { ⟨ z∈ , V⊆ ⟩ → λ { _ (here refl) → z∈ ; d (there d∈) → V⊆ d d∈ } }
 
-{- any code reads what the trivial conditions allow -}
-ok-⊤ : ∀ a → OK (λ _ → ⊤) (λ _ → ⊤) a
-ok-⊤ (loc (var x)) = tt
-ok-⊤ (loc (reg g)) = tt
-ok-⊤ (imm B k) = tt
-ok-⊤ (label k) = tt
+  {- the operand a -}
+  grow-arg : ∀ {τ} (a : Arg Σ ψ τ) W → mem W ⊆ 𝒱ᵐ (just τ) (arg a m) → Grow m (λ A → mem W ⊆ 𝒪 T a (σ̂ A) (ρ̂ A))
+  grow-arg (atom (var x)) W W⊆ = grow-at _ W (λ d d∈ → 𝓔-lookup (frame m) x d (W⊆ d d∈))
+  grow-arg (atom (lit B c)) W W⊆ = grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , W⊆ ⟩ ⟩ ⟩
+  grow-arg (atom (ref f)) W W⊆ = grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , W⊆ ⟩ ⟩ ⟩
+  grow-arg (reg r e) W W⊆ = grow-at (ix r) W (λ d d∈ → at r d (cast-𝒱 e d (W⊆ d d∈)))
+    where
+    at : ∀ r → 𝒱ᵐ (St.rs ψ ‹ r ›) (regs m ⦅ r ⦆) ⊆ 𝓛 (regs m) (frame m) (ix r)
+    at rax = ⊆r
+    at rdi = ⊆r
+    at rsi = ⊆r
+  grow-arg (a ↑) = grow-arg a
 
-code-⊤ : ∀ is → Code (λ _ → ⊤) (λ _ → ⊤) is
-code-⊤ [] = tt
-code-⊤ (movq a d ∷ is) = ⟨ ok-⊤ a , code-⊤ is ⟩
-code-⊤ (subq a d ∷ is) = ⟨ ⟨ ok-⊤ a , ok-⊤ (loc d) ⟩ , code-⊤ is ⟩
-code-⊤ (cmpq a₂ a₁ ∷ is) = ⟨ ⟨ ok-⊤ a₂ , ok-⊤ a₁ ⟩ , code-⊤ is ⟩
-code-⊤ (sete d ∷ is) = ⟨ tt , code-⊤ is ⟩
-code-⊤ (testinl a ∷ is) = ⟨ ok-⊤ a , code-⊤ is ⟩
-code-⊤ (alloc sh as d ∷ is) = ⟨ all-⊤ as , code-⊤ is ⟩
-  where all-⊤ : ∀ as → All (OK (λ _ → ⊤) (λ _ → ⊤)) as
-        all-⊤ [] = []
-        all-⊤ (a ∷ as) = ok-⊤ a ∷ all-⊤ as
-code-⊤ (load f a d ∷ is) = ⟨ ok-⊤ a , code-⊤ is ⟩
-code-⊤ (callq a ∷ is) = ⟨ ok-⊤ a , code-⊤ is ⟩
+  {- an element of an object -}
+  grow-obj : ∀ {A} (o : Obj Σ ψ A) z → z ∈ 𝒱 (obj o m) → Grow m (λ A → z ∈ object T o (σ̂ A) (ρ̂ A))
+  grow-obj (pair c e) z z∈ with pair-inv z z∈
+  ... | ⟨ u , ⟨ u' , ⟨ refl , ⟨ u∈ , u'∈ ⟩ ⟩ ⟩ ⟩ =
+    both (grow-arg c (u ∷ []) λ { _ (here refl) → u∈ }) (λ E h → λ d d∈ → 𝒪-mono (σ̂E E) (ρ̂E E) c d (h d d∈))
+         (grow-arg e (u' ∷ []) λ { _ (here refl) → u'∈ })
+    ⊳ λ { ⟨ h , h' ⟩ → ⟨ h u (here refl) , h' u' (here refl) ⟩ }
+  grow-obj (inl a) z z∈ with inl-inv z z∈
+  ... | ⟨ u , ⟨ refl , u∈ ⟩ ⟩ = grow-arg a (u ∷ []) (λ { _ (here refl) → u∈ }) ⊳ λ h → h u (here refl)
+  grow-obj (inr a) z z∈ with inr-inv z z∈
+  ... | ⟨ u , ⟨ refl , u∈ ⟩ ⟩ = grow-arg a (u ∷ []) (λ { _ (here refl) → u∈ }) ⊳ λ h → h u (here refl)
+  grow-obj (tuple []) ⟨⟩ _ = grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , tt ⟩ ⟩ ⟩
+  grow-obj (tuple as) (tup[ i ] x) ⟨ a , _ ⟩ with trans (sym (At-length i _ x a)) (len𝒱v (args as m))
+  grow-obj (tuple []) (tup[ () ] x) _ | refl
+  grow-obj (tuple (b ∷ bs)) (tup[ i ] x) ⟨ a , _ ⟩ | refl =
+    both (prime (b ∷ bs)) (λ E ne k → let ⟨ d , d∈ ⟩ = ne k in ⟨ d , nth-mono (σ̂E E) (ρ̂E E) (b ∷ bs) k d d∈ ⟩) (comp (b ∷ bs) i x a)
+    ⊳ λ { ⟨ ne , x∈ ⟩ → ⟨ refl , ⟨ x∈ , ne ⟩ ⟩ }
+    where
+    nth-mono : ∀ {ρ ρ' R R'} → ρ ⊆ₑ ρ' → R ⊆ᵣ R' → ∀ {j} (as : Vec (Arg Σ ψ (ty Any)) j) k
+      → nthD (𝒪s T as ρ R) k ⊆ nthD (𝒪s T as ρ' R') k
+    nth-mono s h (a ∷ as) zero = 𝒪-mono s h a
+    nth-mono s h (a ∷ as) (suc k) = nth-mono s h as k
+    prime : ∀ {j} (as : Vec (Arg Σ ψ (ty Any)) j) → Grow m (λ A → ∀ k → nonempty (nthD (𝒪s T as (σ̂ A) (ρ̂ A)) k))
+    prime [] = grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , (λ ()) ⟩ ⟩ ⟩
+    prime (a ∷ as) = both (grow-arg a _ (one (proj₂ (𝒱-ne (arg a m))))) (λ E h d d∈ → 𝒪-mono (σ̂E E) (ρ̂E E) a d (h d d∈)) (prime as)
+      ⊳ λ { ⟨ h , ne ⟩ → λ { zero → ⟨ _ , h _ (here refl) ⟩ ; (suc k) → ne k } }
+    comp : ∀ {j} (as : Vec (Arg Σ ψ (ty Any)) j) (i : Fin j) x → At i (𝒱v (args as m)) x
+      → Grow m (λ A → x ∈ nthD (𝒪s T as (σ̂ A) (ρ̂ A)) i)
+    comp (a ∷ as) zero x ⟨ _ , x∈ ⟩ = grow-arg a _ (one x∈) ⊳ λ h → h x (here refl)
+    comp (a ∷ as) (suc i) x a′ = comp as i x a′
+  grow-obj (tuple as) (dconst k) ()
+  grow-obj (tuple as) (V ↦ w) ()
+  grow-obj (tuple as) ν ()
+  grow-obj (tuple as) ω ()
+  grow-obj (tuple as) ⦅ u , v ⦆ ()
+  grow-obj (tuple as) (left d) ()
+  grow-obj (tuple as) (right d) ()
+  grow-obj (tuple (_ ∷ _)) ⟨⟩ ()
 
-codes-⊤ : ∀ bs → All (λ b → Code (λ _ → ⊤) (λ _ → ⊤) (Block.instrs b)) bs
-codes-⊤ [] = []
-codes-⊤ (b ∷ bs) = code-⊤ (Block.instrs b) ∷ codes-⊤ bs
+  {- an element of a field -}
+  grow-field : ∀ {A B} (f : Field A B) (a : Arg Σ ψ (ty A)) z → z ∈ 𝒱 (field′ f (arg a m))
+    → Grow m (λ A → z ∈ fieldₛ T f (𝒪 T a (σ̂ A) (ρ̂ A)))
+  grow-field f a z z∈ = gw f (arg a m) z∈ (grow-arg a)
+    where
+    gw : ∀ {A B} (f : Field A B) (v : Val Σ A) → z ∈ 𝒱 (field′ f v)
+      → (∀ W → mem W ⊆ 𝒱 v → Grow m (λ A → mem W ⊆ 𝒪 T a (σ̂ A) (ρ̂ A))) → Grow m (λ A → z ∈ fieldₛ T f (𝒪 T a (σ̂ A) (ρ̂ A)))
+    gw (get i) (tup ws) z∈ g = g _ (one ⟨ At-lookup i ws z∈ , 𝒱v-ne ws ⟩) ⊳ λ h → h _ (here refl)
+    gw payload (inl u) z∈ g = g (left z ∷ []) (one z∈) ⊳ λ h → inj₁ (h _ (here refl))
+    gw payload (inr u) z∈ g = g (right z ∷ []) (one z∈) ⊳ λ h → inj₂ (h _ (here refl))
 
-{- Finite parts of sets --------------------------------------------------------------}
+  {- the flag of testinl -}
+  grow-isinl : ∀ (a : Arg Σ ψ (ty ⟪ sum ⟫)) → Grow m (λ A → 𝒱 (bit (is-inl (arg a m))) ⊆ isinl (𝒪 T a (σ̂ A) (ρ̂ A)))
+  grow-isinl a = gw (arg a m) (grow-arg a)
+    where
+    gw : ∀ (v : Val Σ ⟪ sum ⟫) → (∀ W → mem W ⊆ 𝒱 v → Grow m (λ A → mem W ⊆ 𝒪 T a (σ̂ A) (ρ̂ A)))
+      → Grow m (λ A → 𝒱 (bit (is-inl v)) ⊆ isinl (𝒪 T a (σ̂ A) (ρ̂ A)))
+    gw (inl u) g = g (left _ ∷ []) (one (proj₂ (𝒱-ne u))) ⊳ λ h d d∈ →
+      let ⟨ u' , ⟨ e , u'∈ ⟩ ⟩ = inl-inv d d∈ in inj₁ ⟨ _ , ⟨ h _ (here refl) , trans e (cong left (𝒯L[]-inv u' u'∈)) ⟩ ⟩
+    gw (inr u) g = g (right _ ∷ []) (one (proj₂ (𝒱-ne u))) ⊳ λ h d d∈ →
+      let ⟨ u' , ⟨ e , u'∈ ⟩ ⟩ = inr-inv d d∈ in inj₂ ⟨ _ , ⟨ h _ (here refl) , trans e (cong right (𝒯L[]-inv u' u'∈)) ⟩ ⟩
 
-++-⊆ : ∀ {P : 𝒫 Value} A B → mem A ⊆ P → mem B ⊆ P → mem (A ++ B) ⊆ P
-++-⊆ A B A⊆ B⊆ d d∈ with ∈-++⁻ A d∈
-... | inj₁ a = A⊆ d a
-... | inj₂ b = B⊆ d b
+{- The denotations of states ------------------------------------------------------------}
 
-{- the parts f z of the elements z of V -}
-pick : (Value → List Value) → List Value → List Value
-pick f [] = []
-pick f (z ∷ V) = f z ++ pick f V
+𝓕 : ∀ {f} → Flag Σ f → 𝒫 Value
+𝓕 {true} b = 𝒱 (bit {Σ} b)
+𝓕 {false} _ = ∅
 
-pick-∈ : ∀ f V {z} → z ∈ mem V → mem (f z) ⊆ mem (pick f V)
-pick-∈ f (z ∷ V) (here refl) d d∈ = ∈-++⁺ˡ d∈
-pick-∈ f (z ∷ V) (there z∈) d d∈ = ∈-++⁺ʳ (f z) (pick-∈ f V z∈ d d∈)
+{- the call stack: a caller runs its rest with the result in %rax -}
+𝒦 : Stack Σ → 𝒫 Value → 𝒫 Value
+𝒦 halt D = D
+𝒦 (retK k bs φ σ) D z = Σ[ A ∈ Apx ] Σ[ W ∈ List Value ] σ̂ A ⊆ₑ 𝓔 φ × mem W ⊆ D × W ≢ []
+  × z ∈ 𝒦 σ (K k bs (σ̂ A) (called-regs (mem W)) init)
 
-pick-⊆ : ∀ {P : 𝒫 Value} f V → (∀ z → z ∈ mem V → mem (f z) ⊆ P) → mem (pick f V) ⊆ P
-pick-⊆ f [] h = λ _ ()
-pick-⊆ f (z ∷ V) h = ++-⊆ (f z) (pick f V) (h z (here refl)) (pick-⊆ f V (λ z' z'∈ → h z' (there z'∈)))
+𝒮 : State Σ → 𝒫 Value
+𝒮 (run k bs σ η m) z = Σ[ A ∈ Apx ] AL A m × z ∈ 𝒦 σ (K k bs (σ̂ A) (ρ̂ A) (𝓕 (flag m)))
 
-{- a finite part of O X, for an operator O on one set, is in O of a finite
-   part of X, picked out by f -}
-split : ∀ {O : 𝒫 Value → 𝒫 Value} (Om : ∀ {D E} → D ⊆ E → O D ⊆ O E) f {X}
-  → (∀ z → z ∈ O X → mem (f z) ⊆ X × z ∈ O (mem (f z)))
-  → ∀ V → mem V ⊆ O X → mem (pick f V) ⊆ X × mem V ⊆ O (mem (pick f V))
-split Om f h V V⊆ =
-  ⟨ pick-⊆ f V (λ z z∈ → proj₁ (h z (V⊆ z z∈)))
-  , (λ z z∈ → Om (pick-∈ f V z∈) z (proj₂ (h z (V⊆ z z∈)))) ⟩
+𝒦-mono : ∀ σ {D E} → D ⊆ E → 𝒦 σ D ⊆ 𝒦 σ E
+𝒦-mono halt D⊆ = D⊆
+𝒦-mono (retK k bs φ σ) D⊆ z ⟨ A , ⟨ W , ⟨ fr , ⟨ W⊆ , r ⟩ ⟩ ⟩ ⟩ = ⟨ A , ⟨ W , ⟨ fr , ⟨ (λ d d∈ → D⊆ d (W⊆ d d∈)) , r ⟩ ⟩ ⟩ ⟩
 
-fstv sndv lft rgt : Value → List Value
-fstv ⦅ p , q ⦆ = p ∷ []
-fstv _ = []
-sndv ⦅ p , q ⦆ = q ∷ []
-sndv _ = []
-lft (left p) = p ∷ []
-lft _ = []
-rgt (right p) = p ∷ []
-rgt _ = []
+{- the open closure agrees with its slot -}
+Inv : State Σ → Set
+Inv (run {ψ = ψ} k bs σ η m) = OpR (St.op ψ) (frame m) (opened m)
 
-pair-split : ∀ {X Y} V → mem V ⊆ dpair ⟨ X , ⟨ Y , ptt ⟩ ⟩
-  → mem (pick fstv V) ⊆ X × mem (pick sndv V) ⊆ Y × mem V ⊆ dpair ⟨ mem (pick fstv V) , ⟨ mem (pick sndv V) , ptt ⟩ ⟩
-pair-split {X} {Y} V V⊆ =
-  ⟨ pick-⊆ fstv V (λ z z∈ → proj₁ (h z (V⊆ z z∈)))
-  , ⟨ pick-⊆ sndv V (λ z z∈ → proj₁ (proj₂ (h z (V⊆ z z∈))))
-  , (λ z z∈ → lower (pair-mono _ _ ⟨ lift (pick-∈ fstv V z∈) , ⟨ lift (pick-∈ sndv V z∈) , ptt ⟩ ⟩) z
-                 (proj₂ (proj₂ (h z (V⊆ z z∈))))) ⟩ ⟩
+nn : ∀ {P Q R : Apx → Set} → Σ[ A ∈ Apx ] P A × Q A × R A → Σ[ A ∈ Apx ] P A × R A
+nn ⟨ A , ⟨ p , ⟨ _ , r ⟩ ⟩ ⟩ = ⟨ A , ⟨ p , r ⟩ ⟩
+
+{- Writes ------------------------------------------------------------------------------------}
+
+{- r := v, after the other registers are made ρ' -}
+reg-⊆ : ∀ {n Bs η η' Γ Γ' Δ O O' F τ} (r : Reg) {k : Seq Σ n Bs (st (Γ' [ r ↦ just τ ]) Δ O' F)} {bs σ}
+  {m : Mach Σ η (st Γ Δ O F)} {ρ' : RegVals Σ η' Γ'} {o' : Opened Σ η' O'} {v : RV Σ η' τ} (D : Apx → 𝒫 Value)
+  → (∀ l → 𝓛 ρ' (frame m) l ⊆ 𝓛 (regs m) (frame m) l)
+  → (∀ W → mem W ⊆ 𝒱ᵐ (just τ) v → Grow m (λ A → mem W ⊆ D A))
+  → 𝒮 (run k bs σ η' ⟨ _[_≔_] {τ = just τ} ρ' r v , frame m , o' , flag m ⟩)
+    ⊆ λ z → Σ[ A ∈ Apx ] AL A m × nonempty (D A) × z ∈ 𝒦 σ (K k bs (σ̂ A) (ρ̂ A [ r ≔ₛ D A ]) (𝓕 (flag m)))
+reg-⊆ {τ = τ} r {k} {bs} {σ} {m = m} {v = v} D h g z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩
+    with grown (g (ext (A' (ix r)) (𝒱ʳ-ne τ v)) (ext-⊆ (A' (ix r)) (𝒱ʳ-ne τ v) (λ d d∈ → proj₂ (upd-𝓛 r) d (al' (ix r) d d∈)))) (clear A' (ix r)) al₀
   where
-  h : ∀ z → z ∈ dpair ⟨ X , ⟨ Y , ptt ⟩ ⟩
-    → mem (fstv z) ⊆ X × mem (sndv z) ⊆ Y × z ∈ dpair ⟨ mem (fstv z) , ⟨ mem (sndv z) , ptt ⟩ ⟩
-  h ⦅ p , q ⦆ ⟨ p∈ , q∈ ⟩ = ⟨ (λ { _ (here refl) → p∈ }) , ⟨ (λ { _ (here refl) → q∈ }) , ⟨ here refl , here refl ⟩ ⟩ ⟩
-
-inl-split : ∀ {X} V → mem V ⊆ inl ⟨ X , ptt ⟩ → mem (pick lft V) ⊆ X × mem V ⊆ inl ⟨ mem (pick lft V) , ptt ⟩
-inl-split = split inl-⊆ lft h
+  al₀ : AL (clear A' (ix r)) m
+  al₀ l with l ≟ ix r
+  ... | yes _ = λ _ ()
+  ... | no ne = λ d d∈ → h l d (proj₁ (upd-𝓛 r) l ne d (al' l d d∈))
+... | ⟨ A , ⟨ al , ⟨ E , W⊆ ⟩ ⟩ ⟩ =
+  ⟨ A , ⟨ al , ⟨ ne-mem (ext-ne _ (𝒱ʳ-ne τ v)) W⊆
+  , 𝒦-mono σ (K-mono k bs (λ i → E′ _ (ix<3 r i)) (upd r E′ (λ d d∈ → W⊆ d (∈-++⁺ˡ d∈))) ⊆r) z z∈ ⟩ ⟩ ⟩
   where
-  h : ∀ {X} z → z ∈ inl ⟨ X , ptt ⟩ → mem (lft z) ⊆ X × z ∈ inl ⟨ mem (lft z) , ptt ⟩
-  h (left p) p∈ = ⟨ (λ { _ (here refl) → p∈ }) , here refl ⟩
+  E′ : ∀ l → l ≢ ix r → mem (A' l) ⊆ mem (A l)
+  E′ l ne d d∈ = E l d (clear-≢ ne d d∈)
 
-inr-split : ∀ {X} V → mem V ⊆ inr ⟨ X , ptt ⟩ → mem (pick rgt V) ⊆ X × mem V ⊆ inr ⟨ mem (pick rgt V) , ptt ⟩
-inr-split = split inr-⊆ rgt h
+{- d := v -}
+put-⊆ : ∀ {n Bs ψ τ ψ'} (d : Dst n ψ τ ψ') {k : Seq Σ n Bs ψ'} {bs σ η} {m : Mach Σ η ψ} {v : RV Σ η τ} (D : Apx → 𝒫 Value)
+  → (∀ W → mem W ⊆ 𝒱ᵐ (just τ) v → Grow m (λ A → mem W ⊆ D A))
+  → 𝒮 (run k bs σ η (put d v m))
+    ⊆ λ z → Σ[ A ∈ Apx ] AL A m × nonempty (D A) × z ∈ 𝒦 σ (putₛ T d (D A) (K k bs) (σ̂ A) (ρ̂ A) (𝓕 (flag m)))
+put-⊆ (reg r) {k} {bs} {σ} {m = m} {v} D g = reg-⊆ r {k} {bs} {σ} {m} {regs m} {opened m} {v} D (λ _ → ⊆r) g
+put-⊆ (slot {A = A₁} p _) {k} {bs} {σ} {m = m} {v} D g z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩
+    with grown (g (ext (A' 3) (𝒱-ne v)) (ext-⊆ (A' 3) (𝒱-ne v) (al' 3))) (und p A') (und-AL p al')
+... | ⟨ A , ⟨ al , ⟨ E , W⊆ ⟩ ⟩ ⟩ =
+  ⟨ A , ⟨ al , ⟨ ne-mem (ext-ne _ (𝒱-ne v)) W⊆
+  , 𝒦-mono σ (λ u u∈ → ⟨ ext (A' 3) (𝒱-ne v) , ⟨ ⟨ K-mono k bs fr (λ { rax → E 0 ; rdi → E 1 ; rsi → E 2 }) ⊆r u u∈
+                                            , ⟨ ext-ne _ (𝒱-ne v) , Con⇒≈ _ (𝒱-con v) (ext-⊆ (A' 3) (𝒱-ne v) (al' 3)) ⟩ ⟩
+                                          , ⟨ W⊆ , ext-ne _ (𝒱-ne v) ⟩ ⟩ ⟩) z z∈ ⟩ ⟩ ⟩
   where
-  h : ∀ {X} z → z ∈ inr ⟨ X , ptt ⟩ → mem (rgt z) ⊆ X × z ∈ inr ⟨ mem (rgt z) , ptt ⟩
-  h (right p) p∈ = ⟨ (λ { _ (here refl) → p∈ }) , here refl ⟩
+  fr : σ̂ A' ⊆ₑ (mem (ext (A' 3) (𝒱-ne v)) • drop p (σ̂ A))
+  fr zero d d∈ = ∈-++⁺ˡ d∈
+  fr (suc j) d d∈ = drop-mono p (σ̂E E) j d (drop-undrop p _ j d d∈)
 
-{- the components of tuples -}
-hd tl : Value → List Value
-hd (tup[ zero ] x) = x ∷ []
-hd _ = []
-tl (tup[ suc i ] x) = tup[ i ] x ∷ []
-tl _ = []
+{- the flag := b -}
+flag-⊆ : ∀ {n Bs Γ Δ O F} {k : Seq Σ n Bs (st Γ Δ O true)} {bs σ η} {m : Mach Σ η (st Γ Δ O F)} b (G : Apx → 𝒫 Value)
+  → Grow m (λ A → 𝒱 (bit b) ⊆ G A)
+  → 𝒮 (run k bs σ η ⟨ regs m , frame m , opened m , b ⟩) ⊆ λ z → Σ[ A ∈ Apx ] AL A m × z ∈ 𝒦 σ (K k bs (σ̂ A) (ρ̂ A) (G A))
+flag-⊆ {k = k} {bs} {σ} b G g z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ with grown g A' al'
+... | ⟨ A , ⟨ al , ⟨ E , F⊆ ⟩ ⟩ ⟩ = ⟨ A , ⟨ al , 𝒦-mono σ (K-mono k bs (σ̂E E) (ρ̂E E) F⊆) z z∈ ⟩ ⟩
 
-hd-tl : ∀ {D Ds} z → z ∈ 𝒯L (D ∷ Ds) → mem (hd z) ⊆ D × mem (tl z) ⊆ 𝒯L Ds
-hd-tl (tup[ zero ] x) ⟨ ⟨ _ , x∈ ⟩ , _ ⟩ = ⟨ (λ { _ (here refl) → x∈ }) , (λ _ ()) ⟩
-hd-tl (tup[ suc i ] x) ⟨ a , ⟨ _ , ne ⟩ ⟩ = ⟨ (λ _ ()) , (λ { _ (here refl) → ⟨ a , ne ⟩ }) ⟩
+{- Calls and returns -----------------------------------------------------------------------}
 
-tup-split : ∀ Ds V → AllNE Ds → mem V ⊆ 𝒯L Ds
-  → Σ[ Gs ∈ List (List Value) ] Pointwise (λ G D → mem G ⊆ D) Gs Ds × AllNE (map mem Gs) × mem V ⊆ 𝒯L (map mem Gs)
-tup-split [] V _ V⊆ = ⟨ [] , ⟨ [] , ⟨ tt , V⊆ ⟩ ⟩ ⟩
-tup-split (D ∷ Ds) V ⟨ ⟨ w , w∈ ⟩ , ne ⟩ V⊆
-    with tup-split Ds (pick tl V) ne (pick-⊆ tl V λ z z∈ → proj₂ (hd-tl z (V⊆ z z∈)))
-... | ⟨ Gs , ⟨ pw , ⟨ neGs , V'⊆ ⟩ ⟩ ⟩ =
-  ⟨ G₀ ∷ Gs
-  , ⟨ ++-⊆ (w ∷ []) (pick hd V) (λ { _ (here refl) → w∈ }) (pick-⊆ hd V λ z z∈ → proj₁ (hd-tl z (V⊆ z z∈))) ∷ pw
-    , ⟨ neAll , (λ z z∈ → g z z∈ (V⊆ z z∈)) ⟩ ⟩ ⟩
+{- callq: the callee's approximation gives the entries X ↦ (Y ↦ w) of the
+   code that the caller applies -}
+call-⊆ : ∀ {n Bs Γ Δ O F} {k : Seq Σ n Bs (returned Δ)} {bs σ η} {m : Mach Σ η (st Γ Δ O F)} (a : Arg Σ (st Γ Δ O F) codeα) e₁ e₂
+  → 𝒮 (start (arg a m) (cast e₁ (regs m ⦅ rdi ⦆)) (cast e₂ (regs m ⦅ rsi ⦆)) (retK k bs (frame m) σ)) ⊆ 𝒮 (run (callq a e₁ e₂ ∷ k) bs σ η m)
+call-⊆ {n} {k = k} {bs} {σ} {η} {m} a e₁ e₂ = gw (arg a m) (grow-arg {m = m} a)
   where
-  G₀ = w ∷ pick hd V
-  neAll : AllNE (mem G₀ ∷ map mem Gs)
-  neAll = ⟨ ⟨ w , here refl ⟩ , neGs ⟩
-  g : ∀ z → z ∈ mem V → z ∈ 𝒯L (D ∷ Ds) → z ∈ 𝒯L (mem G₀ ∷ map mem Gs)
-  g (tup[ zero ] x) z∈ ⟨ ⟨ len , _ ⟩ , _ ⟩ =
-    ⟨ ⟨ trans (length-map mem Gs) (trans (Pointwise-length pw) len) , there (pick-∈ hd V z∈ x (here refl)) ⟩ , neAll ⟩
-  g (tup[ suc i ] x) z∈ _ = ⟨ proj₁ (V'⊆ (tup[ i ] x) (pick-∈ tl V z∈ _ (here refl))) , neAll ⟩
-
-{- Locations ---------------------------------------------------------------------}
-
-_≟L_ : (l l' : Loc) → Dec (l ≡ l')
-var x ≟L var y with x ≟ y
-... | yes refl = yes refl
-... | no ne = no λ { refl → ne refl }
-reg g ≟L reg g' with g ≟R g'
-... | yes refl = yes refl
-... | no ne = no λ { refl → ne refl }
-var x ≟L reg g = no λ ()
-reg g ≟L var x = no λ ()
-
-{- the registers other than g, after writing g -}
-↦ₘ-other : ∀ (ρ : MRegs) g m g' → g' ≢ g → (ρ [ g ↦ₘ m ]) g' ≡ ρ g'
-↦ₘ-other ρ rax m rax ne = ⊥-elim (ne refl)
-↦ₘ-other ρ rax m rdi ne = refl
-↦ₘ-other ρ rax m rsi ne = refl
-↦ₘ-other ρ rdi m rax ne = refl
-↦ₘ-other ρ rdi m rdi ne = ⊥-elim (ne refl)
-↦ₘ-other ρ rdi m rsi ne = refl
-↦ₘ-other ρ rsi m rax ne = refl
-↦ₘ-other ρ rsi m rdi ne = refl
-↦ₘ-other ρ rsi m rsi ne = ⊥-elim (ne refl)
-
-↦ₘ-here : ∀ (ρ : MRegs) g m → (ρ [ g ↦ₘ m ]) g ≡ m
-↦ₘ-here ρ rax m = refl
-↦ₘ-here ρ rdi m = refl
-↦ₘ-here ρ rsi m = refl
-
-{- what a write of v to d does in the machine -}
-record Put (d : Loc) (v : Val) (φ : Frame) (ρ : MRegs) (φ' : Frame) (ρ' : MRegs) : Set where
-  field
-    p-len : length φ' ≡ length φ
-    p-here : readM φ' ρ' d ≡ just v
-    p-other : ∀ l → l ≢ d → readM φ' ρ' l ≡ readM φ ρ l
-    p-inside : ∀ {x} → d ≡ var x → x < length φ
-open Put
-
-put-inv : ∀ d m {φ ρ K s'} → putM d m φ ρ K ≡ next s'
-  → Σ[ v ∈ Val ] Σ[ φ' ∈ Frame ] Σ[ ρ' ∈ MRegs ] m ≡ just v × s' ≡ K φ' ρ' × Put d v φ ρ φ' ρ'
-put-inv (var x) (just v) {φ} {ρ} e with φ [ x ]≔ v in e'
-put-inv (var x) (just v) {φ} {ρ} refl | just φ' =
-  ⟨ v , ⟨ φ' , ⟨ ρ , ⟨ refl , ⟨ refl , record
-    { p-len = Common.Assigned.len a ; p-here = Common.Assigned.here a
-    ; p-other = λ { (var y) ne → Common.Assigned.other a y (λ { refl → ne refl }) ; (reg g) ne → refl }
-    ; p-inside = λ { refl → Common.Assigned.inside a } } ⟩ ⟩ ⟩ ⟩ ⟩
-  where a = Common.≔-inv [] φ x e'
-put-inv (reg g) (just v) {φ} {ρ} refl =
-  ⟨ v , ⟨ φ , ⟨ ρ [ g ↦ₘ just v ] , ⟨ refl , ⟨ refl , record
-    { p-len = refl ; p-here = ↦ₘ-here ρ g (just v)
-    ; p-other = λ { (var y) ne → refl ; (reg g') ne → ↦ₘ-other ρ g (just v) g' (λ { refl → ne refl }) }
-    ; p-inside = λ () } ⟩ ⟩ ⟩ ⟩ ⟩
-
-test-inv : ∀ m {K : Maybe Bool → State} {s'} → test m K ≡ next s' → Σ[ b ∈ Bool ] m ≡ just b × s' ≡ K (just b)
-test-inv (just b) refl = ⟨ b , ⟨ refl , refl ⟩ ⟩
-
-goto-inv : ∀ mb {σ f φ ρ s'} → goto mb σ f φ ρ ≡ next s'
-  → Σ[ b ∈ Block ] Σ[ bs ∈ List Block ] mb ≡ just ⟨ b , bs ⟩ × s' ≡ run (Block.instrs b) (Block.jump b) bs σ f φ ρ
-goto-inv (just ⟨ b , bs ⟩) refl = ⟨ b , ⟨ bs , ⟨ refl , refl ⟩ ⟩ ⟩
-
-bind-inv : ∀ {A B : Set} (m : Maybe A) {f : A → Maybe B} {r} → (m >>= f) ≡ just r → Σ[ x ∈ A ] m ≡ just x × f x ≡ just r
-bind-inv (just x) e = ⟨ x , ⟨ refl , e ⟩ ⟩
-
-Evals : Frame → MRegs → List Arg → List Val → Set
-Evals φ ρ = Pointwise (λ a u → arg φ ρ a ≡ just u)
-
-args-inv : ∀ {φ ρ} acc as {k : List Val → Maybe Val} {w} → args φ ρ acc as k ≡ just w
-  → Σ[ us ∈ List Val ] Evals φ ρ as us × k (reverse acc ++ us) ≡ just w
-args-inv {φ} {ρ} acc [] {k} e = ⟨ [] , ⟨ [] , subst (λ vs → k vs ≡ _) (sym (++-identityʳ' (reverse acc))) e ⟩ ⟩
-  where ++-identityʳ' : ∀ (xs : List Val) → xs ++ [] ≡ xs
-        ++-identityʳ' [] = refl
-        ++-identityʳ' (x ∷ xs) = cong (x ∷_) (++-identityʳ' xs)
-args-inv {φ} {ρ} acc (a ∷ as) {k} e with arg φ ρ a in ea
-... | just u with args-inv (u ∷ acc) as e
-...   | ⟨ us , ⟨ es , e' ⟩ ⟩ =
-  ⟨ u ∷ us , ⟨ ea ∷ es , subst (λ vs → k vs ≡ _) (++-assoc (reverse acc) [ u ] us) (subst (λ vs → k (vs ++ us) ≡ _) (unfold-reverse' u acc) e') ⟩ ⟩
-  where unfold-reverse' : ∀ (u : Val) acc → reverse (u ∷ acc) ≡ reverse acc ++ [ u ]
-        unfold-reverse' u acc = Data.List.Properties.unfold-reverse u acc
-
-{- Soundness, for a table ds of global definitions ---------------------------------}
-
-module _ (ds : List Body) (wfd : DefsWF ds) (con : ∀ k → Con (table ds k)) where
-
-  open Common ds
-
-  {- the table, with ν added to every entry -}
-  T⁺ : Table
-  T⁺ k = table ds k ∪ ⌈ ν ⌉
-
-  private
-    ν~ : ∀ {f} z → z ∈ Λ ⟨ f , ptt ⟩ → ν ~ z × z ~ ν
-    ν~ ν _ = ⟨ tt , tt ⟩
-    ν~ (V ↦ w) _ = ⟨ tt , tt ⟩
-
-    table-ν : ∀ Ns k z → z ∈ table Ns k → ν ~ z × z ~ ν
-    table-ν (N ∷ Ns) k z z∈ with k ≟ length Ns
-    ... | yes _ = ν~ z z∈
-    ... | no _ = table-ν Ns k z z∈
-
-  T⁺-con : ∀ k → Con (T⁺ k)
-  T⁺-con k a b (inj₁ a∈) (inj₁ b∈) = con k a b a∈ b∈
-  T⁺-con k a b (inj₁ a∈) (inj₂ refl) = proj₂ (table-ν ds k a a∈)
-  T⁺-con k a b (inj₂ refl) (inj₁ b∈) = proj₁ (table-ν ds k b b∈)
-  T⁺-con k a b (inj₂ refl) (inj₂ refl) = tt
-
-  open Den T⁺ (λ k → inj₂ refl) T⁺-con
-
-  {- within the machine, the same table on both sides -}
-  module M (n : ℕ) = Mono {T⁺} {T⁺} {λ _ → ⊤} (λ _ _ _ z → z) n
-
-  {- Approximations ---------------------------------------------------------------}
-
-  Apx : Set
-  Apx = Loc → List Value
-
-  {- a finite part of the denotation of what a location holds -}
-  Ap : List Value → Maybe Val → Set
-  Ap A (just v) = mem A ⊆ 𝒱 v
-  Ap A nothing = A ≡ []
-
-  AL : Apx → Frame → MRegs → Set
-  AL A φ ρ = ∀ l → Ap (A l) (readM φ ρ l)
-
-  σ̂ : Apx → Store
-  σ̂ A x = mem (A (var x))
-
-  ρ̂ : Apx → SRegs
-  ρ̂ A g = mem (A (reg g))
-
-  𝓕 : Maybe Bool → 𝒫 Value
-  𝓕 (just b) = ⌈ dout (bool b) ⌉
-  𝓕 nothing = ∅
-
-  {- what runs from a point of a body on -}
-  K : List Instr → Jump → List Block → ℕ → Kont
-  K is j bs n = ⟦ is ⟧ˢ T⁺ n (⟦ j ⟧ʲ (blocks T⁺ n bs))
-
-  K-mono : ∀ is j bs n → M.MonoK n (K is j bs n) (K is j bs n)
-  K-mono is j bs n = M.is-mono n is (code-⊤ is) (M.jump-mono n j (M.blocks-mono n bs (codes-⊤ bs)))
-
-  {- the call stack: a caller runs its rest with the callee's result -}
-  𝒦 : Stack → 𝒫 Value → 𝒫 Value
-  𝒦 halt D d = d ∈ D
-  𝒦 (retK is j bs φ stk) D d =
-    Σ[ A ∈ Apx ] Σ[ W ∈ List Value ] (∀ x → Ap (A (var x)) (φ ‼ x)) × mem W ⊆ D × W ≢ []
-      × d ∈ 𝒦 stk (K is j bs (length φ) (σ̂ A) (called (mem W)) ∅)
-
-  𝒮 : State → 𝒫 Value
-  𝒮 (run is j bs stk f φ ρ) d = Σ[ A ∈ Apx ] AL A φ ρ × d ∈ 𝒦 stk (K is j bs (length φ) (σ̂ A) (ρ̂ A) (𝓕 f))
-
-  𝒦-mono : ∀ stk {D E} → D ⊆ E → 𝒦 stk D ⊆ 𝒦 stk E
-  𝒦-mono halt D⊆ = D⊆
-  𝒦-mono (retK is j bs φ stk) D⊆ d ⟨ A , ⟨ W , ⟨ af , ⟨ W⊆ , r ⟩ ⟩ ⟩ ⟩ =
-    ⟨ A , ⟨ W , ⟨ af , ⟨ (λ x x∈ → D⊆ x (W⊆ x x∈)) , r ⟩ ⟩ ⟩ ⟩
-
-  Ext : Apx → Apx → Set
-  Ext A B = ∀ l → mem (A l) ⊆ mem (B l)
-
-  Ext-trans : ∀ {A B C} → Ext A B → Ext B C → Ext A C
-  Ext-trans E E' l d d∈ = E' l d (E l d d∈)
-
-  Ext-le : ∀ {n A B F} → Ext A B → M.Le n (σ̂ A) (ρ̂ A) F (σ̂ B) (ρ̂ B) F
-  Ext-le E = ⟨ (λ x → E (var x)) , ⟨ (λ g → E (reg g)) , (λ _ z → z) ⟩ ⟩
-
-  add : Apx → Loc → List Value → Apx
-  add A l V l' with l' ≟L l
-  ... | yes _ = A l' ++ V
-  ... | no _ = A l'
-
-  clear : Apx → Loc → Apx
-  clear A l l' with l' ≟L l
-  ... | yes _ = []
-  ... | no _ = A l'
-
-  ap-[] : ∀ m → Ap [] m
-  ap-[] (just v) = λ _ ()
-  ap-[] nothing = refl
-
-  here-⊆ : ∀ {A φ ρ l v} → AL A φ ρ → readM φ ρ l ≡ just v → mem (A l) ⊆ 𝒱 v
-  here-⊆ {A} {l = l} al e = subst (Ap (A l)) e (al l)
-
-  add-AL : ∀ {A φ ρ v} l V → AL A φ ρ → readM φ ρ l ≡ just v → mem V ⊆ 𝒱 v → AL (add A l V) φ ρ
-  add-AL {A} l V al e V⊆ l' with l' ≟L l
-  ... | yes refl = subst (Ap (A l ++ V)) (sym e) (++-⊆ (A l) V (here-⊆ al e) V⊆)
-  ... | no _ = al l'
-
-  add-ext : ∀ A l V → Ext A (add A l V)
-  add-ext A l V l' with l' ≟L l
-  ... | yes _ = λ d d∈ → ∈-++⁺ˡ d∈
-  ... | no _ = λ d z → z
-
-  add-here : ∀ A l V → mem V ⊆ mem (add A l V l)
-  add-here A l V with l ≟L l
-  ... | yes _ = λ d d∈ → ∈-++⁺ʳ (A l) d∈
-  ... | no ne = ⊥-elim (ne refl)
-
-  clear-AL : ∀ {A φ ρ φ' ρ'} d → AL A φ' ρ' → (∀ l → l ≢ d → readM φ' ρ' l ≡ readM φ ρ l) → AL (clear A d) φ ρ
-  clear-AL {A} {φ} {ρ} d al oth l with l ≟L d
-  ... | yes _ = ap-[] (readM φ ρ l)
-  ... | no ne = subst (Ap (A l)) (oth l ne) (al l)
-
-  clear-⊆ : ∀ A d l → l ≢ d → mem (A l) ⊆ mem (clear A d l)
-  clear-⊆ A d l ne with l ≟L d
-  ... | yes e = ⊥-elim (ne e)
-  ... | no _ = λ _ z → z
-
-  {- a nonempty finite part -}
-  ext : List Value → Val → List Value
-  ext A v = A ++ proj₁ (𝒱-nonempty v) ∷ []
-
-  ext-⊆ : ∀ A v → mem A ⊆ 𝒱 v → mem (ext A v) ⊆ 𝒱 v
-  ext-⊆ A v A⊆ = ++-⊆ A _ A⊆ (λ { _ (here refl) → proj₂ (𝒱-nonempty v) })
-
-  ext-ne : ∀ A v → ext A v ≢ []
-  ext-ne [] v ()
-  ext-ne (x ∷ A) v ()
-
-  ext-pt : ∀ A v → proj₁ (𝒱-nonempty v) ∈ mem (ext A v)
-  ext-pt A v = ∈-++⁺ʳ A (here refl)
-
-  read-in : ∀ {n σ} x → x < n → σ x ⊆ readD n σ x
-  read-in {n} x x< with x <? n
-  ... | yes _ = λ _ z → z
-  ... | no ¬x< = ⊥-elim (¬x< x<)
-
-  checked-in : ∀ {n x D} → x < n → D ⊆ checked n x D
-  checked-in {n} {x} x< with x <? n
-  ... | yes _ = λ _ z → z
-  ... | no ¬x< = ⊥-elim (¬x< x<)
-
-  𝒪-ext : ∀ {n A B} a → Ext A B → 𝒪 T⁺ n (σ̂ A) (ρ̂ A) a ⊆ 𝒪 T⁺ n (σ̂ B) (ρ̂ B) a
-  𝒪-ext {n} a E = M.𝒪-mono n a (ok-⊤ a) (λ x → E (var x)) (λ g → E (reg g))
-
-  {- the operand a, which holds v, approximated by enough to hold V -}
-  grow : ∀ a {φ ρ v} A V → AL A φ ρ → arg φ ρ a ≡ just v → mem V ⊆ 𝒱 v
-    → Σ[ B ∈ Apx ] AL B φ ρ × Ext A B × mem V ⊆ 𝒪 T⁺ (length φ) (σ̂ B) (ρ̂ B) a
-  grow (loc (var x)) {φ} A V al e V⊆ =
-    ⟨ add A (var x) V , ⟨ add-AL (var x) V al e V⊆ , ⟨ add-ext A (var x) V
-    , (λ d d∈ → read-in x (‼-just φ x e) d (add-here A (var x) V d d∈)) ⟩ ⟩ ⟩
-  grow (loc (reg g)) A V al e V⊆ = ⟨ add A (reg g) V , ⟨ add-AL (reg g) V al e V⊆ , ⟨ add-ext A (reg g) V , add-here A (reg g) V ⟩ ⟩ ⟩
-  grow (imm B k) A V al refl V⊆ = ⟨ A , ⟨ al , ⟨ (λ l d z → z) , V⊆ ⟩ ⟩ ⟩
-  grow (label k) A V al refl V⊆ = ⟨ A , ⟨ al , ⟨ (λ l d z → z) , V⊆ ⟩ ⟩ ⟩
-
-  grows : ∀ as {φ ρ us} A Gs → AL A φ ρ → Evals φ ρ as us → Pointwise (λ G u → mem G ⊆ 𝒱 u) Gs us
-    → Σ[ B ∈ Apx ] AL B φ ρ × Ext A B × Pointwise (λ a G → mem G ⊆ 𝒪 T⁺ (length φ) (σ̂ B) (ρ̂ B) a) as Gs
-  grows [] A [] al [] [] = ⟨ A , ⟨ al , ⟨ (λ l d z → z) , [] ⟩ ⟩ ⟩
-  grows (a ∷ as) A (G ∷ Gs) al (e ∷ es) (g ∷ gs) with grow a A G al e g
-  ... | ⟨ B , ⟨ alB , ⟨ E , G⊆ ⟩ ⟩ ⟩ with grows as B Gs alB es gs
-  ...   | ⟨ C , ⟨ alC , ⟨ E' , ps ⟩ ⟩ ⟩ = ⟨ C , ⟨ alC , ⟨ Ext-trans E E' , (λ d d∈ → 𝒪-ext a E' d (G⊆ d d∈)) ∷ ps ⟩ ⟩ ⟩
-
-  {- Writes ----------------------------------------------------------------------}
-
-  {- d := D, where D holds a finite part V of v as large as what d holds
-     after the step -}
-  write : ∀ d {v φ ρ φ' ρ' A' A D κ F} → Put d v φ ρ φ' ρ' → AL A' φ' ρ'
-    → (∀ l → l ≢ d → mem (A' l) ⊆ mem (A l)) → mem (ext (A' d) v) ⊆ D → M.MonoK (length φ) κ κ
-    → κ (σ̂ A') (ρ̂ A') F ⊆ putD (length φ) d D κ (σ̂ A) (ρ̂ A) F
-  write (var x) {v} {A' = A'} {A} P al' oth V⊆ mκ w w∈ =
-    checked-in (p-inside P refl) w
-      ⟨ V , ⟨ ⟨ mκ ⟨ s , ⟨ (λ g → oth (reg g) (λ ())) , (λ _ z → z) ⟩ ⟩ w w∈ , ⟨ ext-ne _ v , Con⇒≈ V (𝒱-con v) V⊆v ⟩ ⟩
-          , ⟨ V⊆ , ext-ne _ v ⟩ ⟩ ⟩
+  e = cast e₁ (regs m ⦅ rdi ⦆)
+  w = cast e₂ (regs m ⦅ rsi ⦆)
+  gw : (c : Val Σ (code η)) → (∀ W → mem W ⊆ 𝒱 c → Grow m (λ A → mem W ⊆ 𝒪 T a (σ̂ A) (ρ̂ A)))
+    → 𝒮 (start c e w (retK k bs (frame m) σ)) ⊆ λ z → Σ[ A ∈ Apx ] AL A m × z ∈ 𝒦 σ (⟦_⟧ⁱ T {n} (callq a e₁ e₂) (K k bs) (σ̂ A) (ρ̂ A) (𝓕 (flag m)))
+  gw (code f) g z ⟨ A' , ⟨ al' , ⟨ Ac , ⟨ W , ⟨ fr , ⟨ W⊆ , ⟨ W≢ , z∈ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
+      with grown (both {m = m} (g (map ent W) entries) (λ E h d d∈ → 𝒪-mono (σ̂E E) (ρ̂E E) a d (h d d∈))
+             (both {m = m} (grow-at {m = m} 1 X (λ d d∈ → cast-𝒱 e₁ d (ext-⊆ (A' 1) (𝒱-ne e) (al' 1) d d∈))) (λ E h d d∈ → E 1 d (h d d∈))
+                   (grow-at {m = m} 2 Y (λ d d∈ → cast-𝒱 e₂ d (ext-⊆ (A' 2) (𝒱-ne w) (al' 2) d d∈))))
+             ) A₀ al₀
     where
-    V = ext (A' (var x)) v
-    V⊆v = ext-⊆ _ v (here-⊆ al' (p-here P))
-    s : ∀ y → σ̂ A' y ⊆ (σ̂ A [ x ↦ₛ mem V ]) y
-    s y with y ≟ x
-    ... | yes refl = λ d d∈ → ∈-++⁺ˡ d∈
-    ... | no ne = oth (var y) (λ { refl → ne refl })
-  write (reg g) {v} {A' = A'} {A} {D} P al' oth V⊆ mκ w w∈ =
-    ⟨ ⟨ _ , V⊆ _ (ext-pt (A' (reg g)) v) ⟩ , mκ ⟨ (λ x → oth (var x) (λ ())) , ⟨ r , (λ _ z → z) ⟩ ⟩ w w∈ ⟩
-    where
-    r : ∀ g' → ρ̂ A' g' ⊆ (ρ̂ A [ g ≔ D ]) g'
-    r g' with g' ≟R g
-    ... | yes refl = subst (λ X → ρ̂ A' g ⊆ X) (sym (≔-here (ρ̂ A) g D)) (λ d d∈ → V⊆ d (∈-++⁺ˡ d∈))
-    ... | no ne = subst (λ X → ρ̂ A' g' ⊆ X) (sym (≔-other (ρ̂ A) g D g' ne)) (oth (reg g') (λ { refl → ne refl }))
-
-  {- what the operands of an instruction must hold so that it writes, or
-     sets the flag to, enough of the value written -}
-  PutH : Frame → MRegs → Maybe Val → (Store → SRegs → 𝒫 Value) → Set
-  PutH φ ρ m Dfun = ∀ {v} A₀ V → m ≡ just v → AL A₀ φ ρ → mem V ⊆ 𝒱 v
-    → Σ[ A ∈ Apx ] AL A φ ρ × Ext A₀ A × mem V ⊆ Dfun (σ̂ A) (ρ̂ A)
-
-  FlagH : Frame → MRegs → Maybe Bool → (Store → SRegs → 𝒫 Value) → Set
-  FlagH φ ρ m Ffun = ∀ {b} A₀ → m ≡ just b → AL A₀ φ ρ → Σ[ A ∈ Apx ] AL A φ ρ × Ext A₀ A × 𝓕 (just b) ⊆ Ffun (σ̂ A) (ρ̂ A)
-
-  {- a step that writes d -}
-  put-step : ∀ d (Dfun : Store → SRegs → 𝒫 Value) {m φ ρ stk is j bs f s'}
-    → putM d m φ ρ (run is j bs stk f) ≡ next s' → PutH φ ρ m Dfun
-    → 𝒮 s' ⊆ λ w → Σ[ A ∈ Apx ] AL A φ ρ
-                × w ∈ 𝒦 stk (putD (length φ) d (Dfun (σ̂ A) (ρ̂ A)) (K is j bs (length φ)) (σ̂ A) (ρ̂ A) (𝓕 f))
-  put-step d Dfun {m} {φ} {stk = stk} {is} {j} {bs} {f} e h w w∈ with put-inv d m e
-  ... | ⟨ v , ⟨ φ' , ⟨ ρ' , ⟨ refl , ⟨ refl , P ⟩ ⟩ ⟩ ⟩ ⟩ with w∈
-  ...   | ⟨ A' , ⟨ al' , w∈' ⟩ ⟩
-        with h (clear A' d) (ext (A' d) v) refl (clear-AL d al' (p-other P)) (ext-⊆ _ v (here-⊆ al' (p-here P)))
-  ...     | ⟨ A , ⟨ al , ⟨ E , V⊆ ⟩ ⟩ ⟩ =
-    ⟨ A , ⟨ al , 𝒦-mono stk (write d P al' (λ l ne u u∈ → E l u (clear-⊆ A' d l ne u u∈)) V⊆ (K-mono is j bs (length φ))) w
-                   (subst (λ n → w ∈ 𝒦 stk (K is j bs n (σ̂ A') (ρ̂ A') (𝓕 f))) (p-len P) w∈') ⟩ ⟩
-
-  {- a step that sets the flag -}
-  flag-step : ∀ (Ffun : Store → SRegs → 𝒫 Value) {m φ ρ stk is j bs s'}
-    → test m (λ f' → run is j bs stk f' φ ρ) ≡ next s' → FlagH φ ρ m Ffun
-    → 𝒮 s' ⊆ λ w → Σ[ A ∈ Apx ] AL A φ ρ × w ∈ 𝒦 stk (flagD (Ffun (σ̂ A) (ρ̂ A)) (K is j bs (length φ)) (σ̂ A) (ρ̂ A))
-  flag-step Ffun {m} {φ} {stk = stk} {is} {j} {bs} e h w w∈ with test-inv m e
-  ... | ⟨ b , ⟨ refl , refl ⟩ ⟩ with w∈
-  ...   | ⟨ A' , ⟨ al' , w∈' ⟩ ⟩ with h A' refl al'
-  ...     | ⟨ A , ⟨ al , ⟨ E , F⊆ ⟩ ⟩ ⟩ =
-    ⟨ A , ⟨ al , 𝒦-mono stk (λ u u∈ → ⟨ ⟨ _ , F⊆ _ refl ⟩
-                                     , K-mono is j bs (length φ) ⟨ (λ x → E (var x)) , ⟨ (λ g → E (reg g)) , F⊆ ⟩ ⟩ u u∈ ⟩) w w∈' ⟩ ⟩
-
-  {- What the instructions compute ------------------------------------------------}
-
-  {- the operands of alloc -}
-  pw-𝒱s : ∀ Gs us → Pointwise (λ G D → mem G ⊆ D) Gs (𝒱s us) → Pointwise (λ G u → mem G ⊆ 𝒱 u) Gs us
-  pw-𝒱s [] [] [] = []
-  pw-𝒱s (G ∷ Gs) (u ∷ us) (g ∷ gs) = g ∷ pw-𝒱s Gs us gs
-
-  module _ {n : ℕ} {σ : Store} {ρ : SRegs} where
-    private O = 𝒪 T⁺ n σ ρ
-
-    At-𝒪s : ∀ as (i : Fin (length as)) d → At i (map O as) d → d ∈ nthD (𝒪s T⁺ n σ ρ as) i
-    At-𝒪s (a ∷ as) zero d ⟨ _ , d∈ ⟩ = d∈
-    At-𝒪s (a ∷ as) (suc i) d a∈ = At-𝒪s as i d a∈
-
-    NE-𝒪s : ∀ as → AllNE (map O as) → ∀ i → nonempty (nthD (𝒪s T⁺ n σ ρ as) i)
-    NE-𝒪s (a ∷ as) ⟨ ne , _ ⟩ zero = ne
-    NE-𝒪s (a ∷ as) ⟨ _ , nes ⟩ (suc i) = NE-𝒪s as nes i
-
-    𝒯L-𝒪s : ∀ as → 𝒯L (map O as) ⊆ 𝒯 (length as) (𝒪s T⁺ n σ ρ as)
-    𝒯L-𝒪s [] ⟨⟩ tt = tt
-    𝒯L-𝒪s [] (tup[ zero ] d) ⟨ () , _ ⟩
-    𝒯L-𝒪s [] (tup[ suc i ] d) ⟨ () , _ ⟩
-    𝒯L-𝒪s (a ∷ as) (tup[_]_ {m} i d) ⟨ a∈ , ne ⟩ with trans (sym (length-map O (a ∷ as))) (At-length i _ d a∈)
-    ... | refl = ⟨ refl , ⟨ At-𝒪s (a ∷ as) i d a∈ , NE-𝒪s (a ∷ as) ne ⟩ ⟩
-
-    ⊆L-pw : ∀ as Gs → Pointwise (λ a G → mem G ⊆ O a) as Gs → map mem Gs ⊆L map O as
-    ⊆L-pw [] [] [] = tt
-    ⊆L-pw (a ∷ as) (G ∷ Gs) (p ∷ ps) = ⟨ p , ⊆L-pw as Gs ps ⟩
-
-  {- the operands of alloc sh, approximated by Gs, build enough of the object -}
-  build-ok : ∀ sh us {v} → build sh us ≡ just v → ∀ V → mem V ⊆ 𝒱 v
-    → Σ[ Gs ∈ List (List Value) ] Pointwise (λ G u → mem G ⊆ 𝒱 u) Gs us
-      × (∀ {n σ ρ} as → Pointwise (λ a G → mem G ⊆ 𝒪 T⁺ n σ ρ a) as Gs → mem V ⊆ object T⁺ n σ ρ sh as)
-  build-ok pairₛ (u₁ ∷ u₂ ∷ []) refl V V⊆ with pair-split V V⊆
-  ... | ⟨ P⊆ , ⟨ Q⊆ , V⊆' ⟩ ⟩ =
-    ⟨ pick fstv V ∷ pick sndv V ∷ [] , ⟨ P⊆ ∷ Q⊆ ∷ []
-    , (λ { (a ∷ b ∷ []) (pa ∷ pb ∷ []) x x∈ → lower (pair-mono _ _ ⟨ lift pa , ⟨ lift pb , ptt ⟩ ⟩) x (V⊆' x x∈) }) ⟩ ⟩
-  build-ok tupleₛ us refl V V⊆ with tup-split (𝒱s us) V (𝒱s-nonempty us) V⊆
-  ... | ⟨ Gs , ⟨ pw , ⟨ _ , V⊆' ⟩ ⟩ ⟩ =
-    ⟨ Gs , ⟨ pw-𝒱s Gs us pw
-    , (λ as ps x x∈ → 𝒯L-𝒪s as x (𝒯L-mono (map mem Gs) _ (⊆L-pw as Gs ps) x (V⊆' x x∈))) ⟩ ⟩
-  build-ok inlₛ (u ∷ []) refl V V⊆ with inl-split V V⊆
-  ... | ⟨ P⊆ , V⊆' ⟩ = ⟨ pick lft V ∷ [] , ⟨ P⊆ ∷ [] , (λ { (a ∷ []) (pa ∷ []) x x∈ → inl-⊆ pa x (V⊆' x x∈) }) ⟩ ⟩
-  build-ok inrₛ (u ∷ []) refl V V⊆ with inr-split V V⊆
-  ... | ⟨ P⊆ , V⊆' ⟩ = ⟨ pick rgt V ∷ [] , ⟨ P⊆ ∷ [] , (λ { (a ∷ []) (pa ∷ []) x x∈ → inr-⊆ pa x (V⊆' x x∈) }) ⟩ ⟩
-
-  {- V, each element wrapped by f, is in Y -}
-  wrap : ∀ (f : Value → Value) V {X Y : 𝒫 Value} → (∀ x → x ∈ X → f x ∈ Y) → mem V ⊆ X → mem (map f V) ⊆ Y
-  wrap f V {Y = Y} h V⊆ y y∈ = G (∈-map⁻ f y∈)
-    where
-    G : ∀ {y} → Σ[ x ∈ Value ] x ∈ mem V × y ≡ f x → y ∈ Y
-    G ⟨ x , ⟨ x∈ , refl ⟩ ⟩ = h x (V⊆ x x∈)
-
-  {- the operand of load fl, approximated by G, takes enough of the field -}
-  field-ok : ∀ fl u {v} → get-field fl u ≡ just v → ∀ V → mem V ⊆ 𝒱 v
-    → Σ[ G ∈ List Value ] mem G ⊆ 𝒱 u × mem V ⊆ field′ fl (mem G)
-  field-ok fstₛ (pair v w) refl V V⊆ =
-    ⟨ _ , ⟨ wrap (λ p → ⦅ p , proj₁ (𝒱-nonempty w) ⦆) V (λ p p∈ → ⟨ p∈ , proj₂ (𝒱-nonempty w) ⟩) V⊆ , (λ p p∈ → ⟨ _ , ∈-map⁺ _ p∈ ⟩) ⟩ ⟩
-  field-ok sndₛ (pair v w) refl V V⊆ =
-    ⟨ _ , ⟨ wrap (λ q → ⦅ proj₁ (𝒱-nonempty v) , q ⦆) V (λ q q∈ → ⟨ proj₂ (𝒱-nonempty v) , q∈ ⟩) V⊆ , (λ q q∈ → ⟨ _ , ∈-map⁺ _ q∈ ⟩) ⟩ ⟩
-  field-ok (getₛ i) (tup us) e V V⊆ =
-    ⟨ _ , ⟨ wrap (tup[ i ]_) V (λ d d∈ → ⟨ proj-𝒱s i us e d d∈ , 𝒱s-nonempty us ⟩) V⊆ , (λ d d∈ → ∈-map⁺ _ d∈) ⟩ ⟩
-  field-ok payload (T.inl v) refl V V⊆ = ⟨ _ , ⟨ wrap left V (λ _ z → z) V⊆ , (λ d d∈ → inj₁ (∈-map⁺ left d∈)) ⟩ ⟩
-  field-ok payload (T.inr v) refl V V⊆ = ⟨ _ , ⟨ wrap right V (λ _ z → z) V⊆ , (λ d d∈ → inj₂ (∈-map⁺ right d∈)) ⟩ ⟩
-
-  mmap-inv : ∀ {A B : Set} (f : A → B) (m : Maybe A) {y} → mmap f m ≡ just y → Σ[ x ∈ A ] m ≡ just x × y ≡ f x
-  mmap-inv f (just x) refl = ⟨ x , ⟨ refl , refl ⟩ ⟩
-
-  truth-inv : ∀ m {b} → truth m ≡ just b → m ≡ just (bool b)
-  truth-inv (just (bool b)) refl = refl
-
-  {- the two integers of a primitive -}
-  prim-ok : ∀ p v w {o} → δ? p (obs v) (obs w) ≡ just o
-    → Σ[ n ∈ _ ] Σ[ m ∈ _ ] dconst {Int} n ∈ 𝒱 v × dconst {Int} m ∈ 𝒱 w × o ≡ δ p n m
-  prim-ok p v w e with δ?-inv p (obs v) (obs w) e
-  ... | ⟨ n , ⟨ m , ⟨ ov , ⟨ ow , refl ⟩ ⟩ ⟩ ⟩ = ⟨ n , ⟨ m , ⟨ int-in v ov , ⟨ int-in w ow , refl ⟩ ⟩ ⟩ ⟩
-
-  {- the code of the definition that a call runs, and the older ones -}
-  callee : ∀ k {b} → global ds k ≡ just b
-    → Σ[ Ns ∈ List Body ] table ds k ≡ codeD (table Ns) b × (∀ j → j < length Ns → table ds j ≡ table Ns j)
-       × BodyOK (length Ns) (2 ⊔ Body.locals b) b
-  callee k {b} eg with global-split k eg
-  ... | ⟨ xs , ⟨ Ns , ⟨ e , refl ⟩ ⟩ ⟩ =
-    ⟨ Ns , ⟨ trans (cong (λ L → table L (length Ns)) e) (table-at xs b Ns)
-    , ⟨ (λ j j< → trans (cong (λ L → table L j) (trans e (sym (++-assoc xs [ b ] Ns)))) (table-agree (xs ++ [ b ]) Ns j j<))
-    , proj₁ (DefsWF-suffix xs (subst DefsWF e wfd)) ⟩ ⟩ ⟩
-
-  ap-zeros : ∀ A m x → Ap A (zeros m ‼ x) → mem A ⊆ zerosD x
-  ap-zeros A m x ap with zeros m ‼ x in e
-  ... | just w with replicate-‼-just m x e
-  ...   | refl = ap
-  ap-zeros A m x refl | nothing = λ _ ()
-
-  callq-inv : ∀ m {stk ρ s'} → callq? ds m stk ρ ≡ next s'
-    → Σ[ k ∈ ℕ ] Σ[ n ∈ ℕ ] Σ[ bs ∈ List Block ] Σ[ b ∈ Block ] Σ[ e₁ ∈ Val ] Σ[ e₂ ∈ Val ]
-       m ≡ just (code k) × global ds k ≡ just (body n bs b) × ρ rdi ≡ just e₁ × ρ rsi ≡ just e₂
-       × s' ≡ run (Block.instrs b) (Block.jump b) bs stk nothing (zeros (2 + (n ∸ 2))) (regs nothing (just e₁) (just e₂))
-  callq-inv (just (code k)) {ρ = ρ} e with global ds k in eg | ρ rdi | ρ rsi
-  callq-inv (just (code k)) refl | just (body n bs b) | just v₁ | just v₂ =
-    ⟨ k , ⟨ n , ⟨ bs , ⟨ b , ⟨ v₁ , ⟨ v₂ , ⟨ refl , ⟨ eg , ⟨ refl , ⟨ refl , refl ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-  callq-inv (just (code k)) () | just _ | just _ | nothing
-  callq-inv (just (code k)) () | just _ | nothing | _
-  callq-inv (just (code k)) () | nothing | _ | _
-
-  {- the registers a callee starts with and a caller continues with -}
-  rax-only : List Value → Apx
-  rax-only W (reg rax) = W
-  rax-only W _ = []
-
-  {- callq: the callee's approximation gives the entries X ↦ (Y ↦ w) of
-     its code that the caller applies -}
-  call-step : ∀ a {is j bs stk f φ ρ s'} → callq? ds (arg φ ρ a) (retK is j bs φ stk) ρ ≡ next s'
-    → 𝒮 s' ⊆ 𝒮 (run (callq a ∷ is) j bs stk f φ ρ)
-  call-step a {is} {j} {bs} {stk} {f} {φ} {ρ} e w w∈ with callq-inv (arg φ ρ a) e
-  ... | ⟨ k , ⟨ m , ⟨ bbs , ⟨ bst , ⟨ e₁ , ⟨ e₂ , ⟨ ea , ⟨ eg , ⟨ er₁ , ⟨ er₂ , refl ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ with w∈
-  ... | ⟨ A' , ⟨ al' , ⟨ A'' , ⟨ W , ⟨ af , ⟨ W⊆ , ⟨ W≢ , w∈' ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ with callee k eg
-  ... | ⟨ Ns , ⟨ et , ⟨ agree , c ∷ cs ⟩ ⟩ ⟩
-      with grows (loc (reg rdi) ∷ loc (reg rsi) ∷ a ∷ []) A₀ (X ∷ Y ∷ map entry W ∷ []) al₀
-                 (er₁ ∷ er₂ ∷ ea ∷ []) (ext-⊆ _ e₁ (here-⊆ al' refl) ∷ ext-⊆ _ e₂ (here-⊆ al' refl) ∷ entries ∷ [])
-    where
+    X = ext (A' 1) (𝒱-ne e)
+    Y = ext (A' 2) (𝒱-ne w)
+    ent : Value → Value
+    ent w' = X ↦ (Y ↦ w')
     A₀ : Apx
-    A₀ (var x) = A'' (var x)
-    A₀ (reg g) = []
-    al₀ : AL A₀ φ ρ
-    al₀ (var x) = af x
-    al₀ (reg g) = ap-[] (ρ g)
-    X = ext (A' (reg rdi)) e₁
-    Y = ext (A' (reg rsi)) e₂
-    entry : Value → Value
-    entry w = X ↦ (Y ↦ w)
-    n' = length (zeros (2 + (m ∸ 2)))
-    TT : ∀ k' → k' < length Ns → T⁺ k' ⊆ table Ns k'
-    TT k' k'< x (inj₁ x∈) = subst (λ T → x ∈ T) (agree k' k'<) x∈
-    TT k' k'< x (inj₂ refl) = ν-table Ns k' k'<
-    regs-le : ∀ g → ρ̂ A' g ⊆ argsD (mem X) (mem Y) g
-    regs-le rax = subst (λ L → mem L ⊆ ∅) (sym (al' (reg rax))) (λ _ ())
-    regs-le rdi = λ d d∈ → ∈-++⁺ˡ d∈
-    regs-le rsi = λ d d∈ → ∈-++⁺ˡ d∈
-    runs : ∀ w → w ∈ mem W → w ∈ runD (table Ns) (2 ⊔ m) (body m bbs bst) zerosD (argsD (mem X) (mem Y)) ∅
-    runs w w∈W = Mono.body-mono TT (2 ⊔ m) m bbs bst (c ∷ cs)
-      ⟨ (λ x → ap-zeros (A' (var x)) (2 + (m ∸ 2)) x (al' (var x))) , ⟨ regs-le , (λ _ z → z) ⟩ ⟩ w
-      (subst (λ n → w ∈ K (Block.instrs bst) (Block.jump bst) bbs n (σ̂ A') (ρ̂ A') ∅) (frame-size m) (W⊆ w w∈W))
-    entries : mem (map entry W) ⊆ T⁺ k
-    entries x x∈ with ∈-map⁻ entry x∈
-    ... | ⟨ w , ⟨ w∈W , refl ⟩ ⟩ =
-      inj₁ (subst (λ T → entry w ∈ T) (sym et)
-        ⟨ ⟨ runs w w∈W , ⟨ ext-ne _ e₂ , Con⇒≈ Y (𝒱-con e₂) (ext-⊆ _ e₂ (here-⊆ al' refl)) ⟩ ⟩
-        , ⟨ ext-ne _ e₁ , Con⇒≈ X (𝒱-con e₁) (ext-⊆ _ e₁ (here-⊆ al' refl)) ⟩ ⟩)
-  ... | ⟨ B , ⟨ alB , ⟨ E , X⊆ ∷ Y⊆ ∷ F⊆ ∷ [] ⟩ ⟩ ⟩ =
-    ⟨ B , ⟨ alB , 𝒦-mono stk (λ u u∈ → ⟨ R-ne , K-mono is j bs (length φ)
-                                ⟨ (λ x → E (var x)) , ⟨ M.called-le (length φ) W⊆R , (λ _ z → z) ⟩ ⟩ u u∈ ⟩) w w∈' ⟩ ⟩
+    A₀ = λ { 0 → [] ; 1 → [] ; 2 → [] ; l → Ac l }
+    al₀ : AL A₀ m
+    al₀ = λ { 0 → λ _ () ; 1 → λ _ () ; 2 → λ _ () ; (suc (suc (suc i))) → fr i }
+    entries : mem (map ent W) ⊆ T f
+    entries x x∈ with ∈-map⁻ ent x∈
+    ... | ⟨ w' , ⟨ w'∈ , refl ⟩ ⟩ = closed f (ent w')
+      ⟨ ⟨ K-mono (Body.start (ds ! f)) (Body.blocks (ds ! f)) (λ i → al' (suc (suc (suc i))))
+            (λ { rax → ∅⊆ (al' 0) ; rdi → λ d d∈ → ∈-++⁺ˡ d∈ ; rsi → λ d d∈ → ∈-++⁺ˡ d∈ }) (λ _ ()) w' (W⊆ w' w'∈)
+        , ⟨ ext-ne _ (𝒱-ne w) , Con⇒≈ Y (𝒱-con w) (ext-⊆ (A' 2) (𝒱-ne w) (al' 2)) ⟩ ⟩
+      , ⟨ ext-ne _ (𝒱-ne e) , Con⇒≈ X (𝒱-con e) (ext-⊆ (A' 1) (𝒱-ne e) (al' 1)) ⟩ ⟩
+  ... | ⟨ A , ⟨ al , ⟨ E , ⟨ F⊆ , ⟨ X⊆ , Y⊆ ⟩ ⟩ ⟩ ⟩ ⟩ =
+    ⟨ A , ⟨ al , 𝒦-mono σ (λ u u∈ → ⟨ ne-mem W≢ W⊆C , K-mono k bs (σ̂E E) (λ { rax → W⊆C ; rdi → ⊆r ; rsi → ⊆r }) ⊆r u u∈ ⟩) z z∈ ⟩ ⟩
     where
-    R = ⋆ ⟨ ⋆ ⟨ 𝒪 T⁺ (length φ) (σ̂ B) (ρ̂ B) a , ⟨ ρ̂ B rdi , ptt ⟩ ⟩ , ⟨ ρ̂ B rsi , ptt ⟩ ⟩
-    W⊆R : mem W ⊆ R
-    W⊆R w w∈W = ⟨ _ , ⟨ ⟨ _ , ⟨ F⊆ _ (∈-map⁺ _ w∈W) , ⟨ X⊆ , ext-ne _ e₁ ⟩ ⟩ ⟩ , ⟨ Y⊆ , ext-ne _ e₂ ⟩ ⟩ ⟩
-    R-ne : nonempty R
-    R-ne with E≢[]⇒nonempty-mem W≢
-    ... | ⟨ w₀ , w₀∈ ⟩ = ⟨ w₀ , W⊆R w₀ w₀∈ ⟩
+    W⊆C : mem W ⊆ ⋆ ⟨ ⋆ ⟨ 𝒪 T a (σ̂ A) (ρ̂ A) , ⟨ ρ̂ A rdi , ptt ⟩ ⟩ , ⟨ ρ̂ A rsi , ptt ⟩ ⟩
+    W⊆C w' w'∈ = ⟨ _ , ⟨ ⟨ _ , ⟨ F⊆ _ (∈-map⁺ _ w'∈) , ⟨ X⊆ , ext-ne _ (𝒱-ne e) ⟩ ⟩ ⟩ , ⟨ Y⊆ , ext-ne _ (𝒱-ne w) ⟩ ⟩ ⟩
 
-  {- Steps shrink the denotation of the state ---------------------------------}
+{- Steps ----------------------------------------------------------------------------------------}
 
-  step-⊆ : ∀ s {s'} → step ds s ≡ next s' → 𝒮 s' ⊆ 𝒮 s
-  step-⊆ (run (movq a d ∷ is) j bs stk f φ ρ) e =
-    put-step d (λ σ ρ → 𝒪 T⁺ (length φ) σ ρ a) {m = arg φ ρ a} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} {f = f} e λ A₀ V ea al V⊆ → grow a A₀ V al ea V⊆
-  step-⊆ (run (subq a d ∷ is) j bs stk f φ ρ) e = put-step d Df {m = M} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} {f = f} e h
-    where
-    M = arg φ ρ a >>= λ w → readM φ ρ d >>= λ u → prim? sub u w
-    Df = λ σ ρ' → primD sub ⟨ 𝒪 T⁺ (length φ) σ ρ' (loc d) , ⟨ 𝒪 T⁺ (length φ) σ ρ' a , ptt ⟩ ⟩
-    h : PutH φ ρ M Df
-    h A₀ V em al V⊆ with bind-inv (arg φ ρ a) em
-    ... | ⟨ w , ⟨ ea , em' ⟩ ⟩ with bind-inv (readM φ ρ d) em'
-    ... | ⟨ u , ⟨ ed , ep ⟩ ⟩ with mmap-inv out (δ? sub (obs u) (obs w)) ep
-    ... | ⟨ o , ⟨ eo , refl ⟩ ⟩ with prim-ok sub u w eo
-    ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , refl ⟩ ⟩ ⟩ ⟩ with grow (loc d) A₀ (dconst n ∷ []) al ed (λ { _ (here refl) → n∈ })
-    ... | ⟨ B , ⟨ alB , ⟨ E , n⊆ ⟩ ⟩ ⟩ with grow a B (dconst m ∷ []) alB ea (λ { _ (here refl) → m∈ })
-    ... | ⟨ C , ⟨ alC , ⟨ E' , m⊆ ⟩ ⟩ ⟩ =
-      ⟨ C , ⟨ alC , ⟨ Ext-trans E E'
-      , (λ x x∈ → ⟨ n , ⟨ m , ⟨ 𝒪-ext (loc d) E' _ (n⊆ _ (here refl)) , ⟨ m⊆ _ (here refl) , 𝒱-out _ x (V⊆ x x∈) ⟩ ⟩ ⟩ ⟩) ⟩ ⟩ ⟩
-  step-⊆ (run (cmpq a₂ a₁ ∷ is) j bs stk f φ ρ) e = flag-step Ff {m = M} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} e h
-    where
-    M = arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w
-    Ff = λ σ ρ' → primD eq ⟨ 𝒪 T⁺ (length φ) σ ρ' a₁ , ⟨ 𝒪 T⁺ (length φ) σ ρ' a₂ , ptt ⟩ ⟩
-    h : FlagH φ ρ M Ff
-    h A₀ em al with bind-inv (arg φ ρ a₁) em
-    ... | ⟨ v , ⟨ e₁ , em' ⟩ ⟩ with bind-inv (arg φ ρ a₂) em'
-    ... | ⟨ w , ⟨ e₂ , ec ⟩ ⟩ with prim-ok eq v w (truth-inv _ ec)
-    ... | ⟨ n , ⟨ m , ⟨ n∈ , ⟨ m∈ , eo ⟩ ⟩ ⟩ ⟩ with grow a₁ A₀ (dconst n ∷ []) al e₁ (λ { _ (here refl) → n∈ })
-    ... | ⟨ B , ⟨ alB , ⟨ E , n⊆ ⟩ ⟩ ⟩ with grow a₂ B (dconst m ∷ []) alB e₂ (λ { _ (here refl) → m∈ })
-    ... | ⟨ C , ⟨ alC , ⟨ E' , m⊆ ⟩ ⟩ ⟩ =
-      ⟨ C , ⟨ alC , ⟨ Ext-trans E E'
-      , (λ { x refl → ⟨ n , ⟨ m , ⟨ 𝒪-ext a₁ E' _ (n⊆ _ (here refl)) , ⟨ m⊆ _ (here refl) , cong dout eo ⟩ ⟩ ⟩ ⟩ }) ⟩ ⟩ ⟩
-  step-⊆ (run (sete d ∷ is) j bs stk (just b) φ ρ) e =
-    put-step d (λ _ _ → 𝓕 (just b)) {m = just (bit b)} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} {f = just b} e λ { A₀ V refl al V⊆ → ⟨ A₀ , ⟨ al , ⟨ (λ l u z → z) , (λ x x∈ → 𝒱-out (bool b) x (V⊆ x x∈)) ⟩ ⟩ ⟩ }
-  step-⊆ (run (testinl a ∷ is) j bs stk f φ ρ) e = flag-step Ff {m = arg φ ρ a >>= is-inl} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} e h
-    where
-    Ff = λ σ ρ' → isinl (𝒪 T⁺ (length φ) σ ρ' a)
-    h : FlagH φ ρ (arg φ ρ a >>= is-inl) Ff
-    h A₀ em al with bind-inv (arg φ ρ a) em
-    ... | ⟨ T.inl u , ⟨ ea , refl ⟩ ⟩ with grow a A₀ (left (proj₁ (𝒱-nonempty u)) ∷ []) al ea (λ { _ (here refl) → proj₂ (𝒱-nonempty u) })
-    ...   | ⟨ B , ⟨ alB , ⟨ E , l⊆ ⟩ ⟩ ⟩ = ⟨ B , ⟨ alB , ⟨ E , (λ { x refl → inj₁ ⟨ _ , ⟨ l⊆ _ (here refl) , refl ⟩ ⟩ }) ⟩ ⟩ ⟩
-    h A₀ em al | ⟨ T.inr u , ⟨ ea , refl ⟩ ⟩ with grow a A₀ (right (proj₁ (𝒱-nonempty u)) ∷ []) al ea (λ { _ (here refl) → proj₂ (𝒱-nonempty u) })
-    ...   | ⟨ B , ⟨ alB , ⟨ E , r⊆ ⟩ ⟩ ⟩ = ⟨ B , ⟨ alB , ⟨ E , (λ { x refl → inj₂ ⟨ _ , ⟨ r⊆ _ (here refl) , refl ⟩ ⟩ }) ⟩ ⟩ ⟩
-  step-⊆ (run (alloc sh as d ∷ is) j bs stk f φ ρ) e = put-step d Df {m = args φ ρ [] as (build sh)} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} {f = f} e h
-    where
-    Df = λ σ ρ' → object T⁺ (length φ) σ ρ' sh as
-    h : PutH φ ρ (args φ ρ [] as (build sh)) Df
-    h A₀ V em al V⊆ with args-inv [] as em
-    ... | ⟨ us , ⟨ es , eb ⟩ ⟩ with build-ok sh us eb V V⊆
-    ... | ⟨ Gs , ⟨ pw , obj ⟩ ⟩ with grows as A₀ Gs al es pw
-    ... | ⟨ B , ⟨ alB , ⟨ E , ps ⟩ ⟩ ⟩ = ⟨ B , ⟨ alB , ⟨ E , obj as ps ⟩ ⟩ ⟩
-  step-⊆ (run (load fl a d ∷ is) j bs stk f φ ρ) e = put-step d Df {m = arg φ ρ a >>= get-field fl} {φ = φ} {ρ = ρ} {stk = stk} {is = is} {j = j} {bs = bs} {f = f} e h
-    where
-    Df = λ σ ρ' → field′ fl (𝒪 T⁺ (length φ) σ ρ' a)
-    h : PutH φ ρ (arg φ ρ a >>= get-field fl) Df
-    h A₀ V em al V⊆ with bind-inv (arg φ ρ a) em
-    ... | ⟨ u , ⟨ ea , eg ⟩ ⟩ with field-ok fl u eg V V⊆
-    ... | ⟨ G , ⟨ G⊆ , V⊆' ⟩ ⟩ with grow a A₀ G al ea G⊆
-    ... | ⟨ B , ⟨ alB , ⟨ E , G⊆' ⟩ ⟩ ⟩ = ⟨ B , ⟨ alB , ⟨ E , (λ x x∈ → M.field-mono (length φ) fl G⊆' x (V⊆' x x∈)) ⟩ ⟩ ⟩
-  step-⊆ (run (callq a ∷ is) j bs stk f φ ρ) e = call-step a {is} {j} {bs} {stk} {f} {φ} {ρ} e
-  step-⊆ (run [] retq bs halt f φ ρ) e with ρ rax
-  step-⊆ (run [] retq bs halt f φ ρ) () | just v
-  step-⊆ (run [] retq bs halt f φ ρ) () | nothing
-  step-⊆ (run [] retq bs (retK is j bs' φ' stk) f φ ρ) e w w∈ with ρ rax in er
-  step-⊆ (run [] retq bs (retK is j bs' φ' stk) f φ ρ) refl w ⟨ A' , ⟨ al' , w∈ ⟩ ⟩ | just v =
-    ⟨ rax-only W , ⟨ al , ⟨ A' , ⟨ W , ⟨ (λ x → al' (var x)) , ⟨ (λ _ z → z) , ⟨ ext-ne _ v
-    , 𝒦-mono stk (K-mono is j bs' (length φ') ⟨ (λ _ _ z → z) , ⟨ r , (λ _ z → z) ⟩ ⟩) w w∈ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩
-    where
-    W = ext (A' (reg rax)) v
-    al : AL (rax-only W) φ ρ
-    al (reg rax) = subst (Ap W) (sym er) (ext-⊆ _ v (here-⊆ al' refl))
-    al (reg rdi) = ap-[] (ρ rdi)
-    al (reg rsi) = ap-[] (ρ rsi)
-    al (var x) = ap-[] (φ ‼ x)
-    r : ∀ g → ρ̂ A' g ⊆ called (mem W) g
-    r rax = λ d d∈ → ∈-++⁺ˡ d∈
-    r rdi = subst (λ L → mem L ⊆ ∅) (sym (al' (reg rdi))) (λ _ ())
-    r rsi = subst (λ L → mem L ⊆ ∅) (sym (al' (reg rsi))) (λ _ ())
-  step-⊆ (run [] retq bs (retK is j bs' φ' stk) f φ ρ) () w w∈ | nothing
-  step-⊆ (run [] (jmp l) bs stk f φ ρ) e w w∈ with goto-inv (block-at bs l) e
-  ... | ⟨ b , ⟨ bs' , ⟨ eb , refl ⟩ ⟩ ⟩ with w∈
-  ... | ⟨ A , ⟨ al , w∈' ⟩ ⟩ =
-    ⟨ A , ⟨ al , subst (λ B → w ∈ 𝒦 stk (B (σ̂ A) (ρ̂ A) (𝓕 f))) (sym (blocks-at bs l eb)) w∈' ⟩ ⟩
-  step-⊆ (run [] (je l₁ l₂) bs stk (just true) φ ρ) e w w∈ with goto-inv (block-at bs l₁) e
-  ... | ⟨ b , ⟨ bs' , ⟨ eb , refl ⟩ ⟩ ⟩ with w∈
-  ... | ⟨ A , ⟨ al , w∈' ⟩ ⟩ =
-    ⟨ A , ⟨ al , 𝒦-mono stk (λ u u∈ → inj₁ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → refl })
-                               , ⟨ subst (λ B → u ∈ B (σ̂ A) (ρ̂ A) (𝓕 (just true))) (sym (blocks-at bs l₁ eb)) u∈ , ≈-single ⟩ ⟩ ⟩ ⟩) w w∈' ⟩ ⟩
-  step-⊆ (run [] (je l₁ l₂) bs stk (just false) φ ρ) e w w∈ with goto-inv (block-at bs l₂) e
-  ... | ⟨ b , ⟨ bs' , ⟨ eb , refl ⟩ ⟩ ⟩ with w∈
-  ... | ⟨ A , ⟨ al , w∈' ⟩ ⟩ =
-    ⟨ A , ⟨ al , 𝒦-mono stk (λ u u∈ → inj₂ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → refl })
-                               , ⟨ subst (λ B → u ∈ B (σ̂ A) (ρ̂ A) (𝓕 (just false))) (sym (blocks-at bs l₂ eb)) u∈ , ≈-single ⟩ ⟩ ⟩ ⟩) w w∈' ⟩ ⟩
+{- what a step does: a step to s' keeps the open closure in agreement with its
+   slot and shrinks the denotation, and a stop with an answer returns v -}
+Back : State Σ → Next (State Σ) → Set
+Back s (next s') = Inv s' × 𝒮 s' ⊆ 𝒮 s
+Back s (stop o) = Answer o → Σ[ v ∈ Val Σ Any ] o ≡ obs v × 𝒱 v ⊆ 𝒮 s
 
-  ↠-⊆ : ∀ {s t} → s ↠ t → 𝒮 t ⊆ 𝒮 s
-  ↠-⊆ done d d∈ = d∈
-  ↠-⊆ {s} (st ∷↠ σ) d d∈ = step-⊆ s st d (↠-⊆ σ d d∈)
-
-  {- Final states ----------------------------------------------------------------}
-
-  private
-    put-stop : ∀ d m {φ ρ K o} → putM d m φ ρ K ≡ stop o → o ≡ o-wrong
-    put-stop d nothing refl = refl
-    put-stop (var x) (just v) {φ} e with φ [ x ]≔ v
-    put-stop (var x) (just v) refl | nothing = refl
-    put-stop (var x) (just v) () | just _
-
-    test-stop : ∀ m {K : Maybe Bool → State} {o} → test m K ≡ stop o → o ≡ o-wrong
-    test-stop nothing refl = refl
-
-    goto-stop : ∀ mb {σ f φ ρ o} → goto mb σ f φ ρ ≡ stop o → o ≡ o-wrong
-    goto-stop nothing refl = refl
-
-    callq-stop : ∀ m {stk ρ o} → callq? ds m stk ρ ≡ stop o → o ≡ o-wrong
-    callq-stop (just (code k)) {ρ = ρ} e with global ds k | ρ rdi | ρ rsi
-    callq-stop (just (code k)) () | just (body _ _ _) | just _ | just _
-    callq-stop (just (code k)) refl | just _ | just _ | nothing = refl
-    callq-stop (just (code k)) refl | just _ | nothing | _ = refl
-    callq-stop (just (code k)) refl | nothing | _ | _ = refl
-    callq-stop (just (pair _ _)) refl = refl
-    callq-stop (just (const _ _)) refl = refl
-    callq-stop (just (tup _)) refl = refl
-    callq-stop (just (T.inl _)) refl = refl
-    callq-stop (just (T.inr _)) refl = refl
-    callq-stop nothing refl = refl
-
-    wrong : ∀ {o} → o ≡ o-wrong → Answer o → ⊥
-    wrong refl ans = ans refl
-
-  {- a state that stops with an answer has an element of its shape -}
-  final-shape : ∀ s {o} → step ds s ≡ stop o → Answer o → Σ[ d ∈ Value ] d ∈ 𝒮 s × ShapeOf o d
-  final-shape (run (movq a d ∷ is) j bs stk f φ ρ) e ans = ⊥-elim (wrong (put-stop d (arg φ ρ a) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
-  final-shape (run (subq a d ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (arg φ ρ a >>= λ w → readM φ ρ d >>= λ u → prim? sub u w) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
-  final-shape (run (cmpq a₂ a₁ ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (test-stop (arg φ ρ a₁ >>= λ v → arg φ ρ a₂ >>= λ w → cmp v w) {K = λ f' → run is j bs stk f' φ ρ} e) ans)
-  final-shape (run (sete d ∷ is) j bs stk (just b) φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (just (bit b)) {φ = φ} {ρ = ρ} {K = run is j bs stk (just b)} e) ans)
-  final-shape (run (sete d ∷ is) j bs stk nothing φ ρ) refl ans = ⊥-elim (ans refl)
-  final-shape (run (testinl a ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (test-stop (arg φ ρ a >>= is-inl) {K = λ f' → run is j bs stk f' φ ρ} e) ans)
-  final-shape (run (alloc sh as d ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (args φ ρ [] as (build sh)) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
-  final-shape (run (load fl a d ∷ is) j bs stk f φ ρ) e ans =
-    ⊥-elim (wrong (put-stop d (arg φ ρ a >>= get-field fl) {φ = φ} {ρ = ρ} {K = run is j bs stk f} e) ans)
-  final-shape (run (callq a ∷ is) j bs stk f φ ρ) e ans = ⊥-elim (wrong (callq-stop (arg φ ρ a) {retK is j bs φ stk} {ρ} e) ans)
-  final-shape (run [] retq bs halt f φ ρ) e ans with ρ rax in er
-  final-shape (run [] retq bs halt f φ ρ) refl ans | just v with 𝒱-shape v
-  ... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ = ⟨ d , ⟨ ⟨ rax-only (d ∷ []) , ⟨ al , here refl ⟩ ⟩ , sh ⟩ ⟩
-    where
-    al : AL (rax-only (d ∷ [])) φ ρ
-    al (reg rax) = subst (Ap (d ∷ [])) (sym er) (λ { _ (here refl) → d∈ })
-    al (reg rdi) = ap-[] (ρ rdi)
-    al (reg rsi) = ap-[] (ρ rsi)
-    al (var x) = ap-[] (φ ‼ x)
-  final-shape (run [] retq bs halt f φ ρ) refl ans | nothing = ⊥-elim (ans refl)
-  final-shape (run [] retq bs (retK is j bs' φ' stk) f φ ρ) e ans with ρ rax
-  final-shape (run [] retq bs (retK is j bs' φ' stk) f φ ρ) () ans | just v
-  final-shape (run [] retq bs (retK is j bs' φ' stk) f φ ρ) refl ans | nothing = ⊥-elim (ans refl)
-  final-shape (run [] (jmp l) bs stk f φ ρ) e ans = ⊥-elim (wrong (goto-stop (block-at bs l) {stk} {f} {φ} {ρ} e) ans)
-  final-shape (run [] (je l₁ l₂) bs stk (just true) φ ρ) e ans = ⊥-elim (wrong (goto-stop (block-at bs l₁) {stk} {just true} {φ} {ρ} e) ans)
-  final-shape (run [] (je l₁ l₂) bs stk (just false) φ ρ) e ans = ⊥-elim (wrong (goto-stop (block-at bs l₂) {stk} {just false} {φ} {ρ} e) ans)
-  final-shape (run [] (je l₁ l₂) bs stk nothing φ ρ) refl ans = ⊥-elim (ans refl)
-
-{- Soundness ------------------------------------------------------------------}
-
-{- a well-formed program that terminates with an answer o has an element
-   of the shape of o in its denotation -}
-soundness : ∀ P → WF P → ∀ {o} → Terminates (sem P) o → Answer o
-  → Σ[ d ∈ Value ] d ∈ ⟦ P ⟧ₚ × ShapeOf o d
-soundness (program ds (body n bs b)) ⟨ wfd , ⟨ cs , con ⟩ ⟩ ⟨ s , ⟨ σ , fin ⟩ ⟩ ans
-    with final-shape ds wfd con s fin ans
-... | ⟨ d , ⟨ d∈ , sh ⟩ ⟩ with ↠-⊆ ds wfd con (Common.star→↠ ds σ) d d∈
-... | ⟨ A , ⟨ al , d∈₀ ⟩ ⟩ =
-  ⟨ d , ⟨ Mono.body-mono TT n n bs b cs ⟨ (λ x → ap-zeros ds wfd con (A (var x)) n x (al (var x))) , ⟨ r , (λ _ z → z) ⟩ ⟩ d
-            (subst (λ m → d ∈ K ds wfd con (Block.instrs b) (Block.jump b) bs m _ _ ∅) (length-replicate n) d∈₀)
-        , sh ⟩ ⟩
+back : ∀ s → Inv s → Back s (step ds s)
+back (run (movq a d ∷ k) bs σ η m) i = ⟨ put-inv d i , (λ z z∈ → nn (put-⊆ d {k = k} {bs} {σ} {η} {m} (λ A → 𝒪 T a (σ̂ A) (ρ̂ A)) (grow-arg {m = m} a) z z∈)) ⟩
+back (run (subq a r e ∷ k) bs σ η m) i = ⟨ i , (λ z z∈ →
+  nn (put-⊆ (reg r) {k = k} {bs} {σ} {η} {m} (λ A → primD sub ⟨ ρ̂ A r , ⟨ 𝒪 T a (σ̂ A) (ρ̂ A) , ptt ⟩ ⟩)
+        (λ W W⊆ → both {m = m} (grow-arg {m = m} (reg r e) _ (one (int∈ (cast e (regs m ⦅ r ⦆))))) (λ E h d d∈ → E (ix r) d (h d d∈)) (grow-arg {m = m} a _ (one (int∈ (arg a m))))
+          ⊳ λ { ⟨ h₁ , h₂ ⟩ d d∈ → prim-in sub h₁ h₂ d (W⊆ d d∈) }) z z∈)) ⟩
+back (run (cmpq a₂ a₁ ∷ k) bs σ η m) i = ⟨ i ,
+  flag-⊆ {k = k} {bs} {σ} {η} {m} (does (int (arg a₁ m) ≟ℤ int (arg a₂ m))) (λ A → primD eq ⟨ 𝒪 T a₁ (σ̂ A) (ρ̂ A) , ⟨ 𝒪 T a₂ (σ̂ A) (ρ̂ A) , ptt ⟩ ⟩)
+    (both {m = m} (grow-arg {m = m} a₁ _ (one (int∈ (arg a₁ m)))) (λ E h d d∈ → 𝒪-mono (σ̂E E) (ρ̂E E) a₁ d (h d d∈)) (grow-arg {m = m} a₂ _ (one (int∈ (arg a₂ m))))
+      ⊳ λ { ⟨ h₁ , h₂ ⟩ → prim-in eq h₁ h₂ }) ⟩
+back (run (sete d ∷ k) bs σ η m) i =
+  ⟨ put-inv d i , (λ z z∈ → nn (put-⊆ d {k = k} {bs} {σ} {η} {m} (λ _ → 𝓕 (flag m)) (λ W W⊆ → grow λ A₀ al → ⟨ A₀ , ⟨ al , ⟨ (λ _ → ⊆r) , W⊆ ⟩ ⟩ ⟩) z z∈)) ⟩
+back (run (testinl a ∷ k) bs σ η m) i = ⟨ i , flag-⊆ {k = k} {bs} {σ} {η} {m} (is-inl (arg a m)) (λ A → isinl (𝒪 T a (σ̂ A) (ρ̂ A))) (grow-isinl a) ⟩
+back (run (alloc o d ∷ k) bs σ η m) i = ⟨ put-inv d i , (λ z z∈ →
+  nn (put-⊆ d {k = k} {bs} {σ} {η} {m} (λ A → object T o (σ̂ A) (ρ̂ A))
+        (λ W W⊆ → grow-each {m = m} _ (λ E → object-mono (σ̂E E) (ρ̂E E) o) W (λ z z∈ → grow-obj o z (W⊆ z z∈))) z z∈)) ⟩
+back (run (load f a d ∷ k) bs σ η m) i = ⟨ put-inv d i , (λ z z∈ →
+  nn (put-⊆ d {k = k} {bs} {σ} {η} {m} (λ A → fieldₛ T f (𝒪 T a (σ̂ A) (ρ̂ A)))
+        (λ W W⊆ → grow-each {m = m} _ (λ E → fieldₛ-mono f (𝒪-mono (σ̂E E) (ρ̂E E) a)) W (λ z z∈ → grow-field f a z (W⊆ z z∈))) z z∈)) ⟩
+back (run (loadfst x r ∷ k) bs σ η m) i = ⟨ pack-eta (frame m ! x) , (λ z z∈ →
+  nn (reg-⊆ r {k} {bs} {σ} {m} {wipeᵣ (regs m)} {⟨ code-of (frame m ! x) , env-of (frame m ! x) ⟩} {code-of (frame m ! x)} (λ A → carD ⟨ σ̂ A (idx x) , ptt ⟩) wipe-𝓛
+        (λ W W⊆ → grow-each {m = m} _ (λ E → lower (car-mono _ _ ⟨ lift (σ̂E E (idx x)) , ptt ⟩)) W
+          (λ z z∈ → fst (frame m ! x) (grow-arg {m = m} (atom (var x))) (W⊆ z z∈))) z z∈)) ⟩
   where
-  TT : ∀ k → k < length ds → T⁺ ds wfd con k ⊆ table ds k
-  TT k k< x (inj₁ x∈) = x∈
-  TT k k< x (inj₂ refl) = Common.ν-table ds ds k k<
-  r : ∀ g → ρ̂ ds wfd con A g ⊆ called (zerosD 0) g
-  r rax = al (reg rax)
-  r rdi = subst (λ L → mem L ⊆ ∅) (sym (al (reg rdi))) (λ _ ())
-  r rsi = subst (λ L → mem L ⊆ ∅) (sym (al (reg rsi))) (λ _ ())
+  fst : ∀ (v : Val Σ ⟪ fun ⟫) {z} → (∀ W → mem W ⊆ 𝒱 v → Grow m (λ A → mem W ⊆ σ̂ A (idx x)))
+    → z ∈ 𝒱 (code-of v) → Grow m (λ A → z ∈ carD ⟨ σ̂ A (idx x) , ptt ⟩)
+  fst (pack c e) g z∈ = g _ (one ⟨ z∈ , proj₂ (𝒱-ne e) ⟩) ⊳ λ h → ⟨ _ , h _ (here refl) ⟩
+back (run (loadsnd {x = x} r ∷ k) bs σ η m) i = ⟨ i , (λ z z∈ →
+  nn (reg-⊆ r {k} {bs} {σ} {m} {regs m} {opened m} {proj₂ (opened m)} (λ A → cdrD ⟨ σ̂ A (idx x) , ptt ⟩) (λ _ → ⊆r)
+        (λ W W⊆ → grow-each {m = m} _ (λ E → lower (cdr-mono _ _ ⟨ lift (σ̂E E (idx x)) , ptt ⟩)) W
+          (λ z z∈ → grow-arg {m = m} (atom (var x)) _ (one (subst (λ v → ⦅ proj₁ (𝒱-ne (proj₁ (opened m))) , z ⦆ ∈ 𝒱 v) i ⟨ proj₂ (𝒱-ne (proj₁ (opened m))) , W⊆ z z∈ ⟩))
+            ⊳ λ h → ⟨ _ , h _ (here refl) ⟩)) z z∈)) ⟩
+back s@(run (callq a e₁ e₂ ∷ k) bs σ η m) i = subst (Back s) (sym (enter-start (arg a m))) ⟨ inv (arg a m) , call-⊆ a e₁ e₂ ⟩
+  where
+  inv : ∀ {η} (c : Val Σ (code η)) {e w σ'} → Inv (start c e w σ')
+  inv (code f) = tt
+back (run (chk t x d ∷ k) bs σ η m) i with proj? t (frame m ! x) in eq
+... | nothing = λ ans → ⊥-elim (ans refl)
+... | just u = ⟨ put-inv d i , ⊆′ ⟩
+  where
+  g : ∀ W → mem W ⊆ 𝒱 u → Grow ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩ (λ A → mem W ⊆ projectᵍ fun₄ t (σ̂ A (idx x)))
+  g W W⊆ = let ⟨ d₀ , ⟨ d₀∈ , acc ⟩ ⟩ = acc-𝒱 t u in
+    grow-at _ (d₀ ∷ W) (λ { _ (here refl) → 𝓔-lookup (frame m) x _ (proj?-𝒱 t (frame m ! x) eq _ d₀∈)
+                          ; d (there d∈) → 𝓔-lookup (frame m) x _ (proj?-𝒱 t (frame m ! x) eq _ (W⊆ d d∈)) })
+    ⊳ λ h w w∈ → ⟨ ⟨ d₀ , ⟨ h _ (here refl) , acc ⟩ ⟩ , h _ (there w∈) ⟩
+  ⊆′ : 𝒮 (run k bs σ η (put d u ⟨ regs m [ rax ≔ tt ] , frame m , opened m , tt ⟩)) ⊆ 𝒮 (run (chk t x d ∷ k) bs σ η m)
+  ⊆′ z z∈ with put-⊆ d {k} {bs} {σ} {η} (λ A → projectᵍ fun₄ t (σ̂ A (idx x))) g z z∈
+  ... | ⟨ A , ⟨ al , ⟨ ne , z∈′ ⟩ ⟩ ⟩ =
+    ⟨ A , ⟨ (λ { 0 → ∅⊆ (al 0) ; 1 → al 1 ; 2 → al 2 ; (suc (suc (suc j))) → al _ })
+    , 𝒦-mono σ (λ u u∈ → ⟨ ne , put-mono d ⊆r (K-mono k bs) (λ _ → ⊆r) (λ { rax → ∅⊆ (al 0) ; rdi → ⊆r ; rsi → ⊆r }) (λ _ ()) u u∈ ⟩) z z∈′ ⟩ ⟩
+back (run (retq e) bs halt η m) i ans =
+  ⟨ v , ⟨ refl , (λ z z∈ → ⟨ (λ { 0 → z ∷ [] ; _ → [] }) , ⟨ (λ { 0 → λ { _ (here refl) → cast-𝒱 e _ z∈ } ; (suc l) → λ _ () }) , here refl ⟩ ⟩) ⟩ ⟩
+  where v = cast e (regs m ⦅ rax ⦆)
+back (run (retq e) bs (retK k bs' φ σ) η m) i = ⟨ tt , (λ { z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ →
+  ⟨ (λ { 0 → W A' ; _ → [] }) , ⟨ (λ { 0 → λ d d∈ → cast-𝒱 e d (ext-⊆ (A' 0) (𝒱-ne v) (al' 0) d d∈) ; (suc l) → λ _ () })
+  , ⟨ A' , ⟨ W A' , ⟨ (λ j → al' (suc (suc (suc j)))) , ⟨ ⊆r , ⟨ ext-ne _ (𝒱-ne v)
+  , 𝒦-mono σ (K-mono k bs' (λ _ → ⊆r) (λ { rax d d∈ → ∈-++⁺ˡ d∈ ; rdi → ∅⊆ (al' 1) ; rsi → ∅⊆ (al' 2) }) (λ _ ())) z z∈ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ ⟩ }) ⟩
+  where
+  v = cast e (regs m ⦅ rax ⦆)
+  W = λ (A' : Apx) → ext (A' 0) (𝒱-ne v)
+back (run (jmp l) bs σ η m) i = ⟨ tt , (λ { z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ → ⟨ A' , ⟨ unset-AL al' , 𝒦-mono σ (jump bs l al') z z∈ ⟩ ⟩ }) ⟩
+back (run (je l₁ l₂) bs σ η ⟨ ρm , φ , o , true ⟩) i = ⟨ tt , (λ { z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ →
+  ⟨ A' , ⟨ unset-AL al' , 𝒦-mono σ (λ u u∈ → inj₁ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → tt }) , ⟨ jump bs l₁ al' u u∈ , ≈-single ⟩ ⟩ ⟩ ⟩) z z∈ ⟩ ⟩ }) ⟩
+back (run (je l₁ l₂) bs σ η ⟨ ρm , φ , o , false ⟩) i = ⟨ tt , (λ { z ⟨ A' , ⟨ al' , z∈ ⟩ ⟩ →
+  ⟨ A' , ⟨ unset-AL al' , 𝒦-mono σ (λ u u∈ → inj₂ ⟨ ⟨⟩ , ⟨ [] , ⟨ (λ { _ (here refl) → tt }) , ⟨ jump bs l₂ al' u u∈ , ≈-single ⟩ ⟩ ⟩ ⟩) z z∈ ⟩ ⟩ }) ⟩
+
+↠-⊆ : ∀ {s t} → Inv s → s ↠ t → Inv t × 𝒮 t ⊆ 𝒮 s
+↠-⊆ i done = ⟨ i , ⊆r ⟩
+↠-⊆ {s} i (stp ∷↠ τ) = let ⟨ i′ , ⊆₁ ⟩ = subst (Back s) stp (back s i) ; ⟨ i″ , ⊆₂ ⟩ = ↠-⊆ i′ τ in ⟨ i″ , (λ z z∈ → ⊆₁ z (⊆₂ z z∈)) ⟩
+
+{- Soundness ------------------------------------------------------------------------------}
+
+{- what the machine stops with, from main, is in the denotation of the program -}
+soundness : ∀ (b : Body Σ (entry [])) {o} → Terminates (sem (program ds b)) o → Answer o
+  → Σ[ v ∈ Val Σ Any ] o ≡ obs v × 𝒱 v ⊆ ⟦ program ds b ⟧ₜ
+soundness (body n bs k) ⟨ s , ⟨ τ , fin ⟩ ⟩ ans =
+  let ⟨ i , ⊆₁ ⟩ = ↠-⊆ tt (star→↠ τ) ; ⟨ v , ⟨ e , v⊆ ⟩ ⟩ = subst (Back s) fin (back s i) ans in
+  ⟨ v , ⟨ e , (λ z z∈ → start⊆ z (⊆₁ z (v⊆ z z∈))) ⟩ ⟩
+  where
+  start⊆ : 𝒮 (run k bs halt 0 ⟨ rv tt tt tt , [] , tt , tt ⟩) ⊆ ⟦ program ds (body n bs k) ⟧ₜ
+  start⊆ z ⟨ A , ⟨ al , z∈ ⟩ ⟩ =
+    K-mono k bs (λ i → al (suc (suc (suc i)))) (λ { rax → ∅⊆ (al 0) ; rdi → ∅⊆ (al 1) ; rsi → ∅⊆ (al 2) }) (λ _ ()) z z∈
