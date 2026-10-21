@@ -32,7 +32,8 @@ the languages and passes, and each is our best effort in its style.
   determinism of the machines.
 \item \emph{Clocked interpreters and value relations}, in the style of
   CakeML \citep{Kumar:2014aa}. Each language has a total interpreter
-  with a clock that ticks at each function call, and each pass is
+  with a clock that ticks each time the interpreted program calls a
+  function, and each pass is
   proved by relating the results of the two interpreters at the same
   clock.
 \item \emph{Reduction semantics and simulations.} Each language has a
