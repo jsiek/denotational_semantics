@@ -1,33 +1,189 @@
 %% Section 5: evaluation, comparing the denotational proof with the three
-%% operational ones (RQ2, RQ4). Budget: 3.0 pages
+%% operational ones (RQ2 quantitatively, RQ4). Budget: 3.0 pages
 %% (notes/paper-outline.md, section 5). Numbers come from loc.md
-%% (loc.py --mu) and will change; update them before submission.
-%% TODO: setup, accounting rules, Table 1, analysis by kind of pass, full
-%% cost, threats to validity.
+%% ("Current counts", loc.py --mu) and will change; update them before
+%% submission (in particular after the graph-proof cleanup PR).
+%% Why the equational passes exceed the interpreter's: the comparison of
+%% Graph/*Correct.agda with Interp/*Fuel.agda (nonemptiness, laws,
+%% consistency, binder annotations).
 
-\section{Evaluation}
+\section{Evaluation: Comparison with Operational Approaches}
 \label{sec:evaluation}
+
+To measure how concise the denotational proofs are (RQ2) and how the
+denotational approach compares overall with operational ones (RQ4), we
+proved the same compiler correct three more times, in three operational
+styles. This section describes the four developments, compares the
+sizes of their proofs pass by pass, and explains the differences.
+
+\subsection{Setup}
+
+All four developments prove the correctness of the same ten-pass
+compiler (Section~\ref{sec:compiler}), from the same Agda definitions of
+the languages and passes, and each is our best effort in its style.
+\begin{itemize}
+\item \emph{Graph model.} The semantics of each language is the
+  graph-model semantics of Appendix~\ref{app:languages}, and each pass
+  is proved as in Section~\ref{sec:compiler-proof}.
+\item \emph{Abstract machines and simulations}, in the style of
+  CompCert \citep{Leroy:2009aa}. Each language has a small-step CEK
+  machine, and each pass is proved by a forward simulation. The
+  backward direction follows from forward simulation and the
+  determinism of the machines.
+\item \emph{Clocked interpreters and value relations}, in the style of
+  CakeML \citep{Kumar:2014aa}. Each language has a total interpreter
+  with a clock that ticks at each function call, and each pass is
+  proved by relating the results of the two interpreters at the same
+  clock.
+\item \emph{Reduction semantics and simulations.} Each language has a
+  reduction semantics, by substitution for the higher-order languages,
+  and each pass is proved by a simulation between reductions.
+\end{itemize}
+The three operational theorems say that the compiled program terminates
+with the same observation as the source, and that one diverges exactly
+when the other does. With adequacy, the denotational theorem says the
+same (Section~\ref{sec:adequacy}).
+
+We measure each proof by its lines of Agda, not counting comments,
+blank lines, or imports. The counts include the semantics of the
+languages, the proof of each pass, and the composition of the passes.
+They exclude what all four share, namely the languages and passes
+(938 lines). We report the language-independent infrastructure that
+each style relies on, and the adequacy of the graph model, separately.
+
+\subsection{Results}
+
+\begin{table}[t]
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & graph model & machines & interpreters & reduction\\
+\midrule
+semantics of the languages & 375 & 575 & \textbf{374} & 965\\
+lemmas shared by the passes & --- & 11 & --- & ---\\
+\pass{simplify} & \textbf{360} & 584 & 633 & 715\\
+\pass{enclose} & 43 & 93 & \textbf{33} & 164\\
+\pass{optimize} & 83 & 127 & \textbf{65} & 232\\
+\pass{concretize} & 68 & 111 & \textbf{42} & 154\\
+\pass{delay} & 524 & 96 & \textbf{35} & 139\\
+\pass{globalize} & \textbf{118} & 213 & 183 & 219\\
+\pass{remove complex operands} & 125 & 147 & \textbf{85} & 164\\
+\pass{lift locals} & 44 & 51 & \textbf{27} & 204\\
+\pass{explicate control} & \textbf{71} & 105 & 75 & 105\\
+\pass{select instructions} & 83 & 107 & \textbf{48} & 107\\
+composition & 30 & \textbf{20} & 36 & \textbf{20}\\
+shared modules not used by all four & --- & \textbf{15} & \textbf{15} & \textbf{15}\\
+modules reused from an earlier pipeline & 34 & 3 & \textbf{2} & 4\\
+\midrule
+total & 1958 & 2258 & \textbf{1653} & 3207\\
+\bottomrule
+\end{tabular}
+\caption{Lines of Agda in the four correctness proofs of the compiler.
+  The smallest number in each row is in bold.}
+\label{tab:loc}
+\end{table}
+
+Table~\ref{tab:loc} gives the sizes. The proof with clocked
+interpreters is the smallest, at 1,653 lines, followed by the graph
+model at 1,958, abstract machines at 2,258, and reduction semantics at
+3,207. One pass decides the graph model's place: \pass{delay} alone is
+524 lines, a quarter of the total, against 35 to 139 lines in the
+operational styles. Without \pass{delay}, the graph model would be the
+smallest, at 1,434 lines against 1,618 for the interpreters.
+
+\subsection{Analysis}
+
+\paragraph{The graph model wins where a pass simplifies or restructures code.}
+
+The denotational proof is the smallest for \pass{simplify},
+\pass{globalize}, and \pass{explicate control}. For \pass{simplify},
+the gap is largest: 360 lines against 584 to 715. Its denotational
+proof treats the reductions that the pass performs under binders as
+equations (Section~\ref{sec:equational}). Each operational proof must
+instead replay those reductions as steps of the source program: on
+open terms in the reduction semantics, or as a run-ahead of the source
+machine or interpreter, with stuttering where the target does more. The
+interpreter proof is the largest of the three, because \pass{simplify}
+removes calls, so the target needs fewer clock ticks than the source,
+which breaks the usual clock-for-clock argument. For \pass{globalize},
+the interpreter proof relates the two tables of definitions value by
+value, while the denotational proof shows that a reference means what
+the code it replaced means.
+
+\paragraph{Elsewhere the interpreters are slightly smaller.}
+
+For the other equational passes, the denotational proofs are 10 to 40
+lines larger than the interpreter proofs. The difference is not in the
+congruence cases, which take one line per construct in both styles. A
+denotation is a set of values, so the graph model must prove side
+conditions that hold trivially for the single value that an
+interpreter computes: that the sets involved are nonempty, for strict
+closures, $\kw{let}$s, and writes, and that they are consistent, for
+the binders. It must also apply $\beta$ and related laws, with their
+premises, where an interpreter simply runs; the prologue of a function
+body in x86$\mu$ is the largest example. Writing out the bodies of
+binders for the congruence lemmas accounts for some of the rest.
 
 \paragraph{\pass{Delay} is the pass whose denotational proof costs the most.}
 
-The denotational proof of \pass{delay} takes 524 lines of Agda, against 35 to
-139 lines for the same pass in the three operational styles. Most of the difference has three
-sources. First, the denotational proof needs two directions, while a
-simulation proof gets the backward direction for free from forward
-simulation and the determinism of the target. The graph model has an
-analogue of determinism, the consistency of denotations, and it does
-part of the job: if the source produces a constant, the forward
-direction puts that constant in the target, and consistency rules out
-any other. But the graph model represents divergence as the empty set,
-the absence of evidence, and a forward relation cannot carry absence.
-Showing that a diverging program compiles to a diverging program is
-therefore a separate argument, and that argument is reflection. (We use
-different relations for the two directions, the structural one for
-preservation and the approximant one for reflection, because a single
-relation parameterized by the direction made the proof longer: on an
-earlier version of the compiler, switching from one relation to two cut
-the proof of \pass{delay} from 1,358 to 832 lines.)
-Second, reflection needs the finite lists, the batches of calls, and
-the lemma that extracts them from a target call. Third, $\beta$-rules in
-the graph model hold only under side conditions of nonemptiness and
-continuity, which a machine gets for free by taking a step.
+The denotational proof of \pass{delay} takes 524 lines of Agda,
+against 35 to 139 lines for the same pass in the three operational
+styles. Most of the difference has three sources. First, the
+denotational proof needs two directions, while a simulation proof gets
+the backward direction for free from forward simulation and the
+determinism of the target. The graph model has an analogue of
+determinism, the consistency of denotations, and it does part of the
+job: if the source produces a constant, the forward direction puts
+that constant in the target, and consistency rules out any other. But
+the graph model represents divergence as the empty set, the absence of
+evidence, and a forward relation cannot carry absence. Showing that a
+diverging program compiles to a diverging program is therefore a
+separate argument, and that argument is reflection. We use different
+relations for the two directions, the satisfaction relation for
+preservation and the approximant logical relation for reflection,
+because a single relation parameterized by the direction made the
+proof longer: on an earlier version of the compiler, switching from
+one relation to two cut the proof of \pass{delay} from 1,358 to 832
+lines. Second, reflection needs the finite lists, the batches of calls,
+and the lemma that extracts them from a target call. Third, the
+$\beta$-law of the graph model holds only under side conditions of
+nonemptiness and continuity, which a machine gets for free by taking a
+step.
+
+\paragraph{The semantics and the infrastructure}
+
+The graph-model semantics of the ten languages is 375 lines, about the
+same as the interpreters' 374. The machines need 575 lines and the
+reduction semantics 965, which include the laws of substitution and
+the machines of the first-order languages. The infrastructure that the
+counts exclude goes the other way. The graph model relies on 1,542
+lines of language-independent infrastructure, mostly the graph model
+itself and its operators, against 447 for the machines, 413 for the
+interpreters, and 1,191 for the reduction semantics. Adequacy, which
+connects the graph model to the interpreters of the source and target
+languages, is a further 1,532 lines (Section~\ref{sec:adequacy}).
+
+\subsection{The Answers to RQ2 and RQ4}
+
+The comparison confirms the answer to RQ2. For the passes that
+simplify or restructure code while keeping the representation of
+values, the equational proofs are concise: the smallest of the four
+styles for \pass{simplify}, \pass{globalize}, and \pass{explicate
+control}, and within a few dozen lines of the smallest for the others.
+The answer to RQ4 is mixed. Overall, the denotational development ranks
+second, behind the clocked interpreters and ahead of abstract machines
+and reduction semantics. Its advantage on the passes that keep the
+representation of values is outweighed by the single pass that
+changes it.
+
+\subsection{Threats to Validity}
+
+Lines of Agda are only a proxy for proof effort. Each development is
+our best effort, but experience gained in one style carries over to
+the next. The comparison
+covers one compiler, and the sizes depend on choices of semantics, for
+example the continuation-passing semantics of Imp, which makes
+\pass{explicate control} an equation, and on proof engineering that
+could still shrink any of the four developments. Finally, the
+developments share infrastructure unevenly, so we report it
+separately rather than in the totals.

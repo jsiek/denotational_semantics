@@ -82,12 +82,9 @@ The use of Lemma~\ref{lem:beta} needs $\den{M}\rho$ to be nonempty,
 which holds because a syntactic value denotes a nonempty set, and
 consistent, which holds because $\rho$ is. A $\beta$-redex
 $(\lambda x.\, N)\;M$ is the same calculation without the second step.
-The operational proofs must instead replay the reductions that
-\pass{simplify} performs under binders as steps of the source program,
-relate states in which the source runs ahead or the target stutters,
-and, for the clocked interpreter, cope with a target that needs fewer
-clock ticks than its source. The denotational proof is 360 lines of
-Agda, against 584 to 715 for the three operational proofs.
+The reductions that \pass{simplify} performs under binders, and the
+calls that it removes, are equations between sets, so the proof needs
+no notion of an evaluation step.
 
 \paragraph{Enclose}
 
@@ -261,16 +258,17 @@ $\sigma(y) \callop \mathcal{A}\den{a}\sigma$, which is $C$.
 
 \paragraph{The answer to RQ2}
 
-Equational reasoning yields concise proofs for the passes that keep
-the representation of values. For \pass{simplify}, \pass{globalize},
-and \pass{explicate control}, the denotational proof is the smallest of
-the four styles: 360, 118, and 71 lines, against 584 to 715, 183 to
-219, and 75 to 105 for the operational proofs. For the other
-equational passes, the denotational proofs are 10 to 40 lines larger
-than the smallest operational ones, which use clocked interpreters
-(Section~\ref{sec:evaluation}). The exception is \pass{delay}, the pass
-that changes the representation of closures from functions to pairs of
-code and environment. Its correctness is not an equation, and its
-proof is the subject of the rest of this section.
+These calculations answer RQ2 affirmatively. For each of the nine
+passes, the interesting case is a short chain of equations between
+denotations: the meaning of the source form, a few laws of the graph
+model or the semantic equations, the induction hypothesis, and the
+meaning of the target form. The remaining cases are congruences. No
+proof mentions evaluation steps, machine states, or clocks.
+Section~\ref{sec:evaluation} measures how concise these proofs are by
+comparing them with proofs of the same passes in three operational
+styles. The exception is \pass{delay}, the pass that changes the
+representation of closures from functions to pairs of code and
+environment. Its correctness is not an equation, and its proof is the
+subject of the rest of this section.
 
 \input{delay}
