@@ -103,12 +103,15 @@ induction whose cases are congruences and a few laws of the graph
 model (Section~\ref{sec:equational}), largely independent of how the
 pass changes the way the program runs. The size of an operational
 proof tends to depend instead on how closely the run of the target
-follows the run of the source. Nine passes are equations, and for most
-of them the two runs correspond closely; for \pass{simplify} and, to a
-lesser degree, \pass{globalize}, they differ more; and \pass{delay} is
-not an equation. We discuss these three groups in turn.
+follows the run of the source. On the denotational side, the correctness of nine
+of the ten passes is an equation between the meaning of a program and
+the meaning of its translation; only \pass{delay} is the exception. On
+the operational side, the runs of the source and target correspond
+closely for most passes, including \pass{delay}, but differ more for
+\pass{simplify} and, to a lesser degree, \pass{globalize}. Combining
+the two factors gives three groups of passes, which we discuss in turn.
 
-\paragraph{When a pass is an equation and the runs correspond closely, the interpreters tend to be slightly smaller.}
+\paragraph{When correctness is an equation and the runs correspond closely, the interpreter proofs tend to be slightly smaller.}
 
 For \pass{enclose}, \pass{optimize}, \pass{concretize},
 \pass{remove complex operands}, \pass{lift locals}, \pass{explicate
@@ -132,7 +135,7 @@ interpreters only. The reduction semantics, which works by
 substitution, is often much larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
 
-\paragraph{When a pass is an equation but the runs differ more, the graph model tends to be smallest.}
+\paragraph{When correctness is an equation but the runs differ more, the denotational proof tends to be smallest.}
 
 \pass{simplify} is the clearest case, at 349 lines against 584 to 715.
 It reduces programs under binders and removes calls, so the target
@@ -149,7 +152,7 @@ it is a reference into a table of definitions. The interpreter proof
 relates the two tables value by value, while the denotational proof
 shows that a reference means what the code it replaced means.
 
-\paragraph{When a pass is not an equation, the operational styles are much smaller.}
+\paragraph{When correctness is not an equation, the operational proofs are much smaller.}
 
 \pass{Delay} changes how closures are represented, so its correctness
 is not an equation, yet the run of the target follows the run of the
