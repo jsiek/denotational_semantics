@@ -111,7 +111,7 @@ closely for most passes, including \pass{delay}, but differ more for
 \pass{simplify} and, to a lesser degree, \pass{globalize}. Combining
 the two factors gives three groups of passes, which we discuss in turn.
 
-\paragraph{When correctness is an equation and the runs correspond closely, the interpreter proofs tend to be slightly smaller.}
+\paragraph{When denotational correctness is an equation and the runs correspond closely, the interpreter proofs tend to be slightly smaller.}
 
 For \pass{enclose}, \pass{optimize}, \pass{concretize},
 \pass{remove complex operands}, \pass{lift locals}, \pass{explicate
@@ -140,7 +140,7 @@ interpreters only. The reduction semantics, which works by
 substitution, is often much larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
 
-\paragraph{When correctness is an equation but the runs differ more, the denotational proof tends to be smallest.}
+\paragraph{When denotational correctness is an equation but the runs differ more, the denotational proof tends to be smallest.}
 
 \pass{simplify} is the clearest case, at 349 lines against 584 to 715.
 It reduces programs under binders and removes calls, so the target
@@ -157,7 +157,7 @@ it is a reference into a table of definitions. The interpreter proof
 relates the two tables value by value, while the denotational proof
 shows that a reference means what the code it replaced means.
 
-\paragraph{When correctness is not an equation, the operational proofs are much smaller.}
+\paragraph{When denotational correctness is not an equation, the operational proofs are much smaller.}
 
 \pass{Delay} changes how closures are represented, so its correctness
 is not an equation, yet the run of the target follows the run of the
