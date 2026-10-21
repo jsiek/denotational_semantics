@@ -75,10 +75,10 @@ open import Data.List using ([])
 open import Data.Product using (_×_; proj₁; proj₂)
 
 {- The environment of a closed program: every variable denotes {⟨⟩}, the
-   default value. (It only matters for open terms, as the passes are
-   stated on whole terms.) -}
-ρ₀ : Env Value
-ρ₀ = λ _ → ⌈ ⟨⟩ ⌉
+   default value (Mu/Semantics/Graph/Closed.agda, which the proofs use
+   too). It only matters for open terms, as the passes are stated on
+   whole terms. -}
+open import Mu.Semantics.Graph.Closed public using (ρ₀)
 
 {- Each pass ------------------------------------------------------------------}
 

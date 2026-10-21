@@ -48,7 +48,7 @@ We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
 languages, the proof of each pass, and the composition of the passes.
 They exclude what all four share, namely the languages and passes
-(938 lines). We report the language-independent infrastructure that
+(921 lines). We report the language-independent infrastructure that
 each style relies on, and the adequacy of the graph model, separately.
 
 \subsection{Results}
@@ -59,23 +59,23 @@ each style relies on, and the adequacy of the graph model, separately.
 \toprule
  & graph model & machines & interpreters & reduction\\
 \midrule
-semantics of the languages & 375 & 575 & \textbf{374} & 965\\
+semantics of the languages & 395 & 575 & \textbf{374} & 965\\
 lemmas shared by the passes & --- & 11 & --- & ---\\
-\pass{simplify} & \textbf{360} & 584 & 633 & 715\\
-\pass{enclose} & 43 & 93 & \textbf{33} & 164\\
-\pass{optimize} & 83 & 127 & \textbf{65} & 232\\
-\pass{concretize} & 68 & 111 & \textbf{42} & 154\\
+\pass{simplify} & \textbf{349} & 584 & 633 & 715\\
+\pass{enclose} & 37 & 93 & \textbf{33} & 164\\
+\pass{optimize} & 66 & 127 & \textbf{65} & 232\\
+\pass{concretize} & 46 & 111 & \textbf{42} & 154\\
 \pass{delay} & 524 & 96 & \textbf{35} & 139\\
-\pass{globalize} & \textbf{118} & 213 & 183 & 219\\
-\pass{remove complex operands} & 125 & 147 & \textbf{85} & 164\\
-\pass{lift locals} & 44 & 51 & \textbf{27} & 204\\
-\pass{explicate control} & \textbf{71} & 105 & 75 & 105\\
-\pass{select instructions} & 83 & 107 & \textbf{48} & 107\\
+\pass{globalize} & \textbf{115} & 213 & 183 & 219\\
+\pass{remove complex operands} & 109 & 147 & \textbf{85} & 164\\
+\pass{lift locals} & 39 & 51 & \textbf{27} & 204\\
+\pass{explicate control} & \textbf{64} & 105 & 75 & 105\\
+\pass{select instructions} & 76 & 107 & \textbf{48} & 107\\
 composition & 30 & \textbf{20} & 36 & \textbf{20}\\
 shared modules not used by all four & --- & \textbf{15} & \textbf{15} & \textbf{15}\\
 modules reused from an earlier pipeline & 34 & 3 & \textbf{2} & 4\\
 \midrule
-total & 1958 & 2258 & \textbf{1653} & 3207\\
+total & 1884 & 2258 & \textbf{1653} & 3207\\
 \bottomrule
 \end{tabular}
 \caption{Lines of Agda in the four correctness proofs of the compiler.
@@ -85,11 +85,11 @@ total & 1958 & 2258 & \textbf{1653} & 3207\\
 
 Table~\ref{tab:loc} gives the sizes. The proof with clocked
 interpreters is the smallest, at 1,653 lines, followed by the graph
-model at 1,958, abstract machines at 2,258, and reduction semantics at
+model at 1,884, abstract machines at 2,258, and reduction semantics at
 3,207. One pass decides the graph model's place: \pass{delay} alone is
-524 lines, a quarter of the total, against 35 to 139 lines in the
+524 lines, more than a quarter of the total, against 35 to 139 lines in the
 operational styles. Without \pass{delay}, the graph model would be the
-smallest, at 1,434 lines against 1,618 for the interpreters.
+smallest, at 1,360 lines against 1,618 for the interpreters.
 
 \subsection{Analysis}
 
@@ -97,7 +97,7 @@ smallest, at 1,434 lines against 1,618 for the interpreters.
 
 The denotational proof is the smallest for \pass{simplify},
 \pass{globalize}, and \pass{explicate control}. For \pass{simplify},
-the gap is largest: 360 lines against 584 to 715. Its denotational
+the gap is largest: 349 lines against 584 to 715. Its denotational
 proof treats the reductions that the pass performs under binders as
 equations (Section~\ref{sec:equational}). Each operational proof must
 instead replay those reductions as steps of the source program: on
@@ -112,7 +112,7 @@ the code it replaced means.
 
 \paragraph{Elsewhere the interpreters are slightly smaller.}
 
-For the other equational passes, the denotational proofs are 10 to 40
+For the other equational passes, the denotational proofs are 1 to 28
 lines larger than the interpreter proofs. The difference is not in the
 congruence cases, which take one line per construct in both styles. A
 denotation is a set of values, so the graph model must prove side
@@ -121,8 +121,7 @@ interpreter computes: that the sets involved are nonempty, for strict
 closures, $\kw{let}$s, and writes, and that they are consistent, for
 the binders. It must also apply $\beta$ and related laws, with their
 premises, where an interpreter simply runs; the prologue of a function
-body in x86$\mu$ is the largest example. Writing out the bodies of
-binders for the congruence lemmas accounts for some of the rest.
+body in x86$\mu$ is the largest example.
 
 \paragraph{\pass{Delay} is the pass whose denotational proof costs the most.}
 
@@ -152,16 +151,15 @@ step.
 
 \paragraph{The semantics and the infrastructure}
 
-The graph-model semantics of the ten languages is 375 lines, about the
-same as the interpreters' 374. The machines need 575 lines and the
+The graph-model semantics of the ten languages is 395 lines, slightly more than the interpreters' 374. The machines need 575 lines and the
 reduction semantics 965, which include the laws of substitution and
 the machines of the first-order languages. The infrastructure that the
-counts exclude goes the other way. The graph model relies on 1,542
+counts exclude goes the other way. The graph model relies on 1,544
 lines of language-independent infrastructure, mostly the graph model
 itself and its operators, against 447 for the machines, 413 for the
 interpreters, and 1,191 for the reduction semantics. Adequacy, which
 connects the graph model to the interpreters of the source and target
-languages, is a further 1,532 lines (Section~\ref{sec:adequacy}).
+languages, is a further 1,529 lines (Section~\ref{sec:adequacy}).
 
 \subsection{The Answers to RQ2 and RQ4}
 
@@ -169,7 +167,7 @@ The comparison confirms the answer to RQ2. For the passes that
 simplify or restructure code while keeping the representation of
 values, the equational proofs are concise: the smallest of the four
 styles for \pass{simplify}, \pass{globalize}, and \pass{explicate
-control}, and within a few dozen lines of the smallest for the others.
+control}, and within 30 lines of the smallest for the others.
 The answer to RQ4 is mixed. Overall, the denotational development ranks
 second, behind the clocked interpreters and ahead of abstract machines
 and reduction semantics. Its advantage on the passes that keep the
