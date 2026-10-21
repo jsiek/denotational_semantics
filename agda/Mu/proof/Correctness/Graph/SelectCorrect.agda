@@ -38,6 +38,7 @@ import Mu.Language.Imp as I
 import Mu.Language.CFG as C
 open C using (DSig; Args; Tail; return; seq; goto; case; _▷_)
 open import Mu.Language.X86 using (Seq; Atm; var; rax; St; called)
+open import Mu.proof.Semantics.Graph.Binders using (let-≃; case-≃)
 open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 open import Data.Bool using (false)
 open import Data.Maybe using (nothing)
@@ -80,13 +81,12 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     {- what k means, after the value of s is in o -}
     Fits : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') → (𝒫 Value → 𝒫 Value) → (∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)) → Env Value → Set₁
     Fits ret K k ρ = ∀ {Γ O F} ρ' R F' → R rax ≃ X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B' ρ' R F'
-    Fits (to p _) K k ρ = ∀ {Γ O F} V → V ≈ V → ∀ R F' → K (mem V) ≃ X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B' (mem V • drop p ρ) R F'
+    Fits (to p _) K k ρ = ∀ {Γ O F} X → Con X → ∀ R F' → K X ≃ X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B' (X • drop p ρ) R F'
 
     put-≃ : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ D D' Γ O F R F'}
       → Fits o K k ρ → D ≃ D' → then o K D ≃ X.put T' (dst o {Γ} {O} {F}) D' (X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B') ρ R F'
     put-≃ ret f D≃ = ≃-trans D≃ (f _ _ _)
-    put-≃ (to p _) {K} {k} {ρ} {Γ = Γ} {O} {F} {R} {F'} f D≃ =
-      ⋆-≃ (Λ-≃ {K} {λ X → X.⟦_⟧ˢ T' (k {Γ} {O} {F}) B' (X • drop p ρ) R F'} (λ V _ c → f {Γ} {O} {F} V c R F')) D≃
+    put-≃ (to p _) {Γ = Γ} {O} {F} {R} {F'} f D≃ = let-≃ D≃ λ X _ cX → f {Γ} {O} {F} X cX R F'
 
     {- a strict write, before a return or a bind -}
     strict-put : ∀ {Δ A Δ''} (o : Out n Δ A Δ'') {K} {k : ∀ {Γ O F} → Seq Σ n R' Bs (after o Γ O F)} {ρ D D' Γ O F R F'}
@@ -120,9 +120,8 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
   tail-≃ (seq p s t) le {B} {B'} br ρ R F' =
     sel-≃ B' s (to p _) {K = λ X → ⟦ t ⟧ᵗ T B (X • drop p ρ)} (λ V c R F → tail-≃ t _ br _ R F)
   tail-≃ (goto l) le br ρ R F' = br l ρ
-  tail-≃ (case (var x) p l₁ l₂) le {B} {B'} br ρ R F' =
-    𝒞-≃ {D = ρ (idx x)} {ρ (idx x)} {F = λ X → B l₁ (X • drop p ρ)} {λ X → B' l₁ (X • drop p ρ)} {λ X → B l₂ (X • drop p ρ)} {λ X → B' l₂ (X • drop p ρ)}
-      ≃-refl (λ _ _ _ → br l₁ _) (λ _ _ _ → br l₂ _)
+  tail-≃ (case (var x) p l₁ l₂) le br ρ R F' =
+    case-≃ (≃-refl {D = ρ (idx x)}) (λ X _ _ → br l₁ (X • drop p ρ)) (λ X _ _ → br l₂ (X • drop p ρ))
 
   blocks-≃ : ∀ {n R' Bs} (bs : C.Blocks Σ R' Bs) .(le : blocks-depth bs ≤ n) → BR (GC.blocks bs T) (X.blocks T' (sel-blocks bs le))
   blocks-≃ (bs ▷ t) le Z ρ = tail-≃ t _ (blocks-≃ bs _) ρ _ _
@@ -132,12 +131,9 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
   code-≃ : ∀ {s} (b : C.Body Σ (DSig.cod s) (Args s)) → codeᶜ T b ≃ X.codeₜ T' (def-body b)
   code-≃ {s} (C.body bs t) = Λ-≃ λ V neV cV → Λ-≃ λ W neW cW →
     ≃-trans (fin-β {λ X' → E (mem W • X' • ι)} (λ X⊆ → mono X⊆ (λ _ z → z)) neV cV)
-      (≃-trans (⋆-≃ (Λ-≃ {λ X' → E (mem W • X' • ι)} {λ X' → L (λ Y' → E (Y' • X' • ι)) (mem W)}
-                       λ V' _ _ → fin-β {λ Y' → E (Y' • mem V' • ι)} (mono (λ _ z → z)) neW cW) ≃-refl)
-        (⋆-≃ (Λ-≃ {λ X' → L (λ Y' → E (Y' • X' • ι)) (mem W)} {λ X' → L (λ Y' → x86 (mem V) (mem W) (Y' • X' • ι)) (mem W)}
-                   λ V' _ cV' → ⋆-≃ (Λ-≃ {λ Y' → E (Y' • mem V' • ι)} {λ Y' → x86 (mem V) (mem W) (Y' • mem V' • ι)}
-                     λ W' _ cW' → tail-≃ t _ (blocks-≃ bs _) (mem W' • mem V' • ι) _ _) ≃-refl)
-                 ≃-refl))
+      (≃-trans (let-≃ ≃-refl λ X' _ _ → fin-β {λ Y' → E (Y' • X' • ι)} (mono (λ _ z → z)) neW cW)
+        (let-≃ ≃-refl λ X' _ _ → let-≃ {F' = λ Y' → x86 (mem V) (mem W) (Y' • X' • ι)} (≃-refl {D = mem W}) λ Y' _ _ →
+          tail-≃ t _ (blocks-≃ bs _) (Y' • X' • ι) _ _))
     where
     ι : Env Value
     ι = λ _ → init
@@ -145,8 +141,6 @@ module _ {Σ : List DSig} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f
     x86 : 𝒫 Value → 𝒫 Value → Env Value → 𝒫 Value
     x86 X Y ρ = X.⟦_⟧ˢ T' (tail t (m≤n⊔m (blocks-depth bs) _) {St.rs (called s)} {nothing} {false})
                   (X.blocks T' (sel-blocks bs (m≤m⊔n _ (depth t)))) ρ (X.args X Y) init
-    L : (𝒫 Value → 𝒫 Value) → 𝒫 Value → 𝒫 Value
-    L F D = ⋆ ⟨ Λ ⟨ F , ptt ⟩ , ⟨ D , ptt ⟩ ⟩
     mono : ∀ {X X' Y Y'} → X ⊆ X' → Y ⊆ Y' → E (Y • X • ι) ⊆ E (Y' • X' • ι)
     mono X⊆ Y⊆ = tail-mono t (blocks-mono bs) λ { zero → Y⊆ ; (suc zero) → X⊆ ; (suc (suc j)) → λ _ z → z }
 

@@ -30,6 +30,7 @@ open import Mu.Semantics.Graph.Ops using (Table; tables)
 open import Mu.proof.Semantics.Graph.CFG using (⟦_⟧ᵗ; blocks; run; drop; 𝒮-≃; 𝒜)
   renaming (code′ to codeᶜ; table to tableᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Mu.Semantics.Graph.Imp using (⟦_⟧ᴷ) renaming (code′ to codeᵢ; table to tableᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
+open import Mu.proof.Semantics.Graph.Binders using (let-≃; case-≃)
 open import Mu.Framework.AllUtil using (All; []; _∷_) renaming (map to All-map)
 
 open import Data.List using (List; []; _∷_; length)
@@ -43,11 +44,9 @@ open import Relation.Nullary using (yes; no)
 
 κ-≃ : ∀ {Σ Δ A} (e : I.Exp Σ Δ A) {T : Table Σ} {σ} {κ κ' : 𝒫 Value → 𝒫 Value} → (∀ D → κ D ≃ κ' D) → ⟦ e ⟧ᴷ T σ κ ≃ ⟦ e ⟧ᴷ T σ κ'
 κ-≃ (I.simple s) h = h _
-κ-≃ (I.assign e₁ e₂) {T} {σ} {κ} {κ'} h =
-  κ-≃ e₁ λ D → ⋆-≃ (Λ-≃ {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ} {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ'} λ _ _ _ → κ-≃ e₂ h) (≃-refl {D = D})
-κ-≃ (I.case a e₁ e₂) {T} {σ} {κ} {κ'} h =
-  𝒞-≃ {F = λ X → ⟦ e₁ ⟧ᴷ T (X • σ) κ} {λ X → ⟦ e₁ ⟧ᴷ T (X • σ) κ'} {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ} {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) κ'}
-    (≃-refl {D = 𝒜 a T σ}) (λ _ _ _ → κ-≃ e₁ h) (λ _ _ _ → κ-≃ e₂ h)
+κ-≃ (I.assign e₁ e₂) {T} {σ} h = κ-≃ e₁ λ D → let-≃ (≃-refl {D = D}) λ X _ _ → κ-≃ e₂ {T = T} {X • σ} h
+κ-≃ (I.case a e₁ e₂) {T} {σ} h =
+  case-≃ (≃-refl {D = 𝒜 a T σ}) (λ X _ _ → κ-≃ e₁ {T = T} {X • σ} h) (λ X _ _ → κ-≃ e₂ {T = T} {X • σ} h)
 
 {- blocks that extend others -----------------------------------------------------------}
 
@@ -82,19 +81,16 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ≃ T' f)
   cps (I.assign e₁ e₂) p k bs with explicate-assign e₂ (there⊑ p) k bs | cps e₂ (there⊑ p) k bs
   ... | out g bs₁ t | ⟨ x₂ , h₂ ⟩ with explicate-assign e₁ here⊑ t bs₁ | cps e₁ here⊑ t bs₁
   ...   | out g' bs₂ t₁ | ⟨ x₁ , h₁ ⟩ =
-    ⟨ ext-trans x₂ x₁ , (λ σ → ≃-trans (κ-≃ e₁ λ D → ⋆-≃ (Λ-≃ {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) (asg p k bs σ)}
-        {λ X → ⟦ t ⟧ᵗ T' (blocks bs₁ T') (X • σ)} λ _ _ _ → h₂ _) ≃-refl) (h₁ σ)) ⟩
+    ⟨ ext-trans x₂ x₁ , (λ σ → ≃-trans (κ-≃ e₁ λ D → let-≃ (≃-refl {D = D}) λ X _ _ → h₂ (X • σ)) (h₁ σ)) ⟩
   cps (I.case a e₁ e₂) p k bs with explicate-assign e₁ (there⊑ p) (goto Z) (bs ▷ k) | cps e₁ (there⊑ p) (goto Z) (bs ▷ k)
   ... | out g₁ bs₁ t₁ | ⟨ x₁ , h₁ ⟩
       with explicate-assign e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁)
          | cps e₂ (there⊑ p) (goto (⊑-∋ (there⊑ g₁) Z)) (bs₁ ▷ t₁)
   ...   | out g₂ bs₂ t₂ | ⟨ x₂ , h₂ ⟩ =
     ⟨ there (ext-trans (there (ext-trans (there here) x₁)) x₂)
-    , (λ σ → 𝒞-≃ {F = λ X → ⟦ e₁ ⟧ᴷ T (X • σ) (asg p k bs σ)} {λ X → blocks (bs₂ ▷ t₂) T' (⊑-∋ (there⊑ g₂) Z) (X • σ)}
-                 {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) (asg p k bs σ)} {λ X → ⟦ t₂ ⟧ᵗ T' (blocks bs₂ T') (X • σ)} (𝒜≃ a σ)
-        (λ _ _ _ → ≃-trans (h₁ _) (≃-reflexive (cong-app (ext-at x₂ Z) _)))
-        (λ _ _ _ → ≃-trans (κ-≃ e₂ λ D →
-           ≃-reflexive (cong (λ F → ⋆ ⟨ Λ ⟨ (λ X → F (X • drop p σ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) (ext-at x₁ Z))) (h₂ _))) ⟩
+    , (λ σ → case-≃ (𝒜≃ a σ) (λ X _ _ → ≃-trans (h₁ (X • σ)) (≃-reflexive (cong-app (ext-at x₂ Z) _)))
+        (λ X _ _ → ≃-trans (κ-≃ e₂ λ D →
+           ≃-reflexive (cong (λ F → ⋆ ⟨ Λ ⟨ (λ X → F (X • drop p σ)) , ptt ⟩ , ⟨ D , ptt ⟩ ⟩) (ext-at x₁ Z))) (h₂ (X • σ)))) ⟩
     where
     𝒜≃ : ∀ {Δ A} (a : I.Atm Σ Δ A) σ → 𝒜 a T σ ≃ 𝒜 a T' σ
     𝒜≃ a σ = 𝒮-≃ TT (I.atm a) σ
@@ -104,15 +100,13 @@ module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ≃ T' f)
   tl (I.assign e₁ e₂) bs with explicate-tail e₂ bs | tl e₂ bs
   ... | out g bs₁ t | ⟨ x₂ , h₂ ⟩ with explicate-assign e₁ here⊑ t bs₁ | cps e₁ here⊑ t bs₁
   ...   | out g' bs₂ t₁ | ⟨ x₁ , h₁ ⟩ =
-    ⟨ ext-trans x₂ x₁ , (λ σ → ≃-trans (κ-≃ e₁ λ D → ⋆-≃ (Λ-≃ {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) (λ D → D)}
-        {λ X → ⟦ t ⟧ᵗ T' (blocks bs₁ T') (X • σ)} λ _ _ _ → h₂ _) ≃-refl) (h₁ σ)) ⟩
+    ⟨ ext-trans x₂ x₁ , (λ σ → ≃-trans (κ-≃ e₁ λ D → let-≃ (≃-refl {D = D}) λ X _ _ → h₂ (X • σ)) (h₁ σ)) ⟩
   tl (I.case a e₁ e₂) bs with explicate-tail e₁ bs | tl e₁ bs
   ... | out g₁ bs₁ t₁ | ⟨ x₁ , h₁ ⟩ with explicate-tail e₂ (bs₁ ▷ t₁) | tl e₂ (bs₁ ▷ t₁)
   ...   | out g₂ bs₂ t₂ | ⟨ x₂ , h₂ ⟩ =
     ⟨ there (ext-trans (there x₁) x₂)
-    , (λ σ → 𝒞-≃ {F = λ X → ⟦ e₁ ⟧ᴷ T (X • σ) (λ D → D)} {λ X → blocks (bs₂ ▷ t₂) T' (⊑-∋ (there⊑ g₂) Z) (X • σ)}
-                 {λ X → ⟦ e₂ ⟧ᴷ T (X • σ) (λ D → D)} {λ X → ⟦ t₂ ⟧ᵗ T' (blocks bs₂ T') (X • σ)} (𝒮-≃ TT (I.atm a) σ)
-        (λ _ _ _ → ≃-trans (h₁ _) (≃-reflexive (cong-app (ext-at x₂ Z) _))) (λ _ _ _ → h₂ _)) ⟩
+    , (λ σ → case-≃ (𝒮-≃ TT (I.atm a) σ) (λ X _ _ → ≃-trans (h₁ (X • σ)) (≃-reflexive (cong-app (ext-at x₂ Z) _)))
+        (λ X _ _ → h₂ (X • σ))) ⟩
 
   body-≃ : ∀ {Δ} (e : I.Exp Σ Δ R) σ → ⟦ e ⟧ᴷ T σ (λ D → D) ≃ run (explicate-body e) T' σ
   body-≃ e σ with explicate-tail e [] | tl e []

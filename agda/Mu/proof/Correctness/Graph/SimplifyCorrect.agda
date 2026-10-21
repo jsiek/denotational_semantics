@@ -43,6 +43,7 @@ open import Mu.Language.Type
 open import Mu.Language.ISWIM
 open import Mu.Language.ISWIMSubst using (ren; exts; varK; travs)
 open import Mu.proof.Semantics.Graph.ISWIM
+open import Mu.proof.Semantics.Graph.Binders using (Body-≃; lam-≃; let-≃; case-≃; body-mono)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; pos)
 open import Mu.proof.Compiler.SimplifyFacts as P
   using (Info; _∣_; term; known; Known; val; fun; Facts; self; info; under; known-as; shift-info; shift-known;
@@ -76,21 +77,17 @@ ren-ext : ∀ {Γ Δ C} (r : ∀ {B} → Γ ∋ B → Δ ∋ B) {ρ ρ' X} → (
 ren-ext r h Z = ≃-refl
 ren-ext r h (S x) = h x
 ren-≃ r (` x) h = h x
-ren-≃ r (lam N) {ρ} {ρ'} h =
-  Λ-≃ {λ X → ⟦ ren (exts varK r) N ⟧ (X • ρ')} {λ X → ⟦ N ⟧ (X • ρ)} (λ V _ _ → ren-≃ (exts varK r) N (ren-ext r h))
+ren-≃ r (lam N) {ρ} {ρ'} h = lam-≃ λ X _ _ → ren-≃ (exts varK r) N {X • ρ} {X • ρ'} (ren-ext r h)
 ren-≃ r (app L M) h = ⋆-≃ (ren-≃ r L h) (ren-≃ r M h)
 ren-≃ r (lit B c) h = ≃-refl
 ren-≃ r (tuple {Δ} Ms) h = 𝒯-≃ (length Δ) (rens-nth r Ms h)
 ren-≃ r (get i M) h = proj-≃ (pos i) (ren-≃ r M h)
 ren-≃ r (inl M) h = inl-≃ (ren-≃ r M h)
 ren-≃ r (inr M) h = inr-≃ (ren-≃ r M h)
-ren-≃ r (case L M N) {ρ} {ρ'} h =
-  𝒞-≃ {F = λ X → ⟦ ren (exts varK r) M ⟧ (X • ρ')} {λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ ren (exts varK r) N ⟧ (X • ρ')} {λ X → ⟦ N ⟧ (X • ρ)}
-    (ren-≃ r L h) (λ _ _ _ → ren-≃ (exts varK r) M (ren-ext r h)) (λ _ _ _ → ren-≃ (exts varK r) N (ren-ext r h))
+ren-≃ r (case L M N) {ρ} {ρ'} h = case-≃ (ren-≃ r L h)
+  (λ X _ _ → ren-≃ (exts varK r) M {X • ρ} {X • ρ'} (ren-ext r h)) (λ X _ _ → ren-≃ (exts varK r) N {X • ρ} {X • ρ'} (ren-ext r h))
 ren-≃ r (prim p L M) h = primD-≃ p (ren-≃ r L h) (ren-≃ r M h)
-ren-≃ r (let′ M N) {ρ} {ρ'} h =
-  ⋆-≃ (Λ-≃ {λ X → ⟦ ren (exts varK r) N ⟧ (X • ρ')} {λ X → ⟦ N ⟧ (X • ρ)} (λ V _ _ → ren-≃ (exts varK r) N (ren-ext r h)))
-      (ren-≃ r M h)
+ren-≃ r (let′ M N) {ρ} {ρ'} h = let-≃ (ren-≃ r M h) λ X _ _ → ren-≃ (exts varK r) N {X • ρ} {X • ρ'} (ren-ext r h)
 ren-≃ r (fold M) h = ren-≃ r M h
 ren-≃ r (unfold M) h = ren-≃ r M h
 rens-nth r (M ∷ Ms) h zero = ren-≃ r M h
@@ -101,18 +98,15 @@ shift-≃ M X γ = ren-≃ S M (λ x → ≃-refl)
 
 {- β for a value ------------------------------------------------------------------}
 
-body-mono : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) γ → Mono₁ (λ X → ⟦ N ⟧ (X • γ))
-body-mono N γ X⊆ = proj₁ (ok N) (•-~ _⊆_ (λ _ _ z → z) X⊆)
-
 let-β : ∀ {Γ A B} (N : Tm (A ∷ Γ) B) γ D → nonempty-env γ → nonempty D → Con D
   → ⋆ ⟨ ⟦ lam N ⟧ γ , ⟨ D , ptt ⟩ ⟩ ≃ ⟦ N ⟧ (D • γ)
-let-β N γ D ne neD cD = Λ-β (body-mono N γ) (fin₁ (ok N) ne neD) cD
+let-β N γ D ne neD cD = Λ-β (body-mono (ok N) γ) (fin₁ (ok N) ne neD) cD
 
 case-inl : ∀ {Γ A B C} (L : Tm Γ (A ⊹ B)) (M : Tm (A ∷ Γ) C) N γ D → ⟦ L ⟧ γ ≃ inlD ⟨ D , ptt ⟩ → nonempty-env γ → nonempty D → Con D
   → ⟦ case L M N ⟧ γ ≃ ⟦ M ⟧ (D • γ)
 case-inl L M N γ D L≃ ne neD cD =
   ≃-trans (𝒞-≃ {F = F} {F} {G} {G} L≃ (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))
-          (𝒞-inl-β {D} {F} {G} (body-mono M γ) (fin₁ (ok M) ne neD) cD)
+          (𝒞-inl-β {D} {F} {G} (body-mono (ok M) γ) (fin₁ (ok M) ne neD) cD)
   where F = λ X → ⟦ M ⟧ (X • γ)
         G = λ X → ⟦ N ⟧ (X • γ)
 
@@ -120,7 +114,7 @@ case-inr : ∀ {Γ A B C} (L : Tm Γ (A ⊹ B)) (M : Tm (A ∷ Γ) C) N γ D →
   → ⟦ case L M N ⟧ γ ≃ ⟦ N ⟧ (D • γ)
 case-inr L M N γ D L≃ ne neD cD =
   ≃-trans (𝒞-≃ {F = F} {F} {G} {G} L≃ (λ _ _ _ → ≃-refl) (λ _ _ _ → ≃-refl))
-          (𝒞-inr-β {D} {F} {G} (body-mono N γ) (fin₁ (ok N) ne neD) cD)
+          (𝒞-inr-β {D} {F} {G} (body-mono (ok N) γ) (fin₁ (ok N) ne neD) cD)
   where F = λ X → ⟦ M ⟧ (X • γ)
         G = λ X → ⟦ N ⟧ (X • γ)
 
@@ -248,15 +242,13 @@ case-ok : ∀ {Δ Γ A B C} fl (L : Tm Δ (A ⊹ B)) (M : Tm (A ∷ Δ) C) N {E 
   → Desc (⟦ L ⟧ γ) I γ' → Desc (⟦ case L M N ⟧ γ) (simp-case fl E I M N) γ'
 
 {- a body under a binder that stays -}
-under-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ'} → Wf γ → Wf γ' → Ok E γ γ' → ∀ V → V ≢ [] → V ≈ V
-  → ⟦ N ⟧ (mem V • γ) ≃ ⟦ term (simp fl (under E) N) ⟧ (mem V • γ')
-under-ok fl N wf wf' ok V ne c =
-  tm (simp-ok fl N (wf-• wf (E≢[]⇒nonempty-mem ne) (≈⇒Con c)) (wf-• wf' (E≢[]⇒nonempty-mem ne) (≈⇒Con c))
-                 (ok-under (mem V) ok))
+under-ok : ∀ {Δ Γ A B} fl (N : Tm (A ∷ Δ) B) {E : Facts Δ Γ} {γ γ'} → Wf γ → Wf γ' → Ok E γ γ'
+  → Body-≃ (λ X → ⟦ N ⟧ (X • γ)) (λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ'))
+under-ok fl N wf wf' ok X ne c = tm (simp-ok fl N (wf-• wf ne c) (wf-• wf' ne c) (ok-under X ok))
 
 simp-ok fl (` x) wf wf' ok = ok x
 simp-ok fl (lam N) {γ = γ} wf wf' ok =
-  desc (Λ-≃ (under-ok fl N wf wf' ok)) (λ { refl → kfun γ wf ok ≃-refl })
+  desc (lam-≃ (under-ok fl N wf wf' ok)) (λ { refl → kfun γ wf ok ≃-refl })
 simp-ok fl (app L M) wf wf' ok = app-ok fl L M wf wf' ok (simp-ok fl M wf wf' ok)
 simp-ok fl (lit B c) wf wf' ok = desc-self P.lit ≃-refl
 simp-ok fl (tuple {Δ'} Ms) wf wf' ok = desc-info (𝒯-≃ (length Δ') (simps-ok fl Ms wf wf' ok))
@@ -337,15 +329,12 @@ let-ok fl N {E} {γ} {γ'} {I} {D} wf wf' ok d cD with small (term I) in s | val
   ok' Z = desc (tm d) (kn (desc-shift I _ d))
   ok' (S x) = desc-shift (E x) _ (ok x)
 ... | false | false =
-  desc (⋆-≃ (Λ-≃ {λ X → ⟦ N ⟧ (X • γ)} {λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ')} (under-ok fl N wf wf' ok)) (tm d)) (λ ())
+  desc (let-≃ (tm d) (under-ok fl N wf wf' ok)) (λ ())
 
 {- a case on a known injection takes its branch -}
 case-ok fl L M N {E} {γ} {γ'} {I} wf wf' ok d with branch (known I) refl in e
 ... | nothing =
-  desc (𝒞-≃ {F = λ X → ⟦ M ⟧ (X • γ)} {λ X → ⟦ term (simp fl (under E) M) ⟧ (X • γ')}
-             {λ X → ⟦ N ⟧ (X • γ)} {λ X → ⟦ term (simp fl (under E) N) ⟧ (X • γ')}
-             (tm d) (λ v V c → under-ok fl M wf wf' ok (v ∷ V) (λ ()) c) (λ v V c → under-ok fl N wf wf' ok (v ∷ V) (λ ()) c))
-       (λ ())
+  desc (case-≃ (tm d) (under-ok fl M wf wf' ok) (under-ok fl N wf wf' ok)) (λ ())
 ... | just (inj₁ K) with branch-inl (known I) refl e
 ...   | ⟨ k , _ ⟩ with kv (kn d k)
 ...     | ⟨ P.inl v , Kt≃ ⟩ =

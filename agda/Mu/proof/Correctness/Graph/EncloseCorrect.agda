@@ -24,12 +24,12 @@ open import Mu.Language.ISWIM
 import Mu.Language.Clos2 as T
 open import Mu.Semantics.Graph.ISWIM
 open import Mu.proof.Semantics.Graph.Clos2 using (fv-env) renaming (⟦_⟧ to ⟦_⟧₂; ⟦_⟧s to ⟦_⟧s₂)
+open import Mu.proof.Semantics.Graph.Binders using (lam-≃; let-≃; case-≃; guard-yes)
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab; pos)
 open import Mu.Compiler.Enclose
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length)
-open import Data.List.Relation.Unary.Any using (here)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; subst)
 
@@ -56,12 +56,9 @@ encs-nth : ∀ {Γ Δ} (Ms : All (Tm Γ) Δ) {ρ ρ'} → Rel Γ ρ ρ'
   → ∀ i → nthD (⟦ Ms ⟧s ρ) i ≃ nthD (⟦ encs Ms ⟧s₂ ρ') i
 
 enc (` x) r = proj₁ (r x)
-enc {Γ} (lam N) {ρ} {ρ'} r =
-  ⟨ (λ w w∈ → ⟨ ne , proj₁ body w w∈ ⟩) , (λ { w ⟨ _ , w∈ ⟩ → proj₂ body w w∈ }) ⟩
-  where
-  ne = tab-ne T.`_ ρ' (λ x → proj₂ (r x))
-  body = Λ-≃ λ V neV _ → enc N (ext (E≢[]⇒nonempty-mem neV) λ x →
-           ⟨ ≃-trans (proj₁ (r x)) (≃-reflexive (sym (tab-fv T.`_ ρ' x))) , subst nonempty (sym (tab-fv T.`_ ρ' x)) (proj₂ (r x)) ⟩)
+enc (lam N) {ρ} {ρ'} r =
+  ≃-trans (lam-≃ λ X ne _ → enc N (ext ne λ x → subst (λ D → _ ≃ D × nonempty D) (sym (tab-fv T.`_ ρ' x)) (r x)))
+    (≃-sym (guard-yes (tab-ne T.`_ ρ' (λ x → proj₂ (r x)))))
 enc (app L M) r = ⋆-≃ (enc L r) (enc M r)
 enc (lit B c) r = ≃-refl
 enc (tuple {Δ} Ms) r = 𝒯-≃ (length Δ) (encs-nth Ms r)
@@ -69,12 +66,9 @@ enc (get i M) r = proj-≃ (pos i) (enc M r)
 enc (inl M) r = inl-≃ (enc M r)
 enc (inr M) r = inr-≃ (enc M r)
 enc (case L M N) {ρ} {ρ'} r =
-  𝒞-≃ {F = λ X → ⟦ M ⟧ (X • ρ)} {λ X → ⟦ enclose M ⟧₂ (X • ρ')} {λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ enclose N ⟧₂ (X • ρ')}
-    (enc L r) (λ v V _ → enc M (ext ⟨ v , here refl ⟩ r)) (λ v V _ → enc N (ext ⟨ v , here refl ⟩ r))
+  case-≃ (enc L r) (λ X ne _ → enc M {X • ρ} {X • ρ'} (ext ne r)) (λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r))
 enc (prim p L M) r = primD-≃ p (enc L r) (enc M r)
-enc (let′ M N) {ρ} {ρ'} r =
-  letD-≃ {F = λ X → ⟦ N ⟧ (X • ρ)} {λ X → ⟦ enclose N ⟧₂ (X • ρ')} (enc M r)
-    (λ V neV _ → enc N (ext (E≢[]⇒nonempty-mem neV) r))
+enc (let′ M N) {ρ} {ρ'} r = let-≃ (enc M r) λ X ne _ → enc N {X • ρ} {X • ρ'} (ext ne r)
 enc (fold M) r = enc M r
 enc (unfold M) r = enc M r
 
