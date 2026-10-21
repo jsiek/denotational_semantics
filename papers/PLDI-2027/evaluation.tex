@@ -96,23 +96,26 @@ smallest, at 1,360 lines against 1,618 for the interpreters.
 
 \subsection{Analysis}
 
-\paragraph{The graph model tends to be smallest, or close to it, when a pass is proved by equational reasoning.}
+Two factors seem to drive the sizes in Table~\ref{tab:loc}. The size of
+a denotational proof tends to depend most on whether the pass preserves
+the meaning of a program exactly. When it does, the proof is an
+induction whose cases are congruences and a few laws of the graph
+model (Section~\ref{sec:equational}), largely independent of how the
+pass changes the way the program runs. The size of an operational
+proof tends to depend instead on how closely the run of the target
+follows the run of the source. Nine passes are equations, and for most
+of them the two runs correspond closely; for \pass{simplify} and, to a
+lesser degree, \pass{globalize}, they differ more; and \pass{delay} is
+not an equation. We discuss these three groups in turn.
 
-For the nine passes proved by an equation, the denotational proof is
-the smallest for \pass{simplify} and \pass{globalize}, about the same
-size as the smallest for \pass{explicate control}, and at most 28
-lines larger than the smallest for the other six. Two factors seem to
-drive these sizes. The size of a denotational proof tends to depend
-most on whether the pass preserves the meaning of a program exactly.
-When it does, the proof is an induction whose cases are congruences
-and a few laws of the graph model (Section~\ref{sec:equational}),
-largely independent of how the pass changes the way the program runs.
-The size of an operational proof tends to depend instead on how
-closely the run of the target follows the run of the source.
+\paragraph{When a pass is an equation and the runs correspond closely, the interpreters tend to be slightly smaller.}
 
-When the two runs correspond closely, as for most of the passes, the
-interpreter proofs tend to be short as well, and slightly smaller than
-the denotational ones. The difference is not in the congruence cases,
+For \pass{enclose}, \pass{optimize}, \pass{concretize},
+\pass{remove complex operands}, \pass{lift locals}, \pass{explicate
+control}, and \pass{select instructions}, both the denotational and the
+interpreter proofs are short. The interpreter proofs are smaller by 1
+to 28 lines, except for \pass{explicate control}, where the two are
+about the same size. The difference is not in the congruence cases,
 which take one line per construct in both styles. A denotation is a
 set of values, so the graph model must prove side conditions that hold
 trivially for the single value that an interpreter computes: that the
@@ -124,67 +127,67 @@ for \pass{lift locals} and \pass{select instructions}, whose
 denotational proofs are about 1.4 and 1.6 times the interpreter
 proofs: the continuation-passing semantics of Imp puts a commuting
 conversion into \pass{lift locals}, and the prologue of a function body
-in x86$\mu$ takes two $\beta$-steps. The tendency also does not extend
-to every operational style: the reduction semantics, which works by
+in x86$\mu$ takes two $\beta$-steps. The tendency concerns the
+interpreters only. The reduction semantics, which works by
 substitution, is often much larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
 
-When the two runs differ more, the operational proofs tend to grow,
-and the graph model comes out ahead. \pass{simplify} is the clearest
-case, at 349 lines against 584 to 715. It reduces programs under
-binders and removes calls, so the target takes fewer steps than the
-source. Each operational proof must replay those reductions as steps
-of the source program: on open terms in the reduction semantics, or as
-a run-ahead of the source machine or interpreter, with stuttering
-where the target does more. The interpreter proof is the largest of
-the three, because the target needs fewer clock ticks than the source,
-which breaks the usual clock-for-clock argument. \pass{globalize} fits
-the pattern less cleanly. Its interpreter proof is still clock for
-clock; the runs differ only in where the code of a function lives,
-since in the target it is a reference into a table of definitions.
-The interpreter proof relates the two tables value by value, while the
-denotational proof shows that a reference means what the code it
-replaced means.
+\paragraph{When a pass is an equation but the runs differ more, the graph model tends to be smallest.}
 
-\paragraph{\pass{Delay} is the pass whose denotational proof costs the most.}
+\pass{simplify} is the clearest case, at 349 lines against 584 to 715.
+It reduces programs under binders and removes calls, so the target
+takes fewer steps than the source. Each operational proof must replay
+those reductions as steps of the source program: on open terms in the
+reduction semantics, or as a run-ahead of the source machine or
+interpreter, with stuttering where the target does more. The
+interpreter proof is the largest of the three, because the target
+needs fewer clock ticks than the source, which breaks the usual
+clock-for-clock argument. \pass{globalize} fits the pattern less
+cleanly. Its interpreter proof is still clock for clock; the runs
+differ only in where the code of a function lives, since in the target
+it is a reference into a table of definitions. The interpreter proof
+relates the two tables value by value, while the denotational proof
+shows that a reference means what the code it replaced means.
 
-\pass{Delay} shows the opposite tendency. It is not an equation,
-because it changes how closures are represented, yet the run of the
-target follows the run of the source closely. The denotational proof of \pass{delay} takes 524 lines of Agda,
-against 35 to 139 lines for the same pass in the three operational
-styles. Most of the difference has three sources. First, the
-denotational proof needs two directions, while a simulation proof gets
-the backward direction for free from forward simulation and the
-determinism of the target. The graph model has an analogue of
-determinism, the consistency of denotations, and it does part of the
-job: if the source produces a constant, the forward direction puts
-that constant in the target, and consistency rules out any other. But
-the graph model represents divergence as the empty set, the absence of
-evidence, and a forward relation cannot carry absence. Showing that a
-diverging program compiles to a diverging program is therefore a
-separate argument, and that argument is reflection. We use different
-relations for the two directions, the satisfaction relation for
-preservation and the approximant logical relation for reflection,
-because a single relation parameterized by the direction made the
-proof longer: on an earlier version of the compiler, switching from
-one relation to two cut the proof of \pass{delay} from 1,358 to 832
-lines. Second, reflection needs the finite lists, the batches of calls,
-and the lemma that extracts them from a target call. Third, the
-$\beta$-law of the graph model holds only under side conditions of
-nonemptiness and continuity, which a machine gets for free by taking a
-step.
+\paragraph{When a pass is not an equation, the operational styles are much smaller.}
 
-\paragraph{The semantics and the infrastructure}
+\pass{Delay} changes how closures are represented, so its correctness
+is not an equation, yet the run of the target follows the run of the
+source closely. Its denotational proof takes 524 lines of Agda,
+against 35 to 139 lines in the three operational styles. Most of the
+difference has three sources. First, the denotational proof needs two
+directions, while a simulation proof gets the backward direction for
+free from forward simulation and the determinism of the target. The
+graph model has an analogue of determinism, the consistency of
+denotations, and it does part of the job: if the source produces a
+constant, the forward direction puts that constant in the target, and
+consistency rules out any other. But the graph model represents
+divergence as the empty set, the absence of evidence, and a forward
+relation cannot carry absence. Showing that a diverging program
+compiles to a diverging program is therefore a separate argument, and
+that argument is reflection. We use different relations for the two
+directions, the satisfaction relation for preservation and the
+approximant logical relation for reflection, because a single relation
+parameterized by the direction made the proof longer: on an earlier
+version of the compiler, switching from one relation to two cut the
+proof of \pass{delay} from 1,358 to 832 lines. Second, reflection needs
+the finite lists, the batches of calls, and the lemma that extracts
+them from a target call. Third, the $\beta$-law of the graph model
+holds only under side conditions of nonemptiness and continuity, which
+a machine gets for free by taking a step.
 
-The graph-model semantics of the ten languages is 395 lines, slightly more than the interpreters' 374. The machines need 575 lines and the
+\paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
+
+The graph-model semantics of the ten languages is 395 lines, slightly
+more than the interpreters' 374. The machines need 575 lines and the
 reduction semantics 965, which include the laws of substitution and
-the machines of the first-order languages. The infrastructure that the
-counts exclude goes the other way. The graph model relies on 1,544
-lines of language-independent infrastructure, mostly the graph model
-itself and its operators, against 447 for the machines, 413 for the
-interpreters, and 1,191 for the reduction semantics. Adequacy, which
-connects the graph model to the interpreters of the source and target
-languages, is a further 1,529 lines (Section~\ref{sec:adequacy}).
+the machines of the first-order languages. The language-independent
+infrastructure, which the totals exclude, differs more. The graph model
+relies on 1,544 lines of it, mostly the graph model itself and its
+operators, against 447 for the machines, 413 for the interpreters, and
+1,191 for the reduction semantics. Adequacy, which connects the graph
+model to the interpreters of the source and target languages, is a
+further 1,529 lines (Section~\ref{sec:adequacy}).
 
 \subsection{The Answers to RQ2 and RQ4}
 
