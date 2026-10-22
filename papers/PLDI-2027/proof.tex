@@ -19,12 +19,9 @@ Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{compile}(M)} \neq \emptyset$.
 \end{theorem}
 
-Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmatively; with adequacy (Section~\ref{sec:adequacy}), it says that the compiler preserves and reflects divergence. The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass. Every pass except
-\pass{delay} preserves the meaning of a program exactly: the program
-and its translation denote the same set. The theorem for \pass{delay}
-(Theorem~\ref{thm:delay}) is the weaker statement about constants and
-nonemptiness, and the composition carries it through the remaining
-passes, which are equations. 
+Theorem~\ref{thm:compiler}, which we mechanize in Agda, answers RQ1 affirmatively; with adequacy (Section~\ref{sec:adequacy}), it says that the compiler preserves and reflects divergence. The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass: an equation for every pass but
+\pass{delay}, and for \pass{delay} the weaker statement of
+Theorem~\ref{thm:delay}. 
 
 This section first shows how we prove the passes other than \pass{delay} (Section~\ref{sec:equational}). These proofs answer whether the
 compositionality and equational reasoning of denotational semantics
