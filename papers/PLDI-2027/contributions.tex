@@ -32,8 +32,5 @@
 \item A comparison, on a ten-pass compiler, of the size of mechanized
   correctness proofs in two denotational styles (graph model and
   Scott domains) and three operational styles (abstract machines,
-  clocked interpreters and reduction semantics), which shows that the denotational proofs are
-  among the smallest when equational reasoning suffices but are the
-  largest when a the relation between denotations is more complex
-  (\S\ref{sec:evaluation}).
+  clocked interpreters and reduction semantics), each against its own semantics: the graph-model proofs are the smallest of the five for \pass{simplify}, \pass{globalize}, and \pass{explicate control}, while for \pass{delay} both denotational proofs are several times larger than the operational ones (\S\ref{sec:evaluation}).
 \end{itemize}
