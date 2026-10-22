@@ -192,15 +192,18 @@ similarly for a function of two sets.
 
 \paragraph{Why a graph model}
 
-We chose a graph model to keep the mechanization small. The graph
-model, its operators, and the rest of the language-independent
-infrastructure that the graph-model proof uses are 1,544 lines of Agda
-that need only Agda's standard library and check in safe mode. The
-Scott-domain proof of the same compiler (Section~\ref{sec:evaluation})
-adds 1,507 lines of its own infrastructure to the domain theory of
-TypeTopology \citep{Escardo:TypeTopology}, of which it imports about
-18,600 lines, and assumes propositional truncation and two
-extensionality principles. \citet{Benton:2010aa} report around 4,400
-lines of Coq for their domain theory.
+We originally chose a graph model to keep the mechanization small. The
+graph model, its operators, and the rest of the language-independent
+infrastructure we developed is 1,544 lines of Agda.  It imports only
+Agda's standard library and checks in safe mode.
+%
+The Scott-domain proof of the same compiler
+(Section~\ref{sec:evaluation}) uses 1,507 lines of infrastructure that
+we developed and imports about 18,600 lines of domain theory from the
+TypeTopology repository~\citep{Escardo:TypeTopology}. TypeTopology
+assumes propositional truncation and two extensionality principles.
+%
+\citet{Benton:2010aa} report around 4,400 lines of Coq for their
+domain theory.
 
 
