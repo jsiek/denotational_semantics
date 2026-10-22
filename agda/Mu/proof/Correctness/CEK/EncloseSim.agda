@@ -9,9 +9,9 @@
   variables that it captures (capture), which collects exactly the
   environment, and then builds the closure.
 
-  Values are related (_≈_) when they agree, except that an ISWIMμ
-  closure of N and ρ is related to a Clos2μ closure of enclose N whose
-  captured values are related to ρ. Environments are related pointwise;
+  Values are related (_≈_, proof/Semantics/CEK/Rel.agda) when they
+  agree, except that an ISWIMμ closure of N and ρ is related to a Clos2μ
+  closure of enclose N whose captured values are related to ρ. Environments are related pointwise;
   continuations are related frame by frame. Neither machine stops with
   an error.
 
@@ -24,30 +24,19 @@ open import Mu.Language.ISWIM
 import Mu.Language.Clos2 as C2
 open import Mu.Compiler.Enclose
 open import Mu.Framework.AllUtil using (All; []; _∷_; tab; lookup; _<><_; _<><ᵃ_; All₂; lookup₂; _<><₂_; tab-lookup₂)
-open import Semantics.Observation using (o-tuple; o-inl; o-inr)
 open import proof.Semantics.CEK.Smallstep
 open import proof.Semantics.CEK.Simulation
 import Mu.Semantics.CEK.ISWIM as Src
 import Mu.Semantics.CEK.Clos2 as Tgt
 
-open import Data.Bool using (true; false)
-open import Data.Integer using (_≟_)
 open import Data.List using (List; []; _∷_)
-open import Language.Prim using (sub; eq)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong; cong₂)
-open import Relation.Nullary using (does)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; cong)
+
+open import Mu.proof.Semantics.CEK.Rel {λ Δ A B → Tm (A ∷ Δ) B} {λ Δ A B → C2.Tm (A ∷ Δ) B} enclose
 
 {- The simulation relation -----------------------------------------------------}
 
-infix 4 _≈_ _≈k_ _~_
-
-data _≈_ : ∀ {A} → Src.Val A → Tgt.Val A → Set where
-  clo≈ : ∀ {Γ A B} {N : Tm (A ∷ Γ) B} {ρ vs} → All₂ _≈_ ρ vs → Src.clo N ρ ≈ Tgt.clos (enclose N) vs
-  const≈ : ∀ {B c} → Src.const {B} c ≈ Tgt.const c
-  tup≈ : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.tup vs ≈ Tgt.tup ws
-  inl≈ : ∀ {A B v w} → v ≈ w → Src.inl {A} {B} v ≈ Tgt.inl w
-  inr≈ : ∀ {A B v w} → v ≈ w → Src.inr {A} {B} v ≈ Tgt.inr w
-  fold≈ : ∀ {A v w} → v ≈ w → Src.fold {A} v ≈ Tgt.fold w
+infix 4 _≈k_ _~_
 
 _≈ρ_ : ∀ {Γ} → Src.Env Γ → Tgt.Env Γ → Set
 _≈ρ_ = All₂ _≈_
@@ -78,24 +67,6 @@ data _~_ : Src.State → Tgt.State → Set where
     → Src.eval M ρ₁ κ₁ ~ Tgt.eval (enclose M) ρ₂ κ₂
   ret~ : ∀ {A} {v : Src.Val A} {w κ₁ κ₂} → v ≈ w → κ₁ ≈k κ₂ → Src.ret v κ₁ ~ Tgt.ret w κ₂
 
-{- Related values are observed alike, and primitives give related values -}
-obs≈ : ∀ {A} {v : Src.Val A} {w} → v ≈ w → Src.obs v ≡ Tgt.obs w
-obs≈* : ∀ {Δ} {vs : All _ Δ} {ws} → All₂ _≈_ vs ws → Src.obs-all vs ≡ Tgt.obs-all ws
-obs≈ (clo≈ _) = refl
-obs≈ const≈ = refl
-obs≈ (tup≈ rs) = cong o-tuple (obs≈* rs)
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈ (fold≈ r) = obs≈ r
-obs≈* [] = refl
-obs≈* (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obs≈* rs)
-
-δ≈ : ∀ p n m → Src.δᵀ p n m ≈ Tgt.δᵀ p n m
-δ≈ sub n m = const≈
-δ≈ eq n m with does (n ≟ m)
-... | true = inl≈ (tup≈ [])
-... | false = inr≈ (tup≈ [])
-
 {- The simulation, for any Clos2μ program P ------------------------------------}
 
 module _ {T : Type} (P : C2.Tm [] T) where
@@ -118,7 +89,7 @@ module _ {T : Type} (P : C2.Tm [] T) where
   sim (eval~ {M = ` x} er k) = steps₁ refl (ret~ (lookup₂ er x) k)
   sim (eval~ {M = lam N} {ρ₂ = ρ₂} {κ₂ = κ₂} er k) =
     steps (plus refl (capture (λ x → x) [] ρ₂ (Tgt.closK (enclose N) κ₂) ◅◅ (refl ◅ ε)))
-          (ret~ (clo≈ (tab-lookup₂ er)) k)
+          (ret~ (clos≈ (tab-lookup₂ er)) k)
   sim (eval~ {M = app L M} er k) = steps₁ refl (eval~ er (appL er k))
   sim (eval~ {M = lit B c} er k) = steps₁ refl (ret~ const≈ k)
   sim (eval~ {M = tuple Ms} er k) = steps₁ refl (tuple-next~ [] er k)
@@ -132,7 +103,7 @@ module _ {T : Type} (P : C2.Tm [] T) where
   sim (eval~ {M = unfold M} er k) = steps₁ refl (eval~ er (unfoldK k))
   sim (ret~ r halt) = stops (cong stop (sym (obs≈ r)))
   sim (ret~ r (appL er k)) = steps₁ refl (eval~ er (appR r k))
-  sim (ret~ r (appR (clo≈ er) k)) = steps₁ refl (eval~ (r ∷ er) k)
+  sim (ret~ r (appR (clos≈ er) k)) = steps₁ refl (eval~ (r ∷ er) k)
   sim (ret~ r (tupK rs er k)) = steps₁ refl (tuple-next~ (r ∷ rs) er k)
   sim (ret~ (tup≈ rs) (getK {i = i} k)) = steps₁ refl (ret~ (lookup₂ rs i) k)
   sim (ret~ r (inlK k)) = steps₁ refl (ret~ (inl≈ r) k)

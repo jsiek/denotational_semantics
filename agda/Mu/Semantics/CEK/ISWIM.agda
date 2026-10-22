@@ -4,9 +4,11 @@
   environments and continuations: a state is well typed by construction,
   so the machine has no case for a value of the wrong kind or an unbound
   variable, and it never stops with an error. Call by value, left to
-  right, as the ISWIMᵀ machine (Semantics/CEK/Typed/ISWIM.agda). A value
-  of a recursive type is a fold of a value of its unfolding; unfold
-  takes it apart, and cannot fail.
+  right, as the ISWIMᵀ machine (Semantics/CEK/Typed/ISWIM.agda). The
+  values are those of Mu/Semantics/CEK/Values.agda: a closure (clo) is
+  the code of a function packed with the tuple of its environment. A
+  value of a recursive type is a fold of a value of its unfolding;
+  unfold takes it apart, and cannot fail.
 
   The values of a tuple are collected newest first (vs : All Val Δ'),
   so that the tuple's type, tup (Δ' <>< Δ), needs no rewriting as they
@@ -16,29 +18,19 @@
 
 module Mu.Semantics.CEK.ISWIM where
 
-open import Framework.Primitives using (Base; base-rep; Int)
-open import Language.Prim using (Prim; sub; eq)
+open import Framework.Primitives using (Int)
 open import Mu.Language.Type
 open import Mu.Language.ISWIM
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; _<><_; _<><ᵃ_)
-open import Semantics.Observation using (Obs; o-const; o-fun; o-tuple; o-inl; o-inr)
 open import Semantics.CEK.Smallstep using (Machine; Next; next; stop; machine)
 
-open import Data.Bool using (if_then_else_)
-open import Data.Integer using (ℤ; _-_; _≟_)
-open import Data.List using (List; []; _∷_)
-open import Relation.Nullary using (does)
+open import Data.Integer using (ℤ)
+open import Data.List using ([]; _∷_)
 
-data Val : Type → Set where
-  clo : ∀ {Γ A B} → Tm (A ∷ Γ) B → All Val Γ → Val (A ⇒ B)
-  const : ∀ {B} → base-rep B → Val (base B)
-  tup : ∀ {Δ} → All Val Δ → Val (tup Δ)
-  inl : ∀ {A B} → Val A → Val (A ⊹ B)
-  inr : ∀ {A B} → Val B → Val (A ⊹ B)
-  fold : ∀ {A} → Val (unroll A) → Val (μ A)
+open import Mu.Semantics.CEK.Values (λ Δ A B → Tm (A ∷ Δ) B) public
 
-Env : Ctx → Set
-Env = All Val
+{- a closure: the code N with its environment ρ -}
+pattern clo N ρ = pack (code N) (tup ρ)
 
 data Cont : Type → Set where
   halt : ∀ {A} → Cont A
@@ -59,22 +51,6 @@ data Cont : Type → Set where
 data State : Set where
   eval : ∀ {Γ A} → Tm Γ A → Env Γ → Cont A → State
   ret : ∀ {A} → Val A → Cont A → State
-
-obs : ∀ {A} → Val A → Obs
-obs-all : ∀ {Δ} → All Val Δ → List Obs
-obs (clo _ _) = o-fun
-obs (const {B} c) = o-const B c
-obs (tup vs) = o-tuple (obs-all vs)
-obs (inl v) = o-inl (obs v)
-obs (inr v) = o-inr (obs v)
-obs (fold v) = obs v
-obs-all [] = []
-obs-all (v ∷ vs) = obs v ∷ obs-all vs
-
-{- a primitive on two integers: eq gives inl ⟨⟩ for true -}
-δᵀ : ∀ p → ℤ → ℤ → Val (out-ty p)
-δᵀ sub n m = const (n - m)
-δᵀ eq n m = if does (n ≟ m) then inl (tup []) else inr (tup [])
 
 {- evaluate the rest of a tuple's components, or build it -}
 tuple-next : ∀ {Γ Δ' Δ} → All Val Δ' → All (Tm Γ) Δ → Env Γ → Cont (tup (Δ' <>< Δ)) → State
