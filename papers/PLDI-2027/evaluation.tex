@@ -213,16 +213,35 @@ the one pass that changes it.
 
 \subsection{Threats to Validity}
 
-Lines of Agda are only a proxy for proof effort. Counting lexical
-tokens instead, which is insensitive to layout, gives the same ranking:
-each style averages 20 to 21 tokens per line, and the graph model's
-total is 1.12 times the interpreters' by tokens, against 1.14 times by
-lines. Counting non-whitespace characters also gives the same ranking. Each development is
-our best effort, but experience gained in one style carries over to
-the next. The comparison
-covers one compiler, and the sizes depend on choices of semantics, for
+We measure the size of the proofs, which is only a proxy for the
+effort of writing them. Lines of Agda depend on layout; lexical tokens
+and non-whitespace characters do not, but they are proxies too. The
+three measures agree on the ranking: each style averages 20 to 21
+tokens per line, and the graph model's total is 1.12 times the
+interpreters' by tokens, against 1.14 times by lines. Size also says
+little about difficulty, which depends heavily on whether a proof has
+precedent in the literature or must be invented. The reflection proof
+for \pass{delay} took us far more effort than its size suggests,
+because no denotational proof of its kind existed; with the
+approximant logical relation in hand, a similar proof should be much
+easier to write. Each development is our best effort, but experience
+gained in one style carries over to the next.
+
+The comparison covers one compiler, and the totals depend on its
+selection of passes. The denotational proofs tend to be smaller for
+optimizations such as \pass{simplify} and much larger for passes that
+change the representation of values such as \pass{delay}, so a
+compiler with more of one kind or the other could rank the styles
+differently. The sizes also depend on choices of semantics, for
 example the continuation-passing semantics of Imp, which makes
 \pass{explicate control} an equation, and on proof engineering that
-could still shrink any of the four developments. Finally, the
-developments share infrastructure unevenly, so we report it
-separately rather than in the totals.
+could still shrink any of the four developments.
+
+The sizes also depend on the proof assistant. Agda offers little proof
+automation apart from normalization: it unfolds definitions
+aggressively during type checking, which probably favours the
+interpreters, whose results Agda can compute directly. In Rocq or Lean,
+the sizes would depend heavily on the tactics used, and the relative
+sizes of the four styles could be quite different. Finally, the
+developments share infrastructure unevenly, so we report it separately
+rather than in the totals.
