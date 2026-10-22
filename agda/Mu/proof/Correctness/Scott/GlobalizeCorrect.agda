@@ -61,19 +61,10 @@ open import Semantics.Scott.Prim pt fe pe using (primD)
 open import Mu.Semantics.Scott.Ops pt fe pe
 open import Mu.Semantics.Scott.Clos4 pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
 open import Mu.Semantics.Scott.Clos5 pt fe pe
+open import Mu.proof.Semantics.Scott.BackEndLemmas pt fe pe using (codeᶜ-cong)
 
 ≡→＝ : ∀ {A : Set} {x y : A} → x Eq.≡ y → x ＝ y
 ≡→＝ Eq.refl = refl
-
-{- the code of a closure, of bodies that agree -}
-codeᶜ-cong : (N N' : Den Env) → ((ρ : ⟨ Env ⟩) → N · ρ ＝ N' · ρ) → codeᶜ N ＝ codeᶜ N'
-codeᶜ-cong N N' h =
-  Λ-cong (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B) Λ) (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B') Λ)
-    (λ X _ → Λ-cong (curry₁ 𝔻 𝔻 𝔻 B · X) (curry₁ 𝔻 𝔻 𝔻 B' · X) (λ Y _ → h (env₂ X Y)))
- where
-  B B' : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]
-  B = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N
-  B' = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N'
 
 {- Changing the table -----------------------------------------------------------------}
 
@@ -139,14 +130,14 @@ record OKs {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) (o : Out Σ (λ Σ' 
 {- a construct of one or two operands means the same when they do -}
 record Cong₁ {Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (M₄ : S.Tm Γ B) : 𝓤₁ ̇ where
   constructor mk-cong₁
-  field cong₁ : ∀ {Σ'} (T : Table Σ') M' → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ T ] · ρ)
+  field cong₁ : ∀ {Σ'} {T : Table Σ'} {M'} → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ T ] · ρ)
                 → (ρ : ⟨ Env ⟩) → ⟦ M₄ ⟧₄ · ρ ＝ ⟦ f M' ⟧[ T ] · ρ
 open Cong₁
 
 record Cong₂ {Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B)
              (M₄ : S.Tm Γ C) : 𝓤₁ ̇ where
   constructor mk-cong₂
-  field cong₂ : ∀ {Σ'} (T : Table Σ') L' M' → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ T ] · ρ)
+  field cong₂ : ∀ {Σ'} {T : Table Σ'} {L' M'} → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ T ] · ρ)
                 → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ T ] · ρ) → (ρ : ⟨ Env ⟩) → ⟦ M₄ ⟧₄ · ρ ＝ ⟦ f L' M' ⟧[ T ] · ρ
 open Cong₂
 
@@ -159,16 +150,16 @@ glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A →
 
 glob-ok (S.` x) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
 glob-ok (S.code N) D with glob N D | glob-ok N D
-... | out s D' N' | mk-ok e h = mk-ok (mk-ext (agrees e)) λ ρ → codeᶜ-cong ⟦ N ⟧₄ ⟦ N' ⟧[ made D' ] h
-glob-ok (S.pack L M) D = glob₂-ok pack L M D {M₄ = S.pack L M} (mk-cong₂ λ T L' M' hL hM ρ → ap₂ (λ a b → pair · a · b) (hL ρ) (hM ρ))
+... | out s D' N' | mk-ok e h = mk-ok (mk-ext (agrees e)) λ ρ → codeᶜ-cong ⟦ N ⟧₄ ⟦ N' ⟧[ made D' ] (λ X Y _ _ → h (env₂ X Y))
+glob-ok (S.pack L M) D = glob₂-ok pack L M D {M₄ = S.pack L M} (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → pair · a · b) (hL ρ) (hM ρ))
 glob-ok (S.callc L M) D = glob₂-ok callc L M D {M₄ = S.callc L M}
-  (mk-cong₂ λ T L' M' hL hM ρ → ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (hL ρ) (hM ρ))
+  (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (hL ρ) (hM ρ))
 glob-ok (S.lit B c) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
 glob-ok (S.tuple {Δ} Ms) D with globs Ms D | globs-ok Ms D
 ... | out s D' Ms' | mk-oks e h = mk-ok e λ ρ → ap (tupleᵈ (length Δ) ·_) (h ρ)
-glob-ok (S.get i M) D = glob₁-ok (get i) M D {M₄ = S.get i M} (mk-cong₁ λ T M' h ρ → ap (proj (pos i) ·_) (h ρ))
-glob-ok (S.inl {B = B} M) D = glob₁-ok (inl {B = B}) M D {M₄ = S.inl M} (mk-cong₁ λ T M' h ρ → ap (inlᵈ ·_) (h ρ))
-glob-ok (S.inr {A} M) D = glob₁-ok (inr {A = A}) M D {M₄ = S.inr M} (mk-cong₁ λ T M' h ρ → ap (inrᵈ ·_) (h ρ))
+glob-ok (S.get i M) D = glob₁-ok (get i) M D {M₄ = S.get i M} (mk-cong₁ λ h ρ → ap (proj (pos i) ·_) (h ρ))
+glob-ok (S.inl {B = B} M) D = glob₁-ok (inl {B = B}) M D {M₄ = S.inl M} (mk-cong₁ λ h ρ → ap (inlᵈ ·_) (h ρ))
+glob-ok (S.inr {A} M) D = glob₁-ok (inr {A = A}) M D {M₄ = S.inr M} (mk-cong₁ λ h ρ → ap (inrᵈ ·_) (h ρ))
 glob-ok (S.case L M N) D with glob L D | glob-ok L D
 ... | out s₁ D₁ L' | o₁ with glob M D₁ | glob-ok M D₁
 ...   | out s₂ D₂ M' | o₂ with glob N D₂ | glob-ok N D₂
@@ -177,12 +168,11 @@ glob-ok (S.case L M N) D with glob L D | glob-ok L D
     caseᶜ-cong ⟦ L ⟧₄ ⟦ wk (⊑-∋ (⊑-trans s₂ s₃)) L' ⟧[ made D₃ ] ⟦ M ⟧₄ ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ]
       ⟦ N ⟧₄ ⟦ N' ⟧[ made D₃ ] ρ ρ (ok-sem o₁ ρ ∙ wk-made (ext-trans (ok-ext o₂) e₃) L' ρ)
       (λ d _ → ok-sem o₂ (d • ρ) ∙ wk-made e₃ M' (d • ρ)) (λ d _ → h₃ (d • ρ))
-glob-ok (S.prim p L M) D =
-  glob₂-ok (prim p) L M D {M₄ = S.prim p L M} (mk-cong₂ λ T L' M' hL hM ρ → ap₂ (λ a b → primD p · a · b) (hL ρ) (hM ρ))
+glob-ok (S.prim p L M) D = glob₂-ok (prim p) L M D {M₄ = S.prim p L M} (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → primD p · a · b) (hL ρ) (hM ρ))
 glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N}
-  (mk-cong₂ λ T M' N' hM hN ρ → letᶜ-cong ⟦ M ⟧₄ ⟦ M' ⟧[ T ] ⟦ N ⟧₄ ⟦ N' ⟧[ T ] ρ ρ (hM ρ) (λ d _ → hN (d • ρ)))
-glob-ok (S.fold {A} M) D = glob₁-ok (fold {A = A}) M D {M₄ = S.fold M} (mk-cong₁ λ T M' h → h)
-glob-ok (S.unfold {A} M) D = glob₁-ok (unfold {A = A}) M D {M₄ = S.unfold M} (mk-cong₁ λ T M' h → h)
+  (mk-cong₂ λ {_} {T} {M'} {N'} hM hN ρ → letᶜ-cong ⟦ M ⟧₄ ⟦ M' ⟧[ T ] ⟦ N ⟧₄ ⟦ N' ⟧[ T ] ρ ρ (hM ρ) (λ d _ → hN (d • ρ)))
+glob-ok (S.fold {A} M) D = glob₁-ok (fold {A = A}) M D {M₄ = S.fold M} (mk-cong₁ λ h → h)
+glob-ok (S.unfold {A} M) D = glob₁-ok (unfold {A = A}) M D {M₄ = S.unfold M} (mk-cong₁ λ h → h)
 
 globs-ok [] D = mk-oks (mk-ext (λ f → refl)) λ ρ → refl
 globs-ok (M ∷ Ms) D with glob M D | glob-ok M D
@@ -191,18 +181,18 @@ globs-ok (M ∷ Ms) D with glob M D | glob-ok M D
   mk-oks (ext-trans (ok-ext o₁) e₂) λ ρ → dfunext fe λ { zero → ok-sem o₁ ρ ∙ wk-made e₂ M' ρ ; (suc i) → happly (h₂ ρ) i }
 
 glob₁-ok f M D c with glob M D | glob-ok M D
-... | out s D' M' | mk-ok e h = mk-ok e (cong₁ c (made D') M' h)
+... | out s D' M' | mk-ok e h = mk-ok e (cong₁ c h)
 
 glob₂-ok f L M D c with glob L D | glob-ok L D
 ... | out s₁ D₁ L' | o₁ with glob M D₁ | glob-ok M D₁
-...   | out s₂ D₂ M' | mk-ok e₂ h₂ = mk-ok (ext-trans (ok-ext o₁) e₂) (cong₂ c (made D₂) (wk (⊑-∋ s₂) L') M' (λ ρ → ok-sem o₁ ρ ∙ wk-made e₂ L' ρ) h₂)
+...   | out s₂ D₂ M' | mk-ok e₂ h₂ = mk-ok (ext-trans (ok-ext o₁) e₂) (cong₂ c (λ ρ → ok-sem o₁ ρ ∙ wk-made e₂ L' ρ) h₂)
 
 {- The table of the program ------------------------------------------------------------}
 
 table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {t} (f : Σ' ∋ t) → made D f ＝ tables code′ (close D s) (⊑-∋ s f)
 table-close (D ▷ N) s Z =
   codeᶜ-cong ⟦ N ⟧[ made D ] ⟦ wk (⊑-∋ s') N ⟧[ tables code′ (close D s') ]
-    (wk-sem (⊑-∋ s') (tables code′ (close D s')) (made D) (table-close D s') N)
+    (λ X Y _ _ → wk-sem (⊑-∋ s') (tables code′ (close D s')) (made D) (table-close D s') N (env₂ X Y))
   ∙ tables-yes code′ (wk (⊑-∋ s') N) (close D s') (⊑-∋ s Z) (lvl-⊑ s Z) ⁻¹
   where s' = ⊑-trans (there⊑ here⊑) s
 table-close (D ▷ N) s (S f) =
