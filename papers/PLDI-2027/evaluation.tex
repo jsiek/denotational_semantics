@@ -54,6 +54,25 @@ intrinsically typed syntax of the languages and the functions that
 implement the passes (921 lines). We report the language-independent infrastructure that
 each style relies on, and the adequacy of the graph model, separately.
 
+%% AI Use paragraph required by the PLDI 2027 call for papers (in the main
+%% text, counts toward the page limit; ACM asks for it in the methods
+%% section). Facts from the authors: no AI before 2026; all Agda code of
+%% 2026 written by Claude Code; theorem statements checked by the authors.
+%% Commit trailers: Claude Opus 5.5 (544) and Claude Sonnet 5.5 (11).
+%% TODO: mention the final cleanup pass once its PRs are merged.
+\paragraph{AI Use}
+
+All of the Agda code of the four developments, including the adequacy
+proofs, was written in 2026 by the AI coding assistant Claude Code,
+with the Claude Opus 5.5 and Claude Sonnet 5.5 models, under our
+direction. Earlier work on this project, from 2022 and before, used no
+AI. Claude Code also wrote the script that counts the lines of the
+proofs and assisted with the literature search. The mechanized results
+do not depend on trusting the AI: every development is checked by Agda
+in safe mode, with no postulates, and we checked every theorem
+statement ourselves. We also checked each citation and each claim
+about prior work against its source.
+
 \subsection{Results}
 
 \begin{table}[t]
