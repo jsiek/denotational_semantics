@@ -8,18 +8,16 @@
 \section{Proving the Compiler Correct}
 \label{sec:compiler-proof}
 
-The correctness theorem for the whole compiler says that a closed
-program and its translation produce the same constants, and that one
-produces something exactly when the other does.
+The correctness theorem for the whole compiler says that a closed program of integer type and its translation produce the same constants, and that one produces something exactly when the other does.
 
 \begin{theorem}[Compiler correctness]\label{thm:compiler}
-Let $M$ be a closed term of \iswim. For every constant $c$,
+Let $M$ be a closed term of \iswim\ of type $\kw{Int}$. For every constant $c$,
 $c \in \den{M}$ if and only if $c \in \den{\pass{compile}(M)}$.
 Moreover, $\den{M} \neq \emptyset$ if and only if
 $\den{\pass{compile}(M)} \neq \emptyset$.
 \end{theorem}
 
-The proof composes one result per pass. Every pass except
+The same statement holds for closed terms of every type; we state it for $\kw{Int}$, the type of a whole program's result, to align it with the operational theorems (Section~\ref{sec:evaluation}). The proof composes one result per pass. Every pass except
 \pass{delay} preserves the meaning of a program exactly: the program
 and its translation denote the same set. The theorem for \pass{delay}
 (Theorem~\ref{thm:delay}) is the weaker statement about constants and
