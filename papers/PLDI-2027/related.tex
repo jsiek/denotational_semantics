@@ -37,17 +37,21 @@ definitional interpreter; the virtual machine keeps closures as values.
 Our back end adapts the operational proofs of \citet{Siek:2025ab} for a
 first-order compiler.
 
-\paragraph{Closure conversion}
+\paragraph{Operational proofs of closure conversion}
 
-Typed closure conversion represents a closure as a package of an
-existential type \citep{Minamide:1996ys}, as our FlatClos does, and \citet{Minamide:1996ys} prove it correct with logical relations over terms. \citet{Ahmed:2008aa}
-show that it preserves observational equivalence, and
-\citet{Bowman:2018aa} extend it to the calculus of constructions. \citet{Wand:1994aa} prove the partial
+The introduction discusses the denotational proofs of closure
+conversion and defunctionalization that come closest to ours; the
+proofs below are operational. Typed closure conversion represents a
+closure as a package of an existential type, as our FlatClos does, and
+\citet{Minamide:1996ys} prove it correct with logical relations between
+source and target terms. \citet{Ahmed:2008aa} show that it preserves
+observational equivalence, and \citet{Bowman:2018aa} extend it to the
+calculus of constructions. \citet{Wand:1994aa} prove the partial
 correctness of lightweight closure conversion with an operational
-semantics. Mechanized proofs of closure conversion for
-languages with recursion, such as those of \citet{Hur:2011aa},
-\citet{Neis:2015aa}, and \citet{Wang:2016ab}, use Kripke, step-indexed,
-or simulation relations over operational semantics.
+semantics. Proofs of closure conversion for languages with recursion,
+such as those of \citet{Hur:2011aa}, \citet{Neis:2015aa}, and
+\citet{Wang:2016ab}, use Kripke, step-indexed, or simulation relations
+over operational semantics.
 
 \paragraph{Relations between denotations}
 
