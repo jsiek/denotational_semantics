@@ -42,11 +42,10 @@ import Mu.proof.Correctness.Scott.SimplifyCorrect
 import Mu.proof.Correctness.Scott.EncloseCorrect
 import Mu.proof.Correctness.Scott.OptimizeCorrect
 import Mu.proof.Correctness.Scott.ConcretizeCorrect
+import Mu.proof.Correctness.Scott.DelayRel
 import Mu.proof.Correctness.Scott.DelayPreserve
-import Mu.proof.Correctness.Scott.DelayPreserveTerms
 import Mu.proof.Correctness.Scott.DelayReflect
-import Mu.proof.Correctness.Scott.DelayReflectOps
-import Mu.proof.Correctness.Scott.DelayReflectTerms
+import Mu.proof.Correctness.Scott.DelayTerms
 import Mu.proof.Correctness.Scott.DelayCorrect
 import Mu.proof.Correctness.Scott.GlobalizeCorrect
 import Mu.proof.Correctness.Scott.RCOCorrect

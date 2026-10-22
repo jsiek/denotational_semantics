@@ -18,8 +18,9 @@
   The continuations are continuous maps, so the graph model's κ-≃ is
   just a congruence (ap). The compiler takes apart the output of a
   recursive call with `with`; Out is a record, so the proof uses its
-  projections instead (a `with` in a recursive proof about 𝔻 is slow to
-  check).
+  projections instead (a `with` while meanings are in scope is slow to
+  check: tl by `with`, as in the graph model, does not check in 6
+  minutes).
 
 -}
 
@@ -49,9 +50,9 @@ open import proof.Framework.Scott.Ops pt fe pe renaming (app to appᵈ; inl to i
 open import proof.Framework.Scott.Semantics pt fe pe
 open import Mu.Semantics.Scott.Ops pt fe pe
 open import Mu.Semantics.Scott.Imp pt fe pe using (⟦_⟧ᴷ; K; idK; underK)
-  renaming (code′ to codeᵢ; table to tableᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
+  renaming (code′ to codeᵢ; ⟦_⟧ₚ to ⟦_⟧ᵢ)
 open import Mu.Semantics.Scott.CFG pt fe pe using (⟦_⟧ᵗ; blocks; run; drop; 𝒜; 𝒮)
-  renaming (code′ to codeᶜ′; table to tableᶜ; ⟦_⟧ₚ to ⟦_⟧ᶜ)
+  renaming (code′ to codeᶜ′; ⟦_⟧ₚ to ⟦_⟧ᶜ)
 open import Mu.proof.Semantics.Scott.BackEndLemmas pt fe pe using (codeᶜ-cong; tables-cons; 𝒜-＝; 𝒮-＝)
 
 {- blocks that extend others -----------------------------------------------------------}
@@ -72,7 +73,7 @@ ext-at T (there e) l = ext-at T e l
 
 {- The pass preserves meanings -----------------------------------------------------------}
 
-module _ {Σ R} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
+module _ {Σ R} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
   {- assign the next slot of the frame cut by p, then k with the blocks bs -}
   asg : ∀ {Bs Δ Δ' A} → Δ' ⊑ Δ → Tail Σ R Bs (A ∷ Δ') → Blocks Σ R Bs → ⟨ Env ⟩ → ⟨ K ⟩
@@ -94,13 +95,13 @@ module _ {Σ R} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
     → ((X : ⟨ 𝔻 ⟩) → F₁ · X ＝ G₁ · X) → ((X : ⟨ 𝔻 ⟩) → F₂ · X ＝ G₂ · X)
     → cases · (𝒜 a T · σ) · (strict · F₁ , strict · F₂) ＝ cases · (𝒜 a T' · σ) · (strict · G₁ , strict · G₂)
   branches a F₁ F₂ G₁ G₂ σ h₁ h₂ =
-    ap₂ (λ x y → cases · x · y) (𝒜-＝ T T' TT a σ)
+    ap₂ (λ x y → cases · x · y) (𝒜-＝ TT a σ)
       (ap₂ _,_ (ap (strict ·_) (to-continuous-function-＝ 𝔻 𝔻 {F₁} {G₁} h₁))
                (ap (strict ·_) (to-continuous-function-＝ 𝔻 𝔻 {F₂} {G₂} h₂)))
 
   cps : ∀ {Bs Δ Δ' A} (e : I.Exp Σ Δ A) (p : Δ' ⊑ Δ) (k : Tail Σ R Bs (A ∷ Δ')) (bs : Blocks Σ R Bs)
     → Good (λ σ → ⟦ e ⟧ᴷ T · σ · asg p k bs σ) bs (explicate-assign e p k bs)
-  cps (I.simple s) p k bs = here , λ σ → ap (asg p k bs σ ·_) (𝒮-＝ T T' TT s σ)
+  cps (I.simple s) p k bs = here , λ σ → ap (asg p k bs σ ·_) (𝒮-＝ TT s σ)
   cps (I.assign e₁ e₂) p k bs =
     ext-trans (pr₁ c₂) (pr₁ c₁) ,
     λ σ → ap (⟦ e₁ ⟧ᴷ T · σ ·_) (bind e₂ (asg p k bs σ) (Out.tail o₂) (Out.made o₂) σ (λ X → pr₂ c₂ (X • σ)))
@@ -123,7 +124,7 @@ module _ {Σ R} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f)
     c₂ = cps e₂ (there⊑ p) (goto (⊑-∋ (there⊑ (Out.grows o₁)) Z)) (Out.made o₁ ▷ Out.tail o₁)
 
   tl : ∀ {Bs Δ} (e : I.Exp Σ Δ R) (bs : Blocks Σ R Bs) → Good (λ σ → ⟦ e ⟧ᴷ T · σ · idK) bs (explicate-tail e bs)
-  tl (I.simple s) bs = here , 𝒮-＝ T T' TT s
+  tl (I.simple s) bs = here , 𝒮-＝ TT s
   tl (I.assign e₁ e₂) bs =
     ext-trans (pr₁ c₂) (pr₁ c₁) ,
     λ σ → ap (⟦ e₁ ⟧ᴷ T · σ ·_) (bind e₂ idK (Out.tail o₂) (Out.made o₂) σ (λ X → pr₂ c₂ (X • σ)))
@@ -155,11 +156,11 @@ table-explicate [] f = refl
 table-explicate (d ∷ ds) f =
   tables-cons codeᵢ codeᶜ′ d ds (explicate-body d) (All-map explicate-body ds) f
     (codeᶜ-cong (∘₁ Env (K ⟹₁ 𝔻) 𝔻 (⟦ d ⟧ᴷ T) (at-point₁ K 𝔻 idK)) (run (explicate-body d) T')
-       (λ X Y _ _ → body-＝ T T' (table-explicate ds) d (env₂ X Y)))
+       (λ X Y _ _ → body-＝ (table-explicate ds) d (env₂ X Y)))
     (table-explicate ds f)
  where
   T = tables codeᵢ ds
   T' = tables codeᶜ′ (All-map explicate-body ds)
 
 explicate-correct : ∀ {A} (P : I.Program A) → ⟦ P ⟧ᵢ ＝ ⟦ explicate P ⟧ᶜ
-explicate-correct (I.program ds e) = body-＝ (tableᵢ ds) (tableᶜ (All-map explicate-body ds)) (table-explicate ds) e ρ₀
+explicate-correct (I.program ds e) = body-＝ (table-explicate ds) e ρ₀

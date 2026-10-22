@@ -1,8 +1,9 @@
 {-
 
-  Scott domains: lemmas for the proofs of the back-end passes of ISWIMμ
-  (lift locals, explicate control, select instructions,
-  Mu/proof/Correctness/Scott/{LiftLocals,Explicate,Select}Correct.agda).
+  Scott domains: lemmas for the proofs of the passes of ISWIMμ from
+  globalize on (globalize, remove complex operands, lift locals,
+  explicate control, select instructions,
+  Mu/proof/Correctness/Scott/{Globalize,RCO,LiftLocals,Explicate,Select}Correct.agda).
 
   * seq: seq ⊥ e is ⊥, seq d d is d, and seq d (seq d e) is seq d e;
     d ⊑ e when d = e provided d is defined (below-if);
@@ -150,7 +151,7 @@ tables-cons cd cd' {ss = ss} d ds d' ds' f =
   choose-cong (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) (cd' (tables cd' ds') d') (tables cd' ds' f)
 
 {- atoms and simple expressions (of Impμ, CFGμ), for tables that agree -}
-module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
+module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
   𝒜-＝ : ∀ {Δ A} (a : I.Atm Σ Δ A) σ → 𝒜 a T · σ ＝ 𝒜 a T' · σ
   𝒜-＝ (I.var x) σ = refl

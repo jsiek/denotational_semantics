@@ -17,14 +17,14 @@
     whole table (close), agrees with made, by the levels of the
     references.
 
-  Unlike the graph-model proof, the recursive lemmas use no `with` (it
-  makes Agda very slow here): what glob makes is taken apart by
-  auxiliary functions on its result (codeO, glob₂O, ...), equal to glob
-  by syntactic lemmas (glob-code, glob₂-eq, ...), and the tables of
-  Mu/Semantics/Scott/Ops.agda by tables-yes and tables-no. The
-  predicates OK, OKs, Cong₁ and Cong₂ are records, so that Agda compares
-  them by their indices rather than by unfolding them to meanings, and
-  the recursion glob-ok only calls a lemma for each construct.
+  The proof has the graph model's structure, taking apart what glob
+  makes by `with`. A `with` is slow to check while values of 𝔻 or
+  environments are in scope (each such module below takes more than 5
+  minutes), so they appear only inside the fields of records: the
+  predicates OK, OKs, Cong₁ and Cong₂ are records, and a `with` that is
+  followed by another keeps the OK it matched whole. The end theorem,
+  itself an equation between values, takes glob's result apart by
+  programO and globalize-eq instead.
 
 -}
 
@@ -62,19 +62,10 @@ open import Semantics.Scott.Prim pt fe pe using (primD)
 open import Mu.Semantics.Scott.Ops pt fe pe
 open import Mu.Semantics.Scott.Clos4 pt fe pe renaming (⟦_⟧ to ⟦_⟧₄; ⟦_⟧s to ⟦_⟧s₄)
 open import Mu.Semantics.Scott.Clos5 pt fe pe
+open import Mu.proof.Semantics.Scott.BackEndLemmas pt fe pe using (codeᶜ-cong)
 
 ≡→＝ : ∀ {A : Set} {x y : A} → x Eq.≡ y → x ＝ y
 ≡→＝ Eq.refl = refl
-
-{- the code of a closure, of bodies that agree -}
-codeᶜ-cong : (N N' : Den Env) → ((ρ : ⟨ Env ⟩) → N · ρ ＝ N' · ρ) → codeᶜ N ＝ codeᶜ N'
-codeᶜ-cong N N' h =
-  Λ-cong (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B) Λ) (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B') Λ)
-    (λ X _ → Λ-cong (curry₁ 𝔻 𝔻 𝔻 B · X) (curry₁ 𝔻 𝔻 𝔻 B' · X) (λ Y _ → h (env₂ X Y)))
- where
-  B B' : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]
-  B = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N
-  B' = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ N'
 
 {- Changing the table -----------------------------------------------------------------}
 
@@ -126,12 +117,11 @@ wk-made {s = s} {D} {D'} e = wk-sem (⊑-∋ s) (made D') (made D) (λ f → agr
 
 {- What glob makes ----------------------------------------------------------------------}
 
-{- (records, as are Cong₁ and Cong₂ below, so that Agda compares them by
-   their indices, never by unfolding them to meanings) -}
 record OK {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) (o : Out Σ (λ Σ' → Tm Σ' Γ A)) : 𝓤₁ ̇ where
   constructor mk-ok
   field ok-ext : Ext (Out.grows o) D (Out.made o)
         ok-sem : (ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ Out.res o ⟧[ made (Out.made o) ] · ρ
+open OK
 
 record OKs {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) (o : Out Σ (λ Σ' → All (Tm Σ' Γ) Δ)) : 𝓤₁ ̇ where
   constructor mk-oks
@@ -141,222 +131,69 @@ record OKs {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) (o : Out Σ (λ Σ' 
 {- a construct of one or two operands means the same when they do -}
 record Cong₁ {Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (M₄ : S.Tm Γ B) : 𝓤₁ ̇ where
   constructor mk-cong₁
-  field cong₁ : ∀ {Σ'} (T : Table Σ') M' → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ T ] · ρ)
+  field cong₁ : ∀ {Σ'} {T : Table Σ'} {M'} → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ T ] · ρ)
                 → (ρ : ⟨ Env ⟩) → ⟦ M₄ ⟧₄ · ρ ＝ ⟦ f M' ⟧[ T ] · ρ
 open Cong₁
 
 record Cong₂ {Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B)
              (M₄ : S.Tm Γ C) : 𝓤₁ ̇ where
   constructor mk-cong₂
-  field cong₂ : ∀ {Σ'} (T : Table Σ') L' M' → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ T ] · ρ)
+  field cong₂ : ∀ {Σ'} {T : Table Σ'} {L' M'} → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ T ] · ρ)
                 → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ T ] · ρ) → (ρ : ⟨ Env ⟩) → ⟦ M₄ ⟧₄ · ρ ＝ ⟦ f L' M' ⟧[ T ] · ρ
 open Cong₂
 
-{- glob, taken apart: what it does with the result of a recursive call -}
-codeO : ∀ {Σ Γ Δ A B} → Out Σ (λ Σ' → Code Σ' (sig Δ A B)) → Out Σ (λ Σ' → Tm Σ' Γ (code Δ A B))
-codeO (out s D' N') = out (there⊑ s) (D' ▷ N') (fun-ref Z)
-
-tupleO : ∀ {Σ Γ Δ} → Out Σ (λ Σ' → All (Tm Σ' Γ) Δ) → Out Σ (λ Σ' → Tm Σ' Γ (tup Δ))
-tupleO (out s D' Ms') = out s D' (tuple Ms')
-
-glob₁O : ∀ {Σ Γ Γ₁ A B} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) → Out Σ (λ Σ' → Tm Σ' Γ₁ A) → Out Σ (λ Σ' → Tm Σ' Γ B)
-glob₁O f (out s D' M') = out s D' (f M')
-
-glob₂O′ : ∀ {Σ Σ₁ Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C)
-  → Σ ⊑ Σ₁ → Tm Σ₁ Γ₁ A → Out Σ₁ (λ Σ' → Tm Σ' Γ₂ B) → Out Σ (λ Σ' → Tm Σ' Γ C)
-glob₂O′ f s₁ L' (out s₂ D₂ M') = out (⊑-trans s₁ s₂) D₂ (f (wk (⊑-∋ s₂) L') M')
-
-glob₂O : ∀ {Σ Γ Γ₁ Γ₂ A B C} → (∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C)
-  → S.Tm Γ₂ B → Out Σ (λ Σ' → Tm Σ' Γ₁ A) → Out Σ (λ Σ' → Tm Σ' Γ C)
-glob₂O f M (out s₁ D₁ L') = glob₂O′ f s₁ L' (glob M D₁)
-
-globsO′ : ∀ {Σ Σ₁ Γ A Δ} → Σ ⊑ Σ₁ → Tm Σ₁ Γ A → Out Σ₁ (λ Σ' → All (Tm Σ' Γ) Δ) → Out Σ (λ Σ' → All (Tm Σ' Γ) (A ∷ Δ))
-globsO′ s₁ M' (out s₂ D₂ Ms') = out (⊑-trans s₁ s₂) D₂ (wk (⊑-∋ s₂) M' ∷ Ms')
-
-globsO : ∀ {Σ Γ A Δ} → All (S.Tm Γ) Δ → Out Σ (λ Σ' → Tm Σ' Γ A) → Out Σ (λ Σ' → All (Tm Σ' Γ) (A ∷ Δ))
-globsO Ms (out s₁ D₁ M') = globsO′ s₁ M' (globs Ms D₁)
-
-caseO″ : ∀ {Σ Σ₁ Σ₂ Γ A B C} → Σ ⊑ Σ₁ → Σ₁ ⊑ Σ₂ → Tm Σ₁ Γ (A ⊹ B) → Tm Σ₂ (A ∷ Γ) C
-  → Out Σ₂ (λ Σ' → Tm Σ' (B ∷ Γ) C) → Out Σ (λ Σ' → Tm Σ' Γ C)
-caseO″ s₁ s₂ L' M' (out s₃ D₃ N') =
-  out (⊑-trans s₁ (⊑-trans s₂ s₃)) D₃ (case (wk (⊑-∋ (⊑-trans s₂ s₃)) L') (wk (⊑-∋ s₃) M') N')
-
-caseO′ : ∀ {Σ Σ₁ Γ A B C} → Σ ⊑ Σ₁ → Tm Σ₁ Γ (A ⊹ B) → S.Tm (B ∷ Γ) C
-  → Out Σ₁ (λ Σ' → Tm Σ' (A ∷ Γ) C) → Out Σ (λ Σ' → Tm Σ' Γ C)
-caseO′ s₁ L' N (out s₂ D₂ M') = caseO″ s₁ s₂ L' M' (glob N D₂)
-
-caseO : ∀ {Σ Γ A B C} → S.Tm (A ∷ Γ) C → S.Tm (B ∷ Γ) C → Out Σ (λ Σ' → Tm Σ' Γ (A ⊹ B)) → Out Σ (λ Σ' → Tm Σ' Γ C)
-caseO M N (out s₁ D₁ L') = caseO′ s₁ L' N (glob M D₁)
-
-{- (these mention no values, so `with` is harmless) -}
-module _ {Σ} (D : Made Σ) where
-  glob-code : ∀ {Γ Δ A B} (N : S.Tm (A ∷ tup Δ ∷ []) B) → glob {Γ = Γ} (S.code N) D Eq.≡ codeO (glob N D)
-  glob-code N with glob N D
-  ... | out _ _ _ = Eq.refl
-
-  glob-tuple : ∀ {Γ Δ} (Ms : All (S.Tm Γ) Δ) → glob (S.tuple Ms) D Eq.≡ tupleO (globs Ms D)
-  glob-tuple Ms with globs Ms D
-  ... | out _ _ _ = Eq.refl
-
-  glob₁-eq : ∀ {Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) → glob₁ f M D Eq.≡ glob₁O f (glob M D)
-  glob₁-eq f M with glob M D
-  ... | out _ _ _ = Eq.refl
-
-  glob₂-eq : ∀ {Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B)
-    → glob₂ f L M D Eq.≡ glob₂O f M (glob L D)
-  glob₂-eq f L M with glob L D
-  ... | out _ D₁ _ with glob M D₁
-  ...   | out _ _ _ = Eq.refl
-
-  globs-eq : ∀ {Γ A Δ} (M : S.Tm Γ A) (Ms : All (S.Tm Γ) Δ) → globs (M ∷ Ms) D Eq.≡ globsO Ms (glob M D)
-  globs-eq M Ms with glob M D
-  ... | out _ D₁ _ with globs Ms D₁
-  ...   | out _ _ _ = Eq.refl
-
-  glob-case : ∀ {Γ A B C} (L : S.Tm Γ (A ⊹ B)) (M : S.Tm (A ∷ Γ) C) (N : S.Tm (B ∷ Γ) C)
-    → glob (S.case L M N) D Eq.≡ caseO M N (glob L D)
-  glob-case L M N with glob L D
-  ... | out _ D₁ _ with glob M D₁
-  ...   | out _ D₂ _ with glob N D₂
-  ...     | out _ _ _ = Eq.refl
-
-{- what each part makes means what the source does -}
-code-ok : ∀ {Σ Γ Δ A B} (N : S.Tm (A ∷ tup Δ ∷ []) B) (D : Made Σ) o → OK N D o → OK {Γ = Γ} (S.code N) D (codeO o)
-code-ok N D (out s D' N') (mk-ok e h) = mk-ok (mk-ext (agrees e)) λ ρ → codeᶜ-cong ⟦ N ⟧₄ ⟦ N' ⟧[ made D' ] h
-
-tuple-ok : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) o → OKs Ms D o → OK (S.tuple Ms) D (tupleO o)
-tuple-ok {Δ = Δ} Ms D (out s D' Ms') (mk-oks e h) = mk-ok e λ ρ → ap (tupleᵈ (length Δ) ·_) (h ρ)
-
-glob₁-ok : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B} o
-  → OK M D o → Cong₁ f M M₄ → OK M₄ D (glob₁O f o)
-glob₁-ok f M D (out s D' M') (mk-ok e h) c = mk-ok e (cong₁ c (made D') M' h)
-
-module _ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B)
-         (D : Made Σ) {M₄ : S.Tm Γ C} (c : Cong₂ f L M M₄) where
-  glob₂-ok′ : ∀ {Σ₁} (s₁ : Σ ⊑ Σ₁) (D₁ : Made Σ₁) (L' : Tm Σ₁ Γ₁ A) → Ext s₁ D D₁ → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ made D₁ ] · ρ)
-    → ∀ o → OK M D₁ o → OK M₄ D (glob₂O′ f s₁ L' o)
-  glob₂-ok′ s₁ D₁ L' e₁ h₁ (out s₂ D₂ M') (mk-ok e₂ h₂) =
-    mk-ok (ext-trans e₁ e₂) (cong₂ c (made D₂) (wk (⊑-∋ s₂) L') M' (λ ρ → h₁ ρ ∙ wk-made e₂ L' ρ) h₂)
-
-  glob₂-ok : ∀ o → OK L D o → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → OK M₄ D (glob₂O f M o)
-  glob₂-ok (out s₁ D₁ L') (mk-ok e₁ h₁) okM = glob₂-ok′ s₁ D₁ L' e₁ h₁ (glob M D₁) (okM D₁)
-
-  glob₂-sem : OK L D (glob L D) → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → OK M₄ D (glob₂ f L M D)
-  glob₂-sem okL okM = Eq.subst (OK M₄ D) (Eq.sym (glob₂-eq D f L M)) (glob₂-ok (glob L D) okL okM)
-
-module _ {Σ Γ A Δ} (M : S.Tm Γ A) (Ms : All (S.Tm Γ) Δ) (D : Made Σ) where
-  globs-ok′ : ∀ {Σ₁} (s₁ : Σ ⊑ Σ₁) (D₁ : Made Σ₁) (M' : Tm Σ₁ Γ A) → Ext s₁ D D₁ → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ made D₁ ] · ρ)
-    → ∀ o → OKs Ms D₁ o → OKs (M ∷ Ms) D (globsO′ s₁ M' o)
-  globs-ok′ s₁ D₁ M' e₁ h₁ (out s₂ D₂ Ms') (mk-oks e₂ h₂) =
-    mk-oks (ext-trans e₁ e₂) λ ρ → dfunext fe λ { zero → h₁ ρ ∙ wk-made e₂ M' ρ ; (suc i) → happly (h₂ ρ) i }
-
-  globs-ok∷ : ∀ o → OK M D o → (∀ {Σ'} (D' : Made Σ') → OKs Ms D' (globs Ms D')) → OKs (M ∷ Ms) D (globsO Ms o)
-  globs-ok∷ (out s₁ D₁ M') (mk-ok e₁ h₁) okMs = globs-ok′ s₁ D₁ M' e₁ h₁ (globs Ms D₁) (okMs D₁)
-
-module _ {Σ Γ A B C} (L : S.Tm Γ (A ⊹ B)) (M : S.Tm (A ∷ Γ) C) (N : S.Tm (B ∷ Γ) C) (D : Made Σ) where
-  case-ok″ : ∀ {Σ₁ Σ₂} (s₁ : Σ ⊑ Σ₁) (s₂ : Σ₁ ⊑ Σ₂) (D₁ : Made Σ₁) (D₂ : Made Σ₂) (L' : Tm Σ₁ Γ (A ⊹ B)) (M' : Tm Σ₂ (A ∷ Γ) C)
-    → Ext s₁ D D₁ → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ made D₁ ] · ρ)
-    → Ext s₂ D₁ D₂ → ((ρ : ⟨ Env ⟩) → ⟦ M ⟧₄ · ρ ＝ ⟦ M' ⟧[ made D₂ ] · ρ)
-    → ∀ o → OK N D₂ o → OK (S.case L M N) D (caseO″ s₁ s₂ L' M' o)
-  case-ok″ s₁ s₂ D₁ D₂ L' M' e₁ h₁ e₂ h₂ (out s₃ D₃ N') (mk-ok e₃ h₃) =
-    mk-ok (ext-trans e₁ (ext-trans e₂ e₃)) λ ρ →
-      caseᶜ-cong ⟦ L ⟧₄ ⟦ wk (⊑-∋ (⊑-trans s₂ s₃)) L' ⟧[ made D₃ ] ⟦ M ⟧₄ ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ]
-        ⟦ N ⟧₄ ⟦ N' ⟧[ made D₃ ] ρ ρ (h₁ ρ ∙ wk-made (ext-trans e₂ e₃) L' ρ)
-        (λ d _ → h₂ (d • ρ) ∙ wk-made e₃ M' (d • ρ)) (λ d _ → h₃ (d • ρ))
-
-  case-ok′ : ∀ {Σ₁} (s₁ : Σ ⊑ Σ₁) (D₁ : Made Σ₁) (L' : Tm Σ₁ Γ (A ⊹ B)) → Ext s₁ D D₁ → ((ρ : ⟨ Env ⟩) → ⟦ L ⟧₄ · ρ ＝ ⟦ L' ⟧[ made D₁ ] · ρ)
-    → (∀ {Σ'} (D' : Made Σ') → OK N D' (glob N D')) → ∀ o → OK M D₁ o → OK (S.case L M N) D (caseO′ s₁ L' N o)
-  case-ok′ s₁ D₁ L' e₁ h₁ okN (out s₂ D₂ M') (mk-ok e₂ h₂) = case-ok″ s₁ s₂ D₁ D₂ L' M' e₁ h₁ e₂ h₂ (glob N D₂) (okN D₂)
-
-  case-ok : ∀ o → OK L D o → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → (∀ {Σ'} (D' : Made Σ') → OK N D' (glob N D'))
-    → OK (S.case L M N) D (caseO M N o)
-  case-ok (out s₁ D₁ L') (mk-ok e₁ h₁) okM okN = case-ok′ s₁ D₁ L' e₁ h₁ okN (glob M D₁) (okM D₁)
-
-glob₁-sem : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B}
-  → OK M D (glob M D) → Cong₁ f M M₄ → OK M₄ D (glob₁ f M D)
-glob₁-sem f M D {M₄} ok c = Eq.subst (OK M₄ D) (Eq.sym (glob₁-eq D f M)) (glob₁-ok f M D {M₄ = M₄} (glob M D) ok c)
-
-{- each construct, given what glob makes of its parts (not recursive, so
-   that the recursion of glob-ok below is only a skeleton) -}
-code-sem : ∀ {Σ Γ Δ A B} (N : S.Tm (A ∷ tup Δ ∷ []) B) (D : Made Σ) → OK N D (glob N D)
-  → OK {Γ = Γ} (S.code N) D (glob (S.code N) D)
-code-sem {Γ = Γ} N D ok = Eq.subst (OK {Γ = Γ} (S.code N) D) (Eq.sym (glob-code D N)) (code-ok {Γ = Γ} N D (glob N D) ok)
-
-tuple-sem : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) → OKs Ms D (globs Ms D) → OK (S.tuple Ms) D (glob (S.tuple Ms) D)
-tuple-sem Ms D ok = Eq.subst (OK (S.tuple Ms) D) (Eq.sym (glob-tuple D Ms)) (tuple-ok Ms D (globs Ms D) ok)
-
-case-sem : ∀ {Σ Γ A B C} (L : S.Tm Γ (A ⊹ B)) (M : S.Tm (A ∷ Γ) C) (N : S.Tm (B ∷ Γ) C) (D : Made Σ)
-  → OK L D (glob L D) → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → (∀ {Σ'} (D' : Made Σ') → OK N D' (glob N D'))
-  → OK (S.case L M N) D (glob (S.case L M N) D)
-case-sem L M N D okL okM okN =
-  Eq.subst (OK (S.case L M N) D) (Eq.sym (glob-case D L M N)) (case-ok L M N D (glob L D) okL okM okN)
-
-globs-sem : ∀ {Σ Γ A Δ} (M : S.Tm Γ A) (Ms : All (S.Tm Γ) Δ) (D : Made Σ) → OK M D (glob M D)
-  → (∀ {Σ'} (D' : Made Σ') → OKs Ms D' (globs Ms D')) → OKs (M ∷ Ms) D (globs (M ∷ Ms) D)
-globs-sem M Ms D ok okMs = Eq.subst (OKs (M ∷ Ms) D) (Eq.sym (globs-eq D M Ms)) (globs-ok∷ M Ms D (glob M D) ok okMs)
-
-{- the constructs of one or two operands -}
-module _ {Σ Γ} (D : Made Σ) where
-  pack-sem : ∀ {Δ A B} (L : S.Tm Γ (code Δ A B)) (M : S.Tm Γ (tup Δ)) → OK L D (glob L D)
-    → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → OK (S.pack L M) D (glob (S.pack L M) D)
-  pack-sem L M = glob₂-sem pack L M D {M₄ = S.pack L M} (mk-cong₂ λ T L' M' hL hM ρ → ap₂ (λ a b → pair · a · b) (hL ρ) (hM ρ))
-
-  callc-sem : ∀ {A B} (L : S.Tm Γ (A ⇒ B)) (M : S.Tm Γ A) → OK L D (glob L D)
-    → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → OK (S.callc L M) D (glob (S.callc L M) D)
-  callc-sem L M = glob₂-sem callc L M D {M₄ = S.callc L M}
-    (mk-cong₂ λ T L' M' hL hM ρ → ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (hL ρ) (hM ρ))
-
-  prim-sem : ∀ p (L M : S.Tm Γ (base Int)) → OK L D (glob L D)
-    → (∀ {Σ'} (D' : Made Σ') → OK M D' (glob M D')) → OK (S.prim p L M) D (glob (S.prim p L M) D)
-  prim-sem p L M = glob₂-sem (prim p) L M D {M₄ = S.prim p L M} (mk-cong₂ λ T L' M' hL hM ρ → ap₂ (λ a b → primD p · a · b) (hL ρ) (hM ρ))
-
-  let-sem : ∀ {A B} (M : S.Tm Γ A) (N : S.Tm (A ∷ Γ) B) → OK M D (glob M D)
-    → (∀ {Σ'} (D' : Made Σ') → OK N D' (glob N D')) → OK (S.let′ M N) D (glob (S.let′ M N) D)
-  let-sem M N = glob₂-sem let′ M N D {M₄ = S.let′ M N}
-    (mk-cong₂ λ T M' N' hM hN ρ → letᶜ-cong ⟦ M ⟧₄ ⟦ M' ⟧[ T ] ⟦ N ⟧₄ ⟦ N' ⟧[ T ] ρ ρ (hM ρ) (λ d _ → hN (d • ρ)))
-
-  get-sem : ∀ {Δ A} (i : Δ ∋ A) (M : S.Tm Γ (tup Δ)) → OK M D (glob M D) → OK (S.get i M) D (glob (S.get i M) D)
-  get-sem i M ok = glob₁-sem (get i) M D {M₄ = S.get i M} ok (mk-cong₁ λ T M' h ρ → ap (proj (pos i) ·_) (h ρ))
-
-  inl-sem : ∀ {A B} (M : S.Tm Γ A) → OK M D (glob M D) → OK (S.inl {B = B} M) D (glob (S.inl M) D)
-  inl-sem {B = B} M ok = glob₁-sem (inl {B = B}) M D {M₄ = S.inl M} ok (mk-cong₁ λ T M' h ρ → ap (inlᵈ ·_) (h ρ))
-
-  inr-sem : ∀ {A B} (M : S.Tm Γ B) → OK M D (glob M D) → OK (S.inr {A = A} M) D (glob (S.inr M) D)
-  inr-sem {A = A} M ok = glob₁-sem (inr {A = A}) M D {M₄ = S.inr M} ok (mk-cong₁ λ T M' h ρ → ap (inrᵈ ·_) (h ρ))
-
-  fold-sem : ∀ {A} (M : S.Tm Γ (unrollᵗ A)) → OK M D (glob M D) → OK (S.fold {A = A} M) D (glob (S.fold {A = A} M) D)
-  fold-sem {A} M ok = glob₁-sem (fold {A = A}) M D {M₄ = S.fold {A = A} M} ok (mk-cong₁ λ T M' h → h)
-
-  unfold-sem : ∀ {A} (M : S.Tm Γ (μ A)) → OK M D (glob M D) → OK (S.unfold M) D (glob (S.unfold M) D)
-  unfold-sem {A} M ok = glob₁-sem (unfold {A = A}) M D {M₄ = S.unfold M} ok (mk-cong₁ λ T M' h → h)
-
 glob-ok : ∀ {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) → OK M D (glob M D)
 globs-ok : ∀ {Σ Γ Δ} (Ms : All (S.Tm Γ) Δ) (D : Made Σ) → OKs Ms D (globs Ms D)
+glob₁-ok : ∀ {Σ Γ Γ₁ A B} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ B) (M : S.Tm Γ₁ A) (D : Made Σ) {M₄ : S.Tm Γ B}
+  → Cong₁ f M M₄ → OK M₄ D (glob₁ f M D)
+glob₂-ok : ∀ {Σ Γ Γ₁ Γ₂ A B C} (f : ∀ {Σ'} → Tm Σ' Γ₁ A → Tm Σ' Γ₂ B → Tm Σ' Γ C) (L : S.Tm Γ₁ A) (M : S.Tm Γ₂ B)
+  (D : Made Σ) {M₄ : S.Tm Γ C} → Cong₂ f L M M₄ → OK M₄ D (glob₂ f L M D)
 
 glob-ok (S.` x) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
-glob-ok {Γ = Γ} (S.code N) D = code-sem {Γ = Γ} N D (glob-ok N D)
-glob-ok (S.pack L M) D = pack-sem D L M (glob-ok L D) (glob-ok M)
-glob-ok (S.callc L M) D = callc-sem D L M (glob-ok L D) (glob-ok M)
+glob-ok (S.code N) D with glob N D | glob-ok N D
+... | out s D' N' | mk-ok e h = mk-ok (mk-ext (agrees e)) λ ρ → codeᶜ-cong ⟦ N ⟧₄ ⟦ N' ⟧[ made D' ] (λ X Y _ _ → h (env₂ X Y))
+glob-ok (S.pack L M) D = glob₂-ok pack L M D {M₄ = S.pack L M} (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → pair · a · b) (hL ρ) (hM ρ))
+glob-ok (S.callc L M) D = glob₂-ok callc L M D {M₄ = S.callc L M}
+  (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → appᵈ · (appᵈ · (car · a) · (cdr · a)) · b) (hL ρ) (hM ρ))
 glob-ok (S.lit B c) D = mk-ok (mk-ext (λ f → refl)) λ ρ → refl
-glob-ok (S.tuple Ms) D = tuple-sem Ms D (globs-ok Ms D)
-glob-ok (S.get i M) D = get-sem D i M (glob-ok M D)
-glob-ok (S.inl {B = B} M) D = inl-sem D {B = B} M (glob-ok M D)
-glob-ok (S.inr {A} M) D = inr-sem D {A = A} M (glob-ok M D)
-glob-ok (S.case L M N) D = case-sem L M N D (glob-ok L D) (glob-ok M) (glob-ok N)
-glob-ok (S.prim p L M) D = prim-sem D p L M (glob-ok L D) (glob-ok M)
-glob-ok (S.let′ M N) D = let-sem D M N (glob-ok M D) (glob-ok N)
-glob-ok (S.fold {A} M) D = fold-sem D {A = A} M (glob-ok M D)
-glob-ok (S.unfold {A} M) D = unfold-sem D {A = A} M (glob-ok M D)
+glob-ok (S.tuple {Δ} Ms) D with globs Ms D | globs-ok Ms D
+... | out s D' Ms' | mk-oks e h = mk-ok e λ ρ → ap (tupleᵈ (length Δ) ·_) (h ρ)
+glob-ok (S.get i M) D = glob₁-ok (get i) M D {M₄ = S.get i M} (mk-cong₁ λ h ρ → ap (proj (pos i) ·_) (h ρ))
+glob-ok (S.inl {B = B} M) D = glob₁-ok (inl {B = B}) M D {M₄ = S.inl M} (mk-cong₁ λ h ρ → ap (inlᵈ ·_) (h ρ))
+glob-ok (S.inr {A} M) D = glob₁-ok (inr {A = A}) M D {M₄ = S.inr M} (mk-cong₁ λ h ρ → ap (inrᵈ ·_) (h ρ))
+glob-ok (S.case L M N) D with glob L D | glob-ok L D
+... | out s₁ D₁ L' | o₁ with glob M D₁ | glob-ok M D₁
+...   | out s₂ D₂ M' | o₂ with glob N D₂ | glob-ok N D₂
+...     | out s₃ D₃ N' | mk-ok e₃ h₃ =
+  mk-ok (ext-trans (ok-ext o₁) (ext-trans (ok-ext o₂) e₃)) λ ρ →
+    caseᶜ-cong ⟦ L ⟧₄ ⟦ wk (⊑-∋ (⊑-trans s₂ s₃)) L' ⟧[ made D₃ ] ⟦ M ⟧₄ ⟦ wk (⊑-∋ s₃) M' ⟧[ made D₃ ]
+      ⟦ N ⟧₄ ⟦ N' ⟧[ made D₃ ] ρ ρ (ok-sem o₁ ρ ∙ wk-made (ext-trans (ok-ext o₂) e₃) L' ρ)
+      (λ d _ → ok-sem o₂ (d • ρ) ∙ wk-made e₃ M' (d • ρ)) (λ d _ → h₃ (d • ρ))
+glob-ok (S.prim p L M) D = glob₂-ok (prim p) L M D {M₄ = S.prim p L M} (mk-cong₂ λ hL hM ρ → ap₂ (λ a b → primD p · a · b) (hL ρ) (hM ρ))
+glob-ok (S.let′ M N) D = glob₂-ok let′ M N D {M₄ = S.let′ M N}
+  (mk-cong₂ λ {_} {T} {M'} {N'} hM hN ρ → letᶜ-cong ⟦ M ⟧₄ ⟦ M' ⟧[ T ] ⟦ N ⟧₄ ⟦ N' ⟧[ T ] ρ ρ (hM ρ) (λ d _ → hN (d • ρ)))
+glob-ok (S.fold {A} M) D = glob₁-ok (fold {A = A}) M D {M₄ = S.fold M} (mk-cong₁ λ h → h)
+glob-ok (S.unfold {A} M) D = glob₁-ok (unfold {A = A}) M D {M₄ = S.unfold M} (mk-cong₁ λ h → h)
 
 globs-ok [] D = mk-oks (mk-ext (λ f → refl)) λ ρ → refl
-globs-ok (M ∷ Ms) D = globs-sem M Ms D (glob-ok M D) (globs-ok Ms)
+globs-ok (M ∷ Ms) D with glob M D | glob-ok M D
+... | out s₁ D₁ M' | o₁ with globs Ms D₁ | globs-ok Ms D₁
+...   | out s₂ D₂ Ms' | mk-oks e₂ h₂ =
+  mk-oks (ext-trans (ok-ext o₁) e₂) λ ρ → dfunext fe λ { zero → ok-sem o₁ ρ ∙ wk-made e₂ M' ρ ; (suc i) → happly (h₂ ρ) i }
+
+glob₁-ok f M D c with glob M D | glob-ok M D
+... | out s D' M' | mk-ok e h = mk-ok e (cong₁ c h)
+
+glob₂-ok f L M D c with glob L D | glob-ok L D
+... | out s₁ D₁ L' | o₁ with glob M D₁ | glob-ok M D₁
+...   | out s₂ D₂ M' | mk-ok e₂ h₂ = mk-ok (ext-trans (ok-ext o₁) e₂) (cong₂ c (λ ρ → ok-sem o₁ ρ ∙ wk-made e₂ L' ρ) h₂)
 
 {- The table of the program ------------------------------------------------------------}
 
 table-close : ∀ {Σ Σ'} (D : Made Σ') (s : Σ' ⊑ Σ) {t} (f : Σ' ∋ t) → made D f ＝ tables code′ (close D s) (⊑-∋ s f)
 table-close (D ▷ N) s Z =
   codeᶜ-cong ⟦ N ⟧[ made D ] ⟦ wk (⊑-∋ s') N ⟧[ tables code′ (close D s') ]
-    (wk-sem (⊑-∋ s') (tables code′ (close D s')) (made D) (table-close D s') N)
+    (λ X Y _ _ → wk-sem (⊑-∋ s') (tables code′ (close D s')) (made D) (table-close D s') N (env₂ X Y))
   ∙ tables-yes code′ (wk (⊑-∋ s') N) (close D s') (⊑-∋ s Z) (lvl-⊑ s Z) ⁻¹
   where s' = ⊑-trans (there⊑ here⊑) s
 table-close (D ▷ N) s (S f) =

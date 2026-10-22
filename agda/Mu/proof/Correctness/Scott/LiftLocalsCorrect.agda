@@ -50,7 +50,7 @@ import Mu.Semantics.Scott.Imp pt fe pe as I
 open I using (⟦_⟧ᴷ; 𝒜; 𝒜s; K; idK; underK)
 open import Mu.proof.Semantics.Scott.BackEndLemmas pt fe pe using (seq-⊥; cases-strict-natural; codeᶜ-cong; tables-cons)
 
-module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
+module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
   atm-＝ : ∀ {Δ A} (a : Atm Σ Δ A) σ → ⟦ ⌜ a ⌝ᵃ ⟧[ T ] · σ ＝ 𝒜 a T' · σ
   atm-＝ (var x) σ = refl
@@ -81,19 +81,15 @@ module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
     ∙ (app-Λ F D) ⁻¹
     ∙ lift-sem e₁ σ (appᵈ · (Λ · F)) (app-Λ F ⊥𝔻 ∙ seq-⊥ (F · ⊥𝔻))
    where
-    Mᵈ Nᵈ : Den Env
     Mᵈ = ⟦ ⌜ e₁ ⌝ ⟧[ T ]
     Nᵈ = ⟦ ⌜ e₂ ⌝ ⟧[ T ]
-    D : ⟨ 𝔻 ⟩
     D = Mᵈ · σ
-    F : DCPO[ 𝔻 , 𝔻 ]
     F = underK (⟦ lift e₂ ⟧ᴷ T') · (σ , κ)
   lift-sem (M.case a e₁ e₂) σ κ s =
     cases-strict-natural κ s (abs ⟦ ⌜ e₁ ⌝ ⟧[ T ] · σ) (abs ⟦ ⌜ e₂ ⌝ ⟧[ T ] · σ) F₁ F₂
       (λ X → lift-sem e₁ (X • σ) κ s) (λ X → lift-sem e₂ (X • σ) κ s) (⟦ ⌜ a ⌝ᵃ ⟧[ T ] · σ)
     ∙ ap (λ x → cases · x · (strict · F₁ , strict · F₂)) (atm-＝ a σ)
    where
-    F₁ F₂ : DCPO[ 𝔻 , 𝔻 ]
     F₁ = underK (⟦ lift e₁ ⟧ᴷ T') · (σ , κ)
     F₂ = underK (⟦ lift e₂ ⟧ᴷ T') · (σ , κ)
 
@@ -110,9 +106,9 @@ table-lift : ∀ {Σ ss} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) ss)
 table-lift [] f = refl
 table-lift (d ∷ ds) f =
   tables-cons code′ I.code′ ⌜ d ⌝ (All-map ⌜_⌝ ds) (lift d) (All-map lift ds) f
-    (code-lift (tables code′ (All-map ⌜_⌝ ds)) (tables I.code′ (All-map lift ds)) (table-lift ds) d)
+    (code-lift (table-lift ds) d)
     (table-lift ds f)
 
 lift-locals-correct : ∀ {A} (P : M.Program A) → ⟦ ⌜ P ⌝ₚ ⟧ₚ ＝ I.⟦ lift-program P ⟧ₚ
 lift-locals-correct (M.program ds e) =
-  lift-sem (table (All-map ⌜_⌝ ds)) (I.table (All-map lift ds)) (table-lift ds) e ρ₀ idK refl
+  lift-sem (table-lift ds) e ρ₀ idK refl

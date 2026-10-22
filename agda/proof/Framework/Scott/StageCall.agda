@@ -196,6 +196,12 @@ callₛ-mono m cd cd' v le =
   transport₂ (λ a b → a ⊑⟨ 𝓓 m ⟩ b) (callᶜ-is m v cd) (callᶜ-is m v cd')
     (monotone-if-continuous (Pow (Fin 2) (𝓓 (succ (succ m)))) (𝓓 m) (callᶜ m v) cd cd' le)
 
+{- application is monotone -}
+app-mono : (f f' a a' : ⟨ 𝔻 ⟩) → f ⊑⟨ 𝔻 ⟩ f' → a ⊑⟨ 𝔻 ⟩ a' → app · f · a ⊑⟨ 𝔻 ⟩ app · f' · a'
+app-mono f f' a a' u w = transitivity 𝔻 _ _ _
+  (monotone-if-continuous 𝔻 (𝔻 ⟹₁ 𝔻) app f f' u a)
+  (monotone-if-continuous 𝔻 𝔻 (app · f') a a' w)
+
 {- moving the closure down a stage, and the argument up -}
 callₛ-π : (m : ℕ) (cd : Fin 2 → ⟨ 𝓓 (succ (succ (succ m))) ⟩) (v : ⟨ 𝓓 m ⟩)
   → callₛ m (λ i → π (succ (succ m)) (cd i)) v ⊑⟨ 𝓓 m ⟩ π m (callₛ (succ m) cd (ε m v))
@@ -210,10 +216,6 @@ callₛ-π m cd v =
   e' = ε∞ (succ (succ m)) · π (succ (succ m)) (cd (suc zero))
   rhs-eq : π m (callₛ (succ m) cd (ε m v)) ＝ π∞ m · (app · (app · c' · e') · (ε∞ m · v))
   rhs-eq = π-π∞ m (app · (app · c' · e') · (ε∞ (succ m) · ε m v)) ∙ ap (λ - → π∞ m · (app · (app · c' · e') · -)) (ε∞-ε m v)
-  app-mono : (f f' a a' : ⟨ 𝔻 ⟩) → f ⊑⟨ 𝔻 ⟩ f' → a ⊑⟨ 𝔻 ⟩ a' → app · f · a ⊑⟨ 𝔻 ⟩ app · f' · a'
-  app-mono f f' a a' u w = transitivity 𝔻 _ _ _
-    (monotone-if-continuous 𝔻 (𝔻 ⟹₁ 𝔻) app f f' u a)
-    (monotone-if-continuous 𝔻 𝔻 (app · f') a a' w)
 
 {- moving the closure up a stage, and the argument down -}
 callₛ-ε : (m : ℕ) (cd : Fin 2 → ⟨ 𝓓 (succ (succ m)) ⟩) (w : ⟨ 𝓓 (succ m) ⟩)
