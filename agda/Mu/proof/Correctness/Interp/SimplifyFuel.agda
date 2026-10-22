@@ -24,10 +24,11 @@
   closure, under Facts that are true of the two environments (Ok); a
   known function is a source closure (KDen). When simp E M returns a
   value term, or M has a known value, the source runs M to a value it
-  describes, at every large enough clock (run-term, run-known). A call,
-  β or an inlined known function (whose body the source reaches by
-  running the operator), is one lemma (run-let, let-sim). The interpreters never err, and the theorem holds for every
-  closed program.
+  describes, at every large enough clock (run, both at once: Opd). A
+  call, β or an inlined known function (whose body the source reaches
+  by running the operator), is one lemma for each (run-let, let-sim).
+  The interpreters never err, and the theorem holds for every closed
+  program.
 
 -}
 
@@ -354,9 +355,6 @@ opd-info T h with value T in isv
 ... | true = opd (λ _ → h refl) λ { refl → map₂ (map₂ (strong-den T)) (h refl) }
 ... | false = opd (λ e → h (trans (sym isv) e)) λ ()
 
-Fn : ∀ {Δ Γ A} → Tm Δ A → S.Env Δ → Info Γ A → S.Env Γ → Set
-Fn L ρ J ρ' = ∀ {K} → known J ≡ just K → Σ[ v ∈ S.Val _ ] Run L ρ v × KDen v K ρ'
-
 run : ∀ {Δ Γ A} fl (M : Tm Δ A) {E : Facts Δ Γ} {ρ ρ'} → Ok E ρ ρ' → Opd (λ ck → S.eval ck ρ M) (simp fl E M) ρ'
 run-terms : ∀ {Δ Γ Δ'} fl (Ms : All (Tm Δ) Δ') {E : Facts Δ Γ} {ρ ρ'} → Ok E ρ ρ' → values (simps fl E Ms) ≡ true
   → Σ[ vs ∈ All S.Val Δ' ] Stable (λ ck → S.evals ck ρ Ms) (ret vs) × Strongs vs (simps fl E Ms) ρ'
@@ -364,17 +362,18 @@ run-get : ∀ {Δ Γ Δ' A} fl (i : Δ' ∋ A) (L : Tm Δ (tup Δ')) {E : Facts 
   → component i (known (simp fl E L)) refl ≡ just K → Σ[ v ∈ S.Val A ] Run (get i L) ρ v × Den v K ρ'
 run-unf : ∀ {Δ Γ A} fl (L : Tm Δ (μ A)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
   → unfolded (known (simp fl E L)) refl ≡ just K → Σ[ v ∈ S.Val _ ] Run (unfold L) ρ v × Den v K ρ'
+{- a known branch: L runs to an injection of v, which K describes, for the branch's variable -}
 run-inl : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⊹ B)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
-  → branch (known (simp fl E L)) refl ≡ just (inj₁ K) → Σ[ v ∈ S.Val A ] Run L ρ (S.inl v) × Strong v K ρ'
+  → branch (known (simp fl E L)) refl ≡ just (inj₁ K) → Σ[ v ∈ S.Val A ] Run L ρ (S.inl v) × Ok (self K P.• E) (v ∷ ρ) ρ'
 run-inr : ∀ {Δ Γ A B} fl (L : Tm Δ (A ⊹ B)) {E : Facts Δ Γ} {ρ ρ' K} → Ok E ρ ρ'
-  → branch (known (simp fl E L)) refl ≡ just (inj₂ K) → Σ[ v ∈ S.Val B ] Run L ρ (S.inr v) × Strong v K ρ'
+  → branch (known (simp fl E L)) refl ≡ just (inj₂ K) → Σ[ v ∈ S.Val B ] Run L ρ (S.inr v) × Ok (self K P.• E) (v ∷ ρ) ρ'
 run-int : ∀ {Δ Γ} fl (L : Tm Δ (base Int)) {E : Facts Δ Γ} {ρ ρ' n} → Ok E ρ ρ' → int-of (known (simp fl E L)) ≡ just n
   → Run L ρ (S.const n)
 {- a let, or a call: the source runs the operand, then N (run-let), or
    the target calls (run-call) -}
 run-let : ∀ {Δf Δ Γ A B} t fl (N : Tm (A ∷ Δf) B) {Ef : Facts Δf Γ} {ρf ρ' I} {M : Tm Δ A} {ρ} → Ok Ef ρf ρ'
   → Opd (λ ck → S.eval ck ρ M) I ρ' → Opd (Bound t M N ρf ρ) (simp-let fl Ef N I) ρ'
-run-call : ∀ {Δ Γ A B} fl (J : Info Γ (A ⇒ B)) I {L : Tm Δ (A ⇒ B)} {M ρ' ρ} → Fn L ρ J ρ'
+run-call : ∀ {Δ Γ A B} fl (J : Info Γ (A ⇒ B)) I {L : Tm Δ (A ⇒ B)} {M ρ' ρ} → Opd (λ ck → S.eval ck ρ L) J ρ'
   → Opd (λ ck → S.eval ck ρ M) I ρ' → Opd (λ ck → S.eval ck ρ (app L M)) (simp-call fl J I) ρ'
 
 {- a primitive on known integers -}
@@ -387,7 +386,7 @@ run fl (` x) {ρ = ρ} ok = opd (λ _ → _ , st-now (λ _ → refl) , trm ok x)
 run fl (lam N) ok = opd (λ _ → _ , st-now (λ _ → refl) , clo≈ ok) λ { refl → _ , st-now (λ _ → refl) , _ , refl , ok }
 run fl (app L M) {E} {ρ = ρ} ok with lam? L
 ... | is-lam N = run-let true fl N {ρf = ρ} {M = M} ok (run fl M ok)
-... | other = run-call fl (simp fl E L) _ {L = L} {M} (o-known (run fl L ok)) (run fl M ok)
+... | other = run-call fl (simp fl E L) _ {L = L} {M} (run fl L ok) (run fl M ok)
 run fl (lit B c) ok = opd-self (lit B c) (st-now (λ _ → refl)) refl
 run fl (tuple Ms) {E} ok = opd-info (tuple (simps fl E Ms)) λ e →
   let vs , σ , ds = run-terms fl Ms ok e in S.tup vs , st-bind σ (st-now (λ _ → refl)) , vs , refl , ds
@@ -395,7 +394,7 @@ run fl (get i L) {E} ok with component i (known (simp fl E L)) refl in c
 ... | nothing = opd (λ ()) (λ ())
 ... | just K with small K in s | run-get fl i L ok c
 ...   | true | v , σ , d = opd-self K σ (small-strong K s d)
-...   | false | v , σ , d = opd (λ ()) λ { refl → v , σ , d }
+...   | false | r = opd (λ ()) λ { refl → r }
 run fl (inl M) {E} ok = opd-info (inl (term (simp fl E M))) λ e →
   let v , σ , d = o-term (run fl M ok) e in S.inl v , st-bind σ (st-now (λ _ → refl)) , v , refl , d
 run fl (inr M) {E} ok = opd-info (inr (term (simp fl E M))) λ e →
@@ -403,9 +402,9 @@ run fl (inr M) {E} ok = opd-info (inr (term (simp fl E M))) λ e →
 run fl (case L M N) {E} ok with branch (known (simp fl E L)) refl in b
 ... | nothing = opd (λ ()) (λ ())
 ... | just (inj₁ K) with run-inl fl L ok b
-...   | v , σ , d = opd-map (st-bind σ) (run fl M (ok-self ok (proj₂ (branch-inl (known (simp fl E L)) refl b)) d))
+...   | v , σ , ok' = opd-map (st-bind σ) (run fl M ok')
 run fl (case L M N) {E} ok | just (inj₂ K) with run-inr fl L ok b
-...   | v , σ , d = opd-map (st-bind σ) (run fl N (ok-self ok (proj₂ (branch-inr (known (simp fl E L)) refl b)) d))
+...   | v , σ , ok' = opd-map (st-bind σ) (run fl N ok')
 run fl (prim p L M) {E} ok with int-of (known (simp fl E L)) in e₁
 ... | nothing = opd (λ ()) (λ ())
 ... | just n with int-of (known (simp fl E M)) in e₂
@@ -418,7 +417,7 @@ run fl (unfold L) {E} ok with unfolded (known (simp fl E L)) refl in u
 ... | nothing = opd (λ ()) (λ ())
 ... | just K with small K in s | run-unf fl L ok u
 ...   | true | v , σ , d = opd-self K σ (small-strong K s d)
-...   | false | v , σ , d = opd (λ ()) λ { refl → v , σ , d }
+...   | false | r = opd (λ ()) λ { refl → r }
 
 run-terms fl [] ok _ = [] , st-now (λ _ → refl) , tt
 run-terms fl (M ∷ Ms) {E} ok e with P.∧-true {value (term (simp fl E M))} e
@@ -434,11 +433,11 @@ run-unf fl L {E} ok u with o-known (run fl L ok) (unfold-inv (known (simp fl E L
 
 run-inl fl L {E} ok b with branch-inl (known (simp fl E L)) refl b
 ... | k , s with o-known (run fl L ok) k
-...   | .(S.inl v₀) , σ , (v₀ , refl , d) = v₀ , σ , small-strong _ s d
+...   | .(S.inl v₀) , σ , (v₀ , refl , d) = v₀ , σ , ok-self ok s (small-strong _ s d)
 
 run-inr fl L {E} ok b with branch-inr (known (simp fl E L)) refl b
 ... | k , s with o-known (run fl L ok) k
-...   | .(S.inr v₀) , σ , (v₀ , refl , d) = v₀ , σ , small-strong _ s d
+...   | .(S.inr v₀) , σ , (v₀ , refl , d) = v₀ , σ , ok-self ok s (small-strong _ s d)
 
 run-int fl L {E} ok e with int-inv (known (simp fl E L)) e
 ... | refl , k with o-known (run fl L ok) k
@@ -451,7 +450,7 @@ run-let t fl N okf o | false | true = opd (λ ()) (λ ())
 run-let t fl N okf o | false | false = opd (λ ()) (λ ())
 
 run-call (suc fl) (T ∣ just (P.fun N Ef)) I {M = M} hJ o with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
-... | true with hJ refl
+... | true with o-known hJ refl
 ...   | _ , σL , (ρf , refl , okf) = opd-map (st-bind σL) (run-let true fl N {M = M} okf o)
 run-call (suc fl) (T ∣ just (P.fun N Ef)) I hJ o | false = opd (λ ()) (λ ())
 run-call zero J I hJ o = opd (λ ()) (λ ())
@@ -511,7 +510,7 @@ body-sim : ∀ {Δ Γ A B} t ck fl (N : Tm (A ∷ Δ) B) {E : Facts (A ∷ Δ) �
 let-sim : ∀ {Δf Δ Γ A B} t ck fl (N : Tm (A ∷ Δf) B) {Ef : Facts Δf Γ} {ρf ρ' I} {M : Tm Δ A} {ρ} → Ok Ef ρf ρ' → Opd (λ ck → S.eval ck ρ M) I ρ'
   → Sim _≈_ (λ c → S.eval c ρ M) (S.eval ck ρ' (term I)) ck
   → Sim _≈_ (Bound t M N ρf ρ) (S.eval ck ρ' (term (simp-let fl Ef N I))) ck
-call-sim : ∀ {Δ Γ A B} ck fl (J : Info Γ (A ⇒ B)) I {L : Tm Δ (A ⇒ B)} {M ρ' ρ} → Fn L ρ J ρ'
+call-sim : ∀ {Δ Γ A B} ck fl (J : Info Γ (A ⇒ B)) I {L : Tm Δ (A ⇒ B)} {M ρ' ρ} → Opd (λ ck → S.eval ck ρ L) J ρ'
   → Sim _≈_ (λ c → S.eval c ρ L) (S.eval ck ρ' (term J)) ck → Opd (λ ck → S.eval ck ρ M) I ρ'
   → Sim _≈_ (λ c → S.eval c ρ M) (S.eval ck ρ' (term I)) ck
   → Sim _≈_ (λ c → S.eval c ρ (app L M)) (S.eval ck ρ' (term (simp-call fl J I))) ck
@@ -532,7 +531,7 @@ let-sim t ck fl N {I = I} {M} {ρ} okf o hM | false | true =
 let-sim t ck fl N okf o hM | false | false = sim-bind hM λ _ r → body-sim t ck fl N (ok-under okf r)
 
 call-sim ck (suc fl) (T ∣ just (P.fun N Ef)) I {L} {M} hJ hL o hM with size (term (simp-let fl Ef N I)) ≤ᵇ inline-size
-... | true with hJ refl
+... | true with o-known hJ refl
 ...   | _ , σL , (ρf , refl , okf) = sim-run (mono-at _ L) σL (let-sim true ck fl N {M = M} okf o hM)
 call-sim ck (suc fl) (T ∣ just (P.fun N Ef)) I {L} hJ hL o hM | false = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
 call-sim ck zero J I hJ hL o hM = sim-bind hL λ _ r → sim-bind hM λ _ s → sim-call ck r s
@@ -543,23 +542,22 @@ sim ck fl (` x) {ρ = ρ} ok = sim-known ck (` x) ρ (st-now (λ _ → refl)) (t
 sim ck fl (lam N) ok = sim-ret (clo≈ ok)
 sim ck fl (app L M) {E} ok with lam? L
 ... | is-lam N = let-sim true ck fl N {M = M} ok (run fl M ok) (sim ck fl M ok)
-... | other = call-sim ck fl (simp fl E L) _ {L = L} {M} (o-known (run fl L ok)) (sim ck fl L ok) (run fl M ok) (sim ck fl M ok)
+... | other = call-sim ck fl (simp fl E L) _ {L = L} {M} (run fl L ok) (sim ck fl L ok) (run fl M ok) (sim ck fl M ok)
 sim ck fl (lit B c) ok = sim-ret const≈
 sim ck fl (tuple Ms) ok = sim-bind (sims ck fl Ms ok) λ _ rs → sim-ret (tup≈ rs)
 sim ck fl (get i L) {E} ok with component i (known (simp fl E L)) refl in c
 ... | nothing = sim-bind (sim ck fl L ok) λ _ r → sim-ret (nth≈ i r)
-... | just K with small K in s
-...   | true with run-get fl i L ok c
-...     | v , σ , d = sim-known ck (get i L) _ σ (small-strong K s d)
-sim ck fl (get i L) {E} ok | just K | false = sim-bind (sim ck fl L ok) λ _ r → sim-ret (nth≈ i r)
+... | just K with small K in s | run-get fl i L ok c
+...   | true | v , σ , d = sim-known ck (get i L) _ σ (small-strong K s d)
+...   | false | _ = sim-bind (sim ck fl L ok) λ _ r → sim-ret (nth≈ i r)
 sim ck fl (inl M) ok = sim-bind (sim ck fl M ok) λ _ r → sim-ret (inl≈ r)
 sim ck fl (inr M) ok = sim-bind (sim ck fl M ok) λ _ r → sim-ret (inr≈ r)
 sim ck fl (case L M N) {E} ok with branch (known (simp fl E L)) refl in b
 ... | nothing = sim-bind (sim ck fl L ok) λ { _ (inl≈ r) → sim ck fl M (ok-under ok r) ; _ (inr≈ r) → sim ck fl N (ok-under ok r) }
 ... | just (inj₁ K) with run-inl fl L ok b
-...   | v , σ , d = sim-run (mono-at _ L) σ (sim ck fl M (ok-self ok (proj₂ (branch-inl (known (simp fl E L)) refl b)) d))
+...   | v , σ , ok' = sim-run (mono-at _ L) σ (sim ck fl M ok')
 sim ck fl (case L M N) {E} ok | just (inj₂ K) with run-inr fl L ok b
-...   | v , σ , d = sim-run (mono-at _ L) σ (sim ck fl N (ok-self ok (proj₂ (branch-inr (known (simp fl E L)) refl b)) d))
+...   | v , σ , ok' = sim-run (mono-at _ L) σ (sim ck fl N ok')
 sim ck fl (prim p L M) {E} ok with int-of (known (simp fl E L)) in e₁
 ... | nothing = sim-bind (sim ck fl L ok) λ _ r → sim-bind (sim ck fl M ok) λ _ s → sim-ret (δ≈ p r s)
 ... | just n with int-of (known (simp fl E M)) in e₂
@@ -569,10 +567,9 @@ sim ck fl (let′ M N) ok = let-sim false ck fl N {M = M} ok (run fl M ok) (sim 
 sim ck fl (fold M) ok = sim-bind (sim ck fl M ok) λ _ r → sim-ret (fold≈ r)
 sim ck fl (unfold L) {E} ok with unfolded (known (simp fl E L)) refl in u
 ... | nothing = sim-bind (sim ck fl L ok) λ _ r → sim-ret (unfold≈ r)
-... | just K with small K in s
-...   | true with run-unf fl L ok u
-...     | v , σ , d = sim-known ck (unfold L) _ σ (small-strong K s d)
-sim ck fl (unfold L) {E} ok | just K | false = sim-bind (sim ck fl L ok) λ _ r → sim-ret (unfold≈ r)
+... | just K with small K in s | run-unf fl L ok u
+...   | true | v , σ , d = sim-known ck (unfold L) _ σ (small-strong K s d)
+...   | false | _ = sim-bind (sim ck fl L ok) λ _ r → sim-ret (unfold≈ r)
 
 {- The end theorem: for every closed program ----------------------------------------}
 
