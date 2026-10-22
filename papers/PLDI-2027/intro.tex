@@ -48,8 +48,11 @@ These challenges motivate four research questions:
   compiler passes?
 \item[RQ3] Can all the passes of the whole compiler be proved correct by
   equational reasoning?
-\item[RQ4] How does the denotational approach compare overall with
-  operational approaches to proving correctness of a whole compiler?
+\item[RQ4] How does the denotational approach, with a graph model,
+  compare overall with operational approaches to proving correctness
+  of a whole compiler?
+\item[RQ5] How does the choice of denotational model, a graph model
+  or Scott domains, affect the correctness proof?
 \end{description}
 
 We answer RQ1 affirmatively. The final missing link is a new
@@ -164,9 +167,9 @@ closure conversion abound, we know of no prior denotational proof for a
 language with general recursion that both preserves and reflects
 divergence.
 
-Finally, to answer RQ2 and RQ4, whose answers depend on comparing the
-denotational proof of correctness to operational ones, we prove the
-same compiler correct three more times: with abstract machines and
+Finally, to answer RQ2, RQ4, and RQ5, which depend on comparing the
+graph-model proof with other styles, we prove the same compiler
+correct three more times: with abstract machines and
 simulations, as in CompCert; with clocked interpreters and value
 relations, as in CakeML; and with standard reduction semantics and
 simulations. We also prove it a second time denotationally, with Scott
@@ -191,6 +194,11 @@ at 1,806 lines of Agda: behind the proof using clocked interpreters
 quantifies the negative answer to RQ3: where a pass changes how
 closures are represented, the denotational proof is more complex.  The
 proof of \pass{delay} takes 450 lines with the denotational semantics, compared with 35 to 126 for the operational proofs.
+For RQ5, the Scott-domain proof is 1.4 times as large as the
+graph-model proof. The main reason is that Scott values are infinite:
+the relation for \pass{delay} cannot recurse on them, and because the
+method of \citet{Pitts:1996aa} does not apply directly, we built it
+stage by stage, as \citet{Reynolds:1974aa} did.
 
 
 The technical contributions of this paper are:

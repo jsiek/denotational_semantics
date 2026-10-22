@@ -150,7 +150,11 @@ natural ones. The following reasons rule out all but one.
   for every source argument set $E$ that is related to the target
   arguments, and there are infinitely many such sets with no element
   in common, so a finite source side cannot have, for each of them, an
-  entry $V \mapsto w$ with $V \subseteq E$.
+  entry $V \mapsto w$ with $V \subseteq E$. For example, a target closure
+  that shows no usable code entry is related to every nonempty source
+  set, such as the singleton of $[n] \mapsto n$ for each $n$, and no
+  finite source side for $\lambda f.\,f$ serves them all; we check this
+  case in Agda.
 \item \emph{Whole denotations on both sides}, which we also tried,
   handle the mixing. But the function case uses the relation in
   negative position, and nothing decreases there, since a whole
@@ -165,9 +169,9 @@ natural ones. The following reasons rule out all but one.
   the call case fails for a bounded piece of it: its
   outputs can come from code entries whose arguments have any depth,
   so the pairs that produce them have no bound. The argument succeeds
-  for finitely many outputs at a time, and one can show by induction
-  on the bound that the relation holds on a bounded set exactly when it
-  holds on each finite sublist.
+  for finitely many outputs at a time, and we show in Agda, by
+  induction on the bound, that the relation holds on a bounded set
+  exactly when it holds on each finite sublist.
 \end{itemize}
 What remains is a finite list of target elements against the whole
 source denotation. Recursion on types, as in the proofs of
