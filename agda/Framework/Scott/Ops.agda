@@ -87,11 +87,12 @@ strict = to-exp₁ (𝔻 ⟹₁ 𝔻) 𝔻 𝔻 s
 Λ : DCPO[ 𝔻 ⟹₁ 𝔻 , 𝔻 ]
 Λ = ∘₁ (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) 𝔻 strict (inj fun)
 
-{- application: app f d applies f to d if f is a function, else ⊥ -}
+{- application: app f d applies f to d if f is a function (strictly: as
+   in the graph model, an application needs a defined argument), else ⊥ -}
 {- (the branches of the cases below are named, so that lemmas can
    refer to them) -}
 app-br : (t : Tag) → DCPO[ obj (Payload t) 𝔻 , 𝔻 ⟹₁ 𝔻 ]
-app-br fun = id₁ (𝔻 ⟹₁ 𝔻)
+app-br fun = strict
 app-br t = const₁ (obj (Payload t) 𝔻) (𝔻 ⟹₁ 𝔻) (const₁ 𝔻 𝔻 ⊥𝔻)
 
 app : DCPO[ 𝔻 , 𝔻 ⟹₁ 𝔻 ]

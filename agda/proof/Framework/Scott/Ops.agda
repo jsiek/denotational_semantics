@@ -106,6 +106,9 @@ seq-defined-l d e = ∐ˢˢ-defined (λ _ → e) (defined-is-prop d)
 seq-defined-r : (d e : ⟨ 𝔻 ⟩) → defined (seq · d · e) → defined e
 seq-defined-r d e p = transport defined (seq-defined d e (seq-defined-l d e p)) p
 
+seq-idem : (d e : ⟨ 𝔻 ⟩) → seq · d · (seq · d · e) ＝ seq · d · e
+seq-idem d e = seq-cong d (seq · d · e) e (seq-defined d e)
+
 {- a strict continuous map commutes with seq d -}
 seq-strict : (f : DCPO[ 𝔻 , 𝔻 ]) → f · ⊥𝔻 ＝ ⊥𝔻 → (d e : ⟨ 𝔻 ⟩) → f · (seq · d · e) ＝ seq · d · (f · e)
 seq-strict f s d e = ∐ˢˢ-＝-if-continuous-and-strict 𝔻⊥ 𝔻⊥ (pr₁ f) (pr₂ f) s (λ _ → e) (defined-is-prop d)
@@ -129,7 +132,7 @@ case-⊥ E h = antisymmetry (E ⁻) _ _ below (⊥-is-least E _)
 {- Functions -------------------------------------------------------------------------}
 
 app-Λ : (g : DCPO[ 𝔻 , 𝔻 ]) (d : ⟨ 𝔻 ⟩) → app · (Λ · g) · d ＝ seq · d · (g · d)
-app-Λ g d = ap (_· d) (case-inj (𝔻 ⟹𝔻) app-br fun (strict · g))
+app-Λ g d = ap (_· d) (case-inj (𝔻 ⟹𝔻) app-br fun (strict · g)) ∙ seq-idem d (g · d)
 
 app-Λ-defined : (g : DCPO[ 𝔻 , 𝔻 ]) (d : ⟨ 𝔻 ⟩) → defined d → app · (Λ · g) · d ＝ g · d
 app-Λ-defined g d p = app-Λ g d ∙ seq-defined d (g · d) p
