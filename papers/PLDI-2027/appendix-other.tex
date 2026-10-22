@@ -398,8 +398,7 @@ $\{\langle\rangle\}$ as the content of an unset register and an unset
 flag. A sequence means a continuous function of the frame, the
 registers, and the flag.
 
-\begin{theorem}[Correctness, Scott domains]\label{thm:scott}
-Let $M$ be a closed term of \iswim. For every constant $c$,
+\begin{theorem}[Correctness, Scott domains]\label{thm:scott} Assume propositional truncation, function extensionality, and propositional extensionality. Let $M$ be a closed term of \iswim. For every constant $c$,
 $\den{M}\rho_0 = c()$ if and only if $\den{\pass{compile}(M)} = c()$.
 Moreover, $\den{M}\rho_0$ is defined if and only if
 $\den{\pass{compile}(M)}$ is defined.
