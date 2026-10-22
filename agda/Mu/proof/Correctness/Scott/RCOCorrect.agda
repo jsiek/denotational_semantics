@@ -16,9 +16,7 @@
   (seq-absorb). The continuation of atomize means the operator on the
   atom under any extension of the frame (atomize-sem, atomizes-sem,
   atomize₂-sem). Unlike the graph model, no environment need be
-  defined or consistent. That a callc means CALL of its operands is
-  checked only once per table (callc-T, callc-T'), as Agda is slow to
-  compare nested operators.
+  defined or consistent.
 
 -}
 
@@ -29,7 +27,7 @@ open import UF.Subsingletons
 open import UF.Base using (ap₂; happly)
 
 open import Framework.Primitives using (Nat; Int; 𝔹; Unit; Void; Blame)
-open import Mu.Language.Type using (_∋_; Z; S; idx; lvl; _⇒_)
+open import Mu.Language.Type using (_∋_; Z; S; idx; _⇒_)
 open import Mu.Language.Clos5
 import Mu.Language.Mon as M
 open M using (Atm; Exp; var; lit; ref; ren; ⌜_⌝; ⌜_⌝ᵃ; ⌜_⌝ᵛ; ⌜_⌝ₚ)
@@ -39,9 +37,6 @@ open import Framework.abt.GSubst using (_•_)
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.List using (List; []; _∷_; length)
-open import Data.Nat using (_≟_)
-import Relation.Binary.PropositionalEquality as Eq
-open import Relation.Nullary using (Dec; yes; no)
 
 module Mu.proof.Correctness.Scott.RCOCorrect
         (pt : propositional-truncations-exist)
@@ -60,20 +55,9 @@ open import Semantics.Scott.Prim pt fe pe using (primD; prim-br₁; prim-br₂)
 open import proof.Framework.Scott.Values pt fe pe using (app-arg-⊥)
 open import Mu.Semantics.Scott.Ops pt fe pe
 open import Mu.Semantics.Scott.Clos5 pt fe pe
+open import Mu.proof.Semantics.Scott.BackEndLemmas pt fe pe using (below-if; codeᶜ-cong; tables-cons)
 
 {- seq d e is e when e defined implies d defined ------------------------------------}
-
-private
- V : DCPO₁
- V = obj Val 𝔻
-
- value-tr : (d e : ⟨ 𝔻 ⟩) (q : d ＝ e) (p : defined d)
-   → value (unroll · d) p ⊑⟨ V ⟩ value (unroll · e) (transport defined q p)
- value-tr d .d refl p = reflexivity V (value (unroll · d) p)
-
-below-if : (d e : ⟨ 𝔻 ⟩) → (defined d → d ＝ e) → d ⊑⟨ 𝔻 ⟩ e
-below-if d e h = transport (λ - → d ⊑⟨ 𝔻 ⟩ -) (roll-unroll e)
-  (below-roll d (unroll · e) ((λ p → transport defined (h p) p) , (λ p → value-tr d e (h p) p)))
 
 seq-absorb : (d e : ⟨ 𝔻 ⟩) → (defined e → defined d) → seq · d · e ＝ e
 seq-absorb d e h = antisymmetry 𝔻 (seq · d · e) e
@@ -141,19 +125,6 @@ prim-str₁ p m = strict-reflects (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (primD p)
 cases-str : (br : ⟨ Br ⟩) → Str (λ v → cases · v · br)
 cases-str br = strict-reflects (∘₁ 𝔻 (Br ⟹₁ 𝔻) 𝔻 cases (at-point₁ Br 𝔻 br)) (ap (_· br) (case-⊥ (Br ⟹𝔻) cases-br))
 
-{- the tables of two lists of definitions agree when their newest
-   definitions and the tables of the older ones do -}
-module _ {Σ} {D D' : DSig → Set} (cd : Table Σ → ∀ {s} → D s → ⟨ 𝔻 ⟩) (cd' : Table Σ → ∀ {s} → D' s → ⟨ 𝔻 ⟩)
-         {s₀ ss} (d : D s₀) (ds : All D ss) (d' : D' s₀) (ds' : All D' ss) {s} (f : Σ ∋ s)
-         (e₁ : cd (tables cd ds) d ＝ cd' (tables cd' ds') d') (e₂ : tables cd ds f ＝ tables cd' ds' f) where
-  private
-   cons-dec : Dec (lvl f Eq.≡ length ss) → tables cd (d ∷ ds) f ＝ tables cd' (d' ∷ ds') f
-   cons-dec (yes q) = tables-yes cd d ds f q ∙ e₁ ∙ tables-yes cd' d' ds' f q ⁻¹
-   cons-dec (no q) = tables-no cd d ds f q ∙ e₂ ∙ tables-no cd' d' ds' f q ⁻¹
-
-  tables-cons : tables cd (d ∷ ds) f ＝ tables cd' (d' ∷ ds') f
-  tables-cons = cons-dec (lvl f ≟ length ss)
-
 {- Terms ---------------------------------------------------------------------------}
 
 module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
@@ -175,22 +146,6 @@ module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
   ren-atm r (var x) σ σ' ag = agr ag x
   ren-atm r (lit B c) σ σ' ag = refl
   ren-atm r (ref f) σ σ' ag = refl
-
-  {- a callc means CALL of its operands, as does a term equal to it by a
-     syntactic equation (an embedding). This holds by definition, but
-     Agda is slow to check it (it compares nested operators by unfolding
-     the domain), so it is checked only here, for each table, and used
-     by rewriting. (The tables are module parameters, so that these
-     statements match the goals literally: a table passed as an
-     argument is η-expanded, and the goals would then be compared by
-     unfolding.) -}
-  callc-T : ∀ {Γ A B} (t : Tm Σ Γ B) (L : Tm Σ Γ (A ⇒ B)) (N : Tm Σ Γ A) → t Eq.≡ callc L N
-    → (γ : ⟨ Env ⟩) → ⟦ t ⟧[ T ] · γ ＝ CALL (⟦ L ⟧[ T ] · γ) (⟦ N ⟧[ T ] · γ)
-  callc-T .(callc L N) L N Eq.refl γ = refl
-
-  callc-T' : ∀ {Γ A B} (t : Tm Σ Γ B) (L : Tm Σ Γ (A ⇒ B)) (N : Tm Σ Γ A) → t Eq.≡ callc L N
-    → (γ : ⟨ Env ⟩) → ⟦ t ⟧[ T' ] · γ ＝ CALL (⟦ L ⟧[ T' ] · γ) (⟦ N ⟧[ T' ] · γ)
-  callc-T' .(callc L N) L N Eq.refl γ = refl
 
   {- the continuation of atomize means F of its atom -}
   KOK : ∀ {Δ A B} → K Σ Δ A B → ⟨ Env ⟩ → (⟨ 𝔻 ⟩ → ⟨ 𝔻 ⟩) → 𝓤₁ ̇
@@ -255,10 +210,8 @@ module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
     atomize₂-sem L N ρ M.pack γ σ ag (λ a b → pair · a · b) (λ b a p → pr₁ (pair-defined← a b p)) (λ a b p → pr₂ (pair-defined← a b p))
       λ _ _ _ → refl
   rco-sem (callc L N) ρ γ σ ag =
-    callc-T (callc L N) L N Eq.refl γ
-    ∙ atomize₂-sem L N ρ M.callc γ σ ag CALL callc-str₁
-        (λ a → strict-reflects (appᵈ · (appᵈ · (car · a) · (cdr · a))) (app-arg-⊥ (appᵈ · (car · a) · (cdr · a))))
-        (λ σ' a b → callc-T' ⌜ M.callc a b ⌝ ⌜ a ⌝ᵃ ⌜ b ⌝ᵃ Eq.refl σ' ⁻¹)
+    atomize₂-sem L N ρ M.callc γ σ ag CALL callc-str₁
+      (λ a → strict-reflects (appᵈ · (appᵈ · (car · a) · (cdr · a))) (app-arg-⊥ (appᵈ · (car · a) · (cdr · a)))) λ _ _ _ → refl
   rco-sem (lit B c) ρ γ σ ag = refl
   rco-sem (tuple {Δ} Ns) ρ γ σ ag =
     atomizes-sem Ns ρ _ γ σ ag (tupleᵈ (length Δ) ·_) (λ ds i p → tuple-defined← (length Δ) ds p i) λ _ _ _ _ → refl
@@ -285,14 +238,8 @@ module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
 
   {- the code of a definition means the code of its output -}
   code-rco : ∀ {s} (d : Code Σ s) → code′ T d ＝ code′ T' ⌜ rco d (λ x → x) ⌝
-  code-rco d =
-    Λ-cong (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B) Λ) (∘₁ 𝔻 (𝔻 ⟹₁ 𝔻) 𝔻 (curry₁ 𝔻 𝔻 𝔻 B') Λ)
-      (λ X _ → Λ-cong (curry₁ 𝔻 𝔻 𝔻 B · X) (curry₁ 𝔻 𝔻 𝔻 B' · X)
-        (λ Y _ → rco-sem d (λ x → x) (env₂ X Y) (env₂ X Y) (mk-ag λ x → refl)))
-   where
-    B B' : DCPO[ 𝔻 ×₁ 𝔻 , 𝔻 ]
-    B = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ ⟦ d ⟧[ T ]
-    B' = ∘₁ (𝔻 ×₁ 𝔻) Env 𝔻 env₂ᶜ ⟦ ⌜ rco d (λ x → x) ⌝ ⟧[ T' ]
+  code-rco d = codeᶜ-cong ⟦ d ⟧[ T ] ⟦ ⌜ rco d (λ x → x) ⌝ ⟧[ T' ]
+    (λ X Y _ _ → rco-sem d (λ x → x) (env₂ X Y) (env₂ X Y) (mk-ag λ x → refl))
 
 {- Programs ---------------------------------------------------------------------------}
 
