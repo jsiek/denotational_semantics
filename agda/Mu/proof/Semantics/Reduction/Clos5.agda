@@ -19,6 +19,7 @@ open import Mu.Framework.AllUtil using (All; []; _∷_)
 open import Semantics.Observation using (Obs; o-error)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (val)
+open import proof.Framework.ReductionVec Obs o-error using (cong₃)
 
 open import Data.List using (List; []; _∷_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
@@ -115,9 +116,7 @@ module _ {Σ : List DSig} where
   sub-id h (get i M) = cong (get i) (sub-id h M)
   sub-id h (inl M) = cong inl (sub-id h M)
   sub-id h (inr M) = cong inr (sub-id h M)
-  sub-id h (case L M N) = case≡ (sub-id h L) (sub-id (sub-id-exts h) M) (sub-id (sub-id-exts h) N)
-    where case≡ : ∀ {L L' M M' N N'} → L ≡ L' → M ≡ M' → N ≡ N' → case {Σ} {_} L M N ≡ case L' M' N'
-          case≡ refl refl refl = refl
+  sub-id h (case L M N) = cong₃ case (sub-id h L) (sub-id (sub-id-exts h) M) (sub-id (sub-id-exts h) N)
   sub-id h (prim p L M) = cong₂ (prim p) (sub-id h L) (sub-id h M)
   sub-id h (let′ M N) = cong₂ let′ (sub-id h M) (sub-id (sub-id-exts h) N)
   sub-id h (fold M) = cong fold (sub-id h M)
