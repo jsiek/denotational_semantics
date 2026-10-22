@@ -66,6 +66,9 @@ import Mu.proof.Correctness.Reduction.PipelineRed
 import Mu.proof.Adequacy.EndToEnd
 import Mu.proof.Adequacy.CEK.EndToEnd
 import Mu.proof.Mixed.CompilerMixed
+{- a design experiment, in no proof's total: a finite source side cannot
+   satisfy the function clause of delay's relation -}
+import Mu.proof.Correctness.Graph.DelayDesignFiniteSource
 import Mu.proof.Semantics.CEK.NoError
 import Mu.proof.Semantics.Interp.NoError
 import Mu.proof.Semantics.Reduction.NoError
