@@ -150,9 +150,11 @@ natural ones. The following reasons rule out all but one.
   for every source argument set $E$ that is related to the target
   arguments, and there are infinitely many such sets with no element
   in common, so a finite source side cannot have, for each of them, an
-  entry $V \mapsto w$ with $V \subseteq E$. For example, the singletons
-  of the entries $[1] \mapsto 1$, $[1,1] \mapsto 1$, \ldots\ are all
-  related to the closure of $\lambda x.\,1$; we check this case in Agda.
+  entry $V \mapsto w$ with $V \subseteq E$. For example, a target closure
+  that shows no usable code entry is related to every nonempty source
+  set, such as the singleton of $[n] \mapsto n$ for each $n$, and no
+  finite source side for $\lambda f.\,f$ serves them all; we check this
+  case in Agda.
 \item \emph{Whole denotations on both sides}, which we also tried,
   handle the mixing. But the function case uses the relation in
   negative position, and nothing decreases there, since a whole
