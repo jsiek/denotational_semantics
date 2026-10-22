@@ -197,20 +197,16 @@ similarly for a function of two sets.
 
 \paragraph{Why a graph model}
 
-We chose a graph model primarily to keep the mechanization small.  Our
-graph model, including the operators of all the compiler's languages,
-is about 1,200 lines of Agda. Early in this project we experimented with using
-Scott domains, using the domain theory of TypeTopology repository
-\citep{Escardo:TypeTopology}. The experiment covered the source
-language and Clos of an earlier, untyped version of the compiler, and
-the passes between them. Yet the constructions for the Scott domain
-(sums, lifting, products and exponentials of domains, locally
-continuous functors, and the solution of the domain equation) took 847
-lines, on top of about 5,400 lines of TypeTopology's domain
-theory. The experiment also required postulates for propositional
-truncation, function extensionality, and propositional extensionality,
-whereas our development uses Agda's safe mode (no postulates) and only
-its standard library. \citet{Benton:2010aa} report around 4,400 lines
-of Coq for a comparable library of domain theory.
+We chose a graph model to keep the mechanization small. Our graph
+model, including the operators of all the compiler's languages, is
+about 1,200 lines of Agda. An early experiment with Scott domains,
+built on the domain theory of TypeTopology \citep{Escardo:TypeTopology}
+and covering only the source language and Clos of an earlier version
+of the compiler, needed 847 lines of its own constructions on top of
+about 5,400 lines of TypeTopology. It also assumed propositional
+truncation, function extensionality, and propositional
+extensionality, whereas our development uses only Agda's safe mode and
+standard library. \citet{Benton:2010aa} report around 4,400 lines of
+Coq for a comparable library of domain theory.
 
 

@@ -307,16 +307,13 @@ the source set or taking a sublist of the target list preserves it.
 
 \paragraph{Why not recursion on types}
 
-The intermediate languages are typed, so one might hope to define the
-relation by recursion on types, as \citet{Chlipala:2007fk} and
-\citet{Nielsen:2000aa} do. The recursive types of \iswim\ rule this
-out. The constructs $\kw{fold}$ and $\kw{unfold}$ mean the identity, so
-the relation at $\mu X.\,A$ would have to be the relation at
-$A[\mu X.\,A/X]$, which is not a smaller type. For example, at the
-type $\mu X.\,X \rightarrow \mathrm{Int}$, the clause for application
-needs the relation at the argument type, which is
-$\mu X.\,X \rightarrow \mathrm{Int}$ itself. By contrast, the depth of
-the target list decreases at every call.
+One might hope to define the relation by recursion on types, as
+\citet{Chlipala:2007fk} and \citet{Nielsen:2000aa} do, but the
+recursive types of \iswim\ rule this out. Since $\kw{fold}$ and
+$\kw{unfold}$ mean the identity, the relation at $\mu X.\,A$ would
+have to be the relation at $A[\mu X.\,A/X]$, which is not a smaller
+type. The depth of the target list, by contrast, decreases at every
+call.
 
 \paragraph{The fundamental lemma}
 
