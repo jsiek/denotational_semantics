@@ -27,10 +27,12 @@
   clauses (app-res, let-res, call-res, case-res) that agrees with it
   (app-eq, ...), proved by `with` on syntax only; the lemmas on known
   values (get-ok, prim-ok, unfold-ok) do the same, outside the
-  recursion. (A `with` whose goal mentions 𝔻 is very slow to check.)
-  For the same reason kfun states D ＝ ⟦ L ⟧ γ for a term L ≡ λ N: a
-  constructor whose type mentions ⟦ λ N ⟧, which unfolds, is very slow
-  to check.
+  recursion. (A `with` while values of 𝔻 or environments are in scope
+  is very slow to check: get-ok by `with`, as in the graph model, does
+  not check in 45 minutes, and neither does a `with` on simp-get whose
+  Desc is about a variable, in 4 minutes.) kfun states D ＝ ⟦ L ⟧ γ
+  for a term L ≡ λ N: with D ＝ ⟦ λ N ⟧ γ, as in the graph model, the
+  module does not check in 6 minutes.
 
 -}
 
