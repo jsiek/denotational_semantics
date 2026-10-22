@@ -14,26 +14,29 @@
 The idea that a compiler is correct when a diagram of meanings commutes
 goes back to \citet{Morris:1973ab} and \citet{Thatcher:1981aa}, and
 \citet{Milne:1976aa} related semantics at different levels of
-abstraction with inclusive predicates. Both the source and the target
-of each pass have a denotational semantics in \citet{Pardo:2018aa}, who
-give clocked denotations to a first-order imperative language and a
-stack language, and in \citet{Siek:2017ab}, who proves an inliner
-correct by equality of graph-model denotations. Other proofs mix
-styles. \citet{Benton:2009aa} relate a domain-theoretic semantics of a
-typed language with recursion to an operational SECD machine, using
+abstraction with inclusive predicates. Among proofs of particular
+compilers, those of \citet{Pardo:2018aa} and \citet{Siek:2017ab} are
+denotational for both the source and the target of each pass:
+\citet{Pardo:2018aa} give clocked denotations to a first-order
+imperative language and a stack language, and \citet{Siek:2017ab}
+proves an inliner correct by equality of graph-model denotations. Other
+proofs mix the styles, with a denotational semantics on only one side.
+\citet{Benton:2009aa} relate a domain-theoretic semantics of a typed
+language with recursion to an operational SECD machine, using
 step-indexed biorthogonal relations; the target machine has primitive
 closures. \OE{}uf \citep{Mullen:2018aa} gives a denotation only to its
-total source language and proves every pass operationally. Still
-others are operational. The CLI stack \citep{Moore:1989aa,Young:1989aa}
-runs the source for $n$ steps and the target for a number of steps
-given by a clock function, and shows that runs without error are
-preserved, but says nothing about divergence. CompCert
-\citep{Leroy:2009aa} and CakeML \citep{Kumar:2014aa}, discussed in the
-introduction, use simulations and clocked big-step semantics. The
-calculated compilers of \citet{Bahr:2015aa} derive a compiler and its
-virtual machine from a definitional interpreter; the virtual machine
-keeps closures as values. Our back end adapts the operational proofs
-of \citet{Siek:2025ab} for a first-order compiler.
+total source language and proves every pass operationally. Most
+compiler proofs, finally, are operational on both sides. The CLI stack
+\citep{Moore:1989aa,Young:1989aa} runs the source for $n$ steps and the
+target for a number of steps given by a clock function, and shows that
+runs without error are preserved, but says nothing about divergence.
+CompCert \citep{Leroy:2009aa} and CakeML \citep{Kumar:2014aa},
+discussed in the introduction, use simulations and clocked big-step
+semantics, respectively. The calculated compilers of
+\citet{Bahr:2015aa} derive a compiler and its virtual machine from a
+definitional interpreter; the virtual machine keeps closures as values.
+Our back end adapts the operational proofs of \citet{Siek:2025ab} for a
+first-order compiler.
 
 \paragraph{Closure conversion}
 
