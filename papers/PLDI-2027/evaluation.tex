@@ -279,6 +279,15 @@ differently. The sizes also depend on choices of semantics, for
 example the continuation-passing semantics of Imp, which makes
 \pass{explicate control} an equation, and on proof engineering that
 could still shrink any of the four developments.
+We built the Scott-domain semantics on one universal domain of tagged
+values, as \citet{Milner:1978kh} did for ML. Our graph model makes the
+same choice, so the two denotational columns are like for like. For
+typed languages, a domain for each type is more usual
+\citep{Benton:2009ab,Dockins:2014aa}. It would avoid the case analysis
+on tags, about an eighth of the Scott-domain proof of \pass{delay}, but
+it would need a domain equation for each recursive type, and the
+existential types of closures fit it less directly. The stage-indexed
+relations would remain.
 
 The sizes also depend on the proof assistant. Agda offers little proof
 automation apart from normalization: it unfolds definitions
