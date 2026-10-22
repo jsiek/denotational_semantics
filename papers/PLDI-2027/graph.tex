@@ -148,10 +148,7 @@ $\Delta = \lambda x.\, (\kw{unfold}\;x)\; x$ denotes $\emptyset$: an
 output of $\Omega$ would need an entry of $\den{\Delta}$ whose input
 contains a strictly smaller entry of $\den{\Delta}$ with the same
 output, and so on forever, which is impossible for finite elements.
-Divergence
-as the empty set is the reason that reflection is the hard direction
-of a correctness proof: a relation that follows the source program
-forward cannot carry the absence of elements to the target.
+
 
 \paragraph{Consistency}
 
@@ -197,20 +194,15 @@ similarly for a function of two sets.
 
 \paragraph{Why a graph model}
 
-We chose a graph model primarily to keep the mechanization small.  Our
-graph model, including the operators of all the compiler's languages,
-is about 1,200 lines of Agda. Early in this project we experimented with using
-Scott domains, using the domain theory of TypeTopology repository
-\citep{Escardo:TypeTopology}. The experiment covered the source
-language and Clos of an earlier, untyped version of the compiler, and
-the passes between them. Yet the constructions for the Scott domain
-(sums, lifting, products and exponentials of domains, locally
-continuous functors, and the solution of the domain equation) took 847
-lines, on top of about 5,400 lines of TypeTopology's domain
-theory. The experiment also required postulates for propositional
-truncation, function extensionality, and propositional extensionality,
-whereas our development uses Agda's safe mode (no postulates) and only
-its standard library. \citet{Benton:2010aa} report around 4,400 lines
-of Coq for a comparable library of domain theory.
+We chose a graph model to keep the mechanization small. Our graph
+model, including the operators of all the compiler's languages, is
+about 1,200 lines of Agda, and it needs only Agda's safe mode and
+standard library. A proof of the same compiler with Scott domains, on
+the domain theory of TypeTopology \citep{Escardo:TypeTopology}, is 1.9
+times as large (Section~\ref{sec:evaluation}), relies on 1,495 lines
+of its own infrastructure on top of TypeTopology, and assumes
+propositional truncation and two extensionality principles.
+\citet{Benton:2010aa} report around 4,400 lines of Coq for a library of
+domain theory.
 
 

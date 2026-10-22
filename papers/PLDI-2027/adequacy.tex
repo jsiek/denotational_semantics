@@ -1,0 +1,35 @@
+%% Section 4.3: adequacy. Sources: agda/Mu/Theorems/Adequacy.agda (the
+%% statements), agda/Mu/proof/Adequacy/{ISWIM,Soundness,LogRel,X86*,
+%% EndToEnd}.agda. Size from loc.md (adequacy table, interpreters).
+
+\subsection{Adequacy}
+\label{sec:adequacy}
+
+Theorem~\ref{thm:compiler} is stated in terms of denotations. To
+connect it to running code, we prove that the graph-model semantics of
+\iswim\ and of x86$\mu$ are adequate with respect to the clocked
+interpreters of Section~\ref{sec:evaluation}.
+
+\begin{theorem}[Adequacy]\label{thm:adequacy}
+Let $M$ be a closed term of \iswim. For every constant $c$,
+$c \in \den{M}$ if and only if the interpreter of \iswim\ terminates on
+$M$ with $c$, and $\den{M}$ is empty if and only if the interpreter
+diverges on $M$, that is, runs out of clock for every clock. The same
+holds for x86$\mu$ and the program $\pass{compile}(M)$.
+\end{theorem}
+
+The proof for each language has two halves. Soundness says that what
+the interpreter returns at some clock denotes a part of the meaning of
+the program. Adequacy says that every element of the meaning is
+related to the value that the interpreter returns from some clock on,
+by a logical relation defined by recursion on the element, as in
+earlier adequacy proofs for graph and filter models
+\citep{Siek:2017ab,Wadler:2020aa}. Together with
+Theorem~\ref{thm:compiler}, Theorem~\ref{thm:adequacy} gives the
+theorem that the operational proofs state: for a program of integer
+type, the interpreters of \iswim\ and x86$\mu$ terminate with the same
+integer, or both diverge. The adequacy proofs are 1,529 lines of Agda.
+We report them separately from the comparison of
+Section~\ref{sec:evaluation}, because with the graph-model semantics
+taken as the definition of the languages, the proof of the compiler is
+complete without them.

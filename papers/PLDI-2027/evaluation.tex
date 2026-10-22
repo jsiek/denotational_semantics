@@ -12,19 +12,23 @@
 
 To measure how concise the denotational proofs are (RQ2) and how the
 denotational approach compares overall with operational ones (RQ4), we
-proved the same compiler correct three more times, in three operational
-styles. This section describes the four developments, compares the
+proved the same compiler correct four more times: once in a second denotational style, with Scott domains, and three times in operational styles. This section describes the five developments, compares the
 sizes of their proofs pass by pass, and explains the differences.
 
 \subsection{Setup}
 
-All four developments prove the correctness of the same ten-pass
+All five developments prove the correctness of the same ten-pass
 compiler (Section~\ref{sec:compiler}), from the same Agda definitions of
 the languages and passes, and each is our best effort in its style.
 \begin{itemize}
 \item \emph{Graph model.} The semantics of each language is the
   graph-model semantics of Appendix~\ref{app:languages}, and each pass
-  is proved as in Section~\ref{sec:compiler-proof}.
+    is proved as in Section~\ref{sec:compiler-proof}.
+\item \emph{Scott domains.} The semantics of each language maps into a
+  universal domain $\mathbb{D} \cong
+  \mathcal{L}(\Sigma_t\, \mathit{Payload}_t(\mathbb{D}))$, solved as a
+  bilimit using the domain theory of TypeTopology
+    \citep{Escardo:TypeTopology}, and meanings are continuous functions.
 \item \emph{Abstract machines and simulations}, in the style of
   CompCert \citep{Leroy:2009aa}. Each language has a small-step CEK
   machine, and each pass is proved by a forward simulation. The
@@ -49,7 +53,7 @@ that the denotational correctness theorem is equivalent
 We measure each proof by its lines of Agda, not counting comments,
 blank lines, or imports. The counts include the semantics of the
 languages, the proof of each pass, and the composition of the passes.
-They exclude the Agda code that all four proofs use unchanged: the
+They exclude the Agda code that all five proofs use unchanged: the
 intrinsically typed syntax of the languages and the functions that
 implement the passes (921 lines). We report the language-independent infrastructure that
 each style relies on, and the adequacy of the graph model, separately.
@@ -61,7 +65,7 @@ each style relies on, and the adequacy of the graph model, separately.
 %% Commit trailers: Claude Opus 5.5 (544) and Claude Sonnet 5.5 (11).
 \paragraph{AI Use}
 
-All of the Agda code of the four developments, including the adequacy
+All of the Agda code of the five developments, including the adequacy
 proofs, was written in 2026 by Claude Code (Opus 5.5 and Sonnet 5.5
 models), under our direction, starting from a repository that already
 contained Agda mechanizations, written by the authors from 2018 to
@@ -84,30 +88,32 @@ source.
 
 \begin{table}[t]
 \small
-\begin{tabular}{@{}lrrrr@{}}
+\begin{tabular}{@{}lrrrrr@{}}
 \toprule
- & graph model & machines & interpreters & reduction\\
+ & \multicolumn{2}{c}{denotational} & \multicolumn{3}{c}{operational}\\
+\cmidrule(lr){2-3}\cmidrule(l){4-6}
+ & graph model & Scott domains & machines & interpreters & reduction\\
 \midrule
-semantics of the languages & 393 & 511 & \textbf{374} & 961\\
-lemmas shared by the passes & --- & 38 & --- & ---\\
-\pass{simplify} & \textbf{349} & 560 & 508 & 697\\
-\pass{enclose} & 37 & 71 & \textbf{33} & 147\\
-\pass{optimize} & 66 & 128 & \textbf{65} & 212\\
-\pass{concretize} & 46 & 88 & \textbf{42} & 148\\
-\pass{delay} & 450 & 73 & \textbf{35} & 126\\
-\pass{globalize} & \textbf{115} & 213 & 175 & 192\\
-\pass{remove complex operands} & 109 & 120 & \textbf{83} & 157\\
-\pass{lift locals} & 39 & 51 & \textbf{27} & 204\\
-\pass{explicate control} & \textbf{64} & 105 & 75 & 105\\
-\pass{select instructions} & 76 & 107 & \textbf{48} & 107\\
-composition & 28 & 20 & 22 & \textbf{18}\\
-shared modules not used by all four & --- & \textbf{15} & \textbf{15} & \textbf{15}\\
-modules reused from an earlier pipeline & 34 & 3 & \textbf{2} & 4\\
+semantics of the languages & 393 & 395 & 511 & \textbf{374} & 961\\
+lemmas shared by the passes & --- & 132 & 38 & --- & ---\\
+\pass{simplify} & \textbf{349} & 441 & 560 & 508 & 697\\
+\pass{enclose} & 37 & 50 & 71 & \textbf{33} & 147\\
+\pass{optimize} & 66 & 119 & 128 & \textbf{65} & 212\\
+\pass{concretize} & 46 & 62 & 88 & \textbf{42} & 148\\
+\pass{delay} & 450 & 1403 & 73 & \textbf{35} & 126\\
+\pass{globalize} & \textbf{115} & 262 & 213 & 175 & 192\\
+\pass{remove complex operands} & 109 & 195 & 120 & \textbf{83} & 157\\
+\pass{lift locals} & 39 & 63 & 51 & \textbf{27} & 204\\
+\pass{explicate control} & \textbf{64} & 92 & 105 & 75 & 105\\
+\pass{select instructions} & 76 & 204 & 107 & \textbf{48} & 107\\
+composition & 28 & 32 & 20 & 22 & \textbf{18}\\
+shared modules not used by all & --- & --- & 15 & 15 & 15\\
+modules reused from an earlier pipeline & 34 & --- & 3 & \textbf{2} & 4\\
 \midrule
-total & 1806 & 2103 & \textbf{1504} & 3093\\
+total & 1806 & 3450 & 2103 & \textbf{1504} & 3093\\
 \bottomrule
 \end{tabular}
-\caption{Lines of Agda in the four correctness proofs of the compiler.
+\caption{Lines of Agda in the five correctness proofs of the compiler.
   The smallest number in each row is in bold.}
 \label{tab:loc}
 \end{table}
@@ -117,7 +123,7 @@ interpreters is the smallest, at 1,504 lines, followed by the graph
 model at 1,806, abstract machines at 2,103, and reduction semantics at 3,093. One pass decides the graph model's place: \pass{delay} alone is
 450 lines, a quarter of the total, against 35 to 126 lines in the
 operational styles. Without \pass{delay}, the graph model would be the
-smallest, at 1,356 lines against 1,469 for the interpreters.
+smallest, at 1,356 lines against 1,469 for the interpreters. The second denotational proof, with Scott domains, is the largest but one, at 3,450 lines: 1.9 times the graph model, and larger in every row.
 
 \subsection{Analysis}
 
@@ -196,38 +202,52 @@ consistency rules out any other. But the graph model represents
 divergence as the empty set, the absence of evidence, and a forward
 relation cannot carry absence. Showing that a diverging program
 compiles to a diverging program is therefore a separate argument, and
-that argument is reflection. We use different relations for the two
-directions, the satisfaction relation for preservation and the
-approximant logical relation for reflection, because a single relation
-parameterized by the direction made the proof longer: on an earlier
-version of the compiler, switching from one relation to two cut the
-proof of \pass{delay} from 1,358 to 832 lines. Second, reflection
+that argument is reflection. Second, reflection
 needs the finite lists, the batches of calls, and the lemma that
 extracts them from a target call. Third, the $\beta$-law of
 Lemma~\ref{lem:beta} holds only under side conditions of nonemptiness,
 consistency, and continuity, whereas a machine does not have such side
 conditions.
 
+\paragraph{The graph model is much smaller than Scott domains.}
+
+The two denotational proofs have the same structure, with an equation
+for every pass but \pass{delay}, yet the Scott-domain proof is larger
+in every row and 1.9 times the graph model overall, by lines and by
+tokens. For the equational passes it is 1.3 to 2.7 times larger.  The gap is widest for \pass{delay}, at
+1,403 lines against 450. The relational method of
+\citet{Pitts:1996aa} for recursively defined domains does not apply
+directly: \pass{delay} turns a function into a pair of code and
+environment, so the closure clause of the relation looks three levels
+into the target domain but only one into the source, which does not
+match the action of the domain's functor. We therefore followed
+\citet{Reynolds:1974aa} and built both relations stage by stage along
+the bilimit. For preservation, the relation pairs a depth-$n$
+approximation of the source with the full target; for reflection, it
+pairs the full source with a depth-$n$ approximation of the target,
+the counterpart of the approximant logical relation with the stages of
+the bilimit in place of the depth of finite elements. Each relation
+must be shown admissible and compatible with the projections between
+stages, arguments that finite elements make unnecessary in the graph
+model. The Scott-domain proof also relies on 1,495
+lines of its own infrastructure on top of TypeTopology, and it takes
+much longer to check: about 50 minutes, against 3 for the graph model.
+
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
-The graph-model semantics of the ten languages is 393 lines, slightly more than the interpreters' 374. The machines need 511 lines and the reduction semantics 961, which include the laws of substitution and
-the machines of the first-order languages. The language-independent
+The graph-model semantics of the ten languages is 393 lines, slightly more than the interpreters' 374. The machines need 511 lines and the reduction semantics 961. The language-independent
 infrastructure, which the totals exclude, differs more. The graph model
 relies on 1,544 lines of it, mostly the graph model itself and its
 operators, against 447 for the machines, 413 for the interpreters, and
-1,191 for the reduction semantics. Adequacy, which connects the graph
-model to the interpreters of the source and target languages, is a
-further 1,529 lines (Section~\ref{sec:adequacy}).
+1,191 for the reduction semantics.
 
 \subsection{The Answers to RQ2 and RQ4}
 
 The comparison supports the answer to RQ2. For the passes that keep
 the representation of values, the equational proofs tend to be
-concise: the smallest of the four styles for \pass{simplify} and
+concise: the smallest of the five styles for \pass{simplify} and
 \pass{globalize}, about the same as the smallest for \pass{explicate
-  control}, and within 30 lines of the smallest for the others, though
-\pass{lift locals} and \pass{select instructions} are relatively the
-furthest behind. The answer to RQ4 is mixed. Overall, the denotational
+  control}, and within 30 lines of the smallest for the others. The answer to RQ4 is mixed. Overall, the denotational
 development ranks second, behind the clocked interpreters and ahead of
 abstract machines and reduction semantics. Its advantage on the passes
 proved by equational reasoning such as \pass{simplify} is neutralized
@@ -248,8 +268,7 @@ easier to write. Because experience gained in writing one development could carr
 over to the next, after completing all four we gave each of them a
 final cleanup pass with the same goals and rules: shorten and clarify
 the proofs without changing any theorem statement and without moving
-code into the uncounted infrastructure. The cleanup removed between 114
-and 155 lines from each style, and the ranking did not change.
+code into the uncounted infrastructure. The cleanup removed between 114 and 155 lines from each style, and the ranking did not change. The Scott-domain proof, which we wrote last, did not receive this pass.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for

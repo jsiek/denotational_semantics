@@ -53,8 +53,10 @@ translate most forms homomorphically, the case for such a form applies
 the same operator to equal arguments and is immediate. The real work
 is in the few cases that the pass changes, where an equation about the
 operators of the graph model replaces the source form with the target
-form. Below we show that case for each pass as a calculation, with the
-justification of each step on the right. Where a step needs a set to
+form. Below we show that case as a calculation for three representative
+passes, with the justification of each step on the right;
+Appendix~\ref{app:calculations} gives the calculations for the other
+six. Where a step needs a set to
 be nonempty, we show the nonempty case; in the other case both sides
 are empty.
 
@@ -86,43 +88,6 @@ The reductions that \pass{simplify} performs under binders, and the
 calls that it removes, are equations between sets, so the proof needs
 no notion of an evaluation step.
 
-\paragraph{Enclose}
-
-The environments agree on the variables $\vec{x}$ in scope, and the
-target environment is nonempty on them. A $\lambda$-abstraction becomes
-a closure that captures all of $\vec{x}$. With $N' =
-\pass{enclose}(N)$ and $F = \mlam{Y} \den{N'}\rho_0[\vec{x}{:=}\rho'(\vec{x}),
-y{:=}Y]$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\lambda y.\,N}\rho & = & \Lambda(\mlam{Y} \den{N}\rho[y{:=}Y]) & \text{(meaning of $\lambda$)}\\
-    & = & \Lambda(F) & \text{(induction hypothesis for $N$)}\\
-    & = & \mathsf{guard}(\rho'(x_1), \ldots, \rho'(x_k);\; \Lambda(F)) & \text{($\rho'$ is nonempty on $\vec{x}$)}\\
-    & = & \den{\kw{clos}\;(\vec{x}, y.\,N')\;\vec{x}}\rho' & \text{(meaning of a closure)}
-\end{array}
-\]}
-
-\paragraph{Optimize}
-
-The environments agree on the variables that a term uses, and the
-source environment is nonempty. Let $D_i = \den{M_i}\rho$ and $D'_i =
-\den{\pass{optimize}(M_i)}\rho'$, let $I$ be the indices of the kept
-captured values, and let $N' = \pass{optimize}(N)$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{clos}\;(\vec{x}, y.\,N)\;\vec{M}}\rho
-    & = & \mathsf{guard}(\vec{D};\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(meaning of a closure)}\\
-    & = & \mathsf{guard}(\vec{D}'_I;\; \Lambda(\mlam{Y} \den{N}\rho_0[\vec{x}{:=}\vec{D}, y{:=}Y])) & \text{(the guards hold together)}\\
-    & = & \mathsf{guard}(\vec{D}'_I;\; \Lambda(\mlam{Y} \den{N'}\rho_0[\vec{x}_I{:=}\vec{D}'_I, y{:=}Y])) & \text{(induction hypothesis for $N$)}\\
-    & = & \den{\kw{clos}\;(\vec{x}_I, y.\,N')\;\vec{M}'_I}\rho' & \text{(meaning of a closure)}
-\end{array}
-\]}
-The guards hold together because a dropped captured value is a
-variable, which the environment makes nonempty. The induction
-hypothesis applies because $N$ uses only $\vec{x}_I$ and $y$.
-
 \paragraph{Concretize}
 
 Each variable $x$ means in $\rho$ what its reference $\varphi(x)$, either
@@ -145,90 +110,6 @@ $\kw{get}_i\,z$, and $\pi_{\mathsf{tup}_i}(\mathcal{T}(\vec{D}')) =
 D'_i = D_i$ when every $D'_i$ is nonempty. The use of
 Lemma~\ref{lem:beta} needs the tuple $\mathcal{T}(\vec{D}')$ to be
 nonempty and consistent.
-
-\paragraph{Globalize}
-
-The induction hypothesis says that a term means the same as its
-translation under the table $T'$ of the definitions made so far. For
-code, \pass{globalize} first translates the body $N$ to $N'$ and then
-adds the definition $d_k = \kw{code}\;(z, y.\,N')$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{code}\;(z, y.\,N)}\rho
-    & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N}\rho_0[z{:=}X, y{:=}Y])) & \text{(meaning of code)}\\
-    & = & \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{N'}_{T_k}\rho_0[z{:=}X, y{:=}Y])) & \text{(induction hypothesis for $N$)}\\
-    & = & T(k) & \text{(meaning of definition $d_k$)}\\
-    & = & \den{f_k}_T\,\rho & \text{(meaning of $f_k$)}
-\end{array}
-\]}
-The other cases also use a weakening lemma: a term means the same under
-a larger table that agrees on the definitions the term refers to.
-
-\paragraph{Remove complex operands}
-
-When an operand $M$ is not an atom, \pass{remove complex operands}
-binds it to a fresh variable $x$ with a $\kw{let}$. For a projection,
-with $D = \den{\pass{rco}(M)}_{T'}\rho'$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{get}_i\,M}_T\,\rho & = & \pi_{\mathsf{tup}_i}(\den{M}_T\,\rho) & \text{(meaning of $\kw{get}_i$)}\\
-    & = & \pi_{\mathsf{tup}_i}(D) & \text{(induction hypothesis for $M$)}\\
-    & = & \den{\kw{get}_i\,x}_{T'}\,\rho'[x{:=}D] & \text{(meaning of $\kw{get}_i$)}\\
-    & = & \Lambda(\mlam{X} \den{\kw{get}_i\,x}_{T'}\,\rho'[x{:=}X]) \app D & \text{(Lemma~\ref{lem:beta}, part 1)}\\
-    & = & \den{\kw{let}\;x = \pass{rco}(M)\;\kw{in}\;\kw{get}_i\,x}_{T'}\,\rho' & \text{(meaning of $\kw{let}$)}
-\end{array}
-\]}
-The Agda proves this once for every strict operation and every
-continuation, and chains it over several operands.
-
-\paragraph{Lift locals}
-
-The semantics of Imp is in continuation-passing style, so the
-induction hypothesis relates a Mon term $e$ and its translation under
-a continuation $\kappa$: $\kappa(\den{e}_T\,\sigma) =
-\den{\pass{lift}(e)}_{T'}\,\sigma\,\kappa$. A $\kw{let}$ becomes an
-assignment to the next slot $x$. With $\kappa' = \mlam{D}
-\Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app
-D$:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \kappa(\den{\kw{let}\;x = M\;\kw{in}\;N}_T\,\sigma)
-    & = & \kappa(\Lambda(\mlam{X} \den{N}_T\,\sigma[x{:=}X]) \app \den{M}_T\,\sigma) & \text{(meaning of $\kw{let}$)}\\
-    & = & \Lambda(\mlam{X} \kappa(\den{N}_T\,\sigma[x{:=}X])) \app \den{M}_T\,\sigma & \text{(a $\kw{let}$ commutes with $\kappa$)}\\
-    & = & \Lambda(\mlam{X} \den{\pass{lift}(N)}_{T'}\,\sigma[x{:=}X]\,\kappa) \app \den{M}_T\,\sigma & \text{(induction hypothesis for $N$)}\\
-    & = & \den{\pass{lift}(M)}_{T'}\,\sigma\,\kappa' & \text{(induction hypothesis for $M$)}\\
-    & = & \den{x \mathrel{:=} \pass{lift}(M);\; \pass{lift}(N)}_{T'}\,\sigma\,\kappa & \text{(meaning of assignment)}
-\end{array}
-\]}
-The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
-consistent and the body to be monotone. The $\kw{case}$ case follows
-the same pattern.
-
-\paragraph{Explicate control}
-
-The induction hypothesis says that an Imp expression $e$, run with the
-continuation $\kappa_{x,k}$ that writes slot $x$ and then runs the tail
-$k$, means the same as the tail $\pass{assign}(e, x, k)$, given the
-meanings $B$ of the blocks. The key case is an assignment whose
-right-hand side is a $\kw{case}$. The pass adds $k$ as a block $l$, the
-join point, so $B(l)$ is the meaning of $k$, and each branch $e_i$
-becomes a block $l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))$.
-We show the first branch; the second is the same:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2)}_T\,\sigma\,\kappa_{x,k}
-    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,k},\; \ldots) & \text{(Imp)}\\
-    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,\kw{goto}\,l},\; \ldots) & \text{(join point $l$)}\\
-    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} B(l_1)(\sigma[x'{:=}X]),\; \ldots) & \text{(ind.\ hyp.)}\\
-    & = & \den{\kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)}_{T',B}\,\sigma & \text{(CFG)}
-\end{array}
-\]}
-A further lemma says that blocks added later do not change the meaning
-of a label made earlier.
 
 \paragraph{Select instructions}
 
@@ -272,3 +153,5 @@ environment. Its correctness is not an equation, and its proof is the
 subject of the rest of this section.
 
 \input{delay}
+
+\input{adequacy}

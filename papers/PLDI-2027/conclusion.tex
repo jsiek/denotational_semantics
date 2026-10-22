@@ -1,0 +1,27 @@
+%% Section 7: conclusion and future work. Budget: about 0.4 page.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We proved a ten-pass compiler correct, from a call-by-value
+$\lambda$-calculus with recursive types down to a typed assembly
+language, using a graph-model denotational semantics for every
+language, and mechanized the proof in Agda (RQ1). Nine of the ten
+passes are proved by short equational calculations (RQ2). The
+exception is \pass{delay}, the step of closure conversion that lowers
+closures to pairs of code and environment: its correctness is not an
+equation, and its reflection proof needs a new kind of relation, the
+approximant logical relation, defined by recursion on the depth of a
+finite approximation of the target (RQ3). Among three operational
+proofs of the same compiler, the denotational proof ranks second in
+size: it tends to be the smallest, or close to it, for the equational
+passes, and much larger for \pass{delay} (RQ4).
+A second denotational proof, with Scott domains, is 1.9 times as large
+as the graph-model proof, and its proof of \pass{delay} follows the
+stage-by-stage construction of Reynolds rather than the method of
+Pitts.
+
+In future work we plan to report on a dynamically typed variant of the
+compiler, whose graph model has an error element, and to repeat the
+comparison in a proof assistant with more automation, such as Rocq or
+Lean.
