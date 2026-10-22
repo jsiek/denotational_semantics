@@ -94,19 +94,16 @@ encs≈ (M ∷ Ms) = enc M ∷ encs≈ Ms
 
 {- Closure under substitution ----------------------------------------------------}
 
-{- a kit of each language, which agree -}
-record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
+{- for a kit of each language, which agree on variables and on weakening,
+   and whose target terms of a variable, weakened, are variables or values -}
+module Trav {𝒦₁ 𝒦₂} (laws : S.Laws 𝒦₁)
+  (rel-vr : ∀ {Γ A} (x : Γ ∋ A) → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ x) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ x))
+  (rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
+    → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b))
+  (vv-vr : ∀ {Γ A} (x : Γ ∋ A) → VV (T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ x)))
+  (vv-wk : ∀ {Γ A B} {b : T.Kit.K 𝒦₂ Γ A} → VV (T.Kit.tm 𝒦₂ b) → VV (T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ {B = B} b))) where
   module K₁ = S.Kit 𝒦₁
   module K₂ = T.Kit 𝒦₂
-  field
-    laws : S.Laws 𝒦₁
-    rel-vr : ∀ {Γ A} (x : Γ ∋ A) → K₁.tm (K₁.vr x) ≈ K₂.tm (K₂.vr x)
-    rel-wk : ∀ {Γ A B} {a : K₁.K Γ A} {b} → K₁.tm a ≈ K₂.tm b → K₁.tm (K₁.wk {B = B} a) ≈ K₂.tm (K₂.wk b)
-    vv-vr : ∀ {Γ A} (x : Γ ∋ A) → VV (K₂.tm (K₂.vr x))
-    vv-wk : ∀ {Γ A B} {b : K₂.K Γ A} → VV (K₂.tm b) → VV (K₂.tm (K₂.wk {B = B} b))
-
-module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
-  open KR K
   open S.Laws laws
 
   OK : ∀ {Γ Δ} → S.Sub 𝒦₁ Γ Δ → T.Sub 𝒦₂ Γ Δ → Set
@@ -149,16 +146,13 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
   vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
-varKR : KR S.varK T.varK
-varKR = record { laws = S.varL ; rel-vr = λ _ → var≈ ; rel-wk = λ { var≈ → var≈ } ; vv-vr = var ; vv-wk = λ _ → var _ }
-
-tmKR : KR S.tmK T.tmK
-tmKR = record { laws = S.tmL ; rel-vr = λ _ → var≈ ; rel-wk = λ r → Trav.≈-trav varKR r (λ _ → var≈) (λ _ → var _)
-              ; vv-vr = var ; vv-wk = λ { (var x) → var _ ; (val v) → val (T.value-trav v) } }
+module RenT = Trav {S.varK} {T.varK} S.varL (λ _ → var≈) (λ { var≈ → var≈ }) var (λ _ → var _)
+module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-trav r (λ _ → var≈) (λ _ → var _))
+  var (λ { (var x) → var _ ; (val v) → val (T.value-trav v) })
 
 {- substituting a value for the variable of a binder -}
 ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → V ≈ V' → Value V' → (N S.[ V ]) ≈ (N' T.[ V' ])
-≈-[] n m v = Trav.≈-trav tmKR n (λ { Z → m }) (λ { Z → val v })
+≈-[] n m v = SubT.≈-trav n (λ { Z → m }) (λ { Z → val v })
 
 {- The simulation ------------------------------------------------------------------}
 
@@ -198,7 +192,7 @@ sim (app≈ r s) =
   β-sim (T.clos vs) (lam≈ {N = N} {σ = σ} n h vv) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
        (subst (_≈ _) (sym (S.exts-[] σ _ N))
-              (Trav.≈-trav tmKR n (λ { Z → m' ; (S i) → h i }) (λ { Z → val w ; (S i) → each-lookup vv i })))
+              (SubT.≈-trav n (λ { Z → m' ; (S i) → h i }) (λ { Z → val w ; (S i) → each-lookup vv i })))
 sim lit≈ = val ε T.lit lit≈
 sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
 sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)

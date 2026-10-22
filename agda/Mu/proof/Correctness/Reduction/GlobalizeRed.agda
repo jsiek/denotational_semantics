@@ -163,14 +163,11 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
 
   {- Closure under substitution -----------------------------------------------------}
 
-  record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit {Σf}) : Set where
-    field
-      rel-vr : ∀ {Γ B} → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ (Z {Γ = Γ} {a = B})) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z)
-      rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
-        → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)
-
-  module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
-    open KR K
+  {- for a kit of each language, which agree on variable 0 and on weakening -}
+  module Trav {𝒦₁ : S.Kit} {𝒦₂ : T.Kit {Σf}}
+    (rel-vr : ∀ {Γ B} → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ (Z {Γ = Γ} {a = B})) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z))
+    (rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
+      → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)) where
 
     OK : ∀ {Γ Δ} → S.Sub 𝒦₁ Γ Δ → T.Sub 𝒦₂ Γ Δ → Set
     OK σ τ = ∀ {A} (x : _ ∋ A) → S.Kit.tm 𝒦₁ (σ x) ≈ T.Kit.tm 𝒦₂ (τ x)
@@ -200,11 +197,8 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
     ≈-travs [] ok = []
     ≈-travs (r ∷ rs) ok = ≈-trav r ok ∷ ≈-travs rs ok
 
-  varKR : KR S.varK T.varK
-  varKR = record { rel-vr = var≈ ; rel-wk = λ { var≈ → var≈ } }
-
-  tmKR : KR S.tmK T.tmK
-  tmKR = record { rel-vr = var≈ ; rel-wk = λ r → Trav.≈-trav varKR r λ _ → var≈ }
+  module RenT = Trav {S.varK} {T.varK} var≈ (λ { var≈ → var≈ })
+  module SubT = Trav {S.tmK} {T.tmK} var≈ (λ r → RenT.≈-trav r λ _ → var≈)
 
   {- The simulation ----------------------------------------------------------------------}
 
@@ -230,7 +224,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   ... | false = inr≈ (tuple≈ [])
 
   ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → V ≈ V' → (N S.[ V ]) ≈ (N' T.[ V' ])
-  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m }
+  ≈-[] n m = SubT.≈-trav n λ { Z → m }
 
   sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
   sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'} → All₂ _≈_ Ms Ms' → Ans (T.reds ds) (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
@@ -246,7 +240,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
       → Ans′ (callc V W) (S.call V refl W) (C.callc V' W')
     call-sim (T.pack T.fun-ref e) (pack≈ (code≈ n) m) w m' =
       to (one (trans (val-in (value-red (T.pack T.fun-ref e))) (val-in (value-red w))))
-         (Trav.≈-trav tmKR n λ { Z → m' ; (S Z) → m })
+         (SubT.≈-trav n λ { Z → m' ; (S Z) → m })
   sim lit≈ = val ε T.lit lit≈
   sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
   sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)

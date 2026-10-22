@@ -143,16 +143,14 @@ OK 𝒦 ρ ρ₂ σ τ = ∀ {A} (x : _ ∋ A) {y} → ρ x ≡ just y → ρ₂
 VK : ∀ {Γ Δ} (𝒦 : Kit) → T.Sub 𝒦 Γ Δ → Set
 VK 𝒦 σ = ∀ {A} (x : _ ∋ A) → VV (Kit.tm 𝒦 (σ x))
 
-record KR (𝒦 : Kit) : Set where
-  field
-    rel-vr : ∀ {Γ Γ' B} {ρ : VM Γ Γ'} → extρ {B = B} ρ ⊢ Kit.tm 𝒦 (Kit.vr 𝒦 Z) ≈ Kit.tm 𝒦 (Kit.vr 𝒦 Z)
-    vv-vr : ∀ {Γ B} → VV {B ∷ Γ} (Kit.tm 𝒦 (Kit.vr 𝒦 Z))
-    rel-wk : ∀ {Γ Γ' A B} {ρ : VM Γ Γ'} {a : Kit.K 𝒦 Γ A} {b} → ρ ⊢ Kit.tm 𝒦 a ≈ Kit.tm 𝒦 b
-      → extρ {B = B} ρ ⊢ Kit.tm 𝒦 (Kit.wk 𝒦 a) ≈ Kit.tm 𝒦 (Kit.wk 𝒦 b)
-    vv-wk : ∀ {Γ A B} {a : Kit.K 𝒦 Γ A} → VV (Kit.tm 𝒦 a) → VV (Kit.tm 𝒦 (Kit.wk 𝒦 {B = B} a))
-
-module Trav {𝒦} (K : KR 𝒦) where
-  open KR K
+{- for a kit whose variable 0 is related to itself and is a variable or a
+   value, and whose weakening keeps both -}
+module Trav {𝒦}
+  (rel-vr : ∀ {Γ Γ' B} {ρ : VM Γ Γ'} → extρ {B = B} ρ ⊢ Kit.tm 𝒦 (Kit.vr 𝒦 Z) ≈ Kit.tm 𝒦 (Kit.vr 𝒦 Z))
+  (vv-vr : ∀ {Γ B} → VV {B ∷ Γ} (Kit.tm 𝒦 (Kit.vr 𝒦 Z)))
+  (rel-wk : ∀ {Γ Γ' A B} {ρ : VM Γ Γ'} {a : Kit.K 𝒦 Γ A} {b} → ρ ⊢ Kit.tm 𝒦 a ≈ Kit.tm 𝒦 b
+    → extρ {B = B} ρ ⊢ Kit.tm 𝒦 (Kit.wk 𝒦 a) ≈ Kit.tm 𝒦 (Kit.wk 𝒦 b))
+  (vv-wk : ∀ {Γ A B} {a : Kit.K 𝒦 Γ A} → VV (Kit.tm 𝒦 a) → VV (Kit.tm 𝒦 (Kit.wk 𝒦 {B = B} a))) where
 
   ok-ext : ∀ {Γ Γ' Δ Δ' B} {ρ : VM Γ Γ'} {ρ₂ : VM Δ Δ'} {σ : T.Sub 𝒦 Γ Δ} {τ : T.Sub 𝒦 Γ' Δ'} → OK 𝒦 ρ ρ₂ σ τ
     → OK 𝒦 (extρ {B = B} ρ) (extρ ρ₂) (T.exts 𝒦 σ) (T.exts 𝒦 τ)
@@ -190,12 +188,9 @@ module Trav {𝒦} (K : KR 𝒦) where
   caps-trav (drop (var x) cs) ok vv = drop (vv x) (caps-trav cs ok vv)
   caps-trav (drop (val v) cs) ok vv = drop (val (T.value-trav v)) (caps-trav cs ok vv)
 
-varKR : KR varK
-varKR = record { rel-vr = var≈ refl ; vv-vr = var _ ; rel-wk = λ { (var≈ e) → var≈ (cong (Mb.map S) e) } ; vv-wk = λ _ → var _ }
-
-tmKR : KR tmK
-tmKR = record { rel-vr = var≈ refl ; vv-vr = var _ ; rel-wk = λ r → Trav.≈-trav varKR r (λ _ e → var≈ (cong (Mb.map S) e)) (λ _ → var _)
-              ; vv-wk = λ { (var x) → var _ ; (val v) → val (T.value-trav v) } }
+module RenT = Trav {varK} (var≈ refl) (var _) (λ { (var≈ e) → var≈ (cong (Mb.map S) e) }) (λ _ → var _)
+module SubT = Trav {tmK} (var≈ refl) (var _) (λ r → RenT.≈-trav r (λ _ e → var≈ (cong (Mb.map S) e)) (λ _ → var _))
+  (λ { (var x) → var _ ; (val v) → val (T.value-trav v) })
 
 {- The simulation ----------------------------------------------------------------------}
 
@@ -260,7 +255,7 @@ out≈ P.eq n m with does (n Z.≟ m)
 
 {- substituting a value for the variable of a binder -}
 ≈-[] : ∀ {A B} {N N' : Tm (A ∷ []) B} {V V'} → extρ ρ₀ ⊢ N ≈ N' → R V V' → Value V → R (N T.[ V ]) (N' T.[ V' ])
-≈-[] n m v = Trav.≈-trav tmKR n (λ { Z refl → m }) (λ { Z → val v })
+≈-[] n m v = SubT.≈-trav n (λ { Z refl → m }) (λ { Z → val v })
 
 sim : ∀ {A} {M M' : Tm [] A} → R M M' → Ans′ M (T.red M) M'
 sims : ∀ {Δ} {Ms Ms' : All (Tm []) Δ} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (T.reds Ms) Ms'
@@ -275,7 +270,7 @@ sim (app≈ r s) =
     → Ans′ (app V W) (T.β V refl W) (app V' W')
   β-sim (T.clos vs) (clos≈ fl n cs) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
-       (Trav.≈-trav tmKR n (caps-lookup cs m')
+       (SubT.≈-trav n (caps-lookup cs m')
           λ { Z → val (≈-value m' w) ; (S i) → val (each-lookup (caps-values cs vs) i) })
 sim lit≈ = val ε T.lit lit≈
 sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)

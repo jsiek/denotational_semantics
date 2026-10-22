@@ -90,16 +90,13 @@ shift-ren : ∀ {Γ A B} (r : Ref Γ A) → ref-tm (shift-ref {B = B} r) ≡ T.r
 shift-ren (var x) = refl
 shift-ren (prj i x) = refl
 
-record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
-  field
-    rel-vr : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} → ext-ref {B = B} φ ⊢ S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ Z) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z)
-    shift-trav : ∀ {Γ Δ A B} {τ : T.Sub 𝒦₂ Γ Δ} (r : Ref Γ A)
-      → T.trav 𝒦₂ (T.exts 𝒦₂ {B = B} τ) (ref-tm (shift-ref r)) ≡ T.ren S (T.trav 𝒦₂ τ (ref-tm r))
-    rel-wk : ∀ {Γ Γ' A B} {φ : Refs Γ Γ'} {a : S.Kit.K 𝒦₁ Γ A} {X} → φ ⊢ S.Kit.tm 𝒦₁ a ≈ X
-      → ext-ref {B = B} φ ⊢ S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ a) ≈ T.ren S X
-
-module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
-  open KR K
+{- for a kit of each language, which agree on variable 0 and on weakening -}
+module Trav {𝒦₁ 𝒦₂}
+  (rel-vr : ∀ {Γ Γ' B} {φ : Refs Γ Γ'} → ext-ref {B = B} φ ⊢ S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ Z) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z))
+  (shift-trav : ∀ {Γ Δ A B} {τ : T.Sub 𝒦₂ Γ Δ} (r : Ref Γ A)
+    → T.trav 𝒦₂ (T.exts 𝒦₂ {B = B} τ) (ref-tm (shift-ref r)) ≡ T.ren S (T.trav 𝒦₂ τ (ref-tm r)))
+  (rel-wk : ∀ {Γ Γ' A B} {φ : Refs Γ Γ'} {a : S.Kit.K 𝒦₁ Γ A} {X} → φ ⊢ S.Kit.tm 𝒦₁ a ≈ X
+    → ext-ref {B = B} φ ⊢ S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ a) ≈ T.ren S X) where
 
   ok-ext : ∀ {Γ Γ' Δ Δ' B} {φ : Refs Γ Γ'} {φ₂ : Refs Δ Δ'} {σ : S.Sub 𝒦₁ Γ Δ} {τ : T.Sub 𝒦₂ Γ' Δ'} → OK 𝒦₁ 𝒦₂ φ φ₂ σ τ
     → OK 𝒦₁ 𝒦₂ (ext-ref {B = B} φ) (ext-ref φ₂) (S.exts 𝒦₁ σ) (T.exts 𝒦₂ τ)
@@ -129,13 +126,10 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   ≈-travs [] ok = []
   ≈-travs (r ∷ rs) ok = ≈-trav r ok ∷ ≈-travs rs ok
 
-varKR : KR S.varK T.varK
-varKR = record { rel-vr = var≈ refl ; shift-trav = λ { (var x) → refl ; (prj i x) → refl }
-               ; rel-wk = λ { {φ = φ} {a} (var≈ refl) → var≈ (shift-ren (φ a)) ; (get≈ () _ _) } }
-
-tmKR : KR S.tmK T.tmK
-tmKR = record { rel-vr = var≈ refl ; shift-trav = λ { (var x) → refl ; (prj i x) → refl }
-              ; rel-wk = λ r → Trav.≈-trav varKR r λ x → var≈ (shift-ren _) }
+module RenT = Trav {S.varK} {T.varK} (var≈ refl) (λ { (var x) → refl ; (prj i x) → refl })
+  (λ { {φ = φ} {a} (var≈ refl) → var≈ (shift-ren (φ a)) })
+module SubT = Trav {S.tmK} {T.tmK} (var≈ refl) (λ { (var x) → refl ; (prj i x) → refl })
+  (λ r → RenT.≈-trav r λ x → var≈ (shift-ren _))
 
 {- The simulation --------------------------------------------------------------------------}
 
@@ -177,7 +171,7 @@ module _ {φ₀ : Refs [] []} where
  ... | false = inr≈ (tuple≈ [])
 
  ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → ext-ref φ₀ ⊢ N ≈ N' → R V V' → R (N S.[ V ]) (N' T.[ V' ])
- ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m }
+ ≈-[] n m = SubT.≈-trav n λ { Z → m }
 
  sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
  sims : ∀ {Δ} {Ms : All _ Δ} {Ms'} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
@@ -193,7 +187,7 @@ module _ {φ₀ : Refs [] []} where
      → Ans′ (app V W) (S.β V refl W) (C.app V' W')
    β-sim (T.clos vs) (clos≈ n ms) w m' =
      to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
-        (Trav.≈-trav tmKR n λ { Z → m' ; (S i) → get≈ (each-lookup (≈-values ms vs) i) (lookup₂ ms i) vs })
+        (SubT.≈-trav n λ { Z → m' ; (S i) → get≈ (each-lookup (≈-values ms vs) i) (lookup₂ ms i) vs })
  sim lit≈ = val ε T.lit lit≈
  sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
  sim (getᵢ≈ {i = i} r) = ans-in (frame _ λ _ → refl) getᵢ≈ (sim r)
