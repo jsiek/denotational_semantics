@@ -80,14 +80,11 @@ delays≈ ρ (M ∷ Ms) = delay≈ ρ M ∷ delays≈ ρ Ms
 OK : ∀ {Γ Δ Γ₂ Δ₂} (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) → Ren Γ Δ → Ren Γ₂ Δ₂ → S.Sub 𝒦₁ Γ Γ₂ → T.Sub 𝒦₂ Δ Δ₂ → Set
 OK 𝒦₁ 𝒦₂ ρ ρ₂ σ τ = ∀ {A} (x : _ ∋ A) → ρ₂ ⊢ S.Kit.tm 𝒦₁ (σ x) ≈ T.Kit.tm 𝒦₂ (τ (ρ x))
 
-record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
-  field
-    rel-vr : ∀ {Γ Δ B} {ρ : Ren Γ Δ} → ext {B = B} ρ ⊢ S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ Z) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z)
-    rel-wk : ∀ {Γ Δ A B} {ρ : Ren Γ Δ} {a : S.Kit.K 𝒦₁ Γ A} {b} → ρ ⊢ S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
-      → ext {B = B} ρ ⊢ S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)
-
-module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
-  open KR K
+{- for a kit of each language, which agree on variable 0 and on weakening -}
+module Trav {𝒦₁ 𝒦₂}
+  (rel-vr : ∀ {Γ Δ B} {ρ : Ren Γ Δ} → ext {B = B} ρ ⊢ S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ Z) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ Z))
+  (rel-wk : ∀ {Γ Δ A B} {ρ : Ren Γ Δ} {a : S.Kit.K 𝒦₁ Γ A} {b} → ρ ⊢ S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
+    → ext {B = B} ρ ⊢ S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b)) where
 
   ok-ext : ∀ {Γ Δ Γ₂ Δ₂ B} {ρ : Ren Γ Δ} {ρ₂ : Ren Γ₂ Δ₂} {σ : S.Sub 𝒦₁ Γ Γ₂} {τ : T.Sub 𝒦₂ Δ Δ₂} → OK 𝒦₁ 𝒦₂ ρ ρ₂ σ τ
     → OK 𝒦₁ 𝒦₂ (ext {B = B} ρ) (ext ρ₂) (S.exts 𝒦₁ σ) (T.exts 𝒦₂ τ)
@@ -115,11 +112,8 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   ≈-travs [] ok = []
   ≈-travs (r ∷ rs) ok = ≈-trav r ok ∷ ≈-travs rs ok
 
-varKR : KR S.varK T.varK
-varKR = record { rel-vr = var≈ refl ; rel-wk = λ { (var≈ e) → var≈ (cong S e) } }
-
-tmKR : KR S.tmK T.tmK
-tmKR = record { rel-vr = var≈ refl ; rel-wk = λ r → Trav.≈-trav varKR r λ _ → var≈ refl }
+module RenT = Trav {S.varK} {T.varK} (var≈ refl) (λ { (var≈ e) → var≈ (cong S e) })
+module SubT = Trav {S.tmK} {T.tmK} (var≈ refl) (λ r → RenT.≈-trav r λ _ → var≈ refl)
 
 {- The simulation ------------------------------------------------------------------------------}
 
@@ -131,23 +125,16 @@ module _ {ρ₀ : Ren [] []} where
   Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → C.Tm [] A → Set
   Ans′ = Ans T.red Value R
 
-  obs≈ : ∀ {A} {V V'} → R {A} V V' → S.obs V ≡ T.obs V'
-  obss≈ : ∀ {Θ} {Vs : All _ Θ} {Vs'} → All₂ R Vs Vs' → S.obss Vs ≡ T.obss Vs'
-  obs≈ (var≈ {x = ()} _)
-  obs≈ (clos≈ _ _) = refl
-  obs≈ (app≈ _ _) = refl
-  obs≈ lit≈ = refl
-  obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
-  obs≈ (get≈ _) = refl
-  obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-  obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-  obs≈ (case≈ _ _ _) = refl
-  obs≈ (prim≈ _ _) = refl
-  obs≈ (let≈ _ _) = refl
-  obs≈ (fold≈ r) = obs≈ r
-  obs≈ (unfold≈ _) = refl
-  obss≈ [] = refl
-  obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
+  obs≈ : ∀ {A} {V V'} → R {A} V V' → Value V' → S.obs V ≡ T.obs V'
+  obss≈ : ∀ {Θ} {Vs : All _ Θ} {Vs'} → All₂ R Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+  obs≈ (clos≈ _ _) _ = refl
+  obs≈ lit≈ _ = refl
+  obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
+  obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
+  obs≈ (inr≈ r) (T.inr v) = cong o-inr (obs≈ r v)
+  obs≈ (fold≈ r) (T.fold v) = obs≈ r v
+  obss≈ [] [] = refl
+  obss≈ (r ∷ rs) (v ∷ vs) = cong₂ _∷_ (obs≈ r v) (obss≈ rs vs)
 
   out≈ : ∀ p n m → R (S.out p n m) (T.out p n m)
   out≈ P.sub n m = lit≈
@@ -156,11 +143,10 @@ module _ {ρ₀ : Ren [] []} where
   ... | false = inr≈ (tuple≈ [])
 
   ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → ext ρ₀ ⊢ N ≈ N' → R V V' → R (N S.[ V ]) (N' T.[ V' ])
-  ≈-[] n m = Trav.≈-trav tmKR n λ { Z → m ; (S ()) }
+  ≈-[] n m = SubT.≈-trav n λ { Z → m }
 
   sim : ∀ {A} {M M'} → R {A} M M' → Ans′ M (S.red M) M'
   sims : ∀ {Θ} {Ms : All _ Θ} {Ms'} → All₂ R Ms Ms' → Ans T.reds (Each Value) (All₂ R) Ms (S.reds Ms) Ms'
-  sim (var≈ {x = ()} _)
   sim (clos≈ {N' = N'} n rs) =
     ans-in (frame-∘ {redU = T.red} {h = C.tuple} {f = C.pack (C.code N')} (frame _ λ _ → refl) (frame _ λ _ → refl))
       (clos≈ n) (sims rs) λ vs ms → val ε (T.pack T.code (T.tuple vs)) (clos≈ n ms)
@@ -172,7 +158,7 @@ module _ {ρ₀ : Ren [] []} where
       → Ans′ (app V W) (S.β V refl W) (C.callc V' W')
     β-sim (T.pack T.code (T.tuple vs)) (clos≈ n ms) w m' =
       to (one (trans (val-in (value-red (T.pack T.code (T.tuple vs)))) (val-in (value-red w))))
-         (Trav.≈-trav tmKR n λ { Z → m' ; (S Z) → tuple≈ ms })
+         (SubT.≈-trav n λ { Z → m' ; (S Z) → tuple≈ ms })
   sim lit≈ = val ε T.lit lit≈
   sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
   sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)
@@ -196,4 +182,4 @@ module _ {ρ₀ : Ren [] []} where
 {- The end theorem ----------------------------------------------------------------------}
 
 delay-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (delay-program M))
-delay-correct M = red-equivalent value-red R sim (λ m _ _ → obs≈ m) (delay≈ _ M)
+delay-correct M = red-equivalent value-red R sim (λ m _ → obs≈ m) (delay≈ _ M)

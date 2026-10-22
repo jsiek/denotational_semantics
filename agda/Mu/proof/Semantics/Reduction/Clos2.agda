@@ -52,3 +52,16 @@ values-trav (v ∷ vs) = value-trav v ∷ values-trav vs
 lookup-travs : ∀ {𝒦 Γ Δ Δ' A} (σ : Sub 𝒦 Γ Δ) (Ms : All (Tm Γ) Δ') (i : Δ' ∋ A) → lookup (travs 𝒦 σ Ms) i ≡ trav 𝒦 σ (lookup Ms i)
 lookup-travs σ (M ∷ Ms) Z = refl
 lookup-travs σ (M ∷ Ms) (S i) = lookup-travs σ Ms i
+
+{- a variable or a value: what a closure captures, in enclose's and
+   optimize's relations; renaming keeps it, and closed it is a value -}
+data VV {Γ} : ∀ {A} → Tm Γ A → Set where
+  var : ∀ {A} (x : Γ ∋ A) → VV (` x)
+  val : ∀ {A} {V : Tm Γ A} → Value V → VV V
+
+vv-wk : ∀ {Γ A B} {M : Tm Γ A} → VV M → VV (ren (S {b = B}) M)
+vv-wk (var x) = var _
+vv-wk (val v) = val (value-trav v)
+
+vv-value : ∀ {A} {V : Tm [] A} → VV V → Value V
+vv-value (val v) = v

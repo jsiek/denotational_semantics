@@ -18,7 +18,7 @@ open import Framework.Primitives using (Int)
 open import Mu.Language.Type using (base)
 open import Mu.Language.ISWIM using (Tm)
 open import Mu.Language.Mon using (⌜_⌝ₚ)
-open import Mu.Compiler.Pipeline using (compile₄; compile; compile-mon; compile-imp; compile-cfg; compile-x86)
+open import Mu.Compiler.Pipeline using (compile; compile-mon; compile-imp; compile-cfg; compile-x86)
 open import Semantics.Observation using (Obs; o-const; _⇔_)
 open import Semantics.Reduction.Smallstep using (Equivalent; Terminates; Diverges)
 open import proof.Framework.Simulation Obs using (equiv-trans)
@@ -33,7 +33,6 @@ open import Mu.proof.Correctness.Reduction.LiftLocalsRed using (lift-locals-corr
 open import Mu.proof.Correctness.CEK.ExplicateSim using (explicate-correct)
 open import Mu.proof.Correctness.CEK.SelectSim using (select-correct)
 import Mu.Semantics.Reduction.ISWIM as S
-import Mu.Semantics.Reduction.Clos4 as Clos4ᵣ
 import Mu.Semantics.Reduction.Clos5 as Clos5ᵣ
 import Mu.Semantics.CEK.Imp as Impμₘ
 import Mu.Semantics.CEK.CFG as CFGμₘ
@@ -42,13 +41,10 @@ import Mu.Semantics.CEK.X86 as X86μₘ
 open import Data.Integer using (ℤ)
 open import Data.List using ([])
 
-compile₄-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Clos4ᵣ.sem (compile₄ M))
-compile₄-correct M =
-  equiv-trans (simplify-correct M)
-    (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _) (equiv-trans (concretize-correct _) (delay-correct _))))
-
 compile-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Clos5ᵣ.sem (compile M))
-compile-correct M = equiv-trans (compile₄-correct M) (globalize-correct _)
+compile-correct M =
+  equiv-trans (simplify-correct M) (equiv-trans (enclose-correct _) (equiv-trans (optimize-correct _)
+    (equiv-trans (concretize-correct _) (equiv-trans (delay-correct _) (globalize-correct _)))))
 
 compile-mon-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (Clos5ᵣ.sem ⌜ compile-mon M ⌝ₚ)
 compile-mon-correct M = equiv-trans (compile-correct M) (rco-correct _)

@@ -28,7 +28,7 @@ open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.ISWIM as S
 import Mu.proof.Semantics.Reduction.Clos2 as T
-open T using (Value; value-red)
+open T using (Value; value-red; VV; var; val; vv-wk; vv-value)
 import Language.Prim as P
 
 open import Data.Bool using (true; false)
@@ -38,11 +38,6 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (does)
 
 {- The relation --------------------------------------------------------------}
-
-{- what a closure captures: a variable or a value -}
-data VV {Γ} : ∀ {A} → C.Tm Γ A → Set where
-  var : ∀ {A} (x : Γ ∋ A) → VV (C.` x)
-  val : ∀ {A} {V : C.Tm Γ A} → Value V → VV V
 
 infix 4 _≈_
 data _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Γ A → Set where
@@ -94,19 +89,16 @@ encs≈ (M ∷ Ms) = enc M ∷ encs≈ Ms
 
 {- Closure under substitution ----------------------------------------------------}
 
-{- a kit of each language, which agree -}
-record KR (𝒦₁ : S.Kit) (𝒦₂ : T.Kit) : Set where
+{- for a kit of each language, which agree on variables and on weakening,
+   and whose target terms of a variable, weakened, are variables or values -}
+module Trav {𝒦₁ 𝒦₂} (laws : S.Laws 𝒦₁)
+  (rel-vr : ∀ {Γ A} (x : Γ ∋ A) → S.Kit.tm 𝒦₁ (S.Kit.vr 𝒦₁ x) ≈ T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ x))
+  (rel-wk : ∀ {Γ A B} {a : S.Kit.K 𝒦₁ Γ A} {b} → S.Kit.tm 𝒦₁ a ≈ T.Kit.tm 𝒦₂ b
+    → S.Kit.tm 𝒦₁ (S.Kit.wk 𝒦₁ {B = B} a) ≈ T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ b))
+  (vv-vr : ∀ {Γ A} (x : Γ ∋ A) → VV (T.Kit.tm 𝒦₂ (T.Kit.vr 𝒦₂ x)))
+  (vv-wk : ∀ {Γ A B} {b : T.Kit.K 𝒦₂ Γ A} → VV (T.Kit.tm 𝒦₂ b) → VV (T.Kit.tm 𝒦₂ (T.Kit.wk 𝒦₂ {B = B} b))) where
   module K₁ = S.Kit 𝒦₁
   module K₂ = T.Kit 𝒦₂
-  field
-    laws : S.Laws 𝒦₁
-    rel-vr : ∀ {Γ A} (x : Γ ∋ A) → K₁.tm (K₁.vr x) ≈ K₂.tm (K₂.vr x)
-    rel-wk : ∀ {Γ A B} {a : K₁.K Γ A} {b} → K₁.tm a ≈ K₂.tm b → K₁.tm (K₁.wk {B = B} a) ≈ K₂.tm (K₂.wk b)
-    vv-vr : ∀ {Γ A} (x : Γ ∋ A) → VV (K₂.tm (K₂.vr x))
-    vv-wk : ∀ {Γ A B} {b : K₂.K Γ A} → VV (K₂.tm b) → VV (K₂.tm (K₂.wk {B = B} b))
-
-module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
-  open KR K
   open S.Laws laws
 
   OK : ∀ {Γ Δ} → S.Sub 𝒦₁ Γ Δ → T.Sub 𝒦₂ Γ Δ → Set
@@ -149,16 +141,12 @@ module Trav {𝒦₁ 𝒦₂} (K : KR 𝒦₁ 𝒦₂) where
   vvs-trav (var x ∷ vv) vk = vk x ∷ vvs-trav vv vk
   vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
-varKR : KR S.varK T.varK
-varKR = record { laws = S.varL ; rel-vr = λ _ → var≈ ; rel-wk = λ { var≈ → var≈ } ; vv-vr = var ; vv-wk = λ _ → var _ }
-
-tmKR : KR S.tmK T.tmK
-tmKR = record { laws = S.tmL ; rel-vr = λ _ → var≈ ; rel-wk = λ r → Trav.≈-trav varKR r (λ _ → var≈) (λ _ → var _)
-              ; vv-vr = var ; vv-wk = λ { (var x) → var _ ; (val v) → val (T.value-trav v) } }
+module RenT = Trav {S.varK} {T.varK} S.varL (λ _ → var≈) (λ { var≈ → var≈ }) var (λ _ → var _)
+module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-trav r (λ _ → var≈) (λ _ → var _)) var vv-wk
 
 {- substituting a value for the variable of a binder -}
 ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → V ≈ V' → Value V' → (N S.[ V ]) ≈ (N' T.[ V' ])
-≈-[] n m v = Trav.≈-trav tmKR n (λ { Z → m }) (λ { Z → val v })
+≈-[] n m v = SubT.≈-trav n (λ { Z → m }) (λ { Z → val v })
 
 {- The simulation ------------------------------------------------------------------}
 
@@ -167,25 +155,18 @@ Ans′ = Ans T.red Value _≈_
 
 vvs-values : ∀ {Δ} {Fs : All (C.Tm []) Δ} → Each VV Fs → Each Value Fs
 vvs-values [] = []
-vvs-values (var () ∷ vv)
-vvs-values (val v ∷ vv) = v ∷ vvs-values vv
+vvs-values (v ∷ vv) = vv-value v ∷ vvs-values vv
 
-obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → S.obs V ≡ T.obs V'
-obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → S.obss Vs ≡ T.obss Vs'
-obs≈ (lam≈ _ _ _) = refl
-obs≈ (app≈ _ _) = refl
-obs≈ lit≈ = refl
-obs≈ (tuple≈ rs) = cong o-tuple (obss≈ rs)
-obs≈ (get≈ _) = refl
-obs≈ (inl≈ r) = cong o-inl (obs≈ r)
-obs≈ (inr≈ r) = cong o-inr (obs≈ r)
-obs≈ (case≈ _ _ _) = refl
-obs≈ (prim≈ _ _) = refl
-obs≈ (let≈ _ _) = refl
-obs≈ (fold≈ r) = obs≈ r
-obs≈ (unfold≈ _) = refl
-obss≈ [] = refl
-obss≈ (r ∷ rs) = cong₂ _∷_ (obs≈ r) (obss≈ rs)
+obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
+obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'
+obs≈ (lam≈ _ _ _) _ = refl
+obs≈ lit≈ _ = refl
+obs≈ (tuple≈ rs) (T.tuple vs) = cong o-tuple (obss≈ rs vs)
+obs≈ (inl≈ r) (T.inl v) = cong o-inl (obs≈ r v)
+obs≈ (inr≈ r) (T.inr v) = cong o-inr (obs≈ r v)
+obs≈ (fold≈ r) (T.fold v) = obs≈ r v
+obss≈ [] [] = refl
+obss≈ (r ∷ rs) (v ∷ vs) = cong₂ _∷_ (obs≈ r v) (obss≈ rs vs)
 
 out≈ : ∀ p n m → S.out {[]} p n m ≈ T.out p n m
 out≈ P.sub n m = lit≈
@@ -195,7 +176,6 @@ out≈ P.eq n m with does (n Z.≟ m)
 
 sim : ∀ {A} {M : Tm [] A} {M'} → M ≈ M' → Ans′ M (S.red M) M'
 sims : ∀ {Δ} {Ms : All (Tm []) Δ} {Ms'} → All₂ _≈_ Ms Ms' → Ans T.reds (Each Value) (All₂ _≈_) Ms (S.reds Ms) Ms'
-sim (var≈ {x = ()})
 sim m@(lam≈ _ _ vv) = val ε (T.clos (vvs-values vv)) m
 sim (app≈ r s) =
   ans-in (frame _ λ _ → refl) (λ m → app≈ m s) (sim r)
@@ -206,7 +186,7 @@ sim (app≈ r s) =
   β-sim (T.clos vs) (lam≈ {N = N} {σ = σ} n h vv) w m' =
     to (one (trans (val-in (value-red (T.clos vs))) (val-in (value-red w))))
        (subst (_≈ _) (sym (S.exts-[] σ _ N))
-              (Trav.≈-trav tmKR n (λ { Z → m' ; (S i) → h i }) (λ { Z → val w ; (S i) → each-lookup vv i })))
+              (SubT.≈-trav n (λ { Z → m' ; (S i) → h i }) (λ { Z → val w ; (S i) → each-lookup vv i })))
 sim lit≈ = val ε T.lit lit≈
 sim (tuple≈ rs) = ans-in (frame _ λ _ → refl) tuple≈ (sims rs) λ vs ms → val ε (T.tuple vs) (tuple≈ ms)
 sim (get≈ {i = i} r) = ans-in (frame _ λ _ → refl) get≈ (sim r)
@@ -230,4 +210,4 @@ sims (r ∷ rs) = ans-∷ T.reds (λ _ _ → refl) value-red rs (sim r) (sims rs
 {- The end theorem -------------------------------------------------------------}
 
 enclose-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (enclose M))
-enclose-correct M = red-equivalent value-red _≈_ sim (λ m _ _ → obs≈ m) (enc M)
+enclose-correct M = red-equivalent value-red _≈_ sim (λ m _ → obs≈ m) (enc M)

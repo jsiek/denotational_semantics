@@ -82,13 +82,6 @@ module _ {Σ : List DSig} (ds : All (Code Σ) Σ) where
   {- a target value is the source's -}
   ≈-val : ∀ {A} {M V : Tm Σ [] A} → M ≈ V → Value V → M ≡ V
   ≈-val (val≈ _) _ = refl
-  ≈-val (letc≈ _ _ _) ()
-  ≈-val (call≈ _ _) ()
-  ≈-val (get≈ _) ()
-  ≈-val (prim≈ _ _) ()
-  ≈-val (unfold≈ _) ()
-  ≈-val (case≈ _ _ _) ()
-  ≈-val (let≈ _ _ _) ()
 
   {- The fundamental lemma --------------------------------------------------------}
 
