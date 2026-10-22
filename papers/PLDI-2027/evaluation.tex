@@ -221,8 +221,8 @@ stages takes 299 lines, the largest share. Third, the universal domain
 is a sum of tagged values: the primitives and tagged values take 71
 lines, and the 135 lines of shared lemmas are laws of strictness and
 definedness, which replace nonemptiness; in exchange, no consistency is
-needed. The graph-model relations recurse on finite elements, and none
-of the first two costs arise. The rest of the gap is a property of
+needed. The graph-model relations recurse on finite elements, and neither
+of the first two costs arises. The rest of the gap is a property of
 Agda: its \texttt{with}-abstraction is very slow when a value of the
 domain is in scope, so six places in five passes use auxiliary lemmas,
 records, or an opaque definition instead.
