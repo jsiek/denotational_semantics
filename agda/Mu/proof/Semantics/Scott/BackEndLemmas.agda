@@ -1,8 +1,9 @@
 {-
 
-  Scott domains: lemmas for the proofs of the back-end passes of ISWIMμ
-  (lift locals, explicate control, select instructions,
-  Mu/proof/Correctness/Scott/{LiftLocals,Explicate,Select}Correct.agda).
+  Scott domains: lemmas for the proofs of the passes of ISWIMμ from
+  globalize on (globalize, remove complex operands, lift locals,
+  explicate control, select instructions,
+  Mu/proof/Correctness/Scott/{Globalize,RCO,LiftLocals,Explicate,Select}Correct.agda).
 
   * seq: seq ⊥ e is ⊥, seq d d is d, and seq d (seq d e) is seq d e;
     d ⊑ e when d = e provided d is defined (below-if);
