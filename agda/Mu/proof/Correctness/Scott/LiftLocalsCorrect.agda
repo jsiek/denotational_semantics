@@ -81,19 +81,15 @@ module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) w
     ∙ (app-Λ F D) ⁻¹
     ∙ lift-sem e₁ σ (appᵈ · (Λ · F)) (app-Λ F ⊥𝔻 ∙ seq-⊥ (F · ⊥𝔻))
    where
-    Mᵈ Nᵈ : Den Env
     Mᵈ = ⟦ ⌜ e₁ ⌝ ⟧[ T ]
     Nᵈ = ⟦ ⌜ e₂ ⌝ ⟧[ T ]
-    D : ⟨ 𝔻 ⟩
     D = Mᵈ · σ
-    F : DCPO[ 𝔻 , 𝔻 ]
     F = underK (⟦ lift e₂ ⟧ᴷ T') · (σ , κ)
   lift-sem (M.case a e₁ e₂) σ κ s =
     cases-strict-natural κ s (abs ⟦ ⌜ e₁ ⌝ ⟧[ T ] · σ) (abs ⟦ ⌜ e₂ ⌝ ⟧[ T ] · σ) F₁ F₂
       (λ X → lift-sem e₁ (X • σ) κ s) (λ X → lift-sem e₂ (X • σ) κ s) (⟦ ⌜ a ⌝ᵃ ⟧[ T ] · σ)
     ∙ ap (λ x → cases · x · (strict · F₁ , strict · F₂)) (atm-＝ a σ)
    where
-    F₁ F₂ : DCPO[ 𝔻 , 𝔻 ]
     F₁ = underK (⟦ lift e₁ ⟧ᴷ T') · (σ , κ)
     F₂ = underK (⟦ lift e₂ ⟧ᴷ T') · (σ , κ)
 
