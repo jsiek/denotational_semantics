@@ -14,11 +14,7 @@ compiler pass is correct when the meaning of a program before the pass
 equals its meaning afterward, and the proof is equational reasoning.
 This recipe guided early denotational proofs of compiler correctness
 \citep{Polak:1981aa,Clinger:1984aa}, but becomes difficult when
-compilation changes the representation of program values. For example,
-compiling first-class, lexically scoped functions
-to a first-order target language, such as assembly, requires replacing
-functions with a lower-level representation.  In
-particular, \emph{closure conversion} replaces each function with a
+compilation changes the representation of program values. For example, compiling first-class, lexically scoped functions to a first-order target language, such as assembly, requires \emph{closure conversion}, which replaces each function with a
 pair of a code pointer and the values of its free variables, and
 replaces each call with code that takes the pair apart and jumps to
 the code pointer. It therefore turns functions into data, and a
@@ -92,22 +88,18 @@ The whole-compiler correctness theorem states that the source and
 target denotations contain the same constants and are nonempty
 together. We also prove that the denotational semantics of
 \iswim\ and of the assembly language are adequate with respect to
-the interpreters for those languages. Thus we know our correctness
-theorem is equivalent to the standard theorem for an operational
-semantics.  We mechanize all of these results in Agda.
+the interpreters for those languages. Our correctness theorem is therefore equivalent to the usual operational one.  We mechanize all of these results in Agda.
 
 The graph model we use is essentially the $D_A$ model
 of \citet{Engeler:1981aa} (see
 also \citet{barendregt84:_lambda_calculus}), which is a variation on
 the earlier models of
 \citet{Plotkin:1993ab} and \citet{Scott:1976lq}. Each graph element
-is a finite piece of evidence about a program's behavior. In
-particular, the meaning of a function is a set of input--output
+is a finite piece of evidence about a program's behavior. The meaning of a function is a set of input--output
 entries, and the meaning of an application collects the outputs of the
 entries whose inputs are covered by the meaning of the argument. An
 \iswim\ program that diverges does not produce output, so its meaning
-is the empty set. We chose a graph model because it is elementary: a
-denotation is just a set of inductively defined graph elements, so
+is the empty set. We chose a graph model because it is elementary: a denotation is a set of inductively defined graph elements, so
 mechanizing the model takes a fraction of the size of traditional
 domain theory (Section~\ref{sec:graph-models}). Our use of graph
 models draws inspiration from the filter models of
@@ -135,15 +127,10 @@ of correctness (that is, both directions) for ordinary or CFA-based
 defunctionalization in the presence of recursion.''
 
 Other denotational compiler proofs for source languages that admit
-divergence avoid closure conversion. Some start from first-order
-languages. \citet{Polak:1981aa} considers a subset of Pascal,
+divergence avoid closure conversion. Some concern compilers for first-order languages. \citet{Polak:1981aa} considers a subset of Pascal,
 \citet{Xia:2019aa} use interaction trees for a compiler from an
 imperative language to assembly, and \citet{Cheng:2026aa} use sets of
-behaviors for the front end of CompCert. Others compile to target
-languages with direct support for closures. This is the case for the
-target languages of
-\citet{Clinger:1984aa}, Guttman, Ramsdell, and Wand
-\citeyearpar{Guttman:1995aa}, and \citet{Benton:2009aa}.
+behaviors for the front end of CompCert. Others concern compilers whose target languages support closures directly, such as those of \citet{Clinger:1984aa}, Guttman, Ramsdell, and Wand \citeyearpar{Guttman:1995aa}, and \citet{Benton:2009aa}.
 
 Operational proofs do handle closure conversion in the presence of
 recursion. \citet{Pottier:2006aa} proved that untyped
@@ -157,16 +144,11 @@ Turing-complete programming languages.'' CakeML
 big-step semantics, and CertiCoq \citep{Paraskevopoulou:2019aa} uses
 step-indexed logical relations. CompCert \citep{Leroy:2009aa}, whose
 source language is first-order, established simulations as a standard
-technique for compiler verification. Thus, while operational proofs of
-closure conversion abound, we know of no prior denotational proof of closure conversion for a language with general recursion that both preserves and reflects divergence.
+technique for compiler verification. We know of no prior denotational proof of closure conversion for a language with general recursion that both preserves and reflects divergence.
 
 Finally, to answer RQ2, RQ4, and RQ5, which depend on comparing the
 graph-model proof with other styles, we prove the same compiler
-correct three more times: with abstract machines and
-simulations, as in CompCert; with clocked interpreters and value
-relations, as in CakeML; and with standard reduction semantics and
-simulations. We also prove it a second time denotationally, with Scott
-domains.  Each development covers the ten-pass pipeline and proves an
+correct four more times: with abstract machines and simulations, as in CompCert; with clocked interpreters and value relations, as in CakeML; with standard reduction semantics and simulations; and, denotationally, with Scott domains.  Each development covers the ten-pass pipeline and proves an
 analogous correctness property in its own semantics. Prior comparisons
 of semantic styles for compiler proofs exist, but at a smaller
 scale. \citet{Owens:2016aa} found that proving one compiler phase
@@ -196,7 +178,7 @@ method of \citet{Pitts:1996aa} does not apply directly, we built it
 stage by stage, as \citet{Reynolds:1974aa} did.
 
 
-The technical contributions of this paper are:
+Our contributions are:
 \input{contributions}
 
 Section~\ref{sec:compiler} presents the compiler and its languages, and

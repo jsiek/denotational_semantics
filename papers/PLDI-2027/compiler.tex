@@ -116,8 +116,7 @@ Appendix~\ref{app:languages}.
 \paragraph{The source language}
 
 \iswim\ has integers, $n$-ary tuples, binary sums, the primitives
-$\kw{sub}$ and $\kw{eq}$, and iso-recursive types. Most of its forms
-are standard. The primitive $\kw{eq}$ returns
+$\kw{sub}$ and $\kw{eq}$, and iso-recursive types. The primitive $\kw{eq}$ returns
 $\kw{inl}\;\langle\rangle$ for true and $\kw{inr}\;\langle\rangle$ for
 false, so $\kw{case}$ serves as the conditional. A recursive type $\mu
 X.\, A$ is isomorphic to its unfolding $A[\mu X.\, A / X]$, and the
@@ -129,10 +128,8 @@ type, and $\kw{unfold}$ turns it back:
   \qquad
   \frac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \]
-Neither coercion does anything at run time. The other typing rules are
-straightforward (Appendix~\ref{app:types}). \iswim\ has no recursion
-operator.  Instead, recursive types make self-application typable, so
-a program can define the call-by-value fixed-point combinator directly:
+Neither coercion does anything at run time. \iswim\ has no recursion
+operator.  Recursive types make self-application typable, so a program can define the call-by-value fixed-point combinator:
 \[
   \mathit{fix} = \lambda f.\, g\;(\kw{fold}\;g)
   \quad\text{where}\quad
@@ -204,8 +201,7 @@ The \pass{lift locals} pass gives each variable a fixed location in the
 function's stack frame, called a \emph{slot}, numbered by how many
 variables are bound before it. We keep writing $x$ and $y$ for these
 variables, but from Imp on they stand for slots, and each $\kw{let}$
-becomes an assignment to the next slot. The compiler omits register
-allocation: every local variable lives in its slot. The
+becomes an assignment to the next slot. The
 \pass{explicate control} pass turns the nested $\kw{case}$s of Imp
 into a control-flow graph. A CFG program $P$ has a function body for
 each global definition and one for the main program. A function body

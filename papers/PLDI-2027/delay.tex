@@ -15,11 +15,11 @@
 \label{sec:approx-lr}
 
 The \pass{delay} pass lowers closures to pairs of code and
-environment. Its proof is the hardest part of the compiler proof, and its correctness is not an equation. This section
+environment. Its proof is the hardest part of the compiler proof. This section
 shows why semantic reflection for \pass{delay} resisted our earlier
 attempts and how the approximant logical relation proves it.
 
-The source language of \pass{delay} is EnvClos. In EnvClos, a closure
+In EnvClos, the source language of \pass{delay}, a closure
 $\kw{clos}\;(z, y.\,N)\;\vec{M}$ is still a function. Its code $N$ is closed,
 with free variables $z$ for the environment and $y$ for the argument,
 and its meaning is a curried function of the environment $X$ and then
@@ -34,7 +34,7 @@ means function application:
 \end{array}
 \]
 
-The target language of \pass{delay} is FlatClos. In FlatClos, a closure is
+In FlatClos, the target language, a closure is
 a pair of code and environment, and a call takes the pair apart. The
 meaning of $\kw{code}\;(z, y.\,N)$ is the same curried function as before. The
 meaning of $\kw{pack}\;L\;M$ is the set of pairs $\pairv{u}{v}$ with
@@ -174,7 +174,7 @@ What remains is a finite list of target elements against the whole
 source denotation. Recursion on types, as in the proofs of
 \citet{Chlipala:2007fk} and \citet{Nielsen:2000aa}, is not an option:
 since $\kw{fold}$ and $\kw{unfold}$ mean the identity, the relation at
-$\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller type. The relation does not depend on types at all.
+$\mu X.\,A$ would be the relation at $A[\mu X.\,A/X]$, which is not a smaller type. The relation does not depend on types.
 
 \paragraph{The key insight}
 
@@ -260,8 +260,7 @@ pairs of $V$.
 
 A \emph{batch of calls} $\callsto{V}{U}{W}$ says two things. The
 first conjunct, $U \subseteq \mathsf{args}(V)$, says that every
-argument in $U$ is taken by some usable entry of $V$. This keeps the
-arguments shallower than $V$, which the recursion needs. The second
+argument in $U$ is taken by some usable entry of $V$. The second
 conjunct says that each result $w$ in $W$ is produced by a usable entry
 of $V$ whose arguments are among $U$.
 
@@ -276,9 +275,7 @@ at the recursive occurrences:
   \item every sublist of a projection of $V$ is related to the same
     projection of $D$.
 \end{enumerate}
-The third clause is where the $\car$ and $\cdr$ of the call operator
-meet. Through usable entries, the code comes from $\car(V)$ and the
-environments come from $\cdr(V)$, both within the finite list $V$.
+
 
 \paragraph{An example}
 
@@ -345,13 +342,7 @@ $V \subseteq \den{\pass{delay}(M)}\rho'$.
 
 The proof is by induction on $M$. Throughout, the second part of
 Lemma~\ref{lem:depth-irrelevant} lets us pass between $D \ALR V$ and
-its four clauses, with ${\ALR}$ at the recursive occurrences. Most cases are routine. In the case of a
-variable, the relation between $\rho$ and $\rho'$ gives the conclusion
-directly. The constructs $\kw{fold}$ and
-$\kw{unfold}$ denote the identity function in both languages, so their
-cases follow immediately from the induction hypothesis. The cases for
-tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the
-induction hypotheses for their subterms. Two cases carry the weight.
+its four clauses, with ${\ALR}$ at the recursive occurrences. The case of a variable follows from the relation between $\rho$ and $\rho'$, and the cases of $\kw{fold}$, $\kw{unfold}$, tuples, injections, $\kw{let}$, and $\kw{case}$ follow from the induction hypotheses for their subterms. Two cases carry the weight.
 
 \emph{Case $M = L\;K$.} Then
 $\pass{delay}(M) = \kw{callc}\,\pass{delay}(L)\,\pass{delay}(K)$,

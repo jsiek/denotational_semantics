@@ -60,10 +60,7 @@ finite pieces of evidence about the behavior, which we call
 our compiler's languages.  We first explain how the model represents
 functions, then how it handles recursion and divergence, and then why
 we require consistency, which rules out sets of elements that cannot
-all describe the same value.  Throughout
-the explanation, we refer to Figure~\ref{fig:graph-ops}, which defines
-elements and the operators on sets of elements from which we build the
-semantics of the source, target, and intermediate languages.  We end
+all describe the same value.  Figure~\ref{fig:graph-ops} defines the elements and the operators on sets of elements from which we build the semantics of all our languages.  We end
 this section with the properties of the semantics that our proofs rely
 on, including a $\beta$-law, and with our reasons for choosing a graph
 model over traditional domain theory.
@@ -106,11 +103,7 @@ mathematical function.
   \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])
 \end{array}
 \]
-The meaning of function application is given by operator $D \app E$
-(Figure~\ref{fig:graph-ops}).  It collects all the entries of $D$
-whose input is contained in the argument $E$, and returns the outputs
-of those entries. So the following equation defines the meaning of
-application in \iswim.
+The operator $D \app E$ (Figure~\ref{fig:graph-ops}) gives the meaning of application: it collects the outputs of the entries of $D$ whose input is contained in the argument $E$, and application in \iswim\ means:
 \[
 \begin{array}{rcl}
   \den{L\;M}\rho & = & \den{L}\rho \app \den{M}\rho
@@ -152,7 +145,7 @@ output, and so on forever, which is impossible for finite elements.
 \paragraph{Consistency}
 
 We write $u \sim v$ when the elements $u$ and $v$ are consistent,
-which means, intuitively, that they could describe the same value.
+which means that they could describe the same value.
 Appendix~\ref{app:consistency} gives the definition. The operator
 $\Lambda$ builds only entries whose inputs are consistent, which rules
 out entries such as $[1, 2] \mapsto 3$ in the meaning of $\lambda x.\,

@@ -14,7 +14,7 @@ denotational semantics based on a graph model to prove a compiler
 correct, from a call-by-value $\lambda$-calculus with iso-recursive
 types (so it supports general recursion and admits divergence),
 through closure conversion, to a typed assembly language. The proof is
-total: the compiler preserves and reflects divergence. We prove most passes in the compiler correct by an equation between the denotations of
+total: the compiler preserves and reflects divergence. We prove most passes correct by an equation between the denotations of
 a program before and after the pass. The exception is the step of
 closure conversion that lowers closures into code and environment
 pairs: its reflection direction needs a new kind of logical relation
@@ -23,14 +23,8 @@ relations}. We mechanize the proof in Agda.
 
 To compare this graph-model approach with other styles, we prove
 correctness of the same compiler four more times, in three operational
-styles and with Scott domains, and report on the size of the proofs.
+styles and with Scott domains, and compare the sizes of the proofs.
 Counting each correctness proof against its own semantics, without language-independent infrastructure, the graph-model development is smaller than the proofs using
 Scott domains, abstract machines, and reduction semantics, but larger
-than the proof using clocked interpreters. In
-particular, the graph-model approach yields
-smaller proofs for compiler passes in which the program values remain
-at the same level of abstraction, such as inlining, where equational
-reasoning suffices.  But the denotational proofs are larger for
-compiler passes that translate program values into a lower level of
-abstraction, such as lowering closures to their flat representation.
+than the proof using clocked interpreters. Compared with the operational proofs, the graph-model proofs are smaller for passes that keep the representation of values, such as inlining, where equational reasoning suffices, and larger for passes that change it, such as the lowering of closures to pairs of code and environment.
 
