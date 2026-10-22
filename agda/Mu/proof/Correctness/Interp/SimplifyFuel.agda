@@ -41,22 +41,21 @@ open import Mu.Language.ISWIM
 open import Mu.Language.ISWIMSubst using (ren; travs; varK)
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import Mu.proof.Compiler.SimplifyFacts as P
-  using (Info; _∣_; term; known; Known; Facts; self; info; under; known-as; shift-info; shift-known; simp; simps;
-         simp-app; simp-call; simp-let; lam?; is-lam; other; size; inline-size; inline-fuel; simp-get; simp-case;
-         simp-prim; simp-unfold; simplify; small; atom; value; values; component; branch; unfolded; int-of; prim-term;
-         value-sv; small-sv; comp-inv; int-inv; branch-inl; branch-inr; unfold-inv)
+  using (Info; _∣_; term; known; Known; Facts; self; under; known-as; shift-info; shift-known; simp; simps;
+         simp-call; simp-let; lam?; is-lam; other; size; inline-size; inline-fuel; simplify; small; atom; value;
+         values; component; branch; unfolded; int-of; prim-term; comp-inv; int-inv; branch-inl; branch-inr; unfold-inv)
 open import Semantics.Observation
 open import proof.Semantics.Interp.Clock
 import Mu.Semantics.Interp.ISWIM as S
 
-open import Data.Bool using (Bool; true; false; _∧_; if_then_else_)
+open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Integer using (_≟_)
-open import Data.List using (List; []; _∷_)
+open import Data.List using ([]; _∷_)
 open import Data.Maybe using (just; nothing)
 open import Data.Nat using (ℕ; zero; suc; _≤_; s≤s; _≤ᵇ_)
 open import Data.Nat.Properties using (n≤1+n; ≤-refl)
-open import Data.Product using (_×_; Σ-syntax; _,_; proj₁; proj₂; map₁; map₂)
+open import Data.Product using (_×_; Σ-syntax; _,_; map₁; map₂)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
