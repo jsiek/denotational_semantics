@@ -73,6 +73,29 @@ The denotational: Scott domains column (`agda/AllScott.agda`,
 which clones TypeTopology at a pinned commit into `_deps/` (not tracked),
 patches it, and checks the column against it and the standard library.
 
+## Reproducing the PLDI 2027 paper
+
+The paper's compiler is ISWIMμ (`agda/Mu/`): a call-by-value
+λ-calculus with iso-recursive types compiled in ten passes to X86μ.
+
+* Graph model, abstract machines, clocked interpreters, reduction
+  semantics, and adequacy: `make check` (Agda 2.8.0, standard library
+  2.4, `--safe`; about three minutes). `agda/All.agda` imports
+  `agda/Mu/All.agda`.
+* Scott domains: `make check-scott`. It fetches TypeTopology at commit
+  `17487fc910f3bb305c30001507fed5d41d52dc3c` into `_deps/`, applies
+  `scott/typetopology-builtin-alias.patch` (Bool and List become
+  aliases of Agda's builtins), and checks `agda/AllScott.agda` with
+  `--safe` (about three more minutes). Its theorems take propositional
+  truncation, function extensionality and propositional extensionality
+  as module parameters.
+* Theorem statements: `agda/Mu/Theorems/Denotational.agda` (graph
+  model), `Scott.agda`, `Simulation.agda` (abstract machines),
+  `Interpreter.agda`, `Reduction.agda`, and `Adequacy.agda`.
+* Table 1: `python3 papers/PLDI-2027/loc.py --mu` (the four columns,
+  infrastructure and adequacy) and `--scott` (the Scott-domain column);
+  add `--tokens` or `--chars` for the other measures.
+
 ## Other developments
 
 * `agda/old/` holds the earlier developments. They use the abt library
