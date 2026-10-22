@@ -7,11 +7,12 @@
 %% Graph/*Correct.agda with Interp/*Fuel.agda (nonemptiness, laws,
 %% consistency, binder annotations).
 
-\section{Evaluation: Comparison with Operational Approaches}
+\section{Evaluation: Comparison with Other Proof Styles}
 \label{sec:evaluation}
 
-To measure how concise the denotational proofs are (RQ2) and how the
-denotational approach compares overall with operational ones (RQ4), we
+To measure how concise the denotational proofs are (RQ2), how the
+graph-model proof compares with operational ones (RQ4), and how it
+compares with Scott domains (RQ5), we
 proved the same compiler correct four more times: once in a second denotational style, with Scott domains, and three times in operational styles. This section describes the five developments, compares the
 sizes of their proofs pass by pass, and explains the differences.
 
@@ -235,7 +236,7 @@ relies on 1,544 lines of it, mostly the graph model itself and its
 operators, against 447 for the machines, 413 for the interpreters, and
 1,191 for the reduction semantics.
 
-\subsection{The Answers to RQ2 and RQ4}
+\subsection{The Answers to RQ2, RQ4, and RQ5}
 
 The comparison supports the answer to RQ2. For the passes that keep
 the representation of values, the equational proofs tend to be
@@ -245,7 +246,10 @@ concise: the smallest of the five styles for \pass{simplify} and
 development ranks second, behind the clocked interpreters and ahead of
 abstract machines and reduction semantics. Its advantage on the passes
 proved by equational reasoning such as \pass{simplify} is neutralized
-by \pass{delay}, the one pass that is not an equation.
+by \pass{delay}, the one pass that is not an equation. For RQ5, the
+graph model gives the smaller proof: the Scott-domain proof is 1.4
+times as large, mostly for reasons of the mathematics (stage-indexed
+relations, calls across stages, and tags) rather than of Agda.
 
 \subsection{Threats to Validity}
 
