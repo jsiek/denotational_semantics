@@ -326,7 +326,7 @@ The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) i
 
 Theorem statements (Mu/Theorems/Scott.agda): 84 lines.
 
-TypeTopology itself (not counted anywhere): the Scott column imports, transitively from `agda/AllScott.agda`, 80 TypeTopology modules with about 18,600 lines of code (the `code` blocks of the `.lagda` files, without comments, blank lines or imports; counted 2026-10-22 at the pinned commit). The paper's §3 quotes this figure.
+TypeTopology itself (not counted anywhere): the Scott column imports, transitively from `agda/AllScott.agda`, 80 TypeTopology modules with about 18,600 lines of code (the `code` blocks of the `.lagda` files, without comments, blank lines or imports; counted 2026-10-22 at the pinned commit). `loc.py --scott` prints the breakdown: domain theory and lifting (`DomainTheory`, `Lifting`), 19 modules, 6,176 lines, which the paper's Table 2 counts for the Scott column; the general foundations (`UF`, `MLTT`, …), 61 modules, 12,448 lines, which play the role of the standard library and are counted for no column.
 
 * **Total:** 2485, 1.4 times the graph model (1.3 by tokens), larger in every row but the semantics.
 * **Delay (723 against 450):** one stage-indexed relation `R δ n s w` over a direction δ serves both halves (`DelayRel.agda`). By category, out of 838 comment-stripped lines with imports: the relation's definitions, is-prop, monotonicity, admissibility and the moves between stages 174; calls 101 and `StageCall` 198 (299, the largest share: a call of a pair seen at stage m + 2 shows its result only at stage m); primitives and tagged values 71 (about a twelfth); closures 43, other operators 62, terms and top level 66, header and imports 123.

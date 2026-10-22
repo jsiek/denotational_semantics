@@ -1989,6 +1989,76 @@ def scott_report(c, M):
     print()
     print(f'Theorem statements (Mu/Theorems/Scott.agda): {sum(code_lines(f) for f in thm)} lines.')
     print()
+    typetopology_report()
+
+
+TT_SOURCE = '_deps/TypeTopology/source'
+# TypeTopology's domain theory and the lifting monad (the mathematics the
+# graph model's own infrastructure plays the role of), against its general
+# foundations (univalent foundations, MLTT, naturals, ...), which play the
+# role the standard library plays for every column and are counted for none
+TT_DOMAIN = ('DomainTheory', 'Lifting')
+
+
+def typetopology_report():
+    """The TypeTopology modules that the Scott column imports, transitively
+    from agda/AllScott.agda, by top-level directory: code lines (the code
+    blocks of .lagda files, without comments, blank lines or imports)."""
+    if not os.path.isdir(TT_SOURCE):
+        print('TypeTopology not fetched (run `make scott-deps`): no breakdown of the imported library.')
+        print()
+        return
+
+    def find(mod):
+        rel = mod.replace('.', '/')
+        for root in ('agda', TT_SOURCE):
+            for ext in ('.agda', '.lagda'):
+                q = os.path.join(root, rel + ext)
+                if os.path.exists(q):
+                    return q
+        return None
+
+    def code_of(f):
+        t = open(f, encoding='utf-8').read()
+        if f.endswith('.lagda'):
+            t = '\n'.join(re.findall(r'\\begin\{code\}(.*?)\\end\{code\}', t, re.S))
+        return t
+
+    def count(t):
+        t = re.sub(r'\{-.*?-\}', '', t, flags=re.S)
+        n = 0
+        for line in t.split('\n'):
+            line = re.sub(r'--.*', '', line).strip()
+            if line and not re.match(r'(open\s+)?import\b', line):
+                n += 1
+        return n
+
+    seen, todo = {}, [A + 'AllScott.agda']
+    while todo:
+        f = todo.pop()
+        if f in seen:
+            continue
+        seen[f] = code_of(f)
+        for m in re.findall(r'^\s*(?:open\s+)?import\s+([\w.]+)', seen[f], re.M):
+            q = find(m)
+            if q and q not in seen:
+                todo.append(q)
+    mods, lines_ = {}, {}
+    for f, t in seen.items():
+        if f.startswith(TT_SOURCE):
+            top = f[len(TT_SOURCE) + 1:].split('/')[0]
+            mods[top] = mods.get(top, 0) + 1
+            lines_[top] = lines_.get(top, 0) + count(t)
+    dom = sum(lines_.get(k, 0) for k in TT_DOMAIN)
+    found = sum(lines_.values()) - dom
+    print('| TypeTopology imported by the Scott column (not in any total) | modules | lines |')
+    print('|---|---:|---:|')
+    print(f"| domain theory and lifting ({', '.join(TT_DOMAIN)}) | {sum(mods.get(k, 0) for k in TT_DOMAIN)} | {dom} |")
+    print(f"| foundations (the rest: {', '.join(sorted(k for k in lines_ if k not in TT_DOMAIN))}) "
+          f"| {sum(mods.values()) - sum(mods.get(k, 0) for k in TT_DOMAIN)} | {found} |")
+    print(f'| **total** | {sum(mods.values())} | {sum(lines_.values())} |')
+    print()
+    print()
 
 
 def main():

@@ -106,13 +106,27 @@ lemmas shared by the passes & --- & 135 & 38 & --- & ---\\
 composition & 28 & 32 & 20 & 22 & \textbf{18}\\
 \midrule
 total & 1806 & 2485 & 2103 & \textbf{1504} & 3093\\
-\midrule
-language-independent infrastructure & 1544 & 1507 & 447 & \textbf{413} & 1191\\
-total with infrastructure & 3350 & 3992 & 2550 & \textbf{1917} & 4284\\
 \bottomrule
 \end{tabular}
-\caption{Lines of Agda in the five correctness proofs. The smallest number in each row is in bold. The infrastructure of Scott domains excludes TypeTopology itself.}
+\caption{Lines of Agda in the five correctness proofs. The smallest number in each row is in bold.}
 \label{tab:loc}
+\end{table}
+
+\begin{table}[t]
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+ & graph model & Scott domains & machines & interpreters & reduction\\
+\midrule
+our infrastructure & 1544 & 1507 & 447 & \textbf{413} & 1191\\
+TypeTopology's domain theory & --- & 6176 & --- & --- & ---\\
+\midrule
+total with Table~\ref{tab:loc} & 3350 & 10168 & 2550 & \textbf{1917} & 4284\\
+\bottomrule
+\end{tabular}
+\caption{Lines of Agda in the infrastructure that each proof relies on,
+  which Table~\ref{tab:loc} excludes. For Scott domains, TypeTopology's domain theory is the modules on dcpos and lifting that the proof imports. Not counted for any column: the Agda standard library and TypeTopology's general foundations (12,448 lines).}
+\label{tab:infra}
 \end{table}
 
 Table~\ref{tab:loc} gives the sizes. The proof with clocked
@@ -120,7 +134,7 @@ interpreters is the smallest, at 1,504 lines, followed by the graph
 model at 1,806, abstract machines at 2,103, and reduction semantics at 3,093. One pass decides the graph model's place: \pass{delay} alone is
 450 lines, a quarter of the total, against 35 to 126 lines in the
 operational styles. Without \pass{delay}, the graph model would be the
-smallest, at 1,356 lines against 1,469 for the interpreters. The second denotational proof, with Scott domains, is 2,485 lines, between the abstract machines and reduction semantics: 1.4 times the graph model, and larger in every row but the semantics of the languages. Counting the language-independent infrastructure that each style relies on changes the order: the interpreters remain the smallest at 1,917 lines, followed by the machines at 2,550, the graph model at 3,350, Scott domains at 3,992, and reduction semantics at 4,284. The rows for the passes do not change.
+smallest, at 1,356 lines against 1,469 for the interpreters. The second denotational proof, with Scott domains, is 2,485 lines, between the abstract machines and reduction semantics: 1.4 times the graph model, and larger in every row but the semantics of the languages. Counting the infrastructure that each style relies on (Table~\ref{tab:infra}) changes the order: the interpreters remain the smallest at 1,917 lines, followed by the machines at 2,550, the graph model at 3,350, reduction semantics at 4,284, and Scott domains at 10,168. The rows for the passes do not change.
 
 \subsection{Analysis}
 
@@ -226,17 +240,14 @@ $m + 2$ shows its result only at stage $m$, and relating calls across
 stages takes 299 lines, the largest share. Third, the universal domain
 is a sum of tagged values: the primitives and tagged values take 71
 lines, and the 135 lines of shared lemmas are laws of strictness and
-definedness, which replace nonemptiness; in exchange, the proof needs no consistency. The graph-model relations recurse on finite elements, and neither
-of the first two costs arises. The rest of the gap is a property of
+definedness, which replace nonemptiness; in exchange, the proof needs no consistency. The graph-model relations recurse on finite elements, and neither of the first two costs arises. The infrastructure widens the gap (Table~\ref{tab:infra}): the Scott-domain proof relies on 1,507 lines of its own and 6,176 lines of TypeTopology's domain theory, 10,168 lines in all with the proof, against 1,544 and 3,350 for the graph model. The rest of the gap is a property of
 Agda: its \texttt{with}-abstraction is very slow when a value of the
 domain is in scope, so six places in five passes use auxiliary lemmas,
 records, or an opaque definition instead.
 
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
-The graph-model semantics of the ten languages is 427 lines, somewhat more than the interpreters' 391. The machines need 529 lines and the reduction semantics 980. The language-independent
-infrastructure, which the totals exclude, differs more. The graph model
-relies on 1,544 lines of it, mostly the graph model itself and its
+The graph-model semantics of the ten languages is 427 lines, somewhat more than the interpreters' 391. The machines need 529 lines and the reduction semantics 980. The language-independent infrastructure (Table~\ref{tab:infra}) differs more. The graph model relies on 1,544 lines of it, mostly the graph model itself and its
 operators, against 447 for the machines, 413 for the interpreters, and
 1,191 for the reduction semantics.
 
