@@ -17,6 +17,8 @@ errors).  Further tables:
   --chars       measure in non-whitespace characters instead of lines
   --mixed       mixing semantics on ISWIMμ: simplify in the graph model,
                 the other passes by the interpreters, joined by a bridge
+  --scott       the fifth ISWIMμ column, denotational: Scott domains,
+                against the graph model, row by row
 
 A code line is a line that is not blank, not a comment ({- -} blocks,
 -- line comments) and not part of an import statement (`import` or
@@ -177,6 +179,18 @@ row.  The splits that also prove globalize or explicate control in the
 graph model are estimated from the measured rows, each further bridge at
 the size of ISWIMμ's.
 
+The Scott-domain column (agda/AllScott.agda and the files of SCOTT
+below) needs TypeTopology, so it is checked by `make check-scott`, not
+`make check`; its files are in no group and in none of the checks above.
+--scott prints it against the graph model, row by row, with the same
+rows; its total counts, as a column's does, the shared modules of
+ISWIMμ it reaches that the four do not all reach, and the ISWIM
+pipeline's modules it reuses; its infrastructure (domain theory on
+TypeTopology: sums, lifting, functors, the solution of the domain
+equation, the domain of values and its operators, the combinators that
+build continuous meanings, the stages of the bilimit) is a separate
+table, as the graph model's is.
+
 The public theorem statements are new boilerplate (each restates a
 theorem of the proofs with its type), so they are not in the totals;
 they are in the audit-surface tables, which give, for each style, the
@@ -203,6 +217,19 @@ AP, GEA = A + 'proof/Adequacy/', A + 'proof/Adequacy/GraphErr/'
 W, WP = A + 'Framework/', A + 'proof/Framework/'
 MU = A + 'Mu/'
 MUP = MU + 'proof/'
+
+
+# the Scott-domain column (needs TypeTopology; see --scott)
+SCOTT = [A + 'AllScott.agda', W + 'Scott/*.agda', WP + 'Scott/*.agda', A + 'Semantics/Scott/*.agda',
+         MU + 'Semantics/Scott/*.agda', MU + 'proof/Semantics/Scott/*.agda',
+         MU + 'proof/Correctness/Scott/*.agda', MU + 'Theorems/Scott.agda']
+
+
+def scott_files():
+    return {f for p in SCOTT for f in glob.glob(p)}
+
+
+SCOTT_FILES = scott_files()
 
 
 def u(p):
@@ -829,7 +856,7 @@ class Count:
                 sys.exit(f'{b}, an import bundle, has lines other than imports')
         for side, gname, pats in GROUPS:
             files = sorted({f for p in pats for f in glob.glob(p)
-                            if ('*' not in p or f not in explicit) and f not in BUNDLES})
+                            if ('*' not in p or f not in explicit) and f not in BUNDLES and f not in SCOTT_FILES})
             if not files:
                 sys.exit(f'no files for group {side}/{gname}')
             for f in files:
@@ -841,7 +868,7 @@ class Count:
                 counts[(s, gname)] = counts.get((s, gname), 0) + sum(code_lines(f) for f in files)
         every = {f for f in glob.glob('agda/**/*.agda', recursive=True)
                  if not f.startswith('agda/old/') and f not in ('agda/All.agda', U + 'All.agda', MU + 'All.agda')
-                 and f not in BUNDLES}
+                 and f not in BUNDLES and f not in scott_files() and not f.startswith('agda/Scratch/')}
         missing = sorted(every - set(seen))
         if missing:
             sys.exit('not in any group:\n  ' + '\n  '.join(missing))
@@ -1856,6 +1883,97 @@ def iswim_brief(c, T, M):
     print()
 
 
+SC, SCP = MU + 'proof/Correctness/Scott/', MU + 'proof/Semantics/Scott/'
+SCOTT_ROWS = [
+    ('semantics of the languages', [MU + 'Semantics/Scott/*.agda', A + 'Semantics/Scott/*.agda']),
+    ('lemmas shared by the passes', [SCP + '*.agda']),
+    ('simplify', [SC + 'SimplifyCorrect.agda', MUP + 'Compiler/SimplifyFacts.agda']),
+    ('CC: enclose', [SC + 'EncloseCorrect.agda']),
+    ('CC: optimize', [SC + 'OptimizeCorrect.agda']),
+    ('CC: concretize', [SC + 'ConcretizeCorrect.agda']),
+    ('CC: delay', [SC + 'Delay*.agda', WP + 'Scott/StageCall.agda']),
+    ('CC: globalize', [SC + 'GlobalizeCorrect.agda']),
+    ('rco', [SC + 'RCOCorrect.agda']),
+    ('lift locals', [SC + 'LiftLocalsCorrect.agda']),
+    ('explicate control', [SC + 'ExplicateCorrect.agda']),
+    ('select instructions', [SC + 'SelectCorrect.agda']),
+    ('composition', [SC + 'CompilerCorrect.agda']),
+]
+SCOTT_INFRA = [
+    ('dcpos on TypeTopology: exponentials, products, powers, sums, lifting',
+     [W + 'Scott/Base.agda', W + 'Scott/Sum.agda', W + 'Scott/Lift.agda', WP + 'Scott/Sum.agda',
+      WP + 'Scott/Lift.agda']),
+    ('locally continuous functors, the solution of D ≅ F D as a bilimit',
+     [W + 'Scott/Functor.agda', W + 'Scott/Solve.agda', WP + 'Scott/Solve.agda']),
+    ('the domain of values and its operators',
+     [W + 'Scott/Domain.agda', WP + 'Scott/Domain.agda', W + 'Scott/Ops.agda', WP + 'Scott/Ops.agda',
+      WP + 'Scott/Values.agda']),
+    ('combinators for continuous meanings', [W + 'Scott/Semantics.agda', WP + 'Scott/Semantics.agda']),
+    ('the stages of the bilimit (approximations by depth)', [WP + 'Scott/Stages.agda']),
+]
+
+
+def scott_report(c, M):
+    """The Scott-domain column against the graph model, row by row; then its
+    infrastructure and its theorem statements."""
+    def files(pats):
+        return sorted({f for p in pats for f in glob.glob(p)})
+    sf = scott_files()
+    rows = [(r, files(ps)) for r, ps in SCOTT_ROWS]
+    infra = [(r, files(ps)) for r, ps in SCOTT_INFRA]
+    thm = [MU + 'Theorems/Scott.agda']
+    covered = {f for _, fs in rows + infra for f in fs} | set(thm) | {A + 'AllScott.agda'}
+    missing = sorted(sf - covered)
+    if missing:
+        sys.exit('Scott files in no row:\n  ' + '\n  '.join(missing))
+    # what the proofs reach outside the column: shared modules of ISWIMμ not
+    # reached by all four, and the ISWIM pipeline's modules
+    seen, todo = set(), [f for _, fs in rows for f in fs]
+    while todo:
+        f = todo.pop()
+        if f not in seen:
+            seen.add(f)
+            todo.extend(g for g in imports(f) if g not in seen)
+    outside = {unit(f) for f in seen if f not in sf and f in c.every}
+    counted = {unit(f) for _, fs in rows for f in fs if f in c.every}
+    shared = {un for un, (side, _) in c.group_of.items() if side in ('shared', 'mu-shared')}
+    extra = (shared & outside) - M['by_all'] - counted
+    borrowed = {un for un in outside if not c.group_of[un][0].startswith('mu-')
+                and un not in c.infra and un not in shared}
+    print('| component (ISWIMμ) | denotational: graph model | denotational: Scott domains |')
+    print('|---|---:|---:|')
+    stotal = 0
+    for r, fs in rows:
+        n = sum(code_lines(f) for f in fs)
+        stotal += n
+        print(f'| {r} | ' + ' | '.join(bold_min([c.counts.get(('mu-den', r)), n or None])) + ' |')
+    nx, nb = c.lines(extra), c.lines(borrowed)
+    print(f'| {EXTRA} | ' + ' | '.join(bold_min([c.lines(M['extra']['mu-den']) or None, nx or None])) + ' |')
+    print(f'| {MU_BORROWED} | ' + ' | '.join(bold_min([c.lines(M['borrowed']['mu-den']) or None, nb or None])) + ' |')
+    print('| **total** | ' + ' | '.join(bold_min([M['total']['mu-den'], stotal + nx + nb])) + ' |')
+    print()
+    if extra | borrowed:
+        print('Counted in the Scott column: ' + ', '.join(f'{c.display(un)} ({c.ulines(un)})'
+                                                       for un in sorted(extra | borrowed)) + '.')
+        print()
+    print('The Scott column counts the meaning of the primitives (`Semantics.Scott.Prim`) in its '
+          "semantics row, and simplify's syntactic lemmas (`Mu.proof.Compiler.SimplifyFacts`) in its "
+          'simplify row, as the graph model does; its delay row includes the calls of approximated '
+          'closures (`proof.Framework.Scott.StageCall`).')
+    print()
+    print('| infrastructure of the Scott column (not in the total) | lines |')
+    print('|---|---:|')
+    itotal = 0
+    for r, fs in infra:
+        n = sum(code_lines(f) for f in fs)
+        itotal += n
+        print(f'| {r} | {n} |')
+    print(f'| **total** | {itotal} |')
+    print()
+    print(f'Theorem statements (Mu/Theorems/Scott.agda): {sum(code_lines(f) for f in thm)} lines.')
+    print()
+
+
 def main():
     global MEASURE
     args = sys.argv[1:]
@@ -1894,6 +2012,11 @@ def main():
         assurance(c)
         return
     M = mu_analyze(c)
+    if '--scott' in args:
+        print('## ISWIMμ in Scott domains, against the graph model')
+        print()
+        scott_report(c, M)
+        return
     X = mixed_analyze(c, M)
     if '--mixed' in args:
         print('## Mixing semantics: the graph model and the interpreters')

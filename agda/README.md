@@ -160,6 +160,14 @@ used by a theorem statement: those of `Mu/` by ISWIMμ's, in
     exactly when the source diverges); for a main of type Int, the
     source and X86μ stop with the same constant, or both diverge
     (`compile-x86-const`, `compile-x86-diverges`);
+  * `Mu/Theorems/Scott.agda` (checked by `make check-scott`, not `make
+    check`; see below): the same as `Denotational.agda`, in Scott
+    domains: a term means an element of the domain of values 𝔻, a
+    solution of 𝔻 ≅ 𝓛 (Σ t , Payload t 𝔻), and each pass but delay
+    preserves the meaning of a program exactly (delay: its constants and
+    whether it is defined), and so does the whole compiler, assuming
+    propositional truncations, function extensionality and
+    propositional extensionality (the parameters of the module);
   * `Mu/Theorems/Adequacy.agda`: the graph model is sound and adequate
     for the ISWIMμ machine, and for the X86μ machine running compiled
     programs, and neither machine stops with an error; so the compiler,
@@ -231,7 +239,15 @@ used by a theorem statement: those of `Mu/` by ISWIMμ's, in
     and `Framework/Smallstep.agda`, and the machines of Clos5ᵀ (its
     values), Impᵀ, CFGᵀ and X86ᵀ (`Semantics/CEK/Typed/{Clos5,Imp,CFG,X86}.agda`),
     shared with the CEK machine + simulation style;
-  * adequacy: those of the denotational and simulation theorems.
+  * adequacy: those of the denotational and simulation theorems;
+  * denotational: Scott domains (ISWIMμ only): `Mu/Semantics/Scott/`
+    (the semantics of each language, built with the combinators of
+    `Framework/Scott/Semantics.agda`), `Semantics/Scott/Prim.agda` (the
+    meaning of the primitives) and `Framework/Scott/` (on Tom de Jong's
+    domain theory in TypeTopology: sums, lifting, powers, exponentials
+    and products of dcpos, locally continuous functors, the solution of
+    a domain equation as a sequential bilimit, the domain of values, its
+    operators, and combinators for continuous meanings).
 
 ## `proof/`
 
@@ -289,13 +305,28 @@ directory per style, and adequacy is in `proof/Adequacy/`:
   CEK column's proofs of explicate control and select instructions; its
   adequacy, `Mu/proof/Adequacy/`, is direct for the X86μ machine, and
   uses that neither machine stops with an error,
-  `Mu/proof/Semantics/CEK/NoError.agda`).
+  `Mu/proof/Semantics/CEK/NoError.agda`; its Scott-domain column is
+  `Mu/proof/Correctness/Scott/`, with lemmas shared by passes in
+  `Mu/proof/Semantics/Scott/`, and the language-independent lemmas in
+  `proof/Framework/Scott/`: the solution of the domain equation, the
+  operators, the stages of the bilimit (approximations by depth) and the
+  calls of approximated closures, which delay's logical relations use).
 
 `All.agda` imports the theorem files, every module of `proof/`,
 `Untyped/All.agda` and `Mu/All.agda` (which imports `Mu/Theorems/` and
 `Mu/proof/`), so that `make check` checks everything. `old/` holds
 earlier developments, not checked by `make check` (see the top-level
 README).
+
+The denotational: Scott domains column needs TypeTopology, so it is not
+part of `All.agda`: `AllScott.agda` imports its theorem file
+(`Mu/Theorems/Scott.agda`) and proofs, and `make check-scott` fetches
+TypeTopology at a pinned commit into `_deps/` (not tracked;
+`scott/fetch-typetopology.sh`, which applies
+`scott/typetopology-builtin-alias.patch` so that TypeTopology and the
+standard library share ℕ, Bool and List), and checks it
+(`scott/check.sh`, with the libraries file `_deps/libraries`: the
+default one plus TypeTopology). `make check-all` does both.
 
 Line counts of the proofs, and of the audit surface, are in
 `papers/PLDI-2027/loc.md` (`python3 papers/PLDI-2027/loc.py`, for
