@@ -47,11 +47,12 @@ private
  ε-exp-εs zero n x = refl
  ε-exp-εs (succ j) n x = 𝔻-solution.ε-exp-commutes-with-ε (j + n) (εs j n x) ∙ ε-exp-εs j n x
 
-{- unroll (ε∞ (k + 1) x) -}
+{- unroll (ε∞ (k + 1) x). (The two sups are given to sups-are-unique:
+   inferred, they take Agda a minute to find.) -}
 unroll-ε∞ : (k : ℕ) (x : ⟨ 𝓓 (succ k) ⟩) → unroll · (ε∞ (succ k) · x) ＝ act (Liftᶠ Val) (ε∞ k) (π∞ k) · x
 unroll-ε∞ k x =
   𝔻-solution.unfold-is-sup σ
-  ∙ sups-are-unique (underlying-order L) (pr₁ (axioms-of-dcpo L)) uf
+  ∙ sups-are-unique (underlying-order L) (pr₁ (axioms-of-dcpo L)) uf {∐ L {ℕ} {uf} (𝔻-solution.unfold-family-is-directed σ)} {c}
       (∐-is-sup L {ℕ} {uf} (𝔻-solution.unfold-family-is-directed σ)) (ub , lub)
  where
   σ = ε∞ (succ k) · x
