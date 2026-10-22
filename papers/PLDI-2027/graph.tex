@@ -97,8 +97,8 @@ The meaning of a function, given by operator $\Lambda$
 function's body when the body is evaluated in an environment that maps
 its parameter to input $V$.  In \iswim, the meaning of a
 $\lambda$-abstraction is given below, where an environment $\rho$ maps
-each variable to a set of elements and $\boldsymbol{\lambda}$ is the
-notation for specifying a mathematical function.
+each variable to a set of elements and $\boldsymbol{\lambda}$ denotes a
+mathematical function.
 \[
 \begin{array}{rcl}
   \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{X} \den{N}\rho[x{:=}X])
@@ -194,13 +194,13 @@ similarly for a function of two sets.
 
 We chose a graph model to keep the mechanization small. Our graph
 model, including the operators of all the compiler's languages, is
-about 1,200 lines of Agda, and it needs only Agda's safe mode and
+about 1,200 lines of Agda and needs only Agda's safe mode and
 standard library. A proof of the same compiler with Scott domains, on
 the domain theory of TypeTopology \citep{Escardo:TypeTopology}, is 1.4
 times as large (Section~\ref{sec:evaluation}), relies on 1,507 lines
-of its own infrastructure on top of TypeTopology, and assumes
+of its own infrastructure, and assumes
 propositional truncation and two extensionality principles.
-\citet{Benton:2010aa} report around 4,400 lines of Coq for a library of
+\citet{Benton:2010aa} report around 4,400 lines of Coq for their
 domain theory.
 
 

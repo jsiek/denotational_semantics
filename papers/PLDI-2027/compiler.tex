@@ -108,7 +108,11 @@ block labels, and $f_k$ over the names of a program's global
 definitions, where $f_k$ refers to the definition $d_k$. In the
 languages prior to Imp, $x$, $y$, and $z$ range over variables. From
 Imp on, they range over fixed locations in a function's stack frame,
-as we explain below.  Every language also has a semantics in the graph
+as we explain below. A binder is written as one or more names followed
+by a period, and the names are bound in what follows the period: in
+$\lambda x.\,N$ and $\kw{case}\;L\;(x.\,M)\;(y.\,N)$, the name $x$ is
+bound in $N$ and $M$, and $\kw{clos}\;(\vec{x}, y.\,N)$ binds $\vec{x}$
+and $y$ in $N$. Every language also has a semantics in the graph
 model of Section~\ref{sec:graph-models}, given in full in
 Appendix~\ref{app:languages}.
 
@@ -141,11 +145,11 @@ with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
 
-The first pass, named \pass{simplify}, is a bare-bones version of the source
+The first pass, \pass{simplify}, is a bare-bones version of the
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
-known values, folds primitives on known constants, reduces a
+known values, folds constants, reduces a
 $\kw{case}$, projection, or $\kw{unfold}$ of a known value, and
-inlines calls to small known functions.
+inlines small known functions.
 
 \paragraph{Closure conversion}
 

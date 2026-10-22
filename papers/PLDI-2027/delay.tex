@@ -106,8 +106,8 @@ the source element (Figure~\ref{fig:preserve}): a source function has
 no code and environment to separate. We read $v \sqsubseteq D'$ as
 ``$D'$ satisfies $v$''. The relation is in
 the style of the satisfaction relation of Abramsky's domain logic
-\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source graph element
-in the role of the formula. The source element is finite, so the
+\citep{Abramsky:1990vv,Abramsky:1993fk}, with a source element
+as the formula. The source element is finite, so the
 recursion is structural, and preservation is a routine induction on
 $M$.
 
@@ -160,9 +160,9 @@ natural ones. The following reasons rule out all but one.
   as a limit, which is what our Scott-domain proof does
   (Section~\ref{sec:evaluation}).
 \item \emph{A target set of bounded depth}, possibly infinite, against
-  the source denotation, does give a well-founded definition, by
+  the source denotation, gives a well-founded definition by
   recursion on the bound. But the target denotation is unbounded, and
-  the call case of the proof fails for a bounded piece of it: its
+  the call case fails for a bounded piece of it: its
   outputs can come from code entries whose arguments have any depth,
   so the pairs that produce them have no bound. The argument succeeds
   for finitely many outputs at a time, and one can show by induction
@@ -185,8 +185,7 @@ $U_e$. These pairs form a finite list $V \subseteq D'$ that contains
 both halves of the call, so the code and the environments are matched
 \emph{inside} $V$. The relation lets a call use exactly the code
 entries whose environments $V$ itself provides, which excludes the
-junk. The finite list also makes the relation well founded, as we
-explain below.
+junk. The finite list also makes the relation well founded.
 
 \begin{figure}[t]
 \small\figdefs
@@ -379,8 +378,8 @@ source set, so $D \app E \ALR W$.
 Let $M$ be a closed term of EnvClos, and let $\den{\cdot}$ denote
 meaning in the empty environment. For every constant $c$,
 $c \in \den{M}$ if and only if $c \in \den{\pass{delay}(M)}$.
-Moreover, $\den{M}$ is nonempty if and only if
-$\den{\pass{delay}(M)}$ is nonempty.
+Moreover, $\den{M} \neq \emptyset$ if and only if
+$\den{\pass{delay}(M)} \neq \emptyset$.
 \end{theorem}
 
 The empty environments are related, so reflection follows from
