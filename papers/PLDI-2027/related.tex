@@ -1,28 +1,112 @@
-%% Section 8: related work. Budget: 1.5 pages (notes/paper-outline.md,
-%% section 8, which lists the planned paragraphs and the Pitts draft text).
-%% TODO: write the section.
+%% Section 6: related work. Budget: about 1.25 pages. Sources:
+%% notes/paper-outline.md (section 8) and notes/related-work.md (the tiers
+%% in section 2.0 and the tables in sections 2.1-2.6). The closest work
+%% (Chlipala 2007 and 2010, Nielsen, Banerjee et al., Pottier and Gauthier,
+%% CakeML, CertiCoq, Polak, Clinger, VLISP, interaction trees, Cheng et al.,
+%% Owens et al., Kahn et al.) is discussed in the introduction and only
+%% referred to here. Siek's earlier work is cited in the third person.
 
 \section{Related Work}
 \label{sec:related}
 
-%% Relations for adequacy versus relations between two denotations.
-The tower
-$\ALR_0, \ALR_1, \ldots$ of the approximant logical relation
+The introduction discusses the work closest to ours: the denotational
+proofs of \citet{Chlipala:2007fk}, \citet{Nielsen:2000aa}, and
+\citet{Banerjee:2001aa}, and the operational proofs of closure
+conversion for languages with recursion. Here we place our work in a
+wider context.
+
+\paragraph{Denotational compiler correctness}
+
+The idea that a compiler is correct when a diagram of meanings commutes
+goes back to \citet{Morris:1973aa} and \citet{Thatcher:1981aa}, and
+\citet{Milne:1976aa} related semantics at different levels of
+abstraction with inclusive predicates. Among mechanized proofs,
+\citet{Benton:2009aa} relate a domain-theoretic semantics of a typed
+language with recursion to an operational SECD machine, using
+step-indexed biorthogonal relations; the target machine has primitive
+closures. \citet{Pardo:2018aa} give clocked denotations to a
+first-order imperative language and a stack language in Agda, and
+\OE{}uf \citep{Mullen:2018aa} gives a denotation only to its total
+source language and proves every pass operationally. The calculated
+compilers of \citet{Bahr:2015aa} derive a compiler and its virtual
+machine from a definitional interpreter; the virtual machine keeps
+closures as values. \citet{Siek:2017ab} proves an inliner correct by
+equality of graph-model denotations, and \citet{Siek:2025ab} proves the
+back-end passes of a first-order compiler correct operationally; our
+back end adapts the latter.
+
+\paragraph{Closure conversion}
+
+Typed closure conversion represents a closure as a package of an
+existential type \citep{Minamide:1996ys}, as our FlatClos does, and is
+proved correct with logical relations over terms. \citet{Ahmed:2008aa}
+show that it preserves observational equivalence using step-indexed
+relations, and \citet{Bowman:2018aa} extend it to the calculus of
+constructions. \citet{Wand:1994aa} prove the partial
+correctness of lightweight closure conversion with an operational
+semantics. Mechanized proofs of closure conversion for
+languages with recursion, such as those of \citet{Hur:2011aa},
+\citet{Neis:2015aa}, and \citet{Wang:2016aa}, use Kripke, step-indexed,
+or simulation relations over operational semantics. Our proof relates denotations instead.
+
+\paragraph{Relations between denotations}
+
+Relating two denotational semantics of one language is an old problem.
+The tower $\ALR_0, \ALR_1, \ldots$ of the approximant logical relation
 (Section~\ref{sec:approx-lr}) has the same shape as the one that
 \citet{Reynolds:1974aa} used to relate the direct and continuation
-semantics of a language. He built his relation stage by stage along
-the inverse-limit construction of the domains
+semantics of a language. He built his relation stage by stage along the
+inverse-limit construction of the domains
 \citep{Scott:1971aa,Smyth:1982aa}. His index ranges over the stages of
 both domains, and his relation is the intersection over all stages.
 Our index bounds only the depth of the finite target side, and depth
-irrelevance (Lemma~\ref{lem:depth-irrelevant}) makes an intersection unnecessary.
+irrelevance (Lemma~\ref{lem:depth-irrelevant}) makes an intersection
+unnecessary. Later work related two semantics with inclusive predicates
+\citep{Milne:1976aa,Stoy:1977aa}, finitary projections
+\citep{Mulmuley:1987aa}, or types \citep{Meyer:1985aa,Filinski:2007aa}.
+\citet{Pitts:1996aa} showed that a relation specified by a
+mixed-variance equation over a recursively defined domain exists and
+is unique, because the domain is the minimal invariant of its defining
+functor. His method offers an alternative route to our theorem,
+through traditional domain theory rather than a graph model; whether it
+applies to a graph model, and whether it would make the reflection
+proof for \pass{delay} easier, remain open. Indexing a relation by
+finite elements is common in adequacy proofs, which relate a
+denotation to syntax: \citet{Winskel:1993aa} indexes by the size of
+tokens of an information system, \citet{Abramsky:1990vv} by formulas of
+a domain logic, and \citet{Siek:2017ab} and \citet{Wadler:2020aa} by
+finite elements of a graph or filter model. Step-indexed
+\citep{Appel:2001aa,Ahmed:2006aa} and guarded
+\citep{Mogelberg:2016aa} relations are the operational and synthetic
+alternatives. To our knowledge, the approximant logical relation is
+the first relation between two denotational semantics indexed by
+finite approximations on one side only.
 
-%% Graph and filter models; consistency.
-Consistency has a precedent in the $\lambda$-calculus model that
-\citet{Scott:1982aa} builds from information systems, whose function
-entries pair consistent sets of inputs and outputs. As in the coherent
-domains of \citet{Plotkin:1978aa}, our consistency is pairwise: a set
-is consistent when its elements are pairwise consistent. Our rule for
+\paragraph{Graph models and their mechanization}
+
+Our model descends from the graph models of \citet{Plotkin:1993ab},
+\citet{Scott:1976lq}, and \citet{Engeler:1981aa} and is related to the
+filter models of \citet{Barendregt:1983aa}. Consistency has a
+precedent in the $\lambda$-calculus model that \citet{Scott:1982aa}
+builds from information systems, whose function entries pair
+consistent sets of inputs and outputs. As in the coherent domains of
+\citet{Plotkin:1978aa}, our consistency is pairwise, and our rule for
 entries is the consistency of a function space of information systems
 \citep{Larsen:1984aa} in its pairwise form
-\citep{Schwichtenberg:2006aa}.
+\citep{Schwichtenberg:2006aa}. Mechanizations of traditional domain
+theory, such as those of \citet{Benton:2010aa} in Coq and the
+TypeTopology library in Agda \citep{Escardo:TypeTopology}, are
+substantially larger than our graph model (Section~\ref{sec:graph-models}).
+
+\paragraph{Comparisons of semantic styles}
+
+Besides the comparisons of \citet{Owens:2016aa} and
+\citet{Kahn:2025aa} discussed in the introduction,
+\citet{Leroy:2009rc} prove coinductive big-step and small-step
+semantics equivalent and prove one compiler correct once,
+\citet{Danielsson:2012aa} gives an operational semantics in the
+partiality monad and proves a compiler correct with it, and
+\citet{Knothe:2026aa} combine small-step and big-step semantics within
+CompCert to verify loop optimizations. None of these includes a
+denotational semantics or a whole compiler for a higher-order
+language.
