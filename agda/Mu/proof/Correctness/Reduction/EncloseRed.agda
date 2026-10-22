@@ -28,7 +28,7 @@ open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.ISWIM as S
 import Mu.proof.Semantics.Reduction.Clos2 as T
-open T using (Value; value-red)
+open T using (Value; value-red; VV; var; val; vv-wk; vv-value)
 import Language.Prim as P
 
 open import Data.Bool using (true; false)
@@ -38,11 +38,6 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans
 open import Relation.Nullary using (does)
 
 {- The relation --------------------------------------------------------------}
-
-{- what a closure captures: a variable or a value -}
-data VV {Γ} : ∀ {A} → C.Tm Γ A → Set where
-  var : ∀ {A} (x : Γ ∋ A) → VV (C.` x)
-  val : ∀ {A} {V : C.Tm Γ A} → Value V → VV V
 
 infix 4 _≈_
 data _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Γ A → Set where
@@ -147,8 +142,7 @@ module Trav {𝒦₁ 𝒦₂} (laws : S.Laws 𝒦₁)
   vvs-trav (val v ∷ vv) vk = val (T.value-trav v) ∷ vvs-trav vv vk
 
 module RenT = Trav {S.varK} {T.varK} S.varL (λ _ → var≈) (λ { var≈ → var≈ }) var (λ _ → var _)
-module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-trav r (λ _ → var≈) (λ _ → var _))
-  var (λ { (var x) → var _ ; (val v) → val (T.value-trav v) })
+module SubT = Trav {S.tmK} {T.tmK} S.tmL (λ _ → var≈) (λ r → RenT.≈-trav r (λ _ → var≈) (λ _ → var _)) var vv-wk
 
 {- substituting a value for the variable of a binder -}
 ≈-[] : ∀ {A B} {N : Tm (A ∷ []) B} {N' V V'} → N ≈ N' → V ≈ V' → Value V' → (N S.[ V ]) ≈ (N' T.[ V' ])
@@ -161,7 +155,7 @@ Ans′ = Ans T.red Value _≈_
 
 vvs-values : ∀ {Δ} {Fs : All (C.Tm []) Δ} → Each VV Fs → Each Value Fs
 vvs-values [] = []
-vvs-values (val v ∷ vv) = v ∷ vvs-values vv
+vvs-values (v ∷ vv) = vv-value v ∷ vvs-values vv
 
 obs≈ : ∀ {A} {V : Tm [] A} {V'} → V ≈ V' → Value V' → S.obs V ≡ T.obs V'
 obss≈ : ∀ {Δ} {Vs : All (Tm []) Δ} {Vs'} → All₂ _≈_ Vs Vs' → Each Value Vs' → S.obss Vs ≡ T.obss Vs'

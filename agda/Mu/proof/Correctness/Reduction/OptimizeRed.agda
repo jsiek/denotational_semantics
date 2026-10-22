@@ -28,7 +28,7 @@ open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_; each-lookup)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.Clos2 as T
-open T using (Kit; varK; tmK; trav; travs; Value; value-red)
+open T using (Kit; varK; tmK; trav; travs; Value; value-red; VV; var; val; vv-wk; vv-value)
 import Language.Prim as P
 
 open import Data.Bool using (Bool; true; false; T)
@@ -60,11 +60,6 @@ extρ ρ (S x) = Mb.map S (ρ x)
 ρfl : ∀ {Δ A} (fl : Flags Δ) → VM (A ∷ Δ) (A ∷ kept fl)
 ρfl fl Z = just Z
 ρfl fl (S i) = Mb.map S (ρsq fl i)
-
-{- a variable or a value -}
-data VV {Γ} : ∀ {A} → Tm Γ A → Set where
-  var : ∀ {A} (x : Γ ∋ A) → VV (` x)
-  val : ∀ {A} {V : Tm Γ A} → Value V → VV V
 
 infix 4 _⊢_≈_
 data _⊢_≈_ : ∀ {Γ Γ' A} → VM Γ Γ' → Tm Γ A → Tm Γ' A → Set
@@ -189,8 +184,7 @@ module Trav {𝒦}
   caps-trav (drop (val v) cs) ok vv = drop (val (T.value-trav v)) (caps-trav cs ok vv)
 
 module RenT = Trav {varK} (var≈ refl) (var _) (λ { (var≈ e) → var≈ (cong (Mb.map S) e) }) (λ _ → var _)
-module SubT = Trav {tmK} (var≈ refl) (var _) (λ r → RenT.≈-trav r (λ _ e → var≈ (cong (Mb.map S) e)) (λ _ → var _))
-  (λ { (var x) → var _ ; (val v) → val (T.value-trav v) })
+module SubT = Trav {tmK} (var≈ refl) (var _) (λ r → RenT.≈-trav r (λ _ e → var≈ (cong (Mb.map S) e)) (λ _ → var _)) vv-wk
 
 {- The simulation ----------------------------------------------------------------------}
 
@@ -204,8 +198,6 @@ Ans′ : ∀ {A} → Tm [] A → Red (Tm [] A) → Tm [] A → Set
 Ans′ = Ans T.red Value R
 
 {- a closed variable or value is a value -}
-vv-value : ∀ {A} {V : Tm [] A} → VV V → Value V
-vv-value (val v) = v
 
 {- the source of a value is a value -}
 ≈-value : ∀ {A} {V V' : Tm [] A} → R V V' → Value V' → Value V
