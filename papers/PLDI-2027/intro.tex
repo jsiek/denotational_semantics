@@ -59,16 +59,17 @@ semantics is a graph model: a program's denotation is a set of
 inductively defined \emph{graph elements}. The key to the reflection
 direction is a new kind of relation between denotations, which we call
 an \emph{approximant logical relation}. Relating one target graph
-element to one source graph element fails because the target takes the
-code and environment of a closure apart. Relating possibly infinite
-sets on both sides instead makes the function case recursive in
-negative positions and therefore not well founded.  Our key insight is
-that only the target side needs to shrink: we relate a finite set of
-target graph elements (i.e. a finite approximation) to a possibly
-infinite source denotation and define the relation by recursion on the
-depth of the elements in the finite set. So this definition is well
-founded without structural recursion on types or an index that counts
-steps of computation. To our knowledge, this is the first relation
+element to one source graph element fails because a target call takes
+the code and environment of a closure apart, from different pairs.
+Relating whole denotations on both sides instead leaves the function
+case, which uses the relation in negative position, with nothing to
+recurse on. Our key insight is that the target side should be finite
+and the source side should not: we relate a finite set of target graph
+elements (a finite approximation), which contains both halves of each
+call it describes, to the whole source denotation, and define the
+relation by recursion on the depth of the elements in the finite set.
+This definition is well founded without recursion on types or an index
+that counts steps of computation. To our knowledge, this is the first relation
 between two denotational semantics defined by recursion on the depth
 of elements in one of the denotations.
 

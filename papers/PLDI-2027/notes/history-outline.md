@@ -19,7 +19,10 @@ Each step is "a natural idea, and why it fails", so each failure motivates a par
    - The function case makes the definition recursive in both positive and negative positions, so it needs the later modality ▷.
    - A denotational semantics has no evaluation step to discharge the ▷.
 3. **Index by element depth, in the style of Pitts's projections πₙ.**
-   - This fails because a small output of a function can depend on an arbitrarily deep input.
+   - The definition itself works: a target set bounded in depth, even an infinite one, gives a well-founded recursion on the bound.
+   - The proof fails: the whole denotation is unbounded, and in the call case of the fundamental lemma the outputs of a bounded piece can come from entries with arguments of any depth, so the producing pairs have no bound. (This is the precise form of "a small output can depend on an arbitrarily deep input".)
+   - The relation on a bounded set is equivalent to its restriction to finite sublists (induction on the bound), so it collapses to the finite-list relation.
+   - The paper's §4.2 covers all nine side/side combinations (element, finite list, set on each side); see the "Which sides to relate" paragraph in delay.tex.
 4. **Index by one target point within an infinite target context (the near miss).**
    - The context cannot be shrunk, and only part of the argument set is related, so the closure case cannot be closed.
 5. **The insight.**
