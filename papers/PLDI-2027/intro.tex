@@ -8,7 +8,7 @@
 \label{sec:intro}
 
 
-Denotational semantics offers an appealing account of compiler
+Denotational semantics offers an account of compiler
 correctness: the meaning of a program is a mathematical object, so a
 compiler pass is correct when the meaning of a program before the pass
 equals its meaning afterward, and the proof is equational reasoning.
@@ -125,7 +125,7 @@ divergence avoid closure conversion. Some concern compilers for first-order lang
 imperative language to assembly, and \citet{Cheng:2026aa} use sets of
 behaviors for the front end of CompCert. Others concern compilers whose target languages support closures directly, such as those of \citet{Clinger:1984aa}, Guttman, Ramsdell, and Wand \citeyearpar{Guttman:1995aa}, and \citet{Benton:2009aa}.
 
-Operational proofs handle closure conversion with recursion routinely,
+Operational proofs handle closure conversion with recursion,
 with simulations (CompCert \citep{Leroy:2009aa}), clocked big-step
 semantics (CakeML \citep{Kumar:2014aa}), or step-indexed logical
 relations (CertiCoq \citep{Paraskevopoulou:2019aa}). When

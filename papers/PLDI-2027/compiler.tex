@@ -139,7 +139,7 @@ with $x : \mu X.\, X \rightarrow (\kw{Int} \rightarrow \kw{Int})$.
 
 \paragraph{The optimizer}
 
-The first pass, \pass{simplify}, is a bare-bones version of the
+The first pass, \pass{simplify}, is a simplified version of the
 optimizer cp0 of Chez Scheme \citep{Waddell:1997fk}. It propagates
 known values, folds constants, reduces a
 $\kw{case}$, projection, or $\kw{unfold}$ of a known value, and
@@ -155,8 +155,7 @@ $N$, so the code is closed. The \pass{enclose} pass captures every
 variable in scope, and the \pass{optimize} pass then drops the
 captured values that the code does not use. The \pass{concretize} pass
 stores the captured values of a closure in a single environment tuple,
-so an EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds just two
-variables in its code, the environment $z$ and the parameter $y$, and
+so an EnvClos closure $\kw{clos}\;(z, y.\,N)\;\vec{M}$ binds two variables in its code, the environment $z$ and the parameter $y$, and
 the code reads $x_i$ as $\kw{get}_i\,z$. The \pass{delay} pass then
 separates a closure into its code and its environment, translating
 from EnvClos to FlatClos. In this target IR, $\kw{code}\;(z, y.\,N)$ is

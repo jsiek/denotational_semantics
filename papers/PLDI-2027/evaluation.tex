@@ -167,8 +167,7 @@ strict closures, $\kw{let}$s, and writes require their sets to be
 nonempty, and the binders require them to be consistent. The
 denotational proofs must establish these conditions, whereas they hold
 trivially for the single value that an interpreter computes. It must
-also apply laws of the graph model that have premises, where an
-interpreter simply runs: the $\beta$-law of Lemma~\ref{lem:beta}, and
+also apply laws of the graph model that have premises, where an interpreter runs: the $\beta$-law of Lemma~\ref{lem:beta}, and
 commuting conversions that move a $\kw{let}$ or $\kw{case}$ past a
 continuation. These costs are largest, relative to the interpreter
 proofs, for \pass{lift locals} and \pass{select instructions}. Their
@@ -178,7 +177,7 @@ semantics of Imp requires a commuting conversion.  In \pass{select
   instructions}, the prologue of a function body in x86$\mu$ requires
 two uses of Lemma~\ref{lem:beta}. The tendency concerns the
 interpreters only. The reduction semantics, which works by
-substitution, is often much larger even for these passes, as for
+substitution, is often several times larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
 
 \paragraph{Equal meanings, different runs: the denotational proof tends to be smallest.}
@@ -197,7 +196,7 @@ it is a reference into a table of definitions. The interpreter proof
 relates the two tables value by value, while the denotational proof
 shows that a reference means what the code it replaced means.
 
-\paragraph{Changed representations: the operational proofs are much smaller.}
+\paragraph{Changed representations: the operational proofs are several times smaller.}
 
 \pass{Delay} changes the representation of closures, so its correctness
 is not an equation, yet the run of the target follows the run of the
@@ -241,7 +240,7 @@ stages takes 299 lines, the largest share. Third, the universal domain
 is a sum of tagged values: the primitives and tagged values take 71
 lines, and the 135 lines of shared lemmas are laws of strictness and
 definedness, which replace nonemptiness; in exchange, the proof needs no consistency. The graph-model relations recurse on finite elements, and neither of the first two costs arises. The infrastructure widens the gap further (Table~\ref{tab:infra}). The rest of the gap is a property of
-Agda: its \texttt{with}-abstraction is very slow when a value of the
+Agda: its \texttt{with}-abstraction is slow when a value of the
 domain is in scope, so six places in five passes use auxiliary lemmas,
 records, or an opaque definition instead.
 
@@ -268,7 +267,7 @@ of each style.
 We measure the size of the proofs, which is only a proxy for the
 effort of writing them. Lines of Agda depend on layout; lexical tokens
 and non-whitespace characters do not, but they are proxies too. The three measures agree on the ranking: by tokens, the graph model's total is 1.22 times the interpreters', against 1.20 times by lines. Size also says
-little about difficulty, which depends heavily on whether a proof has precedent in the literature or its authors must invent it. Because experience carries over from one development to the next, we
+little about difficulty, which depends on whether a proof has precedent in the literature or its authors must invent it. Because experience carries over from one development to the next, we
 gave every development a final cleanup pass under the same rules
 (shorten and clarify, change no theorem statement, move nothing into
 the uncounted infrastructure). It did not change the order of the other four; the Scott-domain proof,
@@ -277,8 +276,7 @@ of reduction semantics.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for
-optimizations such as \pass{simplify} and much larger for passes that
-change the representation of values such as \pass{delay}, so a
+optimizations such as \pass{simplify} and several times larger for passes that change the representation of values such as \pass{delay}, so a
 compiler with more of one kind or the other could rank the styles
 differently. The sizes also depend on choices of semantics, for
 example the continuation-passing semantics of Imp, which makes
@@ -292,4 +290,4 @@ case analysis on tags, a twelfth of the Scott-domain proof of
 \pass{delay}, but would need a domain equation for each recursive type
 and would leave the stage-indexed relations in place.
 
-The sizes also depend on the proof assistant. Agda's main automation is normalization, which probably favors the interpreters, whose results it computes directly; with the tactics of Rocq or Lean, the relative sizes of the five styles could be quite different.
+The sizes also depend on the proof assistant. Agda's main automation is normalization, which probably favors the interpreters, whose results it computes directly; with the tactics of Rocq or Lean, the relative sizes of the five styles could differ.
