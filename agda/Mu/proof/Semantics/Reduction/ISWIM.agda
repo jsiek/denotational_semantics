@@ -134,15 +134,3 @@ wk-[] V W = trans (ren-trav tmK {τ = `_} (λ ()) V) (sub-id (λ ()) V)
 {- under a binder, then for the bound variable: closed values for the rest -}
 exts-[] : ∀ {Γ A C} (σ : ∀ {B} → Γ ∋ B → Tm [] B) (W : Tm [] C) (N : Tm (C ∷ Γ) A) → sub (exts tmK σ) N [ W ] ≡ sub (W • σ) N
 exts-[] σ W = trav-sub tmL λ { Z → refl ; (S x) → wk-[] (σ x) W }
-
-{- a traversal keeps values -}
-value-trav : ∀ {𝒦 Γ Δ A} {σ : Sub 𝒦 Γ Δ} {V : Tm Γ A} → Value V → Value (trav 𝒦 σ V)
-values-trav : ∀ {𝒦 Γ Δ Δ'} {σ : Sub 𝒦 Γ Δ} {Vs : All (Tm Γ) Δ'} → Each Value Vs → Each Value (travs 𝒦 σ Vs)
-value-trav lam = lam
-value-trav lit = lit
-value-trav (tuple vs) = tuple (values-trav vs)
-value-trav (inl v) = inl (value-trav v)
-value-trav (inr v) = inr (value-trav v)
-value-trav (fold v) = fold (value-trav v)
-values-trav [] = []
-values-trav (v ∷ vs) = value-trav v ∷ values-trav vs
