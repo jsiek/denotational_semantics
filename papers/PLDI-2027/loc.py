@@ -640,7 +640,7 @@ GROUPS = [
     ('mu-examples', 'examples', [MUP + 'Compiler/Examples/*.agda']),
     # design experiments, in no total: the delay relation on target sets of
     # bounded depth (the paper's design space for reflection, §4.2)
-    ('mu-exp', 'delay: the relation on target sets of bounded depth',
+    ('mu-exp', 'delay: design experiments (target sets of bounded depth; a finite source side)',
      [MUP + 'Correctness/Graph/DelayDesign*.agda']),
     # mixing semantics (--mixed): simplify in the graph model and the other
     # passes by the interpreters, joined by the bridge at ISWIMμ (its graph
