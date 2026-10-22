@@ -93,10 +93,13 @@ defined-π∞ : (n : ℕ) (d : ⟨ 𝔻 ⟩) → defined d → is-defined (π∞
 defined-π∞ n d q = transport is-defined (π∞-unroll n d ⁻¹) q
 
 {- the approximation of a value made with a tag -}
-π∞-inj : (n : ℕ) (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩)
-  → π∞ (succ n) · (inj t · x) ＝ η (t , fmap (Payload t) 𝔻 (𝓓 n) (π∞ n) (ε∞ n) x)
-π∞-inj n t x = π∞-unroll n (inj t · x)
-               ∙ ap (𝓛map (obj Val 𝔻) (obj Val (𝓓 n)) (act Val (π∞ n) (ε∞ n))) (unroll-roll (η (t , x)))
+opaque
+ unfolding inj
+
+ π∞-inj : (n : ℕ) (t : Tag) (x : ⟨ obj (Payload t) 𝔻 ⟩)
+   → π∞ (succ n) · (inj t · x) ＝ η (t , fmap (Payload t) 𝔻 (𝓓 n) (π∞ n) (ε∞ n) x)
+ π∞-inj n t x = π∞-unroll n (inj t · x)
+                ∙ ap (𝓛map (obj Val 𝔻) (obj Val (𝓓 n)) (act Val (π∞ n) (ε∞ n))) (unroll-roll (η (t , x)))
 
 {- π and ε at stage n + 2, on the payload (stated once: Agda checks it
    fast, but can be slow to unfold π (n + 1) inside a bigger goal) -}
