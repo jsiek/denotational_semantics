@@ -81,6 +81,15 @@ module Over (P : DCPO₁) where
  tupleᶜ : {n : ℕ} → Dens n → Den P
  tupleᶜ {n} Ms = ∘₁ P (Pow (Fin n) 𝔻) 𝔻 Ms (tuple n)
 
+ {- a case, given its two branches as functions; they are made strict -}
+ casesᶜ : Den P → DCPO[ P , 𝔻 ⟹₁ 𝔻 ] → DCPO[ P , 𝔻 ⟹₁ 𝔻 ] → Den P
+ casesᶜ L F G =
+  ∘₁ P ((Br ⟹₁ 𝔻) ×₁ Br) 𝔻
+    (pair₁ P (Br ⟹₁ 𝔻) Br (∘₁ P 𝔻 (Br ⟹₁ 𝔻) L cases)
+       (pair₁ P (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) (∘₁ P (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) F strict)
+                                    (∘₁ P (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) G strict)))
+    (eval₁ Br 𝔻)
+
 open Over Env public
 
 {- Binders --------------------------------------------------------------------}
@@ -99,12 +108,14 @@ letᶜ M N = op₂ app (lamᶜ N) M
 
 {- a case: the branches, under one binder each, are strict -}
 caseᶜ : Den Env → Den Env → Den Env → Den Env
-caseᶜ L M N =
- ∘₁ Env ((Br ⟹₁ 𝔻) ×₁ Br) 𝔻
-   (pair₁ Env (Br ⟹₁ 𝔻) Br (∘₁ Env 𝔻 (Br ⟹₁ 𝔻) L cases)
-      (pair₁ Env (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) (∘₁ Env (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) (abs M) strict)
-                                      (∘₁ Env (𝔻 ⟹₁ 𝔻) (𝔻 ⟹₁ 𝔻) (abs N) strict)))
-   (eval₁ Br 𝔻)
+caseᶜ L M N = casesᶜ L (abs M) (abs N)
+
+{- the environment without its newest position -}
+shiftᶜ : DCPO[ Env , Env ]
+shiftᶜ = f , to-Pow-continuous ℕ 𝔻 Env f (λ i → pr₂ (at ℕ 𝔻 (succ i)))
+ where
+  f : ⟨ Env ⟩ → ℕ → ⟨ 𝔻 ⟩
+  f σ i = σ (succ i)
 
 {- Code and closures ----------------------------------------------------------}
 

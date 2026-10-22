@@ -25,3 +25,6 @@ import Mu.Semantics.Scott.Clos2
 import Mu.Semantics.Scott.Clos3
 import Mu.Semantics.Scott.Clos4
 import Mu.Semantics.Scott.Clos5
+import Mu.Semantics.Scott.Imp
+import Mu.Semantics.Scott.CFG
+import Mu.Semantics.Scott.X86
