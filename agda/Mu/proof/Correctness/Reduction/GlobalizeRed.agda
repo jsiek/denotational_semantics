@@ -9,9 +9,11 @@
   under substitution (≈-trav), except that code N is related to a
   reference f when N is related to the definition lookup ds f. The pass
   threads the definitions made so far (Made) through the term, each over
-  the table before it, and weakens: a subterm is related to its output,
-  weakened to the whole table along s, when the definitions made agree
-  with ds along s (Agree).
+  the table before it, and weakens. So the relation is along an
+  embedding e of the target's table into that of the whole program
+  (e ⊢ M ≈ M', and M ≈ M' along the identity), and weakening the target
+  is a change of embedding (≈-wk): a subterm is related to its output
+  along s, when the definitions made agree with ds along s (Agree).
 
 -}
 
@@ -27,7 +29,6 @@ open import Mu.Compiler.Globalize
 open import Mu.Framework.AllUtil using (All; []; _∷_; lookup; All₂; lookup₂)
 open import Semantics.Observation
 open import proof.Framework.Reduction Obs o-error hiding (Each; []; _∷_)
-open import proof.Framework.ReductionVec Obs o-error using (cong₃)
 open import Mu.proof.Framework.ReductionAll Obs o-error using (ans-∷; Each; []; _∷_)
 open import Semantics.Reduction.Smallstep using (Equivalent)
 import Mu.proof.Semantics.Reduction.Clos4 as S
@@ -38,54 +39,62 @@ import Language.Prim as P
 open import Data.Bool using (true; false)
 import Data.Integer as Z
 open import Data.List using (List; []; _∷_)
-open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import Data.Product using (_×_; _,_; proj₁)
 open import Data.Unit using (⊤; tt)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂; subst)
 open import Relation.Nullary using (does)
-
-{- weakening the table twice -}
-wk-wk : ∀ {Σ Σ' Σ'' Γ A} {e : ∀ {n} → Σ' ∋ n → Σ'' ∋ n} {e' : ∀ {n} → Σ ∋ n → Σ' ∋ n} {e'' : ∀ {n} → Σ ∋ n → Σ'' ∋ n}
-  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x) → (M : C.Tm Σ Γ A) → C.wk e (C.wk e' M) ≡ C.wk e'' M
-wks-wk : ∀ {Σ Σ' Σ'' Γ Δ} {e : ∀ {n} → Σ' ∋ n → Σ'' ∋ n} {e' : ∀ {n} → Σ ∋ n → Σ' ∋ n} {e'' : ∀ {n} → Σ ∋ n → Σ'' ∋ n}
-  → (∀ {n} (x : Σ ∋ n) → e (e' x) ≡ e'' x) → (Ms : All (C.Tm Σ Γ) Δ) → C.wks e (C.wks e' Ms) ≡ C.wks e'' Ms
-wk-wk h (C.` x) = refl
-wk-wk h (C.fun-ref f) = cong C.fun-ref (h f)
-wk-wk h (C.pack L M) = cong₂ C.pack (wk-wk h L) (wk-wk h M)
-wk-wk h (C.callc L M) = cong₂ C.callc (wk-wk h L) (wk-wk h M)
-wk-wk h (C.lit B c) = refl
-wk-wk h (C.tuple Ms) = cong C.tuple (wks-wk h Ms)
-wk-wk h (C.get i M) = cong (C.get i) (wk-wk h M)
-wk-wk h (C.inl M) = cong C.inl (wk-wk h M)
-wk-wk h (C.inr M) = cong C.inr (wk-wk h M)
-wk-wk h (C.case L M N) = cong₃ C.case (wk-wk h L) (wk-wk h M) (wk-wk h N)
-wk-wk h (C.prim p L M) = cong₂ (C.prim p) (wk-wk h L) (wk-wk h M)
-wk-wk h (C.let′ M N) = cong₂ C.let′ (wk-wk h M) (wk-wk h N)
-wk-wk h (C.fold M) = cong C.fold (wk-wk h M)
-wk-wk h (C.unfold M) = cong C.unfold (wk-wk h M)
-wks-wk h [] = refl
-wks-wk h (M ∷ Ms) = cong₂ _∷_ (wk-wk h M) (wks-wk h Ms)
 
 module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
 
   {- The relation ---------------------------------------------------------------}
 
-  infix 4 _≈_
-  data _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Σf Γ A → Set where
-    var≈ : ∀ {Γ A} {x : Γ ∋ A} → ` x ≈ C.` x
-    code≈ : ∀ {Γ Δ A B N} {f : Σf ∋ sig Δ A B} → N ≈ lookup ds f → code {Γ} N ≈ C.fun-ref f
-    pack≈ : ∀ {Γ Δ A B} {L : Tm Γ (code Δ A B)} {L' M M'} → L ≈ L' → M ≈ M' → pack L M ≈ C.pack L' M'
-    callc≈ : ∀ {Γ A B} {L : Tm Γ (A ⇒ B)} {L' M M'} → L ≈ L' → M ≈ M' → callc L M ≈ C.callc L' M'
-    lit≈ : ∀ {Γ B c} → lit {Γ} B c ≈ C.lit B c
-    tuple≈ : ∀ {Γ Δ} {Ms : All (Tm Γ) Δ} {Ms'} → All₂ _≈_ Ms Ms' → tuple Ms ≈ C.tuple Ms'
-    get≈ : ∀ {Γ Δ A} {i : Δ ∋ A} {M : Tm Γ (tup Δ)} {M'} → M ≈ M' → get i M ≈ C.get i M'
-    inl≈ : ∀ {Γ A B} {M : Tm Γ A} {M'} → M ≈ M' → inl {B = B} M ≈ C.inl M'
-    inr≈ : ∀ {Γ A B} {M : Tm Γ B} {M'} → M ≈ M' → inr {A = A} M ≈ C.inr M'
-    case≈ : ∀ {Γ A B C} {L : Tm Γ (A ⊹ B)} {L'} {M : Tm (A ∷ Γ) C} {M' N N'} → L ≈ L' → M ≈ M' → N ≈ N'
-      → case L M N ≈ C.case L' M' N'
-    prim≈ : ∀ {Γ p} {L : Tm Γ _} {L' M M'} → L ≈ L' → M ≈ M' → prim p L M ≈ C.prim p L' M'
-    let≈ : ∀ {Γ A B} {M : Tm Γ A} {M'} {N : Tm (A ∷ Γ) B} {N'} → M ≈ M' → N ≈ N' → let′ M N ≈ C.let′ M' N'
-    fold≈ : ∀ {Γ A} {M : Tm Γ (unroll A)} {M'} → M ≈ M' → fold {A = A} M ≈ C.fold M'
-    unfold≈ : ∀ {Γ A} {M : Tm Γ (μ A)} {M'} → M ≈ M' → unfold M ≈ C.unfold M'
+  {- for a table Σ that e embeds into Σf -}
+  Emb : List DSig → Set
+  Emb Σ = ∀ {n} → Σ ∋ n → Σf ∋ n
+
+  infix 4 _⊢_≈_ _≈_
+  data _⊢_≈_ {Σ} (e : Emb Σ) : ∀ {Γ A} → Tm Γ A → C.Tm Σ Γ A → Set where
+    var≈ : ∀ {Γ A} {x : Γ ∋ A} → e ⊢ ` x ≈ C.` x
+    code≈ : ∀ {Γ Δ A B N} {f : Σ ∋ sig Δ A B} → (λ x → x) ⊢ N ≈ lookup ds (e f) → e ⊢ code {Γ} N ≈ C.fun-ref f
+    pack≈ : ∀ {Γ Δ A B} {L : Tm Γ (code Δ A B)} {L' M M'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ pack L M ≈ C.pack L' M'
+    callc≈ : ∀ {Γ A B} {L : Tm Γ (A ⇒ B)} {L' M M'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ callc L M ≈ C.callc L' M'
+    lit≈ : ∀ {Γ B c} → e ⊢ lit {Γ} B c ≈ C.lit B c
+    tuple≈ : ∀ {Γ Δ} {Ms : All (Tm Γ) Δ} {Ms'} → All₂ (e ⊢_≈_) Ms Ms' → e ⊢ tuple Ms ≈ C.tuple Ms'
+    get≈ : ∀ {Γ Δ A} {i : Δ ∋ A} {M : Tm Γ (tup Δ)} {M'} → e ⊢ M ≈ M' → e ⊢ get i M ≈ C.get i M'
+    inl≈ : ∀ {Γ A B} {M : Tm Γ A} {M'} → e ⊢ M ≈ M' → e ⊢ inl {B = B} M ≈ C.inl M'
+    inr≈ : ∀ {Γ A B} {M : Tm Γ B} {M'} → e ⊢ M ≈ M' → e ⊢ inr {A = A} M ≈ C.inr M'
+    case≈ : ∀ {Γ A B C} {L : Tm Γ (A ⊹ B)} {L'} {M : Tm (A ∷ Γ) C} {M' N N'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ N ≈ N'
+      → e ⊢ case L M N ≈ C.case L' M' N'
+    prim≈ : ∀ {Γ p} {L : Tm Γ _} {L' M M'} → e ⊢ L ≈ L' → e ⊢ M ≈ M' → e ⊢ prim p L M ≈ C.prim p L' M'
+    let≈ : ∀ {Γ A B} {M : Tm Γ A} {M'} {N : Tm (A ∷ Γ) B} {N'} → e ⊢ M ≈ M' → e ⊢ N ≈ N' → e ⊢ let′ M N ≈ C.let′ M' N'
+    fold≈ : ∀ {Γ A} {M : Tm Γ (unroll A)} {M'} → e ⊢ M ≈ M' → e ⊢ fold {A = A} M ≈ C.fold M'
+    unfold≈ : ∀ {Γ A} {M : Tm Γ (μ A)} {M'} → e ⊢ M ≈ M' → e ⊢ unfold M ≈ C.unfold M'
+
+  {- the relation for the terms of the whole program -}
+  _≈_ : ∀ {Γ A} → Tm Γ A → C.Tm Σf Γ A → Set
+  _≈_ = (λ x → x) ⊢_≈_
+
+  {- weakening the target's table -}
+  ≈-wk : ∀ {Σ Σ' Γ A} {e : Emb Σ} {e' : Emb Σ'} {g : ∀ {n} → Σ ∋ n → Σ' ∋ n} {M : Tm Γ A} {M'}
+    → (∀ {n} (f : Σ ∋ n) → e' (g f) ≡ e f) → e ⊢ M ≈ M' → e' ⊢ M ≈ C.wk g M'
+  ≈-wks : ∀ {Σ Σ' Γ Δ} {e : Emb Σ} {e' : Emb Σ'} {g : ∀ {n} → Σ ∋ n → Σ' ∋ n} {Ms : All (Tm Γ) Δ} {Ms'}
+    → (∀ {n} (f : Σ ∋ n) → e' (g f) ≡ e f) → All₂ (e ⊢_≈_) Ms Ms' → All₂ (e' ⊢_≈_) Ms (C.wks g Ms')
+  ≈-wk h var≈ = var≈
+  ≈-wk {M = code N} h (code≈ {f = f} r) = code≈ (subst (λ f' → N ≈ lookup ds f') (sym (h f)) r)
+  ≈-wk h (pack≈ r s) = pack≈ (≈-wk h r) (≈-wk h s)
+  ≈-wk h (callc≈ r s) = callc≈ (≈-wk h r) (≈-wk h s)
+  ≈-wk h lit≈ = lit≈
+  ≈-wk h (tuple≈ rs) = tuple≈ (≈-wks h rs)
+  ≈-wk h (get≈ r) = get≈ (≈-wk h r)
+  ≈-wk h (inl≈ r) = inl≈ (≈-wk h r)
+  ≈-wk h (inr≈ r) = inr≈ (≈-wk h r)
+  ≈-wk h (case≈ r s t) = case≈ (≈-wk h r) (≈-wk h s) (≈-wk h t)
+  ≈-wk h (prim≈ r s) = prim≈ (≈-wk h r) (≈-wk h s)
+  ≈-wk h (let≈ r s) = let≈ (≈-wk h r) (≈-wk h s)
+  ≈-wk h (fold≈ r) = fold≈ (≈-wk h r)
+  ≈-wk h (unfold≈ r) = unfold≈ (≈-wk h r)
+  ≈-wks h [] = []
+  ≈-wks h (r ∷ rs) = ≈-wk h r ∷ ≈-wks h rs
 
   {- The fundamental lemma ----------------------------------------------------------}
 
@@ -97,31 +106,31 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   agree-irr : ∀ {Σ} {D : Made Σ} {s s'} → Agree D s → Agree D s'
   agree-irr {s = s} {s'} a rewrite ⊑-irr s s' = a
 
-  {- the source is related to the output, weakened, and the definitions made before agree too -}
+  {- the source is related to the output along s, and the definitions made before agree too -}
   Glob : ∀ {Σ Γ A} → Tm Γ A → Made Σ → Out Σ (λ Σ' → C.Tm Σ' Γ A) → Set
-  Glob M D (out g D' M') = ∀ s → Agree D' s → M ≈ C.wk (⊑-∋ s) M' × Agree D (⊑-trans g s)
+  Glob M D (out g D' M') = ∀ s → Agree D' s → ⊑-∋ s ⊢ M ≈ M' × Agree D (⊑-trans g s)
 
   Globs : ∀ {Σ Γ Δ} → All (Tm Γ) Δ → Made Σ → Out Σ (λ Σ' → All (C.Tm Σ' Γ) Δ) → Set
-  Globs Ms D (out g D' Ms') = ∀ s → Agree D' s → All₂ _≈_ Ms (C.wks (⊑-∋ s) Ms') × Agree D (⊑-trans g s)
+  Globs Ms D (out g D' Ms') = ∀ s → Agree D' s → All₂ (⊑-∋ s ⊢_≈_) Ms Ms' × Agree D (⊑-trans g s)
 
   {- one operand, and then another, under the weakening of the first -}
   wk≈ : ∀ {Σ Σ' Γ A} {M : Tm Γ A} {M' : C.Tm Σ Γ A} {g : Σ ⊑ Σ'} {s : Σ' ⊑ Σf}
-    → M ≈ C.wk (⊑-∋ (⊑-trans g s)) M' → M ≈ C.wk (⊑-∋ s) (C.wk (⊑-∋ g) M')
-  wk≈ {M' = M'} {g} {s} r = subst (_ ≈_) (sym (wk-wk (λ x → sym (⊑-∋-trans g s x)) M')) r
+    → ⊑-∋ (⊑-trans g s) ⊢ M ≈ M' → ⊑-∋ s ⊢ M ≈ C.wk (⊑-∋ g) M'
+  wk≈ {g = g} {s} = ≈-wk λ x → sym (⊑-∋-trans g s x)
 
   glob≈ : ∀ {Σ Γ A} (M : Tm Γ A) (D : Made Σ) → Glob M D (glob M D)
   globs≈ : ∀ {Σ Γ Δ} (Ms : All (Tm Γ) Δ) (D : Made Σ) → Globs Ms D (globs Ms D)
   glob₁≈ : ∀ {Σ Γ Γ₁ A B} {f : ∀ {Σ'} → C.Tm Σ' Γ₁ A → C.Tm Σ' Γ B} {h : Tm Γ₁ A → Tm Γ B}
-    → (∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X'} → X ≈ C.wk e X' → h X ≈ C.wk e (f X'))
+    → (∀ {Σ'} {e : Emb Σ'} {X X'} → e ⊢ X ≈ X' → e ⊢ h X ≈ f X')
     → (M : Tm Γ₁ A) (D : Made Σ) → Glob (h M) D (glob₁ f M D)
   glob₂≈ : ∀ {Σ Γ Γ₁ Γ₂ A B Cc} {f : ∀ {Σ'} → C.Tm Σ' Γ₁ A → C.Tm Σ' Γ₂ B → C.Tm Σ' Γ Cc} {h : Tm Γ₁ A → Tm Γ₂ B → Tm Γ Cc}
-    → (∀ {Σ'} {e : ∀ {n} → Σ' ∋ n → Σf ∋ n} {X X' Y Y'} → X ≈ C.wk e X' → Y ≈ C.wk e Y' → h X Y ≈ C.wk e (f X' Y'))
+    → (∀ {Σ'} {e : Emb Σ'} {X X' Y Y'} → e ⊢ X ≈ X' → e ⊢ Y ≈ Y' → e ⊢ h X Y ≈ f X' Y')
     → (L : Tm Γ₁ A) (M : Tm Γ₂ B) (D : Made Σ) → Glob (h L M) D (glob₂ f L M D)
 
   glob≈ (` x) D s a = var≈ , agree-irr a
   glob≈ (code N) D with glob N D | glob≈ N D
   ... | out g D' N' | ih = λ { s (e , a) → let (r , a') = ih _ a in
-          code≈ (subst (_ ≈_) (sym e) r) , agree-irr a' }
+          code≈ (subst (_ ≈_) (sym e) (≈-wk (λ _ → refl) r)) , agree-irr a' }
   glob≈ (pack L M) D = glob₂≈ pack≈ L M D
   glob≈ (callc L M) D = glob₂≈ callc≈ L M D
   glob≈ (lit B c) D s a = lit≈ , agree-irr a
@@ -135,7 +144,7 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   ...   | out g₂ D₂ M' | ih₂ with glob N D₂ | glob≈ N D₂
   ...     | out g₃ D₃ N' | ih₃ = λ s a →
     let (r₃ , a₂) = ih₃ s a ; (r₂ , a₁) = ih₂ _ a₂ ; (r₁ , a₀) = ih₁ _ a₁ in
-    case≈ (wk≈ (subst (_ ≈_) (cong (λ q → C.wk (⊑-∋ q) L') (⊑-irr _ _)) r₁)) (wk≈ r₂) r₃ , agree-irr a₀
+    case≈ (wk≈ (subst (λ q → ⊑-∋ q ⊢ L ≈ L') (⊑-irr _ _) r₁)) (wk≈ r₂) r₃ , agree-irr a₀
   glob≈ (prim p L M) D = glob₂≈ prim≈ L M D
   glob≈ (let′ M N) D = glob₂≈ let≈ M N D
   glob≈ (fold M) D = glob₁≈ fold≈ M D
@@ -261,30 +270,10 @@ module _ {Σf : List DSig} (ds : All (C.Code Σf) Σf) where
   sims [] = val ε [] []
   sims (r ∷ rs) = ans-∷ (T.reds ds) (λ _ _ → refl) value-red rs (sim r) (sims rs)
 
-{- weakening along the identity -}
-wk-id : ∀ {Σ Γ A} {e : ∀ {n} → Σ ∋ n → Σ ∋ n} → (∀ {n} (x : Σ ∋ n) → e x ≡ x) → (M : C.Tm Σ Γ A) → C.wk e M ≡ M
-wks-id : ∀ {Σ Γ Δ} {e : ∀ {n} → Σ ∋ n → Σ ∋ n} → (∀ {n} (x : Σ ∋ n) → e x ≡ x) → (Ms : All (C.Tm Σ Γ) Δ) → C.wks e Ms ≡ Ms
-wk-id h (C.` x) = refl
-wk-id h (C.fun-ref f) = cong C.fun-ref (h f)
-wk-id h (C.pack L M) = cong₂ C.pack (wk-id h L) (wk-id h M)
-wk-id h (C.callc L M) = cong₂ C.callc (wk-id h L) (wk-id h M)
-wk-id h (C.lit B c) = refl
-wk-id h (C.tuple Ms) = cong C.tuple (wks-id h Ms)
-wk-id h (C.get i M) = cong (C.get i) (wk-id h M)
-wk-id h (C.inl M) = cong C.inl (wk-id h M)
-wk-id h (C.inr M) = cong C.inr (wk-id h M)
-wk-id h (C.case L M N) = cong₃ C.case (wk-id h L) (wk-id h M) (wk-id h N)
-wk-id h (C.prim p L M) = cong₂ (C.prim p) (wk-id h L) (wk-id h M)
-wk-id h (C.let′ M N) = cong₂ C.let′ (wk-id h M) (wk-id h N)
-wk-id h (C.fold M) = cong C.fold (wk-id h M)
-wk-id h (C.unfold M) = cong C.unfold (wk-id h M)
-wks-id h [] = refl
-wks-id h (M ∷ Ms) = cong₂ _∷_ (wk-id h M) (wks-id h Ms)
-
 {- The end theorem ---------------------------------------------------------------------}
 
 globalize-correct : ∀ {A} (M : Tm [] A) → Equivalent (S.sem M) (T.sem (globalize M))
 globalize-correct M with glob M [] | (λ {Σf} (ds : All (C.Code Σf) Σf) → glob≈ ds M [])
 ... | out g D M' | ih =
   red-equivalent value-red (_≈_ (close D here⊑)) (sim (close D here⊑)) (λ m _ → obs≈ (close D here⊑) m)
-    (subst (λ X → _≈_ (close D here⊑) M X) (wk-id (λ _ → refl) M') (proj₁ (ih (close D here⊑) here⊑ (agree-close (close D here⊑) D here⊑ λ _ → refl))))
+    (proj₁ (ih (close D here⊑) here⊑ (agree-close (close D here⊑) D here⊑ λ _ → refl)))
