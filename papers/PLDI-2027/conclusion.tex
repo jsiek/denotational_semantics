@@ -5,17 +5,14 @@
 
 Our main result is a denotational proof that closure conversion
 preserves and reflects the meaning of programs, divergence included,
-for a language with general recursion. Reflection is the hard
-direction. A relation between single elements cannot prove it, because
-a target call takes its code and its environment from different pairs,
-and a relation between whole denotations has nothing to recurse on in
-the function case. The approximant logical relation relates a finite
-list of target elements, which contains both halves of every call it
-describes, to the whole source denotation, and recurses on the depth of
+for a language with general recursion. For reflection, we introduced
+the approximant logical relation, which relates a finite list of target
+elements to the whole source denotation and recurses on the depth of
 that list. With it, the graph-model proof of a ten-pass compiler,
 mechanized in Agda, consists of short equational calculations for the
 nine passes that keep the representation of values and one relational
-proof for \pass{delay}, which is several times the size of the
-operational proofs of that pass. In future work we plan to report on a
+proof for the step of closure conversion that lowers closures to pairs
+of code and environment, which is several times the size of the
+operational proofs of that step. In future work we plan to report on a
 dynamically typed variant of the compiler and to repeat the comparison
 in Rocq or Lean.
