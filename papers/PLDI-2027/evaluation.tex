@@ -139,7 +139,7 @@ closely for most passes, including \pass{delay}, but differ more for
 \pass{simplify} and, to a lesser degree, \pass{globalize}. Combining
 the two factors gives three groups of passes, which we discuss in turn.
 
-\paragraph{When denotational correctness is an equation and the runs correspond closely, the interpreter proofs tend to be slightly smaller.}
+\paragraph{Equal meanings, similar runs: the interpreter proofs tend to be slightly smaller.}
 
 For \pass{enclose}, \pass{optimize}, \pass{concretize}, \pass{remove
   complex operands}, \pass{lift locals}, \pass{explicate control}, and
@@ -167,7 +167,7 @@ interpreters only. The reduction semantics, which works by
 substitution, is often much larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
 
-\paragraph{When denotational correctness is an equation but the runs differ more, the denotational proof tends to be smallest.}
+\paragraph{Equal meanings, different runs: the denotational proof tends to be smallest.}
 
 \pass{simplify} is the clearest case, at 349 lines against 508 to 697.
 It reduces programs under binders and removes calls, so the target
@@ -183,7 +183,7 @@ it is a reference into a table of definitions. The interpreter proof
 relates the two tables value by value, while the denotational proof
 shows that a reference means what the code it replaced means.
 
-\paragraph{When denotational correctness is not an equation, the operational proofs are much smaller.}
+\paragraph{Changed representations: the operational proofs are much smaller.}
 
 \pass{Delay} changes the representation of closures, so its correctness
 is not an equation, yet the run of the target follows the run of the
@@ -271,7 +271,7 @@ easier to write. Because experience gained in writing one development could carr
 over to the next, after completing all four we gave each of them a
 final cleanup pass with the same goals and rules: shorten and clarify
 the proofs without changing any theorem statement and without moving
-code into the uncounted infrastructure. The cleanup removed between 114 and 155 lines from each operational style and the graph model, and the ranking did not change. The Scott-domain proof, which we wrote last, had more to remove: 3,457 lines before its cleanup and 2,485 after.
+code into the uncounted infrastructure. The cleanup removed between 114 and 155 lines from each operational style and the graph model, and the ranking did not change. The Scott-domain proof, which we wrote last, had more to remove, 3,457 lines before its cleanup and 2,485 after, mostly because the cleanup merged its two stage-indexed relations for \pass{delay} into one and removed workarounds for slow checking in Agda.
 
 The comparison covers one compiler, and the totals depend on its
 selection of passes. The denotational proofs tend to be smaller for

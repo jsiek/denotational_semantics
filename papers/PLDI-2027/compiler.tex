@@ -247,8 +247,7 @@ test, a load, and a conditional jump. The coercions $\kw{fold}$ and
 $\kw{unfold}$ survive to x86$\mu$ as annotations on operands,
 $\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
 
-x86$\mu$ abstracts from a real instruction set in several ways. It is
-typed; its heap is abstract, with no addresses or memory layout; it has
+x86$\mu$ abstracts from a real instruction set. It is typed; its heap is abstract, with no addresses or memory layout; it has
 three registers and no register allocation; control flow within a
 function is acyclic, so loops are recursive calls; and $\kw{case}$ is
 a pseudo-instruction. None of these abstractions concerns closure
