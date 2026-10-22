@@ -1,0 +1,405 @@
+%% Appendix: the semantics of ISWIMμ and x86μ in the other four styles, and
+%% the correctness theorem of each style. Sources:
+%% agda/Mu/Theorems/{Scott,Simulation,Interpreter,Reduction}.agda (the
+%% statements); agda/Mu/Semantics/Interp/{Values,ISWIM,X86}.agda,
+%% agda/Framework/Clocked.agda; agda/Mu/Semantics/CEK/{Values,ISWIM,X86}.agda,
+%% agda/Framework/Smallstep.agda; agda/Mu/Semantics/Reduction/ISWIM.agda,
+%% agda/Framework/Reduction.agda (red is shown with step-in unfolded);
+%% agda/Framework/Scott/{Domain,Ops,Semantics}.agda,
+%% agda/Semantics/Scott/Prim.agda, agda/Mu/Semantics/Scott/{ISWIM,X86}.agda.
+
+\raggedbottom
+\allowdisplaybreaks
+\section{The Other Four Semantics and Their Theorems}
+\label{app:other}
+
+Each of the five developments of Section~\ref{sec:evaluation} proves
+the whole compiler correct with respect to its own semantics of the
+languages. For the graph model, the semantics are those of
+Appendix~\ref{app:languages} and the theorem is
+Theorem~\ref{thm:compiler}. This appendix gives, for each of the other
+four styles, the semantics of the source language \iswim\ and the
+target language x86$\mu$, and the correctness theorem for the whole
+compiler, so that each theorem can be read on its own. The semantics
+of the intermediate languages follow the same pattern and are in the
+artifact.
+
+\subsection{Values and Observations}
+\label{app:observations}
+
+The three operational styles share their values and their
+observations. A value of type $A$ is one of
+\[
+  v, w ::= c \mid \kw{code}\,f \mid \kw{pack}(v, w) \mid \kw{tup}(v_1, \ldots, v_n)
+    \mid \kw{inl}\,v \mid \kw{inr}\,v \mid \kw{fold}\,v
+\]
+where a closure $\kw{pack}(v, w)$ pairs a code value $v$ with the tuple
+$w$ of its environment. In \iswim, the code of a closure is the body $N$
+of a $\lambda$-abstraction and its environment is the environment
+$\rho$ of the $\lambda$-abstraction, a list of values; we write
+$\langle \lambda x.\,N, \rho\rangle$ for $\kw{pack}(\kw{code}\,N,
+\kw{tup}(\rho))$. In x86$\mu$, the code of a closure is the name $f$ of a
+definition. A run is observed through its final value, forgetting the
+code and environment inside closures:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
+  \mathit{obs}(c) & = & c &
+  \mathit{obs}(\kw{pack}(v, w)) & = & \mathit{fun}\\
+  \mathit{obs}(\kw{tup}(v_1, \ldots, v_n)) & = & \mathit{tuple}(\mathit{obs}(v_1), \ldots, \mathit{obs}(v_n)) &
+  \mathit{obs}(\kw{fold}\,v) & = & \mathit{obs}(v)\\
+  \mathit{obs}(\kw{inl}\,v) & = & \mathit{left}(\mathit{obs}(v)) &
+  \mathit{obs}(\kw{inr}\,v) & = & \mathit{right}(\mathit{obs}(v))
+\end{array}
+\]
+and $\mathit{obs}(\kw{code}\,f) = \mathit{fun}$. A run may also stop
+with the observation $\mathit{error}$, which no well-typed program
+reaches. The primitives compute $\delta_{\kw{sub}}(n, m) = n - m$ and
+$\delta_{\kw{eq}}(n, m) = \kw{inl}\,\kw{tup}()$ if $n = m$ and
+$\kw{inr}\,\kw{tup}()$ otherwise.
+
+\paragraph{Machines}
+
+A machine is a set of states, a start state, and a step function that
+maps each state $s$ either to a next state, written $s \longrightarrow
+s'$, or to a final observation, written $s \Downarrow o$. A machine
+\emph{terminates with} $o$ when a sequence of steps leads from the start
+state to a state $s$ with $s \Downarrow o$, and it \emph{diverges} when
+for every $n$ there is a sequence of $n$ steps from the start state.
+
+\paragraph{Clocked interpreters}
+
+A clocked interpreter maps a clock $k \in \mathbb{N}$ to a result,
+which is $\mathsf{timeout}$, $\mathsf{error}$, or $\mathsf{ret}\,v$
+for a value $v$. We write $v \leftarrow e;\; e'$ for the result of $e'$
+when $e$ is $\mathsf{ret}\,v$, and for $e$ itself when $e$ is
+$\mathsf{timeout}$ or $\mathsf{error}$. An interpreter \emph{terminates
+with} $o$ when for some clock $k$ its result is $\mathsf{ret}\,v$ with
+$\mathit{obs}(v) = o$, or $\mathsf{error}$ with $o = \mathit{error}$,
+and it \emph{diverges} when its result is $\mathsf{timeout}$ for every
+clock.
+
+\paragraph{Equivalence}
+
+Two machines, or two interpreters, are \emph{equivalent} when, for
+every observation $o$, one terminates with $o$ if and only if the other
+does, and one diverges if and only if the other does. The three
+operational theorems state that a program and its compilation are
+equivalent.
+
+\subsection{Clocked Interpreters}
+\label{app:interp}
+
+\paragraph{\iswim}
+
+The interpreter $\mathit{eval}_k(\rho, M)$ evaluates a term $M$ in an
+environment $\rho$ of values at clock $k$. The clock ticks at each call:
+\begin{align*}
+  \mathit{eval}_k(\rho, x) &= \mathsf{ret}\,\rho(x) \\
+  \mathit{eval}_k(\rho, \lambda x.\,N) &= \mathsf{ret}\,\langle \lambda x.\,N, \rho\rangle \\
+  \mathit{eval}_k(\rho, L\;M) &= f \leftarrow \mathit{eval}_k(\rho, L);\; w \leftarrow \mathit{eval}_k(\rho, M);\; \mathit{call}_k(f, w) \\
+  \mathit{eval}_k(\rho, c) &= \mathsf{ret}\,c \\
+  \mathit{eval}_k(\rho, \kw{tuple}\,(M_1, \ldots, M_n)) &= v_1 \leftarrow \mathit{eval}_k(\rho, M_1);\; \ldots;\; v_n \leftarrow \mathit{eval}_k(\rho, M_n);\;
+    \mathsf{ret}\,\kw{tup}(v_1, \ldots, v_n) \\
+  \mathit{eval}_k(\rho, \kw{get}_i\,M) &= \kw{tup}(v_1, \ldots, v_n) \leftarrow \mathit{eval}_k(\rho, M);\; \mathsf{ret}\,v_i \\
+  \mathit{eval}_k(\rho, \kw{inl}\,M) &= v \leftarrow \mathit{eval}_k(\rho, M);\; \mathsf{ret}\,(\kw{inl}\,v)
+  \qquad\text{(likewise $\kw{inr}$ and $\kw{fold}$)} \\
+  \mathit{eval}_k(\rho, \kw{case}\;L\;(x.\,M)\;(y.\,N)) &= u \leftarrow \mathit{eval}_k(\rho, L);\;
+    \begin{cases}
+      \mathit{eval}_k(\rho[x{:=}v], M) & \text{if } u = \kw{inl}\,v\\
+      \mathit{eval}_k(\rho[y{:=}v], N) & \text{if } u = \kw{inr}\,v
+    \end{cases} \\
+  \mathit{eval}_k(\rho, \kw{prim}_p\;L\;M) &= n \leftarrow \mathit{eval}_k(\rho, L);\; m \leftarrow \mathit{eval}_k(\rho, M);\; \mathsf{ret}\,\delta_p(n, m) \\
+  \mathit{eval}_k(\rho, \kw{let}\;x = M\;\kw{in}\;N) &= v \leftarrow \mathit{eval}_k(\rho, M);\; \mathit{eval}_k(\rho[x{:=}v], N) \\
+  \mathit{eval}_k(\rho, \kw{unfold}\;M) &= \kw{fold}\,v \leftarrow \mathit{eval}_k(\rho, M);\; \mathsf{ret}\,v \\[4pt]
+  \mathit{call}_0(f, w) &= \mathsf{timeout} \\
+  \mathit{call}_{k+1}(\langle \lambda x.\,N, \rho\rangle, w) &= \mathit{eval}_k(\rho[x{:=}w], N)
+\end{align*}
+A pattern on the left of $\leftarrow$ always matches, because the
+interpreter is defined on well-typed terms and values. The interpreter
+of a closed program $M$ is $k \mapsto \mathit{eval}_k(\emptyset, M)$.
+
+\paragraph{x86$\mu$}
+
+A machine state $m$ of x86$\mu$ has the registers $\kw{rax}$,
+$\kw{rdi}$, and $\kw{rsi}$, each holding a value or unset; the frame
+$\sigma$, which holds a value in each slot assigned so far; the
+environment of the open closure, if any; and the flag, which is a
+Boolean or unset. An operand means $\mathit{arg}(a, m)$: the value of
+an atom in the frame, the value of a register, and
+$\kw{fold}\,(\mathit{arg}(a, m))$ for $\kw{fold}\,a$ and the $v$ such
+that $\mathit{arg}(a, m) = \kw{fold}\,v$ for $\kw{unfold}\,a$. An
+object means the value that its operands make:
+$\mathit{obj}(\kw{pair}(a_1, a_2), m) = \kw{pack}(\mathit{arg}(a_1, m),
+\mathit{arg}(a_2, m))$, and likewise a tuple and the injections. A write
+$\mathit{put}(d, v, m)$ sets a register, or, for a slot $x$, extends
+the frame cut at $x$ with $v$, $\sigma|_x[x{:=}v]$, and closes the open
+closure, as in the graph-model semantics. The instructions update the
+state:
+\begin{align*}
+  \kw{movq}\; a, d &: \mathit{put}(d, \mathit{arg}(a, m), m) \\
+  \kw{subq}\; a, \%r &: \mathit{put}(\%r, \delta_{\kw{sub}}(m(r), \mathit{arg}(a, m)), m) \\
+  \kw{cmpq}\; a_2, a_1 &: m \text{ with the flag } (\mathit{arg}(a_1, m) = \mathit{arg}(a_2, m)) \\
+  \kw{sete}\; d &: \mathit{put}(d, \kw{inl}\,\kw{tup}() \text{ if the flag is true, else } \kw{inr}\,\kw{tup}(), m) \\
+  \kw{alloc}\; o, d &: \mathit{put}(d, \mathit{obj}(o, m), m) \\
+  \kw{load}\; \kw{get}_i\; a, d &: \mathit{put}(d, v_i, m) \text{ where } \mathit{arg}(a, m) = \kw{tup}(v_1, \ldots, v_n) \\
+  \kw{fst}\; x, \%r &: m \text{ with } r \text{ set to } c \text{ and the open closure } e,
+    \text{ where } \sigma(x) = \kw{pack}(c, e) \\
+  \kw{snd}\; x, \%r &: m \text{ with } r \text{ set to the environment of the open closure}
+\end{align*}
+where $\kw{fst}$ also unsets the registers that held the code or the
+environment of an earlier open closure. Write $\mathit{instr}(i, m)$
+for the state that an instruction $i$ other than $\kw{callq}$ leaves.
+The interpreter $\mathit{run}_k(B, m, s)$ runs a sequence $s$ with
+blocks $B$ in the state $m$:
+\begin{align*}
+  \mathit{run}_k(B, m, i;\; s) &= \mathit{run}_k(B, \mathit{instr}(i, m), s)
+    \qquad\text{for $i$ not $\kw{callq}$} \\
+  \mathit{run}_k(B, m, \kw{callq}\; a;\; s) &= v \leftarrow \mathit{call}_k(\mathit{arg}(a, m), m(\kw{rdi}), m(\kw{rsi}));\;
+    \mathit{run}_k(B, m_v, s) \\
+  \mathit{run}_k(B, m, \kw{retq}) &= \mathsf{ret}\; m(\kw{rax}) \\
+  \mathit{run}_k(B, m, \kw{jmp}\;l) &= \mathit{jump}_k(B, l, \sigma) \\
+  \mathit{run}_k(B, m, \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) &= \begin{cases}
+      \mathit{jump}_k(B, l_1, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inl}\,v\\
+      \mathit{jump}_k(B, l_2, \sigma|_y[y{:=}v]) & \text{if } \sigma(x) = \kw{inr}\,v
+    \end{cases} \\[4pt]
+  \mathit{jump}_k(B, l, \sigma) &= \mathit{run}_k(B_l, m_\sigma, s_l) \\
+  \mathit{call}_0(\kw{code}\,f, e, w) &= \mathsf{timeout} \\
+  \mathit{call}_{k+1}(\kw{code}\,f, e, w) &= \mathit{run}_k(B_f, m_{e,w}, s_f)
+\end{align*}
+Here $\sigma$ is the frame of $m$; $m_v$ has the frame of $m$, $v$ in
+$\kw{rax}$, and nothing else set; $s_l$ is block $l$ and $B_l$ the
+blocks older than it; $m_\sigma$ has the frame $\sigma$ and nothing else
+set; $s_f$ is the start of the function body of definition $f$, with
+blocks $B_f$; and $m_{e,w}$ has $e$ in $\kw{rdi}$, $w$ in $\kw{rsi}$, an
+empty frame, and nothing else set. The interpreter of a program is $k
+\mapsto \mathit{run}_k(B, m_0, s)$ for the main function body $s$ with
+blocks $B$, where $m_0$ has an empty frame and nothing set.
+
+\begin{theorem}[Correctness, clocked interpreters]\label{thm:interp}
+For every closed term $M$ of \iswim, the interpreter of \iswim\ on $M$
+and the interpreter of x86$\mu$ on $\pass{compile}(M)$ are equivalent.
+\end{theorem}
+
+\subsection{Abstract Machines}
+\label{app:machines}
+
+\paragraph{\iswim}
+
+The CEK machine of \iswim\ evaluates a term $M$ in an environment $\rho$
+with a continuation $\kappa$, $\mathit{eval}(M, \rho, \kappa)$, or
+returns a value $v$ to a continuation, $\mathit{ret}(v, \kappa)$. A
+continuation is a stack of frames, each of which says what to do with
+the value of a subterm:
+\begin{align*}
+  \kappa &::= \mathit{halt} \mid \mathit{appL}(M, \rho, \kappa) \mid \mathit{appR}(f, \kappa)
+    \mid \mathit{tupK}(\vec{v}, \vec{M}, \rho, \kappa) \mid \mathit{getK}_i(\kappa)
+    \mid \mathit{inlK}(\kappa) \mid \mathit{inrK}(\kappa) \\
+ &\mid \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa) \mid \mathit{primL}_p(M, \rho, \kappa)
+    \mid \mathit{primR}_p(n, \kappa) \mid \mathit{letK}(x.\,N, \rho, \kappa)
+    \mid \mathit{foldK}(\kappa) \mid \mathit{unfoldK}(\kappa)
+\end{align*}
+The machine steps by:
+\begin{align*}
+  \mathit{eval}(x, \rho, \kappa) &\longrightarrow \mathit{ret}(\rho(x), \kappa) \\
+  \mathit{eval}(\lambda x.\,N, \rho, \kappa) &\longrightarrow \mathit{ret}(\langle \lambda x.\,N, \rho\rangle, \kappa) \\
+  \mathit{eval}(L\;M, \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{appL}(M, \rho, \kappa)) \\
+  \mathit{eval}(c, \rho, \kappa) &\longrightarrow \mathit{ret}(c, \kappa) \\
+  \mathit{eval}(\kw{tuple}\,(), \rho, \kappa) &\longrightarrow \mathit{ret}(\kw{tup}(), \kappa) \\
+  \mathit{eval}(\kw{tuple}\,(M_1, \ldots, M_n), \rho, \kappa) &\longrightarrow \mathit{eval}(M_1, \rho, \mathit{tupK}((), (M_2, \ldots, M_n), \rho, \kappa)) \\
+  \mathit{eval}(\kw{get}_i\,M, \rho, \kappa) &\longrightarrow \mathit{eval}(M, \rho, \mathit{getK}_i(\kappa))
+    \qquad\text{(likewise $\kw{inl}$, $\kw{inr}$, $\kw{fold}$, $\kw{unfold}$)} \\
+  \mathit{eval}(\kw{case}\;L\;(x.\,M)\;(y.\,N), \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa)) \\
+  \mathit{eval}(\kw{prim}_p\;L\;M, \rho, \kappa) &\longrightarrow \mathit{eval}(L, \rho, \mathit{primL}_p(M, \rho, \kappa)) \\
+  \mathit{eval}(\kw{let}\;x = M\;\kw{in}\;N, \rho, \kappa) &\longrightarrow \mathit{eval}(M, \rho, \mathit{letK}(x.\,N, \rho, \kappa)) \\[4pt]
+  \mathit{ret}(v, \mathit{halt}) &\Downarrow \mathit{obs}(v) \\
+  \mathit{ret}(f, \mathit{appL}(M, \rho, \kappa)) &\longrightarrow \mathit{eval}(M, \rho, \mathit{appR}(f, \kappa)) \\
+  \mathit{ret}(w, \mathit{appR}(\langle \lambda x.\,N, \rho\rangle, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}w], \kappa) \\
+  \mathit{ret}(v, \mathit{tupK}(\vec{v}, (), \rho, \kappa)) &\longrightarrow \mathit{ret}(\kw{tup}(\vec{v}, v), \kappa) \\
+  \mathit{ret}(v, \mathit{tupK}(\vec{v}, (M, \vec{M}), \rho, \kappa)) &\longrightarrow \mathit{eval}(M, \rho, \mathit{tupK}((\vec{v}, v), \vec{M}, \rho, \kappa)) \\
+  \mathit{ret}(\kw{tup}(v_1, \ldots, v_n), \mathit{getK}_i(\kappa)) &\longrightarrow \mathit{ret}(v_i, \kappa) \\
+  \mathit{ret}(v, \mathit{inlK}(\kappa)) &\longrightarrow \mathit{ret}(\kw{inl}\,v, \kappa)
+    \qquad\text{(likewise $\kw{inr}$, $\kw{fold}$)} \\
+  \mathit{ret}(\kw{inl}\,v, \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(M, \rho[x{:=}v], \kappa) \\
+  \mathit{ret}(\kw{inr}\,v, \mathit{caseK}(x.\,M, y.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[y{:=}v], \kappa) \\
+  \mathit{ret}(n, \mathit{primL}_p(M, \rho, \kappa)) &\longrightarrow \mathit{eval}(M, \rho, \mathit{primR}_p(n, \kappa)) \\
+  \mathit{ret}(m, \mathit{primR}_p(n, \kappa)) &\longrightarrow \mathit{ret}(\delta_p(n, m), \kappa) \\
+  \mathit{ret}(v, \mathit{letK}(x.\,N, \rho, \kappa)) &\longrightarrow \mathit{eval}(N, \rho[x{:=}v], \kappa) \\
+  \mathit{ret}(\kw{fold}\,v, \mathit{unfoldK}(\kappa)) &\longrightarrow \mathit{ret}(v, \kappa)
+\end{align*}
+The machine of a closed program $M$ starts in
+$\mathit{eval}(M, \emptyset, \mathit{halt})$.
+
+\paragraph{x86$\mu$}
+
+The machine of x86$\mu$ runs a sequence $s$ with blocks $B$, a stack
+$\Sigma$ of the callers' return points, and a machine state $m$ as in
+Appendix~\ref{app:interp}, $\mathit{run}(s, B, \Sigma, m)$. A return
+point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's
+sequence, its blocks, and its frame. With the notation of
+Appendix~\ref{app:interp}, the machine steps by:
+\begin{align*}
+  \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
+    \qquad\text{for $i$ not $\kw{callq}$} \\
+  \mathit{run}(\kw{callq}\; a;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s_f, B_f, (\mathit{retK}(s, B, \sigma), \Sigma), m_{e,w}) \\
+ & \quad\text{where } \mathit{arg}(a, m) = \kw{code}\,f,\ e = m(\kw{rdi}),\ w = m(\kw{rsi}) \\
+  \mathit{run}(\kw{retq}, B, \mathit{halt}, m) &\Downarrow \mathit{obs}(m(\kw{rax})) \\
+  \mathit{run}(\kw{retq}, B, (\mathit{retK}(s, B', \sigma'), \Sigma), m) &\longrightarrow \mathit{run}(s, B', \Sigma, m') \\
+ & \quad\text{where $m'$ has the frame $\sigma'$, $m(\kw{rax})$ in $\kw{rax}$, and nothing else set} \\
+  \mathit{run}(\kw{jmp}\;l, B, \Sigma, m) &\longrightarrow \mathit{run}(s_l, B_l, \Sigma, m_\sigma) \\
+  \mathit{run}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2), B, \Sigma, m) &\longrightarrow \mathit{run}(s_{l_1}, B_{l_1}, \Sigma, m_{\sigma|_y[y{:=}v]}) \quad\text{if } \sigma(x) = \kw{inl}\,v \\
+ & \text{(and likewise for $\kw{inr}$ and $l_2$)}
+\end{align*}
+The machine of a program starts in $\mathit{run}(s, B, \mathit{halt},
+m_0)$ for the main function body $s$ with blocks $B$.
+
+\begin{theorem}[Correctness, abstract machines]\label{thm:machines}
+For every closed term $M$ of \iswim, the machine of \iswim\ on $M$ and
+the machine of x86$\mu$ on $\pass{compile}(M)$ are equivalent.
+\end{theorem}
+
+\subsection{Reduction Semantics}
+\label{app:reduction}
+
+The reduction semantics of \iswim\ rewrites closed terms, by
+substitution, call by value and left to right. The values are
+\[
+  V, W ::= \lambda x.\,N \mid c \mid \kw{tuple}\,(V_1, \ldots, V_n) \mid \kw{inl}\,V
+    \mid \kw{inr}\,V \mid \kw{fold}\,V
+\]
+The function $\mathit{red}(M)$ says whether a closed term $M$ is a
+value ($\mathsf{val}$) or reduces to a term $M'$ ($\mathsf{to}\,M'$).
+In each case below, the subterms are reduced left to right. A subterm
+that reduces makes the whole term reduce in the same position, and once
+the subterms are values the term takes its own step:
+\begin{align*}
+  \mathit{red}(V) &= \mathsf{val} \\
+  \mathit{red}(L\;M) &= \mathsf{to}\,(L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
+ &= \mathsf{to}\,(V\;M') &&\text{if } L = V \text{ and } \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,(N[x{:=}W]) &&\text{if } L = \lambda x.\,N \text{ and } M = W \\
+  \mathit{red}(\kw{tuple}\,(\vec{V}, M, \vec{M})) &= \mathsf{to}\,(\kw{tuple}\,(\vec{V}, M', \vec{M})) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
+  \mathit{red}(\kw{get}_i\,M) &= \mathsf{to}\,(\kw{get}_i\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,V_i &&\text{if } M = \kw{tuple}\,(V_1, \ldots, V_n) \\
+  \mathit{red}(\kw{inl}\,M) &= \mathsf{to}\,(\kw{inl}\,M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M'
+    \quad\text{(likewise $\kw{inr}$, $\kw{fold}$)} \\
+  \mathit{red}(\kw{case}\;L\;(x.\,M)\;(y.\,N)) &= \mathsf{to}\,(\kw{case}\;L'\;(x.\,M)\;(y.\,N)) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
+ &= \mathsf{to}\,(M[x{:=}V]) &&\text{if } L = \kw{inl}\,V \\
+ &= \mathsf{to}\,(N[y{:=}V]) &&\text{if } L = \kw{inr}\,V \\
+  \mathit{red}(\kw{prim}_p\;L\;M) &= \mathsf{to}\,(\kw{prim}_p\;L'\;M) &&\text{if } \mathit{red}(L) = \mathsf{to}\,L' \\
+ &= \mathsf{to}\,(\kw{prim}_p\;V\;M') &&\text{if } L = V \text{ and } \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,\delta_p(n, m) &&\text{if } L = n \text{ and } M = m \\
+  \mathit{red}(\kw{let}\;x = M\;\kw{in}\;N) &= \mathsf{to}\,(\kw{let}\;x = M'\;\kw{in}\;N) &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,(N[x{:=}V]) &&\text{if } M = V \\
+  \mathit{red}(\kw{unfold}\;M) &= \mathsf{to}\,(\kw{unfold}\;M') &&\text{if } \mathit{red}(M) = \mathsf{to}\,M' \\
+ &= \mathsf{to}\,V &&\text{if } M = \kw{fold}\,V
+\end{align*}
+Here $\delta_p(n, m)$ is read as a term. The result of a primitive is a
+value, and the result $\mathit{obs}(V)$ of a value is as in
+Appendix~\ref{app:observations}, with $\mathit{fun}$ for $\lambda
+x.\,N$. A closed well-typed term is a value or reduces, so these cases
+cover every such term.\footnote{The Agda definition also has a result
+$\mathsf{error}$ for a term that is stuck, which no closed well-typed
+term is, and it writes the cases that reduce a subterm with one
+combinator, $\mathit{step\text{-}in}$, that propagates a subterm's
+reduction to the whole term. The equations above are that definition
+with the combinator unfolded.} The reduction semantics of a closed
+program $M$ is the machine whose states are closed terms, which starts
+at $M$, steps $M \longrightarrow M'$ when $\mathit{red}(M) =
+\mathsf{to}\,M'$, and stops with $M \Downarrow \mathit{obs}(M)$ when
+$M$ is a value.
+
+The first-order languages Imp, CFG, and x86$\mu$ have no binders, so
+the reduction-semantics development uses the machines of
+Appendix~\ref{app:machines} for them, and shares the proofs of
+\pass{explicate control} and \pass{select instructions} with the
+abstract-machine development.
+
+\begin{theorem}[Correctness, reduction semantics]\label{thm:reduction}
+For every closed term $M$ of \iswim, the reduction semantics of \iswim\
+on $M$ and the machine of x86$\mu$ on $\pass{compile}(M)$ are
+equivalent.
+\end{theorem}
+
+\subsection{Scott Domains}
+\label{app:scott}
+
+The domain of values is the solution of
+\[
+  \mathbb{D} \cong \mathcal{L}(\Sigma_{t \in \mathit{Tag}}\, \mathit{Payload}_t(\mathbb{D}))
+\]
+where $\mathcal{L}$ is lifting, and a tag $t$ is a constant $c$, with
+payload the one-point domain; $\mathit{tup}_n$, with payload
+$\mathbb{D}^n$; $\mathit{left}$ or $\mathit{right}$, with payload
+$\mathbb{D}$; $\mathit{fun}$, with payload the continuous functions
+$[\mathbb{D} \to \mathbb{D}]$; or $\mathit{pr}$, with payload
+$\mathbb{D}^2$. The least element $\bot$ of $\mathbb{D}$ means divergence;
+a value $d$ is \emph{defined} when $d \neq \bot$. We write $t(x)$ for the
+value with tag $t$ and payload $x$. The operators are continuous and
+strict, as the graph model's are:
+\begin{itemize}
+\item $\Lambda(g) = \mathit{fun}(g')$, where $g'$ agrees with $g$ on
+  defined values and maps $\bot$ to $\bot$; and $\mathsf{app}(d, e) =
+  h(e)$ if $d = \mathit{fun}(h)$ and $e$ is defined, and $\bot$
+  otherwise;
+\item $\mathcal{T}(d_1, \ldots, d_n) = \mathit{tup}_n(d_1, \ldots,
+  d_n)$ if every $d_i$ is defined, and $\bot$ otherwise; and
+  $\pi_{\mathsf{tup}_i}(d) = d_i$ if $d = \mathit{tup}_n(d_1, \ldots,
+  d_n)$, and $\bot$ otherwise;
+\item $\mathsf{pair}$, $\car$, and $\cdr$ likewise, with the tag
+  $\mathit{pr}$;
+\item $\mathsf{inl}(d) = \mathit{left}(d)$ and $\mathsf{inr}(d) =
+  \mathit{right}(d)$ if $d$ is defined, and $\bot$ otherwise; and
+  $\mathsf{cases}(d, f, g)$ is $f(e)$ if $d = \mathit{left}(e)$, $g(e)$
+  if $d = \mathit{right}(e)$, and $\bot$ otherwise;
+\item $\mathsf{prim}_p(d, e) = \delta_p(n, m)$ if $d = n$ and $e = m$
+  are integers, and $\bot$ otherwise, where the Boolean results are
+  $\mathsf{inl}(\mathit{tup}_0())$ and $\mathsf{inr}(\mathit{tup}_0())$;
+\item $\mathsf{seq}(d, e) = e$ if $d$ is defined, and $\bot$ otherwise.
+\end{itemize}
+An environment maps variables to values, and the environment $\rho_0$
+of a closed program maps every variable to the empty tuple
+$\mathit{tup}_0()$.
+
+\paragraph{\iswim}
+
+The semantics of \iswim\ has the equations of the graph-model semantics
+(Appendix~\ref{app:languages}), with the operators of $\mathbb{D}$:
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
+  \den{x}\rho & = & \rho(x) &
+  \den{c}\rho & = & c()\\
+  \den{\lambda x.\, N}\rho & = & \Lambda(\mlam{d} \den{N}\rho[x{:=}d]) &
+  \den{L\;M}\rho & = & \mathsf{app}(\den{L}\rho, \den{M}\rho)\\
+  \den{\kw{tuple}\;(M_1, \ldots, M_n)}\rho & = & \mathcal{T}(\den{M_1}\rho, \ldots, \den{M_n}\rho) &
+  \den{\kw{get}_i\,M}\rho & = & \pi_{\mathsf{tup}_i}(\den{M}\rho)\\
+  \den{\kw{inl}\;M}\rho & = & \mathsf{inl}(\den{M}\rho) &
+  \den{\kw{inr}\;M}\rho & = & \mathsf{inr}(\den{M}\rho)\\
+  \den{\kw{prim}_p\;L\;M}\rho & = & \mathsf{prim}_p(\den{L}\rho, \den{M}\rho) &
+  \den{\kw{fold}\;M}\rho & = & \den{M}\rho\\
+  \den{\kw{let}\;x = M\;\kw{in}\;N}\rho & = & \mathsf{app}(\Lambda(\mlam{d} \den{N}\rho[x{:=}d]), \den{M}\rho) &
+  \den{\kw{unfold}\;M}\rho & = & \den{M}\rho
+\end{array}
+\]
+\[
+  \den{\kw{case}\;L\;(x.\,M)\;(y.\,N)}\rho =
+    \mathsf{cases}(\den{L}\rho,\; (\mlam{d} \den{M}\rho[x{:=}d])',\; (\mlam{d} \den{N}\rho[y{:=}d])')
+\]
+where $g'$ is the strict function that agrees with $g$ on defined
+values, as in $\Lambda$.
+
+\paragraph{x86$\mu$}
+
+The semantics of x86$\mu$ has the equations of the graph-model
+semantics of x86$\mu$ (Appendix~\ref{app:languages}), with the
+operators of $\mathbb{D}$ in place of those of the graph model,
+$\mathsf{seq}$ in place of $\mathsf{guard}$ in the meaning of
+$\kw{callq}$, and the empty tuple $\mathit{tup}_0()$ in place of
+$\{\langle\rangle\}$ as the content of an unset register and an unset
+flag. A sequence means a continuous function of the frame, the
+registers, and the flag.
+
+\begin{theorem}[Correctness, Scott domains]\label{thm:scott}
+Let $M$ be a closed term of \iswim. For every constant $c$,
+$\den{M}\rho_0 = c()$ if and only if $\den{\pass{compile}(M)} = c()$.
+Moreover, $\den{M}\rho_0$ is defined if and only if
+$\den{\pass{compile}(M)}$ is defined.
+\end{theorem}

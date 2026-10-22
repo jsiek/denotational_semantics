@@ -16,12 +16,7 @@ finite approximation of the target (RQ3). Among three operational
 proofs of the same compiler, the denotational proof ranks second in
 size: it tends to be the smallest, or close to it, for the equational
 passes, and much larger for \pass{delay} (RQ4).
-A second denotational proof, with Scott domains, is 1.9 times as large
-as the graph-model proof, and its proof of \pass{delay} follows the
-stage-by-stage construction of Reynolds rather than the method of
-Pitts.
-
-In future work we plan to report on a dynamically typed variant of the
-compiler, whose graph model has an error element, and to repeat the
-comparison in a proof assistant with more automation, such as Rocq or
-Lean.
+A second denotational proof, with Scott domains, is larger, and its
+proof of \pass{delay} follows Reynolds rather than Pitts. In future
+work we plan to report on a dynamically typed variant of the compiler
+and to repeat the comparison in Rocq or Lean.
