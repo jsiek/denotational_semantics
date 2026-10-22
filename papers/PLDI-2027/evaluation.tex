@@ -113,29 +113,28 @@ the two factors gives three groups of passes, which we discuss in turn.
 
 \paragraph{When denotational correctness is an equation and the runs correspond closely, the interpreter proofs tend to be slightly smaller.}
 
-For \pass{enclose}, \pass{optimize}, \pass{concretize},
-\pass{remove complex operands}, \pass{lift locals}, \pass{explicate
-control}, and \pass{select instructions}, both the denotational and the
-interpreter proofs are short. The interpreter proofs are smaller by 1
-to 28 lines, except for \pass{explicate control}, where the two are
-about the same size. The difference is not in the congruence cases,
-which take one line per construct in both styles. In the graph model, a term
-denotes a set of values rather than a single value, and several
-operators place conditions on these sets: strict closures,
-$\kw{let}$s, and writes require their sets to be nonempty, and the
-binders require them to be consistent. The denotational proofs must
-establish these conditions, whereas they hold trivially for the single
-value that an interpreter computes. It must also
-apply laws of the graph model that have premises, where an interpreter
-simply runs: the $\beta$-law of Lemma~\ref{lem:beta}, and commuting
-conversions that move a $\kw{let}$ or $\kw{case}$ past a
-continuation. These costs are largest, relative to the
-interpreter proofs, for \pass{lift locals} and \pass{select
-instructions}. Their denotational proofs are about 1.4 and 1.6 times
-the size of the interpreter proofs. In \pass{lift locals}, the
-continuation-passing semantics of Imp requires a commuting conversion.
-In \pass{select instructions}, the prologue of a function body in
-x86$\mu$ requires two uses of Lemma~\ref{lem:beta}. The tendency concerns the
+For \pass{enclose}, \pass{optimize}, \pass{concretize}, \pass{remove
+  complex operands}, \pass{lift locals}, \pass{explicate control}, and
+\pass{select instructions}, both the denotational and the interpreter
+proofs are short. The interpreter proofs are smaller by 1 to 28 lines,
+except for \pass{explicate control}, where the two are about the same
+size. The difference is not in the congruence cases, which take one
+line per construct in both styles. In the graph model, a term denotes
+a set of values and several operators place conditions on these sets:
+strict closures, $\kw{let}$s, and writes require their sets to be
+nonempty, and the binders require them to be consistent. The
+denotational proofs must establish these conditions, whereas they hold
+trivially for the single value that an interpreter computes. It must
+also apply laws of the graph model that have premises, where an
+interpreter simply runs: the $\beta$-law of Lemma~\ref{lem:beta}, and
+commuting conversions that move a $\kw{let}$ or $\kw{case}$ past a
+continuation. These costs are largest, relative to the interpreter
+proofs, for \pass{lift locals} and \pass{select instructions}. Their
+denotational proofs are about 1.4 and 1.6 times the size of the
+interpreter proofs. In \pass{lift locals}, the continuation-passing
+semantics of Imp requires a commuting conversion.  In \pass{select
+  instructions}, the prologue of a function body in x86$\mu$ requires
+two uses of Lemma~\ref{lem:beta}. The tendency concerns the
 interpreters only. The reduction semantics, which works by
 substitution, is often much larger even for these passes, as for
 \pass{optimize} and \pass{lift locals}.
@@ -178,11 +177,12 @@ directions, the satisfaction relation for preservation and the
 approximant logical relation for reflection, because a single relation
 parameterized by the direction made the proof longer: on an earlier
 version of the compiler, switching from one relation to two cut the
-proof of \pass{delay} from 1,358 to 832 lines. Second, reflection needs
-the finite lists, the batches of calls, and the lemma that extracts
-them from a target call. Third, the $\beta$-law of Lemma~\ref{lem:beta}
-holds only under side conditions of nonemptiness, consistency, and
-continuity, which a machine gets for free by taking a step.
+proof of \pass{delay} from 1,358 to 832 lines. Second, reflection
+needs the finite lists, the batches of calls, and the lemma that
+extracts them from a target call. Third, the $\beta$-law of
+Lemma~\ref{lem:beta} holds only under side conditions of nonemptiness,
+consistency, and continuity, whereas a machine does not have such side
+conditions.
 
 \paragraph{The graph-model semantics is about as small as the interpreters', but it needs more infrastructure.}
 
@@ -203,13 +203,13 @@ The comparison supports the answer to RQ2. For the passes that keep
 the representation of values, the equational proofs tend to be
 concise: the smallest of the four styles for \pass{simplify} and
 \pass{globalize}, about the same as the smallest for \pass{explicate
-control}, and within 30 lines of the smallest for the others, though
+  control}, and within 30 lines of the smallest for the others, though
 \pass{lift locals} and \pass{select instructions} are relatively the
 furthest behind. The answer to RQ4 is mixed. Overall, the denotational
 development ranks second, behind the clocked interpreters and ahead of
 abstract machines and reduction semantics. Its advantage on the passes
-that keep the representation of values is outweighed by \pass{delay},
-the one pass that changes it.
+proved by equational reasoning such as \pass{simplify} is neutralized
+by \pass{delay}, the one pass that is not an equation.
 
 \subsection{Threats to Validity}
 
