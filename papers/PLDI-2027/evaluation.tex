@@ -35,11 +35,11 @@ the languages and passes, and each is our best effort in its style.
   backward direction follows from forward simulation and the
   determinism of the machines.
 \item \emph{Clocked interpreters and value relations}, in the style of
-  CakeML \citep{Kumar:2014aa}. Each language has a total interpreter
+  CakeML \citep{Kumar:2014aa}, a technique that goes back to the clocked
+  evaluator of \citet{Boyer:1984aa}. Each language has a total interpreter
   with a clock that ticks each time the interpreted program calls a
   function, and each pass is
-  proved by relating the results of the two interpreters at the same
-  clock.
+  proved by relating the two interpreters' results at the same clock.
 \item \emph{Reduction semantics and simulations.} Each language has a
   reduction semantics, using substitution for function application,
   and each pass is proved by a simulation between reductions.
