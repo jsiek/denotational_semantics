@@ -18,8 +18,9 @@
   The continuations are continuous maps, so the graph model's κ-≃ is
   just a congruence (ap). The compiler takes apart the output of a
   recursive call with `with`; Out is a record, so the proof uses its
-  projections instead (a `with` in a recursive proof about 𝔻 is slow to
-  check).
+  projections instead (a `with` while meanings are in scope is slow to
+  check: tl by `with`, as in the graph model, does not check in 6
+  minutes).
 
 -}
 

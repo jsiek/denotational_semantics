@@ -18,12 +18,13 @@
     references.
 
   The proof has the graph model's structure, taking apart what glob
-  makes by `with`. Two things keep Agda fast here (otherwise each takes
-  minutes): the predicates OK, OKs, Cong₁ and Cong₂ are records, and a
-  `with` is never checked while an equation between meanings is in
-  scope (a `with` that is followed by another keeps the OK it matched
-  whole). So the end theorem, itself an equation, takes glob's result
-  apart by programO and globalize-eq instead.
+  makes by `with`. A `with` is slow to check while values of 𝔻 or
+  environments are in scope (each such module below takes more than 5
+  minutes), so they appear only inside the fields of records: the
+  predicates OK, OKs, Cong₁ and Cong₂ are records, and a `with` that is
+  followed by another keeps the OK it matched whole. The end theorem,
+  itself an equation between values, takes glob's result apart by
+  programO and globalize-eq instead.
 
 -}
 
