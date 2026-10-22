@@ -157,9 +157,6 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   open import Mu.proof.Semantics.Interp.Rel {λ Δ A B → S.Tm (A ∷ tup Δ ∷ []) B} {λ Δ A B → Σf ∋ sig Δ A B}
   open Rel GCode (Same GCode) public
 
-  pack≈' : ∀ {Δ A B} {c : S4.Val (code Δ A B)} {c' e e'} → c ≈ c' → e ≈ e' → S4.pack c e ≈ T.Vals.pack c' e'
-  pack≈' (code≈ g) (tup≈ rs) = pack≈ rs (same g)
-
   run≈ : ∀ ck {Σ Γ A} (M : S.Tm Γ A) (D : Made Σ) {r : Ren (Out.Σ' (glob M D)) Σf} {ρ₁ ρ₂}
     → Contains (Out.made (glob M D)) r → All₂ _≈_ ρ₁ ρ₂
     → RelResult _≈_ (S4.eval ck ρ₁ M) (T.eval dsf ck ρ₂ (wk r (Out.res (glob M D))))
@@ -175,7 +172,7 @@ module G {Σf : List DSig} (dsf : All (Code Σf) Σf) where
   run≈ ck (S.pack L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
-    bind-rel (ihL (contains-ext e₂ c) E) λ v → bind-rel (ihM c E) λ w → ret (pack≈' v w)
+    bind-rel (ihL (contains-ext e₂ c) E) λ { (code≈ g) → bind-rel (ihM c E) λ { (tup≈ rs) → ret (pack≈ rs (same g)) } }
   run≈ ck (S.callc L M) D {r} c E with glob L D | run≈ ck L D
   ... | out s₁ D₁ L' | ihL with glob M D₁ | glob-ext M D₁ | run≈ ck M D₁
   ...   | out s₂ D₂ M' | e₂ | ihM rewrite wk-wk r (⊑-∋ s₂) L' =
