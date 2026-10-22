@@ -5,8 +5,28 @@
 
 \appendix
 
+The appendices give the definitions that the paper uses but does not
+show in full. Appendix~\ref{app:graph-model} completes the graph model
+of Section~\ref{sec:graph-models}; Appendix~\ref{app:languages} gives
+the type system and graph-model semantics of each language, and
+Appendix~\ref{app:passes} the passes, of Section~\ref{sec:compiler};
+Appendix~\ref{app:calculations} gives the key cases of the equational
+proofs not shown in Section~\ref{sec:equational};
+Appendix~\ref{app:alr-example} works through an example of the
+approximant logical relation of Section~\ref{sec:approx-lr}; and
+Appendix~\ref{app:other} gives the semantics of the source and target
+languages in the other four styles of Section~\ref{sec:evaluation},
+with their correctness theorems.
+
 \section{The Graph Model}
 \label{app:graph-model}
+
+This appendix completes the definition of the graph model of
+Section~\ref{sec:graph-models}: consistency, which $\Lambda$ and
+$\mathcal{C}$ require of their inputs and the proof of \pass{delay}
+relies on; the depth of an element, on which the approximant logical
+relation recurses; and the operators of the semantics not shown in
+Figure~\ref{fig:graph-ops}.
 
 \subsection{Consistency}
 \label{app:consistency}
@@ -54,8 +74,7 @@ consistent with every element of the other.
 \subsection{Depth}
 \label{app:depth}
 
-The depth of an element of the graph model is the height of its
-syntax tree, not counting constants, $\nu$ and $\langle\rangle$; the depth of a finite list is the largest depth of its
+The approximant logical relation of Section~\ref{sec:approx-lr} is defined by recursion on the depth of a list of elements. The depth of an element is the height of its syntax tree, not counting constants, $\nu$ and $\langle\rangle$; the depth of a finite list is the largest depth of its
 elements (zero for the empty list):
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
@@ -103,8 +122,7 @@ the payloads of the injections in the scrutinee:
 \end{array}
 \]
 where $\mathsf{left}(V) = \{\mathsf{left}(v) \mid v \in V\}$, and
-likewise for $\mathsf{right}$. Finally, a guard makes a set strict in
-other sets:
+likewise for $\mathsf{right}$. A guard makes a set strict in other sets:
 \[
   \mathsf{guard}(D_1, \ldots, D_n;\, E) = E
   \text{ if } D_1, \ldots, D_n \text{ are nonempty, and } \emptyset \text{ otherwise.}
@@ -116,8 +134,7 @@ other sets:
 
 %% Typing: definitions.tex (Types and Languages) and
 %% agda/Mu/Language/*.agda. Semantics: agda/Mu/Semantics/Graph/*.agda.
-This appendix gives, for each language of Section~\ref{sec:compiler},
-its type system and its semantics in the graph model. The base types
+This appendix gives, for each language of Section~\ref{sec:compiler} in the order of the pipeline, its type system and its semantics in the graph model. The type systems are those of our intrinsically typed Agda definitions, so every pass maps well-typed terms to well-typed terms; the semantics are the ones that Theorem~\ref{thm:compiler} and the proofs of Section~\ref{sec:compiler-proof} speak of. The base types
 are $\kw{Nat}$, $\kw{Int}$, $\kw{Bool}$, $\kw{Unit}$, and $\kw{Void}$.
 The result type $\mathit{out}(p)$ of a primitive is $\kw{Int}$ for
 $\kw{sub}$ and $\kw{tup}() + \kw{tup}()$ for $\kw{eq}$. 
@@ -133,8 +150,7 @@ Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}.
 
 \subsection{The \iswim\ Language}
 
-A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of
-variable types.
+\iswim\ is the source language, and the first pass, \pass{simplify}, maps it to itself. A judgment $\Gamma \vdash M : A$ types a term in a context $\Gamma$ of variable types.
 \[
 \begin{array}{@{}c@{}}
   \dfrac{x{:}A \in \Gamma}{\Gamma \vdash x : A}
@@ -169,7 +185,7 @@ variable types.
   \dfrac{\Gamma \vdash M : \mu X.\, A}{\Gamma \vdash \kw{unfold}\;M : A[\mu X.\, A / X]}
 \end{array}
 \]
-The semantics:
+The semantics follows Section~\ref{sec:graph-models}, with the operators of Figure~\ref{fig:graph-ops} and Appendix~\ref{app:operators}:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{\qquad}r@{\;}c@{\;}l@{}}
   \den{x}\rho & = & \rho(x) &
@@ -193,7 +209,7 @@ The semantics:
 
 \subsection{The Clos and EnvClos Languages}
 
-Clos and EnvClos type and interpret their other forms as \iswim\ does.
+Clos is the language of closures that \pass{enclose} produces and \pass{optimize} improves, and EnvClos, produced by \pass{concretize}, stores the captured values of a closure in one tuple; EnvClos is the source of \pass{delay}. Both type and interpret their other forms as \iswim\ does.
 A closure's type does not show the types $\Delta = A_1, \ldots, A_n$ of
 its captured values.
 \[
@@ -226,8 +242,7 @@ curried meaning of its code to the tuple of the captured values
 
 \subsection{The FlatClos Language}
 
-FlatClos replaces closures and application with code, packing, and
-calls, and types and interprets its other forms as \iswim\ does:
+FlatClos, the target of \pass{delay}, replaces closures and application with code, packing, and calls, and types and interprets its other forms as \iswim\ does:
 \[
   \dfrac{z{:}\kw{tup}(\Delta),\, y{:}A \vdash N : C}
         {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
@@ -251,9 +266,9 @@ calls, and types and interprets its other forms as \iswim\ does:
 
 \subsection{The GlobalFun and Mon Languages}
 
-A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
+GlobalFun, the target of \pass{globalize}, makes the code of every function a global definition. A GlobalFun program has a table $\Sigma = \sigma_0, \ldots, \sigma_{m-1}$
 of the signatures $\sigma_k = (\Delta_k; A_k \rightarrow C_k)$ of its
-definitions, and a term is typed by the table as well as its context,
+definitions, and a term is typed by the table and its context,
 $\Sigma; \Gamma \vdash M : A$. The other forms are typed as in FlatClos.
 \[
   \dfrac{k < m}{\Sigma; \Gamma \vdash f_k : \kw{code}(\Delta_k; A_k \rightarrow C_k)}
@@ -275,13 +290,13 @@ of its code, given the table $T_k$ of the definitions older than it
 \[
   \den{(d_0, \ldots, d_{m-1};\; M)} = \den{M}_T\rho_0
 \]
-Mon has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
+Mon, the target of \pass{remove complex operands}, has the syntax of Figure~\ref{fig:grammars}, is typed as GlobalFun,
 and has the meaning of its embedding into GlobalFun: an atom and an
 operation on atoms are GlobalFun terms already.
 
 \subsection{The Imp Language}
 
-A body runs in a frame of slots, typed by the list
+Imp, the target of \pass{lift locals}, replaces variables by slots of a stack frame. A body runs in a frame of slots, typed by the list
 $\Delta = A_0, \ldots, A_{j-1}$ of the types of the slots assigned so
 far; slot $x < j$ has type $A_x$. An assignment and a $\kw{case}$ write
 the next slot, $|\Delta|$. Atoms and simple expressions are typed as
@@ -328,7 +343,7 @@ it assigns, like a $\kw{let}$:
 
 \subsection{The CFG Language}
 
-A tail is typed by the type $R$ of the function body's result, the list
+CFG, the target of \pass{explicate control}, organizes each function body as a control-flow graph: a function body $(t_0, \ldots, t_{j-1};\, t)$ has numbered blocks $t_0, \ldots, t_{j-1}$ and a starting tail $t$. A tail is typed by the type $R$ of the function body's result, the list
 $\vec{\Delta} = \Delta_0, \ldots, \Delta_{j-1}$ of the frames of the
 blocks it may jump to, and its own frame $\Delta$. A label $l$ is an
 index into $\vec{\Delta}$. Block $t_l$ is typed over the blocks older
@@ -380,7 +395,7 @@ expression and no continuation.
 
 \subsection{The x86$\mu$ Language}
 
-An instruction is typed by the type of the machine state it starts in
+x86$\mu$ is the target language, produced by \pass{select instructions}; Section~\ref{sec:compiler} describes its instructions informally. An instruction is typed by the type of the machine state it starts in
 and the one it leaves. A state type
 $\psi = \langle \Theta; \Delta; O; F \rangle$ gives the types $\Theta$
 of the registers, the frame $\Delta$ of the slots assigned so far, the
@@ -531,8 +546,7 @@ definition means
 $T(k) = \Lambda(\mlam{X} \Lambda(\mlam{Y} \den{s}_B\,\rho_0\,R_{X,Y}\,
 \{\langle\rangle\}))$ for its function body $s$ with blocks $B$, where
 $R_{X,Y}$ maps $\kw{rdi}$ to $X$, $\kw{rsi}$ to $Y$, and $\kw{rax}$ to
-$\{\langle\rangle\}$; the tables are as in GlobalFun. A program means
-the meaning of its main function body in $\rho_0$ and $R_0$, with the flag
+$\{\langle\rangle\}$; the tables are as in GlobalFun. A program means its main function body in $\rho_0$ and $R_0$, with the flag
 $\{\langle\rangle\}$.
 
 \section{The Compiler Passes}
@@ -544,7 +558,7 @@ recursive function on the syntax of Figure~\ref{fig:grammars}. In each
 pass, the clauses not shown are homomorphic: they translate the
 subterms and rebuild the same form. No pass inspects a recursive type;
 $\kw{fold}$ and $\kw{unfold}$ pass through every pass as operations
-with one operand. The compiler is the composition of the passes:
+with one operand. The subsections follow the order of the pipeline; Sections~\ref{sec:equational} and~\ref{sec:approx-lr} and Appendix~\ref{app:calculations} prove each definition correct. The compiler is the composition of the passes:
 \[
 \begin{array}{@{}l@{}}
   \pass{compile} = \pass{select} \circ \pass{explicate} \circ \pass{lift}
@@ -676,8 +690,7 @@ $\kw{let}$.
 
 \subsection{\pass{enclose} (\iswim\ to Clos)}
 
-\pass{enclose} makes each function a closure that captures every
-variable in scope, in order, so its body is unchanged:
+\pass{enclose} makes each function a closure that captures the variables in scope, in order:
 \[
   \pass{enclose}(\lambda y.\, N) =
     \kw{clos}\;(x_1, \ldots, x_k, y.\,\pass{enclose}(N))\;(x_1, \ldots, x_k)
@@ -717,7 +730,7 @@ $\kw{get}_i\,z$, in EnvClos:
 \end{array}
 \]
 Under a $\kw{let}$ or $\kw{case}$ the bound variable maps to itself,
-and a program is concretized with the empty map.
+and a program starts with the empty map.
 
 \subsection{\pass{delay} (EnvClos to FlatClos)}
 
@@ -867,13 +880,12 @@ so $\kw{callc}$ and $\kw{case}$ take a slot.
   \pass{tail}(\kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)) & = & \kw{case}\;x\;(y.\,l_1)\;(y.\,l_2)
 \end{array}
 \]
-The frame of a function body has as many slots as the largest frame
-that any of its tails starts in or writes. With $\Delta$ the frame a tail starts in:
+The frame of a function body has as many slots as the largest frame that any of its tails starts in or writes, which $\mathit{slots}$ computes. With $\Delta$ the frame a tail starts in:
 \[
 \begin{array}{@{}r@{\;}c@{\;}l@{}}
-  \mathit{depth}(\kw{return}\;r) = \mathit{depth}(\kw{goto}\;l) & = & |\Delta|\\
-  \mathit{depth}(x \mathrel{:=} r;\; t) & = & \max(|\Delta|, \mathit{depth}(t))\\
-  \mathit{depth}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
+  \mathit{slots}(\kw{return}\;r) = \mathit{slots}(\kw{goto}\;l) & = & |\Delta|\\
+  \mathit{slots}(x \mathrel{:=} r;\; t) & = & \max(|\Delta|, \mathit{slots}(t))\\
+  \mathit{slots}(\kw{case}\;a\;(x.\,l_1)\;(x.\,l_2)) & = & \max(|\Delta|, x + 1)\\[4pt]
   \pass{select}((t_0, \ldots, t_{j-1};\; t)) & = &
     (n;\; \pass{tail}(t_0), \ldots, \pass{tail}(t_{j-1});\; \pass{tail}(t))\\
   \pass{select}^{+}((t_0, \ldots, t_{j-1};\; t)) & = &
@@ -881,8 +893,7 @@ that any of its tails starts in or writes. With $\Delta$ the frame a tail starts
   & & \quad \kw{movq}\; \%\kw{rdi}, 0;\; \kw{movq}\; \%\kw{rsi}, 1;\; \pass{tail}(t))
 \end{array}
 \]
-with $n = \max(\mathit{depth}(t_0), \ldots, \mathit{depth}(t_{j-1}),
-\mathit{depth}(t))$. The main function body uses $\pass{select}$, and
+with $n = \max(\mathit{slots}(t_0), \ldots, \mathit{slots}(t_{j-1}), \mathit{slots}(t))$. The main function body uses $\pass{select}$, and
 each definition uses $\pass{select}^{+}$, whose prologue moves the
 environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 1: $\pass{select}((b_0, \ldots, b_{m-1};\; b)) =
@@ -892,8 +903,7 @@ environment and argument from $\kw{rdi}$ and $\kw{rsi}$ to slots 0 and
 \section{Calculations for the Other Equational Passes}
 \label{app:calculations}
 
-This appendix gives the key case of the proofs of the remaining six
-passes that are proved by an equation (Section~\ref{sec:equational}).
+This appendix gives the key case of the proofs of the six equational passes that Section~\ref{sec:equational} does not show, in the order of the pipeline. As there, each proof generalizes the equation to open terms under related environments, the other cases are congruences, and where a step needs a set to be nonempty we show the nonempty case.
 
 \paragraph{Enclose}
 
@@ -966,31 +976,8 @@ with $D = \den{\pass{rco}(M)}_{T'}\rho'$:
     & = & \den{\kw{let}\;x = \pass{rco}(M)\;\kw{in}\;\kw{get}_i\,x}_{T'}\,\rho' & \text{(meaning of $\kw{let}$)}
 \end{array}
 \]}
-The Agda proves this once for every strict operation and every
+The Agda development proves this once for every strict operation and every
 continuation, and chains it over several operands.
-
-\paragraph{Explicate control}
-
-The induction hypothesis says that an Imp expression $e$, run with the
-continuation $\kappa_{x,k}$ that writes slot $x$ and then runs the tail
-$k$, means the same as the tail $\pass{assign}(e, x, k)$, given the
-meanings $B$ of the blocks. The key case is an assignment whose
-right-hand side is a $\kw{case}$. The pass adds $k$ as a block $l$, the
-join point, so $B(l)$ is the meaning of $k$, and each branch $e_i$
-becomes a block $l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))$.
-We show the first branch; the second is the same:
-{\small
-\[
-\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
-  \den{\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2)}_T\,\sigma\,\kappa_{x,k}
-    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,k},\; \ldots) & \text{(Imp)}\\
-    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,\kw{goto}\,l},\; \ldots) & \text{(join point $l$)}\\
-    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} B(l_1)(\sigma[x'{:=}X]),\; \ldots) & \text{(ind.\ hyp.)}\\
-    & = & \den{\kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)}_{T',B}\,\sigma & \text{(CFG)}
-\end{array}
-\]}
-A further lemma says that blocks added later do not change the meaning
-of a label made earlier.
 
 \paragraph{Lift locals}
 
@@ -1016,11 +1003,33 @@ The second step, a commuting conversion, needs $\den{M}_T\,\sigma$ to be
 consistent and the body to be monotone. The $\kw{case}$ case follows
 the same pattern.
 
+\paragraph{Explicate control}
+
+The induction hypothesis says that an Imp expression $e$, run with the
+continuation $\kappa_{x,k}$ that writes slot $x$ and then runs the tail
+$k$, means the same as the tail $\pass{assign}(e, x, k)$, given the
+meanings $B$ of the blocks. The key case is an assignment whose
+right-hand side is a $\kw{case}$. The pass adds $k$ as a block $l$, the
+join point, so $B(l)$ is the meaning of $k$, and each branch $e_i$
+becomes a block $l_i = \pass{add}(\pass{assign}(e_i, x, \kw{goto}\;l))$.
+We show the first branch; the second is the same:
+{\small
+\[
+\begin{array}{@{}r@{\;}c@{\;}l@{\quad}l@{}}
+  \den{\kw{case}\;a\;(x'.\,e_1)\;(x'.\,e_2)}_T\,\sigma\,\kappa_{x,k}
+    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,k},\; \ldots) & \text{(Imp)}\\
+    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} \den{e_1}_T\,\sigma[x'{:=}X]\,\kappa_{x,\kw{goto}\,l},\; \ldots) & \text{(join point $l$)}\\
+    & = & \mathcal{C}(\mathcal{A}\den{a}\sigma,\; \mlam{X} B(l_1)(\sigma[x'{:=}X]),\; \ldots) & \text{(ind.\ hyp.)}\\
+    & = & \den{\kw{case}\;a\;(x'.\,l_1)\;(x'.\,l_2)}_{T',B}\,\sigma & \text{(CFG)}
+\end{array}
+\]}
+A further lemma says that blocks added later do not change the meaning
+of a label made earlier.
+
 \section{An Example of the Approximant Logical Relation}
 \label{app:alr-example}
 
-Return to the example of Section~\ref{sec:approx-lr}, $\lambda y.\, x + y$ with $x$ bound to $9$, whose source
-meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
+This appendix works clause~3 of the approximant logical relation (Figure~\ref{fig:alr}) through the example of Section~\ref{sec:approx-lr}: $\lambda y.\, x + y$ with $x$ bound to $9$, whose source meaning $D$ contains $[1] \mapsto 10$. Take the one-element list
 $V = [\pairv{u}{9}]$ with $u = [9] \mapsto ([1] \mapsto 10)$. The
 environment $[9]$ of the code entry is in $\cdr(V)$, so
 $\entryin{[1]}{10}{V}$ is a usable entry, and $\callsto{V}{[1]}{[10]}$

@@ -234,8 +234,7 @@ The machine of x86$\mu$ runs a sequence $s$ with blocks $B$, a stack
 $\Sigma$ of the callers' return points, and a machine state $m$ as in
 Appendix~\ref{app:interp}, $\mathit{run}(s, B, \Sigma, m)$. A return
 point $\mathit{retK}(s, B, \sigma)$ holds the rest $s$ of the caller's
-sequence, its blocks, and its frame. With the notation of
-Appendix~\ref{app:interp}, the machine steps by:
+sequence, its blocks, and its frame. In the notation of Appendix~\ref{app:interp}, its steps are:
 \begin{align*}
   \mathit{run}(i;\; s, B, \Sigma, m) &\longrightarrow \mathit{run}(s, B, \Sigma, \mathit{instr}(i, m))
     \qquad\text{for $i$ not $\kw{callq}$} \\
@@ -330,8 +329,7 @@ $\mathbb{D}$; $\mathit{fun}$, with payload the continuous functions
 $[\mathbb{D} \to \mathbb{D}]$; or $\mathit{pr}$, with payload
 $\mathbb{D}^2$. The least element $\bot$ of $\mathbb{D}$ means divergence;
 a value $d$ is \emph{defined} when $d \neq \bot$. We write $t(x)$ for the
-value with tag $t$ and payload $x$. The operators are continuous and
-strict, as the graph model's are:
+value with tag $t$ and payload $x$. As in the graph model, the operators are strict; they are also continuous:
 \begin{itemize}
 \item $\Lambda(g) = \mathit{fun}(g')$, where $g'$ agrees with $g$ on
   defined values and maps $\bot$ to $\bot$; and $\mathsf{app}(d, e) =
