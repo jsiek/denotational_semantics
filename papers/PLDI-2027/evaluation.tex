@@ -240,20 +240,22 @@ relies on 1,544 lines of it, mostly the graph model itself and its
 operators, against 447 for the machines, 413 for the interpreters, and
 1,191 for the reduction semantics.
 
-\subsection{The Answers to RQ2, RQ4, and RQ5}
+\subsection{What the Comparison Shows}
 
-The comparison supports the answer to RQ2. For the passes that keep
-the representation of values, the equational proofs tend to be
-concise: the smallest of the five styles for \pass{simplify} and
-\pass{globalize}, about the same as the smallest for \pass{explicate
-  control}, and within 30 lines of the smallest for the others. The answer to RQ4 is mixed. Overall, the denotational
-development ranks second, behind the clocked interpreters and ahead of
-abstract machines and reduction semantics. Its advantage on the passes
-proved by equational reasoning such as \pass{simplify} is neutralized
-by \pass{delay}, the one pass that is not an equation. For RQ5, the
-graph model gives the smaller proof: the Scott-domain proof is 1.4
-times as large, mostly for reasons of the mathematics (stage-indexed
-relations, calls across stages, and tags) rather than of Agda.
+The rows for the passes support a conclusion that does not depend on
+how the totals are counted. Where a pass keeps the representation of
+values, the graph-model proof is the smallest of the five for
+\pass{simplify}, \pass{globalize}, and \pass{explicate control}, and
+within 30 lines of the smallest for the others (RQ2). Where a pass
+changes that representation, as \pass{delay} does, the operational
+proofs are several times smaller. The totals, by contrast, depend on
+the accounting. Counting each proof against its own semantics, the
+graph model ranks second, and with the language-independent
+infrastructure it ranks third (RQ4). Under both accountings, the graph
+model gives a smaller proof than Scott domains (RQ5). All five
+developments are ours, written with the same AI assistant, so the
+totals measure these developments rather than the inherent difficulty
+of each style.
 
 \subsection{Threats to Validity}
 

@@ -184,10 +184,7 @@ includes a denotational style.
 The comparison answers RQ2 affirmatively. Equational reasoning can be
 particularly concise: the denotational proof for the source optimizer,
 \pass{simplify}, takes 349 lines against 508 to 697 for the operational
-proofs (Section~\ref{sec:equational}). The answer to RQ4 is mixed. Counting the compiler-correctness
-proofs under the same rules, the denotational development ranks second
-at 1,806 lines of Agda: behind the proof using clocked interpreters
-(1,504 lines), but ahead of the proofs using abstract machines (2,103 lines) and reduction semantics (3,093 lines).  The comparison also
+proofs (Section~\ref{sec:equational}). The answer to RQ4 is mixed. Counting each correctness proof against its own semantics, the graph-model development ranks second at 1,806 lines of Agda: behind the proof using clocked interpreters (1,504 lines), but ahead of the proofs using abstract machines (2,103 lines) and reduction semantics (3,093 lines). With the language-independent infrastructure that each style relies on, it ranks third, behind the machines as well.  The comparison also
 quantifies the negative answer to RQ3: where a pass changes the representation of closures, the denotational proof is more complex.  The
 proof of \pass{delay} takes 450 lines with the denotational semantics, compared with 35 to 126 for the operational proofs.
 For RQ5, the Scott-domain proof is 1.4 times as large as the

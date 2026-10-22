@@ -24,8 +24,7 @@ relations}. We mechanize the proof in Agda.
 To compare this graph-model approach with other styles, we prove
 correctness of the same compiler four more times, in three operational
 styles and with Scott domains, and report on the size of the proofs.
-Under a common accounting of the five whole-compiler correctness
-proofs, the graph-model development is smaller than the proofs using
+Counting each correctness proof against its own semantics, without language-independent infrastructure, the graph-model development is smaller than the proofs using
 Scott domains, abstract machines, and reduction semantics, but larger
 than the proof using clocked interpreters. In
 particular, the graph-model approach yields

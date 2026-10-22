@@ -3,14 +3,16 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We proved a ten-pass compiler correct, from a call-by-value
-$\lambda$-calculus with recursive types down to a typed assembly
-language, with a graph-model semantics for every language, and
-mechanized the proof in Agda (RQ1). Nine passes are proved by short
-equational calculations (RQ2). The exception, \pass{delay}, needs our
-new approximant logical relation for reflection (RQ3). Among three
-operational proofs of the same compiler, the denotational proof ranks
-second in size (RQ4), and a second denotational proof, with Scott
-domains, is 1.4 times as large (RQ5). In future work we plan to report on a dynamically
-typed variant of the compiler and to repeat the comparison in Rocq or
-Lean.
+Denotational equality makes compiler proofs short as long as a pass
+keeps the representation of values. With a graph-model semantics for
+every language, nine of the ten passes of a compiler from a
+call-by-value $\lambda$-calculus with recursive types to a typed
+assembly language are short equational calculations, and we mechanized
+the whole proof in Agda. When a pass changes the representation of
+closures, equality gives way to a relation, and semantic reflection
+needs a new one, the approximant logical relation, which relates a
+finite target approximation to the whole source denotation. That pass
+is where the denotational proof pays: it is several times the size of
+the operational proofs of the same pass. In future work we plan to
+report on a dynamically typed variant of the compiler and to repeat
+the comparison in Rocq or Lean.
