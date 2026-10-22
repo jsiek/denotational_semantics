@@ -50,7 +50,7 @@ import Mu.Semantics.Scott.Imp pt fe pe as I
 open I using (⟦_⟧ᴷ; 𝒜; 𝒜s; K; idK; underK)
 open import Mu.proof.Semantics.Scott.BackEndLemmas pt fe pe using (seq-⊥; cases-strict-natural; codeᶜ-cong; tables-cons)
 
-module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
+module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
   atm-＝ : ∀ {Δ A} (a : Atm Σ Δ A) σ → ⟦ ⌜ a ⌝ᵃ ⟧[ T ] · σ ＝ 𝒜 a T' · σ
   atm-＝ (var x) σ = refl
@@ -106,9 +106,9 @@ table-lift : ∀ {Σ ss} (ds : All (λ s → M.Exp Σ (Args s) (DSig.cod s)) ss)
 table-lift [] f = refl
 table-lift (d ∷ ds) f =
   tables-cons code′ I.code′ ⌜ d ⌝ (All-map ⌜_⌝ ds) (lift d) (All-map lift ds) f
-    (code-lift (tables code′ (All-map ⌜_⌝ ds)) (tables I.code′ (All-map lift ds)) (table-lift ds) d)
+    (code-lift (table-lift ds) d)
     (table-lift ds f)
 
 lift-locals-correct : ∀ {A} (P : M.Program A) → ⟦ ⌜ P ⌝ₚ ⟧ₚ ＝ I.⟦ lift-program P ⟧ₚ
 lift-locals-correct (M.program ds e) =
-  lift-sem (table (All-map ⌜_⌝ ds)) (I.table (All-map lift ds)) (table-lift ds) e ρ₀ idK refl
+  lift-sem (table-lift ds) e ρ₀ idK refl

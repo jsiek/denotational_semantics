@@ -151,7 +151,7 @@ tables-cons cd cd' {ss = ss} d ds d' ds' f =
   choose-cong (lvl f ≟ length ss) (cd (tables cd ds) d) (tables cd ds f) (cd' (tables cd' ds') d') (tables cd' ds' f)
 
 {- atoms and simple expressions (of Impμ, CFGμ), for tables that agree -}
-module _ {Σ} (T T' : Table Σ) (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
+module _ {Σ} {T T' : Table Σ} (TT : ∀ {s} (f : Σ ∋ s) → T f ＝ T' f) where
 
   𝒜-＝ : ∀ {Δ A} (a : I.Atm Σ Δ A) σ → 𝒜 a T · σ ＝ 𝒜 a T' · σ
   𝒜-＝ (I.var x) σ = refl
