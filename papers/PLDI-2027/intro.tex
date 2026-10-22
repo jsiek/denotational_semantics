@@ -168,18 +168,17 @@ denotational proof of correctness to operational ones, we prove the
 same compiler correct three more times: with abstract machines and
 simulations, as in CompCert; with clocked interpreters and value
 relations, as in CakeML; and with standard reduction semantics and
-simulations. We also prove it a second time denotationally, with
-Scott domains.  Each development covers the complete ten-pass pipeline
-and proves an analogous correctness property in its own
-semantics. Prior comparisons of semantic styles for compiler proofs
-exist, but at a smaller scale. \citet{Owens:2016aa} found that proving
-one compiler phase correct took 43 lines with a relational big-step
-semantics and 18 lines with a functional one, and
-\citet{Kahn:2025aa} compared three operational semantics by the lines of
-Agda needed to prove compilation to a Krivine machine correct. Our
-comparison is, to our knowledge, the first on a compiler for a
-higher-order language down to assembly that includes a denotational
-style.
+simulations. We also prove it a second time denotationally, with Scott
+domains.  Each development covers the ten-pass pipeline and proves an
+analogous correctness property in its own semantics. Prior comparisons
+of semantic styles for compiler proofs exist, but at a smaller
+scale. \citet{Owens:2016aa} found that proving one compiler phase
+correct took 43 lines with a relational big-step semantics and 18
+lines with a functional one, and \citet{Kahn:2025aa} compared three
+operational semantics by the lines of Agda needed to prove compilation
+to a Krivine machine correct. Our comparison is, to our knowledge, the
+first on a compiler for a higher-order language down to assembly that
+includes a denotational style.
 
 The comparison answers RQ2 affirmatively. Equational reasoning can be
 particularly concise: the denotational proof for the source optimizer,

@@ -172,6 +172,7 @@ $\exists \Delta.\, \kw{code}(\Delta; A \rightarrow C) \times
 so closures with different environments have the same type. The form
 $\kw{callc}\;L\;M$ opens the closure $L$ and calls its code with its
 environment and the argument $M$.
+\vspace{-5pt}
 \begin{gather*}
   \frac{z : \kw{tup}(\Delta),\, y : A \vdash N : C}
        {\Gamma \vdash \kw{code}\;(z, y.\,N) : \kw{code}(\Delta; A \rightarrow C)}
@@ -244,4 +245,4 @@ single pseudo-instruction that tests the tag of an injection, writes
 its payload to a slot, and jumps to one of two blocks; it stands for a
 test, a load, and a conditional jump. The coercions $\kw{fold}$ and
 $\kw{unfold}$ survive to x86$\mu$ as annotations on operands,
-$\kw{fold}\;a$ and $\kw{unfold}\;a$, which do nothing at run time.
+$\kw{fold}\;a$ and $\kw{unfold}\;a$, that do nothing.
